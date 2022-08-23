@@ -14,8 +14,9 @@
 
 namespace mam4 {
 
-using Pack = PackType;
-using IntPack = IntPackType;
+using Pack       = haero::PackType;
+using IntPack    = haero::IntPackType;
+using Atmosphere = haero::Atmosphere;
 
 //-----------------------------------------------------------------------------
 // The following functions were ported from aero_newnuc_utils.F90 in the MAM4

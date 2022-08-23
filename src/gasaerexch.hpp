@@ -3,10 +3,13 @@
 
 #include "aero_config.hpp"
 
+#include <haero/haero.hpp>
 #include <haero/atmosphere.hpp>
 #include <Kokkos_Array.hpp>
 
 namespace mam4 {
+
+using Atmosphere = haero::Atmosphere;
 
 /// @class GasAerExchImpl
 /// This class implements MAM4's gas/aersol exchange  parameterization. Its
