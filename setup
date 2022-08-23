@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+
+# This script creates a build directory and sticks a config.sh script into it.
+# Then config.sh can be edited and run within the build directory.
+
+# Print usage info.
+if [ "$1" = "" ]; then
+  echo "setup: Creates a build directory with a configuration file."
+  echo "Usage: setup build_dir"
+  exit 1
+fi
+
+# Create the build directory if it doesn't exist.
+if [ ! -d $1 ]; then
+  mkdir -p $1
+fi
+
+# Copy our template config script into place.
+echo -e "#!/usr/bin/env bash\n" > $1/config.sh
+echo "SOURCE_DIR=$PWD" >> $1/config.sh
+cat <<EOT >> $1/config.sh
+# ^^^^^^ location of mam4xx source code.
+
+# config.sh -- A CMake configuration script.
+# Edit this file to change the parameters in your build. Uncomment exactly one
+# value for each parameter.
+
+#-----------------------------------------------------------------------------
+#                             Installation prefix
+#-----------------------------------------------------------------------------
+PREFIX=$PWD/$1
+
+#-----------------------------------------------------------------------------
+#                                   HAERO
+#-----------------------------------------------------------------------------
+
+# To build MAM4xx, you must have HAERO installed. Set this variable to a path
+# with include/, lib/, and share/ directories in which HAERO has been installed.
+# For instructions on building HAERO, surf to
+# https://github.com/eagles-project/haero
+# and check out the README.md file there.
+
+HAERO_DIR=/path/to/haero
+
+#-----------------------------------------------------------------------------
+#                         Build features and parameters
+#-----------------------------------------------------------------------------
+
+# Set this to
+# * 'Debug' for development (debugging symbols, no optimization)
+# * 'Release' for production (no symbols, optimization).
+BUILD_TYPE=Debug
+
+# Uncomment this if you want really verbose builds.
+#VERBOSE=ON
+
+#-----------------------------------------------------------------------------
+#                      MAM4 box model cross-validation setup
+#-----------------------------------------------------------------------------
+
+# Set this to ON to enable testing against MAM4 box model parameterizations.
+ENABLE_MAM4BOX=OFF
+
+# If Set this to a local directory containing a clone of the mam_refactor repo.
+#MAM4BOX_DIR=/path/to/mam_box_model_source
+
+#-----------------------------------------------------------------------------
+#                   Don't change anything below here.
+#-----------------------------------------------------------------------------
+
+# We use good old-fashioned UNIX makefiles.
+GENERATOR="Unix Makefiles"
+
+if [ "\$VERBOSE" = "ON" ]; then
+  OPTIONS="\$OPTIONS -DCMAKE_VERBOSE_MAKEFILE=ON"
+fi
+
+# Clear the build cache.
+rm -f CMakeCache.txt
+
+# Pass along MAM4 box model options if needed.
+if [ "\$ENABLE_MAM4BOX" = "ON" ]; then
+  OPTIONS="\$OPTIONS -DCMAKE_Fortran_COMPILER=\$FC -DMAM4BOX_DIR=\$MAM4BOX_DIR"
+fi
+
+# Configure the build.
+cmake \
+ -DCMAKE_INSTALL_PREFIX:PATH=\$PREFIX \
+ -DCMAKE_BUILD_TYPE=\$BUILD_TYPE \
+ -DCMAKE_C_COMPILER=\$CC \
+ -DCMAKE_CXX_COMPILER=\$CXX \
+ -DMAM4XX_HAERO_DIR=\$HAERO_DIR \
+ -DMAM4XX_ENABLE_BOX=\$ENABLE_MAM4BOX \
+ \$OPTIONS \
+ -G "\$GENERATOR" \
+ \$SOURCE_DIR
+EOT
+
+# Make config.sh executable.
+chmod a+x $1/config.sh
+
+# Give instructions.
+echo "Your build directory '$1' is ready."
+echo "To configure your build:"
+echo "  1. cd $1"
+echo "  2. Edit config.sh"
+echo "  3. ./config.sh"
+echo "  4. Build using 'make -j'."
+
