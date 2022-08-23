@@ -34,6 +34,12 @@ brew install cmake gfortran openmpi
 
 ## Building MAM4xx
 
+Before you get started with MAM4xx, you'll need a working installation of the
+HAERO high-performance aerosol interface library. You can follow the
+instructions in the [HAERO repository](https://github.com/eagles-project/haero)
+to build and install HAERO. Make sure you run all the steps, including
+`make install`.
+
 To configure MAM4xx:
 
 1. Make sure you have the latest versions of all the required submodules:
