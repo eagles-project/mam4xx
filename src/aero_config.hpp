@@ -6,13 +6,16 @@
 #include <algorithm>
 #include <map>
 #include <numeric>
-#include <string>
 
 namespace mam4 {
 
 /// MAM4 column-wise prognostic aerosol fields (also used for tendencies).
 class Prognostics final {
  public:
+  using PackInfo = haero::PackInfo;
+  using ColumnView = haero::ColumnView;
+  using ThreadTeam = haero::ThreadTeam;
+
   /// Creates a container for prognostic variables on the specified number of
   /// vertical levels.
   explicit Prognostics(int num_levels) : nlev_(num_levels) {
@@ -49,7 +52,7 @@ class Prognostics final {
   /// Returns true iff all prognostic quantities are nonnegative, using the
   /// given thread team to parallelize the check.
   KOKKOS_INLINE_FUNCTION
-  bool quantities_nonnegative(const TeamType& team) const {
+  bool quantities_nonnegative(const ThreadTeam& team) const {
     const int nk = PackInfo::num_packs(num_levels());
     int violations = 0;
     Kokkos::parallel_reduce(
@@ -88,6 +91,8 @@ using Tendencies = Prognostics;
 /// MAM4 column-wise diagnostic aerosol fields.
 class Diagnostics final {
  public:
+  using ColumnView = haero::ColumnView;
+
   explicit Diagnostics(int num_levels) : nlev_(num_levels) {
     for (int mode = 0; mode < 4; ++mode) {
       dry_geometric_mean_diameter[mode] =
@@ -117,9 +122,9 @@ class Diagnostics final {
 class AeroConfig final {
  public:
   // Types.
-  using Prognostics = ::haero::mam4::Prognostics;
-  using Diagnostics = ::haero::mam4::Diagnostics;
-  using Tendencies = ::haero::mam4::Tendencies;
+  using Prognostics = ::mam4::Prognostics;
+  using Diagnostics = ::mam4::Diagnostics;
+  using Tendencies = ::mam4::Tendencies;
 
   bool calculate_gas_uptake_coefficient = false;
   int number_gauss_points_for_integration = 2;

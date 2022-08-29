@@ -2,21 +2,25 @@
 #define MAM4XX_NUCLEATION_HPP
 
 #include "aero_config.hpp"
-#include "aero_modes.hpp"
 #include "conversions.hpp"
 #include "merikanto2007.hpp"
 #include "vehkamaki2002.hpp"
 #include "wang2008.hpp"
 
-#include <ekat/ekat_pack_math.hpp>
 #include <haero/atmosphere.hpp>
-#include <haero/haero_math.hpp>
+#include <haero/math.hpp>
 
 namespace mam4 {
 
-using Pack       = haero::PackType;
-using IntPack    = haero::IntPackType;
 using Atmosphere = haero::Atmosphere;
+using Constants  = haero::Constants;
+using IntPack    = haero::IntPackType;
+using Pack       = haero::PackType;
+using PackInfo   = haero::PackInfo;
+using Real       = haero::Real;
+using ThreadTeam = haero::ThreadTeam;
+
+using haero::max;
 
 //-----------------------------------------------------------------------------
 // The following functions were ported from aero_newnuc_utils.F90 in the MAM4
@@ -678,7 +682,7 @@ class Nucleation {
   // valid, false if not
   KOKKOS_INLINE_FUNCTION
   bool validate(const AeroConfig& config,
-                const TeamType& team,
+                const ThreadTeam& team,
                 const Atmosphere& atm,
                 const Prognostics& progs) const {
 
@@ -691,7 +695,7 @@ class Nucleation {
   // NOTE: are fixed, but the data in those views is allowed to vary.
   KOKKOS_INLINE_FUNCTION
   void compute_tendencies(const AeroConfig& config,
-                          const TeamType& team, Real t, Real dt,
+                          const ThreadTeam& team, Real t, Real dt,
                           const Atmosphere& atm,
                           const Prognostics& progs,
                           const Diagnostics& diags,

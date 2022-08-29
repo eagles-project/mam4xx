@@ -10,13 +10,20 @@
 namespace mam4 {
 
 using Atmosphere = haero::Atmosphere;
+using Constants  = haero::Constants;
+using IntPack    = haero::IntPackType;
+using PackType   = haero::PackType;
+using PackInfo   = haero::PackInfo;
+using Real       = haero::Real;
+using ThreadTeam = haero::ThreadTeam;
 
-/// @class GasAerExchImpl
+
+/// @class GasAerExch
 /// This class implements MAM4's gas/aersol exchange  parameterization. Its
 /// structure is defined by the usage of the impl_ member in the AeroProcess
 /// class in
 /// ../aero_process.hpp.
-class GasAerExchImpl {
+class GasAerExch {
   static constexpr int num_mode = 4;
   static constexpr int num_gas = 13;
   static constexpr int num_aer = 7;
@@ -36,18 +43,18 @@ class GasAerExchImpl {
   static constexpr Real soag_h2so4_uptake_coeff_ratio = 0.81;  // for SOAG
   static constexpr Real nh3_h2so4_uptake_coeff_ratio = 2.08;   // for NH3
 
-  haero::kokkos_device_type::view_2d<bool> l_mode_can_contain_species;
-  haero::kokkos_device_type::view_2d<bool> l_gas_condense_to_mode;
-  haero::kokkos_device_type::view_1d<bool> l_mode_can_age;
-  haero::kokkos_device_type::view_1d<int> idx_gas_to_aer;
-  haero::kokkos_device_type::view_1d<int> eqn_and_numerics_category;
-  haero::kokkos_device_type::view_1d<Real> uptk_rate_factor;
-  haero::kokkos_device_type::view_1d<Real> qgas_cur;
-  haero::kokkos_device_type::view_1d<Real> qgas_avg;
-  haero::kokkos_device_type::view_1d<Real> qgas_netprod_otrproc;
-  haero::kokkos_device_type::view_2d<PackType> uptkaer;
-  haero::kokkos_device_type::view_1d<Real> alnsg_aer;
-  haero::kokkos_device_type::view_1d<int> mode_aging_optaa;
+  haero::DeviceType::view_2d<bool> l_mode_can_contain_species;
+  haero::DeviceType::view_2d<bool> l_gas_condense_to_mode;
+  haero::DeviceType::view_1d<bool> l_mode_can_age;
+  haero::DeviceType::view_1d<int> idx_gas_to_aer;
+  haero::DeviceType::view_1d<int> eqn_and_numerics_category;
+  haero::DeviceType::view_1d<Real> uptk_rate_factor;
+  haero::DeviceType::view_1d<Real> qgas_cur;
+  haero::DeviceType::view_1d<Real> qgas_avg;
+  haero::DeviceType::view_1d<Real> qgas_netprod_otrproc;
+  haero::DeviceType::view_2d<PackType> uptkaer;
+  haero::DeviceType::view_1d<Real> alnsg_aer;
+  haero::DeviceType::view_1d<int> mode_aging_optaa;
 
  public:
   // process-specific configuration data (if any)
@@ -114,7 +121,7 @@ class GasAerExchImpl {
   // assumptions made by this implementation, returning true if the states are
   // valid, false if not
   KOKKOS_INLINE_FUNCTION
-  bool validate(const AeroConfig &config, const TeamType &team,
+  bool validate(const AeroConfig &config, const ThreadTeam &team,
                 const Atmosphere &atm, const Prognostics &progs) const {
     // Make sure relevant atmospheric quantities are physical.
     const int nk = PackInfo::num_packs(atm.num_levels());
@@ -162,7 +169,7 @@ class GasAerExchImpl {
   // NOTE: that both diags and tends are const below--this means their views
   // NOTE: are fixed, but the data in those views is allowed to vary.
   KOKKOS_INLINE_FUNCTION
-  void compute_tendencies(const AeroConfig &config, const TeamType &team,
+  void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
                           Real t, Real dt, const Atmosphere &atm,
                           const Prognostics &progs, const Diagnostics &diags,
                           const Tendencies &tends) const {

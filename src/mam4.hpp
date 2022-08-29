@@ -10,8 +10,10 @@
 
 namespace mam4 {
 
-using NucleationProcess = haero::AeroProcess<AeroConfig, NucleationImpl>;
-using GasAerExchProcess = haero::AeroProcess<AeroConfig, GasAerExchImpl>;
+using Real = haero::Real;
+
+using NucleationProcess = haero::AeroProcess<AeroConfig, Nucleation>;
+using GasAerExchProcess = haero::AeroProcess<AeroConfig, GasAerExch>;
 
 } // namespace mam4
 

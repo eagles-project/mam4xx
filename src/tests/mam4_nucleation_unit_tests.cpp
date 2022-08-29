@@ -1,4 +1,4 @@
-#include <haero/mam4.hpp>
+#include <mam4.hpp>
 
 #include <catch2/catch.hpp>
 
@@ -28,9 +28,9 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleation_process") {
   mam4::NucleationProcess process(mam4_config);
 
   // Single-column dispatch.
-  auto team_policy = haero::TeamPolicy(1u, Kokkos::AUTO);
+  auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
   Real t = 0.0, dt = 30.0;
-  Kokkos::parallel_for(team_policy, KOKKOS_LAMBDA(const TeamType& team) {
+  Kokkos::parallel_for(team_policy, KOKKOS_LAMBDA(const ThreadTeam& team) {
     process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
   });
 }
@@ -39,7 +39,7 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_nucleation_process") {
   // Now we process multiple columns within a single dіspatch (mc means
   // "multi-column").
   int ncol = 8;
-  DeviceType::view_1d<haero::Atmosphere> mc_atm("mc_progs", ncol);
+  DeviceType::view_1d<Atmosphere> mc_atm("mc_progs", ncol);
   DeviceType::view_1d<mam4::Prognostics> mc_progs("mc_atm", ncol);
   DeviceType::view_1d<mam4::Diagnostics> mc_diags("mc_diags", ncol);
   DeviceType::view_1d<mam4::Tendencies>  mc_tends("mc_tends", ncol);
@@ -62,9 +62,9 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_nucleation_process") {
   mam4::NucleationProcess process(mam4_config);
 
   // Dispatch over all the above columns.
-  auto team_policy = haero::TeamPolicy(ncol, Kokkos::AUTO);
+  auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
   Real t = 0.0, dt = 30.0;
-  Kokkos::parallel_for(team_policy, KOKKOS_LAMBDA(const TeamType& team) {
+  Kokkos::parallel_for(team_policy, KOKKOS_LAMBDA(const ThreadTeam& team) {
     const int icol = team.league_rank();
     process.compute_tendencies(team, t, dt, mc_atm(icol), mc_progs(icol),
                                mc_diags(icol), mc_tends(icol));

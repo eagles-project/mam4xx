@@ -5,9 +5,6 @@
 #include <haero/gas_species.hpp>
 #include <haero/math.hpp>
 
-#include <ekat/ekat_pack.hpp>
-
-#include <cmath>
 #include <string>
 #include <vector>
 
@@ -41,8 +38,8 @@ namespace mam4 {
 /// deliquescence_pt, particles achieve their maximum amount of liquid water.
 ///
 struct Mode final {
+  using Real = haero::Real;
 
- public:
   // Default constructor needed to resize Kokkos Views on device before deep
   // copy.
   KOKKOS_INLINE_FUNCTION
@@ -54,6 +51,7 @@ struct Mode final {
         crystallization_pt(0),
         deliquescence_pt(0) {
   }
+
   /// Creates an aerosol particle mode.
   /// @param [in] min_diam The minimum diameter for particles that belong
   ///                      to this mode [m].
@@ -169,14 +167,14 @@ enum class AeroId {
 };
 
 // A list of aerosol species in MAM4.
-static AeroSpecies aero_species[7] = {
-  AeroSpecies(96.0, 1770.0, 0.507),   // sulphate
-  AeroSpecies(12.011, 1000.0, 1e-10), // primary organic matter
-  AeroSpecies(12.011, 1000.0, 0.14),  // secondary organic aerosol
-  AeroSpecies(12.011, 1700.0, 1e-10), // black carbon
-  AeroSpecies(135.065, 2600.0, 0.14), // dust
-  AeroSpecies(58.4425, 1900.0, 1.16), // sodium chloride
-  AeroSpecies(250093.0, 1601.0, 0.1)  // marine organic matter
+static haero::AeroSpecies aero_species[7] = {
+  haero::AeroSpecies(96.0, 1770.0, 0.507),   // sulphate
+  haero::AeroSpecies(12.011, 1000.0, 1e-10), // primary organic matter
+  haero::AeroSpecies(12.011, 1000.0, 0.14),  // secondary organic aerosol
+  haero::AeroSpecies(12.011, 1700.0, 1e-10), // black carbon
+  haero::AeroSpecies(135.065, 2600.0, 0.14), // dust
+  haero::AeroSpecies(58.4425, 1900.0, 1.16), // sodium chloride
+  haero::AeroSpecies(250093.0, 1601.0, 0.1)  // marine organic matter
 };
 
 /// Returns the index of the given aerosol species within the given mode, or
@@ -230,20 +228,20 @@ enum class GasId {
 };
 
 // A list of gas species in MAM4.
-static GasSpecies gas_species[13] = {
-  GasSpecies(47.9982), // ozone
-  GasSpecies(34.0136), // hydrogen peroxide
-  GasSpecies(98.0784), // sulfuric acid
-  GasSpecies(64.0648), // sulfur dioxide
-  GasSpecies(62.1324), // dimethylsulfide
-  GasSpecies(12.011),  // secondary organic aerosol precursor
-  GasSpecies(31.988),  // oxygen
-  GasSpecies(44.009),  // carbon dioxide
-  GasSpecies(44.013),  // nitrous oxide
-  GasSpecies(16.04),   // methane
-  GasSpecies(137.73),  // thrichlorofluoromethane
-  GasSpecies(120.91),  // dichlorofluoromethane
-  GasSpecies(50.0)     // ammonia
+static haero::GasSpecies gas_species[13] = {
+  haero::GasSpecies(47.9982), // ozone
+  haero::GasSpecies(34.0136), // hydrogen peroxide
+  haero::GasSpecies(98.0784), // sulfuric acid
+  haero::GasSpecies(64.0648), // sulfur dioxide
+  haero::GasSpecies(62.1324), // dimethylsulfide
+  haero::GasSpecies(12.011),  // secondary organic aerosol precursor
+  haero::GasSpecies(31.988),  // oxygen
+  haero::GasSpecies(44.009),  // carbon dioxide
+  haero::GasSpecies(44.013),  // nitrous oxide
+  haero::GasSpecies(16.04),   // methane
+  haero::GasSpecies(137.73),  // thrichlorofluoromethane
+  haero::GasSpecies(120.91),  // dichlorofluoromethane
+  haero::GasSpecies(50.0)     // ammonia
 };
 
 } // namespace mam4

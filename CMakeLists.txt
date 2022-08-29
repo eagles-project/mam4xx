@@ -10,7 +10,7 @@ message(STATUS "Configuring with build type: ${CMAKE_BUILD_TYPE}")
 # We rely on Haero for basic data structures and third-party libraries.
 if (NOT MAM4XX_HAERO_DIR)
   message(FATAL_ERROR "MAM4XX_HAERO_DIR is not specified! Please provide a path to Haero.")
-else if (NOT EXISTS ${MAM4XX_HAERO_DIR}/share)
+elseif (NOT EXISTS ${MAM4XX_HAERO_DIR}/share)
   message(FATAL_ERROR "Invalid MAM4XX_HAERO_DIR. Please provide a valid path to Haero.")
 endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${MAM4XX_HAERO_DIR}/share/")
@@ -22,19 +22,19 @@ else() #CPU
   message(STATUS "Building for CPU (${HAERO_DEVICE_ARCH})")
 endif()
 
+# Set compilers, linkers, and flags from Haero.
+set(CMAKE_CXX_STANDARD ${HAERO_CXX_STANDARD})
+set(CMAKE_CXX_COMPILER ${HAERO_CXX_COMPILER})
+set(CMAKE_CXX_FLAGS    ${HAERO_CXX_FLAGS})
+
+set(CMAKE_C_STANDARD ${HAERO_C_STANDARD})
+set(CMAKE_C_COMPILER ${HAERO_C_COMPILER})
+set(CMAKE_C_FLAGS    ${HAERO_C_FLAGS})
+
 enable_language(CXX)
 enable_language(Fortran)
 
 project (mam4xx)
-
-# Set compilers, linkers, and flags from Haero.
-set(CMAKE_CXX_STANDARD ${HAERO_CXX_STANDARD})
-set(CMAKE_CXX_FLAGS    ${HAERO_CXX_FLAGS})
-set(CMAKE_CXX_COMPILER ${HAERO_CXX_COMPILER})
-
-set(CMAKE_C_STANDARD ${HAERO_C_STANDARD})
-set(CMAKE_C_FLAGS    ${HAERO_C_FLAGS})
-set(CMAKE_C_COMPILER ${HAERO_C_COMPILER})
 
 set(CMAKE_EXE_LINKER_FLAGS ${HAERO_EXE_LINKER_FLAGS})
 
@@ -57,12 +57,34 @@ message(STATUS "Using ${HAERO_PRECISION} precision floating point numbers")
 # We build static libraries only.
 set(BUILD_SHARED_LIBS OFF)
 
+# Fortran setting and compiler flags
+set(CMAKE_Fortran_FLAGS "-cpp")
+if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fbacktrace")
+  endif()
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wall -ffree-form -ffree-line-length-none")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-unused-dummy-argument")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Werror=tabs")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-maybe-uninitialized")
+elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -traceback")
+  endif()
+endif()
+if (APPLE)
+  set(CMAKE_Fortran_STANDARD_LIBRARIES "-lc++")
+else()
+  set(CMAKE_Fortran_STANDARD_LIBRARIES "-lstdc++ -no-pie")
+endif()
+
 # Report the installation prefix.
 message(STATUS "Installation prefix is ${CMAKE_INSTALL_PREFIX}")
 
 set(MAMXX_LIBRARIES ${HAERO_LIBRARIES})
 
 # We look for headers in these directories.
+include_directories(${HAERO_INCLUDE_DIRS})
 include_directories("${PROJECT_BINARY_DIR}")
 include_directories("${MAMXX_HAERO_DIR}/include")
 include_directories(${PROJECT_SOURCE_DIR}/src)

@@ -8,6 +8,9 @@
 
 namespace mam4::conversions {
 
+using Real = haero::Real;
+using Constants = haero::Constants;
+
 /// Given a number concentration for a species or mixture [m-3], computes and
 /// returns a mass mixing ratio [kg species/kg dry air] based on its molecular
 /// weight and on the density of dry air in the vicinity.

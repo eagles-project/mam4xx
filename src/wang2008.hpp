@@ -1,12 +1,12 @@
 #ifndef MAM4XX_WANG2008_HPP
 #define MAM4XX_WANG2008_HPP
 
-#include <ekat/ekat_pack.hpp>
-#include <ekat/ekat_pack_math.hpp>
 #include <haero/haero.hpp>
-#include <haero/math.hpp>
 
 namespace mam4::wang2008 {
+
+using Real = haero::Real;
+using PackType = haero::PackType;
 
 /// The functions in this file implement parameterizations described in
 /// Wang and Penner, Aerosol indirect forcing in a global model with particle

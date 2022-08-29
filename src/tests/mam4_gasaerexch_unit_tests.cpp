@@ -1,6 +1,7 @@
+#include "mam4.hpp"
+
 #include <catch2/catch.hpp>
 #include <cmath>
-#include <haero/mam4.hpp>
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -27,10 +28,10 @@ TEST_CASE("test_compute_tendencies", "mam4_gasaerexch_process") {
   mam4::GasAerExchProcess process(mam4_config);
 
   // Single-column dispatch.
-  auto team_policy = TeamPolicy(1u, Kokkos::AUTO);
+  auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
   Real t = 0.0, dt = 30.0;
   Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const TeamType& team) {
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam& team) {
         process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
       });
 }
@@ -63,10 +64,10 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_gasaerexch_process") {
   mam4::GasAerExchProcess process(mam4_config);
 
   // Dispatch over all the above columns.
-  auto team_policy = TeamPolicy(ncol, Kokkos::AUTO);
+  auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
   Real t = 0.0, dt = 30.0;
   Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const TeamType& team) {
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam& team) {
         const int icol = team.league_rank();
         process.compute_tendencies(team, t, dt, mc_atm(icol), mc_progs(icol),
                                    mc_diags(icol), mc_tends(icol));
