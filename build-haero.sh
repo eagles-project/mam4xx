@@ -78,12 +78,6 @@ if [[ ! -d $(pwd)/.haero ]]; then
   cd .haero || exit
   git submodule update --init --recursive || exit
   cd ..
-else
-  echo "Updating Haero repository in $(pwd)/.haero..."
-  cd .haero || exit
-  git pull || exit
-  git submodule update --init --recursive || exit
-  cd ..
 fi
 
 # Configure Haero with the given selections.
