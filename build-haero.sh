@@ -25,6 +25,10 @@ PRECISION=$3
 PACKSIZE=$4
 OPT=$5
 
+# Default compilers (can be overridden by environment variables)
+CC=cc
+CXX=c++
+
 if [[ "$PREFIX" == "" ]]; then
   echo "Haero installation prefix was not specified!"
   echo "Usage: $0 <prefix> <device> <precision> <packsize> <opt>"
@@ -74,6 +78,12 @@ if [[ ! -d $(pwd)/.haero ]]; then
   cd .haero || exit
   git submodule update --init --recursive || exit
   cd ..
+else
+  echo "Updating Haero repository in $(pwd)/.haero..."
+  cd .haero || exit
+  git pull || exit
+  git submodule update --init --recursive || exit
+  cd ..
 fi
 
 # Configure Haero with the given selections.
@@ -92,7 +102,6 @@ cmake -S ./.haero -B ./.haero/build \
   -DCMAKE_CXX_COMPILER=$CXX \
   -DHAERO_ENABLE_GPU=$ENABLE_GPU \
   -DHAERO_DEVICE_ARCH=$DEVICE_ARCH \
-  -DHAERO_PRECISION=$PRECISION \
   -DKokkos_ARCH_$DEVICE_ARCH:BOOL=ON \
   -DHAERO_PRECISION=$PRECISION \
   -DHAERO_PACK_SIZE=$PACKSIZE \
