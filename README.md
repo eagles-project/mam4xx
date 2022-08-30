@@ -34,33 +34,44 @@ brew install cmake gfortran openmpi
 
 ## Building MAM4xx
 
+### Installing HAERO
+
 Before you get started with MAM4xx, you'll need a working installation of the
-HAERO high-performance aerosol interface library. You can follow the
-instructions in the [HAERO repository](https://github.com/eagles-project/haero)
-to build and install HAERO. Make sure you run all the steps, including
-`make install`.
+HAERO high-performance aerosol interface library. For your convenience, we have
+provided the `build-haero.sh` script, which can be used to quickly and easily
+install HAERO in a desired configuration. The script allows you to set a number
+of parameters. Check out the comments at the top of `build-haero.sh`.
 
-To configure MAM4xx:
+You can build a CPU-capable version of HAERO with some defaults set by typing
 
-1. Make sure you have the latest versions of all the required submodules:
-   ```
-   git submodule update --init --recursive
-   ```
-2. Create a build directory by running the `setup` script from the top-level
+```
+./build-haero.sh <path>
+```
+
+where `<path>` is a directory to which HAERO will be installed. If you'd rather
+install HAERO yourself, you can follow the instructions in the
+[HAERO repository](https://github.com/eagles-project/haero). Make sure you run
+all the steps, including `make install`.
+
+### Configuring and Building MAM4xx
+
+To build MAM4xx:
+
+1. Create a build directory by running the `setup` script from the top-level
    source directory:
    ```
    ./setup build
    ```
-3. Change to your build directory and edit the `config.sh` file to select
+2. Change to your build directory and edit the `config.sh` file to select
    configuration options. Then run `./config.sh` to configure the model. MAM4xx
    gets most of its configuration information from HAERO, so there aren't many
    options here.
-4. From the build directory, type `make -j` to build the library. (If you're
+3. From the build directory, type `make -j` to build the library. (If you're
    building MAM4xx for GPUs, place a number after the `-j` flag, as in
    `make -j 8`).
-5. To run tests for the library (and the driver, if configured), type
+4. To run tests for the library (and the driver, if configured), type
    `make test`.
-6. To install the model to the location indicated by `PREFIX` in your
+5. To install the model to the location indicated by `PREFIX` in your
    `config.sh` script, type `make install`. By default, products are installed
    in `include`, `lib`, `bin`, and `share` ѕubdirectories within your build
    directory.
