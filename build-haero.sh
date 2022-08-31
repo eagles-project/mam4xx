@@ -25,6 +25,14 @@ PRECISION=$3
 PACKSIZE=$4
 OPT=$5
 
+# Default compilers (can be overridden by environment variables)
+if [[ -z $CC ]]; then
+  CC=cc
+fi
+if [[ -z $CXX ]]; then
+  CXX=c++
+fi
+
 if [[ "$PREFIX" == "" ]]; then
   echo "Haero installation prefix was not specified!"
   echo "Usage: $0 <prefix> <device> <precision> <packsize> <opt>"
@@ -88,11 +96,10 @@ fi
 echo "Configuring Haero with the given selections..."
 cmake -S ./.haero -B ./.haero/build \
   -DCMAKE_INSTALL_PREFIX="$PREFIX" \
-  -DCMAKE_C_COMPILER=cc \
-  -DCMAKE_CXX_COMPILER=c++ \
+  -DCMAKE_C_COMPILER=$CC \
+  -DCMAKE_CXX_COMPILER=$CXX \
   -DHAERO_ENABLE_GPU=$ENABLE_GPU \
   -DHAERO_DEVICE_ARCH=$DEVICE_ARCH \
-  -DHAERO_PRECISION=$PRECISION \
   -DKokkos_ARCH_$DEVICE_ARCH:BOOL=ON \
   -DHAERO_PRECISION=$PRECISION \
   -DHAERO_PACK_SIZE=$PACKSIZE \
@@ -105,5 +112,3 @@ make -j8 install
 cd ../../
 echo "Haero has been installed in $PREFIX. Set HAERO_DIR to this directory in"
 echo "your config.sh script after running setup."
-
-
