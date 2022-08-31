@@ -26,8 +26,12 @@ PACKSIZE=$4
 OPT=$5
 
 # Default compilers (can be overridden by environment variables)
-CC=cc
-CXX=c++
+if [[ -z $CC ]]; then
+  CC=cc
+fi
+if [[ -z $CXX ]]; then
+  CXX=c++
+fi
 
 if [[ "$PREFIX" == "" ]]; then
   echo "Haero installation prefix was not specified!"
@@ -108,5 +112,3 @@ make -j8 install
 cd ../../
 echo "Haero has been installed in $PREFIX. Set HAERO_DIR to this directory in"
 echo "your config.sh script after running setup."
-
-
