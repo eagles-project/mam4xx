@@ -5,6 +5,8 @@ version of the Modal Aerosol Model (MAM), intended for use with E3SM.
 
 * The [Installation](installation.md) guide shows you how to build and install
   MAM4xx on your own machine or on a supported high-performance platform.
+* The [Developer](development.md) guide lays out some basic principles and
+  guidelines we use in developing MAM4xx.
 * In the [Testing](testing.md) guide, we describe in general terms the
   methodology we use to test MAM4xx and its aerosol processes.
 
