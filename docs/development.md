@@ -106,13 +106,20 @@ tips/opinions:
   _This is particularly true when writing code that runs on a GPU, for which the
   standard template library is largely unavailable!_
 
-## Kokkos, EKAT, Haero: Intranodal Parallelism
+## Kokkos, EKAT, Haero: Intra-node Parallelism
 
-MAM4xx is written in "performance-portable" C++ code using
-[Kokkos](https://kokkos.github.io/kokkos-core-wiki/) to dispatch
-parallelizable workloads to threads on CPUs or GPUs. Kokkos allows developers
-to write code that is very nearly standard C++ that can run on GPU accelerators,
-which makes it unnecessary to learn specialized languages like CUDA and HIP.
+MAM4xx is written in "performance-portable" C++ code using [Kokkos](https://kokkos.github.io/kokkos-core-wiki/)
+to dispatch parallelizable workloads to threads on CPUs or GPUs on a compute
+node. Kokkos allows developers to write code that is very nearly standard C++
+that can run on GPU accelerators, which makes it unnecessary to learn
+specialized accelerator languages like CUDA and HIP.
+
+Because MAM4xx is based on column physics, it operates on sets of independent
+vertical atmospheric columns and can do all of its work within a single compute
+node. In other words, a MAM4xx instance on a compute node has no specific need
+to communicate with other nodes. However, the host model that uses MAM4xx almost
+certainly needs inter-nodal communication, for which [MPI](https://www.mpi-forum.org)
+is used.
 
 The high-performance data types in MAM4xx used for these parallel dispatches are
 all provided by Kokkos. Kokkos is a general-purpose parallel programming model,
@@ -134,14 +141,22 @@ couple of additional layers:
   so we can focus on solving relevant problems and not reinventing the wheel
   over and over.
 
+EKAT includes an MPI configuration in its build system, and this configuration
+is passed along to HAERO and MAM4xx. This means you'll need some implementation
+of MPI on your system, like [OpenMPI](https://www.open-mpi.org) or
+[MPICH](https://www.mpich.org).
+
 In this section, we describe the data structures provided by HAERO (via EKAT
-and Kokkos).
+and Kokkos). The [Kokkos documentation](https://kokkos.github.io/kokkos-core-wiki/)
+and [tutorials](https://github.com/kokkos/kokkos-tutorials) are fantastic
+resources for understanding the most important data structures and
+techniques we use.
 
 ### Views: C++ multidimensional arrays
 
 Fortran programmers have long been skeptical about using C++ as a scientific
 programming language because C++ doesn't have multidimensional arrays. (This has
-also frustrated a lot of C++ programmers in the HPC community!).
+also frustrated a lot of C++ programmers in the HPC community!)
 
 Kokkos provides a solution to this problem: the [View](https://kokkos.github.io/kokkos-core-wiki/API/core/view/view.html)
 data structure. A `View` is basically a multidimensional array that lives in a
@@ -150,13 +165,13 @@ template parameters that dictate what it stores, where it stores things, and
 how it indexes them.
 
 As a multidimensional array, a `View` has a **rank** that indicates the number
-of indices it possesses. For example, a rank 1 `View` `V` has a single index,
-allowing you to retrieve the `i`th value with the syntax `V(i)`. A rank 3 `View`
+of indices it possesses. For example, a rank-1 `View` `V` has a single index,
+allowing you to retrieve the `i`th value with the syntax `V(i)`. A rank-3 `View`
 `T` has three indexes, providing access to an element with the syntax
 `T(i, j, k)`.
 
 Some people refer to the rank of a View as its **dimension**, but this term
-actually refers to the number of data in a specific index. For example, the
+actually refers to the number of elements for a specific index. For example, the
 dimension of the second index of `T` above is the valid number of values of `j`
 that can be used in the expression `T(i, j, k)`. Indices in a `View` run from
 `0` to `dim-1`, where `dim` is the dimension relative to the index in question.
@@ -180,8 +195,46 @@ parameters according to the needs of aerosol column physics:
   diagnostic aerosol data from an atmosphereic host model for use and updating
   by MAM4xx.
 
-### Parallel dispatch
-### "Host" vs "device"
+These three `View` types should be all you need to implement aerosol processes
+and their parameterizations. In fact, the aerosol processes themselves really
+only use the `ColumnView` type.
+
+### Parallel dispatch: Host and Device
+
+MAM4xx runs within a single process runs on an entire compute node, no matter
+how many CPUs or GPUs are available to that node. Within MAM4xx, processes on
+different compute nodes typically don't communicate directly with each other.
+Instead, the host model coordinates communication between these processes using
+MPI, and MAM4xx relies on the host model to get consistent data.
+
+To understand the _intranodal_ parallelism used by MAM4xx, we need some
+terminology:
+
+* The **compute host** is the CPU running the process containing the atmospheric
+  host model and MAM4xx. The compute host manages the control flow of the host
+  nmodel and MAM4xx--it can also do numerical calculations, but such
+  calculations can't be done in parallel on the host.
+* The **compute device** is where numerical calculations are performed in
+  parallel. On a node with only CPUs, the role of the compute device is played
+  by the same CPU as that for the compute host. On a node with access to GPUs,
+  the compute device is the GPU, which has its own memory and (very different!)
+  processing hardware. Logically, the compute device is distinct from the
+  compute host, because only the compute device can execute code in parallel.
+
+Strictly speaking, a machine can have more than one compute device. For example,
+a many-core CPU with a GPU has two potential compute devices: the CPU and the
+GPU. We will ignore this possibility and assume that all calculations are done
+on a single compute device, which we call the **device**.
+
+To make use of the **device** on a compute node, MAM4xx uses the
+[parallel dispatch](https://kokkos.github.io/kokkos-core-wiki/API/core/ParallelDispatch.html)
+capabilities provided by Kokkos. MAM4xx's "column physics" approach allows it
+to take advantage of a specific parallel dispatch approach based on the Kokkos
+[TeamPolicy](https://kokkos.github.io/kokkos-core-wiki/API/core/policies/TeamPolicy.html).
+Here's how it works.
+
+_Describe hierarchical parallel dispatch here_
+
 ### Tips and gotchas
 
 ## Packs and Vectorization
