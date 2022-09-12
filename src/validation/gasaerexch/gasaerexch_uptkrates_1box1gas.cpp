@@ -1,13 +1,15 @@
-#include <haero/mam4.hpp>
-#include <iostream>
+#include <mam4.hpp>
+
 #include <skywalker.hpp>
+
+#include <iostream>
 #include <vector>
 
 using namespace haero;
 using namespace skywalker;
 
 void test_gasaerexch_uptkrates_1box1gas_process(
-    const Input& input, Output& output, mam4::GasAerExchImpl& gasaerexch) {
+    const Input& input, Output& output, mam4::GasAerExch& gasaerexch) {
   // Ensemble parameters
   if (!input.has("temp")) {
     std::cerr << "Required name: "
@@ -83,8 +85,7 @@ void test_gasaerexch_uptkrates_1box1gas_process(
     test_uptkaer = input.get_array("uptkaer");
   }
 
-  kokkos_device_type::view_1d<PackType> uptkaer_dev("uptkaer on device",
-                                                    n_mode);
+  ColumnView uptkaer_dev("uptkaer on device", n_mode);
   Kokkos::parallel_for(
       "gasaerexch.gas_aer_uptkrates_1box1gas", 1, KOKKOS_LAMBDA(const int) {
         Kokkos::Array<PackType, n_mode> uptkaer;
@@ -111,7 +112,7 @@ void test_gasaerexch_uptkrates_1box1gas_process(
 
 void test_gasaerexch_uptkrates_1box1gas(std::unique_ptr<Ensemble>& ensemble) {
   mam4::AeroConfig mam4_config;
-  mam4::GasAerExchImpl gasaerexch;
+  mam4::GasAerExch gasaerexch;
   gasaerexch.init(mam4_config);
 
   ensemble->process([&](const Input& input, Output& output) {
