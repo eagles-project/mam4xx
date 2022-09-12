@@ -1,14 +1,13 @@
-#include <haero/constants.hpp>
-#include <haero/mam4/nucleation_impl.hpp>
-
+#include <nucleation.hpp>
 #include <validation.hpp>
 
-#include <iostream>
 #include <skywalker.hpp>
+#include <haero/constants.hpp>
+
+#include <iostream>
 
 using namespace skywalker;
-using namespace haero;
-using namespace haero::mam4;
+using namespace mam4;
 
 void newnuc_cluster_growth(Ensemble* ensemble) {
 
@@ -56,7 +55,7 @@ void newnuc_cluster_growth(Ensemble* ensemble) {
     // Call the cluster growth function on device.
     Kokkos::parallel_for("newnuc_cluster_growth", 1,
       [&]KOKKOS_FUNCTION(int i) {
-        newnuc_cluster_growth(dnclusterdt, cnum_h2so4, cnum_nh3, radius_cluster,
+      nucleation::newnuc_cluster_growth(dnclusterdt, cnum_h2so4, cnum_nh3, radius_cluster,
           dplom_mode, dphim_mode, nsize,
           deltat, temp, relhumnn, cair,
           accom_coef_h2so4, mw_so4a, mw_so4a_host, mw_nh4a,

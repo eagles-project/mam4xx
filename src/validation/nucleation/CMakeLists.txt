@@ -3,7 +3,6 @@ set(NUC_BASELINE_DIR ${MAM4BOX_BASELINE_DIR}/nucleation)
 
 # These subdirectories contain Skywalker drivers for MAM4 parameterizations.
 # Include directory for .mod files.
-include_directories(${PROJECT_BINARY_DIR}/haero)
 include_directories(${PROJECT_BINARY_DIR}/validation)
 
 # We use a single driver for all nucleation-related parameterizations.

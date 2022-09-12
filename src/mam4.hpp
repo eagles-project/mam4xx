@@ -12,6 +12,8 @@ namespace mam4 {
 
 using Real = haero::Real;
 
+using ColumnView = haero::ColumnView;
+
 using NucleationProcess = haero::AeroProcess<AeroConfig, Nucleation>;
 using GasAerExchProcess = haero::AeroProcess<AeroConfig, GasAerExch>;
 

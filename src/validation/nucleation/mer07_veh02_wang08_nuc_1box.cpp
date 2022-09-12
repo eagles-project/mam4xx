@@ -1,14 +1,13 @@
-#include <haero/constants.hpp>
-#include <haero/mam4/nucleation_impl.hpp>
-
+#include <nucleation.hpp>
 #include <validation.hpp>
 
-#include <iostream>
+#include <haero/constants.hpp>
 #include <skywalker.hpp>
 
+#include <iostream>
+
 using namespace skywalker;
-using namespace haero;
-using namespace haero::mam4;
+using namespace mam4;
 
 void mer07_veh02_wang08_nuc_1box(Ensemble* ensemble) {
   constexpr Real pi = Constants::pi;
@@ -58,7 +57,7 @@ void mer07_veh02_wang08_nuc_1box(Ensemble* ensemble) {
     Pack dnclusterdt, rateloge, cnum_h2so4, cnum_nh3, radius_cluster;
     Kokkos::parallel_for("mer07_veh02_wang08_nuc_1box", 1,
       [&]KOKKOS_FUNCTION(int i) {
-        mer07_veh02_wang08_nuc_1box(
+      nucleation::mer07_veh02_wang08_nuc_1box(
           newnuc_method_user_choice, newnuc_method_actual,
           pbl_nuc_wang2008_user_choice, pbl_nuc_wang2008_actual,
           ln_nuc_rate_cutoff,

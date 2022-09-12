@@ -2,6 +2,6 @@
 add_subdirectory(tests)
 
 # MAM4 cross validation with MAM4's box model (via Skywalker drivers).
-if (HAERO_ENABLE_MAM4BOX)
+if (MAM4XX_ENABLE_BOX)
   add_subdirectory(validation)
 endif()
