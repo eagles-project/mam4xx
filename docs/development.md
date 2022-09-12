@@ -18,10 +18,10 @@ stuck, organize your thoughts and ask another member of the team for their
 input. Not only can this save you time, but it can also help you build
 productive relationships with other team members.
 
-If you're a core member of the MAM4xx development team on the EAGLES Project,
-the easiest way to seek help is to post a Slack message to the appropriate
-channel. We have access to an `ESMD-BER` Slack workspace with some useful
-channels for asynchronous team communication:
+If you're a member of the MAM4xx development team on the EAGLES Project, the
+easiest way to seek help is to post a Slack message to the appropriate channel.
+We have access to an `ESMD-BER` Slack workspace with some useful channels for
+asynchronous team communication:
 
 * `eagles-mam-cpp`: This is the best channel for discussing and troubleshooting
   issues related to MAM4xx development.
@@ -39,8 +39,55 @@ itself.
 
 ## The Big Picture
 
-### SCREAM and its atmosphere driver
-### Atmosphere processes
+MAM4xx makes the 4-mode modal aerosol model ("MAM4") available to
+[EAMxx (aka "SCREAM")](https://github.com/E3SM-Project/scream), which is written
+in C++ and uses [Kokkos](https://github.com/kokkos/kokkos) to achieve good
+parallel performance on platforms of interest to the DOE's Office of Science.
+EAMxx has a lot of moving parts, but MAM4xx mainly interacts only with a data
+structure called the Atmosphere Driver (AD).
+
+In this document, we refer to EAMxx as SCREAM to reduce confusion,
+because the name of the GitHub repository containing the code for EAMxx is
+`scream`. While we're at it, let's define some basic terminology:
+
+* A **host model** is an atmospheric model containing a dynamical core that
+  solves a transport equation for mass in the atmosphere, and several physics
+  packages that parameterize important atmospheric processes that can't be
+  resolved by the underlying grid. SCREAM is the atmospheric host model used
+  by E3SM version 4, so when we refer to the "host model", we refer to SCREAM.
+* An **aerosol package** is a physics package that provides a representation of
+  aerosols (prognostic and diagnostic variables, and tendencies for evolving
+  the prognostics) for use by a host model. The aerosol package of interest for
+  us, of course, is MAM4xx.
+* An **aerosol process** is a set of functions associated with a specific part
+  of the aerosol lifecycle (e.g. nucleation, coagulation, aging) that calculate
+  updates to aerosol-related quantities.
+* An **aerosol parameterization** is a function that computes one or more
+  quantities needed to update aerosol-related quantities. An aerosol process can
+  contain one or more related parameterizations.
+* A **prognostic variable** is a quantity in the atmosphere whose evolution is
+  described by a differential equation. Prognostic variables cannot be obtained
+  using closed-form (algebraic) equations.
+* A **diagnostic variable** is a quantity in the atmosphere that can be
+  expressed in terms of prognostic variables in closed form (usually some
+  algebraic expression).
+* A **tendency** is a time derivative ("rate of change") associated with a
+  prognostic variable. An aerosol process computes tendencies given a set of
+  prognostic variables.
+* An **atmospheric state** is a complete quantitative description of the
+  atmosphere according to a host model. This description consists entirely of
+  prognostic and diagnostic variables.
+
+### SCREAM's atmosphere driver
+
+In essence, an atmospheric host model does the following things:
+1. it initializes the state of the atmosphere at the beginning of the simulation
+2. it advances the state of the atmosphere and the simulation time in a sequence
+   of discrete "time steps". Within each time step of length `dt`, tendencies
+   are computed for each of the prognostic variables, and the atmospheric state
+   is updated from time `t` to time `t + dt` by integrating these tendencies
+
+### SCREAM's atmosphere processes
 ### HAERO and aerosol processes
 
 ## MAM4xx Code Structure
@@ -124,7 +171,8 @@ is used.
 The high-performance data types in MAM4xx used for these parallel dispatches are
 all provided by Kokkos. Kokkos is a general-purpose parallel programming model,
 and is accordingly complex, with many elaborate features and options. In order
-to reduce this complexity and focus on decisions and logic related to earth system models (ESMs) in general and aerosols in particular, we make use of a
+to reduce this complexity and focus on decisions and logic related to earth
+system models (ESMs) in general and aerosols in particular, we make use of a
 couple of additional layers:
 
 * [**E3SM/Kokkos Application Toolkit (EKAT)**](https://github.com/E3SM-Project/EKAT):
@@ -235,11 +283,13 @@ Here's how it works.
 
 _Describe hierarchical parallel dispatch here_
 
-### Tips and gotchas
+### Frequently Asked Questions
 
 ## Packs and Vectorization
 
 ### Why Packs?
+
 ### Masks and predicates
-### Tips and gotchas
+
+### Frequently Asked Questions
 
