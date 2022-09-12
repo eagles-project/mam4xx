@@ -1,11 +1,5 @@
 cmake_minimum_required (VERSION 3.12.0)
 
-# Do we have make?
-find_program(MAKE make)
-if (MAKE STREQUAL "MAKE_NOTFOUND")
-  message(FATAL_ERROR "Make is required, but is not available on this system.")
-endif()
-
 #-----------------------------------------
 # Options (most are inherited from Haero)
 #-----------------------------------------
@@ -134,7 +128,9 @@ if (MAM4XX_ENABLE_BOX)
   elseif(NOT EXISTS ${MAM4BOX_DIR})
     message(FATAL_ERROR "Invalid MAM4BOX_DIR: ${MAM4BOX_DIR}")
   endif()
+
   # Build the MAM4 box model's core library.
+  find_program(MAKE make REQUIRED)
   set(MAM4BOX_CMAKE_OPTS -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}
                          -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                          -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
