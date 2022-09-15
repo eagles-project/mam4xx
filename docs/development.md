@@ -46,15 +46,13 @@ parallel performance on platforms of interest to the DOE's Office of Science.
 EAMxx has a lot of moving parts, but MAM4xx mainly interacts only with a data
 structure called the Atmosphere Driver (AD).
 
-In this document, we refer to EAMxx as SCREAM to reduce confusion,
-because the name of the GitHub repository containing the code for EAMxx is
-`scream`. While we're at it, let's define some basic terminology:
+### Terminology
 
 * A **host model** is an atmospheric model containing a dynamical core that
   solves a transport equation for mass in the atmosphere, and several physics
   packages that parameterize important atmospheric processes that can't be
-  resolved by the underlying grid. SCREAM is the atmospheric host model used
-  by E3SM version 4, so when we refer to the "host model", we refer to SCREAM.
+  resolved by the underlying grid. EAMxx is the atmospheric host model used
+  by E3SM version 4, so when we refer to the "host model", we refer to EAMxx.
 * An **aerosol package** is a physics package that provides a representation of
   aerosols (prognostic and diagnostic variables, and tendencies for evolving
   the prognostics) for use by a host model. The aerosol package of interest for
@@ -78,7 +76,7 @@ because the name of the GitHub repository containing the code for EAMxx is
   atmosphere according to a host model. This description consists entirely of
   prognostic and diagnostic variables.
 
-### SCREAM's atmosphere driver
+### EAMxx's atmosphere driver
 
 In essence, an atmospheric host model does the following things:
 1. it initializes the state of the atmosphere at the beginning of the simulation
@@ -87,7 +85,7 @@ In essence, an atmospheric host model does the following things:
    are computed for each of the prognostic variables, and the atmospheric state
    is updated from time `t` to time `t + dt` by integrating these tendencies
 
-### SCREAM's atmosphere processes
+### EAMxx's atmosphere processes
 ### HAERO and aerosol processes
 
 ## MAM4xx Code Structure
@@ -131,8 +129,10 @@ with a few notable _exceptions_:
 * Names of functions, methods, and variables use `snake_case`, not
   `camelCase` or `UpperCamelCase`.
 * We typically use braces to enclose logic for all `if`/`else`/loop statements
-  for consistency and readability.
-* We use `EKAT_ASSERT` instead of `assert` (because of our toolchain).
+  even if they are only a single line, for consistency and readability.
+* We use `EKAT_ASSERT` instead of `assert` to ensure that all MPI processes
+  are properly shut down when a program terminates because of a violated
+  assertion.
 
 ### Best practices
 
@@ -237,7 +237,7 @@ parameters according to the needs of aerosol column physics:
 * `TracersView`: a rank-3 `View` with indices `n`, `i`, `k`, that identify a
   specific tracer (advected quantity) `n` in a specific column `i` at a specific
   vertical level `k`. This `View` type is used to extract prognostic aerosol
-  data from an atmospheric host model (e.g. SCREAM) so it can be advanced by
+  data from an atmospheric host model (e.g. EAMxx) so it can be advanced by
   MAM4xx.
 * `DiagnosticsView`: a rank-3 `View` similar to `TracersView`, used to index
   diagnostic aerosol data from an atmosphereic host model for use and updating
@@ -247,7 +247,7 @@ These three `View` types should be all you need to implement aerosol processes
 and their parameterizations. In fact, the aerosol processes themselves really
 only use the `ColumnView` type.
 
-### Parallel dispatch: Host and Device
+### Parallel dispatch: host and device
 
 MAM4xx runs within a single process runs on an entire compute node, no matter
 how many CPUs or GPUs are available to that node. Within MAM4xx, processes on
@@ -293,3 +293,13 @@ _Describe hierarchical parallel dispatch here_
 
 ### Frequently Asked Questions
 
+## Resources
+
+* [EKAT repository](https://github.com/E3SM-Project/EKAT)
+* [E3SM website](https://e3sm.org)
+* [Kokkos documentation](https://kokkos.github.io/kokkos-core-wiki/)
+* [HAERO repository](https://github.com/eagles-project/haero)
+* [LLVM C++ Style Guide](https://llvm.org/docs/CodingStandards.html)
+* [MAM4 box model repository](https://github.com/eagles-project/mam_refactor)
+* [SCREAM (EAMxx) repository](https://github.com/E3SM-Project/scream)
+* [Skywalker documentation](https://eagles-project.github.io/skywalker/)
