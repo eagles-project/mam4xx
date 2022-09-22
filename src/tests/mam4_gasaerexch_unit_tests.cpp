@@ -1,5 +1,3 @@
-#include "mam4.hpp"
-
 #include <catch2/catch.hpp>
 #include <cmath>
 #include <iomanip>
@@ -7,11 +5,18 @@
 #include <limits>
 #include <memory>
 
+#include "mam4.hpp"
+
 using namespace haero;
 
 TEST_CASE("test_constructor", "mam4_gasaerexch_process") {
   mam4::AeroConfig mam4_config;
-  mam4::GasAerExchProcess process(mam4_config);
+  mam4::GasAerExchProcess::ProcessConfig process_config;
+  constexpr int num_aer = 7;
+  constexpr int num_mode = 4;
+  Kokkos::resize(process_config.l_mode_can_contain_species, num_aer, num_mode);
+  Kokkos::resize(process_config.l_mode_can_age, num_aer);
+  mam4::GasAerExchProcess process(mam4_config, process_config);
   REQUIRE(process.name() == "MAM4 gas/aersol exchange");
   REQUIRE(process.aero_config() == mam4_config);
 }
@@ -25,7 +30,12 @@ TEST_CASE("test_compute_tendencies", "mam4_gasaerexch_process") {
   mam4::Tendencies tends(nlev);
 
   mam4::AeroConfig mam4_config;
-  mam4::GasAerExchProcess process(mam4_config);
+  mam4::GasAerExchProcess::ProcessConfig process_config;
+  constexpr int num_aer = 7;
+  constexpr int num_mode = 4;
+  Kokkos::resize(process_config.l_mode_can_contain_species, num_aer, num_mode);
+  Kokkos::resize(process_config.l_mode_can_age, num_aer);
+  mam4::GasAerExchProcess process(mam4_config, process_config);
 
   // Single-column dispatch.
   auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
@@ -49,7 +59,7 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_gasaerexch_process") {
   Atmosphere atmosphere(nlev, pblh);
   mam4::Prognostics prognostics(nlev);
   mam4::Diagnostics diagnostics(nlev);
-  mam4::Tendencies  tendencies(nlev);
+  mam4::Tendencies tendencies(nlev);
   for (int icol = 0; icol < ncol; ++icol) {
     Kokkos::parallel_for(
         "Load multi-column views", 1, KOKKOS_LAMBDA(const int) {
@@ -61,7 +71,12 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_gasaerexch_process") {
   }
 
   mam4::AeroConfig mam4_config;
-  mam4::GasAerExchProcess process(mam4_config);
+  mam4::GasAerExchProcess::ProcessConfig process_config;
+  constexpr int num_aer = 7;
+  constexpr int num_mode = 4;
+  Kokkos::resize(process_config.l_mode_can_contain_species, num_aer, num_mode);
+  Kokkos::resize(process_config.l_mode_can_age, num_aer);
+  mam4::GasAerExchProcess process(mam4_config, process_config);
 
   // Dispatch over all the above columns.
   auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);

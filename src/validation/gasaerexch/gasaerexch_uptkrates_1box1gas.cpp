@@ -1,15 +1,14 @@
-#include <mam4.hpp>
-
-#include <skywalker.hpp>
-
 #include <iostream>
+#include <mam4.hpp>
+#include <skywalker.hpp>
 #include <vector>
 
 using namespace haero;
 using namespace skywalker;
 
-void test_gasaerexch_uptkrates_1box1gas_process(
-    const Input& input, Output& output, mam4::GasAerExch& gasaerexch) {
+void test_gasaerexch_uptkrates_1box1gas_process(const Input& input,
+                                                Output& output,
+                                                mam4::GasAerExch& gasaerexch) {
   // Ensemble parameters
   if (!input.has("temp")) {
     std::cerr << "Required name: "
@@ -113,6 +112,9 @@ void test_gasaerexch_uptkrates_1box1gas_process(
 void test_gasaerexch_uptkrates_1box1gas(std::unique_ptr<Ensemble>& ensemble) {
   mam4::AeroConfig mam4_config;
   mam4::GasAerExch gasaerexch;
+  mam4::GasAerExchConfig config;
+  Kokkos::resize(config.l_mode_can_contain_species, num_aer, num_mode);
+  Kokkos::resize(config.l_mode_can_age, num_aer);
   gasaerexch.init(mam4_config);
 
   ensemble->process([&](const Input& input, Output& output) {

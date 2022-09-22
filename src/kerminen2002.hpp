@@ -211,6 +211,6 @@ PackType apparent_nucleation_factor(
   return apparent_nucleation_factor(eta, d_wet_crit, d_wet_grown);
 }
 
-}  // namespace kerminen2002::mam4
+}  // namespace mam4::kerminen2002
 
 #endif

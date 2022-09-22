@@ -1,9 +1,7 @@
-#include <validation.hpp>
-
 #include <haero/haero.hpp>
-#include <skywalker.hpp>
-
 #include <iostream>
+#include <skywalker.hpp>
+#include <validation.hpp>
 
 using namespace haero;
 using namespace skywalker;
