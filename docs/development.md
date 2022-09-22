@@ -389,11 +389,52 @@ _Describe hierarchical parallel dispatch here_
 
 ## Packs and Vectorization
 
+While EAMxx is primarily focused on platforms with GPU-based accelerators, it is
+also able to run on architectures with only CPUs. For CPU-based architectures,
+EAMxx has adopted a rather aggressive optimization strategy involving
+[vectorization](https://stackoverflow.com/questions/1422149/what-is-vectorization).
+The primary tools in our vectorization toolkit are the [`Pack`](https://github.com/E3SM-Project/EKAT/blob/master/src/ekat/ekat_pack.hpp)
+and [`Mask`](https://github.com/E3SM-Project/EKAT/blob/master/src/ekat/ekat_pack.hpp)
+types provided by EKAT.
+
 ### Why Packs?
+
+The `Pack` class template groups ("packs") a set of numbers together in a way
+that arithmetic operations on them can be fused using fancy
+["Advanced Vector eXtensions" (AVX)](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions)
+provided by modern CPUs. In some cases these AVX instructions can provide
+measurable performance benefits.
+
+A `Pack` has a "size" (a "pack size") equal to the number of numbers it stores.
+The pack size is encoded in its type. MAM4xx uses a single pack size determined
+by HAERO for all its `Pack`s.
 
 ### Masks and predicates
 
+The `Mask` class allows you to create grouped ("packed") booleans that store
+evaluated logical expressions on `Pack` objects. Because a `Pack` represents
+multiple numbers, you can't use logical expressions using `Pack`s directly in
+`if` tests, even if your `Pack`s have a size of `1`. Instead, you create a
+`Mask` from a predicate involving `Pack`s, and then you manipulate `Pack`s
+using their `set` methods with the `Mask` indicating the numbers to change.
+
+Here's an example that illustrates how you might take a `Pack` of floating
+point numberes and zero out only those numbers that are negative:
+
+```
+  // create a mask that indicates which numbers in the pack p are negative
+  auto negative = (p < 0);
+  // set all of the negative numbers within p to zero.
+  p.set(negative, 0.0);
+```
+
+Not as straightforward as using numbers, is it? `Pack`s may be the most
+challenging aspect of porting MAM4 from Fortran to C++.
+
 ### Frequently Asked Questions
+
+* **Really? HPC isn't difficult enough that we need Packs?** We agree. This is
+  a fight that at least some of us are willing to pick.
 
 ## Resources
 
