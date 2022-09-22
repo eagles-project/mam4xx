@@ -87,11 +87,28 @@ In essence, an atmospheric host model does the following things:
 
 ### EAMxx's atmosphere processes
 
+To evolve the state of the atmosphere over a time period `[t, t+dt]`, EAMxx has
+an [`AtmosphereDriver`](https://github.com/E3SM-Project/scream/blob/master/components/scream/src/control/atmosphere_driver.hpp)
+object that orchestrates changes to the atmospheric state resulting from
+different atmospheric processes. Each of these processes is represented by a
+class derived from the [`AtmosphereProcess`](https://github.com/E3SM-Project/scream/blob/master/components/scream/src/share/atm_process/atmosphere_process.hpp)
+base class. The slide below, taken from the MAM4xx kick-off meeting, illustrates
+the different atmospheric processes within EAMxx.
+
 ![EAMxx's atmosphere processes and our addition(s)](figures/eamxx_atm_procs.png)
 
-![The innards of an aerosol atmosphere process](figures/aero_atm_proc.png)
+The objective of our project is to implement one or more `AtmosphereProcess`
+subclasses that represent the effects of aerosols on the atmosphere.
 
 ### HAERO and aerosol processes
+
+Within an aerosol-related `AtmosphereProcess` subclass, we extract data from
+EAMxx, feed it into MAM4xx's data structures, run a set of aerosol processes,
+and then incorporate the resulting output back into EAMxx's atmospheric state.
+The process is roughly illustrated in this slide (also taken from the MAM4xx
+kick-off meeting):
+
+![The innards of an aerosol atmosphere process](figures/aero_atm_proc.png)
 
 ## MAM4xx Code Structure
 
