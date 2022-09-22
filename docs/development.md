@@ -164,21 +164,22 @@ The most interesting of these data types is the `AeroProcess` class template.
 
 1. `AerosolConfig`, which defines parameters that describe the aerosols of concern
    and their particle size distribution properties. It also defines data types
-   data types used by aerosol processes, like `Prognostics` (prognostic
-   variables), `Diagnostics` (diagnostic variables), and `Tendencies` (rates of
-   change for prognostic variables). In MAM4xx, we use the [`mam4::AeroConfig`](https://github.com/eagles-project/mam4xx/blob/main/src/aero_config.hpp)
+   used by aerosol processes, like `Prognostics` (prognostic variables),
+   `Diagnostics` (diagnostic variables), and `Tendencies` (rates of change for
+   prognostic variables). In MAM4xx, we use the
+   [`mam4::AeroConfig`](https://github.com/eagles-project/mam4xx/blob/main/src/aero_config.hpp)
    type for the `AerosolConfig` template parameter for all `AeroProcess` types.
 2. `AerosolProcessImpl`, which implements the behavior for an `AeroProcess` type
    in several methods, including
-   * an `init` method, which is called upon construction and accepts an
-     `AerosolConfig` object and a process-specific `AerosolProcessImpl::Config`
-     object that can be used by the process implementation
-   * a `validate` method, which validates data in the given `Atmosphere` and
-     `Prognostics` objects. Often, this means checking for negative quantities,
-     which are unphysical.
-   * a `compute_tendencies` method, which "runs the process" at a given time
-     over a given duration and computes tendencies for each of the prognostic
-     variables present
+     * an `init` method, which is called upon construction and accepts an
+       `AerosolConfig` object and a process-specific `AerosolProcessImpl::Config`
+       object that can be used by the process implementation
+     * a `validate` method, which validates data in the given `Atmosphere` and
+       `Prognostics` objects. Often, this means checking for negative quantities,
+       which are unphysical.
+     * a `compute_tendencies` method, which "runs the process" at a given time
+       over a given duration and computes tendencies for each of the prognostic
+       variables present
 
 When we say we're porting MAM4 to C++ from Fortran, we're talking about
 writing an `AerosolProcessImpl` class for each of the aerosol processes in MAM4
