@@ -1,0 +1,93 @@
+name: auto_test
+
+# This action is triggered:
+# 1. when someone creates a pull request for a merge to the main branch
+# 2. when changes are merged into the main branch (via a pull request)
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Below are jobs, each of which runs sequentially.
+jobs:
+  # This job builds the box model and runs our test suite.
+  build:
+    # A build matrix storing all desired configurations.
+    strategy:
+      matrix:
+        os: [ubuntu-latest] #, macos-latest]
+        build-type: [Debug, Release]
+        fp-precision: [single, double]
+        pack-size: [1, 4]
+
+    runs-on: ${{ matrix.os }}
+
+#    # Pre-fab container with third-party libs installed.
+#    container: coherellc/haero-tpl:${{ matrix.build-type }}-${{ matrix.fp-precision }}-pack-size-${{ matrix.pack-size }}
+
+    # Environment variables
+    env:
+      FC: gfortran
+      CI: 1   # indicates that we are running in a CI environment.
+
+    # Steps for building and running tests.
+    steps:
+
+    - name: Installing dependencies
+      run: |
+        sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+        autoconf \
+        clang-format \
+        cmake \
+        libopenmpi-dev \
+        gcc \
+        g++ \
+        gfortran \
+        git \
+        make \
+        pkg-config \
+        ca-certificates
+
+    - name: Checking out repository
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        submodules: recursive
+
+    - name: Building haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision, pack size=${{ matrix.pack-size }})
+      run: |
+        ./build-haero.sh ${{ env.GITHUB_WORKSPACE }}/haero cpu:AMDAVX ${{ matrix.fp-precision }} ${{ matrix.pack-size }} ${{ matrix.build-type }}
+
+    - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision, pack size=${{ matrix.pack-size }})
+      run: |
+        ./setup build
+        cd build
+        cmake \
+          -DCMAKE_INSTALL_PREFIX=`pwd`/build \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+          -DMAM4XX_HAERO_DIR=${{ env.GITHUB_WORKSPACE }}/haero \
+          -G "Unix Makefiles" \
+          ..
+
+# TODO: clang-format seems unstable under different versions. Not helpful!
+#    - name: Checking code formatting...
+#      run: |
+#        cd build
+#        make format-cxx-check
+
+    - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+      run: |
+        cd build
+        make -j
+
+    - name: Running tests (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+      run: |
+        cd build
+        ctest -V
+
+    - name: Installing MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+      run: |
+        cd build
+        make install
+
