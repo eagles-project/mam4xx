@@ -363,7 +363,7 @@ terminology:
 
 * The **compute host** is the CPU running the process containing the atmospheric
   host model and MAM4xx. The compute host manages the control flow of the host
-  nmodel and MAM4xx--it can also do numerical calculations, but such
+  model and MAM4xx--it can also do numerical calculations, but such
   calculations can't be done in parallel on the host.
 * The **compute device** is where numerical calculations are performed in
   parallel. On a node with only CPUs, the role of the compute device is played
