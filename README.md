@@ -114,3 +114,5 @@ documentation, you must download `mkdocs` and its Material theme:
 Then, run `mkdocs serve` from the root directory of your MAM4xx repo,
 and point your browser to [`http://localhost:8000`](http://localhost:8000).
 
+You can also view the [MAM4xx developer guide](https://github.com/eagles-project/mam4xx/blob/main/docs/development.md)
+on GitHub.
