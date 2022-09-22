@@ -100,7 +100,7 @@ the different atmospheric processes within EAMxx.
 The objective of our project is to implement one or more `AtmosphereProcess`
 subclasses that represent the effects of aerosols on the atmosphere.
 
-### HAERO and aerosol processes
+### Aerosol atmosphere processes
 
 Within an aerosol-related `AtmosphereProcess` subclass, we extract data from
 EAMxx, feed it into MAM4xx's data structures, run a set of aerosol processes,
