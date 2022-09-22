@@ -86,6 +86,11 @@ In essence, an atmospheric host model does the following things:
    is updated from time `t` to time `t + dt` by integrating these tendencies
 
 ### EAMxx's atmosphere processes
+
+![EAMxx's atmosphere processes and our addition(s)](figures/eamxx_atm_procs.png)
+
+![The innards of an aerosol atmosphere process](figures/aero_atm_proc.png)
+
 ### HAERO and aerosol processes
 
 ## MAM4xx Code Structure
