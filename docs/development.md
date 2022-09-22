@@ -98,7 +98,7 @@ particles. Aerosol particles have an outsized influence on cooling and warming
 processes in the atmosphere, and interact strongly with incoming solar
 radiation.
 
-_Include JAMES figure of aerosol life cycle here?_
+![Journal of Advances in Modeling Earth Systems, Volume: 12, Issue: 1, First published: 06 December 2019, DOI: (10.1029/2019MS001851)](figures/aerosol_lifecycle.jpg)
 
 It is not possible to describe aerosol dynamics in terms of purely mechanistic
 processes. Instead, aerosols are assumed to form and evolve over a set of
