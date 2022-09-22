@@ -91,7 +91,87 @@ In essence, an atmospheric host model does the following things:
 ## MAM4xx Code Structure
 
 ### Aerosol processes and parameterizations
-### Aerosol process structure
+
+Aerosols are long polymer chains that are emitted from the surface of the earth
+and/or that form in the atmosphere as a result of collisions between gas
+particles. Aerosol particles have an outsized influence on cooling and warming
+processes in the atmosphere, and interact strongly with incoming solar
+radiation.
+
+_Include JAMES figure of aerosol life cycle here?_
+
+It is not possible to describe aerosol dynamics in terms of purely mechanistic
+processes. Instead, aerosols are assumed to form and evolve over a set of
+distinct stages in an "aerosol life cycle." These stages are conceptually
+convenient and represent phenomenology that can be compared with experimental
+observations. Because of this phenomenological approach, each stage of the
+aerosol lifecycle (which we call an "aerosol process") must be _parameterized_:
+in other words, an aerosol process is _quantified_ in terms of a set of
+parameters that determine how the aerosols evolve over time.
+
+Different aerosol models can decompose the aerosol lifecycle into different
+stages (processes). MAM4xx, uses the aerosol processes defined by MAM4.
+
+### Aerosol process data structures
+
+MAM4xx uses several data structures defined in [HAERO](https://github.com/eagles-project/haero).
+In particular:
+
+* The [`Real`](https://github.com/eagles-project/haero/blob/main/haero/haero.hpp)
+  type is a floating point number in single or double precision, depending on
+  how HAERO was configured.
+* The [`ColumnView`](https://github.com/eagles-project/haero/blob/main/haero/haero.hpp)
+  type is a Kokkos view (array) representing a quantity defined on an
+  atmospheric column. See the section on Kokkos views below for more details on
+  this type.
+* The [`AeroProcess`](https://github.com/eagles-project/haero/blob/main/haero/aero_process.hpp)
+  class template defines the interface for an aerosol process.
+* The [`Atmosphere`](https://github.com/eagles-project/haero/blob/main/haero/atmosphere.hpp)
+  class defines the state of the atmosphere, which is typically used as input
+  data for aerosol processes.
+* The [`AeroSpecies`](https://github.com/eagles-project/haero/blob/main/haero/aero_species.hpp)
+  and [`GasSpecies`](https://github.com/eagles-project/haero/blob/main/haero/gas_species.hpp)
+  types define the respective physical properties of aerosol and gas
+  molecules present in the atmosphere.
+* The [`ThreadTeam`](https://github.com/eagles-project/haero/blob/main/haero/haero.hpp)
+  type is used to control a team of threads allocated to a single atmospheric
+  column. It's used in Kokkos `parallel_for` loops.
+
+The most interesting of these data types is the `AeroProcess` class template.
+`AeroProcess` has two template parameters that define its behavior:
+
+1. `AerosolConfig`, which defines parameters that describe the aerosols of concern
+   and their particle size distribution properties. It also defines data types
+   data types used by aerosol processes, like `Prognostics` (prognostic
+   variables), `Diagnostics` (diagnostic variables), and `Tendencies` (rates of
+   change for prognostic variables). In MAM4xx, we use the [`mam4::AeroConfig`](https://github.com/eagles-project/mam4xx/blob/main/src/aero_config.hpp)
+   type for the `AerosolConfig` template parameter for all `AeroProcess` types.
+2. `AerosolProcessImpl`, which implements the behavior for an `AeroProcess` type
+   in several methods, including
+   * an `init` method, which is called upon construction and accepts an
+     `AerosolConfig` object and a process-specific `AerosolProcessImpl::Config`
+     object that can be used by the process implementation
+   * a `validate` method, which validates data in the given `Atmosphere` and
+     `Prognostics` objects. Often, this means checking for negative quantities,
+     which are unphysical.
+   * a `compute_tendencies` method, which "runs the process" at a given time
+     over a given duration and computes tendencies for each of the prognostic
+     variables present
+
+When we say we're porting MAM4 to C++ from Fortran, we're talking about
+writing an `AerosolProcessImpl` class for each of the aerosol processes in MAM4
+and filling the `compute_tendencies` method with the relevant ported Fortran
+code. To see specific examples of aerosol process implementations, take a look
+at the [`mam4::Nucleation`](https://github.com/eagles-project/mam4xx/blob/main/src/nucleation.hpp)
+and [`mam4::GasAerExch`](https://github.com/eagles-project/mam4xx/blob/main/src/gasaerexch.hpp)
+classes, which implement nucleation and gas-aerosol exchange (a.k.a. "condensation").
+
+HAERO contains several other data structures in addition those mentioned above.
+More details on these data structures can be found in the
+[HAERO documentation](https://eagles-project.github.io/haero/).
+
+_NOTE: This site will be published when we finish the open source paperwork
+for HAERO._
 
 ## C++ Guidelines
 
