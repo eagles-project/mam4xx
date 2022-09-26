@@ -1,3 +1,7 @@
+# MAM4 support library (host/cpu functions only)
+add_library(mam4xx
+  kohler.cpp)
+
 # MAM4 process unit tests.
 add_subdirectory(tests)
 
