@@ -112,9 +112,7 @@ void KohlerVerification::generate_input_data() {
     });
 }
 
-void KohlerVerification::solve() {
 
-}
 
 // ETI
 // double precison is required by the KohlerPolynomial class, so we intstantiate

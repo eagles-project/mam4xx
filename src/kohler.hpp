@@ -52,6 +52,18 @@ ScalarType surface_tension_water_air(const ScalarType T=Constants::triple_pt_h2o
   return B*pow(tau, mu)*(1+b*tau);
 }
 
+template <> KOKKOS_INLINE_FUNCTION
+PackType surface_tension_water_air<PackType>(const PackType T) {
+  constexpr Real Tc = Constants::tc_water;
+  constexpr Real B = 0.2358;
+  constexpr Real b = -0.625;
+  constexpr Real mu = 1.256;
+  const auto tau = 1 - T/Tc;
+  EKAT_KERNEL_ASSERT( (T >= 248.16).all() );
+  EKAT_KERNEL_ASSERT( (T < 646.096).all() );
+  return B*pow(tau, mu)*(1+b*tau);
+}
+
 
 /// Kelvin coefficient
 /**
@@ -62,11 +74,16 @@ ScalarType surface_tension_water_air(const ScalarType T=Constants::triple_pt_h2o
   To reproduce MAM4 approximations, call this function without an argument;
   the default value is set to the constant value used by MAM4.
 
+  ** Note: This subroutine uses SI units **
+
+  MAM4 uses micrometers and milinewtons.
+
+  @param [in] T temperature [K]
+  @return Kelvin droplet coefficient [m]
 */
 template <typename ScalarType> KOKKOS_INLINE_FUNCTION
 ScalarType kelvin_coefficient(const ScalarType T=Constants::triple_pt_h2o) {
-  return 2*Constants::molec_weight_h2o*
-    surface_tension_water_air(T) /
+  return 2*surface_tension_water_air(T) /
     (Constants::r_gas_h2o_vapor * T *
      Constants::density_h2o);
 }
@@ -145,9 +162,10 @@ struct KohlerPolynomial {
 
   /** Constructor. Creates 1 instance of a KohlerPolynomial.
 
-    @param rel_h relative humidity
-    @param hygro hygroscopicity
-    @param dry_rad_microns particle dry radius [ 1e-6 m ]
+    @param [in] rel_h relative humidity
+    @param [in] hygro hygroscopicity
+    @param [in] dry_rad_microns particle dry radius [ 1e-6 m ]
+    @param [in] temperature [K]
   */
   template <typename U>
   KOKKOS_INLINE_FUNCTION KohlerPolynomial(const U& rel_h,
@@ -160,6 +178,8 @@ struct KohlerPolynomial {
         dry_radius(dry_rad_microns),
         dry_radius_cubed(cube(dry_rad_microns)),
         kelvin_a(kelvin_coefficient(temperature)) {
+
+    kelvin_a *= 1e6; /* convert from N to mN and m to micron */
     EKAT_KERNEL_ASSERT(valid_inputs( ScalarType(rel_h),
                                      ScalarType(hygro),
                                      ScalarType(dry_rad_microns)));
@@ -171,6 +191,7 @@ struct KohlerPolynomial {
     @param rel_h relative humidity
     @param hygro hygroscopicity
     @param dry_rad_microns particle dry radius [ 1e-6 m ]
+    @param [in] temperature [K]
   */
   template <typename U>
   KOKKOS_INLINE_FUNCTION KohlerPolynomial(const MaskType& m, const U& rel_h,
@@ -184,6 +205,9 @@ struct KohlerPolynomial {
         dry_radius_cubed(cube(dry_rad_microns)),
         kelvin_a(kelvin_coefficient(temperature))
       {
+
+    kelvin_a *= 1e6; /* convert from N to mN and m to micron */
+
     EKAT_KERNEL_ASSERT(valid_inputs(m, ScalarType(rel_h),
                                        ScalarType(hygro),
                                        ScalarType(dry_rad_microns)));
@@ -202,7 +226,7 @@ struct KohlerPolynomial {
   */
   template <typename U>
   KOKKOS_INLINE_FUNCTION ScalarType operator()(const U& wet_radius) const {
-    const ScalarType rwet = T(wet_radius);
+    const ScalarType rwet = ScalarType(wet_radius);
     const ScalarType result = (log_rel_humidity * rwet - kelvin_a) * cube(rwet) +
                      ((hygroscopicity - log_rel_humidity) * rwet + kelvin_a) *
                          dry_radius_cubed;
@@ -298,16 +322,6 @@ struct KohlerVerification {
   Real dhyg;
   Real rmin;
   Real ddry;
-  DeviceType::view_1d<PackType> newton_sol;
-  DeviceType::view_1d<PackType> newton_err;
-  DeviceType::view_1d<int> newton_iterations;
-  DeviceType::view_1d<PackType> bisection_sol;
-  DeviceType::view_1d<PackType> bisection_err;
-  DeviceType::view_1d<int> bisection_iterations;
-  DeviceType::view_1d<PackType> bracket_sol;
-  DeviceType::view_1d<PackType> bracket_err;
-  DeviceType::view_1d<int> bracket_iterations;
-  static constexpr Real temperature = Constants::triple_pt_h2o;
 
   /** Constructor
 
@@ -328,19 +342,10 @@ struct KohlerVerification {
           KohlerPolynomial<Real>::hygro_min) / (nn-1)),
     rmin(KohlerPolynomial<Real>::dry_radius_min_microns),
     ddry((KohlerPolynomial<Real>::dry_radius_max_microns -
-          KohlerPolynomial<Real>::dry_radius_min_microns) / (nn-1)),
-    newton_sol("kohler_newton_sol", haero::cube(nn)),
-    newton_err("kohler_newton_err", haero::cube(nn)),
-    newton_iterations("kohler_newton_iterations"),
-    bisection_sol("kohler_bisection_sol", haero::cube(nn)),
-    bisection_err("kohler_bisection_err", haero::cube(nn)),
-    bisection_iterations("kohler_bisection_iterations"),
-    bracket_sol("kohler_bracket_sol", haero::cube(nn)),
-    bracket_err("kohler_bracket_err", haero::cube(nn)),
-    bracket_iterations("kohler_bracket_iterations")
+          KohlerPolynomial<Real>::dry_radius_min_microns) / (nn-1))
   {
     generate_input_data();
-    load_true_sol_from_file();
+//     load_true_sol_from_file();
   }
 
   /**
@@ -367,8 +372,6 @@ struct KohlerVerification {
   /** This function loads verification data from a text file into a view.
   */
   void load_true_sol_from_file();
-
-  void solve();
 };
 
 // } // namespace kohler
