@@ -11,7 +11,7 @@ std::string KohlerVerification::mathematica_verification_program() const {
   /* mathematica doesn't like exponential notation, so we use setprecision
    * instead.*/
   ss << "kelvinCoeff = " << std::fixed << std::setprecision(16)
-     << kelvin_coefficient<Real>() << ";\n";
+     << kelvin_coefficient<Real>()*1e6 << ";\n";
   ss << "rhMin = " << rhmin << ";\n";
   ss << "rhMax = " << KohlerPolynomial<Real>::rel_humidity_max << ";\n";
   ss << "hygMin = " << hmin << ";\n";
@@ -39,7 +39,7 @@ std::string KohlerVerification::matlab_verification_program() const {
   ss << "clear; format long;\n";
   ss << "%% parameter bounds\n";
   ss << "kelvinCoeff = " << std::fixed << std::setprecision(16)
-     << kelvin_coefficient<Real>() << ";\n";
+     << kelvin_coefficient<Real>()*1e6 << ";\n";
   ss << "rhMin = " << rhmin << ";\n";
   ss << "rhMax = " << KohlerPolynomial<Real>::rel_humidity_max << ";\n";
   ss << "hygMin = " << hmin << ";\n";
@@ -81,7 +81,7 @@ std::string KohlerVerification::matlab_verification_program() const {
 }
 
 void KohlerVerification::load_true_sol_from_file() {
-  std::string data_file = HAERO_TEST_DATA_DIR;
+  std::string data_file = MAM4_TEST_DATA_DIR;
   data_file += "/mm_kohler_roots.txt";
   std::cout << "reading true solutions from data file: " << data_file << "\n";
   std::ifstream mm_sols(data_file);
@@ -119,5 +119,8 @@ void KohlerVerification::generate_input_data() {
 // the two most common types here.
 template struct KohlerPolynomial<PackType>;
 template struct KohlerPolynomial<double>;
+template struct KohlerSolver<haero::math::NewtonSolver<KohlerPolynomial<PackType>>>;
+template struct KohlerSolver<haero::math::BisectionSolver<KohlerPolynomial<PackType>>>;
+template struct KohlerSolver<haero::math::BracketedNewtonSolver<KohlerPolynomial<PackType>>>;
 
 }  // namespace haero

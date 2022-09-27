@@ -1,6 +1,7 @@
 #ifndef MAM4XX_KOHLER_HPP
 #define MAM4XX_KOHLER_HPP
 
+#include "mam4.hpp"
 #include <haero/haero.hpp>
 #include <haero/math.hpp>
 #include <haero/constants.hpp>
@@ -243,7 +244,7 @@ struct KohlerPolynomial {
   */
   template <typename U>
   KOKKOS_INLINE_FUNCTION ScalarType derivative(const U& wet_radius) const {
-    const ScalarType rwet = T(wet_radius);
+    const ScalarType rwet = ScalarType(wet_radius);
     const ScalarType wet_radius_squared = square(rwet);
     const ScalarType result =
         (4 * log_rel_humidity * rwet - 3 * kelvin_a) * wet_radius_squared +
@@ -309,6 +310,48 @@ struct KohlerPolynomial {
   }
 };
 
+template <typename SolverType>
+struct KohlerSolver {
+  typedef KohlerPolynomial<PackType> polynomial_type;
+  typedef PackType value_type;
+  PackType relative_humidity;
+  PackType hygroscopicity;
+  PackType dry_radius_microns;
+  Real conv_tol;
+  int n_iter;
+
+  KOKKOS_INLINE_FUNCTION
+  KohlerSolver(const PackType& rel_h,
+               const PackType& hyg,
+               const PackType& rdry,
+               const Real tol) :
+    relative_humidity(rel_h),
+    hygroscopicity(hyg),
+    dry_radius_microns(rdry),
+    conv_tol(tol),
+    n_iter(0) {}
+
+
+  KOKKOS_INLINE_FUNCTION
+  PackType solve() {
+    PackType wet_radius_left(0.9*dry_radius_microns);
+    PackType wet_radius_right(50*dry_radius_microns);
+    PackType wet_radius_init(25*dry_radius_microns);
+    const auto kpoly = polynomial_type(relative_humidity,
+                                       hygroscopicity,
+                                       dry_radius_microns);
+    auto solver = SolverType(wet_radius_init,
+                             wet_radius_left,
+                             wet_radius_right,
+                             conv_tol,
+                             kpoly);
+    const PackType result = solver.solve();
+    n_iter = solver.counter;
+    return result;
+  }
+};
+
+
 struct KohlerVerification {
   int n;
   int n_trials;
@@ -345,7 +388,7 @@ struct KohlerVerification {
           KohlerPolynomial<Real>::dry_radius_min_microns) / (nn-1))
   {
     generate_input_data();
-//     load_true_sol_from_file();
+    load_true_sol_from_file();
   }
 
   /**
