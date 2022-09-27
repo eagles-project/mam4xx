@@ -75,14 +75,15 @@ fi
 # Capitalize the optimization setting
 BUILD_TYPE=${BUILD_TYPE^}
 
-# Clone Haero in the current directory (if needed).
-if [[ ! -d $(pwd)/.haero ]]; then
-  echo "Cloning Haero repository into $(pwd)/.haero..."
-  git clone git@github.com:eagles-project/haero.git .haero || exit
-  cd .haero || exit
-  git submodule update --init --recursive || exit
-  cd ..
+# Clone a fresh copy Haero in the current directory. Delete any existing copy.
+if [[ -d $(pwd)/.haero ]]; then
+  rm -rf $(pwd)/.haero
 fi
+echo "Cloning Haero repository into $(pwd)/.haero..."
+git clone git@github.com:eagles-project/haero.git .haero || exit
+cd .haero || exit
+git submodule update --init --recursive || exit
+cd ..
 
 # Configure Haero with the given selections.
 if [[ "$DEVICE" == "cpu:"* ]]; then
