@@ -16,14 +16,14 @@
 #   floating point numbers used in Haero. Default: double
 # * <packsize> (an integer such as 1, 4, 8) determines the number of values in
 #   a Pack used for vectorization, mainly on CPUs (most GPUs use 1). Default: 1
-# * <opt> (either `debug` or `release`) determines whether Haero is built
+# * <build_type> (either `debug`, `release`) determines whether Haero is built
 #   optimized or for debugging. Default: debug
 
 PREFIX=$1
 DEVICE=$2
 PRECISION=$3
 PACKSIZE=$4
-OPT=$5
+BUILD_TYPE=$5
 
 # Default compilers (can be overridden by environment variables)
 if [[ -z $CC ]]; then
@@ -35,7 +35,7 @@ fi
 
 if [[ "$PREFIX" == "" ]]; then
   echo "Haero installation prefix was not specified!"
-  echo "Usage: $0 <prefix> <device> <precision> <packsize> <opt>"
+  echo "Usage: $0 <prefix> <device> <precision> <packsize> <build_type>"
   exit
 fi
 
@@ -52,9 +52,9 @@ if [[ "$PACKSIZE" == "" ]]; then
   PACKSIZE=1
   echo "No pack size specified. Selected 1."
 fi
-if [[ "$OPT" == "" ]]; then
-  OPT=debug
-  echo "No optimization level specified. Selected debug."
+if [[ "$BUILD_TYPE" == "" ]]; then
+  BUILD_TYPE=debug
+  echo "No build_type (optimization level) specified. Selected debug."
 fi
 
 # Validate options
@@ -67,13 +67,13 @@ if [[ "$PRECISION" != "single" && "$PRECISION" != "double" ]]; then
   exit
 fi
 # FIXME: pack size?
-if [[ "$OPT" != "debug" && "$OPT" != "release" ]]; then
+if [[ "$BUILD_TYPE" != "debug" && "$OPT" != "release" ]]; then
   echo "Invalid optimization specified: $OPT (must be debug or release)"
   exit
 fi
 
 # Capitalize the optimization setting
-OPT=${OPT^}
+BUILD_TYPE=${BUILD_TYPE^}
 
 # Clone Haero in the current directory (if needed).
 if [[ ! -d $(pwd)/.haero ]]; then
@@ -95,6 +95,7 @@ fi
 
 echo "Configuring Haero with the given selections..."
 cmake -S ./.haero -B ./.haero/build \
+  -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
   -DCMAKE_INSTALL_PREFIX="$PREFIX" \
   -DCMAKE_C_COMPILER=$CC \
   -DCMAKE_CXX_COMPILER=$CXX \
