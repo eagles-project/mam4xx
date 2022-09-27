@@ -195,19 +195,19 @@ TEST_CASE("kohler_verificiation", "") {
       KOKKOS_LAMBDA (const int i, Real& err) {
         const Real me = max(newton_err(i));
         err = (me > err ? me : err);
-      }, newton_max_err);
+      }, Kokkos::Max<Real>(newton_max_err));
 
     Kokkos::parallel_reduce(num_packs,
       KOKKOS_LAMBDA (const int i, Real& err) {
         const Real me = max(bisection_err(i));
         err = (me > err ? me : err);
-      }, bisection_max_err);
+      }, Kokkos::Max<Real>(bisection_max_err));
 
     Kokkos::parallel_reduce(num_packs,
       KOKKOS_LAMBDA (const int i, Real& err) {
         const Real me = max(bracket_err(i));
         err = (me > err ? me : err);
-      }, bracket_max_err);
+      }, Kokkos::Max<Real>(bracket_max_err));
 
 
     int newton_max_iter;
@@ -216,15 +216,15 @@ TEST_CASE("kohler_verificiation", "") {
     Kokkos::parallel_reduce(num_packs,
       KOKKOS_LAMBDA (const int i, int& it) {
         it = (newton_iterations(i) > it ? newton_iterations(i) : it);
-      }, newton_max_iter);
+      }, Kokkos::Max<int>(newton_max_iter));
     Kokkos::parallel_reduce(num_packs,
       KOKKOS_LAMBDA (const int i, int& it) {
         it = (bisection_iterations(i) > it ? bisection_iterations(i) : it);
-      }, bisection_max_iter);
+      }, Kokkos::Max<int>(bisection_max_iter));
     Kokkos::parallel_reduce(num_packs,
       KOKKOS_LAMBDA (const int i, int& it) {
         it = (bracket_iterations(i) > it ? bracket_iterations(i) : it);
-      }, bracket_max_iter);
+      }, Kokkos::Max<int>(bracket_max_iter));
 
     std::cout << "To generate the verification data with Mathematica, run this "
                  "program:\n\n";
@@ -241,8 +241,8 @@ TEST_CASE("kohler_verificiation", "") {
     logger.info("bracket solve: max err = {}, max_iter = {}", bracket_max_err, bracket_max_iter);
 
     REQUIRE(newton_max_err < 1.5 * conv_tol);
-    REQUIRE(bisection_max_err < 50 * conv_tol);
-    REQUIRE(bracket_max_err < 20 * conv_tol);
+    REQUIRE(bisection_max_err < 5 * conv_tol);
+    REQUIRE(bracket_max_err < 1.5 * conv_tol);
 
   }
 }
