@@ -6,6 +6,7 @@
 #include <haero/math.hpp>
 #include <haero/constants.hpp>
 #include <haero/floating_point.hpp>
+#include <haero/root_finders.hpp>
 #include <ekat/ekat_scalar_traits.hpp>
 #include <ekat/ekat_pack_math.hpp>
 
