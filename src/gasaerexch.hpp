@@ -97,14 +97,14 @@ class GasAerExch {
 
     EKAT_ASSERT(l_mode_can_contain_species.extent(0) == process_config.l_mode_can_contain_species.extent(0));
     EKAT_ASSERT(l_mode_can_contain_species.extent(1) == process_config.l_mode_can_contain_species.extent(1));
-    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) { 
+    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) {
       for (int iaer = 0; iaer < num_aer; ++iaer)
         for (int imode = 0; imode < num_mode; ++imode)
-          l_mode_can_contain_species(iaer,num_mode) = 
-	    process_config.l_mode_can_contain_species(iaer,num_mode);
+          l_mode_can_contain_species(iaer,num_mode) =
+          process_config.l_mode_can_contain_species(iaer,num_mode);
     });
     EKAT_ASSERT(l_mode_can_age.extent(0) == process_config.l_mode_can_age.extent(0));
-    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) { 
+    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) {
       for (int iaer = 0; iaer < num_aer; ++iaer)
         l_mode_can_age(iaer) = process_config.l_mode_can_age(iaer);
     });
@@ -140,30 +140,30 @@ class GasAerExch {
     // which category.
     //-------------------------------------------------------------------
     Kokkos::parallel_for(
-        num_gas, KOKKOS_CLASS_LAMBDA(int k) { 
+        num_gas, KOKKOS_CLASS_LAMBDA(int k) {
       if (k==igas_h2so4)                                eqn_and_numerics_category(k) = ANAL;
       else if (igas_soag_bgn <= k && k <= igas_soag_end) eqn_and_numerics_category(k) = IMPL;
       else if (k==igas_nh3)                             eqn_and_numerics_category(k) = ANAL;
       else                                              eqn_and_numerics_category(k) = NA;
     });
- 
- 
+
+
     //-------------------------------------------------------------------
     // Determine whether specific gases will condense to specific modes
     //-------------------------------------------------------------------
-    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) { 
+    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) {
       for (int igas = 0; igas < num_gas; ++igas)
         for (int imode = 0; imode < num_mode; ++imode)
-          l_gas_condense_to_mode(igas,num_mode) = false; 
+          l_gas_condense_to_mode(igas,num_mode) = false;
     });
- 
-    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) { 
+
+    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) {
       for (int igas = 0; igas < num_gas; ++igas) {   // loop through all registered gas species
         if (eqn_and_numerics_category(igas) != NA) { // this gas species can condense
           const int iaer = idx_gas_to_aer(igas);     // what aerosol species does the gas become when condensing?
           for (int imode = 0; imode < num_mode; ++imode)
-            l_gas_condense_to_mode(igas,imode) = 
-	      l_mode_can_contain_species(iaer,imode) || l_mode_can_age(imode);
+            l_gas_condense_to_mode(igas,imode) =
+            l_mode_can_contain_species(iaer,imode) || l_mode_can_age(imode);
         }
       }
     });
@@ -282,6 +282,19 @@ class GasAerExch {
                 vol_molar_h2so4, vol_molar_air, accom_coef_h2so4, r_universal,
                 r_pi, beta_inp, nghq, dgn_awet, alnsg_aer, uptkaer_ref);
 
+            // -----------------------------------------------------------------------------------
+            // Unit conversion: uptkrate is for number = 1 #/m3, so mult. by number conc. (#/m3)
+            //-----------------------------------------------------------------------------------
+            PackType qnum_cur[4];
+            for (int i=0; i<4; ++i) {
+              qnum_cur[i] = progs.n_mode[i](k);  
+            }
+            const PackType aircon = pmid / (r_universal * temp);
+            for (int imode=0; imode<num_mode; ++imode) {
+               if (l_condense_to_mode[imode]) {
+                 uptkaer_ref[imode] *= qnum_cur[imode] * aircon;
+               }
+            }
             //========================================================================================
             // Assign uptake rate to each gas species and each mode using the
             // ref. value uptkaer_ref calculated above and the uptake rate
@@ -290,7 +303,7 @@ class GasAerExch {
             for (int igas = 0; igas < num_gas; ++igas)
               for (int imode = 0; imode < num_mode; ++imode)
                 uptkaer(igas, imode) = 0.0;  // default is no uptake
-					     
+
             //========================================================================================
             // Assign uptake rate to each gas species and each mode using the ref. value uptkaer_ref
             // calculated above and the uptake rate factor specified as constants at the
