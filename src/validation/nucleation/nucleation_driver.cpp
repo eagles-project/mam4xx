@@ -1,16 +1,15 @@
-#include <validation.hpp>
-
 #include <haero/haero.hpp>
-#include <skywalker.hpp>
-
 #include <iostream>
+#include <skywalker.hpp>
+#include <validation.hpp>
 
 // This driver computes the binary or ternary nucleation rate for the given
 // input.
 
 void usage() {
   std::cerr << "nucleation_driver: a Skywalker driver for validating the "
-               "MAM4 nucleation parameterizations." << std::endl;
+               "MAM4 nucleation parameterizations."
+            << std::endl;
   std::cerr << "nucleation_driver: usage:" << std::endl;
   std::cerr << "nucleation_driver <input.yaml>" << std::endl;
   exit(0);
@@ -46,7 +45,7 @@ int main(int argc, char** argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
   try {
-    if (func_name == "mer07_veh02_wang08_nuc_1box") { // nucleation
+    if (func_name == "mer07_veh02_wang08_nuc_1box") {  // nucleation
       mer07_veh02_wang08_nuc_1box(ensemble);
     } else if (func_name == "newnuc_cluster_growth") {
       newnuc_cluster_growth(ensemble);

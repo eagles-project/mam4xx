@@ -1,11 +1,11 @@
 #ifndef MAM4XX_AERO_CONFIG_HPP
 #define MAM4XX_AERO_CONFIG_HPP
 
-#include "aero_modes.hpp"
-
 #include <algorithm>
 #include <map>
 #include <numeric>
+
+#include "aero_modes.hpp"
 
 namespace mam4 {
 
@@ -92,13 +92,15 @@ using Tendencies = Prognostics;
 class Diagnostics final {
  public:
   using ColumnView = haero::ColumnView;
+  using PackInfo = haero::PackInfo;
 
   explicit Diagnostics(int num_levels) : nlev_(num_levels) {
+    const int nk = PackInfo::num_packs(num_levels);
     for (int mode = 0; mode < 4; ++mode) {
       dry_geometric_mean_diameter[mode] =
-          ColumnView("dry_geometric_mean_diameter", num_levels);
+          ColumnView("dry_geometric_mean_diameter", nk);
       wet_geometric_mean_diameter[mode] =
-          ColumnView("wet_geometric_mean_diameter", num_levels);
+          ColumnView("wet_geometric_mean_diameter", nk);
     }
   }
   Diagnostics() = default;  // Careful! Only for creating placeholders in views
@@ -149,7 +151,14 @@ class AeroConfig final {
   }
 
   /// Returns the number of aerosol modes.
-  static int num_modes() { return 4; }
+  static constexpr int num_modes() { return 4; }
+
+  /// Returns the number of aerosol ids. This is the number of enums in
+  /// mam4::AeroId.
+  static constexpr int num_aerosol_ids() { return 7; }
+
+  /// Returns the number of gas ids. This is the number of enums in mam4::GasId.
+  static constexpr int num_gas_ids() { return 13; }
 };
 
 }  // namespace mam4

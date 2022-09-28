@@ -4,7 +4,6 @@
 #include <haero/aero_species.hpp>
 #include <haero/gas_species.hpp>
 #include <haero/math.hpp>
-
 #include <string>
 #include <vector>
 
@@ -49,8 +48,7 @@ struct Mode final {
         max_diameter(0),
         mean_std_dev(1),
         crystallization_pt(0),
-        deliquescence_pt(0) {
-  }
+        deliquescence_pt(0) {}
 
   /// Creates an aerosol particle mode.
   /// @param [in] min_diam The minimum diameter for particles that belong
@@ -62,8 +60,8 @@ struct Mode final {
   /// @param [in] sigma    The geometric standard deviation for this mode.
   /// @param [in] crystal_pt The crystallization point of the mode
   /// @param [in] deliq_pt The deliquescence point of the mode
-  Mode(Real min_diam, Real nom_diam, Real max_diam,
-       Real sigma, Real crystal_pt, Real deliq_pt)
+  Mode(Real min_diam, Real nom_diam, Real max_diam, Real sigma, Real crystal_pt,
+       Real deliq_pt)
       : min_diameter(min_diam),
         nom_diameter(nom_diam),
         max_diameter(max_diam),
@@ -84,8 +82,7 @@ struct Mode final {
         max_diameter(m.max_diameter),
         mean_std_dev(m.mean_std_dev),
         crystallization_pt(m.crystallization_pt),
-        deliquescence_pt(m.deliquescence_pt) {
-  }
+        deliquescence_pt(m.deliquescence_pt) {}
 
   KOKKOS_INLINE_FUNCTION
   Mode &operator=(const Mode &m) {
@@ -143,38 +140,40 @@ enum class ModeIndex {
 /// A list of all modes within MAM4.
 /// NOTE: Legacy MAM4 uses the same constant crystallization and deliquescence
 /// NOTE: values for all modes & species.  See links for additional discussion:
-/// NOTE: https://eagles-project.atlassian.net/wiki/spaces/Computation/pages/1125515265/Aerosol+species+and+mode+data
-/// NOTE: https://eagles-project.atlassian.net/wiki/spaces/Computation/pages/354877515/Module+verifications
+/// NOTE:
+/// https://eagles-project.atlassian.net/wiki/spaces/Computation/pages/1125515265/Aerosol+species+and+mode+data
+/// NOTE:
+/// https://eagles-project.atlassian.net/wiki/spaces/Computation/pages/354877515/Module+verifications
 /// NOTE: These data are found on Anvil in
 /// NOTE: /lcrc/group/acme/ccsm-data/inputdata/atm/cam/physprops/
 static Mode modes[4] = {
-  Mode(5.35e-8, 1.1e-7, 4.4e-7, 1.8, 0.35, 0.8), // accumulation
-  Mode(8.7e-9, 2.6e-8, 5.2e-8, 1.6, 0.35, 0.8),  // aitken
-  Mode(1e-6, 2e-6, 4e-6, 1.8, 0.35, 0.8),        // coarse
-  Mode(1e-8, 5e-8, 1e-7, 1.6, 0.35, 0.8)         // primary carbon
+    Mode(5.35e-8, 1.1e-7, 4.4e-7, 1.8, 0.35, 0.8),  // accumulation
+    Mode(8.7e-9, 2.6e-8, 5.2e-8, 1.6, 0.35, 0.8),   // aitken
+    Mode(1e-6, 2e-6, 4e-6, 1.8, 0.35, 0.8),         // coarse
+    Mode(1e-8, 5e-8, 1e-7, 1.6, 0.35, 0.8)          // primary carbon
 };
 
 /// Identifiers for aerosol species that inhabit MAM4 modes.
 enum class AeroId {
-  SO4,  // sulphate
-  POM,  // primary organic matter
-  SOA,  // secondary organic aerosol
-  BC,   // black carbon
-  DST,  // dust
-  NaCl, // sodium chloride
-  MOM,  // marine organic matter,
-  None  // invalid aerosol species
+  SO4,   // sulphate
+  POM,   // primary organic matter
+  SOA,   // secondary organic aerosol
+  BC,    // black carbon
+  DST,   // dust
+  NaCl,  // sodium chloride
+  MOM,   // marine organic matter,
+  None   // invalid aerosol species
 };
 
 // A list of aerosol species in MAM4.
 static haero::AeroSpecies aero_species[7] = {
-  haero::AeroSpecies(96.0, 1770.0, 0.507),   // sulphate
-  haero::AeroSpecies(12.011, 1000.0, 1e-10), // primary organic matter
-  haero::AeroSpecies(12.011, 1000.0, 0.14),  // secondary organic aerosol
-  haero::AeroSpecies(12.011, 1700.0, 1e-10), // black carbon
-  haero::AeroSpecies(135.065, 2600.0, 0.14), // dust
-  haero::AeroSpecies(58.4425, 1900.0, 1.16), // sodium chloride
-  haero::AeroSpecies(250093.0, 1601.0, 0.1)  // marine organic matter
+    haero::AeroSpecies(96.0, 1770.0, 0.507),    // sulphate
+    haero::AeroSpecies(12.011, 1000.0, 1e-10),  // primary organic matter
+    haero::AeroSpecies(12.011, 1000.0, 0.14),   // secondary organic aerosol
+    haero::AeroSpecies(12.011, 1700.0, 1e-10),  // black carbon
+    haero::AeroSpecies(135.065, 2600.0, 0.14),  // dust
+    haero::AeroSpecies(58.4425, 1900.0, 1.16),  // sodium chloride
+    haero::AeroSpecies(250093.0, 1601.0, 0.1)   // marine organic matter
 };
 
 /// Returns the index of the given aerosol species within the given mode, or
@@ -183,23 +182,25 @@ KOKKOS_INLINE_FUNCTION
 int aerosol_index_for_mode(ModeIndex mode, AeroId aero_id) {
   // A list of species within each mode for MAM4.
   static constexpr AeroId mode_aero_species[4][7] = {
-    { // accumulation mode
-      AeroId::SO4, AeroId::POM, AeroId::SOA, AeroId::BC, AeroId::DST,
-      AeroId::NaCl, AeroId::MOM
-    },
-    { // aitken mode
-      AeroId::SO4, AeroId::SOA, AeroId::NaCl, AeroId::MOM, AeroId::None,
-      AeroId::None, AeroId::None,
-    },
-    { // coarse mode
-      AeroId::DST, AeroId::NaCl, AeroId::SO4, AeroId::BC, AeroId::POM,
-      AeroId::SOA, AeroId::MOM
-    },
-    { // primary carbon mode
-      AeroId::POM, AeroId::BC, AeroId::MOM, AeroId::None, AeroId::None,
-      AeroId::None, AeroId::None
-    }
-  };
+      {// accumulation mode
+       AeroId::SO4, AeroId::POM, AeroId::SOA, AeroId::BC, AeroId::DST,
+       AeroId::NaCl, AeroId::MOM},
+      {
+          // aitken mode
+          AeroId::SO4,
+          AeroId::SOA,
+          AeroId::NaCl,
+          AeroId::MOM,
+          AeroId::None,
+          AeroId::None,
+          AeroId::None,
+      },
+      {// coarse mode
+       AeroId::DST, AeroId::NaCl, AeroId::SO4, AeroId::BC, AeroId::POM,
+       AeroId::SOA, AeroId::MOM},
+      {// primary carbon mode
+       AeroId::POM, AeroId::BC, AeroId::MOM, AeroId::None, AeroId::None,
+       AeroId::None, AeroId::None}};
 
   int mode_index = static_cast<int>(mode);
   for (int s = 0; s < 7; ++s) {
@@ -212,38 +213,38 @@ int aerosol_index_for_mode(ModeIndex mode, AeroId aero_id) {
 
 // Identifiers for gas species in MAM4.
 enum class GasId {
-  O3,    // ozone
-  H2O2,  // hydrogen peroxide
-  H2SO4, // sulfuric acid
-  SO2,   // sulfur dioxide
-  DMS,   // dimethylsulfide
-  SOAG,  // secondary organic aerosol precursor
-  O2,    // oxygen
-  CO2,   // carbon dioxide
-  N2O,   // nitrous oxide
-  CH4,   // methane,
-  CFC11, // trichlorofluoromethane
-  CFC12, // dichlorodifluoromethane
-  NH3    // ammonia
+  O3,     // ozone
+  H2O2,   // hydrogen peroxide
+  H2SO4,  // sulfuric acid
+  SO2,    // sulfur dioxide
+  DMS,    // dimethylsulfide
+  SOAG,   // secondary organic aerosol precursor
+  O2,     // oxygen
+  CO2,    // carbon dioxide
+  N2O,    // nitrous oxide
+  CH4,    // methane,
+  CFC11,  // trichlorofluoromethane
+  CFC12,  // dichlorodifluoromethane
+  NH3     // ammonia
 };
 
 // A list of gas species in MAM4.
 static haero::GasSpecies gas_species[13] = {
-  haero::GasSpecies(47.9982), // ozone
-  haero::GasSpecies(34.0136), // hydrogen peroxide
-  haero::GasSpecies(98.0784), // sulfuric acid
-  haero::GasSpecies(64.0648), // sulfur dioxide
-  haero::GasSpecies(62.1324), // dimethylsulfide
-  haero::GasSpecies(12.011),  // secondary organic aerosol precursor
-  haero::GasSpecies(31.988),  // oxygen
-  haero::GasSpecies(44.009),  // carbon dioxide
-  haero::GasSpecies(44.013),  // nitrous oxide
-  haero::GasSpecies(16.04),   // methane
-  haero::GasSpecies(137.73),  // thrichlorofluoromethane
-  haero::GasSpecies(120.91),  // dichlorofluoromethane
-  haero::GasSpecies(50.0)     // ammonia
+    haero::GasSpecies(47.9982),  // ozone
+    haero::GasSpecies(34.0136),  // hydrogen peroxide
+    haero::GasSpecies(98.0784),  // sulfuric acid
+    haero::GasSpecies(64.0648),  // sulfur dioxide
+    haero::GasSpecies(62.1324),  // dimethylsulfide
+    haero::GasSpecies(12.011),   // secondary organic aerosol precursor
+    haero::GasSpecies(31.988),   // oxygen
+    haero::GasSpecies(44.009),   // carbon dioxide
+    haero::GasSpecies(44.013),   // nitrous oxide
+    haero::GasSpecies(16.04),    // methane
+    haero::GasSpecies(137.73),   // thrichlorofluoromethane
+    haero::GasSpecies(120.91),   // dichlorofluoromethane
+    haero::GasSpecies(50.0)      // ammonia
 };
 
-} // namespace mam4
+}  // namespace mam4
 
 #endif

@@ -1,22 +1,21 @@
 #ifndef MAM4XX_GASAEREXCH_HPP
 #define MAM4XX_GASAEREXCH_HPP
 
-#include "aero_config.hpp"
-
-#include <haero/haero.hpp>
-#include <haero/atmosphere.hpp>
 #include <Kokkos_Array.hpp>
+#include <haero/atmosphere.hpp>
+#include <haero/haero.hpp>
+
+#include "aero_config.hpp"
 
 namespace mam4 {
 
 using Atmosphere = haero::Atmosphere;
-using Constants  = haero::Constants;
-using IntPack    = haero::IntPackType;
-using PackType   = haero::PackType;
-using PackInfo   = haero::PackInfo;
-using Real       = haero::Real;
+using Constants = haero::Constants;
+using IntPack = haero::IntPackType;
+using PackType = haero::PackType;
+using PackInfo = haero::PackInfo;
+using Real = haero::Real;
 using ThreadTeam = haero::ThreadTeam;
-
 
 /// @class GasAerExch
 /// This class implements MAM4's gas/aersol exchange  parameterization. Its
@@ -24,9 +23,9 @@ using ThreadTeam = haero::ThreadTeam;
 /// class in
 /// ../aero_process.hpp.
 class GasAerExch {
-  static constexpr int num_mode = 4;
-  static constexpr int num_gas = 13;
-  static constexpr int num_aer = 7;
+  static constexpr int num_mode = AeroConfig::num_modes();
+  static constexpr int num_gas = AeroConfig::num_gas_ids();
+  static constexpr int num_aer = AeroConfig::num_aerosol_ids();
   static constexpr int nait = static_cast<int>(ModeIndex::Aitken);
   static constexpr int npca = static_cast<int>(ModeIndex::PrimaryCarbon);
   static constexpr int igas_h2so4 = static_cast<int>(GasId::H2SO4);
@@ -34,8 +33,14 @@ class GasAerExch {
   static constexpr int iaer_h2so4 = static_cast<int>(GasId::H2SO4);
   static constexpr int iaer_so4 = static_cast<int>(AeroId::SO4);
   static constexpr int iaer_pom = static_cast<int>(AeroId::POM);
-  static constexpr int nsoa = static_cast<int>(AeroId::SOA);
+  static constexpr int igas_soag_bgn = static_cast<int>(AeroId::SOA);
+  static constexpr int igas_soag_end = static_cast<int>(AeroId::SOA);
   // static const int npoa     = static_cast<int>(AeroId::POA);
+  enum {
+    NA,
+    ANAL,
+    IMPL
+  };
 
   static constexpr Real mw_h2so4 = Constants::molec_weight_h2so4;
 
@@ -60,9 +65,11 @@ class GasAerExch {
   // process-specific configuration data (if any)
   struct Config {
     Config() {}
-    Config(const Config&) = default;
+    Config(const Config &) = default;
     ~Config() = default;
     Config& operator=(const Config&) = default;
+    haero::DeviceType::view_2d<bool> l_mode_can_contain_species;
+    haero::DeviceType::view_1d<bool> l_mode_can_age;
   };
 
   // name -- unique name of the process implemented by this class
@@ -70,7 +77,7 @@ class GasAerExch {
 
   // init -- initializes the implementation with MAM4's configuration
   void init(const AeroConfig &aero_config,
-            const Config& process_config = Config()) {
+            const Config &process_config = Config()) {
     Kokkos::resize(l_mode_can_contain_species, num_aer, num_mode);
     Kokkos::resize(l_gas_condense_to_mode, num_gas, num_mode);
     Kokkos::resize(l_mode_can_age, num_aer);
@@ -88,6 +95,19 @@ class GasAerExch {
     Kokkos::resize(alnsg_aer, num_mode);
     Kokkos::resize(mode_aging_optaa, num_mode);
 
+    EKAT_ASSERT(l_mode_can_contain_species.extent(0) == process_config.l_mode_can_contain_species.extent(0));
+    EKAT_ASSERT(l_mode_can_contain_species.extent(1) == process_config.l_mode_can_contain_species.extent(1));
+    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) { 
+      for (int iaer = 0; iaer < num_aer; ++iaer)
+        for (int imode = 0; imode < num_mode; ++imode)
+          l_mode_can_contain_species(iaer,num_mode) = 
+	    process_config.l_mode_can_contain_species(iaer,num_mode);
+    });
+    EKAT_ASSERT(l_mode_can_age.extent(0) == process_config.l_mode_can_age.extent(0));
+    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) { 
+      for (int iaer = 0; iaer < num_aer; ++iaer)
+        l_mode_can_age(iaer) = process_config.l_mode_can_age(iaer);
+    });
     //------------------------------------------------------------------
     // MAM currently assumes that the uptake rate of other gases
     // are proportional to the uptake rate of sulfuric acid gas (H2SO4).
@@ -99,12 +119,53 @@ class GasAerExch {
         num_gas, KOKKOS_CLASS_LAMBDA(int k) { uptk_rate_factor(k) = 0.0; });
 
     const int h2so4 = igas_h2so4;
-    const int   nh3 = igas_nh3;
+    const int nh3 = igas_nh3;
+    Kokkos::parallel_for(
+        1, KOKKOS_CLASS_LAMBDA(int) {
+          // H2SO4 is the ref species, so the ratio is 1
+          uptk_rate_factor(h2so4) = 1.0;
+          // For NH3
+          uptk_rate_factor(nh3) = nh3_h2so4_uptake_coeff_ratio;
+        });
+
+    //-------------------------------------------------------------------
+    // MAM currently uses a splitting method to deal with gas-aerosol
+    // mass exchange. A quasi-analytical solution assuming timestep-wise
+    // constant uptake rate is applied to nonvolatile species, while
+    // an implicit time stepping method with adaptive step size
+    // is applied to gas-phase SOA species which are assumed semi-volatile.
+    // There are two different subroutines in this modules to deal
+    // with the two categories of cases. The array
+    // eqn_and_numerics_category flags which gas species belongs to
+    // which category.
+    //-------------------------------------------------------------------
+    Kokkos::parallel_for(
+        num_gas, KOKKOS_CLASS_LAMBDA(int k) { 
+      if (k==igas_h2so4)                                eqn_and_numerics_category(k) = ANAL;
+      else if (igas_soag_bgn <= k && k <= igas_soag_end) eqn_and_numerics_category(k) = IMPL;
+      else if (k==igas_nh3)                             eqn_and_numerics_category(k) = ANAL;
+      else                                              eqn_and_numerics_category(k) = NA;
+    });
+ 
+ 
+    //-------------------------------------------------------------------
+    // Determine whether specific gases will condense to specific modes
+    //-------------------------------------------------------------------
     Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) { 
-      // H2SO4 is the ref species, so the ratio is 1
-      uptk_rate_factor(h2so4) = 1.0;
-      // For NH3
-      uptk_rate_factor(nh3) = nh3_h2so4_uptake_coeff_ratio;
+      for (int igas = 0; igas < num_gas; ++igas)
+        for (int imode = 0; imode < num_mode; ++imode)
+          l_gas_condense_to_mode(igas,num_mode) = false; 
+    });
+ 
+    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) { 
+      for (int igas = 0; igas < num_gas; ++igas) {   // loop through all registered gas species
+        if (eqn_and_numerics_category(igas) != NA) { // this gas species can condense
+          const int iaer = idx_gas_to_aer(igas);     // what aerosol species does the gas become when condensing?
+          for (int imode = 0; imode < num_mode; ++imode)
+            l_gas_condense_to_mode(igas,imode) = 
+	      l_mode_can_contain_species(iaer,imode) || l_mode_can_age(imode);
+        }
+      }
     });
 
     // For SOAG. (igas_soag_bgn and igas_soag_end are the start- and
@@ -176,14 +237,19 @@ class GasAerExch {
     // const int nghq = 2;  // set number of ghq points for direct ghq
     const bool l_calc_gas_uptake_coeff =
         config.calculate_gas_uptake_coefficient;
+
+    const int nk = PackInfo::num_packs(atm.num_levels());
     //=========================================================================
     // Initialize the time-step mean gas concentration (explain why?)
     //=========================================================================
-    for (int k=0; k< num_gas; ++k) qgas_avg(k) = 0.0;
+    for (int k = 0; k < num_gas; ++k) qgas_avg(k) = 0.0;
+
+    Kokkos::Array<Real, num_mode> alnsg_aer;
+    for (int k = 0; k < num_mode; ++k)
+      alnsg_aer[k] = log(modes[k].mean_std_dev);
 
     const int h2so4 = igas_h2so4;
     if (l_calc_gas_uptake_coeff) {
-      const int nk = PackInfo::num_packs(atm.num_levels());
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
             //=========================================================================
@@ -211,9 +277,6 @@ class GasAerExch {
             const Real beta_inp = 0;  // quadrature parameter (--)
             const int nghq = config.number_gauss_points_for_integration;
 
-            Kokkos::Array<Real, num_mode> alnsg_aer = {
-                0, 0, 0, 0};  // TODO: Figure out what this should be.
-
             gas_aer_uptkrates_1box1gas(
                 l_condense_to_mode, temp, pmid, pstd, mw_h2so4, 1000 * mw_air,
                 vol_molar_h2so4, vol_molar_air, accom_coef_h2so4, r_universal,
@@ -227,6 +290,13 @@ class GasAerExch {
             for (int igas = 0; igas < num_gas; ++igas)
               for (int imode = 0; imode < num_mode; ++imode)
                 uptkaer(igas, imode) = 0.0;  // default is no uptake
+					     
+            //========================================================================================
+            // Assign uptake rate to each gas species and each mode using the ref. value uptkaer_ref
+            // calculated above and the uptake rate factor specified as constants at the
+            // beginning of the module
+            //========================================================================================
+
             for (int igas = 0; igas < num_gas; ++igas)
               for (int imode = 0; imode < num_mode; ++imode)
                 if (l_gas_condense_to_mode(igas, imode))
@@ -324,8 +394,8 @@ class GasAerExch {
                                            7.0710678118654746e-01};
     const Kokkos::Array<Real, 2> wghq_2 = {8.8622692545275794e-01,
                                            8.8622692545275794e-01};
-    Real const *xghq=nullptr;
-    Real const *wghq=nullptr;
+    Real const *xghq = nullptr;
+    Real const *wghq = nullptr;
     if (20 == nghq) {
       xghq = xghq_20.data();
       wghq = wghq_20.data();
@@ -339,7 +409,10 @@ class GasAerExch {
       xghq = xghq_2.data();
       wghq = wghq_2.data();
     } else {
-      printf("nghq integration option is not available: %d, valid are 20, 10, 4, and 2\n", nghq);
+      printf(
+          "nghq integration option is not available: %d, valid are 20, 10, 4, "
+          "and 2\n",
+          nghq);
       Kokkos::abort("Invalid integration order requested.");
     }
     //---------------------------------------------------------------------------------------------
