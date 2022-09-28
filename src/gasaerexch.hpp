@@ -9,14 +9,6 @@
 
 namespace mam4 {
 
-using Atmosphere = haero::Atmosphere;
-using Constants = haero::Constants;
-using IntPack = haero::IntPackType;
-using PackType = haero::PackType;
-using PackInfo = haero::PackInfo;
-using Real = haero::Real;
-using ThreadTeam = haero::ThreadTeam;
-
 /// @class GasAerExch
 /// This class implements MAM4's gas/aersol exchange  parameterization. Its
 /// structure is defined by the usage of the impl_ member in the AeroProcess

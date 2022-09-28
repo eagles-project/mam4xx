@@ -14,12 +14,20 @@
 
 namespace mam4 {
 
-using Real = haero::Real;
+  using DeviceType = haero::DeviceType;
+  using Constants = haero::Constants;
+  using PackType = haero::PackType;
+  using PackInfo = haero::PackInfo;
+  using MaskType = haero::MaskType;
+  using Real = haero::Real;
+  using ColumnView = haero::ColumnView;
+  template <typename ST> using FloatingPoint = haero::FloatingPoint<ST>;
+  using Atmosphere = haero::Atmosphere;
+  using IntPack = haero::IntPackType;
+  using ThreadTeam = haero::ThreadTeam;
 
-using ColumnView = haero::ColumnView;
-
-using NucleationProcess = haero::AeroProcess<AeroConfig, Nucleation>;
-using GasAerExchProcess = haero::AeroProcess<AeroConfig, GasAerExch>;
+  using NucleationProcess = haero::AeroProcess<AeroConfig, Nucleation>;
+  using GasAerExchProcess = haero::AeroProcess<AeroConfig, GasAerExch>;
 
 }  // namespace mam4
 

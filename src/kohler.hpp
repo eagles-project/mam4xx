@@ -11,13 +11,6 @@
 #include <ekat/ekat_pack_math.hpp>
 
 namespace mam4 {
-  using DeviceType = haero::DeviceType;
-  using Constants = haero::Constants;
-  using PackType = haero::PackType;
-  using PackInfo = haero::PackInfo;
-  using MaskType = haero::MaskType;
-  using Real = haero::Real;
-  template <typename ST> using FloatingPoint = haero::FloatingPoint<ST>;
 
 /// Surface tension of liquid water in air as a function of temperature
 /**
