@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "kohler.hpp"
+#include "kohler_verification.hpp"
 #include "catch2/catch.hpp"
 #include "haero/haero.hpp"
 #include "haero/math.hpp"
