@@ -1,4 +1,5 @@
 #include "kohler_verification.hpp"
+#include "mam4_test_config.hpp"
 
 #include <iomanip>
 #include <fstream>

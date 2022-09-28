@@ -3,6 +3,7 @@
 
 #include "kohler.hpp"
 #include "kohler_verification.hpp"
+#include "mam4_test_config.hpp"
 #include "catch2/catch.hpp"
 #include "haero/haero.hpp"
 #include "haero/math.hpp"

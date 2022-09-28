@@ -2,9 +2,12 @@
 #define MAM4XX_GASAEREXCH_HPP
 
 #include <Kokkos_Array.hpp>
+
 #include <haero/atmosphere.hpp>
 #include <haero/haero.hpp>
 #include <haero/constants.hpp>
+
+#include "mam4_haero_config.hpp"
 #include "aero_config.hpp"
 
 namespace mam4 {
