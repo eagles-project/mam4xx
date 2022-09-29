@@ -12,13 +12,7 @@
 
 namespace mam4 {
 
-using Atmosphere = haero::Atmosphere;
-using Constants = haero::Constants;
-using IntPack = haero::IntPackType;
-using Pack = haero::PackType;
-using PackInfo = haero::PackInfo;
-using Real = haero::Real;
-using ThreadTeam = haero::ThreadTeam;
+using Pack = PackType;
 
 using haero::max;
 
