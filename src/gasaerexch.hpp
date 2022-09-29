@@ -48,6 +48,7 @@ class GasAerExch {
   bool l_gas_condense_to_mode[num_gas][num_mode]={};
   int eqn_and_numerics_category[num_gas]={};
   Real uptk_rate_factor[num_gas]={};
+  Real modes_mean_std_dev[num_mode]={};
   //haero::DeviceType::view_1d<int> mode_aging_optaa;
 
 public:
@@ -93,7 +94,9 @@ public:
     uptk_rate_factor[igas_h2so4] = 1.0;
     // For NH3
     uptk_rate_factor[igas_nh3] = nh3_h2so4_uptake_coeff_ratio;
-
+ 
+    for (int imode = 0; imode < num_mode; ++imode)
+      modes_mean_std_dev[imode]=modes[imode].mean_std_dev;
     //-------------------------------------------------------------------
     // MAM currently uses a splitting method to deal with gas-aerosol
     // mass exchange. A quasi-analytical solution assuming timestep-wise
@@ -218,13 +221,13 @@ public:
     //====================================================================
     // Initialize the time-step mean gas concentration (explain why?)
     //====================================================================
-    Real qgas_avg[num_gas];
-    for (int k = 0; k < num_gas; ++k)
-      qgas_avg[k] = 0.0;
+    //Real qgas_avg[num_gas];
+    //for (int k = 0; k < num_gas; ++k)
+    //  qgas_avg[k] = 0.0;
 
     Real alnsg_aer[num_mode];
     for (int k = 0; k < num_mode; ++k)
-      alnsg_aer[k] = log(modes[k].mean_std_dev);
+      alnsg_aer[k] = log(modes_mean_std_dev[k]);
 
     const int h2so4 = igas_h2so4;
     Kokkos::parallel_for(
