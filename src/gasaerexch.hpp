@@ -2,20 +2,15 @@
 #define MAM4XX_GASAEREXCH_HPP
 
 #include <Kokkos_Array.hpp>
+
 #include <haero/atmosphere.hpp>
 #include <haero/haero.hpp>
+#include <haero/constants.hpp>
 
+#include "mam4_types.hpp"
 #include "aero_config.hpp"
 
 namespace mam4 {
-
-using Atmosphere = haero::Atmosphere;
-using Constants = haero::Constants;
-using IntPack = haero::IntPackType;
-using PackType = haero::PackType;
-using PackInfo = haero::PackInfo;
-using Real = haero::Real;
-using ThreadTeam = haero::ThreadTeam;
 
 /// @class GasAerExch
 /// This class implements MAM4's gas/aersol exchange  parameterization. Its
@@ -97,14 +92,14 @@ class GasAerExch {
 
     EKAT_ASSERT(l_mode_can_contain_species.extent(0) == process_config.l_mode_can_contain_species.extent(0));
     EKAT_ASSERT(l_mode_can_contain_species.extent(1) == process_config.l_mode_can_contain_species.extent(1));
-    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) { 
+    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) {
       for (int iaer = 0; iaer < num_aer; ++iaer)
         for (int imode = 0; imode < num_mode; ++imode)
-          l_mode_can_contain_species(iaer,num_mode) = 
+          l_mode_can_contain_species(iaer,num_mode) =
 	    process_config.l_mode_can_contain_species(iaer,num_mode);
     });
     EKAT_ASSERT(l_mode_can_age.extent(0) == process_config.l_mode_can_age.extent(0));
-    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) { 
+    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) {
       for (int iaer = 0; iaer < num_aer; ++iaer)
         l_mode_can_age(iaer) = process_config.l_mode_can_age(iaer);
     });
@@ -140,29 +135,29 @@ class GasAerExch {
     // which category.
     //-------------------------------------------------------------------
     Kokkos::parallel_for(
-        num_gas, KOKKOS_CLASS_LAMBDA(int k) { 
+        num_gas, KOKKOS_CLASS_LAMBDA(int k) {
       if (k==igas_h2so4)                                eqn_and_numerics_category(k) = ANAL;
       else if (igas_soag_bgn <= k && k <= igas_soag_end) eqn_and_numerics_category(k) = IMPL;
       else if (k==igas_nh3)                             eqn_and_numerics_category(k) = ANAL;
       else                                              eqn_and_numerics_category(k) = NA;
     });
- 
- 
+
+
     //-------------------------------------------------------------------
     // Determine whether specific gases will condense to specific modes
     //-------------------------------------------------------------------
-    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) { 
+    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) {
       for (int igas = 0; igas < num_gas; ++igas)
         for (int imode = 0; imode < num_mode; ++imode)
-          l_gas_condense_to_mode(igas,num_mode) = false; 
+          l_gas_condense_to_mode(igas,num_mode) = false;
     });
- 
-    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) { 
+
+    Kokkos::parallel_for( 1, KOKKOS_CLASS_LAMBDA(int) {
       for (int igas = 0; igas < num_gas; ++igas) {   // loop through all registered gas species
         if (eqn_and_numerics_category(igas) != NA) { // this gas species can condense
           const int iaer = idx_gas_to_aer(igas);     // what aerosol species does the gas become when condensing?
           for (int imode = 0; imode < num_mode; ++imode)
-            l_gas_condense_to_mode(igas,imode) = 
+            l_gas_condense_to_mode(igas,imode) =
 	      l_mode_can_contain_species(iaer,imode) || l_mode_can_age(imode);
         }
       }
@@ -290,7 +285,7 @@ class GasAerExch {
             for (int igas = 0; igas < num_gas; ++igas)
               for (int imode = 0; imode < num_mode; ++imode)
                 uptkaer(igas, imode) = 0.0;  // default is no uptake
-					     
+
             //========================================================================================
             // Assign uptake rate to each gas species and each mode using the ref. value uptkaer_ref
             // calculated above and the uptake rate factor specified as constants at the
