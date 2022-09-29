@@ -132,7 +132,7 @@ in other words, an aerosol process is _quantified_ in terms of a set of
 parameters that determine how the aerosols evolve over time.
 
 Different aerosol models can decompose the aerosol lifecycle into different
-stages (processes). MAM4xx, uses the aerosol processes defined by MAM4.
+stages (processes). MAM4xx uses the aerosol processes defined by MAM4.
 
 ### Aerosol process data structures
 
@@ -389,7 +389,7 @@ explains how it works.
 
 **How are the atmospheric columns laid out in EAMxx?**
 
-Great question! [This Confluence page](https://acme-climate.atlassian.net/wiki/spaces/DOC/pages/34113147/SE+Atmosphere+Grid+Overview+EAM+CAM)
+[This Confluence page](https://acme-climate.atlassian.net/wiki/spaces/DOC/pages/34113147/SE+Atmosphere+Grid+Overview+EAM+CAM)
 describes the computational grid(s) used by EAMxx.
 
 ## Packs and Vectorization
@@ -412,7 +412,8 @@ measurable performance benefits.
 
 A `Pack` has a "size" (a "pack size") equal to the number of numbers it stores.
 The pack size is encoded in its type. MAM4xx uses a single pack size determined
-by HAERO for all its `Pack`s.
+by HAERO for all its `Pack`s. This pack size is defined by the macro
+`HAERO_PACK_SIZE`.
 
 ### Masks and predicates
 
@@ -424,7 +425,7 @@ multiple numbers, you can't use logical expressions using `Pack`s directly in
 using their `set` methods with the `Mask` indicating the numbers to change.
 
 Here's an example that illustrates how you might take a `Pack` of floating
-point numberes and zero out only those numbers that are negative:
+point numbers and zero out only those numbers that are negative:
 
 ```
   // create a mask that indicates which numbers in the pack p are negative
@@ -434,13 +435,14 @@ point numberes and zero out only those numbers that are negative:
 ```
 
 You can also check whether any, all, or none of the numbers within a `Pack`
-satisfy your criterion using the `any`, `all`, or `none` methods on `Mask`:
+satisfy your criterion using the `any`, `all`, or `none` member functions
+provided by the `Mask` type:
 
 ```
   // Verify that we've eliminated the negative numbers in p above.
   auto still_negative = (p < 0);
   EKAT_ASSERT(still_negative.none()); // no numbers in p are negative
-  EKAT_ASSERT(!still_negative.any()); // "any" is the negation" of "none"
+  EKAT_ASSERT(!still_negative.any()); // "any" is the negation of "none"
   EKAT_ASSERT(!still_negative.all()); // trivially false if "any" is false
 ```
 
