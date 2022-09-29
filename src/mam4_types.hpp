@@ -1,5 +1,5 @@
-#ifndef MAM4_HAERO_CONFIG_HPP
-#define MAM4_HAERO_CONFIG_HPP
+#ifndef MAM4_TYPES_HPP
+#define MAM4_TYPES_HPP
 
 // This header defines common Haero aliases for use in MAM4.
 

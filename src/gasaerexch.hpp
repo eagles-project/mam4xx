@@ -7,7 +7,7 @@
 #include <haero/haero.hpp>
 #include <haero/constants.hpp>
 
-#include "mam4_haero_config.hpp"
+#include "mam4_types.hpp"
 #include "aero_config.hpp"
 
 namespace mam4 {

@@ -3,7 +3,7 @@
 
 // This header makes all MAM4 processes available.
 
-#include "mam4_haero_config.hpp"
+#include "mam4_types.hpp"
 
 #include <haero/aero_process.hpp>
 
