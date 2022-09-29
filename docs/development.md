@@ -382,11 +382,15 @@ To make use of the **device** on a compute node, MAM4xx uses the
 capabilities provided by Kokkos. MAM4xx's "column physics" approach allows it
 to take advantage of a specific parallel dispatch approach based on the Kokkos
 [TeamPolicy](https://kokkos.github.io/kokkos-core-wiki/API/core/policies/TeamPolicy.html).
-Here's how it works.
-
-_Describe hierarchical parallel dispatch here_
+[This EAMxx Confluence page](https://acme-climate.atlassian.net/wiki/spaces/NGDNA/pages/1749155880/On-Node+Parallelism+in+SCREAM+Physics)
+explains how it works.
 
 ### Frequently Asked Questions
+
+**How are the atmospheric columns laid out in EAMxx?**
+
+Great question! [This Confluence page](https://acme-climate.atlassian.net/wiki/spaces/DOC/pages/34113147/SE+Atmosphere+Grid+Overview+EAM+CAM)
+describes the computational grid(s) used by EAMxx.
 
 ## Packs and Vectorization
 
@@ -429,13 +433,26 @@ point numberes and zero out only those numbers that are negative:
   p.set(negative, 0.0);
 ```
 
+You can also check whether any, all, or none of the numbers within a `Pack`
+satisfy your criterion using the `any`, `all`, or `none` methods on `Mask`:
+
+```
+  // Verify that we've eliminated the negative numbers in p above.
+  auto still_negative = (p < 0);
+  EKAT_ASSERT(still_negative.none()); // no numbers in p are negative
+  EKAT_ASSERT(!still_negative.any()); // "any" is the negation" of "none"
+  EKAT_ASSERT(!still_negative.all()); // trivially false if "any" is false
+```
+
 Not as straightforward as using numbers, is it? `Pack`s may be the most
 challenging aspect of porting MAM4 from Fortran to C++.
 
 ### Frequently Asked Questions
 
-* **Really? HPC isn't difficult enough that we need Packs?** We agree. This is
-  a fight that at least some of us are willing to pick.
+* **Really? HPC isn't difficult enough that we need to complicate things further
+  with Packs?** We agree. This is a fight that at least some of us are willing
+  to pick, but we have to do what EAMxx does, so if we decide to forego `Pack`s
+  in our code, it will require negotiation.
 
 ## Resources
 
