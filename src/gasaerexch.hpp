@@ -12,6 +12,8 @@
 
 namespace mam4 {
 
+using Pack = haero::PackType;
+
 /// @class GasAerExch
 /// This class implements MAM4's gas/aersol exchange  parameterization. Its
 /// structure is defined by the usage of the impl_ member in the AeroProcess
