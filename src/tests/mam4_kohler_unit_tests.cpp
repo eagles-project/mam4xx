@@ -139,7 +139,9 @@ TEST_CASE("kohler_verificiation", "") {
     Kokkos::parallel_for("KohlerVerification::test_properties",
       num_packs,
       KOKKOS_LAMBDA (const int i) {
-        const auto kpoly = KohlerPolynomial<PackType>(rh(i), hyg(i), rdry(i));
+        const Real mam4_default_temperature = Constants::triple_pt_h2o;
+        const auto kpoly = KohlerPolynomial<PackType>(rh(i), hyg(i), rdry(i),
+          PackType(mam4_default_temperature));
         k_of_zero(i) = kpoly(PackType(0));
         k_of_rdry(i) = kpoly(rdry(i));
         k_of_25rdry(i) = kpoly(25*rdry(i));

@@ -76,9 +76,10 @@ PackType surface_tension_water_air<PackType>(const PackType T) {
 */
 template <typename ScalarType> KOKKOS_INLINE_FUNCTION
 ScalarType kelvin_coefficient(const ScalarType T=Constants::triple_pt_h2o) {
+  const Real density_h2o = Constants::density_h2o;
+  const Real r_gas_h2o_vapor = Constants::r_gas_h2o_vapor;
   return 2*surface_tension_water_air(T) /
-    (Constants::r_gas_h2o_vapor * T *
-     Constants::density_h2o);
+    (r_gas_h2o_vapor * T * density_h2o);
 }
 
 /** @brief Struct that represents the Kohler polynomial.
@@ -329,9 +330,12 @@ struct KohlerSolver {
     PackType wet_radius_left(0.9*dry_radius_microns);
     PackType wet_radius_right(50*dry_radius_microns);
     PackType wet_radius_init(25*dry_radius_microns);
+    const Real triple_pt_h2o = Constants::triple_pt_h2o;
+    const PackType default_T(triple_pt_h2o);
     const auto kpoly = polynomial_type(relative_humidity,
                                        hygroscopicity,
-                                       dry_radius_microns);
+                                       dry_radius_microns,
+                                       default_T);
     auto solver = SolverType(wet_radius_init,
                              wet_radius_left,
                              wet_radius_right,
