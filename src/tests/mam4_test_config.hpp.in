@@ -1,0 +1,10 @@
+#ifndef MAM4_TEST_CONFIG_HPP
+#define MAM4_TEST_CONFIG_HPP
+
+#define MAM4_TEST_DATA_DIR "@CMAKE_CURRENT_SOURCE_DIR@/data"
+
+namespace mam4 {
+
+}
+
+#endif

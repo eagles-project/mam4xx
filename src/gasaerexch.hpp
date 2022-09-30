@@ -2,21 +2,15 @@
 #define MAM4XX_GASAEREXCH_HPP
 
 #include <Kokkos_Array.hpp>
+
 #include <haero/atmosphere.hpp>
 #include <haero/haero.hpp>
 #include <haero/constants.hpp>
 
+#include "mam4_types.hpp"
 #include "aero_config.hpp"
 
 namespace mam4 {
-
-using Atmosphere = haero::Atmosphere;
-using Constants = haero::Constants;
-using IntPack = haero::IntPackType;
-using Pack = haero::PackType;
-using PackInfo = haero::PackInfo;
-using Real = haero::Real;
-using ThreadTeam = haero::ThreadTeam;
 
 /// @class GasAerExch
 /// This class implements MAM4's gas/aersol exchange  parameterization. Its

@@ -152,17 +152,19 @@ void binary_nuc_vehk2002(const Pack& temp, const Pack& rh, const Pack& so4vol,
   // calc sulfuric acid mole fraction in critical cluster
   // following eq. (11) in Vehkamäki et al. (2002)
   Pack x_crit =
-      vehkamaki2002::h2so4_critical_mole_fraction(cnum_h2so4, temp, rh);
+      vehkamaki2002::h2so4_critical_mole_fraction(so4vol, temp, rh);
 
   // calc nucleation rate
   // following eq. (12) in Vehkamäki et al. (2002)
-  rateloge = vehkamaki2002::nucleation_rate(cnum_h2so4, temp, rh, x_crit);
+  rateloge = vehkamaki2002::nucleation_rate(so4vol, temp, rh, x_crit);
   ratenucl = exp(min(rateloge, log(1e38)));
 
   // calc number of molecules in critical cluster
   // following eq. (13) in Vehkamäki et al. (2002)
   cnum_tot =
-      vehkamaki2002::num_critical_molecules(cnum_h2so4, temp, rh, x_crit);
+      vehkamaki2002::num_critical_molecules(so4vol, temp, rh, x_crit);
+
+  cnum_h2so4 = cnum_tot * x_crit;
 
   // calc radius (nm) of critical cluster
   // following eq. (14) in Vehkamäki et al. (2002)
