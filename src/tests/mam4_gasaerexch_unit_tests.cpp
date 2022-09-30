@@ -12,10 +12,6 @@ using namespace haero;
 TEST_CASE("test_constructor", "mam4_gasaerexch_process") {
   mam4::AeroConfig mam4_config;
   mam4::GasAerExchProcess::ProcessConfig process_config;
-  constexpr int num_aer = 7;
-  constexpr int num_mode = 4;
-  Kokkos::resize(process_config.l_mode_can_contain_species, num_aer, num_mode);
-  Kokkos::resize(process_config.l_mode_can_age, num_aer);
   mam4::GasAerExchProcess process(mam4_config, process_config);
   REQUIRE(process.name() == "MAM4 gas/aersol exchange");
   REQUIRE(process.aero_config() == mam4_config);
@@ -31,10 +27,6 @@ TEST_CASE("test_compute_tendencies", "mam4_gasaerexch_process") {
 
   mam4::AeroConfig mam4_config;
   mam4::GasAerExchProcess::ProcessConfig process_config;
-  constexpr int num_aer = 7;
-  constexpr int num_mode = 4;
-  Kokkos::resize(process_config.l_mode_can_contain_species, num_aer, num_mode);
-  Kokkos::resize(process_config.l_mode_can_age, num_aer);
   mam4::GasAerExchProcess process(mam4_config, process_config);
 
   // Single-column dispatch.
@@ -72,10 +64,6 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_gasaerexch_process") {
 
   mam4::AeroConfig mam4_config;
   mam4::GasAerExchProcess::ProcessConfig process_config;
-  constexpr int num_aer = 7;
-  constexpr int num_mode = 4;
-  Kokkos::resize(process_config.l_mode_can_contain_species, num_aer, num_mode);
-  Kokkos::resize(process_config.l_mode_can_age, num_aer);
   mam4::GasAerExchProcess process(mam4_config, process_config);
 
   // Dispatch over all the above columns.
