@@ -13,11 +13,9 @@
 
 namespace mam4 {
 
-  using NucleationProcess = haero::AeroProcess<AeroConfig, Nucleation>;
-  using GasAerExchProcess = haero::AeroProcess<AeroConfig, GasAerExch>;
+using NucleationProcess = haero::AeroProcess<AeroConfig, Nucleation>;
+using GasAerExchProcess = haero::AeroProcess<AeroConfig, GasAerExch>;
 
-}  // namespace mam4
-
-
+} // namespace mam4
 
 #endif
