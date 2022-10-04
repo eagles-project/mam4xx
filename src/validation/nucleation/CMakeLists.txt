@@ -11,6 +11,18 @@ add_executable(nucleation_driver nucleation_driver.cpp
                newnuc_cluster_growth.cpp)
 target_link_libraries(nucleation_driver skywalker;validation;${HAERO_LIBRARIES})
 
+# Copy some Python scripts from mam_x_validation to our binary directory.
+foreach(script
+        compare_nucleation_rate.py
+        compare_particle_growth.py
+        generate_plots.py)
+  configure_file(
+    ${NUC_VALIDATION_DIR}/${script}
+    ${CMAKE_CURRENT_BINARY_DIR}/${script}
+    COPYONLY
+  )
+endforeach()
+
 # Run the driver in several configurations to produce datasets.
 
 # Nucleation rate
@@ -23,7 +35,8 @@ foreach (input
          merikanto2007_fig2
          merikanto2007_fig3
          merikanto2007_fig4)
-  add_test(validate_${input} nucleation_driver ${NUC_VALIDATION_DIR}/${input}.yaml)
+  add_test(run_${input} nucleation_driver ${NUC_VALIDATION_DIR}/${input}.yaml)
+  add_test(validate_${input} python3 compare_nucleation_rate.py mam4xx_${input}.py ${NUC_VALIDATION_DIR}/mam4_${input}.py)
 endforeach()
 
 # Nucleation particle cluster growth
@@ -31,12 +44,7 @@ foreach (input
          nucgrowth_case1
          nucgrowth_case2
          nucgrowth_case3)
-  add_test(validate_${input} nucleation_driver ${NUC_VALIDATION_DIR}/${input}.yaml)
+  add_test(run_${input} nucleation_driver ${NUC_VALIDATION_DIR}/${input}.yaml)
+  add_test(validate_${input} python3 compare_particle_growth.py mam4xx_${input}.py ${NUC_VALIDATION_DIR}/mam4_${input}.py)
 endforeach()
 
-# Copy generate_plots.py to our binary directory for ease of use.
-configure_file(
-  ${NUC_VALIDATION_DIR}/generate_plots.py
-  ${CMAKE_CURRENT_BINARY_DIR}/generate_plots.py
-  COPYONLY
-)

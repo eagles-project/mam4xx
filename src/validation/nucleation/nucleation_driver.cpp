@@ -1,4 +1,5 @@
-#include <haero/haero.hpp>
+#include <nucleation.hpp>
+
 #include <iostream>
 #include <skywalker.hpp>
 #include <validation.hpp>
@@ -16,7 +17,7 @@ void usage() {
 }
 
 using namespace skywalker;
-using namespace haero;
+using namespace mam4;
 
 // Parameterizations used by the nucleation process.
 void mer07_veh02_wang08_nuc_1box(Ensemble* ensemble);
@@ -32,13 +33,13 @@ int main(int argc, char** argv) {
   std::cout << argv[0] << ": reading " << input_file << std::endl;
 
   // Load the ensemble. Any error encountered is fatal.
-  Ensemble* ensemble = skywalker::load_ensemble(input_file, "haero");
+  Ensemble* ensemble = skywalker::load_ensemble(input_file, "mam4xx");
 
   // Figure out which component of nucleation we're validating by reading
   // the settings.
   Settings settings = ensemble->settings();
   if (!settings.has("function")) {
-    std::cerr << "No function specified in haero.settings!" << std::endl;
+    std::cerr << "No function specified in mam4xx.settings!" << std::endl;
     exit(0);
   }
 

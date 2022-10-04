@@ -1,6 +1,6 @@
 #include "validation.hpp"
 
-namespace haero {
+namespace mam4 {
 namespace validation {
 
 std::string output_name(const std::string& input_file) {
@@ -16,9 +16,9 @@ std::string output_name(const std::string& input_file) {
     slash += 1;
     dot -= slash;
   }
-  return std::string("haero_") + input_file.substr(slash, dot) +
+  return std::string("mam4xx_") + input_file.substr(slash, dot) +
          std::string(".py");
 }
 
 }  // namespace validation
-}  // namespace haero
+}  // namespace mam4

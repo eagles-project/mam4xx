@@ -1,9 +1,10 @@
-#include <haero/haero.hpp>
+#include <gasaerexch.hpp>
+
 #include <iostream>
 #include <skywalker.hpp>
 #include <validation.hpp>
 
-using namespace haero;
+using namespace mam4;
 using namespace skywalker;
 
 void test_gasaerexch_uptkrates_1box1gas(std::unique_ptr<Ensemble>& ensemble);

@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace haero {
+namespace mam4 {
 namespace validation {
 
 /// Given the name of a Skywalker input YAML file, determine the name of the
