@@ -6,6 +6,7 @@
 #include <numeric>
 
 #include "aero_modes.hpp"
+#include "haero/view_pack_helpers.hpp"
 
 namespace mam4 {
 
@@ -22,14 +23,18 @@ class Prognostics final {
     const int nk = PackInfo::num_packs(num_levels);
     for (int mode = 0; mode < 4; ++mode) {
       n_mode[mode] = ColumnView("n_mode", nk);
+      haero::zero_init(n_mode[mode], num_levels);
       for (int spec = 0; spec < 7; ++spec) {
         q_aero[mode][spec] = ColumnView("q_aero", nk);
+        haero::zero_init(q_aero[mode][spec], num_levels);
       }
     }
     for (int gas = 0; gas < 13; ++gas) {
       q_gas[gas] = ColumnView("q_gas", nk);
+      haero::zero_init(q_gas[gas], num_levels);
       for (int mode = 0; mode < 4; ++mode) {
         uptkaer[gas][mode] = ColumnView("uptake_rate", nk);
+        haero::zero_init(uptkaer[gas][mode], num_levels);
       }
     }
   }
