@@ -28,6 +28,9 @@ class Prognostics final {
     }
     for (int gas = 0; gas < 13; ++gas) {
       q_gas[gas] = ColumnView("q_gas", nk);
+      for (int mode = 0; mode < 4; ++mode) {
+        uptkaer[gas][mode] = ColumnView("uptake_rate", nk);
+      }
     }
   }
 
@@ -45,6 +48,8 @@ class Prognostics final {
 
   /// gas mass mixing ratios (see aero_mode.hpp for indexing)
   ColumnView q_gas[13];
+
+  ColumnView uptkaer[13][4];
 
   KOKKOS_INLINE_FUNCTION
   int num_levels() const { return nlev_; }
