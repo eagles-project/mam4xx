@@ -48,6 +48,14 @@ install HAERO yourself, you can follow the instructions in the
 [HAERO repository](https://github.com/eagles-project/haero). Make sure you run
 all the steps, including `make install`.
 
+### Initializing submodules
+
+Before you start working with the repo, make sure you initialize its submodules:
+
+```
+git submodule update --init --recursive
+```
+
 ### Configuring and Building MAM4xx
 
 To build MAM4xx:
