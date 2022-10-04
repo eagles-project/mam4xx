@@ -27,7 +27,6 @@ set(CMAKE_C_COMPILER ${HAERO_C_COMPILER})
 set(CMAKE_C_FLAGS    ${HAERO_C_FLAGS})
 
 enable_language(CXX)
-enable_language(Fortran)
 
 project (mam4xx)
 
@@ -36,7 +35,6 @@ set(CMAKE_EXE_LINKER_FLAGS ${HAERO_EXE_LINKER_FLAGS})
 message(STATUS "Generating project files in build directory: ${PROJECT_BINARY_DIR}")
 message(STATUS "C++ compiler is ${CMAKE_CXX_COMPILER} (${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION})")
 message(STATUS "C compiler is ${CMAKE_C_COMPILER} (${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION})")
-message(STATUS "Fortran compiler is ${CMAKE_Fortran_COMPILER} (${CMAKE_Fortran_COMPILER_ID} ${CMAKE_Fortran_COMPILER_VERSION})")
 
 # Version numbers.
 set(MAM4XX_MAJOR_VERSION 0)
@@ -51,27 +49,6 @@ message(STATUS "Using ${HAERO_PRECISION} precision floating point numbers")
 
 # We build static libraries only.
 set(BUILD_SHARED_LIBS OFF)
-
-# Fortran setting and compiler flags
-set(CMAKE_Fortran_FLAGS "-cpp")
-if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fbacktrace")
-  endif()
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wall -ffree-form -ffree-line-length-none")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-unused-dummy-argument")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Werror=tabs")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-maybe-uninitialized")
-elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -traceback")
-  endif()
-endif()
-if (APPLE)
-  set(CMAKE_Fortran_STANDARD_LIBRARIES "-lc++")
-else()
-  set(CMAKE_Fortran_STANDARD_LIBRARIES "-lstdc++ -no-pie")
-endif()
 
 # Report the installation prefix.
 message(STATUS "Installation prefix is ${CMAKE_INSTALL_PREFIX}")

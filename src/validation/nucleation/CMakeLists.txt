@@ -36,11 +36,18 @@ foreach (input
          merikanto2007_fig3
          merikanto2007_fig4)
 
+  # copy the baseline file into place
+  configure_file(
+    ${NUC_VALIDATION_DIR}/mam_${input}.py
+    ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.py
+    COPYONLY
+  )
+
   # add a test to run the skywalker driver
   add_test(run_${input} nucleation_driver ${NUC_VALIDATION_DIR}/${input}.yaml)
 
   # add a test to validate mam4xx's results against the baseline.
-  add_test(validate_${input} python3 compare_nucleation_rate.py mam4xx_${input}.py ${NUC_VALIDATION_DIR}/mam_${input}.py)
+  add_test(validate_${input} python3 compare_nucleation_rate.py mam4xx_${input}.py mam_${input}.py)
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
 endforeach()
 
@@ -50,11 +57,18 @@ foreach (input
          nucgrowth_case2
          nucgrowth_case3)
 
+  # copy the baseline file into place
+  configure_file(
+    ${NUC_VALIDATION_DIR}/mam_${input}.py
+    ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.py
+    COPYONLY
+  )
+
   # add a test to run the skywalker driver
   add_test(run_${input} nucleation_driver ${NUC_VALIDATION_DIR}/${input}.yaml)
 
   # add a test to validate mam4xx's results against the baseline.
-  add_test(validate_${input} python3 compare_particle_growth.py mam4xx_${input}.py ${NUC_VALIDATION_DIR}/mam_${input}.py)
+  add_test(validate_${input} python3 compare_particle_growth.py mam4xx_${input}.py mam_${input}.py)
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
 endforeach()
 
