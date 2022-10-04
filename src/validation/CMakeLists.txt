@@ -12,7 +12,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 # baselines for that process (e.g. ${MAM4BOX_BASELINE_DIR}/nucleation).
 set(MAM4BOX_BASELINE_DIR ${PROJECT_BINARY_DIR}/mam4box/standalone/tests)
 
-# Haero Skywalker drivers
+#-------------------------
+# MAM4xx Skywalker drivers
+#-------------------------
 
 add_subdirectory(nucleation)
-add_subdirectory(gasaerexch)
+#add_subdirectory(gasaerexch)

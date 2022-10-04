@@ -35,8 +35,13 @@ foreach (input
          merikanto2007_fig2
          merikanto2007_fig3
          merikanto2007_fig4)
+
+  # add a test to run the skywalker driver
   add_test(run_${input} nucleation_driver ${NUC_VALIDATION_DIR}/${input}.yaml)
-  add_test(validate_${input} python3 compare_nucleation_rate.py mam4xx_${input}.py ${NUC_VALIDATION_DIR}/mam4_${input}.py)
+
+  # add a test to validate mam4xx's results against the baseline.
+  add_test(validate_${input} python3 compare_nucleation_rate.py mam4xx_${input}.py ${NUC_VALIDATION_DIR}/mam_${input}.py)
+  set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
 endforeach()
 
 # Nucleation particle cluster growth
@@ -44,7 +49,12 @@ foreach (input
          nucgrowth_case1
          nucgrowth_case2
          nucgrowth_case3)
+
+  # add a test to run the skywalker driver
   add_test(run_${input} nucleation_driver ${NUC_VALIDATION_DIR}/${input}.yaml)
-  add_test(validate_${input} python3 compare_particle_growth.py mam4xx_${input}.py ${NUC_VALIDATION_DIR}/mam4_${input}.py)
+
+  # add a test to validate mam4xx's results against the baseline.
+  add_test(validate_${input} python3 compare_particle_growth.py mam4xx_${input}.py ${NUC_VALIDATION_DIR}/mam_${input}.py)
+  set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
 endforeach()
 
