@@ -1,5 +1,4 @@
 set(NUC_VALIDATION_DIR ${MAM_X_VALIDATION_DIR}/nucleation)
-set(NUC_BASELINE_DIR ${MAM4BOX_BASELINE_DIR}/nucleation)
 
 # These subdirectories contain Skywalker drivers for MAM4 parameterizations.
 # Include directory for .mod files.
