@@ -1,5 +1,4 @@
 set(EXCH_VALIDATION_DIR ${MAM_X_VALIDATION_DIR}/gasaerexch)
-set(EXCH_BASELINE_DIR ${MAM4BOX_BASELINE_DIR}/gasaerexch)
 
 # Include directory for .mod files.
 include_directories(${PROJECT_BINARY_DIR}/haero)

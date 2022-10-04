@@ -55,20 +55,6 @@ BUILD_TYPE=Debug
 #VERBOSE=ON
 
 #-----------------------------------------------------------------------------
-#                      MAM4 box model cross-validation setup
-#-----------------------------------------------------------------------------
-
-# Set this to ON to enable testing against MAM4 box model parameterizations.
-ENABLE_MAM4BOX=OFF
-
-# Set this to the (non-MPI) Fortran compiler you want to use to build the MAM4
-# box model.
-MAM4BOX_FC=gfortran
-
-# Set this to a local directory containing a clone of the mam_refactor repo.
-MAM4BOX_DIR=/path/to/mam_box_model_source
-
-#-----------------------------------------------------------------------------
 #                   Don't change anything below here.
 #-----------------------------------------------------------------------------
 
@@ -82,17 +68,11 @@ fi
 # Clear the build cache.
 rm -f CMakeCache.txt
 
-# Pass along MAM4 box model options if needed.
-if [ "\$ENABLE_MAM4BOX" = "ON" ]; then
-  OPTIONS="\$OPTIONS -DCMAKE_Fortran_COMPILER=\$MAM4BOX_FC -DMAM4BOX_DIR=\$MAM4BOX_DIR"
-fi
-
 # Configure the build.
 cmake \
  -DCMAKE_INSTALL_PREFIX:PATH=\$PREFIX \
  -DCMAKE_BUILD_TYPE=\$BUILD_TYPE \
  -DMAM4XX_HAERO_DIR=\$HAERO_DIR \
- -DMAM4XX_ENABLE_BOX=\$ENABLE_MAM4BOX \
  \$OPTIONS \
  -G "\$GENERATOR" \
  \$SOURCE_DIR
