@@ -18,6 +18,7 @@ using Real = haero::Real;
 using ColumnView = haero::ColumnView;
 template <typename ST> using FloatingPoint = haero::FloatingPoint<ST>;
 using Atmosphere = haero::Atmosphere;
+using AeroSpecies = haero::AeroSpecies;
 using IntPack = haero::IntPackType;
 using ThreadTeam = haero::ThreadTeam;
 

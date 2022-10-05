@@ -190,20 +190,20 @@ static constexpr Real mam4_hyg_mom = 0.1;
 
   Here we use SI units.
 */
-static haero::AeroSpecies aero_species[7] = {
-    haero::AeroSpecies(Constants::molec_weight_so4,
+static AeroSpecies aero_species[7] = {
+    AeroSpecies(Constants::molec_weight_so4,
       mam4_density_so4, mam4_hyg_so4),   // sulphate
-    haero::AeroSpecies(Constants::molec_weight_c,
+    AeroSpecies(Constants::molec_weight_c,
       mam4_density_pom, mam4_hyg_pom), // primary organic matter
-    haero::AeroSpecies(Constants::molec_weight_c,
+    AeroSpecies(Constants::molec_weight_c,
       mam4_density_soa, mam4_hyg_soa),  // secondary organic aerosol
-    haero::AeroSpecies(Constants::molec_weight_c,
+    AeroSpecies(Constants::molec_weight_c,
       mam4_density_bc, mam4_hyg_bc), // black carbon
-    haero::AeroSpecies(mam4_molec_weight_dst,
+    AeroSpecies(mam4_molec_weight_dst,
       mam4_density_dst, mam4_hyg_dst), // dust
-    haero::AeroSpecies(Constants::molec_weight_nacl,
+    AeroSpecies(Constants::molec_weight_nacl,
       mam4_density_nacl, mam4_hyg_nacl), // sodium chloride
-    haero::AeroSpecies(mam4_molec_weight_mom,
+    AeroSpecies(mam4_molec_weight_mom,
       mam4_density_mom, mam4_hyg_mom)  // marine organic matter
 };
 
