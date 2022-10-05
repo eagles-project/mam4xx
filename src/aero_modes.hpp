@@ -4,6 +4,8 @@
 #include <haero/aero_species.hpp>
 #include <haero/gas_species.hpp>
 #include <haero/math.hpp>
+#include <haero/constants.hpp>
+#include "mam4_types.hpp"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -157,15 +159,52 @@ enum class AeroId {
   None = 7  // invalid aerosol species
 };
 
-// A list of aerosol species in MAM4.
+/// Molecular weight of mam4 dust aerosol [kg/mol]
+static constexpr Real mam4_molec_weight_dst = 0.135065;
+
+/// Molecular weight of mam4 marine organic matter [kg/mol]
+static constexpr Real mam4_molec_weight_mom = 250.093;
+
+/// mam4 aerosol densities [kg/m3]
+static constexpr Real mam4_density_so4 = 1770.0;
+static constexpr Real mam4_density_pom = 1000.0;
+static constexpr Real mam4_density_soa = 1000.0;
+static constexpr Real mam4_density_bc = 1700.0;
+static constexpr Real mam4_desnity_dst = 2600.0;
+static constexpr Real mam4_density_nacl = 1900.0;
+static constexpr Real mam4_density_mom = 1601.0;
+
+/// mam4 aerosol hygroscopicities
+static constexpr Real mam4_hyg_so4 = 0.507;
+static constexpr Real mam4_hyg_pom = 1e-10;
+static constexpr Real mam4_hyg_soa = 0.1;
+static constexpr Real mam4_hyg_bc = 1e-10;
+static constexpr Real mam4_hyg_dst = 0.14;
+static constexpr Real mam4_hyg_nacl = 1.16;
+static constexpr Real mam4_hyg_mom = 0.1;
+
+/// A list of aerosol species in MAM4.
+/*
+  Note that in MAM4 fortran, molecular weights are given as g/mol, rather than
+  kg/mol.
+
+  Here we use SI units.
+*/
 static haero::AeroSpecies aero_species[7] = {
-    haero::AeroSpecies(96.0, 1770.0, 0.507),   // sulphate
-    haero::AeroSpecies(12.011, 1000.0, 1e-10), // primary organic matter
-    haero::AeroSpecies(12.011, 1000.0, 0.14),  // secondary organic aerosol
-    haero::AeroSpecies(12.011, 1700.0, 1e-10), // black carbon
-    haero::AeroSpecies(135.065, 2600.0, 0.14), // dust
-    haero::AeroSpecies(58.4425, 1900.0, 1.16), // sodium chloride
-    haero::AeroSpecies(250093.0, 1601.0, 0.1)  // marine organic matter
+    haero::AeroSpecies(Constants::molec_weight_so4,
+      mam4_density_so4, mam4_hyg_so4),   // sulphate
+    haero::AeroSpecies(Constants::molec_weight_c,
+      mam4_density_pom, mam4_hyg_pom), // primary organic matter
+    haero::AeroSpecies(Constants::molec_weight_c,
+      mam4_density_soa, mam4_hyg_soa),  // secondary organic aerosol
+    haero::AeroSpecies(Constants::molec_weight_c,
+      mam4_density_bc, mam4_hyg_bc), // black carbon
+    haero::AeroSpecies(mam4_molec_weight_dst,
+      mam4_density_dst, mam4_hyg_dst), // dust
+    haero::AeroSpecies(Constants::molec_weight_nacl,
+      mam4_density_nacl, mam4_hyg_nacl), // sodium chloride
+    haero::AeroSpecies(mam4_molec_weight_mom,
+      mam4_density_mom, mam4_hyg_mom)  // marine organic matter
 };
 
 /// Returns the index of the given aerosol species within the given mode, or
