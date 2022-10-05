@@ -109,8 +109,10 @@ class Diagnostics final {
     for (int mode = 0; mode < 4; ++mode) {
       dry_geometric_mean_diameter[mode] =
           ColumnView("dry_geometric_mean_diameter", nk);
+      haero::zero_init(dry_geometric_mean_diameter[mode], num_levels);
       wet_geometric_mean_diameter[mode] =
           ColumnView("wet_geometric_mean_diameter", nk);
+      haero::zero_init(wet_geometric_mean_diameter[mode], num_levels);
     }
   }
   Diagnostics() = default;  // Careful! Only for creating placeholders in views
