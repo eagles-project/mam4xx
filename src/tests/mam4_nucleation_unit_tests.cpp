@@ -1,9 +1,13 @@
+#include "ekat/ekat_pack_kokkos.hpp"
+#include "ekat/logging/ekat_logger.hpp"
+#include "ekat/mpi/ekat_comm.hpp"
 #include <catch2/catch.hpp>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <limits>
 #include <mam4.hpp>
+
 #include "ekat/logging/ekat_logger.hpp"
 #include "ekat/mpi/ekat_comm.hpp"
 
@@ -25,7 +29,7 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleation_process") {
 
 
   ekat::logger::Logger<> logger("nucleation unit tests",
-    ekat::logger::LogLevel::debug, comm);
+                                ekat::logger::LogLevel::debug, comm);
 
   int nlev = 72;
   Real pblh = 1000;
@@ -46,52 +50,52 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleation_process") {
 
   std::ostringstream ss;
   ss << "prog_qgas0 [in]: [ ";
-  for (int k=0; k<nlev; ++k) {
+  for (int k = 0; k < nlev; ++k) {
     ss << h_prog_qgas0(k) << " ";
   }
   ss << "]";
   logger.debug(ss.str());
   ss.str("");
   ss << "tend_qgas0 [in]: [ ";
-  for (int k=0; k<nlev; ++k) {
+  for (int k = 0; k < nlev; ++k) {
     ss << h_tend_qgas0(k) << " ";
   }
   ss << "]";
   logger.debug(ss.str());
   ss.str("");
 
-  for (int k=0; k<nlev; ++k) {
-    CHECK( !isnan(h_prog_qgas0(k)) );
-    CHECK( !isnan(h_tend_qgas0(k)) );
+  for (int k = 0; k < nlev; ++k) {
+    CHECK(!isnan(h_prog_qgas0(k)));
+    CHECK(!isnan(h_tend_qgas0(k)));
   }
   // Single-column dispatch.
   auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
   Real t = 0.0, dt = 30.0;
   Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const ThreadTeam& team) {
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
         process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
       });
   Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);
   Kokkos::deep_copy(h_tend_qgas0, tend_qgas0);
 
   ss << "prog_qgas0 [out]: [ ";
-  for (int k=0; k<nlev; ++k) {
+  for (int k = 0; k < nlev; ++k) {
     ss << h_prog_qgas0(k) << " ";
   }
   ss << "]";
   logger.debug(ss.str());
   ss.str("");
   ss << "tend_qgas0 [out]: [ ";
-  for (int k=0; k<nlev; ++k) {
+  for (int k = 0; k < nlev; ++k) {
     ss << h_tend_qgas0(k) << " ";
   }
   ss << "]";
   logger.debug(ss.str());
   ss.str("");
 
-  for (int k=0; k<nlev; ++k) {
-    CHECK( !isnan(h_prog_qgas0(k)) );
-    CHECK( !isnan(h_tend_qgas0(k)) );
+  for (int k = 0; k < nlev; ++k) {
+    CHECK(!isnan(h_prog_qgas0(k)));
+    CHECK(!isnan(h_tend_qgas0(k)));
   }
 }
 
@@ -126,7 +130,7 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_nucleation_process") {
   auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
   Real t = 0.0, dt = 30.0;
   Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const ThreadTeam& team) {
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
         const int icol = team.league_rank();
         process.compute_tendencies(team, t, dt, mc_atm(icol), mc_progs(icol),
                                    mc_diags(icol), mc_tends(icol));
