@@ -6,10 +6,9 @@
 #include <mam4.hpp>
 #include "ekat/logging/ekat_logger.hpp"
 #include "ekat/mpi/ekat_comm.hpp"
-<<<<<<< HEAD
-=======
+
 #include "ekat/ekat_pack_kokkos.hpp"
->>>>>>> pbosler/nucleation_tests
+
 #include <sstream>
 
 using namespace haero;
