@@ -205,19 +205,19 @@ int aerosol_index_for_mode(ModeIndex mode, AeroId aero_id) {
 
 // Identifiers for gas species in MAM4.
 enum class GasId {
-  O3,    // ozone
-  H2O2,  // hydrogen peroxide
-  H2SO4, // sulfuric acid
-  SO2,   // sulfur dioxide
-  DMS,   // dimethylsulfide
-  SOAG,  // secondary organic aerosol precursor
-  O2,    // oxygen
-  CO2,   // carbon dioxide
-  N2O,   // nitrous oxide
-  CH4,   // methane,
-  CFC11, // trichlorofluoromethane
-  CFC12, // dichlorodifluoromethane
-  NH3    // ammonia
+  O3 = 0,    // ozone
+  H2O2 = 1,  // hydrogen peroxide
+  H2SO4 = 2, // sulfuric acid
+  SO2 = 3,   // sulfur dioxide
+  DMS = 4,   // dimethylsulfide
+  SOAG = 5,  // secondary organic aerosol precursor
+  O2 = 6,    // oxygen
+  CO2 = 7,   // carbon dioxide
+  N2O = 8,   // nitrous oxide
+  CH4 = 9,   // methane,
+  CFC11 = 10, // trichlorofluoromethane
+  CFC12 = 11, // dichlorodifluoromethane
+  NH3 = 12    // ammonia
 };
 
 // A list of gas species in MAM4.
