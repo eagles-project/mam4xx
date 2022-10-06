@@ -20,3 +20,7 @@ target_compile_options(mam4_gasaerexch_unit_tests PRIVATE -Werror)
 
 EkatCreateUnitTest(mam4_kohler_unit_tests mam4_kohler_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES})
+
+CreateUnitTest(aero_modes_unit_tests aero_modes_tests.cpp)
+
+CreateUnitTest(aero_config_unit_tests aero_config_unit_tests.cpp)
