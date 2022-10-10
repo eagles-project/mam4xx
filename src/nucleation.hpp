@@ -897,9 +897,9 @@ class Nucleation {
     qnh3_del = 0.0;
 
     // dry-diameter limits for "grown" new particles
-    dplom_mode[0] =
-        exp(0.67 * log(dgnumlo_aer[nait]) + 0.33 * log(dgnum_aer[nait]));
-    dphim_mode[0] = dgnumhi_aer[nait];
+    dplom_mode[0] = Pack(
+        exp(0.67 * log(dgnumlo_aer[nait]) + 0.33 * log(dgnum_aer[nait])));
+    dphim_mode[0] = Pack(dgnumhi_aer[nait]);
 
     //----------------------------------------------------------------
     // Only do the cluster growth calculation when nucleation rate is
