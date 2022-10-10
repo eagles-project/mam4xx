@@ -170,7 +170,7 @@ static constexpr Real mam4_density_so4 = 1770.0;
 static constexpr Real mam4_density_pom = 1000.0;
 static constexpr Real mam4_density_soa = 1000.0;
 static constexpr Real mam4_density_bc = 1700.0;
-static constexpr Real mam4_desnity_dst = 2600.0;
+static constexpr Real mam4_density_dst = 2600.0;
 static constexpr Real mam4_density_nacl = 1900.0;
 static constexpr Real mam4_density_mom = 1601.0;
 

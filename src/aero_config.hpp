@@ -111,7 +111,10 @@ public:
     for (int mode = 0; mode < 4; ++mode) {
       dry_geometric_mean_diameter[mode] =
           ColumnView("dry_geometric_mean_diameter", nk);
+      dry_geometric_mean_volume[mode] =
+          ColumnView("dry_geometric_mean_volume", nk);
       haero::zero_init(dry_geometric_mean_diameter[mode], num_levels);
+      haero::zero_init(dry_geometric_mean_volume[mode], num_levels);
       wet_geometric_mean_diameter[mode] =
           ColumnView("wet_geometric_mean_diameter", nk);
       haero::zero_init(wet_geometric_mean_diameter[mode], num_levels);
@@ -125,6 +128,7 @@ public:
   int num_levels() const { return nlev_; }
 
   ColumnView dry_geometric_mean_diameter[4];
+  ColumnView dry_geometric_mean_volume[4];
   ColumnView wet_geometric_mean_diameter[4];
 
   /// For gas-aerosol exchange process

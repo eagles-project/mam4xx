@@ -3,6 +3,7 @@
 
 // This header defines common Haero aliases for use in MAM4.
 
+#include <haero/aero_species.hpp>
 #include <haero/atmosphere.hpp>
 #include <haero/constants.hpp>
 #include <haero/floating_point.hpp>
