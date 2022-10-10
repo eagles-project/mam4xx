@@ -1,6 +1,7 @@
 #include "kohler_verification.hpp"
-#include "mam4_test_config.hpp"
+#ifdef HAERO_DOUBLE_PRECISION
 
+#include "mam4_test_config.hpp"
 #include <iomanip>
 #include <fstream>
 
@@ -113,3 +114,4 @@ void KohlerVerification::generate_input_data() {
 }
 
 } // namespace mam4
+#endif // double precision

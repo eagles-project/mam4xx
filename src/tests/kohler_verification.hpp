@@ -1,6 +1,8 @@
 #ifndef MAM4XX_KOHLER_VERIFICATION_HPP
 #define MAM4XX_KOHLER_VERIFICATION_HPP
 
+#include <haero/haero.hpp>
+#ifdef HAERO_DOUBLE_PRECISION
 #include "kohler.hpp"
 
 namespace mam4 {
@@ -70,5 +72,7 @@ struct KohlerVerification {
   void load_true_sol_from_file();
 };
 
+
 } // namespace mam4
+#endif // double precision
 #endif
