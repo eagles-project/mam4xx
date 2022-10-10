@@ -85,7 +85,7 @@ jobs:
         cmake \
           -DCMAKE_INSTALL_PREFIX=`pwd`/build \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-          -DMAM4XX_HAERO_DIR=haero_install \
+          -DMAM4XX_HAERO_DIR=../haero_install \
           -G "Unix Makefiles" \
           ..
 
