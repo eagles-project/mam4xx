@@ -64,7 +64,7 @@ jobs:
 
     - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision, pack size=${{ matrix.pack-size }})
       run: |
-        cmake -S haero_src -B haero_build
+        cmake -S haero_src -B haero_build \
            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
            -DCMAKE_INSTALL_PREFIX="haero_install" \
            -DCMAKE_C_COMPILER=gcc \
