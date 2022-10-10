@@ -80,14 +80,11 @@ jobs:
 
     - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision, pack size=${{ matrix.pack-size }})
       run: |
-        ./setup build
-        cd build
-        cmake \
-          -DCMAKE_INSTALL_PREFIX=`pwd`/build \
+        cmake -S . -B build \
+          -DCMAKE_INSTALL_PREFIX=`pwd`/install \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-          -DMAM4XX_HAERO_DIR=../haero_install \
-          -G "Unix Makefiles" \
-          ..
+          -DMAM4XX_HAERO_DIR=`pwd`/haero_install \
+          -G "Unix Makefiles"
 
 # TODO: clang-format seems unstable under different versions. Not helpful!
 #    - name: Checking code formatting...
