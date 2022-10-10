@@ -58,6 +58,18 @@ BUILD_TYPE=Debug
 #                   Don't change anything below here.
 #-----------------------------------------------------------------------------
 
+# Are we on a special machine?
+pushd "\$SOURCE_DIR"/machines >& /dev/null
+for MACHINE_FILE in \$(ls)
+do
+  MACHINE=\${MACHINE_FILE/\.sh/}
+  if echo `hostname` | grep -q "\$MACHINE"; then
+    echo "Found machine file \$MACHINE_FILE. Setting up environment for \$MACHINE..."
+    . ./\$MACHINE.sh
+  fi
+done
+popd >& /dev/null
+
 # We use good old-fashioned UNIX makefiles.
 GENERATOR="Unix Makefiles"
 
