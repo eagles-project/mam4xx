@@ -55,9 +55,28 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         submodules: recursive
 
-    - name: Building haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision, pack size=${{ matrix.pack-size }})
+    - name: Cloning Haero
+      uses: actions/checkout@v2
+      with:
+        repository: eagles-project/haero
+        submodules: recursive
+        path: ${{ env.GITHUB_WORKSPACE }}/haero_src
+
+    - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision, pack size=${{ matrix.pack-size }})
       run: |
-        ./build-haero.sh ${{ env.GITHUB_WORKSPACE }}/haero cpu:AMDAVX ${{ matrix.fp-precision }} ${{ matrix.pack-size }} ${{ matrix.build-type }}
+        cmake -S ${{ env.GITHUB_WORKSPACE }}/haero_src -B ${{ env.GITHUB_WORKSPACE }}/haero_build
+           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+           -DCMAKE_INSTALL_PREFIX="${{ env.GITHUB_WORKSPACE }}/haero_install" \
+           -DCMAKE_C_COMPILER=gcc \
+           -DCMAKE_CXX_COMPILER=g++ \
+           -DHAERO_ENABLE_GPU=OFF \
+           -DHAERO_DEVICE_ARCH=AMDAVX \
+           -DKokkos_ARCH_AMDAVX:BOOL=ON \
+           -DHAERO_PRECISION=${{ matrix.fp-precision }} \
+           -DHAERO_PACK_SIZE=${{ matrix.pack-size }}
+        cd ${{ env.GITHUB_WORKSPACE }}/haero_build
+        make -j
+        make install
 
     - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision, pack size=${{ matrix.pack-size }})
       run: |
