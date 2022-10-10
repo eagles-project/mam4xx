@@ -1,0 +1,110 @@
+name: auto_test
+
+# This action is triggered:
+# 1. when someone creates a pull request for a merge to the main branch
+# 2. when changes are merged into the main branch (via a pull request)
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Below are jobs, each of which runs sequentially.
+jobs:
+  # This job builds the box model and runs our test suite.
+  build:
+    # A build matrix storing all desired configurations.
+    strategy:
+      matrix:
+        os: [ubuntu-latest] #, macos-latest]
+        build-type: [Debug, Release]
+        fp-precision: [single, double]
+        pack-size: [1, 4]
+
+    runs-on: ${{ matrix.os }}
+
+#    # Pre-fab container with third-party libs installed.
+#    container: coherellc/haero-tpl:${{ matrix.build-type }}-${{ matrix.fp-precision }}-pack-size-${{ matrix.pack-size }}
+
+    # Environment variables
+    env:
+      FC: gfortran
+      CI: 1   # indicates that we are running in a CI environment.
+
+    # Steps for building and running tests.
+    steps:
+
+    - name: Installing dependencies
+      run: |
+        sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+        autoconf \
+        clang-format \
+        cmake \
+        libopenmpi-dev \
+        gcc \
+        g++ \
+        gfortran \
+        git \
+        make \
+        pkg-config \
+        ca-certificates
+
+    - name: Checking out repository
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        submodules: recursive
+
+    - name: Cloning Haero
+      uses: actions/checkout@v2
+      with:
+        repository: eagles-project/haero
+        submodules: recursive
+        path: haero_src
+
+    - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision, pack size=${{ matrix.pack-size }})
+      run: |
+        cmake -S haero_src -B haero_build \
+           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+           -DCMAKE_INSTALL_PREFIX="haero_install" \
+           -DCMAKE_C_COMPILER=gcc \
+           -DCMAKE_CXX_COMPILER=g++ \
+           -DHAERO_ENABLE_GPU=OFF \
+           -DHAERO_DEVICE_ARCH=AMDAVX \
+           -DKokkos_ARCH_AMDAVX:BOOL=ON \
+           -DHAERO_PRECISION=${{ matrix.fp-precision }} \
+           -DHAERO_PACK_SIZE=${{ matrix.pack-size }}
+        cd haero_build
+        make -j
+        make install
+
+    - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision, pack size=${{ matrix.pack-size }})
+      run: |
+        cmake -S . -B build \
+          -DCMAKE_INSTALL_PREFIX=`pwd`/install \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+          -DMAM4XX_HAERO_DIR=`pwd`/haero_install \
+          -G "Unix Makefiles"
+
+# TODO: clang-format seems unstable under different versions. Not helpful!
+#    - name: Checking code formatting...
+#      run: |
+#        cd build
+#        make format-cxx-check
+
+    - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+      run: |
+        cd build
+        make -j
+
+    - name: Running tests (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+      run: |
+        cd build
+        ctest -V
+
+# No install target (yet?)
+#    - name: Installing MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+#      run: |
+#        cd build
+#        make install
+
