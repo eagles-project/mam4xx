@@ -427,9 +427,9 @@ void newnuc_cluster_growth(
   igrow = 0;
   auto dpdry_clus_lo = (dpdry_clus <= dplom_sect[0]);
   igrow.set(dpdry_clus_lo, 1);
-  auto dpdry_clus_hi = (dpdry_clus >= dphim_sect[nsize]);
+  auto dpdry_clus_hi = (dpdry_clus >= dphim_sect[nsize-1]);
   isize_nuc.set(dpdry_clus_hi, nsize);
-  dpdry_part.set(dpdry_clus_hi, dphim_sect[nsize]);
+  dpdry_part.set(dpdry_clus_hi, dphim_sect[nsize-1]);
   for (int i = 0; i < nsize; ++i) {
     auto dpdry_clus_i = (dpdry_clus < dphim_sect[i]);
     isize_nuc.set(dpdry_clus_i, i);
@@ -897,9 +897,9 @@ class Nucleation {
     qnh3_del = 0.0;
 
     // dry-diameter limits for "grown" new particles
-    dplom_mode[0] = Pack(
-        exp(0.67 * log(dgnumlo_aer[nait]) + 0.33 * log(dgnum_aer[nait])));
-    dphim_mode[0] = Pack(dgnumhi_aer[nait]);
+    dplom_mode[0] =
+        exp(0.67 * log(dgnumlo_aer[nait]) + 0.33 * log(dgnum_aer[nait]));
+    dphim_mode[0] = dgnumhi_aer[nait];
 
     //----------------------------------------------------------------
     // Only do the cluster growth calculation when nucleation rate is
