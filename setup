@@ -6,8 +6,18 @@
 # Print usage info.
 if [ "$1" = "" ]; then
   echo "setup: Creates a build directory with a configuration file."
-  echo "Usage: setup build_dir"
+  echo "Optional argument 2 is path to haero install location."
+  echo "Usage: setup build_dir [haero_dir]"
   exit 1
+fi
+
+# assign optional argument 2 to DIR_HAERO if it exists
+if [ -z "$2" ]; then
+  # if the optional arg isn't given, we print this placeholder
+  export DIR_HAERO=/path/to/haero
+else
+  # expand arg to full path, in case it's relative
+  export DIR_HAERO=$(readlink -f $2)
 fi
 
 # Create the build directory if it doesn't exist.
@@ -40,7 +50,7 @@ PREFIX=$PWD/$1
 # https://github.com/eagles-project/haero
 # and check out the README.md file there.
 
-HAERO_DIR=/path/to/haero
+HAERO_DIR=$DIR_HAERO
 
 #-----------------------------------------------------------------------------
 #                         Build features and parameters
@@ -57,18 +67,6 @@ BUILD_TYPE=Debug
 #-----------------------------------------------------------------------------
 #                   Don't change anything below here.
 #-----------------------------------------------------------------------------
-
-# Are we on a special machine?
-pushd "\$SOURCE_DIR"/machines >& /dev/null
-for MACHINE_FILE in \$(ls)
-do
-  MACHINE=\${MACHINE_FILE/\.sh/}
-  if echo `hostname` | grep -q "\$MACHINE"; then
-    echo "Found machine file \$MACHINE_FILE. Setting up environment for \$MACHINE..."
-    . ./\$MACHINE.sh
-  fi
-done
-popd >& /dev/null
 
 # We use good old-fashioned UNIX makefiles.
 GENERATOR="Unix Makefiles"
@@ -95,6 +93,11 @@ chmod a+x $1/config.sh
 
 # Give instructions.
 echo "Your build directory '$1' is ready."
+# assign optional argument 2 to DIR_HAERO if it exists
+if [ ! -z "$2" ]; then
+  # expand arg to full path, in case it's relative
+  echo "You have given '$DIR_HAERO' as the HAERO library install location."
+fi
 echo "To configure your build:"
 echo "  1. cd $1"
 echo "  2. Edit config.sh"
