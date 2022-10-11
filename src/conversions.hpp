@@ -204,7 +204,7 @@ particle]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar mean_particle_diameter_from_volume(
     const Scalar mode_mean_particle_volume, const Real mean_std_dev) {
-  const Real pio6 = Constants::pi_sixth;
+  const Scalar pio6 = Constants::pi_sixth;
   return cbrt(mode_mean_particle_volume / pio6) *
          exp(-1.5 * ekat::square<Scalar>(log(mean_std_dev)));
 }
@@ -219,7 +219,7 @@ KOKKOS_INLINE_FUNCTION Scalar mean_particle_diameter_from_volume(
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar mean_particle_volume_from_diameter(
     const Scalar geom_diam, const Real mean_std_dev) {
-  const Real pio6 = Constants::pi_sixth;
+  const Scalar pio6 = Constants::pi_sixth;
   return cube(geom_diam) * exp(4.5 * ekat::square<Scalar>(log(mean_std_dev))) *
          pio6;
 }

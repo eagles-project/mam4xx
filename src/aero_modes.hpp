@@ -131,6 +131,10 @@ enum class ModeIndex {
   PrimaryCarbon = 3,
 };
 
+/// Map ModeIndex to string (for logging, e.g.)
+std::string mode_str(const ModeIndex m);
+
+
 /// A list of all modes within MAM4.
 /// NOTE: Legacy MAM4 uses the same constant crystallization and deliquescence
 /// NOTE: values for all modes & species.  See links for additional discussion:
@@ -158,6 +162,9 @@ enum class AeroId {
   MOM = 6,  // marine organic matter,
   None = 7  // invalid aerosol species
 };
+
+/// Map ModeIndex to string (for logging, e.g.)
+std::string aero_id_str(const AeroId aid);
 
 /// Molecular weight of mam4 dust aerosol [kg/mol]
 static constexpr Real mam4_molec_weight_dst = 0.135065;

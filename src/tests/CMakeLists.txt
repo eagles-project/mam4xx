@@ -24,6 +24,10 @@ EkatCreateUnitTest(mam4_kohler_unit_tests mam4_kohler_unit_tests.cpp
 else ()
   message(STATUS "disabling Kohler verification tests (they require double precision)")
 endif ()
-CreateUnitTest(aero_modes_unit_tests aero_modes_tests.cpp)
+EkatCreateUnitTest(aero_modes_unit_tests aero_modes_tests.cpp
+  LIBS mam4xx ${HAERO_LIBRARIES})
 
 CreateUnitTest(aero_config_unit_tests aero_config_unit_tests.cpp)
+
+EkatCreateUnitTest(mode_averages mode_averages_unit_tests.cpp
+  LIBS mam4xx ${HAERO_LIBRARIES})
