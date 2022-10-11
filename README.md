@@ -15,21 +15,16 @@ To build MAM4xx, you need:
 * the [HAERO](https://github.com/eagles-project/haero) aerosol package interface,
   which provides necessary libraries and settings.
 
-If you want to compare MAM4xx's processes and parameterizations with the
-[MAM4 microphysics box model](https://github.com/eagles-project/mam_refactor),
-you also need decent Fortran compiler, such as GNU `gfortran` or Intel's `ifort`
-compiler.
-
-You can obtain all of these (except perhaps your favorite Fortran compiler)
-freely on the Linux and Mac platforms. On Linux, just use your favorite package
-manager. On a Mac, you can get the Clang C/C++ compiler by installing XCode, and
-then use a package manager like [Homebrew](https://brew.sh/) or
-[MacPorts](https://www.macports.org/) to get the rest.
+You can obtain all of these freely on the Linux and Mac platforms. On Linux,
+just use your favorite package manager. On a Mac, you can get the Clang C/C++
+compiler by installing XCode, and then use a package manager like
+[Homebrew](https://brew.sh/) or [MacPorts](https://www.macports.org/) to get the
+rest.
 
 For example, to download the relevant software on your Mac using Homebrew, type
 
 ```
-brew install cmake gfortran openmpi
+brew install cmake openmpi
 ```
 
 ## Building MAM4xx
@@ -52,6 +47,14 @@ where `<path>` is a directory to which HAERO will be installed. If you'd rather
 install HAERO yourself, you can follow the instructions in the
 [HAERO repository](https://github.com/eagles-project/haero). Make sure you run
 all the steps, including `make install`.
+
+### Initializing submodules
+
+Before you start working with the repo, make sure you initialize its submodules:
+
+```
+git submodule update --init --recursive
+```
 
 ### Configuring and Building MAM4xx
 

@@ -1,8 +1,9 @@
 #include "kohler_verification.hpp"
-#include "mam4_test_config.hpp"
+#ifdef HAERO_DOUBLE_PRECISION
 
-#include <iomanip>
+#include "mam4_test_config.hpp"
 #include <fstream>
+#include <iomanip>
 
 namespace mam4 {
 
@@ -11,7 +12,7 @@ std::string KohlerVerification::mathematica_verification_program() const {
   /* mathematica doesn't like exponential notation, so we use setprecision
    * instead.*/
   ss << "kelvinCoeff = " << std::fixed << std::setprecision(16)
-     << kelvin_coefficient<Real>()*1e6 << ";\n";
+     << kelvin_coefficient<Real>() * 1e6 << ";\n";
   ss << "rhMin = " << rhmin << ";\n";
   ss << "rhMax = " << KohlerPolynomial<Real>::rel_humidity_max << ";\n";
   ss << "hygMin = " << hmin << ";\n";
@@ -39,7 +40,7 @@ std::string KohlerVerification::matlab_verification_program() const {
   ss << "clear; format long;\n";
   ss << "%% parameter bounds\n";
   ss << "kelvinCoeff = " << std::fixed << std::setprecision(16)
-     << kelvin_coefficient<Real>()*1e6 << ";\n";
+     << kelvin_coefficient<Real>() * 1e6 << ";\n";
   ss << "rhMin = " << rhmin << ";\n";
   ss << "rhMax = " << KohlerPolynomial<Real>::rel_humidity_max << ";\n";
   ss << "hygMin = " << hmin << ";\n";
@@ -100,16 +101,19 @@ void KohlerVerification::load_true_sol_from_file() {
 }
 
 void KohlerVerification::generate_input_data() {
-  const auto md_policy = Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0,0,0},{n,n,n});
-  Kokkos::parallel_for("KohlerVerification::generate_input_data",
-    md_policy, KOKKOS_CLASS_LAMBDA (const int i, const int j, const int k) {
-      const int ind = haero::square(n)*i + n*j + k;
-      const auto pack_idx = PackInfo::pack_idx(ind);
-      const auto vec_idx = PackInfo::vec_idx(ind);
-      relative_humidity(pack_idx)[vec_idx] = rhmin + i*drh;
-      hygroscopicity(pack_idx)[vec_idx] = hmin + j*dhyg;
-      dry_radius(pack_idx)[vec_idx] = rmin + k*ddry;
-    });
+  const auto md_policy =
+      Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0, 0, 0}, {n, n, n});
+  Kokkos::parallel_for(
+      "KohlerVerification::generate_input_data", md_policy,
+      KOKKOS_CLASS_LAMBDA(const int i, const int j, const int k) {
+        const int ind = haero::square(n) * i + n * j + k;
+        const auto pack_idx = PackInfo::pack_idx(ind);
+        const auto vec_idx = PackInfo::vec_idx(ind);
+        relative_humidity(pack_idx)[vec_idx] = rhmin + i * drh;
+        hygroscopicity(pack_idx)[vec_idx] = hmin + j * dhyg;
+        dry_radius(pack_idx)[vec_idx] = rmin + k * ddry;
+      });
 }
 
 } // namespace mam4
+#endif // double precision

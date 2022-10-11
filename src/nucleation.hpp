@@ -421,9 +421,9 @@ void newnuc_cluster_growth(
   igrow = 0;
   auto dpdry_clus_lo = (dpdry_clus <= dplom_sect[0]);
   igrow.set(dpdry_clus_lo, 1);
-  auto dpdry_clus_hi = (dpdry_clus >= dphim_sect[nsize]);
+  auto dpdry_clus_hi = (dpdry_clus >= dphim_sect[nsize-1]);
   isize_nuc.set(dpdry_clus_hi, nsize);
-  dpdry_part.set(dpdry_clus_hi, dphim_sect[nsize]);
+  dpdry_part.set(dpdry_clus_hi, dphim_sect[nsize-1]);
   for (int i = 0; i < nsize; ++i) {
     auto dpdry_clus_i = (dpdry_clus < dphim_sect[i]);
     isize_nuc.set(dpdry_clus_i, i);

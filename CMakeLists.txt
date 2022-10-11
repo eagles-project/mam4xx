@@ -1,10 +1,5 @@
 cmake_minimum_required (VERSION 3.12.0)
 
-#-----------------------------------------
-# Options (most are inherited from Haero)
-#-----------------------------------------
-option(MAM4XX_ENABLE_BOX "Enable MAM4 box model cross-validation"     OFF)
-
 message(STATUS "Configuring with build type: ${CMAKE_BUILD_TYPE}")
 
 # We rely on Haero for basic data structures and third-party libraries.
@@ -32,7 +27,6 @@ set(CMAKE_C_COMPILER ${HAERO_C_COMPILER})
 set(CMAKE_C_FLAGS    ${HAERO_C_FLAGS})
 
 enable_language(CXX)
-enable_language(Fortran)
 
 project (mam4xx)
 
@@ -41,7 +35,6 @@ set(CMAKE_EXE_LINKER_FLAGS ${HAERO_EXE_LINKER_FLAGS})
 message(STATUS "Generating project files in build directory: ${PROJECT_BINARY_DIR}")
 message(STATUS "C++ compiler is ${CMAKE_CXX_COMPILER} (${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION})")
 message(STATUS "C compiler is ${CMAKE_C_COMPILER} (${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION})")
-message(STATUS "Fortran compiler is ${CMAKE_Fortran_COMPILER} (${CMAKE_Fortran_COMPILER_ID} ${CMAKE_Fortran_COMPILER_VERSION})")
 
 # Version numbers.
 set(MAM4XX_MAJOR_VERSION 0)
@@ -56,27 +49,6 @@ message(STATUS "Using ${HAERO_PRECISION} precision floating point numbers")
 
 # We build static libraries only.
 set(BUILD_SHARED_LIBS OFF)
-
-# Fortran setting and compiler flags
-set(CMAKE_Fortran_FLAGS "-cpp")
-if (CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fbacktrace")
-  endif()
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wall -ffree-form -ffree-line-length-none")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-unused-dummy-argument")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Werror=tabs")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-maybe-uninitialized")
-elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -traceback")
-  endif()
-endif()
-if (APPLE)
-  set(CMAKE_Fortran_STANDARD_LIBRARIES "-lc++")
-else()
-  set(CMAKE_Fortran_STANDARD_LIBRARIES "-lstdc++ -no-pie")
-endif()
 
 # Report the installation prefix.
 message(STATUS "Installation prefix is ${CMAKE_INSTALL_PREFIX}")
@@ -119,67 +91,6 @@ enable_testing()
 
 # Source directories.
 add_subdirectory(src)
-
-# MAM4 box model (for testing ported parameterizations)
-if (MAM4XX_ENABLE_BOX)
-  message(STATUS "Enabling cross validation with MAM4 box model.")
-  if (NOT MAM4BOX_DIR)
-    message(FATAL_ERROR "MAM4 box model cross validation requested, but MAM4BOX_DIR is not set!")
-  elseif(NOT EXISTS ${MAM4BOX_DIR})
-    message(FATAL_ERROR "Invalid MAM4BOX_DIR: ${MAM4BOX_DIR}")
-  endif()
-
-  # Build the MAM4 box model's core library.
-  find_program(MAKE make REQUIRED)
-  set(MAM4BOX_CMAKE_OPTS -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}
-                         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-                         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-                         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-                         -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
-                         -DMAMBOX_PRECISION=${HAERO_PRECISION}
-                         -DMAMBOX_ENABLE_DRIVER=OFF
-                         -DMAMBOX_ENABLE_VALIDATION=OFF
-                         -DMAMBOX_NUM_COLUMNS=1
-                         -DMAMBOX_NUM_LEVELS=1
-                         -DMAMBOX_NUM_SPECIES=35
-                         -DMAMBOX_NUM_BLACK_CARBON_TAGS=1
-                         -DMAMBOX_NUM_PRIMARY_ORGANIC_TAGS=1
-                         -DMAMBOX_NUM_SECONDARY_ORGANIC_TAGS=1
-                         -DMAMBOX_NUM_SECONDARY_ORGANIC_GAS_TAGS=1
-                         -DMAMBOX_RAIN_EVAP_TO_COARSE_AERO=1)
-  include(ExternalProject)
-  ExternalProject_Add(mam4box_proj
-                      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/mam4box
-                      SOURCE_DIR ${MAM4BOX_DIR}
-                      BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/mam4box
-                      INSTALL_DIR ${PROJECT_BINARY_DIR}
-                      CMAKE_ARGS ${MAM4BOX_CMAKE_OPTS}
-                      LOG_CONFIGURE TRUE
-                      BUILD_COMMAND ${MAKE} -j
-                      LOG_BUILD TRUE
-                      INSTALL_COMMAND ${MAKE} install
-                      LOG_INSTALL TRUE)
-  # The MAM4 box model calls its library "mam_core", so we must do the same.
-  add_library(mam_core STATIC IMPORTED GLOBAL)
-  set_target_properties(mam_core PROPERTIES IMPORTED_LOCATION ${PROJECT_BINARY_DIR}/lib/libmam_core.a)
-  add_dependencies(mam_core mam4box_proj skywalker_f90)
-
-  #----------------------------------------------
-  # Build the MAM4 box model's Skywalker drivers
-  #----------------------------------------------
-
-  # Make sure the drivers can access the relevant Fortran modules and libraries.
-  include_directories(${PROJECT_BINARY_DIR}/mam4box/core)
-  #include_directories(${CMAKE_CURRENT_BINARY_DIR})
-  set(MAMBOX_LIBRARIES skywalker_f90;skywalker;mam_core)
-
-  # Copy the box model's standalone tests into its own source directory.
-  file(COPY ${MAM4BOX_DIR}/standalone/tests/
-       DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/mam4box_drivers)
-
-  # Build the drivers.
-  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/mam4box_drivers)
-endif()
 
 # Formatting and format checking using clang-format.
 find_program(CLANG_FORMAT clang-format)
