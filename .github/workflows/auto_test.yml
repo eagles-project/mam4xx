@@ -102,9 +102,8 @@ jobs:
         cd build
         ctest -V
 
-# No install target (yet?)
-#    - name: Installing MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
-#      run: |
-#        cd build
-#        make install
+    - name: Installing MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+      run: |
+        cd build
+        make install
 

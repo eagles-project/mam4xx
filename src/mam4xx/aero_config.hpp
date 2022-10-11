@@ -1,12 +1,13 @@
 #ifndef MAM4XX_AERO_CONFIG_HPP
 #define MAM4XX_AERO_CONFIG_HPP
 
+#include <mam4xx/aero_modes.hpp>
+
+#include <haero/view_pack_helpers.hpp>
+
 #include <algorithm>
 #include <map>
 #include <numeric>
-
-#include "aero_modes.hpp"
-#include "haero/view_pack_helpers.hpp"
 
 namespace mam4 {
 

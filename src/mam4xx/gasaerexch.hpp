@@ -1,14 +1,13 @@
 #ifndef MAM4XX_GASAEREXCH_HPP
 #define MAM4XX_GASAEREXCH_HPP
 
-#include <Kokkos_Array.hpp>
+#include <mam4xx/mam4_types.hpp>
+#include <mam4xx/aero_config.hpp>
 
 #include <haero/atmosphere.hpp>
 #include <haero/haero.hpp>
 #include <haero/constants.hpp>
-
-#include "mam4_types.hpp"
-#include "aero_config.hpp"
+#include <Kokkos_Array.hpp>
 
 namespace mam4 {
 

@@ -1,8 +1,10 @@
-#include "aero_modes.hpp"
-#include "ekat/logging/ekat_logger.hpp"
-#include "ekat/mpi/ekat_comm.hpp"
-#include "mam4.hpp"
+#include <mam4xx/aero_modes.hpp>
+#include <mam4xx/mam4.hpp>
+
 #include <catch2/catch.hpp>
+#include <ekat/logging/ekat_logger.hpp>
+#include <ekat/mpi/ekat_comm.hpp>
+
 #include <map>
 #include <sstream>
 
