@@ -1,17 +1,18 @@
-#include <cmath>
-#include <iostream>
-
-#include "kohler.hpp"
 #include "kohler_verification.hpp"
 #include "mam4_test_config.hpp"
-#include "catch2/catch.hpp"
-#include "haero/haero.hpp"
-#include "haero/math.hpp"
-#include "haero/constants.hpp"
-#include "haero/floating_point.hpp"
-#include "ekat/ekat_pack_math.hpp"
-#include "ekat/logging/ekat_logger.hpp"
-#include "ekat/mpi/ekat_comm.hpp"
+#include <mam4xx/kohler.hpp>
+
+#include <catch2/catch.hpp>
+#include <haero/haero.hpp>
+#include <haero/math.hpp>
+#include <haero/constants.hpp>
+#include <haero/floating_point.hpp>
+#include <ekat/ekat_pack_math.hpp>
+#include <ekat/logging/ekat_logger.hpp>
+#include <ekat/mpi/ekat_comm.hpp>
+
+#include <cmath>
+#include <iostream>
 
 using namespace mam4;
 

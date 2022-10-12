@@ -1,14 +1,14 @@
 #ifndef MAM4XX_NUCLEATION_HPP
 #define MAM4XX_NUCLEATION_HPP
 
+#include <mam4xx/aero_config.hpp>
+#include <mam4xx/conversions.hpp>
+#include <mam4xx/merikanto2007.hpp>
+#include <mam4xx/vehkamaki2002.hpp>
+#include <mam4xx/wang2008.hpp>
+
 #include <haero/atmosphere.hpp>
 #include <haero/math.hpp>
-
-#include "aero_config.hpp"
-#include "conversions.hpp"
-#include "merikanto2007.hpp"
-#include "vehkamaki2002.hpp"
-#include "wang2008.hpp"
 
 namespace mam4 {
 
