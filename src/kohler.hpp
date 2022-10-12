@@ -10,6 +10,8 @@
 #include <haero/math.hpp>
 #include <haero/root_finders.hpp>
 
+#include <iomanip>
+
 namespace mam4 {
 
 /// Surface tension of liquid water in air as a function of temperature
@@ -21,7 +23,7 @@ namespace mam4 {
   MAM4's approximation of constant surface tension, neglecting temperature
   dependence.
 
-  This formula is valid from T = 248.16 K (supercooled liquid water) to the
+  This formula is valid from T = 248.16 K (-25 C, supercooled liquid water) to the
    critical temperature Tc = 646.096 K (steam).
 
   IAPWS Release on Surface Tension of Ordinary Water Substance
@@ -37,25 +39,13 @@ template <typename ScalarType>
 KOKKOS_INLINE_FUNCTION ScalarType
 surface_tension_water_air(const ScalarType T = Constants::triple_pt_h2o) {
   constexpr Real Tc = Constants::tc_water;
+  constexpr Real tp = Constants::triple_pt_h2o;
   constexpr Real B = 0.2358;
   constexpr Real b = -0.625;
   constexpr Real mu = 1.256;
   const auto tau = 1 - T / Tc;
-  EKAT_KERNEL_ASSERT(T >= 248.16);
-  EKAT_KERNEL_ASSERT(T < 646.096);
-  return B * pow(tau, mu) * (1 + b * tau);
-}
-
-template <>
-KOKKOS_INLINE_FUNCTION PackType
-surface_tension_water_air<PackType>(const PackType T) {
-  constexpr Real Tc = Constants::tc_water;
-  constexpr Real B = 0.2358;
-  constexpr Real b = -0.625;
-  constexpr Real mu = 1.256;
-  const auto tau = 1 - T / Tc;
-  EKAT_KERNEL_ASSERT((T >= 248.16).all());
-  EKAT_KERNEL_ASSERT((T < 646.096).all());
+  EKAT_KERNEL_ASSERT(haero::FloatingPoint<ScalarType>::in_bounds(
+    T, tp-25, Tc, std::numeric_limits<float>::epsilon()));
   return B * pow(tau, mu) * (1 + b * tau);
 }
 
