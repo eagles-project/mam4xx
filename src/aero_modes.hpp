@@ -134,9 +134,27 @@ enum class ModeIndex {
 /// Map ModeIndex to string (for logging, e.g.)
 std::string mode_str(const ModeIndex m);
 
+static constexpr Real mam4_crystallization_rel_hum = 0.35;
+static constexpr Real mam4_delequesence_rel_hum = 0.8;
+static constexpr Real mam4_accum_min_radius_m = 5.35e-8;
+static constexpr Real mam4_accum_nom_radius_m = 1.1e-7;
+static constexpr Real mam4_accum_max_radius_m = 4.4e-7;
+static constexpr Real mam4_accum_mead_std_dev = 1.8;
+static constexpr Real mam4_aitken_min_radius_m = 8.7e-9;
+static constexpr Real mam4_aitken_nom_radius_m = 2.6e-8;
+static constexpr Real mam4_aitken_max_radius_m = 5.2e-8;
+static constexpr Real mam4_aitken_mead_std_dev = 1.6;
+static constexpr Real mam4_coarse_min_radius_m = 1e-6;
+static constexpr Real mam4_coarse_nom_radius_m = 2e-6;
+static constexpr Real mam4_coarse_max_radius_m = 4e-6;
+static constexpr Real mam4_coarse_mead_std_dev = 1.8;
+static constexpr Real mam4_primary_carbon_min_radius_m = 1e-8;
+static constexpr Real mam4_primary_carbon_nom_radius_m = 5e-8;
+static constexpr Real mam4_primary_carbon_max_radius_m = 1e-7;
+static constexpr Real mam4_primary_carbon_mead_std_dev = 1.6;
 
 /// A list of all modes within MAM4.
-/// NOTE: Legacy MAM4 uses the same constant crystallization and deliquescence
+/// NOTE: MAM4 uses the same constant crystallization and deliquescence
 /// NOTE: values for all modes & species.  See links for additional discussion:
 /// NOTE:
 /// https://eagles-project.atlassian.net/wiki/spaces/Computation/pages/1125515265/Aerosol+species+and+mode+data
@@ -145,10 +163,34 @@ std::string mode_str(const ModeIndex m);
 /// NOTE: These data are found on Anvil in
 /// NOTE: /lcrc/group/acme/ccsm-data/inputdata/atm/cam/physprops/
 static Mode modes[4] = {
-    Mode(5.35e-8, 1.1e-7, 4.4e-7, 1.8, 0.35, 0.8), // accumulation
-    Mode(8.7e-9, 2.6e-8, 5.2e-8, 1.6, 0.35, 0.8),  // aitken
-    Mode(1e-6, 2e-6, 4e-6, 1.8, 0.35, 0.8),        // coarse
-    Mode(1e-8, 5e-8, 1e-7, 1.6, 0.35, 0.8)         // primary carbon
+    // accumulation
+    Mode(mam4_accum_min_radius_m,
+        mam4_accum_nom_radius_m,
+        mam4_accum_max_radius_m,
+        mam4_accum_mead_std_dev,
+        mam4_crystallization_rel_hum,
+        mam4_delequesence_rel_hum),
+    // aitken
+    Mode(mam4_aitken_min_radius_m,
+         mam4_aitken_nom_radius_m,
+         mam4_aitken_max_radius_m,
+         mam4_aitken_mead_std_dev,
+         mam4_crystallization_rel_hum,
+         mam4_delequesence_rel_hum),
+    // coarse
+    Mode(mam4_coarse_min_radius_m,
+         mam4_coarse_nom_radius_m,
+         mam4_coarse_max_radius_m,
+         mam4_coarse_mead_std_dev,
+         mam4_crystallization_rel_hum,
+         mam4_delequesence_rel_hum),
+    // primary carbon
+    Mode(mam4_primary_carbon_min_radius_m,
+         mam4_primary_carbon_nom_radius_m,
+         mam4_primary_carbon_max_radius_m,
+         mam4_primary_carbon_mead_std_dev,
+         mam4_crystallization_rel_hum,
+         mam4_delequesence_rel_hum)
 };
 
 /// Identifiers for aerosol species that inhabit MAM4 modes.

@@ -15,6 +15,14 @@ namespace mam4 {
   by value by a lambda.  The Views inside the Diags struct are const,
   but the data contained by the Views can change.
 
+  Equation (A2) from Ghan et al., 2011, Droplet nucleation: Physically-based
+   parameterizations and comparative evaluation, J. Adv. Earth Sys. Mod. 3
+   M10001.
+
+  Note that equation (A3) from that paper, which sets the hygroscopicity
+  value for each species, is not used by MAM4 (whose values of hygroscopicity
+  are set explicitly -- see aero_modes.hpp).
+
   @param [in/out] diags Diagnostics: output container for hygroscopicity data
   @param [in] progs Prognostics contain mode number mixing ratios and
       aerosol mass mixing ratios

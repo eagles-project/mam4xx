@@ -5,8 +5,6 @@
 #include "aero_modes.hpp"
 #include "aero_config.hpp"
 
-#include <iostream>
-
 namespace mam4 {
 
 /**  Compute the dry geometric mean particle size (volume and diameter)
