@@ -161,7 +161,7 @@ public:
 
     if (violations == 0) { // all clear so far
       // Check for negative mixing ratios.
-      if (progs.quantities_nonnegative(team)) {
+      if (!progs.quantities_nonnegative(team)) {
         ++violations;
       }
     }
