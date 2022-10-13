@@ -737,7 +737,7 @@ class Nucleation {
           for (int m = 0; m < 4; ++m) {  // modes
             qnum_cur[m] = progs.n_mode[m](k);
             for (int a = 0; a < 7; ++a) {  // aerosols
-              qaer_cur[m][a] = progs.q_aero[m][a](k);
+              qaer_cur[m][a] = progs.q_aero_i[m][a](k);
             }
           }
 
@@ -753,7 +753,7 @@ class Nucleation {
 
           // Store the computed tendencies.
           tends.n_mode[nait](k) = dndt_ait;
-          tends.q_aero[nait][iaer_so4](k) = dso4dt_ait;
+          tends.q_aero_i[nait][iaer_so4](k) = dso4dt_ait;
           tends.q_gas[igas_h2so4](k) = -dso4dt_ait;
           // FIXME: what about dmdt_ait?
         });
