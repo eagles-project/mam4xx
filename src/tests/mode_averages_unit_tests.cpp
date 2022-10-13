@@ -4,8 +4,11 @@
 #include "conversions.hpp"
 #include "mode_dry_particle_size.hpp"
 #include "mode_hygroscopicity.hpp"
+#include "mode_wet_particle_size.hpp"
+#include "atmosphere_init.hpp"
 
 #include "haero/floating_point.hpp"
+#include "haero/atmosphere.hpp"
 
 #include "catch2/catch.hpp"
 
@@ -88,6 +91,8 @@ TEST_CASE("modal_averages", "") {
         REQUIRE(FloatingPoint<PackType>::equiv(h_diam(k), dry_aero_mean_particle_diam[m]));
       }
     }
+    logger.info("dry particle size tests complete.");
+  } // section (dry particle size)
 
   SECTION("hygroscopicity") {
     PackType hygro[4];
@@ -124,7 +129,22 @@ TEST_CASE("modal_averages", "") {
         REQUIRE(FloatingPoint<PackType>::equiv(h_hyg(k), hygro[m]));
       }
     }
-
+    logger.info("hygroscopicity tests complete.");
   } // section (hygroscopicity)
-} // section (dry particle size)
+
+  SECTION("wet particle size") {
+    const Real pblh = 0;
+    Atmosphere atm(nlev, pblh);
+    init_atm_const_lapse_rate(atm);
+
+    Kokkos::parallel_for("compute_wet_particle_size", nk,
+      KOKKOS_LAMBDA (const int i) {
+        mode_avg_dry_particle_diam(diags, progs, i);
+        Kokkos::fence();
+        mode_hygroscopicity(diags, progs, i);
+        Kokkos::fence();
+        mode_avg_wet_particle_diam(diags, progs, atm, i);
+      });
+
+  } // section wet particle size
 } // test case

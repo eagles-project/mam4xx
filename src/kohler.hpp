@@ -291,13 +291,20 @@ template <typename SolverType> struct KohlerSolver {
   PackType hygroscopicity;
   PackType dry_radius_microns;
   Real conv_tol;
+  MaskType mask;
   int n_iter;
 
   KOKKOS_INLINE_FUNCTION
   KohlerSolver(const PackType &rel_h, const PackType &hyg, const PackType &rdry,
                const Real tol)
       : relative_humidity(rel_h), hygroscopicity(hyg), dry_radius_microns(rdry),
-        conv_tol(tol), n_iter(0) {}
+        conv_tol(tol), mask(MaskType(false)), n_iter(0)  {}
+
+  KOKKOS_INLINE_FUNCTION
+  KohlerSolver(const PackType &rel_h, const PackType &hyg, const PackType &rdry,
+               const Real tol, const MaskType& msk)
+      : relative_humidity(rel_h), hygroscopicity(hyg), dry_radius_microns(rdry),
+        conv_tol(tol), mask(msk), n_iter(0)  {}
 
   KOKKOS_INLINE_FUNCTION
   PackType solve() {
@@ -306,7 +313,7 @@ template <typename SolverType> struct KohlerSolver {
     PackType wet_radius_init(25 * dry_radius_microns);
     const Real triple_pt_h2o = Constants::triple_pt_h2o;
     const PackType default_T(triple_pt_h2o);
-    const auto kpoly = polynomial_type(relative_humidity, hygroscopicity,
+    const auto kpoly = polynomial_type(mask, relative_humidity, hygroscopicity,
                                        dry_radius_microns, default_T);
     auto solver = SolverType(wet_radius_init, wet_radius_left, wet_radius_right,
                              conv_tol, kpoly);
