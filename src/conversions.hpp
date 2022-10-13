@@ -138,7 +138,7 @@ specific_humidity_from_vapor_mixing_ratio(const Scalar &qv) {
 ///  O. A. Alduchov and R. E. Eskridge, 1996, Improved Magnus form approximation
 ///  of saturation vapor pressure, Journal of Applied Meteorology 35:601--609.
 ///
-///  See eq. (21) from that paper, which improves the original formula's
+///  See eqs. (21) and (22) from that paper, which improves the original formula's
 ///  accuracy over the temperature range [-40, 50] C expected of
 ///  atmospheric conditions throughout an entire vertical column.
 ///  The paper uses temperature in Celsius and returns
@@ -147,16 +147,20 @@ specific_humidity_from_vapor_mixing_ratio(const Scalar &qv) {
 ///  See also Lamb & Verlinde section 3.3.
 ///
 ///  @param [in] T temperature [K]
+///  @param [in] P pressure [Pa]
 ///  @return es(T) saturation vapor pressure of water vapor [Pa]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar
-vapor_saturation_pressure_magnus(const Scalar &T) {
+vapor_saturation_pressure_magnus(const Scalar &T, const Scalar &P) {
   static constexpr Real e0 = 610.94;      // Pa
   static constexpr Real exp_num = 17.625; // nondimensional
   static constexpr Real exp_den = 234.04; // deg C
   const auto Tf = Constants::freezing_pt_h2o;
   const auto celsius_temp = T - Tf;
-  return e0 * exp(exp_num * celsius_temp / (exp_den + celsius_temp));
+
+  const auto ew = e0 * exp(exp_num * celsius_temp / (exp_den + celsius_temp));
+  const auto ea = 1.00071*exp(4.5e-8*P)*ew;
+  return ea * ew;
 }
 
 /// Computes the relative humidity from the water vapor mixing ratio and the
@@ -171,8 +175,8 @@ vapor_saturation_pressure_magnus(const Scalar &T) {
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar relative_humidity_from_vapor_mixing_ratio(
     const Scalar &qv, const Scalar &p, const Scalar &T,
-    Scalar (*vsp)(const Scalar &) = vapor_saturation_pressure_magnus<Scalar>) {
-  auto es = vsp(T);
+    Scalar (*vsp)(const Scalar &, const Scalar&) = vapor_saturation_pressure_magnus<Scalar>) {
+  auto es = vsp(T,p);
   return qv / (es / p);
 }
 
