@@ -1,11 +1,15 @@
-#include "ekat/ekat_pack_kokkos.hpp"
-#include "ekat/logging/ekat_logger.hpp"
-#include "ekat/mpi/ekat_comm.hpp"
+#include <mam4xx/mam4.hpp>
+
 #include <catch2/catch.hpp>
+#include <ekat/ekat_pack_kokkos.hpp>
+#include <ekat/logging/ekat_logger.hpp>
+#include <ekat/mpi/ekat_comm.hpp>
+
 #include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <limits>
+
 #include <mam4.hpp>
 
 #include "ekat/logging/ekat_logger.hpp"

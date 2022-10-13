@@ -1,8 +1,10 @@
-#include "aero_config.hpp"
-#include "ekat/logging/ekat_logger.hpp"
-#include "ekat/mpi/ekat_comm.hpp"
-#include "mam4.hpp"
+#include <mam4xx/aero_config.hpp>
+#include <mam4xx/mam4.hpp>
+
 #include <catch2/catch.hpp>
+#include <ekat/logging/ekat_logger.hpp>
+#include <ekat/mpi/ekat_comm.hpp>
+
 #include <map>
 #include <sstream>
 
@@ -25,12 +27,14 @@ TEST_CASE("aero_config", "") {
     typedef typename ColumnView::HostMirror HostColumnView;
 
     HostColumnView h_progs_num_aer[4];
-    HostColumnView h_progs_q_aer[4][7];
+    HostColumnView h_progs_q_aer_i[4][7];
+    HostColumnView h_progs_q_aer_c[4][7];
     HostColumnView h_progs_q_gas[13];
     HostColumnView h_progs_uptkaer[13][4];
 
     HostColumnView h_tends_num_aer[4];
-    HostColumnView h_tends_q_aer[4][7];
+    HostColumnView h_tends_q_aer_i[4][7];
+    HostColumnView h_tends_q_aer_c[4][7];
     HostColumnView h_tends_q_gas[13];
     HostColumnView h_tends_uptkaer[13][4];
 
@@ -49,8 +53,10 @@ TEST_CASE("aero_config", "") {
           Kokkos::create_mirror_view(diags.wet_geometric_mean_diameter[m]);
       for (int s = 0; s < 7; ++s) {
         logger.debug("[mode, species] = [{}, {}]", m, s);
-        h_progs_q_aer[m][s] = Kokkos::create_mirror_view(progs.q_aero[m][s]);
-        h_tends_q_aer[m][s] = Kokkos::create_mirror_view(tends.q_aero[m][s]);
+        h_progs_q_aer_i[m][s] = Kokkos::create_mirror_view(progs.q_aero_i[m][s]);
+        h_tends_q_aer_i[m][s] = Kokkos::create_mirror_view(tends.q_aero_i[m][s]);
+        h_progs_q_aer_c[m][s] = Kokkos::create_mirror_view(progs.q_aero_c[m][s]);
+        h_tends_q_aer_c[m][s] = Kokkos::create_mirror_view(tends.q_aero_c[m][s]);
       }
       for (int g = 0; g < 13; ++g) {
         logger.debug("[mode, gas] = [{}, {}]", m, g);
@@ -72,8 +78,10 @@ TEST_CASE("aero_config", "") {
       Kokkos::deep_copy(h_diags_wet_diam[m],
                         diags.wet_geometric_mean_diameter[m]);
       for (int s = 0; s < 7; ++s) {
-        Kokkos::deep_copy(h_progs_q_aer[m][s], progs.q_aero[m][s]);
-        Kokkos::deep_copy(h_tends_q_aer[m][s], tends.q_aero[m][s]);
+        Kokkos::deep_copy(h_progs_q_aer_i[m][s], progs.q_aero_i[m][s]);
+        Kokkos::deep_copy(h_tends_q_aer_i[m][s], tends.q_aero_i[m][s]);
+        Kokkos::deep_copy(h_progs_q_aer_c[m][s], progs.q_aero_c[m][s]);
+        Kokkos::deep_copy(h_tends_q_aer_c[m][s], tends.q_aero_c[m][s]);
       }
       for (int g = 0; g < 13; ++g) {
         Kokkos::deep_copy(h_progs_uptkaer[g][m], progs.uptkaer[g][m]);
@@ -95,8 +103,10 @@ TEST_CASE("aero_config", "") {
         REQUIRE(h_diags_dry_diam[m](p)[v] == 0);
         REQUIRE(h_diags_wet_diam[m](p)[v] == 0);
         for (int s = 0; s < 7; ++s) {
-          REQUIRE(h_progs_q_aer[m][s](p)[v] == 0);
-          REQUIRE(h_tends_q_aer[m][s](p)[v] == 0);
+          REQUIRE(h_progs_q_aer_i[m][s](p)[v] == 0);
+          REQUIRE(h_tends_q_aer_i[m][s](p)[v] == 0);
+          REQUIRE(h_progs_q_aer_c[m][s](p)[v] == 0);
+          REQUIRE(h_tends_q_aer_c[m][s](p)[v] == 0);
         }
         for (int g = 0; g < 13; ++g) {
           REQUIRE(h_progs_uptkaer[g][m](p)[v] == 0);

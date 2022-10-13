@@ -5,7 +5,9 @@
 #include <haero/gas_species.hpp>
 #include <haero/math.hpp>
 #include <haero/constants.hpp>
+
 #include "mam4_types.hpp"
+
 #include <iostream>
 #include <string>
 #include <vector>

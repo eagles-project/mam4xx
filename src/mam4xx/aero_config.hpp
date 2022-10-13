@@ -1,12 +1,13 @@
 #ifndef MAM4XX_AERO_CONFIG_HPP
 #define MAM4XX_AERO_CONFIG_HPP
 
+#include <mam4xx/aero_modes.hpp>
+
+#include <haero/view_pack_helpers.hpp>
+
 #include <algorithm>
 #include <map>
 #include <numeric>
-
-#include "aero_modes.hpp"
-#include "haero/view_pack_helpers.hpp"
 
 namespace mam4 {
 
@@ -25,8 +26,10 @@ public:
       n_mode[mode] = ColumnView("n_mode", nk);
       haero::zero_init(n_mode[mode], num_levels);
       for (int spec = 0; spec < 7; ++spec) {
-        q_aero[mode][spec] = ColumnView("q_aero", nk);
-        haero::zero_init(q_aero[mode][spec], num_levels);
+        q_aero_i[mode][spec] = ColumnView("q_aero_i", nk);
+        q_aero_c[mode][spec] = ColumnView("q_aero_c", nk);
+        haero::zero_init(q_aero_i[mode][spec], num_levels);
+        haero::zero_init(q_aero_c[mode][spec], num_levels);
       }
     }
     for (int gas = 0; gas < 13; ++gas) {
@@ -47,9 +50,13 @@ public:
   /// modal aerosol number mixing ratios (see aero_mode.hpp for indexing)
   ColumnView n_mode[4];
 
-  /// aerosol mass mixing ratios within each mode (see aero_mode.hpp for
-  /// indexing)
-  ColumnView q_aero[4][7];
+  /// interstitial aerosol mass mixing ratios within each mode
+  /// (see aero_mode.hpp for indexing)
+  ColumnView q_aero_i[4][7];
+
+  /// cloudborne aerosol mass mixing ratios within each mode
+  /// (see aero_mode.hpp for indexing)
+  ColumnView q_aero_c[4][7];
 
   /// gas mass mixing ratios (see aero_mode.hpp for indexing)
   ColumnView q_gas[13];
@@ -73,7 +80,8 @@ public:
               ++violation;
             } else {
               for (int spec = 0; spec < 7; ++spec) { // check aerosol mmrs
-                if ((q_aero[mode][spec](k) < 0).any()) {
+                if ((q_aero_i[mode][spec](k) < 0).any() ||
+                    (q_aero_c[mode][spec](k) < 0).any()) {
                   ++violation;
                   break;
                 }

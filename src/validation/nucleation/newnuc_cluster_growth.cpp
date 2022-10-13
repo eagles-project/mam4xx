@@ -1,8 +1,10 @@
+#include <mam4xx/nucleation.hpp>
+
 #include <haero/constants.hpp>
-#include <iostream>
-#include <nucleation.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
+
+#include <iostream>
 
 using namespace skywalker;
 using namespace mam4;

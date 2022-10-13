@@ -1,14 +1,14 @@
 #ifndef MAM4XX_NUCLEATION_HPP
 #define MAM4XX_NUCLEATION_HPP
 
+#include <mam4xx/aero_config.hpp>
+#include <mam4xx/conversions.hpp>
+#include <mam4xx/merikanto2007.hpp>
+#include <mam4xx/vehkamaki2002.hpp>
+#include <mam4xx/wang2008.hpp>
+
 #include <haero/atmosphere.hpp>
 #include <haero/math.hpp>
-
-#include "aero_config.hpp"
-#include "conversions.hpp"
-#include "merikanto2007.hpp"
-#include "vehkamaki2002.hpp"
-#include "wang2008.hpp"
 
 namespace mam4 {
 
@@ -731,7 +731,7 @@ class Nucleation {
           for (int m = 0; m < 4; ++m) {  // modes
             qnum_cur[m] = progs.n_mode[m](k);
             for (int a = 0; a < 7; ++a) {  // aerosols
-              qaer_cur[m][a] = progs.q_aero[m][a](k);
+              qaer_cur[m][a] = progs.q_aero_i[m][a](k);
             }
           }
 
@@ -747,7 +747,7 @@ class Nucleation {
 
           // Store the computed tendencies.
           tends.n_mode[nait](k) = dndt_ait;
-          tends.q_aero[nait][iaer_so4](k) = dso4dt_ait;
+          tends.q_aero_i[nait][iaer_so4](k) = dso4dt_ait;
           tends.q_gas[igas_h2so4](k) = -dso4dt_ait;
           // FIXME: what about dmdt_ait?
         });

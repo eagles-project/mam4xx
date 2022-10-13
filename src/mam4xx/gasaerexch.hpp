@@ -1,14 +1,13 @@
 #ifndef MAM4XX_GASAEREXCH_HPP
 #define MAM4XX_GASAEREXCH_HPP
 
-#include <Kokkos_Array.hpp>
+#include <mam4xx/mam4_types.hpp>
+#include <mam4xx/aero_config.hpp>
 
 #include <haero/atmosphere.hpp>
 #include <haero/haero.hpp>
 #include <haero/constants.hpp>
-
-#include "mam4_types.hpp"
-#include "aero_config.hpp"
+#include <Kokkos_Array.hpp>
 
 namespace mam4 {
 
@@ -162,31 +161,9 @@ public:
 
     if (violations == 0) { // all clear so far
       // Check for negative mixing ratios.
-      Kokkos::parallel_reduce(
-          Kokkos::TeamThreadRange(team, nk),
-          KOKKOS_LAMBDA(int k, int &violation) {
-            for (int mode = 0; mode < 4; ++mode) { // check mode mmrs
-              if ((progs.n_mode[mode](k) < 0).any()) {
-                ++violation;
-              } else {
-                for (int spec = 0; spec < 7; ++spec) { // check aerosol mmrs
-                  if ((progs.q_aero[mode][spec](k) < 0).any()) {
-                    ++violation;
-                    break;
-                  }
-                }
-              }
-              if (violation > 0)
-                break;
-            }
-            if (violation == 0) {
-              for (int gas = 0; gas < 13; ++gas) { // check gas mmrs
-                if ((progs.q_gas[gas](k) < 0).any())
-                  ++violation;
-              }
-            }
-          },
-          violations);
+      if (!progs.quantities_nonnegative(team)) {
+        ++violations;
+      }
     }
     return (violations > 0);
   }
@@ -291,7 +268,7 @@ public:
           }
           for (int n = 0; n < num_mode; ++n)
             for (int g = 0; g < num_aer; ++g)
-              qaer_cur[g][n] = progs.q_aero[n][g](k);
+              qaer_cur[g][n] = progs.q_aero_i[n][g](k);
           for (int igas = 0; igas < num_gas; ++igas) {
             if (eqn_and_numerics_category[igas] == ANAL) {
               const int iaer = config_.idx_gas_to_aer[igas];

@@ -1,7 +1,8 @@
 #include "kohler_verification.hpp"
-#ifdef HAERO_DOUBLE_PRECISION
 
+#ifdef HAERO_DOUBLE_PRECISION
 #include "mam4_test_config.hpp"
+
 #include <fstream>
 #include <iomanip>
 

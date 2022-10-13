@@ -1,7 +1,8 @@
 #ifndef MAM4XX_KOHLER_HPP
 #define MAM4XX_KOHLER_HPP
 
-#include "mam4_types.hpp"
+#include <mam4xx/mam4.hpp>
+
 #include <ekat/ekat_pack_math.hpp>
 #include <ekat/ekat_scalar_traits.hpp>
 #include <haero/constants.hpp>

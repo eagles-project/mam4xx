@@ -1,11 +1,11 @@
+#include <mam4xx/mam4.hpp>
+
 #include <catch2/catch.hpp>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <limits>
 #include <memory>
-
-#include "mam4.hpp"
 
 using namespace haero;
 

@@ -2,8 +2,9 @@
 #define MAM4XX_KOHLER_VERIFICATION_HPP
 
 #include <haero/haero.hpp>
+
 #ifdef HAERO_DOUBLE_PRECISION
-#include "kohler.hpp"
+#include <mam4xx/kohler.hpp>
 
 namespace mam4 {
 
