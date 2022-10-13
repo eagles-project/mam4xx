@@ -10,8 +10,6 @@
 #include <iostream>
 #include <limits>
 
-#include <mam4.hpp>
-
 #include "ekat/logging/ekat_logger.hpp"
 #include "ekat/mpi/ekat_comm.hpp"
 

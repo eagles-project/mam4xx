@@ -235,11 +235,26 @@ static constexpr Real mam4_hyg_nacl = 1.16;
 static constexpr Real mam4_hyg_mom = 0.1;
 
 /// A list of aerosol species in MAM4.
-/*
+/**
   Note that in MAM4 fortran, molecular weights are given as g/mol, rather than
   kg/mol.
 
-  Here we use SI units.
+  Here and in Haero we use SI units for everything, so molecular weights
+  are given as [kg/mol].
+
+  When the variable is "universal" in the sense that it will be the same
+  whether MAM4 is using or some other software package is using it, we
+  use the external haero::Constants value, which is sourced to the latest
+  NIST data available.  Additionally, this prepares Mam4xx to ultimately
+  use an external source of constants with EAM.  Examples are the
+  molecular weights of Carbon, Sulphate, and Sodium Chloride.
+
+  Some of these constants are unique to mam4 -- these are listed here, with
+  the prefix mam4_*. For example, its definition
+  of primary carbon, dust, and marine organic matter are defined by choices
+  of what those modes represent.  Other examples, such as the density of some
+  substances, differ from the values provided by NIST; these, too, are listed
+  here as mam4_* constants.
 */
 static AeroSpecies aero_species[7] = {
     AeroSpecies(Constants::molec_weight_so4,
@@ -310,21 +325,42 @@ enum class GasId {
   NH3 = 12    // ammonia
 };
 
+/// Molecular weight of carbon dioxide [kg/mol]
+static constexpr Real molec_weight_co2 = 0.0440095;
+/// Molecular weight of methane @f$\text{CH}_4@f$
+static constexpr Real molec_weight_ch4 = 0.0160425;
+/// Molecular weight of trichlorofluoromethan @f$\text{CCl}_3\text{F}@f$
+static constexpr Real molec_weight_ccl3f = 0.13736;
+/// Molecular weight of dichlorofluoromethane @f$\texct{CHCl}_2F@f$
+static constexpr Real molec_weight_chcl2f = 0.10292;
+/// Molecular weight of hydrogen peroxide @f$\text{H}_2\text{O}_2@f$
+static constexpr Real molec_weight_h2o2 = 0.034015;
+/// Molecular weight of dimethylsulfide @f$\text{C}_2\text{H}_6\text{S}@f$
+static constexpr Real molec_weight_dms = 0.06214;
+/// Molecular weight of oxygen molecule @f$\text{O}_2@f$
+static constexpr Real molec_weight_o2 = 0.0319988;
+/// Molecular weight of nitrous oxide @f$\text{N}_2\text{O}@f$
+static constexpr Real molec_weight_n2o = 0.044013;
+/// Molecular weight of ozone @f$\text{O}_3@f$
+static constexpr Real molec_weight_o3 = 0.0479982;
+/// Molecular weight of sulfur dioxide @f$\text{SO}_2@f$
+static constexpr Real molec_weight_so2 = 0.06407;
+
 // A list of gas species in MAM4.
 static haero::GasSpecies gas_species[13] = {
-    haero::GasSpecies(47.9982), // ozone
-    haero::GasSpecies(34.0136), // hydrogen peroxide
-    haero::GasSpecies(98.0784), // sulfuric acid
-    haero::GasSpecies(64.0648), // sulfur dioxide
-    haero::GasSpecies(62.1324), // dimethylsulfide
-    haero::GasSpecies(12.011),  // secondary organic aerosol precursor
-    haero::GasSpecies(31.988),  // oxygen
-    haero::GasSpecies(44.009),  // carbon dioxide
-    haero::GasSpecies(44.013),  // nitrous oxide
-    haero::GasSpecies(16.04),   // methane
-    haero::GasSpecies(137.73),  // thrichlorofluoromethane
-    haero::GasSpecies(120.91),  // dichlorofluoromethane
-    haero::GasSpecies(50.0)     // ammonia
+    haero::GasSpecies(molec_weight_o3), // ozone
+    haero::GasSpecies(molec_weight_h2o2), // hydrogen peroxide
+    haero::GasSpecies(Constants::molec_weight_h2so4), // sulfuric acid
+    haero::GasSpecies(molec_weight_so2), // sulfur dioxide
+    haero::GasSpecies(molec_weight_dms), // dimethylsulfide
+    haero::GasSpecies(Constants::molec_weight_c),  // secondary organic aerosol precursor
+    haero::GasSpecies(molec_weight_o2),  // oxygen
+    haero::GasSpecies(molec_weight_co2),  // carbon dioxide
+    haero::GasSpecies(molec_weight_n2o),  // nitrous oxide
+    haero::GasSpecies(molec_weight_ch4),   // methane
+    haero::GasSpecies(molec_weight_ccl3f),  // thrichlorofluoromethane
+    haero::GasSpecies(molec_weight_chcl2f),  // dichlorofluoromethane
+    haero::GasSpecies(Constants::molec_weight_nh3)     // ammonia
 };
 
 } // namespace mam4

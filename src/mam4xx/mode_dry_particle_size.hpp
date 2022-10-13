@@ -29,7 +29,7 @@ void mode_avg_dry_particle_diam(const Diagnostics& diags, const Prognostics& pro
     const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx),
       static_cast<AeroId>(aid));
     if (s>=0) {
-      volume_mixing_ratio += progs.q_aero[mode_idx][s](pack_idx) /
+      volume_mixing_ratio += progs.q_aero_i[mode_idx][s](pack_idx) /
         aero_species[s].density;
     }
   }

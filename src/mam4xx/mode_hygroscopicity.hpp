@@ -37,7 +37,7 @@ void mode_hygroscopicity(const Diagnostics& diags, const Prognostics& progs,
     const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx),
       static_cast<AeroId>(aid));
     if (s>=0) {
-      const PackType mass_mix_ratio = progs.q_aero[mode_idx][s](pack_idx);
+      const PackType mass_mix_ratio = progs.q_aero_i[mode_idx][s](pack_idx);
       volume_mixing_ratio += mass_mix_ratio / aero_species[s].density;
       hyg += mass_mix_ratio * aero_species[s].hygroscopicity /
         aero_species[s].density;

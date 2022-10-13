@@ -1,4 +1,4 @@
-# Everything in mam4xx so far is implemented in C++ headers, so we must
+# Most of mam4xx is implemented in C++ headers, so we must
 # install them for a client.
 install(FILES
         aero_config.hpp
@@ -15,3 +15,6 @@ install(FILES
         vehkamaki2002.hpp
         wang2008.hpp
         DESTINATION include/mam4xx)
+
+add_library(mam4xx aero_modes.cpp)
+install(TARGETS mam4xx DESTINATION ${CMAKE_INSTALL_LIBDIR}/mam4xx)

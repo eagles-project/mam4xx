@@ -1,11 +1,12 @@
-#include "mam4_types.hpp"
-#include "aero_modes.hpp"
-#include "aero_config.hpp"
-#include "conversions.hpp"
-#include "mode_dry_particle_size.hpp"
-#include "mode_hygroscopicity.hpp"
-#include "mode_wet_particle_size.hpp"
 #include "atmosphere_init.hpp"
+
+#include "mam4xx/mam4_types.hpp"
+#include "mam4xx/aero_modes.hpp"
+#include "mam4xx/aero_config.hpp"
+#include "mam4xx/conversions.hpp"
+#include "mam4xx/mode_dry_particle_size.hpp"
+#include "mam4xx/mode_hygroscopicity.hpp"
+#include "mam4xx/mode_wet_particle_size.hpp"
 
 #include "haero/floating_point.hpp"
 #include "haero/atmosphere.hpp"
@@ -42,13 +43,13 @@ TEST_CASE("modal_averages", "") {
       const int s = aerosol_index_for_mode(static_cast<ModeIndex>(m),
         static_cast<AeroId>(aid));
       if (s>=0) {
-        auto h_q_view = Kokkos::create_mirror_view(progs.q_aero[m][s]);
+        auto h_q_view = Kokkos::create_mirror_view(progs.q_aero_i[m][s]);
         for (int k=0; k<nlev; ++k) {
           const int pack_idx = PackInfo::pack_idx(k);
           const int vec_idx = PackInfo::vec_idx(k);
           h_q_view(pack_idx)[vec_idx] = mass_mixing_ratio;
         }
-        Kokkos::deep_copy(progs.q_aero[m][s], h_q_view);
+        Kokkos::deep_copy(progs.q_aero_i[m][s], h_q_view);
       }
     }
   }
