@@ -133,6 +133,10 @@ specific_humidity_from_vapor_mixing_ratio(const Scalar &qv) {
 /// Computes the saturation vapor pressure of water as a function
 /// of temperature.
 ///
+/// Note that this formula computes saturation vapor pressure
+/// over a planar surface of pure water; it does not account
+/// for surrounding air and does not take environmental pressure into account.
+///
 /// The formula is the improved Magnus formula from
 ///
 ///  O. A. Alduchov and R. E. Eskridge, 1996, Improved Magnus form approximation
@@ -151,33 +155,131 @@ specific_humidity_from_vapor_mixing_ratio(const Scalar &qv) {
 ///  @return es(T) saturation vapor pressure of water vapor [Pa]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar
-vapor_saturation_pressure_magnus(const Scalar &T, const Scalar &P) {
+vapor_saturation_pressure_magnus_ew(const Scalar &T) {
   static constexpr Real e0 = 610.94;      // Pa
   static constexpr Real exp_num = 17.625; // nondimensional
   static constexpr Real exp_den = 234.04; // deg C
   const auto Tf = Constants::freezing_pt_h2o;
   const auto celsius_temp = T - Tf;
+  return e0 * exp(exp_num * celsius_temp / (exp_den + celsius_temp));
+}
 
-  const auto ew = e0 * exp(exp_num * celsius_temp / (exp_den + celsius_temp));
-  const auto ea = 1.00071*exp(4.5e-8*P)*ew;
-  return ea * ew;
+/// Computes the saturation vapor pressure of water as a function
+/// of temperature and pressure for moist air
+/// above a planar surface of water.
+///
+/// The formula is the improved Magnus formula from
+///
+///  O. A. Alduchov and R. E. Eskridge, 1996, Improved Magnus form approximation
+///  of saturation vapor pressure, Journal of Applied Meteorology 35:601--609.
+///
+///  See eq. (22) from that paper, which improves the original formula's
+///  accuracy over the temperature range [-40, 50] C expected of
+///  atmospheric conditions throughout an entire vertical column.
+///  The paper uses temperature in Celsius and returns
+///  pressure in hPa. We have changed to SI units in this implementation.
+///
+///  See also Lamb & Verlinde section 3.3.
+///
+///  @param [in] T temperature [K]
+///  @param [in] P pressure [Pa]
+///  @return es(T) saturation vapor pressure of water vapor [Pa]
+template <typename Scalar>
+KOKKOS_INLINE_FUNCTION Scalar
+vapor_saturation_pressure_magnus(const Scalar &T, const Scalar &P) {
+  const auto ew = vapor_saturation_pressure_magnus_ew(T);
+  return 1.00071 * exp(4.5e-8 * P) * ew;
+}
+
+/// @brief Saturation vapor pressure, Hardy formula
+/**
+    @param [in] T [K]
+    @return es [Pa]
+
+    This formula is used by NCAR for atmospheric sounding data, and
+    is included in their
+   [ASPEN](https://ncar.github.io/aspendocs/form_wsat.html#formula) data
+   processing code.
+
+    B. Hardy, 1998, ITS-90 Formulations for Vapor Pressure, Frostpoint
+   Temperature, Dewpoint Temperature, and Enhancement Factors in the Range –100
+   to +100 C, Proceedings of the Third International Symposium on Humidity &
+   Moisture, Teddington, London, England, April 1998.
+*/
+template <typename Scalar>
+KOKKOS_INLINE_FUNCTION Scalar vapor_saturation_pressure_hardy(const Scalar &T) {
+  const Real g[8] = {-2.8365744e3,    -6.028076559e3, 1.954263612e1,
+                     -2.737830188e-2, 1.6261698e-5,   7.0229056e-10,
+                     -1.8680009e-13,  2.7150305};
+  Scalar log_es(0);
+  for (int i = 0; i < 7; ++i) {
+    log_es += g[i] * pow(T, i - 2);
+  }
+  log_es += g[7] * log(T);
+  return exp(log_es);
+}
+
+/// @brief Saturation mixing ratio of water vapor
+/**
+
+   // FIXME: these humidity functions need to be reconciled with EAMXX
+
+    See NCAR's software for atmospheric sounding data,
+   [ASPEN](https://ncar.github.io/aspendocs/form_wsat.html#formula)
+
+    @param [in] T temperature of moist air [K]
+    @param [in] P pressure of moist air [Pa]
+    @return saturation mixing ratio of water vapor [kg h2o / kg dry air]
+*/
+template <typename Scalar>
+KOKKOS_INLINE_FUNCTION Scalar saturation_mixing_ratio_hardy(const Scalar &T,
+                                                            const Scalar &P) {
+  const Real eps_h2o =
+      Constants::molec_weight_h2o / Constants::molec_weight_dry_air;
+  const auto es = vapor_saturation_pressure_hardy(T);
+  return eps_h2o * es / (P - es);
 }
 
 /// Computes the relative humidity from the water vapor mixing ratio and the
 /// pressure and temperature, given the relationship between temperature and
 /// the water vapor saturation pressure.
-/// @param [in] qv water vapor mixing ratio [kg vapor/kg dry air]
+///
+/// Use this formula with parameterizations that are defined with respect to
+/// air air (and note that mixing ratio is defined with respect to dry air).
+///
+/// @param [in] w water vapor mixing ratio [kg vapor / kg dry air]
 /// @param [in] p total pressure [Pa]
 /// @param [in] T temperature [K]
-/// @param [in] vsp A function that computes the vapor saturation pressure from
+/// @param [in] wsat A function that computes the saturation mixing ratio from
 ///                 the temperature. If not supplied,
-///                 @ref vapor_saturation_pressure_magnus is used.
+///                 @ref saturation_mixing_ratio_hardy is used.
+/// @return relative humidity [1]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar relative_humidity_from_vapor_mixing_ratio(
-    const Scalar &qv, const Scalar &p, const Scalar &T,
-    Scalar (*vsp)(const Scalar &, const Scalar&) = vapor_saturation_pressure_magnus<Scalar>) {
-  auto es = vsp(T,p);
-  return qv / (es / p);
+    const Scalar &w, const Scalar &T, const Scalar &p,
+    Scalar (*wsat)(const Scalar &,
+                   const Scalar &) = saturation_mixing_ratio_hardy<Scalar>) {
+  const auto ws = wsat(T, p);
+  return w / ws;
+}
+
+/// @brief Computes the relative humidity from specific humidity,
+/// temperature, and pressure.
+///
+/// Use this formula with parameterizations defined with respect to moist air,
+/// since EAM's dynamical core uses moist air, this formula should be the
+/// default.
+///
+/// @param [in] q specific humidity [density vapor / density moist air]
+/// @param [in] T temperature [K]
+/// @param [in] P total pressure [Pa]
+/// @return relative humidity [1]
+template <typename Scalar>
+KOKKOS_INLINE_FUNCTION Scalar relative_humidity_from_specific_humidity(
+    const Scalar &q, const Scalar &T, const Scalar &P) {
+  const auto w = vapor_mixing_ratio_from_specific_humidity(q);
+  const auto ws = saturation_mixing_ratio_hardy(T, P);
+  return w / ws;
 }
 
 /// Computes the water vapor mixing ratio from the relative humidity and the
@@ -186,15 +288,17 @@ KOKKOS_INLINE_FUNCTION Scalar relative_humidity_from_vapor_mixing_ratio(
 /// @param [in] rel_hum relative humidity [-]
 /// @param [in] p total pressure [Pa]
 /// @param [in] T temperature [K]
-/// @param [in] vsp A function that computes the vapor saturation pressure from
-///                 the temperature. If not supplied,
-///                 @ref vapor_saturation_pressure_magnus is used.
+/// @param [in] ws A function that computes the saturation mixing ratio from
+///                 the temperature and pressure. If not supplied,
+///                 @ref saturation_mixing_ratio_hardy is used.
+/// @return saturation mixing ratio [kg h2o / kg dry air]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar vapor_mixing_ratio_from_relative_humidity(
     const Scalar &rel_hum, const Scalar &p, const Scalar &T,
-    Scalar (*vsp)(const Scalar &) = vapor_saturation_pressure_magnus<Scalar>) {
-  auto es = vsp(T);
-  return rel_hum * es / p;
+    Scalar (*wsat)(const Scalar &,
+                   const Scalar &) = saturation_mixing_ratio_hardy<Scalar>) {
+  const auto ws = wsat(T, p);
+  return rel_hum * ws;
 }
 
 /** @brief This function returns the modal geometric mean particle diameter,

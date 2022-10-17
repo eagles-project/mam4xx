@@ -34,3 +34,6 @@ CreateUnitTest(aero_config_unit_tests aero_config_unit_tests.cpp)
 
 EkatCreateUnitTest(mode_averages mode_averages_unit_tests.cpp
   LIBS mam4xx mam4xx_tests ${HAERO_LIBRARIES})
+
+EkatCreateUnitTest(conversions_unit_tests conversions_unit_tests.cpp
+  LIBS mam4xx_tests ${HAERO_LIBRARIES})
