@@ -116,7 +116,7 @@ TEST_CASE("conversions", "") {
           "level {}: T = {} P = {} w = {} q = {} relative humidity = {}", k,
           h_T(k), h_P(k), h_w(k), h_q(k), h_rh_q(k));
       if (!haero::FloatingPoint<PackType>::in_bounds(h_rh_q(k), 0, 1)) {
-        logger.debug("\tlevel {}: w = {} wsat = {}", k,
+        logger.error("\tlevel {}: w = {} wsat = {}", k,
                      vapor_mixing_ratio_from_specific_humidity(h_q(k)),
                      saturation_mixing_ratio_hardy(h_T(k), h_P(k)));
       }
@@ -125,14 +125,16 @@ TEST_CASE("conversions", "") {
       CHECK(haero::FloatingPoint<PackType>::in_bounds(h_rh_w(k), 0, 1));
 
       // both relative humidities should match
-      if (!haero::FloatingPoint<PackType>::equiv(
-              h_rh_q(k), h_rh_w(k), std::numeric_limits<float>::epsilon())) {
-        logger.debug(
-            "rel diff found at level {}: rh_q = {} rh_w = {} rel_diff = {}", k,
-            h_rh_q(k), h_rh_w(k), abs(h_rh_q(k) - h_rh_w(k)) / h_rh_q(k));
+      const Real tol = 2*std::numeric_limits<float>::epsilon();
+      if (!haero::FloatingPoint<PackType>::rel(
+              h_rh_q(k), h_rh_w(k), tol)) {
+        logger.error(
+            "rel diff found at level {}: rh_q = {} rh_w = {} rel_diff = {} tol = {}", k,
+            h_rh_q(k), h_rh_w(k), abs(h_rh_q(k) - h_rh_w(k)) / h_rh_q(k),
+            tol);
       }
-      REQUIRE(haero::FloatingPoint<PackType>::equiv(
-          h_rh_q(k), h_rh_w(k), std::numeric_limits<float>::epsilon()));
+      REQUIRE(haero::FloatingPoint<PackType>::rel(
+          h_rh_q(k), h_rh_w(k), tol));
     }
   }
 }
