@@ -203,10 +203,6 @@ KOKKOS_INLINE_FUNCTION AeroSpecies aero_species(const int i) {
   return species[i];
 }
 
-/// Returns the index of the given aerosol species within the given mode, or
-/// -1 if the species is not found within the mode.
-KOKKOS_INLINE_FUNCTION
-int aerosol_index_for_mode(ModeIndex mode, AeroId aero_id) {
   // A list of species within each mode for MAM4.
   static constexpr AeroId mode_aero_species[4][7] = {
       {// accumulation mode
@@ -228,6 +224,14 @@ int aerosol_index_for_mode(ModeIndex mode, AeroId aero_id) {
       {// primary carbon mode
        AeroId::POM, AeroId::BC, AeroId::MOM, AeroId::None, AeroId::None,
        AeroId::None, AeroId::None}};
+
+/// Returns number of species per mode
+static constexpr int num_species_mode[4] = {7, 4, 7, 3 } ; 
+
+/// Returns the index of the given aerosol species within the given mode, or
+/// -1 if the species is not found within the mode.
+KOKKOS_INLINE_FUNCTION
+int aerosol_index_for_mode(ModeIndex mode, AeroId aero_id) {
 
   int mode_index = static_cast<int>(mode);
   for (int s = 0; s < 7; ++s) {
