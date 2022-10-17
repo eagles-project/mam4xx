@@ -12,10 +12,10 @@
 
 namespace mam4 {
 
-/** @brief Water vapor mixing ratio profile, @f$ q_v(z) @f$
+/** @brief Specific humidity profile, @f$ q_v(z) @f$
 
   @param [in] z height [m]
-  @param [in] qv0 mixing ratio at surface [kg H<sub>2</sub>O / kg dry air]
+  @param [in] qv0 mixing ratio at surface [kg H<sub>2</sub>O / kg moist air]
   @param [in] qv1 decay rate of water vapor [1/m]
   @return @f$ q_v @f$
 */
