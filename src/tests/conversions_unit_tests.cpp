@@ -23,7 +23,7 @@ using namespace mam4::conversions;
 TEST_CASE("conversions", "") {
   ekat::Comm comm;
   ekat::logger::Logger<> logger("conversions unit tests",
-                                ekat::logger::LogLevel::debug, comm);
+                                ekat::logger::LogLevel::info, comm);
 
   const int nlev = 72;
   const int npacks = PackInfo::num_packs(nlev);
@@ -35,7 +35,7 @@ TEST_CASE("conversions", "") {
   // exact solutions.
   //
   // these values correspond to a humid atmosphere with relative humidity
-  // values approximately between 30% and 80%
+  // values approximately between 32% and 98%
   const Real Tv0 = 300;     // reference virtual temperature [K]
   const Real Gammav = 0.01; // virtual temperature lapse rate [K/m]
   const Real qv0 =
@@ -85,6 +85,24 @@ TEST_CASE("conversions", "") {
               relative_humidity_from_vapor_mixing_ratio(w(k), T(k), P(k));
         });
 
+    typedef typename Kokkos::MinMax<Real>::value_type MinMax;
+    MinMax rh_mm;
+    Kokkos::parallel_reduce(
+        npacks,
+        KOKKOS_LAMBDA(const int k, MinMax &mm) {
+          const auto rhk = relative_humidity_q(k);
+          for (int i = 0; i < haero::HAERO_PACK_SIZE; ++i) {
+            if (rhk[i] < mm.min_val)
+              mm.min_val = rhk[i];
+            if (rhk[i] > mm.max_val)
+              mm.max_val = rhk[i];
+          }
+        },
+        Kokkos::MinMax<Real>(rh_mm));
+
+    logger.info("relative humidity range = [{}, {}]", rh_mm.min_val,
+                rh_mm.max_val);
+
     auto h_q = Kokkos::create_mirror_view(specific_humidity);
     auto h_rh_q = Kokkos::create_mirror_view(relative_humidity_q);
     auto h_rh_w = Kokkos::create_mirror_view(relative_humidity_w);
@@ -94,7 +112,7 @@ TEST_CASE("conversions", "") {
     Kokkos::deep_copy(h_rh_w, relative_humidity_w);
 
     for (int k = 0; k < npacks; ++k) {
-      logger.info(
+      logger.debug(
           "level {}: T = {} P = {} w = {} q = {} relative humidity = {}", k,
           h_T(k), h_P(k), h_w(k), h_q(k), h_rh_q(k));
       if (!haero::FloatingPoint<PackType>::in_bounds(h_rh_q(k), 0, 1)) {
@@ -104,16 +122,16 @@ TEST_CASE("conversions", "") {
       }
       // check that relative humidities are in bounds
       CHECK(haero::FloatingPoint<PackType>::in_bounds(h_rh_q(k), 0, 1));
-      CHECK(haero::FloatingPoint<PackType>::in_bounds(h_rh_w(k), 0, 1.));
+      CHECK(haero::FloatingPoint<PackType>::in_bounds(h_rh_w(k), 0, 1));
 
       // both relative humidities should match
-      if (!haero::FloatingPoint<PackType>::rel(
+      if (!haero::FloatingPoint<PackType>::equiv(
               h_rh_q(k), h_rh_w(k), std::numeric_limits<float>::epsilon())) {
         logger.debug(
             "rel diff found at level {}: rh_q = {} rh_w = {} rel_diff = {}", k,
             h_rh_q(k), h_rh_w(k), abs(h_rh_q(k) - h_rh_w(k)) / h_rh_q(k));
       }
-      REQUIRE(haero::FloatingPoint<PackType>::rel(
+      REQUIRE(haero::FloatingPoint<PackType>::equiv(
           h_rh_q(k), h_rh_w(k), std::numeric_limits<float>::epsilon()));
     }
   }
