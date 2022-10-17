@@ -9,7 +9,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mam4_test_config.hpp.in
 # ${PROJECT_BINARY_DIR}/bin, so let's make sure it's there.
 file(COPY ${MAM4XX_HAERO_DIR}/bin/test-launcher DESTINATION ${PROJECT_BINARY_DIR}/bin)
 
-add_library(mam4xx_tests kohler_verification.cpp)
+add_library(mam4xx_tests kohler_verification.cpp
+                         atmosphere_init.cpp)
 target_include_directories(mam4xx_tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(mam4xx_tests ${HAERO_LIBRARIES})
 
@@ -27,3 +28,6 @@ endif ()
 CreateUnitTest(aero_modes_unit_tests aero_modes_tests.cpp)
 
 CreateUnitTest(aero_config_unit_tests aero_config_unit_tests.cpp)
+
+EkatCreateUnitTest(conversions_unit_tests conversions_unit_tests.cpp
+  LIBS mam4xx_tests ${HAERO_LIBRARIES})
