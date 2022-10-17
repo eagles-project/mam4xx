@@ -2,13 +2,13 @@
 
 #include <catch2/catch.hpp>
 
-#include <haero/haero.hpp>
 #include <haero/atmosphere.hpp>
 #include <haero/constants.hpp>
 #include <haero/floating_point.hpp>
+#include <haero/haero.hpp>
 
-#include "mam4xx/conversions.hpp"
 #include "atmosphere_init.hpp"
+#include "mam4xx/conversions.hpp"
 
 #include <ekat/ekat_pack_math.hpp>
 #include <ekat/logging/ekat_logger.hpp>
@@ -22,7 +22,8 @@ using namespace mam4::conversions;
 
 TEST_CASE("conversions", "") {
   ekat::Comm comm;
-  ekat::logger::Logger<> logger("conversions unit tests", ekat::logger::LogLevel::debug, comm);
+  ekat::logger::Logger<> logger("conversions unit tests",
+                                ekat::logger::LogLevel::debug, comm);
 
   const int nlev = 72;
   const int npacks = PackInfo::num_packs(nlev);
@@ -35,9 +36,10 @@ TEST_CASE("conversions", "") {
   //
   // these values correspond to a humid atmosphere with relative humidity
   // values approximately between 30% and 80%
-  const Real Tv0 = 300; // reference virtual temperature [K]
+  const Real Tv0 = 300;     // reference virtual temperature [K]
   const Real Gammav = 0.01; // virtual temperature lapse rate [K/m]
-  const Real qv0 = 0.015; // specific humidity at surface [kg h2o / kg moist air]
+  const Real qv0 =
+      0.015; // specific humidity at surface [kg h2o / kg moist air]
   const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
   init_atm_const_tv_lapse_rate(atm, Tv0, Gammav, qv0, qv1);
 
@@ -59,12 +61,11 @@ TEST_CASE("conversions", "") {
     Kokkos::deep_copy(h_hdp, atm.hydrostatic_dp);
 
     // write atm. column data to log for comparison with e3sm
-    for (int k=0; k<npacks; ++k) {
-      REQUIRE( (h_w(k) >= 0).all() );
-      logger.info("levek {}: T = {} P = {} z = {} dp = {} w = {}",
-        k, h_T(k), h_P(k), h_z(k), h_hdp(k), h_w(k));
+    for (int k = 0; k < npacks; ++k) {
+      REQUIRE((h_w(k) >= 0).all());
+      logger.info("levek {}: T = {} P = {} z = {} dp = {} w = {}", k, h_T(k),
+                  h_P(k), h_z(k), h_hdp(k), h_w(k));
     }
-
   }
 
   SECTION("relative humidity") {
@@ -74,46 +75,46 @@ TEST_CASE("conversions", "") {
 
     // compute relative humidity with respect to specific humidity and to
     // mixing ratio
-    Kokkos::parallel_for(npacks, KOKKOS_LAMBDA (const int k) {
-      const auto q = specific_humidity_from_vapor_mixing_ratio(w(k));
-      specific_humidity(k) = q;
-      relative_humidity_q(k) =
-        relative_humidity_from_specific_humidity(q, T(k), P(k));
-      relative_humidity_w(k) =
-        relative_humidity_from_vapor_mixing_ratio(w(k), T(k), P(k));
-    });
+    Kokkos::parallel_for(
+        npacks, KOKKOS_LAMBDA(const int k) {
+          const auto q = specific_humidity_from_vapor_mixing_ratio(w(k));
+          specific_humidity(k) = q;
+          relative_humidity_q(k) =
+              relative_humidity_from_specific_humidity(q, T(k), P(k));
+          relative_humidity_w(k) =
+              relative_humidity_from_vapor_mixing_ratio(w(k), T(k), P(k));
+        });
 
     auto h_q = Kokkos::create_mirror_view(specific_humidity);
     auto h_rh_q = Kokkos::create_mirror_view(relative_humidity_q);
     auto h_rh_w = Kokkos::create_mirror_view(relative_humidity_w);
 
-
     Kokkos::deep_copy(h_q, specific_humidity);
     Kokkos::deep_copy(h_rh_q, relative_humidity_q);
     Kokkos::deep_copy(h_rh_w, relative_humidity_w);
 
-
-    for (int k=0; k<npacks; ++k) {
-      logger.info("level {}: T = {} P = {} w = {} q = {} relative humidity = {}",
-          k,  h_T(k), h_P(k), h_w(k), h_q(k), h_rh_q(k));
+    for (int k = 0; k < npacks; ++k) {
+      logger.info(
+          "level {}: T = {} P = {} w = {} q = {} relative humidity = {}", k,
+          h_T(k), h_P(k), h_w(k), h_q(k), h_rh_q(k));
       if (!haero::FloatingPoint<PackType>::in_bounds(h_rh_q(k), 0, 1)) {
-        logger.debug("\tlevel {}: w = {} wsat = {}",
-          k, vapor_mixing_ratio_from_specific_humidity(h_q(k)),
-            saturation_mixing_ratio_hardy(h_T(k), h_P(k)));
+        logger.debug("\tlevel {}: w = {} wsat = {}", k,
+                     vapor_mixing_ratio_from_specific_humidity(h_q(k)),
+                     saturation_mixing_ratio_hardy(h_T(k), h_P(k)));
       }
       // check that relative humidities are in bounds
-      CHECK( haero::FloatingPoint<PackType>::in_bounds(h_rh_q(k), 0, 1) );
-      CHECK( haero::FloatingPoint<PackType>::in_bounds(h_rh_w(k), 0, 1.) );
+      CHECK(haero::FloatingPoint<PackType>::in_bounds(h_rh_q(k), 0, 1));
+      CHECK(haero::FloatingPoint<PackType>::in_bounds(h_rh_w(k), 0, 1.));
 
       // both relative humidities should match
-      if (!haero::FloatingPoint<PackType>::rel(h_rh_q(k), h_rh_w(k),
-        std::numeric_limits<float>::epsilon())) {
-        logger.debug("rel diff found at level {}: rh_q = {} rh_w = {} rel_diff = {}",
-          k, h_rh_q(k), h_rh_w(k), abs(h_rh_q(k) - h_rh_w(k))/h_rh_q(k));
+      if (!haero::FloatingPoint<PackType>::rel(
+              h_rh_q(k), h_rh_w(k), std::numeric_limits<float>::epsilon())) {
+        logger.debug(
+            "rel diff found at level {}: rh_q = {} rh_w = {} rel_diff = {}", k,
+            h_rh_q(k), h_rh_w(k), abs(h_rh_q(k) - h_rh_w(k)) / h_rh_q(k));
       }
-      REQUIRE(haero::FloatingPoint<PackType>::rel(h_rh_q(k), h_rh_w(k),
-        std::numeric_limits<float>::epsilon()));
+      REQUIRE(haero::FloatingPoint<PackType>::rel(
+          h_rh_q(k), h_rh_w(k), std::numeric_limits<float>::epsilon()));
     }
-
   }
 }

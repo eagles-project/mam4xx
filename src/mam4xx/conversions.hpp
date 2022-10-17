@@ -21,8 +21,8 @@ using Constants = haero::Constants;
 /// @param [in] dry_air_density The mass density of dry air [kg/m3]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar
-mmr_from_number_conc(const Scalar& number_conc, Real molecular_wt,
-                     const Scalar& dry_air_density) {
+mmr_from_number_conc(const Scalar &number_conc, Real molecular_wt,
+                     const Scalar &dry_air_density) {
   const auto Na = Constants::avogadro;
   return number_conc * molecular_wt / (dry_air_density * Na);
 }
@@ -36,7 +36,7 @@ mmr_from_number_conc(const Scalar& number_conc, Real molecular_wt,
 /// @param [in] dry_air_density The mass density of dry air [kg/m3]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar number_conc_from_mmr(
-    const Scalar& mmr, Real molecular_wt, const Scalar& dry_air_density) {
+    const Scalar &mmr, Real molecular_wt, const Scalar &dry_air_density) {
   const auto Na = Constants::avogadro;
   return mmr * (dry_air_density * Na) / molecular_wt;
 }
@@ -49,7 +49,7 @@ KOKKOS_INLINE_FUNCTION Scalar number_conc_from_mmr(
 /// @param [in] molecular_wt The molecular weight of the species/mixture
 /// [kg/kmol]
 template <typename Scalar>
-KOKKOS_INLINE_FUNCTION Scalar mmr_from_vmr(const Scalar& vmr,
+KOKKOS_INLINE_FUNCTION Scalar mmr_from_vmr(const Scalar &vmr,
                                            Real molecular_wt) {
   const auto mw_dry_air = Constants::molec_weight_dry_air;
   return vmr * molecular_wt / mw_dry_air;
@@ -63,7 +63,7 @@ KOKKOS_INLINE_FUNCTION Scalar mmr_from_vmr(const Scalar& vmr,
 /// @param [in] molecular_wt The molecular weight of the species/mixture
 /// [kg/kmol]
 template <typename Scalar>
-KOKKOS_INLINE_FUNCTION Scalar vmr_from_mmr(const Scalar& mmr,
+KOKKOS_INLINE_FUNCTION Scalar vmr_from_mmr(const Scalar &mmr,
                                            Real molecular_wt) {
   const auto mw_dry_air = Constants::molec_weight_dry_air;
   return mmr * mw_dry_air / molecular_wt;
@@ -76,7 +76,7 @@ KOKKOS_INLINE_FUNCTION Scalar vmr_from_mmr(const Scalar& mmr,
 /// @param [in] q1 specific humidity [-]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar
-virtual_temperature_from_temperature(const Scalar& T, const Scalar& q1) {
+virtual_temperature_from_temperature(const Scalar &T, const Scalar &q1) {
   return T * (1.0 + 0.6078 * q1);
 }
 
@@ -86,7 +86,7 @@ virtual_temperature_from_temperature(const Scalar& T, const Scalar& q1) {
 /// @param [in] q1 specific humidity [-]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar
-temperature_from_virtual_temperature(const Scalar& Tv, const Scalar& q1) {
+temperature_from_virtual_temperature(const Scalar &Tv, const Scalar &q1) {
   return Tv / (1.0 + 0.6078 * q1);
 }
 
@@ -95,8 +95,8 @@ temperature_from_virtual_temperature(const Scalar& Tv, const Scalar& q1) {
 /// @param [in] rho total mass density [kg/m3]
 /// @param [in] q1 specific humidity [-]
 template <typename Scalar>
-KOKKOS_INLINE_FUNCTION Scalar dry_from_total_mass_density(const Scalar& rho,
-                                                          const Scalar& q1) {
+KOKKOS_INLINE_FUNCTION Scalar dry_from_total_mass_density(const Scalar &rho,
+                                                          const Scalar &q1) {
   return rho * (1 - q1);
 }
 
@@ -105,8 +105,8 @@ KOKKOS_INLINE_FUNCTION Scalar dry_from_total_mass_density(const Scalar& rho,
 /// @param [in] rho total mass density [kg/m3]
 /// @param [in] q1 specific humidity [-]
 template <typename Scalar>
-KOKKOS_INLINE_FUNCTION Scalar vapor_from_total_mass_density(const Scalar& rho,
-                                                            const Scalar& q1) {
+KOKKOS_INLINE_FUNCTION Scalar vapor_from_total_mass_density(const Scalar &rho,
+                                                            const Scalar &q1) {
   return rho * q1;
 }
 
@@ -115,7 +115,7 @@ KOKKOS_INLINE_FUNCTION Scalar vapor_from_total_mass_density(const Scalar& rho,
 /// @param [in] q1 specific humidity [-]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar
-vapor_mixing_ratio_from_specific_humidity(const Scalar& q1) {
+vapor_mixing_ratio_from_specific_humidity(const Scalar &q1) {
   return q1 / (1 - q1);
 }
 
@@ -124,7 +124,7 @@ vapor_mixing_ratio_from_specific_humidity(const Scalar& q1) {
 /// @param [in] qv water vapor mixing ratio [kg vapor / kg dry air]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar
-specific_humidity_from_vapor_mixing_ratio(const Scalar& qv) {
+specific_humidity_from_vapor_mixing_ratio(const Scalar &qv) {
   return qv / (qv + 1);
 }
 
@@ -152,10 +152,10 @@ specific_humidity_from_vapor_mixing_ratio(const Scalar& qv) {
 ///  @return es(T) saturation vapor pressure of water vapor [Pa]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar
-vapor_saturation_pressure_magnus_ew(const Scalar& T) {
-  static constexpr Real e0 = 610.94;       // Pa
-  static constexpr Real exp_num = 17.625;  // nondimensional
-  static constexpr Real exp_den = 234.04;  // deg C
+vapor_saturation_pressure_magnus_ew(const Scalar &T) {
+  static constexpr Real e0 = 610.94;      // Pa
+  static constexpr Real exp_num = 17.625; // nondimensional
+  static constexpr Real exp_den = 234.04; // deg C
   const auto Tf = Constants::freezing_pt_h2o;
   const auto celsius_temp = T - Tf;
   return e0 * exp(exp_num * celsius_temp / (exp_den + celsius_temp));
@@ -183,7 +183,7 @@ vapor_saturation_pressure_magnus_ew(const Scalar& T) {
 ///  @return es(T) saturation vapor pressure of water vapor [Pa]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar
-vapor_saturation_pressure_magnus(const Scalar& T, const Scalar& P) {
+vapor_saturation_pressure_magnus(const Scalar &T, const Scalar &P) {
   const auto ew = vapor_saturation_pressure_magnus_ew(T);
   return 1.00071 * exp(4.5e-8 * P) * ew;
 }
@@ -194,23 +194,25 @@ vapor_saturation_pressure_magnus(const Scalar& T, const Scalar& P) {
     @return es [Pa]
 
     This formula is used by NCAR for atmospheric sounding data, and
-    is included in their [ASPEN](https://ncar.github.io/aspendocs/form_wsat.html#formula)
-    data processing code.
+    is included in their
+   [ASPEN](https://ncar.github.io/aspendocs/form_wsat.html#formula) data
+   processing code.
 
-    B. Hardy, 1998, ITS-90 Formulations for Vapor Pressure, Frostpoint Temperature, Dewpoint Temperature, and Enhancement Factors in the Range –100 to +100 C, Proceedings of the Third International Symposium on Humidity & Moisture, Teddington, London, England, April 1998.
+    B. Hardy, 1998, ITS-90 Formulations for Vapor Pressure, Frostpoint
+   Temperature, Dewpoint Temperature, and Enhancement Factors in the Range –100
+   to +100 C, Proceedings of the Third International Symposium on Humidity &
+   Moisture, Teddington, London, England, April 1998.
 */
 template <typename Scalar>
-KOKKOS_INLINE_FUNCTION Scalar
-vapor_saturation_pressure_hardy(const Scalar& T) {
-  const Real g[8] = {-2.8365744e3, -6.028076559e3,
-                      1.954263612e1, -2.737830188e-2,
-                      1.6261698e-5, 7.0229056e-10,
-                      -1.8680009e-13, 2.7150305};
+KOKKOS_INLINE_FUNCTION Scalar vapor_saturation_pressure_hardy(const Scalar &T) {
+  const Real g[8] = {-2.8365744e3,    -6.028076559e3, 1.954263612e1,
+                     -2.737830188e-2, 1.6261698e-5,   7.0229056e-10,
+                     -1.8680009e-13,  2.7150305};
   Scalar log_es(0);
-  for (int i=0; i<7; ++i) {
-    log_es += g[i]*pow(T, i-2);
+  for (int i = 0; i < 7; ++i) {
+    log_es += g[i] * pow(T, i - 2);
   }
-  log_es += g[7]*log(T);
+  log_es += g[7] * log(T);
   return exp(log_es);
 }
 
@@ -219,16 +221,18 @@ vapor_saturation_pressure_hardy(const Scalar& T) {
 
    // FIXME: these humidity functions need to be reconciled with EAMXX
 
-    See NCAR's software for atmospheric sounding data, [ASPEN](https://ncar.github.io/aspendocs/form_wsat.html#formula)
+    See NCAR's software for atmospheric sounding data,
+   [ASPEN](https://ncar.github.io/aspendocs/form_wsat.html#formula)
 
     @param [in] T temperature of moist air [K]
     @param [in] P pressure of moist air [Pa]
     @return saturation mixing ratio of water vapor [kg h2o / kg dry air]
 */
 template <typename Scalar>
-KOKKOS_INLINE_FUNCTION Scalar
-saturation_mixing_ratio_hardy(const Scalar& T, const Scalar& P) {
-  const Real eps_h2o = Constants::molec_weight_h2o / Constants::molec_weight_dry_air;
+KOKKOS_INLINE_FUNCTION Scalar saturation_mixing_ratio_hardy(const Scalar &T,
+                                                            const Scalar &P) {
+  const Real eps_h2o =
+      Constants::molec_weight_h2o / Constants::molec_weight_dry_air;
   const auto es = vapor_saturation_pressure_hardy(T);
   return eps_h2o * es / (P - es);
 }
@@ -249,8 +253,9 @@ saturation_mixing_ratio_hardy(const Scalar& T, const Scalar& P) {
 /// @return relative humidity [1]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar relative_humidity_from_vapor_mixing_ratio(
-    const Scalar& w, const Scalar& T, const Scalar& p,
-    Scalar (*wsat)(const Scalar&, const Scalar&) = saturation_mixing_ratio_hardy<Scalar>) {
+    const Scalar &w, const Scalar &T, const Scalar &p,
+    Scalar (*wsat)(const Scalar &,
+                   const Scalar &) = saturation_mixing_ratio_hardy<Scalar>) {
   const auto ws = wsat(T, p);
   return w / ws;
 }
@@ -259,17 +264,18 @@ KOKKOS_INLINE_FUNCTION Scalar relative_humidity_from_vapor_mixing_ratio(
 /// temperature, and pressure.
 ///
 /// Use this formula with parameterizations defined with respect to moist air,
-/// since EAM's dynamical core uses moist air, this formula should be the default.
+/// since EAM's dynamical core uses moist air, this formula should be the
+/// default.
 ///
 /// @param [in] q specific humidity [density vapor / density moist air]
 /// @param [in] T temperature [K]
 /// @param [in] P total pressure [Pa]
 /// @return relative humidity [1]
 template <typename Scalar>
-KOKKOS_INLINE_FUNCTION Scalar
-relative_humidity_from_specific_humidity(const Scalar& q, const Scalar& T, const Scalar& P) {
+KOKKOS_INLINE_FUNCTION Scalar relative_humidity_from_specific_humidity(
+    const Scalar &q, const Scalar &T, const Scalar &P) {
   const auto w = vapor_mixing_ratio_from_specific_humidity(q);
-  const auto ws = saturation_mixing_ratio_hardy(T,P);
+  const auto ws = saturation_mixing_ratio_hardy(T, P);
   return w / ws;
 }
 
@@ -285,12 +291,13 @@ relative_humidity_from_specific_humidity(const Scalar& q, const Scalar& T, const
 /// @return saturation mixing ratio [kg h2o / kg dry air]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar vapor_mixing_ratio_from_relative_humidity(
-    const Scalar& rel_hum, const Scalar& p, const Scalar& T,
-    Scalar (*wsat)(const Scalar&, const Scalar&) = saturation_mixing_ratio_hardy<Scalar>) {
-  const auto ws = wsat(T,p);
+    const Scalar &rel_hum, const Scalar &p, const Scalar &T,
+    Scalar (*wsat)(const Scalar &,
+                   const Scalar &) = saturation_mixing_ratio_hardy<Scalar>) {
+  const auto ws = wsat(T, p);
   return rel_hum * ws;
 }
 
-}  // namespace mam4::conversions
+} // namespace mam4::conversions
 
 #endif
