@@ -217,6 +217,8 @@ vapor_saturation_pressure_hardy(const Scalar& T) {
 /// @brief Saturation mixing ratio of water vapor
 /**
 
+   // FIXME: these humidity functions need to be reconciled with EAMXX
+
     See NCAR's software for atmospheric sounding data, [ASPEN](https://ncar.github.io/aspendocs/form_wsat.html#formula)
 
     @param [in] T temperature of moist air [K]
