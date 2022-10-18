@@ -24,8 +24,8 @@ namespace mam4 {
   MAM4's approximation of constant surface tension, neglecting temperature
   dependence.
 
-  This formula is valid from T = 248.16 K (-25 C, supercooled liquid water) to the
-   critical temperature Tc = 646.096 K (steam).
+  This formula is valid from T = 248.16 K (-25 C, supercooled liquid water) to
+  the critical temperature Tc = 646.096 K (steam).
 
   IAPWS Release on Surface Tension of Ordinary Water Substance
   IAPWS R1-76(2014)
@@ -46,7 +46,7 @@ surface_tension_water_air(const ScalarType T = Constants::triple_pt_h2o) {
   constexpr Real mu = 1.256;
   const auto tau = 1 - T / Tc;
   EKAT_KERNEL_ASSERT(haero::FloatingPoint<ScalarType>::in_bounds(
-    T, tp-25, Tc, std::numeric_limits<float>::epsilon()));
+      T, tp - 25, Tc, std::numeric_limits<float>::epsilon()));
   return B * pow(tau, mu) * (1 + b * tau);
 }
 
@@ -306,13 +306,13 @@ template <typename SolverType> struct KohlerSolver {
   KohlerSolver(const PackType &rel_h, const PackType &hyg, const PackType &rdry,
                const Real tol)
       : relative_humidity(rel_h), hygroscopicity(hyg), dry_radius_microns(rdry),
-        conv_tol(tol), mask(MaskType(false)), n_iter(0)  {}
+        conv_tol(tol), mask(MaskType(false)), n_iter(0) {}
 
   KOKKOS_INLINE_FUNCTION
   KohlerSolver(const PackType &rel_h, const PackType &hyg, const PackType &rdry,
-               const Real tol, const MaskType& msk)
+               const Real tol, const MaskType &msk)
       : relative_humidity(rel_h), hygroscopicity(hyg), dry_radius_microns(rdry),
-        conv_tol(tol), mask(msk), n_iter(0)  {}
+        conv_tol(tol), mask(msk), n_iter(0) {}
 
   KOKKOS_INLINE_FUNCTION
   DoublePack solve() {

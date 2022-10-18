@@ -143,8 +143,8 @@ specific_humidity_from_vapor_mixing_ratio(const Scalar &qv) {
 ///  O. A. Alduchov and R. E. Eskridge, 1996, Improved Magnus form approximation
 ///  of saturation vapor pressure, Journal of Applied Meteorology 35:601--609.
 ///
-///  See eqs. (21) and (22) from that paper, which improves the original formula's
-///  accuracy over the temperature range [-40, 50] C expected of
+///  See eqs. (21) and (22) from that paper, which improves the original
+///  formula's accuracy over the temperature range [-40, 50] C expected of
 ///  atmospheric conditions throughout an entire vertical column.
 ///  The paper uses temperature in Celsius and returns
 ///  pressure in hPa. We have changed to SI units in this implementation.

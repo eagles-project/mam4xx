@@ -1,9 +1,9 @@
 #ifndef MAM4XX_DRY_PARTICLE_SIZE_HPP
 #define MAM4XX_DRY_PARTICLE_SIZE_HPP
 
-#include "mam4_types.hpp"
-#include "aero_modes.hpp"
 #include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "mam4_types.hpp"
 
 namespace mam4 {
 
@@ -23,20 +23,23 @@ namespace mam4 {
   @param [in] pack_idx Column pack where size data are needed
 */
 KOKKOS_INLINE_FUNCTION
-void mode_avg_dry_particle_diam(const Diagnostics& diags, const Prognostics& progs, const int mode_idx, const int pack_idx) {
+void mode_avg_dry_particle_diam(const Diagnostics &diags,
+                                const Prognostics &progs, const int mode_idx,
+                                const int pack_idx) {
   PackType volume_mixing_ratio(0); // [m3 aerosol / kg air]
-  for (int aid=0; aid<AeroConfig::num_aerosol_ids(); ++aid) {
+  for (int aid = 0; aid < AeroConfig::num_aerosol_ids(); ++aid) {
     const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx),
-      static_cast<AeroId>(aid));
-    if (s>=0) {
-      volume_mixing_ratio += progs.q_aero_i[mode_idx][s](pack_idx) /
-        aero_species[s].density;
+                                         static_cast<AeroId>(aid));
+    if (s >= 0) {
+      volume_mixing_ratio +=
+          progs.q_aero_i[mode_idx][s](pack_idx) / aero_species[s].density;
     }
   }
-  const PackType mean_vol = volume_mixing_ratio / progs.n_mode[mode_idx](pack_idx);
+  const PackType mean_vol =
+      volume_mixing_ratio / progs.n_mode[mode_idx](pack_idx);
   diags.dry_geometric_mean_diameter[mode_idx](pack_idx) =
-    conversions::mean_particle_diameter_from_volume(mean_vol,
-          modes[mode_idx].mean_std_dev);
+      conversions::mean_particle_diameter_from_volume(
+          mean_vol, modes[mode_idx].mean_std_dev);
 }
 
 /**  Compute the dry geometric mean particle size (volume and diameter)
@@ -51,14 +54,12 @@ void mode_avg_dry_particle_diam(const Diagnostics& diags, const Prognostics& pro
   @param [in] pack_idx Column pack where size data are needed
 */
 KOKKOS_INLINE_FUNCTION
-void mode_avg_dry_particle_diam(const Diagnostics& diags, const Prognostics& progs, const int pack_idx) {
-  for (int m=0; m<AeroConfig::num_modes(); ++m) {
+void mode_avg_dry_particle_diam(const Diagnostics &diags,
+                                const Prognostics &progs, const int pack_idx) {
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
     mode_avg_dry_particle_diam(diags, progs, m, pack_idx);
   }
 }
-
-
-
 
 } // namespace mam4
 #endif

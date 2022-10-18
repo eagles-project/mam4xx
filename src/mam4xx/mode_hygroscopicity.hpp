@@ -1,9 +1,9 @@
 #ifndef MAM4XX_HYGROSCOPICITY_HPP
 #define MAM4XX_HYGROSCOPICITY_HPP
 
-#include "mam4_types.hpp"
-#include "aero_modes.hpp"
 #include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "mam4_types.hpp"
 
 namespace mam4 {
 
@@ -29,18 +29,18 @@ namespace mam4 {
   @param [in] mode_idx Mode whose average hygroscopicity is needed
   @param [in] pack_idx Column pack where size data are needed
 */
-void mode_hygroscopicity(const Diagnostics& diags, const Prognostics& progs,
-  const int mode_idx, const int pack_idx) {
+void mode_hygroscopicity(const Diagnostics &diags, const Prognostics &progs,
+                         const int mode_idx, const int pack_idx) {
   PackType hyg(0);
   PackType volume_mixing_ratio(0); // [m3 aerosol / kg air]
-  for (int aid = 0; aid<AeroConfig::num_aerosol_ids(); ++aid) {
+  for (int aid = 0; aid < AeroConfig::num_aerosol_ids(); ++aid) {
     const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx),
-      static_cast<AeroId>(aid));
-    if (s>=0) {
+                                         static_cast<AeroId>(aid));
+    if (s >= 0) {
       const PackType mass_mix_ratio = progs.q_aero_i[mode_idx][s](pack_idx);
       volume_mixing_ratio += mass_mix_ratio / aero_species[s].density;
       hyg += mass_mix_ratio * aero_species[s].hygroscopicity /
-        aero_species[s].density;
+             aero_species[s].density;
     }
     diags.hygroscopicity[mode_idx](pack_idx) = hyg / volume_mixing_ratio;
   }
@@ -59,9 +59,9 @@ void mode_hygroscopicity(const Diagnostics& diags, const Prognostics& progs,
       aerosol mass mixing ratios
   @param [in] pack_idx Column pack where size data are needed
 */
-void mode_hygroscopicity(const Diagnostics& diags, const Prognostics& progs,
-  const int pack_idx) {
-  for (int m=0; m<AeroConfig::num_modes(); ++m) {
+void mode_hygroscopicity(const Diagnostics &diags, const Prognostics &progs,
+                         const int pack_idx) {
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
     mode_hygroscopicity(diags, progs, m, pack_idx);
   }
 }

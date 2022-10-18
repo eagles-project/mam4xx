@@ -1,14 +1,14 @@
 #ifndef MAM4XX_WET_PARTICLE_SIZE_HPP
 #define MAM4XX_WET_PARTICLE_SIZE_HPP
 
-#include "mam4_types.hpp"
-#include "aero_modes.hpp"
 #include "aero_config.hpp"
-#include "kohler.hpp"
+#include "aero_modes.hpp"
 #include "conversions.hpp"
+#include "kohler.hpp"
+#include "mam4_types.hpp"
 
-#include "haero/haero.hpp"
 #include "haero/atmosphere.hpp"
+#include "haero/haero.hpp"
 
 #include <ekat/ekat_pack.hpp>
 #include <ekat/ekat_pack_math.hpp>
@@ -20,12 +20,11 @@ namespace mam4 {
 static constexpr Real meters_to_microns = 1e6;
 static constexpr Real microns_to_meters = 1e-6;
 static constexpr Real dry_radius_min_microns =
-  KohlerPolynomial<double>::dry_radius_min_microns;
+    KohlerPolynomial<double>::dry_radius_min_microns;
 static constexpr Real dry_radius_max_microns =
-  KohlerPolynomial<double>::dry_radius_max_microns;
+    KohlerPolynomial<double>::dry_radius_max_microns;
 static constexpr Real wet_radius_max_microns = 30.0;
 static constexpr Real solver_convergence_tol = 1e-10;
-
 
 /** @brief Compute aerosol particle wet diameter for interstitial aerosols
   in a single mode.
@@ -47,14 +46,14 @@ static constexpr Real solver_convergence_tol = 1e-10;
   @param [in] pack_idx column pack index
 */
 KOKKOS_INLINE_FUNCTION
-void mode_avg_wet_particle_diam(const Diagnostics& diags,
-  const Atmosphere& atm, const int mode_idx, const int pack_idx) {
+void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
+                                const int mode_idx, const int pack_idx) {
 
   // check hygroscopicity is in bounds for water uptake
   EKAT_KERNEL_ASSERT(FloatingPoint<PackType>::in_bounds(
-    diags.hygroscopicity[mode_idx](pack_idx),
-    KohlerPolynomial<double>::hygro_min,
-    KohlerPolynomial<double>::hygro_max));
+      diags.hygroscopicity[mode_idx](pack_idx),
+      KohlerPolynomial<double>::hygro_min,
+      KohlerPolynomial<double>::hygro_max));
 
   // unit conversion multipliers
   const Real to_microns = meters_to_microns;
@@ -66,15 +65,15 @@ void mode_avg_wet_particle_diam(const Diagnostics& diags,
   PackType wet_diam;
 
   // compute relative humidity
-  PackType rel_humidity = conversions::relative_humidity_from_vapor_mixing_ratio(
-    atm.vapor_mixing_ratio(pack_idx),
-    atm.temperature(pack_idx),
-    atm.pressure(pack_idx));
+  PackType rel_humidity =
+      conversions::relative_humidity_from_vapor_mixing_ratio(
+          atm.vapor_mixing_ratio(pack_idx), atm.temperature(pack_idx),
+          atm.pressure(pack_idx));
   // check that relative humidity is in bounds for interstitial water uptake
   // and Kohler theory
-  EKAT_KERNEL_ASSERT(FloatingPoint<PackType>::in_bounds(rel_humidity,
-    KohlerPolynomial<double>::rel_humidity_min,
-    KohlerPolynomial<double>::rel_humidity_max));
+  EKAT_KERNEL_ASSERT(FloatingPoint<PackType>::in_bounds(
+      rel_humidity, KohlerPolynomial<double>::rel_humidity_min,
+      KohlerPolynomial<double>::rel_humidity_max));
 
   // set masks:
   //  case 1: dry air
@@ -86,23 +85,26 @@ void mode_avg_wet_particle_diam(const Diagnostics& diags,
   const auto rh_high = (rel_humidity > modes[mode_idx].deliquescence_pt);
   //  case 4: particles too small
   const auto too_small =
-    (0.5*to_microns * diags.dry_geometric_mean_diameter[mode_idx](pack_idx) <
-      rdry_min);
+      (0.5 * to_microns *
+           diags.dry_geometric_mean_diameter[mode_idx](pack_idx) <
+       rdry_min);
 
   // no water uptake occurs if particles are too small or if air is too dry
   const auto use_dry_radius = (rh_low || too_small);
-  wet_diam.set(use_dry_radius, diags.dry_geometric_mean_diameter[mode_idx](pack_idx));
+  wet_diam.set(use_dry_radius,
+               diags.dry_geometric_mean_diameter[mode_idx](pack_idx));
   // for all other cases, we need a Kohler polynomial solve
   const auto needs_kohler = !use_dry_radius;
 
   if (needs_kohler.any()) {
 
     // convert from diameter in meters to radius in microns
-    const PackType dry_radius_microns = 0.5*to_microns*
-      diags.dry_geometric_mean_diameter[mode_idx](pack_idx);
+    const PackType dry_radius_microns =
+        0.5 * to_microns *
+        diags.dry_geometric_mean_diameter[mode_idx](pack_idx);
 
     // check dry particle size is in bounds
-    EKAT_KERNEL_ASSERT( (dry_radius_microns <= rdry_max).all() );
+    EKAT_KERNEL_ASSERT((dry_radius_microns <= rdry_max).all());
 
     // Set up Kohler solver
     // (requires double precision)
@@ -115,8 +117,9 @@ void mode_avg_wet_particle_diam(const Diagnostics& diags,
     //  This step replaces the mam4 subroutine modal_aero_kohler with
     //  a new solver that is better conditioned and stable for
     //  finite precision computations.
-    SolverType kohler_solver = SolverType(rel_humidity, diags.hygroscopicity[mode_idx](pack_idx),
-      dry_radius_microns, tol);
+    SolverType kohler_solver =
+        SolverType(rel_humidity, diags.hygroscopicity[mode_idx](pack_idx),
+                   dry_radius_microns, tol);
     auto rwet_microns = PackType(kohler_solver.solve());
 
     // set maximum wet radius of 30 microns
@@ -141,14 +144,14 @@ void mode_avg_wet_particle_diam(const Diagnostics& diags,
       Here, we use the PDF functions for both.
     */
     const PackType dry_vol = conversions::mean_particle_volume_from_diameter(
-      diags.dry_geometric_mean_diameter[mode_idx](pack_idx),
-      modes[mode_idx].mean_std_dev);
+        diags.dry_geometric_mean_diameter[mode_idx](pack_idx),
+        modes[mode_idx].mean_std_dev);
 
     PackType wet_vol = conversions::mean_particle_volume_from_diameter(
-      2*to_meters*rwet_microns, modes[mode_idx].mean_std_dev);
+        2 * to_meters * rwet_microns, modes[mode_idx].mean_std_dev);
 
     // check that wet particle volume >= dry particle volume
-    EKAT_KERNEL_ASSERT( (wet_vol >= dry_vol).all() );
+    EKAT_KERNEL_ASSERT((wet_vol >= dry_vol).all());
     // which implies that water volume is nonnegative
     PackType water_vol = wet_vol - dry_vol;
 
@@ -160,28 +163,28 @@ void mode_avg_wet_particle_diam(const Diagnostics& diags,
     //   ! apply simple treatment of deliquesence/crystallization hysteresis
     //   ! for rhcrystal < rh < rhdeliques, aerosol water is a fraction of
     //   ! the "upper curve" value, and the fraction is a linear function of rh
-    const Real hysteresis_factor =
-      1 / (modes[mode_idx].deliquescence_pt - modes[mode_idx].crystallization_pt);
+    const Real hysteresis_factor = 1 / (modes[mode_idx].deliquescence_pt -
+                                        modes[mode_idx].crystallization_pt);
     EKAT_KERNEL_ASSERT(hysteresis_factor > 0);
-    water_vol.set(rh_mid, hysteresis_factor*water_vol*(rel_humidity -
-      modes[mode_idx].crystallization_pt));
+    water_vol.set(rh_mid,
+                  hysteresis_factor * water_vol *
+                      (rel_humidity - modes[mode_idx].crystallization_pt));
 
     // check that hysteresis does not cause negative water content
-    EKAT_KERNEL_ASSERT( (water_vol >= 0).all() );
+    EKAT_KERNEL_ASSERT((water_vol >= 0).all());
 
     wet_vol = dry_vol + water_vol;
 
     const PackType rwet_hyst =
-      0.5 * conversions::mean_particle_diameter_from_volume(
-        wet_vol, modes[mode_idx].mean_std_dev);
+        0.5 * conversions::mean_particle_diameter_from_volume(
+                  wet_vol, modes[mode_idx].mean_std_dev);
 
-    wet_diam.set(rh_mid, 2*rwet_hyst);
-    wet_diam.set(rh_high, 2*to_meters*rwet_microns);
+    wet_diam.set(rh_mid, 2 * rwet_hyst);
+    wet_diam.set(rh_high, 2 * to_meters * rwet_microns);
   }
 
   diags.wet_geometric_mean_diameter[mode_idx](pack_idx) = wet_diam;
 }
-
 
 /** @brief Compute aerosol particle wet diameter for interstitial aerosols
   in all modes.
@@ -202,9 +205,9 @@ void mode_avg_wet_particle_diam(const Diagnostics& diags,
   @param [in] pack_idx column pack index
 */
 KOKKOS_INLINE_FUNCTION
-void mode_avg_wet_particle_diam(const Diagnostics& diags, const Atmosphere& atm,
-  const int pack_idx) {
-  for (int m=0; m<AeroConfig::num_modes(); ++m) {
+void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
+                                const int pack_idx) {
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
     mode_avg_wet_particle_diam(diags, atm, m, pack_idx);
   }
 }
