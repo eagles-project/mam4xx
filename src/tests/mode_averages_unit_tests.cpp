@@ -1,4 +1,4 @@
-#include "atmosphere_init.hpp"
+#include "atmosphere_utils.hpp"
 
 #include "mam4xx/mam4_types.hpp"
 #include "mam4xx/aero_modes.hpp"

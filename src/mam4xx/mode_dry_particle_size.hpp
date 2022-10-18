@@ -7,21 +7,20 @@
 
 namespace mam4 {
 
-/**  Compute the dry geometric mean particle size (volume and diameter)
-  from the log-normal size distribution.
-
-  This version can be called in parallel over both modes and column packs.
-
-  Diags are marked 'const' because they need to be able to be captured
-  by value by a lambda.  The Views inside the Diags struct are const,
-  but the data contained by the Views can change.
-
-  @param [in/out] diags Diagnostics: output container for particle size data
-  @param [in] progs Prognostics contain mode number mixing ratios and
-      aerosol mass mixing ratios
-  @param [in] mode_idx Mode whose average size is needed
-  @param [in] pack_idx Column pack where size data are needed
-*/
+///  Compute the dry geometric mean particle size (volume and diameter)
+///  from the log-normal size distribution for a single mode.
+///
+///  This version can be called in parallel over both modes and column packs.
+///
+///  Diags are marked 'const' because they need to be able to be captured
+///  by value by a lambda.  The Views inside the Diags struct are const,
+///  but the data contained by the Views can change.
+///
+///  @param [in/out] diags Diagnostics: output container for particle size data
+///  @param [in] progs Prognostics contain mode number mixing ratios and
+///      aerosol mass mixing ratios
+///  @param [in] mode_idx Mode whose average size is needed
+///  @param [in] pack_idx Column pack where size data are needed
 KOKKOS_INLINE_FUNCTION
 void mode_avg_dry_particle_diam(const Diagnostics &diags,
                                 const Prognostics &progs, const int mode_idx,
@@ -42,17 +41,16 @@ void mode_avg_dry_particle_diam(const Diagnostics &diags,
           mean_vol, modes[mode_idx].mean_std_dev);
 }
 
-/**  Compute the dry geometric mean particle size (volume and diameter)
-  from the log-normal size distribution.
-
-  This version can be called in parallel over column packs, and computes
-  all modal averages serially.
-
-  @param [in/out] diags Diagnostics: output container for particle size data
-  @param [in] progs Prognostics contain mode number mixing ratios and
-      aerosol mass mixing ratios
-  @param [in] pack_idx Column pack where size data are needed
-*/
+///  Compute the dry geometric mean particle size (volume and diameter)
+///  from the log-normal size distribution for all modes.
+///
+///  This version can be called in parallel over column packs, and computes
+///  all modal averages serially.
+///
+///  @param [in/out] diags Diagnostics: output container for particle size data
+///  @param [in] progs Prognostics contain mode number mixing ratios and
+///      aerosol mass mixing ratios
+///  @param [in] pack_idx Column pack where size data are needed
 KOKKOS_INLINE_FUNCTION
 void mode_avg_dry_particle_diam(const Diagnostics &diags,
                                 const Prognostics &progs, const int pack_idx) {

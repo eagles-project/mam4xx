@@ -26,25 +26,24 @@ static constexpr Real dry_radius_max_microns =
 static constexpr Real wet_radius_max_microns = 30.0;
 static constexpr Real solver_convergence_tol = 1e-10;
 
-/** @brief Compute aerosol particle wet diameter for interstitial aerosols
-  in a single mode.
-
-  This version can be called in parallel over both modes and column packs.
-
-  This function replaces subroutine modal_aero_wateruptake_dr from
-  legacy Mam4 file modal_aero_wateruptake.F90.
-
-  Inputs are the mode averages contained in @ref Diagnostics (dry particle size,
-  hygroscopicity) and @ref Atmosphere (vapor mass mixing ratio).
-  Diags are marked 'const' because they need to be able to be captured
-  by value by a lambda.  The Views inside the Diags struct are const,
-  but the data contained by the Views can change.
-
-  @param [in/out] diags dry/wet particle geometric mean diameter
-  @param [in] atm Atmosphere contains (T, P, w) data
-  @param [in] mode_idx mode that needs wet particle size data
-  @param [in] pack_idx column pack index
-*/
+///  Compute aerosol particle wet diameter for interstitial aerosols
+///  in a single mode.
+///
+///  This version can be called in parallel over both modes and column packs.
+///
+///  This function replaces subroutine modal_aero_wateruptake_dr from
+///  file modal_aero_wateruptake.F90.
+///
+///  Inputs are the mode averages contained in @ref Diagnostics (dry particle size,
+///  hygroscopicity) and @ref Atmosphere (vapor mass mixing ratio).
+///  Diags are marked 'const' because they need to be able to be captured
+///  by value by a lambda.  The Views inside the Diags struct are const,
+///  but the data contained by the Views can change.
+///
+///  @param [in/out] diags dry/wet particle geometric mean diameter
+///  @param [in] atm Atmosphere contains (T, P, w) data
+///  @param [in] mode_idx mode that needs wet particle size data
+///  @param [in] pack_idx column pack index
 KOKKOS_INLINE_FUNCTION
 void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
                                 const int mode_idx, const int pack_idx) {
@@ -131,18 +130,17 @@ void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
     rwet_microns.set(too_big, rwet_max);
 
     // Compute wet and dry particle volume in cubic meters
-    /**
-      This volume calculation represents a bug fix from legacy Mam4.
-      In subroutine modal_aero_wateruptake_sub from file
-      modal_aero_wateruptake.F90, particle volumes are computed using the
-      spherical geometric formulas without accounting for the probability
-      density function (PDF) that represents the modal particle size
-      distribution, which is an inconsistency: the dry_geometric_mean_diameter
-      input accounts for the PDF while the same quantity for wet particles
-      does not.
-
-      Here, we use the PDF functions for both.
-    */
+    //
+    //  This volume calculation represents a bug fix from legacy Mam4.
+    //  In subroutine modal_aero_wateruptake_sub from file
+    //  modal_aero_wateruptake.F90, particle volumes are computed using the
+    //  spherical geometric formulas without accounting for the probability
+    //  density function (PDF) that represents the modal particle size
+    //  distribution, which is an inconsistency: the dry_geometric_mean_diameter
+    //  input accounts for the PDF while the same quantity for wet particles
+    //  does not.
+    //
+    //  Here, we use the PDF functions for both.
     const PackType dry_vol = conversions::mean_particle_volume_from_diameter(
         diags.dry_geometric_mean_diameter[mode_idx](pack_idx),
         modes[mode_idx].mean_std_dev);
@@ -186,24 +184,23 @@ void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
   diags.wet_geometric_mean_diameter[mode_idx](pack_idx) = wet_diam;
 }
 
-/** @brief Compute aerosol particle wet diameter for interstitial aerosols
-  in all modes.
-
-  This version can be called in parallel column packs.
-
-  This function replaces subroutine modal_aero_wateruptake_dr from
-  legacy Mam4 file modal_aero_wateruptake.F90.
-
-  Inputs are the mode averages contained in @ref Diagnostics (dry particle
-  size, hygroscopicity) and @ref Atmosphere (vapor mass mixing ratio).
-  Diags are marked 'const' because they need to be able to be captured
-  by value by a lambda.  The Views inside the Diags struct are const,
-  but the data contained by the Views can change.
-
-  @param [in/out] diags dry/wet particle geometric mean diameter
-  @param [in] atm Atmosphere contains (T, P, w) data
-  @param [in] pack_idx column pack index
-*/
+///  Compute aerosol particle wet diameter for interstitial aerosols
+///  in all modes.
+///
+///  This version can be called in parallel column packs.
+///
+///  This function replaces subroutine modal_aero_wateruptake_dr from
+///  file modal_aero_wateruptake.F90.
+///
+///  Inputs are the mode averages contained in @ref Diagnostics (dry particle
+///  size, hygroscopicity) and @ref Atmosphere (vapor mass mixing ratio).
+///  Diags are marked 'const' because they need to be able to be captured
+///  by value by a lambda.  The Views inside the Diags struct are const,
+///  but the data contained by the Views can change.
+///
+///  @param [in/out] diags dry/wet particle geometric mean diameter
+///  @param [in] atm Atmosphere contains (T, P, w) data
+///  @param [in] pack_idx column pack index
 KOKKOS_INLINE_FUNCTION
 void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
                                 const int pack_idx) {
