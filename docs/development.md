@@ -415,6 +415,23 @@ The pack size is encoded in its type. MAM4xx uses a single pack size determined
 by HAERO for all its `Pack`s. This pack size is defined by the macro
 `HAERO_PACK_SIZE`.
 
+### Packs and padding
+
+`ekat::Pack`s are simd structs that help performance on machines with vector
+instructions, and their size is determined by the machine's vector length.
+When pack size > 1, it's possible that the total number of values for a
+column view (which is `num_packs * pack_size`) exceeds the number of levels
+in the column.  In such a case, the extra entries are referred to as
+"padding," and to mark them as such, the default initializer of
+`ekat::Pack` sets all values to `quiet_nan`.
+
+This means that you will have to explicitly initialize all non-padded entries
+to have valid (not `nan`) values.  See the `zero_init` function in
+[Haero's](https://github.com/eagles-project/haero)
+`view_pack_helpers.hpp` for an example that sets a `ColumnView` to zero
+except for any padded values (which remain `nan`)
+using utilities from the `PackInfo` struct.
+
 ### Masks and predicates
 
 The `Mask` class allows you to create grouped ("packed") booleans that store
@@ -448,6 +465,36 @@ provided by the `Mask` type:
 
 Not as straightforward as using numbers, is it? `Pack`s may be the most
 challenging aspect of porting MAM4 from Fortran to C++.
+
+**Mask convention:** The term `Mask` may introduce some confusion as to its
+use: if `Mask[i] = true`, should the `i`th entry be skipped, because it's
+"masked," or should it be worked on because it's "turned on?"  The convention
+is the latter: `Mask[i] = true` implies that entry `i` is turned on.
+See `ekat_pack.hpp` for initializers (constructors and assign operators) and
+methods (e.g., `set`) that combine the functions of `Mask` and `Pack`.
+An example based on the absolute value function is
+
+```
+   // non-packed example
+   inline float absolute_value(const float x) {return (x < 0 ? -x : x);}
+```
+
+```
+  // packed example
+  inline PackType absolute_value(const PackType x) {
+    const MaskType negative_mask = (x < 0); // "turn on" negative values
+    PackType result = x;
+    result.set(negative_mask, -x); // only changes the "on" values
+    return result;
+  }
+```
+The above example is
+for illustrative purposes only; `abs` is already overloaded for packs,
+along with lots of standard math functions in `ekat_pack_math.hpp`.
+
+Hence, to skip the padded extra values in a packed column, we set every entry that
+corresponds to a valid column level to `true`, and entries that correspond
+to padding to `false`.
 
 ### Frequently Asked Questions
 
