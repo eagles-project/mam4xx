@@ -188,21 +188,21 @@ vapor_saturation_pressure_magnus(const Scalar &T, const Scalar &P) {
   return 1.00071 * exp(4.5e-8 * P) * ew;
 }
 
-/// @brief Saturation vapor pressure, Hardy formula
-/**
-    @param [in] T [K]
-    @return es [Pa]
-
-    This formula is used by NCAR for atmospheric sounding data, and
-    is included in their
-   [ASPEN](https://ncar.github.io/aspendocs/form_wsat.html#formula) data
-   processing code.
-
-    B. Hardy, 1998, ITS-90 Formulations for Vapor Pressure, Frostpoint
-   Temperature, Dewpoint Temperature, and Enhancement Factors in the Range –100
-   to +100 C, Proceedings of the Third International Symposium on Humidity &
-   Moisture, Teddington, London, England, April 1998.
-*/
+///  Saturation vapor pressure, Hardy formula
+///
+///  @param [in] T [K]
+///  @return es [Pa]
+///
+///  This formula is used by NCAR for atmospheric sounding data, and
+///  is included in their
+///  [ASPEN](https://ncar.github.io/aspendocs/form_wsat.html#formula) data
+///  processing code.
+///
+///    B. Hardy, 1998, ITS-90 Formulations for Vapor Pressure, Frostpoint
+///   Temperature, Dewpoint Temperature, and Enhancement Factors in the Range
+///   –100 to +100 C, Proceedings of the Third International Symposium on
+///   Humidity & Moisture, Teddington, London, England, April 1998.
+///
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar vapor_saturation_pressure_hardy(const Scalar &T) {
   const Real g[8] = {-2.8365744e3,    -6.028076559e3, 1.954263612e1,
@@ -216,18 +216,18 @@ KOKKOS_INLINE_FUNCTION Scalar vapor_saturation_pressure_hardy(const Scalar &T) {
   return exp(log_es);
 }
 
-/// @brief Saturation mixing ratio of water vapor
-/**
-
-   // FIXME: these humidity functions need to be reconciled with EAMXX
-
-    See NCAR's software for atmospheric sounding data,
-   [ASPEN](https://ncar.github.io/aspendocs/form_wsat.html#formula)
-
-    @param [in] T temperature of moist air [K]
-    @param [in] P pressure of moist air [Pa]
-    @return saturation mixing ratio of water vapor [kg h2o / kg dry air]
-*/
+///  Saturation mixing ratio of water vapor
+///
+///
+///  // FIXME: these humidity functions need to be reconciled with EAMXX
+///
+///  See NCAR's software for atmospheric sounding data,
+///  [ASPEN](https://ncar.github.io/aspendocs/form_wsat.html#formula)
+///
+///  @param [in] T temperature of moist air [K]
+///  @param [in] P pressure of moist air [Pa]
+///  @return saturation mixing ratio of water vapor [kg h2o / kg dry air]
+///
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar saturation_mixing_ratio_hardy(const Scalar &T,
                                                             const Scalar &P) {
@@ -260,7 +260,7 @@ KOKKOS_INLINE_FUNCTION Scalar relative_humidity_from_vapor_mixing_ratio(
   return w / ws;
 }
 
-/// @brief Computes the relative humidity from specific humidity,
+///  Computes the relative humidity from specific humidity,
 /// temperature, and pressure.
 ///
 /// Use this formula with parameterizations defined with respect to moist air,
