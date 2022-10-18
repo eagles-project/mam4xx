@@ -23,7 +23,7 @@ void get_relaxed_v2n_limits(Ensemble* ensemble) {
     Real v2nmin = input.get("v2nmin");
     Real v2nmax = input.get("v2nmax");
     Real v2nminrl = 0.0;
-    Real v2nmaxrl =0.0;
+    Real v2nmaxrl = 0.0;
  
     // Call the cluster growth function on device.
     Kokkos::parallel_for(

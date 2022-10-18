@@ -490,7 +490,7 @@ class Calcsize {
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
 
-        // Oscar working on this: start         
+        // Oscar is working on this: start         
         const auto n_i = prognostics.n_mode;
         const auto n_c = prognostics.n_mode;
 
@@ -582,10 +582,10 @@ class Calcsize {
                                     v2nmax, dgnmin, dgnmax, common_factor,
                                     dgncur_c_k, v2ncur_c_k); 
         }	
-        // Oscar working on this: end
+        // Oscar is working on this: end
 
     // to be completed. 
-    // Mike working on this:     
+    // Mike is  working on this:     
     //       ! save number concentrations and dry volumes for explicit aitken <--> accum mode transfer
     //       ! which is the next step in the calcsize process
     //       if ( do_aitacc_transfer ) then
