@@ -10,7 +10,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mam4_test_config.hpp.in
 file(COPY ${MAM4XX_HAERO_DIR}/bin/test-launcher DESTINATION ${PROJECT_BINARY_DIR}/bin)
 
 add_library(mam4xx_tests kohler_verification.cpp
-                         atmosphere_init.cpp)
+                         atmosphere_utils.cpp)
 target_include_directories(mam4xx_tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(mam4xx_tests PUBLIC ${HAERO_INCLUDE_DIRS})
 target_link_libraries(mam4xx_tests ${HAERO_LIBRARIES})
