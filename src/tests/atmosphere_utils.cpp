@@ -1,4 +1,4 @@
-#include "atmosphere_init.hpp"
+#include "atmosphere_utils.hpp"
 #include "mam4xx/conversions.hpp"
 
 #include <ekat/ekat_assert.hpp>
