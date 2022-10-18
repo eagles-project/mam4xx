@@ -28,17 +28,16 @@ foreach (input
          get_relaxed_v2n_limits_case1)
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
-  #configure_file(
-  #  ${CALCSIZE_VALIDATION_DIR}/mam_${input}.py
-  #  ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.py
-  #  COPYONLY
-  #)
+  configure_file(
+    ${CALCSIZE_VALIDATION_DIR}/mam_${input}.py
+    ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.py
+    COPYONLY
+  )
 
   # add a test to run the skywalker driver
-  #add_test(run_${input} calcsize_driver ${CALCSIZE_VALIDATION_DIR}/${input}.yaml)
   add_test(run_${input} calcsize_driver ${CALCSIZE_VALIDATION_DIR}/${input}.yaml)
  
   # add a test to validate mam4xx's results against the baseline.
-  #add_test(validate_${input} python3 compare_calcsize.py mam4xx_${input}.py mam_${input}.py)
-  #set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
+  add_test(validate_${input} python3 compare_calcsize.py mam4xx_${input}.py mam_${input}.py)
+  set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
 endforeach()
