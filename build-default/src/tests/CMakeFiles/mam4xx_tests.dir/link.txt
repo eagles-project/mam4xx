@@ -1,2 +1,0 @@
-/opt/rh/gcc-toolset-11/root/usr/bin/ar qc libmam4xx_tests.a CMakeFiles/mam4xx_tests.dir/kohler_verification.cpp.o CMakeFiles/mam4xx_tests.dir/atmosphere_utils.cpp.o
-/opt/rh/gcc-toolset-11/root/usr/bin/ranlib libmam4xx_tests.a

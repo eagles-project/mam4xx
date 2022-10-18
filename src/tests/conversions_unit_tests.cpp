@@ -7,7 +7,7 @@
 #include <haero/floating_point.hpp>
 #include <haero/haero.hpp>
 
-#include "atmosphere_utils.hpp"
+#include "atmosphere_init.hpp"
 #include "mam4xx/conversions.hpp"
 
 #include <ekat/ekat_pack_math.hpp>
