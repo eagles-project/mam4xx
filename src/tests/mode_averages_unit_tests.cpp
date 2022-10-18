@@ -181,7 +181,7 @@ TEST_CASE("modal_averages", "") {
       KOKKOS_LAMBDA (const int i) {
         mode_avg_dry_particle_diam(diags, progs, i);
         mode_hygroscopicity(diags, progs, i);
-        mode_avg_wet_particle_diam(diags, progs, atm, i);
+        mode_avg_wet_particle_diam(diags, atm, i);
       });
 
     for (int m=0; m<4; ++m) {
@@ -201,7 +201,7 @@ TEST_CASE("modal_averages", "") {
         logger.debug("m = {} k = {} rdry = {} rwet = {}",
           m, k, h_dry_diam(k), h_wet_diam(k));
 
-//         CHECK( (h_wet_diam(k) >= h_dry_diam(k)).all() );
+        CHECK( (h_wet_diam(k) >= h_dry_diam(k)).all() );
       }
     }
 

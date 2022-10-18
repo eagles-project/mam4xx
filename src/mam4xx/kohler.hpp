@@ -183,7 +183,7 @@ template <typename ScalarType = PackType> struct KohlerPolynomial {
         dry_radius(dry_rad_microns), dry_radius_cubed(cube(dry_rad_microns)),
         kelvin_a(kelvin_coefficient(temperature)) {
 
-    kelvin_a *= 1e6; /* convert from N to mN and m to micron */
+    kelvin_a *= 1e6; /* convert from SI to MAM4 Kohler solve units */
 
     EKAT_KERNEL_ASSERT(valid_inputs(m, ScalarType(rel_h), ScalarType(hygro),
                                     ScalarType(dry_rad_microns)));
@@ -285,6 +285,12 @@ template <typename ScalarType = PackType> struct KohlerPolynomial {
   }
 };
 
+/** @brief Solver for the Kohler polynomial; templated so that it can
+use any root finding algorithm from the haero::math namespace.
+
+  This solver replaces subroutine modal_aero_kohler from
+  modal_aero_wateruptake.F90.
+*/
 template <typename SolverType> struct KohlerSolver {
   typedef KohlerPolynomial<PackType> polynomial_type;
   typedef PackType value_type;
