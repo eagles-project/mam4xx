@@ -420,9 +420,9 @@ namespace calcsize {
   // aitken_accum_exchange
 }  // namespace calcsize
 
-/// @class Calcsize
-/// This class implements MAM4's Calcsize parameterization.
-class Calcsize {
+/// @class CalcSize
+/// This class implements MAM4's CalcSize parameterization.
+class CalcSize {
  public:
   // nucleation-specific configuration
   struct Config {
