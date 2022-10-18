@@ -1,6 +1,7 @@
 #ifndef MAM4_CONVERSIONS_HPP
 #define MAM4_CONVERSIONS_HPP
 
+#include <ekat/ekat_pack.hpp>
 #include <ekat/ekat_pack_math.hpp>
 #include <haero/constants.hpp>
 #include <haero/math.hpp>

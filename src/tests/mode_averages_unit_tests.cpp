@@ -136,16 +136,74 @@ TEST_CASE("modal_averages", "") {
   SECTION("wet particle size") {
     const Real pblh = 0;
     Atmosphere atm(nlev, pblh);
-    init_atm_const_lapse_rate(atm);
+    // initialize a hydrostatically balanced moist air column
+    // using constant lapse rate in virtual temperature to manufacture
+    // exact solutions.
+    //
+    // these values correspond to a humid atmosphere with relative humidity
+    // values approximately between 32% and 98%
+    const Real Tv0 = 300;     // reference virtual temperature [K]
+    const Real Gammav = 0.01; // virtual temperature lapse rate [K/m]
+    const Real qv0 =
+        0.015; // specific humidity at surface [kg h2o / kg moist air]
+    const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
+    init_atm_const_tv_lapse_rate(atm, Tv0, Gammav, qv0, qv1);
+
+    const auto w = atm.vapor_mixing_ratio;
+    const auto T = atm.temperature;
+    const auto P = atm.pressure;
+    ColumnView relative_humidity("relative_humidity", nk);
+    Kokkos::parallel_for("compute relative humidity", nk,
+      KOKKOS_LAMBDA (const int k) {
+        relative_humidity(k) =
+          conversions::relative_humidity_from_vapor_mixing_ratio(w(k), T(k), P(k));
+      });
+
+    typedef typename Kokkos::MinMax<Real>::value_type MinMax;
+    MinMax rh_mm;
+    Kokkos::parallel_reduce(
+        nk,
+        KOKKOS_LAMBDA(const int k, MinMax &mm) {
+          const auto rhk = relative_humidity(k);
+          for (int i = 0; i < haero::HAERO_PACK_SIZE; ++i) {
+            if (rhk[i] < mm.min_val)
+              mm.min_val = rhk[i];
+            if (rhk[i] > mm.max_val)
+              mm.max_val = rhk[i];
+          }
+        },
+        Kokkos::MinMax<Real>(rh_mm));
+
+    logger.info("relative humidity range = [{}, {}]", rh_mm.min_val,
+                rh_mm.max_val);
 
     Kokkos::parallel_for("compute_wet_particle_size", nk,
       KOKKOS_LAMBDA (const int i) {
         mode_avg_dry_particle_diam(diags, progs, i);
-        Kokkos::fence();
         mode_hygroscopicity(diags, progs, i);
-        Kokkos::fence();
         mode_avg_wet_particle_diam(diags, progs, atm, i);
       });
+
+    for (int m=0; m<4; ++m) {
+      auto h_dry_diam = Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter[m]);
+      auto h_wet_diam = Kokkos::create_mirror_view(diags.wet_geometric_mean_diameter[m]);
+      Kokkos::deep_copy(h_dry_diam, diags.dry_geometric_mean_diameter[m]);
+      Kokkos::deep_copy(h_wet_diam, diags.wet_geometric_mean_diameter[m]);
+
+      if ( !FloatingPoint<PackType>::in_bounds(h_dry_diam(0)*1e3,
+        KohlerPolynomial<PackType>::dry_radius_min_microns,
+        KohlerPolynomial<PackType>::dry_radius_max_microns) ) {
+
+        logger.error("dry particle size out of bounds for mode {}", m);
+      }
+
+      for (int k=0; k<nk; ++k) {
+        logger.debug("m = {} k = {} rdry = {} rwet = {}",
+          m, k, h_dry_diam(k), h_wet_diam(k));
+
+//         CHECK( (h_wet_diam(k) >= h_dry_diam(k)).all() );
+      }
+    }
 
   } // section wet particle size
 } // test case

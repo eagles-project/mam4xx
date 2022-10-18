@@ -119,7 +119,7 @@ template <typename ScalarType = PackType> struct KohlerPolynomial {
       "double precision required.");
 
   /// Minimum value of relative humidity
-  static constexpr double rel_humidity_min = 0.05;
+  static constexpr double rel_humidity_min = 0.00;
   /// Above this relative humidity is considered saturated air, and cloud
   /// aerosol processes would apply
   static constexpr double rel_humidity_max = 0.98;
