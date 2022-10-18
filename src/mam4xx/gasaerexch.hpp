@@ -230,7 +230,7 @@ public:
             //--------------------------------------------------------------
             Pack qnum_cur[4];
             for (int i = 0; i < 4; ++i) {
-              qnum_cur[i] = progs.n_mode[i](k);
+              qnum_cur[i] = progs.n_mode_i[i](k);
             }
             const Pack aircon = pmid / (r_universal * temp);
             for (int imode = 0; imode < num_mode; ++imode) {

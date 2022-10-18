@@ -45,8 +45,8 @@ TEST_CASE("aero_config", "") {
 
     for (int m = 0; m < 4; ++m) {
       logger.debug("mode m = {}", m);
-      h_progs_num_aer[m] = Kokkos::create_mirror_view(progs.n_mode[m]);
-      h_tends_num_aer[m] = Kokkos::create_mirror_view(tends.n_mode[m]);
+      h_progs_num_aer[m] = Kokkos::create_mirror_view(progs.n_mode_i[m]);
+      h_tends_num_aer[m] = Kokkos::create_mirror_view(tends.n_mode_i[m]);
       h_diags_dry_diam[m] =
           Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter[m]);
       h_diags_wet_diam[m] =
@@ -71,8 +71,8 @@ TEST_CASE("aero_config", "") {
 
     logger.info("deep copying views");
     for (int m = 0; m < 4; ++m) {
-      Kokkos::deep_copy(h_progs_num_aer[m], progs.n_mode[m]);
-      Kokkos::deep_copy(h_tends_num_aer[m], tends.n_mode[m]);
+      Kokkos::deep_copy(h_progs_num_aer[m], progs.n_mode_i[m]);
+      Kokkos::deep_copy(h_tends_num_aer[m], tends.n_mode_i[m]);
       Kokkos::deep_copy(h_diags_dry_diam[m],
                         diags.dry_geometric_mean_diameter[m]);
       Kokkos::deep_copy(h_diags_wet_diam[m],
