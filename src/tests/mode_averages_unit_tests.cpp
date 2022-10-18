@@ -191,8 +191,8 @@ TEST_CASE("modal_averages", "") {
       Kokkos::deep_copy(h_wet_diam, diags.wet_geometric_mean_diameter[m]);
 
       if ( !FloatingPoint<PackType>::in_bounds(h_dry_diam(0)*1e3,
-        KohlerPolynomial<PackType>::dry_radius_min_microns,
-        KohlerPolynomial<PackType>::dry_radius_max_microns) ) {
+        KohlerPolynomial<double>::dry_radius_min_microns,
+        KohlerPolynomial<double>::dry_radius_max_microns) ) {
 
         logger.error("dry particle size out of bounds for mode {}", m);
       }

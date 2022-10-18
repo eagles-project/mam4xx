@@ -53,8 +53,8 @@ void mode_avg_wet_particle_diam(const Diagnostics& diags,
   // check hygroscopicity is in bounds for water uptake
   EKAT_KERNEL_ASSERT(FloatingPoint<PackType>::in_bounds(
     diags.hygroscopicity[mode_idx](pack_idx),
-    KohlerPolynomial<PackType>::hygro_min,
-    KohlerPolynomial<PackType>::hygro_max));
+    KohlerPolynomial<double>::hygro_min,
+    KohlerPolynomial<double>::hygro_max));
 
   // unit conversion multipliers
   const Real to_microns = meters_to_microns;
@@ -73,8 +73,8 @@ void mode_avg_wet_particle_diam(const Diagnostics& diags,
   // check that relative humidity is in bounds for interstitial water uptake
   // and Kohler theory
   EKAT_KERNEL_ASSERT(FloatingPoint<PackType>::in_bounds(rel_humidity,
-    KohlerPolynomial<PackType>::rel_humidity_min,
-    KohlerPolynomial<PackType>::rel_humidity_max));
+    KohlerPolynomial<double>::rel_humidity_min,
+    KohlerPolynomial<double>::rel_humidity_max));
 
   // set masks:
   //  case 1: dry air
@@ -115,9 +115,9 @@ void mode_avg_wet_particle_diam(const Diagnostics& diags,
     //  This step replaces the mam4 subroutine modal_aero_kohler with
     //  a new solver that is better conditioned and stable for
     //  finite precision computations.
-    auto kohler_solver = SolverType(rel_humidity, diags.hygroscopicity[mode_idx](pack_idx),
+    SolverType kohler_solver = SolverType(rel_humidity, diags.hygroscopicity[mode_idx](pack_idx),
       dry_radius_microns, tol);
-    PackType rwet_microns = kohler_solver.solve();
+    auto rwet_microns = PackType(kohler_solver.solve());
 
     // set maximum wet radius of 30 microns
     //

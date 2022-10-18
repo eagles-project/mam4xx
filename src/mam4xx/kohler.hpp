@@ -119,7 +119,7 @@ template <typename ScalarType = PackType> struct KohlerPolynomial {
       "double precision required.");
 
   /// Minimum value of relative humidity
-  static constexpr double rel_humidity_min = 0.00;
+  static constexpr double rel_humidity_min = 0.05;
   /// Above this relative humidity is considered saturated air, and cloud
   /// aerosol processes would apply
   static constexpr double rel_humidity_max = 0.98;
@@ -292,11 +292,12 @@ use any root finding algorithm from the haero::math namespace.
   modal_aero_wateruptake.F90.
 */
 template <typename SolverType> struct KohlerSolver {
-  typedef KohlerPolynomial<PackType> polynomial_type;
-  typedef PackType value_type;
-  PackType relative_humidity;
-  PackType hygroscopicity;
-  PackType dry_radius_microns;
+  typedef ekat::Pack<double, haero::HAERO_PACK_SIZE> DoublePack;
+  typedef KohlerPolynomial<DoublePack> polynomial_type;
+  typedef DoublePack value_type;
+  DoublePack relative_humidity;
+  DoublePack hygroscopicity;
+  DoublePack dry_radius_microns;
   Real conv_tol;
   MaskType mask;
   int n_iter;
@@ -314,17 +315,17 @@ template <typename SolverType> struct KohlerSolver {
         conv_tol(tol), mask(msk), n_iter(0)  {}
 
   KOKKOS_INLINE_FUNCTION
-  PackType solve() {
-    PackType wet_radius_left(0.9 * dry_radius_microns);
-    PackType wet_radius_right(50 * dry_radius_microns);
-    PackType wet_radius_init(25 * dry_radius_microns);
+  DoublePack solve() {
+    DoublePack wet_radius_left(0.9 * dry_radius_microns);
+    DoublePack wet_radius_right(50 * dry_radius_microns);
+    DoublePack wet_radius_init(25 * dry_radius_microns);
     const Real triple_pt_h2o = Constants::triple_pt_h2o;
-    const PackType default_T(triple_pt_h2o);
+    const DoublePack default_T(triple_pt_h2o);
     const auto kpoly = polynomial_type(mask, relative_humidity, hygroscopicity,
                                        dry_radius_microns, default_T);
     auto solver = SolverType(wet_radius_init, wet_radius_left, wet_radius_right,
                              conv_tol, kpoly);
-    const PackType result = solver.solve();
+    const DoublePack result = solver.solve();
     n_iter = solver.counter;
     return result;
   }
