@@ -32,13 +32,13 @@ TEST_CASE("modal_averages", "") {
   const Real number_mixing_ratio = 2e7;
   const Real mass_mixing_ratio = 3e-8;
   for (int m=0; m<4; ++m) {
-    auto h_n_view = Kokkos::create_mirror_view(progs.n_mode[m]);
+    auto h_n_view = Kokkos::create_mirror_view(progs.n_mode_i[m]);
     for (int k=0; k<nlev; ++k) {
       const int pack_idx = PackInfo::pack_idx(k);
       const int vec_idx = PackInfo::vec_idx(k);
       h_n_view(pack_idx)[vec_idx] = number_mixing_ratio;
     }
-    Kokkos::deep_copy(progs.n_mode[m], h_n_view);
+    Kokkos::deep_copy(progs.n_mode_i[m], h_n_view);
     for (int aid=0; aid<7; ++aid) {
       const int s = aerosol_index_for_mode(static_cast<ModeIndex>(m),
         static_cast<AeroId>(aid));

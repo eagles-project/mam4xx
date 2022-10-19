@@ -35,7 +35,7 @@ void mode_avg_dry_particle_diam(const Diagnostics &diags,
     }
   }
   const PackType mean_vol =
-      volume_mixing_ratio / progs.n_mode[mode_idx](pack_idx);
+      volume_mixing_ratio / progs.n_mode_i[mode_idx](pack_idx);
   diags.dry_geometric_mean_diameter[mode_idx](pack_idx) =
       conversions::mean_particle_diameter_from_volume(
           mean_vol, modes[mode_idx].mean_std_dev);
