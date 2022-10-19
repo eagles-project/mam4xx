@@ -302,14 +302,13 @@ KOKKOS_INLINE_FUNCTION Scalar vapor_mixing_ratio_from_relative_humidity(
   return rel_hum * ws;
 }
 
-/** @brief This function returns the modal geometric mean particle diameter,
-given the mode's mean volume (~ to 3rd log-normal moment) and the modal
-standard deviation.
-
-@param mode_mean_particle_volume mean particle volume for mode [m^3 per
-particle]
-@return modal mean particle diameter [m per particle]
-*/
+///   This function returns the modal geometric mean particle diameter,
+/// given the mode's mean volume (~ to 3rd log-normal moment) and the modal
+/// standard deviation.
+///
+/// @param mode_mean_particle_volume mean particle volume for mode [m^3 per
+/// particle]
+/// @return modal mean particle diameter [m per particle]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar mean_particle_diameter_from_volume(
     const Scalar mode_mean_particle_volume, const Real mean_std_dev) {
@@ -318,13 +317,12 @@ KOKKOS_INLINE_FUNCTION Scalar mean_particle_diameter_from_volume(
          exp(-1.5 * ekat::square<Scalar>(log(mean_std_dev)));
 }
 
-/** @brief This function is the inverse of
-  modal_mean_particle_diameter_from_volume; given the modal mean geometric
-  diamaeter, it returns the corresponding volume.
-
-  @param [in] geom_diam geometric mean diameter [m per particle]
-  @return mean volume [m^3 per particle]
-*/
+///   This function is the inverse of
+///   modal_mean_particle_diameter_from_volume; given the modal mean geometric
+///   diamaeter, it returns the corresponding volume.
+///
+///   @param [in] geom_diam geometric mean diameter [m per particle]
+///   @return mean volume [m^3 per particle]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar mean_particle_volume_from_diameter(
     const Scalar geom_diam, const Real mean_std_dev) {
