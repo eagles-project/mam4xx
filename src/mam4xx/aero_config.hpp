@@ -23,8 +23,10 @@ public:
   explicit Prognostics(int num_levels) : nlev_(num_levels) {
     const int nk = PackInfo::num_packs(num_levels);
     for (int mode = 0; mode < 4; ++mode) {
-      n_mode[mode] = ColumnView("n_mode", nk);
-      haero::zero_init(n_mode[mode], num_levels);
+      n_mode_i[mode] = ColumnView("n_mode_i", nk);
+      n_mode_c[mode] = ColumnView("n_mode_c", nk);
+      haero::zero_init(n_mode_i[mode], num_levels);
+      haero::zero_init(n_mode_c[mode], num_levels);
       for (int spec = 0; spec < 7; ++spec) {
         q_aero_i[mode][spec] = ColumnView("q_aero_i", nk);
         q_aero_c[mode][spec] = ColumnView("q_aero_c", nk);
@@ -47,8 +49,11 @@ public:
   ~Prognostics() = default;
   Prognostics &operator=(const Prognostics &) = default;
 
-  /// modal aerosol number mixing ratios (see aero_mode.hpp for indexing)
-  ColumnView n_mode[4];
+  ///  modal interstitial aerosol number mixing ratios (see aero_mode.hpp for indexing)
+  ColumnView n_mode_i[4];
+
+  /// modal cloudborne aerosol number mixing ratios (see aero_mode.hpp for indexing)
+  ColumnView n_mode_c[4];
 
   /// interstitial aerosol mass mixing ratios within each mode
   /// (see aero_mode.hpp for indexing)
@@ -76,7 +81,8 @@ public:
         Kokkos::TeamThreadRange(team, nk),
         KOKKOS_CLASS_LAMBDA(int k, int &violation) {
           for (int mode = 0; mode < 4; ++mode) { // check mode mmrs
-            if ((n_mode[mode](k) < 0).any()) {
+            if ((n_mode_i[mode](k) < 0).any() ||
+                (n_mode_c[mode](k) < 0).any() ) {
               ++violation;
             } else {
               for (int spec = 0; spec < 7; ++spec) { // check aerosol mmrs
