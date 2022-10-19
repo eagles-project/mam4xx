@@ -11,139 +11,10 @@
 
 namespace mam4 {
 
-/// MAM4 column-wise prognostic aerosol fields (also used for tendencies).
-class Prognostics final {
-public:
-  using PackInfo = haero::PackInfo;
-  using ColumnView = haero::ColumnView;
-  using ThreadTeam = haero::ThreadTeam;
-
-  /// Creates a container for prognostic variables on the specified number of
-  /// vertical levels.
-  explicit Prognostics(int num_levels) : nlev_(num_levels) {
-    const int nk = PackInfo::num_packs(num_levels);
-    for (int mode = 0; mode < 4; ++mode) {
-      n_mode[mode] = ColumnView("n_mode", nk);
-      haero::zero_init(n_mode[mode], num_levels);
-      for (int spec = 0; spec < 7; ++spec) {
-        q_aero_i[mode][spec] = ColumnView("q_aero_i", nk);
-        q_aero_c[mode][spec] = ColumnView("q_aero_c", nk);
-        haero::zero_init(q_aero_i[mode][spec], num_levels);
-        haero::zero_init(q_aero_c[mode][spec], num_levels);
-      }
-    }
-    for (int gas = 0; gas < 13; ++gas) {
-      q_gas[gas] = ColumnView("q_gas", nk);
-      haero::zero_init(q_gas[gas], num_levels);
-      for (int mode = 0; mode < 4; ++mode) {
-        uptkaer[gas][mode] = ColumnView("uptake_rate", nk);
-        haero::zero_init(uptkaer[gas][mode], num_levels);
-      }
-    }
-  }
-
-  Prognostics() = default; // Careful! Only for creating placeholders in views
-  Prognostics(const Prognostics &) = default;
-  ~Prognostics() = default;
-  Prognostics &operator=(const Prognostics &) = default;
-
-  /// modal aerosol number mixing ratios (see aero_mode.hpp for indexing)
-  ColumnView n_mode[4];
-
-  /// interstitial aerosol mass mixing ratios within each mode
-  /// (see aero_mode.hpp for indexing)
-  ColumnView q_aero_i[4][7];
-
-  /// cloudborne aerosol mass mixing ratios within each mode
-  /// (see aero_mode.hpp for indexing)
-  ColumnView q_aero_c[4][7];
-
-  /// gas mass mixing ratios (see aero_mode.hpp for indexing)
-  ColumnView q_gas[13];
-
-  ColumnView uptkaer[13][4];
-
-  KOKKOS_INLINE_FUNCTION
-  int num_levels() const { return nlev_; }
-
-  /// Returns true iff all prognostic quantities are nonnegative, using the
-  /// given thread team to parallelize the check.
-  KOKKOS_INLINE_FUNCTION
-  bool quantities_nonnegative(const ThreadTeam &team) const {
-    const int nk = PackInfo::num_packs(num_levels());
-    int violations = 0;
-    Kokkos::parallel_reduce(
-        Kokkos::TeamThreadRange(team, nk),
-        KOKKOS_CLASS_LAMBDA(int k, int &violation) {
-          for (int mode = 0; mode < 4; ++mode) { // check mode mmrs
-            if ((n_mode[mode](k) < 0).any()) {
-              ++violation;
-            } else {
-              for (int spec = 0; spec < 7; ++spec) { // check aerosol mmrs
-                if ((q_aero_i[mode][spec](k) < 0).any() ||
-                    (q_aero_c[mode][spec](k) < 0).any()) {
-                  ++violation;
-                  break;
-                }
-              }
-            }
-            if (violation > 0)
-              break;
-          }
-          if (violation == 0) {
-            for (int gas = 0; gas < 13; ++gas) { // check gas mmrs
-              if ((q_gas[gas](k) < 0).any())
-                ++violation;
-            }
-          }
-        },
-        violations);
-    return (violations == 0);
-  }
-
-private:
-  int nlev_;
-};
-
+class Prognostics; // fwd decl
+class Diagnostics; // fwd decl
 // Tendencies are identical in structure to prognostics.
-using Tendencies = Prognostics;
-
-/// MAM4 column-wise diagnostic aerosol fields.
-class Diagnostics final {
-public:
-  using ColumnView = haero::ColumnView;
-  using PackInfo = haero::PackInfo;
-
-  explicit Diagnostics(int num_levels) : nlev_(num_levels) {
-    const int nk = PackInfo::num_packs(num_levels);
-    for (int mode = 0; mode < 4; ++mode) {
-      hygroscopicity[mode] = ColumnView("hygroscopicity", nk);
-      haero::zero_init(hygroscopicity[mode], num_levels);
-      dry_geometric_mean_diameter[mode] =
-          ColumnView("dry_geometric_mean_diameter", nk);
-      haero::zero_init(dry_geometric_mean_diameter[mode], num_levels);
-      wet_geometric_mean_diameter[mode] =
-          ColumnView("wet_geometric_mean_diameter", nk);
-      haero::zero_init(wet_geometric_mean_diameter[mode], num_levels);
-    }
-  }
-  Diagnostics() = default; // Careful! Only for creating placeholders in views
-  Diagnostics(const Diagnostics &) = default;
-  ~Diagnostics() = default;
-  Diagnostics &operator=(const Diagnostics &) = default;
-
-  int num_levels() const { return nlev_; }
-
-  ColumnView hygroscopicity[4];
-  ColumnView dry_geometric_mean_diameter[4];
-  ColumnView wet_geometric_mean_diameter[4];
-
-  /// For gas-aerosol exchange process
-  ColumnView uptkrate_h2so4;
-
-private:
-  int nlev_;
-};
+using Tendencies = Prognostics; // fwd decl
 
 /// @struct MAM4::AeroConfig: for use with all MAM4 process implementations
 class AeroConfig final {
@@ -185,6 +56,151 @@ public:
   /// Returns the number of gas ids. This is the number of enums in mam4::GasId.
   static constexpr int num_gas_ids() { return 13; }
 };
+
+
+/// MAM4 column-wise prognostic aerosol fields (also used for tendencies).
+class Prognostics final {
+public:
+  using PackInfo = haero::PackInfo;
+  using ColumnView = haero::ColumnView;
+  using ThreadTeam = haero::ThreadTeam;
+
+  /// Creates a container for prognostic variables on the specified number of
+  /// vertical levels.
+  explicit Prognostics(int num_levels) : nlev_(num_levels) {
+    const int nk = PackInfo::num_packs(num_levels);
+    for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
+      n_mode[mode] = ColumnView("n_mode", nk);
+      haero::zero_init(n_mode[mode], num_levels);
+      for (int spec = 0; spec < AeroConfig::num_aerosol_ids(); ++spec) {
+        q_aero_i[mode][spec] = ColumnView("q_aero_i", nk);
+        q_aero_c[mode][spec] = ColumnView("q_aero_c", nk);
+        haero::zero_init(q_aero_i[mode][spec], num_levels);
+        haero::zero_init(q_aero_c[mode][spec], num_levels);
+      }
+    }
+    for (int gas = 0; gas < AeroConfig::num_gas_ids(); ++gas) {
+      q_gas[gas] = ColumnView("q_gas", nk);
+      haero::zero_init(q_gas[gas], num_levels);
+      for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
+        uptkaer[gas][mode] = ColumnView("uptake_rate", nk);
+        haero::zero_init(uptkaer[gas][mode], num_levels);
+      }
+    }
+  }
+
+  Prognostics() = default; // Careful! Only for creating placeholders in views
+  Prognostics(const Prognostics &) = default;
+  ~Prognostics() = default;
+  Prognostics &operator=(const Prognostics &) = default;
+
+  /// modal aerosol number mixing ratios (see aero_mode.hpp for indexing)
+  ColumnView n_mode[AeroConfig::num_modes()];
+
+  /// interstitial aerosol mass mixing ratios within each mode
+  /// (see aero_mode.hpp for indexing)
+  ColumnView q_aero_i[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
+
+  /// cloudborne aerosol mass mixing ratios within each mode
+  /// (see aero_mode.hpp for indexing)
+  ColumnView q_aero_c[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
+
+  /// gas mass mixing ratios (see aero_mode.hpp for indexing)
+  ColumnView q_gas[AeroConfig::num_gas_ids()];
+
+  ColumnView uptkaer[AeroConfig::num_gas_ids()][AeroConfig::num_modes()];
+
+  KOKKOS_INLINE_FUNCTION
+  int num_levels() const { return nlev_; }
+
+  /// Returns true iff all prognostic quantities are nonnegative, using the
+  /// given thread team to parallelize the check.
+  KOKKOS_INLINE_FUNCTION
+  bool quantities_nonnegative(const ThreadTeam &team) const {
+    const int nk = PackInfo::num_packs(num_levels());
+    int violations = 0;
+    Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(team, nk),
+        KOKKOS_CLASS_LAMBDA(int k, int &violation) {
+          for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) { // check mode mmrs
+            if ((n_mode[mode](k) < 0).any()) {
+              ++violation;
+            } else {
+              for (int spec = 0; spec < AeroConfig::num_aerosol_ids(); ++spec) { // check aerosol mmrs
+                if ((q_aero_i[mode][spec](k) < 0).any() ||
+                    (q_aero_c[mode][spec](k) < 0).any()) {
+                  ++violation;
+                  break;
+                }
+              }
+            }
+            if (violation > 0)
+              break;
+          }
+          if (violation == 0) {
+            for (int gas = 0; gas < AeroConfig::num_gas_ids(); ++gas) { // check gas mmrs
+              if ((q_gas[gas](k) < 0).any())
+                ++violation;
+            }
+          }
+        },
+        violations);
+    return (violations == 0);
+  }
+
+private:
+  int nlev_;
+};
+
+
+/// MAM4 column-wise diagnostic aerosol fields.
+class Diagnostics final {
+public:
+  using ColumnView = haero::ColumnView;
+  using PackInfo = haero::PackInfo;
+
+  explicit Diagnostics(int num_levels) : nlev_(num_levels) {
+    const int nk = PackInfo::num_packs(num_levels);
+    for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
+      hygroscopicity[mode] = ColumnView("hygroscopicity", nk);
+      haero::zero_init(hygroscopicity[mode], num_levels);
+      dry_geometric_mean_diameter[mode] =
+          ColumnView("dry_geometric_mean_diameter", nk);
+      haero::zero_init(dry_geometric_mean_diameter[mode], num_levels);
+      wet_geometric_mean_diameter[mode] =
+          ColumnView("wet_geometric_mean_diameter", nk);
+      haero::zero_init(wet_geometric_mean_diameter[mode], num_levels);
+    }
+  }
+  Diagnostics() = default; // Careful! Only for creating placeholders in views
+  Diagnostics(const Diagnostics &) = default;
+  ~Diagnostics() = default;
+  Diagnostics &operator=(const Diagnostics &) = default;
+
+  int num_levels() const { return nlev_; }
+
+  /// Hygroscopicity is a modal mass-weighted average over all species
+  /// in a mode; set/update with function @ref mode_hygrodscopicity
+  /// Used for water uptake and droplet nucleation
+  ColumnView hygroscopicity[AeroConfig::num_modes()];
+
+  /// Dry particle diameter is a modal mass-weighted average over all species
+  /// in a mode; set/update with function @ref mode_hygroscopicity.
+  /// Used for water uptake, droplet nucleation, nucleation
+  ColumnView dry_geometric_mean_diameter[AeroConfig::num_modes()];
+
+  /// Wet particle diameter is a modal mass-weighted average over all species
+  /// in a mode; set/update with function @ref mode_avg_wet_particle_diam.
+  /// Used for water uptake, droplet nucleation, gasaerxch
+  ColumnView wet_geometric_mean_diameter[AeroConfig::num_modes()];
+
+  /// For gas-aerosol exchange process
+  ColumnView uptkrate_h2so4;
+
+private:
+  int nlev_;
+};
+
 
 } // namespace mam4
 
