@@ -105,6 +105,23 @@ The build directory has a structure that mirrors the source directory, and you
 can type `make` in any one of its subdirectories to do partial builds. In
 practice, though, it's safest to always build from the top of the build tree.
 
+### Checking C++ formatting, and auto-formatting
+
+Our C++ style rules are described in the [MAM4xx developer guide](https://github.com/eagles-project/mam4xx/blob/main/docs/development.md).
+We enforce them using `clang-format`. If you have the correct version of
+`clang-format` installed, you can use the following targets to check and fix
+all C++ code in the `src` subdirectory:
+
+* `make format-cxx-check`: checks C++ formatting in all source files and reports
+  any non-conforming code
+* `make format-cxx`: applies C++ formatting rules to all source files, editing
+  them in place. Try to do this in a separate commit from your other work.
+
+You can run either of these targets from your build directory. If you have a
+different version of `clang-format` than the one we support, you'll get an error
+message telling you the correct version to install when you use either of these
+targets.
+
 ## Generating Documentation
 
 Documentation for MAM4xx can be built using
