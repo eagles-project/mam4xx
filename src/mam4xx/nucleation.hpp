@@ -729,7 +729,7 @@ class Nucleation {
           // extract aerosol mixing ratios
           Pack qnum_cur[4], qaer_cur[4][7];
           for (int m = 0; m < 4; ++m) {  // modes
-            qnum_cur[m] = progs.n_mode[m](k);
+            qnum_cur[m] = progs.n_mode_i[m](k);
             for (int a = 0; a < 7; ++a) {  // aerosols
               qaer_cur[m][a] = progs.q_aero_i[m][a](k);
             }
@@ -746,7 +746,7 @@ class Nucleation {
                               dso4dt_ait, dnh4dt_ait, dnclusterdt);
 
           // Store the computed tendencies.
-          tends.n_mode[nait](k) = dndt_ait;
+          tends.n_mode_i[nait](k) = dndt_ait;
           tends.q_aero_i[nait][iaer_so4](k) = dso4dt_ait;
           tends.q_gas[igas_h2so4](k) = -dso4dt_ait;
           // FIXME: what about dmdt_ait?
