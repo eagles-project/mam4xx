@@ -491,14 +491,14 @@ class CalcSize {
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
 
         // Oscar is working on this: start         
-        const auto n_i = prognostics.n_mode;
-        const auto n_c = prognostics.n_mode;
+        const auto n_i = prognostics.n_mode_i;
+        const auto n_c = prognostics.n_mode_c;
 
         // tendencies for interstitial number mixing ratios
-        const auto dnidt = tendencies.n_mode;
+        const auto dnidt = tendencies.n_mode_i;
 
         // tendencies for cloud-borne number mixing ratios
-        const auto dncdt = tendencies.n_mode;
+        const auto dncdt = tendencies.n_mode_c;
 
         Pack dryvol_i = 0; 
         Pack dryvol_c = 0;
