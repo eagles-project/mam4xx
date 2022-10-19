@@ -11,8 +11,6 @@
 #include <haero/math.hpp>
 #include <haero/root_finders.hpp>
 
-#include <iomanip>
-
 namespace mam4 {
 
 /// Surface tension of liquid water in air as a function of temperature

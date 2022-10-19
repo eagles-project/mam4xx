@@ -1,3 +1,5 @@
+include(GNUInstallDirs)
+
 # Most of mam4xx is implemented in C++ headers, so we must
 # install them for a client.
 install(FILES
