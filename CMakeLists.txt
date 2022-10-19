@@ -18,7 +18,7 @@ else() #CPU
 endif()
 
 # Blessed version of clang-format.
-set(CLANG_FORMAT_VERSION 13)
+set(CLANG_FORMAT_VERSION 14)
 
 # Set compilers, linkers, and flags from Haero.
 set(CMAKE_CXX_STANDARD ${HAERO_CXX_STANDARD})
