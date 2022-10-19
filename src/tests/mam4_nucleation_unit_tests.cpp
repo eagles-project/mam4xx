@@ -9,12 +9,6 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
-
-#include "ekat/logging/ekat_logger.hpp"
-#include "ekat/mpi/ekat_comm.hpp"
-
-#include "ekat/ekat_pack_kokkos.hpp"
-
 #include <sstream>
 
 using namespace haero;
@@ -28,7 +22,6 @@ TEST_CASE("test_constructor", "mam4_nucleation_process") {
 
 TEST_CASE("test_compute_tendencies", "mam4_nucleation_process") {
   ekat::Comm comm;
-
 
   ekat::logger::Logger<> logger("nucleation unit tests",
                                 ekat::logger::LogLevel::debug, comm);

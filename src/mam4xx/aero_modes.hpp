@@ -134,25 +134,28 @@ enum class ModeIndex {
 };
 
 /// Map ModeIndex to string (for logging, e.g.)
+/// This function cannot be called inside a GPU kernel,
+/// but it's helpful to use with ekat::Logger statements
+/// (which also cannot be called from inside a kernel)
 std::string mode_str(const ModeIndex m);
 
 static constexpr Real mam4_crystallization_rel_hum = 0.35;
 static constexpr Real mam4_delequesence_rel_hum = 0.8;
-static constexpr Real mam4_accum_min_radius_m = 5.35e-8;
-static constexpr Real mam4_accum_nom_radius_m = 1.1e-7;
-static constexpr Real mam4_accum_max_radius_m = 4.4e-7;
+static constexpr Real mam4_accum_min_diameter_m = 5.35e-8;
+static constexpr Real mam4_accum_nom_diameter_m = 1.1e-7;
+static constexpr Real mam4_accum_max_diameter_m = 4.4e-7;
 static constexpr Real mam4_accum_mead_std_dev = 1.8;
-static constexpr Real mam4_aitken_min_radius_m = 8.7e-9;
-static constexpr Real mam4_aitken_nom_radius_m = 2.6e-8;
-static constexpr Real mam4_aitken_max_radius_m = 5.2e-8;
+static constexpr Real mam4_aitken_min_diameter_m = 8.7e-9;
+static constexpr Real mam4_aitken_nom_diameter_m = 2.6e-8;
+static constexpr Real mam4_aitken_max_diameter_m = 5.2e-8;
 static constexpr Real mam4_aitken_mead_std_dev = 1.6;
-static constexpr Real mam4_coarse_min_radius_m = 1e-6;
-static constexpr Real mam4_coarse_nom_radius_m = 2e-6;
-static constexpr Real mam4_coarse_max_radius_m = 4e-6;
+static constexpr Real mam4_coarse_min_diameter_m = 1e-6;
+static constexpr Real mam4_coarse_nom_diameter_m = 2e-6;
+static constexpr Real mam4_coarse_max_diameter_m = 4e-6;
 static constexpr Real mam4_coarse_mead_std_dev = 1.8;
-static constexpr Real mam4_primary_carbon_min_radius_m = 1e-8;
-static constexpr Real mam4_primary_carbon_nom_radius_m = 5e-8;
-static constexpr Real mam4_primary_carbon_max_radius_m = 1e-7;
+static constexpr Real mam4_primary_carbon_min_diameter_m = 1e-8;
+static constexpr Real mam4_primary_carbon_nom_diameter_m = 5e-8;
+static constexpr Real mam4_primary_carbon_max_diameter_m = 1e-7;
 static constexpr Real mam4_primary_carbon_mead_std_dev = 1.6;
 
 /// A list of all modes within MAM4.
@@ -166,20 +169,20 @@ static constexpr Real mam4_primary_carbon_mead_std_dev = 1.6;
 /// NOTE: /lcrc/group/acme/ccsm-data/inputdata/atm/cam/physprops/
 static Mode modes[4] = {
     // accumulation
-    Mode(mam4_accum_min_radius_m, mam4_accum_nom_radius_m,
-         mam4_accum_max_radius_m, mam4_accum_mead_std_dev,
+    Mode(mam4_accum_min_diameter_m, mam4_accum_nom_diameter_m,
+         mam4_accum_max_diameter_m, mam4_accum_mead_std_dev,
          mam4_crystallization_rel_hum, mam4_delequesence_rel_hum),
     // aitken
-    Mode(mam4_aitken_min_radius_m, mam4_aitken_nom_radius_m,
-         mam4_aitken_max_radius_m, mam4_aitken_mead_std_dev,
+    Mode(mam4_aitken_min_diameter_m, mam4_aitken_nom_diameter_m,
+         mam4_aitken_max_diameter_m, mam4_aitken_mead_std_dev,
          mam4_crystallization_rel_hum, mam4_delequesence_rel_hum),
     // coarse
-    Mode(mam4_coarse_min_radius_m, mam4_coarse_nom_radius_m,
-         mam4_coarse_max_radius_m, mam4_coarse_mead_std_dev,
+    Mode(mam4_coarse_min_diameter_m, mam4_coarse_nom_diameter_m,
+         mam4_coarse_max_diameter_m, mam4_coarse_mead_std_dev,
          mam4_crystallization_rel_hum, mam4_delequesence_rel_hum),
     // primary carbon
-    Mode(mam4_primary_carbon_min_radius_m, mam4_primary_carbon_nom_radius_m,
-         mam4_primary_carbon_max_radius_m, mam4_primary_carbon_mead_std_dev,
+    Mode(mam4_primary_carbon_min_diameter_m, mam4_primary_carbon_nom_diameter_m,
+         mam4_primary_carbon_max_diameter_m, mam4_primary_carbon_mead_std_dev,
          mam4_crystallization_rel_hum, mam4_delequesence_rel_hum)};
 
 /// Identifiers for aerosol species that inhabit MAM4 modes.
@@ -195,6 +198,9 @@ enum class AeroId {
 };
 
 /// Map ModeIndex to string (for logging, e.g.)
+/// This function cannot be called inside a GPU kernel,
+/// but it's helpful to use with ekat::Logger statements
+/// (which also cannot be called inside a kernel)
 std::string aero_id_str(const AeroId aid);
 
 /// Molecular weight of mam4 dust aerosol [kg/mol]

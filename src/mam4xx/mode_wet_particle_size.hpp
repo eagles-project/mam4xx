@@ -1,19 +1,17 @@
 #ifndef MAM4XX_WET_PARTICLE_SIZE_HPP
 #define MAM4XX_WET_PARTICLE_SIZE_HPP
 
-#include "aero_config.hpp"
-#include "aero_modes.hpp"
-#include "conversions.hpp"
-#include "kohler.hpp"
-#include "mam4_types.hpp"
+#include <mam4xx/aero_config.hpp>
+#include <mam4xx/aero_modes.hpp>
+#include <mam4xx/conversions.hpp>
+#include <mam4xx/kohler.hpp>
+#include <mam4xx/mam4_types.hpp>
 
-#include "haero/atmosphere.hpp"
-#include "haero/haero.hpp"
+#include <haero/atmosphere.hpp>
+#include <haero/haero.hpp>
 
 #include <ekat/ekat_pack.hpp>
 #include <ekat/ekat_pack_math.hpp>
-
-#include <sstream>
 
 namespace mam4 {
 

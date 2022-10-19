@@ -1,21 +1,21 @@
 #include "atmosphere_utils.hpp"
 
-#include "mam4xx/mam4_types.hpp"
-#include "mam4xx/aero_modes.hpp"
-#include "mam4xx/aero_config.hpp"
-#include "mam4xx/conversions.hpp"
-#include "mam4xx/mode_dry_particle_size.hpp"
-#include "mam4xx/mode_hygroscopicity.hpp"
-#include "mam4xx/mode_wet_particle_size.hpp"
+#include <mam4xx/mam4_types.hpp>
+#include <mam4xx/aero_modes.hpp>
+#include <mam4xx/aero_config.hpp>
+#include <mam4xx/conversions.hpp>
+#include <mam4xx/mode_dry_particle_size.hpp>
+#include <mam4xx/mode_hygroscopicity.hpp>
+#include <mam4xx/mode_wet_particle_size.hpp>
 
-#include "haero/floating_point.hpp"
-#include "haero/atmosphere.hpp"
+#include <haero/floating_point.hpp>
+#include <haero/atmosphere.hpp>
 
-#include "catch2/catch.hpp"
+#include <catch2/catch.hpp>
 
-#include "ekat/ekat_pack_kokkos.hpp"
-#include "ekat/logging/ekat_logger.hpp"
-#include "ekat/mpi/ekat_comm.hpp"
+#include <ekat/ekat_pack_kokkos.hpp>
+#include <ekat/logging/ekat_logger.hpp>
+#include <ekat/mpi/ekat_comm.hpp>
 
 using namespace mam4;
 

@@ -1,9 +1,9 @@
 #ifndef MAM4XX_DRY_PARTICLE_SIZE_HPP
 #define MAM4XX_DRY_PARTICLE_SIZE_HPP
 
-#include "aero_config.hpp"
-#include "aero_modes.hpp"
-#include "mam4_types.hpp"
+#include <mam4xx/aero_config.hpp>
+#include <mam4xx/aero_modes.hpp>
+#include <mam4xx/mam4_types.hpp>
 
 namespace mam4 {
 
