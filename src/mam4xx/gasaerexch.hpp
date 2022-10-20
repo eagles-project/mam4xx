@@ -1,13 +1,13 @@
 #ifndef MAM4XX_GASAEREXCH_HPP
 #define MAM4XX_GASAEREXCH_HPP
 
-#include <mam4xx/mam4_types.hpp>
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/mam4_types.hpp>
 
-#include <haero/atmosphere.hpp>
-#include <haero/haero.hpp>
-#include <haero/constants.hpp>
 #include <Kokkos_Array.hpp>
+#include <haero/atmosphere.hpp>
+#include <haero/constants.hpp>
+#include <haero/haero.hpp>
 
 namespace mam4 {
 
@@ -40,11 +40,11 @@ class GasAerExch {
   static constexpr Real soag_h2so4_uptake_coeff_ratio = 0.81; // for SOAG
   static constexpr Real nh3_h2so4_uptake_coeff_ratio = 2.08;  // for NH3
 
-  bool l_gas_condense_to_mode[num_gas][num_mode]={};
-  int eqn_and_numerics_category[num_gas]={};
-  Real uptk_rate_factor[num_gas]={};
-  Real modes_mean_std_dev[num_mode]={};
-  //haero::DeviceType::view_1d<int> mode_aging_optaa;
+  bool l_gas_condense_to_mode[num_gas][num_mode] = {};
+  int eqn_and_numerics_category[num_gas] = {};
+  Real uptk_rate_factor[num_gas] = {};
+  Real modes_mean_std_dev[num_mode] = {};
+  // haero::DeviceType::view_1d<int> mode_aging_optaa;
 
 public:
   // process-specific configuration data (if any)
@@ -54,16 +54,16 @@ public:
     Config(const Config &) = default;
     ~Config() = default;
     Config &operator=(const Config &) = default;
-    bool l_mode_can_contain_species[num_aer][num_mode]={};
-    bool l_mode_can_age[num_aer]={};
-    int idx_gas_to_aer[num_gas]={};
+    bool l_mode_can_contain_species[num_aer][num_mode] = {};
+    bool l_mode_can_age[num_aer] = {};
+    int idx_gas_to_aer[num_gas] = {};
     // qgas_netprod_otrproc = gas net production rate from other processes
     // such as gas-phase chemistry and emissions (mol/mol/s)
     // this allows the condensation (gasaerexch) routine to apply production and
     // condensation loss together, which is more accurate numerically
     // NOTE - must be >= zero, as numerical method can fail when it is negative
     // NOTE - currently only the values for h2so4 and nh3 should be non-zero
-    Real qgas_netprod_otrproc[num_gas]={};
+    Real qgas_netprod_otrproc[num_gas] = {};
   };
 
   // name -- unique name of the process implemented by this class
@@ -74,7 +74,7 @@ public:
             const Config &process_config = Config()) {
 
     config_ = process_config;
-    //Kokkos::resize(mode_aging_optaa, num_mode);
+    // Kokkos::resize(mode_aging_optaa, num_mode);
 
     //------------------------------------------------------------------
     // MAM currently assumes that the uptake rate of other gases
@@ -89,9 +89,9 @@ public:
     uptk_rate_factor[igas_h2so4] = 1.0;
     // For NH3
     uptk_rate_factor[igas_nh3] = nh3_h2so4_uptake_coeff_ratio;
- 
+
     for (int imode = 0; imode < num_mode; ++imode)
-      modes_mean_std_dev[imode]=modes[imode].mean_std_dev;
+      modes_mean_std_dev[imode] = modes[imode].mean_std_dev;
     //-------------------------------------------------------------------
     // MAM currently uses a splitting method to deal with gas-aerosol
     // mass exchange. A quasi-analytical solution assuming timestep-wise
@@ -130,8 +130,8 @@ public:
     }
 
     // For SOAG. (igas_soag_bgn and igas_soag_end are the start- and
-    // end-indices) Remove use of igas_soag_bgn but keep comments in 
-    // case need to be added back 
+    // end-indices) Remove use of igas_soag_bgn but keep comments in
+    // case need to be added back
     // uptk_rate_factor(igas_soag:igas_soagzz) =
     //   soag_h2so4_uptake_coeff_ratio
     //         igas_soag = ngas + 1
@@ -184,7 +184,8 @@ public:
     const Real mw_air = Constants::molec_weight_dry_air;
     const Real vol_molar_h2so4 = Constants::molec_weight_h2so4;
     const Real vol_molar_air = Constants::molec_weight_dry_air;
-    const Real accom_coef_h2so4 = Constants::accom_coef_h2so4;;
+    const Real accom_coef_h2so4 = Constants::accom_coef_h2so4;
+    ;
     const Real r_universal = Constants::r_gas;
     const Real r_pi = Constants::pi;
     const Real beta_inp = 0; // quadrature parameter (--)
@@ -194,8 +195,8 @@ public:
     //====================================================================
     // Initialize the time-step mean gas concentration (explain why?)
     //====================================================================
-    //Real qgas_avg[num_gas];
-    //for (int k = 0; k < num_gas; ++k)
+    // Real qgas_avg[num_gas];
+    // for (int k = 0; k < num_gas; ++k)
     //  qgas_avg[k] = 0.0;
 
     Real alnsg_aer[num_mode];
@@ -261,7 +262,8 @@ public:
               diags.uptkrate_h2so4(k) += progs.uptkaer[h2so4][n](k);
           }
           // extract gas mixing ratios
-          Pack qgas_cur[num_gas], qgas_avg[num_gas], qaer_cur[num_aer][num_mode];
+          Pack qgas_cur[num_gas], qgas_avg[num_gas],
+              qaer_cur[num_aer][num_mode];
           for (int g = 0; g < num_gas; ++g) {
             qgas_cur[g] = progs.q_gas[g](k);
             qgas_avg[g] = 0;
@@ -276,18 +278,19 @@ public:
               Pack uptkaer[num_mode];
               for (int n = 0; n < num_mode; ++n)
                 uptkaer[n] = progs.uptkaer[igas][n](k);
-              Pack (&qaer)[num_mode] = qaer_cur[iaer];
+              Pack(&qaer)[num_mode] = qaer_cur[iaer];
               mam_gasaerexch_1subarea_1gas_nonvolatile(
-                  dt, netprod, uptkaer,
-                  qgas_cur[igas], qgas_avg[igas], qaer);
+                  dt, netprod, uptkaer, qgas_cur[igas], qgas_avg[igas], qaer);
             }
           }
         });
   }
   KOKKOS_INLINE_FUNCTION
-  void mam_gasaerexch_1subarea_1gas_nonvolatile(
-    const Real dt, const Real netprod, Pack uptkaer[num_mode],
-    Pack &qgas_cur, Pack &qgas_avg, Pack qaer_cur[num_mode]) const {
+  void mam_gasaerexch_1subarea_1gas_nonvolatile(const Real dt,
+                                                const Real netprod,
+                                                Pack uptkaer[num_mode],
+                                                Pack &qgas_cur, Pack &qgas_avg,
+                                                Pack qaer_cur[num_mode]) const {
 
   }
 
@@ -298,8 +301,7 @@ public:
       const Real vol_molar_gas, const Real vol_molar_air, const Real accom,
       const Real r_universal, const Real pi, const Real beta_inp,
       const int nghq, const Pack dgncur_awet[num_mode],
-      const Real lnsg[num_mode],
-      Pack uptkaer[num_mode]) const {
+      const Real lnsg[num_mode], Pack uptkaer[num_mode]) const {
     //----------------------------------------------------------------------
     //  Computes   uptake rate parameter uptkaer[0:num_mode] =
     //  uptkrate[0:num_mode]
@@ -387,10 +389,9 @@ public:
       xghq = xghq_2.data();
       wghq = wghq_2.data();
     } else {
-      printf(
-          "nghq integration option is not available: %d, "
-          "valid are 20, 10, 4, and 2\n",
-          nghq);
+      printf("nghq integration option is not available: %d, "
+             "valid are 20, 10, 4, and 2\n",
+             nghq);
       Kokkos::abort("Invalid integration order requested.");
     }
     //-----------------------------------------------------------------------
@@ -413,7 +414,7 @@ public:
 
       // beta = dln(uptake_rate)/dln(D_p)
       //      = 2.0 in free molecular regime, 1.0 in continuum regime
-      // if uptake_rate ~= a * (D_p**beta), then the 2 point quadrature 
+      // if uptake_rate ~= a * (D_p**beta), then the 2 point quadrature
       // is very accurate
       Pack beta;
       if (abs(beta_inp - 1.5) > 0.5) {

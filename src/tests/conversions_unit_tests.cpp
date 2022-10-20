@@ -125,16 +125,14 @@ TEST_CASE("conversions", "") {
       CHECK(haero::FloatingPoint<PackType>::in_bounds(h_rh_w(k), 0, 1));
 
       // both relative humidities should match
-      const Real tol = 2*std::numeric_limits<float>::epsilon();
-      if (!haero::FloatingPoint<PackType>::rel(
-              h_rh_q(k), h_rh_w(k), tol)) {
-        logger.error(
-            "rel diff found at level {}: rh_q = {} rh_w = {} rel_diff = {} tol = {}", k,
-            h_rh_q(k), h_rh_w(k), abs(h_rh_q(k) - h_rh_w(k)) / h_rh_q(k),
-            tol);
+      const Real tol = 2 * std::numeric_limits<float>::epsilon();
+      if (!haero::FloatingPoint<PackType>::rel(h_rh_q(k), h_rh_w(k), tol)) {
+        logger.error("rel diff found at level {}: rh_q = {} rh_w = {} rel_diff "
+                     "= {} tol = {}",
+                     k, h_rh_q(k), h_rh_w(k),
+                     abs(h_rh_q(k) - h_rh_w(k)) / h_rh_q(k), tol);
       }
-      REQUIRE(haero::FloatingPoint<PackType>::rel(
-          h_rh_q(k), h_rh_w(k), tol));
+      REQUIRE(haero::FloatingPoint<PackType>::rel(h_rh_q(k), h_rh_w(k), tol));
     }
   }
 }

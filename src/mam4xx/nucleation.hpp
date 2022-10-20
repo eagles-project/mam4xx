@@ -32,12 +32,12 @@ namespace nucleation {
 // Atmos. Chem. Phys.  9, 239–260, 2009
 //--------------------------------------------------------
 KOKKOS_INLINE_FUNCTION
-void pbl_nuc_wang2008(const Pack& so4vol, Real pi,
+void pbl_nuc_wang2008(const Pack &so4vol, Real pi,
                       int pbl_nuc_wang2008_user_choice,
                       Real adjust_factor_pbl_ratenucl,
-                      IntPack& pbl_nuc_wang2008_actual, Pack& ratenucl,
-                      Pack& rateloge, Pack& cnum_tot, Pack& cnum_h2so4,
-                      Pack& cnum_nh3, Pack& radius_cluster_nm) {
+                      IntPack &pbl_nuc_wang2008_actual, Pack &ratenucl,
+                      Pack &rateloge, Pack &cnum_tot, Pack &cnum_h2so4,
+                      Pack &cnum_nh3, Pack &radius_cluster_nm) {
   // subr arguments (in)
   // real(wp), intent(in) :: pi                           ! pi
   // real(wp), intent(in) :: so4vol                       ! concentration of
@@ -103,9 +103,9 @@ void pbl_nuc_wang2008(const Pack& so4vol, Real pi,
   //    since aitken size >> initial size, the initial composition
   //    has very little impact on the results
 
-  tmp_diam = radius_cluster_nm * 2.0e-7;       // diameter in cm
-  tmp_volu = cube(tmp_diam) * (pi / 6.0);      // volume in cm^3
-  tmp_mass = tmp_volu * density_sulfate_gcm3;  // mass in g
+  tmp_diam = radius_cluster_nm * 2.0e-7;      // diameter in cm
+  tmp_volu = cube(tmp_diam) * (pi / 6.0);     // volume in cm^3
+  tmp_mass = tmp_volu * density_sulfate_gcm3; // mass in g
 
   // no. of h2so4 molec per cluster assuming pure h2so4
   cnum_h2so4.set(pbl_rate_sufficient,
@@ -124,9 +124,9 @@ void pbl_nuc_wang2008(const Pack& so4vol, Real pi,
 //        j. geophys. res., 107, 4622, doi:10.1029/2002jd002184
 //-----------------------------------------------------------------
 KOKKOS_INLINE_FUNCTION
-void binary_nuc_vehk2002(const Pack& temp, const Pack& rh, const Pack& so4vol,
-                         Pack& ratenucl, Pack& rateloge, Pack& cnum_h2so4,
-                         Pack& cnum_tot, Pack& radius_cluster) {
+void binary_nuc_vehk2002(const Pack &temp, const Pack &rh, const Pack &so4vol,
+                         Pack &ratenucl, Pack &rateloge, Pack &cnum_h2so4,
+                         Pack &cnum_tot, Pack &radius_cluster) {
   // arguments (in)
   // real(wp), intent(in) :: temp              ! temperature (k)
   // real(wp), intent(in) :: rh                ! relative humidity (0-1)
@@ -145,8 +145,7 @@ void binary_nuc_vehk2002(const Pack& temp, const Pack& rh, const Pack& so4vol,
 
   // calc sulfuric acid mole fraction in critical cluster
   // following eq. (11) in Vehkamäki et al. (2002)
-  Pack x_crit =
-      vehkamaki2002::h2so4_critical_mole_fraction(so4vol, temp, rh);
+  Pack x_crit = vehkamaki2002::h2so4_critical_mole_fraction(so4vol, temp, rh);
 
   // calc nucleation rate
   // following eq. (12) in Vehkamäki et al. (2002)
@@ -155,8 +154,7 @@ void binary_nuc_vehk2002(const Pack& temp, const Pack& rh, const Pack& so4vol,
 
   // calc number of molecules in critical cluster
   // following eq. (13) in Vehkamäki et al. (2002)
-  cnum_tot =
-      vehkamaki2002::num_critical_molecules(so4vol, temp, rh, x_crit);
+  cnum_tot = vehkamaki2002::num_critical_molecules(so4vol, temp, rh, x_crit);
 
   cnum_h2so4 = cnum_tot * x_crit;
 
@@ -185,9 +183,9 @@ void binary_nuc_vehk2002(const Pack& temp, const Pack& rh, const Pack& so4vol,
 // r:     radius of the critical cluster (nm)
 //-----------------------------------------------------------------------------
 KOKKOS_INLINE_FUNCTION
-void ternary_nuc_merik2007(const Pack& t, const Pack& rh, const Pack& c2,
-                           const Pack& c3, Pack& j_log, Pack& ntot, Pack& nacid,
-                           Pack& namm, Pack& r) {
+void ternary_nuc_merik2007(const Pack &t, const Pack &rh, const Pack &c2,
+                           const Pack &c3, Pack &j_log, Pack &ntot, Pack &nacid,
+                           Pack &namm, Pack &r) {
   Pack t_onset = merikanto2007::onset_temperature(rh, c2, c3);
 
   // Set log(J) assuming no nucleation.
@@ -228,26 +226,26 @@ void ternary_nuc_merik2007(const Pack& t, const Pack& rh, const Pack& c2,
 //   Atmos. Chem. Phys.  9, 239–260, 2009
 KOKKOS_INLINE_FUNCTION
 void mer07_veh02_wang08_nuc_1box(
-    int newnuc_method_user_choice, IntPack& newnuc_method_actual,  // in, out
+    int newnuc_method_user_choice, IntPack &newnuc_method_actual, // in, out
     int pbl_nuc_wang2008_user_choice,
-    IntPack& pbl_nuc_wang2008_actual,                           // in, out
-    Real ln_nuc_rate_cutoff,                                    // in
-    Real adjust_factor_bin_tern_ratenucl,                       // in
-    Real adjust_factor_pbl_ratenucl,                            // in
-    Real pi, const Pack& so4vol_in, const Pack& nh3ppt_in,      // in
-    const Pack& temp_in, const Pack& rh_in, const Pack& zm_in,  // in
-    Real pblh_in,                                               // in
-    Pack& dnclusterdt, Pack& rateloge, Pack& cnum_h2so4,        // out
-    Pack& cnum_nh3, Pack& radius_cluster) {                     // out
+    IntPack &pbl_nuc_wang2008_actual,                          // in, out
+    Real ln_nuc_rate_cutoff,                                   // in
+    Real adjust_factor_bin_tern_ratenucl,                      // in
+    Real adjust_factor_pbl_ratenucl,                           // in
+    Real pi, const Pack &so4vol_in, const Pack &nh3ppt_in,     // in
+    const Pack &temp_in, const Pack &rh_in, const Pack &zm_in, // in
+    Real pblh_in,                                              // in
+    Pack &dnclusterdt, Pack &rateloge, Pack &cnum_h2so4,       // out
+    Pack &cnum_nh3, Pack &radius_cluster) {                    // out
 
-  Pack rh_bb;      // bounded value of rh_in
-  Pack so4vol_bb;  // bounded value of so4vol_in (molecules per cm3)
-  Pack temp_bb;    // bounded value of temp_in (K)
-  Pack nh3ppt_bb;  // bounded nh3 (ppt)
+  Pack rh_bb;     // bounded value of rh_in
+  Pack so4vol_bb; // bounded value of so4vol_in (molecules per cm3)
+  Pack temp_bb;   // bounded value of temp_in (K)
+  Pack nh3ppt_bb; // bounded nh3 (ppt)
 
-  Pack cnum_tot;   // total number of molecules in a cluster
-  Pack ratenuclt;  // J: nucleation rate from parameterization.
-                   // # of clusters/nuclei per cm3 per s
+  Pack cnum_tot;  // total number of molecules in a cluster
+  Pack ratenuclt; // J: nucleation rate from parameterization.
+                  // # of clusters/nuclei per cm3 per s
 
   //---------------------------------------------------------------
   // Set "effective zero"
@@ -340,49 +338,49 @@ void mer07_veh02_wang08_nuc_1box(
 
 KOKKOS_INLINE_FUNCTION
 void newnuc_cluster_growth(
-    const Pack& ratenuclt_bb, const Pack& cnum_h2so4, const Pack& cnum_nh3,
-    const Pack& radius_cluster, const Pack* dplom_sect, const Pack* dphim_sect,
-    int nsize, Real dtnuc, const Pack& temp_in, const Pack& rh_in,
-    const Pack& cair, Real accom_coef_h2so4, Real mw_so4a, Real mw_so4a_host,
-    Real mw_nh4a, Real avogad, Real pi, const Pack& qnh3_cur,
-    const Pack& qh2so4_cur, const Pack& so4vol_in, const Pack& h2so4_uptkrate,
-    IntPack& isize_nuc, Pack& dens_nh4so4a, Pack& qh2so4_del, Pack& qnh3_del,
-    Pack& qso4a_del, Pack& qnh4a_del, Pack& qnuma_del) {
+    const Pack &ratenuclt_bb, const Pack &cnum_h2so4, const Pack &cnum_nh3,
+    const Pack &radius_cluster, const Pack *dplom_sect, const Pack *dphim_sect,
+    int nsize, Real dtnuc, const Pack &temp_in, const Pack &rh_in,
+    const Pack &cair, Real accom_coef_h2so4, Real mw_so4a, Real mw_so4a_host,
+    Real mw_nh4a, Real avogad, Real pi, const Pack &qnh3_cur,
+    const Pack &qh2so4_cur, const Pack &so4vol_in, const Pack &h2so4_uptkrate,
+    IntPack &isize_nuc, Pack &dens_nh4so4a, Pack &qh2so4_del, Pack &qnh3_del,
+    Pack &qso4a_del, Pack &qnh4a_del, Pack &qnuma_del) {
   Pack tmpa;
   Pack tmpb, tmpe;
-  Pack voldry_clus;       // critical-cluster dry volume (m3)
-  Pack voldry_part;       // "grown" single-particle dry volume (m3)
-  Pack wetvol_dryvol;     // grown particle (wet-volume)/(dry-volume)
-  Pack wet_volfrac_so4a;  // grown particle (dry-volume-from-so4)/(wet-volume)
-  Pack dpdry_part;        // "grown" single-particle dry diameter (m)
-  Pack dpdry_clus;        // critical cluster diameter (m)
+  Pack voldry_clus;      // critical-cluster dry volume (m3)
+  Pack voldry_part;      // "grown" single-particle dry volume (m3)
+  Pack wetvol_dryvol;    // grown particle (wet-volume)/(dry-volume)
+  Pack wet_volfrac_so4a; // grown particle (dry-volume-from-so4)/(wet-volume)
+  Pack dpdry_part;       // "grown" single-particle dry diameter (m)
+  Pack dpdry_clus;       // critical cluster diameter (m)
 
-  Pack cs_prime_kk;       // kk2002 "cs_prime" parameter (1/m2)
-  Pack cs_kk;             // kk2002 "cs" parameter (1/s)
-  Pack dfin_kk, dnuc_kk;  // kk2002 final/initial new particle wet diameter (nm)
+  Pack cs_prime_kk;      // kk2002 "cs_prime" parameter (1/m2)
+  Pack cs_kk;            // kk2002 "cs" parameter (1/s)
+  Pack dfin_kk, dnuc_kk; // kk2002 final/initial new particle wet diameter (nm)
   Pack tmpa1, tmpb1;
-  Pack tmp_spd;           // h2so4 vapor molecular speed (m/s)
-  Pack qmolnh4a_del_max;  // max production of aerosol nh4 over dtnuc
-                          // (mol/mol-air)
-  Pack qmolso4a_del_max;  // max production of aerosol so4 over dtnuc
-                          // (mol/mol-air)
-  Pack ratenuclt_kk;      // nucleation rate after kk2002 adjustment (#/m3/s)
+  Pack tmp_spd;          // h2so4 vapor molecular speed (m/s)
+  Pack qmolnh4a_del_max; // max production of aerosol nh4 over dtnuc
+                         // (mol/mol-air)
+  Pack qmolso4a_del_max; // max production of aerosol so4 over dtnuc
+                         // (mol/mol-air)
+  Pack ratenuclt_kk;     // nucleation rate after kk2002 adjustment (#/m3/s)
 
   IntPack igrow;
 
   Pack tmp_n1, tmp_n2, tmp_n3;
   Pack tmp_m1, tmp_m2, tmp_m3;
-  Pack dens_part;              // "grown" single-particle dry density (kg/m3)
-  Pack mass_part;              // "grown" single-particle dry mass (kg)
-  Pack molenh4a_per_moleso4a;  // (mol aerosol nh4)/(mol aerosol so4)
-  Pack kgaero_per_moleso4a;    // (kg dry aerosol)/(mol aerosol so4)
+  Pack dens_part;             // "grown" single-particle dry density (kg/m3)
+  Pack mass_part;             // "grown" single-particle dry mass (kg)
+  Pack molenh4a_per_moleso4a; // (mol aerosol nh4)/(mol aerosol so4)
+  Pack kgaero_per_moleso4a;   // (kg dry aerosol)/(mol aerosol so4)
   Pack factor_kk;
-  Pack freduce;  // reduction factor applied to nucleation rate
-                 // due to limited availability of h2so4 & nh3 gases
+  Pack freduce; // reduction factor applied to nucleation rate
+                // due to limited availability of h2so4 & nh3 gases
   Pack freducea, freduceb;
-  Pack gamma_kk;  // kk2002 "gamma" parameter (nm2*m2/h)
-  Pack gr_kk;     // kk2002 "gr" parameter (nm/h)
-  Pack nu_kk;     // kk2002 "nu" parameter (nm)
+  Pack gamma_kk; // kk2002 "gamma" parameter (nm2*m2/h)
+  Pack gr_kk;    // kk2002 "gr" parameter (nm/h)
+  Pack nu_kk;    // kk2002 "nu" parameter (nm)
 
   constexpr Real onethird = 1.0 / 3.0;
 
@@ -421,9 +419,9 @@ void newnuc_cluster_growth(
   igrow = 0;
   auto dpdry_clus_lo = (dpdry_clus <= dplom_sect[0]);
   igrow.set(dpdry_clus_lo, 1);
-  auto dpdry_clus_hi = (dpdry_clus >= dphim_sect[nsize-1]);
+  auto dpdry_clus_hi = (dpdry_clus >= dphim_sect[nsize - 1]);
   isize_nuc.set(dpdry_clus_hi, nsize);
-  dpdry_part.set(dpdry_clus_hi, dphim_sect[nsize-1]);
+  dpdry_part.set(dpdry_clus_hi, dphim_sect[nsize - 1]);
   for (int i = 0; i < nsize; ++i) {
     auto dpdry_clus_i = (dpdry_clus < dphim_sect[i]);
     isize_nuc.set(dpdry_clus_i, i);
@@ -488,7 +486,7 @@ void newnuc_cluster_growth(
 
   // "gr" parameter (nm/h) = condensation growth rate of new particles
   // use kk2002 eqn 21 for h2so4 uptake, and correct for nh3 & h2o uptake
-  tmp_spd.set(growth, 14.7 * sqrt(temp_in));  // h2so4 molecular speed (m/s)
+  tmp_spd.set(growth, 14.7 * sqrt(temp_in)); // h2so4 molecular speed (m/s)
   gr_kk.set(growth, 3.0e-9 * tmp_spd * mw_sulfacid * so4vol_in /
                         (dens_part * wet_volfrac_so4a));
 
@@ -522,7 +520,7 @@ void newnuc_cluster_growth(
 
   // tmpb = h2so4 gas diffusivity (m2/s, then m2/h)
   tmpb.set(growth, 6.7037e-6 * (pow(temp_in, 0.75) / cair));
-  tmpb1.set(growth, tmpb * 3600.0);  // m2/s -> m2/h
+  tmpb1.set(growth, tmpb * 3600.0); // m2/s -> m2/h
   cs_prime_kk.set(growth, tmpa / (4.0 * pi * tmpb * accom_coef_h2so4));
   cs_kk.set(growth, cs_prime_kk * 4.0 * pi * tmpb1);
 
@@ -599,17 +597,17 @@ void newnuc_cluster_growth(
   qnh4a_del.set(enough_nuc, -qnh3_del);
 
   // change to aerosol number (in #/mol-air)
-  qnuma_del.set(
-      enough_nuc,
-      1.0e-3 * (qso4a_del * mw_so4a + qnh4a_del * mw_nh4a) / mass_part);
+  qnuma_del.set(enough_nuc, 1.0e-3 *
+                                (qso4a_del * mw_so4a + qnh4a_del * mw_nh4a) /
+                                mass_part);
 }
 
-}  // namespace nucleation
+} // namespace nucleation
 
 /// @class Nucleation
 /// This class implements MAM4's nucleation parameterization.
 class Nucleation {
- public:
+public:
   // nucleation-specific configuration
   struct Config {
     // "host" parameters
@@ -625,22 +623,17 @@ class Nucleation {
 
     // default constructor -- sets default values for parameters
     Config()
-        : dens_so4a_host(0),
-          mw_nh4a_host(mw_nh4a),
-          mw_so4a_host(mw_so4a),
-          newnuc_method_user_choice(2),
-          pbl_nuc_wang2008_user_choice(1),
-          adjust_factor_bin_tern_ratenucl(1.0),
-          adjust_factor_pbl_ratenucl(1.0),
-          accom_coef_h2so4(1.0),
-          newnuc_adjust_factor_dnaitdt(1.0) {}
+        : dens_so4a_host(0), mw_nh4a_host(mw_nh4a), mw_so4a_host(mw_so4a),
+          newnuc_method_user_choice(2), pbl_nuc_wang2008_user_choice(1),
+          adjust_factor_bin_tern_ratenucl(1.0), adjust_factor_pbl_ratenucl(1.0),
+          accom_coef_h2so4(1.0), newnuc_adjust_factor_dnaitdt(1.0) {}
 
-    Config(const Config&) = default;
+    Config(const Config &) = default;
     ~Config() = default;
-    Config& operator=(const Config&) = default;
+    Config &operator=(const Config &) = default;
   };
 
- private:
+private:
   static const int nait = static_cast<int>(ModeIndex::Aitken);
   static const int igas_h2so4 = static_cast<int>(GasId::H2SO4);
   static const int igas_nh3 = static_cast<int>(GasId::NH3);
@@ -654,18 +647,18 @@ class Nucleation {
   Config config_;
 
   // Mode parameters
-  Real dgnum_aer[4],   // mean geometric number diameter
-      dgnumhi_aer[4],  // max geometric number diameter
-      dgnumlo_aer[4];  // min geometric number diameter
+  Real dgnum_aer[4],  // mean geometric number diameter
+      dgnumhi_aer[4], // max geometric number diameter
+      dgnumlo_aer[4]; // min geometric number diameter
 
- public:
+public:
   // name -- unique name of the process implemented by this class
-  const char* name() const { return "MAM4 nucleation"; }
+  const char *name() const { return "MAM4 nucleation"; }
 
   // init -- initializes the implementation with MAM4's configuration and with
   // a process-specific configuration.
-  void init(const AeroConfig& aero_config,
-            const Config& nucl_config = Config()) {
+  void init(const AeroConfig &aero_config,
+            const Config &nucl_config = Config()) {
     // Set nucleation-specific config parameters.
     config_ = nucl_config;
 
@@ -687,8 +680,8 @@ class Nucleation {
   // assumptions made by this implementation, returning true if the states are
   // valid, false if not
   KOKKOS_INLINE_FUNCTION
-  bool validate(const AeroConfig& config, const ThreadTeam& team,
-                const Atmosphere& atm, const Prognostics& progs) const {
+  bool validate(const AeroConfig &config, const ThreadTeam &team,
+                const Atmosphere &atm, const Prognostics &progs) const {
     return atm.quantities_nonnegative(team) &&
            progs.quantities_nonnegative(team);
   }
@@ -697,10 +690,10 @@ class Nucleation {
   // NOTE: that both diags and tends are const below--this means their views
   // NOTE: are fixed, but the data in those views is allowed to vary.
   KOKKOS_INLINE_FUNCTION
-  void compute_tendencies(const AeroConfig& config, const ThreadTeam& team,
-                          Real t, Real dt, const Atmosphere& atm,
-                          const Prognostics& progs, const Diagnostics& diags,
-                          const Tendencies& tends) const {
+  void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
+                          Real t, Real dt, const Atmosphere &atm,
+                          const Prognostics &progs, const Diagnostics &diags,
+                          const Tendencies &tends) const {
     int iaer_so4 = aerosol_index_for_mode(ModeIndex::Aitken, AeroId::SO4);
     constexpr Real r_universal = Constants::r_gas;
     const int nk = PackInfo::num_packs(atm.num_levels());
@@ -723,19 +716,19 @@ class Nucleation {
           Pack qgas_cur[13], qgas_avg[13];
           for (int g = 0; g < 13; ++g) {
             qgas_cur[g] = progs.q_gas[g](k);
-            qgas_avg[g] = progs.q_gas[g](k);  // FIXME: what should we do here??
+            qgas_avg[g] = progs.q_gas[g](k); // FIXME: what should we do here??
           }
 
           // extract aerosol mixing ratios
           Pack qnum_cur[4], qaer_cur[4][7];
-          for (int m = 0; m < 4; ++m) {  // modes
+          for (int m = 0; m < 4; ++m) { // modes
             qnum_cur[m] = progs.n_mode_i[m](k);
-            for (int a = 0; a < 7; ++a) {  // aerosols
+            for (int a = 0; a < 7; ++a) { // aerosols
               qaer_cur[m][a] = progs.q_aero_i[m][a](k);
             }
           }
 
-          Pack qwtr_cur[4] = {0, 0, 0, 0};  // FIXME: what is this?
+          Pack qwtr_cur[4] = {0, 0, 0, 0}; // FIXME: what is this?
 
           // compute tendencies at this level
           Pack dndt_ait, dmdt_ait, dso4dt_ait, dnh4dt_ait, dnclusterdt;
@@ -753,21 +746,21 @@ class Nucleation {
         });
   }
 
- private:
+private:
   // This function computes relevant tendencies at a single vertical level. It
   // was ported directly from the compute_tendencies subroutine in the
   // modal_aero_newnuc module from the MAM4 box model.
   KOKKOS_INLINE_FUNCTION
-  void compute_tendencies_(Real deltat, const Pack& temp, const Pack& pmid,
-                           const Pack& aircon, const Pack& zmid, Real pblh,
-                           const Pack& relhum, const Pack& uptkrate_h2so4,
-                           const Pack& del_h2so4_gasprod,
-                           const Pack& del_h2so4_aeruptk,
+  void compute_tendencies_(Real deltat, const Pack &temp, const Pack &pmid,
+                           const Pack &aircon, const Pack &zmid, Real pblh,
+                           const Pack &relhum, const Pack &uptkrate_h2so4,
+                           const Pack &del_h2so4_gasprod,
+                           const Pack &del_h2so4_aeruptk,
                            const Pack qgas_cur[13], const Pack qgas_avg[13],
                            const Pack qnum_cur[4], const Pack qaer_cur[4][7],
-                           const Pack qwtr_cur[4], Pack& dndt_ait,
-                           Pack& dmdt_ait, Pack& dso4dt_ait, Pack& dnh4dt_ait,
-                           Pack& dnclusterdt) const {
+                           const Pack qwtr_cur[4], Pack &dndt_ait,
+                           Pack &dmdt_ait, Pack &dso4dt_ait, Pack &dnh4dt_ait,
+                           Pack &dnclusterdt) const {
     static constexpr Real avogadro = Constants::avogadro;
     static constexpr Real rgas = Constants::r_gas;
     static constexpr Real ln_nuc_rate_cutoff = -13.82;
@@ -782,11 +775,11 @@ class Nucleation {
     Pack dplom_mode[nsize], dphim_mode[nsize];
     IntPack isize_group;
 
-    Pack cair;  // air density
+    Pack cair; // air density
     Pack so4vol, nh3ppt;
 
-    Pack radius_cluster;  // radius of newly formed cluster, in nm
-    Pack rateloge;        // ln(J)
+    Pack radius_cluster; // radius of newly formed cluster, in nm
+    Pack rateloge;       // ln(J)
     Pack cnum_h2so4;
     Pack cnum_nh3;
 
@@ -867,12 +860,12 @@ class Nucleation {
       // mer07_veh02_nuc_mosaic_1box to facilitate comparison.
 
       nucleation::mer07_veh02_wang08_nuc_1box(
-          newnuc_method_user_choice, newnuc_method_actual,        // in, out
-          pbl_nuc_wang2008_user_choice, pbl_nuc_wang2008_actual,  // in, out
-          ln_nuc_rate_cutoff,                                     // in
-          adjust_factor_bin_tern_ratenucl, adjust_factor_pbl_ratenucl,   // in
-          pi, so4vol, nh3ppt, temp, relhumnn, zmid, pblh,                // in
-          dnclusterdt, rateloge, cnum_h2so4, cnum_nh3, radius_cluster);  // out
+          newnuc_method_user_choice, newnuc_method_actual,       // in, out
+          pbl_nuc_wang2008_user_choice, pbl_nuc_wang2008_actual, // in, out
+          ln_nuc_rate_cutoff,                                    // in
+          adjust_factor_bin_tern_ratenucl, adjust_factor_pbl_ratenucl,  // in
+          pi, so4vol, nh3ppt, temp, relhumnn, zmid, pblh,               // in
+          dnclusterdt, rateloge, cnum_h2so4, cnum_nh3, radius_cluster); // out
 
     } else {
       rateloge = ln_nuc_rate_cutoff;
@@ -989,6 +982,6 @@ class Nucleation {
   }
 };
 
-}  // namespace mam4
+} // namespace mam4
 
 #endif

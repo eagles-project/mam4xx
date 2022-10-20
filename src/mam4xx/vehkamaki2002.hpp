@@ -48,8 +48,8 @@ Kokkos::pair<Real, Real> valid_c_h2so4_range() {
 /// @param [in] temp The atmospherіc temperature [K]
 /// @param [in] rel_hum The relative humidity [-]
 KOKKOS_INLINE_FUNCTION
-Pack h2so4_critical_mole_fraction(const Pack& c_h2so4, const Pack& temp,
-                                  const Pack& rel_hum) {
+Pack h2so4_critical_mole_fraction(const Pack &c_h2so4, const Pack &temp,
+                                  const Pack &rel_hum) {
   // Calculate the mole fraction using eq 11 of Vehkamaki et al (2002).
   auto N_a = c_h2so4;
   return Pack(0.740997 - 0.00266379 * temp - 0.00349998 * log(N_a) +
@@ -68,8 +68,8 @@ Pack h2so4_critical_mole_fraction(const Pack& c_h2so4, const Pack& temp,
 /// @param [in] rel_hum The relative humidity [-]
 /// @param [in] x_crit The mole fraction of H2SO4 in a critical cluster [-]
 KOKKOS_INLINE_FUNCTION
-Pack nucleation_rate(const Pack& c_h2so4, const Pack& temp, const Pack& rel_hum,
-                     const Pack& x_crit) {
+Pack nucleation_rate(const Pack &c_h2so4, const Pack &temp, const Pack &rel_hum,
+                     const Pack &x_crit) {
   // Calculate the coefficients in eq 12 of Vehkamaki et al (2002).
   Pack a = 0.14309 + 2.21956 * temp - 0.0273911 * square(temp) +
            0.0000722811 * cube(temp) + 5.91822 / x_crit;
@@ -117,8 +117,8 @@ Pack nucleation_rate(const Pack& c_h2so4, const Pack& temp, const Pack& rel_hum,
 /// @param [in] rel_hum The relative humidity [-]
 /// @param [in] x_crit The mole fraction of H2SO4 in a critical cluster [-]
 KOKKOS_INLINE_FUNCTION
-Pack num_critical_molecules(const Pack& c_h2so4, const Pack& temp,
-                            const Pack& rel_hum, const Pack& x_crit) {
+Pack num_critical_molecules(const Pack &c_h2so4, const Pack &temp,
+                            const Pack &rel_hum, const Pack &x_crit) {
   // Calc the coefficients for the number of molecules in a critical
   // cluster (eq 13).
   Pack A = -0.00295413 - 0.0976834 * temp + 0.00102485 * square(temp) -
@@ -165,7 +165,7 @@ Pack num_critical_molecules(const Pack& c_h2so4, const Pack& temp,
 /// @param [in] x_crit The mole fraction of H2SO4 in a critical cluster [-]
 /// @param [in] n_tot The total number of molecules in the critical cluster [-]
 KOKKOS_INLINE_FUNCTION
-Pack critical_radius(const Pack& x_crit, const Pack& n_tot) {
+Pack critical_radius(const Pack &x_crit, const Pack &n_tot) {
   return exp(-1.6524245 + 0.42316402 * x_crit + 0.3346648 * log(n_tot));
 }
 
@@ -175,7 +175,7 @@ Pack critical_radius(const Pack& x_crit, const Pack& n_tot) {
 /// @param [in] temp The atmospherіc temperature [K]
 /// @param [in] rel_hum The relative humidity [-]
 KOKKOS_INLINE_FUNCTION
-Pack h2so4_nucleation_threshold(const Pack& temp, const Pack& rel_hum) {
+Pack h2so4_nucleation_threshold(const Pack &temp, const Pack &rel_hum) {
   return exp(-279.243 + 11.7344 * rel_hum + 22700.9 / temp -
              1088.64 * rel_hum / temp + 1.14436 * temp -
              0.0302331 * rel_hum * temp - 0.00130254 * square(temp) -
@@ -183,5 +183,5 @@ Pack h2so4_nucleation_threshold(const Pack& temp, const Pack& rel_hum) {
              0.00879662 * temp * log(rel_hum));
 }
 
-}  // namespace mam4::vehkamaki2002
+} // namespace mam4::vehkamaki2002
 #endif

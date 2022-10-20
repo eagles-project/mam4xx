@@ -57,7 +57,6 @@ public:
   static constexpr int num_gas_ids() { return 13; }
 };
 
-
 /// MAM4 column-wise prognostic aerosol fields (also used for tendencies).
 class Prognostics final {
 public:
@@ -96,10 +95,12 @@ public:
   ~Prognostics() = default;
   Prognostics &operator=(const Prognostics &) = default;
 
-  ///  modal interstitial aerosol number mixing ratios (see aero_mode.hpp for indexing)
+  ///  modal interstitial aerosol number mixing ratios (see aero_mode.hpp for
+  ///  indexing)
   ColumnView n_mode_i[AeroConfig::num_modes()];
 
-  /// modal cloudborne aerosol number mixing ratios (see aero_mode.hpp for indexing)
+  /// modal cloudborne aerosol number mixing ratios (see aero_mode.hpp for
+  /// indexing)
   ColumnView n_mode_c[AeroConfig::num_modes()];
 
   /// interstitial aerosol mass mixing ratios within each mode
@@ -127,12 +128,14 @@ public:
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(team, nk),
         KOKKOS_CLASS_LAMBDA(int k, int &violation) {
-          for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) { // check mode mmrs
+          for (int mode = 0; mode < AeroConfig::num_modes();
+               ++mode) { // check mode mmrs
             if ((n_mode_i[mode](k) < 0).any() ||
-                (n_mode_c[mode](k) < 0).any() ) {
+                (n_mode_c[mode](k) < 0).any()) {
               ++violation;
             } else {
-              for (int spec = 0; spec < AeroConfig::num_aerosol_ids(); ++spec) { // check aerosol mmrs
+              for (int spec = 0; spec < AeroConfig::num_aerosol_ids();
+                   ++spec) { // check aerosol mmrs
                 if ((q_aero_i[mode][spec](k) < 0).any() ||
                     (q_aero_c[mode][spec](k) < 0).any()) {
                   ++violation;
@@ -144,7 +147,8 @@ public:
               break;
           }
           if (violation == 0) {
-            for (int gas = 0; gas < AeroConfig::num_gas_ids(); ++gas) { // check gas mmrs
+            for (int gas = 0; gas < AeroConfig::num_gas_ids();
+                 ++gas) { // check gas mmrs
               if ((q_gas[gas](k) < 0).any())
                 ++violation;
             }
@@ -157,7 +161,6 @@ public:
 private:
   int nlev_;
 };
-
 
 /// MAM4 column-wise diagnostic aerosol fields.
 class Diagnostics final {
@@ -206,7 +209,6 @@ public:
 private:
   int nlev_;
 };
-
 
 } // namespace mam4
 

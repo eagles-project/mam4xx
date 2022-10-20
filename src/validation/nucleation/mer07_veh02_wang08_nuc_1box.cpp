@@ -9,7 +9,7 @@
 using namespace skywalker;
 using namespace mam4;
 
-void mer07_veh02_wang08_nuc_1box(Ensemble* ensemble) {
+void mer07_veh02_wang08_nuc_1box(Ensemble *ensemble) {
   constexpr Real pi = Constants::pi;
 
   // Figure out settings for binary/ternary nucleation and planetary boundary
@@ -41,7 +41,7 @@ void mer07_veh02_wang08_nuc_1box(Ensemble* ensemble) {
   Real ln_nuc_rate_cutoff = -13.82;
 
   // Run the ensemble.
-  ensemble->process([=](const Input& input, Output& output) {
+  ensemble->process([=](const Input &input, Output &output) {
     // Parse input
 
     Pack temp = input.get("temperature");

@@ -32,11 +32,11 @@ static constexpr Real solver_convergence_tol = 1e-10;
 ///  This function replaces subroutine modal_aero_wateruptake_dr from
 ///  file modal_aero_wateruptake.F90.
 ///
-///  Inputs are the mode averages contained in @ref Diagnostics (dry particle size,
-///  hygroscopicity) and @ref Atmosphere (vapor mass mixing ratio).
-///  Diags are marked 'const' because they need to be able to be captured
-///  by value by a lambda.  The Views inside the Diags struct are const,
-///  but the data contained by the Views can change.
+///  Inputs are the mode averages contained in @ref Diagnostics (dry particle
+///  size, hygroscopicity) and @ref Atmosphere (vapor mass mixing ratio). Diags
+///  are marked 'const' because they need to be able to be captured by value by
+///  a lambda.  The Views inside the Diags struct are const, but the data
+///  contained by the Views can change.
 ///
 ///  @param [in/out] diags dry/wet particle geometric mean diameter
 ///  @param [in] atm Atmosphere contains (T, P, w) data

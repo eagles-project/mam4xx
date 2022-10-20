@@ -24,9 +24,9 @@ namespace mam4::kerminen2002 {
 /// [kg/mol]
 /// @param [in] temp The atmospheric temperature [K]
 KOKKOS_INLINE_FUNCTION
-PackType growth_rate(const PackType c, const PackType& rho, const Real mw,
-                     const PackType& temp) {
-  PackType speed = 14.7 * sqrt(temp);  // molecular speed [m/s]
+PackType growth_rate(const PackType c, const PackType &rho, const Real mw,
+                     const PackType &temp) {
+  PackType speed = 14.7 * sqrt(temp); // molecular speed [m/s]
   return 3.0e-9 * speed * mw * c / rho;
 }
 
@@ -37,15 +37,15 @@ PackType growth_rate(const PackType c, const PackType& rho, const Real mw,
 /// @param [in] d_wet_grown The wet diameter of grown particles [nm]
 /// @param [in] c_tot The total number concentration of aerosol particles [#/cc]
 KOKKOS_INLINE_FUNCTION
-PackType condensation_sink(const PackType& rho_air, const PackType& d_wet_grown,
-                           const PackType& c_tot) {
+PackType condensation_sink(const PackType &rho_air, const PackType &d_wet_grown,
+                           const PackType &c_tot) {
   // For the purposes of this calculation, we use alpha == 1 and we use the mean
   // free path of air as computed from the air density in the calculation of the
   // Knudsen number for the nucleation mode.
   // NOTE: this differs from the MAM4 calculation, which uses an H2SO4
   // NOTE: uptake rate that assumes a process ordering, which we're no
   // NOTE: longer allowed to do.
-  const Real alpha = 1;  // accommodation coefficient
+  const Real alpha = 1; // accommodation coefficient
 
   // The Knudsen number for the nucleated particles is Kn = 2 * lambda / d,
   // where lambda is the mean free path of air, and d is the grown particle
@@ -80,13 +80,11 @@ PackType condensation_sink(const PackType& rho_air, const PackType& d_wet_grown,
 /// @param [in] cond_growth_rate The condensation growth rate GR [m/s]
 /// @param [in] cond_sink The condensation sink CS' [1/m2]
 KOKKOS_INLINE_FUNCTION
-PackType growth_parameter(const PackType& temp, const PackType& d_dry_crit,
-                          const PackType& d_wet_crit,
-                          const PackType& d_dry_grown,
-                          const PackType& d_wet_grown,
-                          const PackType& rho_grown,
-                          const PackType& cond_growth_rate,
-                          const PackType& cond_sink) {
+PackType
+growth_parameter(const PackType &temp, const PackType &d_dry_crit,
+                 const PackType &d_wet_crit, const PackType &d_dry_grown,
+                 const PackType &d_wet_grown, const PackType &rho_grown,
+                 const PackType &cond_growth_rate, const PackType &cond_sink) {
   // Compute gamma from KK2002 eq 22 [nm2/m2/h], neglecting the
   // (d_mean/150)^0.048 factor.
   PackType gamma = 0.23 * pow(d_wet_crit, 0.2) * pow(d_wet_grown / 3.0, 0.075) *
@@ -115,13 +113,13 @@ PackType growth_parameter(const PackType& temp, const PackType& d_dry_crit,
 /// @param [in] rho_air The mass density of dry air [kg/m3]
 /// @param [in] mw_h2so4 The molecular weight of H2SO4 gas [kg/mol]
 KOKKOS_INLINE_FUNCTION
-PackType growth_parameter(const PackType& c_so4, const PackType& c_nh4,
-                          const PackType& nh4_to_so4_molar_ratio,
-                          const PackType& temp, const PackType& rel_hum,
-                          const PackType& d_dry_crit,
-                          const PackType& d_wet_crit,
-                          const PackType& d_dry_grown,
-                          const PackType& rho_grown, const PackType& rho_air,
+PackType growth_parameter(const PackType &c_so4, const PackType &c_nh4,
+                          const PackType &nh4_to_so4_molar_ratio,
+                          const PackType &temp, const PackType &rel_hum,
+                          const PackType &d_dry_crit,
+                          const PackType &d_wet_crit,
+                          const PackType &d_dry_grown,
+                          const PackType &rho_grown, const PackType &rho_air,
                           Real mw_h2so4) {
   // Compute the wet/dry volume ratio using the simple Kohler approximation
   // for ammonium sulfate and bisulfate.
@@ -161,9 +159,9 @@ PackType growth_parameter(const PackType& c_so4, const PackType& c_nh4,
 /// @param [in] d_wet_crit The wet diameter of particles in a CC [nm]
 /// @param [in] d_wet_grown The wet diameter of grown particles [nm]
 KOKKOS_INLINE_FUNCTION
-PackType apparent_nucleation_factor(const PackType& eta,
-                                    const PackType& d_wet_crit,
-                                    const PackType& d_wet_grown) {
+PackType apparent_nucleation_factor(const PackType &eta,
+                                    const PackType &d_wet_crit,
+                                    const PackType &d_wet_grown) {
   return exp(eta / d_wet_grown - eta / d_wet_crit);
 }
 
@@ -190,11 +188,11 @@ PackType apparent_nucleation_factor(const PackType& eta,
 /// @param [in] mw_h2so4 The molecular weight of H2SO4 gas [kg/mol]
 KOKKOS_INLINE_FUNCTION
 PackType apparent_nucleation_factor(
-    const PackType& c_so4, const PackType& c_nh4,
-    const PackType& nh4_to_so4_molar_ratio, const PackType& temp,
-    const PackType& rel_hum, const PackType& d_dry_crit,
-    const PackType& d_wet_crit, const PackType& d_dry_grown,
-    const PackType& rho_grown, const PackType& rho_air, Real mw_h2so4) {
+    const PackType &c_so4, const PackType &c_nh4,
+    const PackType &nh4_to_so4_molar_ratio, const PackType &temp,
+    const PackType &rel_hum, const PackType &d_dry_crit,
+    const PackType &d_wet_crit, const PackType &d_dry_grown,
+    const PackType &rho_grown, const PackType &rho_air, Real mw_h2so4) {
   // Compute the wet/dry volume ratio using the simple Kohler approximation
   // for ammonium sulfate and bisulfate.
   const auto bounded_rel_hum = max(0.10, min(0.95, rel_hum));
@@ -211,6 +209,6 @@ PackType apparent_nucleation_factor(
   return apparent_nucleation_factor(eta, d_wet_crit, d_wet_grown);
 }
 
-}  // namespace mam4::kerminen2002
+} // namespace mam4::kerminen2002
 
 #endif

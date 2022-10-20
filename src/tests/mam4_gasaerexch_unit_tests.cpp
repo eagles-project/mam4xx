@@ -33,7 +33,7 @@ TEST_CASE("test_compute_tendencies", "mam4_gasaerexch_process") {
   auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
   Real t = 0.0, dt = 30.0;
   Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const ThreadTeam& team) {
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
         process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
       });
 }
@@ -70,7 +70,7 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_gasaerexch_process") {
   auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
   Real t = 0.0, dt = 30.0;
   Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const ThreadTeam& team) {
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
         const int icol = team.league_rank();
         process.compute_tendencies(team, t, dt, mc_atm(icol), mc_progs(icol),
                                    mc_diags(icol), mc_tends(icol));
