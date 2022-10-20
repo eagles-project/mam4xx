@@ -3,7 +3,7 @@
 namespace mam4 {
 namespace validation {
 
-std::string output_name(const std::string& input_file) {
+std::string output_name(const std::string &input_file) {
   std::string output_file;
   size_t slash = input_file.find_last_of('/');
   size_t dot = input_file.find_last_of('.');
@@ -20,5 +20,5 @@ std::string output_name(const std::string& input_file) {
          std::string(".py");
 }
 
-}  // namespace validation
-}  // namespace mam4
+} // namespace validation
+} // namespace mam4

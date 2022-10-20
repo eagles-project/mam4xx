@@ -21,8 +21,8 @@ namespace mam4 {
 ///   MAM4's approximation of constant surface tension, neglecting temperature
 ///   dependence.
 ///
-///   This formula is valid from T = 248.16 K (-25 C, supercooled liquid water) to
-///   the critical temperature Tc = 646.096 K (steam).
+///   This formula is valid from T = 248.16 K (-25 C, supercooled liquid water)
+///   to the critical temperature Tc = 646.096 K (steam).
 ///
 ///   IAPWS Release on Surface Tension of Ordinary Water Substance
 ///   IAPWS R1-76(2014)
@@ -70,38 +70,40 @@ kelvin_coefficient(const ScalarType T = Constants::triple_pt_h2o) {
 
 /// Struct that represents the Kohler polynomial.
 ///
-///   @f$ K(r_w) = \log(s) r_w^4 - A r_w^3 + (B - \log(s))r_d^3 r_w + A r_d^3 @f$
+///   @f$ K(r_w) = \log(s) r_w^4 - A r_w^3 + (B - \log(s))r_d^3 r_w + A r_d^3
+///   @f$
 ///
-///   where r_w is the wet radius, s is relative humidity, A is the Kelvin effect
-///   coefficient, B is hygroscopicity, and r_d is the dry radius.
+///   where r_w is the wet radius, s is relative humidity, A is the Kelvin
+///   effect coefficient, B is hygroscopicity, and r_d is the dry radius.
 ///
-///   The Kohler polynomial is a quartic polynomial whose variable is particle wet
-///   radius. Equilibrium solutions are roots of this polynomial. Algebraically,
-///   there are 2 complex roots and 2 real roots.  Of the real roots, one is
-///   positive, the other is negative.
-///   Physically, only the real, positive root makes sense.
+///   The Kohler polynomial is a quartic polynomial whose variable is particle
+///   wet radius. Equilibrium solutions are roots of this polynomial.
+///   Algebraically, there are 2 complex roots and 2 real roots.  Of the real
+///   roots, one is positive, the other is negative. Physically, only the real,
+///   positive root makes sense.
 ///
 ///   Each instance corresponds to a separate set of coefficients, which are
 ///   functions of the inputs.
 ///
 ///   This struct conforms to the interface prescribed in math.hpp for
-///   scalar functions that are to be used with numerical rootfinding algorithms.
+///   scalar functions that are to be used with numerical rootfinding
+///   algorithms.
 ///
-///   This struct is templated on scalar type so that it can be used with PackType.
-///   If it is used with PackType, each element of the PackType corresponds to a
-///   separate KohlerPolynomial, with distinct coefficients.
+///   This struct is templated on scalar type so that it can be used with
+///   PackType. If it is used with PackType, each element of the PackType
+///   corresponds to a separate KohlerPolynomial, with distinct coefficients.
 ///
-///   @warning This polynomial is severely ill-conditioned, to the point that it is
-///   sensitive to order-of-operations changes caused by compiler optimization
-///   flags.  We therefore require double precision.
+///   @warning This polynomial is severely ill-conditioned, to the point that it
+///   is sensitive to order-of-operations changes caused by compiler
+///   optimization flags.  We therefore require double precision.
 ///
 ///   Properties of the Kohler Polynomial that are useful to finding its roots:
 ///
 ///   1. K(0) = kelvin_droplet_effect_coeff * cube(r_dry) > 0
 ///   2. K(r_dry) = r_dry**4 * hygroscopicity > 0
 ///
-///   Properties of the Kohler Polynomial that are useful to finding its roots given
-///   inputs that are within the bounds defined below:
+///   Properties of the Kohler Polynomial that are useful to finding its roots
+///   given inputs that are within the bounds defined below:
 ///
 ///   1. K(25*r_dry) < 0
 template <typename ScalarType = PackType> struct KohlerPolynomial {
@@ -158,13 +160,13 @@ template <typename ScalarType = PackType> struct KohlerPolynomial {
                                     ScalarType(dry_rad_microns)));
   }
 
-///    Constructor. Creates 1 instance of a KohlerPolynomial.
-///
-///     @param m mask to skip padded pack values in valid_inputs check
-///     @param rel_h relative humidity
-///     @param hygro hygroscopicity
-///     @param dry_rad_microns particle dry radius [ 1e-6 m ]
-///     @param [in] temperature [K]
+  ///    Constructor. Creates 1 instance of a KohlerPolynomial.
+  ///
+  ///     @param m mask to skip padded pack values in valid_inputs check
+  ///     @param rel_h relative humidity
+  ///     @param hygro hygroscopicity
+  ///     @param dry_rad_microns particle dry radius [ 1e-6 m ]
+  ///     @param [in] temperature [K]
   template <typename U>
   KOKKOS_INLINE_FUNCTION
   KohlerPolynomial(const MaskType &m, const U &rel_h, const U &hygro,
@@ -180,16 +182,17 @@ template <typename ScalarType = PackType> struct KohlerPolynomial {
                                     ScalarType(dry_rad_microns)));
   }
 
-///   Evaluates the Kohler polynomial.
-///
-///     @f$ K(r_w) = \log(s) r_w^4 - A r_w^3 + (B - \log(s))r_d^3 r_w + A r_d^3 @f$
-///
-///     where r_w is the wet radius, s is relative humidity, A is the Kelvin effect
-///     coefficient, B is hygroscopicity, and r_d is the dry radius.
-///
-///     @param [in] Polynomial input value, wet_radius wet radius in microns [ 1e-6
-///     m]
-///     @return Polynomial value, wet_radius in microns [ 1e-6 m]
+  ///   Evaluates the Kohler polynomial.
+  ///
+  ///     @f$ K(r_w) = \log(s) r_w^4 - A r_w^3 + (B - \log(s))r_d^3 r_w + A
+  ///     r_d^3 @f$
+  ///
+  ///     where r_w is the wet radius, s is relative humidity, A is the Kelvin
+  ///     effect coefficient, B is hygroscopicity, and r_d is the dry radius.
+  ///
+  ///     @param [in] Polynomial input value, wet_radius wet radius in microns [
+  ///     1e-6 m]
+  ///     @return Polynomial value, wet_radius in microns [ 1e-6 m]
   template <typename U>
   KOKKOS_INLINE_FUNCTION ScalarType operator()(const U &wet_radius) const {
     const ScalarType rwet = ScalarType(wet_radius);
@@ -200,13 +203,13 @@ template <typename ScalarType = PackType> struct KohlerPolynomial {
     return result;
   }
 
-///   Evaluates the derivative of the Kohler polynomial with respect to
-///     wet radius
-///
-///     @f$ K'(r_w) = \frac{\partial K}(\partial r_w)(r_w) @f$
-///
-///     @param [in] Polynomial input value, wet radius in microns [ 1e-6 m]
-///     @return Polynomial slope at input value
+  ///   Evaluates the derivative of the Kohler polynomial with respect to
+  ///     wet radius
+  ///
+  ///     @f$ K'(r_w) = \frac{\partial K}(\partial r_w)(r_w) @f$
+  ///
+  ///     @param [in] Polynomial input value, wet radius in microns [ 1e-6 m]
+  ///     @return Polynomial slope at input value
   template <typename U>
   KOKKOS_INLINE_FUNCTION ScalarType derivative(const U &wet_radius) const {
     const ScalarType rwet = ScalarType(wet_radius);

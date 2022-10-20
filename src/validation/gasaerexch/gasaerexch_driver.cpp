@@ -7,17 +7,17 @@
 using namespace mam4;
 using namespace skywalker;
 
-void test_gasaerexch_uptkrates_1box1gas(std::unique_ptr<Ensemble>& ensemble);
+void test_gasaerexch_uptkrates_1box1gas(std::unique_ptr<Ensemble> &ensemble);
 
-void usage(const std::string& prog_name) {
+void usage(const std::string &prog_name) {
   std::cerr << prog_name << ": usage:" << std::endl;
   std::cerr << prog_name << " <input.yaml>" << std::endl;
   exit(0);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   if (argc == 1) {
-    usage((const char*)argv[0]);
+    usage((const char *)argv[0]);
   }
   Kokkos::initialize(argc, argv);
   std::string input_file = argv[1];
@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
     // Write out a Python module.
     std::cout << argv[0] << ": writing " << output_file << std::endl;
     ensemble->write(output_file);
-  } catch (Exception& e) {
+  } catch (Exception &e) {
     std::cerr << ": Error: " << e.what() << std::endl;
   }
 }

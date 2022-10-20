@@ -17,6 +17,9 @@ else() #CPU
   message(STATUS "Building for CPU (${HAERO_DEVICE_ARCH})")
 endif()
 
+# Blessed version of clang-format.
+set(CLANG_FORMAT_VERSION 14)
+
 # Set compilers, linkers, and flags from Haero.
 set(CMAKE_CXX_STANDARD ${HAERO_CXX_STANDARD})
 set(CMAKE_CXX_COMPILER ${HAERO_CXX_COMPILER})
@@ -95,12 +98,27 @@ add_subdirectory(src)
 # Formatting and format checking using clang-format.
 find_program(CLANG_FORMAT clang-format)
 if (NOT CLANG_FORMAT STREQUAL "CLANG_FORMAT-NOTFOUND")
-  add_custom_target(format-cxx
-    find ${PROJECT_SOURCE_DIR}/src -name "*.[hc]pp" -exec ${CLANG_FORMAT} -i --style=google {} \+;
-    VERBATIM
-    COMMENT "Auto-formatting C++ code...")
-  add_custom_target(format-cxx-check
-    find ${PROJECT_SOURCE_DIR}/src -name "*.[hc]pp" -exec ${CLANG_FORMAT} -n --Werror -ferror-limit=1 --style=google {} \+;
-    VERBATIM
-    COMMENT "Checking C++ formatting...")
+  # Is this the blessed version? If not, we create targets that warn the user
+  # to obtain the right version.
+  execute_process(COMMAND clang-format --version
+    OUTPUT_VARIABLE CF_VERSION)
+  string(STRIP ${CF_VERSION} CF_VERSION)
+  if (NOT ${CF_VERSION} MATCHES ${CLANG_FORMAT_VERSION})
+    add_custom_target(format-cxx
+      echo "You have clang-format version ${CF_VERSION}, but ${CLANG_FORMAT_VERSION} is required."
+      "Please make sure this version appears in your path and rerun config.sh.")
+    add_custom_target(format-cxx-check
+      echo "You have clang-format version ${CF_VERSION}, but ${CLANG_FORMAT_VERSION} is required."
+      "Please make sure this version appears in your path and rerun config.sh.")
+  else()
+    add_custom_target(format-cxx
+      find ${PROJECT_SOURCE_DIR}/src -name "*.[hc]pp" -exec ${CLANG_FORMAT} -i {} \+;
+      VERBATIM
+      COMMENT "Auto-formatting C++ code...")
+    add_custom_target(format-cxx-check
+      find ${PROJECT_SOURCE_DIR}/src -name "*.[hc]pp" -exec ${CLANG_FORMAT} -n --Werror -ferror-limit=1 {} \+;
+      VERBATIM
+      COMMENT "Checking C++ formatting...")
+  endif()
+
 endif()

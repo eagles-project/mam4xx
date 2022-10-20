@@ -20,7 +20,7 @@ using PackType = haero::PackType;
 /// Shito et al (2006).
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 KOKKOS_INLINE_FUNCTION
-PackType first_order_pbl_nucleation_rate(const PackType& c_h2so4) {
+PackType first_order_pbl_nucleation_rate(const PackType &c_h2so4) {
   return 1e-6 * c_h2so4;
 }
 
@@ -29,10 +29,10 @@ PackType first_order_pbl_nucleation_rate(const PackType& c_h2so4) {
 /// Shito et al (2006).
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 KOKKOS_INLINE_FUNCTION
-PackType second_order_pbl_nucleation_rate(const PackType& c_h2so4) {
+PackType second_order_pbl_nucleation_rate(const PackType &c_h2so4) {
   return 1e-12 * c_h2so4;
 }
 
-}  // namespace mam4::wang2008
+} // namespace mam4::wang2008
 
 #endif

@@ -9,7 +9,7 @@
 using namespace skywalker;
 using namespace mam4;
 
-void newnuc_cluster_growth(Ensemble* ensemble) {
+void newnuc_cluster_growth(Ensemble *ensemble) {
   constexpr Real rgas = Constants::r_gas;
   constexpr Real pi = Constants::pi;
   constexpr Real avogadro = Constants::avogadro;
@@ -20,7 +20,7 @@ void newnuc_cluster_growth(Ensemble* ensemble) {
   // Settings settings = ensemble->settings();
 
   // Run the ensemble.
-  ensemble->process([=](const Input& input, Output& output) {
+  ensemble->process([=](const Input &input, Output &output) {
     // Fetch ensemble parameters
 
     Pack dnclusterdt = input.get("dnclusterdt");

@@ -58,8 +58,8 @@ Kokkos::pair<Real, Real> valid_xi_nh3_range() {
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Pack log_nucleation_rate(const Pack& temp, const Pack& rel_hum,
-                         const Pack& c_h2so4, const Pack& xi_nh3) {
+Pack log_nucleation_rate(const Pack &temp, const Pack &rel_hum,
+                         const Pack &c_h2so4, const Pack &xi_nh3) {
   auto c = c_h2so4;
   auto xi = xi_nh3;
   return Pack(
@@ -149,8 +149,8 @@ Pack log_nucleation_rate(const Pack& temp, const Pack& rel_hum,
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Pack onset_temperature(const Pack& rel_hum, const Pack& c_h2so4,
-                       const Pack& xi_nh3) {
+Pack onset_temperature(const Pack &rel_hum, const Pack &c_h2so4,
+                       const Pack &xi_nh3) {
   return Pack(143.6002929064716 + 1.0178856665693992 * rel_hum +
               10.196398812974294 * log(c_h2so4) -
               0.1849879416839113 * square(log(c_h2so4)) -
@@ -167,8 +167,8 @@ Pack onset_temperature(const Pack& rel_hum, const Pack& c_h2so4,
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Pack critical_radius(const Pack& log_J, const Pack& temp, const Pack& c_h2so4,
-                     const Pack& xi_nh3) {
+Pack critical_radius(const Pack &log_J, const Pack &temp, const Pack &c_h2so4,
+                     const Pack &xi_nh3) {
   auto c = c_h2so4;
   auto xi = xi_nh3;
   return Pack(
@@ -194,8 +194,8 @@ Pack critical_radius(const Pack& log_J, const Pack& temp, const Pack& c_h2so4,
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Pack num_critical_molecules(const Pack& log_J, const Pack& temp,
-                            const Pack& c_h2so4, const Pack& xi_nh3) {
+Pack num_critical_molecules(const Pack &log_J, const Pack &temp,
+                            const Pack &c_h2so4, const Pack &xi_nh3) {
   auto c = c_h2so4;
   auto xi = xi_nh3;
   return Pack(
@@ -221,8 +221,8 @@ Pack num_critical_molecules(const Pack& log_J, const Pack& temp,
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Pack num_h2so4_molecules(const Pack& log_J, const Pack& temp,
-                         const Pack& c_h2so4, const Pack& xi_nh3) {
+Pack num_h2so4_molecules(const Pack &log_J, const Pack &temp,
+                         const Pack &c_h2so4, const Pack &xi_nh3) {
   auto c = c_h2so4;
   auto xi = xi_nh3;
   return Pack(
@@ -248,8 +248,8 @@ Pack num_h2so4_molecules(const Pack& log_J, const Pack& temp,
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Pack num_nh3_molecules(const Pack& log_J, const Pack& temp, const Pack& c_h2so4,
-                       const Pack& xi_nh3) {
+Pack num_nh3_molecules(const Pack &log_J, const Pack &temp, const Pack &c_h2so4,
+                       const Pack &xi_nh3) {
   auto c = c_h2so4;
   auto xi = xi_nh3;
   return Pack(
@@ -268,5 +268,5 @@ Pack num_nh3_molecules(const Pack& log_J, const Pack& temp, const Pack& c_h2so4,
       0.0046977006608603395 * square(log_J));
 }
 
-}  // namespace mam4::merikanto2007
+} // namespace mam4::merikanto2007
 #endif

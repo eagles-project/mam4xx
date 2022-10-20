@@ -237,6 +237,19 @@ with a few notable _exceptions_:
   are properly shut down when a program terminates because of a violated
   assertion.
 
+These style conventions are enforced with the following build targets, which
+you can run from your build directory:
+
+* `make format-cxx-check`: checks C++ formatting in all source files and reports
+  any non-conforming code
+* `make format-cxx`: applies C++ formatting rules to all source files, editing
+  them in place. Try to do this in a separate commit from your other work.
+
+These targets are only available if you have `clang-format` on your system, and
+they only perform their work if you have the version we support. If you have an
+unsupported version of `clang-format`, the targets will tell you the right
+version to install.
+
 ### Best practices
 
 The bullets in the [LLVM C++ Style Guide](https://llvm.org/docs/CodingStandards.html)

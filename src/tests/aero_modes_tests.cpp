@@ -30,13 +30,13 @@ TEST_CASE("aero_modes_test", "") {
       logger.debug("m = {} s = {} aero_idx = {}", m, s, aero_idx);
       if (aero_idx >= 0) {
         logger.info("{} mode contains aerosol species \"{}\".",
-          mode_str(static_cast<ModeIndex>(m)),
-          aero_id_str(static_cast<AeroId>(s)));
+                    mode_str(static_cast<ModeIndex>(m)),
+                    aero_id_str(static_cast<AeroId>(s)));
         REQUIRE(mode_has_spec[m][s]);
       } else {
         logger.info("{} mode does not contain aerosol species \"{}\".",
-          mode_str(static_cast<ModeIndex>(m)),
-          aero_id_str(static_cast<AeroId>(s)));
+                    mode_str(static_cast<ModeIndex>(m)),
+                    aero_id_str(static_cast<AeroId>(s)));
         REQUIRE(!mode_has_spec[m][s]);
       }
     }

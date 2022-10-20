@@ -6,9 +6,9 @@
 using namespace haero;
 using namespace skywalker;
 
-void test_gasaerexch_uptkrates_1box1gas_process(const Input& input,
-                                                Output& output,
-                                                mam4::GasAerExch& gasaerexch) {
+void test_gasaerexch_uptkrates_1box1gas_process(const Input &input,
+                                                Output &output,
+                                                mam4::GasAerExch &gasaerexch) {
   // Ensemble parameters
   if (!input.has("temp")) {
     std::cerr << "Required name: "
@@ -65,15 +65,21 @@ void test_gasaerexch_uptkrates_1box1gas_process(const Input& input,
   }
   {
     const std::vector<Real> array = input.get_array("lnsg");
-    for (size_t i = 0; i < array.size() && i < n_mode; ++i) lnsg[i] = array[i];
+    for (size_t i = 0; i < array.size() && i < n_mode; ++i)
+      lnsg[i] = array[i];
   }
   const std::vector<Real> aernum = input.get_array("aernum");
   const Real temp = input.get("temp");
-  if (has_mw_gas) mw_gas = input.get("mw_gas");
-  if (has_pmid) pmid = input.get("pmid");
-  if (has_beta) beta_inp = input.get("beta");
-  if (has_nghq) nghq = static_cast<int>(input.get("nghq"));
-  if (has_vol_molar_gas) vol_molar_gas = input.get("vol_molar_gas");
+  if (has_mw_gas)
+    mw_gas = input.get("mw_gas");
+  if (has_pmid)
+    pmid = input.get("pmid");
+  if (has_beta)
+    beta_inp = input.get("beta");
+  if (has_nghq)
+    nghq = static_cast<int>(input.get("nghq"));
+  if (has_vol_molar_gas)
+    vol_molar_gas = input.get("vol_molar_gas");
   if (has_condense_to_mode) {
     const std::vector<Real> values = input.get_array("condense_to_mode");
     for (int i = 0; i < n_mode; ++i)
@@ -92,13 +98,15 @@ void test_gasaerexch_uptkrates_1box1gas_process(const Input& input,
             l_condense_to_mode, temp, pmid, pstd, mw_gas, mw_air, vol_molar_gas,
             vol_molar_air, accom, r_universal, pi, beta_inp, nghq, dgncur_awet,
             lnsg, uptkaer);
-        for (size_t i = 0; i < n_mode; ++i) uptkaer_dev(i) = uptkaer[i];
+        for (size_t i = 0; i < n_mode; ++i)
+          uptkaer_dev(i) = uptkaer[i];
       });
   Kokkos::Array<PackType, n_mode> uptkaer;
   {
     auto host_view = Kokkos::create_mirror_view(uptkaer_dev);
     Kokkos::deep_copy(host_view, uptkaer_dev);
-    for (size_t i = 0; i < n_mode; ++i) uptkaer[i] = host_view[i];
+    for (size_t i = 0; i < n_mode; ++i)
+      uptkaer[i] = host_view[i];
   }
   // Write the computed nucleation rate.
   {
@@ -109,7 +117,7 @@ void test_gasaerexch_uptkrates_1box1gas_process(const Input& input,
   }
 }
 
-void test_gasaerexch_uptkrates_1box1gas(std::unique_ptr<Ensemble>& ensemble) {
+void test_gasaerexch_uptkrates_1box1gas(std::unique_ptr<Ensemble> &ensemble) {
   mam4::AeroConfig mam4_config;
   mam4::GasAerExch gasaerexch;
   mam4::GasAerExchConfig config;
@@ -117,7 +125,7 @@ void test_gasaerexch_uptkrates_1box1gas(std::unique_ptr<Ensemble>& ensemble) {
   Kokkos::resize(config.l_mode_can_age, num_aer);
   gasaerexch.init(mam4_config);
 
-  ensemble->process([&](const Input& input, Output& output) {
+  ensemble->process([&](const Input &input, Output &output) {
     test_gasaerexch_uptkrates_1box1gas_process(input, output, gasaerexch);
   });
 }

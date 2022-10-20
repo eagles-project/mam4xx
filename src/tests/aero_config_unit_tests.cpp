@@ -53,10 +53,14 @@ TEST_CASE("aero_config", "") {
           Kokkos::create_mirror_view(diags.wet_geometric_mean_diameter[m]);
       for (int s = 0; s < 7; ++s) {
         logger.debug("[mode, species] = [{}, {}]", m, s);
-        h_progs_q_aer_i[m][s] = Kokkos::create_mirror_view(progs.q_aero_i[m][s]);
-        h_tends_q_aer_i[m][s] = Kokkos::create_mirror_view(tends.q_aero_i[m][s]);
-        h_progs_q_aer_c[m][s] = Kokkos::create_mirror_view(progs.q_aero_c[m][s]);
-        h_tends_q_aer_c[m][s] = Kokkos::create_mirror_view(tends.q_aero_c[m][s]);
+        h_progs_q_aer_i[m][s] =
+            Kokkos::create_mirror_view(progs.q_aero_i[m][s]);
+        h_tends_q_aer_i[m][s] =
+            Kokkos::create_mirror_view(tends.q_aero_i[m][s]);
+        h_progs_q_aer_c[m][s] =
+            Kokkos::create_mirror_view(progs.q_aero_c[m][s]);
+        h_tends_q_aer_c[m][s] =
+            Kokkos::create_mirror_view(tends.q_aero_c[m][s]);
       }
       for (int g = 0; g < 13; ++g) {
         logger.debug("[mode, gas] = [{}, {}]", m, g);

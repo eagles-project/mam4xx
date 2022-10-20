@@ -20,10 +20,10 @@ using namespace skywalker;
 using namespace mam4;
 
 // Parameterizations used by the nucleation process.
-void mer07_veh02_wang08_nuc_1box(Ensemble* ensemble);
-void newnuc_cluster_growth(Ensemble* ensemble);
+void mer07_veh02_wang08_nuc_1box(Ensemble *ensemble);
+void newnuc_cluster_growth(Ensemble *ensemble);
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
   }
@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
   std::cout << argv[0] << ": reading " << input_file << std::endl;
 
   // Load the ensemble. Any error encountered is fatal.
-  Ensemble* ensemble = skywalker::load_ensemble(input_file, "mam4xx");
+  Ensemble *ensemble = skywalker::load_ensemble(input_file, "mam4xx");
 
   // Figure out which component of nucleation we're validating by reading
   // the settings.
@@ -46,12 +46,12 @@ int main(int argc, char** argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
   try {
-    if (func_name == "mer07_veh02_wang08_nuc_1box") {  // nucleation
+    if (func_name == "mer07_veh02_wang08_nuc_1box") { // nucleation
       mer07_veh02_wang08_nuc_1box(ensemble);
     } else if (func_name == "newnuc_cluster_growth") {
       newnuc_cluster_growth(ensemble);
     }
-  } catch (std::exception& e) {
+  } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
   }
 
