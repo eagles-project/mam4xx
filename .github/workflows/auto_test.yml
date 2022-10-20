@@ -16,7 +16,7 @@ jobs:
     # A build matrix storing all desired configurations.
     strategy:
       matrix:
-        os: [ubuntu-latest] #, macos-latest]
+        os: [ubuntu-22.04] #, macos-latest]
         build-type: [Debug, Release]
         fp-precision: [single, double]
         pack-size: [1, 4]
