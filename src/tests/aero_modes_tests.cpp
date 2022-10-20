@@ -15,7 +15,7 @@ TEST_CASE("aero_modes_test", "") {
   ekat::Comm comm;
 
   ekat::logger::Logger<> logger("nucleation unit tests",
-                                ekat::logger::LogLevel::debug, comm);
+                                ekat::logger::LogLevel::info, comm);
 
   const bool mode_has_spec[4][7] = {
       {true, true, true, true, true, true, true},
@@ -29,8 +29,14 @@ TEST_CASE("aero_modes_test", "") {
                                                   static_cast<AeroId>(s));
       logger.debug("m = {} s = {} aero_idx = {}", m, s, aero_idx);
       if (aero_idx >= 0) {
+        logger.info("{} mode contains aerosol species \"{}\".",
+          mode_str(static_cast<ModeIndex>(m)),
+          aero_id_str(static_cast<AeroId>(s)));
         REQUIRE(mode_has_spec[m][s]);
       } else {
+        logger.info("{} mode does not contain aerosol species \"{}\".",
+          mode_str(static_cast<ModeIndex>(m)),
+          aero_id_str(static_cast<AeroId>(s)));
         REQUIRE(!mode_has_spec[m][s]);
       }
     }

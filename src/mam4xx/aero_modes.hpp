@@ -2,8 +2,11 @@
 #define MAM4XX_AERO_MODES_HPP
 
 #include <haero/aero_species.hpp>
+#include <haero/constants.hpp>
 #include <haero/gas_species.hpp>
 #include <haero/math.hpp>
+
+#include "mam4_types.hpp"
 
 #include <iostream>
 #include <string>
@@ -130,8 +133,33 @@ enum class ModeIndex {
   PrimaryCarbon = 3,
 };
 
+/// Map ModeIndex to string (for logging, e.g.)
+/// This function cannot be called inside a GPU kernel,
+/// but it's helpful to use with ekat::Logger statements
+/// (which also cannot be called from inside a kernel)
+std::string mode_str(const ModeIndex m);
+
+static constexpr Real mam4_crystallization_rel_hum = 0.35;
+static constexpr Real mam4_delequesence_rel_hum = 0.8;
+static constexpr Real mam4_accum_min_diameter_m = 5.35e-8;
+static constexpr Real mam4_accum_nom_diameter_m = 1.1e-7;
+static constexpr Real mam4_accum_max_diameter_m = 4.4e-7;
+static constexpr Real mam4_accum_mead_std_dev = 1.8;
+static constexpr Real mam4_aitken_min_diameter_m = 8.7e-9;
+static constexpr Real mam4_aitken_nom_diameter_m = 2.6e-8;
+static constexpr Real mam4_aitken_max_diameter_m = 5.2e-8;
+static constexpr Real mam4_aitken_mead_std_dev = 1.6;
+static constexpr Real mam4_coarse_min_diameter_m = 1e-6;
+static constexpr Real mam4_coarse_nom_diameter_m = 2e-6;
+static constexpr Real mam4_coarse_max_diameter_m = 4e-6;
+static constexpr Real mam4_coarse_mead_std_dev = 1.8;
+static constexpr Real mam4_primary_carbon_min_diameter_m = 1e-8;
+static constexpr Real mam4_primary_carbon_nom_diameter_m = 5e-8;
+static constexpr Real mam4_primary_carbon_max_diameter_m = 1e-7;
+static constexpr Real mam4_primary_carbon_mead_std_dev = 1.6;
+
 /// A list of all modes within MAM4.
-/// NOTE: Legacy MAM4 uses the same constant crystallization and deliquescence
+/// NOTE: MAM4 uses the same constant crystallization and deliquescence
 /// NOTE: values for all modes & species.  See links for additional discussion:
 /// NOTE:
 /// https://eagles-project.atlassian.net/wiki/spaces/Computation/pages/1125515265/Aerosol+species+and+mode+data
@@ -140,11 +168,22 @@ enum class ModeIndex {
 /// NOTE: These data are found on Anvil in
 /// NOTE: /lcrc/group/acme/ccsm-data/inputdata/atm/cam/physprops/
 static Mode modes[4] = {
-    Mode(5.35e-8, 1.1e-7, 4.4e-7, 1.8, 0.35, 0.8), // accumulation
-    Mode(8.7e-9, 2.6e-8, 5.2e-8, 1.6, 0.35, 0.8),  // aitken
-    Mode(1e-6, 2e-6, 4e-6, 1.8, 0.35, 0.8),        // coarse
-    Mode(1e-8, 5e-8, 1e-7, 1.6, 0.35, 0.8)         // primary carbon
-};
+    // accumulation
+    Mode(mam4_accum_min_diameter_m, mam4_accum_nom_diameter_m,
+         mam4_accum_max_diameter_m, mam4_accum_mead_std_dev,
+         mam4_crystallization_rel_hum, mam4_delequesence_rel_hum),
+    // aitken
+    Mode(mam4_aitken_min_diameter_m, mam4_aitken_nom_diameter_m,
+         mam4_aitken_max_diameter_m, mam4_aitken_mead_std_dev,
+         mam4_crystallization_rel_hum, mam4_delequesence_rel_hum),
+    // coarse
+    Mode(mam4_coarse_min_diameter_m, mam4_coarse_nom_diameter_m,
+         mam4_coarse_max_diameter_m, mam4_coarse_mead_std_dev,
+         mam4_crystallization_rel_hum, mam4_delequesence_rel_hum),
+    // primary carbon
+    Mode(mam4_primary_carbon_min_diameter_m, mam4_primary_carbon_nom_diameter_m,
+         mam4_primary_carbon_max_diameter_m, mam4_primary_carbon_mead_std_dev,
+         mam4_crystallization_rel_hum, mam4_delequesence_rel_hum)};
 
 /// Identifiers for aerosol species that inhabit MAM4 modes.
 enum class AeroId {
@@ -158,15 +197,72 @@ enum class AeroId {
   None = 7  // invalid aerosol species
 };
 
-// A list of aerosol species in MAM4.
-static haero::AeroSpecies aero_species[7] = {
-    haero::AeroSpecies(96.0, 1770.0, 0.507),   // sulphate
-    haero::AeroSpecies(12.011, 1000.0, 1e-10), // primary organic matter
-    haero::AeroSpecies(12.011, 1000.0, 0.14),  // secondary organic aerosol
-    haero::AeroSpecies(12.011, 1700.0, 1e-10), // black carbon
-    haero::AeroSpecies(135.065, 2600.0, 0.14), // dust
-    haero::AeroSpecies(58.4425, 1900.0, 1.16), // sodium chloride
-    haero::AeroSpecies(250093.0, 1601.0, 0.1)  // marine organic matter
+/// Map ModeIndex to string (for logging, e.g.)
+/// This function cannot be called inside a GPU kernel,
+/// but it's helpful to use with ekat::Logger statements
+/// (which also cannot be called inside a kernel)
+std::string aero_id_str(const AeroId aid);
+
+/// Molecular weight of mam4 dust aerosol [kg/mol]
+static constexpr Real mam4_molec_weight_dst = 0.135065;
+
+/// Molecular weight of mam4 marine organic matter [kg/mol]
+static constexpr Real mam4_molec_weight_mom = 250.093;
+
+/// mam4 aerosol densities [kg/m3]
+static constexpr Real mam4_density_so4 = 1770.0;
+static constexpr Real mam4_density_pom = 1000.0;
+static constexpr Real mam4_density_soa = 1000.0;
+static constexpr Real mam4_density_bc = 1700.0;
+static constexpr Real mam4_density_dst = 2600.0;
+static constexpr Real mam4_density_nacl = 1900.0;
+static constexpr Real mam4_density_mom = 1601.0;
+
+/// mam4 aerosol hygroscopicities
+static constexpr Real mam4_hyg_so4 = 0.507;
+static constexpr Real mam4_hyg_pom = 1e-10;
+static constexpr Real mam4_hyg_soa = 0.1;
+static constexpr Real mam4_hyg_bc = 1e-10;
+static constexpr Real mam4_hyg_dst = 0.14;
+static constexpr Real mam4_hyg_nacl = 1.16;
+static constexpr Real mam4_hyg_mom = 0.1;
+
+/// A list of aerosol species in MAM4.
+/**
+  Note that in MAM4 fortran, molecular weights are given as g/mol, rather than
+  kg/mol.
+
+  Here and in Haero we use SI units for everything, so molecular weights
+  are given as [kg/mol].
+
+  When the variable is "universal" in the sense that it will be the same
+  whether MAM4 is using or some other software package is using it, we
+  use the external haero::Constants value, which is sourced to the latest
+  NIST data available.  Additionally, this prepares Mam4xx to ultimately
+  use an external source of constants with EAM.  Examples are the
+  molecular weights of Carbon, Sulphate, and Sodium Chloride.
+
+  Some of these constants are unique to mam4 -- these are listed here, with
+  the prefix mam4_*. For example, its definition
+  of primary carbon, dust, and marine organic matter are defined by choices
+  of what those modes represent.  Other examples, such as the density of some
+  substances, differ from the values provided by NIST; these, too, are listed
+  here as mam4_* constants.
+*/
+static AeroSpecies aero_species[7] = {
+    AeroSpecies(Constants::molec_weight_so4, mam4_density_so4,
+                mam4_hyg_so4), // sulphate
+    AeroSpecies(Constants::molec_weight_c, mam4_density_pom,
+                mam4_hyg_pom), // primary organic matter
+    AeroSpecies(Constants::molec_weight_c, mam4_density_soa,
+                mam4_hyg_soa), // secondary organic aerosol
+    AeroSpecies(Constants::molec_weight_c, mam4_density_bc,
+                mam4_hyg_bc), // black carbon
+    AeroSpecies(mam4_molec_weight_dst, mam4_density_dst, mam4_hyg_dst), // dust
+    AeroSpecies(Constants::molec_weight_nacl, mam4_density_nacl,
+                mam4_hyg_nacl), // sodium chloride
+    AeroSpecies(mam4_molec_weight_mom, mam4_density_mom,
+                mam4_hyg_mom) // marine organic matter
 };
 
 /// Returns the index of the given aerosol species within the given mode, or
@@ -206,36 +302,58 @@ int aerosol_index_for_mode(ModeIndex mode, AeroId aero_id) {
 
 // Identifiers for gas species in MAM4.
 enum class GasId {
-  O3 = 0,    // ozone
-  H2O2 = 1,  // hydrogen peroxide
-  H2SO4 = 2, // sulfuric acid
-  SO2 = 3,   // sulfur dioxide
-  DMS = 4,   // dimethylsulfide
-  SOAG = 5,  // secondary organic aerosol precursor
-  O2 = 6,    // oxygen
-  CO2 = 7,   // carbon dioxide
-  N2O = 8,   // nitrous oxide
-  CH4 = 9,   // methane,
+  O3 = 0,     // ozone
+  H2O2 = 1,   // hydrogen peroxide
+  H2SO4 = 2,  // sulfuric acid
+  SO2 = 3,    // sulfur dioxide
+  DMS = 4,    // dimethylsulfide
+  SOAG = 5,   // secondary organic aerosol precursor
+  O2 = 6,     // oxygen
+  CO2 = 7,    // carbon dioxide
+  N2O = 8,    // nitrous oxide
+  CH4 = 9,    // methane,
   CFC11 = 10, // trichlorofluoromethane
   CFC12 = 11, // dichlorodifluoromethane
   NH3 = 12    // ammonia
 };
 
+/// Molecular weight of carbon dioxide [kg/mol]
+static constexpr Real molec_weight_co2 = 0.0440095;
+/// Molecular weight of methane @f$\text{CH}_4@f$
+static constexpr Real molec_weight_ch4 = 0.0160425;
+/// Molecular weight of trichlorofluoromethan @f$\text{CCl}_3\text{F}@f$
+static constexpr Real molec_weight_ccl3f = 0.13736;
+/// Molecular weight of dichlorofluoromethane @f$\texct{CHCl}_2F@f$
+static constexpr Real molec_weight_chcl2f = 0.10292;
+/// Molecular weight of hydrogen peroxide @f$\text{H}_2\text{O}_2@f$
+static constexpr Real molec_weight_h2o2 = 0.034015;
+/// Molecular weight of dimethylsulfide @f$\text{C}_2\text{H}_6\text{S}@f$
+static constexpr Real molec_weight_dms = 0.06214;
+/// Molecular weight of oxygen molecule @f$\text{O}_2@f$
+static constexpr Real molec_weight_o2 = 0.0319988;
+/// Molecular weight of nitrous oxide @f$\text{N}_2\text{O}@f$
+static constexpr Real molec_weight_n2o = 0.044013;
+/// Molecular weight of ozone @f$\text{O}_3@f$
+static constexpr Real molec_weight_o3 = 0.0479982;
+/// Molecular weight of sulfur dioxide @f$\text{SO}_2@f$
+static constexpr Real molec_weight_so2 = 0.06407;
+
 // A list of gas species in MAM4.
 static haero::GasSpecies gas_species[13] = {
-    haero::GasSpecies(47.9982), // ozone
-    haero::GasSpecies(34.0136), // hydrogen peroxide
-    haero::GasSpecies(98.0784), // sulfuric acid
-    haero::GasSpecies(64.0648), // sulfur dioxide
-    haero::GasSpecies(62.1324), // dimethylsulfide
-    haero::GasSpecies(12.011),  // secondary organic aerosol precursor
-    haero::GasSpecies(31.988),  // oxygen
-    haero::GasSpecies(44.009),  // carbon dioxide
-    haero::GasSpecies(44.013),  // nitrous oxide
-    haero::GasSpecies(16.04),   // methane
-    haero::GasSpecies(137.73),  // thrichlorofluoromethane
-    haero::GasSpecies(120.91),  // dichlorofluoromethane
-    haero::GasSpecies(50.0)     // ammonia
+    haero::GasSpecies(molec_weight_o3),               // ozone
+    haero::GasSpecies(molec_weight_h2o2),             // hydrogen peroxide
+    haero::GasSpecies(Constants::molec_weight_h2so4), // sulfuric acid
+    haero::GasSpecies(molec_weight_so2),              // sulfur dioxide
+    haero::GasSpecies(molec_weight_dms),              // dimethylsulfide
+    haero::GasSpecies(
+        Constants::molec_weight_c),      // secondary organic aerosol precursor
+    haero::GasSpecies(molec_weight_o2),  // oxygen
+    haero::GasSpecies(molec_weight_co2), // carbon dioxide
+    haero::GasSpecies(molec_weight_n2o), // nitrous oxide
+    haero::GasSpecies(molec_weight_ch4), // methane
+    haero::GasSpecies(molec_weight_ccl3f),         // thrichlorofluoromethane
+    haero::GasSpecies(molec_weight_chcl2f),        // dichlorofluoromethane
+    haero::GasSpecies(Constants::molec_weight_nh3) // ammonia
 };
 
 } // namespace mam4

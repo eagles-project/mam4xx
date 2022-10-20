@@ -3,6 +3,7 @@
 
 // This header defines common Haero aliases for use in MAM4.
 
+#include <haero/aero_species.hpp>
 #include <haero/atmosphere.hpp>
 #include <haero/constants.hpp>
 #include <haero/floating_point.hpp>
@@ -18,6 +19,7 @@ using Real = haero::Real;
 using ColumnView = haero::ColumnView;
 template <typename ST> using FloatingPoint = haero::FloatingPoint<ST>;
 using Atmosphere = haero::Atmosphere;
+using AeroSpecies = haero::AeroSpecies;
 using IntPack = haero::IntPackType;
 using ThreadTeam = haero::ThreadTeam;
 

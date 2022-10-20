@@ -1,7 +1,10 @@
 #ifndef MAM4_CONVERSIONS_HPP
 #define MAM4_CONVERSIONS_HPP
 
+#include <ekat/ekat_pack.hpp>
+#include <ekat/ekat_pack_math.hpp>
 #include <haero/constants.hpp>
+#include <haero/math.hpp>
 
 /// This file contains functions for converting between various representations
 /// of physical quantities in aerosol parameterizations.
@@ -140,8 +143,8 @@ specific_humidity_from_vapor_mixing_ratio(const Scalar &qv) {
 ///  O. A. Alduchov and R. E. Eskridge, 1996, Improved Magnus form approximation
 ///  of saturation vapor pressure, Journal of Applied Meteorology 35:601--609.
 ///
-///  See eq. (21) from that paper, which improves the original formula's
-///  accuracy over the temperature range [-40, 50] C expected of
+///  See eqs. (21) and (22) from that paper, which improves the original
+///  formula's accuracy over the temperature range [-40, 50] C expected of
 ///  atmospheric conditions throughout an entire vertical column.
 ///  The paper uses temperature in Celsius and returns
 ///  pressure in hPa. We have changed to SI units in this implementation.
@@ -149,6 +152,7 @@ specific_humidity_from_vapor_mixing_ratio(const Scalar &qv) {
 ///  See also Lamb & Verlinde section 3.3.
 ///
 ///  @param [in] T temperature [K]
+///  @param [in] P pressure [Pa]
 ///  @return es(T) saturation vapor pressure of water vapor [Pa]
 template <typename Scalar>
 KOKKOS_INLINE_FUNCTION Scalar
@@ -296,6 +300,35 @@ KOKKOS_INLINE_FUNCTION Scalar vapor_mixing_ratio_from_relative_humidity(
                    const Scalar &) = saturation_mixing_ratio_hardy<Scalar>) {
   const auto ws = wsat(T, p);
   return rel_hum * ws;
+}
+
+///   This function returns the modal geometric mean particle diameter,
+/// given the mode's mean volume (~ to 3rd log-normal moment) and the modal
+/// standard deviation.
+///
+/// @param mode_mean_particle_volume mean particle volume for mode [m^3 per
+/// particle]
+/// @return modal mean particle diameter [m per particle]
+template <typename Scalar>
+KOKKOS_INLINE_FUNCTION Scalar mean_particle_diameter_from_volume(
+    const Scalar mode_mean_particle_volume, const Real mean_std_dev) {
+  const Scalar pio6 = Constants::pi_sixth;
+  return cbrt(mode_mean_particle_volume / pio6) *
+         exp(-1.5 * ekat::square<Scalar>(log(mean_std_dev)));
+}
+
+///   This function is the inverse of
+///   modal_mean_particle_diameter_from_volume; given the modal mean geometric
+///   diamaeter, it returns the corresponding volume.
+///
+///   @param [in] geom_diam geometric mean diameter [m per particle]
+///   @return mean volume [m^3 per particle]
+template <typename Scalar>
+KOKKOS_INLINE_FUNCTION Scalar mean_particle_volume_from_diameter(
+    const Scalar geom_diam, const Real mean_std_dev) {
+  const Scalar pio6 = Constants::pi_sixth;
+  return cube(geom_diam) * exp(4.5 * ekat::square<Scalar>(log(mean_std_dev))) *
+         pio6;
 }
 
 } // namespace mam4::conversions

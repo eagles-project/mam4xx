@@ -42,6 +42,7 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleation_process") {
   auto h_tend_qgas0 = Kokkos::create_mirror_view(tend_qgas0);
   Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);
   Kokkos::deep_copy(h_tend_qgas0, tend_qgas0);
+
   std::ostringstream ss;
   ss << "prog_qgas0 [in]: [ ";
   for (int k = 0; k < nlev; ++k) {
@@ -62,7 +63,6 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleation_process") {
     CHECK(!isnan(h_prog_qgas0(k)));
     CHECK(!isnan(h_tend_qgas0(k)));
   }
-
   // Single-column dispatch.
   auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
   Real t = 0.0, dt = 30.0;
@@ -70,9 +70,9 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleation_process") {
       team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
         process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
       });
-
   Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);
   Kokkos::deep_copy(h_tend_qgas0, tend_qgas0);
+
   ss << "prog_qgas0 [out]: [ ";
   for (int k = 0; k < nlev; ++k) {
     ss << h_prog_qgas0(k) << " ";
