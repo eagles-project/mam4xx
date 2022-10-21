@@ -20,10 +20,10 @@ using namespace skywalker;
 using namespace mam4;
 
 // Parameterizations used by the nucleation process.
-void get_relaxed_v2n_limits(Ensemble* ensemble);
-void compute_dry_volume_k(Ensemble* ensemble);
+void get_relaxed_v2n_limits(Ensemble *ensemble);
+void compute_dry_volume_k(Ensemble *ensemble);
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
   }
@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
   std::cout << argv[0] << ": reading " << input_file << std::endl;
 
   // Load the ensemble. Any error encountered is fatal.
-  Ensemble* ensemble = skywalker::load_ensemble(input_file, "mam4xx");
+  Ensemble *ensemble = skywalker::load_ensemble(input_file, "mam4xx");
 
   // the settings.
   Settings settings = ensemble->settings();
@@ -45,12 +45,12 @@ int main(int argc, char** argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
   try {
-    if (func_name == "get_relaxed_v2n_limits") {  // 
+    if (func_name == "get_relaxed_v2n_limits") { //
       get_relaxed_v2n_limits(ensemble);
     } else if (func_name == "compute_dry_volume") {
       compute_dry_volume_k(ensemble);
-    } 
-  } catch (std::exception& e) {
+    }
+  } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
   }
 
