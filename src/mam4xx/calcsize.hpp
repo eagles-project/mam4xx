@@ -22,12 +22,14 @@ using RealView = haero::RealView1D;
 
 using haero::max;
 using haero::min;
+using haero::sqrt;
 
 namespace calcsize {
 
 /*-----------------------------------------------------------------------------
 !Compute initial dry volume based on bulk mass mixing ratio (mmr) and specie
 density ! volume = mmr/density
+TODO: Is this used?
  -----------------------------------------------------------------------------*/
 KOKKOS_INLINE_FUNCTION
 void compute_dry_volume(const Diagnostics &diagnostics, // in
@@ -152,6 +154,9 @@ void update_diameter_and_vol2num(/*std::size_t klev, std::size_t imode, */
 }
 
 KOKKOS_INLINE_FUNCTION
+// FIXME: maybe give this a better name? e.g., get_num_tendency() to avoid
+// confusion with compute_tendecies()
+// @oscar--thoughts?
 static Pack compute_tendency(const Pack &num, const Pack &num0,
                              const Pack &dt_inverse) {
   return (num - num0) * dt_inverse;
@@ -218,7 +223,7 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
    * The masks below represent four if-else conditions in the original fortran
    * code. The masks represent whether a given branch should be traversed for
    * a given element of the pack, and this pack is passed to the function
-   * invokations.
+   * invocations.
    */
   const auto drva_le_zero = drv_i <= 0.0;
   num_i.set(drva_le_zero, 0.0);
@@ -406,9 +411,27 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
   dqqcwdt = compute_tendency(num_c, init_num_c, dtinv);
 }
 
-///
+/*
+ * \brief Exchange aerosols between aitken and accumulation modes based on new
+    sizes.
+ */
+KOKKOS_INLINE_FUNCTION
+void aitken_accum_exchange() // nlevs, top_lev, &
+                             // aitken_idx,  accum_idx, adj_tscale_inv, &
+                             // dt, q_i, q_c, n_i, n_c, &
+                             // drv_a_aitsv, num_a_aitsv, drv_c_aitsv,
+                             // num_c_aitsv,     & drv_a_accsv,num_a_accsv,
+                             // drv_c_accsv, num_c_accsv,      & dgncur_a,
+                             // v2ncur_a, dgncur_c, v2ncur_c, & didt, dcdt,
+                             // dnidt, dncdt)
+// NOTE: skipping the existence checks and index verification for now
+
+{
+  // auto v2n_geo_mean = sqrt(v2n);
+}
 
 // aitken_accum_exchange
+
 } // namespace calcsize
 
 /// @class CalcSize
@@ -494,6 +517,42 @@ public:
 
           for (int imode = 0; imode < nmodes; imode++) {
 
+            // FIXME: as compared to the oldHaero_fortranPort.f90, we appear to
+            // be missing this !Initialize diameter(dgnum), volume to number
+            // ratios(v2ncur) and dry volume (dryvol) for both !interstitial and
+            // cloudborne aerosols
+
+            // call set_initial_sz_and_volumes (imode, top_lev, nlevs, dgncur_a,
+            // v2ncur_a, dryvol_a) !for interstitial aerosols call
+            // set_initial_sz_and_volumes (imode, top_lev, nlevs, dgncur_c,
+            // v2ncur_c, dryvol_c) !for cloud-borne aerosols
+
+            // !----------------------------------------------------------------------
+            // !Algorithm to compute dry aerosol diameter:
+            // !calculate aerosol diameter volume, volume is computed from mass
+            // and density
+            // !----------------------------------------------------------------------
+
+            // !find start and end index of species in this mode in the
+            // "population" array !The indices are same for interstitial and
+            // cloudborne species s_spec_ind = population_offsets(imode) !start
+            // index e_spec_ind = population_offsets(imode+1) - 1 !end index of
+            // species for all (modes expect the last mode)
+
+            // if(imode.eq.nmodes) then ! for last mode
+            //    e_spec_ind = num_populations !if imode==nmodes, end index is
+            //    the total number of species
+            // endif
+
+            // nspec = num_mode_species(imode) !total number of species in mode
+            // "imode"
+
+            // !capture densities for each specie in this mode
+            // density(1:max_nspec) = huge(density) !initialize the whole array
+            // to a huge value [FIXME: NaN would be better than huge]
+            // density(1:nspec) = spec_density(imode, 1:nspec) !assign density
+            // till nspec (as nspec can be different for each mode)
+
             calcsize::compute_dry_volume_k(k, imode, prognostics, dryvol_i,
                                            dryvol_c);
 
@@ -573,36 +632,31 @@ public:
             calcsize::update_diameter_and_vol2num(
                 dryvol_c, num_c_k, v2nmin, v2nmax, dgnmin, dgnmax,
                 common_factor, dgncur_c_k, v2ncur_c_k);
-          }
-          // Oscar is working on this: end
 
-          // to be completed.
-          // Mike is  working on this:
-          //       ! save number concentrations and dry volumes for explicit
-          //       aitken <--> accum mode transfer ! which is the next step in
-          //       the calcsize process if ( do_aitacc_transfer ) then
-          //          if (imode == aitken_idx) then
-          //             drv_a_aitsv(klev) = drv_a
-          //             num_a_aitsv(klev) = num_a
-          //             drv_c_aitsv(klev) = drv_c
-          //             num_c_aitsv(klev) = num_c
-          //          else if (imode == accum_idx) then
-          //             drv_a_accsv(klev) = drv_a
-          //             num_a_accsv(klev) = num_a
-          //             drv_c_accsv(klev) = drv_c
-          //             num_c_accsv(klev) = num_c
-          //          end if
-          //       end if
-          //       drv_a_sv(klev,imode) = drv_a
-          //       num_a_sv(klev,imode) = num_a
-          //       drv_c_sv(klev,imode) = drv_c
-          //       num_c_sv(klev,imode) = num_c
+            // save number concentrations and dry volumes for explicit
+            // aitken <--> accum mode transfer, which is the next step in
+            // the calcSize process
+            if (do_aitacc_transfer) {
+              if (imode == aitken_idx) {
+                // TODO: determine if we need to save these--i.e., is drv_i ever
+                // changed before the max() calculation in
+                // aitken_accum_exchange() if yet, maybe better to skip the
+                // logic and do it, regardless?
+                const auto sdryvol_i_ait = dryvol_i;
+                const auto snum_i_k_ait = num_i_k;
+                const auto sdryvol_c_ait = dryvol_c;
+                const auto snum_c_k_ait = num_c_k;
+              } else if (imode == accumulation_idx) {
+                const auto sdryvol_i_acc = dryvol_i;
+                const auto snum_i_k_acc = num_i_k;
+                const auto sdryvol_c_acc = dryvol_c;
+                const auto snum_c_k_acc = num_c_k;
+              }
+            }
+          } // for(imode)
 
-          //    enddo! klev
-          // enddo! imodes
-
-          // !------------------------------------------------------------------------------
-          // ! Overall logic for aitken<-->acculation transfer:
+          // !------------------------------------------------------------------
+          // ! Overall logic for aitken<-->accumulation transfer:
           // ! ------------------------------------------------
           // ! when the aitken mode mean size is too big, the largest
           // !    aitken particles are transferred into the accum mode
@@ -610,18 +664,31 @@ public:
           // ! when the accum mode mean size is too small, the smallest
           // !    accum particles are transferred into the aitken mode
           // !    to increase the accum mode mean size
-          // !------------------------------------------------------------------------------
+          // !------------------------------------------------------------------
+
+          if (do_aitacc_transfer) {
+            calcsize::aitken_accum_exchange();
+            // nlevs, top_lev, &aitken_idx, accum_idx, adj_tscale_inv, &dt,
+            // q_i, q_c, n_i, n_c, &sdrv_a_ait, snum_a_ait, sdrv_c_ait,
+            // snum_c_ait, &sdrv_a_acc, snum_a_acc, sdrv_c_acc, snum_c_acc,
+            // &dgncur_a, v2ncur_a, dgncur_c, v2ncur_c, &didt, dcdt, dnidt,
+            // dncdt)
+          }
 
           // if ( do_aitacc_transfer ) then
           //    call aitken_accum_exchange( nlevs, top_lev, &
           //         aitken_idx,  accum_idx, adj_tscale_inv, &
           //         dt, q_i, q_c, n_i, n_c,&
-          //         drv_a_aitsv, num_a_aitsv, drv_c_aitsv, num_c_aitsv,     &
-          //         drv_a_accsv,num_a_accsv, drv_c_accsv, num_c_accsv,      &
+          //         sdrv_a_ait, snum_a_ait, sdrv_c_ait, snum_c_ait,     &
+          //         sdrv_a_acc,snum_a_acc, sdrv_c_acc, snum_c_acc,      &
           //         dgncur_a, v2ncur_a, dgncur_c, v2ncur_c, &
           //         didt, dcdt, dnidt, dncdt )
           // end if
-        });
+        }); // kokkos::parfor(k)
+
+    // This is from haero fortran port:
+    // TODO: after aitken<->accum transfer, the rest of the code deals
+    // with history field output and updating the tendencies
   }
 
 private:
