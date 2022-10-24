@@ -1,4 +1,5 @@
 #include "mam4xx/conversions.hpp"
+#include "mam4xx/aero_modes.hpp"
 
 #include <catch2/catch.hpp>
 
@@ -64,6 +65,49 @@ TEST_CASE("conversions", "") {
       logger.info("levek {}: T = {} P = {} z = {} dp = {} w = {}", k, h_T(k),
                   h_P(k), h_z(k), h_hdp(k), h_w(k));
     }
+  }
+
+    // mass mixing ratio (mmr) <-> number_conc
+    //auto const mmr = mmr_from_number_conc(num_conc, Constants::molec_weight_h2o, )
+
+    // mass mixing ratio (mmr) <-> molar mixing ratio (vmr)
+
+  SECTION("temperature") {
+    // temperature <-> virtual temperature
+    int c = 257;
+    auto tol = c * std::numeric_limits<Real>::epsilon(); //~5.7e-14
+    auto const temp = temperature_from_virtual_temperature(Tv0, qv0);
+    auto const vtemp = virtual_temperature_from_temperature(temp, qv0);
+    logger.info("tol = {}", tol);
+    logger.info("qv0 init = {}, Tv0 init = {}, calc temp = {}, calc vtemp = {}", qv0, Tv0, temp, vtemp);
+    REQUIRE(FloatingPoint<Real>::equiv(Tv0, vtemp, tol));  
+  }  
+    // total mass density -> dry mass density
+  SECTION("density") {
+    auto const dmd = dry_from_total_mass_density(mam4_density_dst, qv0); 
+    logger.info("dmd = {}", dmd);
+  }
+  SECTION("ratio") {
+    // vapor mixing ratio <-> specific humidity
+    auto const vmr = vapor_mixing_ratio_from_specific_humidity(qv0);
+    auto const sh = specific_humidity_from_vapor_mixing_ratio(vmr);
+    logger.info("qv0 initial = {}, calc vapor mixing ratio = {}, calc specific humidity = {}", qv0, vmr, sh);
+    REQUIRE(FloatingPoint<Real>::equiv(qv0, sh));  
+  }
+   // vapor saturation pressure
+
+   // saturation mixing ratio
+
+   // relative humidity <-> vapor mixing ratio
+  SECTION("mean particle") { 
+   // mean particle diameter <-> mean particle volume
+    PackType accum_diam(0);
+    accum_diam = mam4_accum_nom_diameter_m;
+    auto const volume = mean_particle_volume_from_diameter(accum_diam, mam4_accum_mead_std_dev);
+    auto const diameter = mean_particle_diameter_from_volume(volume, mam4_accum_mead_std_dev);
+    logger.info("mam4_accum_diam = {}, mam4_accum_std_dev = {}, calc volume = {}, calc diameter = {}", accum_diam, mam4_accum_mead_std_dev, volume, diameter);
+    REQUIRE(FloatingPoint<PackType>::equiv(diameter, accum_diam));  
+
   }
 
   SECTION("relative humidity") {

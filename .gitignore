@@ -1,3 +1,5 @@
 .DS_Store
 .haero
 mam4_test_config.hpp
+build/
+haero/
