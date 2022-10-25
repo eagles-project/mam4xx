@@ -477,7 +477,7 @@ public:
   void init(const AeroConfig &aero_config,
             const Config &calsize_config = Config()) {
     // Set nucleation-specific config parameters.
-    config_ = nucl_config;
+    config_ = calsize_config;
 
     // Set mode parameters.
     for (int m = 0; m < 4; ++m) {
