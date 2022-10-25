@@ -451,10 +451,6 @@ public:
 
 private:
   Config config_;
-  ColumnView dgncur_i[4];
-  ColumnView v2ncur_i[4];
-  ColumnView dgncur_c[4];
-  ColumnView v2ncur_c[4];
 
   Real v2nmin_nmodes[4], v2nmax_nmodes[4];
   // v2nnom_nmodes[4];
@@ -503,9 +499,9 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
-  void compute_tendencies(const ThreadTeam &team, Real t, Real dt,
+  void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
+                          Real t, Real dt, const Atmosphere &atmosphere,
                           const Prognostics &prognostics,
-                          const Atmosphere &atmosphere,
                           const Diagnostics &diagnostics,
                           const Tendencies &tendencies) const {
 
@@ -521,6 +517,10 @@ public:
     const int aitken_idx = int(ModeIndex::Aitken);
     const int accumulation_idx = int(ModeIndex::Accumulation);
     const int nmodes = AeroConfig::num_modes();
+    auto &dgncur_i = diagnostics.dgncur_i;
+    auto &v2ncur_i = diagnostics.v2ncur_i;
+    auto &dgncur_c = diagnostics.dgncur_c;
+    auto &v2ncur_c = diagnostics.v2ncur_c;
 
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
@@ -536,13 +536,13 @@ public:
 
           Pack dryvol_i = 0;
           Pack dryvol_c = 0;
-
           for (int imode = 0; imode < nmodes; imode++) {
 
             // FIXME: as compared to the oldHaero_fortranPort.f90, we appear to
             // be missing this !Initialize diameter(dgnum), volume to number
             // ratios(v2ncur) and dry volume (dryvol) for both !interstitial and
             // cloudborne aerosols
+            // DONE
 
             // call set_initial_sz_and_volumes (imode, top_lev, nlevs, dgncur_a,
             // v2ncur_a, dryvol_a) !for interstitial aerosols call

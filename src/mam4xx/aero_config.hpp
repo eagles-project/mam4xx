@@ -178,6 +178,14 @@ public:
           ColumnView("wet_geometric_mean_diameter_cloudeborne", num_levels);
       Kokkos::deep_copy(wet_geometric_mean_diameter_i[mode], 0.0);
       Kokkos::deep_copy(wet_geometric_mean_diameter_c[mode], 0.0);
+      dgncur_i[mode] = ColumnView("interstitial particle diameter", nk);
+      haero::zero_init(dgncur_i[mode], num_levels);
+      v2ncur_i[mode] = ColumnView("interstitial vol2num ratio", nk);
+      haero::zero_init(v2ncur_i[mode], num_levels);
+      dgncur_c[mode] = ColumnView("cldborne particle diameter", nk);
+      haero::zero_init(dgncur_c[mode], num_levels);
+      v2ncur_c[mode] = ColumnView("cldborne vol2num ratio", nk);
+      haero::zero_init(v2ncur_c[mode], num_levels);
     }
   }
   Diagnostics() = default; // Careful! Only for creating placeholders in views
@@ -209,6 +217,16 @@ public:
 
   /// For gas-aerosol exchange process
   ColumnView uptkrate_h2so4;
+
+  /// For calcsize
+  // !interstitial particle diameter[m]
+  ColumnView dgncur_i[AeroConfig::num_modes()];
+  // !interstitial vol2num ratio [FIXME: units????]
+  ColumnView v2ncur_i[AeroConfig::num_modes()];
+  // !cldborne particle diameter [m]
+  ColumnView dgncur_c[AeroConfig::num_modes()];
+  // !cldborne vol2num ratio [FIXME:units???]
+  ColumnView v2ncur_c[AeroConfig::num_modes()];
 
 private:
   int nlev_;
