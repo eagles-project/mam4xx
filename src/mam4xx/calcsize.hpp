@@ -456,17 +456,17 @@ private:
   ColumnView dgncur_c[4];
   ColumnView v2ncur_c[4];
 
-  RealView v2nmin_nmodes;
-  RealView v2nmax_nmodes;
-  RealView v2nnom_nmodes;
-  RealView dgnmin_nmodes;
-  RealView dgnmax_nmodes;
-  RealView dgnnom_nmodes;
+  Real v2nmin_nmodes[4], v2nmax_nmodes[4];
+  // v2nnom_nmodes[4];
+  // Mode parameters
+  Real dgnnom_nmodes[4], // mean geometric number diameter
+      dgnmax_nmodes[4],  // max geometric number diameter
+      dgnmin_nmodes[4];  // min geometric number diameter
 
   // There is a common factor calculated over and over in the core loop of this
   // process. This factor has been pulled out so the calculation only has to be
   // performed once.
-  RealView common_factor_nmodes;
+  Real common_factor_nmodes[4];
 
 public:
   // name -- unique name of the process implemented by this class
@@ -475,9 +475,31 @@ public:
   // init -- initializes the implementation with MAM4's configuration and with
   // a process-specific configuration.
   void init(const AeroConfig &aero_config,
-            const Config &calsize_config = Config()) {
+            const Config &nucl_config = Config()) {
     // Set nucleation-specific config parameters.
-    config_ = calsize_config;
+    config_ = nucl_config;
+
+    // Set mode parameters.
+    for (int m = 0; m < 4; ++m) {
+      // FIXME: There is no mean geometric number diameter in a mode.
+      // FIXME: Assume "nominal" diameter for now?
+      // FIXME: There is a comment in modal_aero_newnuc.F90 that Dick Easter
+      // FIXME: thinks that dgnum_aer isn't used in MAM4, but it is actually
+      // FIXME: used in this nucleation parameterization. So we will have to
+      // FIXME: figure this out.
+      dgnnom_nmodes[m] = modes[m].nom_diameter;
+      dgnmin_nmodes[m] = modes[m].min_diameter;
+      dgnmax_nmodes[m] = modes[m].max_diameter;
+      common_factor_nmodes[m] =
+          exp(4.5 * log(modes[m].mean_std_dev) * log(modes[m].mean_std_dev)) *
+          Constants::pi_sixth; // A common factor
+      v2nmin_nmodes[m] =
+          1.0 / (common_factor_nmodes[m] * pow(dgnmax_nmodes[m], 3.0));
+      v2nmax_nmodes[m] =
+          1.0 / (common_factor_nmodes[m] * pow(dgnmin_nmodes[m], 3.0));
+      // min_vol2num
+      // = 1.0_wp/(pi_sixth*(imode%max_diameter**3.0_wp)*exp(4.5_wp*(log(imode%mean_std_dev))**2.0_wp))
+    }
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -556,11 +578,11 @@ public:
             calcsize::compute_dry_volume_k(k, imode, prognostics, dryvol_i,
                                            dryvol_c);
 
-            auto v2nmin = v2nmin_nmodes(imode);
-            auto v2nmax = v2nmax_nmodes(imode);
-            const auto dgnmin = dgnmin_nmodes(imode);
-            const auto dgnmax = dgnmax_nmodes(imode);
-            const auto common_factor = common_factor_nmodes(imode);
+            auto v2nmin = v2nmin_nmodes[imode];
+            auto v2nmax = v2nmax_nmodes[imode];
+            const auto dgnmin = dgnmin_nmodes[imode];
+            const auto dgnmax = dgnmax_nmodes[imode];
+            const auto common_factor = common_factor_nmodes[imode];
 
             Real v2nminrl, v2nmaxrl;
 
