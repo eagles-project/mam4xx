@@ -13,18 +13,19 @@ using Real = haero::Real;
 using Pack = haero::PackType;
 
 // ==============================================================================
-// Calculate SOA species's eiquilibrium vapor mixing ratio under the ambient condition,
-// ignoring the solute effect.
+// Calculate SOA species's eiquilibrium vapor mixing ratio under the ambient
+// condition, ignoring the solute effect.
 //
 // History:
 // - MAM box model by R. C. Easter, PNNL.
 // - Subroutine cretated duing code refactoring by Hui Wan, PNNL, 2022.
 // ==============================================================================
 KOKKOS_INLINE_FUNCTION
-void soa_equilib_mixing_ratio_no_solute(
-    const int ntot_soaspec, const Pack &T_in_K, const Pack &p_in_Pa,
-    const Pack &pstd_in_Pa, const Real r_universal, const Pack &g0_soa) {
-
+void soa_equilib_mixing_ratio_no_solute(const int ntot_soaspec,
+                                        const Pack &T_in_K, const Pack &p_in_Pa,
+                                        const Pack &pstd_in_Pa,
+                                        const Real r_universal,
+                                        const Pack &g0_soa) {
 
   // ntot_soaspec     number of SOA species
   // T_in_K           temperature in Kelvin
@@ -70,8 +71,7 @@ void soa_equilib_mixing_ratio_no_solute(
 
 end subroutine soa_equilib_mixing_ratio_no_solute
 #endif
-    }
-
+}
 
 KOKKOS_INLINE_FUNCTION
 void mam_soaexch_1subarea(
@@ -102,5 +102,5 @@ void mam_soaexch_1subarea(
                                      r_universal, soa_out);
 }
 } // namespace gasaerexch
-}
+} // namespace mam4
 #endif

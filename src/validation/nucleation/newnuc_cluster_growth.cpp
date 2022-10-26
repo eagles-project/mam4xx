@@ -1,7 +1,7 @@
 #include <mam4xx/nucleation.hpp>
 
-#include <mam4xx/mam4_types.hpp>
 #include <haero/constants.hpp>
+#include <mam4xx/mam4_types.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
 
@@ -48,14 +48,14 @@ void newnuc_cluster_growth(Ensemble *ensemble) {
     Pack so4vol = input.get("so4vol");
     Pack tmp_uptkrate = input.get("tmp_uptkrate");
 
-
     // Call the cluster growth function on device.
-    DeviceType::view_1d<Real> return_vals("Return from Device",5);
+    DeviceType::view_1d<Real> return_vals("Return from Device", 5);
     Kokkos::parallel_for(
         "newnuc_cluster_growth", 1, KOKKOS_LAMBDA(int i) {
-    // computed outputs
+          // computed outputs
           IntPack isize_group;
-          Pack dens_nh4so4a, qh2so4_del, qnh3_del, qso4a_del, qnh4a_del, qnuma_del;
+          Pack dens_nh4so4a, qh2so4_del, qnh3_del, qso4a_del, qnh4a_del,
+              qnuma_del;
           nucleation::newnuc_cluster_growth(
               dnclusterdt, cnum_h2so4, cnum_nh3, radius_cluster, dplom_mode,
               dphim_mode, nsize, deltat, temp, relhumnn, cair, accom_coef_h2so4,

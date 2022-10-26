@@ -3,8 +3,8 @@
 
 #include "gasaerexch_soaexch.hpp"
 
-#include <mam4xx/mam4_types.hpp>
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/mam4_types.hpp>
 
 #include <Kokkos_Array.hpp>
 #include <haero/atmosphere.hpp>
@@ -106,6 +106,7 @@ public:
                           Real t, Real dt, const Atmosphere &atm,
                           const Prognostics &progs, const Diagnostics &diags,
                           const Tendencies &tends) const;
+
 private:
   // Gas-Aerosol-Exchange-specific configuration
   Config config_;
@@ -124,7 +125,7 @@ void mam_gasaerexch_1subarea_1gas_nonvolatile(
     const Real dt, const Real qgas_netprod_otrproc,
     Pack uptkaer[GasAerExch::num_mode], Pack &qgas_cur, Pack &qgas_avg,
     Pack qaer_cur[GasAerExch::num_mode]) {
-  
+
   // qgas_netprod_otrproc = gas net production rate from other processes
   //    such as gas-phase chemistry and emissions (mol/mol/s)
   // this allows the condensation (gasaerexch) routine to apply production and
@@ -546,9 +547,10 @@ void gas_aerosol_uptake_rates_1box(
   // Clip condensation rate when nh3 is on the list of non-volatile gases:
   // limit the condensation of nh3 so that nh4 does not exceed
   // aer_nh4_so4_molar_ratio_max * so4 (molar basis).
-  // (Hui Wan's comment from Dec. 2020: chose to leave the following block here instead
-  // of moving it to the subroutine mam_gasaerexch_1subarea_nonvolatile_quasi_analytical,
-  // to make it a bit easier to see the assumed relationship between species.)
+  // (Hui Wan's comment from Dec. 2020: chose to leave the following block here
+  // instead of moving it to the subroutine
+  // mam_gasaerexch_1subarea_nonvolatile_quasi_analytical, to make it a bit
+  // easier to see the assumed relationship between species.)
   //---------------------------------------------------------------------
   {
     const int igas = GasAerExch::igas_nh3;
@@ -580,7 +582,7 @@ void gas_aerosol_uptake_rates_1box(
   // For now we are only going to do a single volitle species.
   const int npoa = 1;
   Pack qaer_poa[npoa][num_mode];
-  for (int n=0; n<num_mode; ++n)
+  for (int n = 0; n < num_mode; ++n)
     qaer_poa[0][n].set(0 < qaer_cur[idxs][n], qaer_cur[idxs][n], 0);
 
   const int num_soamode = 1;
@@ -590,10 +592,10 @@ void gas_aerosol_uptake_rates_1box(
     for (int n = 0; n < num_mode; ++n)
       uptkaer[igas][n] = progs.uptkaer[igas][n](k);
   Pack soa_out = 0;
-  mam_soaexch_1subarea(
-      num_soamode, GasAerExch::npca, npoa,
-      GasAerExch::igas_soag_bgn, dt, dtsub_soa_fixed, pstd, r_universal, temp,
-      pmid, uptkaer, qaer_poa, qgas_cur, qgas_avg, qaer_cur, soa_out);
+  mam_soaexch_1subarea(num_soamode, GasAerExch::npca, npoa,
+                       GasAerExch::igas_soag_bgn, dt, dtsub_soa_fixed, pstd,
+                       r_universal, temp, pmid, uptkaer, qaer_poa, qgas_cur,
+                       qgas_avg, qaer_cur, soa_out);
   for (int igas = 0; igas < num_gas; ++igas)
     for (int n = 0; n < num_mode; ++n)
       progs.uptkaer[igas][n](k) = uptkaer[igas][n];
@@ -697,9 +699,8 @@ void GasAerExch::compute_tendencies(const AeroConfig &config,
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
         gasaerexch::gas_aerosol_uptake_rates_1box(
-            k, config, dt, atm, progs, diags, config_,
-            l_gas_condense_to_mode, eqn_and_numerics_category,
-            uptk_rate_factor, alnsg_aer);
+            k, config, dt, atm, progs, diags, config_, l_gas_condense_to_mode,
+            eqn_and_numerics_category, uptk_rate_factor, alnsg_aer);
       });
 }
 } // namespace mam4

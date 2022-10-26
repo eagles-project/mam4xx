@@ -1,8 +1,8 @@
-#include <mam4xx/gasaerexch.hpp>
-#include <skywalker.hpp>
-#include <mam4xx/mam4.hpp>
-#include <vector>
 #include <iostream>
+#include <mam4xx/gasaerexch.hpp>
+#include <mam4xx/mam4.hpp>
+#include <skywalker.hpp>
+#include <vector>
 
 using mam4::gasaerexch::gas_aer_uptkrates_1box1gas;
 
@@ -96,7 +96,7 @@ void test_gasaerexch_uptkrates_1box1gas_process(const Input &input,
   Kokkos::parallel_for(
       "gasaerexch::gas_aer_uptkrates_1box1gas", 1, KOKKOS_LAMBDA(const int) {
         PackType uptkaer[n_mode];
-	mam4::gasaerexch::gas_aer_uptkrates_1box1gas(
+        mam4::gasaerexch::gas_aer_uptkrates_1box1gas(
             l_condense_to_mode, temp, pmid, pstd, mw_gas, mw_air, vol_molar_gas,
             vol_molar_air, accom, r_universal, pi, beta_inp, nghq, dgncur_awet,
             lnsg, uptkaer);

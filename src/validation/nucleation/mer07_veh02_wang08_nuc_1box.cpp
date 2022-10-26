@@ -56,7 +56,8 @@ void mer07_veh02_wang08_nuc_1box(Ensemble *ensemble) {
     // Call the nucleation function on device.
     Real dnclusterdt;
     Kokkos::parallel_reduce(
-        "mer07_veh02_wang08_nuc_1box", 1, KOKKOS_LAMBDA(int i, Real &dnclusterdt) {
+        "mer07_veh02_wang08_nuc_1box", 1,
+        KOKKOS_LAMBDA(int i, Real &dnclusterdt) {
           IntPack newnuc_method_actual, pbl_nuc_wang2008_actual;
           Pack temp_dnclusterdt, rateloge, cnum_h2so4, cnum_nh3, radius_cluster;
           nucleation::mer07_veh02_wang08_nuc_1box(
@@ -67,7 +68,8 @@ void mer07_veh02_wang08_nuc_1box(Ensemble *ensemble) {
               zmid, pblh, temp_dnclusterdt, rateloge, cnum_h2so4, cnum_nh3,
               radius_cluster);
           dnclusterdt = temp_dnclusterdt[0];
-        }, Kokkos::Max<Real>(dnclusterdt));
+        },
+        Kokkos::Max<Real>(dnclusterdt));
 
     // Process output
     Real J_cm3s = dnclusterdt * 1e-6;
