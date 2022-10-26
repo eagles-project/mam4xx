@@ -1,5 +1,6 @@
 #include <mam4xx/nucleation.hpp>
 
+#include <mam4xx/mam4_types.hpp>
 #include <haero/constants.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
@@ -47,25 +48,38 @@ void newnuc_cluster_growth(Ensemble *ensemble) {
     Pack so4vol = input.get("so4vol");
     Pack tmp_uptkrate = input.get("tmp_uptkrate");
 
-    // computed outputs
-    IntPack isize_group;
-    Pack dens_nh4so4a, qh2so4_del, qnh3_del, qso4a_del, qnh4a_del, qnuma_del;
 
     // Call the cluster growth function on device.
+    DeviceType::view_1d<Real> return_vals("Return from Device",5);
     Kokkos::parallel_for(
-        "newnuc_cluster_growth", 1, [&] KOKKOS_FUNCTION(int i) {
+        "newnuc_cluster_growth", 1, KOKKOS_LAMBDA(int i) {
+    // computed outputs
+          IntPack isize_group;
+          Pack dens_nh4so4a, qh2so4_del, qnh3_del, qso4a_del, qnh4a_del, qnuma_del;
           nucleation::newnuc_cluster_growth(
               dnclusterdt, cnum_h2so4, cnum_nh3, radius_cluster, dplom_mode,
               dphim_mode, nsize, deltat, temp, relhumnn, cair, accom_coef_h2so4,
               mw_so4a, mw_so4a_host, mw_nh4a, avogadro, pi, qnh3_cur,
               qh2so4_cur, so4vol, tmp_uptkrate, isize_group, dens_nh4so4a,
               qh2so4_del, qnh3_del, qso4a_del, qnh4a_del, qnuma_del);
+          return_vals[0] = qh2so4_del[0];
+          return_vals[1] = qnh3_del[0];
+          return_vals[2] = qso4a_del[0];
+          return_vals[3] = qnh4a_del[0];
+          return_vals[4] = qnuma_del[0];
         });
+    auto host_vals = Kokkos::create_mirror_view(return_vals);
+    Kokkos::deep_copy(host_vals, return_vals);
+    const Real qh2so4_del = host_vals[0];
+    const Real qnh3_del = host_vals[1];
+    const Real qso4a_del = host_vals[2];
+    const Real qnh4a_del = host_vals[3];
+    const Real qnuma_del = host_vals[4];
 
-    output.set("qh2so4_del", qh2so4_del[0]);
-    output.set("qnh3_del", qnh3_del[0]);
-    output.set("qso4a_del", qso4a_del[0]);
-    output.set("qnh4a_del", qnh4a_del[0]);
-    output.set("qnuma_del", qnuma_del[0]);
+    output.set("qh2so4_del", qh2so4_del);
+    output.set("qnh3_del", qnh3_del);
+    output.set("qso4a_del", qso4a_del);
+    output.set("qnh4a_del", qnh4a_del);
+    output.set("qnuma_del", qnuma_del);
   });
 }

@@ -1,7 +1,10 @@
-#include <iostream>
-#include <mam4.hpp>
+#include <mam4xx/gasaerexch.hpp>
 #include <skywalker.hpp>
+#include <mam4xx/mam4.hpp>
 #include <vector>
+#include <iostream>
+
+using mam4::gasaerexch::gas_aer_uptkrates_1box1gas;
 
 using namespace haero;
 using namespace skywalker;
@@ -54,10 +57,10 @@ void test_gasaerexch_uptkrates_1box1gas_process(const Input &input,
   Real vol_molar_gas = 42.880000000000003;
   const Real vol_molar_air = 20.100000000000001;
 
-  Kokkos::Array<bool, n_mode> l_condense_to_mode = {true, true, true, true};
+  bool l_condense_to_mode[n_mode] = {true, true, true, true};
   // Parse input
-  Kokkos::Array<PackType, n_mode> dgncur_awet;
-  Kokkos::Array<Real, n_mode> lnsg;
+  PackType dgncur_awet[n_mode];
+  Real lnsg[n_mode];
   {
     const std::vector<Real> array = input.get_array("dgncur_awet");
     for (size_t i = 0; i < array.size() && i < n_mode; ++i)
@@ -89,12 +92,11 @@ void test_gasaerexch_uptkrates_1box1gas_process(const Input &input,
   if (has_solution) {
     test_uptkaer = input.get_array("uptkaer");
   }
-
   ColumnView uptkaer_dev("uptkaer on device", n_mode);
   Kokkos::parallel_for(
-      "gasaerexch.gas_aer_uptkrates_1box1gas", 1, KOKKOS_LAMBDA(const int) {
-        Kokkos::Array<PackType, n_mode> uptkaer;
-        gasaerexch.gas_aer_uptkrates_1box1gas(
+      "gasaerexch::gas_aer_uptkrates_1box1gas", 1, KOKKOS_LAMBDA(const int) {
+        PackType uptkaer[n_mode];
+	mam4::gasaerexch::gas_aer_uptkrates_1box1gas(
             l_condense_to_mode, temp, pmid, pstd, mw_gas, mw_air, vol_molar_gas,
             vol_molar_air, accom, r_universal, pi, beta_inp, nghq, dgncur_awet,
             lnsg, uptkaer);
@@ -120,10 +122,8 @@ void test_gasaerexch_uptkrates_1box1gas_process(const Input &input,
 void test_gasaerexch_uptkrates_1box1gas(std::unique_ptr<Ensemble> &ensemble) {
   mam4::AeroConfig mam4_config;
   mam4::GasAerExch gasaerexch;
-  mam4::GasAerExchConfig config;
-  Kokkos::resize(config.l_mode_can_contain_species, num_aer, num_mode);
-  Kokkos::resize(config.l_mode_can_age, num_aer);
-  gasaerexch.init(mam4_config);
+  mam4::GasAerExch::Config config;
+  gasaerexch.init(mam4_config, config);
 
   ensemble->process([&](const Input &input, Output &output) {
     test_gasaerexch_uptkrates_1box1gas_process(input, output, gasaerexch);
