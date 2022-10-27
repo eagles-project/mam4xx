@@ -97,6 +97,10 @@ jobs:
         cd build
         make -j
 
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with: python-version: '3'
+
     - name: Running tests (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
       run: |
         cd build
