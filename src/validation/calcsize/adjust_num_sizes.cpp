@@ -82,6 +82,4 @@ void adjust_num_sizes(Ensemble *ensemble) {
     output.set("interstitial_tend", interstitial_tend_values);
     output.set("cloudborne_tend", cloudborne_tend_values);
   });
-
-
 }

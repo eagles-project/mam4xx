@@ -108,34 +108,36 @@ void get_relaxed_v2n_limits(const bool do_aitacc_transfer,
    * \see get_relaxed_v2n_limits
    */
 
-    //   !intent-ins
-    // logical,  intent(in) :: do_aitacc_transfer !flag to control whether to transfer aerosols from one mode to another
-    // logical,  intent(in) :: is_aitken_mode     !true if this mode is aitken mode
-    // logical,  intent(in) :: is_accum_mode      !true if this mode is accumulation mode
+  //   !intent-ins
+  // logical,  intent(in) :: do_aitacc_transfer !flag to control whether to
+  // transfer aerosols from one mode to another logical,  intent(in) ::
+  // is_aitken_mode     !true if this mode is aitken mode logical,  intent(in)
+  // :: is_accum_mode      !true if this mode is accumulation mode
 
-    // !intent-(in)outs
-    // real(wp), intent(inout) :: v2nmin, v2nmax     !volume_to_num min/max ratios
-    // real(wp), intent(out)   :: v2nminrl, v2nmaxrl ! relaxed counterparts of volume_to_num min/max ratios
+  // !intent-(in)outs
+  // real(wp), intent(inout) :: v2nmin, v2nmax     !volume_to_num min/max ratios
+  // real(wp), intent(out)   :: v2nminrl, v2nmaxrl ! relaxed counterparts of
+  // volume_to_num min/max ratios
 
-    // !local
-    // !(relaxation factor is currently assumed to be a factor of 3 in diameter
-    // !which makes it 3**3=27 for volume)
-    // !i.e. dgnumlo_relaxed = dgnumlo/3 and dgnumhi_relaxed = dgnumhi*3; therefore we use
-    // !3**3=27 as a relaxation factor for volume
+  // !local
+  // !(relaxation factor is currently assumed to be a factor of 3 in diameter
+  // !which makes it 3**3=27 for volume)
+  // !i.e. dgnumlo_relaxed = dgnumlo/3 and dgnumhi_relaxed = dgnumhi*3;
+  // therefore we use !3**3=27 as a relaxation factor for volume
 
   static constexpr Real relax_factor = 27.0;
 
   // factor to artifically inflate or deflate v2nmin and v2nmax
   static constexpr Real szadj_block_fac = 1.0e6;
 
-   // !default relaxation:
-  v2nminrl = v2nmin/relax_factor;
-  v2nmaxrl = v2nmax*relax_factor;
-    // !if do_aitacc_transfer is turned on, we will do the ait<->acc tranfer separately in
-    // !aitken_accum_exchange subroutine, so we are effectively turning OFF the size adjustment for these
-    // !two modes here by artifically inflating (or deflating) v2min and v2nmax using "szadj_block_fac"
-    // !and then computing v2minrl and v2nmaxrl based on newly computed v2min and v2nmax.
-
+  // !default relaxation:
+  v2nminrl = v2nmin / relax_factor;
+  v2nmaxrl = v2nmax * relax_factor;
+  // !if do_aitacc_transfer is turned on, we will do the ait<->acc tranfer
+  // separately in !aitken_accum_exchange subroutine, so we are effectively
+  // turning OFF the size adjustment for these !two modes here by artifically
+  // inflating (or deflating) v2min and v2nmax using "szadj_block_fac" !and then
+  // computing v2minrl and v2nmaxrl based on newly computed v2min and v2nmax.
 
   if (do_aitacc_transfer) {
     // !for aitken mode, divide v2nmin by 1.0e6 to effectively turn off the
@@ -148,9 +150,10 @@ void get_relaxed_v2n_limits(const bool do_aitacc_transfer,
       v2nmax *= szadj_block_fac;
 
     // !Also change the v2nmaxrl/v2nminrl so that
-    // !the interstitial<-->activated number adjustment is effectively turned off
-    v2nminrl = v2nmin/relax_factor;
-    v2nmaxrl = v2nmax*relax_factor;
+    // !the interstitial<-->activated number adjustment is effectively turned
+    // off
+    v2nminrl = v2nmin / relax_factor;
+    v2nmaxrl = v2nmax * relax_factor;
   }
 }
 
@@ -188,8 +191,9 @@ KOKKOS_INLINE_FUNCTION
 // FIXME: maybe give this a better name? e.g., get_num_tendency() to avoid
 // confusion with compute_tendecies()
 // @oscar--thoughts?
-static Pack compute_tendency(const Pack &num, const Pack &num0,
-                             const Pack &dt_inverse) {
+// rename to match ported fortran version
+static Pack update_num_adj_tends(const Pack &num, const Pack &num0,
+                                 const Pack &dt_inverse) {
   return (num - num0) * dt_inverse;
 }
 
@@ -209,8 +213,19 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
                       const Real &dt, const Real &v2nmin, const Real &v2nmax,
                       const Real &v2nminrl, const Real &v2nmaxrl, Pack &num_i,
                       Pack &num_c, Pack &dqdt, Pack &dqqcwdt) {
-  static constexpr Real close_to_one = 1.0 + 1.0e-15;
-  static constexpr Real seconds_in_a_day = 86400.0;
+
+  // !intent-ins
+  // real(wp), intent(in) :: drv_i, drv_c      !dry volumes [TODO:units]
+  // real(wp), intent(in) :: init_num_a, init_num_c    !initial number mixing
+  // ratios [TODO:units] real(wp), intent(in) :: dt                !time step
+  // [s] real(wp), intent(in) :: v2nmin, v2nmax    !volume to number min and
+  // max[TODO:units] real(wp), intent(in) :: v2nminrl, v2nmaxrl!volume to number
+  // "relaxed" min and max[TODO:units]
+
+  // !intent-outs
+  // real(wp), intent(out):: num_a, num_c  !final number  mixing ratios after
+  // size adjument real(wp), intent(out):: dqdt, dqqcwdt ! number mixing ratio
+  // tendencies
 
   /*
    *
@@ -237,6 +252,9 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
    * time scale
    *
    */
+
+  static constexpr Real close_to_one = 1.0 + 1.0e-15;
+  static constexpr Real seconds_in_a_day = 86400.0;
 
   // time scale for number adjustment
   const auto adj_tscale = max(seconds_in_a_day, dt);
@@ -267,8 +285,8 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
    * to be zero for this mode and level
    */
   const auto drv_i_c_le_zero = drva_le_zero && drvc_le_zero;
-  dqdt.set(drv_i_c_le_zero, compute_tendency(num_i, init_num_i, dtinv));
-  dqqcwdt.set(drv_i_c_le_zero, compute_tendency(num_c, init_num_c, dtinv));
+  dqdt.set(drv_i_c_le_zero, update_num_adj_tends(num_i, init_num_i, dtinv));
+  dqqcwdt.set(drv_i_c_le_zero, update_num_adj_tends(num_c, init_num_c, dtinv));
 
   /* if cloud borne dry volume (drv_c) is zero(or less), the interstitial
    * number/volume == total/combined apply step 1 and 3, but skip the relaxed
@@ -438,8 +456,8 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
   }
 
   // Update tendencies
-  dqdt = compute_tendency(num_i, init_num_i, dtinv);
-  dqqcwdt = compute_tendency(num_c, init_num_c, dtinv);
+  dqdt = update_num_adj_tends(num_i, init_num_i, dtinv);
+  dqqcwdt = update_num_adj_tends(num_c, init_num_c, dtinv);
 }
 
 /*
@@ -483,7 +501,7 @@ public:
 private:
   Config config_;
 
-  Real v2nmin_nmodes[4], v2nmax_nmodes[4];
+  Real v2nmin_nmodes[4], v2nmax_nmodes[4], v2nnom_nmodes[4];
   // v2nnom_nmodes[4];
   // Mode parameters
   Real dgnnom_nmodes[4], // mean geometric number diameter
@@ -522,6 +540,8 @@ public:
           Constants::pi_sixth; // A common factor
       v2nmin_nmodes[m] =
           1.0 / (common_factor_nmodes[m] * pow(dgnmax_nmodes[m], 3.0));
+      v2nnom_nmodes[m] =
+          1.0 / (common_factor_nmodes[m] * pow(dgnnom_nmodes[m], 3.0));
       v2nmax_nmodes[m] =
           1.0 / (common_factor_nmodes[m] * pow(dgnmin_nmodes[m], 3.0));
       // min_vol2num
@@ -606,6 +626,16 @@ public:
             // density(1:nspec) = spec_density(imode, 1:nspec) !assign density
             // till nspec (as nspec can be different for each mode)
 
+            // !Initialize diameter(dgnum), volume to number ratios(v2ncur) and
+            // dry volume (dryvol) for both !interstitial and cloudborne
+            // aerosols we did not implement set_initial_sz_and_volumes
+            dgncur_i[imode](k) = dgnnom_nmodes[imode]; //! diameter [m]
+            v2ncur_i[imode](k) = v2nnom_nmodes[imode]; // !volume to number
+
+            dgncur_c[imode](k) = dgnnom_nmodes[imode]; //! diameter [m]
+            v2ncur_c[imode](k) = v2nnom_nmodes[imode]; // !volume to number
+
+            // dry volume is set to zero inside compute_dry_volume_k
             calcsize::compute_dry_volume_k(k, imode, prognostics, dryvol_i,
                                            dryvol_c);
 
