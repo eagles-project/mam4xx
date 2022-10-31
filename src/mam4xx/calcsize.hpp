@@ -697,8 +697,8 @@ public:
 
               // number tendencies to be updated by adjust_num_sizes subroutine
 
-              auto interstitial_tend = dnidt[imode](k);
-              auto cloudborne_tend = dncdt[imode](k);
+              auto &interstitial_tend = dnidt[imode](k);
+              auto &cloudborne_tend = dncdt[imode](k);
 
               /*NOTE: Only number tendencies (NOT mass mixing ratios) are
                updated in adjust_num_sizes Effect of these adjustment will be
@@ -713,16 +713,16 @@ public:
 
             // update diameters and volume to num ratios for interstitial
             // aerosols
-            auto dgncur_i_k = dgncur_i[imode](k);
-            auto v2ncur_i_k = v2ncur_i[imode](k);
+            auto &dgncur_i_k = dgncur_i[imode](k);
+            auto &v2ncur_i_k = v2ncur_i[imode](k);
 
             calcsize::update_diameter_and_vol2num(
                 dryvol_i, num_i_k, v2nmin, v2nmax, dgnmin, dgnmax,
                 common_factor, dgncur_i_k, v2ncur_i_k);
 
             // update diameters and volume to num ratios for cloudborne aerosols
-            auto dgncur_c_k = dgncur_c[imode](k);
-            auto v2ncur_c_k = v2ncur_c[imode](k);
+            auto &dgncur_c_k = dgncur_c[imode](k);
+            auto &v2ncur_c_k = v2ncur_c[imode](k);
             calcsize::update_diameter_and_vol2num(
                 dryvol_c, num_c_k, v2nmin, v2nmax, dgnmin, dgnmax,
                 common_factor, dgncur_c_k, v2ncur_c_k);

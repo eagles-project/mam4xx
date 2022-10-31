@@ -61,25 +61,33 @@ void adjust_num_sizes(Ensemble *ensemble) {
     Pack interstitial_tend[nmodes] = {0};
     Pack cloudborne_tend[nmodes] = {0};
 
+    Pack num_i[nmodes];
+    Pack num_c[nmodes];
+
     Kokkos::parallel_for("adjust_num_sizes", 1, [&] KOKKOS_FUNCTION(int i) {
       for (int m = 0; m < nmodes; ++m) {
-        auto num_i = Pack(init_num_i[m] < 0, Pack(0.0), init_num_i[m]);
-        auto num_c = Pack(init_num_c[m] < 0, Pack(0.0), init_num_c[m]);
+        num_i[m] = Pack(init_num_i[m] < 0, Pack(0.0), init_num_i[m]);
+        num_c[m] = Pack(init_num_c[m] < 0, Pack(0.0), init_num_c[m]);
         calcsize::adjust_num_sizes(drv_i[m], drv_c[m], init_num_i[m],
                                    init_num_c[m], dt, v2nmin[m], v2nmax[m],
-                                   v2nminrl[m], v2nmaxrl[m], num_i, num_c,
+                                   v2nminrl[m], v2nmaxrl[m], num_i[m], num_c[m],
                                    interstitial_tend[m], cloudborne_tend[m]);
       }
     });
 
     std::vector<Real> interstitial_tend_values, cloudborne_tend_values;
+    std::vector<Real> num_i_values, num_c_values;
 
     for (int m = 0; m < nmodes; ++m) {
       interstitial_tend_values.push_back(interstitial_tend[m][0]);
       cloudborne_tend_values.push_back(cloudborne_tend[m][0]);
+      num_i_values.push_back(num_i[m][0]);
+      num_c_values.push_back(num_c[m][0]);
     }
 
     output.set("interstitial_tend", interstitial_tend_values);
     output.set("cloudborne_tend", cloudborne_tend_values);
+    output.set("num_i", num_i_values);
+    output.set("num_c", num_c_values);
   });
 }
