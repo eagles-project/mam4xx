@@ -18,6 +18,10 @@
 #   a Pack used for vectorization, mainly on CPUs (most GPUs use 1). Default: 1
 # * <build_type> (either `debug`, `release`) determines whether Haero is built
 #   optimized or for debugging. Default: debug
+#
+# NOTE: This script disables MPI, since the mam4xx team is focused on single-
+# NOTE: node parallelism. If you need an MPI-enabled build of Haero, please
+# NOTE: follow the installation directions in that repo.
 
 PREFIX=$1
 DEVICE=$2
@@ -94,12 +98,13 @@ else
   DEVICE_ARCH="${DEVICE/gpu:/}"
 fi
 
-echo "Configuring Haero with the given selections..."
+echo "Configuring Haero with the given selections (WITHOUT MPI)..."
 cmake -S ./.haero -B ./.haero/build \
   -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
   -DCMAKE_INSTALL_PREFIX="$PREFIX" \
   -DCMAKE_C_COMPILER=$CC \
   -DCMAKE_CXX_COMPILER=$CXX \
+  -DHAERO_ENABLE_MPI=OFF \
   -DHAERO_ENABLE_GPU=$ENABLE_GPU \
   -DHAERO_DEVICE_ARCH=$DEVICE_ARCH \
   -DKokkos_ARCH_$DEVICE_ARCH:BOOL=ON \
