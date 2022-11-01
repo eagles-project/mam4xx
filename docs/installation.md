@@ -41,7 +41,7 @@ brew install cmake gfortran openmpi
 MAM4xx uses data structures and libraries provided by Haero. To build Haero, you
 can either
 
-* use the [build-haero.sh script](https://github.com/eagles-project/mam4xx/blob/main/src/build-haero.sh), or
+* use the [build-haero.sh script](https://github.com/eagles-project/mam4xx/blob/main/build-haero.sh), or
 * follow the directions in the [Haero repository](https://github.com/eagles-project/haero) itself
 
 ## Clone the MAM4xx Repository
