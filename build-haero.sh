@@ -16,8 +16,8 @@
 #   floating point numbers used in Haero. Default: double
 # * <packsize> (an integer such as 1, 4, 8) determines the number of values in
 #   a Pack used for vectorization, mainly on CPUs (most GPUs use 1). Default: 1
-# * <build_type> (either `debug`, `release`) determines whether Haero is built
-#   optimized or for debugging. Default: debug
+# * <build_type> (either `Debug` or `Release`) determines whether Haero is built
+#   optimized or for debugging. Default: Debug
 #
 # NOTE: This script disables MPI, since the mam4xx team is focused on single-
 # NOTE: node parallelism. If you need an MPI-enabled build of Haero, please
@@ -57,8 +57,8 @@ if [[ "$PACKSIZE" == "" ]]; then
   echo "No pack size specified. Selected 1."
 fi
 if [[ "$BUILD_TYPE" == "" ]]; then
-  BUILD_TYPE=debug
-  echo "No build_type (optimization level) specified. Selected debug."
+  BUILD_TYPE=Debug
+  echo "No build type specified. Selected Debug."
 fi
 
 # Validate options
@@ -71,13 +71,10 @@ if [[ "$PRECISION" != "single" && "$PRECISION" != "double" ]]; then
   exit
 fi
 # FIXME: pack size?
-if [[ "$BUILD_TYPE" != "debug" && "$BUILD_TYPE" != "release" ]]; then
-  echo "Invalid optimization specified: $OPT (must be debug or release)"
+if [[ "$BUILD_TYPE" != "Debug" && "$BUILD_TYPE" != "Release" ]]; then
+  echo "Invalid optimization specified: $BUILD_TYPE (must be Debug or Release)"
   exit
 fi
-
-# Capitalize the optimization setting
-BUILD_TYPE=${BUILD_TYPE^}
 
 # Clone a fresh copy Haero in the current directory. Delete any existing copy.
 if [[ -d $(pwd)/.haero ]]; then
