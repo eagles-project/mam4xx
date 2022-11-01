@@ -1,4 +1,4 @@
-#include <gasaerexch.hpp>
+#include <mam4xx/gasaerexch.hpp>
 
 #include <iostream>
 #include <skywalker.hpp>
@@ -21,8 +21,7 @@ int main(int argc, char **argv) {
   }
   Kokkos::initialize(argc, argv);
   std::string input_file = argv[1];
-  std::string output_file =
-      validation::output_name(input_file).replace(0, 6, "");
+  std::string output_file = validation::output_name(input_file);
   std::cout << argv[0] << ": reading " << input_file << std::endl;
 
   // Load the ensemble. Any error encountered is fatal.

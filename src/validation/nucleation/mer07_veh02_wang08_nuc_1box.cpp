@@ -54,21 +54,25 @@ void mer07_veh02_wang08_nuc_1box(Ensemble *ensemble) {
     Real pblh = input.get("planetary_boundary_layer_height");
 
     // Call the nucleation function on device.
-    IntPack newnuc_method_actual, pbl_nuc_wang2008_actual;
-    Pack dnclusterdt, rateloge, cnum_h2so4, cnum_nh3, radius_cluster;
-    Kokkos::parallel_for(
-        "mer07_veh02_wang08_nuc_1box", 1, [&] KOKKOS_FUNCTION(int i) {
+    Real dnclusterdt;
+    Kokkos::parallel_reduce(
+        "mer07_veh02_wang08_nuc_1box", 1,
+        KOKKOS_LAMBDA(int i, Real &dnclusterdt) {
+          IntPack newnuc_method_actual, pbl_nuc_wang2008_actual;
+          Pack temp_dnclusterdt, rateloge, cnum_h2so4, cnum_nh3, radius_cluster;
           nucleation::mer07_veh02_wang08_nuc_1box(
               newnuc_method_user_choice, newnuc_method_actual,
               pbl_nuc_wang2008_user_choice, pbl_nuc_wang2008_actual,
               ln_nuc_rate_cutoff, adjust_factor_bin_tern_ratenucl,
               adjust_factor_pbl_ratenucl, pi, so4vol, nh3ppt, temp, relhumnn,
-              zmid, pblh, dnclusterdt, rateloge, cnum_h2so4, cnum_nh3,
+              zmid, pblh, temp_dnclusterdt, rateloge, cnum_h2so4, cnum_nh3,
               radius_cluster);
-        });
+          dnclusterdt = temp_dnclusterdt[0];
+        },
+        Kokkos::Max<Real>(dnclusterdt));
 
     // Process output
-    Real J_cm3s = dnclusterdt[0] * 1e-6;
+    Real J_cm3s = dnclusterdt * 1e-6;
     output.set("nucleation_rate", J_cm3s);
   });
 }

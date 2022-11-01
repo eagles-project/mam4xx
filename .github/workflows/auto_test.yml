@@ -97,6 +97,16 @@ jobs:
         cd build
         make -j
 
+    - name: Setup Python  
+      uses: actions/setup-python@v4
+      with: 
+        python-version: '3'
+
+    - name: Install Numpy
+      run: |
+        python3 -m pip install --upgrade pip
+        pip install numpy
+
     - name: Running tests (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
       run: |
         cd build
