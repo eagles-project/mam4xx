@@ -33,10 +33,10 @@ density  volume = mmr/density
 TODO: Is this used?
  -----------------------------------------------------------------------------*/
 KOKKOS_INLINE_FUNCTION
-void compute_dry_volume(const Diagnostics &diagnostics, // in
-                        const Prognostics &prognostics, // in
-                        const ColumnView &dryvol_i,     // out
-                        const ColumnView &dryvol_c)     // out
+void compute_dry_volume(const Diagnostics& diagnostics, // in
+                        const Prognostics& prognostics, // in
+                        const ColumnView& dryvol_i,     // out
+                        const ColumnView& dryvol_c)     // out
 {
   // Pack dryvol = 0;
   const int nlevels = diagnostics.num_levels();
@@ -62,9 +62,9 @@ void compute_dry_volume(const Diagnostics &diagnostics, // in
 
 KOKKOS_INLINE_FUNCTION
 void compute_dry_volume_k(int k, int imode,
-                          const Prognostics &prognostics, // in
-                          Pack &dryvol_i,                 // out
-                          Pack &dryvol_c)                 // out
+                          const Prognostics& prognostics, // in
+                          Pack& dryvol_i,                 // out
+                          Pack& dryvol_c)                 // out
 {
   // Pack dryvol = 0;
   const auto q_i = prognostics.q_aero_i;
@@ -95,10 +95,10 @@ void compute_dry_volume_k(int k, int imode,
 KOKKOS_INLINE_FUNCTION
 void get_relaxed_v2n_limits(const bool do_aitacc_transfer,
                             const bool is_aitken_mode, const bool is_accum_mode,
-                            Real &v2nmin,   // in
-                            Real &v2nmax,   // in
-                            Real &v2nminrl, // out
-                            Real &v2nmaxrl) // out
+                            Real& v2nmin,   // in
+                            Real& v2nmax,   // in
+                            Real& v2nminrl, // out
+                            Real& v2nmaxrl) // out
 {
   /*
    * Relaxation factor is currently assumed to be a factor of 3 in diameter
@@ -164,10 +164,10 @@ void get_relaxed_v2n_limits(const bool do_aitacc_transfer,
  *--------------------------------------------------------------------------*/
 KOKKOS_INLINE_FUNCTION
 void update_diameter_and_vol2num(/*std::size_t klev, std::size_t imode, */
-                                 const Pack &drv, const Pack &num, Real v2nmin,
+                                 const Pack& drv, const Pack& num, Real v2nmin,
                                  Real v2nmax, Real dgnmin, Real dgnmax,
-                                 Real cmn_factor, Pack &dgncur_k_i,
-                                 Pack &v2ncur_k_i) {
+                                 Real cmn_factor, Pack& dgncur_k_i,
+                                 Pack& v2ncur_k_i) {
   const auto drv_gt_0 = drv > 0.0;
   if (!drv_gt_0.any())
     return;
@@ -190,14 +190,14 @@ void update_diameter_and_vol2num(/*std::size_t klev, std::size_t imode, */
 
 KOKKOS_INLINE_FUNCTION
 // rename to match ported fortran version
-static Pack update_num_adj_tends(const Pack &num, const Pack &num0,
-                                 const Pack &dt_inverse) {
+static Pack update_num_adj_tends(const Pack& num, const Pack& num0,
+                                 const Pack& dt_inverse) {
   return (num - num0) * dt_inverse;
 }
 
 KOKKOS_INLINE_FUNCTION
-static Pack min_max_bounded(const Pack &drv, const Pack &v2nmin,
-                            const Pack &v2nmax, const Pack &num) {
+static Pack min_max_bounded(const Pack& drv, const Pack& v2nmin,
+                            const Pack& v2nmax, const Pack& num) {
   return max(drv * v2nmin, min(drv * v2nmax, num));
 }
 
@@ -206,11 +206,12 @@ static Pack min_max_bounded(const Pack &drv, const Pack &v2nmin,
  * comments.
  */
 KOKKOS_INLINE_FUNCTION
-void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
-                      const Pack &init_num_i, const Pack &init_num_c,
-                      const Real &dt, const Real &v2nmin, const Real &v2nmax,
-                      const Real &v2nminrl, const Real &v2nmaxrl, Pack &num_i,
-                      Pack &num_c, Pack &dqdt, Pack &dqqcwdt) {
+void adjust_num_sizes(const Pack& drv_i, const Pack& drv_c,
+                      const Pack& init_num_i, const Pack& init_num_c,
+                      const Real& dt, const Real& v2nmin, const Real& v2nmax,
+                      const Real& v2nminrl, const Real& v2nmaxrl,
+                      const Real& adj_tscale_inv, const Real& close_to_one,
+                      Pack& num_i, Pack& num_c, Pack& dqdt, Pack& dqqcwdt) {
 
   // intent-ins
   // real(wp), intent(in) :: drv_i, drv_c      dry volumes [TODO:units]
@@ -250,15 +251,6 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
    * time scale
    *
    */
-
-  static constexpr Real close_to_one = 1.0 + 1.0e-15;
-  static constexpr Real seconds_in_a_day = 86400.0;
-
-  // time scale for number adjustment
-  const auto adj_tscale = max(seconds_in_a_day, dt);
-
-  // inverse of the adjustment time scale
-  const auto adj_tscale_inv = 1.0 / (adj_tscale * close_to_one);
 
   // fraction of adj_tscale covered in the current time step "dt"
   const auto frac_adj_in_dt = max(0.0, min(1.0, dt * adj_tscale_inv));
@@ -462,7 +454,7 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
  * \brief Exchange aerosols between aitken and accumulation modes based on new
     sizes.
  */
- // @mjs:**HERE**
+// @mjs:**HERE**
 KOKKOS_INLINE_FUNCTION
 void aitken_accum_exchange() // nlevs, top_lev, &
                              // aitken_idx,  accum_idx, adj_tscale_inv, &
@@ -475,6 +467,7 @@ void aitken_accum_exchange() // nlevs, top_lev, &
 // NOTE: skipping the existence checks and index verification for now
 
 {
+  // compute geometric mean of v2n's for aitken and accumulation modes
   // auto v2n_geo_mean = sqrt(v2n);
 }
 
@@ -492,9 +485,9 @@ public:
     // default constructor -- sets default values for parameters
     Config() {}
 
-    Config(const Config &) = default;
+    Config(const Config&) = default;
     ~Config() = default;
-    Config &operator=(const Config &) = default;
+    Config& operator=(const Config&) = default;
   };
 
 private:
@@ -514,12 +507,12 @@ private:
 
 public:
   // name -- unique name of the process implemented by this class
-  const char *name() const { return "MAM4 calcsize"; }
+  const char* name() const { return "MAM4 calcsize"; }
 
   // init -- initializes the implementation with MAM4's configuration and with
   // a process-specific configuration.
-  void init(const AeroConfig &aero_config,
-            const Config &calsize_config = Config()) {
+  void init(const AeroConfig& aero_config,
+            const Config& calsize_config = Config()) {
     // Set nucleation-specific config parameters.
     config_ = calsize_config;
 
@@ -537,10 +530,10 @@ public:
       common_factor_nmodes[m] =
           exp(4.5 * log(modes[m].mean_std_dev) * log(modes[m].mean_std_dev)) *
           Constants::pi_sixth; // A common factor
-      v2nmin_nmodes[m] =
-          1.0 / (common_factor_nmodes[m] * pow(dgnmax_nmodes[m], 3.0));
       v2nnom_nmodes[m] =
           1.0 / (common_factor_nmodes[m] * pow(dgnnom_nmodes[m], 3.0));
+      v2nmin_nmodes[m] =
+          1.0 / (common_factor_nmodes[m] * pow(dgnmax_nmodes[m], 3.0));
       v2nmax_nmodes[m] =
           1.0 / (common_factor_nmodes[m] * pow(dgnmin_nmodes[m], 3.0));
       // min_vol2num
@@ -549,11 +542,11 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
-  void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
-                          Real t, Real dt, const Atmosphere &atmosphere,
-                          const Prognostics &prognostics,
-                          const Diagnostics &diagnostics,
-                          const Tendencies &tendencies) const {
+  void compute_tendencies(const AeroConfig& config, const ThreadTeam& team,
+                          Real t, Real dt, const Atmosphere& atmosphere,
+                          const Prognostics& prognostics,
+                          const Diagnostics& diagnostics,
+                          const Tendencies& tendencies) const {
 
     const int nlevels = diagnostics.num_levels();
 
@@ -567,10 +560,10 @@ public:
     const int aitken_idx = int(ModeIndex::Aitken);
     const int accumulation_idx = int(ModeIndex::Accumulation);
     const int nmodes = AeroConfig::num_modes();
-    auto &dgncur_i = diagnostics.dgncur_i;
-    auto &v2ncur_i = diagnostics.v2ncur_i;
-    auto &dgncur_c = diagnostics.dgncur_c;
-    auto &v2ncur_c = diagnostics.v2ncur_c;
+    auto& dgncur_i = diagnostics.dgncur_i;
+    auto& v2ncur_i = diagnostics.v2ncur_i;
+    auto& dgncur_c = diagnostics.dgncur_c;
+    auto& v2ncur_c = diagnostics.v2ncur_c;
 
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
@@ -651,8 +644,8 @@ public:
             //      Get relaxed limits for volume_to_num
             // (we use relaxed limits for aerosol number "adjustment"
             // calculations via "adjust_num_sizes" subroutine. Note: The
-            // relaxed limits will be artificially inflated (or deflated) for the
-            // aitken and accumulation modes if "do_aitacc_transfer" flag is
+            // relaxed limits will be artificially inflated (or deflated) for
+            // the aitken and accumulation modes if "do_aitacc_transfer" flag is
             // true to effectively shut-off aerosol number "adjustment"
             // calculations for these modes because we do the explicit transfer
             // (via "aitken_accum_exchange" subroutine) from one mode to
@@ -676,6 +669,19 @@ public:
             // Make it non-negative
             auto num_c_k = Pack(init_num_c < 0, Pack(0.0), init_num_c);
 
+            static constexpr Real close_to_one = 1.0 + 1.0e-15;
+            static constexpr Real seconds_in_a_day = 86400.0;
+
+            // these quantities are required for adjust_num_sizes() and
+            // aitken_accum_exchange() [within, specifically
+            // compute_coef_ait_acc_transfer() and
+            // compute_coef_acc_ait_transfer()]
+            // time scale for number adjustment
+            const auto adj_tscale = max(seconds_in_a_day, dt);
+
+            // inverse of the adjustment time scale
+            const auto adj_tscale_inv = 1.0 / (adj_tscale * close_to_one);
+
             if (do_adjust) {
               /*------------------------------------------------------------------
                *  Do number adjustment for interstitial and activated particles
@@ -696,8 +702,8 @@ public:
 
               // number tendencies to be updated by adjust_num_sizes subroutine
 
-              auto &interstitial_tend = dnidt[imode](k);
-              auto &cloudborne_tend = dncdt[imode](k);
+              auto& interstitial_tend = dnidt[imode](k);
+              auto& cloudborne_tend = dncdt[imode](k);
 
               /*NOTE: Only number tendencies (NOT mass mixing ratios) are
                updated in adjust_num_sizes Effect of these adjustment will be
@@ -705,23 +711,24 @@ public:
                "update_diameter_and_vol2num" subroutine call below) */
               calcsize::adjust_num_sizes(
                   dryvol_i, dryvol_c, init_num_i, init_num_c, dt, // in
-                  v2nmin, v2nmax, v2nminrl, v2nmaxrl,             // in
-                  num_i_k, num_c_k,                               // out
-                  interstitial_tend, cloudborne_tend);            // out
+                  v2nmin, v2nmax, v2nminrl, v2nmaxrl, adj_tscale_inv, // in
+                  close_to_one,                        // in
+                  num_i_k, num_c_k,                    // out
+                  interstitial_tend, cloudborne_tend); // out
             }
 
             // update diameters and volume to num ratios for interstitial
             // aerosols
-            auto &dgncur_i_k = dgncur_i[imode](k);
-            auto &v2ncur_i_k = v2ncur_i[imode](k);
+            auto& dgncur_i_k = dgncur_i[imode](k);
+            auto& v2ncur_i_k = v2ncur_i[imode](k);
 
             calcsize::update_diameter_and_vol2num(
                 dryvol_i, num_i_k, v2nmin, v2nmax, dgnmin, dgnmax,
                 common_factor, dgncur_i_k, v2ncur_i_k);
 
             // update diameters and volume to num ratios for cloudborne aerosols
-            auto &dgncur_c_k = dgncur_c[imode](k);
-            auto &v2ncur_c_k = v2ncur_c[imode](k);
+            auto& dgncur_c_k = dgncur_c[imode](k);
+            auto& v2ncur_c_k = v2ncur_c[imode](k);
             calcsize::update_diameter_and_vol2num(
                 dryvol_c, num_c_k, v2nmin, v2nmax, dgnmin, dgnmax,
                 common_factor, dgncur_c_k, v2ncur_c_k);
