@@ -70,7 +70,6 @@ jobs:
            -DCMAKE_CXX_COMPILER=g++ \
            -DHAERO_ENABLE_MPI=OFF \
            -DHAERO_ENABLE_GPU=OFF \
-           -DHAERO_DEVICE_ARCH=AMDAVX \
            -DKokkos_ARCH_AMDAVX:BOOL=ON \
            -DHAERO_PRECISION=${{ matrix.fp-precision }} \
            -DHAERO_PACK_SIZE=${{ matrix.pack-size }}

@@ -8,10 +8,8 @@
 # where
 # * <prefix> is the installation prefix (e.g. /usr/local) in which you
 #   would like Haero installed
-# * <device> (either cpu:ARCH or gpu:ARCH), identifies the device ARCHitecture
-#   for which Haero is built. Some examples:
-#   `cpu:AMDAVX`   - AMD CPU with AVX instructions (default)
-#   `gpu:AMPERE80` - NVIDIA Ampere GPU
+# * <device> (either `cpu` or `gpu`), identifies the device type for which Haero
+#   is built.
 # * <precision> (either `single` or `double`) determines the precision of
 #   floating point numbers used in Haero. Default: double
 # * <packsize> (an integer such as 1, 4, 8) determines the number of values in
@@ -45,8 +43,8 @@ fi
 
 # Set defaults.
 if [[ "$DEVICE" == "" ]]; then
-  DEVICE=cpu:AMDAVX
-  echo "No device specified. Selected cpu:AMDAVX."
+  DEVICE=cpu
+  echo "No device specified. Selected cpu."
 fi
 if [[ "$PRECISION" == "" ]]; then
   PRECISION=double
@@ -62,7 +60,7 @@ if [[ "$BUILD_TYPE" == "" ]]; then
 fi
 
 # Validate options
-if [[ "$DEVICE" != "cpu:"* && "$DEVICE" != "gpu:"* ]]; then
+if [[ "$DEVICE" != "cpu" && "$DEVICE" != "gpu" ]]; then
   echo "Invalid device specified: $DEVICE"
   exit
 fi
@@ -87,12 +85,10 @@ git submodule update --init --recursive || exit
 cd ..
 
 # Configure Haero with the given selections.
-if [[ "$DEVICE" == "cpu:"* ]]; then
-  ENABLE_GPU=OFF
-  DEVICE_ARCH="${DEVICE/cpu:/}"
-else
+if [[ "$DEVICE" == "gpu" ]]; then
   ENABLE_GPU=ON
-  DEVICE_ARCH="${DEVICE/gpu:/}"
+else
+  ENABLE_GPU=OFF
 fi
 
 echo "Configuring Haero with the given selections (WITHOUT MPI)..."
@@ -103,8 +99,6 @@ cmake -S ./.haero -B ./.haero/build \
   -DCMAKE_CXX_COMPILER=$CXX \
   -DHAERO_ENABLE_MPI=OFF \
   -DHAERO_ENABLE_GPU=$ENABLE_GPU \
-  -DHAERO_DEVICE_ARCH=$DEVICE_ARCH \
-  -DKokkos_ARCH_$DEVICE_ARCH:BOOL=ON \
   -DHAERO_PRECISION=$PRECISION \
   -DHAERO_PACK_SIZE=$PACKSIZE \
   || exit
