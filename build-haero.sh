@@ -71,7 +71,7 @@ if [[ "$PRECISION" != "single" && "$PRECISION" != "double" ]]; then
   exit
 fi
 # FIXME: pack size?
-if [[ "$BUILD_TYPE" != "debug" && "$OPT" != "release" ]]; then
+if [[ "$BUILD_TYPE" != "debug" && "$BUILD_TYPE" != "release" ]]; then
   echo "Invalid optimization specified: $OPT (must be debug or release)"
   exit
 fi
