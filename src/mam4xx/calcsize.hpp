@@ -4,8 +4,9 @@
 #include <haero/atmosphere.hpp>
 #include <haero/math.hpp>
 
-#include "aero_config.hpp"
-#include "conversions.hpp"
+// I think the style preference is angle brackets here
+#include <mam4xx/aero_config.hpp>
+#include <mam4xx/conversions.hpp>
 
 namespace mam4 {
 
@@ -82,7 +83,7 @@ void compute_dry_volume_k(int k, int imode,
 /*
  * \brief Get relaxed limits for volume_to_num (we use relaxed limits for
  * aerosol number "adjustment" calculations via "adjust_num_sizes" subroutine.
- * Note: The relaxed limits will be artifically inflated (or deflated) for the
+ * Note: The relaxed limits will be artificially inflated (or deflated) for the
  * aitken and accumulation modes if "do_aitacc_transfer" flag is true to
  * effectively shut-off aerosol number "adjustment" calculations for these
  * modes because we do the explicit transfer (via "aitken_accum_exchange"
@@ -127,15 +128,15 @@ void get_relaxed_v2n_limits(const bool do_aitacc_transfer,
 
   static constexpr Real relax_factor = 27.0;
 
-  // factor to artifically inflate or deflate v2nmin and v2nmax
+  // factor to artificially inflate or deflate v2nmin and v2nmax
   static constexpr Real szadj_block_fac = 1.0e6;
 
   // default relaxation:
   v2nminrl = v2nmin / relax_factor;
   v2nmaxrl = v2nmax * relax_factor;
-  // if do_aitacc_transfer is turned on, we will do the ait<->acc tranfer
+  // if do_aitacc_transfer is turned on, we will do the ait<->acc transfer
   // separately in aitken_accum_exchange subroutine, so we are effectively
-  // turning OFF the size adjustment for these two modes here by artifically
+  // turning OFF the size adjustment for these two modes here by artificially
   // inflating (or deflating) v2min and v2nmax using "szadj_block_fac" and then
   // computing v2minrl and v2nmaxrl based on newly computed v2min and v2nmax.
 
@@ -188,9 +189,6 @@ void update_diameter_and_vol2num(/*std::size_t klev, std::size_t imode, */
 }
 
 KOKKOS_INLINE_FUNCTION
-// FIXME: maybe give this a better name? e.g., get_num_tendency() to avoid
-// confusion with compute_tendecies()
-// @oscar--thoughts?
 // rename to match ported fortran version
 static Pack update_num_adj_tends(const Pack &num, const Pack &num0,
                                  const Pack &dt_inverse) {
@@ -306,7 +304,7 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
   }
 
   /* Note that anything in this scope that touches a pack outside this scope,
-   * it must also refer to `drv_i_c_gt_zero`. eg `pk.set(drv_i_c_gt_zero &&
+   * it must also refer to `drv_i_c_gt_zero`. e.g., `pk.set(drv_i_c_gt_zero &&
    * some_other_cond, val);`
    */
   const auto drv_i_c_gt_zero = !drvc_le_zero && !drva_le_zero;
@@ -348,11 +346,11 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
     auto num_c_stp2 = num_c_stp1 + delta_num_c_stp2;
 
     /*
-     * 2(c) We now also need to balance num_* incase only one among the
+     * 2(c) We now also need to balance num_* in case only one among the
      * interstitial or cloud- borne is changing. If interstitial stayed the
      * same (i.e. it is within range) but cloud-borne is predicted to reach
      * its maximum(or minimum), we modify interstitial number (num_i), so as
-     * to accomodate change in the cloud-borne aerosols (and vice-versa). We
+     * to accommodate change in the cloud-borne aerosols (and vice-versa). We
      * try to balance these by moving the num_* in the opposite direction as
      * much as possible to conserve num_i + num_c (such that num_i+num_c stays
      * close to its original value)
@@ -369,7 +367,7 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
                                    num_c_stp1 - delta_num_i_stp2));
 
     /*
-     * Step3[apply stricter bounds] has 3 parts (a), (b) and (c)
+     * Step 3 [apply stricter bounds] has 3 parts (a), (b) and (c)
      * Step 3:(a) compute combined total of num_i and num_c
      */
     const auto total_drv = drv_i + drv_c;
@@ -464,6 +462,7 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
  * \brief Exchange aerosols between aitken and accumulation modes based on new
     sizes.
  */
+ // @mjs:**HERE**
 KOKKOS_INLINE_FUNCTION
 void aitken_accum_exchange() // nlevs, top_lev, &
                              // aitken_idx,  accum_idx, adj_tscale_inv, &
@@ -652,7 +651,7 @@ public:
             //      Get relaxed limits for volume_to_num
             // (we use relaxed limits for aerosol number "adjustment"
             // calculations via "adjust_num_sizes" subroutine. Note: The
-            // relaxed limits will be artifically inflated (or deflated) for the
+            // relaxed limits will be artificially inflated (or deflated) for the
             // aitken and accumulation modes if "do_aitacc_transfer" flag is
             // true to effectively shut-off aerosol number "adjustment"
             // calculations for these modes because we do the explicit transfer
