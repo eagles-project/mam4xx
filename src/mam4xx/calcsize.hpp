@@ -27,8 +27,8 @@ using haero::sqrt;
 namespace calcsize {
 
 /*-----------------------------------------------------------------------------
-!Compute initial dry volume based on bulk mass mixing ratio (mmr) and specie
-density ! volume = mmr/density
+Compute initial dry volume based on bulk mass mixing ratio (mmr) and specie
+density  volume = mmr/density
 TODO: Is this used?
  -----------------------------------------------------------------------------*/
 KOKKOS_INLINE_FUNCTION
@@ -108,49 +108,49 @@ void get_relaxed_v2n_limits(const bool do_aitacc_transfer,
    * \see get_relaxed_v2n_limits
    */
 
-  //   !intent-ins
-  // logical,  intent(in) :: do_aitacc_transfer !flag to control whether to
+  //   intent-ins
+  // logical,  intent(in) :: do_aitacc_transfer flag to control whether to
   // transfer aerosols from one mode to another logical,  intent(in) ::
-  // is_aitken_mode     !true if this mode is aitken mode logical,  intent(in)
-  // :: is_accum_mode      !true if this mode is accumulation mode
+  // is_aitken_mode     true if this mode is aitken mode logical,  intent(in)
+  // :: is_accum_mode      true if this mode is accumulation mode
 
-  // !intent-(in)outs
-  // real(wp), intent(inout) :: v2nmin, v2nmax     !volume_to_num min/max ratios
-  // real(wp), intent(out)   :: v2nminrl, v2nmaxrl ! relaxed counterparts of
+  // intent-(in)outs
+  // real(wp), intent(inout) :: v2nmin, v2nmax     volume_to_num min/max ratios
+  // real(wp), intent(out)   :: v2nminrl, v2nmaxrl  relaxed counterparts of
   // volume_to_num min/max ratios
 
-  // !local
-  // !(relaxation factor is currently assumed to be a factor of 3 in diameter
-  // !which makes it 3**3=27 for volume)
-  // !i.e. dgnumlo_relaxed = dgnumlo/3 and dgnumhi_relaxed = dgnumhi*3;
-  // therefore we use !3**3=27 as a relaxation factor for volume
+  // local
+  // (relaxation factor is currently assumed to be a factor of 3 in diameter
+  // which makes it 3**3=27 for volume)
+  // i.e. dgnumlo_relaxed = dgnumlo/3 and dgnumhi_relaxed = dgnumhi*3;
+  // therefore we use 3**3=27 as a relaxation factor for volume
 
   static constexpr Real relax_factor = 27.0;
 
   // factor to artifically inflate or deflate v2nmin and v2nmax
   static constexpr Real szadj_block_fac = 1.0e6;
 
-  // !default relaxation:
+  // default relaxation:
   v2nminrl = v2nmin / relax_factor;
   v2nmaxrl = v2nmax * relax_factor;
-  // !if do_aitacc_transfer is turned on, we will do the ait<->acc tranfer
-  // separately in !aitken_accum_exchange subroutine, so we are effectively
-  // turning OFF the size adjustment for these !two modes here by artifically
-  // inflating (or deflating) v2min and v2nmax using "szadj_block_fac" !and then
+  // if do_aitacc_transfer is turned on, we will do the ait<->acc tranfer
+  // separately in aitken_accum_exchange subroutine, so we are effectively
+  // turning OFF the size adjustment for these two modes here by artifically
+  // inflating (or deflating) v2min and v2nmax using "szadj_block_fac" and then
   // computing v2minrl and v2nmaxrl based on newly computed v2min and v2nmax.
 
   if (do_aitacc_transfer) {
-    // !for aitken mode, divide v2nmin by 1.0e6 to effectively turn off the
-    // !         adjustment when number is too small (size is too big)
+    // for aitken mode, divide v2nmin by 1.0e6 to effectively turn off the
+    //          adjustment when number is too small (size is too big)
     if (is_aitken_mode)
       v2nmin /= szadj_block_fac;
-    // !for accumulation, multiply v2nmax by 1.0e6 to effectively turn off the
-    // !         adjustment when number is too big (size is too small)
+    // for accumulation, multiply v2nmax by 1.0e6 to effectively turn off the
+    //          adjustment when number is too big (size is too small)
     if (is_accum_mode)
       v2nmax *= szadj_block_fac;
 
-    // !Also change the v2nmaxrl/v2nminrl so that
-    // !the interstitial<-->activated number adjustment is effectively turned
+    // Also change the v2nmaxrl/v2nminrl so that
+    // the interstitial<-->activated number adjustment is effectively turned
     // off
     v2nminrl = v2nmin / relax_factor;
     v2nmaxrl = v2nmax * relax_factor;
@@ -214,17 +214,17 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
                       const Real &v2nminrl, const Real &v2nmaxrl, Pack &num_i,
                       Pack &num_c, Pack &dqdt, Pack &dqqcwdt) {
 
-  // !intent-ins
-  // real(wp), intent(in) :: drv_i, drv_c      !dry volumes [TODO:units]
-  // real(wp), intent(in) :: init_num_a, init_num_c    !initial number mixing
-  // ratios [TODO:units] real(wp), intent(in) :: dt                !time step
-  // [s] real(wp), intent(in) :: v2nmin, v2nmax    !volume to number min and
-  // max[TODO:units] real(wp), intent(in) :: v2nminrl, v2nmaxrl!volume to number
+  // intent-ins
+  // real(wp), intent(in) :: drv_i, drv_c      dry volumes [TODO:units]
+  // real(wp), intent(in) :: init_num_a, init_num_c    initial number mixing
+  // ratios [TODO:units] real(wp), intent(in) :: dt                time step
+  // [s] real(wp), intent(in) :: v2nmin, v2nmax    volume to number min and
+  // max[TODO:units] real(wp), intent(in) :: v2nminrl, v2nmaxrlvolume to number
   // "relaxed" min and max[TODO:units]
 
-  // !intent-outs
-  // real(wp), intent(out):: num_a, num_c  !final number  mixing ratios after
-  // size adjument real(wp), intent(out):: dqdt, dqqcwdt ! number mixing ratio
+  // intent-outs
+  // real(wp), intent(out):: num_a, num_c  final number  mixing ratios after
+  // size adjument real(wp), intent(out):: dqdt, dqqcwdt  number mixing ratio
   // tendencies
 
   /*
@@ -590,50 +590,50 @@ public:
           for (int imode = 0; imode < nmodes; imode++) {
 
             // FIXME: as compared to the oldHaero_fortranPort.f90, we appear to
-            // be missing this !Initialize diameter(dgnum), volume to number
-            // ratios(v2ncur) and dry volume (dryvol) for both !interstitial and
+            // be missing this Initialize diameter(dgnum), volume to number
+            // ratios(v2ncur) and dry volume (dryvol) for both interstitial and
             // cloudborne aerosols
             // DONE
 
             // call set_initial_sz_and_volumes (imode, top_lev, nlevs, dgncur_a,
-            // v2ncur_a, dryvol_a) !for interstitial aerosols call
+            // v2ncur_a, dryvol_a) for interstitial aerosols call
             // set_initial_sz_and_volumes (imode, top_lev, nlevs, dgncur_c,
-            // v2ncur_c, dryvol_c) !for cloud-borne aerosols
+            // v2ncur_c, dryvol_c) for cloud-borne aerosols
 
-            // !----------------------------------------------------------------------
-            // !Algorithm to compute dry aerosol diameter:
-            // !calculate aerosol diameter volume, volume is computed from mass
+            // ----------------------------------------------------------------------
+            // Algorithm to compute dry aerosol diameter:
+            // calculate aerosol diameter volume, volume is computed from mass
             // and density
-            // !----------------------------------------------------------------------
+            // ----------------------------------------------------------------------
 
-            // !find start and end index of species in this mode in the
-            // "population" array !The indices are same for interstitial and
-            // cloudborne species s_spec_ind = population_offsets(imode) !start
-            // index e_spec_ind = population_offsets(imode+1) - 1 !end index of
+            // find start and end index of species in this mode in the
+            // "population" array The indices are same for interstitial and
+            // cloudborne species s_spec_ind = population_offsets(imode) start
+            // index e_spec_ind = population_offsets(imode+1) - 1 end index of
             // species for all (modes expect the last mode)
 
-            // if(imode.eq.nmodes) then ! for last mode
-            //    e_spec_ind = num_populations !if imode==nmodes, end index is
+            // if(imode.eq.nmodes) then  for last mode
+            //    e_spec_ind = num_populations if imode==nmodes, end index is
             //    the total number of species
             // endif
 
-            // nspec = num_mode_species(imode) !total number of species in mode
+            // nspec = num_mode_species(imode) total number of species in mode
             // "imode"
 
-            // !capture densities for each specie in this mode
-            // density(1:max_nspec) = huge(density) !initialize the whole array
+            // capture densities for each specie in this mode
+            // density(1:max_nspec) = huge(density) initialize the whole array
             // to a huge value [FIXME: NaN would be better than huge]
-            // density(1:nspec) = spec_density(imode, 1:nspec) !assign density
+            // density(1:nspec) = spec_density(imode, 1:nspec) assign density
             // till nspec (as nspec can be different for each mode)
 
-            // !Initialize diameter(dgnum), volume to number ratios(v2ncur) and
-            // dry volume (dryvol) for both !interstitial and cloudborne
+            // Initialize diameter(dgnum), volume to number ratios(v2ncur) and
+            // dry volume (dryvol) for both interstitial and cloudborne
             // aerosols we did not implement set_initial_sz_and_volumes
-            dgncur_i[imode](k) = dgnnom_nmodes[imode]; //! diameter [m]
-            v2ncur_i[imode](k) = v2nnom_nmodes[imode]; // !volume to number
+            dgncur_i[imode](k) = dgnnom_nmodes[imode]; // diameter [m]
+            v2ncur_i[imode](k) = v2nnom_nmodes[imode]; // volume to number
 
-            dgncur_c[imode](k) = dgnnom_nmodes[imode]; //! diameter [m]
-            v2ncur_c[imode](k) = v2nnom_nmodes[imode]; // !volume to number
+            dgncur_c[imode](k) = dgnnom_nmodes[imode]; // diameter [m]
+            v2ncur_c[imode](k) = v2nnom_nmodes[imode]; // volume to number
 
             // dry volume is set to zero inside compute_dry_volume_k
             calcsize::compute_dry_volume_k(k, imode, prognostics, dryvol_i,
@@ -649,21 +649,21 @@ public:
 
             // compute upper and lower limits for volume to num (v2n) ratios and
             // diameters (dgn)
-            //      !Get relaxed limits for volume_to_num
-            // !(we use relaxed limits for aerosol number "adjustment"
-            // calculations via "adjust_num_sizes" subroutine. !Note: The
+            //      Get relaxed limits for volume_to_num
+            // (we use relaxed limits for aerosol number "adjustment"
+            // calculations via "adjust_num_sizes" subroutine. Note: The
             // relaxed limits will be artifically inflated (or deflated) for the
-            // aitken and accumulation modes !if "do_aitacc_transfer" flag is
+            // aitken and accumulation modes if "do_aitacc_transfer" flag is
             // true to effectively shut-off aerosol number "adjustment"
-            // calculations !for these modes because we do the explicit transfer
-            // (via "aitken_accum_exchange" subroutine) from one !mode to
+            // calculations for these modes because we do the explicit transfer
+            // (via "aitken_accum_exchange" subroutine) from one mode to
             // another instead of adjustments for these modes)
 
             calcsize::get_relaxed_v2n_limits(
                 do_aitacc_transfer, imode == aitken_idx,
                 imode == accumulation_idx, v2nmin, v2nmax, v2nminrl,
-                v2nmaxrl); //! outputs (NOTE: v2nmin and v2nmax are only updated
-                           //! for aitken and accumulation modes)
+                v2nmaxrl); // outputs (NOTE: v2nmin and v2nmax are only updated
+                           // for aitken and accumulation modes)
 
             // initial value of num interstitial for this pack and mode
             auto init_num_i = n_i[imode](k);
@@ -749,16 +749,16 @@ public:
             }
           } // for(imode)
 
-          // !------------------------------------------------------------------
-          // ! Overall logic for aitken<-->accumulation transfer:
-          // ! ------------------------------------------------
-          // ! when the aitken mode mean size is too big, the largest
-          // !    aitken particles are transferred into the accum mode
-          // !    to reduce the aitken mode mean size
-          // ! when the accum mode mean size is too small, the smallest
-          // !    accum particles are transferred into the aitken mode
-          // !    to increase the accum mode mean size
-          // !------------------------------------------------------------------
+          // ------------------------------------------------------------------
+          //  Overall logic for aitken<-->accumulation transfer:
+          //  ------------------------------------------------
+          //  when the aitken mode mean size is too big, the largest
+          //     aitken particles are transferred into the accum mode
+          //     to reduce the aitken mode mean size
+          //  when the accum mode mean size is too small, the smallest
+          //     accum particles are transferred into the aitken mode
+          //     to increase the accum mode mean size
+          // ------------------------------------------------------------------
 
           if (do_aitacc_transfer) {
             calcsize::aitken_accum_exchange();
