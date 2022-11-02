@@ -7,13 +7,13 @@
 using namespace skywalker;
 using namespace mam4;
 
-void adjust_num_sizes(Ensemble* ensemble) {
+void adjust_num_sizes(Ensemble *ensemble) {
 
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
 
   // Run the ensemble.
-  ensemble->process([=](const Input& input, Output& output) {
+  ensemble->process([=](const Input &input, Output &output) {
     // Fetch ensemble parameters
 
     Real dt = input.get("dt");
