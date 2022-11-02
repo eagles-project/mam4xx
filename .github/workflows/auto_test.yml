@@ -40,7 +40,6 @@ jobs:
         autoconf \
         clang-format \
         cmake \
-        libopenmpi-dev \
         gcc \
         g++ \
         gfortran \
@@ -69,8 +68,8 @@ jobs:
            -DCMAKE_INSTALL_PREFIX="haero_install" \
            -DCMAKE_C_COMPILER=gcc \
            -DCMAKE_CXX_COMPILER=g++ \
+           -DHAERO_ENABLE_MPI=OFF \
            -DHAERO_ENABLE_GPU=OFF \
-           -DHAERO_DEVICE_ARCH=AMDAVX \
            -DKokkos_ARCH_AMDAVX:BOOL=ON \
            -DHAERO_PRECISION=${{ matrix.fp-precision }} \
            -DHAERO_PACK_SIZE=${{ matrix.pack-size }}

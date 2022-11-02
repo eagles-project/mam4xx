@@ -8,16 +8,18 @@
 # where
 # * <prefix> is the installation prefix (e.g. /usr/local) in which you
 #   would like Haero installed
-# * <device> (either cpu:ARCH or gpu:ARCH), identifies the device ARCHitecture
-#   for which Haero is built. Some examples:
-#   `cpu:AMDAVX`   - AMD CPU with AVX instructions (default)
-#   `gpu:AMPERE80` - NVIDIA Ampere GPU
+# * <device> (either `cpu` or `gpu`), identifies the device type for which Haero
+#   is built.
 # * <precision> (either `single` or `double`) determines the precision of
 #   floating point numbers used in Haero. Default: double
 # * <packsize> (an integer such as 1, 4, 8) determines the number of values in
 #   a Pack used for vectorization, mainly on CPUs (most GPUs use 1). Default: 1
-# * <build_type> (either `debug`, `release`) determines whether Haero is built
-#   optimized or for debugging. Default: debug
+# * <build_type> (either `Debug` or `Release`) determines whether Haero is built
+#   optimized or for debugging. Default: Debug
+#
+# NOTE: This script disables MPI, since the mam4xx team is focused on single-
+# NOTE: node parallelism. If you need an MPI-enabled build of Haero, please
+# NOTE: follow the installation directions in that repo.
 
 PREFIX=$1
 DEVICE=$2
@@ -41,8 +43,8 @@ fi
 
 # Set defaults.
 if [[ "$DEVICE" == "" ]]; then
-  DEVICE=cpu:AMDAVX
-  echo "No device specified. Selected cpu:AMDAVX."
+  DEVICE=cpu
+  echo "No device specified. Selected cpu."
 fi
 if [[ "$PRECISION" == "" ]]; then
   PRECISION=double
@@ -53,12 +55,12 @@ if [[ "$PACKSIZE" == "" ]]; then
   echo "No pack size specified. Selected 1."
 fi
 if [[ "$BUILD_TYPE" == "" ]]; then
-  BUILD_TYPE=debug
-  echo "No build_type (optimization level) specified. Selected debug."
+  BUILD_TYPE=Debug
+  echo "No build type specified. Selected Debug."
 fi
 
 # Validate options
-if [[ "$DEVICE" != "cpu:"* && "$DEVICE" != "gpu:"* ]]; then
+if [[ "$DEVICE" != "cpu" && "$DEVICE" != "gpu" ]]; then
   echo "Invalid device specified: $DEVICE"
   exit
 fi
@@ -67,13 +69,10 @@ if [[ "$PRECISION" != "single" && "$PRECISION" != "double" ]]; then
   exit
 fi
 # FIXME: pack size?
-if [[ "$BUILD_TYPE" != "debug" && "$OPT" != "release" ]]; then
-  echo "Invalid optimization specified: $OPT (must be debug or release)"
+if [[ "$BUILD_TYPE" != "Debug" && "$BUILD_TYPE" != "Release" ]]; then
+  echo "Invalid optimization specified: $BUILD_TYPE (must be Debug or Release)"
   exit
 fi
-
-# Capitalize the optimization setting
-BUILD_TYPE=${BUILD_TYPE^}
 
 # Clone a fresh copy Haero in the current directory. Delete any existing copy.
 if [[ -d $(pwd)/.haero ]]; then
@@ -86,23 +85,20 @@ git submodule update --init --recursive || exit
 cd ..
 
 # Configure Haero with the given selections.
-if [[ "$DEVICE" == "cpu:"* ]]; then
-  ENABLE_GPU=OFF
-  DEVICE_ARCH="${DEVICE/cpu:/}"
-else
+if [[ "$DEVICE" == "gpu" ]]; then
   ENABLE_GPU=ON
-  DEVICE_ARCH="${DEVICE/gpu:/}"
+else
+  ENABLE_GPU=OFF
 fi
 
-echo "Configuring Haero with the given selections..."
+echo "Configuring Haero with the given selections (WITHOUT MPI)..."
 cmake -S ./.haero -B ./.haero/build \
   -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
   -DCMAKE_INSTALL_PREFIX="$PREFIX" \
   -DCMAKE_C_COMPILER=$CC \
   -DCMAKE_CXX_COMPILER=$CXX \
+  -DHAERO_ENABLE_MPI=OFF \
   -DHAERO_ENABLE_GPU=$ENABLE_GPU \
-  -DHAERO_DEVICE_ARCH=$DEVICE_ARCH \
-  -DKokkos_ARCH_$DEVICE_ARCH:BOOL=ON \
   -DHAERO_PRECISION=$PRECISION \
   -DHAERO_PACK_SIZE=$PACKSIZE \
   || exit

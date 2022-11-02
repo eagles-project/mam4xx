@@ -10,8 +10,9 @@ To build MAM4xx, you need:
 * [CMake v3.12+](https://cmake.org/)
 * GNU Make
 * reliable C and C++ compilers
-* a working MPI installation (like [OpenMPI](https://www.open-mpi.org/) or
-  [Mpich](https://www.mpich.org/))
+* optionally, a working MPI installation (like [OpenMPI](https://www.open-mpi.org/)
+  or [Mpich](https://www.mpich.org/)), if you want to use MAM4xx in a
+  multi-node parallel environment
 * the [HAERO](https://github.com/eagles-project/haero) aerosol package interface,
   which provides necessary libraries and settings.
 
