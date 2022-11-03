@@ -101,23 +101,22 @@ static constexpr Real mam4_primary_carbon_mead_std_dev = 1.6;
 /// NOTE: /lcrc/group/acme/ccsm-data/inputdata/atm/cam/physprops/
 KOKKOS_INLINE_FUNCTION const mam4::Mode &modes(const int i) {
   static const mam4::Mode M[4] = {
-    // accumulation
-    {mam4_accum_min_diameter_m, mam4_accum_nom_diameter_m,
-     mam4_accum_max_diameter_m, mam4_accum_mead_std_dev,
-     mam4_crystallization_rel_hum, mam4_delequesence_rel_hum},
-    // aitken
-    {mam4_aitken_min_diameter_m, mam4_aitken_nom_diameter_m,
-     mam4_aitken_max_diameter_m, mam4_aitken_mead_std_dev,
-     mam4_crystallization_rel_hum, mam4_delequesence_rel_hum},
-    // coarse
-    {mam4_coarse_min_diameter_m, mam4_coarse_nom_diameter_m,
-     mam4_coarse_max_diameter_m, mam4_coarse_mead_std_dev,
-     mam4_crystallization_rel_hum, mam4_delequesence_rel_hum},
-    // primary carbon
-    {mam4_primary_carbon_min_diameter_m, mam4_primary_carbon_nom_diameter_m,
-     mam4_primary_carbon_max_diameter_m, mam4_primary_carbon_mead_std_dev,
-     mam4_crystallization_rel_hum, mam4_delequesence_rel_hum} 
-  };
+      // accumulation
+      {mam4_accum_min_diameter_m, mam4_accum_nom_diameter_m,
+       mam4_accum_max_diameter_m, mam4_accum_mead_std_dev,
+       mam4_crystallization_rel_hum, mam4_delequesence_rel_hum},
+      // aitken
+      {mam4_aitken_min_diameter_m, mam4_aitken_nom_diameter_m,
+       mam4_aitken_max_diameter_m, mam4_aitken_mead_std_dev,
+       mam4_crystallization_rel_hum, mam4_delequesence_rel_hum},
+      // coarse
+      {mam4_coarse_min_diameter_m, mam4_coarse_nom_diameter_m,
+       mam4_coarse_max_diameter_m, mam4_coarse_mead_std_dev,
+       mam4_crystallization_rel_hum, mam4_delequesence_rel_hum},
+      // primary carbon
+      {mam4_primary_carbon_min_diameter_m, mam4_primary_carbon_nom_diameter_m,
+       mam4_primary_carbon_max_diameter_m, mam4_primary_carbon_mead_std_dev,
+       mam4_crystallization_rel_hum, mam4_delequesence_rel_hum}};
   return M[i];
 };
 
@@ -187,19 +186,19 @@ static constexpr Real mam4_hyg_mom = 0.1;
 */
 KOKKOS_INLINE_FUNCTION AeroSpecies aero_species(const int i) {
   static const AeroSpecies species[7] = {
-    AeroSpecies{Constants::molec_weight_so4, mam4_density_so4,
-                mam4_hyg_so4}, 
-    AeroSpecies{Constants::molec_weight_c, mam4_density_pom,
-                mam4_hyg_pom}, // primary organic matter
-    AeroSpecies{Constants::molec_weight_c, mam4_density_soa,
-                mam4_hyg_soa}, // secondary organic aerosol
-    AeroSpecies{Constants::molec_weight_c, mam4_density_bc,
-                mam4_hyg_bc}, // black carbon
-    AeroSpecies{mam4_molec_weight_dst, mam4_density_dst, mam4_hyg_dst}, // dust
-    AeroSpecies{Constants::molec_weight_nacl, mam4_density_nacl,
-                mam4_hyg_nacl}, // sodium chloride
-    AeroSpecies{mam4_molec_weight_mom, mam4_density_mom,
-                mam4_hyg_mom} // marine organic matter
+      AeroSpecies{Constants::molec_weight_so4, mam4_density_so4, mam4_hyg_so4},
+      AeroSpecies{Constants::molec_weight_c, mam4_density_pom,
+                  mam4_hyg_pom}, // primary organic matter
+      AeroSpecies{Constants::molec_weight_c, mam4_density_soa,
+                  mam4_hyg_soa}, // secondary organic aerosol
+      AeroSpecies{Constants::molec_weight_c, mam4_density_bc,
+                  mam4_hyg_bc}, // black carbon
+      AeroSpecies{mam4_molec_weight_dst, mam4_density_dst,
+                  mam4_hyg_dst}, // dust
+      AeroSpecies{Constants::molec_weight_nacl, mam4_density_nacl,
+                  mam4_hyg_nacl}, // sodium chloride
+      AeroSpecies{mam4_molec_weight_mom, mam4_density_mom,
+                  mam4_hyg_mom} // marine organic matter
   };
   return species[i];
 }
