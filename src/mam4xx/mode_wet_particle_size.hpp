@@ -74,12 +74,12 @@ void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
 
   // set masks:
   //  case 1: dry air
-  const auto rh_low = (rel_humidity <= modes[mode_idx].crystallization_pt);
+  const auto rh_low = (rel_humidity <= modes(mode_idx).crystallization_pt);
   //  case 2: unsaturated air
-  const auto rh_mid = (rel_humidity > modes[mode_idx].crystallization_pt) &&
-                      (rel_humidity <= modes[mode_idx].deliquescence_pt);
+  const auto rh_mid = (rel_humidity > modes(mode_idx).crystallization_pt) &&
+                      (rel_humidity <= modes(mode_idx).deliquescence_pt);
   //  case 3: nearly saturated air
-  const auto rh_high = (rel_humidity > modes[mode_idx].deliquescence_pt);
+  const auto rh_high = (rel_humidity > modes(mode_idx).deliquescence_pt);
   //  case 4: particles too small
   const auto too_small =
       (0.5 * to_microns *
@@ -141,10 +141,10 @@ void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
     //  Here, we use the PDF functions for both.
     const PackType dry_vol = conversions::mean_particle_volume_from_diameter(
         diags.dry_geometric_mean_diameter[mode_idx](pack_idx),
-        modes[mode_idx].mean_std_dev);
+        modes(mode_idx).mean_std_dev);
 
     PackType wet_vol = conversions::mean_particle_volume_from_diameter(
-        2 * to_meters * rwet_microns, modes[mode_idx].mean_std_dev);
+        2 * to_meters * rwet_microns, modes(mode_idx).mean_std_dev);
 
     // check that wet particle volume >= dry particle volume
     EKAT_KERNEL_ASSERT((wet_vol >= dry_vol).all());
@@ -159,12 +159,12 @@ void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
     //   ! apply simple treatment of deliquesence/crystallization hysteresis
     //   ! for rhcrystal < rh < rhdeliques, aerosol water is a fraction of
     //   ! the "upper curve" value, and the fraction is a linear function of rh
-    const Real hysteresis_factor = 1 / (modes[mode_idx].deliquescence_pt -
-                                        modes[mode_idx].crystallization_pt);
+    const Real hysteresis_factor = 1 / (modes(mode_idx).deliquescence_pt -
+                                        modes(mode_idx).crystallization_pt);
     EKAT_KERNEL_ASSERT(hysteresis_factor > 0);
     water_vol.set(rh_mid,
                   hysteresis_factor * water_vol *
-                      (rel_humidity - modes[mode_idx].crystallization_pt));
+                      (rel_humidity - modes(mode_idx).crystallization_pt));
 
     // check that hysteresis does not cause negative water content
     EKAT_KERNEL_ASSERT((water_vol >= 0).all());
@@ -173,7 +173,7 @@ void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
 
     const PackType rwet_hyst =
         0.5 * conversions::mean_particle_diameter_from_volume(
-                  wet_vol, modes[mode_idx].mean_std_dev);
+                  wet_vol, modes(mode_idx).mean_std_dev);
 
     wet_diam.set(rh_mid, 2 * rwet_hyst);
     wet_diam.set(rh_high, 2 * to_meters * rwet_microns);
