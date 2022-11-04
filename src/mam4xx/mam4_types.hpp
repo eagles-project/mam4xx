@@ -7,6 +7,7 @@
 #include <haero/atmosphere.hpp>
 #include <haero/constants.hpp>
 #include <haero/floating_point.hpp>
+#include <haero/gas_species.hpp>
 
 namespace mam4 {
 
@@ -20,6 +21,7 @@ using ColumnView = haero::ColumnView;
 template <typename ST> using FloatingPoint = haero::FloatingPoint<ST>;
 using Atmosphere = haero::Atmosphere;
 using AeroSpecies = haero::AeroSpecies;
+using GasSpecies = haero::GasSpecies;
 using IntPack = haero::IntPackType;
 using ThreadTeam = haero::ThreadTeam;
 
