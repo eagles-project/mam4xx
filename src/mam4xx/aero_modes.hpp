@@ -279,19 +279,19 @@ static constexpr Real molec_weight_so2 = 0.06407;
 /// A list of gas species in MAM4.
 KOKKOS_INLINE_FUNCTION GasSpecies gas_species(const int i) {
   static const GasSpecies species[13] = {
-    {molec_weight_o3},               // ozone
-    {molec_weight_h2o2},             // hydrogen peroxide
-    {Constants::molec_weight_h2so4}, // sulfuric acid
-    {molec_weight_so2},              // sulfur dioxide
-    {molec_weight_dms},              // dimethylsulfide
-    {Constants::molec_weight_c},     // secondary organic aerosol precursor
-    {molec_weight_o2},               // oxygen
-    {molec_weight_co2},              // carbon dioxide
-    {molec_weight_n2o},              // nitrous oxide
-    {molec_weight_ch4},              // methane
-    {molec_weight_ccl3f},            // thrichlorofluoromethane
-    {molec_weight_chcl2f},           // dichlorofluoromethane
-    {Constants::molec_weight_nh3}    // ammonia
+      {molec_weight_o3},               // ozone
+      {molec_weight_h2o2},             // hydrogen peroxide
+      {Constants::molec_weight_h2so4}, // sulfuric acid
+      {molec_weight_so2},              // sulfur dioxide
+      {molec_weight_dms},              // dimethylsulfide
+      {Constants::molec_weight_c},     // secondary organic aerosol precursor
+      {molec_weight_o2},               // oxygen
+      {molec_weight_co2},              // carbon dioxide
+      {molec_weight_n2o},              // nitrous oxide
+      {molec_weight_ch4},              // methane
+      {molec_weight_ccl3f},            // thrichlorofluoromethane
+      {molec_weight_chcl2f},           // dichlorofluoromethane
+      {Constants::molec_weight_nh3}    // ammonia
   };
   return species[i];
 }
