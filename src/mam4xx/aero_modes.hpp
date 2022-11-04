@@ -276,23 +276,25 @@ static constexpr Real molec_weight_o3 = 0.0479982;
 /// Molecular weight of sulfur dioxide @f$\text{SO}_2@f$
 static constexpr Real molec_weight_so2 = 0.06407;
 
-// A list of gas species in MAM4.
-static haero::GasSpecies gas_species[13] = {
-    haero::GasSpecies(molec_weight_o3),               // ozone
-    haero::GasSpecies(molec_weight_h2o2),             // hydrogen peroxide
-    haero::GasSpecies(Constants::molec_weight_h2so4), // sulfuric acid
-    haero::GasSpecies(molec_weight_so2),              // sulfur dioxide
-    haero::GasSpecies(molec_weight_dms),              // dimethylsulfide
-    haero::GasSpecies(
-        Constants::molec_weight_c),      // secondary organic aerosol precursor
-    haero::GasSpecies(molec_weight_o2),  // oxygen
-    haero::GasSpecies(molec_weight_co2), // carbon dioxide
-    haero::GasSpecies(molec_weight_n2o), // nitrous oxide
-    haero::GasSpecies(molec_weight_ch4), // methane
-    haero::GasSpecies(molec_weight_ccl3f),         // thrichlorofluoromethane
-    haero::GasSpecies(molec_weight_chcl2f),        // dichlorofluoromethane
-    haero::GasSpecies(Constants::molec_weight_nh3) // ammonia
-};
+/// A list of gas species in MAM4.
+KOKKOS_INLINE_FUNCTION GasSpecies gas_species(const int i) {
+  static const GasSpecies species[13] = {
+    {molec_weight_o3},               // ozone
+    {molec_weight_h2o2},             // hydrogen peroxide
+    {Constants::molec_weight_h2so4}, // sulfuric acid
+    {molec_weight_so2},              // sulfur dioxide
+    {molec_weight_dms},              // dimethylsulfide
+    {Constants::molec_weight_c},     // secondary organic aerosol precursor
+    {molec_weight_o2},               // oxygen
+    {molec_weight_co2},              // carbon dioxide
+    {molec_weight_n2o},              // nitrous oxide
+    {molec_weight_ch4},              // methane
+    {molec_weight_ccl3f},            // thrichlorofluoromethane
+    {molec_weight_chcl2f},           // dichlorofluoromethane
+    {Constants::molec_weight_nh3}    // ammonia
+  };
+  return species[i];
+}
 
 } // namespace mam4
 
