@@ -670,9 +670,9 @@ public:
       // FIXME: thinks that dgnum_aer isn't used in MAM4, but it is actually
       // FIXME: used in this nucleation parameterization. So we will have to
       // FIXME: figure this out.
-      dgnum_aer[m] = modes[m].nom_diameter;
-      dgnumlo_aer[m] = modes[m].min_diameter;
-      dgnumhi_aer[m] = modes[m].max_diameter;
+      dgnum_aer[m] = modes(m).nom_diameter;
+      dgnumlo_aer[m] = modes(m).min_diameter;
+      dgnumhi_aer[m] = modes(m).max_diameter;
     }
   }
 

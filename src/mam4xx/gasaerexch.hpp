@@ -624,7 +624,7 @@ inline void GasAerExch::init(const AeroConfig &aero_config,
   uptk_rate_factor[igas_nh3] = nh3_h2so4_uptake_coeff_ratio;
 
   for (int imode = 0; imode < num_mode; ++imode)
-    modes_mean_std_dev[imode] = modes[imode].mean_std_dev;
+    modes_mean_std_dev[imode] = modes(imode).mean_std_dev;
   //-------------------------------------------------------------------
   // MAM currently uses a splitting method to deal with gas-aerosol
   // mass exchange. A quasi-analytical solution assuming timestep-wise

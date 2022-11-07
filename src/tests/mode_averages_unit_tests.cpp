@@ -64,14 +64,14 @@ TEST_CASE("modal_averages", "") {
         const int s = aerosol_index_for_mode(static_cast<ModeIndex>(m),
                                              static_cast<AeroId>(aid));
         if (s >= 0) {
-          dry_vol += mass_mixing_ratio / aero_species[s].density;
+          dry_vol += mass_mixing_ratio / aero_species(s).density;
         }
       }
       const PackType mean_vol = dry_vol / number_mixing_ratio;
       dry_aero_mean_particle_volume[m] = mean_vol;
       dry_aero_mean_particle_diam[m] =
           conversions::mean_particle_diameter_from_volume(
-              mean_vol, modes[m].mean_std_dev);
+              mean_vol, modes(m).mean_std_dev);
 
       logger.info("{} mode has mean particle diameter {}",
                   mode_str(static_cast<ModeIndex>(m)),
@@ -109,9 +109,9 @@ TEST_CASE("modal_averages", "") {
         const int s = aerosol_index_for_mode(static_cast<ModeIndex>(m),
                                              static_cast<AeroId>(aid));
         if (s >= 0) {
-          dry_vol += mass_mixing_ratio / aero_species[s].density;
-          hyg += mass_mixing_ratio * aero_species[s].hygroscopicity /
-                 aero_species[s].density;
+          dry_vol += mass_mixing_ratio / aero_species(s).density;
+          hyg += mass_mixing_ratio * aero_species(s).hygroscopicity /
+                 aero_species(s).density;
         }
       }
       hygro[m] = hyg / dry_vol;

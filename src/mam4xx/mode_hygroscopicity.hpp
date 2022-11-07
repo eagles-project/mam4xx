@@ -27,6 +27,7 @@ namespace mam4 {
 ///      aerosol mass mixing ratios
 ///  @param [in] mode_idx Mode whose average hygroscopicity is needed
 ///  @param [in] pack_idx Column pack where size data are needed
+KOKKOS_INLINE_FUNCTION
 void mode_hygroscopicity(const Diagnostics &diags, const Prognostics &progs,
                          const int mode_idx, const int pack_idx) {
   PackType hyg(0);
@@ -36,9 +37,9 @@ void mode_hygroscopicity(const Diagnostics &diags, const Prognostics &progs,
                                          static_cast<AeroId>(aid));
     if (s >= 0) {
       const PackType mass_mix_ratio = progs.q_aero_i[mode_idx][s](pack_idx);
-      volume_mixing_ratio += mass_mix_ratio / aero_species[s].density;
-      hyg += mass_mix_ratio * aero_species[s].hygroscopicity /
-             aero_species[s].density;
+      volume_mixing_ratio += mass_mix_ratio / aero_species(s).density;
+      hyg += mass_mix_ratio * aero_species(s).hygroscopicity /
+             aero_species(s).density;
     }
     diags.hygroscopicity[mode_idx](pack_idx) = hyg / volume_mixing_ratio;
   }
@@ -56,6 +57,7 @@ void mode_hygroscopicity(const Diagnostics &diags, const Prognostics &progs,
 ///  @param [in] progs Prognostics contain mode number mixing ratios and
 ///      aerosol mass mixing ratios
 ///  @param [in] pack_idx Column pack where size data are needed
+KOKKOS_INLINE_FUNCTION
 void mode_hygroscopicity(const Diagnostics &diags, const Prognostics &progs,
                          const int pack_idx) {
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {

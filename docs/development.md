@@ -235,7 +235,7 @@ with a few notable _exceptions_:
   even if they are only a single line, for consistency and readability.
 * We use `EKAT_ASSERT` instead of `assert` to ensure that all MPI processes
   are properly shut down when a program terminates because of a violated
-  assertion.
+  assertion (when MPI is enabled).
 
 These style conventions are enforced with the following build targets, which
 you can run from your build directory:
@@ -305,10 +305,10 @@ couple of additional layers:
   so we can focus on solving relevant problems and not reinventing the wheel
   over and over.
 
-EKAT includes an MPI configuration in its build system, and this configuration
-is passed along to HAERO and MAM4xx. This means you'll need some implementation
-of MPI on your system, like [OpenMPI](https://www.open-mpi.org) or
-[MPICH](https://www.mpich.org).
+If MPI is enabled, EKAT configures MPI in its own build system, and this
+configuration is passed along to HAERO and MAM4xx. If you enable MPI, you'll
+need an implementation on your system like [OpenMPI](https://www.open-mpi.org)
+or [MPICH](https://www.mpich.org).
 
 In this section, we describe the data structures provided by HAERO (via EKAT
 and Kokkos). The [Kokkos documentation](https://kokkos.github.io/kokkos-core-wiki/)

@@ -12,9 +12,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${MAM4XX_HAERO_DIR}/share/")
 include(haero)
 
 if(HAERO_ENABLE_GPU)
-  message(STATUS "Building for GPU (${HAERO_DEVICE_ARCH})")
+  message(STATUS "Building for GPU")
 else() #CPU
-  message(STATUS "Building for CPU (${HAERO_DEVICE_ARCH})")
+  message(STATUS "Building for CPU")
 endif()
 
 # Blessed version of clang-format.

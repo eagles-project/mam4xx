@@ -31,14 +31,14 @@ void mode_avg_dry_particle_diam(const Diagnostics &diags,
                                          static_cast<AeroId>(aid));
     if (s >= 0) {
       volume_mixing_ratio +=
-          progs.q_aero_i[mode_idx][s](pack_idx) / aero_species[s].density;
+          progs.q_aero_i[mode_idx][s](pack_idx) / aero_species(s).density;
     }
   }
   const PackType mean_vol =
       volume_mixing_ratio / progs.n_mode_i[mode_idx](pack_idx);
   diags.dry_geometric_mean_diameter[mode_idx](pack_idx) =
       conversions::mean_particle_diameter_from_volume(
-          mean_vol, modes[mode_idx].mean_std_dev);
+          mean_vol, modes(mode_idx).mean_std_dev);
 }
 
 ///  Compute the dry geometric mean particle size (volume and diameter)

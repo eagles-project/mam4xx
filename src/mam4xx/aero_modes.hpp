@@ -43,86 +43,18 @@ namespace mam4 {
 ///
 struct Mode final {
   using Real = haero::Real;
-
-  // Default constructor needed to resize Kokkos Views on device before deep
-  // copy.
-  KOKKOS_INLINE_FUNCTION
-  Mode()
-      : min_diameter(0), nom_diameter(0), max_diameter(0), mean_std_dev(1),
-        crystallization_pt(0), deliquescence_pt(0) {}
-
-  /// Creates an aerosol particle mode.
-  /// @param [in] min_diam The minimum diameter for particles that belong
-  ///                      to this mode [m].
-  /// @param [in] nom_diam The nominal diameter for particles that belong
-  ///                      to this mode [m].
-  /// @param [in] max_diam The maximum diameter for particles that belong
-  ///                      to this mode [m].
-  /// @param [in] sigma    The geometric standard deviation for this mode.
-  /// @param [in] crystal_pt The crystallization point of the mode
-  /// @param [in] deliq_pt The deliquescence point of the mode
-  Mode(Real min_diam, Real nom_diam, Real max_diam, Real sigma, Real crystal_pt,
-       Real deliq_pt)
-      : min_diameter(min_diam), nom_diameter(nom_diam), max_diameter(max_diam),
-        mean_std_dev(sigma), crystallization_pt(crystal_pt),
-        deliquescence_pt(deliq_pt) {
-    EKAT_ASSERT(max_diam > min_diam);
-    EKAT_ASSERT(nom_diam > min_diam);
-    EKAT_ASSERT(max_diam > nom_diam);
-    EKAT_ASSERT(deliq_pt > crystal_pt);
-    EKAT_ASSERT(sigma >= 1);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  Mode(const Mode &m)
-      : min_diameter(m.min_diameter), nom_diameter(m.nom_diameter),
-        max_diameter(m.max_diameter), mean_std_dev(m.mean_std_dev),
-        crystallization_pt(m.crystallization_pt),
-        deliquescence_pt(m.deliquescence_pt) {}
-
-  KOKKOS_INLINE_FUNCTION
-  Mode &operator=(const Mode &m) {
-    min_diameter = m.min_diameter;
-    nom_diameter = m.nom_diameter;
-    max_diameter = m.max_diameter;
-    mean_std_dev = m.mean_std_dev;
-    crystallization_pt = m.crystallization_pt;
-    deliquescence_pt = m.deliquescence_pt;
-    return *this;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  ~Mode() {}
-
   /// The minimum diameter for particles that belong to this mode.
-  Real min_diameter;
-
+  const Real min_diameter;
   /// The nominal diameter for particles that belong to this mode.
-  Real nom_diameter;
-
+  const Real nom_diameter;
   /// The maximum diameter for particles that belong to this mode.
-  Real max_diameter;
-
+  const Real max_diameter;
   /// The geometric mean standard deviation for this mode.
-  Real mean_std_dev;
-
+  const Real mean_std_dev;
   /// The crystallization point [rel. humidity] for this mode.
-  Real crystallization_pt;
-
+  const Real crystallization_pt;
   /// The deliquescence point [rel. humidity] for this mode.
-  Real deliquescence_pt;
-
-  // Comparison operators.
-  KOKKOS_INLINE_FUNCTION
-  bool operator==(const Mode &other) const {
-    return ((min_diameter == other.min_diameter) and
-            (max_diameter == other.max_diameter) and
-            (mean_std_dev == other.mean_std_dev) and
-            (crystallization_pt == other.crystallization_pt) and
-            (deliquescence_pt == other.deliquescence_pt));
-  }
-  KOKKOS_INLINE_FUNCTION
-  bool operator!=(const Mode &other) const { return !(*this == other); }
+  const Real deliquescence_pt;
 };
 
 /// Mode indices in MAM4
@@ -167,23 +99,26 @@ static constexpr Real mam4_primary_carbon_mead_std_dev = 1.6;
 /// https://eagles-project.atlassian.net/wiki/spaces/Computation/pages/354877515/Module+verifications
 /// NOTE: These data are found on Anvil in
 /// NOTE: /lcrc/group/acme/ccsm-data/inputdata/atm/cam/physprops/
-static Mode modes[4] = {
-    // accumulation
-    Mode(mam4_accum_min_diameter_m, mam4_accum_nom_diameter_m,
-         mam4_accum_max_diameter_m, mam4_accum_mead_std_dev,
-         mam4_crystallization_rel_hum, mam4_delequesence_rel_hum),
-    // aitken
-    Mode(mam4_aitken_min_diameter_m, mam4_aitken_nom_diameter_m,
-         mam4_aitken_max_diameter_m, mam4_aitken_mead_std_dev,
-         mam4_crystallization_rel_hum, mam4_delequesence_rel_hum),
-    // coarse
-    Mode(mam4_coarse_min_diameter_m, mam4_coarse_nom_diameter_m,
-         mam4_coarse_max_diameter_m, mam4_coarse_mead_std_dev,
-         mam4_crystallization_rel_hum, mam4_delequesence_rel_hum),
-    // primary carbon
-    Mode(mam4_primary_carbon_min_diameter_m, mam4_primary_carbon_nom_diameter_m,
-         mam4_primary_carbon_max_diameter_m, mam4_primary_carbon_mead_std_dev,
-         mam4_crystallization_rel_hum, mam4_delequesence_rel_hum)};
+KOKKOS_INLINE_FUNCTION const mam4::Mode &modes(const int i) {
+  static const mam4::Mode M[4] = {
+      // accumulation
+      {mam4_accum_min_diameter_m, mam4_accum_nom_diameter_m,
+       mam4_accum_max_diameter_m, mam4_accum_mead_std_dev,
+       mam4_crystallization_rel_hum, mam4_delequesence_rel_hum},
+      // aitken
+      {mam4_aitken_min_diameter_m, mam4_aitken_nom_diameter_m,
+       mam4_aitken_max_diameter_m, mam4_aitken_mead_std_dev,
+       mam4_crystallization_rel_hum, mam4_delequesence_rel_hum},
+      // coarse
+      {mam4_coarse_min_diameter_m, mam4_coarse_nom_diameter_m,
+       mam4_coarse_max_diameter_m, mam4_coarse_mead_std_dev,
+       mam4_crystallization_rel_hum, mam4_delequesence_rel_hum},
+      // primary carbon
+      {mam4_primary_carbon_min_diameter_m, mam4_primary_carbon_nom_diameter_m,
+       mam4_primary_carbon_max_diameter_m, mam4_primary_carbon_mead_std_dev,
+       mam4_crystallization_rel_hum, mam4_delequesence_rel_hum}};
+  return M[i];
+};
 
 /// Identifiers for aerosol species that inhabit MAM4 modes.
 enum class AeroId {
@@ -249,21 +184,24 @@ static constexpr Real mam4_hyg_mom = 0.1;
   substances, differ from the values provided by NIST; these, too, are listed
   here as mam4_* constants.
 */
-static AeroSpecies aero_species[7] = {
-    AeroSpecies(Constants::molec_weight_so4, mam4_density_so4,
-                mam4_hyg_so4), // sulphate
-    AeroSpecies(Constants::molec_weight_c, mam4_density_pom,
-                mam4_hyg_pom), // primary organic matter
-    AeroSpecies(Constants::molec_weight_c, mam4_density_soa,
-                mam4_hyg_soa), // secondary organic aerosol
-    AeroSpecies(Constants::molec_weight_c, mam4_density_bc,
-                mam4_hyg_bc), // black carbon
-    AeroSpecies(mam4_molec_weight_dst, mam4_density_dst, mam4_hyg_dst), // dust
-    AeroSpecies(Constants::molec_weight_nacl, mam4_density_nacl,
-                mam4_hyg_nacl), // sodium chloride
-    AeroSpecies(mam4_molec_weight_mom, mam4_density_mom,
-                mam4_hyg_mom) // marine organic matter
-};
+KOKKOS_INLINE_FUNCTION AeroSpecies aero_species(const int i) {
+  static const AeroSpecies species[7] = {
+      AeroSpecies{Constants::molec_weight_so4, mam4_density_so4, mam4_hyg_so4},
+      AeroSpecies{Constants::molec_weight_c, mam4_density_pom,
+                  mam4_hyg_pom}, // primary organic matter
+      AeroSpecies{Constants::molec_weight_c, mam4_density_soa,
+                  mam4_hyg_soa}, // secondary organic aerosol
+      AeroSpecies{Constants::molec_weight_c, mam4_density_bc,
+                  mam4_hyg_bc}, // black carbon
+      AeroSpecies{mam4_molec_weight_dst, mam4_density_dst,
+                  mam4_hyg_dst}, // dust
+      AeroSpecies{Constants::molec_weight_nacl, mam4_density_nacl,
+                  mam4_hyg_nacl}, // sodium chloride
+      AeroSpecies{mam4_molec_weight_mom, mam4_density_mom,
+                  mam4_hyg_mom} // marine organic matter
+  };
+  return species[i];
+}
 
 /// Returns the index of the given aerosol species within the given mode, or
 /// -1 if the species is not found within the mode.
@@ -338,23 +276,25 @@ static constexpr Real molec_weight_o3 = 0.0479982;
 /// Molecular weight of sulfur dioxide @f$\text{SO}_2@f$
 static constexpr Real molec_weight_so2 = 0.06407;
 
-// A list of gas species in MAM4.
-static haero::GasSpecies gas_species[13] = {
-    haero::GasSpecies(molec_weight_o3),               // ozone
-    haero::GasSpecies(molec_weight_h2o2),             // hydrogen peroxide
-    haero::GasSpecies(Constants::molec_weight_h2so4), // sulfuric acid
-    haero::GasSpecies(molec_weight_so2),              // sulfur dioxide
-    haero::GasSpecies(molec_weight_dms),              // dimethylsulfide
-    haero::GasSpecies(
-        Constants::molec_weight_c),      // secondary organic aerosol precursor
-    haero::GasSpecies(molec_weight_o2),  // oxygen
-    haero::GasSpecies(molec_weight_co2), // carbon dioxide
-    haero::GasSpecies(molec_weight_n2o), // nitrous oxide
-    haero::GasSpecies(molec_weight_ch4), // methane
-    haero::GasSpecies(molec_weight_ccl3f),         // thrichlorofluoromethane
-    haero::GasSpecies(molec_weight_chcl2f),        // dichlorofluoromethane
-    haero::GasSpecies(Constants::molec_weight_nh3) // ammonia
-};
+/// A list of gas species in MAM4.
+KOKKOS_INLINE_FUNCTION GasSpecies gas_species(const int i) {
+  static const GasSpecies species[13] = {
+      {molec_weight_o3},               // ozone
+      {molec_weight_h2o2},             // hydrogen peroxide
+      {Constants::molec_weight_h2so4}, // sulfuric acid
+      {molec_weight_so2},              // sulfur dioxide
+      {molec_weight_dms},              // dimethylsulfide
+      {Constants::molec_weight_c},     // secondary organic aerosol precursor
+      {molec_weight_o2},               // oxygen
+      {molec_weight_co2},              // carbon dioxide
+      {molec_weight_n2o},              // nitrous oxide
+      {molec_weight_ch4},              // methane
+      {molec_weight_ccl3f},            // thrichlorofluoromethane
+      {molec_weight_chcl2f},           // dichlorofluoromethane
+      {Constants::molec_weight_nh3}    // ammonia
+  };
+  return species[i];
+}
 
 } // namespace mam4
 
