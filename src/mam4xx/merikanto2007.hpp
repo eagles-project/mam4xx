@@ -7,7 +7,9 @@
 namespace mam4::merikanto2007 {
 
 using Real = haero::Real;
-using Pack = haero::PackType;
+using haero::cube;
+using haero::log;
+using haero::square;
 
 /// The functions in this file implement parameterizations described in
 /// Merikanto et al, New parameterization of sulfuric acid-ammonia-water ternary
@@ -58,12 +60,11 @@ Kokkos::pair<Real, Real> valid_xi_nh3_range() {
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Pack log_nucleation_rate(const Pack &temp, const Pack &rel_hum,
-                         const Pack &c_h2so4, const Pack &xi_nh3) {
+Real log_nucleation_rate(const Real temp, const Real rel_hum,
+                         const Real c_h2so4, const Real xi_nh3) {
   auto c = c_h2so4;
   auto xi = xi_nh3;
-  return Pack(
-      -12.861848898625231 + 4.905527742256349 * xi -
+  return -12.861848898625231 + 4.905527742256349 * xi -
       358.2337705052991 * rel_hum - 0.05463019231872484 * xi * temp +
       4.8630382337426985 * rel_hum * temp +
       0.00020258394697064567 * xi * square(temp) -
@@ -139,7 +140,7 @@ Pack log_nucleation_rate(const Pack &temp, const Pack &rel_hum,
       3.1712136610383244 * cube(log(xi)) * log(rel_hum) -
       0.037822330602328806 * temp * cube(log(xi)) * log(rel_hum) +
       0.0001500555743561457 * square(temp) * cube(log(xi)) * log(rel_hum) -
-      1.9828365865570703e-7 * cube(temp) * cube(log(xi)) * log(rel_hum));
+      1.9828365865570703e-7 * cube(temp) * cube(log(xi)) * log(rel_hum);
 }
 
 /// Computes the "onset temperature" [K] (eq 10) above which Merikanto's
@@ -149,15 +150,15 @@ Pack log_nucleation_rate(const Pack &temp, const Pack &rel_hum,
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Pack onset_temperature(const Pack &rel_hum, const Pack &c_h2so4,
-                       const Pack &xi_nh3) {
-  return Pack(143.6002929064716 + 1.0178856665693992 * rel_hum +
-              10.196398812974294 * log(c_h2so4) -
-              0.1849879416839113 * square(log(c_h2so4)) -
-              17.161783213150173 * log(xi_nh3) +
-              109.92469248546053 * log(xi_nh3) / log(c_h2so4) +
-              0.7734119613144357 * log(c_h2so4) * log(xi_nh3) -
-              0.15576469879527022 * square(log(xi_nh3)));
+Real onset_temperature(const Real rel_hum, const Real c_h2so4,
+                       const Real xi_nh3) {
+  return 143.6002929064716 + 1.0178856665693992 * rel_hum +
+      10.196398812974294 * log(c_h2so4) -
+      0.1849879416839113 * square(log(c_h2so4)) -
+      17.161783213150173 * log(xi_nh3) +
+      109.92469248546053 * log(xi_nh3) / log(c_h2so4) +
+      0.7734119613144357 * log(c_h2so4) * log(xi_nh3) -
+      0.15576469879527022 * square(log(xi_nh3));
 }
 
 /// Computes the radius of a critical cluster [nm] as parameterized in Merikanto
@@ -167,12 +168,11 @@ Pack onset_temperature(const Pack &rel_hum, const Pack &c_h2so4,
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Pack critical_radius(const Pack &log_J, const Pack &temp, const Pack &c_h2so4,
-                     const Pack &xi_nh3) {
+Real critical_radius(const Real log_J, const Real temp, const Real c_h2so4,
+                     const Real xi_nh3) {
   auto c = c_h2so4;
   auto xi = xi_nh3;
-  return Pack(
-      3.2888553966535506e-1 - 3.374171768439839e-3 * temp +
+  return 3.2888553966535506e-1 - 3.374171768439839e-3 * temp +
       1.8347359507774313e-5 * square(temp) + 2.5419844298881856e-3 * log(c) -
       9.498107643050827e-5 * temp * log(c) +
       7.446266520834559e-4 * square(log(c)) + 2.4303397746137294e-2 * log(xi) +
@@ -184,7 +184,7 @@ Pack critical_radius(const Pack &log_J, const Pack &temp, const Pack &c_h2so4,
       2.6813110884009767e-5 * temp * log_J +
       1.2879071621313094e-3 * log(xi) * log_J -
       3.80352446061867e-6 * temp * log(xi) * log_J -
-      1.8790172502456827e-5 * square(log_J));
+      1.8790172502456827e-5 * square(log_J);
 }
 
 /// Computes the total number of molecules in a critical cluster as
@@ -194,12 +194,11 @@ Pack critical_radius(const Pack &log_J, const Pack &temp, const Pack &c_h2so4,
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Pack num_critical_molecules(const Pack &log_J, const Pack &temp,
-                            const Pack &c_h2so4, const Pack &xi_nh3) {
+Real num_critical_molecules(const Real log_J, const Real temp,
+                            const Real c_h2so4, const Real xi_nh3) {
   auto c = c_h2so4;
   auto xi = xi_nh3;
-  return Pack(
-      57.40091052369212 - 0.2996341884645408 * temp +
+  return 57.40091052369212 - 0.2996341884645408 * temp +
       0.0007395477768531926 * square(temp) - 5.090604835032423 * log(c) +
       0.011016634044531128 * temp * log(c) +
       0.06750032251225707 * square(log(c)) - 0.8102831333223962 * log(xi) +
@@ -211,7 +210,7 @@ Pack num_critical_molecules(const Pack &log_J, const Pack &temp,
       0.014916956508210809 * temp * log_J +
       0.08459090011666293 * log(xi) * log_J -
       0.00014800625143907616 * temp * log(xi) * log_J +
-      0.00503804694656905 * square(log_J));
+      0.00503804694656905 * square(log_J);
 }
 
 /// Computes the total number of H2SO4 molecules in a critical cluster as
@@ -221,12 +220,11 @@ Pack num_critical_molecules(const Pack &log_J, const Pack &temp,
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Pack num_h2so4_molecules(const Pack &log_J, const Pack &temp,
-                         const Pack &c_h2so4, const Pack &xi_nh3) {
+Real num_h2so4_molecules(const Real log_J, const Real temp,
+                         const Real c_h2so4, const Real xi_nh3) {
   auto c = c_h2so4;
   auto xi = xi_nh3;
-  return Pack(
-      -4.7154180661803595 + 0.13436423483953885 * temp -
+  return -4.7154180661803595 + 0.13436423483953885 * temp -
       0.00047184686478816176 * square(temp) - 2.564010713640308 * log(c) +
       0.011353312899114723 * temp * log(c) +
       0.0010801941974317014 * square(log(c)) + 0.5171368624197119 * log(xi) -
@@ -238,7 +236,7 @@ Pack num_h2so4_molecules(const Pack &log_J, const Pack &temp,
       1.3276469271073974 * log_J - 0.006167654171986281 * temp * log_J -
       0.11061390967822708 * log(xi) * log_J +
       0.0004367575329273496 * temp * log(xi) * log_J +
-      0.000916366357266258 * square(log_J));
+      0.000916366357266258 * square(log_J);
 }
 
 /// Computes the total number of NH3 molecules in a critical cluster as
@@ -248,12 +246,11 @@ Pack num_h2so4_molecules(const Pack &log_J, const Pack &temp,
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Pack num_nh3_molecules(const Pack &log_J, const Pack &temp, const Pack &c_h2so4,
-                       const Pack &xi_nh3) {
+Real num_nh3_molecules(const Real log_J, const Real temp, const Real c_h2so4,
+                       const Real xi_nh3) {
   auto c = c_h2so4;
   auto xi = xi_nh3;
-  return Pack(
-      71.20073903979772 - 0.8409600103431923 * temp +
+  return 71.20073903979772 - 0.8409600103431923 * temp +
       0.0024803006590334922 * square(temp) + 2.7798606841602607 * log(c) -
       0.01475023348171676 * temp * log(c) +
       0.012264508212031405 * square(log(c)) - 2.009926050440182 * log(xi) +
@@ -265,7 +262,7 @@ Pack num_nh3_molecules(const Pack &log_J, const Pack &temp, const Pack &c_h2so4,
       0.002419872323052805 * temp * log_J +
       0.07916392322884074 * log(xi) * log_J -
       0.0003021586030317366 * temp * log(xi) * log_J +
-      0.0046977006608603395 * square(log_J));
+      0.0046977006608603395 * square(log_J);
 }
 
 } // namespace mam4::merikanto2007
