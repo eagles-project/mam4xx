@@ -469,6 +469,8 @@ void aitken_accum_exchange() // nlevs, top_lev, &
 {
   // compute geometric mean of v2n's for aitken and accumulation modes
   // auto v2n_geo_mean = sqrt(v2n);
+
+
 }
 
 // aitken_accum_exchange
@@ -539,6 +541,8 @@ public:
       // min_vol2num
       // = 1.0_wp/(pi_sixth*(imode%max_diameter**3.0_wp)*exp(4.5_wp*(log(imode%mean_std_dev))**2.0_wp))
     }
+
+
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -556,7 +560,7 @@ public:
     static constexpr bool do_aitacc_transfer = true;
     static constexpr bool do_adjust = true;
 
-    const auto nk = PackInfo::num_packs(nlevels);
+    const int nk = PackInfo::num_packs(atm.num_levels());
     const int aitken_idx = int(ModeIndex::Aitken);
     const int accumulation_idx = int(ModeIndex::Accumulation);
     const int nmodes = AeroConfig::num_modes();
