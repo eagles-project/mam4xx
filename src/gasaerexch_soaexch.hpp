@@ -21,8 +21,7 @@ using Real = haero::Real;
 // ==============================================================================
 KOKKOS_INLINE_FUNCTION
 void soa_equilib_mixing_ratio_no_solute(const int ntot_soaspec,
-                                        const Real &T_in_K, 
-					const Real &p_in_Pa,
+                                        const Real &T_in_K, const Real &p_in_Pa,
                                         const Real &pstd_in_Pa,
                                         const Real r_universal,
                                         const Real &g0_soa) {

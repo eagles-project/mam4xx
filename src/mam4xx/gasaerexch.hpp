@@ -79,8 +79,7 @@ public:
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(team, nk),
         KOKKOS_LAMBDA(int k, int &violation) {
-          if ((atm.temperature(k) < 0) || 
-	      (atm.pressure(k) < 0) ||
+          if ((atm.temperature(k) < 0) || (atm.pressure(k) < 0) ||
               (atm.vapor_mixing_ratio(k) < 0)) {
             violation = 1;
           }
@@ -171,15 +170,16 @@ void mam_gasaerexch_1subarea_1gas_nonvolatile(
       // coeff.
       const Real zqgas_equil = tmp_pxt / tmp_kxt;
       zqgas_end = (zqgas_init - zqgas_equil) * exp(-tmp_kxt) + zqgas_equil;
-      zqgas_avg = (zqgas_init - zqgas_equil) * (1.0 - exp(-tmp_kxt)) / tmp_kxt + zqgas_equil;
+      zqgas_avg = (zqgas_init - zqgas_equil) * (1.0 - exp(-tmp_kxt)) / tmp_kxt +
+                  zqgas_equil;
     } else {
       // Weaker condensation, use Taylor expansion to avoid large error
       // resulting from small denominator
       const Real tmp_kxt2 = tmp_kxt * tmp_kxt;
-      zqgas_end = zqgas_init * (1.0 - tmp_kxt + tmp_kxt2 * 0.5) 
-                + tmp_pxt * (1.0 - tmp_kxt * 0.5 + tmp_kxt2 / 6.0);
-      zqgas_avg = zqgas_init * (1.0 - tmp_kxt * 0.5 + tmp_kxt2 / 6.0) 
-	        + tmp_pxt * (0.5 - tmp_kxt / 6.0 + tmp_kxt2 / 24.0);
+      zqgas_end = zqgas_init * (1.0 - tmp_kxt + tmp_kxt2 * 0.5) +
+                  tmp_pxt * (1.0 - tmp_kxt * 0.5 + tmp_kxt2 / 6.0);
+      zqgas_avg = zqgas_init * (1.0 - tmp_kxt * 0.5 + tmp_kxt2 / 6.0) +
+                  tmp_pxt * (0.5 - tmp_kxt / 6.0 + tmp_kxt2 / 24.0);
     }
     qgas_cur = zqgas_end;
     qgas_avg = zqgas_avg;
@@ -188,9 +188,10 @@ void mam_gasaerexch_1subarea_1gas_nonvolatile(
 
     // Distribute the condensed mass to different aerosol modes
     for (int n = 0; n < num_mode; ++n) {
-      if (0 < uptkaer[n]) 
-      qaer_cur[n] = qaer_prev[n] + tmp_qdel_cond *
-        (uptkaer[n] / total_uptake_coeff_of_all_modes);
+      if (0 < uptkaer[n])
+        qaer_cur[n] =
+            qaer_prev[n] +
+            tmp_qdel_cond * (uptkaer[n] / total_uptake_coeff_of_all_modes);
     }
   }
 }
@@ -545,12 +546,13 @@ void gas_aerosol_uptake_rates_1box(
       if (0 < progs.uptkaer[igas][n](k)) {
         // if nh4 exceeds aer_nh4_so4_molar_ratio_max*so4 (molar basis),
         // put the excessive amount back to gas phase (nh3)
-        const Real mass_excess = qaer_cur[iaer][n] -
-          aer_nh4_so4_molar_ratio_max * qaer_cur[GasAerExch::iaer_so4][n];
+        const Real mass_excess =
+            qaer_cur[iaer][n] -
+            aer_nh4_so4_molar_ratio_max * qaer_cur[GasAerExch::iaer_so4][n];
         if (0 < mass_excess) {
           qaer_cur[iaer][n] = qaer_cur[iaer][n] - mass_excess;
-          qgas_cur[igas]    = qgas_cur[igas] + mass_excess;
-          qgas_avg[igas]    = qgas_avg[igas] + mass_excess * 0.5;
+          qgas_cur[igas] = qgas_cur[igas] + mass_excess;
+          qgas_avg[igas] = qgas_avg[igas] + mass_excess * 0.5;
         }
       }
     }
