@@ -54,6 +54,104 @@ void soa_equilib_mixing_ratio_no_solute(const Real &T_in_K,      // in
   g0_soa = pstd_in_Pa * p0_soa / p_in_Pa;
 }
 
+
+//================================================================================
+// Determine adaptive time-step size for SOA condensation/evaporation
+//================================================================================
+KOKKOS_INLINE_FUNCTION
+Real soa_exch_substepsize(const bool skip_soamode[1],  // in   true if this mode does not have soa
+			  const Real uptkaer_soag_tmp[1][AeroConfig::num_modes()], // in 
+			  // evolving SOA aerosol mixrat (mol/mol at actual mw), part of the unknowns of the ODEs
+                          const Real a_soa[1][AeroConfig::num_modes()], // in  soa aerosol mixrat (mol/mol at actual mw)
+			  const Real a_opoa[AeroConfig::num_modes()],   // in  oxidized-poa aerosol mixrat (mol/mol at actual mw)
+                          const Real g_soa[1],   // in  evolving SOA gas mixrat (mol/mol at actual mw), part of the unknowns of the ODEs
+                          const Real g0_soa[1],  // in  ambient soa gas equilib mixrat (mol/mol at actual mw), len ntot_soaspec=1
+			  const Real alpha_astem,// in  error control parameter for sub-timesteps 
+			  const Real dt_full,    // in  host model dt (s) 
+			  Real &t_cur)           // inout urrent time (s) since last full time step
+{
+  static constexpr int ntot_soaspec = 1;  //  "last" gas species that can be SOA 
+  static constexpr int ntot_soamode = 1;  //  "last" mode on which soa is allowed to condense
+
+  const Real  eps_aer = 1.0e-20;  // epsilon to be used on denominator for avoiding division by zero
+  const Real  eps_gas = 1.0e-20;  // epsilon to be used on denominator for avoiding division by zero
+
+  //------------------------------------------------------------------
+  // Oxygenated OA in each aerosol mode, summed over all SOA species
+  //------------------------------------------------------------------
+  Real a_ooa_sum_tmp[ntot_soamode];  // total ooa (=soa+opoa) in a mode
+  for (int n = 0; n < ntot_soamode; ++n) {
+    if (!skip_soamode[n]) {
+      a_ooa_sum_tmp[n] = a_opoa[n];
+      for (int i = 0; i < ntot_soaspec; ++i) 
+        a_ooa_sum_tmp[n] +=  a_soa[i][n];
+    }
+  }
+  //----------------------------------------------------------------------------------------------------------
+  // For each SOA species, estimate the normalized total mass exchange rate by using a simple 
+  // Euler forward scheme.  Here the normalized mass exchange rate is defined as 
+  //   condensed or evaporated SOA /dt / max( available-SOA-gas, equilibrium-SOA-gas-mixing-ratio )
+  // We first calculate this rate for each SOA species and each aerosol mode. Then, for each species, we calculate 
+  // the sum of its absolute value over all modes, and saved the result in the array tot_frac_single_soa_species.
+  //----------------------------------------------------------------------------------------------------------
+  Real tot_frac_single_soa_species[ntot_soaspec];
+  for (int i = 0; i < ntot_soaspec; ++i) 
+    tot_frac_single_soa_species[i] = 0.0;
+
+  for (int ll = 0; ll < ntot_soaspec; ++ll) {
+    for (int n = 0; n < ntot_soamode; ++n) {
+      if (!skip_soamode[n]) {
+        // Calculate g_star, the equilibrium SOA mixing ratio after taking into account the solute effect
+
+        // sat(ll,n) = g0_soa(ll)/a_ooa_sum_tmp(n) = g_star(ll,n)/a_soa(ll,n)
+        // This this the pre-factor of SOA (aerosol) mixing ratio in the expression of the 
+        // equilibrium SOA mixing ratio -- it is not a saturation rato!
+        const Real sat = g0_soa[ll]/haero::max( a_ooa_sum_tmp[n], eps_aer );
+
+        // g_star -  equilibrium SOA gas mixing ratio (mol/mol at actual mw), with solute effect accounted for
+        const Real g_star = sat*a_soa[ll][n];
+
+        // Calculate the mass exchange rate (normalized by the larger between g_soa and g_star)  
+        // of this aerosol mode by using an Euler forward scheme,
+        // then add this fraction to the total fraction (variable tot_frac_single_soa_species)
+        // summed over all aerosol modes.
+
+        const Real phi = (g_soa[ll] - g_star)/haero::max( g_soa[ll], haero::max(g_star, eps_gas));
+        tot_frac_single_soa_species[ll] += uptkaer_soag_tmp[ll][n]*haero::abs(phi);
+      }
+    }
+  }
+
+  //------------------------------------------------------------------------------------------------------
+  // Now, get the maximum of the normalized exchange rate of all SOA species
+  //------------------------------------------------------------------------------------------------------
+  Real max_frac_all_soa_species = -999999;
+  for (int i = 0; i < ntot_soaspec; ++i) 
+    max_frac_all_soa_species = haero::max(max_frac_all_soa_species, tot_frac_single_soa_species[i]);
+
+  //------------------------------------------------------------------------------------------------------
+  // Determine the adaptive step size, dt_cur, requiring that the condensed or evaporated amount of
+  // any SOA species cannot exceed a fraction (alpha_astem) of 
+  //   max( available-SOA-gas, equilibrium-SOA-gas-mixing-ratio ).
+  //------------------------------------------------------------------------------------------------------
+  const Real dt_max = dt_full - t_cur;   // how far we are from the end of the full time step
+
+  Real dt_cur=0;  // out current integration timestep (s)
+  if (dt_max*max_frac_all_soa_species <= alpha_astem) {
+     // Here alpha_astem/max_frac_all_soa_species >= dt_max, so this is the final substep.
+     // The substep length is limited by the length of full dt.
+     dt_cur = dt_max;
+     t_cur = dt_full;
+  } else {
+     // Using dt_max would lead to more than alpha_astem (fraction) of mass exchange.
+     // Limit the step size to avoid exceeding alpha_astem. 
+     dt_cur = alpha_astem/max_frac_all_soa_species;
+     t_cur += dt_cur;
+  }
+  return dt_cur; 
+}
+//===============================================================================================
+
 //===============================================================================================
 // Time integration for the ODE set that describes the condensation/evaporation of SOA
 //-----------------------------------------------------------------------------------------------
@@ -76,11 +174,9 @@ void mam_soaexch_advance_in_time(const Real dt_full,        // in host model dt 
 {
   using haero::max;
   static constexpr int ntot_soamode = 1;
-//static constexpr int ntot_poaspec = 1;
+  static constexpr int ntot_soaspec = 1;  //  "last" gas species that can be SOA 
   static constexpr int max_gas = AeroConfig::num_gas_ids();
-  //const int max_aer = AeroConfig::num_aerosol_ids();
   static constexpr int max_mode = AeroConfig::num_modes();
-  const int ntot_soaspec = 1;  //  "last" gas species that can be SOA 
 
 
   // The local arrays a_soa and g_soa declared below have the same meaning of qaer_cur and qgas_cur.
@@ -96,10 +192,9 @@ void mam_soaexch_advance_in_time(const Real dt_full,        // in host model dt 
 
   bool skip_soamode[ntot_soamode];                 // true if this mode does not have soa
   Real uptkaer_soag_tmp[ntot_soaspec][max_mode];   // uptake rate of different modes for different soa species
-  Real beta[ntot_soaspec][max_mode];               // dtcur * uptake-rate-coefficient
+  Real beta[ntot_soaspec][max_mode];               // dt_cur * uptake-rate-coefficient
 
   const Real  eps_aer = 1.0e-20; // epsilon to be used on denominator for avoiding division by zero
-//const Real  eps_gas = 1.0e-20; // epsilon to be used on denominator for avoiding division by zero
   const Real  eps_dt  = 1.0e-3;
 
   // variable name "sat": sat(m,ll) = g0_soa(ll)/a_ooa_sum(m) = g_star(m,ll)/a_soa(m,ll)
@@ -153,167 +248,166 @@ void mam_soaexch_advance_in_time(const Real dt_full,        // in host model dt 
     for (int i=0; i<ntot_soaspec; ++i) 
       g_soa[i] = max( qgas_cur[i], 0.0);
 
-      //  Load incoming SOA aerosols into temporary array, force values to be non-negative
+    //  Load incoming SOA aerosols into temporary array, force values to be non-negative
 
-      for (int n = 0; n<ntot_soamode; ++n) {
-         if (!skip_soamode[n]) {
-           for (int i=0; i<ntot_soaspec; ++i) 
-             a_soa[i][n] = max( qaer_cur[i][n], 0.0);
-	 }
-      } 
+    for (int n = 0; n<ntot_soamode; ++n) {
+       if (!skip_soamode[n]) {
+         for (int i=0; i<ntot_soaspec; ++i) 
+           a_soa[i][n] = max( qaer_cur[i][n], 0.0);
+       }
+    } 
 
-      //  Calculate the total amount of each SOA species, defined as mixing ratio of gas + aerosol,
-      //  saved in array tot_soa.
+    //  Calculate the total amount of each SOA species, defined as mixing ratio of gas + aerosol,
+    //  saved in array tot_soa.
 
-      for (int ll = 0; ll < ntot_soaspec; ++ll) {
-         tot_soa[ll] = g_soa[ll];
-         for (int n = 0; n < ntot_soamode; ++n) {
-            if (!skip_soamode[n]) 
-              tot_soa[ll] = tot_soa[ll] + a_soa[ll][n];
-	 }
-      }
+    for (int ll = 0; ll < ntot_soaspec; ++ll) {
+       tot_soa[ll] = g_soa[ll];
+       for (int n = 0; n < ntot_soamode; ++n) {
+          if (!skip_soamode[n]) 
+            tot_soa[ll] = tot_soa[ll] + a_soa[ll][n];
+       }
+    }
 
-      // -----------------------------------------------------------------------------
-      //  Determine step size: either fixed or adaptive
-      // -----------------------------------------------------------------------------
-      Real dtcur = 0;  // substep length, fixed or adaptive
-      if (dt_sub_fixed > 0.0) { //  Use prescribed, fixed step size
-        dtcur = dt_sub_fixed;
-        tcur = tcur + dtcur;
-      } else { //  Chose an adaptive step size
-//      call soa_exch_substepsize(ntot_soaspec, ntot_soamode,        &
-//                                skip_soamode, uptkaer_soag_tmp,    &
-//                                a_soa, a_opoa, g_soa,              &
-//                                g0_soa, alpha_astem, dtfull,       &
-//                                dtcur, tcur                        )// out, inout
-      }
+    // -----------------------------------------------------------------------------
+    //  Determine step size: either fixed or adaptive
+    // -----------------------------------------------------------------------------
+    Real dt_cur = 0;  // substep length, fixed or adaptive
+    if (dt_sub_fixed > 0.0) { //  Use prescribed, fixed step size
+      dt_cur = dt_sub_fixed;
+      tcur += dt_cur;
+    } else { //  Chose an adaptive step size
+      dt_cur = soa_exch_substepsize(skip_soamode, uptkaer_soag_tmp,    
+                                    a_soa, a_opoa, g_soa,              
+                                    g0_soa, alpha_astem, dt_full,      
+                                    tcur);// inout
+    }
 
-      // ----------------------------------------------------------------------------
-      //  Now that we have determined the sub-step size dtcur,
-      //  define a variable beta = dtcur * uptake-rate-coefficient.
-      //  This is used at a few places in the semi-implicit time integration scheme.
-      // ----------------------------------------------------------------------------
-      for (int n = 0; n<ntot_soamode; ++n) {
-        if (!skip_soamode[n] ) {
-          for (int ll = 0; ll<ntot_soaspec; ++ll) 
-            beta[ll][n] = dtcur*uptkaer_soag_tmp[ll][n];
-	}
-      }
-
-      // ------------------------------------------------------------------------------------------
-      //  Linearize the ODE of each SOA species in each mode
-      // ------------------------------------------------------------------------------------------
-      //  Because the equilibrium SOA mixing ratio (that takes into account the solvent effect)
-      //  depends on the SOA (aerosol) mixing ratio in each mode,
-      //  the time evolution equations for SOAs (aerosol) are nonlinear.
-      //  To numerically solve these nonlinear equations using a semi-implicit-in-time scheme,
-      //  we need to linearize the equations.
-      //  The nonlinear pre-factor in front of an SOA mixing ratio on the RHS of the 
-      //  SOA mixing ratio equation is 
-      //      uptake-rate-coefficient * g0_soa / mixing-ratio-of-OOA
-      //  Let us denote 
-      //      sat = g0_soa / mixing-ratio-of-OOA
-      //  The code block below provides an approximate value of sat (saved in the array sat_hybrid)
-      //  to be used in the semi-implicit solve further down below.
-      //  We refer to this "sat" variable as a "hybrid" one because the calculation below
-      //  uses different expressions for SOA condensation and evaporation.
-      //  The difference is in the SOA (aerosol) mixing ratios used for calculating the OOA mixing
-      //  ratio in the denominaotor of sat.
-      // ------------------------------------------------------------------------------------------
-      Real a_soa_hybrid[ntot_soaspec];                 // temporary SOA aerosol mixrat (mol/mol) used for linearization
-      for (int n = 0; n<ntot_soamode; ++n) {
-        if ( skip_soamode[n] ) continue;
-
-        for (int ll = 0; ll<ntot_soaspec; ++ll) {
-
-          //  First get an estimate of the equilibrium SOA mixing ratio (variable g_star_old)
-          //  using the old SOA mixing ratio (variable a_soa)
-
-          Real a_ooa_sum_old = a_opoa[n]; //// total ooa (=soa+opoa) in a mode, calculated using old SOA mixing ratio
-          for (int i = 0; i<ntot_soaspec; ++i) 
-	    a_ooa_sum_old += a_soa[i][n];
-          const Real sat_old = g0_soa[ll]/max( a_ooa_sum_old, eps_aer );
-
-          const Real g_star_old = sat_old*a_soa[ll][n];   // soa gas mixrat that is in equilib with each aerosol mode (mol/mol)
-                                                          // diagnosed using old gas and aerosol mixing ratios
-
-          //  Using g_star_old and the current (old) g_soa to determine whether we have
-          //   - supersaturation (meaning SOA will be condensing) or 
-          //   - undersaturation (meaning SOA will be evaporating)
-
-          const Real g_soa_supersat = g_soa[ll] - g_star_old; // SOA gas supersaturation mixrat (mol/mol at actual mw). < 0 means unsaturated
-
-          if (g_soa_supersat > 0.0) {
-            //  For modes where SOA is condensing, estimate an approximate "new" a_soa(ll,n)
-            //  using the Euler forward scheme in which both the SOA gas mixing ratio
-            //  and equilibrium mixing ratio are set to their "old" values, i.e.,
-            //  the current g_soa and the above-calculated g_star_old.
-            //  Do this to get better estimate of "new" a_soa(ll,n) and g_star(ll,n)
-
-            a_soa_hybrid[ll] = a_soa[ll][n] + beta[ll][n]*g_soa_supersat;
-
-	  } else {
-            //  For modes where SOA is evaporating, simply use the "old" SOA mixing ratio
-            a_soa_hybrid[ll] = a_soa[ll][n];
-	  }
-	}
-
-        //  Now, calculate the total OOA in the mode using the a_soa_hybrid calculated just now
-
-        Real a_ooa_sum_hybrid = a_opoa[n]; // total ooa (=soa+opoa) in a mode, different for condensation/evaporation cases
-        for (int i = 0; i<ntot_soaspec; ++i) 
-	  a_ooa_sum_hybrid += a_soa_hybrid[i];
-
-        //  With the newly calculated a_ooa_sum_hybrid, we can now calculate 
-        //  the pre-factor in front of the SOA mixing ratio on the RHS of each SOA equation,
-        //  (i.e., variable sat_hybrid).
-
+    // ----------------------------------------------------------------------------
+    //  Now that we have determined the sub-step size dt_cur,
+    //  define a variable beta = dt_cur * uptake-rate-coefficient.
+    //  This is used at a few places in the semi-implicit time integration scheme.
+    // ----------------------------------------------------------------------------
+    for (int n = 0; n<ntot_soamode; ++n) {
+      if (!skip_soamode[n] ) {
         for (int ll = 0; ll<ntot_soaspec; ++ll) 
-          sat_hybrid[ll][n] = g0_soa[ll]/max( a_ooa_sum_hybrid, eps_aer );
+          beta[ll][n] = dt_cur*uptkaer_soag_tmp[ll][n];
       }
-      // ------------------------------------------------------------------------------------------
-      //  Implicit solve for the linearize equations 
-      // ------------------------------------------------------------------------------------------
-      for (int ll = 0; ll < ntot_soaspec; ++ll) {
-        Real tmpa = 0.0;
-        Real tmpb = 0.0;
-        for (int n = 0; n < ntot_soamode; ++n) {
-          if (!skip_soamode[n]) {
-            tmpa += a_soa[ll][n]/(1.0 + beta[ll][n]*sat_hybrid[ll][n]);
-            tmpb += beta[ll][n]/(1.0 + beta[ll][n]*sat_hybrid[ll][n]);
-	  }
-	}
-        g_soa[ll] = (tot_soa[ll] - tmpa)/(1.0 + tmpb);
-        g_soa[ll] = max( 0.0, g_soa[ll] );
-        for (int n = 0; n < ntot_soamode; ++n) {
-          if (!skip_soamode[n]) {
-            a_soa[ll][n] = (a_soa[ll][n] + beta[ll][n]*g_soa[ll]) /   
-                         (1.0 + beta[ll][n]*sat_hybrid[ll][n]);
-	  }
+    }
+
+    // ------------------------------------------------------------------------------------------
+    //  Linearize the ODE of each SOA species in each mode
+    // ------------------------------------------------------------------------------------------
+    //  Because the equilibrium SOA mixing ratio (that takes into account the solvent effect)
+    //  depends on the SOA (aerosol) mixing ratio in each mode,
+    //  the time evolution equations for SOAs (aerosol) are nonlinear.
+    //  To numerically solve these nonlinear equations using a semi-implicit-in-time scheme,
+    //  we need to linearize the equations.
+    //  The nonlinear pre-factor in front of an SOA mixing ratio on the RHS of the 
+    //  SOA mixing ratio equation is 
+    //      uptake-rate-coefficient * g0_soa / mixing-ratio-of-OOA
+    //  Let us denote 
+    //      sat = g0_soa / mixing-ratio-of-OOA
+    //  The code block below provides an approximate value of sat (saved in the array sat_hybrid)
+    //  to be used in the semi-implicit solve further down below.
+    //  We refer to this "sat" variable as a "hybrid" one because the calculation below
+    //  uses different expressions for SOA condensation and evaporation.
+    //  The difference is in the SOA (aerosol) mixing ratios used for calculating the OOA mixing
+    //  ratio in the denominaotor of sat.
+    // ------------------------------------------------------------------------------------------
+    Real a_soa_hybrid[ntot_soaspec];                 // temporary SOA aerosol mixrat (mol/mol) used for linearization
+    for (int n = 0; n<ntot_soamode; ++n) {
+      if ( skip_soamode[n] ) continue;
+
+      for (int ll = 0; ll<ntot_soaspec; ++ll) {
+
+        //  First get an estimate of the equilibrium SOA mixing ratio (variable g_star_old)
+        //  using the old SOA mixing ratio (variable a_soa)
+
+        Real a_ooa_sum_old = a_opoa[n]; //// total ooa (=soa+opoa) in a mode, calculated using old SOA mixing ratio
+        for (int i = 0; i<ntot_soaspec; ++i) 
+          a_ooa_sum_old += a_soa[i][n];
+        const Real sat_old = g0_soa[ll]/max( a_ooa_sum_old, eps_aer );
+
+        const Real g_star_old = sat_old*a_soa[ll][n];   // soa gas mixrat that is in equilib with each aerosol mode (mol/mol)
+                                                        // diagnosed using old gas and aerosol mixing ratios
+
+        //  Using g_star_old and the current (old) g_soa to determine whether we have
+        //   - supersaturation (meaning SOA will be condensing) or 
+        //   - undersaturation (meaning SOA will be evaporating)
+
+        const Real g_soa_supersat = g_soa[ll] - g_star_old; // SOA gas supersaturation mixrat (mol/mol at actual mw). < 0 means unsaturated
+
+        if (g_soa_supersat > 0.0) {
+          //  For modes where SOA is condensing, estimate an approximate "new" a_soa(ll,n)
+          //  using the Euler forward scheme in which both the SOA gas mixing ratio
+          //  and equilibrium mixing ratio are set to their "old" values, i.e.,
+          //  the current g_soa and the above-calculated g_star_old.
+          //  Do this to get better estimate of "new" a_soa(ll,n) and g_star(ll,n)
+
+          a_soa_hybrid[ll] = a_soa[ll][n] + beta[ll][n]*g_soa_supersat;
+
+        } else {
+          //  For modes where SOA is evaporating, simply use the "old" SOA mixing ratio
+          a_soa_hybrid[ll] = a_soa[ll][n];
         }
       }
 
-      // ------------------------------------------------------------------------------------------
-      //  Save mix ratios for soa species
-      // ------------------------------------------------------------------------------------------
-      for (int igas = 0; igas < ntot_soaspec; ++igas) {
-        for (int n = 0; n < ntot_soamode; ++n) 
-          qaer_cur[igas][n] = a_soa[igas][n];
-      }
+      //  Now, calculate the total OOA in the mode using the a_soa_hybrid calculated just now
 
-      // ------------------------------------------------------------------------------------------
-      //  Save mixing ratios for SOA gas species; diagnose time average
-      // ------------------------------------------------------------------------------------------
-      for (int igas = 0; igas<ntot_soaspec; ++igas) {
-        qgas_cur[igas] = g_soa[igas];                       //  new gas mixing ratio
-        const Real tmpc = qgas_cur[igas] - qgas_prv[igas];  //  amount of condensation/evaporation
-        qgas_avg_sum[igas] = qgas_avg_sum[igas] + dtcur*(qgas_prv[igas] + 0.5*tmpc);
+      Real a_ooa_sum_hybrid = a_opoa[n]; // total ooa (=soa+opoa) in a mode, different for condensation/evaporation cases
+      for (int i = 0; i<ntot_soaspec; ++i) 
+        a_ooa_sum_hybrid += a_soa_hybrid[i];
+
+      //  With the newly calculated a_ooa_sum_hybrid, we can now calculate 
+      //  the pre-factor in front of the SOA mixing ratio on the RHS of each SOA equation,
+      //  (i.e., variable sat_hybrid).
+
+      for (int ll = 0; ll<ntot_soaspec; ++ll) 
+        sat_hybrid[ll][n] = g0_soa[ll]/max( a_ooa_sum_hybrid, eps_aer );
+    }
+    // ------------------------------------------------------------------------------------------
+    //  Implicit solve for the linearize equations 
+    // ------------------------------------------------------------------------------------------
+    for (int ll = 0; ll < ntot_soaspec; ++ll) {
+      Real tmpa = 0.0;
+      Real tmpb = 0.0;
+      for (int n = 0; n < ntot_soamode; ++n) {
+        if (!skip_soamode[n]) {
+          tmpa += a_soa[ll][n]/(1.0 + beta[ll][n]*sat_hybrid[ll][n]);
+          tmpb += beta[ll][n]/(1.0 + beta[ll][n]*sat_hybrid[ll][n]);
+        }
       }
-      dtsum_qgas_avg = dtsum_qgas_avg + dtcur;
+      g_soa[ll] = (tot_soa[ll] - tmpa)/(1.0 + tmpb);
+      g_soa[ll] = max( 0.0, g_soa[ll] );
+      for (int n = 0; n < ntot_soamode; ++n) {
+        if (!skip_soamode[n]) {
+          a_soa[ll][n] = (a_soa[ll][n] + beta[ll][n]*g_soa[ll]) /   
+                       (1.0 + beta[ll][n]*sat_hybrid[ll][n]);
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------------------------------
+    //  Save mix ratios for soa species
+    // ------------------------------------------------------------------------------------------
+    for (int igas = 0; igas < ntot_soaspec; ++igas) {
+      for (int n = 0; n < ntot_soamode; ++n) 
+        qaer_cur[igas][n] = a_soa[igas][n];
+    }
+
+    // ------------------------------------------------------------------------------------------
+    //  Save mixing ratios for SOA gas species; diagnose time average
+    // ------------------------------------------------------------------------------------------
+    for (int igas = 0; igas<ntot_soaspec; ++igas) {
+      qgas_cur[igas] = g_soa[igas];                       //  new gas mixing ratio
+      const Real tmpc = qgas_cur[igas] - qgas_prv[igas];  //  amount of condensation/evaporation
+      qgas_avg_sum[igas] = qgas_avg_sum[igas] + dt_cur*(qgas_prv[igas] + 0.5*tmpc);
+    }
+    dtsum_qgas_avg = dtsum_qgas_avg + dt_cur;
   }
 
   // -------------------------------------------------------------------
-  //  Convert qgas_avg from sum_over[ qgas*dtcur ] to an average
+  //  Convert qgas_avg from sum_over[ qgas*dt_cur ] to an average
   // -------------------------------------------------------------------
   for (int i=0; i<ntot_soaspec; ++i) 
     qgas_avg[i] = max( 0.0, qgas_avg_sum[i]/dtsum_qgas_avg );
@@ -343,7 +437,7 @@ void mam_soaexch_1subarea(
   static constexpr int ntot_poaspec = 1;
   static constexpr int num_mode = AeroConfig::num_modes();
   static constexpr bool flag_pcarbon_opoa_frac_zero   = true; // for backward compatibility
-//static constexpr Real alpha_astem     = 0.05; // parameter used in calc of sub-step sizes
+  static constexpr Real alpha_astem     = 0.05; // parameter used in calc of sub-step sizes
   static constexpr Real opoa_frac_const = 0.10; // assumed OPOA fraction 
 
   Real a_opoa[num_mode];
@@ -383,10 +477,10 @@ void mam_soaexch_1subarea(
   // -----------------------------------------------------------
   //  Time stepping -- uses multiple substeps to reach dtfull
   // -----------------------------------------------------------
-//const int niter_max = 1000;
+  const int niter_max = 1000;
 
-  //mam_soaexch_advance_in_time( dt, dt_sub_soa_fixed, niter_max, alpha_astem, uptkaer,  
-  //                             g0_soa, qgas_cur, a_opoa, qaer_cur, qgas_avg, niter );
+  mam_soaexch_advance_in_time( dt, dt_sub_soa_fixed, niter_max, alpha_astem, uptkaer,  
+                               &g0_soa, qgas_cur, a_opoa, qaer_cur, qgas_avg, niter );
 }
 } // namespace gasaerexch
 } // namespace mam4
