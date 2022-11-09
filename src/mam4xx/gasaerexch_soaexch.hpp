@@ -211,7 +211,7 @@ void mam_soaexch_advance_in_time(
   // qaer_cur and qgas_cur but
   //   with negative values set to zero.
   //- At the end of each substep, the values of a_soa and g_soa are copied back
-  //to qaer_cur and qgas_cur.
+  // to qaer_cur and qgas_cur.
 
   Real a_soa[ntot_soaspec]
             [max_mode]; // evolving SOA aerosol mixrat (mol/mol at actual mw),
@@ -368,8 +368,9 @@ void mam_soaexch_advance_in_time(
         //  First get an estimate of the equilibrium SOA mixing ratio (variable
         //  g_star_old) using the old SOA mixing ratio (variable a_soa)
 
-        Real a_ooa_sum_old = a_opoa[n]; //// total ooa (=soa+opoa) in a mode,
-                                        ///calculated using old SOA mixing ratio
+        Real a_ooa_sum_old =
+            a_opoa[n]; //// total ooa (=soa+opoa) in a mode,
+                       /// calculated using old SOA mixing ratio
         for (int i = 0; i < ntot_soaspec; ++i)
           a_ooa_sum_old += a_soa[i][n];
         const Real sat_old = g0_soa[ll] / max(a_ooa_sum_old, eps_aer);
