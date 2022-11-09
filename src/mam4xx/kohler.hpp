@@ -3,7 +3,6 @@
 
 #include <mam4xx/mam4.hpp>
 
-//#include <ekat/ekat_scalar_traits.hpp>
 #include <haero/constants.hpp>
 #include <haero/floating_point.hpp>
 #include <haero/haero.hpp>
@@ -224,7 +223,7 @@ template <typename SolverType> struct KohlerSolver {
         conv_tol(tol), n_iter(0) {}
 
   KOKKOS_INLINE_FUNCTION
-  Real solve() {
+  double solve() {
     double wet_radius_left = 0.9 * dry_radius_microns;
     double wet_radius_right = 50 * dry_radius_microns;
     double wet_radius_init = 25 * dry_radius_microns;
