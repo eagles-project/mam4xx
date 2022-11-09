@@ -753,10 +753,10 @@ private:
     Real cair; // air density
     Real so4vol, nh3ppt;
 
-    Real radius_cluster; // radius of newly formed cluster, in nm
-    Real rateloge;       // ln(J)
-    Real cnum_h2so4;
-    Real cnum_nh3;
+    Real radius_cluster = 0.0; // radius of newly formed cluster, in nm
+    Real rateloge = 0.0;       // ln(J)
+    Real cnum_h2so4 = 0.0;
+    Real cnum_nh3 = 0.0;
 
     Real mass1p;
     Real mass1p_aithi, mass1p_aitlo;
@@ -871,20 +871,18 @@ private:
         exp(0.67 * log(dgnumlo_aer[nait]) + 0.33 * log(dgnum_aer[nait]));
     dphim_mode[0] = dgnumhi_aer[nait];
 
+    // mass1p_... = mass (kg) of so4 & nh4 in a single particle of diameter
+    // ... (assuming same dry density for so4 & nh4) mass1p_aitlo - dp =
+    // dplom_mode(1); mass1p_aithi - dp = dphim_mode(1);
+    tmpa = dens_so4a_host * pi / 6.0;
+    mass1p_aitlo = tmpa * cube(dplom_mode[0]);
+    mass1p_aithi = tmpa * cube(dphim_mode[0]);
+
     //----------------------------------------------------------------
     // Only do the cluster growth calculation when nucleation rate is
     // appreciable
     //----------------------------------------------------------------
     if (rateloge > ln_nuc_rate_cutoff) {
-      // mass1p_... = mass (kg) of so4 & nh4 in a single particle of diameter
-      // ... (assuming same dry density for so4 & nh4) mass1p_aitlo - dp =
-      // dplom_mode(1); mass1p_aithi - dp = dphim_mode(1);
-
-      tmpa = dens_so4a_host * pi / 6.0;
-      mass1p_aitlo = tmpa * cube(dplom_mode[0]);
-      mass1p_aithi = tmpa * cube(dphim_mode[0]);
-
-      // Cluster growth
       nucleation::newnuc_cluster_growth(
           dnclusterdt, cnum_h2so4, cnum_nh3, radius_cluster, dplom_mode,
           dphim_mode, nsize, deltat, temp, relhumnn, cair, accom_coef_h2so4,
