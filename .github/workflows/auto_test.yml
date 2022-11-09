@@ -59,6 +59,7 @@ jobs:
         repository: eagles-project/haero
         submodules: recursive
         path: haero_src
+        ref: no-packs  # remove this when Haero no-packs branch is merged!
 
     - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
       run: |
