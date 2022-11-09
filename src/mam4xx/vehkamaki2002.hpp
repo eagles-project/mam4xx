@@ -7,7 +7,10 @@
 namespace mam4::vehkamaki2002 {
 
 using Real = haero::Real;
-using Pack = haero::PackType;
+using haero::cube;
+using haero::exp;
+using haero::log;
+using haero::square;
 
 /// The functions in this file implement parameterizations described in
 /// Vehkamaki et al, An improved parameterization for sulfuric acid–water /
@@ -48,17 +51,15 @@ Kokkos::pair<Real, Real> valid_c_h2so4_range() {
 /// @param [in] temp The atmospherіc temperature [K]
 /// @param [in] rel_hum The relative humidity [-]
 KOKKOS_INLINE_FUNCTION
-Pack h2so4_critical_mole_fraction(const Pack &c_h2so4, const Pack &temp,
-                                  const Pack &rel_hum) {
+Real h2so4_critical_mole_fraction(Real c_h2so4, Real temp, Real rel_hum) {
   // Calculate the mole fraction using eq 11 of Vehkamaki et al (2002).
   auto N_a = c_h2so4;
-  return Pack(0.740997 - 0.00266379 * temp - 0.00349998 * log(N_a) +
-              0.0000504022 * temp * log(N_a) + 0.00201048 * log(rel_hum) -
-              0.000183289 * temp * log(rel_hum) +
-              0.00157407 * square(log(rel_hum)) -
-              0.0000179059 * temp * square(log(rel_hum)) +
-              0.000184403 * cube(log(rel_hum)) -
-              1.50345e-6 * temp * cube(log(rel_hum)));
+  return 0.740997 - 0.00266379 * temp - 0.00349998 * log(N_a) +
+         0.0000504022 * temp * log(N_a) + 0.00201048 * log(rel_hum) -
+         0.000183289 * temp * log(rel_hum) + 0.00157407 * square(log(rel_hum)) -
+         0.0000179059 * temp * square(log(rel_hum)) +
+         0.000184403 * cube(log(rel_hum)) -
+         1.50345e-6 * temp * cube(log(rel_hum));
 }
 
 /// Computes the binary nucleation rate [m-3 s-1] as parameterized by
@@ -68,37 +69,36 @@ Pack h2so4_critical_mole_fraction(const Pack &c_h2so4, const Pack &temp,
 /// @param [in] rel_hum The relative humidity [-]
 /// @param [in] x_crit The mole fraction of H2SO4 in a critical cluster [-]
 KOKKOS_INLINE_FUNCTION
-Pack nucleation_rate(const Pack &c_h2so4, const Pack &temp, const Pack &rel_hum,
-                     const Pack &x_crit) {
+Real nucleation_rate(Real c_h2so4, Real temp, Real rel_hum, Real x_crit) {
   // Calculate the coefficients in eq 12 of Vehkamaki et al (2002).
-  Pack a = 0.14309 + 2.21956 * temp - 0.0273911 * square(temp) +
+  Real a = 0.14309 + 2.21956 * temp - 0.0273911 * square(temp) +
            0.0000722811 * cube(temp) + 5.91822 / x_crit;
 
-  Pack b = 0.117489 + 0.462532 * temp - 0.0118059 * square(temp) +
+  Real b = 0.117489 + 0.462532 * temp - 0.0118059 * square(temp) +
            0.0000404196 * cube(temp) + 15.7963 / x_crit;
 
-  Pack c = -0.215554 - 0.0810269 * temp + 0.00143581 * square(temp) -
+  Real c = -0.215554 - 0.0810269 * temp + 0.00143581 * square(temp) -
            4.7758e-6 * cube(temp) - 2.91297 / x_crit;
 
-  Pack d = -3.58856 + 0.049508 * temp - 0.00021382 * square(temp) +
+  Real d = -3.58856 + 0.049508 * temp - 0.00021382 * square(temp) +
            3.10801e-7 * cube(temp) - 0.0293333 / x_crit;
 
-  Pack e = 1.14598 - 0.600796 * temp + 0.00864245 * square(temp) -
+  Real e = 1.14598 - 0.600796 * temp + 0.00864245 * square(temp) -
            0.0000228947 * cube(temp) - 8.44985 / x_crit;
 
-  Pack f = 2.15855 + 0.0808121 * temp - 0.000407382 * square(temp) -
+  Real f = 2.15855 + 0.0808121 * temp - 0.000407382 * square(temp) -
            4.01957e-7 * cube(temp) + 0.721326 / x_crit;
 
-  Pack g = 1.6241 - 0.0160106 * temp + 0.0000377124 * square(temp) +
+  Real g = 1.6241 - 0.0160106 * temp + 0.0000377124 * square(temp) +
            3.21794e-8 * cube(temp) - 0.0113255 / x_crit;
 
-  Pack h = 9.71682 - 0.115048 * temp + 0.000157098 * square(temp) +
+  Real h = 9.71682 - 0.115048 * temp + 0.000157098 * square(temp) +
            4.00914e-7 * cube(temp) + 0.71186 / x_crit;
 
-  Pack i = -1.05611 + 0.00903378 * temp - 0.0000198417 * square(temp) +
+  Real i = -1.05611 + 0.00903378 * temp - 0.0000198417 * square(temp) +
            2.46048e-8 * cube(temp) - 0.0579087 / x_crit;
 
-  Pack j = -0.148712 + 0.00283508 * temp - 9.24619e-6 * square(temp) +
+  Real j = -0.148712 + 0.00283508 * temp - 9.24619e-6 * square(temp) +
            5.00427e-9 * cube(temp) - 0.0127081 / x_crit;
 
   // Compute the nucleation rate using eq 12.
@@ -117,38 +117,38 @@ Pack nucleation_rate(const Pack &c_h2so4, const Pack &temp, const Pack &rel_hum,
 /// @param [in] rel_hum The relative humidity [-]
 /// @param [in] x_crit The mole fraction of H2SO4 in a critical cluster [-]
 KOKKOS_INLINE_FUNCTION
-Pack num_critical_molecules(const Pack &c_h2so4, const Pack &temp,
-                            const Pack &rel_hum, const Pack &x_crit) {
+Real num_critical_molecules(Real c_h2so4, Real temp, Real rel_hum,
+                            Real x_crit) {
   // Calc the coefficients for the number of molecules in a critical
   // cluster (eq 13).
-  Pack A = -0.00295413 - 0.0976834 * temp + 0.00102485 * square(temp) -
+  Real A = -0.00295413 - 0.0976834 * temp + 0.00102485 * square(temp) -
            2.18646e-6 * cube(temp) - 0.101717 / x_crit;
 
-  Pack B = -0.00205064 - 0.00758504 * temp + 0.000192654 * square(temp) -
+  Real B = -0.00205064 - 0.00758504 * temp + 0.000192654 * square(temp) -
            6.7043e-7 * cube(temp) - 0.255774 / x_crit;
 
-  Pack C = +0.00322308 + 0.000852637 * temp - 0.0000154757 * square(temp) +
+  Real C = +0.00322308 + 0.000852637 * temp - 0.0000154757 * square(temp) +
            5.66661e-8 * cube(temp) + 0.0338444 / x_crit;
 
-  Pack D = +0.0474323 - 0.000625104 * temp + 2.65066e-6 * square(temp) -
+  Real D = +0.0474323 - 0.000625104 * temp + 2.65066e-6 * square(temp) -
            3.67471e-9 * cube(temp) - 0.000267251 / x_crit;
 
-  Pack E = -0.0125211 + 0.00580655 * temp - 0.000101674 * square(temp) +
+  Real E = -0.0125211 + 0.00580655 * temp - 0.000101674 * square(temp) +
            2.88195e-7 * cube(temp) + 0.0942243 / x_crit;
 
-  Pack F = -0.038546 - 0.000672316 * temp + 2.60288e-6 * square(temp) +
+  Real F = -0.038546 - 0.000672316 * temp + 2.60288e-6 * square(temp) +
            1.19416e-8 * cube(temp) - 0.00851515 / x_crit;
 
-  Pack G = -0.0183749 + 0.000172072 * temp - 3.71766e-7 * square(temp) -
+  Real G = -0.0183749 + 0.000172072 * temp - 3.71766e-7 * square(temp) -
            5.14875e-10 * cube(temp) + 0.00026866 / x_crit;
 
-  Pack H = -0.0619974 + 0.000906958 * temp - 9.11728e-7 * square(temp) -
+  Real H = -0.0619974 + 0.000906958 * temp - 9.11728e-7 * square(temp) -
            5.36796e-9 * cube(temp) - 0.00774234 / x_crit;
 
-  Pack I = +0.0121827 - 0.00010665 * temp + 2.5346e-7 * square(temp) -
+  Real I = +0.0121827 - 0.00010665 * temp + 2.5346e-7 * square(temp) -
            3.63519e-10 * cube(temp) + 0.000610065 / x_crit;
 
-  Pack J = +0.000320184 - 0.0000174762 * temp + 6.06504e-8 * square(temp) -
+  Real J = +0.000320184 - 0.0000174762 * temp + 6.06504e-8 * square(temp) -
            1.4177e-11 * cube(temp) + 0.000135751 / x_crit;
 
   // Compute n_tot using eq 13.
@@ -165,7 +165,7 @@ Pack num_critical_molecules(const Pack &c_h2so4, const Pack &temp,
 /// @param [in] x_crit The mole fraction of H2SO4 in a critical cluster [-]
 /// @param [in] n_tot The total number of molecules in the critical cluster [-]
 KOKKOS_INLINE_FUNCTION
-Pack critical_radius(const Pack &x_crit, const Pack &n_tot) {
+Real critical_radius(Real x_crit, Real n_tot) {
   return exp(-1.6524245 + 0.42316402 * x_crit + 0.3346648 * log(n_tot));
 }
 
@@ -175,7 +175,7 @@ Pack critical_radius(const Pack &x_crit, const Pack &n_tot) {
 /// @param [in] temp The atmospherіc temperature [K]
 /// @param [in] rel_hum The relative humidity [-]
 KOKKOS_INLINE_FUNCTION
-Pack h2so4_nucleation_threshold(const Pack &temp, const Pack &rel_hum) {
+Real h2so4_nucleation_threshold(Real temp, Real rel_hum) {
   return exp(-279.243 + 11.7344 * rel_hum + 22700.9 / temp -
              1088.64 * rel_hum / temp + 1.14436 * temp -
              0.0302331 * rel_hum * temp - 0.00130254 * square(temp) -

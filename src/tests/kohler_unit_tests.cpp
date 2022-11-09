@@ -3,7 +3,6 @@
 #include <mam4xx/kohler.hpp>
 
 #include <catch2/catch.hpp>
-#include <ekat/ekat_pack_math.hpp>
 #include <ekat/logging/ekat_logger.hpp>
 #include <ekat/mpi/ekat_comm.hpp>
 #include <haero/constants.hpp>
@@ -17,31 +16,29 @@
 using namespace mam4;
 
 struct KohlerSolveTestFtor {
-  typedef KohlerPolynomial<PackType> poly_type;
-  typedef DeviceType::view_1d<PackType> pack_view;
-  typedef DeviceType::view_1d<int> int_view;
+  typedef DeviceType::view_1d<Real> RealView;
+  typedef DeviceType::view_1d<int> IntView;
 
-  pack_view newton_sol;
-  pack_view newton_err;
-  int_view newton_iterations;
-  pack_view bisection_sol;
-  pack_view bisection_err;
-  int_view bisection_iterations;
-  pack_view bracket_sol;
-  pack_view bracket_err;
-  int_view bracket_iterations;
-  pack_view relative_humidity;
-  pack_view hygroscopicity;
-  pack_view dry_radius;
-  pack_view true_sol;
+  RealView newton_sol;
+  RealView newton_err;
+  IntView newton_iterations;
+  RealView bisection_sol;
+  RealView bisection_err;
+  IntView bisection_iterations;
+  RealView bracket_sol;
+  RealView bracket_err;
+  IntView bracket_iterations;
+  RealView relative_humidity;
+  RealView hygroscopicity;
+  RealView dry_radius;
+  RealView true_sol;
   Real tol;
 
-  KohlerSolveTestFtor(pack_view n_sol, pack_view n_err, int_view n_iter,
-                      pack_view b_sol, pack_view b_err, int_view b_iter,
-                      pack_view br_sol, pack_view br_err, int_view br_iter,
-                      const pack_view rh, const pack_view hyg,
-                      const pack_view rdry, const pack_view sol,
-                      const Real ctol)
+  KohlerSolveTestFtor(RealView n_sol, RealView n_err, IntView n_iter,
+                      RealView b_sol, RealView b_err, IntView b_iter,
+                      RealView br_sol, RealView br_err, IntView br_iter,
+                      const RealView rh, const RealView hyg,
+                      const RealView rdry, const RealView sol, const Real ctol)
       : newton_sol(n_sol), newton_err(n_err), newton_iterations(n_iter),
         bisection_sol(b_sol), bisection_err(b_err),
         bisection_iterations(b_iter), bracket_sol(br_sol), bracket_err(br_err),
@@ -50,12 +47,14 @@ struct KohlerSolveTestFtor {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int i) const {
-    KohlerSolver<haero::math::NewtonSolver<poly_type>> newton_solver(
+    KohlerSolver<haero::math::NewtonSolver<KohlerPolynomial>> newton_solver(
         relative_humidity(i), hygroscopicity(i), dry_radius(i), tol);
-    KohlerSolver<haero::math::BisectionSolver<poly_type>> bisection_solver(
-        relative_humidity(i), hygroscopicity(i), dry_radius(i), tol);
-    KohlerSolver<haero::math::BracketedNewtonSolver<poly_type>> bracket_solver(
-        relative_humidity(i), hygroscopicity(i), dry_radius(i), tol);
+    KohlerSolver<haero::math::BisectionSolver<KohlerPolynomial>>
+        bisection_solver(relative_humidity(i), hygroscopicity(i), dry_radius(i),
+                         tol);
+    KohlerSolver<haero::math::BracketedNewtonSolver<KohlerPolynomial>>
+        bracket_solver(relative_humidity(i), hygroscopicity(i), dry_radius(i),
+                       tol);
 
     newton_sol(i) = newton_solver.solve();
     bisection_sol(i) = bisection_solver.solve();
@@ -77,7 +76,7 @@ TEST_CASE("kohler_physics_functions", "") {
                                 ekat::logger::LogLevel::debug, comm);
 
   const Real mam4_surften = haero::Constants::surface_tension_h2o_air_273k;
-  const Real mam4_kelvin_a = kelvin_coefficient<Real>();
+  const Real mam4_kelvin_a = kelvin_coefficient();
 
   // minimum temperature for liquid water to -25 C
   const Real min_temp = 248.16;
@@ -110,10 +109,9 @@ TEST_CASE("kohler_physics_functions", "") {
               "difference in Kelvin droplet coefficient.",
               max_rel_diff_kelvin_a);
 
-  REQUIRE(kelvin_coefficient<Real>() * 1e6 ==
+  REQUIRE(kelvin_coefficient() * 1e6 ==
           Approx(0.00120746723156361711).epsilon(7e-3));
-  REQUIRE(surface_tension_water_air<Real>() ==
-          Approx(mam4_surften).epsilon(8.5e-5));
+  REQUIRE(surface_tension_water_air() == Approx(mam4_surften).epsilon(8.5e-5));
 }
 
 TEST_CASE("kohler_verificiation", "") {
@@ -125,27 +123,22 @@ TEST_CASE("kohler_verificiation", "") {
   // number of tests for each of 3 parameters, total of N**3 tests
   static constexpr int N = 20;
   static constexpr int N3 = N * N * N;
-  const int num_packs = PackInfo::num_packs(N3);
   KohlerVerification verification(N);
 
   SECTION("polynomial_properties") {
-    DeviceType::view_1d<PackType> k_of_zero("kohler_poly_zero_input",
-                                            num_packs);
-    DeviceType::view_1d<PackType> k_of_rdry("kohler_poly_rdry_input",
-                                            num_packs);
-    DeviceType::view_1d<PackType> k_of_25rdry("kohler_poly_25rdry_input",
-                                              num_packs);
+    DeviceType::view_1d<Real> k_of_zero("kohler_poly_zero_input", N3);
+    DeviceType::view_1d<Real> k_of_rdry("kohler_poly_rdry_input", N3);
+    DeviceType::view_1d<Real> k_of_25rdry("kohler_poly_25rdry_input", N3);
 
     const auto rh = verification.relative_humidity;
     const auto hyg = verification.hygroscopicity;
     const auto rdry = verification.dry_radius;
     Kokkos::parallel_for(
-        "KohlerVerification::test_properties", num_packs,
-        KOKKOS_LAMBDA(const int i) {
+        "KohlerVerification::test_properties", N3, KOKKOS_LAMBDA(const int i) {
           const Real mam4_default_temperature = Constants::triple_pt_h2o;
-          const auto kpoly = KohlerPolynomial<PackType>(
-              rh(i), hyg(i), rdry(i), PackType(mam4_default_temperature));
-          k_of_zero(i) = kpoly(PackType(0));
+          const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
+                                              mam4_default_temperature);
+          k_of_zero(i) = kpoly(0);
           k_of_rdry(i) = kpoly(rdry(i));
           k_of_25rdry(i) = kpoly(25 * rdry(i));
         });
@@ -162,36 +155,33 @@ TEST_CASE("kohler_verificiation", "") {
     Kokkos::deep_copy(h_hyg, hyg);
     Kokkos::deep_copy(h_rdry, rdry);
 
-    const Real mam4_kelvin_a = kelvin_coefficient<Real>() * 1e6;
+    const Real mam4_kelvin_a = kelvin_coefficient() * 1e6;
 
-    for (int i = 0; i < num_packs; ++i) {
-      REQUIRE(FloatingPoint<PackType>::equiv(h_k0(i),
-                                             mam4_kelvin_a * cube(h_rdry(i))));
-      REQUIRE((h_krdry(i) > 0).all());
-      REQUIRE((h_k25(i) < 0).all());
+    for (int i = 0; i < N3; ++i) {
+      REQUIRE(
+          FloatingPoint<Real>::equiv(h_k0(i), mam4_kelvin_a * cube(h_rdry(i))));
+      REQUIRE(h_krdry(i) > 0);
+      REQUIRE(h_k25(i) < 0);
     }
   }
 
   SECTION("polynomial_roots") {
     const Real conv_tol = 1e-10;
 
-    DeviceType::view_1d<PackType> newton_sol("kohler_newton_sol", num_packs);
-    DeviceType::view_1d<PackType> newton_err("kohler_newton_err", num_packs);
-    DeviceType::view_1d<int> newton_iterations("kohler_newton_iterations",
-                                               num_packs);
-    DeviceType::view_1d<PackType> bisection_sol("kohler_bisection_sol",
-                                                num_packs);
-    DeviceType::view_1d<PackType> bisection_err("kohler_bisection_err",
-                                                num_packs);
+    DeviceType::view_1d<Real> newton_sol("kohler_newton_sol", N3);
+    DeviceType::view_1d<Real> newton_err("kohler_newton_err", N3);
+    DeviceType::view_1d<int> newton_iterations("kohler_newton_iterations", N3);
+    DeviceType::view_1d<Real> bisection_sol("kohler_bisection_sol", N3);
+    DeviceType::view_1d<Real> bisection_err("kohler_bisection_err", N3);
     DeviceType::view_1d<int> bisection_iterations("kohler_bisection_iterations",
-                                                  num_packs);
-    DeviceType::view_1d<PackType> bracket_sol("kohler_bracket_sol", num_packs);
-    DeviceType::view_1d<PackType> bracket_err("kohler_bracket_err", num_packs);
+                                                  N3);
+    DeviceType::view_1d<Real> bracket_sol("kohler_bracket_sol", N3);
+    DeviceType::view_1d<Real> bracket_err("kohler_bracket_err", N3);
     DeviceType::view_1d<int> bracket_iterations("kohler_bracket_iterations",
-                                                num_packs);
+                                                N3);
 
     Kokkos::parallel_for(
-        "KohlerVerification::roots", num_packs,
+        "KohlerVerification::roots", N3,
         KohlerSolveTestFtor(
             newton_sol, newton_err, newton_iterations, bisection_sol,
             bisection_err, bisection_iterations, bracket_sol, bracket_err,
@@ -203,25 +193,25 @@ TEST_CASE("kohler_verificiation", "") {
     Real bisection_max_err;
     Real bracket_max_err;
     Kokkos::parallel_reduce(
-        num_packs,
+        N3,
         KOKKOS_LAMBDA(const int i, Real &err) {
-          const Real me = max(newton_err(i));
+          const Real me = newton_err(i);
           err = (me > err ? me : err);
         },
         Kokkos::Max<Real>(newton_max_err));
 
     Kokkos::parallel_reduce(
-        num_packs,
+        N3,
         KOKKOS_LAMBDA(const int i, Real &err) {
-          const Real me = max(bisection_err(i));
+          const Real me = bisection_err(i);
           err = (me > err ? me : err);
         },
         Kokkos::Max<Real>(bisection_max_err));
 
     Kokkos::parallel_reduce(
-        num_packs,
+        N3,
         KOKKOS_LAMBDA(const int i, Real &err) {
-          const Real me = max(bracket_err(i));
+          const Real me = bracket_err(i);
           err = (me > err ? me : err);
         },
         Kokkos::Max<Real>(bracket_max_err));
@@ -230,19 +220,19 @@ TEST_CASE("kohler_verificiation", "") {
     int bisection_max_iter;
     int bracket_max_iter;
     Kokkos::parallel_reduce(
-        num_packs,
+        N3,
         KOKKOS_LAMBDA(const int i, int &it) {
           it = (newton_iterations(i) > it ? newton_iterations(i) : it);
         },
         Kokkos::Max<int>(newton_max_iter));
     Kokkos::parallel_reduce(
-        num_packs,
+        N3,
         KOKKOS_LAMBDA(const int i, int &it) {
           it = (bisection_iterations(i) > it ? bisection_iterations(i) : it);
         },
         Kokkos::Max<int>(bisection_max_iter));
     Kokkos::parallel_reduce(
-        num_packs,
+        N3,
         KOKKOS_LAMBDA(const int i, int &it) {
           it = (bracket_iterations(i) > it ? bracket_iterations(i) : it);
         },
