@@ -32,36 +32,36 @@ Compute initial dry volume based on bulk mass mixing ratio (mmr) and specie
 density  volume = mmr/density
 TODO: Is this used?
  -----------------------------------------------------------------------------*/
+// KOKKOS_INLINE_FUNCTION
+// void compute_dry_volume(const Diagnostics &diagnostics, // in
+//                         const Prognostics &prognostics, // in
+//                         const ColumnView &dryvol_i,     // out
+//                         const ColumnView &dryvol_c)     // out
+// {
+//   // Pack dryvol = 0;
+//   const int nlevels = diagnostics.num_levels();
+//   const auto nk = PackInfo::num_packs(nlevels);
+
+//   const auto q_i = prognostics.q_aero_i;
+//   const auto q_c = prognostics.q_aero_c;
+//   const auto nmodes = AeroConfig::num_modes();
+
+//   for (int k = 0; k < nk; ++k) {
+//     for (int imode = 0; imode < nmodes; ++imode) {
+//       const auto n_spec = num_species_mode[imode];
+//       for (int ispec = 0; ispec < n_spec; ispec++) {
+//         const Real inv_density = 1.0 / get_density_aero_species(imode, ispec);
+//         dryvol_i(k) += max(0.0, q_i[imode][ispec](k)) * inv_density;
+//         dryvol_c(k) += max(0.0, q_c[imode][ispec](k)) * inv_density;
+//       } // end imode
+
+//     } // end ispec
+//   }   // end k
+
+// } // end
+
 KOKKOS_INLINE_FUNCTION
-void compute_dry_volume(const Diagnostics &diagnostics, // in
-                        const Prognostics &prognostics, // in
-                        const ColumnView &dryvol_i,     // out
-                        const ColumnView &dryvol_c)     // out
-{
-  // Pack dryvol = 0;
-  const int nlevels = diagnostics.num_levels();
-  const auto nk = PackInfo::num_packs(nlevels);
-
-  const auto q_i = prognostics.q_aero_i;
-  const auto q_c = prognostics.q_aero_c;
-  const auto nmodes = AeroConfig::num_modes();
-
-  for (int k = 0; k < nk; ++k) {
-    for (int imode = 0; imode < nmodes; ++imode) {
-      const auto n_spec = num_species_mode[imode];
-      for (int ispec = 0; ispec < n_spec; ispec++) {
-        const Real inv_density = 1.0 / get_density_aero_species(imode, ispec);
-        dryvol_i(k) += max(0.0, q_i[imode][ispec](k)) * inv_density;
-        dryvol_c(k) += max(0.0, q_c[imode][ispec](k)) * inv_density;
-      } // end imode
-
-    } // end ispec
-  }   // end k
-
-} // end
-
-KOKKOS_INLINE_FUNCTION
-void compute_dry_volume_k(int k, int imode,
+void compute_dry_volume_k(int k, int imode, const Real inv_density[4][7], 
                           const Prognostics &prognostics, // in
                           Pack &dryvol_i,                 // out
                           Pack &dryvol_c)                 // out
@@ -72,10 +72,11 @@ void compute_dry_volume_k(int k, int imode,
   dryvol_i = 0;
   dryvol_c = 0;
   const auto n_spec = num_species_mode[imode];
+  // int count =0;
   for (int ispec = 0; ispec < n_spec; ispec++) {
-    const Real inv_density = 1.0 / get_density_aero_species(imode, ispec);
-    dryvol_i += max(0.0, q_i[imode][ispec](k)) * inv_density;
-    dryvol_c += max(0.0, q_c[imode][ispec](k)) * inv_density;
+    dryvol_i += max(0.0, q_i[imode][ispec](k)) * inv_density[imode][ispec];
+    dryvol_c += max(0.0, q_c[imode][ispec](k)) * inv_density[imode][ispec];
+    // count += ispec; 
   } // end ispec
 
 } // end
@@ -507,6 +508,8 @@ private:
   // performed once.
   Real common_factor_nmodes[4];
 
+  Real _inv_density[4][7];
+
 public:
   // name -- unique name of the process implemented by this class
   const char *name() const { return "MAM4 calcsize"; }
@@ -517,7 +520,7 @@ public:
             const Config &calsize_config = Config()) {
     // Set nucleation-specific config parameters.
     config_ = calsize_config;
-
+  
     // Set mode parameters.
     for (int m = 0; m < 4; ++m) {
       // FIXME: There is no mean geometric number diameter in a mode.
@@ -540,10 +543,17 @@ public:
           1.0 / (common_factor_nmodes[m] * pow(dgnmin_nmodes[m], 3.0));
       // min_vol2num
       // = 1.0_wp/(pi_sixth*(imode%max_diameter**3.0_wp)*exp(4.5_wp*(log(imode%mean_std_dev))**2.0_wp))
-    }
 
+      // compute inv density; density is constant, so we can computer in int. 
+      const auto n_spec = num_species_mode[m];
+      for (int ispec = 0; ispec < n_spec; ispec++) {
+        int aero_id = int(mode_aero_species[m][ispec]);
+        _inv_density[m][ispec] = Real(1.0) / aero_species(aero_id).density;
+      } // for(ispec)
 
-  }
+    } // for(m)
+
+  } // end(int)
 
   KOKKOS_INLINE_FUNCTION
   void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
@@ -560,7 +570,7 @@ public:
     static constexpr bool do_aitacc_transfer = true;
     static constexpr bool do_adjust = true;
 
-    const int nk = PackInfo::num_packs(atm.num_levels());
+    const int nk = PackInfo::num_packs(atmosphere.num_levels());
     const int aitken_idx = int(ModeIndex::Aitken);
     const int accumulation_idx = int(ModeIndex::Accumulation);
     const int nmodes = AeroConfig::num_modes();
@@ -568,6 +578,7 @@ public:
     auto &v2ncur_i = diagnostics.v2ncur_i;
     auto &dgncur_c = diagnostics.dgncur_c;
     auto &v2ncur_c = diagnostics.v2ncur_c;
+    const auto inv_density = _inv_density; 
 
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
@@ -632,7 +643,7 @@ public:
             v2ncur_c[imode](k) = v2nnom_nmodes[imode]; // volume to number
 
             // dry volume is set to zero inside compute_dry_volume_k
-            calcsize::compute_dry_volume_k(k, imode, prognostics, dryvol_i,
+            calcsize::compute_dry_volume_k(k, imode, inv_density,  prognostics, dryvol_i,
                                            dryvol_c);
 
             auto v2nmin = v2nmin_nmodes[imode];

@@ -46,6 +46,8 @@ void compute_dry_volume_k(Ensemble *ensemble) {
 
     Pack dryvol_i[4];
     Pack dryvol_c[4];
+    // FIXMED: need to update this variable
+    Real inv_density[4][7];
 
     // Call the cluster growth function on device.
     // FIXME: Will compile in CUDA?
@@ -53,7 +55,7 @@ void compute_dry_volume_k(Ensemble *ensemble) {
       for (int imode = 0; imode < nmodes; ++imode) {
         Pack dryvol_i_k = 0;
         Pack dryvol_c_k = 0;
-        calcsize::compute_dry_volume_k(k, imode,
+        calcsize::compute_dry_volume_k(k, imode, inv_density,
                                        progs,      // in
                                        dryvol_i_k, // out
                                        dryvol_c_k);
