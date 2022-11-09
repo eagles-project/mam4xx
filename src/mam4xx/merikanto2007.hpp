@@ -60,8 +60,7 @@ Kokkos::pair<Real, Real> valid_xi_nh3_range() {
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Real log_nucleation_rate(const Real temp, const Real rel_hum,
-                         const Real c_h2so4, const Real xi_nh3) {
+Real log_nucleation_rate(Real temp, Real rel_hum, Real c_h2so4, Real xi_nh3) {
   auto c = c_h2so4;
   auto xi = xi_nh3;
   return -12.861848898625231 + 4.905527742256349 * xi -
@@ -150,8 +149,7 @@ Real log_nucleation_rate(const Real temp, const Real rel_hum,
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Real onset_temperature(const Real rel_hum, const Real c_h2so4,
-                       const Real xi_nh3) {
+Real onset_temperature(Real rel_hum, Real c_h2so4, Real xi_nh3) {
   return 143.6002929064716 + 1.0178856665693992 * rel_hum +
       10.196398812974294 * log(c_h2so4) -
       0.1849879416839113 * square(log(c_h2so4)) -
@@ -168,8 +166,7 @@ Real onset_temperature(const Real rel_hum, const Real c_h2so4,
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Real critical_radius(const Real log_J, const Real temp, const Real c_h2so4,
-                     const Real xi_nh3) {
+Real critical_radius(Real log_J, Real temp, Real c_h2so4, Real xi_nh3) {
   auto c = c_h2so4;
   auto xi = xi_nh3;
   return 3.2888553966535506e-1 - 3.374171768439839e-3 * temp +
@@ -194,8 +191,7 @@ Real critical_radius(const Real log_J, const Real temp, const Real c_h2so4,
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Real num_critical_molecules(const Real log_J, const Real temp,
-                            const Real c_h2so4, const Real xi_nh3) {
+Real num_critical_molecules(Real log_J, Real temp, Real c_h2so4, Real xi_nh3) {
   auto c = c_h2so4;
   auto xi = xi_nh3;
   return 57.40091052369212 - 0.2996341884645408 * temp +
@@ -220,8 +216,7 @@ Real num_critical_molecules(const Real log_J, const Real temp,
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Real num_h2so4_molecules(const Real log_J, const Real temp,
-                         const Real c_h2so4, const Real xi_nh3) {
+Real num_h2so4_molecules(Real log_J, Real temp, Real c_h2so4, Real xi_nh3) {
   auto c = c_h2so4;
   auto xi = xi_nh3;
   return -4.7154180661803595 + 0.13436423483953885 * temp -
@@ -246,8 +241,7 @@ Real num_h2so4_molecules(const Real log_J, const Real temp,
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
-Real num_nh3_molecules(const Real log_J, const Real temp, const Real c_h2so4,
-                       const Real xi_nh3) {
+Real num_nh3_molecules(Real log_J, Real temp, Real c_h2so4, Real xi_nh3) {
   auto c = c_h2so4;
   auto xi = xi_nh3;
   return 71.20073903979772 - 0.8409600103431923 * temp +

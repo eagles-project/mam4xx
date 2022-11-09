@@ -51,8 +51,7 @@ Kokkos::pair<Real, Real> valid_c_h2so4_range() {
 /// @param [in] temp The atmospherіc temperature [K]
 /// @param [in] rel_hum The relative humidity [-]
 KOKKOS_INLINE_FUNCTION
-Real h2so4_critical_mole_fraction(const Real c_h2so4, const Real temp,
-                                  const Real rel_hum) {
+Real h2so4_critical_mole_fraction(Real c_h2so4, Real temp, Real rel_hum) {
   // Calculate the mole fraction using eq 11 of Vehkamaki et al (2002).
   auto N_a = c_h2so4;
   return 0.740997 - 0.00266379 * temp - 0.00349998 * log(N_a) +
@@ -71,8 +70,7 @@ Real h2so4_critical_mole_fraction(const Real c_h2so4, const Real temp,
 /// @param [in] rel_hum The relative humidity [-]
 /// @param [in] x_crit The mole fraction of H2SO4 in a critical cluster [-]
 KOKKOS_INLINE_FUNCTION
-Real nucleation_rate(const Real c_h2so4, const Real temp, const Real rel_hum,
-                     const Real x_crit) {
+Real nucleation_rate(Real c_h2so4, Real temp, Real rel_hum, Real x_crit) {
   // Calculate the coefficients in eq 12 of Vehkamaki et al (2002).
   Real a = 0.14309 + 2.21956 * temp - 0.0273911 * square(temp) +
            0.0000722811 * cube(temp) + 5.91822 / x_crit;
@@ -120,8 +118,7 @@ Real nucleation_rate(const Real c_h2so4, const Real temp, const Real rel_hum,
 /// @param [in] rel_hum The relative humidity [-]
 /// @param [in] x_crit The mole fraction of H2SO4 in a critical cluster [-]
 KOKKOS_INLINE_FUNCTION
-Real num_critical_molecules(const Real c_h2so4, const Real temp,
-                            const Real rel_hum, const Real x_crit) {
+Real num_critical_molecules(Real c_h2so4, Real temp, Real rel_hum, Real x_crit) {
   // Calc the coefficients for the number of molecules in a critical
   // cluster (eq 13).
   Real A = -0.00295413 - 0.0976834 * temp + 0.00102485 * square(temp) -
@@ -168,7 +165,7 @@ Real num_critical_molecules(const Real c_h2so4, const Real temp,
 /// @param [in] x_crit The mole fraction of H2SO4 in a critical cluster [-]
 /// @param [in] n_tot The total number of molecules in the critical cluster [-]
 KOKKOS_INLINE_FUNCTION
-Real critical_radius(const Real x_crit, const Real n_tot) {
+Real critical_radius(Real x_crit, Real n_tot) {
   return exp(-1.6524245 + 0.42316402 * x_crit + 0.3346648 * log(n_tot));
 }
 
@@ -178,7 +175,7 @@ Real critical_radius(const Real x_crit, const Real n_tot) {
 /// @param [in] temp The atmospherіc temperature [K]
 /// @param [in] rel_hum The relative humidity [-]
 KOKKOS_INLINE_FUNCTION
-Real h2so4_nucleation_threshold(const Real temp, const Real rel_hum) {
+Real h2so4_nucleation_threshold(Real temp, Real rel_hum) {
   return exp(-279.243 + 11.7344 * rel_hum + 22700.9 / temp -
              1088.64 * rel_hum / temp + 1.14436 * temp -
              0.0302331 * rel_hum * temp - 0.00130254 * square(temp) -
