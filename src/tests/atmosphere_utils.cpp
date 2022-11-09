@@ -8,7 +8,6 @@ namespace mam4 {
 void init_atm_const_tv_lapse_rate(const Atmosphere &atm, const Real Tv0,
                                   const Real Gammav, const Real qv0,
                                   const Real qv1) {
-  using haero::PackInfo;
   EKAT_REQUIRE_MSG(FloatingPoint<Real>::in_bounds(Tv0, 273, 323),
                    "unexpected Tv0, check units = K");
   EKAT_REQUIRE_MSG(FloatingPoint<Real>::in_bounds(Gammav, 0, 0.02),

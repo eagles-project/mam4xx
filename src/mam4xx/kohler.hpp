@@ -143,7 +143,7 @@ struct KohlerPolynomial {
   KohlerPolynomial(Real rel_h, Real hygro, Real dry_rad_microns,
                    Real temperature = Constants::triple_pt_h2o)
       : log_rel_humidity(log(rel_h)), hygroscopicity(hygro),
-        dry_radius(dry_rad_microns), dry_radius_cubed(cube(dry_rad_microns)),
+        dry_radius(dry_rad_microns), dry_radius_cubed(haero::cube(dry_rad_microns)),
         kelvin_a(kelvin_coefficient(temperature)) {
 
     kelvin_a *= 1e6; /* convert from N to mN and m to micron */
@@ -165,7 +165,7 @@ struct KohlerPolynomial {
   KOKKOS_INLINE_FUNCTION Real operator()(const U &wet_radius) const {
     const Real rwet = Real(wet_radius);
     const Real result =
-        (log_rel_humidity * rwet - kelvin_a) * cube(rwet) +
+        (log_rel_humidity * rwet - kelvin_a) * haero::cube(rwet) +
         ((hygroscopicity - log_rel_humidity) * rwet + kelvin_a) *
             dry_radius_cubed;
     return result;
