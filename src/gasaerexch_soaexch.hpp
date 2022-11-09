@@ -10,7 +10,6 @@ namespace mam4 {
 namespace gasaerexch {
 
 using Real = haero::Real;
-using Pack = haero::PackType;
 
 // ==============================================================================
 // Calculate SOA species's eiquilibrium vapor mixing ratio under the ambient
@@ -22,10 +21,10 @@ using Pack = haero::PackType;
 // ==============================================================================
 KOKKOS_INLINE_FUNCTION
 void soa_equilib_mixing_ratio_no_solute(const int ntot_soaspec,
-                                        const Pack &T_in_K, const Pack &p_in_Pa,
-                                        const Pack &pstd_in_Pa,
+                                        const Real &T_in_K, const Real &p_in_Pa,
+                                        const Real &pstd_in_Pa,
                                         const Real r_universal,
-                                        const Pack &g0_soa) {
+                                        const Real &g0_soa) {
 
   // ntot_soaspec     number of SOA species
   // T_in_K           temperature in Kelvin
@@ -77,13 +76,13 @@ KOKKOS_INLINE_FUNCTION
 void mam_soaexch_1subarea(
     const int num_soamode, const int npca, const int npoa, const int soag,
     const Real dt, const Real dtsub_soa_fixed, const Real pstd,
-    const Real r_universal, const Pack &temp, const Pack &pmid,
-    const Pack uptkaer[AeroConfig::num_gas_ids()][AeroConfig::num_modes()],
-    const Pack qaer_poa[1][AeroConfig::num_modes()],
-    Pack qgas_cur[AeroConfig::num_gas_ids()],
-    Pack qgas_avg[AeroConfig::num_gas_ids()],
-    Pack qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-    Pack &soa_out) {
+    const Real r_universal, const Real &temp, const Real &pmid,
+    const Real uptkaer[AeroConfig::num_gas_ids()][AeroConfig::num_modes()],
+    const Real qaer_poa[1][AeroConfig::num_modes()],
+    Real qgas_cur[AeroConfig::num_gas_ids()],
+    Real qgas_avg[AeroConfig::num_gas_ids()],
+    Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+    Real &soa_out) {
 
   // static constexpr int num_mode = AeroConfig::num_modes();
   // static constexpr int num_gas = AeroConfig::num_gas_ids();

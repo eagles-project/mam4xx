@@ -26,9 +26,6 @@ void init_atm_const_tv_lapse_rate(const Atmosphere &atm, const Real Tv0,
 
   Real psum = hydrostatic_pressure_at_height(ztop, p0, Tv0, Gammav);
   for (int k = 0; k < nlev; ++k) {
-    const int pack_idx = PackInfo::pack_idx(k);
-    const int vec_idx = PackInfo::vec_idx(k);
-
     const Real z_up = ztop - k * dz;
     const Real z_mid = ztop - (k + 0.5) * dz;
     const Real z_down = ztop - (k + 1) * dz;
@@ -40,13 +37,12 @@ void init_atm_const_tv_lapse_rate(const Atmosphere &atm, const Real Tv0,
     const Real qv = conversions::specific_humidity_from_vapor_mixing_ratio(w);
     const Real tv = init_virtual_temperature(z_mid, Tv0, Gammav);
 
-    h_temperature(pack_idx)[vec_idx] =
+    h_temperature(k) =
         conversions::temperature_from_virtual_temperature(tv, qv);
-    h_pressure(pack_idx)[vec_idx] =
-        hydrostatic_pressure_at_height(z_mid, p0, Tv0, Gammav);
-    h_mix(pack_idx)[vec_idx] = w;
-    h_height(pack_idx)[vec_idx] = z_mid;
-    h_hdp(pack_idx)[vec_idx] = hdp;
+    h_pressure(k) = hydrostatic_pressure_at_height(z_mid, p0, Tv0, Gammav);
+    h_mix(k) = w;
+    h_height(k) = z_mid;
+    h_hdp(k) = hdp;
 
     psum += hdp;
   }

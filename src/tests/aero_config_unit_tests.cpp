@@ -100,24 +100,22 @@ TEST_CASE("aero_config", "") {
     logger.info("checking that all views are initialized to zero.");
     for (int m = 0; m < 4; ++m) {
       for (int k = 0; k < nlev; ++k) {
-        const int p = PackInfo::pack_idx(k);
-        const int v = PackInfo::vec_idx(k);
-        REQUIRE(h_progs_num_aer[m](p)[v] == 0);
-        REQUIRE(h_tends_num_aer[m](p)[v] == 0);
-        REQUIRE(h_diags_dry_diam[m](p)[v] == 0);
-        REQUIRE(h_diags_wet_diam[m](p)[v] == 0);
+        REQUIRE(h_progs_num_aer[m](k) == 0);
+        REQUIRE(h_tends_num_aer[m](k) == 0);
+        REQUIRE(h_diags_dry_diam[m](k) == 0);
+        REQUIRE(h_diags_wet_diam[m](k) == 0);
         for (int s = 0; s < 7; ++s) {
-          REQUIRE(h_progs_q_aer_i[m][s](p)[v] == 0);
-          REQUIRE(h_tends_q_aer_i[m][s](p)[v] == 0);
-          REQUIRE(h_progs_q_aer_c[m][s](p)[v] == 0);
-          REQUIRE(h_tends_q_aer_c[m][s](p)[v] == 0);
+          REQUIRE(h_progs_q_aer_i[m][s](k) == 0);
+          REQUIRE(h_tends_q_aer_i[m][s](k) == 0);
+          REQUIRE(h_progs_q_aer_c[m][s](k) == 0);
+          REQUIRE(h_tends_q_aer_c[m][s](k) == 0);
         }
         for (int g = 0; g < 13; ++g) {
-          REQUIRE(h_progs_uptkaer[g][m](p)[v] == 0);
-          REQUIRE(h_tends_uptkaer[g][m](p)[v] == 0);
+          REQUIRE(h_progs_uptkaer[g][m](k) == 0);
+          REQUIRE(h_tends_uptkaer[g][m](k) == 0);
           if (m == 0) {
-            REQUIRE(h_progs_q_gas[g](p)[v] == 0);
-            REQUIRE(h_tends_q_gas[g](p)[v] == 0);
+            REQUIRE(h_progs_q_gas[g](k) == 0);
+            REQUIRE(h_tends_q_gas[g](k) == 0);
           }
         }
       }

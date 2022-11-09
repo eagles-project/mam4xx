@@ -44,13 +44,13 @@ void mer07_veh02_wang08_nuc_1box(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Parse input
 
-    Pack temp = input.get("temperature");
-    Pack relhumnn = input.get("relative_humidity");
+    Real temp = input.get("temperature");
+    Real relhumnn = input.get("relative_humidity");
 
-    Pack nh3ppt = input.get("xi_nh3");
-    Pack so4vol = input.get("c_h2so4");
+    Real nh3ppt = input.get("xi_nh3");
+    Real so4vol = input.get("c_h2so4");
 
-    Pack zmid = input.get("height");
+    Real zmid = input.get("height");
     Real pblh = input.get("planetary_boundary_layer_height");
 
     // Call the nucleation function on device.
@@ -58,8 +58,8 @@ void mer07_veh02_wang08_nuc_1box(Ensemble *ensemble) {
     Kokkos::parallel_reduce(
         "mer07_veh02_wang08_nuc_1box", 1,
         KOKKOS_LAMBDA(int i, Real &dnclusterdt) {
-          IntPack newnuc_method_actual, pbl_nuc_wang2008_actual;
-          Pack temp_dnclusterdt, rateloge, cnum_h2so4, cnum_nh3, radius_cluster;
+          int newnuc_method_actual, pbl_nuc_wang2008_actual;
+          Real temp_dnclusterdt, rateloge, cnum_h2so4, cnum_nh3, radius_cluster;
           nucleation::mer07_veh02_wang08_nuc_1box(
               newnuc_method_user_choice, newnuc_method_actual,
               pbl_nuc_wang2008_user_choice, pbl_nuc_wang2008_actual,
@@ -67,7 +67,7 @@ void mer07_veh02_wang08_nuc_1box(Ensemble *ensemble) {
               adjust_factor_pbl_ratenucl, pi, so4vol, nh3ppt, temp, relhumnn,
               zmid, pblh, temp_dnclusterdt, rateloge, cnum_h2so4, cnum_nh3,
               radius_cluster);
-          dnclusterdt = temp_dnclusterdt[0];
+          dnclusterdt = temp_dnclusterdt;
         },
         Kokkos::Max<Real>(dnclusterdt));
 

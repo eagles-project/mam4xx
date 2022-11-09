@@ -19,12 +19,11 @@ jobs:
         os: [ubuntu-22.04] #, macos-latest]
         build-type: [Debug, Release]
         fp-precision: [single, double]
-        pack-size: [1, 4]
 
     runs-on: ${{ matrix.os }}
 
 #    # Pre-fab container with third-party libs installed.
-#    container: coherellc/haero-tpl:${{ matrix.build-type }}-${{ matrix.fp-precision }}-pack-size-${{ matrix.pack-size }}
+#    container: coherellc/haero-tpl:${{ matrix.build-type }}-${{ matrix.fp-precision }}
 
     # Environment variables
     env:
@@ -61,7 +60,7 @@ jobs:
         submodules: recursive
         path: haero_src
 
-    - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision, pack size=${{ matrix.pack-size }})
+    - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
       run: |
         cmake -S haero_src -B haero_build \
            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
@@ -71,13 +70,12 @@ jobs:
            -DHAERO_ENABLE_MPI=OFF \
            -DHAERO_ENABLE_GPU=OFF \
            -DKokkos_ARCH_AMDAVX:BOOL=ON \
-           -DHAERO_PRECISION=${{ matrix.fp-precision }} \
-           -DHAERO_PACK_SIZE=${{ matrix.pack-size }}
+           -DHAERO_PRECISION=${{ matrix.fp-precision }}
         cd haero_build
         make -j
         make install
 
-    - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision, pack size=${{ matrix.pack-size }})
+    - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
       run: |
         cmake -S . -B build \
           -DCMAKE_INSTALL_PREFIX=`pwd`/install \
@@ -96,12 +94,12 @@ jobs:
         cd build
         make -j
 
-    - name: Setup Python  
+    - name: Installing Python 3
       uses: actions/setup-python@v4
-      with: 
+      with:
         python-version: '3'
 
-    - name: Install Numpy
+    - name: Installing Numpy
       run: |
         python3 -m pip install --upgrade pip
         pip install numpy
