@@ -24,7 +24,6 @@ TEST_CASE("modal_averages", "") {
                                 ekat::logger::LogLevel::debug, comm);
 
   const int nlev = 72;
-  const int nk = PackInfo::num_packs(nlev);
 
   Prognostics progs(nlev);
   Diagnostics diags(nlev);
@@ -34,9 +33,7 @@ TEST_CASE("modal_averages", "") {
   for (int m = 0; m < 4; ++m) {
     auto h_n_view = Kokkos::create_mirror_view(progs.n_mode_i[m]);
     for (int k = 0; k < nlev; ++k) {
-      const int pack_idx = PackInfo::pack_idx(k);
-      const int vec_idx = PackInfo::vec_idx(k);
-      h_n_view(pack_idx)[vec_idx] = number_mixing_ratio;
+      h_n_view(k) = number_mixing_ratio;
     }
     Kokkos::deep_copy(progs.n_mode_i[m], h_n_view);
     for (int aid = 0; aid < 7; ++aid) {
@@ -45,9 +42,7 @@ TEST_CASE("modal_averages", "") {
       if (s >= 0) {
         auto h_q_view = Kokkos::create_mirror_view(progs.q_aero_i[m][s]);
         for (int k = 0; k < nlev; ++k) {
-          const int pack_idx = PackInfo::pack_idx(k);
-          const int vec_idx = PackInfo::vec_idx(k);
-          h_q_view(pack_idx)[vec_idx] = mass_mixing_ratio;
+          h_q_view(k) = mass_mixing_ratio;
         }
         Kokkos::deep_copy(progs.q_aero_i[m][s], h_q_view);
       }
@@ -56,10 +51,10 @@ TEST_CASE("modal_averages", "") {
 
   SECTION("dry particle size") {
 
-    PackType dry_aero_mean_particle_volume[4];
-    PackType dry_aero_mean_particle_diam[4];
+//    Real dry_aero_mean_particle_volume[4]; // unused
+    Real dry_aero_mean_particle_diam[4];
     for (int m = 0; m < 4; ++m) {
-      PackType dry_vol(0);
+      Real dry_vol = 0.0;
       for (int aid = 0; aid < 7; ++aid) {
         const int s = aerosol_index_for_mode(static_cast<ModeIndex>(m),
                                              static_cast<AeroId>(aid));
@@ -67,8 +62,8 @@ TEST_CASE("modal_averages", "") {
           dry_vol += mass_mixing_ratio / aero_species(s).density;
         }
       }
-      const PackType mean_vol = dry_vol / number_mixing_ratio;
-      dry_aero_mean_particle_volume[m] = mean_vol;
+      const Real mean_vol = dry_vol / number_mixing_ratio;
+//      dry_aero_mean_particle_volume[m] = mean_vol;
       dry_aero_mean_particle_diam[m] =
           conversions::mean_particle_diameter_from_volume(
               mean_vol, modes(m).mean_std_dev);
@@ -79,7 +74,7 @@ TEST_CASE("modal_averages", "") {
     }
 
     Kokkos::parallel_for(
-        "compute_dry_particle_size", nk, KOKKOS_LAMBDA(const int i) {
+        "compute_dry_particle_size", nlev, KOKKOS_LAMBDA(const int i) {
           mode_avg_dry_particle_diam(diags, progs, i);
         });
 
@@ -87,24 +82,24 @@ TEST_CASE("modal_averages", "") {
       auto h_diam =
           Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter[m]);
       Kokkos::deep_copy(h_diam, diags.dry_geometric_mean_diameter[m]);
-      for (int k = 0; k < nk; ++k) {
-        if (!FloatingPoint<PackType>::equiv(h_diam(k),
-                                            dry_aero_mean_particle_diam[m])) {
+      for (int k = 0; k < nlev; ++k) {
+        if (!FloatingPoint<Real>::equiv(h_diam(k),
+                                        dry_aero_mean_particle_diam[m])) {
           logger.debug("h_diam({}) = {}, dry_aero_mean_particle_diam[{}] = {}",
                        k, h_diam(k), m, dry_aero_mean_particle_diam[m]);
         }
-        REQUIRE(FloatingPoint<PackType>::equiv(h_diam(k),
-                                               dry_aero_mean_particle_diam[m]));
+        REQUIRE(FloatingPoint<Real>::equiv(h_diam(k),
+                                           dry_aero_mean_particle_diam[m]));
       }
     }
     logger.info("dry particle size tests complete.");
   } // section (dry particle size)
 
   SECTION("hygroscopicity") {
-    PackType hygro[4];
+    Real hygro[4];
     for (int m = 0; m < 4; ++m) {
-      PackType dry_vol(0);
-      PackType hyg(0);
+      Real dry_vol = 0.0;
+      Real hyg = 0.0;
       for (int aid = 0; aid < 7; ++aid) {
         const int s = aerosol_index_for_mode(static_cast<ModeIndex>(m),
                                              static_cast<AeroId>(aid));
@@ -120,18 +115,18 @@ TEST_CASE("modal_averages", "") {
     }
 
     Kokkos::parallel_for(
-        "compute_hygroscopicity", nk,
+        "compute_hygroscopicity", nlev,
         KOKKOS_LAMBDA(const int i) { mode_hygroscopicity(diags, progs, i); });
 
     for (int m = 0; m < 4; ++m) {
       auto h_hyg = Kokkos::create_mirror_view(diags.hygroscopicity[m]);
       Kokkos::deep_copy(h_hyg, diags.hygroscopicity[m]);
-      for (int k = 0; k < nk; ++k) {
-        if (!FloatingPoint<PackType>::equiv(h_hyg(k), hygro[m])) {
+      for (int k = 0; k < nlev; ++k) {
+        if (!FloatingPoint<Real>::equiv(h_hyg(k), hygro[m])) {
           logger.debug("h_hyg({}) = {}, hygro[{}] = {}", k, h_hyg(k), m,
                        hygro[m]);
         }
-        REQUIRE(FloatingPoint<PackType>::equiv(h_hyg(k), hygro[m]));
+        REQUIRE(FloatingPoint<Real>::equiv(h_hyg(k), hygro[m]));
       }
     }
     logger.info("hygroscopicity tests complete.");
@@ -156,9 +151,9 @@ TEST_CASE("modal_averages", "") {
     const auto w = atm.vapor_mixing_ratio;
     const auto T = atm.temperature;
     const auto P = atm.pressure;
-    ColumnView relative_humidity("relative_humidity", nk);
+    ColumnView relative_humidity("relative_humidity", nlev);
     Kokkos::parallel_for(
-        "compute relative humidity", nk, KOKKOS_LAMBDA(const int k) {
+        "compute relative humidity", nlev, KOKKOS_LAMBDA(const int k) {
           relative_humidity(k) =
               conversions::relative_humidity_from_vapor_mixing_ratio(w(k), T(k),
                                                                      P(k));
@@ -167,15 +162,13 @@ TEST_CASE("modal_averages", "") {
     typedef typename Kokkos::MinMax<Real>::value_type MinMax;
     MinMax rh_mm;
     Kokkos::parallel_reduce(
-        nk,
+        nlev,
         KOKKOS_LAMBDA(const int k, MinMax &mm) {
           const auto rhk = relative_humidity(k);
-          for (int i = 0; i < haero::HAERO_PACK_SIZE; ++i) {
-            if (rhk[i] < mm.min_val)
-              mm.min_val = rhk[i];
-            if (rhk[i] > mm.max_val)
-              mm.max_val = rhk[i];
-          }
+          if (rhk < mm.min_val)
+            mm.min_val = rhk;
+          if (rhk > mm.max_val)
+            mm.max_val = rhk;
         },
         Kokkos::MinMax<Real>(rh_mm));
 
@@ -183,7 +176,7 @@ TEST_CASE("modal_averages", "") {
                 rh_mm.max_val);
 
     Kokkos::parallel_for(
-        "compute_wet_particle_size", nk, KOKKOS_LAMBDA(const int i) {
+        "compute_wet_particle_size", nlev, KOKKOS_LAMBDA(const int i) {
           mode_avg_dry_particle_diam(diags, progs, i);
           mode_hygroscopicity(diags, progs, i);
           mode_avg_wet_particle_diam(diags, atm, i);
@@ -197,19 +190,19 @@ TEST_CASE("modal_averages", "") {
       Kokkos::deep_copy(h_dry_diam, diags.dry_geometric_mean_diameter[m]);
       Kokkos::deep_copy(h_wet_diam, diags.wet_geometric_mean_diameter[m]);
 
-      if (!FloatingPoint<PackType>::in_bounds(
+      if (!FloatingPoint<Real>::in_bounds(
               h_dry_diam(0) * 1e3,
-              KohlerPolynomial<double>::dry_radius_min_microns,
-              KohlerPolynomial<double>::dry_radius_max_microns)) {
+              KohlerPolynomial::dry_radius_min_microns,
+              KohlerPolynomial::dry_radius_max_microns)) {
 
         logger.error("dry particle size out of bounds for mode {}", m);
       }
 
-      for (int k = 0; k < nk; ++k) {
+      for (int k = 0; k < nlev; ++k) {
         logger.debug("m = {} k = {} rdry = {} rwet = {}", m, k, h_dry_diam(k),
                      h_wet_diam(k));
 
-        CHECK((h_wet_diam(k) >= h_dry_diam(k)).all());
+        CHECK(h_wet_diam(k) >= h_dry_diam(k));
       }
     }
 

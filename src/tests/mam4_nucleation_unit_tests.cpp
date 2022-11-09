@@ -1,7 +1,6 @@
 #include <mam4xx/mam4.hpp>
 
 #include <catch2/catch.hpp>
-#include <ekat/ekat_pack_kokkos.hpp>
 #include <ekat/logging/ekat_logger.hpp>
 #include <ekat/mpi/ekat_comm.hpp>
 
@@ -36,8 +35,8 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleation_process") {
   mam4::AeroConfig mam4_config;
   mam4::NucleationProcess process(mam4_config);
 
-  const auto prog_qgas0 = ekat::scalarize(progs.q_gas[0]);
-  const auto tend_qgas0 = ekat::scalarize(tends.q_gas[0]);
+  const auto prog_qgas0 = progs.q_gas[0];
+  const auto tend_qgas0 = tends.q_gas[0];
   auto h_prog_qgas0 = Kokkos::create_mirror_view(prog_qgas0);
   auto h_tend_qgas0 = Kokkos::create_mirror_view(tend_qgas0);
   Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);

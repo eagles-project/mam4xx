@@ -10,7 +10,6 @@
 #include "atmosphere_utils.hpp"
 #include "mam4xx/conversions.hpp"
 
-#include <ekat/ekat_pack_math.hpp>
 #include <ekat/logging/ekat_logger.hpp>
 #include <ekat/mpi/ekat_comm.hpp>
 
@@ -26,7 +25,6 @@ TEST_CASE("conversions", "") {
                                 ekat::logger::LogLevel::info, comm);
 
   const int nlev = 72;
-  const int npacks = PackInfo::num_packs(nlev);
   const Real pblh = 0;
   Atmosphere atm(nlev, pblh);
 
@@ -61,22 +59,22 @@ TEST_CASE("conversions", "") {
     Kokkos::deep_copy(h_hdp, atm.hydrostatic_dp);
 
     // write atm. column data to log for comparison with e3sm
-    for (int k = 0; k < npacks; ++k) {
-      REQUIRE((h_w(k) >= 0).all());
+    for (int k = 0; k < nlev; ++k) {
+      REQUIRE(h_w(k) >= 0);
       logger.info("levek {}: T = {} P = {} z = {} dp = {} w = {}", k, h_T(k),
                   h_P(k), h_z(k), h_hdp(k), h_w(k));
     }
   }
 
   SECTION("relative humidity") {
-    ColumnView specific_humidity("specific_humidity", npacks);
-    ColumnView relative_humidity_w("relative_humidity_w", npacks);
-    ColumnView relative_humidity_q("relative_humidity_q", npacks);
+    ColumnView specific_humidity("specific_humidity", nlev);
+    ColumnView relative_humidity_w("relative_humidity_w", nlev);
+    ColumnView relative_humidity_q("relative_humidity_q", nlev);
 
     // compute relative humidity with respect to specific humidity and to
     // mixing ratio
     Kokkos::parallel_for(
-        npacks, KOKKOS_LAMBDA(const int k) {
+        nlev, KOKKOS_LAMBDA(const int k) {
           const auto q = specific_humidity_from_vapor_mixing_ratio(w(k));
           specific_humidity(k) = q;
           relative_humidity_q(k) =
@@ -88,15 +86,13 @@ TEST_CASE("conversions", "") {
     typedef typename Kokkos::MinMax<Real>::value_type MinMax;
     MinMax rh_mm;
     Kokkos::parallel_reduce(
-        npacks,
+        nlev,
         KOKKOS_LAMBDA(const int k, MinMax &mm) {
           const auto rhk = relative_humidity_q(k);
-          for (int i = 0; i < haero::HAERO_PACK_SIZE; ++i) {
-            if (rhk[i] < mm.min_val)
-              mm.min_val = rhk[i];
-            if (rhk[i] > mm.max_val)
-              mm.max_val = rhk[i];
-          }
+          if (rhk < mm.min_val)
+            mm.min_val = rhk;
+          if (rhk > mm.max_val)
+            mm.max_val = rhk;
         },
         Kokkos::MinMax<Real>(rh_mm));
 
@@ -111,28 +107,28 @@ TEST_CASE("conversions", "") {
     Kokkos::deep_copy(h_rh_q, relative_humidity_q);
     Kokkos::deep_copy(h_rh_w, relative_humidity_w);
 
-    for (int k = 0; k < npacks; ++k) {
+    for (int k = 0; k < nlev; ++k) {
       logger.debug(
           "level {}: T = {} P = {} w = {} q = {} relative humidity = {}", k,
           h_T(k), h_P(k), h_w(k), h_q(k), h_rh_q(k));
-      if (!haero::FloatingPoint<PackType>::in_bounds(h_rh_q(k), 0, 1)) {
+      if (!haero::FloatingPoint<Real>::in_bounds(h_rh_q(k), 0, 1)) {
         logger.error("\tlevel {}: w = {} wsat = {}", k,
                      vapor_mixing_ratio_from_specific_humidity(h_q(k)),
                      saturation_mixing_ratio_hardy(h_T(k), h_P(k)));
       }
       // check that relative humidities are in bounds
-      CHECK(haero::FloatingPoint<PackType>::in_bounds(h_rh_q(k), 0, 1));
-      CHECK(haero::FloatingPoint<PackType>::in_bounds(h_rh_w(k), 0, 1));
+      CHECK(haero::FloatingPoint<Real>::in_bounds(h_rh_q(k), 0, 1));
+      CHECK(haero::FloatingPoint<Real>::in_bounds(h_rh_w(k), 0, 1));
 
       // both relative humidities should match
       const Real tol = 2 * std::numeric_limits<float>::epsilon();
-      if (!haero::FloatingPoint<PackType>::rel(h_rh_q(k), h_rh_w(k), tol)) {
+      if (!haero::FloatingPoint<Real>::rel(h_rh_q(k), h_rh_w(k), tol)) {
         logger.error("rel diff found at level {}: rh_q = {} rh_w = {} rel_diff "
                      "= {} tol = {}",
                      k, h_rh_q(k), h_rh_w(k),
                      abs(h_rh_q(k) - h_rh_w(k)) / h_rh_q(k), tol);
       }
-      REQUIRE(haero::FloatingPoint<PackType>::rel(h_rh_q(k), h_rh_w(k), tol));
+      REQUIRE(haero::FloatingPoint<Real>::rel(h_rh_q(k), h_rh_w(k), tol));
     }
   }
 }

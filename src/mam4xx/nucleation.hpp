@@ -802,6 +802,7 @@ private:
     if (qh2so4_avg <= qh2so4_cutoff) {
       // qh2so4_avg very low. assume no nucleation will happen
       // (diagnose so4 and nn4 tendencies and exit)
+      tmp_frso4 = 1.0; // (uninitialized in original MAM code!)
       dso4dt_ait = dmdt_ait*tmp_frso4/mw_so4a_host;
       dnh4dt_ait = dmdt_ait*(1.0 - tmp_frso4)/mw_nh4a_host;
       return;

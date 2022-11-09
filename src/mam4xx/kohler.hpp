@@ -106,6 +106,8 @@ kelvin_coefficient(Real T = Constants::triple_pt_h2o) {
 ///
 ///   1. K(25*r_dry) < 0
 struct KohlerPolynomial {
+  using value_type = double; // double precision required
+
   /// Minimum value of relative humidity
   static constexpr double rel_humidity_min = 0.05;
   /// Above this relative humidity is considered saturated air, and cloud
