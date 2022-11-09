@@ -11,10 +11,10 @@ namespace mam4 {
 struct KohlerVerification {
   int n;
   int n_trials;
-  DeviceType::view_1d<PackType> true_sol;
-  DeviceType::view_1d<PackType> relative_humidity;
-  DeviceType::view_1d<PackType> hygroscopicity;
-  DeviceType::view_1d<PackType> dry_radius;
+  DeviceType::view_1d<Real> true_sol;
+  DeviceType::view_1d<Real> relative_humidity;
+  DeviceType::view_1d<Real> hygroscopicity;
+  DeviceType::view_1d<Real> dry_radius;
   Real rhmin;
   Real drh;
   Real hmin;
@@ -32,17 +32,17 @@ struct KohlerVerification {
         relative_humidity("relative_humidity", haero::cube(nn)),
         hygroscopicity("hygroscopicity", haero::cube(nn)),
         dry_radius("dry_radius", haero::cube(nn)),
-        rhmin(KohlerPolynomial<Real>::rel_humidity_min),
-        drh((KohlerPolynomial<Real>::rel_humidity_max -
-             KohlerPolynomial<Real>::rel_humidity_min) /
+        rhmin(KohlerPolynomial::rel_humidity_min),
+        drh((KohlerPolynomial::rel_humidity_max -
+             KohlerPolynomial::rel_humidity_min) /
             (nn - 1)),
-        hmin(KohlerPolynomial<Real>::hygro_min),
-        dhyg((KohlerPolynomial<Real>::hygro_max -
-              KohlerPolynomial<Real>::hygro_min) /
+        hmin(KohlerPolynomial::hygro_min),
+        dhyg((KohlerPolynomial::hygro_max -
+              KohlerPolynomial::hygro_min) /
              (nn - 1)),
-        rmin(KohlerPolynomial<Real>::dry_radius_min_microns),
-        ddry((KohlerPolynomial<Real>::dry_radius_max_microns -
-              KohlerPolynomial<Real>::dry_radius_min_microns) /
+        rmin(KohlerPolynomial::dry_radius_min_microns),
+        ddry((KohlerPolynomial::dry_radius_max_microns -
+              KohlerPolynomial::dry_radius_min_microns) /
              (nn - 1)) {
     generate_input_data();
     load_true_sol_from_file();

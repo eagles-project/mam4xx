@@ -3,8 +3,7 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <ekat/ekat_pack_math.hpp>
-#include <ekat/ekat_scalar_traits.hpp>
+//#include <ekat/ekat_scalar_traits.hpp>
 #include <haero/constants.hpp>
 #include <haero/floating_point.hpp>
 #include <haero/haero.hpp>
@@ -12,6 +11,8 @@
 #include <haero/root_finders.hpp>
 
 namespace mam4 {
+
+using haero::square;
 
 /// Surface tension of liquid water in air as a function of temperature
 ///   @param [in] T temperature [K]
@@ -32,16 +33,15 @@ namespace mam4 {
 ///   https://webbook.nist.gov/cgi/fluid.cgi?TLow=273.16&THigh=343&TInc=1&Applet=on&Digits=5&ID=C7732185&Action=Load&Type=SatP&TUnit=K&PUnit=MPa&DUnit=mol%2Fl&HUnit=kJ%2Fmol&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm&RefState=DEF
 ///
 ///   accessed on September 20, 2022
-template <typename ScalarType>
-KOKKOS_INLINE_FUNCTION ScalarType
-surface_tension_water_air(const ScalarType T = Constants::triple_pt_h2o) {
+KOKKOS_INLINE_FUNCTION Real
+surface_tension_water_air(Real T = Constants::triple_pt_h2o) {
   constexpr Real Tc = Constants::tc_water;
   constexpr Real tp = Constants::triple_pt_h2o;
   constexpr Real B = 0.2358;
   constexpr Real b = -0.625;
   constexpr Real mu = 1.256;
   const auto tau = 1 - T / Tc;
-  EKAT_KERNEL_ASSERT(haero::FloatingPoint<ScalarType>::in_bounds(
+  EKAT_KERNEL_ASSERT(haero::FloatingPoint<Real>::in_bounds(
       T, tp - 25, Tc, std::numeric_limits<float>::epsilon()));
   return B * pow(tau, mu) * (1 + b * tau);
 }
@@ -60,9 +60,8 @@ surface_tension_water_air(const ScalarType T = Constants::triple_pt_h2o) {
 ///
 ///   @param [in] T temperature [K]
 ///   @return Kelvin droplet coefficient [m]
-template <typename ScalarType>
-KOKKOS_INLINE_FUNCTION ScalarType
-kelvin_coefficient(const ScalarType T = Constants::triple_pt_h2o) {
+KOKKOS_INLINE_FUNCTION Real
+kelvin_coefficient(Real T = Constants::triple_pt_h2o) {
   const Real density_h2o = Constants::density_h2o;
   const Real r_gas_h2o_vapor = Constants::r_gas_h2o_vapor;
   return 2 * surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o);
@@ -106,12 +105,7 @@ kelvin_coefficient(const ScalarType T = Constants::triple_pt_h2o) {
 ///   given inputs that are within the bounds defined below:
 ///
 ///   1. K(25*r_dry) < 0
-template <typename ScalarType = PackType> struct KohlerPolynomial {
-  static_assert(
-      std::is_same<typename ekat::ScalarTraits<ScalarType>::scalar_type,
-                   double>::value,
-      "double precision required.");
-
+struct KohlerPolynomial {
   /// Minimum value of relative humidity
   static constexpr double rel_humidity_min = 0.05;
   /// Above this relative humidity is considered saturated air, and cloud
@@ -126,19 +120,16 @@ template <typename ScalarType = PackType> struct KohlerPolynomial {
   /// Maximum particle size for Kohler theory
   static constexpr double dry_radius_max_microns = 30;
 
-  using value_type = ScalarType;
-  using scalar_type = typename ekat::ScalarTraits<ScalarType>::scalar_type;
-
   /// Coefficient in the Kohler polynomial
-  ScalarType log_rel_humidity;
+  double log_rel_humidity;
   /// Coefficient in the Kohler polynomial
-  ScalarType hygroscopicity;
+  double hygroscopicity;
   /// Safe return value
-  ScalarType dry_radius;
+  double dry_radius;
   /// Coefficient in the Kohler polynomial
-  ScalarType dry_radius_cubed;
+  double dry_radius_cubed;
   /// Coefficient in the Kohler polynomial
-  ScalarType kelvin_a;
+  double kelvin_a;
 
   /** Constructor. Creates 1 instance of a KohlerPolynomial.
 
@@ -147,39 +138,15 @@ template <typename ScalarType = PackType> struct KohlerPolynomial {
     @param [in] dry_rad_microns particle dry radius [ 1e-6 m ]
     @param [in] temperature [K]
   */
-  template <typename U>
   KOKKOS_INLINE_FUNCTION
-  KohlerPolynomial(const U &rel_h, const U &hygro, const U &dry_rad_microns,
-                   const U &temperature = Constants::triple_pt_h2o)
+  KohlerPolynomial(Real rel_h, Real hygro, Real dry_rad_microns,
+                   Real temperature = Constants::triple_pt_h2o)
       : log_rel_humidity(log(rel_h)), hygroscopicity(hygro),
         dry_radius(dry_rad_microns), dry_radius_cubed(cube(dry_rad_microns)),
         kelvin_a(kelvin_coefficient(temperature)) {
 
     kelvin_a *= 1e6; /* convert from N to mN and m to micron */
-    EKAT_KERNEL_ASSERT(valid_inputs(ScalarType(rel_h), ScalarType(hygro),
-                                    ScalarType(dry_rad_microns)));
-  }
-
-  ///    Constructor. Creates 1 instance of a KohlerPolynomial.
-  ///
-  ///     @param m mask to skip padded pack values in valid_inputs check
-  ///     @param rel_h relative humidity
-  ///     @param hygro hygroscopicity
-  ///     @param dry_rad_microns particle dry radius [ 1e-6 m ]
-  ///     @param [in] temperature [K]
-  template <typename U>
-  KOKKOS_INLINE_FUNCTION
-  KohlerPolynomial(const MaskType &m, const U &rel_h, const U &hygro,
-                   const U &dry_rad_microns,
-                   const U &temperature = Constants::triple_pt_h2o)
-      : log_rel_humidity(log(rel_h)), hygroscopicity(hygro),
-        dry_radius(dry_rad_microns), dry_radius_cubed(cube(dry_rad_microns)),
-        kelvin_a(kelvin_coefficient(temperature)) {
-
-    kelvin_a *= 1e6; /* convert from SI to MAM4 Kohler solve units */
-
-    EKAT_KERNEL_ASSERT(valid_inputs(m, ScalarType(rel_h), ScalarType(hygro),
-                                    ScalarType(dry_rad_microns)));
+    EKAT_KERNEL_ASSERT(valid_inputs(rel_h, hygro, dry_rad_microns));
   }
 
   ///   Evaluates the Kohler polynomial.
@@ -194,9 +161,9 @@ template <typename ScalarType = PackType> struct KohlerPolynomial {
   ///     1e-6 m]
   ///     @return Polynomial value, wet_radius in microns [ 1e-6 m]
   template <typename U>
-  KOKKOS_INLINE_FUNCTION ScalarType operator()(const U &wet_radius) const {
-    const ScalarType rwet = ScalarType(wet_radius);
-    const ScalarType result =
+  KOKKOS_INLINE_FUNCTION Real operator()(const U &wet_radius) const {
+    const Real rwet = Real(wet_radius);
+    const Real result =
         (log_rel_humidity * rwet - kelvin_a) * cube(rwet) +
         ((hygroscopicity - log_rel_humidity) * rwet + kelvin_a) *
             dry_radius_cubed;
@@ -211,22 +178,21 @@ template <typename ScalarType = PackType> struct KohlerPolynomial {
   ///     @param [in] Polynomial input value, wet radius in microns [ 1e-6 m]
   ///     @return Polynomial slope at input value
   template <typename U>
-  KOKKOS_INLINE_FUNCTION ScalarType derivative(const U &wet_radius) const {
-    const ScalarType rwet = ScalarType(wet_radius);
-    const ScalarType wet_radius_squared = square(rwet);
-    const ScalarType result =
+  KOKKOS_INLINE_FUNCTION Real derivative(const U &wet_radius) const {
+    const Real rwet = Real(wet_radius);
+    const Real wet_radius_squared = square(rwet);
+    const Real result =
         (4 * log_rel_humidity * rwet - 3 * kelvin_a) * wet_radius_squared +
         (hygroscopicity - log_rel_humidity) * dry_radius_cubed;
     return result;
   }
 
   KOKKOS_INLINE_FUNCTION
-  bool valid_inputs(const ScalarType &relh, const ScalarType &hyg,
-                    const ScalarType &dry_rad) const {
-    return (FloatingPoint<ScalarType>::in_bounds(relh, rel_humidity_min,
+  bool valid_inputs(Real relh, Real hyg, Real dry_rad) const {
+    return (FloatingPoint<Real>::in_bounds(relh, rel_humidity_min,
                                                  rel_humidity_max) and
-            FloatingPoint<ScalarType>::in_bounds(hyg, hygro_min, hygro_max) and
-            FloatingPoint<ScalarType>::in_bounds(
+            FloatingPoint<Real>::in_bounds(hyg, hygro_min, hygro_max) and
+            FloatingPoint<Real>::in_bounds(
                 dry_rad, dry_radius_min_microns, dry_radius_max_microns));
   }
 
@@ -234,46 +200,6 @@ template <typename ScalarType = PackType> struct KohlerPolynomial {
   bool valid_inputs() const {
     return valid_inputs(exp(this->log_rel_humidity), this->hygroscopicity,
                         this->dry_radius);
-  }
-
-  template <typename ST = ScalarType>
-  KOKKOS_INLINE_FUNCTION
-      typename std::enable_if<ekat::ScalarTraits<ST>::is_simd, bool>::type
-      valid_inputs(const MaskType &m) const {
-    const ST relative_humidity = exp(this->log_rel_humidity);
-    const double rhmin = rel_humidity_min;
-    const double rhmax = rel_humidity_max;
-    const double hmin = hygro_min;
-    const double hmax = hygro_max;
-    const double rmin = dry_radius_min_microns;
-    const double rmax = dry_radius_max_microns;
-    const double tol = FloatingPoint<double>::zero_tol;
-    const auto in_bounds_mask = (relative_humidity >= (rhmin - tol)) &&
-                                (relative_humidity <= (rhmax + tol)) &&
-                                (this->hygroscopicity >= (hmin - tol)) &&
-                                (this->hygroscopicity <= (hmax + tol)) &&
-                                (this->dry_radius >= (rmin - tol)) &&
-                                (this->dry_radius <= (rmax + tol));
-    return (in_bounds_mask || (!m)).all();
-  }
-
-  template <typename ST = ScalarType>
-  KOKKOS_INLINE_FUNCTION
-      typename std::enable_if<ekat::ScalarTraits<ST>::is_simd, bool>::type
-      valid_inputs(const MaskType &m, const ST &relh, const ST &hyg,
-                   const ST &dry_rad) const {
-    const double rhmin = rel_humidity_min;
-    const double rhmax = rel_humidity_max;
-    const double hmin = hygro_min;
-    const double hmax = hygro_max;
-    const double rmin = dry_radius_min_microns;
-    const double rmax = dry_radius_max_microns;
-    const double tol = FloatingPoint<double>::zero_tol;
-    const auto in_bounds_mask =
-        (relh >= (rhmin - tol)) && (relh <= (rhmax + tol)) &&
-        (hyg >= (hmin - tol)) && (hyg <= (hmax + tol)) &&
-        (dry_rad >= (rmin - tol)) && (dry_rad <= (rmax + tol));
-    return (in_bounds_mask || (!m)).all();
   }
 };
 
@@ -283,40 +209,30 @@ template <typename ScalarType = PackType> struct KohlerPolynomial {
 /// This solver replaces subroutine modal_aero_kohler from
 /// modal_aero_wateruptake.F90.
 template <typename SolverType> struct KohlerSolver {
-  typedef ekat::Pack<double, haero::HAERO_PACK_SIZE> DoublePack;
-  typedef KohlerPolynomial<DoublePack> polynomial_type;
-  typedef DoublePack value_type;
-  DoublePack relative_humidity;
-  DoublePack hygroscopicity;
-  DoublePack dry_radius_microns;
+  using value_type = double;
+  double relative_humidity;
+  double hygroscopicity;
+  double dry_radius_microns;
   Real conv_tol;
-  MaskType mask;
   int n_iter;
 
   KOKKOS_INLINE_FUNCTION
-  KohlerSolver(const PackType &rel_h, const PackType &hyg, const PackType &rdry,
-               const Real tol)
+  KohlerSolver(Real rel_h, Real hyg, Real rdry, Real tol)
       : relative_humidity(rel_h), hygroscopicity(hyg), dry_radius_microns(rdry),
-        conv_tol(tol), mask(MaskType(false)), n_iter(0) {}
+        conv_tol(tol), n_iter(0) {}
 
   KOKKOS_INLINE_FUNCTION
-  KohlerSolver(const PackType &rel_h, const PackType &hyg, const PackType &rdry,
-               const Real tol, const MaskType &msk)
-      : relative_humidity(rel_h), hygroscopicity(hyg), dry_radius_microns(rdry),
-        conv_tol(tol), mask(msk), n_iter(0) {}
-
-  KOKKOS_INLINE_FUNCTION
-  DoublePack solve() {
-    DoublePack wet_radius_left(0.9 * dry_radius_microns);
-    DoublePack wet_radius_right(50 * dry_radius_microns);
-    DoublePack wet_radius_init(25 * dry_radius_microns);
+  Real solve() {
+    double wet_radius_left  = 0.9 * dry_radius_microns;
+    double wet_radius_right = 50 * dry_radius_microns;
+    double wet_radius_init  = 25 * dry_radius_microns;
     const Real triple_pt_h2o = Constants::triple_pt_h2o;
-    const DoublePack default_T(triple_pt_h2o);
-    const auto kpoly = polynomial_type(mask, relative_humidity, hygroscopicity,
-                                       dry_radius_microns, default_T);
+    const double default_T = triple_pt_h2o;
+    const auto kpoly = KohlerPolynomial(relative_humidity, hygroscopicity,
+                                        dry_radius_microns, default_T);
     auto solver = SolverType(wet_radius_init, wet_radius_left, wet_radius_right,
                              conv_tol, kpoly);
-    const DoublePack result = solver.solve();
+    const double result = solver.solve();
     n_iter = solver.counter;
     return result;
   }

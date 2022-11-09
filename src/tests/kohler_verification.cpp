@@ -13,13 +13,13 @@ std::string KohlerVerification::mathematica_verification_program() const {
   /* mathematica doesn't like exponential notation, so we use setprecision
    * instead.*/
   ss << "kelvinCoeff = " << std::fixed << std::setprecision(16)
-     << kelvin_coefficient<Real>() * 1e6 << ";\n";
+     << kelvin_coefficient() * 1e6 << ";\n";
   ss << "rhMin = " << rhmin << ";\n";
-  ss << "rhMax = " << KohlerPolynomial<Real>::rel_humidity_max << ";\n";
+  ss << "rhMax = " << KohlerPolynomial::rel_humidity_max << ";\n";
   ss << "hygMin = " << hmin << ";\n";
-  ss << "hygMax = " << KohlerPolynomial<Real>::hygro_max << ";\n";
+  ss << "hygMax = " << KohlerPolynomial::hygro_max << ";\n";
   ss << "radMin = " << rmin << ";\n";
-  ss << "radMax = " << KohlerPolynomial<Real>::dry_radius_max_microns << ";\n";
+  ss << "radMax = " << KohlerPolynomial::dry_radius_max_microns << ";\n";
   ss << "nn = " << n << ";\n";
   ss << "drh = (rhMax - rhMin)/(nn-1);\n";
   ss << "dhyg = (hygMax - hygMin)/(nn-1);\n";
@@ -31,7 +31,7 @@ std::string KohlerVerification::mathematica_verification_program() const {
         "Log[kinputs[[i]][[1]]]) kinputs[[i]][[3]]^3 r == 0 && r > 0, r, "
         "Reals], {i, Length[kinputs]}]];\n";
   ss << "kout = Table[r /. kroots[[i]], {i, Length[kroots]}];\n";
-  ss << "(* Uncomment to overwrite data file: Export[\"" << HAERO_TEST_DATA_DIR
+  ss << "(* Uncomment to overwrite data file: Export[\"" << MAM4_TEST_DATA_DIR
      << "/mm_kohler_roots.txt\", kout];*)\n";
   return ss.str();
 }
@@ -41,13 +41,13 @@ std::string KohlerVerification::matlab_verification_program() const {
   ss << "clear; format long;\n";
   ss << "%% parameter bounds\n";
   ss << "kelvinCoeff = " << std::fixed << std::setprecision(16)
-     << kelvin_coefficient<Real>() * 1e6 << ";\n";
+     << kelvin_coefficient() * 1e6 << ";\n";
   ss << "rhMin = " << rhmin << ";\n";
-  ss << "rhMax = " << KohlerPolynomial<Real>::rel_humidity_max << ";\n";
+  ss << "rhMax = " << KohlerPolynomial::rel_humidity_max << ";\n";
   ss << "hygMin = " << hmin << ";\n";
-  ss << "hygMax = " << KohlerPolynomial<Real>::hygro_max << ";\n";
+  ss << "hygMax = " << KohlerPolynomial::hygro_max << ";\n";
   ss << "radMin = " << rmin << ";\n";
-  ss << "radMax = " << KohlerPolynomial<Real>::dry_radius_max_microns << ";\n";
+  ss << "radMax = " << KohlerPolynomial::dry_radius_max_microns << ";\n";
   ss << "nn = " << n << ";\n";
   ss << "%% parameter inputs\n";
   ss << "relh = rhMin:(rhMax - rhMin)/(nn-1):rhMax;\n";
@@ -77,7 +77,7 @@ std::string KohlerVerification::matlab_verification_program() const {
   ss << "  end\n";
   ss << "end\n";
   ss << "%% output: uncomment to overwrite data file\n";
-  ss << "% writematrix(wet_rad_sol', \"" << HAERO_TEST_DATA_DIR
+  ss << "% writematrix(wet_rad_sol', \"" << MAM4_TEST_DATA_DIR
      << "/matlab_kohler_roots.txt\");\n";
   return ss.str();
 }
@@ -93,9 +93,8 @@ void KohlerVerification::load_true_sol_from_file() {
   Real mmroot;
   int idx = 0;
   while (mm_sols >> mmroot) {
-    const int pack_idx = PackInfo::pack_idx(idx);
-    const int vec_idx = PackInfo::vec_idx(idx++);
-    h_result(pack_idx)[vec_idx] = mmroot;
+    h_result(idx) = mmroot;
+    ++idx;
   }
   mm_sols.close();
   Kokkos::deep_copy(true_sol, h_result);
@@ -107,12 +106,10 @@ void KohlerVerification::generate_input_data() {
   Kokkos::parallel_for(
       "KohlerVerification::generate_input_data", md_policy,
       KOKKOS_CLASS_LAMBDA(const int i, const int j, const int k) {
-        const int ind = haero::square(n) * i + n * j + k;
-        const auto pack_idx = PackInfo::pack_idx(ind);
-        const auto vec_idx = PackInfo::vec_idx(ind);
-        relative_humidity(pack_idx)[vec_idx] = rhmin + i * drh;
-        hygroscopicity(pack_idx)[vec_idx] = hmin + j * dhyg;
-        dry_radius(pack_idx)[vec_idx] = rmin + k * ddry;
+        const int idx = haero::square(n) * i + n * j + k;
+        relative_humidity(idx) = rhmin + i * drh;
+        hygroscopicity(idx) = hmin + j * dhyg;
+        dry_radius(idx) = rmin + k * ddry;
       });
 }
 
