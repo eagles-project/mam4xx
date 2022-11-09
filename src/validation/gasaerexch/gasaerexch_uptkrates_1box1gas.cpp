@@ -59,7 +59,7 @@ void test_gasaerexch_uptkrates_1box1gas_process(const Input &input,
 
   bool l_condense_to_mode[n_mode] = {true, true, true, true};
   // Parse input
-  PackType dgncur_awet[n_mode];
+  Real dgncur_awet[n_mode];
   Real lnsg[n_mode];
   {
     const std::vector<Real> array = input.get_array("dgncur_awet");
@@ -95,7 +95,7 @@ void test_gasaerexch_uptkrates_1box1gas_process(const Input &input,
   ColumnView uptkaer_dev("uptkaer on device", n_mode);
   Kokkos::parallel_for(
       "gasaerexch::gas_aer_uptkrates_1box1gas", 1, KOKKOS_LAMBDA(const int) {
-        PackType uptkaer[n_mode];
+        Real uptkaer[n_mode];
         mam4::gasaerexch::gas_aer_uptkrates_1box1gas(
             l_condense_to_mode, temp, pmid, pstd, mw_gas, mw_air, vol_molar_gas,
             vol_molar_air, accom, r_universal, pi, beta_inp, nghq, dgncur_awet,
@@ -103,7 +103,7 @@ void test_gasaerexch_uptkrates_1box1gas_process(const Input &input,
         for (size_t i = 0; i < n_mode; ++i)
           uptkaer_dev(i) = uptkaer[i];
       });
-  Kokkos::Array<PackType, n_mode> uptkaer;
+  Kokkos::Array<Real, n_mode> uptkaer;
   {
     auto host_view = Kokkos::create_mirror_view(uptkaer_dev);
     Kokkos::deep_copy(host_view, uptkaer_dev);
@@ -114,7 +114,7 @@ void test_gasaerexch_uptkrates_1box1gas_process(const Input &input,
   {
     std::vector<Real> values(n_mode);
     for (size_t i = 0; i < values.size() && i < n_mode; ++i)
-      values[i] = uptkaer[i][0];
+      values[i] = uptkaer[i];
     output.set("uptkaer", values);
   }
 }

@@ -3,7 +3,7 @@
 # This script builds the Haero high-performance aerosool toolkit with specific
 # settings so mam4xx can be linked against it. Run it like this:
 #
-# `./build-haero.sh <prefix> <device> <precision> <packsize> <opt>
+# `./build-haero.sh <prefix> <device> <precision> <build_type>
 #
 # where
 # * <prefix> is the installation prefix (e.g. /usr/local) in which you
@@ -12,8 +12,6 @@
 #   is built.
 # * <precision> (either `single` or `double`) determines the precision of
 #   floating point numbers used in Haero. Default: double
-# * <packsize> (an integer such as 1, 4, 8) determines the number of values in
-#   a Pack used for vectorization, mainly on CPUs (most GPUs use 1). Default: 1
 # * <build_type> (either `Debug` or `Release`) determines whether Haero is built
 #   optimized or for debugging. Default: Debug
 #
@@ -24,8 +22,7 @@
 PREFIX=$1
 DEVICE=$2
 PRECISION=$3
-PACKSIZE=$4
-BUILD_TYPE=$5
+BUILD_TYPE=$4
 
 # Default compilers (can be overridden by environment variables)
 if [[ -z $CC ]]; then
@@ -37,7 +34,7 @@ fi
 
 if [[ "$PREFIX" == "" ]]; then
   echo "Haero installation prefix was not specified!"
-  echo "Usage: $0 <prefix> <device> <precision> <packsize> <build_type>"
+  echo "Usage: $0 <prefix> <device> <precision> <build_type>"
   exit
 fi
 
@@ -49,10 +46,6 @@ fi
 if [[ "$PRECISION" == "" ]]; then
   PRECISION=double
   echo "No floating point precision specified. Selected double."
-fi
-if [[ "$PACKSIZE" == "" ]]; then
-  PACKSIZE=1
-  echo "No pack size specified. Selected 1."
 fi
 if [[ "$BUILD_TYPE" == "" ]]; then
   BUILD_TYPE=Debug
@@ -68,7 +61,6 @@ if [[ "$PRECISION" != "single" && "$PRECISION" != "double" ]]; then
   echo "Invalid precision specified: $PRECISION (must be single or double)"
   exit
 fi
-# FIXME: pack size?
 if [[ "$BUILD_TYPE" != "Debug" && "$BUILD_TYPE" != "Release" ]]; then
   echo "Invalid optimization specified: $BUILD_TYPE (must be Debug or Release)"
   exit
@@ -79,7 +71,7 @@ if [[ -d $(pwd)/.haero ]]; then
   rm -rf $(pwd)/.haero
 fi
 echo "Cloning Haero repository into $(pwd)/.haero..."
-git clone git@github.com:eagles-project/haero.git .haero || exit
+git clone -b no-packs git@github.com:eagles-project/haero.git .haero || exit
 cd .haero || exit
 git submodule update --init --recursive || exit
 cd ..
@@ -100,7 +92,6 @@ cmake -S ./.haero -B ./.haero/build \
   -DHAERO_ENABLE_MPI=OFF \
   -DHAERO_ENABLE_GPU=$ENABLE_GPU \
   -DHAERO_PRECISION=$PRECISION \
-  -DHAERO_PACK_SIZE=$PACKSIZE \
   || exit
 
 echo "Building and installing Haero in $PREFIX..."

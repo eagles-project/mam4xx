@@ -12,7 +12,7 @@
 
 namespace mam4 {
 
-using Pack = PackType;
+using Pack = haero::PackType;
 
 using haero::max;
 

@@ -3,8 +3,6 @@
 
 #include <mam4xx/aero_modes.hpp>
 
-#include <haero/view_pack_helpers.hpp>
-
 #include <algorithm>
 #include <map>
 #include <numeric>
@@ -60,32 +58,30 @@ public:
 /// MAM4 column-wise prognostic aerosol fields (also used for tendencies).
 class Prognostics final {
 public:
-  using PackInfo = haero::PackInfo;
   using ColumnView = haero::ColumnView;
   using ThreadTeam = haero::ThreadTeam;
 
   /// Creates a container for prognostic variables on the specified number of
   /// vertical levels.
   explicit Prognostics(int num_levels) : nlev_(num_levels) {
-    const int nk = PackInfo::num_packs(num_levels);
     for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
-      n_mode_i[mode] = ColumnView("n_mode_i", nk);
-      n_mode_c[mode] = ColumnView("n_mode_c", nk);
-      haero::zero_init(n_mode_i[mode], num_levels);
-      haero::zero_init(n_mode_c[mode], num_levels);
+      n_mode_i[mode] = ColumnView("n_mode_i", num_levels);
+      n_mode_c[mode] = ColumnView("n_mode_c", num_levels);
+      Kokkos::deep_copy(n_mode_i[mode], 0.0);
+      Kokkos::deep_copy(n_mode_c[mode], 0.0);
       for (int spec = 0; spec < AeroConfig::num_aerosol_ids(); ++spec) {
-        q_aero_i[mode][spec] = ColumnView("q_aero_i", nk);
-        q_aero_c[mode][spec] = ColumnView("q_aero_c", nk);
-        haero::zero_init(q_aero_i[mode][spec], num_levels);
-        haero::zero_init(q_aero_c[mode][spec], num_levels);
+        q_aero_i[mode][spec] = ColumnView("q_aero_i", num_levels);
+        q_aero_c[mode][spec] = ColumnView("q_aero_c", num_levels);
+        Kokkos::deep_copy(q_aero_i[mode][spec], 0.0);
+        Kokkos::deep_copy(q_aero_c[mode][spec], 0.0);
       }
     }
     for (int gas = 0; gas < AeroConfig::num_gas_ids(); ++gas) {
-      q_gas[gas] = ColumnView("q_gas", nk);
-      haero::zero_init(q_gas[gas], num_levels);
+      q_gas[gas] = ColumnView("q_gas", num_levels);
+      Kokkos::deep_copy(q_gas[gas], 0.0);
       for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
-        uptkaer[gas][mode] = ColumnView("uptake_rate", nk);
-        haero::zero_init(uptkaer[gas][mode], num_levels);
+        uptkaer[gas][mode] = ColumnView("uptake_rate", num_levels);
+        Kokkos::deep_copy(uptkaer[gas][mode], 0.0);
       }
     }
   }
@@ -123,21 +119,20 @@ public:
   /// given thread team to parallelize the check.
   KOKKOS_INLINE_FUNCTION
   bool quantities_nonnegative(const ThreadTeam &team) const {
-    const int nk = PackInfo::num_packs(num_levels());
+    const int nk = num_levels();
     int violations = 0;
     Kokkos::parallel_reduce(
         Kokkos::TeamThreadRange(team, nk),
         KOKKOS_CLASS_LAMBDA(int k, int &violation) {
           for (int mode = 0; mode < AeroConfig::num_modes();
                ++mode) { // check mode mmrs
-            if ((n_mode_i[mode](k) < 0).any() ||
-                (n_mode_c[mode](k) < 0).any()) {
+            if ((n_mode_i[mode](k) < 0) || (n_mode_c[mode](k) < 0)) {
               ++violation;
             } else {
               for (int spec = 0; spec < AeroConfig::num_aerosol_ids();
                    ++spec) { // check aerosol mmrs
-                if ((q_aero_i[mode][spec](k) < 0).any() ||
-                    (q_aero_c[mode][spec](k) < 0).any()) {
+                if ((q_aero_i[mode][spec](k) < 0) ||
+                    (q_aero_c[mode][spec](k) < 0)) {
                   ++violation;
                   break;
                 }
@@ -149,7 +144,7 @@ public:
           if (violation == 0) {
             for (int gas = 0; gas < AeroConfig::num_gas_ids();
                  ++gas) { // check gas mmrs
-              if ((q_gas[gas](k) < 0).any())
+              if (q_gas[gas](k) < 0)
                 ++violation;
             }
           }
@@ -166,19 +161,17 @@ private:
 class Diagnostics final {
 public:
   using ColumnView = haero::ColumnView;
-  using PackInfo = haero::PackInfo;
 
   explicit Diagnostics(int num_levels) : nlev_(num_levels) {
-    const int nk = PackInfo::num_packs(num_levels);
     for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
-      hygroscopicity[mode] = ColumnView("hygroscopicity", nk);
-      haero::zero_init(hygroscopicity[mode], num_levels);
+      hygroscopicity[mode] = ColumnView("hygroscopicity", num_levels);
+      Kokkos::deep_copy(hygroscopicity[mode], 0.0);
       dry_geometric_mean_diameter[mode] =
-          ColumnView("dry_geometric_mean_diameter", nk);
-      haero::zero_init(dry_geometric_mean_diameter[mode], num_levels);
+          ColumnView("dry_geometric_mean_diameter", num_levels);
+      Kokkos::deep_copy(dry_geometric_mean_diameter[mode], 0.0);
       wet_geometric_mean_diameter[mode] =
-          ColumnView("wet_geometric_mean_diameter", nk);
-      haero::zero_init(wet_geometric_mean_diameter[mode], num_levels);
+          ColumnView("wet_geometric_mean_diameter", num_levels);
+      Kokkos::deep_copy(wet_geometric_mean_diameter[mode], 0.0);
     }
   }
   Diagnostics() = default; // Careful! Only for creating placeholders in views
