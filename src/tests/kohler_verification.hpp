@@ -37,8 +37,7 @@ struct KohlerVerification {
              KohlerPolynomial::rel_humidity_min) /
             (nn - 1)),
         hmin(KohlerPolynomial::hygro_min),
-        dhyg((KohlerPolynomial::hygro_max -
-              KohlerPolynomial::hygro_min) /
+        dhyg((KohlerPolynomial::hygro_max - KohlerPolynomial::hygro_min) /
              (nn - 1)),
         rmin(KohlerPolynomial::dry_radius_min_microns),
         ddry((KohlerPolynomial::dry_radius_max_microns -

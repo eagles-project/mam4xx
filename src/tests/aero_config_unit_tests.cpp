@@ -101,7 +101,7 @@ TEST_CASE("aero_config", "") {
     for (int m = 0; m < 4; ++m) {
       for (int k = 0; k < nlev; ++k) {
         REQUIRE(h_progs_num_aer[m](k) == 0);
-        REQUIRE(h_tends_num_aer[m](k)== 0);
+        REQUIRE(h_tends_num_aer[m](k) == 0);
         REQUIRE(h_diags_dry_diam[m](k) == 0);
         REQUIRE(h_diags_wet_diam[m](k) == 0);
         for (int s = 0; s < 7; ++s) {

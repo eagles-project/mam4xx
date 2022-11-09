@@ -39,8 +39,7 @@ void init_atm_const_tv_lapse_rate(const Atmosphere &atm, const Real Tv0,
 
     h_temperature(k) =
         conversions::temperature_from_virtual_temperature(tv, qv);
-    h_pressure(k) =
-        hydrostatic_pressure_at_height(z_mid, p0, Tv0, Gammav);
+    h_pressure(k) = hydrostatic_pressure_at_height(z_mid, p0, Tv0, Gammav);
     h_mix(k) = w;
     h_height(k) = z_mid;
     h_hdp(k) = hdp;

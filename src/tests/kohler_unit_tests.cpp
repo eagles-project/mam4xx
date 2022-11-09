@@ -38,8 +38,7 @@ struct KohlerSolveTestFtor {
                       RealView b_sol, RealView b_err, IntView b_iter,
                       RealView br_sol, RealView br_err, IntView br_iter,
                       const RealView rh, const RealView hyg,
-                      const RealView rdry, const RealView sol,
-                      const Real ctol)
+                      const RealView rdry, const RealView sol, const Real ctol)
       : newton_sol(n_sol), newton_err(n_err), newton_iterations(n_iter),
         bisection_sol(b_sol), bisection_err(b_err),
         bisection_iterations(b_iter), bracket_sol(br_sol), bracket_err(br_err),
@@ -50,10 +49,12 @@ struct KohlerSolveTestFtor {
   void operator()(const int i) const {
     KohlerSolver<haero::math::NewtonSolver<KohlerPolynomial>> newton_solver(
         relative_humidity(i), hygroscopicity(i), dry_radius(i), tol);
-    KohlerSolver<haero::math::BisectionSolver<KohlerPolynomial>> bisection_solver(
-        relative_humidity(i), hygroscopicity(i), dry_radius(i), tol);
-    KohlerSolver<haero::math::BracketedNewtonSolver<KohlerPolynomial>> bracket_solver(
-        relative_humidity(i), hygroscopicity(i), dry_radius(i), tol);
+    KohlerSolver<haero::math::BisectionSolver<KohlerPolynomial>>
+        bisection_solver(relative_humidity(i), hygroscopicity(i), dry_radius(i),
+                         tol);
+    KohlerSolver<haero::math::BracketedNewtonSolver<KohlerPolynomial>>
+        bracket_solver(relative_humidity(i), hygroscopicity(i), dry_radius(i),
+                       tol);
 
     newton_sol(i) = newton_solver.solve();
     bisection_sol(i) = bisection_solver.solve();
@@ -133,11 +134,10 @@ TEST_CASE("kohler_verificiation", "") {
     const auto hyg = verification.hygroscopicity;
     const auto rdry = verification.dry_radius;
     Kokkos::parallel_for(
-        "KohlerVerification::test_properties", N3,
-        KOKKOS_LAMBDA(const int i) {
+        "KohlerVerification::test_properties", N3, KOKKOS_LAMBDA(const int i) {
           const Real mam4_default_temperature = Constants::triple_pt_h2o;
-          const auto kpoly = KohlerPolynomial(
-              rh(i), hyg(i), rdry(i), mam4_default_temperature);
+          const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
+                                              mam4_default_temperature);
           k_of_zero(i) = kpoly(0);
           k_of_rdry(i) = kpoly(rdry(i));
           k_of_25rdry(i) = kpoly(25 * rdry(i));
@@ -158,8 +158,8 @@ TEST_CASE("kohler_verificiation", "") {
     const Real mam4_kelvin_a = kelvin_coefficient() * 1e6;
 
     for (int i = 0; i < N3; ++i) {
-      REQUIRE(FloatingPoint<Real>::equiv(h_k0(i),
-                                         mam4_kelvin_a * cube(h_rdry(i))));
+      REQUIRE(
+          FloatingPoint<Real>::equiv(h_k0(i), mam4_kelvin_a * cube(h_rdry(i))));
       REQUIRE(h_krdry(i) > 0);
       REQUIRE(h_k25(i) < 0);
     }
@@ -170,12 +170,9 @@ TEST_CASE("kohler_verificiation", "") {
 
     DeviceType::view_1d<Real> newton_sol("kohler_newton_sol", N3);
     DeviceType::view_1d<Real> newton_err("kohler_newton_err", N3);
-    DeviceType::view_1d<int> newton_iterations("kohler_newton_iterations",
-                                               N3);
-    DeviceType::view_1d<Real> bisection_sol("kohler_bisection_sol",
-                                                N3);
-    DeviceType::view_1d<Real> bisection_err("kohler_bisection_err",
-                                                N3);
+    DeviceType::view_1d<int> newton_iterations("kohler_newton_iterations", N3);
+    DeviceType::view_1d<Real> bisection_sol("kohler_bisection_sol", N3);
+    DeviceType::view_1d<Real> bisection_err("kohler_bisection_err", N3);
     DeviceType::view_1d<int> bisection_iterations("kohler_bisection_iterations",
                                                   N3);
     DeviceType::view_1d<Real> bracket_sol("kohler_bracket_sol", N3);

@@ -51,7 +51,7 @@ TEST_CASE("modal_averages", "") {
 
   SECTION("dry particle size") {
 
-//    Real dry_aero_mean_particle_volume[4]; // unused
+    //    Real dry_aero_mean_particle_volume[4]; // unused
     Real dry_aero_mean_particle_diam[4];
     for (int m = 0; m < 4; ++m) {
       Real dry_vol = 0.0;
@@ -63,7 +63,7 @@ TEST_CASE("modal_averages", "") {
         }
       }
       const Real mean_vol = dry_vol / number_mixing_ratio;
-//      dry_aero_mean_particle_volume[m] = mean_vol;
+      //      dry_aero_mean_particle_volume[m] = mean_vol;
       dry_aero_mean_particle_diam[m] =
           conversions::mean_particle_diameter_from_volume(
               mean_vol, modes(m).mean_std_dev);
@@ -191,8 +191,7 @@ TEST_CASE("modal_averages", "") {
       Kokkos::deep_copy(h_wet_diam, diags.wet_geometric_mean_diameter[m]);
 
       if (!FloatingPoint<Real>::in_bounds(
-              h_dry_diam(0) * 1e3,
-              KohlerPolynomial::dry_radius_min_microns,
+              h_dry_diam(0) * 1e3, KohlerPolynomial::dry_radius_min_microns,
               KohlerPolynomial::dry_radius_max_microns)) {
 
         logger.error("dry particle size out of bounds for mode {}", m);

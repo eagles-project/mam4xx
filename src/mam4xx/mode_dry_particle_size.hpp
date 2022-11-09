@@ -23,8 +23,7 @@ namespace mam4 {
 ///  @param [in] k Column vertical level where size data are needed
 KOKKOS_INLINE_FUNCTION
 void mode_avg_dry_particle_diam(const Diagnostics &diags,
-                                const Prognostics &progs,
-                                int mode_idx, int k) {
+                                const Prognostics &progs, int mode_idx, int k) {
   Real volume_mixing_ratio = 0.0; // [m3 aerosol / kg air]
   for (int aid = 0; aid < AeroConfig::num_aerosol_ids(); ++aid) {
     const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx),
@@ -34,8 +33,7 @@ void mode_avg_dry_particle_diam(const Diagnostics &diags,
           progs.q_aero_i[mode_idx][s](k) / aero_species(s).density;
     }
   }
-  const Real mean_vol =
-      volume_mixing_ratio / progs.n_mode_i[mode_idx](k);
+  const Real mean_vol = volume_mixing_ratio / progs.n_mode_i[mode_idx](k);
   diags.dry_geometric_mean_diameter[mode_idx](k) =
       conversions::mean_particle_diameter_from_volume(
           mean_vol, modes(mode_idx).mean_std_dev);

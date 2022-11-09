@@ -192,10 +192,10 @@ struct KohlerPolynomial {
   KOKKOS_INLINE_FUNCTION
   bool valid_inputs(Real relh, Real hyg, Real dry_rad) const {
     return (FloatingPoint<Real>::in_bounds(relh, rel_humidity_min,
-                                                 rel_humidity_max) and
+                                           rel_humidity_max) and
             FloatingPoint<Real>::in_bounds(hyg, hygro_min, hygro_max) and
-            FloatingPoint<Real>::in_bounds(
-                dry_rad, dry_radius_min_microns, dry_radius_max_microns));
+            FloatingPoint<Real>::in_bounds(dry_rad, dry_radius_min_microns,
+                                           dry_radius_max_microns));
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -225,9 +225,9 @@ template <typename SolverType> struct KohlerSolver {
 
   KOKKOS_INLINE_FUNCTION
   Real solve() {
-    double wet_radius_left  = 0.9 * dry_radius_microns;
+    double wet_radius_left = 0.9 * dry_radius_microns;
     double wet_radius_right = 50 * dry_radius_microns;
-    double wet_radius_init  = 25 * dry_radius_microns;
+    double wet_radius_init = 25 * dry_radius_microns;
     const Real triple_pt_h2o = Constants::triple_pt_h2o;
     const double default_T = triple_pt_h2o;
     const auto kpoly = KohlerPolynomial(relative_humidity, hygroscopicity,

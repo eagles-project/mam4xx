@@ -55,7 +55,7 @@ void newnuc_cluster_growth(Ensemble *ensemble) {
           // computed outputs
           int isize_group;
           Real dens_nh4so4a, qh2so4_del, qnh3_del, qso4a_del, qnh4a_del,
-               qnuma_del;
+              qnuma_del;
           nucleation::newnuc_cluster_growth(
               dnclusterdt, cnum_h2so4, cnum_nh3, radius_cluster, dplom_mode,
               dphim_mode, nsize, deltat, temp, relhumnn, cair, accom_coef_h2so4,

@@ -11,8 +11,8 @@ namespace mam4::conversions {
 
 using Real = haero::Real;
 using Constants = haero::Constants;
-using haero::square;
 using haero::cube;
+using haero::square;
 
 /// Given a number concentration for a species or mixture [m-3], computes and
 /// returns a mass mixing ratio [kg species/kg dry air] based on its molecular
@@ -22,9 +22,9 @@ using haero::cube;
 /// @param [in] molecular_wt The molecular weight of the species/mixture
 /// [kg/kmol]
 /// @param [in] dry_air_density The mass density of dry air [kg/m3]
-KOKKOS_INLINE_FUNCTION Real
-mmr_from_number_conc(Real number_conc, Real molecular_wt,
-                     Real dry_air_density) {
+KOKKOS_INLINE_FUNCTION Real mmr_from_number_conc(Real number_conc,
+                                                 Real molecular_wt,
+                                                 Real dry_air_density) {
   const auto Na = Constants::avogadro;
   return number_conc * molecular_wt / (dry_air_density * Na);
 }
@@ -36,8 +36,8 @@ mmr_from_number_conc(Real number_conc, Real molecular_wt,
 /// @param [in] molecular_wt The molecular weight of the species/mixture
 /// [kg/kmol]
 /// @param [in] dry_air_density The mass density of dry air [kg/m3]
-KOKKOS_INLINE_FUNCTION Real number_conc_from_mmr(
-    Real mmr, Real molecular_wt, Real dry_air_density) {
+KOKKOS_INLINE_FUNCTION Real number_conc_from_mmr(Real mmr, Real molecular_wt,
+                                                 Real dry_air_density) {
   const auto Na = Constants::avogadro;
   return mmr * (dry_air_density * Na) / molecular_wt;
 }
@@ -71,8 +71,8 @@ KOKKOS_INLINE_FUNCTION Real vmr_from_mmr(Real mmr, Real molecular_wt) {
 /// Gill, 1982, Atmosphere-Ocean Dynamics, Academic Press, San Diego CA.
 /// @param [in] Tv virtual temperature [K]
 /// @param [in] q1 specific humidity [-]
-KOKKOS_INLINE_FUNCTION Real
-virtual_temperature_from_temperature(Real T, Real q1) {
+KOKKOS_INLINE_FUNCTION Real virtual_temperature_from_temperature(Real T,
+                                                                 Real q1) {
   return T * (1.0 + 0.6078 * q1);
 }
 
@@ -80,8 +80,8 @@ virtual_temperature_from_temperature(Real T, Real q1) {
 /// vapor mass mixing ratio [kg vapor/kg dry air].
 /// @param [in] Tv virtual temperature [K]
 /// @param [in] q1 specific humidity [-]
-KOKKOS_INLINE_FUNCTION Real
-temperature_from_virtual_temperature(Real Tv, Real q1) {
+KOKKOS_INLINE_FUNCTION Real temperature_from_virtual_temperature(Real Tv,
+                                                                 Real q1) {
   return Tv / (1.0 + 0.6078 * q1);
 }
 
@@ -104,16 +104,14 @@ KOKKOS_INLINE_FUNCTION Real vapor_from_total_mass_density(Real rho, Real q1) {
 /// Computes the water vapor mixing ratio from the specific humidity. This
 /// calculation diverges at q1 = 1.
 /// @param [in] q1 specific humidity [-]
-KOKKOS_INLINE_FUNCTION Real
-vapor_mixing_ratio_from_specific_humidity(Real q1) {
+KOKKOS_INLINE_FUNCTION Real vapor_mixing_ratio_from_specific_humidity(Real q1) {
   return q1 / (1 - q1);
 }
 
 /// Computes the specific humidity from the water vapor mixing ratio. This
 /// calculation diverges at q1 = 1.
 /// @param [in] qv water vapor mixing ratio [kg vapor / kg dry air]
-KOKKOS_INLINE_FUNCTION Real
-specific_humidity_from_vapor_mixing_ratio(Real qv) {
+KOKKOS_INLINE_FUNCTION Real specific_humidity_from_vapor_mixing_ratio(Real qv) {
   return qv / (qv + 1);
 }
 
@@ -140,8 +138,7 @@ specific_humidity_from_vapor_mixing_ratio(Real qv) {
 ///  @param [in] T temperature [K]
 ///  @param [in] P pressure [Pa]
 ///  @return es(T) saturation vapor pressure of water vapor [Pa]
-KOKKOS_INLINE_FUNCTION Real
-vapor_saturation_pressure_magnus_ew(Real T) {
+KOKKOS_INLINE_FUNCTION Real vapor_saturation_pressure_magnus_ew(Real T) {
   static constexpr Real e0 = 610.94;      // Pa
   static constexpr Real exp_num = 17.625; // nondimensional
   static constexpr Real exp_den = 234.04; // deg C
@@ -170,8 +167,7 @@ vapor_saturation_pressure_magnus_ew(Real T) {
 ///  @param [in] T temperature [K]
 ///  @param [in] P pressure [Pa]
 ///  @return es(T) saturation vapor pressure of water vapor [Pa]
-KOKKOS_INLINE_FUNCTION Real
-vapor_saturation_pressure_magnus(Real T, Real P) {
+KOKKOS_INLINE_FUNCTION Real vapor_saturation_pressure_magnus(Real T, Real P) {
   const auto ew = vapor_saturation_pressure_magnus_ew(T);
   return 1.00071 * exp(4.5e-8 * P) * ew;
 }
@@ -254,8 +250,9 @@ KOKKOS_INLINE_FUNCTION Real relative_humidity_from_vapor_mixing_ratio(
 /// @param [in] T temperature [K]
 /// @param [in] P total pressure [Pa]
 /// @return relative humidity [1]
-KOKKOS_INLINE_FUNCTION Real relative_humidity_from_specific_humidity(
-    Real q, Real T, Real P) {
+KOKKOS_INLINE_FUNCTION Real relative_humidity_from_specific_humidity(Real q,
+                                                                     Real T,
+                                                                     Real P) {
   const auto w = vapor_mixing_ratio_from_specific_humidity(q);
   const auto ws = saturation_mixing_ratio_hardy(T, P);
   return w / ws;
@@ -298,8 +295,8 @@ KOKKOS_INLINE_FUNCTION Real mean_particle_diameter_from_volume(
 ///
 ///   @param [in] geom_diam geometric mean diameter [m per particle]
 ///   @return mean volume [m^3 per particle]
-KOKKOS_INLINE_FUNCTION Real mean_particle_volume_from_diameter(
-    Real geom_diam, Real mean_std_dev) {
+KOKKOS_INLINE_FUNCTION Real
+mean_particle_volume_from_diameter(Real geom_diam, Real mean_std_dev) {
   const double pio6 = Constants::pi_sixth;
   return cube(geom_diam) * exp(4.5 * square(log(mean_std_dev))) * pio6;
 }

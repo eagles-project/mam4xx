@@ -45,8 +45,7 @@ void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
 
   // check hygroscopicity is in bounds for water uptake
   EKAT_KERNEL_ASSERT(FloatingPoint<Real>::in_bounds(
-      diags.hygroscopicity[mode_idx](k),
-      KohlerPolynomial::hygro_min,
+      diags.hygroscopicity[mode_idx](k), KohlerPolynomial::hygro_min,
       KohlerPolynomial::hygro_max));
 
   // unit conversion multipliers
@@ -59,10 +58,8 @@ void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
   Real wet_diam;
 
   // compute relative humidity
-  Real rel_humidity =
-      conversions::relative_humidity_from_vapor_mixing_ratio(
-          atm.vapor_mixing_ratio(k), atm.temperature(k),
-          atm.pressure(k));
+  Real rel_humidity = conversions::relative_humidity_from_vapor_mixing_ratio(
+      atm.vapor_mixing_ratio(k), atm.temperature(k), atm.pressure(k));
   // check that relative humidity is in bounds for interstitial water uptake
   // and Kohler theory
   EKAT_KERNEL_ASSERT(FloatingPoint<Real>::in_bounds(
@@ -79,8 +76,8 @@ void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
   const auto rh_high = (rel_humidity > modes(mode_idx).deliquescence_pt);
   //  case 4: particles too small
   const auto too_small =
-      (0.5 * to_microns *
-           diags.dry_geometric_mean_diameter[mode_idx](k) < rdry_min);
+      (0.5 * to_microns * diags.dry_geometric_mean_diameter[mode_idx](k) <
+       rdry_min);
 
   // no water uptake occurs if particles are too small or if air is too dry
   if (rh_low || too_small) {
@@ -90,15 +87,15 @@ void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
 
     // convert from diameter in meters to radius in microns
     const Real dry_radius_microns =
-        0.5 * to_microns *
-        diags.dry_geometric_mean_diameter[mode_idx](k);
+        0.5 * to_microns * diags.dry_geometric_mean_diameter[mode_idx](k);
 
     // check dry particle size is in bounds
     EKAT_KERNEL_ASSERT((dry_radius_microns <= rdry_max));
 
     // Set up Kohler solver
     // (requires double precision)
-    typedef KohlerSolver<haero::math::NewtonSolver<KohlerPolynomial>> SolverType;
+    typedef KohlerSolver<haero::math::NewtonSolver<KohlerPolynomial>>
+        SolverType;
     const Real tol = solver_convergence_tol;
     // Solve for the roots of the Kohler polynomial
     //

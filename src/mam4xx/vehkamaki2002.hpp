@@ -55,12 +55,11 @@ Real h2so4_critical_mole_fraction(Real c_h2so4, Real temp, Real rel_hum) {
   // Calculate the mole fraction using eq 11 of Vehkamaki et al (2002).
   auto N_a = c_h2so4;
   return 0.740997 - 0.00266379 * temp - 0.00349998 * log(N_a) +
-              0.0000504022 * temp * log(N_a) + 0.00201048 * log(rel_hum) -
-              0.000183289 * temp * log(rel_hum) +
-              0.00157407 * square(log(rel_hum)) -
-              0.0000179059 * temp * square(log(rel_hum)) +
-              0.000184403 * cube(log(rel_hum)) -
-              1.50345e-6 * temp * cube(log(rel_hum));
+         0.0000504022 * temp * log(N_a) + 0.00201048 * log(rel_hum) -
+         0.000183289 * temp * log(rel_hum) + 0.00157407 * square(log(rel_hum)) -
+         0.0000179059 * temp * square(log(rel_hum)) +
+         0.000184403 * cube(log(rel_hum)) -
+         1.50345e-6 * temp * cube(log(rel_hum));
 }
 
 /// Computes the binary nucleation rate [m-3 s-1] as parameterized by
@@ -118,7 +117,8 @@ Real nucleation_rate(Real c_h2so4, Real temp, Real rel_hum, Real x_crit) {
 /// @param [in] rel_hum The relative humidity [-]
 /// @param [in] x_crit The mole fraction of H2SO4 in a critical cluster [-]
 KOKKOS_INLINE_FUNCTION
-Real num_critical_molecules(Real c_h2so4, Real temp, Real rel_hum, Real x_crit) {
+Real num_critical_molecules(Real c_h2so4, Real temp, Real rel_hum,
+                            Real x_crit) {
   // Calc the coefficients for the number of molecules in a critical
   // cluster (eq 13).
   Real A = -0.00295413 - 0.0976834 * temp + 0.00102485 * square(temp) -
