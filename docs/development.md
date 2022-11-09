@@ -363,6 +363,14 @@ These three `View` types should be all you need to implement aerosol processes
 and their parameterizations. In fact, the aerosol processes themselves really
 only use the `ColumnView` type.
 
+**NOTE**: You may be tempted to use `View::extent` to determine the size of a
+`View`. While this is perfectly reasonable under normal circumstances, there are
+cases where a `View` might be larger than you would expect. This has to do with
+EAMxx's vectorization strategy, which allocates and aligns memory for `View`s
+assuming a minimum "block size" for data. For MAM4xx, all of our `ColumnView`
+variables will be functionally equal in length to the number of vertical levels
+in the atmosphere, but the actual extents may be greater.
+
 ### Parallel dispatch: host and device
 
 MAM4xx runs within a single process runs on an entire compute node, no matter
@@ -404,117 +412,6 @@ explains how it works.
 
 [This Confluence page](https://acme-climate.atlassian.net/wiki/spaces/DOC/pages/34113147/SE+Atmosphere+Grid+Overview+EAM+CAM)
 describes the computational grid(s) used by EAMxx.
-
-## Packs and Vectorization
-
-While EAMxx is primarily focused on platforms with GPU-based accelerators, it is
-also able to run on architectures with only CPUs. For CPU-based architectures,
-EAMxx has adopted a rather aggressive optimization strategy involving
-[vectorization](https://stackoverflow.com/questions/1422149/what-is-vectorization).
-The primary tools in our vectorization toolkit are the [`Pack`](https://github.com/E3SM-Project/EKAT/blob/master/src/ekat/ekat_pack.hpp)
-and [`Mask`](https://github.com/E3SM-Project/EKAT/blob/master/src/ekat/ekat_pack.hpp)
-types provided by EKAT.
-
-### Why Packs?
-
-The `Pack` class template groups ("packs") a set of numbers together in a way
-that arithmetic operations on them can be fused using fancy
-["Advanced Vector eXtensions" (AVX)](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions)
-provided by modern CPUs. In some cases these AVX instructions can provide
-measurable performance benefits.
-
-A `Pack` has a "size" (a "pack size") equal to the number of numbers it stores.
-The pack size is encoded in its type. MAM4xx uses a single pack size determined
-by HAERO for all its `Pack`s. This pack size is defined by the macro
-`HAERO_PACK_SIZE`.
-
-### Packs and padding
-
-`ekat::Pack`s are simd structs that help performance on machines with vector
-instructions, and their size is determined by the machine's vector length.
-When pack size > 1, it's possible that the total number of values for a
-column view (which is `num_packs * pack_size`) exceeds the number of levels
-in the column.  In such a case, the extra entries are referred to as
-"padding," and to mark them as such, the default initializer of
-`ekat::Pack` sets all values to `quiet_nan`.
-
-This means that you will have to explicitly initialize all non-padded entries
-to have valid (not `nan`) values.  See the `zero_init` function in
-[Haero's](https://github.com/eagles-project/haero)
-`view_pack_helpers.hpp` for an example that sets a `ColumnView` to zero
-except for any padded values (which remain `nan`)
-using utilities from the `PackInfo` struct.
-
-### Masks and predicates
-
-The `Mask` class allows you to create grouped ("packed") booleans that store
-evaluated logical expressions on `Pack` objects. Because a `Pack` represents
-multiple numbers, you can't use logical expressions using `Pack`s directly in
-`if` tests, even if your `Pack`s have a size of `1`. Instead, you create a
-`Mask` from a predicate involving `Pack`s, and then you manipulate `Pack`s
-using their `set` methods with the `Mask` indicating the numbers to change.
-
-Here's an example that illustrates how you might take a `Pack` of floating
-point numbers and zero out only those numbers that are negative:
-
-```
-  // create a mask that indicates which numbers in the pack p are negative
-  auto negative = (p < 0);
-  // set all of the negative numbers within p to zero.
-  p.set(negative, 0.0);
-```
-
-You can also check whether any, all, or none of the numbers within a `Pack`
-satisfy your criterion using the `any`, `all`, or `none` member functions
-provided by the `Mask` type:
-
-```
-  // Verify that we've eliminated the negative numbers in p above.
-  auto still_negative = (p < 0);
-  EKAT_ASSERT(still_negative.none()); // no numbers in p are negative
-  EKAT_ASSERT(!still_negative.any()); // "any" is the negation of "none"
-  EKAT_ASSERT(!still_negative.all()); // trivially false if "any" is false
-```
-
-Not as straightforward as using numbers, is it? `Pack`s may be the most
-challenging aspect of porting MAM4 from Fortran to C++.
-
-**Mask convention:** The term `Mask` may introduce some confusion as to its
-use: if `Mask[i] = true`, should the `i`th entry be skipped, because it's
-"masked," or should it be worked on because it's "turned on?"  The convention
-is the latter: `Mask[i] = true` implies that entry `i` is turned on.
-See `ekat_pack.hpp` for initializers (constructors and assign operators) and
-methods (e.g., `set`) that combine the functions of `Mask` and `Pack`.
-An example based on the absolute value function is
-
-```
-   // non-packed example
-   inline float absolute_value(const float x) {return (x < 0 ? -x : x);}
-```
-
-```
-  // packed example
-  inline PackType absolute_value(const PackType x) {
-    const MaskType negative_mask = (x < 0); // "turn on" negative values
-    PackType result = x;
-    result.set(negative_mask, -x); // only changes the "on" values
-    return result;
-  }
-```
-The above example is
-for illustrative purposes only; `abs` is already overloaded for packs,
-along with lots of standard math functions in `ekat_pack_math.hpp`.
-
-Hence, to skip the padded extra values in a packed column, we set every entry that
-corresponds to a valid column level to `true`, and entries that correspond
-to padding to `false`.
-
-### Frequently Asked Questions
-
-* **Really? HPC isn't difficult enough that we need to complicate things further
-  with Packs?** We agree. This is a fight that at least some of us are willing
-  to pick, but we have to do what EAMxx does, so if we decide to forego `Pack`s
-  in our code, it will require negotiation.
 
 ## Resources
 
