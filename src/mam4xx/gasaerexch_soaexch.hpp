@@ -350,7 +350,7 @@ void mam_soaexch_advance_in_time(
       dt_cur = dt_sub_fixed;
       tcur += dt_cur;
     } else {
-      // Chose an adaptive step size
+      // Choose an adaptive step size
       dt_cur =
           soa_exch_substepsize(skip_soamode, uptkaer_soag_tmp, a_soa, a_opoa,
                                g_soa, g0_soa, alpha_astem, dt_full, tcur);
