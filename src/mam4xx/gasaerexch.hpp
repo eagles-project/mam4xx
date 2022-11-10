@@ -569,17 +569,16 @@ void gas_aerosol_uptake_rates_1box(
   for (int n = 0; n < num_mode; ++n)
     qaer_poa[0][n] = haero::max(qaer_cur[idxs][n], 0);
 
-  const int num_soamode = 1;
   const Real dtsub_soa_fixed = -1;
   Real uptkaer[num_gas][num_mode];
   for (int igas = 0; igas < num_gas; ++igas)
     for (int n = 0; n < num_mode; ++n)
       uptkaer[igas][n] = progs.uptkaer[igas][n](k);
   Real soa_out = 0;
-  mam_soaexch_1subarea(num_soamode, GasAerExch::npca, npoa,
-                       GasAerExch::igas_soag_bgn, dt, dtsub_soa_fixed, pstd,
-                       r_universal, temp, pmid, uptkaer, qaer_poa, qgas_cur,
-                       qgas_avg, qaer_cur, soa_out);
+  int niter = 0;
+  mam_soaexch_1subarea(GasAerExch::npca, dt, dtsub_soa_fixed, pstd, r_universal,
+                       temp, pmid, uptkaer, qaer_poa, qgas_cur, qgas_avg,
+                       qaer_cur, niter, soa_out);
   for (int igas = 0; igas < num_gas; ++igas)
     for (int n = 0; n < num_mode; ++n)
       progs.uptkaer[igas][n](k) = uptkaer[igas][n];
