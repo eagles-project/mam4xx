@@ -56,7 +56,7 @@ void compute_dry_volume_k(Ensemble *ensemble) {
       for (int imode = 0; imode < nmodes; ++imode) {
         const auto n_spec = num_species_mode[imode];
         for (int ispec = 0; ispec < n_spec; ispec++) {
-          int aero_id = int(mode_aero_species[imode][ispec]);
+          const int aero_id = get_AeroId_from_mode_aero_species(imode,ispec);
           inv_density[imode][ispec] = Real(1.0) / aero_species(aero_id).density;
         } // for(ispec)
       }

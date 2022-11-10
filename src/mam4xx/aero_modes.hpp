@@ -293,6 +293,12 @@ KOKKOS_INLINE_FUNCTION GasSpecies gas_species(const int i) {
   };
   return species[i];
 }
+// get AeroId from mode_aero_species
+// given mode No and species No return the Aero Id
+KOKKOS_INLINE_FUNCTION int get_AeroId_from_mode_aero_species(const int modeNo, const int speciesNo) {
+  return  int(mode_aero_species[modeNo][speciesNo]);
+}  
+
 
 } // namespace mam4
 

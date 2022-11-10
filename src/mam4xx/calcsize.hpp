@@ -498,7 +498,7 @@ public:
       // compute inv density; density is constant, so we can computer in int.
       const auto n_spec = num_species_mode[m];
       for (int ispec = 0; ispec < n_spec; ispec++) {
-        int aero_id = int(mode_aero_species[m][ispec]);
+        const int aero_id = get_AeroId_from_mode_aero_species(m,ispec);
         _inv_density[m][ispec] = Real(1.0) / aero_species(aero_id).density;
       } // for(ispec)
 
