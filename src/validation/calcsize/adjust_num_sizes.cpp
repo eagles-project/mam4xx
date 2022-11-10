@@ -68,12 +68,12 @@ void adjust_num_sizes(Ensemble *ensemble) {
 
     Real num_i[nmodes];
     Real num_c[nmodes];
-    const Real zero=0;
+    const Real zero = 0;
 
     Kokkos::parallel_for("adjust_num_sizes", 1, [&] KOKKOS_FUNCTION(int i) {
       for (int m = 0; m < nmodes; ++m) {
         num_i[m] = init_num_i[m] < 0 ? zero : init_num_i[m];
-        num_c[m] =  init_num_c[m] < 0 ?  zero :  init_num_c[m];
+        num_c[m] = init_num_c[m] < 0 ? zero : init_num_c[m];
         calcsize::adjust_num_sizes(
             drv_i[m], drv_c[m], init_num_i[m], init_num_c[m], dt, v2nmin[m],
             v2nmax[m], v2nminrl[m], v2nmaxrl[m], adj_tscale_inv, // in

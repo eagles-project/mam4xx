@@ -30,9 +30,8 @@ density  volume = mmr/density
 TODO: Is this used?
  -----------------------------------------------------------------------------*/
 
-
 KOKKOS_INLINE_FUNCTION
-void compute_dry_volume_k(int k, int imode, const Real inv_density[4][7], 
+void compute_dry_volume_k(int k, int imode, const Real inv_density[4][7],
                           const Prognostics &prognostics, // in
                           Real &dryvol_i,                 // out
                           Real &dryvol_c)                 // out
@@ -47,7 +46,7 @@ void compute_dry_volume_k(int k, int imode, const Real inv_density[4][7],
   for (int ispec = 0; ispec < n_spec; ispec++) {
     dryvol_i += max(0.0, q_i[imode][ispec](k)) * inv_density[imode][ispec];
     dryvol_c += max(0.0, q_c[imode][ispec](k)) * inv_density[imode][ispec];
-    // count += ispec; 
+    // count += ispec;
   } // end ispec
 
 } // end
@@ -138,8 +137,7 @@ KOKKOS_INLINE_FUNCTION
 void update_diameter_and_vol2num(/*std::size_t klev, std::size_t imode, */
                                  const Real &drv, const Real &num, Real v2nmin,
                                  Real v2nmax, Real dgnmin, Real dgnmax,
-                                 Real cmn_factor, Real &dgncur,
-                                 Real &v2ncur) {
+                                 Real cmn_factor, Real &dgncur, Real &v2ncur) {
   const auto drv_gt_0 = drv > 0.0;
   if (!drv_gt_0)
     return;
@@ -150,12 +148,13 @@ void update_diameter_and_vol2num(/*std::size_t klev, std::size_t imode, */
   if (num <= drv_mul_v2nmin) {
     dgncur = dgnmin; // set to minimum diameter for this mode
     v2ncur = v2nmin; // set to minimum vol2num ratio for this mode
-  } else if (num >= drv_mul_v2nmax)  {
+  } else if (num >= drv_mul_v2nmax) {
     dgncur = dgnmax; // set to maximum diameter for this mode
     v2ncur = v2nmax; // set to maximum vol2num ratio for this mode
   } else {
-    dgncur = pow((drv / (cmn_factor * num)), (1.0 / 3.0)); //compute diameter based on dry volume (drv)
-    v2ncur = num / drv; 
+    dgncur = pow((drv / (cmn_factor * num)),
+                 (1.0 / 3.0)); // compute diameter based on dry volume (drv)
+    v2ncur = num / drv;
   }
 }
 
@@ -242,38 +241,43 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
   const auto drv_i_c_le_zero = drva_le_zero && drvc_le_zero;
   const Real zero = 0;
 
-  //If both interstitial (drv_a) and cloud borne (drv_c) dry volumes are zero (or less)
-  //adjust numbers(num_a and num_c respectively) for both of them to be zero for this mode and level
-  if (drv_i_c_le_zero){
-    num_i=zero;
-    num_c=zero;
+  // If both interstitial (drv_a) and cloud borne (drv_c) dry volumes are zero
+  // (or less) adjust numbers(num_a and num_c respectively) for both of them to
+  // be zero for this mode and level
+  if (drv_i_c_le_zero) {
+    num_i = zero;
+    num_c = zero;
     dqdt = update_num_adj_tends(num_i, init_num_i, dtinv);
     dqqcwdt = update_num_adj_tends(num_c, init_num_c, dtinv);
   } else if (drvc_le_zero) {
-    //if cloud borne dry volume (drv_c) is zero(or less), the interstitial number/volume == total/combined
-    //apply step 1 and 3, but skip the relaxed adjustment (step 2, see below)
-    num_c=zero;
+    // if cloud borne dry volume (drv_c) is zero(or less), the interstitial
+    // number/volume == total/combined apply step 1 and 3, but skip the relaxed
+    // adjustment (step 2, see below)
+    num_c = zero;
     const auto numbnd = min_max_bounded(drv_i, v2nmin, v2nmax, num_i);
-    num_i = num_i + (numbnd - num_i) * frac_adj_in_dt; 
+    num_i = num_i + (numbnd - num_i) * frac_adj_in_dt;
   } else if (drva_le_zero) {
     // interstitial volume is zero, treat similar to above
     const auto numbnd = min_max_bounded(drv_c, v2nmin, v2nmax, num_c);
-    num_c = num_c + (numbnd - num_c) * frac_adj_in_dt; 
-    num_i=zero;
-  } else 
-  {
+    num_c = num_c + (numbnd - num_c) * frac_adj_in_dt;
+    num_i = zero;
+  } else {
     // The number adjustment is done in 3 steps:
-    // Step 1: assumes that num_a and num_c are non-negative (nothing to be done here)
+    // Step 1: assumes that num_a and num_c are non-negative (nothing to be done
+    // here)
     const auto num_i_stp1 = num_i;
     const auto num_c_stp1 = num_c;
 
-    //Step 2 [Apply relaxed bounds] has 3 parts (a), (b) and (c)
-    // Step 2: (a)Apply relaxed bounds to bound num_a and num_c within "relaxed" bounds.
-    auto numbnd = min_max_bounded(drv_i, v2nminrl, v2nmaxrl, num_i_stp1);//bounded to relaxed min and max
+    // Step 2 [Apply relaxed bounds] has 3 parts (a), (b) and (c)
+    //  Step 2: (a)Apply relaxed bounds to bound num_a and num_c within
+    //  "relaxed" bounds.
+    auto numbnd = min_max_bounded(drv_i, v2nminrl, v2nmaxrl,
+                                  num_i_stp1); // bounded to relaxed min and max
     /* (b)Ideally, num_* should be in range. If they are not, we assume that
-       they will reach their maximum (or minimum)for this mode within a day (time scale).
-       We then compute how much num_* will change in a time step by multiplying the difference
-       between num_* and its maximum(or minimum) with "frac_adj_in_dt".
+       they will reach their maximum (or minimum)for this mode within a day
+       (time scale). We then compute how much num_* will change in a time step
+       by multiplying the difference between num_* and its maximum(or minimum)
+       with "frac_adj_in_dt".
     */
 
     const auto delta_num_i_stp2 = (numbnd - num_i_stp1) * frac_adj_in_dt;
@@ -286,27 +290,28 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
 
     // change in num_i in one time step
     auto num_c_stp2 = num_c_stp1 + delta_num_c_stp2;
-    
-    /* (c)We now also need to balance num_* incase only one among the interstitial or cloud-
-      borne is changing. If interstitial stayed the same (i.e. it is within range)
-      but cloud-borne is predicted to reach its maximum(or minimum), we modify
-      interstitial number (num_a), so as to accomodate change in the cloud-borne aerosols
-      (and vice-versa). We try to balance these by moving the num_* in the opposite
-      direction as much as possible to conserve num_a + num_c (such that num_a+num_c
-      stays close to its original value)
+
+    /* (c)We now also need to balance num_* incase only one among the
+      interstitial or cloud- borne is changing. If interstitial stayed the same
+      (i.e. it is within range) but cloud-borne is predicted to reach its
+      maximum(or minimum), we modify interstitial number (num_a), so as to
+      accomodate change in the cloud-borne aerosols (and vice-versa). We try to
+      balance these by moving the num_* in the opposite direction as much as
+      possible to conserve num_a + num_c (such that num_a+num_c stays close to
+      its original value)
     */
     const auto delta_num_i_stp2_eq0 = delta_num_i_stp2 == 0.0;
     const auto delta_num_c_stp2_eq0 = delta_num_c_stp2 == 0.0;
-    
-    if (delta_num_i_stp2_eq0 && !delta_num_c_stp2_eq0){
-      num_i_stp2= min_max_bounded(drv_i, v2nminrl, v2nmaxrl,
+
+    if (delta_num_i_stp2_eq0 && !delta_num_c_stp2_eq0) {
+      num_i_stp2 = min_max_bounded(drv_i, v2nminrl, v2nmaxrl,
                                    num_i_stp1 - delta_num_c_stp2);
-    } else if (delta_num_c_stp2_eq0 && !delta_num_i_stp2_eq0){
-      num_c_stp2=min_max_bounded(drv_c, v2nminrl, v2nmaxrl,
+    } else if (delta_num_c_stp2_eq0 && !delta_num_i_stp2_eq0) {
+      num_c_stp2 = min_max_bounded(drv_c, v2nminrl, v2nmaxrl,
                                    num_c_stp1 - delta_num_i_stp2);
     } else {
       // nothing here
-    }  // end if 
+    } // end if
 
     /* Step3[apply stricter bounds] has 3 parts (a), (b) and (c)
        Step 3:(a) compute combined total of num_a and num_c
@@ -322,7 +327,7 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
     auto delta_num_i_stp3 = zero;
     auto delta_num_c_stp3 = zero;
 
-       /*
+    /*
      * "total_drv*v2nmin" represents minimum number for this mode, and
      * "total_drv*v2nmxn" represents maximum number for this mode
      */
@@ -331,8 +336,8 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
 
     const auto total_lt_lowerbound = total_num < min_number_bound;
     const auto total_gt_upperbound = total_num > max_number_bound;
-    if (total_lt_lowerbound){
-          // change in total_num in one time step
+    if (total_lt_lowerbound) {
+      // change in total_num in one time step
       const auto delta_num_t3 = (min_number_bound - total_num) * frac_adj_in_dt;
 
       /*
@@ -342,9 +347,9 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
       const auto do_dist_delta_num =
           (num_i_stp2 < drv_i * v2nmin) && (num_c_stp2 < drv_c * v2nmin);
       if (do_dist_delta_num) {
-       /* if both num_i and num_c are less than the lower bound distribute
-       * "delta_num" using weighted ratios
-       */
+        /* if both num_i and num_c are less than the lower bound distribute
+         * "delta_num" using weighted ratios
+         */
         delta_num_i_stp3 = delta_num_t3 * (num_i_stp2 / total_num);
         delta_num_c_stp3 = delta_num_t3 * (num_c_stp2 / total_num);
       } else if (num_c_stp2 < drv_c * v2nmin) {
@@ -366,23 +371,23 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
       const auto do_dist_delta_num =
           (num_i_stp2 > drv_i * v2nmax) && (num_c_stp2 > drv_c * v2nmax);
       if (do_dist_delta_num) {
-             /*
-       * if both num_i and num_c are more than the upper bound distribute
-       * "delta_num" using weighted ratios
-       */
-      delta_num_i_stp3=delta_num_t3 * (num_i_stp2 / total_num);
-      delta_num_c_stp3=delta_num_t3 * (num_c_stp2 / total_num);
+        /*
+         * if both num_i and num_c are more than the upper bound distribute
+         * "delta_num" using weighted ratios
+         */
+        delta_num_i_stp3 = delta_num_t3 * (num_i_stp2 / total_num);
+        delta_num_c_stp3 = delta_num_t3 * (num_c_stp2 / total_num);
 
       } else if (num_c_stp2 > drv_c * v2nmax) {
-              // if only num_c is more than the upper bound, assign total change to
+        // if only num_c is more than the upper bound, assign total change to
         // num_c
-        delta_num_c_stp3 = delta_num_t3; 
+        delta_num_c_stp3 = delta_num_t3;
 
       } else if (num_i_stp2 > drv_i * v2nmax) {
 
         // if only num_i is more than the upper bound, assign total change to
         // num_i
-        delta_num_i_stp3=delta_num_t3;
+        delta_num_i_stp3 = delta_num_t3;
       } else {
         // nothing here
       } // end if do_dist_delta_num
@@ -397,9 +402,7 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
   // Update tendencies
   dqdt = update_num_adj_tends(num_i, init_num_i, dtinv);
   dqqcwdt = update_num_adj_tends(num_c, init_num_c, dtinv);
-
-
- }
+}
 
 /*
  * \brief Exchange aerosols between aitken and accumulation modes based on new
@@ -420,8 +423,6 @@ void aitken_accum_exchange() // nlevs, top_lev, &
 {
   // compute geometric mean of v2n's for aitken and accumulation modes
   // auto v2n_geo_mean = sqrt(v2n);
-
-
 }
 
 // aitken_accum_exchange
@@ -470,7 +471,7 @@ public:
             const Config &calsize_config = Config()) {
     // Set nucleation-specific config parameters.
     config_ = calsize_config;
-  
+
     // Set mode parameters.
     for (int m = 0; m < 4; ++m) {
       // FIXME: There is no mean geometric number diameter in a mode.
@@ -494,7 +495,7 @@ public:
       // min_vol2num
       // = 1.0_wp/(pi_sixth*(imode%max_diameter**3.0_wp)*exp(4.5_wp*(log(imode%mean_std_dev))**2.0_wp))
 
-      // compute inv density; density is constant, so we can computer in int. 
+      // compute inv density; density is constant, so we can computer in int.
       const auto n_spec = num_species_mode[m];
       for (int ispec = 0; ispec < n_spec; ispec++) {
         int aero_id = int(mode_aero_species[m][ispec]);
@@ -528,8 +529,8 @@ public:
     auto &v2ncur_i = diagnostics.v2ncur_i;
     auto &dgncur_c = diagnostics.dgncur_c;
     auto &v2ncur_c = diagnostics.v2ncur_c;
-    const auto inv_density = _inv_density; 
-    const Real zero=0;
+    const auto inv_density = _inv_density;
+    const Real zero = 0;
     const Real close_to_one = 1.0 + 1.0e-15;
     const Real seconds_in_a_day = 86400.0;
 
@@ -596,8 +597,8 @@ public:
             v2ncur_c[imode](k) = v2nnom_nmodes[imode]; // volume to number
 
             // dry volume is set to zero inside compute_dry_volume_k
-            calcsize::compute_dry_volume_k(k, imode, inv_density,  prognostics, dryvol_i,
-                                           dryvol_c);
+            calcsize::compute_dry_volume_k(k, imode, inv_density, prognostics,
+                                           dryvol_i, dryvol_c);
 
             auto v2nmin = v2nmin_nmodes[imode];
             auto v2nmax = v2nmax_nmodes[imode];
@@ -703,7 +704,8 @@ public:
             // the calcSize process
             // if (do_aitacc_transfer) {
             //   if (imode == aitken_idx) {
-            //     // TODO: determine if we need to save these--i.e., is drv_i ever
+            //     // TODO: determine if we need to save these--i.e., is drv_i
+            //     ever
             //     // changed before the max() calculation in
             //     // aitken_accum_exchange() if yet, maybe better to skip the
             //     // logic and do it, regardless?

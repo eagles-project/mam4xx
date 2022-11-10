@@ -48,20 +48,17 @@ void compute_dry_volume_k(Ensemble *ensemble) {
     Real dryvol_c[4];
 
     // FIXMED: need to update this variable
-    
 
     // Call the cluster growth function on device.
     // FIXME: Will compile in CUDA?
     Kokkos::parallel_for("compute_dry_volume_k", 1, [&] KOKKOS_FUNCTION(int k) {
       Real inv_density[4][7];
-      for (int imode = 0; imode < nmodes; ++imode)
-      {
-      const auto n_spec = num_species_mode[imode];
-      for (int ispec = 0; ispec < n_spec; ispec++) {
-        int aero_id = int(mode_aero_species[imode][ispec]);
-        inv_density[imode][ispec] = Real(1.0) / aero_species(aero_id).density;
-      } // for(ispec)
-
+      for (int imode = 0; imode < nmodes; ++imode) {
+        const auto n_spec = num_species_mode[imode];
+        for (int ispec = 0; ispec < n_spec; ispec++) {
+          int aero_id = int(mode_aero_species[imode][ispec]);
+          inv_density[imode][ispec] = Real(1.0) / aero_species(aero_id).density;
+        } // for(ispec)
       }
       for (int imode = 0; imode < nmodes; ++imode) {
         Real dryvol_i_k = 0;
