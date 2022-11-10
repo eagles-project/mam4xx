@@ -17,8 +17,8 @@ void update_diameter_and_vol2num(Ensemble *ensemble) {
     // Fetch ensemble parameters
 
     // drv and num can be either interstitial or cloudborne aerosols
-    const Pack drv = input.get("drv");
-    const Pack num = input.get("num");
+    const Real drv = input.get("drv");
+    const Real num = input.get("num");
 
     // mode dependent
     Real v2nmin = input.get("v2nmin");
@@ -29,8 +29,8 @@ void update_diameter_and_vol2num(Ensemble *ensemble) {
 
     Real cmn_factor = input.get("cmn_factor");
 
-    Pack dgncur_k_i = 0;
-    Pack v2ncur_k_i = 0;
+    Real dgncur_k_i = 0;
+    Real v2ncur_k_i = 0;
 
     Kokkos::parallel_for(
         "update_diameter_and_vol2num", 1, [&] KOKKOS_FUNCTION(int i) {
@@ -39,7 +39,7 @@ void update_diameter_and_vol2num(Ensemble *ensemble) {
                                                 dgncur_k_i, v2ncur_k_i);
         });
 
-    output.set("dgncur", dgncur_k_i[0]);
-    output.set("v2ncur", v2ncur_k_i[0]);
+    output.set("dgncur", dgncur_k_i);
+    output.set("v2ncur", v2ncur_k_i);
   });
 }

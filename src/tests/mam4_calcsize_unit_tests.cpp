@@ -79,7 +79,7 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
     ss.str("");
 
     for (int k = 0; k < nlev; ++k) {
-      CHECK(!isnan(h_prog_n_mode_i(k)[0]));
+      CHECK(!isnan(h_prog_n_mode_i(k)));
     }
 
     const auto n_spec = mam4::num_species_mode[imode];
@@ -104,7 +104,7 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
       ss.str("");
 
       for (int k = 0; k < nlev; ++k) {
-        CHECK(!isnan(h_prog_aero_i(k)[0]));
+        CHECK(!isnan(h_prog_aero_i(k)));
       }
 
     } // end species
@@ -132,7 +132,7 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
     ss.str("");
 
     for (int k = 0; k < nlev; ++k) {
-      CHECK(!isnan(h_tends_n_mode_i(k)[0]));
+      CHECK(!isnan(h_tends_n_mode_i(k)));
     }
 
     const auto n_spec = mam4::num_species_mode[imode];
@@ -153,7 +153,7 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
       ss.str("");
 
       for (int k = 0; k < nlev; ++k) {
-        CHECK(!isnan(h_tends_aero_i(k)[0]));
+        CHECK(!isnan(h_tends_aero_i(k)));
       }
 
     } // end species

@@ -12,14 +12,11 @@ namespace mam4 {
 
 using Atmosphere = haero::Atmosphere;
 using Constants = haero::Constants;
-using IntPack = haero::IntPackType;
-using Pack = haero::PackType;
-using PackInfo = haero::PackInfo;
 using Real = haero::Real;
 using ThreadTeam = haero::ThreadTeam;
 
 using ColumnView = haero::ColumnView;
-using RealView = haero::RealView1D;
+// using RealView = haero::RealView1D;
 
 using haero::max;
 using haero::min;
@@ -32,41 +29,15 @@ Compute initial dry volume based on bulk mass mixing ratio (mmr) and specie
 density  volume = mmr/density
 TODO: Is this used?
  -----------------------------------------------------------------------------*/
-// KOKKOS_INLINE_FUNCTION
-// void compute_dry_volume(const Diagnostics &diagnostics, // in
-//                         const Prognostics &prognostics, // in
-//                         const ColumnView &dryvol_i,     // out
-//                         const ColumnView &dryvol_c)     // out
-// {
-//   // Pack dryvol = 0;
-//   const int nlevels = diagnostics.num_levels();
-//   const auto nk = PackInfo::num_packs(nlevels);
 
-//   const auto q_i = prognostics.q_aero_i;
-//   const auto q_c = prognostics.q_aero_c;
-//   const auto nmodes = AeroConfig::num_modes();
-
-//   for (int k = 0; k < nk; ++k) {
-//     for (int imode = 0; imode < nmodes; ++imode) {
-//       const auto n_spec = num_species_mode[imode];
-//       for (int ispec = 0; ispec < n_spec; ispec++) {
-//         const Real inv_density = 1.0 / get_density_aero_species(imode, ispec);
-//         dryvol_i(k) += max(0.0, q_i[imode][ispec](k)) * inv_density;
-//         dryvol_c(k) += max(0.0, q_c[imode][ispec](k)) * inv_density;
-//       } // end imode
-
-//     } // end ispec
-//   }   // end k
-
-// } // end
 
 KOKKOS_INLINE_FUNCTION
 void compute_dry_volume_k(int k, int imode, const Real inv_density[4][7], 
                           const Prognostics &prognostics, // in
-                          Pack &dryvol_i,                 // out
-                          Pack &dryvol_c)                 // out
+                          Real &dryvol_i,                 // out
+                          Real &dryvol_c)                 // out
 {
-  // Pack dryvol = 0;
+  // Real dryvol = 0;
   const auto q_i = prognostics.q_aero_i;
   const auto q_c = prognostics.q_aero_c;
   dryvol_i = 0;
@@ -165,40 +136,39 @@ void get_relaxed_v2n_limits(const bool do_aitacc_transfer,
  *--------------------------------------------------------------------------*/
 KOKKOS_INLINE_FUNCTION
 void update_diameter_and_vol2num(/*std::size_t klev, std::size_t imode, */
-                                 const Pack &drv, const Pack &num, Real v2nmin,
+                                 const Real &drv, const Real &num, Real v2nmin,
                                  Real v2nmax, Real dgnmin, Real dgnmax,
-                                 Real cmn_factor, Pack &dgncur_k_i,
-                                 Pack &v2ncur_k_i) {
+                                 Real cmn_factor, Real &dgncur,
+                                 Real &v2ncur) {
   const auto drv_gt_0 = drv > 0.0;
-  if (!drv_gt_0.any())
+  if (!drv_gt_0)
     return;
 
   const auto drv_mul_v2nmin = drv * v2nmin;
   const auto drv_mul_v2nmax = drv * v2nmax;
 
-  // auto &dgncur_k_i = dgncur(klev, imode);
-  // auto &v2ncur_k_i = v2ncur(klev, imode);
-
-  dgncur_k_i.set(num <= drv_mul_v2nmin, dgnmin);
-  dgncur_k_i.set(num >= drv_mul_v2nmax, dgnmax);
-  dgncur_k_i.set(num > drv_mul_v2nmin and num < drv_mul_v2nmax,
-                 pow((drv / (cmn_factor * num)), (1.0 / 3.0)));
-
-  v2ncur_k_i.set(num <= drv_mul_v2nmin, v2nmin);
-  v2ncur_k_i.set(num >= drv_mul_v2nmax, v2nmax);
-  v2ncur_k_i.set(num > drv_mul_v2nmin and num < drv_mul_v2nmax, num / drv);
+  if (num <= drv_mul_v2nmin) {
+    dgncur = dgnmin; // set to minimum diameter for this mode
+    v2ncur = v2nmin; // set to minimum vol2num ratio for this mode
+  } else if (num >= drv_mul_v2nmax)  {
+    dgncur = dgnmax; // set to maximum diameter for this mode
+    v2ncur = v2nmax; // set to maximum vol2num ratio for this mode
+  } else {
+    dgncur = pow((drv / (cmn_factor * num)), (1.0 / 3.0)); //compute diameter based on dry volume (drv)
+    v2ncur = num / drv; 
+  }
 }
 
 KOKKOS_INLINE_FUNCTION
 // rename to match ported fortran version
-static Pack update_num_adj_tends(const Pack &num, const Pack &num0,
-                                 const Pack &dt_inverse) {
+static Real update_num_adj_tends(const Real &num, const Real &num0,
+                                 const Real &dt_inverse) {
   return (num - num0) * dt_inverse;
 }
 
 KOKKOS_INLINE_FUNCTION
-static Pack min_max_bounded(const Pack &drv, const Pack &v2nmin,
-                            const Pack &v2nmax, const Pack &num) {
+static Real min_max_bounded(const Real &drv, const Real &v2nmin,
+                            const Real &v2nmax, const Real &num) {
   return max(drv * v2nmin, min(drv * v2nmax, num));
 }
 
@@ -207,12 +177,12 @@ static Pack min_max_bounded(const Pack &drv, const Pack &v2nmin,
  * comments.
  */
 KOKKOS_INLINE_FUNCTION
-void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
-                      const Pack &init_num_i, const Pack &init_num_c,
+void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
+                      const Real &init_num_i, const Real &init_num_c,
                       const Real &dt, const Real &v2nmin, const Real &v2nmax,
                       const Real &v2nminrl, const Real &v2nmaxrl,
                       const Real &adj_tscale_inv, const Real &close_to_one,
-                      Pack &num_i, Pack &num_c, Pack &dqdt, Pack &dqqcwdt) {
+                      Real &num_i, Real &num_c, Real &dqdt, Real &dqqcwdt) {
 
   // intent-ins
   // real(wp), intent(in) :: drv_i, drv_c      dry volumes [TODO:units]
@@ -262,72 +232,51 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
   /*
    * The masks below represent four if-else conditions in the original fortran
    * code. The masks represent whether a given branch should be traversed for
-   * a given element of the pack, and this pack is passed to the function
+   * a given element of the Real, and this Real is passed to the function
    * invocations.
    */
+
   const auto drva_le_zero = drv_i <= 0.0;
-  num_i.set(drva_le_zero, 0.0);
-
   const auto drvc_le_zero = drv_c <= 0.0;
-  num_c.set(drvc_le_zero, 0.0);
 
-  /* If both interstitial (drv_i) and cloud borne (drv_c) dry volumes are zero
-   * (or less) adjust numbers(num_i and num_c respectively) for both of them
-   * to be zero for this mode and level
-   */
   const auto drv_i_c_le_zero = drva_le_zero && drvc_le_zero;
-  dqdt.set(drv_i_c_le_zero, update_num_adj_tends(num_i, init_num_i, dtinv));
-  dqqcwdt.set(drv_i_c_le_zero, update_num_adj_tends(num_c, init_num_c, dtinv));
+  const Real zero = 0;
 
-  /* if cloud borne dry volume (drv_c) is zero(or less), the interstitial
-   * number/volume == total/combined apply step 1 and 3, but skip the relaxed
-   * adjustment (step 2, see below)
-   */
-  const auto only_drvc_le_zero = !drva_le_zero && drvc_le_zero;
-  {
+  //If both interstitial (drv_a) and cloud borne (drv_c) dry volumes are zero (or less)
+  //adjust numbers(num_a and num_c respectively) for both of them to be zero for this mode and level
+  if (drv_i_c_le_zero){
+    num_i=zero;
+    num_c=zero;
+    dqdt = update_num_adj_tends(num_i, init_num_i, dtinv);
+    dqqcwdt = update_num_adj_tends(num_c, init_num_c, dtinv);
+  } else if (drvc_le_zero) {
+    //if cloud borne dry volume (drv_c) is zero(or less), the interstitial number/volume == total/combined
+    //apply step 1 and 3, but skip the relaxed adjustment (step 2, see below)
+    num_c=zero;
     const auto numbnd = min_max_bounded(drv_i, v2nmin, v2nmax, num_i);
-    num_i.set(only_drvc_le_zero, num_i + (numbnd - num_i) * frac_adj_in_dt);
-  }
-
-  /* interstitial volume is zero, treat similar to above */
-  const auto only_drva_le_zero = !drvc_le_zero && drva_le_zero;
-  {
+    num_i = num_i + (numbnd - num_i) * frac_adj_in_dt; 
+  } else if (drva_le_zero) {
+    // interstitial volume is zero, treat similar to above
     const auto numbnd = min_max_bounded(drv_c, v2nmin, v2nmax, num_c);
-    num_c.set(only_drva_le_zero, num_c + (numbnd - num_c) * frac_adj_in_dt);
-  }
-
-  /* Note that anything in this scope that touches a pack outside this scope,
-   * it must also refer to `drv_i_c_gt_zero`. e.g., `pk.set(drv_i_c_gt_zero &&
-   * some_other_cond, val);`
-   */
-  const auto drv_i_c_gt_zero = !drvc_le_zero && !drva_le_zero;
-  if (drv_i_c_gt_zero.any()) {
-    /*
-     * The number adjustment is done in 3 steps:
-     *
-     * Step 1: assumes that num_i and num_c are non-negative (nothing to be
-     * done here)
-     */
+    num_c = num_c + (numbnd - num_c) * frac_adj_in_dt; 
+    num_i=zero;
+  } else 
+  {
+    // The number adjustment is done in 3 steps:
+    // Step 1: assumes that num_a and num_c are non-negative (nothing to be done here)
     const auto num_i_stp1 = num_i;
     const auto num_c_stp1 = num_c;
 
-    /*
-     * Step 2 [Apply relaxed bounds] has 3 parts (a), (b) and (c)
-     *
-     * Step 2: (a) Apply relaxed bounds to bound num_i and num_c within
-     * "relaxed" bounds.
-     */
-    auto numbnd = min_max_bounded(drv_i, v2nminrl, v2nmaxrl, num_i_stp1);
+    //Step 2 [Apply relaxed bounds] has 3 parts (a), (b) and (c)
+    // Step 2: (a)Apply relaxed bounds to bound num_a and num_c within "relaxed" bounds.
+    auto numbnd = min_max_bounded(drv_i, v2nminrl, v2nmaxrl, num_i_stp1);//bounded to relaxed min and max
+    /* (b)Ideally, num_* should be in range. If they are not, we assume that
+       they will reach their maximum (or minimum)for this mode within a day (time scale).
+       We then compute how much num_* will change in a time step by multiplying the difference
+       between num_* and its maximum(or minimum) with "frac_adj_in_dt".
+    */
 
-    /*
-     * 2(b) Ideally, num_* should be in range. If they are not, we assume
-     * that they will reach their maximum (or minimum)for this mode
-     * within a day (time scale). We then compute how much num_* will
-     * change in a time step by multiplying the difference between num_*
-     * and its maximum(or minimum) with "frac_adj_in_dt".
-     */
     const auto delta_num_i_stp2 = (numbnd - num_i_stp1) * frac_adj_in_dt;
-
     // change in num_i in one time step
     auto num_i_stp2 = num_i_stp1 + delta_num_i_stp2;
 
@@ -337,32 +286,31 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
 
     // change in num_i in one time step
     auto num_c_stp2 = num_c_stp1 + delta_num_c_stp2;
-
-    /*
-     * 2(c) We now also need to balance num_* in case only one among the
-     * interstitial or cloud- borne is changing. If interstitial stayed the
-     * same (i.e. it is within range) but cloud-borne is predicted to reach
-     * its maximum(or minimum), we modify interstitial number (num_i), so as
-     * to accommodate change in the cloud-borne aerosols (and vice-versa). We
-     * try to balance these by moving the num_* in the opposite direction as
-     * much as possible to conserve num_i + num_c (such that num_i+num_c stays
-     * close to its original value)
-     */
+    
+    /* (c)We now also need to balance num_* incase only one among the interstitial or cloud-
+      borne is changing. If interstitial stayed the same (i.e. it is within range)
+      but cloud-borne is predicted to reach its maximum(or minimum), we modify
+      interstitial number (num_a), so as to accomodate change in the cloud-borne aerosols
+      (and vice-versa). We try to balance these by moving the num_* in the opposite
+      direction as much as possible to conserve num_a + num_c (such that num_a+num_c
+      stays close to its original value)
+    */
     const auto delta_num_i_stp2_eq0 = delta_num_i_stp2 == 0.0;
     const auto delta_num_c_stp2_eq0 = delta_num_c_stp2 == 0.0;
+    
+    if (delta_num_i_stp2_eq0 && !delta_num_c_stp2_eq0){
+      num_i_stp2= min_max_bounded(drv_i, v2nminrl, v2nmaxrl,
+                                   num_i_stp1 - delta_num_c_stp2);
+    } else if (delta_num_c_stp2_eq0 && !delta_num_i_stp2_eq0){
+      num_c_stp2=min_max_bounded(drv_c, v2nminrl, v2nmaxrl,
+                                   num_c_stp1 - delta_num_i_stp2);
+    } else {
+      // nothing here
+    }  // end if 
 
-    num_i_stp2.set(delta_num_i_stp2_eq0 && !delta_num_c_stp2_eq0,
-                   min_max_bounded(drv_i, v2nminrl, v2nmaxrl,
-                                   num_i_stp1 - delta_num_c_stp2));
-
-    num_c_stp2.set(delta_num_c_stp2_eq0 && !delta_num_i_stp2_eq0,
-                   min_max_bounded(drv_c, v2nminrl, v2nmaxrl,
-                                   num_c_stp1 - delta_num_i_stp2));
-
-    /*
-     * Step 3 [apply stricter bounds] has 3 parts (a), (b) and (c)
-     * Step 3:(a) compute combined total of num_i and num_c
-     */
+    /* Step3[apply stricter bounds] has 3 parts (a), (b) and (c)
+       Step 3:(a) compute combined total of num_a and num_c
+    */
     const auto total_drv = drv_i + drv_c;
     const auto total_num = num_i_stp2 + num_c_stp2;
 
@@ -371,10 +319,10 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
      *     is out of range. If total_num is within range, we don't do anything
      * (i.e. delta_numa3 and delta_num_c_stp3 remain zero)
      */
-    auto delta_num_i_stp3 = Pack(0.0);
-    auto delta_num_c_stp3 = Pack(0.0);
+    auto delta_num_i_stp3 = zero;
+    auto delta_num_c_stp3 = zero;
 
-    /*
+       /*
      * "total_drv*v2nmin" represents minimum number for this mode, and
      * "total_drv*v2nmxn" represents maximum number for this mode
      */
@@ -382,37 +330,34 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
     const auto max_number_bound = total_drv * v2nmax;
 
     const auto total_lt_lowerbound = total_num < min_number_bound;
-    {
-      // change in total_num in one time step
+    const auto total_gt_upperbound = total_num > max_number_bound;
+    if (total_lt_lowerbound){
+          // change in total_num in one time step
       const auto delta_num_t3 = (min_number_bound - total_num) * frac_adj_in_dt;
 
       /*
        * Now we need to decide how to distribute "delta_num" (change in
        * number) for num_i and num_c.
-       *
-       * if both num_i and num_c are less than the lower bound distribute
-       * "delta_num" using weighted ratios
        */
       const auto do_dist_delta_num =
           (num_i_stp2 < drv_i * v2nmin) && (num_c_stp2 < drv_c * v2nmin);
+      if (do_dist_delta_num) {
+       /* if both num_i and num_c are less than the lower bound distribute
+       * "delta_num" using weighted ratios
+       */
+        delta_num_i_stp3 = delta_num_t3 * (num_i_stp2 / total_num);
+        delta_num_c_stp3 = delta_num_t3 * (num_c_stp2 / total_num);
+      } else if (num_c_stp2 < drv_c * v2nmin) {
+        // if only num_c is less than lower bound, assign total change to num_c
+        delta_num_c_stp3 = delta_num_t3;
+      } else if (num_i_stp2 < drv_i * v2nmin) {
+        // if only num_a is less than lower bound, assign total change to num_a
+        delta_num_i_stp3 = delta_num_t3;
+      } else {
+        // nothing here
+      } // end do_dist_delta_num
 
-      delta_num_i_stp3.set(total_lt_lowerbound && do_dist_delta_num,
-                           delta_num_t3 * (num_i_stp2 / total_num));
-
-      delta_num_c_stp3.set(total_lt_lowerbound && do_dist_delta_num,
-                           delta_num_t3 * (num_c_stp2 / total_num));
-
-      // if only num_c is less than lower bound, assign total change to num_c
-      delta_num_c_stp3.set(total_lt_lowerbound && (num_c_stp2 < drv_c * v2nmin),
-                           delta_num_t3);
-
-      // if only num_i is less than lower bound, assign total change to num_i
-      delta_num_i_stp3.set(total_lt_lowerbound && (num_i_stp2 < drv_i * v2nmin),
-                           delta_num_t3);
-    }
-
-    const auto total_gt_upperbound = total_num > max_number_bound;
-    {
+    } else if (total_gt_upperbound) {
       // change in total_num in one time step
       const auto delta_num_t3 = (max_number_bound - total_num) * frac_adj_in_dt;
 
@@ -420,35 +365,221 @@ void adjust_num_sizes(const Pack &drv_i, const Pack &drv_c,
       // num_c
       const auto do_dist_delta_num =
           (num_i_stp2 > drv_i * v2nmax) && (num_c_stp2 > drv_c * v2nmax);
-
-      /*
+      if (do_dist_delta_num) {
+             /*
        * if both num_i and num_c are more than the upper bound distribute
        * "delta_num" using weighted ratios
        */
-      delta_num_i_stp3.set(total_gt_upperbound && do_dist_delta_num,
-                           delta_num_t3 * (num_i_stp2 / total_num));
-      delta_num_c_stp3.set(total_gt_upperbound && do_dist_delta_num,
-                           delta_num_t3 * (num_c_stp2 / total_num));
+      delta_num_i_stp3=delta_num_t3 * (num_i_stp2 / total_num);
+      delta_num_c_stp3=delta_num_t3 * (num_c_stp2 / total_num);
 
-      // if only num_c is more than the upper bound, assign total change to
-      // num_c
-      delta_num_c_stp3.set(total_gt_upperbound && (num_c_stp2 > drv_c * v2nmax),
-                           delta_num_t3);
+      } else if (num_c_stp2 > drv_c * v2nmax) {
+              // if only num_c is more than the upper bound, assign total change to
+        // num_c
+        delta_num_c_stp3 = delta_num_t3; 
 
-      // if only num_i is more than the upper bound, assign total change to
-      // num_i
-      delta_num_i_stp3.set(total_gt_upperbound && (num_i_stp2 > drv_i * v2nmax),
-                           delta_num_t3);
-    }
+      } else if (num_i_stp2 > drv_i * v2nmax) {
 
-    // Update num_i/c
-    num_i.set(drv_i_c_gt_zero, num_i_stp2 + delta_num_i_stp3);
-    num_c.set(drv_i_c_gt_zero, num_c_stp2 + delta_num_c_stp3);
-  }
+        // if only num_i is more than the upper bound, assign total change to
+        // num_i
+        delta_num_i_stp3=delta_num_t3;
+      } else {
+        // nothing here
+      } // end if do_dist_delta_num
+
+    } // end if total_lt_lowerbound
+
+    num_i = num_i_stp2 + delta_num_i_stp3;
+    num_c = num_c_stp2 + delta_num_c_stp3;
+
+  } // end if drv_i_c_le_zero
 
   // Update tendencies
   dqdt = update_num_adj_tends(num_i, init_num_i, dtinv);
   dqqcwdt = update_num_adj_tends(num_c, init_num_c, dtinv);
+
+
+  // num_i.set(drva_le_zero, 0.0);  
+  // num_c.set(drvc_le_zero, 0.0);
+
+  // /* If both interstitial (drv_i) and cloud borne (drv_c) dry volumes are zero
+  //  * (or less) adjust numbers(num_i and num_c respectively) for both of them
+  //  * to be zero for this mode and level
+  //  */
+  // const auto drv_i_c_le_zero = drva_le_zero && drvc_le_zero;
+  // dqdt.set(drv_i_c_le_zero, update_num_adj_tends(num_i, init_num_i, dtinv));
+  // dqqcwdt.set(drv_i_c_le_zero, update_num_adj_tends(num_c, init_num_c, dtinv));
+
+  // /* if cloud borne dry volume (drv_c) is zero(or less), the interstitial
+  //  * number/volume == total/combined apply step 1 and 3, but skip the relaxed
+  //  * adjustment (step 2, see below)
+  //  */
+  // const auto only_drvc_le_zero = !drva_le_zero && drvc_le_zero;
+  // {
+  //   const auto numbnd = min_max_bounded(drv_i, v2nmin, v2nmax, num_i);
+  //   num_i.set(only_drvc_le_zero, num_i + (numbnd - num_i) * frac_adj_in_dt);
+  // }
+
+  // /* interstitial volume is zero, treat similar to above */
+  // const auto only_drva_le_zero = !drvc_le_zero && drva_le_zero;
+  // {
+  //   const auto numbnd = min_max_bounded(drv_c, v2nmin, v2nmax, num_c);
+  //   num_c.set(only_drva_le_zero, num_c + (numbnd - num_c) * frac_adj_in_dt);
+  // }
+
+  // /* Note that anything in this scope that touches a Real outside this scope,
+  //  * it must also refer to `drv_i_c_gt_zero`. e.g., `pk.set(drv_i_c_gt_zero &&
+  //  * some_other_cond, val);`
+  //  */
+  // const auto drv_i_c_gt_zero = !drvc_le_zero && !drva_le_zero;
+  // if (drv_i_c_gt_zero.any()) {
+  //   /*
+  //    * The number adjustment is done in 3 steps:
+  //    *
+  //    * Step 1: assumes that num_i and num_c are non-negative (nothing to be
+  //    * done here)
+  //    */
+  //   const auto num_i_stp1 = num_i;
+  //   const auto num_c_stp1 = num_c;
+
+  //   /*
+  //    * Step 2 [Apply relaxed bounds] has 3 parts (a), (b) and (c)
+  //    *
+  //    * Step 2: (a) Apply relaxed bounds to bound num_i and num_c within
+  //    * "relaxed" bounds.
+  //    */
+  //   auto numbnd = min_max_bounded(drv_i, v2nminrl, v2nmaxrl, num_i_stp1);
+
+  //   /*
+  //    * 2(b) Ideally, num_* should be in range. If they are not, we assume
+  //    * that they will reach their maximum (or minimum)for this mode
+  //    * within a day (time scale). We then compute how much num_* will
+  //    * change in a time step by multiplying the difference between num_*
+  //    * and its maximum(or minimum) with "frac_adj_in_dt".
+  //    */
+  //   const auto delta_num_i_stp2 = (numbnd - num_i_stp1) * frac_adj_in_dt;
+
+  //   // change in num_i in one time step
+  //   auto num_i_stp2 = num_i_stp1 + delta_num_i_stp2;
+
+  //   // bounded to relaxed min and max
+  //   numbnd = min_max_bounded(drv_c, v2nminrl, v2nmaxrl, num_c_stp1);
+  //   const auto delta_num_c_stp2 = (numbnd - num_c_stp1) * frac_adj_in_dt;
+
+  //   // change in num_i in one time step
+  //   auto num_c_stp2 = num_c_stp1 + delta_num_c_stp2;
+
+  //   /*
+  //    * 2(c) We now also need to balance num_* in case only one among the
+  //    * interstitial or cloud- borne is changing. If interstitial stayed the
+  //    * same (i.e. it is within range) but cloud-borne is predicted to reach
+  //    * its maximum(or minimum), we modify interstitial number (num_i), so as
+  //    * to accommodate change in the cloud-borne aerosols (and vice-versa). We
+  //    * try to balance these by moving the num_* in the opposite direction as
+  //    * much as possible to conserve num_i + num_c (such that num_i+num_c stays
+  //    * close to its original value)
+  //    */
+  //   const auto delta_num_i_stp2_eq0 = delta_num_i_stp2 == 0.0;
+  //   const auto delta_num_c_stp2_eq0 = delta_num_c_stp2 == 0.0;
+
+  //   num_i_stp2.set(delta_num_i_stp2_eq0 && !delta_num_c_stp2_eq0,
+  //                  min_max_bounded(drv_i, v2nminrl, v2nmaxrl,
+  //                                  num_i_stp1 - delta_num_c_stp2));
+
+  //   num_c_stp2.set(delta_num_c_stp2_eq0 && !delta_num_i_stp2_eq0,
+  //                  min_max_bounded(drv_c, v2nminrl, v2nmaxrl,
+  //                                  num_c_stp1 - delta_num_i_stp2));
+
+  //   /*
+  //    * Step 3 [apply stricter bounds] has 3 parts (a), (b) and (c)
+  //    * Step 3:(a) compute combined total of num_i and num_c
+  //    */
+  //   const auto total_drv = drv_i + drv_c;
+  //   const auto total_num = num_i_stp2 + num_c_stp2;
+
+  //   /*
+  //    * 3(b) We now compute amount of num_* to change if total_num
+  //    *     is out of range. If total_num is within range, we don't do anything
+  //    * (i.e. delta_numa3 and delta_num_c_stp3 remain zero)
+  //    */
+  //   auto delta_num_i_stp3 = Real(0.0);
+  //   auto delta_num_c_stp3 = Real(0.0);
+
+  //   /*
+  //    * "total_drv*v2nmin" represents minimum number for this mode, and
+  //    * "total_drv*v2nmxn" represents maximum number for this mode
+  //    */
+  //   const auto min_number_bound = total_drv * v2nmin;
+  //   const auto max_number_bound = total_drv * v2nmax;
+
+  //   const auto total_lt_lowerbound = total_num < min_number_bound;
+  //   {
+  //     // change in total_num in one time step
+  //     const auto delta_num_t3 = (min_number_bound - total_num) * frac_adj_in_dt;
+
+  //     /*
+  //      * Now we need to decide how to distribute "delta_num" (change in
+  //      * number) for num_i and num_c.
+  //      *
+  //      * if both num_i and num_c are less than the lower bound distribute
+  //      * "delta_num" using weighted ratios
+  //      */
+  //     const auto do_dist_delta_num =
+  //         (num_i_stp2 < drv_i * v2nmin) && (num_c_stp2 < drv_c * v2nmin);
+
+  //     delta_num_i_stp3.set(total_lt_lowerbound && do_dist_delta_num,
+  //                          delta_num_t3 * (num_i_stp2 / total_num));
+
+  //     delta_num_c_stp3.set(total_lt_lowerbound && do_dist_delta_num,
+  //                          delta_num_t3 * (num_c_stp2 / total_num));
+
+  //     // if only num_c is less than lower bound, assign total change to num_c
+  //     delta_num_c_stp3.set(total_lt_lowerbound && (num_c_stp2 < drv_c * v2nmin),
+  //                          delta_num_t3);
+
+  //     // if only num_i is less than lower bound, assign total change to num_i
+  //     delta_num_i_stp3.set(total_lt_lowerbound && (num_i_stp2 < drv_i * v2nmin),
+  //                          delta_num_t3);
+  //   }
+
+  //   const auto total_gt_upperbound = total_num > max_number_bound;
+  //   {
+  //     // change in total_num in one time step
+  //     const auto delta_num_t3 = (max_number_bound - total_num) * frac_adj_in_dt;
+
+  //     // decide how to distribute "delta_num"(change in number) for num_i and
+  //     // num_c
+  //     const auto do_dist_delta_num =
+  //         (num_i_stp2 > drv_i * v2nmax) && (num_c_stp2 > drv_c * v2nmax);
+
+  //     /*
+  //      * if both num_i and num_c are more than the upper bound distribute
+  //      * "delta_num" using weighted ratios
+  //      */
+  //     delta_num_i_stp3.set(total_gt_upperbound && do_dist_delta_num,
+  //                          delta_num_t3 * (num_i_stp2 / total_num));
+  //     delta_num_c_stp3.set(total_gt_upperbound && do_dist_delta_num,
+  //                          delta_num_t3 * (num_c_stp2 / total_num));
+
+  //     // if only num_c is more than the upper bound, assign total change to
+  //     // num_c
+  //     delta_num_c_stp3.set(total_gt_upperbound && (num_c_stp2 > drv_c * v2nmax),
+  //                          delta_num_t3);
+
+  //     // if only num_i is more than the upper bound, assign total change to
+  //     // num_i
+  //     delta_num_i_stp3.set(total_gt_upperbound && (num_i_stp2 > drv_i * v2nmax),
+  //                          delta_num_t3);
+  //   }
+
+  //   // Update num_i/c
+  //   num_i.set(drv_i_c_gt_zero, num_i_stp2 + delta_num_i_stp3);
+  //   num_c.set(drv_i_c_gt_zero, num_c_stp2 + delta_num_c_stp3);
+  // }
+
+  // Update tendencies
+  // dqdt = update_num_adj_tends(num_i, init_num_i, dtinv);
+  // dqqcwdt = update_num_adj_tends(num_c, init_num_c, dtinv);
 }
 
 /*
@@ -570,15 +701,18 @@ public:
     static constexpr bool do_aitacc_transfer = true;
     static constexpr bool do_adjust = true;
 
-    const int nk = PackInfo::num_packs(atmosphere.num_levels());
     const int aitken_idx = int(ModeIndex::Aitken);
     const int accumulation_idx = int(ModeIndex::Accumulation);
     const int nmodes = AeroConfig::num_modes();
+    const int nk = atmosphere.num_levels();
     auto &dgncur_i = diagnostics.dgncur_i;
     auto &v2ncur_i = diagnostics.v2ncur_i;
     auto &dgncur_c = diagnostics.dgncur_c;
     auto &v2ncur_c = diagnostics.v2ncur_c;
     const auto inv_density = _inv_density; 
+    const Real zero=0;
+    const Real close_to_one = 1.0 + 1.0e-15;
+    const Real seconds_in_a_day = 86400.0;
 
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
@@ -592,8 +726,8 @@ public:
           // tendencies for cloud-borne number mixing ratios
           const auto dncdt = tendencies.n_mode_c;
 
-          Pack dryvol_i = 0;
-          Pack dryvol_c = 0;
+          Real dryvol_i = 0;
+          Real dryvol_c = 0;
           for (int imode = 0; imode < nmodes; imode++) {
 
             // FIXME: as compared to the oldHaero_fortranPort.f90, we appear to
@@ -672,20 +806,17 @@ public:
                 v2nmaxrl); // outputs (NOTE: v2nmin and v2nmax are only updated
                            // for aitken and accumulation modes)
 
-            // initial value of num interstitial for this pack and mode
+            // initial value of num interstitial for this Real and mode
             auto init_num_i = n_i[imode](k);
 
             // `adjust_num_sizes` will use the initial value, but other
             // calculations require this to be nonzero.
             // Make it non-negative
-            auto num_i_k = Pack(init_num_i < 0, Pack(0.0), init_num_i);
+            auto num_i_k = init_num_i < 0 ? zero : init_num_i;
 
             auto init_num_c = n_c[imode](k);
             // Make it non-negative
-            auto num_c_k = Pack(init_num_c < 0, Pack(0.0), init_num_c);
-
-            static constexpr Real close_to_one = 1.0 + 1.0e-15;
-            static constexpr Real seconds_in_a_day = 86400.0;
+            auto num_c_k = init_num_c < 0 ? zero : init_num_c;
 
             // these quantities are required for adjust_num_sizes() and
             // aitken_accum_exchange() [within, specifically
@@ -751,23 +882,23 @@ public:
             // save number concentrations and dry volumes for explicit
             // aitken <--> accum mode transfer, which is the next step in
             // the calcSize process
-            if (do_aitacc_transfer) {
-              if (imode == aitken_idx) {
-                // TODO: determine if we need to save these--i.e., is drv_i ever
-                // changed before the max() calculation in
-                // aitken_accum_exchange() if yet, maybe better to skip the
-                // logic and do it, regardless?
-                const auto sdryvol_i_ait = dryvol_i;
-                const auto snum_i_k_ait = num_i_k;
-                const auto sdryvol_c_ait = dryvol_c;
-                const auto snum_c_k_ait = num_c_k;
-              } else if (imode == accumulation_idx) {
-                const auto sdryvol_i_acc = dryvol_i;
-                const auto snum_i_k_acc = num_i_k;
-                const auto sdryvol_c_acc = dryvol_c;
-                const auto snum_c_k_acc = num_c_k;
-              }
-            }
+            // if (do_aitacc_transfer) {
+            //   if (imode == aitken_idx) {
+            //     // TODO: determine if we need to save these--i.e., is drv_i ever
+            //     // changed before the max() calculation in
+            //     // aitken_accum_exchange() if yet, maybe better to skip the
+            //     // logic and do it, regardless?
+            //     const auto sdryvol_i_ait = dryvol_i;
+            //     const auto snum_i_k_ait = num_i_k;
+            //     const auto sdryvol_c_ait = dryvol_c;
+            //     const auto snum_c_k_ait = num_c_k;
+            //   } else if (imode == accumulation_idx) {
+            //     const auto sdryvol_i_acc = dryvol_i;
+            //     const auto snum_i_k_acc = num_i_k;
+            //     const auto sdryvol_c_acc = dryvol_c;
+            //     const auto snum_c_k_acc = num_c_k;
+            //   }
+            // }
           } // for(imode)
 
           // ------------------------------------------------------------------

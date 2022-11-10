@@ -85,23 +85,23 @@ void compute_tendencies(Ensemble *ensemble) {
 
       auto h_tend_num_i = Kokkos::create_mirror_view(tends.n_mode_i[imode]);
       Kokkos::deep_copy(tends.n_mode_i[imode], h_tend_num_i);
-      tend_n_mode_i_out.push_back(h_tend_num_i(0)[0]);
+      tend_n_mode_i_out.push_back(h_tend_num_i(0));
 
       auto h_tend_num_c = Kokkos::create_mirror_view(tends.n_mode_c[imode]);
       Kokkos::deep_copy(tends.n_mode_c[imode], h_tend_num_c);
-      tend_n_mode_c_out.push_back(h_tend_num_c(0)[0]);
+      tend_n_mode_c_out.push_back(h_tend_num_c(0));
 
       const auto n_spec = num_species_mode[imode];
       for (int isp = 0; isp < n_spec; ++isp) {
         auto h_tend_aero_i =
             Kokkos::create_mirror_view(tends.q_aero_i[imode][isp]);
         Kokkos::deep_copy(tends.q_aero_i[imode][isp], h_tend_aero_i);
-        tend_aero_i_out.push_back(h_tend_aero_i(0)[0]);
+        tend_aero_i_out.push_back(h_tend_aero_i(0));
 
         auto h_tend_aero_c =
             Kokkos::create_mirror_view(tends.q_aero_c[imode][isp]);
         Kokkos::deep_copy(tends.q_aero_c[imode][isp], h_tend_aero_c);
-        tend_aero_c_out.push_back(h_tend_aero_c(0)[0]);
+        tend_aero_c_out.push_back(h_tend_aero_c(0));
 
       } // end species
     }   // end mode

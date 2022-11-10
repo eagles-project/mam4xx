@@ -33,11 +33,11 @@ void adjust_num_sizes(Ensemble *ensemble) {
     auto in_v2nminrl = input.get_array("v2nminrl");
     auto in_v2nmaxrl = input.get_array("v2nmaxrl");
 
-    Pack drv_i[nmodes];
-    Pack drv_c[nmodes];
+    Real drv_i[nmodes];
+    Real drv_c[nmodes];
 
-    Pack init_num_i[nmodes];
-    Pack init_num_c[nmodes];
+    Real init_num_i[nmodes];
+    Real init_num_c[nmodes];
 
     Real v2nmin[nmodes];
     Real v2nmax[nmodes];
@@ -63,16 +63,17 @@ void adjust_num_sizes(Ensemble *ensemble) {
     const auto adj_tscale = max(seconds_in_a_day, dt);
     const auto adj_tscale_inv = 1.0 / (adj_tscale * close_to_one);
 
-    Pack interstitial_tend[nmodes] = {0};
-    Pack cloudborne_tend[nmodes] = {0};
+    Real interstitial_tend[nmodes] = {0};
+    Real cloudborne_tend[nmodes] = {0};
 
-    Pack num_i[nmodes];
-    Pack num_c[nmodes];
+    Real num_i[nmodes];
+    Real num_c[nmodes];
+    const Real zero=0;
 
     Kokkos::parallel_for("adjust_num_sizes", 1, [&] KOKKOS_FUNCTION(int i) {
       for (int m = 0; m < nmodes; ++m) {
-        num_i[m] = Pack(init_num_i[m] < 0, Pack(0.0), init_num_i[m]);
-        num_c[m] = Pack(init_num_c[m] < 0, Pack(0.0), init_num_c[m]);
+        num_i[m] = init_num_i[m] < 0 ? zero : init_num_i[m];
+        num_c[m] =  init_num_c[m] < 0 ?  zero :  init_num_c[m];
         calcsize::adjust_num_sizes(
             drv_i[m], drv_c[m], init_num_i[m], init_num_c[m], dt, v2nmin[m],
             v2nmax[m], v2nminrl[m], v2nmaxrl[m], adj_tscale_inv, // in
@@ -85,10 +86,10 @@ void adjust_num_sizes(Ensemble *ensemble) {
     std::vector<Real> num_i_values, num_c_values;
 
     for (int m = 0; m < nmodes; ++m) {
-      interstitial_tend_values.push_back(interstitial_tend[m][0]);
-      cloudborne_tend_values.push_back(cloudborne_tend[m][0]);
-      num_i_values.push_back(num_i[m][0]);
-      num_c_values.push_back(num_c[m][0]);
+      interstitial_tend_values.push_back(interstitial_tend[m]);
+      cloudborne_tend_values.push_back(cloudborne_tend[m]);
+      num_i_values.push_back(num_i[m]);
+      num_c_values.push_back(num_c[m]);
     }
 
     output.set("interstitial_tend", interstitial_tend_values);

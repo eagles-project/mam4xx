@@ -44,8 +44,8 @@ void compute_dry_volume_k(Ensemble *ensemble) {
       } // end species
     }   // end modes
 
-    Pack dryvol_i[4];
-    Pack dryvol_c[4];
+    Real dryvol_i[4];
+    Real dryvol_c[4];
     // FIXMED: need to update this variable
     Real inv_density[4][7];
 
@@ -53,8 +53,8 @@ void compute_dry_volume_k(Ensemble *ensemble) {
     // FIXME: Will compile in CUDA?
     Kokkos::parallel_for("compute_dry_volume_k", 1, [&] KOKKOS_FUNCTION(int k) {
       for (int imode = 0; imode < nmodes; ++imode) {
-        Pack dryvol_i_k = 0;
-        Pack dryvol_c_k = 0;
+        Real dryvol_i_k = 0;
+        Real dryvol_c_k = 0;
         calcsize::compute_dry_volume_k(k, imode, inv_density,
                                        progs,      // in
                                        dryvol_i_k, // out
@@ -67,8 +67,8 @@ void compute_dry_volume_k(Ensemble *ensemble) {
     std::vector<Real> values_i, values_c;
 
     for (int imode = 0; imode < nmodes; ++imode) {
-      values_i.push_back(dryvol_i[imode][0]);
-      values_c.push_back(dryvol_c[imode][0]);
+      values_i.push_back(dryvol_i[imode]);
+      values_c.push_back(dryvol_c[imode]);
     }
 
     output.set("dryvol_i", values_i);
