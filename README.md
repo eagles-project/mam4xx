@@ -49,6 +49,13 @@ install HAERO yourself, you can follow the instructions in the
 [HAERO repository](https://github.com/eagles-project/haero). Make sure you run
 all the steps, including `make install`.
 
+If you're on a machine that requires modules to get access to compilers, etc, 
+use 
+```
+source build-haero.sh <path>
+```
+to make sure your environment is updated.
+
 ### Initializing submodules
 
 Before you start working with the repo, make sure you initialize its submodules:

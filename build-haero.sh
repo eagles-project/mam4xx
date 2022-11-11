@@ -74,7 +74,25 @@ echo "Cloning Haero repository into $(pwd)/.haero..."
 git clone git@github.com:eagles-project/haero.git .haero || exit
 cd .haero || exit
 git submodule update --init --recursive || exit
-cd ..
+
+# Are we on a special machine?
+cd machines
+echo $(pwd)
+for MACHINE_FILE in $(ls)
+do
+  MACHINE=${MACHINE_FILE/\.sh/}
+  echo $MACHINE
+  echo `hostname` | grep -q "$MACHINE" 
+  host_match=$?
+  echo $SYSTEM_NAME | grep -q "$MACHINE"
+  sys_match=$?
+  if  [ $host_match -eq 0 ] || [ $sys_match -eq 0 ]; then
+    echo "Found machine file $MACHINE_FILE. Setting up environment for $MACHINE..."
+    source ./$MACHINE.sh
+  fi
+done
+
+cd ../..
 
 # Configure Haero with the given selections.
 if [[ "$DEVICE" == "gpu" ]]; then
