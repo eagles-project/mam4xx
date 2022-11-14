@@ -359,7 +359,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
 
   constexpr Real onethird = 1.0 / 3.0;
 
-  // dry densities (kg/m3) molecular weights of aerosol
+  // dry densities [kg/m3] molecular weights of aerosol
   // ammsulf, ammbisulf, and sulfacid (from mosaic  dens_electrolyte values)
   //  Real dens_ammsulf   = 1.769e3
   //  Real dens_ammbisulf = 1.78e3
@@ -369,7 +369,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
   constexpr Real dens_ammbisulf = 1.770e3;
   constexpr Real dens_sulfacid = 1.770e3;
 
-  // molecular weights (g/mol) of aerosol ammsulf, ammbisulf, and sulfacid
+  // molecular weights [g/mol] of aerosol ammsulf, ammbisulf, and sulfacid
   // for ammbisulf and sulfacid, use 114 & 96 here rather than 115 & 98
   // because we don't keep track of aerosol hion mass
   constexpr Real mw_ammsulf = 132.0;
@@ -386,7 +386,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
                 (1.0e3 * dens_sulfacid * avogad);
 
   // correction when host code sulfate is really ammonium bisulfate/sulfate
-  voldry_clus = voldry_clus * (mw_so4a_host / mw_so4a);
+  voldry_clus *= (mw_so4a_host / mw_so4a);
   dpdry_clus = pow(voldry_clus * 6.0 / pi, onethird);
 
   isize_nuc = 1;
