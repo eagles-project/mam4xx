@@ -611,6 +611,9 @@ public:
   };
 
 private:
+  static constexpr int num_modes = AeroConfig::num_modes();
+  static constexpr int num_gases = AeroConfig::num_gas_ids();
+  static constexpr int max_num_mode_species = AeroConfig::num_aerosol_ids();
   static const int nait = static_cast<int>(ModeIndex::Aitken);
   static const int igas_h2so4 = static_cast<int>(GasId::H2SO4);
   static const int igas_nh3 = static_cast<int>(GasId::NH3);
@@ -624,9 +627,9 @@ private:
   Config config_;
 
   // Mode parameters
-  Real dgnum_aer[4],  // mean geometric number diameter
-      dgnumhi_aer[4], // max geometric number diameter
-      dgnumlo_aer[4]; // min geometric number diameter
+  Real dgnum_aer[num_modes],  // mean geometric number diameter
+      dgnumhi_aer[num_modes], // max geometric number diameter
+      dgnumlo_aer[num_modes]; // min geometric number diameter
 
 public:
   // name -- unique name of the process implemented by this class
@@ -640,7 +643,7 @@ public:
     config_ = nucl_config;
 
     // Set mode parameters.
-    for (int m = 0; m < 4; ++m) {
+    for (int m = 0; m < num_modes; ++m) {
       // FIXME: There is no mean geometric number diameter in a mode.
       // FIXME: Assume "nominal" diameter for now?
       // FIXME: There is a comment in modal_aero_newnuc.F90 that Dick Easter
@@ -690,22 +693,22 @@ public:
           Real del_h2so4_aeruptk = 0;
 
           // extract gas mixing ratios
-          Real qgas_cur[13], qgas_avg[13];
-          for (int g = 0; g < 13; ++g) {
+          Real qgas_cur[num_gases], qgas_avg[num_gases];
+          for (int g = 0; g < num_gases; ++g) {
             qgas_cur[g] = progs.q_gas[g](k);
             qgas_avg[g] = progs.q_gas[g](k); // FIXME: what should we do here??
           }
 
           // extract aerosol mixing ratios
-          Real qnum_cur[4], qaer_cur[4][7];
-          for (int m = 0; m < 4; ++m) { // modes
+          Real qnum_cur[num_modes], qaer_cur[num_modes][max_num_mode_species];
+          for (int m = 0; m < num_modes; ++m) { // modes
             qnum_cur[m] = progs.n_mode_i[m](k);
             for (int a = 0; a < 7; ++a) { // aerosols
               qaer_cur[m][a] = progs.q_aero_i[m][a](k);
             }
           }
 
-          Real qwtr_cur[4] = {0, 0, 0, 0}; // water vapor mmr?
+          Real qwtr_cur[num_modes] = {0, 0, 0, 0}; // water vapor mmr?
 
           // compute tendencies at this level
           Real dndt_ait, dmdt_ait, dso4dt_ait, dnh4dt_ait, dnclusterdt;
@@ -731,9 +734,11 @@ private:
   void compute_tendencies_(Real deltat, Real temp, Real pmid, Real aircon,
                            Real zmid, Real pblh, Real relhum,
                            Real uptkrate_h2so4, Real del_h2so4_gasprod,
-                           Real del_h2so4_aeruptk, const Real qgas_cur[13],
-                           const Real qgas_avg[13], const Real qnum_cur[4],
-                           const Real qaer_cur[4][7], const Real qwtr_cur[4],
+                           Real del_h2so4_aeruptk, const Real qgas_cur[num_gases],
+                           const Real qgas_avg[num_gases],
+                           const Real qnum_cur[num_modes],
+                           const Real qaer_cur[num_modes][max_num_mode_species],
+                           const Real qwtr_cur[num_modes],
                            Real &dndt_ait, Real &dmdt_ait, Real &dso4dt_ait,
                            Real &dnh4dt_ait, Real &dnclusterdt) const {
     static constexpr Real avogadro = Constants::avogadro;
