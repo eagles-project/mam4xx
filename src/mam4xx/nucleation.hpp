@@ -148,7 +148,7 @@ void binary_nuc_vehk2002(Real temp, Real rh, Real so4vol, Real &ratenucl,
 
   // calc nucleation rate
   // following eq. (12) in Vehkamäki et al. (2002)
-  rateloge = vehkamaki2002::nucleation_rate(so4vol, temp, rh, x_crit);
+  rateloge = log(vehkamaki2002::nucleation_rate(so4vol, temp, rh, x_crit));
   ratenucl = exp(min(rateloge, log(1e38)));
 
   // calc number of molecules in critical cluster
@@ -359,7 +359,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
 
   constexpr Real onethird = 1.0 / 3.0;
 
-  // dry densities (kg/m3) molecular weights of aerosol
+  // dry densities [kg/m3] molecular weights of aerosol
   // ammsulf, ammbisulf, and sulfacid (from mosaic  dens_electrolyte values)
   //  Real dens_ammsulf   = 1.769e3
   //  Real dens_ammbisulf = 1.78e3
@@ -369,7 +369,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
   constexpr Real dens_ammbisulf = 1.770e3;
   constexpr Real dens_sulfacid = 1.770e3;
 
-  // molecular weights (g/mol) of aerosol ammsulf, ammbisulf, and sulfacid
+  // molecular weights [g/mol] of aerosol ammsulf, ammbisulf, and sulfacid
   // for ammbisulf and sulfacid, use 114 & 96 here rather than 115 & 98
   // because we don't keep track of aerosol hion mass
   constexpr Real mw_ammsulf = 132.0;
@@ -386,7 +386,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
                 (1.0e3 * dens_sulfacid * avogad);
 
   // correction when host code sulfate is really ammonium bisulfate/sulfate
-  voldry_clus = voldry_clus * (mw_so4a_host / mw_so4a);
+  voldry_clus *= (mw_so4a_host / mw_so4a);
   dpdry_clus = pow(voldry_clus * 6.0 / pi, onethird);
 
   isize_nuc = 1;
@@ -611,6 +611,9 @@ public:
   };
 
 private:
+  static constexpr int num_modes = AeroConfig::num_modes();
+  static constexpr int num_gases = AeroConfig::num_gas_ids();
+  static constexpr int max_num_mode_species = AeroConfig::num_aerosol_ids();
   static const int nait = static_cast<int>(ModeIndex::Aitken);
   static const int igas_h2so4 = static_cast<int>(GasId::H2SO4);
   static const int igas_nh3 = static_cast<int>(GasId::NH3);
@@ -624,9 +627,9 @@ private:
   Config config_;
 
   // Mode parameters
-  Real dgnum_aer[4],  // mean geometric number diameter
-      dgnumhi_aer[4], // max geometric number diameter
-      dgnumlo_aer[4]; // min geometric number diameter
+  Real dgnum_aer[num_modes],  // mean geometric number diameter
+      dgnumhi_aer[num_modes], // max geometric number diameter
+      dgnumlo_aer[num_modes]; // min geometric number diameter
 
 public:
   // name -- unique name of the process implemented by this class
@@ -640,7 +643,7 @@ public:
     config_ = nucl_config;
 
     // Set mode parameters.
-    for (int m = 0; m < 4; ++m) {
+    for (int m = 0; m < num_modes; ++m) {
       // FIXME: There is no mean geometric number diameter in a mode.
       // FIXME: Assume "nominal" diameter for now?
       // FIXME: There is a comment in modal_aero_newnuc.F90 that Dick Easter
@@ -690,22 +693,22 @@ public:
           Real del_h2so4_aeruptk = 0;
 
           // extract gas mixing ratios
-          Real qgas_cur[13], qgas_avg[13];
-          for (int g = 0; g < 13; ++g) {
+          Real qgas_cur[num_gases], qgas_avg[num_gases];
+          for (int g = 0; g < num_gases; ++g) {
             qgas_cur[g] = progs.q_gas[g](k);
             qgas_avg[g] = progs.q_gas[g](k); // FIXME: what should we do here??
           }
 
           // extract aerosol mixing ratios
-          Real qnum_cur[4], qaer_cur[4][7];
-          for (int m = 0; m < 4; ++m) { // modes
+          Real qnum_cur[num_modes], qaer_cur[num_modes][max_num_mode_species];
+          for (int m = 0; m < num_modes; ++m) { // modes
             qnum_cur[m] = progs.n_mode_i[m](k);
             for (int a = 0; a < 7; ++a) { // aerosols
               qaer_cur[m][a] = progs.q_aero_i[m][a](k);
             }
           }
 
-          Real qwtr_cur[4] = {0, 0, 0, 0}; // water vapor mmr?
+          Real qwtr_cur[num_modes] = {0, 0, 0, 0}; // water vapor mmr?
 
           // compute tendencies at this level
           Real dndt_ait, dmdt_ait, dso4dt_ait, dnh4dt_ait, dnclusterdt;
@@ -728,14 +731,14 @@ private:
   // was ported directly from the compute_tendencies subroutine in the
   // modal_aero_newnuc module from the MAM4 box model.
   KOKKOS_INLINE_FUNCTION
-  void compute_tendencies_(Real deltat, Real temp, Real pmid, Real aircon,
-                           Real zmid, Real pblh, Real relhum,
-                           Real uptkrate_h2so4, Real del_h2so4_gasprod,
-                           Real del_h2so4_aeruptk, const Real qgas_cur[13],
-                           const Real qgas_avg[13], const Real qnum_cur[4],
-                           const Real qaer_cur[4][7], const Real qwtr_cur[4],
-                           Real &dndt_ait, Real &dmdt_ait, Real &dso4dt_ait,
-                           Real &dnh4dt_ait, Real &dnclusterdt) const {
+  void compute_tendencies_(
+      Real deltat, Real temp, Real pmid, Real aircon, Real zmid, Real pblh,
+      Real relhum, Real uptkrate_h2so4, Real del_h2so4_gasprod,
+      Real del_h2so4_aeruptk, const Real qgas_cur[num_gases],
+      const Real qgas_avg[num_gases], const Real qnum_cur[num_modes],
+      const Real qaer_cur[num_modes][max_num_mode_species],
+      const Real qwtr_cur[num_modes], Real &dndt_ait, Real &dmdt_ait,
+      Real &dso4dt_ait, Real &dnh4dt_ait, Real &dnclusterdt) const {
     static constexpr Real avogadro = Constants::avogadro;
     static constexpr Real rgas = Constants::r_gas;
     static constexpr Real ln_nuc_rate_cutoff = -13.82;
