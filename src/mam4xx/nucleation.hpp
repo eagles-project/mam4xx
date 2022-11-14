@@ -731,16 +731,14 @@ private:
   // was ported directly from the compute_tendencies subroutine in the
   // modal_aero_newnuc module from the MAM4 box model.
   KOKKOS_INLINE_FUNCTION
-  void compute_tendencies_(Real deltat, Real temp, Real pmid, Real aircon,
-                           Real zmid, Real pblh, Real relhum,
-                           Real uptkrate_h2so4, Real del_h2so4_gasprod,
-                           Real del_h2so4_aeruptk, const Real qgas_cur[num_gases],
-                           const Real qgas_avg[num_gases],
-                           const Real qnum_cur[num_modes],
-                           const Real qaer_cur[num_modes][max_num_mode_species],
-                           const Real qwtr_cur[num_modes],
-                           Real &dndt_ait, Real &dmdt_ait, Real &dso4dt_ait,
-                           Real &dnh4dt_ait, Real &dnclusterdt) const {
+  void compute_tendencies_(
+      Real deltat, Real temp, Real pmid, Real aircon, Real zmid, Real pblh,
+      Real relhum, Real uptkrate_h2so4, Real del_h2so4_gasprod,
+      Real del_h2so4_aeruptk, const Real qgas_cur[num_gases],
+      const Real qgas_avg[num_gases], const Real qnum_cur[num_modes],
+      const Real qaer_cur[num_modes][max_num_mode_species],
+      const Real qwtr_cur[num_modes], Real &dndt_ait, Real &dmdt_ait,
+      Real &dso4dt_ait, Real &dnh4dt_ait, Real &dnclusterdt) const {
     static constexpr Real avogadro = Constants::avogadro;
     static constexpr Real rgas = Constants::r_gas;
     static constexpr Real ln_nuc_rate_cutoff = -13.82;

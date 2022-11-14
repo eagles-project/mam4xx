@@ -11,7 +11,7 @@ using namespace skywalker;
 using namespace mam4;
 
 void newnuc_cluster_growth(Ensemble *ensemble) {
-  constexpr Real rgas = Constants::r_gas;                     // [J/K/mol]
+  constexpr Real rgas = Constants::r_gas; // [J/K/mol]
   constexpr Real pi = Constants::pi;
   constexpr Real avogadro = Constants::avogadro;              // [#/mol]
   constexpr Real mw_so4a = Constants::molec_weight_so4 * 1e3; // [g/mol]
