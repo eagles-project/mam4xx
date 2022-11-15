@@ -404,28 +404,112 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
   dqqcwdt = update_num_adj_tends(num_c, init_num_c, dtinv);
 }
 
+KOKKOS_INLINE_FUNCTION
+void compute_coef_ait_acc_transfer(aitken_idx) {}
+// v2n_geomean, adj_tscale_inv, drv_a_aitsv, &
+//        drv_c_aitsv, num_a_aitsv, num_c_aitsv,  voltonum_acc, &
+//        ait2acc_index, xfercoef_num_ait2acc, xfercoef_vol_ait2acc,
+//        xfertend_num)
+
+//     !------------------------------------------------------------
+//     ! Purpose: Computes coefficients for transfer from aitken to accumulation
+//     mode
+//     !
+//     ! Author: Richard Easter (Refactored by Balwinder Singh)
+//     !------------------------------------------------------------
+
+//     !intent ins
+//     integer,  intent(in) :: iacc
+//     real(wp), intent(in) :: v2n_geomean    !geometric mean volume to number
+//     ratio real(wp), intent(in) :: adj_tscale_inv !inverse if the time scale
+//     [1/s] real(wp), intent(in) :: drv_a_aitsv, drv_c_aitsv !dry volume
+//     real(wp), intent(in) :: num_a_aitsv, num_c_aitsv, voltonum_acc
+
+//     !intent outs
+//     integer,  intent(inout) :: ait2acc_index
+//     real(wp), intent(inout) :: xfercoef_num_ait2acc, xfercoef_vol_ait2acc!
+//     transfer coefficients real(wp), intent(inout) :: xfertend_num(2,2)
+//     !transfer tendencies
+
+//     !local
+//     real(wp) :: drv_t, num_t
+//     real(wp) :: xferfrac_num_ait2acc, xferfrac_vol_ait2acc
+
+//     !initialize
+//     ait2acc_index        = 0
+//     xfercoef_num_ait2acc = 0.0_wp
+//     xfercoef_vol_ait2acc = 0.0_wp
+//     xfertend_num(:,:)    = 0.0_wp
+
+//     ! compute aitken --> accum transfer rates
+
+//     drv_t = drv_a_aitsv + drv_c_aitsv
+//     num_t = num_a_aitsv + num_c_aitsv
+//     if (drv_t > 0.0_wp) then
+//        !if num is less than the mean value, we have large particles (keeping
+//        volume constant drv_t) !which needs to be moved to accumulation mode
+//        if (num_t < drv_t*v2n_geomean) then
+//           ait2acc_index = 1
+//           if (num_t < drv_t*voltonum_acc) then ! move all particles if number
+//           is smaller than the acc mean
+//              xferfrac_num_ait2acc = 1.0_wp
+//              xferfrac_vol_ait2acc = 1.0_wp
+//           else !otherwise scale the transfer
+//              xferfrac_vol_ait2acc = ((num_t/drv_t) - v2n_geomean)/   &
+//                   (voltonum_acc - v2n_geomean)
+//              xferfrac_num_ait2acc = xferfrac_vol_ait2acc*   &
+//                   (drv_t*voltonum_acc/num_t)
+//              !bound the transfer coefficients between 0 and 1
+//              if ((xferfrac_num_ait2acc <= 0.0_wp) .or.   &
+//                   (xferfrac_vol_ait2acc <= 0.0_wp)) then
+//                 xferfrac_num_ait2acc = 0.0_wp
+//                 xferfrac_vol_ait2acc = 0.0_wp
+//              else if ((xferfrac_num_ait2acc >= 1.0_wp) .or.   &
+//                   (xferfrac_vol_ait2acc >= 1.0_wp)) then
+//                 xferfrac_num_ait2acc = 1.0_wp
+//                 xferfrac_vol_ait2acc = 1.0_wp
+//              end if
+//           end if
+//           xfercoef_num_ait2acc = xferfrac_num_ait2acc*adj_tscale_inv
+//           xfercoef_vol_ait2acc = xferfrac_vol_ait2acc*adj_tscale_inv
+//           xfertend_num(1,1) = num_a_aitsv*xfercoef_num_ait2acc
+//           xfertend_num(1,2) = num_c_aitsv*xfercoef_num_ait2acc
+//        end if
+//     end if
+
+//   end subroutine compute_coef_ait_acc_transfer
+
 /*
  * \brief Exchange aerosols between aitken and accumulation modes based on new
     sizes.
  */
 // @mjs:**HERE**
 KOKKOS_INLINE_FUNCTION
-void aitken_accum_exchange() // nlevs, top_lev, &
-                             // aitken_idx,  accum_idx, adj_tscale_inv, &
-                             // dt, q_i, q_c, n_i, n_c, &
-                             // drv_a_aitsv, num_a_aitsv, drv_c_aitsv,
-                             // num_c_aitsv,     & drv_a_accsv,num_a_accsv,
-                             // drv_c_accsv, num_c_accsv,      & dgncur_a,
-                             // v2ncur_a, dgncur_c, v2ncur_c, & didt, dcdt,
-                             // dnidt, dncdt)
-// NOTE: skipping the existence checks and index verification for now
+void aitken_accum_exchange(const int &k, const int &aitken_idx,
+                           const int &accum_idx, v2nnom_nmodes, adj_tscale_inv,
+                           dt, q_i, q_c, n_i, n_c, drv_a_aitsv, num_a_aitsv,
+                           drv_c_aitsv, num_c_aitsv, drv_a_accsv, num_a_accsv,
+                           drv_c_accsv, num_c_accsv, dgncur_a, v2ncur_a,
+                           dgncur_c, v2ncur_c, didt, dcdt, dnidt, dncdt) {
+  // NOTE: skipping the existence checks and index verification for now
+  Real voltonum_ait =
+      v2nnom_nmodes[aitken_idx]; // volume to number for aitken mode
+  Real voltonum_acc =
+      v2nnom_nmodes[accum_idx]; // volume to number for accumulation mode
 
-{
-  // compute geometric mean of v2n's for aitken and accumulation modes
-  // auto v2n_geo_mean = sqrt(v2n);
-}
+  // v2n_geomean is the geometric mean vol2num values
+  // between the aitken and accum modes
+  auto v2n_geomean = haero::sqrt(voltonum_ait * voltonum_acc);
 
-// aitken_accum_exchange
+  // Compute aitken->accumulation transfer
+  calcSize::compute_coef_ait_acc_transfer(aitken_idx, v2n_geomean,
+                                          adj_tscale_inv);
+  //  (iacc, v2n_geomean, adj_tscale_inv, drv_a_aitsv(klev), & !input
+  // drv_c_aitsv (klev), num_a_aitsv(klev), num_c_aitsv(klev), voltonum_acc, &
+  // !input ait2acc_index, xfercoef_num_ait2acc, xfercoef_vol_ait2acc,
+  // xfertend_num)              !output
+
+} // aitken_accum_exchange
 
 } // namespace calcsize
 
@@ -471,6 +555,12 @@ public:
             const Config &calsize_config = Config()) {
     // Set nucleation-specific config parameters.
     config_ = calsize_config;
+
+    // FIXME: @mjs--set this up in the aero_config?
+    // boolean view indicating which species will be transferred from
+    // accumulation -> aitken indexed to accumulation mode (because it carries
+    // more species)
+    bool no_transfer_acc2ait[7] = {true, false, true, false, false, true, true};
 
     // Set mode parameters.
     for (int m = 0; m < 4; ++m) {
@@ -548,6 +638,26 @@ public:
 
           Real dryvol_i = 0;
           Real dryvol_c = 0;
+          auto didt = tendencies.q_aero_i;
+          auto dcdt = tendencies.q_aero_c;
+          auto q_i = prognostics.q_aero_i;
+          auto q_c = prognostics.q_aero_c;
+
+          //  initialize these variables that are used at the bottom of the
+          //  imode loop and are needed outside the loop scope
+          Real sdryvol_i_ait = 0;
+          Real snum_i_k_ait = 0;
+          Real sdryvol_c_ait = 0;
+          Real snum_c_k_ait = 0;
+          Real sdryvol_i_acc = 0;
+          Real snum_i_k_acc = 0;
+          Real sdryvol_c_acc = 0;
+          Real snum_c_k_acc = 0;
+          Real drv_a_sv[nmodes];
+          Real num_a_sv[nmodes];
+          Real drv_c_sv[nmodes];
+          Real num_c_sv[nmodes];
+
           for (int imode = 0; imode < nmodes; imode++) {
 
             // FIXME: as compared to the oldHaero_fortranPort.f90, we appear to
@@ -702,24 +812,27 @@ public:
             // save number concentrations and dry volumes for explicit
             // aitken <--> accum mode transfer, which is the next step in
             // the calcSize process
-            // if (do_aitacc_transfer) {
-            //   if (imode == aitken_idx) {
-            //     // TODO: determine if we need to save these--i.e., is drv_i
-            //     ever
-            //     // changed before the max() calculation in
-            //     // aitken_accum_exchange() if yet, maybe better to skip the
-            //     // logic and do it, regardless?
-            //     const auto sdryvol_i_ait = dryvol_i;
-            //     const auto snum_i_k_ait = num_i_k;
-            //     const auto sdryvol_c_ait = dryvol_c;
-            //     const auto snum_c_k_ait = num_c_k;
-            //   } else if (imode == accumulation_idx) {
-            //     const auto sdryvol_i_acc = dryvol_i;
-            //     const auto snum_i_k_acc = num_i_k;
-            //     const auto sdryvol_c_acc = dryvol_c;
-            //     const auto snum_c_k_acc = num_c_k;
-            //   }
-            // }
+            if (do_aitacc_transfer) {
+              if (imode == aitken_idx) {
+                // TODO: determine if we need to save these--i.e., is drv_i ever
+                // changed before the max() calculation in
+                // aitken_accum_exchange() if yet, maybe better to skip the
+                // logic and do it, regardless?
+                dryvol_i_ait = dryvol_i;
+                num_i_k_ait = num_i_k;
+                dryvol_c_ait = dryvol_c;
+                num_c_k_ait = num_c_k;
+              } else if (imode == accumulation_idx) {
+                dryvol_i_acc = dryvol_i;
+                num_i_k_acc = num_i_k;
+                dryvol_c_acc = dryvol_c;
+                num_c_k_acc = num_c_k;
+              }
+            }
+            drv_a_sv[imode] = drv_a;
+            num_a_sv[imode] = num_a;
+            drv_c_sv[imode] = drv_c;
+            num_c_sv[imode] = num_c;
           } // for(imode)
 
           // ------------------------------------------------------------------
@@ -734,23 +847,13 @@ public:
           // ------------------------------------------------------------------
 
           if (do_aitacc_transfer) {
-            calcsize::aitken_accum_exchange();
-            // nlevs, top_lev, &aitken_idx, accum_idx, adj_tscale_inv, &dt,
-            // q_i, q_c, n_i, n_c, &sdrv_a_ait, snum_a_ait, sdrv_c_ait,
-            // snum_c_ait, &sdrv_a_acc, snum_a_acc, sdrv_c_acc, snum_c_acc,
-            // &dgncur_a, v2ncur_a, dgncur_c, v2ncur_c, &didt, dcdt, dnidt,
-            // dncdt)
+            calcsize::aitken_accum_exchange(
+                k, aitken_idx, accum_idx, v2nnom_nmodes, adj_tscale_inv, dt q_i,
+                q_c, n_i, n_c, drv_i_ait, num_i_ait, drv_c_ait, num_c_ait,
+                drv_i_acc, num_i_acc, drv_c_acc, num_c_acc, dgncur_i, v2ncur_i,
+                dgncur_c, v2ncur_c, didt, dcdt, dnidt, dncdt);
           }
 
-          // if ( do_aitacc_transfer ) then
-          //    call aitken_accum_exchange( nlevs, top_lev, &
-          //         aitken_idx,  accum_idx, adj_tscale_inv, &
-          //         dt, q_i, q_c, n_i, n_c,&
-          //         sdrv_a_ait, snum_a_ait, sdrv_c_ait, snum_c_ait,     &
-          //         sdrv_a_acc,snum_a_acc, sdrv_c_acc, snum_c_acc,      &
-          //         dgncur_a, v2ncur_a, dgncur_c, v2ncur_c, &
-          //         didt, dcdt, dnidt, dncdt )
-          // end if
         }); // kokkos::parfor(k)
 
     // This is from haero fortran port:
