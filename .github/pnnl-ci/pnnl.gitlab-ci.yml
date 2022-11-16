@@ -148,6 +148,8 @@ stages:
 
 SVC Account Cleanup:
   stage: .pre
+  except:
+    - branches
   variables:
     # Don't clone for cleanup jobs
     WORKDIR_SUFFIX: 'deception-build-and-test'
@@ -162,6 +164,8 @@ SVC Account Cleanup:
 
 Deception Test:
   stage: build
+  except:
+    - branches
   variables:
     GIT_STRATEGY: clone
     SLURM_Q: "dl_shared"
@@ -175,6 +179,8 @@ Deception Test:
 Rebuild HAERO:
   stage: .pre
   when: manual
+  except:
+    - branches
   variables:
     GIT_STRATEGY: clone
     MY_CLUSTER: "deception"
