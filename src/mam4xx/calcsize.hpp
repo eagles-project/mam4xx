@@ -27,7 +27,6 @@ namespace calcsize {
 /*-----------------------------------------------------------------------------
 Compute initial dry volume based on bulk mass mixing ratio (mmr) and specie
 density  volume = mmr/density
-TODO: Is this used?
  -----------------------------------------------------------------------------*/
 
 KOKKOS_INLINE_FUNCTION
@@ -295,7 +294,7 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
       interstitial or cloud- borne is changing. If interstitial stayed the same
       (i.e. it is within range) but cloud-borne is predicted to reach its
       maximum(or minimum), we modify interstitial number (num_a), so as to
-      accomodate change in the cloud-borne aerosols (and vice-versa). We try to
+      accommodate change in the cloud-borne aerosols (and vice-versa). We try to
       balance these by moving the num_* in the opposite direction as much as
       possible to conserve num_a + num_c (such that num_a+num_c stays close to
       its original value)
@@ -405,8 +404,8 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
 }
 
 KOKKOS_INLINE_FUNCTION
-void compute_coef_ait_acc_transfer(aitken_idx) {}
-// v2n_geomean, adj_tscale_inv, drv_a_aitsv, &
+void compute_coef_ait_acc_transfer() {}
+// v2n_geomean, adj_tscale_inv, drv_a_aitsv, aitken_idx &
 //        drv_c_aitsv, num_a_aitsv, num_c_aitsv,  voltonum_acc, &
 //        ait2acc_index, xfercoef_num_ait2acc, xfercoef_vol_ait2acc,
 //        xfertend_num)
@@ -483,27 +482,27 @@ void compute_coef_ait_acc_transfer(aitken_idx) {}
  * \brief Exchange aerosols between aitken and accumulation modes based on new
     sizes.
  */
-// @mjs:**HERE**
 KOKKOS_INLINE_FUNCTION
-void aitken_accum_exchange(const int &k, const int &aitken_idx,
-                           const int &accum_idx, v2nnom_nmodes, adj_tscale_inv,
-                           dt, q_i, q_c, n_i, n_c, drv_a_aitsv, num_a_aitsv,
-                           drv_c_aitsv, num_c_aitsv, drv_a_accsv, num_a_accsv,
-                           drv_c_accsv, num_c_accsv, dgncur_a, v2ncur_a,
-                           dgncur_c, v2ncur_c, didt, dcdt, dnidt, dncdt) {
-  // NOTE: skipping the existence checks and index verification for now
-  Real voltonum_ait =
-      v2nnom_nmodes[aitken_idx]; // volume to number for aitken mode
-  Real voltonum_acc =
-      v2nnom_nmodes[accum_idx]; // volume to number for accumulation mode
+void aitken_accum_exchange(
+    const int& k, const int& aitken_idx, const int& accum_idx,
+    const Real v2nnom_nmodes[4], const Real& adj_tscale_inv, const Real& dt,
+    const Prognostics& prognostics, const Real& drv_i_aitsv,
+    const Real& num_i_aitsv, const Real& drv_c_aitsv, const Real& num_c_aitsv,
+    const Real& drv_i_accsv, const Real& num_i_accsv, const Real& drv_c_accsv,
+    const Real &num_c_accsv, Diagnostics diagnostics, Tendencies tendencies) {
+  //   // NOTE: skipping the existence checks and index verification for now
+    // Real voltonum_ait =
+    //     v2nnom_nmodes[aitken_idx]; // volume to number for aitken mode
+    // Real voltonum_acc =
+    //     v2nnom_nmodes[accum_idx]; // volume to number for accumulation mode
 
   // v2n_geomean is the geometric mean vol2num values
   // between the aitken and accum modes
-  auto v2n_geomean = haero::sqrt(voltonum_ait * voltonum_acc);
+  // auto v2n_geomean = haero::sqrt(voltonum_ait * voltonum_acc);
 
   // Compute aitken->accumulation transfer
-  calcSize::compute_coef_ait_acc_transfer(aitken_idx, v2n_geomean,
-                                          adj_tscale_inv);
+  // calcSize::compute_coef_ait_acc_transfer(aitken_idx, v2n_geomean,
+  //                                         adj_tscale_inv);
   //  (iacc, v2n_geomean, adj_tscale_inv, drv_a_aitsv(klev), & !input
   // drv_c_aitsv (klev), num_a_aitsv(klev), num_c_aitsv(klev), voltonum_acc, &
   // !input ait2acc_index, xfercoef_num_ait2acc, xfercoef_vol_ait2acc,
@@ -520,12 +519,18 @@ public:
   // nucleation-specific configuration
   struct Config {
 
+    // boolean view indicating which species will be transferred from
+    // accumulation -> aitken indexed to accumulation mode (because it carries
+    // more species)
+    // FIXME: is this the best place for this?
+    bool no_transfer_acc2ait[7] = {true, false, true, false, false, true, true};
+
     // default constructor -- sets default values for parameters
     Config() {}
 
-    Config(const Config &) = default;
+    Config(const Config&) = default;
     ~Config() = default;
-    Config &operator=(const Config &) = default;
+    Config& operator=(const Config&) = default;
   };
 
 private:
@@ -554,13 +559,7 @@ public:
   void init(const AeroConfig &aero_config,
             const Config &calsize_config = Config()) {
     // Set nucleation-specific config parameters.
-    config_ = calsize_config;
-
-    // FIXME: @mjs--set this up in the aero_config?
-    // boolean view indicating which species will be transferred from
-    // accumulation -> aitken indexed to accumulation mode (because it carries
-    // more species)
-    bool no_transfer_acc2ait[7] = {true, false, true, false, false, true, true};
+    config_ = calcsize_config;
 
     // Set mode parameters.
     for (int m = 0; m < 4; ++m) {
@@ -588,7 +587,7 @@ public:
       // compute inv density; density is constant, so we can computer in int.
       const auto n_spec = num_species_mode[m];
       for (int ispec = 0; ispec < n_spec; ispec++) {
-        const int aero_id = get_AeroId_from_mode_aero_species(m,ispec);
+        const int aero_id = get_AeroId_from_mode_aero_species(m, ispec);
         _inv_density[m][ispec] = Real(1.0) / aero_species(aero_id).density;
       } // for(ispec)
 
@@ -626,7 +625,6 @@ public:
 
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
-          // Oscar is working on this: start
           const auto n_i = prognostics.n_mode_i;
           const auto n_c = prognostics.n_mode_c;
 
@@ -638,33 +636,30 @@ public:
 
           Real dryvol_i = 0;
           Real dryvol_c = 0;
-          auto didt = tendencies.q_aero_i;
-          auto dcdt = tendencies.q_aero_c;
-          auto q_i = prognostics.q_aero_i;
-          auto q_c = prognostics.q_aero_c;
 
           //  initialize these variables that are used at the bottom of the
           //  imode loop and are needed outside the loop scope
-          Real sdryvol_i_ait = 0;
-          Real snum_i_k_ait = 0;
-          Real sdryvol_c_ait = 0;
-          Real snum_c_k_ait = 0;
-          Real sdryvol_i_acc = 0;
-          Real snum_i_k_acc = 0;
-          Real sdryvol_c_acc = 0;
-          Real snum_c_k_acc = 0;
-          Real drv_a_sv[nmodes];
-          Real num_a_sv[nmodes];
-          Real drv_c_sv[nmodes];
-          Real num_c_sv[nmodes];
+          Real dryvol_i_aitsv = 0;
+          Real num_i_k_aitsv = 0;
+          Real dryvol_c_aitsv = 0;
+          Real num_c_k_aitsv = 0;
+          Real dryvol_i_accsv = 0;
+          Real num_i_k_accsv = 0;
+          Real dryvol_c_accsv = 0;
+          Real num_c_k_accsv = 0;
+          // NOTE: these were work arrays and may not be necessary
+          // Real drv_i_sv[nmodes];
+          // Real num_i_sv[nmodes];
+          // Real drv_c_sv[nmodes];
+          // Real num_c_sv[nmodes];
+
+          // time scale for number adjustment
+          const auto adj_tscale = max(seconds_in_a_day, dt);
+
+          // inverse of the adjustment time scale
+          const auto adj_tscale_inv = 1.0 / (adj_tscale * close_to_one);
 
           for (int imode = 0; imode < nmodes; imode++) {
-
-            // FIXME: as compared to the oldHaero_fortranPort.f90, we appear to
-            // be missing this Initialize diameter(dgnum), volume to number
-            // ratios(v2ncur) and dry volume (dryvol) for both interstitial and
-            // cloudborne aerosols
-            // DONE
 
             // call set_initial_sz_and_volumes (imode, top_lev, nlevs, dgncur_a,
             // v2ncur_a, dryvol_a) for interstitial aerosols call
@@ -748,16 +743,6 @@ public:
             // Make it non-negative
             auto num_c_k = init_num_c < 0 ? zero : init_num_c;
 
-            // these quantities are required for adjust_num_sizes() and
-            // aitken_accum_exchange() [within, specifically
-            // compute_coef_ait_acc_transfer() and
-            // compute_coef_acc_ait_transfer()]
-            // time scale for number adjustment
-            const auto adj_tscale = max(seconds_in_a_day, dt);
-
-            // inverse of the adjustment time scale
-            const auto adj_tscale_inv = 1.0 / (adj_tscale * close_to_one);
-
             if (do_adjust) {
               /*------------------------------------------------------------------
                *  Do number adjustment for interstitial and activated particles
@@ -803,8 +788,8 @@ public:
                 common_factor, dgncur_i_k, v2ncur_i_k);
 
             // update diameters and volume to num ratios for cloudborne aerosols
-            auto &dgncur_c_k = dgncur_c[imode](k);
-            auto &v2ncur_c_k = v2ncur_c[imode](k);
+            auto& dgncur_c_k = dgncur_c[imode](k);
+            auto& v2ncur_c_k = v2ncur_c[imode](k);
             calcsize::update_diameter_and_vol2num(
                 dryvol_c, num_c_k, v2nmin, v2nmax, dgnmin, dgnmax,
                 common_factor, dgncur_c_k, v2ncur_c_k);
@@ -816,23 +801,24 @@ public:
               if (imode == aitken_idx) {
                 // TODO: determine if we need to save these--i.e., is drv_i ever
                 // changed before the max() calculation in
-                // aitken_accum_exchange() if yet, maybe better to skip the
+                // aitken_accum_exchange() if yes, maybe better to skip the
                 // logic and do it, regardless?
-                dryvol_i_ait = dryvol_i;
-                num_i_k_ait = num_i_k;
-                dryvol_c_ait = dryvol_c;
-                num_c_k_ait = num_c_k;
+                dryvol_i_aitsv = dryvol_i;
+                num_i_k_aitsv = num_i_k;
+                dryvol_c_aitsv = dryvol_c;
+                num_c_k_aitsv = num_c_k;
               } else if (imode == accumulation_idx) {
-                dryvol_i_acc = dryvol_i;
-                num_i_k_acc = num_i_k;
-                dryvol_c_acc = dryvol_c;
-                num_c_k_acc = num_c_k;
+                dryvol_i_accsv = dryvol_i;
+                num_i_k_accsv = num_i_k;
+                dryvol_c_accsv = dryvol_c;
+                num_c_k_accsv = num_c_k;
               }
             }
-            drv_a_sv[imode] = drv_a;
-            num_a_sv[imode] = num_a;
-            drv_c_sv[imode] = drv_c;
-            num_c_sv[imode] = num_c;
+            // these were work variables that seem to not be used
+            // drv_i_sv[imode] = dryvol_i;
+            // num_i_sv[imode] = num_i_k;
+            // drv_c_sv[imode] = dryvol_c;
+            // num_c_sv[imode] = num_c_k;
           } // for(imode)
 
           // ------------------------------------------------------------------
@@ -847,20 +833,17 @@ public:
           // ------------------------------------------------------------------
 
           if (do_aitacc_transfer) {
-            calcsize::aitken_accum_exchange(
-                k, aitken_idx, accum_idx, v2nnom_nmodes, adj_tscale_inv, dt q_i,
-                q_c, n_i, n_c, drv_i_ait, num_i_ait, drv_c_ait, num_c_ait,
-                drv_i_acc, num_i_acc, drv_c_acc, num_c_acc, dgncur_i, v2ncur_i,
-                dgncur_c, v2ncur_c, didt, dcdt, dnidt, dncdt);
+            calcsize::aitken_accum_exchange(k, aitken_idx,
+                                            accumulation_idx, v2nnom_nmodes,
+                                            adj_tscale_inv, dt, prognostics,
+                                            dryvol_i_aitsv, num_i_k_aitsv,
+                                            dryvol_c_aitsv, num_c_k_aitsv,
+                                            dryvol_i_accsv, num_i_k_accsv,
+                                            dryvol_c_accsv, num_c_k_accsv,
+                                            diagnostics, tendencies);
           }
-
         }); // kokkos::parfor(k)
-
-    // This is from haero fortran port:
-    // TODO: after aitken<->accum transfer, the rest of the code deals
-    // with history field output and updating the tendencies
   }
-
 private:
 };
 
