@@ -1,8 +1,8 @@
 # CI constraints for every branch
 workflow:
-  # This should allow for pipelines only running once...
-  rules:
-    - if: $CI_COMMIT_BRANCH
+  - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    when: never
+  - when: always
 
 .pnnl_after_script_template:
   after_script:
