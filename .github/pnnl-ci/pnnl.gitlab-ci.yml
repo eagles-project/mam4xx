@@ -1,5 +1,6 @@
 # CI constraints for every branch
 workflow:
+  # This should allow for pipelines only running once...
   rules:
     - if: $CI_COMMIT_BRANCH
 
