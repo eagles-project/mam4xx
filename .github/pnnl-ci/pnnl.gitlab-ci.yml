@@ -65,7 +65,7 @@
       rm "$WORKDIR/jobid_${jobid}"
       exit $res
 
-.pnnl_module_script_template:
+.pnnl_haero_script_template:
   script:
     - |
       set -x
@@ -115,7 +115,7 @@ SVC Account Cleanup:
     - ls -hal $WORKDIR
 
 Deception Test:
-  stage: test
+  stage: build
   variables:
     GIT_STRATEGY: clone
     SLURM_Q: "dl_shared"
