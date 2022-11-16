@@ -34,6 +34,4 @@ cleanup() {
 
 echo "Hello World"
 
-echo "Detecting Args for CTEST=" $CTEST_ARGS
-
-# TODO - actually build and test mam4xx with shared HAERO in CI
+# TODO - Build HAERO in a shared project directory that is accessible from other stage

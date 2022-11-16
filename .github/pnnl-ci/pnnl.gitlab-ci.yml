@@ -10,7 +10,7 @@ workflow:
 .pnnl_after_script_template:
   after_script:
     - |
-      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${MY_CLUSTER}/"
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}/"
       # Iterate over possible jobid named files (jobid_%J)
       job_ids="$WORKDIR/jobid_*"
       for job in $job_ids
@@ -28,6 +28,7 @@ workflow:
 
       #  NOTES:  WORKDIR is on constance/deception/newell
       #          ./      is only on the Kubernetes instance
+      set -x
 
       export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
       if [[ ! -d "$WORKDIR" ]]; then
@@ -77,8 +78,52 @@ workflow:
 .pnnl_haero_script_template:
   script:
     - |
+
+      #  NOTES:  WORKDIR is on constance/deception/newell
+      #          ./      is only on the Kubernetes instance
       set -x
-      # TODO - add code to actually re-build HAERO in project share as necessary
+
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
+      if [[ ! -d "$WORKDIR" ]]; then
+        # if workdir already exists, we're in the testing job
+        mkdir -p "$WORKDIR"
+        cp -r . "$WORKDIR"
+      fi
+
+      cd "$WORKDIR"
+
+      # Unique output file for this stage
+      output="output"
+      [ -f $output ] && rm $output
+      touch $output
+      tail -f $output &
+      tailpid=$!
+
+      # Set some directories used in the build script manually, as they
+      # can be inconsistent in gitlab pipelines
+      export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+
+      # jobid used in pnnl_after_script_template to cancel job if cancelled or
+      # timed out by gitlab through the UI
+      jobid=$(sbatch --export=ALL -A EAGLES -N 1 --exclusive -p slurm -o $output -e $output -t 1:00:00 $WORKDIR/.github/pnnl-ci/rebuild-haero.sh)
+      export jobid=$(echo $jobid | cut -f4 -d' ')
+      # Unique jobid filename for this job
+      echo $jobid > "$WORKDIR/jobid_${jobid}"
+      res=1
+      while :;
+      do
+        if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' $output)" != "0" ]]; then
+          kill $tailpid
+          echo 'Last tail of build $output:'
+          tail -n 200 $output
+          res=$(grep BUILD_STATUS $output | tail -n 1 | cut -f2 -d':')
+          break
+        fi
+        sleep 10
+      done
+      echo "Finished batch job with exit code: $res"
+      rm "$WORKDIR/jobid_${jobid}"
+      exit $res
 
 
 .pnnl_tags_template:
@@ -108,6 +153,7 @@ SVC Account Cleanup:
   stage: .pre
   variables:
     # Don't clone for cleanup jobs
+    WORKDIR_SUFFIX: 'deception-build-and-test'
     GIT_STRATEGY: none
   extends:
     - .pnnl_tags_template
