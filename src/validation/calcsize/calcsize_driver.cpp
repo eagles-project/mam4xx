@@ -8,7 +8,7 @@
 // input.
 
 void usage() {
-  std::cerr << "calsize_driver: a Skywalker driver for validating the "
+  std::cerr << "calcsize_driver: a Skywalker driver for validating the "
                "MAM4 calcsize parameterizations."
             << std::endl;
   std::cerr << "calcsize_driver: usage:" << std::endl;
@@ -19,7 +19,7 @@ void usage() {
 using namespace skywalker;
 using namespace mam4;
 
-// Parameterizations used by the nucleation process.
+// Parameterizations used by the calcsize process.
 void get_relaxed_v2n_limits(Ensemble *ensemble);
 void compute_dry_volume_k(Ensemble *ensemble);
 void adjust_num_sizes(Ensemble *ensemble);

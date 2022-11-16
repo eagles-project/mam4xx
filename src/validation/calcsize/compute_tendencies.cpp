@@ -1,12 +1,8 @@
 #include <mam4xx/mam4.hpp>
 
-#include <haero/constants.hpp>
-#include <iostream>
 #include <mam4xx/calcsize.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
-
-#include <ekat/ekat_pack_kokkos.hpp>
 
 using namespace skywalker;
 using namespace mam4;
@@ -33,13 +29,12 @@ void compute_tendencies(Ensemble *ensemble) {
 
     mam4::AeroConfig mam4_config;
     mam4::CalcSizeProcess process(mam4_config);
+    const auto nmodes = mam4_config.num_modes();
 
     auto q_i = input.get_array("interstitial");
     auto n_i = input.get_array("interstitial_num");
     auto q_c = input.get_array("cloud_borne");
     auto n_c = input.get_array("cloud_borne_num");
-
-    const auto nmodes = AeroConfig::num_modes();
 
     int count = 0;
     for (int imode = 0; imode < nmodes; ++imode) {

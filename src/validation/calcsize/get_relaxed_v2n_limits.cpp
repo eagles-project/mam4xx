@@ -1,7 +1,4 @@
-#include <haero/constants.hpp>
-#include <iostream>
 #include <mam4xx/calcsize.hpp>
-#include <mam4xx/mam4.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
 
@@ -22,9 +19,6 @@ void get_relaxed_v2n_limits(Ensemble *ensemble) {
 
     const int aitken_idx = int(ModeIndex::Aitken);
     const int accumulation_idx = int(ModeIndex::Accumulation);
-
-    mam4::AeroConfig mam4_config;
-    mam4::CalcSizeProcess process(mam4_config);
 
     const auto nmodes = AeroConfig::num_modes();
     Real v2nmin_nmodes[nmodes];

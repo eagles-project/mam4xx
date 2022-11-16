@@ -1,10 +1,7 @@
-
-#include <haero/constants.hpp>
-#include <iostream>
 #include <mam4xx/calcsize.hpp>
-#include <mam4xx/mam4.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
+// #include <mam4xx/aero_config.hpp>
 
 using namespace skywalker;
 using namespace mam4;

@@ -1,5 +1,3 @@
-#include <haero/constants.hpp>
-#include <iostream>
 #include <mam4xx/calcsize.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
