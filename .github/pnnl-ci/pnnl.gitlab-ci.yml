@@ -90,11 +90,6 @@ workflow:
     - marianas
     - deception
 
-.pnnl_rules:
-  rules:
-    - &pnnl_rule
-      if: '$CI_PROJECT_ROOT_NAMESPACE == "eagles"' # Will only apply to PNNL
-
 .pnnl_nonhpc_tags:
   image: ubuntu:20.04
   tags:
@@ -115,7 +110,6 @@ SVC Account Cleanup:
     # Don't clone for cleanup jobs
     GIT_STRATEGY: none
   extends:
-    - .pnnl_rules
     - .pnnl_tags_template
   script:
     - export WORKDIR="$HOME/gitlab/"
@@ -134,7 +128,6 @@ Deception Test:
     - .pnnl_tags_template
     - .pnnl_script_template
     - .pnnl_after_script_template
-    - .pnnl_rules
 
 Rebuild HAERO:
   stage: .pre
@@ -146,6 +139,5 @@ Rebuild HAERO:
   extends:
     - .pnnl_tags_template
     - .pnnl_haero_script_template
-    - .pnnl_rules
   allow_failure: true
 # ---
