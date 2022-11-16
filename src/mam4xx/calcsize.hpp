@@ -483,18 +483,20 @@ void compute_coef_ait_acc_transfer() {}
     sizes.
  */
 KOKKOS_INLINE_FUNCTION
-void aitken_accum_exchange(
-    const int& k, const int& aitken_idx, const int& accum_idx,
-    const Real v2nnom_nmodes[4], const Real& adj_tscale_inv, const Real& dt,
-    const Prognostics& prognostics, const Real& drv_i_aitsv,
-    const Real& num_i_aitsv, const Real& drv_c_aitsv, const Real& num_c_aitsv,
-    const Real& drv_i_accsv, const Real& num_i_accsv, const Real& drv_c_accsv,
-    const Real &num_c_accsv, Diagnostics diagnostics, Tendencies tendencies) {
+void aitken_accum_exchange(const int &k, const int &aitken_idx,
+                           const int &accum_idx, const Real v2nnom_nmodes[4],
+                           const Real &adj_tscale_inv, const Real &dt,
+                           const Prognostics &prognostics,
+                           const Real &drv_i_aitsv, const Real &num_i_aitsv,
+                           const Real &drv_c_aitsv, const Real &num_c_aitsv,
+                           const Real &drv_i_accsv, const Real &num_i_accsv,
+                           const Real &drv_c_accsv, const Real &num_c_accsv,
+                           Diagnostics diagnostics, Tendencies tendencies) {
   //   // NOTE: skipping the existence checks and index verification for now
-    // Real voltonum_ait =
-    //     v2nnom_nmodes[aitken_idx]; // volume to number for aitken mode
-    // Real voltonum_acc =
-    //     v2nnom_nmodes[accum_idx]; // volume to number for accumulation mode
+  // Real voltonum_ait =
+  //     v2nnom_nmodes[aitken_idx]; // volume to number for aitken mode
+  // Real voltonum_acc =
+  //     v2nnom_nmodes[accum_idx]; // volume to number for accumulation mode
 
   // v2n_geomean is the geometric mean vol2num values
   // between the aitken and accum modes
@@ -528,9 +530,9 @@ public:
     // default constructor -- sets default values for parameters
     Config() {}
 
-    Config(const Config&) = default;
+    Config(const Config &) = default;
     ~Config() = default;
-    Config& operator=(const Config&) = default;
+    Config &operator=(const Config &) = default;
   };
 
 private:
@@ -788,8 +790,8 @@ public:
                 common_factor, dgncur_i_k, v2ncur_i_k);
 
             // update diameters and volume to num ratios for cloudborne aerosols
-            auto& dgncur_c_k = dgncur_c[imode](k);
-            auto& v2ncur_c_k = v2ncur_c[imode](k);
+            auto &dgncur_c_k = dgncur_c[imode](k);
+            auto &v2ncur_c_k = v2ncur_c[imode](k);
             calcsize::update_diameter_and_vol2num(
                 dryvol_c, num_c_k, v2nmin, v2nmax, dgnmin, dgnmax,
                 common_factor, dgncur_c_k, v2ncur_c_k);
@@ -833,17 +835,15 @@ public:
           // ------------------------------------------------------------------
 
           if (do_aitacc_transfer) {
-            calcsize::aitken_accum_exchange(k, aitken_idx,
-                                            accumulation_idx, v2nnom_nmodes,
-                                            adj_tscale_inv, dt, prognostics,
-                                            dryvol_i_aitsv, num_i_k_aitsv,
-                                            dryvol_c_aitsv, num_c_k_aitsv,
-                                            dryvol_i_accsv, num_i_k_accsv,
-                                            dryvol_c_accsv, num_c_k_accsv,
-                                            diagnostics, tendencies);
+            calcsize::aitken_accum_exchange(
+                k, aitken_idx, accumulation_idx, v2nnom_nmodes, adj_tscale_inv,
+                dt, prognostics, dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv,
+                num_c_k_aitsv, dryvol_i_accsv, num_i_k_accsv, dryvol_c_accsv,
+                num_c_k_accsv, diagnostics, tendencies);
           }
         }); // kokkos::parfor(k)
   }
+
 private:
 };
 
