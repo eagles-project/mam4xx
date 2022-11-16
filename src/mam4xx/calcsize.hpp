@@ -559,7 +559,7 @@ public:
   // init -- initializes the implementation with MAM4's configuration and with
   // a process-specific configuration.
   void init(const AeroConfig &aero_config,
-            const Config &calsize_config = Config()) {
+            const Config &calcsize_config = Config()) {
     // Set nucleation-specific config parameters.
     config_ = calcsize_config;
 
