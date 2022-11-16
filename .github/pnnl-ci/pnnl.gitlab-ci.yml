@@ -1,8 +1,8 @@
 # CI constraints for every branch
 workflow:
-  - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  - if: $CI_PIPELINE_SOURCE != "push"
     when: never
-  - when: always
+
 
 .pnnl_after_script_template:
   after_script:
