@@ -1,9 +1,10 @@
 # CI constraints for every branch
 workflow:
-  rules:
-  - if: $CI_PIPELINE_SOURCE != "push"
-    when: never
-
+		# Only run if source is an open merge request or a branch push
+	- if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+	- if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+		when: never
+	- if: '$CI_COMMIT_BRANCH'
 
 .pnnl_after_script_template:
   after_script:
@@ -149,8 +150,6 @@ stages:
 
 SVC Account Cleanup:
   stage: .pre
-  except:
-    - branches
   variables:
     # Don't clone for cleanup jobs
     WORKDIR_SUFFIX: 'deception-build-and-test'
@@ -165,8 +164,6 @@ SVC Account Cleanup:
 
 Deception Test:
   stage: build
-  except:
-    - branches
   variables:
     GIT_STRATEGY: clone
     SLURM_Q: "dl_shared"
@@ -180,8 +177,6 @@ Deception Test:
 Rebuild HAERO:
   stage: .pre
   when: manual
-  except:
-    - branches
   variables:
     GIT_STRATEGY: clone
     MY_CLUSTER: "deception"
