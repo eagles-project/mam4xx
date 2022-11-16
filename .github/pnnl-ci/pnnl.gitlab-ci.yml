@@ -1,5 +1,6 @@
 # CI constraints for every branch
 workflow:
+  rules:
   - if: $CI_PIPELINE_SOURCE != "push"
     when: never
 
