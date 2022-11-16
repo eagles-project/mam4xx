@@ -1,0 +1,142 @@
+.pnnl_after_script_template:
+  after_script:
+    - |
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${MY_CLUSTER}/"
+      # Iterate over possible jobid named files (jobid_%J)
+      job_ids="$WORKDIR/jobid_*"
+      for job in $job_ids
+      do
+        if [[ -f "$job" ]]; then
+          jobid=$(cat "$job")
+          scancel $jobid
+        fi
+      done
+      rm -rf $WORKDIR
+
+.pnnl_script_template:
+  script:
+    - |
+
+      #  NOTES:  WORKDIR is on constance/deception/newell
+      #          ./      is only on the Kubernetes instance
+
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
+      if [[ ! -d "$WORKDIR" ]]; then
+        # if workdir already exists, we're in the testing job
+        mkdir -p "$WORKDIR"
+        cp -r . "$WORKDIR"
+      fi
+
+      cd "$WORKDIR"
+
+      # Unique output file for this stage
+      output="output"
+      [ -f $output ] && rm $output
+      touch $output
+      tail -f $output &
+      tailpid=$!
+
+      # Set some directories used in the build script manually, as they
+      # can be inconsistent in gitlab pipelines
+      export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
+
+      # Export CTESTARGS defined in variables to run correct tests for stage
+      export CTESTARGS=$CTESTARGS
+
+      # jobid used in pnnl_after_script_template to cancel job if cancelled or
+      # timed out by gitlab through the UI
+      jobid=$(sbatch --export=ALL -A EAGLES --gres=gpu:1 --ntasks=3 -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/.github/pnnl-ci/ci.sh)
+      export jobid=$(echo $jobid | cut -f4 -d' ')
+      # Unique jobid filename for this job
+      echo $jobid > "$WORKDIR/jobid_${jobid}"
+      res=1
+      while :;
+      do
+        if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' $output)" != "0" ]]; then
+          kill $tailpid
+          echo 'Last tail of build $output:'
+          tail -n 200 $output
+          res=$(grep BUILD_STATUS $output | tail -n 1 | cut -f2 -d':')
+          break
+        fi
+        sleep 10
+      done
+      echo "Finished batch job with exit code: $res"
+      rm "$WORKDIR/jobid_${jobid}"
+      exit $res
+
+.pnnl_module_script_template:
+  script:
+    - |
+      set -x
+      # TODO - add code to actually re-build HAERO in project share as necessary
+
+
+.pnnl_tags_template:
+  image: kfox1111/slurm:deception2
+  tags:
+    - k8s
+    - ikp
+    - eagles
+    - marianas
+    - deception
+
+.pnnl_rules:
+  rules:
+    - &pnnl_rule
+      if: '$CI_PROJECT_ROOT_NAMESPACE == "eagles"' # Will only apply to PNNL
+
+.pnnl_nonhpc_tags:
+  image: ubuntu:20.04
+  tags:
+    - k8s
+    - ikp
+    - eagles
+    - basic
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+stages:
+  - build
+
+SVC Account Cleanup:
+  stage: .pre
+  variables:
+    # Don't clone for cleanup jobs
+    GIT_STRATEGY: none
+  extends:
+    - .pnnl_rules
+    - .pnnl_tags_template
+  script:
+    - export WORKDIR="$HOME/gitlab/"
+    # clears directory of files more than 6 hours/360 minutes old
+    - find $WORKDIR -type d -mindepth 1 -mmin +360 -prune -print -exec rm -rf {} \; || true
+    - ls -hal $WORKDIR
+
+Deception Test:
+  stage: test
+  variables:
+    GIT_STRATEGY: clone
+    SLURM_Q: "dl_shared"
+    WORKDIR_SUFFIX: "deception-build-and-test"
+    CTEST_ARGS: "test-args"
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+    - .pnnl_after_script_template
+    - .pnnl_rules
+
+Rebuild HAERO:
+  stage: .pre
+  when: manual
+  variables:
+    GIT_STRATEGY: clone
+    MY_CLUSTER: "deception"
+    WORKDIR_SUFFIX: "deception_haero"
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_haero_script_template
+    - .pnnl_rules
+  allow_failure: true
+# ---
