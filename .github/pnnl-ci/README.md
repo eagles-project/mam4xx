@@ -22,6 +22,8 @@ We have manually configured PNNL CI to point to the YAML file in `/.github/pnnl-
 
 https://forum.gitlab.com/t/duplicate-pipelines-for-ci-cd-for-external-repo-github/32551/4 - I had to enable these features in GitHub settings in order to avoid duplicate pipelines being triggered.
 
+The above might not be true, but I needed to give the Personal Access Token additional permission per https://docs.gitlab.com/ee/ci/ci_cd_for_external_repos/github_integration.html#connect-with-personal-access-token
+
 ## Scipts
 
 ### `ci.sh`
