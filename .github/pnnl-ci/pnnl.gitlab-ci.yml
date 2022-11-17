@@ -60,33 +60,38 @@ variables:
 
 .pnnl_script_template:
   script:
-    #  NOTES:  WORKDIR is on constance/deception/newell
-    #          ./      is only on the Kubernetes instance
-    - set -x
-    - export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
-    - mkdir -p "$WORKDIR"
-    - cp -r . "$WORKDIR"
-    - cd "$WORKDIR"
-
-    # Unique output file for this stage
-    - output="output"
-    - echo -n > $output
-    - tail -f $output &
-    - tailpid=$!
-
-    # Some variables need to be exported to propogate to scripts
-    - export HAERO_INSTALL=$HAERO_INSTALL 
-    - export BUILD_TYPE=$BUILD_TYPE
-    - export PRECISION=$PRECISION
-
-    # jobid used in pnnl_after_script_template to cancel job if cancelled or
-    # timed out by gitlab through the UI
-    - jobid=$(sbatch --export=ALL -A EAGLES --gres=gpu:1 --ntasks=3 -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/.github/pnnl-ci/$SCRIPT_NAME)
-    - export jobid=$(echo $jobid | cut -f4 -d' ')
-    # Unique jobid filename for this job
-    - echo $jobid > "$WORKDIR/jobid_${jobid}"
-    - res=1
     - |
+      set -xv
+      #  NOTES:  WORKDIR is on constance/deception/newell
+      #          ./      is only on the Kubernetes instance
+      #          Comments in multi line YAML are buggy,
+      #          So make sure to indent at same level
+
+      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
+      mkdir -p $WORKDIR
+      cp -r . $WORKDIR
+      cd $WORKDIR
+
+      # Unique output file for this stage
+      output="output"
+      echo -n > $output
+      tail -f $output &
+      tailpid=$!
+
+      # Some variables need to be exported to propogate to scripts
+      export HAERO_INSTALL=$HAERO_INSTALL 
+      export BUILD_TYPE=$BUILD_TYPE
+      export PRECISION=$PRECISION
+
+      # jobid used in pnnl_after_script_template to cancel job if cancelled or
+      # timed out by gitlab through the UI
+      # We use a template script name so that each pipeline stage can re-use same script configuration
+      jobid=$(sbatch --export=ALL -A EAGLES --gres=gpu:1 --ntasks=3 -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/.github/pnnl-ci/$SCRIPT_NAME)
+      export jobid=$(echo $jobid | cut -f4 -d' ')
+      # Unique jobid filename for this job
+      echo $jobid > "$WORKDIR/jobid_${jobid}"
+      res=1
+     
       while :;
       do
         if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' $output)" != "0" ]]; then
@@ -98,9 +103,10 @@ variables:
         fi
         sleep 10
       done
-    - echo "Finished batch job with exit code: $res"
-    - rm "$WORKDIR/jobid_${jobid}"
-    - exit $res
+
+      echo "Finished batch job with exit code: $res"
+      rm "$WORKDIR/jobid_${jobid}"
+      exit $res
 
 SVC Account Cleanup:
   stage: .pre
