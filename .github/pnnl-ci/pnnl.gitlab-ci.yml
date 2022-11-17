@@ -40,12 +40,12 @@ variables:
       - BUILD_TYPE: [Debug, Release]
   variables:
     GIT_STRATEGY: clone
-    HAERO_INSTALL: /qfs/projects/eagles/pnnl-ci/haero_${{ BUILD_TYPE }}_${{ PRECISION }}"
+    HAERO_INSTALL: /qfs/projects/eagles/pnnl-ci/haero_${BUILD_TYPE}_${PRECISION}
 
 
 .pnnl_after_script_template:
   after_script:
-    - export WORKDIR=$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}/
+    - export WORKDIR=$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}
       # Iterate over possible jobid named files (jobid_%J)
     - job_ids="$WORKDIR/jobid_*"
     - |
@@ -122,7 +122,7 @@ SVC Account Cleanup:
     - ls -hal $WORKDIR
 
 Deception Single Precision:
-  stage: build
+  stage: build-single
   variables:
     SLURM_Q: "dl_shared"
     WORKDIR_SUFFIX: mam4xx_${BUILD_TYPE}_${PRECISION}
@@ -132,7 +132,7 @@ Deception Single Precision:
     - .pnnl_hpc_job_template
 
 Deception Double Precision:
-  stage: build
+  stage: build-double
   variables:
     SLURM_Q: "dl_shared"
     WORKDIR_SUFFIX: mam4xx_${BUILD_TYPE}_${PRECISION}
