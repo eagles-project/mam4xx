@@ -4,11 +4,15 @@ This is used to track any maintanence information for PNNL CI. We will also trac
 
 ## TODO
 
+- [x] Only run PNNL CI in PRs
+- [ ] Add support for a variety of paritions on Deception
+- [ ] Build HEARO without cloning mam4xx in CI step
+- [x] Refactor CI YAML to remove duplication across scripts
 - [ ] Add way to skip CI using a commit message
-- [ ] Only run GPU CI in PRs
-- [ ] Rebuild HAERO in manual pipeline
-- [ ] Use installed HAERO in project share to avoid re-building each time
-- [ ] Add CMake / ctest configuration in CI
+- [x] Support full matrix of build types (single, double etc.)
+- [x] Rebuild HAERO in manual pipeline
+- [x] Use installed HAERO in project share to avoid re-building each time
+- [x] Add CMake / ctest configuration in CI
 - [ ] Ensure that pipelines are not false positive/negative
 - [ ] Port pipeline to AMD architectures
 
@@ -27,9 +31,10 @@ You need to generate a Personal Access Token (PAT) through GitHub project before
 
 Steps:
 
-1. Import an existing GitHub repository in GitLab using mirroring. Make sure to add your username, and use PAT as password auth
-1. Enable the GitHub integration in Settings > Integrations in GitLab using PAT
-1. Ensure your YAML has correct syntax, and you should be good to go!
+1. Create an empty project in GitLab. **DO NOT** initialize using in-build GitHub integration, as this is broken for running pipelines.
+1. Set up repository mirroring, ensuring you enable running pipelines and keeping divergent refs. Use GitHub username within `https` URL and Personal Access token as the password.
+1. Enable the GitHub integration in Settings > Integrations in GitLab. This will post pipeline status, and should automatically detect PAT.
+1. Ensure your YAML has correct syntax, and you should be good to go! Since we mirror everything in the repo, we will have copies of issues and PRs as well.
 
 Since this integration is automatically configured through GitLab premium, pipeline status will automatically be posted to commits/PRs.
 

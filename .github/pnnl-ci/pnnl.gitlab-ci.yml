@@ -1,130 +1,12 @@
 workflow:
-  # Only run if source is an open merge request or a branch push
+  # Only run if source is an open merge request
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
-      when: never
-    - if: $CI_COMMIT_BRANCH
 
-.pnnl_after_script_template:
-  after_script:
-    - |
-      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}/"
-      # Iterate over possible jobid named files (jobid_%J)
-      job_ids="$WORKDIR/jobid_*"
-      for job in $job_ids
-      do
-        if [[ -f "$job" ]]; then
-          jobid=$(cat "$job")
-          scancel $jobid
-        fi
-      done
-      rm -rf $WORKDIR
+stages:
+  - build
 
-.pnnl_script_template:
-  script:
-    - |
-
-      #  NOTES:  WORKDIR is on constance/deception/newell
-      #          ./      is only on the Kubernetes instance
-      set -x
-
-      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
-      if [[ ! -d "$WORKDIR" ]]; then
-        # if workdir already exists, we're in the testing job
-        mkdir -p "$WORKDIR"
-        cp -r . "$WORKDIR"
-      fi
-
-      cd "$WORKDIR"
-
-      # Unique output file for this stage
-      output="output"
-      [ -f $output ] && rm $output
-      touch $output
-      tail -f $output &
-      tailpid=$!
-
-      # Set some directories used in the build script manually, as they
-      # can be inconsistent in gitlab pipelines
-      export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
-
-      # Export CTESTARGS defined in variables to run correct tests for stage
-      export CTESTARGS=$CTESTARGS
-
-      # jobid used in pnnl_after_script_template to cancel job if cancelled or
-      # timed out by gitlab through the UI
-      jobid=$(sbatch --export=ALL -A EAGLES --gres=gpu:1 --ntasks=3 -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/.github/pnnl-ci/ci.sh)
-      export jobid=$(echo $jobid | cut -f4 -d' ')
-      # Unique jobid filename for this job
-      echo $jobid > "$WORKDIR/jobid_${jobid}"
-      res=1
-      while :;
-      do
-        if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' $output)" != "0" ]]; then
-          kill $tailpid
-          echo 'Last tail of build $output:'
-          tail -n 200 $output
-          res=$(grep BUILD_STATUS $output | tail -n 1 | cut -f2 -d':')
-          break
-        fi
-        sleep 10
-      done
-      echo "Finished batch job with exit code: $res"
-      rm "$WORKDIR/jobid_${jobid}"
-      exit $res
-
-.pnnl_haero_script_template:
-  script:
-    - |
-
-      #  NOTES:  WORKDIR is on constance/deception/newell
-      #          ./      is only on the Kubernetes instance
-      set -x
-
-      export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
-      if [[ ! -d "$WORKDIR" ]]; then
-        # if workdir already exists, we're in the testing job
-        mkdir -p "$WORKDIR"
-        cp -r . "$WORKDIR"
-      fi
-
-      cd "$WORKDIR"
-
-      # Unique output file for this stage
-      output="output"
-      [ -f $output ] && rm $output
-      touch $output
-      tail -f $output &
-      tailpid=$!
-
-      # Set some directories used in the build script manually, as they
-      # can be inconsistent in gitlab pipelines
-      export srcdir=$WORKDIR builddir=$WORKDIR/build installdir=$WORKDIR/install
-
-      # jobid used in pnnl_after_script_template to cancel job if cancelled or
-      # timed out by gitlab through the UI
-      jobid=$(sbatch --export=ALL -A EAGLES -N 1 --exclusive -p slurm -o $output -e $output -t 1:00:00 $WORKDIR/.github/pnnl-ci/rebuild-haero.sh)
-      export jobid=$(echo $jobid | cut -f4 -d' ')
-      # Unique jobid filename for this job
-      echo $jobid > "$WORKDIR/jobid_${jobid}"
-      res=1
-      while :;
-      do
-        if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' $output)" != "0" ]]; then
-          kill $tailpid
-          echo 'Last tail of build $output:'
-          tail -n 200 $output
-          res=$(grep BUILD_STATUS $output | tail -n 1 | cut -f2 -d':')
-          break
-        fi
-        sleep 10
-      done
-      echo "Finished batch job with exit code: $res"
-      rm "$WORKDIR/jobid_${jobid}"
-      exit $res
-
-
+# Runner with HPC/SLURM connection
 .pnnl_tags_template:
   image: kfox1111/slurm:deception2
   tags:
@@ -134,6 +16,7 @@ workflow:
     - marianas
     - deception
 
+# Basic Ubuntu image for Cleanup/Linting
 .pnnl_nonhpc_tags:
   image: ubuntu:20.04
   tags:
@@ -145,14 +28,84 @@ workflow:
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
-stages:
-  - build
+# Generic job for building HAERO/mam4xx
+.pnnl_hpc_job_template:
+  extends:
+    - .pnnl_tags_template
+    - .pnnl_script_template
+    - .pnnl_after_script_template
+  parallel:
+    matrix:
+      - BUILD_TYPE: [Debug, Release]
+      - PRECISION: [single, double]
+  variables:
+    GIT_STRATEGY: clone
+    HAERO_INSTALL: /qfs/projects/eagles/pnnl-ci/haero_${{ BUILD_TYPE }}_${{ PRECISION }}"
+
+
+.pnnl_after_script_template:
+  after_script:
+    - export WORKDIR=$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}/
+      # Iterate over possible jobid named files (jobid_%J)
+    - job_ids="$WORKDIR/jobid_*"
+    - |
+      for job in $job_ids
+      do
+        if [[ -f "$job" ]]; then
+          jobid=$(cat "$job")
+          scancel $jobid
+        fi
+      done
+    - rm -rf $WORKDIR
+
+.pnnl_script_template:
+  script:
+    #  NOTES:  WORKDIR is on constance/deception/newell
+    #          ./      is only on the Kubernetes instance
+    - set -x
+    - export WORKDIR="$HOME/gitlab/${CI_PIPELINE_ID}/${WORKDIR_SUFFIX}"
+    - mkdir -p "$WORKDIR"
+    - cp -r . "$WORKDIR"
+    - cd "$WORKDIR"
+
+    # Unique output file for this stage
+    - output="output"
+    - echo -n > $output
+    - tail -f $output &
+    - tailpid=$!
+
+    # Some variables need to be exported to propogate to scripts
+    - export HAERO_INSTALL=$HAERO_INSTALL 
+    - export BUILD_TYPE=$BUILD_TYPE
+    - export PRECISION=$PRECISION
+
+    # jobid used in pnnl_after_script_template to cancel job if cancelled or
+    # timed out by gitlab through the UI
+    - jobid=$(sbatch --export=ALL -A EAGLES --gres=gpu:1 --ntasks=3 -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/.github/pnnl-ci/$SCRIPT_NAME)
+    - export jobid=$(echo $jobid | cut -f4 -d' ')
+    # Unique jobid filename for this job
+    - echo $jobid > "$WORKDIR/jobid_${jobid}"
+    - res=1
+    - |
+      while :;
+      do
+        if [[ "$(awk 'BEGIN{i=0}/BUILD_STATUS/{i++}END{print i}' $output)" != "0" ]]; then
+          kill $tailpid
+          echo 'Last tail of build $output:'
+          tail -n 200 $output
+          res=$(grep BUILD_STATUS $output | tail -n 1 | cut -f2 -d':')
+          break
+        fi
+        sleep 10
+      done
+    - echo "Finished batch job with exit code: $res"
+    - rm "$WORKDIR/jobid_${jobid}"
+    - exit $res
 
 SVC Account Cleanup:
   stage: .pre
   variables:
     # Don't clone for cleanup jobs
-    WORKDIR_SUFFIX: 'deception-build-and-test'
     GIT_STRATEGY: none
   extends:
     - .pnnl_tags_template
@@ -165,24 +118,19 @@ SVC Account Cleanup:
 Deception Test:
   stage: build
   variables:
-    GIT_STRATEGY: clone
     SLURM_Q: "dl_shared"
-    WORKDIR_SUFFIX: "deception-build-and-test"
-    CTEST_ARGS: "test-args"
+    WORKDIR_SUFFIX: mam4xx_${{ BUILD_TYPE }}_${{ PRECISION }}
+    SCRIPT_NAME: ci.sh
   extends:
-    - .pnnl_tags_template
-    - .pnnl_script_template
-    - .pnnl_after_script_template
+    - .pnnl_hpc_job_template
 
 Rebuild HAERO:
   stage: .pre
   when: manual
   variables:
-    GIT_STRATEGY: clone
-    MY_CLUSTER: "deception"
-    WORKDIR_SUFFIX: "deception_haero"
+    SLURM_Q: "dl_shared"
+    WORKDIR_SUFFIX: haero_${{ BUILD_TYPE }}_${{ PRECISION }}
+    SCRIPT_NAME: rebuild-haero.sh
   extends:
-    - .pnnl_tags_template
-    - .pnnl_haero_script_template
-  allow_failure: true
+    - .pnnl_hpc_job_template
 # ---

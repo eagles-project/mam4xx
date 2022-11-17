@@ -32,6 +32,12 @@ cleanup() {
   exit $2
 }
 
-echo "Hello World"
+echo $BUILD_TYPE " detected for BUILD_TYPE\n"
+echo $HAERO_INSTALL " detected for HAERO install location\n"
+echo $PRECISION " detected for PRECISION\n"
 
-# TODO - Build HAERO in a shared project directory that is accessible from other stage
+./build-haero.sh \
+  $HAERO_INSTALL \
+  gpu \
+  $PRECISION \
+  $BUILD_TYPE

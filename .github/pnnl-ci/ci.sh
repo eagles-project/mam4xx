@@ -32,8 +32,17 @@ cleanup() {
   exit $2
 }
 
-echo "Hello World"
+echo $BUILD_TYPE " detected for BUILD_TYPE\n"
+echo $HAERO_INSTALL " detected for HAERO install location\n"
+echo $PRECISION " detected for PRECISION\n"
 
-echo "Detecting Args for CTEST=" $CTEST_ARGS
+mkdir -p build
+rm -rf build/*
+cmake -B build -S . \
+  -DCMAKE_INSTALL_PREFIX=$(pwd)/install
+  -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+  -DMAM4XX_HAERO_DIR=$HAERO_INSTALL
+  -G "Unix Makefiles"
 
-# TODO - actually build and test mam4xx with shared HAERO in CI
+cmake --build build -- -j
+cd build && ctest -V
