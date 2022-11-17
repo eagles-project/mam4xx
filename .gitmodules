@@ -1,3 +1,3 @@
 [submodule "src/validation/mam_x_validation"]
 	path = src/validation/mam_x_validation
-	url = git@github.com:eagles-project/mam_x_validation.git
+	url = https://github.com/eagles-project/mam_x_validation.git

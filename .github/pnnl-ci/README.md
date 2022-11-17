@@ -2,19 +2,23 @@
 
 This is used to track any maintanence information for PNNL CI. We will also track any current TODOs/notes for developers.
 
-## TODO
+### TODO:
 
-- [x] Only run PNNL CI in PRs
+
 - [ ] Add support for a variety of paritions on Deception
 - [ ] Build HEARO without cloning mam4xx in CI step
-- [x] Refactor CI YAML to remove duplication across scripts
 - [ ] Add way to skip CI using a commit message
+- [ ] Ensure that pipelines are not false positive/negative
+- [ ] Only run 2 jobs at a time as we only have 2 runners
+- [ ] Port pipeline to AMD architectures
+
+### Done:
+- [x] Only run PNNL CI in PRs
+- [x] Refactor CI YAML to remove duplication across scripts
 - [x] Support full matrix of build types (single, double etc.)
 - [x] Rebuild HAERO in manual pipeline
 - [x] Use installed HAERO in project share to avoid re-building each time
 - [x] Add CMake / ctest configuration in CI
-- [ ] Ensure that pipelines are not false positive/negative
-- [ ] Port pipeline to AMD architectures
 
 ## Access Token
 
@@ -39,6 +43,13 @@ Steps:
 Since this integration is automatically configured through GitLab premium, pipeline status will automatically be posted to commits/PRs.
 
 ## Scipts
+
+There are shared environment variables that are propogated across both scripts, and each job shares the same template in order to reduce code duplication.
+
+The shared variables are:
+- HAERO_INSTALL - specifying where haero is/should be installed
+- BUILD_TYPE - Debug/Release
+- PRECISION - Single/Double, only applies to haero build stage
 
 ### `ci.sh`
 
