@@ -7,8 +7,11 @@ Since we are cloning in CI, you need to make sure that all dependent repositorie
 This is used to track any maintanence information for PNNL CI. We will also track any current TODOs/notes for developers.
 
 ### TODO:
+- [ ] Add support for cloning with ssh in CI
+- [ ] Use installed HAERO in project share to avoid re-building each time
 - [ ] Add support for a variety of paritions on Deception
 - [ ] Build HEARO without cloning mam4xx in CI step
+- [ ] Add way to skip CI using a GitHub tag
 - [ ] Add way to skip CI using a commit message
 - [ ] Ensure that pipelines are not false positive/negative
 - [ ] Port pipeline to AMD architectures
@@ -19,7 +22,6 @@ This is used to track any maintanence information for PNNL CI. We will also trac
 - [x] Refactor CI YAML to remove duplication across scripts
 - [x] Support full matrix of build types (single, double etc.)
 - [x] Rebuild HAERO in manual pipeline
-- [x] Use installed HAERO in project share to avoid re-building each time
 - [x] Add CMake / ctest configuration in CI
 
 ## Access Token
@@ -44,9 +46,9 @@ Since this integration is automatically configured through GitLab premium, pipel
 There are shared environment variables that are propogated across both scripts, and each job shares the same template in order to reduce code duplication.
 
 The shared variables are:
-- HAERO_INSTALL - specifying where haero is/should be installed
-- BUILD_TYPE - Debug/Release
-- PRECISION - Single/Double, only applies to haero build stage
+- `HAERO_INSTALL` - specifying where haero is/should be installed
+- `BUILD_TYPE` - Debug/Release
+- `PRECISION` - Single/Double, only applies to haero build stage
 
 ### `ci.sh`
 Used to build and test mam4xx in CI using HAERO installed in project share.
