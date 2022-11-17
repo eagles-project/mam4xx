@@ -32,9 +32,12 @@ cleanup() {
   exit $2
 }
 
-echo $BUILD_TYPE " detected for BUILD_TYPE\n"
-echo $HAERO_INSTALL " detected for HAERO install location\n"
-echo $PRECISION " detected for PRECISION\n"
+echo $BUILD_TYPE " detected for BUILD_TYPE"
+echo $HAERO_INSTALL " detected for HAERO install location"
+echo $PRECISION " detected for PRECISION"
+
+module purge
+module load cmake
 
 mkdir -p build
 rm -rf build/*
@@ -42,7 +45,10 @@ cmake -B build -S . \
   -DCMAKE_INSTALL_PREFIX=$(pwd)/install
   -DCMAKE_BUILD_TYPE=$BUILD_TYPE
   -DMAM4XX_HAERO_DIR=$HAERO_INSTALL
-  -G "Unix Makefiles"
+  -G "Unix Makefiles" && \
 
-cmake --build build -- -j
+cmake --build build -- -j && \
 cd build && ctest -V
+
+EXIT_CODE=$?
+exit $EXIT_CODE

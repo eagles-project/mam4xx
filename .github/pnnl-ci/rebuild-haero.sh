@@ -41,3 +41,6 @@ echo $PRECISION " detected for PRECISION\n"
   gpu \
   $PRECISION \
   $BUILD_TYPE
+
+EXIT_CODE=$?
+exit $EXIT_CODE

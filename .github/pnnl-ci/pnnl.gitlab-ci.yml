@@ -35,9 +35,6 @@ variables:
     - .pnnl_tags_template
     - .pnnl_script_template
     - .pnnl_after_script_template
-  parallel:
-    matrix:
-      - BUILD_TYPE: [Debug, Release]
   variables:
     GIT_STRATEGY: clone
     HAERO_INSTALL: /qfs/projects/eagles/pnnl-ci/haero_${BUILD_TYPE}_${PRECISION}
@@ -121,8 +118,12 @@ SVC Account Cleanup:
     - find $WORKDIR -type d -mindepth 1 -mmin +360 -prune -print -exec rm -rf {} \; || true
     - ls -hal $WORKDIR
 
+# Since we only have two runners, we need to cap parallel jobs at 2
 Deception Single Precision:
   stage: build-single
+  parallel:
+    matrix:
+      - BUILD_TYPE: [Debug, Release]
   variables:
     SLURM_Q: "dl_shared"
     WORKDIR_SUFFIX: mam4xx_${BUILD_TYPE}_${PRECISION}
@@ -133,6 +134,9 @@ Deception Single Precision:
 
 Deception Double Precision:
   stage: build-double
+  parallel:
+    matrix:
+      - BUILD_TYPE: [Debug, Release]
   variables:
     SLURM_Q: "dl_shared"
     WORKDIR_SUFFIX: mam4xx_${BUILD_TYPE}_${PRECISION}
@@ -141,8 +145,13 @@ Deception Double Precision:
   extends:
     - .pnnl_hpc_job_template
 
-Rebuild HAERO Single Precision:
+# HAERO rebuild will have 4 total jobs, and users should only run 2 at a time
+Rebuild HAERO:
   stage: .pre
+  parallel:
+    matrix:
+      - BUILD_TYPE: [Debug, Release]
+        PRECISION: [single, double]
   when: manual
   variables:
     SLURM_Q: "dl_shared"
