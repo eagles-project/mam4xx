@@ -37,7 +37,7 @@ variables:
   parallel:
     matrix:
       - BUILD_TYPE: [Debug, Release]
-      - PRECISION: [single, double]
+        PRECISION: [single, double]
   variables:
     GIT_STRATEGY: clone
     HAERO_INSTALL: /qfs/projects/eagles/pnnl-ci/haero_${{ BUILD_TYPE }}_${{ PRECISION }}"
