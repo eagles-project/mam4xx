@@ -4,7 +4,8 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 stages:
-  - build
+  - build-single
+  - build-double
 
 # Runner with HPC/SLURM connection
 .pnnl_tags_template:
@@ -37,7 +38,6 @@ variables:
   parallel:
     matrix:
       - BUILD_TYPE: [Debug, Release]
-        PRECISION: [single, double]
   variables:
     GIT_STRATEGY: clone
     HAERO_INSTALL: /qfs/projects/eagles/pnnl-ci/haero_${{ BUILD_TYPE }}_${{ PRECISION }}"
@@ -121,22 +121,34 @@ SVC Account Cleanup:
     - find $WORKDIR -type d -mindepth 1 -mmin +360 -prune -print -exec rm -rf {} \; || true
     - ls -hal $WORKDIR
 
-Deception Test:
+Deception Single Precision:
   stage: build
   variables:
     SLURM_Q: "dl_shared"
-    WORKDIR_SUFFIX: mam4xx_${{ BUILD_TYPE }}_${{ PRECISION }}
+    WORKDIR_SUFFIX: mam4xx_${BUILD_TYPE}_${PRECISION}
     SCRIPT_NAME: ci.sh
+    PRECISION: single
   extends:
     - .pnnl_hpc_job_template
 
-Rebuild HAERO:
+Deception Double Precision:
+  stage: build
+  variables:
+    SLURM_Q: "dl_shared"
+    WORKDIR_SUFFIX: mam4xx_${BUILD_TYPE}_${PRECISION}
+    SCRIPT_NAME: ci.sh
+    PRECISION: double
+  extends:
+    - .pnnl_hpc_job_template
+
+Rebuild HAERO Single Precision:
   stage: .pre
   when: manual
   variables:
     SLURM_Q: "dl_shared"
-    WORKDIR_SUFFIX: haero_${{ BUILD_TYPE }}_${{ PRECISION }}
+    WORKDIR_SUFFIX: haero_${BUILD_TYPE}_${PRECISION}
     SCRIPT_NAME: rebuild-haero.sh
+    PRECISION: single
   extends:
     - .pnnl_hpc_job_template
 # ---
