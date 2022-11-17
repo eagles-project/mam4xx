@@ -40,7 +40,7 @@ void compute_dry_volume_k(int k, int imode, const Real inv_density[4][7],
   const auto q_c = prognostics.q_aero_c;
   dryvol_i = 0;
   dryvol_c = 0;
-  const auto n_spec = num_species_mode[imode];
+  const auto n_spec = num_species_mode(imode);
   // int count =0;
   for (int ispec = 0; ispec < n_spec; ispec++) {
     dryvol_i += max(0.0, q_i[imode][ispec](k)) * inv_density[imode][ispec];
@@ -587,9 +587,9 @@ public:
       // = 1.0_wp/(pi_sixth*(imode%max_diameter**3.0_wp)*exp(4.5_wp*(log(imode%mean_std_dev))**2.0_wp))
 
       // compute inv density; density is constant, so we can computer in int.
-      const auto n_spec = num_species_mode[m];
+      const auto n_spec = num_species_mode(m);
       for (int ispec = 0; ispec < n_spec; ispec++) {
-        const int aero_id = get_AeroId_from_mode_aero_species(m, ispec);
+        const int aero_id = int(mode_aero_species(m, ispec));
         _inv_density[m][ispec] = Real(1.0) / aero_species(aero_id).density;
       } // for(ispec)
 
@@ -604,11 +604,11 @@ public:
                           const Diagnostics &diagnostics,
                           const Tendencies &tendencies) const {
 
-    const int nlevels = diagnostics.num_levels();
+    //const int nlevels = diagnostics.num_levels();
 
-    static constexpr std::size_t num_levels_upper_bound = 128;
+    //static constexpr std::size_t num_levels_upper_bound = 128;
     // See declaration of num_levels_upper_bound for its documentation
-    EKAT_KERNEL_ASSERT(nlevels <= num_levels_upper_bound);
+    //EKAT_KERNEL_ASSERT(nlevels <= num_levels_upper_bound);
     static constexpr bool do_aitacc_transfer = true;
     static constexpr bool do_adjust = true;
 

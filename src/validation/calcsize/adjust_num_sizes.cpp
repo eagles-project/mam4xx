@@ -58,7 +58,7 @@ void adjust_num_sizes(Ensemble *ensemble) {
 
     static constexpr Real close_to_one = 1.0 + 1.0e-15;
     static constexpr Real seconds_in_a_day = 86400.0;
-    const auto adj_tscale = max(seconds_in_a_day, dt);
+    const auto adj_tscale = haero::max(seconds_in_a_day, dt);
     const auto adj_tscale_inv = 1.0 / (adj_tscale * close_to_one);
 
     Real interstitial_tend[nmodes] = {0};
@@ -68,7 +68,7 @@ void adjust_num_sizes(Ensemble *ensemble) {
     Real num_c[nmodes];
     const Real zero = 0;
 
-    Kokkos::parallel_for("adjust_num_sizes", 1, [&] KOKKOS_FUNCTION(int i) {
+    //Kokkos::parallel_for("adjust_num_sizes", 1, [&] KOKKOS_FUNCTION(int i) {
       for (int m = 0; m < nmodes; ++m) {
         num_i[m] = init_num_i[m] < 0 ? zero : init_num_i[m];
         num_c[m] = init_num_c[m] < 0 ? zero : init_num_c[m];
@@ -78,7 +78,7 @@ void adjust_num_sizes(Ensemble *ensemble) {
             close_to_one, num_i[m], num_c[m], interstitial_tend[m],
             cloudborne_tend[m]);
       }
-    });
+    //});
 
     std::vector<Real> interstitial_tend_values, cloudborne_tend_values;
     std::vector<Real> num_i_values, num_c_values;

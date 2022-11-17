@@ -30,12 +30,12 @@ void update_diameter_and_vol2num(Ensemble *ensemble) {
     Real dgncur_k_i = 0;
     Real v2ncur_k_i = 0;
 
-    Kokkos::parallel_for(
-        "update_diameter_and_vol2num", 1, [&] KOKKOS_FUNCTION(int i) {
+    //Kokkos::parallel_for(
+    //    "update_diameter_and_vol2num", 1, [&] KOKKOS_FUNCTION(int i) {
           calcsize::update_diameter_and_vol2num(drv, num, v2nmin, v2nmax,
                                                 dgnmin, dgnmax, cmn_factor,
                                                 dgncur_k_i, v2ncur_k_i);
-        });
+    //    });
 
     output.set("dgncur", dgncur_k_i);
     output.set("v2ncur", v2ncur_k_i);

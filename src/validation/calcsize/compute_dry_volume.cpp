@@ -24,7 +24,7 @@ void compute_dry_volume_k(Ensemble *ensemble) {
     // FIXME: only works for one cell
     int count = 0;
     for (int imode = 0; imode < nmodes; ++imode) {
-      const auto n_spec = num_species_mode[imode];
+      const auto n_spec = num_species_mode(imode);
       for (int isp = 0; isp < n_spec; ++isp) {
         // const auto prog_aero_i = ekat::scalarize(progs.q_aero_i[imode][i]);
         auto h_prog_aero_i =
@@ -41,19 +41,19 @@ void compute_dry_volume_k(Ensemble *ensemble) {
       } // end species
     }   // end modes
 
-    Real dryvol_i[4];
-    Real dryvol_c[4];
+    DeviceType::view_1d<Real> dryvol_i("Return dryvol_i", 4);
+    DeviceType::view_1d<Real> dryvol_c("Return dryvol_c", 4);
 
     // FIXMED: need to update this variable
 
     // Call the cluster growth function on device.
     // FIXME: Will compile in CUDA?
-    Kokkos::parallel_for("compute_dry_volume_k", 1, [&] KOKKOS_FUNCTION(int k) {
+    Kokkos::parallel_for("compute_dry_volume_k", 1, KOKKOS_LAMBDA(int k) {
       Real inv_density[4][7];
       for (int imode = 0; imode < nmodes; ++imode) {
-        const auto n_spec = num_species_mode[imode];
+        const auto n_spec = num_species_mode(imode);
         for (int ispec = 0; ispec < n_spec; ispec++) {
-          const int aero_id = get_AeroId_from_mode_aero_species(imode, ispec);
+          const int aero_id = int(mode_aero_species(imode, ispec));
           inv_density[imode][ispec] = Real(1.0) / aero_species(aero_id).density;
         } // for(ispec)
       }
@@ -64,16 +64,22 @@ void compute_dry_volume_k(Ensemble *ensemble) {
                                        progs,      // in
                                        dryvol_i_k, // out
                                        dryvol_c_k);
-        dryvol_i[imode] = dryvol_i_k;
-        dryvol_c[imode] = dryvol_c_k;
+        dryvol_i(imode) = dryvol_i_k;
+        dryvol_c(imode) = dryvol_c_k;
       }
     });
+
+    auto host_dryvol_i = Kokkos::create_mirror_view(dryvol_i);
+    Kokkos::deep_copy(host_dryvol_i, dryvol_i);
+
+    auto host_dryvol_c = Kokkos::create_mirror_view(dryvol_c);
+    Kokkos::deep_copy(host_dryvol_c, dryvol_c);
 
     std::vector<Real> values_i, values_c;
     // FIXME need to copy from device to host
     for (int imode = 0; imode < nmodes; ++imode) {
-      values_i.push_back(dryvol_i[imode]);
-      values_c.push_back(dryvol_c[imode]);
+      values_i.push_back(host_dryvol_i(imode));
+      values_c.push_back(host_dryvol_c(imode));
     }
 
     output.set("dryvol_i", values_i);

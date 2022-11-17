@@ -47,7 +47,7 @@ void compute_tendencies(Ensemble *ensemble) {
       h_prog_n_mode_c(0) = n_c[imode];
       Kokkos::deep_copy(h_prog_n_mode_c, progs.n_mode_c[imode]);
 
-      const auto n_spec = num_species_mode[imode];
+      const auto n_spec = num_species_mode(imode);
       for (int isp = 0; isp < n_spec; ++isp) {
         // const auto prog_aero_i = ekat::scalarize(progs.q_aero_i[imode][i]);
         auto h_prog_aero_i =
@@ -86,7 +86,7 @@ void compute_tendencies(Ensemble *ensemble) {
       Kokkos::deep_copy(tends.n_mode_c[imode], h_tend_num_c);
       tend_n_mode_c_out.push_back(h_tend_num_c(0));
 
-      const auto n_spec = num_species_mode[imode];
+      const auto n_spec = num_species_mode(imode);
       for (int isp = 0; isp < n_spec; ++isp) {
         auto h_tend_aero_i =
             Kokkos::create_mirror_view(tends.q_aero_i[imode][isp]);
