@@ -1,11 +1,9 @@
 #include <mam4xx/mam4.hpp>
 
+#include <mam4xx/aero_config.hpp>
 #include <mam4xx/calcsize.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
-#include <mam4xx/aero_config.hpp>
-
-
 
 using namespace skywalker;
 using namespace mam4;
@@ -17,7 +15,6 @@ void aitken_accum_exchange(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-
     Real dt = input.get("dt");
 
     int nlev = 1;
@@ -46,12 +43,11 @@ void aitken_accum_exchange(Ensemble *ensemble) {
     const Real num_i_aitsv = input.get("num_i_aitsv");
     const Real drv_c_aitsv = input.get("drv_c_aitsv");
     const Real num_c_aitsv = input.get("num_c_aitsv");
-    
+
     const Real drv_i_accsv = input.get("drv_i_accsv");
     const Real num_i_accsv = input.get("num_i_accsv");
     const Real drv_c_accsv = input.get("drv_c_accsv");
     const Real num_c_accsv = input.get("num_c_accsv");
-
 
     int count = 0;
     for (int imode = 0; imode < nmodes; ++imode) {
@@ -82,42 +78,34 @@ void aitken_accum_exchange(Ensemble *ensemble) {
 
       h_v2nnom_nmodes(imode) = s_v2nnom_nmodes[imode];
 
-
-    }   // end modes
+    } // end modes
 
     Kokkos::deep_copy(h_v2nnom_nmodes, d_v2nnom_nmodes);
     const int aitken_idx = int(ModeIndex::Aitken);
-    const int accum_idx = int(ModeIndex::Accumulation); 
+    const int accum_idx = int(ModeIndex::Accumulation);
     static constexpr Real close_to_one = 1.0 + 1.0e-15;
     static constexpr Real seconds_in_a_day = 86400.0;
     const auto adj_tscale = haero::max(seconds_in_a_day, dt);
     const auto adj_tscale_inv = 1.0 / (adj_tscale * close_to_one);
 
-    Kokkos::parallel_for("compute_dry_volume_k", 1, KOKKOS_LAMBDA(int k) {
+    Kokkos::parallel_for(
+        "compute_dry_volume_k", 1, KOKKOS_LAMBDA(int k) {
+          Real v2nnom_nmodes[nmodes];
+          for (int m = 0; m < nmodes; ++m) {
+            v2nnom_nmodes[m] = d_v2nnom_nmodes(m);
+          }
 
-        Real v2nnom_nmodes[nmodes];
-        for (int m = 0; m < nmodes; ++m) {
-          v2nnom_nmodes[m]=d_v2nnom_nmodes(m);
-        }          
-
-        calcsize::aitken_accum_exchange(k, aitken_idx, accum_idx, v2nnom_nmodes,
-                           adj_tscale_inv, dt,
-                           progs,
-                           drv_i_aitsv,
-                           num_i_aitsv,
-                           drv_c_aitsv, num_c_aitsv,
-                           drv_i_accsv,num_i_accsv,
-                           drv_c_accsv, num_c_accsv,
-                           diags, tends);
-
-      });  
+          calcsize::aitken_accum_exchange(
+              k, aitken_idx, accum_idx, v2nnom_nmodes, adj_tscale_inv, dt,
+              progs, drv_i_aitsv, num_i_aitsv, drv_c_aitsv, num_c_aitsv,
+              drv_i_accsv, num_i_accsv, drv_c_accsv, num_c_accsv, diags, tends);
+        });
 
     std::vector<Real> tend_aero_i_out;
     std::vector<Real> tend_n_mode_i_out;
 
     std::vector<Real> tend_aero_c_out;
     std::vector<Real> tend_n_mode_c_out;
-
 
     for (int imode = 0; imode < nmodes; ++imode) {
 
@@ -149,9 +137,5 @@ void aitken_accum_exchange(Ensemble *ensemble) {
 
     output.set("cloud_borne_ptend_num", tend_n_mode_c_out);
     output.set("cloud_borne_ptend", tend_aero_c_out);
-
-
-    });
-
-
+  });
 }
