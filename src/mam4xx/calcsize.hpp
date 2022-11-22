@@ -404,11 +404,23 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
 }
 
 KOKKOS_INLINE_FUNCTION
-void compute_coef_ait_acc_transfer() {}
-// v2n_geomean, adj_tscale_inv, drv_a_aitsv, aitken_idx &
-//        drv_c_aitsv, num_a_aitsv, num_c_aitsv,  voltonum_acc, &
-//        ait2acc_index, xfercoef_num_ait2acc, xfercoef_vol_ait2acc,
-//        xfertend_num)
+void compute_coef_ait_acc_transfer(const int iacc, // in
+                                   const Real v2n_geomean, // in
+                                   const Real adj_tscale_inv,// in
+                                   const Real drv_a_aitsv,// in
+                                   const Real drv_c_aitsv,// in
+                                   const Real num_a_aitsv, // in
+                                   const Real num_c_aitsv,// in
+                                   const Real voltonum_acc,// in
+                                   int& ait2acc_index, // out
+                                   Real& xfercoef_num_ait2acc,// out
+                                   Real& xfercoef_vol_ait2acc,// out
+                                   Real xfertend_num[2][2]// out
+                                   ) 
+{
+
+  // TODO
+  // xfertend_num check its declaration. 
 
 //     !------------------------------------------------------------
 //     ! Purpose: Computes coefficients for transfer from aitken to accumulation
@@ -416,67 +428,171 @@ void compute_coef_ait_acc_transfer() {}
 //     !
 //     ! Author: Richard Easter (Refactored by Balwinder Singh)
 //     !------------------------------------------------------------
-
-//     !intent ins
-//     integer,  intent(in) :: iacc
-//     real(wp), intent(in) :: v2n_geomean    !geometric mean volume to number
-//     ratio real(wp), intent(in) :: adj_tscale_inv !inverse if the time scale
-//     [1/s] real(wp), intent(in) :: drv_a_aitsv, drv_c_aitsv !dry volume
-//     real(wp), intent(in) :: num_a_aitsv, num_c_aitsv, voltonum_acc
+//      inputs       
+//     iacc
+//     v2n_geomean    !geometric mean volume to number
+//     adj_tscale_inv !inverse if the time scale
+//     drv_a_aitsv, drv_c_aitsv !dry volume
+//     num_a_aitsv, num_c_aitsv, voltonum_acc
 
 //     !intent outs
-//     integer,  intent(inout) :: ait2acc_index
-//     real(wp), intent(inout) :: xfercoef_num_ait2acc, xfercoef_vol_ait2acc!
-//     transfer coefficients real(wp), intent(inout) :: xfertend_num(2,2)
+//     ait2acc_index
+//      xfercoef_num_ait2acc, xfercoef_vol_ait2acc!
+//     xfertend_num(2,2)
 //     !transfer tendencies
 
 //     !local
-//     real(wp) :: drv_t, num_t
-//     real(wp) :: xferfrac_num_ait2acc, xferfrac_vol_ait2acc
-
-//     !initialize
-//     ait2acc_index        = 0
-//     xfercoef_num_ait2acc = 0.0_wp
-//     xfercoef_vol_ait2acc = 0.0_wp
-//     xfertend_num(:,:)    = 0.0_wp
+       const Real zero=0, one=1;
+       
+       //initialize
+       ait2acc_index        = 0;
+       Real xferfrac_num_ait2acc=zero;
+       Real xferfrac_vol_ait2acc=zero;
+       xfertend_num={0};
 
 //     ! compute aitken --> accum transfer rates
 
-//     drv_t = drv_a_aitsv + drv_c_aitsv
-//     num_t = num_a_aitsv + num_c_aitsv
-//     if (drv_t > 0.0_wp) then
-//        !if num is less than the mean value, we have large particles (keeping
-//        volume constant drv_t) !which needs to be moved to accumulation mode
-//        if (num_t < drv_t*v2n_geomean) then
-//           ait2acc_index = 1
-//           if (num_t < drv_t*voltonum_acc) then ! move all particles if number
-//           is smaller than the acc mean
-//              xferfrac_num_ait2acc = 1.0_wp
-//              xferfrac_vol_ait2acc = 1.0_wp
-//           else !otherwise scale the transfer
-//              xferfrac_vol_ait2acc = ((num_t/drv_t) - v2n_geomean)/   &
-//                   (voltonum_acc - v2n_geomean)
-//              xferfrac_num_ait2acc = xferfrac_vol_ait2acc*   &
-//                   (drv_t*voltonum_acc/num_t)
-//              !bound the transfer coefficients between 0 and 1
-//              if ((xferfrac_num_ait2acc <= 0.0_wp) .or.   &
-//                   (xferfrac_vol_ait2acc <= 0.0_wp)) then
-//                 xferfrac_num_ait2acc = 0.0_wp
-//                 xferfrac_vol_ait2acc = 0.0_wp
-//              else if ((xferfrac_num_ait2acc >= 1.0_wp) .or.   &
-//                   (xferfrac_vol_ait2acc >= 1.0_wp)) then
-//                 xferfrac_num_ait2acc = 1.0_wp
-//                 xferfrac_vol_ait2acc = 1.0_wp
-//              end if
-//           end if
-//           xfercoef_num_ait2acc = xferfrac_num_ait2acc*adj_tscale_inv
-//           xfercoef_vol_ait2acc = xferfrac_vol_ait2acc*adj_tscale_inv
-//           xfertend_num(1,1) = num_a_aitsv*xfercoef_num_ait2acc
-//           xfertend_num(1,2) = num_c_aitsv*xfercoef_num_ait2acc
-//        end if
-//     end if
+       const Real drv_t = drv_a_aitsv + drv_c_aitsv;
+       const Real num_t = num_a_aitsv + num_c_aitsv;
+       if (drv_t > zero) {
+       //if num is less than the mean value, we have large particles (keeping
+       // volume constant drv_t) !which needs to be moved to accumulation mode
+       if (num_t < drv_t*v2n_geomean){
+          ait2acc_index = 1;
+          if (num_t < drv_t*voltonum_acc) {//then ! move all particles if number
+          //is smaller than the acc mean
+             xferfrac_num_ait2acc = one ;
+             xferfrac_vol_ait2acc = one ;
+          } else {// !otherwise scale the transfer
+             xferfrac_vol_ait2acc = ((num_t/drv_t) - v2n_geomean) / (voltonum_acc - v2n_geomean);
+             xferfrac_num_ait2acc = xferfrac_vol_ait2acc *  (drv_t*voltonum_acc/num_t);
+             //bound the transfer coefficients between 0 and 1
+             if ((xferfrac_num_ait2acc <= zero) || (xferfrac_vol_ait2acc <= zero) ) {
+                xferfrac_num_ait2acc = zero;
+                xferfrac_vol_ait2acc = zero;
+             }   
+             else if ((xferfrac_num_ait2acc >= one ) || (xferfrac_vol_ait2acc >= one)) {
+                xferfrac_num_ait2acc = one;
+                xferfrac_vol_ait2acc = one;
+             }   
+             
+          } // end num_t < drv_t*voltonum_acc
+          xfercoef_num_ait2acc = xferfrac_num_ait2acc*adj_tscale_inv;
+          xfercoef_vol_ait2acc = xferfrac_vol_ait2acc*adj_tscale_inv;
+          xfertend_num[0][0] = num_a_aitsv*xfercoef_num_ait2acc;
+          xfertend_num[0][1] = num_c_aitsv*xfercoef_num_ait2acc;
+       } // end num_t < drv_t*v2n_geomean
+    } // end drv_t > zero
+}  //end compute_coef_ait_acc_transfer
 
-//   end subroutine compute_coef_ait_acc_transfer
+KOKKOS_INLINE_FUNCTION
+void compute_coef_acc_ait_transfer( int iacc, int klev, 
+       const Real v2n_geomean, const Real adj_tscale_inv,
+       const Prognostics &prognostics, const Real drv_a_accsv, const Real drv_c_accsv, 
+       const Real  num_a_accsv,  const Real num_c_accsv,
+       const int no_transfer_acc2ait[7], const Real voltonum_ait, 
+       const Real inv_density[4][7],  const Real v2nmin_nmodes[4],                              
+       Real& drv_a_noxf, Real&  drv_c_noxf, int & acc2_ait_index, Real &xfercoef_num_acc2ait, 
+       Real& xfercoef_vol_acc2ait, Real xfertend_num[2][2])
+  {
+   //TODO
+    // v2nmin_nmodes is not an input in the mam subrotine. 
+    // check xfertend_num 
+    // invdens, we are using inv_density from calcsize int()
+    // q_i and q_c 
+
+    // intent -ins
+    //integer,  intent(in) :: iacc, klev
+    // real(wp), intent(in) :: v2n_geomean        !geometric mean volume to number ratio
+    //real(wp), intent(in) :: adj_tscale_inv     !inverse if the time scale [1/s]
+    //real(wp), intent(in) :: q_i(:,:), q_c(:,:) !interstitial and cldborne mix ratios [kg/kg(of air)]
+    // real(wp), intent(in) :: drv_a_accsv, drv_c_accsv !dry volume
+    // real(wp), intent(in) :: num_a_accsv, num_c_accsv, voltonum_ait
+    //logical,  intent(in) :: no_transfer_acc2ait(:) !"true" for species which can't be transffered
+
+    // !intent - outs
+    // integer,  intent(inout) :: acc2_ait_index
+    // real(wp), intent(inout) :: drv_a_noxf, drv_c_noxf
+    // real(wp), intent(inout) :: xfercoef_num_acc2ait, xfercoef_vol_acc2ait ! transfer coefficients
+    // real(wp), intent(inout) :: xfertend_num(2,2) !transfer tendencies
+
+    const auto q_i = prognostics.q_aero_i;
+    const auto q_c = prognostics.q_aero_c;
+
+    // local
+    // int ipop, ispec, s_spec_ind, e_spec_ind;
+    Real drv_t_noxf, num_t0;
+    Real num_t_noxf;
+    Real xferfrac_num_acc2ait, xferfrac_vol_acc2ait;
+    const Real zero_div_fac = 1.0e-37;  // BAD_CONSTANT!! This is not a physical constant, but it could impact numerical errors. 
+    const Real zero=0.0, one=1.0;
+
+    acc2_ait_index = 0;
+    xfercoef_num_acc2ait = zero;
+    xfercoef_vol_acc2ait = zero;
+
+    Real drv_t = drv_a_accsv + drv_c_accsv;
+    Real num_t = num_a_accsv + num_c_accsv;
+    drv_a_noxf = zero;
+    drv_c_noxf = zero;
+    const auto n_spec = num_species_mode(iacc); // number of species in iacc mode
+
+    if (drv_t > zero) {
+       //!if number is larger than the mean, it means we have small particles (keeping volume constant drv_t),
+       //!we need to move particles to aitken mode
+       if (num_t > drv_t*v2n_geomean) {
+          //!As there may be more species in the accumulation mode which are not present in the aitken mode,
+          //!we need to compute the num and volume only for the species which can be transferred
+         
+          // In mam4xx q_i and q_c have a different structure that mam4, i.e, q_i[nmode][nspecies](k).
+          // So, we need to modify the following for loop  
+          for (int ispec = 0; ispec < n_spec; ++ispec)
+          {
+            if ( no_transfer_acc2ait[ispec] ) 
+            {// then !species which can't be transferred
+                // need qmass*invdens = (kg/kg-air) * [1/(kg/m3)] = m3/kg-air
+                drv_a_noxf += max(zero,q_i[iacc][ispec](klev))*inv_density[iacc][ispec];
+                drv_c_noxf += max(zero,q_c[iacc][ispec](klev))*inv_density[iacc][ispec];
+            }//end if
+          } // end ispec
+          drv_t_noxf = drv_a_noxf + drv_c_noxf; //!total volume which can't be moved to the aitken mode
+          num_t_noxf = drv_t_noxf*v2nmin_nmodes[iacc];// !total number which can't be moved to the aitken mode
+          num_t0 = num_t;
+          num_t = max( zero, num_t - num_t_noxf );
+          drv_t = max( zero, drv_t - drv_t_noxf );
+       }// end num_t > drv_t*v2n_geomean
+    } //end drv_t
+
+    if (drv_t > zero) {
+       //!Find out if we need to transfer based on the new num_t
+       if (num_t > drv_t*v2n_geomean) {
+          acc2_ait_index = 1;
+          if (num_t > drv_t*voltonum_ait) {//! if number of larger than the aitken mean, move all particles
+             xferfrac_num_acc2ait = one;
+             xferfrac_vol_acc2ait = one;
+          }else {// scale the transfer
+             xferfrac_vol_acc2ait = ((num_t/drv_t) - v2n_geomean)/ (voltonum_ait - v2n_geomean);
+             xferfrac_num_acc2ait = xferfrac_vol_acc2ait*(drv_t*voltonum_ait/num_t);
+             // !bound the transfer coefficients between 0 and 1
+             if ((xferfrac_num_acc2ait <= zero) ||  
+                  (xferfrac_vol_acc2ait <= zero)) {
+                xferfrac_num_acc2ait = zero;
+                xferfrac_vol_acc2ait = zero;
+             } else if ((xferfrac_num_acc2ait >= one) ||
+                  (xferfrac_vol_acc2ait >= one)) {
+                xferfrac_num_acc2ait = one;
+                xferfrac_vol_acc2ait = one;
+             }
+          } //
+          xferfrac_num_acc2ait = xferfrac_num_acc2ait*num_t/max( zero_div_fac, num_t0 );
+          xfercoef_num_acc2ait = xferfrac_num_acc2ait*adj_tscale_inv;
+          xfercoef_vol_acc2ait = xferfrac_vol_acc2ait*adj_tscale_inv;
+          xfertend_num[1][0] = num_a_accsv*xfercoef_num_acc2ait;
+          xfertend_num[1][1] = num_c_accsv*xfercoef_num_acc2ait;
+       } //end num_t > drv_t*v2n_geomean
+    }
+
+  }// end subroutine compute_coef_acc_ait_transfer
 
 /*
  * \brief Exchange aerosols between aitken and accumulation modes based on new
