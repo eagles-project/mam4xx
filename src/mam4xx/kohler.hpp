@@ -87,10 +87,6 @@ kelvin_coefficient(Real T = Constants::triple_pt_h2o) {
 ///   scalar functions that are to be used with numerical rootfinding
 ///   algorithms.
 ///
-///   This struct is templated on scalar type so that it can be used with
-///   PackType. If it is used with PackType, each element of the PackType
-///   corresponds to a separate KohlerPolynomial, with distinct coefficients.
-///
 ///   @warning This polynomial is severely ill-conditioned, to the point that it
 ///   is sensitive to order-of-operations changes caused by compiler
 ///   optimization flags.  We therefore require double precision.

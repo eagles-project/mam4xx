@@ -1,10 +1,16 @@
 #ifndef MAM4XX_KERMINEN2002_HPP
 #define MAM4XX_KERMINEN2002_HPP
 
-#include <ekat/ekat_pack.hpp>
-#include <ekat/ekat_pack_math.hpp>
+#include <haero/haero.hpp>
+#include <haero/math.hpp>
 
 namespace mam4::kerminen2002 {
+
+using Real = haero::Real;
+using haero::cube;
+using haero::exp;
+using haero::log;
+using haero::square;
 
 /// The functions in this file implement parameterizations described in
 /// Kerminen and Kulmala, Analytical formulae connecting the “real” and the
@@ -24,9 +30,8 @@ namespace mam4::kerminen2002 {
 /// [kg/mol]
 /// @param [in] temp The atmospheric temperature [K]
 KOKKOS_INLINE_FUNCTION
-PackType growth_rate(const PackType c, const PackType &rho, const Real mw,
-                     const PackType &temp) {
-  PackType speed = 14.7 * sqrt(temp); // molecular speed [m/s]
+Real growth_rate(const Real c, const Real rho, const Real mw, const Real temp) {
+  Real speed = 14.7 * sqrt(temp); // molecular speed [m/s]
   return 3.0e-9 * speed * mw * c / rho;
 }
 
@@ -37,8 +42,8 @@ PackType growth_rate(const PackType c, const PackType &rho, const Real mw,
 /// @param [in] d_wet_grown The wet diameter of grown particles [nm]
 /// @param [in] c_tot The total number concentration of aerosol particles [#/cc]
 KOKKOS_INLINE_FUNCTION
-PackType condensation_sink(const PackType &rho_air, const PackType &d_wet_grown,
-                           const PackType &c_tot) {
+Real condensation_sink(const Real rho_air, const Real d_wet_grown,
+                       const Real c_tot) {
   // For the purposes of this calculation, we use alpha == 1 and we use the mean
   // free path of air as computed from the air density in the calculation of the
   // Knudsen number for the nucleation mode.
@@ -58,7 +63,7 @@ PackType condensation_sink(const PackType &rho_air, const PackType &d_wet_grown,
   // TODO: should we attempt to estimate the wet number density?
   static const Real mw_air = Constants::molec_weight_dry_air;
   static const Real pi = Constants::pi;
-  const PackType Kn = 2 * mw_air / (pi * rho_air * cube(d_wet_grown));
+  const Real Kn = 2 * mw_air / (pi * rho_air * cube(d_wet_grown));
 
   // Compute the transitional correction for the condensational mass flux
   // (Fuchs and Sutugin, 1971, or KK2002 eq 4).
@@ -80,15 +85,14 @@ PackType condensation_sink(const PackType &rho_air, const PackType &d_wet_grown,
 /// @param [in] cond_growth_rate The condensation growth rate GR [m/s]
 /// @param [in] cond_sink The condensation sink CS' [1/m2]
 KOKKOS_INLINE_FUNCTION
-PackType
-growth_parameter(const PackType &temp, const PackType &d_dry_crit,
-                 const PackType &d_wet_crit, const PackType &d_dry_grown,
-                 const PackType &d_wet_grown, const PackType &rho_grown,
-                 const PackType &cond_growth_rate, const PackType &cond_sink) {
+Real growth_parameter(const Real temp, const Real d_dry_crit,
+                      const Real d_wet_crit, const Real d_dry_grown,
+                      const Real d_wet_grown, const Real rho_grown,
+                      const Real cond_growth_rate, const Real cond_sink) {
   // Compute gamma from KK2002 eq 22 [nm2/m2/h], neglecting the
   // (d_mean/150)^0.048 factor.
-  PackType gamma = 0.23 * pow(d_wet_crit, 0.2) * pow(d_wet_grown / 3.0, 0.075) *
-                   pow(1e-3 * rho_grown, -0.33) * pow(temp / 293.0, -0.75);
+  Real gamma = 0.23 * pow(d_wet_crit, 0.2) * pow(d_wet_grown / 3.0, 0.075) *
+               pow(1e-3 * rho_grown, -0.33) * pow(temp / 293.0, -0.75);
 
   // Compute eta [nm] using KK2002 eq 11.
   return gamma * cond_sink / cond_growth_rate;
@@ -113,14 +117,12 @@ growth_parameter(const PackType &temp, const PackType &d_dry_crit,
 /// @param [in] rho_air The mass density of dry air [kg/m3]
 /// @param [in] mw_h2so4 The molecular weight of H2SO4 gas [kg/mol]
 KOKKOS_INLINE_FUNCTION
-PackType growth_parameter(const PackType &c_so4, const PackType &c_nh4,
-                          const PackType &nh4_to_so4_molar_ratio,
-                          const PackType &temp, const PackType &rel_hum,
-                          const PackType &d_dry_crit,
-                          const PackType &d_wet_crit,
-                          const PackType &d_dry_grown,
-                          const PackType &rho_grown, const PackType &rho_air,
-                          Real mw_h2so4) {
+Real growth_parameter(const Real c_so4, const Real c_nh4,
+                      const Real nh4_to_so4_molar_ratio, const Real temp,
+                      const Real rel_hum, const Real d_dry_crit,
+                      const Real d_wet_crit, const Real d_dry_grown,
+                      const Real rho_grown, const Ral rho_air,
+                      const Real mw_h2so4) {
   // Compute the wet/dry volume ratio using the simple Kohler approximation
   // for ammonium sulfate and bisulfate.
   const auto bounded_rel_hum = max(0.10, min(0.95, rel_hum));
@@ -129,19 +131,19 @@ PackType growth_parameter(const PackType &c_so4, const PackType &c_nh4,
   // Compute the growth rate [nm/h] of new particles.
 
   // Compute the fraction of the wet volume due to SO4 aerosol.
-  PackType V_frac_wet_so4 =
+  Real V_frac_wet_so4 =
       1.0 / (wet_dry_vol_ratio * (1.0 + nh4_to_so4_molar_ratio * 17.0 / 98.0));
 
   // Compute the condensation growth rate gr [nm/h] of new particles from
   // KK2002 eq 21 for H2SO4 uptake and correct for NH3/H2O uptake.
-  PackType cond_growth_rate = growth_rate(c_so4, rho_grown, mw_h2so4, temp);
+  Real cond_growth_rate = growth_rate(c_so4, rho_grown, mw_h2so4, temp);
   cond_growth_rate /= V_frac_wet_so4;
 
   // Wet diameter [nm] of grown particles with dry diameter d_dry_grown.
-  PackType d_wet_grown = 1e9 * d_dry_grown * pow(wet_dry_vol_ratio, 1.0 / 3.0);
+  Real d_wet_grown = 1e9 * d_dry_grown * pow(wet_dry_vol_ratio, 1.0 / 3.0);
 
   // Compute the condensation sink CS' from KK2002 eqs 3-4.
-  PackType cond_sink = condensation_sink(rho_air, d_wet_grown, c_so4 + c_nh4);
+  Real cond_sink = condensation_sink(rho_air, d_wet_grown, c_so4 + c_nh4);
 
   // Compute eta [nm] using KK2002 eq 11.
   return growth_parameter(temp, d_dry_crit, d_wet_crit, d_dry_grown,
@@ -159,9 +161,8 @@ PackType growth_parameter(const PackType &c_so4, const PackType &c_nh4,
 /// @param [in] d_wet_crit The wet diameter of particles in a CC [nm]
 /// @param [in] d_wet_grown The wet diameter of grown particles [nm]
 KOKKOS_INLINE_FUNCTION
-PackType apparent_nucleation_factor(const PackType &eta,
-                                    const PackType &d_wet_crit,
-                                    const PackType &d_wet_grown) {
+Real apparent_nucleation_factor(const Real eta, const Real d_wet_crit,
+                                const Real d_wet_grown) {
   return exp(eta / d_wet_grown - eta / d_wet_crit);
 }
 
@@ -187,24 +188,24 @@ PackType apparent_nucleation_factor(const PackType &eta,
 /// @param [in] rho_air The mass density of dry air [kg/m3]
 /// @param [in] mw_h2so4 The molecular weight of H2SO4 gas [kg/mol]
 KOKKOS_INLINE_FUNCTION
-PackType apparent_nucleation_factor(
-    const PackType &c_so4, const PackType &c_nh4,
-    const PackType &nh4_to_so4_molar_ratio, const PackType &temp,
-    const PackType &rel_hum, const PackType &d_dry_crit,
-    const PackType &d_wet_crit, const PackType &d_dry_grown,
-    const PackType &rho_grown, const PackType &rho_air, Real mw_h2so4) {
+Real apparent_nucleation_factor(const Real c_so4, const Real c_nh4,
+                                const Real nh4_to_so4_molar_ratio,
+                                const Real temp, const Real rel_hum,
+                                const Real d_dry_crit, const Real d_wet_crit,
+                                const Real d_dry_grown, const Real rho_grown,
+                                const Real rho_air, const Real mw_h2so4) {
   // Compute the wet/dry volume ratio using the simple Kohler approximation
   // for ammonium sulfate and bisulfate.
   const auto bounded_rel_hum = max(0.10, min(0.95, rel_hum));
   const auto wet_dry_vol_ratio = 1.0 - 0.56 / log(bounded_rel_hum);
 
   // Wet diameter [nm] of grown particles with dry diameter d_dry_grown.
-  PackType d_wet_grown = 1e9 * d_dry_grown * pow(wet_dry_vol_ratio, 1.0 / 3.0);
+  Real d_wet_grown = 1e9 * d_dry_grown * pow(wet_dry_vol_ratio, 1.0 / 3.0);
 
   // Growth parameter eta.
-  PackType eta = growth_parameter(c_so4, c_nh4, nh4_to_so4_molar_ratio, temp,
-                                  rel_hum, d_dry_crit, d_wet_crit, d_dry_grown,
-                                  rho_grown, rho_air, mw_h2so4);
+  Real eta = growth_parameter(c_so4, c_nh4, nh4_to_so4_molar_ratio, temp,
+                              rel_hum, d_dry_crit, d_wet_crit, d_dry_grown,
+                              rho_grown, rho_air, mw_h2so4);
 
   return apparent_nucleation_factor(eta, d_wet_crit, d_wet_grown);
 }

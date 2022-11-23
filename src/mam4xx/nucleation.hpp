@@ -740,7 +740,7 @@ private:
       const Real qwtr_cur[num_modes], Real &dndt_ait, Real &dmdt_ait,
       Real &dso4dt_ait, Real &dnh4dt_ait, Real &dnclusterdt) const {
     static constexpr Real avogadro = Constants::avogadro; // FIXME: replace
-    static constexpr Real rgas = Constants::r_gas; // FIXME: replace
+    static constexpr Real rgas = Constants::r_gas;        // FIXME: replace
     static constexpr Real ln_nuc_rate_cutoff = -13.82;
 
     // min h2so4 vapor for nuc calcs = 4.0e-16 mol/mol-air ~= 1.0e4
