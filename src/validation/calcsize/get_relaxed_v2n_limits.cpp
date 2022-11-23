@@ -37,13 +37,13 @@ void get_relaxed_v2n_limits(Ensemble *ensemble) {
     Real v2nminrl[nmodes] = {0.0};
     Real v2nmaxrl[nmodes] = {0.0};
     // Call the cluster growth function on device.
-    //Kokkos::parallel_for(
+    // Kokkos::parallel_for(
     //    "get_relaxed_v2n_limits", 1, [&] KOKKOS_FUNCTION(int k) {
-          for (int m = 0; m < nmodes; ++m) {
-            calcsize::get_relaxed_v2n_limits(
-                do_aitacc_transfer, m == aitken_idx, m == accumulation_idx,
-                v2nmin_nmodes[m], v2nmax_nmodes[m], v2nminrl[m], v2nmaxrl[m]);
-          }
+    for (int m = 0; m < nmodes; ++m) {
+      calcsize::get_relaxed_v2n_limits(
+          do_aitacc_transfer, m == aitken_idx, m == accumulation_idx,
+          v2nmin_nmodes[m], v2nmax_nmodes[m], v2nminrl[m], v2nmaxrl[m]);
+    }
     //    });
 
     std::vector<Real> v2nminrl_values, v2nmaxrl_values;

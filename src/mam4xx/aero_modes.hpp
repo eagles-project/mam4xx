@@ -204,37 +204,37 @@ KOKKOS_INLINE_FUNCTION AeroSpecies aero_species(const int i) {
 }
 
 // A list of species within each mode for MAM4.
-KOKKOS_INLINE_FUNCTION AeroId mode_aero_species(const int modeNo, const int speciesNo) {
-// A list of species within each mode for MAM4.
-static constexpr AeroId mode_aero_species[4][7] = {
-    {// accumulation mode
-     AeroId::SO4, AeroId::POM, AeroId::SOA, AeroId::BC, AeroId::DST,
-     AeroId::NaCl, AeroId::MOM},
-    {
-        // aitken mode
-        AeroId::SO4,
-        AeroId::SOA,
-        AeroId::NaCl,
-        AeroId::MOM,
-        AeroId::None,
-        AeroId::None,
-        AeroId::None,
-    },
-    {// coarse mode
-     AeroId::DST, AeroId::NaCl, AeroId::SO4, AeroId::BC, AeroId::POM,
-     AeroId::SOA, AeroId::MOM},
-    {// primary carbon mode
-     AeroId::POM, AeroId::BC, AeroId::MOM, AeroId::None, AeroId::None,
-     AeroId::None, AeroId::None}};
-     
-  return  mode_aero_species[modeNo][speciesNo];
-}  
+KOKKOS_INLINE_FUNCTION AeroId mode_aero_species(const int modeNo,
+                                                const int speciesNo) {
+  // A list of species within each mode for MAM4.
+  static constexpr AeroId mode_aero_species[4][7] = {
+      {// accumulation mode
+       AeroId::SO4, AeroId::POM, AeroId::SOA, AeroId::BC, AeroId::DST,
+       AeroId::NaCl, AeroId::MOM},
+      {
+          // aitken mode
+          AeroId::SO4,
+          AeroId::SOA,
+          AeroId::NaCl,
+          AeroId::MOM,
+          AeroId::None,
+          AeroId::None,
+          AeroId::None,
+      },
+      {// coarse mode
+       AeroId::DST, AeroId::NaCl, AeroId::SO4, AeroId::BC, AeroId::POM,
+       AeroId::SOA, AeroId::MOM},
+      {// primary carbon mode
+       AeroId::POM, AeroId::BC, AeroId::MOM, AeroId::None, AeroId::None,
+       AeroId::None, AeroId::None}};
 
+  return mode_aero_species[modeNo][speciesNo];
+}
 
 /// Returns number of species per mode
 KOKKOS_INLINE_FUNCTION int num_species_mode(const int i) {
-static constexpr int _num_species_mode[4] = {7, 4, 7, 3};
- return _num_species_mode[i];
+  static constexpr int _num_species_mode[4] = {7, 4, 7, 3};
+  return _num_species_mode[i];
 }
 
 /// Returns the index of the given aerosol species within the given mode, or
@@ -243,7 +243,7 @@ KOKKOS_INLINE_FUNCTION
 int aerosol_index_for_mode(ModeIndex mode, AeroId aero_id) {
   int mode_index = static_cast<int>(mode);
   for (int s = 0; s < 7; ++s) {
-    if (aero_id == mode_aero_species(mode_index,s)) {
+    if (aero_id == mode_aero_species(mode_index, s)) {
       return s;
     }
   }
@@ -302,18 +302,14 @@ KOKKOS_INLINE_FUNCTION GasSpecies gas_species(const int i) {
   return species[i];
 }
 
-// number of common species between aitek and accum modes
-static constexpr int n_common_species_aitek_accum = 4;
-// species index in atike mode 
-static constexpr int ait_spec_in_acc[n_common_species_aitek_accum]={0 , 1, 2, 3}; 
-// species index in accum mode 
-static constexpr int acc_spec_in_ait[n_common_species_aitek_accum]={0 , 2, 5, 6};
-
-static constexpr bool no_transfer_acc2ait[7] = {true, false, true, false, false, true, true}; 
-
-
-
-
+static constexpr bool no_transfer_acc2ait[7] = {true,  false, true, false,
+                                                false, true,  true};
+// number of common species between aitken and accum modes
+static constexpr int n_common_species_ait_accum = 4;
+// species index in aitken mode
+static constexpr int ait_spec_in_acc[n_common_species_ait_accum] = {0, 1, 2, 3};
+// species index in accum mode
+static constexpr int acc_spec_in_ait[n_common_species_ait_accum] = {0, 2, 5, 6};
 } // namespace mam4
 
 #endif
