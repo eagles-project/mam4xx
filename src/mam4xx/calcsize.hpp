@@ -677,11 +677,11 @@ KOKKOS_INLINE_FUNCTION
 KOKKOS_INLINE_FUNCTION
 void  update_tends_flx(const int klev, // in 
                        const int jmode, //in 
-                       const int n_common_species,
+                       // const int n_common_species,
                        const int src_mode_ixd, //in 
                        const int dest_mode_ixd, //in
-                       const int src_species_idx[n_common_species], 
-                       const int dest_species_idx[n_common_species], 
+                       const int src_species_idx[n_common_species_aitek_accum], // n_common_species_aitek_accum is defined in aero_modes
+                       const int dest_species_idx[n_common_species_aitek_accum], 
                        const Real xfertend_num[2][2], 
                        const Real xfercoef,
                        const Prognostics &prognostics,
@@ -743,7 +743,7 @@ void  update_tends_flx(const int klev, // in
                      dqdt_dest_c,
                      xfertend_num);
 
-    for (int i = 0; i < n_common_species; ++i)
+    for (int i = 0; i < n_common_species_aitek_accum; ++i)
     {
       const int ispec_src = src_species_idx[i];
       const int ispec_dest = dest_species_idx[i];
@@ -794,6 +794,9 @@ void aitken_accum_exchange(const int &k, const int &aitken_idx,
   // drv_c_aitsv (klev), num_a_aitsv(klev), num_c_aitsv(klev), voltonum_acc, &
   // !input ait2acc_index, xfercoef_num_ait2acc, xfercoef_vol_ait2acc,
   // xfertend_num)              !output
+
+
+
 
 } // aitken_accum_exchange
 
@@ -848,6 +851,9 @@ public:
     // Set nucleation-specific config parameters.
     config_ = calcsize_config;
 
+
+
+
     // Set mode parameters.
     for (int m = 0; m < 4; ++m) {
       // FIXME: There is no mean geometric number diameter in a mode.
@@ -877,6 +883,9 @@ public:
         const int aero_id = int(mode_aero_species(m, ispec));
         _inv_density[m][ispec] = Real(1.0) / aero_species(aero_id).density;
       } // for(ispec)
+
+
+
 
       
 
