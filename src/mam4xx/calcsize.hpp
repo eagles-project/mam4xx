@@ -610,47 +610,158 @@ void compute_coef_acc_ait_transfer(
 
 } // end subroutine compute_coef_acc_ait_transfer
 KOKKOS_INLINE_FUNCTION
-  void compute_new_sz_after_transfer(const Real drv, //in
-                                     const Real num, //in
-                                     const Real voltonumbhi, // in v2nmax_nmodes(imode)
-                                     const Real voltonumblo, //in v2nmin_nmodes(imode)
-                                     const Real voltonumb, //in v2nnom_nmodes(imode)
-                                     const Real dgn_nmodes_hi, // in dgnmax_nmodes(imode)
-                                     const Real dgn_nmodes_lo, // in dgnmin_nmodes(imode)
-                                     const Real dgn_nmodes_nom, // in dgnnom_nmodes(imode)
-                                     const Real cmn_factor_nmodes_imode,// in cmn_factor_nmodes(imode)
-                                     Real& dgncur,
-                                     Real& v2ncur)
+void compute_new_sz_after_transfer(
+    const Real drv,                     // in
+    const Real num,                     // in
+    const Real voltonumbhi,             // in v2nmax_nmodes(imode)
+    const Real voltonumblo,             // in v2nmin_nmodes(imode)
+    const Real voltonumb,               // in v2nnom_nmodes(imode)
+    const Real dgn_nmodes_hi,           // in dgnmax_nmodes(imode)
+    const Real dgn_nmodes_lo,           // in dgnmin_nmodes(imode)
+    const Real dgn_nmodes_nom,          // in dgnnom_nmodes(imode)
+    const Real cmn_factor_nmodes_imode, // in cmn_factor_nmodes(imode)
+    Real &dgncur, Real &v2ncur) {
+
+  // intent-ins
+  // integer,  intent(in) :: imode
+  // real(wp), intent(in) :: drv, num
+
+  //! intent-outs
+  // real(wp), intent(inout) :: dgncur, v2ncur
+  //  Note that we did not pass imode.
+  const Real zero = 0;
+  const Real third =
+      1.0 / 3.0; // BAD_CONSTANT!! it is not a physical constant. change name?
+
+  if (drv > zero) {
+    if (num <= drv * voltonumbhi) {
+      dgncur = dgn_nmodes_hi;
+      v2ncur = voltonumbhi;
+    } else if (num >= drv * voltonumblo) {
+      dgncur = dgn_nmodes_lo;
+      v2ncur = voltonumblo;
+    } else {
+      dgncur = pow(drv / (cmn_factor_nmodes_imode * num), third);
+      v2ncur = num / drv;
+    } // end num <= drv*voltonumbhi
+  } else {
+    dgncur = dgn_nmodes_nom;
+    v2ncur = voltonumb;
+  } // end drv > zero
+
+} // end subroutine compute_new_sz_after_transfer
+
+KOKKOS_INLINE_FUNCTION
+  void update_num_tends( const int jmode,
+                         const int aer_type, 
+                         Real& dqdt_src,
+                         Real& dqdt_dest,
+                         const Real xfertend_num[2][2])
   {
+    // !intent ins
+    // integer,  intent(in) :: klev, jmode, isrc, idest, aer_type
+    // real(wp), intent(in) :: xfertend_num(:,:)
+
+    // !intent inouts
+    // real(wp), intent(inout) :: dqdt(:,:)
+
+    // !local
+    // real(wp) :: xfertend
+
+    const Real xfertend = xfertend_num[jmode][aer_type];
+    dqdt_src -= xfertend;
+    dqdt_dest +=xfertend;
+  } //end subroutine update_num_tends
+
+//------------------------------------------------------------------------------------------------
+KOKKOS_INLINE_FUNCTION
+void  update_tends_flx(const int klev, // in 
+                       const int jmode, //in 
+                       const int n_common_species,
+                       const int src_mode_ixd, //in 
+                       const int dest_mode_ixd, //in
+                       const int src_species_idx[n_common_species], 
+                       const int dest_species_idx[n_common_species], 
+                       const Real xfertend_num[2][2], 
+                       const Real xfercoef,
+                       const Prognostics &prognostics,
+                       const Tendencies& tendencies)
+{
+    
+    //intent - ins
+    // integer,  intent(in) :: klev, jmode
+    // integer,  intent(in) :: src_num_mode_inter(0:maxpair_csizxf), dest_num_mode_inter(0:maxpair_csizxf)
+    // integer,  intent(in) :: src_num_mode_cldbrn(0:maxpair_csizxf), dest_num_mode_cldbrn(0:maxpair_csizxf)
+    // integer,  intent(in) :: src_inter(max_nspec, 0:maxpair_csizxf), dest_inter(max_nspec, 0:maxpair_csizxf)
+    // integer,  intent(in) :: src_cldbrn(max_nspec, 0:maxpair_csizxf), dest_cldbrn(max_nspec, 0:maxpair_csizxf)
+
+    // real(wp), intent(in) :: xfertend_num(2,2)
+    // real(wp), intent(in) :: xfercoef
+    // real(wp), intent(in) :: q_i(:,:), q_c(:,:)
+
+    // !intent -inout
+    // real(wp), intent(inout) :: didt(:,:), dcdt(:,:), dnidt(:,:), dncdt(:,:)
+
+    // integer  :: imap, isrc, idest
+    // real(wp) :: xfertend
 
 
-    //intent-ins
-    //integer,  intent(in) :: imode
-    //real(wp), intent(in) :: drv, num
+    //NOTES on arrays and indices:
+    //jmode==1 is aitken->accumulation transfer;
+    //    ==2 is accumulation->aitken transfer;
 
-    //!intent-outs
-    //real(wp), intent(inout) :: dgncur, v2ncur
-    // Note that we did not pass imode. 
-    const Real zero=0;
-    const Real third   = 1.0/3.0; // BAD_CONSTANT!! it is not a physical constant. change name? 
+    //xfertend_num(jmode,1) contains how much to transfer for interstitial aerosols
+    //xfertend_num(jmode,2) contains how much to transfer for cloudborne aerosols
 
-    if (drv > zero) {
-       if (num <= drv*voltonumbhi) {
-          dgncur = dgn_nmodes_hi; 
-          v2ncur = voltonumbhi;
-       } else if (num >= drv*voltonumblo) {
-          dgncur = dgn_nmodes_lo; 
-          v2ncur = voltonumblo; 
-       } else {
-          dgncur = pow(drv/(cmn_factor_nmodes_imode*num),third); 
-          v2ncur = num/drv;
-       } // end num <= drv*voltonumbhi
-     } else {
-       dgncur = dgn_nmodes_nom;
-       v2ncur = voltonumb;
-    } // end drv > zero
+    const auto q_i = prognostics.q_aero_i;
+    const auto q_c = prognostics.q_aero_c;
+    const auto didt = tendencies.q_aero_i;
+    const auto dnidt= tendencies.n_mode_i; 
+    const auto dcdt=tendencies.q_aero_c;
+    const auto dncdt=tendencies.n_mode_c; 
 
-  } //end subroutine compute_new_sz_after_transfer
+    const Real zero =0;
+
+    // !interstiatial species
+    Real dqdt_src_i = dnidt[src_mode_ixd](klev); 
+    Real dqdt_dest_i= dnidt[dest_mode_ixd](klev); 
+    const int aer_interstiatial=0;
+    update_num_tends(jmode,
+                     aer_interstiatial, 
+                     dqdt_src_i,
+                     dqdt_dest_i,
+                     xfertend_num);
+
+    // !cloud borne apecies
+    const int aer_cloud_borne=1;
+    Real dqdt_src_c = dncdt[src_mode_ixd](klev); 
+    Real dqdt_dest_c= dncdt[dest_mode_ixd](klev); 
+
+    update_num_tends(jmode,
+                     aer_cloud_borne, 
+                     dqdt_src_c,
+                     dqdt_dest_c,
+                     xfertend_num);
+
+    for (int i = 0; i < n_common_species; ++i)
+    {
+      const int ispec_src = src_species_idx[i];
+      const int ispec_dest = dest_species_idx[i];
+      // !interstiatial species
+      const Real xfertend_i = max(zero, q_i[src_mode_ixd][ispec_src](klev))*xfercoef; 
+      didt[src_mode_ixd][ispec_src](klev) -=xfertend_i;
+      didt[dest_mode_ixd][ispec_dest](klev) += xfertend_i;
+
+       // !cloud borne apecies
+      const Real xfertend_c = max(zero, q_c[src_mode_ixd][ispec_src](klev))*xfercoef; 
+      dcdt[src_mode_ixd][ispec_src](klev) -=xfertend_c;
+      dcdt[dest_mode_ixd][ispec_dest](klev) += xfertend_c;
+
+    }
+
+
+  } //end subroutine update_tends_flx
+
 
 /*
  * \brief Exchange aerosols between aitken and accumulation modes based on new
@@ -766,6 +877,8 @@ public:
         const int aero_id = int(mode_aero_species(m, ispec));
         _inv_density[m][ispec] = Real(1.0) / aero_species(aero_id).density;
       } // for(ispec)
+
+      
 
     } // for(m)
 
