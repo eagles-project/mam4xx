@@ -447,7 +447,7 @@ void compute_coef_ait_acc_transfer(const int iacc,             // in
   ait2acc_index = 0;
   Real xferfrac_num_ait2acc = zero;
   Real xferfrac_vol_ait2acc = zero;
-  xfertend_num = {0};
+  // xfertend_num = {{0,0},{0,0}};
 
   //     ! compute aitken --> accum transfer rates
 
@@ -484,6 +484,8 @@ void compute_coef_ait_acc_transfer(const int iacc,             // in
       xfertend_num[0][1] = num_c_aitsv * xfercoef_num_ait2acc;
     } // end num_t < drv_t*v2n_geomean
   }   // end drv_t > zero
+
+
 } // end compute_coef_ait_acc_transfer
 
 KOKKOS_INLINE_FUNCTION
@@ -491,7 +493,7 @@ void compute_coef_acc_ait_transfer(
     int iacc, int klev, const Real v2n_geomean, const Real adj_tscale_inv,
     const Prognostics &prognostics, const Real drv_a_accsv,
     const Real drv_c_accsv, const Real num_a_accsv, const Real num_c_accsv,
-    const int no_transfer_acc2ait[7], const Real voltonum_ait,
+    const bool no_transfer_acc2ait[7], const Real voltonum_ait,
     const Real inv_density[4][7], const Real v2nmin_nmodes[4], Real &drv_a_noxf,
     Real &drv_c_noxf, int &acc2_ait_index, Real &xfercoef_num_acc2ait,
     Real &xfercoef_vol_acc2ait, Real xfertend_num[2][2]) {
@@ -803,7 +805,7 @@ void  update_tends_flx(const int klev, // in
     // local 
 
     int ait2acc_index=0, acc2_ait_index=0; //!indices for transfer between modes
-    Real xfertend_num[2][2]={{0},{0}}; //!tendency for number transfer
+    Real xfertend_num[2][2]={{0,0},{0,0}}; //!tendency for number transfer
     const Real zero =0;
 
     // Real xfercoef_num_ait2acc=0;
@@ -814,7 +816,7 @@ void  update_tends_flx(const int klev, // in
     Real drv_a_noxf=0, drv_c_noxf=0;
     // Real drv_t_noxf=0;// !"noxf" stands for "no transfer"
     // Real num_t_noxf=0;
-
+ 
 
     // ! jump to end-of-loop if no transfer is needed at current klev
     if (ait2acc_index+acc2_ait_index > 0) {
@@ -844,7 +846,7 @@ void  update_tends_flx(const int klev, // in
           //      dgncur_a(klev,iait), v2ncur_a(klev,iait))
 
           // CHECK orginal function does not have v2nmax.. and dgnmax as inputs.
-      // !interstitial species (aitken mode)
+      // !interstitial species (aitken mode)   
       compute_new_sz_after_transfer(
           drv_a, // in
           num_a, // in
@@ -866,11 +868,6 @@ void  update_tends_flx(const int klev, // in
           dgnmin_nmodes[aitken_idx], dgnnom_nmodes[aitken_idx],
           cmn_factor_nmodes[aitken_idx], dgncur_c[aitken_idx],
           v2ncur_c[aitken_idx]);
-
-      // num_a = num_a_acc
-      // drv_a = drv_a_acc
-      // num_c = num_c_acc
-      // drv_c = drv_c_acc
 
       //interstitial species (accumulation mode)
             compute_new_sz_after_transfer(
@@ -895,8 +892,6 @@ void  update_tends_flx(const int klev, // in
           dgnmin_nmodes[accum_idx], dgnnom_nmodes[accum_idx],
           cmn_factor_nmodes[aitken_idx], dgncur_c[accum_idx],
           v2ncur_c[accum_idx]);      
-
-      //FIX ME  MIKE, we need to update the following variables:
       
           // !------------------------------------------------------------------
           // ! compute tendency amounts for aitken <--> accum transfer
@@ -1262,11 +1257,12 @@ public:
           //     accum particles are transferred into the aitken mode
           //     to increase the accum mode mean size
           // ------------------------------------------------------------------
-
           if (do_aitacc_transfer) {
 
-                Real dgncur_i_k[nmodes], v2ncur_i_k[nmodes],
-                dgncur_c_k[nmodes], v2ncur_c_k[nmodes];
+                Real dgncur_i_k[nmodes];
+                Real v2ncur_i_k[nmodes];
+                Real dgncur_c_k[nmodes];
+                Real v2ncur_c_k[nmodes];
 
                 for (int m = 0; m < nmodes; ++m)
                 {
@@ -1276,7 +1272,6 @@ public:
                   v2ncur_c_k[m] = v2ncur_c[m](k); // volume to number
                 }
 
-              
                 calcsize::aitken_accum_exchange(
                 k, aitken_idx, accumulation_idx, 
                 v2nmax_nmodes, v2nmin_nmodes, v2nnom_nmodes,

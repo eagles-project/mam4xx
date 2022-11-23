@@ -307,7 +307,9 @@ static constexpr int n_common_species_aitek_accum = 4;
 // species index in atike mode 
 static constexpr int ait_spec_in_acc[n_common_species_aitek_accum]={0 , 1, 2, 3}; 
 // species index in accum mode 
-static constexpr int acc_spec_in_ait[n_common_species_aitek_accum]={0 , 2, 5, 6}; 
+static constexpr int acc_spec_in_ait[n_common_species_aitek_accum]={0 , 2, 5, 6};
+
+static constexpr bool no_transfer_acc2ait[7] = {true, false, true, false, false, true, true}; 
 
 
 
