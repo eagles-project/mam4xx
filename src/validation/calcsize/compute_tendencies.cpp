@@ -76,6 +76,9 @@ void compute_tendencies(Ensemble *ensemble) {
     std::vector<Real> tend_aero_c_out;
     std::vector<Real> tend_n_mode_c_out;
 
+    std::vector<Real> diags_dgncur_i;
+    std::vector<Real> diags_dgncur_c;
+
     for (int imode = 0; imode < nmodes; ++imode) {
 
       auto h_tend_num_i = Kokkos::create_mirror_view(tends.n_mode_i[imode]);
@@ -99,6 +102,18 @@ void compute_tendencies(Ensemble *ensemble) {
         tend_aero_c_out.push_back(h_tend_aero_c(0));
 
       } // end species
+
+      // diameter interstitial
+      auto h_dgncur_i = Kokkos::create_mirror_view(diags.dgncur_i[imode]);
+      Kokkos::deep_copy(diags.dgncur_i[imode], h_dgncur_i);
+      diags_dgncur_i.push_back(h_dgncur_i(0));
+
+      // diameter cloud_borne
+      auto h_dgncur_c = Kokkos::create_mirror_view(diags.dgncur_c[imode]);
+      Kokkos::deep_copy(diags.dgncur_c[imode], h_dgncur_c);
+      diags_dgncur_c.push_back(h_dgncur_c(0));
+
+
     }   // end mode
 
     output.set("interstitial_ptend", tend_aero_i_out);
@@ -106,6 +121,9 @@ void compute_tendencies(Ensemble *ensemble) {
 
     output.set("cloud_borne_ptend_num", tend_n_mode_c_out);
     output.set("cloud_borne_ptend", tend_aero_c_out);
+
+    output.set("cloud_borne_diameter", diags_dgncur_c);
+    output.set("interstitial_diameter", diags_dgncur_i);
 
     // add more outputs (diagnostics)
   });
