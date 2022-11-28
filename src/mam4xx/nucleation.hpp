@@ -55,9 +55,9 @@ void pbl_nuc_wang2008(Real so4vol, Real pi, int pbl_nuc_wang2008_user_choice,
   // real(wp), intent(inout) :: radius_cluster_nm         ! the radius of a
   // cluster in nm
 
-  constexpr Real mw_h2so4_gmol = 98.0;
-  constexpr Real avogadro_mol = 6.023e23;
-  constexpr Real density_sulfate_gcm3 = 1.8;
+  constexpr Real mw_h2so4_gmol = 98.0;       // BAD_CONSTANT
+  constexpr Real avogadro_mol = 6.023e23;    // BAD_CONSTANT
+  constexpr Real density_sulfate_gcm3 = 1.8; // BAD_CONSTANT
 
   //-----------------------------------------------------------------
   // Initialize the pbl_nuc_wang2008_actual flag. Assumed default is
@@ -365,16 +365,16 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
   //  Real dens_ammbisulf = 1.78e3
   //  Real dens_sulfacid  = 1.841e3
   // use following to match cam3 modal_aero densities
-  constexpr Real dens_ammsulf = 1.770e3;
-  constexpr Real dens_ammbisulf = 1.770e3;
-  constexpr Real dens_sulfacid = 1.770e3;
+  constexpr Real dens_ammsulf = 1.770e3;   // BAD_CONSTANT
+  constexpr Real dens_ammbisulf = 1.770e3; // BAD_CONSTANT
+  constexpr Real dens_sulfacid = 1.770e3;  // BAD_CONSTANT
 
   // molecular weights [g/mol] of aerosol ammsulf, ammbisulf, and sulfacid
   // for ammbisulf and sulfacid, use 114 & 96 here rather than 115 & 98
   // because we don't keep track of aerosol hion mass
-  constexpr Real mw_ammsulf = 132.0;
-  constexpr Real mw_ammbisulf = 114.0;
-  constexpr Real mw_sulfacid = 96.0;
+  constexpr Real mw_ammsulf = 132.0;   // BAD_CONSTANT
+  constexpr Real mw_ammbisulf = 114.0; // BAD_CONSTANT
+  constexpr Real mw_sulfacid = 96.0;   // BAD_CONSTANT
 
   // wet/dry volume ratio - use simple kohler approx for ammsulf/ammbisulf
   tmpa = max(0.10, min(0.95, rh_in));
@@ -618,10 +618,9 @@ private:
   static const int igas_h2so4 = static_cast<int>(GasId::H2SO4);
   static const int igas_nh3 = static_cast<int>(GasId::NH3);
 
-  static constexpr Real mw_h2so4 = Constants::molec_weight_h2so4;
-  static constexpr Real mw_so4a = Constants::molec_weight_so4;
-  static constexpr Real mw_nh4a = Constants::molec_weight_nh4;
-  static constexpr Real pi = Constants::pi;
+  static constexpr Real mw_so4a = 96.0;              // BAD_CONSTANT
+  static constexpr Real mw_nh4a = 18.0;              // BAD_CONSTANT
+  static constexpr Real pi = 3.14159265358979323846; // BAD_CONSTANT
 
   // Nucleation-specific configuration
   Config config_;
@@ -675,7 +674,11 @@ public:
                           const Prognostics &progs, const Diagnostics &diags,
                           const Tendencies &tends) const {
     int iaer_so4 = aerosol_index_for_mode(ModeIndex::Aitken, AeroId::SO4);
-    constexpr Real r_universal = Constants::r_gas;
+    static constexpr Real boltzmann =
+        1.38065e-23; // BAD_CONSTANT (Boltzmann's constant ~ J/K/molecule)
+    static constexpr Real avogadro =
+        6.02214e26; // BAD_CONSTANT (Avogadro's number ~ molecules/kmole)
+    static constexpr Real r_universal = boltzmann * avogadro; // BAD_CONSTANT
     const int nk = atm.num_levels();
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
@@ -739,8 +742,11 @@ private:
       const Real qaer_cur[num_modes][max_num_mode_species],
       const Real qwtr_cur[num_modes], Real &dndt_ait, Real &dmdt_ait,
       Real &dso4dt_ait, Real &dnh4dt_ait, Real &dnclusterdt) const {
-    static constexpr Real avogadro = Constants::avogadro;
-    static constexpr Real rgas = Constants::r_gas;
+    static constexpr Real avogadro =
+        6.02214e26; // BAD_CONSTANT (Avogadro's number ~ molecules/kmole)
+    static constexpr Real boltzmann =
+        1.38065e-23; // BAD_CONSTANT (Boltzmann's constant ~ J/K/molecule)
+    static constexpr Real rgas = boltzmann * avogadro; // BAD_CONSTANT
     static constexpr Real ln_nuc_rate_cutoff = -13.82;
 
     // min h2so4 vapor for nuc calcs = 4.0e-16 mol/mol-air ~= 1.0e4

@@ -83,12 +83,6 @@ jobs:
           -DMAM4XX_HAERO_DIR=`pwd`/haero_install \
           -G "Unix Makefiles"
 
-# TODO: clang-format seems unstable under different versions. Not helpful!
-#    - name: Checking code formatting...
-#      run: |
-#        cd build
-#        make format-cxx-check
-
     - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
       run: |
         cd build
@@ -107,7 +101,7 @@ jobs:
     - name: Running tests (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
       run: |
         cd build
-        ctest -V
+        ctest -V --output-on-failure
 
     - name: Installing MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
       run: |
