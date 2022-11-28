@@ -631,10 +631,14 @@ void compute_new_sz_after_transfer(
   //! intent-outs
   // real(wp), intent(inout) :: dgncur, v2ncur
   //  Note that we did not pass imode.
+
+  // const Real voltonumbhi = 1. / pow(cmn_factor_nmodes_imode*dgn_nmodes_hi,3.0);
+  // const Real voltonumblo = 1. / pow(cmn_factor_nmodes_imode*dgn_nmodes_lo,3.0);
+  // const Real voltonumb   = 1. / pow(cmn_factor_nmodes_imode*dgn_nmodes_nom,3.0);
+
   const Real zero = 0;
   const Real third =
       1.0 / 3.0; // BAD_CONSTANT!! it is not a physical constant. change name?
-
   if (drv > zero) {
     if (num <= drv * voltonumbhi) {
       dgncur = dgn_nmodes_hi;
@@ -772,9 +776,9 @@ void aitken_accum_exchange(
     const Real &adj_tscale_inv, const Real &dt, const Prognostics &prognostics,
     const Real &drv_i_aitsv, const Real &num_i_aitsv, const Real &drv_c_aitsv,
     const Real &num_c_aitsv, const Real &drv_i_accsv, const Real &num_i_accsv,
-    const Real &drv_c_accsv, const Real &num_c_accsv, Real dgncur_a[4],
-    Real v2ncur_a[4], Real dgncur_c[4], Real v2ncur_c[4],
+    const Real &drv_c_accsv, const Real &num_c_accsv, 
     const Diagnostics &diagnostics, const Tendencies &tendencies) {
+
 
   // -----------------------------------------------------------------------------
   // Purpose: Exchange aerosols between aitken and accumulation modes based on
@@ -786,6 +790,19 @@ void aitken_accum_exchange(
   // Author: Richard Easter (Refactored by Balwinder Singh)
   // Ported to C++/Kokkos by: Oscar Diaz-Ibarra and Michael Schmidt
   // -----------------------------------------------------------------------------
+
+  Real& dgncur_a_aitken = diagnostics.dgncur_i[aitken_idx](k); 
+  Real& dgncur_a_accum  = diagnostics.dgncur_i[accum_idx](k);
+
+  Real& dgncur_c_aitken = diagnostics.dgncur_c[aitken_idx](k); 
+  Real& dgncur_c_accum  = diagnostics.dgncur_c[accum_idx](k);
+
+  Real& v2ncur_c_accum = diagnostics.v2ncur_c[accum_idx](k);
+  Real& v2ncur_a_accum =  diagnostics.v2ncur_i[accum_idx](k);
+
+  Real& v2ncur_c_aitken = diagnostics.v2ncur_c[aitken_idx](k); 
+  Real& v2ncur_a_aitken = diagnostics.v2ncur_i[aitken_idx](k); 
+
 
   const Real voltonum_ait =
       v2nnom_nmodes[aitken_idx]; // volume to number for aitken mode
@@ -861,6 +878,7 @@ void aitken_accum_exchange(
         dt; // ! diff in volume transfer fomr ait->accum and accum->ait transfer
     const Real drv_a = max(
         zero, drv_i_aitsv - vol_diff_a); // !drv removed/added from aitken mode
+
     const Real drv_a_acc =
         max(zero, drv_i_accsv +
                       vol_diff_a); // !drv added/removed to accumulation mode
@@ -888,8 +906,8 @@ void aitken_accum_exchange(
         v2nmax_nmodes[aitken_idx], v2nmin_nmodes[aitken_idx],
         v2nnom_nmodes[aitken_idx], dgnmax_nmodes[aitken_idx],
         dgnmin_nmodes[aitken_idx], dgnnom_nmodes[aitken_idx],
-        cmn_factor_nmodes[aitken_idx], dgncur_a[aitken_idx],
-        v2ncur_a[aitken_idx]);
+        cmn_factor_nmodes[aitken_idx], dgncur_a_aitken,
+        v2ncur_a_aitken);
 
     // !cloud borne species (aitken mode)
 
@@ -899,8 +917,9 @@ void aitken_accum_exchange(
         v2nmax_nmodes[aitken_idx], v2nmin_nmodes[aitken_idx],
         v2nnom_nmodes[aitken_idx], dgnmax_nmodes[aitken_idx],
         dgnmin_nmodes[aitken_idx], dgnnom_nmodes[aitken_idx],
-        cmn_factor_nmodes[aitken_idx], dgncur_c[aitken_idx],
-        v2ncur_c[aitken_idx]);
+        cmn_factor_nmodes[aitken_idx], dgncur_c_aitken,
+        v2ncur_c_aitken);
+
 
     // interstitial species (accumulation mode)
     compute_new_sz_after_transfer(
@@ -909,8 +928,9 @@ void aitken_accum_exchange(
         v2nmax_nmodes[accum_idx], v2nmin_nmodes[accum_idx],
         v2nnom_nmodes[accum_idx], dgnmax_nmodes[accum_idx],
         dgnmin_nmodes[accum_idx], dgnnom_nmodes[accum_idx],
-        cmn_factor_nmodes[aitken_idx], dgncur_a[accum_idx],
-        v2ncur_a[accum_idx]);
+        cmn_factor_nmodes[accum_idx], dgncur_a_accum,
+        v2ncur_a_accum);
+
     // call compute_new_sz_after_transfer(iacc, drv_a, num_a, &
     //      dgncur_a(klev,iacc), v2ncur_a(klev,iacc))
 
@@ -923,8 +943,8 @@ void aitken_accum_exchange(
         v2nmax_nmodes[accum_idx], v2nmin_nmodes[accum_idx],
         v2nnom_nmodes[accum_idx], dgnmax_nmodes[accum_idx],
         dgnmin_nmodes[accum_idx], dgnnom_nmodes[accum_idx],
-        cmn_factor_nmodes[aitken_idx], dgncur_c[accum_idx],
-        v2ncur_c[accum_idx]);
+        cmn_factor_nmodes[accum_idx], dgncur_c_accum,
+        v2ncur_c_accum);
     // !------------------------------------------------------------------
     // ! compute tendency amounts for aitken <--> accum transfer
     // !------------------------------------------------------------------
@@ -962,6 +982,7 @@ void aitken_accum_exchange(
           xfertend_num, xfercoef_vol_acc2ait, prognostics, tendencies);
     } // end  acc2_ait_index
   }   // !ait2acc_index+acc2_ait_index > 0
+
 
 } // aitken_accum_exchange
 
@@ -1281,26 +1302,16 @@ public:
           // ------------------------------------------------------------------
           if (do_aitacc_transfer) {
 
-            Real dgncur_i_k[nmodes];
-            Real v2ncur_i_k[nmodes];
-            Real dgncur_c_k[nmodes];
-            Real v2ncur_c_k[nmodes];
-
-            for (int m = 0; m < nmodes; ++m) {
-              dgncur_i_k[m] = dgncur_i[m](k); // diameter [m]
-              v2ncur_i_k[m] = v2ncur_i[m](k); // volume to number
-              dgncur_c_k[m] = dgncur_c[m](k); // diameter [m]
-              v2ncur_c_k[m] = v2ncur_c[m](k); // volume to number
-            }
-
             calcsize::aitken_accum_exchange(
                 k, aitken_idx, accumulation_idx, v2nmax_nmodes, v2nmin_nmodes,
                 v2nnom_nmodes, dgnmax_nmodes, dgnmin_nmodes, dgnnom_nmodes,
                 common_factor_nmodes, inv_density, adj_tscale_inv, dt,
                 prognostics, dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv,
                 num_c_k_aitsv, dryvol_i_accsv, num_i_k_accsv, dryvol_c_accsv,
-                num_c_k_accsv, dgncur_i_k, v2ncur_i_k, dgncur_c_k, v2ncur_c_k,
+                num_c_k_accsv, 
+                // dgncur_i_k, v2ncur_i_k, dgncur_c_k, v2ncur_c_k,
                 diagnostics, tendencies);
+
           }
         }); // kokkos::parfor(k)
   }
