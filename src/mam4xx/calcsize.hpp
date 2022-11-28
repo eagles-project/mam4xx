@@ -681,10 +681,10 @@ void update_tends_flx(
     const int src_mode_ixd,  // in
     const int dest_mode_ixd, // in
     const int n_common_species_ait_accum,
-    const int src_species_idx[n_common_species_ait_accum], // n_common_species_ait_accum
+    const int *src_species_idx, // n_common_species_ait_accum
                                       // is defined in
                                       // aero_modes.hpp
-    const int dest_species_idx[n_common_species_ait_accum],
+    const int *dest_species_idx,
     const Real xfertend_num[2][2], const Real xfercoef,
     const Prognostics &prognostics, const Tendencies &tendencies) {
 
@@ -767,8 +767,8 @@ void aitken_accum_exchange(
     const int &k, const int &aitken_idx, const int &accum_idx,
     const bool no_transfer_acc2ait[7],
     const int n_common_species_ait_accum,
-    const int ait_spec_in_acc[n_common_species_ait_accum],
-    const int acc_spec_in_ait[n_common_species_ait_accum],
+    const int *ait_spec_in_acc,
+    const int *acc_spec_in_ait,
     const Real v2nmax_nmodes[4], const Real v2nmin_nmodes[4],
     const Real v2nnom_nmodes[4], const Real dgnmax_nmodes[4],
     const Real dgnmin_nmodes[4], const Real dgnnom_nmodes[4],
