@@ -302,17 +302,6 @@ KOKKOS_INLINE_FUNCTION GasSpecies gas_species(const int i) {
   return species[i];
 }
 
-// boolean view indicating which species will be transferred from
-// accumulation -> aitken indexed to accumulation mode (because it carries
-// more species)
-static constexpr bool no_transfer_acc2ait[7] = {true,  false, true, false,
-                                                false, true,  true};
-// number of common species between aitken and accum modes
-static constexpr int n_common_species_ait_accum = 4;
-// species index in aitken mode
-static constexpr int ait_spec_in_acc[n_common_species_ait_accum] = {0, 1, 2, 3};
-// species index in accum mode
-static constexpr int acc_spec_in_ait[n_common_species_ait_accum] = {0, 2, 5, 6};
 } // namespace mam4
 
 #endif

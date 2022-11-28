@@ -35,17 +35,14 @@ void compute_dry_volume_k(int k, int imode, const Real inv_density[4][7],
                           Real &dryvol_i,                 // out
                           Real &dryvol_c)                 // out
 {
-  // Real dryvol = 0;
   const auto q_i = prognostics.q_aero_i;
   const auto q_c = prognostics.q_aero_c;
   dryvol_i = 0;
   dryvol_c = 0;
   const auto n_spec = num_species_mode(imode);
-  // int count =0;
   for (int ispec = 0; ispec < n_spec; ispec++) {
     dryvol_i += max(0.0, q_i[imode][ispec](k)) * inv_density[imode][ispec];
     dryvol_c += max(0.0, q_c[imode][ispec](k)) * inv_density[imode][ispec];
-    // count += ispec;
   } // end ispec
 
 } // end
@@ -681,11 +678,10 @@ KOKKOS_INLINE_FUNCTION
 void update_tends_flx(
     const int klev,  // in
     const int jmode, // in
-    // const int n_common_species,
     const int src_mode_ixd,  // in
     const int dest_mode_ixd, // in
-    const int src_species_idx
-        [n_common_species_ait_accum], // n_common_species_ait_accum
+    const int n_common_species_ait_accum,
+    const int src_species_idx[n_common_species_ait_accum], // n_common_species_ait_accum
                                       // is defined in
                                       // aero_modes.hpp
     const int dest_species_idx[n_common_species_ait_accum],
@@ -769,6 +765,10 @@ void update_tends_flx(
 KOKKOS_INLINE_FUNCTION
 void aitken_accum_exchange(
     const int &k, const int &aitken_idx, const int &accum_idx,
+    const bool no_transfer_acc2ait[7],
+    const int n_common_species_ait_accum,
+    const int ait_spec_in_acc[n_common_species_ait_accum],
+    const int acc_spec_in_ait[n_common_species_ait_accum],
     const Real v2nmax_nmodes[4], const Real v2nmin_nmodes[4],
     const Real v2nnom_nmodes[4], const Real dgnmax_nmodes[4],
     const Real dgnmin_nmodes[4], const Real dgnnom_nmodes[4],
@@ -954,11 +954,13 @@ void aitken_accum_exchange(
       // !Since jmode=0, source mode = aitken and destination mode
       // =accumulation Inter and cldbrn aero solver have same struct, so idx
       // in cases are equal
+
       update_tends_flx(
           k,               // in
           jmode,           // in
           aitken_idx,      // in src=> aitken
           accum_idx,       // in dest => accumulation
+          n_common_species_ait_accum, // in
           ait_spec_in_acc, // defined in aero_modes - src => aitken
           acc_spec_in_ait, // defined in aero_modes - src => accumulation
           xfertend_num, xfercoef_vol_ait2acc, prognostics, tendencies);
@@ -977,6 +979,7 @@ void aitken_accum_exchange(
           jmode,           // in
           accum_idx,       // in src=> accumulation
           aitken_idx,      // in dest => aitken
+          n_common_species_ait_accum,
           acc_spec_in_ait, // defined in aero_modes - src => accumulation
           ait_spec_in_acc, // defined in aero_modes - src => aitken
           xfertend_num, xfercoef_vol_acc2ait, prognostics, tendencies);
@@ -1018,6 +1021,18 @@ private:
   Real common_factor_nmodes[AeroConfig::num_modes()];
 
   Real _inv_density[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
+
+  // is the species present in both accum and aitken modes? 
+  // boolean view indicating which species will be transferred from
+    // accumulation -> aitken indexed to accumulation mode (because it carries
+    // more species)
+  const bool _no_transfer_acc2ait[7]= {true,  false, true, false, false, true,  true};; 
+  // number of common species between accum and aitken modes 
+  const int _n_common_species_ait_accum=4;
+  // index of aitken species in accum mode.
+  const int _ait_spec_in_acc[4] = {0, 1, 2, 3};
+  // index of accum species in aitken mode.
+  const int _acc_spec_in_ait[4]= {0, 2, 5, 6};
 
 public:
   // name -- unique name of the process implemented by this class
@@ -1091,7 +1106,12 @@ public:
     const Real zero = 0;
     const Real close_to_one = 1.0 + 1.0e-15;
     const Real seconds_in_a_day = 86400.0;
-
+    //
+    const auto acc_spec_in_ait=_acc_spec_in_ait;
+    const auto ait_spec_in_acc=_ait_spec_in_acc;
+    const auto n_common_species_ait_accum=_n_common_species_ait_accum;
+    const auto no_transfer_acc2ait = _no_transfer_acc2ait;
+    
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
           const auto n_i = prognostics.n_mode_i;
@@ -1171,6 +1191,16 @@ public:
             v2ncur_c[imode](k) = v2nnom_nmodes[imode]; // volume to number
 
             // dry volume is set to zero inside compute_dry_volume_k
+            //----------------------------------------------------------------------
+            //Compute dry volume mixrats (aerosol diameter)
+            //Current default: number mmr is prognosed
+            //       Algorithm:calculate aerosol diameter from mass, number, and fixed sigmag
+            //
+            //sigmag ("sigma g") is "geometric standard deviation for aerosol mode"
+            //
+            //Volume = sum_over_components{ component_mass mixrat / density }
+            //----------------------------------------------------------------------
+
             calcsize::compute_dry_volume_k(k, imode, inv_density, prognostics,
                                            dryvol_i, dryvol_c);
 
@@ -1303,7 +1333,10 @@ public:
           if (do_aitacc_transfer) {
 
             calcsize::aitken_accum_exchange(
-                k, aitken_idx, accumulation_idx, v2nmax_nmodes, v2nmin_nmodes,
+                k, aitken_idx, accumulation_idx,
+                no_transfer_acc2ait, n_common_species_ait_accum, 
+                ait_spec_in_acc, acc_spec_in_ait,
+                 v2nmax_nmodes, v2nmin_nmodes,
                 v2nnom_nmodes, dgnmax_nmodes, dgnmin_nmodes, dgnnom_nmodes,
                 common_factor_nmodes, inv_density, adj_tscale_inv, dt,
                 prognostics, dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv,
