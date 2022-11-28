@@ -618,10 +618,9 @@ private:
   static const int igas_h2so4 = static_cast<int>(GasId::H2SO4);
   static const int igas_nh3 = static_cast<int>(GasId::NH3);
 
-  // FIXME: Need to replace with MAM4 values
-  static constexpr Real mw_so4a = Constants::molec_weight_so4;
-  static constexpr Real mw_nh4a = Constants::molec_weight_nh4;
-  static constexpr Real pi = Constants::pi;
+  static constexpr Real mw_so4a = 96.0;              // BAD_CONSTANT
+  static constexpr Real mw_nh4a = 18.0;              // BAD_CONSTANT
+  static constexpr Real pi = 3.14159265358979323846; // BAD_CONSTANT
 
   // Nucleation-specific configuration
   Config config_;
@@ -675,7 +674,11 @@ public:
                           const Prognostics &progs, const Diagnostics &diags,
                           const Tendencies &tends) const {
     int iaer_so4 = aerosol_index_for_mode(ModeIndex::Aitken, AeroId::SO4);
-    constexpr Real r_universal = Constants::r_gas; // FIXME: replace
+    static constexpr Real boltzmann =
+        1.38065e-23; // BAD_CONSTANT (Boltzmann's constant ~ J/K/molecule)
+    static constexpr Real avogadro =
+        6.02214e26; // BAD_CONSTANT (Avogadro's number ~ molecules/kmole)
+    static constexpr Real r_universal = boltzmann * avogadro; // BAD_CONSTANT
     const int nk = atm.num_levels();
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
@@ -739,8 +742,11 @@ private:
       const Real qaer_cur[num_modes][max_num_mode_species],
       const Real qwtr_cur[num_modes], Real &dndt_ait, Real &dmdt_ait,
       Real &dso4dt_ait, Real &dnh4dt_ait, Real &dnclusterdt) const {
-    static constexpr Real avogadro = Constants::avogadro; // FIXME: replace
-    static constexpr Real rgas = Constants::r_gas;        // FIXME: replace
+    static constexpr Real avogadro =
+        6.02214e26; // BAD_CONSTANT (Avogadro's number ~ molecules/kmole)
+    static constexpr Real boltzmann =
+        1.38065e-23; // BAD_CONSTANT (Boltzmann's constant ~ J/K/molecule)
+    static constexpr Real rgas = boltzmann * avogadro; // BAD_CONSTANT
     static constexpr Real ln_nuc_rate_cutoff = -13.82;
 
     // min h2so4 vapor for nuc calcs = 4.0e-16 mol/mol-air ~= 1.0e4
