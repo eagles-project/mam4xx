@@ -16,7 +16,6 @@ using Real = haero::Real;
 using ThreadTeam = haero::ThreadTeam;
 
 using ColumnView = haero::ColumnView;
-// using RealView = haero::RealView1D;
 
 using haero::max;
 using haero::min;
@@ -93,10 +92,10 @@ void get_relaxed_v2n_limits(const bool do_aitacc_transfer,
   // i.e. dgnumlo_relaxed = dgnumlo/3 and dgnumhi_relaxed = dgnumhi*3;
   // therefore we use 3**3=27 as a relaxation factor for volume
 
-  static constexpr Real relax_factor = 27.0;
+  const Real relax_factor = 27.0; // BAD_CONSTANT!!
 
   // factor to artificially inflate or deflate v2nmin and v2nmax
-  static constexpr Real szadj_block_fac = 1.0e6;
+  const Real szadj_block_fac = 1.0e6; // BAD_CONSTANT!!
 
   // default relaxation:
   v2nminrl = v2nmin / relax_factor;
@@ -142,16 +141,22 @@ void update_diameter_and_vol2num(/*std::size_t klev, std::size_t imode, */
   const auto drv_mul_v2nmax = drv * v2nmax;
 
   if (num <= drv_mul_v2nmin) {
-    dgncur = dgnmin; // set to minimum diameter for this mode
+    // dgncur = dgnmin; // set to minimum diameter for this mode
+    dgncur = dgnmax; // FIXME e3sm uses dgnxx => hi
     v2ncur = v2nmin; // set to minimum vol2num ratio for this mode
   } else if (num >= drv_mul_v2nmax) {
-    dgncur = dgnmax; // set to maximum diameter for this mode
+    // dgncur = dgnmax; // set to maximum diameter for this mode
+    dgncur = dgnmin; // FIXME e3sm uses dgnyy => lo
     v2ncur = v2nmax; // set to maximum vol2num ratio for this mode
   } else {
     dgncur = pow((drv / (cmn_factor * num)),
                  (1.0 / 3.0)); // compute diameter based on dry volume (drv)
     v2ncur = num / drv;
   }
+
+  // printf("dgncur update... %e \n",pow((drv / (cmn_factor * num)),
+  //                (1.0 / 3.0)));
+
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -612,8 +617,8 @@ KOKKOS_INLINE_FUNCTION
 void compute_new_sz_after_transfer(
     const Real drv,                     // in
     const Real num,                     // in
-    const Real voltonumbhi,             // in v2nmax_nmodes(imode)
-    const Real voltonumblo,             // in v2nmin_nmodes(imode)
+    const Real voltonumbhi2,             // in v2nmax_nmodes(imode) FIXME
+    const Real voltonumblo2,             // in v2nmin_nmodes(imode) FIXME
     const Real voltonumb,               // in v2nnom_nmodes(imode)
     const Real dgn_nmodes_hi,           // in dgnmax_nmodes(imode)
     const Real dgn_nmodes_lo,           // in dgnmin_nmodes(imode)
@@ -628,10 +633,13 @@ void compute_new_sz_after_transfer(
   //! intent-outs
   // real(wp), intent(inout) :: dgncur, v2ncur
   //  Note that we did not pass imode.
+  // FIXME: E3Sm uses the following expressions for voltonumbhi and voltonumblo. 
+  // Note that voltonumbhi uses dgn_nmodes_hi and voltonumblo uses dgn_nmodes_lo
+  // In other part of e3sm voltonumbhi is computed with dgn_nmodes_lo and voltonumblo
+  // with dgn_nmodes_hi.  
 
-  // const Real voltonumbhi = 1. / pow(cmn_factor_nmodes_imode*dgn_nmodes_hi,3.0);
-  // const Real voltonumblo = 1. / pow(cmn_factor_nmodes_imode*dgn_nmodes_lo,3.0);
-  // const Real voltonumb   = 1. / pow(cmn_factor_nmodes_imode*dgn_nmodes_nom,3.0);
+  const Real voltonumbhi = 1. / pow(cmn_factor_nmodes_imode*dgn_nmodes_hi,3.0);
+  const Real voltonumblo = 1. / pow(cmn_factor_nmodes_imode*dgn_nmodes_lo,3.0);
 
   const Real zero = 0;
   const Real third =
@@ -681,9 +689,7 @@ void update_tends_flx(
     const int src_mode_ixd,  // in
     const int dest_mode_ixd, // in
     const int n_common_species_ait_accum,
-    const int *src_species_idx, // n_common_species_ait_accum
-                                      // is defined in
-                                      // aero_modes.hpp
+    const int *src_species_idx, // 
     const int *dest_species_idx,
     const Real xfertend_num[2][2], const Real xfercoef,
     const Prognostics &prognostics, const Tendencies &tendencies) {
@@ -997,8 +1003,13 @@ class CalcSize {
 public:
   // nucleation-specific configuration
   struct Config {
+
+    bool do_aitacc_transfer;
+    bool do_adjust;
+
     // default constructor -- sets default values for parameters
-    Config() {}
+    Config() :
+        do_aitacc_transfer(true), do_adjust(true) {}
 
     Config(const Config &) = default;
     ~Config() = default;
@@ -1086,22 +1097,13 @@ public:
                           const Diagnostics &diagnostics,
                           const Tendencies &tendencies) const {
 
-    // const int nlevels = diagnostics.num_levels();
-
-    // static constexpr std::size_t num_levels_upper_bound = 128;
-    //  See declaration of num_levels_upper_bound for its documentation
-    // EKAT_KERNEL_ASSERT(nlevels <= num_levels_upper_bound);
-    static constexpr bool do_aitacc_transfer = true;
-    static constexpr bool do_adjust = true;
+    const bool do_aitacc_transfer = config_.do_aitacc_transfer;
+    const bool do_adjust = config_.do_adjust;
 
     const int aitken_idx = int(ModeIndex::Aitken);
     const int accumulation_idx = int(ModeIndex::Accumulation);
     const int nmodes = AeroConfig::num_modes();
     const int nk = atmosphere.num_levels();
-    auto &dgncur_i = diagnostics.dgncur_i;
-    auto &v2ncur_i = diagnostics.v2ncur_i;
-    auto &dgncur_c = diagnostics.dgncur_c;
-    auto &v2ncur_c = diagnostics.v2ncur_c;
     const auto inv_density = _inv_density;
     const Real zero = 0;
     const Real close_to_one = 1.0 + 1.0e-15;
@@ -1122,6 +1124,15 @@ public:
 
           // tendencies for cloud-borne number mixing ratios
           const auto dncdt = tendencies.n_mode_c;
+
+          // diameter for interstitial aerosols
+          auto dgncur_i = diagnostics.dgncur_i;
+          // volumen to number ratio for interstitial aerosols 
+          auto v2ncur_i = diagnostics.v2ncur_i;
+          // diameter for cloud-borne aerosols
+          auto dgncur_c = diagnostics.dgncur_c;
+          // volumen to number ratio for cloud-borne aerosols 
+          auto v2ncur_c = diagnostics.v2ncur_c;         
 
           Real dryvol_i = 0;
           Real dryvol_c = 0;
@@ -1200,7 +1211,7 @@ public:
             //
             //Volume = sum_over_components{ component_mass mixrat / density }
             //----------------------------------------------------------------------
-
+            // dryvol_i, dryvol_c are set to zero inside compute_dry_volume_k
             calcsize::compute_dry_volume_k(k, imode, inv_density, prognostics,
                                            dryvol_i, dryvol_c);
 
@@ -1342,10 +1353,10 @@ public:
                 prognostics, dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv,
                 num_c_k_aitsv, dryvol_i_accsv, num_i_k_accsv, dryvol_c_accsv,
                 num_c_k_accsv, 
-                // dgncur_i_k, v2ncur_i_k, dgncur_c_k, v2ncur_c_k,
                 diagnostics, tendencies);
 
-          }
+          } // end do_aitacc_transfer
+
         }); // kokkos::parfor(k)
   }
 
