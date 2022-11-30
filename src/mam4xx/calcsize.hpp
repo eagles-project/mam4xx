@@ -1106,8 +1106,8 @@ public:
     const int nk = atmosphere.num_levels();
     const auto inv_density = _inv_density;
     const Real zero = 0;
-    const Real close_to_one = 1.0 + 1.0e-15;
-    const Real seconds_in_a_day = 86400.0;
+    const Real close_to_one = 1.0 + 1.0e-15; // BAD_CONSTANT!!
+    const Real seconds_in_a_day = 86400.0; // BAD_CONSTANT!!
     //
     const auto acc_spec_in_ait=_acc_spec_in_ait;
     const auto ait_spec_in_acc=_ait_spec_in_acc;
