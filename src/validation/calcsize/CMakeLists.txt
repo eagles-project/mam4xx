@@ -2,6 +2,7 @@ set(CALCSIZE_VALIDATION_DIR ${MAM_X_VALIDATION_DIR}/calcsize)
 
 # These subdirectories contain Skywalker drivers for MAM4 parameterizations.
 # Include directory for .mod files.
+
 include_directories(${PROJECT_BINARY_DIR}/validation)
 
 # We use a single driver for all calcsize-related parameterizations.
@@ -25,7 +26,8 @@ endforeach()
 
 # Nucleation rate
 foreach (input
-         get_relaxed_v2n_limits_case1)
+         get_relaxed_v2n_limits_case1
+         get_relaxed_v2n_limits_case2)
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
   configure_file(

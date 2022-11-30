@@ -60,4 +60,5 @@ int main(int argc, char** argv) {
 
   // Clean up.
   delete ensemble;
+  Kokkos::finalize();
 }
