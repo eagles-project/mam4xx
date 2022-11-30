@@ -516,9 +516,11 @@ public:
 
             // `adjust_num_sizes` will use the initial value, but other
             // calculations require this to be nonzero.
+            // Make it non-negative
             auto num_i_k = Pack(init_num_i < 0, Pack(0.0), init_num_i);
 
             auto init_num_c = n_c[imode](k);
+            // Make it non-negative
             auto num_c_k = Pack(init_num_c < 0, Pack(0.0), init_num_c);
 
             if (do_adjust) {

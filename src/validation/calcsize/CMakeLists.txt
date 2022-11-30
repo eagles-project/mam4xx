@@ -8,7 +8,8 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 # We use a single driver for all calcsize-related parameterizations.
 add_executable(calcsize_driver calcsize_driver.cpp
                get_relaxed_v2n_limits.cpp
-               compute_dry_volume.cpp)
+               compute_dry_volume.cpp
+               adjust_num_sizes.cpp)
 target_link_libraries(calcsize_driver skywalker;validation;${HAERO_LIBRARIES})
 
 
@@ -27,7 +28,8 @@ endforeach()
 # Nucleation rate
 foreach (input
          get_relaxed_v2n_limits_case1
-         get_relaxed_v2n_limits_case2)
+         get_relaxed_v2n_limits_case2
+         adjust_num_sizes_case1)
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
   configure_file(
@@ -38,7 +40,7 @@ foreach (input
 
   # add a test to run the skywalker driver
   add_test(run_${input} calcsize_driver ${CALCSIZE_VALIDATION_DIR}/${input}.yaml)
- 
+
   # add a test to validate mam4xx's results against the baseline.
   add_test(validate_${input} python3 compare_calcsize.py mam4xx_${input}.py mam_${input}.py)
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})

@@ -22,6 +22,7 @@ using namespace mam4;
 // Parameterizations used by the nucleation process.
 void get_relaxed_v2n_limits(Ensemble *ensemble);
 void compute_dry_volume_k(Ensemble *ensemble);
+void adjust_num_sizes(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -49,6 +50,8 @@ int main(int argc, char **argv) {
       get_relaxed_v2n_limits(ensemble);
     } else if (func_name == "compute_dry_volume") {
       compute_dry_volume_k(ensemble);
+    } else if (func_name == "adjust_num_sizes") {
+      adjust_num_sizes(ensemble);
     }
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
