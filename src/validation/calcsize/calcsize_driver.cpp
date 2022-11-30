@@ -24,6 +24,7 @@ void get_relaxed_v2n_limits(Ensemble *ensemble);
 void compute_dry_volume_k(Ensemble *ensemble);
 void adjust_num_sizes(Ensemble *ensemble);
 void update_diameter_and_vol2num(Ensemble *ensemble);
+void compute_tendencies(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -55,6 +56,8 @@ int main(int argc, char **argv) {
       adjust_num_sizes(ensemble);
     } else if (func_name == "update_diameter_and_vol2num") {
       update_diameter_and_vol2num(ensemble);
+    } else if (func_name == "compute_tendencies") {
+      compute_tendencies(ensemble);
     }
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
