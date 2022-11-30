@@ -19,8 +19,9 @@ void get_relaxed_v2n_limits(Ensemble *ensemble) {
 
     const bool do_aitacc_transfer =
         static_cast<bool>(input.get("do_aitacc_transfer"));
-    const bool is_aitken_mode = static_cast<bool>(input.get("is_aitken_mode"));
-    const bool is_accum_mode = static_cast<bool>(input.get("is_accum_mode"));
+
+    const int aitken_idx = int(ModeIndex::Aitken);
+    const int accumulation_idx = int(ModeIndex::Accumulation);
 
     mam4::AeroConfig mam4_config;
     mam4::CalcSizeProcess process(mam4_config);
@@ -46,7 +47,7 @@ void get_relaxed_v2n_limits(Ensemble *ensemble) {
         "get_relaxed_v2n_limits", 1, [&] KOKKOS_FUNCTION(int k) {
           for (int m = 0; m < nmodes; ++m) {
             calcsize::get_relaxed_v2n_limits(
-                do_aitacc_transfer, is_aitken_mode, is_accum_mode,
+                do_aitacc_transfer, m == aitken_idx, m == accumulation_idx,
                 v2nmin_nmodes[m], v2nmax_nmodes[m], v2nminrl[m], v2nmaxrl[m]);
           }
         });

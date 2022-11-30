@@ -107,20 +107,51 @@ void get_relaxed_v2n_limits(const bool do_aitacc_transfer,
    *
    * \see get_relaxed_v2n_limits
    */
+
+    //   !intent-ins
+    // logical,  intent(in) :: do_aitacc_transfer !flag to control whether to transfer aerosols from one mode to another
+    // logical,  intent(in) :: is_aitken_mode     !true if this mode is aitken mode
+    // logical,  intent(in) :: is_accum_mode      !true if this mode is accumulation mode
+
+    // !intent-(in)outs
+    // real(wp), intent(inout) :: v2nmin, v2nmax     !volume_to_num min/max ratios
+    // real(wp), intent(out)   :: v2nminrl, v2nmaxrl ! relaxed counterparts of volume_to_num min/max ratios
+
+    // !local
+    // !(relaxation factor is currently assumed to be a factor of 3 in diameter
+    // !which makes it 3**3=27 for volume)
+    // !i.e. dgnumlo_relaxed = dgnumlo/3 and dgnumhi_relaxed = dgnumhi*3; therefore we use
+    // !3**3=27 as a relaxation factor for volume
+
   static constexpr Real relax_factor = 27.0;
 
   // factor to artifically inflate or deflate v2nmin and v2nmax
   static constexpr Real szadj_block_fac = 1.0e6;
 
+   // !default relaxation:
+  v2nminrl = v2nmin/relax_factor;
+  v2nmaxrl = v2nmax*relax_factor;
+    // !if do_aitacc_transfer is turned on, we will do the ait<->acc tranfer separately in
+    // !aitken_accum_exchange subroutine, so we are effectively turning OFF the size adjustment for these
+    // !two modes here by artifically inflating (or deflating) v2min and v2nmax using "szadj_block_fac"
+    // !and then computing v2minrl and v2nmaxrl based on newly computed v2min and v2nmax.
+
+
   if (do_aitacc_transfer) {
+    // !for aitken mode, divide v2nmin by 1.0e6 to effectively turn off the
+    // !         adjustment when number is too small (size is too big)
     if (is_aitken_mode)
       v2nmin /= szadj_block_fac;
+    // !for accumulation, multiply v2nmax by 1.0e6 to effectively turn off the
+    // !         adjustment when number is too big (size is too small)
     if (is_accum_mode)
       v2nmax *= szadj_block_fac;
-  }
 
-  v2nminrl = v2nmin / relax_factor;
-  v2nmaxrl = v2nmax * relax_factor;
+    // !Also change the v2nmaxrl/v2nminrl so that
+    // !the interstitial<-->activated number adjustment is effectively turned off
+    v2nminrl = v2nmin/relax_factor;
+    v2nmaxrl = v2nmax*relax_factor;
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -588,10 +619,21 @@ public:
 
             // compute upper and lower limits for volume to num (v2n) ratios and
             // diameters (dgn)
+            //      !Get relaxed limits for volume_to_num
+            // !(we use relaxed limits for aerosol number "adjustment"
+            // calculations via "adjust_num_sizes" subroutine. !Note: The
+            // relaxed limits will be artifically inflated (or deflated) for the
+            // aitken and accumulation modes !if "do_aitacc_transfer" flag is
+            // true to effectively shut-off aerosol number "adjustment"
+            // calculations !for these modes because we do the explicit transfer
+            // (via "aitken_accum_exchange" subroutine) from one !mode to
+            // another instead of adjustments for these modes)
 
             calcsize::get_relaxed_v2n_limits(
                 do_aitacc_transfer, imode == aitken_idx,
-                imode == accumulation_idx, v2nmin, v2nmax, v2nminrl, v2nmaxrl);
+                imode == accumulation_idx, v2nmin, v2nmax, v2nminrl,
+                v2nmaxrl); //! outputs (NOTE: v2nmin and v2nmax are only updated
+                           //! for aitken and accumulation modes)
 
             // initial value of num interstitial for this pack and mode
             auto init_num_i = n_i[imode](k);
