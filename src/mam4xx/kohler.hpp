@@ -32,15 +32,15 @@ using haero::square;
 ///   https://webbook.nist.gov/cgi/fluid.cgi?TLow=273.16&THigh=343&TInc=1&Applet=on&Digits=5&ID=C7732185&Action=Load&Type=SatP&TUnit=K&PUnit=MPa&DUnit=mol%2Fl&HUnit=kJ%2Fmol&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm&RefState=DEF
 ///
 ///   accessed on September 20, 2022
-KOKKOS_INLINE_FUNCTION Real
-surface_tension_water_air(Real T = Constants::triple_pt_h2o) {
-  constexpr Real Tc = Constants::tc_water;
-  constexpr Real tp = Constants::triple_pt_h2o;
-  constexpr Real B = 0.2358;
-  constexpr Real b = -0.625;
-  constexpr Real mu = 1.256;
+KOKKOS_INLINE_FUNCTION double
+surface_tension_water_air(double T = Constants::triple_pt_h2o) {
+  constexpr double Tc = Constants::tc_water;
+  constexpr double tp = Constants::triple_pt_h2o;
+  constexpr double B = 0.2358;
+  constexpr double b = -0.625;
+  constexpr double mu = 1.256;
   const auto tau = 1 - T / Tc;
-  EKAT_KERNEL_ASSERT(haero::FloatingPoint<Real>::in_bounds(
+  EKAT_KERNEL_ASSERT(haero::FloatingPoint<double>::in_bounds(
       T, tp - 25, Tc, std::numeric_limits<float>::epsilon()));
   return B * pow(tau, mu) * (1 + b * tau);
 }
@@ -59,10 +59,10 @@ surface_tension_water_air(Real T = Constants::triple_pt_h2o) {
 ///
 ///   @param [in] T temperature [K]
 ///   @return Kelvin droplet coefficient [m]
-KOKKOS_INLINE_FUNCTION Real
-kelvin_coefficient(Real T = Constants::triple_pt_h2o) {
-  const Real density_h2o = Constants::density_h2o;
-  const Real r_gas_h2o_vapor = Constants::r_gas_h2o_vapor;
+KOKKOS_INLINE_FUNCTION double
+kelvin_coefficient(double T = Constants::triple_pt_h2o) {
+  const double density_h2o = Constants::density_h2o;
+  const double r_gas_h2o_vapor = Constants::r_gas_h2o_vapor;
   return 2 * surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o);
 }
 
@@ -159,9 +159,9 @@ struct KohlerPolynomial {
   ///     1e-6 m]
   ///     @return Polynomial value, wet_radius in microns [ 1e-6 m]
   template <typename U>
-  KOKKOS_INLINE_FUNCTION Real operator()(const U &wet_radius) const {
-    const Real rwet = Real(wet_radius);
-    const Real result =
+  KOKKOS_INLINE_FUNCTION double operator()(const U &wet_radius) const {
+    const double rwet = Real(wet_radius);
+    const double result =
         (log_rel_humidity * rwet - kelvin_a) * haero::cube(rwet) +
         ((hygroscopicity - log_rel_humidity) * rwet + kelvin_a) *
             dry_radius_cubed;
@@ -176,22 +176,22 @@ struct KohlerPolynomial {
   ///     @param [in] Polynomial input value, wet radius in microns [ 1e-6 m]
   ///     @return Polynomial slope at input value
   template <typename U>
-  KOKKOS_INLINE_FUNCTION Real derivative(const U &wet_radius) const {
-    const Real rwet = Real(wet_radius);
-    const Real wet_radius_squared = square(rwet);
-    const Real result =
+  KOKKOS_INLINE_FUNCTION double derivative(const U &wet_radius) const {
+    const double rwet = double(wet_radius);
+    const double wet_radius_squared = square(rwet);
+    const double result =
         (4 * log_rel_humidity * rwet - 3 * kelvin_a) * wet_radius_squared +
         (hygroscopicity - log_rel_humidity) * dry_radius_cubed;
     return result;
   }
 
   KOKKOS_INLINE_FUNCTION
-  bool valid_inputs(Real relh, Real hyg, Real dry_rad) const {
-    return (FloatingPoint<Real>::in_bounds(relh, rel_humidity_min,
-                                           rel_humidity_max) and
-            FloatingPoint<Real>::in_bounds(hyg, hygro_min, hygro_max) and
-            FloatingPoint<Real>::in_bounds(dry_rad, dry_radius_min_microns,
-                                           dry_radius_max_microns));
+  bool valid_inputs(double relh, double hyg, double dry_rad) const {
+    return (FloatingPoint<double>::in_bounds(relh, rel_humidity_min,
+                                             rel_humidity_max) and
+            FloatingPoint<double>::in_bounds(hyg, hygro_min, hygro_max) and
+            FloatingPoint<double>::in_bounds(dry_rad, dry_radius_min_microns,
+                                             dry_radius_max_microns));
   }
 
   KOKKOS_INLINE_FUNCTION
