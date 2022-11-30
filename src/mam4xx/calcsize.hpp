@@ -127,12 +127,13 @@ void get_relaxed_v2n_limits(const bool do_aitacc_transfer,
  *--------------------------------------------------------------------------*/
 KOKKOS_INLINE_FUNCTION
 void update_diameter_and_vol2num(/*std::size_t klev, std::size_t imode, */
-                                 Pack drv, Pack num, Real v2nmin, Real v2nmax,
-                                 Real dgnmin, Real dgnmax, Real cmn_factor,
-                                 Pack dgncur_k_i, Pack v2ncur_k_i) {
-  // FIX THIS
-  //  const auto drv_gt_0 = drv > 0.0;
-  //  if (!drv_gt_0.any()) return;
+                                 const Pack &drv, const Pack &num, Real v2nmin,
+                                 Real v2nmax, Real dgnmin, Real dgnmax,
+                                 Real cmn_factor, Pack &dgncur_k_i,
+                                 Pack &v2ncur_k_i) {
+  const auto drv_gt_0 = drv > 0.0;
+  if (!drv_gt_0.any())
+    return;
 
   const auto drv_mul_v2nmin = drv * v2nmin;
   const auto drv_mul_v2nmax = drv * v2nmax;

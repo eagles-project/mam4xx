@@ -23,6 +23,7 @@ using namespace mam4;
 void get_relaxed_v2n_limits(Ensemble *ensemble);
 void compute_dry_volume_k(Ensemble *ensemble);
 void adjust_num_sizes(Ensemble *ensemble);
+void update_diameter_and_vol2num(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -52,6 +53,8 @@ int main(int argc, char **argv) {
       compute_dry_volume_k(ensemble);
     } else if (func_name == "adjust_num_sizes") {
       adjust_num_sizes(ensemble);
+    } else if (func_name == "update_diameter_and_vol2num") {
+      update_diameter_and_vol2num(ensemble);
     }
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
