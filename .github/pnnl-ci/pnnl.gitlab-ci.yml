@@ -27,7 +27,9 @@ stages:
     - basic
 
 variables:
-  GIT_SUBMODULE_STRATEGY: recursive
+  # Since submodules are cloned manually in CI, this is none
+  # If we were to use HTTPS instead of SSH, this could be recursive
+  GIT_SUBMODULE_STRATEGY: none
 
 # Generic job for building HAERO/mam4xx
 .pnnl_hpc_job_template:
@@ -38,7 +40,6 @@ variables:
   variables:
     GIT_STRATEGY: clone
     HAERO_INSTALL: /qfs/projects/eagles/pnnl-ci/haero_${BUILD_TYPE}_${PRECISION}
-
 
 .pnnl_after_script_template:
   after_script:

@@ -59,10 +59,11 @@ The shared variables are:
 ### `ci.sh`
 Used to build and test mam4xx in CI using HAERO installed in project share.
 
-Since we are installing in GitLab pipelines, this script uses the variable `CI_HTTPS_INSTALL` in order to force the `build-haero.sh` script to clone submodules using HTTPS instead of SSH.
-
-It does this by manually find and replacing the `.gitmodules` files in each repository where relevant with `https://.../` instead of `git@...:`.
+Similar to the `rebuild-haero.sh` script, since we are building in CI, SSH submodules will not suffice. As such this scripts clones the validation repo manually after applying a perl script on the `.gitmodules` file.
 
 ### `rebuild-haero.sh`
 Used to re-configure HAERO in project share, along with configuring permissions so other users can configure with shared installation.
 
+Since we are installing in GitLab pipelines, this script uses the variable `CI_HTTPS_INSTALL` in order to force the `build-haero.sh` script to clone submodules using HTTPS instead of SSH.
+
+It does this by manually find and replacing the `.gitmodules` files in each repository where relevant with `https://.../` instead of `git@...:`.
