@@ -106,5 +106,7 @@ void compute_tendencies(Ensemble *ensemble) {
 
     output.set("cloud_borne_ptend_num", tend_n_mode_c_out);
     output.set("cloud_borne_ptend", tend_aero_c_out);
+
+    // add more outputs (diagnostics)
   });
 }

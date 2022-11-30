@@ -8,13 +8,13 @@
 using namespace skywalker;
 using namespace mam4;
 
-void aitken_accum_exchange(Ensemble *ensemble) {
+void aitken_accum_exchange(Ensemble* ensemble) {
 
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
 
   // Run the ensemble.
-  ensemble->process([=](const Input &input, Output &output) {
+  ensemble->process([=](const Input& input, Output& output) {
     Real dt = input.get("dt");
 
     int nlev = 1;
@@ -34,6 +34,25 @@ void aitken_accum_exchange(Ensemble *ensemble) {
     auto n_c = input.get_array("cloud_borne_num");
 
     auto s_v2nnom_nmodes = input.get_array("v2nnom_nmodes");
+    auto v2nmax_nmodes = input.get_array("v2nmax_nmodes");
+    // v2nmin_nmodes
+    // dgnmax_nmodes
+    // dgnmin_nmodes
+    // dgnnom_nmodes
+    // common_factor_nmodes
+    // inv_density
+    // dryvol_i_aitsv
+    // num_i_k_aitsv
+    // dryvol_c_aitsv
+    // num_c_k_aitsv
+    // dryvol_i_accsv
+    // num_i_k_accsv
+    // dryvol_c_accsv
+    // num_c_k_accsv
+    // dgncur_i_k
+    // v2ncur_i_k
+    // dgncur_c_k
+    // v2ncur_c_k
 
     DeviceType::view_1d<Real> d_v2nnom_nmodes("v2nnom_nmodes", nmodes);
     auto h_v2nnom_nmodes = Kokkos::create_mirror_view(d_v2nnom_nmodes);
@@ -95,11 +114,14 @@ void aitken_accum_exchange(Ensemble *ensemble) {
             v2nnom_nmodes[m] = d_v2nnom_nmodes(m);
           }
 
-          // calcsize::aitken_accum_exchange(
-          //     k, aitken_idx, accum_idx, v2nnom_nmodes, adj_tscale_inv, dt,
-          //     progs, drv_i_aitsv, num_i_aitsv, drv_c_aitsv, num_c_aitsv,
-          //     drv_i_accsv, num_i_accsv, drv_c_accsv, num_c_accsv, diags,
-          //     tends);
+          calcsize::aitken_accum_exchange(
+              k, aitken_idx, accum_idx, v2nmax_nmodes, v2nmin_nmodes,
+              v2nnom_nmodes, dgnmax_nmodes, dgnmin_nmodes, dgnnom_nmodes,
+              common_factor_nmodes, inv_density, adj_tscale_inv, dt,
+              prognostics, dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv,
+              num_c_k_aitsv, dryvol_i_accsv, num_i_k_accsv, dryvol_c_accsv,
+              num_c_k_accsv, dgncur_i_k, v2ncur_i_k, dgncur_c_k, v2ncur_c_k,
+              diagnostics, tendencies);
         });
 
     std::vector<Real> tend_aero_i_out;
