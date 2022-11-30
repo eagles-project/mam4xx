@@ -36,6 +36,10 @@ echo $BUILD_TYPE " detected for BUILD_TYPE\n"
 echo $HAERO_INSTALL " detected for HAERO install location\n"
 echo $PRECISION " detected for PRECISION\n"
 
+# Since we are using CI, we must set environment variable
+# This clones submodules manually over HTTPS instead of using SSH
+export CI_HTTPS_INSTALL=1
+
 ./build-haero.sh \
   $HAERO_INSTALL \
   gpu \

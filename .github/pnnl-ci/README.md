@@ -36,13 +36,17 @@ We have manually configured PNNL CI to point to the YAML file in `/.github/pnnl-
 ## GitHub/GitLab Integration
 You need to generate a Personal Access Token (PAT) through GitHub project before starting this process.
 
+We will also be creating a pull mirror, and not a push mirror, as pull mirrors are updated based on an external source, whereas push mirrors are preferred when pushing updates externally.
+
 Steps:
 1. Create an empty project in GitLab. **DO NOT** initialize using in-build GitHub integration, as this is broken for running pipelines.
-1. Set up repository mirroring, ensuring you enable running pipelines and keeping divergent refs. Use GitHub username within `https` URL and Personal Access token as the password.
-1. Enable the GitHub integration in Settings > Integrations in GitLab. This will post pipeline status, and should automatically detect PAT.
+1. Set up repository mirroring, ensuring you enable running pipelines and keeping divergent refs. Use GitHub username within `https` URL and Personal Access token as the password. `https://CameronRutherford@github.com/eagles-project/mam4xx` would be the repository URL in this case, where my username can be replaced with the account where the PAT was generated, and you would place the PAT in the field which asks for a password. End results should be a repository mirror with `https://*****:*****@github.com/eagles-project/mam4xx` showing as the URL.
+1. Enable the GitHub integration in Settings > Integrations in GitLab. This will post pipeline status to the relevant Pull Requests, and you will need to add a personal access token used here as well.
 1. Ensure your YAML has correct syntax, and you should be good to go! Since we mirror everything in the repo, we will have copies of issues and PRs as well.
 
 Since this integration is automatically configured through GitLab premium, pipeline status will automatically be posted to commits/PRs.
+
+There is a way to orchestrate this pipeline posting through non-premium GitLab as well - https://ecp-ci.gitlab.io/docs/guides/build-status-gitlab.html
 
 ## Scipts
 There are shared environment variables that are propogated across both scripts, and each job shares the same template in order to reduce code duplication.
@@ -54,6 +58,10 @@ The shared variables are:
 
 ### `ci.sh`
 Used to build and test mam4xx in CI using HAERO installed in project share.
+
+Since we are installing in GitLab pipelines, this script uses the variable `CI_HTTPS_INSTALL` in order to force the `build-haero.sh` script to clone submodules using HTTPS instead of SSH.
+
+It does this by manually find and replacing the `.gitmodules` files in each repository where relevant with `https://.../` instead of `git@...:`.
 
 ### `rebuild-haero.sh`
 Used to re-configure HAERO in project share, along with configuring permissions so other users can configure with shared installation.

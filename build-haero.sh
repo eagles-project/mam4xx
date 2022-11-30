@@ -73,7 +73,26 @@ fi
 echo "Cloning Haero repository into $(pwd)/.haero..."
 git clone https://github.com/eagles-project/haero.git .haero || exit
 cd .haero || exit
-git submodule update --init --recursive || exit
+
+# If we are using HTTPS to clone submodules...
+if [[ "$CI_HTTPS_INSTALL" == 1 ]]; then
+  # Need to modify each .gitmodules file before cloning 
+  # TODO - is there a way to templatize this function?
+  perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules || exit
+  # Update just haero submodules
+  git submodule update --init || exit
+  # Go through and repeat the process for submodules with submodules
+  declare -a arr=("ekat" "skywalker")
+  for subm in "${arr[@]}"
+  do
+    pushd ./ext/$subm
+    perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules || exit
+    git submodule update --init || exit
+    popd
+  done
+else
+  git submodule update --init --recursive || exit
+fi
 
 # Are we on a special machine?
 cd machines
