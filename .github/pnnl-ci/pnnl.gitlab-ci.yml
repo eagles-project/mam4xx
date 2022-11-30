@@ -166,8 +166,7 @@ Rebuild HAERO Single Precision:
     - .pnnl_hpc_job_template
 
 Rebuild HAERO Double Precision:
-  dependencies:
-    - 'Rebuild HAERO Single Precision'
+  needs: ["Rebuild HAERO Single Precision"]
   stage: haero-double
   parallel:
     matrix:
