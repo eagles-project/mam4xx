@@ -9,13 +9,12 @@ PNNL CI will only run when you are adding new commits to an existing merge reque
 You can add `[skip-ci]` in order to prevent CI jobs from running at PNNL. TODO involves adding support for skipping CI when certain tags are present in a PR.
 
 #### TODO:
-- [ ] Add support for cloning with ssh in CI, with documentation
 - [ ] Use installed HAERO in project share to avoid re-building each time
 - [ ] Add support for a variety of paritions on Deception
-- [ ] Build HEARO without cloning mam4xx in CI step
 - [ ] Add way to skip CI using a GitHub tag in both GitLab and GitHub
 - [ ] Ensure that pipelines are not false positive/negative
 - [ ] Port pipeline to AMD architectures
+- [ ] Streamline CI rebuilding of HAERO to happen with one button (need to work around 2 max job limit)
 
 #### Done:
 - [x] Only run 2 jobs at a time as we only have 2 runners
@@ -25,6 +24,8 @@ You can add `[skip-ci]` in order to prevent CI jobs from running at PNNL. TODO i
 - [x] Rebuild HAERO in manual pipeline
 - [x] Add CMake / ctest configuration in CI
 - [x] Add way to skip CI using a commit message
+- [x] Add support for cloning with ssh in CI, with documentation
+- [x] Build HEARO without cloning mam4xx in CI step
 
 ## Access Token
 @CameronRutherford currently maintains the access token used to enable GitHub mirroring. 
@@ -67,3 +68,5 @@ Used to re-configure HAERO in project share, along with configuring permissions 
 Since we are installing in GitLab pipelines, this script uses the variable `CI_HTTPS_INSTALL` in order to force the `build-haero.sh` script to clone submodules using HTTPS instead of SSH.
 
 It does this by manually find and replacing the `.gitmodules` files in each repository where relevant with `https://.../` instead of `git@...:`.
+
+Additionally, for some reason `SYSTEM_NAME` is configured on PNNL login nodes, but when running in a job this variable proves unhelpful. As such, we export `SYSTEM_NAME=deception` in this script before running.

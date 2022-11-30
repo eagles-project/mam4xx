@@ -32,13 +32,15 @@ cleanup() {
   exit $2
 }
 
-echo $BUILD_TYPE " detected for BUILD_TYPE\n"
-echo $HAERO_INSTALL " detected for HAERO install location\n"
-echo $PRECISION " detected for PRECISION\n"
+echo $BUILD_TYPE " detected for BUILD_TYPE"
+echo $HAERO_INSTALL " detected for HAERO install location"
+echo $PRECISION " detected for PRECISION"
 
 # Since we are using CI, we must set environment variable
 # This clones submodules manually over HTTPS instead of using SSH
 export CI_HTTPS_INSTALL=1
+# SYSTEM_NAME seems to work on login nodes, but not in compute instances, so we will export manually for PNNL
+export SYSTEM_NAME=deception
 
 ./build-haero.sh \
   $HAERO_INSTALL \

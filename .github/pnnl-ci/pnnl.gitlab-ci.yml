@@ -4,6 +4,8 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 stages:
+  - haero-single
+  - haero-double
   - build-single
   - build-double
 
@@ -147,18 +149,43 @@ Deception Double Precision:
     - .pnnl_hpc_job_template
 
 # HAERO rebuild will have 4 total jobs, and users should only run 2 at a time
+# As such the haero staged jobs will only run 2 at a time, and will only run when manually triggered
 Rebuild HAERO:
   stage: .pre
+  when: manual
+  allow_failure: false
+  variables:
+    GIT_STRATEGY: none
+
+Rebuild HAERO Single Precision:
+  dependencies:
+    - 'Rebuild HAERO'
+  stage: haero-single
   parallel:
     matrix:
       - BUILD_TYPE: [Debug, Release]
-        PRECISION: [single, double]
   when: manual
   variables:
+    PRECISION: single
     SLURM_Q: "dl_shared"
     WORKDIR_SUFFIX: haero_${BUILD_TYPE}_${PRECISION}
     SCRIPT_NAME: rebuild-haero.sh
-    PRECISION: single
+  extends:
+    - .pnnl_hpc_job_template
+
+Rebuild HAERO Double Precision:
+  dependencies:
+    - 'Rebuild HAERO Single Precision'
+  stage: haero-double
+  parallel:
+    matrix:
+      - BUILD_TYPE: [Debug, Release]
+  when: manual
+  variables:
+    PRECISION: double
+    SLURM_Q: "dl_shared"
+    WORKDIR_SUFFIX: haero_${BUILD_TYPE}_${PRECISION}
+    SCRIPT_NAME: rebuild-haero.sh
   extends:
     - .pnnl_hpc_job_template
 # ---
