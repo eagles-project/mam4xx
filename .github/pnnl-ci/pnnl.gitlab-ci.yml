@@ -151,7 +151,7 @@ Deception Double Precision:
 # HAERO rebuild will have 4 total jobs, and users should only run 2 at a time
 # As such the haero staged jobs will only run 2 at a time, and will only run when manually triggered
 Rebuild HAERO Single Precision:
-  allow_failure: true
+  allow_failure: true # This means that all stages will attempt to re-build even if one fails
   when: manual
   stage: haero-single
   parallel:
