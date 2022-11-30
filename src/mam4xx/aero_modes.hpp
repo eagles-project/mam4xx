@@ -302,6 +302,9 @@ KOKKOS_INLINE_FUNCTION GasSpecies gas_species(const int i) {
   return species[i];
 }
 
+// boolean view indicating which species will be transferred from
+// accumulation -> aitken indexed to accumulation mode (because it carries
+// more species)
 static constexpr bool no_transfer_acc2ait[7] = {true,  false, true, false,
                                                 false, true,  true};
 // number of common species between aitken and accum modes

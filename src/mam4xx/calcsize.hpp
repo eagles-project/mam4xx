@@ -669,6 +669,7 @@ void update_num_tends(const int jmode, const int aer_type, Real &dqdt_src,
   const Real xfertend = xfertend_num[jmode][aer_type];
   dqdt_src -= xfertend;
   dqdt_dest += xfertend;
+
 } // end subroutine update_num_tends
 
 //------------------------------------------------------------------------------------------------
@@ -725,16 +726,16 @@ void update_tends_flx(
   const Real zero = 0;
 
   // !interstiatial species
-  Real dqdt_src_i = dnidt[src_mode_ixd](klev);
-  Real dqdt_dest_i = dnidt[dest_mode_ixd](klev);
+  Real& dqdt_src_i = dnidt[src_mode_ixd](klev);
+  Real& dqdt_dest_i = dnidt[dest_mode_ixd](klev);
   const int aer_interstiatial = 0;
   update_num_tends(jmode, aer_interstiatial, dqdt_src_i, dqdt_dest_i,
                    xfertend_num);
 
   // !cloud borne apecies
   const int aer_cloud_borne = 1;
-  Real dqdt_src_c = dncdt[src_mode_ixd](klev);
-  Real dqdt_dest_c = dncdt[dest_mode_ixd](klev);
+  Real& dqdt_src_c = dncdt[src_mode_ixd](klev);
+  Real& dqdt_dest_c = dncdt[dest_mode_ixd](klev);
 
   update_num_tends(jmode, aer_cloud_borne, dqdt_src_c, dqdt_dest_c,
                    xfertend_num);
@@ -972,13 +973,6 @@ class CalcSize {
 public:
   // nucleation-specific configuration
   struct Config {
-
-    // boolean view indicating which species will be transferred from
-    // accumulation -> aitken indexed to accumulation mode (because it carries
-    // more species)
-    // FIXME: is this the best place for this?
-    bool no_transfer_acc2ait[7] = {true, false, true, false, false, true, true};
-
     // default constructor -- sets default values for parameters
     Config() {}
 
@@ -990,19 +984,19 @@ public:
 private:
   Config config_;
 
-  Real v2nmin_nmodes[4], v2nmax_nmodes[4], v2nnom_nmodes[4];
+  Real v2nmin_nmodes[AeroConfig::num_modes()], v2nmax_nmodes[AeroConfig::num_modes()], v2nnom_nmodes[AeroConfig::num_modes()];
   // v2nnom_nmodes[4];
   // Mode parameters
-  Real dgnnom_nmodes[4], // mean geometric number diameter
-      dgnmax_nmodes[4],  // max geometric number diameter
-      dgnmin_nmodes[4];  // min geometric number diameter
+  Real dgnnom_nmodes[AeroConfig::num_modes()], // mean geometric number diameter
+      dgnmax_nmodes[AeroConfig::num_modes()],  // max geometric number diameter
+      dgnmin_nmodes[AeroConfig::num_modes()];  // min geometric number diameter
 
   // There is a common factor calculated over and over in the core loop of this
   // process. This factor has been pulled out so the calculation only has to be
   // performed once.
-  Real common_factor_nmodes[4];
+  Real common_factor_nmodes[AeroConfig::num_modes()];
 
-  Real _inv_density[4][7];
+  Real _inv_density[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
 
 public:
   // name -- unique name of the process implemented by this class
@@ -1016,7 +1010,7 @@ public:
     config_ = calcsize_config;
 
     // Set mode parameters.
-    for (int m = 0; m < 4; ++m) {
+    for (int m = 0; m < AeroConfig::num_modes(); ++m) {
       // FIXME: There is no mean geometric number diameter in a mode.
       // FIXME: Assume "nominal" diameter for now?
       // FIXME: There is a comment in modal_aero_newnuc.F90 that Dick Easter
