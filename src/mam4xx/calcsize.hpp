@@ -524,11 +524,11 @@ public:
       // FIXME: thinks that dgnum_aer isn't used in MAM4, but it is actually
       // FIXME: used in this nucleation parameterization. So we will have to
       // FIXME: figure this out.
-      dgnnom_nmodes[m] = modes[m].nom_diameter;
-      dgnmin_nmodes[m] = modes[m].min_diameter;
-      dgnmax_nmodes[m] = modes[m].max_diameter;
+      dgnnom_nmodes[m] = modes(m).nom_diameter;
+      dgnmin_nmodes[m] = modes(m).min_diameter;
+      dgnmax_nmodes[m] = modes(m).max_diameter;
       common_factor_nmodes[m] =
-          exp(4.5 * log(modes[m].mean_std_dev) * log(modes[m].mean_std_dev)) *
+          exp(4.5 * log(modes(m).mean_std_dev) * log(modes(m).mean_std_dev)) *
           Constants::pi_sixth; // A common factor
       v2nnom_nmodes[m] =
           1.0 / (common_factor_nmodes[m] * pow(dgnnom_nmodes[m], 3.0));

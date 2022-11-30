@@ -32,12 +32,12 @@ void get_relaxed_v2n_limits(Ensemble *ensemble) {
     // should we get this values from calcsize config?
     for (int m = 0; m < nmodes; ++m) {
       const Real common_factor_nmodes =
-          exp(4.5 * log(modes[m].mean_std_dev) * log(modes[m].mean_std_dev)) *
+          exp(4.5 * log(modes(m).mean_std_dev) * log(modes(m).mean_std_dev)) *
           Constants::pi_sixth; // A common factor
       v2nmin_nmodes[m] =
-          1.0 / (common_factor_nmodes * pow(modes[m].max_diameter, 3.0));
+          1.0 / (common_factor_nmodes * pow(modes(m).max_diameter, 3.0));
       v2nmax_nmodes[m] =
-          1.0 / (common_factor_nmodes * pow(modes[m].min_diameter, 3.0));
+          1.0 / (common_factor_nmodes * pow(modes(m).min_diameter, 3.0));
     }
 
     Real v2nminrl[nmodes] = {0.0};
