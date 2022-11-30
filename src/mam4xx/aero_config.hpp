@@ -178,14 +178,15 @@ public:
           ColumnView("wet_geometric_mean_diameter_cloudeborne", num_levels);
       Kokkos::deep_copy(wet_geometric_mean_diameter_i[mode], 0.0);
       Kokkos::deep_copy(wet_geometric_mean_diameter_c[mode], 0.0);
-      dgncur_i[mode] = ColumnView("interstitial particle diameter", nk);
-      haero::zero_init(dgncur_i[mode], num_levels);
-      v2ncur_i[mode] = ColumnView("interstitial vol2num ratio", nk);
-      haero::zero_init(v2ncur_i[mode], num_levels);
-      dgncur_c[mode] = ColumnView("cldborne particle diameter", nk);
-      haero::zero_init(dgncur_c[mode], num_levels);
-      v2ncur_c[mode] = ColumnView("cldborne vol2num ratio", nk);
-      haero::zero_init(v2ncur_c[mode], num_levels);
+      // calcsize
+      dgncur_i[mode] = ColumnView("interstitial particle diameter", num_levels);
+      Kokkos::deep_copy(dgncur_i[mode], 0.0);
+      v2ncur_i[mode] = ColumnView("interstitial vol2num ratio", num_levels);
+      Kokkos::deep_copy(v2ncur_i[mode], 0.0);
+      dgncur_c[mode] = ColumnView("cldborne particle diameter", num_levels);
+      Kokkos::deep_copy(dgncur_c[mode], 0.0);
+      v2ncur_c[mode] = ColumnView("cldborne vol2num ratio", num_levels);
+      Kokkos::deep_copy(v2ncur_c[mode], 0.0);
     }
   }
   Diagnostics() = default; // Careful! Only for creating placeholders in views
