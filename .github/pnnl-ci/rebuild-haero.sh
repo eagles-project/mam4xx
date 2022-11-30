@@ -41,6 +41,10 @@ echo $PRECISION " detected for PRECISION"
 export CI_HTTPS_INSTALL=1
 # SYSTEM_NAME seems to work on login nodes, but not in compute instances, so we will export manually for PNNL
 export SYSTEM_NAME=deception
+# Similarly in CI we need to configure the right module path
+# Perhpas this should just be added to HAERO directly
+. /etc/profile.d/modules.sh
+module purge
 
 ./build-haero.sh \
   $HAERO_INSTALL \
