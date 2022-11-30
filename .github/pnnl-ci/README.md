@@ -1,28 +1,30 @@
 # PNNL CI Documentation for mam4xx
-
+This is used to track any maintanence information for PNNL CI. We will also track any current TODOs/notes for developers.
+## Usage
 We currently only have 2 k8s runners, and so you must only run 2 concurrent pipelines at a time. This especially applies to when you trigger manual jobs.
 
-Since we are cloning in CI, you need to make sure that all dependent repositories are cloned under HTTPS and not SSH.
+### Skipping CI runs:
+PNNL CI will only run when you are adding new commits to an existing merge request.
 
-This is used to track any maintanence information for PNNL CI. We will also track any current TODOs/notes for developers.
+You can add `[skip-ci]` in order to prevent CI jobs from running at PNNL. TODO involves adding support for skipping CI when certain tags are present in a PR.
 
-### TODO:
-- [ ] Add support for cloning with ssh in CI
+#### TODO:
+- [ ] Add support for cloning with ssh in CI, with documentation
 - [ ] Use installed HAERO in project share to avoid re-building each time
 - [ ] Add support for a variety of paritions on Deception
 - [ ] Build HEARO without cloning mam4xx in CI step
-- [ ] Add way to skip CI using a GitHub tag
-- [ ] Add way to skip CI using a commit message
+- [ ] Add way to skip CI using a GitHub tag in both GitLab and GitHub
 - [ ] Ensure that pipelines are not false positive/negative
 - [ ] Port pipeline to AMD architectures
 
-### Done:
+#### Done:
 - [x] Only run 2 jobs at a time as we only have 2 runners
 - [x] Only run PNNL CI in PRs
 - [x] Refactor CI YAML to remove duplication across scripts
 - [x] Support full matrix of build types (single, double etc.)
 - [x] Rebuild HAERO in manual pipeline
 - [x] Add CMake / ctest configuration in CI
+- [x] Add way to skip CI using a commit message
 
 ## Access Token
 @CameronRutherford currently maintains the access token used to enable GitHub mirroring. 
@@ -31,7 +33,7 @@ This token is set to expire in one year, and someone will need to ensure that th
 ## PNNL Site Config
 We have manually configured PNNL CI to point to the YAML file in `/.github/pnnl-ci/pnnl.gitlab-ci.yml`. Make sure to re-configure this when refreshing connection.
 
-## GitHub/GitLab configuration
+## GitHub/GitLab Integration
 You need to generate a Personal Access Token (PAT) through GitHub project before starting this process.
 
 Steps:
