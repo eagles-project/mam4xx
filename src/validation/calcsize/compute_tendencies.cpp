@@ -22,7 +22,7 @@ void compute_tendencies(Ensemble *ensemble) {
     // Fetch ensemble parameters
 
     Real dt = input.get("dt");
-    Real t = input.get("t");
+    Real t = 0;
 
     int nlev = 1;
     Real pblh = 1000;
