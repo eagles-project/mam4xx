@@ -491,7 +491,7 @@ void aitken_accum_exchange(const int &k, const int &aitken_idx,
                            const Real &drv_c_aitsv, const Real &num_c_aitsv,
                            const Real &drv_i_accsv, const Real &num_i_accsv,
                            const Real &drv_c_accsv, const Real &num_c_accsv,
-                           Diagnostics diagnostics, Tendencies tendencies) {
+                           const Diagnostics& diagnostics, const Tendencies& tendencies) {
   //   // NOTE: skipping the existence checks and index verification for now
   // Real voltonum_ait =
   //     v2nnom_nmodes[aitken_idx]; // volume to number for aitken mode

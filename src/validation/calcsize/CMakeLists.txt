@@ -11,7 +11,8 @@ add_executable(calcsize_driver calcsize_driver.cpp
                compute_dry_volume.cpp
                adjust_num_sizes.cpp
                update_diameter_and_vol2num.cpp
-               compute_tendencies.cpp)
+               compute_tendencies.cpp
+               aitken_accum_exchange.cpp)
 target_link_libraries(calcsize_driver skywalker;validation;${HAERO_LIBRARIES})
 
 
@@ -35,7 +36,8 @@ foreach (input
          adjust_num_sizes_case2
          update_diameter_and_vol2num_case1
          calcsize_e3sm
-         compute_dry_volume_case1)
+         compute_dry_volume_case1
+         aitken_accum_exchange_case1)
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
   configure_file(

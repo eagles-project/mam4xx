@@ -25,6 +25,7 @@ void compute_dry_volume_k(Ensemble *ensemble);
 void adjust_num_sizes(Ensemble *ensemble);
 void update_diameter_and_vol2num(Ensemble *ensemble);
 void compute_tendencies(Ensemble *ensemble);
+void aitken_accum_exchange(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -58,6 +59,8 @@ int main(int argc, char **argv) {
       update_diameter_and_vol2num(ensemble);
     } else if (func_name == "compute_tendencies") {
       compute_tendencies(ensemble);
+    } else if (func_name == "aitken_accum_exchange") {
+      aitken_accum_exchange(ensemble);
     }
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
