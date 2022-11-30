@@ -49,7 +49,7 @@ Since this integration is automatically configured through GitLab premium, pipel
 
 There is a way to orchestrate this pipeline posting through non-premium GitLab as well - https://ecp-ci.gitlab.io/docs/guides/build-status-gitlab.html
 
-## Scipts
+## Scripts
 There are shared environment variables that are propogated across both scripts, and each job shares the same template in order to reduce code duplication.
 
 The shared variables are:
