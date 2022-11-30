@@ -150,21 +150,13 @@ Deception Double Precision:
 
 # HAERO rebuild will have 4 total jobs, and users should only run 2 at a time
 # As such the haero staged jobs will only run 2 at a time, and will only run when manually triggered
-Rebuild HAERO:
-  stage: .pre
-  when: manual
-  allow_failure: false
-  variables:
-    GIT_STRATEGY: none
-
 Rebuild HAERO Single Precision:
-  dependencies:
-    - 'Rebuild HAERO'
+  allow_failure: false
+  when: manual
   stage: haero-single
   parallel:
     matrix:
       - BUILD_TYPE: [Debug, Release]
-  when: manual
   variables:
     PRECISION: single
     SLURM_Q: "dl_shared"
@@ -180,7 +172,6 @@ Rebuild HAERO Double Precision:
   parallel:
     matrix:
       - BUILD_TYPE: [Debug, Release]
-  when: manual
   variables:
     PRECISION: double
     SLURM_Q: "dl_shared"
