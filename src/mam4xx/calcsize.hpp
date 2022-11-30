@@ -30,9 +30,9 @@ density  volume = mmr/density
 
 KOKKOS_INLINE_FUNCTION
 void compute_dry_volume_k(int k, int imode, const Real inv_density[4][7],
-                          const Prognostics &prognostics, // in
-                          Real &dryvol_i,                 // out
-                          Real &dryvol_c)                 // out
+                          const Prognostics& prognostics, // in
+                          Real& dryvol_i,                 // out
+                          Real& dryvol_c)                 // out
 {
   const auto q_i = prognostics.q_aero_i;
   const auto q_c = prognostics.q_aero_c;
@@ -61,10 +61,10 @@ void compute_dry_volume_k(int k, int imode, const Real inv_density[4][7],
 KOKKOS_INLINE_FUNCTION
 void get_relaxed_v2n_limits(const bool do_aitacc_transfer,
                             const bool is_aitken_mode, const bool is_accum_mode,
-                            Real &v2nmin,   // in
-                            Real &v2nmax,   // in
-                            Real &v2nminrl, // out
-                            Real &v2nmaxrl) // out
+                            Real& v2nmin,   // in
+                            Real& v2nmax,   // in
+                            Real& v2nminrl, // out
+                            Real& v2nmaxrl) // out
 {
   /*
    * Relaxation factor is currently assumed to be a factor of 3 in diameter
@@ -130,9 +130,9 @@ void get_relaxed_v2n_limits(const bool do_aitacc_transfer,
  *--------------------------------------------------------------------------*/
 KOKKOS_INLINE_FUNCTION
 void update_diameter_and_vol2num(/*std::size_t klev, std::size_t imode, */
-                                 const Real &drv, const Real &num, Real v2nmin,
+                                 const Real& drv, const Real& num, Real v2nmin,
                                  Real v2nmax, Real dgnmin, Real dgnmax,
-                                 Real cmn_factor, Real &dgncur, Real &v2ncur) {
+                                 Real cmn_factor, Real& dgncur, Real& v2ncur) {
   const auto drv_gt_0 = drv > 0.0;
   if (!drv_gt_0)
     return;
@@ -161,14 +161,14 @@ void update_diameter_and_vol2num(/*std::size_t klev, std::size_t imode, */
 
 KOKKOS_INLINE_FUNCTION
 // rename to match ported fortran version
-static Real update_num_adj_tends(const Real &num, const Real &num0,
-                                 const Real &dt_inverse) {
+static Real update_num_adj_tends(const Real& num, const Real& num0,
+                                 const Real& dt_inverse) {
   return (num - num0) * dt_inverse;
 }
 
 KOKKOS_INLINE_FUNCTION
-static Real min_max_bounded(const Real &drv, const Real &v2nmin,
-                            const Real &v2nmax, const Real &num) {
+static Real min_max_bounded(const Real& drv, const Real& v2nmin,
+                            const Real& v2nmax, const Real& num) {
   return max(drv * v2nmin, min(drv * v2nmax, num));
 }
 
@@ -177,12 +177,12 @@ static Real min_max_bounded(const Real &drv, const Real &v2nmin,
  * comments.
  */
 KOKKOS_INLINE_FUNCTION
-void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
-                      const Real &init_num_i, const Real &init_num_c,
-                      const Real &dt, const Real &v2nmin, const Real &v2nmax,
-                      const Real &v2nminrl, const Real &v2nmaxrl,
-                      const Real &adj_tscale_inv, const Real &close_to_one,
-                      Real &num_i, Real &num_c, Real &dqdt, Real &dqqcwdt) {
+void adjust_num_sizes(const Real& drv_i, const Real& drv_c,
+                      const Real& init_num_i, const Real& init_num_c,
+                      const Real& dt, const Real& v2nmin, const Real& v2nmax,
+                      const Real& v2nminrl, const Real& v2nmaxrl,
+                      const Real& adj_tscale_inv, const Real& close_to_one,
+                      Real& num_i, Real& num_c, Real& dqdt, Real& dqqcwdt) {
 
   // intent-ins
   // real(wp), intent(in) :: drv_i, drv_c      dry volumes [TODO:units]
@@ -414,9 +414,9 @@ void compute_coef_ait_acc_transfer(const int iacc,             // in
                                    const Real num_a_aitsv,     // in
                                    const Real num_c_aitsv,     // in
                                    const Real voltonum_acc,    // in
-                                   int &ait2acc_index,         // out
-                                   Real &xfercoef_num_ait2acc, // out
-                                   Real &xfercoef_vol_ait2acc, // out
+                                   int& ait2acc_index,         // out
+                                   Real& xfercoef_num_ait2acc, // out
+                                   Real& xfercoef_vol_ait2acc, // out
                                    Real xfertend_num[2][2]     // out
 ) {
 
@@ -492,12 +492,12 @@ void compute_coef_ait_acc_transfer(const int iacc,             // in
 KOKKOS_INLINE_FUNCTION
 void compute_coef_acc_ait_transfer(
     int iacc, int klev, const Real v2n_geomean, const Real adj_tscale_inv,
-    const Prognostics &prognostics, const Real drv_a_accsv,
+    const Prognostics& prognostics, const Real drv_a_accsv,
     const Real drv_c_accsv, const Real num_a_accsv, const Real num_c_accsv,
     const bool no_transfer_acc2ait[7], const Real voltonum_ait,
-    const Real inv_density[4][7], const Real v2nmin_nmodes[4], Real &drv_a_noxf,
-    Real &drv_c_noxf, int &acc2_ait_index, Real &xfercoef_num_acc2ait,
-    Real &xfercoef_vol_acc2ait, Real xfertend_num[2][2]) {
+    const Real inv_density[4][7], const Real v2nmin_nmodes[4], Real& drv_a_noxf,
+    Real& drv_c_noxf, int& acc2_ait_index, Real& xfercoef_num_acc2ait,
+    Real& xfercoef_vol_acc2ait, Real xfertend_num[2][2]) {
   // TODO
   //  v2nmin_nmodes is not an input in the mam subrotine.
   //  check xfertend_num
@@ -624,7 +624,7 @@ void compute_new_sz_after_transfer(
     const Real dgn_nmodes_lo,           // in dgnmin_nmodes(imode)
     const Real dgn_nmodes_nom,          // in dgnnom_nmodes(imode)
     const Real cmn_factor_nmodes_imode, // in cmn_factor_nmodes(imode)
-    Real &dgncur, Real &v2ncur) {
+    Real& dgncur, Real& v2ncur) {
 
   // intent-ins
   // integer,  intent(in) :: imode
@@ -633,10 +633,10 @@ void compute_new_sz_after_transfer(
   //! intent-outs
   // real(wp), intent(inout) :: dgncur, v2ncur
   //  Note that we did not pass imode.
-  // FIXME: E3Sm uses the following expressions for voltonumbhi and voltonumblo. 
+  // FIXME: E3Sm uses the following expressions for voltonumbhi and voltonumblo.
   // Note that voltonumbhi uses dgn_nmodes_hi and voltonumblo uses dgn_nmodes_lo
   // In other part of e3sm voltonumbhi is computed with dgn_nmodes_lo and voltonumblo
-  // with dgn_nmodes_hi.  
+  // with dgn_nmodes_hi.
 
   const Real voltonumbhi = 1. / pow(cmn_factor_nmodes_imode*dgn_nmodes_hi,3.0);
   const Real voltonumblo = 1. / pow(cmn_factor_nmodes_imode*dgn_nmodes_lo,3.0);
@@ -663,8 +663,8 @@ void compute_new_sz_after_transfer(
 } // end subroutine compute_new_sz_after_transfer
 
 KOKKOS_INLINE_FUNCTION
-void update_num_tends(const int jmode, const int aer_type, Real &dqdt_src,
-                      Real &dqdt_dest, const Real xfertend_num[2][2]) {
+void update_num_tends(const int jmode, const int aer_type, Real& dqdt_src,
+                      Real& dqdt_dest, const Real xfertend_num[2][2]) {
   // !intent ins
   // integer,  intent(in) :: klev, jmode, isrc, idest, aer_type
   // real(wp), intent(in) :: xfertend_num(:,:)
@@ -689,11 +689,10 @@ void update_tends_flx(
     const int src_mode_ixd,  // in
     const int dest_mode_ixd, // in
     const int n_common_species_ait_accum,
-    const int *src_species_idx, // 
+    const int *src_species_idx, //
     const int *dest_species_idx,
     const Real xfertend_num[2][2], const Real xfercoef,
     const Prognostics &prognostics, const Tendencies &tendencies) {
-
   // intent - ins
   //  integer,  intent(in) :: klev, jmode
   //  integer,  intent(in) :: src_num_mode_inter(0:maxpair_csizxf),
@@ -770,21 +769,18 @@ void update_tends_flx(
  */
 KOKKOS_INLINE_FUNCTION
 void aitken_accum_exchange(
-    const int &k, const int &aitken_idx, const int &accum_idx,
-    const bool no_transfer_acc2ait[7],
-    const int n_common_species_ait_accum,
-    const int *ait_spec_in_acc,
-    const int *acc_spec_in_ait,
+    const int& k, const int& aitken_idx, const int& accum_idx,
+    const bool no_transfer_acc2ait[7], const int n_common_species_ait_accum,
+    const int* ait_spec_in_acc, const int* acc_spec_in_ait,
     const Real v2nmax_nmodes[4], const Real v2nmin_nmodes[4],
     const Real v2nnom_nmodes[4], const Real dgnmax_nmodes[4],
     const Real dgnmin_nmodes[4], const Real dgnnom_nmodes[4],
     const Real cmn_factor_nmodes[4], const Real inv_density[4][7],
-    const Real &adj_tscale_inv, const Real &dt, const Prognostics &prognostics,
-    const Real &drv_i_aitsv, const Real &num_i_aitsv, const Real &drv_c_aitsv,
-    const Real &num_c_aitsv, const Real &drv_i_accsv, const Real &num_i_accsv,
-    const Real &drv_c_accsv, const Real &num_c_accsv, 
-    const Diagnostics &diagnostics, const Tendencies &tendencies) {
-
+    const Real& adj_tscale_inv, const Real& dt, const Prognostics& prognostics,
+    const Real& drv_i_aitsv, const Real& num_i_aitsv, const Real& drv_c_aitsv,
+    const Real& num_c_aitsv, const Real& drv_i_accsv, const Real& num_i_accsv,
+    const Real& drv_c_accsv, const Real& num_c_accsv,
+    const Diagnostics& diagnostics, const Tendencies& tendencies) {
 
   // -----------------------------------------------------------------------------
   // Purpose: Exchange aerosols between aitken and accumulation modes based on
@@ -797,18 +793,17 @@ void aitken_accum_exchange(
   // Ported to C++/Kokkos by: Oscar Diaz-Ibarra and Michael Schmidt
   // -----------------------------------------------------------------------------
 
-  Real& dgncur_a_aitken = diagnostics.dgncur_i[aitken_idx](k); 
-  Real& dgncur_a_accum  = diagnostics.dgncur_i[accum_idx](k);
+  Real& dgncur_a_aitken = diagnostics.dgncur_i[aitken_idx](k);
+  Real& dgncur_a_accum = diagnostics.dgncur_i[accum_idx](k);
 
-  Real& dgncur_c_aitken = diagnostics.dgncur_c[aitken_idx](k); 
-  Real& dgncur_c_accum  = diagnostics.dgncur_c[accum_idx](k);
+  Real& dgncur_c_aitken = diagnostics.dgncur_c[aitken_idx](k);
+  Real& dgncur_c_accum = diagnostics.dgncur_c[accum_idx](k);
 
   Real& v2ncur_c_accum = diagnostics.v2ncur_c[accum_idx](k);
-  Real& v2ncur_a_accum =  diagnostics.v2ncur_i[accum_idx](k);
+  Real& v2ncur_a_accum = diagnostics.v2ncur_i[accum_idx](k);
 
-  Real& v2ncur_c_aitken = diagnostics.v2ncur_c[aitken_idx](k); 
-  Real& v2ncur_a_aitken = diagnostics.v2ncur_i[aitken_idx](k); 
-
+  Real& v2ncur_c_aitken = diagnostics.v2ncur_c[aitken_idx](k);
+  Real& v2ncur_a_aitken = diagnostics.v2ncur_i[aitken_idx](k);
 
   const Real voltonum_ait =
       v2nnom_nmodes[aitken_idx]; // volume to number for aitken mode
@@ -912,8 +907,7 @@ void aitken_accum_exchange(
         v2nmax_nmodes[aitken_idx], v2nmin_nmodes[aitken_idx],
         v2nnom_nmodes[aitken_idx], dgnmax_nmodes[aitken_idx],
         dgnmin_nmodes[aitken_idx], dgnnom_nmodes[aitken_idx],
-        cmn_factor_nmodes[aitken_idx], dgncur_a_aitken,
-        v2ncur_a_aitken);
+        cmn_factor_nmodes[aitken_idx], dgncur_a_aitken, v2ncur_a_aitken);
 
     // !cloud borne species (aitken mode)
 
@@ -923,9 +917,7 @@ void aitken_accum_exchange(
         v2nmax_nmodes[aitken_idx], v2nmin_nmodes[aitken_idx],
         v2nnom_nmodes[aitken_idx], dgnmax_nmodes[aitken_idx],
         dgnmin_nmodes[aitken_idx], dgnnom_nmodes[aitken_idx],
-        cmn_factor_nmodes[aitken_idx], dgncur_c_aitken,
-        v2ncur_c_aitken);
-
+        cmn_factor_nmodes[aitken_idx], dgncur_c_aitken, v2ncur_c_aitken);
 
     // interstitial species (accumulation mode)
     compute_new_sz_after_transfer(
@@ -934,8 +926,7 @@ void aitken_accum_exchange(
         v2nmax_nmodes[accum_idx], v2nmin_nmodes[accum_idx],
         v2nnom_nmodes[accum_idx], dgnmax_nmodes[accum_idx],
         dgnmin_nmodes[accum_idx], dgnnom_nmodes[accum_idx],
-        cmn_factor_nmodes[accum_idx], dgncur_a_accum,
-        v2ncur_a_accum);
+        cmn_factor_nmodes[accum_idx], dgncur_a_accum, v2ncur_a_accum);
 
     // call compute_new_sz_after_transfer(iacc, drv_a, num_a, &
     //      dgncur_a(klev,iacc), v2ncur_a(klev,iacc))
@@ -949,8 +940,7 @@ void aitken_accum_exchange(
         v2nmax_nmodes[accum_idx], v2nmin_nmodes[accum_idx],
         v2nnom_nmodes[accum_idx], dgnmax_nmodes[accum_idx],
         dgnmin_nmodes[accum_idx], dgnnom_nmodes[accum_idx],
-        cmn_factor_nmodes[accum_idx], dgncur_c_accum,
-        v2ncur_c_accum);
+        cmn_factor_nmodes[accum_idx], dgncur_c_accum, v2ncur_c_accum);
     // !------------------------------------------------------------------
     // ! compute tendency amounts for aitken <--> accum transfer
     // !------------------------------------------------------------------
@@ -962,12 +952,12 @@ void aitken_accum_exchange(
       // in cases are equal
 
       update_tends_flx(
-          k,               // in
-          jmode,           // in
-          aitken_idx,      // in src=> aitken
-          accum_idx,       // in dest => accumulation
+          k,                          // in
+          jmode,                      // in
+          aitken_idx,                 // in src=> aitken
+          accum_idx,                  // in dest => accumulation
           n_common_species_ait_accum, // in
-          ait_spec_in_acc, // defined in aero_modes - src => aitken
+          ait_spec_in_acc,            // defined in aero_modes - src => aitken
           acc_spec_in_ait, // defined in aero_modes - src => accumulation
           xfertend_num, xfercoef_vol_ait2acc, prognostics, tendencies);
     } // end ait2acc_index
@@ -981,17 +971,16 @@ void aitken_accum_exchange(
       // xfercoef_vol_ait2acc in this call as we are !doing accum->aitken
       // transfer
       update_tends_flx(
-          k,               // in
-          jmode,           // in
-          accum_idx,       // in src=> accumulation
-          aitken_idx,      // in dest => aitken
+          k,          // in
+          jmode,      // in
+          accum_idx,  // in src=> accumulation
+          aitken_idx, // in dest => aitken
           n_common_species_ait_accum,
           acc_spec_in_ait, // defined in aero_modes - src => accumulation
           ait_spec_in_acc, // defined in aero_modes - src => aitken
           xfertend_num, xfercoef_vol_acc2ait, prognostics, tendencies);
     } // end  acc2_ait_index
   }   // !ait2acc_index+acc2_ait_index > 0
-
 
 } // aitken_accum_exchange
 
@@ -1011,15 +1000,17 @@ public:
     Config() :
         do_aitacc_transfer(true), do_adjust(true) {}
 
-    Config(const Config &) = default;
+    Config(const Config&) = default;
     ~Config() = default;
-    Config &operator=(const Config &) = default;
+    Config& operator=(const Config&) = default;
   };
 
 private:
   Config config_;
 
-  Real v2nmin_nmodes[AeroConfig::num_modes()], v2nmax_nmodes[AeroConfig::num_modes()], v2nnom_nmodes[AeroConfig::num_modes()];
+  Real v2nmin_nmodes[AeroConfig::num_modes()],
+      v2nmax_nmodes[AeroConfig::num_modes()],
+      v2nnom_nmodes[AeroConfig::num_modes()];
   // v2nnom_nmodes[4];
   // Mode parameters
   Real dgnnom_nmodes[AeroConfig::num_modes()], // mean geometric number diameter
@@ -1033,26 +1024,28 @@ private:
 
   Real _inv_density[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
 
-  // is the species present in both accum and aitken modes? 
+  // is the species present in both accum and aitken modes?
   // boolean view indicating which species will be transferred from
-    // accumulation -> aitken indexed to accumulation mode (because it carries
-    // more species)
-  const bool _no_transfer_acc2ait[7]= {true,  false, true, false, false, true,  true};; 
-  // number of common species between accum and aitken modes 
-  const int _n_common_species_ait_accum=4;
+  // accumulation -> aitken indexed to accumulation mode (because it carries
+  // more species)
+  const bool _no_transfer_acc2ait[7] = {true,  false, true, false,
+                                        false, true,  true};
+  ;
+  // number of common species between accum and aitken modes
+  const int _n_common_species_ait_accum = 4;
   // index of aitken species in accum mode.
   const int _ait_spec_in_acc[4] = {0, 1, 2, 3};
   // index of accum species in aitken mode.
-  const int _acc_spec_in_ait[4]= {0, 2, 5, 6};
+  const int _acc_spec_in_ait[4] = {0, 2, 5, 6};
 
 public:
   // name -- unique name of the process implemented by this class
-  const char *name() const { return "MAM4 calcsize"; }
+  const char* name() const { return "MAM4 calcsize"; }
 
   // init -- initializes the implementation with MAM4's configuration and with
   // a process-specific configuration.
-  void init(const AeroConfig &aero_config,
-            const Config &calcsize_config = Config()) {
+  void init(const AeroConfig& aero_config,
+            const Config& calcsize_config = Config()) {
     // Set nucleation-specific config parameters.
     config_ = calcsize_config;
 
@@ -1088,14 +1081,14 @@ public:
 
     } // for(m)
 
-  } // end(int)
+  } // end(init)
 
   KOKKOS_INLINE_FUNCTION
-  void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
-                          Real t, Real dt, const Atmosphere &atmosphere,
-                          const Prognostics &prognostics,
-                          const Diagnostics &diagnostics,
-                          const Tendencies &tendencies) const {
+  void compute_tendencies(const AeroConfig& config, const ThreadTeam& team,
+                          Real t, Real dt, const Atmosphere& atmosphere,
+                          const Prognostics& prognostics,
+                          const Diagnostics& diagnostics,
+                          const Tendencies& tendencies) const {
 
     const bool do_aitacc_transfer = config_.do_aitacc_transfer;
     const bool do_adjust = config_.do_adjust;
@@ -1104,16 +1097,21 @@ public:
     const int accumulation_idx = int(ModeIndex::Accumulation);
     const int nmodes = AeroConfig::num_modes();
     const int nk = atmosphere.num_levels();
+
+    auto &dgncur_i = diagnostics.dgncur_i;
+    auto &v2ncur_i = diagnostics.v2ncur_i;
+    auto &dgncur_c = diagnostics.dgncur_c;
+    auto &v2ncur_c = diagnostics.v2ncur_c;
     const auto inv_density = _inv_density;
     const Real zero = 0;
     const Real close_to_one = 1.0 + 1.0e-15; // BAD_CONSTANT!!
     const Real seconds_in_a_day = 86400.0; // BAD_CONSTANT!!
     //
-    const auto acc_spec_in_ait=_acc_spec_in_ait;
-    const auto ait_spec_in_acc=_ait_spec_in_acc;
-    const auto n_common_species_ait_accum=_n_common_species_ait_accum;
+    const auto acc_spec_in_ait = _acc_spec_in_ait;
+    const auto ait_spec_in_acc = _ait_spec_in_acc;
+    const auto n_common_species_ait_accum = _n_common_species_ait_accum;
     const auto no_transfer_acc2ait = _no_transfer_acc2ait;
-    
+
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
           const auto n_i = prognostics.n_mode_i;
@@ -1127,12 +1125,12 @@ public:
 
           // diameter for interstitial aerosols
           auto dgncur_i = diagnostics.dgncur_i;
-          // volumen to number ratio for interstitial aerosols 
+          // volumen to number ratio for interstitial aerosols
           auto v2ncur_i = diagnostics.v2ncur_i;
           // diameter for cloud-borne aerosols
           auto dgncur_c = diagnostics.dgncur_c;
-          // volumen to number ratio for cloud-borne aerosols 
-          auto v2ncur_c = diagnostics.v2ncur_c;         
+          // volumen to number ratio for cloud-borne aerosols
+          auto v2ncur_c = diagnostics.v2ncur_c;
 
           Real dryvol_i = 0;
           Real dryvol_c = 0;
@@ -1203,13 +1201,15 @@ public:
 
             // dry volume is set to zero inside compute_dry_volume_k
             //----------------------------------------------------------------------
-            //Compute dry volume mixrats (aerosol diameter)
-            //Current default: number mmr is prognosed
-            //       Algorithm:calculate aerosol diameter from mass, number, and fixed sigmag
+            // Compute dry volume mixrats (aerosol diameter)
+            // Current default: number mmr is prognosed
+            //       Algorithm:calculate aerosol diameter from mass, number, and
+            //       fixed sigmag
             //
-            //sigmag ("sigma g") is "geometric standard deviation for aerosol mode"
+            // sigmag ("sigma g") is "geometric standard deviation for aerosol
+            // mode"
             //
-            //Volume = sum_over_components{ component_mass mixrat / density }
+            // Volume = sum_over_components{ component_mass mixrat / density }
             //----------------------------------------------------------------------
             // dryvol_i, dryvol_c are set to zero inside compute_dry_volume_k
             calcsize::compute_dry_volume_k(k, imode, inv_density, prognostics,
@@ -1273,8 +1273,8 @@ public:
 
               // number tendencies to be updated by adjust_num_sizes subroutine
 
-              auto &interstitial_tend = dnidt[imode](k);
-              auto &cloudborne_tend = dncdt[imode](k);
+              auto& interstitial_tend = dnidt[imode](k);
+              auto& cloudborne_tend = dncdt[imode](k);
 
               /*NOTE: Only number tendencies (NOT mass mixing ratios) are
                updated in adjust_num_sizes Effect of these adjustment will be
@@ -1290,16 +1290,16 @@ public:
 
             // update diameters and volume to num ratios for interstitial
             // aerosols
-            auto &dgncur_i_k = dgncur_i[imode](k);
-            auto &v2ncur_i_k = v2ncur_i[imode](k);
+            auto& dgncur_i_k = dgncur_i[imode](k);
+            auto& v2ncur_i_k = v2ncur_i[imode](k);
 
             calcsize::update_diameter_and_vol2num(
                 dryvol_i, num_i_k, v2nmin, v2nmax, dgnmin, dgnmax,
                 common_factor, dgncur_i_k, v2ncur_i_k);
 
             // update diameters and volume to num ratios for cloudborne aerosols
-            auto &dgncur_c_k = dgncur_c[imode](k);
-            auto &v2ncur_c_k = v2ncur_c[imode](k);
+            auto& dgncur_c_k = dgncur_c[imode](k);
+            auto& v2ncur_c_k = v2ncur_c[imode](k);
             calcsize::update_diameter_and_vol2num(
                 dryvol_c, num_c_k, v2nmin, v2nmax, dgnmin, dgnmax,
                 common_factor, dgncur_c_k, v2ncur_c_k);
@@ -1345,18 +1345,17 @@ public:
 
             calcsize::aitken_accum_exchange(
                 k, aitken_idx, accumulation_idx,
-                no_transfer_acc2ait, n_common_species_ait_accum, 
+                no_transfer_acc2ait, n_common_species_ait_accum,
                 ait_spec_in_acc, acc_spec_in_ait,
                  v2nmax_nmodes, v2nmin_nmodes,
                 v2nnom_nmodes, dgnmax_nmodes, dgnmin_nmodes, dgnnom_nmodes,
                 common_factor_nmodes, inv_density, adj_tscale_inv, dt,
                 prognostics, dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv,
                 num_c_k_aitsv, dryvol_i_accsv, num_i_k_accsv, dryvol_c_accsv,
-                num_c_k_accsv, 
+                num_c_k_accsv,
                 diagnostics, tendencies);
 
           } // end do_aitacc_transfer
-
         }); // kokkos::parfor(k)
   }
 
