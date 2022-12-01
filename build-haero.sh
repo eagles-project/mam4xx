@@ -71,35 +71,9 @@ if [[ -d $(pwd)/.haero ]]; then
   rm -rf $(pwd)/.haero
 fi
 echo "Cloning Haero repository into $(pwd)/.haero..."
-
-# Need to clone HAERO in different ways depending on if we are using CI or not
-if [[ "$CI_HTTPS_INSTALL" == 1 ]]; then
-
-  # Use HTTPS instead of SSH
-  git clone https://github.com/eagles-project/haero.git .haero || exit
-  cd .haero || exit
-
-  # Need to modify .gitmodules file before cloning 
-  perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules || exit
-  # Update just haero submodules
-  git submodule update --init || exit
-
-  # Go through and repeat the process for submodules with submodules
-  declare -a arr=("ekat" "skywalker")
-  for subm in "${arr[@]}"
-  do
-    pushd ./ext/$subm
-    perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules || exit
-    git submodule update --init || exit
-    popd
-  done
-
-else
-  # Use SSH
-  git clone git@github.com:eagles-project/haero.git .haero || exit
-  cd .haero || exit
-  git submodule update --init --recursive || exit
-fi
+git clone git@github.com:eagles-project/haero.git .haero || exit
+cd .haero || exit
+git submodule update --init --recursive || exit
 
 # Are we on a special machine?
 cd machines

@@ -35,22 +35,135 @@ cleanup() {
 echo $BUILD_TYPE " detected for BUILD_TYPE"
 echo $HAERO_INSTALL " detected for HAERO install location"
 echo $PRECISION " detected for PRECISION"
+echo $SYSTEM_NAME " is the target cluster"
 
-# Since we are using CI, we must set environment variable
-# This clones submodules manually over HTTPS instead of using SSH
-export CI_HTTPS_INSTALL=1
-# SYSTEM_NAME seems to work on login nodes, but not in compute instances, so we will export manually for PNNL
-export SYSTEM_NAME=deception
-# Similarly in CI we need to configure the right module path
-# Perhpas this should just be added to HAERO directly
-. /etc/profile.d/modules.sh
-module purge
+PREFIX=$HAERO_INSTALL
+DEVICE=gpu
+PRECISION=$PRECISION
+BUILD_TYPE=$BUILD_TYPE
 
-./build-haero.sh \
-  $HAERO_INSTALL \
-  gpu \
-  $PRECISION \
-  $BUILD_TYPE
+# Default compilers (can be overridden by environment variables)
+if [[ -z $CC ]]; then
+  CC=cc
+fi
+if [[ -z $CXX ]]; then
+  CXX=c++
+fi
+
+if [[ "$PREFIX" == "" ]]; then
+  echo "Haero installation prefix was not specified!"
+  echo "Usage: $0 <prefix> <device> <precision> <build_type>"
+  exit
+fi
+
+# Set defaults.
+if [[ "$DEVICE" == "" ]]; then
+  DEVICE=cpu
+  echo "No device specified. Selected cpu."
+fi
+if [[ "$PRECISION" == "" ]]; then
+  PRECISION=double
+  echo "No floating point precision specified. Selected double."
+fi
+if [[ "$BUILD_TYPE" == "" ]]; then
+  BUILD_TYPE=Debug
+  echo "No build type specified. Selected Debug."
+fi
+
+# Validate options
+if [[ "$DEVICE" != "cpu" && "$DEVICE" != "gpu" ]]; then
+  echo "Invalid device specified: $DEVICE"
+  exit
+fi
+if [[ "$PRECISION" != "single" && "$PRECISION" != "double" ]]; then
+  echo "Invalid precision specified: $PRECISION (must be single or double)"
+  exit
+fi
+if [[ "$BUILD_TYPE" != "Debug" && "$BUILD_TYPE" != "Release" ]]; then
+  echo "Invalid optimization specified: $BUILD_TYPE (must be Debug or Release)"
+  exit
+fi
+
+# Clone a fresh copy Haero in the current directory. Delete any existing copy.
+if [[ -d $(pwd)/.haero ]]; then
+  rm -rf $(pwd)/.haero
+fi
+echo "Cloning Haero repository into $(pwd)/.haero..."
+
+# Need to clone HAERO using HTTPS instead of SSH
+git clone https://github.com/eagles-project/haero.git .haero || exit
+cd .haero || exit
+
+# Checkout custom branch where working changes are
+# TODO - REMOVE ONCE MERGED INTO HAERO
+git checkout origin/deception-testing-ci || exit
+
+# Need to modify .gitmodules file before cloning 
+perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules || exit
+# Update just haero submodules
+git submodule update --init || exit
+
+# Go through and repeat the process for submodules with submodules
+declare -a arr=("ekat" "skywalker")
+for subm in "${arr[@]}"
+do
+  pushd ./ext/$subm
+  perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules || exit
+  git submodule update --init || exit
+  popd
+done
+
+# Are we on a special machine?
+cd machines
+echo $(pwd)
+for MACHINE_FILE in $(ls)
+do
+  MACHINE=${MACHINE_FILE/\.sh/}
+  echo $MACHINE
+  echo `hostname` | grep -q "$MACHINE" 
+  host_match=$?
+  echo $SYSTEM_NAME | grep -q "$MACHINE"
+  sys_match=$?
+  if  [ $host_match -eq 0 ] || [ $sys_match -eq 0 ]; then
+    echo "Found machine file $MACHINE_FILE. Setting up environment for $MACHINE..."
+    source ./$MACHINE.sh
+  fi
+done
+
+cd ../..
+
+# Configure Haero with the given selections.
+if [[ "$DEVICE" == "gpu" ]]; then
+  ENABLE_GPU=ON
+else
+  ENABLE_GPU=OFF
+fi
+
+echo "Configuring Haero with the given selections (WITHOUT MPI)..."
+cmake -S ./.haero -B ./.haero/build \
+  -C ./mam4xx-git/.github/pnnl-ci/deception-cache.cmake \
+  -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+  -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+  -DHAERO_ENABLE_MPI=OFF \
+  -DCMAKE_C_COMPILER=$CC \
+  -DCMAKE_CXX_COMPILER=$CXX \
+  -DHAERO_ENABLE_GPU=$ENABLE_GPU \
+  -DHAERO_PRECISION=$PRECISION 
 
 EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+  exit $EXIT_CODE
+fi
+
+cd ./.haero/build || exit
+echo "Building and installing Haero in $PREFIX..."
+make -j8 install
+
+EXIT_CODE=$?
+
+cd ../../
+echo "Haero has been installed in $PREFIX. Set HAERO_DIR to this directory in"
+echo "your config.sh script after running setup."
+
 exit $EXIT_CODE

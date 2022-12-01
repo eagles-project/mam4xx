@@ -40,7 +40,10 @@ variables:
     - .pnnl_script_template
     - .pnnl_after_script_template
   variables:
+  # Since we are only able to compile against one CUDA arch, we must target just dl_shared
+    SLURM_Q: "dl_shared"
     GIT_STRATEGY: clone
+    SYSTEM_NAME: deception
     HAERO_INSTALL: /qfs/projects/eagles/pnnl-ci/haero_${BUILD_TYPE}_${PRECISION}
 
 .pnnl_after_script_template:
@@ -82,6 +85,7 @@ variables:
       export HAERO_INSTALL=$HAERO_INSTALL 
       export BUILD_TYPE=$BUILD_TYPE
       export PRECISION=$PRECISION
+      export SYSTEM_NAME=$SYSTEM_NAME
 
       # jobid used in pnnl_after_script_template to cancel job if cancelled or
       # timed out by gitlab through the UI
@@ -114,7 +118,7 @@ SVC Account Cleanup:
     # Don't clone for cleanup jobs
     GIT_STRATEGY: none
   extends:
-    - .pnnl_tags_template
+    - .pnnl_nohpc_tags
   script:
     - export WORKDIR="$HOME/gitlab/"
     # clears directory of files more than 6 hours/360 minutes old
@@ -123,34 +127,34 @@ SVC Account Cleanup:
 
 # Since we only have two runners, we need to cap parallel jobs at 2
 Deception Single Precision:
+  extends:
+    - .pnnl_hpc_job_template
   stage: build-single
   parallel:
     matrix:
       - BUILD_TYPE: [Debug, Release]
   variables:
-    SLURM_Q: "dl_shared"
     WORKDIR_SUFFIX: mam4xx_${BUILD_TYPE}_${PRECISION}
     SCRIPT_NAME: ci.sh
     PRECISION: single
-  extends:
-    - .pnnl_hpc_job_template
 
 Deception Double Precision:
+  extends:
+    - .pnnl_hpc_job_template
   stage: build-double
   parallel:
     matrix:
       - BUILD_TYPE: [Debug, Release]
   variables:
-    SLURM_Q: "dl_shared"
+    PRECISION: double
     WORKDIR_SUFFIX: mam4xx_${BUILD_TYPE}_${PRECISION}
     SCRIPT_NAME: ci.sh
-    PRECISION: double
-  extends:
-    - .pnnl_hpc_job_template
 
 # HAERO rebuild will have 4 total jobs, and users should only run 2 at a time
 # As such the haero staged jobs will only run 2 at a time, and will only run when manually triggered
 Rebuild HAERO Single Precision:
+  extends:
+    - .pnnl_hpc_job_template
   allow_failure: true # This means that all stages will attempt to re-build even if one fails
   when: manual
   stage: haero-single
@@ -159,13 +163,12 @@ Rebuild HAERO Single Precision:
       - BUILD_TYPE: [Debug, Release]
   variables:
     PRECISION: single
-    SLURM_Q: "dl_shared"
     WORKDIR_SUFFIX: haero_${BUILD_TYPE}_${PRECISION}
     SCRIPT_NAME: rebuild-haero.sh
-  extends:
-    - .pnnl_hpc_job_template
 
 Rebuild HAERO Double Precision:
+  extends:
+    - .pnnl_hpc_job_template
   needs: ["Rebuild HAERO Single Precision"]
   stage: haero-double
   parallel:
@@ -173,9 +176,6 @@ Rebuild HAERO Double Precision:
       - BUILD_TYPE: [Debug, Release]
   variables:
     PRECISION: double
-    SLURM_Q: "dl_shared"
     WORKDIR_SUFFIX: haero_${BUILD_TYPE}_${PRECISION}
     SCRIPT_NAME: rebuild-haero.sh
-  extends:
-    - .pnnl_hpc_job_template
 # ---

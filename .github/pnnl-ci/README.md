@@ -1,7 +1,11 @@
 # PNNL CI Documentation for mam4xx
 This is used to track any maintanence information for PNNL CI. We will also track any current TODOs/notes for developers.
 ## Usage
-We currently only have 2 k8s runners, and so you must only run 2 concurrent pipelines at a time. This especially applies to when you trigger manual jobs.
+We currently only have 2 k8s runners, and so you must only run 2 concurrent pipelines at a time.
+
+Since we are only able to target one Kokkos CUDA arch at a time https://github.com/kokkos/kokkos/issues/4953, we can only run CI on one Deception partition.
+
+**NOTE: Since we require CI to run on only one partition, CI might not always go through if Deception partition `dl_shared` is particularly busy.**
 
 ### Skipping CI runs:
 PNNL CI will only run when you are adding new commits to an existing merge request.
@@ -10,11 +14,9 @@ You can add `[skip-ci]` in order to prevent CI jobs from running at PNNL. TODO i
 
 #### TODO:
 - [ ] Use installed HAERO in project share to avoid re-building each time
-- [ ] Add support for a variety of paritions on Deception
+- [ ] Add support for a variety of paritions on Deception. We currently only target dl_shared as we can only choose one cuda arch.
 - [ ] Add way to skip CI using a GitHub tag in both GitLab and GitHub
-- [ ] Ensure that pipelines are not false positive/negative
 - [ ] Port pipeline to AMD architectures
-- [ ] Streamline CI rebuilding of HAERO to happen with one button (need to work around 2 max job limit)
 
 #### Done:
 - [x] Only run 2 jobs at a time as we only have 2 runners
@@ -26,6 +28,8 @@ You can add `[skip-ci]` in order to prevent CI jobs from running at PNNL. TODO i
 - [x] Add way to skip CI using a commit message
 - [x] Add support for cloning with ssh in CI, with documentation
 - [x] Build HEARO without cloning mam4xx in CI step
+- [x] Ensure that pipelines are not false positive/negative
+- [x] Streamline CI rebuilding of HAERO to happen with one button (need to work around 2 max job limit)
 
 ## Access Token
 @CameronRutherford currently maintains the access token used to enable GitHub mirroring. 
@@ -70,3 +74,7 @@ Since we are installing in GitLab pipelines, this script uses the variable `CI_H
 It does this by manually find and replacing the `.gitmodules` files in each repository where relevant with `https://.../` instead of `git@...:`.
 
 Additionally, for some reason `SYSTEM_NAME` is configured on PNNL login nodes, but when running in a job this variable proves unhelpful. As such, we export `SYSTEM_NAME=deception` in this script before running.
+
+### `deception-cache.cmake`
+
+Since there are CMake options that need to be set and do not change at runtime, we use this to specify HAERO variables for building. Really this is just the Kokkos arch, however this made passing arguments to CMake easier.
