@@ -242,7 +242,7 @@ void adjust_num_sizes(const Real& drv_i, const Real& drv_c,
   const auto drv_i_c_le_zero = drva_le_zero && drvc_le_zero;
   const Real zero = 0;
 
-  // If both interstitial (drv_a) and cloud borne (drv_c) dry volumes are zero
+  // If both interstitial (drv_i) and cloud borne (drv_c) dry volumes are zero
   // (or less) adjust numbers(num_a and num_c respectively) for both of them to
   // be zero for this mode and level
   if (drv_i_c_le_zero) {
@@ -409,9 +409,9 @@ KOKKOS_INLINE_FUNCTION
 void compute_coef_ait_acc_transfer(const int iacc,             // in
                                    const Real v2n_geomean,     // in
                                    const Real adj_tscale_inv,  // in
-                                   const Real drv_a_aitsv,     // in
+                                   const Real drv_i_aitsv,     // in
                                    const Real drv_c_aitsv,     // in
-                                   const Real num_a_aitsv,     // in
+                                   const Real num_i_aitsv,     // in
                                    const Real num_c_aitsv,     // in
                                    const Real voltonum_acc,    // in
                                    int& ait2acc_index,         // out
@@ -433,8 +433,8 @@ void compute_coef_ait_acc_transfer(const int iacc,             // in
   //     iacc
   //     v2n_geomean    !geometric mean volume to number
   //     adj_tscale_inv !inverse if the time scale
-  //     drv_a_aitsv, drv_c_aitsv !dry volume
-  //     num_a_aitsv, num_c_aitsv, voltonum_acc
+  //     drv_i_aitsv, drv_c_aitsv !dry volume
+  //     num_i_aitsv, num_c_aitsv, voltonum_acc
 
   //     !intent outs
   //     ait2acc_index
@@ -453,8 +453,8 @@ void compute_coef_ait_acc_transfer(const int iacc,             // in
 
   //     ! compute aitken --> accum transfer rates
 
-  const Real drv_t = drv_a_aitsv + drv_c_aitsv;
-  const Real num_t = num_a_aitsv + num_c_aitsv;
+  const Real drv_t = drv_i_aitsv + drv_c_aitsv;
+  const Real num_t = num_i_aitsv + num_c_aitsv;
   if (drv_t > zero) {
     // if num is less than the mean value, we have large particles (keeping
     //  volume constant drv_t) !which needs to be moved to accumulation mode
@@ -482,7 +482,7 @@ void compute_coef_ait_acc_transfer(const int iacc,             // in
       } // end num_t < drv_t*voltonum_acc
       xfercoef_num_ait2acc = xferfrac_num_ait2acc * adj_tscale_inv;
       xfercoef_vol_ait2acc = xferfrac_vol_ait2acc * adj_tscale_inv;
-      xfertend_num[0][0] = num_a_aitsv * xfercoef_num_ait2acc;
+      xfertend_num[0][0] = num_i_aitsv * xfercoef_num_ait2acc;
       xfertend_num[0][1] = num_c_aitsv * xfercoef_num_ait2acc;
     } // end num_t < drv_t*v2n_geomean
   }   // end drv_t > zero
@@ -492,10 +492,10 @@ void compute_coef_ait_acc_transfer(const int iacc,             // in
 KOKKOS_INLINE_FUNCTION
 void compute_coef_acc_ait_transfer(
     int iacc, int klev, const Real v2n_geomean, const Real adj_tscale_inv,
-    const Prognostics& prognostics, const Real drv_a_accsv,
-    const Real drv_c_accsv, const Real num_a_accsv, const Real num_c_accsv,
+    const Prognostics& prognostics, const Real drv_i_accsv,
+    const Real drv_c_accsv, const Real num_i_accsv, const Real num_c_accsv,
     const bool no_transfer_acc2ait[7], const Real voltonum_ait,
-    const Real inv_density[4][7], const Real v2nmin_nmodes[4], Real& drv_a_noxf,
+    const Real inv_density[4][7], const Real v2nmin_nmodes[4], Real& drv_i_noxf,
     Real& drv_c_noxf, int& acc2_ait_index, Real& xfercoef_num_acc2ait,
     Real& xfercoef_vol_acc2ait, Real xfertend_num[2][2]) {
   // TODO
@@ -511,14 +511,14 @@ void compute_coef_acc_ait_transfer(
   // real(wp), intent(in) :: adj_tscale_inv     !inverse if the time scale [1/s]
   // real(wp), intent(in) :: q_i(:,:), q_c(:,:) !interstitial and cldborne mix
   // ratios [kg/kg(of air)]
-  // real(wp), intent(in) :: drv_a_accsv, drv_c_accsv !dry volume
-  // real(wp), intent(in) :: num_a_accsv, num_c_accsv, voltonum_ait
+  // real(wp), intent(in) :: drv_i_accsv, drv_c_accsv !dry volume
+  // real(wp), intent(in) :: num_i_accsv, num_c_accsv, voltonum_ait
   // logical,  intent(in) :: no_transfer_acc2ait(:) !"true" for species which
   // can't be transffered
 
   // !intent - outs
   // integer,  intent(inout) :: acc2_ait_index
-  // real(wp), intent(inout) :: drv_a_noxf, drv_c_noxf
+  // real(wp), intent(inout) :: drv_i_noxf, drv_c_noxf
   // real(wp), intent(inout) :: xfercoef_num_acc2ait, xfercoef_vol_acc2ait !
   // transfer coefficients real(wp), intent(inout) :: xfertend_num(2,2)
   // !transfer tendencies
@@ -540,9 +540,9 @@ void compute_coef_acc_ait_transfer(
   xfercoef_num_acc2ait = zero;
   xfercoef_vol_acc2ait = zero;
 
-  Real drv_t = drv_a_accsv + drv_c_accsv;
-  Real num_t = num_a_accsv + num_c_accsv;
-  drv_a_noxf = zero;
+  Real drv_t = drv_i_accsv + drv_c_accsv;
+  Real num_t = num_i_accsv + num_c_accsv;
+  drv_i_noxf = zero;
   drv_c_noxf = zero;
   const auto n_spec = num_species_mode(iacc); // number of species in iacc mode
 
@@ -561,14 +561,14 @@ void compute_coef_acc_ait_transfer(
         if (no_transfer_acc2ait[ispec]) { // then !species which can't be
                                           // transferred
           // need qmass*invdens = (kg/kg-air) * [1/(kg/m3)] = m3/kg-air
-          drv_a_noxf +=
+          drv_i_noxf +=
               max(zero, q_i[iacc][ispec](klev)) * inv_density[iacc][ispec];
           drv_c_noxf +=
               max(zero, q_c[iacc][ispec](klev)) * inv_density[iacc][ispec];
         } // end if
       }   // end ispec
       drv_t_noxf =
-          drv_a_noxf +
+          drv_i_noxf +
           drv_c_noxf; //! total volume which can't be moved to the aitken mode
       num_t_noxf =
           drv_t_noxf * v2nmin_nmodes[iacc]; // !total number which can't be
@@ -606,7 +606,7 @@ void compute_coef_acc_ait_transfer(
           xferfrac_num_acc2ait * num_t / max(zero_div_fac, num_t0);
       xfercoef_num_acc2ait = xferfrac_num_acc2ait * adj_tscale_inv;
       xfercoef_vol_acc2ait = xferfrac_vol_acc2ait * adj_tscale_inv;
-      xfertend_num[1][0] = num_a_accsv * xfercoef_num_acc2ait;
+      xfertend_num[1][0] = num_i_accsv * xfercoef_num_acc2ait;
       xfertend_num[1][1] = num_c_accsv * xfercoef_num_acc2ait;
     } // end num_t > drv_t*v2n_geomean
   }
@@ -793,17 +793,17 @@ void aitken_accum_exchange(
   // Ported to C++/Kokkos by: Oscar Diaz-Ibarra and Michael Schmidt
   // -----------------------------------------------------------------------------
 
-  Real& dgncur_a_aitken = diagnostics.dgncur_i[aitken_idx](k);
-  Real& dgncur_a_accum = diagnostics.dgncur_i[accum_idx](k);
+  Real& dgncur_i_aitken = diagnostics.dgncur_i[aitken_idx](k);
+  Real& dgncur_i_accum = diagnostics.dgncur_i[accum_idx](k);
 
   Real& dgncur_c_aitken = diagnostics.dgncur_c[aitken_idx](k);
   Real& dgncur_c_accum = diagnostics.dgncur_c[accum_idx](k);
 
   Real& v2ncur_c_accum = diagnostics.v2ncur_c[accum_idx](k);
-  Real& v2ncur_a_accum = diagnostics.v2ncur_i[accum_idx](k);
+  Real& v2ncur_i_accum = diagnostics.v2ncur_i[accum_idx](k);
 
   Real& v2ncur_c_aitken = diagnostics.v2ncur_c[aitken_idx](k);
-  Real& v2ncur_a_aitken = diagnostics.v2ncur_i[aitken_idx](k);
+  Real& v2ncur_i_aitken = diagnostics.v2ncur_i[aitken_idx](k);
 
   const Real voltonum_ait =
       v2nnom_nmodes[aitken_idx]; // volume to number for aitken mode
@@ -821,7 +821,7 @@ void aitken_accum_exchange(
   Real xfercoef_vol_acc2ait =
       0; // !volume and number transfer coefficients (acc->ait)
 
-  Real drv_a_noxf = 0, drv_c_noxf = 0;
+  Real drv_i_noxf = 0, drv_c_noxf = 0;
   // Real drv_t_noxf=0;// !"noxf" stands for "no transfer"
   // Real num_t_noxf=0;
 
@@ -855,7 +855,7 @@ void aitken_accum_exchange(
   compute_coef_acc_ait_transfer(
       accum_idx, k, v2n_geomean, adj_tscale_inv, prognostics, drv_i_accsv,
       drv_c_accsv, num_i_accsv, num_c_accsv, no_transfer_acc2ait, voltonum_ait,
-      inv_density, v2nmin_nmodes, drv_a_noxf, drv_c_noxf, acc2_ait_index,
+      inv_density, v2nmin_nmodes, drv_i_noxf, drv_c_noxf, acc2_ait_index,
       xfercoef_num_acc2ait, xfercoef_vol_acc2ait, xfertend_num);
 
   // ! jump to end-of-loop if no transfer is needed at current klev
@@ -869,18 +869,18 @@ void aitken_accum_exchange(
         dt; //   !diff in num from  ait->accum and accum->ait transfer
     const Real num_a = max(
         zero, num_i_aitsv - num_diff_a); // !num removed/added from aitken mode
-    const Real num_a_acc =
+    const Real num_i_acc =
         max(zero, num_i_accsv +
                       num_diff_a); // !num added/removed to accumulation mode
 
     const Real vol_diff_a =
         (drv_i_aitsv * xfercoef_vol_ait2acc -
-         (drv_i_accsv - drv_a_noxf) * xfercoef_vol_acc2ait) *
+         (drv_i_accsv - drv_i_noxf) * xfercoef_vol_acc2ait) *
         dt; // ! diff in volume transfer fomr ait->accum and accum->ait transfer
-    const Real drv_a = max(
+    const Real drv_i = max(
         zero, drv_i_aitsv - vol_diff_a); // !drv removed/added from aitken mode
 
-    const Real drv_a_acc =
+    const Real drv_i_acc =
         max(zero, drv_i_accsv +
                       vol_diff_a); // !drv added/removed to accumulation mode
 
@@ -902,12 +902,12 @@ void aitken_accum_exchange(
     // NOTE: CHECK orginal function does not have v2nmax.. and dgnmax as inputs.
     // !interstitial species (aitken mode)
     compute_new_sz_after_transfer(
-        drv_a, // in
+        drv_i, // in
         num_a, // in
         v2nmax_nmodes[aitken_idx], v2nmin_nmodes[aitken_idx],
         v2nnom_nmodes[aitken_idx], dgnmax_nmodes[aitken_idx],
         dgnmin_nmodes[aitken_idx], dgnnom_nmodes[aitken_idx],
-        cmn_factor_nmodes[aitken_idx], dgncur_a_aitken, v2ncur_a_aitken);
+        cmn_factor_nmodes[aitken_idx], dgncur_i_aitken, v2ncur_i_aitken);
 
     // !cloud borne species (aitken mode)
 
@@ -921,15 +921,15 @@ void aitken_accum_exchange(
 
     // interstitial species (accumulation mode)
     compute_new_sz_after_transfer(
-        drv_a_acc, // in
-        num_a_acc, // in
+        drv_i_acc, // in
+        num_i_acc, // in
         v2nmax_nmodes[accum_idx], v2nmin_nmodes[accum_idx],
         v2nnom_nmodes[accum_idx], dgnmax_nmodes[accum_idx],
         dgnmin_nmodes[accum_idx], dgnnom_nmodes[accum_idx],
-        cmn_factor_nmodes[accum_idx], dgncur_a_accum, v2ncur_a_accum);
+        cmn_factor_nmodes[accum_idx], dgncur_i_accum, v2ncur_i_accum);
 
-    // call compute_new_sz_after_transfer(iacc, drv_a, num_a, &
-    //      dgncur_a(klev,iacc), v2ncur_a(klev,iacc))
+    // call compute_new_sz_after_transfer(iacc, drv_i, num_a, &
+    //      dgncur_i(klev,iacc), v2ncur_i(klev,iacc))
 
     // !cloud borne species (accumulation mode)
     // call compute_new_sz_after_transfer(iacc, drv_c, num_c, &
@@ -1159,8 +1159,8 @@ public:
 
           for (int imode = 0; imode < nmodes; imode++) {
 
-            // call set_initial_sz_and_volumes (imode, top_lev, nlevs, dgncur_a,
-            // v2ncur_a, dryvol_a) for interstitial aerosols call
+            // call set_initial_sz_and_volumes (imode, top_lev, nlevs, dgncur_i,
+            // v2ncur_i, dryvol_a) for interstitial aerosols call
             // set_initial_sz_and_volumes (imode, top_lev, nlevs, dgncur_c,
             // v2ncur_c, dryvol_c) for cloud-borne aerosols
 
@@ -1290,6 +1290,7 @@ public:
 
             // update diameters and volume to num ratios for interstitial
             // aerosols
+            // FIXME: The RHS's here and correspondingly below appear to be set above, via `diagnostics` and never used. Maybe skip a step and assign it here?
             auto& dgncur_i_k = dgncur_i[imode](k);
             auto& v2ncur_i_k = v2ncur_i[imode](k);
 
