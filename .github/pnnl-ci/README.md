@@ -74,7 +74,3 @@ Since we are installing in GitLab pipelines, this script uses the variable `CI_H
 It does this by manually find and replacing the `.gitmodules` files in each repository where relevant with `https://.../` instead of `git@...:`.
 
 Additionally, for some reason `SYSTEM_NAME` is configured on PNNL login nodes, but when running in a job this variable proves unhelpful. As such, we export `SYSTEM_NAME=deception` in this script before running.
-
-### `deception-cache.cmake`
-
-Since there are CMake options that need to be set and do not change at runtime, we use this to specify HAERO variables for building. Really this is just the Kokkos arch, however this made passing arguments to CMake easier.
