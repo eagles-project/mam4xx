@@ -32,6 +32,8 @@ cleanup() {
   exit $2
 }
 
+set -xv
+
 # TODO - add more verification to ensure variables are set before proceeding
 echo $BUILD_TYPE "detected for BUILD_TYPE"
 echo $HAERO_INSTALL "detected for HAERO install location"
@@ -64,4 +66,7 @@ cmake --build build -- -j && \
 cd build && ctest -V
 
 EXIT_CODE=$?
+
+set +xv
+
 exit $EXIT_CODE
