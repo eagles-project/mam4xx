@@ -37,6 +37,7 @@ echo $BUILD_TYPE " detected for BUILD_TYPE"
 echo $HAERO_INSTALL " detected for HAERO install location"
 echo $PRECISION " detected for PRECISION"
 
+. /etc/profile.d/modules.sh
 module purge
 module load cmake
 
