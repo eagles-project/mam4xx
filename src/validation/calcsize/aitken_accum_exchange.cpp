@@ -29,7 +29,8 @@ void aitken_accum_exchange(Ensemble* ensemble) {
     const int nmodes = mam4_config.num_modes();
     const int nspec = mam4_config.num_aerosol_ids();
 
-    const bool no_transfer_acc2ait[7] = {true,  false, true, false, false, true, true};
+    const bool no_transfer_acc2ait[7] = {true,  false, true, false,
+                                         false, true,  true};
     const int n_common_species_ait_accum = 4;
     const int ait_spec_in_acc[4] = {0, 1, 2, 3};
     const int acc_spec_in_ait[4] = {0, 2, 5, 6};
@@ -120,17 +121,17 @@ void aitken_accum_exchange(Ensemble* ensemble) {
 
     Kokkos::parallel_for(
         "aitken_accum_exchange_k", max_k, KOKKOS_LAMBDA(const int& k) {
-
-          std::cout << "we're here" << "\n";
-          calcsize::aitken_accum_exchange(k, aitken_idx, accum_idx, no_transfer_acc2ait,
-                n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
-                v2nmax_nmodes, v2nmin_nmodes, v2nnom_nmodes, dgnmax_nmodes,
-                dgnmin_nmodes, dgnnom_nmodes, common_factor_nmodes,
-                inv_density, adj_tscale_inv, dt, progs, dryvol_i_aitsv,
-                num_i_k_aitsv, dryvol_c_aitsv, num_c_k_aitsv, dryvol_i_accsv,
-                num_i_k_accsv, dryvol_c_accsv, num_c_k_accsv, diags,
-                tends);
-    });
+          std::cout << "we're here"
+                    << "\n";
+          calcsize::aitken_accum_exchange(
+              k, aitken_idx, accum_idx, no_transfer_acc2ait,
+              n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
+              v2nmax_nmodes, v2nmin_nmodes, v2nnom_nmodes, dgnmax_nmodes,
+              dgnmin_nmodes, dgnnom_nmodes, common_factor_nmodes, inv_density,
+              adj_tscale_inv, dt, progs, dryvol_i_aitsv, num_i_k_aitsv,
+              dryvol_c_aitsv, num_c_k_aitsv, dryvol_i_accsv, num_i_k_accsv,
+              dryvol_c_accsv, num_c_k_accsv, diags, tends);
+        });
 
     std::vector<Real> tend_aero_i_out;
     std::vector<Real> tend_n_mode_i_out;
