@@ -40,17 +40,19 @@ echo $PRECISION " detected for PRECISION"
 . /etc/profile.d/modules.sh
 module purge
 module load cmake
+module load gcc/9.1.0
+module load cuda/11.4
+module load python/3.7.0
 
 # Need to clone in validation submodule as we are unable to clone automatically
 perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules || exit
 git submodule update --init || exit
 
-mkdir -p build
-rm -rf build/*
-cmake -B build -S . \
+cmake \
+  -DMAM4XX_HAERO_DIR=$HAERO_INSTALL \
   -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
   -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-  -DMAM4XX_HAERO_DIR=$HAERO_INSTALL \ 
+  -B build -S $(pwd) \
   -G "Unix Makefiles" && \
 
 cmake --build build -- -j && \
