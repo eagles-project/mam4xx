@@ -1,5 +1,6 @@
 #include <mam4xx/mam4.hpp>
 
+#include <ekat/ekat_type_traits.hpp>
 #include <ekat/logging/ekat_logger.hpp>
 #include <ekat/mpi/ekat_comm.hpp>
 
@@ -298,6 +299,16 @@ TEST_CASE("gas_aer_uptkrates_1box1gas", "mam_gasaerexch") {
 
 TEST_CASE("mam_gasaerexch_1subarea_1gas_nonvolatile", "mam_gasaerexch") {
 
+  // Since there does not seem to be a way to extract the internal epsilon
+  // used by Approx from the class, the following is based on code found
+  // in the catch_approx.cpp source file.
+  const double epsilon = ekat::is_single_precision<Real>::value
+                             // Single precision value since the check values
+                             // were created using double
+                             ? .0001
+                             // Default value used in class Approx
+                             : std::numeric_limits<float>::epsilon() * 100;
+
   ekat::Comm comm;
   ekat::logger::Logger<> logger("nucleation unit tests",
                                 ekat::logger::LogLevel::debug, comm);
@@ -557,25 +568,25 @@ TEST_CASE("mam_gasaerexch_1subarea_1gas_nonvolatile", "mam_gasaerexch") {
           dt, qgas_netprod_otrproc, uptkaer[p][n], qgas_cur, qgas_avg,
           qaer_cur);
 
-      if (!(qgas_cur == Approx(out_qgas_cur[p][n])))
+      if (!(qgas_cur == Approx(out_qgas_cur[p][n]).epsilon(epsilon)))
         std::cout << "qgas_cur != Approx(test_qgas_cur)): "
                   << std::setprecision(14) << qgas_cur
                   << " != " << out_qgas_cur[p][n] << std::endl;
-      REQUIRE(qgas_cur == Approx(out_qgas_cur[p][n]));
+      REQUIRE(qgas_cur == Approx(out_qgas_cur[p][n]).epsilon(epsilon));
 
-      if (!(qgas_avg == Approx(out_qgas_avg[p][n])))
+      if (!(qgas_avg == Approx(out_qgas_avg[p][n]).epsilon(epsilon)))
         std::cout << "qgas_avg != Approx(test_qgas_avg)): "
                   << std::setprecision(14) << qgas_avg
                   << " != " << out_qgas_avg[p][n] << std::endl;
-      REQUIRE(qgas_avg == Approx(out_qgas_avg[p][n]));
+      REQUIRE(qgas_avg == Approx(out_qgas_avg[p][n]).epsilon(epsilon));
 
       for (int i = 0; i < num_mode; ++i) {
-        if (!(qaer_cur[i] == Approx(out_qaer_cur[p][n][i])))
+        if (!(qaer_cur[i] == Approx(out_qaer_cur[p][n][i]).epsilon(epsilon)))
           std::cout << "qaer_cur[i] != Approx(test_qaer_cur[i])): "
                     << std::setprecision(14) << qaer_cur[i]
                     << " != " << out_qaer_cur[p][n][i] << " (n,i):(" << n << ","
                     << i << ")" << std::endl;
-        REQUIRE(qaer_cur[i] == Approx(out_qaer_cur[p][n][i]));
+        REQUIRE(qaer_cur[i] == Approx(out_qaer_cur[p][n][i]).epsilon(epsilon));
       }
     }
   }
