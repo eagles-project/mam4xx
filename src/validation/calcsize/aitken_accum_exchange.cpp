@@ -29,29 +29,35 @@ void aitken_accum_exchange(Ensemble* ensemble) {
     const int nmodes = mam4_config.num_modes();
     const int nspec = mam4_config.num_aerosol_ids();
 
+    const bool no_transfer_acc2ait[7] = {true,  false, true, false, false, true, true};
+    const int n_common_species_ait_accum = 4;
+    const int ait_spec_in_acc[4] = {0, 1, 2, 3};
+    const int acc_spec_in_ait[4] = {0, 2, 5, 6};
+
+    const int max_k = input.get("max_k");
+
     auto q_i = input.get_array("interstitial");
     auto n_i = input.get_array("interstitial_num");
     auto q_c = input.get_array("cloud_borne");
     auto n_c = input.get_array("cloud_borne_num");
 
+    auto in_v2nmin_nmodes = input.get_array("v2nmin_nmodes");
+    Real v2nmin_nmodes[nmodes];
+    auto in_v2nmax_nmodes = input.get_array("v2nmax_nmodes");
+    Real v2nmax_nmodes[nmodes];
+    auto in_v2nnom_nmodes = input.get_array("v2nnom_nmodes");
+    Real v2nnom_nmodes[nmodes];
 
-    DeviceType::view_1d<Real> d_v2nnom_nmodes("v2nnom_nmodes", nmodes);
-    auto h_v2nnom_nmodes = Kokkos::create_mirror_view(d_v2nnom_nmodes);
-    auto s_v2nnom_nmodes = input.get_array("v2nnom_nmodes");
+    auto in_dgnmin_nmodes = input.get_array("dgnmin_nmodes");
+    Real dgnmin_nmodes[nmodes];
+    auto in_dgnmax_nmodes = input.get_array("dgnmax_nmodes");
+    Real dgnmax_nmodes[nmodes];
+    auto in_dgnnom_nmodes = input.get_array("dgnnom_nmodes");
+    Real dgnnom_nmodes[nmodes];
 
-    auto v2nmin_nmodes = input.get_array("v2nmin_nmodes");
-    auto v2nmax_nmodes = input.get_array("v2nmax_nmodes");
+    auto in_common_factor_nmodes = input.get_array("common_factor_nmodes");
+    Real common_factor_nmodes[nmodes];
 
-    auto dgnnom_nmodes = input.get_array("dgnnom_nmodes");
-    auto dgnmin_nmodes = input.get_array("dgnmin_nmodes");
-    auto dgnmax_nmodes = input.get_array("dgnmax_nmodes");
-
-    auto common_factor_nmodes = input.get_array("common_factor_nmodes");
-
-    const Real num_i_aitsv = input.get("num_i_aitsv");
-    const Real num_c_aitsv = input.get("num_c_aitsv");
-    const Real num_i_accsv = input.get("num_i_accsv");
-    const Real num_c_accsv = input.get("num_c_accsv");
     const Real num_i_k_aitsv = input.get("num_i_k_aitsv");
     const Real num_c_k_aitsv = input.get("num_c_k_aitsv");
     const Real num_i_k_accsv = input.get("num_i_k_accsv");
@@ -61,37 +67,8 @@ void aitken_accum_exchange(Ensemble* ensemble) {
     const Real dryvol_c_aitsv = input.get("dryvol_c_aitsv");
     const Real dryvol_i_accsv = input.get("dryvol_i_accsv");
     const Real dryvol_c_accsv = input.get("dryvol_c_accsv");
-    const Real drv_i_aitsv = input.get("drv_i_aitsv");
-    const Real drv_c_aitsv = input.get("drv_c_aitsv");
-    const Real drv_i_accsv = input.get("drv_i_accsv");
-    const Real drv_c_accsv = input.get("drv_c_accsv");
 
-    const Real dgncur_i_k = input.get("dgncur_i_k");
-    const Real dgncur_c_k = input.get("dgncur_c_k");
-
-    const Real v2ncur_c_k = input.get("v2ncur_c_k");
-    const Real v2ncur_i_k = input.get("v2ncur_i_k");
-
-    const Real drv_i_aitsv = input.get("drv_i_aitsv");
-    const Real num_i_aitsv = input.get("num_i_aitsv");
-    const Real drv_c_aitsv = input.get("drv_c_aitsv");
-    const Real num_c_aitsv = input.get("num_c_aitsv");
-
-    const Real drv_i_accsv = input.get("drv_i_accsv");
-    const Real num_i_accsv = input.get("num_i_accsv");
-    const Real drv_c_accsv = input.get("drv_c_accsv");
-    const Real num_c_accsv = input.get("num_c_accsv");
-
-    // // full array size = nmodes x nspec (4 x 7);
-    DeviceType::view_2d<Real> d_inv_density("inv_density", nmodes, nspec);
-    Kokkos::deep_copy(d_inv_density, 0.0);
-    auto h_inv_density = Kokkos::create_mirror_view(d_inv_density);
-
-    // const auto n_spec = num_species_mode(m);
-    // for (int ispec = 0; ispec < n_spec; ispec++) {
-    //   const int aero_id = int(mode_aero_species(m, ispec));
-    //   h_inv_density[m][ispec] = Real(1.0) / aero_species(aero_id).density;
-    // } // for(ispec)
+    Real inv_density[nmodes][nspec];
 
     int count = 0;
     for (int imode = 0; imode < nmodes; ++imode) {
@@ -106,7 +83,6 @@ void aitken_accum_exchange(Ensemble* ensemble) {
 
       const auto n_spec = num_species_mode(imode);
       for (int isp = 0; isp < n_spec; ++isp) {
-        // const auto prog_aero_i = ekat::scalarize(progs.q_aero_i[imode][i]);
         auto h_prog_aero_i =
             Kokkos::create_mirror_view(progs.q_aero_i[imode][isp]);
         h_prog_aero_i(0) = q_i[count];
@@ -118,17 +94,22 @@ void aitken_accum_exchange(Ensemble* ensemble) {
         Kokkos::deep_copy(h_prog_aero_c, progs.q_aero_c[imode][isp]);
 
         const int aero_id = int(mode_aero_species(imode, isp));
-        h_inv_density(imode, isp) = Real(1.0) / aero_species(aero_id).density;
+        inv_density[imode][isp] = Real(1.0) / aero_species(aero_id).density;
 
         count++;
       } // end species
 
-      h_v2nnom_nmodes(imode) = s_v2nnom_nmodes[imode];
+      v2nmin_nmodes[imode] = in_v2nmin_nmodes[imode];
+      v2nmax_nmodes[imode] = in_v2nmax_nmodes[imode];
+      v2nnom_nmodes[imode] = in_v2nnom_nmodes[imode];
+
+      dgnmin_nmodes[imode] = in_dgnmin_nmodes[imode];
+      dgnmax_nmodes[imode] = in_dgnmax_nmodes[imode];
+      dgnnom_nmodes[imode] = in_dgnnom_nmodes[imode];
+
+      common_factor_nmodes[imode] = in_common_factor_nmodes[imode];
 
     } // end modes
-
-    Kokkos::deep_copy(h_v2nnom_nmodes, d_v2nnom_nmodes);
-    Kokkos::deep_copy(h_inv_density, d_inv_density);
 
     const int aitken_idx = int(ModeIndex::Aitken);
     const int accum_idx = int(ModeIndex::Accumulation);
@@ -138,33 +119,18 @@ void aitken_accum_exchange(Ensemble* ensemble) {
     const auto adj_tscale_inv = 1.0 / (adj_tscale * close_to_one);
 
     Kokkos::parallel_for(
-        "compute_dry_volume_k", 1, KOKKOS_LAMBDA(int k) {
-          Real v2nnom_nmodes[nmodes];
-          for (int m = 0; m < nmodes; ++m) {
-            v2nnom_nmodes[m] = d_v2nnom_nmodes(m);
-          }
+        "aitken_accum_exchange_k", max_k, KOKKOS_LAMBDA(const int& k) {
 
-          // calcsize::aitken_accum_exchange(
-          //     k, aitken_idx, accum_idx, v2nmax_nmodes, v2nmin_nmodes,
-          //     v2nnom_nmodes, dgnmax_nmodes, dgnmin_nmodes, dgnnom_nmodes,
-          //     common_factor_nmodes, inv_density, adj_tscale_inv, dt,
-          //     prognostics, dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv,
-          //     num_c_k_aitsv, dryvol_i_accsv, num_i_k_accsv, dryvol_c_accsv,
-          //     num_c_k_accsv, dgncur_i_k, v2ncur_i_k, dgncur_c_k, v2ncur_c_k,
-          //     diagnostics, tendencies);
-          // calcsize::aitken_accum_exchange(
-          //     k, aitken_idx, accumulation_idx,
-          //     no_transfer_acc2ait, n_common_species_ait_accum,
-          //     ait_spec_in_acc, acc_spec_in_ait,
-          //     v2nmax_nmodes, v2nmin_nmodes,
-          //     v2nnom_nmodes, dgnmax_nmodes, dgnmin_nmodes, dgnnom_nmodes,
-          //     common_factor_nmodes, inv_density, adj_tscale_inv, dt,
-          //     prognostics, dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv,
-          //     num_c_k_aitsv, dryvol_i_accsv, num_i_k_accsv, dryvol_c_accsv,
-          //     num_c_k_accsv,
-          //     // dgncur_i_k, v2ncur_i_k, dgncur_c_k, v2ncur_c_k,
-          //     diagnostics, tendencies);
-        });
+          std::cout << "we're here" << "\n";
+          calcsize::aitken_accum_exchange(k, aitken_idx, accum_idx, no_transfer_acc2ait,
+                n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
+                v2nmax_nmodes, v2nmin_nmodes, v2nnom_nmodes, dgnmax_nmodes,
+                dgnmin_nmodes, dgnnom_nmodes, common_factor_nmodes,
+                inv_density, adj_tscale_inv, dt, progs, dryvol_i_aitsv,
+                num_i_k_aitsv, dryvol_c_aitsv, num_c_k_aitsv, dryvol_i_accsv,
+                num_i_k_accsv, dryvol_c_accsv, num_c_k_accsv, diags,
+                tends);
+    });
 
     std::vector<Real> tend_aero_i_out;
     std::vector<Real> tend_n_mode_i_out;
