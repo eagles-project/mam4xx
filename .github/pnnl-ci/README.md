@@ -13,7 +13,7 @@ PNNL CI will only run when you are adding new commits to an existing merge reque
 You can add `[skip-ci]` in order to prevent CI jobs from running at PNNL. TODO involves adding support for skipping CI when certain tags are present in a PR.
 
 #### TODO:
-- [ ] Use installed HAERO in project share to avoid re-building each time
+- [ ] Consider cleaning up old installations and adding permissions changes so all users can use shared installation
 - [ ] Add support for a variety of paritions on Deception. We currently only target dl_shared as we can only choose one cuda arch.
 - [ ] Add way to skip CI using a GitHub tag in both GitLab and GitHub
 - [ ] Port pipeline to AMD architectures
@@ -30,6 +30,7 @@ You can add `[skip-ci]` in order to prevent CI jobs from running at PNNL. TODO i
 - [x] Build HEARO without cloning mam4xx in CI step
 - [x] Ensure that pipelines are not false positive/negative
 - [x] Streamline CI rebuilding of HAERO to happen with one button (need to work around 2 max job limit)
+- [x] Use installed HAERO in project share to avoid re-building each time
 
 ## Access Token
 @CameronRutherford currently maintains the access token used to enable GitHub mirroring. 

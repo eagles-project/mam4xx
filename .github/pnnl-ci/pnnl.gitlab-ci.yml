@@ -40,8 +40,6 @@ variables:
     - .pnnl_script_template
     - .pnnl_after_script_template
   variables:
-  # Since we are only able to compile against one CUDA arch, we must target just dl_shared
-    SLURM_Q: "dl_shared"
     GIT_STRATEGY: clone
     SYSTEM_NAME: deception
     HAERO_INSTALL: /qfs/projects/eagles/pnnl-ci/haero_${BUILD_TYPE}_${PRECISION}
@@ -134,6 +132,8 @@ Deception Single Precision:
     matrix:
       - BUILD_TYPE: [Debug, Release]
   variables:
+  # Since we are only able to compile against one CUDA arch, we must target just dl_shared
+    SLURM_Q: "dl_shared"
     WORKDIR_SUFFIX: mam4xx_${BUILD_TYPE}_${PRECISION}
     SCRIPT_NAME: ci.sh
     PRECISION: single
@@ -146,6 +146,8 @@ Deception Double Precision:
     matrix:
       - BUILD_TYPE: [Debug, Release]
   variables:
+  # Since we are only able to compile against one CUDA arch, we must target just dl_shared
+    SLURM_Q: "dl_shared"
     PRECISION: double
     WORKDIR_SUFFIX: mam4xx_${BUILD_TYPE}_${PRECISION}
     SCRIPT_NAME: ci.sh
@@ -162,6 +164,8 @@ Rebuild HAERO Single Precision:
     matrix:
       - BUILD_TYPE: [Debug, Release]
   variables:
+  # We are just building, so might as well use CPU nodes
+    SLURM_Q: "short"
     PRECISION: single
     WORKDIR_SUFFIX: haero_${BUILD_TYPE}_${PRECISION}
     SCRIPT_NAME: rebuild-haero.sh
@@ -175,6 +179,8 @@ Rebuild HAERO Double Precision:
     matrix:
       - BUILD_TYPE: [Debug, Release]
   variables:
+  # We are just building, so might as well use CPU nodes
+    SLURM_Q: "short"
     PRECISION: double
     WORKDIR_SUFFIX: haero_${BUILD_TYPE}_${PRECISION}
     SCRIPT_NAME: rebuild-haero.sh
