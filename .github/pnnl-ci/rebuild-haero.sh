@@ -141,7 +141,6 @@ fi
 
 echo "Configuring Haero with the given selections (WITHOUT MPI)..."
 cmake -S ./.haero -B ./.haero/build \
-  -C ./mam4xx-git/.github/pnnl-ci/deception-cache.cmake \
   -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
   -DCMAKE_INSTALL_PREFIX="$PREFIX" \
   -DHAERO_ENABLE_MPI=OFF \
