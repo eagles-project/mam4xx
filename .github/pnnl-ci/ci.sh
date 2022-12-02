@@ -44,13 +44,8 @@ module load gcc/9.1.0
 module load cuda/11.4
 module load python/3.7.0
 
-# Default compilers (can be overridden by environment variables)
-if [[ -z $CC ]]; then
-  CC=cc
-fi
-if [[ -z $CXX ]]; then
-  CXX=c++
-fi
+# Need to set env variables to get compiler set correctly
+export CC=$(which gcc) CXX=$(which g++) FC=$(which gfortran)
 
 # Need to clone in validation submodule as we are unable to clone automatically
 perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules || exit
