@@ -44,42 +44,6 @@ using namespace haero;
 // 2022
 // --------------------------------------------------------------------------------------------
 
-// ------------------------------------------------------------------------
-//  Subroutine for calculating wet geometric mean diameter from
-//  the aerosol mass and number concentrations, using a prescribed
-//  wet-to-dry diameter ratio.
-//
-//  History:
-//    Original code by Richard (Dick) C. Easter, PNNL
-//    Ported to this test driver by Qiyang Yan and Hui Wan, PNNL, 2022.
-// ------------------------------------------------------------------------
-void diag_dgn_wet(const Real qaer_cur[mam4::AeroConfig::num_aerosol_ids()]
-                                     [mam4::AeroConfig::num_modes()],
-                  const Real qnum_cur[mam4::AeroConfig::num_modes()],
-                  const Real dwet_ddry_ratio,
-                  Real dgn_awet[mam4::AeroConfig::num_modes()]) {
-  static constexpr int num_aer = mam4::AeroConfig::num_aerosol_ids();
-  static constexpr int ntot_amode = 1;
-  // --------------------------
-  //  Calculation
-  // --------------------------
-  for (int n = 0; n < ntot_amode; ++n) {
-    Real tmp_dryvol = 0.0;
-    // Sum up the volume of all species in this mode
-    for (int iaer = 0; iaer < num_aer; ++iaer) {
-      const Real tmpa =
-          qaer_cur[iaer][n] * mam4::aero_species(iaer).molecular_weight;
-      tmp_dryvol += tmpa / mam4::aero_species(iaer).density;
-    }
-    // Convert dry volume to dry diameter, then to wet diameter
-    const Real sx = std::log(mam4::modes(n).mean_std_dev);
-    const Real tmpb =
-        tmp_dryvol / haero::max(1.0e-30, qnum_cur[n] * (Constants::pi / 6.0) *
-                                             exp(4.5 * sx * sx));
-    dgn_awet[n] = pow(tmpb, (1.0 / 3.0) * dwet_ddry_ratio); // m
-  }
-}
-
 void usage() {
   std::cerr << "exe_skywkr_gasaerexch_timestepping: a Skywalker driver for "
                "validating the "
@@ -307,7 +271,7 @@ int main(int argc, char **argv) {
       // --------------------------------------------------------------------------------------
       Real dgn_awet[num_mode]; // geometric mean diameter of each aerosol mode
       if ((update_diameter_every_time_step == 1) || (istep == 1)) {
-        diag_dgn_wet(qaer_cur, qnum_cur, dwet_ddry_ratio, dgn_awet);
+        mam4::diag_dgn_wet(qaer_cur, qnum_cur, dwet_ddry_ratio, dgn_awet);
       }
       // --------------------------------------------------------------------------------------
       //  Gas-aerosol exchanges
