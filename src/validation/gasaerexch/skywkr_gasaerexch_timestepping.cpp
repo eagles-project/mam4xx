@@ -2,6 +2,7 @@
 #include <mam4xx/aero_modes.hpp>
 #include <mam4xx/gasaerexch.hpp>
 #include <mam4xx/mam4.hpp>
+#include <mam4xx/mode_wet_particle_size.hpp>
 
 #include <haero/aero_process.hpp>
 #include <haero/atmosphere.hpp>

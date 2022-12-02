@@ -55,7 +55,7 @@ void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
   const Real rdry_max = dry_radius_max_microns;
 
   // initialize result (default initializer is quiet nan)
-  Real wet_diam;
+  Real wet_diam = 0;
 
   // compute relative humidity
   Real rel_humidity = conversions::relative_humidity_from_vapor_mixing_ratio(
