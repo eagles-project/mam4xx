@@ -118,7 +118,7 @@ SVC Account Cleanup:
     # Don't clone for cleanup jobs
     GIT_STRATEGY: none
   extends:
-    - .pnnl_nonhpc_tags
+    - .pnnl_tags_template
   script:
     - export WORKDIR="$HOME/gitlab/"
     # clears directory of files more than 6 hours/360 minutes old
