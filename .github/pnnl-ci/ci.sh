@@ -48,9 +48,9 @@ git submodule update --init || exit
 mkdir -p build
 rm -rf build/*
 cmake -B build -S . \
-  -DCMAKE_INSTALL_PREFIX=$(pwd)/install
-  -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-  -DMAM4XX_HAERO_DIR=$HAERO_INSTALL
+  -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
+  -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+  -DMAM4XX_HAERO_DIR=$HAERO_INSTALL \ 
   -G "Unix Makefiles" && \
 
 cmake --build build -- -j && \
