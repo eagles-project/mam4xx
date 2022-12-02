@@ -159,7 +159,7 @@ Real soa_exch_substepsize(
   //------------------------------------------------------------------------------------------------------
   // Now, get the maximum of the normalized exchange rate of all SOA species
   //------------------------------------------------------------------------------------------------------
-  Real max_frac_all_soa_species = -999999;
+  Real max_frac_all_soa_species = tot_frac_single_soa_species[0];
   for (int i = 0; i < ntot_soaspec; ++i)
     max_frac_all_soa_species =
         haero::max(max_frac_all_soa_species, tot_frac_single_soa_species[i]);
@@ -504,14 +504,18 @@ void mam_soaexch_advance_in_time(
     qgas_avg[i] = max(0.0, qgas_avg_sum[i] / dtsum_qgas_avg);
 }
 
+// --------------------------------------------------------------------
+// Calculate secondary organic aerosols, soa,
+// condensation/evaporation over time dt
+// --------------------------------------------------------------------
 KOKKOS_INLINE_FUNCTION
 void mam_soaexch_1subarea(const int mode_pca,          // in
                           const Real dt,               // in
                           const Real dt_sub_soa_fixed, // in
                           const Real pstd,             // in
                           const Real r_universal,      // in
-                          const Real &temp,            // in
-                          const Real &pmid,            // in
+                          const Real temp,             // in
+                          const Real pmid,             // in
                           const Real uptkaer[AeroConfig::num_gas_ids()]
                                             [AeroConfig::num_modes()],     // in
                           const Real qaer_poa[1][AeroConfig::num_modes()], // in
@@ -528,13 +532,13 @@ void mam_soaexch_1subarea(const int mode_pca,          // in
   // dt_sub_soa_fixed fixed sub-step in s. A negative value  means using adaptive step sizes
   // pstd             standard atmosphere in Pa
   // r_universal      universal gas constant in J/K/mol
-  // &temp            temperature (K)
-  // &pmid            pressure at model levels (Pa)
-  // uptkaer 
+  // temp             temperature (K)
+  // pmid             pressure at model levels (Pa)
+  // uptkaer          uptake rate
   // qaer_poa         POA mixing ratio (mol/mol at actual mw)
-  // qgas_cur               
+  // qgas_cur         current gas mixing ratio
   // qgas_avg               
-  // qaer_cur
+  // qaer_cur         current aerosol mass mix ratio (mol/mol)
   // niter
   // g0_soa           ambient soa gas equilib mixrat (mol/mol at actual mw)
   // clang-format on
@@ -542,8 +546,8 @@ void mam_soaexch_1subarea(const int mode_pca,          // in
   // ntot_poaspec is the number of reacting gas species. The code only supports
   // one but MAM4 had an initial support for more so it was decided to keep the
   // form of the multi-species code if not the function.
-  static constexpr int ntot_soamode = 1;
   static constexpr int ntot_poaspec = 1;
+  static constexpr int ntot_soamode = 1;
   static constexpr int num_mode = AeroConfig::num_modes();
   // for backward compatibility
   static constexpr bool flag_pcarbon_opoa_frac_zero = true;
