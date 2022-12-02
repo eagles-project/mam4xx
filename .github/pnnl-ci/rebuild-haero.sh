@@ -32,10 +32,10 @@ cleanup() {
   exit $2
 }
 
-echo $BUILD_TYPE " detected for BUILD_TYPE"
-echo $HAERO_INSTALL " detected for HAERO install location"
-echo $PRECISION " detected for PRECISION"
-echo $SYSTEM_NAME " is the target cluster"
+echo $BUILD_TYPE "detected for BUILD_TYPE"
+echo $HAERO_INSTALL "detected for HAERO install location"
+echo $PRECISION "detected for PRECISION"
+echo $SYSTEM_NAME "is the target cluster"
 
 PREFIX=$HAERO_INSTALL
 DEVICE=gpu

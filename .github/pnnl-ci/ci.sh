@@ -33,9 +33,9 @@ cleanup() {
 }
 
 # TODO - add more verification to ensure variables are set before proceeding
-echo $BUILD_TYPE " detected for BUILD_TYPE"
-echo $HAERO_INSTALL " detected for HAERO install location"
-echo $PRECISION " detected for PRECISION"
+echo $BUILD_TYPE "detected for BUILD_TYPE"
+echo $HAERO_INSTALL "detected for HAERO install location"
+echo $PRECISION "detected for PRECISION"
 
 . /etc/profile.d/modules.sh
 module purge
@@ -43,6 +43,14 @@ module load cmake
 module load gcc/9.1.0
 module load cuda/11.4
 module load python/3.7.0
+
+# Default compilers (can be overridden by environment variables)
+if [[ -z $CC ]]; then
+  CC=cc
+fi
+if [[ -z $CXX ]]; then
+  CXX=c++
+fi
 
 # Need to clone in validation submodule as we are unable to clone automatically
 perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules || exit
@@ -52,6 +60,8 @@ cmake \
   -DMAM4XX_HAERO_DIR=$HAERO_INSTALL \
   -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
   -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+  -DCMAKE_C_COMPILER=$CC \
+  -DCMAKE_CXX_COMPILER=$CXX \
   -B build -S $(pwd) \
   -G "Unix Makefiles" && \
 
