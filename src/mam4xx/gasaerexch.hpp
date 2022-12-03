@@ -48,6 +48,7 @@ public:
     Config(const Config &) = default;
     ~Config() = default;
     Config &operator=(const Config &) = default;
+    Real dtsub_soa_fixed = -1;
     bool l_mode_can_contain_species[num_aer][num_mode] = {};
     bool l_mode_can_age[num_aer] = {};
     int idx_gas_to_aer[num_gas] = {};
@@ -120,7 +121,7 @@ namespace gasaerexch {
 KOKKOS_INLINE_FUNCTION
 void mam_gasaerexch_1subarea_1gas_nonvolatile(
     const Real dt, const Real qgas_netprod_otrproc,
-    Real uptkaer[GasAerExch::num_mode], Real &qgas_cur, Real &qgas_avg,
+    const Real uptkaer[GasAerExch::num_mode], Real &qgas_cur, Real &qgas_avg,
     Real qaer_cur[GasAerExch::num_mode]) {
 
   // qgas_netprod_otrproc = gas net production rate from other processes
@@ -251,8 +252,8 @@ Real fuchs_sutugin(const Real &D_p, const Real &gasfreepath,
 
 KOKKOS_INLINE_FUNCTION
 void gas_aer_uptkrates_1box1gas(
-    const bool l_condense_to_mode[GasAerExch::num_mode], const Real &temp,
-    const Real &pmid, const Real pstd, const Real mw_gas, const Real mw_air,
+    const bool l_condense_to_mode[GasAerExch::num_mode], const Real temp,
+    const Real pmid, const Real pstd, const Real mw_gas, const Real mw_air,
     const Real vol_molar_gas, const Real vol_molar_air, const Real accom,
     const Real r_universal, const Real pi, const Real beta_inp, const int nghq,
     const Real dgncur_awet[GasAerExch::num_mode],
@@ -569,7 +570,7 @@ void gas_aerosol_uptake_rates_1box(
   for (int n = 0; n < num_mode; ++n)
     qaer_poa[0][n] = haero::max(qaer_cur[idxs][n], 0);
 
-  const Real dtsub_soa_fixed = -1;
+  const Real dtsub_soa_fixed = config.dtsub_soa_fixed;
   Real uptkaer[num_gas][num_mode];
   for (int igas = 0; igas < num_gas; ++igas)
     for (int n = 0; n < num_mode; ++n)

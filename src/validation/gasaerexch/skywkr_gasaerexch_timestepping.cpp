@@ -1,0 +1,363 @@
+#include "Kokkos_Core.hpp"
+#include <mam4xx/aero_modes.hpp>
+#include <mam4xx/gasaerexch.hpp>
+#include <mam4xx/mam4.hpp>
+#include <mam4xx/mode_wet_particle_size.hpp>
+
+#include <haero/aero_process.hpp>
+#include <haero/atmosphere.hpp>
+#include <haero/constants.hpp>
+
+#include <cmath>
+#include <ekat/ekat_assert.hpp>
+#include <iostream>
+#include <skywalker.hpp>
+
+using namespace skywalker;
+using namespace haero;
+// ---------------------------------------------------------------------------------------------
+
+// This file contains a program for testing the gas-aerosol mass exchange
+// parameterizations in the MAM4 aerosol microphysics packages.
+//
+// MAM4's function being called here is mam_gasaerexch_1subarea, which calls
+// child functions to do time stepping for
+//  1. the condensation of non-volatile species, e.g., H2SO4,
+//  2. the condensation and evaporation of semi-volatile species, e.g., SOA.
+//
+// Depending on how the case is setup (what values are given to input
+// parameters), this same test driver can be used to test the two types of
+// gas-aerosol exchanges listed above, either in isolation or combined.
+//
+// The case setup (parameters, initial conditions, ambient conditions)
+// is read in from a yaml file and parsed by a tool called Skywalker.
+// Output is written into a Python module.
+//
+// Program skywkr_gasaerexch_timestepping below is the test driver.
+// The namespace driver_utils contains some utility functions that are not
+// specific to this test.
+// ---------------------------------------------------------------------------------------------
+// History:
+// - Test ideas originally developed by Richard (Dick) C. Easter, PNNL, ca. 2017
+// - Implementation using Skywalker and revisions to test setup: Qiyang Yan,
+// PNNL, 2021-2022
+// - Clean-up, consolidation, and further revision of test setup: Hui Wan, PNNL,
+// 2022
+// --------------------------------------------------------------------------------------------
+
+void usage() {
+  std::cerr << "exe_skywkr_gasaerexch_timestepping: a Skywalker driver for "
+               "validating the "
+               "MAM4 nucleation parameterizations."
+            << std::endl;
+  std::cerr << "exe_skywkr_gasaerexch_timestepping: usage:" << std::endl;
+  std::cerr << "exe_skywkr_gasaerexch_timestepping <input.yaml>" << std::endl;
+  exit(0);
+}
+
+// -------------------------------------
+void get_file_names(const std::string &input_suffix,
+                    const std::string &output_suffix,
+                    const std::string &input_file, std::string &output_file,
+                    std::string &exe_name) {
+
+  // Retrieve name of executable
+  exe_name = "skywkr_gasaerexch_timestepping";
+
+  // Generate an output file name based on the name of the input file.
+  const size_t suffix = input_file.find(input_suffix);
+  if (suffix != std::string::npos) {
+    // Look for the last slash in the filename.
+    size_t slash = input_file.rfind("/");
+    if (slash == std::string::npos)
+      slash = 0;
+    output_file =
+        input_file.substr(slash + 1, suffix - slash - 1) + output_suffix;
+  } else {
+    std::cout << exe_name << ": Invalid input filename (no " << input_suffix
+              << " suffix found): " << input_file << std::endl;
+    exit(1);
+  }
+  std::cout << __FILE__ << ":" << __LINE__ << std::endl
+            << " input_suffix:" << input_suffix << std::endl
+            << " output_suffix:" << output_suffix << std::endl
+            << " input_file:" << input_file << std::endl
+            << " output_file:" << output_file << std::endl;
+}
+
+// =====================================================================================
+//  This is the driver program that tests MAM's gas-aerosol exchange
+//  parameterizations.
+// =====================================================================================
+
+int main(int argc, char **argv) {
+  if (argc == 1) {
+    usage();
+  }
+  Kokkos::initialize(argc, argv);
+  std::string input_file = argv[1];
+  std::cout << argv[0] << ": reading " << input_file << std::endl;
+
+  static constexpr int num_gas = mam4::AeroConfig::num_gas_ids();
+  static constexpr int num_mode = mam4::AeroConfig::num_modes();
+  static constexpr int num_aer = mam4::AeroConfig::num_aerosol_ids();
+  static constexpr int ntot_amode = 1;
+  static constexpr int nsoa = 1 + static_cast<int>(mam4::AeroId::SOA);
+#if 0
+  !------------------------------------------------------------------------------------------
+  ! Initialize constants, parameters, and MAMs internal bookkeeping
+  !------------------------------------------------------------------------------------------
+  call cambox_init_basics( ncol, pbuf2d )
+
+  !------------------------------------------------------------------------------------------
+  ! Read command line, retrieve names of executable and input file, set name of output file
+  !------------------------------------------------------------------------------------------
+#endif
+
+  const std::string input_suffix = ".yaml";
+  const std::string output_suffix = ".py";
+  std::string output_file;
+  std::string exe_name;
+  get_file_names(input_suffix, output_suffix, input_file, output_file,
+                 exe_name);
+  // -------------------------------------------------------
+  // Load the ensemble. Any error encountered is fatal.
+  // -------------------------------------------------------
+  std::cout << exe_name << ": Loading ensemble from " << input_file
+            << std::endl;
+  const std::string model_name = "mam_box";
+  Ensemble *ensemble = skywalker::load_ensemble(input_file, model_name);
+
+  // ------------------------------------------------------------------------------------------
+  //  Parse test settings. Make sure the subroutine to be tested is
+  //  mam_gasaerexch_1subarea
+  // ------------------------------------------------------------------------------------------
+  Settings settings = ensemble->settings();
+  if (!settings.has("mam_subr_name")) {
+    std::cerr << "No function specified in mam4xx.mam_subr_name!" << std::endl;
+    exit(0);
+  }
+  if (settings.get("mam_subr_name") != "mam_gasaerexch_1subarea") {
+    std::cerr << "mam4xx.mam_subr_name not `mam_gasaerexch_1subarea` "
+              << std::endl;
+    exit(0);
+  }
+
+  const int h2so4 = static_cast<int>(mam4::GasId::H2SO4);
+  const int soa = static_cast<int>(mam4::AeroId::SOA);
+  const int so4 = static_cast<int>(mam4::AeroId::SO4);
+  const int pom = static_cast<int>(mam4::AeroId::POM);
+  const int bc = static_cast<int>(mam4::AeroId::BC);
+  const int ncl = static_cast<int>(mam4::AeroId::NaCl);
+  const int dst = static_cast<int>(mam4::AeroId::DST);
+  const int mom = static_cast<int>(mam4::AeroId::MOM);
+  // ===========================================================================================
+  //  Loop over all members of the ensemble. Process input, do calculations, and
+  //  prepare output
+  // ===========================================================================================
+  ensemble->process([=](const Input &input, Output &output) {
+    Real qgas_netprod_otrproc[num_gas];
+    Real qgas_cur[num_mode];
+    // ----------------------------------------
+    //  Process input for this ensemble member
+    // ----------------------------------------
+    //  Ambient conditions
+
+    // const Real pmid   = input.get("pmid");            // air pressure
+    // const Real temp   = input.get("temp");            // air temperature
+    // const Real aircon = pmid/(Constants::r_gas*temp); // air density
+
+    // gas production rates and mixing ratio ICs
+
+    qgas_netprod_otrproc[h2so4] = input.get("qgas_prod_rate_h2so4");
+    qgas_netprod_otrproc[soa] = input.get("qgas_prod_rate_soag");
+
+    qgas_cur[h2so4] = input.get("qgas_cur_h2so4");
+    qgas_cur[soa] = input.get("qgas_cur_soag");
+
+    // aerosol mixing ratio ICs
+    Real qnum_cur[num_mode];
+    {
+      const std::vector<Real> val = input.get_array("qnum_cur");
+      for (int i = 0; i < num_mode; ++i)
+        qnum_cur[i] = val[i];
+    }
+    Real qaer_cur[num_aer][num_mode];
+    {
+      std::vector<Real> val[7];
+      val[0] = input.get_array("qaer_soa");
+      val[1] = input.get_array("qaer_so4");
+      val[2] = input.get_array("qaer_pom");
+      val[3] = input.get_array("qaer_bc");
+      val[4] = input.get_array("qaer_ncl");
+      val[5] = input.get_array("qaer_dst");
+      val[6] = input.get_array("qaer_mom");
+      for (int i = 0; i < num_mode; ++i) {
+        qaer_cur[soa][i] = val[0][i];
+        qaer_cur[so4][i] = val[1][i];
+        qaer_cur[pom][i] = val[2][i];
+        qaer_cur[bc][i] = val[3][i];
+        qaer_cur[ncl][i] = val[4][i];
+        qaer_cur[dst][i] = val[5][i];
+        qaer_cur[mom][i] = val[6][i];
+      }
+    }
+
+    // Time-stepping
+    const Real run_length = input.get("run_length");
+    const Real dt_mam = input.get("dt_mam");
+    const int nstep_end = std::round(run_length / dt_mam);
+    EKAT_REQUIRE_MSG(FloatingPoint<Real>::equiv(nstep_end * dt_mam, run_length),
+                     "The run length should be a multiple of the time step.");
+
+    const Real dt_soa_opt = std::round(input.get("dt_soa_opt"));
+    EKAT_REQUIRE_MSG(dt_soa_opt == 0 || dt_soa_opt == -1,
+                     "dt_soa_opt should be 0 or -1.");
+    const Real dt_soa_fixed = dt_soa_opt == -1 ? -1 : dt_mam;
+
+    const bool update_diameter_every_time_step =
+        std::round(input.get("update_diameter_every_time_step"));
+
+    // Miscellaneous input and tmp variables
+
+    const int n_mode = ntot_amode;
+    const Real dwet_ddry_ratio = 1.0;
+    // const bool l_calc_gas_uptake_coeff = true;
+
+    std::vector<Real> time(nstep_end);
+    std::vector<Real> so4a(nstep_end);
+    std::vector<Real> so4g(nstep_end);
+    std::vector<Real> so4g_ddt_exch(nstep_end);
+    std::vector<Real> soaa(nstep_end);
+    std::vector<Real> soag(nstep_end);
+    std::vector<Real> soag_ddt_exch(nstep_end);
+    std::vector<Real> soag_amb_qsat(nstep_end);
+    std::vector<Real> soag_niter(nstep_end);
+
+    // ------------------------------------------------------------------
+    //  save initial conditions for output
+    // ------------------------------------------------------------------
+    {
+      const int istep = 0;
+      time[istep] = 0;
+      so4g[istep] = qgas_cur[h2so4];
+      soag[istep] = qgas_cur[soa];
+      so4a[istep] = qaer_cur[so4][n_mode];
+      soaa[istep] = qaer_cur[soa][n_mode];
+
+      // ------------------------------------------------------------------
+      //  Time loop, in which the MAM subroutine we want to test is called.
+      // ------------------------------------------------------------------
+      std::cout << std::endl;
+      std::cout << "===== Time loop starting" << std::endl;
+      std::cout << "run_length   = " << run_length << std::endl;
+      std::cout << "nstep_end    = " << nstep_end << std::endl;
+      std::cout << "dt_mam       = " << dt_mam << std::endl;
+      std::cout << "dt_soa_fixed = " << dt_soa_fixed
+                << " (dt_soa_opt = " << dt_soa_opt << ")" << std::endl;
+      std::cout << std::endl;
+    }
+    // ---------
+    for (int istep = 0; istep < nstep_end; ++istep) {
+
+      // --------------------------------------------------------------------------------------
+      //  Apply net production from other processes (e.g., chemistry,
+      //  advection). This is done here for SOA only, because the production
+      //  rate of H2SO4 gas is handled inside the MAM subroutine we are testing.
+      // --------------------------------------------------------------------------------------
+      qgas_cur[soa] = qgas_cur[soa] + qgas_netprod_otrproc[soa] * dt_mam;
+
+      // --------------------------------------------------------------------------------------
+      //  Calculate/update wet geometric mean diameter of each aerosol mode
+      // --------------------------------------------------------------------------------------
+      Real dgn_awet[num_mode]; // geometric mean diameter of each aerosol mode
+      if ((update_diameter_every_time_step == 1) || (istep == 1)) {
+        mam4::diag_dgn_wet(qaer_cur, qnum_cur, dwet_ddry_ratio, dgn_awet);
+      }
+      // --------------------------------------------------------------------------------------
+      //  Gas-aerosol exchanges
+      // --------------------------------------------------------------------------------------
+      //  Save the gas mixing ratios before gas-aerosol exchange to diagnose the
+      //  tendencies after the subroutine call.
+      // Note: qgas_cur[num_gas] is out of bounds but the constructor is for
+      // [begin,end)
+      const std::vector<Real> zqgas_bef(&qgas_cur[0], &qgas_cur[num_mode]);
+
+      // Call the MAM subroutine. Gas and aerosol mixing ratios will be updated
+      // during the call
+      int nlev = 1;
+      Real pblh = 1000;
+      Atmosphere atm(nlev, pblh);
+      mam4::Prognostics progs(nlev);
+      mam4::Diagnostics diags(nlev);
+      mam4::Tendencies tends(nlev);
+
+      mam4::AeroConfig mam4_config;
+      mam4::GasAerExchProcess::ProcessConfig process_config;
+      mam4::GasAerExchProcess process(mam4_config, process_config);
+      auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+      Real t = 0.0, dt = dt_mam;
+      Kokkos::parallel_for(
+          team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+            process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
+          });
+      Real g0_soa[nsoa] = {}; // ambient saturation mixing ratio of SOA gases,
+                              // solute effect ignored
+      int niter = 1;          // number of substeps used for SOA
+
+      // ---------------------------------------------------------
+      //  Calculations for this timestep done. Prepare for output.
+      // ---------------------------------------------------------
+      //  Save values for output and postprocessing
+
+      time[istep] = istep * dt_mam;
+
+      // so4
+      so4g[istep] = qgas_cur[h2so4];
+      so4a[istep] = std::accumulate(qaer_cur[so4], qaer_cur[so4 + 1], 0);
+      so4g_ddt_exch[istep] = (qgas_cur[h2so4] - zqgas_bef[h2so4]) / dt_mam -
+                             qgas_netprod_otrproc[h2so4];
+
+      // soa
+      soag[istep] = qgas_cur[soa];
+      soaa[istep] = std::accumulate(qaer_cur[soa], qaer_cur[soa + 1], 0);
+      soag_ddt_exch[istep] = (qgas_cur[soa] - zqgas_bef[soa]) / dt_mam;
+      soag_amb_qsat[istep] = g0_soa[soa];
+      soag_niter[istep] = niter;
+      // Print some numbers to stdout for quick checks
+      std::cout << "step " << istep << ", dqSOAG/dt = " << soag_ddt_exch[istep]
+                << ", qSOAG after = " << qgas_cur[soa]
+                << ", g0_soa = " << g0_soa[soa] << ", niter = " << niter
+                << std::endl;
+      // ----------------------------------------------
+    }
+    std::cout << std::endl;
+    std::cout << "===== Time loop done" << std::endl;
+    std::cout << std::endl;
+
+    // ------------------------------------------
+    //  Process output for this ensemble member
+    // ------------------------------------------
+    output.set("model_time", time);
+    output.set("so4a_time_series", so4a);
+    output.set("so4g_time_series", so4g);
+    output.set("so4g_ddt_exch", so4g_ddt_exch);
+    output.set("soaa_time_series", soaa);
+    output.set("soag_time_series", soag);
+    output.set("soag_ddt_exch", soag_ddt_exch);
+    output.set("soag_amb_qsat", soag_amb_qsat);
+    output.set("soag_niter", soag_niter);
+  });
+
+  // ========================================
+  //  End of loop over all ensemble members
+  // ========================================//
+  //  Now we write out a Python module containing the output data.
+  std::cout << exe_name << ": Writing output to " << output_file << std::endl;
+  ensemble->write(output_file);
+
+  // If we got here, the execution was successfull.
+  std::cout << "PASS" << std::endl;
+  Kokkos::finalize();
+  return 0;
+}
