@@ -30,12 +30,12 @@ void compute_dry_volume_k(Ensemble *ensemble) {
         auto h_prog_aero_i =
             Kokkos::create_mirror_view(progs.q_aero_i[imode][isp]);
         h_prog_aero_i(0) = q_i[count];
-        Kokkos::deep_copy(h_prog_aero_i, progs.q_aero_i[imode][isp]);
+        Kokkos::deep_copy(progs.q_aero_i[imode][isp], h_prog_aero_i);
 
         auto h_prog_aero_c =
             Kokkos::create_mirror_view(progs.q_aero_c[imode][isp]);
         h_prog_aero_c(0) = q_c[count];
-        Kokkos::deep_copy(h_prog_aero_c, progs.q_aero_c[imode][isp]);
+        Kokkos::deep_copy(progs.q_aero_c[imode][isp], h_prog_aero_c);
 
         count++;
       } // end species
