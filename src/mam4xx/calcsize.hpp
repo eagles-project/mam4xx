@@ -913,6 +913,10 @@ private:
   const int _ait_spec_in_acc[4] = {0, 1, 2, 3};
   // index of accum species in aitken mode.
   const int _acc_spec_in_ait[4] = {0, 2, 5, 6};
+  Real v2nmin[4];
+  Real v2nmax[4];
+  Real v2nminrl[4];
+  Real v2nmaxrl[4];
 
 public:
   // name -- unique name of the process implemented by this class
@@ -924,6 +928,9 @@ public:
             const Config& calcsize_config = Config()) {
     // Set nucleation-specific config parameters.
     config_ = calcsize_config;
+
+    const int aitken_idx = int(ModeIndex::Aitken);
+    const int accumulation_idx = int(ModeIndex::Accumulation);
 
     // Set mode parameters.
     for (int m = 0; m < AeroConfig::num_modes(); ++m) {
@@ -954,6 +961,25 @@ public:
         const int aero_id = int(mode_aero_species(m, ispec));
         _inv_density[m][ispec] = Real(1.0) / aero_species(aero_id).density;
       } // for(ispec)
+      // FIXME: do we need to update v2nmin_nmodes and v2nmax_nmodes as well?
+      v2nmin[m] = v2nmin_nmodes[m];
+      v2nmax[m] = v2nmax_nmodes[m];
+      // compute upper and lower limits for volume to num (v2n) ratios and
+      // diameters (dgn)
+      //      Get relaxed limits for volume_to_num
+      // (we use relaxed limits for aerosol number "adjustment"
+      // calculations via "adjust_num_sizes" subroutine. Note: The
+      // relaxed limits will be artificially inflated (or deflated) for
+      // the aitken and accumulation modes if "do_aitacc_transfer" flag is
+      // true to effectively shut-off aerosol number "adjustment"
+      // calculations for these modes because we do the explicit transfer
+      // (via "aitken_accum_exchange" subroutine) from one mode to
+      // another instead of adjustments for these modes)
+      calcsize::get_relaxed_v2n_limits(
+                config_.do_aitacc_transfer, m == aitken_idx,
+                m == accumulation_idx, v2nmin[m], v2nmax[m], v2nminrl[m],
+                v2nmaxrl[m]); // outputs (NOTE: v2nmin and v2nmax are only updated
+                           // for aitken and accumulation modes)
 
     } // for(m)
 
@@ -982,6 +1008,7 @@ public:
     auto& dgncur_c = diagnostics.dgncur_c;
     // volume to number ratio for cloud-borne aerosols
     auto& v2ncur_c = diagnostics.v2ncur_c;
+
 
     const auto inv_density = _inv_density;
     const Real zero = 0;
@@ -1094,31 +1121,9 @@ public:
             calcsize::compute_dry_volume_k(k, imode, inv_density, prognostics,
                                            dryvol_i, dryvol_c);
 
-            auto v2nmin = v2nmin_nmodes[imode];
-            auto v2nmax = v2nmax_nmodes[imode];
             const auto dgnmin = dgnmin_nmodes[imode];
             const auto dgnmax = dgnmax_nmodes[imode];
             const auto common_factor = common_factor_nmodes[imode];
-
-            Real v2nminrl, v2nmaxrl;
-
-            // compute upper and lower limits for volume to num (v2n) ratios and
-            // diameters (dgn)
-            //      Get relaxed limits for volume_to_num
-            // (we use relaxed limits for aerosol number "adjustment"
-            // calculations via "adjust_num_sizes" subroutine. Note: The
-            // relaxed limits will be artificially inflated (or deflated) for
-            // the aitken and accumulation modes if "do_aitacc_transfer" flag is
-            // true to effectively shut-off aerosol number "adjustment"
-            // calculations for these modes because we do the explicit transfer
-            // (via "aitken_accum_exchange" subroutine) from one mode to
-            // another instead of adjustments for these modes)
-
-            calcsize::get_relaxed_v2n_limits(
-                do_aitacc_transfer, imode == aitken_idx,
-                imode == accumulation_idx, v2nmin, v2nmax, v2nminrl,
-                v2nmaxrl); // outputs (NOTE: v2nmin and v2nmax are only updated
-                           // for aitken and accumulation modes)
 
             // initial value of num interstitial for this Real and mode
             auto init_num_i = n_i[imode](k);
@@ -1161,7 +1166,7 @@ public:
                "update_diameter_and_vol2num" subroutine call below) */
               calcsize::adjust_num_sizes(
                   dryvol_i, dryvol_c, init_num_i, init_num_c, dt,     // in
-                  v2nmin, v2nmax, v2nminrl, v2nmaxrl, adj_tscale_inv, // in
+                  v2nmin[imode], v2nmax[imode], v2nminrl[imode], v2nmaxrl[imode], adj_tscale_inv, // in
                   close_to_one,                                       // in
                   num_i_k, num_c_k,                                   // out
                   interstitial_tend, cloudborne_tend);                // out
@@ -1169,19 +1174,15 @@ public:
 
             // update diameters and volume to num ratios for interstitial
             // aerosols
-            auto& dgncur_i_k = dgncur_i[imode](k);
-            auto& v2ncur_i_k = v2ncur_i[imode](k);
 
             calcsize::update_diameter_and_vol2num(
-                dryvol_i, num_i_k, v2nmin, v2nmax, dgnmin, dgnmax,
-                common_factor, dgncur_i_k, v2ncur_i_k);
+                dryvol_i, num_i_k, v2nmin[imode], v2nmax[imode], dgnmin, dgnmax,
+                common_factor, dgncur_i[imode](k), v2ncur_i[imode](k));
 
             // update diameters and volume to num ratios for cloudborne aerosols
-            auto& dgncur_c_k = dgncur_c[imode](k);
-            auto& v2ncur_c_k = v2ncur_c[imode](k);
             calcsize::update_diameter_and_vol2num(
-                dryvol_c, num_c_k, v2nmin, v2nmax, dgnmin, dgnmax,
-                common_factor, dgncur_c_k, v2ncur_c_k);
+                dryvol_c, num_c_k, v2nmin[imode], v2nmax[imode], dgnmin, dgnmax,
+                common_factor, dgncur_c[imode](k), v2ncur_c[imode](k));
 
             // save number concentrations and dry volumes for explicit
             // aitken <--> accum mode transfer, which is the next step in
