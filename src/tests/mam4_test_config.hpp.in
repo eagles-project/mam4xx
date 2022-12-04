@@ -1,10 +1,10 @@
 #ifndef MAM4_TEST_CONFIG_HPP
 #define MAM4_TEST_CONFIG_HPP
 
+// clang-format off
 #define MAM4_TEST_DATA_DIR "@CMAKE_CURRENT_SOURCE_DIR@/data"
+// clang-format on
 
-namespace mam4 {
-
-}
+namespace mam4 {}
 
 #endif
