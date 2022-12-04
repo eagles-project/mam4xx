@@ -5,12 +5,6 @@
 #include <ekat/logging/ekat_logger.hpp>
 #include <ekat/mpi/ekat_comm.hpp>
 
-// #include <cmath>
-// #include <iomanip>
-// #include <iostream>
-// #include <limits>
-// #include <sstream>
-
 // if you need something from the data/ directory
 // std::string data_file = MAM4_TEST_DATA_DIR;
 // #include <mam4_test_config.hpp>
@@ -41,12 +35,6 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
   mam4::CalcSizeProcess process(mam4_config);
 
   const auto nmodes = mam4::AeroConfig::num_modes();
-
-  // int total_sp_aero=0;
-  // for (int imode = 0; imode < nmodes; ++imode)
-  // {
-  //   total_sp_aero += mam4::num_species_mode[imode];
-  // }
 
   Kokkos::Array<Real, 21> interstitial = {
       0.1218350564E-08, 0.3560443333E-08, 0.4203338951E-08, 0.3723412167E-09,

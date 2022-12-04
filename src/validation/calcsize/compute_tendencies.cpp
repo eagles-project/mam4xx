@@ -113,8 +113,7 @@ void compute_tendencies(Ensemble *ensemble) {
       Kokkos::deep_copy(h_dgncur_c, diags.dgncur_c[imode]);
       diags_dgncur_c.push_back(h_dgncur_c(0));
 
-
-    }   // end mode
+    } // end mode
 
     output.set("interstitial_ptend", tend_aero_i_out);
     output.set("interstitial_ptend_num", tend_n_mode_i_out);

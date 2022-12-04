@@ -8,13 +8,13 @@
 using namespace skywalker;
 using namespace mam4;
 
-void aitken_accum_exchange(Ensemble* ensemble) {
+void aitken_accum_exchange(Ensemble *ensemble) {
 
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
 
   // Run the ensemble.
-  ensemble->process([=](const Input& input, Output& output) {
+  ensemble->process([=](const Input &input, Output &output) {
     Real dt = input.get("dt");
 
     int nlev = 1;
@@ -120,9 +120,7 @@ void aitken_accum_exchange(Ensemble* ensemble) {
     const auto adj_tscale_inv = 1.0 / (adj_tscale * close_to_one);
 
     Kokkos::parallel_for(
-        "aitken_accum_exchange_k", max_k, KOKKOS_LAMBDA(const int& k) {
-          // std::cout << "we're here"
-          //           << "\n";
+        "aitken_accum_exchange_k", max_k, KOKKOS_LAMBDA(const int &k) {
           calcsize::aitken_accum_exchange(
               k, aitken_idx, accum_idx, no_transfer_acc2ait,
               n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
