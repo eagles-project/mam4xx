@@ -121,8 +121,8 @@ void aitken_accum_exchange(Ensemble* ensemble) {
 
     Kokkos::parallel_for(
         "aitken_accum_exchange_k", max_k, KOKKOS_LAMBDA(const int& k) {
-          std::cout << "we're here"
-                    << "\n";
+          // std::cout << "we're here"
+          //           << "\n";
           calcsize::aitken_accum_exchange(
               k, aitken_idx, accum_idx, no_transfer_acc2ait,
               n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
