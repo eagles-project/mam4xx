@@ -440,7 +440,7 @@ void compute_coef_acc_ait_transfer(
     int iacc, int klev, const Real v2n_geomean, const Real adj_tscale_inv,
     const Prognostics &prognostics, const Real drv_i_accsv,
     const Real drv_c_accsv, const Real num_i_accsv, const Real num_c_accsv,
-    const bool no_transfer_acc2ait[7], const Real voltonum_ait,
+    const bool noxf_acc2ait[7], const Real voltonum_ait,
     const Real inv_density[4][7], const Real v2nmin_nmodes[4], Real &drv_i_noxf,
     Real &drv_c_noxf, int &acc2_ait_index, Real &xfercoef_num_acc2ait,
     Real &xfercoef_vol_acc2ait, Real xfertend_num[2][2]) {
@@ -478,7 +478,7 @@ void compute_coef_acc_ait_transfer(
       // In mam4xx q_i and q_c have a different structure that mam4, i.e,
       // q_i[nmode][nspecies](k). So, we need to modify the following for loop
       for (int ispec = 0; ispec < n_spec; ++ispec) {
-        if (no_transfer_acc2ait[ispec]) { // then species which can't be
+        if (noxf_acc2ait[ispec]) { // then species which can't be
                                           // transferred
           // need qmass*invdens = (kg/kg-air) * [1/(kg/m3)] = m3/kg-air
           drv_i_noxf +=
@@ -656,7 +656,7 @@ void update_tends_flx(const int klev,          // in
 KOKKOS_INLINE_FUNCTION
 void aitken_accum_exchange(
     const int &k, const int &aitken_idx, const int &accum_idx,
-    const bool no_transfer_acc2ait[7], const int n_common_species_ait_accum,
+    const bool noxf_acc2ait[7], const int n_common_species_ait_accum,
     const int *ait_spec_in_acc, const int *acc_spec_in_ait,
     const Real v2nmax_nmodes[4], const Real v2nmin_nmodes[4],
     const Real v2nnom_nmodes[4], const Real dgnmax_nmodes[4],
@@ -732,13 +732,13 @@ void aitken_accum_exchange(
   //   accum may have some species (seasalt, dust, poa etc.) that are
   //   not in aitken mode.
   //   so first divide the accum dry volume & number into not-transferred (using
-  //   no_transfer_acc2ait) species and transferred species, and use the
+  //   noxf_acc2ait) species and transferred species, and use the
   //   transferred-species portion in what follows
   //  ----------------------------------------------------------------------------------------
 
   compute_coef_acc_ait_transfer(
       accum_idx, k, v2n_geomean, adj_tscale_inv, prognostics, drv_i_accsv,
-      drv_c_accsv, num_i_accsv, num_c_accsv, no_transfer_acc2ait, voltonum_ait,
+      drv_c_accsv, num_i_accsv, num_c_accsv, noxf_acc2ait, voltonum_ait,
       inv_density, v2nmin_nmodes, drv_i_noxf, drv_c_noxf, acc2_ait_index,
       xfercoef_num_acc2ait, xfercoef_vol_acc2ait, xfertend_num);
 
@@ -900,12 +900,17 @@ private:
 
   Real _inv_density[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
 
-  // is the species present in both accum and aitken modes?
-  // boolean view indicating which species will be transferred from
-  // accumulation -> aitken indexed to accumulation mode (because it carries
-  // more species)
-  const bool _no_transfer_acc2ait[7] = {true,  false, true, false,
-                                        false, true,  true};
+   /*------------------------------------------------------------------------
+   Identify accum species cannot be transferred to aitken mode
+  
+   Accumulation mode have more species than Aitken mode. Therefore, there
+   will be some species which cannot be transferred from accumulation to
+   Aitken mode as they don't exist in the Aitken mode
+  ------------------------------------------------------------------------*/
+  // true: cannot be transferred
+  // false: can be transferred
+  const bool _noxf_acc2ait[7] = {false,  true, false, true,
+                                        true, false,  false};
   ;
   // number of common species between accum and aitken modes
   const int _n_common_species_ait_accum = 4;
@@ -1017,7 +1022,7 @@ public:
     const auto acc_spec_in_ait = _acc_spec_in_ait;
     const auto ait_spec_in_acc = _ait_spec_in_acc;
     const auto n_common_species_ait_accum = _n_common_species_ait_accum;
-    const auto no_transfer_acc2ait = _no_transfer_acc2ait;
+    const auto noxf_acc2ait = _noxf_acc2ait;
 
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
@@ -1224,7 +1229,7 @@ public:
           if (do_aitacc_transfer) {
 
             calcsize::aitken_accum_exchange(
-                k, aitken_idx, accumulation_idx, no_transfer_acc2ait,
+                k, aitken_idx, accumulation_idx, noxf_acc2ait,
                 n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
                 v2nmax_nmodes, v2nmin_nmodes, v2nnom_nmodes, dgnmax_nmodes,
                 dgnmin_nmodes, dgnnom_nmodes, common_factor_nmodes, inv_density,
