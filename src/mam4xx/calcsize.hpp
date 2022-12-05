@@ -900,12 +900,12 @@ private:
 
   Real _inv_density[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
 
-   /*------------------------------------------------------------------------
-   Identify accum species cannot be transferred to aitken mode
+  /*------------------------------------------------------------------------
+  Identify accum species cannot be transferred to aitken mode
   
-   Accumulation mode have more species than Aitken mode. Therefore, there
-   will be some species which cannot be transferred from accumulation to
-   Aitken mode as they don't exist in the Aitken mode
+  Accumulation mode have more species than Aitken mode. Therefore, there
+  will be some species which cannot be transferred from accumulation to
+  Aitken mode as they don't exist in the Aitken mode
   ------------------------------------------------------------------------*/
   // true: cannot be transferred
   // false: can be transferred
@@ -1006,13 +1006,21 @@ public:
     const int nk = atmosphere.num_levels();
 
     // diameter for interstitial aerosols
-    auto &dgncur_i = diagnostics.dgncur_i;
+    const auto dgncur_i = diagnostics.dgncur_i;
     // volume to number ratio for interstitial aerosols
-    auto &v2ncur_i = diagnostics.v2ncur_i;
+    const auto v2ncur_i = diagnostics.v2ncur_i;
     // diameter for cloud-borne aerosols
-    auto &dgncur_c = diagnostics.dgncur_c;
+    const auto dgncur_c = diagnostics.dgncur_c;
     // volume to number ratio for cloud-borne aerosols
-    auto &v2ncur_c = diagnostics.v2ncur_c;
+    const auto v2ncur_c = diagnostics.v2ncur_c;
+
+    const auto n_i = prognostics.n_mode_i;
+    const auto n_c = prognostics.n_mode_c;
+    // tendencies for interstitial number mixing ratios
+    const auto dnidt = tendencies.n_mode_i;
+    // tendencies for cloud-borne number mixing ratios
+    const auto dncdt = tendencies.n_mode_c;
+
 
     const auto inv_density = _inv_density;
     const Real zero = 0;
@@ -1026,25 +1034,7 @@ public:
 
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
-          const auto n_i = prognostics.n_mode_i;
-          const auto n_c = prognostics.n_mode_c;
-
-          // tendencies for interstitial number mixing ratios
-          const auto dnidt = tendencies.n_mode_i;
-
-          // tendencies for cloud-borne number mixing ratios
-          const auto dncdt = tendencies.n_mode_c;
-
-          // FIXME: should these non-reference variables be here vs. above as
-          // references and outside of the parfor? (I suspect above is correct)
-          // // diameter for interstitial aerosols
-          // auto dgncur_i = diagnostics.dgncur_i;
-          // // volume to number ratio for interstitial aerosols
-          // auto v2ncur_i = diagnostics.v2ncur_i;
-          // // diameter for cloud-borne aerosols
-          // auto dgncur_c = diagnostics.dgncur_c;
-          // // volume to number ratio for cloud-borne aerosols
-          // auto v2ncur_c = diagnostics.v2ncur_c;
+          
 
           Real dryvol_i = 0;
           Real dryvol_c = 0;
