@@ -479,7 +479,7 @@ void compute_coef_acc_ait_transfer(
       // q_i[nmode][nspecies](k). So, we need to modify the following for loop
       for (int ispec = 0; ispec < n_spec; ++ispec) {
         if (noxf_acc2ait[ispec]) { // then species which can't be
-                                          // transferred
+                                   // transferred
           // need qmass*invdens = (kg/kg-air) * [1/(kg/m3)] = m3/kg-air
           drv_i_noxf +=
               max(zero, q_i[iacc][ispec](klev)) * inv_density[iacc][ispec];
@@ -902,15 +902,14 @@ private:
 
   /*------------------------------------------------------------------------
   Identify accum species cannot be transferred to aitken mode
-  
+
   Accumulation mode have more species than Aitken mode. Therefore, there
   will be some species which cannot be transferred from accumulation to
   Aitken mode as they don't exist in the Aitken mode
   ------------------------------------------------------------------------*/
   // true: cannot be transferred
   // false: can be transferred
-  const bool _noxf_acc2ait[7] = {false,  true, false, true,
-                                        true, false,  false};
+  const bool _noxf_acc2ait[7] = {false, true, false, true, true, false, false};
   ;
   // number of common species between accum and aitken modes
   const int _n_common_species_ait_accum = 4;
@@ -1021,7 +1020,6 @@ public:
     // tendencies for cloud-borne number mixing ratios
     const auto dncdt = tendencies.n_mode_c;
 
-
     const auto inv_density = _inv_density;
     const Real zero = 0;
     const Real close_to_one = 1.0 + 1.0e-15; // BAD_CONSTANT!!
@@ -1034,8 +1032,6 @@ public:
 
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
-          
-
           Real dryvol_i = 0;
           Real dryvol_c = 0;
 
