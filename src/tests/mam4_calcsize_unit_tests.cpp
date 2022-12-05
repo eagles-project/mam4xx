@@ -56,7 +56,7 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
       // set all cell to same value.
       h_prog_n_mode_i(k) = interstitial_num[imode];
     }
-    Kokkos::deep_copy(h_prog_n_mode_i, progs.n_mode_i[imode]);
+    Kokkos::deep_copy(progs.n_mode_i[imode], h_prog_n_mode_i);
 
     ss << "progs.n_mode_i (mode No " << imode << ") [in]: [ ";
     for (int k = 0; k < nlev; ++k) {
@@ -79,7 +79,7 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
         // set all cell to same value.
         h_prog_aero_i(k) = interstitial[count];
       }
-      Kokkos::deep_copy(h_prog_aero_i, progs.q_aero_i[imode][isp]);
+      Kokkos::deep_copy(progs.q_aero_i[imode][isp], h_prog_aero_i);
       count++;
 
       ss << "progs.q_aero_i (mode No " << imode << ", species No " << isp
@@ -98,18 +98,18 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
     } // end species
   }   // end modes
 
+  const int ncol = 1;
   // Single-column dispatch.
-  auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+  auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
   Real t = 0.0, dt = 30.0;
   Kokkos::parallel_for(
       team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
         process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
       });
 
-  count = 0;
   for (int imode = 0; imode < nmodes; ++imode) {
     auto h_tends_n_mode_i = Kokkos::create_mirror_view(tends.n_mode_i[imode]);
-    Kokkos::deep_copy(tends.n_mode_i[imode], h_tends_n_mode_i);
+    Kokkos::deep_copy(h_tends_n_mode_i, tends.n_mode_i[imode]);
 
     ss << "tends.n_mode_i (mode No " << imode << ") [out]: [ ";
     for (int k = 0; k < nlev; ++k) {
@@ -128,8 +128,7 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
       // const auto prog_aero_i = ekat::scalarize(tends.q_aero_i[imode][i]);
       auto h_tends_aero_i =
           Kokkos::create_mirror_view(tends.q_aero_i[imode][isp]);
-      Kokkos::deep_copy(tends.q_aero_i[imode][isp], h_tends_aero_i);
-      count++;
+      Kokkos::deep_copy(h_tends_aero_i, tends.q_aero_i[imode][isp]);
 
       ss << "tends.q_aero_i (mode No " << imode << ", species No " << isp
          << " ) [out]: [ ";
