@@ -459,7 +459,6 @@ void compute_coef_acc_ait_transfer(
       1.0e-37; // BAD_CONSTANT!! This is not a physical constant, but it could
                // impact numerical errors.
 
-
   acc2_ait_index = 0;
   xfercoef_num_acc2ait = zero;
   xfercoef_vol_acc2ait = zero;
