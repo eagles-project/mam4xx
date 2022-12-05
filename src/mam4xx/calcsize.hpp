@@ -447,14 +447,18 @@ void compute_coef_acc_ait_transfer(
 
   const auto q_i = prognostics.q_aero_i;
   const auto q_c = prognostics.q_aero_c;
+  const Real zero = 0.0, one = 1.0;
 
-  Real drv_t_noxf, num_t0;
-  Real num_t_noxf;
-  Real xferfrac_num_acc2ait, xferfrac_vol_acc2ait;
+  // FIXME: we are getting compilation errors in ubuntu-22.04 for these
+  // uninitilizated variables.
+  Real drv_t_noxf = zero, num_t0 = zero;
+  Real num_t_noxf = zero;
+  Real xferfrac_num_acc2ait = zero, xferfrac_vol_acc2ait = zero;
+
   const Real zero_div_fac =
       1.0e-37; // BAD_CONSTANT!! This is not a physical constant, but it could
                // impact numerical errors.
-  const Real zero = 0.0, one = 1.0;
+
 
   acc2_ait_index = 0;
   xfercoef_num_acc2ait = zero;
