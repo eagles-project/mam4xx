@@ -721,7 +721,13 @@ void aitken_accum_exchange(
 
   // v2n_geomean is the geometric mean vol2num values
   // between the aitken and accum modes
-  auto v2n_geomean = haero::sqrt(voltonum_ait * voltonum_acc);
+  // FIXME
+  // We are scaling voltonum_ait and voltonum_acc by a factor of 1e20
+  // because this computation produces inf and nan in the compute_tendencies
+  // unit test of calcsize for the single precision build.
+  // We could also consider other options to fix this issue.
+  const auto v2n_geomean = Real(1e20) * haero::sqrt(voltonum_ait / Real(1e20) *
+                                              voltonum_acc / Real(1e20));
 
   // Compute aitken -> accumulation transfer
   compute_coef_ait_acc_transfer(
