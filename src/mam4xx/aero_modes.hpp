@@ -238,21 +238,15 @@ int aerosol_index_for_mode(ModeIndex mode, AeroId aero_id) {
   return -1;
 }
 
-// Identifiers for gas species in MAM4.
+// Identifiers for gas species in MAM4, specified in the same order as they
+// appear in the set_gaѕ_and_aer_names_and_indices subroutine within the
+// modal_aero_microp_species F90 module (assuming nsoa == 1). It looks like MAM4
+// only tracks SOAG and H2SO4. We keep NH3 around because ternary nucleation
+// requires it, is already ported, and may be required in the future.
 enum class GasId {
-  O3 = 0,     // ozone
-  H2O2 = 1,   // hydrogen peroxide
-  H2SO4 = 2,  // sulfuric acid
-  SO2 = 3,    // sulfur dioxide
-  DMS = 4,    // dimethylsulfide
-  SOAG = 5,   // secondary organic aerosol precursor
-  O2 = 6,     // oxygen
-  CO2 = 7,    // carbon dioxide
-  N2O = 8,    // nitrous oxide
-  CH4 = 9,    // methane,
-  CFC11 = 10, // trichlorofluoromethane
-  CFC12 = 11, // dichlorodifluoromethane
-  NH3 = 12    // ammonia
+  SOAG = 0,  // secondary organic aerosol precursor
+  H2SO4 = 1, // sulfuric acid
+  NH3 = 2,   // ammonia
 };
 
 /// Molecular weight of carbon dioxide [kg/mol]
