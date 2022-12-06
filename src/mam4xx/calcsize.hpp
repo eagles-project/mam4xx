@@ -727,7 +727,7 @@ void aitken_accum_exchange(
   // unit test of calcsize for the single precision build.
   // We could also consider other options to fix this issue.
   const auto v2n_geomean = Real(1e20) * haero::sqrt(voltonum_ait / Real(1e20) *
-                                              voltonum_acc / Real(1e20));
+                                                    voltonum_acc / Real(1e20));
 
   // Compute aitken -> accumulation transfer
   compute_coef_ait_acc_transfer(
