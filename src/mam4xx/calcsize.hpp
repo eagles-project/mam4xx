@@ -186,46 +186,35 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
    */
 
   // fraction of adj_tscale covered in the current time step "dt"
-  const auto frac_adj_in_dt = max(0.0, min(1.0, dt * adj_tscale_inv));
+  const Real zero = 0.0;
+  const Real one = 1.0;
+  const auto frac_adj_in_dt = max(zero, min(one, dt * adj_tscale_inv));
 
   // inverse of time step
-  const auto dtinv = 1.0 / (dt * close_to_one);
-
-  /*
-   * The masks below represent four if-else conditions in the original fortran
-   * code. The masks represent whether a given branch should be traversed for
-   * a given element of the Real, and this Real is passed to the function
-   * invocations.
-   */
-  //  FIXME: I think this comment no longer applies(?)
-
-  const auto drva_le_zero = drv_i <= 0.0;
-  const auto drvc_le_zero = drv_c <= 0.0;
-
-  const auto drv_i_c_le_zero = drva_le_zero && drvc_le_zero;
-  const Real zero = 0;
+  const auto dtinv = one / (dt * close_to_one);
 
   // If both interstitial (drv_i) and cloud borne (drv_c) dry volumes are zero
   // (or less) adjust numbers(num_a and num_c respectively) for both of them to
   // be zero for this mode and level
-  if (drv_i_c_le_zero) {
+  if (drv_i <= zero && drv_c <= zero) {
     num_i = zero;
     num_c = zero;
     dqdt = update_num_adj_tends(num_i, init_num_i, dtinv);
     dqqcwdt = update_num_adj_tends(num_c, init_num_c, dtinv);
-  } else if (drvc_le_zero) {
+  } else if (drv_c <= zero) {
     // if cloud borne dry volume (drv_c) is zero(or less), the interstitial
     // number/volume == total/combined apply step 1 and 3, but skip the relaxed
     // adjustment (step 2, see below)
     num_c = zero;
     const auto numbnd = min_max_bounded(drv_i, v2nmin, v2nmax, num_i);
     num_i = num_i + (numbnd - num_i) * frac_adj_in_dt;
-  } else if (drva_le_zero) {
+  } else if (drv_i <= zero) {
     // interstitial volume is zero, treat similar to above
     const auto numbnd = min_max_bounded(drv_c, v2nmin, v2nmax, num_c);
     num_c = num_c + (numbnd - num_c) * frac_adj_in_dt;
     num_i = zero;
   } else {
+    // both volumes are positive
     // The number adjustment is done in 3 steps:
     // Step 1: assumes that num_a and num_c are non-negative (nothing to be done
     // here)
@@ -264,18 +253,13 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
       possible to conserve num_i + num_c (such that num_i + num_c stays close to
       its original value)
     */
-    const auto delta_num_i_stp2_eq0 = delta_num_i_stp2 == 0.0;
-    const auto delta_num_c_stp2_eq0 = delta_num_c_stp2 == 0.0;
 
-    if (delta_num_i_stp2_eq0 && !delta_num_c_stp2_eq0) {
+    if (delta_num_i_stp2 == zero && delta_num_c_stp2 != zero) {
       num_i_stp2 = min_max_bounded(drv_i, v2nminrl, v2nmaxrl,
                                    num_i_stp1 - delta_num_c_stp2);
-    } else if (delta_num_c_stp2_eq0 && !delta_num_i_stp2_eq0) {
+    } else if (delta_num_i_stp2 != zero && delta_num_c_stp2 == zero) {
       num_c_stp2 = min_max_bounded(drv_c, v2nminrl, v2nmaxrl,
                                    num_c_stp1 - delta_num_i_stp2);
-    } else {
-      // nothing here
-      // for i = 1, N; do ~panic;
     } // end if
 
     /* Step3[apply stricter bounds] has 3 parts (a), (b) and (c)
@@ -299,9 +283,7 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
     const auto min_number_bound = total_drv * v2nmin;
     const auto max_number_bound = total_drv * v2nmax;
 
-    const auto total_lt_lowerbound = total_num < min_number_bound;
-    const auto total_gt_upperbound = total_num > max_number_bound;
-    if (total_lt_lowerbound) {
+    if (total_num < min_number_bound) {
       // change in total_num in one time step
       const auto delta_num_t3 = (min_number_bound - total_num) * frac_adj_in_dt;
 
@@ -309,9 +291,7 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
        * Now we need to decide how to distribute "delta_num" (change in
        * number) for num_i and num_c.
        */
-      const auto do_dist_delta_num =
-          (num_i_stp2 < drv_i * v2nmin) && (num_c_stp2 < drv_c * v2nmin);
-      if (do_dist_delta_num) {
+      if ((num_i_stp2 < drv_i * v2nmin) && (num_c_stp2 < drv_c * v2nmin)) {
         /* if both num_i and num_c are less than the lower bound distribute
          * "delta_num" using weighted ratios
          */
@@ -323,19 +303,15 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
       } else if (num_i_stp2 < drv_i * v2nmin) {
         // if only num_i is less than lower bound, assign total change to num_i
         delta_num_i_stp3 = delta_num_t3;
-      } else {
-        // nothing here
       } // end if (do_dist_delta_num)
 
-    } else if (total_gt_upperbound) {
+    } else if (total_num > max_number_bound) {
       // change in total_num in one time step
       const auto delta_num_t3 = (max_number_bound - total_num) * frac_adj_in_dt;
 
       // decide how to distribute "delta_num"(change in number) for num_i and
       // num_c
-      const auto do_dist_delta_num =
-          (num_i_stp2 > drv_i * v2nmax) && (num_c_stp2 > drv_c * v2nmax);
-      if (do_dist_delta_num) {
+      if ((num_i_stp2 > drv_i * v2nmax) && (num_c_stp2 > drv_c * v2nmax)) {
         /*
          * if both num_i and num_c are more than the upper bound distribute
          * "delta_num" using weighted ratios
@@ -352,8 +328,6 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
         // if only num_i is more than the upper bound, assign total change to
         // num_i
         delta_num_i_stp3 = delta_num_t3;
-      } else {
-        // nothing here
       } // end if (do_dist_delta_num)
 
     } // end if (total_lt_lowerbound)
@@ -726,7 +700,7 @@ void aitken_accum_exchange(
   // and their multiplication overflows single precision, and
   // the square root ends up NaN. Thus,we compute sqrt individually
   const auto v2n_geomean =
-      haero::sqrt(voltonum_ait) * haero::sqrt(voltonum_ait);
+      haero::sqrt(voltonum_ait) * haero::sqrt(voltonum_acc);
 
   // Compute aitken -> accumulation transfer
   compute_coef_ait_acc_transfer(
