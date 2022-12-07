@@ -40,7 +40,10 @@ foreach (input
          update_diameter_and_vol2num_case1
          calcsize_e3sm
          compute_dry_volume_case1
-         aitken_accum_exchange_case1)
+         aitken_accum_exchange_case1
+         calcsize_sub_ts_378
+         calcsize_sub_ts_379
+         )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
   configure_file(
