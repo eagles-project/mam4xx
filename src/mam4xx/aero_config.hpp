@@ -52,7 +52,7 @@ public:
   static constexpr int num_aerosol_ids() { return 7; }
 
   /// Returns the number of gas ids. This is the number of enums in mam4::GasId.
-  static constexpr int num_gas_ids() { return 13; }
+  static constexpr int num_gas_ids() { return 3; }
 };
 
 /// MAM4 column-wise prognostic aerosol fields (also used for tendencies).
