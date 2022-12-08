@@ -493,8 +493,8 @@ void compute_coef_acc_ait_transfer(
           xferfrac_vol_acc2ait = one;
         }
       }
-      xferfrac_num_acc2ait =
-          xferfrac_num_acc2ait * num_t * FloatingPoint<Real>::safe_denominator(num_t0);
+      xferfrac_num_acc2ait = xferfrac_num_acc2ait * num_t *
+                             FloatingPoint<Real>::safe_denominator(num_t0);
       xfercoef_num_acc2ait = xferfrac_num_acc2ait * adj_tscale_inv;
       xfercoef_vol_acc2ait = xferfrac_vol_acc2ait * adj_tscale_inv;
       xfertend_num[1][0] = num_i_accsv * xfercoef_num_acc2ait;
@@ -571,11 +571,11 @@ void update_tends_flx(const int klev,          // in
                       const Tendencies &tendencies) {
 
   // NOTES on arrays and indices:
-  // jmode==1 is aitken->accumulation transfer;
-  //     ==2 is accumulation->aitken transfer;
+  // jmode==0 is aitken->accumulation transfer;
+  //     ==1 is accumulation->aitken transfer;
 
-  // xfertend_num(jmode,1) contains how much to transfer for interstitial
-  // aerosols xfertend_num(jmode,2) contains how much to transfer for cloudborne
+  // xfertend_num(jmode,0) contains how much to transfer for interstitial
+  // aerosols xfertend_num(jmode,1) contains how much to transfer for cloudborne
   // aerosols
 
   const auto q_i = prognostics.q_aero_i;
@@ -799,13 +799,10 @@ void aitken_accum_exchange(
     //------------------------------------------------------------------
     // compute tendency amounts for aitken <--> accum transfer
     //------------------------------------------------------------------
-    // jmode = 1 does aitken --> accum
+    // jmode = 0 does aitken --> accum
     if (ait2acc_index > 0) {
       const int jmode = 0;
       // Since jmode = 0, source mode = aitken and destination mode accumulation
-      // interstitial and cloudborne aero solver have same struct, so idx
-      // in cases are equal NOTE: ??
-
       update_tends_flx(
           k,          // in
           jmode,      // in
@@ -817,7 +814,7 @@ void aitken_accum_exchange(
           xfertend_num, xfercoef_vol_ait2acc, prognostics, tendencies);
     } // end if (ait2acc_index)
 
-    // jmode = 2 does accum --> aitken
+    // jmode = 1 does accum --> aitken
     if (acc2_ait_index > 0) {
       const int jmode = 1;
       // Same suboutine as above (update_tends_flx) is called but source
