@@ -427,10 +427,6 @@ void compute_coef_acc_ait_transfer(
   Real num_t_noxf = zero;
   Real xferfrac_num_acc2ait = zero, xferfrac_vol_acc2ait = zero;
 
-  const Real zero_div_fac =
-      1.0e-37; // BAD_CONSTANT!! This is not a physical constant, but it could
-               // impact numerical errors.
-
   acc2_ait_index = 0;
   xfercoef_num_acc2ait = zero;
   xfercoef_vol_acc2ait = zero;
@@ -498,7 +494,7 @@ void compute_coef_acc_ait_transfer(
         }
       }
       xferfrac_num_acc2ait =
-          xferfrac_num_acc2ait * num_t / max(zero_div_fac, num_t0);
+          xferfrac_num_acc2ait * num_t * FloatingPoint<Real>::safe_denominator(num_t0);
       xfercoef_num_acc2ait = xferfrac_num_acc2ait * adj_tscale_inv;
       xfercoef_vol_acc2ait = xferfrac_vol_acc2ait * adj_tscale_inv;
       xfertend_num[1][0] = num_i_accsv * xfercoef_num_acc2ait;

@@ -72,7 +72,6 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
 
     const auto n_spec = mam4::num_species_mode(imode);
     for (int isp = 0; isp < n_spec; ++isp) {
-      // const auto prog_aero_i = ekat::scalarize(progs.q_aero_i[imode][i]);
       auto h_prog_aero_i =
           Kokkos::create_mirror_view(progs.q_aero_i[imode][isp]);
       for (int k = 0; k < nlev; ++k) {
