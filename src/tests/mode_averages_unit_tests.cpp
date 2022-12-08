@@ -80,8 +80,8 @@ TEST_CASE("modal_averages", "") {
 
     for (int m = 0; m < 4; ++m) {
       auto h_diam =
-          Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter[m]);
-      Kokkos::deep_copy(h_diam, diags.dry_geometric_mean_diameter[m]);
+          Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter_i[m]);
+      Kokkos::deep_copy(h_diam, diags.dry_geometric_mean_diameter_i[m]);
       for (int k = 0; k < nlev; ++k) {
         if (!FloatingPoint<Real>::equiv(h_diam(k),
                                         dry_aero_mean_particle_diam[m])) {
@@ -179,16 +179,16 @@ TEST_CASE("modal_averages", "") {
         "compute_wet_particle_size", nlev, KOKKOS_LAMBDA(const int i) {
           mode_avg_dry_particle_diam(diags, progs, i);
           mode_hygroscopicity(diags, progs, i);
-          mode_avg_wet_particle_diam(diags, atm, i);
+          mode_avg_wet_particle_diam_water_uptake(diags, atm, i);
         });
 
     for (int m = 0; m < 4; ++m) {
       auto h_dry_diam =
-          Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter[m]);
+          Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter_i[m]);
       auto h_wet_diam =
-          Kokkos::create_mirror_view(diags.wet_geometric_mean_diameter[m]);
-      Kokkos::deep_copy(h_dry_diam, diags.dry_geometric_mean_diameter[m]);
-      Kokkos::deep_copy(h_wet_diam, diags.wet_geometric_mean_diameter[m]);
+          Kokkos::create_mirror_view(diags.wet_geometric_mean_diameter_i[m]);
+      Kokkos::deep_copy(h_dry_diam, diags.dry_geometric_mean_diameter_i[m]);
+      Kokkos::deep_copy(h_wet_diam, diags.wet_geometric_mean_diameter_i[m]);
 
       if (!FloatingPoint<Real>::in_bounds(
               h_dry_diam(0) * 1e3, KohlerPolynomial::dry_radius_min_microns,

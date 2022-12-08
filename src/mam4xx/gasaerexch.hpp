@@ -453,7 +453,7 @@ void gas_aerosol_uptake_rates_1box(
   const Real &pmid = atm.pressure(k);
   Real dgn_awet[num_mode] = {0, 0, 0, 0};
   for (int i = 0; i < num_mode; ++i)
-    dgn_awet[i] = diags.wet_geometric_mean_diameter[i](k);
+    dgn_awet[i] = diags.wet_geometric_mean_diameter_i[i](k);
   if (l_calc_gas_uptake_coeff) {
     // do calcullation for ALL modes
     const bool l_condense_to_mode[num_mode] = {true, true, true, true};

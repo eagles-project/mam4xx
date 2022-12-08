@@ -40,7 +40,7 @@ static constexpr Real solver_convergence_tol = 1e-10;
 ///  @param [in] mode_idx mode that needs wet particle size data
 ///  @param [in] k column vertical level index
 KOKKOS_INLINE_FUNCTION
-void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
+void mode_avg_wet_particle_diam_water_uptake(const Diagnostics &diags, const Atmosphere &atm,
                                 int mode_idx, int k) {
 
   // check hygroscopicity is in bounds for water uptake
@@ -76,18 +76,18 @@ void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
   const auto rh_high = (rel_humidity > modes(mode_idx).deliquescence_pt);
   //  case 4: particles too small
   const auto too_small =
-      (0.5 * to_microns * diags.dry_geometric_mean_diameter[mode_idx](k) <
+      (0.5 * to_microns * diags.dry_geometric_mean_diameter_i[mode_idx](k) <
        rdry_min);
 
   // no water uptake occurs if particles are too small or if air is too dry
   if (rh_low || too_small) {
-    wet_diam = diags.dry_geometric_mean_diameter[mode_idx](k);
+    wet_diam = diags.dry_geometric_mean_diameter_i[mode_idx](k);
   } else {
     // for all other cases, we need a Kohler polynomial solve
 
     // convert from diameter in meters to radius in microns
     const Real dry_radius_microns =
-        0.5 * to_microns * diags.dry_geometric_mean_diameter[mode_idx](k);
+        0.5 * to_microns * diags.dry_geometric_mean_diameter_i[mode_idx](k);
 
     // check dry particle size is in bounds
     EKAT_KERNEL_ASSERT((dry_radius_microns <= rdry_max));
@@ -123,13 +123,13 @@ void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
     //  modal_aero_wateruptake.F90, particle volumes are computed using the
     //  spherical geometric formulas without accounting for the probability
     //  density function (PDF) that represents the modal particle size
-    //  distribution, which is an inconsistency: the dry_geometric_mean_diameter
+    //  distribution, which is an inconsistency: the dry_geometric_mean_diameter_i
     //  input accounts for the PDF while the same quantity for wet particles
     //  does not.
     //
     //  Here, we use the PDF functions for both.
     const Real dry_vol = conversions::mean_particle_volume_from_diameter(
-        diags.dry_geometric_mean_diameter[mode_idx](k),
+        diags.dry_geometric_mean_diameter_i[mode_idx](k),
         modes(mode_idx).mean_std_dev);
 
     Real wet_vol = conversions::mean_particle_volume_from_diameter(
@@ -172,7 +172,7 @@ void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
     }
   }
 
-  diags.wet_geometric_mean_diameter[mode_idx](k) = wet_diam;
+  diags.wet_geometric_mean_diameter_i[mode_idx](k) = wet_diam;
 }
 
 ///  Compute aerosol particle wet diameter for interstitial aerosols
@@ -193,10 +193,10 @@ void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
 ///  @param [in] atm Atmosphere contains (T, P, w) data
 ///  @param [in] k column vertical levelindex
 KOKKOS_INLINE_FUNCTION
-void mode_avg_wet_particle_diam(const Diagnostics &diags, const Atmosphere &atm,
+void mode_avg_wet_particle_diam_water_uptake(const Diagnostics &diags, const Atmosphere &atm,
                                 int k) {
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
-    mode_avg_wet_particle_diam(diags, atm, m, k);
+    mode_avg_wet_particle_diam_water_uptake(diags, atm, m, k);
   }
 }
 
