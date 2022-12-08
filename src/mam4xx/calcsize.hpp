@@ -694,7 +694,7 @@ void aitken_accum_exchange(
   // v2n_geomean is the geometric mean vol2num values
   // between the aitken and accum modes
   // const auto v2n_geomean =
-      // haero::sqrt(voltonum_ait*voltonum_acc);
+  // haero::sqrt(voltonum_ait*voltonum_acc);
   // voltonum_ait and voltonum_acc are O(10^22) and O(10^20), respectively,
   // and their multiplication overflows single precision, and
   // the square root ends up NaN. Thus,we compute sqrt individually
