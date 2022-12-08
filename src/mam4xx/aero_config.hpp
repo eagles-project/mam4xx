@@ -181,12 +181,8 @@ public:
       // calcsize
       dgncur_i[mode] = ColumnView("interstitial particle diameter", num_levels);
       Kokkos::deep_copy(dgncur_i[mode], 0.0);
-      v2ncur_i[mode] = ColumnView("interstitial vol2num ratio", num_levels);
-      Kokkos::deep_copy(v2ncur_i[mode], 0.0);
       dgncur_c[mode] = ColumnView("cldborne particle diameter", num_levels);
       Kokkos::deep_copy(dgncur_c[mode], 0.0);
-      v2ncur_c[mode] = ColumnView("cldborne vol2num ratio", num_levels);
-      Kokkos::deep_copy(v2ncur_c[mode], 0.0);
     }
   }
   Diagnostics() = default; // Careful! Only for creating placeholders in views
@@ -220,14 +216,10 @@ public:
   ColumnView uptkrate_h2so4;
 
   /// For calcsize
-  // !interstitial particle diameter[m]
+  // interstitial particle diameter[m]
   ColumnView dgncur_i[AeroConfig::num_modes()];
-  // !interstitial vol2num ratio [FIXME: units????]
-  ColumnView v2ncur_i[AeroConfig::num_modes()];
-  // !cldborne particle diameter [m]
+  // cldborne particle diameter [m]
   ColumnView dgncur_c[AeroConfig::num_modes()];
-  // !cldborne vol2num ratio [FIXME:units???]
-  ColumnView v2ncur_c[AeroConfig::num_modes()];
 
 private:
   int nlev_;

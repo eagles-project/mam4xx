@@ -656,11 +656,13 @@ void aitken_accum_exchange(
   Real &dgncur_c_aitken = diagnostics.dgncur_c[aitken_idx](k);
   Real &dgncur_c_accum = diagnostics.dgncur_c[accum_idx](k);
 
-  Real &v2ncur_c_accum = diagnostics.v2ncur_c[accum_idx](k);
-  Real &v2ncur_i_accum = diagnostics.v2ncur_i[accum_idx](k);
+  const Real zero = 0;
 
-  Real &v2ncur_c_aitken = diagnostics.v2ncur_c[aitken_idx](k);
-  Real &v2ncur_i_aitken = diagnostics.v2ncur_i[aitken_idx](k);
+  Real v2ncur_c_accum = zero;
+  Real v2ncur_i_accum = zero;
+
+  Real v2ncur_c_aitken = zero;
+  Real v2ncur_i_aitken = zero;
 
   const Real voltonum_ait =
       v2nnom_nmodes[aitken_idx]; // volume to number for aitken mode
@@ -669,7 +671,6 @@ void aitken_accum_exchange(
   int ait2acc_index = 0,
       acc2_ait_index = 0; // indices for transfer between modes
   Real xfertend_num[2][2] = {{0, 0}, {0, 0}}; // tendency for number transfer
-  const Real zero = 0;
 
   Real xfercoef_num_ait2acc = 0;
   Real xfercoef_vol_ait2acc =
@@ -980,12 +981,8 @@ public:
 
     // diameter for interstitial aerosols
     const auto dgncur_i = diagnostics.dgncur_i;
-    // volume to number ratio for interstitial aerosols
-    const auto v2ncur_i = diagnostics.v2ncur_i;
     // diameter for cloud-borne aerosols
     const auto dgncur_c = diagnostics.dgncur_c;
-    // volume to number ratio for cloud-borne aerosols
-    const auto v2ncur_c = diagnostics.v2ncur_c;
 
     const auto n_i = prognostics.n_mode_i;
     const auto n_c = prognostics.n_mode_c;
@@ -1064,10 +1061,10 @@ public:
             // dry volume (dryvol) for both interstitial and cloudborne
             // aerosols we did not implement set_initial_sz_and_volumes
             dgncur_i[imode](k) = dgnnom_nmodes[imode]; // diameter [m]
-            v2ncur_i[imode](k) = v2nnom_nmodes[imode]; // volume to number
+            Real v2ncur_i = v2nnom_nmodes[imode];      // volume to number
 
             dgncur_c[imode](k) = dgnnom_nmodes[imode]; // diameter [m]
-            v2ncur_c[imode](k) = v2nnom_nmodes[imode]; // volume to number
+            Real v2ncur_c = v2nnom_nmodes[imode];      // volume to number
 
             // dry volume is set to zero inside compute_dry_volume_k
             //----------------------------------------------------------------------
@@ -1142,12 +1139,12 @@ public:
 
             calcsize::update_diameter_and_vol2num(
                 dryvol_i, num_i_k, v2nmin[imode], v2nmax[imode], dgnmin, dgnmax,
-                common_factor, dgncur_i[imode](k), v2ncur_i[imode](k));
+                common_factor, dgncur_i[imode](k), v2ncur_i);
 
             // update diameters and volume to num ratios for cloudborne aerosols
             calcsize::update_diameter_and_vol2num(
                 dryvol_c, num_c_k, v2nmin[imode], v2nmax[imode], dgnmin, dgnmax,
-                common_factor, dgncur_c[imode](k), v2ncur_c[imode](k));
+                common_factor, dgncur_c[imode](k), v2ncur_c);
 
             // save number concentrations and dry volumes for explicit
             // aitken <--> accum mode transfer, which is the next step in
