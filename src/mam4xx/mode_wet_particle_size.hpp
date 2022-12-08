@@ -40,8 +40,9 @@ static constexpr Real solver_convergence_tol = 1e-10;
 ///  @param [in] mode_idx mode that needs wet particle size data
 ///  @param [in] k column vertical level index
 KOKKOS_INLINE_FUNCTION
-void mode_avg_wet_particle_diam_water_uptake(const Diagnostics &diags, const Atmosphere &atm,
-                                int mode_idx, int k) {
+void mode_avg_wet_particle_diam_water_uptake(const Diagnostics &diags,
+                                             const Atmosphere &atm,
+                                             int mode_idx, int k) {
 
   // check hygroscopicity is in bounds for water uptake
   EKAT_KERNEL_ASSERT(FloatingPoint<Real>::in_bounds(
@@ -123,9 +124,9 @@ void mode_avg_wet_particle_diam_water_uptake(const Diagnostics &diags, const Atm
     //  modal_aero_wateruptake.F90, particle volumes are computed using the
     //  spherical geometric formulas without accounting for the probability
     //  density function (PDF) that represents the modal particle size
-    //  distribution, which is an inconsistency: the dry_geometric_mean_diameter_i
-    //  input accounts for the PDF while the same quantity for wet particles
-    //  does not.
+    //  distribution, which is an inconsistency: the
+    //  dry_geometric_mean_diameter_i input accounts for the PDF while the same
+    //  quantity for wet particles does not.
     //
     //  Here, we use the PDF functions for both.
     const Real dry_vol = conversions::mean_particle_volume_from_diameter(
@@ -193,8 +194,8 @@ void mode_avg_wet_particle_diam_water_uptake(const Diagnostics &diags, const Atm
 ///  @param [in] atm Atmosphere contains (T, P, w) data
 ///  @param [in] k column vertical levelindex
 KOKKOS_INLINE_FUNCTION
-void mode_avg_wet_particle_diam_water_uptake(const Diagnostics &diags, const Atmosphere &atm,
-                                int k) {
+void mode_avg_wet_particle_diam_water_uptake(const Diagnostics &diags,
+                                             const Atmosphere &atm, int k) {
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
     mode_avg_wet_particle_diam_water_uptake(diags, atm, m, k);
   }
