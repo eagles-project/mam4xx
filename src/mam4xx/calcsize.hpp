@@ -423,8 +423,6 @@ void compute_coef_acc_ait_transfer(
   const auto q_c = prognostics.q_aero_c;
   const Real zero = 0.0, one = 1.0;
 
-  // FIXME: we are getting compilation errors in ubuntu-22.04 for these
-  // uninitilizated variables.
   Real drv_t_noxf = zero, num_t0 = zero;
   Real num_t_noxf = zero;
   Real xferfrac_num_acc2ait = zero, xferfrac_vol_acc2ait = zero;
@@ -695,7 +693,8 @@ void aitken_accum_exchange(
 
   // v2n_geomean is the geometric mean vol2num values
   // between the aitken and accum modes
-  // FIXME
+  // const auto v2n_geomean =
+      // haero::sqrt(voltonum_ait*voltonum_acc);
   // voltonum_ait and voltonum_acc are O(10^22) and O(10^20), respectively,
   // and their multiplication overflows single precision, and
   // the square root ends up NaN. Thus,we compute sqrt individually
