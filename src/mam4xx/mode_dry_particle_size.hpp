@@ -8,7 +8,8 @@
 namespace mam4 {
 
 ///  Compute the dry geometric mean particle size (volume and diameter)
-///  from the log-normal size distribution for a single mode.
+///  from the log-normal size distribution for a single mode,
+///  both interstitial and cloudeborne aerosols.
 ///
 ///  This version can be called in parallel over both modes and vertical levels.
 ///
@@ -24,19 +25,27 @@ namespace mam4 {
 KOKKOS_INLINE_FUNCTION
 void mode_avg_dry_particle_diam(const Diagnostics &diags,
                                 const Prognostics &progs, int mode_idx, int k) {
-  Real volume_mixing_ratio = 0.0; // [m3 aerosol / kg air]
+  Real volume_mixing_ratio_i = 0.0; // [m3 aerosol / kg air]
+  Real volume_mixing_ratio_c = 0.0; // [m3 aerosol / kg air]
   for (int aid = 0; aid < AeroConfig::num_aerosol_ids(); ++aid) {
     const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx),
                                          static_cast<AeroId>(aid));
     if (s >= 0) {
-      volume_mixing_ratio +=
+      volume_mixing_ratio_i +=
           progs.q_aero_i[mode_idx][s](k) / aero_species(s).density;
+
+      volume_mixing_ratio_c +=
+          progs.q_aero_c[mode_idx][s](k) / aero_species(s).density;
     }
   }
-  const Real mean_vol = volume_mixing_ratio / progs.n_mode_i[mode_idx](k);
-  diags.dry_geometric_mean_diameter[mode_idx](k) =
+  const Real mean_vol_i = volume_mixing_ratio_i / progs.n_mode_i[mode_idx](k);
+  const Real mean_vol_c = volume_mixing_ratio_c / progs.n_mode_c[mode_idx](k);
+  diags.dry_geometric_mean_diameter_i[mode_idx](k) =
       conversions::mean_particle_diameter_from_volume(
-          mean_vol, modes(mode_idx).mean_std_dev);
+          mean_vol_i, modes(mode_idx).mean_std_dev);
+  diags.dry_geometric_mean_diameter_c[mode_idx](k) =
+      conversions::mean_particle_diameter_from_volume(
+          mean_vol_c, modes(mode_idx).mean_std_dev);
 }
 
 ///  Compute the dry geometric mean particle size (volume and diameter)

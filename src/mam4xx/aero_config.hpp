@@ -166,12 +166,18 @@ public:
     for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
       hygroscopicity[mode] = ColumnView("hygroscopicity", num_levels);
       Kokkos::deep_copy(hygroscopicity[mode], 0.0);
-      dry_geometric_mean_diameter[mode] =
-          ColumnView("dry_geometric_mean_diameter", num_levels);
-      Kokkos::deep_copy(dry_geometric_mean_diameter[mode], 0.0);
-      wet_geometric_mean_diameter[mode] =
-          ColumnView("wet_geometric_mean_diameter", num_levels);
-      Kokkos::deep_copy(wet_geometric_mean_diameter[mode], 0.0);
+      dry_geometric_mean_diameter_i[mode] =
+          ColumnView("dry_geometric_mean_diameter_interstitial", num_levels);
+      dry_geometric_mean_diameter_c[mode] =
+          ColumnView("dry_geometric_mean_diameter_cloudeborne", num_levels);
+      Kokkos::deep_copy(dry_geometric_mean_diameter_i[mode], 0.0);
+      Kokkos::deep_copy(dry_geometric_mean_diameter_c[mode], 0.0);
+      wet_geometric_mean_diameter_i[mode] =
+          ColumnView("wet_geometric_mean_diameter_interstitial", num_levels);
+      wet_geometric_mean_diameter_c[mode] =
+          ColumnView("wet_geometric_mean_diameter_cloudeborne", num_levels);
+      Kokkos::deep_copy(wet_geometric_mean_diameter_i[mode], 0.0);
+      Kokkos::deep_copy(wet_geometric_mean_diameter_c[mode], 0.0);
     }
   }
   Diagnostics() = default; // Careful! Only for creating placeholders in views
@@ -182,19 +188,24 @@ public:
   int num_levels() const { return nlev_; }
 
   /// Hygroscopicity is a modal mass-weighted average over all species
-  /// in a mode; set/update with function @ref mode_hygrodscopicity
-  /// Used for water uptake and droplet nucleation
+  /// in a mode
   ColumnView hygroscopicity[AeroConfig::num_modes()];
 
   /// Dry particle diameter is a modal mass-weighted average over all species
-  /// in a mode; set/update with function @ref mode_hygroscopicity.
-  /// Used for water uptake, droplet nucleation, nucleation
-  ColumnView dry_geometric_mean_diameter[AeroConfig::num_modes()];
+  /// of interstitial aerosols in a mode
+  ColumnView dry_geometric_mean_diameter_i[AeroConfig::num_modes()];
+
+  /// Dry particle diameter is a modal mass-weighted average over all species
+  /// of cloudeborne aerosols in a mode
+  ColumnView dry_geometric_mean_diameter_c[AeroConfig::num_modes()];
 
   /// Wet particle diameter is a modal mass-weighted average over all species
-  /// in a mode; set/update with function @ref mode_avg_wet_particle_diam.
-  /// Used for water uptake, droplet nucleation, gasaerxch
-  ColumnView wet_geometric_mean_diameter[AeroConfig::num_modes()];
+  /// of interstitial aerosols in a mode
+  ColumnView wet_geometric_mean_diameter_i[AeroConfig::num_modes()];
+
+  /// Wet particle diameter is a modal mass-weighted average over all species
+  /// of cloudeborne in a mode
+  ColumnView wet_geometric_mean_diameter_c[AeroConfig::num_modes()];
 
   /// For gas-aerosol exchange process
   ColumnView uptkrate_h2so4;
