@@ -122,10 +122,10 @@ void update_diameter_and_vol2num(const Real &drv, const Real &num, Real v2nmin,
   const auto drv_mul_v2nmax = drv * v2nmax;
 
   if (num <= drv_mul_v2nmin) {
-    dgncur = dgnmax; // FIXME: e3sm uses dgnxx => hi
+    dgncur = dgnmax; //
     v2ncur = v2nmin; // set to minimum vol2num ratio for this mode
   } else if (num >= drv_mul_v2nmax) {
-    dgncur = dgnmin; // FIXME: e3sm uses dgnyy => lo
+    dgncur = dgnmin; //
     v2ncur = v2nmax; // set to maximum vol2num ratio for this mode
   } else {
     dgncur = pow((drv / (cmn_factor * num)),
@@ -508,24 +508,16 @@ KOKKOS_INLINE_FUNCTION
 void compute_new_sz_after_transfer(
     const Real drv,                     // in
     const Real num,                     // in
-    const Real voltonumbhi2,            // in v2nmax_nmodes(imode) FIXME: stale?
-    const Real voltonumblo2,            // in v2nmin_nmodes(imode) FIXME: stale?
+    const Real voltonumbhi,             // in v2nmin_nmodes(imode)
+    const Real voltonumblo,             // in v2nmax_nmodes(imode)
     const Real voltonumb,               // in v2nnom_nmodes(imode)
     const Real dgn_nmodes_hi,           // in dgnmax_nmodes(imode)
     const Real dgn_nmodes_lo,           // in dgnmin_nmodes(imode)
     const Real dgn_nmodes_nom,          // in dgnnom_nmodes(imode)
     const Real cmn_factor_nmodes_imode, // in cmn_factor_nmodes(imode)
     Real &dgncur, Real &v2ncur) {
-
-  // FIXME: E3Sm uses the following expressions for voltonumbhi and voltonumblo.
-  // Note that voltonumbhi uses dgn_nmodes_hi and voltonumblo uses dgn_nmodes_lo
-  // In other part of e3sm voltonumbhi is computed with dgn_nmodes_lo and
-  // voltonumblo with dgn_nmodes_hi.
-
-  const Real voltonumbhi =
-      1. / pow(cmn_factor_nmodes_imode * dgn_nmodes_hi, 3.0);
-  const Real voltonumblo =
-      1. / pow(cmn_factor_nmodes_imode * dgn_nmodes_lo, 3.0);
+  // voltonumbhi is computed with dgn_nmodes_hi, i.e., voltonumbhi =v2nmin
+  // voltonumblo is computed with dgn_nmodes_lo, i.e., voltonumblo =v2nmax
 
   const Real zero = 0;
   const Real third =
@@ -763,36 +755,46 @@ void aitken_accum_exchange(
     // NOTE: CHECK orginal function does not have v2nmax.. and dgnmax as inputs.
     // interstitial species (aitken mode)
     compute_new_sz_after_transfer(
-        drv_i, // in
-        num_i, // in
-        v2nmax_nmodes[aitken_idx], v2nmin_nmodes[aitken_idx],
+        drv_i,                     // in
+        num_i,                     // in
+        v2nmin_nmodes[aitken_idx], // corresponds to voltonumbhi because it is
+                                   // computed with dgnumhi
+        v2nmax_nmodes[aitken_idx], // corresponds to voltonumblo because it is
+                                   // computed with dgnumlo
         v2nnom_nmodes[aitken_idx], dgnmax_nmodes[aitken_idx],
         dgnmin_nmodes[aitken_idx], dgnnom_nmodes[aitken_idx],
         cmn_factor_nmodes[aitken_idx], dgncur_i_aitken, v2ncur_i_aitken);
 
     // cloud borne species (aitken mode)
     compute_new_sz_after_transfer(
-        drv_c, // in
-        num_c, // in
-        v2nmax_nmodes[aitken_idx], v2nmin_nmodes[aitken_idx],
+        drv_c,                     // in
+        num_c,                     // in
+        v2nmin_nmodes[aitken_idx], // corresponds to voltonumbhi
+        v2nmax_nmodes[aitken_idx], // corresponds to voltonumblo
         v2nnom_nmodes[aitken_idx], dgnmax_nmodes[aitken_idx],
         dgnmin_nmodes[aitken_idx], dgnnom_nmodes[aitken_idx],
         cmn_factor_nmodes[aitken_idx], dgncur_c_aitken, v2ncur_c_aitken);
 
     // interstitial species (accumulation mode)
     compute_new_sz_after_transfer(
-        drv_i_acc, // in
-        num_i_acc, // in
-        v2nmax_nmodes[accum_idx], v2nmin_nmodes[accum_idx],
+        drv_i_acc,                // in
+        num_i_acc,                // in
+        v2nmin_nmodes[accum_idx], // corresponds to voltonumbhi because it is
+                                  // computed with dgnumhi
+        v2nmax_nmodes[accum_idx], // corresponds to voltonumblo because it is
+                                  // computed with dgnumlo
         v2nnom_nmodes[accum_idx], dgnmax_nmodes[accum_idx],
         dgnmin_nmodes[accum_idx], dgnnom_nmodes[accum_idx],
         cmn_factor_nmodes[accum_idx], dgncur_i_accum, v2ncur_i_accum);
 
     // cloud borne species (accumulation mode)
     compute_new_sz_after_transfer(
-        drv_c_acc, // in
-        num_c_acc, // in
-        v2nmax_nmodes[accum_idx], v2nmin_nmodes[accum_idx],
+        drv_c_acc,                // in
+        num_c_acc,                // in
+        v2nmin_nmodes[accum_idx], // corresponds to voltonumbhi because it is
+                                  // computed with dgnumlo
+        v2nmax_nmodes[accum_idx], // corresponds to voltonumblo because it is
+                                  // computed with dgnumhi
         v2nnom_nmodes[accum_idx], dgnmax_nmodes[accum_idx],
         dgnmin_nmodes[accum_idx], dgnnom_nmodes[accum_idx],
         cmn_factor_nmodes[accum_idx], dgncur_c_accum, v2ncur_c_accum);
@@ -913,8 +915,6 @@ public:
 
     // Set mode parameters.
     for (int m = 0; m < AeroConfig::num_modes(); ++m) {
-      // FIXME: There is no mean geometric number diameter in a mode.
-      // FIXME: Assume "nominal" diameter for now?
       // FIXME: There is a comment in modal_aero_newnuc.F90 that Dick Easter
       // FIXME: thinks that dgnum_aer isn't used in MAM4, but it is actually
       // FIXME: used in this nucleation parameterization. So we will have to
