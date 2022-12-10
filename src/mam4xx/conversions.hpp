@@ -85,11 +85,12 @@ KOKKOS_INLINE_FUNCTION Real temperature_from_virtual_temperature(Real Tv,
   return Tv / (1.0 + 0.6078 * q1);
 }
 
-/// Computes the dry mass density from the total mass density using the specific
+/// Computes the dry air density from the total air density using the specific
 /// humidity.
-/// @param [in] rho total mass density [kg/m3]
+/// @param [in] rho total air density [kg/m3]
 /// @param [in] q1 specific humidity [-]
-KOKKOS_INLINE_FUNCTION Real dry_from_total_mass_density(Real rho, Real q1) {
+KOKKOS_INLINE_FUNCTION Real dry_air_density_from_total_air_density(Real rho,
+                                                                   Real q1) {
   return rho * (1 - q1);
 }
 
@@ -136,7 +137,6 @@ KOKKOS_INLINE_FUNCTION Real specific_humidity_from_vapor_mixing_ratio(Real qv) {
 ///  See also Lamb & Verlinde section 3.3.
 ///
 ///  @param [in] T temperature [K]
-///  @param [in] P pressure [Pa]
 ///  @return es(T) saturation vapor pressure of water vapor [Pa]
 KOKKOS_INLINE_FUNCTION Real vapor_saturation_pressure_magnus_ew(Real T) {
   static constexpr Real e0 = 610.94;      // Pa
