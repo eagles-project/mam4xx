@@ -104,13 +104,15 @@ void compute_tendencies(Ensemble *ensemble) {
       } // end species
 
       // diameter interstitial
-      auto h_dgncur_i = Kokkos::create_mirror_view(diags.dgncur_i[imode]);
-      Kokkos::deep_copy(h_dgncur_i, diags.dgncur_i[imode]);
+      auto h_dgncur_i = Kokkos::create_mirror_view(
+          diags.dry_geometric_mean_diameter_i[imode]);
+      Kokkos::deep_copy(h_dgncur_i, diags.dry_geometric_mean_diameter_i[imode]);
       diags_dgncur_i.push_back(h_dgncur_i(0));
 
       // diameter cloud_borne
-      auto h_dgncur_c = Kokkos::create_mirror_view(diags.dgncur_c[imode]);
-      Kokkos::deep_copy(h_dgncur_c, diags.dgncur_c[imode]);
+      auto h_dgncur_c = Kokkos::create_mirror_view(
+          diags.dry_geometric_mean_diameter_c[imode]);
+      Kokkos::deep_copy(h_dgncur_c, diags.dry_geometric_mean_diameter_c[imode]);
       diags_dgncur_c.push_back(h_dgncur_c(0));
 
     } // end mode

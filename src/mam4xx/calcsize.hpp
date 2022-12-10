@@ -642,11 +642,15 @@ void aitken_accum_exchange(
   // Ported to C++/Kokkos by: Oscar Diaz-Ibarra and Michael Schmidt
   // -----------------------------------------------------------------------------
 
-  Real &dgncur_i_aitken = diagnostics.dgncur_i[aitken_idx](k);
-  Real &dgncur_i_accum = diagnostics.dgncur_i[accum_idx](k);
+  Real &dgncur_i_aitken =
+      diagnostics.dry_geometric_mean_diameter_i[aitken_idx](k);
+  Real &dgncur_i_accum =
+      diagnostics.dry_geometric_mean_diameter_i[accum_idx](k);
 
-  Real &dgncur_c_aitken = diagnostics.dgncur_c[aitken_idx](k);
-  Real &dgncur_c_accum = diagnostics.dgncur_c[accum_idx](k);
+  Real &dgncur_c_aitken =
+      diagnostics.dry_geometric_mean_diameter_c[aitken_idx](k);
+  Real &dgncur_c_accum =
+      diagnostics.dry_geometric_mean_diameter_c[accum_idx](k);
 
   const Real zero = 0;
 
@@ -980,9 +984,9 @@ public:
     const int nk = atmosphere.num_levels();
 
     // diameter for interstitial aerosols
-    const auto dgncur_i = diagnostics.dgncur_i;
+    const auto dgncur_i = diagnostics.dry_geometric_mean_diameter_i;
     // diameter for cloud-borne aerosols
-    const auto dgncur_c = diagnostics.dgncur_c;
+    const auto dgncur_c = diagnostics.dry_geometric_mean_diameter_c;
 
     const auto n_i = prognostics.n_mode_i;
     const auto n_c = prognostics.n_mode_c;
