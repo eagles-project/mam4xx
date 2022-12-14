@@ -5,6 +5,7 @@ include(GNUInstallDirs)
 install(FILES
         aero_config.hpp
         aero_modes.hpp
+        aging.hpp
         calcsize.hpp
         conversions.hpp
         gasaerexch.hpp
