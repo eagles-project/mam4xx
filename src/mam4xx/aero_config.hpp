@@ -78,7 +78,9 @@ public:
     }
     for (int gas = 0; gas < AeroConfig::num_gas_ids(); ++gas) {
       q_gas[gas] = ColumnView("q_gas", num_levels);
+      q_gas_avg[gas] = ColumnView("q_gas_avg", num_levels);
       Kokkos::deep_copy(q_gas[gas], 0.0);
+      Kokkos::deep_copy(q_gas_avg[gas], 0.0);
       for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
         uptkaer[gas][mode] = ColumnView("uptake_rate", num_levels);
         Kokkos::deep_copy(uptkaer[gas][mode], 0.0);
@@ -109,6 +111,9 @@ public:
 
   /// gas mass mixing ratios (see aero_mode.hpp for indexing)
   ColumnView q_gas[AeroConfig::num_gas_ids()];
+
+  /// average gas mass mixing ratios (see aero_mode.hpp for indexing)
+  ColumnView q_gas_avg[AeroConfig::num_gas_ids()];
 
   ColumnView uptkaer[AeroConfig::num_gas_ids()][AeroConfig::num_modes()];
 
@@ -146,6 +151,8 @@ public:
                  ++gas) { // check gas mmrs
               if (q_gas[gas](k) < 0)
                 ++violation;
+              if (q_gas_avg[gas](k) < 0)
+                ++violation;
             }
           }
         },
@@ -179,6 +186,8 @@ public:
       Kokkos::deep_copy(wet_geometric_mean_diameter_i[mode], 0.0);
       Kokkos::deep_copy(wet_geometric_mean_diameter_c[mode], 0.0);
     }
+    uptkrate_h2so4 = ColumnView("uptkrate_h2so4", num_levels);
+    Kokkos::deep_copy(uptkrate_h2so4, 0.0);
   }
   Diagnostics() = default; // Careful! Only for creating placeholders in views
   Diagnostics(const Diagnostics &) = default;

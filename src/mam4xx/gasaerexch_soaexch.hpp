@@ -63,17 +63,28 @@ void soa_equilib_mixing_ratio_no_solute(const Real &T_in_K,     // in
 //================================================================================
 KOKKOS_INLINE_FUNCTION
 Real soa_exch_substepsize(
-    const bool skip_soamode[1],                              // in
-    const Real uptkaer_soag_tmp[1][AeroConfig::num_modes()], // in
-    const Real a_soa[1][AeroConfig::num_modes()],            // in
-    const Real a_opoa[AeroConfig::num_modes()],              // in
-    const Real g_soa[1],                                     // in
-    const Real g0_soa[1],                                    // in
-    const Real alpha_astem,                                  // in
-    const Real dt_full,                                      // in
-    Real &t_cur)                                             // inout
+    const int ntot_soamode,    // in
+    const int ntot_soaspec,    // in
+    const bool skip_soamode[], // in len ntot_soaspec
+    const Real uptkaer_soag_tmp[]
+                               [AeroConfig::num_modes()], // in len ntot_soaspec
+    const Real a_soa[][AeroConfig::num_modes()],          // in len ntot_soaspec
+    const Real a_opoa[AeroConfig::num_modes()],           // in
+    const Real g_soa[],                                   // in len ntot_soaspec
+    const Real g0_soa[],                                  // in len ntot_soaspec
+    const Real alpha_astem,                               // in
+    const Real dt_full,                                   // in
+    Real &t_cur)                                          // inout
 {
   // clang-format off
+  // ntot_soaspec 
+  //  "last" gas species that can be SOA, MAM4 had this variable but it was
+  //  a work in progress and not suported in mam4xx but it was desired to
+  //  keep these variables around to help support variable number of SOA
+  //  species in the future.
+  //
+  // ntot_soamode  "last" mode on which soa is allowed to condense
+  //
   // skip_soamode          true if this mode does not have soa
   // uptkaer_soag_tmpmodes evolving SOA aerosol mixrat (mol/mol at actual mw), 
   //                       part of the unknowns of the ODEs
@@ -87,14 +98,6 @@ Real soa_exch_substepsize(
   // dt_fulln              host model dt (s)
   // t_cur                 current time (s) since last full time step
   // clang-format on
-
-  //  "last" gas species that can be SOA, MAM4 had this variable but it was
-  //  a work in progress and not suported in mam4xx but it was desired to
-  //  keep these variables around to help support variable number of SOA
-  //  species in the future.
-  static constexpr int ntot_soaspec = 1;
-  //  "last" mode on which soa is allowed to condense
-  static constexpr int ntot_soamode = 1;
 
   const Real eps_aer = 1.0e-20; // epsilon to be used on denominator for
                                 // avoiding division by zero
@@ -201,13 +204,16 @@ Real soa_exch_substepsize(
 //===============================================================================================
 KOKKOS_INLINE_FUNCTION
 void mam_soaexch_advance_in_time(
+    const int ntot_soamode,  // in
+    const int ntot_soaspec,  // in
+    const int soaspec[],     // in len ntot_soaspec
     const Real dt_full,      // in
     const Real dt_sub_fixed, // in
     const int niter_max,     // in
     const Real alpha_astem,  // in
     const Real uptkaer[AeroConfig::num_gas_ids()]
                       [AeroConfig::num_modes()], // in
-    const Real g0_soa[1],                        // in
+    const Real g0_soa[],                         // in len ntot_soaspec
     Real qgas_cur[AeroConfig::num_gas_ids()],    // inout
     const Real a_opoa[AeroConfig::num_modes()],  // in
     Real qaer_cur[AeroConfig::num_aerosol_ids()]
@@ -216,6 +222,9 @@ void mam_soaexch_advance_in_time(
     int &niter)                               // out
 {
   // clang-format off
+  // int ntot_soamode 
+  // int ntot_soaspec  "last" gas species that can be SOA
+  // int soaspec[ntot_soaspec]
   // dt_full       Host model dt (s)
   // dt_sub_fixed  Fixed sub-step. A negative value means using adaptive step sizes
   // niter_max     Maximum number of substeps
@@ -231,9 +240,6 @@ void mam_soaexch_advance_in_time(
   // clang-format on
 
   using haero::max;
-  static constexpr int ntot_soamode = 1;
-  static constexpr int ntot_soaspec = 1; //  "last" gas species that can be SOA
-  static constexpr int max_gas = AeroConfig::num_gas_ids();
   static constexpr int max_mode = AeroConfig::num_modes();
 
   // The local arrays a_soa and g_soa declared below have the same meaning of
@@ -246,24 +252,24 @@ void mam_soaexch_advance_in_time(
 
   // evolving SOA aerosol mixrat (mol/mol at actual mw), part of the unknowns of
   // the ODEs
-  Real a_soa[ntot_soaspec][max_mode];
+  Real a_soa[AeroConfig::num_gas_ids()][max_mode] = {};
   // evolving SOA gas mixrat (mol/mol at actual mw), part of the unknowns of the
   // ODEs
-  Real g_soa[ntot_soaspec];
+  Real g_soa[AeroConfig::num_gas_ids()] = {};
 
   // gas mixrat at beginning of substep, saved for calculating time average of
   // qgas
-  Real qgas_prv[max_gas];
+  Real qgas_prv[AeroConfig::num_gas_ids()] = {};
   // qgas*dt integrated over a time step, used for calculating time average of
   // qgas
-  Real qgas_avg_sum[max_gas];
+  Real qgas_avg_sum[AeroConfig::num_gas_ids()] = {};
 
   // true if this mode does not have soa
-  bool skip_soamode[ntot_soamode];
+  bool skip_soamode[max_mode] = {};
   // uptake rate of different modes for different soa species
-  Real uptkaer_soag_tmp[ntot_soaspec][max_mode];
+  Real uptkaer_soag_tmp[AeroConfig::num_gas_ids()][max_mode] = {};
   // dt_cur * uptake-rate-coefficient
-  Real beta[ntot_soaspec][max_mode];
+  Real beta[AeroConfig::num_gas_ids()][max_mode] = {};
 
   const Real eps_aer = 1.0e-20; // epsilon to be used on denominator for
                                 // avoiding division by zero
@@ -273,20 +279,23 @@ void mam_soaexch_advance_in_time(
   // g_star(m,ll)/a_soa(m,ll) used by the numerical integration scheme -- it is
   // not a saturation rato!
 
-  Real sat_hybrid[ntot_soaspec][max_mode];
+  Real sat_hybrid[AeroConfig::num_gas_ids()][max_mode] = {};
 
-  Real tot_soa[ntot_soaspec]; // g_soa + sum( a_soa(:) )
+  Real tot_soa[AeroConfig::num_gas_ids()] = {}; // g_soa + sum( a_soa(:) )
 
   // ----------------------------------------------------------------------
   //  Determine which modes have non-zero transfer rates and are hence
   //  involved in the subsequent calculations of soa gas-aerosol transfer.
   //  (For diameter = 1 nm and number = 1 #/cm3, xferrate ~= 1e-9 s-1)
   // ----------------------------------------------------------------------
-  for (int n = 0; n < ntot_soamode; ++n) {
+  for (int n = 0; n < max_mode; ++n)
     skip_soamode[n] = true;
+
+  for (int n = 0; n < ntot_soamode; ++n) {
     for (int ll = 0; ll < ntot_soaspec; ++ll) {
-      if (uptkaer[ll][n] > 1.0e-15) {
-        uptkaer_soag_tmp[ll][n] = uptkaer[ll][n];
+      const int soa = soaspec[ll];
+      if (uptkaer[soa][n] > 1.0e-15) {
+        uptkaer_soag_tmp[ll][n] = uptkaer[soa][n];
         skip_soamode[n] = false;
       } else {
         uptkaer_soag_tmp[ll][n] = 0.0;
@@ -309,26 +318,31 @@ void mam_soaexch_advance_in_time(
     ++niter;
     if (niter > niter_max)
       break;
-
     // save gas mixing ratios at the beginning of substep.
     // This is used at the end of the substep to calculate a time average
-    for (int i = 0; i < ntot_soaspec; ++i)
-      qgas_prv[i] = qgas_cur[i];
+    for (int i = 0; i < ntot_soaspec; ++i) {
+      const int soa = soaspec[i];
+      qgas_prv[i] = qgas_cur[soa];
+    }
 
     // ------------------------------------------------------------------------------
     //  SOA gas, aerosol, and total: get the current (old) values
     // ------------------------------------------------------------------------------
     //  Load incoming SOA gas into temporary array, force values to be
     //  non-negative
-    for (int i = 0; i < ntot_soaspec; ++i)
-      g_soa[i] = max(qgas_cur[i], 0.0);
+    for (int i = 0; i < ntot_soaspec; ++i) {
+      const int soa = soaspec[i];
+      g_soa[i] = max(qgas_cur[soa], 0.0);
+    }
 
     //  Load incoming SOA aerosols into temporary array, force values to be
     //  non-negative
     for (int n = 0; n < ntot_soamode; ++n) {
       if (!skip_soamode[n]) {
-        for (int i = 0; i < ntot_soaspec; ++i)
-          a_soa[i][n] = max(qaer_cur[i][n], 0.0);
+        for (int i = 0; i < ntot_soaspec; ++i) {
+          const int soa = soaspec[i];
+          a_soa[i][n] = max(qaer_cur[soa][n], 0.0);
+        }
       }
     }
 
@@ -337,8 +351,9 @@ void mam_soaexch_advance_in_time(
     for (int ll = 0; ll < ntot_soaspec; ++ll) {
       tot_soa[ll] = g_soa[ll];
       for (int n = 0; n < ntot_soamode; ++n) {
-        if (!skip_soamode[n])
-          tot_soa[ll] = tot_soa[ll] + a_soa[ll][n];
+        if (!skip_soamode[n]) {
+          tot_soa[ll] += a_soa[ll][n];
+        }
       }
     }
 
@@ -351,9 +366,9 @@ void mam_soaexch_advance_in_time(
       tcur += dt_cur;
     } else {
       // Choose an adaptive step size
-      dt_cur =
-          soa_exch_substepsize(skip_soamode, uptkaer_soag_tmp, a_soa, a_opoa,
-                               g_soa, g0_soa, alpha_astem, dt_full, tcur);
+      dt_cur = soa_exch_substepsize(ntot_soamode, ntot_soaspec, skip_soamode,
+                                    uptkaer_soag_tmp, a_soa, a_opoa, g_soa,
+                                    g0_soa, alpha_astem, dt_full, tcur);
     }
 
     // ----------------------------------------------------------------------------
@@ -480,17 +495,20 @@ void mam_soaexch_advance_in_time(
     //  Save mix ratios for soa species
     // ------------------------------------------------------------------------------------------
     for (int igas = 0; igas < ntot_soaspec; ++igas) {
-      for (int n = 0; n < ntot_soamode; ++n)
-        qaer_cur[igas][n] = a_soa[igas][n];
+      for (int n = 0; n < ntot_soamode; ++n) {
+        const int soa = soaspec[igas];
+        qaer_cur[soa][n] = a_soa[igas][n];
+      }
     }
 
     // ------------------------------------------------------------------------------------------
     //  Save mixing ratios for SOA gas species; diagnose time average
     // ------------------------------------------------------------------------------------------
     for (int igas = 0; igas < ntot_soaspec; ++igas) {
-      qgas_cur[igas] = g_soa[igas]; //  new gas mixing ratio
-      const Real tmpc = qgas_cur[igas] -
-                        qgas_prv[igas]; //  amount of condensation/evaporation
+      const int soa = soaspec[igas];
+      qgas_cur[soa] = g_soa[igas]; //  new gas mixing ratio
+      const Real tmpc =
+          qgas_cur[soa] - qgas_prv[igas]; //  amount of condensation/evaporation
       qgas_avg_sum[igas] =
           qgas_avg_sum[igas] + dt_cur * (qgas_prv[igas] + 0.5 * tmpc);
     }
@@ -500,8 +518,10 @@ void mam_soaexch_advance_in_time(
   // -------------------------------------------------------------------
   //  Convert qgas_avg from sum_over[ qgas*dt_cur ] to an average
   // -------------------------------------------------------------------
-  for (int i = 0; i < ntot_soaspec; ++i)
-    qgas_avg[i] = max(0.0, qgas_avg_sum[i] / dtsum_qgas_avg);
+  for (int i = 0; i < ntot_soaspec; ++i) {
+    const int soa = soaspec[i];
+    qgas_avg[soa] = max(0.0, qgas_avg_sum[i] / dtsum_qgas_avg);
+  }
 }
 
 // --------------------------------------------------------------------
@@ -510,6 +530,9 @@ void mam_soaexch_advance_in_time(
 // --------------------------------------------------------------------
 KOKKOS_INLINE_FUNCTION
 void mam_soaexch_1subarea(const int mode_pca,          // in
+                          const int ntot_soamode,      // in
+                          const int ntot_soaspec,      // in
+                          const int soaspec[],         // in len ntot_soaspec
                           const Real dt,               // in
                           const Real dt_sub_soa_fixed, // in
                           const Real pstd,             // in
@@ -528,6 +551,9 @@ void mam_soaexch_1subarea(const int mode_pca,          // in
 
   // clang-format off
   // mode_pca         mam4::ModeIndex::PrimaryCarbon
+  // ntot_soamode      
+  // ntot_soaspec      
+  // soaspec[ntot_soaspec]
   // dt               time step size used by parent subroutine
   // dt_sub_soa_fixed fixed sub-step in s. A negative value  means using adaptive step sizes
   // pstd             standard atmosphere in Pa
@@ -547,7 +573,6 @@ void mam_soaexch_1subarea(const int mode_pca,          // in
   // one but MAM4 had an initial support for more so it was decided to keep the
   // form of the multi-species code if not the function.
   static constexpr int ntot_poaspec = 1;
-  static constexpr int ntot_soamode = 1;
   static constexpr int num_mode = AeroConfig::num_modes();
   // for backward compatibility
   static constexpr bool flag_pcarbon_opoa_frac_zero = true;
@@ -598,9 +623,10 @@ void mam_soaexch_1subarea(const int mode_pca,          // in
   // -----------------------------------------------------------
   const int niter_max = 1000;
 
-  mam_soaexch_advance_in_time(dt, dt_sub_soa_fixed, niter_max, alpha_astem,
-                              uptkaer, &g0_soa, qgas_cur, a_opoa, qaer_cur,
-                              qgas_avg, niter);
+  mam_soaexch_advance_in_time(ntot_soamode, ntot_soaspec, soaspec, dt,
+                              dt_sub_soa_fixed, niter_max, alpha_astem, uptkaer,
+                              &g0_soa, qgas_cur, a_opoa, qaer_cur, qgas_avg,
+                              niter);
 }
 } // namespace gasaerexch
 } // namespace mam4

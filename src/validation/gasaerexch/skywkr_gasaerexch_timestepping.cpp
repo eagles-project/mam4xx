@@ -15,7 +15,7 @@
 
 using namespace skywalker;
 using namespace haero;
-// ---------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------
 
 // This file contains a program for testing the gas-aerosol mass exchange
 // parameterizations in the MAM4 aerosol microphysics packages.
@@ -36,14 +36,14 @@ using namespace haero;
 // Program skywkr_gasaerexch_timestepping below is the test driver.
 // The namespace driver_utils contains some utility functions that are not
 // specific to this test.
-// ---------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------
 // History:
 // - Test ideas originally developed by Richard (Dick) C. Easter, PNNL, ca. 2017
 // - Implementation using Skywalker and revisions to test setup: Qiyang Yan,
 // PNNL, 2021-2022
 // - Clean-up, consolidation, and further revision of test setup: Hui Wan, PNNL,
 // 2022
-// --------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 void usage() {
   std::cerr << "exe_skywkr_gasaerexch_timestepping: a Skywalker driver for "
@@ -85,10 +85,10 @@ void get_file_names(const std::string &input_suffix,
             << " output_file:" << output_file << std::endl;
 }
 
-// =====================================================================================
+// =================================================================
 //  This is the driver program that tests MAM's gas-aerosol exchange
 //  parameterizations.
-// =====================================================================================
+// =================================================================
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -104,14 +104,14 @@ int main(int argc, char **argv) {
   static constexpr int ntot_amode = 1;
   static constexpr int nsoa = 1 + static_cast<int>(mam4::AeroId::SOA);
 #if 0
-  !------------------------------------------------------------------------------------------
+  !-----------------------------------------------------------------------
   ! Initialize constants, parameters, and MAMs internal bookkeeping
-  !------------------------------------------------------------------------------------------
+  !----------------------------------------------------------------------
   call cambox_init_basics( ncol, pbuf2d )
 
-  !------------------------------------------------------------------------------------------
+  !----------------------------------------------------------------------
   ! Read command line, retrieve names of executable and input file, set name of output file
-  !------------------------------------------------------------------------------------------
+  !----------------------------------------------------------------------
 #endif
 
   const std::string input_suffix = ".yaml";
@@ -128,10 +128,10 @@ int main(int argc, char **argv) {
   const std::string model_name = "mam_box";
   Ensemble *ensemble = skywalker::load_ensemble(input_file, model_name);
 
-  // ------------------------------------------------------------------------------------------
+  // ----------------------------------------------------------------------
   //  Parse test settings. Make sure the subroutine to be tested is
   //  mam_gasaerexch_1subarea
-  // ------------------------------------------------------------------------------------------
+  // ----------------------------------------------------------------------
   Settings settings = ensemble->settings();
   if (!settings.has("mam_subr_name")) {
     std::cerr << "No function specified in mam4xx.mam_subr_name!" << std::endl;
@@ -151,10 +151,10 @@ int main(int argc, char **argv) {
   const int ncl = static_cast<int>(mam4::AeroId::NaCl);
   const int dst = static_cast<int>(mam4::AeroId::DST);
   const int mom = static_cast<int>(mam4::AeroId::MOM);
-  // ===========================================================================================
+  // =======================================================================
   //  Loop over all members of the ensemble. Process input, do calculations, and
   //  prepare output
-  // ===========================================================================================
+  // =======================================================================
   ensemble->process([=](const Input &input, Output &output) {
     Real qgas_netprod_otrproc[num_gas];
     Real qgas_cur[num_mode];
@@ -260,23 +260,23 @@ int main(int argc, char **argv) {
     // ---------
     for (int istep = 0; istep < nstep_end; ++istep) {
 
-      // --------------------------------------------------------------------------------------
+      // ------------------------------------------------------------------
       //  Apply net production from other processes (e.g., chemistry,
       //  advection). This is done here for SOA only, because the production
       //  rate of H2SO4 gas is handled inside the MAM subroutine we are testing.
-      // --------------------------------------------------------------------------------------
+      // ------------------------------------------------------------------
       qgas_cur[soa] = qgas_cur[soa] + qgas_netprod_otrproc[soa] * dt_mam;
 
-      // --------------------------------------------------------------------------------------
+      // ------------------------------------------------------------------
       //  Calculate/update wet geometric mean diameter of each aerosol mode
-      // --------------------------------------------------------------------------------------
+      // ------------------------------------------------------------------
       Real dgn_awet[num_mode]; // geometric mean diameter of each aerosol mode
       if ((update_diameter_every_time_step == 1) || (istep == 1)) {
         mam4::diag_dgn_wet(qaer_cur, qnum_cur, dwet_ddry_ratio, dgn_awet);
       }
-      // --------------------------------------------------------------------------------------
+      // ------------------------------------------------------------------
       //  Gas-aerosol exchanges
-      // --------------------------------------------------------------------------------------
+      // ------------------------------------------------------------------
       //  Save the gas mixing ratios before gas-aerosol exchange to diagnose the
       //  tendencies after the subroutine call.
       // Note: qgas_cur[num_gas] is out of bounds but the constructor is for

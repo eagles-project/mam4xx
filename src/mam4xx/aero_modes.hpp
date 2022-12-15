@@ -122,12 +122,12 @@ KOKKOS_INLINE_FUNCTION const mam4::Mode &modes(const int i) {
 
 /// Identifiers for aerosol species that inhabit MAM4 modes.
 enum class AeroId {
-  SO4 = 0,  // sulphate
-  POM = 1,  // primary organic matter
-  SOA = 2,  // secondary organic aerosol
+  SOA = 0,  // secondary organic aerosol
+  SO4 = 1,  // sulphate
+  POM = 2,  // primary organic matter
   BC = 3,   // black carbon
-  DST = 4,  // dust
-  NaCl = 5, // sodium chloride
+  NaCl = 4, // sodium chloride
+  DST = 5,  // dust
   MOM = 6,  // marine organic matter,
   None = 7  // invalid aerosol species
 };
