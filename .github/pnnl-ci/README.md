@@ -37,6 +37,8 @@ You can add `[skip-ci]` in order to prevent CI jobs from running at PNNL. TODO i
 @CameronRutherford currently maintains the access token used to enable GitHub mirroring. 
 This token is set to expire in one year, and someone will need to ensure that this integration is renewed each year.
 
+https://code.pnnl.gov/help/user/project/repository/mirror/pull.md - make sure that when you create the PAT for this integration, that you use `repo` as the designated scope.
+
 ## PNNL Site Config
 We have manually configured PNNL CI to point to the YAML file in `/.github/pnnl-ci/pnnl.gitlab-ci.yml`. Make sure to re-configure this when refreshing connection.
 
@@ -71,7 +73,7 @@ Similar to the `rebuild-haero.sh` script, since we are building in CI, SSH submo
 ### `rebuild-haero.sh`
 Used to re-configure HAERO in project share, along with configuring permissions so other users can configure with shared installation.
 
-Since we are installing in GitLab pipelines, this script uses the variable `CI_HTTPS_INSTALL` in order to force the `build-haero.sh` script to clone submodules using HTTPS instead of SSH.
+Since we are installing in GitLab pipelines, we are unable to clone with SSH. This requirement resulted in a separate script for CI, where HTTPS is used for submodules instead of SSH.
 
 It does this by manually find and replacing the `.gitmodules` files in each repository where relevant with `https://.../` instead of `git@...:`.
 
