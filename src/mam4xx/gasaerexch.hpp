@@ -46,8 +46,9 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   static constexpr int idx_gas_to_aer(const int i, const int j) {
-    const int gas_to_aer[num_gas][2] = {
-      {igas_soag, iaer_soag_bgn}, {igas_h2so4, iaer_so4}, {igas_nh3, iaer_nh4}};
+    const int gas_to_aer[num_gas][2] = {{igas_soag, iaer_soag_bgn},
+                                        {igas_h2so4, iaer_so4},
+                                        {igas_nh3, iaer_nh4}};
     return gas_to_aer[i][j];
   }
   // qgas_netprod_otrproc = gas net production rate from other processes
@@ -76,8 +77,8 @@ public:
   //  gas_nh3
   KOKKOS_INLINE_FUNCTION
   static constexpr Real uptk_rate_factor(const int i) {
-    const Real uptk_rate[num_gas] = {
-      soag_h2so4_uptake_coeff_ratio, 1.0, nh3_h2so4_uptake_coeff_ratio};
+    const Real uptk_rate[num_gas] = {soag_h2so4_uptake_coeff_ratio, 1.0,
+                                     nh3_h2so4_uptake_coeff_ratio};
     return uptk_rate[i];
   }
 
@@ -655,13 +656,13 @@ void gas_aerosol_uptake_rates_1box(
   const int igas_h2so4 = static_cast<int>(GasId::H2SO4);
 
   const bool igas_nh3 = config.igas_nh3;
-  int idx_gas_to_aer[num_gas][2];  
-  for (int i=0; i<num_gas; ++i)
-    for (int j=0; j<2; ++j)
-      idx_gas_to_aer[i][j] = GasAerExch::idx_gas_to_aer(i,j);
+  int idx_gas_to_aer[num_gas][2];
+  for (int i = 0; i < num_gas; ++i)
+    for (int j = 0; j < 2; ++j)
+      idx_gas_to_aer[i][j] = GasAerExch::idx_gas_to_aer(i, j);
 
   Real qgas_netprod_otrproc[num_gas];
-  for (int i=0; i<num_gas; ++i)
+  for (int i = 0; i < num_gas; ++i)
     qgas_netprod_otrproc[i] = GasAerExch::qgas_netprod_otrproc(i);
 
   const int iaer_so4 = GasAerExch::iaer_so4;
@@ -760,8 +761,8 @@ inline void GasAerExch::init(const AeroConfig &aero_config,
       l_gas_condense_to_mode[igas][imode] = false;
   // loop through all registered gas species
   for (int g = 0; g < num_gas_to_aer; ++g) {
-    const int igas = GasAerExch::idx_gas_to_aer(g,0);
-    const int iaer = GasAerExch::idx_gas_to_aer(g,1);
+    const int igas = GasAerExch::idx_gas_to_aer(g, 0);
+    const int iaer = GasAerExch::idx_gas_to_aer(g, 1);
     // can this gas species condense?
     if (eqn_and_numerics_category[igas] != NA) {
       // what aerosol species does the gas become when condensing?
@@ -794,7 +795,7 @@ void GasAerExch::compute_tendencies(const AeroConfig &config,
 
   Real uptk_rate[num_gas];
   for (int k = 0; k < num_gas; ++k)
-    uptk_rate[k] =  GasAerExch::uptk_rate_factor(k);
+    uptk_rate[k] = GasAerExch::uptk_rate_factor(k);
 
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
