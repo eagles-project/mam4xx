@@ -108,7 +108,7 @@ Real soa_exch_substepsize(
   // Oxygenated OA in each aerosol mode, summed over all SOA species
   //------------------------------------------------------------------
   // total ooa (=soa+opoa) in a mode
-  Real a_ooa_sum_tmp[ntot_soamode];
+  Real a_ooa_sum_tmp[AeroConfig::num_modes()];
   for (int n = 0; n < ntot_soamode; ++n) {
     if (!skip_soamode[n]) {
       a_ooa_sum_tmp[n] = a_opoa[n];
@@ -126,7 +126,7 @@ Real soa_exch_substepsize(
   // Then, for each species, we calculate the sum of its absolute value over all
   // modes, and saved the result in the array tot_frac_single_soa_species.
   //----------------------------------------------------------------------------------------------------------
-  Real tot_frac_single_soa_species[ntot_soaspec];
+  Real tot_frac_single_soa_species[AeroConfig::num_gas_ids()];
   for (int i = 0; i < ntot_soaspec; ++i)
     tot_frac_single_soa_species[i] = 0.0;
 
@@ -406,7 +406,7 @@ void mam_soaexch_advance_in_time(
     // ------------------------------------------------------------------------------------------
 
     // temporary SOA aerosol mixrat (mol/mol) used for linearization
-    Real a_soa_hybrid[ntot_soaspec];
+    Real a_soa_hybrid[AeroConfig::num_gas_ids()];
     for (int n = 0; n < ntot_soamode; ++n) {
       if (skip_soamode[n])
         continue;

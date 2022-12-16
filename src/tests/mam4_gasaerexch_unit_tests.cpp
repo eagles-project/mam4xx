@@ -615,8 +615,8 @@ void GasAerExch_init(const GasAerExch::Config &config,
 
   // loop through all registered gas species
   for (int g = 0; g < num_gas_to_aer; ++g) {
-    const int igas = GasAerExch::idx_gas_to_aer[g][0];
-    const int iaer = GasAerExch::idx_gas_to_aer[g][1];
+    const int igas = GasAerExch::idx_gas_to_aer(g, 0);
+    const int iaer = GasAerExch::idx_gas_to_aer(g, 1);
     // can this gas species condense?
     if (eqn_and_numerics_category[igas] != mam4::GasAerExch::NA) {
       // what aerosol species does the gas become when condensing?
@@ -1214,13 +1214,22 @@ TEST_CASE("mam_gasaerexch_1subarea", "mam_gasaerexch") {
       uptkaer[igas_soag][i] = in_uptkaer[n][0][i];
       uptkaer[igas_h2so4][i] = in_uptkaer[n][1][i];
     }
+    int idx_gas_to_aer[num_gas][2];
+    for (int i = 0; i < num_gas; ++i)
+      for (int j = 0; j < 2; ++j)
+        idx_gas_to_aer[i][j] = GasAerExch::idx_gas_to_aer(i, j);
+
+    Real uptk_rate_factor[num_gas];
+    for (int i = 0; i < num_gas; ++i)
+      uptk_rate_factor[i] = GasAerExch::uptk_rate_factor(i);
+
     gasaerexch::mam_gasaerexch_1subarea(
-        nghq, igas_h2so4, igas_nh3, GasAerExch::idx_gas_to_aer, iaer_so4,
-        iaer_pom, l_calc_gas_uptake_coeff, l_gas_condense_to_mode,
+        nghq, igas_h2so4, igas_nh3, idx_gas_to_aer, iaer_so4, iaer_pom,
+        l_calc_gas_uptake_coeff, l_gas_condense_to_mode,
         eqn_and_numerics_category, dt, dtsub_soa_fixed, temp, pmid, aircon,
         ngas, qgas_cur, qgas_avg, qgas_netprod_otrproc, qaer_cur, qnum_cur,
-        dgn_awet, alnsg_aer, GasAerExch::uptk_rate_factor, uptkaer,
-        uptkrate_h2so4, niter_out, g0_soa_out);
+        dgn_awet, alnsg_aer, uptk_rate_factor, uptkaer, uptkrate_h2so4,
+        niter_out, g0_soa_out);
 
     if (!(qgas_cur[igas_soag] == Approx(out_qgas_cur[n][0]).epsilon(epsilon)))
       std::cout << "qgas_cur != Approx(test_qgas_cur)): "

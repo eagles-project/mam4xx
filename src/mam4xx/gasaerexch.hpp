@@ -43,16 +43,25 @@ public:
   // what aerosol species does the gas become when condensing?
   // There are two gases that condense to aerosols:
   static constexpr int igas_nh3_index = 2;
-  static constexpr int idx_gas_to_aer[num_gas][2] = {
-      {igas_soag, iaer_soag_bgn}, {igas_h2so4, iaer_so4}, {igas_nh3, iaer_nh4}};
 
+  KOKKOS_INLINE_FUNCTION
+  static constexpr int idx_gas_to_aer(const int i, const int j) {
+    const int gas_to_aer[num_gas][2] = {{igas_soag, iaer_soag_bgn},
+                                        {igas_h2so4, iaer_so4},
+                                        {igas_nh3, iaer_nh4}};
+    return gas_to_aer[i][j];
+  }
   // qgas_netprod_otrproc = gas net production rate from other processes
   // such as gas-phase chemistry and emissions (mol/mol/s)
   // this allows the condensation (gasaerexch) routine to apply production and
   // condensation loss together, which is more accurate numerically
   // NOTE - must be >= zero, as numerical method can fail when it is negative
   // NOTE - currently only the values for h2so4 and nh3 should be non-zero
-  static constexpr Real qgas_netprod_otrproc[num_gas] = {0, 5.0e-016, 0};
+  KOKKOS_INLINE_FUNCTION
+  static constexpr Real qgas_netprod_otrproc(const int i) {
+    const Real qgas[num_gas] = {0, 5.0e-016, 0};
+    return qgas[i];
+  }
 
   // ratio of gas uptake coeff w.r.t. that of h2so4
   static constexpr Real soag_h2so4_uptake_coeff_ratio = 0.81; // for SOAG
@@ -66,8 +75,12 @@ public:
   //------------------------------------------------------------------
   //  Indices correspond to those in idx_gas_to_aer: gas_soag, gas_h2so4,
   //  gas_nh3
-  static constexpr Real uptk_rate_factor[num_gas] = {
-      soag_h2so4_uptake_coeff_ratio, 1.0, nh3_h2so4_uptake_coeff_ratio};
+  KOKKOS_INLINE_FUNCTION
+  static constexpr Real uptk_rate_factor(const int i) {
+    const Real uptk_rate[num_gas] = {soag_h2so4_uptake_coeff_ratio, 1.0,
+                                     nh3_h2so4_uptake_coeff_ratio};
+    return uptk_rate[i];
+  }
 
   // -----------------------------------------------------------------
   // The NA, ANAL, and IMPL flags are used in the eqn_and_numerics_category
@@ -643,10 +656,15 @@ void gas_aerosol_uptake_rates_1box(
   const int igas_h2so4 = static_cast<int>(GasId::H2SO4);
 
   const bool igas_nh3 = config.igas_nh3;
-  const int(&idx_gas_to_aer)[GasAerExch::num_gas][2] =
-      GasAerExch::idx_gas_to_aer;
-  const Real(&qgas_netprod_otrproc)[GasAerExch::num_gas] =
-      GasAerExch::qgas_netprod_otrproc;
+  int idx_gas_to_aer[num_gas][2];
+  for (int i = 0; i < num_gas; ++i)
+    for (int j = 0; j < 2; ++j)
+      idx_gas_to_aer[i][j] = GasAerExch::idx_gas_to_aer(i, j);
+
+  Real qgas_netprod_otrproc[num_gas];
+  for (int i = 0; i < num_gas; ++i)
+    qgas_netprod_otrproc[i] = GasAerExch::qgas_netprod_otrproc(i);
+
   const int iaer_so4 = GasAerExch::iaer_so4;
   const int iaer_pom = GasAerExch::iaer_pom;
   const bool l_calc_gas_uptake_coeff = config.calculate_gas_uptake_coefficient;
@@ -743,8 +761,8 @@ inline void GasAerExch::init(const AeroConfig &aero_config,
       l_gas_condense_to_mode[igas][imode] = false;
   // loop through all registered gas species
   for (int g = 0; g < num_gas_to_aer; ++g) {
-    const int igas = idx_gas_to_aer[g][0];
-    const int iaer = idx_gas_to_aer[g][1];
+    const int igas = GasAerExch::idx_gas_to_aer(g, 0);
+    const int iaer = GasAerExch::idx_gas_to_aer(g, 1);
     // can this gas species condense?
     if (eqn_and_numerics_category[igas] != NA) {
       // what aerosol species does the gas become when condensing?
@@ -771,22 +789,19 @@ void GasAerExch::compute_tendencies(const AeroConfig &config,
                                     const Tendencies &tends) const {
   // const int nghq = 2;  // set number of ghq points for direct ghq
   const int nk = atm.num_levels();
-  //====================================================================
-  // Initialize the time-step mean gas concentration (explain why?)
-  //====================================================================
-  // Real qgas_avg[num_gas];
-  // for (int k = 0; k < num_gas; ++k)
-  //  qgas_avg[k] = 0.0;
-
   Real alnsg_aer[num_mode];
   for (int k = 0; k < num_mode; ++k)
     alnsg_aer[k] = std::log(modes_mean_std_dev[k]);
+
+  Real uptk_rate[num_gas];
+  for (int k = 0; k < num_gas; ++k)
+    uptk_rate[k] = GasAerExch::uptk_rate_factor(k);
 
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
         gasaerexch::gas_aerosol_uptake_rates_1box(
             k, config, dt, atm, progs, diags, config_, l_gas_condense_to_mode,
-            eqn_and_numerics_category, uptk_rate_factor, alnsg_aer);
+            eqn_and_numerics_category, uptk_rate, alnsg_aer);
       });
 }
 } // namespace mam4
