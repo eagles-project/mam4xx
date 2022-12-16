@@ -13,7 +13,6 @@
 
 using namespace haero;
 using namespace mam4;
-#if 0
 TEST_CASE("test_constructor", "mam4_gasaerexch_process") {
   mam4::AeroConfig mam4_config;
   mam4::GasAerExchProcess::ProcessConfig process_config;
@@ -592,13 +591,11 @@ TEST_CASE("mam_gasaerexch_1subarea_1gas_nonvolatile", "mam_gasaerexch") {
   }
 }
 
-#endif
-
 namespace {
-void GasAerExch_init(
-    const GasAerExch::Config &config,
-    int eqn_and_numerics_category[mam4::GasAerExch::num_gas],
-    bool l_gas_condense_to_mode[3][mam4::GasAerExch::num_mode]) {
+void GasAerExch_init(const GasAerExch::Config &config,
+                     int eqn_and_numerics_category[mam4::GasAerExch::num_gas],
+                     bool l_gas_condense_to_mode[mam4::GasAerExch::num_gas]
+                                                [mam4::GasAerExch::num_mode]) {
   const int num_gas = AeroConfig::num_gas_ids();
   const int igas_h2so4 = static_cast<int>(GasId::H2SO4);
   const int igas_soag = static_cast<int>(GasId::SOAG);
@@ -612,7 +609,7 @@ void GasAerExch_init(
   eqn_and_numerics_category[igas_h2so4] = mam4::GasAerExch::ANAL;
   eqn_and_numerics_category[igas_nh3] = mam4::GasAerExch::ANAL;
 
-  for (int igas = 0; igas < 3; ++igas)
+  for (int igas = 0; igas < num_gas; ++igas)
     for (int imode = 0; imode < num_mode; ++imode)
       l_gas_condense_to_mode[igas][imode] = false;
 
@@ -665,7 +662,7 @@ TEST_CASE("mam_gasaerexch_1subarea", "mam_gasaerexch") {
   const bool l_calc_gas_uptake_coeff = config.calculate_gas_uptake_coefficient;
 
   int eqn_and_numerics_category[num_gas];
-  bool l_gas_condense_to_mode[3][num_mode];
+  bool l_gas_condense_to_mode[num_gas][num_mode];
   GasAerExch_init(config, eqn_and_numerics_category, l_gas_condense_to_mode);
 
   const Real dt = 1.0;
@@ -674,7 +671,7 @@ TEST_CASE("mam_gasaerexch_1subarea", "mam_gasaerexch") {
   const Real pmid = 100000.0;
   const Real aircon = 4.4055781358372036e-02;
   const int ngas = GasAerExch::num_gas_to_aer;
-  const Real qgas_netprod_otrproc[3] = {0.0, 5.00e-16, 0.0};
+  const Real qgas_netprod_otrproc[num_gas] = {0.0, 5.00e-16, 0.0};
 
   Real modes_mean_std_dev[num_mode];
   for (int imode = 0; imode < num_mode; ++imode)

@@ -112,7 +112,8 @@ public:
   /// gas mass mixing ratios (see aero_mode.hpp for indexing)
   ColumnView q_gas[AeroConfig::num_gas_ids()];
 
-  /// average gas mass mixing ratios (see aero_mode.hpp for indexing)
+  /// time average of the gas mix ratios over the time step of
+  /// integration (see aero_mode.hpp for indexing)
   ColumnView q_gas_avg[AeroConfig::num_gas_ids()];
 
   ColumnView uptkaer[AeroConfig::num_gas_ids()][AeroConfig::num_modes()];
