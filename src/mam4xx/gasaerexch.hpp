@@ -63,10 +63,6 @@ public:
     return qgas[i];
   }
 
-  // ratio of gas uptake coeff w.r.t. that of h2so4
-  static constexpr Real soag_h2so4_uptake_coeff_ratio = 0.81; // for SOAG
-  static constexpr Real nh3_h2so4_uptake_coeff_ratio = 2.08;  // for NH3
-
   //------------------------------------------------------------------
   // MAM4xx currently assumes that the uptake rate of other gases
   // are proportional to the uptake rate of sulfuric acid gas (H2SO4).
@@ -77,8 +73,9 @@ public:
   //  gas_nh3
   KOKKOS_INLINE_FUNCTION
   static constexpr Real uptk_rate_factor(const int i) {
-    const Real uptk_rate[num_gas] = {soag_h2so4_uptake_coeff_ratio, 1.0,
-                                     nh3_h2so4_uptake_coeff_ratio};
+    const Real uptk_rate[num_gas] = {Constants::soag_h2so4_uptake_coeff_ratio,
+                                     1.0,
+                                     Constants::nh3_h2so4_uptake_coeff_ratio};
     return uptk_rate[i];
   }
 
@@ -109,18 +106,6 @@ public:
     Config &operator=(const Config &) = default;
     Real dtsub_soa_fixed = -1;
 
-    // In mam_refactor these are set in set_host_model_mapping_for_aerosols
-    // through a long and complicated process. For some reason it is
-    // not the same as the mode_aero_species[4][7] settings in
-    // aero_modes.hpp.
-    bool l_mode_can_contain_species[num_aer][num_mode] = {
-        {true, true, true, true},    // SOA
-        {true, true, true, true},    // SO4
-        {true, true, true, true},    // POM
-        {true, true, true, false},   // BC
-        {true, false, true, false},  // NaCl
-        {true, false, true, false},  // DST
-        {true, false, true, false}}; // MOM
     bool l_mode_can_age[num_mode] = {false, false, false, true};
 
     bool calculate_gas_uptake_coefficient = true;
@@ -768,9 +753,12 @@ inline void GasAerExch::init(const AeroConfig &aero_config,
       // what aerosol species does the gas become when condensing?
       if (0 <= iaer) {
         for (int imode = 0; imode < num_mode; ++imode) {
+          const ModeIndex node_index = static_cast<ModeIndex>(imode);
+          const AeroId aero_id = static_cast<AeroId>(iaer);
+          const bool mode_can_contain_species =
+              -1 != aerosol_index_for_mode(node_index, aero_id);
           l_gas_condense_to_mode[g][imode] =
-              config_.l_mode_can_contain_species[iaer][imode] ||
-              config_.l_mode_can_age[imode];
+              mode_can_contain_species || config_.l_mode_can_age[imode];
         }
       }
     }
