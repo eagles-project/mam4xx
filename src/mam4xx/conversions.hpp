@@ -319,10 +319,9 @@ mean_particle_volume_from_diameter(Real geom_diam, Real mean_std_dev) {
 /// @param [in] P pressure [Pa]
 /// @param [in] R gas constant [J/K/kg]
 /// @return density [kg/m3]
-KOKKOS_INLINE_FUNCTION Real
-density_of_ideal_gas(const Real T, const Real P,
-  const Real R = Constants::r_gas_dry_air) {
-  return P / (R*T);
+KOKKOS_INLINE_FUNCTION Real density_of_ideal_gas(
+    const Real T, const Real P, const Real R = Constants::r_gas_dry_air) {
+  return P / (R * T);
 }
 
 } // namespace mam4::conversions

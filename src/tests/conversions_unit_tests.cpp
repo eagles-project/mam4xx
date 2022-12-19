@@ -132,7 +132,7 @@ TEST_CASE("conversions", "") {
     logger.info("qv0 init = {}, Tv0 init = {}, calc temp = {}, calc vtemp = {}",
                 qv0, Tv0, temp, vtemp);
     logger.info("rho_dry = {}, rho_wet = {}", rho_dry, rho_wet);
-    REQUIRE( rho_dry > rho_wet );
+    REQUIRE(rho_dry > rho_wet);
     REQUIRE(FloatingPoint<Real>::equiv(Tv0, vtemp, tol));
   }
 
