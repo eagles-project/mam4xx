@@ -75,8 +75,7 @@ TEST_CASE("conversions", "") {
   SECTION("air density") {
     // total air density -> dry air density
     logger.info("SECTION air density");
-    auto const rho =
-        unit_pressure / (haero::Constants::r_gas_dry_air * unit_temp);
+    auto const rho = density_of_ideal_gas(unit_temp, unit_pressure);
     auto const dry_air_density =
         dry_air_density_from_total_air_density(rho, qv0);
     auto const vapor_density = vapor_from_total_mass_density(rho, qv0);
@@ -98,8 +97,7 @@ TEST_CASE("conversions", "") {
   SECTION("mixing ratios") {
     // mass mixing ratio (mmr) <-> number_conc
     logger.info("SECTION mixing ratios");
-    auto const rho =
-        unit_pressure / (haero::Constants::r_gas_dry_air * unit_temp);
+    auto const rho = density_of_ideal_gas(unit_temp, unit_pressure);
     auto const mmr = 1e-8;
     auto const num_conc =
         number_conc_from_mmr(mmr, haero::Constants::molec_weight_nacl, rho);
@@ -127,9 +125,14 @@ TEST_CASE("conversions", "") {
     auto tol = c * std::numeric_limits<Real>::epsilon(); //~5.7e-14
     auto const temp = temperature_from_virtual_temperature(Tv0, qv0);
     auto const vtemp = virtual_temperature_from_temperature(temp, qv0);
+    auto const P0 = 100000; // Pa
+    auto const rho_dry = density_of_ideal_gas(temp, P0);
+    auto const rho_wet = density_of_ideal_gas(vtemp, P0);
     logger.info("tol = {}", tol);
     logger.info("qv0 init = {}, Tv0 init = {}, calc temp = {}, calc vtemp = {}",
                 qv0, Tv0, temp, vtemp);
+    logger.info("rho_dry = {}, rho_wet = {}", rho_dry, rho_wet);
+    REQUIRE( rho_dry > rho_wet );
     REQUIRE(FloatingPoint<Real>::equiv(Tv0, vtemp, tol));
   }
 
