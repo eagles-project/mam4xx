@@ -145,21 +145,21 @@ static constexpr Real mam4_molec_weight_dst = 0.135065;
 static constexpr Real mam4_molec_weight_mom = 250.093;
 
 /// mam4 aerosol densities [kg/m3]
+static constexpr Real mam4_density_soa = 1000.0;
 static constexpr Real mam4_density_so4 = 1770.0;
 static constexpr Real mam4_density_pom = 1000.0;
-static constexpr Real mam4_density_soa = 1000.0;
 static constexpr Real mam4_density_bc = 1700.0;
-static constexpr Real mam4_density_dst = 2600.0;
 static constexpr Real mam4_density_nacl = 1900.0;
+static constexpr Real mam4_density_dst = 2600.0;
 static constexpr Real mam4_density_mom = 1601.0;
 
 /// mam4 aerosol hygroscopicities
+static constexpr Real mam4_hyg_soa = 0.1;
 static constexpr Real mam4_hyg_so4 = 0.507;
 static constexpr Real mam4_hyg_pom = 1e-10;
-static constexpr Real mam4_hyg_soa = 0.1;
 static constexpr Real mam4_hyg_bc = 1e-10;
-static constexpr Real mam4_hyg_dst = 0.14;
 static constexpr Real mam4_hyg_nacl = 1.16;
+static constexpr Real mam4_hyg_dst = 0.14;
 static constexpr Real mam4_hyg_mom = 0.1;
 
 /// A list of aerosol species in MAM4.
@@ -186,17 +186,17 @@ static constexpr Real mam4_hyg_mom = 0.1;
 */
 KOKKOS_INLINE_FUNCTION AeroSpecies aero_species(const int i) {
   static const AeroSpecies species[7] = {
+      AeroSpecies{Constants::molec_weight_c, mam4_density_soa,
+                  mam4_hyg_soa}, // secondary organic aerosol
       AeroSpecies{Constants::molec_weight_so4, mam4_density_so4, mam4_hyg_so4},
       AeroSpecies{Constants::molec_weight_c, mam4_density_pom,
                   mam4_hyg_pom}, // primary organic matter
-      AeroSpecies{Constants::molec_weight_c, mam4_density_soa,
-                  mam4_hyg_soa}, // secondary organic aerosol
       AeroSpecies{Constants::molec_weight_c, mam4_density_bc,
                   mam4_hyg_bc}, // black carbon
-      AeroSpecies{mam4_molec_weight_dst, mam4_density_dst,
-                  mam4_hyg_dst}, // dust
       AeroSpecies{Constants::molec_weight_nacl, mam4_density_nacl,
                   mam4_hyg_nacl}, // sodium chloride
+      AeroSpecies{mam4_molec_weight_dst, mam4_density_dst,
+                  mam4_hyg_dst}, // dust
       AeroSpecies{mam4_molec_weight_mom, mam4_density_mom,
                   mam4_hyg_mom} // marine organic matter
   };
@@ -248,6 +248,12 @@ int aerosol_index_for_mode(ModeIndex mode, AeroId aero_id) {
     }
   }
   return -1;
+}
+/// Convenient function that returns bool indicating if species is
+/// within mode.
+KOKKOS_INLINE_FUNCTION
+bool mode_can_contain_species(ModeIndex mode, AeroId aero_id) {
+  return -1 != aerosol_index_for_mode(mode, aero_id);
 }
 
 // Identifiers for gas species in MAM4, specified in the same order as they

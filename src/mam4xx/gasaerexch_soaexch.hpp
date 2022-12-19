@@ -10,8 +10,6 @@
 namespace mam4 {
 namespace gasaerexch {
 
-using Real = haero::Real;
-
 // ==============================================================================
 // Calculate SOA species's eiquilibrium vapor mixing ratio under the ambient
 // condition, ignoring the solute effect.
@@ -580,7 +578,6 @@ void mam_soaexch_1subarea(const int mode_pca,          // in
   static constexpr Real alpha_astem = 0.05;
   // assumed OPOA fraction
   static constexpr Real opoa_frac_const = 0.10;
-
   Real a_opoa[num_mode];
   for (int n = 0; n < num_mode; ++n)
     a_opoa[n] = 0;

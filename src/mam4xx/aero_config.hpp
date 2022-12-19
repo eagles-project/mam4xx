@@ -189,6 +189,8 @@ public:
     }
     uptkrate_h2so4 = ColumnView("uptkrate_h2so4", num_levels);
     Kokkos::deep_copy(uptkrate_h2so4, 0.0);
+    g0_soa_out = ColumnView("g0_soa_out", num_levels);
+    Kokkos::deep_copy(g0_soa_out, 0.0);
   }
   Diagnostics() = default; // Careful! Only for creating placeholders in views
   Diagnostics(const Diagnostics &) = default;
@@ -219,6 +221,7 @@ public:
 
   /// For gas-aerosol exchange process
   ColumnView uptkrate_h2so4;
+  ColumnView g0_soa_out;
 
 private:
   int nlev_;

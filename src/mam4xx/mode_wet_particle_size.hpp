@@ -219,19 +219,19 @@ KOKKOS_INLINE_FUNCTION
 void diag_dgn_wet(const Real qaer_cur[mam4::AeroConfig::num_aerosol_ids()]
                                      [mam4::AeroConfig::num_modes()],
                   const Real qnum_cur[mam4::AeroConfig::num_modes()],
+		  const Real molecular_weight_gm[mam4::AeroConfig::num_aerosol_ids()],
                   const Real dwet_ddry_ratio,
                   Real dgn_awet[mam4::AeroConfig::num_modes()]) {
   static constexpr int num_aer = mam4::AeroConfig::num_aerosol_ids();
-  static constexpr int ntot_amode = 1;
   // --------------------------
   //  Calculation
   // --------------------------
-  for (int n = 0; n < ntot_amode; ++n) {
+  for (int n = 0; n < mam4::AeroConfig::num_modes(); ++n) {
     Real tmp_dryvol = 0.0;
     // Sum up the volume of all species in this mode
     for (int iaer = 0; iaer < num_aer; ++iaer) {
-      const Real tmpa =
-          qaer_cur[iaer][n] * mam4::aero_species(iaer).molecular_weight;
+      const Real weight_gm_per_mol = molecular_weight_gm[iaer];;
+      const Real tmpa = qaer_cur[iaer][n] * weight_gm_per_mol;
       tmp_dryvol += tmpa / mam4::aero_species(iaer).density;
     }
     // Convert dry volume to dry diameter, then to wet diameter
@@ -239,7 +239,7 @@ void diag_dgn_wet(const Real qaer_cur[mam4::AeroConfig::num_aerosol_ids()]
     const Real tmpb =
         tmp_dryvol / haero::max(1.0e-30, qnum_cur[n] * (Constants::pi / 6.0) *
                                              exp(4.5 * sx * sx));
-    dgn_awet[n] = pow(tmpb, (1.0 / 3.0) * dwet_ddry_ratio); // m
+    dgn_awet[n] = pow(tmpb, (1.0 / 3.0) * dwet_ddry_ratio); 
   }
 }
 

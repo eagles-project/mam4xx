@@ -6,15 +6,9 @@
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
+#include <mam4xx/mam4_types.hpp>
 
 namespace mam4 {
-
-using Atmosphere = haero::Atmosphere;
-using Constants = haero::Constants;
-using Real = haero::Real;
-using ThreadTeam = haero::ThreadTeam;
-
-using ColumnView = haero::ColumnView;
 
 using haero::max;
 using haero::min;
