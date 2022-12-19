@@ -223,10 +223,11 @@ void diag_dgn_wet(
     const Real molecular_weight_gm[mam4::AeroConfig::num_aerosol_ids()],
     const Real dwet_ddry_ratio, Real dgn_awet[mam4::AeroConfig::num_modes()]) {
   static constexpr int num_aer = mam4::AeroConfig::num_aerosol_ids();
+  static constexpr int num_modes = mam4::AeroConfig::num_modes();
   // --------------------------
   //  Calculation
   // --------------------------
-  for (int n = 0; n < mam4::AeroConfig::num_modes(); ++n) {
+  for (int n = 0; n < num_modes; ++n) {
     Real tmp_dryvol = 0.0;
     // Sum up the volume of all species in this mode
     for (int iaer = 0; iaer < num_aer; ++iaer) {

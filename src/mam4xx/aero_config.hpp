@@ -220,7 +220,9 @@ public:
   ColumnView wet_geometric_mean_diameter_c[AeroConfig::num_modes()];
 
   /// For gas-aerosol exchange process
+  /// Uptake rate coefficient of H2SO4 gas, summed over all modes
   ColumnView uptkrate_h2so4;
+  /// Ambient SOA gas equilib mixing rate (mol/mol at actual mw)
   ColumnView g0_soa_out;
 
 private:

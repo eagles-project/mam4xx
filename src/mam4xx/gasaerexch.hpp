@@ -466,23 +466,35 @@ void gas_aer_uptkrates_1box1gas(
 
 KOKKOS_INLINE_FUNCTION
 void mam_gasaerexch_1subarea(
-    const int nghq, const int igas_h2so4, const bool igas_nh3,
-    const int ntot_soamode, const int idx_gas_to_aer[GasAerExch::num_gas][2],
-    const int iaer_so4, const int iaer_pom, const bool l_calc_gas_uptake_coeff,
+    const int nghq,                                   // in
+    const int igas_h2so4,                             // in
+    const bool igas_nh3,                              // in
+    const int ntot_soamode,                           // in
+    const int idx_gas_to_aer[GasAerExch::num_gas][2], // in
+    const int iaer_so4,                               // in
+    const int iaer_pom,                               // in
+    const bool l_calc_gas_uptake_coeff,               // in
     const bool l_gas_condense_to_mode[GasAerExch::num_gas]
-                                     [GasAerExch::num_mode],
-    const int eqn_and_numerics_category[GasAerExch::num_gas], const Real dt,
-    const Real dtsub_soa_fixed, const Real temp, const Real pmid,
-    const Real aircon, const int ngas, Real qgas_cur[GasAerExch::num_gas],
-    Real qgas_avg[GasAerExch::num_gas],
-    const Real qgas_netprod_otrproc[GasAerExch::num_gas],
-    Real qaer_cur[AeroConfig::num_aerosol_ids()][GasAerExch::num_mode],
-    Real qnum_cur[GasAerExch::num_mode],
-    const Real dgn_awet[GasAerExch::num_mode],
-    const Real alnsg_aer[GasAerExch::num_mode],
-    const Real uptk_rate_factor[GasAerExch::num_gas],
-    Real uptkaer[GasAerExch::num_gas][GasAerExch::num_mode],
-    Real &uptkrate_h2so4, int &niter_out, Real &g0_soa_out) {
+                                     [GasAerExch::num_mode],  // in
+    const int eqn_and_numerics_category[GasAerExch::num_gas], // in
+    const Real dt,                                            // in
+    const Real dtsub_soa_fixed,                               // in
+    const Real temp,                                          // in
+    const Real pmid,                                          // in
+    const Real aircon,                                        // in
+    const int ngas, Real qgas_cur[GasAerExch::num_gas],       // in
+    Real qgas_avg[GasAerExch::num_gas],                       // in/out
+    const Real qgas_netprod_otrproc[GasAerExch::num_gas],     // in
+    Real qaer_cur[AeroConfig::num_aerosol_ids()]
+                 [GasAerExch::num_mode],                     // in/out
+    Real qnum_cur[GasAerExch::num_mode],                     // in/out
+    const Real dgn_awet[GasAerExch::num_mode],               // in
+    const Real alnsg_aer[GasAerExch::num_mode],              // in
+    const Real uptk_rate_factor[GasAerExch::num_gas],        // in
+    Real uptkaer[GasAerExch::num_gas][GasAerExch::num_mode], // inout
+    Real &uptkrate_h2so4,                                    // out
+    int &niter_out,                                          // out
+    Real &g0_soa_out) {                                      // out
   const int num_mode = GasAerExch::num_mode;
   const int num_gas = GasAerExch::num_gas;
 
