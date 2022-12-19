@@ -1228,8 +1228,8 @@ TEST_CASE("mam_gasaerexch_1subarea", "mam_gasaerexch") {
 
     int ntot_soamode = 4;
     gasaerexch::mam_gasaerexch_1subarea(
-        nghq, igas_h2so4, igas_nh3, ntot_soamode, idx_gas_to_aer, iaer_so4, iaer_pom,
-        l_calc_gas_uptake_coeff, l_gas_condense_to_mode,
+        nghq, igas_h2so4, igas_nh3, ntot_soamode, idx_gas_to_aer, iaer_so4,
+        iaer_pom, l_calc_gas_uptake_coeff, l_gas_condense_to_mode,
         eqn_and_numerics_category, dt, dtsub_soa_fixed, temp, pmid, aircon,
         ngas, qgas_cur, qgas_avg, qgas_netprod_otrproc, qaer_cur, qnum_cur,
         dgn_awet, alnsg_aer, uptk_rate_factor, uptkaer, uptkrate_h2so4,

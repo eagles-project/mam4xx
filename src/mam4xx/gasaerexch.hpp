@@ -409,7 +409,8 @@ void gas_aer_uptkrates_1box1gas(
   const Real gasdiffus = gas_diffusivity(temp, p_in_atm, mw_gas, mw_air_gmol,
                                          vol_molar_gas, vol_molar_air);
   // gas mean free path (m)
-  const Real molecular_speed = mean_molecular_speed(temp, mw_gas, r_universal_mJ, pi);
+  const Real molecular_speed =
+      mean_molecular_speed(temp, mw_gas, r_universal_mJ, pi);
   const Real gasfreepath = 3.0 * gasdiffus / molecular_speed;
   const Real accomxp283 = accom * 0.283;
   const Real accomxp75 = accom * 0.75;
@@ -466,9 +467,8 @@ void gas_aer_uptkrates_1box1gas(
 KOKKOS_INLINE_FUNCTION
 void mam_gasaerexch_1subarea(
     const int nghq, const int igas_h2so4, const bool igas_nh3,
-    const int ntot_soamode,
-    const int idx_gas_to_aer[GasAerExch::num_gas][2], const int iaer_so4,
-    const int iaer_pom, const bool l_calc_gas_uptake_coeff,
+    const int ntot_soamode, const int idx_gas_to_aer[GasAerExch::num_gas][2],
+    const int iaer_so4, const int iaer_pom, const bool l_calc_gas_uptake_coeff,
     const bool l_gas_condense_to_mode[GasAerExch::num_gas]
                                      [GasAerExch::num_mode],
     const int eqn_and_numerics_category[GasAerExch::num_gas], const Real dt,
@@ -651,7 +651,7 @@ void gas_aerosol_uptake_rates_1box(
   const Real dtsub_soa_fixed = config.dtsub_soa_fixed;
   const Real &temp = atm.temperature(k);
   const Real &pmid = atm.pressure(k);
-  const Real aircon_kmol = pmid / (1000*r_universal * temp);
+  const Real aircon_kmol = pmid / (1000 * r_universal * temp);
   const int ngas = GasAerExch::num_gas_to_aer;
 
   // set number of ghq points for direct ghq
@@ -687,13 +687,13 @@ void gas_aerosol_uptake_rates_1box(
   Real g0_soa_out = 0;
   const int ntot_soamode = config.ntot_soamode;
 
-  mam_gasaerexch_1subarea(nghq, igas_h2so4, igas_nh3, ntot_soamode, idx_gas_to_aer, iaer_so4,
-                          iaer_pom, l_calc_gas_uptake_coeff,
-                          l_gas_condense_to_mode, eqn_and_numerics_category, dt,
-                          dtsub_soa_fixed, temp, pmid, aircon_kmol, ngas, qgas_cur,
-                          qgas_avg, qgas_netprod_otrproc, qaer_cur, qnum_cur,
-                          dgn_awet, alnsg_aer, uptk_rate_factor, uptkaer,
-                          uptkrate_h2so4, niter_out, g0_soa_out);
+  mam_gasaerexch_1subarea(
+      nghq, igas_h2so4, igas_nh3, ntot_soamode, idx_gas_to_aer, iaer_so4,
+      iaer_pom, l_calc_gas_uptake_coeff, l_gas_condense_to_mode,
+      eqn_and_numerics_category, dt, dtsub_soa_fixed, temp, pmid, aircon_kmol,
+      ngas, qgas_cur, qgas_avg, qgas_netprod_otrproc, qaer_cur, qnum_cur,
+      dgn_awet, alnsg_aer, uptk_rate_factor, uptkaer, uptkrate_h2so4, niter_out,
+      g0_soa_out);
 
   for (int g = 0; g < num_gas; ++g) {
     progs.q_gas[g](k) = qgas_cur[g];
