@@ -22,53 +22,57 @@ stages:
     - marianas
     - deception
 
-# Basic Ubuntu image for Cleanup/Linting
-.pnnl_nonhpc_tags:
-  image: ubuntu:20.04
-  tags:
-    - k8s
-    - ikp
-    - eagles
-    - basic
-  # No need to clone for non-hpc jobs in CI
-  variables:
-    GIT_STRATEGY: none
+# This runner isn't configured correctly, but would be useful for linting
+# # Basic Ubuntu image for Cleanup/Linting
+# .pnnl_nonhpc_tags:
+#   image: ubuntu:20.04
+#   tags:
+#     - k8s
+#     - ikp
+#     - eagles
+#     - basic
 
 variables:
   # Since submodules are cloned manually in CI, this is none
   # If we were to use HTTPS instead of SSH, this could be recursive
   GIT_SUBMODULE_STRATEGY: none
+  GIT_STRATEGY: clone
 
-# Generic job for building HAERO/mam4xx
-.pnnl_hpc_job_template:
+.pnnl_base_template:
   extends:
     - .pnnl_tags_template
     - .pnnl_script_template
     - .pnnl_after_script_template
-  variables:
-  # Since we are only able to compile against one CUDA arch, we must target just dl_shared
-    SLURM_Q: "dl_shared"
-    GIT_STRATEGY: clone
-    SYSTEM_NAME: deception
-    HAERO_INSTALL: /qfs/projects/eagles/pnnl-ci/haero_${BUILD_TYPE}_${PRECISION}
-    WORKDIR_SUFFIX: mam4xx_${BUILD_TYPE}_${PRECISION}
-    SCRIPT_NAME: ci.sh
-
-# Generic haero rebuild template
-.haero_rebuild:
-  rules:
-    - if: '$CI_COMMIT_TITLE =~ /[haero-rebuild]/'
-      when: on_success
-    - when: manual
-  allow_failure: true
 # We only have 2 runners at a time, so this is the most we can parallelize
   parallel:
     matrix:
       - BUILD_TYPE: [Debug, Release]
   variables:
+    SYSTEM_NAME: deception
+    WORKDIR_SUFFIX: haero_${BUILD_TYPE}_${PRECISION}
+    HAERO_INSTALL: /qfs/projects/eagles/pnnl-ci/haero_${BUILD_TYPE}_${PRECISION}
+
+# Generic job for building HAERO/mam4xx
+.pnnl_hpc_job_template:
+  extends:
+    - .pnnl_base_template
+  variables:
+  # Since we are only able to compile against one CUDA arch, we must target just dl_shared
+    SLURM_Q: "dl_shared"
+    SCRIPT_NAME: ci.sh
+
+# Generic haero rebuild template
+.haero_rebuild_template:
+  extends:
+    - .pnnl_base_template
+  rules:
+    - if: '$CI_COMMIT_TITLE =~ /[haero-rebuild]/'
+      when: on_success
+    - when: manual
+  allow_failure: true
+  variables:
   # We are just building, so might as well use CPU nodes
     SLURM_Q: "short"
-    WORKDIR_SUFFIX: haero_${BUILD_TYPE}_${PRECISION}
     SCRIPT_NAME: rebuild-haero.sh
 
 .pnnl_after_script_template:
@@ -140,21 +144,20 @@ variables:
 SVC Account Cleanup:
   stage: .pre
   extends:
-    - .pnnl_nonhpc_tags
+    - .pnnl_tags_template
+  # No need to clone for non-hpc jobs in CI
+  variables:
+    GIT_STRATEGY: none
   script:
     - export WORKDIR="$HOME/gitlab/"
     # clears directory of files more than 6 hours/360 minutes old
     - find $WORKDIR -type d -mindepth 1 -mmin +360 -prune -print -exec rm -rf {} \; || true
     - ls -hal $WORKDIR
 
-# Since we only have two runners, we need to cap parallel jobs at 2
 Deception Single Precision:
   extends:
     - .pnnl_hpc_job_template
   stage: build-single
-  parallel:
-    matrix:
-      - BUILD_TYPE: [Debug, Release]
   variables:
     PRECISION: single
 
@@ -162,25 +165,19 @@ Deception Double Precision:
   extends:
     - .pnnl_hpc_job_template
   stage: build-double
-  parallel:
-    matrix:
-      - BUILD_TYPE: [Debug, Release]
   variables:
     PRECISION: double
 
 Rebuild HAERO Single Precision:
   extends:
-    - .pnnl_hpc_job_template
-    - .haero_rebuild
+    - .haero_rebuild_template
   stage: haero-single
   variables:
     PRECISION: single
 
 Rebuild HAERO Double Precision:
   extends:
-    - .pnnl_hpc_job_template
-    - .haero_rebuild
-  needs: ["Rebuild HAERO Single Precision"]
+    - .haero_rebuild_template
   stage: haero-double
   variables:
     PRECISION: double

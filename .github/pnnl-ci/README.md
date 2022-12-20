@@ -7,19 +7,28 @@ Since we are only able to target one Kokkos CUDA arch at a time https://github.c
 
 **NOTE: Since we require CI to run on only one partition, CI might not always go through if Deception partition `dl_shared` is particularly busy.**
 
+For some reason only the HPC runners are configured to run at the moment, and so all stages will share that base configuration.
+
+## Rebuilding HAERO in CI
+
+You can either add "[hearo-rebuild]" directly to your commit message, or go to https:://code.pnnl.gov/e3sm/eagles/mam4xx and trigger the rebuild pipeline manually once you have pushed to your branch.
+
+Make sure you either push to GitHub and have the mirror update first, or just push to the GitLab directly.
+
 ### Skipping CI runs:
 PNNL CI will only run when you are adding new commits to an existing merge request.
 
 You can add `[skip-ci]` in order to prevent CI jobs from running at PNNL. TODO involves adding support for skipping CI when certain tags are present in a PR.
 
 #### TODO:
-- [ ] Get mam4xx building for GPU locally, then get working in CI
 - [ ] Consider cleaning up old installations and adding permissions changes so all users can use shared installation
 - [ ] Add support for a variety of paritions on Deception. We currently only target dl_shared as we can only choose one cuda arch
 - [ ] Add way to skip CI using a GitHub tag in both GitLab and GitHub
 - [ ] Port pipeline to AMD architectures
 
 #### Done:
+- [x] Run CI based on commit message or manual trigger
+- [x] Get mam4xx building for GPU locally, then get working in CI
 - [x] Only run 2 jobs at a time as we only have 2 runners
 - [x] Only run PNNL CI in PRs
 - [x] Refactor CI YAML to remove duplication across scripts
