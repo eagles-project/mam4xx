@@ -236,10 +236,11 @@ int main(int argc, char **argv) {
     // Time-stepping
     const Real run_length = input.get("run_length");
     const Real dt_mam = input.get("dt_mam");
-    const int nstep_end = std::round(run_length / dt_mam);
+    int nstep_end = std::round(run_length / dt_mam);
     EKAT_REQUIRE_MSG(
         mam4::FloatingPoint<Real>::equiv(nstep_end * dt_mam, run_length),
         "The run length should be a multiple of the time step.");
+    ++nstep_end;
 
     const Real dt_soa_opt = std::round(input.get("dt_soa_opt"));
     EKAT_REQUIRE_MSG(dt_soa_opt == 0 || dt_soa_opt == -1,
@@ -255,15 +256,15 @@ int main(int argc, char **argv) {
     const Real dwet_ddry_ratio = 1.0;
     // const bool l_calc_gas_uptake_coeff = true;
 
-    std::vector<Real> time(nstep_end);
-    std::vector<Real> so4a(nstep_end);
-    std::vector<Real> so4g(nstep_end);
-    std::vector<Real> so4g_ddt_exch(nstep_end);
-    std::vector<Real> soaa(nstep_end);
-    std::vector<Real> soag(nstep_end);
-    std::vector<Real> soag_ddt_exch(nstep_end);
-    std::vector<Real> soag_amb_qsat(nstep_end);
-    std::vector<Real> soag_niter(nstep_end);
+    std::vector<Real> time(nstep_end, 0);
+    std::vector<Real> so4a(nstep_end, 0);
+    std::vector<Real> so4g(nstep_end, 0);
+    std::vector<Real> so4g_ddt_exch(nstep_end, 0);
+    std::vector<Real> soaa(nstep_end, 0);
+    std::vector<Real> soag(nstep_end, 0);
+    std::vector<Real> soag_ddt_exch(nstep_end, 0);
+    std::vector<Real> soag_amb_qsat(nstep_end, 0);
+    std::vector<Real> soag_niter(nstep_end, 0);
 
     // ------------------------------------------------------------------
     //  save initial conditions for output
@@ -273,9 +274,8 @@ int main(int argc, char **argv) {
       time[istep] = 0;
       so4g[istep] = qgas_cur[h2so4];
       soag[istep] = qgas_cur[soa];
-      so4a[istep] = qaer_cur[so4][n_mode];
-      soaa[istep] = qaer_cur[soa][n_mode];
-
+      for (int i=0; i<n_mode; ++i)  so4a[istep] += qaer_cur[so4][i];
+      for (int i=0; i<n_mode; ++i)  soaa[istep] += qaer_cur[soa][i];
       // ------------------------------------------------------------------
       //  Time loop, in which the MAM subroutine we want to test is called.
       // ------------------------------------------------------------------
@@ -289,7 +289,7 @@ int main(int argc, char **argv) {
       std::cout << std::endl;
     }
     // ---------
-    for (int istep = 0; istep < nstep_end; ++istep) {
+    for (int istep = 1; istep < nstep_end; ++istep) {
 
       // ------------------------------------------------------------------
       //  Apply net production from other processes (e.g., chemistry,
@@ -301,8 +301,8 @@ int main(int argc, char **argv) {
       // ------------------------------------------------------------------
       //  Calculate/update wet geometric mean diameter of each aerosol mode
       // ------------------------------------------------------------------
-      Real dgn_awet[num_mode] =
-          {}; // geometric mean diameter of each aerosol mode
+      // geometric mean diameter of each aerosol mode
+      Real dgn_awet[num_mode] = {}; 
       if ((update_diameter_every_time_step == 1) || (istep == 1)) {
         mam4::diag_dgn_wet(qaer_cur, qnum_cur, molecular_weight_gm,
                            dwet_ddry_ratio, dgn_awet);
