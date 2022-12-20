@@ -325,25 +325,26 @@ int main(int argc, char **argv) {
       mam4::Diagnostics diags(nlev);
       mam4::Tendencies tends(nlev);
 
-      atm.temperature(0) = temp;
-      atm.pressure(0) = pmid;
+      Kokkos::deep_copy(atm.temperature, temp);
+      Kokkos::deep_copy(atm.pressure, pmid);
       for (int n = 0; n < num_mode; ++n)
         for (int g = 0; g < num_aer; ++g)
-          progs.q_aero_i[n][g](0) = qaer_cur[g][n];
+          Kokkos::deep_copy(progs.q_aero_i[n][g], qaer_cur[g][n]);
 
       for (int n = 0; n < num_gas; ++n)
-        progs.q_gas[n](0) = qgas_cur[n];
+        Kokkos::deep_copy(progs.q_gas[n], qgas_cur[n]);
 
       for (int n = 0; n < num_mode; ++n)
-        progs.n_mode_i[n](0) = qnum_cur[n];
+        Kokkos::deep_copy(progs.n_mode_i[n], qnum_cur[n]);
 
       for (int igas = 0; igas < num_gas; ++igas)
         for (int imode = 0; imode < num_mode; ++imode)
-          progs.uptkaer[igas][imode](0) = 0;
+          Kokkos::deep_copy(progs.uptkaer[igas][imode], 0);
 
-      diags.g0_soa_out(0) = 0;
+      Kokkos::deep_copy(diags.g0_soa_out, 0);
+
       for (int i = 0; i < num_mode; ++i)
-        diags.wet_geometric_mean_diameter_i[i](0) = dgn_awet[i];
+        Kokkos::deep_copy(diags.wet_geometric_mean_diameter_i[i], dgn_awet[i]);
 
       mam4::AeroConfig mam4_config;
 
@@ -366,14 +367,22 @@ int main(int argc, char **argv) {
       //  Save values for output and postprocessing
 
       for (int n = 0; n < num_mode; ++n)
-        for (int g = 0; g < num_aer; ++g)
-          qaer_cur[g][n] = progs.q_aero_i[n][g](0);
+        for (int g = 0; g < num_aer; ++g) {
+          auto host_view = Kokkos::create_mirror_view(progs.q_aero_i[n][g]);
+          Kokkos::deep_copy(host_view, progs.q_aero_i[n][g]);
+          qaer_cur[g][n] = host_view(0);
+        }
 
-      for (int n = 0; n < num_gas; ++n)
-        qgas_cur[n] = progs.q_gas[n](0);
+      for (int n = 0; n < num_gas; ++n) {
+        auto host_view = Kokkos::create_mirror_view(progs.q_gas[n]);
+        Kokkos::deep_copy(host_view, progs.q_gas[n]);
+        qgas_cur[n] = host_view(0);
+      }
 
       // ambient saturation mixing ratio of SOA gases, solute effect ignored
-      const Real g0_soa = diags.g0_soa_out(0);
+      auto host_view = Kokkos::create_mirror_view(diags.g0_soa_out);
+      Kokkos::deep_copy(host_view, diags.g0_soa_out);
+      const Real g0_soa = host_view(0);
 
       time[istep] = istep * dt_mam;
 
