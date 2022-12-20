@@ -232,7 +232,6 @@ void diag_dgn_wet(
     // Sum up the volume of all species in this mode
     for (int iaer = 0; iaer < num_aer; ++iaer) {
       const Real weight_gm_per_mol = molecular_weight_gm[iaer];
-      ;
       const Real tmpa = qaer_cur[iaer][n] * weight_gm_per_mol;
       tmp_dryvol += tmpa / mam4::aero_species(iaer).density;
     }

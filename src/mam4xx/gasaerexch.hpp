@@ -767,10 +767,10 @@ inline void GasAerExch::init(const AeroConfig &aero_config,
         for (int imode = 0; imode < num_mode; ++imode) {
           const ModeIndex node_index = static_cast<ModeIndex>(imode);
           const AeroId aero_id = static_cast<AeroId>(iaer);
-          const bool mode_can_contain_species =
-              mam4::mode_can_contain_species(node_index, aero_id);
+          const bool mode_contains_species =
+              mam4::mode_contains_species(node_index, aero_id);
           l_gas_condense_to_mode[g][imode] =
-              mode_can_contain_species || config_.l_mode_can_age[imode];
+              mode_contains_species || config_.l_mode_can_age[imode];
         }
       }
     }

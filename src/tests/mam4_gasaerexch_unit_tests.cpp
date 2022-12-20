@@ -624,10 +624,10 @@ void GasAerExch_init(const GasAerExch::Config &config,
         for (int imode = 0; imode < num_mode; ++imode) {
           const ModeIndex node_index = static_cast<ModeIndex>(imode);
           const AeroId aero_id = static_cast<AeroId>(iaer);
-          const bool mode_can_contain_species =
+          const bool mode_contains_species =
               -1 != aerosol_index_for_mode(node_index, aero_id);
           l_gas_condense_to_mode[g][imode] =
-              mode_can_contain_species || config.l_mode_can_age[imode];
+              mode_contains_species || config.l_mode_can_age[imode];
         }
       }
     }

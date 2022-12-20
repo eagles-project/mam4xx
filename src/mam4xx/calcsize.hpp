@@ -885,7 +885,6 @@ private:
   // true: cannot be transferred
   // false: can be transferred
   const bool _noxf_acc2ait[7] = {false, true, false, true, true, false, false};
-  ;
   // number of common species between accum and aitken modes
   const int _n_common_species_ait_accum = 4;
   // index of aitken species in accum mode.

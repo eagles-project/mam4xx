@@ -252,7 +252,7 @@ int aerosol_index_for_mode(ModeIndex mode, AeroId aero_id) {
 /// Convenient function that returns bool indicating if species is
 /// within mode.
 KOKKOS_INLINE_FUNCTION
-bool mode_can_contain_species(ModeIndex mode, AeroId aero_id) {
+bool mode_contains_species(ModeIndex mode, AeroId aero_id) {
   return -1 != aerosol_index_for_mode(mode, aero_id);
 }
 
