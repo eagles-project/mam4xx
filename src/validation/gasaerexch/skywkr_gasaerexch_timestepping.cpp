@@ -15,6 +15,7 @@
 
 using namespace skywalker;
 using namespace haero;
+using namespace mam4;
 // -------------------------------------------------------------------------
 
 // This file contains a program for testing the gas-aerosol mass exchange
@@ -85,6 +86,31 @@ void get_file_names(const std::string &input_suffix,
             << " output_file:" << output_file << std::endl;
 }
 
+// ------------------------------------------------------------
+// Subroutine for initialize various module constants/parameters.
+// In the global model, the initialization of these variables is
+// scattered in multiple subroutines and some values are copied
+// from the host model. Here we have a simplified subroutine that
+// only set the constants/parameters needed by the gas-aerosol exchange
+// parameterization.
+// ------------------------------------------------------------
+GasAerExch::Config gasaerexch_module_var_init() {
+  const int imode_pca = static_cast<int>(ModeIndex::PrimaryCarbon);
+  static constexpr int max_mode = 4;
+  int mode_aging_optaa[max_mode] = {};
+  mode_aging_optaa[imode_pca] =
+      1; // the value does not matter as long as it is > 0
+  bool l_mode_can_age[max_mode] = {};
+  for (int i = 0; i < max_mode; ++i)
+    l_mode_can_age[i] = mode_aging_optaa[i] > 0;
+
+  GasAerExch::Config config;
+  for (int i = 0; i < GasAerExch::num_mode; ++i)
+    config.l_mode_can_age[i] = l_mode_can_age[i];
+
+  return config;
+}
+
 // =================================================================
 //  This is the driver program that tests MAM's gas-aerosol exchange
 //  parameterizations.
@@ -101,18 +127,22 @@ int main(int argc, char **argv) {
   static constexpr int num_gas = mam4::AeroConfig::num_gas_ids();
   static constexpr int num_mode = mam4::AeroConfig::num_modes();
   static constexpr int num_aer = mam4::AeroConfig::num_aerosol_ids();
-  static constexpr int ntot_amode = 1;
-  static constexpr int nsoa = 1 + static_cast<int>(mam4::AeroId::SOA);
-#if 0
-  !-----------------------------------------------------------------------
-  ! Initialize constants, parameters, and MAMs internal bookkeeping
-  !----------------------------------------------------------------------
-  call cambox_init_basics( ncol, pbuf2d )
+  static constexpr int ntot_amode = 4;
 
-  !----------------------------------------------------------------------
-  ! Read command line, retrieve names of executable and input file, set name of output file
-  !----------------------------------------------------------------------
-#endif
+  // ---------------------------------------------------------------------
+  // Initialize constants, parameters, and MAMs internal bookkeeping
+  // --------------------------------------------------------------------
+  const GasAerExch::Config config = gasaerexch_module_var_init();
+  // molecular_weight is not the same as from mam4::aero_species()
+  // even when converted from kg to gm.  So hard code them in this
+  // test to be able to match that which is in mam_refactor
+  const Real molecular_weight_gm[num_aer] = {150.0, 115.0, 150.0,   12.0,
+                                             58.50, 135.0, 250092.0};
+
+  // --------------------------------------------------------------------
+  // Read command line, retrieve names of executable and input file, set name of
+  // output file
+  // --------------------------------------------------------------------
 
   const std::string input_suffix = ".yaml";
   const std::string output_suffix = ".py";
@@ -144,6 +174,7 @@ int main(int argc, char **argv) {
   }
 
   const int h2so4 = static_cast<int>(mam4::GasId::H2SO4);
+
   const int soa = static_cast<int>(mam4::AeroId::SOA);
   const int so4 = static_cast<int>(mam4::AeroId::SO4);
   const int pom = static_cast<int>(mam4::AeroId::POM);
@@ -160,11 +191,11 @@ int main(int argc, char **argv) {
     Real qgas_cur[num_mode];
     // ----------------------------------------
     //  Process input for this ensemble member
-    // ----------------------------------------
+    // -----------------------------------saerexch_module_va-----
     //  Ambient conditions
 
-    // const Real pmid   = input.get("pmid");            // air pressure
-    // const Real temp   = input.get("temp");            // air temperature
+    const Real pmid = input.get("pmid"); // air pressure
+    const Real temp = input.get("temp"); // air temperature
     // const Real aircon = pmid/(Constants::r_gas*temp); // air density
 
     // gas production rates and mixing ratio ICs
@@ -202,13 +233,13 @@ int main(int argc, char **argv) {
         qaer_cur[mom][i] = val[6][i];
       }
     }
-
     // Time-stepping
     const Real run_length = input.get("run_length");
     const Real dt_mam = input.get("dt_mam");
     const int nstep_end = std::round(run_length / dt_mam);
-    EKAT_REQUIRE_MSG(FloatingPoint<Real>::equiv(nstep_end * dt_mam, run_length),
-                     "The run length should be a multiple of the time step.");
+    EKAT_REQUIRE_MSG(
+        mam4::FloatingPoint<Real>::equiv(nstep_end * dt_mam, run_length),
+        "The run length should be a multiple of the time step.");
 
     const Real dt_soa_opt = std::round(input.get("dt_soa_opt"));
     EKAT_REQUIRE_MSG(dt_soa_opt == 0 || dt_soa_opt == -1,
@@ -220,7 +251,7 @@ int main(int argc, char **argv) {
 
     // Miscellaneous input and tmp variables
 
-    const int n_mode = ntot_amode;
+    const int n_mode = ntot_amode - 1;
     const Real dwet_ddry_ratio = 1.0;
     // const bool l_calc_gas_uptake_coeff = true;
 
@@ -270,9 +301,11 @@ int main(int argc, char **argv) {
       // ------------------------------------------------------------------
       //  Calculate/update wet geometric mean diameter of each aerosol mode
       // ------------------------------------------------------------------
-      Real dgn_awet[num_mode]; // geometric mean diameter of each aerosol mode
+      Real dgn_awet[num_mode] =
+          {}; // geometric mean diameter of each aerosol mode
       if ((update_diameter_every_time_step == 1) || (istep == 1)) {
-        mam4::diag_dgn_wet(qaer_cur, qnum_cur, dwet_ddry_ratio, dgn_awet);
+        mam4::diag_dgn_wet(qaer_cur, qnum_cur, molecular_weight_gm,
+                           dwet_ddry_ratio, dgn_awet);
       }
       // ------------------------------------------------------------------
       //  Gas-aerosol exchanges
@@ -292,8 +325,33 @@ int main(int argc, char **argv) {
       mam4::Diagnostics diags(nlev);
       mam4::Tendencies tends(nlev);
 
+      Kokkos::deep_copy(atm.temperature, temp);
+      Kokkos::deep_copy(atm.pressure, pmid);
+      for (int n = 0; n < num_mode; ++n)
+        for (int g = 0; g < num_aer; ++g)
+          Kokkos::deep_copy(progs.q_aero_i[n][g], qaer_cur[g][n]);
+
+      for (int n = 0; n < num_gas; ++n)
+        Kokkos::deep_copy(progs.q_gas[n], qgas_cur[n]);
+
+      for (int n = 0; n < num_mode; ++n)
+        Kokkos::deep_copy(progs.n_mode_i[n], qnum_cur[n]);
+
+      for (int igas = 0; igas < num_gas; ++igas)
+        for (int imode = 0; imode < num_mode; ++imode)
+          Kokkos::deep_copy(progs.uptkaer[igas][imode], 0);
+
+      Kokkos::deep_copy(diags.g0_soa_out, 0);
+
+      for (int i = 0; i < num_mode; ++i)
+        Kokkos::deep_copy(diags.wet_geometric_mean_diameter_i[i], dgn_awet[i]);
+
       mam4::AeroConfig mam4_config;
-      mam4::GasAerExchProcess::ProcessConfig process_config;
+
+      mam4::GasAerExchProcess::ProcessConfig process_config = config;
+      for (int i = 0; i < num_gas; ++i)
+        process_config.qgas_netprod_otrproc[i] = qgas_netprod_otrproc[i];
+
       mam4::GasAerExchProcess process(mam4_config, process_config);
       auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
       Real t = 0.0, dt = dt_mam;
@@ -301,33 +359,54 @@ int main(int argc, char **argv) {
           team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
             process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
           });
-      Real g0_soa[nsoa] = {}; // ambient saturation mixing ratio of SOA gases,
-                              // solute effect ignored
-      int niter = 1;          // number of substeps used for SOA
+      int niter = 1; // number of substeps used for SOA
 
       // ---------------------------------------------------------
       //  Calculations for this timestep done. Prepare for output.
       // ---------------------------------------------------------
       //  Save values for output and postprocessing
 
+      for (int n = 0; n < num_mode; ++n)
+        for (int g = 0; g < num_aer; ++g) {
+          auto host_view = Kokkos::create_mirror_view(progs.q_aero_i[n][g]);
+          Kokkos::deep_copy(host_view, progs.q_aero_i[n][g]);
+          qaer_cur[g][n] = host_view(0);
+        }
+
+      for (int n = 0; n < num_gas; ++n) {
+        auto host_view = Kokkos::create_mirror_view(progs.q_gas[n]);
+        Kokkos::deep_copy(host_view, progs.q_gas[n]);
+        qgas_cur[n] = host_view(0);
+      }
+
+      // ambient saturation mixing ratio of SOA gases, solute effect ignored
+      auto host_view = Kokkos::create_mirror_view(diags.g0_soa_out);
+      Kokkos::deep_copy(host_view, diags.g0_soa_out);
+      const Real g0_soa = host_view(0);
+
       time[istep] = istep * dt_mam;
 
       // so4
       so4g[istep] = qgas_cur[h2so4];
-      so4a[istep] = std::accumulate(qaer_cur[so4], qaer_cur[so4 + 1], 0);
+      so4a[istep] = 0;
+      for (int n = 0; n < num_mode; ++n)
+        so4a[istep] += qaer_cur[so4][n];
+
       so4g_ddt_exch[istep] = (qgas_cur[h2so4] - zqgas_bef[h2so4]) / dt_mam -
                              qgas_netprod_otrproc[h2so4];
 
       // soa
       soag[istep] = qgas_cur[soa];
-      soaa[istep] = std::accumulate(qaer_cur[soa], qaer_cur[soa + 1], 0);
+      soaa[istep] = 0;
+      for (int n = 0; n < num_mode; ++n)
+        soaa[istep] += qaer_cur[soa][n];
       soag_ddt_exch[istep] = (qgas_cur[soa] - zqgas_bef[soa]) / dt_mam;
-      soag_amb_qsat[istep] = g0_soa[soa];
+      soag_amb_qsat[istep] = g0_soa;
       soag_niter[istep] = niter;
       // Print some numbers to stdout for quick checks
       std::cout << "step " << istep << ", dqSOAG/dt = " << soag_ddt_exch[istep]
                 << ", qSOAG after = " << qgas_cur[soa]
-                << ", g0_soa = " << g0_soa[soa] << ", niter = " << niter
+                << ", g0_soa = " << g0_soa << ", niter = " << niter
                 << std::endl;
       // ----------------------------------------------
     }

@@ -189,6 +189,8 @@ public:
     }
     uptkrate_h2so4 = ColumnView("uptkrate_h2so4", num_levels);
     Kokkos::deep_copy(uptkrate_h2so4, 0.0);
+    g0_soa_out = ColumnView("g0_soa_out", num_levels);
+    Kokkos::deep_copy(g0_soa_out, 0.0);
   }
   Diagnostics() = default; // Careful! Only for creating placeholders in views
   Diagnostics(const Diagnostics &) = default;
@@ -218,7 +220,10 @@ public:
   ColumnView wet_geometric_mean_diameter_c[AeroConfig::num_modes()];
 
   /// For gas-aerosol exchange process
+  /// Uptake rate coefficient of H2SO4 gas, summed over all modes
   ColumnView uptkrate_h2so4;
+  /// Ambient SOA gas equilib mixing rate (mol/mol at actual mw)
+  ColumnView g0_soa_out;
 
 private:
   int nlev_;

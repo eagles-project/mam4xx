@@ -622,9 +622,12 @@ void GasAerExch_init(const GasAerExch::Config &config,
       // what aerosol species does the gas become when condensing?
       if (0 <= iaer) {
         for (int imode = 0; imode < num_mode; ++imode) {
+          const ModeIndex node_index = static_cast<ModeIndex>(imode);
+          const AeroId aero_id = static_cast<AeroId>(iaer);
+          const bool mode_contains_species =
+              -1 != aerosol_index_for_mode(node_index, aero_id);
           l_gas_condense_to_mode[g][imode] =
-              config.l_mode_can_contain_species[iaer][imode] ||
-              config.l_mode_can_age[imode];
+              mode_contains_species || config.l_mode_can_age[imode];
         }
       }
     }
@@ -1223,9 +1226,10 @@ TEST_CASE("mam_gasaerexch_1subarea", "mam_gasaerexch") {
     for (int i = 0; i < num_gas; ++i)
       uptk_rate_factor[i] = GasAerExch::uptk_rate_factor(i);
 
+    int ntot_soamode = 4;
     gasaerexch::mam_gasaerexch_1subarea(
-        nghq, igas_h2so4, igas_nh3, idx_gas_to_aer, iaer_so4, iaer_pom,
-        l_calc_gas_uptake_coeff, l_gas_condense_to_mode,
+        nghq, igas_h2so4, igas_nh3, ntot_soamode, idx_gas_to_aer, iaer_so4,
+        iaer_pom, l_calc_gas_uptake_coeff, l_gas_condense_to_mode,
         eqn_and_numerics_category, dt, dtsub_soa_fixed, temp, pmid, aircon,
         ngas, qgas_cur, qgas_avg, qgas_netprod_otrproc, qaer_cur, qnum_cur,
         dgn_awet, alnsg_aer, uptk_rate_factor, uptkaer, uptkrate_h2so4,

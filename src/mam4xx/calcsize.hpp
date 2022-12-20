@@ -6,15 +6,9 @@
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
+#include <mam4xx/mam4_types.hpp>
 
 namespace mam4 {
-
-using Atmosphere = haero::Atmosphere;
-using Constants = haero::Constants;
-using Real = haero::Real;
-using ThreadTeam = haero::ThreadTeam;
-
-using ColumnView = haero::ColumnView;
 
 using haero::max;
 using haero::min;
@@ -891,7 +885,6 @@ private:
   // true: cannot be transferred
   // false: can be transferred
   const bool _noxf_acc2ait[7] = {false, true, false, true, true, false, false};
-  ;
   // number of common species between accum and aitken modes
   const int _n_common_species_ait_accum = 4;
   // index of aitken species in accum mode.
