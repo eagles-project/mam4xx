@@ -301,6 +301,29 @@ mean_particle_volume_from_diameter(Real geom_diam, Real mean_std_dev) {
   return cube(geom_diam) * exp(4.5 * square(log(mean_std_dev))) * pio6;
 }
 
+/// Compute the density of an ideal gas given its temperature and pressure.
+///
+/// Example usage (default assumes gas is air):
+///    atm = haero::Atmosphere;
+///    k = level idx;
+///
+///    rho = density_of_ideal_gas(atm.temperature(k), atm.pressure(k));
+///
+///    To compute total (moist) air, use virtual temperature instead of
+///    temperature.
+///
+///    To compute density of a different gas than air, supply the
+///    appropriate gas constant as the third argument.
+///
+/// @param [in] T temperature [K]
+/// @param [in] P pressure [Pa]
+/// @param [in] R gas constant [J/K/kg]
+/// @return density [kg/m3]
+KOKKOS_INLINE_FUNCTION Real density_of_ideal_gas(
+    const Real T, const Real P, const Real R = Constants::r_gas_dry_air) {
+  return P / (R * T);
+}
+
 } // namespace mam4::conversions
 
 #endif
