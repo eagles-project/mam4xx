@@ -98,11 +98,7 @@ echo "Cloning Haero repository into $(pwd)/.haero..."
 git clone https://github.com/eagles-project/haero.git .haero || exit
 cd .haero || exit
 
-# Checkout custom branch where working changes are
-# TODO - REMOVE ONCE MERGED INTO HAERO
-git checkout origin/deception-testing-ci || exit
-
-# Need to modify .gitmodules file before cloning 
+# Need to modify .gitmodules file before cloning
 perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules || exit
 # Update just haero submodules
 git submodule update --init || exit
@@ -124,7 +120,7 @@ for MACHINE_FILE in $(ls)
 do
   MACHINE=${MACHINE_FILE/\.sh/}
   echo $MACHINE
-  echo `hostname` | grep -q "$MACHINE" 
+  echo `hostname` | grep -q "$MACHINE"
   host_match=$?
   echo $SYSTEM_NAME | grep -q "$MACHINE"
   sys_match=$?
@@ -152,7 +148,7 @@ cmake -S ./.haero -B ./.haero/build \
   -DCMAKE_CXX_COMPILER=$CXX \
   -DHAERO_ENABLE_GPU=$ENABLE_GPU \
   -DKokkos_ARCH_PASCAL60=ON \
-  -DHAERO_PRECISION=$PRECISION 
+  -DHAERO_PRECISION=$PRECISION
 
 EXIT_CODE=$?
 
