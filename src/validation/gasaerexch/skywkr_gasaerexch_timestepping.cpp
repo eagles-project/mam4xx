@@ -274,8 +274,10 @@ int main(int argc, char **argv) {
       time[istep] = 0;
       so4g[istep] = qgas_cur[h2so4];
       soag[istep] = qgas_cur[soa];
-      for (int i=0; i<n_mode; ++i)  so4a[istep] += qaer_cur[so4][i];
-      for (int i=0; i<n_mode; ++i)  soaa[istep] += qaer_cur[soa][i];
+      for (int i = 0; i < n_mode; ++i)
+        so4a[istep] += qaer_cur[so4][i];
+      for (int i = 0; i < n_mode; ++i)
+        soaa[istep] += qaer_cur[soa][i];
       // ------------------------------------------------------------------
       //  Time loop, in which the MAM subroutine we want to test is called.
       // ------------------------------------------------------------------
@@ -302,7 +304,7 @@ int main(int argc, char **argv) {
       //  Calculate/update wet geometric mean diameter of each aerosol mode
       // ------------------------------------------------------------------
       // geometric mean diameter of each aerosol mode
-      Real dgn_awet[num_mode] = {}; 
+      Real dgn_awet[num_mode] = {};
       if ((update_diameter_every_time_step == 1) || (istep == 1)) {
         mam4::diag_dgn_wet(qaer_cur, qnum_cur, molecular_weight_gm,
                            dwet_ddry_ratio, dgn_awet);
