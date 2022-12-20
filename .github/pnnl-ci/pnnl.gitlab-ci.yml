@@ -2,6 +2,7 @@ workflow:
   # Only run if source is an open merge request
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
   # We want to ignore detached pipelines
   # https://stackoverflow.com/questions/55257549/how-can-i-trigger-a-job-with-a-manual-click-or-a-commit-message
     - if: $CI_MERGE_REQUEST_EVENT_TYPE != "detached"
@@ -59,6 +60,7 @@ variables:
   variables:
   # Since we are only able to compile against one CUDA arch, we must target just dl_shared
     SLURM_Q: "dl_shared"
+    SLURM_ARGS: "--ntasks=3 --gres=gpu:1"
     SCRIPT_NAME: ci.sh
 
 # Generic haero rebuild template
@@ -73,6 +75,7 @@ variables:
   variables:
   # We are just building, so might as well use CPU nodes
     SLURM_Q: "short"
+    SLURM_ARGS: "-N 1 --exclusive"
     SCRIPT_NAME: rebuild-haero.sh
 
 .pnnl_after_script_template:
@@ -119,7 +122,7 @@ variables:
       # jobid used in pnnl_after_script_template to cancel job if cancelled or
       # timed out by gitlab through the UI
       # We use a template script name so that each pipeline stage can re-use same script configuration
-      jobid=$(sbatch --export=ALL -A EAGLES --gres=gpu:1 --ntasks=3 -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/.github/pnnl-ci/$SCRIPT_NAME)
+      jobid=$(sbatch --export=ALL -A EAGLES $SLURM_ARGS -p $SLURM_Q -o $output -e $output -t 1:00:00 $WORKDIR/.github/pnnl-ci/$SCRIPT_NAME)
       export jobid=$(echo $jobid | cut -f4 -d' ')
       # Unique jobid filename for this job
       echo $jobid > "$WORKDIR/jobid_${jobid}"
