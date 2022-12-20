@@ -84,6 +84,10 @@ if [[ "$BUILD_TYPE" != "Debug" && "$BUILD_TYPE" != "Release" ]]; then
   exit
 fi
 
+# We need to keep a copy of HAERO src code present for the mometn
+# TODO - remove this `cd` and install without referencing source code
+cd $PREFIX
+
 # Clone a fresh copy Haero in the current directory. Delete any existing copy.
 if [[ -d $(pwd)/.haero ]]; then
   rm -rf $(pwd)/.haero

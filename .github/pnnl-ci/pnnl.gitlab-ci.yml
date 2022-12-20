@@ -2,6 +2,9 @@ workflow:
   # Only run if source is an open merge request
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  # We want to ignore detached pipelines
+  # https://stackoverflow.com/questions/55257549/how-can-i-trigger-a-job-with-a-manual-click-or-a-commit-message
+    - if: $CI_MERGE_REQUEST_EVENT_TYPE != "detached"
 
 stages:
   - haero-single
@@ -27,6 +30,9 @@ stages:
     - ikp
     - eagles
     - basic
+  # No need to clone for non-hpc jobs in CI
+  variables:
+    GIT_STRATEGY: none
 
 variables:
   # Since submodules are cloned manually in CI, this is none
@@ -40,9 +46,30 @@ variables:
     - .pnnl_script_template
     - .pnnl_after_script_template
   variables:
+  # Since we are only able to compile against one CUDA arch, we must target just dl_shared
+    SLURM_Q: "dl_shared"
     GIT_STRATEGY: clone
     SYSTEM_NAME: deception
     HAERO_INSTALL: /qfs/projects/eagles/pnnl-ci/haero_${BUILD_TYPE}_${PRECISION}
+    WORKDIR_SUFFIX: mam4xx_${BUILD_TYPE}_${PRECISION}
+    SCRIPT_NAME: ci.sh
+
+# Generic haero rebuild template
+.haero_rebuild:
+  rules:
+    - if: '$CI_COMMIT_TITLE =~ /[haero-rebuild]/'
+      when: on_success
+    - when: manual
+  allow_failure: true
+# We only have 2 runners at a time, so this is the most we can parallelize
+  parallel:
+    matrix:
+      - BUILD_TYPE: [Debug, Release]
+  variables:
+  # We are just building, so might as well use CPU nodes
+    SLURM_Q: "short"
+    WORKDIR_SUFFIX: haero_${BUILD_TYPE}_${PRECISION}
+    SCRIPT_NAME: rebuild-haero.sh
 
 .pnnl_after_script_template:
   after_script:
@@ -112,11 +139,8 @@ variables:
 
 SVC Account Cleanup:
   stage: .pre
-  variables:
-    # Don't clone for cleanup jobs
-    GIT_STRATEGY: none
   extends:
-    - .pnnl_tags_template
+    - .pnnl_nonhpc_tags
   script:
     - export WORKDIR="$HOME/gitlab/"
     # clears directory of files more than 6 hours/360 minutes old
@@ -132,10 +156,6 @@ Deception Single Precision:
     matrix:
       - BUILD_TYPE: [Debug, Release]
   variables:
-  # Since we are only able to compile against one CUDA arch, we must target just dl_shared
-    SLURM_Q: "dl_shared"
-    WORKDIR_SUFFIX: mam4xx_${BUILD_TYPE}_${PRECISION}
-    SCRIPT_NAME: ci.sh
     PRECISION: single
 
 Deception Double Precision:
@@ -146,42 +166,22 @@ Deception Double Precision:
     matrix:
       - BUILD_TYPE: [Debug, Release]
   variables:
-  # Since we are only able to compile against one CUDA arch, we must target just dl_shared
-    SLURM_Q: "dl_shared"
     PRECISION: double
-    WORKDIR_SUFFIX: mam4xx_${BUILD_TYPE}_${PRECISION}
-    SCRIPT_NAME: ci.sh
 
-# HAERO rebuild will have 4 total jobs, and users should only run 2 at a time
-# As such the haero staged jobs will only run 2 at a time, and will only run when manually triggered
 Rebuild HAERO Single Precision:
   extends:
     - .pnnl_hpc_job_template
-  allow_failure: true # This means that all stages will attempt to re-build even if one fails
-  when: manual
+    - .haero_rebuild
   stage: haero-single
-  parallel:
-    matrix:
-      - BUILD_TYPE: [Debug, Release]
   variables:
-  # We are just building, so might as well use CPU nodes
-    SLURM_Q: "short"
     PRECISION: single
-    WORKDIR_SUFFIX: haero_${BUILD_TYPE}_${PRECISION}
-    SCRIPT_NAME: rebuild-haero.sh
 
 Rebuild HAERO Double Precision:
   extends:
     - .pnnl_hpc_job_template
+    - .haero_rebuild
   needs: ["Rebuild HAERO Single Precision"]
   stage: haero-double
-  parallel:
-    matrix:
-      - BUILD_TYPE: [Debug, Release]
   variables:
-  # We are just building, so might as well use CPU nodes
-    SLURM_Q: "short"
     PRECISION: double
-    WORKDIR_SUFFIX: haero_${BUILD_TYPE}_${PRECISION}
-    SCRIPT_NAME: rebuild-haero.sh
 # ---
