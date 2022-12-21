@@ -46,6 +46,9 @@ void mode_avg_dry_particle_diam(const Diagnostics &diags,
   diags.dry_geometric_mean_diameter_c[mode_idx](k) =
       conversions::mean_particle_diameter_from_volume(
           mean_vol_c, modes(mode_idx).mean_std_dev);
+  diags.dry_geometric_mean_diameter_total[mode_idx](k) =
+      conversions::mean_particle_diameter_from_volume(
+          mean_vol_c + mean_vol_i, modes(mode_idx).mean_std_dev);
 }
 
 ///  Compute the dry geometric mean particle size (volume and diameter)
