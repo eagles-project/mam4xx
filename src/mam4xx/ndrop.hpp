@@ -19,6 +19,7 @@ namespace mam4 {
 
 //const inputs?
 KOKKOS_INLINE_FUNCTION void get_total_aer_mmr_sum(int imode, 
+                                                  int level,
                                                   int nspec, 
                                                   int istart, 
                                                   int istop, 
@@ -42,19 +43,23 @@ KOKKOS_INLINE_FUNCTION void get_total_aer_mmr_sum(int imode,
 
     for(int lspec = 0; lspec < nspec; lspec++) {
         type_idx = lspectype_amode(lspec, imode);
-        density_sp  = specdens_amode(type_idx);      //species density
+        density_sp  = aero_species  (aero_modes)   //species density
         //hygro_sp    = spechygro(type_idx);           //species hygroscopicity
-        hygro_sp    = Diagnostics::hygroscopicity[type_idx];           //species hygroscopicity
+        hygro_sp    =            //species hygroscopicity
         spc_idx   = lmassptr_amode(lspec,imode);     //index of species in state_q array
+        //don't loop over colums, use level
         for(int icol = istart; icol < istop; icol++) {
             vol = max(Prognositics::q_aero_i[icol][spc_idx] + Prognostics::q_aero_c[icol][spc_idx], 0) / density_sp;       //volume = mmr/density
             
-            total_mmr = ((Prognositics::q_aero_i[icol][spc_idx] * Diagnostics::dry_geometric_mean_diameter_i[icol]) + (Prognostics::q_aero_c[icol][spc_idx] * Diagnostics::dry_geometric_mean_diameter_c[icol])) / (Prognositics::q_aero_i[icol][spc_idx] + Prognostics::q_aero_c[icol][spc_idx]);
+            //total_mmr = ((Prognositics::q_aero_i[icol][spc_idx] * Diagnostics::dry_geometric_mean_diameter_i[icol]) + (Prognostics::q_aero_c[icol][spc_idx] * Diagnostics::dry_geometric_mean_diameter_c[icol])) / (Prognositics::q_aero_i[icol][spc_idx] + Prognostics::q_aero_c[icol][spc_idx]);
             
             vaerosolsum[icol] += vol;           //bulk volume
-            hygrosum[icol] += vol * hygro_sp;    //bulk hygroscopicity
+            hygrosum[icol] += mode_hygroscopicity_total() ;    //bulk hygroscopicity
         }
     }
+    
+    //this function got replaced by adding mode_hygroscopicity_total(), dry_geometric_mean_diameter_total to Diagnostics, 
+    // and mode_avg_dry_particle_diam() to populate diags.dry_geometric_mean_diameter_total
 
 //Fortran
 //  do lspec = 1, nspec
