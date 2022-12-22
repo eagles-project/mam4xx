@@ -192,6 +192,10 @@ public:
   ColumnView hygroscopicity[AeroConfig::num_modes()];
 
   /// Dry particle diameter is a modal mass-weighted average over all species
+  /// of interstitial AND cloudeborne aerosols in a mode
+  ColumnView dry_geometric_mean_diameter_total[AeroConfig::num_modes()];
+
+  /// Dry particle diameter is a modal mass-weighted average over all species
   /// of interstitial aerosols in a mode
   ColumnView dry_geometric_mean_diameter_i[AeroConfig::num_modes()];
 
