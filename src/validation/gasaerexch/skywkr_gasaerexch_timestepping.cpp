@@ -361,7 +361,6 @@ int main(int argc, char **argv) {
           team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
             process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
           });
-      int niter = 1; // number of substeps used for SOA
 
       // ---------------------------------------------------------
       //  Calculations for this timestep done. Prepare for output.
@@ -382,9 +381,20 @@ int main(int argc, char **argv) {
       }
 
       // ambient saturation mixing ratio of SOA gases, solute effect ignored
-      auto host_view = Kokkos::create_mirror_view(diags.g0_soa_out);
-      Kokkos::deep_copy(host_view, diags.g0_soa_out);
-      const Real g0_soa = host_view(0);
+      Real g0_soa = 0;
+      {
+        auto host_view = Kokkos::create_mirror_view(diags.g0_soa_out);
+        Kokkos::deep_copy(host_view, diags.g0_soa_out);
+        g0_soa = host_view(0);
+      }
+
+      // Number of time substeps needed for convergence of SOA gases
+      int niter = 0;
+      {
+        auto host_view = Kokkos::create_mirror_view(diags.num_substeps);
+        Kokkos::deep_copy(host_view, diags.num_substeps);
+        niter = host_view(0);
+      }
 
       time[istep] = istep * dt_mam;
 
