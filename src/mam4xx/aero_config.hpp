@@ -191,6 +191,8 @@ public:
     Kokkos::deep_copy(uptkrate_h2so4, 0.0);
     g0_soa_out = ColumnView("g0_soa_out", num_levels);
     Kokkos::deep_copy(g0_soa_out, 0.0);
+    num_substeps = haero::DeviceType::view_1d<int>("num_substeps", num_levels);
+    Kokkos::deep_copy(num_substeps, 0);
   }
   Diagnostics() = default; // Careful! Only for creating placeholders in views
   Diagnostics(const Diagnostics &) = default;
@@ -224,6 +226,9 @@ public:
   ColumnView uptkrate_h2so4;
   /// Ambient SOA gas equilib mixing rate (mol/mol at actual mw)
   ColumnView g0_soa_out;
+
+  /// Number of time substeps needed to converge in mam_soaexch_advance_in_time
+  haero::DeviceType::view_1d<int> num_substeps;
 
 private:
   int nlev_;

@@ -721,6 +721,7 @@ void gas_aerosol_uptake_rates_1box(
 
   diags.g0_soa_out(k) = g0_soa_out;
   diags.uptkrate_h2so4(k) = uptkrate_h2so4;
+  diags.num_substeps(k) = niter_out;
 }
 
 } // namespace gasaerexch
