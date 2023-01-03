@@ -229,6 +229,7 @@ public:
 
   /// Number of time substeps needed to converge in mam_soaexch_advance_in_time
   haero::DeviceType::view_1d<int> num_substeps;
+
 private:
   int nlev_;
 };
