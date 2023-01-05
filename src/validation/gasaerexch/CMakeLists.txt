@@ -33,9 +33,32 @@ endif ()
 set_tests_properties(gasaerexch_compare_output
   PROPERTIES DEPENDS gasaerexch_uptkrates_1box1gas)
 
+# Copy a Python tool from mam_x_validation to the test directory.
+set(GASAER_SIZE_VALIDATION_DIR ${MAM_X_VALIDATION_DIR}/gasaerexch)
+set(GASAER_SIZE_VALIDATION_TOOLS_DIR ${MAM_X_VALIDATION_DIR}/tools)
+configure_file(
+  ${GASAER_SIZE_VALIDATION_TOOLS_DIR}/skywalker_diff.py
+  ${CMAKE_CURRENT_BINARY_DIR}/skywalker_diff.py
+  COPYONLY
+)
 
 # These skywalker drivers test gasaerexch convergence rates
 add_executable(exe_skywkr_gasaerexch_timestepping skywkr_gasaerexch_timestepping.cpp)
 target_link_libraries(exe_skywkr_gasaerexch_timestepping skywalker;validation;${HAERO_LIBRARIES})
+
 add_test(skywkr_soa_cond_timestepping_with_adptv_dt exe_skywkr_gasaerexch_timestepping
          ${EXCH_VALIDATION_DIR}/skywkr_soa_cond_timestepping_with_adptv_dt.yaml)
+
+# copy the baseline file into place; is the skywalker file produced by fortran code?
+configure_file(
+  ${MAM_X_VALIDATION_DIR}/gasaerexch/mam_skywkr_soa_cond_timestepping_with_adptv_dt.py
+  ${CMAKE_CURRENT_BINARY_DIR}/mam_skywkr_soa_cond_timestepping_with_adptv_dt.py
+  COPYONLY
+)
+# add a test to validate mam4xx's results against the baseline.
+add_test(validate_skywkr_soa_cond_timestepping_with_adptv_dt skywalker_diff.py -r 0.0001
+  skywkr_soa_cond_timestepping_with_adptv_dt
+  mam_skywkr_soa_cond_timestepping_with_adptv_dt
+)
+set_tests_properties(validate_skywkr_soa_cond_timestepping_with_adptv_dt PROPERTIES DEPENDS skywkr_soa_cond_timestepping_with_adptv_dt)
+

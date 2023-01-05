@@ -19,9 +19,9 @@ TEST_CASE("aero_modes_test", "") {
 
   const bool mode_has_spec[4][7] = {
       {true, true, true, true, true, true, true},
-      {true, false, true, false, false, true, true},
+      {true, true, false, false, true, false, true},
       {true, true, true, true, true, true, true},
-      {false, true, false, true, false, false, true}};
+      {false, false, true, true, false, false, true}};
 
   for (int m = 0; m < 4; ++m) {
     for (int s = 0; s < 7; ++s) {
