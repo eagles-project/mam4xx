@@ -1,8 +1,14 @@
 #ifndef MAM4XX_AGING_HPP
 #define MAM4XX_AGING_HPP
-
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/conversions.hpp>
+#include <mam4xx/merikanto2007.hpp>
+#include <mam4xx/vehkamaki2002.hpp>
+#include <mam4xx/wang2008.hpp>
+
+#include <haero/atmosphere.hpp>
 #include <haero/math.hpp>
+
 
 namespace mam4{
 
@@ -12,12 +18,16 @@ void mam_pcarbon_aging_frac(int nsrc, int ipar, Real *dgn_a,
 Real *qaer_cur, Real *qaer_del_cond, Real *qaer_del_coag_in, 
 Real *xferfrac_pcage, Real *frac_cond, Real *frac_coag){
 
-int iaer_so4 = aerosol_index_for_mode(ModeIndex::Aitken, AeroId::SO4);
+const int iaer_so4 = aerosol_index_for_mode(ModeIndex::Aitken, AeroId::SO4);
+const int iaer_soa = aerosol_index_for_mode(ModeIndex::Aitken, AeroId::SOA); 
 
 // for default MAM4 only so4 and soa contribute to aging, nsoa is for tagging and
 // is set to 1 for default MAM4
 
-// const Real vol_shell = qaer_cur[iaer_so4][nsrc]*mass_2_vol[iaer_so4] + qaer_cur[iaer_soa][nsrc]*fac_m2v_eqvhyg_aer[iaer_soa];
+const Real vol_shell = qaer_cur[iaer_so4][nsrc]*mass_2_vol[iaer_so4] + qaer_cur[iaer_soa][nsrc]*fac_m2v_eqvhyg_aer[iaer_soa];
+
+(void) iaer_soa; 
+(void) vol_shell;
 
 // const Real qaer_del_cond_tmp = qaer_del_cond[iaer_so4][nsrc]*mass_2_vol[iaer_so4] + qaer_del_cond[iaer_soa][nsrc]*fac_m2v_eqvhyg_aer[iaer_soa];
 

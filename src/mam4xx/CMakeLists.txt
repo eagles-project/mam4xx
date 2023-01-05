@@ -5,7 +5,6 @@ include(GNUInstallDirs)
 install(FILES
         aero_config.hpp
         aero_modes.hpp
-        aging.hpp
         calcsize.hpp
         conversions.hpp
         gasaerexch.hpp
@@ -15,6 +14,7 @@ install(FILES
         mam4_types.hpp
         merikanto2007.hpp
         nucleation.hpp
+        aging.hpp
         vehkamaki2002.hpp
         wang2008.hpp
         DESTINATION include/mam4xx)
