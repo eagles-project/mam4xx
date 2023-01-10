@@ -5,7 +5,7 @@
 using namespace skywalker;
 using namespace mam4;
 
-void transfer_cond_coag_mass_to_accum(Ensemble *ensemble){
+void mam_pcarbon_aging_frac(Ensemble *ensemble){
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {

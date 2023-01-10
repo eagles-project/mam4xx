@@ -19,6 +19,11 @@ void usage() {
 using namespace skywalker;
 using namespace mam4;
 
+// Parameterizations used by the aging process.
+void mam_pcarbon_aging_frac(Ensemble *ensemble);
+void transfer_aged_pcarbon_to_accum(Ensemble *ensemble);
+void transfer_cond_coag_mass_to_accum(Ensemble *ensemble);
+
 int main(int argc, char **argv){
 
   if (argc == 1) {
