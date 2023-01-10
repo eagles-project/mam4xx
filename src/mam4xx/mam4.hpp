@@ -16,6 +16,7 @@ namespace mam4 {
 using NucleationProcess = haero::AeroProcess<AeroConfig, Nucleation>;
 using GasAerExchProcess = haero::AeroProcess<AeroConfig, GasAerExch>;
 using CalcSizeProcess = haero::AeroProcess<AeroConfig, CalcSize>;
+using AgingProcess = haero::AeroProcess<AeroConfig, Aging>;
 
 } // namespace mam4
 
