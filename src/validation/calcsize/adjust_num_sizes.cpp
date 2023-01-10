@@ -5,13 +5,13 @@
 using namespace skywalker;
 using namespace mam4;
 
-void adjust_num_sizes(Ensemble *ensemble) {
+void adjust_num_sizes(Ensemble* ensemble) {
 
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
 
   // Run the ensemble.
-  ensemble->process([=](const Input &input, Output &output) {
+  ensemble->process([=](const Input& input, Output& output) {
     // Fetch ensemble parameters
 
     Real dt = input.get("dt");
@@ -56,10 +56,11 @@ void adjust_num_sizes(Ensemble *ensemble) {
       v2nmaxrl[m] = in_v2nmaxrl[m];
     }
 
-    static constexpr Real close_to_one = 1.0 + 1.0e-15;
+    // static constexpr Real close_to_one = 1.0 + 1.0e-15;
     static constexpr Real seconds_in_a_day = 86400.0;
-    const auto adj_tscale = haero::max(seconds_in_a_day, dt);
-    const auto adj_tscale_inv = 1.0 / (adj_tscale * close_to_one);
+    const Real adj_tscale = haero::max(seconds_in_a_day, dt);
+    const Real adj_tscale_inv =
+        1.0 * FloatingPoint<Real>::safe_denominator(adj_tscale);
 
     Real interstitial_tend[nmodes] = {0};
     Real cloudborne_tend[nmodes] = {0};
@@ -75,7 +76,7 @@ void adjust_num_sizes(Ensemble *ensemble) {
       calcsize::adjust_num_sizes(drv_i[m], drv_c[m], init_num_i[m],
                                  init_num_c[m], dt, v2nmin[m], v2nmax[m],
                                  v2nminrl[m], v2nmaxrl[m], adj_tscale_inv, // in
-                                 close_to_one, num_i[m], num_c[m],
+                                 num_i[m], num_c[m],
                                  interstitial_tend[m], cloudborne_tend[m]);
     }
     //});
