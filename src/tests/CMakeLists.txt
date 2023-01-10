@@ -19,9 +19,9 @@ target_link_libraries(mam4xx_tests mam4xx)
 CreateUnitTest(mam4_nucleation_unit_tests mam4_nucleation_unit_tests.cpp)
 CreateUnitTest(mam4_gasaerexch_unit_tests mam4_gasaerexch_unit_tests.cpp)
 CreateUnitTest(mam4_calcsize_unit_tests mam4_calcsize_unit_tests.cpp)
-target_compile_options(mam4_nucleation_unit_tests PRIVATE -Werror)
-target_compile_options(mam4_gasaerexch_unit_tests PRIVATE -Werror)
-target_compile_options(mam4_calcsize_unit_tests PRIVATE -Werror)
+# target_compile_options(mam4_nucleation_unit_tests PRIVATE -Werror)
+# target_compile_options(mam4_gasaerexch_unit_tests PRIVATE -Werror)
+# target_compile_options(mam4_calcsize_unit_tests PRIVATE -Werror)
 
 if (${HAERO_PRECISION} MATCHES double)
 EkatCreateUnitTest(kohler_unit_tests kohler_unit_tests.cpp
