@@ -12,15 +12,20 @@ TEST_CASE("test_constructor", "mam4_aging_process") {
 
 TEST_CASE("test_compute_tendencies", "mam4_aging_process") {
 
+
   ekat::Comm comm;
   ekat::logger::Logger<> logger("aging unit tests",
                             ekat::logger::LogLevel::debug, comm);
+  std::ostringstream ss;
 
 
   mam4::AeroConfig mam4_config;
   mam4::AgingProcess process(mam4_config);
 
 
+    ss << "\n aging compute tendencies";
+    logger.debug(ss.str());
+    ss.str("");  
 
 
 }
