@@ -70,6 +70,23 @@ public:
 };
 
 namespace aging{
+
+KOKKOS_INLINE_FUNCTION
+void mam_pcarbon_aging_1subarea( int n_mode, 
+                                Real *dgn_a[AeroConfig::num_modes()],
+                                Real *qnum_cur[AeroConfig::num_modes()],
+                                Real *qnum_del_cond[AeroConfig::num_modes()],
+                                Real *qnum_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+                                Real *qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+                                Real *qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+                                Real *qaer_del_coag_in[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()]
+){
+
+
+
+}
+
+
 KOKKOS_INLINE_FUNCTION
 void mam_pcarbon_aging_frac(
 const int mode_pca,    // Called nsrc in original F90 code. 
@@ -127,7 +144,6 @@ q_del_coag[nsrc] += q_tmp*frac_coag;
 
 KOKKOS_INLINE_FUNCTION
 void transfer_cond_coag_mass_to_accum(int nsrc, int ndest,
-Real xferfrac_pcage, Real frac_cond, Real frac_coag, 
 Real *qaer_cur, Real *qaer_del_cond, Real *qaer_del_coag){
 
 

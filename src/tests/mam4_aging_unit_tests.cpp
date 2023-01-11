@@ -29,3 +29,32 @@ TEST_CASE("test_compute_tendencies", "mam4_aging_process") {
 
 
 }
+
+TEST_CASE("test_cond_coag_mass_to_accum", "mam4_aging_process"){
+
+ekat::Comm comm;
+ekat::logger::Logger<> logger("aging unit tests",
+                          ekat::logger::LogLevel::debug, comm);
+std::ostringstream ss;
+
+
+
+
+//const auto naero =  mam4::AeroConfig::num_aerosol_ids();
+//const auto nmodes = mam4::AeroConfig::num_modes();
+
+
+
+}
+
+TEST_CASE("transfer_aged_pcarbon_to_accum", "mam4_aging_process"){
+
+
+
+
+}
+
+TEST_CASE("mam4_pcarbond_aging_1subarea", "mam4_aging_process"){
+
+
+}
