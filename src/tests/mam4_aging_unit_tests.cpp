@@ -54,7 +54,7 @@ TEST_CASE("transfer_aged_pcarbon_to_accum", "mam4_aging_process"){
 
 }
 
-TEST_CASE("mam4_pcarbond_aging_1subarea", "mam4_aging_process"){
+TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process"){
 
 
 }
