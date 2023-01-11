@@ -263,10 +263,9 @@ Real gas_diffusivity(
   const Real gas_diffusivity =
       (1.0e-7 * haero::pow(T_in_K, 1.75) *
        haero::sqrt(1.0 / mw_gas + 1.0 / mw_air_gmol)) /
-      (p_in_atm * haero::pow(
-                      haero::pow(vd_gas, onethird) +
-                          haero::pow(vd_air, onethird),
-                      2.0));
+      (p_in_atm *
+       haero::pow(haero::pow(vd_gas, onethird) + haero::pow(vd_air, onethird),
+                  2.0));
 
   return gas_diffusivity;
 }
