@@ -262,10 +262,10 @@ Real gas_diffusivity(
 
   const Real gas_diffusivity =
       (1.0e-7 * haero::pow(T_in_K, 1.75) *
-       Kokkos::Experimental::sqrt(1.0 / mw_gas + 1.0 / mw_air_gmol)) /
-      (p_in_atm * Kokkos::Experimental::pow(
-                      Kokkos::Experimental::pow(vd_gas, onethird) +
-                          Kokkos::Experimental::pow(vd_air, onethird),
+       haero::sqrt(1.0 / mw_gas + 1.0 / mw_air_gmol)) /
+      (p_in_atm * haero::pow(
+                      haero::pow(vd_gas, onethird) +
+                          haero::pow(vd_air, onethird),
                       2.0));
 
   return gas_diffusivity;
@@ -334,8 +334,8 @@ void gas_aer_uptkrates_1box1gas(
   //      x = ln(D_p)
   //      dN/dx = log-normal particle number density distribution
   //----------------------------------------------------------------------
-  const Real tworootpi = 2 * Kokkos::Experimental::sqrt(pi);
-  const Real root2 = Kokkos::Experimental::sqrt(2.0);
+  const Real tworootpi = 2 * haero::sqrt(pi);
+  const Real root2 = haero::sqrt(2.0);
   const Real one = 1.0;
   const Real two = 2.0;
 
