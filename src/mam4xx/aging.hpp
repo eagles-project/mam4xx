@@ -71,51 +71,44 @@ public:
 
 namespace aging{
 
-KOKKOS_INLINE_FUNCTION
-void mam_pcarbon_aging_1subarea( int n_mode, 
-                                Real *dgn_a[AeroConfig::num_modes()],
-                                Real *qnum_cur[AeroConfig::num_modes()],
-                                Real *qnum_del_cond[AeroConfig::num_modes()],
-                                Real *qnum_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-                                Real *qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-                                Real *qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-                                Real *qaer_del_coag_in[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()]
-){
-
-
-
-}
-
 
 KOKKOS_INLINE_FUNCTION
 void mam_pcarbon_aging_frac(
-const int mode_pca,    // Called nsrc in original F90 code. 
-Real *dgn_a, 
-Real *qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],       // aerosol molar mixing ratio   [kmol/kmol-air]
-Real *qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],  // 
-Real *qaer_del_coag_in, 
-Real *xferfrac_pcage,                                                         // fraction of aged pom/bc transferred to accum [unitless]
-Real *frac_cond,                                                              // fraction of aerosol change due to condensation [unitless]
-Real *frac_coag)                                                              // fraction of aerosol change due to condensation [unitless]
-{                  
+     Real dgn_a[AeroConfig::num_modes()],
+     Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+     Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+     Real qaer_del_coag_in[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()]
+     )                                                                // fraction of aerosol change due to condensation [unitless]
+{       
+
+  const int ipair = 1;
+  static constexpr int nsrc = static_cast<int>(ModeIndex::PrimaryCarbon); 
+  const int iaer_so4 = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::SO4);
+  const int iaer_soa = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::SOA); 
+  const int iaer_bc = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::BC); 
+  const int iaer_pom = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::POM); 
+  const int iaer_mom = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::MOM); 
+
+  const Real so4_vol = aero_species(iaer_so4).molecular_weight/aero_species(iaer_so4).density;
+  const Real soa_vol =  aero_species(iaer_soa).molecular_weight/aero_species(iaer_soa).density;
+  const Real bc_vol =  aero_species(iaer_bc).molecular_weight/aero_species(iaer_bc).density;
+  const Real pom_vol =  aero_species(iaer_pom).molecular_weight/aero_species(iaer_pom).density;
+  const Real mom_vol =  aero_species(iaer_mom).molecular_weight/aero_species(iaer_mom).density;
+
+  const Real fac_m2v_eqvhyg_aer = soa_vol * aero_species(iaer_soa).hygroscopicity; 
+
+  const Real vol_shell = qaer_cur[iaer_so4][nsrc] * so4_vol + qaer_cur[iaer_soa][nsrc] * fac_m2v_eqvhyg_aer;
+  const Real qaer_del_cond_tmp =  haero::max( qaer_del_cond[iaer_so4][nsrc]*so4_vol + qaer_del_cond[iaer_soa][nsrc]*fac_m2v_eqvhyg_aer, 1.0e-35) ;
+  const Real qaer_del_coag_tmp = qaer_del_coag_in[iaer_so4][ipair]*so4_vol + qaer_del_coag_in[iaer_soa][ipair]*fac_m2v_eqvhyg_aer;
+
+  const Real frac_cond = 1.0 - qaer_del_cond_tmp/(qaer_del_cond_tmp + haero::max( qaer_del_coag_tmp, 0.0));
+  const Real vol_core = qaer_cur[iaer_bc][nsrc] * bc_vol + qaer_cur[iaer_pom][nsrc] * pom_vol +  qaer_cur[iaer_mom][nsrc] * mom_vol;
 
 
+  (void) vol_shell;
+  (void)  frac_cond;
+  (void) vol_core;
 
-
-const int iaer_so4 = aerosol_index_for_mode(ModeIndex::Aitken, AeroId::SO4);
-const int iaer_soa = aerosol_index_for_mode(ModeIndex::Aitken, AeroId::SOA); 
-
-const Real so4_vol = aero_species(iaer_so4).molecular_weight/aero_species(int(AeroId::SO4)).density;
-const Real soa_vol =  aero_species(int(AeroId::SOA)).molecular_weight/aero_species(int(AeroId::SOA)).density;
-const Real fac_m2v_eqvhyg_aer = soa_vol * aero_species(int(AeroId::SO4)).hygroscopicity; 
-
-
-(void) iaer_so4; 
-(void) iaer_soa; 
-(void) so4_vol;
-(void) soa_vol;
-(void) fac_m2v_eqvhyg_aer;
-//(void) vold_shell;
 //(void) vol_shell;
 
 // const Real qaer_del_cond_tmp = qaer_del_cond[iaer_so4][nsrc]*mass_2_vol[iaer_so4] + qaer_del_cond[iaer_soa][nsrc]*fac_m2v_eqvhyg_aer[iaer_soa];
@@ -125,9 +118,38 @@ const Real fac_m2v_eqvhyg_aer = soa_vol * aero_species(int(AeroId::SO4)).hygrosc
 
 }
 
+
+KOKKOS_INLINE_FUNCTION
+void mam_pcarbon_aging_1subarea(
+                               Real dgn_a[AeroConfig::num_modes()],
+                               Real qnum_cur[AeroConfig::num_modes()],
+                               Real qnum_del_cond[AeroConfig::num_modes()],
+                               Real qnum_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+                               Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+                               Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+                               Real qaer_del_coag_in[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()]
+){
+
+
+  //static constexpr int ndest = static_cast<int>(ModeIndex::Accumulation);  // Source is accumulation mode
+   //static constexpr int nsrc = static_cast<int>(ModeIndex::PrimaryCarbon);  // Destination in primary carbon mode
+
+
+
+  mam_pcarbon_aging_frac(dgn_a, qaer_cur, qaer_del_cond, qaer_del_coag_in);
+
+
+}
+
+           
+
+
+
+
+
 KOKKOS_INLINE_FUNCTION
 void transfer_aged_pcarbon_to_accum(int nsrc, int ndest, Real xferfrac_pcage, 
-Real  frac_cond, Real frac_coag, Real *q_cur, Real *q_del_cond, Real *q_del_coag){
+Real frac_cond, Real frac_coag, Real *q_cur, Real *q_del_cond, Real *q_del_coag){
 
 const Real q_tmp = q_cur[nsrc]*xferfrac_pcage; 
 
