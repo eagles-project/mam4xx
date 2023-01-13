@@ -128,21 +128,6 @@ void mam_pcarbon_aging_frac(
     xferfrac_pcage =  haero::min( xferfrac_tmp1/xferfrac_tmp2, xferfrac_max ); 
   }
 
-  (void) xferfrac_max ;
-  (void)  xferfrac_tmp1; 
-  (void)  xferfrac_tmp2; 
-  (void) fac_volsfc; 
-  (void) vol_shell;
-  (void)  frac_cond;
-  (void) vol_core;
-
-
-//(void) vol_shell;
-
-// const Real qaer_del_cond_tmp = qaer_del_cond[iaer_so4][nsrc]*mass_2_vol[iaer_so4] + qaer_del_cond[iaer_soa][nsrc]*fac_m2v_eqvhyg_aer[iaer_soa];
-
-// const Real qaer_del_coag_tmp = qaer_del_coag_in[iaer_so4][ipair]*mass_2_vol[iaer_so4] + qaer_del_coag_in[iaer_soa][ipair]*fac_m2v_eqvhyg_aer[iaer_soa];
-
 
 }
 
@@ -161,9 +146,6 @@ void mam_pcarbon_aging_1subarea(
   Real xferfrac_pcage; 
   Real frac_cond;
   Real frac_coag; 
-
-  //static constexpr int ndest = static_cast<int>(ModeIndex::Accumulation);  // Source is accumulation mode
-  //static constexpr int nsrc = static_cast<int>(ModeIndex::PrimaryCarbon);  // Destination in primary carbon mode
 
   mam_pcarbon_aging_frac(dgn_a, qaer_cur, qaer_del_cond, qaer_del_coag_in, xferfrac_pcage, frac_cond, frac_coag);
 
