@@ -185,7 +185,7 @@ void adjust_num_sizes(const Real& drv_i, const Real& drv_c,
   const Real frac_adj_in_dt = max(zero, min(one, dt * adj_tscale_inv));
 
   // inverse of time step
-  const Real dtinv = one * FloatingPoint<Real>::safe_denominator(dt);
+  const Real dtinv = FloatingPoint<Real>::safe_denominator(dt);
 
   // If both interstitial (drv_i) and cloud borne (drv_c) dry volumes are zero
   // (or less) adjust numbers(num_a and num_c respectively) for both of them to
@@ -990,10 +990,8 @@ public:
 
     const auto inv_density = _inv_density;
     const Real zero = 0;
-    // NOTE: for consistency with MAM, should we have the safe_denominator()
-    // calls use this as tolerance?
     // const Real close_to_one = 1.0 + 1.0e-15; // BAD_CONSTANT!!
-    const Real seconds_in_a_day = 86400.0;   // BAD_CONSTANT!!
+    const Real seconds_in_a_day = 86400.0; // BAD_CONSTANT!!
     //
     const auto acc_spec_in_ait = _acc_spec_in_ait;
     const auto ait_spec_in_acc = _ait_spec_in_acc;
@@ -1025,8 +1023,8 @@ public:
           const Real adj_tscale = max(seconds_in_a_day, dt);
 
           // inverse of the adjustment time scale
-          const Real adj_tscale_inv =
-              1.0 * FloatingPoint<Real>::safe_denominator(adj_tscale);
+          const Real adj_tscale_inv = FloatingPoint<Real>::safe_denominator(
+                                         adj_tscale);
 
           for (int imode = 0; imode < nmodes; imode++) {
 
