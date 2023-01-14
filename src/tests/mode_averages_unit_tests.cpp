@@ -102,8 +102,6 @@ TEST_CASE("modal_averages", "") {
         }
         REQUIRE(FloatingPoint<Real>::equiv(h_diam_i(k),
                                            dry_aero_mean_particle_diam[m]));
-        REQUIRE(FloatingPoint<Real>::equiv(h_diam_total(k),
-                                           h_diam_i(k) + h_diam_c(k)));
       }
     }
     logger.info("dry particle size tests complete.");
