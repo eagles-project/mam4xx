@@ -79,16 +79,29 @@ TEST_CASE("modal_averages", "") {
         });
 
     for (int m = 0; m < 4; ++m) {
-      auto h_diam =
+      auto h_diam_i =
           Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter_i[m]);
-      Kokkos::deep_copy(h_diam, diags.dry_geometric_mean_diameter_i[m]);
+      auto h_diam_c =
+          Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter_c[m]);
+      auto h_diam_total = Kokkos::create_mirror_view(
+          diags.dry_geometric_mean_diameter_total[m]);
+
+      Kokkos::deep_copy(h_diam_i, diags.dry_geometric_mean_diameter_i[m]);
+      Kokkos::deep_copy(h_diam_c, diags.dry_geometric_mean_diameter_c[m]);
+      Kokkos::deep_copy(h_diam_total,
+                        diags.dry_geometric_mean_diameter_total[m]);
+
       for (int k = 0; k < nlev; ++k) {
-        if (!FloatingPoint<Real>::equiv(h_diam(k),
+        if (!FloatingPoint<Real>::equiv(h_diam_i(k),
                                         dry_aero_mean_particle_diam[m])) {
-          logger.debug("h_diam({}) = {}, dry_aero_mean_particle_diam[{}] = {}",
-                       k, h_diam(k), m, dry_aero_mean_particle_diam[m]);
+          logger.debug(
+              "h_diam_i({}) = {}, dry_aero_mean_particle_diam[{}] = {}", k,
+              h_diam_i(k), m, dry_aero_mean_particle_diam[m]);
+
+          logger.debug("h_diam_c({}) = {}, h_diam_total({}) = {}", k,
+                       h_diam_c(k), k, h_diam_total(k));
         }
-        REQUIRE(FloatingPoint<Real>::equiv(h_diam(k),
+        REQUIRE(FloatingPoint<Real>::equiv(h_diam_i(k),
                                            dry_aero_mean_particle_diam[m]));
       }
     }

@@ -7,13 +7,14 @@
 
 namespace mam4 {
 
-///  Compute the modal average hygroscopicity for a single mode using
+///  Compute the modal average hygroscopicity for a single mode's interstitial
+///  aerosols using
 ///  Equation (A2) from Ghan et al., 2011, Droplet nucleation: Physically-based
 ///  parameterizations and comparative evaluation, J. Adv. Earth Sys. Mod. 3
 ///  M10001.
 ///
 ///  Note that equation (A3) from that paper, which sets the hygroscopicity
-///  value for each species, is not used by MAM4 (whose values of hygroscopicity
+///  value for each species, is not used by MAM4 (whose species' hygroscopicity
 ///  are set explicitly -- see aero_modes.hpp).
 ///
 ///  This version can be called in parallel over both modes and vertical levels.
