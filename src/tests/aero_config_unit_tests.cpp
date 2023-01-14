@@ -38,8 +38,11 @@ TEST_CASE("aero_config", "") {
     HostColumnView h_tends_q_gas[13];
     HostColumnView h_tends_uptkaer[13][4];
 
-    HostColumnView h_diags_wet_diam[4];
-    HostColumnView h_diags_dry_diam[4];
+    HostColumnView h_diags_wet_diam_i[4];
+    
+    HostColumnView h_diags_dry_diam_i[4];
+    HostColumnView h_diags_dry_diam_c[4];
+    HostColumnView h_diags_dry_diam_total[4];
 
     logger.info("creating host mirror views");
 
@@ -47,9 +50,14 @@ TEST_CASE("aero_config", "") {
       logger.debug("mode m = {}", m);
       h_progs_num_aer[m] = Kokkos::create_mirror_view(progs.n_mode_i[m]);
       h_tends_num_aer[m] = Kokkos::create_mirror_view(tends.n_mode_i[m]);
-      h_diags_dry_diam[m] =
+      h_diags_dry_diam_i[m] =
           Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter_i[m]);
-      h_diags_wet_diam[m] =
+      h_diags_dry_diam_c[m] =
+          Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter_c[m]);
+      h_diags_dry_diam_total[m] =
+          Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter_total[m]);
+
+      h_diags_wet_diam_i[m] =
           Kokkos::create_mirror_view(diags.wet_geometric_mean_diameter_i[m]);
       for (int s = 0; s < AeroConfig::num_aerosol_ids(); ++s) {
         logger.debug("[mode, species] = [{}, {}]", m, s);
@@ -77,9 +85,15 @@ TEST_CASE("aero_config", "") {
     for (int m = 0; m < AeroConfig::num_modes(); ++m) {
       Kokkos::deep_copy(h_progs_num_aer[m], progs.n_mode_i[m]);
       Kokkos::deep_copy(h_tends_num_aer[m], tends.n_mode_i[m]);
-      Kokkos::deep_copy(h_diags_dry_diam[m],
+
+      Kokkos::deep_copy(h_diags_dry_diam_i[m],
                         diags.dry_geometric_mean_diameter_i[m]);
-      Kokkos::deep_copy(h_diags_wet_diam[m],
+      Kokkos::deep_copy(h_diags_dry_diam_c[m],
+                        diags.dry_geometric_mean_diameter_c[m]);
+      Kokkos::deep_copy(h_diags_dry_diam_total[m],
+                        diags.dry_geometric_mean_diameter_total[m]);
+
+      Kokkos::deep_copy(h_diags_wet_diam_i[m],
                         diags.wet_geometric_mean_diameter_i[m]);
       for (int s = 0; s < AeroConfig::num_aerosol_ids(); ++s) {
         Kokkos::deep_copy(h_progs_q_aer_i[m][s], progs.q_aero_i[m][s]);
@@ -102,8 +116,10 @@ TEST_CASE("aero_config", "") {
       for (int k = 0; k < nlev; ++k) {
         REQUIRE(h_progs_num_aer[m](k) == 0);
         REQUIRE(h_tends_num_aer[m](k) == 0);
-        REQUIRE(h_diags_dry_diam[m](k) == 0);
-        REQUIRE(h_diags_wet_diam[m](k) == 0);
+        REQUIRE(h_diags_dry_diam_i[m](k) == 0);
+        REQUIRE(h_diags_dry_diam_c[m](k) == 0);
+        REQUIRE(h_diags_dry_diam_total[m](k) == 0);
+        REQUIRE(h_diags_wet_diam_i[m](k) == 0);
         for (int s = 0; s < AeroConfig::num_aerosol_ids(); ++s) {
           REQUIRE(h_progs_q_aer_i[m][s](k) == 0);
           REQUIRE(h_tends_q_aer_i[m][s](k) == 0);

@@ -170,8 +170,11 @@ public:
           ColumnView("dry_geometric_mean_diameter_interstitial", num_levels);
       dry_geometric_mean_diameter_c[mode] =
           ColumnView("dry_geometric_mean_diameter_cloudeborne", num_levels);
+      dry_geometric_mean_diameter_total[mode] =
+          ColumnView("dry_geometric_mean_diameter_total", num_levels);
       Kokkos::deep_copy(dry_geometric_mean_diameter_i[mode], 0.0);
       Kokkos::deep_copy(dry_geometric_mean_diameter_c[mode], 0.0);
+      Kokkos::deep_copy(dry_geometric_mean_diameter_total[mode], 0.0);
       wet_geometric_mean_diameter_i[mode] =
           ColumnView("wet_geometric_mean_diameter_interstitial", num_levels);
       wet_geometric_mean_diameter_c[mode] =
