@@ -9,7 +9,8 @@ namespace mam4 {
 
 ///  Compute the dry geometric mean particle size (volume and diameter)
 ///  from the log-normal size distribution for a single mode,
-///  both interstitial and cloudeborne aerosols.
+///  both interstitial and cloudeborne aerosols, separately,
+///  as well as the total (interstitial + cloudborne).
 ///
 ///  This version can be called in parallel over both modes and vertical levels.
 ///
