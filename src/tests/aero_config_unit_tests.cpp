@@ -39,7 +39,7 @@ TEST_CASE("aero_config", "") {
     HostColumnView h_tends_uptkaer[13][4];
 
     HostColumnView h_diags_wet_diam_i[4];
-    
+
     HostColumnView h_diags_dry_diam_i[4];
     HostColumnView h_diags_dry_diam_c[4];
     HostColumnView h_diags_dry_diam_total[4];
@@ -54,8 +54,8 @@ TEST_CASE("aero_config", "") {
           Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter_i[m]);
       h_diags_dry_diam_c[m] =
           Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter_c[m]);
-      h_diags_dry_diam_total[m] =
-          Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter_total[m]);
+      h_diags_dry_diam_total[m] = Kokkos::create_mirror_view(
+          diags.dry_geometric_mean_diameter_total[m]);
 
       h_diags_wet_diam_i[m] =
           Kokkos::create_mirror_view(diags.wet_geometric_mean_diameter_i[m]);
