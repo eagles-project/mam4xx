@@ -9,7 +9,6 @@
 #include <haero/atmosphere.hpp>
 #include <haero/math.hpp>
 
-
 namespace mam4{
 
 class Aging{
@@ -28,23 +27,19 @@ public:
 private:
   Config config_;
 
-
 public:
   // name -- unique name of the process implemented by this class
   const char *name() const { return "MAM4 aging"; }
+
+
+  // init -- initializes the implementation with MAM4's configuration
+  void init(const AeroConfig &aero_config,
+            const Config &process_config = Config());
 
    // In E3SM this is read in from an input file
   static constexpr Real n_so4_monolayers_pcage  =  8.0;   
   static constexpr Real dr_so4_monolayers_pcage  =  n_so4_monolayers_pcage * 4.76e-10;
 
-
-  void init(const AeroConfig &aero_config,
-            const Config &aging_config = Config()) {
-
-        config_ = aging_config;
-
-        
-    };
 
 
   // validate -- validates the given atmospheric state and prognostics against
@@ -65,13 +60,15 @@ public:
                           const Tendencies &tends) const;
 
 
+
+
 };
 
 namespace aging{
 
 
 KOKKOS_INLINE_FUNCTION
-void mam_pcarbon_aging_frac(
+void mam_pcarbon_aging_frac(const int nsrc, 
      Real dgn_a[AeroConfig::num_modes()],
      Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
      Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
@@ -82,8 +79,7 @@ void mam_pcarbon_aging_frac(
      )                                                                
 {       
 
-  const int ipair = 1;
-  static constexpr int nsrc = static_cast<int>(ModeIndex::PrimaryCarbon); 
+  const int ipair = 1; 
   const int iaer_so4 = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::SO4);
   const int iaer_soa = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::SOA); 
   const int iaer_bc = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::BC); 
@@ -133,62 +129,164 @@ void mam_pcarbon_aging_frac(
 
 
 KOKKOS_INLINE_FUNCTION
+void transfer_aged_pcarbon_to_accum(const int nsrc, 
+                                    const int ndest,
+                                    const Real xferfrac_pcage, 
+                                    const Real frac_cond, 
+                                    const Real frac_coag, 
+                                    Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()], 
+                                    Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()], 
+                                    Real qaer_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()]){
+
+  const int iaer_bc = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::BC); 
+  const int iaer_pom = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::POM); 
+  const int iaer_mom = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::MOM); 
+  
+  const int aero_to_accum[3] = {iaer_bc, iaer_pom, iaer_mom};
+  for (int ai = 0; ai<3; ++ai){
+    const int iaer = aero_to_accum[ai];
+    
+    Real q_tmp = qaer_cur[iaer][nsrc]*xferfrac_pcage;
+    
+    qaer_cur[iaer][nsrc] -=  q_tmp;
+    qaer_cur[iaer][ndest] +=  q_tmp;
+
+    qaer_del_cond[iaer][nsrc]  -= q_tmp*frac_cond;
+    qaer_del_cond[iaer][ndest] += q_tmp*frac_cond;
+
+    qaer_del_coag[iaer][nsrc]  -= q_tmp*frac_coag;
+    qaer_del_coag[iaer][ndest] +=q_tmp*frac_coag;
+
+  }
+  
+}
+
+KOKKOS_INLINE_FUNCTION
+void transfer_cond_coag_mass_to_accum(const int nsrc, 
+                                      const int ndest,
+                                      Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+                                      Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+                                      Real qaer_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()]){
+
+
+// qaer_cur[ndest] += qaer_cur[nsrc];
+// qaer_del_cond[ndest] += qaer_del_cond[nsrc];
+// qaer_del_coag[ndest] += qaer_del_cond[nsrc];
+
+// qaer_cur[nsrc] = 0.0;
+// qaer_del_cond[nsrc] = 0.0;
+// qaer_del_coag[nsrc] = 0.0;
+
+}
+
+KOKKOS_INLINE_FUNCTION
 void mam_pcarbon_aging_1subarea(
-                               Real dgn_a[AeroConfig::num_modes()],
-                               Real qnum_cur[AeroConfig::num_modes()],
-                               Real qnum_del_cond[AeroConfig::num_modes()],
-                               Real qnum_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-                               Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-                               Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-                               Real qaer_del_coag_in[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()]
+                                Real dgn_a[AeroConfig::num_modes()],
+                                Real qnum_cur[AeroConfig::num_modes()],
+                                Real qnum_del_cond[AeroConfig::num_modes()],
+                                Real qnum_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+                                Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+                                Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+                                Real qaer_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+                                Real qaer_del_coag_in[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()]
 ){
 
-  Real xferfrac_pcage; 
-  Real frac_cond;
-  Real frac_coag; 
-
-  mam_pcarbon_aging_frac(dgn_a, qaer_cur, qaer_del_cond, qaer_del_coag_in, xferfrac_pcage, frac_cond, frac_coag);
-
-}
-
-           
 
 
-
-
-
-KOKKOS_INLINE_FUNCTION
-void transfer_aged_pcarbon_to_accum(int nsrc, int ndest, Real xferfrac_pcage, 
-Real frac_cond, Real frac_coag, Real *q_cur, Real *q_del_cond, Real *q_del_coag){
-
-const Real q_tmp = q_cur[nsrc]*xferfrac_pcage; 
-
-q_cur[nsrc] -=  q_tmp;
-q_cur[ndest] +=  q_tmp;
-
-q_del_cond[nsrc] -= q_tmp*frac_cond; 
-q_del_cond[ndest] += q_tmp*frac_cond;
-
-q_del_coag[nsrc] -= q_tmp*frac_coag;
-q_del_coag[nsrc] += q_tmp*frac_coag;
 
 }
 
 KOKKOS_INLINE_FUNCTION
-void transfer_cond_coag_mass_to_accum(int nsrc, int ndest,
-Real *qaer_cur, Real *qaer_del_cond, Real *qaer_del_coag){
+void aerosol_aging_rates_1box(
+    const int k, 
+    const AeroConfig &aero_config, 
+    const Real dt,
+    const Atmosphere &atm, 
+    const Prognostics &progs, 
+    const Diagnostics &diags,
+    const Aging::Config &config
+    ) {
+
+      const int num_aer = AeroConfig::num_aerosol_ids();
+      const int num_mode = AeroConfig::num_modes();
+
+     // These are variables that I don't know how to define at the moment for now 
+     // we will just allocate them here
+    Real dgn_a[num_mode];
+    // Real qnum_cur[AeroConfig::num_modes()],
+    Real qnum_del_cond[num_mode];
+    Real qnum_del_coag[num_aer][num_mode];
+    //  Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+    Real qaer_del_cond[num_aer][num_mode];
+    Real qaer_del_coag[num_aer][num_mode];
+    Real qaer_del_coag_in[num_aer][num_mode];
 
 
-qaer_cur[ndest] += qaer_cur[nsrc];
-qaer_del_cond[ndest] += qaer_del_cond[nsrc];
-qaer_del_coag[ndest] += qaer_del_cond[nsrc];
+    // Get prognostic fields 
+    // Aerosol mass 
+    Real qaer_cur[num_aer][num_mode];
+    for (int n = 0; n < num_mode; ++n)
+      for (int g = 0; g < num_aer; ++g)
+        qaer_cur[g][n] = progs.q_aero_i[n][g](k);
 
-qaer_cur[nsrc] = 0.0;
-qaer_del_cond[nsrc] = 0.0;
-qaer_del_coag[nsrc] = 0.0;
+    // Aerosol number
+    Real qnum_cur[num_mode];
+    for (int i = 0; i < num_mode; ++i) {
+      qnum_cur[i] = progs.n_mode_i[i](k);
+    }
+
+      mam_pcarbon_aging_1subarea(dgn_a, qnum_cur, qnum_del_cond, qnum_del_coag, qaer_cur, qaer_del_cond, qaer_del_coag, qaer_del_coag_in);
+
+
+    }
+
+  //Real xferfrac_pcage; 
+  //Real frac_cond;
+  //Real frac_coag; 
+
+  //static constexpr int nsrc = static_cast<int>(ModeIndex::PrimaryCarbon);
+  //static constexpr int ndest = static_cast<int>(ModeIndex::Accumulation); 
+
+  //mam_pcarbon_aging_frac(nsrc, dgn_a, qaer_cur, qaer_del_cond, qaer_del_coag_in, xferfrac_pcage, frac_cond, frac_coag);
+  //transfer_aged_pcarbon_to_accum(nsrc, ndest, xferfrac_pcage, frac_coag, frac_coag, qaer_cur, qaer_del_cond, qaer_del_coag);
+  //transfer_cond_coag_mass_to_accum(nsrc, ndest, qaer_cur, qaer_del_cond, qaer_del_coag);
+
+
+
+
+} // namespace aging
+
+
+// init -- initializes the implementation with MAM4's configuration
+inline void Aging::init(const AeroConfig &aero_config,
+                             const Config &process_config) {
+
+        config_ = process_config;
+
+        
+    };
+
+// compute_tendencies -- computes tendencies and updates diagnostics
+// NOTE: that both diags and tends are const below--this means their views
+// NOTE: are fixed, but the data in those views is allowed to vary.
+KOKKOS_INLINE_FUNCTION
+void Aging::compute_tendencies(const AeroConfig &config,
+                                    const ThreadTeam &team, Real t, Real dt,
+                                    const Atmosphere &atm,
+                                    const Prognostics &progs,
+                                    const Diagnostics &diags,
+                                    const Tendencies &tends) const {
+
+  const int nk = atm.num_levels();
+
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
+        aging::aerosol_aging_rates_1box(
+            k, config, dt, atm, progs, diags, config_);
+      });
+
 
 }
 
-}
-}
+} // namespace mam4 
 #endif

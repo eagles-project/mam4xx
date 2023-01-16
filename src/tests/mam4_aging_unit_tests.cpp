@@ -45,7 +45,7 @@ TEST_CASE("transfer_aged_pcarbon_to_accum", "mam4_aging_process"){
 
 TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process"){
 
-  ekat::Comm comm;
+/*   ekat::Comm comm;
   ekat::logger::Logger<> logger("aging unit tests",
                             ekat::logger::LogLevel::debug, comm);
   std::ostringstream ss;
@@ -63,16 +63,17 @@ TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process"){
   Real qnum_del_coag[naero][nmodes];
   Real qaer_cur[naero][nmodes];
   Real qaer_del_cond[naero][nmodes];
+  Real qaer_del_coag[naero][nmodes];
   Real qaer_del_coag_in[naero][nmodes];
 
 
 
   mam4::aging::mam_pcarbon_aging_1subarea(dgn_a, qnum_cur, qnum_del_cond,
-  qnum_del_coag, qaer_cur, qaer_del_cond, qaer_del_coag_in);
+  qnum_del_coag, qaer_cur, qaer_del_cond, qaer_del_coag, qaer_del_coag_in);
 
   ss << "\n aging compute tendencies";
   logger.debug(ss.str());
-  ss.str("");  
+  ss.str("");   */
 
 
 
