@@ -18,12 +18,16 @@ public:
     static const int num_pcarbon_to_accum = 3; 
     static const int num_cond_coag_to_accum = 2; 
 
+    // These are the aerosol indicies Primary Carbon mode aerosols that need 
+    // to be transferred to the accumulation mode. 
     static constexpr int indx_aer_pcarbon_to_accum[num_pcarbon_to_accum] = {
       static_cast<int>(AeroId::POM),
       static_cast<int>(AeroId::BC),
       static_cast<int>(AeroId::MOM)
     };
 
+
+    // These are the aerosol indicies of the Primary 
     static constexpr int indx_aer_cond_coag_to_accum[num_cond_coag_to_accum] = {
       static_cast<int>(AeroId::SOA),
       static_cast<int>(AeroId::SO4)
@@ -75,8 +79,6 @@ public:
                           Real t, Real dt, const Atmosphere &atm,
                           const Prognostics &progs, const Diagnostics &diags,
                           const Tendencies &tends) const;
-
-
 
 
 };
@@ -234,8 +236,19 @@ void mam_pcarbon_aging_1subarea(
 
     const int ai = Aging::indx_aer_pcarbon_to_accum[a]; 
 
+    // Now we pack mode information per aerosol
+    Real qaer_cur_modes[AeroConfig::num_modes()];
+    Real qaer_del_cond_modes[AeroConfig::num_modes()];
+    Real qaer_del_coag_in_modes[AeroConfig::num_modes()];
+    for(int m=0; m<AeroConfig::num_modes(); m++){
+      qaer_cur_modes[m] = qaer_cur[ai][m];
+      qaer_del_cond_modes[m] = qaer_cur[ai][m];
+      qaer_del_coag_in_modes[m] = qaer_cur[ai][m];
+    }
 
-    (void) ai; // Remove
+
+    
+
   }
 
   // species is soa, so4, or nh4 produced by condensation or coagulation
