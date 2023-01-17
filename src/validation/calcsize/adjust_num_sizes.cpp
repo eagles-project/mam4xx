@@ -5,13 +5,13 @@
 using namespace skywalker;
 using namespace mam4;
 
-void adjust_num_sizes(Ensemble* ensemble) {
+void adjust_num_sizes(Ensemble *ensemble) {
 
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
 
   // Run the ensemble.
-  ensemble->process([=](const Input& input, Output& output) {
+  ensemble->process([=](const Input &input, Output &output) {
     // Fetch ensemble parameters
 
     Real dt = input.get("dt");
@@ -76,8 +76,8 @@ void adjust_num_sizes(Ensemble* ensemble) {
       calcsize::adjust_num_sizes(drv_i[m], drv_c[m], init_num_i[m],
                                  init_num_c[m], dt, v2nmin[m], v2nmax[m],
                                  adj_tscale_inv, // in
-                                 num_i[m], num_c[m],
-                                 interstitial_tend[m], cloudborne_tend[m]);
+                                 num_i[m], num_c[m], interstitial_tend[m],
+                                 cloudborne_tend[m]);
     }
     //});
 

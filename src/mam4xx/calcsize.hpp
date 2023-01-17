@@ -23,9 +23,9 @@ density  volume = mmr/density
 
 KOKKOS_INLINE_FUNCTION
 void compute_dry_volume_k(int k, int imode, const Real inv_density[4][7],
-                          const Prognostics& prognostics, // in
-                          Real& dryvol_i,                 // out
-                          Real& dryvol_c)                 // out
+                          const Prognostics &prognostics, // in
+                          Real &dryvol_i,                 // out
+                          Real &dryvol_c)                 // out
 {
   const auto q_i = prognostics.q_aero_i;
   const auto q_c = prognostics.q_aero_c;
@@ -44,9 +44,10 @@ void compute_dry_volume_k(int k, int imode, const Real inv_density[4][7],
  * (drv)
  *--------------------------------------------------------------------------*/
 KOKKOS_INLINE_FUNCTION
-void update_diameter_and_vol2num(const Real& drv, const Real& num, Real v2nmin,
+void update_diameter_and_vol2num(const Real &drv, const Real &num, Real v2nmin,
                                  Real v2nmax, Real dgnmin, Real dgnmax,
-                                 Real mean_std_dev, Real &dgncur, Real &v2ncur) {
+                                 Real mean_std_dev, Real &dgncur,
+                                 Real &v2ncur) {
   const auto drv_gt_0 = drv > 0.0;
   if (!drv_gt_0)
     return;
@@ -62,23 +63,24 @@ void update_diameter_and_vol2num(const Real& drv, const Real& num, Real v2nmin,
     v2ncur = v2nmax; // set to maximum vol2num ratio for this mode
   } else {
     // dgncur = pow((drv / (cmn_factor * num)),
-                 // (1.0 / 3.0)); // compute diameter based on dry volume (drv)
+    // (1.0 / 3.0)); // compute diameter based on dry volume (drv)
     v2ncur = num / drv;
-    const Real geom_diam = Real(1.0)/ v2ncur;
-    dgncur = conversions::mean_particle_diameter_from_volume( geom_diam, mean_std_dev);
+    const Real geom_diam = Real(1.0) / v2ncur;
+    dgncur = conversions::mean_particle_diameter_from_volume(geom_diam,
+                                                             mean_std_dev);
   }
 }
 
 KOKKOS_INLINE_FUNCTION
 // rename to match ported fortran version
-static Real update_num_adj_tends(const Real& num, const Real& num0,
-                                 const Real& dt_inverse) {
+static Real update_num_adj_tends(const Real &num, const Real &num0,
+                                 const Real &dt_inverse) {
   return (num - num0) * dt_inverse;
 }
 
 KOKKOS_INLINE_FUNCTION
-static Real min_max_bounded(const Real& drv, const Real& v2nmin,
-                            const Real& v2nmax, const Real& num) {
+static Real min_max_bounded(const Real &drv, const Real &v2nmin,
+                            const Real &v2nmax, const Real &num) {
   return max(drv * v2nmin, min(drv * v2nmax, num));
 }
 
@@ -87,11 +89,11 @@ static Real min_max_bounded(const Real& drv, const Real& v2nmin,
  * comments.
  */
 KOKKOS_INLINE_FUNCTION
-void adjust_num_sizes(const Real& drv_i, const Real& drv_c,
-                      const Real& init_num_i, const Real& init_num_c,
-                      const Real& dt, const Real& v2nmin, const Real& v2nmax,
-                      const Real& adj_tscale_inv, Real& num_i, Real& num_c,
-                      Real& dqdt, Real& dqqcwdt) {
+void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
+                      const Real &init_num_i, const Real &init_num_c,
+                      const Real &dt, const Real &v2nmin, const Real &v2nmax,
+                      const Real &adj_tscale_inv, Real &num_i, Real &num_c,
+                      Real &dqdt, Real &dqqcwdt) {
 
   /*
    *
@@ -303,9 +305,9 @@ void compute_coef_ait_acc_transfer(const int iacc,             // in
                                    const Real num_i_aitsv,     // in
                                    const Real num_c_aitsv,     // in
                                    const Real voltonum_acc,    // in
-                                   int& ait2acc_index,         // out
-                                   Real& xfercoef_num_ait2acc, // out
-                                   Real& xfercoef_vol_ait2acc, // out
+                                   int &ait2acc_index,         // out
+                                   Real &xfercoef_num_ait2acc, // out
+                                   Real &xfercoef_vol_ait2acc, // out
                                    Real xfertend_num[2][2]     // out
 ) {
 
@@ -364,12 +366,12 @@ void compute_coef_ait_acc_transfer(const int iacc,             // in
 KOKKOS_INLINE_FUNCTION
 void compute_coef_acc_ait_transfer(
     int iacc, int klev, const Real v2n_geomean, const Real adj_tscale_inv,
-    const Prognostics& prognostics, const Real drv_i_accsv,
+    const Prognostics &prognostics, const Real drv_i_accsv,
     const Real drv_c_accsv, const Real num_i_accsv, const Real num_c_accsv,
     const bool noxf_acc2ait[7], const Real voltonum_ait,
-    const Real inv_density[4][7], const Real v2nmin_nmodes[4], Real& drv_i_noxf,
-    Real& drv_c_noxf, int& acc2_ait_index, Real& xfercoef_num_acc2ait,
-    Real& xfercoef_vol_acc2ait, Real xfertend_num[2][2]) {
+    const Real inv_density[4][7], const Real v2nmin_nmodes[4], Real &drv_i_noxf,
+    Real &drv_c_noxf, int &acc2_ait_index, Real &xfercoef_num_acc2ait,
+    Real &xfercoef_vol_acc2ait, Real xfertend_num[2][2]) {
 
   const auto q_i = prognostics.q_aero_i;
   const auto q_c = prognostics.q_aero_c;
@@ -458,16 +460,16 @@ void compute_coef_acc_ait_transfer(
 
 KOKKOS_INLINE_FUNCTION
 void compute_new_sz_after_transfer(
-    const Real drv,                     // in
-    const Real num,                     // in
-    const Real voltonumbhi,             // in v2nmin_nmodes(imode)
-    const Real voltonumblo,             // in v2nmax_nmodes(imode)
-    const Real voltonumb,               // in v2nnom_nmodes(imode)
-    const Real dgn_nmodes_hi,           // in dgnmax_nmodes(imode)
-    const Real dgn_nmodes_lo,           // in dgnmin_nmodes(imode)
-    const Real dgn_nmodes_nom,          // in dgnnom_nmodes(imode)
-    const Real mean_std_dev, // in mean_std_dev(imode)
-    Real& dgncur, Real& v2ncur) {
+    const Real drv,            // in
+    const Real num,            // in
+    const Real voltonumbhi,    // in v2nmin_nmodes(imode)
+    const Real voltonumblo,    // in v2nmax_nmodes(imode)
+    const Real voltonumb,      // in v2nnom_nmodes(imode)
+    const Real dgn_nmodes_hi,  // in dgnmax_nmodes(imode)
+    const Real dgn_nmodes_lo,  // in dgnmin_nmodes(imode)
+    const Real dgn_nmodes_nom, // in dgnnom_nmodes(imode)
+    const Real mean_std_dev,   // in mean_std_dev(imode)
+    Real &dgncur, Real &v2ncur) {
   // voltonumbhi is computed with dgn_nmodes_hi, i.e., voltonumbhi =v2nmin
   // voltonumblo is computed with dgn_nmodes_lo, i.e., voltonumblo =v2nmax
 
@@ -482,8 +484,9 @@ void compute_new_sz_after_transfer(
     } else {
       // dgncur = pow(drv / (cmn_factor_nmodes_imode * num), third);
       v2ncur = num / drv;
-      const Real geom_diam = Real(1.0)/ v2ncur;
-      dgncur = conversions::mean_particle_diameter_from_volume( geom_diam, mean_std_dev);
+      const Real geom_diam = Real(1.0) / v2ncur;
+      dgncur = conversions::mean_particle_diameter_from_volume(geom_diam,
+                                                               mean_std_dev);
     } // end if (num <= drv*voltonumbhi)
   } else {
     dgncur = dgn_nmodes_nom;
@@ -493,8 +496,8 @@ void compute_new_sz_after_transfer(
 } // end compute_new_sz_after_transfer
 
 KOKKOS_INLINE_FUNCTION
-void update_num_tends(const int jmode, const int aer_type, Real& dqdt_src,
-                      Real& dqdt_dest, const Real xfertend_num[2][2]) {
+void update_num_tends(const int jmode, const int aer_type, Real &dqdt_src,
+                      Real &dqdt_dest, const Real xfertend_num[2][2]) {
   const Real xfertend = xfertend_num[jmode][aer_type];
   dqdt_src -= xfertend;
   dqdt_dest += xfertend;
@@ -508,11 +511,11 @@ void update_tends_flx(const int klev,          // in
                       const int src_mode_ixd,  // in
                       const int dest_mode_ixd, // in
                       const int n_common_species_ait_accum,
-                      const int* src_species_idx, //
-                      const int* dest_species_idx,
+                      const int *src_species_idx, //
+                      const int *dest_species_idx,
                       const Real xfertend_num[2][2], const Real xfercoef,
-                      const Prognostics& prognostics,
-                      const Tendencies& tendencies) {
+                      const Prognostics &prognostics,
+                      const Tendencies &tendencies) {
 
   // NOTES on arrays and indices:
   // jmode==0 is aitken->accumulation transfer;
@@ -532,16 +535,16 @@ void update_tends_flx(const int klev,          // in
   const Real zero = 0;
 
   // interstiatial species
-  Real& dqdt_src_i = dnidt[src_mode_ixd](klev);
-  Real& dqdt_dest_i = dnidt[dest_mode_ixd](klev);
+  Real &dqdt_src_i = dnidt[src_mode_ixd](klev);
+  Real &dqdt_dest_i = dnidt[dest_mode_ixd](klev);
   const int aer_interstiatial = 0;
   update_num_tends(jmode, aer_interstiatial, dqdt_src_i, dqdt_dest_i,
                    xfertend_num);
 
   // cloud borne apecies
   const int aer_cloud_borne = 1;
-  Real& dqdt_src_c = dncdt[src_mode_ixd](klev);
-  Real& dqdt_dest_c = dncdt[dest_mode_ixd](klev);
+  Real &dqdt_src_c = dncdt[src_mode_ixd](klev);
+  Real &dqdt_dest_c = dncdt[dest_mode_ixd](klev);
 
   update_num_tends(jmode, aer_cloud_borne, dqdt_src_c, dqdt_dest_c,
                    xfertend_num);
@@ -570,18 +573,18 @@ void update_tends_flx(const int klev,          // in
  */
 KOKKOS_INLINE_FUNCTION
 void aitken_accum_exchange(
-    const int& k, const int& aitken_idx, const int& accum_idx,
+    const int &k, const int &aitken_idx, const int &accum_idx,
     const bool noxf_acc2ait[7], const int n_common_species_ait_accum,
-    const int* ait_spec_in_acc, const int* acc_spec_in_ait,
+    const int *ait_spec_in_acc, const int *acc_spec_in_ait,
     const Real v2nmax_nmodes[4], const Real v2nmin_nmodes[4],
     const Real v2nnom_nmodes[4], const Real dgnmax_nmodes[4],
     const Real dgnmin_nmodes[4], const Real dgnnom_nmodes[4],
     const Real mean_std_dev_nmodes[4], const Real inv_density[4][7],
-    const Real& adj_tscale_inv, const Real& dt, const Prognostics& prognostics,
-    const Real& drv_i_aitsv, const Real& num_i_aitsv, const Real& drv_c_aitsv,
-    const Real& num_c_aitsv, const Real& drv_i_accsv, const Real& num_i_accsv,
-    const Real& drv_c_accsv, const Real& num_c_accsv,
-    const Diagnostics& diagnostics, const Tendencies& tendencies) {
+    const Real &adj_tscale_inv, const Real &dt, const Prognostics &prognostics,
+    const Real &drv_i_aitsv, const Real &num_i_aitsv, const Real &drv_c_aitsv,
+    const Real &num_c_aitsv, const Real &drv_i_accsv, const Real &num_i_accsv,
+    const Real &drv_c_accsv, const Real &num_c_accsv,
+    const Diagnostics &diagnostics, const Tendencies &tendencies) {
 
   // -----------------------------------------------------------------------------
   // Purpose: Exchange aerosols between aitken and accumulation modes based on
@@ -594,14 +597,14 @@ void aitken_accum_exchange(
   // Ported to C++/Kokkos by: Oscar Diaz-Ibarra and Michael Schmidt
   // -----------------------------------------------------------------------------
 
-  Real& dgncur_i_aitken =
+  Real &dgncur_i_aitken =
       diagnostics.dry_geometric_mean_diameter_i[aitken_idx](k);
-  Real& dgncur_i_accum =
+  Real &dgncur_i_accum =
       diagnostics.dry_geometric_mean_diameter_i[accum_idx](k);
 
-  Real& dgncur_c_aitken =
+  Real &dgncur_c_aitken =
       diagnostics.dry_geometric_mean_diameter_c[aitken_idx](k);
-  Real& dgncur_c_accum =
+  Real &dgncur_c_accum =
       diagnostics.dry_geometric_mean_diameter_c[accum_idx](k);
 
   const Real zero = 0;
@@ -810,9 +813,9 @@ public:
     // default constructor -- sets default values for parameters
     Config() : do_aitacc_transfer(true), do_adjust(true) {}
 
-    Config(const Config&) = default;
+    Config(const Config &) = default;
     ~Config() = default;
-    Config& operator=(const Config&) = default;
+    Config &operator=(const Config &) = default;
   };
 
 private:
@@ -851,16 +854,15 @@ private:
 
 public:
   // name -- unique name of the process implemented by this class
-  const char* name() const { return "MAM4 calcsize"; }
+  const char *name() const { return "MAM4 calcsize"; }
 
   // init -- initializes the implementation with MAM4's configuration and with
   // a process-specific configuration.
-  void init(const AeroConfig& aero_config,
-            const Config& calcsize_config = Config()) {
+  void init(const AeroConfig &aero_config,
+            const Config &calcsize_config = Config()) {
     // Set nucleation-specific config parameters.
     config_ = calcsize_config;
-    const Real one = 1.0 ;
-
+    const Real one = 1.0;
 
     // Set mode parameters.
     for (int m = 0; m < AeroConfig::num_modes(); ++m) {
@@ -872,12 +874,12 @@ public:
       dgnmin_nmodes[m] = modes(m).min_diameter;
       dgnmax_nmodes[m] = modes(m).max_diameter;
       mean_std_dev_nmodes[m] = modes(m).mean_std_dev;
-      v2nnom_nmodes[m] =
-          one / conversions::mean_particle_volume_from_diameter(dgnnom_nmodes[m], modes(m).mean_std_dev ); 
-      v2nmin_nmodes[m] =
-          one / conversions::mean_particle_volume_from_diameter(dgnmax_nmodes[m], modes(m).mean_std_dev ); 
-      v2nmax_nmodes[m] =
-          one / conversions::mean_particle_volume_from_diameter(dgnmin_nmodes[m], modes(m).mean_std_dev );
+      v2nnom_nmodes[m] = one / conversions::mean_particle_volume_from_diameter(
+                                   dgnnom_nmodes[m], modes(m).mean_std_dev);
+      v2nmin_nmodes[m] = one / conversions::mean_particle_volume_from_diameter(
+                                   dgnmax_nmodes[m], modes(m).mean_std_dev);
+      v2nmax_nmodes[m] = one / conversions::mean_particle_volume_from_diameter(
+                                   dgnmin_nmodes[m], modes(m).mean_std_dev);
 
       // compute inv density; density is constant, so we can compute in init.
       const auto n_spec = num_species_mode(m);
@@ -894,11 +896,11 @@ public:
   } // end(init)
 
   KOKKOS_INLINE_FUNCTION
-  void compute_tendencies(const AeroConfig& config, const ThreadTeam& team,
-                          Real t, Real dt, const Atmosphere& atmosphere,
-                          const Prognostics& prognostics,
-                          const Diagnostics& diagnostics,
-                          const Tendencies& tendencies) const {
+  void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
+                          Real t, Real dt, const Atmosphere &atmosphere,
+                          const Prognostics &prognostics,
+                          const Diagnostics &diagnostics,
+                          const Tendencies &tendencies) const {
 
     const bool do_aitacc_transfer = config_.do_aitacc_transfer;
     const bool do_adjust = config_.do_adjust;
@@ -922,7 +924,6 @@ public:
 
     const auto inv_density = _inv_density;
     const Real zero = 0;
-    // const Real close_to_one = 1.0 + 1.0e-15; // BAD_CONSTANT!!
     const Real seconds_in_a_day = 86400.0; // BAD_CONSTANT!!
     //
     const auto acc_spec_in_ait = _acc_spec_in_ait;
@@ -955,8 +956,8 @@ public:
           const Real adj_tscale = max(seconds_in_a_day, dt);
 
           // inverse of the adjustment time scale
-          const Real adj_tscale_inv = FloatingPoint<Real>::safe_denominator(
-                                         adj_tscale);
+          const Real adj_tscale_inv =
+              FloatingPoint<Real>::safe_denominator(adj_tscale);
 
           for (int imode = 0; imode < nmodes; imode++) {
 
@@ -1052,8 +1053,8 @@ public:
 
               // number tendencies to be updated by adjust_num_sizes subroutine
 
-              auto& interstitial_tend = dnidt[imode](k);
-              auto& cloudborne_tend = dncdt[imode](k);
+              auto &interstitial_tend = dnidt[imode](k);
+              auto &cloudborne_tend = dncdt[imode](k);
 
               /*NOTE: Only number tendencies (NOT mass mixing ratios) are
                updated in adjust_num_sizes Effect of these adjustment will be
@@ -1066,8 +1067,7 @@ public:
                     adj_tscale_inv,                      // in
                     num_i_k, num_c_k,                    // out
                     interstitial_tend, cloudborne_tend); // out
-
-              } 
+              }
             }
 
             // update diameters and volume to num ratios for interstitial
