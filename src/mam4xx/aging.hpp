@@ -12,17 +12,34 @@
 namespace mam4{
 
 class Aging{
+
 public:
 
+    static const int num_pcarbon_to_accum = 3; 
+    static const int num_cond_coag_to_accum = 2; 
 
- struct Config{
+    static constexpr int indx_aer_pcarbon_to_accum[num_pcarbon_to_accum] = {
+      static_cast<int>(AeroId::POM),
+      static_cast<int>(AeroId::BC),
+      static_cast<int>(AeroId::MOM)
+    };
 
-    Config() {}; 
+    static constexpr int indx_aer_cond_coag_to_accum[num_cond_coag_to_accum] = {
+      static_cast<int>(AeroId::SOA),
+      static_cast<int>(AeroId::SO4)
+    };
 
-    Config(const Config &) = default;
-    ~Config() = default;
-    Config &operator=(const Config &) = default;
- };
+  struct Config{
+
+      Config() {}; 
+
+      Config(const Config &) = default;
+      ~Config() = default;
+      Config &operator=(const Config &) = default;
+
+
+
+  };
 
 private:
   Config config_;
@@ -192,7 +209,54 @@ void mam_pcarbon_aging_1subarea(
 ){
 
 
+  Real xferfrac_pcage, frac_cond, frac_coag; 
 
+  const int ipair = 1; 
+  const int nsrc =  static_cast<int>(ModeIndex::PrimaryCarbon);
+  const int ndest = static_cast<int>(ModeIndex::Accumulation);
+  const int num_aer = AeroConfig::num_aerosol_ids();
+
+
+  mam_pcarbon_aging_frac(nsrc, 
+                         dgn_a, 
+                         qaer_cur, 
+                         qaer_del_cond, 
+                         qaer_del_coag_in, 
+                         xferfrac_pcage, 
+                         frac_cond, 
+                         frac_coag);
+
+  // MAM4 pcarbon mode only has pom, bc, mom, lmap only has index (>0) for these species
+  // species is pom or bc
+  // transfer the aged fraction to accum mode
+  //  include this transfer change in the cond and/or coag change (for mass budget)
+  for (int a = 0; a < Aging::num_pcarbon_to_accum; ++a){
+
+    const int ai = Aging::indx_aer_pcarbon_to_accum[a]; 
+
+
+    (void) ai; // Remove
+  }
+
+  // species is soa, so4, or nh4 produced by condensation or coagulation
+  // transfer all of it to accum mode
+  // also transfer the condensation and coagulation changes
+  // to accum mode (for mass budget)
+  for (int a = 0; a < Aging::num_cond_coag_to_accum; ++a){
+    const int ai = Aging::indx_aer_cond_coag_to_accum[a];
+
+    (void) ai; // Remove
+  }
+
+
+  
+  (void) xferfrac_pcage; // Remove
+  (void) frac_cond;  // Remove
+  (void) frac_coag; // Remove
+  (void) ipair;  // Remove
+  (void) nsrc;  // Remove
+  (void) ndest; // Remove
+  (void) num_aer; // Remove
 
 }
 
@@ -235,22 +299,18 @@ void aerosol_aging_rates_1box(
       qnum_cur[i] = progs.n_mode_i[i](k);
     }
 
-      mam_pcarbon_aging_1subarea(dgn_a, qnum_cur, qnum_del_cond, qnum_del_coag, qaer_cur, qaer_del_cond, qaer_del_coag, qaer_del_coag_in);
+    mam_pcarbon_aging_1subarea(
+        dgn_a, 
+        qnum_cur, 
+        qnum_del_cond, 
+        qnum_del_coag, 
+        qaer_cur, 
+        qaer_del_cond, 
+        qaer_del_coag, 
+        qaer_del_coag_in);
 
 
     }
-
-  //Real xferfrac_pcage; 
-  //Real frac_cond;
-  //Real frac_coag; 
-
-  //static constexpr int nsrc = static_cast<int>(ModeIndex::PrimaryCarbon);
-  //static constexpr int ndest = static_cast<int>(ModeIndex::Accumulation); 
-
-  //mam_pcarbon_aging_frac(nsrc, dgn_a, qaer_cur, qaer_del_cond, qaer_del_coag_in, xferfrac_pcage, frac_cond, frac_coag);
-  //transfer_aged_pcarbon_to_accum(nsrc, ndest, xferfrac_pcage, frac_coag, frac_coag, qaer_cur, qaer_del_cond, qaer_del_coag);
-  //transfer_cond_coag_mass_to_accum(nsrc, ndest, qaer_cur, qaer_del_cond, qaer_del_coag);
-
 
 
 
