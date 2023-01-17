@@ -10,7 +10,6 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 
 # We use a single driver for all calcsize-related parameterizations.
 add_executable(calcsize_driver calcsize_driver.cpp
-               get_relaxed_v2n_limits.cpp
                compute_dry_volume.cpp
                adjust_num_sizes.cpp
                update_diameter_and_vol2num.cpp
@@ -33,8 +32,6 @@ endforeach()
 
 # Calcsize
 foreach (input
-         get_relaxed_v2n_limits_case1
-         get_relaxed_v2n_limits_case2
          adjust_num_sizes_case1
          adjust_num_sizes_case2
          update_diameter_and_vol2num_case1

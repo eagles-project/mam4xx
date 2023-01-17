@@ -20,7 +20,6 @@ using namespace skywalker;
 using namespace mam4;
 
 // Parameterizations used by the calcsize process.
-void get_relaxed_v2n_limits(Ensemble *ensemble);
 void compute_dry_volume_k(Ensemble *ensemble);
 void adjust_num_sizes(Ensemble *ensemble);
 void update_diameter_and_vol2num(Ensemble *ensemble);
@@ -49,9 +48,7 @@ int main(int argc, char **argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
   try {
-    if (func_name == "get_relaxed_v2n_limits") { //
-      get_relaxed_v2n_limits(ensemble);
-    } else if (func_name == "compute_dry_volume") {
+    if (func_name == "compute_dry_volume") {
       compute_dry_volume_k(ensemble);
     } else if (func_name == "adjust_num_sizes") {
       adjust_num_sizes(ensemble);

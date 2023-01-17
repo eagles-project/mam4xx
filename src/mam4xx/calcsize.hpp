@@ -39,67 +39,6 @@ void compute_dry_volume_k(int k, int imode, const Real inv_density[4][7],
 
 } // end
 
-/*
- * \brief Get relaxed limits for volume_to_num (we use relaxed limits for
- * aerosol number "adjustment" calculations via "adjust_num_sizes" subroutine.
- * Note: The relaxed limits will be artificially inflated (or deflated) for the
- * aitken and accumulation modes if "do_aitacc_transfer" flag is true to
- * effectively shut-off aerosol number "adjustment" calculations for these
- * modes because we do the explicit transfer (via "aitken_accum_exchange"
- * subroutine) from one mode to another instead of adjustments for these
- * modes).
- *
- * \note v2nmin and v2nmax are only updated for aitken and accumulation modes.
- */
-KOKKOS_INLINE_FUNCTION
-void get_relaxed_v2n_limits(const bool do_aitacc_transfer,
-                            const bool is_aitken_mode, const bool is_accum_mode,
-                            Real& v2nmin,   // in
-                            Real& v2nmax,   // in
-                            Real& v2nminrl, // out
-                            Real& v2nmaxrl) // out
-{
-  /*
-   * Relaxation factor is currently assumed to be a factor of 3 in diameter
-   * which makes it 3**3=27 for volume.  i.e. dgnumlo_relaxed = dgnumlo/3 and
-   * dgnumhi_relaxed = dgnumhi*3; therefore we use 3**3=27 as a relaxation
-   * factor for volume.
-   *
-   * \see get_relaxed_v2n_limits
-   */
-
-  const Real relax_factor = 27.0; // BAD_CONSTANT!!
-
-  // factor to artificially inflate or deflate v2nmin and v2nmax
-  const Real szadj_block_fac = 1.0e6; // BAD_CONSTANT!!
-
-  // default relaxation:
-  v2nminrl = v2nmin / relax_factor;
-  v2nmaxrl = v2nmax * relax_factor;
-  // if do_aitacc_transfer is turned on, we will do the ait<->acc transfer
-  // separately in aitken_accum_exchange subroutine, so we are effectively
-  // turning OFF the size adjustment for these two modes here by artificially
-  // inflating (or deflating) v2min and v2nmax using "szadj_block_fac" and then
-  // computing v2minrl and v2nmaxrl based on newly computed v2min and v2nmax.
-
-  if (do_aitacc_transfer) {
-    // for aitken mode, divide v2nmin by 1.0e6 to effectively turn off the
-    //          adjustment when number is too small (size is too big)
-    if (is_aitken_mode)
-      v2nmin /= szadj_block_fac;
-    // for accumulation, multiply v2nmax by 1.0e6 to effectively turn off the
-    //          adjustment when number is too big (size is too small)
-    if (is_accum_mode)
-      v2nmax *= szadj_block_fac;
-
-    // Also change the v2nmaxrl/v2nminrl so that
-    // the interstitial<-->activated number adjustment is effectively turned
-    // off
-    v2nminrl = v2nmin / relax_factor;
-    v2nmaxrl = v2nmax * relax_factor;
-  }
-}
-
 /*----------------------------------------------------------------------------
  * Compute particle diameter and volume to number ratios using dry bulk volume
  * (drv)
@@ -151,7 +90,6 @@ KOKKOS_INLINE_FUNCTION
 void adjust_num_sizes(const Real& drv_i, const Real& drv_c,
                       const Real& init_num_i, const Real& init_num_c,
                       const Real& dt, const Real& v2nmin, const Real& v2nmax,
-                      const Real& v2nminrl, const Real& v2nmaxrl,
                       const Real& adj_tscale_inv, Real& num_i, Real& num_c,
                       Real& dqdt, Real& dqqcwdt) {
 
@@ -188,6 +126,24 @@ void adjust_num_sizes(const Real& drv_i, const Real& drv_c,
 
   // inverse of time step
   const Real dtinv = FloatingPoint<Real>::safe_denominator(dt);
+
+  /*
+   * Relaxation factor is currently assumed to be a factor of 3 in diameter
+   * which makes it 3**3=27 for volume.  i.e. dgnumlo_relaxed = dgnumlo/3 and
+   * dgnumhi_relaxed = dgnumhi*3; therefore we use 3**3=27 as a relaxation
+   * factor for volume.
+   *
+   * \see get_relaxed_v2n_limits
+   */
+
+  const Real relax_factor = 27.0; // BAD_CONSTANT!!
+
+  // factor to artificially inflate or deflate v2nmin and v2nmax
+  // const Real szadj_block_fac = 1.0e6; // BAD_CONSTANT!!
+
+  // default relaxation:
+  const Real v2nminrl = v2nmin / relax_factor;
+  const Real v2nmaxrl = v2nmax * relax_factor;
 
   // If both interstitial (drv_i) and cloud borne (drv_c) dry volumes are zero
   // (or less) adjust numbers(num_a and num_c respectively) for both of them to
@@ -892,8 +848,6 @@ private:
   const int _acc_spec_in_ait[4] = {0, 2, 5, 6};
   Real v2nmin[4];
   Real v2nmax[4];
-  Real v2nminrl[4];
-  Real v2nmaxrl[4];
 
 public:
   // name -- unique name of the process implemented by this class
@@ -905,10 +859,8 @@ public:
             const Config& calcsize_config = Config()) {
     // Set nucleation-specific config parameters.
     config_ = calcsize_config;
+    const Real one = 1.0 ;
 
-    const int aitken_idx = int(ModeIndex::Aitken);
-    const int accumulation_idx = int(ModeIndex::Accumulation);
-    const Real one = 1.0;
 
     // Set mode parameters.
     for (int m = 0; m < AeroConfig::num_modes(); ++m) {
@@ -936,22 +888,6 @@ public:
       // FIXME: do we need to update v2nmin_nmodes and v2nmax_nmodes as well?
       v2nmin[m] = v2nmin_nmodes[m];
       v2nmax[m] = v2nmax_nmodes[m];
-      // compute upper and lower limits for volume to num (v2n) ratios and
-      // diameters (dgn)
-      //      Get relaxed limits for volume_to_num
-      // (we use relaxed limits for aerosol number "adjustment"
-      // calculations via "adjust_num_sizes" subroutine. Note: The
-      // relaxed limits will be artificially inflated (or deflated) for
-      // the aitken and accumulation modes if "do_aitacc_transfer" flag is
-      // true to effectively shut-off aerosol number "adjustment"
-      // calculations for these modes because we do the explicit transfer
-      // (via "aitken_accum_exchange" subroutine) from one mode to
-      // another instead of adjustments for these modes)
-      calcsize::get_relaxed_v2n_limits(
-          config_.do_aitacc_transfer, m == aitken_idx, m == accumulation_idx,
-          v2nmin[m], v2nmax[m], v2nminrl[m],
-          v2nmaxrl[m]); // outputs (NOTE: v2nmin and v2nmax are only updated
-                        // for aitken and accumulation modes)
 
     } // for(m)
 
@@ -1092,6 +1028,10 @@ public:
             // Make it non-negative
             auto num_c_k = init_num_c < 0 ? zero : init_num_c;
 
+            const auto is_aitken_or_accumulation =
+                imode == accumulation_idx || imode == aitken_idx;
+            const auto do_adjust_aitken_or_accum =
+                is_aitken_or_accumulation && do_aitacc_transfer;
             if (do_adjust) {
               /*------------------------------------------------------------------
                *  Do number adjustment for interstitial and activated particles
@@ -1119,12 +1059,15 @@ public:
                updated in adjust_num_sizes Effect of these adjustment will be
                reflected in the particle diameters (via
                "update_diameter_and_vol2num" subroutine call below) */
-              calcsize::adjust_num_sizes(
-                  dryvol_i, dryvol_c, init_num_i, init_num_c, dt, // in
-                  v2nmin[imode], v2nmax[imode], v2nminrl[imode],
-                  v2nmaxrl[imode], adj_tscale_inv,     // in
-                  num_i_k, num_c_k,                    // out
-                  interstitial_tend, cloudborne_tend); // out
+              if (!do_adjust_aitken_or_accum) {
+                calcsize::adjust_num_sizes(
+                    dryvol_i, dryvol_c, init_num_i, init_num_c, dt, // in
+                    v2nmin[imode], v2nmax[imode],
+                    adj_tscale_inv,                      // in
+                    num_i_k, num_c_k,                    // out
+                    interstitial_tend, cloudborne_tend); // out
+
+              } 
             }
 
             // update diameters and volume to num ratios for interstitial
