@@ -153,39 +153,32 @@ void transfer_aged_pcarbon_to_accum(const int nsrc,
                                     const Real xferfrac_pcage, 
                                     const Real frac_cond, 
                                     const Real frac_coag, 
-                                    Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()], 
-                                    Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()], 
-                                    Real qaer_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()]){
+                                    Real qaer_cur[AeroConfig::num_modes()],
+                                    Real qaer_del_cond[AeroConfig::num_modes()], 
+                                    Real qaer_del_coag[AeroConfig::num_modes()]){
 
-  const int iaer_bc = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::BC); 
-  const int iaer_pom = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::POM); 
-  const int iaer_mom = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::MOM); 
   
-  const int aero_to_accum[3] = {iaer_bc, iaer_pom, iaer_mom};
-  for (int ai = 0; ai<3; ++ai){
-    const int iaer = aero_to_accum[ai];
     
-    Real q_tmp = qaer_cur[iaer][nsrc]*xferfrac_pcage;
+    Real q_tmp = qaer_cur[nsrc]*xferfrac_pcage;
     
-    qaer_cur[iaer][nsrc] -=  q_tmp;
-    qaer_cur[iaer][ndest] +=  q_tmp;
+    qaer_cur[nsrc] -=  q_tmp;
+    qaer_cur[ndest] +=  q_tmp;
 
-    qaer_del_cond[iaer][nsrc]  -= q_tmp*frac_cond;
-    qaer_del_cond[iaer][ndest] += q_tmp*frac_cond;
+    qaer_del_cond[nsrc]  -= q_tmp*frac_cond;
+    qaer_del_cond[ndest] += q_tmp*frac_cond;
 
-    qaer_del_coag[iaer][nsrc]  -= q_tmp*frac_coag;
-    qaer_del_coag[iaer][ndest] +=q_tmp*frac_coag;
+    qaer_del_coag[nsrc]  -= q_tmp*frac_coag;
+    qaer_del_coag[ndest] += q_tmp*frac_coag;
 
-  }
   
 }
 
 KOKKOS_INLINE_FUNCTION
 void transfer_cond_coag_mass_to_accum(const int nsrc, 
                                       const int ndest,
-                                      Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-                                      Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-                                      Real qaer_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()]){
+                                      Real qaer_cur[AeroConfig::num_modes()],
+                                      Real qaer_del_cond[AeroConfig::num_modes()],
+                                      Real qaer_del_coag[AeroConfig::num_modes()]){
 
 
 // qaer_cur[ndest] += qaer_cur[nsrc];
@@ -203,7 +196,7 @@ void mam_pcarbon_aging_1subarea(
                                 Real dgn_a[AeroConfig::num_modes()],
                                 Real qnum_cur[AeroConfig::num_modes()],
                                 Real qnum_del_cond[AeroConfig::num_modes()],
-                                Real qnum_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+                                Real qnum_del_coag[AeroConfig::num_aerosol_ids()],
                                 Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
                                 Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
                                 Real qaer_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
@@ -212,12 +205,9 @@ void mam_pcarbon_aging_1subarea(
 
 
   Real xferfrac_pcage, frac_cond, frac_coag; 
-
-  const int ipair = 1; 
+ 
   const int nsrc =  static_cast<int>(ModeIndex::PrimaryCarbon);
   const int ndest = static_cast<int>(ModeIndex::Accumulation);
-  const int num_aer = AeroConfig::num_aerosol_ids();
-
 
   mam_pcarbon_aging_frac(nsrc, 
                          dgn_a, 
@@ -227,28 +217,49 @@ void mam_pcarbon_aging_1subarea(
                          xferfrac_pcage, 
                          frac_cond, 
                          frac_coag);
+  // Note, there are probably optimizations to be done here, closely following the Fortran code
+  // required extra unpacking of arrays. 
+
 
   // MAM4 pcarbon mode only has pom, bc, mom, lmap only has index (>0) for these species
   // species is pom or bc
   // transfer the aged fraction to accum mode
   //  include this transfer change in the cond and/or coag change (for mass budget)
+     
+     
+
+  Real qaer_cur_modes[AeroConfig::num_modes()];
+  Real qaer_del_cond_modes[AeroConfig::num_modes()];
+  Real qaer_del_coag_modes[AeroConfig::num_modes()];
+ 
   for (int a = 0; a < Aging::num_pcarbon_to_accum; ++a){
 
     const int ai = Aging::indx_aer_pcarbon_to_accum[a]; 
-
-    // Now we pack mode information per aerosol
-    Real qaer_cur_modes[AeroConfig::num_modes()];
-    Real qaer_del_cond_modes[AeroConfig::num_modes()];
-    Real qaer_del_coag_in_modes[AeroConfig::num_modes()];
+  
+    // Pack mode information per aerosol
     for(int m=0; m<AeroConfig::num_modes(); m++){
       qaer_cur_modes[m] = qaer_cur[ai][m];
-      qaer_del_cond_modes[m] = qaer_cur[ai][m];
-      qaer_del_coag_in_modes[m] = qaer_cur[ai][m];
+      qaer_del_cond_modes[m] = qaer_del_cond[ai][m];
+      qaer_del_coag_modes[m] = qaer_del_coag[ai][m];
     }
 
+    transfer_aged_pcarbon_to_accum(nsrc, 
+                                  ndest, 
+                                  xferfrac_pcage, 
+                                  frac_cond, 
+                                  frac_coag, 
+                                  qaer_cur_modes, 
+                                  qaer_del_cond_modes, 
+                                  qaer_del_coag_modes);
 
-    
 
+     // Unpack mode information per aerosol
+     for(int m=0; m<AeroConfig::num_modes(); m++){
+      qaer_cur[ai][m] = qaer_cur_modes[m];
+      qaer_del_cond[ai][m] = qaer_del_cond_modes[m];
+      qaer_del_coag[ai][m] = qaer_del_coag_modes[m];
+    }
+ 
   }
 
   // species is soa, so4, or nh4 produced by condensation or coagulation
@@ -258,18 +269,38 @@ void mam_pcarbon_aging_1subarea(
   for (int a = 0; a < Aging::num_cond_coag_to_accum; ++a){
     const int ai = Aging::indx_aer_cond_coag_to_accum[a];
 
-    (void) ai; // Remove
+    // Pack mode information per aerosol
+    for(int m=0; m<AeroConfig::num_modes(); m++){
+      qaer_cur_modes[m] = qaer_cur[ai][m];
+      qaer_del_cond_modes[m] = qaer_del_cond[ai][m];
+      qaer_del_coag_modes[m] = qaer_del_coag[ai][m];
+    }
+
+    transfer_cond_coag_mass_to_accum(nsrc,  
+                                     ndest, 
+                                     qaer_cur_modes, 
+                                     qaer_del_cond_modes, 
+                                     qaer_del_coag_modes);
+
+     // Unpack mode information per aerosol
+     for(int m=0; m<AeroConfig::num_modes(); m++){
+      qaer_cur[ai][m] = qaer_cur_modes[m];
+      qaer_del_cond[ai][m] = qaer_del_cond_modes[m];
+      qaer_del_coag[ai][m] = qaer_del_coag_modes[m];
+    }
+
+    // number - transfer the aged fraction to accum mode
+    // include this transfer change in the cond and/or coag change (for mass budget)
+
+
   }
 
 
-  
-  (void) xferfrac_pcage; // Remove
-  (void) frac_cond;  // Remove
-  (void) frac_coag; // Remove
-  (void) ipair;  // Remove
-  (void) nsrc;  // Remove
-  (void) ndest; // Remove
-  (void) num_aer; // Remove
+    transfer_cond_coag_mass_to_accum(nsrc,  
+                                     ndest, 
+                                     qnum_cur, 
+                                     qnum_del_cond, 
+                                     qnum_del_coag);
 
 }
 
@@ -292,7 +323,7 @@ void aerosol_aging_rates_1box(
     Real dgn_a[num_mode];
     // Real qnum_cur[AeroConfig::num_modes()],
     Real qnum_del_cond[num_mode];
-    Real qnum_del_coag[num_aer][num_mode];
+    Real qnum_del_coag[num_aer];
     //  Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
     Real qaer_del_cond[num_aer][num_mode];
     Real qaer_del_coag[num_aer][num_mode];
