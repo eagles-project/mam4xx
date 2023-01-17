@@ -1060,6 +1060,8 @@ public:
                updated in adjust_num_sizes Effect of these adjustment will be
                reflected in the particle diameters (via
                "update_diameter_and_vol2num" subroutine call below) */
+              // Thus, when we are NOT doing the diameter/vol adjustments below,
+              // then we DO the num adjustment here
               if (!do_adjust_aitken_or_accum) {
                 calcsize::adjust_num_sizes(
                     dryvol_i, dryvol_c, init_num_i, init_num_c, dt, // in
