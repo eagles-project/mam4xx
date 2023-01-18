@@ -307,18 +307,18 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
 }
 
 KOKKOS_INLINE_FUNCTION
-void compute_coef_ait_acc_transfer(const int iacc,                    // in
+void compute_coef_ait_acc_transfer(const int iacc,                   // in
                                    const Real num2vol_ratio_geomean, // in
-                                   const Real adj_tscale_inv,         // in
-                                   const Real drv_i_aitsv,            // in
-                                   const Real drv_c_aitsv,            // in
-                                   const Real num_i_aitsv,            // in
-                                   const Real num_c_aitsv,            // in
-                                   const Real voltonum_acc,           // in
-                                   int &ait2acc_index,                // out
-                                   Real &xfercoef_num_ait2acc,        // out
-                                   Real &xfercoef_vol_ait2acc,        // out
-                                   Real xfertend_num[2][2]            // out
+                                   const Real adj_tscale_inv,        // in
+                                   const Real drv_i_aitsv,           // in
+                                   const Real drv_c_aitsv,           // in
+                                   const Real num_i_aitsv,           // in
+                                   const Real num_c_aitsv,           // in
+                                   const Real voltonum_acc,          // in
+                                   int &ait2acc_index,               // out
+                                   Real &xfercoef_num_ait2acc,       // out
+                                   Real &xfercoef_vol_ait2acc,       // out
+                                   Real xfertend_num[2][2]           // out
 ) {
 
   // ------------------------------------------------------------
@@ -475,15 +475,15 @@ void compute_coef_acc_ait_transfer(
 
 KOKKOS_INLINE_FUNCTION
 void compute_new_sz_after_transfer(
-    const Real drv,            // in
-    const Real num,            // in
-    const Real num2volratio_hi,    // in num2vol_ratio_min_nmodes(imode)
-    const Real num2volratio_lo,    // in num2vol_ratio_max_nmodes(imode)
-    const Real num2volratio,      // in num2vol_ratio_nom_nmodes(imode)
-    const Real dgn_nmodes_hi,  // in dgnmax_nmodes(imode)
-    const Real dgn_nmodes_lo,  // in dgnmin_nmodes(imode)
-    const Real dgn_nmodes_nom, // in dgnnom_nmodes(imode)
-    const Real mean_std_dev,   // in mean_std_dev(imode)
+    const Real drv,             // in
+    const Real num,             // in
+    const Real num2volratio_hi, // in num2vol_ratio_min_nmodes(imode)
+    const Real num2volratio_lo, // in num2vol_ratio_max_nmodes(imode)
+    const Real num2volratio,    // in num2vol_ratio_nom_nmodes(imode)
+    const Real dgn_nmodes_hi,   // in dgnmax_nmodes(imode)
+    const Real dgn_nmodes_lo,   // in dgnmin_nmodes(imode)
+    const Real dgn_nmodes_nom,  // in dgnnom_nmodes(imode)
+    const Real mean_std_dev,    // in mean_std_dev(imode)
     Real &dgncur, Real &num2vol_ratio_cur) {
   // num2volratio_hi is computed with dgn_nmodes_hi, i.e., num2volratio_hi
   // = num2vol_ratio_min num2volratio_lo is computed with dgn_nmodes_lo, i.e.,
