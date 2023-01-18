@@ -50,7 +50,7 @@ void adjust_num_sizes(Ensemble *ensemble) {
     static constexpr Real seconds_in_a_day = 86400.0;
     const Real adj_tscale = haero::max(seconds_in_a_day, dt);
     const Real adj_tscale_inv =
-        1.0 * FloatingPoint<Real>::safe_denominator(adj_tscale);
+        FloatingPoint<Real>::safe_denominator(adj_tscale);
 
     Real interstitial_tend[nmodes] = {0};
     Real cloudborne_tend[nmodes] = {0};

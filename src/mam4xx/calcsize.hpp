@@ -66,8 +66,6 @@ void update_diameter_and_vol2num(const Real &drv, const Real &num,
     num2vol_ratio_cur =
         num2vol_ratio_max; // set to maximum vol2num ratio for this mode
   } else {
-    // dgncur = pow((drv / (cmn_factor * num)),
-    // (1.0 / 3.0)); // compute diameter based on dry volume (drv)
     num2vol_ratio_cur = num / drv;
     const Real geom_diam = Real(1.0) / num2vol_ratio_cur;
     dgncur = conversions::mean_particle_diameter_from_volume(geom_diam,
@@ -139,7 +137,7 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
    * dgnumhi_relaxed = dgnumhi*3; therefore we use 3**3=27 as a relaxation
    * factor for volume.
    *
-   * \see get_relaxed_num2vol_ratio__limits
+   * \see get_relaxed_num2vol_ratio_limits
    */
 
   const Real relax_factor = 27.0; // BAD_CONSTANT!!
@@ -310,7 +308,7 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
 
 KOKKOS_INLINE_FUNCTION
 void compute_coef_ait_acc_transfer(const int iacc,                    // in
-                                   const Real num2vol_ratio__geomean, // in
+                                   const Real num2vol_ratio_geomean, // in
                                    const Real adj_tscale_inv,         // in
                                    const Real drv_i_aitsv,            // in
                                    const Real drv_c_aitsv,            // in
@@ -344,15 +342,15 @@ void compute_coef_ait_acc_transfer(const int iacc,                    // in
   if (drv_t > zero) {
     // if num is less than the mean value, we have large particles (keeping
     //  volume constant drv_t), which needs to be moved to accumulation mode
-    if (num_t < drv_t * num2vol_ratio__geomean) {
+    if (num_t < drv_t * num2vol_ratio_geomean) {
       ait2acc_index = 1;
       if (num_t < drv_t * voltonum_acc) { // then  move all particles if number
         // is smaller than the acc mean
         xferfrac_num_ait2acc = one;
         xferfrac_vol_ait2acc = one;
       } else { // otherwise scale the transfer
-        xferfrac_vol_ait2acc = ((num_t / drv_t) - num2vol_ratio__geomean) /
-                               (voltonum_acc - num2vol_ratio__geomean);
+        xferfrac_vol_ait2acc = ((num_t / drv_t) - num2vol_ratio_geomean) /
+                               (voltonum_acc - num2vol_ratio_geomean);
         xferfrac_num_ait2acc =
             xferfrac_vol_ait2acc * (drv_t * voltonum_acc / num_t);
         // bound the transfer coefficients between 0 and 1
@@ -370,14 +368,14 @@ void compute_coef_ait_acc_transfer(const int iacc,                    // in
       xfercoef_vol_ait2acc = xferfrac_vol_ait2acc * adj_tscale_inv;
       xfertend_num[0][0] = num_i_aitsv * xfercoef_num_ait2acc;
       xfertend_num[0][1] = num_c_aitsv * xfercoef_num_ait2acc;
-    } // end if (num_t < drv_t*num2vol_ratio__geomean)
+    } // end if (num_t < drv_t*num2vol_ratio_geomean)
   }   // end if (drv_t > zero)
 
 } // end compute_coef_ait_acc_transfer
 
 KOKKOS_INLINE_FUNCTION
 void compute_coef_acc_ait_transfer(
-    int iacc, int klev, const Real num2vol_ratio__geomean,
+    int iacc, int klev, const Real num2vol_ratio_geomean,
     const Real adj_tscale_inv, const Prognostics &prognostics,
     const Real drv_i_accsv, const Real drv_c_accsv, const Real num_i_accsv,
     const Real num_c_accsv,
@@ -412,7 +410,7 @@ void compute_coef_acc_ait_transfer(
     // if number is larger than the mean, it means we have small particles
     // (keeping volume constant drv_t), we need to move particles to aitken
     // mode
-    if (num_t > drv_t * num2vol_ratio__geomean) {
+    if (num_t > drv_t * num2vol_ratio_geomean) {
       // As there may be more species in the accumulation mode which are not
       // present in the aitken mode, we need to compute the num and volume only
       // for the species which can be transferred
@@ -438,20 +436,20 @@ void compute_coef_acc_ait_transfer(
       num_t0 = num_t;
       num_t = max(zero, num_t - num_t_noxf);
       drv_t = max(zero, drv_t - drv_t_noxf);
-    } // end if (num_t > drv_t*num2vol_ratio__geomean)
+    } // end if (num_t > drv_t*num2vol_ratio_geomean)
   }   // end if (drv_t)
 
   if (drv_t > zero) {
     // Find out if we need to transfer based on the new num_t
-    if (num_t > drv_t * num2vol_ratio__geomean) {
+    if (num_t > drv_t * num2vol_ratio_geomean) {
       acc2_ait_index = 1;
       if (num_t > drv_t * voltonum_ait) { // if number of larger than the
                                           // aitken mean, move all particles
         xferfrac_num_acc2ait = one;
         xferfrac_vol_acc2ait = one;
       } else { // scale the transfer
-        xferfrac_vol_acc2ait = ((num_t / drv_t) - num2vol_ratio__geomean) /
-                               (voltonum_ait - num2vol_ratio__geomean);
+        xferfrac_vol_acc2ait = ((num_t / drv_t) - num2vol_ratio_geomean) /
+                               (voltonum_ait - num2vol_ratio_geomean);
         xferfrac_num_acc2ait =
             xferfrac_vol_acc2ait * (drv_t * voltonum_ait / num_t);
         // bound the transfer coefficients between 0 and 1
@@ -470,7 +468,7 @@ void compute_coef_acc_ait_transfer(
       xfercoef_vol_acc2ait = xferfrac_vol_acc2ait * adj_tscale_inv;
       xfertend_num[1][0] = num_i_accsv * xfercoef_num_acc2ait;
       xfertend_num[1][1] = num_c_accsv * xfercoef_num_acc2ait;
-    } // end if (num_t > drv_t*num2vol_ratio__geomean)
+    } // end if (num_t > drv_t*num2vol_ratio_geomean)
   }
 
 } // end compute_coef_acc_ait_transfer
@@ -479,36 +477,36 @@ KOKKOS_INLINE_FUNCTION
 void compute_new_sz_after_transfer(
     const Real drv,            // in
     const Real num,            // in
-    const Real voltonumbhi,    // in num2vol_ratio_min_nmodes(imode)
-    const Real voltonumblo,    // in num2vol_ratio_max_nmodes(imode)
-    const Real voltonumb,      // in num2vol_ratio_nom_nmodes(imode)
+    const Real num2volratio_hi,    // in num2vol_ratio_min_nmodes(imode)
+    const Real num2volratio_lo,    // in num2vol_ratio_max_nmodes(imode)
+    const Real num2volratio,      // in num2vol_ratio_nom_nmodes(imode)
     const Real dgn_nmodes_hi,  // in dgnmax_nmodes(imode)
     const Real dgn_nmodes_lo,  // in dgnmin_nmodes(imode)
     const Real dgn_nmodes_nom, // in dgnnom_nmodes(imode)
     const Real mean_std_dev,   // in mean_std_dev(imode)
     Real &dgncur, Real &num2vol_ratio_cur) {
-  // voltonumbhi is computed with dgn_nmodes_hi, i.e., voltonumbhi
-  // =num2vol_ratio_min voltonumblo is computed with dgn_nmodes_lo, i.e.,
-  // voltonumblo =num2vol_ratio_max
+  // num2volratio_hi is computed with dgn_nmodes_hi, i.e., num2volratio_hi
+  // = num2vol_ratio_min num2volratio_lo is computed with dgn_nmodes_lo, i.e.,
+  // num2volratio_lo = num2vol_ratio_max
 
   const Real zero = 0;
   if (drv > zero) {
-    if (num <= drv * voltonumbhi) {
+    if (num <= drv * num2volratio_hi) {
       dgncur = dgn_nmodes_hi;
-      num2vol_ratio_cur = voltonumbhi;
-    } else if (num >= drv * voltonumblo) {
+      num2vol_ratio_cur = num2volratio_hi;
+    } else if (num >= drv * num2volratio_lo) {
       dgncur = dgn_nmodes_lo;
-      num2vol_ratio_cur = voltonumblo;
+      num2vol_ratio_cur = num2volratio_lo;
     } else {
       // dgncur = pow(drv / (cmn_factor_nmodes_imode * num), third);
       num2vol_ratio_cur = num / drv;
       const Real geom_diam = Real(1.0) / num2vol_ratio_cur;
       dgncur = conversions::mean_particle_diameter_from_volume(geom_diam,
                                                                mean_std_dev);
-    } // end if (num <= drv*voltonumbhi)
+    } // end if (num <= drv*num2volratio_hi)
   } else {
     dgncur = dgn_nmodes_nom;
-    num2vol_ratio_cur = voltonumb;
+    num2vol_ratio_cur = num2volratio_;
   } // end if (drv > zero)
 
 } // end compute_new_sz_after_transfer
@@ -664,19 +662,19 @@ void aitken_accum_exchange(
   //  are transfered between these modes
   // ------------------------------------------------------------------------
 
-  // num2vol_ratio__geomean is the geometric mean vol2num values
+  // num2vol_ratio_geomean is the geometric mean vol2num values
   // between the aitken and accum modes
-  // const auto num2vol_ratio__geomean =
+  // const auto num2vol_ratio_geomean =
   // haero::sqrt(voltonum_ait*voltonum_acc);
   // voltonum_ait and voltonum_acc are O(10^22) and O(10^20), respectively,
   // and their multiplication overflows single precision, and
   // the square root ends up NaN. Thus,we compute sqrt individually
-  const auto num2vol_ratio__geomean =
+  const auto num2vol_ratio_geomean =
       haero::sqrt(voltonum_ait) * haero::sqrt(voltonum_acc);
 
   // Compute aitken -> accumulation transfer
   compute_coef_ait_acc_transfer(
-      accum_idx, num2vol_ratio__geomean, adj_tscale_inv, drv_i_aitsv,
+      accum_idx, num2vol_ratio_geomean, adj_tscale_inv, drv_i_aitsv,
       drv_c_aitsv, num_i_aitsv, num_c_aitsv, voltonum_acc, ait2acc_index,
       xfercoef_num_ait2acc, xfercoef_vol_ait2acc, xfertend_num);
 
@@ -691,7 +689,7 @@ void aitken_accum_exchange(
   //  ----------------------------------------------------------------------------------------
 
   compute_coef_acc_ait_transfer(
-      accum_idx, k, num2vol_ratio__geomean, adj_tscale_inv, prognostics,
+      accum_idx, k, num2vol_ratio_geomean, adj_tscale_inv, prognostics,
       drv_i_accsv, drv_c_accsv, num_i_accsv, num_c_accsv, noxf_acc2ait,
       voltonum_ait, inv_density, num2vol_ratio_min_nmodes, drv_i_noxf,
       drv_c_noxf, acc2_ait_index, xfercoef_num_acc2ait, xfercoef_vol_acc2ait,
@@ -742,10 +740,10 @@ void aitken_accum_exchange(
     compute_new_sz_after_transfer(
         drv_i,                                // in
         num_i,                                // in
-        num2vol_ratio_min_nmodes[aitken_idx], // corresponds to voltonumbhi
+        num2vol_ratio_min_nmodes[aitken_idx], // corresponds to num2volratio_hi
                                               // because it is computed with
                                               // dgnumhi
-        num2vol_ratio_max_nmodes[aitken_idx], // corresponds to voltonumblo
+        num2vol_ratio_max_nmodes[aitken_idx], // corresponds to num2volratio_lo
                                               // because it is computed with
                                               // dgnumlo
         num2vol_ratio_nom_nmodes[aitken_idx], dgnmax_nmodes[aitken_idx],
@@ -757,8 +755,8 @@ void aitken_accum_exchange(
     compute_new_sz_after_transfer(
         drv_c,                                // in
         num_c,                                // in
-        num2vol_ratio_min_nmodes[aitken_idx], // corresponds to voltonumbhi
-        num2vol_ratio_max_nmodes[aitken_idx], // corresponds to voltonumblo
+        num2vol_ratio_min_nmodes[aitken_idx], // corresponds to num2volratio_hi
+        num2vol_ratio_max_nmodes[aitken_idx], // corresponds to num2volratio_lo
         num2vol_ratio_nom_nmodes[aitken_idx], dgnmax_nmodes[aitken_idx],
         dgnmin_nmodes[aitken_idx], dgnnom_nmodes[aitken_idx],
         mean_std_dev_nmodes[aitken_idx], dgncur_c_aitken,
@@ -768,10 +766,10 @@ void aitken_accum_exchange(
     compute_new_sz_after_transfer(
         drv_i_acc,                           // in
         num_i_acc,                           // in
-        num2vol_ratio_min_nmodes[accum_idx], // corresponds to voltonumbhi
+        num2vol_ratio_min_nmodes[accum_idx], // corresponds to num2volratio_hi
                                              // because it is computed with
                                              // dgnumhi
-        num2vol_ratio_max_nmodes[accum_idx], // corresponds to voltonumblo
+        num2vol_ratio_max_nmodes[accum_idx], // corresponds to num2volratio_lo
                                              // because it is computed with
                                              // dgnumlo
         num2vol_ratio_nom_nmodes[accum_idx], dgnmax_nmodes[accum_idx],
@@ -783,10 +781,10 @@ void aitken_accum_exchange(
     compute_new_sz_after_transfer(
         drv_c_acc,                           // in
         num_c_acc,                           // in
-        num2vol_ratio_min_nmodes[accum_idx], // corresponds to voltonumbhi
+        num2vol_ratio_min_nmodes[accum_idx], // corresponds to num2volratio_hi
                                              // because it is computed with
                                              // dgnumlo
-        num2vol_ratio_max_nmodes[accum_idx], // corresponds to voltonumblo
+        num2vol_ratio_max_nmodes[accum_idx], // corresponds to num2volratio_lo
                                              // because it is computed with
                                              // dgnumhi
         num2vol_ratio_nom_nmodes[accum_idx], dgnmax_nmodes[accum_idx],
