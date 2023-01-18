@@ -737,7 +737,7 @@ void aitken_accum_exchange(
     const Real drv_c = max(zero, drv_c_aitsv - vol_diff_c);
     const Real drv_c_acc = max(zero, drv_c_accsv + vol_diff_c);
 
-    // NOTE: CHECK orginal function does not have num2vol_ratio_max.. and dgnmax
+    // NOTE: CHECK original function does not have num2vol_ratio_max and dgnmax
     // as inputs. interstitial species (aitken mode)
     compute_new_sz_after_transfer(
         drv_i,                                // in

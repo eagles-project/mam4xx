@@ -28,10 +28,6 @@ void adjust_num_sizes(Ensemble *ensemble) {
     auto in_v2nmin = input.get_array("v2nmin");
     auto in_v2nmax = input.get_array("v2nmax");
 
-    // we've gotten rid of these variables
-    // auto in_v2nminrl = input.get_array("v2nminrl");
-    // auto in_v2nmaxrl = input.get_array("v2nmaxrl");
-
     Real drv_i[nmodes];
     Real drv_c[nmodes];
 
@@ -41,10 +37,6 @@ void adjust_num_sizes(Ensemble *ensemble) {
     Real v2nmin[nmodes];
     Real v2nmax[nmodes];
 
-    // we've gotten rid of these variables
-    // Real v2nminrl[nmodes];
-    // Real v2nmaxrl[nmodes];
-
     for (int m = 0; m < nmodes; ++m) {
       drv_i[m] = in_drv_i[m];
       drv_c[m] = in_drv_c[m];
@@ -53,12 +45,8 @@ void adjust_num_sizes(Ensemble *ensemble) {
 
       v2nmin[m] = in_v2nmin[m];
       v2nmax[m] = in_v2nmax[m];
-
-      // v2nminrl[m] = in_v2nminrl[m];
-      // v2nmaxrl[m] = in_v2nmaxrl[m];
     }
 
-    // static constexpr Real close_to_one = 1.0 + 1.0e-15;
     static constexpr Real seconds_in_a_day = 86400.0;
     const Real adj_tscale = haero::max(seconds_in_a_day, dt);
     const Real adj_tscale_inv =
