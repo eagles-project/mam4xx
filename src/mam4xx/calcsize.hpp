@@ -506,7 +506,7 @@ void compute_new_sz_after_transfer(
     } // end if (num <= drv*num2volratio_hi)
   } else {
     dgncur = dgn_nmodes_nom;
-    num2vol_ratio_cur = num2volratio_;
+    num2vol_ratio_cur = num2volratio;
   } // end if (drv > zero)
 
 } // end compute_new_sz_after_transfer
