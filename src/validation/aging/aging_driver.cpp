@@ -21,9 +21,10 @@ using namespace mam4;
 
 // Parameterizations used by the aging process.
 void mam_pcarbon_aging_frac(Ensemble *ensemble);
-void mam_pcarbon_aging_1subarea(Ensemble *ensemble);
+void mam_pcarbon_aging_1box(Ensemble *ensemble);
 void transfer_aged_pcarbon_to_accum(Ensemble *ensemble);
 void transfer_cond_coag_mass_to_accum(Ensemble *ensemble);
+
 
 int main(int argc, char **argv){
 
@@ -50,8 +51,17 @@ int main(int argc, char **argv){
   auto func_name = settings.get("function");
 
   // Write out a Python module.
-  std::cout << argv[0] << ": writing " << output_file << std::endl;
-  ensemble->write(output_file);
+  // std::cout << argv[0] << ": writing " << output_file << std::endl;
+  // ensemble->write(output_file);
+
+  try {
+    if (func_name == "mam_pcarbon_aging_frac") { //
+      mam_pcarbon_aging_frac(ensemble);
+    }
+
+  } catch(std::exception &e) {
+    std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
+  }
 
   // Clean up.
   delete ensemble;

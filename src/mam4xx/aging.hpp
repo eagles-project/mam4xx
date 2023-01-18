@@ -33,6 +33,9 @@ public:
       static_cast<int>(AeroId::SO4)
     };
 
+
+    Real aero_vol[AeroConfig::num_aerosol_ids()];
+
   struct Config{
 
       Config() {}; 
@@ -40,8 +43,6 @@ public:
       Config(const Config &) = default;
       ~Config() = default;
       Config &operator=(const Config &) = default;
-
-
 
   };
 
@@ -117,6 +118,8 @@ void mam_pcarbon_aging_frac(const int nsrc,
 
 
   const Real vol_shell = qaer_cur[iaer_so4][nsrc] * so4_vol + qaer_cur[iaer_soa][nsrc] * fac_m2v_eqvhyg_aer;
+
+
   const Real qaer_del_cond_tmp =  haero::max( qaer_del_cond[iaer_so4][nsrc]*so4_vol + qaer_del_cond[iaer_soa][nsrc]*fac_m2v_eqvhyg_aer, std::numeric_limits<float>::epsilon()) ;
   const Real qaer_del_coag_tmp = qaer_del_coag_in[iaer_so4][ipair]*so4_vol + qaer_del_coag_in[iaer_soa][ipair]*fac_m2v_eqvhyg_aer;
   
@@ -181,13 +184,13 @@ void transfer_cond_coag_mass_to_accum(const int nsrc,
                                       Real qaer_del_coag[AeroConfig::num_modes()]){
 
 
-// qaer_cur[ndest] += qaer_cur[nsrc];
-// qaer_del_cond[ndest] += qaer_del_cond[nsrc];
-// qaer_del_coag[ndest] += qaer_del_cond[nsrc];
+ qaer_cur[ndest] += qaer_cur[nsrc];
+ qaer_del_cond[ndest] += qaer_del_cond[nsrc];
+ qaer_del_coag[ndest] += qaer_del_cond[nsrc];
 
-// qaer_cur[nsrc] = 0.0;
-// qaer_del_cond[nsrc] = 0.0;
-// qaer_del_coag[nsrc] = 0.0;
+ qaer_cur[nsrc] = 0.0;
+ qaer_del_cond[nsrc] = 0.0;
+ qaer_del_coag[nsrc] = 0.0;
 
 }
 
@@ -356,8 +359,6 @@ void aerosol_aging_rates_1box(
 
     }
 
-
-
 } // namespace aging
 
 
@@ -365,9 +366,15 @@ void aerosol_aging_rates_1box(
 inline void Aging::init(const AeroConfig &aero_config,
                              const Config &process_config) {
 
-        config_ = process_config;
+      config_ = process_config;
 
+      for (int ai=0; ai < AeroConfig::num_aerosol_ids(); ++ai){
+        const AeroSpecies as = aero_species(ai);
         
+        aero_vol[ai] = as.molecular_weight/as.density;
+      
+      }
+
     };
 
 // compute_tendencies -- computes tendencies and updates diagnostics
@@ -388,7 +395,6 @@ void Aging::compute_tendencies(const AeroConfig &config,
         aging::aerosol_aging_rates_1box(
             k, config, dt, atm, progs, diags, config_);
       });
-
 
 }
 
