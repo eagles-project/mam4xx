@@ -633,7 +633,7 @@ KOKKOS_INLINE_FUNCTION
 void gas_aerosol_uptake_rates_1box(
     const int k, const AeroConfig &aero_config, const Real dt,
     const Atmosphere &atm, const Prognostics &progs, const Diagnostics &diags,
-    const GasAerExch::Config &config,
+    const Tendencies &tends, const GasAerExch::Config &config,
     const bool l_gas_condense_to_mode[GasAerExch::num_gas]
                                      [GasAerExch::num_mode],
     const int eqn_and_numerics_category[GasAerExch::num_gas],
@@ -683,6 +683,19 @@ void gas_aerosol_uptake_rates_1box(
     qnum_cur[i] = progs.n_mode_i[i](k);
   }
 
+  Real qgas_sv1[num_gas], qnum_sv1[num_mode], qaer_sv1[num_aer][num_mode];
+  for (int i = 0; i < num_gas; ++i) {
+    qgas_sv1[i] = qgas_cur[i];
+  }
+  for (int i = 0; i < num_mode; ++i) {
+    qnum_sv1[i] = qnum_cur[i];
+  }
+  for (int i = 0; i < num_aer; ++i) {
+    for (int j = 0; j < num_mode; ++j) {
+      qaer_sv1[i][j] = qaer_cur[i][j];
+    }
+  }
+
   Real dgn_awet[num_mode] = {};
   for (int i = 0; i < num_mode; ++i)
     dgn_awet[i] = diags.wet_geometric_mean_diameter_i[i](k);
@@ -705,6 +718,23 @@ void gas_aerosol_uptake_rates_1box(
       ngas, qgas_cur, qgas_avg, qgas_netprod_otrproc, qaer_cur, qnum_cur,
       dgn_awet, alnsg_aer, uptk_rate_factor, uptkaer, uptkrate_h2so4, niter_out,
       g0_soa_out);
+
+  for (int i = 0; i < num_mode; ++i) {
+    tends.qnum_del_cond[i](k) = (qnum_cur[i] - qnum_sv1[i]) / dt;
+  }
+  for (int i = 0; i < num_aer; ++i) {
+    for (int j = 0; j < num_mode; ++j) {
+      tends.qaer_del_cond[i][j](k) = (qaer_cur[i][j] - qaer_sv1[i][j]) / dt;
+    }
+  }
+  for (int i = 0; i < num_gas; ++i) {
+    tends.qgas_del_cond[i](k) +=
+        (qgas_cur[i] - (qgas_sv1[i] + qgas_netprod_otrproc[i] * dt)) / dt;
+  }
+  tends.del_h2so4_aeruptk(k) =
+      (qgas_cur[igas_h2so4] -
+       (qgas_sv1[igas_h2so4] + qgas_netprod_otrproc[igas_h2so4] * dt)) /
+      dt;
 
   for (int g = 0; g < num_gas; ++g) {
     progs.q_gas[g](k) = qgas_cur[g];
@@ -800,8 +830,9 @@ void GasAerExch::compute_tendencies(const AeroConfig &config,
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
         gasaerexch::gas_aerosol_uptake_rates_1box(
-            k, config, dt, atm, progs, diags, config_, l_gas_condense_to_mode,
-            eqn_and_numerics_category, uptk_rate, alnsg_aer);
+            k, config, dt, atm, progs, diags, tends, config_,
+            l_gas_condense_to_mode, eqn_and_numerics_category, uptk_rate,
+            alnsg_aer);
       });
 }
 } // namespace mam4
