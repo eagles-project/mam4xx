@@ -22,7 +22,9 @@ density  volume = mmr/density
  -----------------------------------------------------------------------------*/
 
 KOKKOS_INLINE_FUNCTION
-void compute_dry_volume_k(int k, int imode, const Real inv_density[4][7],
+void compute_dry_volume_k(int k, int imode,
+                          const Real inv_density[AeroConfig::num_modes()]
+                                                [AeroConfig::num_aerosol_ids()],
                           const Prognostics &prognostics, // in
                           Real &dryvol_i,                 // out
                           Real &dryvol_c)                 // out
@@ -378,8 +380,12 @@ void compute_coef_acc_ait_transfer(
     int iacc, int klev, const Real num2vol_ratio__geomean,
     const Real adj_tscale_inv, const Prognostics &prognostics,
     const Real drv_i_accsv, const Real drv_c_accsv, const Real num_i_accsv,
-    const Real num_c_accsv, const bool noxf_acc2ait[7], const Real voltonum_ait,
-    const Real inv_density[4][7], const Real num2vol_ratio_min_nmodes[4],
+    const Real num_c_accsv,
+    const bool noxf_acc2ait[AeroConfig::num_aerosol_ids()],
+    const Real voltonum_ait,
+    const Real inv_density[AeroConfig::num_modes()]
+                          [AeroConfig::num_aerosol_ids()],
+    const Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
     Real &drv_i_noxf, Real &drv_c_noxf, int &acc2_ait_index,
     Real &xfercoef_num_acc2ait, Real &xfercoef_vol_acc2ait,
     Real xfertend_num[2][2]) {
@@ -586,13 +592,18 @@ void update_tends_flx(const int klev,          // in
 KOKKOS_INLINE_FUNCTION
 void aitken_accum_exchange(
     const int &k, const int &aitken_idx, const int &accum_idx,
-    const bool noxf_acc2ait[7], const int n_common_species_ait_accum,
-    const int *ait_spec_in_acc, const int *acc_spec_in_ait,
-    const Real num2vol_ratio_max_nmodes[4],
-    const Real num2vol_ratio_min_nmodes[4],
-    const Real num2vol_ratio_nom_nmodes[4], const Real dgnmax_nmodes[4],
-    const Real dgnmin_nmodes[4], const Real dgnnom_nmodes[4],
-    const Real mean_std_dev_nmodes[4], const Real inv_density[4][7],
+    const bool noxf_acc2ait[AeroConfig::num_aerosol_ids()],
+    const int n_common_species_ait_accum, const int *ait_spec_in_acc,
+    const int *acc_spec_in_ait,
+    const Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()],
+    const Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
+    const Real num2vol_ratio_nom_nmodes[AeroConfig::num_modes()],
+    const Real dgnmax_nmodes[AeroConfig::num_modes()],
+    const Real dgnmin_nmodes[AeroConfig::num_modes()],
+    const Real dgnnom_nmodes[AeroConfig::num_modes()],
+    const Real mean_std_dev_nmodes[AeroConfig::num_modes()],
+    const Real inv_density[AeroConfig::num_modes()]
+                          [AeroConfig::num_aerosol_ids()],
     const Real &adj_tscale_inv, const Real &dt, const Prognostics &prognostics,
     const Real &drv_i_aitsv, const Real &num_i_aitsv, const Real &drv_c_aitsv,
     const Real &num_c_aitsv, const Real &drv_i_accsv, const Real &num_i_accsv,
