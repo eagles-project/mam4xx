@@ -127,17 +127,17 @@ public:
   /// Gas to aerosol mass transfer rate (1/s)
   ColumnView uptkaer[AeroConfig::num_gas_ids()][AeroConfig::num_modes()];
 
-  /// Aerosol number mix ratio changes over time step (#/kmol/t)
+  /// Aerosol number mix ratio changes over time step (#/kmol/s)
   ColumnView qnum_del_cond[AeroConfig::num_modes()];
 
-  /// Aerosol mass mix ratio changes over time step (mol/mol/t)
+  /// Aerosol mass mix ratio changes over time step (mol/mol/s)
   ColumnView qaer_del_cond[AeroConfig::num_aerosol_ids()]
                           [AeroConfig::num_modes()];
 
-  /// Current gas mix ratios changes over time step (mol/mol/t)
+  /// Current gas mix ratios changes over time step (mol/mol/s)
   ColumnView qgas_del_cond[AeroConfig::num_gas_ids()];
 
-  /// H2SO4 mix ratios changes over time step (mol/mol/t)
+  /// H2SO4 mix ratios changes over time step (mol/mol/s)
   ColumnView del_h2so4_aeruptk;
 
   KOKKOS_INLINE_FUNCTION
