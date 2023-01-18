@@ -25,8 +25,7 @@ void mam_pcarbon_aging_1box(Ensemble *ensemble);
 void transfer_aged_pcarbon_to_accum(Ensemble *ensemble);
 void transfer_cond_coag_mass_to_accum(Ensemble *ensemble);
 
-
-int main(int argc, char **argv){
+int main(int argc, char **argv) {
 
   if (argc == 1) {
     usage();
@@ -59,12 +58,11 @@ int main(int argc, char **argv){
       mam_pcarbon_aging_frac(ensemble);
     }
 
-  } catch(std::exception &e) {
+  } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
   }
 
   // Clean up.
   delete ensemble;
   Kokkos::finalize();
-
 }
