@@ -44,7 +44,6 @@ void compute_dry_volume_k(Ensemble *ensemble) {
     Kokkos::parallel_for(
         "compute_dry_volume_k", 1, KOKKOS_LAMBDA(int k) {
           Real inv_density[4][7];
-          // for (int imode = 0; imode < nmodes; ++imode) {
           const auto n_spec = num_species_mode(imode);
           for (int ispec = 0; ispec < n_spec; ispec++) {
             const int aero_id = int(mode_aero_species(imode, ispec));

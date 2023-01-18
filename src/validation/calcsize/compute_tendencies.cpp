@@ -137,8 +137,6 @@ void compute_tendencies(Ensemble *ensemble) {
     output.set("cloud_borne_ptend_num", tend_n_mode_c_out);
     output.set("cloud_borne_ptend", tend_aero_c_out);
 
-    // output.set("cloud_borne_diameter", diags_dgncur_c);
-    // output.set("interstitial_diameter", diags_dgncur_i);
     output.set("diameter", diags_dgncur_i);
 
     // add more outputs (diagnostics)
