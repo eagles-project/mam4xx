@@ -867,15 +867,20 @@ private:
   ------------------------------------------------------------------------*/
   // true: cannot be transferred
   // false: can be transferred
-  const bool _noxf_acc2ait[7] = {false, false, true, true, false, true, false};
+  // const bool _noxf_acc2ait[7] = {false, false, true, true, false, true,
+  // false}; set size of _noxf_acc2ait, _ait_spec_in_acc, and _acc_spec_in_ait
+  // to AeroConfig::num_aerosol_ids() which is maximum number of species;
+  // however, we only use first _n_common_species_ait_accum values of
+  // _ait_spec_in_acc and _acc_spec_in_ait
+  bool _noxf_acc2ait[AeroConfig::num_aerosol_ids()];
   // number of common species between accum and aitken modes
-  const int _n_common_species_ait_accum = 4;
+  int _n_common_species_ait_accum;
   // index of aitken species in accum mode.
-  const int _ait_spec_in_acc[4] = {0, 1, 2, 3};
+  int _ait_spec_in_acc[AeroConfig::num_aerosol_ids()]; // = {0, 1, 2, 3};
   // index of accum species in aitken mode.
-  const int _acc_spec_in_ait[4] = {0, 1, 4, 6};
-  Real num2vol_ratio_min[4];
-  Real num2vol_ratio_max[4];
+  int _acc_spec_in_ait[AeroConfig::num_aerosol_ids()]; // = {0, 1, 4, 6};
+  Real num2vol_ratio_min[AeroConfig::num_modes()];
+  Real num2vol_ratio_max[AeroConfig::num_modes()];
 
 public:
   // name -- unique name of the process implemented by this class
@@ -888,6 +893,34 @@ public:
     // Set nucleation-specific config parameters.
     config_ = calcsize_config;
     const Real one = 1.0;
+
+    // find aerosol species in accumulation that can be transfer to aitken mode
+    const int accum_idx = int(ModeIndex::Accumulation);
+    const int aitken_idx = int(ModeIndex::Aitken);
+
+    // check if accumulation species exists in aitken mode
+    // also save idx for transfer
+    int count = 0;
+    for (int isp = 0; isp < num_species_mode(accum_idx); ++isp) {
+      // assume species can not be transfer.
+      _noxf_acc2ait[isp] = true;
+      AeroId sp_accum = mode_aero_species(accum_idx, isp);
+
+      for (int jsp = 0; jsp < num_species_mode(aitken_idx); ++jsp) {
+        AeroId sp_aitken = mode_aero_species(aitken_idx, jsp);
+        if (sp_accum == sp_aitken) {
+          // false : can be transfer.
+          _noxf_acc2ait[isp] = false;
+          // save index for transfer from accumulation to aitken mode
+          _acc_spec_in_ait[count] = isp;
+          // save index for transfer from aitken to accumulation mode
+          _ait_spec_in_acc[count] = jsp;
+          count++;
+          break;
+        }
+      } // end aitken foor
+    }   // end accumulation for
+    _n_common_species_ait_accum = count;
 
     // Set mode parameters.
     for (int m = 0; m < AeroConfig::num_modes(); ++m) {
