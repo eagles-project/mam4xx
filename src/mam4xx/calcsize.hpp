@@ -867,13 +867,13 @@ private:
   ------------------------------------------------------------------------*/
   // true: cannot be transferred
   // false: can be transferred
-  const bool _noxf_acc2ait[7] = {false, true, false, true, true, false, false};
+  const bool _noxf_acc2ait[7] = {false, false, true, true, false, true, false};
   // number of common species between accum and aitken modes
   const int _n_common_species_ait_accum = 4;
   // index of aitken species in accum mode.
   const int _ait_spec_in_acc[4] = {0, 1, 2, 3};
   // index of accum species in aitken mode.
-  const int _acc_spec_in_ait[4] = {0, 2, 5, 6};
+  const int _acc_spec_in_ait[4] = {0, 1, 4, 6};
   Real num2vol_ratio_min[4];
   Real num2vol_ratio_max[4];
 
