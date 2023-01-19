@@ -876,11 +876,11 @@ private:
   ------------------------------------------------------------------------*/
   // true: cannot be transferred
   // false: can be transferred
-  // const bool _noxf_acc2ait[7] = {false, false, true, true, false, true,
-  // false}; set size of _noxf_acc2ait, _ait_spec_in_acc, and _acc_spec_in_ait
-  // to AeroConfig::num_aerosol_ids() which is maximum number of species;
-  // however, we only use first _n_common_species_ait_accum values of
-  // _ait_spec_in_acc and _acc_spec_in_ait
+  // const bool _noxf_acc2ait[AeroConfig::num_aerosol_ids()] = {false, false,
+  // true, true, false, true, false}; set size of _noxf_acc2ait,
+  // _ait_spec_in_acc, and _acc_spec_in_ait to AeroConfig::num_aerosol_ids()
+  // which is maximum number of species; however, we only use first
+  // _n_common_species_ait_accum values of _ait_spec_in_acc and _acc_spec_in_ait
   bool _noxf_acc2ait[AeroConfig::num_aerosol_ids()];
   // number of common species between accum and aitken modes
   int _n_common_species_ait_accum;
