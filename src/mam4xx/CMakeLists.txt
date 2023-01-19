@@ -8,6 +8,7 @@ install(FILES
         calcsize.hpp
         conversions.hpp
         gasaerexch.hpp
+        gasaerexch_soaexch.hpp
         kerminen2002.hpp
         kohler.hpp
         mam4.hpp
