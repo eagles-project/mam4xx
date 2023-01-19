@@ -1,9 +1,8 @@
 #ifndef MAM4XX_GASAEREXCH_HPP
 #define MAM4XX_GASAEREXCH_HPP
 
-#include "gasaerexch_soaexch.hpp"
-
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/gasaerexch_soaexch.hpp>
 #include <mam4xx/mam4_types.hpp>
 
 #include <Kokkos_Array.hpp>

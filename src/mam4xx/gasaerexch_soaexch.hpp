@@ -1,7 +1,7 @@
 #ifndef MAM4XX_GASAEREXCH_SOAEXCH_HPP
 #define MAM4XX_GASAEREXCH_SOAEXCH_HPP
 
-#include "mam4xx/aero_config.hpp"
+#include <mam4xx/aero_config.hpp>
 #include <mam4xx/aero_modes.hpp>
 
 #include <haero/haero.hpp>
