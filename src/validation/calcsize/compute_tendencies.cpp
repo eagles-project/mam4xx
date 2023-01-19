@@ -49,16 +49,18 @@ void compute_tendencies(Ensemble *ensemble) {
 
       const auto n_spec = num_species_mode(imode);
       for (int isp = 0; isp < n_spec; ++isp) {
-        // const auto prog_aero_i = ekat::scalarize(progs.q_aero_i[imode][i]);
+        // correcting index for inputs.
+        const int isp_mam4xx =
+            validation::e3sm_to_mam4xx_aerosol_idx[imode][isp];
         auto h_prog_aero_i =
-            Kokkos::create_mirror_view(progs.q_aero_i[imode][isp]);
+            Kokkos::create_mirror_view(progs.q_aero_i[imode][isp_mam4xx]);
         h_prog_aero_i(0) = q_i[count];
-        Kokkos::deep_copy(progs.q_aero_i[imode][isp], h_prog_aero_i);
+        Kokkos::deep_copy(progs.q_aero_i[imode][isp_mam4xx], h_prog_aero_i);
 
         auto h_prog_aero_c =
-            Kokkos::create_mirror_view(progs.q_aero_c[imode][isp]);
+            Kokkos::create_mirror_view(progs.q_aero_c[imode][isp_mam4xx]);
         h_prog_aero_c(0) = q_c[count];
-        Kokkos::deep_copy(progs.q_aero_c[imode][isp], h_prog_aero_c);
+        Kokkos::deep_copy(progs.q_aero_c[imode][isp_mam4xx], h_prog_aero_c);
 
         count++;
       } // end species
@@ -70,15 +72,22 @@ void compute_tendencies(Ensemble *ensemble) {
           process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
         });
 
-    std::vector<Real> tend_aero_i_out;
+    // Outputs from e3sm are saved in 1D array of 21 inputs.
+    int total_number_of_species = 0;
+    for (int imode = 0; imode < nmodes; ++imode) {
+      total_number_of_species += num_species_mode(imode);
+    } // end mode
+
+    std::vector<Real> tend_aero_i_out(total_number_of_species, -1);
     std::vector<Real> tend_n_mode_i_out;
 
-    std::vector<Real> tend_aero_c_out;
+    std::vector<Real> tend_aero_c_out(total_number_of_species, -1);
     std::vector<Real> tend_n_mode_c_out;
 
     std::vector<Real> diags_dgncur_i;
     std::vector<Real> diags_dgncur_c;
 
+    int count_species = 0;
     for (int imode = 0; imode < nmodes; ++imode) {
 
       auto h_tend_num_i = Kokkos::create_mirror_view(tends.n_mode_i[imode]);
@@ -91,17 +100,22 @@ void compute_tendencies(Ensemble *ensemble) {
 
       const auto n_spec = num_species_mode(imode);
       for (int isp = 0; isp < n_spec; ++isp) {
+
+        // save outputs using the same indexing from e3sm.
+        const int isp_mam4xx =
+            count_species + validation::mam4xx_to_e3sm_aerosol_idx[imode][isp];
+
         auto h_tend_aero_i =
             Kokkos::create_mirror_view(tends.q_aero_i[imode][isp]);
         Kokkos::deep_copy(h_tend_aero_i, tends.q_aero_i[imode][isp]);
-        tend_aero_i_out.push_back(h_tend_aero_i(0));
+        tend_aero_i_out[isp_mam4xx] = h_tend_aero_i(0);
 
         auto h_tend_aero_c =
             Kokkos::create_mirror_view(tends.q_aero_c[imode][isp]);
         Kokkos::deep_copy(h_tend_aero_c, tends.q_aero_c[imode][isp]);
-        tend_aero_c_out.push_back(h_tend_aero_c(0));
-
+        tend_aero_c_out[isp_mam4xx] = h_tend_aero_c(0);
       } // end species
+      count_species += n_spec;
 
       // diameter interstitial
       auto h_dgncur_i = Kokkos::create_mirror_view(
@@ -123,8 +137,6 @@ void compute_tendencies(Ensemble *ensemble) {
     output.set("cloud_borne_ptend_num", tend_n_mode_c_out);
     output.set("cloud_borne_ptend", tend_aero_c_out);
 
-    // output.set("cloud_borne_diameter", diags_dgncur_c);
-    // output.set("interstitial_diameter", diags_dgncur_i);
     output.set("diameter", diags_dgncur_i);
 
     // add more outputs (diagnostics)
