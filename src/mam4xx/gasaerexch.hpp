@@ -720,18 +720,18 @@ void gas_aerosol_uptake_rates_1box(
       g0_soa_out);
 
   for (int i = 0; i < num_mode; ++i) {
-    tends.qnum_del_cond[i](k) = (qnum_cur[i] - qnum_sv1[i]) / dt;
+    diags.qnum_del_cond[i](k) = (qnum_cur[i] - qnum_sv1[i]) / dt;
   }
   for (int i = 0; i < num_aer; ++i) {
     for (int j = 0; j < num_mode; ++j) {
-      tends.qaer_del_cond[i][j](k) = (qaer_cur[i][j] - qaer_sv1[i][j]) / dt;
+      diags.qaer_del_cond[i][j](k) = (qaer_cur[i][j] - qaer_sv1[i][j]) / dt;
     }
   }
   for (int i = 0; i < num_gas; ++i) {
-    tends.qgas_del_cond[i](k) +=
+    diags.qgas_del_cond[i](k) +=
         (qgas_cur[i] - (qgas_sv1[i] + qgas_netprod_otrproc[i] * dt)) / dt;
   }
-  tends.del_h2so4_aeruptk(k) =
+  diags.del_h2so4_aeruptk(k) =
       (qgas_cur[igas_h2so4] -
        (qgas_sv1[igas_h2so4] + qgas_netprod_otrproc[igas_h2so4] * dt)) /
       dt;

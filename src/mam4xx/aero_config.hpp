@@ -64,30 +64,23 @@ public:
   /// Creates a container for prognostic variables on the specified number of
   /// vertical levels.
   explicit Prognostics(int num_levels) : nlev_(num_levels) {
-    del_h2so4_aeruptk = ColumnView("del_h2so4_aeruptk", num_levels);
     for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
       n_mode_i[mode] = ColumnView("n_mode_i", num_levels);
       n_mode_c[mode] = ColumnView("n_mode_c", num_levels);
-      qnum_del_cond[mode] = ColumnView("qnum_del_cond", num_levels);
       Kokkos::deep_copy(n_mode_i[mode], 0.0);
       Kokkos::deep_copy(n_mode_c[mode], 0.0);
-      Kokkos::deep_copy(qnum_del_cond[mode], 0.0);
       for (int spec = 0; spec < AeroConfig::num_aerosol_ids(); ++spec) {
         q_aero_i[mode][spec] = ColumnView("q_aero_i", num_levels);
         q_aero_c[mode][spec] = ColumnView("q_aero_c", num_levels);
-        qaer_del_cond[spec][mode] = ColumnView("qaer_del_cond", num_levels);
         Kokkos::deep_copy(q_aero_i[mode][spec], 0.0);
         Kokkos::deep_copy(q_aero_c[mode][spec], 0.0);
-        Kokkos::deep_copy(qaer_del_cond[spec][mode], 0.0);
       }
     }
     for (int gas = 0; gas < AeroConfig::num_gas_ids(); ++gas) {
       q_gas[gas] = ColumnView("q_gas", num_levels);
       q_gas_avg[gas] = ColumnView("q_gas_avg", num_levels);
-      qgas_del_cond[gas] = ColumnView("qgas_del_cond", num_levels);
       Kokkos::deep_copy(q_gas[gas], 0.0);
       Kokkos::deep_copy(q_gas_avg[gas], 0.0);
-      Kokkos::deep_copy(qgas_del_cond[gas], 0.0);
       for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
         uptkaer[gas][mode] = ColumnView("uptake_rate", num_levels);
         Kokkos::deep_copy(uptkaer[gas][mode], 0.0);
@@ -126,19 +119,6 @@ public:
   /// Uptate Rate for each gas species and each mode.
   /// Gas to aerosol mass transfer rate (1/s)
   ColumnView uptkaer[AeroConfig::num_gas_ids()][AeroConfig::num_modes()];
-
-  /// Aerosol number mix ratio changes over time step (#/kmol/s)
-  ColumnView qnum_del_cond[AeroConfig::num_modes()];
-
-  /// Aerosol mass mix ratio changes over time step (mol/mol/s)
-  ColumnView qaer_del_cond[AeroConfig::num_aerosol_ids()]
-                          [AeroConfig::num_modes()];
-
-  /// Current gas mix ratios changes over time step (mol/mol/s)
-  ColumnView qgas_del_cond[AeroConfig::num_gas_ids()];
-
-  /// H2SO4 mix ratios changes over time step (mol/mol/s)
-  ColumnView del_h2so4_aeruptk;
 
   KOKKOS_INLINE_FUNCTION
   int num_levels() const { return nlev_; }
@@ -193,6 +173,7 @@ public:
   using ColumnView = haero::ColumnView;
 
   explicit Diagnostics(int num_levels) : nlev_(num_levels) {
+    del_h2so4_aeruptk = ColumnView("del_h2so4_aeruptk", num_levels);
     for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
       hygroscopicity[mode] = ColumnView("hygroscopicity", num_levels);
       Kokkos::deep_copy(hygroscopicity[mode], 0.0);
@@ -208,6 +189,16 @@ public:
           ColumnView("wet_geometric_mean_diameter_cloudeborne", num_levels);
       Kokkos::deep_copy(wet_geometric_mean_diameter_i[mode], 0.0);
       Kokkos::deep_copy(wet_geometric_mean_diameter_c[mode], 0.0);
+      qnum_del_cond[mode] = ColumnView("qnum_del_cond", num_levels);
+      Kokkos::deep_copy(qnum_del_cond[mode], 0.0);
+      for (int spec = 0; spec < AeroConfig::num_aerosol_ids(); ++spec) {
+        qaer_del_cond[spec][mode] = ColumnView("qaer_del_cond", num_levels);
+        Kokkos::deep_copy(qaer_del_cond[spec][mode], 0.0);
+      }
+    }
+    for (int gas = 0; gas < AeroConfig::num_gas_ids(); ++gas) {
+      qgas_del_cond[gas] = ColumnView("qgas_del_cond", num_levels);
+      Kokkos::deep_copy(qgas_del_cond[gas], 0.0);
     }
     uptkrate_h2so4 = ColumnView("uptkrate_h2so4", num_levels);
     Kokkos::deep_copy(uptkrate_h2so4, 0.0);
@@ -251,6 +242,19 @@ public:
 
   /// Number of time substeps needed to converge in mam_soaexch_advance_in_time
   haero::DeviceType::view_1d<int> num_substeps;
+
+  /// Aerosol number mix ratio changes over time step (#/kmol/s)
+  ColumnView qnum_del_cond[AeroConfig::num_modes()];
+
+  /// Aerosol mass mix ratio changes over time step (mol/mol/s)
+  ColumnView qaer_del_cond[AeroConfig::num_aerosol_ids()]
+                          [AeroConfig::num_modes()];
+
+  /// Current gas mix ratios changes over time step (mol/mol/s)
+  ColumnView qgas_del_cond[AeroConfig::num_gas_ids()];
+
+  /// H2SO4 mix ratios changes over time step (mol/mol/s)
+  ColumnView del_h2so4_aeruptk;
 
 private:
   int nlev_;
