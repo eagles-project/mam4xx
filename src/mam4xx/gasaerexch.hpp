@@ -719,22 +719,16 @@ void gas_aerosol_uptake_rates_1box(
       dgn_awet, alnsg_aer, uptk_rate_factor, uptkaer, uptkrate_h2so4, niter_out,
       g0_soa_out);
 
-  for (int i = 0; i < num_mode; ++i) {
-    diags.qnum_del_cond[i](k) = (qnum_cur[i] - qnum_sv1[i]) / dt;
-  }
-  for (int i = 0; i < num_aer; ++i) {
-    for (int j = 0; j < num_mode; ++j) {
-      diags.qaer_del_cond[i][j](k) = (qaer_cur[i][j] - qaer_sv1[i][j]) / dt;
-    }
-  }
-  for (int i = 0; i < num_gas; ++i) {
-    diags.qgas_del_cond[i](k) +=
-        (qgas_cur[i] - (qgas_sv1[i] + qgas_netprod_otrproc[i] * dt)) / dt;
-  }
-  diags.del_h2so4_aeruptk(k) =
-      (qgas_cur[igas_h2so4] -
-       (qgas_sv1[igas_h2so4] + qgas_netprod_otrproc[igas_h2so4] * dt)) /
-      dt;
+  for (int i = 0; i < num_mode; ++i)
+    tends.n_mode_i[i](k) = (qnum_cur[i] - qnum_sv1[i]) / dt;
+
+  for (int i = 0; i < num_aer; ++i)
+    for (int j = 0; j < num_mode; ++j)
+      tends.q_aero_i[i][j](k) = (qaer_cur[i][j] - qaer_sv1[i][j]) / dt;
+
+  for (int g = 0; g < num_gas; ++g)
+    tends.q_gas[g](k) +=
+        (qgas_cur[g] - (qgas_sv1[g] + qgas_netprod_otrproc[g] * dt)) / dt;
 
   for (int g = 0; g < num_gas; ++g) {
     progs.q_gas[g](k) = qgas_cur[g];
