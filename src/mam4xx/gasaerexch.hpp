@@ -722,9 +722,9 @@ void gas_aerosol_uptake_rates_1box(
   for (int i = 0; i < num_mode; ++i)
     tends.n_mode_i[i](k) = (qnum_cur[i] - qnum_sv1[i]) / dt;
 
-  for (int i = 0; i < num_aer; ++i)
-    for (int j = 0; j < num_mode; ++j)
-      tends.q_aero_i[i][j](k) = (qaer_cur[i][j] - qaer_sv1[i][j]) / dt;
+  for (int n = 0; n < num_mode; ++n)
+    for (int g = 0; g < num_aer; ++g)
+      tends.q_aero_i[n][g](k) = (qaer_cur[g][n] - qaer_sv1[g][n]) / dt;
 
   for (int g = 0; g < num_gas; ++g)
     tends.q_gas[g](k) +=
