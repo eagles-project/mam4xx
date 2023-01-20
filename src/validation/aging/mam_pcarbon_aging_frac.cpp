@@ -15,7 +15,7 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
                 << "nsrc" << std::endl;
       exit(0);
     }
-    if (!input.has("dgn_a")) {
+    if (!input.has_array("dgn_a")) {
       std::cerr << "Required name: "
                 << "dgn_a" << std::endl;
       exit(0);

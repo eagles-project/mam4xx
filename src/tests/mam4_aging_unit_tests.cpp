@@ -25,37 +25,53 @@ TEST_CASE("test_compute_tendencies", "mam4_aging_process") {}
 
 TEST_CASE("test_cond_coag_mass_to_accum", "mam4_aging_process") {}
 
-TEST_CASE("transfer_aged_pcarbon_to_accum", "mam4_aging_process") {}
+TEST_CASE("transfer_aged_pcarbon_to_accum", "mam4_aging_process") {
+  const int nsrc = static_cast<int>(ModeIndex::PrimaryCarbon);
+  const int ndest = static_cast<int>(ModeIndex::Accumulation);
 
-TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
+  Real xferfrac_pcage = 0.5;
+  Real frac_cond = 0.25;
+  Real frac_coag = 0.75;
 
-  /*   ekat::Comm comm;
-    ekat::logger::Logger<> logger("aging unit tests",
-                              ekat::logger::LogLevel::debug, comm);
-    std::ostringstream ss;
+  std::vector<Real> qaer_cur(AeroConfig::num_modes(), 0.0);
+  std::vector<Real> qaer_del_cond(AeroConfig::num_modes(), 0.0);
+  std::vector<Real> qaer_del_coag(AeroConfig::num_modes(), 0.0);
 
+  qaer_cur[nsrc] = 0.0;
 
-    mam4::AeroConfig mam4_config;
-    mam4::AgingProcess process(mam4_config);
+  aging::transfer_aged_pcarbon_to_accum(
+      nsrc, ndest, xferfrac_pcage, frac_cond, frac_coag, qaer_cur.data(),
+      qaer_del_cond.data(), qaer_del_coag.data());
 
-    const auto naero = mam4::AeroConfig::num_aerosol_ids();
-    const auto nmodes = mam4::AeroConfig::num_modes();
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    REQUIRE(qaer_cur[m] == 0.0);
+    REQUIRE(qaer_del_cond[m] == 0.0);
+    REQUIRE(qaer_del_coag[m] == 0.0);
+  }
 
-    Real dgn_a[nmodes];
-    Real qnum_cur[nmodes];
-    Real qnum_del_cond[nmodes];
-    Real qnum_del_coag[naero][nmodes];
-    Real qaer_cur[naero][nmodes];
-    Real qaer_del_cond[naero][nmodes];
-    Real qaer_del_coag[naero][nmodes];
-    Real qaer_del_coag_in[naero][nmodes];
+  qaer_cur[nsrc] = 1.0;
+  aging::transfer_aged_pcarbon_to_accum(
+      nsrc, ndest, xferfrac_pcage, frac_cond, frac_coag, qaer_cur.data(),
+      qaer_del_cond.data(), qaer_del_coag.data());
 
+  Real sum_for_conservation = 0.0;
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    if (m == nsrc) {
+      REQUIRE(qaer_cur[m] == 0.5);
+    } else if (m == ndest) {
+      REQUIRE(qaer_cur[m] == 0.5);
+      REQUIRE(qaer_del_cond[m] == 0.125);
+      REQUIRE(qaer_del_coag[m] == 0.375);
+    } else {
+      REQUIRE(qaer_cur[m] == 0.0);
+      REQUIRE(qaer_del_coag[m] == 0.0);
+      REQUIRE(qaer_del_cond[m] == 0.0);
+    }
+    sum_for_conservation += qaer_cur[m] + qaer_del_cond[m] + qaer_del_coag[m];
+  }
 
-
-    mam4::aging::mam_pcarbon_aging_1subarea(dgn_a, qnum_cur, qnum_del_cond,
-    qnum_del_coag, qaer_cur, qaer_del_cond, qaer_del_coag, qaer_del_coag_in);
-
-    ss << "\n aging compute tendencies";
-    logger.debug(ss.str());
-    ss.str("");   */
+  // Check for conservation
+  REQUIRE(sum_for_conservation == 1.0);
 }
+
+TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {}
