@@ -189,4 +189,53 @@ TEST_CASE("transfer_aged_pcarbon_to_accum", "mam4_aging_process") {
   REQUIRE(sum_for_conservation == 1.0);
 }
 
-TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {}
+TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
+
+  Real dgn_a[AeroConfig::num_modes()];
+  Real qnum_cur[AeroConfig::num_modes()];
+  Real qnum_del_cond[AeroConfig::num_modes()];
+  Real qnum_del_coag[AeroConfig::num_modes()];
+  Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()];
+  Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()];
+  Real qaer_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()];
+  Real qaer_del_coag_in[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()];
+
+  // Fill all arrays with zeros
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    dgn_a[m] = 0.0;
+    qnum_cur[m] = 0.0;
+    qnum_del_cond[m] = 0.0;
+    qnum_del_coag[m] = 0.0;
+  }
+
+  for (int a = 0; a < AeroConfig::num_aerosol_ids(); ++a) {
+    for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+      qaer_cur[a][m] = 0.0;
+      qaer_del_cond[a][m] = 0.0;
+      qaer_del_coag[a][m] = 0.0;
+      qaer_del_coag_in[a][m] = 0.0;
+    }
+  }
+
+  aging::mam_pcarbon_aging_1subarea(dgn_a, qnum_cur, qnum_del_cond,
+                                    qnum_del_coag, qaer_cur, qaer_del_cond,
+                                    qaer_del_coag, qaer_del_coag_in);
+
+  // Passing in zeros for everything should give zeros back
+  // Fill all arrays with zeros
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    REQUIRE(dgn_a[m] == 0.0);
+    REQUIRE(qnum_cur[m] == 0.0);
+    REQUIRE(qnum_del_cond[m] == 0.0);
+    REQUIRE(qnum_del_coag[m] == 0.0);
+  }
+
+  for (int a = 0; a < AeroConfig::num_aerosol_ids(); ++a) {
+    for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+      REQUIRE(qaer_cur[a][m] == 0.0);
+      REQUIRE(qaer_del_cond[a][m] == 0.0);
+      REQUIRE(qaer_del_coag[a][m] == 0.0);
+      REQUIRE(qaer_del_coag_in[a][m] == 0.0);
+    }
+  }
+}

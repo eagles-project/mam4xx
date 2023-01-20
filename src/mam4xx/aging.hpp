@@ -187,7 +187,7 @@ KOKKOS_INLINE_FUNCTION
 void mam_pcarbon_aging_1subarea(
     Real dgn_a[AeroConfig::num_modes()], Real qnum_cur[AeroConfig::num_modes()],
     Real qnum_del_cond[AeroConfig::num_modes()],
-    Real qnum_del_coag[AeroConfig::num_aerosol_ids()],
+    Real qnum_del_coag[AeroConfig::num_modes()],
     Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
     Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
     Real qaer_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
