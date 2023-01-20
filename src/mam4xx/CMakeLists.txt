@@ -17,6 +17,7 @@ install(FILES
         merikanto2007.hpp
         nucleation.hpp
         aging.hpp
+        rename.hpp
         vehkamaki2002.hpp
         wang2008.hpp
         DESTINATION include/mam4xx)
