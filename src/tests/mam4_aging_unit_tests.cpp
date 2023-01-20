@@ -21,9 +21,124 @@ TEST_CASE("test_constructor", "mam4_aging_process") {
   REQUIRE(process.aero_config() == mam4_config);
 }
 
-TEST_CASE("test_compute_tendencies", "mam4_aging_process") {}
+TEST_CASE("test_compute_tendencies", "mam4_aging_process") {
+  ekat::Comm comm;
 
-TEST_CASE("test_cond_coag_mass_to_accum", "mam4_aging_process") {}
+  ekat::logger::Logger<> logger("aging unit tests",
+                                ekat::logger::LogLevel::debug, comm);
+  int nlev = 72;
+  Real pblh = 1000;
+  Atmosphere atm(nlev, pblh);
+  mam4::Prognostics progs(nlev);
+  mam4::Diagnostics diags(nlev);
+  mam4::Tendencies tends(nlev);
+
+  mam4::AeroConfig mam4_config;
+  mam4::NucleationProcess process(mam4_config);
+
+  const auto prog_qgas0 = progs.q_gas[0];
+  const auto tend_qgas0 = tends.q_gas[0];
+  auto h_prog_qgas0 = Kokkos::create_mirror_view(prog_qgas0);
+  auto h_tend_qgas0 = Kokkos::create_mirror_view(tend_qgas0);
+  Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);
+  Kokkos::deep_copy(h_tend_qgas0, tend_qgas0);
+
+  std::ostringstream ss;
+  ss << "prog_qgas0 [in]: [ ";
+  for (int k = 0; k < nlev; ++k) {
+    ss << h_prog_qgas0(k) << " ";
+  }
+  ss << "]";
+  logger.debug(ss.str());
+  ss.str("");
+  ss << "tend_qgas0 [in]: [ ";
+  for (int k = 0; k < nlev; ++k) {
+    ss << h_tend_qgas0(k) << " ";
+  }
+  ss << "]";
+  logger.debug(ss.str());
+  ss.str("");
+
+  for (int k = 0; k < nlev; ++k) {
+    CHECK(!isnan(h_prog_qgas0(k)));
+    CHECK(!isnan(h_tend_qgas0(k)));
+  }
+
+  // Single-column dispatch.
+  auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+  Real t = 0.0, dt = 30.0;
+  Kokkos::parallel_for(
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
+      });
+  Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);
+  Kokkos::deep_copy(h_tend_qgas0, tend_qgas0);
+
+  ss << "prog_qgas0 [out]: [ ";
+  for (int k = 0; k < nlev; ++k) {
+    ss << h_prog_qgas0(k) << " ";
+  }
+  ss << "]";
+  logger.debug(ss.str());
+  ss.str("");
+  ss << "tend_qgas0 [out]: [ ";
+  for (int k = 0; k < nlev; ++k) {
+    ss << h_tend_qgas0(k) << " ";
+  }
+  ss << "]";
+  logger.debug(ss.str());
+  ss.str("");
+
+  for (int k = 0; k < nlev; ++k) {
+    CHECK(!isnan(h_prog_qgas0(k)));
+    CHECK(!isnan(h_tend_qgas0(k)));
+  }
+}
+
+TEST_CASE("test_cond_coag_mass_to_accum", "mam4_aging_process") {
+  const int nsrc = static_cast<int>(ModeIndex::PrimaryCarbon);
+  const int ndest = static_cast<int>(ModeIndex::Accumulation);
+
+  std::vector<Real> qaer_cur(AeroConfig::num_modes(), 0.0);
+  std::vector<Real> qaer_del_cond(AeroConfig::num_modes(), 0.0);
+  std::vector<Real> qaer_del_coag(AeroConfig::num_modes(), 0.0);
+
+  aging::transfer_cond_coag_mass_to_accum(
+      nsrc, ndest, qaer_cur.data(), qaer_del_cond.data(), qaer_del_coag.data());
+
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    REQUIRE(qaer_cur[m] == 0.0);
+    REQUIRE(qaer_del_cond[m] == 0.0);
+    REQUIRE(qaer_del_coag[m] == 0.0);
+  }
+
+  qaer_cur[nsrc] = 1.0;
+  qaer_del_cond[nsrc] = 1.0;
+  qaer_del_coag[nsrc] = 1.0;
+  aging::transfer_cond_coag_mass_to_accum(
+      nsrc, ndest, qaer_cur.data(), qaer_del_cond.data(), qaer_del_coag.data());
+
+  Real sum_for_conservation = 0.0;
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    if (m == nsrc) {
+      REQUIRE(qaer_cur[m] == 0.0);
+      REQUIRE(qaer_del_cond[m] == 0.0);
+      REQUIRE(qaer_del_coag[m] == 0.0);
+    } else if (m == ndest) {
+      REQUIRE(qaer_cur[m] == 1.0);
+      REQUIRE(qaer_del_cond[m] == 1.0);
+      REQUIRE(qaer_del_coag[m] == 1.0);
+    } else {
+      REQUIRE(qaer_cur[m] == 0.0);
+      REQUIRE(qaer_del_coag[m] == 0.0);
+      REQUIRE(qaer_del_cond[m] == 0.0);
+    }
+    sum_for_conservation += qaer_cur[m] + qaer_del_cond[m] + qaer_del_coag[m];
+  }
+
+  // Check for conservation
+  REQUIRE(sum_for_conservation == 3.0);
+}
 
 TEST_CASE("transfer_aged_pcarbon_to_accum", "mam4_aging_process") {
   const int nsrc = static_cast<int>(ModeIndex::PrimaryCarbon);

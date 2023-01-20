@@ -176,7 +176,7 @@ void transfer_cond_coag_mass_to_accum(
 
   qaer_cur[ndest] += qaer_cur[nsrc];
   qaer_del_cond[ndest] += qaer_del_cond[nsrc];
-  qaer_del_coag[ndest] += qaer_del_cond[nsrc];
+  qaer_del_coag[ndest] += qaer_del_coag[nsrc];
 
   qaer_cur[nsrc] = 0.0;
   qaer_del_cond[nsrc] = 0.0;
