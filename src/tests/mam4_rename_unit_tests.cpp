@@ -18,6 +18,30 @@ TEST_CASE("test_constructor", "mam4_rename_process") {
   REQUIRE(process.aero_config() == mam4_config);
 }
 
+// TEST_CASE("test_find_renaming_pairs", "mam4_rename_process") {
+//   // mam4::AeroConfig mam4_config;
+//   // mam4::RenameProcess process(mam4_config);
+//   mam4::rename::find_renaming_pairs();
+//   REQUIRE(1 == 1);
+// }
+
+TEST_CASE("test_compute_dryvol_change_in_src_mode", "mam4_rename_process") {
+  // mam4::AeroConfig mam4_config;
+  // mam4::RenameProcess process(mam4_config);
+  mam4::rename::compute_dryvol_change_in_src_mode();
+  REQUIRE(1 == 1);
+}
+
+TEST_CASE("test_do_inter_mode_transfer", "mam4_rename_process") {
+  // mam4::AeroConfig mam4_config;
+  // mam4::RenameProcess process(mam4_config);
+  mam4::rename::do_inter_mode_transfer();
+  REQUIRE(1 == 1);
+}
+
+// Everything below is leftover from calcsize but could be useful, so leaving it
+// for now
+
 // TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
 //   ekat::Comm comm;
 
