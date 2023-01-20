@@ -49,10 +49,6 @@ int main(int argc, char **argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
 
-  // Write out a Python module.
-  // std::cout << argv[0] << ": writing " << output_file << std::endl;
-  // ensemble->write(output_file);
-
   try {
     if (func_name == "mam_pcarbon_aging_frac") { //
       mam_pcarbon_aging_frac(ensemble);
@@ -65,7 +61,7 @@ int main(int argc, char **argv) {
   // Write out a Python module.
   std::cout << argv[0] << ": writing " << output_file << std::endl;
   ensemble->write(output_file);
-  
+
   // Clean up.
   delete ensemble;
   Kokkos::finalize();

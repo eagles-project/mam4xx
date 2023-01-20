@@ -35,11 +35,13 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
       }
     }
 
-    Real xferfrac_pcage; 
-    Real frac_cond; 
+    Real xferfrac_pcage;
+    Real frac_cond;
     Real frac_coag;
 
-    aging::mam_pcarbon_aging_frac(nsrc[0], dgn_a_f.data(), qaer_cur_c, qaer_del_cond_c, qaer_del_coag_in_c, xferfrac_pcage, frac_cond, frac_coag);
+    aging::mam_pcarbon_aging_frac(nsrc[0], dgn_a_f.data(), qaer_cur_c,
+                                  qaer_del_cond_c, qaer_del_coag_in_c,
+                                  xferfrac_pcage, frac_cond, frac_coag);
 
     n = 0;
     for (int a = 0; a < num_aero; ++a) {
@@ -51,15 +53,11 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
       }
     }
 
-
     output.set("qaer_cur", qaer_cur_f);
     output.set("qaer_del_cond", qaer_del_cond_f);
     output.set("qaer_del_coag_in", qaer_del_coag_in_f);
-    // output.set("xferfrac_pcage", xferfrac_pcage);
-    // output.set("frac_cond", frac_cond);
-    // output.set("frac_coag",  frac_coag);
-
-
+    output.set("xferfrac_pcage", xferfrac_pcage);
+    output.set("frac_cond", frac_cond);
+    output.set("frac_coag", frac_coag);
   });
-
 }
