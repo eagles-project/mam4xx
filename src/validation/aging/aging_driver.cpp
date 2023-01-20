@@ -62,6 +62,10 @@ int main(int argc, char **argv) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
   }
 
+  // Write out a Python module.
+  std::cout << argv[0] << ": writing " << output_file << std::endl;
+  ensemble->write(output_file);
+  
   // Clean up.
   delete ensemble;
   Kokkos::finalize();
