@@ -9,8 +9,32 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-    int nlev = 1;
-    mam4::Prognostics progs(nlev);
+    // Ensemble parameters
+    if (!input.has("nsrc")) {
+      std::cerr << "Required name: "
+                << "nsrc" << std::endl;
+      exit(0);
+    }
+    if (!input.has("dgn_a")) {
+      std::cerr << "Required name: "
+                << "dgn_a" << std::endl;
+      exit(0);
+    }
+    if (!input.has_array("qaer_cur")) {
+      std::cerr << "Required name: "
+                << "qaer_cur" << std::endl;
+      exit(0);
+    }
+    if (!input.has_array("qaer_del_cond")) {
+      std::cerr << "Required name: "
+                << "qaer_del_cond" << std::endl;
+      exit(0);
+    }
+    if (!input.has_array("qaer_del_coag_in")) {
+      std::cerr << "Required name: "
+                << "qaer_del_coag_in" << std::endl;
+      exit(0);
+    }
 
     auto nsrc = input.get_array("nsrc");
     auto dgn_a_f = input.get_array("dgn_a");

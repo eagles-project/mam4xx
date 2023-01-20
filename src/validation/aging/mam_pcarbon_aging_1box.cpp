@@ -5,7 +5,7 @@
 using namespace skywalker;
 using namespace mam4;
 
-void mam_pcarbon_aging_1subarea(Ensemble *ensemble) {
+void mam_pcarbon_aging_1box(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {

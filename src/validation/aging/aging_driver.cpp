@@ -53,6 +53,9 @@ int main(int argc, char **argv) {
     if (func_name == "mam_pcarbon_aging_frac") { //
       mam_pcarbon_aging_frac(ensemble);
     }
+    if (func_name == "mam_pcarbon_aging_1box") {
+      mam_pcarbon_aging_1box(ensemble);
+    }
 
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
