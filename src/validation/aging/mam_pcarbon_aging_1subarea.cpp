@@ -9,7 +9,6 @@ void mam_pcarbon_aging_1subarea(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-
     if (!input.has_array("dgn_a")) {
       std::cerr << "Required name: "
                 << "dgn_a" << std::endl;
@@ -79,14 +78,10 @@ void mam_pcarbon_aging_1subarea(Ensemble *ensemble) {
       }
     }
 
-    aging::mam_pcarbon_aging_1subarea(dgn_a_f.data(), 
-                                       qnum_cur_f.data(), 
-                                       qnum_del_cond_f.data(), 
-                                       qnum_del_coag_f.data(), 
-                                       qaer_cur_c,
-                                       qaer_del_cond_c,
-                                       qaer_del_coag_c,
-                                       qaer_del_coag_in_c);
+    aging::mam_pcarbon_aging_1subarea(
+        dgn_a_f.data(), qnum_cur_f.data(), qnum_del_cond_f.data(),
+        qnum_del_coag_f.data(), qaer_cur_c, qaer_del_cond_c, qaer_del_coag_c,
+        qaer_del_coag_in_c);
 
     n = 0;
     for (int a = 0; a < num_aero; ++a) {
@@ -105,7 +100,6 @@ void mam_pcarbon_aging_1subarea(Ensemble *ensemble) {
     output.set("qaer_cur", qaer_cur_f);
     output.set("qaer_del_cond", qaer_del_cond_f);
     output.set("qaer_del_coag", qaer_del_coag_f);
-    output.set("qaer_del_coag_in", qaer_del_coag_in_f);    
-
+    output.set("qaer_del_coag_in", qaer_del_coag_in_f);
   });
 }
