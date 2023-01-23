@@ -15,6 +15,9 @@ namespace mam4 {
 using haero::max;
 using haero::min;
 using haero::sqrt;
+using Constants = haero::Constants;
+using haero::square;
+
 
 namespace rename {
 
@@ -59,9 +62,8 @@ void find_renaming_pairs(const int dest_mode_of_mode[AeroConfig::num_modes()],
   int src_mode, dest_mode;
 
   // some parameters
-  const Real sqrt_half = haero::sqrt(0.5);
-  // (3^3): relaxing 3 * diameter, which makes it 3^3 for volume
-  const Real frelax = 27.0;
+  
+
 
   //  Let us assume there are none to start with
   num_pairs = 0;
@@ -177,6 +179,16 @@ public:
 private:
   Config config_;
 
+  Real _sz_factor[AeroConfig::num_modes()],
+  _fmode_dist_tail_fac[AeroConfig::num_modes()],
+  _v2n_lo_rlx[AeroConfig::num_modes()],
+  _v2n_hi_rlx[AeroConfig::num_modes()],
+  _ln_diameter_tail_fac[AeroConfig::num_modes()],
+  _diameter_cutoff[AeroConfig::num_modes()],
+  _ln_dia_cutoff[AeroConfig::num_modes()],
+  _diameter_threshold[AeroConfig::num_modes()];
+
+
 public:
   // name -- unique name of the process implemented by this class
   const char *name() const { return "MAM4 rename"; }
@@ -187,6 +199,22 @@ public:
             const Config &rename_config = Config()) {
     // Set rename-specific config parameters.
     config_ = rename_config;
+    const Real pio6 = Constants::pi_sixth;
+    const Real sqrt_half = haero::sqrt(0.5);
+      // (3^3): relaxing 3 * diameter, which makes it 3^3 for volume
+    const Real frelax = 27.0;
+
+    for (int m = 0; m < AeroConfig::num_modes(); ++m)
+    {
+      const Real alnsg_amode = log(modes(m).mean_std_dev);
+      // FIXME : check where _sz_factor is used and try to use function calls from conversions.hpp
+      _sz_factor[m] = Constants::pi_sixth*exp(4.5*square(alnsg_amode));
+      _fmode_dist_tail_fac[m] = sqrt_half/alnsg_amode;
+      _v2n_lo_rlx[m] = Real(1) / conversions::mean_particle_volume_from_diameter(modes(m).min_diameter,modes(m).mean_std_dev)*frelax;
+      _v2n_hi_rlx[m] = Real(1) / conversions::mean_particle_volume_from_diameter(modes(m).max_diameter,modes(m).mean_std_dev)/ frelax;
+    }
+
+
 
   } // end(init)
 
