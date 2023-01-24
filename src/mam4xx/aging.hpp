@@ -14,8 +14,8 @@ namespace mam4 {
 class Aging {
 
 public:
-  static const int num_pcarbon_to_accum = 3;
-  static const int num_cond_coag_to_accum = 2;
+  static constexpr int num_pcarbon_to_accum = 3;
+  static constexpr int num_cond_coag_to_accum = 2;
 
   // These are the aerosol indicies Primary Carbon mode aerosols that need
   // to be transferred to the accumulation mode.
