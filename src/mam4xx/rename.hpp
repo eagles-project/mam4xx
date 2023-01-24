@@ -142,13 +142,18 @@ void find_renaming_pairs(const int dest_mode_of_mode[AeroConfig::num_modes()],
 }
 #endif
 KOKKOS_INLINE_FUNCTION
-void compute_dryvol_change_in_src_mode(const int nmode, // input
-                                       const int nspec,
-                                       const int *dest_mode_of_mode, // input
-                                       const Real q_mmr[4][7],
-                                       const Real q_del_growth[4][7], // input
-                                       Real dryvol[4], Real deldryvol[4],
-                                       const Real mass_2_vol[7]) {
+void compute_dryvol_change_in_src_mode(
+    const int nmode,              // in
+    const int nspec,              // in
+    const int *dest_mode_of_mode, // in
+    const Real q_mmr[AeroConfig::num_modes()]
+                    [AeroConfig::num_aerosol_ids()], // in
+    const Real q_del_growth[AeroConfig::num_modes()]
+                           [AeroConfig::num_aerosol_ids()], // in
+    const Real mass_2_vol[AeroConfig::num_aerosol_ids()],   // in
+    Real dryvol[AeroConfig::num_modes()],
+    Real deldryvol[AeroConfig::num_modes()] // out
+) {
   for (int m = 0; m < nmode; ++m) {
     int dest_mode = dest_mode_of_mode[m];
 
@@ -384,7 +389,8 @@ public:
     // default constructor -- sets default values for parameters
 
     int _dest_mode_of_mode[AeroConfig::num_modes()];
-    Config() : _dest_mode_of_mode{0, 1, 0, 0} {}
+    bool _iscldy;
+    Config() : _dest_mode_of_mode{0, 1, 0, 0}, _iscldy{false} {}
 
     Config(const Config &) = default;
     ~Config() = default;
@@ -402,7 +408,8 @@ private:
       _ln_diameter_tail_fac[AeroConfig::num_modes()],
       _diameter_cutoff[AeroConfig::num_modes()],
       _ln_dia_cutoff[AeroConfig::num_modes()],
-      _diameter_threshold[AeroConfig::num_modes()];
+      _diameter_threshold[AeroConfig::num_modes()],
+      _mass_2_vol[AeroConfig::num_aerosol_ids()];
 
 public:
   // name -- unique name of the process implemented by this class
@@ -473,6 +480,13 @@ public:
       }
     }
 
+    // Factor, mass_2_vol, to convert from
+    // q_mmr[kmol-specie/kmol-air]) to volume units[m3/kmol-air]
+    for (int iaero = 0; iaero < AeroConfig::num_aerosol_ids(); ++iaero) {
+      _mass_2_vol[iaero] =
+          aero_species(iaero).molecular_weight / aero_species(iaero).density;
+    }
+
   } // end(init)
 
   // NOTE: it looks like this will probably correspond to mam_rename_1subarea()
@@ -483,6 +497,69 @@ public:
                           const Prognostics &prognostics,
                           const Diagnostics &diagnostics,
                           const Tendencies &tendencies) const {
+
+    if (_num_pairs <= 0)
+      return;
+
+    const int nk = atmosphere.num_levels();
+
+    const auto dest_mode_of_mode = config_._dest_mode_of_mode;
+    const auto iscldy = config_._iscldy;
+    const auto mass_2_vol = _mass_2_vol;
+
+    Kokkos::parallel_for(
+        Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
+          Real q_mmr_i[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
+          Real q_del_growth_i[AeroConfig::num_modes()]
+                             [AeroConfig::num_aerosol_ids()];
+
+          // FIXME: set values of q_mmr and  q_del_growth
+
+          Real dryvol_i[AeroConfig::num_modes()];
+          Real deldryvol_i[AeroConfig::num_modes()];
+
+          // Interstitial aerosols: Compute initial (before growth) aerosol dry
+          // volume and also the growth in dryvolume of the "src" mode
+
+          rename::compute_dryvol_change_in_src_mode(
+              AeroConfig::num_modes(),       // in
+              AeroConfig::num_aerosol_ids(), // in
+              dest_mode_of_mode,             // in
+              q_mmr_i,                       // in
+              q_del_growth_i,                // in
+              _mass_2_vol,                   // in
+              dryvol_i,                      // out
+              deldryvol_i                    // out
+          );
+
+          Real q_mmr_c[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
+          Real q_del_growth_c[AeroConfig::num_modes()]
+                             [AeroConfig::num_aerosol_ids()];
+
+          // FIXME: set values of q_mmr and  q_del_growth
+
+          Real dryvol_c[AeroConfig::num_modes()];
+          Real deldryvol_c[AeroConfig::num_modes()];
+
+          if (iscldy) {
+
+            rename::compute_dryvol_change_in_src_mode(
+                AeroConfig::num_modes(),       // in
+                AeroConfig::num_aerosol_ids(), // in
+                dest_mode_of_mode,             // in
+                q_mmr_c,                       // in
+                q_del_growth_c,                // in
+                _mass_2_vol,                   // in
+                dryvol_c,                      // out
+                deldryvol_c                    // out
+            );
+          }
+
+          ///
+          // Cloudborne aerosols: Compute initial (before growth) aerosol dry
+          // volume and
+          //  also the growth in dryvolume of the "src" mode
+        }); // kokkos::parfor(k)
 
     // NOTE: original subroutine signature
     // (iscloudy, dest_mode_of_mode, nmode, &
