@@ -14,20 +14,6 @@ namespace mam4 {
 class Aging {
 
 public:
-  static constexpr int num_pcarbon_to_accum = 3;
-  static constexpr int num_cond_coag_to_accum = 2;
-
-  // These are the aerosol indicies Primary Carbon mode aerosols that need
-  // to be transferred to the accumulation mode.
-  static constexpr int indx_aer_pcarbon_to_accum[num_pcarbon_to_accum] = {
-      static_cast<int>(AeroId::POM), static_cast<int>(AeroId::BC),
-      static_cast<int>(AeroId::MOM)};
-
-  // These are the aerosol indicies of the Primary
-  static constexpr int indx_aer_cond_coag_to_accum[num_cond_coag_to_accum] = {
-      static_cast<int>(AeroId::SOA), static_cast<int>(AeroId::SO4)};
-
-  Real aero_vol[AeroConfig::num_aerosol_ids()];
 
   struct Config {
 
@@ -209,13 +195,23 @@ void mam_pcarbon_aging_1subarea(
   //  include this transfer change in the cond and/or coag change (for mass
   //  budget)
 
+  static constexpr int num_pcarbon_to_accum = 3;
+  static constexpr int num_cond_coag_to_accum = 2;
+
+  static constexpr int indx_aer_pcarbon_to_accum[num_pcarbon_to_accum] = {
+      static_cast<int>(AeroId::POM), static_cast<int>(AeroId::BC),
+      static_cast<int>(AeroId::MOM)};
+
+  static constexpr int indx_aer_cond_coag_to_accum[num_cond_coag_to_accum] = {
+      static_cast<int>(AeroId::SOA), static_cast<int>(AeroId::SO4)};
+
   Real qaer_cur_modes[AeroConfig::num_modes()];
   Real qaer_del_cond_modes[AeroConfig::num_modes()];
   Real qaer_del_coag_modes[AeroConfig::num_modes()];
 
-  for (int a = 0; a < Aging::num_pcarbon_to_accum; ++a) {
+  for (int a = 0; a < num_pcarbon_to_accum; ++a) {
 
-    const int ai = Aging::indx_aer_pcarbon_to_accum[a];
+    const int ai = indx_aer_pcarbon_to_accum[a];
 
     // Pack mode information per aerosol
     for (int m = 0; m < AeroConfig::num_modes(); m++) {
@@ -240,8 +236,8 @@ void mam_pcarbon_aging_1subarea(
   // transfer all of it to accum mode
   // also transfer the condensation and coagulation changes
   // to accum mode (for mass budget)
-  for (int a = 0; a < Aging::num_cond_coag_to_accum; ++a) {
-    const int ai = Aging::indx_aer_cond_coag_to_accum[a];
+  for (int a = 0; a < num_cond_coag_to_accum; ++a) {
+    const int ai = indx_aer_cond_coag_to_accum[a];
 
     // Pack mode information per aerosol
     for (int m = 0; m < AeroConfig::num_modes(); m++) {
@@ -316,11 +312,6 @@ inline void Aging::init(const AeroConfig &aero_config,
 
   config_ = process_config;
 
-  for (int ai = 0; ai < AeroConfig::num_aerosol_ids(); ++ai) {
-    const AeroSpecies as = aero_species(ai);
-
-    aero_vol[ai] = as.molecular_weight / as.density;
-  }
 };
 
 // compute_tendencies -- computes tendencies and updates diagnostics
