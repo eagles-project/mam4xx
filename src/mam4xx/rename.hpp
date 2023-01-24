@@ -20,6 +20,7 @@ using haero::square;
 
 namespace rename {
 
+#if 0
 KOKKOS_INLINE_FUNCTION
 void find_renaming_pairs(const int dest_mode_of_mode[AeroConfig::num_modes()],
                          int num_pairs) {
@@ -139,13 +140,53 @@ void find_renaming_pairs(const int dest_mode_of_mode[AeroConfig::num_modes()],
     //    // 99% of the cutoff
   } // end for(imode)
 }
-
+#endif
 KOKKOS_INLINE_FUNCTION
-void compute_dryvol_change_in_src_mode() {}
-// NOTE: original function signature
-// (nmode, nspec, dest_mode_of_mode, & // input
-// q_mmr, q_del_growth, & // input
-// dryvol, deldryvol )
+void compute_dryvol_change_in_src_mode(const int nmode, // input
+                                       const int nspec,
+                                       const int *dest_mode_of_mode, // input
+                                       const Real q_mmr[4][7],
+                                       const Real q_del_growth[4][7], // input
+                                       Real dryvol[4], Real deldryvol[4],
+                                       const Real mass_2_vol[7]) {
+  for (int m = 0; m < nmode; ++m) {
+    int dest_mode = dest_mode_of_mode[m];
+
+    if (dest_mode > 0) {
+
+      // For each mode, we compute a dry volume by combining (accumulating)
+      // mass/density for each species in that mode.
+      //  conversion from mass to volume is accomplished by multiplying with
+      //  precomputed "mass_2_vol" factor
+
+      // s_spec_ind = 1     !start species index for this mode [These will be
+      // subroutine args] e_spec_ind = nspec !end species index for this mode
+
+      // initialize tmp accumulators
+      Real tmp_dryvol = 0.0;     // dry volume accumulator
+      Real tmp_del_dryvol = 0.0; // dry volume growth(change) accumulator
+
+      // Notes on mass_2_vol factor:Units:[m3/kmol-species]; where kmol-species
+      // is the amount of a species "s" This factor is obtained by
+      // (molecular_weight/density) of a specie. That is, [ (g/mol-species) /
+      // (kg-species/m3) ]; where molecular_weight has units [g/mol-species] and
+      // density units are [kg-specie/m3] which results in the units of
+      // m3/kmol-specie
+
+      for (int ispec = 0; ispec < nspec; ++ispec) {
+        // Multiply by mass_2_vol[m3/kmol-species] to convert
+        // q_mmr[kmol-specie/kmol-air]) to volume units[m3/kmol-air]
+        tmp_dryvol += q_mmr[m][ispec] * mass_2_vol[ispec];
+        // accumulate the "grwoth" in volume units as well
+        tmp_del_dryvol += q_del_growth[m][ispec] * mass_2_vol[ispec];
+      }
+
+      dryvol[m] =
+          tmp_dryvol - tmp_del_dryvol; // This is dry volume before the growth
+      deldryvol[m] = tmp_del_dryvol;   // change in dry volume due to growth
+    }
+  }
+}
 
 KOKKOS_INLINE_FUNCTION
 Real total_inter_cldbrn() {
@@ -342,7 +383,8 @@ public:
   struct Config {
     // default constructor -- sets default values for parameters
 
-    Config() {}
+    int _dest_mode_of_mode[AeroConfig::num_modes()];
+    Config() : _dest_mode_of_mode{0, 1, 0, 0} {}
 
     Config(const Config &) = default;
     ~Config() = default;
@@ -352,6 +394,7 @@ public:
 private:
   Config config_;
 
+  int _num_pairs;
   Real _sz_factor[AeroConfig::num_modes()],
       _fmode_dist_tail_fac[AeroConfig::num_modes()],
       _v2n_lo_rlx[AeroConfig::num_modes()],
@@ -374,17 +417,21 @@ public:
             const Config &rename_config = Config()) {
     // Set rename-specific config parameters.
     config_ = rename_config;
-    const Real pio6 = Constants::pi_sixth;
     const Real sqrt_half = haero::sqrt(0.5);
     // (3^3): relaxing 3 * diameter, which makes it 3^3 for volume
     const Real frelax = 27.0;
 
     for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+      const int dest_mode =
+          config_._dest_mode_of_mode[m]; // "destination" mode for mode "imode"
       const Real alnsg_amode = log(modes(m).mean_std_dev);
       // FIXME : check where _sz_factor is used and try to use function calls
       // from conversions.hpp
       _sz_factor[m] = Constants::pi_sixth * exp(4.5 * square(alnsg_amode));
+      // factor for computing distribution tails of the  "src mode"
       _fmode_dist_tail_fac[m] = sqrt_half / alnsg_amode;
+      // compute volume to number high and low limits with relaxation
+      // coefficients (watch out for the repeated calculations)
       _v2n_lo_rlx[m] = Real(1) /
                        conversions::mean_particle_volume_from_diameter(
                            modes(m).min_diameter, modes(m).mean_std_dev) *
@@ -393,6 +440,37 @@ public:
                        conversions::mean_particle_volume_from_diameter(
                            modes(m).max_diameter, modes(m).mean_std_dev) /
                        frelax;
+      // A factor for computing diameter at the tails of the distribution
+      _ln_diameter_tail_fac[m] = Real(3.0) * square(alnsg_amode);
+
+      const int src_mode =
+          m; //  transfer "src" mode is the current mode (i.e. imode)
+
+      // ^^At this point, we know that particles can be transferred from the
+      // "src_mode" to "dest_mode". "src_mode" is the current mode (i.e.
+      // imode)
+
+      if (dest_mode > 0) {
+        // update number of pairs found so far
+        _num_pairs += _num_pairs; // increment npair
+
+        // cutoff (based on geometric mean) for making decision to do inter-mode
+        // transfers We took geommetric mean of the participating modes (source
+        // and destination) to find a cutoff or threshold from moving particles
+        // from the source to the
+        //  destination mode.
+        const Real alnsg_amode_dest_mode =
+            log(modes(dest_mode - 1).mean_std_dev);
+        _diameter_cutoff[src_mode] =
+            sqrt(modes(src_mode).nom_diameter * exp(1.5 * square(alnsg_amode)) *
+                 modes(dest_mode).nom_diameter *
+                 exp(1.5 * square(alnsg_amode_dest_mode)));
+
+        _ln_dia_cutoff[src_mode] =
+            log(_diameter_cutoff[src_mode]); // log of cutoff
+        _diameter_threshold[src_mode] =
+            0.99 * _diameter_cutoff[src_mode]; // 99% of the cutoff
+      }
     }
 
   } // end(init)

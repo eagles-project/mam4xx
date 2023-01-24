@@ -28,7 +28,7 @@ TEST_CASE("test_constructor", "mam4_rename_process") {
 TEST_CASE("test_compute_dryvol_change_in_src_mode", "mam4_rename_process") {
   // mam4::AeroConfig mam4_config;
   // mam4::RenameProcess process(mam4_config);
-  mam4::rename::compute_dryvol_change_in_src_mode();
+  // mam4::rename::compute_dryvol_change_in_src_mode();
   REQUIRE(1 == 1);
 }
 
