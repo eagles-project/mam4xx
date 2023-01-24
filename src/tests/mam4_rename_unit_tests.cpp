@@ -39,6 +39,20 @@ TEST_CASE("test_do_inter_mode_transfer", "mam4_rename_process") {
   REQUIRE(1 == 1);
 }
 
+TEST_CASE("test_compute_before_growth_dryvol_and_num", "mam4_rename_process") {
+  // mam4::AeroConfig mam4_config;
+  // mam4::RenameProcess process(mam4_config);
+  mam4::rename::compute_before_growth_dryvol_and_num();
+  REQUIRE(1 == 1);
+}
+
+TEST_CASE("test_total_inter_cldbrn", "mam4_rename_process") {
+  // mam4::AeroConfig mam4_config;
+  // mam4::RenameProcess process(mam4_config);
+  Real outvar = mam4::rename::total_inter_cldbrn();
+  REQUIRE(1 == 1);
+}
+
 // Everything below is leftover from calcsize but could be useful, so leaving it
 // for now
 
@@ -69,7 +83,8 @@ TEST_CASE("test_do_inter_mode_transfer", "mam4_rename_process") {
 //       0.2733926271E-16};
 
 //   Kokkos::Array<Real, nmodes> interstitial_num = {
-//       0.8098354597E+09, 0.4425427527E+08, 0.1400840545E+06, 0.1382391601E+10};
+//       0.8098354597E+09, 0.4425427527E+08, 0.1400840545E+06,
+//       0.1382391601E+10};
 
 //   std::ostringstream ss;
 //   int count = 0;
@@ -131,7 +146,8 @@ TEST_CASE("test_do_inter_mode_transfer", "mam4_rename_process") {
 //       });
 
 //   for (int imode = 0; imode < nmodes; ++imode) {
-//     auto h_tends_n_mode_i = Kokkos::create_mirror_view(tends.n_mode_i[imode]);
+//     auto h_tends_n_mode_i =
+//     Kokkos::create_mirror_view(tends.n_mode_i[imode]);
 //     Kokkos::deep_copy(h_tends_n_mode_i, tends.n_mode_i[imode]);
 
 //     ss << "tends.n_mode_i (mode No " << imode << ") [out]: [ ";
