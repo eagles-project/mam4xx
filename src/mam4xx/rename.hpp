@@ -20,127 +20,6 @@ using haero::square;
 
 namespace rename {
 
-#if 0
-KOKKOS_INLINE_FUNCTION
-void find_renaming_pairs(const int dest_mode_of_mode[AeroConfig::num_modes()],
-                         int num_pairs) {
-  // NOTE: original function signature
-  // (nmodes, dest_mode_of_mode, &  // input
-  // num_pairs, sz_factor, fmode_dist_tail_fac, v2n_lo_rlx, & // output
-  // v2n_hi_rlx, ln_diameter_tail_fac, diameter_cutoff, &     // output
-  // ln_dia_cutoff, diameter_threshold)
-
-  // ------------------------------------------------------------------------
-  // Find number of pairs which participates in the inter-mode transfer
-  // ------------------------------------------------------------------------
-  // Number of mode pairs allowed to do inter-mode particle transfer
-  // (e.g. if we have a pair "mode_1<-->mode_2", mode_1 and mode_2 can
-  // participate in the inter-mode aerosol particle transfer where particles
-  // of the same species in mode_1 can be transferred to mode_2 and vice-versa)
-  // ------------------------------------------------------------------------
-
-  // // arguments (intent-ins)
-  // integer, intent(in) :: nmodes               // total number of modes
-  // integer, intent(in) :: dest_mode_of_mode(:) // array carry info about the
-  // destination mode of a particular mode
-
-  // // intent-outs
-  // integer,  intent(out) :: num_pairs          // total number of pairs to be
-  // found real(r8), intent(out) :: sz_factor(:), fmode_dist_tail_fac(:) //
-  // precomputed factors to be used later [unitless] real(r8), intent(out) ::
-  // v2n_lo_rlx(:), v2n_hi_rlx(:)         // relaxed volume to num high and low
-  // ratio limits [m^-3] real(r8), intent(out) :: ln_diameter_tail_fac(:) // log
-  // of diameter factor for distribution tail [unitless] real(r8), intent(out)
-  // :: diameter_cutoff(:), ln_dia_cutoff(:) // cutoff (threshold) for deciding
-  // the  do inter-mode transfer [m] real(r8), intent(out) ::
-  // diameter_threshold(:)                // threshold diameter(99% of
-  // cutoff)[m]
-
-  //  local variables
-  const int nmodes = AeroConfig::num_modes();
-  int src_mode, dest_mode;
-
-  // some parameters
-
-  //  Let us assume there are none to start with
-  num_pairs = 0;
-
-  // if there can be no possible pairs, just return
-  // if (all(dest_mode_of_mode(:)<=0)) return
-  // TODO: will these indices be negative or just 0?
-  // NOTE: is there a way to use std::all_of() here?
-  // it doesn't look like ekat has its own version
-  int dmode_sum = 0;
-  for (int i = 0; i < nmodes; ++i) {
-    dmode_sum += dest_mode_of_mode[i];
-  }
-  if (dmode_sum <= 0)
-    return;
-
-  // // Go through all the modes to find if we have at least one or more than
-  // one pairs
-  for (int imode = 0; imode < nmodes; imode++) {
-    dest_mode = dest_mode_of_mode[imode]; // "destination" mode for mode "imode"
-
-    // if dest_mode is <=0, transfer is not possible for this mode, cycle
-    //    the loop for the next mode
-    if (dest_mode <= 0)
-      continue;
-
-    src_mode = imode; //  transfer "src" mode is the current mode (i.e. imode)
-
-    // ^^At this point, we know that particles can be transferred from the
-    // "src_mode" to "dest_mode". "src_mode" is the current mode (i.e.
-    // imode)
-
-    // update number of pairs found so far
-    num_pairs = num_pairs + 1; // increment npair
-
-    // -------------------------------------------------------
-    // Now precompute some common factors to be used later
-    // -------------------------------------------------------
-
-    // size factor for "src mode"
-    // compute_size_factor(src_mode,  sz_factor);
-    // size factor for "dest mode"
-    // compute_size_factor(dest_mode, sz_factor);
-
-    //    //
-    //    ---------------------------------------------------------------------------------------------------------
-    //    //  We compute few factors below for the "src_mode", which will be
-    //    used for inter-mode particle transfer
-    //    //
-    //    ---------------------------------------------------------------------------------------------------------
-
-    //    fmode_dist_tail_fac(src_mode) = sqrt_half/alnsg_amode(src_mode) //
-    //    factor for computing distribution tails of the  "src mode"
-
-    //    // compute volume to number high and low limits with relaxation
-    //    coefficients (watch out for the repeated calculations)
-    //    v2n_lo_rlx(src_mode) = vol_to_num_ratio(src_mode, dgnumlo_amode) *
-    //    frelax v2n_hi_rlx(src_mode) = vol_to_num_ratio(src_mode,
-    //    dgnumhi_amode) / frelax
-
-    //    // A factor for computing diameter at the tails of the distribution
-    //    ln_diameter_tail_fac(src_mode) = 3.0 * (alnsg_amode(src_mode)**2)
-
-    //    // cutoff (based on geometric mean) for making decision to do
-    //    inter-mode transfers
-    //    // We took geometric mean of the participating modes (source and
-    //    destination)
-    //    // to find a cutoff or threshold from moving particles from the source
-    //    to the
-    //    // destination mode.
-    //    diameter_cutoff(src_mode) = sqrt(   &
-    //         dgnum_amode(src_mode)*exp(1.5*(alnsg_amode(src_mode)**2)) *   &
-    //         dgnum_amode(dest_mode)*exp(1.5*(alnsg_amode(dest_mode)**2)) )
-
-    //    ln_dia_cutoff(src_mode) = log(diameter_cutoff(src_mode)) // log of
-    //    cutoff diameter_threshold(src_mode) = 0.99*diameter_cutoff(src_mode)
-    //    // 99% of the cutoff
-  } // end for(imode)
-}
-#endif
 KOKKOS_INLINE_FUNCTION
 void compute_dryvol_change_in_src_mode(
     const int nmode,              // in
@@ -378,6 +257,81 @@ void do_inter_mode_transfer(
   } // end for(imode)
 } // end do_inter_mode_transfer()
 
+KOKKOS_INLINE_FUNCTION
+void find_renaming_pairs(
+    int *dest_mode_of_mode,                             // in
+    Real sz_factor[AeroConfig::num_modes()],            // out
+    Real fmode_dist_tail_fac[AeroConfig::num_modes()],  // out
+    Real v2n_lo_rlx[AeroConfig::num_modes()],           // out
+    Real v2n_hi_rlx[AeroConfig::num_modes()],           // out
+    Real ln_diameter_tail_fac[AeroConfig::num_modes()], // out
+    Real num_pairs,                                     // out
+    Real diameter_cutoff[AeroConfig::num_modes()],      // out
+    Real ln_dia_cutoff[AeroConfig::num_modes()],
+    Real diameter_threshold[AeroConfig::num_modes()], // out
+    Real mass_2_vol[AeroConfig::num_aerosol_ids()]) {
+  const Real sqrt_half = haero::sqrt(0.5);
+  // (3^3): relaxing 3 * diameter, which makes it 3^3 for volume
+  const Real frelax = 27.0;
+
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    const int dest_mode =
+        dest_mode_of_mode[m]; // "destination" mode for mode "imode"
+    const Real alnsg_amode = log(modes(m).mean_std_dev);
+    // FIXME : check where _sz_factor is used and try to use function calls
+    // from conversions.hpp
+    sz_factor[m] = Constants::pi_sixth * exp(4.5 * square(alnsg_amode));
+    // factor for computing distribution tails of the  "src mode"
+    fmode_dist_tail_fac[m] = sqrt_half / alnsg_amode;
+    // compute volume to number high and low limits with relaxation
+    // coefficients (watch out for the repeated calculations)
+    v2n_lo_rlx[m] = Real(1) /
+                    conversions::mean_particle_volume_from_diameter(
+                        modes(m).min_diameter, modes(m).mean_std_dev) *
+                    frelax;
+    v2n_hi_rlx[m] = Real(1) /
+                    conversions::mean_particle_volume_from_diameter(
+                        modes(m).max_diameter, modes(m).mean_std_dev) /
+                    frelax;
+    // A factor for computing diameter at the tails of the distribution
+    ln_diameter_tail_fac[m] = Real(3.0) * square(alnsg_amode);
+
+    const int src_mode =
+        m; //  transfer "src" mode is the current mode (i.e. imode)
+
+    // ^^At this point, we know that particles can be transferred from the
+    // "src_mode" to "dest_mode". "src_mode" is the current mode (i.e.
+    // imode)
+
+    if (dest_mode > 0) {
+      // update number of pairs found so far
+      num_pairs += num_pairs; // increment npair
+
+      // cutoff (based on geometric mean) for making decision to do inter-mode
+      // transfers We took geommetric mean of the participating modes (source
+      // and destination) to find a cutoff or threshold from moving particles
+      // from the source to the
+      //  destination mode.
+      const Real alnsg_amode_dest_mode = log(modes(dest_mode - 1).mean_std_dev);
+      diameter_cutoff[src_mode] =
+          sqrt(modes(src_mode).nom_diameter * exp(1.5 * square(alnsg_amode)) *
+               modes(dest_mode).nom_diameter *
+               exp(1.5 * square(alnsg_amode_dest_mode)));
+
+      ln_dia_cutoff[src_mode] = log(diameter_cutoff[src_mode]); // log of cutoff
+      diameter_threshold[src_mode] =
+          0.99 * diameter_cutoff[src_mode]; // 99% of the cutoff
+    }
+  }
+
+  // Factor, mass_2_vol, to convert from
+  // q_mmr[kmol-specie/kmol-air]) to volume units[m3/kmol-air]
+  for (int iaero = 0; iaero < AeroConfig::num_aerosol_ids(); ++iaero) {
+    mass_2_vol[iaero] =
+        aero_species(iaero).molecular_weight / aero_species(iaero).density;
+  }
+}
+
 } // namespace rename
 
 /// @class Rename
@@ -423,69 +377,17 @@ public:
   void init(const AeroConfig &aero_config,
             const Config &rename_config = Config()) {
     // Set rename-specific config parameters.
-    config_ = rename_config;
-    const Real sqrt_half = haero::sqrt(0.5);
-    // (3^3): relaxing 3 * diameter, which makes it 3^3 for volume
-    const Real frelax = 27.0;
-
-    for (int m = 0; m < AeroConfig::num_modes(); ++m) {
-      const int dest_mode =
-          config_._dest_mode_of_mode[m]; // "destination" mode for mode "imode"
-      const Real alnsg_amode = log(modes(m).mean_std_dev);
-      // FIXME : check where _sz_factor is used and try to use function calls
-      // from conversions.hpp
-      _sz_factor[m] = Constants::pi_sixth * exp(4.5 * square(alnsg_amode));
-      // factor for computing distribution tails of the  "src mode"
-      _fmode_dist_tail_fac[m] = sqrt_half / alnsg_amode;
-      // compute volume to number high and low limits with relaxation
-      // coefficients (watch out for the repeated calculations)
-      _v2n_lo_rlx[m] = Real(1) /
-                       conversions::mean_particle_volume_from_diameter(
-                           modes(m).min_diameter, modes(m).mean_std_dev) *
-                       frelax;
-      _v2n_hi_rlx[m] = Real(1) /
-                       conversions::mean_particle_volume_from_diameter(
-                           modes(m).max_diameter, modes(m).mean_std_dev) /
-                       frelax;
-      // A factor for computing diameter at the tails of the distribution
-      _ln_diameter_tail_fac[m] = Real(3.0) * square(alnsg_amode);
-
-      const int src_mode =
-          m; //  transfer "src" mode is the current mode (i.e. imode)
-
-      // ^^At this point, we know that particles can be transferred from the
-      // "src_mode" to "dest_mode". "src_mode" is the current mode (i.e.
-      // imode)
-
-      if (dest_mode > 0) {
-        // update number of pairs found so far
-        _num_pairs += _num_pairs; // increment npair
-
-        // cutoff (based on geometric mean) for making decision to do inter-mode
-        // transfers We took geommetric mean of the participating modes (source
-        // and destination) to find a cutoff or threshold from moving particles
-        // from the source to the
-        //  destination mode.
-        const Real alnsg_amode_dest_mode =
-            log(modes(dest_mode - 1).mean_std_dev);
-        _diameter_cutoff[src_mode] =
-            sqrt(modes(src_mode).nom_diameter * exp(1.5 * square(alnsg_amode)) *
-                 modes(dest_mode).nom_diameter *
-                 exp(1.5 * square(alnsg_amode_dest_mode)));
-
-        _ln_dia_cutoff[src_mode] =
-            log(_diameter_cutoff[src_mode]); // log of cutoff
-        _diameter_threshold[src_mode] =
-            0.99 * _diameter_cutoff[src_mode]; // 99% of the cutoff
-      }
-    }
-
-    // Factor, mass_2_vol, to convert from
-    // q_mmr[kmol-specie/kmol-air]) to volume units[m3/kmol-air]
-    for (int iaero = 0; iaero < AeroConfig::num_aerosol_ids(); ++iaero) {
-      _mass_2_vol[iaero] =
-          aero_species(iaero).molecular_weight / aero_species(iaero).density;
-    }
+    rename::find_renaming_pairs(config_._dest_mode_of_mode, // in
+                                _sz_factor,                 // out
+                                _fmode_dist_tail_fac,       // out
+                                _v2n_lo_rlx,                // out
+                                _v2n_hi_rlx,                // out
+                                _ln_diameter_tail_fac,      // out
+                                _num_pairs,                 // out
+                                _diameter_cutoff,           // out
+                                _ln_dia_cutoff,
+                                _diameter_threshold, // out
+                                _mass_2_vol);
 
   } // end(init)
 
@@ -507,58 +409,44 @@ public:
     const auto iscldy = config_._iscldy;
     const auto mass_2_vol = _mass_2_vol;
 
+    const auto sz_factor = _sz_factor;
+    const auto fmode_dist_tail_fac = _fmode_dist_tail_fac;
+    const auto v2n_lo_rlx = _v2n_lo_rlx;
+    const auto v2n_hi_rlx = _v2n_hi_rlx;
+    const auto ln_diameter_tail_fac = _ln_diameter_tail_fac;
+    const auto num_pairs = _num_pairs;
+    const auto diameter_cutoff = _diameter_cutoff;
+    const auto ln_dia_cutoff = _ln_dia_cutoff;
+    const auto diameter_threshold = _diameter_threshold;
+
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
-          Real q_mmr_i[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
-          Real q_del_growth_i[AeroConfig::num_modes()]
-                             [AeroConfig::num_aerosol_ids()];
+          Real qnum_cur[AeroConfig::num_modes()];
+          Real qaer_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
+          Real qaer_del_grow4rnam[AeroConfig::num_modes()]
+                                 [AeroConfig::num_aerosol_ids()];
 
-          // FIXME: set values of q_mmr and  q_del_growth
+          //
+          Real qnumcw_cur[AeroConfig::num_modes()];
+          Real qaercw_cur[AeroConfig::num_modes()]
+                         [AeroConfig::num_aerosol_ids()];
+          Real qaercw_del_grow4rnam[AeroConfig::num_modes()]
+                                   [AeroConfig::num_aerosol_ids()];
 
-          Real dryvol_i[AeroConfig::num_modes()];
-          Real deldryvol_i[AeroConfig::num_modes()];
-
-          // Interstitial aerosols: Compute initial (before growth) aerosol dry
-          // volume and also the growth in dryvolume of the "src" mode
-
-          rename::compute_dryvol_change_in_src_mode(
-              AeroConfig::num_modes(),       // in
-              AeroConfig::num_aerosol_ids(), // in
-              dest_mode_of_mode,             // in
-              q_mmr_i,                       // in
-              q_del_growth_i,                // in
-              _mass_2_vol,                   // in
-              dryvol_i,                      // out
-              deldryvol_i                    // out
-          );
-
-          Real q_mmr_c[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
-          Real q_del_growth_c[AeroConfig::num_modes()]
-                             [AeroConfig::num_aerosol_ids()];
-
-          // FIXME: set values of q_mmr and  q_del_growth
-
-          Real dryvol_c[AeroConfig::num_modes()];
-          Real deldryvol_c[AeroConfig::num_modes()];
-
-          if (iscldy) {
-
-            rename::compute_dryvol_change_in_src_mode(
-                AeroConfig::num_modes(),       // in
-                AeroConfig::num_aerosol_ids(), // in
-                dest_mode_of_mode,             // in
-                q_mmr_c,                       // in
-                q_del_growth_c,                // in
-                _mass_2_vol,                   // in
-                dryvol_c,                      // out
-                deldryvol_c                    // out
-            );
-          }
-
-          ///
-          // Cloudborne aerosols: Compute initial (before growth) aerosol dry
-          // volume and
-          //  also the growth in dryvolume of the "src" mode
+          mam_rename_1subarea_(iscldy,
+                               dest_mode_of_mode,    // in
+                               sz_factor,            // in
+                               fmode_dist_tail_fac,  // in
+                               v2n_lo_rlx,           // in
+                               v2n_hi_rlx,           // in
+                               ln_diameter_tail_fac, // in
+                               num_pairs,            // in
+                               diameter_cutoff,      // in
+                               ln_dia_cutoff,        // in
+                               diameter_threshold,   // in
+                               mass_2_vol, qnum_cur, qaer_cur,
+                               qaer_del_grow4rnam, qnumcw_cur, qaercw_cur,
+                               qaercw_del_grow4rnam);
         }); // kokkos::parfor(k)
 
     // NOTE: original subroutine signature
@@ -679,6 +567,64 @@ public:
   }
 
 private:
+  KOKKOS_INLINE_FUNCTION
+  void mam_rename_1subarea_(
+      const bool iscldy,
+      const int *dest_mode_of_mode,                             // in
+      const Real sz_factor[AeroConfig::num_modes()],            // in
+      const Real fmode_dist_tail_fac[AeroConfig::num_modes()],  // in
+      const Real v2n_lo_rlx[AeroConfig::num_modes()],           // in
+      const Real v2n_hi_rlx[AeroConfig::num_modes()],           // in
+      const Real ln_diameter_tail_fac[AeroConfig::num_modes()], // in
+      const Real num_pairs,                                     // in
+      const Real diameter_cutoff[AeroConfig::num_modes()],      // in
+      const Real ln_dia_cutoff[AeroConfig::num_modes()],        // in
+      const Real diameter_threshold[AeroConfig::num_modes()],   // in
+      const Real mass_2_vol[AeroConfig::num_aerosol_ids()],
+      Real qnum_cur[AeroConfig::num_modes()],
+      Real qaer_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+      Real qaer_del_grow4rnam[AeroConfig::num_modes()]
+                             [AeroConfig::num_aerosol_ids()],
+      Real qnumcw_cur[AeroConfig::num_modes()],
+      Real qaercw_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+      Real qaercw_del_grow4rnam[AeroConfig::num_modes()]
+                               [AeroConfig::num_aerosol_ids()]) const {
+
+    Real dryvol_i[mam4::AeroConfig::num_modes()];
+    Real deldryvol_i[mam4::AeroConfig::num_modes()];
+
+    // Interstitial aerosols: Compute initial (before growth) aerosol dry
+    // volume and also the growth in dryvolume of the "src" mode
+
+    rename::compute_dryvol_change_in_src_mode(
+        mam4::AeroConfig::num_modes(),       // in
+        mam4::AeroConfig::num_aerosol_ids(), // in
+        dest_mode_of_mode,                   // in
+        qaer_cur,                            // in
+        qaer_del_grow4rnam,                  // in
+        mass_2_vol,                          // in
+        dryvol_i,                            // out
+        deldryvol_i                          // out
+    );
+
+    Real dryvol_c[mam4::AeroConfig::num_modes()];
+    Real deldryvol_c[mam4::AeroConfig::num_modes()];
+
+    if (iscldy) {
+
+      rename::compute_dryvol_change_in_src_mode(
+          AeroConfig::num_modes(),       // in
+          AeroConfig::num_aerosol_ids(), // in
+          dest_mode_of_mode,             // in
+          qaercw_cur,                    // in
+          qaercw_del_grow4rnam,          // in
+          mass_2_vol,                    // in
+          dryvol_c,                      // out
+          deldryvol_c                    // out
+      );
+
+    } // end iscldy
+  }
 }; // end(compute_tendencies)
 
 } // namespace mam4
