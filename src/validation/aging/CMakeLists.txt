@@ -6,7 +6,7 @@ set(AGING_VALIDATION_SCRIPTS_DIR ${MAM_X_VALIDATION_DIR}/scripts)
 
 include_directories(${PROJECT_BINARY_DIR}/validation)
 
-# We use a single driver for all calcsize-related parameterizations.
+# We use a single driver for all aging-related parameterizations.
 add_executable(aging_driver aging_driver.cpp
                mam_pcarbon_aging_frac.cpp
                mam_pcarbon_aging_1subarea.cpp)
