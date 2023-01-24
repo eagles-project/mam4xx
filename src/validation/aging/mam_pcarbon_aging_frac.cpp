@@ -13,27 +13,27 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
     if (!input.has_array("nsrc")) {
       std::cerr << "Required name: "
                 << "nsrc" << std::endl;
-      exit(0);
+      exit(1);
     }
     if (!input.has_array("dgn_a")) {
       std::cerr << "Required name: "
                 << "dgn_a" << std::endl;
-      exit(0);
+      exit(1);
     }
     if (!input.has_array("qaer_cur")) {
       std::cerr << "Required name: "
                 << "qaer_cur" << std::endl;
-      exit(0);
+      exit(1);
     }
     if (!input.has_array("qaer_del_cond")) {
       std::cerr << "Required name: "
                 << "qaer_del_cond" << std::endl;
-      exit(0);
+      exit(1);
     }
     if (!input.has_array("qaer_del_coag_in")) {
       std::cerr << "Required name: "
                 << "qaer_del_coag_in" << std::endl;
-      exit(0);
+      exit(1);
     }
 
     auto nsrc = input.get_array("nsrc");

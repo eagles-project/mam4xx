@@ -12,42 +12,42 @@ void mam_pcarbon_aging_1subarea(Ensemble *ensemble) {
     if (!input.has_array("dgn_a")) {
       std::cerr << "Required name: "
                 << "dgn_a" << std::endl;
-      exit(0);
+      exit(1);
     }
     if (!input.has_array("qnum_cur")) {
       std::cerr << "Required name: "
                 << "qnum_cur" << std::endl;
-      exit(0);
+      exit(1);
     }
     if (!input.has_array("qnum_del_cond")) {
       std::cerr << "Required name: "
                 << "qnum_del_cond" << std::endl;
-      exit(0);
+      exit(1);
     }
     if (!input.has_array("qnum_del_coag")) {
       std::cerr << "Required name: "
                 << "qnum_del_coag" << std::endl;
-      exit(0);
+      exit(1);
     }
     if (!input.has_array("qaer_cur")) {
       std::cerr << "Required name: "
                 << "qaer_cur" << std::endl;
-      exit(0);
+      exit(1);
     }
     if (!input.has_array("qaer_del_cond")) {
       std::cerr << "Required name: "
                 << "qaer_del_cond" << std::endl;
-      exit(0);
+      exit(1);
     }
     if (!input.has_array("qaer_del_coag")) {
       std::cerr << "Required name: "
                 << "qaer_del_coag" << std::endl;
-      exit(0);
+      exit(1);
     }
     if (!input.has_array("qaer_del_coag_in")) {
       std::cerr << "Required name: "
                 << "qaer_del_coag_in" << std::endl;
-      exit(0);
+      exit(1);
     }
 
     auto dgn_a_f = input.get_array("dgn_a");

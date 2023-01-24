@@ -1,5 +1,4 @@
 #include <mam4xx/aging.hpp>
-
 #include <iostream>
 #include <skywalker.hpp>
 #include <validation.hpp>
@@ -13,7 +12,7 @@ void usage() {
             << std::endl;
   std::cerr << "aging_driver: usage:" << std::endl;
   std::cerr << "aging_driver <input.yaml>" << std::endl;
-  exit(0);
+  exit(1);
 }
 
 using namespace skywalker;
@@ -41,7 +40,7 @@ int main(int argc, char **argv) {
   Settings settings = ensemble->settings();
   if (!settings.has("function")) {
     std::cerr << "No function specified in mam4xx.settings!" << std::endl;
-    exit(0);
+    exit(1);
   }
 
   // Dispatch to the requested function.
