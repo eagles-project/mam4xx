@@ -14,7 +14,6 @@ namespace mam4 {
 class Aging {
 
 public:
-
   struct Config {
 
     Config(){};
@@ -59,14 +58,31 @@ public:
 
 namespace aging {
 
+//------------------------------------------------------------------------
+// calculate fractions of aged pom/bc to be transferred to accum mode, aerosol
+// change due to condenstion and coagulation
 KOKKOS_INLINE_FUNCTION
 void mam_pcarbon_aging_frac(
-    const int nsrc, Real dgn_a[AeroConfig::num_modes()],
-    Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-    Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+    const int nsrc,                      // pcarbon mode index [unitless]
+    Real dgn_a[AeroConfig::num_modes()], // dry geometric mean diameter of
+                                         // number distribution [m]
+    Real qaer_cur[AeroConfig::num_aerosol_ids()]
+                 [AeroConfig::num_modes()], // aerosol mass mixing ratio
+                                            // [mol/mol]
+    Real qaer_del_cond[AeroConfig::num_aerosol_ids()]
+                      [AeroConfig::num_modes()], // change of aerosol mass
+                                                 // mixing ratio due to
+                                                 // condensation [mol/mol]
     Real qaer_del_coag_in[AeroConfig::num_aerosol_ids()]
-                         [AeroConfig::num_modes()],
-    Real &xferfrac_pcage, Real &frac_cond, Real &frac_coag) {
+                         [AeroConfig::num_modes()], // change of aerosol mass
+                                                    // mixing ratio due to
+                                                    // coagulation
+    Real &xferfrac_pcage, // fraction of aged pom/bc transferred to accum
+                          // [unitless]
+    Real
+        &frac_cond, // fraction of aerosol change due to condensation [unitless]
+    Real &
+        frac_coag) { // fraction of aerosol change due to coagulation [unitless]
 
   const int ipair = 1;
   const int iaer_so4 =
@@ -95,6 +111,7 @@ void mam_pcarbon_aging_frac(
   const Real fac_m2v_eqvhyg_aer =
       soa_vol * aero_species(iaer_soa).hygroscopicity;
 
+  // for default MAM4 only so4 and soa contribute to aging
   const Real vol_shell = qaer_cur[iaer_so4][nsrc] * so4_vol +
                          qaer_cur[iaer_soa][nsrc] * fac_m2v_eqvhyg_aer;
 
@@ -134,13 +151,30 @@ void mam_pcarbon_aging_frac(
   }
 }
 
+//------------------------------------------------------------------------
+// transfer mass/number of aged pom and bc from pcarbon to accum mode
+// adjust the change of aerosol mass/number due to condenations/coagulation
+// in pcarbon anc accum mode
 KOKKOS_INLINE_FUNCTION
 void transfer_aged_pcarbon_to_accum(
-    const int nsrc, const int ndest, const Real xferfrac_pcage,
-    const Real frac_cond, const Real frac_coag,
-    Real qaer_cur[AeroConfig::num_modes()],
-    Real qaer_del_cond[AeroConfig::num_modes()],
-    Real qaer_del_coag[AeroConfig::num_modes()]) {
+    const int nsrc,            // pcarbon mode index [unitless]
+    const int ndest,           // accum mode index [unitless]
+    const Real xferfrac_pcage, // fraction of aged pom/bc transferred to accum
+                               // [unitless]
+    const Real frac_cond, // fraction of aerosol mass change due to condensation
+                          // [unitless]
+    const Real frac_coag, // fraction of aerosol mass change due to coagulation
+                          // [unitless]
+    Real qaer_cur[AeroConfig::num_modes()], // aerosol mass or number mixing
+                                            // ratio [mol/mol]/[#/kmol]
+    Real qaer_del_cond[AeroConfig::num_modes()],   // change of aerosol mass or
+                                                   // number mixing ratio due to
+                                                   // condensation
+                                                   // [mol/mol]/[#/kmol]
+    Real qaer_del_coag[AeroConfig::num_modes()]) { // change of aerosol mass or
+                                                   // number mixing ratio due to
+                                                   // coagulation
+                                                   // [mol/mol]/[#/kmol]
 
   Real q_tmp = qaer_cur[nsrc] * xferfrac_pcage;
 
@@ -154,11 +188,24 @@ void transfer_aged_pcarbon_to_accum(
   qaer_del_coag[ndest] += q_tmp * frac_coag;
 }
 
+//------------------------------------------------------------------------
+// transfer mass of aerosols contributing to aging (i.e., so4, soa)
+//  from pcarbon to accum mode
+//  adjust the change of aerosol mass/number due to condenations/coagulation
+//  in pcarbon and accum mode
+
 KOKKOS_INLINE_FUNCTION
 void transfer_cond_coag_mass_to_accum(
-    const int nsrc, const int ndest, Real qaer_cur[AeroConfig::num_modes()],
-    Real qaer_del_cond[AeroConfig::num_modes()],
-    Real qaer_del_coag[AeroConfig::num_modes()]) {
+    const int nsrc,                         // pcarbon mode index [unitless]
+    const int ndest,                        // accum mode index [unitless]
+    Real qaer_cur[AeroConfig::num_modes()], // aerosol mass mixing ratio
+                                            // [mol/mol]
+    Real qaer_del_cond[AeroConfig::num_modes()],   // change of aerosol mass
+                                                   // mixing ratio due to
+                                                   // condensation [mol/mol]
+    Real qaer_del_coag[AeroConfig::num_modes()]) { // change of aerosol mass
+                                                   // mixing ratio due to
+                                                   // coagulation [mol/mol]
 
   qaer_cur[ndest] += qaer_cur[nsrc];
   qaer_del_cond[ndest] += qaer_del_cond[nsrc];
@@ -171,14 +218,32 @@ void transfer_cond_coag_mass_to_accum(
 
 KOKKOS_INLINE_FUNCTION
 void mam_pcarbon_aging_1subarea(
-    Real dgn_a[AeroConfig::num_modes()], Real qnum_cur[AeroConfig::num_modes()],
-    Real qnum_del_cond[AeroConfig::num_modes()],
-    Real qnum_del_coag[AeroConfig::num_modes()],
-    Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-    Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-    Real qaer_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-    Real qaer_del_coag_in[AeroConfig::num_aerosol_ids()]
-                         [AeroConfig::num_modes()]) {
+    Real dgn_a[AeroConfig::num_modes()],    // dry geometric mean diameter of
+                                            // number distribution [m]
+    Real qnum_cur[AeroConfig::num_modes()], // aerosol number mixing ratio
+                                            // [#/kmol]
+    Real qnum_del_cond[AeroConfig::num_modes()], // change of aerosol number
+                                                 // mixing ratio due to
+                                                 // condensation [#/kmol]
+    Real qnum_del_coag[AeroConfig::num_modes()], // change of aerosol number
+                                                 // mixing ratio due to
+                                                 // coagulation [#/kmol]
+    Real qaer_cur[AeroConfig::num_aerosol_ids()]
+                 [AeroConfig::num_modes()], // aerosol mass mixing ratio
+                                            // [mol/mol]
+    Real qaer_del_cond[AeroConfig::num_aerosol_ids()]
+                      [AeroConfig::num_modes()], // change of aerosol mass
+                                                 // mixing ratio due to
+                                                 // condensation [mol/mol]
+    Real qaer_del_coag[AeroConfig::num_aerosol_ids()]
+                      [AeroConfig::num_modes()], // change of aerosol mass
+                                                 // mixing ratio due to
+                                                 // coagulation [mol/mol]
+    Real qaer_del_coag_in
+        [AeroConfig::num_aerosol_ids()]
+        [AeroConfig::num_modes()]) { //  change of aerosol mass mixing ratio due
+                                     //  to coagulation from subrountine
+                                     //  mam_coag_1subarea [mol/mol]
 
   Real xferfrac_pcage, frac_cond, frac_coag;
 
@@ -220,6 +285,11 @@ void mam_pcarbon_aging_1subarea(
       qaer_del_coag_modes[m] = qaer_del_coag[ai][m];
     }
 
+    // species is pom or bc
+    // transfer the aged fraction to accum mode
+    // include this transfer change in the cond and/or coag change (for mass
+    // budget)
+
     transfer_aged_pcarbon_to_accum(nsrc, ndest, xferfrac_pcage, frac_cond,
                                    frac_coag, qaer_cur_modes,
                                    qaer_del_cond_modes, qaer_del_coag_modes);
@@ -255,12 +325,11 @@ void mam_pcarbon_aging_1subarea(
       qaer_del_cond[ai][m] = qaer_del_cond_modes[m];
       qaer_del_coag[ai][m] = qaer_del_coag_modes[m];
     }
-
-    // number - transfer the aged fraction to accum mode
-    // include this transfer change in the cond and/or coag change (for mass
-    // budget)
   }
 
+  // number - transfer the aged fraction to accum mode
+  // include this transfer change in the cond and/or coag change (for mass
+  // budget)
   transfer_cond_coag_mass_to_accum(nsrc, ndest, qnum_cur, qnum_del_cond,
                                    qnum_del_coag);
 }
@@ -269,7 +338,7 @@ KOKKOS_INLINE_FUNCTION
 void aerosol_aging_rates_1box(const int k, const AeroConfig &aero_config,
                               const Real dt, const Atmosphere &atm,
                               const Prognostics &progs,
-                              const Diagnostics &diags,
+                              const Diagnostics &diags, const Tendencies &tends,
                               const Aging::Config &config) {
 
   const int num_aer = AeroConfig::num_aerosol_ids();
@@ -299,9 +368,32 @@ void aerosol_aging_rates_1box(const int k, const AeroConfig &aero_config,
     qnum_cur[i] = progs.n_mode_i[i](k);
   }
 
+  // primary carbon aging
   mam_pcarbon_aging_1subarea(dgn_a, qnum_cur, qnum_del_cond, qnum_del_coag,
                              qaer_cur, qaer_del_cond, qaer_del_coag,
                              qaer_del_coag_in);
+
+  // compute the tendencies
+  for (int n = 0; n < num_mode; ++n) {
+    for (int g = 0; g < num_aer; ++g) {
+      tends.q_aero_i[n][g](k) +=
+          (qaer_cur[g][n] - progs.q_aero_i[n][g](k)) / dt;
+    }
+  }
+
+  for (int i = 0; i < num_mode; ++i) {
+    tends.n_mode_i[i](k) += (qnum_cur[i] - progs.n_mode_i[i](k)) / dt;
+  }
+
+  for (int n = 0; n < num_mode; ++n) {
+    for (int g = 0; g < num_aer; ++g) {
+      progs.q_aero_i[n][g](k) = qaer_cur[g][n];
+    }
+
+    for (int i = 0; i < num_mode; ++i) {
+      progs.n_mode_i[i](k) = qnum_cur[i];
+    }
+  }
 }
 
 } // namespace aging
@@ -311,7 +403,6 @@ inline void Aging::init(const AeroConfig &aero_config,
                         const Config &process_config) {
 
   config_ = process_config;
-
 };
 
 // compute_tendencies -- computes tendencies and updates diagnostics
@@ -328,7 +419,7 @@ void Aging::compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
 
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
-        aging::aerosol_aging_rates_1box(k, config, dt, atm, progs, diags,
+        aging::aerosol_aging_rates_1box(k, config, dt, atm, progs, diags, tends,
                                         config_);
       });
 }
