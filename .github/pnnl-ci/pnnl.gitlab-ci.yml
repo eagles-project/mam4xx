@@ -73,7 +73,7 @@ variables:
     - .pnnl_base_template
   rules:
     - when: manual
-    - if: '$CI_COMMIT_TITLE =~ /[haero-rebuild]/'
+    - if: '$CI_COMMIT_TITLE =~ /\[haero-rebuild\]/'
       when: on_success
   allow_failure: true
   variables:
@@ -124,7 +124,7 @@ variables:
       export SYSTEM_NAME=$SYSTEM_NAME
 
       # Use perl script if MY_CLUSTER is something specific
-      if [[ $MY_CLUSTER = "dl_gpu" ]]; then
+      if [[ $SLURM_Q = "dl_gpu" ]]; then
         # This is any idle DL node.
         # Results in the following possible GPU archs:
         #   - P100 (cuda_arch 60) (dl/dl_shared)
