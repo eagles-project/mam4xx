@@ -9,6 +9,7 @@
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/mam4_types.hpp>
+#include <mam4xx/utils.hpp>
 
 namespace mam4 {
 
@@ -117,13 +118,6 @@ Real total_inter_cldbrn(const bool &iscloudy, const int &imode,
   return total;
 }
 
-// this function considers 'num' and returns either 'num' (already in bounds) or
-// 'high'/'low' if num is outside the bounds
-KOKKOS_INLINE_FUNCTION
-static Real min_max_bound(const Real &low, const Real &high, const Real &num) {
-  return max(low, min(high, num));
-}
-
 KOKKOS_INLINE_FUNCTION
 void compute_before_growth_dryvol_and_num() {}
 
@@ -167,7 +161,7 @@ void compute_before_growth_dryvol_and_num(
   bef_grwth_num = max(0.0, bef_grwth_num); // bound to have minimum of 0
 
   // // bound number within min and max of the source mode
-  bef_grwth_numbnd = min_max_bound(bef_grwth_dryvolbnd * v2nhi, // min value
+  bef_grwth_numbnd = utils::min_max_bound(bef_grwth_dryvolbnd * v2nhi, // min value
                                    bef_grwth_dryvolbnd * v2nlo,
                                    bef_grwth_num); // max value and input
 }
