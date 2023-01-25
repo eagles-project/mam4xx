@@ -72,9 +72,9 @@ variables:
   extends:
     - .pnnl_base_template
   rules:
-    - when: manual
     - if: '$CI_COMMIT_TITLE =~ /\[haero-rebuild\]/'
       when: always
+    - when: manual
   allow_failure: true
   variables:
   # We are just building, so might as well use CPU nodes
