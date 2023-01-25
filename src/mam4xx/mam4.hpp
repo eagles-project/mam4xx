@@ -5,6 +5,7 @@
 
 #include <haero/aero_process.hpp>
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/aging.hpp>
 #include <mam4xx/calcsize.hpp>
 #include <mam4xx/coagulation.hpp>
 #include <mam4xx/gasaerexch.hpp>
@@ -17,6 +18,7 @@ using NucleationProcess = haero::AeroProcess<AeroConfig, Nucleation>;
 using GasAerExchProcess = haero::AeroProcess<AeroConfig, GasAerExch>;
 using CoagulationProcess = haero::AeroProcess<AeroConfig, Coagulation>;
 using CalcSizeProcess = haero::AeroProcess<AeroConfig, CalcSize>;
+using AgingProcess = haero::AeroProcess<AeroConfig, Aging>;
 
 } // namespace mam4
 
