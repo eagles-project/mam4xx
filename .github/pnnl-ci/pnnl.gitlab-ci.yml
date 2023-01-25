@@ -11,14 +11,10 @@ workflow:
 stages:
 # While we could put this in a matrix with more runners,
 # This maximizes the number of concurrent builds that can run
-  - haero-single-debug
-  - haero-double-debug
-  - haero-single-release
-  - haero-double-release
-  - build-single-debug
-  - build-double-debug
-  - build-single-release
-  - build-double-release
+  - haero-single
+  - haero-double
+  - build-single
+  - build-double
 
 # Runner with HPC/SLURM connection
 .pnnl_tags_template:
@@ -159,6 +155,7 @@ variables:
       exit $res
 
 SVC Account Cleanup:
+  resource_group: testing
   stage: .pre
   extends:
     - .pnnl_tags_template
@@ -174,9 +171,10 @@ SVC Account Cleanup:
 # Since we only have two runners, we should run builds one after the other to ensure
 # Two developers can run pipelines at the same time.
 Deception Debug Single Precision:
+  resource_group: testing
   extends:
     - .pnnl_hpc_job_template
-  stage: build-single-debug
+  stage: build-single
   variables:
     PRECISION: single
     BUILD_TYPE: Debug
@@ -184,15 +182,16 @@ Deception Debug Single Precision:
 Deception Release Single Precision:
   extends:
     - .pnnl_hpc_job_template
-  stage: build-single-release
+  stage: build-single
   variables:
     PRECISION: single
     BUILD_TYPE: Release
 
 Deception Debug Double Precision:
+  resource_group: testing
   extends:
     - .pnnl_hpc_job_template
-  stage: build-double-debug
+  stage: build-double
   variables:
     PRECISION: double
     BUILD_TYPE: Release
@@ -200,15 +199,16 @@ Deception Debug Double Precision:
 Deception Release Double Precision:
   extends:
     - .pnnl_hpc_job_template
-  stage: build-double-release
+  stage: build-double
   variables:
     PRECISION: double
     BUILD_TYPE: Debug
 
 Rebuild HAERO Debug Single Precision:
+  resource_group: testing
   extends:
     - .haero_rebuild_template
-  stage: haero-single-debug
+  stage: haero-single
   variables:
     PRECISION: single
     BUILD_TYPE: Debug
@@ -216,23 +216,25 @@ Rebuild HAERO Debug Single Precision:
 Rebuild HAERO Release Single Precision:
   extends:
     - .haero_rebuild_template
-  stage: haero-single-release
+  stage: haero-single
   variables:
     PRECISION: single
     BUILD_TYPE: Release
 
 Rebuild HAERO Debug Double Precision:
+  resource_group: testing
   extends:
     - .haero_rebuild_template
-  stage: haero-double-debug
+  stage: haero-double
   variables:
     PRECISION: double
     BUILD_TYPE: Debug
 
 Rebuild HAERO Release Double Precision:
+  resource_group: testing
   extends:
     - .haero_rebuild_template
-  stage: haero-double-release
+  stage: haero-double
   variables:
     PRECISION: double
     BUILD_TYPE: Release
