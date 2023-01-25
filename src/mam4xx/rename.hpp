@@ -17,6 +17,7 @@ using haero::max;
 using haero::min;
 using haero::sqrt;
 using haero::erf;
+using haero::log;
 using Constants = haero::Constants;
 using haero::square;
 
@@ -57,18 +58,18 @@ void compute_dryvol_change_in_src_mode(
       Real tmp_dryvol = 0.0;     // dry volume accumulator
       Real tmp_del_dryvol = 0.0; // dry volume growth(change) accumulator
 
-      // Notes on mass_2_vol factor:Units:[m3/kmol-species]; where kmol-species
+      // Notes on mass_2_vol factor: Units:[m3/kmol-species]; where kmol-species
       // is the amount of a species "s" This factor is obtained by
-      // (molecular_weight/density) of a specie. That is, [ (g/mol-species) /
+      // (molecular_weight/density) of a species. That is, [ (g/mol-species) /
       // (kg-species/m3) ]; where molecular_weight has units [g/mol-species] and
-      // density units are [kg-specie/m3] which results in the units of
-      // m3/kmol-specie
+      // density units are [kg-species/m3] which results in the units of
+      // m3/kmol-species
 
       for (int ispec = 0; ispec < nspec; ++ispec) {
         // Multiply by mass_2_vol[m3/kmol-species] to convert
-        // q_mmr[kmol-specie/kmol-air]) to volume units[m3/kmol-air]
+        // q_mmr[kmol-species/kmol-air]) to volume units[m3/kmol-air]
         tmp_dryvol += q_mmr[m][ispec] * mass_2_vol[ispec];
-        // accumulate the "grwoth" in volume units as well
+        // accumulate the "growth" in volume units as well
         tmp_del_dryvol += q_del_growth[m][ispec] * mass_2_vol[ispec];
       }
 
@@ -97,10 +98,8 @@ Real total_inter_cldbrn(const bool &iscloudy, const int &imode,
 
   // logical,  intent(in) :: iscldy       // TRUE, if a cell has cloud
   // integer,  intent(in) :: imode
-  // real(r8), intent(in) :: interstitial(:)     // interstital part [unit
-  // FIXME: this is weird--figure out what's going on here
-  // depends on the input] real(r8), intent(in), optional :: cldbrn(:) // cloud
-  // borne part [unit depends on the input]
+  // real(r8), intent(in) :: interstitial(:) // interstitial part [unit depends on the input]
+  // real(r8), intent(in), optional :: cldbrn(:) // cloudborne part [unit depends on the input]
 
   // // return value
   // real(r8) :: total
@@ -119,6 +118,7 @@ Real total_inter_cldbrn(const bool &iscloudy, const int &imode,
   return total;
 }
 
+// TODO: this is a placeholder until we create a proper unit test
 KOKKOS_INLINE_FUNCTION
 void compute_before_growth_dryvol_and_num() {}
 
@@ -140,13 +140,11 @@ void compute_before_growth_dryvol_and_num(
 
   // Compute total(i.e. cloud borne and interstitial) of dry volume (before
   // growth)
-  //  and delta in dry volume in the source mode [units: (m3 of specie)/(kmol
+  //  and delta in dry volume in the source mode [units: (m3 of species)/(kmol
   // of air)]
-  // NOTE: cloudborne input can be optional, so we are sending "src_mode" as
-  // a argument
-  // as we cannot reference a member of an optional array if it is not
-  // present
-  // FIXME: give more thought to what's going on here and why
+  // NOTE(mam4 refactor): cloudborne input can be optional, so we are sending
+  // "src_mode" as a argument
+  // as we cannot reference a member of an optional array if it is not present
   // NOTE: as long as dryvol_i(src_mode) is initialized to 0 when that mode is
   // "not cloudy", this function call is a one-liner. e.g.,
   // pregrowth_dryvol = dryvol_i[src_mode] + dryvol_c[src_mode];
@@ -163,8 +161,8 @@ void compute_before_growth_dryvol_and_num(
 
   // // bound number within min and max of the source mode
   bef_grwth_numbnd = utils::min_max_bound(bef_grwth_dryvolbnd * v2nhi, // min value
-                                   bef_grwth_dryvolbnd * v2nlo,
-                                   bef_grwth_num); // max value and input
+                                   bef_grwth_dryvolbnd * v2nlo, // max value
+                                   bef_grwth_num); // input
 }
 
 //FIXME: check if a function to compute mode_diameter exist. 
@@ -181,6 +179,7 @@ Real mode_diameter(const Real volume, const Real number, const Real size_factor)
  return pow(volume/(number*size_factor),onethird); 
 } // end mode_diameter
 
+// TODO: this is a placeholder until we create a proper unit test
 KOKKOS_INLINE_FUNCTION
 void do_inter_mode_transfer() {}
 
@@ -197,10 +196,10 @@ void do_inter_mode_transfer(
     Real ln_dia_cutoff[AeroConfig::num_modes()],
     Real diameter_threshold[AeroConfig::num_modes()],
     Real dgnum_amode[AeroConfig::num_modes()],
-    Real qaer_cur[AeroConfig::num_modes()][7],
+    Real qaer_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
     // aerosol number mixing ratios [#/kmol-air]
     Real qnum_cur[AeroConfig::num_modes()], 
-    Real qaercw_cur[AeroConfig::num_modes()][7], 
+    Real qaercw_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
     Real qnumcw_cur[AeroConfig::num_modes()]) {
   // NOTE: original function signature
   // (nmode, nspec, dest_mode_of_mode, &
@@ -216,8 +215,7 @@ void do_inter_mode_transfer(
   Real bef_grwth_dryvolbnd; // [m3/kmol-air]
   Real bef_grwth_numbnd; //  [#/kmol-air]
 
-  // // Loop through the modes and do the transfer
-  // pair_loop:  do imode = 1, nmode
+  // Loop through the modes and do the transfer
   for (int imode = 0; imode < nmodes; ++imode) {
     src_mode = imode;                     // source mode
     dest_mode = dest_mode_of_mode[imode]; // destination mode
@@ -227,7 +225,6 @@ void do_inter_mode_transfer(
       continue;
 
     // compute before growth dry volume and number
-
     compute_before_growth_dryvol_and_num(
         // in
         iscloudy, src_mode, dryvol_a, dryvol_c, qnum_cur, qnumcw_cur,
@@ -238,25 +235,24 @@ void do_inter_mode_transfer(
     // change (delta) in dryvol
     const Real dryvol_del = total_inter_cldbrn(iscloudy, src_mode, deldryvol_a, deldryvol_c); 
 
-    // Total dryvolume after growth (add delta growth)
+    // Total dry volume after growth (add delta growth)
     Real aft_grwth_dryvol = bef_grwth_dryvol + dryvol_del; 
 
-    // Skip inter-mode transfer for this mode if dry after grwoth is ~ 0
+    // Skip inter-mode transfer for this mode if dry after growth is ~ 0
     if (aft_grwth_dryvol <= smallest_dryvol_value) {break;}
+    // // Total dry volume after growth (add delta growth)
 
     // compute before growth diameter
     Real bef_grwth_diameter = mode_diameter(bef_grwth_dryvolbnd, bef_grwth_numbnd, sz_factor[src_mode]);
 
     // if the before growth diameter is more than the threshold
-    // (diameter_threshold), we restrict diameter
-    // to the threshold and change dry volume accorindgly
+    // (diameter_threshold), we restrict diameter to the threshold and change dry volume accordingly
     if (bef_grwth_diameter > diameter_threshold[src_mode] ) {
       //  this revised volume corresponds to bef_grwth_diameter ==
       //    diameter_threshold, and same number conc 
       bef_grwth_dryvol = bef_grwth_dryvol * cube(diameter_threshold[src_mode]/bef_grwth_diameter);
       bef_grwth_diameter = diameter_threshold[src_mode];
     }
-
 
     //FIXME 
     // BAD CONSTANT 
@@ -265,8 +261,7 @@ void do_inter_mode_transfer(
     }
    
     // Compute after growth diameter; if it is less than the "nominal" or
-    // "base" diameter for
-    // the source mode, skip inter-mode transfer
+    // "base" diameter for the source mode, skip inter-mode transfer
     Real aft_grwth_diameter =
     mode_diameter(aft_grwth_dryvol,bef_grwth_numbnd,sz_factor[src_mode]);
     // FIXME
@@ -370,10 +365,9 @@ void find_renaming_pairs(
       num_pairs += num_pairs; // increment npair
 
       // cutoff (based on geometric mean) for making decision to do inter-mode
-      // transfers We took geommetric mean of the participating modes (source
+      // transfers We took geometric mean of the participating modes (source
       // and destination) to find a cutoff or threshold from moving particles
-      // from the source to the
-      //  destination mode.
+      // from the source to the destination mode.
       const Real alnsg_amode_dest_mode = log(modes(dest_mode - 1).mean_std_dev);
       diameter_cutoff[src_mode] =
           sqrt(modes(src_mode).nom_diameter * exp(1.5 * square(alnsg_amode)) *
@@ -387,7 +381,7 @@ void find_renaming_pairs(
   }
 
   // Factor, mass_2_vol, to convert from
-  // q_mmr[kmol-specie/kmol-air]) to volume units[m3/kmol-air]
+  // q_mmr[kmol-species/kmol-air]) to volume units[m3/kmol-air]
   for (int iaero = 0; iaero < AeroConfig::num_aerosol_ids(); ++iaero) {
     mass_2_vol[iaero] =
         aero_species(iaero).molecular_weight / aero_species(iaero).density;
@@ -450,10 +444,10 @@ void compute_tail_fraction(const Real diameter,
   // Thus, if we do not want to include it we set its values to -1. 
   // in current implementation log_dia_tail_fac is not present. 
   const Real log_diameter  = log(diameter) + min(Real(0), log_dia_tail_fac);
-  const Real tail = ( log_dia_cutoff - log_diameter ) * tail_dist_fac;
-  // erf error function
+  const Real tail = (log_dia_cutoff - log_diameter) * tail_dist_fac;
+  // erfc error function
   // FIXME: check that we are using same function that E3SM.  
-  tail_fraction = Real(0.5)*erf( tail ); 
+  tail_fraction = Real(0.5) * erf( tail );
 
 } // end compute_tail_fraction
 
@@ -470,27 +464,26 @@ void compute_xfer_fractions(const Real bef_grwth_dryvol,
                             ){
 
     // BAD CONSTANT
-    //1-eps (this number is little less than 1, e.g. 0.99)
+    //1-eps (this number is little less than 1, e.g. 0.99) // FIXME: this comment is nonsense
     const Real xferfrac_max = 0.99; //1.0 - 10.0*epsilon(1.0_r8) ; 
     // assume we have fractions to transfer, so we will not skip the rest of the calculations
     is_xfer_frac_zero = false;
-    const Real zero =0.0; 
+    const Real zero = 0.0;
 
     // transfer fraction is difference between new and old tail-fractions
     const Real volume_fraction = aft_grwth_tail_fr_vol*aft_grwth_dryvol - bef_grwth_tail_fr_vol*bef_grwth_dryvol;
-
 
     if (volume_fraction <= zero ) {
       is_xfer_frac_zero = true;
       return; 
      } 
 
-    xfer_vol_frac = min( volume_fraction, aft_grwth_dryvol )/aft_grwth_dryvol;
-    xfer_vol_frac = min( xfer_vol_frac, xferfrac_max ) ; 
+    xfer_vol_frac = min(volume_fraction, aft_grwth_dryvol) / aft_grwth_dryvol;
+    xfer_vol_frac = min(xfer_vol_frac, xferfrac_max) ;
     xfer_num_frac = aft_grwth_tail_fr_num - bef_grwth_tail_fr_num; 
 
     // transfer fraction for number cannot exceed that of mass
-    xfer_num_frac = max( zero, min( xfer_num_frac, xfer_vol_frac ) );
+    xfer_num_frac = max(zero, min(xfer_num_frac, xfer_vol_frac));
 
 } // end compute_xfer_fractions
 
@@ -498,13 +491,14 @@ KOKKOS_INLINE_FUNCTION
 void do_num_and_mass_transfer(const int src_mode, const int dest_mode,
                               const Real xfer_vol_frac,
                               const Real xfer_num_frac, // input
-                              Real qaer[4][7], Real qnum[4]) {
+                              Real qaer[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+                              Real qnum[AeroConfig::num_modes()]) {
   // compute changes to number and species masses
   const Real num_trans = qnum[src_mode] * xfer_num_frac;
   qnum[src_mode] -= num_trans;
   qnum[dest_mode] += num_trans;
 
-  for (int ispec = 0; ispec < 7; ++ispec) {
+  for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
     const Real vol_trans = qaer[src_mode][ispec] * xfer_vol_frac;
     qaer[src_mode][ispec] -= vol_trans;
     qaer[dest_mode][ispec] += vol_trans;
@@ -567,8 +561,8 @@ public:
 
   } // end(init)
 
-  // NOTE: it looks like this will probably correspond to mam_rename_1subarea()
-  // in the fortran refactor code
+  // NOTE: this corresponds to mam_rename_1subarea() in the fortran refactor
+  // code, which we include as a private function below
   KOKKOS_INLINE_FUNCTION
   void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
                           Real t, Real dt, const Atmosphere &atmosphere,
@@ -770,7 +764,7 @@ private:
     Real deldryvol_i[mam4::AeroConfig::num_modes()];
 
     // Interstitial aerosols: Compute initial (before growth) aerosol dry
-    // volume and also the growth in dryvolume of the "src" mode
+    // volume and also the growth in dry volume of the "src" mode
 
     rename::compute_dryvol_change_in_src_mode(
         mam4::AeroConfig::num_modes(),       // in
