@@ -61,8 +61,9 @@ variables:
   extends:
     - .pnnl_base_template
   variables:
-  # Since we are only able to compile against one CUDA arch, we must target just dl_shared
-    SLURM_Q: "dl_shared"
+  # We can hard code the SLURM_Q, or have a perl script find any idle partition at runtime.
+  # This is a magic string that matches a conditional in the job script
+    SLURM_Q: "dl_gpu"
     SLURM_ARGS: "--ntasks=3 --gres=gpu:1"
     SCRIPT_NAME: ci.sh
 
@@ -122,6 +123,16 @@ variables:
       export BUILD_TYPE=$BUILD_TYPE
       export PRECISION=$PRECISION
       export SYSTEM_NAME=$SYSTEM_NAME
+
+      # Use perl script if MY_CLUSTER is something specific
+      if [[ $MY_CLUSTER = "dl_gpu" ]]; then
+        # This is any idle DL node.
+        # Results in the following possible GPU archs:
+        #   - P100 (cuda_arch 60) (dl/dl_shared)
+        #   - V100 (cuda_arch 70) (dlv/dlv_shared)
+        #   - RTX 2080 Ti (cuda_arch 75) (dlt/dlt_shared)
+        export SLURM_Q=`perl ./.github/pnnl-ci/findIdleDLNodes.pl`
+      fi
 
       # jobid used in pnnl_after_script_template to cancel job if cancelled or
       # timed out by gitlab through the UI
