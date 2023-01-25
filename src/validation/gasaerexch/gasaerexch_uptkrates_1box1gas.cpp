@@ -16,22 +16,22 @@ void test_gasaerexch_uptkrates_1box1gas_process(const Input &input,
   if (!input.has("temp")) {
     std::cerr << "Required name: "
               << "temp" << std::endl;
-    exit(0);
+    exit(1);
   }
   if (!input.has_array("dgncur_awet")) {
     std::cerr << "Required name: "
               << "dgncur_awet" << std::endl;
-    exit(0);
+    exit(1);
   }
   if (!input.has_array("lnsg")) {
     std::cerr << "Required name: "
               << "lnsg" << std::endl;
-    exit(0);
+    exit(1);
   }
   if (!input.has_array("aernum")) {
     std::cerr << "Required name: "
               << "aernum" << std::endl;
-    exit(0);
+    exit(1);
   }
   const bool has_mw_gas = input.has("mw_gas");
   const bool has_pmid = input.has("pmid");

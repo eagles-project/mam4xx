@@ -165,12 +165,12 @@ int main(int argc, char **argv) {
   Settings settings = ensemble->settings();
   if (!settings.has("mam_subr_name")) {
     std::cerr << "No function specified in mam4xx.mam_subr_name!" << std::endl;
-    exit(0);
+    exit(1);
   }
   if (settings.get("mam_subr_name") != "mam_gasaerexch_1subarea") {
     std::cerr << "mam4xx.mam_subr_name not `mam_gasaerexch_1subarea` "
               << std::endl;
-    exit(0);
+    exit(1);
   }
 
   const int h2so4 = static_cast<int>(mam4::GasId::H2SO4);
