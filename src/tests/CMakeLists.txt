@@ -18,8 +18,10 @@ target_link_libraries(mam4xx_tests mam4xx)
 
 CreateUnitTest(mam4_nucleation_unit_tests mam4_nucleation_unit_tests.cpp)
 CreateUnitTest(mam4_gasaerexch_unit_tests mam4_gasaerexch_unit_tests.cpp)
+CreateUnitTest(mam4_coagulation_unit_tests mam4_coagulation_unit_tests.cpp)
 CreateUnitTest(mam4_calcsize_unit_tests mam4_calcsize_unit_tests.cpp)
 target_compile_options(mam4_nucleation_unit_tests PRIVATE -Werror)
+target_compile_options(mam4_coagulation_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_gasaerexch_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_calcsize_unit_tests PRIVATE -Werror)
 
