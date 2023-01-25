@@ -53,6 +53,18 @@ TEST_CASE("test_total_inter_cldbrn", "mam4_rename_process") {
   REQUIRE(1 == 1);
 }
 
+// TODO: consider checking error when non-real arguments passed?
+TEST_CASE("test_min_max_bound", "mam4_rename_process") {
+  // mam4::AeroConfig mam4_config;
+  // mam4::RenameProcess process(mam4_config);
+  Real outvar = mam4::rename::min_max_bound(1, 3, 2);
+  REQUIRE(outvar == 2);
+  outvar = mam4::rename::min_max_bound(1, 3, 0);
+  REQUIRE(outvar == 1);
+  outvar = mam4::rename::min_max_bound(1, 3, 4);
+  REQUIRE(outvar == 3);
+}
+
 // Everything below is leftover from calcsize but could be useful, so leaving it
 // for now
 
