@@ -74,7 +74,7 @@ variables:
   rules:
     - when: manual
     - if: '$CI_COMMIT_TITLE =~ /\[haero-rebuild\]/'
-      when: on_success
+      when: always
   allow_failure: true
   variables:
   # We are just building, so might as well use CPU nodes
