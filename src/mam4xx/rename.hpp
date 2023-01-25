@@ -374,7 +374,108 @@ void find_renaming_pairs(
     mass_2_vol[iaero] =
         aero_species(iaero).molecular_weight / aero_species(iaero).density;
   }
-}
+} // end find_renaming_pairs
+
+#if 0
+  subroutine compute_tail_fraction(diameter,log_dia_cutoff, tail_dist_fac, & !input
+       log_dia_tail_fac, & !optional input
+       tail_fraction ) !output
+
+    !Compute tail fraction to be used for inter-mode species transfer
+
+    use shr_spfn_mod, only: erfc_shr => shr_spfn_erfc  !E3SM implementation of the erro function
+
+    implicit none
+
+    real(r8), intent(in) :: diameter       ![m]
+    real(r8), intent(in) :: log_dia_cutoff ![m]
+    real(r8), intent(in) :: tail_dist_fac  ![unitless]
+
+    real(r8), intent(in), optional :: log_dia_tail_fac! [m]
+
+    real(r8), intent(out) :: tail_fraction ![unitless]
+
+    real(r8) :: log_diameter, tail ![m]
+
+    log_diameter  = log(diameter)
+    if (present(log_dia_tail_fac)) log_diameter  = log_diameter + log_dia_tail_fac
+    tail          = ( log_dia_cutoff - log_diameter ) * tail_dist_fac
+    tail_fraction = 0.5_r8*erfc_shr( tail )
+
+  end subroutine compute_tail_fraction
+
+  KOKKOS_INLINE_FUNCTION
+void compute_tail_fraction() {
+  // Compute tail fraction to be used for inter-mode species transfer
+  // use shr_spfn_mod, only: erfc_shr => shr_spfn_erfc  !E3SM implementation of the erro function
+
+  log_diameter  = log(diameter)
+  
+    if (present(log_dia_tail_fac)) log_diameter  = log_diameter + log_dia_tail_fac
+    tail          = ( log_dia_cutoff - log_diameter ) * tail_dist_fac
+    tail_fraction = 0.5_r8*erfc_shr( tail )
+
+
+#endif
+
+
+
+
+// } // end compute_tail_fraction
+
+KOKKOS_INLINE_FUNCTION
+void compute_xfer_fractions(const Real bef_grwth_dryvol,
+                            const Real aft_grwth_dryvol,
+                            const Real bef_grwth_tail_fr_vol,
+                            const Real aft_grwth_tail_fr_vol, // in
+                            const Real aft_grwth_tail_fr_num,
+                            const Real bef_grwth_tail_fr_num, // in
+                            bool & is_xfer_frac_zero, //out
+                            Real & xfer_vol_frac,
+                            Real & xfer_num_frac //out
+                            ){
+
+    // BAD CONSTANT
+    //1-eps (this number is little less than 1, e.g. 0.99)
+    const Real xferfrac_max = 0.99; //1.0 - 10.0*epsilon(1.0_r8) ; 
+    // assume we have fractions to transfer, so we will not skip the rest of the calculations
+    is_xfer_frac_zero = false;
+    const Real zero =0.0; 
+
+    // transfer fraction is difference between new and old tail-fractions
+    const Real volume_fraction = aft_grwth_tail_fr_vol*aft_grwth_dryvol - bef_grwth_tail_fr_vol*bef_grwth_dryvol;
+
+
+    if (volume_fraction <= zero ) {
+      is_xfer_frac_zero = true;
+      return; 
+     } 
+
+    xfer_vol_frac = min( volume_fraction, aft_grwth_dryvol )/aft_grwth_dryvol;
+    xfer_vol_frac = min( xfer_vol_frac, xferfrac_max ) ; 
+    xfer_num_frac = aft_grwth_tail_fr_num - bef_grwth_tail_fr_num; 
+
+    // transfer fraction for number cannot exceed that of mass
+    xfer_num_frac = max( zero, min( xfer_num_frac, xfer_vol_frac ) );
+
+} // end compute_xfer_fractions
+
+KOKKOS_INLINE_FUNCTION
+void do_num_and_mass_transfer(const int src_mode, const int dest_mode,
+                              const Real xfer_vol_frac,
+                              const Real xfer_num_frac, // input
+                              Real qaer[4][7], Real qnum[4]) {
+  // compute changes to number and species masses
+  const Real num_trans = qnum[src_mode] * xfer_num_frac;
+  qnum[src_mode] -= num_trans;
+  qnum[dest_mode] += num_trans;
+
+  for (int ispec = 0; ispec < 7; ++ispec) {
+    const Real vol_trans = qaer[src_mode][ispec] * xfer_vol_frac;
+    qaer[src_mode][ispec] -= vol_trans;
+    qaer[dest_mode][ispec] += vol_trans;
+  }
+} // end do_num_and_mass_transfer
 
 } // namespace rename
 
