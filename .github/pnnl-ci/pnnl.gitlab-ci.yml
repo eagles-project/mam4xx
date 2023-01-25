@@ -9,10 +9,16 @@ workflow:
     - if: $CI_MERGE_REQUEST_EVENT_TYPE != "detached"
 
 stages:
-  - haero-single
-  - haero-double
-  - build-single
-  - build-double
+# While we could put this in a matrix with more runners,
+# This maximizes the number of concurrent builds that can run
+  - haero-single-debug
+  - haero-double-debug
+  - haero-single-release
+  - haero-double-release
+  - build-single-debug
+  - build-double-debug
+  - build-single-release
+  - build-double-release
 
 # Runner with HPC/SLURM connection
 .pnnl_tags_template:
@@ -45,10 +51,6 @@ variables:
     - .pnnl_tags_template
     - .pnnl_script_template
     - .pnnl_after_script_template
-# We only have 2 runners at a time, so this is the most we can parallelize
-  parallel:
-    matrix:
-      - BUILD_TYPE: [Debug, Release]
   variables:
     SYSTEM_NAME: deception
     WORKDIR_SUFFIX: haero_${BUILD_TYPE}_${PRECISION}
@@ -69,6 +71,7 @@ variables:
   extends:
     - .pnnl_base_template
   rules:
+    - when: never
     - if: '$CI_COMMIT_TITLE =~ /[haero-rebuild]/'
       when: on_success
     - when: manual
@@ -158,31 +161,69 @@ SVC Account Cleanup:
     - find $WORKDIR -type d -mindepth 1 -mmin +360 -prune -print -exec rm -rf {} \; || true
     - ls -hal $WORKDIR
 
-Deception Single Precision:
+# Since we only have two runners, we should run builds one after the other to ensure
+# Two developers can run pipelines at the same time.
+Deception Debug Single Precision:
   extends:
     - .pnnl_hpc_job_template
-  stage: build-single
+  stage: build-single-debug
   variables:
     PRECISION: single
+    BUILD_TYPE: Debug
 
-Deception Double Precision:
+Deception Release Single Precision:
   extends:
     - .pnnl_hpc_job_template
-  stage: build-double
+  stage: build-single-release
+  variables:
+    PRECISION: single
+    BUILD_TYPE: Release
+
+Deception Debug Double Precision:
+  extends:
+    - .pnnl_hpc_job_template
+  stage: build-double-debug
   variables:
     PRECISION: double
+    BUILD_TYPE: Release
 
-Rebuild HAERO Single Precision:
+Deception Release Double Precision:
+  extends:
+    - .pnnl_hpc_job_template
+  stage: build-double-release
+  variables:
+    PRECISION: double
+    BUILD_TYPE: Debug
+
+Rebuild HAERO Debug Single Precision:
+  extends:
+    - .haero_rebuild_template
+  stage: haero-single-debug
+  variables:
+    PRECISION: single
+    BUILD_TYPE: Debug
+
+Rebuild HAERO Release Single Precision:
   extends:
     - .haero_rebuild_template
   stage: haero-single
   variables:
     PRECISION: single
+    BUILD_TYPE: Release
 
-Rebuild HAERO Double Precision:
+Rebuild HAERO Debug Double Precision:
   extends:
     - .haero_rebuild_template
   stage: haero-double
   variables:
     PRECISION: double
+    BUILD_TYPE: Debug
+
+Rebuild HAERO Release Double Precision:
+  extends:
+    - .haero_rebuild_template
+  stage: haero-double
+  variables:
+    PRECISION: double
+    BUILD_TYPE: Release
 # ---
