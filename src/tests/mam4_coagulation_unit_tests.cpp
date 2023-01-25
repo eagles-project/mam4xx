@@ -23,8 +23,8 @@ TEST_CASE("test_constructor", "mam4_coagulation_process") {
 
 TEST_CASE("test_compute_tendencies", "mam4_coagulation_process") {
 
-  //Kokkos::parallel_for(
-  //    team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-  //      process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
-  //    });
+  // Kokkos::parallel_for(
+  //     team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+  //       process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
+  //     });
 }
