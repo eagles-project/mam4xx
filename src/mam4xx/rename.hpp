@@ -179,6 +179,82 @@ Real mode_diameter(const Real volume, const Real number, const Real size_factor)
  return pow(volume/(number*size_factor),onethird); 
 } // end mode_diameter
 
+
+KOKKOS_INLINE_FUNCTION
+void compute_tail_fraction(const Real diameter, 
+                           const Real log_dia_cutoff,
+                           const Real tail_dist_fac, //input
+                           const Real log_dia_tail_fac, 
+                           Real& tail_fraction
+                           ) {
+  // Compute tail fraction to be used for inter-mode species transfer
+  // rename use present function for this if statement.
+  // However, we will check if log_dia_tail_fac is bigger than zero.
+  // Thus, if we do not want to include it we set its values to -1. 
+  // in current implementation log_dia_tail_fac is not present. 
+  const Real log_diameter  = log(diameter) + min(Real(0), log_dia_tail_fac);
+  const Real tail = (log_dia_cutoff - log_diameter) * tail_dist_fac;
+  // erfc error function
+  // FIXME: check that we are using same function that E3SM.  
+  tail_fraction = Real(0.5) * erf( tail );
+
+} // end compute_tail_fraction
+
+
+KOKKOS_INLINE_FUNCTION
+void compute_xfer_fractions(const Real bef_grwth_dryvol,
+                            const Real aft_grwth_dryvol,
+                            const Real bef_grwth_tail_fr_vol,
+                            const Real aft_grwth_tail_fr_vol, // in
+                            const Real aft_grwth_tail_fr_num,
+                            const Real bef_grwth_tail_fr_num, // in
+                            bool & is_xfer_frac_zero, //out
+                            Real & xfer_vol_frac,
+                            Real & xfer_num_frac //out
+                            ){
+
+    // BAD CONSTANT
+    //1-eps (this number is little less than 1, e.g. 0.99) // FIXME: this comment is nonsense
+    const Real xferfrac_max = 0.99; //1.0 - 10.0*epsilon(1.0_r8) ; 
+    // assume we have fractions to transfer, so we will not skip the rest of the calculations
+    is_xfer_frac_zero = false;
+    const Real zero = 0.0;
+
+    // transfer fraction is difference between new and old tail-fractions
+    const Real volume_fraction = aft_grwth_tail_fr_vol*aft_grwth_dryvol - bef_grwth_tail_fr_vol*bef_grwth_dryvol;
+
+    if (volume_fraction <= zero ) {
+      is_xfer_frac_zero = true;
+      return; 
+     } 
+
+    xfer_vol_frac = min(volume_fraction, aft_grwth_dryvol) / aft_grwth_dryvol;
+    xfer_vol_frac = min(xfer_vol_frac, xferfrac_max) ;
+    xfer_num_frac = aft_grwth_tail_fr_num - bef_grwth_tail_fr_num; 
+
+    // transfer fraction for number cannot exceed that of mass
+    xfer_num_frac = max(zero, min(xfer_num_frac, xfer_vol_frac));
+
+} // end compute_xfer_fractions
+
+KOKKOS_INLINE_FUNCTION
+void do_num_and_mass_transfer(const int src_mode, const int dest_mode,
+                              const Real xfer_vol_frac,
+                              const Real xfer_num_frac, // input
+                              Real qaer[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+                              Real qnum[AeroConfig::num_modes()]) {
+  // compute changes to number and species masses
+  const Real num_trans = qnum[src_mode] * xfer_num_frac;
+  qnum[src_mode] -= num_trans;
+  qnum[dest_mode] += num_trans;
+
+  for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
+    const Real vol_trans = qaer[src_mode][ispec] * xfer_vol_frac;
+    qaer[src_mode][ispec] -= vol_trans;
+    qaer[dest_mode][ispec] += vol_trans;
+  }
+} // end do_num_and_mass_transfer
+
 // TODO: this is a placeholder until we create a proper unit test
 KOKKOS_INLINE_FUNCTION
 void do_inter_mode_transfer() {}
@@ -214,6 +290,8 @@ void do_inter_mode_transfer(
   Real bef_grwth_dryvol; // [m3/kmol-air]
   Real bef_grwth_dryvolbnd; // [m3/kmol-air]
   Real bef_grwth_numbnd; //  [#/kmol-air]
+
+  const Real zero=0;
 
   // Loop through the modes and do the transfer
   for (int imode = 0; imode < nmodes; ++imode) {
@@ -264,51 +342,84 @@ void do_inter_mode_transfer(
     // "base" diameter for the source mode, skip inter-mode transfer
     Real aft_grwth_diameter =
     mode_diameter(aft_grwth_dryvol,bef_grwth_numbnd,sz_factor[src_mode]);
-    // FIXME
-    // We need 
+
     if (aft_grwth_diameter <= dgnum_amode[src_mode]) {break;}
 
-    // // compute before growth number fraction in the tail
-    // call compute_tail_fraction(bef_grwth_diameter,ln_dia_cutoff(src_mode),
-    // fmode_dist_tail_fac(src_mode), & // input
-    //      tail_fraction = bef_grwth_tail_fr_num ) // output
+    // compute before growth number fraction in the tail
 
-    // // compute before growth volume (or mass) fraction in the tail
-    // call compute_tail_fraction(bef_grwth_diameter,ln_dia_cutoff(src_mode),
-    // fmode_dist_tail_fac(src_mode), & // input
-    //      log_dia_tail_fac = ln_diameter_tail_fac(src_mode), & // optional
-    //      input tail_fraction = bef_grwth_tail_fr_vol ) // output
+    // call compute_tail_fraction(bef_grwth_diameter,ln_dia_cutoff(src_mode), 
+    // log_dia_tail_fac is not presented in original call to compute_tail_fraction.
+    // Thus do not no include its value
+    const Real default_log_dia_tail_fac=Real(-1);
+    Real bef_grwth_tail_fr_num =zero; 
+    compute_tail_fraction(bef_grwth_diameter, 
+                          ln_dia_cutoff[src_mode],
+                          fmode_dist_tail_fac[src_mode],
+                           default_log_dia_tail_fac, 
+                           bef_grwth_tail_fr_num // out
+                           ); 
 
-    // // compute after growth number fraction in the tail
-    // call compute_tail_fraction(aft_grwth_diameter,ln_dia_cutoff(src_mode),
-    // fmode_dist_tail_fac(src_mode), & // input
-    //      tail_fraction = aft_grwth_tail_fr_num ) // output
+    // compute before growth volume (or mass) fraction in the tail
+    Real bef_grwth_tail_fr_vol = zero; 
+    compute_tail_fraction(bef_grwth_diameter, 
+                          ln_dia_cutoff[src_mode],
+                          fmode_dist_tail_fac[src_mode],
+                           ln_diameter_tail_fac[src_mode], 
+                           bef_grwth_tail_fr_vol // out
+                           ); 
 
-    // // compute after growth volume (or mass) fraction in the tail
-    // call compute_tail_fraction(aft_grwth_diameter,ln_dia_cutoff(src_mode),
-    // fmode_dist_tail_fac(src_mode), & // input
-    //      log_dia_tail_fac = ln_diameter_tail_fac(src_mode), & // optional
-    //      input tail_fraction = aft_grwth_tail_fr_vol ) // output
+    // compute after growth number fraction in the tail
+     // log_dia_tail_fac is not presented in original call to compute_tail_fraction.
+    // Thus do not no include its value
+    Real aft_grwth_tail_fr_num = zero;
+    compute_tail_fraction(aft_grwth_diameter, 
+                          ln_dia_cutoff[src_mode],
+                          fmode_dist_tail_fac[src_mode],
+                           default_log_dia_tail_fac, 
+                           aft_grwth_tail_fr_num // out
+                           );
+    
+    // compute after growth volume (or mass) fraction in the tail
+    Real aft_grwth_tail_fr_vol = zero; 
+    compute_tail_fraction(aft_grwth_diameter, ln_dia_cutoff[src_mode],
+                          fmode_dist_tail_fac[src_mode],
+                          ln_diameter_tail_fac[src_mode],
+                          aft_grwth_tail_fr_vol // out
+    );
 
-    // // compute transfer fraction (volume and mass) - if less than zero, cycle
-    // loop call compute_xfer_fractions(bef_grwth_dryvol, aft_grwth_dryvol,
-    // bef_grwth_tail_fr_vol, aft_grwth_tail_fr_vol, & // input
-    //      aft_grwth_tail_fr_num, bef_grwth_tail_fr_num, &
-    //      is_xfer_frac_zero, xfer_vol_frac, xfer_num_frac) // output
+    // compute transfer fraction (volume and mass) - if less than zero, cycle
+    // loop 
+    bool is_xfer_frac_zero=false; 
+    Real xfer_vol_frac=zero; 
+    Real xfer_num_frac=zero; 
+    compute_xfer_fractions(bef_grwth_dryvol,
+                           aft_grwth_dryvol,
+                           bef_grwth_tail_fr_vol,
+                           aft_grwth_tail_fr_vol, // in
+                           aft_grwth_tail_fr_num,
+                           bef_grwth_tail_fr_num, // in
+                           is_xfer_frac_zero, //out
+                           xfer_vol_frac,
+                           xfer_num_frac //out
+                            ); 
 
-    // if (is_xfer_frac_zero) cycle pair_loop
+    if (is_xfer_frac_zero) {
+      break;
+    }
 
-    // // do the transfer for the interstitial species
-    // call do_num_and_mass_transfer(nspec, src_mode, dest_mode, xfer_vol_frac,
-    // xfer_num_frac, & // input
-    //      qaer_cur, qnum_cur) // output
-
-    // // do the transfer for the cloud borne species
-    // if ( iscloudy ) then
-    //    call do_num_and_mass_transfer(nspec, src_mode, dest_mode,
-    //    xfer_vol_frac, xfer_num_frac, & // input
-    //         qaercw_cur, qnumcw_cur) // output
-    // end if
+    // do the transfer for the interstitial species
+    do_num_and_mass_transfer(src_mode, dest_mode,
+                             xfer_vol_frac,
+                             xfer_num_frac, // input
+                             qaer_cur,
+                             qnum_cur); 
+    if (iscloudy){
+      do_num_and_mass_transfer(src_mode, dest_mode,
+                             xfer_vol_frac,
+                             xfer_num_frac, // input
+                             qaercw_cur,
+                             qnumcw_cur); 
+    }
   } // end for(imode)
 } // end do_inter_mode_transfer()
 
@@ -388,122 +499,9 @@ void find_renaming_pairs(
   }
 } // end find_renaming_pairs
 
-#if 0
-  subroutine compute_tail_fraction(diameter,log_dia_cutoff, tail_dist_fac, & !input
-       log_dia_tail_fac, & !optional input
-       tail_fraction ) !output
-
-    !Compute tail fraction to be used for inter-mode species transfer
-
-    use shr_spfn_mod, only: erfc_shr => shr_spfn_erfc  !E3SM implementation of the erro function
-
-    implicit none
-
-    real(r8), intent(in) :: diameter       ![m]
-    real(r8), intent(in) :: log_dia_cutoff ![m]
-    real(r8), intent(in) :: tail_dist_fac  ![unitless]
-
-    real(r8), intent(in), optional :: log_dia_tail_fac! [m]
-
-    real(r8), intent(out) :: tail_fraction ![unitless]
-
-    real(r8) :: log_diameter, tail ![m]
-
-    log_diameter  = log(diameter)
-    if (present(log_dia_tail_fac)) log_diameter  = log_diameter + log_dia_tail_fac
-    tail          = ( log_dia_cutoff - log_diameter ) * tail_dist_fac
-    tail_fraction = 0.5_r8*erfc_shr( tail )
-
-  end subroutine compute_tail_fraction
-
-  KOKKOS_INLINE_FUNCTION
-void compute_tail_fraction() {
-  // Compute tail fraction to be used for inter-mode species transfer
-  // use shr_spfn_mod, only: erfc_shr => shr_spfn_erfc  !E3SM implementation of the erro function
-
-  log_diameter  = log(diameter)
-  
-    if (present(log_dia_tail_fac)) log_diameter  = log_diameter + log_dia_tail_fac
-    tail          = ( log_dia_cutoff - log_diameter ) * tail_dist_fac
-    tail_fraction = 0.5_r8*erfc_shr( tail )
 
 
-#endif
 
-
-KOKKOS_INLINE_FUNCTION
-void compute_tail_fraction(const Real diameter, 
-                           const Real log_dia_cutoff,
-                           const Real tail_dist_fac, //input
-                           const Real log_dia_tail_fac, 
-                           Real& tail_fraction
-                           ) {
-  // Compute tail fraction to be used for inter-mode species transfer
-  // rename use present function for this if statement.
-  // However, we will check if log_dia_tail_fac is bigger than zero.
-  // Thus, if we do not want to include it we set its values to -1. 
-  // in current implementation log_dia_tail_fac is not present. 
-  const Real log_diameter  = log(diameter) + min(Real(0), log_dia_tail_fac);
-  const Real tail = (log_dia_cutoff - log_diameter) * tail_dist_fac;
-  // erfc error function
-  // FIXME: check that we are using same function that E3SM.  
-  tail_fraction = Real(0.5) * erf( tail );
-
-} // end compute_tail_fraction
-
-KOKKOS_INLINE_FUNCTION
-void compute_xfer_fractions(const Real bef_grwth_dryvol,
-                            const Real aft_grwth_dryvol,
-                            const Real bef_grwth_tail_fr_vol,
-                            const Real aft_grwth_tail_fr_vol, // in
-                            const Real aft_grwth_tail_fr_num,
-                            const Real bef_grwth_tail_fr_num, // in
-                            bool & is_xfer_frac_zero, //out
-                            Real & xfer_vol_frac,
-                            Real & xfer_num_frac //out
-                            ){
-
-    // BAD CONSTANT
-    //1-eps (this number is little less than 1, e.g. 0.99) // FIXME: this comment is nonsense
-    const Real xferfrac_max = 0.99; //1.0 - 10.0*epsilon(1.0_r8) ; 
-    // assume we have fractions to transfer, so we will not skip the rest of the calculations
-    is_xfer_frac_zero = false;
-    const Real zero = 0.0;
-
-    // transfer fraction is difference between new and old tail-fractions
-    const Real volume_fraction = aft_grwth_tail_fr_vol*aft_grwth_dryvol - bef_grwth_tail_fr_vol*bef_grwth_dryvol;
-
-    if (volume_fraction <= zero ) {
-      is_xfer_frac_zero = true;
-      return; 
-     } 
-
-    xfer_vol_frac = min(volume_fraction, aft_grwth_dryvol) / aft_grwth_dryvol;
-    xfer_vol_frac = min(xfer_vol_frac, xferfrac_max) ;
-    xfer_num_frac = aft_grwth_tail_fr_num - bef_grwth_tail_fr_num; 
-
-    // transfer fraction for number cannot exceed that of mass
-    xfer_num_frac = max(zero, min(xfer_num_frac, xfer_vol_frac));
-
-} // end compute_xfer_fractions
-
-KOKKOS_INLINE_FUNCTION
-void do_num_and_mass_transfer(const int src_mode, const int dest_mode,
-                              const Real xfer_vol_frac,
-                              const Real xfer_num_frac, // input
-                              Real qaer[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
-                              Real qnum[AeroConfig::num_modes()]) {
-  // compute changes to number and species masses
-  const Real num_trans = qnum[src_mode] * xfer_num_frac;
-  qnum[src_mode] -= num_trans;
-  qnum[dest_mode] += num_trans;
-
-  for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
-    const Real vol_trans = qaer[src_mode][ispec] * xfer_vol_frac;
-    qaer[src_mode][ispec] -= vol_trans;
-    qaer[dest_mode][ispec] += vol_trans;
-  }
-} // end do_num_and_mass_transfer
 
 } // namespace rename
 
