@@ -167,6 +167,20 @@ void compute_before_growth_dryvol_and_num(
                                    bef_grwth_num); // max value and input
 }
 
+//FIXME: check if a function to compute mode_diameter exist. 
+KOKKOS_INLINE_FUNCTION
+Real mode_diameter(const Real volume, const Real number, const Real size_factor)
+{
+    // compute diameter inputs:
+    // volume      ![m3]
+    // number      ![#/kmol-air]
+    // size_factor ![unitless]
+  // BAD CONSTANT 
+ Real onethird = Real(1.0)/Real(3.0);  
+
+ return pow(volume/(number*size_factor),onethird); 
+} // end mode_diameter
+
 KOKKOS_INLINE_FUNCTION
 void do_inter_mode_transfer() {}
 
@@ -176,13 +190,18 @@ void do_inter_mode_transfer(
     // volume to number relaxation limits [m^-3]
     Real v2nlorlx[AeroConfig::num_modes()], Real v2nhirlx[AeroConfig::num_modes()],
     // dry volume [m3/kmol-air]
-    Real dryvol_i[AeroConfig::num_modes()], Real dryvol_c[AeroConfig::num_modes()],
+    Real dryvol_a[AeroConfig::num_modes()], Real dryvol_c[AeroConfig::num_modes()],
+    Real deldryvol_a[AeroConfig::num_modes()], Real deldryvol_c[AeroConfig::num_modes()],
+    Real sz_factor[AeroConfig::num_modes()], Real fmode_dist_tail_fac[AeroConfig::num_modes()],
+    Real ln_diameter_tail_fac[AeroConfig::num_modes()], 
+    Real ln_dia_cutoff[AeroConfig::num_modes()],
+    Real diameter_threshold[AeroConfig::num_modes()],
+    Real dgnum_amode[AeroConfig::num_modes()],
+    Real qaer_cur[AeroConfig::num_modes()][7],
     // aerosol number mixing ratios [#/kmol-air]
-    Real qnum_cur[AeroConfig::num_modes()], Real qnumcw_cur[AeroConfig::num_modes()],
-    Real qnum_i_cur[AeroConfig::num_modes()],
-    Real qmol_i_cur[AeroConfig::num_modes()],
-    Real qnum_c_cur[AeroConfig::num_modes()],
-    Real qmol_c_cur[AeroConfig::num_modes()]) {
+    Real qnum_cur[AeroConfig::num_modes()], 
+    Real qaercw_cur[AeroConfig::num_modes()][7], 
+    Real qnumcw_cur[AeroConfig::num_modes()]) {
   // NOTE: original function signature
   // (nmode, nspec, dest_mode_of_mode, &
   // iscloudy, v2nlorlx, v2nhirlx, dryvol_a, dryvol_c, deldryvol_a, deldryvol_c,
@@ -211,46 +230,48 @@ void do_inter_mode_transfer(
 
     compute_before_growth_dryvol_and_num(
         // in
-        iscloudy, src_mode, dryvol_i, dryvol_c, qnum_cur, qnumcw_cur,
+        iscloudy, src_mode, dryvol_a, dryvol_c, qnum_cur, qnumcw_cur,
         v2nlorlx[src_mode], v2nhirlx[src_mode],
         // out
         bef_grwth_dryvol, bef_grwth_dryvolbnd, bef_grwth_numbnd);
+    
+    // change (delta) in dryvol
+    const Real dryvol_del = total_inter_cldbrn(iscloudy, src_mode, deldryvol_a, deldryvol_c); 
 
-    // // change (delta) in dryvol
-    // dryvol_del = total_inter_cldbrn(iscloudy, src_mode, deldryvol_a,
-    // deldryvol_c)
+    // Total dryvolume after growth (add delta growth)
+    Real aft_grwth_dryvol = bef_grwth_dryvol + dryvol_del; 
 
-    // // Total dryvolume after growth (add delta growth)
-    // aft_grwth_dryvol = bef_grwth_dryvol + dryvol_del
+    // Skip inter-mode transfer for this mode if dry after grwoth is ~ 0
+    if (aft_grwth_dryvol <= smallest_dryvol_value) {break;}
 
-    // // Skip inter-mode transfer for this mode if dry after grwoth is ~ 0
-    // if (aft_grwth_dryvol <= smallest_dryvol_value) cycle pair_loop
+    // compute before growth diameter
+    Real bef_grwth_diameter = mode_diameter(bef_grwth_dryvolbnd, bef_grwth_numbnd, sz_factor[src_mode]);
 
-    // // compute before growth diameter
-    // bef_grwth_diameter = mode_diameter(bef_grwth_dryvolbnd, bef_grwth_numbnd,
-    // sz_factor(src_mode))
-
-    // // if the before growth diameter is more than the threshold
+    // if the before growth diameter is more than the threshold
     // (diameter_threshold), we restrict diameter
-    // // to the threshold and change dry volume accorindgly
-    // if (bef_grwth_diameter > diameter_threshold(src_mode)) then
-    //    //  this revised volume corresponds to bef_grwth_diameter ==
-    //    diameter_threshold, and same number conc bef_grwth_dryvol =
-    //    bef_grwth_dryvol *
-    //    (diameter_threshold(src_mode)/bef_grwth_diameter)**3
-    //    bef_grwth_diameter = diameter_threshold(src_mode)
-    // end if
+    // to the threshold and change dry volume accorindgly
+    if (bef_grwth_diameter > diameter_threshold[src_mode] ) {
+      //  this revised volume corresponds to bef_grwth_diameter ==
+      //    diameter_threshold, and same number conc 
+      bef_grwth_dryvol = bef_grwth_dryvol * cube(diameter_threshold[src_mode]/bef_grwth_diameter);
+      bef_grwth_diameter = diameter_threshold[src_mode];
+    }
 
-    // if ((aft_grwth_dryvol-bef_grwth_dryvol) <= 1.0e-6_r8*bef_grwth_dryvolbnd)
-    // cycle pair_loop
 
-    // // Compute after growth diameter; if it is less than the "nominal" or
+    //FIXME 
+    // BAD CONSTANT 
+    if ((aft_grwth_dryvol-bef_grwth_dryvol) <= Real(1.0e-6)*bef_grwth_dryvolbnd){
+      break;
+    }
+   
+    // Compute after growth diameter; if it is less than the "nominal" or
     // "base" diameter for
-    // // the source mode, skip inter-mode transfer
-    // aft_grwth_diameter =
-    // mode_diameter(aft_grwth_dryvol,bef_grwth_numbnd,sz_factor(src_mode))
-
-    // if (aft_grwth_diameter <= dgnum_amode(src_mode)) cycle pair_loop
+    // the source mode, skip inter-mode transfer
+    Real aft_grwth_diameter =
+    mode_diameter(aft_grwth_dryvol,bef_grwth_numbnd,sz_factor[src_mode]);
+    // FIXME
+    // We need 
+    if (aft_grwth_diameter <= dgnum_amode[src_mode]) {break;}
 
     // // compute before growth number fraction in the tail
     // call compute_tail_fraction(bef_grwth_diameter,ln_dia_cutoff(src_mode),
@@ -295,6 +316,8 @@ void do_inter_mode_transfer(
     // end if
   } // end for(imode)
 } // end do_inter_mode_transfer()
+
+
 
 KOKKOS_INLINE_FUNCTION
 void find_renaming_pairs(
