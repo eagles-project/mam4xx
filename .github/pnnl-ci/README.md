@@ -1,14 +1,20 @@
 # PNNL CI Documentation for mam4xx
 This is used to track any maintanence information for PNNL CI. We will also track any current TODOs/notes for developers.
+
 ## Usage
-We currently only have 2 k8s runners, and so you must only run 2 concurrent pipelines at a time.
+We currently only have 2 k8s runners, and so you must only run 2 concurrent pipelines on any merge request commits at a time.
 
-Since we are only able to target one Kokkos CUDA arch at a time https://github.com/kokkos/kokkos/issues/4953, we can only run CI on one Deception partition.
+CI runs on a variety of hardward architectures by using a perl script when the job is run to select the right partition:
 
-**NOTE: Since we require CI to run on only one partition, CI might not always go through if Deception partition `dl_shared` is particularly busy.**
+The possible  GPU architectures are:
+
+| GPU Type | Cuda Architecture | SLURM partition |
+|-|-|-|
+| P100 | 60 | dl/dl_shared |
+| V100 | 70 | dlv/dlv_shared |
+| RTX 2080 Ti | 75 | dlt/dlt_shared |
 
 For some reason only the HPC runners are configured to run at the moment, and so all stages will share that base configuration.
-
 ## Rebuilding HAERO in CI
 
 You can either add "[hearo-rebuild]" directly to your commit message, or go to https://code.pnnl.gov/e3sm/eagles/mam4xx and trigger the rebuild pipeline manually once you have pushed to your branch.
