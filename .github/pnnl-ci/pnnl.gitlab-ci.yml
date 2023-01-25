@@ -217,7 +217,7 @@ Rebuild HAERO Debug Single Precision:
 Rebuild HAERO Release Single Precision:
   extends:
     - .haero_rebuild_template
-  stage: haero-single
+  stage: haero-single-release
   variables:
     PRECISION: single
     BUILD_TYPE: Release
@@ -225,7 +225,7 @@ Rebuild HAERO Release Single Precision:
 Rebuild HAERO Debug Double Precision:
   extends:
     - .haero_rebuild_template
-  stage: haero-double
+  stage: haero-double-debug
   variables:
     PRECISION: double
     BUILD_TYPE: Debug
@@ -233,7 +233,7 @@ Rebuild HAERO Debug Double Precision:
 Rebuild HAERO Release Double Precision:
   extends:
     - .haero_rebuild_template
-  stage: haero-double
+  stage: haero-double-release
   variables:
     PRECISION: double
     BUILD_TYPE: Release

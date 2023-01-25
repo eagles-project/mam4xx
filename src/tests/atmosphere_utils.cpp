@@ -48,8 +48,8 @@ void init_atm_const_tv_lapse_rate(const Atmosphere &atm, const Real Tv0,
   }
 
   // Assert equality based on relative values, rather than absolute tolerance
-  EKAT_ASSERT(FloatingPoint<Real>::rel(
-        psum, p0, std::numeric_limits<float>::epsilon())); 
+  EKAT_ASSERT(FloatingPoint<Real>::rel(psum, p0,
+                                       std::numeric_limits<float>::epsilon()));
 
   Kokkos::deep_copy(atm.temperature, h_temperature);
   Kokkos::deep_copy(atm.pressure, h_pressure);
