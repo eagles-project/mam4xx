@@ -7,6 +7,7 @@
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/mam4_types.hpp>
+#include <mam4xx/utils.hpp>
 
 namespace mam4 {
 
@@ -44,6 +45,8 @@ void compute_dry_volume_k(int k, int imode,
 /*----------------------------------------------------------------------------
  * Compute particle diameter and volume to number ratios using dry bulk volume
  * (drv)
+ * NOTE: this fxn retains the 'vol2num' naming convention (for now?) because
+ * untangling the associated tests is a can of worms
  *--------------------------------------------------------------------------*/
 KOKKOS_INLINE_FUNCTION
 void update_diameter_and_vol2num(const Real &drv, const Real &num,
@@ -60,11 +63,11 @@ void update_diameter_and_vol2num(const Real &drv, const Real &num,
   if (num <= drv_mul_num2vol_ratio_min) {
     dgncur = dgnmax; //
     num2vol_ratio_cur =
-        num2vol_ratio_min; // set to minimum vol2num ratio for this mode
+        num2vol_ratio_min; // set to minimum num2vol_ratio for this mode
   } else if (num >= drv_mul_num2vol_ratio_max) {
     dgncur = dgnmin; //
     num2vol_ratio_cur =
-        num2vol_ratio_max; // set to maximum vol2num ratio for this mode
+        num2vol_ratio_max; // set to maximum num2vol_ratio for this mode
   } else {
     num2vol_ratio_cur = num / drv;
     const Real geom_diam = Real(1.0) / num2vol_ratio_cur;
@@ -78,12 +81,6 @@ KOKKOS_INLINE_FUNCTION
 static Real update_num_adj_tends(const Real &num, const Real &num0,
                                  const Real &dt_inverse) {
   return (num - num0) * dt_inverse;
-}
-
-KOKKOS_INLINE_FUNCTION
-static Real min_max_bounded(const Real &drv, const Real &num2vol_ratio_min,
-                            const Real &num2vol_ratio_max, const Real &num) {
-  return max(drv * num2vol_ratio_min, min(drv * num2vol_ratio_max, num));
 }
 
 /*
@@ -162,13 +159,15 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
     // number/volume == total/combined apply step 1 and 3, but skip the relaxed
     // adjustment (step 2, see below)
     num_c = zero;
-    const auto numbnd =
-        min_max_bounded(drv_i, num2vol_ratio_min, num2vol_ratio_max, num_i);
+    const auto numbnd = utils::min_max_bound(drv_i * num2vol_ratio_min,
+                                             drv_i * num2vol_ratio_max, num_i);
     num_i = num_i + (numbnd - num_i) * frac_adj_in_dt;
   } else if (drv_i <= zero) {
     // interstitial volume is zero, treat similar to above
     const auto numbnd =
-        min_max_bounded(drv_c, num2vol_ratio_min, num2vol_ratio_max, num_c);
+        // min_max_bounded(drv_c, num2vol_ratio_min, num2vol_ratio_max, num_c);
+        utils::min_max_bound(drv_c * num2vol_ratio_min,
+                             drv_c * num2vol_ratio_max, num_c);
     num_c = num_c + (numbnd - num_c) * frac_adj_in_dt;
     num_i = zero;
   } else {
@@ -182,9 +181,9 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
     // Step 2 [Apply relaxed bounds] has 3 parts (a), (b) and (c)
     //  Step 2: (a)Apply relaxed bounds to bound num_a and num_c within
     //  "relaxed" bounds.
-    auto numbnd =
-        min_max_bounded(drv_i, num2vol_ratio_minrl, num2vol_ratio_maxrl,
-                        num_i_stp1); // bounded to relaxed min and max
+    auto numbnd = utils::min_max_bound(
+        drv_i * num2vol_ratio_minrl, drv_i * num2vol_ratio_maxrl,
+        num_i_stp1); // bounded to relaxed min and max
     /* (b)Ideally, num_* should be in range. If they are not, we assume that
        they will reach their maximum (or minimum) for this mode within a day
        (time scale). We then compute how much num_* will change in a time step
@@ -197,14 +196,14 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
     auto num_i_stp2 = num_i_stp1 + delta_num_i_stp2;
 
     // bounded to relaxed min and max
-    numbnd = min_max_bounded(drv_c, num2vol_ratio_minrl, num2vol_ratio_maxrl,
-                             num_c_stp1);
+    numbnd = utils::min_max_bound(drv_c * num2vol_ratio_minrl,
+                                  drv_c * num2vol_ratio_maxrl, num_c_stp1);
     const auto delta_num_c_stp2 = (numbnd - num_c_stp1) * frac_adj_in_dt;
 
     // change in num_i in one time step
     auto num_c_stp2 = num_c_stp1 + delta_num_c_stp2;
 
-    /* (c)We now also need to balance num_* incase only one among the
+    /* (c)We now also need to balance num_* in case only one among the
       interstitial or cloud-borne is changing. If interstitial stayed the same
       (i.e. it is within range) but cloud-borne is predicted to reach its
       maximum (or minimum), we modify interstitial number (num_i), so as to
@@ -215,16 +214,16 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
     */
 
     if (delta_num_i_stp2 == zero && delta_num_c_stp2 != zero) {
-      num_i_stp2 =
-          min_max_bounded(drv_i, num2vol_ratio_minrl, num2vol_ratio_maxrl,
-                          num_i_stp1 - delta_num_c_stp2);
+      num_i_stp2 = utils::min_max_bound(drv_i * num2vol_ratio_minrl,
+                                        drv_i * num2vol_ratio_maxrl,
+                                        num_i_stp1 - delta_num_c_stp2);
     } else if (delta_num_i_stp2 != zero && delta_num_c_stp2 == zero) {
-      num_c_stp2 =
-          min_max_bounded(drv_c, num2vol_ratio_minrl, num2vol_ratio_maxrl,
-                          num_c_stp1 - delta_num_i_stp2);
+      num_c_stp2 = utils::min_max_bound(drv_c * num2vol_ratio_minrl,
+                                        drv_c * num2vol_ratio_maxrl,
+                                        num_c_stp1 - delta_num_i_stp2);
     } // end if
 
-    /* Step3[apply stricter bounds] has 3 parts (a), (b) and (c)
+    /* Step 3: [apply stricter bounds] has 3 parts (a), (b) and (c)
        Step 3:(a) compute combined total of num_i and num_c
     */
     const auto total_drv = drv_i + drv_c;
@@ -240,7 +239,7 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
 
     /*
      * "total_drv*num2vol_ratio_min" represents minimum number for this mode,
-     * and "total_drv*num2vol_ratio_mxn" represents maximum number for this mode
+     * and "total_drv*num2vol_ratio_max" represents maximum number for this mode
      */
     const auto min_number_bound = total_drv * num2vol_ratio_min;
     const auto max_number_bound = total_drv * num2vol_ratio_max;
@@ -475,38 +474,38 @@ void compute_coef_acc_ait_transfer(
 
 KOKKOS_INLINE_FUNCTION
 void compute_new_sz_after_transfer(
-    const Real drv,             // in
-    const Real num,             // in
-    const Real num2volratio_hi, // in num2vol_ratio_min_nmodes(imode)
-    const Real num2volratio_lo, // in num2vol_ratio_max_nmodes(imode)
-    const Real num2volratio,    // in num2vol_ratio_nom_nmodes(imode)
-    const Real dgn_nmodes_hi,   // in dgnmax_nmodes(imode)
-    const Real dgn_nmodes_lo,   // in dgnmin_nmodes(imode)
-    const Real dgn_nmodes_nom,  // in dgnnom_nmodes(imode)
-    const Real mean_std_dev,    // in mean_std_dev(imode)
+    const Real drv,              // in
+    const Real num,              // in
+    const Real num2vol_ratio_hi, // in num2vol_ratio_min_nmodes(imode)
+    const Real num2vol_ratio_lo, // in num2vol_ratio_max_nmodes(imode)
+    const Real num2vol_ratio,    // in num2vol_ratio_nom_nmodes(imode)
+    const Real dgn_nmodes_hi,    // in dgnmax_nmodes(imode)
+    const Real dgn_nmodes_lo,    // in dgnmin_nmodes(imode)
+    const Real dgn_nmodes_nom,   // in dgnnom_nmodes(imode)
+    const Real mean_std_dev,     // in mean_std_dev(imode)
     Real &dgncur, Real &num2vol_ratio_cur) {
-  // num2volratio_hi is computed with dgn_nmodes_hi, i.e., num2volratio_hi
-  // = num2vol_ratio_min num2volratio_lo is computed with dgn_nmodes_lo, i.e.,
-  // num2volratio_lo = num2vol_ratio_max
+  // num2vol_ratio_hi is computed with dgn_nmodes_hi, i.e., num2vol_ratio_hi
+  // = num2vol_ratio_min num2vol_ratio_lo is computed with dgn_nmodes_lo, i.e.,
+  // num2vol_ratio_lo = num2vol_ratio_max
 
   const Real zero = 0;
   if (drv > zero) {
-    if (num <= drv * num2volratio_hi) {
+    if (num <= drv * num2vol_ratio_hi) {
       dgncur = dgn_nmodes_hi;
-      num2vol_ratio_cur = num2volratio_hi;
-    } else if (num >= drv * num2volratio_lo) {
+      num2vol_ratio_cur = num2vol_ratio_hi;
+    } else if (num >= drv * num2vol_ratio_lo) {
       dgncur = dgn_nmodes_lo;
-      num2vol_ratio_cur = num2volratio_lo;
+      num2vol_ratio_cur = num2vol_ratio_lo;
     } else {
       // dgncur = pow(drv / (cmn_factor_nmodes_imode * num), third);
       num2vol_ratio_cur = num / drv;
       const Real geom_diam = Real(1.0) / num2vol_ratio_cur;
       dgncur = conversions::mean_particle_diameter_from_volume(geom_diam,
                                                                mean_std_dev);
-    } // end if (num <= drv*num2volratio_hi)
+    } // end if (num <= drv*num2vol_ratio_hi)
   } else {
     dgncur = dgn_nmodes_nom;
-    num2vol_ratio_cur = num2volratio;
+    num2vol_ratio_cur = num2vol_ratio;
   } // end if (drv > zero)
 
 } // end compute_new_sz_after_transfer
@@ -662,7 +661,7 @@ void aitken_accum_exchange(
   //  are transfered between these modes
   // ------------------------------------------------------------------------
 
-  // num2vol_ratio_geomean is the geometric mean vol2num values
+  // num2vol_ratio_geomean is the geometric mean num2vol_ratio values
   // between the aitken and accum modes
   // const auto num2vol_ratio_geomean =
   // haero::sqrt(voltonum_ait*voltonum_acc);
@@ -740,10 +739,10 @@ void aitken_accum_exchange(
     compute_new_sz_after_transfer(
         drv_i,                                // in
         num_i,                                // in
-        num2vol_ratio_min_nmodes[aitken_idx], // corresponds to num2volratio_hi
+        num2vol_ratio_min_nmodes[aitken_idx], // corresponds to num2vol_ratio_hi
                                               // because it is computed with
                                               // dgnumhi
-        num2vol_ratio_max_nmodes[aitken_idx], // corresponds to num2volratio_lo
+        num2vol_ratio_max_nmodes[aitken_idx], // corresponds to num2vol_ratio_lo
                                               // because it is computed with
                                               // dgnumlo
         num2vol_ratio_nom_nmodes[aitken_idx], dgnmax_nmodes[aitken_idx],
@@ -755,8 +754,8 @@ void aitken_accum_exchange(
     compute_new_sz_after_transfer(
         drv_c,                                // in
         num_c,                                // in
-        num2vol_ratio_min_nmodes[aitken_idx], // corresponds to num2volratio_hi
-        num2vol_ratio_max_nmodes[aitken_idx], // corresponds to num2volratio_lo
+        num2vol_ratio_min_nmodes[aitken_idx], // corresponds to num2vol_ratio_hi
+        num2vol_ratio_max_nmodes[aitken_idx], // corresponds to num2vol_ratio_lo
         num2vol_ratio_nom_nmodes[aitken_idx], dgnmax_nmodes[aitken_idx],
         dgnmin_nmodes[aitken_idx], dgnnom_nmodes[aitken_idx],
         mean_std_dev_nmodes[aitken_idx], dgncur_c_aitken,
@@ -766,10 +765,10 @@ void aitken_accum_exchange(
     compute_new_sz_after_transfer(
         drv_i_acc,                           // in
         num_i_acc,                           // in
-        num2vol_ratio_min_nmodes[accum_idx], // corresponds to num2volratio_hi
+        num2vol_ratio_min_nmodes[accum_idx], // corresponds to num2vol_ratio_hi
                                              // because it is computed with
                                              // dgnumhi
-        num2vol_ratio_max_nmodes[accum_idx], // corresponds to num2volratio_lo
+        num2vol_ratio_max_nmodes[accum_idx], // corresponds to num2vol_ratio_lo
                                              // because it is computed with
                                              // dgnumlo
         num2vol_ratio_nom_nmodes[accum_idx], dgnmax_nmodes[accum_idx],
@@ -781,10 +780,10 @@ void aitken_accum_exchange(
     compute_new_sz_after_transfer(
         drv_c_acc,                           // in
         num_c_acc,                           // in
-        num2vol_ratio_min_nmodes[accum_idx], // corresponds to num2volratio_hi
+        num2vol_ratio_min_nmodes[accum_idx], // corresponds to num2vol_ratio_hi
                                              // because it is computed with
                                              // dgnumlo
-        num2vol_ratio_max_nmodes[accum_idx], // corresponds to num2volratio_lo
+        num2vol_ratio_max_nmodes[accum_idx], // corresponds to num2vol_ratio_lo
                                              // because it is computed with
                                              // dgnumhi
         num2vol_ratio_nom_nmodes[accum_idx], dgnmax_nmodes[accum_idx],
@@ -1212,8 +1211,6 @@ public:
           } // end do_aitacc_transfer
         }); // kokkos::parfor(k)
   }
-
-private:
 };
 
 } // namespace mam4
