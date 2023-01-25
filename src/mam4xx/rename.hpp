@@ -20,6 +20,11 @@ using haero::square;
 
 namespace rename {
 
+// FIXME: there's almost certainly a better way to do this
+// FIXME: should this go here? Other option would be to put it in
+    // do_inter_mode_transfer(), but that's not where it is in the fortran mam4
+const Real smallest_dryvol_value = 1.0e-25; // BAD CONSTANT!
+
 KOKKOS_INLINE_FUNCTION
 void compute_dryvol_change_in_src_mode(
     const int nmode,              // in
@@ -112,14 +117,27 @@ Real total_inter_cldbrn(const bool &iscloudy, const int &imode,
   return total;
 }
 
+// this function considers 'num' and returns either 'num' (already in bounds) or
+// 'high'/'low' if num is outside the bounds
+KOKKOS_INLINE_FUNCTION
+static Real min_max_bound(const Real &low, const Real &high, const Real &num) {
+  return max(low, min(high, num));
+}
+
 KOKKOS_INLINE_FUNCTION
 void compute_before_growth_dryvol_and_num() {}
 
 KOKKOS_INLINE_FUNCTION
-void compute_before_growth_dryvol_and_num(const int &iscloudy,
-                                          const Real &smallest_dryvol_value,
-                                          Real &bef_grwth_dryvol,
-                                          Real &bef_grwth_dryvolbnd) {
+void compute_before_growth_dryvol_and_num(
+    // in
+    const int &iscloudy, const bool &src_mode,
+    Real dryvol_i[AeroConfig::num_modes()],
+    Real dryvol_c[AeroConfig::num_modes()],
+    Real qnum_cur[AeroConfig::num_modes()],
+    Real qnumcw_cur[AeroConfig::num_modes()],
+    const Real &v2nlo, const Real &v2nhi,
+    // out
+    Real &bef_grwth_dryvol, Real &bef_grwth_dryvolbnd, Real &bef_grwth_numbnd) {
   // NOTE: original function signature
   // (iscloudy, src_mode, dryvol_a, dryvol_c, & // input
   // qnum_cur, qnumcw_cur, v2nhi, v2nlo, // input
@@ -133,18 +151,25 @@ void compute_before_growth_dryvol_and_num(const int &iscloudy,
   // a argument
   // as we cannot reference a member of an optional array if it is not
   // present
-  bef_grwth_dryvol = total_inter_cldbrn();
+  // FIXME: give more thought to what's going on here and why
+  // NOTE: as long as dryvol_i(src_mode) is initialized to 0 when that mode is
+  // "not cloudy", this function call is a one-liner. e.g.,
+  // pregrowth_dryvol = dryvol_i[src_mode] + dryvol_c[src_mode];
+  // at worst, we could give it an if(dryvol_c[src_mode] > 0) statement
+  bef_grwth_dryvol = total_inter_cldbrn(iscloudy, src_mode, dryvol_i, dryvol_c);
 
+  // FIXME: is it feasible that pregrowth_dryvol would be smaller than 1e-25?
   bef_grwth_dryvolbnd = haero::max(bef_grwth_dryvol, smallest_dryvol_value);
 
-  // // Compute total before growth number [units: #/kmol-air]
-  // bef_grwth_num    = total_inter_cldbrn(iscldy, src_mode, qnum_cur,
-  // qnumcw_cur) bef_grwth_num = max( 0.0_r8, bef_grwth_num ) // bound to have
-  // minimum of 0
+  // Compute total before growth number [units: #/kmol-air]
+  Real bef_grwth_num =
+      total_inter_cldbrn(iscloudy, src_mode, qnum_cur, qnumcw_cur);
+  bef_grwth_num = max(0.0, bef_grwth_num); // bound to have minimum of 0
 
   // // bound number within min and max of the source mode
-  // bef_grwth_numbnd = min_max_bound(bef_grwth_dryvolbnd*v2nhi, & // min value
-  //      bef_grwth_dryvolbnd*v2nlo, bef_grwth_num) // max value and input
+  bef_grwth_numbnd = min_max_bound(bef_grwth_dryvolbnd * v2nhi, // min value
+                                   bef_grwth_dryvolbnd * v2nlo,
+                                   bef_grwth_num); // max value and input
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -152,7 +177,17 @@ void do_inter_mode_transfer() {}
 
 KOKKOS_INLINE_FUNCTION
 void do_inter_mode_transfer(
-    const int dest_mode_of_mode[AeroConfig::num_modes()], const bool iscloudy) {
+    const int dest_mode_of_mode[AeroConfig::num_modes()], const bool &iscloudy,
+    // volume to number relaxation limits [m^-3]
+    Real v2nlorlx[AeroConfig::num_modes()], Real v2nhirlx[AeroConfig::num_modes()],
+    // dry volume [m3/kmol-air]
+    Real dryvol_i[AeroConfig::num_modes()], Real dryvol_c[AeroConfig::num_modes()],
+    // aerosol number mixing ratios [#/kmol-air]
+    Real qnum_cur[AeroConfig::num_modes()], Real qnumcw_cur[AeroConfig::num_modes()],
+    Real qnum_i_cur[AeroConfig::num_modes()],
+    Real qmol_i_cur[AeroConfig::num_modes()],
+    Real qnum_c_cur[AeroConfig::num_modes()],
+    Real qmol_c_cur[AeroConfig::num_modes()]) {
   // NOTE: original function signature
   // (nmode, nspec, dest_mode_of_mode, &
   // iscloudy, v2nlorlx, v2nhirlx, dryvol_a, dryvol_c, deldryvol_a, deldryvol_c,
@@ -162,6 +197,10 @@ void do_inter_mode_transfer(
   // local variables
   const int nmodes = AeroConfig::num_modes();
   int src_mode, dest_mode;
+
+  Real bef_grwth_dryvol; // [m3/kmol-air]
+  Real bef_grwth_dryvolbnd; // [m3/kmol-air]
+  Real bef_grwth_numbnd; //  [#/kmol-air]
 
   // // Loop through the modes and do the transfer
   // pair_loop:  do imode = 1, nmode
@@ -175,7 +214,12 @@ void do_inter_mode_transfer(
 
     // compute before growth dry volume and number
 
-    compute_before_growth_dryvol_and_num();
+    compute_before_growth_dryvol_and_num(
+        // in
+        iscloudy, src_mode, dryvol_i, dryvol_c, qnum_cur, qnumcw_cur,
+        v2nlorlx[src_mode], v2nhirlx[src_mode],
+        // out
+        bef_grwth_dryvol, bef_grwth_dryvolbnd, bef_grwth_numbnd);
 
     // // change (delta) in dryvol
     // dryvol_del = total_inter_cldbrn(iscloudy, src_mode, deldryvol_a,
@@ -368,9 +412,6 @@ private:
 public:
   // name -- unique name of the process implemented by this class
   const char *name() const { return "MAM4 rename"; }
-
-  // FIXME: there's almost certainly a better way to do this
-  const Real smallest_dryvol_value = 1.0e-25; // BAD CONSTANT!
 
   // init -- initializes the implementation with MAM4's configuration and with
   // a process-specific configuration.
