@@ -196,7 +196,7 @@ void compute_tail_fraction(const Real diameter,
   const Real tail = (log_dia_cutoff - log_diameter) * tail_dist_fac;
   // erfc error function
   // FIXME: check that we are using same function than E3SM.  
-  tail_fraction = Real(0.5) * erf( tail );
+  tail_fraction = Real(0.5) * (Real(1) - erf( tail ));
 
 } // end compute_tail_fraction
 
