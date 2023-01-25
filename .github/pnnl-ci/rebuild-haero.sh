@@ -166,4 +166,7 @@ cd ../../
 echo "Haero has been installed in $PREFIX. Set HAERO_DIR to this directory in"
 echo "your config.sh script after running setup."
 
+echo "Cleaning up HAERO git clone in $PWD/.haero"
+rm -rf $(pwd)/.haero
+
 exit $EXIT_CODE

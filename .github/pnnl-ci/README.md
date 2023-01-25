@@ -21,12 +21,12 @@ PNNL CI will only run when you are adding new commits to an existing merge reque
 You can add `[skip-ci]` in order to prevent CI jobs from running at PNNL. TODO involves adding support for skipping CI when certain tags are present in a PR.
 
 #### TODO:
-- [ ] Consider cleaning up old installations and adding permissions changes so all users can use shared installation
-- [ ] Add support for a variety of paritions on Deception. We currently only target dl_shared as we can only choose one cuda arch
-- [ ] Add way to skip CI using a GitHub tag in both GitLab and GitHub
 - [ ] Port pipeline to AMD architectures
 
 #### Done:
+- [x] Consider cleaning up old installations and adding permissions changes so all users can use shared installation
+- [x] Add support for a variety of paritions on Deception. We currently only target dl_shared as we can only choose one cuda arch
+- [x] Add way to skip CI using a GitHub tag in both GitLab and GitHub
 - [x] Run CI based on commit message or manual trigger
 - [x] Get mam4xx building for GPU locally, then get working in CI
 - [x] Only run 2 jobs at a time as we only have 2 runners
