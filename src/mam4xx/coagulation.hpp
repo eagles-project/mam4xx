@@ -59,14 +59,11 @@ private:
   Config config_;
 };
 
-namespace coagulation {
-
-
-} // namespace coagulation
+namespace coagulation {} // namespace coagulation
 
 // init -- initializes the implementation with MAM4's configuration
 inline void Coagulation::init(const AeroConfig &aero_config,
-                             const Config &process_config) {
+                              const Config &process_config) {
   // TODO
   config_ = process_config;
 }
@@ -76,14 +73,13 @@ inline void Coagulation::init(const AeroConfig &aero_config,
 // NOTE: are fixed, but the data in those views is allowed to vary.
 KOKKOS_INLINE_FUNCTION
 void Coagulation::compute_tendencies(const AeroConfig &config,
-                                    const ThreadTeam &team, Real t, Real dt,
-                                    const Atmosphere &atm,
-                                    const Prognostics &progs,
-                                    const Diagnostics &diags,
-                                    const Tendencies &tends) const 
-{
-    printf("Hello!\n");
-    // TODO
+                                     const ThreadTeam &team, Real t, Real dt,
+                                     const Atmosphere &atm,
+                                     const Prognostics &progs,
+                                     const Diagnostics &diags,
+                                     const Tendencies &tends) const {
+  printf("Hello!\n");
+  // TODO
 }
 } // namespace mam4
 
