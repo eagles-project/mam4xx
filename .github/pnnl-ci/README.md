@@ -2,7 +2,11 @@
 This is used to track any maintanence information for PNNL CI. We will also track any current TODOs/notes for developers.
 
 ## Usage
-We currently only have 2 k8s runners, and so you must only run 2 concurrent pipelines on any merge request commits at a time.
+We currently only have 2 k8s runners, and so you must only run 2 concurrent pipelines at a time.
+
+Since we added resource groups to control how many pipelines can run at once, we will use 2 runners in a given pipeline stage.
+
+If another pipeline is running, you will have to wait for it to finish before yours can start.
 
 CI runs on a variety of hardward architectures by using a perl script when the job is run to select the right partition:
 
