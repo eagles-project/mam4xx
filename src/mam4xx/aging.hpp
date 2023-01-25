@@ -121,12 +121,12 @@ void mam_pcarbon_aging_frac(
                                          haero::max(qaer_del_coag_tmp, 0.0));
   frac_coag = 1.0 - frac_cond;
 
-  const int core_modes[3] = {iaer_bc, iaer_pom, iaer_mom};
+  const int spec_modes[3] = {iaer_bc, iaer_pom, iaer_mom};
   const Real core_volumes[3] = {bc_vol, pom_vol, mom_vol};
   Real vol_core = 0.0;
   for (int mi = 0; mi < 3; ++mi) {
-    const int m = core_modes[mi];
-    vol_core += qaer_cur[m][nsrc] * core_volumes[m];
+    const int ispec = spec_modes[mi];
+    vol_core += qaer_cur[ispec][nsrc] * core_volumes[mi];
   }
 
   const Real fac_volsfc = haero::exp(
@@ -270,13 +270,13 @@ void mam_pcarbon_aging_1subarea(
 
   for (int a = 0; a < num_pcarbon_to_accum; ++a) {
 
-    const int ai = indx_aer_pcarbon_to_accum[a];
+    const int ispec = indx_aer_pcarbon_to_accum[a];
 
     // Pack mode information per aerosol
-    for (int m = 0; m < AeroConfig::num_modes(); m++) {
-      qaer_cur_modes[m] = qaer_cur[ai][m];
-      qaer_del_cond_modes[m] = qaer_del_cond[ai][m];
-      qaer_del_coag_modes[m] = qaer_del_coag[ai][m];
+    for (int imode = 0; imode < AeroConfig::num_modes(); imode++) {
+      qaer_cur_modes[imode] = qaer_cur[ispec][imode];
+      qaer_del_cond_modes[imode] = qaer_del_cond[ispec][imode];
+      qaer_del_coag_modes[imode] = qaer_del_coag[ispec][imode];
     }
 
     // species is pom or bc
@@ -289,10 +289,10 @@ void mam_pcarbon_aging_1subarea(
                                    qaer_del_cond_modes, qaer_del_coag_modes);
 
     // Unpack mode information per aerosol
-    for (int m = 0; m < AeroConfig::num_modes(); m++) {
-      qaer_cur[ai][m] = qaer_cur_modes[m];
-      qaer_del_cond[ai][m] = qaer_del_cond_modes[m];
-      qaer_del_coag[ai][m] = qaer_del_coag_modes[m];
+    for (int imode = 0; imode < AeroConfig::num_modes(); imode++) {
+      qaer_cur[ispec][imode] = qaer_cur_modes[imode];
+      qaer_del_cond[ispec][imode] = qaer_del_cond_modes[imode];
+      qaer_del_coag[ispec][imode] = qaer_del_coag_modes[imode];
     }
   }
 
@@ -301,23 +301,23 @@ void mam_pcarbon_aging_1subarea(
   // also transfer the condensation and coagulation changes
   // to accum mode (for mass budget)
   for (int a = 0; a < num_cond_coag_to_accum; ++a) {
-    const int ai = indx_aer_cond_coag_to_accum[a];
+    const int ispec = indx_aer_cond_coag_to_accum[a];
 
     // Pack mode information per aerosol
-    for (int m = 0; m < AeroConfig::num_modes(); m++) {
-      qaer_cur_modes[m] = qaer_cur[ai][m];
-      qaer_del_cond_modes[m] = qaer_del_cond[ai][m];
-      qaer_del_coag_modes[m] = qaer_del_coag[ai][m];
+    for (int imode = 0; imode < AeroConfig::num_modes(); imode++) {
+      qaer_cur_modes[imode] = qaer_cur[ispec][imode];
+      qaer_del_cond_modes[imode] = qaer_del_cond[ispec][imode];
+      qaer_del_coag_modes[imode] = qaer_del_coag[ispec][imode];
     }
 
     transfer_cond_coag_mass_to_accum(nsrc, ndest, qaer_cur_modes,
                                      qaer_del_cond_modes, qaer_del_coag_modes);
 
     // Unpack mode information per aerosol
-    for (int m = 0; m < AeroConfig::num_modes(); m++) {
-      qaer_cur[ai][m] = qaer_cur_modes[m];
-      qaer_del_cond[ai][m] = qaer_del_cond_modes[m];
-      qaer_del_coag[ai][m] = qaer_del_coag_modes[m];
+    for (int imode = 0; imode < AeroConfig::num_modes(); imode++) {
+      qaer_cur[ispec][imode] = qaer_cur_modes[imode];
+      qaer_del_cond[ispec][imode] = qaer_del_cond_modes[imode];
+      qaer_del_coag[ispec][imode] = qaer_del_coag_modes[imode];
     }
   }
 
@@ -352,14 +352,14 @@ void aerosol_aging_rates_1box(const int k, const AeroConfig &aero_config,
   // Get prognostic fields
   // Aerosol mass
   Real qaer_cur[num_aer][num_mode];
-  for (int n = 0; n < num_mode; ++n)
-    for (int g = 0; g < num_aer; ++g)
-      qaer_cur[g][n] = progs.q_aero_i[n][g](k);
+  for (int imode = 0; imode < num_mode; ++imode)
+    for (int ispec = 0; ispec < num_aer; ++ispec)
+      qaer_cur[ispec][imode] = progs.q_aero_i[imode][ispec](k);
 
   // Aerosol number
   Real qnum_cur[num_mode];
-  for (int i = 0; i < num_mode; ++i) {
-    qnum_cur[i] = progs.n_mode_i[i](k);
+  for (int imode = 0; imode < num_mode; ++imode) {
+    qnum_cur[imode] = progs.n_mode_i[imode](k);
   }
 
   // primary carbon aging
@@ -368,24 +368,26 @@ void aerosol_aging_rates_1box(const int k, const AeroConfig &aero_config,
                              qaer_del_coag_in);
 
   // compute the tendencies
-  for (int n = 0; n < num_mode; ++n) {
-    for (int g = 0; g < num_aer; ++g) {
-      tends.q_aero_i[n][g](k) +=
-          (qaer_cur[g][n] - progs.q_aero_i[n][g](k)) / dt;
+  for (int imode = 0; imode < num_mode; ++imode) {
+    for (int ispec = 0; ispec < num_aer; ++ispec) {
+      tends.q_aero_i[imode][ispec](k) +=
+          (qaer_cur[ispec][imode] - progs.q_aero_i[imode][ispec](k)) / dt;
     }
   }
 
-  for (int i = 0; i < num_mode; ++i) {
-    tends.n_mode_i[i](k) += (qnum_cur[i] - progs.n_mode_i[i](k)) / dt;
+  for (int imode = 0; imode < num_mode; ++imode) {
+    tends.n_mode_i[imode](k) +=
+        (qnum_cur[imode] - progs.n_mode_i[imode](k)) / dt;
   }
 
-  for (int n = 0; n < num_mode; ++n) {
-    for (int g = 0; g < num_aer; ++g) {
-      progs.q_aero_i[n][g](k) = qaer_cur[g][n];
+  // Update the prognostics
+  for (int imode = 0; imode < num_mode; ++imode) {
+    for (int ispec = 0; ispec < num_aer; ++ispec) {
+      progs.q_aero_i[imode][ispec](k) = qaer_cur[ispec][imode];
     }
 
-    for (int i = 0; i < num_mode; ++i) {
-      progs.n_mode_i[i](k) = qnum_cur[i];
+    for (int imode = 0; imode < num_mode; ++imode) {
+      progs.n_mode_i[imode](k) = qnum_cur[imode];
     }
   }
 }

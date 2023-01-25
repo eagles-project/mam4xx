@@ -50,11 +50,11 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
     Real qaer_del_coag_in_c[num_aero][num_modes];
 
     int n = 0;
-    for (int a = 0; a < num_aero; ++a) {
-      for (int m = 0; m < num_modes; ++m) {
-        qaer_cur_c[a][m] = qaer_cur_f[n];
-        qaer_del_cond_c[a][m] = qaer_del_cond_f[n];
-        qaer_del_coag_in_c[a][m] = qaer_del_coag_in_f[n];
+    for (int ispec = 0; ispec < num_aero; ++ispec) {
+      for (int imode = 0; imode < num_modes; ++imode) {
+        qaer_cur_c[ispec][imode] = qaer_cur_f[n];
+        qaer_del_cond_c[ispec][imode] = qaer_del_cond_f[n];
+        qaer_del_coag_in_c[ispec][imode] = qaer_del_coag_in_f[n];
         n += 1;
       }
     }
@@ -68,11 +68,11 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
                                   xferfrac_pcage, frac_cond, frac_coag);
 
     n = 0;
-    for (int a = 0; a < num_aero; ++a) {
-      for (int m = 0; m < num_modes; ++m) {
-        qaer_cur_f[n] = qaer_cur_c[a][m];
-        qaer_del_cond_f[n] = qaer_del_cond_c[a][m];
-        qaer_del_coag_in_f[n] = qaer_del_coag_in_c[a][m];
+    for (int ispec = 0; ispec < num_aero; ++ispec) {
+      for (int imode = 0; imode < num_modes; ++imode) {
+        qaer_cur_f[n] = qaer_cur_c[ispec][imode];
+        qaer_del_cond_f[n] = qaer_del_cond_c[ispec][imode];
+        qaer_del_coag_in_f[n] = qaer_del_coag_in_c[ispec][imode];
         n += 1;
       }
     }

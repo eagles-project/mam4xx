@@ -119,21 +119,22 @@ TEST_CASE("test_cond_coag_mass_to_accum", "mam4_aging_process") {
       nsrc, ndest, qaer_cur.data(), qaer_del_cond.data(), qaer_del_coag.data());
 
   Real sum_for_conservation = 0.0;
-  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
-    if (m == nsrc) {
-      REQUIRE(qaer_cur[m] == 0.0);
-      REQUIRE(qaer_del_cond[m] == 0.0);
-      REQUIRE(qaer_del_coag[m] == 0.0);
-    } else if (m == ndest) {
-      REQUIRE(qaer_cur[m] == 1.0);
-      REQUIRE(qaer_del_cond[m] == 1.0);
-      REQUIRE(qaer_del_coag[m] == 1.0);
+  for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+    if (imode == nsrc) {
+      REQUIRE(qaer_cur[imode] == 0.0);
+      REQUIRE(qaer_del_cond[imode] == 0.0);
+      REQUIRE(qaer_del_coag[imode] == 0.0);
+    } else if (imode == ndest) {
+      REQUIRE(qaer_cur[imode] == 1.0);
+      REQUIRE(qaer_del_cond[imode] == 1.0);
+      REQUIRE(qaer_del_coag[imode] == 1.0);
     } else {
-      REQUIRE(qaer_cur[m] == 0.0);
-      REQUIRE(qaer_del_coag[m] == 0.0);
-      REQUIRE(qaer_del_cond[m] == 0.0);
+      REQUIRE(qaer_cur[imode] == 0.0);
+      REQUIRE(qaer_del_coag[imode] == 0.0);
+      REQUIRE(qaer_del_cond[imode] == 0.0);
     }
-    sum_for_conservation += qaer_cur[m] + qaer_del_cond[m] + qaer_del_coag[m];
+    sum_for_conservation +=
+        qaer_cur[imode] + qaer_del_cond[imode] + qaer_del_coag[imode];
   }
 
   // Check for conservation
@@ -158,10 +159,10 @@ TEST_CASE("transfer_aged_pcarbon_to_accum", "mam4_aging_process") {
       nsrc, ndest, xferfrac_pcage, frac_cond, frac_coag, qaer_cur.data(),
       qaer_del_cond.data(), qaer_del_coag.data());
 
-  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
-    REQUIRE(qaer_cur[m] == 0.0);
-    REQUIRE(qaer_del_cond[m] == 0.0);
-    REQUIRE(qaer_del_coag[m] == 0.0);
+  for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+    REQUIRE(qaer_cur[imode] == 0.0);
+    REQUIRE(qaer_del_cond[imode] == 0.0);
+    REQUIRE(qaer_del_coag[imode] == 0.0);
   }
 
   qaer_cur[nsrc] = 1.0;
@@ -170,19 +171,20 @@ TEST_CASE("transfer_aged_pcarbon_to_accum", "mam4_aging_process") {
       qaer_del_cond.data(), qaer_del_coag.data());
 
   Real sum_for_conservation = 0.0;
-  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
-    if (m == nsrc) {
-      REQUIRE(qaer_cur[m] == 0.5);
-    } else if (m == ndest) {
-      REQUIRE(qaer_cur[m] == 0.5);
-      REQUIRE(qaer_del_cond[m] == 0.125);
-      REQUIRE(qaer_del_coag[m] == 0.375);
+  for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+    if (imode == nsrc) {
+      REQUIRE(qaer_cur[imode] == 0.5);
+    } else if (imode == ndest) {
+      REQUIRE(qaer_cur[imode] == 0.5);
+      REQUIRE(qaer_del_cond[imode] == 0.125);
+      REQUIRE(qaer_del_coag[imode] == 0.375);
     } else {
-      REQUIRE(qaer_cur[m] == 0.0);
-      REQUIRE(qaer_del_coag[m] == 0.0);
-      REQUIRE(qaer_del_cond[m] == 0.0);
+      REQUIRE(qaer_cur[imode] == 0.0);
+      REQUIRE(qaer_del_coag[imode] == 0.0);
+      REQUIRE(qaer_del_cond[imode] == 0.0);
     }
-    sum_for_conservation += qaer_cur[m] + qaer_del_cond[m] + qaer_del_coag[m];
+    sum_for_conservation +=
+        qaer_cur[imode] + qaer_del_cond[imode] + qaer_del_coag[imode];
   }
 
   // Check for conservation
@@ -201,19 +203,19 @@ TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
   Real qaer_del_coag_in[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()];
 
   // Fill all arrays with zeros
-  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
-    dgn_a[m] = 0.0;
-    qnum_cur[m] = 0.0;
-    qnum_del_cond[m] = 0.0;
-    qnum_del_coag[m] = 0.0;
+  for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+    dgn_a[imode] = 0.0;
+    qnum_cur[imode] = 0.0;
+    qnum_del_cond[imode] = 0.0;
+    qnum_del_coag[imode] = 0.0;
   }
 
-  for (int a = 0; a < AeroConfig::num_aerosol_ids(); ++a) {
-    for (int m = 0; m < AeroConfig::num_modes(); ++m) {
-      qaer_cur[a][m] = 0.0;
-      qaer_del_cond[a][m] = 0.0;
-      qaer_del_coag[a][m] = 0.0;
-      qaer_del_coag_in[a][m] = 0.0;
+  for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
+    for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+      qaer_cur[ispec][imode] = 0.0;
+      qaer_del_cond[ispec][imode] = 0.0;
+      qaer_del_coag[ispec][imode] = 0.0;
+      qaer_del_coag_in[ispec][imode] = 0.0;
     }
   }
 
@@ -222,20 +224,19 @@ TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
                                     qaer_del_coag, qaer_del_coag_in);
 
   // Passing in zeros for everything should give zeros back
-  // Fill all arrays with zeros
-  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
-    REQUIRE(dgn_a[m] == 0.0);
-    REQUIRE(qnum_cur[m] == 0.0);
-    REQUIRE(qnum_del_cond[m] == 0.0);
-    REQUIRE(qnum_del_coag[m] == 0.0);
+  for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+    REQUIRE(dgn_a[imode] == 0.0);
+    REQUIRE(qnum_cur[imode] == 0.0);
+    REQUIRE(qnum_del_cond[imode] == 0.0);
+    REQUIRE(qnum_del_coag[imode] == 0.0);
   }
 
-  for (int a = 0; a < AeroConfig::num_aerosol_ids(); ++a) {
-    for (int m = 0; m < AeroConfig::num_modes(); ++m) {
-      REQUIRE(qaer_cur[a][m] == 0.0);
-      REQUIRE(qaer_del_cond[a][m] == 0.0);
-      REQUIRE(qaer_del_coag[a][m] == 0.0);
-      REQUIRE(qaer_del_coag_in[a][m] == 0.0);
+  for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
+    for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+      REQUIRE(qaer_cur[ispec][imode] == 0.0);
+      REQUIRE(qaer_del_cond[ispec][imode] == 0.0);
+      REQUIRE(qaer_del_coag[ispec][imode] == 0.0);
+      REQUIRE(qaer_del_coag_in[ispec][imode] == 0.0);
     }
   }
 }
