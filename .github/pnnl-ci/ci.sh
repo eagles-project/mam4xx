@@ -59,7 +59,6 @@ cmake \
   -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
   -DCMAKE_C_COMPILER=$CC \
   -DCMAKE_CXX_COMPILER=$CXX \
-  -DMAM4XX_PNNL_CI=ON \
   -B build -S $(pwd) \
   -G "Unix Makefiles" && \
 
