@@ -7,17 +7,13 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v1
-      # Need to override GITHUB_REF with correct name for MRs
-      # spyoungtech/mirror-action@master is hard coded 
-      # https://github.com/yesolutions/mirror-action/search?q=GITHUB_REF
-      - run: echo "GITHUB_REF=${{ github.head_ref }}" >> $GITHUB_ENV
       - uses: spyoungtech/mirror-action@master
         with:
           REMOTE: ${{ secrets.GITLAB_REPO_URL }}
           GIT_USERNAME: ${{ secrets.GITLAB_USER }}
           GIT_PASSWORD: ${{ secrets.GITLAB_ACCESS_TOKEN }}
           GIT_PUSH_ARGS: --push-option=ci.skip --tags --force --prune
-          PUSH_ALL_REFS: "false"
+          PUSH_ALL_REFS: "true"
           DEBUG: "true"
       - name: Trigger Pipeline
         # Need {{ github.head_ref }} for running within pull requests
