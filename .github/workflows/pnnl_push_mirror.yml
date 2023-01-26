@@ -5,24 +5,20 @@ on: [pull_request]
 jobs:
   to_gitlab:
     runs-on: ubuntu-18.04
-    env:
-      # This sets branch name for the Trigger Pipeline stage
-      BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-      # https://github.com/yesolutions/mirror-action/search?q=GITHUB_REF
-      # Action defaults to GITHUB_REF, so we need to override for PRs
-      GITHUB_REF: ${BRANCH_NAME}
     steps:
       - uses: actions/checkout@v1
       - uses: spyoungtech/mirror-action@master
         with:
+          # Need to override GITHUB_REF with correct name for MRs
+          GITHUB_REF: ${{ github.head_ref }}
           REMOTE: ${{ secrets.GITLAB_REPO_URL }}
           GIT_USERNAME: ${{ secrets.GITLAB_USER }}
           GIT_PASSWORD: ${{ secrets.GITLAB_ACCESS_TOKEN }}
           GIT_PUSH_ARGS: --push-option=ci.skip --tags --force --prune
           PUSH_ALL_REFS: "false"
           DEBUG: "true"
-      - uses: nelonoel/branch-name@v1.0.1
       - name: Trigger Pipeline
+        # Need {{ github.head_ref }} for running within pull requests
         run: |
-          curl -X POST -F token=${{ secrets.GITLAB_PIPELINE_TRIGGER_TOKEN }} -F ref=${BRANCH_NAME} https://code.pnnl.gov/api/v4/projects/298/trigger/pipeline
+          curl -X POST -F token=${{ secrets.GITLAB_PIPELINE_TRIGGER_TOKEN }} -F ref=${{ github.head_ref }} https://code.pnnl.gov/api/v4/projects/298/trigger/pipeline
           exit $?
