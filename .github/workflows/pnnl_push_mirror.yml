@@ -6,7 +6,11 @@ jobs:
   to_gitlab:
     runs-on: ubuntu-18.04
     env:
+      # This sets branch name for the Trigger Pipeline stage
       BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+      # https://github.com/yesolutions/mirror-action/search?q=GITHUB_REF
+      # Action defaults to GITHUB_REF, so we need to override for PRs
+      GITHUB_REF: ${BRANCH_NAME}
     steps:
       - uses: actions/checkout@v1
       - uses: spyoungtech/mirror-action@master
