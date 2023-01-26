@@ -56,25 +56,37 @@ You can add `[skip-ci]` in order to prevent CI jobs from running at PNNL. TODO i
 @CameronRutherford currently maintains the access token used to enable GitHub mirroring. 
 This token is set to expire in one year, and someone will need to ensure that this integration is renewed each year.
 
-https://code.pnnl.gov/help/user/project/repository/mirror/pull.md - make sure that when you create the PAT for this integration, that you use `repo` as the designated scope.
+https://code.pnnl.gov/help/user/project/repository/mirror/pull.md - make sure that when you create the PAT for this integration, that you use `write` as the scope, so that GitHub actions can write to the PNNL GitLab with updates as they are added.
+
+## Pipeline Trigger Token
+
+You will need to setup up a pipeline trigger token in order to allow GitHub acitons to trigger CI pipelines.
 
 ## PNNL Site Config
-We have manually configured PNNL CI to point to the YAML file in `/.github/pnnl-ci/pnnl.gitlab-ci.yml`. Make sure to re-configure this when refreshing connection.
+We have manually configured PNNL CI to point to the YAML file in `/.github/pnnl-ci/pnnl.gitlab-ci.yml`. Make sure to re-configure this if you need to re-configure the repository.
 
 ## GitHub/GitLab Integration
-You need to generate a Personal Access Token (PAT) through GitHub project before starting this process.
+You need to generate a Personal Access Token (PAT) through GitHub project before starting this process per the section above.
 
-We will also be creating a pull mirror, and not a push mirror, as pull mirrors are updated based on an external source, whereas push mirrors are preferred when pushing updates externally.
+We are going to set up a push mirror that is updated with each pull request update. Through a GitHub action, each check will:
+1. Push updates to all branches in the GitLab
+1. Trigger a pipeline to run using the Pipeline Trigger token
+1. PNNL GitLab will post a new message describing pipeline status in a separate check
 
-Steps:
+The GitHub action in `/.github/workflows/pnnl_push_mirror.yml` relies on the following GitHub secrets. Make sure to configure these if they are expired/broken:
+1. GITLAB_ACCESS_TOKEN : This is the PAT configured with write permissions for the push mirror action
+1. GITLAB_PIPELINE_TRIGGER_TOKEN : This is a separate token that allows you to use the pipeline trigger API
+1. GITLAB_REPO_URL : The same url that one would use for adding mam4xx GitLab as a remote w/ https connection
+1. GITLAB_USER : The username to associate with push mirror actions (can be any valid user)
+
+In order to set this up:
 1. Create an empty project in GitLab. **DO NOT** initialize using in-build GitHub integration, as this is broken for running pipelines.
-1. Set up repository mirroring, ensuring you enable running pipelines and keeping divergent refs. Use GitHub username within `https` URL and Personal Access token as the password. `https://CameronRutherford@github.com/eagles-project/mam4xx` would be the repository URL in this case, where my username can be replaced with the account where the PAT was generated, and you would place the PAT in the field which asks for a password. End results should be a repository mirror with `https://*****:*****@github.com/eagles-project/mam4xx` showing as the URL.
 1. Enable the GitHub integration in Settings > Integrations in GitLab. This will post pipeline status to the relevant Pull Requests, and you will need to add a personal access token used here as well.
-1. Ensure your YAML has correct syntax, and you should be good to go! Since we mirror everything in the repo, we will have copies of issues and PRs as well.
+1. Ensure your YAML has correct syntax, and you should be good to go!
 
-Since this integration is automatically configured through GitLab premium, pipeline status will automatically be posted to commits/PRs.
+Since the pipeline status is automatically configured through GitLab premium + GitHub integration, pipeline status will automatically be posted to commits/PRs.
 
-There is a way to orchestrate this pipeline posting through non-premium GitLab as well - https://ecp-ci.gitlab.io/docs/guides/build-status-gitlab.html
+There is a way to orchestrate this pipeline posting through non-premium GitLab as well - https://ecp-ci.gitlab.io/docs/guides/build-status-gitlab.html...
 
 ## Scripts
 There are shared environment variables that are propogated across both scripts, and each job shares the same template in order to reduce code duplication.
