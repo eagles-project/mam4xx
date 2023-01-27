@@ -16,7 +16,7 @@ namespace mam4 {
 using haero::max;
 using haero::min;
 using haero::sqrt;
-using haero::erf;
+using haero::erfc;
 using haero::log;
 using Constants = haero::Constants;
 using haero::square;
@@ -183,8 +183,8 @@ Real mode_diameter(const Real volume, const Real number, const Real size_factor)
 KOKKOS_INLINE_FUNCTION
 void compute_tail_fraction(const Real diameter, 
                            const Real log_dia_cutoff,
-                           const Real tail_dist_fac, //input
-                           const Real log_dia_tail_fac, 
+                           const Real tail_dist_fac,
+                           const Real log_dia_tail_fac, // input
                            Real& tail_fraction
                            ) {
   // Compute tail fraction to be used for inter-mode species transfer
@@ -196,7 +196,7 @@ void compute_tail_fraction(const Real diameter,
   const Real tail = (log_dia_cutoff - log_diameter) * tail_dist_fac;
   // erfc error function
   // FIXME: check that we are using same function than E3SM.  
-  tail_fraction = Real(0.5) * (Real(1) - erf( tail ));
+  tail_fraction = Real(0.5) * erfc(tail);
 
 } // end compute_tail_fraction
 
