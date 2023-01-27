@@ -29,7 +29,7 @@ namespace mam4 {
 ///  @param [in] mode_idx Mode whose average hygroscopicity is needed
 ///  @param [in] k Column vertical level where size data are needed
 KOKKOS_INLINE_FUNCTION
-void mode_hygroscopicity_i(Diagnostics &diags, const Prognostics &progs,
+void mode_hygroscopicity_i(const Diagnostics &diags, const Prognostics &progs,
                            int mode_idx, int k) {
   Real hyg = 0.0;
   Real volume_mixing_ratio = 0.0; // [m3 aerosol / kg air]
@@ -59,7 +59,7 @@ void mode_hygroscopicity_i(Diagnostics &diags, const Prognostics &progs,
 ///      aerosol mass mixing ratios
 ///  @param [in] k Column vertical level where size data are needed
 KOKKOS_INLINE_FUNCTION
-void mode_hygroscopicity(Diagnostics &diags, const Prognostics &progs, int k) {
+void mode_hygroscopicity(const Diagnostics &diags, const Prognostics &progs, int k) {
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
     mode_hygroscopicity_i(diags, progs, m, k);
   }
