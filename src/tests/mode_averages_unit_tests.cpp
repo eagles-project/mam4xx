@@ -77,8 +77,8 @@ TEST_CASE("modal_averages", "") {
           conversions::mean_particle_diameter_from_volume(
               mean_vol, modes(m).mean_std_dev);
       dry_aero_mean_particle_diam_total[m] =
-        conversions::mean_particle_diameter_from_volume(
-              2*mean_vol, modes(m).mean_std_dev);
+          conversions::mean_particle_diameter_from_volume(
+              2 * mean_vol, modes(m).mean_std_dev);
 
       logger.info("{} mode has mean particle diameter {}",
                   mode_str(static_cast<ModeIndex>(m)),
@@ -115,23 +115,25 @@ TEST_CASE("modal_averages", "") {
           logger.debug("h_diam_c({}) = {}, h_diam_total({}) = {}", k,
                        h_diam_c(k), k, h_diam_total(k));
         }
-        if (!FloatingPoint<Real>::equiv(h_diam_c(k), dry_aero_mean_particle_diam[m])) {
+        if (!FloatingPoint<Real>::equiv(h_diam_c(k),
+                                        dry_aero_mean_particle_diam[m])) {
           logger.debug(
-            "h_diam_c({}) = {}, dry_aero_mean_particle_diam[{}] = {}", k,
-            h_diam_c(k), m, dry_aero_mean_particle_diam[m]);
+              "h_diam_c({}) = {}, dry_aero_mean_particle_diam[{}] = {}", k,
+              h_diam_c(k), m, dry_aero_mean_particle_diam[m]);
         }
         if (!FloatingPoint<Real>::equiv(h_diam_total(k),
-                                      dry_aero_mean_particle_diam_total[m])) {
-          logger.debug(
-            "h_diam_total({}) = {}, dry_aero_mean_particle_diam_total[{}] = {}", k,
-              h_diam_total(k), m, dry_aero_mean_particle_diam_total[m]);
+                                        dry_aero_mean_particle_diam_total[m])) {
+          logger.debug("h_diam_total({}) = {}, "
+                       "dry_aero_mean_particle_diam_total[{}] = {}",
+                       k, h_diam_total(k), m,
+                       dry_aero_mean_particle_diam_total[m]);
         }
         REQUIRE(FloatingPoint<Real>::equiv(h_diam_i(k),
                                            dry_aero_mean_particle_diam[m]));
         REQUIRE(FloatingPoint<Real>::equiv(h_diam_c(k),
                                            dry_aero_mean_particle_diam[m]));
-        REQUIRE(FloatingPoint<Real>::equiv(h_diam_total(k),
-                                           dry_aero_mean_particle_diam_total[m]));
+        REQUIRE(FloatingPoint<Real>::equiv(
+            h_diam_total(k), dry_aero_mean_particle_diam_total[m]));
       }
     }
     logger.info("dry particle size tests complete.");
