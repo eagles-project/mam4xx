@@ -91,12 +91,12 @@ Real total_inter_cldbrn(const bool &iscloudy, const int &imode,
                         const Real interstitial[AeroConfig::num_modes()],
                         const Real cloudborne[AeroConfig::num_modes()]) {
   // NOTE: original function signature
-  // (iscldy, imode, interstitial, cldbrn)
+  // (iscloudy, imode, interstitial, cldbrn)
 
   // // compute total (dry volume or number) of interstitial and cloud borne
   // species
 
-  // logical,  intent(in) :: iscldy       // TRUE, if a cell has cloud
+  // logical,  intent(in) :: iscloudy       // TRUE, if a cell has cloud
   // integer,  intent(in) :: imode
   // real(r8), intent(in) :: interstitial(:) // interstitial part [unit depends on the input]
   // real(r8), intent(in), optional :: cldbrn(:) // cloudborne part [unit depends on the input]
@@ -125,7 +125,7 @@ void compute_before_growth_dryvol_and_num() {}
 KOKKOS_INLINE_FUNCTION
 void compute_before_growth_dryvol_and_num(
     // in
-    const int &iscloudy, const bool &src_mode,
+    const bool &iscloudy, const int &src_mode,
     const Real dryvol_i[AeroConfig::num_modes()],
     const Real dryvol_c[AeroConfig::num_modes()],
     Real qnum_cur[AeroConfig::num_modes()],
@@ -520,8 +520,8 @@ public:
     // default constructor -- sets default values for parameters
 
     int _dest_mode_of_mode[AeroConfig::num_modes()];
-    bool _iscldy;
-    Config() : _dest_mode_of_mode{0, 1, 0, 0}, _iscldy{false} {}
+    bool _iscloudy;
+    Config() : _dest_mode_of_mode{0, 1, 0, 0}, _iscloudy{false} {}
 
     Config(const Config &) = default;
     ~Config() = default;
@@ -585,7 +585,7 @@ public:
     const int nk = atmosphere.num_levels();
 
     const auto dest_mode_of_mode = config_._dest_mode_of_mode;
-    const auto iscldy = config_._iscldy;
+    const auto iscloudy = config_._iscloudy;
     const auto mass_2_vol = _mass_2_vol;
 
     const auto sz_factor = _sz_factor;
@@ -613,7 +613,7 @@ public:
           Real qaercw_del_grow4rnam[AeroConfig::num_modes()]
                                    [AeroConfig::num_aerosol_ids()];
 
-          mam_rename_1subarea_(iscldy,
+          mam_rename_1subarea_(iscloudy,
                                dest_mode_of_mode,    // in
                                sz_factor,            // in
                                fmode_dist_tail_fac,  // in
@@ -636,7 +636,7 @@ public:
 private:
   KOKKOS_INLINE_FUNCTION
   void mam_rename_1subarea_(
-      const bool iscldy,
+      const bool iscloudy,
       const int *dest_mode_of_mode,                             // in
       const Real sz_factor[AeroConfig::num_modes()],            // in
       const Real fmode_dist_tail_fac[AeroConfig::num_modes()],  // in
@@ -678,7 +678,7 @@ private:
     Real dryvol_c[mam4::AeroConfig::num_modes()];
     Real deldryvol_c[mam4::AeroConfig::num_modes()];
 
-    if (iscldy) {
+    if (iscloudy) {
 
       rename::compute_dryvol_change_in_src_mode(
           AeroConfig::num_modes(),       // in
@@ -691,13 +691,13 @@ private:
           deldryvol_c                    // out
       );
 
-    } // end iscldy
+    } // end iscloudy
 
     // Find fractions (mass and number) to transfer and complete the
     //     transfer
 
     rename::do_inter_mode_transfer(
-        dest_mode_of_mode, iscldy,
+        dest_mode_of_mode, iscloudy,
         // volume to number relaxation limits [m^-3]
         v2n_lo_rlx, v2n_hi_rlx, sz_factor, fmode_dist_tail_fac,
         ln_diameter_tail_fac, ln_dia_cutoff, diameter_threshold, dgnum_amode,
