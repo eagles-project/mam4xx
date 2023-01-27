@@ -734,6 +734,74 @@ void getcoags(const Real lamda, const Real kfmatac, const Real kfmat,
                                       esac25, n2a, qn22);
 }
 
+KOKKOS_INLINE_FUNCTION
+void getcoags_wrapper_f(const Real airtemp, const Real airprs, const Real dgatk,
+                        const Real dgacc, const Real sgatk, const Real sgacc,
+                        const Real xxlsgat, const Real xxlsgac,
+                        const Real pdensat, const Real pdensac, Real &betaij0,
+                        Real &betaij3, Real &betaii0, Real &betajj0) {
+
+  // -----------------------------------------------
+  // Prepare input to getcoags
+  // -----------------------------------------------
+  const Real t0 = haero::Constants::freezing_pt_h2o + 15.0;
+  const Real sqrt_temp = haero::sqrt(airtemp);
+
+  // Calculate mean free path [m]:
+  // 6.6328e-8 is the sea level value given in table i.2.8
+  // on page 10 of u.s. standard atmosphere 1962
+  const Real lamda =
+      6.6328e-8 * haero::Constants::pressure_stp * airtemp / (t0 * airprs);
+
+  //  Calculate dynamic viscosity [kg m**-1 s**-1]:
+  // u.s. standard atmosphere 1962 page 14 expression
+  // for dynamic viscosity is:
+  // dynamic viscosity =  beta * t * sqrt(t) / ( t + s)
+  // where beta = 1.458e-6 [kg s^-1 K**-0.5], s = 110.4 [K].
+  const Real amu = 1.458e-6 * airtemp * sqrt_temp / (airtemp + 110.4);
+
+  // Term used in equation a6 of binkowski & shankar (1995)
+  const Real knc = (2.0 / 3.0) * haero::Constants::boltzmann * airtemp / amu;
+
+  // Terms used in equation a5 of binkowski & shankar (1995)
+  const Real kfmat =
+      sqrt(3.0 * haero::Constants::boltzmann * airtemp / pdensat);
+  const Real kfmac =
+      sqrt(3.0 * haero::Constants::boltzmann * airtemp / pdensac);
+  const Real kfmatac =
+      sqrt(6.0 * haero::Constants::boltzmann * airtemp / (pdensat + pdensac));
+
+  // -------------------------------------------------------------------------------------------------
+  // Call subr. getcoags ported from the CMAQ model to calculate
+  //  - intermodal coagulation coefficients of the 0th and 3rd moments;
+  //  - intramodal coagulation coefficients of the 0th moment.
+  // Note:
+  //  - Coag. coefficients of the 0th moment (qn11, qn22, qn12) correspond to
+  //  aerosol number changes;
+  //  - Coag. coefficient  of the 3rd moment (qv12) correspond to aerosol mass
+  //  changes.
+  //-------------------------------------------------------------------------------------------------
+  Real qn11, qn22, qn12, qv12;
+  getcoags(lamda, kfmatac, kfmat, kfmac, knc, dgatk, dgacc, sgatk, sgacc,
+           xxlsgat, xxlsgac, qn11, qn22, qn12, qv12);
+
+  // --------------------------------------------------------------------
+  //  Adjustments to the output from subr. getcoags
+  // --------------------------------------------------------------------
+  //  Clip negative values
+
+  betaii0 = haero::max(0.0, qn11);
+  betajj0 = haero::max(0.0, qn22);
+  betaij0 = haero::max(0.0, qn12);
+
+  // For the mass transfer, convert from the CMAQ model's coag rate parameters
+  // to the MIRAGE2 model's parameters
+  const Real dumatk3 =
+      ((haero::pow(dgatk, 3.0)) *
+       haero::exp(4.5 * xxlsgat * xxlsgat)); // or unit conversion
+  betaij3 = max(0.0, qv12 / dumatk3);
+}
+
 } // namespace coagulation
 
 // init -- initializes the implementation with MAM4's configuration

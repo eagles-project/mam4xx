@@ -89,6 +89,8 @@ TEST_CASE("intra_coag_rate_for_0th_moment", "mam4_coagulation_process") {
 
 TEST_CASE("get_coags", "mam4_coagulation_process") {}
 
+TEST_CASE("getcoags_wrapper_f", "mam4_coagulation_process") {}
+
 TEST_CASE("test_compute_tendencies", "mam4_coagulation_process") {
 
   // Kokkos::parallel_for(
