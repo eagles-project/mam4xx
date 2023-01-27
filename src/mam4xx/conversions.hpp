@@ -32,7 +32,7 @@ KOKKOS_INLINE_FUNCTION Real mmr_from_number_conc(Real number_conc,
 /// Given a mass mixing ratio (mmr) for a species or mixture [kg species/kg
 /// dry air], computes and returns a number density [m-3] based on its molecular
 /// weight and on the density of dry air in the vicinity.
-/// @param [in] mmr The number concentration of the species/mixture [m-3]
+/// @param [in] mmr The mass mixing ratio  of the species/mixture [kg/kg dry air]
 /// @param [in] molecular_wt The molecular weight of the species/mixture
 /// [kg/kmol]
 /// @param [in] dry_air_density The mass density of dry air [kg/m3]
@@ -57,8 +57,7 @@ KOKKOS_INLINE_FUNCTION Real mmr_from_vmr(Real vmr, Real molecular_wt) {
 /// Given a mass mixing ratio (mmr) for a species or mixture [kg species/kg
 /// dry air], computes and returns a molar mixing ratio [kmol species/k dry air]
 /// based on its molecular weight.
-/// @param [in] mmr The molar mixing ratio of the species/mixture [kmol/kmol
-/// dry air]
+/// @param [in] mmr The mass mixing ratio of the species/mixture [kg/kg dry air]
 /// @param [in] molecular_wt The molecular weight of the species/mixture
 /// [kg/kmol]
 KOKKOS_INLINE_FUNCTION Real vmr_from_mmr(Real mmr, Real molecular_wt) {
@@ -184,7 +183,7 @@ KOKKOS_INLINE_FUNCTION Real vapor_saturation_pressure_magnus(Real T, Real P) {
 ///
 ///    B. Hardy, 1998, ITS-90 Formulations for Vapor Pressure, Frostpoint
 ///   Temperature, Dewpoint Temperature, and Enhancement Factors in the Range
-///   –100 to +100 C, Proceedings of the Third International Symposium on
+///   -100 to +100 C, Proceedings of the Third International Symposium on
 ///   Humidity & Moisture, Teddington, London, England, April 1998.
 ///
 KOKKOS_INLINE_FUNCTION Real vapor_saturation_pressure_hardy(Real T) {
@@ -291,7 +290,7 @@ KOKKOS_INLINE_FUNCTION Real mean_particle_diameter_from_volume(
 
 ///   This function is the inverse of
 ///   modal_mean_particle_diameter_from_volume; given the modal mean geometric
-///   diamaeter, it returns the corresponding volume.
+///   diameter, it returns the corresponding volume.
 ///
 ///   @param [in] geom_diam geometric mean diameter [m per particle]
 ///   @return mean volume [m^3 per particle]
