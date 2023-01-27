@@ -21,7 +21,44 @@ TEST_CASE("test_constructor", "mam4_coagulation_process") {
   REQUIRE(process.aero_config() == mam4_config);
 }
 
-TEST_CASE("intermodal_coag_rate_for_0th_moment", "mam4_coagulation_process"){}
+TEST_CASE("bm0ij_data", "mam4_cagulation_process") {
+
+  // Here we test a few values returned directly from fortran with those
+  // as defined in the C++ code.
+
+  int n1 = 0;
+  int n2a = 1;
+  int n2n = 2;
+  Real bm0ij_f = 0.674432;
+  Real bm0ij_c = coagulation::bm0ij_data(n1, n2a, n2n);
+  REQUIRE(bm0ij_f == bm0ij_c);
+
+  n1 = 1;
+  n2a = 4;
+  n2n = 0;
+  bm0ij_f = 0.739575;
+  bm0ij_c = coagulation::bm0ij_data(n1, n2a, n2n);
+  REQUIRE(bm0ij_f == bm0ij_c);
+}
+
+TEST_CASE("intermodal_coag_rate_for_0th_moment", "mam4_coagulation_process") {}
+
+TEST_CASE("bm3ij_data", "mam4_coagulation_process") {
+
+  int n1 = 0;
+  int n2a = 1;
+  int n2n = 2;
+  Real bm3i_f = 0.74927;
+  Real bm3i_c = coagulation::bm3i_data(n1, n2a, n2n);
+  REQUIRE(bm3i_f == bm3i_c);
+
+  n1 = 1;
+  n2a = 4;
+  n2n = 0;
+  bm3i_f = 0.91886;
+  bm3i_c = coagulation::bm3i_data(n1, n2a, n2n);
+  REQUIRE(bm3i_f == bm3i_c);
+}
 
 TEST_CASE("intermodal_coag_rate_for_3rd_moment", "mam4_coagulation_process") {}
 

@@ -61,24 +61,8 @@ private:
 
 namespace coagulation {
 
-// ---------------------------------------------------------------
-// Purpose: calculate the intermodal coagulation rate for the 0th moment
-//          using an  analytic expression from Whitby et al. (1991).
-// History:
-//  - Original code taken from CMAG v4.6 code and ported to CAM
-//    by Richard C. Easter, 2007.
-//  - Contents here wrapped in a separate subroutine by
-//    Hui Wan, 2022 following a suggestion from Balwinder Singh.
-//---------------------------------------------------------------
 KOKKOS_INLINE_FUNCTION
-void intermodal_coag_rate_for_0th_moment(
-    const Real two, const Real a_const, const Real r1, const Real r2,
-    const Real rx4, const Real ri1, const Real ri2, const Real ri3,
-    const Real knc, const Real kngat, const Real kngac, const Real kfmatac,
-    const Real sqdgat, const Real esat01, const Real esat04, const Real esat09,
-    const Real esat16, const Real esac01, const Real esac04, const Real esac09,
-    const Real esac16, const int n1, const int n2a, const int n2n, Real &qn12) {
-
+Real bm0ij_data(const int n1, const int n2a, const int n2n) {
   const Real bm0ij[10][10][10] = {
       {{0.628539, 0.63961, 0.664514, 0.696278, 0.731558, 0.768211, 0.80448,
         0.83883, 0.870024, 0.897248},
@@ -281,6 +265,30 @@ void intermodal_coag_rate_for_0th_moment(
        {0.997402, 0.997632, 0.998089, 0.998554, 0.998945, 0.999244, 0.999464,
         0.999622, 0.999733, 0.999811}}};
 
+  return bm0ij[n1][n2a][n2n];
+}
+
+// ---------------------------------------------------------------
+// Purpose: calculate the intermodal coagulation rate for the 0th moment
+//          using an  analytic expression from Whitby et al. (1991).
+// History:
+//  - Original code taken from CMAG v4.6 code and ported to CAM
+//    by Richard C. Easter, 2007.
+//  - Contents here wrapped in a separate subroutine by
+//    Hui Wan, 2022 following a suggestion from Balwinder Singh.
+//---------------------------------------------------------------
+
+KOKKOS_INLINE_FUNCTION
+void intermodal_coag_rate_for_0th_moment(
+    const Real two, const Real a_const, const Real r1, const Real r2,
+    const Real rx4, const Real ri1, const Real ri2, const Real ri3,
+    const Real knc, const Real kngat, const Real kngac, const Real kfmatac,
+    const Real sqdgat, const Real esat01, const Real esat04, const Real esat09,
+    const Real esat16, const Real esac01, const Real esac04, const Real esac09,
+    const Real esac16, const int n1, const int n2a, const int n2n, Real &qn12) {
+
+  const Real bm0ij = bm0ij_data(n1, n2a, n2n);
+
   // --------------
   // Calculations
   // --------------
@@ -293,7 +301,7 @@ void intermodal_coag_rate_for_0th_moment(
              (r2 + ri2) * esat04 * esac04);
 
   // Free-molecular form:  equation h.7a of whitby et al. (1991)
-  const Real coagfm0 = kfmatac * sqdgat * bm0ij[n1][n2n][n2a] *
+  const Real coagfm0 = kfmatac * sqdgat * bm0ij *
                        (esat01 + r1 * esac01 + two * r2 * esat01 * esac04 +
                         rx4 * esat09 * esac16 + ri3 * esat16 * esac09 +
                         two * ri1 * esat04 + esac01);
@@ -302,28 +310,11 @@ void intermodal_coag_rate_for_0th_moment(
   qn12 = coagnc0 * coagfm0 / (coagnc0 + coagfm0);
 }
 
-// ---------------------------------------------------------------------------
-// Purpose: calculate the intermodal coagulation rate for the 3rd moment
-//          using an  analytic expression from Whitby et al. (1991).
-// History:
-//  - Original code taken from CMAG v4.6 code and ported to CAM
-//    by Richard C. Easter, 2007.
-//  - Contents here wrapped in a separate subroutine by
-//    Hui Wan, 2022 following a suggestion from Balwinder Singh.
-// ---------------------------------------------------------------------------
 KOKKOS_INLINE_FUNCTION
-void intermodal_coag_rate_for_3rd_moment(
-    const Real two, const Real a_const, const Real r1, const Real r2,
-    const Real rx4, const Real ri1, const Real ri2, const Real ri3,
-    const Real knc, const Real kngat, const Real kngac, const Real dgat3,
-    const Real kfmatac, const Real sqdgat7, const Real esat04,
-    const Real esat09, const Real esat16, const Real esat25, const Real esat36,
-    const Real esat49, const Real esat64, const Real esac01, const Real esac04,
-    const Real esac09, const Real esac16, const Real esat100, const int n1,
-    const int n2a, const int n2n, Real &qv12) {
-
+Real bm3i_data(const int n1, const int n2a, const int n2n) {
   // rpm....   3rd moment nuclei mode corr. fac. for bimodal fm coag rate
   // m3 intermodal fm-rpm values
+
   const Real bm3i[10][10][10] = {
       {{0.70708, 0.71681, 0.73821, 0.76477, 0.7935, 0.82265, 0.8509, 0.87717,
         0.90069, 0.92097},
@@ -526,6 +517,30 @@ void intermodal_coag_rate_for_3rd_moment(
        {0.97977, 0.98071, 0.9827, 0.98492, 0.98695, 0.98858, 0.9897, 0.99027,
         0.99026, 0.98968}}};
 
+  return bm3i[n1][n2a][n2n];
+}
+
+// ---------------------------------------------------------------------------
+// Purpose: calculate the intermodal coagulation rate for the 3rd moment
+//          using an  analytic expression from Whitby et al. (1991).
+// History:
+//  - Original code taken from CMAG v4.6 code and ported to CAM
+//    by Richard C. Easter, 2007.
+//  - Contents here wrapped in a separate subroutine by
+//    Hui Wan, 2022 following a suggestion from Balwinder Singh.
+// ---------------------------------------------------------------------------
+KOKKOS_INLINE_FUNCTION
+void intermodal_coag_rate_for_3rd_moment(
+    const Real two, const Real a_const, const Real r1, const Real r2,
+    const Real rx4, const Real ri1, const Real ri2, const Real ri3,
+    const Real knc, const Real kngat, const Real kngac, const Real dgat3,
+    const Real kfmatac, const Real sqdgat7, const Real esat04,
+    const Real esat09, const Real esat16, const Real esat25, const Real esat36,
+    const Real esat49, const Real esat64, const Real esac01, const Real esac04,
+    const Real esac09, const Real esac16, const Real esat100, const int n1,
+    const int n2a, const int n2n, Real &qv12) {
+
+  const Real bm3i = bm3i_data(n1, n2n, n2a);
   // --------------
   // Calculations
   // --------------
@@ -538,7 +553,7 @@ void intermodal_coag_rate_for_3rd_moment(
        r2 * esat16 * esac04 + ri2 * esat64 * esac04);
 
   // Free-molecular form: equation h.7b of whitby et al. (1991)
-  const Real coagfm3 = kfmatac * sqdgat7 * bm3i[n1][n2n][n2a] *
+  const Real coagfm3 = kfmatac * sqdgat7 * bm3i *
                        (esat49 + r1 * esat36 * esac01 +
                         two * r2 * esat25 * esac04 + rx4 * esat09 * esac16 +
                         ri3 * esat100 * esac09 + two * ri1 * esat64 * esac01);
