@@ -280,12 +280,12 @@ Real bm0ij_data(const int n1, const int n2a, const int n2n) {
 
 KOKKOS_INLINE_FUNCTION
 void intermodal_coag_rate_for_0th_moment(
-    const Real two, const Real a_const, const Real r1, const Real r2,
-    const Real rx4, const Real ri1, const Real ri2, const Real ri3,
-    const Real knc, const Real kngat, const Real kngac, const Real kfmatac,
-    const Real sqdgat, const Real esat01, const Real esat04, const Real esat09,
-    const Real esat16, const Real esac01, const Real esac04, const Real esac09,
-    const Real esac16, const int n1, const int n2a, const int n2n, Real &qn12) {
+    const Real a_const, const Real r1, const Real r2, const Real rx4,
+    const Real ri1, const Real ri2, const Real ri3, const Real knc,
+    const Real kngat, const Real kngac, const Real kfmatac, const Real sqdgat,
+    const Real esat01, const Real esat04, const Real esat09, const Real esat16,
+    const Real esac01, const Real esac04, const Real esac09, const Real esac16,
+    const int n1, const int n2a, const int n2n, Real &qn12) {
 
   const Real bm0ij = bm0ij_data(n1, n2a, n2n);
 
@@ -295,16 +295,16 @@ void intermodal_coag_rate_for_0th_moment(
   // Near-continuum form:  equation h.10a of whitby et al. (1991)
 
   const Real coagnc0 =
-      knc * (two +
+      knc * (2.0 +
              a_const * (kngat * (esat04 + r2 * esat16 * esac04) +
                         kngac * (esac04 + ri2 * esac16 * esat04)) +
              (r2 + ri2) * esat04 * esac04);
 
   // Free-molecular form:  equation h.7a of whitby et al. (1991)
   const Real coagfm0 = kfmatac * sqdgat * bm0ij *
-                       (esat01 + r1 * esac01 + two * r2 * esat01 * esac04 +
+                       (esat01 + r1 * esac01 + 2.0 * r2 * esat01 * esac04 +
                         rx4 * esat09 * esac16 + ri3 * esat16 * esac09 +
-                        two * ri1 * esat04 + esac01);
+                        2.0 * ri1 * esat04 + esac01);
 
   // Harmonic mean
   qn12 = coagnc0 * coagfm0 / (coagnc0 + coagfm0);
@@ -531,14 +531,14 @@ Real bm3i_data(const int n1, const int n2a, const int n2n) {
 // ---------------------------------------------------------------------------
 KOKKOS_INLINE_FUNCTION
 void intermodal_coag_rate_for_3rd_moment(
-    const Real two, const Real a_const, const Real r1, const Real r2,
-    const Real rx4, const Real ri1, const Real ri2, const Real ri3,
-    const Real knc, const Real kngat, const Real kngac, const Real dgat3,
-    const Real kfmatac, const Real sqdgat7, const Real esat04,
-    const Real esat09, const Real esat16, const Real esat25, const Real esat36,
-    const Real esat49, const Real esat64, const Real esac01, const Real esac04,
-    const Real esac09, const Real esac16, const Real esat100, const int n1,
-    const int n2a, const int n2n, Real &qv12) {
+    const Real a_const, const Real r1, const Real r2, const Real rx4,
+    const Real ri1, const Real ri2, const Real ri3, const Real knc,
+    const Real kngat, const Real kngac, const Real dgat3, const Real kfmatac,
+    const Real sqdgat7, const Real esat04, const Real esat09, const Real esat16,
+    const Real esat25, const Real esat36, const Real esat49, const Real esat64,
+    const Real esac01, const Real esac04, const Real esac09, const Real esac16,
+    const Real esat100, const int n1, const int n2a, const int n2n,
+    Real &qv12) {
 
   const Real bm3i = bm3i_data(n1, n2n, n2a);
   // --------------
@@ -548,26 +548,28 @@ void intermodal_coag_rate_for_3rd_moment(
 
   const Real coagnc3 =
       knc * dgat3 *
-      (two * esat36 + a_const * kngat * (esat16 + r2 * esat04 * esac04) +
+      (2.0 * esat36 + a_const * kngat * (esat16 + r2 * esat04 * esac04) +
        a_const * kngac * (esat36 * esac04 + ri2 * esat64 * esac16) +
        r2 * esat16 * esac04 + ri2 * esat64 * esac04);
 
   // Free-molecular form: equation h.7b of whitby et al. (1991)
   const Real coagfm3 = kfmatac * sqdgat7 * bm3i *
                        (esat49 + r1 * esat36 * esac01 +
-                        two * r2 * esat25 * esac04 + rx4 * esat09 * esac16 +
-                        ri3 * esat100 * esac09 + two * ri1 * esat64 * esac01);
+                        2.0 * r2 * esat25 * esac04 + rx4 * esat09 * esac16 +
+                        ri3 * esat100 * esac09 + 2.0 * ri1 * esat64 * esac01);
 
   // Harmonic mean
   qv12 = coagnc3 * coagfm3 / (coagnc3 + coagfm3);
 }
 
 KOKKOS_INLINE_FUNCTION
-void intramodal_coag_rate_for_0th_moment(
-    const Real one, const Real two, const Real a_const, const Real knc,
-    const Real kngxx, const Real kfmxx, const Real sqdgxx, const Real esxx04,
-    const Real esxx08, const Real esxx20, const Real esxx01, const Real esxx05,
-    const Real esxx25, const int n2x, Real &qnxx) {
+void intramodal_coag_rate_for_0th_moment(const Real a_const, const Real knc,
+                                         const Real kngxx, const Real kfmxx,
+                                         const Real sqdgxx, const Real esxx04,
+                                         const Real esxx08, const Real esxx20,
+                                         const Real esxx01, const Real esxx05,
+                                         const Real esxx25, const int n2x,
+                                         Real &qnxx) {
 
   // rpm 0th moment correction factors for unimodal fm coagulation  rates
   // m0 intramodal fm - rpm values
@@ -581,14 +583,155 @@ void intramodal_coag_rate_for_0th_moment(
   // --------------
   // Near-continuum form: equation h.12a of whitby et al. (1991)
   const Real coagnc =
-      knc * (one + esxx08 + a_const * kngxx * (esxx20 + esxx04));
+      knc * (1.0 + esxx08 + a_const * kngxx * (esxx20 + esxx04));
 
   // Free-molecular form: equation h.11a of whitby et al. (1991)
   const Real coagfm =
-      kfmxx * sqdgxx * bm0[n2x] * (esxx01 + esxx25 + two * esxx05);
+      kfmxx * sqdgxx * bm0[n2x] * (esxx01 + esxx25 + 2.0 * esxx05);
 
   // Harmonic mean
   qnxx = coagfm * coagnc / (coagfm + coagnc);
+}
+
+// --------------------------------------------------------
+//  getcoags calculates the coagulation rates using a new
+//     approximate algorithm for the 2nd moment.  the 0th and 3rd moments
+//     are done by analytic expressions from whitby et al. (1991).  the
+//     correction factors are also similar to those from whitby et al.
+//     (1991), but are derived from the gauss-hermite numerical
+//     quadratures used by binkowski and roselle (2003).
+//
+//  Revision history:
+//   fsb 08/25/03 coded by dr. francis s. binkowksi
+//   fsb 08/25/04 added in-line documentation
+//   rce 04/15/2007
+//    - code taken from cmaq v4.6 code; converted to f90;
+//    - added "intent" to subr arguments;
+//    - renamed "r4" & "dp" variables to "rx4" & "rx8";
+//    - changed "real*N" declarations to "real(rN)" (N = 4 or 8)
+//   Hui Wan, 2022: removed unused calculations;
+//                  wrapped the calculation of different
+//                  coagulation rates into separate subroutines
+//                  following a suggestion from Balwinder Singh.
+//
+//  References:
+//   1. whitby, e. r., p. h. mcmurry, u. shankar, and f. s. binkowski,
+//   modal aerosol dynamics modeling, rep. 600/3-91/020, atmospheric
+//   research and exposure assessment laboratory,
+//   u.s. environmental protection agency, research triangle park, n.c.,
+//   (ntis pb91-161729/as), 1991
+//
+//   2. binkowski, f.s. an u. shankar, the regional particulate matter
+//   model 1. model decsription and preliminary results, journal of
+//   geophysical research, 100, d12, pp 26,191-26,209,
+//   december 20, 1995.
+//
+//   3. binkowski, f.s. and s.j. roselle, models-3 community
+//   multiscale air quality (cmaq) model aerosol component 1:
+//   model description.  j. geophys. res., vol 108, no d6, 4183
+//   doi:10.1029/2001jd001409, 2003.
+// --------------------------------------------------------
+KOKKOS_INLINE_FUNCTION
+void getcoags(const Real lamda, const Real kfmatac, const Real kfmat,
+              const Real kfmac, const Real knc, const Real dgatk,
+              const Real dgacc, const Real sgatk, const Real sgacc,
+              const Real xxlsgat, const Real xxlsgac, Real &qn11, Real &qn22,
+              Real &qn12, Real &qv12) {
+
+  const Real a_const = 1.246;
+  const Real esat01 = haero::exp(0.125 * xxlsgat * xxlsgat);
+  const Real esac01 = haero::exp(0.125 * xxlsgac * xxlsgac);
+
+  const Real esat04 = haero::pow(esat01, 4.0);
+  const Real esac04 = haero::pow(esac01, 4.0);
+
+  const Real esat05 = esat04 * esat01;
+  const Real esac05 = esac04 * esac01;
+
+  const Real esat08 = esat04 * esat04;
+  const Real esac08 = esac04 * esac04;
+
+  const Real esat09 = esat08 * esat01;
+  const Real esac09 = esac08 * esac01;
+
+  const Real esat16 = esat08 * esat08;
+  const Real esac16 = esac08 * esac08;
+
+  const Real esat20 = esat16 * esat04;
+  const Real esac20 = esac16 * esac04;
+
+  const Real esat24 = esat20 * esat04;
+
+  const Real esat25 = esat20 * esat05;
+  const Real esac25 = esac20 * esac05;
+
+  const Real esat36 = esat20 * esat16;
+
+  const Real esat49 = esat24 * esat25;
+
+  const Real esat64 = esat20 * esat20 * esat24;
+
+  const Real esat100 = esat64 * esat36;
+
+  const Real dgat3 = dgatk * dgatk * dgatk;
+
+  const Real sqdgat = haero::sqrt(dgatk);
+  const Real sqdgac = haero::sqrt(dgacc);
+  const Real sqdgat7 = dgat3 * sqdgat;
+
+  const Real r1 = sqdgac / sqdgat;
+  const Real r2 = r1 * r1;
+  const Real rx4 = r2 * r2;
+  const Real ri1 = 1.0 / r1;
+  const Real ri2 = 1.0 / (r1 * r1);
+  const Real ri3 = 1.0 / (r1 * r1 * r1);
+  const Real kngat = 2.0 * lamda / dgatk;
+  const Real kngac = 2.0 * lamda / dgacc;
+
+  //  Calculate ratio of geometric mean diameters
+
+  const Real rat = dgacc / dgatk;
+
+  // Trap subscripts for bm0 and bm0i, between 1 and 10.
+  // See page h.5 of whitby et al. (1991)
+
+  const int n2n = haero::max(1, haero::min(10, int(4.0 * (sgatk - 0.75)))) - 1;
+  const int n2a = haero::max(1, haero::min(10, int(4.0 * (sgacc - 0.75)))) - 1;
+  const int n1 =
+      haero::max(1,
+                 haero::min(10, 1 + int((1.0 / haero::log(haero::sqrt(2.0))) *
+                                        haero::log(rat)))) -
+      1;
+
+  // -----------------------------------------------------------------
+  //  Aitken to accumulation mode coagulation rate for the 0th moment
+  // -----------------------------------------------------------------
+  intermodal_coag_rate_for_0th_moment(a_const, r1, r2, rx4, ri1, ri2, ri3, knc,
+                                      kngat, kngac, kfmatac, sqdgat, esat01,
+                                      esat04, esat09, esat16, esac01, esac04,
+                                      esac09, esac16, n1, n2a, n2n, qn12);
+
+  // -----------------------------------------------------------------
+  // Aitken to accumulation mode coagulation rate for the 3rd moment
+  // -----------------------------------------------------------------
+  intermodal_coag_rate_for_3rd_moment(
+      a_const, r1, r2, rx4, ri1, ri2, ri3, knc, kngat, kngac, dgat3, kfmatac,
+      sqdgat7, esat04, esat09, esat16, esat25, esat36, esat49, esat64, esac01,
+      esac04, esac09, esac16, esat100, n1, n2a, n2n, qv12);
+
+  // --------------------------------------------------------
+  // Intramodal coagulation (0th moment only), aitken mode
+  // --------------------------------------------------------
+  intramodal_coag_rate_for_0th_moment(a_const, knc, kngat, kfmat, sqdgat,
+                                      esat01, esat04, esat05, esat08, esat20,
+                                      esat25, n2n, qn11);
+
+  // --------------------------------------------------------------
+  // Intramodal coagulation (0th moment only), accumulation mode
+  // --------------------------------------------------------------
+  intramodal_coag_rate_for_0th_moment(a_const, knc, kngac, kfmac, sqdgac,
+                                      esac01, esac04, esac05, esac08, esac20,
+                                      esac25, n2a, qn22);
 }
 
 } // namespace coagulation

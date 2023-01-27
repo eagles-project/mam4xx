@@ -64,8 +64,6 @@ TEST_CASE("intermodal_coag_rate_for_3rd_moment", "mam4_coagulation_process") {}
 
 TEST_CASE("intra_coag_rate_for_0th_moment", "mam4_coagulation_process") {
 
-  Real one = 0.0;
-  Real two = 0.0;
   Real a_const = 0.0;
   Real knc = 0.0;
 
@@ -85,9 +83,11 @@ TEST_CASE("intra_coag_rate_for_0th_moment", "mam4_coagulation_process") {
   Real qnxx = 0.0;
 
   coagulation::intramodal_coag_rate_for_0th_moment(
-      one, two, a_const, knc, kngxx, kfmxx, sqdgxx, esxx04, esxx08, esxx20,
-      esxx01, esxx05, esxx25, n2x, qnxx);
+      a_const, knc, kngxx, kfmxx, sqdgxx, esxx04, esxx08, esxx20, esxx01,
+      esxx05, esxx25, n2x, qnxx);
 }
+
+TEST_CASE("get_coags", "mam4_coagulation_process") {}
 
 TEST_CASE("test_compute_tendencies", "mam4_coagulation_process") {
 
