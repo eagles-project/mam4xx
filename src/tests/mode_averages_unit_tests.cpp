@@ -21,38 +21,48 @@ using namespace mam4;
 TEST_CASE("modal_averages", "") {
   ekat::Comm comm;
   ekat::logger::Logger<> logger("modal averages tests",
-                                ekat::logger::LogLevel::debug, comm);
+                                ekat::logger::LogLevel::info, comm);
 
+  /// Use EAMxx default number of levels
   const int nlev = 72;
-
+  /// Initialize prognostics with nonzero mass and number
+  /// mixing ratios.
+  /// These values are chosen for simplicity; they roughly match
+  /// (within an order of magnitude) realistic values.
   Prognostics progs(nlev);
   Diagnostics diags(nlev);
 
   const Real number_mixing_ratio = 2e7;
   const Real mass_mixing_ratio = 3e-8;
   for (int m = 0; m < 4; ++m) {
-    auto h_n_view = Kokkos::create_mirror_view(progs.n_mode_i[m]);
-    for (int k = 0; k < nlev; ++k) {
-      h_n_view(k) = number_mixing_ratio;
-    }
-    Kokkos::deep_copy(progs.n_mode_i[m], h_n_view);
+    Kokkos::deep_copy(progs.n_mode_i[m], number_mixing_ratio);
+    Kokkos::deep_copy(progs.n_mode_c[m], number_mixing_ratio);
     for (int aid = 0; aid < 7; ++aid) {
       const int s = aerosol_index_for_mode(static_cast<ModeIndex>(m),
                                            static_cast<AeroId>(aid));
       if (s >= 0) {
-        auto h_q_view = Kokkos::create_mirror_view(progs.q_aero_i[m][s]);
+        auto h_q_view_i = Kokkos::create_mirror_view(progs.q_aero_i[m][s]);
+        auto h_q_view_c = Kokkos::create_mirror_view(progs.q_aero_c[m][s]);
         for (int k = 0; k < nlev; ++k) {
-          h_q_view(k) = mass_mixing_ratio;
+          h_q_view_i(k) = mass_mixing_ratio;
+          h_q_view_c(k) = mass_mixing_ratio;
         }
-        Kokkos::deep_copy(progs.q_aero_i[m][s], h_q_view);
+        Kokkos::deep_copy(progs.q_aero_i[m][s], h_q_view_i);
+        Kokkos::deep_copy(progs.q_aero_c[m][s], h_q_view_c);
       }
     }
   }
 
+  /// compute dry particle size for interstitial, cloud, and
+  /// total (interstitial + cloud) aerosols.
+  /// Here we compute the average sizes separately, then call the kernel
+  /// and compare its result to our manually computed values.
+  /// We use the same values for interstitial and cloud in this unit test.
   SECTION("dry particle size") {
 
-    //    Real dry_aero_mean_particle_volume[4]; // unused
+    /// Separate averages
     Real dry_aero_mean_particle_diam[4];
+    Real dry_aero_mean_particle_diam_total[4];
     for (int m = 0; m < 4; ++m) {
       Real dry_vol = 0.0;
       for (int aid = 0; aid < 7; ++aid) {
@@ -63,33 +73,67 @@ TEST_CASE("modal_averages", "") {
         }
       }
       const Real mean_vol = dry_vol / number_mixing_ratio;
-      //      dry_aero_mean_particle_volume[m] = mean_vol;
       dry_aero_mean_particle_diam[m] =
           conversions::mean_particle_diameter_from_volume(
               mean_vol, modes(m).mean_std_dev);
+      dry_aero_mean_particle_diam_total[m] =
+          conversions::mean_particle_diameter_from_volume(
+              2 * mean_vol, modes(m).mean_std_dev);
 
       logger.info("{} mode has mean particle diameter {}",
                   mode_str(static_cast<ModeIndex>(m)),
                   dry_aero_mean_particle_diam[m]);
     }
 
+    /// Call mam4xx kernel across all modes, levels
     Kokkos::parallel_for(
         "compute_dry_particle_size", nlev, KOKKOS_LAMBDA(const int i) {
           mode_avg_dry_particle_diam(diags, progs, i);
         });
 
+    /// Copy kernel results from device to host and compare
     for (int m = 0; m < 4; ++m) {
-      auto h_diam =
+      auto h_diam_i =
           Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter_i[m]);
-      Kokkos::deep_copy(h_diam, diags.dry_geometric_mean_diameter_i[m]);
+      auto h_diam_c =
+          Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter_c[m]);
+      auto h_diam_total = Kokkos::create_mirror_view(
+          diags.dry_geometric_mean_diameter_total[m]);
+
+      Kokkos::deep_copy(h_diam_i, diags.dry_geometric_mean_diameter_i[m]);
+      Kokkos::deep_copy(h_diam_c, diags.dry_geometric_mean_diameter_c[m]);
+      Kokkos::deep_copy(h_diam_total,
+                        diags.dry_geometric_mean_diameter_total[m]);
+
       for (int k = 0; k < nlev; ++k) {
-        if (!FloatingPoint<Real>::equiv(h_diam(k),
+        if (!FloatingPoint<Real>::equiv(h_diam_i(k),
                                         dry_aero_mean_particle_diam[m])) {
-          logger.debug("h_diam({}) = {}, dry_aero_mean_particle_diam[{}] = {}",
-                       k, h_diam(k), m, dry_aero_mean_particle_diam[m]);
+          logger.debug(
+              "h_diam_i({}) = {}, dry_aero_mean_particle_diam[{}] = {}", k,
+              h_diam_i(k), m, dry_aero_mean_particle_diam[m]);
+
+          logger.debug("h_diam_c({}) = {}, h_diam_total({}) = {}", k,
+                       h_diam_c(k), k, h_diam_total(k));
         }
-        REQUIRE(FloatingPoint<Real>::equiv(h_diam(k),
+        if (!FloatingPoint<Real>::equiv(h_diam_c(k),
+                                        dry_aero_mean_particle_diam[m])) {
+          logger.debug(
+              "h_diam_c({}) = {}, dry_aero_mean_particle_diam[{}] = {}", k,
+              h_diam_c(k), m, dry_aero_mean_particle_diam[m]);
+        }
+        if (!FloatingPoint<Real>::equiv(h_diam_total(k),
+                                        dry_aero_mean_particle_diam_total[m])) {
+          logger.debug("h_diam_total({}) = {}, "
+                       "dry_aero_mean_particle_diam_total[{}] = {}",
+                       k, h_diam_total(k), m,
+                       dry_aero_mean_particle_diam_total[m]);
+        }
+        REQUIRE(FloatingPoint<Real>::equiv(h_diam_i(k),
                                            dry_aero_mean_particle_diam[m]));
+        REQUIRE(FloatingPoint<Real>::equiv(h_diam_c(k),
+                                           dry_aero_mean_particle_diam[m]));
+        REQUIRE(FloatingPoint<Real>::equiv(
+            h_diam_total(k), dry_aero_mean_particle_diam_total[m]));
       }
     }
     logger.info("dry particle size tests complete.");

@@ -9,7 +9,8 @@ namespace mam4 {
 
 ///  Compute the dry geometric mean particle size (volume and diameter)
 ///  from the log-normal size distribution for a single mode,
-///  both interstitial and cloudeborne aerosols.
+///  both interstitial and cloudeborne aerosols, separately,
+///  as well as the total (interstitial + cloudborne).
 ///
 ///  This version can be called in parallel over both modes and vertical levels.
 ///
@@ -46,6 +47,9 @@ void mode_avg_dry_particle_diam(const Diagnostics &diags,
   diags.dry_geometric_mean_diameter_c[mode_idx](k) =
       conversions::mean_particle_diameter_from_volume(
           mean_vol_c, modes(mode_idx).mean_std_dev);
+  diags.dry_geometric_mean_diameter_total[mode_idx](k) =
+      conversions::mean_particle_diameter_from_volume(
+          mean_vol_c + mean_vol_i, modes(mode_idx).mean_std_dev);
 }
 
 ///  Compute the dry geometric mean particle size (volume and diameter)

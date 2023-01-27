@@ -178,8 +178,11 @@ public:
           ColumnView("dry_geometric_mean_diameter_interstitial", num_levels);
       dry_geometric_mean_diameter_c[mode] =
           ColumnView("dry_geometric_mean_diameter_cloudeborne", num_levels);
+      dry_geometric_mean_diameter_total[mode] =
+          ColumnView("dry_geometric_mean_diameter_total", num_levels);
       Kokkos::deep_copy(dry_geometric_mean_diameter_i[mode], 0.0);
       Kokkos::deep_copy(dry_geometric_mean_diameter_c[mode], 0.0);
+      Kokkos::deep_copy(dry_geometric_mean_diameter_total[mode], 0.0);
       wet_geometric_mean_diameter_i[mode] =
           ColumnView("wet_geometric_mean_diameter_interstitial", num_levels);
       wet_geometric_mean_diameter_c[mode] =
@@ -204,6 +207,10 @@ public:
   /// Hygroscopicity is a modal mass-weighted average over all species
   /// in a mode
   ColumnView hygroscopicity[AeroConfig::num_modes()];
+
+  /// Total dry particle diameter is a modal mass-weighted average over
+  /// all species of interstitial AND cloudeborne aerosols in a mode
+  ColumnView dry_geometric_mean_diameter_total[AeroConfig::num_modes()];
 
   /// Dry particle diameter is a modal mass-weighted average over all species
   /// of interstitial aerosols in a mode

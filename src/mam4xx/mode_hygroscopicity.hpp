@@ -7,13 +7,14 @@
 
 namespace mam4 {
 
-///  Compute the modal average hygroscopicity for a single mode using
+///  Compute the modal average hygroscopicity for a single mode's interstitial
+///  aerosols using
 ///  Equation (A2) from Ghan et al., 2011, Droplet nucleation: Physically-based
 ///  parameterizations and comparative evaluation, J. Adv. Earth Sys. Mod. 3
 ///  M10001.
 ///
 ///  Note that equation (A3) from that paper, which sets the hygroscopicity
-///  value for each species, is not used by MAM4 (whose values of hygroscopicity
+///  value for each species, is not used by MAM4 (whose species' hygroscopicity
 ///  are set explicitly -- see aero_modes.hpp).
 ///
 ///  This version can be called in parallel over both modes and vertical levels.
@@ -28,8 +29,8 @@ namespace mam4 {
 ///  @param [in] mode_idx Mode whose average hygroscopicity is needed
 ///  @param [in] k Column vertical level where size data are needed
 KOKKOS_INLINE_FUNCTION
-void mode_hygroscopicity(const Diagnostics &diags, const Prognostics &progs,
-                         int mode_idx, int k) {
+void mode_hygroscopicity_i(const Diagnostics &diags, const Prognostics &progs,
+                           int mode_idx, int k) {
   Real hyg = 0.0;
   Real volume_mixing_ratio = 0.0; // [m3 aerosol / kg air]
   for (int aid = 0; aid < AeroConfig::num_aerosol_ids(); ++aid) {
@@ -61,7 +62,7 @@ KOKKOS_INLINE_FUNCTION
 void mode_hygroscopicity(const Diagnostics &diags, const Prognostics &progs,
                          int k) {
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
-    mode_hygroscopicity(diags, progs, m, k);
+    mode_hygroscopicity_i(diags, progs, m, k);
   }
 }
 
