@@ -32,7 +32,8 @@ KOKKOS_INLINE_FUNCTION Real mmr_from_number_conc(Real number_conc,
 /// Given a mass mixing ratio (mmr) for a species or mixture [kg species/kg
 /// dry air], computes and returns a number density [m-3] based on its molecular
 /// weight and on the density of dry air in the vicinity.
-/// @param [in] mmr The mass mixing ratio  of the species/mixture [kg/kg dry air]
+/// @param [in] mmr The mass mixing ratio  of the species/mixture [kg/kg dry
+/// air]
 /// @param [in] molecular_wt The molecular weight of the species/mixture
 /// [kg/kmol]
 /// @param [in] dry_air_density The mass density of dry air [kg/m3]
