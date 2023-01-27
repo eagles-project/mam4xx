@@ -59,7 +59,8 @@ void mode_hygroscopicity_i(const Diagnostics &diags, const Prognostics &progs,
 ///      aerosol mass mixing ratios
 ///  @param [in] k Column vertical level where size data are needed
 KOKKOS_INLINE_FUNCTION
-void mode_hygroscopicity(const Diagnostics &diags, const Prognostics &progs, int k) {
+void mode_hygroscopicity(const Diagnostics &diags, const Prognostics &progs,
+                         int k) {
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
     mode_hygroscopicity_i(diags, progs, m, k);
   }
