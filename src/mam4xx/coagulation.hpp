@@ -952,6 +952,69 @@ void update_qnum_for_intramodal_coag(const Real ybetajj0, const Real deltat,
   qnum_end = qnum_bgn / (1.0 + ybetajj0 * deltat * qnum_bgn);
 }
 
+// ----------------------------------------------------------------------------------------------------
+// Purpose: update aerosol number mixing ratios by taking into account both the
+// intramodal and
+//          intermodal coagulation.
+//
+// Numerical treatment:
+//  - Note that the updates for different modes are calculated in a sequential
+//  manner using a specific
+//    ordering because
+//    - accumulation number loss depends on accumulation number
+//    - pcarbon number loss depends on pcarbon and accumulation number
+//
+//  - The average number mixing ratio over current timestep
+//    of other modes are used to calculate the number loss of a mode.
+// ----------------------------------------------------------------------------------------------------
+KOKKOS_INLINE_FUNCTION
+void mam_coag_num_update(Real ybetaij0[Coagulation::max_coagpair],
+                         Real ybetaii0[Coagulation::max_coagpair],
+                         Real ybetajj0[Coagulation::max_coagpair],
+                         const Real deltat,
+                         Real qnum_bgn[AeroConfig::num_modes()],
+                         Real qnum_end[AeroConfig::num_modes()],
+                         Real qnum_tavg[AeroConfig::num_modes()]) {
+
+  const int nacc = static_cast<int>(ModeIndex::Accumulation);
+  const int npca = static_cast<int>(ModeIndex::PrimaryCarbon);
+  const int nait = static_cast<int>(ModeIndex::Aitken);
+
+  // -------------------------------------------------------
+  // accumulaiton mode number loss due to intramodal coag
+  // -------------------------------------------------------
+
+  update_qnum_for_intramodal_coag(ybetajj0[0], deltat, qnum_bgn[nacc],
+                                  qnum_end[nacc]);
+  qnum_tavg[nacc] = (qnum_bgn[nacc] + qnum_end[nacc]);
+
+  // ----------------------------------------------------------------------------
+  // pcarbon mode number loss - approximate analytical solution
+  // using average number conc. for accumulaiton mode
+  // ----------------------------------------------------------------------------
+  Real bijdtqnumj = haero::max(0.0, deltat * ybetaij0[1] * qnum_tavg[nacc]);
+  Real biidt = haero::max(0.0, deltat * ybetaii0[1]);
+
+  update_qnum_for_intra_and_intermodal_coag(bijdtqnumj, biidt, qnum_bgn[npca],
+                                            qnum_end[npca]);
+
+  qnum_tavg[npca] = (qnum_bgn[npca] + qnum_end[npca]) * 0.5;
+
+  // -----------------------------------------------------------------------------------------
+  // aitken mode number loss - approximate analytical solution
+  // using average number conc. for accumulaiton and pcarbon modes
+  // -----------------------------------------------------------------------------------------
+
+  Real bijqnumj = ybetaij0[0] * qnum_tavg[nacc];
+  bijqnumj = bijqnumj + ybetaij0[2] * qnum_tavg[npca];
+  bijdtqnumj = haero::max(0.0, deltat * bijqnumj);
+  biidt = haero::max(0.0, deltat * ybetaii0[0]);
+
+  update_qnum_for_intra_and_intermodal_coag(bijdtqnumj, biidt, qnum_bgn[nait],
+                                            qnum_end[nait]);
+  qnum_tavg[nait] = (qnum_bgn[nait] + qnum_end[nait]) * 0.5;
+}
+
 } // namespace coagulation
 
 // init -- initializes the implementation with MAM4's configuration
