@@ -91,7 +91,7 @@ TEST_CASE("get_coags", "mam4_coagulation_process") {}
 
 TEST_CASE("getcoags_wrapper_f", "mam4_coagulation_process") {}
 
-TEST_CASE("mam_coag_aer_update", "mam4_coagulation_process"){}
+TEST_CASE("mam_coag_aer_update", "mam4_coagulation_process") {}
 
 TEST_CASE("test_compute_tendencies", "mam4_coagulation_process") {
 
