@@ -940,6 +940,18 @@ void update_qnum_for_intra_and_intermodal_coag(const Real bijdtqnumj,
   }
 }
 
+// ------------------------------------------------------------------------------------------------
+// Purpose: update the number mixing ratio of a single mode by considering
+// intramodal coagulation
+// -------------------------------------------------------------------------------------------------
+KOKKOS_INLINE_FUNCTION
+void update_qnum_for_intramodal_coag(const Real ybetajj0, const Real deltat,
+                                     const Real qnum_bgn, Real &qnum_end) {
+  // Analytical solution under the assumption that ybetajj0 is constant over
+  // deltat
+  qnum_end = qnum_bgn / (1.0 + ybetajj0 * deltat * qnum_bgn);
+}
+
 } // namespace coagulation
 
 // init -- initializes the implementation with MAM4's configuration
