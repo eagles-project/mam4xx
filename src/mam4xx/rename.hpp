@@ -17,6 +17,7 @@ using haero::max;
 using haero::min;
 using haero::sqrt;
 using haero::erfc;
+using haero::cube;
 using haero::log;
 using Constants = haero::Constants;
 using haero::square;
@@ -633,7 +634,8 @@ public:
 
   }
 
-private:
+
+ // Make mam_rename_1subarea public for testing proposes. 
   KOKKOS_INLINE_FUNCTION
   void mam_rename_1subarea_(
       const bool iscloudy,
