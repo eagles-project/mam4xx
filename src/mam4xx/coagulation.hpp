@@ -20,6 +20,8 @@ namespace mam4 {
 /// ../aero_process.hpp.
 class Coagulation {
 public:
+  static constexpr int max_coagpair = 3;  // number of coagulation pairs
+  static constexpr int i_agepair_pca = 0; // ???????????????????????
   // process-specific configuration data (if any)
   struct Config {
     Config() {}
@@ -800,6 +802,120 @@ void getcoags_wrapper_f(const Real airtemp, const Real airprs, const Real dgatk,
       ((haero::pow(dgatk, 3.0)) *
        haero::exp(4.5 * xxlsgat * xxlsgat)); // or unit conversion
   betaij3 = max(0.0, qv12 / dumatk3);
+}
+
+// --------------------------------------------------------
+// Purpose: update aerosol mass mixing ratios by taking into account
+// coagulation-induced inter-modal
+//          mass transfer.
+//
+// Assumed possible mass transfer pathways:
+// - coag pair 1: aitken + accumulation -> accumulation
+// - coag pair 2: pca    + accumulation -> accumulation
+// - coag pair 3: aitken + pca          -> pca
+//
+// Sorted by mass source:
+//  - From aitken mode:
+//      - coag pair 1: aitken + accumulation -> accumulation
+//      - coag pair 3: aitken + pca          -> pca
+//  - From pca mode:
+//      - coag pair 2: pca    + accumulation -> accumulation
+//--------------------------------------------------------------------------------
+// Numerical treatment:
+//
+// The transfer amounts are calculated using as an exponential decay of
+// the initial mass mixing ratios,
+// where the decay constant is calculated using the average (over one timestep)
+// number mixing ratios for each mode
+//
+// The mass transfer calculations are first-order accurate in time,
+// because the mass transferred out of a mode does not
+// include any mass transferred in during the time step.
+// With this approach, the ordering is not important, but the mass transfer
+// calculations are done in the reverse order of the number loss calculations
+// --------------------------------------------------------
+KOKKOS_INLINE_FUNCTION
+void mam_coag_aer_update(
+    Real ybetaij3[Coagulation::max_coagpair], Real deltat,
+    Real qnum_tavg[AeroConfig::num_modes()],
+    Real qaer_bgn[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+    Real qaer_end[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+    Real qaer_del_coag_out[AeroConfig::num_aerosol_ids()]
+                          [AeroConfig::num_modes()]) {
+
+  const int num_aer = AeroConfig::num_aerosol_ids();
+  const int num_mode = AeroConfig::num_modes();
+  // --------------------------------------------------------------------
+  // Initialize the array that will be passed onto aging
+  // --------------------------------------------------------------------
+  for (int ispec = 0; ispec < num_aer; ++ispec) {
+    for (int imode = 0; imode < num_mode; ++imode) {
+      qaer_del_coag_out[ispec][imode] = 0.0;
+    }
+  }
+
+  // --------------------------------------------------------------------
+  //  Mass transfer out of aitken mode. Two coag pairs are involved:
+  // - coag pair 1: aitken + accumulation -> accumulation
+  // - coag pair 3: aitken + pca          -> pca
+  // --------------------------------------------------------------------
+  // Calculate the rate of mass transfer into different destination modes and
+  // the sum over all modes
+
+  const int nacc = static_cast<int>(ModeIndex::Accumulation);
+  const int npca = static_cast<int>(ModeIndex::PrimaryCarbon);
+  const int nait = static_cast<int>(ModeIndex::Aitken);
+
+  const Real bijqnumj1 = haero::max(0.0, ybetaij3[0] * qnum_tavg[nacc]);
+  const Real bijqnumj2 = haero::max(0.0, ybetaij3[2] * qnum_tavg[npca]);
+  Real decay_const = bijqnumj1 + bijqnumj2;
+
+  Real decay_factor =
+      deltat * decay_const; // calculate coag-induced changes only when this
+                            // number is not ~= zero
+
+  if (decay_factor > std::numeric_limits<float>::epsilon()) {
+
+    // Portions of mass going into different modes
+    const Real prtn2 = bijqnumj2 / decay_const;
+    const Real prtn1 = 1.0 - prtn2;
+    const Real tmp_xf =
+        1.0 - haero::exp(-decay_factor); // total fraction lost from aitken mode
+
+    for (int iaer = 0; iaer < num_aer; ++iaer) {
+      const Real tmp_dq =
+          tmp_xf * qaer_bgn[iaer][nait]; // total amount lost from aitken mode
+      qaer_end[iaer][nait] -= tmp_dq;    // subtract from aitken mode
+      qaer_end[iaer][nacc] +=
+          tmp_dq * prtn1; // add a portion to accumulation mode
+      qaer_end[iaer][npca] += tmp_dq * prtn2; // add a portion to pca mode
+
+      // prtn2 (pair 3) corresponds to mass transfer to pca mode, which will
+      // lead to aging. Add this amount to the total mass gained by pca mode, to
+      // be used in the aging parameterization.
+      qaer_del_coag_out[iaer][Coagulation::i_agepair_pca] += tmp_dq * prtn2;
+    }
+  }
+
+  // --------------------------------------------------------------------
+  //  Mass transfer out of pcarbon mode. Only one coag pair is involved:
+  // - coag pair 2: pca + accumulation -> accumulation
+  // --------------------------------------------------------------------
+  decay_const = haero::max(
+      0.0, ybetaij3[1] * qnum_tavg[nacc]); // there is only 1 destination
+
+  decay_factor = deltat * decay_const; // calculate coag-induced changes only
+                                       // when this number is not ~= zero
+  if (decay_factor > std::numeric_limits<float>::epsilon()) {
+    const Real tmp_xf =
+        1.0 - haero::exp(-decay_factor); // total fraction lost from pca mode
+    for (int iaer = 0; iaer < num_aer; ++iaer) {
+      const Real tmp_dq =
+          tmp_xf * qaer_bgn[iaer][npca]; // total amount lost from pca mode
+      qaer_end[iaer][npca] -= tmp_dq;    //  subtract from pca mode
+      qaer_end[iaer][nacc] += tmp_dq;    // add to accumulaiton mode
+    }
+  }
 }
 
 } // namespace coagulation
