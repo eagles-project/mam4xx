@@ -918,6 +918,28 @@ void mam_coag_aer_update(
   }
 }
 
+// --------------------------------------------------------------------
+// Purpose: update the number mixing ratio of a single mode considering both the
+// intramodal
+//         and intermodal coagulation
+// --------------------------------------------------------------------
+KOKKOS_INLINE_FUNCTION
+void update_qnum_for_intra_and_intermodal_coag(const Real bijdtqnumj,
+                                               const Real biidt,
+                                               const Real qnumi_bgn,
+                                               Real &qnumi_end) {
+
+  const Real eps_denominator = 1.0e-5;
+  if (bijdtqnumj < eps_denominator) {
+    qnumi_end = qnumi_bgn / (1.0 + (bijdtqnumj + biidt * qnumi_bgn) *
+                                       (1.0 + 0.5 * bijdtqnumj));
+  } else {
+    const Real tmp_exp = haero::exp(-bijdtqnumj);
+    qnumi_end = qnumi_bgn * tmp_exp /
+                (1.0 + (biidt * qnumi_bgn / bijdtqnumj) * (1.0 - tmp_exp));
+  }
+}
+
 } // namespace coagulation
 
 // init -- initializes the implementation with MAM4's configuration
