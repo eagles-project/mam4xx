@@ -100,10 +100,83 @@ TEST_CASE("update_qnum_for_intramodal_coag", "mam_coagulation_process") {}
 
 TEST_CASE("mam_coag_num_update", "mam_coagulation_process") {}
 
+TEST_CASE("mam_coag_1subarea", "mam_coagulation_process") {}
+
 TEST_CASE("test_compute_tendencies", "mam4_coagulation_process") {
 
-  // Kokkos::parallel_for(
-  //     team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-  //       process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
-  //     });
+  ekat::Comm comm;
+  ekat::logger::Logger<> logger("aging unit tests",
+                                ekat::logger::LogLevel::debug, comm);
+  int nlev = 72;
+  Real pblh = 1000;
+  Atmosphere atm(nlev, pblh);
+  mam4::Prognostics progs(nlev);
+  mam4::Diagnostics diags(nlev);
+  mam4::Tendencies tends(nlev);
+
+  mam4::AeroConfig mam4_config;
+  mam4::NucleationProcess process(mam4_config);
+
+  const auto prog_qgas0 = progs.q_gas[0];
+  const auto tend_qgas0 = tends.q_gas[0];
+  auto h_prog_qgas0 = Kokkos::create_mirror_view(prog_qgas0);
+  auto h_tend_qgas0 = Kokkos::create_mirror_view(tend_qgas0);
+  Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);
+  Kokkos::deep_copy(h_tend_qgas0, tend_qgas0);
+
+  std::ostringstream ss;
+  ss << "prog_qgas0 [in]: [ ";
+  for (int k = 0; k < nlev; ++k) {
+    ss << h_prog_qgas0(k) << " ";
+  }
+  ss << "]";
+  logger.debug(ss.str());
+  ss.str("");
+  ss << "tend_qgas0 [in]: [ ";
+  for (int k = 0; k < nlev; ++k) {
+    ss << h_tend_qgas0(k) << " ";
+  }
+  ss << "]";
+  logger.debug(ss.str());
+  ss.str("");
+
+  for (int k = 0; k < nlev; ++k) {
+    CHECK(!isnan(h_prog_qgas0(k)));
+    CHECK(!isnan(h_tend_qgas0(k)));
+  }
+
+  // Single-column dispatch.
+  auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+  Real t = 0.0, dt = 30.0;
+  Kokkos::parallel_for(
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
+      });
+  Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);
+  Kokkos::deep_copy(h_tend_qgas0, tend_qgas0);
+
+  ss << "prog_qgas0 [out]: [ ";
+  for (int k = 0; k < nlev; ++k) {
+    ss << h_prog_qgas0(k) << " ";
+  }
+  ss << "]";
+  logger.debug(ss.str());
+  ss.str("");
+  ss << "tend_qgas0 [out]: [ ";
+  for (int k = 0; k < nlev; ++k) {
+    ss << h_tend_qgas0(k) << " ";
+  }
+  ss << "]";
+  logger.debug(ss.str());
+  ss.str("");
+
+  for (int k = 0; k < nlev; ++k) {
+    CHECK(!isnan(h_prog_qgas0(k)));
+    CHECK(!isnan(h_tend_qgas0(k)));
+  }
+
+  Kokkos::parallel_for(
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
+      });
 }

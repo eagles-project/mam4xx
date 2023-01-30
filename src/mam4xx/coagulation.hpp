@@ -1107,6 +1107,74 @@ void mam_coag_1subarea(
                         qaer_del_coag_out);
   }
 }
+KOKKOS_INLINE_FUNCTION
+void coagulation_rates_1box(const int k, const AeroConfig &aero_config,
+                            const Real dt, const Atmosphere &atm,
+                            const Prognostics &progs, const Diagnostics &diags,
+                            const Tendencies &tends,
+                            const Coagulation::Config &config) {
+
+  const int num_aer = AeroConfig::num_aerosol_ids();
+  const int num_mode = AeroConfig::num_modes();
+
+  // These are variables that I don't know how to define at the moment for now
+  // we will just allocate them here
+  Real dgn_a[num_mode];
+  Real dgn_awet[num_mode];
+
+  const Real temp = atm.temperature(k);
+  const Real pmid = atm.pressure(k);
+  const Real aircon = pmid / (mam4::Constants::r_gas * temp);
+
+  Real wet_density[num_mode];
+  for (int imode = 0; imode < num_mode; ++imode) {
+    wet_density[imode] = diags.wet_density[imode](k);
+  }
+
+  // Get prognostic fields
+  // Aerosol mass
+  Real qaer_cur[num_aer][num_mode];
+  for (int imode = 0; imode < num_mode; ++imode)
+    for (int ispec = 0; ispec < num_aer; ++ispec)
+      qaer_cur[ispec][imode] = progs.q_aero_i[imode][ispec](k);
+
+  // Aerosol number
+  Real qnum_cur[num_mode];
+  for (int imode = 0; imode < num_mode; ++imode) {
+    qnum_cur[imode] = progs.n_mode_i[imode](k);
+  }
+
+  Real qaer_del_coag_out[AeroConfig::num_aerosol_ids()]
+                        [Coagulation::max_agepair];
+
+  mam_coag_1subarea(dt, temp, pmid, aircon, dgn_a, dgn_awet, wet_density,
+                    qnum_cur, qaer_cur, qaer_del_coag_out);
+
+  // compute the tendencies
+  for (int imode = 0; imode < num_mode; ++imode) {
+    for (int ispec = 0; ispec < num_aer; ++ispec) {
+      tends.q_aero_i[imode][ispec](k) +=
+          (qaer_cur[ispec][imode] - progs.q_aero_i[imode][ispec](k)) / dt;
+    }
+  }
+
+  for (int imode = 0; imode < num_mode; ++imode) {
+    tends.n_mode_i[imode](k) +=
+        (qnum_cur[imode] - progs.n_mode_i[imode](k)) / dt;
+  }
+
+  // Update the prognostics
+  for (int imode = 0; imode < num_mode; ++imode) {
+    for (int ispec = 0; ispec < num_aer; ++ispec) {
+      progs.q_aero_i[imode][ispec](k) = qaer_cur[ispec][imode];
+    }
+
+    for (int imode = 0; imode < num_mode; ++imode) {
+      progs.n_mode_i[imode](k) = qnum_cur[imode];
+    }
+  }
+}
+
 } // namespace coagulation
 
 // init -- initializes the implementation with MAM4's configuration
@@ -1127,7 +1195,12 @@ void Coagulation::compute_tendencies(const AeroConfig &config,
                                      const Diagnostics &diags,
                                      const Tendencies &tends) const {
 
-  // TODO
+  const int nk = atm.num_levels();
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
+        coagulation::coagulation_rates_1box(k, config, dt, atm, progs, diags,
+                                            tends, config_);
+      });
 }
 } // namespace mam4
 
