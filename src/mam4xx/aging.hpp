@@ -32,6 +32,7 @@ public:
   static constexpr Real n_so4_monolayers_pcage = 8.0;
   static constexpr Real dr_so4_monolayers_pcage =
       n_so4_monolayers_pcage * 4.76e-10;
+  static constexpr int max_agepair = 1;
 
   // validate -- validates the given atmospheric state and prognostics against
   // assumptions made by this implementation, returning true if the states are

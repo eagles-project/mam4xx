@@ -2,6 +2,7 @@
 #define MAM4XX_COAGULATION_HPP
 
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/mam4.hpp>
 #include <mam4xx/mam4_types.hpp>
 
 #include <Kokkos_Array.hpp>
@@ -22,6 +23,7 @@ class Coagulation {
 public:
   static constexpr int max_coagpair = 3;  // number of coagulation pairs
   static constexpr int i_agepair_pca = 0; // ???????????????????????
+  static constexpr int max_agepair = 1;
   // process-specific configuration data (if any)
   struct Config {
     Config() {}
@@ -841,7 +843,7 @@ void mam_coag_aer_update(
     Real qaer_bgn[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
     Real qaer_end[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
     Real qaer_del_coag_out[AeroConfig::num_aerosol_ids()]
-                          [AeroConfig::num_modes()]) {
+                          [Coagulation::max_agepair]) {
 
   const int num_aer = AeroConfig::num_aerosol_ids();
   const int num_mode = AeroConfig::num_modes();
@@ -1015,6 +1017,96 @@ void mam_coag_num_update(Real ybetaij0[Coagulation::max_coagpair],
   qnum_tavg[nait] = (qnum_bgn[nait] + qnum_end[nait]) * 0.5;
 }
 
+// -----------------------------------------------------------------------------------------
+// Purpose:
+// Considers the coagulation between aitken, pcarbon, and accumulation modes and
+// updates aerosol mass and number mixing ratios.
+//
+// This function is called by MAM4's microphysics driver for clear-air
+// conditions.
+// -----------------------------------------------------------------------------------------
+KOKKOS_INLINE_FUNCTION
+void mam_coag_1subarea(
+    const Real deltat, const Real temp, const Real pmid, const Real aircon,
+    Real dgn_a[AeroConfig::num_modes()], Real dgn_awet[AeroConfig::num_modes()],
+    Real wetdens[AeroConfig::num_modes()],
+    Real qnum_cur[AeroConfig::num_modes()],
+    Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
+    Real qaer_del_coag_out[AeroConfig::num_aerosol_ids()]
+                          [Coagulation::max_agepair]) {
+
+  const int num_aer = AeroConfig::num_aerosol_ids();
+  const int num_mode = AeroConfig::num_modes();
+  const int nacc = static_cast<int>(ModeIndex::Accumulation);
+  const int npca = static_cast<int>(ModeIndex::PrimaryCarbon);
+  const int nait = static_cast<int>(ModeIndex::Aitken);
+
+  // ----------------------------------------------------
+  // Preparation
+  //----------------------------------------------------
+  // Clip negative values and set initial values before coag
+  Real qaer_bgn[num_aer][num_mode];
+  for (int ispec = 0; ispec < num_aer; ++ispec) {
+    for (int imode = 0; imode < num_mode; ++imode) {
+      qaer_cur[ispec][imode] = haero::max(0.0, qaer_cur[ispec][imode]);
+      qaer_bgn[ispec][imode] = qaer_cur[ispec][imode];
+    }
+  }
+
+  Real qnum_bgn[num_mode];
+  for (int imode = 0; imode < num_mode; ++imode) {
+    qnum_cur[imode] = haero::max(0.0, qnum_cur[imode]);
+    qnum_bgn[imode] = qnum_cur[imode];
+  }
+
+  // --------------------------------------------------------------
+  // Compute coagulation rates using the CMAQ models "fast" method
+  // (based on E. Whitby's approximation approach)
+  // Here subr. arguments are all in mks unit.
+  // --------------------------------------------------------------
+  const int src_mode_coagpair[3] = {nait, npca, nait};
+  const int dest_mode_coagpair[3] = {nacc, nacc, npca};
+  for (int ip = 0; ip < Coagulation::max_coagpair; ++ip) {
+
+    const int src_mode = src_mode_coagpair[ip];
+    const int dest_mode = dest_mode_coagpair[ip];
+
+    Real ybetaij0[Coagulation::max_coagpair];
+    Real ybetaij3[Coagulation::max_coagpair];
+    Real ybetaii0[Coagulation::max_coagpair];
+    Real ybetajj0[Coagulation::max_coagpair];
+
+    // const Real sigma_aer_src  =
+    const Real sigma_aer_src = mam4::modes(src_mode).mean_std_dev;
+    const Real sigma_aer_dest = mam4::modes(dest_mode).mean_std_dev;
+    getcoags_wrapper_f(temp, pmid, dgn_awet[src_mode], dgn_awet[dest_mode],
+                       sigma_aer_src, sigma_aer_dest, haero::log(sigma_aer_src),
+                       haero::log(sigma_aer_dest), wetdens[src_mode],
+                       wetdens[dest_mode], ybetaij0[ip], ybetaij3[ip],
+                       ybetaii0[ip], ybetajj0[ip]);
+
+    // Convert coag coefficients from (m3/s) to (kmol-air/s)
+    for (int ip = 0; ip < Coagulation::max_coagpair; ++ip) {
+      ybetaij0[ip] *= aircon;
+      ybetaij3[ip] *= aircon;
+      ybetaii0[ip] *= aircon;
+      ybetajj0[ip] *= aircon;
+    }
+
+    //---------------------------------------------------------------------------------------
+    // Advance solutions in time assuming the coag coefficients are fixed within
+    // one timestep
+    //---------------------------------------------------------------------------------------
+    // First update number mixing ratios
+    Real qnum_tavg[num_mode];
+    mam_coag_num_update(ybetaij0, ybetaii0, ybetajj0, deltat, qnum_bgn,
+                        qnum_cur, qnum_tavg);
+
+    // Then calculate mass transfers between modes and update mass mixing ratios
+    mam_coag_aer_update(ybetaij3, deltat, qnum_tavg, qaer_bgn, qaer_cur,
+                        qaer_del_coag_out);
+  }
+}
 } // namespace coagulation
 
 // init -- initializes the implementation with MAM4's configuration

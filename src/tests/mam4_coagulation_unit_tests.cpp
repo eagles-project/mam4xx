@@ -93,6 +93,13 @@ TEST_CASE("getcoags_wrapper_f", "mam4_coagulation_process") {}
 
 TEST_CASE("mam_coag_aer_update", "mam4_coagulation_process") {}
 
+TEST_CASE("update_qnum_for_intra_and_intermodal_coag",
+          "mam4_coagulation_process") {}
+
+TEST_CASE("update_qnum_for_intramodal_coag", "mam_coagulation_process") {}
+
+TEST_CASE("mam_coag_num_update", "mam_coagulation_process") {}
+
 TEST_CASE("test_compute_tendencies", "mam4_coagulation_process") {
 
   // Kokkos::parallel_for(
