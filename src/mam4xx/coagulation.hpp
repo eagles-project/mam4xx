@@ -2,7 +2,6 @@
 #define MAM4XX_COAGULATION_HPP
 
 #include <mam4xx/aero_config.hpp>
-#include <mam4xx/mam4.hpp>
 #include <mam4xx/mam4_types.hpp>
 
 #include <Kokkos_Array.hpp>
@@ -803,7 +802,7 @@ void getcoags_wrapper_f(const Real airtemp, const Real airprs, const Real dgatk,
   const Real dumatk3 =
       ((haero::pow(dgatk, 3.0)) *
        haero::exp(4.5 * xxlsgat * xxlsgat)); // or unit conversion
-  betaij3 = max(0.0, qv12 / dumatk3);
+  betaij3 = haero::max(0.0, qv12 / dumatk3);
 }
 
 // --------------------------------------------------------

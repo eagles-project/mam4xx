@@ -1,5 +1,5 @@
 #include <iostream>
-#include <mam4xx/mam4.hpp>
+#include <mam4xx/coagulation.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
 
@@ -19,46 +19,46 @@ using namespace skywalker;
 using namespace mam4;
 
 // Parameterizations used by the aging process.
-//void coag_1subarea(Ensemble *ensemble);
+void coag_1subarea(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
+
 
   if (argc == 1) {
     usage();
    }
 
-  // Kokkos::initialize(argc, argv);
- //  std::string input_file = argv[1];
- //  std::string output_file = validation::output_name(input_file);
- //  std::cout << argv[0] << ": reading " << input_file << std::endl;
+  Kokkos::initialize(argc, argv);
+   std::string input_file = argv[1];
+   std::string output_file = validation::output_name(input_file);
+   std::cout << argv[0] << ": reading " << input_file << std::endl;
 
-//   // Load the ensemble. Any error encountered is fatal.
-//   Ensemble *ensemble = skywalker::load_ensemble(input_file, "mam4xx");
+   // Load the ensemble. Any error encountered is fatal.
+   Ensemble *ensemble = skywalker::load_ensemble(input_file, "mam4xx");
 
-//   // the settings.
-//   Settings settings = ensemble->settings();
-//   if (!settings.has("function")) {
-//     std::cerr << "No function specified in mam4xx.settings!" << std::endl;
-//     exit(1);
-//   }
+   // the settings.
+   Settings settings = ensemble->settings();
+   if (!settings.has("function")) {
+     std::cerr << "No function specified in mam4xx.settings!" << std::endl;
+     exit(1);
+   }
 
-//   // Dispatch to the requested function.
-//   auto func_name = settings.get("function");
+   // Dispatch to the requested function.
+   auto func_name = settings.get("function");
+  try {
+     if (func_name == "coag_1subarea") {
+       coag_1subarea(ensemble);
+     }
 
-//   try {
-//     if (func_name == "mam_pcarbon_aging_1subarea") {
-//       coag_1subarea(ensemble);
-//     }
+   } catch (std::exception &e) {
+     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
+   }
 
-//   } catch (std::exception &e) {
-//     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
-//   }
-
-//   // Write out a Python module.
-//   std::cout << argv[0] << ": writing " << output_file << std::endl;
-//   ensemble->write(output_file);
+  // Write out a Python module.
+   std::cout << argv[0] << ": writing " << output_file << std::endl;
+   ensemble->write(output_file);
 
 //   // Clean up.
-//   delete ensemble;
- //Kokkos::finalize();
+ delete ensemble;
+ Kokkos::finalize();
 }
