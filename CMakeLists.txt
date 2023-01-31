@@ -17,6 +17,8 @@ else() #CPU
   message(STATUS "Building for CPU")
 endif()
 
+option(MAM4XX_ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
+
 # Blessed version of clang-format.
 set(CLANG_FORMAT_VERSION 14)
 
@@ -65,6 +67,12 @@ include_directories("${MAM4XX_HAERO_DIR}/include")
 include_directories(${PROJECT_SOURCE_DIR}/src)
 
 link_directories("${MAM4XX_HAERO_DIR}/lib")
+
+# Code coverage
+if (MAM4XX_ENABLE_COVERAGE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+endif()
 
 # Support for valgrind -- Linux only.
 if (UNIX AND NOT APPLE)

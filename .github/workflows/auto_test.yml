@@ -40,6 +40,8 @@ jobs:
         clang-format \
         cmake \
         gcc \
+        gcov \
+        gcovr \
         g++ \
         gfortran \
         git \
@@ -108,3 +110,14 @@ jobs:
         cd build
         make install
 
+    - name: Generating code coverage report
+      run: |
+        gcovr . build --xml > coverage.xml
+
+    - name: Uploading coverage report to codecov.io
+      uses: codecov/codecov-action@v3
+      with:
+        fail_ci_if_error: true
+        files: coverage.xml
+        name: mam4xx
+        verbose: true
