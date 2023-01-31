@@ -1117,18 +1117,17 @@ void coagulation_rates_1box(const int k, const AeroConfig &aero_config,
   const int num_aer = AeroConfig::num_aerosol_ids();
   const int num_mode = AeroConfig::num_modes();
 
-  // These are variables that I don't know how to define at the moment for now
-  // we will just allocate them here
-  Real dgn_a[num_mode];
-  Real dgn_awet[num_mode];
-
   const Real temp = atm.temperature(k);
   const Real pmid = atm.pressure(k);
   const Real aircon = pmid / (mam4::Constants::r_gas * temp);
 
   Real wet_density[num_mode];
+  Real dgn_a[num_mode];
+  Real dgn_awet[num_mode];
   for (int imode = 0; imode < num_mode; ++imode) {
     wet_density[imode] = diags.wet_density[imode](k);
+    dgn_a[imode] = diags.dry_geometric_mean_diameter_i[imode](k);
+    dgn_awet[imode] = diags.wet_geometric_mean_diameter_i[imode](k);
   }
 
   // Get prognostic fields
