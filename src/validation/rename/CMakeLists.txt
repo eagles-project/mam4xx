@@ -9,7 +9,9 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 
 # We use a single driver for all rename-related parameterizations.
 add_executable(rename_driver  rename_driver.cpp
-               mam_rename_1subarea.cpp)
+               mam_rename_1subarea.cpp
+               find_renaming_pairs.cpp
+               compute_dryvol_change_in_src_mode.cpp)
 target_link_libraries(rename_driver skywalker;validation;${HAERO_LIBRARIES})
 
 
@@ -28,7 +30,9 @@ endforeach()
 # rename
 foreach (input
          rename_1subarea_ts_1111_iscldy_false
-         rename_1subarea_ts_1111_iscldy_true)
+         rename_1subarea_ts_1111_iscldy_true
+         find_renaming_pairs_ts_1111
+         compute_dryvol_change_in_src_mode_ts_1111)
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
   configure_file(

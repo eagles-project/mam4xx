@@ -78,7 +78,6 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     Real qaer_cur[nmodes][naerosol_species];
     set_mode_aerosol_values(qaer_cur_vector, qaer_cur );
 
-
     Rename this_rename;
 
     Real sz_factor[nmodes];
@@ -86,7 +85,7 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     Real v2n_lo_rlx[nmodes];
     Real v2n_hi_rlx[nmodes];
     Real ln_diameter_tail_fac[nmodes];
-    Real num_pairs = 0;
+    int num_pairs = 0;
     Real diameter_cutoff[nmodes];
     Real ln_dia_cutoff[nmodes];
     Real diameter_threshold[nmodes];
@@ -101,12 +100,17 @@ void mam_rename_1subarea(Ensemble *ensemble) {
                                 num_pairs,            // out
                                 diameter_cutoff,      // out
                                 ln_dia_cutoff,
-                                diameter_threshold, // out
-                                mass_2_vol);
+                                diameter_threshold);
 
     Real dgnum_amode[nmodes];
     for (int m = 0; m < nmodes; ++m) {
       dgnum_amode[m] = modes(m).nom_diameter;
+    }
+
+    Real molecular_weight_rename[naerosol_species] = {
+        150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
+    for (int iaero = 0; iaero < naerosol_species; ++iaero) {
+      mass_2_vol[iaero] = molecular_weight_rename[iaero] / aero_species(iaero).density;
     }
 
     this_rename.mam_rename_1subarea_(iscloudy,

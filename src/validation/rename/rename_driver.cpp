@@ -21,6 +21,8 @@ using namespace mam4;
 
 // Parameterizations used by the rename process.
 void mam_rename_1subarea(Ensemble *ensemble);
+void find_renaming_pairs(Ensemble *ensemble);
+void compute_dryvol_change_in_src_mode(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -46,7 +48,14 @@ int main(int argc, char **argv) {
   try {
     if (func_name == "compute_tendencies") {
       mam_rename_1subarea(ensemble);
+    } else if (func_name == "find_renaming_pairs") {
+      find_renaming_pairs(ensemble);
+
+    }else if (func_name == "compute_dryvol_change_in_src_mode") {
+      compute_dryvol_change_in_src_mode(ensemble);
+
     }
+    
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
   }
