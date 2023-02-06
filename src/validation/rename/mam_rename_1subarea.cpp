@@ -24,7 +24,8 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     const int nmodes = AeroConfig::num_modes();
     const int naerosol_species = AeroConfig::num_aerosol_ids();
 
-    const Real zero =0;
+    const Real zero = 0;
+    const Real smallest_dryvol_value = 1.0e-25; // FIXME: BAD_CONSTANT
 
     auto iscloudy_vector = input.get_array("iscldy");
     bool iscloudy = iscloudy_vector[0];
@@ -114,6 +115,7 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     }
 
     this_rename.mam_rename_1subarea_(iscloudy,
+                                     smallest_dryvol_value,
                                      dest_mode_of_mode,    // in
                                      sz_factor,            // in
                                      fmode_dist_tail_fac,  // in

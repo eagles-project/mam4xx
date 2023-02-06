@@ -24,11 +24,6 @@ using haero::square;
 
 namespace rename {
 
-// FIXME: there's almost certainly a better way to do this
-// FIXME: should this go here? Other option would be to put it in
-    // do_inter_mode_transfer(), but that's not where it is in the fortran mam4
-const Real smallest_dryvol_value = 1.0e-25; // BAD CONSTANT!
-
 KOKKOS_INLINE_FUNCTION
 void compute_dryvol_change_in_src_mode(
     const int nmode,              // in
@@ -80,41 +75,23 @@ void compute_dryvol_change_in_src_mode(
       deldryvol[m] = tmp_del_dryvol;   // change in dry volume due to growth
     }
   }
-}
+} // end compute_dryvol_change_in_src_mode()
 
 KOKKOS_INLINE_FUNCTION
-Real total_inter_cldbrn() {
+Real total_interstial_and_cloudborne() {
   Real out = 1;
   return out;
 }
 
+// this function determines the total quantity of interest (both interstitial
+// and cloudborne) for a given mode, whether that be or number mixing ratio
 KOKKOS_INLINE_FUNCTION
-Real total_inter_cldbrn(const bool &iscloudy, const int &imode,
+Real total_interstial_and_cloudborne(const bool &iscloudy, const int &imode,
                         const Real interstitial[AeroConfig::num_modes()],
                         const Real cloudborne[AeroConfig::num_modes()]) {
-  // NOTE: original function signature
-  // (iscloudy, imode, interstitial, cldbrn)
-
-  // // compute total (dry volume or number) of interstitial and cloud borne
-  // species
-
-  // logical,  intent(in) :: iscloudy       // TRUE, if a cell has cloud
-  // integer,  intent(in) :: imode
-  // real(r8), intent(in) :: interstitial(:) // interstitial part [unit depends on the input]
-  // real(r8), intent(in), optional :: cldbrn(:) // cloudborne part [unit depends on the input]
-
-  // // return value
-  // real(r8) :: total
-
   // if there is no cloud, total is just the interstitial value
   Real total = interstitial[imode];
-
   if (iscloudy) {
-    // FIXME: is this needed?
-    // if(.not.present(cldbrn))then
-    //    call endrun("If a grid cell is cloudy, cloud borne aerosol values
-    //    must be present:"//errmsg(__FILE__,__LINE__))
-    // end if
     total = total + cloudborne[imode];
   }
   return total;
@@ -128,63 +105,58 @@ KOKKOS_INLINE_FUNCTION
 void compute_before_growth_dryvol_and_num(
     // in
     const bool &iscloudy, const int &src_mode,
+    const Real &smallest_dryvol_value,
     const Real dryvol_i[AeroConfig::num_modes()],
     const Real dryvol_c[AeroConfig::num_modes()],
-    const Real qnum_cur[AeroConfig::num_modes()],
-    const Real qnumcw_cur[AeroConfig::num_modes()],
-    const Real &v2nhi, const Real &v2nlo, 
+    Real qnum_i_cur[AeroConfig::num_modes()],
+    Real qnum_c_cur[AeroConfig::num_modes()],
+    const Real &num2vol_ratiolo, const Real &num2vol_ratiohi,
     // out
-    Real &bef_grwth_dryvol, Real &bef_grwth_dryvolbnd, Real &bef_grwth_numbnd) {
-  // NOTE: original function signature
-  // (iscloudy, src_mode, dryvol_a, dryvol_c, & // input
-  // qnum_cur, qnumcw_cur, v2nhi, v2nlo, // input
-  // bef_grwth_dryvol, bef_grwth_dryvolbnd, bef_grwth_numbnd)
+    Real &b4_growth_dryvol, Real &b4_growth_dryvol_bounded, Real &b4_growth_qnum_bounded) {
 
   // Compute total(i.e. cloud borne and interstitial) of dry volume (before
-  // growth)
-  //  and delta in dry volume in the source mode [units: (m3 of species)/(kmol
-  // of air)]
-  // NOTE(mam4 refactor): cloudborne input can be optional, so we are sending
-  // "src_mode" as a argument
-  // as we cannot reference a member of an optional array if it is not present
-  // NOTE: as long as dryvol_i[src_mode]is initialized to 0 when that mode is
+  // growth) and delta in dry volume in the source mode
+  // [units: (m3 of species)/(kmol of air)]
+  // NOTE: as long as dryvol_i(src_mode) is initialized to 0 when that mode is
   // "not cloudy", this function call is a one-liner. e.g.,
   // pregrowth_dryvol = dryvol_i[src_mode] + dryvol_c[src_mode];
   // at worst, we could give it an if(dryvol_c[src_mode] > 0) statement
   const Real zero = 0.0;
-  bef_grwth_dryvol = total_inter_cldbrn(iscloudy, src_mode, dryvol_i, dryvol_c);
+  b4_growth_dryvol = total_interstial_and_cloudborne(iscloudy, src_mode, dryvol_i, dryvol_c);
 
   // FIXME: is it feasible that pregrowth_dryvol would be smaller than 1e-25?
-  bef_grwth_dryvolbnd = haero::max(bef_grwth_dryvol, smallest_dryvol_value);
+  b4_growth_dryvol_bounded = haero::max(b4_growth_dryvol, smallest_dryvol_value);
 
   // Compute total before growth number [units: #/kmol-air]
-  Real bef_grwth_num =
-      total_inter_cldbrn(iscloudy, src_mode, qnum_cur, qnumcw_cur);
-  bef_grwth_num = max(zero, bef_grwth_num); // bound to have minimum of 0
+  Real b4_growth_qnum =
+      total_interstial_and_cloudborne(iscloudy, src_mode, qnum_i_cur, qnum_c_cur);
+  b4_growth_qnum = max(zero, b4_growth_qnum); // bound to have minimum of 0
 
   // // bound number within min and max of the source mode
-  bef_grwth_numbnd = utils::min_max_bound(bef_grwth_dryvolbnd * v2nhi, // min value
-                                   bef_grwth_dryvolbnd * v2nlo, // max value
-                                   bef_grwth_num); // input
-}
+  b4_growth_qnum_bounded = utils::min_max_bound(b4_growth_dryvol_bounded * num2vol_ratiohi, // min value
+                                   b4_growth_dryvol_bounded * num2vol_ratiolo, // max value
+                                   b4_growth_qnum); // input
+} // end compute_before_growth_dryvol_and_num()
 
-//FIXME: check if a function to compute mode_diameter exist. 
+// FIXME: check if a function to compute mode_diameter exist.
 KOKKOS_INLINE_FUNCTION
-Real mode_diameter(const Real volume, const Real number, const Real size_factor)
-{
-    // compute diameter inputs:
-    // volume      ![m3]
-    // number      ![#/kmol-air]
-    // size_factor ![unitless]
-  // BAD CONSTANT 
- Real onethird = Real(1.0)/Real(3.0);  
+Real mode_diameter(const Real volume, const Real number,
+                   const Real size_factor) {
+  // compute diameter inputs:
+  // volume      ![m3]
+  // number      ![#/kmol-air]
+  // size_factor ![unitless]
+  // BAD CONSTANT
+  Real onethird = Real(1.0) / Real(3.0);
 
- return pow(volume/(number*size_factor),onethird); 
+  // FIXME: we can get get of 'smallest_dryvol_value' if we use
+  // safe_denominator() here (or even better, in the argument passed to
+  // mean_particle_diameter_from_volume() )
+  return pow(volume / (number * size_factor), onethird);
 } // end mode_diameter
 
-
 KOKKOS_INLINE_FUNCTION
-void compute_tail_fraction(const Real diameter, 
+void compute_tail_fraction(const Real diameter,
                            const Real log_dia_cutoff,
                            const Real tail_dist_fac,
                            const Real log_dia_tail_fac, // input
@@ -193,24 +165,23 @@ void compute_tail_fraction(const Real diameter,
   // Compute tail fraction to be used for inter-mode species transfer
   // rename use present function for this if statement.
   // However, we will check if log_dia_tail_fac is bigger than zero.
-  // Thus, if we do not want to include it we set its values to -1. 
-  // in current implementation log_dia_tail_fac is not present. 
+  // Thus, if we do not want to include it we set its values to -1.
+  // in current implementation log_dia_tail_fac is not present.
   const Real log_diameter  = log(diameter) + max(Real(0), log_dia_tail_fac);
   const Real tail = (log_dia_cutoff - log_diameter) * tail_dist_fac;
-  // erfc error function
-  // FIXME: check that we are using same function than E3SM. 
+  // complimentary error function (erfc)
   tail_fraction = Real(0.5) * erfc(tail);
 
 } // end compute_tail_fraction
 
 
 KOKKOS_INLINE_FUNCTION
-void compute_xfer_fractions(const Real bef_grwth_dryvol,
-                            const Real aft_grwth_dryvol,
-                            const Real bef_grwth_tail_fr_vol,
-                            const Real aft_grwth_tail_fr_vol, // in
-                            const Real aft_grwth_tail_fr_num,
-                            const Real bef_grwth_tail_fr_num, // in
+void compute_xfer_fractions(const Real b4_growth_dryvol,
+                            const Real after_growth_dryvol,
+                            const Real b4_growth_tail_fr_vol,
+                            const Real after_growth_tail_fr_vol, // in
+                            const Real after_growth_tail_fr_num,
+                            const Real b4_growth_tail_fr_qnum, // in
                             bool & is_xfer_frac_zero, //out
                             Real & xfer_vol_frac,
                             Real & xfer_num_frac //out
@@ -219,22 +190,22 @@ void compute_xfer_fractions(const Real bef_grwth_dryvol,
     // FIXME
     // BAD CONSTANT
     //1-eps (this number is little less than 1, e.g. 0.99) // FIXME: this comment is nonsense
-    const Real xferfrac_max = 0.99; //1.0 - 10.0*epsilon(1.0_r8) ; 
+    const Real xferfrac_max = 0.99; //1.0 - 10.0*epsilon(1.0_r8) ;
     // assume we have fractions to transfer, so we will not skip the rest of the calculations
     is_xfer_frac_zero = false;
     const Real zero = 0.0;
 
     // transfer fraction is difference between new and old tail-fractions
-    const Real volume_fraction = aft_grwth_tail_fr_vol*aft_grwth_dryvol - bef_grwth_tail_fr_vol*bef_grwth_dryvol;
+    const Real volume_fraction = after_growth_tail_fr_vol * after_growth_dryvol - b4_growth_tail_fr_vol*b4_growth_dryvol;
 
     if (volume_fraction <= zero ) {
       is_xfer_frac_zero = true;
-      return; 
-     } 
+      return;
+     }
 
-    xfer_vol_frac = min(volume_fraction, aft_grwth_dryvol) / aft_grwth_dryvol;
+    xfer_vol_frac = min(volume_fraction, after_growth_dryvol) / after_growth_dryvol;
     xfer_vol_frac = min(xfer_vol_frac, xferfrac_max) ;
-    xfer_num_frac = aft_grwth_tail_fr_num - bef_grwth_tail_fr_num; 
+    xfer_num_frac = after_growth_tail_fr_num - b4_growth_tail_fr_qnum;
 
     // transfer fraction for number cannot exceed that of mass
     xfer_num_frac = max(zero, min(xfer_num_frac, xfer_vol_frac));
@@ -245,7 +216,10 @@ KOKKOS_INLINE_FUNCTION
 void do_num_and_mass_transfer(const int src_mode, const int dest_mode,
                               const Real xfer_vol_frac,
                               const Real xfer_num_frac, // input
-                              Real qaer[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+                              // FIXME: will qmol be updated this way?
+                              // aerosol molar mixing ratio [kmol/kmol-dry-air]
+                              Real qmol[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+                              // aerosol number mixing ratios [#/kmol-air]
                               Real qnum[AeroConfig::num_modes()]) {
   // compute changes to number and species masses
   const Real num_trans = qnum[src_mode] * xfer_num_frac;
@@ -253,9 +227,9 @@ void do_num_and_mass_transfer(const int src_mode, const int dest_mode,
   qnum[dest_mode] += num_trans;
 
   for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
-    const Real vol_trans = qaer[src_mode][ispec] * xfer_vol_frac;
-    qaer[src_mode][ispec] -= vol_trans;
-    qaer[dest_mode][ispec] += vol_trans;
+    const Real vol_trans = qmol[src_mode][ispec] * xfer_vol_frac;
+    qmol[src_mode][ispec] -= vol_trans;
+    qmol[dest_mode][ispec] += vol_trans;
   }
 } // end do_num_and_mass_transfer
 
@@ -266,10 +240,10 @@ void do_inter_mode_transfer() {}
 KOKKOS_INLINE_FUNCTION
 void do_inter_mode_transfer(
     const int dest_mode_of_mode[AeroConfig::num_modes()],
-    const bool &iscloudy,
+    const bool &iscloudy, const Real &smallest_dryvol_value,
     // volume to number relaxation limits [m^-3]
-    const Real v2nlorlx[AeroConfig::num_modes()],
-    const Real v2nhirlx[AeroConfig::num_modes()],
+    const Real num2vol_ratiolorlx[AeroConfig::num_modes()],
+    const Real num2vol_ratiohirlx[AeroConfig::num_modes()],
     const Real sz_factor[AeroConfig::num_modes()],
     const Real fmode_dist_tail_fac[AeroConfig::num_modes()],
     const Real ln_diameter_tail_fac[AeroConfig::num_modes()],
@@ -277,66 +251,62 @@ void do_inter_mode_transfer(
     const Real diameter_threshold[AeroConfig::num_modes()],
     const Real dgnum_amode[AeroConfig::num_modes()],
     // dry volume [m3/kmol-air]
-    const Real dryvol_a[AeroConfig::num_modes()],
+    const Real dryvol_i[AeroConfig::num_modes()],
     const Real dryvol_c[AeroConfig::num_modes()],
-    const Real deldryvol_a[AeroConfig::num_modes()],
+    const Real deldryvol_i[AeroConfig::num_modes()],
     const Real deldryvol_c[AeroConfig::num_modes()],
-    Real qaer_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+    Real qmol_i_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
     // aerosol number mixing ratios [#/kmol-air]
-    Real qnum_cur[AeroConfig::num_modes()],
-    Real qaercw_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
-    Real qnumcw_cur[AeroConfig::num_modes()]) 
+    Real qnum_i_cur[AeroConfig::num_modes()],
+    Real qmol_c_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+    Real qnum_c_cur[AeroConfig::num_modes()])
 {
-  // NOTE: original function signature
-  // (nmode, nspec, dest_mode_of_mode, &
-  // iscloudy, v2nlorlx, v2nhirlx, dryvol_a, dryvol_c, deldryvol_a, deldryvol_c,
-  // & sz_factor, fmode_dist_tail_fac, ln_diameter_tail_fac, ln_dia_cutoff,
-  // diameter_threshold, & qaer_cur, qnum_cur, qaercw_cur, qnumcw_cur)
-
   // local variables
   const int nmodes = AeroConfig::num_modes();
   int src_mode, dest_mode;
-  const Real zero =0;
+  const Real zero = 0;
 
-  Real bef_grwth_dryvol=zero;    // [m3/kmol-air]
-  Real bef_grwth_dryvolbnd=zero; // [m3/kmol-air]
-  Real bef_grwth_numbnd=zero;    //  [#/kmol-air]
+  Real b4_growth_dryvol = zero;         // [m3/kmol-air]
+  Real b4_growth_dryvol_bounded = zero; // [m3/kmol-air]
+  Real b4_growth_qnum_bounded = zero;   // [#/kmol-air]
 
   // Loop through the modes and do the transfer
   for (int imode = 0; imode < nmodes; ++imode) {
     src_mode = imode;                     // source mode
-    // Fortran indexing to C++ indexing 
+    // FIXME: this needs to go, right?
+    // Fortran indexing to C++ indexing
     dest_mode = dest_mode_of_mode[imode]-1; // destination mode
 
     // if destination mode doesn't exist for the source mode, cycle loop
-    if (dest_mode < 0){ 
+    if (dest_mode < 0){
       continue;
     }
     // compute before growth dry volume and number
     compute_before_growth_dryvol_and_num(
         // in
-        iscloudy, src_mode, dryvol_a, dryvol_c, qnum_cur, qnumcw_cur,
-        v2nhirlx[src_mode], v2nlorlx[src_mode], 
+        iscloudy, src_mode, smallest_dryvol_value, dryvol_i, dryvol_c, qnum_i_cur, qnum_c_cur,
+        num2vol_ratiolorlx[src_mode], num2vol_ratiohirlx[src_mode],
         // out
-        bef_grwth_dryvol, bef_grwth_dryvolbnd, bef_grwth_numbnd);
+        b4_growth_dryvol, b4_growth_dryvol_bounded, b4_growth_qnum_bounded);
 
     // change (delta) in dryvol
     const Real dryvol_del =
-        total_inter_cldbrn(iscloudy, src_mode, deldryvol_a, deldryvol_c);
+        total_interstial_and_cloudborne(iscloudy, src_mode, deldryvol_i, deldryvol_c);
 
     // Total dry volume after growth (add delta growth)
-    Real aft_grwth_dryvol = bef_grwth_dryvol + dryvol_del;
+    Real after_growth_dryvol = b4_growth_dryvol + dryvol_del;
 
+    // FIXME: maybe floating_point::zero(aft_grwth_dryvol)?
     // Skip inter-mode transfer for this mode if dry after growth is ~ 0
-    if (aft_grwth_dryvol <= smallest_dryvol_value) {
+    if (after_growth_dryvol <= smallest_dryvol_value) {
       continue;
     }
-    
+
     // // Total dry volume after growth (add delta growth)
 
     // compute before growth diameter
     Real bef_grwth_diameter = mode_diameter(
-        bef_grwth_dryvolbnd, bef_grwth_numbnd, sz_factor[src_mode]);
+        b4_growth_dryvol_bounded, b4_growth_qnum_bounded, sz_factor[src_mode]);
 
     // if the before growth diameter is more than the threshold
     // (diameter_threshold), we restrict diameter to the threshold and change
@@ -344,22 +314,22 @@ void do_inter_mode_transfer(
     if (bef_grwth_diameter > diameter_threshold[src_mode]) {
       //  this revised volume corresponds to bef_grwth_diameter ==
       //    diameter_threshold, and same number conc
-      bef_grwth_dryvol = bef_grwth_dryvol * cube(diameter_threshold[src_mode] /
+      b4_growth_dryvol = b4_growth_dryvol * cube(diameter_threshold[src_mode] /
                                                  bef_grwth_diameter);
       bef_grwth_diameter = diameter_threshold[src_mode];
     }
 
-    // FIXME
-    //  BAD CONSTANT
-    if ((aft_grwth_dryvol - bef_grwth_dryvol) <=
-        Real(1.0e-6) * bef_grwth_dryvolbnd) {
+    // FIXME: BAD CONSTANT
+    // FIXME: maybe floating_point::zero(<quantity>)?
+    if ((after_growth_dryvol - b4_growth_dryvol) <=
+        Real(1.0e-6) * b4_growth_dryvol_bounded) {
       continue;
     }
     // Compute after growth diameter; if it is less than the "nominal" or
     // "base" diameter for the source mode, skip inter-mode transfer
     Real aft_grwth_diameter =
-        mode_diameter(aft_grwth_dryvol, bef_grwth_numbnd, sz_factor[src_mode]);
-    
+        mode_diameter(after_growth_dryvol, b4_growth_qnum_bounded, sz_factor[src_mode]);
+
     if (aft_grwth_diameter <= dgnum_amode[src_mode]) {
       continue;
     }
@@ -369,40 +339,42 @@ void do_inter_mode_transfer(
     // call compute_tail_fraction(bef_grwth_diameter,ln_dia_cutoff(src_mode),
     // log_dia_tail_fac is not presented in original call to
     // compute_tail_fraction. Thus do not no include its value
-    const Real default_log_dia_tail_fac = Real(-1);
-    Real bef_grwth_tail_fr_num = zero;
+    // FIXME: why do this flag and not set it to zero off the bat?
+      // when it is calculated it is = 3 * x^2, and thus always >= 0
+    const Real default_log_dia_tail_fac = Real(-1); // FIXME: BAD CONSTANT
+    Real b4_growth_tail_fr_qnum = zero;
     compute_tail_fraction(bef_grwth_diameter, ln_dia_cutoff[src_mode],
                           fmode_dist_tail_fac[src_mode],
                           default_log_dia_tail_fac,
-                          bef_grwth_tail_fr_num // out
+                          b4_growth_tail_fr_qnum // out
     );
 
     // compute before growth volume (or mass) fraction in the tail
-    Real bef_grwth_tail_fr_vol = zero;
+    Real b4_growth_tail_fr_vol = zero;
 
     compute_tail_fraction(bef_grwth_diameter, ln_dia_cutoff[src_mode],
                           fmode_dist_tail_fac[src_mode],
                           ln_diameter_tail_fac[src_mode],
-                          bef_grwth_tail_fr_vol // out
+                          b4_growth_tail_fr_vol // out
     );
 
     // compute after growth number fraction in the tail
     // log_dia_tail_fac is not presented in original call to
     // compute_tail_fraction.
     // Thus do not no include its value
-    Real aft_grwth_tail_fr_num = zero;
+    Real after_growth_tail_fr_num = zero;
     compute_tail_fraction(aft_grwth_diameter, ln_dia_cutoff[src_mode],
                           fmode_dist_tail_fac[src_mode],
                           default_log_dia_tail_fac,
-                          aft_grwth_tail_fr_num // out
+                          after_growth_tail_fr_num // out
     );
 
     // compute after growth volume (or mass) fraction in the tail
-    Real aft_grwth_tail_fr_vol = zero;
+    Real after_growth_tail_fr_vol = zero;
     compute_tail_fraction(aft_grwth_diameter, ln_dia_cutoff[src_mode],
                           fmode_dist_tail_fac[src_mode],
                           ln_diameter_tail_fac[src_mode],
-                          aft_grwth_tail_fr_vol // out
+                          after_growth_tail_fr_vol // out
     );
 
     // compute transfer fraction (volume and mass) - if less than zero, cycle
@@ -411,11 +383,11 @@ void do_inter_mode_transfer(
     Real xfer_vol_frac = zero;
     Real xfer_num_frac = zero;
 
-    compute_xfer_fractions(bef_grwth_dryvol, aft_grwth_dryvol,
-                           bef_grwth_tail_fr_vol,
-                           aft_grwth_tail_fr_vol, // in
-                           aft_grwth_tail_fr_num,
-                           bef_grwth_tail_fr_num, // in
+    compute_xfer_fractions(b4_growth_dryvol, after_growth_dryvol,
+                           b4_growth_tail_fr_vol,
+                           after_growth_tail_fr_vol, // in
+                           after_growth_tail_fr_num,
+                           b4_growth_tail_fr_qnum, // in
                            is_xfer_frac_zero,     // out
                            xfer_vol_frac,
                            xfer_num_frac // out
@@ -428,11 +400,11 @@ void do_inter_mode_transfer(
     // do the transfer for the interstitial species
     do_num_and_mass_transfer(src_mode, dest_mode, xfer_vol_frac,
                              xfer_num_frac, // input
-                             qaer_cur, qnum_cur);
+                             qmol_i_cur, qnum_i_cur);
     if (iscloudy) {
       do_num_and_mass_transfer(src_mode, dest_mode, xfer_vol_frac,
                                xfer_num_frac, // input
-                               qaercw_cur, qnumcw_cur);
+                               qmol_c_cur, qnum_c_cur);
     }
   } // end for(imode)
 } // end do_inter_mode_transfer()
@@ -442,8 +414,8 @@ void find_renaming_pairs(
     int *dest_mode_of_mode,                             // in
     Real sz_factor[AeroConfig::num_modes()],            // out
     Real fmode_dist_tail_fac[AeroConfig::num_modes()],  // out
-    Real v2n_lo_rlx[AeroConfig::num_modes()],           // out
-    Real v2n_hi_rlx[AeroConfig::num_modes()],           // out
+    Real num2vol_ratio_lo_rlx[AeroConfig::num_modes()],           // out
+    Real num2vol_ratio_hi_rlx[AeroConfig::num_modes()],           // out
     Real ln_diameter_tail_fac[AeroConfig::num_modes()], // out
     int& num_pairs,                                     // out
     Real diameter_cutoff[AeroConfig::num_modes()],      // out
@@ -457,44 +429,48 @@ void find_renaming_pairs(
   num_pairs = 0;
 
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    // FIXME: delete this
     // Fortran to C++ indexing
     const int dest_mode =
         dest_mode_of_mode[m] - 1; // "destination" mode for mode "imode"
 
     if (dest_mode < 0) {
-      sz_factor[m]=zero; 
-      fmode_dist_tail_fac[m] = zero; 
-      v2n_lo_rlx[m]=zero;
-      v2n_hi_rlx[m] = zero;
-      ln_diameter_tail_fac[m]=zero;
-      diameter_cutoff[m]=zero;
-      ln_dia_cutoff[m]=zero;
-      diameter_threshold[m]=zero;
+      sz_factor[m] = zero;
+      fmode_dist_tail_fac[m] = zero;
+      num2vol_ratio_lo_rlx[m]=zero;
+      num2vol_ratio_hi_rlx[m] = zero;
+      ln_diameter_tail_fac[m] = zero;
+      diameter_cutoff[m] = zero;
+      ln_dia_cutoff[m] = zero;
+      diameter_threshold[m] = zero;
 
     } else {
       const Real alnsg_amode = log(modes(m).mean_std_dev);
-      // FIXME : check where _sz_factor is used and try to use function calls
-      // from conversions.hpp
+      // NOTE: there doesn't seem to be any reason to compute sz_factor here,
+        // rather than in mode_diameter(). It's only used in that function and
+        // definitely takes a long walk to get there
       sz_factor[m] = Constants::pi_sixth * exp(4.5 * square(alnsg_amode));
       // factor for computing distribution tails of the  "src mode"
       fmode_dist_tail_fac[m] = sqrt_half / alnsg_amode;
       // compute volume to number high and low limits with relaxation
       // coefficients (watch out for the repeated calculations)
-      v2n_lo_rlx[m] = Real(1) /
+      num2vol_ratio_lo_rlx[m] = Real(1) /
                       conversions::mean_particle_volume_from_diameter(
                           modes(m).min_diameter, modes(m).mean_std_dev) *
                       frelax;
-      v2n_hi_rlx[m] = Real(1) /
+      num2vol_ratio_hi_rlx[m] = Real(1) /
                       conversions::mean_particle_volume_from_diameter(
                           modes(m).max_diameter, modes(m).mean_std_dev) /
                       frelax;
       // A factor for computing diameter at the tails of the distribution
       ln_diameter_tail_fac[m] = Real(3.0) * square(alnsg_amode);
+
+      //  transfer "src" mode is the current mode (i.e. imode)
+      const int src_mode = m;
+
       // ^^At this point, we know that particles can be transferred from the
       // "src_mode" to "dest_mode". "src_mode" is the current mode (i.e.
       // imode)
-      const int src_mode =
-          m; //  transfer "src" mode is the current mode (i.e. imode)
 
       // update number of pairs found so far
       num_pairs += 1; // increment npair
@@ -503,25 +479,21 @@ void find_renaming_pairs(
       // transfers We took geometric mean of the participating modes (source
       // and destination) to find a cutoff or threshold from moving particles
       // from the source to the destination mode.
+      // FIXME: use `mean_particle_diameter_from_volume()`
       const Real alnsg_amode_dest_mode = log(modes(dest_mode).mean_std_dev);
       diameter_cutoff[src_mode] =
           sqrt(modes(src_mode).nom_diameter * exp(1.5 * square(alnsg_amode)) *
                modes(dest_mode).nom_diameter *
                exp(1.5 * square(alnsg_amode_dest_mode)));
 
-      ln_dia_cutoff[src_mode] = log(diameter_cutoff[src_mode]); // log of cutoff
-      diameter_threshold[src_mode] =
-          0.99 * diameter_cutoff[src_mode]; // 99% of the cutoff
-    }
-  }
-
-
+      // log of cutoff
+      ln_dia_cutoff[src_mode] = log(diameter_cutoff[src_mode]);
+      // 99% of the cutoff
+      // FIXME: BAD CONSTANT!
+      diameter_threshold[src_mode] = 0.99 * diameter_cutoff[src_mode];
+    } // end if/else (dest_mode < 0)
+  } // end for(m)
 } // end find_renaming_pairs
-
-
-
-
-
 } // namespace rename
 
 /// @class Rename
@@ -530,11 +502,16 @@ class Rename {
 public:
   // rename-specific configuration
   struct Config {
-    // default constructor -- sets default values for parameters
-
     int _dest_mode_of_mode[AeroConfig::num_modes()];
-    bool _iscloudy;
-    Config() : _dest_mode_of_mode{0, 1, 0, 0}, _iscloudy{false} {}
+    Real _smallest_dryvol_value;
+    // default constructor -- sets default values for parameters
+    Config() : _dest_mode_of_mode{0, 1, 0, 0},
+      // NOTE: smallest_dryvol_value is a very small molar mixing ratio
+      // [m3-spc/kmol-air] (where m3-species) is meter cubed volume of a species)
+      // used for avoiding overflow. it corresponds to dp = 1 nm
+      // and number = 1e-5 #/mg-air ~= 1e-5 #/cm3-air
+      _smallest_dryvol_value{1.0e-25} {}
+
 
     Config(const Config &) = default;
     ~Config() = default;
@@ -547,12 +524,16 @@ private:
   int _num_pairs;
   Real _sz_factor[AeroConfig::num_modes()],
       _fmode_dist_tail_fac[AeroConfig::num_modes()],
-      _v2n_lo_rlx[AeroConfig::num_modes()],
-      _v2n_hi_rlx[AeroConfig::num_modes()],
+      _num2vol_ratio_lo_rlx[AeroConfig::num_modes()],
+      _num2vol_ratio_hi_rlx[AeroConfig::num_modes()],
       _ln_diameter_tail_fac[AeroConfig::num_modes()],
       _diameter_cutoff[AeroConfig::num_modes()],
       _ln_dia_cutoff[AeroConfig::num_modes()],
       _diameter_threshold[AeroConfig::num_modes()],
+      // Notes on mass_2_vol factor:Units:[m^3/kmol-species]; where kmol-species
+      // is the amount of a given species. This factor is obtained by
+      // (molecular_weight/density) of a species. That is, [ (g/mol-species) /
+      // (kg-species/m3)].
       _mass_2_vol[AeroConfig::num_aerosol_ids()],
       _dgnum_amode[AeroConfig::num_modes()];
 
@@ -564,12 +545,12 @@ public:
   // a process-specific configuration.
   void init(const AeroConfig &aero_config,
             const Config &rename_config = Config()) {
-    // Set rename-specific config parameters.
+    // Set rename-specific config parameters. (no-op)
     rename::find_renaming_pairs(config_._dest_mode_of_mode, // in
                                 _sz_factor,                 // out
                                 _fmode_dist_tail_fac,       // out
-                                _v2n_lo_rlx,                // out
-                                _v2n_hi_rlx,                // out
+                                _num2vol_ratio_lo_rlx,                // out
+                                _num2vol_ratio_hi_rlx,                // out
                                 _ln_diameter_tail_fac,      // out
                                 _num_pairs,                 // out
                                 _diameter_cutoff,           // out
@@ -604,67 +585,109 @@ public:
       return;
 
     const int nk = atmosphere.num_levels();
+    const int nmodes = AeroConfig::num_modes();
+    const int nspec = AeroConfig::num_aerosol_ids();
 
     const auto dest_mode_of_mode = config_._dest_mode_of_mode;
-    const auto iscloudy = config_._iscloudy;
+    const auto iscloudy = diagnostics.iscloudy;
     const auto mass_2_vol = _mass_2_vol;
+    const Real smallest_dryvol_value = config_._smallest_dryvol_value;
 
     const auto sz_factor = _sz_factor;
     const auto fmode_dist_tail_fac = _fmode_dist_tail_fac;
-    const auto v2n_lo_rlx = _v2n_lo_rlx;
-    const auto v2n_hi_rlx = _v2n_hi_rlx;
+    const auto num2vol_ratio_lo_rlx = _num2vol_ratio_lo_rlx;
+    const auto num2vol_ratio_hi_rlx = _num2vol_ratio_hi_rlx;
     const auto ln_diameter_tail_fac = _ln_diameter_tail_fac;
     const auto num_pairs = _num_pairs;
     const auto diameter_cutoff = _diameter_cutoff;
     const auto ln_dia_cutoff = _ln_dia_cutoff;
     const auto diameter_threshold = _diameter_threshold;
-    const auto dgnum_amode = _dgnum_amode; 
+    const auto dgnum_amode = _dgnum_amode;
+
+    // =======================================================================
+    // NOTE: these variables are renamed, to fit the _i/c convention (and for
+    // clarity), so the mapping from mam4 -> mam4xx is:
+    // =======================================================================
+    //  interstitial aerosol number mixing ratio [#/kmol-air], dim = num_modes
+    // qnum_cur -> qnum_i_cur
+    //  interstitial aerosol molar mixing ratio [kmol/kmol-air], dim = num_modes x num_aerosol_ids
+    // qaer_cur -> qmol_i_cur (would qmolspec_i_cur, or something like that be more informative?)
+    // qaer_del_grow4rnam -> qmol_i_del growth in aerosol molar mixing ratio [kmol/kmol-air]
+    //  cloudborne aerosol number mixing ratio [#/kmol-air], dim = num_modes
+    // qnumcw_cur -> qnum_c_cur
+    //  cloudborne aerosol molar mixing ratio [kmol/kmol-air], dim = num_modes x num_aerosol_ids
+    // qaercw_cur -> qmol_c_cur (would qmolspec_c_cur, or something like that be more informative?)
+    // qaercw_del_grow4rnam -> qmol_c_del growth in aerosol molar mixing ratio [kmol/kmol-air]
+    // =======================================================================
 
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
-          Real qnum_cur[AeroConfig::num_modes()];
-          Real qaer_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
-          Real qaer_del_grow4rnam[AeroConfig::num_modes()]
+          Real qnum_i_cur[AeroConfig::num_modes()];
+          Real qmol_i_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
+          Real qmol_i_del[AeroConfig::num_modes()]
                                  [AeroConfig::num_aerosol_ids()];
 
           //
-          Real qnumcw_cur[AeroConfig::num_modes()];
-          Real qaercw_cur[AeroConfig::num_modes()]
+          Real qnum_c_cur[AeroConfig::num_modes()];
+          Real qmol_c_cur[AeroConfig::num_modes()]
                          [AeroConfig::num_aerosol_ids()];
-          Real qaercw_del_grow4rnam[AeroConfig::num_modes()]
+          Real qmol_c_del[AeroConfig::num_modes()]
                                    [AeroConfig::num_aerosol_ids()];
 
-          // mam4
-          mam_rename_1subarea_(iscloudy,
+          const bool &iscloudy_cur = iscloudy(k);
+
+          for (int imode = 0; imode < nmodes; ++imode) {
+            qnum_i_cur[imode] = prognostics.n_mode_i[imode](k);
+            qnum_c_cur[imode] = prognostics.n_mode_c[imode](k);
+            for (int jspec = 0; jspec < nspec; ++jspec) {
+              // convert mass mixing ratios to molar mixing ratios
+              qmol_i_cur[imode][jspec] = conversions::vmr_from_mmr(
+                  prognostics.q_aero_i[imode][jspec](k),
+                  aero_species(jspec).molecular_weight);
+              qmol_i_del[imode][jspec] = conversions::vmr_from_mmr(
+                  tendencies.q_aero_i[imode][jspec](k),
+                  aero_species(jspec).molecular_weight);
+              qmol_c_cur[imode][jspec] = conversions::vmr_from_mmr(
+                  prognostics.q_aero_c[imode][jspec](k),
+                  aero_species(jspec).molecular_weight);
+              qmol_c_del[imode][jspec] = conversions::vmr_from_mmr(
+                  tendencies.q_aero_c[imode][jspec](k),
+                  aero_species(jspec).molecular_weight);
+            }
+          }
+
+          mam_rename_1subarea_(iscloudy_cur,
+                               smallest_dryvol_value,
                                dest_mode_of_mode,    // in
                                sz_factor,            // in
                                fmode_dist_tail_fac,  // in
-                               v2n_lo_rlx,           // in
-                               v2n_hi_rlx,           // in
+                               num2vol_ratio_lo_rlx,           // in
+                               num2vol_ratio_hi_rlx,           // in
                                ln_diameter_tail_fac, // in
                                num_pairs,            // in
                                diameter_cutoff,      // in
                                ln_dia_cutoff,        // in
                                diameter_threshold,   // in
-                               mass_2_vol, // in  
+                               mass_2_vol, // in
                                dgnum_amode, // in
-                               qnum_cur, qaer_cur, // out
-                               qaer_del_grow4rnam, qnumcw_cur, qaercw_cur, // out
-                               qaercw_del_grow4rnam); // out
+                               qnum_i_cur, qmol_i_cur, // out
+                               qmol_i_del, qnum_c_cur, qmol_c_cur, // out
+                               qmol_c_del); // out
         }); // kokkos::parfor(k)
 
   }
 
 
- // Make mam_rename_1subarea public for testing proposes. 
+ // Make mam_rename_1subarea public for testing proposes.
   KOKKOS_INLINE_FUNCTION
   void mam_rename_1subarea_(
-      const bool iscloudy,
+      const bool iscloudy_cur,
+      const Real &smallest_dryvol_value,
       const int *dest_mode_of_mode,                             // in
       const Real sz_factor[AeroConfig::num_modes()],            // in
       const Real fmode_dist_tail_fac[AeroConfig::num_modes()],  // in
-      const Real v2n_lo_rlx[AeroConfig::num_modes()],           // in
-      const Real v2n_hi_rlx[AeroConfig::num_modes()],           // in
+      const Real num2vol_ratio_lo_rlx[AeroConfig::num_modes()],           // in
+      const Real num2vol_ratio_hi_rlx[AeroConfig::num_modes()],           // in
       const Real ln_diameter_tail_fac[AeroConfig::num_modes()], // in
       const int num_pairs,                                     // in
       const Real diameter_cutoff[AeroConfig::num_modes()],      // in
@@ -672,17 +695,17 @@ public:
       const Real diameter_threshold[AeroConfig::num_modes()],   // in
       const Real mass_2_vol[AeroConfig::num_aerosol_ids()],
       const Real dgnum_amode[AeroConfig::num_modes()],   // in
-      Real qnum_cur[AeroConfig::num_modes()],
-      Real qaer_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
-      Real qaer_del_grow4rnam[AeroConfig::num_modes()]
+      Real qnum_i_cur[AeroConfig::num_modes()],
+      Real qmol_i_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+      Real qmol_i_del[AeroConfig::num_modes()]
                              [AeroConfig::num_aerosol_ids()],
-      Real qnumcw_cur[AeroConfig::num_modes()],
-      Real qaercw_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
-      Real qaercw_del_grow4rnam[AeroConfig::num_modes()]
+      Real qnum_c_cur[AeroConfig::num_modes()],
+      Real qmol_c_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+      Real qmol_c_del[AeroConfig::num_modes()]
                                [AeroConfig::num_aerosol_ids()]) const {
-    const Real zero=0; 
-    Real dryvol_i[mam4::AeroConfig::num_modes()]={zero};
-    Real deldryvol_i[mam4::AeroConfig::num_modes()]={zero};
+    const Real zero = 0;
+    Real dryvol_i[mam4::AeroConfig::num_modes()] = {zero};
+    Real deldryvol_i[mam4::AeroConfig::num_modes()] = {zero};
 
     // Interstitial aerosols: Compute initial (before growth) aerosol dry
     // volume and also the growth in dry volume of the "src" mode
@@ -691,43 +714,43 @@ public:
         mam4::AeroConfig::num_modes(),       // in
         mam4::AeroConfig::num_aerosol_ids(), // in
         dest_mode_of_mode,                   // in
-        qaer_cur,                            // in
-        qaer_del_grow4rnam,                  // in
+        qmol_i_cur,                            // in
+        qmol_i_del,                  // in
         mass_2_vol,                          // in
         dryvol_i,                            // out
         deldryvol_i                          // out
     );
 
-    Real dryvol_c[mam4::AeroConfig::num_modes()]={zero};
-    Real deldryvol_c[mam4::AeroConfig::num_modes()]={zero};
+    Real dryvol_c[mam4::AeroConfig::num_modes()] = {zero};
+    Real deldryvol_c[mam4::AeroConfig::num_modes()] = {zero};
 
-    if (iscloudy) {
+    if (iscloudy_cur) {
 
       rename::compute_dryvol_change_in_src_mode(
           AeroConfig::num_modes(),       // in
           AeroConfig::num_aerosol_ids(), // in
           dest_mode_of_mode,             // in
-          qaercw_cur,                    // in
-          qaercw_del_grow4rnam,          // in
+          qmol_c_cur,                    // in
+          qmol_c_del,          // in
           mass_2_vol,                    // in
           dryvol_c,                      // out
           deldryvol_c                    // out
       );
 
-    } // end iscloudy
+    } // end iscloudy_cur
 
     // Find fractions (mass and number) to transfer and complete the
     //     transfer
 
     rename::do_inter_mode_transfer(
-        dest_mode_of_mode, iscloudy,
+        dest_mode_of_mode, iscloudy_cur, smallest_dryvol_value,
         // volume to number relaxation limits [m^-3]
-        v2n_lo_rlx, v2n_hi_rlx, sz_factor, fmode_dist_tail_fac,
+        num2vol_ratio_lo_rlx, num2vol_ratio_hi_rlx, sz_factor, fmode_dist_tail_fac,
         ln_diameter_tail_fac, ln_dia_cutoff, diameter_threshold, dgnum_amode,
         // dry volume [m3/kmol-air]
-        dryvol_i, dryvol_c, deldryvol_i, deldryvol_c, qaer_cur,
+        dryvol_i, dryvol_c, deldryvol_i, deldryvol_c, qmol_i_cur,
         // aerosol number mixing ratios [#/kmol-air]
-        qnum_cur, qaercw_cur, qnumcw_cur);
+        qnum_i_cur, qmol_c_cur, qnum_c_cur);
   }
 }; // end(compute_tendencies)
 

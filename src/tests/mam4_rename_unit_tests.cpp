@@ -47,10 +47,10 @@ TEST_CASE("test_compute_before_growth_dryvol_and_num", "mam4_rename_process") {
   REQUIRE(1 == 1);
 }
 
-TEST_CASE("test_total_inter_cldbrn", "mam4_rename_process") {
+TEST_CASE("test_total_interstial_and_cloudborne", "mam4_rename_process") {
   // mam4::AeroConfig mam4_config;
   // mam4::RenameProcess process(mam4_config);
-  Real outvar = mam4::rename::total_inter_cldbrn();
+  Real outvar = mam4::rename::total_interstial_and_cloudborne();
   REQUIRE(1 == 1);
 }
 
