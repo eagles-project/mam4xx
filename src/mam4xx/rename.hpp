@@ -45,26 +45,21 @@ void compute_dryvol_change_in_src_mode(
 
       // For each mode, we compute a dry volume by combining (accumulating)
       // mass/density for each species in that mode.
-      //  conversion from mass to volume is accomplished by multiplying with
-      //  precomputed "mass_2_vol" factor
-
-      // s_spec_ind = 1     !start species index for this mode [These will be
-      // subroutine args] e_spec_ind = nspec !end species index for this mode
+      // conversion from mass to volume is accomplished by multiplying with
+      // precomputed "mass_2_vol" factor
 
       // initialize tmp accumulators
       Real tmp_dryvol = zero;     // dry volume accumulator
       Real tmp_del_dryvol = zero; // dry volume growth(change) accumulator
 
-      // Notes on mass_2_vol factor: Units:[m3/kmol-species]; where kmol-species
-      // is the amount of a species "s" This factor is obtained by
+      // Notes on mass_2_vol factor: Units:[m^3/kmol-species]; where kmol-species
+      // is the amount of a given species. This factor is obtained by
       // (molecular_weight/density) of a species. That is, [ (g/mol-species) /
-      // (kg-species/m3) ]; where molecular_weight has units [g/mol-species] and
-      // density units are [kg-species/m3] which results in the units of
-      // m3/kmol-species
+      // (kg-species/m3)].
 
       for (int ispec = 0; ispec < nspec; ++ispec) {
-        // Multiply by mass_2_vol[m3/kmol-species] to convert
-        // q_mmr[kmol-species/kmol-air]) to volume units[m3/kmol-air]
+        // Multiply by mass_2_vol [m3/kmol-species] to convert
+        // q_mmr [kmol-species/kmol-air]) to volume units [m3/kmol-air]
         tmp_dryvol += q_mmr[m][ispec] * mass_2_vol[ispec];
         // accumulate the "growth" in volume units as well
         tmp_del_dryvol += q_del_growth[m][ispec] * mass_2_vol[ispec];
@@ -227,9 +222,16 @@ void do_num_and_mass_transfer(const int src_mode, const int dest_mode,
   qnum[dest_mode] += num_trans;
 
   for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
-    const Real vol_trans = qmol[src_mode][ispec] * xfer_vol_frac;
-    qmol[src_mode][ispec] -= vol_trans;
-    qmol[dest_mode][ispec] += vol_trans;
+    // NOTE: in original fortran the non-existent species in a mode had a zero
+    // flag, and since this is c++, they have flags of -1
+    // NOTE: they don't actually check if(spec != 0) in fortran, which seems odd
+    if (src_mode < 0 or dest_mode < 0) {
+      continue;
+    else{
+      const Real vol_trans = qmol[src_mode][ispec] * xfer_vol_frac;
+      qmol[src_mode][ispec] -= vol_trans;
+      qmol[dest_mode][ispec] += vol_trans;
+    }
   }
 } // end do_num_and_mass_transfer
 
@@ -510,12 +512,18 @@ public:
       //                                m4x_spec_arr[x][mam4xx2rename_idx[x][y]]
     int _mam4xx2rename_idx[4][7];
     // default constructor -- sets default values for parameters
+    // TODO: does this stay, or just for testing?
     Config() : _dest_mode_of_mode{0, 1, 0, 0},
       // NOTE: smallest_dryvol_value is a very small molar mixing ratio
       // [m3-spc/kmol-air] (where m3-species) is meter cubed volume of a species)
       // used for avoiding overflow. it corresponds to dp = 1 nm
       // and number = 1e-5 #/mg-air ~= 1e-5 #/cm3-air
+      // FIXME: BAD CONSTANT!
       _smallest_dryvol_value{1.0e-25},
+      // NOTE: in original fortran the non-existent species in a mode had a zero
+      // flag, and since this is c++, they have flags of -1
+      // NOTE: they don't actually check if(spec != 0) in fortran,
+      // which seems odd
       _mam4xx2rename_idx{{0, 1, 2, 3, 4, 5, 6},
                          {0, 1, -1, -1, 4, 6, -1},
                          {0, 1, 2, 3, 4, 5, 6},
@@ -540,7 +548,7 @@ private:
       _diameter_cutoff[AeroConfig::num_modes()],
       _ln_dia_cutoff[AeroConfig::num_modes()],
       _diameter_threshold[AeroConfig::num_modes()],
-      // Notes on mass_2_vol factor:Units:[m^3/kmol-species]; where kmol-species
+      // Notes on mass_2_vol factor: Units:[m^3/kmol-species]; where kmol-species
       // is the amount of a given species. This factor is obtained by
       // (molecular_weight/density) of a species. That is, [ (g/mol-species) /
       // (kg-species/m3)].
