@@ -54,6 +54,32 @@ TEST_CASE("test_total_interstial_and_cloudborne", "mam4_rename_process") {
   REQUIRE(1 == 1);
 }
 
+TEST_CASE("test_mode_diameter", "mam4_rename_process") {
+  Real diam[4] = {1.1e-7, 2.6e-8, 2e-6, 5e-8};
+  Real sigma[4] = {1.8, 1.6, 1.8, 1.6};
+  Real volume;
+  Real number[4] = {1e3, 1e4, 1e5, 1e6};
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+      volume = number[j] *
+               mam4::conversions::mean_particle_volume_from_diameter(diam[i],
+                                                                     sigma[i]);
+      Real ln_sigma = log(sigma[i]);
+      Real size_factor = Constants::pi_sixth * exp(4.5 * square(ln_sigma));
+      Real mam_modeDiam =
+          mam4::rename::mode_diameter(volume, number[j], size_factor);
+      Real convDiam = mam4::conversions::mean_particle_diameter_from_volume(
+          volume / number[j], sigma[i]);
+      std::cout << "starting diam = " << diam[i] << "\n";
+      std::cout << "mam_modeDiam = " << mam_modeDiam << "\n";
+      std::cout << "convDiam = " << convDiam << "\n";
+      REQUIRE(FloatingPoint<Real>::equiv(mam_modeDiam, convDiam));
+      REQUIRE(FloatingPoint<Real>::equiv(mam_modeDiam, diam[i]));
+      REQUIRE(FloatingPoint<Real>::equiv(convDiam, diam[i]));
+    }
+  }
+}
+
 TEST_CASE("test_compute_tail_fraction", "mam4_rename_process") {
   // mam4::AeroConfig mam4_config;
   // mam4::RenameProcess process(mam4_config);

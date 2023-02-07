@@ -138,6 +138,22 @@ void compute_before_growth_dryvol_and_num(
                                    b4_growth_qnum); // input
 } // end compute_before_growth_dryvol_and_num()
 
+KOKKOS_INLINE_FUNCTION
+Real mode_diameter(const Real volume, const Real number, const Real size_factor)
+{
+  // compute diameter inputs:
+  // volume      ![m3]
+  // number      ![#/kmol-air]
+  // size_factor ![unitless]
+  // BAD CONSTANT
+  Real onethird = Real(1.0) / Real(3.0);
+
+  // FIXME: we can get git of 'smallest_dryvol_value' if we use
+    // safe_denominator() here (or even better, in the argument passed to
+    // mean_particle_diameter_from_volume() )
+  return pow(volume / (number * size_factor), onethird);
+} // end mode_diameter
+
 // Compute tail fraction with log_dia_tail_fac
 
 KOKKOS_INLINE_FUNCTION
@@ -273,7 +289,7 @@ void do_inter_mode_transfer(
     src_mode = imode;                     // source mode
     // FIXME: this needs to go, right?
     // Fortran indexing to C++ indexing
-    dest_mode = dest_mode_of_mode[imode]-1; // destination mode
+    dest_mode = dest_mode_of_mode[imode] - 1; // destination mode
 
     // if destination mode doesn't exist for the source mode, cycle loop
     if (dest_mode < 0){
@@ -565,6 +581,7 @@ public:
   void init(const AeroConfig &aero_config,
             const Config &rename_config = Config()) {
     // Set rename-specific config parameters. (no-op)
+
     rename::find_renaming_pairs(config_._dest_mode_of_mode, // in
                                 _mean_std_dev,                 // out
                                 _fmode_dist_tail_fac,       // out
@@ -599,10 +616,10 @@ public:
     // FIXME. 
     // Molecular weights (MW) of aerosol species have units of kg/mol,
     // MWs in rename have units of kg/kmol.
-    // Additionally, MW of SOA, SO4, and POM in rename have different values that the ones from  
+    // Additionally, MW of SOA, SO4, and POM in rename have different values than the ones from
     // aero_modes.hpp
     // this uses the aero_modes.hpp values
-    const Real unit_factor =1000; // from kg/mol to kg/kmol
+    const Real unit_factor = 1000; // from kg/mol to kg/kmol
 
     for (int iaero = 0; iaero < AeroConfig::num_aerosol_ids(); ++iaero) {
       _mass_2_vol[iaero] =
@@ -685,6 +702,7 @@ public:
           const bool &iscloudy_cur = iscloudy(k);
           int rename_idx = 0;
 
+          // FIXME: are these the correct molecular weights below?
           for (int imode = 0; imode < nmodes; ++imode) {
             qnum_i_cur[imode] = prognostics.n_mode_i[imode](k);
             qnum_c_cur[imode] = prognostics.n_mode_c[imode](k);
@@ -724,9 +742,9 @@ public:
                                qnum_i_cur, qmol_i_cur, // out
                                qmol_i_del, qnum_c_cur, qmol_c_cur, // out
                                qmol_c_del); // out
-        }); // kokkos::parfor(k)
+        }); // end kokkos::parfor(k)
 
-  }
+  } // end compute_tendencies()
 
 
  // Make mam_rename_1subarea public for testing proposes.
@@ -802,9 +820,9 @@ public:
         dryvol_i, dryvol_c, deldryvol_i, deldryvol_c, qmol_i_cur,
         // aerosol number mixing ratios [#/kmol-air]
         qnum_i_cur, qmol_c_cur, qnum_c_cur);
-  }
-}; // end(compute_tendencies)
+  } // end mam_rename_1subarea_()
+}; // end class Rename
 
-} // namespace mam4
+} // end namespace mam4
 
 #endif
