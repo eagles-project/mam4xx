@@ -504,13 +504,22 @@ public:
   struct Config {
     int _dest_mode_of_mode[AeroConfig::num_modes()];
     Real _smallest_dryvol_value;
+    // NOTE: rows are ordered in standard convention (accumulation, aitken,
+      // coarse, primary carbon), and the species indexing works as follows:
+      // rename_spec_arr[x \in {0,...,3}][y \in {0,...,6}] =
+      //                                m4x_spec_arr[x][mam4xx2rename_idx[x][y]]
+    int _mam4xx2rename_idx[4][7];
     // default constructor -- sets default values for parameters
     Config() : _dest_mode_of_mode{0, 1, 0, 0},
       // NOTE: smallest_dryvol_value is a very small molar mixing ratio
       // [m3-spc/kmol-air] (where m3-species) is meter cubed volume of a species)
       // used for avoiding overflow. it corresponds to dp = 1 nm
       // and number = 1e-5 #/mg-air ~= 1e-5 #/cm3-air
-      _smallest_dryvol_value{1.0e-25} {}
+      _smallest_dryvol_value{1.0e-25},
+      _mam4xx2rename_idx{{0, 1, 2, 3, 4, 5, 6},
+                         {0, 1, -1, -1, 4, 6, -1},
+                         {0, 1, 2, 3, 4, 5, 6},
+                         {2, 3, 6, -1, -1, -1, -1}} {}
 
 
     Config(const Config &) = default;
@@ -522,6 +531,7 @@ private:
   Config config_;
 
   int _num_pairs;
+  int _mam4xx2rename_idx[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
   Real _sz_factor[AeroConfig::num_modes()],
       _fmode_dist_tail_fac[AeroConfig::num_modes()],
       _num2vol_ratio_lo_rlx[AeroConfig::num_modes()],
@@ -561,13 +571,26 @@ public:
       _dgnum_amode[m] = modes(m).nom_diameter;
     }
 
+    Real _mam4xx2rename_idx[4][7];
+    for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+      for (int jspec = 0; jspec < AeroConfig::num_aerosol_ids(); ++jspec) {
+        _mam4xx2rename_idx[imode][jspec] =
+            config_._mam4xx2rename_idx[imode][jspec];
+      }
+    }
+
   // Factor, mass_2_vol, to convert from
   // q_mmr[kmol-species/kmol-air]) to volume units[m3/kmol-air]
-    Real molecular_weight_rename[AeroConfig::num_aerosol_ids()] = {
-        150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
+    // Real molecular_weight_rename[AeroConfig::num_aerosol_ids()] = {
+    //     150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
+    // for (int iaero = 0; iaero < AeroConfig::num_aerosol_ids(); ++iaero) {
+    //   _mass_2_vol[iaero] =
+    //       molecular_weight_rename[iaero] / aero_species(iaero).density;
+    // }
+    // this uses the aero_modes.hpp values
     for (int iaero = 0; iaero < AeroConfig::num_aerosol_ids(); ++iaero) {
       _mass_2_vol[iaero] =
-          molecular_weight_rename[iaero] / aero_species(iaero).density;
+          aero_species(iaero).molecular_weight / aero_species(iaero).density;
     }
 
   } // end(init)
@@ -635,24 +658,27 @@ public:
                                    [AeroConfig::num_aerosol_ids()];
 
           const bool &iscloudy_cur = iscloudy(k);
+          int rename_idx = 0;
 
           for (int imode = 0; imode < nmodes; ++imode) {
             qnum_i_cur[imode] = prognostics.n_mode_i[imode](k);
             qnum_c_cur[imode] = prognostics.n_mode_c[imode](k);
             for (int jspec = 0; jspec < nspec; ++jspec) {
+              // get the mapping from the mam4xx species ordering to rename's
+              rename_idx = _mam4xx2rename_idx[imode][jspec];
               // convert mass mixing ratios to molar mixing ratios
-              qmol_i_cur[imode][jspec] = conversions::vmr_from_mmr(
-                  prognostics.q_aero_i[imode][jspec](k),
-                  aero_species(jspec).molecular_weight);
-              qmol_i_del[imode][jspec] = conversions::vmr_from_mmr(
-                  tendencies.q_aero_i[imode][jspec](k),
-                  aero_species(jspec).molecular_weight);
-              qmol_c_cur[imode][jspec] = conversions::vmr_from_mmr(
-                  prognostics.q_aero_c[imode][jspec](k),
-                  aero_species(jspec).molecular_weight);
-              qmol_c_del[imode][jspec] = conversions::vmr_from_mmr(
-                  tendencies.q_aero_c[imode][jspec](k),
-                  aero_species(jspec).molecular_weight);
+              qmol_i_cur[imode][rename_idx] = conversions::vmr_from_mmr(
+                  prognostics.q_aero_i[imode][rename_idx](k),
+                  aero_species(rename_idx).molecular_weight);
+              qmol_i_del[imode][rename_idx] = conversions::vmr_from_mmr(
+                  tendencies.q_aero_i[imode][rename_idx](k),
+                  aero_species(rename_idx).molecular_weight);
+              qmol_c_cur[imode][rename_idx] = conversions::vmr_from_mmr(
+                  prognostics.q_aero_c[imode][rename_idx](k),
+                  aero_species(rename_idx).molecular_weight);
+              qmol_c_del[imode][rename_idx] = conversions::vmr_from_mmr(
+                  tendencies.q_aero_c[imode][rename_idx](k),
+                  aero_species(rename_idx).molecular_weight);
             }
           }
 
