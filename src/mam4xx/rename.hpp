@@ -155,6 +155,8 @@ Real mode_diameter(const Real volume, const Real number,
   return pow(volume / (number * size_factor), onethird);
 } // end mode_diameter
 
+// Compute tail fraction with log_dia_tail_fac
+
 KOKKOS_INLINE_FUNCTION
 void compute_tail_fraction(const Real diameter,
                            const Real log_dia_cutoff,
@@ -164,15 +166,28 @@ void compute_tail_fraction(const Real diameter,
                            ) {
   // Compute tail fraction to be used for inter-mode species transfer
   // rename use present function for this if statement.
-  // However, we will check if log_dia_tail_fac is bigger than zero.
-  // Thus, if we do not want to include it we set its values to -1.
-  // in current implementation log_dia_tail_fac is not present.
-  const Real log_diameter  = log(diameter) + max(Real(0), log_dia_tail_fac);
+  const Real log_diameter  = log(diameter) + log_dia_tail_fac;
   const Real tail = (log_dia_cutoff - log_diameter) * tail_dist_fac;
   // complimentary error function (erfc)
   tail_fraction = Real(0.5) * erfc(tail);
 
 } // end compute_tail_fraction
+
+// Compute tail fraction without log_dia_tail_fac
+KOKKOS_INLINE_FUNCTION
+void compute_tail_fraction(const Real diameter,
+                           const Real log_dia_cutoff,
+                           const Real tail_dist_fac,
+                           Real& tail_fraction
+                           ) {
+  // Compute tail fraction to be used for inter-mode species transfer
+  // we use this function if log_dia_tail_fac is not present in the function call
+  const Real tail = (log_dia_cutoff - log(diameter)) * tail_dist_fac;
+  // complimentary error function (erfc)
+  tail_fraction = Real(0.5) * erfc(tail);
+
+} // end compute_tail_fraction
+
 
 
 KOKKOS_INLINE_FUNCTION
@@ -341,11 +356,9 @@ void do_inter_mode_transfer(
     // compute_tail_fraction. Thus do not no include its value
     // FIXME: why do this flag and not set it to zero off the bat?
       // when it is calculated it is = 3 * x^2, and thus always >= 0
-    const Real default_log_dia_tail_fac = Real(-1); // FIXME: BAD CONSTANT
     Real b4_growth_tail_fr_qnum = zero;
     compute_tail_fraction(bef_grwth_diameter, ln_dia_cutoff[src_mode],
                           fmode_dist_tail_fac[src_mode],
-                          default_log_dia_tail_fac,
                           b4_growth_tail_fr_qnum // out
     );
 
@@ -365,7 +378,6 @@ void do_inter_mode_transfer(
     Real after_growth_tail_fr_num = zero;
     compute_tail_fraction(aft_grwth_diameter, ln_dia_cutoff[src_mode],
                           fmode_dist_tail_fac[src_mode],
-                          default_log_dia_tail_fac,
                           after_growth_tail_fr_num // out
     );
 
