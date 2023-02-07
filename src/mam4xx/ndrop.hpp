@@ -1,56 +1,52 @@
-subroutine get_aer_num(imode, istart, istop, state_q, cs, vaerosol, qcldbrn1d_num, &!in
-           naerosol) !out
+#ifndef MAM4XX_NDROP_HPP
+#define MAM4XX_NDROP_HPP
 
-  use modal_aero_data, only:numptr_amode
+#include <haero/aero_species.hpp>
+#include <haero/constants.hpp>
+#include <haero/atmosphere.hpp>
+#include <haero/math.hpp>
 
-  ! input arguments
-  integer,  intent(in) :: imode        ! mode index
-  integer,  intent(in) :: istart       ! start column index (1 <= istart <= istop <= pcols)
-  integer,  intent(in) :: istop        ! stop column index
-  real(r8), intent(in) :: state_q(:,:) ! interstitial aerosol number mixing ratios [#/kg]
-  real(r8), intent(in) :: cs(:)        ! air density [kg/m3]
-  real(r8), intent(in) :: vaerosol(:)  ! volume conc [m3/m3]
-  real(r8), intent(in) :: qcldbrn1d_num(:) ! cloud-borne aerosol number mixing ratios [#/kg]
+#include <mam4xx/aero_config.hpp>
+#include <mam4xx/conversions.hpp>
+#include <mam4xx/mam4_types.hpp>
+#include <mam4xx/utils.hpp>
 
-  !output arguments
-  real(r8), intent(out) :: naerosol(:)  ! number conc [#/m3]
+using Real = haero::Real;
 
-  !internal
-  integer  :: icol, num_idx
+namespace mam4 {
 
-  !convert number mixing ratios to number concentrations
-  !Use bulk volume conc found previously to bound value
+namespace ndrop {
 
-  num_idx = numptr_amode(imode)
-  do icol = istart, istop
-     naerosol(icol) = (state_q(icol,num_idx) + qcldbrn1d_num(icol))*cs(icol)
-     !adjust number so that dgnumlo < dgnum < dgnumhi
-     naerosol(icol) = max(naerosol(icol), vaerosol(icol)*voltonumbhi_amode(imode))
-     naerosol(icol) = min(naerosol(icol), vaerosol(icol)*voltonumblo_amode(imode))
-  enddo
-end subroutine get_aer_num
+  KOKKOS_INLINE_FUNCTION
+  void get_aer_num(const Diagnostics &diags,
+                                  const Prognostics &progs, int mode_idx, int k, Real naerosol[AeroConfig::num_aerosol_ids()]) {
+    //out
+    Real naerosol = 0.0; // number concentration [#/m3]
 
 
-KOKKOS_INLINE_FUNCTION
-void get_aer_num(const Diagnostics &diags,
-                                const Prognostics &progs, int mode_idx, int k, Real vaerosol) {
-  //out
-  Real naerosol = 0.0; // number concentration [#/m3]
+    for (int aid = 0; aid < AeroConfig::num_aerosol_ids(); ++aid) {
+      const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx),
+                                          static_cast<AeroId>(aid));
 
+      if(s >= 0) {
 
-  for (int aid = 0; aid < AeroConfig::num_aerosol_ids(); ++aid) {
-    const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx),
-                                         static_cast<AeroId>(aid));
+          Real rho = conversions::density_of_ideal_gas(haero::Atmosphere.temperature[s], haero::Atmosphere.pressure[s]);
+          Real vaerosol = haero::AeroSpecies.density;
+          naerosol[s] = (progs.q_aero_i[mode_idx][s](k) + progs.q_aero_c[mode_idx][s](k)) * rho;
+          //adjust number so that dgnumlo < dgnum < dgnumhi
+          
+          Real min_diameter = modes(mode_idx).min_diameter;
+          Real max_diameter = modes(mode_idx).max_diameter;
+          Real mean_std_dev = modes(mode_idx).mean_std_dev;
 
-    if(s >= 0) {
+          num2vol_ratio_min = 1.0 / conversions::mean_particle_volume_from_diameter(min_diameter, mean_std_dev);
+          num2vol_ratio_max = 1.0 / conversions::mean_particle_volume_from_diameter(max_diameter, mean_std_dev);
 
-        Real rho = conversions::density_of_ideal_gas(haero::Atmosphere.temperature[s], haero::Atmosphere.pressure[s]);
-        Real vaerosol = haero::AeroSpecies.density;
-        naerosol[s] = (progs.q_aero_i[mode_idx][s](k) + progs.q_aero_c[mode_idx][s](k)) * rho;
-        //adjust number so that dgnumlo < dgnum < dgnumhi
-        naerosol[s] = max(naerosol[s], vaerosol*voltonumbhi_amode[mode_idx]);
-        naerosol[s] = min(naerosol[s], vaerosol*voltonumblo_amode[mode_dix]);
+          naerosol[s] = min(naerosol[s], vaerosol*num2vol_ratio_min);
+          naerosol[s] = max(naerosol[s], vaerosol*num2vol_ratio_max);
+      }
+
     }
-
   }
+}
 }
