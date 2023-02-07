@@ -38,7 +38,7 @@ void compute_dryvol_change_in_src_mode(Ensemble *ensemble) {
     Real q_del_growth[nmodes][naerosol_species];
     set_mode_aerosol_values(q_del_growth_vector, q_del_growth );
 
-    Real sz_factor[nmodes];
+    Real mean_std_dev[nmodes];
     Real fmode_dist_tail_fac[nmodes];
     Real v2n_lo_rlx[nmodes];
     Real v2n_hi_rlx[nmodes];
@@ -50,7 +50,7 @@ void compute_dryvol_change_in_src_mode(Ensemble *ensemble) {
     Real mass_2_vol[naerosol_species];
 
     rename::find_renaming_pairs(dest_mode_of_mode,    // in
-                                sz_factor,            // out
+                                mean_std_dev,            // out
                                 fmode_dist_tail_fac,  // out
                                 v2n_lo_rlx,           // out
                                 v2n_hi_rlx,           // out
@@ -60,7 +60,7 @@ void compute_dryvol_change_in_src_mode(Ensemble *ensemble) {
                                 ln_dia_cutoff,
                                 diameter_threshold);
 
-    //
+    // We use MWs from rename-mam4 for validation proposes 
     Real molecular_weight_rename[naerosol_species] = {
         150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
     for (int iaero = 0; iaero < naerosol_species; ++iaero) {

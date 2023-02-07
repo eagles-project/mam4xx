@@ -81,7 +81,7 @@ void mam_rename_1subarea(Ensemble *ensemble) {
 
     Rename this_rename;
 
-    Real sz_factor[nmodes];
+    Real mean_std_dev[nmodes];
     Real fmode_dist_tail_fac[nmodes];
     Real v2n_lo_rlx[nmodes];
     Real v2n_hi_rlx[nmodes];
@@ -93,7 +93,7 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     Real mass_2_vol[naerosol_species];
 
     rename::find_renaming_pairs(dest_mode_of_mode,    // in
-                                sz_factor,            // out
+                                mean_std_dev,            // out
                                 fmode_dist_tail_fac,  // out
                                 v2n_lo_rlx,           // out
                                 v2n_hi_rlx,           // out
@@ -107,7 +107,7 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     for (int m = 0; m < nmodes; ++m) {
       dgnum_amode[m] = modes(m).nom_diameter;
     }
-
+    //// We use MWs from rename-mam4 for validation proposes 
     Real molecular_weight_rename[naerosol_species] = {
         150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
     for (int iaero = 0; iaero < naerosol_species; ++iaero) {
@@ -117,7 +117,7 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     this_rename.mam_rename_1subarea_(iscloudy,
                                      smallest_dryvol_value,
                                      dest_mode_of_mode,    // in
-                                     sz_factor,            // in
+                                     mean_std_dev,            // in
                                      fmode_dist_tail_fac,  // in
                                      v2n_lo_rlx,           // in
                                      v2n_hi_rlx,           // in

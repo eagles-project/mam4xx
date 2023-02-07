@@ -138,23 +138,6 @@ void compute_before_growth_dryvol_and_num(
                                    b4_growth_qnum); // input
 } // end compute_before_growth_dryvol_and_num()
 
-// FIXME: check if a function to compute mode_diameter exist.
-KOKKOS_INLINE_FUNCTION
-Real mode_diameter(const Real volume, const Real number,
-                   const Real size_factor) {
-  // compute diameter inputs:
-  // volume      ![m3]
-  // number      ![#/kmol-air]
-  // size_factor ![unitless]
-  // BAD CONSTANT
-  Real onethird = Real(1.0) / Real(3.0);
-
-  // FIXME: we can get get of 'smallest_dryvol_value' if we use
-  // safe_denominator() here (or even better, in the argument passed to
-  // mean_particle_diameter_from_volume() )
-  return pow(volume / (number * size_factor), onethird);
-} // end mode_diameter
-
 // Compute tail fraction with log_dia_tail_fac
 
 KOKKOS_INLINE_FUNCTION
@@ -259,7 +242,7 @@ void do_inter_mode_transfer(
     // volume to number relaxation limits [m^-3]
     const Real num2vol_ratiolorlx[AeroConfig::num_modes()],
     const Real num2vol_ratiohirlx[AeroConfig::num_modes()],
-    const Real sz_factor[AeroConfig::num_modes()],
+    const Real mean_std_dev[AeroConfig::num_modes()],
     const Real fmode_dist_tail_fac[AeroConfig::num_modes()],
     const Real ln_diameter_tail_fac[AeroConfig::num_modes()],
     const Real ln_dia_cutoff[AeroConfig::num_modes()],
@@ -320,8 +303,13 @@ void do_inter_mode_transfer(
     // // Total dry volume after growth (add delta growth)
 
     // compute before growth diameter
-    Real bef_grwth_diameter = mode_diameter(
-        b4_growth_dryvol_bounded, b4_growth_qnum_bounded, sz_factor[src_mode]);
+
+    // Real bef_grwth_diameter = mode_diameter(
+    // b4_growth_dryvol_bounded, b4_growth_qnum_bounded, sz_factor[src_mode]);
+    const Real bef_grwth_mode_mean_particle_volume =
+        b4_growth_dryvol_bounded / b4_growth_qnum_bounded;
+    Real bef_grwth_diameter = conversions::mean_particle_diameter_from_volume(
+        bef_grwth_mode_mean_particle_volume, mean_std_dev[src_mode]);
 
     // if the before growth diameter is more than the threshold
     // (diameter_threshold), we restrict diameter to the threshold and change
@@ -342,8 +330,11 @@ void do_inter_mode_transfer(
     }
     // Compute after growth diameter; if it is less than the "nominal" or
     // "base" diameter for the source mode, skip inter-mode transfer
-    Real aft_grwth_diameter =
-        mode_diameter(after_growth_dryvol, b4_growth_qnum_bounded, sz_factor[src_mode]);
+    // Real aft_grwth_diameter =
+    // mode_diameter(after_growth_dryvol, b4_growth_qnum_bounded, sz_factor[src_mode]);
+    const Real after_grwth_mode_mean_particle_volume = after_growth_dryvol/b4_growth_qnum_bounded;
+    Real aft_grwth_diameter = conversions::mean_particle_diameter_from_volume(
+        after_grwth_mode_mean_particle_volume, mean_std_dev[src_mode]);
 
     if (aft_grwth_diameter <= dgnum_amode[src_mode]) {
       continue;
@@ -424,7 +415,7 @@ void do_inter_mode_transfer(
 KOKKOS_INLINE_FUNCTION
 void find_renaming_pairs(
     int *dest_mode_of_mode,                             // in
-    Real sz_factor[AeroConfig::num_modes()],            // out
+    Real mean_std_dev[AeroConfig::num_modes()],            // out
     Real fmode_dist_tail_fac[AeroConfig::num_modes()],  // out
     Real num2vol_ratio_lo_rlx[AeroConfig::num_modes()],           // out
     Real num2vol_ratio_hi_rlx[AeroConfig::num_modes()],           // out
@@ -447,7 +438,7 @@ void find_renaming_pairs(
         dest_mode_of_mode[m] - 1; // "destination" mode for mode "imode"
 
     if (dest_mode < 0) {
-      sz_factor[m] = zero;
+      mean_std_dev[m] = zero;
       fmode_dist_tail_fac[m] = zero;
       num2vol_ratio_lo_rlx[m]=zero;
       num2vol_ratio_hi_rlx[m] = zero;
@@ -458,10 +449,10 @@ void find_renaming_pairs(
 
     } else {
       const Real alnsg_amode = log(modes(m).mean_std_dev);
-      // NOTE: there doesn't seem to be any reason to compute sz_factor here,
+      // NOTE: there doesn't seem to be any reason to compute mean_std_dev here,
         // rather than in mode_diameter(). It's only used in that function and
         // definitely takes a long walk to get there
-      sz_factor[m] = Constants::pi_sixth * exp(4.5 * square(alnsg_amode));
+      mean_std_dev[m] = modes(m).mean_std_dev;
       // factor for computing distribution tails of the  "src mode"
       fmode_dist_tail_fac[m] = sqrt_half / alnsg_amode;
       // compute volume to number high and low limits with relaxation
@@ -550,7 +541,7 @@ private:
 
   int _num_pairs;
   int _mam4xx2rename_idx[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
-  Real _sz_factor[AeroConfig::num_modes()],
+  Real _mean_std_dev[AeroConfig::num_modes()],
       _fmode_dist_tail_fac[AeroConfig::num_modes()],
       _num2vol_ratio_lo_rlx[AeroConfig::num_modes()],
       _num2vol_ratio_hi_rlx[AeroConfig::num_modes()],
@@ -575,7 +566,7 @@ public:
             const Config &rename_config = Config()) {
     // Set rename-specific config parameters. (no-op)
     rename::find_renaming_pairs(config_._dest_mode_of_mode, // in
-                                _sz_factor,                 // out
+                                _mean_std_dev,                 // out
                                 _fmode_dist_tail_fac,       // out
                                 _num2vol_ratio_lo_rlx,                // out
                                 _num2vol_ratio_hi_rlx,                // out
@@ -650,7 +641,7 @@ public:
     const auto mass_2_vol = _mass_2_vol;
     const Real smallest_dryvol_value = config_._smallest_dryvol_value;
 
-    const auto sz_factor = _sz_factor;
+    const auto mean_std_dev = _mean_std_dev;
     const auto fmode_dist_tail_fac = _fmode_dist_tail_fac;
     const auto num2vol_ratio_lo_rlx = _num2vol_ratio_lo_rlx;
     const auto num2vol_ratio_hi_rlx = _num2vol_ratio_hi_rlx;
@@ -719,7 +710,7 @@ public:
           mam_rename_1subarea_(iscloudy_cur,
                                smallest_dryvol_value,
                                dest_mode_of_mode,    // in
-                               sz_factor,            // in
+                               mean_std_dev,            // in
                                fmode_dist_tail_fac,  // in
                                num2vol_ratio_lo_rlx,           // in
                                num2vol_ratio_hi_rlx,           // in
@@ -744,7 +735,7 @@ public:
       const bool iscloudy_cur,
       const Real &smallest_dryvol_value,
       const int *dest_mode_of_mode,                             // in
-      const Real sz_factor[AeroConfig::num_modes()],            // in
+      const Real mean_std_dev[AeroConfig::num_modes()],            // in
       const Real fmode_dist_tail_fac[AeroConfig::num_modes()],  // in
       const Real num2vol_ratio_lo_rlx[AeroConfig::num_modes()],           // in
       const Real num2vol_ratio_hi_rlx[AeroConfig::num_modes()],           // in
@@ -805,7 +796,7 @@ public:
     rename::do_inter_mode_transfer(
         dest_mode_of_mode, iscloudy_cur, smallest_dryvol_value,
         // volume to number relaxation limits [m^-3]
-        num2vol_ratio_lo_rlx, num2vol_ratio_hi_rlx, sz_factor, fmode_dist_tail_fac,
+        num2vol_ratio_lo_rlx, num2vol_ratio_hi_rlx, mean_std_dev, fmode_dist_tail_fac,
         ln_diameter_tail_fac, ln_dia_cutoff, diameter_threshold, dgnum_amode,
         // dry volume [m3/kmol-air]
         dryvol_i, dryvol_c, deldryvol_i, deldryvol_c, qmol_i_cur,
