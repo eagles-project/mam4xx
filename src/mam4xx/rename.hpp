@@ -41,7 +41,7 @@ void compute_dryvol_change_in_src_mode(
   for (int m = 0; m < nmode; ++m) {
     int dest_mode = dest_mode_of_mode[m];
 
-    if (dest_mode > 0) {
+    if (dest_mode >= 0) {
 
       // For each mode, we compute a dry volume by combining (accumulating)
       // mass/density for each species in that mode.
@@ -115,15 +115,12 @@ void compute_before_growth_dryvol_and_num(
   // Compute total (i.e. cloud borne and interstitial) of dry volume (before
   // growth) and delta in dry volume in the source mode
   // [units: (m3 of species)/(kmol of air)]
-  // NOTE: as long as dryvol_i(src_mode) is initialized to 0 when that mode is
-  // "not cloudy", this function call is a one-liner. e.g.,
-  // pregrowth_dryvol = dryvol_i[src_mode] + dryvol_c[src_mode];
-  // at worst, we could give it an if(dryvol_c[src_mode] > 0) statement
   const Real zero = 0.0;
   b4_growth_dryvol =
       total_interstitial_and_cloudborne(iscloudy, src_mode, dryvol_i, dryvol_c);
 
   // FIXME: is it feasible that pregrowth_dryvol would be smaller than 1e-25?
+  // NOTE: we get rid of this and use safe_divide() in do_inter_mode_transfer()
   b4_growth_dryvol_bounded =
       haero::max(b4_growth_dryvol, smallest_dryvol_value);
 
@@ -149,7 +146,7 @@ Real mode_diameter(const Real volume, const Real number,
   // BAD CONSTANT
   Real onethird = Real(1.0) / Real(3.0);
 
-  // FIXME: we can get git of 'smallest_dryvol_value' if we use
+  // FIXME: we can get get of 'smallest_dryvol_value' if we use
   // safe_denominator() here (or even better, in the argument passed to
   // mean_particle_diameter_from_volume() )
   return pow(volume / (number * size_factor), onethird);
@@ -195,10 +192,10 @@ void compute_xfer_fractions(const Real b4_growth_dryvol,
                             Real &xfer_num_frac // out
 ) {
 
-  // FIXME
   // BAD CONSTANT
   // 1-eps (this number is little less than 1, e.g. 0.99) // FIXME: this comment
   // is nonsense
+  // FIXME: use machine's epsilon?
   const Real xferfrac_max = 0.99; // 1.0 - 10.0*epsilon(1.0_r8) ;
   // assume we have fractions to transfer, so we will not skip the rest of the
   // calculations
@@ -228,7 +225,7 @@ KOKKOS_INLINE_FUNCTION
 void do_num_and_mass_transfer(
     const int src_mode, const int dest_mode, const Real xfer_vol_frac,
     const Real xfer_num_frac, // input
-    // FIXME: will qmol be updated this way?
+    // FIXME: will qmol be updated this way?--verify with unit test
     // aerosol molar mixing ratio [kmol/kmol-dry-air]
     Real qmol[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
     // aerosol number mixing ratios [#/kmol-air]
@@ -284,9 +281,7 @@ void do_inter_mode_transfer(
   // Loop through the modes and do the transfer
   for (int imode = 0; imode < nmodes; ++imode) {
     src_mode = imode; // source mode
-    // FIXME: this needs to go, right?
-    // Fortran indexing to C++ indexing
-    dest_mode = dest_mode_of_mode[imode] - 1; // destination mode
+    dest_mode = dest_mode_of_mode[imode]; // destination mode
 
     // if destination mode doesn't exist for the source mode, cycle loop
     if (dest_mode < 0) {
@@ -309,6 +304,7 @@ void do_inter_mode_transfer(
     Real after_growth_dryvol = b4_growth_dryvol + dryvol_del;
 
     // FIXME: maybe floating_point::zero(aft_grwth_dryvol)?
+    // TODO: ask about this in PR
     // Skip inter-mode transfer for this mode if dry after growth is ~ 0
     if (after_growth_dryvol <= smallest_dryvol_value) {
       continue;
@@ -316,6 +312,7 @@ void do_inter_mode_transfer(
 
     // Real bef_grwth_diameter = mode_diameter(
     // b4_growth_dryvol_bounded, b4_growth_qnum_bounded, sz_factor[src_mode]);
+    // FIXME: use safe_divide() here
     const Real bef_grwth_mode_mean_particle_volume =
         b4_growth_dryvol_bounded / b4_growth_qnum_bounded;
     Real bef_grwth_diameter = conversions::mean_particle_diameter_from_volume(
@@ -334,6 +331,7 @@ void do_inter_mode_transfer(
 
     // FIXME: BAD CONSTANT
     // FIXME: maybe floating_point::zero(<quantity>)?
+    // TODO: ask about this in PR
     if ((after_growth_dryvol - b4_growth_dryvol) <=
         Real(1.0e-6) * b4_growth_dryvol_bounded) {
       continue;
@@ -355,10 +353,8 @@ void do_inter_mode_transfer(
     // compute before growth number fraction in the tail
 
     // call compute_tail_fraction(bef_grwth_diameter,ln_dia_cutoff(src_mode),
-    // log_dia_tail_fac is not presented in original call to
+    // log_dia_tail_fac is not present in original call to
     // compute_tail_fraction. Thus do not no include its value
-    // FIXME: why do this flag and not set it to zero off the bat?
-    // when it is calculated it is = 3 * x^2, and thus always >= 0
     Real b4_growth_tail_fr_qnum = zero;
     compute_tail_fraction(bef_grwth_diameter, ln_dia_cutoff[src_mode],
                           fmode_dist_tail_fac[src_mode],
@@ -443,10 +439,8 @@ void find_renaming_pairs(
   num_pairs = 0;
 
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
-    // FIXME: delete this
-    // Fortran to C++ indexing
     const int dest_mode =
-        dest_mode_of_mode[m] - 1; // "destination" mode for mode "imode"
+        dest_mode_of_mode[m]; // "destination" mode for mode "imode"
 
     if (dest_mode < 0) {
       mean_std_dev[m] = zero;
@@ -481,12 +475,11 @@ void find_renaming_pairs(
       // A factor for computing diameter at the tails of the distribution
       ln_diameter_tail_fac[m] = Real(3.0) * square(alnsg_amode);
 
-      //  transfer "src" mode is the current mode (i.e. imode)
+      // transfer "src" mode is the current mode (i.e. imode)
       const int src_mode = m;
 
       // ^^At this point, we know that particles can be transferred from the
-      // "src_mode" to "dest_mode". "src_mode" is the current mode (i.e.
-      // imode)
+      // "src_mode" to "dest_mode". "src_mode" is the current mode (i.e. imode)
 
       // update number of pairs found so far
       num_pairs += 1;
@@ -495,7 +488,8 @@ void find_renaming_pairs(
       // transfers We took geometric mean of the participating modes (source
       // and destination) to find a cutoff or threshold from moving particles
       // from the source to the destination mode.
-      // FIXME: use `mean_particle_diameter_from_volume()`
+      // FIXME: This looks very strange to us, can someone take a look?
+        // e.g., taking log then exp, units?
       const Real alnsg_amode_dest_mode = log(modes(dest_mode).mean_std_dev);
       diameter_cutoff[src_mode] =
           sqrt(modes(src_mode).nom_diameter * exp(1.5 * square(alnsg_amode)) *
@@ -533,7 +527,7 @@ public:
     int _mam4xx2rename_idx[4][7];
     // default constructor--sets default values for parameters
     Config()
-        : _dest_mode_of_mode{0, 1, 0, 0},
+        : _dest_mode_of_mode{-1, 0, -1, -1},
           // NOTE: smallest_dryvol_value is a very small molar mixing ratio
           // [m3-spc/kmol-air] (where m3-species) is meter cubed volume of a
           // species) used for avoiding overflow. it corresponds to dp = 1 nm
@@ -603,7 +597,7 @@ public:
     //     150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
     // for (int iaero = 0; iaero < AeroConfig::num_aerosol_ids(); ++iaero) {
     //   _mass_2_vol[iaero] =
-    //       molecular_weight_rename[iaero] / aero_species(iaero).density;
+    //      molecular_weight_rename[iaero] / aero_species(iaero).density;
     // }
     // FIXME.
     // Molecular weights (MW) of aerosol species have units of kg/mol,
@@ -700,7 +694,7 @@ public:
           const bool &iscloudy_cur = iscloudy(k);
           int rename_idx = 0;
 
-          // FIXME: are these the correct molecular weights below?
+          // FIXME: adjust these to use mamRefactor's MW's
           for (int imode = 0; imode < nmodes; ++imode) {
             qnum_i_cur[imode] = prognostics.n_mode_i[imode](k);
             qnum_c_cur[imode] = prognostics.n_mode_c[imode](k);
@@ -740,7 +734,9 @@ public:
                                qmol_i_del, qnum_c_cur, qmol_c_cur, // out
                                qmol_c_del);                        // out
         }); // end kokkos::parfor(k)
-
+    // FIXME: convert back to mass mixing ratios and store in progs/tends
+    // prognostics = ???
+    // tendencies = ???
   } // end compute_tendencies()
 
   // Make mam_rename_1subarea public for testing proposes.
@@ -802,8 +798,7 @@ public:
 
     } // end iscloudy_cur
 
-    // Find fractions (mass and number) to transfer and complete the
-    //     transfer
+    // Find fractions (mass and number) to transfer and complete the transfer
 
     rename::do_inter_mode_transfer(
         dest_mode_of_mode, iscloudy_cur, smallest_dryvol_value,
