@@ -584,7 +584,7 @@ public:
 
     Real _mam4xx2rename_idx[4][7];
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
-      _dgnum_amode[m] = modes(m).nom_diameter;
+      _dgnum_amode[imode] = modes(imode).nom_diameter;
       for (int jspec = 0; jspec < AeroConfig::num_aerosol_ids(); ++jspec) {
         _mam4xx2rename_idx[imode][jspec] =
             config_._mam4xx2rename_idx[imode][jspec];
