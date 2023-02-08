@@ -65,11 +65,11 @@ void mam_pcarbon_aging_1subarea(Ensemble *ensemble) {
     Real qaer_cur_c[num_aero][num_modes];
     Real qaer_del_cond_c[num_aero][num_modes];
     Real qaer_del_coag_c[num_aero][num_modes];
-    Real qaer_del_coag_in_c[num_aero][num_modes];
+    Real qaer_del_coag_in_c[num_aero][Aging::max_agepair];
 
     int n = 0;
-    for (int ispec = 0; ispec < num_aero; ++ispec) {
-      for (int imode = 0; imode < num_modes; ++imode) {
+    for (int imode = 0; imode < Aging::max_agepair; ++imode) {  
+        for (int ispec = 0; ispec < num_aero; ++ispec) {
         qaer_cur_c[ispec][imode] = qaer_cur_f[n];
         qaer_del_cond_c[ispec][imode] = qaer_del_cond_f[n];
         qaer_del_coag_c[ispec][imode] = qaer_del_coag_f[n];
@@ -84,8 +84,9 @@ void mam_pcarbon_aging_1subarea(Ensemble *ensemble) {
         qaer_del_coag_in_c);
 
     n = 0;
-    for (int ispec = 0; ispec < num_aero; ++ispec) {
-      for (int imode = 0; imode < num_modes; ++imode) {
+    for (int imode = 0; imode < Aging::max_agepair; ++imode) {  
+        for (int ispec = 0; ispec < num_aero; ++ispec) {
+
         qaer_cur_f[n] = qaer_cur_c[ispec][imode];
         qaer_del_cond_f[n] = qaer_del_cond_c[ispec][imode];
         qaer_del_coag_f[n] = qaer_del_coag_c[ispec][imode];
