@@ -17,6 +17,7 @@
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/nucleation.hpp>
 #include <mam4xx/rename.hpp>
+#include <mam4xx/ndrop.hpp>
 
 namespace mam4 {
 

@@ -15,38 +15,32 @@ using Real = haero::Real;
 
 namespace mam4 {
 
-namespace ndrop {
-
   KOKKOS_INLINE_FUNCTION
   void get_aer_num(const Diagnostics &diags,
                                   const Prognostics &progs, int mode_idx, int k, Real naerosol[AeroConfig::num_aerosol_ids()]) {
     //out
-    Real naerosol = 0.0; // number concentration [#/m3]
+    //Real naerosol = 0.0; // number concentration [#/m3]
+    Atmosphere atm = haero::Atmosphere();
 
+    Real rho = conversions::density_of_ideal_gas(atm.temperature(k), atm.pressure(k));
 
-    for (int aid = 0; aid < AeroConfig::num_aerosol_ids(); ++aid) {
-      const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx),
-                                          static_cast<AeroId>(aid));
+    Real vaerosol = aero_species(mode_idx).density;
+    vaerosol = conversions::mean_particle_volume_from_diameter(diags.dry_geometric_mean_diameter_total[mode_idx](k), modes(mode_idx).mean_std_dev);
 
-      if(s >= 0) {
+    naerosol[mode_idx] = (progs.n_mode_i[mode_idx](k) + progs.n_mode_c[mode_idx](k)) * rho;
+    //adjust number so that dgnumlo < dgnum < dgnumhi
+    
+    Real min_diameter = modes(mode_idx).min_diameter;
+    Real max_diameter = modes(mode_idx).max_diameter;
+    Real mean_std_dev = modes(mode_idx).mean_std_dev;
 
-          Real rho = conversions::density_of_ideal_gas(haero::Atmosphere.temperature[s], haero::Atmosphere.pressure[s]);
-          Real vaerosol = haero::AeroSpecies.density;
-          naerosol[s] = (progs.q_aero_i[mode_idx][s](k) + progs.q_aero_c[mode_idx][s](k)) * rho;
-          //adjust number so that dgnumlo < dgnum < dgnumhi
-          
-          Real min_diameter = modes(mode_idx).min_diameter;
-          Real max_diameter = modes(mode_idx).max_diameter;
-          Real mean_std_dev = modes(mode_idx).mean_std_dev;
+    Real num2vol_ratio_min = 1.0 / conversions::mean_particle_volume_from_diameter(min_diameter, mean_std_dev);
+    Real num2vol_ratio_max = 1.0 / conversions::mean_particle_volume_from_diameter(max_diameter, mean_std_dev);
 
-          num2vol_ratio_min = 1.0 / conversions::mean_particle_volume_from_diameter(min_diameter, mean_std_dev);
-          num2vol_ratio_max = 1.0 / conversions::mean_particle_volume_from_diameter(max_diameter, mean_std_dev);
+    naerosol[mode_idx] = min(naerosol[mode_idx], vaerosol*num2vol_ratio_min);
+    naerosol[mode_idx] = max(naerosol[mode_idx], vaerosol*num2vol_ratio_max);
 
-          naerosol[s] = min(naerosol[s], vaerosol*num2vol_ratio_min);
-          naerosol[s] = max(naerosol[s], vaerosol*num2vol_ratio_max);
-      }
-
-    }
+    
   }
 }
-}
+#endif

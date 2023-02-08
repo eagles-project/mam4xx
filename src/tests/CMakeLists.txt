@@ -39,6 +39,9 @@ target_compile_options(mam4_calcsize_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_rename_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_aging_unit_tests PRIVATE -Werror)
 
+CreateUnitTest(mam4_ndrop_unit_tests ndrop_unit_tests.cpp)
+target_compile_options(mam4_ndrop_unit_tests PRIVATE -Werror)
+
 if (${HAERO_PRECISION} MATCHES double)
 EkatCreateUnitTest(kohler_unit_tests kohler_unit_tests.cpp
   LIBS mam4xx mam4xx_tests ${HAERO_LIBRARIES})
