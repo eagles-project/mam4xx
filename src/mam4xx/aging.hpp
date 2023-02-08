@@ -98,11 +98,10 @@ void mam_pcarbon_aging_frac(
   const Real mom_vol = aero_species(iaer_mom).molecular_weight * 1000.0 /
                        aero_species(iaer_mom).density;
 
-
   const Real fac_m2v_eqvhyg_aer = soa_vol *
                                   aero_species(iaer_soa).hygroscopicity /
                                   aero_species(iaer_so4).hygroscopicity;
-  
+
   Real qaer_del_cond_tmp =
       qaer_del_cond[iaer_so4][imom_pc] * so4_vol +
       qaer_del_cond[iaer_soa][imom_pc] * fac_m2v_eqvhyg_aer;
@@ -112,7 +111,7 @@ void mam_pcarbon_aging_frac(
       qaer_del_coag_in[iaer_soa][ipair] * fac_m2v_eqvhyg_aer;
 
   qaer_del_cond_tmp = haero::max(qaer_del_cond_tmp, 1e-35);
-  
+
   frac_cond = qaer_del_cond_tmp /
               (qaer_del_cond_tmp + haero::max(qaer_del_coag_tmp, 0.0));
 
@@ -132,12 +131,9 @@ void mam_pcarbon_aging_frac(
 
   const Real fac_volsfc = haero::exp(
       2.5 * haero::pow(haero::log(mam4::modes(imom_pc).mean_std_dev), 2.0));
-  
-  
+
   const Real xferfrac_max =
       1.0 - 10.0 * std::numeric_limits<Real>::epsilon(); //  1-eps
-
-  std::cout << " eps = " << std::numeric_limits<Real>::epsilon() << "\n";
 
   Real xferfrac_tmp1 = vol_shell * dgn_a[imom_pc] * fac_volsfc;
   Real xferfrac_tmp2 =
@@ -148,8 +144,6 @@ void mam_pcarbon_aging_frac(
   } else {
     xferfrac_pcage = haero::min(xferfrac_tmp1 / xferfrac_tmp2, xferfrac_max);
   }
-
-
 }
 
 //------------------------------------------------------------------------
