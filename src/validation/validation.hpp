@@ -1,6 +1,6 @@
 #ifndef HAERO_VALIDATION_HPP
 #define HAERO_VALIDATION_HPP
-
+#include <mam4xx/aero_config.hpp>
 #include <string>
 
 namespace mam4 {
@@ -69,6 +69,25 @@ static constexpr int mam4xx_to_e3sm_aerosol_idx[4][7] = {
     // e3sm : POM, BC, MOM
     // mam4xx : POM(0), BC(1), MOM(2)
     {0, 1, 2, -1, -1, -1, -1}};
+
+// Convert 1D std::vector to 2D Real array for aerosol mass/molar mixing ratios
+void convert1D_Vector2D_RealMixRatios(
+    const std::vector<Real> &vector_in,                                   // in
+    Real values[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()]); // out
+
+// Convert 2D Real array for aerosol mass/molar mixing ratios to 1D std::vector
+void convert2D_RealMixRatios1D_Vector(
+    const Real values[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+    std::vector<Real> &values_vector);
+
+// Convert 1D Real Num Mode to 1D std::vector.
+void convert1D_RealNumMode1D_Vector(
+    const Real values[AeroConfig::num_modes()], // in
+    std::vector<Real> &values_vector);          // out
+
+// Convert 1D std::vector to 1D Real array for num mode
+void convert1D_Vector1D_RealNumMode(const std::vector<Real> &vector_in,
+                                    Real values[AeroConfig::num_modes()]);
 
 } // namespace validation
 } // namespace mam4

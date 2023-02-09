@@ -32,28 +32,9 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     // int dest_mode_of_mode = input.get_array("dest_mode_of_mode");
     int dest_mode_of_mode[nmodes] = {0, 1, 0, 0};
 
-    auto set_mode_values = [](const std::vector<Real> &vector_in,
-                              Real values[nmodes]) {
-      for (int m = 0; m < nmodes; ++m) {
-        values[m] = vector_in[m];
-      }
-    };
-
-
-    auto set_mode_aerosol_values = [](const std::vector<Real> &vector_in,
-                                       Real values[nmodes][naerosol_species]) {
-      int count = 0;
-      for (int m = 0; m < nmodes; ++m) {
-        for (int ispec = 0; ispec < naerosol_species; ++ispec) {
-          values[m][ispec] = vector_in[count];
-          count++;
-        }
-      }
-    };
-
     auto qnum_cur_vector = input.get_array("qnum_cur");
     Real qnum_cur[nmodes];
-    set_mode_values(qnum_cur_vector, qnum_cur);
+    validation::convert1D_Vector1D_RealNumMode(qnum_cur_vector, qnum_cur);
 
     Real qnumcw_cur[nmodes]={zero};
     Real qaercw_cur[nmodes][naerosol_species]={{zero}};
@@ -61,23 +42,23 @@ void mam_rename_1subarea(Ensemble *ensemble) {
 
     if (iscloudy){
         auto qnumcw_cur_vector = input.get_array("qnumcw_cur");
-        set_mode_values(qnumcw_cur_vector, qnumcw_cur);
+        validation::convert1D_Vector1D_RealNumMode(qnumcw_cur_vector, qnumcw_cur);
 
         auto qaercw_cur_vector = input.get_array("qaercw_cur");
-        set_mode_aerosol_values(qaercw_cur_vector, qaercw_cur );
+        validation::convert1D_Vector2D_RealMixRatios(qaercw_cur_vector, qaercw_cur );
 
         auto qaercw_del_grow4rnam_vector = input.get_array("qaercw_del_grow4rnam");
-        set_mode_aerosol_values(qaercw_del_grow4rnam_vector, qaercw_del_grow4rnam );
+        validation::convert1D_Vector2D_RealMixRatios(qaercw_del_grow4rnam_vector, qaercw_del_grow4rnam );
     }
 
 
     Real qaer_del_grow4rnam[nmodes][naerosol_species];
     auto qaer_del_grow4rnam_vector = input.get_array("qaer_del_grow4rnam");
-    set_mode_aerosol_values(qaer_del_grow4rnam_vector, qaer_del_grow4rnam );
+    validation::convert1D_Vector2D_RealMixRatios(qaer_del_grow4rnam_vector, qaer_del_grow4rnam );
 
     auto qaer_cur_vector = input.get_array("qaer_cur");
     Real qaer_cur[nmodes][naerosol_species];
-    set_mode_aerosol_values(qaer_cur_vector, qaer_cur );
+    validation::convert1D_Vector2D_RealMixRatios(qaer_cur_vector, qaer_cur );
 
     Rename this_rename;
 
@@ -134,49 +115,23 @@ void mam_rename_1subarea(Ensemble *ensemble) {
                                      qnumcw_cur, qaercw_cur,
                                      qaercw_del_grow4rnam);
 
-    auto save_mode_values = [](const Real values[nmodes],
-                               std::vector<Real> &values_vector) {
-      for (int i = 0; i < nmodes; ++i)
-        values_vector[i] = values[i];
-    };
-
-    auto save_mode_aerosol_values =
-        [](const Real values[nmodes][naerosol_species],
-           std::vector<Real> &values_vector) {
-          int count = 0;
-          for (int m = 0; m < nmodes; ++m) {
-            for (int ispec = 0; ispec < naerosol_species; ++ispec) {
-              values_vector[count] = values[m][ispec];
-              count++;
-            }
-          }
-        };
 
     std::vector<Real> qnum_cur_out(nmodes+1, 0);
-    save_mode_values(qnum_cur, qnum_cur_out);
+    validation::convert1D_RealNumMode1D_Vector(qnum_cur, qnum_cur_out);
     output.set("qnum_cur", qnum_cur_out);
 
     std::vector<Real> qaer_cur_out((nmodes+1)*naerosol_species,0);
-    save_mode_aerosol_values(qaer_cur, qaer_cur_out);
+    validation::convert2D_RealMixRatios1D_Vector(qaer_cur, qaer_cur_out);
     output.set("qaer_cur", qaer_cur_out);
     
-    // std::vector<Real> qaer_del_grow4rnam_out((nmodes+1)*naerosol_species,0);
-    // save_mode_aerosol_values(qaer_del_grow4rnam, qaer_del_grow4rnam_out);
-    // output.set("qaer_del_grow4rnam", qaer_del_grow4rnam_out);
-
     if (iscloudy) {
       std::vector<Real> qnumcw_cur_out(nmodes + 1, 0);
-      save_mode_values(qnumcw_cur, qnumcw_cur_out);
+      validation::convert1D_RealNumMode1D_Vector(qnumcw_cur, qnumcw_cur_out);
       output.set("qnumcw_cur", qnumcw_cur_out);
 
       std::vector<Real> qaercw_cur_out((nmodes + 1) * naerosol_species, 0);
-      save_mode_aerosol_values(qaercw_cur, qaercw_cur_out);
+      validation::convert2D_RealMixRatios1D_Vector(qaercw_cur, qaercw_cur_out);
       output.set("qaercw_cur", qaercw_cur_out);
-
-      // std::vector<Real> qaercw_del_grow4rnam_out(
-      //     (nmodes + 1) * naerosol_species, 0);
-      // save_mode_aerosol_values(qaercw_del_grow4rnam, qaercw_del_grow4rnam_out);
-      // output.set("qaercw_del_grow4rnam", qaercw_del_grow4rnam_out);
     }    
 
   });

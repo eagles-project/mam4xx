@@ -1,5 +1,6 @@
 #include "validation.hpp"
 
+
 namespace mam4 {
 namespace validation {
 
@@ -18,6 +19,45 @@ std::string output_name(const std::string &input_file) {
   }
   return std::string("mam4xx_") + input_file.substr(slash, dot) +
          std::string(".py");
+}
+
+ void 
+ convert1D_Vector2D_RealMixRatios(const std::vector<Real> &vector_in,
+                          Real values[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()]) {
+  int count = 0;
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
+      values[m][ispec] = vector_in[count];
+      count++;
+    }
+  }
+}
+
+void 
+convert1D_RealNumMode1D_Vector(const Real values[AeroConfig::num_modes()],
+                           std::vector<Real> &values_vector) {
+  for (int i = 0; i < AeroConfig::num_modes(); ++i)
+    values_vector[i] = values[i];
+}
+
+void 
+convert1D_Vector1D_RealNumMode(const std::vector<Real> &vector_in,
+                               Real values[AeroConfig::num_modes()]) {
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) 
+    values[m] = vector_in[m];
+}
+
+
+void 
+convert2D_RealMixRatios1D_Vector(const Real values[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+                                   std::vector<Real> &values_vector) {
+  int count = 0;
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
+      values_vector[count] = values[m][ispec];
+      count++;
+    }
+  }
 }
 
 } // namespace validation

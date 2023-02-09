@@ -40,12 +40,6 @@ void find_renaming_pairs(Ensemble *ensemble) {
                                 ln_dia_cutoff,
                                 diameter_threshold);
 
-    auto save_mode_values = [](const Real values[nmodes],
-                               std::vector<Real> &values_vector) {
-      for (int i = 0; i < nmodes; ++i)
-        values_vector[i] = values[i];
-    };
-
 
     // We use MW from rename-mam4.
     Real molecular_weight_rename[naerosol_species] = {
@@ -63,46 +57,38 @@ void find_renaming_pairs(Ensemble *ensemble) {
 
 
     std::vector<Real> sz_factor_out(nmodes, 0);
-    save_mode_values(sz_factor, sz_factor_out);
+    validation::convert1D_RealNumMode1D_Vector(sz_factor, sz_factor_out);
     output.set("sz_factor", sz_factor_out);
 
     std::vector<Real> fmode_dist_tail_fac_out(nmodes, 0);
-    save_mode_values(fmode_dist_tail_fac, fmode_dist_tail_fac_out);
+    validation::convert1D_RealNumMode1D_Vector(fmode_dist_tail_fac, fmode_dist_tail_fac_out);
     output.set("fmode_dist_tail_fac", fmode_dist_tail_fac_out);
 
     std::vector<Real> v2n_lo_rlx_out(nmodes, 0);
-    save_mode_values(v2n_lo_rlx, v2n_lo_rlx_out);
+    validation::convert1D_RealNumMode1D_Vector(v2n_lo_rlx, v2n_lo_rlx_out);
     output.set("v2n_lo_rlx", v2n_lo_rlx_out);
 
     std::vector<Real> v2n_hi_rlx_out(nmodes, 0);
-    save_mode_values(v2n_hi_rlx, v2n_hi_rlx_out);
+    validation::convert1D_RealNumMode1D_Vector(v2n_hi_rlx, v2n_hi_rlx_out);
     output.set("v2n_hi_rlx", v2n_hi_rlx_out);
 
     std::vector<Real> ln_diameter_tail_fac_out(nmodes, 0);
-    save_mode_values(ln_diameter_tail_fac, ln_diameter_tail_fac_out);
+    validation::convert1D_RealNumMode1D_Vector(ln_diameter_tail_fac, ln_diameter_tail_fac_out);
     output.set("ln_diameter_tail_fac", ln_diameter_tail_fac_out);
 
     std::vector<Real> diameter_cutoff_out(nmodes, 0);
-    save_mode_values(diameter_cutoff, diameter_cutoff_out);
+    validation::convert1D_RealNumMode1D_Vector(diameter_cutoff, diameter_cutoff_out);
     output.set("diameter_cutoff", diameter_cutoff_out);
 
     output.set("num_pairs", num_pairs);
 
     std::vector<Real> ln_dia_cutoff_out(nmodes, 0);
-    save_mode_values(ln_dia_cutoff, ln_dia_cutoff_out);
+    validation::convert1D_RealNumMode1D_Vector(ln_dia_cutoff, ln_dia_cutoff_out);
     output.set("ln_dia_cutoff", ln_dia_cutoff_out);
 
     std::vector<Real> diameter_threshold_out(nmodes, 0);
-    save_mode_values(diameter_threshold, diameter_threshold_out);
+    validation::convert1D_RealNumMode1D_Vector(diameter_threshold, diameter_threshold_out);
     output.set("diameter_threshold", diameter_threshold_out);
-
-
-    // std::vector<Real> _out(nmodes, 0);
-    // save_mode_values(, _out);
-    // output.set("", _out);
-
-
-
                                 
 
                                 

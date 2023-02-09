@@ -19,24 +19,15 @@ void compute_dryvol_change_in_src_mode(Ensemble *ensemble) {
     // int dest_mode_of_mode = input.get_array("dest_mode_of_mode");
     int dest_mode_of_mode[nmodes] = {0, 1, 0, 0};
 
-    auto set_mode_aerosol_values = [](const std::vector<Real> &vector_in,
-                                      Real values[nmodes][naerosol_species]) {
-      int count = 0;
-      for (int m = 0; m < nmodes; ++m) {
-        for (int ispec = 0; ispec < naerosol_species; ++ispec) {
-          values[m][ispec] = vector_in[count];
-          count++;
-        }
-      }
-    };
-
     auto q_mmr_vector = input.get_array("q_mmr");
     Real q_mmr[nmodes][naerosol_species];
-    set_mode_aerosol_values(q_mmr_vector, q_mmr );
+    validation::convert1D_Vector2D_RealMixRatios(q_mmr_vector,
+                                              q_mmr );
 
     auto q_del_growth_vector = input.get_array("q_del_growth");
     Real q_del_growth[nmodes][naerosol_species];
-    set_mode_aerosol_values(q_del_growth_vector, q_del_growth );
+    validation::convert1D_Vector2D_RealMixRatios(q_del_growth_vector,
+                                                      q_del_growth );
 
     Real mean_std_dev[nmodes];
     Real fmode_dist_tail_fac[nmodes];
@@ -80,19 +71,12 @@ void compute_dryvol_change_in_src_mode(Ensemble *ensemble) {
     dryvol,
     deldryvol);
 
-
-    auto save_mode_values = [](const Real values[nmodes],
-                               std::vector<Real> &values_vector) {
-      for (int i = 0; i < nmodes; ++i)
-        values_vector[i] = values[i];
-    };
-
     std::vector<Real> dryvol_out(nmodes, 0);
-    save_mode_values(dryvol, dryvol_out);
+    validation::convert1D_RealNumMode1D_Vector(dryvol, dryvol_out);
     output.set("dryvol", dryvol_out);
 
     std::vector<Real> deldryvol_out(nmodes, 0);
-    save_mode_values(deldryvol, deldryvol_out);
+    validation::convert1D_RealNumMode1D_Vector(deldryvol, deldryvol_out);
     output.set("deldryvol", deldryvol_out);                                
 
                                 
