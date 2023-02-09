@@ -15,7 +15,7 @@ void find_renaming_pairs(Ensemble *ensemble) {
     const int naerosol_species = AeroConfig::num_aerosol_ids();
 
     // int dest_mode_of_mode = input.get_array("dest_mode_of_mode");
-    int dest_mode_of_mode[nmodes] = {0, 1, 0, 0};
+    int dest_mode_of_mode[nmodes] = {-1, 0, -1, -1};
 
     
     Real fmode_dist_tail_fac[nmodes];

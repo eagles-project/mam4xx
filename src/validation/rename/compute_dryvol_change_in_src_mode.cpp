@@ -17,7 +17,7 @@ void compute_dryvol_change_in_src_mode(Ensemble *ensemble) {
     const Real zero =0;
 
     // int dest_mode_of_mode = input.get_array("dest_mode_of_mode");
-    int dest_mode_of_mode[nmodes] = {0, 1, 0, 0};
+    int dest_mode_of_mode[nmodes] = {-1, 0, -1, -1};
 
     auto q_mmr_vector = input.get_array("q_mmr");
     Real q_mmr[nmodes][naerosol_species];

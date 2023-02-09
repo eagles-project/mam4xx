@@ -30,7 +30,7 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     auto iscloudy_vector = input.get_array("iscldy");
     bool iscloudy = iscloudy_vector[0];
     // int dest_mode_of_mode = input.get_array("dest_mode_of_mode");
-    int dest_mode_of_mode[nmodes] = {0, 1, 0, 0};
+    int dest_mode_of_mode[nmodes] = {-1, 0, -1, -1};
 
     auto qnum_cur_vector = input.get_array("qnum_cur");
     Real qnum_cur[nmodes];
