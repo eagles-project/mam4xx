@@ -87,7 +87,7 @@ void convert_modal_array_to_vector(
 
 // Convert 1D std::vector to 1D Real array for num mode
 void convert_vector_to_modal_array(const std::vector<Real> &vector_in,
-                                    Real values[AeroConfig::num_modes()]);
+                                   Real values[AeroConfig::num_modes()]);
 
 } // namespace validation
 } // namespace mam4

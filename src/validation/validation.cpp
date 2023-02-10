@@ -33,13 +33,13 @@ void convert_vector_to_mass_mixing_ratios(
 }
 
 void convert_modal_array_to_vector(const Real values[AeroConfig::num_modes()],
-                                    std::vector<Real> &values_vector) {
+                                   std::vector<Real> &values_vector) {
   for (int i = 0; i < AeroConfig::num_modes(); ++i)
     values_vector[i] = values[i];
 }
 
 void convert_vector_to_modal_array(const std::vector<Real> &vector_in,
-                                    Real values[AeroConfig::num_modes()]) {
+                                   Real values[AeroConfig::num_modes()]) {
   for (int m = 0; m < AeroConfig::num_modes(); ++m)
     values[m] = vector_in[m];
 }
