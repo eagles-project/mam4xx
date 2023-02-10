@@ -58,7 +58,7 @@ void find_renaming_pairs(Ensemble *ensemble) {
 
     std::vector<Real> fmode_dist_tail_fac_out(nmodes, 0);
     validation::convert_modal_array_to_vector(fmode_dist_tail_fac,
-                                               fmode_dist_tail_fac_out);
+                                              fmode_dist_tail_fac_out);
     output.set("fmode_dist_tail_fac", fmode_dist_tail_fac_out);
 
     std::vector<Real> v2n_lo_rlx_out(nmodes, 0);
@@ -71,24 +71,23 @@ void find_renaming_pairs(Ensemble *ensemble) {
 
     std::vector<Real> ln_diameter_tail_fac_out(nmodes, 0);
     validation::convert_modal_array_to_vector(ln_diameter_tail_fac,
-                                               ln_diameter_tail_fac_out);
+                                              ln_diameter_tail_fac_out);
     output.set("ln_diameter_tail_fac", ln_diameter_tail_fac_out);
 
     std::vector<Real> diameter_cutoff_out(nmodes, 0);
     validation::convert_modal_array_to_vector(diameter_cutoff,
-                                               diameter_cutoff_out);
+                                              diameter_cutoff_out);
     output.set("diameter_cutoff", diameter_cutoff_out);
 
     output.set("num_pairs", num_pairs);
 
     std::vector<Real> ln_dia_cutoff_out(nmodes, 0);
-    validation::convert_modal_array_to_vector(ln_dia_cutoff,
-                                               ln_dia_cutoff_out);
+    validation::convert_modal_array_to_vector(ln_dia_cutoff, ln_dia_cutoff_out);
     output.set("ln_dia_cutoff", ln_dia_cutoff_out);
 
     std::vector<Real> diameter_threshold_out(nmodes, 0);
     validation::convert_modal_array_to_vector(diameter_threshold,
-                                               diameter_threshold_out);
+                                              diameter_threshold_out);
     output.set("diameter_threshold", diameter_threshold_out);
   });
 }

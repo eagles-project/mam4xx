@@ -46,18 +46,18 @@ void mam_rename_1subarea(Ensemble *ensemble) {
 
       auto qaercw_cur_vector = input.get_array("qaercw_cur");
       validation::convert_vector_to_mass_mixing_ratios(qaercw_cur_vector,
-                                                   qaercw_cur);
+                                                       qaercw_cur);
 
       auto qaercw_del_grow4rnam_vector =
           input.get_array("qaercw_del_grow4rnam");
-      validation::convert_vector_to_mass_mixing_ratios(qaercw_del_grow4rnam_vector,
-                                                   qaercw_del_grow4rnam);
+      validation::convert_vector_to_mass_mixing_ratios(
+          qaercw_del_grow4rnam_vector, qaercw_del_grow4rnam);
     }
 
     Real qaer_del_grow4rnam[nmodes][naerosol_species];
     auto qaer_del_grow4rnam_vector = input.get_array("qaer_del_grow4rnam");
     validation::convert_vector_to_mass_mixing_ratios(qaer_del_grow4rnam_vector,
-                                                 qaer_del_grow4rnam);
+                                                     qaer_del_grow4rnam);
 
     auto qaer_cur_vector = input.get_array("qaer_cur");
     Real qaer_cur[nmodes][naerosol_species];
@@ -129,7 +129,8 @@ void mam_rename_1subarea(Ensemble *ensemble) {
       output.set("qnumcw_cur", qnumcw_cur_out);
 
       std::vector<Real> qaercw_cur_out((nmodes + 1) * naerosol_species, 0);
-      validation::convert_mass_mixing_ratios_to_vector(qaercw_cur, qaercw_cur_out);
+      validation::convert_mass_mixing_ratios_to_vector(qaercw_cur,
+                                                       qaercw_cur_out);
       output.set("qaercw_cur", qaercw_cur_out);
     }
   });

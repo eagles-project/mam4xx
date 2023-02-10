@@ -26,7 +26,7 @@ void compute_dryvol_change_in_src_mode(Ensemble *ensemble) {
     auto q_del_growth_vector = input.get_array("q_del_growth");
     Real q_del_growth[nmodes][naerosol_species];
     validation::convert_vector_to_mass_mixing_ratios(q_del_growth_vector,
-                                                 q_del_growth);
+                                                     q_del_growth);
 
     Real mean_std_dev[nmodes];
     Real fmode_dist_tail_fac[nmodes];
