@@ -21,8 +21,8 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     mam4::AeroConfig mam4_config;
     mam4::RenameProcess process(mam4_config);
 
-    const int nmodes = AeroConfig::num_modes();
-    const int naerosol_species = AeroConfig::num_aerosol_ids();
+    constexpr int nmodes = AeroConfig::num_modes();
+    constexpr int naerosol_species = AeroConfig::num_aerosol_ids();
 
     const Real zero = 0;
     const Real smallest_dryvol_value = 1.0e-25; // FIXME: BAD_CONSTANT
