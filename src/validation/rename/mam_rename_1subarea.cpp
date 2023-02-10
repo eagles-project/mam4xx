@@ -36,29 +36,32 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     Real qnum_cur[nmodes];
     validation::convert1D_Vector1D_RealNumMode(qnum_cur_vector, qnum_cur);
 
-    Real qnumcw_cur[nmodes]={zero};
-    Real qaercw_cur[nmodes][naerosol_species]={{zero}};
-    Real qaercw_del_grow4rnam[nmodes][naerosol_species]={{zero}};
+    Real qnumcw_cur[nmodes] = {zero};
+    Real qaercw_cur[nmodes][naerosol_species] = {{zero}};
+    Real qaercw_del_grow4rnam[nmodes][naerosol_species] = {{zero}};
 
-    if (iscloudy){
-        auto qnumcw_cur_vector = input.get_array("qnumcw_cur");
-        validation::convert1D_Vector1D_RealNumMode(qnumcw_cur_vector, qnumcw_cur);
+    if (iscloudy) {
+      auto qnumcw_cur_vector = input.get_array("qnumcw_cur");
+      validation::convert1D_Vector1D_RealNumMode(qnumcw_cur_vector, qnumcw_cur);
 
-        auto qaercw_cur_vector = input.get_array("qaercw_cur");
-        validation::convert1D_Vector2D_RealMixRatios(qaercw_cur_vector, qaercw_cur );
+      auto qaercw_cur_vector = input.get_array("qaercw_cur");
+      validation::convert1D_Vector2D_RealMixRatios(qaercw_cur_vector,
+                                                   qaercw_cur);
 
-        auto qaercw_del_grow4rnam_vector = input.get_array("qaercw_del_grow4rnam");
-        validation::convert1D_Vector2D_RealMixRatios(qaercw_del_grow4rnam_vector, qaercw_del_grow4rnam );
+      auto qaercw_del_grow4rnam_vector =
+          input.get_array("qaercw_del_grow4rnam");
+      validation::convert1D_Vector2D_RealMixRatios(qaercw_del_grow4rnam_vector,
+                                                   qaercw_del_grow4rnam);
     }
-
 
     Real qaer_del_grow4rnam[nmodes][naerosol_species];
     auto qaer_del_grow4rnam_vector = input.get_array("qaer_del_grow4rnam");
-    validation::convert1D_Vector2D_RealMixRatios(qaer_del_grow4rnam_vector, qaer_del_grow4rnam );
+    validation::convert1D_Vector2D_RealMixRatios(qaer_del_grow4rnam_vector,
+                                                 qaer_del_grow4rnam);
 
     auto qaer_cur_vector = input.get_array("qaer_cur");
     Real qaer_cur[nmodes][naerosol_species];
-    validation::convert1D_Vector2D_RealMixRatios(qaer_cur_vector, qaer_cur );
+    validation::convert1D_Vector2D_RealMixRatios(qaer_cur_vector, qaer_cur);
 
     Rename this_rename;
 
@@ -74,31 +77,30 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     Real mass_2_vol[naerosol_species];
 
     rename::find_renaming_pairs(dest_mode_of_mode,    // in
-                                mean_std_dev,            // out
+                                mean_std_dev,         // out
                                 fmode_dist_tail_fac,  // out
                                 v2n_lo_rlx,           // out
                                 v2n_hi_rlx,           // out
                                 ln_diameter_tail_fac, // out
                                 num_pairs,            // out
                                 diameter_cutoff,      // out
-                                ln_dia_cutoff,
-                                diameter_threshold);
+                                ln_dia_cutoff, diameter_threshold);
 
     Real dgnum_amode[nmodes];
     for (int m = 0; m < nmodes; ++m) {
       dgnum_amode[m] = modes(m).nom_diameter;
     }
-    //// We use MWs from rename-mam4 for validation proposes 
+    //// We use MWs from rename-mam4 for validation proposes
     Real molecular_weight_rename[naerosol_species] = {
         150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
     for (int iaero = 0; iaero < naerosol_species; ++iaero) {
-      mass_2_vol[iaero] = molecular_weight_rename[iaero] / aero_species(iaero).density;
+      mass_2_vol[iaero] =
+          molecular_weight_rename[iaero] / aero_species(iaero).density;
     }
 
-    this_rename.mam_rename_1subarea_(iscloudy,
-                                     smallest_dryvol_value,
+    this_rename.mam_rename_1subarea_(iscloudy, smallest_dryvol_value,
                                      dest_mode_of_mode,    // in
-                                     mean_std_dev,            // in
+                                     mean_std_dev,         // in
                                      fmode_dist_tail_fac,  // in
                                      v2n_lo_rlx,           // in
                                      v2n_hi_rlx,           // in
@@ -109,21 +111,18 @@ void mam_rename_1subarea(Ensemble *ensemble) {
                                      diameter_threshold,   // in
                                      mass_2_vol,
                                      dgnum_amode, // in
-                                     qnum_cur, 
-                                     qaer_cur,
-                                     qaer_del_grow4rnam,
+                                     qnum_cur, qaer_cur, qaer_del_grow4rnam,
                                      qnumcw_cur, qaercw_cur,
                                      qaercw_del_grow4rnam);
 
-
-    std::vector<Real> qnum_cur_out(nmodes+1, 0);
+    std::vector<Real> qnum_cur_out(nmodes + 1, 0);
     validation::convert1D_RealNumMode1D_Vector(qnum_cur, qnum_cur_out);
     output.set("qnum_cur", qnum_cur_out);
 
-    std::vector<Real> qaer_cur_out((nmodes+1)*naerosol_species,0);
+    std::vector<Real> qaer_cur_out((nmodes + 1) * naerosol_species, 0);
     validation::convert2D_RealMixRatios1D_Vector(qaer_cur, qaer_cur_out);
     output.set("qaer_cur", qaer_cur_out);
-    
+
     if (iscloudy) {
       std::vector<Real> qnumcw_cur_out(nmodes + 1, 0);
       validation::convert1D_RealNumMode1D_Vector(qnumcw_cur, qnumcw_cur_out);
@@ -132,7 +131,6 @@ void mam_rename_1subarea(Ensemble *ensemble) {
       std::vector<Real> qaercw_cur_out((nmodes + 1) * naerosol_species, 0);
       validation::convert2D_RealMixRatios1D_Vector(qaercw_cur, qaercw_cur_out);
       output.set("qaercw_cur", qaercw_cur_out);
-    }    
-
+    }
   });
 }

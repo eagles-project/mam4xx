@@ -125,8 +125,8 @@ void compute_before_growth_dryvol_and_num(
       haero::max(b4_growth_dryvol, smallest_dryvol_value);
 
   // Compute total before growth number [units: #/kmol-air]
-  Real b4_growth_qnum = total_interstitial_and_cloudborne(iscloudy, src_mode,
-                                                        qnum_i_cur, qnum_c_cur);
+  Real b4_growth_qnum = total_interstitial_and_cloudborne(
+      iscloudy, src_mode, qnum_i_cur, qnum_c_cur);
   b4_growth_qnum = max(zero, b4_growth_qnum); // bound to have minimum of 0
 
   // // bound number within min and max of the source mode
@@ -280,7 +280,7 @@ void do_inter_mode_transfer(
 
   // Loop through the modes and do the transfer
   for (int imode = 0; imode < nmodes; ++imode) {
-    src_mode = imode; // source mode
+    src_mode = imode;                     // source mode
     dest_mode = dest_mode_of_mode[imode]; // destination mode
 
     // if destination mode doesn't exist for the source mode, cycle loop
@@ -489,7 +489,7 @@ void find_renaming_pairs(
       // and destination) to find a cutoff or threshold from moving particles
       // from the source to the destination mode.
       // FIXME: This looks very strange to us, can someone take a look?
-        // e.g., taking log then exp, units?
+      // e.g., taking log then exp, units?
       const Real alnsg_amode_dest_mode = log(modes(dest_mode).mean_std_dev);
       diameter_cutoff[src_mode] =
           sqrt(modes(src_mode).nom_diameter * exp(1.5 * square(alnsg_amode)) *

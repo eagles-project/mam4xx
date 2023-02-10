@@ -51,16 +51,15 @@ int main(int argc, char **argv) {
     } else if (func_name == "find_renaming_pairs") {
       find_renaming_pairs(ensemble);
 
-    }else if (func_name == "compute_dryvol_change_in_src_mode") {
+    } else if (func_name == "compute_dryvol_change_in_src_mode") {
       compute_dryvol_change_in_src_mode(ensemble);
-
     }
-    
+
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
   }
 
-    // Write out a Python module.
+  // Write out a Python module.
   std::cout << argv[0] << ": writing " << output_file << std::endl;
   ensemble->write(output_file);
 
