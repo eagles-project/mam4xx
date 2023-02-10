@@ -51,7 +51,7 @@ TEST_CASE("test_total_interstitial_and_cloudborne", "mam4_rename_process") {
   // mam4::AeroConfig mam4_config;
   // mam4::RenameProcess process(mam4_config);
   Real outvar = mam4::rename::total_interstitial_and_cloudborne();
-  REQUIRE(1 == 1);
+  REQUIRE(outvar == outvar);
 }
 
 TEST_CASE("test_mode_diameter", "mam4_rename_process") {
