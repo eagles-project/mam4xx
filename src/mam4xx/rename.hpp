@@ -136,22 +136,6 @@ void compute_before_growth_dryvol_and_num(
       b4_growth_qnum);                            // input
 } // end compute_before_growth_dryvol_and_num()
 
-KOKKOS_INLINE_FUNCTION
-Real mode_diameter(const Real volume, const Real number,
-                   const Real size_factor) {
-  // compute diameter inputs:
-  // volume      ![m3]
-  // number      ![#/kmol-air]
-  // size_factor ![unitless]
-  // BAD CONSTANT
-  Real onethird = Real(1.0) / Real(3.0);
-
-  // FIXME: we can get get of 'smallest_dryvol_value' if we use
-  // safe_denominator() here (or even better, in the argument passed to
-  // mean_particle_diameter_from_volume() )
-  return pow(volume / (number * size_factor), onethird);
-} // end mode_diameter
-
 // Compute tail fraction with log_dia_tail_fac
 
 KOKKOS_INLINE_FUNCTION
@@ -310,8 +294,6 @@ void do_inter_mode_transfer(
       continue;
     }
 
-    // Real bef_grwth_diameter = mode_diameter(
-    // b4_growth_dryvol_bounded, b4_growth_qnum_bounded, sz_factor[src_mode]);
     // FIXME: use safe_divide() here
     const Real bef_grwth_mode_mean_particle_volume =
         b4_growth_dryvol_bounded / b4_growth_qnum_bounded;
@@ -338,9 +320,6 @@ void do_inter_mode_transfer(
     }
     // Compute after growth diameter; if it is less than the "nominal" or
     // "base" diameter for the source mode, skip inter-mode transfer
-    // Real aft_grwth_diameter =
-    // mode_diameter(after_growth_dryvol, b4_growth_qnum_bounded,
-    // sz_factor[src_mode]);
     const Real after_grwth_mode_mean_particle_volume =
         after_growth_dryvol / b4_growth_qnum_bounded;
     Real aft_grwth_diameter = conversions::mean_particle_diameter_from_volume(
@@ -454,9 +433,6 @@ void find_renaming_pairs(
 
     } else {
       const Real alnsg_amode = log(modes(m).mean_std_dev);
-      // NOTE: there doesn't seem to be any reason to compute mean_std_dev here,
-      // rather than in mode_diameter(). It's only used in that function and
-      // definitely takes a long walk to get there
       mean_std_dev[m] = modes(m).mean_std_dev;
       // factor for computing distribution tails of the "src mode"
       fmode_dist_tail_fac[m] = sqrt_half / alnsg_amode;
