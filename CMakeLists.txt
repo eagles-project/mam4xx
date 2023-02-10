@@ -17,10 +17,6 @@ else() #CPU
   message(STATUS "Building for CPU")
 endif()
 
-# FIXME: **REMOVE BEFORE PR**
-# turns off "unused <thing>" warnings
-add_compile_options(-Wno-unused-but-set-variable -Wno-unused-variable -Wno-unused-private-field)
-
 # Blessed version of clang-format.
 set(CLANG_FORMAT_VERSION 14)
 
