@@ -558,7 +558,6 @@ public:
                                 _diameter_cutoff,           // out
                                 _ln_dia_cutoff, _diameter_threshold);
 
-    Real _mam4xx2rename_idx[4][7];
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
       _dgnum_amode[imode] = modes(imode).nom_diameter;
       for (int jspec = 0; jspec < AeroConfig::num_aerosol_ids(); ++jspec) {
