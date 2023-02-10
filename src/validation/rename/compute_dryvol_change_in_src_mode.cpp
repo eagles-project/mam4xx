@@ -21,11 +21,11 @@ void compute_dryvol_change_in_src_mode(Ensemble *ensemble) {
 
     auto q_mmr_vector = input.get_array("q_mmr");
     Real q_mmr[nmodes][naerosol_species];
-    validation::convert1D_Vector2D_RealMixRatios(q_mmr_vector, q_mmr);
+    validation::convert_vector_to_mass_mixing_ratios(q_mmr_vector, q_mmr);
 
     auto q_del_growth_vector = input.get_array("q_del_growth");
     Real q_del_growth[nmodes][naerosol_species];
-    validation::convert1D_Vector2D_RealMixRatios(q_del_growth_vector,
+    validation::convert_vector_to_mass_mixing_ratios(q_del_growth_vector,
                                                  q_del_growth);
 
     Real mean_std_dev[nmodes];
@@ -69,11 +69,11 @@ void compute_dryvol_change_in_src_mode(Ensemble *ensemble) {
                                               dryvol, deldryvol);
 
     std::vector<Real> dryvol_out(nmodes, 0);
-    validation::convert1D_RealNumMode1D_Vector(dryvol, dryvol_out);
+    validation::convert_modal_array_to_vector(dryvol, dryvol_out);
     output.set("dryvol", dryvol_out);
 
     std::vector<Real> deldryvol_out(nmodes, 0);
-    validation::convert1D_RealNumMode1D_Vector(deldryvol, deldryvol_out);
+    validation::convert_modal_array_to_vector(deldryvol, deldryvol_out);
     output.set("deldryvol", deldryvol_out);
   });
 }

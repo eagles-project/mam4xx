@@ -34,7 +34,7 @@ void mam_rename_1subarea(Ensemble *ensemble) {
 
     auto qnum_cur_vector = input.get_array("qnum_cur");
     Real qnum_cur[nmodes];
-    validation::convert1D_Vector1D_RealNumMode(qnum_cur_vector, qnum_cur);
+    validation::convert_vector_to_modal_array(qnum_cur_vector, qnum_cur);
 
     Real qnumcw_cur[nmodes] = {zero};
     Real qaercw_cur[nmodes][naerosol_species] = {{zero}};
@@ -42,26 +42,26 @@ void mam_rename_1subarea(Ensemble *ensemble) {
 
     if (iscloudy) {
       auto qnumcw_cur_vector = input.get_array("qnumcw_cur");
-      validation::convert1D_Vector1D_RealNumMode(qnumcw_cur_vector, qnumcw_cur);
+      validation::convert_vector_to_modal_array(qnumcw_cur_vector, qnumcw_cur);
 
       auto qaercw_cur_vector = input.get_array("qaercw_cur");
-      validation::convert1D_Vector2D_RealMixRatios(qaercw_cur_vector,
+      validation::convert_vector_to_mass_mixing_ratios(qaercw_cur_vector,
                                                    qaercw_cur);
 
       auto qaercw_del_grow4rnam_vector =
           input.get_array("qaercw_del_grow4rnam");
-      validation::convert1D_Vector2D_RealMixRatios(qaercw_del_grow4rnam_vector,
+      validation::convert_vector_to_mass_mixing_ratios(qaercw_del_grow4rnam_vector,
                                                    qaercw_del_grow4rnam);
     }
 
     Real qaer_del_grow4rnam[nmodes][naerosol_species];
     auto qaer_del_grow4rnam_vector = input.get_array("qaer_del_grow4rnam");
-    validation::convert1D_Vector2D_RealMixRatios(qaer_del_grow4rnam_vector,
+    validation::convert_vector_to_mass_mixing_ratios(qaer_del_grow4rnam_vector,
                                                  qaer_del_grow4rnam);
 
     auto qaer_cur_vector = input.get_array("qaer_cur");
     Real qaer_cur[nmodes][naerosol_species];
-    validation::convert1D_Vector2D_RealMixRatios(qaer_cur_vector, qaer_cur);
+    validation::convert_vector_to_mass_mixing_ratios(qaer_cur_vector, qaer_cur);
 
     Rename this_rename;
 
@@ -116,20 +116,20 @@ void mam_rename_1subarea(Ensemble *ensemble) {
                                      qaercw_del_grow4rnam);
 
     std::vector<Real> qnum_cur_out(nmodes + 1, 0);
-    validation::convert1D_RealNumMode1D_Vector(qnum_cur, qnum_cur_out);
+    validation::convert_modal_array_to_vector(qnum_cur, qnum_cur_out);
     output.set("qnum_cur", qnum_cur_out);
 
     std::vector<Real> qaer_cur_out((nmodes + 1) * naerosol_species, 0);
-    validation::convert2D_RealMixRatios1D_Vector(qaer_cur, qaer_cur_out);
+    validation::convert_mass_mixing_ratios_to_vector(qaer_cur, qaer_cur_out);
     output.set("qaer_cur", qaer_cur_out);
 
     if (iscloudy) {
       std::vector<Real> qnumcw_cur_out(nmodes + 1, 0);
-      validation::convert1D_RealNumMode1D_Vector(qnumcw_cur, qnumcw_cur_out);
+      validation::convert_modal_array_to_vector(qnumcw_cur, qnumcw_cur_out);
       output.set("qnumcw_cur", qnumcw_cur_out);
 
       std::vector<Real> qaercw_cur_out((nmodes + 1) * naerosol_species, 0);
-      validation::convert2D_RealMixRatios1D_Vector(qaercw_cur, qaercw_cur_out);
+      validation::convert_mass_mixing_ratios_to_vector(qaercw_cur, qaercw_cur_out);
       output.set("qaercw_cur", qaercw_cur_out);
     }
   });

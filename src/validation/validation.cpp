@@ -20,7 +20,7 @@ std::string output_name(const std::string &input_file) {
          std::string(".py");
 }
 
-void convert1D_Vector2D_RealMixRatios(
+void convert_vector_to_mass_mixing_ratios(
     const std::vector<Real> &vector_in,
     Real values[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()]) {
   int count = 0;
@@ -32,19 +32,19 @@ void convert1D_Vector2D_RealMixRatios(
   }
 }
 
-void convert1D_RealNumMode1D_Vector(const Real values[AeroConfig::num_modes()],
+void convert_modal_array_to_vector(const Real values[AeroConfig::num_modes()],
                                     std::vector<Real> &values_vector) {
   for (int i = 0; i < AeroConfig::num_modes(); ++i)
     values_vector[i] = values[i];
 }
 
-void convert1D_Vector1D_RealNumMode(const std::vector<Real> &vector_in,
+void convert_vector_to_modal_array(const std::vector<Real> &vector_in,
                                     Real values[AeroConfig::num_modes()]) {
   for (int m = 0; m < AeroConfig::num_modes(); ++m)
     values[m] = vector_in[m];
 }
 
-void convert2D_RealMixRatios1D_Vector(
+void convert_mass_mixing_ratios_to_vector(
     const Real values[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
     std::vector<Real> &values_vector) {
   int count = 0;

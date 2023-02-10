@@ -71,22 +71,22 @@ static constexpr int mam4xx_to_e3sm_aerosol_idx[4][7] = {
     {0, 1, 2, -1, -1, -1, -1}};
 
 // Convert 1D std::vector to 2D Real array for aerosol mass/molar mixing ratios
-void convert1D_Vector2D_RealMixRatios(
+void convert_vector_to_mass_mixing_ratios(
     const std::vector<Real> &vector_in,                                   // in
     Real values[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()]); // out
 
 // Convert 2D Real array for aerosol mass/molar mixing ratios to 1D std::vector
-void convert2D_RealMixRatios1D_Vector(
+void convert_mass_mixing_ratios_to_vector(
     const Real values[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
     std::vector<Real> &values_vector);
 
 // Convert 1D Real Num Mode to 1D std::vector.
-void convert1D_RealNumMode1D_Vector(
+void convert_modal_array_to_vector(
     const Real values[AeroConfig::num_modes()], // in
     std::vector<Real> &values_vector);          // out
 
 // Convert 1D std::vector to 1D Real array for num mode
-void convert1D_Vector1D_RealNumMode(const std::vector<Real> &vector_in,
+void convert_vector_to_modal_array(const std::vector<Real> &vector_in,
                                     Real values[AeroConfig::num_modes()]);
 
 } // namespace validation
