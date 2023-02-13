@@ -652,7 +652,7 @@ public:
     // =======================================================================
 
     Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
+        Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int kk) {
           Real qnum_i_cur[AeroConfig::num_modes()];
           Real qmol_i_cur[AeroConfig::num_modes()]
                          [AeroConfig::num_aerosol_ids()];
@@ -666,28 +666,28 @@ public:
           Real qmol_c_del[AeroConfig::num_modes()]
                          [AeroConfig::num_aerosol_ids()];
 
-          const bool &iscloudy_cur = iscloudy(k);
+          const bool &iscloudy_cur = iscloudy(kk);
           int rename_idx = 0;
 
           // FIXME: adjust these to use mamRefactor's MW's
           for (int imode = 0; imode < nmodes; ++imode) {
-            qnum_i_cur[imode] = prognostics.n_mode_i[imode](k);
-            qnum_c_cur[imode] = prognostics.n_mode_c[imode](k);
+            qnum_i_cur[imode] = prognostics.n_mode_i[imode](kk);
+            qnum_c_cur[imode] = prognostics.n_mode_c[imode](kk);
             for (int jspec = 0; jspec < nspec; ++jspec) {
               // get the mapping from the mam4xx species ordering to rename's
               rename_idx = _mam4xx2rename_idx[imode][jspec];
               // convert mass mixing ratios to molar mixing ratios
               qmol_i_cur[imode][rename_idx] = conversions::vmr_from_mmr(
-                  prognostics.q_aero_i[imode][rename_idx](k),
+                  prognostics.q_aero_i[imode][rename_idx](kk),
                   aero_species(rename_idx).molecular_weight);
               qmol_i_del[imode][rename_idx] = conversions::vmr_from_mmr(
-                  tendencies.q_aero_i[imode][rename_idx](k),
+                  tendencies.q_aero_i[imode][rename_idx](kk),
                   aero_species(rename_idx).molecular_weight);
               qmol_c_cur[imode][rename_idx] = conversions::vmr_from_mmr(
-                  prognostics.q_aero_c[imode][rename_idx](k),
+                  prognostics.q_aero_c[imode][rename_idx](kk),
                   aero_species(rename_idx).molecular_weight);
               qmol_c_del[imode][rename_idx] = conversions::vmr_from_mmr(
-                  tendencies.q_aero_c[imode][rename_idx](k),
+                  tendencies.q_aero_c[imode][rename_idx](kk),
                   aero_species(rename_idx).molecular_weight);
             }
           }
@@ -708,7 +708,7 @@ public:
                                qnum_i_cur, qmol_i_cur,             // out
                                qmol_i_del, qnum_c_cur, qmol_c_cur, // out
                                qmol_c_del);                        // out
-        }); // end kokkos::parfor(k)
+        }); // end kokkos::parfor(kk)
     // FIXME: convert back to mass mixing ratios and store in progs/tends
     // prognostics = ???
     // tendencies = ???
