@@ -130,6 +130,27 @@ different version of `clang-format` than the one we support, you'll get an error
 message telling you the correct version to install when you use either of these
 targets.
 
+## Continuous Integration
+
+See [the PNNL CI REAMDE](.github/pnnl-ci/README.md) for more detailed information.
+
+There is a GitLab instance at PNNL that is configured as a push mirror, where new
+merge requests commits update the mirror in a GitHub action. This action also triggers
+a pipeline in PNNL GitLab. This pipeline eventually posts the status to GitHub
+through the relevent API.
+
+**If CI is failing**, you might require CI to re-build HAERO in order to get changes
+there into the CI pipelines. Since CI pipelines all share the same HAERO build, make
+sure that you do not attempt to re-build on top of another developer.
+
+In order to rebuild HAERO in PNNL CI, either:
+- Add `[haero-rebuild]` somewhere into your commit message when pushing to a PR
+- Log onto the PNNL GitLab, and manually trigger the pipeline yourself.
+
+Pushing with the commit message `[haero-rebuild]` will build HAERO and run tests,
+however if you trigger the rebuild manually, you may have to re-run the pipeline again
+to update the GitHub PR with the correct status.
+
 ## Generating Documentation
 
 Documentation for MAM4xx can be built using
