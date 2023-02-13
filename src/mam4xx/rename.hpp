@@ -287,7 +287,7 @@ void do_inter_mode_transfer(
     // Total dry volume after growth (add delta growth)
     Real after_growth_dryvol = b4_growth_dryvol + dryvol_del;
 
-    // FIXME: maybe floating_point::zero(aft_grwth_dryvol)?
+    // FIXME: maybe floating_point::zero(aft_growth_dryvol)?
     // TODO: ask about this in PR
     // Skip inter-mode transfer for this mode if dry after growth is ~ 0
     if (after_growth_dryvol <= smallest_dryvol_value) {
@@ -295,20 +295,20 @@ void do_inter_mode_transfer(
     }
 
     // FIXME: use safe_divide() here
-    const Real b4_grwth_mode_mean_particle_volume =
+    const Real b4_growth_mode_mean_particle_volume =
         b4_growth_dryvol_bounded / b4_growth_qnum_bounded;
-    Real b4_grwth_diameter = conversions::mean_particle_diameter_from_volume(
-        b4_grwth_mode_mean_particle_volume, mean_std_dev[src_mode]);
+    Real b4_growth_diameter = conversions::mean_particle_diameter_from_volume(
+        b4_growth_mode_mean_particle_volume, mean_std_dev[src_mode]);
 
     // if the before growth diameter is more than the threshold
     // (diameter_threshold), we restrict diameter to the threshold and change
     // dry volume accordingly
-    if (b4_grwth_diameter > diameter_threshold[src_mode]) {
-      // this revised volume corresponds to b4_grwth_diameter ==
+    if (b4_growth_diameter > diameter_threshold[src_mode]) {
+      // this revised volume corresponds to b4_growth_diameter ==
       // diameter_threshold, and same number conc
       b4_growth_dryvol = b4_growth_dryvol *
-                         cube(diameter_threshold[src_mode] / b4_grwth_diameter);
-      b4_grwth_diameter = diameter_threshold[src_mode];
+                         cube(diameter_threshold[src_mode] / b4_growth_diameter);
+      b4_growth_diameter = diameter_threshold[src_mode];
     }
 
     // FIXME: BAD CONSTANT
@@ -320,22 +320,22 @@ void do_inter_mode_transfer(
     }
     // Compute after growth diameter; if it is less than the "nominal" or
     // "base" diameter for the source mode, skip inter-mode transfer
-    const Real after_grwth_mode_mean_particle_volume =
+    const Real after_growth_mode_mean_particle_volume =
         after_growth_dryvol / b4_growth_qnum_bounded;
-    Real aft_grwth_diameter = conversions::mean_particle_diameter_from_volume(
-        after_grwth_mode_mean_particle_volume, mean_std_dev[src_mode]);
+    Real aft_growth_diameter = conversions::mean_particle_diameter_from_volume(
+        after_growth_mode_mean_particle_volume, mean_std_dev[src_mode]);
 
-    if (aft_grwth_diameter <= dgnum_amode[src_mode]) {
+    if (aft_growth_diameter <= dgnum_amode[src_mode]) {
       continue;
     }
 
     // compute before growth number fraction in the tail
 
-    // call compute_tail_fraction(b4_grwth_diameter,ln_dia_cutoff(src_mode),
+    // call compute_tail_fraction(b4_growth_diameter,ln_dia_cutoff(src_mode),
     // log_dia_tail_fac is not present in original call to
     // compute_tail_fraction. Thus do not no include its value
     Real b4_growth_tail_fr_qnum = zero;
-    compute_tail_fraction(b4_grwth_diameter, ln_dia_cutoff[src_mode],
+    compute_tail_fraction(b4_growth_diameter, ln_dia_cutoff[src_mode],
                           fmode_dist_tail_fac[src_mode],
                           b4_growth_tail_fr_qnum // out
     );
@@ -343,7 +343,7 @@ void do_inter_mode_transfer(
     // compute before growth volume (or mass) fraction in the tail
     Real b4_growth_tail_fr_vol = zero;
 
-    compute_tail_fraction(b4_grwth_diameter, ln_dia_cutoff[src_mode],
+    compute_tail_fraction(b4_growth_diameter, ln_dia_cutoff[src_mode],
                           fmode_dist_tail_fac[src_mode],
                           ln_diameter_tail_fac[src_mode],
                           b4_growth_tail_fr_vol // out
@@ -353,14 +353,14 @@ void do_inter_mode_transfer(
     // presented in original call to compute_tail_fraction.
     // Thus do not include its value
     Real after_growth_tail_fr_num = zero;
-    compute_tail_fraction(aft_grwth_diameter, ln_dia_cutoff[src_mode],
+    compute_tail_fraction(aft_growth_diameter, ln_dia_cutoff[src_mode],
                           fmode_dist_tail_fac[src_mode],
                           after_growth_tail_fr_num // out
     );
 
     // compute after growth volume (or mass) fraction in the tail
     Real after_growth_tail_fr_vol = zero;
-    compute_tail_fraction(aft_grwth_diameter, ln_dia_cutoff[src_mode],
+    compute_tail_fraction(aft_growth_diameter, ln_dia_cutoff[src_mode],
                           fmode_dist_tail_fac[src_mode],
                           ln_diameter_tail_fac[src_mode],
                           after_growth_tail_fr_vol // out
