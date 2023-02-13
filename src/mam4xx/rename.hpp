@@ -306,8 +306,8 @@ void do_inter_mode_transfer(
     if (b4_growth_diameter > diameter_threshold[src_mode]) {
       // this revised volume corresponds to b4_growth_diameter ==
       // diameter_threshold, and same number conc
-      b4_growth_dryvol = b4_growth_dryvol *
-                         cube(diameter_threshold[src_mode] / b4_growth_diameter);
+      b4_growth_dryvol = b4_growth_dryvol * cube(diameter_threshold[src_mode] /
+                                                 b4_growth_diameter);
       b4_growth_diameter = diameter_threshold[src_mode];
     }
 
