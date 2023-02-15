@@ -45,6 +45,7 @@ jobs:
         g++ \
         gfortran \
         git \
+        lcov \
         make \
         pkg-config \
         ca-certificates
@@ -83,6 +84,7 @@ jobs:
           -DCMAKE_INSTALL_PREFIX=`pwd`/install \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
           -DMAM4XX_HAERO_DIR=`pwd`/haero_install \
+          -DMAM4XX_ENABLE_COVERAGE=ON \
           -G "Unix Makefiles"
 
     - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
@@ -110,14 +112,16 @@ jobs:
         cd build
         make install
 
-    - name: Generating code coverage report
+    - name: Evaluating code coverage
       run: |
-        gcovr . build --xml > coverage.xml
+        cd build
+        make coverage
 
     - name: Uploading coverage report to codecov.io
       uses: codecov/codecov-action@v3
       with:
         fail_ci_if_error: true
-        files: coverage.xml
+        files: build/coverage.info
         name: mam4xx
+        token: ${{ secrets.CODECOV_TOKEN }}
         verbose: true
