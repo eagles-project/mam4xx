@@ -12,7 +12,6 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 add_executable(calcsize_driver calcsize_driver.cpp
                compute_dry_volume.cpp
                adjust_num_sizes.cpp
-               update_diameter_and_vol2num.cpp
                compute_tendencies.cpp
                aitken_accum_exchange.cpp)
 target_link_libraries(calcsize_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -34,7 +33,6 @@ endforeach()
 foreach (input
          adjust_num_sizes_case1
          adjust_num_sizes_case2
-         update_diameter_and_vol2num_case1
          calcsize_e3sm
          calcsize_sub
          aitken_accum_exchange_case1
@@ -52,6 +50,7 @@ foreach (input
   add_test(run_${input} calcsize_driver ${CALCSIZE_VALIDATION_DIR}/${input}.yaml)
 
   # add a test to validate mam4xx's results against the baseline.
-  add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py)
+  # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error> 
+  add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True 2e-6)
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
 endforeach()

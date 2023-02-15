@@ -51,6 +51,8 @@ void find_renaming_pairs(Ensemble *ensemble) {
     Real sz_factor[nmodes] = {0};
     sz_factor[1] =
         Constants::pi_sixth * exp(4.5 * square(log(modes(1).mean_std_dev)));
+    sz_factor[0] =
+        Constants::pi_sixth * exp(4.5 * square(log(modes(0).mean_std_dev)));
 
     std::vector<Real> sz_factor_out(nmodes, 0);
     validation::convert_modal_array_to_vector(sz_factor, sz_factor_out);
