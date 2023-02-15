@@ -40,8 +40,6 @@ jobs:
         clang-format \
         cmake \
         gcc \
-        gcov \
-        gcovr \
         g++ \
         gfortran \
         git \
