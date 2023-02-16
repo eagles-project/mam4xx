@@ -198,6 +198,7 @@ Deception Release Single Precision:
     PRECISION: single
 
 Deception Debug Double Precision:
+  needs: ['Deception Debug Single Precision']
   extends:
     - .pnnl_hpc_job_template
     - .debug
@@ -206,6 +207,7 @@ Deception Debug Double Precision:
     PRECISION: double
 
 Deception Release Double Precision:
+  needs: ['Deception Release Single Precision']
   extends:
     - .pnnl_hpc_job_template
     - .release
@@ -230,6 +232,7 @@ Rebuild HAERO Release Single Precision:
     PRECISION: single
 
 Rebuild HAERO Debug Double Precision:
+  needs: ['Rebuild HAERO Debug Single Precision']
   extends:
     - .haero_rebuild_template
     - .debug
@@ -238,6 +241,7 @@ Rebuild HAERO Debug Double Precision:
     PRECISION: double
 
 Rebuild HAERO Release Double Precision:
+  needs: ['Rebuild HAERO Release Single Precision']
   extends:
     - .haero_rebuild_template
     - .release
