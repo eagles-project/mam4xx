@@ -71,6 +71,8 @@ variables:
   rules:
     - if: '$CI_COMMIT_TITLE =~ /\[haero-rebuild\]/'
       when: always
+    - if: '$CI_COMMIT_TITLE =~ /\[rebuild-haero\]/'
+      when: always
     - when: manual
   allow_failure: true
   variables:

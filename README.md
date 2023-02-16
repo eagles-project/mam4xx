@@ -144,12 +144,11 @@ there into the CI pipelines. Since CI pipelines all share the same HAERO build, 
 sure that you do not attempt to re-build on top of another developer.
 
 In order to rebuild HAERO in PNNL CI, either:
-- Add `[haero-rebuild]` somewhere into your commit message when pushing to a PR
+- Add `[haero-rebuild]` or `[rebuild-haero]` somewhere into your commit message when pushing to a PR
 - Log onto the PNNL GitLab, and manually trigger the pipeline yourself.
 
-Pushing with the commit message `[haero-rebuild]` will build HAERO and run tests,
-however if you trigger the rebuild manually, you may have to re-run the pipeline again
-to update the GitHub PR with the correct status.
+Pushing with the commit message `[haero-rebuild]` or `[rebuild-haero]` will build HAERO and run tests,
+however if you trigger the rebuild manually, you may have to re-run the pipeline again as tests may have already completed.
 
 ## Generating Documentation
 
