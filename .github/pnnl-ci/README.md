@@ -21,7 +21,7 @@ The possible  GPU architectures are:
 For some reason only the HPC runners are configured to run at the moment, and so all stages will share that base configuration.
 ## Rebuilding HAERO in CI
 
-You can either add "[hearo-rebuild]" directly to your commit message, or go to https://code.pnnl.gov/e3sm/eagles/mam4xx and trigger the rebuild pipeline manually once you have pushed to your branch.
+You can either add `[hearo-rebuild]` or `[rebuild-haero]` directly to your commit message, or go to https://code.pnnl.gov/e3sm/eagles/mam4xx and trigger the rebuild pipeline manually once you have pushed to your branch.
 
 Make sure you either push to GitHub and have the mirror update first, or just push to the GitLab directly.
 
