@@ -45,6 +45,9 @@ foreach (input
   add_test(run_${input} rename_driver ${RENAME_VALIDATION_DIR}/${input}.yaml)
 
   # add a test to validate mam4xx's results against the baseline.
-  add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py)
+  # Select a threshold error slightly bigger than the largest relative error for the threshold error.
+  # Conservative approach: At the time of this commit, threshold error=2e-8.
+  # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error> 
+  add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True 2e-8)
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
 endforeach()

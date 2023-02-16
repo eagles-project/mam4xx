@@ -22,7 +22,6 @@ using namespace mam4;
 // Parameterizations used by the calcsize process.
 void compute_dry_volume_k(Ensemble *ensemble);
 void adjust_num_sizes(Ensemble *ensemble);
-void update_diameter_and_vol2num(Ensemble *ensemble);
 void compute_tendencies(Ensemble *ensemble);
 void aitken_accum_exchange(Ensemble *ensemble);
 
@@ -52,8 +51,6 @@ int main(int argc, char **argv) {
       compute_dry_volume_k(ensemble);
     } else if (func_name == "adjust_num_sizes") {
       adjust_num_sizes(ensemble);
-    } else if (func_name == "update_diameter_and_vol2num") {
-      update_diameter_and_vol2num(ensemble);
     } else if (func_name == "compute_tendencies") {
       compute_tendencies(ensemble);
     } else if (func_name == "aitken_accum_exchange") {
