@@ -1,16 +1,28 @@
-#include <mam4xx/mam4.hpp>
+#include "atmosphere_utils.hpp"
+
+#include "mam4xx/aero_modes.hpp"
+#include "mam4xx/conversions.hpp"
+
+#include <haero/atmosphere.hpp>
+#include <haero/constants.hpp>
+#include <haero/floating_point.hpp>
+#include <haero/haero.hpp>
+
+#include "mam4xx/conversions.hpp"
 
 #include <catch2/catch.hpp>
 #include <ekat/ekat_pack_kokkos.hpp>
 #include <ekat/logging/ekat_logger.hpp>
 #include <ekat/mpi/ekat_comm.hpp>
+#include <mam4xx/mam4.hpp>
 
 // if you need something from the data/ directory
 // std::string data_file = MAM4_TEST_DATA_DIR;
 // #include <mam4_test_config.hpp>
 
-using namespace haero;
+// using namespace haero;
 using namespace mam4;
+using namespace mam4::conversions;
 
 TEST_CASE("test_get_aer_num", "mam4_ndrop") {
   ekat::Comm comm;
@@ -21,125 +33,43 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
   int nlev = 1;
   Real pblh = 1000;
   Atmosphere atm(nlev, pblh);
+
+  // initialize a hydrostatically balanced moist air column
+  // using constant lapse rate in virtual temperature to manufacture
+  // exact solutions.
+  //
+  // these values correspond to a humid atmosphere with relative humidity
+  // values approximately between 32% and 98%
+  const Real Tv0 = 300;     // reference virtual temperature [K]
+  const Real Gammav = 0.01; // virtual temperature lapse rate [K/m]
+  const Real qv0 =
+      0.015; // specific humidity at surface [kg h2o / kg moist air]
+  const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
+  init_atm_const_tv_lapse_rate(atm, Tv0, Gammav, qv0, qv1);
+
   mam4::Prognostics progs(nlev);
   mam4::Diagnostics diags(nlev);
-  mam4::Tendencies tends(nlev);
 
   mam4::AeroConfig mam4_config;
 
-//  const auto nmodes = mam4::AeroConfig::num_modes();
-/*
-  Kokkos::Array<Real, 21> interstitial = {
-      0.1218350564E-08, 0.3560443333E-08, 0.4203338951E-08, 0.3723412167E-09,
-      0.2330196615E-09, 0.1435909119E-10, 0.2704344376E-11, 0.2116400132E-11,
-      0.1326256343E-10, 0.1741610336E-16, 0.1280539377E-16, 0.1045693148E-08,
-      0.5358722850E-10, 0.2926142847E-10, 0.3986256848E-11, 0.3751267639E-10,
-      0.4679337373E-10, 0.9456518445E-13, 0.2272248527E-08, 0.2351792086E-09,
-      0.2733926271E-16};
+  const auto nmodes = mam4::AeroConfig::num_modes();
 
-  Kokkos::Array<Real, nmodes> interstitial_num = {
-      0.8098354597E+09, 0.4425427527E+08, 0.1400840545E+06, 0.1382391601E+10};
-*/
-  //get_aer_num(diags, progs, mode_idx, k, naerosol);
-  Real naerosol[AeroConfig::num_aerosol_ids()];
-  mam4::get_aer_num(diags, progs, 0, 0, naerosol);
-/*
-  std::ostringstream ss;
-  int count = 0;
-  for (int imode = 0; imode < nmodes; ++imode) {
-    auto h_prog_n_mode_i = Kokkos::create_mirror_view(progs.n_mode_i[imode]);
+  Real naerosol[nmodes];
 
+  for (int idx; idx <= nmodes; idx++) {
     for (int k = 0; k < nlev; ++k) {
-      // set all cell to same value.
-      h_prog_n_mode_i(k) = interstitial_num[imode];
+      // logger.info("diags.dry_geometric_mean_diameter_total[idx](k) = {}",
+      // diags.dry_geometric_mean_diameter_total[idx](k));
+      // logger.info("progs.n_mode_i[mode_idx](k) + progs.n_mode_c[mode_idx](k)
+      // = {}", progs.n_mode_i[idx](k) + progs.n_mode_c[idx](k));
+
+      logger.info("interst = {}", progs.n_mode_i[idx](k));
+      logger.info("cloud = {}", progs.n_mode_c[idx](k));
+      logger.info("rho = {}", conversions::density_of_ideal_gas(
+                                  atm.temperature(k), atm.pressure(k)));
+
+      mam4::get_aer_num(diags, progs, atm, idx, k, naerosol);
+      logger.info("naerosol[{}] = {}", idx, naerosol[idx]);
     }
-    Kokkos::deep_copy(progs.n_mode_i[imode], h_prog_n_mode_i);
-
-    ss << "progs.n_mode_i (mode No " << imode << ") [in]: [ ";
-    for (int k = 0; k < nlev; ++k) {
-      ss << h_prog_n_mode_i(k) << " ";
-    }
-    ss << "]";
-    logger.debug(ss.str());
-    ss.str("");
-
-    for (int k = 0; k < nlev; ++k) {
-      CHECK(!isnan(h_prog_n_mode_i(k)));
-    }
-
-    const auto n_spec = mam4::num_species_mode(imode);
-    for (int isp = 0; isp < n_spec; ++isp) {
-      auto h_prog_aero_i =
-          Kokkos::create_mirror_view(progs.q_aero_i[imode][isp]);
-      for (int k = 0; k < nlev; ++k) {
-        // set all cell to same value.
-        h_prog_aero_i(k) = interstitial[count];
-      }
-      Kokkos::deep_copy(progs.q_aero_i[imode][isp], h_prog_aero_i);
-      count++;
-
-      ss << "progs.q_aero_i (mode No " << imode << ", species No " << isp
-         << " ) [in]: [ ";
-      for (int k = 0; k < nlev; ++k) {
-        ss << h_prog_aero_i(k) << " ";
-      }
-      ss << "]";
-      logger.debug(ss.str());
-      ss.str("");
-
-      for (int k = 0; k < nlev; ++k) {
-        CHECK(!isnan(h_prog_aero_i(k)));
-      }
-
-    } // end species
-  }   // end modes
-
-  const int ncol = 1;
-  // Single-column dispatch.
-  auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
-  Real t = 0.0, dt = 30.0;
-  Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-        process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
-      });
-
-  for (int imode = 0; imode < nmodes; ++imode) {
-    auto h_tends_n_mode_i = Kokkos::create_mirror_view(tends.n_mode_i[imode]);
-    Kokkos::deep_copy(h_tends_n_mode_i, tends.n_mode_i[imode]);
-
-    ss << "tends.n_mode_i (mode No " << imode << ") [out]: [ ";
-    for (int k = 0; k < nlev; ++k) {
-      ss << h_tends_n_mode_i(k) << " ";
-    }
-    ss << "]";
-    logger.debug(ss.str());
-    ss.str("");
-
-    for (int k = 0; k < nlev; ++k) {
-      CHECK(!isnan(h_tends_n_mode_i(k)));
-    }
-
-    const auto n_spec = mam4::num_species_mode(imode);
-    for (int isp = 0; isp < n_spec; ++isp) {
-      // const auto prog_aero_i = ekat::scalarize(tends.q_aero_i[imode][i]);
-      auto h_tends_aero_i =
-          Kokkos::create_mirror_view(tends.q_aero_i[imode][isp]);
-      Kokkos::deep_copy(h_tends_aero_i, tends.q_aero_i[imode][isp]);
-
-      ss << "tends.q_aero_i (mode No " << imode << ", species No " << isp
-         << " ) [out]: [ ";
-      for (int k = 0; k < nlev; ++k) {
-        ss << h_tends_aero_i(k) << " ";
-      }
-      ss << "]";
-      logger.debug(ss.str());
-      ss.str("");
-
-      for (int k = 0; k < nlev; ++k) {
-        CHECK(!isnan(h_tends_aero_i(k)));
-      }
-
-    } // end species
-  }   // end modes
-*/
+  }
 }
