@@ -48,7 +48,6 @@ int main(int argc, char **argv) {
 
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
-  std::cout << "HERE HERE HERE \t" << func_name << "\n";
   try {
     if (func_name == "coag_1subarea") {
       coag_1subarea(ensemble);
