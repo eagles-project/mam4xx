@@ -13,5 +13,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 add_subdirectory(nucleation)
 add_subdirectory(gasaerexch)
 add_subdirectory(calcsize)
+<<<<<<< HEAD
 add_subdirectory(coagulation)
     
+=======
+add_subdirectory(aging)
+add_subdirectory(rename)
+>>>>>>> main

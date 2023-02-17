@@ -1,29 +1,28 @@
-#include <mam4xx/calcsize.hpp>
+#include <mam4xx/rename.hpp>
 
 #include <iostream>
 #include <skywalker.hpp>
 #include <validation.hpp>
 
-// This driver computes the binary or ternary nucleation rate for the given
+// This driver computes the binary or ternary rename for the given
 // input.
 
 void usage() {
-  std::cerr << "calcsize_driver: a Skywalker driver for validating the "
-               "MAM4 calcsize parameterizations."
+  std::cerr << "rename_driver: a Skywalker driver for validating the "
+               "MAM4 rename parameterizations."
             << std::endl;
-  std::cerr << "calcsize_driver: usage:" << std::endl;
-  std::cerr << "calcsize_driver <input.yaml>" << std::endl;
+  std::cerr << "rename_driver: usage:" << std::endl;
+  std::cerr << "rename_driver <input.yaml>" << std::endl;
   exit(0);
 }
 
 using namespace skywalker;
 using namespace mam4;
 
-// Parameterizations used by the calcsize process.
-void compute_dry_volume_k(Ensemble *ensemble);
-void adjust_num_sizes(Ensemble *ensemble);
-void compute_tendencies(Ensemble *ensemble);
-void aitken_accum_exchange(Ensemble *ensemble);
+// Parameterizations used by the rename process.
+void mam_rename_1subarea(Ensemble *ensemble);
+void find_renaming_pairs(Ensemble *ensemble);
+void compute_dryvol_change_in_src_mode(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -47,15 +46,15 @@ int main(int argc, char **argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
   try {
-    if (func_name == "compute_dry_volume") {
-      compute_dry_volume_k(ensemble);
-    } else if (func_name == "adjust_num_sizes") {
-      adjust_num_sizes(ensemble);
-    } else if (func_name == "compute_tendencies") {
-      compute_tendencies(ensemble);
-    } else if (func_name == "aitken_accum_exchange") {
-      aitken_accum_exchange(ensemble);
+    if (func_name == "compute_tendencies") {
+      mam_rename_1subarea(ensemble);
+    } else if (func_name == "find_renaming_pairs") {
+      find_renaming_pairs(ensemble);
+
+    } else if (func_name == "compute_dryvol_change_in_src_mode") {
+      compute_dryvol_change_in_src_mode(ensemble);
     }
+
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
   }

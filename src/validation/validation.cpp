@@ -20,5 +20,41 @@ std::string output_name(const std::string &input_file) {
          std::string(".py");
 }
 
+void convert_vector_to_mass_mixing_ratios(
+    const std::vector<Real> &vector_in,
+    Real values[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()]) {
+  int count = 0;
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
+      values[m][ispec] = vector_in[count];
+      count++;
+    }
+  }
+}
+
+void convert_modal_array_to_vector(const Real values[AeroConfig::num_modes()],
+                                   std::vector<Real> &values_vector) {
+  for (int i = 0; i < AeroConfig::num_modes(); ++i)
+    values_vector[i] = values[i];
+}
+
+void convert_vector_to_modal_array(const std::vector<Real> &vector_in,
+                                   Real values[AeroConfig::num_modes()]) {
+  for (int m = 0; m < AeroConfig::num_modes(); ++m)
+    values[m] = vector_in[m];
+}
+
+void convert_mass_mixing_ratios_to_vector(
+    const Real values[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+    std::vector<Real> &values_vector) {
+  int count = 0;
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
+      values_vector[count] = values[m][ispec];
+      count++;
+    }
+  }
+}
+
 } // namespace validation
 } // namespace mam4

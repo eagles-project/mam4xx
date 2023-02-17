@@ -17,6 +17,8 @@ install(FILES
         nucleation.hpp
         aging.hpp
         coagulation.hpp
+        rename.hpp
+        utils.hpp
         vehkamaki2002.hpp
         wang2008.hpp
         DESTINATION include/mam4xx)

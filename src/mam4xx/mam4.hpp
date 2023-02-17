@@ -11,6 +11,7 @@
 #include <mam4xx/gasaerexch.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/nucleation.hpp>
+#include <mam4xx/rename.hpp>
 
 namespace mam4 {
 
@@ -19,6 +20,7 @@ using GasAerExchProcess = haero::AeroProcess<AeroConfig, GasAerExch>;
 using CoagulationProcess = haero::AeroProcess<AeroConfig, Coagulation>;
 using CalcSizeProcess = haero::AeroProcess<AeroConfig, CalcSize>;
 using AgingProcess = haero::AeroProcess<AeroConfig, Aging>;
+using RenameProcess = haero::AeroProcess<AeroConfig, Rename>;
 
 } // namespace mam4
 
