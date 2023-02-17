@@ -879,8 +879,6 @@ void mam_coag_aer_update(
       deltat * decay_const; // calculate coag-induced changes only when this
                             // number is not ~= zero
 
-  std::cout.precision(17);
-
   if (decay_factor > epsilonx2) {
 
     // Portions of mass going into different modes
