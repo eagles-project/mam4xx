@@ -76,35 +76,15 @@ void getcoags_wrapper_f(Ensemble *ensemble) {
     Real betaii0 = 0.0;
     Real betajj0 = 0.0;
 
-    DeviceType::view_1d<Real> return_vals("Return from Device", 4);
-    Kokkos::parallel_for(
-        "getcoags", 1, KOKKOS_LAMBDA(int i) {
-          Real betaij0 = 0.0;
-          Real betaij3 = 0.0;
-          Real betaii0 = 0.0;
-          Real betajj0 = 0.0;
-
-          coagulation::getcoags_wrapper_f(
-              airtemp[0], airprs[0], dgatk[0], dgacc[0], sgatk[0], sgacc[0],
-              xxlsgat[0], xxlsgac[0], pdensat[0], pdensac[0], betaij0, betaij3,
-              betaii0, betajj0);
-
-          return_vals[0] = betaij0;
-          return_vals[1] = betaij3;
-          return_vals[2] = betaii0;
-          return_vals[3] = betajj0;
-        });
-
-    auto host_vals = Kokkos::create_mirror_view(return_vals);
-    Kokkos::deep_copy(host_vals, return_vals);
+    coagulation::getcoags_wrapper_f(airtemp[0], airprs[0], dgatk[0], dgacc[0],
+                                    sgatk[0], sgacc[0], xxlsgat[0], xxlsgac[0],
+                                    pdensat[0], pdensac[0], betaij0, betaij3,
+                                    betaii0, betajj0);
 
     // write output data
     output.set("betaij0", betaij0);
     output.set("betaij3", betaij3);
     output.set("betaii0", betaii0);
     output.set("betajj0", betajj0);
-
-    std::cout << betaij0 << "\t" << betaij3 << "\t" << betaii0 << "\t"
-              << betajj0 << "\n";
   });
 }
