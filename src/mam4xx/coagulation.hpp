@@ -20,9 +20,11 @@ namespace mam4 {
 /// ../aero_process.hpp.
 class Coagulation {
 public:
-  static constexpr int max_coagpair = 3;  // number of coagulation pairs
-  static constexpr int i_agepair_pca = 0; // ???????????????????????
-  static constexpr int max_agepair = 1;
+  static constexpr int max_coagpair = 3; // number of coagulation pairs
+  static constexpr int i_agepair_pca =
+      0; // Todo: This should be resolved back to Aging
+  static constexpr int max_agepair =
+      1; // Todo: This should be resolved back to Aging
   // process-specific configuration data (if any)
   struct Config {
     Config() {}
@@ -290,7 +292,7 @@ void intermodal_coag_rate_for_0th_moment(
     const Real esac01, const Real esac04, const Real esac09, const Real esac16,
     const int n1, const int n2a, const int n2n, Real &qn12) {
 
-  const Real bm0ij = bm0ij_data(n1, n2a, n2n);
+  const Real bm0ij = bm0ij_data(n1, n2n, n2a);
 
   // --------------
   // Calculations
@@ -568,9 +570,9 @@ void intermodal_coag_rate_for_3rd_moment(
 KOKKOS_INLINE_FUNCTION
 void intramodal_coag_rate_for_0th_moment(const Real a_const, const Real knc,
                                          const Real kngxx, const Real kfmxx,
-                                         const Real sqdgxx, const Real esxx04,
+                                         const Real sqdgxx, const Real esxx01,
+                                         const Real esxx04, const Real esxx05,
                                          const Real esxx08, const Real esxx20,
-                                         const Real esxx01, const Real esxx05,
                                          const Real esxx25, const int n2x,
                                          Real &qnxx) {
 
@@ -644,6 +646,8 @@ void getcoags(const Real lamda, const Real kfmatac, const Real kfmat,
   const Real a_const = 1.246;
   const Real esat01 = haero::exp(0.125 * xxlsgat * xxlsgat);
   const Real esac01 = haero::exp(0.125 * xxlsgac * xxlsgac);
+  const Real sqrttwo = haero::sqrt(2.0);
+  const Real dlgsqt2 = 1.0 / haero::log(sqrttwo);
 
   const Real esat04 = haero::pow(esat01, 4.0);
   const Real esac04 = haero::pow(esac01, 4.0);
@@ -697,13 +701,12 @@ void getcoags(const Real lamda, const Real kfmatac, const Real kfmat,
 
   // Trap subscripts for bm0 and bm0i, between 1 and 10.
   // See page h.5 of whitby et al. (1991)
-
-  const int n2n = haero::max(1, haero::min(10, int(4.0 * (sgatk - 0.75)))) - 1;
-  const int n2a = haero::max(1, haero::min(10, int(4.0 * (sgacc - 0.75)))) - 1;
+  const int n2n =
+      haero::max(1, haero::min(10, std::round(4.0 * (sgatk - 0.75)))) - 1;
+  const int n2a =
+      haero::max(1, haero::min(10, std::round(4.0 * (sgacc - 0.75)))) - 1;
   const int n1 =
-      haero::max(1,
-                 haero::min(10, 1 + int((1.0 / haero::log(haero::sqrt(2.0))) *
-                                        haero::log(rat)))) -
+      haero::max(1, haero::min(10, 1 + std::round(dlgsqt2 * haero::log(rat)))) -
       1;
 
   // -----------------------------------------------------------------
@@ -764,15 +767,14 @@ void getcoags_wrapper_f(const Real airtemp, const Real airprs, const Real dgatk,
   const Real amu = 1.458e-6 * airtemp * sqrt_temp / (airtemp + 110.4);
 
   // Term used in equation a6 of binkowski & shankar (1995)
-  const Real knc = (2.0 / 3.0) * haero::Constants::boltzmann * airtemp / amu;
+  const Real boltzmann = 1.3806500000000000e-023;
+  const Real knc = (2.0 / 3.0) * boltzmann * airtemp / amu;
 
   // Terms used in equation a5 of binkowski & shankar (1995)
-  const Real kfmat =
-      sqrt(3.0 * haero::Constants::boltzmann * airtemp / pdensat);
-  const Real kfmac =
-      sqrt(3.0 * haero::Constants::boltzmann * airtemp / pdensac);
-  const Real kfmatac =
-      sqrt(6.0 * haero::Constants::boltzmann * airtemp / (pdensat + pdensac));
+
+  const Real kfmat = sqrt(3.0 * boltzmann * airtemp / pdensat);
+  const Real kfmac = sqrt(3.0 * boltzmann * airtemp / pdensac);
+  const Real kfmatac = sqrt(6.0 * boltzmann * airtemp / (pdensat + pdensac));
 
   // -------------------------------------------------------------------------------------------------
   // Call subr. getcoags ported from the CMAQ model to calculate
@@ -785,6 +787,7 @@ void getcoags_wrapper_f(const Real airtemp, const Real airprs, const Real dgatk,
   //  changes.
   //-------------------------------------------------------------------------------------------------
   Real qn11, qn22, qn12, qv12;
+
   getcoags(lamda, kfmatac, kfmat, kfmac, knc, dgatk, dgacc, sgatk, sgacc,
            xxlsgat, xxlsgac, qn11, qn22, qn12, qv12);
 
@@ -987,7 +990,7 @@ void mam_coag_num_update(Real ybetaij0[Coagulation::max_coagpair],
 
   update_qnum_for_intramodal_coag(ybetajj0[0], deltat, qnum_bgn[nacc],
                                   qnum_end[nacc]);
-  qnum_tavg[nacc] = (qnum_bgn[nacc] + qnum_end[nacc]);
+  qnum_tavg[nacc] = (qnum_bgn[nacc] + qnum_end[nacc]) * 0.5;
 
   // ----------------------------------------------------------------------------
   // pcarbon mode number loss - approximate analytical solution
@@ -1065,46 +1068,47 @@ void mam_coag_1subarea(
   // --------------------------------------------------------------
   const int src_mode_coagpair[3] = {nait, npca, nait};
   const int dest_mode_coagpair[3] = {nacc, nacc, npca};
+
+  Real ybetaij0[Coagulation::max_coagpair];
+  Real ybetaij3[Coagulation::max_coagpair];
+  Real ybetaii0[Coagulation::max_coagpair];
+  Real ybetajj0[Coagulation::max_coagpair];
+
   for (int ip = 0; ip < Coagulation::max_coagpair; ++ip) {
 
     const int src_mode = src_mode_coagpair[ip];
     const int dest_mode = dest_mode_coagpair[ip];
 
-    Real ybetaij0[Coagulation::max_coagpair];
-    Real ybetaij3[Coagulation::max_coagpair];
-    Real ybetaii0[Coagulation::max_coagpair];
-    Real ybetajj0[Coagulation::max_coagpair];
-
     // const Real sigma_aer_src  =
     const Real sigma_aer_src = mam4::modes(src_mode).mean_std_dev;
     const Real sigma_aer_dest = mam4::modes(dest_mode).mean_std_dev;
+
     getcoags_wrapper_f(temp, pmid, dgn_awet[src_mode], dgn_awet[dest_mode],
                        sigma_aer_src, sigma_aer_dest, haero::log(sigma_aer_src),
                        haero::log(sigma_aer_dest), wetdens[src_mode],
                        wetdens[dest_mode], ybetaij0[ip], ybetaij3[ip],
                        ybetaii0[ip], ybetajj0[ip]);
-
-    // Convert coag coefficients from (m3/s) to (kmol-air/s)
-    for (int ip = 0; ip < Coagulation::max_coagpair; ++ip) {
-      ybetaij0[ip] *= aircon;
-      ybetaij3[ip] *= aircon;
-      ybetaii0[ip] *= aircon;
-      ybetajj0[ip] *= aircon;
-    }
-
-    //---------------------------------------------------------------------------------------
-    // Advance solutions in time assuming the coag coefficients are fixed within
-    // one timestep
-    //---------------------------------------------------------------------------------------
-    // First update number mixing ratios
-    Real qnum_tavg[num_mode];
-    mam_coag_num_update(ybetaij0, ybetaii0, ybetajj0, deltat, qnum_bgn,
-                        qnum_cur, qnum_tavg);
-
-    // Then calculate mass transfers between modes and update mass mixing ratios
-    mam_coag_aer_update(ybetaij3, deltat, qnum_tavg, qaer_bgn, qaer_cur,
-                        qaer_del_coag_out);
   }
+  // Convert coag coefficients from (m3/s) to (kmol-air/s)
+  for (int ip = 0; ip < Coagulation::max_coagpair; ++ip) {
+    ybetaij0[ip] *= aircon;
+    ybetaij3[ip] *= aircon;
+    ybetaii0[ip] *= aircon;
+    ybetajj0[ip] *= aircon;
+  }
+
+  //---------------------------------------------------------------------------------------
+  // Advance solutions in time assuming the coag coefficients are fixed within
+  // one timestep
+  //---------------------------------------------------------------------------------------
+  // First update number mixing ratios
+  Real qnum_tavg[num_mode];
+  mam_coag_num_update(ybetaij0, ybetaii0, ybetajj0, deltat, qnum_bgn, qnum_cur,
+                      qnum_tavg);
+
+  // Then calculate mass transfers between modes and update mass mixing ratios
+  mam_coag_aer_update(ybetaij3, deltat, qnum_tavg, qaer_bgn, qaer_cur,
+                      qaer_del_coag_out);
 }
 KOKKOS_INLINE_FUNCTION
 void coagulation_rates_1box(const int k, const AeroConfig &aero_config,

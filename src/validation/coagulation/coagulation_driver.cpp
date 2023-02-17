@@ -20,45 +20,61 @@ using namespace mam4;
 
 // Parameterizations used by the aging process.
 void coag_1subarea(Ensemble *ensemble);
+void getcoags(Ensemble *ensemble);
+void coag_aer_update(Ensemble *ensemble);
+void coag_num_update(Ensemble *ensemble);
+void getcoags_wrapper_f(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
 
-
   if (argc == 1) {
     usage();
-   }
+  }
 
   Kokkos::initialize(argc, argv);
-   std::string input_file = argv[1];
-   std::string output_file = validation::output_name(input_file);
-   std::cout << argv[0] << ": reading " << input_file << std::endl;
+  std::string input_file = argv[1];
+  std::string output_file = validation::output_name(input_file);
+  std::cout << argv[0] << ": reading " << input_file << std::endl;
 
-   // Load the ensemble. Any error encountered is fatal.
-   Ensemble *ensemble = skywalker::load_ensemble(input_file, "mam4xx");
+  // Load the ensemble. Any error encountered is fatal.
+  Ensemble *ensemble = skywalker::load_ensemble(input_file, "mam4xx");
 
-   // the settings.
-   Settings settings = ensemble->settings();
-   if (!settings.has("function")) {
-     std::cerr << "No function specified in mam4xx.settings!" << std::endl;
-     exit(1);
-   }
+  // the settings.
+  Settings settings = ensemble->settings();
+  if (!settings.has("function")) {
+    std::cerr << "No function specified in mam4xx.settings!" << std::endl;
+    exit(1);
+  }
 
-   // Dispatch to the requested function.
-   auto func_name = settings.get("function");
+  // Dispatch to the requested function.
+  auto func_name = settings.get("function");
+  std::cout << "HERE HERE HERE \t" << func_name << "\n";
   try {
-     if (func_name == "coag_1subarea") {
-       coag_1subarea(ensemble);
-     }
-
-   } catch (std::exception &e) {
-     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
-   }
+    if (func_name == "coag_1subarea") {
+      coag_1subarea(ensemble);
+    }
+    if (func_name == "getcoags") {
+      getcoags(ensemble);
+    }
+    if (func_name == "getcoags_wrapper_f") {
+      getcoags_wrapper_f(ensemble);
+    }
+    if (func_name == "coag_aer_update") {
+      coag_aer_update(ensemble);
+    }
+    if (func_name == "coag_num_update") {
+      std::cout << "CALLLLING COAG NUM ******************* \n";
+      coag_num_update(ensemble);
+    }
+  } catch (std::exception &e) {
+    std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
+  }
 
   // Write out a Python module.
-   std::cout << argv[0] << ": writing " << output_file << std::endl;
-   ensemble->write(output_file);
+  std::cout << argv[0] << ": writing " << output_file << std::endl;
+  ensemble->write(output_file);
 
-//   // Clean up.
- delete ensemble;
- Kokkos::finalize();
+  //   // Clean up.
+  delete ensemble;
+  Kokkos::finalize();
 }

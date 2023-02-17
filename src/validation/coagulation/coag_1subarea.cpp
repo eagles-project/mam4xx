@@ -6,7 +6,7 @@ using namespace skywalker;
 using namespace mam4;
 
 void coag_1subarea(Ensemble *ensemble) {
-    
+
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     if (!input.has_array("deltat")) {
@@ -69,50 +69,44 @@ void coag_1subarea(Ensemble *ensemble) {
     for (int ispec = 0; ispec < num_aero; ++ispec) {
       for (int imode = 0; imode < num_modes; ++imode) {
         qaer_cur_c[ispec][imode] = qaer_cur_f[n];
-        n+= 1;
+        n += 1;
       }
     }
 
-    Real qaer_del_coag_out_c[num_aero]
-                          [max_agepair];
-    for (int ispec = 0; ispec < max_agepair; ++ispec) {
-      for (int imode = 0; imode < num_modes; ++imode) {
+    Real qaer_del_coag_out_c[num_aero][max_agepair];
+    for (int imode = 0; imode < num_modes; ++imode) {
+      for (int ispec = 0; ispec < max_agepair; ++ispec) {
+
         qaer_del_coag_out_c[ispec][imode] = 0.0;
       }
     }
 
-    coagulation::mam_coag_1subarea(deltat_f[0], 
-    temp_f[0], 
-    pmid_f[0], 
-    aircon_f[0], 
-    dgn_a_f.data(),
-    dgn_awet_f.data(), 
-    wetdens_f.data(), 
-    qnum_cur_f.data(),
-    qaer_cur_c, 
-    qaer_del_coag_out_c);
+    coagulation::mam_coag_1subarea(
+        deltat_f[0], temp_f[0], pmid_f[0], aircon_f[0], dgn_a_f.data(),
+        dgn_awet_f.data(), wetdens_f.data(), qnum_cur_f.data(), qaer_cur_c,
+        qaer_del_coag_out_c);
 
     n = 0;
-    for (int ispec = 0; ispec < num_aero; ++ispec) {
-      for (int imode = 0; imode < num_modes; ++imode) {
+    for (int imode = 0; imode < num_modes; ++imode) {
+      for (int ispec = 0; ispec < num_aero; ++ispec) {
+
         qaer_cur_f[n] = qaer_cur_c[ispec][imode];
-        n+= 1;
+        n += 1;
       }
     }
 
-    std::vector<Real>  qaer_del_coag_out_f(num_aero * max_agepair);
+    std::vector<Real> qaer_del_coag_out_f(num_aero * max_agepair);
     n = 0;
-    for (int ispec = 0; ispec < max_agepair; ++ispec) {
-      for (int imode = 0; imode < num_modes; ++imode) {
+    for (int imode = 0; imode < num_modes; ++imode) {
+      for (int ispec = 0; ispec < max_agepair; ++ispec) {
+
         qaer_del_coag_out_f[n] = qaer_del_coag_out_c[ispec][imode];
-        n+= 1;
+        n += 1;
       }
     }
 
     output.set("qnum_cur", qnum_cur_f);
     output.set("qaer_cur", qaer_cur_f);
     output.set("qaer_del_coag_out", qaer_del_coag_out_f);
-
   });
-
 }
