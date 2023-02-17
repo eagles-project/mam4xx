@@ -66,8 +66,8 @@ void coag_1subarea(Ensemble *ensemble) {
     const int max_agepair = Coagulation::max_agepair;
     Real qaer_cur_c[num_aero][num_modes];
     int n = 0;
-    for (int ispec = 0; ispec < num_aero; ++ispec) {
-      for (int imode = 0; imode < num_modes; ++imode) {
+    for (int imode = 0; imode < num_modes; ++imode) {
+      for (int ispec = 0; ispec < num_aero; ++ispec) {
         qaer_cur_c[ispec][imode] = qaer_cur_f[n];
         n += 1;
       }

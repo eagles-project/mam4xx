@@ -874,18 +874,20 @@ void mam_coag_aer_update(
   const Real bijqnumj2 = haero::max(0.0, ybetaij3[2] * qnum_tavg[npca]);
   Real decay_const = bijqnumj1 + bijqnumj2;
 
+  constexpr float epsilonx2 = std::numeric_limits<float>::epsilon() * 2.0;
   Real decay_factor =
       deltat * decay_const; // calculate coag-induced changes only when this
                             // number is not ~= zero
 
-  if (decay_factor > std::numeric_limits<float>::epsilon()) {
+  std::cout.precision(17);
+
+  if (decay_factor > epsilonx2) {
 
     // Portions of mass going into different modes
     const Real prtn2 = bijqnumj2 / decay_const;
     const Real prtn1 = 1.0 - prtn2;
     const Real tmp_xf =
         1.0 - haero::exp(-decay_factor); // total fraction lost from aitken mode
-
     for (int iaer = 0; iaer < num_aer; ++iaer) {
       const Real tmp_dq =
           tmp_xf * qaer_bgn[iaer][nait]; // total amount lost from aitken mode
@@ -910,7 +912,7 @@ void mam_coag_aer_update(
 
   decay_factor = deltat * decay_const; // calculate coag-induced changes only
                                        // when this number is not ~= zero
-  if (decay_factor > std::numeric_limits<float>::epsilon()) {
+  if (decay_factor > epsilonx2) {
     const Real tmp_xf =
         1.0 - haero::exp(-decay_factor); // total fraction lost from pca mode
     for (int iaer = 0; iaer < num_aer; ++iaer) {
