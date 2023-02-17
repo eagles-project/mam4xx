@@ -78,18 +78,29 @@ void getcoags(Ensemble *ensemble) {
     auto xxlsgat = input.get_array("xxlsgat");
     auto xxlsgac = input.get_array("xxlsgac");
 
-    Real qn11 = 0.0;
-    Real qn22 = 0.0;
-    Real qn12 = 0.0;
-    Real qv12 = 0.0;
+    DeviceType::view_1d<Real> return_vals("Return from Device", 4);
+    Kokkos::parallel_for(
+        "getcoags", 1, KOKKOS_LAMBDA(int i) {
+          Real qn11 = 0.0;
+          Real qn22 = 0.0;
+          Real qn12 = 0.0;
+          Real qv12 = 0.0;
 
-    coagulation::getcoags(lamdaa[0], kfmatac[0], kfmat[0], kfmac[0], knc[0],
-                          dgatk[0], dgacc[0], sgatk[0], sgacc[0], xxlsgat[0],
-                          xxlsgac[0], qn11, qn22, qn12, qv12);
+          coagulation::getcoags(lamdaa[0], kfmatac[0], kfmat[0], kfmac[0],
+                                knc[0], dgatk[0], dgacc[0], sgatk[0], sgacc[0],
+                                xxlsgat[0], xxlsgac[0], qn11, qn22, qn12, qv12);
 
-    output.set("qn11", qn11);
-    output.set("qn22", qn22);
-    output.set("qn12", qn12);
-    output.set("qv12", qv12);
+          return_vals[0] = qn11;
+          return_vals[1] = qn22;
+          return_vals[2] = qn12;
+          return_vals[3] = qv12;
+        });
+    auto host_vals = Kokkos::create_mirror_view(return_vals);
+    Kokkos::deep_copy(host_vals, return_vals);
+
+    output.set("qn11", return_vals[0]);
+    output.set("qn22", return_vals[1]);
+    output.set("qn12", return_vals[2]);
+    output.set("qv12", return_vals[3]);
   });
 }
