@@ -18,11 +18,7 @@ target_link_libraries(coagulation_driver skywalker;validation;${HAERO_LIBRARIES}
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script
-        compare_getcoags_wrapper_f.py
-        compare_coag_aer_update.py
-        compare_coag_num_update.py
-        compare_coag_1subarea.py
-        compare_getcoags.py)
+        compare_coag_validation.py)
   configure_file(
     ${COAGULATION_VALIDATION_SCRIPTS_DIR}/${script}
     ${CMAKE_CURRENT_BINARY_DIR}/${script}
@@ -52,7 +48,7 @@ foreach (input
   add_test(run_${input} coagulation_driver ${COAGULATION_VALIDATION_DIR}/${input}.yaml)
   
   # add a test to validate mam4xx's results against the baseline.
-  add_test(validate_${input} python3 compare_${input}.py mam4xx_${input}.py mam_${input}.py)
+  add_test(validate_${input} python3 compare_coag_validation.py mam4xx_${input}.py mam_${input}.py)
   endforeach() 
 
 
