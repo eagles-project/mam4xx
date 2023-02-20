@@ -1,3 +1,8 @@
+// mam4xx: Copyright (c) 2022,
+// Battelle Memorial Institute and
+// National Technology & Engineering Solutions of Sandia, LLC (NTESS)
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include "kohler_verification.hpp"
 #include "mam4_test_config.hpp"
 #include <mam4xx/kohler.hpp>
