@@ -62,7 +62,6 @@ int main(int argc, char **argv) {
       coag_aer_update(ensemble);
     }
     if (func_name == "coag_num_update") {
-      std::cout << "CALLLLING COAG NUM ******************* \n";
       coag_num_update(ensemble);
     }
   } catch (std::exception &e) {
