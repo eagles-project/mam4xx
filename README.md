@@ -130,6 +130,29 @@ different version of `clang-format` than the one we support, you'll get an error
 message telling you the correct version to install when you use either of these
 targets.
 
+### Analyzing code coverage
+
+You can get a code coverage report if you've enabled mam4xx to build with
+code coverage instrumentation. This option is configurable in your `config.sh`
+script if you uncomment the `COVERAGE=ON` line, or if you run CMake directly
+with the `--DMAM4XX_ENABLE_COVERAGE=ON` flag. You must have the
+[LCOV](https://lcov.readthedocs.io/en/latest/index.html) tool
+installed to generate reports.
+
+To generate a code coverage report:
+
+1. Build mam4xx with `make -j`
+2. Run the unit tests and validation tests with `make test`
+3. Generate the coverage report with `make coverage`
+
+You will see a file named `coverage.info` in your build directory. This can
+be used with LCOV to visualize source files and functions that do and don't
+have coverage.
+
+Our automated testing system generates code coverage reports and uploads them
+to [codecov.io](https://about.codecov.io/) so they appear in the message feed
+for relevant pull requests.
+
 ## Continuous Integration
 
 See [the PNNL CI REAMDE](.github/pnnl-ci/README.md) for more detailed information.
