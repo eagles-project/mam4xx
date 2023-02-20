@@ -778,9 +778,10 @@ void getcoags_wrapper_f(const Real airtemp, const Real airprs, const Real dgatk,
 
   // Terms used in equation a5 of binkowski & shankar (1995)
 
-  const Real kfmat = sqrt(3.0 * boltzmann * airtemp / pdensat);
-  const Real kfmac = sqrt(3.0 * boltzmann * airtemp / pdensac);
-  const Real kfmatac = sqrt(6.0 * boltzmann * airtemp / (pdensat + pdensac));
+  const Real kfmat = haero::sqrt(3.0 * boltzmann * airtemp / pdensat);
+  const Real kfmac = haero::sqrt(3.0 * boltzmann * airtemp / pdensac);
+  const Real kfmatac =
+      haero::sqrt(6.0 * boltzmann * airtemp / (pdensat + pdensac));
 
   // -------------------------------------------------------------------------------------------------
   // Call subr. getcoags ported from the CMAQ model to calculate
