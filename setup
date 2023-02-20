@@ -64,6 +64,9 @@ BUILD_TYPE=Debug
 # Uncomment this if you want really verbose builds.
 #VERBOSE=ON
 
+# Uncomment this to enable code coverage instrumentation.
+#COVERAGE=ON
+
 #-----------------------------------------------------------------------------
 #                   Don't change anything below here.
 #-----------------------------------------------------------------------------
@@ -73,6 +76,10 @@ GENERATOR="Unix Makefiles"
 
 if [ "\$VERBOSE" = "ON" ]; then
   OPTIONS="\$OPTIONS -DCMAKE_VERBOSE_MAKEFILE=ON"
+fi
+
+if [ "\$COVERAGE" = "ON" ]; then
+  OPTIONS="\$OPTIONS -DMAM4XX_ENABLE_COVERAGE=ON"
 fi
 
 # Clear the build cache.
