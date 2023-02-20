@@ -65,8 +65,6 @@ TEST_CASE("bm3ij_data", "mam4_coagulation_process") {
   REQUIRE(bm3i_f == bm3i_c);
 }
 
-TEST_CASE("intermodal_coag_rate_for_3rd_moment", "mam4_coagulation_process") {}
-
 TEST_CASE("intra_coag_rate_for_0th_moment", "mam4_coagulation_process") {
 
   Real a_const = 0.0;
@@ -91,21 +89,6 @@ TEST_CASE("intra_coag_rate_for_0th_moment", "mam4_coagulation_process") {
       a_const, knc, kngxx, kfmxx, sqdgxx, esxx04, esxx08, esxx20, esxx01,
       esxx05, esxx25, n2x, qnxx);
 }
-
-TEST_CASE("get_coags", "mam4_coagulation_process") {}
-
-TEST_CASE("getcoags_wrapper_f", "mam4_coagulation_process") {}
-
-TEST_CASE("mam_coag_aer_update", "mam4_coagulation_process") {}
-
-TEST_CASE("update_qnum_for_intra_and_intermodal_coag",
-          "mam4_coagulation_process") {}
-
-TEST_CASE("update_qnum_for_intramodal_coag", "mam_coagulation_process") {}
-
-TEST_CASE("mam_coag_num_update", "mam_coagulation_process") {}
-
-TEST_CASE("mam_coag_1subarea", "mam_coagulation_process") {}
 
 TEST_CASE("test_compute_tendencies", "mam4_coagulation_process") {
 
