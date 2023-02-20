@@ -162,9 +162,4 @@ TEST_CASE("test_compute_tendencies", "mam4_coagulation_process") {
     CHECK(!isnan(h_prog_qgas0(k)));
     CHECK(!isnan(h_tend_qgas0(k)));
   }
-
-  Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-        process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
-      });
 }
