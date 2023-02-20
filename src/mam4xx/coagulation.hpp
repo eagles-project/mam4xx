@@ -707,11 +707,12 @@ void getcoags(const Real lamda, const Real kfmatac, const Real kfmat,
   // Trap subscripts for bm0 and bm0i, between 1 and 10.
   // See page h.5 of whitby et al. (1991)
   const int n2n =
-      haero::max(1, haero::min(10, std::round(4.0 * (sgatk - 0.75)))) - 1;
+      haero::max(1, haero::min(10, haero::round(4.0 * (sgatk - 0.75)))) - 1;
   const int n2a =
-      haero::max(1, haero::min(10, std::round(4.0 * (sgacc - 0.75)))) - 1;
+      haero::max(1, haero::min(10, haero::round(4.0 * (sgacc - 0.75)))) - 1;
   const int n1 =
-      haero::max(1, haero::min(10, 1 + std::round(dlgsqt2 * haero::log(rat)))) -
+      haero::max(1,
+                 haero::min(10, 1 + haero::round(dlgsqt2 * haero::log(rat)))) -
       1;
 
   // -----------------------------------------------------------------
