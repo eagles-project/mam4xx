@@ -194,6 +194,9 @@ public:
           ColumnView("wet_geometric_mean_diameter_cloudborne", num_levels);
       Kokkos::deep_copy(wet_geometric_mean_diameter_i[mode], 0.0);
       Kokkos::deep_copy(wet_geometric_mean_diameter_c[mode], 0.0);
+
+      wet_density[mode] = ColumnView("wet_density", num_levels);
+      Kokkos::deep_copy(wet_density[mode], 0.0);
     }
     uptkrate_h2so4 = ColumnView("uptkrate_h2so4", num_levels);
     Kokkos::deep_copy(uptkrate_h2so4, 0.0);
@@ -234,6 +237,9 @@ public:
   /// Wet particle diameter is a modal mass-weighted average over all species
   /// of cloudborne in a mode
   ColumnView wet_geometric_mean_diameter_c[AeroConfig::num_modes()];
+
+  // Aerosol wet density
+  ColumnView wet_density[AeroConfig::num_modes()];
 
   /// For gas-aerosol exchange process
   /// Uptake rate coefficient of H2SO4 gas, summed over all modes

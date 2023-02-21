@@ -10,9 +10,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 #-------------------------
 # MAM4xx Skywalker drivers
 #-------------------------
-
 add_subdirectory(nucleation)
 add_subdirectory(gasaerexch)
 add_subdirectory(calcsize)
+add_subdirectory(coagulation)    
 add_subdirectory(aging)
 add_subdirectory(rename)
