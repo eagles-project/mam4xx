@@ -4,7 +4,7 @@ on: [pull_request]
 
 jobs:
   to_gitlab:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v1
       - uses: spyoungtech/mirror-action@master
