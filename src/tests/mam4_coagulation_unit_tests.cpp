@@ -51,7 +51,7 @@ TEST_CASE("bm0ij_data", "mam4_cagulation_process") {
 TEST_CASE("bm3ij_data", "mam4_coagulation_process") {
 
   const Real threshold_error = std::numeric_limits<float>::epsilon();
-  
+
   int n1 = 0;
   int n2a = 1;
   int n2n = 2;
