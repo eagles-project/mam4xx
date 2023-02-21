@@ -25,11 +25,15 @@ namespace mam4 {
 /// ../aero_process.hpp.
 class Coagulation {
 public:
-  static constexpr int max_coagpair = 3; // number of coagulation pairs
-  static constexpr int i_agepair_pca =
-      0; // Todo: This should be resolved back to Aging
-  static constexpr int max_agepair =
-      1; // Todo: This should be resolved back to Aging
+  // number of coagulation pairs
+  static constexpr int max_coagpair = 3;
+
+  // Todo: This should be resolved back to Aging
+  static constexpr int i_agepair_pca = 0;
+
+  // Todo: This should be resolved back to Aging
+  static constexpr int max_agepair = 1;
+
   // process-specific configuration data (if any)
   struct Config {
     Config() {}
@@ -810,7 +814,7 @@ void getcoags_wrapper_f(const Real airtemp, const Real airprs, const Real dgatk,
   // For the mass transfer, convert from the CMAQ model's coag rate parameters
   // to the MIRAGE2 model's parameters
   const Real dumatk3 =
-      ((haero::pow(dgatk, 3.0)) *
+      (haero::cube(dgatk) *
        haero::exp(4.5 * xxlsgat * xxlsgat)); // or unit conversion
   betaij3 = haero::max(0.0, qv12 / dumatk3);
 }

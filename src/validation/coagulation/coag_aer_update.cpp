@@ -47,7 +47,6 @@ void coag_aer_update(Ensemble *ensemble) {
 
     Real qaer_bgn_c[num_aero][num_modes];
     Real qaer_end_c[num_aero][num_modes];
-    Real qaer_del_coag_out_c[num_aero][max_agepair];
 
     int n = 0;
     for (int ispec = 0; ispec < num_aero; ++ispec) {
@@ -57,13 +56,7 @@ void coag_aer_update(Ensemble *ensemble) {
       }
     }
 
-    n = 0;
-    for (int ispec = 0; ispec < num_aero; ++ispec) {
-      for (int imode = 0; imode < max_agepair; ++imode) {
-        qaer_del_coag_out_c[ispec][imode] = 0.0;
-      }
-    }
-
+    Real qaer_del_coag_out_c[num_aero][max_agepair] = {{0}};
     coagulation::mam_coag_aer_update(ybetaij3.data(), deltat[0],
                                      qnum_tavg.data(), qaer_bgn_c, qaer_end_c,
                                      qaer_del_coag_out_c);
