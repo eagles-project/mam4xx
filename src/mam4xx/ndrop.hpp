@@ -22,10 +22,7 @@ void get_aer_num(const Diagnostics &diags, const Prognostics &progs,
 
   Real rho = conversions::density_of_ideal_gas(atm.temperature(icol),
                                                atm.pressure(icol));
-
-  Real vaerosol;
-
-  vaerosol = conversions::mean_particle_volume_from_diameter(
+  Real vaerosol = conversions::mean_particle_volume_from_diameter(
       diags.dry_geometric_mean_diameter_total[mode_idx](icol),
       modes(mode_idx).mean_std_dev);
 
@@ -45,8 +42,8 @@ void get_aer_num(const Diagnostics &diags, const Prognostics &progs,
       (progs.n_mode_i[mode_idx](icol) + progs.n_mode_c[mode_idx](icol)) * rho;
 
   // adjust number so that dgnumlo < dgnum < dgnumhi
-  naerosol[mode_idx] = min(naerosol[mode_idx], vaerosol * num2vol_ratio_min);
   naerosol[mode_idx] = max(naerosol[mode_idx], vaerosol * num2vol_ratio_max);
+  naerosol[mode_idx] = min(naerosol[mode_idx], vaerosol * num2vol_ratio_min);
 }
 } // namespace mam4
 #endif
