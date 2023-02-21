@@ -7,7 +7,6 @@ install(FILES
         aero_modes.hpp
         calcsize.hpp
         conversions.hpp
-        coagulation.hpp
         gasaerexch.hpp
         gasaerexch_soaexch.hpp
         kerminen2002.hpp
@@ -17,6 +16,7 @@ install(FILES
         merikanto2007.hpp
         nucleation.hpp
         aging.hpp
+        coagulation.hpp
         rename.hpp
         utils.hpp
         vehkamaki2002.hpp

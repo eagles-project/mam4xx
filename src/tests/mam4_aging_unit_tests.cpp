@@ -1,3 +1,8 @@
+// mam4xx: Copyright (c) 2022,
+// Battelle Memorial Institute and
+// National Technology & Engineering Solutions of Sandia, LLC (NTESS)
+// SPDX-License-Identifier: BSD-3-Clause
+
 #include <mam4xx/mam4.hpp>
 
 #include <ekat/ekat_type_traits.hpp>
@@ -250,5 +255,4 @@ TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
       REQUIRE(qaer_del_coag_in[ispec][imode] == 0.0);
     }
   }
-
 }

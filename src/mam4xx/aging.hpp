@@ -1,3 +1,8 @@
+// mam4xx: Copyright (c) 2022,
+// Battelle Memorial Institute and
+// National Technology & Engineering Solutions of Sandia, LLC (NTESS)
+// SPDX-License-Identifier: BSD-3-Clause
+
 #ifndef MAM4XX_AGING_HPP
 #define MAM4XX_AGING_HPP
 #include <haero/math.hpp>
@@ -29,8 +34,9 @@ public:
             const Config &process_config = Config());
 
   // In E3SM this is read in from an input file
-  static constexpr Real dr_so4_monolayers_pcage = 1.4280000515398683E-009;
-
+  static constexpr Real n_so4_monolayers_pcage = 8.0;
+  static constexpr Real dr_so4_monolayers_pcage =
+      n_so4_monolayers_pcage * 4.76e-10;
   static constexpr int max_agepair = 1;
 
   // validate -- validates the given atmospheric state and prognostics against

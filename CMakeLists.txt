@@ -17,6 +17,8 @@ else() #CPU
   message(STATUS "Building for CPU")
 endif()
 
+option(MAM4XX_ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
+
 # Blessed version of clang-format.
 set(CLANG_FORMAT_VERSION 14)
 
@@ -65,6 +67,25 @@ include_directories("${MAM4XX_HAERO_DIR}/include")
 include_directories(${PROJECT_SOURCE_DIR}/src)
 
 link_directories("${MAM4XX_HAERO_DIR}/lib")
+
+# Code coverage
+if (MAM4XX_ENABLE_COVERAGE)
+  message(STATUS "Enabling code coverage instrumentation")
+  find_program(LCOV_EXE lcov DOC "Lcov code coverage tool")
+  if (LCOV_EXE MATCHES "NOTFOUND")
+    message(FATAL_ERROR "Could not find lcov for code coverage reporting!")
+  endif()
+
+  # Add code coverage compiler/linker flags
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+
+  # Add a "make coverage" target.
+  add_custom_target(coverage ${LCOV_EXE} --capture --directory . -o unfiltered_coverage.info
+    COMMAND ${LCOV_EXE} --remove unfiltered_coverage.info '*/external/*' -o coverage.info
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMENT "Generating coverage report (coverage.info)")
+endif()
 
 # Support for valgrind -- Linux only.
 if (UNIX AND NOT APPLE)
