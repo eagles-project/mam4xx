@@ -766,6 +766,7 @@ void getcoags_wrapper_f(const Real airtemp, const Real airprs, const Real dgatk,
   // Calculate mean free path [m]:
   // 6.6328e-8 is the sea level value given in table i.2.8
   // on page 10 of u.s. standard atmosphere 1962
+  // BAD CONSTANT
   const Real lamda =
       6.6328e-8 * haero::Constants::pressure_stp * airtemp / (t0 * airprs);
 
@@ -777,6 +778,7 @@ void getcoags_wrapper_f(const Real airtemp, const Real airprs, const Real dgatk,
   const Real amu = 1.458e-6 * airtemp * sqrt_temp / (airtemp + 110.4);
 
   // Term used in equation a6 of binkowski & shankar (1995)
+  // boltzmann BAD CONSTANT
   const Real boltzmann = 1.3806500000000000e-023;
   const Real knc = (2.0 / 3.0) * boltzmann * airtemp / amu;
 
