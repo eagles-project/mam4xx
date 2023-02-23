@@ -51,7 +51,6 @@ clouds, !  following X. Shi et al. ACP (2014).
 !-------------------------------------------------------------------------------*/
 
 // FIXME
-
 KOKKOS_INLINE_FUNCTION
 Real svp_water(const Real Temperature) {
   Real es = 0;
@@ -83,7 +82,7 @@ void calculate_regm_nucleati(const Real w_vlc, const Real Na, Real &regm) {
   const Real B_coef = -Real(10.41) * lnNa - Real(67.69);
 
   regm = A_coef * log(w_vlc) + B_coef;
-}
+} // end calculate_regm_nucleati
 
 KOKKOS_INLINE_FUNCTION
 void calculate_RHw_hf(const Real Temperature, const Real lnw, Real &RHw) {
@@ -102,7 +101,7 @@ void calculate_RHw_hf(const Real Temperature, const Real lnw, Real &RHw) {
 
   RHw = (A_coef * Temperature * Temperature + B_coef * Temperature + C_coef) *
         Real(0.01);
-}
+} // end calculate_RHw_hf
 
 KOKKOS_INLINE_FUNCTION
 void calculate_Ni_hf(const Real A1, const Real B1, const Real C1, const Real A2,
@@ -179,31 +178,35 @@ void hf(const Real Temperature, const Real w_vlc, const Real RH, const Real Na,
 
   if ((Temperature <= -Real(37.0)) && (RH * subgrid >= RHw)) {
     // FIXME: This parameter is not used
-    // const Real regm = Real(6.07)*lnw-Real(55.0);
+    const Real regm = Real(6.07) * lnw - Real(55.0);
 
-    if (Temperature > -Real(64.0)) // fast-growth regime
-    {
-      A2_fast = A21_fast;
-      B2_fast = B21_fast;
+    if (Temperature >= regm) {
+      // fast-growth regime
+      if (Temperature > -Real(64.0)) //
+      {
+        A2_fast = A21_fast;
+        B2_fast = B21_fast;
+      } else {
+        A2_fast = A22_fast;
+        B2_fast = B22_fast;
+      } // end Temperature
+
+      calculate_Ni_hf(A1_fast, B1_fast, C1_fast, A2_fast, B2_fast, C2_fast,
+                      Temperature, lnw, Na, Ni);
+
     } else {
-      A2_fast = A22_fast;
-      B2_fast = B22_fast;
-    } // end Temperature
+        //  slow-growth regime
 
-    calculate_Ni_hf(A1_fast, B1_fast, C1_fast, A2_fast, B2_fast, C2_fast,
-                    Temperature, lnw, Na, Ni);
-  } else { //       ! slow-growth regime
+        B4_slow = B2_slow + B3_slow * lnw;
 
-    B4_slow = B2_slow + B3_slow * lnw;
+        calculate_Ni_hf(A1_slow, B1_slow, C1_slow, A2_slow, B4_slow, C2_slow,
+                        Temperature, lnw, Na, Ni);
 
-    calculate_Ni_hf(A1_slow, B1_slow, C1_slow, A2_slow, B4_slow, C2_slow,
-                    Temperature, lnw, Na, Ni);
+    } // end Temperature >= regm
+   } // end Temperature <= -Real(37.0)
 
-  } // end Temperature > -64..
+} // end hf
 
-} // end Temperature <= -37.0 ...
-
-} // namespace nucleate_ice
 
 KOKKOS_INLINE_FUNCTION
 void hetero(const Real Temperature, const Real w_vlc, const Real Ns, Real &Nis,
@@ -260,7 +263,6 @@ void nucleati( // inputs
     // outputs
     Real &nuci, Real &onihf, Real &oniimm, Real &onidep, Real &onimey) 
 {
-
   /*---------------------------------------------------------------
   ! Purpose:
   !  The parameterization of ice nucleation.
@@ -311,18 +313,15 @@ void nucleati( // inputs
   const Real num_threshold = 1.0e-10;
 
   if (so4_num >= num_threshold && dst3_num >= num_threshold && cldn > zero) {
-    // BAD CONSTANT
     if ((tc <= Real(-35.0)) && (relhum * nucleate_ice::svp_water(tair) /
                                     nucleate_ice::svp_ice(tair) / subgrid >=
-                                Real(1.2))) //! use higher RHi threshold
-    {
-
+                                Real(1.2))) {
+      //! use higher RHi threshold
       nucleate_ice::calculate_regm_nucleati(wbar, dst3_num, regm);
       if (tc > regm) {
         // heterogeneous nucleation only
-
         // BAD CONSTANT
-        if (tc < Real(-40) && wbar > Real(1.)) {
+        if (tc < -Real(40) && wbar > Real(1.)) {
           // !exclude T<-40 & W> 1m / s from hetero.nucleation
 
           nucleate_ice::hf(tc, wbar, relhum, so4_num, subgrid, nihf);
@@ -338,7 +337,7 @@ void nucleati( // inputs
 
         } // end tc<Real(-40) ...
       } else if (tc < regm - Real(5.)) {
-        // homogeneous nucleation onl
+        // homogeneous nucleation only
         nucleate_ice::hf(tc, wbar, relhum, so4_num, subgrid, nihf);
         niimm = zero;
         nidep = zero;
@@ -348,9 +347,8 @@ void nucleati( // inputs
         // in-between
 
         // BAD CONSTANT
-
-        if (tc < -Real(40.) &&
-            wbar > Real(1.)) { // exclude T<-40 & W>1m/s from hetero. nucleation
+        if (tc < -Real(40.) && wbar > Real(1.)) {
+          // exclude T<-40 & W>1m/s from hetero. nucleation
 
           nucleate_ice::hf(tc, wbar, relhum, so4_num, subgrid, nihf);
           niimm = zero;
@@ -370,35 +368,39 @@ void nucleati( // inputs
                  haero::pow((niimm + nidep) / nihf, (tc - regm) / Real(5.));
 
           } // end nihf <= (niimm + nidep)
+
         }   // end tc < -40._r8
 
-        ni = n1;
+      }     // end 	tc > regm
+      
+      ni = n1;
 
-      } // end tc ...
 
-    } // end so4_num ..
+    } // end tc ...
 
-    /* deposition/condensation nucleation in mixed clouds (-37<T<0C) (Meyers,
-   1992) ! this part is executed but is always replaced by 0, because CNT scheme
-   takes over ! the calculation. use_hetfrz_classnuc is always true. */
-    // FIXME why adding zero to nuci? something is missing?
-    nimey = zero;
-    // BAD CONSTANT
-    nuci = ni + nimey;
-    if (nuci > Real(9999.) || nuci < zero) {
+  } // end so4_num ..
 
-      nuci = zero;
-    } // end
+  /* deposition/condensation nucleation in mixed clouds (-37<T<0C) (Meyers,
+ 1992) ! this part is executed but is always replaced by 0, because CNT scheme
+ takes over ! the calculation. use_hetfrz_classnuc is always true. */
+  // FIXME OD: why adding zero to nuci? is something missing?
+  nimey = zero;
+  // BAD CONSTANT
+  nuci = ni + nimey;
+  if (nuci > Real(9999.) || nuci < zero) {
+    nuci = zero;
+  } // end
 
-    const Real one_millon = 1.e+6;
-    nuci = nuci * one_millon / rhoair; //  ! change unit from #/cm3 to #/kg
-    onimey = nimey * one_millon / rhoair;
-    onidep = nidep * one_millon / rhoair;
-    oniimm = niimm * one_millon / rhoair;
-    onihf = nihf * one_millon / rhoair;
-  }
+  const Real one_millon = 1.e+6;
+  nuci = nuci * one_millon / rhoair; //  ! change unit from #/cm3 to #/kg
+  onimey = nimey * one_millon / rhoair;
+  onidep = nidep * one_millon / rhoair;
+  oniimm = niimm * one_millon / rhoair;
+  onihf = nihf * one_millon / rhoair;
 
-} // end namespace nucleate_ice
+} // end nucleati
+
+  } // end namespace nucleate_ice
 
 /// @class nucleate_ice
 /// This class implements MAM4's nucleate_ice parameterization.
