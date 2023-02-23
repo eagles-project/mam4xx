@@ -18,6 +18,7 @@
 #include <mam4xx/ndrop.hpp>
 #include <mam4xx/nucleation.hpp>
 #include <mam4xx/rename.hpp>
+#include <mam4xx/nucleate_ice.hpp>
 
 namespace mam4 {
 
@@ -27,6 +28,7 @@ using CoagulationProcess = haero::AeroProcess<AeroConfig, Coagulation>;
 using CalcSizeProcess = haero::AeroProcess<AeroConfig, CalcSize>;
 using AgingProcess = haero::AeroProcess<AeroConfig, Aging>;
 using RenameProcess = haero::AeroProcess<AeroConfig, Rename>;
+using NucleateIceProcess = haero::AeroProcess<AeroConfig, NucleateIce>;
 
 } // namespace mam4
 
