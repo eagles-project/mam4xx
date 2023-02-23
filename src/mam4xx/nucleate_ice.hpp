@@ -313,18 +313,18 @@ void nucleati( // inputs
   const Real num_threshold = 1.0e-10;
 
   if (so4_num >= num_threshold && dst3_num >= num_threshold && cldn > zero) {
-    if ((tc <= Real(-35.0)) && (relhum * nucleate_ice::svp_water(tair) /
-                                    nucleate_ice::svp_ice(tair) / subgrid >=
+    if ((tc <= Real(-35.0)) && (relhum * svp_water(tair) /
+                                    svp_ice(tair) / subgrid >=
                                 Real(1.2))) {
       //! use higher RHi threshold
-      nucleate_ice::calculate_regm_nucleati(wbar, dst3_num, regm);
+      calculate_regm_nucleati(wbar, dst3_num, regm);
       if (tc > regm) {
         // heterogeneous nucleation only
         // BAD CONSTANT
         if (tc < -Real(40) && wbar > Real(1.)) {
           // !exclude T<-40 & W> 1m / s from hetero.nucleation
 
-          nucleate_ice::hf(tc, wbar, relhum, so4_num, subgrid, nihf);
+          hf(tc, wbar, relhum, so4_num, subgrid, nihf);
           niimm = zero;
           nidep = zero;
           n1 = nihf;
@@ -338,7 +338,7 @@ void nucleati( // inputs
         } // end tc<Real(-40) ...
       } else if (tc < regm - Real(5.)) {
         // homogeneous nucleation only
-        nucleate_ice::hf(tc, wbar, relhum, so4_num, subgrid, nihf);
+        hf(tc, wbar, relhum, so4_num, subgrid, nihf);
         niimm = zero;
         nidep = zero;
         n1 = nihf;
@@ -350,14 +350,14 @@ void nucleati( // inputs
         if (tc < -Real(40.) && wbar > Real(1.)) {
           // exclude T<-40 & W>1m/s from hetero. nucleation
 
-          nucleate_ice::hf(tc, wbar, relhum, so4_num, subgrid, nihf);
+          hf(tc, wbar, relhum, so4_num, subgrid, nihf);
           niimm = zero;
           nidep = zero;
           n1 = nihf;
 
         } else {
 
-          nucleate_ice::hf(regm - Real(5.), wbar, relhum, so4_num, subgrid,
+          hf(regm - Real(5.), wbar, relhum, so4_num, subgrid,
                            nihf);
           hetero(regm, wbar, dst3_num, niimm, nidep);
 
