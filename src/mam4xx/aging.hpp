@@ -92,21 +92,27 @@ void mam_pcarbon_aging_frac(
 
   const int imom_pc = static_cast<int>(ModeIndex::PrimaryCarbon);
 
+  const Real _molecular_weight_soa = 150 / 1000.0;
+  // FIXME. MW for SO4 is not a standard MW. (BAD CONSTANT)
+  const Real _molecular_weight_so4 = 115 / 1000.0;
+  const Real _molecular_weight_pom = 150 / 1000.0;
+
   // Compute the aerosol volume per mole
-  const Real so4_vol = aero_species(iaer_so4).molecular_weight * 1000.0 /
-                       aero_species(iaer_so4).density;
-  const Real soa_vol = aero_species(iaer_soa).molecular_weight * 1000.0 /
-                       aero_species(iaer_soa).density;
+  const Real so4_vol =
+      _molecular_weight_so4 * 1000.0 / aero_species(iaer_so4).density;
+  const Real soa_vol =
+      _molecular_weight_soa * 1000.0 / aero_species(iaer_soa).density;
   const Real bc_vol = aero_species(iaer_bc).molecular_weight * 1000.0 /
                       aero_species(iaer_bc).density;
-  const Real pom_vol = aero_species(iaer_pom).molecular_weight * 1000.0 /
-                       aero_species(iaer_pom).density;
+  const Real pom_vol =
+      _molecular_weight_pom * 1000.0 / aero_species(iaer_pom).density;
   const Real mom_vol = aero_species(iaer_mom).molecular_weight * 1000.0 /
                        aero_species(iaer_mom).density;
 
-  const Real fac_m2v_eqvhyg_aer = soa_vol *
-                                  aero_species(iaer_soa).hygroscopicity /
-                                  aero_species(iaer_so4).hygroscopicity;
+  // (Bad Constants) for hygroscopicitiy
+  constexpr Real hygro_soa = 0.14000000000000001;
+  constexpr Real hygro_so4 = 0.50700000000000001;
+  const Real fac_m2v_eqvhyg_aer = soa_vol * hygro_soa / hygro_so4;
 
   Real qaer_del_cond_tmp =
       qaer_del_cond[iaer_so4][imom_pc] * so4_vol +

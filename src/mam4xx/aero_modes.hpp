@@ -191,12 +191,12 @@ static constexpr Real mam4_hyg_mom = 0.1;
 */
 KOKKOS_INLINE_FUNCTION AeroSpecies aero_species(const int i) {
   static const AeroSpecies species[7] = {
-      AeroSpecies{150.000000000000/1000.0, mam4_density_soa,
+      AeroSpecies{Constants::molec_weight_c, mam4_density_soa,
                   mam4_hyg_soa}, // secondary organic aerosol
-      AeroSpecies{115.000000000000/1000.0, mam4_density_so4, mam4_hyg_so4},
-      AeroSpecies{150.000000000000/1000.0, mam4_density_pom,
+      AeroSpecies{Constants::molec_weight_so4, mam4_density_so4, mam4_hyg_so4},
+      AeroSpecies{Constants::molec_weight_c, mam4_density_pom,
                   mam4_hyg_pom}, // primary organic matter
-      AeroSpecies{12.0000000000000/1000.0, mam4_density_bc,
+      AeroSpecies{Constants::molec_weight_c, mam4_density_bc,
                   mam4_hyg_bc}, // black carbon
       AeroSpecies{Constants::molec_weight_nacl, mam4_density_nacl,
                   mam4_hyg_nacl}, // sodium chloride
