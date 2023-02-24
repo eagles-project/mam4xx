@@ -14,8 +14,8 @@ target_link_libraries(aging_driver skywalker;validation;${HAERO_LIBRARIES})
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script
-        compare_aging_frac.py
-        compare_aging_1subarea.py)
+        compare_aging_validation.py
+        )
   configure_file(
     ${AGING_VALIDATION_SCRIPTS_DIR}/${script}
     ${CMAKE_CURRENT_BINARY_DIR}/${script}
@@ -42,8 +42,7 @@ foreach (input
   add_test(run_${input} aging_driver ${AGING_VALIDATION_DIR}/${input}.yaml)
 
   # add a test to validate mam4xx's results against the baseline.
-  add_test(validate_${input} python3 compare_aging_frac.py mam4xx_${input}.py mam_${input}.py) 
-  add_test(validate_${input} python3 compare_aging_1subarea.py mam4xx_${input}.py mam_${input}.py) 
+  add_test(validate_${input} python3 compare_aging_validation.py mam4xx_${input}.py mam_${input}.py)
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input} )
 
 endforeach()
