@@ -223,7 +223,6 @@ TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
     }
   }
 
-
   for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
     for (int imode = 0; imode < Aging::max_agepair; ++imode) {
       qaer_del_coag_in[ispec][imode] = 0.0;
