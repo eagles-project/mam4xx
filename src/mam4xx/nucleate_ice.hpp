@@ -50,11 +50,65 @@ clouds, !  following X. Shi et al. ACP (2014).
 !  With help from C. C. Chen and B. Eaton (2014)
 !-------------------------------------------------------------------------------*/
 
+//FIXME from wv_sat_methods.F90
+// Do we need to create a new files for these functions	
+
+KOKKOS_INLINE_FUNCTION
+Real GoffGratch_svp_water(const Real temperature) 
+{
+// ! Goff & Gratch (1946)
+// temperature  ! Temperature in Kelvin
+// 	es             ! SVP in Pa
+// ! uncertain below -70 C
+ // BAD CONSTANT 
+ // FIXME where should we add this constant 
+ // FROM wv_saturation.F90	
+ // Boiling point of water at 1 atm (K)
+ //This value is slightly high, but it seems to be the value for the
+ // steam point of water originally (and most frequently) used in the
+// Goff & Gratch scheme.
+const Real tboil = Real(373.16); 
+
+ const Real ten =10;
+ const Real one =1;
+ return  haero::pow(ten, -Real(7.90298)*(tboil/temperature-one) +  
+                              Real(5.02808)*haero::log10(tboil/temperature) - 
+                              Real(1.3816e-7)*(haero::pow(ten,Real(11.344)*(one-temperature/tboil))-one) +
+                              Real(8.1328e-3)*(haero::pow(ten,-Real(3.49149)*(tboil/temperature-one))-one) + 
+                              haero::log10(Real(1013.246)))*ten*ten;
+
+ } //GoffGratch_svp_water
+
+KOKKOS_INLINE_FUNCTION
+Real GoffGratch_svp_ice(const Real temperature) 
+ {
+  //temperature  ! Temperature in Kelvin
+  // es             ! SVP in Pa
+
+  // ! good down to -100 C
+ // FIXME 
+ // Look for a place to place this constant  	
+ // h2otrip ! Triple point temperature of water (K)
+ // SHR_CONST_TKTRIP  = 273.16_R8       ! triple point of fresh water        ~ K
+ const Real h2otrip	= Real( 273.16);
+ const Real ten =10;
+ const Real one =1;
+
+  return haero::pow(ten,-Real(9.09718)*(h2otrip/temperature-one)-Real(3.56654)* 
+       haero::log10(h2otrip/temperature)+Real(0.876793)*(one-temperature/h2otrip)+ 
+       haero::log10(6.1071))*ten*ten;
+
+}// end GoffGratch_svp_ice
+
+ 
 // FIXME
+//Compute saturation vapor pressure over water
 KOKKOS_INLINE_FUNCTION
 Real svp_water(const Real Temperature) {
-  Real es = 0;
-  return es;
+  // FIXME
+  // ask if we need to implement the other methods to compute svp_water
+  // initial_default_idx = GoffGratch_idx
+  return GoffGratch_svp_water(Temperature);
 }
 
 // FIXME
@@ -369,7 +423,7 @@ void nucleati( // inputs
 
           } // end nihf <= (niimm + nidep)
 
-        }   // end tc < -40._r8
+        }   // end tc < -40.
 
       }     // end 	tc > regm
       
