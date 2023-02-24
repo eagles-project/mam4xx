@@ -1,5 +1,4 @@
 set(AGING_VALIDATION_DIR ${MAM_X_VALIDATION_DIR}/aging)
-set(AGING_VALIDATION_SCRIPTS_DIR ${MAM_X_VALIDATION_DIR}/aging)
 
 # These subdirectories contain Skywalker drivers for MAM4 parameterizations.
 # Include directory for .mod files.
@@ -17,7 +16,7 @@ foreach(script
         compare_aging_validation.py
         )
   configure_file(
-    ${AGING_VALIDATION_SCRIPTS_DIR}/${script}
+    ${AGING_VALIDATION_DIR}/${script}
     ${CMAKE_CURRENT_BINARY_DIR}/${script}
     COPYONLY
   )
