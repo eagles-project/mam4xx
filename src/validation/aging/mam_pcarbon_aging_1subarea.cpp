@@ -81,12 +81,11 @@ void mam_pcarbon_aging_1subarea(Ensemble *ensemble) {
     }
 
     n = 0;
-    for (int imode = 0; imode < num_modes + 1; ++imode) {
+    for (int imode = 0; imode < num_modes; ++imode) {
       for (int ispec = 0; ispec < num_aero; ++ispec) {
         qaer_cur_c[ispec][imode] = qaer_cur_f[n];
         qaer_del_cond_c[ispec][imode] = qaer_del_cond_f[n];
         qaer_del_coag_c[ispec][imode] = qaer_del_coag_f[n];
-        qaer_del_coag_in_c[ispec][imode] = qaer_del_coag_in_f[n];
         n += 1;
       }
     }
