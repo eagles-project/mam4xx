@@ -50,59 +50,68 @@ clouds, !  following X. Shi et al. ACP (2014).
 !  With help from C. C. Chen and B. Eaton (2014)
 !-------------------------------------------------------------------------------*/
 
-//FIXME from wv_sat_methods.F90
-// Do we need to create a new files for these functions	
+// FIXME from wv_sat_methods.F90
+//  Do we need to create a new files for these functions
 
 KOKKOS_INLINE_FUNCTION
-Real GoffGratch_svp_water(const Real temperature) 
-{
-// ! Goff & Gratch (1946)
-// temperature  ! Temperature in Kelvin
-// 	es             ! SVP in Pa
-// ! uncertain below -70 C
- // BAD CONSTANT 
- // FIXME where should we add this constant 
- // FROM wv_saturation.F90	
- // Boiling point of water at 1 atm (K)
- //This value is slightly high, but it seems to be the value for the
- // steam point of water originally (and most frequently) used in the
-// Goff & Gratch scheme.
-const Real tboil = Real(373.16); 
+Real GoffGratch_svp_water(const Real temperature) {
+  // ! Goff & Gratch (1946)
+  // temperature  ! Temperature in Kelvin
+  // 	es             ! SVP in Pa
+  // ! uncertain below -70 C
+  // BAD CONSTANT
+  // FIXME where should we add this constant
+  // FROM wv_saturation.F90
+  // Boiling point of water at 1 atm (K)
+  // This value is slightly high, but it seems to be the value for the
+  // steam point of water originally (and most frequently) used in the
+  // Goff & Gratch scheme.
+  const Real tboil = Real(373.16);
 
- const Real ten =10;
- const Real one =1;
- return  haero::pow(ten, -Real(7.90298)*(tboil/temperature-one) +  
-                              Real(5.02808)*haero::log10(tboil/temperature) - 
-                              Real(1.3816e-7)*(haero::pow(ten,Real(11.344)*(one-temperature/tboil))-one) +
-                              Real(8.1328e-3)*(haero::pow(ten,-Real(3.49149)*(tboil/temperature-one))-one) + 
-                              haero::log10(Real(1013.246)))*ten*ten;
+  const Real ten = 10;
+  const Real one = 1;
+  return haero::pow(ten,
+                    -Real(7.90298) * (tboil / temperature - one) +
+                        Real(5.02808) * haero::log10(tboil / temperature) -
+                        Real(1.3816e-7) *
+                            (haero::pow(ten, Real(11.344) *
+                                                 (one - temperature / tboil)) -
+                             one) +
+                        Real(8.1328e-3) *
+                            (haero::pow(ten, -Real(3.49149) *
+                                                 (tboil / temperature - one)) -
+                             one) +
+                        haero::log10(Real(1013.246))) *
+         ten * ten;
 
- } //GoffGratch_svp_water
+} // GoffGratch_svp_water
 
 KOKKOS_INLINE_FUNCTION
-Real GoffGratch_svp_ice(const Real temperature) 
- {
-  //temperature  ! Temperature in Kelvin
-  // es             ! SVP in Pa
+Real GoffGratch_svp_ice(const Real temperature) {
+  // temperature  ! Temperature in Kelvin
+  //  es             ! SVP in Pa
 
   // ! good down to -100 C
- // FIXME 
- // Look for a place to place this constant  	
- // h2otrip ! Triple point temperature of water (K)
- // SHR_CONST_TKTRIP  = 273.16_R8       ! triple point of fresh water        ~ K
- const Real h2otrip	= Real( 273.16);
- const Real ten =10;
- const Real one =1;
+  // FIXME
+  // Look for a place to place this constant
+  // h2otrip ! Triple point temperature of water (K)
+  // SHR_CONST_TKTRIP  = 273.16_R8       ! triple point of fresh water        ~
+  // K
+  const Real h2otrip = Real(273.16);
+  const Real ten = 10;
+  const Real one = 1;
 
-  return haero::pow(ten,-Real(9.09718)*(h2otrip/temperature-one)-Real(3.56654)* 
-       haero::log10(h2otrip/temperature)+Real(0.876793)*(one-temperature/h2otrip)+ 
-       haero::log10(6.1071))*ten*ten;
+  return haero::pow(ten,
+                    -Real(9.09718) * (h2otrip / temperature - one) -
+                        Real(3.56654) * haero::log10(h2otrip / temperature) +
+                        Real(0.876793) * (one - temperature / h2otrip) +
+                        haero::log10(6.1071)) *
+         ten * ten;
 
-}// end GoffGratch_svp_ice
+} // end GoffGratch_svp_ice
 
- 
 // FIXME
-//Compute saturation vapor pressure over water
+// Compute saturation vapor pressure over water
 KOKKOS_INLINE_FUNCTION
 Real svp_water(const Real Temperature) {
   // FIXME
@@ -112,12 +121,8 @@ Real svp_water(const Real Temperature) {
 }
 
 // FIXME
-
 KOKKOS_INLINE_FUNCTION
-Real svp_ice(const Real Temperature) {
-  Real es = 0;
-  return es;
-}
+Real svp_ice(const Real Temperature) { return GoffGratch_svp_ice(Temperature); }
 
 KOKKOS_INLINE_FUNCTION
 void calculate_regm_nucleati(const Real w_vlc, const Real Na, Real &regm) {
@@ -249,18 +254,17 @@ void hf(const Real Temperature, const Real w_vlc, const Real RH, const Real Na,
                       Temperature, lnw, Na, Ni);
 
     } else {
-        //  slow-growth regime
+      //  slow-growth regime
 
-        B4_slow = B2_slow + B3_slow * lnw;
+      B4_slow = B2_slow + B3_slow * lnw;
 
-        calculate_Ni_hf(A1_slow, B1_slow, C1_slow, A2_slow, B4_slow, C2_slow,
-                        Temperature, lnw, Na, Ni);
+      calculate_Ni_hf(A1_slow, B1_slow, C1_slow, A2_slow, B4_slow, C2_slow,
+                      Temperature, lnw, Na, Ni);
 
     } // end Temperature >= regm
-   } // end Temperature <= -Real(37.0)
+  }   // end Temperature <= -Real(37.0)
 
 } // end hf
-
 
 KOKKOS_INLINE_FUNCTION
 void hetero(const Real Temperature, const Real w_vlc, const Real Ns, Real &Nis,
@@ -307,154 +311,7 @@ void hetero(const Real Temperature, const Real w_vlc, const Real Ns, Real &Nis,
 
 } // hetero
 
-KOKKOS_INLINE_FUNCTION
-void nucleati( // inputs
-    const Real wbar, const Real tair, const Real pmid, const Real relhum,
-    const Real cldn, const Real rhoair, const Real so4_num, const Real dst3_num,
-    // inputs
-    const Real
-        subgrid, // Subgrid scale factor on relative humidity (dimensionless)
-    // outputs
-    Real &nuci, Real &onihf, Real &oniimm, Real &onidep, Real &onimey) 
-{
-  /*---------------------------------------------------------------
-  ! Purpose:
-  !  The parameterization of ice nucleation.
-  !
-  ! Method: The current method is based on Liu & Penner (2005)
-  !  It related the ice nucleation with the aerosol number, temperature and the
-  !  updraft velocity. It includes homogeneous freezing of sulfate, immersion
-  !  freezing of soot, and Meyers et al. (1992) deposition nucleation
-  !
-  ! Authors: Xiaohong Liu, 01/2005, modifications by A. Gettelman 2009-2010
-  !---------------------------------------------------------------- */
-
-  // Input Arguments
-  // wbar        ! grid cell mean vertical velocity [m/s]
-  // tair        ! temperature [K]
-  // pmid        ! pressure at layer midpoints [pa]
-  // relhum      ! relative humidity with respective to liquid [unitless]
-  // cldn        ! new value of cloud fraction    [fraction]
-  // rhoair      ! air density [kg/m3]
-  // so4_num     ! so4 aerosol number [#/cm^3]
-  // dst3_num     ! dust aerosol number [#/cm^3]
-
-  // Output Arguments
-  // nuci       ! ice number nucleated [#/kg]
-  // onihf      ! nucleated number from homogeneous freezing of so4 [#/kg]
-  // oniimm     ! nucleated number from immersion freezing [#/kg]
-  // onidep     ! nucleated number from deposition nucleation [#/kg]
-  // onimey     ! nucleated number from deposition nucleation  (meyers: mixed
-  // phase) [#/kg]
-
-  // Local workspace
-  Real zero = 0;
-  Real nihf = zero;  //                     ! nucleated number from homogeneous
-                     //                     freezing of so4 [#/cm^3]
-  Real niimm = zero; //                     ! nucleated number from immersion
-                     //                     freezing [#/cm^3]
-  Real nidep = zero; //                     ! nucleated number from deposition
-                     //                     nucleation [#/cm^3]
-  Real nimey = zero; //                    ! nucleated number from
-  // deposition nucleation (meyers) [#/cm^3]
-  Real n1 = zero;
-  Real ni = zero; //                  ! nucleated number [#/cm^3]
-  const Real tc =
-      tair - Real(273.15); //                      ! air temperature [C]
-  Real regm = zero;        //                    ! air temperature [C]
-
-  // BAD CONSTANT
-  const Real num_threshold = 1.0e-10;
-
-  if (so4_num >= num_threshold && dst3_num >= num_threshold && cldn > zero) {
-    if ((tc <= Real(-35.0)) && (relhum * svp_water(tair) /
-                                    svp_ice(tair) / subgrid >=
-                                Real(1.2))) {
-      //! use higher RHi threshold
-      calculate_regm_nucleati(wbar, dst3_num, regm);
-      if (tc > regm) {
-        // heterogeneous nucleation only
-        // BAD CONSTANT
-        if (tc < -Real(40) && wbar > Real(1.)) {
-          // !exclude T<-40 & W> 1m / s from hetero.nucleation
-
-          hf(tc, wbar, relhum, so4_num, subgrid, nihf);
-          niimm = zero;
-          nidep = zero;
-          n1 = nihf;
-
-        } else {
-
-          hetero(tc, wbar, dst3_num, niimm, nidep);
-          nihf = zero;
-          n1 = niimm + nidep;
-
-        } // end tc<Real(-40) ...
-      } else if (tc < regm - Real(5.)) {
-        // homogeneous nucleation only
-        hf(tc, wbar, relhum, so4_num, subgrid, nihf);
-        niimm = zero;
-        nidep = zero;
-        n1 = nihf;
-      } else {
-        // transition between homogeneous and heterogeneous: interpolate
-        // in-between
-
-        // BAD CONSTANT
-        if (tc < -Real(40.) && wbar > Real(1.)) {
-          // exclude T<-40 & W>1m/s from hetero. nucleation
-
-          hf(tc, wbar, relhum, so4_num, subgrid, nihf);
-          niimm = zero;
-          nidep = zero;
-          n1 = nihf;
-
-        } else {
-
-          hf(regm - Real(5.), wbar, relhum, so4_num, subgrid,
-                           nihf);
-          hetero(regm, wbar, dst3_num, niimm, nidep);
-
-          if (nihf <= (niimm + nidep)) {
-            n1 = nihf;
-          } else {
-            n1 = (niimm + nidep) *
-                 haero::pow((niimm + nidep) / nihf, (tc - regm) / Real(5.));
-
-          } // end nihf <= (niimm + nidep)
-
-        }   // end tc < -40.
-
-      }     // end 	tc > regm
-      
-      ni = n1;
-
-
-    } // end tc ...
-
-  } // end so4_num ..
-
-  /* deposition/condensation nucleation in mixed clouds (-37<T<0C) (Meyers,
- 1992) ! this part is executed but is always replaced by 0, because CNT scheme
- takes over ! the calculation. use_hetfrz_classnuc is always true. */
-  // FIXME OD: why adding zero to nuci? is something missing?
-  nimey = zero;
-  // BAD CONSTANT
-  nuci = ni + nimey;
-  if (nuci > Real(9999.) || nuci < zero) {
-    nuci = zero;
-  } // end
-
-  const Real one_millon = 1.e+6;
-  nuci = nuci * one_millon / rhoair; //  ! change unit from #/cm3 to #/kg
-  onimey = nimey * one_millon / rhoair;
-  onidep = nidep * one_millon / rhoair;
-  oniimm = niimm * one_millon / rhoair;
-  onihf = nihf * one_millon / rhoair;
-
-} // end nucleati
-
-  } // end namespace nucleate_ice
+} // end namespace nucleate_ice
 
 /// @class nucleate_ice
 /// This class implements MAM4's nucleate_ice parameterization.
@@ -470,10 +327,331 @@ public:
 
 private:
   Config config_;
+  Real _alnsg_amode_aitken,
+       _num_m3_to_cm3,
+       _so4_sz_thresh_icenuc,
+       _mincld;
 
 public:
   // name--unique name of the process implemented by this class
   const char *name() const { return "MAM4 nucleate_ice"; }
+
+  // init -- initializes the implementation with MAM4's configuration and with
+  // a process-specific configuration.
+  void init(const AeroConfig &aero_config,
+            const Config &calcsize_config = Config()) {
+
+  	// alnsg_amode(modeptr_aitken)
+    // alog( sigmag_amode(m) )
+
+    _num_m3_to_cm3 = 1.0e-6;
+    // BAD CONSTANT
+    // FIXME
+    _so4_sz_thresh_icenuc = 1e20; // huge(1.0_r8) !ice nucleation SO2 size threshold for aitken mode
+    // minimum allowed cloud fraction
+    // BAD CONSTANT
+    _mincld = 0.0001;
+
+    const int aitken_idx = int(ModeIndex::Aitken);
+    _alnsg_amode_aitken = haero::log(modes(aitken_idx).mean_std_dev);
+
+  } // end(init)
+
+  KOKKOS_INLINE_FUNCTION
+  void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
+                          Real t, Real dt, const Atmosphere &atmosphere,
+                          const Prognostics &prognostics,
+                          const Diagnostics &diagnostics,
+                          const Tendencies &tendencies) const {
+
+    const int nk = atmosphere.num_levels();  
+    const Real tmelt_m_five = haero::Constants::freezing_pt_h2o - 5;
+    const int coarse_idx = int(ModeIndex::Coarse);
+
+    auto &coarse_dust = prognostics.q_aero_i[coarse_idx][int(AeroId::DST)];
+    auto &coarse_nacl = prognostics.q_aero_i[coarse_idx][int(AeroId::NaCl)];
+    auto &coarse_so4 = prognostics.q_aero_i[coarse_idx][int(AeroId::SO4)];
+
+    auto &coarse_mom = prognostics.q_aero_i[coarse_idx][int(AeroId::MOM)];
+    auto &coarse_bc = prognostics.q_aero_i[coarse_idx][int(AeroId::BC)];
+    auto &coarse_pom = prognostics.q_aero_i[coarse_idx][int(AeroId::POM)];
+    auto &coarse_soa = prognostics.q_aero_i[coarse_idx][int(AeroId::SOA)];
+
+    auto &num_coarse = prognostics.n_mode_i[coarse_idx];
+    auto &num_aitken = prognostics.n_mode_i[coarse_idx];
+
+    // FIXME: look for density
+    // rho(:,:)             ! air density [kg/m^3]
+    // where is air density located? 
+    auto &rho = atmosphere.temperature;
+    // mode dry radius [m]   
+    // dgnum(icol,kk,mode_aitken_idx)
+    const int aitken_idx = int(ModeIndex::Aitken);
+    auto &dgnum_aitken = diagnostics.dry_geometric_mean_diameter_i[aitken_idx];
+    // FIXME  
+    // wsubi(:,:)           ! updraft velocity for ice nucleation [m/s]
+    auto &wsubi = atmosphere.temperature;
+
+    // FIXME
+    const Real subgrid = 0;
+
+    // number of activated aerosol for ice nucleation [#/kg]
+    auto &naai = atmosphere.temperature;
+    // number of activated aerosol for ice nucleation (homogeneous freezing
+    // QUESTION: where should we save the output variables? 
+    // only) [#/kg] output number conc of ice nuclei due to heterogenous
+    // freezing [1/m3]
+    auto &nihf = atmosphere.temperature;
+    // output number conc of ice nuclei due to immersion freezing (hetero nuc)
+    // [1/m3]
+    auto &niimm = atmosphere.temperature;
+    // output number conc of ice nuclei due to deoposion nucleation (hetero nuc)
+    // [1/m3]
+    auto &nidep = atmosphere.temperature;
+    // output number conc of ice nuclei due to meyers deposition [1/m3]
+    auto &nimey = atmosphere.temperature;
+
+    const Real num_m3_to_cm3 = _num_m3_to_cm3;
+    // FIXME
+    // huge(1.0_r8) !ice nucleation SO2 size threshold for aitken mode
+    const Real so4_sz_thresh_icenuc = _so4_sz_thresh_icenuc;
+
+    // ast(:,:)             ! cloud fraction [unitless]
+    // minimum allowed cloud fraction
+    const Real mincld = _mincld;
+    const Real alnsg_amode_aitken = _alnsg_amode_aitken;
+
+    Kokkos::parallel_for(
+        Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int kk) {
+        const Real temp = atmosphere.temperature(kk);	
+          if (temp < tmelt_m_five) {
+
+          	const Real zero = 0;
+            const Real half = 0.5;
+            const Real two = 2;
+
+            const Real pmid = atmosphere.pressure(kk);
+
+            // FIXME: cloud fraction [unitless]
+            // could fraction of part of atm? 
+            auto& ast = atmosphere.pressure;
+
+            // CHECK if this part of code is consistent with original code. 
+            // relative humidity [unitless]
+            Real qv = atmosphere.vapor_mixing_ratio(kk);
+            Real relhum =
+                conversions::relative_humidity_from_vapor_mixing_ratio(qv, pmid,
+                                                                       temp);
+
+            const Real icldm = haero::max(ast(kk), mincld);
+
+            // compute aerosol number for so4, soot, and dust with units #/cm^3
+            // remove soot number, because it is set to zero
+            Real so4_num = zero;
+            Real dst3_num = zero;
+
+            /* For modal aerosols, assume for the upper troposphere:
+            soot = accumulation mode
+            sulfate = aiken mode
+            dust = coarse mode
+            since modal has internal mixtures. */
+            Real dmc = coarse_dust(kk) * rho(kk);
+            Real ssmc = coarse_nacl(kk) * rho(kk);
+            Real so4mc = coarse_so4(kk) * rho(kk);
+
+            Real mommc = coarse_mom(kk) * rho(kk);
+            Real bcmc = coarse_bc(kk) * rho(kk);
+            Real pommc = coarse_pom(kk) * rho(kk);
+            Real soamc = coarse_soa(kk) * rho(kk);
+
+            if (dmc > zero) {
+              const Real wght =
+                  dmc / (ssmc + dmc + so4mc + bcmc + pommc + soamc + mommc);
+              dst3_num = wght * num_coarse(kk) * rho(kk) * num_m3_to_cm3;
+            } // end dmc
+
+            if (dgnum_aitken(kk) > zero) {
+              // only allow so4 with D>0.1 um in ice nucleation
+              so4_num =
+                  num_aitken(kk) * rho(kk) * num_m3_to_cm3 *
+                  (half -
+                   half *
+                       haero::erf(
+                           haero::log(so4_sz_thresh_icenuc / dgnum_aitken(kk)) /
+                           haero::pow(two, half * alnsg_amode_aitken)));
+            } // end dgnum_aitken
+
+            so4_num = haero::max(zero, so4_num);
+
+            nucleati(wsubi(kk), temp, pmid, relhum, icldm, rho(kk), so4_num,
+                     dst3_num, subgrid,
+                     // outputs
+                     naai(kk), nihf(kk), niimm(kk), nidep(kk), nimey(kk));
+
+            //  Question why nihf instead of naai
+            // naai_hom(icol,kk) = nihf(icol,kk)
+            // naai is not saved? 
+
+            // output activated ice (convert from #/kg -> #/m3)
+            // QUESTION: note that these variables are divided by rho in nucleati
+            nihf(kk)  *= rho(kk);
+            niimm(kk) *= rho(kk);
+            nidep(kk) *= rho(kk);
+            nimey(kk) *= rho(kk);
+
+
+          } // end temp
+        }); // kokkos::parfor(k)
+  }
+
+private:
+  KOKKOS_INLINE_FUNCTION
+  void nucleati( // inputs
+      const Real wbar, const Real tair, const Real pmid, const Real relhum,
+      const Real cldn, const Real rhoair, const Real so4_num,
+      const Real dst3_num,
+      // inputs
+      const Real
+          subgrid, // Subgrid scale factor on relative humidity (dimensionless)
+      // outputs
+      Real &nuci, Real &onihf, Real &oniimm, Real &onidep, Real &onimey) const {
+    /*---------------------------------------------------------------
+    ! Purpose:
+    !  The parameterization of ice nucleation.
+    !
+    ! Method: The current method is based on Liu & Penner (2005)
+    !  It related the ice nucleation with the aerosol number, temperature and
+    the !  updraft velocity. It includes homogeneous freezing of sulfate,
+    immersion !  freezing of soot, and Meyers et al. (1992) deposition
+    nucleation
+    !
+    ! Authors: Xiaohong Liu, 01/2005, modifications by A. Gettelman 2009-2010
+    !---------------------------------------------------------------- */
+
+    // Input Arguments
+    // wbar        ! grid cell mean vertical velocity [m/s]
+    // tair        ! temperature [K]
+    // pmid        ! pressure at layer midpoints [pa]
+    // relhum      ! relative humidity with respective to liquid [unitless]
+    // cldn        ! new value of cloud fraction    [fraction]
+    // rhoair      ! air density [kg/m3]
+    // so4_num     ! so4 aerosol number [#/cm^3]
+    // dst3_num     ! dust aerosol number [#/cm^3]
+
+    // Output Arguments
+    // nuci       ! ice number nucleated [#/kg]
+    // onihf      ! nucleated number from homogeneous freezing of so4 [#/kg]
+    // oniimm     ! nucleated number from immersion freezing [#/kg]
+    // onidep     ! nucleated number from deposition nucleation [#/kg]
+    // onimey     ! nucleated number from deposition nucleation  (meyers: mixed
+    // phase) [#/kg]
+
+    // Local workspace
+    Real zero = 0;
+    Real nihf = zero; //                     ! nucleated number from homogeneous
+                      //                     freezing of so4 [#/cm^3]
+    Real niimm = zero; //                     ! nucleated number from immersion
+                       //                     freezing [#/cm^3]
+    Real nidep = zero; //                     ! nucleated number from deposition
+                       //                     nucleation [#/cm^3]
+    Real nimey = zero; //                    ! nucleated number from
+    // deposition nucleation (meyers) [#/cm^3]
+    Real n1 = zero;
+    Real ni = zero; //                  ! nucleated number [#/cm^3]
+    const Real tc =
+        tair - Real(273.15); //                      ! air temperature [C]
+    Real regm = zero;        //                    ! air temperature [C]
+
+    // BAD CONSTANT
+    const Real num_threshold = 1.0e-10;
+
+    if (so4_num >= num_threshold && dst3_num >= num_threshold && cldn > zero) {
+      if ((tc <= Real(-35.0)) && (relhum * nucleate_ice::svp_water(tair) /
+                                      nucleate_ice::svp_ice(tair) / subgrid >=
+                                  Real(1.2))) {
+        //! use higher RHi threshold
+        nucleate_ice::calculate_regm_nucleati(wbar, dst3_num, regm);
+        if (tc > regm) {
+          // heterogeneous nucleation only
+          // BAD CONSTANT
+          if (tc < -Real(40) && wbar > Real(1.)) {
+            // !exclude T<-40 & W> 1m / s from hetero.nucleation
+
+            nucleate_ice::hf(tc, wbar, relhum, so4_num, subgrid, nihf);
+            niimm = zero;
+            nidep = zero;
+            n1 = nihf;
+
+          } else {
+
+            nucleate_ice::hetero(tc, wbar, dst3_num, niimm, nidep);
+            nihf = zero;
+            n1 = niimm + nidep;
+
+          } // end tc<Real(-40) ...
+        } else if (tc < regm - Real(5.)) {
+          // homogeneous nucleation only
+          nucleate_ice::hf(tc, wbar, relhum, so4_num, subgrid, nihf);
+          niimm = zero;
+          nidep = zero;
+          n1 = nihf;
+        } else {
+          // transition between homogeneous and heterogeneous: interpolate
+          // in-between
+
+          // BAD CONSTANT
+          if (tc < -Real(40.) && wbar > Real(1.)) {
+            // exclude T<-40 & W>1m/s from hetero. nucleation
+
+            nucleate_ice::hf(tc, wbar, relhum, so4_num, subgrid, nihf);
+            niimm = zero;
+            nidep = zero;
+            n1 = nihf;
+
+          } else {
+
+            nucleate_ice::hf(regm - Real(5.), wbar, relhum, so4_num, subgrid,
+                             nihf);
+            nucleate_ice::hetero(regm, wbar, dst3_num, niimm, nidep);
+
+            if (nihf <= (niimm + nidep)) {
+              n1 = nihf;
+            } else {
+              n1 = (niimm + nidep) *
+                   haero::pow((niimm + nidep) / nihf, (tc - regm) / Real(5.));
+
+            } // end nihf <= (niimm + nidep)
+
+          } // end tc < -40.
+
+        } // end 	tc > regm
+
+        ni = n1;
+
+      } // end tc ...
+
+    } // end so4_num ..
+
+    /* deposition/condensation nucleation in mixed clouds (-37<T<0C) (Meyers,
+   1992) ! this part is executed but is always replaced by 0, because CNT scheme
+   takes over ! the calculation. use_hetfrz_classnuc is always true. */
+    // FIXME OD: why adding zero to nuci? is something missing?
+    nimey = zero;
+    // BAD CONSTANT
+    nuci = ni + nimey;
+    if (nuci > Real(9999.) || nuci < zero) {
+      nuci = zero;
+    } // end
+
+    const Real one_millon = 1.e+6;
+    nuci = nuci * one_millon / rhoair; //  ! change unit from #/cm3 to #/kg
+    onimey = nimey * one_millon / rhoair;
+    onidep = nidep * one_millon / rhoair;
+    oniimm = niimm * one_millon / rhoair;
+    onihf = nihf * one_millon / rhoair;
+
+  } // end nucleati
+
 }; // end class nucleate_ice
 
 } // end namespace mam4
