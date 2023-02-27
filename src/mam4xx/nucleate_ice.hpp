@@ -380,44 +380,35 @@ public:
     auto &num_coarse = prognostics.n_mode_i[coarse_idx];
     auto &num_aitken = prognostics.n_mode_i[coarse_idx];
 
-    // FIXME: look for density
-    // rho(:,:)             ! air density [kg/m^3]
-    // where is air density located? 
-    auto &rho = atmosphere.temperature;
     // mode dry radius [m]   
     // dgnum(icol,kk,mode_aitken_idx)
     const int aitken_idx = int(ModeIndex::Aitken);
     auto &dgnum_aitken = diagnostics.dry_geometric_mean_diameter_i[aitken_idx];
     // FIXME  
     // wsubi(:,:)           ! updraft velocity for ice nucleation [m/s]
-    auto &wsubi = atmosphere.temperature;
+    auto &wsubi = atmosphere.updraft_vel_ice_nucleation;
+    // could fraction [unitless]
+    auto& ast = atmosphere.cloud_fraction;
 
     // FIXME
     const Real subgrid = 0;
 
     // number of activated aerosol for ice nucleation [#/kg]
-    auto &naai = atmosphere.temperature;
-    // number of activated aerosol for ice nucleation (homogeneous freezing
-    // QUESTION: where should we save the output variables? 
-    // only) [#/kg] output number conc of ice nuclei due to heterogenous
-    // freezing [1/m3]
-    auto &nihf = atmosphere.temperature;
-    // output number conc of ice nuclei due to immersion freezing (hetero nuc)
-    // [1/m3]
-    auto &niimm = atmosphere.temperature;
-    // output number conc of ice nuclei due to deoposion nucleation (hetero nuc)
-    // [1/m3]
-    auto &nidep = atmosphere.temperature;
-    // output number conc of ice nuclei due to meyers deposition [1/m3]
-    auto &nimey = atmosphere.temperature;
+    // auto &naai = atmosphere.temperature;
+    // output number conc of ice nuclei due to heterogeneous freezing [1/m3]
+    auto &nihf = diagnostics.icenuc_num_hetfrz;
+    //output number conc of ice nuclei due to immersion freezing (hetero nuc) [1/m3]
+    auto &niimm = diagnostics.icenuc_num_immfrz;
+    // output number conc of ice nuclei due to deposition nucleation (hetero nuc) [1/m3]
+    auto &nidep = diagnostics.icenuc_num_depnuc;
+    // !output number conc of ice nuclei due to meyers deposition [1/m3]
+    auto &nimey = diagnostics.icenuc_num_meydep;
 
     const Real num_m3_to_cm3 = _num_m3_to_cm3;
     // FIXME
     // huge(1.0_r8) !ice nucleation SO2 size threshold for aitken mode
     const Real so4_sz_thresh_icenuc = _so4_sz_thresh_icenuc;
 
-    // ast(:,:)             ! cloud fraction [unitless]
-    // minimum allowed cloud fraction
     const Real mincld = _mincld;
     const Real alnsg_amode_aitken = _alnsg_amode_aitken;
 
@@ -431,10 +422,12 @@ public:
             const Real two = 2;
 
             const Real pmid = atmosphere.pressure(kk);
+            // CHECK units
+            const Real air_density = conversions::density_of_ideal_gas(temp, pmid);
 
             // FIXME: cloud fraction [unitless]
             // could fraction of part of atm? 
-            auto& ast = atmosphere.pressure;
+            
 
             // CHECK if this part of code is consistent with original code. 
             // relative humidity [unitless]
@@ -455,25 +448,25 @@ public:
             sulfate = aiken mode
             dust = coarse mode
             since modal has internal mixtures. */
-            Real dmc = coarse_dust(kk) * rho(kk);
-            Real ssmc = coarse_nacl(kk) * rho(kk);
-            Real so4mc = coarse_so4(kk) * rho(kk);
+            Real dmc = coarse_dust(kk) * air_density;
+            Real ssmc = coarse_nacl(kk) * air_density;
+            Real so4mc = coarse_so4(kk) * air_density;
 
-            Real mommc = coarse_mom(kk) * rho(kk);
-            Real bcmc = coarse_bc(kk) * rho(kk);
-            Real pommc = coarse_pom(kk) * rho(kk);
-            Real soamc = coarse_soa(kk) * rho(kk);
+            Real mommc = coarse_mom(kk) * air_density;
+            Real bcmc = coarse_bc(kk) * air_density;
+            Real pommc = coarse_pom(kk) * air_density;
+            Real soamc = coarse_soa(kk) * air_density;
 
             if (dmc > zero) {
               const Real wght =
                   dmc / (ssmc + dmc + so4mc + bcmc + pommc + soamc + mommc);
-              dst3_num = wght * num_coarse(kk) * rho(kk) * num_m3_to_cm3;
+              dst3_num = wght * num_coarse(kk) * air_density * num_m3_to_cm3;
             } // end dmc
 
             if (dgnum_aitken(kk) > zero) {
               // only allow so4 with D>0.1 um in ice nucleation
               so4_num =
-                  num_aitken(kk) * rho(kk) * num_m3_to_cm3 *
+                  num_aitken(kk) * air_density * num_m3_to_cm3 *
                   (half -
                    half *
                        haero::erf(
@@ -483,10 +476,12 @@ public:
 
             so4_num = haero::max(zero, so4_num);
 
-            nucleati(wsubi(kk), temp, pmid, relhum, icldm, rho(kk), so4_num,
+            Real naai=zero;
+
+            nucleati(wsubi(kk), temp, pmid, relhum, icldm, air_density, so4_num,
                      dst3_num, subgrid,
                      // outputs
-                     naai(kk), nihf(kk), niimm(kk), nidep(kk), nimey(kk));
+                     naai, nihf(kk), niimm(kk), nidep(kk), nimey(kk));
 
             //  Question why nihf instead of naai
             // naai_hom(icol,kk) = nihf(icol,kk)
@@ -494,10 +489,10 @@ public:
 
             // output activated ice (convert from #/kg -> #/m3)
             // QUESTION: note that these variables are divided by rho in nucleati
-            nihf(kk)  *= rho(kk);
-            niimm(kk) *= rho(kk);
-            nidep(kk) *= rho(kk);
-            nimey(kk) *= rho(kk);
+            nihf(kk)  *= air_density;
+            niimm(kk) *= air_density;
+            nidep(kk) *= air_density;
+            nimey(kk) *= air_density;
 
 
           } // end temp
