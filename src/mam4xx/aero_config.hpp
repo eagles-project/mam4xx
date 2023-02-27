@@ -212,16 +212,14 @@ public:
     num_substeps = haero::DeviceType::view_1d<int>("num_substeps", num_levels);
     Kokkos::deep_copy(num_substeps, 0);
 
-    icenuc_num_hetfrz = ColumnView("icenuc_num_hetfrz", num_levels); 
-    Kokkos::deep_copy(icenuc_num_hetfrz,0.0);
-    icenuc_num_immfrz = ColumnView("icenuc_num_immfrz", num_levels); 
-    Kokkos::deep_copy(icenuc_num_immfrz,0.0);
-    icenuc_num_depnuc = ColumnView("icenuc_num_depnuc", num_levels); 
-    Kokkos::deep_copy(icenuc_num_depnuc,0.0);
-    icenuc_num_meydep = ColumnView("icenuc_num_meydep", num_levels); 
-    Kokkos::deep_copy(icenuc_num_meydep,0.0);
-
-
+    icenuc_num_hetfrz = ColumnView("icenuc_num_hetfrz", num_levels);
+    Kokkos::deep_copy(icenuc_num_hetfrz, 0.0);
+    icenuc_num_immfrz = ColumnView("icenuc_num_immfrz", num_levels);
+    Kokkos::deep_copy(icenuc_num_immfrz, 0.0);
+    icenuc_num_depnuc = ColumnView("icenuc_num_depnuc", num_levels);
+    Kokkos::deep_copy(icenuc_num_depnuc, 0.0);
+    icenuc_num_meydep = ColumnView("icenuc_num_meydep", num_levels);
+    Kokkos::deep_copy(icenuc_num_meydep, 0.0);
   }
   Diagnostics() = default; // Careful! Only for creating placeholders in views
   Diagnostics(const Diagnostics &) = default;
@@ -268,18 +266,20 @@ public:
 
   /// Number of time substeps needed to converge in mam_soaexch_advance_in_time
   haero::DeviceType::view_1d<int> num_substeps;
-  
-  // Output variables for nucleate_ice process: 
-  // Ask experts for better names for: icenuc_num_hetfrz, icenuc_num_immfrz, icenuc_num_depnuc,  icenuc_num_meydep
-  // output number conc of ice nuclei due to heterogeneous freezing [1/m3] 
+
+  // Output variables for nucleate_ice process:
+  // Ask experts for better names for: icenuc_num_hetfrz, icenuc_num_immfrz,
+  // icenuc_num_depnuc,  icenuc_num_meydep output number conc of ice nuclei due
+  // to heterogeneous freezing [1/m3]
   ColumnView icenuc_num_hetfrz;
-  //output number conc of ice nuclei due to immersion freezing (hetero nuc) [1/m3]
+  // output number conc of ice nuclei due to immersion freezing (hetero nuc)
+  // [1/m3]
   ColumnView icenuc_num_immfrz;
-   // output number conc of ice nuclei due to deposition nucleation (hetero nuc) [1/m3]
+  // output number conc of ice nuclei due to deposition nucleation (hetero nuc)
+  // [1/m3]
   ColumnView icenuc_num_depnuc;
   // !output number conc of ice nuclei due to meyers deposition [1/m3]
   ColumnView icenuc_num_meydep;
-
 
 private:
   int nlev_;

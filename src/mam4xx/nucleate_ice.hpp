@@ -327,10 +327,7 @@ public:
 
 private:
   Config config_;
-  Real _alnsg_amode_aitken,
-       _num_m3_to_cm3,
-       _so4_sz_thresh_icenuc,
-       _mincld;
+  Real _alnsg_amode_aitken, _num_m3_to_cm3, _so4_sz_thresh_icenuc, _mincld;
 
 public:
   // name--unique name of the process implemented by this class
@@ -341,13 +338,14 @@ public:
   void init(const AeroConfig &aero_config,
             const Config &calcsize_config = Config()) {
 
-  	// alnsg_amode(modeptr_aitken)
+    // alnsg_amode(modeptr_aitken)
     // alog( sigmag_amode(m) )
 
     _num_m3_to_cm3 = 1.0e-6;
     // BAD CONSTANT
     // FIXME
-    _so4_sz_thresh_icenuc = 1e20; // huge(1.0_r8) !ice nucleation SO2 size threshold for aitken mode
+    _so4_sz_thresh_icenuc =
+        1e20; // huge(1.0_r8) !ice nucleation SO2 size threshold for aitken mode
     // minimum allowed cloud fraction
     // BAD CONSTANT
     _mincld = 0.0001;
@@ -364,7 +362,7 @@ public:
                           const Diagnostics &diagnostics,
                           const Tendencies &tendencies) const {
 
-    const int nk = atmosphere.num_levels();  
+    const int nk = atmosphere.num_levels();
     const Real tmelt_m_five = haero::Constants::freezing_pt_h2o - 5;
     const int coarse_idx = int(ModeIndex::Coarse);
 
@@ -380,15 +378,15 @@ public:
     auto &num_coarse = prognostics.n_mode_i[coarse_idx];
     auto &num_aitken = prognostics.n_mode_i[coarse_idx];
 
-    // mode dry radius [m]   
+    // mode dry radius [m]
     // dgnum(icol,kk,mode_aitken_idx)
     const int aitken_idx = int(ModeIndex::Aitken);
     auto &dgnum_aitken = diagnostics.dry_geometric_mean_diameter_i[aitken_idx];
-    // FIXME  
+    // FIXME
     // wsubi(:,:)           ! updraft velocity for ice nucleation [m/s]
     auto &wsubi = atmosphere.updraft_vel_ice_nucleation;
     // could fraction [unitless]
-    auto& ast = atmosphere.cloud_fraction;
+    auto &ast = atmosphere.cloud_fraction;
 
     // FIXME
     const Real subgrid = 0;
@@ -397,9 +395,11 @@ public:
     // auto &naai = atmosphere.temperature;
     // output number conc of ice nuclei due to heterogeneous freezing [1/m3]
     auto &nihf = diagnostics.icenuc_num_hetfrz;
-    //output number conc of ice nuclei due to immersion freezing (hetero nuc) [1/m3]
+    // output number conc of ice nuclei due to immersion freezing (hetero nuc)
+    // [1/m3]
     auto &niimm = diagnostics.icenuc_num_immfrz;
-    // output number conc of ice nuclei due to deposition nucleation (hetero nuc) [1/m3]
+    // output number conc of ice nuclei due to deposition nucleation (hetero
+    // nuc) [1/m3]
     auto &nidep = diagnostics.icenuc_num_depnuc;
     // !output number conc of ice nuclei due to meyers deposition [1/m3]
     auto &nimey = diagnostics.icenuc_num_meydep;
@@ -414,22 +414,22 @@ public:
 
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int kk) {
-        const Real temp = atmosphere.temperature(kk);	
+          const Real temp = atmosphere.temperature(kk);
           if (temp < tmelt_m_five) {
 
-          	const Real zero = 0;
+            const Real zero = 0;
             const Real half = 0.5;
             const Real two = 2;
 
             const Real pmid = atmosphere.pressure(kk);
             // CHECK units
-            const Real air_density = conversions::density_of_ideal_gas(temp, pmid);
+            const Real air_density =
+                conversions::density_of_ideal_gas(temp, pmid);
 
             // FIXME: cloud fraction [unitless]
-            // could fraction of part of atm? 
-            
+            // could fraction of part of atm?
 
-            // CHECK if this part of code is consistent with original code. 
+            // CHECK if this part of code is consistent with original code.
             // relative humidity [unitless]
             Real qv = atmosphere.vapor_mixing_ratio(kk);
             Real relhum =
@@ -476,7 +476,7 @@ public:
 
             so4_num = haero::max(zero, so4_num);
 
-            Real naai=zero;
+            Real naai = zero;
 
             nucleati(wsubi(kk), temp, pmid, relhum, icldm, air_density, so4_num,
                      dst3_num, subgrid,
@@ -485,15 +485,15 @@ public:
 
             //  Question why nihf instead of naai
             // naai_hom(icol,kk) = nihf(icol,kk)
-            // naai is not saved? 
+            // naai is not saved?
 
             // output activated ice (convert from #/kg -> #/m3)
-            // QUESTION: note that these variables are divided by rho in nucleati
-            nihf(kk)  *= air_density;
+            // QUESTION: note that these variables are divided by rho in
+            // nucleati
+            nihf(kk) *= air_density;
             niimm(kk) *= air_density;
             nidep(kk) *= air_density;
             nimey(kk) *= air_density;
-
 
           } // end temp
         }); // kokkos::parfor(k)
