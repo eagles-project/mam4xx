@@ -45,7 +45,7 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
 
     Real qaer_cur_c[num_aero][num_modes];
     Real qaer_del_cond_c[num_aero][num_modes];
-    Real qaer_del_coag_in_c[num_aero][Aging::max_agepair];
+    Real qaer_del_coag_in_c[num_aero][AeroConfig::max_agepair()];
 
     int n = 0;
     for (int imode = 0; imode < num_modes; ++imode) {
@@ -57,7 +57,7 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
     }
 
     n = 0;
-    for (int imode = 0; imode < Aging::max_agepair; ++imode) {
+    for (int imode = 0; imode < AeroConfig::max_agepair(); ++imode) {
       for (int ispec = 0; ispec < num_aero; ++ispec) {
         qaer_del_coag_in_c[ispec][imode] = qaer_del_coag_in_f[n];
         n += 1;
@@ -82,7 +82,7 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
     }
 
     n = 0;
-    for (int imode = 0; imode < Aging::max_agepair; ++imode) {
+    for (int imode = 0; imode < AeroConfig::max_agepair(); ++imode) {
       for (int ispec = 0; ispec < num_aero; ++ispec) {
         qaer_del_coag_in_f[n] = qaer_del_coag_in_c[ispec][imode];
         n += 1;
