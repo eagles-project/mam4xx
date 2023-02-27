@@ -68,7 +68,7 @@ void coag_1subarea(Ensemble *ensemble) {
 
     const int num_modes = AeroConfig::num_modes();
     const int num_aero = AeroConfig::num_aerosol_ids();
-    const int max_agepair = Coagulation::max_agepair;
+    const int max_agepair = AeroConfig::max_agepair();
     Real qaer_cur_c[num_aero][num_modes];
     int n = 0;
     for (int imode = 0; imode < num_modes; ++imode) {

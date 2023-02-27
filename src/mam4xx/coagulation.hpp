@@ -31,9 +31,6 @@ public:
   // Todo: This should be resolved back to Aging
   static constexpr int i_agepair_pca = 0;
 
-  // Todo: This should be resolved back to Aging
-  static constexpr int max_agepair = 1;
-
   // process-specific configuration data (if any)
   struct Config {
     Config() {}
@@ -858,7 +855,7 @@ void mam_coag_aer_update(
     Real qaer_bgn[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
     Real qaer_end[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
     Real qaer_del_coag_out[AeroConfig::num_aerosol_ids()]
-                          [Coagulation::max_agepair]) {
+                          [AeroConfig::max_agepair()]) {
 
   const int num_aer = AeroConfig::num_aerosol_ids();
   const int num_mode = AeroConfig::num_modes();
@@ -1048,7 +1045,7 @@ void mam_coag_1subarea(
     Real qnum_cur[AeroConfig::num_modes()],
     Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
     Real qaer_del_coag_out[AeroConfig::num_aerosol_ids()]
-                          [Coagulation::max_agepair]) {
+                          [AeroConfig::max_agepair()]) {
 
   const int num_aer = AeroConfig::num_aerosol_ids();
   const int num_mode = AeroConfig::num_modes();
@@ -1160,7 +1157,7 @@ void coagulation_rates_1box(const int k, const AeroConfig &aero_config,
   }
 
   Real qaer_del_coag_out[AeroConfig::num_aerosol_ids()]
-                        [Coagulation::max_agepair];
+                        [AeroConfig::max_agepair()];
 
   mam_coag_1subarea(dt, temp, pmid, aircon, dgn_a, dgn_awet, wet_density,
                     qnum_cur, qaer_cur, qaer_del_coag_out);

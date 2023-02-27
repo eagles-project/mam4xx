@@ -26,6 +26,12 @@ TEST_CASE("test_constructor", "mam4_coagulation_process") {
   REQUIRE(process.aero_config() == mam4_config);
 }
 
+TEST_CASE("test_aging_pairs", "mam4_aging_pairs") {
+  // mam4 coagulation assumes that max_agepair is 1
+  mam4::AeroConfig mam4_config;
+  REQUIRE(mam4_config.max_agepair() == 1);
+}
+
 TEST_CASE("bm0ij_data", "mam4_cagulation_process") {
 
   // Here we test a few values returned directly from fortran with those
