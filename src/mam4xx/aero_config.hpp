@@ -58,6 +58,9 @@ public:
 
   /// Returns the number of gas ids. This is the number of enums in mam4::GasId.
   static constexpr int num_gas_ids() { return 3; }
+
+  /// Returns the number of aging pairs
+  static constexpr int max_agepair() { return 1; }
 };
 
 /// MAM4 column-wise prognostic aerosol fields (also used for tendencies).

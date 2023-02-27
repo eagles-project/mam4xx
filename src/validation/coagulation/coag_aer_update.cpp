@@ -48,7 +48,7 @@ void coag_aer_update(Ensemble *ensemble) {
 
     const int num_modes = AeroConfig::num_modes();
     const int num_aero = AeroConfig::num_aerosol_ids();
-    const int max_agepair = Coagulation::max_agepair;
+    const int max_agepair = AeroConfig::max_agepair();
 
     Real qaer_bgn_c[num_aero][num_modes];
     Real qaer_end_c[num_aero][num_modes];

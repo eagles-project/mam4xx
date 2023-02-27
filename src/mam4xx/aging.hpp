@@ -37,7 +37,6 @@ public:
   static constexpr Real n_so4_monolayers_pcage = 8.0;
   static constexpr Real dr_so4_monolayers_pcage =
       n_so4_monolayers_pcage * 4.76e-10;
-  static constexpr int max_agepair = 1;
 
   // validate -- validates the given atmospheric state and prognostics against
   // assumptions made by this implementation, returning true if the states are
@@ -73,9 +72,9 @@ void mam_pcarbon_aging_frac(
                                                  // mixing ratio due to
                                                  // condensation [mol/mol]
     Real qaer_del_coag_in[AeroConfig::num_aerosol_ids()]
-                         [Aging::max_agepair], // change of aerosol mass
-                                               // mixing ratio due to
-                                               // coagulation
+                         [AeroConfig::max_agepair()], // change of aerosol mass
+                                                      // mixing ratio due to
+                                                      // coagulation
     Real &xferfrac_pcage, // fraction of aged pom/bc transferred to accum
                           // [unitless]
     Real
@@ -246,12 +245,12 @@ void mam_pcarbon_aging_1subarea(
                       [AeroConfig::num_modes()], // change of aerosol mass
                                                  // mixing ratio due to
                                                  // coagulation [mol/mol]
-    Real
-        qaer_del_coag_in[AeroConfig::num_aerosol_ids()]
-                        [Aging::max_agepair]) { //  change of aerosol mass
-                                                //  mixing ratio due to
-                                                //  coagulation from subrountine
-                                                //  mam_coag_1subarea [mol/mol]
+    Real qaer_del_coag_in[AeroConfig::num_aerosol_ids()]
+                         [AeroConfig::max_agepair()]) { //  change of aerosol
+                                                        //  mass
+                                                        //  mixing ratio due to
+  //  coagulation from subrountine
+  //  mam_coag_1subarea [mol/mol]
 
   Real xferfrac_pcage, frac_cond, frac_coag;
 
@@ -361,7 +360,7 @@ void aerosol_aging_rates_1box(const int k, const AeroConfig &aero_config,
   //  Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
   Real qaer_del_cond[num_aer][num_mode];
   Real qaer_del_coag[num_aer][num_mode];
-  Real qaer_del_coag_in[num_aer][Aging::max_agepair];
+  Real qaer_del_coag_in[num_aer][AeroConfig::max_agepair()];
 
   // Get prognostic fields
   // Aerosol mass

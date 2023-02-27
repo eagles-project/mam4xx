@@ -26,6 +26,12 @@ TEST_CASE("test_constructor", "mam4_aging_process") {
   REQUIRE(process.aero_config() == mam4_config);
 }
 
+TEST_CASE("test_aging_pairs", "mam4_aging_pairs") {
+  // mam4 aging assumes that max_agepair is 1
+  mam4::AeroConfig mam4_config;
+  REQUIRE(mam4_config.max_agepair() == 1);
+}
+
 TEST_CASE("test_compute_tendencies", "mam4_aging_process") {
   ekat::Comm comm;
 
@@ -205,7 +211,8 @@ TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
   Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()];
   Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()];
   Real qaer_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()];
-  Real qaer_del_coag_in[AeroConfig::num_aerosol_ids()][Aging::max_agepair];
+  Real qaer_del_coag_in[AeroConfig::num_aerosol_ids()]
+                       [AeroConfig::max_agepair()];
 
   // Fill all arrays with zeros
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
@@ -224,7 +231,7 @@ TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
   }
 
   for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
-    for (int imode = 0; imode < Aging::max_agepair; ++imode) {
+    for (int imode = 0; imode < AeroConfig::max_agepair(); ++imode) {
       qaer_del_coag_in[ispec][imode] = 0.0;
     }
   }
@@ -250,7 +257,7 @@ TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
   }
 
   for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
-    for (int imode = 0; imode < Aging::max_agepair; ++imode) {
+    for (int imode = 0; imode < AeroConfig::max_agepair(); ++imode) {
       REQUIRE(qaer_del_coag_in[ispec][imode] == 0.0);
     }
   }
