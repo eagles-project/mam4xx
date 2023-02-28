@@ -319,6 +319,7 @@ class NucleateIce {
 public:
   // nucleate_ice-specific configuration
   struct Config {
+    // In Fortran code _nucleate_ice_subgrid is read from a file.
     Real _nucleate_ice_subgrid;
     Config() : _nucleate_ice_subgrid(0.0) {}
     Config(const Config &) = default;
@@ -486,9 +487,9 @@ public:
                      // outputs
                      naai, nihf(kk), niimm(kk), nidep(kk), nimey(kk));
 
-            //  Question why nihf instead of naai
+            // QUESTION why nihf instead of naai
             // naai_hom(icol,kk) = nihf(icol,kk)
-            // naai is not saved?
+            // is naai not saved?
 
             // output activated ice (convert from #/kg -> #/m3)
             // QUESTION: note that these variables are divided by rho in
