@@ -4,8 +4,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/calcsize.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
 
@@ -33,7 +31,7 @@ void compute_tendencies(Ensemble *ensemble) {
     mam4::Tendencies tends(nlev);
 
     mam4::AeroConfig mam4_config;
-    mam4::CalcSizeProcess process(mam4_config);
+    mam4::NucleateIceProcess process(mam4_config);
     const auto nmodes = mam4_config.num_modes();
     const Real pmid = input.get("pressure"); // air pressure
     const Real temp = input.get("temperature"); // air temperature
