@@ -35,7 +35,6 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
   Real pblh = 1000;
   Atmosphere atm(nlev, pblh);
 
-  logger.info("starting ndrop test");
   // initialize a hydrostatically balanced moist air column
   // using constant lapse rate in virtual temperature to manufacture
   // exact solutions.
@@ -58,9 +57,6 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
   Kokkos::deep_copy(h_T, T);
   Kokkos::deep_copy(h_P, P);
 
-  logger.info("initialized atmosphere");
-  logger.info("atm.temp = {}", h_T(0));
-  logger.info("atm.pressure = {}", h_P(0));
   mam4::Prognostics progs(nlev);
   mam4::Diagnostics diags(nlev);
 
@@ -90,7 +86,6 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
     }
   }
 
-  logger.info("initialized prognostics");
   // initialize diags
   for (int m = 0; m < nmodes; m++) {
     Real dry_vol = 0.0;
@@ -103,35 +98,26 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
     }
   }
 
-  logger.info("initialized diagnostics");
   // Call mam4xx kernel across all modes, levels
   Kokkos::parallel_for(
       "compute_dry_particle_size", nlev, KOKKOS_LAMBDA(const int i) {
         mode_avg_dry_particle_diam(diags, progs, i);
       });
 
-  logger.info("finished initialization");
-
   mam4::Real naerosol[nmodes];
 
   // iterate over modes and columns to calculate aer num
   for (int m = 0; m < nmodes; m++) {
-    auto h_diam_total = Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter_total[m]);
-    Kokkos::deep_copy(h_diam_total, diags.dry_geometric_mean_diameter_total[m]); 
-
-    Kokkos::parallel_for(
-        "get_aer_num", nlev,  KOKKOS_LAMBDA(int i) {
-          get_aer_num(diags, progs, atm, m,  i, naerosol);
-        });
+    auto h_diam_total =
+        Kokkos::create_mirror_view(diags.dry_geometric_mean_diameter_total[m]);
+    Kokkos::deep_copy(h_diam_total, diags.dry_geometric_mean_diameter_total[m]);
 
     for (int k = 0; k < nlev; k++) {
-      logger.info("k = {}", k);
-      logger.info("h_diam_total({}) = {}", k, h_diam_total(k));
+      logger.info("k = {}, m = {}", k, m);
       Real vaerosol = conversions::mean_particle_volume_from_diameter(
-          h_diam_total(k),
-          modes(m).mean_std_dev);
+          h_diam_total(k), modes(m).mean_std_dev);
+      logger.info("vaerosol = {}", vaerosol);
 
-      logger.info("calcing num2vol ratios");
       Real num2vol_ratio_min =
           1.0 / conversions::mean_particle_volume_from_diameter(
                     modes(m).min_diameter, modes(m).mean_std_dev);
@@ -141,25 +127,26 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
       Real min_bound = vaerosol * num2vol_ratio_max;
       Real max_bound = vaerosol * num2vol_ratio_min;
 
-      logger.info("atm.temp = {}", h_T(k));
-      logger.info("atm.pressure = {}", h_P(k)); 
+      logger.info("atm.temperature = {}, atm.pressure = {}", h_T(k), h_P(k));
       Real middle = (number_mixing_ratio + number_mixing_ratio) *
                     conversions::density_of_ideal_gas(h_T(k), h_P(k));
-                    
-      logger.info("going into get aer num");
-      //mam4::get_aer_num(diags, progs, atm, m, k, naerosol);
+
+      mam4::get_aer_num(diags, progs, atm, m, k, naerosol);
       logger.info("naerosol[{}] = {}", m, naerosol[m]);
 
-      logger.info("min bound = {}", min_bound);
-      logger.info("max bound = {}", max_bound);
+      logger.info("min bound = {}, max bound = {}", min_bound, max_bound);
       logger.info("progs calc = {}", middle);
 
-      //REQUIRE(
-      //    FloatingPoint<Real>::in_bounds(naerosol[m], min_bound, max_bound));
-      //bool check_calc = FloatingPoint<Real>::equiv(naerosol[m], min_bound) ||
-      //                  FloatingPoint<Real>::equiv(naerosol[m], middle) ||
-      //                  FloatingPoint<Real>::equiv(naerosol[m], max_bound);
-      //REQUIRE(check_calc);
+      // TODO: this test needs to be revisited to run properly on GPU
+      //  come back when this function is being used in a ported
+      //  parameterization
+
+      REQUIRE(
+          FloatingPoint<Real>::in_bounds(naerosol[m], min_bound, max_bound));
+      bool check_calc = FloatingPoint<Real>::equiv(naerosol[m], min_bound) ||
+                        FloatingPoint<Real>::equiv(naerosol[m], middle) ||
+                        FloatingPoint<Real>::equiv(naerosol[m], max_bound);
+      REQUIRE(check_calc);
     }
   }
 }
