@@ -319,7 +319,8 @@ class NucleateIce {
 public:
   // nucleate_ice-specific configuration
   struct Config {
-    Config() {}
+    Real _nucleate_ice_subgrid;
+    Config() : _nucleate_ice_subgrid(0.0) {}
     Config(const Config &) = default;
     ~Config() = default;
     Config &operator=(const Config &) = default;
@@ -327,7 +328,8 @@ public:
 
 private:
   Config config_;
-  Real _alnsg_amode_aitken, _num_m3_to_cm3, _so4_sz_thresh_icenuc, _mincld;
+  Real _alnsg_amode_aitken, _num_m3_to_cm3, _so4_sz_thresh_icenuc, _mincld,
+      _nucleate_ice_subgrid;
 
 public:
   // name--unique name of the process implemented by this class
@@ -336,10 +338,11 @@ public:
   // init -- initializes the implementation with MAM4's configuration and with
   // a process-specific configuration.
   void init(const AeroConfig &aero_config,
-            const Config &calcsize_config = Config()) {
+            const Config &nucleate_ice_config = Config()) {
 
     // alnsg_amode(modeptr_aitken)
     // alog( sigmag_amode(m) )
+    _nucleate_ice_subgrid = nucleate_ice_config._nucleate_ice_subgrid;
 
     _num_m3_to_cm3 = 1.0e-6;
     // BAD CONSTANT
@@ -389,7 +392,7 @@ public:
     auto &ast = atmosphere.cloud_fraction;
 
     // FIXME
-    const Real subgrid = 0;
+    const Real subgrid = _nucleate_ice_subgrid;
 
     // number of activated aerosol for ice nucleation [#/kg]
     // auto &naai = atmosphere.temperature;
