@@ -66,7 +66,8 @@ Real GoffGratch_svp_water(const Real temperature) {
   // This value is slightly high, but it seems to be the value for the
   // steam point of water originally (and most frequently) used in the
   // Goff & Gratch scheme.
-  const Real tboil = Real(373.16);
+  //FIXME add this constant to haero::Constants
+  const Real tboil = 373.16;
 
   const Real ten = 10;
   const Real one = 1;
@@ -97,7 +98,7 @@ Real GoffGratch_svp_ice(const Real temperature) {
   // h2otrip ! Triple point temperature of water (K)
   // SHR_CONST_TKTRIP  = 273.16_R8       ! triple point of fresh water        ~
   // K
-  const Real h2otrip = Real(273.16);
+  const Real h2otrip = haero::Constants::triple_pt_h2o ;
   const Real ten = 10;
   const Real one = 1;
 
@@ -205,22 +206,22 @@ void hf(const Real Temperature, const Real w_vlc, const Real RH, const Real Na,
   ! parameters
   !---------------------------------------------------------------------*/
 
-  const Real A1_fast = Real(0.0231);
-  const Real A21_fast = -Real(1.6387); //(T>-64 deg)
-  const Real A22_fast = -Real(6.045);  //(T<=-64 deg)
-  const Real B1_fast = -Real(0.008);
-  const Real B21_fast = -Real(0.042); //(T>-64 deg)
-  const Real B22_fast = -Real(0.112); //(T<=-64 deg)
-  const Real C1_fast = Real(0.0739);
-  const Real C2_fast = Real(1.2372);
+  const Real A1_fast = 0.0231;
+  const Real A21_fast = -1.6387; //(T>-64 deg)
+  const Real A22_fast = -6.045;  //(T<=-64 deg)
+  const Real B1_fast = -0.008;
+  const Real B21_fast = -0.042; //(T>-64 deg)
+  const Real B22_fast = -0.112; //(T<=-64 deg)
+  const Real C1_fast = 0.0739;
+  const Real C2_fast = 1.2372;
 
-  const Real A1_slow = -Real(0.3949);
-  const Real A2_slow = Real(1.282);
-  const Real B1_slow = -Real(0.0156);
-  const Real B2_slow = Real(0.0111);
-  const Real B3_slow = Real(0.0217);
-  const Real C1_slow = Real(0.120);
-  const Real C2_slow = Real(2.312);
+  const Real A1_slow = -0.3949;
+  const Real A2_slow = 1.282;
+  const Real B1_slow = -0.0156;
+  const Real B2_slow = 0.0111;
+  const Real B3_slow = 0.0217;
+  const Real C1_slow = 0.120;
+  const Real C2_slow = 2.312;
 
   /*---------------------------------------------------------------------
   ! local variables
@@ -285,14 +286,14 @@ void hetero(const Real Temperature, const Real w_vlc, const Real Ns, Real &Nis,
   ! parameters
   !---------------------------------------------------------------------*/
 
-  const Real A11 = Real(0.0263);
-  const Real A12 = -Real(0.0185);
-  const Real A21 = Real(2.758);
-  const Real A22 = Real(1.3221);
-  const Real B11 = -Real(0.008);
-  const Real B12 = -Real(0.0468);
-  const Real B21 = -Real(0.2667);
-  const Real B22 = -Real(1.4588);
+  const Real A11 = 0.0263;
+  const Real A12 = -0.0185;
+  const Real A21 = 2.758;
+  const Real A22 = 1.3221;
+  const Real B11 = -0.008;
+  const Real B12 = -0.0468;
+  const Real B21 = -0.2667;
+  const Real B22 = -1.4588;
 
   const Real lnNs = haero::log(Ns);
   const Real lnw = haero::log(w_vlc);
