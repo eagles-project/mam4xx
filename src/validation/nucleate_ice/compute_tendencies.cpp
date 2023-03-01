@@ -37,6 +37,7 @@ void compute_tendencies(Ensemble *ensemble) {
     const Real temp = input.get("temperature"); // air temperature
     const Real updraft_vel_ice_nucleation = input.get("updraft_vel_ice_nucleation"); // cloud fraction
     const Real cloud_fraction = input.get("cloud_fraction");
+    const Real vapor_mixing_ratio = input.get("vapor_mixing_ratio");
 
     auto q_i = input.get_array("interstitial");
     auto n_i = input.get_array("interstitial_num");
@@ -45,6 +46,7 @@ void compute_tendencies(Ensemble *ensemble) {
     Kokkos::deep_copy(atm.pressure, pmid);
     Kokkos::deep_copy(atm.cloud_fraction, cloud_fraction);
     Kokkos::deep_copy(atm.updraft_vel_ice_nucleation, updraft_vel_ice_nucleation);
+    Kokkos::deep_copy(atm.vapor_mixing_ratio, vapor_mixing_ratio);
 
 
     const Real dry_diameter_aitken =  input.get("dry_diameter_aitken");

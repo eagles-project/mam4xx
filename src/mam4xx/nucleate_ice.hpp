@@ -322,7 +322,7 @@ public:
   struct Config {
     // In Fortran code _nucleate_ice_subgrid is read from a file.
     Real _nucleate_ice_subgrid;
-    Config() : _nucleate_ice_subgrid(0.0) {}
+    Config() : _nucleate_ice_subgrid(0.001) {}
     Config(const Config &) = default;
     ~Config() = default;
     Config &operator=(const Config &) = default;
@@ -349,8 +349,9 @@ public:
     _num_m3_to_cm3 = 1.0e-6;
     // BAD CONSTANT
     // FIXME
-    _so4_sz_thresh_icenuc =
-        1e20; // huge(1.0_r8) !ice nucleation SO2 size threshold for aitken mode
+    // std::numeric_limits<Real>::max()
+    // this values is from a txt file
+    _so4_sz_thresh_icenuc = 1e-6; // huge(1.0_r8) !ice nucleation SO2 size threshold for aitken mode
     // minimum allowed cloud fraction
     // BAD CONSTANT
     _mincld = 0.0001;
@@ -437,6 +438,7 @@ public:
             // CHECK if this part of code is consistent with original code.
             // relative humidity [unitless]
             Real qv = atmosphere.vapor_mixing_ratio(kk);
+            // very low temperature produces inf relhum 
             Real relhum =
                 conversions::relative_humidity_from_vapor_mixing_ratio(qv, pmid,
                                                                        temp);
