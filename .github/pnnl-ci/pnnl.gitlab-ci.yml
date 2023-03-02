@@ -1,13 +1,4 @@
 workflow:
-  # Only run if source is an open merge request
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
-      when: never
-  # We want to ignore detached pipelines
-  # https://stackoverflow.com/questions/55257549/how-can-i-trigger-a-job-with-a-manual-click-or-a-commit-message
-    - if: $CI_MERGE_REQUEST_EVENT_TYPE != "detached"
-
 stages:
 # While we could put this in a matrix with more runners,
 # This maximizes the number of concurrent builds that can run
