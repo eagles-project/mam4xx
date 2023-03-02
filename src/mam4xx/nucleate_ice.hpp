@@ -66,7 +66,7 @@ Real GoffGratch_svp_water(const Real temperature) {
   // This value is slightly high, but it seems to be the value for the
   // steam point of water originally (and most frequently) used in the
   // Goff & Gratch scheme.
-  //FIXME add this constant to haero::Constants
+  // FIXME add this constant to haero::Constants
   const Real tboil = 373.16;
 
   const Real ten = 10;
@@ -98,7 +98,7 @@ Real GoffGratch_svp_ice(const Real temperature) {
   // h2otrip ! Triple point temperature of water (K)
   // SHR_CONST_TKTRIP  = 273.16_R8       ! triple point of fresh water        ~
   // K
-  const Real h2otrip = haero::Constants::triple_pt_h2o ;
+  const Real h2otrip = haero::Constants::triple_pt_h2o;
   const Real ten = 10;
   const Real one = 1;
 
@@ -322,7 +322,8 @@ public:
   struct Config {
     // In Fortran code _nucleate_ice_subgrid is read from a file.
     Real _nucleate_ice_subgrid;
-    Config(const Real nucleate_ice_subgrid=0.001) : _nucleate_ice_subgrid(nucleate_ice_subgrid) {}
+    Config(const Real nucleate_ice_subgrid = 0.001)
+        : _nucleate_ice_subgrid(nucleate_ice_subgrid) {}
     Config(const Config &) = default;
     ~Config() = default;
     Config &operator=(const Config &) = default;
@@ -345,13 +346,14 @@ public:
     // alnsg_amode(modeptr_aitken)
     // alog( sigmag_amode(m) )
     _nucleate_ice_subgrid = nucleate_ice_config._nucleate_ice_subgrid;
-    
+
     _num_m3_to_cm3 = 1.0e-6;
     // BAD CONSTANT
     // FIXME
     // std::numeric_limits<Real>::max()
     // this values is from a txt file
-    _so4_sz_thresh_icenuc = 1e-6; // huge(1.0_r8) !ice nucleation SO2 size threshold for aitken mode
+    _so4_sz_thresh_icenuc =
+        1e-6; // huge(1.0_r8) !ice nucleation SO2 size threshold for aitken mode
     // minimum allowed cloud fraction
     // BAD CONSTANT
     _mincld = 0.0001;
@@ -367,7 +369,7 @@ public:
                           const Prognostics &prognostics,
                           const Diagnostics &diagnostics,
                           const Tendencies &tendencies) const {
-    
+
     const int nk = atmosphere.num_levels();
     const Real tmelt_m_five = haero::Constants::freezing_pt_h2o - 5;
     const int coarse_idx = int(ModeIndex::Coarse);
@@ -438,7 +440,7 @@ public:
             // CHECK if this part of code is consistent with original code.
             // relative humidity [unitless]
             Real qv = atmosphere.vapor_mixing_ratio(kk);
-            // very low temperature produces inf relhum 
+            // very low temperature produces inf relhum
             Real relhum =
                 conversions::relative_humidity_from_vapor_mixing_ratio(qv, pmid,
                                                                        temp);
@@ -651,7 +653,6 @@ public:
     onidep = nidep * one_millon / rhoair;
     oniimm = niimm * one_millon / rhoair;
     onihf = nihf * one_millon / rhoair;
-
 
   } // end nucleati
 

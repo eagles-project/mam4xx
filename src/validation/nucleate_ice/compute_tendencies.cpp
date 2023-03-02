@@ -36,9 +36,10 @@ void compute_tendencies(Ensemble *ensemble) {
     NucleateIce::Config nucleate_ice_config(subgrid);
     mam4::NucleateIceProcess process(mam4_config, nucleate_ice_config);
     const auto nmodes = mam4_config.num_modes();
-    const Real pmid = input.get("pressure"); // air pressure
+    const Real pmid = input.get("pressure");    // air pressure
     const Real temp = input.get("temperature"); // air temperature
-    const Real updraft_vel_ice_nucleation = input.get("updraft_vel_ice_nucleation"); // cloud fraction
+    const Real updraft_vel_ice_nucleation =
+        input.get("updraft_vel_ice_nucleation"); // cloud fraction
     const Real cloud_fraction = input.get("cloud_fraction");
     const Real vapor_mixing_ratio = input.get("vapor_mixing_ratio");
 
@@ -48,13 +49,14 @@ void compute_tendencies(Ensemble *ensemble) {
     Kokkos::deep_copy(atm.temperature, temp);
     Kokkos::deep_copy(atm.pressure, pmid);
     Kokkos::deep_copy(atm.cloud_fraction, cloud_fraction);
-    Kokkos::deep_copy(atm.updraft_vel_ice_nucleation, updraft_vel_ice_nucleation);
+    Kokkos::deep_copy(atm.updraft_vel_ice_nucleation,
+                      updraft_vel_ice_nucleation);
     Kokkos::deep_copy(atm.vapor_mixing_ratio, vapor_mixing_ratio);
 
-
-    const Real dry_diameter_aitken =  input.get("dry_diameter_aitken");
-    const int aitken_idx = int(ModeIndex::Aitken); 
-    Kokkos::deep_copy(diags.dry_geometric_mean_diameter_i[aitken_idx], dry_diameter_aitken);
+    const Real dry_diameter_aitken = input.get("dry_diameter_aitken");
+    const int aitken_idx = int(ModeIndex::Aitken);
+    Kokkos::deep_copy(diags.dry_geometric_mean_diameter_i[aitken_idx],
+                      dry_diameter_aitken);
 
     int count = 0;
     for (int imode = 0; imode < nmodes; ++imode) {
@@ -80,26 +82,27 @@ void compute_tendencies(Ensemble *ensemble) {
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
-    });
+        });
 
-  
-    auto h_icenuc_num_hetfrz= Kokkos::create_mirror_view(diags.icenuc_num_hetfrz);
+    auto h_icenuc_num_hetfrz =
+        Kokkos::create_mirror_view(diags.icenuc_num_hetfrz);
     Kokkos::deep_copy(h_icenuc_num_hetfrz, diags.icenuc_num_hetfrz);
 
-    auto h_icenuc_num_immfrz = Kokkos::create_mirror_view(diags.icenuc_num_immfrz);
-    Kokkos::deep_copy(h_icenuc_num_immfrz,diags.icenuc_num_immfrz);
+    auto h_icenuc_num_immfrz =
+        Kokkos::create_mirror_view(diags.icenuc_num_immfrz);
+    Kokkos::deep_copy(h_icenuc_num_immfrz, diags.icenuc_num_immfrz);
 
-    auto h_icenuc_num_depnuc = Kokkos::create_mirror_view(diags.icenuc_num_depnuc);
-    Kokkos::deep_copy(h_icenuc_num_depnuc,diags.icenuc_num_depnuc);
+    auto h_icenuc_num_depnuc =
+        Kokkos::create_mirror_view(diags.icenuc_num_depnuc);
+    Kokkos::deep_copy(h_icenuc_num_depnuc, diags.icenuc_num_depnuc);
 
-    auto h_icenuc_num_meydep = Kokkos::create_mirror_view(diags.icenuc_num_meydep);
-    Kokkos::deep_copy(h_icenuc_num_meydep,diags.icenuc_num_meydep);
+    auto h_icenuc_num_meydep =
+        Kokkos::create_mirror_view(diags.icenuc_num_meydep);
+    Kokkos::deep_copy(h_icenuc_num_meydep, diags.icenuc_num_meydep);
 
     output.set("icenuc_num_hetfrz", h_icenuc_num_hetfrz[0]);
     output.set("icenuc_num_immfrz", h_icenuc_num_immfrz[0]);
     output.set("icenuc_num_depnuc", h_icenuc_num_depnuc[0]);
     output.set("icenuc_num_meydep", h_icenuc_num_meydep[0]);
-
-
   });
 }
