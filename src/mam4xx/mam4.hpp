@@ -14,6 +14,7 @@
 #include <mam4xx/calcsize.hpp>
 #include <mam4xx/coagulation.hpp>
 #include <mam4xx/gasaerexch.hpp>
+#include <mam4xx/hetfzr.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/ndrop.hpp>
 #include <mam4xx/nucleation.hpp>

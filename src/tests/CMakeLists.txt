@@ -30,6 +30,8 @@ EkatCreateUnitTest(mam4_rename_unit_tests mam4_rename_unit_tests.cpp
   LIBS mam4xx ${HAERO_LIBRARIES})
 EkatCreateUnitTest(mam4_aging_unit_tests mam4_aging_unit_tests.cpp
   LIBS mam4xx ${HAERO_LIBRARIES})
+EkatCreateUnitTest(mam4_hetfzr_unit_tests mam4_hetfzr_unit_tests.cpp 
+  LIBS mam4xx ${HAERO_LIBRARIES})
 
 target_compile_options(utils_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_nucleation_unit_tests PRIVATE -Werror)
@@ -38,6 +40,7 @@ target_compile_options(mam4_coagulation_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_calcsize_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_rename_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_aging_unit_tests PRIVATE -Werror)
+target_compile_options(mam4_hetfzr_unit_tests PRIVATE -Werror)
 
 # TODO: this test is currently broken on GPU. 
 # return to this test once we have more context for get_aer_num
