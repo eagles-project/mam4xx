@@ -322,7 +322,7 @@ public:
   struct Config {
     // In Fortran code _nucleate_ice_subgrid is read from a file.
     Real _nucleate_ice_subgrid;
-    Config() : _nucleate_ice_subgrid(0.001) {}
+    Config(const Real nucleate_ice_subgrid=0.001) : _nucleate_ice_subgrid(nucleate_ice_subgrid) {}
     Config(const Config &) = default;
     ~Config() = default;
     Config &operator=(const Config &) = default;
@@ -345,7 +345,7 @@ public:
     // alnsg_amode(modeptr_aitken)
     // alog( sigmag_amode(m) )
     _nucleate_ice_subgrid = nucleate_ice_config._nucleate_ice_subgrid;
-
+    
     _num_m3_to_cm3 = 1.0e-6;
     // BAD CONSTANT
     // FIXME
@@ -506,7 +506,7 @@ public:
         }); // kokkos::parfor(k)
   }
 
-private:
+public:
   KOKKOS_INLINE_FUNCTION
   void nucleati( // inputs
       const Real wbar, const Real tair, const Real pmid, const Real relhum,
@@ -569,7 +569,7 @@ private:
 
     if (so4_num >= num_threshold && dst3_num >= num_threshold && cldn > zero) {
       if ((tc <= Real(-35.0)) && (relhum * nucleate_ice::svp_water(tair) /
-                                      nucleate_ice::svp_ice(tair) / subgrid >=
+                                      nucleate_ice::svp_ice(tair) * subgrid >=
                                   Real(1.2))) {
         //! use higher RHi threshold
         nucleate_ice::calculate_regm_nucleati(wbar, dst3_num, regm);
@@ -651,6 +651,7 @@ private:
     onidep = nidep * one_millon / rhoair;
     oniimm = niimm * one_millon / rhoair;
     onihf = nihf * one_millon / rhoair;
+
 
   } // end nucleati
 

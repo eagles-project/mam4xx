@@ -9,7 +9,7 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 
 # We use a single driver for all nucleate_ice-related parameterizations.
 add_executable(nucleate_ice_driver  nucleate_ice_driver.cpp
-               compute_tendencies.cpp)
+               compute_tendencies.cpp nucleate_ice.cpp)
 target_link_libraries(nucleate_ice_driver skywalker;validation;${HAERO_LIBRARIES})
 
 
@@ -27,7 +27,8 @@ endforeach()
 
 # nucleate_ice
 foreach (input
-         compute_tendencies)
+         compute_tendencies
+         nucleate_ice)
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
   configure_file(

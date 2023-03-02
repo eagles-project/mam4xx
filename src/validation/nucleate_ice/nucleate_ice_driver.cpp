@@ -26,6 +26,7 @@ using namespace mam4;
 
 // Parameterizations used by the nucleate_ice process.
 void compute_tendencies(Ensemble *ensemble);
+void nucleate_ice_test(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -51,7 +52,9 @@ int main(int argc, char **argv) {
   try {
     if (func_name == "compute_tendencies") {
       compute_tendencies(ensemble);
-    } 
+    } else if (func_name == "nucleate_ice") {
+      nucleate_ice_test(ensemble);
+    }
 
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;

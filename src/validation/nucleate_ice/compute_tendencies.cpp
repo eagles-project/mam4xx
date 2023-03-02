@@ -30,8 +30,11 @@ void compute_tendencies(Ensemble *ensemble) {
     mam4::Diagnostics diags(nlev);
     mam4::Tendencies tends(nlev);
 
+    const Real subgrid = input.get("subgrid_in");
+
     mam4::AeroConfig mam4_config;
-    mam4::NucleateIceProcess process(mam4_config);
+    NucleateIce::Config nucleate_ice_config(subgrid);
+    mam4::NucleateIceProcess process(mam4_config, nucleate_ice_config);
     const auto nmodes = mam4_config.num_modes();
     const Real pmid = input.get("pressure"); // air pressure
     const Real temp = input.get("temperature"); // air temperature
