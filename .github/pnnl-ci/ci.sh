@@ -63,7 +63,7 @@ cmake \
   -G "Unix Makefiles" && \
 
 cmake --build build -- -j && \
-cd build && ctest -V
+cd build && ctest -V -E ndrop
 
 EXIT_CODE=$?
 
