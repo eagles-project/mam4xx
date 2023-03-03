@@ -734,7 +734,6 @@ public:
         });
   }
 
-private:
   // This function computes relevant tendencies at a single vertical level. It
   // was ported directly from the compute_tendencies subroutine in the
   // modal_aero_newnuc module from the MAM4 box model.
