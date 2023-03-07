@@ -17,7 +17,8 @@ else() #CPU
   message(STATUS "Building for CPU")
 endif()
 
-option(MAM4XX_ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
+option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
+option(ENABLE_SKYWALKER "Enable Skywalker cross validation" ON)
 
 # Blessed version of clang-format.
 set(CLANG_FORMAT_VERSION 14)
@@ -69,7 +70,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 link_directories("${MAM4XX_HAERO_DIR}/lib")
 
 # Code coverage
-if (MAM4XX_ENABLE_COVERAGE)
+if (ENABLE_COVERAGE)
   message(STATUS "Enabling code coverage instrumentation")
   find_program(LCOV_EXE lcov DOC "Lcov code coverage tool")
   if (LCOV_EXE MATCHES "NOTFOUND")
@@ -112,6 +113,9 @@ endif()
 # Testing
 include(CTest)
 enable_testing()
+
+# Third-party libraries.
+add_subdirectory(ext)
 
 # Source directories.
 add_subdirectory(src)

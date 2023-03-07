@@ -82,7 +82,7 @@ jobs:
           -DCMAKE_INSTALL_PREFIX=`pwd`/install \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
           -DMAM4XX_HAERO_DIR=`pwd`/haero_install \
-          -DMAM4XX_ENABLE_COVERAGE=ON \
+          -DENABLE_COVERAGE=ON \
           -G "Unix Makefiles"
 
     - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)

@@ -5,7 +5,7 @@ add_subdirectory(mam4xx)
 add_subdirectory(tests)
 
 # MAM4 cross validation with Fortran implementations (double precision only)
-if (HAERO_PRECISION STREQUAL "double")
+if (ENABLE_SKYWALKER AND HAERO_PRECISION STREQUAL "double")
   add_subdirectory(validation)
 endif()
 
