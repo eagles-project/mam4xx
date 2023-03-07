@@ -25,7 +25,7 @@ if (ENABLE_SKYWALKER)
                       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
                       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-                      -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
+                      -DENABLE_FORTRAN=OFF
                       -DSKYWALKER_PRECISION=${HAERO_PRECISION})
     ExternalProject_Add(skywalker_proj
                         PREFIX ${CMAKE_CURRENT_BINARY_DIR}/skywalker
@@ -34,9 +34,9 @@ if (ENABLE_SKYWALKER)
                         INSTALL_DIR ${PROJECT_BINARY_DIR}
                         CMAKE_ARGS ${SW_CMAKE_OPTS}
                         LOG_CONFIGURE TRUE
-                        BUILD_COMMAND ${MAKE} -j
+                        BUILD_COMMAND make -j
                         LOG_BUILD TRUE
-                        INSTALL_COMMAND ${MAKE} install
+                        INSTALL_COMMAND make install
                         LOG_INSTALL TRUE)
     add_dependencies(skywalker skywalker_proj)
     add_dependencies(skywalker_f90 skywalker_proj)
