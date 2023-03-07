@@ -104,7 +104,7 @@ perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules || exit
 git submodule update --init || exit
 
 # Go through and repeat the process for submodules with submodules
-declare -a arr=("ekat" "skywalker")
+declare -a arr=("ekat")
 for subm in "${arr[@]}"
 do
   pushd ./ext/$subm
