@@ -17,9 +17,6 @@ if (ENABLE_SKYWALKER)
   add_library(skywalker STATIC IMPORTED GLOBAL)
   set(SKYWALKER_LIBRARY ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}/libskywalker_${HAERO_PRECISION}.a)
   set_target_properties(skywalker PROPERTIES IMPORTED_LOCATION ${SKYWALKER_LIBRARY})
-  add_library(skywalker_f90 STATIC IMPORTED GLOBAL)
-  set(SKYWALKER_F90_LIBRARY ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}/libskywalker_f90_${HAERO_PRECISION}.a)
-  set_target_properties(skywalker_f90 PROPERTIES IMPORTED_LOCATION ${SKYWALKER_F90_LIBRARY})
   if (NOT EXISTS ${SKYWALKER_LIBRARY})
     set(SW_CMAKE_OPTS -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}
                       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
@@ -39,9 +36,7 @@ if (ENABLE_SKYWALKER)
                         INSTALL_COMMAND make install
                         LOG_INSTALL TRUE)
     add_dependencies(skywalker skywalker_proj)
-    add_dependencies(skywalker_f90 skywalker_proj)
   endif()
 
   install(FILES ${SKYWALKER_LIBRARY} DESTINATION ${CMAKE_INSTALL_LIBDIR})
-  install(FILES ${SKYWALKER_F90_LIBRARY} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
