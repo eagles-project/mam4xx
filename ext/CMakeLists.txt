@@ -37,6 +37,4 @@ if (ENABLE_SKYWALKER)
                         LOG_INSTALL TRUE)
     add_dependencies(skywalker skywalker_proj)
   endif()
-
-  install(FILES ${SKYWALKER_LIBRARY} DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
