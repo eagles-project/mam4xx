@@ -8,7 +8,7 @@ set(NUCLEATE_ICE_VALIDATION_SCRIPTS_DIR ${MAM_X_VALIDATION_DIR}/scripts)
 include_directories(${PROJECT_BINARY_DIR}/validation)
 
 # We use a single driver for all nucleate_ice-related parameterizations.
-add_executable(nucleate_ice_driver  nucleate_ice_driver.cpp
+add_executable(nucleate_ice_driver  nucleate_ice_driver.cpp hf.cpp
                compute_tendencies.cpp nucleate_ice.cpp)
 target_link_libraries(nucleate_ice_driver skywalker;validation;${HAERO_LIBRARIES})
 
@@ -28,6 +28,7 @@ endforeach()
 # nucleate_ice
 foreach (input
          nucleate_ice_cam_calc_ts_1402
+         hf_ts_1402
          nucleate_ice)
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
