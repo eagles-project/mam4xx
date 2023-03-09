@@ -27,7 +27,7 @@ endforeach()
 
 # nucleate_ice
 foreach (input
-         compute_tendencies
+         nucleate_ice_cam_calc_ts_1402
          nucleate_ice)
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
