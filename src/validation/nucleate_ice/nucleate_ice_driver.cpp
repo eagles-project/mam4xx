@@ -28,6 +28,7 @@ using namespace mam4;
 void compute_tendencies(Ensemble *ensemble);
 void nucleate_ice_test(Ensemble *ensemble);
 void hf(Ensemble *ensemble);
+void hetero(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -57,6 +58,8 @@ int main(int argc, char **argv) {
       nucleate_ice_test(ensemble);
     } else if (func_name == "hf") {
       hf(ensemble);
+    }else if (func_name == "hetero") {
+      hetero(ensemble);
     }
 
   } catch (std::exception &e) {

@@ -9,7 +9,7 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 
 # We use a single driver for all nucleate_ice-related parameterizations.
 add_executable(nucleate_ice_driver  nucleate_ice_driver.cpp hf.cpp
-               compute_tendencies.cpp nucleate_ice.cpp)
+               compute_tendencies.cpp nucleate_ice.cpp hetero.cpp)
 target_link_libraries(nucleate_ice_driver skywalker;validation;${HAERO_LIBRARIES})
 
 
@@ -28,6 +28,7 @@ endforeach()
 # nucleate_ice
 foreach (input
          nucleate_ice_cam_calc_ts_1402
+         hetero_ts_1402
          hf_ts_1402
          nucleate_ice)
 
