@@ -30,7 +30,9 @@ foreach (input
          nucleate_ice_cam_calc_ts_1402
          hetero_ts_1402
          hf_ts_1402
-         nucleate_ice)
+         #nucleate_ice
+         nucleati_ts_1402
+         )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
   configure_file(

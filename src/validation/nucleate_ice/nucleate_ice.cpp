@@ -25,15 +25,15 @@ void nucleate_ice_test(Ensemble *ensemble) {
     const Real zero = 0;
     Real nuci, onihf, oniimm, onidep, onimey = zero;
 
-    const Real pmid = input.get("pressure");    // air pressure
-    const Real temp = input.get("temperature"); // air temperature
-    const Real cloud_fraction = input.get("cloud_fraction");
-
-    const Real wbar = input.get("updraft_vel_ice_nucleation");
-    const Real relhum = input.get("relative_humidity");
-    const Real rhoair = input.get("air_density");
-    const Real so4_num = input.get("so4_num");
-    const Real dst3_num = input.get("dst3_num");
+    const Real pmid = input.get_array("pmid")[0];    // air pressure
+    const Real temp = input.get_array("tair")[0]; // air temperature
+    const Real cloud_fraction = input.get_array("cldn")[0];
+    //updraft_vel_ice_nucleation
+    const Real wbar = input.get_array("wbar")[0];
+    const Real relhum = input.get_array("relhum")[0];
+    const Real rhoair = input.get_array("rhoair")[0];
+    const Real so4_num = input.get_array("so4_num")[0];
+    const Real dst3_num = input.get_array("dst3_num")[0];
 
     const Real subgrid = input.get("subgrid_in");
 
@@ -41,11 +41,11 @@ void nucleate_ice_test(Ensemble *ensemble) {
                                so4_num, dst3_num, subgrid,
                                // outputs
                                nuci, onihf, oniimm, onidep, onimey);
-
-    output.set("nuci", nuci);
-    output.set("onihf", onihf);
-    output.set("oniimm", oniimm);
-    output.set("onidep", onidep);
-    output.set("onimey", onimey);
+    
+    output.set("nuci", std::vector<Real>(1,nuci));
+    output.set("onihf", std::vector<Real>(1,onihf));
+    output.set("oniimm", std::vector<Real>(1,oniimm));
+    output.set("onidep", std::vector<Real>(1,onidep));
+    output.set("onimey", std::vector<Real>(1,onimey));
   });
 }
