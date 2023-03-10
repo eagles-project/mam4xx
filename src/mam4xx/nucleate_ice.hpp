@@ -411,6 +411,11 @@ public:
     auto &nidep = diagnostics.icenuc_num_depnuc;
     // !output number conc of ice nuclei due to meyers deposition [1/m3]
     auto &nimey = diagnostics.icenuc_num_meydep;
+    
+    // number of activated aerosol for ice nucleation (homogeneous freezing only) [#/kg]
+    auto &naai_hom = diagnostics.num_act_aerosol_ice_nucle_hom;
+    // number of activated aerosol for ice nucleation [#/kg]
+    auto &naai     = diagnostics.num_act_aerosol_ice_nucle;
 
     const Real num_m3_to_cm3 = _num_m3_to_cm3;
     // FIXME
@@ -485,15 +490,15 @@ public:
 
             so4_num = haero::max(zero, so4_num);
 
-            Real naai = zero;
+            // Real naai = zero;
 
             nucleati(wsubi(kk), temp, pmid, relhum, icldm, air_density, so4_num,
                      dst3_num, subgrid,
                      // outputs
-                     naai, nihf(kk), niimm(kk), nidep(kk), nimey(kk));
+                     naai(kk), nihf(kk), niimm(kk), nidep(kk), nimey(kk));
 
             // QUESTION why nihf instead of naai
-            // naai_hom(icol,kk) = nihf(icol,kk)
+            naai_hom(kk) = nihf(kk);
             // is naai not saved?
 
             // output activated ice (convert from #/kg -> #/m3)

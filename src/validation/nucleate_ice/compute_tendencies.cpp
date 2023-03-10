@@ -131,6 +131,16 @@ void compute_tendencies(Ensemble *ensemble) {
         Kokkos::create_mirror_view(diags.icenuc_num_meydep);
     Kokkos::deep_copy(h_icenuc_num_meydep, diags.icenuc_num_meydep);
 
+    auto h_num_act_aerosol_ice_nucle =
+        Kokkos::create_mirror_view(diags.num_act_aerosol_ice_nucle);
+    Kokkos::deep_copy(h_num_act_aerosol_ice_nucle, diags.num_act_aerosol_ice_nucle);
+    auto h_num_act_aerosol_ice_nucle_hom =
+        Kokkos::create_mirror_view(diags.num_act_aerosol_ice_nucle_hom);
+    Kokkos::deep_copy(h_num_act_aerosol_ice_nucle_hom, diags.num_act_aerosol_ice_nucle_hom);
+
+    output.set("naai", h_num_act_aerosol_ice_nucle[0]);
+    output.set("naai_hom", h_num_act_aerosol_ice_nucle_hom[0]);
+
     // output.set("icenuc_num_hetfrz", h_icenuc_num_hetfrz[0]);
     // output.set("icenuc_num_immfrz", h_icenuc_num_immfrz[0]);
     // output.set("icenuc_num_depnuc", h_icenuc_num_depnuc[0]);
