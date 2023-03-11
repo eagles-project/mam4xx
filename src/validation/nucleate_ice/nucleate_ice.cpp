@@ -42,6 +42,7 @@ void nucleate_ice_test(Ensemble *ensemble) {
                                // outputs
                                nuci, onihf, oniimm, onidep, onimey);
     
+    // using std::vector to match format from e3sm validation test.
     output.set("nuci", std::vector<Real>(1,nuci));
     output.set("onihf", std::vector<Real>(1,onihf));
     output.set("oniimm", std::vector<Real>(1,oniimm));

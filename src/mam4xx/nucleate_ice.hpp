@@ -53,6 +53,7 @@ clouds, !  following X. Shi et al. ACP (2014).
 // FIXME from wv_sat_methods.F90
 //  Do we need to create a new files for these functions
 
+
 KOKKOS_INLINE_FUNCTION
 Real GoffGratch_svp_water(const Real temperature) {
   // ! Goff & Gratch (1946)
@@ -120,6 +121,68 @@ Real svp_water(const Real Temperature) {
   // initial_default_idx = GoffGratch_idx
   return GoffGratch_svp_water(Temperature);
 }
+
+
+
+/*---------------------------------------------------------------------
+! UTILITIES
+!---------------------------------------------------------------------*/
+
+// Get saturation specific humidity given pressure and SVP.
+// Specific humidity is limited to range 0-1.
+KOKKOS_INLINE_FUNCTION
+Real wv_sat_svp_to_qsat(const Real es, const Real p) {
+  // es  ! SVP
+  // p   ! Current pressure.
+  // qs
+  // If pressure is less than SVP, set qs to maximum of 1.
+  // epsilo  ! Ice-water transition range
+  // omeps   ! 1._r8 - epsilo
+  // epsilo       = shr_const_mwwv/shr_const_mwdair   ! ratio of h2o to dry air molecular weights 
+  // real(R8),parameter :: SHR_CONST_MWDAIR  = 28.966_R8       ! molecular weight dry air ~ kg/kmole
+  // real(R8),parameter :: SHR_CONST_MWWV    = 18.016_R8       ! molecular weight water vapor
+  // FIXME: move these constants to hearo::constants
+  const Real SHR_CONST_MWWV =  18.016;
+  const Real SHR_CONST_MWDAIR = 28.966;
+  const Real epsilo= SHR_CONST_MWWV/SHR_CONST_MWDAIR;
+
+  const Real zero=0;
+  const Real one =1;
+  const Real omeps = one - epsilo;
+  Real qs = zero;
+  if ((p - es) <= zero){
+    qs = one;
+  } else {
+    qs = epsilo*es / (p - omeps*es);
+  }
+  return qs;
+
+} // wv_sat_svp_to_qsat
+
+
+KOKKOS_INLINE_FUNCTION
+void wv_sat_qsat_water(const Real t, const Real  p, Real& es, Real&qs)
+
+{
+  /*------------------------------------------------------------------!
+  ! Purpose:                                                         !
+  !   Calculate SVP over water at a given temperature, and then      !
+  !   calculate and return saturation specific humidity.             !
+  !------------------------------------------------------------------*/
+  // Inputs
+  // t    ! Temperature
+  // p    ! Pressure
+  // Outputs
+  // es  ! Saturation vapor pressure
+  // qs  ! Saturation specific humidity
+
+  es = svp_water(t);
+  qs = wv_sat_svp_to_qsat(es, p);
+  // Ensures returned es is consistent with limiters on qs.
+  es = haero::min(es, p);
+
+}//wv_sat_qsat_water
+
 
 // FIXME
 KOKKOS_INLINE_FUNCTION
@@ -446,10 +509,15 @@ public:
             // relative humidity [unitless]
             Real qv = atmosphere.vapor_mixing_ratio(kk);
             // very low temperature produces inf relhum
-            Real relhum =
-                conversions::relative_humidity_from_vapor_mixing_ratio(qv, pmid,
-                                                                       temp);
+            Real es =zero;
+            Real qs = zero; 
 
+            nucleate_ice::wv_sat_qsat_water(temp, pmid, es, qs);
+            const Real relhum =  qv/qs;
+
+            // Real relhum =
+            //     conversions::relative_humidity_from_vapor_mixing_ratio(qv, pmid,
+            //                                                            temp);
             const Real icldm = haero::max(ast(kk), mincld);
 
             // compute aerosol number for so4, soot, and dust with units #/cm^3
