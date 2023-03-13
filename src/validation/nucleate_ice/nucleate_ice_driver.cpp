@@ -52,9 +52,9 @@ int main(int argc, char **argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
   try {
-    if (func_name == "compute_tendencies") {
+    if (func_name == "nucleate_ice_cam_calc") {
       compute_tendencies(ensemble);
-    } else if (func_name == "nucleate_ice") {
+    } else if (func_name == "nucleati") {
       nucleate_ice_test(ensemble);
     } else if (func_name == "hf") {
       hf(ensemble);

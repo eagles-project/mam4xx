@@ -51,7 +51,7 @@ clouds, !  following X. Shi et al. ACP (2014).
 !-------------------------------------------------------------------------------*/
 
 // FIXME from wv_sat_methods.F90
-//  Do we need to create a new files for these functions
+//  Do we need to create a new files for these functions?
 
 
 KOKKOS_INLINE_FUNCTION
@@ -94,11 +94,6 @@ Real GoffGratch_svp_ice(const Real temperature) {
   //  es             ! SVP in Pa
 
   // ! good down to -100 C
-  // FIXME
-  // Look for a place to place this constant
-  // h2otrip ! Triple point temperature of water (K)
-  // SHR_CONST_TKTRIP  = 273.16_R8       ! triple point of fresh water        ~
-  // K
   const Real h2otrip = haero::Constants::triple_pt_h2o;
   const Real ten = 10;
   const Real one = 1;
@@ -184,9 +179,11 @@ void wv_sat_qsat_water(const Real t, const Real  p, Real& es, Real&qs)
 }//wv_sat_qsat_water
 
 
-// FIXME
+
 KOKKOS_INLINE_FUNCTION
 Real svp_ice(const Real Temperature) { return GoffGratch_svp_ice(Temperature); }
+
+// From here all functions are from nucleate_ice
 
 KOKKOS_INLINE_FUNCTION
 void calculate_regm_nucleati(const Real w_vlc, const Real Na, Real &regm) {
@@ -300,7 +297,6 @@ void hf(const Real Temperature, const Real w_vlc, const Real RH, const Real Na,
   calculate_RHw_hf(Temperature, lnw, RHw);
 
   if ((Temperature <= -Real(37.0)) && (RH * subgrid >= RHw)) {
-    // FIXME: This parameter is not used
     const Real regm = Real(6.07) * lnw - Real(55.0);
 
     if (Temperature >= regm) {
@@ -384,9 +380,13 @@ public:
   // nucleate_ice-specific configuration
   struct Config {
     // In Fortran code _nucleate_ice_subgrid is read from a file.
+    // !ice nucleation SO2 size threshold for aitken mode
     Real _nucleate_ice_subgrid;
-    Config(const Real nucleate_ice_subgrid = 0.001)
-        : _nucleate_ice_subgrid(nucleate_ice_subgrid) {}
+    Real _so4_sz_thresh_icenuc;
+    Config(const Real nucleate_ice_subgrid = 120,
+           const Real so4_sz_thresh_icenuc = 8.0e-8)
+        : _nucleate_ice_subgrid(nucleate_ice_subgrid),
+          _so4_sz_thresh_icenuc(so4_sz_thresh_icenuc) {}
     Config(const Config &) = default;
     ~Config() = default;
     Config &operator=(const Config &) = default;
@@ -415,8 +415,8 @@ public:
     // FIXME
     // std::numeric_limits<Real>::max()
     // this values is from a txt file
-    _so4_sz_thresh_icenuc =
-        1e-6; // huge(1.0_r8) !ice nucleation SO2 size threshold for aitken mode
+    _so4_sz_thresh_icenuc =nucleate_ice_config._so4_sz_thresh_icenuc;
+    // huge(1.0_r8) 
     // minimum allowed cloud fraction
     // BAD CONSTANT
     _mincld = 0.0001;
@@ -436,6 +436,7 @@ public:
     const int nk = atmosphere.num_levels();
     const Real tmelt_m_five = haero::Constants::freezing_pt_h2o - 5;
     const int coarse_idx = int(ModeIndex::Coarse);
+    const int aitken_idx = int(ModeIndex::Aitken);
 
     auto &coarse_dust = prognostics.q_aero_i[coarse_idx][int(AeroId::DST)];
     auto &coarse_nacl = prognostics.q_aero_i[coarse_idx][int(AeroId::NaCl)];
@@ -447,19 +448,16 @@ public:
     auto &coarse_soa = prognostics.q_aero_i[coarse_idx][int(AeroId::SOA)];
 
     auto &num_coarse = prognostics.n_mode_i[coarse_idx];
-    auto &num_aitken = prognostics.n_mode_i[coarse_idx];
+    auto &num_aitken = prognostics.n_mode_i[aitken_idx];
 
     // mode dry radius [m]
     // dgnum(icol,kk,mode_aitken_idx)
-    const int aitken_idx = int(ModeIndex::Aitken);
+    
     auto &dgnum_aitken = diagnostics.dry_geometric_mean_diameter_i[aitken_idx];
-    // FIXME
     // wsubi(:,:)           ! updraft velocity for ice nucleation [m/s]
     auto &wsubi = atmosphere.updraft_vel_ice_nucleation;
     // could fraction [unitless]
     auto &ast = atmosphere.cloud_fraction;
-
-    // FIXME
     const Real subgrid = _nucleate_ice_subgrid;
 
     // number of activated aerosol for ice nucleation [#/kg]
@@ -483,6 +481,7 @@ public:
     const Real num_m3_to_cm3 = _num_m3_to_cm3;
     // FIXME
     // huge(1.0_r8) !ice nucleation SO2 size threshold for aitken mode
+    // input value from e3sm is not huge.
     const Real so4_sz_thresh_icenuc = _so4_sz_thresh_icenuc;
 
     const Real mincld = _mincld;
@@ -495,15 +494,12 @@ public:
 
             const Real zero = 0;
             const Real half = 0.5;
-            const Real two = 2;
+            const Real sqrt_two = haero::sqrt(2);
 
             const Real pmid = atmosphere.pressure(kk);
             // CHECK units
             const Real air_density =
                 conversions::density_of_ideal_gas(temp, pmid);
-
-            // FIXME: cloud fraction [unitless]
-            // could fraction of part of atm?
 
             // CHECK if this part of code is consistent with original code.
             // relative humidity [unitless]
@@ -553,7 +549,7 @@ public:
                    half *
                        haero::erf(
                            haero::log(so4_sz_thresh_icenuc / dgnum_aitken(kk)) /
-                           haero::pow(two, half * alnsg_amode_aitken)));
+                           (sqrt_two*alnsg_amode_aitken)));
             } // end dgnum_aitken
 
             so4_num = haero::max(zero, so4_num);

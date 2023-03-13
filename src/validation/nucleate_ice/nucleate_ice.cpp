@@ -35,7 +35,7 @@ void nucleate_ice_test(Ensemble *ensemble) {
     const Real so4_num = input.get_array("so4_num")[0];
     const Real dst3_num = input.get_array("dst3_num")[0];
 
-    const Real subgrid = input.get("subgrid_in");
+    const Real subgrid = input.get_array("subgrid")[0];
 
     this_nucleate_ice.nucleati(wbar, temp, pmid, relhum, cloud_fraction, rhoair,
                                so4_num, dst3_num, subgrid,

@@ -30,10 +30,11 @@ void compute_tendencies(Ensemble *ensemble) {
     mam4::Diagnostics diags(nlev);
     mam4::Tendencies tends(nlev);
 
-    const Real subgrid = input.get("subgrid_in");
+    const Real subgrid = input.get_array("subgrid")[0];
+    const Real so4_sz_thresh_icenuc = input.get_array("so4_sz_thresh_icenuc")[0];
 
     mam4::AeroConfig mam4_config;
-    NucleateIce::Config nucleate_ice_config(subgrid);
+    NucleateIce::Config nucleate_ice_config(subgrid,so4_sz_thresh_icenuc);
     mam4::NucleateIceProcess process(mam4_config, nucleate_ice_config);
 
     const Real pmid = input.get_array("pmid")[0];    // air pressure
@@ -55,12 +56,13 @@ void compute_tendencies(Ensemble *ensemble) {
     Kokkos::deep_copy(atm.vapor_mixing_ratio, vapor_mixing_ratio);
 
     auto numptr_amode = input.get_array("numptr_amode");
-    auto modeptr_aitken = input.get_array("modeptr_aitken")[0]-1;
-    auto modeptr_coarse = input.get_array("modeptr_coarse")[0]-1;
+    auto modeptr_aitken = int(input.get_array("modeptr_aitken")[0]-1);
+    auto modeptr_coarse = int(input.get_array("modeptr_coarse")[0]-1);
 
     // mode number mixing ratios
-    auto num_aitken = state_q[numptr_amode[modeptr_aitken]-1];
-    auto num_coarse = state_q[numptr_amode[modeptr_coarse]-1];
+    // const int 
+    auto num_aitken = state_q[int(numptr_amode[modeptr_aitken])-1];
+    auto num_coarse = state_q[int(numptr_amode[modeptr_coarse])-1];
 
 
     // we only copy values of mass m.r that are use in this process. 
@@ -80,13 +82,13 @@ void compute_tendencies(Ensemble *ensemble) {
 
     // mode specie mass m.r. 
     // -1 because of indexing in C++
-    auto coarse_dust = state_q[lptr_dust_a_amode[modeptr_coarse]-1];
-    auto coarse_nacl = state_q[lptr_nacl_a_amode[modeptr_coarse]-1];
-    auto coarse_so4  = state_q[lptr_so4_a_amode[modeptr_coarse]-1];
-    auto coarse_mom  = state_q[lptr_mom_a_amode[modeptr_coarse]-1];
-    auto coarse_bc   = state_q[lptr_bc_a_amode[modeptr_coarse]-1];
-    auto coarse_pom  = state_q[lptr_pom_a_amode[modeptr_coarse]-1];
-    auto coarse_soa  = state_q[lptr_soa_a_amode[modeptr_coarse]-1];
+    auto coarse_dust = state_q[int(lptr_dust_a_amode[modeptr_coarse])-1];
+    auto coarse_nacl = state_q[int(lptr_nacl_a_amode[modeptr_coarse])-1];
+    auto coarse_so4  = state_q[int(lptr_so4_a_amode[modeptr_coarse])-1];
+    auto coarse_mom  = state_q[int(lptr_mom_a_amode[modeptr_coarse])-1];
+    auto coarse_bc   = state_q[int(lptr_bc_a_amode[modeptr_coarse])-1];
+    auto coarse_pom  = state_q[int(lptr_pom_a_amode[modeptr_coarse])-1];
+    auto coarse_soa  = state_q[int(lptr_soa_a_amode[modeptr_coarse])-1];
 
     const int dst_idx = int(AeroId::DST);
     const int nacl_idx = int(AeroId::NaCl);
@@ -138,12 +140,12 @@ void compute_tendencies(Ensemble *ensemble) {
         Kokkos::create_mirror_view(diags.num_act_aerosol_ice_nucle_hom);
     Kokkos::deep_copy(h_num_act_aerosol_ice_nucle_hom, diags.num_act_aerosol_ice_nucle_hom);
 
-    output.set("naai", h_num_act_aerosol_ice_nucle[0]);
-    output.set("naai_hom", h_num_act_aerosol_ice_nucle_hom[0]);
+    output.set("naai", std::vector<Real>(1,h_num_act_aerosol_ice_nucle[0]));
+    output.set("naai_hom", std::vector<Real>(1,h_num_act_aerosol_ice_nucle_hom[0]));
 
-    // output.set("icenuc_num_hetfrz", h_icenuc_num_hetfrz[0]);
-    // output.set("icenuc_num_immfrz", h_icenuc_num_immfrz[0]);
-    // output.set("icenuc_num_depnuc", h_icenuc_num_depnuc[0]);
-    // output.set("icenuc_num_meydep", h_icenuc_num_meydep[0]);
+    output.set("nihf", std::vector<Real>(1,h_icenuc_num_hetfrz[0]));
+    output.set("niimm", std::vector<Real>(1,h_icenuc_num_immfrz[0]));
+    output.set("nidep", std::vector<Real>(1,h_icenuc_num_depnuc[0]));
+    output.set("nimey", std::vector<Real>(1,h_icenuc_num_meydep[0]));
   });
 }

@@ -274,15 +274,19 @@ public:
 
   // Output variables for nucleate_ice process:
   // Ask experts for better names for: icenuc_num_hetfrz, icenuc_num_immfrz,
+  // nihf
   // icenuc_num_depnuc,  icenuc_num_meydep output number conc of ice nuclei due
   // to heterogeneous freezing [1/m3]
   ColumnView icenuc_num_hetfrz;
+  //niimm
   // output number conc of ice nuclei due to immersion freezing (hetero nuc)
   // [1/m3]
   ColumnView icenuc_num_immfrz;
+  // nidep
   // output number conc of ice nuclei due to deposition nucleation (hetero nuc)
   // [1/m3]
   ColumnView icenuc_num_depnuc;
+  // nimey
   // !output number conc of ice nuclei due to meyers deposition [1/m3]
   ColumnView icenuc_num_meydep;
   // number of activated aerosol for ice nucleation (homogeneous freezing only) [#/kg]
