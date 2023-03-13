@@ -53,7 +53,6 @@ clouds, !  following X. Shi et al. ACP (2014).
 // FIXME from wv_sat_methods.F90
 //  Do we need to create a new files for these functions?
 
-
 KOKKOS_INLINE_FUNCTION
 Real GoffGratch_svp_water(const Real temperature) {
   // ! Goff & Gratch (1946)
@@ -117,8 +116,6 @@ Real svp_water(const Real Temperature) {
   return GoffGratch_svp_water(Temperature);
 }
 
-
-
 /*---------------------------------------------------------------------
 ! UTILITIES
 !---------------------------------------------------------------------*/
@@ -133,30 +130,30 @@ Real wv_sat_svp_to_qsat(const Real es, const Real p) {
   // If pressure is less than SVP, set qs to maximum of 1.
   // epsilo  ! Ice-water transition range
   // omeps   ! 1._r8 - epsilo
-  // epsilo       = shr_const_mwwv/shr_const_mwdair   ! ratio of h2o to dry air molecular weights 
-  // real(R8),parameter :: SHR_CONST_MWDAIR  = 28.966_R8       ! molecular weight dry air ~ kg/kmole
-  // real(R8),parameter :: SHR_CONST_MWWV    = 18.016_R8       ! molecular weight water vapor
+  // epsilo       = shr_const_mwwv/shr_const_mwdair   ! ratio of h2o to dry air
+  // molecular weights real(R8),parameter :: SHR_CONST_MWDAIR  = 28.966_R8 !
+  // molecular weight dry air ~ kg/kmole real(R8),parameter :: SHR_CONST_MWWV
+  // = 18.016_R8       ! molecular weight water vapor
   // FIXME: move these constants to hearo::constants
-  const Real SHR_CONST_MWWV =  18.016;
+  const Real SHR_CONST_MWWV = 18.016;
   const Real SHR_CONST_MWDAIR = 28.966;
-  const Real epsilo= SHR_CONST_MWWV/SHR_CONST_MWDAIR;
+  const Real epsilo = SHR_CONST_MWWV / SHR_CONST_MWDAIR;
 
-  const Real zero=0;
-  const Real one =1;
+  const Real zero = 0;
+  const Real one = 1;
   const Real omeps = one - epsilo;
   Real qs = zero;
-  if ((p - es) <= zero){
+  if ((p - es) <= zero) {
     qs = one;
   } else {
-    qs = epsilo*es / (p - omeps*es);
+    qs = epsilo * es / (p - omeps * es);
   }
   return qs;
 
 } // wv_sat_svp_to_qsat
 
-
 KOKKOS_INLINE_FUNCTION
-void wv_sat_qsat_water(const Real t, const Real  p, Real& es, Real&qs)
+void wv_sat_qsat_water(const Real t, const Real p, Real &es, Real &qs)
 
 {
   /*------------------------------------------------------------------!
@@ -176,9 +173,7 @@ void wv_sat_qsat_water(const Real t, const Real  p, Real& es, Real&qs)
   // Ensures returned es is consistent with limiters on qs.
   es = haero::min(es, p);
 
-}//wv_sat_qsat_water
-
-
+} // wv_sat_qsat_water
 
 KOKKOS_INLINE_FUNCTION
 Real svp_ice(const Real Temperature) { return GoffGratch_svp_ice(Temperature); }
@@ -415,8 +410,8 @@ public:
     // FIXME
     // std::numeric_limits<Real>::max()
     // this values is from a txt file
-    _so4_sz_thresh_icenuc =nucleate_ice_config._so4_sz_thresh_icenuc;
-    // huge(1.0_r8) 
+    _so4_sz_thresh_icenuc = nucleate_ice_config._so4_sz_thresh_icenuc;
+    // huge(1.0_r8)
     // minimum allowed cloud fraction
     // BAD CONSTANT
     _mincld = 0.0001;
@@ -452,7 +447,7 @@ public:
 
     // mode dry radius [m]
     // dgnum(icol,kk,mode_aitken_idx)
-    
+
     auto &dgnum_aitken = diagnostics.dry_geometric_mean_diameter_i[aitken_idx];
     // wsubi(:,:)           ! updraft velocity for ice nucleation [m/s]
     auto &wsubi = atmosphere.updraft_vel_ice_nucleation;
@@ -472,11 +467,12 @@ public:
     auto &nidep = diagnostics.icenuc_num_depnuc;
     // !output number conc of ice nuclei due to meyers deposition [1/m3]
     auto &nimey = diagnostics.icenuc_num_meydep;
-    
-    // number of activated aerosol for ice nucleation (homogeneous freezing only) [#/kg]
+
+    // number of activated aerosol for ice nucleation (homogeneous freezing
+    // only) [#/kg]
     auto &naai_hom = diagnostics.num_act_aerosol_ice_nucle_hom;
     // number of activated aerosol for ice nucleation [#/kg]
-    auto &naai     = diagnostics.num_act_aerosol_ice_nucle;
+    auto &naai = diagnostics.num_act_aerosol_ice_nucle;
 
     const Real num_m3_to_cm3 = _num_m3_to_cm3;
     // FIXME
@@ -505,14 +501,15 @@ public:
             // relative humidity [unitless]
             Real qv = atmosphere.vapor_mixing_ratio(kk);
             // very low temperature produces inf relhum
-            Real es =zero;
-            Real qs = zero; 
+            Real es = zero;
+            Real qs = zero;
 
             nucleate_ice::wv_sat_qsat_water(temp, pmid, es, qs);
-            const Real relhum =  qv/qs;
+            const Real relhum = qv / qs;
 
             // Real relhum =
-            //     conversions::relative_humidity_from_vapor_mixing_ratio(qv, pmid,
+            //     conversions::relative_humidity_from_vapor_mixing_ratio(qv,
+            //     pmid,
             //                                                            temp);
             const Real icldm = haero::max(ast(kk), mincld);
 
@@ -545,11 +542,9 @@ public:
               // only allow so4 with D>0.1 um in ice nucleation
               so4_num =
                   num_aitken(kk) * air_density * num_m3_to_cm3 *
-                  (half -
-                   half *
-                       haero::erf(
-                           haero::log(so4_sz_thresh_icenuc / dgnum_aitken(kk)) /
-                           (sqrt_two*alnsg_amode_aitken)));
+                  (half - half * haero::erf(haero::log(so4_sz_thresh_icenuc /
+                                                       dgnum_aitken(kk)) /
+                                            (sqrt_two * alnsg_amode_aitken)));
             } // end dgnum_aitken
 
             so4_num = haero::max(zero, so4_num);

@@ -22,12 +22,11 @@ void hetero(Ensemble *ensemble) {
     const Real temp = input.get_array("Temperature")[0]; // air temperature
     const Real w_vlc = input.get_array("w_vlc")[0];
     const Real Ns = input.get_array("Ns")[0];
-    Real Nis, Nid =0;
+    Real Nis, Nid = 0;
     nucleate_ice::hetero(temp, w_vlc, Ns, // inputs
-                          Nis, Nid) ; // outputs
+                         Nis, Nid);       // outputs
 
     output.set("Nis", Nis);
     output.set("Nid", Nid);
-
   });
 }

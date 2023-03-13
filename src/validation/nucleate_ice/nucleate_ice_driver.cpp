@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
       nucleate_ice_test(ensemble);
     } else if (func_name == "hf") {
       hf(ensemble);
-    }else if (func_name == "hetero") {
+    } else if (func_name == "hetero") {
       hetero(ensemble);
     }
 

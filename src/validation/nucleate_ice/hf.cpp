@@ -25,10 +25,10 @@ void hf(Ensemble *ensemble) {
     const Real RH = input.get_array("RH")[0];
     const Real Na = input.get_array("Na")[0];
     const Real subgrid = input.get_array("subgrid")[0];
-    Real Ni =0;
-    nucleate_ice::hf(temp, w_vlc, RH,  Na, subgrid,  // inputs
-                      Ni) ; 
+    Real Ni = 0;
+    nucleate_ice::hf(temp, w_vlc, RH, Na, subgrid, // inputs
+                     Ni);
 
-    output.set("Ni", std::vector(1,Ni));
+    output.set("Ni", std::vector(1, Ni));
   });
 }

@@ -25,10 +25,10 @@ void nucleate_ice_test(Ensemble *ensemble) {
     const Real zero = 0;
     Real nuci, onihf, oniimm, onidep, onimey = zero;
 
-    const Real pmid = input.get_array("pmid")[0];    // air pressure
+    const Real pmid = input.get_array("pmid")[0]; // air pressure
     const Real temp = input.get_array("tair")[0]; // air temperature
     const Real cloud_fraction = input.get_array("cldn")[0];
-    //updraft_vel_ice_nucleation
+    // updraft_vel_ice_nucleation
     const Real wbar = input.get_array("wbar")[0];
     const Real relhum = input.get_array("relhum")[0];
     const Real rhoair = input.get_array("rhoair")[0];
@@ -41,12 +41,12 @@ void nucleate_ice_test(Ensemble *ensemble) {
                                so4_num, dst3_num, subgrid,
                                // outputs
                                nuci, onihf, oniimm, onidep, onimey);
-    
+
     // using std::vector to match format from e3sm validation test.
-    output.set("nuci", std::vector<Real>(1,nuci));
-    output.set("onihf", std::vector<Real>(1,onihf));
-    output.set("oniimm", std::vector<Real>(1,oniimm));
-    output.set("onidep", std::vector<Real>(1,onidep));
-    output.set("onimey", std::vector<Real>(1,onimey));
+    output.set("nuci", std::vector<Real>(1, nuci));
+    output.set("onihf", std::vector<Real>(1, onihf));
+    output.set("oniimm", std::vector<Real>(1, oniimm));
+    output.set("onidep", std::vector<Real>(1, onidep));
+    output.set("onimey", std::vector<Real>(1, onimey));
   });
 }

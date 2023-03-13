@@ -221,9 +221,11 @@ public:
     icenuc_num_meydep = ColumnView("icenuc_num_meydep", num_levels);
     Kokkos::deep_copy(icenuc_num_meydep, 0.0);
 
-    num_act_aerosol_ice_nucle_hom = ColumnView("num_act_aerosol_ice_nucle_hom", num_levels);
+    num_act_aerosol_ice_nucle_hom =
+        ColumnView("num_act_aerosol_ice_nucle_hom", num_levels);
     Kokkos::deep_copy(num_act_aerosol_ice_nucle_hom, 0.0);
-    num_act_aerosol_ice_nucle = ColumnView("num_act_aerosol_ice_nucle", num_levels);
+    num_act_aerosol_ice_nucle =
+        ColumnView("num_act_aerosol_ice_nucle", num_levels);
     Kokkos::deep_copy(num_act_aerosol_ice_nucle, 0.0);
   }
   Diagnostics() = default; // Careful! Only for creating placeholders in views
@@ -278,9 +280,9 @@ public:
   // icenuc_num_depnuc,  icenuc_num_meydep output number conc of ice nuclei due
   // to heterogeneous freezing [1/m3]
   ColumnView icenuc_num_hetfrz;
-  //niimm
-  // output number conc of ice nuclei due to immersion freezing (hetero nuc)
-  // [1/m3]
+  // niimm
+  //  output number conc of ice nuclei due to immersion freezing (hetero nuc)
+  //  [1/m3]
   ColumnView icenuc_num_immfrz;
   // nidep
   // output number conc of ice nuclei due to deposition nucleation (hetero nuc)
@@ -289,7 +291,8 @@ public:
   // nimey
   // !output number conc of ice nuclei due to meyers deposition [1/m3]
   ColumnView icenuc_num_meydep;
-  // number of activated aerosol for ice nucleation (homogeneous freezing only) [#/kg]
+  // number of activated aerosol for ice nucleation (homogeneous freezing only)
+  // [#/kg]
   ColumnView num_act_aerosol_ice_nucle_hom;
   // number of activated aerosol for ice nucleation [#/kg]
   ColumnView num_act_aerosol_ice_nucle;
