@@ -23,17 +23,19 @@ foreach(script
   )
 endforeach()
 
+set(TEST_LIST
+    nucleate_ice_cam_calc_ts_1402 # passing tolerance = 2e-4
+    hetero_ts_1402
+    hf_ts_1402
+    #nucleate_ice
+    nucleati_ts_1402 # passing tolerance = 6e-8
+    )
+set(DEFAULT_TOL 2e-8)
+set(ERROR_THRESHOLDS 2e-4 ${default_tol} ${default_tol} 6e-8)
+
 # Run the driver in several configurations to produce datasets.
 
-# nucleate_ice
-foreach (input
-         nucleate_ice_cam_calc_ts_1402
-         hetero_ts_1402
-         hf_ts_1402
-         #nucleate_ice
-         nucleati_ts_1402
-         )
-
+foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place; is the skywalker file produced by fortran code?
   configure_file(
     ${NUCLEATE_ICE_VALIDATION_DIR}/mam_${input}.py
@@ -47,7 +49,7 @@ foreach (input
   # add a test to validate mam4xx's results against the baseline.
   # Select a threshold error slightly bigger than the largest relative error for the threshold error.
   # Conservative approach: At the time of this commit, threshold error=2e-8.
-  # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error> 
-  add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True 2e-8)
+  # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error>
+  add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
 endforeach()
