@@ -60,11 +60,11 @@ Real GoffGratch_svp_ice(const Real temperature) {
 // FIXME
 // Compute saturation vapor pressure over water
 KOKKOS_INLINE_FUNCTION
-Real svp_water(const Real Temperature) {
+Real svp_water(const Real temperature) {
   // FIXME
   // ask if we need to implement the other methods to compute svp_water
   // initial_default_idx = GoffGratch_idx
-  return GoffGratch_svp_water(Temperature);
+  return GoffGratch_svp_water(temperature);
 }
 
 /*---------------------------------------------------------------------
@@ -110,7 +110,7 @@ void wv_sat_qsat_water(const Real t, const Real p, Real &es, Real &qs) {
   !   calculate and return saturation specific humidity.             !
   !------------------------------------------------------------------*/
   // Inputs
-  // t    Temperature
+  // t    temperature
   // p    Pressure
   // Outputs
   // es  Saturation vapor pressure
@@ -124,7 +124,7 @@ void wv_sat_qsat_water(const Real t, const Real p, Real &es, Real &qs) {
 } // wv_sat_qsat_water
 
 KOKKOS_INLINE_FUNCTION
-Real svp_ice(const Real Temperature) { return GoffGratch_svp_ice(Temperature); }
+Real svp_ice(const Real temperature) { return GoffGratch_svp_ice(temperature); }
 
 } // namespace wv_sat_methods
 } // namespace mam4

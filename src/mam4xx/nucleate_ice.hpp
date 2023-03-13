@@ -71,13 +71,13 @@ void calculate_regm_nucleati(const Real w_vlc, const Real Na, Real &regm) {
 } // end calculate_regm_nucleati
 
 KOKKOS_INLINE_FUNCTION
-void calculate_RHw_hf(const Real Temperature, const Real lnw, Real &RHw) {
+void calculate_RHw_hf(const Real temperature, const Real lnw, Real &RHw) {
   /*-------------------------------------------------------------------------------
   Calculate threshold relative humidity with respective to water (RHw) based
   on Eq. 3.1 in Liu & Penner (2005), Meteorol. Z.
   -------------------------------------------------------------------------------*/
 
-  // Temperature     temperature [C]
+  // temperature     temperature [C]
   // lnw             ln of vertical velocity
   // RHw             relative humidity threshold
 
@@ -85,16 +85,14 @@ void calculate_RHw_hf(const Real Temperature, const Real lnw, Real &RHw) {
   const Real B_coef = Real(6.0e-2) * lnw + Real(1.052);
   const Real C_coef = Real(1.68) * lnw + Real(129.35);
 
-  RHw = (A_coef * Temperature * Temperature + B_coef * Temperature + C_coef) *
+  RHw = (A_coef * temperature * temperature + B_coef * temperature + C_coef) *
         Real(0.01);
 } // end calculate_RHw_hf
 
 KOKKOS_INLINE_FUNCTION
 void calculate_Ni_hf(const Real A1, const Real B1, const Real C1, const Real A2,
-                     const Real B2, const Real C2, const Real Temperature,
-                     const Real lnw, const Real Na, Real &Ni)
-
-{
+                     const Real B2, const Real C2, const Real temperature,
+                     const Real lnw, const Real Na, Real &Ni) {
   /*-------------------------------------------------------------------------------
   Calculate number of ice crystals (Ni) based on
   Eq. 3.3 in Liu & Penner (2005), Meteorol. Z.
@@ -102,19 +100,19 @@ void calculate_Ni_hf(const Real A1, const Real B1, const Real C1, const Real A2,
 
   // A1, B1, C1     Coefficients
   // A2, B2, C2     Coefficients
-  // Temperature    temperature [C]
+  // temperature    temperature [C]
   // lnw            ln of vertical velocity
   // Na             aerosol number concentrations [#/cm^3]
   // Ni             ice number concentrations [#/cm^3]
 
-  const Real k1 = haero::exp(A2 + B2 * Temperature + C2 * lnw);
-  const Real k2 = A1 + B1 * Temperature + C1 * lnw;
+  const Real k1 = haero::exp(A2 + B2 * temperature + C2 * lnw);
+  const Real k2 = A1 + B1 * temperature + C1 * lnw;
 
   Ni = haero::min(k1 * haero::pow(Na, k2), Na);
 } // end calculate_Ni_hf
 
 KOKKOS_INLINE_FUNCTION
-void hf(const Real Temperature, const Real w_vlc, const Real RH, const Real Na,
+void hf(const Real temperature, const Real w_vlc, const Real RH, const Real Na,
         const Real subgrid, Real &Ni) {
 
   /*-------------------------------------------------------------------------------
@@ -122,7 +120,7 @@ void hf(const Real Temperature, const Real w_vlc, const Real RH, const Real Na,
   Liu & Penner (2005), Meteorol. Z.
   -------------------------------------------------------------------------------*/
 
-  // Temperature     temperature [C]
+  // temperature     temperature [C]
   // w_vlc           vertical velocity [m/s]
   // RH              unitless relative humidity
   // Na              aerosol number concentrations [#/cm^3]
@@ -132,22 +130,22 @@ void hf(const Real Temperature, const Real w_vlc, const Real RH, const Real Na,
   parameters
   ---------------------------------------------------------------------*/
 
-  const Real A1_fast = 0.0231;
-  const Real A21_fast = -1.6387; //(T>-64 deg)
-  const Real A22_fast = -6.045;  //(T<=-64 deg)
-  const Real B1_fast = -0.008;
-  const Real B21_fast = -0.042; //(T>-64 deg)
-  const Real B22_fast = -0.112; //(T<=-64 deg)
-  const Real C1_fast = 0.0739;
-  const Real C2_fast = 1.2372;
+  const Real A1_fast  = 0.0231;
+  const Real A21_fast = -1.6387; // (T > -64 deg)
+  const Real A22_fast = -6.045;  // (T <= -64 deg)
+  const Real B1_fast  = -0.008;
+  const Real B21_fast = -0.042; // (T > -64 deg)
+  const Real B22_fast = -0.112; // (T <= -64 deg)
+  const Real C1_fast  = 0.0739;
+  const Real C2_fast  = 1.2372;
 
-  const Real A1_slow = -0.3949;
-  const Real A2_slow = 1.282;
-  const Real B1_slow = -0.0156;
-  const Real B2_slow = 0.0111;
-  const Real B3_slow = 0.0217;
-  const Real C1_slow = 0.120;
-  const Real C2_slow = 2.312;
+  const Real A1_slow  = -0.3949;
+  const Real A2_slow  = 1.282;
+  const Real B1_slow  = -0.0156;
+  const Real B2_slow  = 0.0111;
+  const Real B3_slow  = 0.0217;
+  const Real C1_slow  = 0.120;
+  const Real C2_slow  = 2.312;
 
   /*---------------------------------------------------------------------
   local variables
@@ -160,40 +158,38 @@ void hf(const Real Temperature, const Real w_vlc, const Real RH, const Real Na,
 
   Ni = zero;
 
-  calculate_RHw_hf(Temperature, lnw, RHw);
+  calculate_RHw_hf(temperature, lnw, RHw);
 
-  if ((Temperature <= -Real(37.0)) && (RH * subgrid >= RHw)) {
+  if ((temperature <= -Real(37.0)) && (RH * subgrid >= RHw)) {
     const Real regm = Real(6.07) * lnw - Real(55.0);
 
-    if (Temperature >= regm) {
+    if (temperature >= regm) {
       // fast-growth regime
-      if (Temperature > -Real(64.0)) //
+      if (temperature > -Real(64.0)) //
       {
         A2_fast = A21_fast;
         B2_fast = B21_fast;
       } else {
         A2_fast = A22_fast;
         B2_fast = B22_fast;
-      } // end Temperature
+      } // end temperature
 
       calculate_Ni_hf(A1_fast, B1_fast, C1_fast, A2_fast, B2_fast, C2_fast,
-                      Temperature, lnw, Na, Ni);
+                      temperature, lnw, Na, Ni);
 
     } else {
       //  slow-growth regime
-
       B4_slow = B2_slow + B3_slow * lnw;
 
       calculate_Ni_hf(A1_slow, B1_slow, C1_slow, A2_slow, B4_slow, C2_slow,
-                      Temperature, lnw, Na, Ni);
-
-    } // end Temperature >= regm
-  }   // end Temperature <= -Real(37.0)
+                      temperature, lnw, Na, Ni);
+    } // end temperature >= regm
+  }   // end temperature <= -Real(37.0)
 
 } // end hf
 
 KOKKOS_INLINE_FUNCTION
-void hetero(const Real Temperature, const Real w_vlc, const Real Ns, Real &Nis,
+void hetero(const Real temperature, const Real w_vlc, const Real Ns, Real &Nis,
             Real &Nid) {
 
   /*-------------------------------------------------------------------------------
@@ -201,7 +197,7 @@ void hetero(const Real Temperature, const Real w_vlc, const Real Ns, Real &Nis,
   Eq. 4.7 in Liu & Penner (2005), Meteorol. Z.
   -----------------------------------------------------------------------------*/
 
-  // Temperature     temperature [C]
+  // temperature     temperature [C]
   // w_vlc           vertical velocity [m/s]
   // Ns              aerosol concentrations [#/cm^3]
   // Nis             ice number concentrations [#/cm^3]
@@ -219,6 +215,7 @@ void hetero(const Real Temperature, const Real w_vlc, const Real Ns, Real &Nis,
   const Real B12 = -0.0468;
   const Real B21 = -0.2667;
   const Real B22 = -1.4588;
+  // FIXME: BAD_CONSTANT (?)
 
   const Real lnNs = haero::log(Ns);
   const Real lnw = haero::log(w_vlc);
@@ -229,11 +226,11 @@ void hetero(const Real Temperature, const Real w_vlc, const Real Ns, Real &Nis,
   const Real C_coef = A21 + B21 * lnNs;
 
   Nis = haero::exp(A22) * haero::pow(Ns, B22) *
-        haero::exp(B_coef * Temperature) * haero::pow(w_vlc, C_coef);
+        haero::exp(B_coef * temperature) * haero::pow(w_vlc, C_coef);
   Nis = haero::min(Nis, Ns);
-  // FIXME : Mention that this variables is set to zero in PR
-  Nid = Real(
-      0.0); // don't include deposition nucleation for cirrus clouds when T<-37C
+  // FIXME: Mention that this variables is set to zero in PR
+  // don't include deposition nucleation for cirrus clouds when T < -37C
+  Nid = Real(0.0);
 
 } // hetero
 
@@ -246,8 +243,8 @@ public:
   // nucleate_ice-specific configuration
   struct Config {
     // In Fortran code _nucleate_ice_subgrid is read from a file.
-    // ice nucleation SO2 size threshold for aitken mode
     Real _nucleate_ice_subgrid;
+    // ice nucleation SO2 size threshold for aitken mode
     Real _so4_sz_thresh_icenuc;
     Config(const Real nucleate_ice_subgrid = 120,
            const Real so4_sz_thresh_icenuc = 8.0e-8)
@@ -272,6 +269,7 @@ public:
   void init(const AeroConfig &aero_config,
             const Config &nucleate_ice_config = Config()) {
 
+    // FIXME(mjs): what are these comments?
     // alnsg_amode(modeptr_aitken)
     // alog( sigmag_amode(m) )
     _nucleate_ice_subgrid = nucleate_ice_config._nucleate_ice_subgrid;
@@ -316,11 +314,13 @@ public:
     auto &num_coarse = prognostics.n_mode_i[coarse_idx];
     auto &num_aitken = prognostics.n_mode_i[aitken_idx];
 
+    // FIXME(mjs): is it safe to get rid of some of these commented lines?
+
     // mode dry radius [m]
     // dgnum(icol,kk,mode_aitken_idx)
 
     auto &dgnum_aitken = diagnostics.dry_geometric_mean_diameter_i[aitken_idx];
-    // wsubi(:,:)           updraft velocity for ice nucleation [m/s]
+    // wsubi(:,:) updraft velocity for ice nucleation [m/s]
     auto &wsubi = atmosphere.updraft_vel_ice_nucleation;
     // could fraction [unitless]
     auto &ast = atmosphere.cloud_fraction;
@@ -377,11 +377,6 @@ public:
 
             wv_sat_methods::wv_sat_qsat_water(temp, pmid, es, qs);
             const Real relhum = qv / qs;
-
-            // Real relhum =
-            //     conversions::relative_humidity_from_vapor_mixing_ratio(qv,
-            //     pmid,
-            //                                                            temp);
             const Real icldm = haero::max(ast(kk), mincld);
 
             // compute aerosol number for so4, soot, and dust with units #/cm^3
@@ -410,7 +405,7 @@ public:
             } // end dmc
 
             if (dgnum_aitken(kk) > zero) {
-              // only allow so4 with D>0.1 um in ice nucleation
+              // only allow so4 with D > 0.1 um in ice nucleation
               so4_num =
                   num_aitken(kk) * air_density * num_m3_to_cm3 *
                   (half - half * haero::erf(haero::log(so4_sz_thresh_icenuc /
@@ -514,7 +509,7 @@ public:
           // heterogeneous nucleation only
           // BAD CONSTANT
           if (tc < -Real(40) && wbar > Real(1.)) {
-            // exclude T<-40 & W> 1m / s from hetero.nucleation
+            // exclude T < -40 & W > 1 m/s from hetero.nucleation
 
             nucleate_ice::hf(tc, wbar, relhum, so4_num, subgrid, nihf);
             niimm = zero;
@@ -540,7 +535,7 @@ public:
 
           // BAD CONSTANT
           if (tc < -Real(40.) && wbar > Real(1.)) {
-            // exclude T<-40 & W>1m/s from hetero. nucleation
+            // exclude T < -40 & W > 1 m/s from hetero. nucleation
 
             nucleate_ice::hf(tc, wbar, relhum, so4_num, subgrid, nihf);
             niimm = zero;
@@ -571,10 +566,13 @@ public:
 
     } // end so4_num ..
 
-    /* deposition/condensation nucleation in mixed clouds (-37<T<0C) (Meyers,
-   1992) this part is executed but is always replaced by 0, because CNT scheme
-   takes over the calculation. use_hetfrz_classnuc is always true. */
+    /* deposition/condensation nucleation in mixed clouds (-37 < T < 0 C)
+    (Meyers, 1992) this part is executed but is always replaced by 0, because
+    CNT scheme takes over the calculation. use_hetfrz_classnuc is always true. */
     // FIXME OD: why adding zero to nuci? is something missing?
+    // mjs: this whole thing is bizarre--add zero and if that makes it >= 1e4
+      // or < 0, then make it zero? And this is the only thing that happens to
+      // nuci in this process?
     nimey = zero;
     // BAD CONSTANT
     nuci = ni + nimey;
@@ -590,9 +588,7 @@ public:
     onihf = nihf * one_millon / rhoair;
 
   } // end nucleati
-
 }; // end class nucleate_ice
-
 } // end namespace mam4
 
 #endif
