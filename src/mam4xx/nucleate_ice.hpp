@@ -22,45 +22,45 @@ namespace mam4 {
 namespace nucleate_ice {
 
 /*-------------------------------------------------------------------------------
-! Purpose:
-!  A parameterization of ice nucleation.
-!
-!  *** This module is intended to be a "portable" code layer.  Ideally it should
-!  *** not contain any use association of modules that belong to the model
+Purpose:
+ A parameterization of ice nucleation.
+
+ *** This module is intended to be a "portable" code layer.  Ideally it should
+ *** not contain any use association of modules that belong to the model
 framework.
-!
-!
-! Method:
-!  The current method is based on Liu & Penner (2005) & Liu et al. (2007)
-!  It related the ice nucleation with the aerosol number, temperature and the
-!  updraft velocity. It includes homogeneous freezing of sulfate & immersion
-!  freezing on mineral dust (soot disabled) in cirrus clouds, and
-!  Meyers et al. (1992) deposition nucleation in mixed-phase clouds
-!
-!  The effect of preexisting ice crystals on ice nucleation in cirrus clouds is
-included, !  and also consider the sub-grid variability of temperature in cirrus
-clouds, !  following X. Shi et al. ACP (2014).
-!
-!  Ice nucleation in mixed-phase clouds now uses classical nucleation theory
-(CNT), !  follows Y. Wang et al. ACP (2014), Hoose et al. (2010).
-!
-! Authors:
-!  Xiaohong Liu, 01/2005, modifications by A. Gettelman 2009-2010
-!  Xiangjun Shi & Xiaohong Liu, 01/2014.
-!
-!  With help from C. C. Chen and B. Eaton (2014)
-!-------------------------------------------------------------------------------*/
+
+
+Method:
+ The current method is based on Liu & Penner (2005) & Liu et al. (2007)
+ It related the ice nucleation with the aerosol number, temperature and the
+ updraft velocity. It includes homogeneous freezing of sulfate & immersion
+ freezing on mineral dust (soot disabled) in cirrus clouds, and
+ Meyers et al. (1992) deposition nucleation in mixed-phase clouds
+
+ The effect of preexisting ice crystals on ice nucleation in cirrus clouds is
+included,  and also consider the sub-grid variability of temperature in cirrus
+clouds,  following X. Shi et al. ACP (2014).
+
+ Ice nucleation in mixed-phase clouds now uses classical nucleation theory
+(CNT),  follows Y. Wang et al. ACP (2014), Hoose et al. (2010).
+
+Authors:
+ Xiaohong Liu, 01/2005, modifications by A. Gettelman 2009-2010
+ Xiangjun Shi & Xiaohong Liu, 01/2014.
+
+ With help from C. C. Chen and B. Eaton (2014)
+-------------------------------------------------------------------------------*/
 
 KOKKOS_INLINE_FUNCTION
 void calculate_regm_nucleati(const Real w_vlc, const Real Na, Real &regm) {
   /*-------------------------------------------------------------------------------
-  ! Calculate temperature regime for ice nucleation based on
-  ! Eq. 4.5 in Liu & Penner (2005), Meteorol. Z.
-  !-------------------------------------------------------------------------------*/
+  Calculate temperature regime for ice nucleation based on
+  Eq. 4.5 in Liu & Penner (2005), Meteorol. Z.
+  -------------------------------------------------------------------------------*/
 
-  // w_vlc            ! vertical velocity [m/s]
-  // Na               ! aerosol number concentration [#/cm^3]
-  // regm             ! threshold temperature [C]
+  // w_vlc            vertical velocity [m/s]
+  // Na               aerosol number concentration [#/cm^3]
+  // regm             threshold temperature [C]
 
   const Real lnNa = haero::log(Na);
   // BAD CONSTANT
@@ -73,13 +73,13 @@ void calculate_regm_nucleati(const Real w_vlc, const Real Na, Real &regm) {
 KOKKOS_INLINE_FUNCTION
 void calculate_RHw_hf(const Real Temperature, const Real lnw, Real &RHw) {
   /*-------------------------------------------------------------------------------
-  ! Calculate threshold relative humidity with respective to water (RHw) based
-  on ! Eq. 3.1 in Liu & Penner (2005), Meteorol. Z.
-  !-------------------------------------------------------------------------------*/
+  Calculate threshold relative humidity with respective to water (RHw) based
+  on Eq. 3.1 in Liu & Penner (2005), Meteorol. Z.
+  -------------------------------------------------------------------------------*/
 
-  // Temperature     ! temperature [C]
-  // lnw             ! ln of vertical velocity
-  // RHw             ! relative humidity threshold
+  // Temperature     temperature [C]
+  // lnw             ln of vertical velocity
+  // RHw             relative humidity threshold
 
   const Real A_coef = Real(6.0e-4) * lnw + Real(6.6e-3);
   const Real B_coef = Real(6.0e-2) * lnw + Real(1.052);
@@ -96,16 +96,16 @@ void calculate_Ni_hf(const Real A1, const Real B1, const Real C1, const Real A2,
 
 {
   /*-------------------------------------------------------------------------------
-  ! Calculate number of ice crystals (Ni) based on
-  ! Eq. 3.3 in Liu & Penner (2005), Meteorol. Z.
-  !-------------------------------------------------------------------------------*/
+  Calculate number of ice crystals (Ni) based on
+  Eq. 3.3 in Liu & Penner (2005), Meteorol. Z.
+  -------------------------------------------------------------------------------*/
 
-  // A1, B1, C1     ! Coefficients
-  // A2, B2, C2     ! Coefficients
-  // Temperature    ! temperature [C]
-  // lnw            ! ln of vertical velocity
-  // Na             ! aerosol number concentrations [#/cm^3]
-  // Ni             ! ice number concentrations [#/cm^3]
+  // A1, B1, C1     Coefficients
+  // A2, B2, C2     Coefficients
+  // Temperature    temperature [C]
+  // lnw            ln of vertical velocity
+  // Na             aerosol number concentrations [#/cm^3]
+  // Ni             ice number concentrations [#/cm^3]
 
   const Real k1 = haero::exp(A2 + B2 * Temperature + C2 * lnw);
   const Real k2 = A1 + B1 * Temperature + C1 * lnw;
@@ -118,19 +118,19 @@ void hf(const Real Temperature, const Real w_vlc, const Real RH, const Real Na,
         const Real subgrid, Real &Ni) {
 
   /*-------------------------------------------------------------------------------
-  ! Calculate number of ice crystals by homogeneous freezing (Ni) based on
-  ! Liu & Penner (2005), Meteorol. Z.
-  !-------------------------------------------------------------------------------*/
+  Calculate number of ice crystals by homogeneous freezing (Ni) based on
+  Liu & Penner (2005), Meteorol. Z.
+  -------------------------------------------------------------------------------*/
 
-  // Temperature     ! temperature [C]
-  // w_vlc           ! vertical velocity [m/s]
-  // RH              ! unitless relative humidity
-  // Na              ! aerosol number concentrations [#/cm^3]
-  // Ni              ! ice number concentrations [#/cm^3]
+  // Temperature     temperature [C]
+  // w_vlc           vertical velocity [m/s]
+  // RH              unitless relative humidity
+  // Na              aerosol number concentrations [#/cm^3]
+  // Ni              ice number concentrations [#/cm^3]
 
   /*---------------------------------------------------------------------
-  ! parameters
-  !---------------------------------------------------------------------*/
+  parameters
+  ---------------------------------------------------------------------*/
 
   const Real A1_fast = 0.0231;
   const Real A21_fast = -1.6387; //(T>-64 deg)
@@ -150,8 +150,8 @@ void hf(const Real Temperature, const Real w_vlc, const Real RH, const Real Na,
   const Real C2_slow = 2.312;
 
   /*---------------------------------------------------------------------
-  ! local variables
-  !---------------------------------------------------------------------*/
+  local variables
+  ---------------------------------------------------------------------*/
   const Real zero = 0;
   Real A2_fast, B2_fast, B4_slow = zero;
   Real lnw, RHw = zero;
@@ -197,19 +197,19 @@ void hetero(const Real Temperature, const Real w_vlc, const Real Ns, Real &Nis,
             Real &Nid) {
 
   /*-------------------------------------------------------------------------------
-  ! Calculate number of ice crystals by heterogenous freezing (Nis) based on
-  ! Eq. 4.7 in Liu & Penner (2005), Meteorol. Z.
-  !-----------------------------------------------------------------------------*/
+  Calculate number of ice crystals by heterogenous freezing (Nis) based on
+  Eq. 4.7 in Liu & Penner (2005), Meteorol. Z.
+  -----------------------------------------------------------------------------*/
 
-  // Temperature     ! temperature [C]
-  // w_vlc           ! vertical velocity [m/s]
-  // Ns              ! aerosol concentrations [#/cm^3]
-  // Nis             ! ice number concentrations [#/cm^3]
-  // Nid             ! ice number concentrations [#/cm^3]
+  // Temperature     temperature [C]
+  // w_vlc           vertical velocity [m/s]
+  // Ns              aerosol concentrations [#/cm^3]
+  // Nis             ice number concentrations [#/cm^3]
+  // Nid             ice number concentrations [#/cm^3]
 
   /*---------------------------------------------------------------------
-  ! parameters
-  !---------------------------------------------------------------------*/
+  parameters
+  ---------------------------------------------------------------------*/
 
   const Real A11 = 0.0263;
   const Real A12 = -0.0185;
@@ -246,7 +246,7 @@ public:
   // nucleate_ice-specific configuration
   struct Config {
     // In Fortran code _nucleate_ice_subgrid is read from a file.
-    // !ice nucleation SO2 size threshold for aitken mode
+    // ice nucleation SO2 size threshold for aitken mode
     Real _nucleate_ice_subgrid;
     Real _so4_sz_thresh_icenuc;
     Config(const Real nucleate_ice_subgrid = 120,
@@ -320,7 +320,7 @@ public:
     // dgnum(icol,kk,mode_aitken_idx)
 
     auto &dgnum_aitken = diagnostics.dry_geometric_mean_diameter_i[aitken_idx];
-    // wsubi(:,:)           ! updraft velocity for ice nucleation [m/s]
+    // wsubi(:,:)           updraft velocity for ice nucleation [m/s]
     auto &wsubi = atmosphere.updraft_vel_ice_nucleation;
     // could fraction [unitless]
     auto &ast = atmosphere.cloud_fraction;
@@ -336,7 +336,7 @@ public:
     // output number conc of ice nuclei due to deposition nucleation (hetero
     // nuc) [1/m3]
     auto &nidep = diagnostics.icenuc_num_depnuc;
-    // !output number conc of ice nuclei due to meyers deposition [1/m3]
+    // output number conc of ice nuclei due to meyers deposition [1/m3]
     auto &nimey = diagnostics.icenuc_num_meydep;
 
     // number of activated aerosol for ice nucleation (homogeneous freezing
@@ -347,7 +347,7 @@ public:
 
     const Real num_m3_to_cm3 = _num_m3_to_cm3;
     // FIXME
-    // huge(1.0_r8) !ice nucleation SO2 size threshold for aitken mode
+    // huge(1.0_r8) ice nucleation SO2 size threshold for aitken mode
     // input value from e3sm is not huge.
     const Real so4_sz_thresh_icenuc = _so4_sz_thresh_icenuc;
 
@@ -455,51 +455,51 @@ public:
       // outputs
       Real &nuci, Real &onihf, Real &oniimm, Real &onidep, Real &onimey) const {
     /*---------------------------------------------------------------
-    ! Purpose:
-    !  The parameterization of ice nucleation.
-    !
-    ! Method: The current method is based on Liu & Penner (2005)
-    !  It related the ice nucleation with the aerosol number, temperature and
-    the !  updraft velocity. It includes homogeneous freezing of sulfate,
-    immersion !  freezing of soot, and Meyers et al. (1992) deposition
+    Purpose:
+     The parameterization of ice nucleation.
+
+    Method: The current method is based on Liu & Penner (2005)
+     It related the ice nucleation with the aerosol number, temperature and
+    the  updraft velocity. It includes homogeneous freezing of sulfate,
+    immersion  freezing of soot, and Meyers et al. (1992) deposition
     nucleation
-    !
-    ! Authors: Xiaohong Liu, 01/2005, modifications by A. Gettelman 2009-2010
-    !---------------------------------------------------------------- */
+
+    Authors: Xiaohong Liu, 01/2005, modifications by A. Gettelman 2009-2010
+    ---------------------------------------------------------------- */
 
     // Input Arguments
-    // wbar        ! grid cell mean vertical velocity [m/s]
-    // tair        ! temperature [K]
-    // pmid        ! pressure at layer midpoints [pa]
-    // relhum      ! relative humidity with respective to liquid [unitless]
-    // cldn        ! new value of cloud fraction    [fraction]
-    // rhoair      ! air density [kg/m3]
-    // so4_num     ! so4 aerosol number [#/cm^3]
-    // dst3_num     ! dust aerosol number [#/cm^3]
+    // wbar        grid cell mean vertical velocity [m/s]
+    // tair        temperature [K]
+    // pmid        pressure at layer midpoints [pa]
+    // relhum      relative humidity with respective to liquid [unitless]
+    // cldn        new value of cloud fraction    [fraction]
+    // rhoair      air density [kg/m3]
+    // so4_num     so4 aerosol number [#/cm^3]
+    // dst3_num     dust aerosol number [#/cm^3]
 
     // Output Arguments
-    // nuci       ! ice number nucleated [#/kg]
-    // onihf      ! nucleated number from homogeneous freezing of so4 [#/kg]
-    // oniimm     ! nucleated number from immersion freezing [#/kg]
-    // onidep     ! nucleated number from deposition nucleation [#/kg]
-    // onimey     ! nucleated number from deposition nucleation  (meyers: mixed
+    // nuci       ice number nucleated [#/kg]
+    // onihf      nucleated number from homogeneous freezing of so4 [#/kg]
+    // oniimm     nucleated number from immersion freezing [#/kg]
+    // onidep     nucleated number from deposition nucleation [#/kg]
+    // onimey     nucleated number from deposition nucleation  (meyers: mixed
     // phase) [#/kg]
 
     // Local workspace
     Real zero = 0;
-    Real nihf = zero; //                     ! nucleated number from homogeneous
-                      //                     freezing of so4 [#/cm^3]
-    Real niimm = zero; //                     ! nucleated number from immersion
+    Real nihf = zero;  //                     nucleated number from homogeneous
+                       //                     freezing of so4 [#/cm^3]
+    Real niimm = zero; //                     nucleated number from immersion
                        //                     freezing [#/cm^3]
-    Real nidep = zero; //                     ! nucleated number from deposition
+    Real nidep = zero; //                     nucleated number from deposition
                        //                     nucleation [#/cm^3]
-    Real nimey = zero; //                    ! nucleated number from
+    Real nimey = zero; //                    nucleated number from
     // deposition nucleation (meyers) [#/cm^3]
     Real n1 = zero;
-    Real ni = zero; //                  ! nucleated number [#/cm^3]
+    Real ni = zero; //                  nucleated number [#/cm^3]
     const Real tc =
-        tair - Real(273.15); //                      ! air temperature [C]
-    Real regm = zero;        //                    ! air temperature [C]
+        tair - Real(273.15); //                      air temperature [C]
+    Real regm = zero;        //                    air temperature [C]
 
     // BAD CONSTANT
     const Real num_threshold = 1.0e-10;
@@ -508,13 +508,13 @@ public:
       if ((tc <= Real(-35.0)) && (relhum * wv_sat_methods::svp_water(tair) /
                                       wv_sat_methods::svp_ice(tair) * subgrid >=
                                   Real(1.2))) {
-        //! use higher RHi threshold
+        // use higher RHi threshold
         nucleate_ice::calculate_regm_nucleati(wbar, dst3_num, regm);
         if (tc > regm) {
           // heterogeneous nucleation only
           // BAD CONSTANT
           if (tc < -Real(40) && wbar > Real(1.)) {
-            // !exclude T<-40 & W> 1m / s from hetero.nucleation
+            // exclude T<-40 & W> 1m / s from hetero.nucleation
 
             nucleate_ice::hf(tc, wbar, relhum, so4_num, subgrid, nihf);
             niimm = zero;
@@ -572,8 +572,8 @@ public:
     } // end so4_num ..
 
     /* deposition/condensation nucleation in mixed clouds (-37<T<0C) (Meyers,
-   1992) ! this part is executed but is always replaced by 0, because CNT scheme
-   takes over ! the calculation. use_hetfrz_classnuc is always true. */
+   1992) this part is executed but is always replaced by 0, because CNT scheme
+   takes over the calculation. use_hetfrz_classnuc is always true. */
     // FIXME OD: why adding zero to nuci? is something missing?
     nimey = zero;
     // BAD CONSTANT
@@ -583,7 +583,7 @@ public:
     } // end
 
     const Real one_millon = 1.e+6;
-    nuci = nuci * one_millon / rhoair; //  ! change unit from #/cm3 to #/kg
+    nuci = nuci * one_millon / rhoair; //  change unit from #/cm3 to #/kg
     onimey = nimey * one_millon / rhoair;
     onidep = nidep * one_millon / rhoair;
     oniimm = niimm * one_millon / rhoair;
