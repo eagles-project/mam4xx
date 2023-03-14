@@ -269,9 +269,6 @@ public:
   void init(const AeroConfig &aero_config,
             const Config &nucleate_ice_config = Config()) {
 
-    // FIXME(mjs): what are these comments?
-    // alnsg_amode(modeptr_aitken)
-    // alog( sigmag_amode(m) )
     _nucleate_ice_subgrid = nucleate_ice_config._nucleate_ice_subgrid;
 
     _num_m3_to_cm3 = 1.0e-6;
@@ -314,20 +311,15 @@ public:
     auto &num_coarse = prognostics.n_mode_i[coarse_idx];
     auto &num_aitken = prognostics.n_mode_i[aitken_idx];
 
-    // FIXME(mjs): is it safe to get rid of some of these commented lines?
-
     // mode dry radius [m]
-    // dgnum(icol,kk,mode_aitken_idx)
-
     auto &dgnum_aitken = diagnostics.dry_geometric_mean_diameter_i[aitken_idx];
-    // wsubi(:,:) updraft velocity for ice nucleation [m/s]
+    // updraft velocity for ice nucleation [m/s]
     auto &wsubi = atmosphere.updraft_vel_ice_nucleation;
     // could fraction [unitless]
     auto &ast = atmosphere.cloud_fraction;
     const Real subgrid = _nucleate_ice_subgrid;
 
     // number of activated aerosol for ice nucleation [#/kg]
-    // auto &naai = atmosphere.temperature;
     // output number conc of ice nuclei due to heterogeneous freezing [1/m3]
     auto &nihf = diagnostics.icenuc_num_hetfrz;
     // output number conc of ice nuclei due to immersion freezing (hetero nuc)
@@ -346,8 +338,7 @@ public:
     auto &naai = diagnostics.num_act_aerosol_ice_nucle;
 
     const Real num_m3_to_cm3 = _num_m3_to_cm3;
-    // FIXME
-    // huge(1.0_r8) ice nucleation SO2 size threshold for aitken mode
+    // ice nucleation SO2 size threshold for aitken mode
     // input value from e3sm is not huge.
     const Real so4_sz_thresh_icenuc = _so4_sz_thresh_icenuc;
 
@@ -364,7 +355,6 @@ public:
             const Real sqrt_two = haero::sqrt(2);
 
             const Real pmid = atmosphere.pressure(kk);
-            // CHECK units
             const Real air_density =
                 conversions::density_of_ideal_gas(temp, pmid);
 
