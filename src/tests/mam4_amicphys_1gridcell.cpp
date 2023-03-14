@@ -293,7 +293,7 @@ void mam_amicphys_1subarea_clear(
       const int dest_mode_of_mode[nmodes] = {-1, 0, -1, -1};
 
       Real qnumcw_cur[num_modes] = {};
-      Real qaercw_cur[num_gas_ids][num_modes] = {};
+      Real qaercw_cur[num_aerosol_ids][num_modes] = {};
       Real qaercw_delsub_grow4rnam[num_aerosol_ids][num_modes] = {};
       Real mean_std_dev[nmodes];
       Real fmode_dist_tail_fac[nmodes];
