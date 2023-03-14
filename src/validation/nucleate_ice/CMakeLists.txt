@@ -24,15 +24,15 @@ foreach(script
 endforeach()
 
 set(TEST_LIST
-    nucleate_ice_cam_calc_merged # passing tolerance = 2e-4
+    nucleate_ice_cam_calc_merged # passing tolerance = 1.5e-5
     hetero_merged
     #hetero_t_merged
     hf_merged
-    nucleati_merged # passing tolerance = 6e-8
+    nucleati_merged # passing tolerance = 3e-9
     nucleate_ice # produced by mam4_standalone_validation
     )
-set(DEFAULT_TOL 2e-8)
-set(ERROR_THRESHOLDS 2e-4 ${DEFAULT_TOL} ${DEFAULT_TOL} 6e-8 1e-10)
+set(DEFAULT_TOL 1e-9)
+set(ERROR_THRESHOLDS 1.5e-5 ${DEFAULT_TOL} ${DEFAULT_TOL} 3e-9 ${DEFAULT_TOL})
 
 # Run the driver in several configurations to produce datasets.
 
