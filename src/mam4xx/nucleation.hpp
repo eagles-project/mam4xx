@@ -456,7 +456,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
   molenh4a_per_moleso4a = 2.0 * tmp_n1 + tmp_n2;
 
   // (kg dry aerosol)/(mol aerosol so4)
-  kgaero_per_moleso4a = 1.0e-3 * (tmp_m1 + tmp_m2 + tmp_m3);
+  kgaero_per_moleso4a = (tmp_m1 + tmp_m2 + tmp_m3);
 
   // correction when host code sulfate is really ammonium bisulfate/sulfate
   kgaero_per_moleso4a = kgaero_per_moleso4a * (mw_so4a_host / mw_so4a);
@@ -503,7 +503,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
     tmpa = max(tmpa, 0.0);
 
     // tmpb = h2so4 gas diffusivity ([m2/s], then [m2/h])
-    tmpb = 6.7037e-6 * pow(temp_in, 0.75) / cair;
+    tmpb = 6.7037e-9 * pow(temp_in, 0.75) / cair;
     tmpb *= 3600.0; // [m2/h]
     cs_prime_kk = tmpa / (4.0 * pi * tmpb * accom_coef_h2so4);
 
@@ -621,7 +621,9 @@ private:
   static constexpr int max_num_mode_species = AeroConfig::num_aerosol_ids();
   static const int nait = static_cast<int>(ModeIndex::Aitken);
   static const int igas_h2so4 = static_cast<int>(GasId::H2SO4);
-  static const int igas_nh3 = static_cast<int>(GasId::NH3);
+  // Turn off NH3. Any negative number would turn it off, this is what is
+  // used in the mam_refactor code.
+  static const int igas_nh3 = -999888777; // static_cast<int>(GasId::NH3);
 
   static constexpr Real mw_so4a = 96.0;              // BAD_CONSTANT
   static constexpr Real mw_nh4a = 18.0;              // BAD_CONSTANT
