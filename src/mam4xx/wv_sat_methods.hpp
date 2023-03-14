@@ -84,10 +84,10 @@ Real wv_sat_svp_to_qsat(const Real es, const Real p) {
   // molecular weights real(R8),parameter :: SHR_CONST_MWDAIR  = 28.966_R8 !
   // molecular weight dry air ~ kg/kmole real(R8),parameter :: SHR_CONST_MWWV
   // = 18.016_R8       ! molecular weight water vapor
-  // FIXME: move these constants to hearo::constants
-  const Real SHR_CONST_MWWV = 18.016;
-  const Real SHR_CONST_MWDAIR = 28.966;
-  const Real epsilo = SHR_CONST_MWWV / SHR_CONST_MWDAIR;
+  // const Real SHR_CONST_MWWV = 18.016;
+  // const Real SHR_CONST_MWDAIR = 28.966;
+  const Real epsilo = haero::Constants::molec_weight_h2o /
+                      haero::Constants::molec_weight_dry_air;
 
   const Real zero = 0;
   const Real one = 1;
