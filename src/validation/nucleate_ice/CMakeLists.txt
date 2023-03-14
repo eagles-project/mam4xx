@@ -24,11 +24,11 @@ foreach(script
 endforeach()
 
 set(TEST_LIST
-    nucleate_ice_cam_calc_ts_1402 # passing tolerance = 2e-4
-    hetero_ts_1402
-    hf_ts_1402
+    nucleate_ice_cam_calc_merged # passing tolerance = 2e-4
+    hetero_merged
+    hf_merged
     #nucleate_ice
-    nucleati_ts_1402 # passing tolerance = 6e-8
+    nucleati_merged # passing tolerance = 6e-8
     )
 set(DEFAULT_TOL 2e-8)
 set(ERROR_THRESHOLDS 2e-4 ${default_tol} ${default_tol} 6e-8)

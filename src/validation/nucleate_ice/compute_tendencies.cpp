@@ -30,7 +30,7 @@ void compute_tendencies(Ensemble *ensemble) {
     mam4::Diagnostics diags(nlev);
     mam4::Tendencies tends(nlev);
 
-    const Real subgrid = input.get_array("subgrid")[0];
+    const Real subgrid = input.get_array("nucleate_ice_subgrid")[0];
     const Real so4_sz_thresh_icenuc =
         input.get_array("so4_sz_thresh_icenuc")[0];
 
