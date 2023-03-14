@@ -26,12 +26,13 @@ endforeach()
 set(TEST_LIST
     nucleate_ice_cam_calc_merged # passing tolerance = 2e-4
     hetero_merged
+    #hetero_t_merged
     hf_merged
-    #nucleate_ice
     nucleati_merged # passing tolerance = 6e-8
+    nucleate_ice # produced by mam4_standalone_validation
     )
 set(DEFAULT_TOL 2e-8)
-set(ERROR_THRESHOLDS 2e-4 ${default_tol} ${default_tol} 6e-8)
+set(ERROR_THRESHOLDS 2e-4 ${DEFAULT_TOL} ${DEFAULT_TOL} 6e-8 1e-10)
 
 # Run the driver in several configurations to produce datasets.
 
@@ -48,7 +49,6 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
 
   # add a test to validate mam4xx's results against the baseline.
   # Select a threshold error slightly bigger than the largest relative error for the threshold error.
-  # Conservative approach: At the time of this commit, threshold error=2e-8.
   # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error>
   add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
