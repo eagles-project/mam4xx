@@ -7,7 +7,7 @@ implementation of the MAM4 modal aerosol model (with 4 fixed modes).
 
 To build MAM4xx, you need:
 
-* [CMake v3.12+](https://cmake.org/)
+* [CMake v3.17+](https://cmake.org/)
 * GNU Make
 * reliable C and C++ compilers
 * optionally, a working MPI installation (like [OpenMPI](https://www.open-mpi.org/)
