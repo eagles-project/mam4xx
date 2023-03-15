@@ -83,8 +83,7 @@ Real wv_sat_svp_to_qsat(const Real es, const Real p) {
   // = 18.016_R8       ! molecular weight water vapor
   // const Real SHR_CONST_MWWV = 18.016;
   // const Real SHR_CONST_MWDAIR = 28.966;
-  const Real epsilo = haero::Constants::molec_weight_h2o /
-                      haero::Constants::molec_weight_dry_air;
+  const Real epsilo = haero::Constants::weight_ratio_h2o_air;
 
   const Real zero = 0;
   const Real one = 1;

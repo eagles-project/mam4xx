@@ -215,7 +215,6 @@ void hetero(const Real temperature, const Real w_vlc, const Real Ns, Real &Nis,
   const Real B12 = -0.0468;
   const Real B21 = -0.2667;
   const Real B22 = -1.4588;
-  // FIXME: BAD_CONSTANT (?)
 
   const Real lnNs = haero::log(Ns);
   const Real lnw = haero::log(w_vlc);
