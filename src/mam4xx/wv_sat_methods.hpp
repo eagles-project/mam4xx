@@ -10,16 +10,13 @@ Real GoffGratch_svp_water(const Real temperature) {
   // Goff & Gratch (1946)
   // temperature in Kelvin
 
-  // FIXME: BAD CONSTANT
-  // FIXME where should we add this constant
   // FROM wv_saturation.F90
   // Boiling point of water at 1 atm (K)
   // This value is slightly high, but it seems to be the value for the
   // steam point of water originally (and most frequently) used in the
   // Goff & Gratch scheme.
-  // FIXME add this constant to haero::Constants
-  const Real tboil = 373.16;
-
+  const Real tboil = haero::Constants::boil_pt_h2o;
+  
   const Real ten = 10;
   const Real one = 1;
   // uncertain below -70 C (NOTE: from mam4)
