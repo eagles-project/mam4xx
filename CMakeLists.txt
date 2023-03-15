@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.12.0)
+cmake_minimum_required (VERSION 3.17.0)
 
 message(STATUS "Configuring with build type: ${CMAKE_BUILD_TYPE}")
 
