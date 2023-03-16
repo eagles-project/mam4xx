@@ -58,7 +58,7 @@ void calculate_regm_nucleati(const Real w_vlc, const Real Na, Real &regm) {
   Eq. 4.5 in Liu & Penner (2005), Meteorol. Z.
   -------------------------------------------------------------------------------*/
 
-  // w_vlc            vertical velocity [m/s]
+  // w_vlc            (updraft) vertical velocity [m/s]
   // Na               aerosol number concentration [#/cm^3]
   // regm             threshold temperature [C]
 
@@ -80,13 +80,18 @@ void calculate_RHw_hf(const Real temperature, const Real lnw, Real &RHw) {
   // temperature     temperature [C]
   // lnw             ln of vertical velocity
   // RHw             relative humidity threshold
+  // NOTE(mjs): This math looks very odd to me
 
-  const Real A_coef = Real(6.0e-4) * lnw + Real(6.6e-3);
-  const Real B_coef = Real(6.0e-2) * lnw + Real(1.052);
-  const Real C_coef = Real(1.68) * lnw + Real(129.35);
+  const Real A_coef = Real(6.0e-4) * lnw + Real(6.6e-3); // this is ~7e-3
+  const Real B_coef = Real(6.0e-2) * lnw + Real(1.052); // this is ~1
+  const Real C_coef = Real(1.68) * lnw + Real(129.35); // this is ~131
 
   RHw = (A_coef * temperature * temperature + B_coef * temperature + C_coef) *
         Real(0.01);
+  // Thus,
+  // RHw ~= (7e-3 * temperature^2 + 1 * temperature + 131) * 0.01
+  // NOTE: assuming the above, for temperature in [-160, -40],
+          // RHw is in [0.9529, 1.3850]
 } // end calculate_RHw_hf
 
 KOKKOS_INLINE_FUNCTION
@@ -121,7 +126,7 @@ void hf(const Real temperature, const Real w_vlc, const Real RH, const Real Na,
   -------------------------------------------------------------------------------*/
 
   // temperature     temperature [C]
-  // w_vlc           vertical velocity [m/s]
+  // w_vlc           (updraft) vertical velocity [m/s]
   // RH              unitless relative humidity
   // Na              aerosol number concentrations [#/cm^3]
   // Ni              ice number concentrations [#/cm^3]
@@ -193,12 +198,12 @@ void hetero(const Real temperature, const Real w_vlc, const Real Ns, Real &Nis,
             Real &Nid) {
 
   /*-------------------------------------------------------------------------------
-  Calculate number of ice crystals by heterogenous freezing (Nis) based on
+  Calculate number of ice crystals by heterogeneous freezing (Nis) based on
   Eq. 4.7 in Liu & Penner (2005), Meteorol. Z.
   -----------------------------------------------------------------------------*/
 
   // temperature     temperature [C]
-  // w_vlc           vertical velocity [m/s]
+  // w_vlc           (updraft) vertical velocity [m/s]
   // Ns              aerosol concentrations [#/cm^3]
   // Nis             ice number concentrations [#/cm^3]
   // Nid             ice number concentrations [#/cm^3]
@@ -375,7 +380,7 @@ public:
 
             /* For modal aerosols, assume for the upper troposphere:
             soot = accumulation mode
-            sulfate = aiken mode
+            sulfate = aitken mode
             dust = coarse mode
             since modal has internal mixtures. */
             Real dmc = coarse_dust(kk) * air_density;
@@ -452,7 +457,7 @@ public:
     ---------------------------------------------------------------- */
 
     // Input Arguments
-    // wbar        grid cell mean vertical velocity [m/s]
+    // wbar        grid cell mean (updraft) vertical velocity [m/s]
     // tair        temperature [K]
     // pmid        pressure at layer midpoints [pa]
     // relhum      relative humidity with respective to liquid [unitless]
@@ -475,8 +480,11 @@ public:
                        //                     freezing of so4 [#/cm^3]
     Real niimm = zero; //                     nucleated number from immersion
                        //                     freezing [#/cm^3]
+    // NOTE: this gets set to zero in every logic branch below
+      // and also within hetero()
     Real nidep = zero; //                     nucleated number from deposition
                        //                     nucleation [#/cm^3]
+    // NOTE: this gets set to zero at the very end
     Real nimey = zero; //                    nucleated number from
     // deposition nucleation (meyers) [#/cm^3]
     Real n1 = zero;
@@ -507,7 +515,7 @@ public:
 
           } else {
 
-            nucleate_ice::hetero(tc, wbar, dst3_num, niimm, nidep);
+            nucleate_ice::het hetero()ero(tc, wbar, dst3_num, niimm, nidep);
             nihf = zero;
             n1 = niimm + nidep;
 
