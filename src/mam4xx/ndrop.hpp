@@ -21,6 +21,19 @@ public:
 };
 
 namespace ndrop {
+//TODO: put this inside ndrop_init
+// abdul-razzak functions of width
+Real bizarro1[AeroConfig::num_modes()];
+// abdul-razzak functions of width
+Real bizarro2[AeroConfig::num_modes()];
+
+KOKKOS_INLINE_FUNCTION 
+void ndrop_init() {
+    for(int m = 0; m < AeroConfig::num_modes(); m++) {
+        bizarro1[m] = 0.5 * haero::exp(2.5 * haero::log(modes(m).mean_std_dev) * haero::log(modes(m).mean_std_dev));
+        bizarro2[m] = 1.0 + 0.25 * haero::log(modes(m).mean_std_dev);
+    }
+}
 
 // TODO: this function signature may need to change to work properly on GPU
 //  come back when this function is being used in a ported parameterization
@@ -103,6 +116,49 @@ void explmix(
         q(k) = max(q(k), 0);
       });
 }
+
+// calculates maximum supersaturation for multiple
+// competing aerosol modes.
+// Abdul-Razzak and Ghan, A parameterization of aerosol activation.
+// 2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
+KOKKOS_INLINE_FUNCTION
+void maxsat(Real zeta, // [dimensionless]
+            Real eta[AeroConfig::num_modes()], // [dimensionless] 
+            Real nmode, //number of modes
+            Real smc[AeroConfig::num_modes()], // critical supersaturation for number mode radius [fraction]
+            Real smax //maximum supersaturation [fraction]
+            ) {
+
+    Real sum = 0;
+    Real g1, g2;
+    bool weak_forcing = true; // whether forcing is sufficiently weak or not
+
+    for(int m = 0; m < nmode; m++) {
+        if(zeta > 1e5 * eta[m] || smc[m] * smc[m] > 1e5 * eta[m]) {
+            // weak forcing. essentially none activated
+            smax = 1e-20;
+        } else {
+            // significant activation of this mode. calc activation of all modes.
+            weak_forcing = false;
+            return;
+        }
+    }
+    
+    if (weak_forcing) 
+        return;
+   
+   for(int m = 0; m < nmode; m++) {
+      if(eta[m] > 1e-20) {
+         g1 = (zeta / eta[m]) * haero::sqrt(zeta / eta[m]);
+         g2 = (smc[m] / haero::sqrt(eta[m] + 3 * zeta)) * haero::sqrt(smc[m] / haero::sqrt(eta[m] + 3 * zeta));
+         sum = sum + (bizarro1[m] * g1 + bizarro2[m] * g2) / (smc[m] * smc[m]);
+      } else {
+         sum = 1e20;
+      }
+   }
+   smax = 1.0 / haero::sqrt(sum);           
+}
+
 } // namespace ndrop
 } // namespace mam4
 #endif
