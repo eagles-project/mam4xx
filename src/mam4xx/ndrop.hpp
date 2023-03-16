@@ -19,33 +19,84 @@ namespace mam4 {
 //  come back when this function is being used in a ported parameterization
 KOKKOS_INLINE_FUNCTION
 void get_aer_num(const Diagnostics &diags, const Prognostics &progs,
-                 const Atmosphere &atm, const int mode_idx, const int k,
-                 Real naerosol[AeroConfig::num_modes()]) {
+                const Atmosphere &atm, const int mode_idx, const int k,
+                Real naerosol[AeroConfig::num_modes()]) {
 
-  Real rho =
-      conversions::density_of_ideal_gas(atm.temperature(k), atm.pressure(k));
-  Real vaerosol = conversions::mean_particle_volume_from_diameter(
-      diags.dry_geometric_mean_diameter_total[mode_idx](k),
-      modes(mode_idx).mean_std_dev);
+    Real rho =
+        conversions::density_of_ideal_gas(atm.temperature(k), atm.pressure(k));
+    Real vaerosol = conversions::mean_particle_volume_from_diameter(
+        diags.dry_geometric_mean_diameter_total[mode_idx](k),
+        modes(mode_idx).mean_std_dev);
 
-  Real min_diameter = modes(mode_idx).min_diameter;
-  Real max_diameter = modes(mode_idx).max_diameter;
-  Real mean_std_dev = modes(mode_idx).mean_std_dev;
+    Real min_diameter = modes(mode_idx).min_diameter;
+    Real max_diameter = modes(mode_idx).max_diameter;
+    Real mean_std_dev = modes(mode_idx).mean_std_dev;
 
-  Real num2vol_ratio_min =
-      1.0 / conversions::mean_particle_volume_from_diameter(min_diameter,
-                                                            mean_std_dev);
-  Real num2vol_ratio_max =
-      1.0 / conversions::mean_particle_volume_from_diameter(max_diameter,
-                                                            mean_std_dev);
+    Real num2vol_ratio_min =
+        1.0 / conversions::mean_particle_volume_from_diameter(min_diameter,
+                                                                mean_std_dev);
+    Real num2vol_ratio_max =
+        1.0 / conversions::mean_particle_volume_from_diameter(max_diameter,
+                                                                mean_std_dev);
 
-  // convert number mixing ratios to number concentrations
-  naerosol[mode_idx] =
-      (progs.n_mode_i[mode_idx](k) + progs.n_mode_c[mode_idx](k)) * rho;
+    // convert number mixing ratios to number concentrations
+    naerosol[mode_idx] =
+        (progs.n_mode_i[mode_idx](k) + progs.n_mode_c[mode_idx](k)) * rho;
 
-  // adjust number so that dgnumlo < dgnum < dgnumhi
-  naerosol[mode_idx] = max(naerosol[mode_idx], vaerosol * num2vol_ratio_max);
-  naerosol[mode_idx] = min(naerosol[mode_idx], vaerosol * num2vol_ratio_min);
+    // adjust number so that dgnumlo < dgnum < dgnumhi
+    naerosol[mode_idx] = max(naerosol[mode_idx], vaerosol * num2vol_ratio_max);
+    naerosol[mode_idx] = min(naerosol[mode_idx], vaerosol * num2vol_ratio_min);
 }
+
+KOKKOS_INLINE_FUNCTION
+void explmix(int pver, Real q[AeroConfig::num_levels()],
+            Real src[AeroConfig::num_levels()],
+            Real ekkp[AeroConfig::num_levels()],
+            Real ekkm[AeroConfig::num_levels()],
+            Real overlapp[AeroConfig::num_levels()],
+            Real overlapm[AeroConfig::num_levels()],
+            Real qold[AeroConfig::num_levels()],
+            Real dt[AeroConfig::num_levels()],
+            bool is_unact,
+            Real qactold[AeroConfig::num_levels()] /*optional*/) {
+
+    int pver; // number of levels
+    q(pver) ! number / mass mixing ratio to be updated [# or kg / kg]
+    qold(pver) ! number / mass mixing ratio from previous time step [# or kg / kg]
+    src(pver) ! source due to activation/nucleation [# or kg / (kg-s)]
+    ekkp(pver) ! zn*zs*density*diffusivity (kg/m3 m2/s) at interface [/s]
+    ! below layer k  (k,k+1 interface)
+    ekkm(pver) ! zn*zs*density*diffusivity (kg/m3 m2/s) at interface [/s]
+    ! above layer k  (k,k+1 interface)
+    overlapp(pver) ! cloud overlap below [fraction]
+    overlapm(pver) ! cloud overlap above [fraction]
+    dt ! time step [s]
+    is_unact ! true if this is an unactivated species
+    qactold(pver) ! [# or kg / kg]
+    ;
+    //number / mass mixing ratio of ACTIVATED species from previous step
+    //*** this should only be present
+    //    if the current species is unactivated number/sfc/mass
+
+    int top_lev; //??
+    int kp1, km1;
+    for(int k=toplev; k <= pver; k++) {
+        kp1 = min(k+1, pver);
+        km1 = max(k-1, top_lev);
+
+        //the qactold*(1-overlap) terms are resuspension of activated material
+
+        if(is_unact) {
+            q[k] = qold[k] + (dt * (-src[k] + (ekkp(k) * (qold[kp1] - qold[k] + (qactold[kp1] * (1 - overlapp[k])))) 
+            + (ekkm[k] * (qold[km1] - qold[k] + (qactold[km1] * (1 - overlapm[k])))))) ;
+        } else {
+            q[k] = qold[k] + (dt * (src[k] + (ekkp[k] * ((overlapp[k] * qold[kp1]) - qold[k])) 
+            + (ekkm[k] * ((overlapm[k] * qold[k]) - qold[k]))));
+        }
+        //force to non-negative
+        q[k] = max(q[k], 0);
+    }
+}
+
 } // namespace mam4
 #endif
