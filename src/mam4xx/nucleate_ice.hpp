@@ -83,15 +83,15 @@ void calculate_RHw_hf(const Real temperature, const Real lnw, Real &RHw) {
   // NOTE(mjs): This math looks very odd to me
 
   const Real A_coef = Real(6.0e-4) * lnw + Real(6.6e-3); // this is ~7e-3
-  const Real B_coef = Real(6.0e-2) * lnw + Real(1.052); // this is ~1
-  const Real C_coef = Real(1.68) * lnw + Real(129.35); // this is ~131
+  const Real B_coef = Real(6.0e-2) * lnw + Real(1.052);  // this is ~1
+  const Real C_coef = Real(1.68) * lnw + Real(129.35);   // this is ~131
 
   RHw = (A_coef * temperature * temperature + B_coef * temperature + C_coef) *
         Real(0.01);
   // Thus,
   // RHw ~= (7e-3 * temperature^2 + 1 * temperature + 131) * 0.01
   // NOTE: assuming the above, for temperature in [-160, -40],
-          // RHw is in [0.9529, 1.3850]
+  // RHw is in [0.9529, 1.3850]
 } // end calculate_RHw_hf
 
 KOKKOS_INLINE_FUNCTION
@@ -135,22 +135,22 @@ void hf(const Real temperature, const Real w_vlc, const Real RH, const Real Na,
   parameters
   ---------------------------------------------------------------------*/
 
-  const Real A1_fast  = 0.0231;
+  const Real A1_fast = 0.0231;
   const Real A21_fast = -1.6387; // (T > -64 deg)
   const Real A22_fast = -6.045;  // (T <= -64 deg)
-  const Real B1_fast  = -0.008;
+  const Real B1_fast = -0.008;
   const Real B21_fast = -0.042; // (T > -64 deg)
   const Real B22_fast = -0.112; // (T <= -64 deg)
-  const Real C1_fast  = 0.0739;
-  const Real C2_fast  = 1.2372;
+  const Real C1_fast = 0.0739;
+  const Real C2_fast = 1.2372;
 
-  const Real A1_slow  = -0.3949;
-  const Real A2_slow  = 1.282;
-  const Real B1_slow  = -0.0156;
-  const Real B2_slow  = 0.0111;
-  const Real B3_slow  = 0.0217;
-  const Real C1_slow  = 0.120;
-  const Real C2_slow  = 2.312;
+  const Real A1_slow = -0.3949;
+  const Real A2_slow = 1.282;
+  const Real B1_slow = -0.0156;
+  const Real B2_slow = 0.0111;
+  const Real B3_slow = 0.0217;
+  const Real C1_slow = 0.120;
+  const Real C2_slow = 2.312;
 
   /*---------------------------------------------------------------------
   local variables
@@ -481,7 +481,7 @@ public:
     Real niimm = zero; //                     nucleated number from immersion
                        //                     freezing [#/cm^3]
     // NOTE: this gets set to zero in every logic branch below
-      // and also within hetero()
+    // and also within hetero()
     Real nidep = zero; //                     nucleated number from deposition
                        //                     nucleation [#/cm^3]
     // NOTE: this gets set to zero at the very end
@@ -565,11 +565,12 @@ public:
 
     /* deposition/condensation nucleation in mixed clouds (-37 < T < 0 C)
     (Meyers, 1992) this part is executed but is always replaced by 0, because
-    CNT scheme takes over the calculation. use_hetfrz_classnuc is always true. */
+    CNT scheme takes over the calculation. use_hetfrz_classnuc is always true.
+  */
     // FIXME OD: why adding zero to nuci? is something missing?
     // mjs: this whole thing is bizarre--add zero and if that makes it >= 1e4
-      // or < 0, then make it zero? And this is the only thing that happens to
-      // nuci in this process?
+    // or < 0, then make it zero? And this is the only thing that happens to
+    // nuci in this process?
     nimey = zero;
     // BAD CONSTANT
     nuci = ni + nimey;
@@ -585,7 +586,7 @@ public:
     onihf = nihf * one_millon / rhoair;
 
   } // end nucleati
-}; // end class nucleate_ice
+};  // end class nucleate_ice
 } // end namespace mam4
 
 #endif

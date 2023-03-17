@@ -125,7 +125,7 @@ TEST_CASE("test_calculate_RHw_hf", "mam4_nucleate_ice_process") {
   mam4::NucleateIceProcess process(mam4_config);
   Real temperature, lnw, RHw;
   // FIXME: do these numbers make sense?
-  temperature =-40.0;
+  temperature = -40.0;
   lnw = 1.0;
   mam4::nucleate_ice::calculate_RHw_hf(temperature, lnw, RHw);
   ss << "RHw [out]: [ ";

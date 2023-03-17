@@ -16,7 +16,7 @@ Real GoffGratch_svp_water(const Real temperature) {
   // steam point of water originally (and most frequently) used in the
   // Goff & Gratch scheme.
   const Real tboil = haero::Constants::boil_pt_h2o;
-  
+
   const Real ten = 10;
   const Real one = 1;
   // uncertain below -70 C (NOTE: from mam4)
