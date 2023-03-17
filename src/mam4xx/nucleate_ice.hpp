@@ -515,7 +515,7 @@ public:
 
           } else {
 
-            nucleate_ice::het hetero()ero(tc, wbar, dst3_num, niimm, nidep);
+            nucleate_ice::hetero(tc, wbar, dst3_num, niimm, nidep);
             nihf = zero;
             n1 = niimm + nidep;
 
