@@ -100,7 +100,7 @@ TEST_CASE("test_calculate_regm_nucleati", "mam4_nucleate_ice_process") {
   mam4::NucleateIceProcess process(mam4_config);
   Real w_vlc, Na, regm;
   // FIXME: do these numbers make sense?
-  w_vlc = 42.0;
+  w_vlc = 0.2;
   Na = 58;
   mam4::nucleate_ice::calculate_regm_nucleati(w_vlc, Na, regm);
   ss << "regm [out]: [ ";
