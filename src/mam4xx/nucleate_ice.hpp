@@ -91,7 +91,7 @@ void calculate_RHw_hf(const Real temperature, const Real lnw, Real &RHw) {
   // Thus,
   // RHw ~= (7e-3 * temperature^2 + 1 * temperature + 131) * 0.01
   // NOTE: assuming the above, for temperature in [-160, -40],
-  // RHw is in [0.9529, 1.3850]
+  // RHw is in [0.9529, 1.5020]
 } // end calculate_RHw_hf
 
 KOKKOS_INLINE_FUNCTION

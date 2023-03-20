@@ -44,8 +44,9 @@ TEST_CASE("test_wv_sat_svp_to_qsat", "mam4_nucleate_ice_process") {
   ss << "]";
   logger.debug(ss.str());
   ss.str("");
-  // REQUIRE(qs <= 1.0);
-  // REQUIRE(qs > 0.0);
+  // function requires this is bounded between 0 and 1
+  REQUIRE(qs > 0.0);
+  REQUIRE(qs <= 1.0);
 
   es -= 500;
   qs = mam4::wv_sat_methods::wv_sat_svp_to_qsat(es, p);
@@ -53,8 +54,9 @@ TEST_CASE("test_wv_sat_svp_to_qsat", "mam4_nucleate_ice_process") {
   ss << qs << " ";
   ss << "]";
   logger.debug(ss.str());
-  // REQUIRE(qs <= 1.0);
-  // REQUIRE(qs > 0.0);
+  // function requires this is bounded between 0 and 1
+  REQUIRE(qs > 0.0);
+  REQUIRE(qs <= 1.0);
 }
 
 TEST_CASE("test_wv_sat_qsat_water", "mam4_nucleate_ice_process") {
@@ -64,29 +66,76 @@ TEST_CASE("test_wv_sat_qsat_water", "mam4_nucleate_ice_process") {
 
   std::ostringstream ss;
 
+  // NOTE: qs output comes directly from wv_sat_svp_to_qsat() (above), so we
+  // won't test those values here
+
   mam4::AeroConfig mam4_config;
   mam4::NucleateIceProcess process(mam4_config);
-  Real es, p, t, qs;
-  // FIXME: do these numbers make sense?
-  es = 101325.0 + 1;
-  p = 300.0;
-  t = 288;
-  qs = 0.8;
-  mam4::wv_sat_methods::wv_sat_qsat_water(t, p, es, qs);
-  ss << "es [out]: [ ";
-  ss << es << " ";
-  ss << "]";
-  logger.debug(ss.str());
-  ss.str("");
-  // REQUIRE(es > 273.0);
+  Real es, p, qs;
+  Real t[4] = {273, 298, 323, 373};
+  // for temperature \in [273, 373]K (~[0, 100]C) es is \in [615, 1.009e5]
+  // and final comparison is min(es, p),
+  // so here we essentially test GoffGratch_svp_water().
+  // es is immediately calculated by svp_water() and qs by wv_sat_svp_to_qsat(),
+  // so no need to initialize.
+  // we make p artificially high to test es calculation
+  p = 2.0e5;
+  for (int i = 0; i < 4; ++i) {
+    mam4::wv_sat_methods::wv_sat_qsat_water(t[i], p, es, qs);
+    ss << "temperature = " << t[i];
+    logger.debug(ss.str());
+    ss.str("");
+    ss << "es [out]: [ ";
+    ss << es << " ";
+    ss << "]";
+    logger.debug(ss.str());
+    ss.str("");
+    REQUIRE(es > 200.0);
+    REQUIRE(es < 1.01e5);
+  }
 
-  p = 700;
-  mam4::wv_sat_methods::wv_sat_qsat_water(t, p, es, qs);
-  ss << "es [out]: [ ";
-  ss << es << " ";
-  ss << "]";
-  logger.debug(ss.str());
-  // REQUIRE(es == p);
+  // make p artificially low to test min(es, p)
+  p = 10;
+  for (int i = 0; i < 4; ++i) {
+    mam4::wv_sat_methods::wv_sat_qsat_water(t[i], p, es, qs);
+    ss << "temperature = " << t[i];
+    logger.debug(ss.str());
+    ss.str("");
+    ss << "es [out]: [ ";
+    ss << es << " ";
+    ss << "]";
+    logger.debug(ss.str());
+    // for p > es (pressure greater than boiling point of water at 1 atm) es is
+    // set to p
+    REQUIRE(es == p);
+  }
+}
+
+TEST_CASE("test_GoffGratch_svp_ice", "mam4_nucleate_ice_process") {
+  ekat::Comm comm;
+  ekat::logger::Logger<> logger("nucleate_ice unit tests",
+                                ekat::logger::LogLevel::debug, comm);
+
+  std::ostringstream ss;
+
+  mam4::AeroConfig mam4_config;
+  mam4::NucleateIceProcess process(mam4_config);
+  Real t[4] = {173, 198, 223, 273};
+  Real es;
+  // for temperature \in [173, 273]K (~[-100, 0]C) es is \in [1.0e-3, 604]
+  for (int i = 0; i < 4; ++i) {
+    es = mam4::wv_sat_methods::GoffGratch_svp_ice(t[i]);
+    ss << "temperature = " << t[i];
+    logger.debug(ss.str());
+    ss.str("");
+    ss << "es [out]: [ ";
+    ss << es << " ";
+    ss << "]";
+    logger.debug(ss.str());
+    ss.str("");
+    REQUIRE(es > 1.0e-3);
+    REQUIRE(es < 604.0);
+  }
 }
 
 TEST_CASE("test_calculate_regm_nucleati", "mam4_nucleate_ice_process") {
@@ -108,10 +157,10 @@ TEST_CASE("test_calculate_regm_nucleati", "mam4_nucleate_ice_process") {
   ss << "]";
   logger.debug(ss.str());
   ss.str("");
-  // see if the returned threshold temperature is in a reasonable(?) range
-  // FIXME: do these numbers make sense?
-  // REQUIRE(regm > -100.0);
-  // REQUIRE(regm < 100.0);
+  // regm is a threshold temperature [C], so giving it a wide range of values
+  // that seem reasonable for the atmosphere
+  REQUIRE(regm > -200.0);
+  REQUIRE(regm < 50.0);
 }
 
 TEST_CASE("test_calculate_RHw_hf", "mam4_nucleate_ice_process") {
@@ -133,8 +182,9 @@ TEST_CASE("test_calculate_RHw_hf", "mam4_nucleate_ice_process") {
   ss << "]";
   logger.debug(ss.str());
   ss.str("");
-  // REQUIRE(RHw > 0.9529);
-  // REQUIRE(RHw < 1.3850);
+  // these bounds come from the rough approximations in the source code
+  REQUIRE(RHw > 0.9);
+  REQUIRE(RHw < 1.6);
 
   temperature = -100.0;
   lnw = 2.0;
@@ -144,8 +194,8 @@ TEST_CASE("test_calculate_RHw_hf", "mam4_nucleate_ice_process") {
   ss << "]";
   logger.debug(ss.str());
   ss.str("");
-  // REQUIRE(RHw > 0.9529);
-  // REQUIRE(RHw < 1.3850);
+  REQUIRE(RHw > 0.9);
+  REQUIRE(RHw < 1.6);
 }
 
 TEST_CASE("test_compute_tendencies", "mam4_nucleate_ice_process") {
@@ -223,7 +273,7 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleate_ice_process") {
 }
 
 TEST_CASE("test_multicol_compute_tendencies", "mam4_nucleateIce_process") {
-  // Now we process multiple columns within a single dіspatch (mc means
+  // Now we process multiple columns within a single dispatch (mc means
   // "multi-column").
   int ncol = 8;
   DeviceType::view_1d<Atmosphere> mc_atm("mc_progs", ncol);

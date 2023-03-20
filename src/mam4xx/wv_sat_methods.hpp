@@ -19,6 +19,11 @@ Real GoffGratch_svp_water(const Real temperature) {
 
   const Real ten = 10;
   const Real one = 1;
+  // got this from wikipedia article for Goff-Gratch eqn. and pulled it out of
+  // the calculation for visibility's sake
+  // https://en.wikipedia.org/wiki/Goff-Gratch_equation
+  const Real svp_at_steam_pt_pressure = 1013.246; // BAD_CONSTANT!
+
   // uncertain below -70 C (NOTE: from mam4)
   return haero::pow(ten,
                     -Real(7.90298) * (tboil / temperature - one) +
@@ -31,7 +36,7 @@ Real GoffGratch_svp_water(const Real temperature) {
                             (haero::pow(ten, -Real(3.49149) *
                                                  (tboil / temperature - one)) -
                              one) +
-                        haero::log10(Real(1013.246))) *
+                        haero::log10(svp_at_steam_pt_pressure)) *
          ten * ten;
 
 } // GoffGratch_svp_water
@@ -44,12 +49,16 @@ Real GoffGratch_svp_ice(const Real temperature) {
   const Real h2otrip = haero::Constants::triple_pt_h2o;
   const Real ten = 10;
   const Real one = 1;
+  // got this from wikipedia article for Goff-Gratch eqn. and pulled it out of
+  // the calculation for visibility's sake
+  // https://en.wikipedia.org/wiki/Goff-Gratch_equation
+  const Real svp_at_ice_pt_pressure = 6.1071; // BAD_CONSTANT!
 
   return haero::pow(ten,
                     -Real(9.09718) * (h2otrip / temperature - one) -
                         Real(3.56654) * haero::log10(h2otrip / temperature) +
                         Real(0.876793) * (one - temperature / h2otrip) +
-                        haero::log10(6.1071)) *
+                        haero::log10(svp_at_ice_pt_pressure)) *
          ten * ten;
 
 } // end GoffGratch_svp_ice
