@@ -116,6 +116,7 @@ jobs:
         make coverage
 
     - name: Uploading coverage report to codecov.io
+      if: ${{ (contains(matrix.os, 'ubuntu')) && (matrix.build-type == 'Debug') && (matrix.fp-precision == 'double') }}
       uses: codecov/codecov-action@v3
       with:
         fail_ci_if_error: true
