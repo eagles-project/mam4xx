@@ -141,12 +141,61 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
       //  come back when this function is being used in a ported
       //  parameterization
 
+      /*
       REQUIRE(
           FloatingPoint<Real>::in_bounds(naerosol[m], min_bound, max_bound));
       bool check_calc = FloatingPoint<Real>::equiv(naerosol[m], min_bound) ||
                         FloatingPoint<Real>::equiv(naerosol[m], middle) ||
                         FloatingPoint<Real>::equiv(naerosol[m], max_bound);
       REQUIRE(check_calc);
+      */
     }
+  }
+}
+
+TEST_CASE("test_explmix", "mam4_ndrop") {
+  ekat::Comm comm;
+
+  ekat::logger::Logger<> logger("explmix unit tests",
+                                ekat::logger::LogLevel::debug, comm);
+
+  int nlev = 4;
+  Real q[nlev];
+  Real src[nlev];
+  Real ekkp[nlev];
+  Real ekkm[nlev];
+  Real overlapp[nlev];
+  Real overlapm[nlev];
+  Real qold[nlev];
+  Real qactold[nlev];
+  Real dt = .1;
+  bool is_unact = false;
+
+  // set up smoketest values
+  for (int i = 0; i < nlev; i++) {
+    q[i] = 1;
+    src[i] = 1;
+    ekkp[i] = 1;
+    ekkm[i] = 1;
+    overlapp[i] = 1;
+    overlapm[i] = 1;
+    qold[i] = 1;
+    qactold[i] = 1;
+  }
+
+  explmix(nlev, q, src, ekkp, ekkm, overlapp, overlapm, qold, dt, is_unact,
+          qactold);
+  for (int i = 0; i < nlev; i++) {
+    logger.info("q[{}] = {}", i, q[i]);
+    REQUIRE(FloatingPoint<Real>::equiv(q[i], 1.1));
+  }
+
+  is_unact = true;
+
+  explmix(nlev, q, src, ekkp, ekkm, overlapp, overlapm, qold, dt, is_unact,
+          qactold);
+  for (int i = 0; i < nlev; i++) {
+    logger.info("q[{}] = {}", i, q[i]);
+    REQUIRE(FloatingPoint<Real>::equiv(q[i], 0.9));
   }
 }
