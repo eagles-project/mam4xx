@@ -50,7 +50,7 @@ void get_aer_num(const Diagnostics &diags, const Prognostics &progs,
 
 KOKKOS_INLINE_FUNCTION
 void explmix(
-    int pver,     // number of levels
+    int nlev,     // number of levels
     Real q[4],    // number / mass mixing ratio to be updated [# or kg / kg]
     Real src[4],  // source due to activation/nucleation [# or kg / (kg-s)]
     Real ekkp[4], // zn*zs*density*diffusivity (kg/m3 m2/s) at interface [/s];
@@ -68,29 +68,31 @@ void explmix(
                     // current species is unactivated number/sfc/mass
 ) {
 
-  int top_lev = 0; //??
-  int kp1, km1;
-  for (int k = top_lev; k < pver; k++) {
-    kp1 = min(k + 1, pver);
-    km1 = max(k - 1, top_lev);
+  int top_lev = 0;
 
-    // the qactold*(1-overlap) terms are resuspension of activated material
+  Kokkos::parallel_for(
+      "compute q per level", nlev, KOKKOS_LAMBDA(const int &k) {
+        int kp1 = min(k + 1, nlev);
+        int km1 = max(k - 1, top_lev);
 
-    if (is_unact) {
-      q[k] =
-          qold[k] + (dt * (-src[k] +
-                           (ekkp[k] * (qold[kp1] - qold[k] +
-                                       (qactold[kp1] * (1 - overlapp[k])))) +
-                           (ekkm[k] * (qold[km1] - qold[k] +
-                                       (qactold[km1] * (1 - overlapm[k]))))));
-    } else {
-      q[k] = qold[k] +
-             (dt * (src[k] + (ekkp[k] * ((overlapp[k] * qold[kp1]) - qold[k])) +
-                    (ekkm[k] * ((overlapm[k] * qold[k]) - qold[k]))));
-    }
-    // force to non-negative
-    q[k] = max(q[k], 0);
-  }
+        // the qactold*(1-overlap) terms are resuspension of activated material
+
+        if (is_unact) {
+          q[k] = qold[k] +
+                 (dt * (-src[k] +
+                        (ekkp[k] * (qold[kp1] - qold[k] +
+                                    (qactold[kp1] * (1 - overlapp[k])))) +
+                        (ekkm[k] * (qold[km1] - qold[k] +
+                                    (qactold[km1] * (1 - overlapm[k]))))));
+        } else {
+          q[k] = qold[k] +
+                 (dt *
+                  (src[k] + (ekkp[k] * ((overlapp[k] * qold[kp1]) - qold[k])) +
+                   (ekkm[k] * ((overlapm[k] * qold[k]) - qold[k]))));
+        }
+        // force to non-negative
+        q[k] = max(q[k], 0);
+      });
 }
 
 } // namespace mam4
