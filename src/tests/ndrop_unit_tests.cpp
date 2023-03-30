@@ -195,7 +195,7 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
           qactold);
   for (int i = 0; i < nlev; i++) {
     logger.info("q[{}] = {}", i, q(i));
-    // REQUIRE(FloatingPoint<Real>::equiv(q(i), 1.1));
+    REQUIRE(FloatingPoint<Real>::equiv(q(i), 1.1));
   }
 
   is_unact = true;
@@ -207,6 +207,6 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
           qactold);
   for (int i = 0; i < nlev; i++) {
     logger.info("q[{}] = {}", i, q(i));
-    // REQUIRE(FloatingPoint<Real>::equiv(q(i), 0.9));
+    REQUIRE(FloatingPoint<Real>::equiv(q(i), 0.9));
   }
 }
