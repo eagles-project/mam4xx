@@ -337,8 +337,9 @@ void mam_pcarbon_aging_1subarea(
   // number - transfer the aged fraction to accum mode
   // include this transfer change in the cond and/or coag change (for mass
   // budget)
-  transfer_cond_coag_mass_to_accum(nsrc, ndest, qnum_cur, qnum_del_cond,
-                                   qnum_del_coag);
+  transfer_aged_pcarbon_to_accum(nsrc, ndest, xferfrac_pcage, frac_cond,
+                                 frac_coag, qnum_cur, qnum_del_cond,
+                                 qnum_del_coag);
 }
 
 KOKKOS_INLINE_FUNCTION
