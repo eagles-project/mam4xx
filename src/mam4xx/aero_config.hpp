@@ -65,35 +65,48 @@ public:
 
 /// MAM4 column-wise prognostic aerosol fields (also used for tendencies).
 class Prognostics final {
+  // this parameter should match the number of views in this class
+  static constexpr int num_views_ =
+    2 * AeroConfig::num_modes() +
+    2 * AeroConfig::num_modes() * AeroConfig::num_aerosol_ids() +
+    1 * AeroConfig::num_gas_ids() * (AeroConfig::num_modes() + 1);
+  // number of vertical levels
+  int nlev_;
+  // storage for (unmanaged) column views, if any
+  haero::Real *view_storage_;
 public:
   using ColumnView = haero::ColumnView;
   using ThreadTeam = haero::ThreadTeam;
 
   /// Creates a container for prognostic variables on the specified number of
-  /// vertical levels.
-  explicit Prognostics(int num_levels) : nlev_(num_levels) {
+  /// vertical levels. The resulting Prognostics manages memory for its Views.
+  explicit Prognostics(int num_levels)
+    : nlev_(num_levels),
+      view_storage_(reinterpret_cast<haero::Real*>(sizeof(haero::Real) * num_views_ * num_levels)) {
+    size_t offset = 0;
     for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
-      n_mode_i[mode] = ColumnView("n_mode_i", num_levels);
-      n_mode_c[mode] = ColumnView("n_mode_c", num_levels);
+      n_mode_i[mode] = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
+      n_mode_c[mode] = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
       Kokkos::deep_copy(n_mode_i[mode], 0.0);
       Kokkos::deep_copy(n_mode_c[mode], 0.0);
       for (int spec = 0; spec < AeroConfig::num_aerosol_ids(); ++spec) {
-        q_aero_i[mode][spec] = ColumnView("q_aero_i", num_levels);
-        q_aero_c[mode][spec] = ColumnView("q_aero_c", num_levels);
+        q_aero_i[mode][spec] = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
+        q_aero_c[mode][spec] = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
         Kokkos::deep_copy(q_aero_i[mode][spec], 0.0);
         Kokkos::deep_copy(q_aero_c[mode][spec], 0.0);
       }
     }
     for (int gas = 0; gas < AeroConfig::num_gas_ids(); ++gas) {
-      q_gas[gas] = ColumnView("q_gas", num_levels);
-      q_gas_avg[gas] = ColumnView("q_gas_avg", num_levels);
+      q_gas[gas] = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
+      q_gas_avg[gas] = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
       Kokkos::deep_copy(q_gas[gas], 0.0);
       Kokkos::deep_copy(q_gas_avg[gas], 0.0);
       for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
-        uptkaer[gas][mode] = ColumnView("uptake_rate", num_levels);
+        uptkaer[gas][mode] = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
         Kokkos::deep_copy(uptkaer[gas][mode], 0.0);
       }
     }
+    EKAT_REQUIRE(offset == num_views_ * num_levels);
   }
 
   Prognostics() = default; // Careful! Only for creating placeholders in views
@@ -170,42 +183,43 @@ public:
         violations);
     return (violations == 0);
   }
-
-private:
-  int nlev_;
 };
 
 /// MAM4 column-wise diagnostic aerosol fields.
 class Diagnostics final {
+  // this parameter should match the number of views in this class
+  static constexpr int num_views_ = 7 * AeroConfig::num_modes() + 2;
+  // number of vertical levels
+  int nlev_;
+  // storage for (unmanaged) column views, if any
+  haero::Real *view_storage_;
 public:
   using ColumnView = haero::ColumnView;
 
-  explicit Diagnostics(int num_levels) : nlev_(num_levels) {
+  explicit Diagnostics(int num_levels)
+    : nlev_(num_levels),
+      view_storage_(reinterpret_cast<haero::Real*>(sizeof(haero::Real) * num_views_ * num_levels)) {
+    size_t offset = 0;
     for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
-      hygroscopicity[mode] = ColumnView("hygroscopicity", num_levels);
+      hygroscopicity[mode] = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
       Kokkos::deep_copy(hygroscopicity[mode], 0.0);
-      dry_geometric_mean_diameter_i[mode] =
-          ColumnView("dry_geometric_mean_diameter_interstitial", num_levels);
-      dry_geometric_mean_diameter_c[mode] =
-          ColumnView("dry_geometric_mean_diameter_cloudborne", num_levels);
-      dry_geometric_mean_diameter_total[mode] =
-          ColumnView("dry_geometric_mean_diameter_total", num_levels);
+      dry_geometric_mean_diameter_i[mode] = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
+      dry_geometric_mean_diameter_c[mode] = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
+      dry_geometric_mean_diameter_total[mode] = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
       Kokkos::deep_copy(dry_geometric_mean_diameter_i[mode], 0.0);
       Kokkos::deep_copy(dry_geometric_mean_diameter_c[mode], 0.0);
       Kokkos::deep_copy(dry_geometric_mean_diameter_total[mode], 0.0);
-      wet_geometric_mean_diameter_i[mode] =
-          ColumnView("wet_geometric_mean_diameter_interstitial", num_levels);
-      wet_geometric_mean_diameter_c[mode] =
-          ColumnView("wet_geometric_mean_diameter_cloudborne", num_levels);
+      wet_geometric_mean_diameter_i[mode] = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
+      wet_geometric_mean_diameter_c[mode] = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
       Kokkos::deep_copy(wet_geometric_mean_diameter_i[mode], 0.0);
       Kokkos::deep_copy(wet_geometric_mean_diameter_c[mode], 0.0);
 
-      wet_density[mode] = ColumnView("wet_density", num_levels);
+      wet_density[mode] = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
       Kokkos::deep_copy(wet_density[mode], 0.0);
     }
-    uptkrate_h2so4 = ColumnView("uptkrate_h2so4", num_levels);
+    uptkrate_h2so4 = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
     Kokkos::deep_copy(uptkrate_h2so4, 0.0);
-    g0_soa_out = ColumnView("g0_soa_out", num_levels);
+    g0_soa_out = ColumnView(&view_storage_[offset], num_levels); offset += num_levels;
     Kokkos::deep_copy(g0_soa_out, 0.0);
     iscloudy = haero::DeviceType::view_1d<bool>("is_cloudy_bool", num_levels);
     Kokkos::deep_copy(iscloudy, false);
