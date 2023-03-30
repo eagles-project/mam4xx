@@ -28,7 +28,7 @@ using namespace mam4::conversions;
 TEST_CASE("test_get_aer_num", "mam4_ndrop") {
   ekat::Comm comm;
 
-  ekat::logger::Logger<> logger("ndrop unit tests",
+  ekat::logger::Logger<> logger("ndrop get aer num unit tests",
                                 ekat::logger::LogLevel::debug, comm);
 
   int nlev = 1;
@@ -156,10 +156,9 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
 TEST_CASE("test_explmix", "mam4_ndrop") {
   ekat::Comm comm;
 
-  ekat::logger::Logger<> logger("explmix unit tests",
+  ekat::logger::Logger<> logger("ndrop explmix unit tests",
                                 ekat::logger::LogLevel::debug, comm);
 
-  logger.info("expl test initing vars");
   int nlev = 4;
   ColumnView q = ColumnView("q", nlev);
   ColumnView src = ColumnView("src", nlev);
@@ -172,7 +171,6 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
   Real dt = .1;
   bool is_unact = false;
 
-  logger.info("setting vars");
   // set up smoketest values
   for (int i = 0; i < nlev; i++) {
     q(i) = 0;
@@ -185,12 +183,6 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
     qactold(i) = 1;
   }
 
-  for (int i = 0; i < nlev; i++) {
-    logger.info(" {} {} {} {} {} {} {} {} ", q(i), src(i), ekkp(i), ekkm(i),
-                overlapp(i), overlapm(i), qold(i), qactold(i));
-  }
-
-  logger.info("going into explmix");
   explmix(nlev, q, src, ekkp, ekkm, overlapp, overlapm, qold, dt, is_unact,
           qactold);
   for (int i = 0; i < nlev; i++) {
@@ -199,10 +191,7 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
   }
 
   is_unact = true;
-  for (int i = 0; i < nlev; i++) {
-    logger.info(" {} {} {} {} {} {} {} {} ", q(i), src(i), ekkp(i), ekkm(i),
-                overlapp(i), overlapm(i), qold(i), qactold(i));
-  }
+
   explmix(nlev, q, src, ekkp, ekkm, overlapp, overlapm, qold, dt, is_unact,
           qactold);
   for (int i = 0; i < nlev; i++) {

@@ -73,34 +73,26 @@ void explmix(
 
   Kokkos::parallel_for(
       "compute q per level", nlev, KOKKOS_LAMBDA(const int k) {
-        //  the parallel for is causing the last q to be .1 shy of the correct
-        //  answer
-        //  ?????????????
         int kp1 = min(k + 1, nlev - 1);
         int km1 = max(k - 1, top_lev);
 
         // the qactold*(1-overlap) terms are resuspension of activated material
 
         if (is_unact) {
-          printf("q = %f\n", q(k));
           q(k) = qold(k) +
                  (dt * (-src(k) +
                         (ekkp(k) * (qold(kp1) - qold(k) +
                                     (qactold(kp1) * (1 - overlapp(k))))) +
                         (ekkm(k) * (qold(km1) - qold(k) +
                                     (qactold(km1) * (1 - overlapm(k)))))));
-          printf("q = %f\n", q(k));
         } else {
-          printf("q = %f\n", q(k));
           q(k) = qold(k) +
                  (dt *
                   (src(k) + (ekkp(k) * ((overlapp(k) * qold(kp1)) - qold(k))) +
                    (ekkm(k) * ((overlapm(k) * qold(k)) - qold(k)))));
-          printf("q = %f\n", q(k));
         }
         // force to non-negative
         q(k) = max(q(k), 0);
-        printf("q = %f\n", q(k));
       });
 }
 
