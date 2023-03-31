@@ -27,7 +27,6 @@ using namespace mam4::conversions;
 
 TEST_CASE("test_get_aer_num", "mam4_ndrop") {
   ekat::Comm comm;
-
   ekat::logger::Logger<> logger("ndrop get aer num unit tests",
                                 ekat::logger::LogLevel::debug, comm);
 
@@ -131,7 +130,7 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
       Real middle = (number_mixing_ratio + number_mixing_ratio) *
                     conversions::density_of_ideal_gas(h_T(k), h_P(k));
 
-      mam4::get_aer_num(diags, progs, atm, m, k, naerosol);
+      ndrop::get_aer_num(diags, progs, atm, m, k, naerosol);
       logger.info("naerosol[{}] = {}", m, naerosol[m]);
 
       logger.info("min bound = {}, max bound = {}", min_bound, max_bound);
@@ -155,7 +154,6 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
 
 TEST_CASE("test_explmix", "mam4_ndrop") {
   ekat::Comm comm;
-
   ekat::logger::Logger<> logger("ndrop explmix unit tests",
                                 ekat::logger::LogLevel::debug, comm);
 
@@ -183,8 +181,14 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
     qactold(i) = 1;
   }
 
-  explmix(nlev, q, src, ekkp, ekkm, overlapp, overlapm, qold, dt, is_unact,
-          qactold);
+  // call explmix from a parallel_for to pass in a ThreadTeam
+  auto team_policy = haero::ThreadTeamPolicy(1u, Kokkos::AUTO);
+  Kokkos::parallel_for(
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        ndrop::explmix(team, nlev, q, src, ekkp, ekkm, overlapp, overlapm, qold,
+                       dt, is_unact, qactold);
+      });
+
   for (int i = 0; i < nlev; i++) {
     logger.info("q[{}] = {}", i, q(i));
     REQUIRE(FloatingPoint<Real>::equiv(q(i), 1.1));
@@ -192,8 +196,12 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
 
   is_unact = true;
 
-  explmix(nlev, q, src, ekkp, ekkm, overlapp, overlapm, qold, dt, is_unact,
-          qactold);
+  Kokkos::parallel_for(
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        ndrop::explmix(team, nlev, q, src, ekkp, ekkm, overlapp, overlapm, qold,
+                       dt, is_unact, qactold);
+      });
+
   for (int i = 0; i < nlev; i++) {
     logger.info("q[{}] = {}", i, q(i));
     REQUIRE(FloatingPoint<Real>::equiv(q(i), 0.9));

@@ -15,6 +15,13 @@ using Real = haero::Real;
 
 namespace mam4 {
 
+class NDrop {
+
+public:
+};
+
+namespace ndrop {
+
 // TODO: this function signature may need to change to work properly on GPU
 //  come back when this function is being used in a ported parameterization
 KOKKOS_INLINE_FUNCTION
@@ -50,7 +57,8 @@ void get_aer_num(const Diagnostics &diags, const Prognostics &progs,
 
 KOKKOS_INLINE_FUNCTION
 void explmix(
-    int nlev,        // number of levels
+    const ThreadTeam &team, // ThreadTeam for parallel_for
+    int nlev,               // number of levels
     ColumnView q,    // number / mass mixing ratio to be updated [# or kg / kg]
     ColumnView src,  // source due to activation/nucleation [# or kg / (kg-s)]
     ColumnView ekkp, // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
@@ -72,7 +80,7 @@ void explmix(
   int top_lev = 0;
 
   Kokkos::parallel_for(
-      "compute q per level", nlev, KOKKOS_LAMBDA(const int k) {
+      Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int k) {
         int kp1 = min(k + 1, nlev - 1);
         int km1 = max(k - 1, top_lev);
 
@@ -95,6 +103,6 @@ void explmix(
         q(k) = max(q(k), 0);
       });
 }
-
+} // namespace ndrop
 } // namespace mam4
 #endif
