@@ -21,6 +21,7 @@
 #include <mam4xx/nucleate_ice.hpp>
 #include <mam4xx/nucleation.hpp>
 #include <mam4xx/rename.hpp>
+#include <mam4xx/wet_dep.hpp>
 
 namespace mam4 {
 
@@ -32,6 +33,7 @@ using ConvProcProcess = haero::AeroProcess<AeroConfig, ConvProc>;
 using AgingProcess = haero::AeroProcess<AeroConfig, Aging>;
 using RenameProcess = haero::AeroProcess<AeroConfig, Rename>;
 using NucleateIceProcess = haero::AeroProcess<AeroConfig, NucleateIce>;
+using WetDepositionProcess = haero::AeroProcess<AeroConfig, WetDeposition>;
 
 } // namespace mam4
 
