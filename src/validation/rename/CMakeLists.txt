@@ -32,7 +32,8 @@ foreach (input
          rename_1subarea_ts_1111_iscldy_false
          rename_1subarea_ts_1111_iscldy_true
          find_renaming_pairs_ts_1111
-         compute_dryvol_change_in_src_mode_ts_1111)
+         compute_dryvol_change_in_src_mode_ts_1111
+         rename_1subarea_epsilon)
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
   configure_file(
