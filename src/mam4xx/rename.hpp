@@ -184,7 +184,8 @@ void compute_xfer_fractions(const Real b4_growth_dryvol,
   // BAD CONSTANT
   // 1-eps (this number is little less than 1, e.g. 0.99) // FIXME: this comment
   // is nonsense
-  constexpr Real xferfrac_max =  Real(1.0) - 10.0*std::numeric_limits<Real>::epsilon();
+  constexpr Real xferfrac_max =
+      Real(1.0) - 10.0 * std::numeric_limits<Real>::epsilon();
   // assume we have fractions to transfer, so we will not skip the rest of the
   // calculations
   is_xfer_frac_zero = false;
