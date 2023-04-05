@@ -26,6 +26,7 @@ constexpr int nimptblgrow_mind = -7, nimptblgrow_maxd = 12;
 constexpr int nimptblgrow_total = -nimptblgrow_mind + nimptblgrow_maxd + 1;
 const int nrainsvmax = 50; // maximum bin number for rain
 const int naerosvmax = 51; //  maximum bin number for aerosol
+const int maxd_aspectype = 14;
 
 // NOTE: original FORTRAN function two internal loop over kk and icol.
 // We removed these loop,so the inputs/outputs of  modal_aero_bcscavcoef_get are
@@ -516,6 +517,7 @@ void modal_aero_bcscavcoef_init(
     const Real dgnum_amode[AeroConfig::num_modes()],
     const Real sigmag_amode[AeroConfig::num_modes()],
     const Real specdens_amode[AeroConfig::num_modes()],
+    const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
     Real scavimptblnum[nimptblgrow_total][AeroConfig::num_modes()],
     Real scavimptblvol[nimptblgrow_total][AeroConfig::num_modes()]) {
   //   !-----------------------------------------------------------------------
@@ -532,14 +534,6 @@ void modal_aero_bcscavcoef_init(
   // int lspectype_amode[10][4] = {{0}};
   // Real specdens_amode[7] = {zero};
 
-  for (int i = 0; i < 4; ++i) {
-    printf("dgnum_amode %e \n ", dgnum_amode[i]);
-  }
-
-  for (int i = 0; i < 4; ++i) {
-    printf("specdens_amode %e \n", specdens_amode[i]);
-  }
-
   int lunerr = 6; //           ! logical unit for error message
 
   // Real scavimptblnum[nimptblgrow_total][AeroConfig::num_modes()] = {{zero}};
@@ -552,11 +546,12 @@ void modal_aero_bcscavcoef_init(
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
     const Real sigmag = sigmag_amode[imode];
     // FIXME: can we get this aero density from mam4xx?
-    // const int ll = lspectype_amode[1][imode];
-    const Real rhodryaero = specdens_amode[imode];
+    const int ll = lspectype_amode[0][imode];
+    printf("ll %d specdens_amode[ll] %e \n ", ll, specdens_amode[ll]);
+    const Real rhodryaero = specdens_amode[ll];
     printf("nimptblgrow_mind %d \n ", nimptblgrow_mind);
     for (int jgrow = nimptblgrow_mind; jgrow < nimptblgrow_maxd; ++jgrow) {
-      printf("jgrow %d \n ", jgrow);
+      // printf("jgrow %d \n ", jgrow);
       // ratio of diameter for wet/dry aerosols [fraction]
       const Real wetdiaratio = haero::exp(jgrow * dlndg_nimptblgrow);
       // aerosol diameter [m]
