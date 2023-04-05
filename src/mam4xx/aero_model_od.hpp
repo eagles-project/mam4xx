@@ -22,7 +22,8 @@ namespace aero_model_od {
 
 // BAD CONSTANT
 const Real dlndg_nimptblgrow = haero::log(1.25);
-const int nimptblgrow_mind = -7, nimptblgrow_maxd = 12;
+constexpr int nimptblgrow_mind = -7, nimptblgrow_maxd = 12;
+constexpr int nimptblgrow_total = -nimptblgrow_mind +  nimptblgrow_maxd;
 const int nrainsvmax = 50; // maximum bin number for rain
 const int naerosvmax = 51; //  maximum bin number for aerosol
 
@@ -511,7 +512,11 @@ void calc_1_impact_rate(const Real dg0,     //  in
 } // end calc_1_impact_rate
 
 KOKKOS_INLINE_FUNCTION
-void modal_aero_bcscavcoef_init() {
+void modal_aero_bcscavcoef_init(const Real dgnum_amode[AeroConfig::num_modes()],
+                                const Real sigmag_amode[AeroConfig::num_modes()],
+                                const Real specdens_amode[AeroConfig::num_modes()],
+                                Real scavimptblnum[nimptblgrow_total][AeroConfig::num_modes()],
+                                Real scavimptblvol[nimptblgrow_total][AeroConfig::num_modes()] ) {
   //   !-----------------------------------------------------------------------
   // !
   // ! Purpose:
@@ -522,15 +527,25 @@ void modal_aero_bcscavcoef_init() {
   // !-----------------------------------------------------------------------
   const Real zero = 0;
   const Real one = 1;
-  Real sigmag_amode[4] = {zero};
-  int lspectype_amode[10][4] = {{0}};
-  Real specdens_amode[7] = {zero};
-  Real dgnum_amode[4] = {zero};
+  // Real sigmag_amode[4] = {zero};
+  // int lspectype_amode[10][4] = {{0}};
+  // Real specdens_amode[7] = {zero};
+  
+  for (int i = 0; i < 4; ++i)
+  {
+    printf("dgnum_amode %e \n ", dgnum_amode[i]);
+  }
+
+  for (int i = 0; i < 4; ++i)
+  {
+    printf("specdens_amode %e \n", specdens_amode[i]);
+  }
+
 
   int lunerr = 6; //           ! logical unit for error message
 
-  Real scavimptblnum[10][4] = {{zero}};
-  Real scavimptblvol[10][4] = {{zero}};
+  // Real scavimptblnum[nimptblgrow_total][AeroConfig::num_modes()] = {{zero}};
+  // Real scavimptblvol[nimptblgrow_total][AeroConfig::num_modes()] = {{zero}};
 
   // ! set up temperature-pressure pair to compute impaction scavenging rates
   // BAD CONSTANT
@@ -538,10 +553,12 @@ void modal_aero_bcscavcoef_init() {
   const Real press_750hPa = 0.75e6; //  ! dynes/cm2
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
     const Real sigmag = sigmag_amode[imode];
-    const int ll = lspectype_amode[1][imode];
-    const Real rhodryaero = specdens_amode[ll];
-
+    // FIXME: can we get this aero density from mam4xx?
+    // const int ll = lspectype_amode[1][imode];
+    const Real rhodryaero = specdens_amode[imode];
+    printf("nimptblgrow_mind %d \n ", nimptblgrow_mind);
     for (int jgrow = nimptblgrow_mind; jgrow < nimptblgrow_maxd; ++jgrow) {
+      printf("jgrow %d \n ", jgrow);
       // ratio of diameter for wet/dry aerosols [fraction]
       const Real wetdiaratio = haero::exp(jgrow * dlndg_nimptblgrow);
       // aerosol diameter [m]
@@ -552,12 +569,12 @@ void modal_aero_bcscavcoef_init() {
       Real rhowetaero = one + (rhodryaero - one) / wetvolratio;
       rhowetaero = haero::min(rhowetaero, rhodryaero);
       /* FIXME: not sure why wet aerosol density is set as dry aerosol density
- here ! but the above calculation of rhowetaero is incorrect. ! I think the
- number 1.0_r8 should be 1000._r8 as the unit is kg/m3 ! the above calculation
- gives wet aerosol density very small number (a few kg/m3) ! this may cause some
- problem. I guess this is the reason of using dry density. ! should be better if
- fix the wet density bug and use it. Keep it for now for BFB testing ! --
- (commented by Shuaiqi Tang when refactoring for MAM4xx) */
+         here ! but the above calculation of rhowetaero is incorrect. ! I think the
+         number 1.0_r8 should be 1000._r8 as the unit is kg/m3 ! the above calculation
+         gives wet aerosol density very small number (a few kg/m3) ! this may cause some
+         problem. I guess this is the reason of using dry density. ! should be better if
+         fix the wet density bug and use it. Keep it for now for BFB testing ! --
+         (commented by Shuaiqi Tang when refactoring for MAM4xx) */
 
       rhowetaero = rhodryaero;
       /*compute impaction scavenging rates at 1 temp-press pair and save
@@ -574,8 +591,8 @@ void modal_aero_bcscavcoef_init() {
       calc_1_impact_rate(dg0_cgs, sigmag, rhowetaero_cgs, temp_0C, press_750hPa,
                          scavratenum, scavratevol, lunerr);
 
-      scavimptblnum[jgrow][imode] = haero::log(scavratenum);
-      scavimptblvol[jgrow][imode] = haero::log(scavratevol);
+      scavimptblnum[jgrow-nimptblgrow_mind][imode] = haero::log(scavratenum);
+      scavimptblvol[jgrow-nimptblgrow_mind][imode] = haero::log(scavratevol);
 
     } // jgrow
 
