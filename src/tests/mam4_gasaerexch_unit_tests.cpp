@@ -48,7 +48,7 @@ TEST_CASE("test_compute_tendencies", "mam4_gasaerexch_process") {
 }
 
 TEST_CASE("test_multicol_compute_tendencies", "mam4_gasaerexch_process") {
-  // Now we process multiple columns within a single dіspatch (mc means
+  // Now we process multiple columns within a single dispatch (mc means
   // "multi-column").
   int ncol = 8;
   DeviceType::view_1d<Atmosphere> mc_atm("mc_progs", ncol);

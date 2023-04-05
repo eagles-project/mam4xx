@@ -262,7 +262,7 @@ bool mode_contains_species(ModeIndex mode, AeroId aero_id) {
 }
 
 // Identifiers for gas species in MAM4, specified in the same order as they
-// appear in the set_gaѕ_and_aer_names_and_indices subroutine within the
+// appear in the set_gas_and_aer_names_and_indices subroutine within the
 // modal_aero_microp_species F90 module (assuming nsoa == 1). It looks like MAM4
 // only tracks SOAG and H2SO4. We keep NH3 around because ternary nucleation
 // requires it, is already ported, and may be required in the future.

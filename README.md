@@ -84,7 +84,7 @@ To build MAM4xx:
    `make test`.
 5. To install the model to the location indicated by `PREFIX` in your
    `config.sh` script, type `make install`. By default, products are installed
-   in `include`, `lib`, `bin`, and `share` ѕubdirectories within your build
+   in `include`, `lib`, `bin`, and `share` subdirectories within your build
    directory.
 
 ### Making code changes and rebuilding
