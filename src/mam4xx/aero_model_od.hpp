@@ -19,6 +19,76 @@
 namespace mam4 {
 
 namespace aero_model_od {
+// NOTE: orginal fortran function two internal loop over kk and icol.
+// We removed these loop,so the inputs/outputs of  modal_aero_bcscavcoef_get are
+// reals at the kk icol location
+KOKKOS_INLINE_FUNCTION
+void modal_aero_bcscavcoef_get(
+    const int imode, const bool isprx_kk, const Real dgn_awet_imode_kk, //& ! in
+    const Real dgnum_amode_imode,
+    const Real scavimptblvol[10][AeroConfig::num_modes()],
+    const Real scavimptblnum[10][AeroConfig::num_modes()], Real &scavcoefnum_kk,
+    Real &scavcoefvol_kk) {
+  // integer,  intent(in) :: imode, ncol
+  // logical,  intent(in) :: isprx(pcols,pver)           ! if there is precip
+  // real(r8), intent(in) :: dgn_awet(pcols,pver,ntot_amode)  ! wet aerosol
+  // diameter [m] real(r8), intent(out):: scavcoefnum(pcols,pver)     !
+  // scavenging removal for aerosol number [1/h] real(r8), intent(out)::
+  // scavcoefvol(pcols,pver)     ! scavenging removal for aerosol volume [1/h]
+  // !-----------------------------------------------------------------------
+  // ! compute impaction scavenging removal amount for aerosol volume and number
+  // !-----------------------------------------------------------------------
+  // Note: We will do the loop over kk annd icol outside of these function
+  // ! do only if there is precip
+  // isprx_kk values of isprx at kk and icol
+  const Real zero = 0;
+  const Real one = 1;
+  // BAD CONSTANT
+  const Real dlndg_nimptblgrow = haero::log(1.25);
+  const int nimptblgrow_mind = -7, nimptblgrow_maxd = 12;
+
+  if (isprx_kk) {
+    // ! interpolate table values using log of
+    // (actual-wet-size)/(base-dry-size) ratio of wet and dry aerosol diameter
+    // [fraction]
+    const Real wetdiaratio = dgn_awet_imode_kk / dgnum_amode_imode;
+    // BAD CONSTANT
+    Real scavimpvol, scavimpnum = zero;
+    if (wetdiaratio >= 0.99 && wetdiaratio <= 1.01) {
+      scavimpvol = scavimptblvol[0][imode];
+      scavimpnum = scavimptblnum[0][imode];
+    } else {
+      Real xgrow = haero::log(wetdiaratio) / dlndg_nimptblgrow;
+      // FIXME check Fortran to C++ indexing conversion
+      int jgrow = int(xgrow);
+      if (xgrow < zero) {
+        jgrow = jgrow - 1;
+      }
+
+      if (jgrow < nimptblgrow_mind) {
+        jgrow = nimptblgrow_mind;
+        xgrow = jgrow;
+      } else {
+        jgrow = haero::min(jgrow, nimptblgrow_maxd - 1);
+      }
+      const Real dumfhi = xgrow - jgrow;
+      const Real dumflo = one - dumfhi;
+      scavimpvol = dumflo * scavimptblvol[jgrow][imode] +
+                   dumfhi * scavimptblvol[jgrow + 1][imode];
+      scavimpnum = dumflo * scavimptblnum[jgrow][imode] +
+                   dumfhi * scavimptblnum[jgrow + 1][imode];
+
+    } /// wetdiaratio
+      // ! impaction scavenging removal amount for volume
+    scavcoefvol_kk = haero::exp(scavimpvol);
+    // ! impaction scavenging removal amount to number
+    scavcoefnum_kk = exp(scavimpnum);
+  } else {
+    scavcoefvol_kk = zero;
+    scavcoefnum_kk = zero;
+  } // isprx_kk
+
+} // modal_aero_bcscavcoef_get
 
 const int nrainsvmax = 50; // maximum bin number for rain
 const int naerosvmax = 51; //  maximum bin number for aerosol
