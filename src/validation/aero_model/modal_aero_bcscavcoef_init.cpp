@@ -29,7 +29,7 @@ void modal_aero_bcscavcoef_init(Ensemble *ensemble) {
     aero_model_od::modal_aero_bcscavcoef_init(
         dgnum_amode.data(), sigmag_amode.data(), specdens_amode.data(),
         scavimptblnum, scavimptblvol);
-    
+
     std::vector<Real> values_scavimptblvol;
     std::vector<Real> values_scavimptblnum;
     for (int m = 0; m < aero_model_od::nimptblgrow_total; ++m) {
