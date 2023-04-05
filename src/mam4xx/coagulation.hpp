@@ -858,12 +858,11 @@ void mam_coag_aer_update(
                           [AeroConfig::max_agepair()]) {
 
   const int num_aer = AeroConfig::num_aerosol_ids();
-  const int num_mode = AeroConfig::num_modes();
   // --------------------------------------------------------------------
   // Initialize the array that will be passed onto aging
   // --------------------------------------------------------------------
   for (int ispec = 0; ispec < num_aer; ++ispec) {
-    for (int imode = 0; imode < num_mode; ++imode) {
+    for (int imode = 0; imode < AeroConfig::max_agepair(); ++imode) {
       qaer_del_coag_out[ispec][imode] = 0.0;
     }
   }
