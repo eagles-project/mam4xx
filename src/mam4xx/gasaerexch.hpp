@@ -62,7 +62,7 @@ public:
   static constexpr int igas_nh3_index = 2;
 
   // There are three gases, AeroConfig::num_gas_ids(), and for each
-  // one it can condense to an aerosol.  
+  // one it can condense to an aerosol.
   // 0 = GasId::SOAG  -> AeroId::SOA
   // 1 = GasId::H2SO4 -> AeroId::SO4
   // 2 = GasId::NH3   -> AeroId::None
@@ -599,11 +599,11 @@ void mam_gasaerexch_1subarea(
 
       for (ModeIndex mode : GasAerExch::Modes()) {
         const int n = static_cast<int>(mode);
-	// Commit a small crime there.  There is a case where
-	// mode_contains_species(mode, aer) is false and yet
-	// a value is stored in qaer_cur at that point.
-	// The e3sm_mam4 code also did this as a place to
-	// store a temperary value. 
+        // Commit a small crime there.  There is a case where
+        // mode_contains_species(mode, aer) is false and yet
+        // a value is stored in qaer_cur at that point.
+        // The e3sm_mam4 code also did this as a place to
+        // store a temperary value.
         qaer_cur[iaer][n] = qaer[n];
       }
     }

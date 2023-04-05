@@ -277,8 +277,7 @@ void mam_pcarbon_aging_1subarea(
 
   static constexpr int indx_aer_cond_coag_to_accum[num_cond_coag_to_accum] = {
       static_cast<int>(AeroId::SOA), static_cast<int>(AeroId::SO4),
-      static_cast<int>(AeroId::NaCl), static_cast<int>(AeroId::DST)
-  };
+      static_cast<int>(AeroId::NaCl), static_cast<int>(AeroId::DST)};
 
   Real qaer_cur_modes[AeroConfig::num_modes()];
   Real qaer_del_cond_modes[AeroConfig::num_modes()];
