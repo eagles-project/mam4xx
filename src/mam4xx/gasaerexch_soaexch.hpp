@@ -209,7 +209,7 @@ KOKKOS_INLINE_FUNCTION
 void mam_soaexch_advance_in_time(
     const int ntot_soamode,  // in
     const int ntot_soaspec,  // in
-    const int soaspec[],     // in len ntot_soaspec
+    const GasId soaspec[],   // in len ntot_soaspec
     const Real dt_full,      // in
     const Real dt_sub_fixed, // in
     const int niter_max,     // in
@@ -296,7 +296,7 @@ void mam_soaexch_advance_in_time(
 
   for (int n = 0; n < ntot_soamode; ++n) {
     for (int ll = 0; ll < ntot_soaspec; ++ll) {
-      const int soa = soaspec[ll];
+      const int soa = static_cast<int>(soaspec[ll]);
       if (uptkaer[soa][n] > 1.0e-15) {
         uptkaer_soag_tmp[ll][n] = uptkaer[soa][n];
         skip_soamode[n] = false;
@@ -324,7 +324,7 @@ void mam_soaexch_advance_in_time(
     // save gas mixing ratios at the beginning of substep.
     // This is used at the end of the substep to calculate a time average
     for (int i = 0; i < ntot_soaspec; ++i) {
-      const int soa = soaspec[i];
+      const int soa = static_cast<int>(soaspec[i]);
       qgas_prv[i] = qgas_cur[soa];
     }
 
@@ -334,7 +334,7 @@ void mam_soaexch_advance_in_time(
     //  Load incoming SOA gas into temporary array, force values to be
     //  non-negative
     for (int i = 0; i < ntot_soaspec; ++i) {
-      const int soa = soaspec[i];
+      const int soa = static_cast<int>(soaspec[i]);
       g_soa[i] = max(qgas_cur[soa], 0.0);
     }
 
@@ -343,7 +343,7 @@ void mam_soaexch_advance_in_time(
     for (int n = 0; n < ntot_soamode; ++n) {
       if (!skip_soamode[n]) {
         for (int i = 0; i < ntot_soaspec; ++i) {
-          const int soa = soaspec[i];
+          const int soa = static_cast<int>(soaspec[i]);
           a_soa[i][n] = max(qaer_cur[soa][n], 0.0);
         }
       }
@@ -498,8 +498,8 @@ void mam_soaexch_advance_in_time(
     //  Save mix ratios for soa species
     // ------------------------------------------------------------------------------------------
     for (int igas = 0; igas < ntot_soaspec; ++igas) {
+      const int soa = static_cast<int>(soaspec[igas]);
       for (int n = 0; n < ntot_soamode; ++n) {
-        const int soa = soaspec[igas];
         qaer_cur[soa][n] = a_soa[igas][n];
       }
     }
@@ -508,7 +508,7 @@ void mam_soaexch_advance_in_time(
     //  Save mixing ratios for SOA gas species; diagnose time average
     // ------------------------------------------------------------------------------------------
     for (int igas = 0; igas < ntot_soaspec; ++igas) {
-      const int soa = soaspec[igas];
+      const int soa = static_cast<int>(soaspec[igas]);
       qgas_cur[soa] = g_soa[igas]; //  new gas mixing ratio
       const Real tmpc =
           qgas_cur[soa] - qgas_prv[igas]; //  amount of condensation/evaporation
@@ -522,7 +522,7 @@ void mam_soaexch_advance_in_time(
   //  Convert qgas_avg from sum_over[ qgas*dt_cur ] to an average
   // -------------------------------------------------------------------
   for (int i = 0; i < ntot_soaspec; ++i) {
-    const int soa = soaspec[i];
+    const int soa = static_cast<int>(soaspec[i]);
     qgas_avg[soa] = max(0.0, qgas_avg_sum[i] / dtsum_qgas_avg);
   }
 }
@@ -535,7 +535,7 @@ KOKKOS_INLINE_FUNCTION
 void mam_soaexch_1subarea(const int mode_pca,          // in
                           const int ntot_soamode,      // in
                           const int ntot_soaspec,      // in
-                          const int soaspec[],         // in len ntot_soaspec
+                          const GasId soaspec[],       // in len ntot_soaspec
                           const Real dt,               // in
                           const Real dt_sub_soa_fixed, // in
                           const Real pstd,             // in

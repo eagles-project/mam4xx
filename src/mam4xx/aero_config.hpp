@@ -124,6 +124,8 @@ public:
   /// integration (see aero_mode.hpp for indexing)
   ColumnView q_gas_avg[AeroConfig::num_gas_ids()];
 
+  /// Uptate Rate for each gas species and each mode.
+  /// i.e. Gas to aerosol mass transfer rate (1/s)
   ColumnView uptkaer[AeroConfig::num_gas_ids()][AeroConfig::num_modes()];
 
   KOKKOS_INLINE_FUNCTION
