@@ -26,6 +26,7 @@ using namespace mam4;
 
 // Parameterizations used by the rename process.
 void modal_aero_bcscavcoef_init(Ensemble *ensemble);
+void calc_1_impact_rate(Ensemble *ensemble);
 int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
@@ -50,6 +51,8 @@ int main(int argc, char **argv) {
   try {
     if (func_name == "modal_aero_bcscavcoef_init") {
       modal_aero_bcscavcoef_init(ensemble);
+    } else if (func_name == "calc_1_impact_rate") {
+      calc_1_impact_rate(ensemble);
     }
 
   } catch (std::exception &e) {

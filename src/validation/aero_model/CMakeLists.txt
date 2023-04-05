@@ -9,7 +9,8 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 
 # We use a single driver for all aero_model-related parameterizations.
 add_executable(aero_model_driver  aero_model_driver.cpp
-               modal_aero_bcscavcoef_init.cpp)
+               modal_aero_bcscavcoef_init.cpp
+              calc_1_impact_rate.cpp)
 target_link_libraries(aero_model_driver skywalker;validation;${HAERO_LIBRARIES})
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
@@ -25,6 +26,7 @@ endforeach()
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     modal_aero_bcscavcoef_init_ts_0
+    calc_1_impact_rate_ts_0
     )
 
 set(DEFAULT_TOL 1e-11)

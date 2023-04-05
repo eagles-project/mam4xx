@@ -6,7 +6,6 @@
 #include <mam4xx/mam4.hpp>
 
 #include <mam4xx/aero_config.hpp>
-#include <mam4xx/rename.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
 
@@ -28,13 +27,13 @@ void modal_aero_bcscavcoef_init(Ensemble *ensemble) {
                       [AeroConfig::num_modes()] = {{zero}};
 
     int lspectype_amode[aero_model_od::maxd_aspectype]
-                       [AeroConfig::num_modes()] = {{0}};                 
+                       [AeroConfig::num_modes()] = {{0}};
 
     int count = 0;
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
       for (int m = 0; m < aero_model_od::maxd_aspectype; ++m) {
-      	// Fortran to C++ indexing conversion
-        lspectype_amode[m][imode] = lspectype_amode_1d[count]-1;
+        // Fortran to C++ indexing conversion
+        lspectype_amode[m][imode] = lspectype_amode_1d[count] - 1;
         count += 1;
       }
     }

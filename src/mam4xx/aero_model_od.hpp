@@ -35,9 +35,9 @@ KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(
     const int imode, const bool isprx_kk, const Real dgn_awet_imode_kk, //& ! in
     const Real dgnum_amode_imode,
-    const Real scavimptblvol[10][AeroConfig::num_modes()],
-    const Real scavimptblnum[10][AeroConfig::num_modes()], Real &scavcoefnum_kk,
-    Real &scavcoefvol_kk) {
+    const Real scavimptblvol[nimptblgrow_total][AeroConfig::num_modes()],
+    const Real scavimptblnum[nimptblgrow_total][AeroConfig::num_modes()],
+    Real &scavcoefnum_kk, Real &scavcoefvol_kk) {
   // integer,  intent(in) :: imode, ncol
   // logical,  intent(in) :: isprx(pcols,pver)           ! if there is precip
   // real(r8), intent(in) :: dgn_awet(pcols,pver,ntot_amode)  ! wet aerosol
