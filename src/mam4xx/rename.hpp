@@ -71,9 +71,10 @@ void compute_dryvol_change_in_src_mode(
         tmp_del_dryvol += q_del_growth[m][ispec] * mass_2_vol[ispec];
       }
 
-      dryvol[m] =
-          tmp_dryvol - tmp_del_dryvol; // This is dry volume before the growth
-      deldryvol[m] = tmp_del_dryvol;   // change in dry volume due to growth
+      // This is dry volume before the growth
+      dryvol[m] = tmp_dryvol - tmp_del_dryvol;
+      // change in dry volume due to growth
+      deldryvol[m] = tmp_del_dryvol;
     }
   }
 } // end compute_dryvol_change_in_src_mode()
@@ -405,7 +406,7 @@ void do_inter_mode_transfer(
 
 KOKKOS_INLINE_FUNCTION
 void find_renaming_pairs(
-    int *dest_mode_of_mode,                             // in
+    const int *dest_mode_of_mode,                       // in
     Real mean_std_dev[AeroConfig::num_modes()],         // out
     Real fmode_dist_tail_fac[AeroConfig::num_modes()],  // out
     Real num2vol_ratio_lo_rlx[AeroConfig::num_modes()], // out
@@ -735,12 +736,15 @@ public:
       const Real diameter_threshold[AeroConfig::num_modes()],   // in
       const Real mass_2_vol[AeroConfig::num_aerosol_ids()],
       const Real dgnum_amode[AeroConfig::num_modes()], // in
+                                                       //
       Real qnum_i_cur[AeroConfig::num_modes()],
       Real qmol_i_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
       Real qmol_i_del[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+
       Real qnum_c_cur[AeroConfig::num_modes()],
       Real qmol_c_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
       Real qmol_c_del[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()])
+
       const {
     const Real zero = 0;
     Real dryvol_i[mam4::AeroConfig::num_modes()] = {zero};
