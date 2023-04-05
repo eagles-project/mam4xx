@@ -19,7 +19,14 @@
 namespace mam4 {
 
 namespace aero_model_od {
-// NOTE: orginal fortran function two internal loop over kk and icol.
+
+// BAD CONSTANT
+const Real dlndg_nimptblgrow = haero::log(1.25);
+const int nimptblgrow_mind = -7, nimptblgrow_maxd = 12;
+const int nrainsvmax = 50; // maximum bin number for rain
+const int naerosvmax = 51; //  maximum bin number for aerosol
+
+// NOTE: original FORTRAN function two internal loop over kk and icol.
 // We removed these loop,so the inputs/outputs of  modal_aero_bcscavcoef_get are
 // reals at the kk icol location
 KOKKOS_INLINE_FUNCTION
@@ -43,10 +50,6 @@ void modal_aero_bcscavcoef_get(
   // isprx_kk values of isprx at kk and icol
   const Real zero = 0;
   const Real one = 1;
-  // BAD CONSTANT
-  const Real dlndg_nimptblgrow = haero::log(1.25);
-  const int nimptblgrow_mind = -7, nimptblgrow_maxd = 12;
-
   if (isprx_kk) {
     // ! interpolate table values using log of
     // (actual-wet-size)/(base-dry-size) ratio of wet and dry aerosol diameter
@@ -90,8 +93,6 @@ void modal_aero_bcscavcoef_get(
 
 } // modal_aero_bcscavcoef_get
 
-const int nrainsvmax = 50; // maximum bin number for rain
-const int naerosvmax = 51; //  maximum bin number for aerosol
 KOKKOS_INLINE_FUNCTION
 Real air_dynamic_viscosity(const Real temp) {
   /*-----------------------------------------------------------------
@@ -508,6 +509,79 @@ void calc_1_impact_rate(const Real dg0,     //  in
   scavratevol = scavsumvol * 3600;
 
 } // end calc_1_impact_rate
+
+KOKKOS_INLINE_FUNCTION
+void modal_aero_bcscavcoef_init() {
+  //   !-----------------------------------------------------------------------
+  // !
+  // ! Purpose:
+  // ! Computes lookup table for aerosol impaction/interception scavenging rates
+  // !
+  // ! Authors: R. Easter
+  // !
+  // !-----------------------------------------------------------------------
+  const Real zero = 0;
+  const Real one = 1;
+  Real sigmag_amode[4] = {zero};
+  int lspectype_amode[10][4] = {{0}};
+  Real specdens_amode[7] = {zero};
+  Real dgnum_amode[4] = {zero};
+
+  int lunerr = 6; //           ! logical unit for error message
+
+  Real scavimptblnum[10][4] = {{zero}};
+  Real scavimptblvol[10][4] = {{zero}};
+
+  // ! set up temperature-pressure pair to compute impaction scavenging rates
+  // BAD CONSTANT
+  const Real temp_0C = 273.16;      //     ! K
+  const Real press_750hPa = 0.75e6; //  ! dynes/cm2
+  for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+    const Real sigmag = sigmag_amode[imode];
+    const int ll = lspectype_amode[1][imode];
+    const Real rhodryaero = specdens_amode[ll];
+
+    for (int jgrow = nimptblgrow_mind; jgrow < nimptblgrow_maxd; ++jgrow) {
+      // ratio of diameter for wet/dry aerosols [fraction]
+      const Real wetdiaratio = haero::exp(jgrow * dlndg_nimptblgrow);
+      // aerosol diameter [m]
+      const Real dg0 = dgnum_amode[imode] * wetdiaratio;
+      // ratio of volume for wet/dry aerosols [fraction]
+      const Real wetvolratio = haero::exp(jgrow * dlndg_nimptblgrow * 3);
+      // dry and wet aerosol density [kg/m3]
+      Real rhowetaero = one + (rhodryaero - one) / wetvolratio;
+      rhowetaero = haero::min(rhowetaero, rhodryaero);
+      /* FIXME: not sure why wet aerosol density is set as dry aerosol density
+ here ! but the above calculation of rhowetaero is incorrect. ! I think the
+ number 1.0_r8 should be 1000._r8 as the unit is kg/m3 ! the above calculation
+ gives wet aerosol density very small number (a few kg/m3) ! this may cause some
+ problem. I guess this is the reason of using dry density. ! should be better if
+ fix the wet density bug and use it. Keep it for now for BFB testing ! --
+ (commented by Shuaiqi Tang when refactoring for MAM4xx) */
+
+      rhowetaero = rhodryaero;
+      /*compute impaction scavenging rates at 1 temp-press pair and save
+              ! note that the subroutine calc_1_impact_rate uses CGS units */
+      // aerosol diameter in CGS unit [cm]
+      const Real dg0_cgs = dg0 * 1.0e2; //  ! m to cm
+      // wet aerosol density in CGS unit [g/cm3]
+      const Real rhowetaero_cgs = rhowetaero * 1.0e-3; //   ! kg/m3 to g/cm3
+      // scavenging rate of aerosol number [1/s]
+      Real scavratenum = zero;
+      // scavenging rate of aerosol volume [1/s]
+      Real scavratevol = zero;
+
+      calc_1_impact_rate(dg0_cgs, sigmag, rhowetaero_cgs, temp_0C, press_750hPa,
+                         scavratenum, scavratevol, lunerr);
+
+      scavimptblnum[jgrow][imode] = haero::log(scavratenum);
+      scavimptblvol[jgrow][imode] = haero::log(scavratevol);
+
+    } // jgrow
+
+  } // end imode
+
+} // modal_aero_bcscavcoef_init
 
 } // end namespace aero_model_od
 
