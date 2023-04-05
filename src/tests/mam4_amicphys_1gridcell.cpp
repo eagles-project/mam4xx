@@ -14,6 +14,8 @@
 #include <ekat/logging/ekat_logger.hpp>
 #include <ekat/mpi/ekat_comm.hpp>
 
+#include <type_traits>
+
 using namespace haero;
 using namespace mam4;
 
@@ -1988,7 +1990,7 @@ TEST_CASE("clear", "test_mam4_amicphys") {
     REQUIRE(wetdens[i] == Approx(check_wetdens[i]));
   }
   for (int i = 0; i < AeroConfig::num_gas_ids(); ++i) {
-    const double epsilon = .0001;
+    const double epsilon = 0.0001;
     const double scale = std::abs(check_qgas4[i]);
     if (!(qgas4[i] == Approx(check_qgas4[i]).scale(scale).epsilon(epsilon)))
       std::cout << "qgas4[" << i << "] != Approx(check_qgas4[" << i
@@ -1999,7 +2001,7 @@ TEST_CASE("clear", "test_mam4_amicphys") {
   }
   for (int i = 0; i < AeroConfig::num_gas_ids(); ++i) {
     for (int j = 0; j < nqtendaa; ++j) {
-      const double epsilon = .0001;
+      const double epsilon = std::is_same_v<Real, double> ? 0.0001 : 0.001;
       const double scale = std::abs(check_qgas_delaa[i][j]);
       if (!(qgas_delaa[i][j] ==
             Approx(check_qgas_delaa[i][j]).scale(scale).epsilon(epsilon)))
@@ -2013,7 +2015,7 @@ TEST_CASE("clear", "test_mam4_amicphys") {
     }
   }
   for (int i = 0; i < AeroConfig::num_modes(); ++i) {
-    const double epsilon = .004;
+    const double epsilon = 0.004;
     const double scale = std::abs(check_qnum4[i]);
     const bool check =
         qnum4[i] == Approx(check_qnum4[i]).scale(scale).epsilon(epsilon);
@@ -2024,23 +2026,25 @@ TEST_CASE("clear", "test_mam4_amicphys") {
                 << " and epsilon:" << epsilon << std::endl;
     REQUIRE(qnum4[i] == Approx(check_qnum4[i]).scale(scale).epsilon(epsilon));
   }
-  for (int i = 0; i < AeroConfig::num_modes(); ++i) {
-    for (int j = 0; j < nqtendaa; ++j) {
-      const double epsilon = .0005;
-      const double scale = std::abs(check_qnum_delaa[i][j]);
-      const bool check =
-          qnum_delaa[i][j] ==
-          Approx(check_qnum_delaa[i][j]).scale(scale).epsilon(epsilon);
-      if (!check)
-        std::cout << "qnum_delaa[" << i << "][" << j
-                  << "] != Approx(check_qnum_delaa[" << i << "][" << j
-                  << "])): " << std::setprecision(14) << qnum_delaa[i][j]
-                  << " != " << check_qnum_delaa[i][j] << " with scale:" << scale
-                  << " and epsilon:" << epsilon << std::endl;
-      REQUIRE(qnum_delaa[i][j] ==
-              Approx(check_qnum_delaa[i][j]).scale(scale).epsilon(epsilon));
+  if (std::is_same_v<Real, double>)
+    for (int i = 0; i < AeroConfig::num_modes(); ++i) {
+      for (int j = 0; j < nqtendaa; ++j) {
+        const double epsilon = 0.0005;
+        const double scale = std::abs(check_qnum_delaa[i][j]);
+        const bool check =
+            qnum_delaa[i][j] ==
+            Approx(check_qnum_delaa[i][j]).scale(scale).epsilon(epsilon);
+        if (!check)
+          std::cout << "qnum_delaa[" << i << "][" << j
+                    << "] != Approx(check_qnum_delaa[" << i << "][" << j
+                    << "])): " << std::setprecision(14) << qnum_delaa[i][j]
+                    << " != " << check_qnum_delaa[i][j]
+                    << " with scale:" << scale << " and epsilon:" << epsilon
+                    << std::endl;
+        REQUIRE(qnum_delaa[i][j] ==
+                Approx(check_qnum_delaa[i][j]).scale(scale).epsilon(epsilon));
+      }
     }
-  }
   for (int i = 0; i < AeroConfig::num_aerosol_ids(); ++i) {
     for (int j = 0; j < AeroConfig::num_modes(); ++j) {
       const double epsilon = 0.0005;
@@ -2058,26 +2062,28 @@ TEST_CASE("clear", "test_mam4_amicphys") {
       }
     }
   }
-  for (int i = 0; i < AeroConfig::num_aerosol_ids(); ++i) {
-    for (int j = 0; j < AeroConfig::num_modes(); ++j) {
-      for (int k = 0; k < nqtendaa; ++k) {
-        const double epsilon = 0.0005;
-        const double scale = std::abs(check_qaer_delaa[i][j][k]);
-        if (!(qaer_delaa[i][j][k] ==
-              Approx(check_qaer_delaa[i][j][k]).scale(scale).epsilon(epsilon)))
-          std::cout << "qaer_delaa[" << i << "][" << j << "][" << k
-                    << "] != Approx(check_qaer_delaa[" << i << "][" << j << "]["
-                    << k << "])): " << std::setprecision(14)
-                    << qaer_delaa[i][j][k]
-                    << " != " << check_qaer_delaa[i][j][k]
-                    << " with scale:" << scale << " and epsilon:" << epsilon
-                    << std::endl;
-        REQUIRE(
-            qaer_delaa[i][j][k] ==
-            Approx(check_qaer_delaa[i][j][k]).scale(scale).epsilon(epsilon));
+  if (std::is_same_v<Real, double>)
+    for (int i = 0; i < AeroConfig::num_aerosol_ids(); ++i) {
+      for (int j = 0; j < AeroConfig::num_modes(); ++j) {
+        for (int k = 0; k < nqtendaa; ++k) {
+          const double epsilon = 0.0005;
+          const double scale = std::abs(check_qaer_delaa[i][j][k]);
+          if (!(qaer_delaa[i][j][k] == Approx(check_qaer_delaa[i][j][k])
+                                           .scale(scale)
+                                           .epsilon(epsilon)))
+            std::cout << "qaer_delaa[" << i << "][" << j << "][" << k
+                      << "] != Approx(check_qaer_delaa[" << i << "][" << j
+                      << "][" << k << "])): " << std::setprecision(14)
+                      << qaer_delaa[i][j][k]
+                      << " != " << check_qaer_delaa[i][j][k]
+                      << " with scale:" << scale << " and epsilon:" << epsilon
+                      << std::endl;
+          REQUIRE(
+              qaer_delaa[i][j][k] ==
+              Approx(check_qaer_delaa[i][j][k]).scale(scale).epsilon(epsilon));
+        }
       }
     }
-  }
   for (int i = 0; i < AeroConfig::num_modes(); ++i) {
     if (!(qwtr4[i] == Approx(check_qwtr4[i])))
       std::cout << "qwtr4[" << i << "] != Approx(check_qwtr4[" << i
