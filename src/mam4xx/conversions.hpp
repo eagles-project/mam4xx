@@ -19,6 +19,8 @@ using Constants = haero::Constants;
 using haero::cube;
 using haero::square;
 
+constexpr Real mol_to_kmol = 1e-3;
+
 /// Given a number concentration for a species or mixture [m-3], computes and
 /// returns a mass mixing ratio [kg species/kg dry air] based on its molecular
 /// weight and on the density of dry air in the vicinity.
@@ -56,7 +58,9 @@ KOKKOS_INLINE_FUNCTION Real number_conc_from_mmr(Real mmr, Real molecular_wt,
 /// @param [in] molecular_wt The molecular weight of the species/mixture
 /// [kg/kmol]
 KOKKOS_INLINE_FUNCTION Real mmr_from_vmr(Real vmr, Real molecular_wt) {
-  const auto mw_dry_air = Constants::molec_weight_dry_air;
+  // we convert here since haero::Constants uses SI units.
+  // e.g., kg/mol for mw_dry_air
+  const auto mw_dry_air = Constants::molec_weight_dry_air * mol_to_kmol;
   return vmr * molecular_wt / mw_dry_air;
 }
 
@@ -67,7 +71,9 @@ KOKKOS_INLINE_FUNCTION Real mmr_from_vmr(Real vmr, Real molecular_wt) {
 /// @param [in] molecular_wt The molecular weight of the species/mixture
 /// [kg/kmol]
 KOKKOS_INLINE_FUNCTION Real vmr_from_mmr(Real mmr, Real molecular_wt) {
-  const auto mw_dry_air = Constants::molec_weight_dry_air;
+  // we convert here since haero::Constants uses SI units.
+  // e.g., kg/mol for mw_dry_air
+  const auto mw_dry_air = Constants::molec_weight_dry_air * mol_to_kmol;
   return mmr * mw_dry_air / molecular_wt;
 }
 
