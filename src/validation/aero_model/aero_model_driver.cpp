@@ -24,9 +24,11 @@ void usage() {
 using namespace skywalker;
 using namespace mam4;
 
-// Parameterizations used by the rename process.
+// Parameterizations used by the aero_model process.
 void modal_aero_bcscavcoef_init(Ensemble *ensemble);
 void calc_1_impact_rate(Ensemble *ensemble);
+void modal_aero_bcscavcoef_get(Ensemble *ensemble);
+
 int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
@@ -53,6 +55,8 @@ int main(int argc, char **argv) {
       modal_aero_bcscavcoef_init(ensemble);
     } else if (func_name == "calc_1_impact_rate") {
       calc_1_impact_rate(ensemble);
+    } else if (func_name == "modal_aero_bcscavcoef_get") {
+      modal_aero_bcscavcoef_get(ensemble);
     }
 
   } catch (std::exception &e) {
