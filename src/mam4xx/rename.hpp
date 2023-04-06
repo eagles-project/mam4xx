@@ -683,18 +683,14 @@ public:
               // get the mapping from the mam4xx species ordering to rename's
               rename_idx = _mam4xx2rename_idx[imode][jspec];
               // convert mass mixing ratios to molar mixing ratios
-              qmol_i_cur[imode][rename_idx] = conversions::vmr_from_mmr(
-                  prognostics.q_aero_i[imode][rename_idx](kk),
-                  aero_species(rename_idx).molecular_weight);
-              qmol_i_del[imode][rename_idx] = conversions::vmr_from_mmr(
-                  tendencies.q_aero_i[imode][rename_idx](kk),
-                  aero_species(rename_idx).molecular_weight);
-              qmol_c_cur[imode][rename_idx] = conversions::vmr_from_mmr(
-                  prognostics.q_aero_c[imode][rename_idx](kk),
-                  aero_species(rename_idx).molecular_weight);
-              qmol_c_del[imode][rename_idx] = conversions::vmr_from_mmr(
-                  tendencies.q_aero_c[imode][rename_idx](kk),
-                  aero_species(rename_idx).molecular_weight);
+              qmol_i_cur[imode][rename_idx] = conversions::mass_mr_to_molar_mr(
+                  prognostics.q_aero_i[imode][rename_idx](kk), rename_idx);
+              qmol_i_del[imode][rename_idx] = conversions::mass_mr_to_molar_mr(
+                  tendencies.q_aero_i[imode][rename_idx](kk), rename_idx);
+              qmol_c_cur[imode][rename_idx] = conversions::mass_mr_to_molar_mr(
+                  prognostics.q_aero_c[imode][rename_idx](kk), rename_idx);
+              qmol_c_del[imode][rename_idx] = conversions::mass_mr_to_molar_mr(
+                  tendencies.q_aero_c[imode][rename_idx](kk), rename_idx);
             }
           }
 

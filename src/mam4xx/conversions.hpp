@@ -8,6 +8,7 @@
 
 #include <haero/constants.hpp>
 #include <haero/math.hpp>
+#include <mam4xx/aero_modes.hpp>
 
 /// This file contains functions for converting between various representations
 /// of physical quantities in aerosol parameterizations.
@@ -19,62 +20,101 @@ using Constants = haero::Constants;
 using haero::cube;
 using haero::square;
 
-constexpr Real mol_to_kmol = 1e-3;
-
 /// Given a number concentration for a species or mixture [m-3], computes and
 /// returns a mass mixing ratio [kg species/kg dry air] based on its molecular
 /// weight and on the density of dry air in the vicinity.
 /// @param [in] number_conc The number concentration of the species/mixture
 /// [m-3]
 /// @param [in] molecular_wt The molecular weight of the species/mixture
-/// [kg/kmol]
+/// [kg/mol]
 /// @param [in] dry_air_density The mass density of dry air [kg/m3]
-KOKKOS_INLINE_FUNCTION Real mmr_from_number_conc(Real number_conc,
-                                                 Real molecular_wt,
-                                                 Real dry_air_density) {
+KOKKOS_INLINE_FUNCTION Real mass_mr_from_number_conc(Real number_conc,
+                                                     Real molecular_wt,
+                                                     Real dry_air_density) {
   const auto Na = Constants::avogadro;
   return number_conc * molecular_wt / (dry_air_density * Na);
 }
 
-/// Given a mass mixing ratio (mmr) for a species or mixture [kg species/kg
+/// Given a mass mixing ratio (mass_mr) for a species or mixture [kg species/kg
 /// dry air], computes and returns a number density [m-3] based on its molecular
 /// weight and on the density of dry air in the vicinity.
-/// @param [in] mmr The mass mixing ratio  of the species/mixture [kg/kg dry
-/// air]
+/// @param [in] mass_mr The mass mixing ratio  of the species/mixture
+/// [kg/kg dry air]
 /// @param [in] molecular_wt The molecular weight of the species/mixture
-/// [kg/kmol]
+/// [kg/mol]
 /// @param [in] dry_air_density The mass density of dry air [kg/m3]
-KOKKOS_INLINE_FUNCTION Real number_conc_from_mmr(Real mmr, Real molecular_wt,
-                                                 Real dry_air_density) {
+KOKKOS_INLINE_FUNCTION Real number_conc_from_mass_mr(Real mass_mr,
+                                                     Real molecular_wt,
+                                                     Real dry_air_density) {
   const auto Na = Constants::avogadro;
-  return mmr * (dry_air_density * Na) / molecular_wt;
+  return mass_mr * (dry_air_density * Na) / molecular_wt;
 }
 
-/// Given a molar mixing ratio (vmr) for a species or mixture
-/// [kmol species/kmol dry air], computes and returns a mass mixing ratio
-/// [kg species/kg dry air] based on its molecular weight.
-/// @param [in] vmr The molar mixing ratio of the species/mixture [kmol/kmol
-/// air]
-/// @param [in] molecular_wt The molecular weight of the species/mixture
-/// [kg/kmol]
-KOKKOS_INLINE_FUNCTION Real mmr_from_vmr(Real vmr, Real molecular_wt) {
-  // we convert here since haero::Constants uses SI units.
-  // e.g., kg/mol for mw_dry_air
-  const auto mw_dry_air = Constants::molec_weight_dry_air * mol_to_kmol;
-  return vmr * molecular_wt / mw_dry_air;
+/// Given a volume mixing ratio (vol_mr) for a species or mixture
+/// [volume species/kg dry air == m^3 species/kg dry air],
+/// computes and returns a mass mixing ratio
+/// [kg species/kg dry air] based on its density.
+/// @param [in] vol_mr The volume mixing ratio of the species/mixture
+/// [volume species/kg dry air]
+/// @param [in] aero_idx The array index for the aerosol of interest
+KOKKOS_INLINE_FUNCTION Real vol_mr_to_mass_mr(Real vol_mr, int aero_idx) {
+  return vol_mr * mam4::aero_species(aero_idx).density;
 }
 
-/// Given a mass mixing ratio (mmr) for a species or mixture [kg species/kg
-/// dry air], computes and returns a molar mixing ratio [kmol species/k dry air]
+/// Given a mass mixing ratio (mass_mr) for a species or mixture
+/// [kg species/kg dry air], computes and returns a
+/// mass mixing ratio [mol species/kg dry air] based on its density.
+/// @param [in] mass_mr The mass mixing ratio of the species/mixture
+/// [kg species/kg dry air]
+/// @param [in] aero_idx The array index for the aerosol of interest
+KOKKOS_INLINE_FUNCTION Real mass_mr_to_vol_mr(Real mass_mr, int aero_idx) {
+  return mass_mr / mam4::aero_species(aero_idx).density;
+}
+
+/// Given a volume mixing ratio (vol_mr) for a species or mixture
+/// [volume species/kg dry air == m^3 species/kg dry air],
+/// computes and returns a molar mixing ratio
+/// [kg species/kg dry air] based on its density and molecular weight.
+/// @param [in] vol_mr The volume mixing ratio of the species/mixture
+/// [volume species/kg dry air]
+/// @param [in] aero_idx The array index for the aerosol of interest
+KOKKOS_INLINE_FUNCTION Real vol_mr_to_molar_mr(Real vol_mr, int aero_idx) {
+  AeroSpecies spec = mam4::aero_species(aero_idx);
+  return vol_mr * spec.density * spec.molecular_weight;
+}
+
+/// Given a molar mixing ratio (molar_mr) for a species or mixture
+/// [kg species/kg dry air], computes and returns a
+/// molar mixing ratio [mol species/kg dry air]
+/// based on its density and molecular weight.
+/// @param [in] molar_mr The molar mixing ratio of the species/mixture
+/// [kg species/kg dry air]
+/// @param [in] aero_idx The array index for the aerosol of interest
+KOKKOS_INLINE_FUNCTION Real molar_mr_to_vol_mr(Real molar_mr, int aero_idx) {
+  AeroSpecies spec = mam4::aero_species(aero_idx);
+  return molar_mr / spec.density * spec.molecular_weight;
+}
+
+/// Given a mass mixing ratio (mass_mr) for a species or mixture
+/// [kg species/kg dry air], computes and returns a
+/// molar mixing ratio [mol species/kg dry air]
 /// based on its molecular weight.
-/// @param [in] mmr The mass mixing ratio of the species/mixture [kg/kg dry air]
-/// @param [in] molecular_wt The molecular weight of the species/mixture
-/// [kg/kmol]
-KOKKOS_INLINE_FUNCTION Real vmr_from_mmr(Real mmr, Real molecular_wt) {
-  // we convert here since haero::Constants uses SI units.
-  // e.g., kg/mol for mw_dry_air
-  const auto mw_dry_air = Constants::molec_weight_dry_air * mol_to_kmol;
-  return mmr * mw_dry_air / molecular_wt;
+/// @param [in] mass_mr The mass mixing ratio of the species/mixture
+/// [kg species/kg dry air]
+/// @param [in] aero_idx The array index for the aerosol of interest
+KOKKOS_INLINE_FUNCTION Real mass_mr_to_molar_mr(Real mass_mr, int aero_idx) {
+  return mass_mr * mam4::aero_species(aero_idx).molecular_weight;
+}
+
+/// Given a molar mixing ratio (molar_mr) for a species or mixture
+/// [mol species/kg dry air], computes and returns a
+/// mass mixing ratio [kg species/kg dry air]
+/// based on its molecular weight.
+/// @param [in] molar_mr The molar mixing ratio of the species/mixture
+/// [mol species/kg dry air]
+/// @param [in] aero_idx The array index for the aerosol of interest
+KOKKOS_INLINE_FUNCTION Real molar_mr_to_mass_mr(Real molar_mr, int aero_idx) {
+  return molar_mr / mam4::aero_species(aero_idx).molecular_weight;
 }
 
 /// Computes the virtual temperature [K] from the temperature [K] and a water
