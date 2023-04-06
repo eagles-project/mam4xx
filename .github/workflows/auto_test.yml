@@ -88,7 +88,7 @@ jobs:
     - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
       run: |
         cd build
-        make -j
+        make
 
     - name: Installing Python 3
       uses: actions/setup-python@v4
