@@ -608,6 +608,33 @@ void calculate_rgimm_and_determine_spec_flag(
   }
 }
 
+KOKKOS_INLINE_FUNCTION
+void calculate_water_activity(
+    Real total_interstitial_aer_num[Hetfzr::hetfzr_aer_nspec],
+    Real awcam[Hetfzr::hetfzr_aer_nspec], Real awfacm[Hetfzr::hetfzr_aer_nspec],
+    const Real r3lx, Real aw[Hetfzr::hetfzr_aer_nspec]) {
+
+  Real molal[Hetfzr::hetfzr_aer_nspec];
+  constexpr Real mw_so4 = 96.06; /// BAD CONSTANT
+  constexpr Real coeff_c1 = 2.9244948e-2;
+  constexpr Real coeff_c2 = 2.3141243e-3;
+  constexpr Real coeff_c3 = 7.8184854e-7;
+
+  for (int ispec = 0; ispec < Hetfzr::hetfzr_aer_nspec; ++ispec) {
+    // calculate molality
+    if (total_interstitial_aer_num[ispec] > 0.0) {
+      molal[ispec] = (1.e-6 * awcam[ispec] * (1.0 - awfacm[ispec]) /
+                      (mw_so4 * total_interstitial_aer_num[ispec] * 1.e6)) /
+                     (4.0 * Constants::pi / 3.0 * Constants::density_h2o *
+                      haero::cube(haero::max(r3lx, 4.0e-6)));
+
+      aw[ispec] = 1.0 / (1.0 + coeff_c1 * molal[ispec] +
+                         coeff_c2 * haero::square(molal[ispec]) +
+                         coeff_c3 * haero::cube(molal[ispec]));
+    }
+  }
+}
+
 } // namespace hetfzr
 } // namespace mam4
 
