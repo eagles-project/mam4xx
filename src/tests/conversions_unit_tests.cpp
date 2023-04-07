@@ -100,13 +100,13 @@ TEST_CASE("conversions", "") {
   }
 
   SECTION("mixing ratios") {
-    // mass mixing ratio (mmr) <-> number_conc
+    // mass mixing ratio (mass_mr) <-> number_conc
     logger.info("SECTION mixing ratios");
     auto const rho = density_of_ideal_gas(unit_temp, unit_pressure);
-    auto const mmr = 1e-8;
+    auto const mass_mr = 1e-8;
     auto const num_conc =
-        number_conc_from_mass_mr(mmr, haero::Constants::molec_weight_nacl, rho);
-    auto const mmr0 = mass_mr_from_number_conc(
+        number_conc_from_mass_mr(mass_mr, haero::Constants::molec_weight_nacl, rho);
+    auto const mass_mr0 = mass_mr_from_number_conc(
         num_conc, haero::Constants::molec_weight_nacl, rho);
 
     logger.info("unit_temp = {}, unit_pressure = {}, rho = {}", unit_temp,
@@ -116,23 +116,37 @@ TEST_CASE("conversions", "") {
         mam4::aero_species(aerosol_index_for_mode(mam4::ModeIndex::Accumulation,
                                                   mam4::AeroId::NaCl))
             .density);
-    logger.info("mixing ratio = {}, num_conc = {}, mmr0 = {}", mmr, num_conc,
-                mmr0);
-    REQUIRE(FloatingPoint<Real>::equiv(mmr, mmr0));
+    logger.info("mixing ratio = {}, num_conc = {}, mass_mr0 = {}", mass_mr, num_conc,
+                mass_mr0);
+    REQUIRE(FloatingPoint<Real>::equiv(mass_mr, mass_mr0));
 
-    // mass mixing ratio (mmr) <-> molar mixing ratio (vmr)
-    auto const vmr = mass_mr_to_vol_mr(
-        mmr0,
-        mam4::aero_species(aerosol_index_for_mode(mam4::ModeIndex::Accumulation,
-                                                  mam4::AeroId::NaCl))
-            .density);
-    auto const mmr1 = vol_mr_to_mass_mr(
-        vmr,
-        mam4::aero_species(aerosol_index_for_mode(mam4::ModeIndex::Accumulation,
-                                                  mam4::AeroId::NaCl))
-            .density);
-    logger.info("mmr0 = {}, vmr = {}, mmr1 = {}", mmr0, vmr, mmr1);
-    REQUIRE(FloatingPoint<Real>::equiv(mmr1, mmr0));
+    // mass mixing ratio (mass_mr) <-> volume mixing ratio (vmr)
+    auto const vmr0 = mass_mr_to_vol_mr(
+        mass_mr0, aerosol_index_for_mode(mam4::ModeIndex::Accumulation,
+                                     mam4::AeroId::NaCl));
+    auto const mass_mr1 = vol_mr_to_mass_mr(
+        vmr0, aerosol_index_for_mode(mam4::ModeIndex::Accumulation,
+                                    mam4::AeroId::NaCl));
+    logger.info("mass_mr0 = {}, vmr0 = {}, mass_mr1 = {}", mass_mr0, vmr0, mass_mr1);
+    REQUIRE(FloatingPoint<Real>::equiv(mass_mr1, mass_mr0));
+    // volume mixing ratio (vmr) <->  molar mixing ratio (molar_mr)
+    auto const molar_mr0 = vol_mr_to_molar_mr(
+        vmr0, aerosol_index_for_mode(mam4::ModeIndex::Accumulation,
+                                     mam4::AeroId::NaCl));
+    auto const vmr1 = molar_mr_to_vol_mr(
+        molar_mr0, aerosol_index_for_mode(mam4::ModeIndex::Accumulation,
+                                    mam4::AeroId::NaCl));
+    logger.info("vmr0 = {}, molar_mr0 = {}, vmr1 = {}", vmr0, molar_mr0, vmr1);
+    REQUIRE(FloatingPoint<Real>::equiv(vmr1, vmr0));
+    // mass mixing ratio (mass_mr) <-> molar mixing ratio (molar_mr)
+    auto const molar_mr00 = mass_mr_to_molar_mr(
+        mass_mr0, aerosol_index_for_mode(mam4::ModeIndex::Accumulation,
+                                     mam4::AeroId::NaCl));
+    auto const mass_mr2 = molar_mr_to_mass_mr(
+        molar_mr00, aerosol_index_for_mode(mam4::ModeIndex::Accumulation,
+                                    mam4::AeroId::NaCl));
+    logger.info("mass_mr0 = {}, molar_mr00 = {}, mass_mr2 = {}", mass_mr0, molar_mr00, mass_mr2);
+    REQUIRE(FloatingPoint<Real>::equiv(mass_mr2, mass_mr0));
   }
 
   SECTION("temperature") {

@@ -92,7 +92,7 @@ KOKKOS_INLINE_FUNCTION Real vol_mr_to_molar_mr(Real vol_mr, int aero_idx) {
 /// @param [in] aero_idx The array index for the aerosol of interest
 KOKKOS_INLINE_FUNCTION Real molar_mr_to_vol_mr(Real molar_mr, int aero_idx) {
   AeroSpecies spec = mam4::aero_species(aero_idx);
-  return molar_mr / spec.density * spec.molecular_weight;
+  return molar_mr / (spec.density * spec.molecular_weight);
 }
 
 /// Given a mass mixing ratio (mass_mr) for a species or mixture
