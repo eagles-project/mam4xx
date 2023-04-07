@@ -635,6 +635,47 @@ void calculate_water_activity(
   }
 }
 
+KOKKOS_INLINE_FUNCTION
+void calculate_vars_for_pdf_imm(Real dim_theta[Hetfzr::pdf_n_theta],
+                                Real pdf_imm_theta[Hetfzr::pdf_n_theta]) {
+
+  constexpr Real theta_min = 1.0 / 180.0 * Constants::pi;
+  constexpr Real theta_max = 179.0 / 180.0 * Constants::pi;
+  constexpr Real imm_dust_mean_theta = 46.0 / 180.0 * Constants::pi;
+  constexpr Real imm_dust_var_theta = 0.01;
+
+  const Real ln_theta_min = haero::log(theta_min);
+  const Real ln_theta_max = haero::log(theta_max);
+  const Real ln_imm_dust_mean_theta = haero::log(imm_dust_mean_theta);
+
+  // calculate the integral in the denominator
+  const Real x1_imm = (ln_theta_min - ln_imm_dust_mean_theta) /
+                      (haero::sqrt(2.0) * imm_dust_var_theta);
+  const Real x2_imm = (ln_theta_max - ln_imm_dust_mean_theta) /
+                      (haero::sqrt(2.0) * imm_dust_var_theta);
+
+  const Real norm_theta_imm = (haero::erf(x2_imm) - haero::erf(x1_imm)) * 0.5;
+
+  for (int ibin = 0; ibin < Hetfzr::pdf_n_theta; ++ibin) {
+    dim_theta[ibin] = 0.0;
+    pdf_imm_theta[ibin] = 0.0;
+  }
+
+  for (int ibin = Hetfzr::itheta_bin_beg; ibin <= Hetfzr::itheta_bin_end;
+       ++ibin) {
+
+    dim_theta[ibin] =
+        1.0 / 180.0 * Constants::pi + (ibin - 1) * Hetfzr::pdf_d_theta;
+    pdf_imm_theta[ibin] =
+        haero::exp(-(haero::square(haero::log(dim_theta[ibin]) -
+                                   ln_imm_dust_mean_theta)) /
+                   (2.0 * haero::square(imm_dust_var_theta))) /
+        (dim_theta[ibin] * imm_dust_var_theta *
+         haero::sqrt(2.0 * Constants::pi)) /
+        norm_theta_imm;
+  }
+}
+
 } // namespace hetfzr
 } // namespace mam4
 
