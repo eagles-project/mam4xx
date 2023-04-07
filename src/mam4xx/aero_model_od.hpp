@@ -552,10 +552,8 @@ void modal_aero_bcscavcoef_init(
     const Real sigmag = sigmag_amode[imode];
     // FIXME: can we get this aero density from mam4xx?
     const int ll = lspectype_amode[0][imode];
-    printf("ll %d specdens_amode[ll] %e \n ", ll, specdens_amode[ll]);
     const Real rhodryaero = specdens_amode[ll];
-    printf("nimptblgrow_mind %d \n ", nimptblgrow_mind);
-    for (int jgrow = nimptblgrow_mind; jgrow < nimptblgrow_maxd; ++jgrow) {
+    for (int jgrow = nimptblgrow_mind; jgrow <= nimptblgrow_maxd ; ++jgrow) {
       // ratio of diameter for wet/dry aerosols [fraction]
       const Real wetdiaratio = haero::exp(jgrow * dlndg_nimptblgrow);
       // aerosol diameter [m]

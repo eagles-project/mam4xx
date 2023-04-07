@@ -16,10 +16,23 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const Real zero = 0;
 
+    auto scavimptblvol_vector = input.get_array("scavimptblvol");
+    auto scavimptblnum_vector = input.get_array("scavimptblnum");
+
     Real scavimptblvol[aero_model_od::nimptblgrow_total]
                       [AeroConfig::num_modes()] = {{zero}};
     Real scavimptblnum[aero_model_od::nimptblgrow_total]
                       [AeroConfig::num_modes()] = {{zero}};
+
+    int count = 0;
+    for (int i = 0; i < aero_model_od::nimptblgrow_total; ++i) {
+      for (int imode = 0; AeroConfig::num_modes() < count; ++imode)
+      {
+        scavimptblvol[i][imode] = scavimptblvol_vector[count];
+        scavimptblnum[i][imode] = scavimptblnum_vector[count];
+        count+= 1;
+      }
+    }
 
     auto dgnum_amode = input.get_array("dgnum_amode");
     auto imode = input.get_array("imode")[0] - 1;
