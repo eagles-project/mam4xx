@@ -124,6 +124,8 @@ public:
   /// integration (see aero_mode.hpp for indexing)
   ColumnView q_gas_avg[AeroConfig::num_gas_ids()];
 
+  /// Uptate Rate for each gas species and each mode.
+  /// i.e. Gas to aerosol mass transfer rate (1/s)
   ColumnView uptkaer[AeroConfig::num_gas_ids()][AeroConfig::num_modes()];
 
   KOKKOS_INLINE_FUNCTION
@@ -209,6 +211,22 @@ public:
     Kokkos::deep_copy(iscloudy, false);
     num_substeps = haero::DeviceType::view_1d<int>("num_substeps", num_levels);
     Kokkos::deep_copy(num_substeps, 0);
+
+    icenuc_num_hetfrz = ColumnView("icenuc_num_hetfrz", num_levels);
+    Kokkos::deep_copy(icenuc_num_hetfrz, 0.0);
+    icenuc_num_immfrz = ColumnView("icenuc_num_immfrz", num_levels);
+    Kokkos::deep_copy(icenuc_num_immfrz, 0.0);
+    icenuc_num_depnuc = ColumnView("icenuc_num_depnuc", num_levels);
+    Kokkos::deep_copy(icenuc_num_depnuc, 0.0);
+    icenuc_num_meydep = ColumnView("icenuc_num_meydep", num_levels);
+    Kokkos::deep_copy(icenuc_num_meydep, 0.0);
+
+    num_act_aerosol_ice_nucle_hom =
+        ColumnView("num_act_aerosol_ice_nucle_hom", num_levels);
+    Kokkos::deep_copy(num_act_aerosol_ice_nucle_hom, 0.0);
+    num_act_aerosol_ice_nucle =
+        ColumnView("num_act_aerosol_ice_nucle", num_levels);
+    Kokkos::deep_copy(num_act_aerosol_ice_nucle, 0.0);
   }
   Diagnostics() = default; // Careful! Only for creating placeholders in views
   Diagnostics(const Diagnostics &) = default;
@@ -255,6 +273,29 @@ public:
 
   /// Number of time substeps needed to converge in mam_soaexch_advance_in_time
   haero::DeviceType::view_1d<int> num_substeps;
+
+  // Output variables for nucleate_ice process:
+  // Ask experts for better names for: icenuc_num_hetfrz, icenuc_num_immfrz,
+  // nihf
+  // icenuc_num_depnuc,  icenuc_num_meydep output number conc of ice nuclei due
+  // to heterogeneous freezing [1/m3]
+  ColumnView icenuc_num_hetfrz;
+  // niimm
+  //  output number conc of ice nuclei due to immersion freezing (hetero nuc)
+  //  [1/m3]
+  ColumnView icenuc_num_immfrz;
+  // nidep
+  // output number conc of ice nuclei due to deposition nucleation (hetero nuc)
+  // [1/m3]
+  ColumnView icenuc_num_depnuc;
+  // nimey
+  // !output number conc of ice nuclei due to meyers deposition [1/m3]
+  ColumnView icenuc_num_meydep;
+  // number of activated aerosol for ice nucleation (homogeneous freezing only)
+  // [#/kg]
+  ColumnView num_act_aerosol_ice_nucle_hom;
+  // number of activated aerosol for ice nucleation [#/kg]
+  ColumnView num_act_aerosol_ice_nucle;
 
 private:
   int nlev_;

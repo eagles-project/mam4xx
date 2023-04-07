@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.12.0)
+cmake_minimum_required (VERSION 3.17.0)
 
 message(STATUS "Configuring with build type: ${CMAKE_BUILD_TYPE}")
 
@@ -17,7 +17,10 @@ else() #CPU
   message(STATUS "Building for CPU")
 endif()
 
-option(MAM4XX_ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
+option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
+option(ENABLE_SKYWALKER "Enable Skywalker cross validation" ON)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 # Blessed version of clang-format.
 set(CLANG_FORMAT_VERSION 14)
@@ -69,7 +72,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 link_directories("${MAM4XX_HAERO_DIR}/lib")
 
 # Code coverage
-if (MAM4XX_ENABLE_COVERAGE)
+if (ENABLE_COVERAGE)
   message(STATUS "Enabling code coverage instrumentation")
   find_program(LCOV_EXE lcov DOC "Lcov code coverage tool")
   if (LCOV_EXE MATCHES "NOTFOUND")
@@ -87,31 +90,16 @@ if (MAM4XX_ENABLE_COVERAGE)
     COMMENT "Generating coverage report (coverage.info)")
 endif()
 
-# Support for valgrind -- Linux only.
-if (UNIX AND NOT APPLE)
-  find_package(Valgrind QUIET)
-  if (VALGRIND_FOUND)
-    set(VALGRIND_FOUND 1) # regularize this value
-    include_directories(${VALGRIND_INCLUDE_DIR})
-    set(MEMORYCHECK_COMMAND ${VALGRIND_PROGRAM})
-    # Add "--gen-suppressions=all" to MEMORYCHECK_COMMAND_OPTIONS to generate
-    # suppressions for Valgrind's false positives. The suppressions show up
-    # right in the MemoryChecker.*.log files.
-    set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --show-leak-kinds=all --errors-for-leak-kinds=definite,possible --track-origins=yes --error-exitcode=1 --trace-children=yes --suppressions=${PROJECT_SOURCE_DIR}/tools/valgrind/scasm.supp" CACHE STRING "Options passed to Valgrind." FORCE)
-
-    # make memcheck target
-    add_custom_target(memcheck ctest -T memcheck -j ${NUMBER_OF_CORES} USES_TERMINAL)
-  else()
-    set(VALGRIND_FOUND 0)
-  endif()
-else()
-  # Valgrind doesn't work on Macs.
-  set(VALGRIND_FOUND 0)
-endif()
+# Support for valgrind (Linux only)
+include(add_memcheck_target)
+add_memcheck_target()
 
 # Testing
 include(CTest)
 enable_testing()
+
+# Third-party libraries.
+add_subdirectory(ext)
 
 # Source directories.
 add_subdirectory(src)

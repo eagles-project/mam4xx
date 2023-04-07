@@ -17,9 +17,8 @@ void find_renaming_pairs(Ensemble *ensemble) {
 
   ensemble->process([=](const Input &input, Output &output) {
     const int nmodes = AeroConfig::num_modes();
-    const int naerosol_species = AeroConfig::num_aerosol_ids();
-
-    // int dest_mode_of_mode = input.get_array("dest_mode_of_mode");
+    // const int naerosol_species = AeroConfig::num_aerosol_ids();
+    //  int dest_mode_of_mode = input.get_array("dest_mode_of_mode");
     int dest_mode_of_mode[nmodes] = {-1, 0, -1, -1};
 
     Real fmode_dist_tail_fac[nmodes];
@@ -30,7 +29,7 @@ void find_renaming_pairs(Ensemble *ensemble) {
     Real diameter_cutoff[nmodes];
     Real ln_dia_cutoff[nmodes];
     Real diameter_threshold[nmodes];
-    Real mass_2_vol[naerosol_species];
+    // Real mass_2_vol[naerosol_species];
     Real mean_std_dev[nmodes];
 
     rename::find_renaming_pairs(dest_mode_of_mode,    // in
@@ -44,12 +43,12 @@ void find_renaming_pairs(Ensemble *ensemble) {
                                 ln_dia_cutoff, diameter_threshold);
 
     // We use MW from rename-mam4.
-    Real molecular_weight_rename[naerosol_species] = {
-        150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
-    for (int iaero = 0; iaero < naerosol_species; ++iaero) {
-      mass_2_vol[iaero] =
-          molecular_weight_rename[iaero] / aero_species(iaero).density;
-    }
+    // Real molecular_weight_rename[naerosol_species] = {
+    //    150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
+    // for (int iaero = 0; iaero < naerosol_species; ++iaero) {
+    //   mass_2_vol[iaero] =
+    //       molecular_weight_rename[iaero] / aero_species(iaero).density;
+    // }
 
     // We do not use sz_factor in rename-mam4xx; however, rename-mam4 does.
     // We only computes sz_factor for validation proposes

@@ -82,13 +82,13 @@ jobs:
           -DCMAKE_INSTALL_PREFIX=`pwd`/install \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
           -DMAM4XX_HAERO_DIR=`pwd`/haero_install \
-          -DMAM4XX_ENABLE_COVERAGE=ON \
+          -DENABLE_COVERAGE=ON \
           -G "Unix Makefiles"
 
     - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
       run: |
         cd build
-        make -j
+        make
 
     - name: Installing Python 3
       uses: actions/setup-python@v4
@@ -116,6 +116,7 @@ jobs:
         make coverage
 
     - name: Uploading coverage report to codecov.io
+      if: ${{ (contains(matrix.os, 'ubuntu')) && (matrix.build-type == 'Debug') && (matrix.fp-precision == 'double') }}
       uses: codecov/codecov-action@v3
       with:
         fail_ci_if_error: true

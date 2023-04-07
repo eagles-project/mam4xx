@@ -45,7 +45,7 @@ TEST_CASE("test_compute_tendencies", "mam4_aging_process") {
   mam4::Tendencies tends(nlev);
 
   mam4::AeroConfig mam4_config;
-  mam4::NucleationProcess process(mam4_config);
+  mam4::AgingProcess process(mam4_config);
 
   const auto prog_qgas0 = progs.q_gas[0];
   const auto tend_qgas0 = tends.q_gas[0];

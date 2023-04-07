@@ -33,8 +33,9 @@ public:
   void init(const AeroConfig &aero_config,
             const Config &process_config = Config());
 
-  // In E3SM this is read in from an input file
-  static constexpr Real n_so4_monolayers_pcage = 8.0;
+  // In E3SM this is read in from an input file and would be 8
+  // In mam_refactor it is defined in phys_control.F90 as 3.
+  static constexpr Real n_so4_monolayers_pcage = 3.0;
   static constexpr Real dr_so4_monolayers_pcage =
       n_so4_monolayers_pcage * 4.76e-10;
 
@@ -268,14 +269,15 @@ void mam_pcarbon_aging_1subarea(
   //  budget)
 
   static constexpr int num_pcarbon_to_accum = 3;
-  static constexpr int num_cond_coag_to_accum = 2;
+  static constexpr int num_cond_coag_to_accum = 4;
 
   static constexpr int indx_aer_pcarbon_to_accum[num_pcarbon_to_accum] = {
       static_cast<int>(AeroId::POM), static_cast<int>(AeroId::BC),
       static_cast<int>(AeroId::MOM)};
 
   static constexpr int indx_aer_cond_coag_to_accum[num_cond_coag_to_accum] = {
-      static_cast<int>(AeroId::SOA), static_cast<int>(AeroId::SO4)};
+      static_cast<int>(AeroId::SOA), static_cast<int>(AeroId::SO4),
+      static_cast<int>(AeroId::NaCl), static_cast<int>(AeroId::DST)};
 
   Real qaer_cur_modes[AeroConfig::num_modes()];
   Real qaer_del_cond_modes[AeroConfig::num_modes()];
@@ -337,8 +339,9 @@ void mam_pcarbon_aging_1subarea(
   // number - transfer the aged fraction to accum mode
   // include this transfer change in the cond and/or coag change (for mass
   // budget)
-  transfer_cond_coag_mass_to_accum(nsrc, ndest, qnum_cur, qnum_del_cond,
-                                   qnum_del_coag);
+  transfer_aged_pcarbon_to_accum(nsrc, ndest, xferfrac_pcage, frac_cond,
+                                 frac_coag, qnum_cur, qnum_del_cond,
+                                 qnum_del_coag);
 }
 
 KOKKOS_INLINE_FUNCTION

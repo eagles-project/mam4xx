@@ -858,12 +858,11 @@ void mam_coag_aer_update(
                           [AeroConfig::max_agepair()]) {
 
   const int num_aer = AeroConfig::num_aerosol_ids();
-  const int num_mode = AeroConfig::num_modes();
   // --------------------------------------------------------------------
   // Initialize the array that will be passed onto aging
   // --------------------------------------------------------------------
   for (int ispec = 0; ispec < num_aer; ++ispec) {
-    for (int imode = 0; imode < num_mode; ++imode) {
+    for (int imode = 0; imode < AeroConfig::max_agepair(); ++imode) {
       qaer_del_coag_out[ispec][imode] = 0.0;
     }
   }
@@ -884,7 +883,7 @@ void mam_coag_aer_update(
   const Real bijqnumj2 = haero::max(0.0, ybetaij3[2] * qnum_tavg[npca]);
   Real decay_const = bijqnumj1 + bijqnumj2;
 
-  constexpr float epsilonx2 = std::numeric_limits<float>::epsilon() * 2.0;
+  constexpr Real epsilonx2 = std::numeric_limits<Real>::epsilon() * 2.0;
   Real decay_factor =
       deltat * decay_const; // calculate coag-induced changes only when this
                             // number is not ~= zero
