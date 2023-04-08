@@ -60,8 +60,8 @@ void modal_aero_bcscavcoef_get(
     // BAD CONSTANT
     Real scavimpvol, scavimpnum = zero;
     if (wetdiaratio >= 0.99 && wetdiaratio <= 1.01) {
-      scavimpvol = scavimptblvol[0][imode];
-      scavimpnum = scavimptblnum[0][imode];
+      scavimpvol = scavimptblvol[-nimptblgrow_mind][imode];
+      scavimpnum = scavimptblnum[-nimptblgrow_mind][imode];
     } else {
       Real xgrow = haero::log(wetdiaratio) / dlndg_nimptblgrow;
       // FIXME check Fortran to C++ indexing conversion
@@ -78,16 +78,19 @@ void modal_aero_bcscavcoef_get(
       }
       const Real dumfhi = xgrow - jgrow;
       const Real dumflo = one - dumfhi;
-      scavimpvol = dumflo * scavimptblvol[jgrow][imode] +
-                   dumfhi * scavimptblvol[jgrow + 1][imode];
-      scavimpnum = dumflo * scavimptblnum[jgrow][imode] +
-                   dumfhi * scavimptblnum[jgrow + 1][imode];
+      // Fortran to C++ index conversion 
+      // note that nimptblgrow_mind is negative (-7)
+      int jgrow_pp=jgrow-nimptblgrow_mind;
+      scavimpvol = dumflo * scavimptblvol[jgrow_pp][imode] +
+                   dumfhi * scavimptblvol[jgrow_pp + 1][imode];
+      scavimpnum = dumflo * scavimptblnum[jgrow_pp][imode] +
+                   dumfhi * scavimptblnum[jgrow_pp + 1][imode];
 
     } /// wetdiaratio
       // ! impaction scavenging removal amount for volume
     scavcoefvol_kk = haero::exp(scavimpvol);
     // ! impaction scavenging removal amount to number
-    scavcoefnum_kk = exp(scavimpnum);
+    scavcoefnum_kk = haero::exp(scavimpnum);
   } else {
     scavcoefvol_kk = zero;
     scavcoefnum_kk = zero;

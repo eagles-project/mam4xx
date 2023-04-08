@@ -24,9 +24,11 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
     Real scavimptblnum[aero_model_od::nimptblgrow_total]
                       [AeroConfig::num_modes()] = {{zero}};
 
+
+
     int count = 0;
     for (int i = 0; i < aero_model_od::nimptblgrow_total; ++i) {
-      for (int imode = 0; AeroConfig::num_modes() < count; ++imode)
+      for (int imode = 0; imode <AeroConfig::num_modes(); ++imode)
       {
         scavimptblvol[i][imode] = scavimptblvol_vector[count];
         scavimptblnum[i][imode] = scavimptblnum_vector[count];
@@ -46,6 +48,6 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
         scavimptblnum, scavcoefnum_kk, scavcoefvol_kk);
 
     output.set("scavcoefnum", std::vector(1, scavcoefnum_kk));
-    output.set("scavratevol", std::vector(1, scavcoefvol_kk));
+    output.set("scavcoefvol", std::vector(1, scavcoefvol_kk));
   });
 }
