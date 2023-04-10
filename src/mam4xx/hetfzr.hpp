@@ -13,6 +13,7 @@
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
+#include <mam4xx/wv_sat_methods.hpp>
 
 namespace mam4 {
 
@@ -241,7 +242,7 @@ void collkernel(const Real temperature, const Real pressure, const Real eswtr,
   constexpr Real Ktherm_bc = 4.2;    // Carbon
   constexpr Real Ktherm_dust = 0.72; // Clay
 
-  const Real tc = temperature - Constants::triple_pt_h2o;
+  const Real tc = temperature - Constants::freezing_pt_h2o;
 
   // air viscosity for tc<0,
   const Real viscos_air = get_air_viscosity(tc);
@@ -460,7 +461,7 @@ KOKKOS_INLINE_FUNCTION
 void calculate_hetfrz_immersion_nucleation(
     const Real deltat, const Real temperature,
     Real uncoated_aer_num[Hetfzr::hetfzr_aer_nspec],
-    const Real total_interstitial_aer_num,
+    const Real total_interstitial_aer_num[Hetfzr::hetfzr_aer_nspec],
     const Real total_cloudborne_aer_num[Hetfzr::hetfzr_aer_nspec],
     const Real sigma_iw, const Real eswtr, const Real vwice,
     const Real dim_theta[Hetfzr::pdf_n_theta],
@@ -674,6 +675,136 @@ void calculate_vars_for_pdf_imm(Real dim_theta[Hetfzr::pdf_n_theta],
          haero::sqrt(2.0 * Constants::pi)) /
         norm_theta_imm;
   }
+}
+
+KOKKOS_INLINE_FUNCTION
+void hetfrz_classnuc_calc(
+    const Real deltat, const Real temperature, const Real pressure,
+    const Real supersatice, Real fn[Hetfzr::hetfzr_aer_nspec], const Real r3lx,
+    const Real icnlx, Real &frzbcimm, Real &frzduimm, Real &frzbccnt,
+    Real &frzducnt, Real &frzbcdep, Real &frzdudep,
+    Real hetraer[Hetfzr::hetfzr_aer_nspec],
+    Real awcam[Hetfzr::hetfzr_aer_nspec], Real awfacm[Hetfzr::hetfzr_aer_nspec],
+    Real dstcoat[Hetfzr::hetfzr_aer_nspec],
+    Real total_aer_num[Hetfzr::hetfzr_aer_nspec],
+    Real coated_aer_num[Hetfzr::hetfzr_aer_nspec],
+    Real uncoated_aer_num[Hetfzr::hetfzr_aer_nspec],
+    Real total_interstitial_aer_num[Hetfzr::hetfzr_aer_nspec],
+    Real total_cloudborne_aer_num[Hetfzr::hetfzr_aer_nspec]) {
+
+  // *****************************************************************************
+  //                 PDF theta model
+  // *****************************************************************************
+  // some variables for PDF theta model
+  // immersion freezing
+  //
+  // With the original value of pdf_n_theta set to 101 the dust activation
+  // fraction between -15 and 0 C could be overestimated.  This problem was
+  // eliminated by increasing pdf_n_theta to 301.  To reduce the expense of
+  // computing the dust activation fraction the integral is only evaluated
+  // where dim_theta is non-zero.  This was determined to be between
+  // dim_theta index values of 53 through 113.  These loop bounds are
+  // hardcoded in the variables itheta_bin_beg and itheta_bin_end.
+  //
+
+  Real dim_theta[Hetfzr::pdf_n_theta];
+  Real pdf_imm_theta[Hetfzr::pdf_n_theta];
+
+  calculate_vars_for_pdf_imm(dim_theta, pdf_imm_theta);
+
+  // get saturation vapor pressures
+  const Real eswtr = wv_sat_methods::svp_water(temperature); // 0 for liquid
+  //const Real esice = wv_sat_methods::svp_ice(temperature);   // 1  for ice
+
+  const Real tc = temperature - Constants::freezing_pt_h2o;
+  const Real rhoice = 916.7 - 0.175 * tc - 5.e-4 * haero::square(tc);
+  const Real vwice = Constants::molec_weight_h2o * Hetfzr::amu / rhoice;
+  const Real sigma_iw = (28.5 + 0.25 * tc) * 1e-3;
+  const Real sigma_iv = (76.1 - 0.155 * tc + 28.5 + 0.25 * tc) * 1.0e-3;
+
+  // get mass mean radius
+  const Real r_bc = hetraer[0];
+  const Real r_dust_a1 = hetraer[1];
+  const Real r_dust_a3 = hetraer[2];
+
+  // calculate collision kernels as a function of environmental parameters and
+  // aerosol/droplet sizes
+  Real Kcoll_bc, Kcoll_dust_a1, Kcoll_dust_a3;
+  collkernel(temperature, pressure, eswtr, r3lx, r_bc, r_dust_a1, r_dust_a3,
+             Kcoll_bc, Kcoll_dust_a1, Kcoll_dust_a3);
+
+  // *****************************************************************************
+  //                take water activity into account
+  // *****************************************************************************
+  //   solute effect
+  Real aw[Hetfzr::hetfzr_aer_nspec] = {0.0};
+
+  // The heterogeneous ice freezing temperatures of all IN generally decrease
+  // with increasing total solute mole fraction. Therefore, the large solution
+  // concentration will cause the freezing point depression and the ice freezing
+  // temperatures of all IN will get close to the homogeneous ice freezing
+  // temperatures. Since we take into account water activity for three
+  // heterogeneous freezing modes(immersion, deposition, and contact), we
+  // utilize interstitial aerosols(not cloudborne aerosols) to calculate water
+  // activity. If the index of IN is 0, it means three freezing modes of this
+  // aerosol are depressed.
+
+  calculate_water_activity(total_interstitial_aer_num, awcam, awfacm, r3lx, aw);
+
+  // *****************************************************************************
+  //                immersion freezing begin
+  // *****************************************************************************
+
+  // critical germ size
+  constexpr Real bad_boltzmann = 1.38e-23; // (BAD CONSTANT)
+  const Real rgimm = 2.0 * vwice * sigma_iw /
+                     (bad_boltzmann * temperature * haero::log(supersatice));
+
+  // take solute effect into account
+  Real rgimm_bc = rgimm;
+  Real rgimm_dust_a1 = rgimm;
+  Real rgimm_dust_a3 = rgimm;
+
+  bool do_bc, do_dst1, do_dst3;
+  calculate_rgimm_and_determine_spec_flag(vwice, sigma_iw, temperature,
+                                          aw[Hetfzr::id_bc], supersatice,
+                                          rgimm_bc, do_bc);
+
+  calculate_rgimm_and_determine_spec_flag(vwice, sigma_iw, temperature,
+                                          aw[Hetfzr::id_dst1], supersatice,
+                                          rgimm_dust_a1, do_dst1);
+
+  calculate_rgimm_and_determine_spec_flag(vwice, sigma_iw, temperature,
+                                          aw[Hetfzr::id_dst3], supersatice,
+                                          rgimm_dust_a3, do_dst3);
+
+  calculate_hetfrz_immersion_nucleation(
+      deltat, temperature, uncoated_aer_num, total_interstitial_aer_num,
+      total_cloudborne_aer_num, sigma_iw, eswtr, vwice, dim_theta,
+      pdf_imm_theta, rgimm_bc, rgimm_dust_a1, rgimm_dust_a3, r_bc, r_dust_a1,
+      r_dust_a3, do_bc, do_dst1, do_dst3, frzbcimm, frzduimm);
+
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  //  Deposition nucleation
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  // critical germ size
+  // assume 98% RH in mixed-phase clouds (Korolev & Isaac, JAS 2006)
+  const Real rgdep = 2.0 * vwice * sigma_iv /
+                     (bad_boltzmann * temperature *
+                      haero::log(Hetfzr::rhwincloud * supersatice));
+
+  calculate_hetfrz_deposition_nucleation(
+      deltat, temperature, uncoated_aer_num, sigma_iv, eswtr, vwice, rgdep,
+      r_bc, r_dust_a1, r_dust_a3, do_bc, do_dst1, do_dst3, frzbcdep, frzdudep);
+
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // contact nucleation
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  calculate_hetfrz_contact_nucleation(
+      deltat, temperature, uncoated_aer_num, icnlx, sigma_iv, eswtr, rgimm,
+      r_bc, r_dust_a1, r_dust_a3, Kcoll_bc, Kcoll_dust_a1, Kcoll_dust_a3, do_bc,
+      do_dst1, do_dst3, frzbccnt, frzducnt);
 }
 
 } // namespace hetfzr
