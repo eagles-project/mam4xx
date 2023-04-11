@@ -55,11 +55,12 @@ jobs:
         submodules: recursive
 
     - name: Cloning Haero
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: eagles-project/haero
         submodules: recursive
         path: haero_src
+        ref: jeff-cohere/uviews
 
     - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
       run: |
