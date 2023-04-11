@@ -26,7 +26,7 @@ void calc_1_impact_rate(Ensemble *ensemble) {
     lunerr = int(input.get_array("lunerr")[0]);
     // const Real input.get_array("")[0]
 
-    aero_model_od::calc_1_impact_rate(dg0,         //  in
+    aero_model::calc_1_impact_rate(dg0,         //  in
                                       sigmag,      //  in
                                       rhoaero,     //  in
                                       temp,        //  in

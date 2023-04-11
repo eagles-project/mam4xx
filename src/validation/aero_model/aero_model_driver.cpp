@@ -3,7 +3,7 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <mam4xx/aero_model_od.hpp>
+#include <mam4xx/aero_model.hpp>
 
 #include <iostream>
 #include <skywalker.hpp>

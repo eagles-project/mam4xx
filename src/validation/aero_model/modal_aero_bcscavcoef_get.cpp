@@ -19,15 +19,15 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
     auto scavimptblvol_vector = input.get_array("scavimptblvol");
     auto scavimptblnum_vector = input.get_array("scavimptblnum");
 
-    Real scavimptblvol[aero_model_od::nimptblgrow_total]
+    Real scavimptblvol[aero_model::nimptblgrow_total]
                       [AeroConfig::num_modes()] = {{zero}};
-    Real scavimptblnum[aero_model_od::nimptblgrow_total]
+    Real scavimptblnum[aero_model::nimptblgrow_total]
                       [AeroConfig::num_modes()] = {{zero}};
 
 
 
     int count = 0;
-    for (int i = 0; i < aero_model_od::nimptblgrow_total; ++i) {
+    for (int i = 0; i < aero_model::nimptblgrow_total; ++i) {
       for (int imode = 0; imode <AeroConfig::num_modes(); ++imode)
       {
         scavimptblvol[i][imode] = scavimptblvol_vector[count];
@@ -43,7 +43,7 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
     Real scavcoefnum_kk = zero;
     Real scavcoefvol_kk = zero;
 
-    aero_model_od::modal_aero_bcscavcoef_get(
+    aero_model::modal_aero_bcscavcoef_get(
         imode, isprx_kk, dgn_awet_imode_kk, dgnum_amode[imode], scavimptblvol,
         scavimptblnum, scavcoefnum_kk, scavcoefvol_kk);
 

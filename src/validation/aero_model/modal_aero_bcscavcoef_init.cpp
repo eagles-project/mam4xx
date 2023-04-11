@@ -21,31 +21,31 @@ void modal_aero_bcscavcoef_init(Ensemble *ensemble) {
 
     Real zero = 0;
 
-    Real scavimptblnum[aero_model_od::nimptblgrow_total]
+    Real scavimptblnum[aero_model::nimptblgrow_total]
                       [AeroConfig::num_modes()] = {{zero}};
-    Real scavimptblvol[aero_model_od::nimptblgrow_total]
+    Real scavimptblvol[aero_model::nimptblgrow_total]
                       [AeroConfig::num_modes()] = {{zero}};
 
-    int lspectype_amode[aero_model_od::maxd_aspectype]
+    int lspectype_amode[aero_model::maxd_aspectype]
                        [AeroConfig::num_modes()] = {{0}};
 
     int count = 0;
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
-      for (int m = 0; m < aero_model_od::maxd_aspectype; ++m) {
+      for (int m = 0; m < aero_model::maxd_aspectype; ++m) {
         // Fortran to C++ indexing conversion
         lspectype_amode[m][imode] = lspectype_amode_1d[count] - 1;
         count += 1;
       }
     }
 
-    aero_model_od::modal_aero_bcscavcoef_init(
+    aero_model::modal_aero_bcscavcoef_init(
         dgnum_amode.data(), sigmag_amode.data(), specdens_amode.data(),
         lspectype_amode, scavimptblnum, scavimptblvol);
 
     std::vector<Real> values_scavimptblvol;
     std::vector<Real> values_scavimptblnum;
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
-      for (int m = 0; m < aero_model_od::nimptblgrow_total; ++m) {
+      for (int m = 0; m < aero_model::nimptblgrow_total; ++m) {
         values_scavimptblnum.push_back(scavimptblnum[m][imode]);
         values_scavimptblvol.push_back(scavimptblvol[m][imode]);
       }

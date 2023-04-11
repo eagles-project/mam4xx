@@ -10,7 +10,7 @@
 
 #include <haero/aero_process.hpp>
 #include <mam4xx/aero_config.hpp>
-#include <mam4xx/aero_model_od.hpp>
+#include <mam4xx/aero_model.hpp>
 #include <mam4xx/aging.hpp>
 #include <mam4xx/calcsize.hpp>
 #include <mam4xx/coagulation.hpp>

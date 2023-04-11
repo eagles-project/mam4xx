@@ -3,8 +3,8 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef MAM4XX_AERO_MODEL_OD_HPP
-#define MAM4XX_AERO_MODEL_OD_HPP
+#ifndef MAM4XX_AERO_MODEL_HPP
+#define MAM4XX_AERO_MODEL_HPP
 
 #include <ekat/util/ekat_math_utils.hpp>
 
@@ -18,7 +18,7 @@
 
 namespace mam4 {
 
-namespace aero_model_od {
+namespace aero_model {
 
 // BAD CONSTANT
 const Real dlndg_nimptblgrow = haero::log(1.25);
@@ -599,13 +599,13 @@ void modal_aero_bcscavcoef_init(
 
 } // modal_aero_bcscavcoef_init
 
-} // end namespace aero_model_od
+} // end namespace aero_model
 
-/// @class aero_model_od
-/// This class implements MAM4's aero_model_od parameterization.
+/// @class aero_model
+/// This class implements MAM4's aero_model parameterization.
 class AeroModelOD {
 public:
-  // aero_model_od-specific configuration
+  // aero_model-specific configuration
   struct Config {
     Config() {}
     Config(const Config &) = default;
@@ -618,8 +618,8 @@ private:
 
 public:
   // name--unique name of the process implemented by this class
-  const char *name() const { return "MAM4 aero_model_od"; }
-}; // end class aero_model_od
+  const char *name() const { return "MAM4 aero_model"; }
+}; // end class aero_model
 
 } // end namespace mam4
 
