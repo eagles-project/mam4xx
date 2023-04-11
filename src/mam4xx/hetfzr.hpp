@@ -907,20 +907,20 @@ void calculate_mass_mean_radius(
   const Real specdens_bc = aero_species(int(AeroId::BC)).density;
   const Real specdens_dust = aero_species(int(AeroId::DST)).density;
   // BC
-  if ((bcmac + bcmpc) * 1.0e-3 > aermc_min_threshold &
-      bc_num > aernum_min_threshold) {
+  if (((bcmac + bcmpc) * 1.0e-3 > aermc_min_threshold) &
+      (bc_num > aernum_min_threshold)) {
     hetraer[0] = get_aer_radius(specdens_bc, bcmac + bcmpc,
                                 bc_num * Hetfzr::num_cm3_to_m3);
   }
 
   // fine dust a1
-  if (dmac * 1e-3 > aermc_min_threshold & dst1_num > aernum_min_threshold) {
+  if ((dmac * 1e-3 > aermc_min_threshold) & (dst1_num > aernum_min_threshold)) {
     hetraer[1] =
         get_aer_radius(specdens_dust, dmac, dst1_num * Hetfzr::num_cm3_to_m3);
   }
 
   // coarse dust a3
-  if (dmc * 1e-3 > aermc_min_threshold and dst3_num > aernum_min_threshold) {
+  if ((dmc * 1e-3 > aermc_min_threshold) & (dst3_num > aernum_min_threshold)) {
     hetraer[2] =
         get_aer_radius(specdens_dust, dmc, dst3_num * Hetfzr::num_cm3_to_m3);
   }

@@ -50,8 +50,7 @@ TEST_CASE("get_latent_heat_vapor", "mam4_hetfzr") {
   };
 
   for (int i = 0; i < 11; ++i) {
-    REQUIRE(haero::abs(lh_test[i] - mam4::hetfzr::get_latent_heat_vapor(tc[i])) <
-            threshold_error);
+    REQUIRE(haero::abs(lh_test[i] - mam4::hetfzr::get_latent_heat_vapor(
+                                        tc[i])) < threshold_error);
   }
-
 }

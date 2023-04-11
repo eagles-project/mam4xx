@@ -228,10 +228,9 @@ public:
         ColumnView("num_act_aerosol_ice_nucle", num_levels);
     Kokkos::deep_copy(num_act_aerosol_ice_nucle, 0.0);
 
-    stratiform_cloud_fraction = 
-      ColumnView("stratiform_cloud_fraction", num_levels);
-      Kokkos::deep_copy(stratiform_cloud_fraction, 0.0);
-
+    stratiform_cloud_fraction =
+        ColumnView("stratiform_cloud_fraction", num_levels);
+    Kokkos::deep_copy(stratiform_cloud_fraction, 0.0);
   }
   Diagnostics() = default; // Careful! Only for creating placeholders in views
   Diagnostics(const Diagnostics &) = default;

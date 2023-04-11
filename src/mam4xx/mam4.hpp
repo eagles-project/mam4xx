@@ -20,7 +20,6 @@
 #include <mam4xx/nucleate_ice.hpp>
 #include <mam4xx/nucleation.hpp>
 #include <mam4xx/rename.hpp>
-#include <mam4xx/hetfzr.hpp>
 
 namespace mam4 {
 
