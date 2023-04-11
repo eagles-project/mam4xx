@@ -27,13 +27,13 @@ void calc_1_impact_rate(Ensemble *ensemble) {
     // const Real input.get_array("")[0]
 
     aero_model::calc_1_impact_rate(dg0,         //  in
-                                      sigmag,      //  in
-                                      rhoaero,     //  in
-                                      temp,        //  in
-                                      press,       //  in
-                                      scavratenum, // out
-                                      scavratevol, // out
-                                      lunerr);
+                                   sigmag,      //  in
+                                   rhoaero,     //  in
+                                   temp,        //  in
+                                   press,       //  in
+                                   scavratenum, // out
+                                   scavratevol, // out
+                                   lunerr);
 
     output.set("scavratenum", std::vector(1, scavratenum));
     output.set("scavratevol", std::vector(1, scavratevol));

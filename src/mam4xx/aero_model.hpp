@@ -78,9 +78,9 @@ void modal_aero_bcscavcoef_get(
       }
       const Real dumfhi = xgrow - jgrow;
       const Real dumflo = one - dumfhi;
-      // Fortran to C++ index conversion 
+      // Fortran to C++ index conversion
       // note that nimptblgrow_mind is negative (-7)
-      int jgrow_pp=jgrow-nimptblgrow_mind;
+      int jgrow_pp = jgrow - nimptblgrow_mind;
       scavimpvol = dumflo * scavimptblvol[jgrow_pp][imode] +
                    dumfhi * scavimptblvol[jgrow_pp + 1][imode];
       scavimpnum = dumflo * scavimptblnum[jgrow_pp][imode] +
@@ -320,7 +320,7 @@ void calc_impact_efficiency(const Real r_aer, const Real r_rain,
   // in different processes
   const Real zero = 0;
   const Real one = 1;
-  const Real one_third = one/Real(3); 
+  const Real one_third = one / Real(3);
   // BAD CONSTANT
   // ! ratio of water viscosity to air viscosity (from Slinn)
   const Real xmuwaterair = 60.0; // ! [fraction]
@@ -338,9 +338,9 @@ void calc_impact_efficiency(const Real r_aer, const Real r_rain,
   const Real stokes = vfall * taurelax / r_rain;
   const Real reynolds = r_rain * vfall / airkinvisc;
   const Real sqrtreynolds = haero::sqrt(reynolds);
-  const Real ebrown = 4. *
-                      (one + 0.4 * sqrtreynolds * haero::pow(schmidt, one_third)) /
-                      (reynolds * schmidt);
+  const Real ebrown =
+      4. * (one + 0.4 * sqrtreynolds * haero::pow(schmidt, one_third)) /
+      (reynolds * schmidt);
 
   //------------ calculate intercept effect ------------
   Real dum =
@@ -382,8 +382,9 @@ void calc_1_impact_rate(const Real dg0,     //  in
       6.02214e26; //   ! Avogadro's number ~ molecules/kmole
   const Real rgas_kmol =
       SHR_CONST_AVOGAD *
-      SHR_CONST_BOLTZ; //       ! Universal gas constant ~ J/K/kmole => ! Gas constant (J/K/mol)
-  const Real rgas = rgas_kmol * 1.e-3 *1.e7; //        
+      SHR_CONST_BOLTZ; //       ! Universal gas constant ~ J/K/kmole => ! Gas
+                       //       constant (J/K/mol)
+  const Real rgas = rgas_kmol * 1.e-3 * 1.e7; //
   const Real pi = haero::Constants::pi;
   const Real zero = 0;
   const Real two = 2;
@@ -463,17 +464,13 @@ void calc_1_impact_rate(const Real dg0,     //  in
   // ! air kinematic viscosity [cm^2/s]
   const Real airkinvisc = air_kinematic_viscosity(temp, rhoair);
 
-
   // compute rain drop number concentrations
   calc_rain_drop_conc(nr, rlo, dr, rhoair, precip,       // ! in
                       rrainsv, xnumrainsv, vfallrainsv); // ! out
 
-
-
   // compute aerosol concentrations
   calc_aer_conc_frac(na, xlo, dx, xg0, sx,             //  in
                      raerosv, fnumaerosv, fvolaerosv); // out
-
 
   // compute scavenging
 
@@ -501,7 +498,6 @@ void calc_1_impact_rate(const Real dg0,     //  in
                              freepath, rhoaero, rhoair, // & ! in
                              vfall, airkinvisc,         // & ! in
                              etotal);                   // out
-
 
       // rain droplet sweep out volume [cm3/cm3/s]
       const Real rainsweepout =
@@ -556,7 +552,7 @@ void modal_aero_bcscavcoef_init(
     // FIXME: can we get this aero density from mam4xx?
     const int ll = lspectype_amode[0][imode];
     const Real rhodryaero = specdens_amode[ll];
-    for (int jgrow = nimptblgrow_mind; jgrow <= nimptblgrow_maxd ; ++jgrow) {
+    for (int jgrow = nimptblgrow_mind; jgrow <= nimptblgrow_maxd; ++jgrow) {
       // ratio of diameter for wet/dry aerosols [fraction]
       const Real wetdiaratio = haero::exp(jgrow * dlndg_nimptblgrow);
       // aerosol diameter [m]

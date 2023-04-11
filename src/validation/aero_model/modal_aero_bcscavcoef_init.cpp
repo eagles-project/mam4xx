@@ -21,13 +21,13 @@ void modal_aero_bcscavcoef_init(Ensemble *ensemble) {
 
     Real zero = 0;
 
-    Real scavimptblnum[aero_model::nimptblgrow_total]
-                      [AeroConfig::num_modes()] = {{zero}};
-    Real scavimptblvol[aero_model::nimptblgrow_total]
-                      [AeroConfig::num_modes()] = {{zero}};
+    Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()] =
+        {{zero}};
+    Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()] =
+        {{zero}};
 
-    int lspectype_amode[aero_model::maxd_aspectype]
-                       [AeroConfig::num_modes()] = {{0}};
+    int lspectype_amode[aero_model::maxd_aspectype][AeroConfig::num_modes()] = {
+        {0}};
 
     int count = 0;
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {

@@ -231,8 +231,6 @@ void calc_aer_conc_frac(const int na, const Real xlo, const Real dx,
 
 } // calc_aer_conc_frac
 
-
-
 KOKKOS_INLINE_FUNCTION
 void calc_schmidt_number(const Real freepath, const Real r_aer,
                          const Real temp, //& ! in
@@ -241,86 +239,157 @@ void calc_schmidt_number(const Real freepath, const Real r_aer,
                          Real &schmidt, Real &taurelax) //! out
 {
 
-KOKKOS_INLINE_FUNCTION
-void calc_schmidt_number(const Real freepath, const Real r_aer,
-                         const Real temp, //& ! in
-                         const Real rhoaero, const Real rhoair,
-                         const Real airkinvisc,         // & ! in
-                         Real &schmidt, Real &taurelax) //! out
-{
-  /*-----------------------------------------------------------------
-  ! calculate Schmidt number
-  ! also output relaxation time for Stokes number
-  !
-  ! note that there is a similar calculation of Schmidt number in dry
-  ! deposition (in modal_aero_drydep.F90) but the calculation of dumfuchs (or
-  ! slip_correction_factor) looks differently
-  !-----------------------------------------------------------------*/
-  // BAD CONSTANT
-  // FIXME get values of boltz_cgs
-
-  // real(r8), intent(in)  :: freepath      ! molecular freepath [cm]
-  // real(r8), intent(in)  :: r_aer         ! aerosol radius [cm]
-  // real(r8), intent(in)  :: temp          ! temperature [K]
-  // real(r8), intent(in)  :: rhoaero       ! density of aerosol particles
-  // [g/cm^3] real(r8), intent(in)  :: rhoair        ! air mass density [g/cm^3]
-  // real(r8), intent(in)  :: airkinvisc    ! air kinematic viscosity [cm2/s]
-
-  // real(r8), intent(out) :: schmidt       ! Schmidt number [unitless]
-  // real(r8), intent(out) :: taurelax      ! relaxation time for Stokes number
-  // [s]
-
-  // BAD CONSTANT
-  //  GET this constant from haero.
-  const Real boltz = 1.38065e-23;      //  ! Boltzmann's constant ~ J/K/molecule
-  const Real boltz_cgs = boltz * 1.e7; // erg/K
-
-  // working variables [unitless]
-  const Real dum = freepath / r_aer;
-  // ! slip correction factor [unitless]
-  const Real dumfuchs = 1. + 1.246 * dum + 0.42 * dum * haero::exp(-0.87 / dum);
-  taurelax =
-      2. * rhoaero * r_aer * r_aer * dumfuchs / (9. * rhoair * airkinvisc);
-
-  // single-particle aerosol mass [g]
-  const Real aeromass =
-      4. * haero::Constants::pi * r_aer * r_aer * r_aer * rhoaero / 3.; // ![g]
-  // aerosol diffusivity [cm^2/s]
-  const Real aerodiffus = boltz_cgs * temp * taurelax / aeromass; //  ! [cm^2/s]
-  schmidt = airkinvisc / aerodiffus;
-}
-
-KOKKOS_INLINE_FUNCTION
-void mmr_gas2vmr_gas(const Real mbar, // in
-              const Real mmr_gas[AeroConfig::num_gas_ids()], // in
-              Real &vmr_gas[AeroConfig::num_gas_ids()]) // out
-{
-  // mbar   : mean wet atmospheric mass [amu or g/mol]
-  // mmr_gas: gas mass mixing ratio [kg/kg]
-  // vmr_gas: volume mixing ratio [mol/mol]
-
-
-  Real vmr_gas = 0.0;
-
-  for (int i = 0; i < AeroConfig::num_gas_ids(); ++i)
+  KOKKOS_INLINE_FUNCTION
+  void calc_schmidt_number(const Real freepath, const Real r_aer,
+                           const Real temp, //& ! in
+                           const Real rhoaero, const Real rhoair,
+                           const Real airkinvisc,         // & ! in
+                           Real &schmidt, Real &taurelax) //! out
   {
-    if (adv_mass(i) != 0.0)
-    {
-      vmr[i] = mbar(:) * mmr_gas(i) / adv_mass(i);
+    /*-----------------------------------------------------------------
+    ! calculate Schmidt number
+    ! also output relaxation time for Stokes number
+    !
+    ! note that there is a similar calculation of Schmidt number in dry
+    ! deposition (in modal_aero_drydep.F90) but the calculation of dumfuchs (or
+    ! slip_correction_factor) looks differently
+    !-----------------------------------------------------------------*/
+    // BAD CONSTANT
+    // FIXME get values of boltz_cgs
+
+    // real(r8), intent(in)  :: freepath      ! molecular freepath [cm]
+    // real(r8), intent(in)  :: r_aer         ! aerosol radius [cm]
+    // real(r8), intent(in)  :: temp          ! temperature [K]
+    // real(r8), intent(in)  :: rhoaero       ! density of aerosol particles
+    // [g/cm^3] real(r8), intent(in)  :: rhoair        ! air mass density
+    // [g/cm^3] real(r8), intent(in)  :: airkinvisc    ! air kinematic viscosity
+    // [cm2/s]
+
+    // real(r8), intent(out) :: schmidt       ! Schmidt number [unitless]
+    // real(r8), intent(out) :: taurelax      ! relaxation time for Stokes
+    // number [s]
+
+    // BAD CONSTANT
+    //  GET this constant from haero.
+    const Real boltz = 1.38065e-23; //  ! Boltzmann's constant ~ J/K/molecule
+    const Real boltz_cgs = boltz * 1.e7; // erg/K
+
+    // working variables [unitless]
+    const Real dum = freepath / r_aer;
+    // ! slip correction factor [unitless]
+    const Real dumfuchs =
+        1. + 1.246 * dum + 0.42 * dum * haero::exp(-0.87 / dum);
+    taurelax =
+        2. * rhoaero * r_aer * r_aer * dumfuchs / (9. * rhoair * airkinvisc);
+
+    // single-particle aerosol mass [g]
+    const Real aeromass = 4. * haero::Constants::pi * r_aer * r_aer * r_aer *
+                          rhoaero / 3.; // ![g]
+    // aerosol diffusivity [cm^2/s]
+    const Real aerodiffus =
+        boltz_cgs * temp * taurelax / aeromass; //  ! [cm^2/s]
+    schmidt = airkinvisc / aerodiffus;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void mmr_gas2vmr_gas(const Real mbar,                               // in
+                       const Real mmr_gas[AeroConfig::num_gas_ids()], // in
+                       Real &vmr_gas[AeroConfig::num_gas_ids()])      // out
+  {
+    // mbar   : mean wet atmospheric mass [amu or g/mol]
+    // mmr_gas: gas mass mixing ratio [kg/kg]
+    // vmr_gas: volume mixing ratio [mol/mol]
+
+    Real vmr_gas = 0.0;
+
+    for (int i = 0; i < AeroConfig::num_gas_ids(); ++i) {
+      if (adv_mass(i) != 0.0) {
+        vmr[i] = mbar( :) * mmr_gas(i) / adv_mass(i);
+      }
     }
   }
-}
 
-KOKKOS_INLINE_FUNCTION
-void vmr2qqcw(vmr, mbar, // in
-              fldcw_all) // out
-{
-  // mbar(:,:) ! mean wet atmospheric mass [g/mol]
-  // vmr(:,:,:) ! volume mixing ratios [mol/mol]
-  // fldcw_all(:,:,:) ! mass mixing ratio [kg/kg]
+  KOKKOS_INLINE_FUNCTION
+  void vmr2qqcw(vmr, mbar, // in
+                fldcw_all) // out
+  {
+    // mbar(:,:) ! mean wet atmospheric mass [g/mol]
+    // vmr(:,:,:) ! volume mixing ratios [mol/mol]
+    // fldcw_all(:,:,:) ! mass mixing ratio [kg/kg]
 
+    //   fldcw_all(:,:,:) = 0.0_r8
+
+    //   do mm = 1,gas_pcnst
+    //      if( adv_mass(mm) /= 0._r8) then
+    //         do kk = 1,pver
+    //            fldcw_all(:,kk,mm) = adv_mass(mm) * vmr(:,kk,mm) / mbar(:,kk)
+    //         enddo
+    //      endif
+    //   enddo
+  }
+
+  // !=============================================================================
+  // subroutine qqcw2vmr(vmr, mbar, fldcw_all)
+  //   !-----------------------------------------------------------------
+  //   !   ... Xfrom from mass to volume mixing ratio
+  //   ! C++ porting: this subroutine is similar to the subroutine mmr2vmr
+  //   ! in mozart/mo_mass_xforms.F90. Maybe can merge them
+  //   ! Note that the subroutine needs adv_mass from module chem_mod,
+  //   ! but the values are assigned from module mo_sim_dat
+  //   !-----------------------------------------------------------------
+
+  //   implicit none
+
+  //   !-----------------------------------------------------------------
+  //   !   ... Dummy args
+  //   !-----------------------------------------------------------------
+  //   real(r8), intent(in)    :: mbar(:,:) ! mean wet atmospheric mass [g/mol]
+  //   real(r8), intent(in)    :: fldcw_all(:,:,:) ! mass mixing ratio [kg/kg]
+  //   real(r8), intent(out)   :: vmr(:,:,:) ! volume mixing ratios [mol/mol]
+
+  //   !-----------------------------------------------------------------
+  //   !   ... Local variables
+  //   !-----------------------------------------------------------------
+  //   integer  :: kk, mm
+
+  //   vmr(:,:,:) = 0.0_r8
+  //   do mm=1,gas_pcnst
+  //      if( adv_mass(mm) /= 0._r8 ) then
+  //         do kk=1,pver
+  //            vmr(:,kk,mm) = mbar(:,kk) * fldcw_all(:,kk,mm) / adv_mass(mm)
+  //         enddo
+  //      endif
+  //   enddo
+  // end subroutine qqcw2vmr
+
+  // !=============================================================================
+  // !=============================================================================
+  // subroutine vmr2qqcw( vmr, mbar, fldcw_all )
+  //   !-----------------------------------------------------------------
+  //   !   ... Xfrom from volume to mass mixing ratio
+  //   ! C++ porting: this subroutine is similar to the subroutine vmr2mmr
+  //   ! in mozart/mo_mass_xforms.F90. Maybe can merge them
+  //   ! Note that the subroutine needs adv_mass from module chem_mod,
+  //   ! but the values are assigned from module mo_sim_dat
+  //   !-----------------------------------------------------------------
+
+  //   implicit none
+
+  //   !-----------------------------------------------------------------
+  //   !   ... Dummy args
+  //   !-----------------------------------------------------------------
+  //   real(r8), intent(in)    :: mbar(:,:) ! mean wet atmospheric mass [g/mol]
+  //   real(r8), intent(in)    :: vmr(:,:,:) ! volume mixing ratios [mol/mol]
+  //   real(r8), intent(out)   :: fldcw_all(:,:,:) ! mass mixing ratio [kg/kg]
+
+  //   !-----------------------------------------------------------------
+  //   !   ... Local variables
+  //   !-----------------------------------------------------------------
+  //   integer  :: kk, mm
+  //   !-----------------------------------------------------------------
+  //   !   ... The non-group species
+  //   !-----------------------------------------------------------------
   //   fldcw_all(:,:,:) = 0.0_r8
-
   //   do mm = 1,gas_pcnst
   //      if( adv_mass(mm) /= 0._r8) then
   //         do kk = 1,pver
@@ -329,383 +398,312 @@ void vmr2qqcw(vmr, mbar, // in
   //      endif
   //   enddo
 
-}
+  // end subroutine vmr2qqcw
 
-// !=============================================================================
-// subroutine qqcw2vmr(vmr, mbar, fldcw_all)
-//   !-----------------------------------------------------------------
-//   !   ... Xfrom from mass to volume mixing ratio
-//   ! C++ porting: this subroutine is similar to the subroutine mmr2vmr
-//   ! in mozart/mo_mass_xforms.F90. Maybe can merge them
-//   ! Note that the subroutine needs adv_mass from module chem_mod,
-//   ! but the values are assigned from module mo_sim_dat
-//   !-----------------------------------------------------------------
+  KOKKOS_INLINE_FUNCTION
+  void calc_impact_efficiency(const Real r_aer, const Real r_rain,
+                              const Real temp, //   & ! in
+                              const Real freepath, const Real rhoaero,
+                              const Real rhoair,                       // & ! in
+                              const Real vfall, const Real airkinvisc, // & ! in
+                              Real &etotal) {
 
-//   implicit none
+    /*-----------------------------------------------------------------
+    ! calculate aerosol-collection efficiency for a given radius of rain and
+    aerosol particles
+    !-----------------------------------------------------------------*/
+    // real(r8), intent(in)  :: r_aer         ! aerosol radius [cm]
+    // real(r8), intent(in)  :: r_rain        ! rain radius [cm]
+    // real(r8), intent(in)  :: temp          ! temperature [K]
+    // real(r8), intent(in)  :: freepath      ! molecular freepath [cm]
+    // real(r8), intent(in)  :: rhoaero       ! density of aerosol particles
+    // [g/cm^3] real(r8), intent(in)  :: rhoair        ! air mass density
+    // [g/cm^3] real(r8), intent(in)  :: airkinvisc    ! air kinematic viscosity
+    // [cm^2/s] real(r8), intent(in)  :: vfall         ! rain droplet falling
+    // speed [cm/s] real(r8), intent(out) :: etotal        ! efficiency of total
+    // effects [fraction]
 
-//   !-----------------------------------------------------------------
-//   !   ... Dummy args
-//   !-----------------------------------------------------------------
-//   real(r8), intent(in)    :: mbar(:,:) ! mean wet atmospheric mass [g/mol]
-//   real(r8), intent(in)    :: fldcw_all(:,:,:) ! mass mixing ratio [kg/kg]
-//   real(r8), intent(out)   :: vmr(:,:,:) ! volume mixing ratios [mol/mol]
+    // ! local variables
+    // real(r8)  :: chi
+    // real(r8)  :: dum, sstar   ! working variables [unitless]
+    // real(r8)  :: taurelax     ! Stokes number relaxation time [s]
+    // real(r8)  :: schmidt      ! Schmidt number [unitless]
+    // real(r8)  :: stokes       ! Stokes number [unitless]
+    // real(r8)  :: reynolds     ! Raynold number [unitless]
+    // real(r8)  :: sqrtreynolds ! sqrt of Raynold number [unitless]
+    // real(r8)  :: ebrown, eintercept, eimpact ! efficiency of
+    // aerosol-collection in different processes
+    const Real zero = 0;
+    const Real one = 1;
+    // BAD CONSTANT
+    // ! ratio of water viscosity to air viscosity (from Slinn)
+    const Real xmuwaterair = 60.0; // ! [fraction]
+    // ! ratio of aerosol and rain radius [fraction]
+    const Real chi = r_aer / r_rain;
+    // ---------- calcualte Brown effect ------------
 
-//   !-----------------------------------------------------------------
-//   !   ... Local variables
-//   !-----------------------------------------------------------------
-//   integer  :: kk, mm
+    Real schmidt = zero;
+    Real taurelax = zero;
 
-//   vmr(:,:,:) = 0.0_r8
-//   do mm=1,gas_pcnst
-//      if( adv_mass(mm) /= 0._r8 ) then
-//         do kk=1,pver
-//            vmr(:,kk,mm) = mbar(:,kk) * fldcw_all(:,kk,mm) / adv_mass(mm)
-//         enddo
-//      endif
-//   enddo
-// end subroutine qqcw2vmr
+    // ! calculate unitless numbers
+    calc_schmidt_number(freepath, r_aer, temp,       //       & ! in
+                        rhoaero, rhoair, airkinvisc, //   & ! in
+                        schmidt, taurelax);          // ! out
 
+    const Real stokes = vfall * taurelax / r_rain;
+    const Real reynolds = r_rain * vfall / airkinvisc;
+    const Real sqrtreynolds = haero::sqrt(reynolds);
+    const Real ebrown =
+        4. * (one + 0.4 * sqrtreynolds * haero::pow(schmidt, 1 / 3)) /
+        (reynolds * schmidt);
 
-// !=============================================================================
-// !=============================================================================
-// subroutine vmr2qqcw( vmr, mbar, fldcw_all )
-//   !-----------------------------------------------------------------
-//   !   ... Xfrom from volume to mass mixing ratio
-//   ! C++ porting: this subroutine is similar to the subroutine vmr2mmr
-//   ! in mozart/mo_mass_xforms.F90. Maybe can merge them
-//   ! Note that the subroutine needs adv_mass from module chem_mod,
-//   ! but the values are assigned from module mo_sim_dat
-//   !-----------------------------------------------------------------
+    //------------ calculate intercept effect ------------
+    Real dum =
+        (one + 2. * xmuwaterair * chi) / (one + xmuwaterair / sqrtreynolds);
+    const Real eintercept = 4. * chi * (chi + dum);
 
-//   implicit none
+    // ! ------------ calculate impact effect ------------
+    dum = haero::log(one + reynolds);
+    const Real sstar = (1.2 + dum / 12.) / (one + dum);
+    Real eimpact = zero;
+    if (stokes > sstar) {
+      dum = stokes - sstar;
+      eimpact = haero::pow(dum / (dum + 0.6666667), 1.5);
+    }
 
-//   !-----------------------------------------------------------------
-//   !   ... Dummy args
-//   !-----------------------------------------------------------------
-//   real(r8), intent(in)    :: mbar(:,:) ! mean wet atmospheric mass [g/mol]
-//   real(r8), intent(in)    :: vmr(:,:,:) ! volume mixing ratios [mol/mol]
-//   real(r8), intent(out)   :: fldcw_all(:,:,:) ! mass mixing ratio [kg/kg]
+    // ! ------------ calculate total effects ------------
+    etotal = ebrown + eintercept + eimpact;
+    etotal = haero::min(etotal, one);
+  } // calc_impact_efficiency
 
-//   !-----------------------------------------------------------------
-//   !   ... Local variables
-//   !-----------------------------------------------------------------
-//   integer  :: kk, mm
-//   !-----------------------------------------------------------------
-//   !   ... The non-group species
-//   !-----------------------------------------------------------------
-//   fldcw_all(:,:,:) = 0.0_r8
-//   do mm = 1,gas_pcnst
-//      if( adv_mass(mm) /= 0._r8) then
-//         do kk = 1,pver
-//            fldcw_all(:,kk,mm) = adv_mass(mm) * vmr(:,kk,mm) / mbar(:,kk)
-//         enddo
-//      endif
-//   enddo
+  /*=====================================================================*/
+  KOKKOS_INLINE_FUNCTION
+  void calc_1_impact_rate(const Real dg0,     //  in
+                          const Real sigmag,  //  in
+                          const Real rhoaero, //  in
+                          const Real temp,    //  in
+                          const Real press,   //  in
+                          Real &scavratenum,  // out
+                          Real &scavratevol,  // out
+                          int &lunerr)        // out
 
-// end subroutine vmr2qqcw
+  {
+    // this subroutine computes a single impaction scavenging rate
+    //  for precipitation rate of 1 mm/h
+    // FIXME: look for this constant at haero::Constants
+    const Real SHR_CONST_BOLTZ =
+        1.38065e-23; //  ! Boltzmann's constant ~ J/K/molecule
+    const Real SHR_CONST_AVOGAD =
+        6.02214e26; //   ! Avogadro's number ~ molecules/kmole
+    const Real rgas_kmol =
+        SHR_CONST_AVOGAD *
+        SHR_CONST_BOLTZ; //       ! Universal gas constant ~ J/K/kmole
+    const Real rgas = rgas_kmol * 1.e-3; //        ! Gas constant (J/K/mol)
+    const Real pi = haero::Constants::pi;
+    const Real zero = 0;
+    const Real two = 2;
 
-KOKKOS_INLINE_FUNCTION
-void calc_impact_efficiency(const Real r_aer, const Real r_rain,
-                            const Real temp, //   & ! in
-                            const Real freepath, const Real rhoaero,
-                            const Real rhoair,                       // & ! in
-                            const Real vfall, const Real airkinvisc, // & ! in
-                            Real &etotal) {
+    //   function parameters
+    // real(r8), intent(in)  :: dg0         ! geometric mean diameter of aerosol
+    // [cm] real(r8), intent(in)  :: sigmag      ! geometric standard deviation
+    // of size distribution real(r8), intent(in)  :: rhoaero     ! aerosol
+    // density [g/cm^3] real(r8), intent(in)  :: temp        ! temperature [K]
+    // real(r8), intent(in)  :: press       ! pressure [dyne/cm^2] real(r8),
+    // intent(out) :: scavratenum, scavratevol  ! scavenging rate for aerosol
+    // number and volume [1/hour] integer,  intent(out) :: lunerr      ! logical
+    // unit for error message
 
-  /*-----------------------------------------------------------------
-  ! calculate aerosol-collection efficiency for a given radius of rain and
-  aerosol particles
-  !-----------------------------------------------------------------*/
-  // real(r8), intent(in)  :: r_aer         ! aerosol radius [cm]
-  // real(r8), intent(in)  :: r_rain        ! rain radius [cm]
-  // real(r8), intent(in)  :: temp          ! temperature [K]
-  // real(r8), intent(in)  :: freepath      ! molecular freepath [cm]
-  // real(r8), intent(in)  :: rhoaero       ! density of aerosol particles
-  // [g/cm^3] real(r8), intent(in)  :: rhoair        ! air mass density [g/cm^3]
-  // real(r8), intent(in)  :: airkinvisc    ! air kinematic viscosity [cm^2/s]
-  // real(r8), intent(in)  :: vfall         ! rain droplet falling speed [cm/s]
-  // real(r8), intent(out) :: etotal        ! efficiency of total effects
-  // [fraction]
+    // local variables
+    Real rrainsv[nrainsvmax] = {zero};    // rain radius for each bin [cm]
+    Real xnumrainsv[nrainsvmax] = {zero}; // rain number for each bin [#/cm3]
+    Real vfallrainsv[nrainsvmax] = {
+        zero}; // rain falling velocity for each bin [cm/s]
 
-  // ! local variables
-  // real(r8)  :: chi
-  // real(r8)  :: dum, sstar   ! working variables [unitless]
-  // real(r8)  :: taurelax     ! Stokes number relaxation time [s]
-  // real(r8)  :: schmidt      ! Schmidt number [unitless]
-  // real(r8)  :: stokes       ! Stokes number [unitless]
-  // real(r8)  :: reynolds     ! Raynold number [unitless]
-  // real(r8)  :: sqrtreynolds ! sqrt of Raynold number [unitless]
-  // real(r8)  :: ebrown, eintercept, eimpact ! efficiency of aerosol-collection
-  // in different processes
-  const Real zero = 0;
-  const Real one = 1;
-  // BAD CONSTANT
-  // ! ratio of water viscosity to air viscosity (from Slinn)
-  const Real xmuwaterair = 60.0; // ! [fraction]
-  // ! ratio of aerosol and rain radius [fraction]
-  const Real chi = r_aer / r_rain;
-  // ---------- calcualte Brown effect ------------
+    Real raerosv[naerosvmax] = {
+        zero}; // aerosol particle radius in each bin [cm]
+    Real fnumaerosv[naerosvmax] = {
+        zero}; // fraction of total number in the bin [fraction]
+    Real fvolaerosv[naerosvmax] = {
+        zero}; // fraction of total volume in the bin [fraction]
 
-  Real schmidt = zero;
-  Real taurelax = zero;
+    // this subroutine is calculated for a fix rainrate of 1 mm/hr
+    // precipitation rate, fix as 1 mm/hr in this subroutine [cm/s]
+    const Real precip = Real(1.0) / Real(36000.); //  1 mm/hr in cm/s
 
-  // ! calculate unitless numbers
-  calc_schmidt_number(freepath, r_aer, temp,       //       & ! in
-                      rhoaero, rhoair, airkinvisc, //   & ! in
-                      schmidt, taurelax);          // ! out
+    // set the iteration radius for rain droplet
+    // rain droplet bin information [cm]
+    const Real rlo = .005;
+    const Real rhi = .250;
+    const Real dr = 0.005;
+    // Nearest whole number: nint
+    // FIXME: find this function in c++
+    // number of rain bins
+    const int nr = Real(1) + int((rhi - rlo) / dr);
 
-  const Real stokes = vfall * taurelax / r_rain;
-  const Real reynolds = r_rain * vfall / airkinvisc;
-  const Real sqrtreynolds = haero::sqrt(reynolds);
-  const Real ebrown = 4. *
-                      (one + 0.4 * sqrtreynolds * haero::pow(schmidt, 1 / 3)) /
-                      (reynolds * schmidt);
+    if (nr > nrainsvmax) {
+      printf("subr. calc_1_impact_rate -- nr > nrainsvmax \n ");
+      return;
+    }
 
-  //------------ calculate intercept effect ------------
-  Real dum =
-      (one + 2. * xmuwaterair * chi) / (one + xmuwaterair / sqrtreynolds);
-  const Real eintercept = 4. * chi * (chi + dum);
+    // aerosol modal information
+    // aerosol bin information
+    const Real ag0 = dg0 / two; // mean radius of aerosol
+    // standard deviation (log-normal distribution)
+    const Real sx = haero::log(sigmag);
+    // log(mean radius) (log-normal distribution)
+    const Real xg0 = haero::log(ag0);
+    const Real xg3 = xg0 + Real(3.) * sx * sx; // mean + 3*std^2
 
-  // ! ------------ calculate impact effect ------------
-  dum = haero::log(one + reynolds);
-  const Real sstar = (1.2 + dum / 12.) / (one + dum);
-  Real eimpact = zero;
-  if (stokes > sstar) {
-    dum = stokes - sstar;
-    eimpact = haero::pow(dum / (dum + 0.6666667), 1.5);
-  }
+    // set the iteration radius for aerosol particles
+    const Real dx = haero::max(0.2 * sx, 0.01);
+    const Real xlo = xg3 - haero::max(4. * sx, 2. * dx);
+    const Real xhi = xg3 + haero::max(4. * sx, 2. * dx);
+    // Nearest whole number: nint
+    // FIXME: find this function in c++
+    const int na = 1 + int((xhi - xlo) / dx);
 
-  // ! ------------ calculate total effects ------------
-  etotal = ebrown + eintercept + eimpact;
-  etotal = haero::min(etotal, one);
-} // calc_impact_efficiency
+    if (na > naerosvmax) {
+      printf("subr. calc_1_impact_rate -- na > naerosvmax \n ");
+      return;
+    }
 
-/*=====================================================================*/
-KOKKOS_INLINE_FUNCTION
-void calc_1_impact_rate(const Real dg0,     //  in
-                        const Real sigmag,  //  in
-                        const Real rhoaero, //  in
-                        const Real temp,    //  in
-                        const Real press,   //  in
-                        Real &scavratenum,  // out
-                        Real &scavratevol,  // out
-                        int &lunerr)        // out
+    // air molar density [dyne/cm^2/erg*mol = mol/cm^3]
+    // FIXME: look for a function call to compute density in mam4xx
+    const Real cair = press / (rgas * temp);
+    // air mass density [g/cm^3]
+    // BAD CONSTANT
+    const Real rhoair = 28.966 * cair;
+    // !   molecular freepath [cm]
+    // BAD CONSTANT
+    const Real freepath = 2.8052e-10 / cair;
+    // ! air kinematic viscosity [cm^2/s]
+    const Real airkinvisc = air_kinematic_viscosity(temp, rhoair);
 
-{
-  // this subroutine computes a single impaction scavenging rate
-  //  for precipitation rate of 1 mm/h
-  // FIXME: look for this constant at haero::Constants
-  const Real SHR_CONST_BOLTZ =
-      1.38065e-23; //  ! Boltzmann's constant ~ J/K/molecule
-  const Real SHR_CONST_AVOGAD =
-      6.02214e26; //   ! Avogadro's number ~ molecules/kmole
-  const Real rgas_kmol =
-      SHR_CONST_AVOGAD *
-      SHR_CONST_BOLTZ; //       ! Universal gas constant ~ J/K/kmole
-  const Real rgas = rgas_kmol * 1.e-3; //        ! Gas constant (J/K/mol)
-  const Real pi = haero::Constants::pi;
-  const Real zero = 0;
-  const Real two = 2;
+    // compute rain drop number concentrations
+    calc_rain_drop_conc(nr, rlo, dr, rhoair, precip,       // ! in
+                        rrainsv, xnumrainsv, vfallrainsv); // ! out
 
-  //   function parameters
-  // real(r8), intent(in)  :: dg0         ! geometric mean diameter of aerosol
-  // [cm] real(r8), intent(in)  :: sigmag      ! geometric standard deviation of
-  // size distribution real(r8), intent(in)  :: rhoaero     ! aerosol density
-  // [g/cm^3] real(r8), intent(in)  :: temp        ! temperature [K] real(r8),
-  // intent(in)  :: press       ! pressure [dyne/cm^2] real(r8), intent(out) ::
-  // scavratenum, scavratevol  ! scavenging rate for aerosol number and volume
-  // [1/hour] integer,  intent(out) :: lunerr      ! logical unit for error
-  // message
+    // compute aerosol concentrations
 
-  // local variables
-  Real rrainsv[nrainsvmax] = {zero};    // rain radius for each bin [cm]
-  Real xnumrainsv[nrainsvmax] = {zero}; // rain number for each bin [#/cm3]
-  Real vfallrainsv[nrainsvmax] = {
-      zero}; // rain falling velocity for each bin [cm/s]
+    calc_aer_conc_frac(na, xlo, dx, xg0, sx,             //  in
+                       raerosv, fnumaerosv, fvolaerosv); // out
 
-  Real raerosv[naerosvmax] = {zero}; // aerosol particle radius in each bin [cm]
-  Real fnumaerosv[naerosvmax] = {
-      zero}; // fraction of total number in the bin [fraction]
-  Real fvolaerosv[naerosvmax] = {
-      zero}; // fraction of total volume in the bin [fraction]
+    // compute scavenging
 
-  // this subroutine is calculated for a fix rainrate of 1 mm/hr
-  // precipitation rate, fix as 1 mm/hr in this subroutine [cm/s]
-  const Real precip = Real(1.0) / Real(36000.); //  1 mm/hr in cm/s
+    Real scavsumnum = zero; // ! scavenging rate of aerosol number, "*bb" is for
+                            // each rain droplet radius bin [1/s]
+    Real scavsumvol = zero; //! scavenging rate of aerosol volume, "*bb" is for
+                            //! each rain droplet radius bin [1/s]
 
-  // set the iteration radius for rain droplet
-  // rain droplet bin information [cm]
-  const Real rlo = .005;
-  const Real rhi = .250;
-  const Real dr = 0.005;
-  // Nearest whole number: nint
-  // FIXME: find this function in c++
-  // number of rain bins
-  const int nr = Real(1) + int((rhi - rlo) / dr);
-
-  if (nr > nrainsvmax) {
-    printf("subr. calc_1_impact_rate -- nr > nrainsvmax \n ");
-    return;
-  }
-
-  // aerosol modal information
-  // aerosol bin information
-  const Real ag0 = dg0 / two; // mean radius of aerosol
-  // standard deviation (log-normal distribution)
-  const Real sx = haero::log(sigmag);
-  // log(mean radius) (log-normal distribution)
-  const Real xg0 = haero::log(ag0);
-  const Real xg3 = xg0 + Real(3.) * sx * sx; // mean + 3*std^2
-
-  // set the iteration radius for aerosol particles
-  const Real dx = haero::max(0.2 * sx, 0.01);
-  const Real xlo = xg3 - haero::max(4. * sx, 2. * dx);
-  const Real xhi = xg3 + haero::max(4. * sx, 2. * dx);
-  // Nearest whole number: nint
-  // FIXME: find this function in c++
-  const int na = 1 + int((xhi - xlo) / dx);
-
-  if (na > naerosvmax) {
-    printf("subr. calc_1_impact_rate -- na > naerosvmax \n ");
-    return;
-  }
-
-  // air molar density [dyne/cm^2/erg*mol = mol/cm^3]
-  // FIXME: look for a function call to compute density in mam4xx
-  const Real cair = press / (rgas * temp);
-  // air mass density [g/cm^3]
-  // BAD CONSTANT
-  const Real rhoair = 28.966 * cair;
-  // !   molecular freepath [cm]
-  // BAD CONSTANT
-  const Real freepath = 2.8052e-10 / cair;
-  // ! air kinematic viscosity [cm^2/s]
-  const Real airkinvisc = air_kinematic_viscosity(temp, rhoair);
-
-  // compute rain drop number concentrations
-  calc_rain_drop_conc(nr, rlo, dr, rhoair, precip,       // ! in
-                      rrainsv, xnumrainsv, vfallrainsv); // ! out
-
-  // compute aerosol concentrations
-
-  calc_aer_conc_frac(na, xlo, dx, xg0, sx,             //  in
-                     raerosv, fnumaerosv, fvolaerosv); // out
-
-  // compute scavenging
-
-  Real scavsumnum = zero; // ! scavenging rate of aerosol number, "*bb" is for
-                          // each rain droplet radius bin [1/s]
-  Real scavsumvol = zero; //! scavenging rate of aerosol volume, "*bb" is for
-                          //! each rain droplet radius bin [1/s]
-
-  // outer loop for rain drop radius
-  for (int jr = 0; jr < nr; ++jr) {
-    // rain droplet radius
-    // rain droplet and aerosol particle radius [cm]
-    Real r_rain = rrainsv[jr];
-    // rain droplet fall speed [cm/s]
-    Real vfall = vfallrainsv[jr];
-    // inner loop for aerosol particle radius
-    Real scavsumnumbb = zero;
-    Real scavsumvolbb = zero;
-    for (int ja = 0; ja < na; ++ja) {
-      // aerosol particle radius
+    // outer loop for rain drop radius
+    for (int jr = 0; jr < nr; ++jr) {
+      // rain droplet radius
       // rain droplet and aerosol particle radius [cm]
-      const Real r_aer = raerosv[ja];
-      Real etotal = zero; // efficiency of total scavenging effects [fraction]
-      calc_impact_efficiency(r_aer, r_rain, temp,       // & ! in
-                             freepath, rhoaero, rhoair, // & ! in
-                             vfall, airkinvisc,         // & ! in
-                             etotal);                   // out
+      Real r_rain = rrainsv[jr];
+      // rain droplet fall speed [cm/s]
+      Real vfall = vfallrainsv[jr];
+      // inner loop for aerosol particle radius
+      Real scavsumnumbb = zero;
+      Real scavsumvolbb = zero;
+      for (int ja = 0; ja < na; ++ja) {
+        // aerosol particle radius
+        // rain droplet and aerosol particle radius [cm]
+        const Real r_aer = raerosv[ja];
+        Real etotal = zero; // efficiency of total scavenging effects [fraction]
+        calc_impact_efficiency(r_aer, r_rain, temp,       // & ! in
+                               freepath, rhoaero, rhoair, // & ! in
+                               vfall, airkinvisc,         // & ! in
+                               etotal);                   // out
 
-      // rain droplet sweep out volume [cm3/cm3/s]
-      const Real rainsweepout =
-          xnumrainsv[jr] * 4 * pi * r_rain * r_rain * vfall;
-      scavsumnumbb += rainsweepout * etotal * fnumaerosv[ja];
-      scavsumvolbb += rainsweepout * etotal * fvolaerosv[ja];
-    } // ja_loop
+        // rain droplet sweep out volume [cm3/cm3/s]
+        const Real rainsweepout =
+            xnumrainsv[jr] * 4 * pi * r_rain * r_rain * vfall;
+        scavsumnumbb += rainsweepout * etotal * fnumaerosv[ja];
+        scavsumvolbb += rainsweepout * etotal * fvolaerosv[ja];
+      } // ja_loop
 
-    scavsumnum += scavsumnumbb;
-    scavsumvol += scavsumvolbb;
+      scavsumnum += scavsumnumbb;
+      scavsumvol += scavsumvolbb;
 
-  } // jr_loop
-  scavratenum = scavsumnum * 3600;
-  scavratevol = scavsumvol * 3600;
+    } // jr_loop
+    scavratenum = scavsumnum * 3600;
+    scavratevol = scavsumvol * 3600;
 
-} // end calc_1_impact_rate
+  } // end calc_1_impact_rate
 
-KOKKOS_INLINE_FUNCTION
-void modal_aero_bcscavcoef_init() {
-  //   !-----------------------------------------------------------------------
-  // !
-  // ! Purpose:
-  // ! Computes lookup table for aerosol impaction/interception scavenging rates
-  // !
-  // ! Authors: R. Easter
-  // !
-  // !-----------------------------------------------------------------------
-  const Real zero = 0;
-  const Real one = 1;
-  Real sigmag_amode[4] = {zero};
-  int lspectype_amode[10][4] = {{0}};
-  Real specdens_amode[7] = {zero};
-  Real dgnum_amode[4] = {zero};
+  KOKKOS_INLINE_FUNCTION
+  void modal_aero_bcscavcoef_init() {
+    //   !-----------------------------------------------------------------------
+    // !
+    // ! Purpose:
+    // ! Computes lookup table for aerosol impaction/interception scavenging
+    // rates
+    // !
+    // ! Authors: R. Easter
+    // !
+    // !-----------------------------------------------------------------------
+    const Real zero = 0;
+    const Real one = 1;
+    Real sigmag_amode[4] = {zero};
+    int lspectype_amode[10][4] = {{0}};
+    Real specdens_amode[7] = {zero};
+    Real dgnum_amode[4] = {zero};
 
-  int lunerr = 6; //           ! logical unit for error message
+    int lunerr = 6; //           ! logical unit for error message
 
-  Real scavimptblnum[10][4] = {{zero}};
-  Real scavimptblvol[10][4] = {{zero}};
+    Real scavimptblnum[10][4] = {{zero}};
+    Real scavimptblvol[10][4] = {{zero}};
 
-  // ! set up temperature-pressure pair to compute impaction scavenging rates
-  // BAD CONSTANT
-  const Real temp_0C = 273.16;      //     ! K
-  const Real press_750hPa = 0.75e6; //  ! dynes/cm2
-  for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
-    const Real sigmag = sigmag_amode[imode];
-    const int ll = lspectype_amode[1][imode];
-    const Real rhodryaero = specdens_amode[ll];
+    // ! set up temperature-pressure pair to compute impaction scavenging rates
+    // BAD CONSTANT
+    const Real temp_0C = 273.16;      //     ! K
+    const Real press_750hPa = 0.75e6; //  ! dynes/cm2
+    for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+      const Real sigmag = sigmag_amode[imode];
+      const int ll = lspectype_amode[1][imode];
+      const Real rhodryaero = specdens_amode[ll];
 
-    for (int jgrow = nimptblgrow_mind; jgrow < nimptblgrow_maxd; ++jgrow) {
-      // ratio of diameter for wet/dry aerosols [fraction]
-      const Real wetdiaratio = haero::exp(jgrow * dlndg_nimptblgrow);
-      // aerosol diameter [m]
-      const Real dg0 = dgnum_amode[imode] * wetdiaratio;
-      // ratio of volume for wet/dry aerosols [fraction]
-      const Real wetvolratio = haero::exp(jgrow * dlndg_nimptblgrow * 3);
-      // dry and wet aerosol density [kg/m3]
-      Real rhowetaero = one + (rhodryaero - one) / wetvolratio;
-      rhowetaero = haero::min(rhowetaero, rhodryaero);
-      /* FIXME: not sure why wet aerosol density is set as dry aerosol density
- here ! but the above calculation of rhowetaero is incorrect. ! I think the
- number 1.0_r8 should be 1000._r8 as the unit is kg/m3 ! the above calculation
- gives wet aerosol density very small number (a few kg/m3) ! this may cause some
- problem. I guess this is the reason of using dry density. ! should be better if
- fix the wet density bug and use it. Keep it for now for BFB testing ! --
- (commented by Shuaiqi Tang when refactoring for MAM4xx) */
+      for (int jgrow = nimptblgrow_mind; jgrow < nimptblgrow_maxd; ++jgrow) {
+        // ratio of diameter for wet/dry aerosols [fraction]
+        const Real wetdiaratio = haero::exp(jgrow * dlndg_nimptblgrow);
+        // aerosol diameter [m]
+        const Real dg0 = dgnum_amode[imode] * wetdiaratio;
+        // ratio of volume for wet/dry aerosols [fraction]
+        const Real wetvolratio = haero::exp(jgrow * dlndg_nimptblgrow * 3);
+        // dry and wet aerosol density [kg/m3]
+        Real rhowetaero = one + (rhodryaero - one) / wetvolratio;
+        rhowetaero = haero::min(rhowetaero, rhodryaero);
+        /* FIXME: not sure why wet aerosol density is set as dry aerosol density
+   here ! but the above calculation of rhowetaero is incorrect. ! I think the
+   number 1.0_r8 should be 1000._r8 as the unit is kg/m3 ! the above calculation
+   gives wet aerosol density very small number (a few kg/m3) ! this may cause
+   some problem. I guess this is the reason of using dry density. ! should be
+   better if fix the wet density bug and use it. Keep it for now for BFB testing
+   ! -- (commented by Shuaiqi Tang when refactoring for MAM4xx) */
 
-      rhowetaero = rhodryaero;
-      /*compute impaction scavenging rates at 1 temp-press pair and save
-              ! note that the subroutine calc_1_impact_rate uses CGS units */
-      // aerosol diameter in CGS unit [cm]
-      const Real dg0_cgs = dg0 * 1.0e2; //  ! m to cm
-      // wet aerosol density in CGS unit [g/cm3]
-      const Real rhowetaero_cgs = rhowetaero * 1.0e-3; //   ! kg/m3 to g/cm3
-      // scavenging rate of aerosol number [1/s]
-      Real scavratenum = zero;
-      // scavenging rate of aerosol volume [1/s]
-      Real scavratevol = zero;
+        rhowetaero = rhodryaero;
+        /*compute impaction scavenging rates at 1 temp-press pair and save
+                ! note that the subroutine calc_1_impact_rate uses CGS units */
+        // aerosol diameter in CGS unit [cm]
+        const Real dg0_cgs = dg0 * 1.0e2; //  ! m to cm
+        // wet aerosol density in CGS unit [g/cm3]
+        const Real rhowetaero_cgs = rhowetaero * 1.0e-3; //   ! kg/m3 to g/cm3
+        // scavenging rate of aerosol number [1/s]
+        Real scavratenum = zero;
+        // scavenging rate of aerosol volume [1/s]
+        Real scavratevol = zero;
 
-      calc_1_impact_rate(dg0_cgs, sigmag, rhowetaero_cgs, temp_0C, press_750hPa,
-                         scavratenum, scavratevol, lunerr);
+        calc_1_impact_rate(dg0_cgs, sigmag, rhowetaero_cgs, temp_0C,
+                           press_750hPa, scavratenum, scavratevol, lunerr);
 
-      scavimptblnum[jgrow][imode] = haero::log(scavratenum);
-      scavimptblvol[jgrow][imode] = haero::log(scavratevol);
+        scavimptblnum[jgrow][imode] = haero::log(scavratenum);
+        scavimptblvol[jgrow][imode] = haero::log(scavratevol);
 
-    } // jgrow
+      } // jgrow
 
-  } // end imode
+    } // end imode
 
-} // modal_aero_bcscavcoef_init
+  } // modal_aero_bcscavcoef_init
 
 } // end namespace aero_model_od
 
