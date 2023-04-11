@@ -18,7 +18,8 @@ using namespace haero::testing;
 // these functions are defined in src/tests/testing.cpp and allow the creation
 // of standalone objects that use "managed" ColumnViews
 Prognostics create_prognostics(int num_levels);
-Prognostics create_diagnostics(int num_levels);
+Diagnostics create_diagnostics(int num_levels);
+Tendencies create_tendencies(int num_levels);
 
 } // namespace testing
 

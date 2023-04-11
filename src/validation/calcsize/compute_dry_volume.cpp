@@ -21,7 +21,7 @@ void compute_dry_volume_k(Ensemble *ensemble) {
     // Fetch ensemble parameters
 
     int nlev = 1;
-    mam4::Prognostics progs(nlev);
+    mam4::Prognostics progs = validation::create_prognostics(nlev);
     auto q_i = input.get_array("interstitial");
     auto q_c = input.get_array("cldbrn");
     // imode only has one elements
