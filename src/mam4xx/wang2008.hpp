@@ -14,7 +14,7 @@ using Real = haero::Real;
 
 /// The functions in this file implement parameterizations described in
 /// Wang and Penner, Aerosol indirect forcing in a global model with particle
-/// nucleation, Atmos. Chem. Phys. Discuss. 8, pp. 13943–13998 (2008)
+/// nucleation, Atmos. Chem. Phys. Discuss. 8, pp. 13943-13998 (2008)
 
 /// These parameterizations assume that nucleated particles are 1 nm in
 /// diameter.

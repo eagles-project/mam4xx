@@ -9,7 +9,7 @@ add_executable(gasaerexch_driver gasaerexch_driver.cpp
                gasaerexch_uptkrates_1box1gas.cpp)
 target_link_libraries(gasaerexch_driver skywalker;validation;${HAERO_LIBRARIES})
 
-# Copy the gas-aerosol exchange plotting ѕcript to our binary directory for
+# Copy the gas-aerosol exchange plotting script to our binary directory for
 # ease of use.
 set(SKYWALKER_RESULT mam4xx_skywalker_gasaerexch_uptkrates_1box1gas)
 configure_file(

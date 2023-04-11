@@ -18,8 +18,8 @@ using haero::log;
 using haero::square;
 
 /// The functions in this file implement parameterizations described in
-/// Kerminen and Kulmala, Analytical formulae connecting the “real” and the
-/// “apparent” nucleation rate and the nuclei number concentration for
+/// Kerminen and Kulmala, Analytical formulae connecting the "real" and the
+/// "apparent" nucleation rate and the nuclei number concentration for
 /// atmospheric nucleation events, Aerosol Science 33 (2002).
 ///
 /// The parameterization has been adapted for systems whose aerosol particles
