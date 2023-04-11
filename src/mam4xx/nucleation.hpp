@@ -694,7 +694,7 @@ public:
           Real pmid = atm.pressure(k);
           Real aircon = pmid / (r_universal * temp);
           Real zmid = atm.height(k);
-          Real pblh = atm.planetary_boundary_height;
+          Real pblh = atm.planetary_boundary_layer_height;
           Real qv = atm.vapor_mixing_ratio(k);
           Real relhum = conversions::relative_humidity_from_vapor_mixing_ratio(
               qv, pmid, temp);

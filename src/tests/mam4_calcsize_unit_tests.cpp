@@ -3,6 +3,7 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "testing.hpp"
 #include <mam4xx/mam4.hpp>
 
 #include <catch2/catch.hpp>
@@ -31,10 +32,10 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
 
   int nlev = 1;
   Real pblh = 1000;
-  Atmosphere atm(nlev, pblh);
-  mam4::Prognostics progs(nlev);
-  mam4::Diagnostics diags(nlev);
-  mam4::Tendencies tends(nlev);
+  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
+  mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
+  mam4::Tendencies tends = mam4::testing::create_tendencies(nlev);
 
   mam4::AeroConfig mam4_config;
   mam4::CalcSizeProcess process(mam4_config);

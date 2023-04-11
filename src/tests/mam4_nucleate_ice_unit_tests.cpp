@@ -3,6 +3,7 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "testing.hpp"
 #include <mam4xx/mam4.hpp>
 #include <mam4xx/utils.hpp>
 // #include <mam4xx/wv_sat_methods.hpp>
@@ -205,10 +206,10 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleate_ice_process") {
                                 ekat::logger::LogLevel::debug, comm);
   int nlev = 72;
   Real pblh = 1000;
-  Atmosphere atm(nlev, pblh);
-  mam4::Prognostics progs(nlev);
-  mam4::Diagnostics diags(nlev);
-  mam4::Tendencies tends(nlev);
+  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
+  mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
+  mam4::Tendencies tends = mam4::testing::create_tendencies(nlev);
 
   mam4::AeroConfig mam4_config;
   mam4::NucleateIceProcess process(mam4_config);
@@ -282,17 +283,17 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_nucleateIce_process") {
   DeviceType::view_1d<mam4::Tendencies> mc_tends("mc_tends", ncol);
   int nlev = 72;
   Real pblh = 1000;
-  Atmosphere atmosphere(nlev, pblh);
-  mam4::Prognostics prognostics(nlev);
-  mam4::Diagnostics diagnostics(nlev);
-  mam4::Tendencies tendencies(nlev);
+  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
+  mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
+  mam4::Tendencies tends = mam4::testing::create_tendencies(nlev);
   for (int icol = 0; icol < ncol; ++icol) {
     Kokkos::parallel_for(
         "Load multi-column views", 1, KOKKOS_LAMBDA(const int) {
-          mc_atm(icol) = atmosphere;
-          mc_progs(icol) = prognostics;
-          mc_diags(icol) = diagnostics;
-          mc_tends(icol) = tendencies;
+          mc_atm(icol) = atm;
+          mc_progs(icol) = progs;
+          mc_diags(icol) = diags;
+          mc_tends(icol) = tends;
         });
   }
 

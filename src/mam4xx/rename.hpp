@@ -89,12 +89,12 @@ Real total_interstitial_and_cloudborne() {
 // and cloudborne) for a given mode, whether that be number or mixing ratio
 KOKKOS_INLINE_FUNCTION
 Real total_interstitial_and_cloudborne(
-    const bool &iscloudy, const int &imode,
+    const bool &is_cloudy, const int &imode,
     const Real interstitial[AeroConfig::num_modes()],
     const Real cloudborne[AeroConfig::num_modes()]) {
   // if there is no cloud, total is just the interstitial value
   Real total = interstitial[imode];
-  if (iscloudy) {
+  if (is_cloudy) {
     total = total + cloudborne[imode];
   }
   return total;
@@ -107,7 +107,7 @@ void compute_before_growth_dryvol_and_num() {}
 KOKKOS_INLINE_FUNCTION
 void compute_before_growth_dryvol_and_num(
     // in
-    const bool &iscloudy, const int &src_mode,
+    const bool &is_cloudy, const int &src_mode,
     const Real &smallest_dryvol_value,
     const Real dryvol_i[AeroConfig::num_modes()],
     const Real dryvol_c[AeroConfig::num_modes()],
@@ -122,8 +122,8 @@ void compute_before_growth_dryvol_and_num(
   // growth) and delta in dry volume in the source mode
   // [units: (m3 of species)/(kmol of air)]
   const Real zero = 0.0;
-  b4_growth_dryvol =
-      total_interstitial_and_cloudborne(iscloudy, src_mode, dryvol_i, dryvol_c);
+  b4_growth_dryvol = total_interstitial_and_cloudborne(is_cloudy, src_mode,
+                                                       dryvol_i, dryvol_c);
 
   // FIXME: is it feasible that pregrowth_dryvol would be smaller than 1e-25?
   // NOTE: we get rid of this and use safe_divide() in do_inter_mode_transfer()
@@ -132,7 +132,7 @@ void compute_before_growth_dryvol_and_num(
 
   // Compute total before growth number [units: #/kmol-air]
   Real b4_growth_qnum = total_interstitial_and_cloudborne(
-      iscloudy, src_mode, qnum_i_cur, qnum_c_cur);
+      is_cloudy, src_mode, qnum_i_cur, qnum_c_cur);
   b4_growth_qnum = max(zero, b4_growth_qnum); // bound to have minimum of 0
 
   // // bound number within min and max of the source mode
@@ -238,7 +238,7 @@ void do_inter_mode_transfer() {}
 
 KOKKOS_INLINE_FUNCTION
 void do_inter_mode_transfer(
-    const int dest_mode_of_mode[AeroConfig::num_modes()], const bool &iscloudy,
+    const int dest_mode_of_mode[AeroConfig::num_modes()], const bool &is_cloudy,
     const Real &smallest_dryvol_value,
     // volume to number relaxation limits [m^-3]
     const Real num2vol_ratiolorlx[AeroConfig::num_modes()],
@@ -280,7 +280,7 @@ void do_inter_mode_transfer(
     // compute before growth dry volume and number
     compute_before_growth_dryvol_and_num(
         // in
-        iscloudy, src_mode, smallest_dryvol_value, dryvol_i, dryvol_c,
+        is_cloudy, src_mode, smallest_dryvol_value, dryvol_i, dryvol_c,
         qnum_i_cur, qnum_c_cur, num2vol_ratiolorlx[src_mode],
         num2vol_ratiohirlx[src_mode],
         // out
@@ -288,7 +288,7 @@ void do_inter_mode_transfer(
 
     // change (delta) in dryvol
     const Real dryvol_del = total_interstitial_and_cloudborne(
-        iscloudy, src_mode, deldryvol_i, deldryvol_c);
+        is_cloudy, src_mode, deldryvol_i, deldryvol_c);
 
     // Total dry volume after growth (add delta growth)
     Real after_growth_dryvol = b4_growth_dryvol + dryvol_del;
@@ -396,7 +396,7 @@ void do_inter_mode_transfer(
     do_num_and_mass_transfer(src_mode, dest_mode, xfer_vol_frac,
                              xfer_num_frac, // input
                              qmol_i_cur, qnum_i_cur);
-    if (iscloudy) {
+    if (is_cloudy) {
       do_num_and_mass_transfer(src_mode, dest_mode, xfer_vol_frac,
                                xfer_num_frac, // input
                                qmol_c_cur, qnum_c_cur);
@@ -622,7 +622,7 @@ public:
     const int nspec = AeroConfig::num_aerosol_ids();
 
     const auto dest_mode_of_mode = config_._dest_mode_of_mode;
-    const auto iscloudy = diagnostics.iscloudy;
+    const auto is_cloudy = diagnostics.is_cloudy;
     const auto mass_2_vol = _mass_2_vol;
     const Real smallest_dryvol_value = config_._smallest_dryvol_value;
 
@@ -672,7 +672,7 @@ public:
           Real qmol_c_del[AeroConfig::num_modes()]
                          [AeroConfig::num_aerosol_ids()];
 
-          const bool &iscloudy_cur = iscloudy(kk);
+          const bool &is_cloudy_cur = is_cloudy(kk);
           int rename_idx = 0;
 
           // FIXME: adjust these to use mamRefactor's MW's
@@ -698,7 +698,7 @@ public:
             }
           }
 
-          mam_rename_1subarea_(iscloudy_cur, smallest_dryvol_value,
+          mam_rename_1subarea_(is_cloudy_cur, smallest_dryvol_value,
                                dest_mode_of_mode,                  // in
                                mean_std_dev,                       // in
                                fmode_dist_tail_fac,                // in
@@ -723,7 +723,7 @@ public:
   // Make mam_rename_1subarea public for testing proposes.
   KOKKOS_INLINE_FUNCTION
   void mam_rename_1subarea_(
-      const bool iscloudy_cur, const Real &smallest_dryvol_value,
+      const bool is_cloudy_cur, const Real &smallest_dryvol_value,
       const int *dest_mode_of_mode,                             // in
       const Real mean_std_dev[AeroConfig::num_modes()],         // in
       const Real fmode_dist_tail_fac[AeroConfig::num_modes()],  // in
@@ -767,7 +767,7 @@ public:
     Real dryvol_c[mam4::AeroConfig::num_modes()] = {zero};
     Real deldryvol_c[mam4::AeroConfig::num_modes()] = {zero};
 
-    if (iscloudy_cur) {
+    if (is_cloudy_cur) {
 
       rename::compute_dryvol_change_in_src_mode(
           AeroConfig::num_modes(),       // in
@@ -780,12 +780,12 @@ public:
           deldryvol_c                    // out
       );
 
-    } // end iscloudy_cur
+    } // end is_cloudy_cur
 
     // Find fractions (mass and number) to transfer and complete the transfer
 
     rename::do_inter_mode_transfer(
-        dest_mode_of_mode, iscloudy_cur, smallest_dryvol_value,
+        dest_mode_of_mode, is_cloudy_cur, smallest_dryvol_value,
         // volume to number relaxation limits [m^-3]
         num2vol_ratio_lo_rlx, num2vol_ratio_hi_rlx, mean_std_dev,
         fmode_dist_tail_fac, ln_diameter_tail_fac, ln_dia_cutoff,
