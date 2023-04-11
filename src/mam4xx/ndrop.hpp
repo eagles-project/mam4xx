@@ -15,6 +15,13 @@ using Real = haero::Real;
 
 namespace mam4 {
 
+class NDrop {
+
+public:
+};
+
+namespace ndrop {
+
 // TODO: this function signature may need to change to work properly on GPU
 //  come back when this function is being used in a ported parameterization
 KOKKOS_INLINE_FUNCTION
@@ -47,5 +54,55 @@ void get_aer_num(const Diagnostics &diags, const Prognostics &progs,
   naerosol[mode_idx] = max(naerosol[mode_idx], vaerosol * num2vol_ratio_max);
   naerosol[mode_idx] = min(naerosol[mode_idx], vaerosol * num2vol_ratio_min);
 }
+
+KOKKOS_INLINE_FUNCTION
+void explmix(
+    const ThreadTeam &team, // ThreadTeam for parallel_for
+    int nlev,               // number of levels
+    ColumnView q,    // number / mass mixing ratio to be updated [# or kg / kg]
+    ColumnView src,  // source due to activation/nucleation [# or kg / (kg-s)]
+    ColumnView ekkp, // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
+                     // [/s]; below layer k  (k,k+1 interface)
+    ColumnView ekkm, // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
+                     // [/s]; above layer k  (k,k+1 interface)
+    ColumnView overlapp, // cloud overlap below [fraction]
+    ColumnView overlapm, // cloud overlap above [fraction]
+    ColumnView qold, // number / mass mixing ratio from previous time step [# or
+                     // kg / kg]
+    Real dt,         // time step [s]
+    bool is_unact,   // true if this is an unactivated species
+    ColumnView
+        qactold // optional: number / mass mixing ratio of ACTIVATED species
+                // from previous step *** this should only be present if the
+                // current species is unactivated number/sfc/mass
+) {
+
+  int top_lev = 0;
+
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int k) {
+        int kp1 = min(k + 1, nlev - 1);
+        int km1 = max(k - 1, top_lev);
+
+        // the qactold*(1-overlap) terms are resuspension of activated material
+
+        if (is_unact) {
+          q(k) = qold(k) +
+                 (dt * (-src(k) +
+                        (ekkp(k) * (qold(kp1) - qold(k) +
+                                    (qactold(kp1) * (1 - overlapp(k))))) +
+                        (ekkm(k) * (qold(km1) - qold(k) +
+                                    (qactold(km1) * (1 - overlapm(k)))))));
+        } else {
+          q(k) = qold(k) +
+                 (dt *
+                  (src(k) + (ekkp(k) * ((overlapp(k) * qold(kp1)) - qold(k))) +
+                   (ekkm(k) * ((overlapm(k) * qold(k)) - qold(k)))));
+        }
+        // force to non-negative
+        q(k) = max(q(k), 0);
+      });
+}
+} // namespace ndrop
 } // namespace mam4
 #endif

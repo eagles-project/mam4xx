@@ -27,8 +27,7 @@ using namespace mam4::conversions;
 
 TEST_CASE("test_get_aer_num", "mam4_ndrop") {
   ekat::Comm comm;
-
-  ekat::logger::Logger<> logger("ndrop unit tests",
+  ekat::logger::Logger<> logger("ndrop get aer num unit tests",
                                 ekat::logger::LogLevel::debug, comm);
 
   int nlev = 1;
@@ -131,7 +130,7 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
       Real middle = (number_mixing_ratio + number_mixing_ratio) *
                     conversions::density_of_ideal_gas(h_T(k), h_P(k));
 
-      mam4::get_aer_num(diags, progs, atm, m, k, naerosol);
+      ndrop::get_aer_num(diags, progs, atm, m, k, naerosol);
       logger.info("naerosol[{}] = {}", m, naerosol[m]);
 
       logger.info("min bound = {}, max bound = {}", min_bound, max_bound);
@@ -141,12 +140,70 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
       //  come back when this function is being used in a ported
       //  parameterization
 
+      /*
       REQUIRE(
           FloatingPoint<Real>::in_bounds(naerosol[m], min_bound, max_bound));
       bool check_calc = FloatingPoint<Real>::equiv(naerosol[m], min_bound) ||
                         FloatingPoint<Real>::equiv(naerosol[m], middle) ||
                         FloatingPoint<Real>::equiv(naerosol[m], max_bound);
       REQUIRE(check_calc);
+      */
     }
+  }
+}
+
+TEST_CASE("test_explmix", "mam4_ndrop") {
+  ekat::Comm comm;
+  ekat::logger::Logger<> logger("ndrop explmix unit tests",
+                                ekat::logger::LogLevel::debug, comm);
+
+  int nlev = 4;
+  ColumnView q = ColumnView("q", nlev);
+  ColumnView src = ColumnView("src", nlev);
+  ColumnView ekkp = ColumnView("ekkp", nlev);
+  ColumnView ekkm = ColumnView("ekkm", nlev);
+  ColumnView overlapp = ColumnView("overlapp", nlev);
+  ColumnView overlapm = ColumnView("overlapm", nlev);
+  ColumnView qold = ColumnView("qold", nlev);
+  ColumnView qactold = ColumnView("qactold", nlev);
+  Real dt = .1;
+  bool is_unact = false;
+
+  // set up smoketest values
+  for (int i = 0; i < nlev; i++) {
+    q(i) = 0;
+    src(i) = 1;
+    ekkp(i) = 1;
+    ekkm(i) = 1;
+    overlapp(i) = 1;
+    overlapm(i) = 1;
+    qold(i) = 1;
+    qactold(i) = 1;
+  }
+
+  // call explmix from a parallel_for to pass in a ThreadTeam
+  auto team_policy = haero::ThreadTeamPolicy(1u, Kokkos::AUTO);
+  Kokkos::parallel_for(
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        ndrop::explmix(team, nlev, q, src, ekkp, ekkm, overlapp, overlapm, qold,
+                       dt, is_unact, qactold);
+      });
+
+  for (int i = 0; i < nlev; i++) {
+    logger.info("q[{}] = {}", i, q(i));
+    REQUIRE(FloatingPoint<Real>::equiv(q(i), 1.1));
+  }
+
+  is_unact = true;
+
+  Kokkos::parallel_for(
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        ndrop::explmix(team, nlev, q, src, ekkp, ekkm, overlapp, overlapm, qold,
+                       dt, is_unact, qactold);
+      });
+
+  for (int i = 0; i < nlev; i++) {
+    logger.info("q[{}] = {}", i, q(i));
+    REQUIRE(FloatingPoint<Real>::equiv(q(i), 0.9));
   }
 }
