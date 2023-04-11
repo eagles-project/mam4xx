@@ -5,11 +5,33 @@
 
 #ifndef HAERO_VALIDATION_HPP
 #define HAERO_VALIDATION_HPP
+#include <haero/testing.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <string>
 
 namespace mam4 {
+
+namespace testing {
+
+using namespace haero::testing;
+
+// these functions are defined in src/tests/testing.cpp and allow the creation
+// of standalone objects that use "managed" ColumnViews
+Prognostics create_prognostics(int num_levels);
+Prognostics create_diagnostics(int num_levels);
+
+} // namespace testing
+
 namespace validation {
+
+// forward functions from mam4::testing
+using namespace mam4::testing;
+
+/// Call this function to initialize a validation driver.
+void initialize(int argc, char **argv);
+
+/// Call this function to finalize a validation driver.
+void finalize();
 
 /// Given the name of a Skywalker input YAML file, determine the name of the
 /// corresponding output Python module file.
