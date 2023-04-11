@@ -29,6 +29,8 @@ set(TEST_LIST
     modal_aero_bcscavcoef_int_stand
     calc_1_impact_rate_ts_0
     modal_aero_bcscavcoef_get_stand
+    modal_aero_bcscavcoef_init_ts_0
+    #modal_aero_bcscavcoef_get_ts_355
     )
 
 set(DEFAULT_TOL 1e-12)
@@ -36,7 +38,10 @@ set(DEFAULT_TOL 1e-12)
 set(ERROR_THRESHOLDS  
    1e-4
    5e-8
-   ${DEFAULT_TOL})
+   ${DEFAULT_TOL}
+   9e-6
+   #${DEFAULT_TOL}
+   )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
