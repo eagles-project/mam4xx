@@ -32,9 +32,7 @@ set(TEST_LIST
     nucleate_ice # produced by mam4_standalone_validation
     )
 set(DEFAULT_TOL 1e-9)
-# Uncomment this line when hetero_merged is fixed
-#set(ERROR_THRESHOLDS 1.5e-5 ${DEFAULT_TOL} ${DEFAULT_TOL} 3e-9 ${DEFAULT_TOL})
-set(ERROR_THRESHOLDS 1.5e-5 ${DEFAULT_TOL} 3e-9 ${DEFAULT_TOL})
+set(ERROR_THRESHOLDS 1.5e-5 ${DEFAULT_TOL} ${DEFAULT_TOL} 3e-9 ${DEFAULT_TOL})
 
 # Run the driver in several configurations to produce datasets.
 
