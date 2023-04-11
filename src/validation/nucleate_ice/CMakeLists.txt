@@ -25,7 +25,7 @@ endforeach()
 
 set(TEST_LIST
     nucleate_ice_cam_calc_merged # passing tolerance = 1.5e-5
-    #hetero_merged <--- Skywalker seems to have trouble generating this ensemble!
+    hetero_merged
     #hetero_t_merged
     hf_merged
     nucleati_merged # passing tolerance = 3e-9
