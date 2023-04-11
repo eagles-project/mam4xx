@@ -52,6 +52,8 @@ public:
   // max. ice nucleating fraction soot
   static constexpr Real limfacbc = 0.01;
 
+  static constexpr Real mincld = 0.0001; // Do we need ot read this
+
   // Wang et al., 2014 fitting parameters
   // freezing parameters for immersion freezing
   static constexpr Real theta_imm_bc =
@@ -71,6 +73,11 @@ public:
       28.0; // contact angle [deg], converted to rad later !Moehler et al
             // (2005), soot
   static constexpr Real dga_dep_bc = -2.e-19; // activation energy [J]
+
+  static constexpr Real num_m3_to_cm3 =
+      1.0e-6; // volume unit conversion, #/m^3 to #/cm^3
+  static constexpr Real num_cm3_to_m3 =
+      1.0e6; // volume unit conversion, #/cm^3 to #/m^3
 
   // Index ids and number of species involved in heterogenous freezing
   static constexpr int id_bc = 0;
@@ -714,7 +721,7 @@ void hetfrz_classnuc_calc(
 
   // get saturation vapor pressures
   const Real eswtr = wv_sat_methods::svp_water(temperature); // 0 for liquid
-  //const Real esice = wv_sat_methods::svp_ice(temperature);   // 1  for ice
+  // const Real esice = wv_sat_methods::svp_ice(temperature);   // 1  for ice
 
   const Real tc = temperature - Constants::freezing_pt_h2o;
   const Real rhoice = 916.7 - 0.175 * tc - 5.e-4 * haero::square(tc);
@@ -807,7 +814,455 @@ void hetfrz_classnuc_calc(
       do_dst1, do_dst3, frzbccnt, frzducnt);
 }
 
+KOKKOS_INLINE_FUNCTION
+void calculate_interstitial_aer_num(
+    const Real bcmac, const Real dmac, const Real bcmpc, const Real dmc,
+    const Real ssmc, const Real mommc, const Real bcmc, const Real pommc,
+    const Real soammc, const Real num_coarse,
+    Real total_interstital_aer_num[Hetfzr::hetfzr_aer_nspec]) {
+
+  // fixed ratio converting BC mass to number (based on BC emission) [#/kg]
+  constexpr Real bc_kg_to_num = 4.669152e+17;
+
+  // fixed ratio converting accum mode dust mass to number [#/kg]
+  constexpr Real dst1_kg_to_num = 3.484e+15;
+
+  total_interstital_aer_num[0] = bcmac * bc_kg_to_num * Hetfzr::num_m3_to_cm3;
+  total_interstital_aer_num[0] += bcmpc * bc_kg_to_num * Hetfzr::num_cm3_to_m3;
+
+  total_interstital_aer_num[1] = dmac * dst1_kg_to_num * Hetfzr::num_m3_to_cm3;
+
+  if (dmc > 0.0) {
+    total_interstital_aer_num[2] =
+        dmc / (ssmc + dmc + bcmc + pommc + soammc + mommc) * num_coarse *
+        Hetfzr::num_m3_to_cm3;
+  }
+}
+
+KOKKOS_INLINE_FUNCTION
+void calculate_cloudborne_aer_num(
+    const Real dmac_cb, const Real ssmac_cb, const Real so4mac_cb,
+    const Real bcmaac_cb, const Real pommac_cb, const Real soamac_cb,
+    const Real mommac_cb, const Real num_accum_cb, const Real dmc_cb,
+    const Real ssmc_cb, const Real mommc_cb, const Real bcmc_cb,
+    const Real pommc_cb, const Real soamc_cb, const Real num_coarse_cb,
+    Real total_cloudborne_aer_num[Hetfzr::hetfzr_aer_nspec]) {
+  // ***************************************************
+  // calculate cloudborne aerosol concentrations for
+  // BC and dust
+  // ***************************************************
+
+  if (bcmaac_cb > 0.0) {
+    total_cloudborne_aer_num[0] = bcmaac_cb /
+                                  (so4mac_cb + bcmaac_cb + pommac_cb +
+                                   soamac_cb + ssmac_cb + dmac_cb + mommac_cb) *
+                                  num_accum_cb *
+                                  Hetfzr::num_m3_to_cm3; // #/cm^3
+  }
+
+  if (dmac_cb > 0.0) {
+    total_cloudborne_aer_num[1] = dmac_cb /
+                                  (so4mac_cb + bcmaac_cb + pommac_cb +
+                                   soamac_cb + ssmac_cb + dmac_cb + mommac_cb) *
+                                  num_accum_cb *
+                                  Hetfzr::num_m3_to_cm3; // #/cm^3
+  }
+
+  if (dmc_cb > 0.0) {
+    total_cloudborne_aer_num[2] =
+        dmc_cb / (dmc_cb + ssmc_cb + mommc_cb + bcmc_cb + pommc_cb + soamc_cb) *
+        num_coarse_cb * Hetfzr::num_m3_to_cm3;
+  }
+}
+
+KOKKOS_INLINE_FUNCTION
+Real get_aer_radius(const Real specdens, const Real aermc, const Real aernum) {
+  // Compute radius for an aerosol species given mass and number concentrations
+  // Note for C++ port: This function may already be present in the C++ utility
+  // functions
+  return haero::cbrt(3.0 / (4.0 * Constants::pi * specdens) * aermc / aernum);
+}
+
+KOKKOS_INLINE_FUNCTION
+void calculate_mass_mean_radius(
+    const Real bcmac, const Real bcmpc, const Real dmac, const Real dmc,
+    Real total_interstitial_aer_num[Hetfzr::hetfzr_aer_nspec],
+    Real hetraer[Hetfzr::hetfzr_aer_nspec]) {
+
+  const Real aermc_min_threshold = 1.0e-30;
+  const Real aernum_min_threshold = 1.0e-3;
+  const Real r_bc_prescribed = 0.067e-6;
+  const Real r_dust_a1_prescribed = 0.258e-6;
+  const Real r_dust_a3_prescribed = 1.576e-6;
+
+  const Real bc_num = total_interstitial_aer_num[1];
+  const Real dst1_num = total_interstitial_aer_num[2];
+  const Real dst3_num = total_interstitial_aer_num[3];
+
+  // Initialize hetraer with prescribed radius
+  hetraer[0] = r_bc_prescribed;
+  hetraer[1] = r_dust_a1_prescribed;
+  hetraer[2] = r_dust_a3_prescribed;
+
+  const Real specdens_bc = aero_species(int(AeroId::BC)).density;
+  const Real specdens_dust = aero_species(int(AeroId::DST)).density;
+  // BC
+  if ((bcmac + bcmpc) * 1.0e-3 > aermc_min_threshold &
+      bc_num > aernum_min_threshold) {
+    hetraer[0] = get_aer_radius(specdens_bc, bcmac + bcmpc,
+                                bc_num * Hetfzr::num_cm3_to_m3);
+  }
+
+  // fine dust a1
+  if (dmac * 1e-3 > aermc_min_threshold & dst1_num > aernum_min_threshold) {
+    hetraer[1] =
+        get_aer_radius(specdens_dust, dmac, dst1_num * Hetfzr::num_cm3_to_m3);
+  }
+
+  // coarse dust a3
+  if (dmc * 1e-3 > aermc_min_threshold and dst3_num > aernum_min_threshold) {
+    hetraer[2] =
+        get_aer_radius(specdens_dust, dmc, dst3_num * Hetfzr::num_cm3_to_m3);
+  }
+}
+
+KOKKOS_INLINE_FUNCTION
+void calcualte_coated_fraction(
+    const Real air_density, const Real so4mac, const Real pommac,
+    const Real mommac, const Real soamac, const Real dmac, const Real bcmac,
+    const Real mommpc, const Real pommpc, const Real bcmpc, const Real so4mc,
+    const Real pommc, const Real soamc, const Real mommc, const Real dmc,
+    Real total_interstitial_aer_num[Hetfzr::hetfzr_aer_nspec],
+    Real total_cloudborne_aer_num[Hetfzr::hetfzr_aer_nspec],
+    Real hetraer[Hetfzr::hetfzr_aer_nspec],
+    Real total_aer_num[Hetfzr::hetfzr_aer_nspec],
+    Real coated_aer_num[Hetfzr::hetfzr_aer_nspec],
+    Real uncoated_aer_num[Hetfzr::hetfzr_aer_nspec],
+    Real dstcoat[Hetfzr::hetfzr_aer_nspec], Real &na500, Real &tot_na500) {
+
+  // ***************************************************
+  // calculate total, coated, uncoated number
+  // concentration for BC and dust
+  // ***************************************************
+
+  const Real r_bc = hetraer[0];
+  const Real r_dust_a1 = hetraer[1];
+  const Real r_dust_a3 = hetraer[2];
+
+  const Real alnsg_mode_accum =
+      haero::log(modes(int(ModeIndex::Accumulation)).mean_std_dev);
+  const Real alnsg_mode_coarse =
+      haero::log(modes(int(ModeIndex::Coarse)).mean_std_dev);
+  const Real alnsg_mode_pcarbon =
+      haero::log(modes(int(ModeIndex::PrimaryCarbon)).mean_std_dev);
+
+  const Real fac_volsfc_dust_a1 =
+      haero::exp(2.5 * haero::square(alnsg_mode_accum));
+  const Real fac_volsfc_dust_a3 =
+      haero::exp(2.5 * haero::square(alnsg_mode_coarse));
+  const Real fac_volsfc_pcarbon =
+      haero::exp(2.5 * haero::square(alnsg_mode_pcarbon));
+
+  Real vol_shell[Hetfzr::hetfzr_aer_nspec];
+  Real vol_core[Hetfzr::hetfzr_aer_nspec];
+
+  const Real spechygro_so4 = 0.507; // Sulfate hygroscopicity
+  const Real spechygro_soa = 0.14;  // SOA hygroscopicity
+  const Real spechygro_pom = 0.1;   // POM hygroscopicity
+  const Real spechygro_mom = 0.1;   // MOM hygroscopicity
+  const Real soa_equivso4_factor = spechygro_soa / spechygro_so4;
+  const Real pom_equivso4_factor = spechygro_pom / spechygro_so4;
+  const Real mom_equivso4_factor = spechygro_mom / spechygro_so4;
+
+  const Real specdens_so4 = aero_species(int(AeroId::SO4)).density;
+  const Real specdens_pom = aero_species(int(AeroId::POM)).density;
+  const Real specdens_mom = aero_species(int(AeroId::MOM)).density;
+  const Real specdens_soa = aero_species(int(AeroId::SOA)).density;
+  const Real specdens_dst = aero_species(int(AeroId::DST)).density;
+  const Real specdens_bc = aero_species(int(AeroId::BC)).density;
+
+  vol_shell[1] =
+      (so4mac / specdens_so4 + pommac * pom_equivso4_factor / specdens_pom +
+       mommac * mom_equivso4_factor / specdens_mom +
+       soamac * soa_equivso4_factor / specdens_soa) /
+      air_density;
+
+  vol_core[1] = dmac / (specdens_dst * air_density);
+
+  // bc
+  vol_shell[0] = (pommpc * pom_equivso4_factor / specdens_pom +
+                  mommpc * mom_equivso4_factor / specdens_mom) /
+                 air_density;
+
+  vol_core[0] = bcmpc / (specdens_bc * air_density);
+
+  // dust_a1
+  Real coat_ratio1 = vol_shell[0] * (r_bc * 2.0) * fac_volsfc_pcarbon;
+
+  const Real n_so4_monolayers_dust = 1.0;
+  const Real dr_so4_monolayers_dust = n_so4_monolayers_dust * 4.76e-10;
+  Real coat_ratio2 =
+      haero::max(6.0 * dr_so4_monolayers_dust * vol_core[0], 0.0);
+  dstcoat[0] = coat_ratio1 / coat_ratio2;
+
+  // dust_a1
+  coat_ratio1 = vol_shell[1] * (r_dust_a1 * 2.0) * fac_volsfc_dust_a1;
+  coat_ratio2 = haero::max(6.0 * dr_so4_monolayers_dust * vol_core[1], 0.0);
+  dstcoat[1] = coat_ratio1 / coat_ratio2;
+
+  // dust_a3
+  vol_shell[2] = so4mc / (specdens_so4 * air_density) +
+                 pommc / (specdens_pom * air_density) +
+                 soamc / (specdens_soa * air_density) +
+                 mommc / (specdens_mom * air_density);
+
+  vol_core[2] = dmc / (specdens_dst * air_density);
+  coat_ratio1 = vol_shell[2] * (r_dust_a3 * 2.0) * fac_volsfc_dust_a3;
+  coat_ratio2 = haero::max(6.0 * dr_so4_monolayers_dust * vol_core[2], 0.0);
+  dstcoat[2] = coat_ratio1 / coat_ratio2;
+
+  for (int ispec = 0; ispec < Hetfzr::hetfzr_aer_nspec; ++ispec) {
+    dstcoat[ispec] = utils::min_max_bound(0.001, 1.0, dstcoat[ispec]);
+  }
+
+  for (int ispec = 0; ispec < Hetfzr::hetfzr_aer_nspec; ++ispec) {
+    total_aer_num[ispec] =
+        total_interstitial_aer_num[ispec] + total_cloudborne_aer_num[ispec];
+    coated_aer_num[ispec] = total_interstitial_aer_num[ispec] * dstcoat[ispec];
+    uncoated_aer_num[ispec] =
+        total_interstitial_aer_num[ispec] * (1.0 - dstcoat[ispec]);
+  }
+
+  const Real bc_kg_to_num = 4.669152e+17;
+  coated_aer_num[0] =
+      bcmpc * bc_kg_to_num * Hetfzr::num_m3_to_cm3 * dstcoat[0] +
+      bcmac * bc_kg_to_num * Hetfzr::num_m3_to_cm3;
+
+  uncoated_aer_num[0] =
+      bcmpc * bc_kg_to_num * Hetfzr::num_m3_to_cm3 * (1.0 - dstcoat[0]);
+
+  const Real dst1_0p5um_scale = 0.488;
+  const Real bc_0p5um_scale = 0.0256;
+  // scaled for D>0.5 um using Clarke et al., 1997; 2004; 2007: rg=0.1um,
+  // sig=1.6
+  tot_na500 = total_aer_num[0] * bc_0p5um_scale +
+              total_aer_num[1] * dst1_0p5um_scale + total_aer_num[2];
+
+  // scaled for D>0.5 um using Clarke et al., 1997; 2004; 2007: rg=0.1um,
+  // sig=1.6
+  na500 = total_interstitial_aer_num[0] * bc_0p5um_scale +
+          total_interstitial_aer_num[1] * dst1_0p5um_scale +
+          total_interstitial_aer_num[2];
+}
+
+KOKKOS_INLINE_FUNCTION
+void calculate_vars_for_water_activity(
+    const Real so4mac, const Real soamac, const Real bcmac, const Real mommac,
+    const Real pommac, const Real num_accum, const Real so4mc, const Real mommc,
+    const Real bcmc, const Real pommc, const Real soamc, const Real num_coarse,
+    Real total_interstitial_aer_num[Hetfzr::hetfzr_aer_nspec],
+    Real awcam[Hetfzr::hetfzr_aer_nspec],
+    Real awfacm[Hetfzr::hetfzr_aer_nspec]) {
+
+  const Real bc_num = total_interstitial_aer_num[0];
+  const Real dst1_num = total_interstitial_aer_num[1];
+  const Real dst3_num = total_interstitial_aer_num[2];
+
+  Real aermc_tmp = so4mac + soamac + pommac + bcmac + mommac;
+
+  const Real mass_kg_to_mug = 1.0e9;
+  // accumulation mode for dust_a1
+  if (num_accum > 0.0) {
+    awcam[1] = (dst1_num * Hetfzr::num_cm3_to_m3) / num_accum * aermc_tmp *
+               mass_kg_to_mug;
+  }
+
+  if (awcam[1] > 0.0) {
+    awfacm[1] = (bcmac + soamac + pommac + mommac) / aermc_tmp;
+  }
+
+  // accumulation mode for bc (if MAM4, primary carbon mode is insoluble)
+  if (num_accum > 0.0) {
+    awcam[0] = (bc_num * Hetfzr::num_cm3_to_m3) / num_accum * aermc_tmp *
+               mass_kg_to_mug;
+  }
+  awfacm[0] = awfacm[1];
+
+  aermc_tmp = so4mc + mommc + bcmc + pommc + soamc;
+
+  // coarse mode for dust_a3
+  if (num_coarse > 0.0) {
+    awcam[2] = (dst3_num * Hetfzr::num_cm3_to_m3) / num_coarse * aermc_tmp *
+               mass_kg_to_mug;
+  }
+
+  if (awcam[2] > 0.0) {
+    awfacm[2] =
+        (bcmc + soamc + pommc + mommc) / (soamc + pommc + so4mc + bcmc + mommc);
+  }
+}
+
+KOKKOS_INLINE_FUNCTION
+void hetfzr_rates_1box(const int k, const AeroConfig &aero_config,
+                       const Real dt, const Atmosphere &atm,
+                       const Prognostics &progs, const Diagnostics &diags,
+                       const Tendencies &tends, const Hetfzr::Config &config) {
+
+  const Real temp = atm.temperature(k);
+  const Real pmid = atm.pressure[k];
+  const Real ast = diags.stratiform_cloud_fraction[k];
+
+  const int coarse_idx = int(ModeIndex::Coarse);
+  const int accum_idx = int(ModeIndex::Accumulation);
+  const int pcarbon_idx = int(ModeIndex::PrimaryCarbon);
+
+  auto &accum_bc = progs.q_aero_i[accum_idx][int(AeroId::BC)];
+  auto &accum_dst = progs.q_aero_i[accum_idx][int(AeroId::DST)];
+  auto &accum_soa = progs.q_aero_i[accum_idx][int(AeroId::SOA)];
+  auto &accum_so4 = progs.q_aero_i[accum_idx][int(AeroId::SO4)];
+  auto &accum_pom = progs.q_aero_i[accum_idx][int(AeroId::POM)];
+  auto &accum_mom = progs.q_aero_i[accum_idx][int(AeroId::MOM)];
+  auto &num_accum = progs.n_mode_i[accum_idx];
+
+  auto &pcarbon_bc = progs.q_aero_i[pcarbon_idx][int(AeroId::BC)];
+  auto &pcarbon_pom = progs.q_aero_i[pcarbon_idx][int(AeroId::POM)];
+  auto &pcarbon_mom = progs.q_aero_i[pcarbon_idx][int(AeroId::MOM)];
+
+  auto &coarse_dust = progs.q_aero_i[coarse_idx][int(AeroId::DST)];
+  auto &coarse_ncl = progs.q_aero_i[coarse_idx][int(AeroId::NaCl)];
+  auto &coarse_mom = progs.q_aero_i[coarse_idx][int(AeroId::MOM)];
+  auto &coarse_bc = progs.q_aero_i[coarse_idx][int(AeroId::BC)];
+  auto &coarse_pom = progs.q_aero_i[coarse_idx][int(AeroId::POM)];
+  auto &coarse_soa = progs.q_aero_i[coarse_idx][int(AeroId::SOA)];
+  auto &coarse_so4 = progs.q_aero_i[coarse_idx][int(AeroId::SO4)];
+
+  auto &num_coarse = progs.n_mode_i[coarse_idx];
+
+  // initialize rho
+  const Real air_density = conversions::density_of_ideal_gas(temp, pmid);
+  const Real lcldm = haero::max(ast, Hetfzr::mincld);
+
+  const Real bcmac = accum_bc(k) * air_density;
+  const Real dmac = accum_dst(k) * air_density;
+  const Real soamac = accum_soa(k) * air_density;
+  const Real so4mac = accum_so4(k) * air_density;
+  const Real pommac = accum_pom(k) * air_density;
+  const Real mommac = accum_mom(k) * air_density;
+
+  const Real bcmpc = pcarbon_bc(k) * air_density;
+  const Real pommpc = pcarbon_pom(k) * air_density;
+  const Real mommpc = pcarbon_mom(k) * air_density;
+
+  const Real dmc = coarse_dust(k) * air_density;
+  const Real ssmc = coarse_ncl(k) * air_density;
+  const Real mommc = coarse_mom(k) * air_density;
+  const Real bcmc = coarse_bc(k) * air_density;
+  const Real pommc = coarse_pom(k) * air_density;
+  const Real soamc = coarse_soa(k) * air_density;
+  const Real so4mc = coarse_so4(k) * air_density;
+
+  Real total_interstital_aer_num[Hetfzr::hetfzr_aer_nspec] = {0.0};
+
+  calculate_interstitial_aer_num(bcmac, dmac, bcmpc, dmc, ssmc, mommc, bcmc,
+                                 pommc, soamc, num_coarse[k],
+                                 total_interstital_aer_num);
+
+  auto &accum_dst_cb = progs.q_aero_c[accum_idx][int(AeroId::DST)];
+  auto &accum_ss_cb = progs.q_aero_c[accum_idx][int(AeroId::NaCl)];
+  auto &accum_so4_cb = progs.q_aero_c[accum_idx][int(AeroId::SO4)];
+  auto &accum_bc_cb = progs.q_aero_c[accum_idx][int(AeroId::BC)];
+  auto &accum_pom_cb = progs.q_aero_c[accum_idx][int(AeroId::POM)];
+  auto &accum_soa_cb = progs.q_aero_c[accum_idx][int(AeroId::SOA)];
+  auto &accum_mom_cb = progs.q_aero_c[accum_idx][int(AeroId::MOM)];
+
+  auto &num_accum_cb = progs.n_mode_c[accum_idx];
+
+  const Real dmac_cb = accum_dst_cb[k] * air_density;
+  const Real ssmac_cb = accum_ss_cb[k] * air_density;
+  const Real so4mac_cb = accum_so4_cb[k] * air_density;
+  const Real bcmaac_cb = accum_bc_cb[k] * air_density;
+  const Real pommac_cb = accum_pom_cb[k] * air_density;
+  const Real soamac_cb = accum_soa_cb[k] * air_density;
+  const Real mommac_cb = accum_mom_cb[k] * air_density;
+
+  auto &coarse_dust_cb = progs.q_aero_c[coarse_idx][int(AeroId::DST)];
+  auto &coarse_ncl_cb = progs.q_aero_c[coarse_idx][int(AeroId::NaCl)];
+  auto &coarse_mom_cb = progs.q_aero_c[coarse_idx][int(AeroId::MOM)];
+  auto &coarse_bc_cb = progs.q_aero_c[coarse_idx][int(AeroId::BC)];
+  auto &coarse_pom_cb = progs.q_aero_c[coarse_idx][int(AeroId::POM)];
+  auto &coarse_soa_cb = progs.q_aero_c[coarse_idx][int(AeroId::SOA)];
+
+  auto &num_coarse_cb = progs.n_mode_c[accum_idx];
+
+  const Real dmc_cb = coarse_dust_cb[k] * air_density;
+  const Real ssmc_cb = coarse_ncl_cb[k] * air_density;
+  const Real mommc_cb = coarse_mom_cb[k] * air_density;
+  const Real bcmc_cb = coarse_bc_cb[k] * air_density;
+  const Real pommc_cb = coarse_pom_cb[k] * air_density;
+  const Real soamc_cb = coarse_soa_cb[k] * air_density;
+
+  Real total_cloudbborne_aer_num[Hetfzr::hetfzr_aer_nspec] = {0.0};
+
+  calculate_cloudborne_aer_num(
+      dmac_cb, ssmac_cb, so4mac_cb, bcmaac_cb, pommac_cb, soamac_cb, mommac_cb,
+      num_accum_cb[k], dmc_cb, ssmc_cb, mommc_cb, bcmc_cb, pommc_cb, soamc_cb,
+      num_coarse_cb[k], total_cloudbborne_aer_num);
+
+  Real hetraer[Hetfzr::hetfzr_aer_nspec] = {0.0};
+
+  calculate_mass_mean_radius(bcmac, bcmpc, dmac, dmc, total_interstital_aer_num,
+                             hetraer);
+
+  Real total_aer_num[Hetfzr::hetfzr_aer_nspec] = {0.0};
+  Real coated_aer_num[Hetfzr::hetfzr_aer_nspec] = {0.0};
+  Real uncoated_aer_num[Hetfzr::hetfzr_aer_nspec] = {0.0};
+  Real dstcoat[Hetfzr::hetfzr_aer_nspec] = {0.0};
+  Real na500 = 0.0;
+  Real tot_na500 = 0.0;
+
+  calcualte_coated_fraction(
+      air_density, so4mac, pommac, mommac, soamac, dmac, bcmac, mommpc, pommpc,
+      bcmpc, so4mc, pommc, soamc, mommc, dmc, total_interstital_aer_num,
+      total_cloudbborne_aer_num, hetraer, total_aer_num, coated_aer_num,
+      uncoated_aer_num, dstcoat, na500, tot_na500);
+
+  Real awcam[Hetfzr::hetfzr_aer_nspec] = {0.0};
+  Real awfacm[Hetfzr::hetfzr_aer_nspec] = {0.0};
+
+  calculate_vars_for_water_activity(
+      so4mac, soamac, bcmac, mommac, pommac, num_accum[k], so4mc, mommc, bcmc,
+      pommc, soamc, num_coarse[k], total_interstital_aer_num, awcam, awfacm);
+
+  (void)lcldm;
+}
+
 } // namespace hetfzr
+
+// init -- initializes the implementation with MAM4's configuration
+inline void Hetfzr::init(const AeroConfig &aero_config,
+                         const Config &process_config) {
+
+  config_ = process_config;
+};
+
+// compute_tendencies -- computes tendencies and updates diagnostics
+// NOTE: that both diags and tends are const below--this means their views
+// NOTE: are fixed, but the data in those views is allowed to vary.
+KOKKOS_INLINE_FUNCTION
+void Hetfzr::compute_tendencies(const AeroConfig &config,
+                                const ThreadTeam &team, Real t, Real dt,
+                                const Atmosphere &atm, const Prognostics &progs,
+                                const Diagnostics &diags,
+                                const Tendencies &tends) const {
+
+  const int nk = atm.num_levels();
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
+        hetfzr::hetfzr_rates_1box(k, config, dt, atm, progs, diags, tends,
+                                  config_);
+      });
+}
+
 } // namespace mam4
 
 #endif
