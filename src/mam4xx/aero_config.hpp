@@ -231,6 +231,9 @@ public:
     stratiform_cloud_fraction =
         ColumnView("stratiform_cloud_fraction", num_levels);
     Kokkos::deep_copy(stratiform_cloud_fraction, 0.0);
+
+    activation_fraction = ColumnView("activation_fraction", num_levels);
+    Kokkos::deep_copy(activation_fraction, 0.0);
   }
   Diagnostics() = default; // Careful! Only for creating placeholders in views
   Diagnostics(const Diagnostics &) = default;
@@ -303,6 +306,9 @@ public:
 
   // stratiform cloud fraction (called AST in F90 MAM4)
   ColumnView stratiform_cloud_fraction;
+
+  // activation fraction for aerosol number
+  ColumnView activation_fraction;
 
 private:
   int nlev_;
