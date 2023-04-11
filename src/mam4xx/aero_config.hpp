@@ -202,6 +202,9 @@ public:
 
       wet_density[mode] = ColumnView("wet_density", num_levels);
       Kokkos::deep_copy(wet_density[mode], 0.0);
+
+      activation_fraction[mode] = ColumnView("activation_fraction", num_levels);
+      Kokkos::deep_copy(activation_fraction[mode], 0.0);
     }
     uptkrate_h2so4 = ColumnView("uptkrate_h2so4", num_levels);
     Kokkos::deep_copy(uptkrate_h2so4, 0.0);
@@ -231,9 +234,6 @@ public:
     stratiform_cloud_fraction =
         ColumnView("stratiform_cloud_fraction", num_levels);
     Kokkos::deep_copy(stratiform_cloud_fraction, 0.0);
-
-    activation_fraction = ColumnView("activation_fraction", num_levels);
-    Kokkos::deep_copy(activation_fraction, 0.0);
   }
   Diagnostics() = default; // Careful! Only for creating placeholders in views
   Diagnostics(const Diagnostics &) = default;
@@ -268,6 +268,9 @@ public:
 
   // Aerosol wet density
   ColumnView wet_density[AeroConfig::num_modes()];
+
+  // Activation fraction
+  ColumnView activation_fraction[AeroConfig::num_modes()];
 
   /// For gas-aerosol exchange process
   /// Uptake rate coefficient of H2SO4 gas, summed over all modes
@@ -306,9 +309,6 @@ public:
 
   // stratiform cloud fraction (called AST in F90 MAM4)
   ColumnView stratiform_cloud_fraction;
-
-  // activation fraction for aerosol number
-  ColumnView activation_fraction;
 
 private:
   int nlev_;
