@@ -25,14 +25,16 @@ endforeach()
 
 set(TEST_LIST
     nucleate_ice_cam_calc_merged # passing tolerance = 1.5e-5
-    hetero_merged
+    #hetero_merged <--- Skywalker seems to have trouble generating this ensemble!
     #hetero_t_merged
     hf_merged
     nucleati_merged # passing tolerance = 3e-9
     nucleate_ice # produced by mam4_standalone_validation
     )
 set(DEFAULT_TOL 1e-9)
-set(ERROR_THRESHOLDS 1.5e-5 ${DEFAULT_TOL} ${DEFAULT_TOL} 3e-9 ${DEFAULT_TOL})
+# Uncomment this line when hetero_merged is fixed
+#set(ERROR_THRESHOLDS 1.5e-5 ${DEFAULT_TOL} ${DEFAULT_TOL} 3e-9 ${DEFAULT_TOL})
+set(ERROR_THRESHOLDS 1.5e-5 ${DEFAULT_TOL} 3e-9 ${DEFAULT_TOL})
 
 # Run the driver in several configurations to produce datasets.
 
