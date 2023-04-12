@@ -18,7 +18,7 @@
 using namespace haero;
 using namespace mam4;
 
-TEST_CASE("get_air_viscosity", "mam4_hetfzr") {
+TEST_CASE("get_air_viscosity", "mam4_hetfrz") {
 
   const Real threshold_error = std::numeric_limits<float>::epsilon();
 
@@ -31,12 +31,12 @@ TEST_CASE("get_air_viscosity", "mam4_hetfzr") {
       1.7564319999999999e-05, 1.7657999999999999e-05};
 
   for (int i = 0; i < 11; ++i) {
-    REQUIRE(haero::abs(visc_test[i] - mam4::hetfzr::get_air_viscosity(tc[i])) <
+    REQUIRE(haero::abs(visc_test[i] - mam4::hetfrz::get_air_viscosity(tc[i])) <
             threshold_error);
   }
 }
 
-TEST_CASE("get_latent_heat_vapor", "mam4_hetfzr") {
+TEST_CASE("get_latent_heat_vapor", "mam4_hetfrz") {
 
   const Real threshold_error = std::numeric_limits<float>::epsilon();
 
@@ -50,7 +50,7 @@ TEST_CASE("get_latent_heat_vapor", "mam4_hetfzr") {
   };
 
   for (int i = 0; i < 11; ++i) {
-    REQUIRE(haero::abs(lh_test[i] - mam4::hetfzr::get_latent_heat_vapor(
+    REQUIRE(haero::abs(lh_test[i] - mam4::hetfrz::get_latent_heat_vapor(
                                         tc[i])) < threshold_error);
   }
 }
