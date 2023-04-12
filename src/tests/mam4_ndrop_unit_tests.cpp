@@ -1,10 +1,10 @@
+#include "testing.hpp"
 #include "atmosphere_utils.hpp"
 
 #include "mam4xx/aero_modes.hpp"
 #include "mam4xx/conversions.hpp"
 #include <mam4xx/mode_dry_particle_size.hpp>
 
-#include <haero/atmosphere.hpp>
 #include <haero/constants.hpp>
 #include <haero/floating_point.hpp>
 #include <haero/haero.hpp>
@@ -32,7 +32,7 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
 
   int nlev = 1;
   Real pblh = 1000;
-  Atmosphere atm(nlev, pblh);
+  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
 
   // initialize a hydrostatically balanced moist air column
   // using constant lapse rate in virtual temperature to manufacture
@@ -158,14 +158,14 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
                                 ekat::logger::LogLevel::debug, comm);
 
   int nlev = 4;
-  ColumnView q = ColumnView("q", nlev);
-  ColumnView src = ColumnView("src", nlev);
-  ColumnView ekkp = ColumnView("ekkp", nlev);
-  ColumnView ekkm = ColumnView("ekkm", nlev);
-  ColumnView overlapp = ColumnView("overlapp", nlev);
-  ColumnView overlapm = ColumnView("overlapm", nlev);
-  ColumnView qold = ColumnView("qold", nlev);
-  ColumnView qactold = ColumnView("qactold", nlev);
+  ColumnView q = mam4::testing::create_column_view(nlev);
+  ColumnView src = mam4::testing::create_column_view(nlev);
+  ColumnView ekkp = mam4::testing::create_column_view(nlev);
+  ColumnView ekkm = mam4::testing::create_column_view(nlev);
+  ColumnView overlapp = mam4::testing::create_column_view(nlev);
+  ColumnView overlapm = mam4::testing::create_column_view(nlev);
+  ColumnView qold = mam4::testing::create_column_view(nlev);
+  ColumnView qactold = mam4::testing::create_column_view(nlev);
   Real dt = .1;
   bool is_unact = false;
 
