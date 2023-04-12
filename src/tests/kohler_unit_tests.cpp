@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "kohler_verification.hpp"
-#include "mam4_test_config.hpp"
+#include <mam4_test_config.hpp>
 #include <mam4xx/kohler.hpp>
 
 #include <catch2/catch.hpp>

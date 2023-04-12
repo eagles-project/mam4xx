@@ -1,7 +1,7 @@
 include(EkatCreateUnitTest)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mam4_test_config.hpp.in
-  ${CMAKE_CURRENT_SOURCE_DIR}/mam4_test_config.hpp
+  ${PROJECT_BINARY_DIR}/include/mam4_test_config.hpp
   @ONLY
 )
 
@@ -12,7 +12,7 @@ file(COPY ${MAM4XX_HAERO_DIR}/bin/test-launcher DESTINATION ${PROJECT_BINARY_DIR
 add_library(mam4xx_tests kohler_verification.cpp
                          atmosphere_utils.cpp
                          testing.cpp)
-target_include_directories(mam4xx_tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(mam4xx_tests PUBLIC ${PROJECT_BINARY_DIR}/include)
 target_include_directories(mam4xx_tests PUBLIC ${HAERO_INCLUDE_DIRS})
 target_link_libraries(mam4xx_tests ${HAERO_LIBRARIES})
 target_link_libraries(mam4xx_tests mam4xx)
