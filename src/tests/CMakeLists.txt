@@ -24,8 +24,8 @@ target_link_libraries(mam4xx_tests mam4xx)
 # We use the EkatCreateUnitTest CMake function to create unit tests that are
 # configured properly to work in the Kokkos environment provided by EKAT.
 # EkatCreateUnitTest must be called with the following options:
-# 1. LIBS mam4xx ${HAERO_LIBRARIES} <-- links against mam4xx and Haero
-# 2. EXCLUDE_TEST_SESSION           <-- uses Haero's setup/breakdown functions
+# 1. LIBS mam4xx_tests ${HAERO_LIBRARIES} <-- links against mam4xx and Haero
+# 2. EXCLUDE_TEST_SESSION                 <-- uses Haero's setup/breakdown functions
 
 EkatCreateUnitTest(utils_unit_tests utils_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)

@@ -60,7 +60,6 @@ jobs:
         repository: eagles-project/haero
         submodules: recursive
         path: haero_src
-        ref: jeff-cohere/uviews
 
     - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
       run: |
