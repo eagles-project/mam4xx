@@ -1,5 +1,5 @@
-#include "testing.hpp"
 #include "atmosphere_utils.hpp"
+#include "testing.hpp"
 
 #include "mam4xx/aero_modes.hpp"
 #include "mam4xx/conversions.hpp"
