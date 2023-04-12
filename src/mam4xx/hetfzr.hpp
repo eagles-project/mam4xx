@@ -153,7 +153,7 @@ Real get_reynolds_num(const Real r3lx, const Real rho_air,
 
   // droplet terminal velocity after Chen & Liu, QJRMS 2004
   const Real vlc_drop_adjfunc =
-      (haero::exp(coeff_adj_a + coeff_adj_b * haero::cube(haero::log(r3lx)) +
+      haero::exp(haero::exp(coeff_adj_a + coeff_adj_b * haero::cube(haero::log(r3lx)) +
                   coeff_adj_c * haero::pow(rho_air, 1.5)));
   const Real vlc_drop =
       (coeff_vlc_a + (coeff_vlc_b + coeff_vlc_c * r3lx) * r3lx) * r3lx *
@@ -1109,8 +1109,8 @@ void hetfzr_rates_1box(const int k, const AeroConfig &aero_config,
                        const Tendencies &tends, const Hetfzr::Config &config) {
 
   const Real temp = atm.temperature(k);
-  const Real pmid = atm.pressure[k];
-  const Real ast = diags.stratiform_cloud_fraction[k];
+  const Real pmid = atm.pressure(k);
+  const Real ast = diags.stratiform_cloud_fraction(k);
 
   const int coarse_idx = int(ModeIndex::Coarse);
   const int accum_idx = int(ModeIndex::Accumulation);
@@ -1232,6 +1232,17 @@ void hetfzr_rates_1box(const int k, const AeroConfig &aero_config,
   calculate_vars_for_water_activity(
       so4mac, soamac, bcmac, mommac, pommac, num_accum[k], so4mc, mommc, bcmc,
       pommc, soamc, num_coarse[k], total_interstital_aer_num, awcam, awfacm);
+
+  auto &af_accum = diags.activation_fraction[accum_idx];
+  auto &af_coarse = diags.activation_fraction[coarse_idx];
+
+  Real cloudborne_aer_num[Hetfzr::hetfzr_aer_nspec];
+  cloudborne_aer_num[0] = total_aer_num[0] * af_accum[k];  // bc
+  cloudborne_aer_num[1] = total_aer_num[1] * af_accum[k];  // dst_a1
+  cloudborne_aer_num[2] = total_aer_num[2] * af_coarse[k]; // dst_a3
+
+  if ((temp > 235.15) & (temp < 269.15)) {
+  }
 
   (void)lcldm;
 }
