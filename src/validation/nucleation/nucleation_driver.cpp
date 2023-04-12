@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
   }
-  Kokkos::initialize(argc, argv);
+  validation::initialize(argc, argv);
   std::string input_file = argv[1];
   std::string output_file = validation::output_name(input_file);
   std::cout << argv[0] << ": reading " << input_file << std::endl;
@@ -66,5 +66,5 @@ int main(int argc, char **argv) {
 
   // Clean up.
   delete ensemble;
-  Kokkos::finalize();
+  validation::finalize();
 }

@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "atmosphere_utils.hpp"
+#include "testing.hpp"
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/aero_modes.hpp>
@@ -34,8 +35,8 @@ TEST_CASE("modal_averages", "") {
   /// mixing ratios.
   /// These values are chosen for simplicity; they roughly match
   /// (within an order of magnitude) realistic values.
-  Prognostics progs(nlev);
-  Diagnostics diags(nlev);
+  Prognostics progs = testing::create_prognostics(nlev);
+  Diagnostics diags = testing::create_diagnostics(nlev);
 
   const Real number_mixing_ratio = 2e7;
   const Real mass_mixing_ratio = 3e-8;
@@ -183,7 +184,7 @@ TEST_CASE("modal_averages", "") {
 
   SECTION("wet particle size") {
     const Real pblh = 0;
-    Atmosphere atm(nlev, pblh);
+    Atmosphere atm = testing::create_atmosphere(nlev, pblh);
     // initialize a hydrostatically balanced moist air column
     // using constant lapse rate in virtual temperature to manufacture
     // exact solutions.
@@ -200,7 +201,7 @@ TEST_CASE("modal_averages", "") {
     const auto w = atm.vapor_mixing_ratio;
     const auto T = atm.temperature;
     const auto P = atm.pressure;
-    ColumnView relative_humidity("relative_humidity", nlev);
+    ColumnView relative_humidity = testing::create_column_view(nlev);
     Kokkos::parallel_for(
         "compute relative humidity", nlev, KOKKOS_LAMBDA(const int k) {
           relative_humidity(k) =

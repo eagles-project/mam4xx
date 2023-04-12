@@ -25,10 +25,10 @@ void compute_tendencies(Ensemble *ensemble) {
 
     int nlev = 1;
     Real pblh = 1000;
-    Atmosphere atm(nlev, pblh);
-    mam4::Prognostics progs(nlev);
-    mam4::Diagnostics diags(nlev);
-    mam4::Tendencies tends(nlev);
+    Atmosphere atm = validation::create_atmosphere(nlev, pblh);
+    mam4::Prognostics progs = validation::create_prognostics(nlev);
+    mam4::Diagnostics diags = validation::create_diagnostics(nlev);
+    mam4::Tendencies tends = validation::create_tendencies(nlev);
 
     const Real subgrid = input.get_array("nucleate_ice_subgrid")[0];
     const Real so4_sz_thresh_icenuc =

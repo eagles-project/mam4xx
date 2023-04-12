@@ -65,41 +65,23 @@ public:
 
 /// MAM4 column-wise prognostic aerosol fields (also used for tendencies).
 class Prognostics final {
+  // number of vertical levels
+  int nlev_;
+
 public:
   using ColumnView = haero::ColumnView;
   using ThreadTeam = haero::ThreadTeam;
 
   /// Creates a container for prognostic variables on the specified number of
-  /// vertical levels.
-  explicit Prognostics(int num_levels) : nlev_(num_levels) {
-    for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
-      n_mode_i[mode] = ColumnView("n_mode_i", num_levels);
-      n_mode_c[mode] = ColumnView("n_mode_c", num_levels);
-      Kokkos::deep_copy(n_mode_i[mode], 0.0);
-      Kokkos::deep_copy(n_mode_c[mode], 0.0);
-      for (int spec = 0; spec < AeroConfig::num_aerosol_ids(); ++spec) {
-        q_aero_i[mode][spec] = ColumnView("q_aero_i", num_levels);
-        q_aero_c[mode][spec] = ColumnView("q_aero_c", num_levels);
-        Kokkos::deep_copy(q_aero_i[mode][spec], 0.0);
-        Kokkos::deep_copy(q_aero_c[mode][spec], 0.0);
-      }
-    }
-    for (int gas = 0; gas < AeroConfig::num_gas_ids(); ++gas) {
-      q_gas[gas] = ColumnView("q_gas", num_levels);
-      q_gas_avg[gas] = ColumnView("q_gas_avg", num_levels);
-      Kokkos::deep_copy(q_gas[gas], 0.0);
-      Kokkos::deep_copy(q_gas_avg[gas], 0.0);
-      for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
-        uptkaer[gas][mode] = ColumnView("uptake_rate", num_levels);
-        Kokkos::deep_copy(uptkaer[gas][mode], 0.0);
-      }
-    }
-  }
+  /// vertical levels. All views must be set manually.
+  explicit Prognostics(int num_levels) : nlev_(num_levels) {}
 
-  Prognostics() = default; // Careful! Only for creating placeholders in views
-  Prognostics(const Prognostics &) = default;
+  Prognostics() = default; // use only for creating containers of Prognostics!
   ~Prognostics() = default;
-  Prognostics &operator=(const Prognostics &) = default;
+
+  // these are used to populate containers of Prognostics objects
+  Prognostics(const Prognostics &rhs) = default;
+  Prognostics &operator=(const Prognostics &rhs) = default;
 
   ///  modal interstitial aerosol number mixing ratios (see aero_mode.hpp for
   ///  indexing)
@@ -170,68 +152,26 @@ public:
         violations);
     return (violations == 0);
   }
-
-private:
-  int nlev_;
 };
 
 /// MAM4 column-wise diagnostic aerosol fields.
 class Diagnostics final {
+  // number of vertical levels
+  int nlev_;
+
 public:
   using ColumnView = haero::ColumnView;
 
-  explicit Diagnostics(int num_levels) : nlev_(num_levels) {
-    for (int mode = 0; mode < AeroConfig::num_modes(); ++mode) {
-      hygroscopicity[mode] = ColumnView("hygroscopicity", num_levels);
-      Kokkos::deep_copy(hygroscopicity[mode], 0.0);
-      dry_geometric_mean_diameter_i[mode] =
-          ColumnView("dry_geometric_mean_diameter_interstitial", num_levels);
-      dry_geometric_mean_diameter_c[mode] =
-          ColumnView("dry_geometric_mean_diameter_cloudborne", num_levels);
-      dry_geometric_mean_diameter_total[mode] =
-          ColumnView("dry_geometric_mean_diameter_total", num_levels);
-      Kokkos::deep_copy(dry_geometric_mean_diameter_i[mode], 0.0);
-      Kokkos::deep_copy(dry_geometric_mean_diameter_c[mode], 0.0);
-      Kokkos::deep_copy(dry_geometric_mean_diameter_total[mode], 0.0);
-      wet_geometric_mean_diameter_i[mode] =
-          ColumnView("wet_geometric_mean_diameter_interstitial", num_levels);
-      wet_geometric_mean_diameter_c[mode] =
-          ColumnView("wet_geometric_mean_diameter_cloudborne", num_levels);
-      Kokkos::deep_copy(wet_geometric_mean_diameter_i[mode], 0.0);
-      Kokkos::deep_copy(wet_geometric_mean_diameter_c[mode], 0.0);
+  /// Creates a container for diagnostic variables on the specified number of
+  /// vertical levels. All views must be set manually.
+  explicit Diagnostics(int num_levels) : nlev_(num_levels) {}
 
-      wet_density[mode] = ColumnView("wet_density", num_levels);
-      Kokkos::deep_copy(wet_density[mode], 0.0);
-    }
-    uptkrate_h2so4 = ColumnView("uptkrate_h2so4", num_levels);
-    Kokkos::deep_copy(uptkrate_h2so4, 0.0);
-    g0_soa_out = ColumnView("g0_soa_out", num_levels);
-    Kokkos::deep_copy(g0_soa_out, 0.0);
-    iscloudy = haero::DeviceType::view_1d<bool>("is_cloudy_bool", num_levels);
-    Kokkos::deep_copy(iscloudy, false);
-    num_substeps = haero::DeviceType::view_1d<int>("num_substeps", num_levels);
-    Kokkos::deep_copy(num_substeps, 0);
-
-    icenuc_num_hetfrz = ColumnView("icenuc_num_hetfrz", num_levels);
-    Kokkos::deep_copy(icenuc_num_hetfrz, 0.0);
-    icenuc_num_immfrz = ColumnView("icenuc_num_immfrz", num_levels);
-    Kokkos::deep_copy(icenuc_num_immfrz, 0.0);
-    icenuc_num_depnuc = ColumnView("icenuc_num_depnuc", num_levels);
-    Kokkos::deep_copy(icenuc_num_depnuc, 0.0);
-    icenuc_num_meydep = ColumnView("icenuc_num_meydep", num_levels);
-    Kokkos::deep_copy(icenuc_num_meydep, 0.0);
-
-    num_act_aerosol_ice_nucle_hom =
-        ColumnView("num_act_aerosol_ice_nucle_hom", num_levels);
-    Kokkos::deep_copy(num_act_aerosol_ice_nucle_hom, 0.0);
-    num_act_aerosol_ice_nucle =
-        ColumnView("num_act_aerosol_ice_nucle", num_levels);
-    Kokkos::deep_copy(num_act_aerosol_ice_nucle, 0.0);
-  }
-  Diagnostics() = default; // Careful! Only for creating placeholders in views
-  Diagnostics(const Diagnostics &) = default;
+  Diagnostics() = default; // use only for creating containers of Diagnostics!
   ~Diagnostics() = default;
-  Diagnostics &operator=(const Diagnostics &) = default;
+
+  // these are used to populate containers of Diagnostics objects
+  Diagnostics(const Diagnostics &rhs) = default;
+  Diagnostics &operator=(const Diagnostics &rhs) = default;
 
   int num_levels() const { return nlev_; }
 
@@ -269,7 +209,7 @@ public:
   ColumnView g0_soa_out;
 
   /// boolean indicating whether cloudborne aerosols are present in a cell
-  haero::DeviceType::view_1d<bool> iscloudy;
+  haero::DeviceType::view_1d<bool> is_cloudy;
 
   /// Number of time substeps needed to converge in mam_soaexch_advance_in_time
   haero::DeviceType::view_1d<int> num_substeps;
@@ -296,9 +236,6 @@ public:
   ColumnView num_act_aerosol_ice_nucle_hom;
   // number of activated aerosol for ice nucleation [#/kg]
   ColumnView num_act_aerosol_ice_nucle;
-
-private:
-  int nlev_;
 };
 
 } // namespace mam4

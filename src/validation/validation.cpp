@@ -8,6 +8,13 @@
 namespace mam4 {
 namespace validation {
 
+void initialize(int argc, char **argv) { Kokkos::initialize(argc, argv); }
+
+void finalize() {
+  testing::finalize();
+  Kokkos::finalize();
+}
+
 std::string output_name(const std::string &input_file) {
   std::string output_file;
   size_t slash = input_file.find_last_of('/');
