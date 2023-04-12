@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <iostream>
-#include <mam4xx/hetfzr.hpp>
+#include <mam4xx/hetfrz.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
 
@@ -39,7 +39,7 @@ void get_reynolds_number(Ensemble *ensemble) {
     skywalker::Real rho_air = input.get("rho_air");
 
     // Compute reynolds number
-    skywalker::Real re = hetfzr::get_reynolds_num(r3lx, rho_air, viscos_air);
+    skywalker::Real re = hetfrz::get_reynolds_num(r3lx, rho_air, viscos_air);
 
     // Store re as an output variable 
     output.set("re", re);

@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <iostream>
-#include <mam4xx/hetfzr.hpp>
+#include <mam4xx/hetfrz.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
 
