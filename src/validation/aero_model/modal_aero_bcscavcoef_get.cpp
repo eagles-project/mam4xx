@@ -16,35 +16,60 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const Real zero = 0;
 
+    const int ncol = int(input.get_array("ncol")[0]);
+
     auto scavimptblvol_vector = input.get_array("scavimptblvol");
     auto scavimptblnum_vector = input.get_array("scavimptblnum");
+
 
     Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()] =
         {{zero}};
     Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()] =
         {{zero}};
 
+        
+
     int count = 0;
+    for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
     for (int i = 0; i < aero_model::nimptblgrow_total; ++i) {
-      for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
         scavimptblvol[i][imode] = scavimptblvol_vector[count];
         scavimptblnum[i][imode] = scavimptblnum_vector[count];
-        count += 1;
-      }
+        count ++;
+      } 
+    }
+
+    auto dgn_awet_vector = input.get_array("dgn_awet");
+    std::vector<std::vector<Real>> dgn_awet;
+
+    count = 0;
+    for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+    std::vector<Real> tmp;  
+    for (int icol = 0; icol < ncol; ++icol)
+    {
+      tmp.push_back(dgn_awet_vector[count]);
+      count++;
+    } 
+    dgn_awet.push_back(tmp);
     }
 
     auto dgnum_amode = input.get_array("dgnum_amode");
     auto imode = input.get_array("imode")[0] - 1;
-    bool isprx_kk = bool(input.get_array("isprx")[0]);
-    auto dgn_awet_imode_kk = input.get_array("dgn_awet")[imode];
-    Real scavcoefnum_kk = zero;
-    Real scavcoefvol_kk = zero;
+    auto isprx_vector = input.get_array("isprx");
 
-    aero_model::modal_aero_bcscavcoef_get(
-        imode, isprx_kk, dgn_awet_imode_kk, dgnum_amode[imode], scavimptblvol,
-        scavimptblnum, scavcoefnum_kk, scavcoefvol_kk);
+    std::vector<Real> scavcoefnum, scavcoefvol;
+    scavcoefnum = std::vector(ncol, zero); 
+    scavcoefvol = std::vector(ncol, zero);
 
-    output.set("scavcoefnum", std::vector(1, scavcoefnum_kk));
-    output.set("scavcoefvol", std::vector(1, scavcoefvol_kk));
+
+    for (int icol = 0; icol < ncol; ++icol)
+    { 
+        aero_model::modal_aero_bcscavcoef_get(
+        imode, isprx_vector[icol], dgn_awet[imode][icol], dgnum_amode[imode], scavimptblvol,
+        scavimptblnum, scavcoefnum[icol], scavcoefvol[icol]);
+    }
+
+
+    output.set("scavcoefnum", scavcoefnum);
+    output.set("scavcoefvol", scavcoefvol);
   });
 }
