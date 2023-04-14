@@ -1244,6 +1244,7 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
   }
 
   (void)lcldm;
+  (void)cloudborne_aer_num;
 }
 
 } // namespace hetfrz
