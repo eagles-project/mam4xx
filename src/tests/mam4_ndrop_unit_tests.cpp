@@ -30,11 +30,9 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
   ekat::logger::Logger<> logger("ndrop get aer num unit tests",
                                 ekat::logger::LogLevel::debug, comm);
 
-  logger.info(" starting test 1");
   int nlev = 1;
   Real pblh = 1000;
   Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
-  logger.info(" atmosphere created");
 
   // initialize a hydrostatically balanced moist air column
   // using constant lapse rate in virtual temperature to manufacture
@@ -48,7 +46,6 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
       0.015; // specific humidity at surface [kg h2o / kg moist air]
   const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
   init_atm_const_tv_lapse_rate(atm, Tv0, Gammav, qv0, qv1);
-  logger.info(" atmosphere initialized");
 
   const auto T = atm.temperature;
   const auto P = atm.pressure;
@@ -58,7 +55,6 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
 
   Kokkos::deep_copy(h_T, T);
   Kokkos::deep_copy(h_P, P);
-  logger.info(" atmosphere copied");
 
   mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
   mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
@@ -89,7 +85,6 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
     }
   }
 
-  logger.info(" inited progs");
   // initialize diags
   for (int m = 0; m < nmodes; m++) {
     Real dry_vol = 0.0;
@@ -102,7 +97,6 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
     }
   }
 
-  logger.info(" inited diags");
   // Call mam4xx kernel across all modes, levels
   Kokkos::parallel_for(
       "compute_dry_particle_size", nlev, KOKKOS_LAMBDA(const int i) {
