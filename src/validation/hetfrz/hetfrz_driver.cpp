@@ -27,6 +27,7 @@ void get_air_viscosity(Ensemble *ensemble);
 void get_latent_heat_vapor(Ensemble *ensemble);
 void calcualte_collkernel_sub(Ensemble *ensemble);
 void collkernel(Ensemble *ensemble);
+void get_Aimm(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
 
@@ -69,6 +70,9 @@ int main(int argc, char **argv) {
     }
     if (func_name == "collkernel") {
       collkernel(ensemble);
+    }
+    if (func_name == "get_Aimm"){
+      get_Aimm(ensemble);
     }
 
   } catch (std::exception &e) {
