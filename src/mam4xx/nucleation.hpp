@@ -34,7 +34,7 @@ namespace nucleation {
 // Wang, M. and J.E. Penner, 2008,
 // Aerosol indirect forcing in a global model with particle nucleation,
 // Atmos. Chem. Phys. Discuss., 8, 13943-13998
-// Atmos. Chem. Phys.  9, 239–260, 2009
+// Atmos. Chem. Phys.  9, 239-260, 2009
 //--------------------------------------------------------
 KOKKOS_INLINE_FUNCTION
 void pbl_nuc_wang2008(Real so4vol, Real pi, int pbl_nuc_wang2008_user_choice,
@@ -121,7 +121,7 @@ void pbl_nuc_wang2008(Real so4vol, Real pi, int pbl_nuc_wang2008_user_choice,
 //-----------------------------------------------------------------
 // calculates binary nucleation rate and critical cluster size
 // using the parameterization in
-//     vehkamäki, h., m. kulmala, i. napari, k.e.j. lehtinen,
+//     vehkam\"aki, h., m. kulmala, i. napari, k.e.j. lehtinen,
 //        c. timmreck, m. noppel and a. laaksonen, 2002,
 //        an improved parameterization for sulfuric acid-water nucleation
 //        rates for tropospheric and stratospheric conditions,
@@ -148,22 +148,22 @@ void binary_nuc_vehk2002(Real temp, Real rh, Real so4vol, Real &ratenucl,
   // real(wp), intent(out) :: radius_cluster   ! the radius of cluster (nm)
 
   // calc sulfuric acid mole fraction in critical cluster
-  // following eq. (11) in Vehkamäki et al. (2002)
+  // following eq. (11) in Vehkam\"aki et al. (2002)
   Real x_crit = vehkamaki2002::h2so4_critical_mole_fraction(so4vol, temp, rh);
 
   // calc nucleation rate
-  // following eq. (12) in Vehkamäki et al. (2002)
+  // following eq. (12) in Vehkam\"aki et al. (2002)
   rateloge = log(vehkamaki2002::nucleation_rate(so4vol, temp, rh, x_crit));
   ratenucl = exp(min(rateloge, log(1e38)));
 
   // calc number of molecules in critical cluster
-  // following eq. (13) in Vehkamäki et al. (2002)
+  // following eq. (13) in Vehkam\"aki et al. (2002)
   cnum_tot = vehkamaki2002::num_critical_molecules(so4vol, temp, rh, x_crit);
 
   cnum_h2so4 = cnum_tot * x_crit;
 
   // calc radius (nm) of critical cluster
-  // following eq. (14) in Vehkamäki et al. (2002)
+  // following eq. (14) in Vehkam\"aki et al. (2002)
   radius_cluster = vehkamaki2002::critical_radius(x_crit, cnum_tot);
 }
 
@@ -219,7 +219,7 @@ void ternary_nuc_merik2007(Real t, Real rh, Real c2, Real c3, Real &j_log,
 //   rates at tropospheric conditions,
 //   j. geophys. res., 112, d15207, doi:10.1029/2006jd0027977
 //
-// * vehkamäki, h., m. kulmala, i. napari, k.e.j. lehtinen,
+// * vehkam\"aki, h., m. kulmala, i. napari, k.e.j. lehtinen,
 //   c. timmreck, m. noppel and a. laaksonen, 2002,
 //   an improved parameterization for sulfuric acid-water nucleation
 //   rates for tropospheric and stratospheric conditions,
@@ -228,7 +228,7 @@ void ternary_nuc_merik2007(Real t, Real rh, Real c2, Real c3, Real &j_log,
 // * Wang, M. and J.E. Penner, 2008,
 //   Aerosol indirect forcing in a global model with particle nucleation,
 //   Atmos. Chem. Phys. Discuss., 8, 13943-13998
-//   Atmos. Chem. Phys.  9, 239–260, 2009
+//   Atmos. Chem. Phys.  9, 239-260, 2009
 KOKKOS_INLINE_FUNCTION
 void mer07_veh02_wang08_nuc_1box(int newnuc_method_user_choice,
                                  int &newnuc_method_actual,        // in, out
@@ -694,7 +694,7 @@ public:
           Real pmid = atm.pressure(k);
           Real aircon = pmid / (r_universal * temp);
           Real zmid = atm.height(k);
-          Real pblh = atm.planetary_boundary_height;
+          Real pblh = atm.planetary_boundary_layer_height;
           Real qv = atm.vapor_mixing_ratio(k);
           Real relhum = conversions::relative_humidity_from_vapor_mixing_ratio(
               qv, pmid, temp);

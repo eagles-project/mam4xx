@@ -8,6 +8,7 @@
 #include <mam4xx/gasaerexch.hpp>
 #include <mam4xx/mam4.hpp>
 #include <mam4xx/mode_wet_particle_size.hpp>
+#include <validation.hpp>
 
 #include <haero/aero_process.hpp>
 #include <haero/atmosphere.hpp>
@@ -125,7 +126,7 @@ int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
   }
-  Kokkos::initialize(argc, argv);
+  validation::initialize(argc, argv);
   std::string input_file = argv[1];
   std::cout << argv[0] << ": reading " << input_file << std::endl;
 
@@ -295,6 +296,15 @@ int main(int argc, char **argv) {
                 << " (dt_soa_opt = " << dt_soa_opt << ")" << std::endl;
       std::cout << std::endl;
     }
+
+    // create containers for the timestepping below.
+    int nlev = 1;
+    Real pblh = 1000;
+    Atmosphere atm = validation::create_atmosphere(nlev, pblh);
+    mam4::Prognostics progs = validation::create_prognostics(nlev);
+    mam4::Diagnostics diags = validation::create_diagnostics(nlev);
+    mam4::Tendencies tends = validation::create_tendencies(nlev);
+
     // ---------
     for (int istep = 1; istep < nstep_end; ++istep) {
 
@@ -325,13 +335,6 @@ int main(int argc, char **argv) {
 
       // Call the MAM subroutine. Gas and aerosol mixing ratios will be updated
       // during the call
-      int nlev = 1;
-      Real pblh = 1000;
-      Atmosphere atm(nlev, pblh);
-      mam4::Prognostics progs(nlev);
-      mam4::Diagnostics diags(nlev);
-      mam4::Tendencies tends(nlev);
-
       Kokkos::deep_copy(atm.temperature, temp);
       Kokkos::deep_copy(atm.pressure, pmid);
       for (int n = 0; n < num_mode; ++n)
@@ -454,6 +457,6 @@ int main(int argc, char **argv) {
 
   // If we got here, the execution was successfull.
   std::cout << "PASS" << std::endl;
-  Kokkos::finalize();
+  validation::finalize();
   return 0;
 }

@@ -18,7 +18,7 @@ using haero::log;
 using haero::square;
 
 /// The functions in this file implement parameterizations described in
-/// Vehkamaki et al, An improved parameterization for sulfuric acid–water /
+/// Vehkamaki et al, An improved parameterization for sulfuric acid-water /
 /// nucleation rates for tropospheric and stratospheric conditions,
 /// Journal of Geophysical Research 107 (2002). Also included are corrections
 /// described in Vehkamaki et al, Correction to "An improved...",
@@ -53,7 +53,7 @@ Kokkos::pair<Real, Real> valid_c_h2so4_range() {
 /// Computes the mole fraction of sulfuric acid in a critical cluster as
 /// parameterized by Vehkmaki et al (2002), eq 11.
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
-/// @param [in] temp The atmospherіc temperature [K]
+/// @param [in] temp The atmospheric temperature [K]
 /// @param [in] rel_hum The relative humidity [-]
 KOKKOS_INLINE_FUNCTION
 Real h2so4_critical_mole_fraction(Real c_h2so4, Real temp, Real rel_hum) {
@@ -70,7 +70,7 @@ Real h2so4_critical_mole_fraction(Real c_h2so4, Real temp, Real rel_hum) {
 /// Computes the binary nucleation rate [m-3 s-1] as parameterized by
 /// Vehkmaki et al (2002), eq 12.
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
-/// @param [in] temp The atmospherіc temperature [K]
+/// @param [in] temp The atmospheric temperature [K]
 /// @param [in] rel_hum The relative humidity [-]
 /// @param [in] x_crit The mole fraction of H2SO4 in a critical cluster [-]
 KOKKOS_INLINE_FUNCTION
@@ -118,7 +118,7 @@ Real nucleation_rate(Real c_h2so4, Real temp, Real rel_hum, Real x_crit) {
 /// Computes the total number of molecules in a critical cluster as
 /// parameterized in Vehkamaki et al (2002), eq 13.
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
-/// @param [in] temp The atmospherіc temperature [K]
+/// @param [in] temp The atmospheric temperature [K]
 /// @param [in] rel_hum The relative humidity [-]
 /// @param [in] x_crit The mole fraction of H2SO4 in a critical cluster [-]
 KOKKOS_INLINE_FUNCTION
@@ -177,7 +177,7 @@ Real critical_radius(Real x_crit, Real n_tot) {
 /// Computes the threshold number concentration of H2SO4 [cm-3] that produces a
 /// nucleation rate of 1 cm-3 s-1 at the given temperature and relative
 /// humidity as parameterized by Vehkamaki et al (2002), eq 15.
-/// @param [in] temp The atmospherіc temperature [K]
+/// @param [in] temp The atmospheric temperature [K]
 /// @param [in] rel_hum The relative humidity [-]
 KOKKOS_INLINE_FUNCTION
 Real h2so4_nucleation_threshold(Real temp, Real rel_hum) {

@@ -14,6 +14,7 @@ install(FILES
         mam4.hpp
         mam4_types.hpp
         merikanto2007.hpp
+        nucleate_ice.hpp
         nucleation.hpp
         aging.hpp
         coagulation.hpp

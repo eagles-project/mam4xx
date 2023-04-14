@@ -60,7 +60,7 @@ Kokkos::pair<Real, Real> valid_xi_nh3_range() {
 
 /// Computes the logarithm of the ternary nucleation rate [cm-3 s-1] as
 /// parameterized by Merikanto et al (2007), eq 8.
-/// @param [in] temp The atmospherіc temperature [K]
+/// @param [in] temp The atmospheric temperature [K]
 /// @param [in] rel_hum The relative humidity [-]
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
@@ -168,7 +168,7 @@ Real onset_temperature(Real rel_hum, Real c_h2so4, Real xi_nh3) {
 /// Computes the radius of a critical cluster [nm] as parameterized in Merikanto
 /// et al (2007), eq 11.
 /// @param [in] log_J The logarithm of the nucleation rate ["log (cm-3 s-1)"]
-/// @param [in] temp The atmospherіc temperature [K]
+/// @param [in] temp The atmospheric temperature [K]
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
@@ -194,7 +194,7 @@ Real critical_radius(Real log_J, Real temp, Real c_h2so4, Real xi_nh3) {
 /// Computes the total number of molecules in a critical cluster as
 /// parameterized in Merikanto et al (2007), eq 12.
 /// @param [in] log_J The logarithm of the nucleation rate ["log (cm-3 s-1)"]
-/// @param [in] temp The atmospherіc temperature [K]
+/// @param [in] temp The atmospheric temperature [K]
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
@@ -219,7 +219,7 @@ Real num_critical_molecules(Real log_J, Real temp, Real c_h2so4, Real xi_nh3) {
 /// Computes the total number of H2SO4 molecules in a critical cluster as
 /// parameterized in Merikanto et al (2007), eq 13.
 /// @param [in] log_J The logarithm of the nucleation rate ["log (cm-3 s-1)"]
-/// @param [in] temp The atmospherіc temperature [K]
+/// @param [in] temp The atmospheric temperature [K]
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION
@@ -244,7 +244,7 @@ Real num_h2so4_molecules(Real log_J, Real temp, Real c_h2so4, Real xi_nh3) {
 /// Computes the total number of NH3 molecules in a critical cluster as
 /// parameterized in Merikanto et al (2007), eq 14.
 /// @param [in] log_J The logarithm of the nucleation rate ["log (cm-3 s-1)"]
-/// @param [in] temp The atmospherіc temperature [K]
+/// @param [in] temp The atmospheric temperature [K]
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] xi_nh3 The molar mixing ratio of NH3 [ppt]
 KOKKOS_INLINE_FUNCTION

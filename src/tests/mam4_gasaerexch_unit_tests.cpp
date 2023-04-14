@@ -3,7 +3,8 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "mam4xx/aero_modes.hpp"
+#include "testing.hpp"
+#include <mam4xx/aero_modes.hpp>
 #include <mam4xx/mam4.hpp>
 
 #include <ekat/ekat_type_traits.hpp>
@@ -30,10 +31,10 @@ TEST_CASE("test_constructor", "mam4_gasaerexch_process") {
 TEST_CASE("test_compute_tendencies", "mam4_gasaerexch_process") {
   int nlev = 72;
   Real pblh = 1000;
-  Atmosphere atm(nlev, pblh);
-  mam4::Prognostics progs(nlev);
-  mam4::Diagnostics diags(nlev);
-  mam4::Tendencies tends(nlev);
+  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
+  mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
+  mam4::Tendencies tends = mam4::testing::create_tendencies(nlev);
 
   mam4::AeroConfig mam4_config;
   mam4::GasAerExchProcess::ProcessConfig process_config;
@@ -49,7 +50,7 @@ TEST_CASE("test_compute_tendencies", "mam4_gasaerexch_process") {
 }
 
 TEST_CASE("test_multicol_compute_tendencies", "mam4_gasaerexch_process") {
-  // Now we process multiple columns within a single dіspatch (mc means
+  // Now we process multiple columns within a single dispatch (mc means
   // "multi-column").
   int ncol = 8;
   DeviceType::view_1d<Atmosphere> mc_atm("mc_progs", ncol);
@@ -58,10 +59,10 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_gasaerexch_process") {
   DeviceType::view_1d<mam4::Tendencies> mc_tends("mc_tends", ncol);
   const int nlev = 72;
   const Real pblh = 1000;
-  Atmosphere atmosphere(nlev, pblh);
-  mam4::Prognostics prognostics(nlev);
-  mam4::Diagnostics diagnostics(nlev);
-  mam4::Tendencies tendencies(nlev);
+  Atmosphere atmosphere = mam4::testing::create_atmosphere(nlev, pblh);
+  mam4::Prognostics prognostics = mam4::testing::create_prognostics(nlev);
+  mam4::Diagnostics diagnostics = mam4::testing::create_diagnostics(nlev);
+  mam4::Tendencies tendencies = mam4::testing::create_tendencies(nlev);
   for (int icol = 0; icol < ncol; ++icol) {
     Kokkos::parallel_for(
         "Load multi-column views", 1, KOKKOS_LAMBDA(const int) {

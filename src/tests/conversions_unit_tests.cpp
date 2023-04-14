@@ -3,8 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "mam4xx/aero_modes.hpp"
-#include "mam4xx/conversions.hpp"
+#include "testing.hpp"
+
+#include <mam4xx/aero_modes.hpp>
+#include <mam4xx/conversions.hpp>
 
 #include <catch2/catch.hpp>
 
@@ -32,7 +34,7 @@ TEST_CASE("conversions", "") {
 
   const int nlev = 72;
   const Real pblh = 0;
-  Atmosphere atm(nlev, pblh);
+  Atmosphere atm = testing::create_atmosphere(nlev, pblh);
 
   // initialize a hydrostatically balanced moist air column
   // using constant lapse rate in virtual temperature to manufacture
@@ -228,9 +230,9 @@ TEST_CASE("conversions", "") {
 
   SECTION("relative humidity") {
     logger.info("SECTION relative humidity");
-    ColumnView specific_humidity("specific_humidity", nlev);
-    ColumnView relative_humidity_w("relative_humidity_w", nlev);
-    ColumnView relative_humidity_q("relative_humidity_q", nlev);
+    ColumnView specific_humidity = testing::create_column_view(nlev);
+    ColumnView relative_humidity_w = testing::create_column_view(nlev);
+    ColumnView relative_humidity_q = testing::create_column_view(nlev);
 
     // compute relative humidity with respect to specific humidity and to
     // mixing ratio

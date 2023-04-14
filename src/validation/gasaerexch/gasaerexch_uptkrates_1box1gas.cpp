@@ -7,6 +7,7 @@
 #include <mam4xx/gasaerexch.hpp>
 #include <mam4xx/mam4.hpp>
 #include <skywalker.hpp>
+#include <validation.hpp>
 #include <vector>
 
 using mam4::gasaerexch::gas_aer_uptkrates_1box1gas;
@@ -97,7 +98,7 @@ void test_gasaerexch_uptkrates_1box1gas_process(const Input &input,
   if (has_solution) {
     test_uptkaer = input.get_array("uptkaer");
   }
-  ColumnView uptkaer_dev("uptkaer on device", n_mode);
+  ColumnView uptkaer_dev = mam4::validation::create_column_view(n_mode);
   Kokkos::parallel_for(
       "gasaerexch::gas_aer_uptkrates_1box1gas", 1, KOKKOS_LAMBDA(const int) {
         Real uptkaer[n_mode];

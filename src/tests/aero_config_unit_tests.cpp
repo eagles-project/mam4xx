@@ -3,6 +3,7 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "testing.hpp"
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/mam4.hpp>
 
@@ -25,9 +26,9 @@ TEST_CASE("aero_config", "") {
     using std::isnan;
 
     const int nlev = 72;
-    Prognostics progs(nlev);
-    Diagnostics diags(nlev);
-    Tendencies tends(nlev);
+    Prognostics progs = testing::create_prognostics(nlev);
+    Diagnostics diags = testing::create_diagnostics(nlev);
+    Tendencies tends = testing::create_tendencies(nlev);
 
     typedef typename ColumnView::HostMirror HostColumnView;
 

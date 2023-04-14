@@ -92,7 +92,7 @@ After you've configured MAM4xx, you can build it:
 5. To install the model to the location indicated by `PREFIX` in your
    `config.sh` script (or `CMAKE_INSTALL_PREFIX`, if you specified it manually),
    type `make install`. By default, products are installed in `include`, `lib`,
-   `bin`, and `share` ѕubdirectories within your build directory.
+   `bin`, and `share` subdirectories within your build directory.
 
 ## Making code changes and rebuilding
 
