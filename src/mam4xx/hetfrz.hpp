@@ -152,9 +152,9 @@ Real get_reynolds_num(const Real r3lx, const Real rho_air,
   const Real coeff_adj_c = -2.4023;
 
   // droplet terminal velocity after Chen & Liu, QJRMS 2004
-  const Real vlc_drop_adjfunc =
-      haero::exp(haero::exp(coeff_adj_a + coeff_adj_b * haero::cube(haero::log(r3lx)) +
-                  coeff_adj_c * haero::pow(rho_air, 1.5)));
+  const Real vlc_drop_adjfunc = haero::exp(
+      haero::exp(coeff_adj_a + coeff_adj_b * haero::cube(haero::log(r3lx)) +
+                 coeff_adj_c * haero::pow(rho_air, 1.5)));
   const Real vlc_drop =
       (coeff_vlc_a + (coeff_vlc_b + coeff_vlc_c * r3lx) * r3lx) * r3lx *
       vlc_drop_adjfunc;
@@ -174,7 +174,9 @@ Real get_temperature_diff(const Real temperature, const Real pressure,
   const Real Dvap = 0.211e-4 * (temperature / 273.15) * (101325. / pressure);
 
   const Real rhoh2o = Constants::density_h2o;
-  const Real rh2o = Constants::r_gas_h2o_vapor;
+  const Real rh2o =
+      461.50463982015992; // (BAD CONSTANT) water vapor gas constant
+
   // G-factor = rhoh2o*Xi in Rogers & Yau, p. 104
 
   const Real G_factor = rhoh2o / ((latvap / (rh2o * temperature) - 1) * latvap *
@@ -200,42 +202,38 @@ void calculate_collkernel_sub(const Real temperature, const Real pressure,
   // Note for C++ port: Due to BFB for Fortran code, we have to declare
   // Boltzmann constant here again. This value is only used in this
   // subroutine.
-  constexpr Real kboltz2 = 1.38065e-23; // BAD CONSTANT
-
+  constexpr Real kboltz2 = 1.38065e-23;                // BAD CONSTANT
+  constexpr Real pi = 3.1415926535897931;              // BAD CONSTANT
+  constexpr Real r_gas_h2o_vapor = 461.50463982015992; // BAD CONSTANT
   // Knudsen number (Seinfeld & Pandis 8.1)
   const Real Kn = lambda / r_a;
 
   // aerosol diffusivity
   const Real Daer =
-      kboltz2 * temperature * (1 + Kn) /
-      (6.0 * Constants::pi * Constants::r_gas_dry_air * viscos_air);
+      kboltz2 * temperature * (1 + Kn) / (6.0 * pi * r_a * viscos_air);
 
   // Schmidt number
   const Real Sc = viscos_air / (Daer * rho_air);
-
   //  Young (1974) first equ. on page 771
-  const Real K_brownian = 4.0 * Constants::pi * r3lx * Daer *
-                          (1 + 0.3 * haero::sqrt(Re) * haero::cbrt(Sc));
+  // Todo (the 0.33 power here should probably be 1/3, but that wouldn't be
+  // BFB.)
+  const Real K_brownian = 4.0 * pi * r3lx * Daer *
+                          (1.0 + 0.3 * haero::sqrt(Re) * haero::pow(Sc, 0.33));
 
   // form factor
   const Real f_t =
       0.4 * (1.0 + 1.45 * Kn + 0.4 * Kn * haero::exp(-1. / Kn)) *
       (Ktherm_air + 2.5 * Kn * Ktherm) /
       ((1.0 + 3.0 * Kn) * (2.0 * Ktherm_air + 5.0 * Kn * Ktherm + Ktherm));
-
   const Real Q_heat = Ktherm_air / r3lx *
                       (1.0 + 0.3 * haero::sqrt(Re) * haero::cbrt(Pr)) * Tdiff;
-
   const Real K_thermo_cotton =
-      4.0 * Constants::pi * haero::square(r3lx) * f_t * Q_heat / pressure;
-
+      4.0 * pi * haero::square(r3lx) * f_t * Q_heat / pressure;
   const Real K_diffusio_cotton =
-      -(1.0 / f_t) * (Constants::r_gas_h2o_vapor * temperature / latvap) *
-      K_thermo_cotton;
+      -(1.0 / f_t) * (r_gas_h2o_vapor * temperature / latvap) * K_thermo_cotton;
 
   K_total = 1.e6 * (K_brownian + K_thermo_cotton +
                     K_diffusio_cotton); // convert m3/s -> cm3/s
-
   K_total = haero::max(0.0, K_total);
 }
 
@@ -254,14 +252,15 @@ void collkernel(const Real temperature, const Real pressure, const Real eswtr,
   // air viscosity for tc<0,
   const Real viscos_air = get_air_viscosity(tc);
 
+  const Real r_gas_dry_air = 287.04231136504870; // (BAD CONSTANT)
   // air density
-  const Real rho_air = pressure / (Constants::r_gas_dry_air * temperature);
+  const Real rho_air = pressure / (r_gas_dry_air * temperature);
 
   // mean free path: Seinfeld & Pandis 8.6
   const Real lambda =
       2.0 * viscos_air /
-      (pressure * haero::sqrt(8.0 / (Constants::pi * Constants::r_gas_dry_air *
-                                     temperature)));
+      (pressure *
+       haero::sqrt(8.0 / (Constants::pi * r_gas_dry_air * temperature)));
 
   // latent heat of vaporization, varies with T
   const Real latvap = get_latent_heat_vapor(tc);

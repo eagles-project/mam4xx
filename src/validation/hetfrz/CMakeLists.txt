@@ -9,12 +9,22 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 # We use a single driver for all aging-related parameterizations.
 add_executable(hetfrz_driver
                hetfrz_driver.cpp
-               hetfrz_get_reynolds_number.cpp)
+               hetfrz_get_reynolds_number.cpp
+               hetfrz_get_temperature_diff.cpp
+               hetfrz_get_latent_heat_vapor.cpp
+               hetfrz_get_air_viscosity.cpp
+               hetfrz_calculate_collkernel_sub.cpp
+               hetfrz_collkernel.cpp)
 target_link_libraries(hetfrz_driver skywalker;validation;${HAERO_LIBRARIES})
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
  foreach(script
-         compare_get_reynolds_num.py)
+         compare_get_reynolds_num.py
+         compare_get_temperature_diff.py
+         compare_get_air_viscosity.py
+         compare_get_latent_heat_vapor.py
+         compare_calculate_collkernel_sub.py
+         compare_collkernel.py)
    configure_file(
      ${HETFRZ_VALIDATION_SCRIPTS_DIR}/${script}
      ${CMAKE_CURRENT_BINARY_DIR}/${script}
@@ -27,6 +37,11 @@ target_link_libraries(hetfrz_driver skywalker;validation;${HAERO_LIBRARIES})
 # Aging
 foreach (input
           get_reynolds_num
+          get_temperature_diff
+          get_air_viscosity
+          get_latent_heat_vapor
+          calculate_collkernel_sub
+          collkernel
           )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
@@ -37,10 +52,10 @@ foreach (input
    )
 
   # add a test to run the skywalker driver
-   add_test(run_${input} hetfzr_driver ${HETFRZ_VALIDATION_DIR}/${input}.yaml)
+   add_test(run_${input} hetfrz_driver ${HETFRZ_VALIDATION_DIR}/${input}.yaml)
   
   # add a test to validate mam4xx's results against the baseline.
-  add_test(validate_${input} python3 compare_get_reynolds_num.py mam4xx_${input}.py ${input}.py)
+  add_test(validate_${input} python3 compare_${input}.py mam4xx_${input}.py ${input}.py)
 endforeach() 
 
 
