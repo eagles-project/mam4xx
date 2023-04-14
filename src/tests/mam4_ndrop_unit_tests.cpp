@@ -30,9 +30,11 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
   ekat::logger::Logger<> logger("ndrop get aer num unit tests",
                                 ekat::logger::LogLevel::debug, comm);
 
+  logger.info(" starting test 1");
   int nlev = 1;
   Real pblh = 1000;
   Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  logger.info(" atmosphere created");
 
   // initialize a hydrostatically balanced moist air column
   // using constant lapse rate in virtual temperature to manufacture
@@ -46,6 +48,7 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
       0.015; // specific humidity at surface [kg h2o / kg moist air]
   const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
   init_atm_const_tv_lapse_rate(atm, Tv0, Gammav, qv0, qv1);
+  logger.info(" atmosphere initialized");
 
   const auto T = atm.temperature;
   const auto P = atm.pressure;
@@ -55,9 +58,10 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
 
   Kokkos::deep_copy(h_T, T);
   Kokkos::deep_copy(h_P, P);
+  logger.info(" atmosphere copied");
 
-  mam4::Prognostics progs(nlev);
-  mam4::Diagnostics diags(nlev);
+  mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
+  mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
 
   mam4::AeroConfig mam4_config;
 
@@ -85,6 +89,7 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
     }
   }
 
+  logger.info(" inited progs");
   // initialize diags
   for (int m = 0; m < nmodes; m++) {
     Real dry_vol = 0.0;
@@ -97,6 +102,7 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop") {
     }
   }
 
+  logger.info(" inited diags");
   // Call mam4xx kernel across all modes, levels
   Kokkos::parallel_for(
       "compute_dry_particle_size", nlev, KOKKOS_LAMBDA(const int i) {
@@ -207,3 +213,53 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
     REQUIRE(FloatingPoint<Real>::equiv(q(i), 0.9));
   }
 }
+
+
+TEST_CASE("test_maxsat", "mam4_ndrop") {
+  ekat::Comm comm;
+  ekat::logger::Logger<> logger("ndrop maxsat unit tests",
+                                ekat::logger::LogLevel::debug, comm);
+
+  int nmodes = AeroConfig::num_modes();
+  Real zeta = 0;
+  ColumnView eta = mam4::testing::create_column_view(nmodes);
+  ColumnView smc = mam4::testing::create_column_view(nmodes);
+  Real smax = 0;
+
+  ndrop::ndrop_init();
+
+  // set up smoketest values
+  for (int m = 0; m < nmodes; m++) {
+    eta(m) = 0;
+    smc(m) = 1;
+  }
+
+  ndrop::maxsat(zeta, eta, nmodes, smc, smax);
+  logger.info("smax = {}", smax);
+  REQUIRE(FloatingPoint<Real>::equiv(smax, 1e-20));
+
+  // set up smoketest values
+  for (int m = 0; m < nmodes; m++) {
+    smc(m) = 0;
+  }
+  smax = 0;
+
+  ndrop::maxsat(zeta, eta, nmodes, smc, smax);
+  logger.info("smax = {}", smax);
+  REQUIRE(FloatingPoint<Real>::equiv(smax, 1e-10));
+
+  // set up smoketest values
+  for (int m = 0; m < nmodes; m++) {
+    eta(m) = 1;
+    smc(m) = 1;
+  }
+  smax = 0;
+  Real answer = 1 / haero::sqrt(49380);
+
+  ndrop::maxsat(zeta, eta, nmodes, smc, smax);
+  logger.info("smax = {}", smax);
+  logger.info("answer = {}", answer);
+  REQUIRE(FloatingPoint<Real>::equiv(smax, answer));
+
+}
+

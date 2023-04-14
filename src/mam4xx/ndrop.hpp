@@ -18,20 +18,29 @@ namespace mam4 {
 class NDrop {
 
 public:
+
+    //TODO: put this inside ndrop_init
+    // abdul-razzak functions of width
+    //static Real bizarro1[AeroConfig::num_modes()];
+    // abdul-razzak functions of width
+    //static Real bizarro2[AeroConfig::num_modes()];
+
 };
 
+
 namespace ndrop {
-//TODO: put this inside ndrop_init
-// abdul-razzak functions of width
-Real bizarro1[AeroConfig::num_modes()];
-// abdul-razzak functions of width
-Real bizarro2[AeroConfig::num_modes()];
+
+//static ColumnView bizarro1;
+//static ColumnView bizarro2;
+
 
 KOKKOS_INLINE_FUNCTION 
 void ndrop_init() {
+    //bizarro1 = ColumnView("bizarro1", AeroConfig::num_modes());
+    //bizarro2 = ColumnView("bizarro2", AeroConfig::num_modes());
     for(int m = 0; m < AeroConfig::num_modes(); m++) {
-        bizarro1[m] = 0.5 * haero::exp(2.5 * haero::log(modes(m).mean_std_dev) * haero::log(modes(m).mean_std_dev));
-        bizarro2[m] = 1.0 + 0.25 * haero::log(modes(m).mean_std_dev);
+        //bizarro1(m) = 0.5 * haero::exp(2.5 * haero::log(modes(m).mean_std_dev) * haero::log(modes(m).mean_std_dev));
+       // bizarro2(m) = 1.0 + 0.25 * haero::log(modes(m).mean_std_dev);
     }
 }
 
@@ -123,10 +132,10 @@ void explmix(
 // 2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
 KOKKOS_INLINE_FUNCTION
 void maxsat(Real zeta, // [dimensionless]
-            Real eta[AeroConfig::num_modes()], // [dimensionless] 
+            ColumnView eta, // [dimensionless] 
             Real nmode, //number of modes
-            Real smc[AeroConfig::num_modes()], // critical supersaturation for number mode radius [fraction]
-            Real smax //maximum supersaturation [fraction]
+            ColumnView smc, // critical supersaturation for number mode radius [fraction]
+            Real &smax //maximum supersaturation [fraction]
             ) {
 
     Real sum = 0;
@@ -134,13 +143,13 @@ void maxsat(Real zeta, // [dimensionless]
     bool weak_forcing = true; // whether forcing is sufficiently weak or not
 
     for(int m = 0; m < nmode; m++) {
-        if(zeta > 1e5 * eta[m] || smc[m] * smc[m] > 1e5 * eta[m]) {
+        if(zeta > 1e5 * eta(m) || smc(m) * smc(m) > 1e5 * eta(m)) {
             // weak forcing. essentially none activated
             smax = 1e-20;
         } else {
             // significant activation of this mode. calc activation of all modes.
             weak_forcing = false;
-            return;
+            break;
         }
     }
     
@@ -148,10 +157,10 @@ void maxsat(Real zeta, // [dimensionless]
         return;
    
    for(int m = 0; m < nmode; m++) {
-      if(eta[m] > 1e-20) {
-         g1 = (zeta / eta[m]) * haero::sqrt(zeta / eta[m]);
-         g2 = (smc[m] / haero::sqrt(eta[m] + 3 * zeta)) * haero::sqrt(smc[m] / haero::sqrt(eta[m] + 3 * zeta));
-         sum = sum + (bizarro1[m] * g1 + bizarro2[m] * g2) / (smc[m] * smc[m]);
+      if(eta(m) > 1e-20) {
+         g1 = (zeta / eta(m)) * haero::sqrt(zeta / eta(m));
+         g2 = (smc(m) / haero::sqrt(eta(m) + 3.0 * zeta)) * haero::sqrt(smc(m) / haero::sqrt(eta(m) + 3.0 * zeta));
+         sum = sum + (12345.0 * g1 + 12345.0 * g2) / (smc(m) * smc(m));
       } else {
          sum = 1e20;
       }
