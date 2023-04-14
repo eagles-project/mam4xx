@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
     if (func_name == "collkernel") {
       collkernel(ensemble);
     }
-    if (func_name == "get_Aimm"){
+    if (func_name == "get_Aimm") {
       get_Aimm(ensemble);
     }
 

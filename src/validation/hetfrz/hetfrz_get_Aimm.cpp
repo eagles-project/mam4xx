@@ -14,7 +14,6 @@ using namespace mam4;
 void get_Aimm(Ensemble *ensemble) {
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-
     if (!input.has("vwice")) {
       std::cerr << "Required name: "
                 << "vwice" << std::endl;
