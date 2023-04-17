@@ -402,23 +402,26 @@ void calculate_hetfrz_deposition_nucleation(
   frzbcdep = 0.0;
   frzdudep = 0.0;
 
+  constexpr Real bad_pi = 3.1415926535897931; // (BAD CONSTANT)
+
   // form factor
-  const Real f_dep_bc =
-      get_form_factor(Hetfrz::theta_dep_bc * Constants::pi / 180.0);
+  const Real f_dep_bc = get_form_factor(Hetfrz::theta_dep_bc * bad_pi / 180.0);
   const Real f_dep_dust_a1 =
-      get_form_factor(Hetfrz::theta_dep_dust * Constants::pi / 180.0);
+      get_form_factor(Hetfrz::theta_dep_dust * bad_pi / 180.0);
   const Real f_dep_dust_a3 =
-      get_form_factor(Hetfrz::theta_dep_dust * Constants::pi / 180.0);
+      get_form_factor(Hetfrz::theta_dep_dust * bad_pi / 180.0);
 
   // homogeneous energy of germ formation
-  const Real dg0dep =
-      4.0 * Constants::pi / 3.0 * sigma_iv * haero::square(rgdep);
+  const Real dg0dep = 4.0 * bad_pi / 3.0 * sigma_iv * haero::square(rgdep);
+
+  constexpr Real mwh2o =
+      18.015999999999998; // Molecular weight water (BAD CONSTANT)
 
   // prefactor
   // attention: division of small numbers
   constexpr Real bad_boltzmann = 1.38e-23; // Boltzmann Constant (BAD CONSTANT)
   const Real Adep = haero::square(Hetfrz::rhwincloud * eswtr) *
-                    (vwice / (Constants::molec_weight_h2o * Hetfrz::amu)) /
+                    (vwice / (mwh2o * Hetfrz::amu)) /
                     (bad_boltzmann * temperature * Hetfrz::nus) *
                     haero::sqrt(sigma_iv / (bad_boltzmann * temperature));
 

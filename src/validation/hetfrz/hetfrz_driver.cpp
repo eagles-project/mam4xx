@@ -31,6 +31,7 @@ void get_Aimm(Ensemble *ensemble);
 void get_dg0imm(Ensemble *ensemble);
 void get_form_factor(Ensemble *ensemble);
 void calculate_hetfrz_contact_nucleation(Ensemble *ensemble);
+void calculate_hetfrz_deposition_nucleation(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
 
@@ -85,6 +86,9 @@ int main(int argc, char **argv) {
     }
     if (func_name == "calculate_hetfrz_contact_nucleation") {
       calculate_hetfrz_contact_nucleation(ensemble);
+    }
+    if (func_name == "calculate_hetfrz_deposition_nucleation") {
+      calculate_hetfrz_deposition_nucleation(ensemble);
     }
 
   } catch (std::exception &e) {
