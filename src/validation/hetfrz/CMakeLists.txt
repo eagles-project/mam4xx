@@ -17,7 +17,8 @@ add_executable(hetfrz_driver
                hetfrz_collkernel.cpp
                hetfrz_get_Aimm.cpp
                hetfrz_get_dg0imm.cpp 
-               hetfrz_get_form_factor.cpp)
+               hetfrz_get_form_factor.cpp
+               hetfzr_calculate_hetfrz_contact_nucleation.cpp)
 target_link_libraries(hetfrz_driver skywalker;validation;${HAERO_LIBRARIES})
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
@@ -39,6 +40,7 @@ foreach (input
           get_Aimm
           get_dg0imm
           get_form_factor
+          calculate_hetfrz_contact_nucleation
           )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?

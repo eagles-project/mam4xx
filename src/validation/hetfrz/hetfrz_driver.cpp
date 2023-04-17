@@ -30,6 +30,7 @@ void collkernel(Ensemble *ensemble);
 void get_Aimm(Ensemble *ensemble);
 void get_dg0imm(Ensemble *ensemble);
 void get_form_factor(Ensemble *ensemble);
+void calculate_hetfrz_contact_nucleation(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
 
@@ -81,6 +82,9 @@ int main(int argc, char **argv) {
     }
     if (func_name == "get_form_factor") {
       get_form_factor(ensemble);
+    }
+    if (func_name == "calculate_hetfrz_contact_nucleation") {
+      calculate_hetfrz_contact_nucleation(ensemble);
     }
 
   } catch (std::exception &e) {
