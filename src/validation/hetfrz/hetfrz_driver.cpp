@@ -28,6 +28,8 @@ void get_latent_heat_vapor(Ensemble *ensemble);
 void calcualte_collkernel_sub(Ensemble *ensemble);
 void collkernel(Ensemble *ensemble);
 void get_Aimm(Ensemble *ensemble);
+void get_dg0imm(Ensemble *ensemble);
+void get_form_factor(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
 
@@ -73,6 +75,12 @@ int main(int argc, char **argv) {
     }
     if (func_name == "get_Aimm") {
       get_Aimm(ensemble);
+    }
+    if (func_name == "get_dg0imm") {
+      get_dg0imm(ensemble);
+    }
+    if (func_name == "get_form_factor") {
+      get_form_factor(ensemble);
     }
 
   } catch (std::exception &e) {

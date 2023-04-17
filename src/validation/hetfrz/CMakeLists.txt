@@ -21,26 +21,14 @@ add_executable(hetfrz_driver
 target_link_libraries(hetfrz_driver skywalker;validation;${HAERO_LIBRARIES})
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
- foreach(script
-         compare_get_reynolds_num.py
-         compare_get_temperature_diff.py
-         compare_get_air_viscosity.py
-         compare_get_latent_heat_vapor.py
-         compare_calculate_collkernel_sub.py
-         compare_collkernel.py 
-         compare_get_Aimm.py 
-         compare_get_dg0imm.py
-         compare_get_form_factor.py)
-   configure_file(
-     ${HETFRZ_VALIDATION_SCRIPTS_DIR}/${script}
-     ${CMAKE_CURRENT_BINARY_DIR}/${script}
+ configure_file(
+     ${HETFRZ_VALIDATION_SCRIPTS_DIR}/compare_hetfzr.py
+     ${CMAKE_CURRENT_BINARY_DIR}/compare_hetfzr.py
      COPYONLY
    )
- endforeach()
 
 # Run the driver in several configurations to produce datasets.
 
-# Aging
 foreach (input
           get_reynolds_num
           get_temperature_diff
@@ -49,6 +37,8 @@ foreach (input
           calculate_collkernel_sub
           collkernel
           get_Aimm
+          get_dg0imm
+          get_form_factor
           )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
@@ -62,7 +52,7 @@ foreach (input
    add_test(run_${input} hetfrz_driver ${HETFRZ_VALIDATION_DIR}/${input}.yaml)
   
   # add a test to validate mam4xx's results against the baseline.
-  add_test(validate_${input} python3 compare_${input}.py mam4xx_${input}.py ${input}.py)
+  add_test(validate_${input} python3 compare_hetfzr.py mam4xx_${input}.py ${input}.py)
 endforeach() 
 
 
