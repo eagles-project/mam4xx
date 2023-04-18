@@ -28,7 +28,6 @@ const int nrainsvmax = 50; // maximum bin number for rain
 const int naerosvmax = 51; //  maximum bin number for aerosol
 const int maxd_aspectype = 14;
 
-
 KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(
     const int imode, const bool isprx_kk, const Real dgn_awet_imode_kk, //& ! in
@@ -40,16 +39,17 @@ void modal_aero_bcscavcoef_get(
   // !-----------------------------------------------------------------------
   // ! compute impaction scavenging removal amount for aerosol volume and number
   // !-----------------------------------------------------------------------
-  
-  // @param [in]  imode mode index 
+
+  // @param [in]  imode mode index
   // @param [in]  isprx_kk if there is precip
-  // @param [in]  dgn_awet_imode_kk ! wet aerosol diameter of mode imode at elevation kk [m]
+  // @param [in]  dgn_awet_imode_kk ! wet aerosol diameter of mode imode at
+  // elevation kk [m]
   // @param [out] scavcoefnum scavenging removal for aerosol number [1/h]
   // @param [out] scavcoefvol scavenging removal for aerosol volume [1/h]
 
   // NOTE: original FORTRAN function has two internal loops: kk and icol.
-  // We removed these loops. Hence, the inputs/outputs of modal_aero_bcscavcoef_get are
-  // reals at kk , icol locations
+  // We removed these loops. Hence, the inputs/outputs of
+  // modal_aero_bcscavcoef_get are reals at kk , icol locations
 
   const Real zero = 0;
   const Real one = 1;
@@ -141,7 +141,7 @@ void calc_rain_drop_conc(const int nr, const Real rlo, const Real dr,
 
   // @param [out] rrainsv(:)   rain radius in each bin [cm]
   // @param [out]  xnumrainsv(:)  rain number concentration in each
-  // @param [out] vfallrainsv(:) rain droplet falling bin [#/cm3] 
+  // @param [out] vfallrainsv(:) rain droplet falling bin [#/cm3]
   // @param [out]   velocity [cm/s] bin [#/cm3]
 
   const Real zero = 0;
@@ -247,7 +247,7 @@ void calc_schmidt_number(const Real freepath, const Real r_aer,
   ! depositon (in modal_aero_drydep.F90) but the calculation of dumfuchs (or
   ! slip_correction_factor) looks differently
   !-----------------------------------------------------------------*/
-  
+
   // @param [in]  freepath      ! molecular freepath [cm]
   // @param [in]  r_aer         ! aerosol radius [cm]
   // @param [in]  temp          ! temperature [K]
@@ -260,7 +260,9 @@ void calc_schmidt_number(const Real freepath, const Real r_aer,
   // [s]
 
   // BAD CONSTANT
-  const Real boltz = haero::Constants::boltzmann;//1.38065e-23;      //  ! Boltzmann's constant ~ J/K/molecule
+  const Real boltz =
+      haero::Constants::boltzmann; // 1.38065e-23;      //  ! Boltzmann's
+                                   // constant ~ J/K/molecule
   // BAD CONSTANT
   const Real boltz_cgs = boltz * 1.e7; // erg/K
 
@@ -302,18 +304,18 @@ void calc_impact_efficiency(const Real r_aer, const Real r_rain,
   // @param [out] etotal        ! efficiency of total effects
   // [fraction]
 
-  // ! local variables         
+  // ! local variables
   const Real zero = 0;
   const Real one = 1;
   const Real one_third = one / Real(3);
   // BAD CONSTANT
-  // FIXME move this constant to hearo 
+  // FIXME move this constant to hearo
   // ! ratio of water viscosity to air viscosity (from Slinn)
   const Real xmuwaterair = 60.0; // ! [fraction]
   // ! ratio of aerosol and rain radius [fraction]
   const Real chi = r_aer / r_rain;
   // ---------- calcualte Brown effect ------------
-  //Schmidt number [unitless]
+  // Schmidt number [unitless]
   Real schmidt = zero;
   // Stokes number relaxation time [s]
   Real taurelax = zero;
@@ -343,7 +345,7 @@ void calc_impact_efficiency(const Real r_aer, const Real r_rain,
   Real eimpact = zero;
   if (stokes > sstar) {
     dum = stokes - sstar;
-    eimpact = haero::pow(dum / (dum + Real(2)/Real(3)), 1.5);
+    eimpact = haero::pow(dum / (dum + Real(2) / Real(3)), 1.5);
   }
   // ! ------------ calculate total effects ------------
   etotal = ebrown + eintercept + eimpact;
@@ -372,13 +374,12 @@ void calc_1_impact_rate(const Real dg0,     //  in
   // size distribution [cm]
   // @param [in]  rhoaero     aerosol density [g/cm^3]
   // @param [in]  temp        temperature [K] real(r8),
-  // @param [in]  press       pressure [dyne/cm^2] 
+  // @param [in]  press       pressure [dyne/cm^2]
   // @param [out] scavratenum scavenging rate for aerosol number [1/hour]
   // @param [out] scavratenum scavenging rate for aerosol volume [1/hour]
 
   // @param [out] lunerr      ! logical unit for error message
 
-  
   // const Real SHR_CONST_BOLTZ =
   //     1.38065e-23; //  ! Boltzmann's constant ~ J/K/molecule
   // const Real SHR_CONST_AVOGAD =
@@ -390,7 +391,7 @@ void calc_1_impact_rate(const Real dg0,     //  in
   // const Real rgas = rgas_kmol * 1.e-3 * 1.e7; //
   // // air molar density [dyne/cm^2/erg*mol = mol/cm^3]
   // const Real cair = press / (rgas * temp);
-  // air molar density [mol/cm^3] 
+  // air molar density [mol/cm^3]
   // const Real rhoair = 28.966 * cair;
 
   const Real pi = haero::Constants::pi;
@@ -398,7 +399,7 @@ void calc_1_impact_rate(const Real dg0,     //  in
   const Real one = 1;
   const Real two = 2;
   const Real ten = 10;
-  const Real one_thousand =1000;
+  const Real one_thousand = 1000;
 
   // local variables
   Real rrainsv[nrainsvmax] = {zero};    // rain radius for each bin [cm]
@@ -451,21 +452,22 @@ void calc_1_impact_rate(const Real dg0,     //  in
     return;
   }
 
-  
   // Note: pressure units are: ! dynes/cm2
   // We need pressure in units of Pa in density_of_ideal_gas
-  // 10 dynes/cm2 = Pa 
-  const Real pressure = press/ten;
+  // 10 dynes/cm2 = Pa
+  const Real pressure = press / ten;
   // air mass density [g/cm^3]
   // unit conversion from [kg/m^3]/1000 to [g/cm^3]
-  const Real rhoair = conversions::density_of_ideal_gas(temp, 
-    pressure, Constants::r_gas_dry_air)/one_thousand;
+  const Real rhoair = conversions::density_of_ideal_gas(
+                          temp, pressure, Constants::r_gas_dry_air) /
+                      one_thousand;
   // unit conversion from [mol g /cm^3/kg]/1000 to [mol/cm^3]
-  // air molar density [mol/cm^3] 
-  const Real cair = rhoair/haero::Constants::molec_weight_dry_air/one_thousand;
+  // air molar density [mol/cm^3]
+  const Real cair =
+      rhoair / haero::Constants::molec_weight_dry_air / one_thousand;
   // !   molecular freepath [cm]
   // BAD CONSTANT
-  // FIXME move this constant to haero 
+  // FIXME move this constant to haero
   const Real freepath = 2.8052e-10 / cair;
   // ! air kinematic viscosity [cm^2/s]
   const Real airkinvisc = air_kinematic_viscosity(temp, rhoair);
@@ -531,22 +533,23 @@ void modal_aero_bcscavcoef_init(
     Real scavimptblnum[nimptblgrow_total][AeroConfig::num_modes()],
     Real scavimptblvol[nimptblgrow_total][AeroConfig::num_modes()]) {
   // -----------------------------------------------------------------------
-  // 
+  //
   //  Purpose:
   //  Computes lookup table for aerosol impaction/interception scavenging rates
-  // 
+  //
   //  Authors: R. Easter
-  // 
+  //
   // -----------------------------------------------------------------------
   // param [in]   dgnum_amode aerosol diameters [m]
-  // param [in]   sigmag_amode standard deviation of aerosol size distribution 
-  // param [in]   specdens_amode dry density (kg/m^3) of aerosol chemical species type l
-  // param [in]   lspectype_amode species type/i.d. for chemical species l
+  // param [in]   sigmag_amode standard deviation of aerosol size distribution
+  // param [in]   specdens_amode dry density (kg/m^3) of aerosol chemical
+  // species type l param [in]   lspectype_amode species type/i.d. for chemical
+  // species l
   //        in aerosol mode m.  (1=sulfate, others to be defined)
   // param [out]  scavimptblnum scavenging rate of aerosol number [1/s]
   // param [out]  scavimptblnum scavenging rate of aerosol volume [1/s]
-  // FIXME : create an 4 elements array that contains the aerosol densities to replace 
-  // specdens_amode and lspectype_amode
+  // FIXME : create an 4 elements array that contains the aerosol densities to
+  // replace specdens_amode and lspectype_amode
 
   const Real zero = 0;
   const Real one = 1;
@@ -555,8 +558,8 @@ void modal_aero_bcscavcoef_init(
 
   // ! set up temperature-pressure pair to compute impaction scavenging rates
   // BAD CONSTANT
-  const Real temp_0C = haero::Constants::melting_pt_h2o;      //     ! K
-  const Real press_750hPa = 0.75e6; //  ! dynes/cm2
+  const Real temp_0C = haero::Constants::melting_pt_h2o; //     ! K
+  const Real press_750hPa = 0.75e6;                      //  ! dynes/cm2
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
     const Real sigmag = sigmag_amode[imode];
     // FIXME: can we get this aero density from mam4xx?
