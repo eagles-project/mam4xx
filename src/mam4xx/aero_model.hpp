@@ -107,7 +107,7 @@ Real air_dynamic_viscosity(const Real temp) {
   ! see the same-name function in modal_aero_drydep.F90
   !-----------------------------------------------------------------*/
   // @param [in] temp   ! air temperature [K]
-  // return [out] dynamic viscosity of air, unit [g/cm/s]
+  // @return     dynamic viscosity of air, unit [g/cm/s]
   return 1.8325e-4 * (416.16 / (temp + 120.)) * haero::pow(temp / 296.16, 1.5);
 
 } // end air_dynamic_viscosity
@@ -119,7 +119,7 @@ Real air_kinematic_viscosity(const Real temp, const Real rhoair) {
   !-----------------------------------------------------------------*/
   // @param [in] temp     ! air temperature [K]
   // @param [in] rhoair   ! air density [g/cm3]
-  // @return vsc_dyn_atm  ! dynamic viscosity of air [g/cm/s]
+  // @return     vsc_dyn_atm  ! dynamic viscosity of air [g/cm/s]
   return air_dynamic_viscosity(temp) / rhoair;
 
 } // air_kinematic_viscosity
@@ -140,9 +140,9 @@ void calc_rain_drop_conc(const int nr, const Real rlo, const Real dr,
   // @param [in] precip       precipitation [cm/s]
 
   // @param [out] rrainsv(:)   rain radius in each bin [cm]
-  // @param [out]  xnumrainsv(:)  rain number concentration in each
+  // @param [out] xnumrainsv(:)  rain number concentration in each
   // @param [out] vfallrainsv(:) rain droplet falling bin [#/cm3]
-  // @param [out]   velocity [cm/s] bin [#/cm3]
+  // @param [out] velocity [cm/s] bin [#/cm3]
 
   const Real zero = 0;
   Real precipsum = zero;
@@ -201,7 +201,7 @@ void calc_aer_conc_frac(const int na, const Real xlo, const Real dx,
 
   // @param [out] raerosv(:)   ! aerosol radius [cm]
   // @param [out] fnumaerosv(:)! fraction of total number in the bin
-  // @param [out]  fvolaerosv(:)! fraction of total volume
+  // @param [out] fvolaerosv(:)! fraction of total volume
   // in the bin [fraction]
 
   // ! calculate total aerosol number and volume
@@ -361,8 +361,7 @@ void calc_1_impact_rate(const Real dg0,     //  in
                         const Real temp,    //  in
                         const Real press,   //  in
                         Real &scavratenum,  // out
-                        Real &scavratevol,  // out
-                        int &lunerr)        // out
+                        Real &scavratevol)  // out
 
 {
   // this subroutine computes a single impaction scavenging rate
@@ -377,8 +376,6 @@ void calc_1_impact_rate(const Real dg0,     //  in
   // @param [in]  press       pressure [dyne/cm^2]
   // @param [out] scavratenum scavenging rate for aerosol number [1/hour]
   // @param [out] scavratenum scavenging rate for aerosol volume [1/hour]
-
-  // @param [out] lunerr      ! logical unit for error message
 
   // const Real SHR_CONST_BOLTZ =
   //     1.38065e-23; //  ! Boltzmann's constant ~ J/K/molecule
@@ -553,9 +550,6 @@ void modal_aero_bcscavcoef_init(
 
   const Real zero = 0;
   const Real one = 1;
-
-  int lunerr = 6; //           ! logical unit for error message
-
   // ! set up temperature-pressure pair to compute impaction scavenging rates
   // BAD CONSTANT
   const Real temp_0C = haero::Constants::melting_pt_h2o; //     ! K
@@ -597,7 +591,7 @@ void modal_aero_bcscavcoef_init(
       Real scavratevol = zero;
 
       calc_1_impact_rate(dg0_cgs, sigmag, rhowetaero_cgs, temp_0C, press_750hPa,
-                         scavratenum, scavratevol, lunerr);
+                         scavratenum, scavratevol);
 
       scavimptblnum[jgrow - nimptblgrow_mind][imode] = haero::log(scavratenum);
       scavimptblvol[jgrow - nimptblgrow_mind][imode] = haero::log(scavratevol);

@@ -17,13 +17,12 @@ void calc_1_impact_rate(Ensemble *ensemble) {
     const Real zero = 0;
     Real scavratenum = zero;
     Real scavratevol = zero;
-    int lunerr = 0;
     const Real dg0 = input.get_array("dg0")[0];
     const Real sigmag = input.get_array("sigmag")[0];
     const Real rhoaero = input.get_array("rhoaero")[0];
     const Real temp = input.get_array("temp")[0];
     const Real press = input.get_array("press")[0];
-    lunerr = int(input.get_array("lunerr")[0]);
+
     // const Real input.get_array("")[0]
 
     aero_model::calc_1_impact_rate(dg0,         //  in
@@ -32,8 +31,7 @@ void calc_1_impact_rate(Ensemble *ensemble) {
                                    temp,        //  in
                                    press,       //  in
                                    scavratenum, // out
-                                   scavratevol, // out
-                                   lunerr);
+                                   scavratevol);
 
     output.set("scavratenum", std::vector(1, scavratenum));
     output.set("scavratevol", std::vector(1, scavratevol));
