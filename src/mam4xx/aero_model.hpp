@@ -64,7 +64,6 @@ void modal_aero_bcscavcoef_get(
       scavimpnum = scavimptblnum[-nimptblgrow_mind][imode];
     } else {
       Real xgrow = haero::log(wetdiaratio) / dlndg_nimptblgrow;
-      // FIXME check Fortran to C++ indexing conversion
       int jgrow = int(xgrow);
       if (xgrow < zero) {
         jgrow = jgrow - 1;
@@ -116,9 +115,9 @@ Real air_kinematic_viscosity(const Real temp, const Real rhoair) {
   /*-----------------------------------------------------------------
   ! Calculate kinematic viscosity of air, unit [cm^2/s]
   !-----------------------------------------------------------------*/
-  // temp     ! air temperature [K]
-  // rhoair   ! air density [g/cm3]
-  // vsc_dyn_atm  ! dynamic viscosity of air [g/cm/s]
+  // @param [in] temp     ! air temperature [K]
+  // @param [in] rhoair   ! air density [g/cm3]
+  // @return vsc_dyn_atm  ! dynamic viscosity of air [g/cm/s]
   return air_dynamic_viscosity(temp) / rhoair;
 
 } // air_kinematic_viscosity
@@ -132,16 +131,16 @@ void calc_rain_drop_conc(const int nr, const Real rlo, const Real dr,
   /*-----------------------------------------------------------------
   !   compute rain drop number concentrations, radius and falling velocity
   !-----------------------------------------------------------------*/
-  // integer,  intent(in) :: nr           ! number of rain bins
-  // real(r8), intent(in) :: rlo          ! lower limit of rain radius [cm]
-  // real(r8), intent(in) :: dr           ! rain radius bin width [cm]
-  // real(r8), intent(in) :: rhoair       ! air mass density [g/cm^3]
-  // real(r8), intent(in) :: precip       ! precipitation [cm/s]
+  // @param [in] nr           ! number of rain bins
+  // @param [in] rlo          ! lower limit of rain radius [cm]
+  // @param [in] dr           ! rain radius bin width [cm]
+  // @param [in] rhoair       ! air mass density [g/cm^3]
+  // @param [in] precip       ! precipitation [cm/s]
 
-  // real(r8), intent(out) :: rrainsv(:)  ! rain radius in each bin [cm]
-  // real(r8), intent(out) :: xnumrainsv(:)  ! rain number concentration in each
-  // bin [#/cm3] real(r8), intent(out) :: vfallrainsv(:) ! rain droplet falling
-  // velocity [cm/s]
+  // @return rrainsv(:)  ! rain radius in each bin [cm]
+  // @return xnumrainsv(:)  ! rain number concentration in each
+  // @return vfallrainsv(:) ! rain droplet falling bin [#/cm3] 
+  // bin [#/cm3]  velocity [cm/s]
 
   const Real zero = 0;
   Real precipsum = zero;
@@ -251,9 +250,7 @@ void calc_schmidt_number(const Real freepath, const Real r_aer,
   ! depositon (in modal_aero_drydep.F90) but the calculation of dumfuchs (or
   ! slip_correction_factor) looks differently
   !-----------------------------------------------------------------*/
-  // BAD CONSTANT
-  // FIXME get values of boltz_cgs
-
+  
   // real(r8), intent(in)  :: freepath      ! molecular freepath [cm]
   // real(r8), intent(in)  :: r_aer         ! aerosol radius [cm]
   // real(r8), intent(in)  :: temp          ! temperature [K]
@@ -266,8 +263,8 @@ void calc_schmidt_number(const Real freepath, const Real r_aer,
   // [s]
 
   // BAD CONSTANT
-  //  GET this constant from haero.
-  const Real boltz = 1.38065e-23;      //  ! Boltzmann's constant ~ J/K/molecule
+  const Real boltz = haero::Constants::boltzmann;//1.38065e-23;      //  ! Boltzmann's constant ~ J/K/molecule
+  // BAD CONSTANT
   const Real boltz_cgs = boltz * 1.e7; // erg/K
 
   // working variables [unitless]
@@ -322,6 +319,7 @@ void calc_impact_efficiency(const Real r_aer, const Real r_rain,
   const Real one = 1;
   const Real one_third = one / Real(3);
   // BAD CONSTANT
+  // FIXME move this constant to hearo 
   // ! ratio of water viscosity to air viscosity (from Slinn)
   const Real xmuwaterair = 60.0; // ! [fraction]
   // ! ratio of aerosol and rain radius [fraction]
@@ -375,19 +373,28 @@ void calc_1_impact_rate(const Real dg0,     //  in
 {
   // this subroutine computes a single impaction scavenging rate
   //  for precipitation rate of 1 mm/h
-  // FIXME: look for this constant at haero::Constants
-  const Real SHR_CONST_BOLTZ =
-      1.38065e-23; //  ! Boltzmann's constant ~ J/K/molecule
-  const Real SHR_CONST_AVOGAD =
-      6.02214e26; //   ! Avogadro's number ~ molecules/kmole
-  const Real rgas_kmol =
-      SHR_CONST_AVOGAD *
-      SHR_CONST_BOLTZ; //       ! Universal gas constant ~ J/K/kmole => ! Gas
-                       //       constant (J/K/mol)
-  const Real rgas = rgas_kmol * 1.e-3 * 1.e7; //
+  // 
+
+  // const Real SHR_CONST_BOLTZ =
+  //     1.38065e-23; //  ! Boltzmann's constant ~ J/K/molecule
+  // const Real SHR_CONST_AVOGAD =
+  //     6.02214e26; //   ! Avogadro's number ~ molecules/kmole
+  // const Real rgas_kmol =
+  //     SHR_CONST_AVOGAD *
+  //     SHR_CONST_BOLTZ; //       ! Universal gas constant ~ J/K/kmole => ! Gas
+  // //                      //       constant (J/K/mol)
+  // const Real rgas = rgas_kmol * 1.e-3 * 1.e7; //
+  // // air molar density [dyne/cm^2/erg*mol = mol/cm^3]
+  // const Real cair = press / (rgas * temp);
+  // air molar density [mol/cm^3] 
+  // const Real rhoair = 28.966 * cair;
+
   const Real pi = haero::Constants::pi;
   const Real zero = 0;
   const Real two = 2;
+  const Real one = 1;
+  const Real ten = 10;
+  const Real one_thousand =1000;
 
   //   function parameters
   // real(r8), intent(in)  :: dg0         ! geometric mean diameter of aerosol
@@ -413,7 +420,7 @@ void calc_1_impact_rate(const Real dg0,     //  in
 
   // this subroutine is calculated for a fix rainrate of 1 mm/hr
   // precipitation rate, fix as 1 mm/hr in this subroutine [cm/s]
-  const Real precip = Real(1.0) / Real(36000.); //  1 mm/hr in cm/s
+  const Real precip = one / Real(36000.); //  1 mm/hr in cm/s
 
   // set the iteration radius for rain droplet
   // rain droplet bin information [cm]
@@ -421,7 +428,6 @@ void calc_1_impact_rate(const Real dg0,     //  in
   const Real rhi = .250;
   const Real dr = 0.005;
   // Nearest whole number: nint
-  // FIXME: find this function in c++
   // number of rain bins
   const int nr = Real(1) + int((rhi - rlo) / dr);
 
@@ -444,7 +450,6 @@ void calc_1_impact_rate(const Real dg0,     //  in
   const Real xlo = xg3 - haero::max(4. * sx, 2. * dx);
   const Real xhi = xg3 + haero::max(4. * sx, 2. * dx);
   // Nearest whole number: nint
-  // FIXME: find this function in c++
   const int na = 1 + int((xhi - xlo) / dx);
 
   if (na > naerosvmax) {
@@ -452,14 +457,21 @@ void calc_1_impact_rate(const Real dg0,     //  in
     return;
   }
 
-  // air molar density [dyne/cm^2/erg*mol = mol/cm^3]
-  // FIXME: look for a function call to compute density in mam4xx
-  const Real cair = press / (rgas * temp);
+  
+    // Note: pressure units are: ! dynes/cm2
+  // We need pressure in units of Pa in density_of_ideal_gas
+  // ten factor => dynes/cm2 to Pa 
+  const Real pressure = press/ten;
   // air mass density [g/cm^3]
-  // BAD CONSTANT
-  const Real rhoair = 28.966 * cair;
+  // unit conversion from [kg/m^3]/1000 to [g/cm^3]
+  const Real rhoair = conversions::density_of_ideal_gas(temp, 
+    pressure, Constants::r_gas_dry_air)/one_thousand;
+  // unit conversion from [mol g /cm^3/kg]/1000 to [mol/cm^3]
+  // air molar density [mol/cm^3] 
+  const Real cair = rhoair/haero::Constants::molec_weight_dry_air/one_thousand;
   // !   molecular freepath [cm]
   // BAD CONSTANT
+  // FIXME move this constant to haero 
   const Real freepath = 2.8052e-10 / cair;
   // ! air kinematic viscosity [cm^2/s]
   const Real airkinvisc = air_kinematic_viscosity(temp, rhoair);
@@ -545,7 +557,7 @@ void modal_aero_bcscavcoef_init(
 
   // ! set up temperature-pressure pair to compute impaction scavenging rates
   // BAD CONSTANT
-  const Real temp_0C = 273.16;      //     ! K
+  const Real temp_0C = haero::Constants::melting_pt_h2o;      //     ! K
   const Real press_750hPa = 0.75e6; //  ! dynes/cm2
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
     const Real sigmag = sigmag_amode[imode];

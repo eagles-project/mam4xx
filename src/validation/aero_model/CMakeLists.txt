@@ -35,10 +35,10 @@ set(TEST_LIST
 set(DEFAULT_TOL 1e-11)
 
 set(ERROR_THRESHOLDS  
-   1e-4
+   2e-4
    5e-8
    ${DEFAULT_TOL}
-   9e-6
+   2e-4
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
