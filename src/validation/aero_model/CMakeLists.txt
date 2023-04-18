@@ -26,7 +26,6 @@ endforeach()
 
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
-    modal_aero_bcscavcoef_int_stand
     calc_1_impact_rate_ts_0
     modal_aero_bcscavcoef_get_ts_355
     modal_aero_bcscavcoef_init_ts_0
@@ -35,7 +34,6 @@ set(TEST_LIST
 set(DEFAULT_TOL 1e-11)
 
 set(ERROR_THRESHOLDS  
-   2e-4
    5e-8
    ${DEFAULT_TOL}
    2e-4

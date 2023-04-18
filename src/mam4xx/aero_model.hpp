@@ -525,8 +525,7 @@ KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_init(
     const Real dgnum_amode[AeroConfig::num_modes()],
     const Real sigmag_amode[AeroConfig::num_modes()],
-    const Real specdens_amode[AeroConfig::num_modes()],
-    const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
+    const Real aerosol_dry_density[AeroConfig::num_modes()],
     Real scavimptblnum[nimptblgrow_total][AeroConfig::num_modes()],
     Real scavimptblvol[nimptblgrow_total][AeroConfig::num_modes()]) {
   // -----------------------------------------------------------------------
@@ -537,14 +536,11 @@ void modal_aero_bcscavcoef_init(
   //  Authors: R. Easter
   //
   // -----------------------------------------------------------------------
-  // param [in]   dgnum_amode aerosol diameters [m]
-  // param [in]   sigmag_amode standard deviation of aerosol size distribution
-  // param [in]   specdens_amode dry density (kg/m^3) of aerosol chemical
-  // species type l param [in]   lspectype_amode species type/i.d. for chemical
-  // species l
-  //        in aerosol mode m.  (1=sulfate, others to be defined)
-  // param [out]  scavimptblnum scavenging rate of aerosol number [1/s]
-  // param [out]  scavimptblnum scavenging rate of aerosol volume [1/s]
+  // @param [in]   dgnum_amode aerosol diameters [m]
+  // @param [in]   sigmag_amode standard deviation of aerosol size distribution
+  // @param [out]  scavimptblnum scavenging rate of aerosol number [1/s]
+  // @param [out]  scavimptblnum scavenging rate of aerosol volume [1/s]
+  // @aerosol_dry_density [in] aerosol dry density [k/m3]
   // FIXME : create an 4 elements array that contains the aerosol densities to
   // replace specdens_amode and lspectype_amode
 
@@ -556,9 +552,10 @@ void modal_aero_bcscavcoef_init(
   const Real press_750hPa = 0.75e6;                      //  ! dynes/cm2
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
     const Real sigmag = sigmag_amode[imode];
-    // FIXME: can we get this aero density from mam4xx?
-    const int ll = lspectype_amode[0][imode];
-    const Real rhodryaero = specdens_amode[ll];
+    // Note: we replaced lspectype_amode and lspectype_amode for
+    // dry_aero_density const int ll = lspectype_amode[0][imode]; const Real
+    // rhodryaero = specdens_amode[ll];
+    const Real rhodryaero = aerosol_dry_density[imode];
     for (int jgrow = nimptblgrow_mind; jgrow <= nimptblgrow_maxd; ++jgrow) {
       // ratio of diameter for wet/dry aerosols [fraction]
       const Real wetdiaratio = haero::exp(jgrow * dlndg_nimptblgrow);

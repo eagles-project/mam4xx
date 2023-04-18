@@ -16,9 +16,6 @@ void modal_aero_bcscavcoef_init(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     auto dgnum_amode = input.get_array("dgnum_amode");
     auto sigmag_amode = input.get_array("sigmag_amode");
-    auto specdens_amode = input.get_array("specdens_amode");
-    auto lspectype_amode_1d = input.get_array("lspectype_amode");
-
     Real zero = 0;
 
     Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()] =
@@ -26,21 +23,17 @@ void modal_aero_bcscavcoef_init(Ensemble *ensemble) {
     Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()] =
         {{zero}};
 
-    int lspectype_amode[aero_model::maxd_aspectype][AeroConfig::num_modes()] = {
-        {0}};
-
-    int count = 0;
-    for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
-      for (int m = 0; m < aero_model::maxd_aspectype; ++m) {
-        // Fortran to C++ indexing conversion
-        lspectype_amode[m][imode] = lspectype_amode_1d[count] - 1;
-        count += 1;
-      }
-    }
+    Real aerosol_dry_density[AeroConfig::num_modes()] = {zero};
+    // Note: Original code uses the following aerosol densities.
+    // sulfate, sulfate, dust, p-organic
+    aerosol_dry_density[0] = mam4::mam4_density_so4;
+    aerosol_dry_density[1] = mam4::mam4_density_so4;
+    aerosol_dry_density[2] = mam4::mam4_density_dst;
+    aerosol_dry_density[3] = mam4::mam4_density_pom;
 
     aero_model::modal_aero_bcscavcoef_init(
-        dgnum_amode.data(), sigmag_amode.data(), specdens_amode.data(),
-        lspectype_amode, scavimptblnum, scavimptblvol);
+        dgnum_amode.data(), sigmag_amode.data(), aerosol_dry_density,
+        scavimptblnum, scavimptblvol);
 
     std::vector<Real> values_scavimptblvol;
     std::vector<Real> values_scavimptblnum;
