@@ -34,6 +34,8 @@ void calculate_hetfrz_contact_nucleation(Ensemble *ensemble);
 void calculate_hetfrz_deposition_nucleation(Ensemble *ensemble);
 void calculate_vars_for_pdf_imm(Ensemble *ensemble);
 void calculate_hetfrz_immersion_nucleation(Ensemble *ensemble);
+void calculate_water_activity(Ensemble *ensemble);
+void calculate_rgimm_and_determine_spec_flag(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
 
@@ -97,6 +99,12 @@ int main(int argc, char **argv) {
     }
     if (func_name == "calculate_hetfrz_immersion_nucleation") {
       calculate_hetfrz_immersion_nucleation(ensemble);
+    }
+    if (func_name == "calculate_water_activity") {
+      calculate_water_activity(ensemble);
+    }
+    if (func_name == "calculate_rgimm_and_determine_spec_flag") {
+      calculate_rgimm_and_determine_spec_flag(ensemble);
     }
 
   } catch (std::exception &e) {
