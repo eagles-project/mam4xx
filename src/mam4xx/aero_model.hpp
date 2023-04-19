@@ -417,17 +417,20 @@ void calc_1_impact_rate(const Real dg0,     //  in
 
   // set the iteration radius for rain droplet
   // rain droplet bin information [cm]
+  // BAD CONSTANT
   const Real rlo = .005;
-  const Real rhi = .250;
+  // const Real rhi = .250;
   const Real dr = 0.005;
-  // Nearest whole number: nint
-  // number of rain bins
-  const int nr = Real(1) + int((rhi - rlo) / dr);
-
-  if (nr > nrainsvmax) {
-    printf("subr. calc_1_impact_rate -- nr > nrainsvmax \n ");
-    return;
-  }
+  // // Nearest whole number: nint
+  // // number of rain bins
+  // const int nr = 1 + haero::round((rhi - rlo) / dr);
+  // FIXME: values to compute nr are hard-coded.
+  const int nr = 50;
+  // We comment this line because nr is hard-coded.
+  // if (nr > nrainsvmax) {
+  //   printf("subr. calc_1_impact_rate -- nr > nrainsvmax \n ");
+  //   return;
+  // }
 
   // aerosol modal information
   // aerosol bin information
@@ -437,13 +440,13 @@ void calc_1_impact_rate(const Real dg0,     //  in
   // log(mean radius) (log-normal distribution)
   const Real xg0 = haero::log(ag0);
   const Real xg3 = xg0 + Real(3.) * sx * sx; // mean + 3*std^2
-
+  // BAD CONSTANT
   // set the iteration radius for aerosol particles
   const Real dx = haero::max(0.2 * sx, 0.01);
   const Real xlo = xg3 - haero::max(4. * sx, 2. * dx);
   const Real xhi = xg3 + haero::max(4. * sx, 2. * dx);
   // Nearest whole number: nint
-  const int na = 1 + int((xhi - xlo) / dx);
+  const int na = 1 + haero::round((xhi - xlo) / dx);
 
   if (na > naerosvmax) {
     printf("subr. calc_1_impact_rate -- na > naerosvmax \n ");
@@ -547,12 +550,13 @@ void modal_aero_bcscavcoef_init(
 
   const Real zero = 0;
   const Real one = 1;
+  const Real three = 3;
   // BAD CONSTANT
   const Real dlndg_nimptblgrow = haero::log(1.25);
   // ! set up temperature-pressure pair to compute impaction scavenging rates
-  // BAD CONSTANT
   const Real temp_0C = haero::Constants::melting_pt_h2o; //     ! K
-  const Real press_750hPa = 0.75e6;                      //  ! dynes/cm2
+  // BAD CONSTANT
+  const Real press_750hPa = 0.75e6; //  ! dynes/cm2
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
     const Real sigmag = sigmag_amode[imode];
     // Note: we replaced lspectype_amode and lspectype_amode for
@@ -561,11 +565,12 @@ void modal_aero_bcscavcoef_init(
     const Real rhodryaero = aerosol_dry_density[imode];
     for (int jgrow = nimptblgrow_mind; jgrow <= nimptblgrow_maxd; ++jgrow) {
       // ratio of diameter for wet/dry aerosols [fraction]
-      const Real wetdiaratio = haero::exp(jgrow * dlndg_nimptblgrow);
+      const Real wetdiaratio = haero::exp(Real(jgrow) * dlndg_nimptblgrow);
       // aerosol diameter [m]
       const Real dg0 = dgnum_amode[imode] * wetdiaratio;
       // ratio of volume for wet/dry aerosols [fraction]
-      const Real wetvolratio = haero::exp(jgrow * dlndg_nimptblgrow * 3);
+      const Real wetvolratio =
+          haero::exp(Real(jgrow) * dlndg_nimptblgrow * three);
       // dry and wet aerosol density [kg/m3]
       Real rhowetaero = one + (rhodryaero - one) / wetvolratio;
       rhowetaero = haero::min(rhowetaero, rhodryaero);
