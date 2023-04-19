@@ -11,6 +11,7 @@
 namespace mam4 {
 
 namespace wetdep {
+/*
         // Need atm for this constant based on number of atmosphere levels
         // See https://github.com/eagles-project/e3sm_mam4_refactor/blob/refactor-maint-2.0/components/eam/src/physics/cam/ppgrid.F90#L32
         const int pver = atm.num_levels();
@@ -35,8 +36,8 @@ namespace wetdep {
    //    enddo
    // enddo
     }
-
-} // namespace nucleation
+*/
+} // namespace wetdep
 
 class WetDeposition {
     public:
