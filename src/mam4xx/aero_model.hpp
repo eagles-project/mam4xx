@@ -21,7 +21,6 @@ namespace mam4 {
 namespace aero_model {
 
 // BAD CONSTANT
-constexpr Real dlndg_nimptblgrow = haero::log(1.25);
 constexpr int nimptblgrow_mind = -7, nimptblgrow_maxd = 12;
 constexpr int nimptblgrow_total = -nimptblgrow_mind + nimptblgrow_maxd + 1;
 const int nrainsvmax = 50; // maximum bin number for rain
@@ -53,6 +52,8 @@ void modal_aero_bcscavcoef_get(
 
   const Real zero = 0;
   const Real one = 1;
+  // BAD CONSTANT
+  const Real dlndg_nimptblgrow = haero::log(1.25);
   if (isprx_kk) {
     // ! interpolate table values using log of
     // (actual-wet-size)/(base-dry-size) ratio of wet and dry aerosol diameter
@@ -546,6 +547,8 @@ void modal_aero_bcscavcoef_init(
 
   const Real zero = 0;
   const Real one = 1;
+  // BAD CONSTANT
+  const Real dlndg_nimptblgrow = haero::log(1.25);
   // ! set up temperature-pressure pair to compute impaction scavenging rates
   // BAD CONSTANT
   const Real temp_0C = haero::Constants::melting_pt_h2o; //     ! K
