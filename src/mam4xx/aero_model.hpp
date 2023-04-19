@@ -21,7 +21,7 @@ namespace mam4 {
 namespace aero_model {
 
 // BAD CONSTANT
-const Real dlndg_nimptblgrow = haero::log(1.25);
+constexpr Real dlndg_nimptblgrow = haero::log(1.25);
 constexpr int nimptblgrow_mind = -7, nimptblgrow_maxd = 12;
 constexpr int nimptblgrow_total = -nimptblgrow_mind + nimptblgrow_maxd + 1;
 const int nrainsvmax = 50; // maximum bin number for rain
