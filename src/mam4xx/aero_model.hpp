@@ -184,7 +184,6 @@ void calc_rain_drop_conc(const int nr, const Real rlo, const Real dr,
 
   } // ii
 
-  // 1.333333 is simplified 4/3 for sphere volume calculation
   precipsum *= haero::Constants::pi * four_thirds;
   for (int ii = 0; ii < nr; ++ii) {
     xnumrainsv[ii] *= (precip / precipsum);
