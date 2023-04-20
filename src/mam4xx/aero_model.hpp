@@ -228,7 +228,6 @@ void calc_aer_conc_frac(const int na, const Real xlo, const Real dx,
     raerosv[ii] = aa;
     const Real dum = (xx - xg0) / sx;
     fnumaerosv[ii] = haero::exp(-0.5 * dum * dum);
-    // 1.3333 is simplified 4/3 for sphere volume calculation
     fvolaerosv[ii] =
         four_thirds * fnumaerosv[ii] * haero::Constants::pi * aa * aa * aa;
     anumsum += fnumaerosv[ii];
