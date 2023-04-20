@@ -155,7 +155,7 @@ void calc_rain_drop_conc(const int nr, const Real rlo, const Real dr,
 
   const Real zero = 0;
   Real precipsum = zero;
-  const Real four_thirds = 4./3.; 
+  const Real four_thirds = 4. / 3.;
   // loop over  cloud bins
   for (int ii = 0; ii < nr; ++ii) {
     // rain radius in the bin [cm]
@@ -217,7 +217,7 @@ void calc_aer_conc_frac(const int na, const Real xlo, const Real dx,
 
   // ! calculate total aerosol number and volume
   const Real zero = 0;
-  const Real four_thirds = 4./3.;  
+  const Real four_thirds = 4. / 3.;
   // total aerosol number
   Real anumsum = zero;
   // total aerosol volume
@@ -231,7 +231,7 @@ void calc_aer_conc_frac(const int na, const Real xlo, const Real dx,
     fnumaerosv[ii] = haero::exp(-0.5 * dum * dum);
     // 1.3333 is simplified 4/3 for sphere volume calculation
     fvolaerosv[ii] =
-        four_thirds * fnumaerosv[ii] *  haero::Constants::pi * aa * aa * aa;
+        four_thirds * fnumaerosv[ii] * haero::Constants::pi * aa * aa * aa;
     anumsum += fnumaerosv[ii];
     avolsum += fvolaerosv[ii];
   } // end ii
@@ -272,23 +272,23 @@ void calc_schmidt_number(const Real freepath, const Real r_aer,
   // [s]
 
   // Unit conversion from J/K/molecule to erg/K
-  const Real one = 1. ; 
-  const Real two = 2. ;
-  const Real four_thirds =4./3.;  
-
+  const Real one = 1.;
+  const Real two = 2.;
+  const Real four_thirds = 4. / 3.;
 
   const Real boltz_cgs = haero::Constants::boltzmann * 1.e7; // erg/K
 
   // working variables [unitless]
   const Real dum = freepath / r_aer;
   // ! slip correction factor [unitless]
-  const Real dumfuchs = one + 1.246 * dum + 0.42 * dum * haero::exp(-0.87 / dum);
+  const Real dumfuchs =
+      one + 1.246 * dum + 0.42 * dum * haero::exp(-0.87 / dum);
   taurelax =
       two * rhoaero * r_aer * r_aer * dumfuchs / (9. * rhoair * airkinvisc);
 
   // single-particle aerosol mass [g]
-  const Real aeromass =
-      four_thirds * haero::Constants::pi * r_aer * r_aer * r_aer * rhoaero; // ![g]
+  const Real aeromass = four_thirds * haero::Constants::pi * r_aer * r_aer *
+                        r_aer * rhoaero; // ![g]
   // aerosol diffusivity [cm^2/s]
   const Real aerodiffus = boltz_cgs * temp * taurelax / aeromass; //  ! [cm^2/s]
   schmidt = airkinvisc / aerodiffus;
@@ -322,8 +322,8 @@ void calc_impact_efficiency(const Real r_aer, const Real r_rain,
   const Real one = 1.;
   const Real two = 2.;
   const Real one_third = 1. / 3.;
-  const Real two_thirds = 2./3.;
-  const Real four = 4.; 
+  const Real two_thirds = 2. / 3.;
+  const Real four = 4.;
   // BAD CONSTANT
   // FIXME move this constant to hearo
   // ! ratio of water viscosity to air viscosity (from Slinn)
