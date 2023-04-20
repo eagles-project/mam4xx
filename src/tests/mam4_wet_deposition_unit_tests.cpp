@@ -3,8 +3,8 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <mam4xx/mam4.hpp>
 #include "testing.hpp"
+#include <mam4xx/mam4.hpp>
 
 #include <haero/constants.hpp>
 
@@ -33,7 +33,8 @@ TEST_CASE("test_constructor", "mam4_wet_deposition_process") {
   REQUIRE(process.aero_config() == mam4_config);
 }
 
-// While this isn't a high level function/part of the namespace, we should still test it
+// While this isn't a high level function/part of the namespace, we should still
+// test it
 TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
   ekat::Comm comm;
   // TODO - figure out how to print this logging information...
@@ -46,7 +47,7 @@ TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
   const int pver = atm.num_levels();
 
   Real *pdel = new Real[pver];
-  Real *source_term = new Real[pver]; 
+  Real *source_term = new Real[pver];
   Real *sink_term = new Real[pver];
   Real *lprec = new Real[pver];
 
@@ -55,13 +56,14 @@ TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
   std::fill_n(sink_term, pver, 1.5);
   std::fill_n(lprec, pver, 0.0);
 
-  mam4::wetdep::local_precip_production(pdel, source_term, sink_term, lprec, atm);
+  mam4::wetdep::local_precip_production(pdel, source_term, sink_term, lprec,
+                                        atm);
 
-  for (int i = 0; i < pver; i++)
-  {
+  for (int i = 0; i < pver; i++) {
     REQUIRE(pdel[i] == 1.0);
     REQUIRE(source_term[i] == 2.0);
     REQUIRE(sink_term[i] == 1.5);
-    REQUIRE(lprec[i] == pdel[i] / Constants::gravity * (source_term[i] - sink_term[i]));
+    REQUIRE(lprec[i] ==
+            pdel[i] / Constants::gravity * (source_term[i] - sink_term[i]));
   }
 }
