@@ -16,14 +16,13 @@ void modal_aero_bcscavcoef_init(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     auto dgnum_amode = input.get_array("dgnum_amode");
     auto sigmag_amode = input.get_array("sigmag_amode");
-    Real zero = 0;
 
     Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()] =
-        {{zero}};
+        {{}};
     Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()] =
-        {{zero}};
+        {{}};
 
-    Real aerosol_dry_density[AeroConfig::num_modes()] = {zero};
+    Real aerosol_dry_density[AeroConfig::num_modes()] = {};
     // Note: Original code uses the following aerosol densities.
     // sulfate, sulfate, dust, p-organic
     aerosol_dry_density[0] = mam4::mam4_density_so4;
@@ -34,7 +33,7 @@ void modal_aero_bcscavcoef_init(Ensemble *ensemble) {
     aero_model::modal_aero_bcscavcoef_init(
         dgnum_amode.data(), sigmag_amode.data(), aerosol_dry_density,
         scavimptblnum, scavimptblvol);
-
+    // Note:  scavimptblnum and scavimptblvol were written in row-major order.
     std::vector<Real> values_scavimptblvol;
     std::vector<Real> values_scavimptblnum;
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {

@@ -60,6 +60,11 @@ void modal_aero_bcscavcoef_get(
     // [fraction]
     const Real wetdiaratio = dgn_awet_imode_kk / dgnum_amode_imode;
     // BAD CONSTANT
+    // Note: indexing in scavimptblnum and scavimptblvol
+    // Fortran : [-7,12]
+    // C++ :  [0,19]
+    // Therefore, -7 (Fortran) => 0 (C++), or jgrow => jgrow - nimptblgrow_mind;
+    // Here, we are assuming that nimptblgrow_mind is negative
     Real scavimpvol, scavimpnum = zero;
     if (wetdiaratio >= 0.99 && wetdiaratio <= 1.01) {
       scavimpvol = scavimptblvol[-nimptblgrow_mind][imode];
@@ -109,6 +114,9 @@ Real air_dynamic_viscosity(const Real temp) {
   !-----------------------------------------------------------------*/
   // @param [in] temp   ! air temperature [K]
   // @return     dynamic viscosity of air, unit [g/cm/s]
+  // Note: We do not have a reference for this correlation.
+  // However, this equation is presented in page 3 of
+  // http://pages.erau.edu/~snivelyj/ep711sp12/EP711_15.pdf.
   return 1.8325e-4 * (416.16 / (temp + 120.)) * haero::pow(temp / 296.16, 1.5);
 
 } // end air_dynamic_viscosity
@@ -174,7 +182,8 @@ void calc_rain_drop_conc(const int nr, const Real rlo, const Real dr,
     precipsum += vfallrainsv[ii] * rr * rr * rr * xnumrainsv[ii];
 
   } // ii
-    // 1.333333 is simplified 4/3 for sphere volume calculation
+
+  // 1.333333 is simplified 4/3 for sphere volume calculation
   precipsum *= haero::Constants::pi * Real(4) / Real(3);
   for (int ii = 0; ii < nr; ++ii) {
     xnumrainsv[ii] *= (precip / precipsum);
@@ -260,12 +269,8 @@ void calc_schmidt_number(const Real freepath, const Real r_aer,
   // @param [out]  taurelax      ! relaxation time for Stokes number
   // [s]
 
-  // BAD CONSTANT
-  const Real boltz =
-      haero::Constants::boltzmann; // 1.38065e-23;      //  ! Boltzmann's
-                                   // constant ~ J/K/molecule
-  // BAD CONSTANT
-  const Real boltz_cgs = boltz * 1.e7; // erg/K
+  // Unit conversion from J/K/molecule to erg/K
+  const Real boltz_cgs = haero::Constants::boltzmann * 1.e7; // erg/K
 
   // working variables [unitless]
   const Real dum = freepath / r_aer;
@@ -385,9 +390,9 @@ void calc_1_impact_rate(const Real dg0,     //  in
   // const Real rgas_kmol =
   //     SHR_CONST_AVOGAD *
   //     SHR_CONST_BOLTZ; //       ! Universal gas constant ~ J/K/kmole => ! Gas
-  // //                      //       constant (J/K/mol)
+  //                      //       constant (J/K/mol)
   // const Real rgas = rgas_kmol * 1.e-3 * 1.e7; //
-  // // air molar density [dyne/cm^2/erg*mol = mol/cm^3]
+  // air molar density [dyne/cm^2/erg*mol = mol/cm^3]
   // const Real cair = press / (rgas * temp);
   // air molar density [mol/cm^3]
   // const Real rhoair = 28.966 * cair;
@@ -555,8 +560,7 @@ void modal_aero_bcscavcoef_init(
   const Real dlndg_nimptblgrow = haero::log(1.25);
   // ! set up temperature-pressure pair to compute impaction scavenging rates
   const Real temp_0C = haero::Constants::melting_pt_h2o; //     ! K
-  // BAD CONSTANT
-  const Real press_750hPa = 0.75e6; //  ! dynes/cm2
+  const Real press_750hPa = 0.75e6;                      //  ! dynes/cm2
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
     const Real sigmag = sigmag_amode[imode];
     // Note: we replaced lspectype_amode and lspectype_amode for

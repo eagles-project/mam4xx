@@ -22,10 +22,12 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
     auto scavimptblnum_vector = input.get_array("scavimptblnum");
 
     Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()] =
-        {{zero}};
+        {{}};
     Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()] =
-        {{zero}};
+        {{}};
 
+    // Note:  scavimptblvol_vector and scavimptblnum_vector were written in
+    // row-major order.
     int count = 0;
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
       for (int i = 0; i < aero_model::nimptblgrow_total; ++i) {
