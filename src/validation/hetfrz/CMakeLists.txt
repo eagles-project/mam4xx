@@ -24,7 +24,8 @@ add_executable(hetfrz_driver
                hetfrz_calculate_hetfrz_immersion_nucleation.cpp
                hetfrz_calculate_rgimm_and_determine_spec_flag.cpp
                hetfrz_calculate_water_activity.cpp
-               hetfrz_calculate_interstitial_aer_num.cpp)
+               hetfrz_calculate_interstitial_aer_num.cpp
+               hetfrz_calculate_cloudborne_aer_num.cpp)
 target_link_libraries(hetfrz_driver skywalker;validation;${HAERO_LIBRARIES})
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
@@ -53,6 +54,7 @@ foreach (input
           calculate_water_activity
           calculate_rgimm_and_determine_spec_flag
           calculate_interstitial_aer_num
+          calculate_cloudborne_aer_num
           )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?

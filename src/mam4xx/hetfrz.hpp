@@ -846,7 +846,7 @@ void calculate_interstitial_aer_num(
 KOKKOS_INLINE_FUNCTION
 void calculate_cloudborne_aer_num(
     const Real dmac_cb, const Real ssmac_cb, const Real so4mac_cb,
-    const Real bcmaac_cb, const Real pommac_cb, const Real soamac_cb,
+    const Real bcmac_cb, const Real pommac_cb, const Real soamac_cb,
     const Real mommac_cb, const Real num_accum_cb, const Real dmc_cb,
     const Real ssmc_cb, const Real mommc_cb, const Real bcmc_cb,
     const Real pommc_cb, const Real soamc_cb, const Real num_coarse_cb,
@@ -856,9 +856,9 @@ void calculate_cloudborne_aer_num(
   // BC and dust
   // ***************************************************
 
-  if (bcmaac_cb > 0.0) {
-    total_cloudborne_aer_num[0] = bcmaac_cb /
-                                  (so4mac_cb + bcmaac_cb + pommac_cb +
+  if (bcmac_cb > 0.0) {
+    total_cloudborne_aer_num[0] = bcmac_cb /
+                                  (so4mac_cb + bcmac_cb + pommac_cb +
                                    soamac_cb + ssmac_cb + dmac_cb + mommac_cb) *
                                   num_accum_cb *
                                   Hetfrz::num_m3_to_cm3; // #/cm^3
@@ -866,7 +866,7 @@ void calculate_cloudborne_aer_num(
 
   if (dmac_cb > 0.0) {
     total_cloudborne_aer_num[1] = dmac_cb /
-                                  (so4mac_cb + bcmaac_cb + pommac_cb +
+                                  (so4mac_cb + bcmac_cb + pommac_cb +
                                    soamac_cb + ssmac_cb + dmac_cb + mommac_cb) *
                                   num_accum_cb *
                                   Hetfrz::num_m3_to_cm3; // #/cm^3

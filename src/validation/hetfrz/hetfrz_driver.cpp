@@ -37,6 +37,7 @@ void calculate_hetfrz_immersion_nucleation(Ensemble *ensemble);
 void calculate_water_activity(Ensemble *ensemble);
 void calculate_rgimm_and_determine_spec_flag(Ensemble *ensemble);
 void calculate_interstitial_aer_num(Ensemble *ensemble);
+void calculate_cloudborne_aer_num(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
 
@@ -109,6 +110,9 @@ int main(int argc, char **argv) {
     }
     if (func_name == "calculate_interstitial_aer_num") {
       calculate_interstitial_aer_num(ensemble);
+    }
+    if (func_name == "calculate_cloudborne_aer_num") {
+      calculate_cloudborne_aer_num(ensemble);
     }
 
   } catch (std::exception &e) {
