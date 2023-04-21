@@ -667,9 +667,6 @@ void calculate_vars_for_pdf_imm(Real dim_theta[Hetfrz::pdf_n_theta],
 
   const Real norm_theta_imm = (haero::erf(x2_imm) - haero::erf(x1_imm)) * 0.5;
 
-  std::cout.precision(19);
-  std::cout << norm_theta_imm << std::endl;
-
   for (int ibin = 0; ibin < Hetfrz::pdf_n_theta; ++ibin) {
     dim_theta[ibin] = 0.0;
     pdf_imm_theta[ibin] = 0.0;
