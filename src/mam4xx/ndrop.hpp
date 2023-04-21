@@ -18,30 +18,21 @@ namespace mam4 {
 class NDrop {
 
 public:
-
-    //TODO: put this inside ndrop_init
-    // abdul-razzak functions of width
-    //static Real bizarro1[AeroConfig::num_modes()];
-    // abdul-razzak functions of width
-    //static Real bizarro2[AeroConfig::num_modes()];
-
 };
-
 
 namespace ndrop {
 
-//static ColumnView bizarro1;
-//static ColumnView bizarro2;
+// abdul-razzak functions of width
+static Real f1[AeroConfig::num_modes()];
+static Real f2[AeroConfig::num_modes()];
 
-
-KOKKOS_INLINE_FUNCTION 
+KOKKOS_INLINE_FUNCTION
 void ndrop_init() {
-    //bizarro1 = ColumnView("bizarro1", AeroConfig::num_modes());
-    //bizarro2 = ColumnView("bizarro2", AeroConfig::num_modes());
-    for(int m = 0; m < AeroConfig::num_modes(); m++) {
-        //bizarro1(m) = 0.5 * haero::exp(2.5 * haero::log(modes(m).mean_std_dev) * haero::log(modes(m).mean_std_dev));
-       // bizarro2(m) = 1.0 + 0.25 * haero::log(modes(m).mean_std_dev);
-    }
+  for (int m = 0; m < AeroConfig::num_modes(); m++) {
+    f1[m] = 0.5 * haero::exp(2.5 * haero::log(modes(m).mean_std_dev) *
+                             haero::log(modes(m).mean_std_dev));
+    f2[m] = 1.0 + 0.25 * haero::log(modes(m).mean_std_dev);
+  }
 }
 
 // TODO: this function signature may need to change to work properly on GPU
@@ -131,41 +122,43 @@ void explmix(
 // Abdul-Razzak and Ghan, A parameterization of aerosol activation.
 // 2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
 KOKKOS_INLINE_FUNCTION
-void maxsat(Real zeta, // [dimensionless]
-            ColumnView eta, // [dimensionless] 
-            Real nmode, //number of modes
-            ColumnView smc, // critical supersaturation for number mode radius [fraction]
-            Real &smax //maximum supersaturation [fraction]
-            ) {
+void maxsat(Real zeta,      // [dimensionless]
+            ColumnView eta, // [dimensionless]
+            Real nmode,     // number of modes
+            ColumnView smc, // critical supersaturation for number mode radius
+                            // [fraction]
+            Real &smax      // maximum supersaturation [fraction]
+) {
 
-    Real sum = 0;
-    Real g1, g2;
-    bool weak_forcing = true; // whether forcing is sufficiently weak or not
+  Real sum = 0;
+  Real g1, g2;
+  bool weak_forcing = true; // whether forcing is sufficiently weak or not
 
-    for(int m = 0; m < nmode; m++) {
-        if(zeta > 1e5 * eta(m) || smc(m) * smc(m) > 1e5 * eta(m)) {
-            // weak forcing. essentially none activated
-            smax = 1e-20;
-        } else {
-            // significant activation of this mode. calc activation of all modes.
-            weak_forcing = false;
-            break;
-        }
+  for (int m = 0; m < nmode; m++) {
+    if (zeta > 1e5 * eta(m) || smc(m) * smc(m) > 1e5 * eta(m)) {
+      // weak forcing. essentially none activated
+      smax = 1e-20;
+    } else {
+      // significant activation of this mode. calc activation of all modes.
+      weak_forcing = false;
+      break;
     }
-    
-    if (weak_forcing) 
-        return;
-   
-   for(int m = 0; m < nmode; m++) {
-      if(eta(m) > 1e-20) {
-         g1 = (zeta / eta(m)) * haero::sqrt(zeta / eta(m));
-         g2 = (smc(m) / haero::sqrt(eta(m) + 3.0 * zeta)) * haero::sqrt(smc(m) / haero::sqrt(eta(m) + 3.0 * zeta));
-         sum = sum + (12345.0 * g1 + 12345.0 * g2) / (smc(m) * smc(m));
-      } else {
-         sum = 1e20;
-      }
-   }
-   smax = 1.0 / haero::sqrt(sum);           
+  }
+
+  if (weak_forcing)
+    return;
+
+  for (int m = 0; m < nmode; m++) {
+    if (eta(m) > 1e-20) {
+      g1 = (zeta / eta(m)) * haero::sqrt(zeta / eta(m));
+      g2 = (smc(m) / haero::sqrt(eta(m) + 3.0 * zeta)) *
+           haero::sqrt(smc(m) / haero::sqrt(eta(m) + 3.0 * zeta));
+      sum = sum + (f1[m] * g1 + f2[m] * g2) / (smc(m) * smc(m));
+    } else {
+      sum = 1e20;
+    }
+  }
+  smax = 1.0 / haero::sqrt(sum);
 }
 
 } // namespace ndrop

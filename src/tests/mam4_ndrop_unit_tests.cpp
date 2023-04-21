@@ -208,7 +208,6 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
   }
 }
 
-
 TEST_CASE("test_maxsat", "mam4_ndrop") {
   ekat::Comm comm;
   ekat::logger::Logger<> logger("ndrop maxsat unit tests",
@@ -248,12 +247,10 @@ TEST_CASE("test_maxsat", "mam4_ndrop") {
     smc(m) = 1;
   }
   smax = 0;
-  Real answer = 1 / haero::sqrt(49380);
+  Real answer = 0.4698982925962298;
 
   ndrop::maxsat(zeta, eta, nmodes, smc, smax);
   logger.info("smax = {}", smax);
   logger.info("answer = {}", answer);
   REQUIRE(FloatingPoint<Real>::equiv(smax, answer));
-
 }
-
