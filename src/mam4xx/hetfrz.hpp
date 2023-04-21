@@ -6,7 +6,7 @@
 #ifndef MAM4XX_HETFZR_HPP
 #define MAM4XX_HETFZR_HPP
 
-#include <haero/atmosphere.hpp> 
+#include <haero/atmosphere.hpp>
 #include <haero/math.hpp>
 
 #include <mam4xx/aero_config.hpp>
@@ -823,7 +823,8 @@ KOKKOS_INLINE_FUNCTION
 void calculate_interstitial_aer_num(
     const Real bcmac, const Real dmac, const Real bcmpc, const Real dmc,
     const Real ssmc, const Real mommc, const Real bcmc, const Real pommc,
-    const Real soammc, const Real ncoarse, Real total_interstital_aer_num[Hetfrz::hetfrz_aer_nspec]) {
+    const Real soammc, const Real ncoarse,
+    Real total_interstital_aer_num[Hetfrz::hetfrz_aer_nspec]) {
 
   // fixed ratio converting BC mass to number (based on BC emission) [#/kg]
   constexpr Real bc_kg_to_num = 4.669152e+17;
