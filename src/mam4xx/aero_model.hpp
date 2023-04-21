@@ -55,49 +55,54 @@ void modal_aero_bcscavcoef_get(
   // BAD CONSTANT
   const Real dlndg_nimptblgrow = haero::log(1.25);
   if (isprx_kk) {
-    // ! interpolate table values using log of
+    // With precipitation
+    // interpolate table values using log of
     // (actual-wet-size)/(base-dry-size) ratio of wet and dry aerosol diameter
     // [fraction]
     const Real wetdiaratio = dgn_awet_imode_kk / dgnum_amode_imode;
-    // BAD CONSTANT
     // Note: indexing in scavimptblnum and scavimptblvol
     // Fortran : [-7,12]
     // C++ :  [0,19]
     // Therefore, -7 (Fortran) => 0 (C++), or jgrow => jgrow - nimptblgrow_mind;
     // Here, we are assuming that nimptblgrow_mind is negative
     Real scavimpvol, scavimpnum = zero;
+    // BAD CONSTANT
     if (wetdiaratio >= 0.99 && wetdiaratio <= 1.01) {
+      // 8th position: Fortran (0) C++(7 or -nimptblgrow_mind)
       scavimpvol = scavimptblvol[-nimptblgrow_mind][imode];
       scavimpnum = scavimptblnum[-nimptblgrow_mind][imode];
     } else {
       Real xgrow = haero::log(wetdiaratio) / dlndg_nimptblgrow;
-      int jgrow = int(xgrow);
-      if (xgrow < zero) {
+      int jgrow = int(xgrow); // get index jgrow
+      if (xgrow < zero) { // // adjust jgrow appropriately if xgrow is negative
         jgrow = jgrow - 1;
       }
-
+      // bound jgrow within max and min values
       if (jgrow < nimptblgrow_mind) {
         jgrow = nimptblgrow_mind;
         xgrow = jgrow;
       } else {
         jgrow = haero::min(jgrow, nimptblgrow_maxd - 1);
       }
+      // compute factors for interpolating impaction scavenging removal amounts
       const Real dumfhi = xgrow - jgrow;
       const Real dumflo = one - dumfhi;
       // Fortran to C++ index conversion
-      // note that nimptblgrow_mind is negative (-7)
+      // Note: nimptblgrow_mind is negative (-7)
       int jgrow_pp = jgrow - nimptblgrow_mind;
       scavimpvol = dumflo * scavimptblvol[jgrow_pp][imode] +
                    dumfhi * scavimptblvol[jgrow_pp + 1][imode];
       scavimpnum = dumflo * scavimptblnum[jgrow_pp][imode] +
                    dumfhi * scavimptblnum[jgrow_pp + 1][imode];
 
-    } /// wetdiaratio
-      // ! impaction scavenging removal amount for volume
+    } // wetdiaratio
+
+    // impaction scavenging removal amount for volume
     scavcoefvol_kk = haero::exp(scavimpvol);
-    // ! impaction scavenging removal amount to number
+    // impaction scavenging removal amount to number
     scavcoefnum_kk = haero::exp(scavimpnum);
   } else {
+    // Without precipitation
     scavcoefvol_kk = zero;
     scavcoefnum_kk = zero;
   } // isprx_kk
