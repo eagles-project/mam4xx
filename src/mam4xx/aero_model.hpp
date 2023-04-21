@@ -623,26 +623,6 @@ void modal_aero_bcscavcoef_init(
 
 } // end namespace aero_model
 
-/// @class aero_model
-/// This class implements MAM4's aero_model parameterization.
-class AeroModelOD {
-public:
-  // aero_model-specific configuration
-  struct Config {
-    Config() {}
-    Config(const Config &) = default;
-    ~Config() = default;
-    Config &operator=(const Config &) = default;
-  };
-
-private:
-  Config config_;
-
-public:
-  // name--unique name of the process implemented by this class
-  const char *name() const { return "MAM4 aero_model"; }
-}; // end class aero_model
-
 } // end namespace mam4
 
 #endif
