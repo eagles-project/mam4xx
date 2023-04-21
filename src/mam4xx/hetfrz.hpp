@@ -6,7 +6,7 @@
 #ifndef MAM4XX_HETFZR_HPP
 #define MAM4XX_HETFZR_HPP
 
-#include <haero/atmosphere.hpp>
+#include <haero/atmosphere.hpp> 
 #include <haero/math.hpp>
 
 #include <mam4xx/aero_config.hpp>
@@ -823,8 +823,7 @@ KOKKOS_INLINE_FUNCTION
 void calculate_interstitial_aer_num(
     const Real bcmac, const Real dmac, const Real bcmpc, const Real dmc,
     const Real ssmc, const Real mommc, const Real bcmc, const Real pommc,
-    const Real soammc, const Real num_coarse,
-    Real total_interstital_aer_num[Hetfrz::hetfrz_aer_nspec]) {
+    const Real soammc, const Real ncoarse, Real total_interstital_aer_num[Hetfrz::hetfrz_aer_nspec]) {
 
   // fixed ratio converting BC mass to number (based on BC emission) [#/kg]
   constexpr Real bc_kg_to_num = 4.669152e+17;
@@ -833,13 +832,12 @@ void calculate_interstitial_aer_num(
   constexpr Real dst1_kg_to_num = 3.484e+15;
 
   total_interstital_aer_num[0] = bcmac * bc_kg_to_num * Hetfrz::num_m3_to_cm3;
-  total_interstital_aer_num[0] += bcmpc * bc_kg_to_num * Hetfrz::num_cm3_to_m3;
-
+  total_interstital_aer_num[0] += bcmpc * bc_kg_to_num * Hetfrz::num_m3_to_cm3;
   total_interstital_aer_num[1] = dmac * dst1_kg_to_num * Hetfrz::num_m3_to_cm3;
 
   if (dmc > 0.0) {
     total_interstital_aer_num[2] =
-        dmc / (ssmc + dmc + bcmc + pommc + soammc + mommc) * num_coarse *
+        dmc / (ssmc + dmc + bcmc + pommc + soammc + mommc) * ncoarse *
         Hetfrz::num_m3_to_cm3;
   }
 }

@@ -36,6 +36,7 @@ void calculate_vars_for_pdf_imm(Ensemble *ensemble);
 void calculate_hetfrz_immersion_nucleation(Ensemble *ensemble);
 void calculate_water_activity(Ensemble *ensemble);
 void calculate_rgimm_and_determine_spec_flag(Ensemble *ensemble);
+void calculate_interstitial_aer_num(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
 
@@ -105,6 +106,9 @@ int main(int argc, char **argv) {
     }
     if (func_name == "calculate_rgimm_and_determine_spec_flag") {
       calculate_rgimm_and_determine_spec_flag(ensemble);
+    }
+    if (func_name == "calculate_interstitial_aer_num") {
+      calculate_interstitial_aer_num(ensemble);
     }
 
   } catch (std::exception &e) {
