@@ -896,9 +896,9 @@ void calculate_mass_mean_radius(
   const Real r_dust_a1_prescribed = 0.258e-6;
   const Real r_dust_a3_prescribed = 1.576e-6;
 
-  const Real bc_num = total_interstitial_aer_num[1];
-  const Real dst1_num = total_interstitial_aer_num[2];
-  const Real dst3_num = total_interstitial_aer_num[3];
+  const Real bc_num = total_interstitial_aer_num[0];
+  const Real dst1_num = total_interstitial_aer_num[1];
+  const Real dst3_num = total_interstitial_aer_num[2];
 
   // Initialize hetraer with prescribed radius
   hetraer[0] = r_bc_prescribed;
