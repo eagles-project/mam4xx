@@ -39,6 +39,7 @@ void calculate_rgimm_and_determine_spec_flag(Ensemble *ensemble);
 void calculate_interstitial_aer_num(Ensemble *ensemble);
 void calculate_cloudborne_aer_num(Ensemble *ensemble);
 void get_aer_radius(Ensemble *ensemble);
+void calculate_mass_mean_radius(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
 
@@ -117,6 +118,9 @@ int main(int argc, char **argv) {
     }
     if (func_name == "get_aer_radius") {
       get_aer_radius(ensemble);
+    }
+    if (func_name == "calculate_mass_mean_radius") {
+      calculate_mass_mean_radius(ensemble);
     }
 
   } catch (std::exception &e) {
