@@ -928,7 +928,7 @@ void calculate_mass_mean_radius(
 }
 
 KOKKOS_INLINE_FUNCTION
-void calcualte_coated_fraction(
+void calculate_coated_fraction(
     const Real air_density, const Real so4mac, const Real pommac,
     const Real mommac, const Real soamac, const Real dmac, const Real bcmac,
     const Real mommpc, const Real pommpc, const Real bcmpc, const Real so4mc,
@@ -1221,7 +1221,7 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
   Real na500 = 0.0;
   Real tot_na500 = 0.0;
 
-  calcualte_coated_fraction(
+  calculate_coated_fraction(
       air_density, so4mac, pommac, mommac, soamac, dmac, bcmac, mommpc, pommpc,
       bcmpc, so4mc, pommc, soamc, mommc, dmc, total_interstital_aer_num,
       total_cloudbborne_aer_num, hetraer, total_aer_num, coated_aer_num,

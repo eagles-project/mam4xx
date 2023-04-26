@@ -27,7 +27,8 @@ add_executable(hetfrz_driver
                hetfrz_calculate_interstitial_aer_num.cpp
                hetfrz_calculate_cloudborne_aer_num.cpp
                hetfrz_get_aer_radius.cpp
-               hetfrz_calculate_mass_mean_radius.cpp)
+               hetfrz_calculate_mass_mean_radius.cpp
+               hetfrz_calculate_coated_fraction.cpp)
 target_link_libraries(hetfrz_driver skywalker;validation;${HAERO_LIBRARIES})
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
@@ -59,6 +60,7 @@ foreach (input
           calculate_cloudborne_aer_num
           get_aer_radius
           calculate_mass_mean_radius
+          calculate_coated_fraction
           )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
