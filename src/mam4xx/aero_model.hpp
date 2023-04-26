@@ -448,7 +448,7 @@ void calc_1_impact_rate(const Real dg0,     //  in
   const int nr = 50;
   // We comment this line because nr is hard-coded.
   // if (nr > nrainsvmax) {
-  //   printf("subr. calc_1_impact_rate -- nr > nrainsvmax \n ");
+  //   Kokkos::abort("subr. calc_1_impact_rate -- nr > nrainsvmax \n ");
   //   return;
   // }
 
@@ -469,8 +469,7 @@ void calc_1_impact_rate(const Real dg0,     //  in
   const int na = 1 + haero::round((xhi - xlo) / dx);
 
   if (na > naerosvmax) {
-    printf("subr. calc_1_impact_rate -- na > naerosvmax \n ");
-    return;
+    Kokkos::abort("subr. calc_1_impact_rate -- na > naerosvmax \n ");
   }
 
   // Note: pressure units are: ! dynes/cm2
