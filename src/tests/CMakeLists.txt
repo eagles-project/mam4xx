@@ -37,6 +37,8 @@ EkatCreateUnitTest(mam4_coagulation_unit_tests mam4_coagulation_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_calcsize_unit_tests mam4_calcsize_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
+EkatCreateUnitTest(mam4_calcsize_sub_unit_tests mam4_calcsize_sub_unit_tests.cpp
+  LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_rename_unit_tests mam4_rename_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_aging_unit_tests mam4_aging_unit_tests.cpp
@@ -51,6 +53,7 @@ target_compile_options(mam4_nucleation_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_gasaerexch_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_coagulation_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_calcsize_unit_tests PRIVATE -Werror)
+target_compile_options(mam4_calcsize_sub_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_amicphys_1gridcell_tests PRIVATE -Werror)
 target_compile_options(mam4_rename_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_aging_unit_tests PRIVATE -Werror)

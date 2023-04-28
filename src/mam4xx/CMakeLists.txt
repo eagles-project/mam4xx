@@ -7,6 +7,7 @@ install(FILES
         aero_model.hpp
         aero_modes.hpp
         calcsize.hpp
+        calcsize_sub.hpp
         conversions.hpp
         gasaerexch.hpp
         gasaerexch_soaexch.hpp
