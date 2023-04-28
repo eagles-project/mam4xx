@@ -2002,7 +2002,8 @@ TEST_CASE("clear", "test_mam4_amicphys") {
     const double epsilon = 0.0001;
     const double scale = std::abs(check_qgas4[i]);
     if (!(qgas4[i] == Approx(check_qgas4[i]).scale(scale).epsilon(epsilon)))
-      std::cout << "qgas4[" << i << "] != Approx(check_qgas4[" << i
+      std::cout << __FILE__ << ":" << __LINE__ << "qgas4[" << i
+                << "] != Approx(check_qgas4[" << i
                 << "])): " << std::setprecision(14) << qgas4[i]
                 << " != " << check_qgas4[i] << " with scale:" << scale
                 << " and epsilon:" << epsilon << std::endl;
@@ -2296,25 +2297,34 @@ TEST_CASE("cloudy", "test_mam4_amicphys") {
     REQUIRE(wetdens[i] == Approx(check_wetdens[i]));
   }
   for (int i = 0; i < num_gas_ids; ++i) {
+#ifdef HAERO_DOUBLE_PRECISION
     const double epsilon = 0.0001;
+#else
+    const double epsilon = 0.1;
+#endif
     const double scale = std::abs(check_qgas4[i]);
     if (!(qgas4[i] == Approx(check_qgas4[i]).epsilon(epsilon).scale(scale)))
-      std::cout << "qgas4[i] != Approx(check_qgas4[i])).epsilon(" << epsilon
-                << ").scale(" << scale << "): " << std::setprecision(14)
-                << qgas4[i] << " != " << check_qgas4[i] << std::endl;
+      std::cout << "qgas4[" << i << "] != Approx(check_qgas4[" << i
+                << "])).epsilon(" << epsilon << ").scale(" << scale
+                << "): " << std::setprecision(14) << qgas4[i]
+                << " != " << check_qgas4[i] << std::endl;
     REQUIRE(qgas4[i] == Approx(check_qgas4[i]).epsilon(epsilon).scale(scale));
   }
   for (int i = 0; i < num_gas_ids; ++i) {
     for (int j = 0; j < nqtendaa; ++j) {
+#ifdef HAERO_DOUBLE_PRECISION
       const double epsilon = 0.0001;
+#else
+      const double epsilon = 0.1;
+#endif
       const double scale = std::abs(qgas_delaa[i][j]);
       if (!(qgas_delaa[i][j] ==
             Approx(check_qgas_delaa[i][j]).epsilon(epsilon).scale(scale)))
-        std::cout
-            << "qgas_delaa[i][j] != Approx(check_qgas_delaa[i][j]).epsilon("
-            << epsilon << ").scale(" << scale << "): " << std::setprecision(14)
-            << qgas_delaa[i][j] << " != " << check_qgas_delaa[i][j]
-            << std::endl;
+        std::cout << "qgas_delaa[" << i << "][" << j
+                  << "] != Approx(check_qgas_delaa[" << i << "][" << j
+                  << "]).epsilon(" << epsilon << ").scale(" << scale
+                  << "): " << std::setprecision(14) << qgas_delaa[i][j]
+                  << " != " << check_qgas_delaa[i][j] << std::endl;
       REQUIRE(qgas_delaa[i][j] ==
               Approx(check_qgas_delaa[i][j]).epsilon(epsilon).scale(scale));
     }
@@ -2328,28 +2338,36 @@ TEST_CASE("cloudy", "test_mam4_amicphys") {
   }
   for (int i = 0; i < num_gas_ids; ++i) {
     for (int j = 0; j < nqtendaa; ++j) {
+#ifdef HAERO_DOUBLE_PRECISION
       const double epsilon = 0.001;
+#else
+      const double epsilon = 0.5;
+#endif
       const double scale = std::abs(qnum_delaa[i][j]);
       if (!(qnum_delaa[i][j] ==
             Approx(check_qnum_delaa[i][j]).epsilon(epsilon).scale(scale)))
-        std::cout
-            << "qnum_delaa[i][j] != Approx(check_qnum_delaa[i][j]).epsilon("
-            << epsilon << ").scale(" << scale << "): " << std::setprecision(14)
-            << qnum_delaa[i][j] << " != " << check_qnum_delaa[i][j]
-            << std::endl;
+        std::cout << "qnum_delaa[" << i << "][" << j
+                  << "] != Approx(check_qnum_delaa[" << i << "][" << j
+                  << "]epsilon(" << epsilon << ").scale(" << scale
+                  << "): " << std::setprecision(14) << qnum_delaa[i][j]
+                  << " != " << check_qnum_delaa[i][j] << std::endl;
       REQUIRE(qnum_delaa[i][j] ==
               Approx(check_qnum_delaa[i][j]).epsilon(epsilon).scale(scale));
     }
   }
   for (int i = 0; i < num_aerosol_ids; ++i) {
     for (int j = 0; j < num_modes; ++j) {
+#ifdef HAERO_DOUBLE_PRECISION
       const double epsilon = 0.001;
+#else
+      const double epsilon = 0.1;
+#endif
       const double scale = std::abs(qaer4[i][j]);
       if (!(qaer4[i][j] ==
             Approx(check_qaer4[i][j]).epsilon(epsilon).scale(scale)))
-        std::cout << "qaer4[i][j] != Approx(check_qaer4[i][j]).epsilon("
-                  << epsilon << ").scale(" << scale
-                  << "): " << std::setprecision(14) << qaer4[i][j]
+        std::cout << "qaer4[" << i << "][" << j << "] != Approx(check_qaer4["
+                  << i << "][" << j << "]epsilon(" << epsilon << ").scale("
+                  << scale << "): " << std::setprecision(14) << qaer4[i][j]
                   << " != " << check_qaer4[i][j] << std::endl;
       REQUIRE(qaer4[i][j] ==
               Approx(check_qaer4[i][j]).epsilon(epsilon).scale(scale));
@@ -2358,7 +2376,11 @@ TEST_CASE("cloudy", "test_mam4_amicphys") {
   for (int i = 0; i < num_aerosol_ids; ++i) {
     for (int j = 0; j < num_modes; ++j) {
       for (int k = 0; k < nqtendaa; ++k) {
+#ifdef HAERO_DOUBLE_PRECISION
         const double epsilon = 0.001;
+#else
+        const double epsilon = 1.0;
+#endif
         const double scale = std::abs(qaer_delaa[i][j][k]);
         if (!(qaer_delaa[i][j][k] ==
               Approx(check_qaer_delaa[i][j][k]).epsilon(epsilon).scale(scale)))
