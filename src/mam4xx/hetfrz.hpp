@@ -78,6 +78,8 @@ public:
       1.0e-6; // volume unit conversion, #/m^3 to #/cm^3
   static constexpr Real num_cm3_to_m3 =
       1.0e6; // volume unit conversion, #/cm^3 to #/m^3
+  static constexpr Real frz_cm3_to_m3 =
+      1.0e6; // het. frz. unit conversion [cm^-3 s^-1 to m^-3 s^-1]
 
   // Index ids and number of species involved in heterogenous freezing
   static constexpr int id_bc = 0;
@@ -1343,6 +1345,13 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
   cloudborne_aer_num[1] = total_aer_num[1] * af_accum;  // dst_a1
   cloudborne_aer_num[2] = total_aer_num[2] * af_coarse; // dst_a3
 
+  Real frzbcimm = 0.0;
+  Real frzduimm = 0.0;
+  Real frzbccnt = 0.0;
+  Real frzducnt = 0.0;
+  Real frzbcdep = 0.0;
+  Real frzdudep = 0.0;
+
   if ((temp > 235.15) & (temp < 269.15)) {
 
     const Real qcic = haero::min((qc / lcldm), 5.0e-3);
@@ -1358,12 +1367,6 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
         wv_sat_methods::svp_water(temp) / wv_sat_methods::svp_ice(temp);
 
     Real fn[Hetfrz::hetfrz_aer_nspec] = {af_accum, af_accum, af_coarse};
-    Real frzbcimm = 0.0;
-    Real frzduimm = 0.0;
-    Real frzbccnt = 0.0;
-    Real frzducnt = 0.0;
-    Real frzbcdep = 0.0;
-    Real frzdudep = 0.0;
     Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec] = {0};
     Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec] = {0};
 
@@ -1378,7 +1381,28 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
     hetfrz_immersion_nucleation_tend = frzbcimm + frzduimm;
     hetfrz_contact_nucleation_tend = frzbccnt + frzbccnt;
     hetfrz_depostion_nucleation_tend = frzbcdep + frzdudep;
+    if (hetfrz_immersion_nucleation_tend > 0.0)
+      freqimm = 1.0;
+    if (hetfrz_contact_nucleation_tend > 0.0)
+      freqcnt = 1.0;
+    if (hetfrz_depostion_nucleation_tend > 0.0)
+      freqdep = 1.0;
+    if ((hetfrz_immersion_nucleation_tend + hetfrz_contact_nucleation_tend +
+         hetfrz_depostion_nucleation_tend) > 0.0)
+      freqmix = 1.0;
   }
+
+  bcfrezimm = frzbcimm * Hetfrz::frz_cm3_to_m3 * ast;
+  bcfrezcnt = frzbccnt * Hetfrz::frz_cm3_to_m3 * ast;
+  bcfrezdep = frzbcdep * Hetfrz::frz_cm3_to_m3 * ast;
+
+  dstfrezimm = frzduimm * Hetfrz::frz_cm3_to_m3 * ast;
+  dstfrezcnt = frzducnt * Hetfrz::frz_cm3_to_m3 * ast;
+  dstfrezdep = frzdudep * Hetfrz::frz_cm3_to_m3 * ast;
+
+  nimix_imm = frzbcimm * Hetfrz::frz_cm3_to_m3 * dt;
+  nimix_cnt = frzbccnt * Hetfrz::frz_cm3_to_m3 * dt;
+  nimix_dep = frzbcdep * Hetfrz::frz_cm3_to_m3 * dt;
 }
 
 } // namespace hetfrz
