@@ -33,8 +33,6 @@ TEST_CASE("test_constructor", "mam4_wet_deposition_process") {
   REQUIRE(process.aero_config() == mam4_config);
 }
 
-// While this isn't a high level function/part of the namespace, we should still
-// test it
 TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
   ekat::Comm comm;
   // TODO - figure out how to print this logging information...
@@ -56,9 +54,11 @@ TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
   std::fill_n(sink_term, pver, 1.5);
   std::fill_n(lprec, pver, 0.0);
 
+  // TODO - call this from in a Kokkos loop to test device code
   mam4::wetdep::local_precip_production(pdel, source_term, sink_term, lprec,
                                         atm);
 
+  // TODO - generate/use real validation data
   for (int i = 0; i < pver; i++) {
     REQUIRE(pdel[i] == 1.0);
     REQUIRE(source_term[i] == 2.0);
@@ -66,4 +66,105 @@ TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
     REQUIRE(lprec[i] ==
             pdel[i] / Constants::gravity * (source_term[i] - sink_term[i]));
   }
+
+  delete[] pdel;
+  delete[] source_term;
+  delete[] sink_term;
+  delete[] lprec;
+}
+
+TEST_CASE("test_calculate_cloudy_volume", "mam4_wet_deposition_process") {
+  ekat::Comm comm;
+  // TODO - figure out how to print this logging information...
+  ekat::logger::Logger<> logger("wet deposition calculate cloudy volume test",
+                                ekat::logger::LogLevel::debug, comm);
+  int nlev = 72;
+  Real pblh = 1000;
+  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+
+  const int pver = atm.num_levels();
+
+  Real *cld = new Real[pver];
+  Real *lprec = new Real[pver];
+  Real *cldv = new Real[pver];
+  Real *sumppr_all = new Real[pver];
+
+  std::fill_n(cld, pver, 1.0);
+  std::fill_n(lprec, pver, 2.0);
+  std::fill_n(cldv, pver, 1.5);
+  std::fill_n(sumppr_all, pver, 0.0);
+
+  // Pass true to flag
+  // TODO - call this from in a Kokkos loop to test device code
+  mam4::wetdep::calculate_cloudy_volume(cld, lprec, true, cldv, sumppr_all,
+                                        atm);
+
+  // TODO - generate/use real validation data
+  for (int i = 0; i < pver; i++) {
+    REQUIRE(cld[i] == 1.0);
+    REQUIRE(lprec[i] == 2.0);
+    // REQUIRE(cldv[i] == 1.5);
+    // REQUIRE(sumppr_all[i] == 0.0);
+  }
+
+  std::fill_n(cld, pver, 1.0);
+  std::fill_n(lprec, pver, 2.0);
+  std::fill_n(cldv, pver, 1.5);
+  std::fill_n(sumppr_all, pver, 0.0);
+
+  // Pass false to flag
+  // TODO - call this from in a Kokkos loop to test device code
+  mam4::wetdep::calculate_cloudy_volume(cld, lprec, false, cldv, sumppr_all,
+                                        atm);
+
+  // TODO - generate/use real validation data
+  for (int i = 0; i < pver; i++) {
+    REQUIRE(cld[i] == 1.0);
+    REQUIRE(lprec[i] == 2.0);
+    // REQUIRE(cldv[i] == 1.5);
+    // REQUIRE(sumppr_all[i] == 0.0);
+  }
+
+  delete[] cld;
+  delete[] lprec;
+  delete[] cldv;
+  delete[] sumppr_all;
+}
+
+TEST_CASE("test_rain_mix_ratio", "mam4_wet_deposition_process") {
+  ekat::Comm comm;
+  // TODO - figure out how to print this logging information...
+  ekat::logger::Logger<> logger("rain mixing ratio test",
+                                ekat::logger::LogLevel::debug, comm);
+  int nlev = 72;
+  Real pblh = 1000;
+  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+
+  const int pver = atm.num_levels();
+
+  Real *temperature = new Real[pver];
+  Real *pmid = new Real[pver];
+  Real *sumppr = new Real[pver];
+  Real *rain = new Real[pver];
+
+  std::fill_n(temperature, pver, 1.0);
+  std::fill_n(pmid, pver, 2.0);
+  std::fill_n(sumppr, pver, 1.5);
+  std::fill_n(rain, pver, 0.0);
+
+  // TODO - call this from in a Kokkos loop to test device code
+  mam4::wetdep::rain_mix_ratio(temperature, pmid, sumppr, rain, atm);
+
+  // TODO - generate/use real validation data
+  for (int i = 0; i < pver; i++) {
+    REQUIRE(temperature[i] == 1.0);
+    REQUIRE(pmid[i] == 2.0);
+    REQUIRE(sumppr[i] == 1.5);
+    // REQUIRE(atm[i] == 0.0);
+  }
+
+  delete[] temperature;
+  delete[] pmid;
+  delete[] sumppr;
+  delete[] rain;
 }
