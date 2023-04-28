@@ -19,7 +19,6 @@
 using namespace haero;
 using namespace mam4;
 
-#if 0
 // Used for debugging purposes to print arrays in a nice
 // format.
 #define PR0(T) P(" " #T, T)
@@ -27,8 +26,7 @@ using namespace mam4;
 #define PR2(I, J, T) P<I, J>(" " #T, T)
 #define PR3(I, J, K, T) P<I, J, K>(" " #T, T)
 #include <string_view>
-template <typename T>
-constexpr auto type_name() {
+template <typename T> constexpr auto type_name() {
   std::string_view name, prefix, suffix;
 #ifdef __clang__
   name = __PRETTY_FUNCTION__;
@@ -43,44 +41,42 @@ constexpr auto type_name() {
   name.remove_suffix(suffix.size());
   return name;
 }
-template<typename T>
-void P(std::string N, T X) {
-  const int w=25;
-  std::cout<<std::setprecision(14)<<std::scientific;
-  std::cout<<type_name<T>()<<" ";
-  std::cout<<N<<"= "<<std::setw(w)<<X<<";\n";
+template <typename T> void P(std::string N, T X) {
+  const int w = 25;
+  std::cout << std::setprecision(14) << std::scientific;
+  std::cout << type_name<T>() << " ";
+  std::cout << N << "= " << std::setw(w) << X << ";\n";
 };
-template<int i, typename T>
-void P(std::string N, T X[i]) {
-  const int w=25;
-  std::cout<<std::setprecision(14)<<std::scientific;
-  std::cout<<type_name<T>()<<" ";
-  std::cout<<N<<"["<<i<<"]={"; 
-  for (int n = 0; n < i; ++n) 
-    std::cout<<std::setw(w)<<X[n]<<(n<i-1?",":"};\n");
+template <int i, typename T> void P(std::string N, T X[i]) {
+  const int w = 25;
+  std::cout << std::setprecision(14) << std::scientific;
+  std::cout << type_name<T>() << " ";
+  std::cout << N << "[" << i << "]={";
+  for (int n = 0; n < i; ++n)
+    std::cout << std::setw(w) << X[n] << (n < i - 1 ? "," : "};\n");
 };
-template<int i, int j, typename T>
-void P(std::string N, T (&X)[i][j]) {
-  const int w=25;
-  std::cout<<std::setprecision(14)<<std::scientific;
-  std::cout<<type_name<T>()<<" ";
-  std::cout<<N<<"["<<i<<"]["<<j<<"]={\n"; 
-  for (int n = 0; n < i; ++n) 
-    for (int m = 0; m < j; ++m) 
-      std::cout<<(!m?"  {":"")<<std::setw(w)<<X[n][m]<<(m<j-1?",":(n<i-1?"},\n":"}\n"));
-  std::cout<<"};\n"; 
+template <int i, int j, typename T> void P(std::string N, T (&X)[i][j]) {
+  const int w = 25;
+  std::cout << std::setprecision(14) << std::scientific;
+  std::cout << type_name<T>() << " ";
+  std::cout << N << "[" << i << "][" << j << "]={\n";
+  for (int n = 0; n < i; ++n)
+    for (int m = 0; m < j; ++m)
+      std::cout << (!m ? "  {" : "") << std::setw(w) << X[n][m]
+                << (m < j - 1 ? "," : (n < i - 1 ? "},\n" : "}\n"));
+  std::cout << "};\n";
 };
-template<int i, int j, int k, typename T>
+template <int i, int j, int k, typename T>
 void P(std::string N, T (&X)[i][j][k]) {
-  const int w=25;
-  std::cout<<std::setprecision(14)<<std::scientific;
-  std::cout<<N<<"["<<i<<"]["<<j<<"]["<<k<<"]={\n"; 
-  for (int n = 0; n < i; ++n) 
-    for (int m = 0; m < j; ++m) 
-      for (int o = 0; o < k; ++o) 
-        std::cout<<(!o?"  {":"")<<std::setw(w)<<X[n][m][o]<<(o<k-1?",":(m<j-1?"},\n":"}\n"));
+  const int w = 25;
+  std::cout << std::setprecision(14) << std::scientific;
+  std::cout << N << "[" << i << "][" << j << "][" << k << "]={\n";
+  for (int n = 0; n < i; ++n)
+    for (int m = 0; m < j; ++m)
+      for (int o = 0; o < k; ++o)
+        std::cout << (!o ? "  {" : "") << std::setw(w) << X[n][m][o]
+                  << (o < k - 1 ? "," : (m < j - 1 ? "},\n" : "}\n"));
 };
-#endif
 
 namespace {
 static constexpr int nqtendaa = 5;
@@ -305,8 +301,8 @@ void mam_amicphys_1subarea_clear(
       // Integration order
       const int nghq = 2;
       const int ntot_soamode = 4;
-      int niter_out;
-      Real g0_soa_out;
+      int niter_out = 0;
+      Real g0_soa_out = 0;
       gasaerexch::mam_gasaerexch_1subarea(
           nghq, igas_h2so4, igas_nh3, ntot_soamode, gas_to_aer, iaer_so4,
           iaer_pom, l_calc_gas_uptake_coeff, l_gas_condense_to_mode,
@@ -324,6 +320,7 @@ void mam_amicphys_1subarea_clear(
       for (int i = 0; i < num_gas_ids; ++i)
         qgas_del_cond[i] +=
             (qgas_cur[i] - (qgas_sv1[i] + qgas_netprod_otrproc[i] * dtsubstep));
+
       for (int i = 0; i < num_modes; ++i)
         qnum_delsub_cond[i] = qnum_cur[i] - qnum_sv1[i];
       for (int i = 0; i < num_aerosol_ids; ++i)
@@ -519,6 +516,7 @@ void mam_amicphys_1subarea_clear(
     }
 
     // primary carbon aging
+
     aging::mam_pcarbon_aging_1subarea(
         dgn_a, qnum_cur, qnum_delsub_cond, qnum_delsub_coag, qaer_cur,
         qaer_delsub_cond, qaer_delsub_coag, qaer_delsub_coag_in);
@@ -673,11 +671,11 @@ void mam_amicphys_1subarea_cloudy(
   // In order to try to match the results in mam_refactor
   // set r_universal as  [mJ/(mol)] as in mam_refactor.
   // const Real r_universal = Constants::r_gas; // [mJ/(K mol)]
-  const Real r_universal = 8.314467591;
+  const Real r_universal = 8.314467591; // [mJ/(mol)] as in mam_refactor
   const Real aircon = pmid / (1000 * r_universal * temp);
   const Real alnsg_aer[num_modes] = {0.58778666490211906, 0.47000362924573563,
                                      0.58778666490211906, 0.47000362924573563};
-  const Real uptk_rate_factor[num_gas_ids] = {2, 0.81, 1.0};
+  const Real uptk_rate_factor[num_gas_ids] = {0.81, 1.0, 1.0};
 
   Real qgas_cur[num_gas_ids];
   for (int i = 0; i < num_gas_ids; ++i)
@@ -760,8 +758,10 @@ void mam_amicphys_1subarea_cloudy(
     Real qaer_delsub_grow4rnam[num_aerosol_ids][num_modes] = {};
 
     if (do_cond) {
-      Real uptkaer[num_gas_ids][num_modes] = {};
+
       const bool l_calc_gas_uptake_coeff = jtsubstep == 1;
+      Real uptkaer[num_gas_ids][num_modes] = {};
+
       for (int i = 0; i < num_gas_ids; ++i)
         qgas_sv1[i] = qgas_cur[i];
       for (int i = 0; i < num_modes; ++i)
@@ -769,10 +769,11 @@ void mam_amicphys_1subarea_cloudy(
       for (int j = 0; j < num_aerosol_ids; ++j)
         for (int i = 0; i < num_modes; ++i)
           qaer_sv1[j][i] = qaer_cur[j][i];
+
       const int nghq = 2;
       const int ntot_soamode = 4;
-      int niter_out;
-      Real g0_soa_out;
+      int niter_out = 0;
+      Real g0_soa_out = 0;
       // time sub-step
       const Real dtsub_soa_fixed = -1.0;
       gasaerexch::mam_gasaerexch_1subarea(
@@ -798,6 +799,7 @@ void mam_amicphys_1subarea_cloudy(
       for (int i = 0; i < num_aerosol_ids; ++i)
         for (int j = 0; j < num_modes; ++j)
           qaer_delsub_cond[i][j] = qaer_cur[i][j] - qaer_sv1[i][j];
+
       // qaer_del_grow4rnam = change in qaer_del_cond during latest condensation
       // calculations
       for (int i = 0; i < num_aerosol_ids; ++i)
@@ -834,7 +836,13 @@ void mam_amicphys_1subarea_cloudy(
       Real diameter_cutoff[nmodes];
       Real ln_dia_cutoff[nmodes];
       Real diameter_threshold[nmodes];
-      Real mass_2_vol[naerosol_species] = {};
+      Real mass_2_vol[naerosol_species] = {0.15,
+                                           6.4971751412429377e-002,
+                                           0.15,
+                                           7.0588235294117650e-003,
+                                           3.0789473684210526e-002,
+                                           5.1923076923076926e-002,
+                                           156.20986883198000};
 
       rename::find_renaming_pairs(dest_mode_of_mode,    // in
                                   mean_std_dev,         // out
@@ -845,6 +853,12 @@ void mam_amicphys_1subarea_cloudy(
                                   num_pairs,            // out
                                   diameter_cutoff,      // out
                                   ln_dia_cutoff, diameter_threshold);
+
+      for (int i = 0; i < num_modes; ++i)
+        qnum_sv1[i] = qnum_cur[i];
+      for (int j = 0; j < num_aerosol_ids; ++j)
+        for (int i = 0; i < num_modes; ++i)
+          qaer_sv1[j][i] = qaer_cur[j][i];
       Real dgnum_amode[nmodes];
       for (int m = 0; m < nmodes; ++m) {
         dgnum_amode[m] = modes(m).nom_diameter;
@@ -855,11 +869,6 @@ void mam_amicphys_1subarea_cloudy(
         for (int j = 0; j < num_modes; ++j)
           qaercw_delsub_grow4rnam[i][j] =
               (qaercw3[i][j] - qaercw2[i][j]) / ntsubstep;
-      for (int i = 0; i < num_modes; ++i)
-        qnum_sv1[i] = qnum_cur[i];
-      for (int j = 0; j < num_aerosol_ids; ++j)
-        for (int i = 0; i < num_modes; ++i)
-          qaer_sv1[j][i] = qaer_cur[j][i];
       Real qnumcw_sv1[num_modes];
       for (int i = 0; i < num_modes; ++i)
         qnumcw_sv1[i] = qnumcw_cur[i];
@@ -2097,22 +2106,24 @@ TEST_CASE("cloudy", "test_mam4_amicphys") {
   static constexpr int num_gas_ids = AeroConfig::num_gas_ids();
   static constexpr int num_modes = AeroConfig::num_modes();
   static constexpr int num_aerosol_ids = AeroConfig::num_aerosol_ids();
-  const bool do_cond_sub = false;
+  const bool do_cond_sub = true;
   const bool do_rename_sub = true;
-  const bool do_newnuc_sub = false;
+  const bool do_newnuc_sub = true;
   const bool do_coag_sub = true;
   const int nstep = 1;
   const Real deltat = 1.0000000000000000;
   const int jsub = 2;
   const int nsubarea = 2;
   const bool iscldy_subarea = true;
+
   const Real afracsub = 0.40000000000000002;
   const Real temp = 273.00000000000000;
   const Real pmid = 100000.00000000000;
-  const Real pdel = 4.4505433377379489e-320;
+  const Real pdel = 0.00000000000;
   const Real zmid = 500.00000000000000;
   const Real pblh = 1100.0000000000000;
   const Real relhumsub = 1.0000000000000000;
+
   Real dgn_a[num_modes] = {1.1966637594943708e-007, 2.7656966213478584e-008,
                            2.1718911947612780e-006, 5.2939487963576523e-008};
   Real dgn_awet[num_modes] = {1.2730137346646958e-007, 2.9756030032807321e-008,
@@ -2201,29 +2212,174 @@ TEST_CASE("cloudy", "test_mam4_amicphys") {
       qnum3, qnum4, qnum_delaa, qaer2, qaer3, qaer4, qaer_delaa, qwtr3, qwtr4,
       qnumcw3, qnumcw4, qnumcw_delaa, qaercw2, qaercw3, qaercw4, qaercw_delaa);
 
-#if 0
-// clang-format off
+  // clang-format off
   const Real check_dgn_a[num_modes] = {
       1.1966637594943708e-007, 2.7656966213478584e-008, 2.1718911947612780e-006, 5.2939487963576523e-008};
   const Real check_dgn_awet[num_modes] = {
       1.2730137346646958e-007, 2.9756030032807321e-008, 2.3266870254473761e-006, 5.2963711345420440e-008};
   const Real check_wetdens[num_modes] = {
       1311.3148168539929, 1377.8279737773473, 1310.8221954835647, 1490.5543769930989};
-  const Real check_qgas4[num_gas_ids] = {0.0000000000000000, 0.0000000000000000};
-  const Real check_qgas_delaa[num_gas_ids][nqtendaa] = {};
+  const Real check_qgas4[num_gas_ids] = {1.1708228956931740e-016, 0.00000000000};
+  const Real check_qgas_delaa[num_gas_ids][nqtendaa] = {
+      {1.1708228956931740e-016,  0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 1.1708228956931740e-016},
+      {0.0000000000000000     ,  0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000},
+      {}};
   const Real check_qnum4[num_modes] = {
       2253176148.8415728, 22531761488.415726, 2253176.1488415725, 4506352297.6831455};
-  const Real check_qgas_qnum_delaa[num_modes][nqtendaa] = {};
-  const Real check_qaer4[num_aerosol_ids][num_modes] = {};
-  const Real check_qaer_delaa[num_aerosol_ids][num_modes][nqtendaa] = {};
+  const Real check_qnum_delaa[num_modes][nqtendaa] = {
+      {7.7571933637159115e-003,  0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000},
+      {0.0000000000000000     ,  0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000},
+      {0.0000000000000000     ,  0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000},
+      {-7.7571933637159115e-003,  0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000}};
+
+  const Real check_qaer4[num_aerosol_ids][num_modes] = {
+    {2.6484020766304678e-011,  1.9963154347230245e-012,   1.5918312144742561e-010,   0.0000000000000000      }, 
+    {3.4543891238118804e-011,  2.6039003387624206e-012,   1.3841779609564254e-010,   0.0000000000000000      }, 
+    {8.8280308243457502e-012,  0.0000000000000000     ,   5.3061041769150948e-011,   1.8930709966802244e-012 }, 
+    {1.6293574938721667e-022,  0.0000000000000000     ,   0.0000000000000000     ,   9.4653549834011203e-011 }, 
+    {6.8037089632647984e-011,  6.8381333387002322e-012,   5.4525090614694088e-010,   0.0000000000000000      }, 
+    {0.0000000000000000     ,  0.0000000000000000     ,   0.0000000000000000     ,   0.0000000000000000      }, 
+    {0.0000000000000000     ,  0.0000000000000000     ,   0.0000000000000000     ,   0.0000000000000000      }
+  };
+  const Real check_qaer_delaa[num_aerosol_ids][num_modes][nqtendaa] = {
+ {{ -7.1706722797035180e-017, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000, -7.1706726483491915e-017},
+  { -4.1515539508818071e-017, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000, -4.1515539508818071e-017},
+  { -3.8600272649380107e-018, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000, -3.8600272649380107e-018},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  3.6864567361695183e-024}},
+ {{  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000}},
+ {{  3.2587149877443334e-024, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  { -3.2587149877443334e-024, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000}},
+ {{  1.6293574938721667e-022, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  { -1.6293574938721667e-022, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000}},
+ {{  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000}},
+ {{  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000}},
+ {{  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000},
+  {  0.0000000000000000     , 0.0000000000000000, 0.0000000000000000, 0.0000000000000000,  0.0000000000000000}}};
+
   const Real check_qwtr4[num_modes] = {
       1.0910189961237504e-010, 9.2545484074841402e-012, 7.3398261784719387e-010, 7.2643814410424918e-014};
-  const Real check_qnumcw4[num_gas_ids][nqtendaa] = {};
-  const Real check_qnumcw_delaa[num_modes][nqqcwtendaa] = {};
-  const Real check_qaercw4[num_aerosol_ids][num_modes] = {};
-  const Real check_qaercw_delaa[num_aerosol_ids][num_modes][nqqcwtendaa] = {};
-// clang-format on
-#endif
+  // clang-format on
+  for (int i = 0; i < num_modes; ++i) {
+    if (!(dgn_a[i] == Approx(check_dgn_a[i])))
+      std::cout << "dgn_a[i] != Approx(check_dgn_a[i])): "
+                << std::setprecision(14) << dgn_a[i] << " != " << check_dgn_a[i]
+                << std::endl;
+    REQUIRE(dgn_a[i] == Approx(check_dgn_a[i]));
+  }
+  for (int i = 0; i < num_modes; ++i) {
+    if (!(dgn_awet[i] == Approx(check_dgn_awet[i])))
+      std::cout << "dgn_awet[i] != Approx(check_dgn_awet[i])): "
+                << std::setprecision(14) << dgn_awet[i]
+                << " != " << check_dgn_awet[i] << std::endl;
+    REQUIRE(dgn_awet[i] == Approx(check_dgn_awet[i]));
+  }
+  for (int i = 0; i < num_modes; ++i) {
+    if (!(wetdens[i] == Approx(check_wetdens[i])))
+      std::cout << "wetdens[i] != Approx(check_wetdens[i])): "
+                << std::setprecision(14) << wetdens[i]
+                << " != " << check_wetdens[i] << std::endl;
+    REQUIRE(wetdens[i] == Approx(check_wetdens[i]));
+  }
+  for (int i = 0; i < num_gas_ids; ++i) {
+    const double epsilon = 0.0001;
+    const double scale = std::abs(check_qgas4[i]);
+    if (!(qgas4[i] == Approx(check_qgas4[i]).epsilon(epsilon).scale(scale)))
+      std::cout << "qgas4[i] != Approx(check_qgas4[i])).epsilon(" << epsilon
+                << ").scale(" << scale << "): " << std::setprecision(14)
+                << qgas4[i] << " != " << check_qgas4[i] << std::endl;
+    REQUIRE(qgas4[i] == Approx(check_qgas4[i]).epsilon(epsilon).scale(scale));
+  }
+  for (int i = 0; i < num_gas_ids; ++i) {
+    for (int j = 0; j < nqtendaa; ++j) {
+      const double epsilon = 0.0001;
+      const double scale = std::abs(qgas_delaa[i][j]);
+      if (!(qgas_delaa[i][j] ==
+            Approx(check_qgas_delaa[i][j]).epsilon(epsilon).scale(scale)))
+        std::cout
+            << "qgas_delaa[i][j] != Approx(check_qgas_delaa[i][j]).epsilon("
+            << epsilon << ").scale(" << scale << "): " << std::setprecision(14)
+            << qgas_delaa[i][j] << " != " << check_qgas_delaa[i][j]
+            << std::endl;
+      REQUIRE(qgas_delaa[i][j] ==
+              Approx(check_qgas_delaa[i][j]).epsilon(epsilon).scale(scale));
+    }
+  }
+  for (int i = 0; i < num_gas_ids; ++i) {
+    if (!(qnum4[i] == Approx(check_qnum4[i])))
+      std::cout << "qnum4[i] != Approx(check_qnum4[i])): "
+                << std::setprecision(14) << qnum4[i] << " != " << check_qnum4[i]
+                << std::endl;
+    REQUIRE(qnum4[i] == Approx(check_qnum4[i]));
+  }
+  for (int i = 0; i < num_gas_ids; ++i) {
+    for (int j = 0; j < nqtendaa; ++j) {
+      const double epsilon = 0.001;
+      const double scale = std::abs(qnum_delaa[i][j]);
+      if (!(qnum_delaa[i][j] ==
+            Approx(check_qnum_delaa[i][j]).epsilon(epsilon).scale(scale)))
+        std::cout
+            << "qnum_delaa[i][j] != Approx(check_qnum_delaa[i][j]).epsilon("
+            << epsilon << ").scale(" << scale << "): " << std::setprecision(14)
+            << qnum_delaa[i][j] << " != " << check_qnum_delaa[i][j]
+            << std::endl;
+      REQUIRE(qnum_delaa[i][j] ==
+              Approx(check_qnum_delaa[i][j]).epsilon(epsilon).scale(scale));
+    }
+  }
+  for (int i = 0; i < num_aerosol_ids; ++i) {
+    for (int j = 0; j < num_modes; ++j) {
+      const double epsilon = 0.001;
+      const double scale = std::abs(qaer4[i][j]);
+      if (!(qaer4[i][j] ==
+            Approx(check_qaer4[i][j]).epsilon(epsilon).scale(scale)))
+        std::cout << "qaer4[i][j] != Approx(check_qaer4[i][j]).epsilon("
+                  << epsilon << ").scale(" << scale
+                  << "): " << std::setprecision(14) << qaer4[i][j]
+                  << " != " << check_qaer4[i][j] << std::endl;
+      REQUIRE(qaer4[i][j] ==
+              Approx(check_qaer4[i][j]).epsilon(epsilon).scale(scale));
+    }
+  }
+  for (int i = 0; i < num_aerosol_ids; ++i) {
+    for (int j = 0; j < num_modes; ++j) {
+      for (int k = 0; k < nqtendaa; ++k) {
+        const double epsilon = 0.001;
+        const double scale = std::abs(qaer_delaa[i][j][k]);
+        if (!(qaer_delaa[i][j][k] ==
+              Approx(check_qaer_delaa[i][j][k]).epsilon(epsilon).scale(scale)))
+          std::cout << "qaer_delaa[i][j][k] != "
+                       "Approx(check_qaer_delaa[i][j][k]).epsilon("
+                    << epsilon << ").scale(" << scale
+                    << "): " << std::setprecision(14) << qaer_delaa[i][j][k]
+                    << " != " << check_qaer_delaa[i][j][k] << std::endl;
+        REQUIRE(
+            qaer_delaa[i][j][k] ==
+            Approx(check_qaer_delaa[i][j][k]).epsilon(epsilon).scale(scale));
+      }
+    }
+  }
+  for (int i = 0; i < num_modes; ++i) {
+    if (!(qwtr4[i] == Approx(check_qwtr4[i])))
+      std::cout << "qwtr4[i] != Approx(check_qwtr4[i])): "
+                << std::setprecision(14) << qwtr4[i] << " != " << check_qwtr4[i]
+                << std::endl;
+    REQUIRE(qwtr4[i] == Approx(check_qwtr4[i]));
+  }
 }
 
 TEST_CASE("mam_amicphys_1gridcell", "test_mam4_amicphys") {
