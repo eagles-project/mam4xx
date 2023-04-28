@@ -1403,6 +1403,11 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
   nimix_imm = frzbcimm * Hetfrz::frz_cm3_to_m3 * dt;
   nimix_cnt = frzbccnt * Hetfrz::frz_cm3_to_m3 * dt;
   nimix_dep = frzbcdep * Hetfrz::frz_cm3_to_m3 * dt;
+
+  dstnicnt = frzduimm*Hetfrz::frz_cm3_to_m3*dt;
+  dstnidep = frzducnt*Hetfrz::frz_cm3_to_m3*dt;
+  dstniimm = frzdudep*Hetfrz::frz_cm3_to_m3*dt;
+
 }
 
 } // namespace hetfrz
