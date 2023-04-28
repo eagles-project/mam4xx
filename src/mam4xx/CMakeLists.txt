@@ -4,6 +4,7 @@ include(GNUInstallDirs)
 # install them for a client.
 install(FILES
         aero_config.hpp
+        aero_model.hpp
         aero_modes.hpp
         calcsize.hpp
         conversions.hpp
