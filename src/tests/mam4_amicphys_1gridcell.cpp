@@ -19,65 +19,6 @@
 using namespace haero;
 using namespace mam4;
 
-// Used for debugging purposes to print arrays in a nice
-// format.
-#define PR0(T) P(" " #T, T)
-#define PR1(I, T) P<I>(" " #T, T)
-#define PR2(I, J, T) P<I, J>(" " #T, T)
-#define PR3(I, J, K, T) P<I, J, K>(" " #T, T)
-#include <string_view>
-template <typename T> constexpr auto type_name() {
-  std::string_view name, prefix, suffix;
-#ifdef __clang__
-  name = __PRETTY_FUNCTION__;
-  prefix = "auto type_name() [T = ";
-  suffix = "]";
-#elif defined(__GNUC__)
-  name = __PRETTY_FUNCTION__;
-  prefix = "constexpr auto type_name() [with T = ";
-  suffix = "]";
-#endif
-  name.remove_prefix(prefix.size());
-  name.remove_suffix(suffix.size());
-  return name;
-}
-template <typename T> void P(std::string N, T X) {
-  const int w = 25;
-  std::cout << std::setprecision(14) << std::scientific;
-  std::cout << type_name<T>() << " ";
-  std::cout << N << "= " << std::setw(w) << X << ";\n";
-};
-template <int i, typename T> void P(std::string N, T X[i]) {
-  const int w = 25;
-  std::cout << std::setprecision(14) << std::scientific;
-  std::cout << type_name<T>() << " ";
-  std::cout << N << "[" << i << "]={";
-  for (int n = 0; n < i; ++n)
-    std::cout << std::setw(w) << X[n] << (n < i - 1 ? "," : "};\n");
-};
-template <int i, int j, typename T> void P(std::string N, T (&X)[i][j]) {
-  const int w = 25;
-  std::cout << std::setprecision(14) << std::scientific;
-  std::cout << type_name<T>() << " ";
-  std::cout << N << "[" << i << "][" << j << "]={\n";
-  for (int n = 0; n < i; ++n)
-    for (int m = 0; m < j; ++m)
-      std::cout << (!m ? "  {" : "") << std::setw(w) << X[n][m]
-                << (m < j - 1 ? "," : (n < i - 1 ? "},\n" : "}\n"));
-  std::cout << "};\n";
-};
-template <int i, int j, int k, typename T>
-void P(std::string N, T (&X)[i][j][k]) {
-  const int w = 25;
-  std::cout << std::setprecision(14) << std::scientific;
-  std::cout << N << "[" << i << "][" << j << "][" << k << "]={\n";
-  for (int n = 0; n < i; ++n)
-    for (int m = 0; m < j; ++m)
-      for (int o = 0; o < k; ++o)
-        std::cout << (!o ? "  {" : "") << std::setw(w) << X[n][m][o]
-                  << (o < k - 1 ? "," : (m < j - 1 ? "},\n" : "}\n"));
-};
-
 namespace {
 static constexpr int nqtendaa = 5;
 static constexpr int nqtendbb = 4;
