@@ -690,16 +690,16 @@ KOKKOS_INLINE_FUNCTION
 void hetfrz_classnuc_calc(
     const Real deltat, const Real temperature, const Real pressure,
     const Real supersatice, Real fn[Hetfrz::hetfrz_aer_nspec], const Real r3lx,
-    const Real icnlx, Real &frzbcimm, Real &frzduimm, Real &frzbccnt,
-    Real &frzducnt, Real &frzbcdep, Real &frzdudep,
-    Real hetraer[Hetfrz::hetfrz_aer_nspec],
+    const Real icnlx, Real hetraer[Hetfrz::hetfrz_aer_nspec],
     Real awcam[Hetfrz::hetfrz_aer_nspec], Real awfacm[Hetfrz::hetfrz_aer_nspec],
     Real dstcoat[Hetfrz::hetfrz_aer_nspec],
     Real total_aer_num[Hetfrz::hetfrz_aer_nspec],
     Real coated_aer_num[Hetfrz::hetfrz_aer_nspec],
     Real uncoated_aer_num[Hetfrz::hetfrz_aer_nspec],
     Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
-    Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec]) {
+    Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec], Real &frzbcimm,
+    Real &frzduimm, Real &frzbccnt, Real &frzducnt, Real &frzbcdep,
+    Real &frzdudep) {
 
   // *****************************************************************************
   //                 PDF theta model
@@ -1111,7 +1111,108 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
 
   const Real temp = atm.temperature(k);
   const Real pmid = atm.pressure(k);
+  const Real qc = atm.liquid_mixing_ratio(k);
+  const Real nc = atm.cloud_liquid_number_mixing_ratio(k);
   const Real ast = diags.stratiform_cloud_fraction(k);
+
+  // These are the output tendencies from heterogeneous freezing that need to be
+  // added correctly to the cloud-micorphysics scheme.
+  auto &hetfrz_immersion_nucleation_tend =
+      diags.hetfrz_immersion_nucleation_tend(k);
+  hetfrz_immersion_nucleation_tend = 0;
+  auto &hetfrz_contact_nucleation_tend =
+      diags.hetfrz_contact_nucleation_tend(k);
+  hetfrz_contact_nucleation_tend = 0;
+  auto &hetfrz_depostion_nucleation_tend =
+      diags.hetfrz_depostion_nucleation_tend(k);
+  hetfrz_contact_nucleation_tend = 0;
+
+  // These fields are used for diagnostics
+  auto &bc_num = diags.bc_num(k);
+  bc_num = 0;
+  auto &dst1_num = diags.dst1_num(k);
+  dst1_num = 0;
+  auto &dst3_num = diags.dst3_num(k);
+  dst3_num = 0;
+  auto &bcc_num = diags.bcc_num(k);
+  bcc_num = 0;
+  auto &dst1c_num = diags.dst1c_num(k);
+  dst1c_num = 0;
+  auto &dst3c_num = diags.dst3c_num(k);
+  dst3c_num = 0;
+  auto &bcuc_num = diags.bcuc_num(k);
+  bcuc_num = 0;
+  auto &dst1uc_num = diags.dst1uc_num(k);
+  dst1uc_num = 0;
+  auto &dst3uc_num = diags.dst3uc_num(k);
+  dst3uc_num = 0;
+  auto &bc_a1_num = diags.bc_a1_num(k);
+  bc_a1_num = 0;
+  auto &dst_a1_num = diags.dst_a1_num(k);
+  dst_a1_num = 0;
+  auto &dst_a3_num = diags.dst_a3_num(k);
+  dst_a3_num = 0;
+  auto &bc_c1_num = diags.bc_c1_num(k);
+  bc_c1_num = 0;
+  auto &dst_c1_num = diags.dst_c1_num(k);
+  dst_c1_num = 0;
+  auto &dst_c3_num = diags.dst_c3_num(k);
+  dst_c3_num = 0;
+  auto &fn_bc_c1_num = diags.fn_bc_c1_num(k);
+  fn_bc_c1_num = 0;
+  auto &fn_dst_c1_num = diags.fn_dst_c1_num(k);
+  fn_dst_c1_num = 0;
+  auto &fn_dst_c3_num = diags.fn_dst_c3_num(k);
+  fn_dst_c3_num = 0;
+  auto &na500 = diags.na500(k);
+  na500 = 0;
+  auto &totna500 = diags.totna500(k);
+  totna500 = 0;
+  auto &freqimm = diags.freqimm(k);
+  freqimm = 0;
+  auto &freqcnt = diags.freqcnt(k);
+  freqcnt = 0;
+  auto &freqdep = diags.freqdep(k);
+  freqdep = 0;
+  auto &freqmix = diags.freqmix(k);
+  freqmix = 0;
+  auto &dstfrezimm = diags.dstfrezimm(k);
+  dstfrezimm = 0;
+  auto &dstfrezcnt = diags.dstfrezcnt(k);
+  dstfrezcnt = 0;
+  auto &dstfrezdep = diags.dstfrezdep(k);
+  dstfrezdep = 0;
+  auto &bcfrezimm = diags.bcfrezimm(k);
+  bcfrezimm = 0;
+  auto &bcfrezcnt = diags.bcfrezcnt(k);
+  bcfrezcnt = 0;
+  auto &bcfrezdep = diags.bcfrezdep(k);
+  bcfrezdep = 0;
+  auto &nimix_imm = diags.nimix_imm(k);
+  nimix_imm = 0;
+  auto &nimix_cnt = diags.nimix_cnt(k);
+  nimix_cnt = 0;
+  auto &nimix_dep = diags.nimix_dep(k);
+  nimix_dep = 0;
+  auto &dstnidep = diags.dstnidep(k);
+  dstnidep = 0;
+  auto &dstnicnt = diags.dstnicnt(k);
+  dstnicnt = 0;
+  auto &dstniimm = diags.dstniimm(k);
+  dstniimm = 0;
+  auto &bcnidep = diags.bcnidep(k);
+  bcnidep = 0;
+  auto &bcnicnt = diags.bcnicnt(k);
+  bcnicnt = 0;
+  auto &bcniimm = diags.bcniimm(k);
+  bcniimm = 0;
+  auto &numice10s = diags.numice10s(k);
+  numice10s = 0;
+  auto &numimm10sdst = diags.numimm10sdst(k);
+  numimm10sdst = 0;
+  auto &numimm10sbc = diags.numimm10sbc(k);
+  numimm10sbc = 0;
+  // End fields used for diagnostics.
 
   const int coarse_idx = int(ModeIndex::Coarse);
   const int accum_idx = int(ModeIndex::Accumulation);
@@ -1218,14 +1319,14 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
   Real coated_aer_num[Hetfrz::hetfrz_aer_nspec] = {0.0};
   Real uncoated_aer_num[Hetfrz::hetfrz_aer_nspec] = {0.0};
   Real dstcoat[Hetfrz::hetfrz_aer_nspec] = {0.0};
-  Real na500 = 0.0;
-  Real tot_na500 = 0.0;
+  na500 = 0.0;
+  totna500 = 0.0;
 
   calculate_coated_fraction(
       air_density, so4mac, pommac, mommac, soamac, dmac, bcmac, mommpc, pommpc,
       bcmpc, so4mc, pommc, soamc, mommc, dmc, total_interstital_aer_num,
       total_cloudbborne_aer_num, hetraer, total_aer_num, coated_aer_num,
-      uncoated_aer_num, dstcoat, na500, tot_na500);
+      uncoated_aer_num, dstcoat, na500, totna500);
 
   Real awcam[Hetfrz::hetfrz_aer_nspec] = {0.0};
   Real awfacm[Hetfrz::hetfrz_aer_nspec] = {0.0};
@@ -1234,19 +1335,50 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
       so4mac, soamac, bcmac, mommac, pommac, num_accum[k], so4mc, mommc, bcmc,
       pommc, soamc, num_coarse[k], total_interstital_aer_num, awcam, awfacm);
 
-  auto &af_accum = diags.activation_fraction[accum_idx];
-  auto &af_coarse = diags.activation_fraction[coarse_idx];
+  auto af_accum = diags.activation_fraction[k][accum_idx];
+  auto af_coarse = diags.activation_fraction[k][coarse_idx];
 
   Real cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec];
-  cloudborne_aer_num[0] = total_aer_num[0] * af_accum[k];  // bc
-  cloudborne_aer_num[1] = total_aer_num[1] * af_accum[k];  // dst_a1
-  cloudborne_aer_num[2] = total_aer_num[2] * af_coarse[k]; // dst_a3
+  cloudborne_aer_num[0] = total_aer_num[0] * af_accum;  // bc
+  cloudborne_aer_num[1] = total_aer_num[1] * af_accum;  // dst_a1
+  cloudborne_aer_num[2] = total_aer_num[2] * af_coarse; // dst_a3
 
   if ((temp > 235.15) & (temp < 269.15)) {
-  }
 
-  (void)lcldm;
-  (void)cloudborne_aer_num;
+    const Real qcic = haero::min((qc / lcldm), 5.0e-3);
+    const Real ncic = haero::max((nc / lcldm), 0.0);
+
+    const Real con1 = 1.0 / haero::pow((1.333 * Constants::pi), 0.333);
+    Real r3lx = con1 * haero::pow(air_density * qcic /
+                                      (Constants::density_h2o *
+                                       haero::max(ncic * air_density, 1.0e6)),
+                                  0.333); // in m
+    r3lx = haero::max(4e-6, r3lx);
+    const Real supersatice =
+        wv_sat_methods::svp_water(temp) / wv_sat_methods::svp_ice(temp);
+
+    Real fn[Hetfrz::hetfrz_aer_nspec] = {af_accum, af_accum, af_coarse};
+    Real frzbcimm = 0.0;
+    Real frzduimm = 0.0;
+    Real frzbccnt = 0.0;
+    Real frzducnt = 0.0;
+    Real frzbcdep = 0.0;
+    Real frzdudep = 0.0;
+    Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec] = {0};
+    Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec] = {0};
+
+    hetfrz::hetfrz_classnuc_calc(
+        dt, temp, pmid, supersatice, fn, r3lx, ncic * air_density, hetraer,
+        awcam, awfacm, dstcoat, total_aer_num, coated_aer_num, uncoated_aer_num,
+        total_interstitial_aer_num, total_cloudborne_aer_num, frzbcimm,
+        frzduimm, frzbccnt, frzducnt, frzbcdep, frzdudep);
+
+    // These are the output tendencies from hetfrz that need to be properly
+    // coupled into the cloud micorphysical scheme
+    hetfrz_immersion_nucleation_tend = frzbcimm + frzduimm;
+    hetfrz_contact_nucleation_tend = frzbccnt + frzbccnt;
+    hetfrz_depostion_nucleation_tend = frzbcdep + frzdudep;
+  }
 }
 
 } // namespace hetfrz
