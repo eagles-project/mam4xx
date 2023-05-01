@@ -1265,11 +1265,11 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
   const Real soamc = coarse_soa(k) * air_density;
   const Real so4mc = coarse_so4(k) * air_density;
 
-  Real total_interstital_aer_num[Hetfrz::hetfrz_aer_nspec] = {0.0};
+  Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec] = {0.0};
 
   calculate_interstitial_aer_num(bcmac, dmac, bcmpc, dmc, ssmc, mommc, bcmc,
                                  pommc, soamc, num_coarse[k],
-                                 total_interstital_aer_num);
+                                 total_interstitial_aer_num);
 
   auto &accum_dst_cb = progs.q_aero_c[accum_idx][int(AeroId::DST)];
   auto &accum_ss_cb = progs.q_aero_c[accum_idx][int(AeroId::NaCl)];
@@ -1305,17 +1305,17 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
   const Real pommc_cb = coarse_pom_cb[k] * air_density;
   const Real soamc_cb = coarse_soa_cb[k] * air_density;
 
-  Real total_cloudbborne_aer_num[Hetfrz::hetfrz_aer_nspec] = {0.0};
+  Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec] = {0.0};
 
   calculate_cloudborne_aer_num(
       dmac_cb, ssmac_cb, so4mac_cb, bcmaac_cb, pommac_cb, soamac_cb, mommac_cb,
       num_accum_cb[k], dmc_cb, ssmc_cb, mommc_cb, bcmc_cb, pommc_cb, soamc_cb,
-      num_coarse_cb[k], total_cloudbborne_aer_num);
+      num_coarse_cb[k], total_cloudborne_aer_num);
 
   Real hetraer[Hetfrz::hetfrz_aer_nspec] = {0.0};
 
-  calculate_mass_mean_radius(bcmac, bcmpc, dmac, dmc, total_interstital_aer_num,
-                             hetraer);
+  calculate_mass_mean_radius(bcmac, bcmpc, dmac, dmc,
+                             total_interstitial_aer_num, hetraer);
 
   Real total_aer_num[Hetfrz::hetfrz_aer_nspec] = {0.0};
   Real coated_aer_num[Hetfrz::hetfrz_aer_nspec] = {0.0};
@@ -1326,8 +1326,8 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
 
   calculate_coated_fraction(
       air_density, so4mac, pommac, mommac, soamac, dmac, bcmac, mommpc, pommpc,
-      bcmpc, so4mc, pommc, soamc, mommc, dmc, total_interstital_aer_num,
-      total_cloudbborne_aer_num, hetraer, total_aer_num, coated_aer_num,
+      bcmpc, so4mc, pommc, soamc, mommc, dmc, total_interstitial_aer_num,
+      total_cloudborne_aer_num, hetraer, total_aer_num, coated_aer_num,
       uncoated_aer_num, dstcoat, na500, totna500);
 
   Real awcam[Hetfrz::hetfrz_aer_nspec] = {0.0};
@@ -1335,7 +1335,7 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
 
   calculate_vars_for_water_activity(
       so4mac, soamac, bcmac, mommac, pommac, num_accum[k], so4mc, mommc, bcmc,
-      pommc, soamc, num_coarse[k], total_interstital_aer_num, awcam, awfacm);
+      pommc, soamc, num_coarse[k], total_interstitial_aer_num, awcam, awfacm);
 
   auto af_accum = diags.activation_fraction[k][accum_idx];
   auto af_coarse = diags.activation_fraction[k][coarse_idx];
@@ -1345,6 +1345,32 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
   cloudborne_aer_num[1] = total_aer_num[1] * af_accum;  // dst_a1
   cloudborne_aer_num[2] = total_aer_num[2] * af_coarse; // dst_a3
 
+  // Store local variables to diags
+  bc_num = total_aer_num[0];
+  dst1_num = total_aer_num[1];
+  dst3_num = total_aer_num[2];
+
+  bcc_num = coated_aer_num[0];
+  dst1c_num = coated_aer_num[1];
+  dst3c_num = coated_aer_num[2];
+
+  bcuc_num = uncoated_aer_num[0];
+  dst1uc_num = uncoated_aer_num[1];
+  dst3uc_num = uncoated_aer_num[2];
+
+  bc_a1_num = total_interstitial_aer_num[0];
+  dst_a1_num = total_interstitial_aer_num[1];
+  dst_a3_num = total_interstitial_aer_num[2];
+
+  bc_c1_num = total_cloudborne_aer_num[0];
+  dst_c1_num = total_cloudborne_aer_num[1];
+  dst_c3_num = total_cloudborne_aer_num[2];
+
+  fn_bc_c1_num = cloudborne_aer_num[0];
+  fn_dst_c1_num = cloudborne_aer_num[1];
+  fn_dst_c3_num = cloudborne_aer_num[2];
+
+  // Finshed storing local variables to diags
   Real frzbcimm = 0.0;
   Real frzduimm = 0.0;
   Real frzbccnt = 0.0;
@@ -1367,7 +1393,6 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
         wv_sat_methods::svp_water(temp) / wv_sat_methods::svp_ice(temp);
 
     Real fn[Hetfrz::hetfrz_aer_nspec] = {af_accum, af_accum, af_coarse};
-    Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec] = {0};
     Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec] = {0};
 
     hetfrz::hetfrz_classnuc_calc(
@@ -1404,10 +1429,18 @@ void hetfrz_rates_1box(const int k, const AeroConfig &aero_config,
   nimix_cnt = frzbccnt * Hetfrz::frz_cm3_to_m3 * dt;
   nimix_dep = frzbcdep * Hetfrz::frz_cm3_to_m3 * dt;
 
-  dstnicnt = frzduimm*Hetfrz::frz_cm3_to_m3*dt;
-  dstnidep = frzducnt*Hetfrz::frz_cm3_to_m3*dt;
-  dstniimm = frzdudep*Hetfrz::frz_cm3_to_m3*dt;
+  dstnicnt = frzduimm * Hetfrz::frz_cm3_to_m3 * dt;
+  dstnidep = frzducnt * Hetfrz::frz_cm3_to_m3 * dt;
+  dstniimm = frzdudep * Hetfrz::frz_cm3_to_m3 * dt;
 
+  numice10s =
+      (hetfrz_immersion_nucleation_tend + hetfrz_contact_nucleation_tend +
+       hetfrz_depostion_nucleation_tend) *
+      Hetfrz::frz_cm3_to_m3 * dt * (10.0 / dt);
+  numimm10sdst = hetfrz_immersion_nucleation_tend * Hetfrz::frz_cm3_to_m3 * dt *
+                 (10.0 / dt);
+  numimm10sbc = hetfrz_immersion_nucleation_tend * Hetfrz::frz_cm3_to_m3 * dt *
+                (10.0 / dt);
 }
 
 } // namespace hetfrz
