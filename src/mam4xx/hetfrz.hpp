@@ -1468,7 +1468,7 @@ void Hetfrz::compute_tendencies(const AeroConfig &config,
   // namely hetfrz_immersion_nucleation_tend, hetfrz_contact_nucleation_tend,
   // and hetfrz_depostion_nucleation_tend. In order for heterogenous freezing to
   // have impacts on the model state, these tendencies must be correctly added
-  // to the relevant microphysical process.
+  // to the relevant cloud-microphysical parameterization.
 
   const int nk = atm.num_levels();
   Kokkos::parallel_for(
