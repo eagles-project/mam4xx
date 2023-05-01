@@ -1462,6 +1462,14 @@ void Hetfrz::compute_tendencies(const AeroConfig &config,
                                 const Diagnostics &diags,
                                 const Tendencies &tends) const {
 
+  // Hetergeneous freezing does not update tendienes directly, as hetergenoues
+  // freezing does not contribute to aerosol-scheme specficic prognostic
+  // variables, rather it it computes tendencies that are stored as dianostics,
+  // namely hetfrz_immersion_nucleation_tend, hetfrz_contact_nucleation_tend,
+  // and hetfrz_depostion_nucleation_tend. In order for heterogenous freezing to
+  // have impacts on the model state, these tendencies must be correctly added
+  // to the relevant microphysical process.
+
   const int nk = atm.num_levels();
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
