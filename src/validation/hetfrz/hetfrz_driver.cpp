@@ -42,6 +42,7 @@ void get_aer_radius(Ensemble *ensemble);
 void calculate_mass_mean_radius(Ensemble *ensemble);
 void calculate_coated_fraction(Ensemble *ensemble);
 void calculate_vars_for_water_activity(Ensemble *ensemble);
+void hetfrz_rates_1box(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
 
@@ -129,6 +130,11 @@ int main(int argc, char **argv) {
     }
     if (func_name == "calculate_vars_for_water_activity") {
       calculate_vars_for_water_activity(ensemble);
+    }
+    std::cout << "Func name " << func_name << std::endl;
+    if (func_name == "hetfrz_rates_1box"){
+      std::cout << "From DRIVER" << std::endl ; 
+      hetfrz_rates_1box(ensemble);
     }
 
   } catch (std::exception &e) {
