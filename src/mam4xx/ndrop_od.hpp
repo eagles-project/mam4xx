@@ -180,6 +180,7 @@ void ccncalc(const Real state_q[7], const Real tair, const Real qcldbrn[7][4],
   const Real pi = haero::Constants::pi;
 
   // FIXME; surften is defined in ndrop_init
+  // BAD CONSTANT
   const Real surften = 0.076;
   // FIME: drop_int
   Real exp45logsig[4] = {};
@@ -261,6 +262,229 @@ void ccncalc(const Real state_q[7], const Real tair, const Real qcldbrn[7][4],
   }                                 // lsat
 
 } /// ccncalc
+
+KOKKOS_INLINE_FUNCTION
+void qsat(const Real tair, const Real pres, Real es, Real qs) {
+  // implementation
+}
+
+// FIXME;Jaelyn Litzinger is porting  maxsat
+KOKKOS_INLINE_FUNCTION
+void maxsat(const Real zeta, Real eta[4], const int nmode, const Real smc[4],
+            Real smax) {}
+
+KOKKOS_INLINE_FUNCTION
+void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
+                    const Real rhoair, Real na[4], const int nmode,
+                    Real volume[4], Real hygro[4], Real fn[4], Real fm[4],
+                    Real fluxn[4], Real fluxm[4], Real &flux_fullact)
+//, const Real smax_prescribed=999
+{
+  // 	  !---------------------------------------------------------------------------------
+  // !Calculates number, surface, and mass fraction of aerosols activated as CCN
+  // !calculates flux of cloud droplets, surface area, and aerosol mass into
+  // cloud !assumes an internal mixture within each of up to nmode multiple
+  // aerosol modes !a gaussiam spectrum of updrafts can be treated.
+  // !
+  // !Units: SI (MKS)
+  // !
+  // !Reference: Abdul-Razzak and Ghan, A parameterization of aerosol
+  // activation. !      2. Multiple aerosol types. J. Geophys. Res., 105,
+  // 6837-6844.
+  // !---------------------------------------------------------------------------------
+
+  // input
+  // @param [in] w_in      ! vertical velocity [m/s]
+  // @param [in] wmaxf     ! maximum updraft velocity for integration [m/s]
+  // @param [in] tair      ! air temperature [K]
+  // @param [in] rhoair    ! air density [kg/m3]
+  // @param [in] na(:)     ! aerosol number concentration [#/m3]
+  // @param [in] nmode     ! number of aerosol modes
+  // @param [in] volume(:) ! aerosol volume concentration [m3/m3]
+  // @param [in] hygro(:)  ! hygroscopicity of aerosol mode [dimensionless]
+  // @param [in] smax_prescribed  ! prescribed max. supersaturation for
+  // secondary activation [fraction]
+
+  // !output
+  // @param [out] fn(:)        ! number fraction of aerosols activated
+  // [fraction]
+  // @param [out] fm(:)        ! mass fraction of aerosols activated [fraction]
+  // @param [out] fluxn(:)     ! flux of activated aerosol number fraction into
+  // cloud [m/s]
+  // @param [out] fluxm(:)     ! flux of activated aerosol mass fraction into
+  // cloud [m/s]
+  // @param [out] flux_fullact ! flux of activated aerosol fraction assuming
+  // 100% activation [m/s]
+
+  // !---------------------------------------------------------------------------------
+  // ! flux_fullact is used for consistency check -- this should match
+  // (ekd(k)*zs(k)) ! also, fluxm/flux_fullact gives fraction of aerosol mass
+  // flux ! that is activated
+  // !---------------------------------------------------------------------------------
+  // FIXME: hearo::Constants
+  const Real zero = 0;
+  // BAD CONSTANT
+  // return if aerosol number is negligible in the accumulation mode
+  // FIXME use index of accumulation mode
+  if (na[0] < 1.e-20) {
+    return;
+  }
+
+  // return if vertical velocity is 0 or negative
+  if (w_in <= zero) {
+    return;
+  }
+
+  //
+  // !return if max supersaturation is 0 or negative
+  // if (smax_prescribed <= zero) {return;};
+
+  // BAD CONSTANT
+  //  FIXME look for constant in ahero
+  //  const Real SHR_CONST_MWDAIR  = 28.966;//       ! molecular weight dry air
+  //  ~ kg/kmole const Real SHR_CONST_MWWV    = 18.016;//       ! molecular
+  //  weight water vapor const Real  rair = SHR_CONST_RGAS/SHR_CONST_MWDAIR;//
+  //  ! Dry air gas constant     ~ J/K/kg
+  const Real rair = haero::Constants::r_gas_dry_air;
+  const Real rh2o = haero::Constants::r_gas_h2o_vapor;
+  const Real latvap =
+      haero::Constants::latent_heat_evap; //      ! latent heat of evaporation ~
+                                          //      J/kg
+  const Real cpair =
+      haero::Constants::cp_dry_air; //    ! specific heat of dry air   ~ J/kg/K
+  const Real gravit =
+      haero::Constants::gravity; //      ! acceleration of gravity ~ m/s^2
+  // SHR_CONST_RHOFW   = 1.000e3_R8      ! density of fresh water     ~ kg/m^3
+  const Real rhoh2o = haero::Constants::density_h2o;
+  const Real pi = haero::Constants::pi;
+  const Real twothird = 2. / 3.;
+  const Real r_universal = haero::Constants::r_gas * 1e3;      //[J/K/kmole]
+  const Real mwh2o = haero::Constants::molec_weight_h2o * 1e3; // [kg/kmol]
+  const Real t0 = 273; // reference temperature [K]
+  // BAD CONSTANT
+  const Real surften = 0.076;
+  const Real aten = 2. * mwh2o * surften / (r_universal * t0 * rhoh2o);
+
+  const Real p0 = 1013.25e2;              //  ! reference pressure [Pa]
+  const Real pres = rair * rhoair * tair; // pressure [Pa]
+  // Obtain Saturation vapor pressure (es) and saturation specific humidity (qs)
+  //  FIXME: check if we have implemented qsat
+  //  water vapor saturation specific humidity [kg/kg]
+  Real qs = zero;
+  // ! saturation vapor pressure [Pa]
+  Real es = zero;           //
+  qsat(tair, pres, es, qs); // !es and qs are the outputs
+  // ! change in qs with temperature  [(kg/kg)/T]
+  const Real dqsdt = latvap / (rh2o * tair * tair) * qs;
+  // [/m]
+  const Real alpha =
+      gravit * (latvap / (cpair * rh2o * tair * tair) - 1. / (rair * tair));
+  // [m3/kg]
+  const Real gamma = (1 + latvap / cpair * dqsdt) / (rhoair * qs);
+  // [s^(3/2)]
+  const Real etafactor2max =
+      1.e10 / haero::pow((alpha * wmaxf),
+                         1.5); // !this should make eta big if na is very small.
+  // vapor diffusivity [m2/s]
+  const Real diff0 = 0.211e-4 * (p0 / pres) * haero::pow(tair / t0, 1.94);
+  // ! thermal conductivity [J / (m-s-K)]
+  const Real conduct0 =
+      (5.69 + 0.017 * (tair - t0)) * 4.186e2 * 1.e-5; // !convert to J/m/s/deg
+  // thermodynamic function [m2/s]
+  const Real gthermfac =
+      1. /
+      (rhoh2o / (diff0 * rhoair * qs) +
+       latvap * rhoh2o / (conduct0 * tair) *
+           (latvap / (rh2o * tair) - 1.)); // gthermfac is same for all modes
+  const Real beta = 2. * pi * rhoh2o * gthermfac * gamma; //[m2/s]
+  // nucleation w, but = w_in if wdiab == 0 [m/s]
+  const Real wnuc = w_in;
+  const Real alw = alpha * wnuc;                  // [/s]
+  const Real etafactor1 = alw * haero::sqrt(alw); // [/ s^(3/2)]
+  // [unitless]
+  const Real zeta = twothird * haero::sqrt(alw) * aten / haero::sqrt(gthermfac);
+
+  Real amcube[4] = {}; // ! cube of dry mode radius [m3]
+
+  // critical supersaturation for number mode radius [fraction]
+  Real smc[4] = {};
+
+  // FIXME
+  // FIME: drop_int
+  Real exp45logsig[4] = {};
+  Real alogsig[4] = {};
+  Real etafactor2[4] = {};
+  Real lnsm[4] = {};
+  for (int imode = 0; imode < 4; ++imode) {
+    alogsig[imode] = haero::log(modes(imode).mean_std_dev);
+    exp45logsig[imode] = haero::exp(4.5 * alogsig[imode] * alogsig[imode]);
+  } // imode
+
+  Real eta[4] = {};
+  // !Here compute smc, eta for all modes for maxsat calculation
+  for (int imode = 0; imode < 4; ++imode) {
+    // BAD CONSTANT
+    if (volume[imode] > 1.e-39 && na[imode] > 1.e-39) {
+      // !number mode radius (m)
+      amcube[imode] = (3. * volume[imode] /
+                       (4. * pi * exp45logsig[imode] *
+                        na[imode])); // ! only if variable size dist
+      // !Growth coefficent Abdul-Razzak & Ghan 1998 eqn 16
+      // !should depend on mean radius of mode to account for gas kinetic
+      // effects !see Fountoukis and Nenes, JGR2005 and Meskhidze et al.,
+      // JGR2006 !for approriate size to use for effective diffusivity.
+      etafactor2[imode] = 1. / (na[imode] * beta * haero::sqrt(gthermfac));
+      // BAD CONSTANT
+      if (hygro[imode] > 1.e-10) {
+        smc[imode] =
+            2. * aten *
+            haero::sqrt(aten / (27. * hygro[imode] *
+                                amcube[imode])); // ! only if variable size dist
+      } else {
+        smc[imode] = 100.;
+      } // hygro
+    } else {
+      smc[imode] = 1.;
+      etafactor2[imode] =
+          etafactor2max; // ! this should make eta big if na is very small.
+    }                    // volumne
+    lnsm[imode] = haero::log(smc[imode]); // ! only if variable size dist
+    eta[imode] = etafactor1 * etafactor2[imode];
+  } // end imode
+
+  // Find maximum supersaturation
+  // Use smax_prescribed if it is present; otherwise get smax from subr maxsat
+  // if ( present( smax_prescribed ) ) then
+  //  maximum supersaturation [fraction]
+  // const Real smax = smax_prescribed;
+  // else
+  // FIXME;Jaelyn Litzinger is porting  maxsat
+  Real smax = zero;
+  maxsat(zeta, eta, nmode, smc, smax);
+  // endif
+  // FIXME [unitless] ? lnsmax maybe has units of log(unit of smax ([fraction]))
+  const Real lnsmax = haero::log(smax);
+  const Real sq2 = haero::sqrt(2.);
+
+  // !Use maximum supersaturation to calculate aerosol activation output
+  for (int imode = 0; imode < 4; ++imode) {
+    // ! [unitless]
+    const Real arg_erf_n =
+        twothird * (lnsm[imode] - lnsmax) / (sq2 * alogsig[imode]);
+
+    fn[imode] = 0.5 * (1. - haero::erf(arg_erf_n)); //! activated number
+    // ! [unitless]
+    const Real arg_erf_m = arg_erf_n - 1.5 * sq2 * alogsig[imode];
+    fm[imode] = 0.5 * (1. - haero::erf(arg_erf_m)); // !activated mass
+    fluxn[imode] = fn[imode] * w_in; // !activated aerosol number flux
+    fluxm[imode] = fm[imode] * w_in; // !activated aerosol mass flux
+  }
+  // FIXME: what is this??
+  // is vertical velocity equal to flux of activated aerosol fraction assuming
+  // 100% activation [m/s]?
+  flux_fullact = w_in;
+
+} // activate_modal
 
 } // namespace ndrop_od
 
