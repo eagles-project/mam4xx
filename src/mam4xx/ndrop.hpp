@@ -22,17 +22,9 @@ public:
 
 namespace ndrop {
 
-// abdul-razzak functions of width
-static Real f1[AeroConfig::num_modes()];
-static Real f2[AeroConfig::num_modes()];
-
 KOKKOS_INLINE_FUNCTION
 void ndrop_init() {
-  for (int m = 0; m < AeroConfig::num_modes(); m++) {
-    f1[m] = 0.5 * haero::exp(2.5 * haero::log(modes(m).mean_std_dev) *
-                             haero::log(modes(m).mean_std_dev));
-    f2[m] = 1.0 + 0.25 * haero::log(modes(m).mean_std_dev);
-  }
+
 }
 
 // TODO: this function signature may need to change to work properly on GPU
@@ -41,17 +33,19 @@ KOKKOS_INLINE_FUNCTION
 void get_aer_num(const Diagnostics &diags, const Prognostics &progs,
                  const Atmosphere &atm, const int mode_idx, const int k,
                  Real naerosol[AeroConfig::num_modes()]) {
-
+  printf("in get aer num\n");
   Real rho =
       conversions::density_of_ideal_gas(atm.temperature(k), atm.pressure(k));
   Real vaerosol = conversions::mean_particle_volume_from_diameter(
       diags.dry_geometric_mean_diameter_total[mode_idx](k),
       modes(mode_idx).mean_std_dev);
 
+  printf("checkpoint 1\n");
   Real min_diameter = modes(mode_idx).min_diameter;
   Real max_diameter = modes(mode_idx).max_diameter;
   Real mean_std_dev = modes(mode_idx).mean_std_dev;
 
+  printf("checkpoint 2\n");
   Real num2vol_ratio_min =
       1.0 / conversions::mean_particle_volume_from_diameter(min_diameter,
                                                             mean_std_dev);
@@ -59,10 +53,12 @@ void get_aer_num(const Diagnostics &diags, const Prognostics &progs,
       1.0 / conversions::mean_particle_volume_from_diameter(max_diameter,
                                                             mean_std_dev);
 
+  printf("checkpoint 3\n");
   // convert number mixing ratios to number concentrations
   naerosol[mode_idx] =
       (progs.n_mode_i[mode_idx](k) + progs.n_mode_c[mode_idx](k)) * rho;
 
+  printf("checkpoint 4\n");
   // adjust number so that dgnumlo < dgnum < dgnumhi
   naerosol[mode_idx] = max(naerosol[mode_idx], vaerosol * num2vol_ratio_max);
   naerosol[mode_idx] = min(naerosol[mode_idx], vaerosol * num2vol_ratio_min);
@@ -122,18 +118,30 @@ void explmix(
 // Abdul-Razzak and Ghan, A parameterization of aerosol activation.
 // 2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
 KOKKOS_INLINE_FUNCTION
-void maxsat(Real zeta,      // [dimensionless]
-            ColumnView eta, // [dimensionless]
-            Real nmode,     // number of modes
-            ColumnView smc, // critical supersaturation for number mode radius
+Real maxsat(const Real zeta,      // [dimensionless]
+            const ColumnView eta, // [dimensionless]
+            const Real nmode,     // number of modes
+            const ColumnView smc // critical supersaturation for number mode radius
                             // [fraction]
-            Real &smax      // maximum supersaturation [fraction]
 ) {
+  printf("maxsat\n");
+  // abdul-razzak functions of width
+  Real f1[AeroConfig::num_modes()];
+  Real f2[AeroConfig::num_modes()];
 
+  printf("reals\n");
   Real sum = 0;
   Real g1, g2;
   bool weak_forcing = true; // whether forcing is sufficiently weak or not
 
+  printf("smax\n");
+  Real smax = 0; // maximum supersaturation [fraction] (output)
+
+  printf("init params\n");
+  printf("zeta = %f\n", zeta);
+  printf("eta = %f\n", eta(0));
+  printf("smc = %f\n", smc(0));
+  printf("smax = %f\n", smax);
   for (int m = 0; m < nmode; m++) {
     if (zeta > 1e5 * eta(m) || smc(m) * smc(m) > 1e5 * eta(m)) {
       // weak forcing. essentially none activated
@@ -144,21 +152,28 @@ void maxsat(Real zeta,      // [dimensionless]
       break;
     }
   }
+  printf("determined forcing\n");
 
   if (weak_forcing)
-    return;
+    return -1;
 
   for (int m = 0; m < nmode; m++) {
+    f1[m] = 0.5 * haero::exp(2.5 * haero::log(modes(m).mean_std_dev) *
+                             haero::log(modes(m).mean_std_dev));
+    f2[m] = 1.0 + 0.25 * haero::log(modes(m).mean_std_dev);
+    printf("set fs\n");
     if (eta(m) > 1e-20) {
       g1 = (zeta / eta(m)) * haero::sqrt(zeta / eta(m));
       g2 = (smc(m) / haero::sqrt(eta(m) + 3.0 * zeta)) *
            haero::sqrt(smc(m) / haero::sqrt(eta(m) + 3.0 * zeta));
-      sum = sum + (f1[m] * g1 + f2[m] * g2) / (smc(m) * smc(m));
+      sum += (f1[m] * g1 + f2[m] * g2) / (smc(m) * smc(m));
     } else {
       sum = 1e20;
     }
   }
+  printf("finish smax\n");
   smax = 1.0 / haero::sqrt(sum);
+  return smax;
 }
 
 } // namespace ndrop
