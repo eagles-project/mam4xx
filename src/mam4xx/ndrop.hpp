@@ -143,9 +143,9 @@ Real maxsat(const Real zeta,      // [dimensionless]
   printf("smc = %f\n", smc(0));
   printf("smax = %f\n", smax);
   for (int m = 0; m < nmode; m++) {
-    if (zeta > 1e5 * eta(m) || smc(m) * smc(m) > 1e5 * eta(m)) {
+    if (zeta > 1e5 /*FIXME: BAD CONSTANT*/ * eta(m) || smc(m) * smc(m) > 1e5 /*FIXME: BAD CONSTANT*/ * eta(m)) {
       // weak forcing. essentially none activated
-      smax = 1e-20;
+      smax = 1e-20; /*FIXME: BAD CONSTANT*/
     } else {
       // significant activation of this mode. calc activation of all modes.
       weak_forcing = false;
@@ -162,13 +162,13 @@ Real maxsat(const Real zeta,      // [dimensionless]
                              haero::log(modes(m).mean_std_dev));
     f2[m] = 1.0 + 0.25 * haero::log(modes(m).mean_std_dev);
     printf("set fs\n");
-    if (eta(m) > 1e-20) {
+    if (eta(m) > 1e-20 /*FIXME: BAD CONSTANT*/) {
       g1 = (zeta / eta(m)) * haero::sqrt(zeta / eta(m));
       g2 = (smc(m) / haero::sqrt(eta(m) + 3.0 * zeta)) *
            haero::sqrt(smc(m) / haero::sqrt(eta(m) + 3.0 * zeta));
       sum += (f1[m] * g1 + f2[m] * g2) / (smc(m) * smc(m));
     } else {
-      sum = 1e20;
+      sum = 1e20; /*FIXME: BAD CONSTANT*/
     }
   }
   printf("finish smax\n");
