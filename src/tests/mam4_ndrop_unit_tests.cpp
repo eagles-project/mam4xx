@@ -189,3 +189,53 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
   logger.info("q = {}", q);
   REQUIRE(FloatingPoint<Real>::equiv(q, 0.9));
 }
+
+TEST_CASE("test_maxsat", "mam4_ndrop") {
+  ekat::Comm comm;
+  ekat::logger::Logger<> logger("ndrop maxsat unit tests",
+                                ekat::logger::LogLevel::debug, comm);
+
+  logger.info("start of maxsat test");
+  int nmodes = AeroConfig::num_modes();
+  logger.info("nmodes = {}", nmodes);
+
+  Real zeta = 0;
+  Real eta[4];
+  Real smc[4];
+  Real smax = 0;
+
+  // set up smoketest values
+  for (int m = 0; m < nmodes; m++) {
+    eta[m] = 0;
+    smc[m] = 1;
+  }
+
+  ndrop::maxsat(zeta, eta, nmodes, smc, smax);
+  logger.info("smax = {}", smax);
+  REQUIRE(FloatingPoint<Real>::equiv(smax, 1e-20));
+
+  for (int m = 0; m < nmodes; m++) {
+    smc[m] = 0;
+  }
+  smax = 0;
+  ndrop::maxsat(zeta, eta, nmodes, smc, smax);
+  logger.info("smax = {}", smax);
+  REQUIRE(FloatingPoint<Real>::equiv(smax, 1e-10));
+
+  // set up smoketest values
+  for (int m = 0; m < nmodes; m++) {
+    eta[m] = 1;
+    smc[m] = 1;
+  }
+  smax = 0;
+  Real double_answer = 0.4698982925962298;
+  Real single_answer = 0.46989828;
+
+  ndrop::maxsat(zeta, eta, nmodes, smc, smax);
+  logger.info("smax = {}", smax);
+  logger.info("double_answer = {}, single_answer = {}", double_answer,
+              single_answer);
+  bool test = FloatingPoint<Real>::equiv(smax, double_answer) ||
+              FloatingPoint<Real>::equiv(smax, single_answer);
+  REQUIRE(test);
+}
