@@ -154,9 +154,10 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
                                 ekat::logger::LogLevel::debug, comm);
 
   Real q = -1;
-  
+
   // set up smoketest values
-  // pretend this is from one level k, in nlev, with adjacent levels k-1 (km1) and k+1 (kp1)
+  // pretend this is from one level k, in nlev, with adjacent levels k-1 (km1)
+  // and k+1 (kp1)
   Real qold_km1 = 1;
   Real qold_k = 1;
   Real qold_kp1 = 1;
@@ -173,18 +174,17 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
   Real qactold_km1 = 1;
   Real qactold_kp1 = 1;
 
-  
-  ndrop::explmix(qold_km1, qold_k, qold_kp1, q, src, ek_kp1, ek_km1, overlap_kp1, overlap_km1,
-                  dt, is_unact);
-  
+  ndrop::explmix(qold_km1, qold_k, qold_kp1, q, src, ek_kp1, ek_km1,
+                 overlap_kp1, overlap_km1, dt, is_unact);
 
   logger.info("q = {}", q);
   REQUIRE(FloatingPoint<Real>::equiv(q, 1.1));
 
   is_unact = true;
 
-  ndrop::explmix(qold_km1, qold_k, qold_kp1, q, src, ek_kp1, ek_km1, overlap_kp1, overlap_km1,
-                  dt, is_unact, qactold_km1, qactold_kp1);
+  ndrop::explmix(qold_km1, qold_k, qold_kp1, q, src, ek_kp1, ek_km1,
+                 overlap_kp1, overlap_km1, dt, is_unact, qactold_km1,
+                 qactold_kp1);
 
   logger.info("q = {}", q);
   REQUIRE(FloatingPoint<Real>::equiv(q, 0.9));
