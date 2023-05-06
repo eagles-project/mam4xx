@@ -84,7 +84,7 @@ void maxsat(const Real zeta,   // [dimensionless]
             const Real nmode,  // modes
             const Real smc[4], // critical supersaturation for number mode
                                // radius [fraction]
-            Real &smax // maximum supersaturation [fraction] (output)
+            Real &smax         // maximum supersaturation [fraction] (output)
 ) {
   // abdul-razzak functions of width
   Real f1[AeroConfig::num_modes()];
