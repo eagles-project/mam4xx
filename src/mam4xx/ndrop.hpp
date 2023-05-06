@@ -23,6 +23,11 @@ public:
 namespace ndrop {
 
 // get_aer_num is being refactored by oscar in collab/ndrop
+KOKKOS_INLINE_FUNCTION
+void get_aer_num(const int voltonumbhi_amode, const int voltonumblo_amode,
+                 const int num_idx, const Real state_q[7],
+                 const Real air_density, const Real vaerosol,
+                 const Real qcldbrn1d_num, Real &naerosol) {}
 
 KOKKOS_INLINE_FUNCTION
 void explmix(
