@@ -22,87 +22,55 @@ public:
 
 namespace ndrop {
 
-// TODO: this function signature may need to change to work properly on GPU
-//  come back when this function is being used in a ported parameterization
-KOKKOS_INLINE_FUNCTION
-void get_aer_num(const Diagnostics &diags, const Prognostics &progs,
-                 const Atmosphere &atm, const int mode_idx, const int k,
-                 Real naerosol[AeroConfig::num_modes()]) {
-
-  Real rho =
-      conversions::density_of_ideal_gas(atm.temperature(k), atm.pressure(k));
-  Real vaerosol = conversions::mean_particle_volume_from_diameter(
-      diags.dry_geometric_mean_diameter_total[mode_idx](k),
-      modes(mode_idx).mean_std_dev);
-
-  Real min_diameter = modes(mode_idx).min_diameter;
-  Real max_diameter = modes(mode_idx).max_diameter;
-  Real mean_std_dev = modes(mode_idx).mean_std_dev;
-
-  Real num2vol_ratio_min =
-      1.0 / conversions::mean_particle_volume_from_diameter(min_diameter,
-                                                            mean_std_dev);
-  Real num2vol_ratio_max =
-      1.0 / conversions::mean_particle_volume_from_diameter(max_diameter,
-                                                            mean_std_dev);
-
-  // convert number mixing ratios to number concentrations
-  naerosol[mode_idx] =
-      (progs.n_mode_i[mode_idx](k) + progs.n_mode_c[mode_idx](k)) * rho;
-
-  // adjust number so that dgnumlo < dgnum < dgnumhi
-  naerosol[mode_idx] = max(naerosol[mode_idx], vaerosol * num2vol_ratio_max);
-  naerosol[mode_idx] = min(naerosol[mode_idx], vaerosol * num2vol_ratio_min);
-}
+//get_aer_num is being refactored by oscar in collab/ndrop
 
 KOKKOS_INLINE_FUNCTION
 void explmix(
-    const ThreadTeam &team, // ThreadTeam for parallel_for
-    int nlev,               // number of levels
-    ColumnView q,    // number / mass mixing ratio to be updated [# or kg / kg]
-    ColumnView src,  // source due to activation/nucleation [# or kg / (kg-s)]
-    ColumnView ekkp, // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
-                     // [/s]; below layer k  (k,k+1 interface)
-    ColumnView ekkm, // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
-                     // [/s]; above layer k  (k,k+1 interface)
-    ColumnView overlapp, // cloud overlap below [fraction]
-    ColumnView overlapm, // cloud overlap above [fraction]
-    ColumnView qold, // number / mass mixing ratio from previous time step [# or
+    const Real qold_km1, // number / mass mixing ratio from previous time step at level k-1 [# or
                      // kg / kg]
-    Real dt,         // time step [s]
-    bool is_unact,   // true if this is an unactivated species
-    ColumnView
-        qactold // optional: number / mass mixing ratio of ACTIVATED species
-                // from previous step *** this should only be present if the
+    const Real qold_k,  // number / mass mixing ratio from previous time step at level k [# or
+                     // kg / kg]
+    const Real qold_kp1,  // number / mass mixing ratio from previous time step at level k+1 [# or
+                     // kg / kg]
+    Real &q,    // OUTPUT, number / mass mixing ratio to be updated [# or kg / kg]
+    const Real src,  // source due to activation/nucleation at level k [# or kg / (kg-s)]
+    const Real ek_kp1, // zn*zs*density*diffusivity (kg/m3 m2/s) at interface 
+                     // [/s]; below layer k  (k,k+1 interface)
+    const Real ek_km1, // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
+                     // [/s]; above layer k  (k,k+1 interface)
+    const Real overlap_kp1, // cloud overlap below [fraction]
+    const Real overlap_km1, // cloud overlap above [fraction]
+    const Real dt,         // time step [s]
+    const bool is_unact,   // true if this is an unactivated species
+    const Real 
+        qactold_km1 = 1, // optional: number / mass mixing ratio of ACTIVATED species
+                // from previous step at level k-1 *** this should only be present if the
+                // current species is unactivated number/sfc/mass
+    const Real 
+        qactold_kp1 = 1 // optional: number / mass mixing ratio of ACTIVATED species
+                // from previous step at level k+1 *** this should only be present if the
                 // current species is unactivated number/sfc/mass
 ) {
 
-  int top_lev = 0;
+  // the qactold*(1-overlap) terms are resuspension of activated material
 
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int k) {
-        int kp1 = min(k + 1, nlev - 1);
-        int km1 = max(k - 1, top_lev);
+  if (is_unact) {
+    q = qold_k +
+            (dt * (-src +
+                  (ek_kp1 * (qold_kp1 - qold_k +
+                              (qactold_kp1 * (1 - overlap_kp1)))) +
+                  (ek_km1 * (qold_km1 - qold_k +
+                              (qactold_km1 * (1 - overlap_km1))))));
+  } else {
+    q = qold_k +
+            (dt *
+            (src + (ek_kp1 * ((overlap_kp1 * qold_kp1) - qold_k)) +
+              (ek_km1 * ((overlap_km1 * qold_k) - qold_k))));
+  }
+  // force to non-negative
+  q = max(q, 0);
+} // end explmix
 
-        // the qactold*(1-overlap) terms are resuspension of activated material
-
-        if (is_unact) {
-          q(k) = qold(k) +
-                 (dt * (-src(k) +
-                        (ekkp(k) * (qold(kp1) - qold(k) +
-                                    (qactold(kp1) * (1 - overlapp(k))))) +
-                        (ekkm(k) * (qold(km1) - qold(k) +
-                                    (qactold(km1) * (1 - overlapm(k)))))));
-        } else {
-          q(k) = qold(k) +
-                 (dt *
-                  (src(k) + (ekkp(k) * ((overlapp(k) * qold(kp1)) - qold(k))) +
-                   (ekkm(k) * ((overlapm(k) * qold(k)) - qold(k)))));
-        }
-        // force to non-negative
-        q(k) = max(q(k), 0);
-      });
-}
 } // namespace ndrop
 } // namespace mam4
 #endif
