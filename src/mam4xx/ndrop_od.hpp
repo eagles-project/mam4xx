@@ -495,7 +495,7 @@ void activate_modal(const Real w_in,
   //  maximum supersaturation [fraction]
   // const Real smax = smax_prescribed;
   // else
-  // FIXME;Jaelyn Litzinger is porting  maxsat
+  // FIXME;Jaelyn Litzinger is porting maxsat
   Real smax = zero;
   maxsat(zeta, eta, nmode, smc, smax);
   // endif
