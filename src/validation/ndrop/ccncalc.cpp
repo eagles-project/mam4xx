@@ -15,36 +15,143 @@ using namespace mam4;
 void ccncalc(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
 
-#if 0    
+    // number of vertical points. 
     const Real zero = 0;
-    Real scavratenum = zero;
-    Real scavratevol = zero;
-    const Real state_q_db = input.get_array("state_q");
-    const Real tar_db = input.get_array("tair");
-    const Real rhoaero = input.get_array("rhoaero")[0];
-    const Real temp = input.get_array("temp")[0];
-    const Real press = input.get_array("press")[0];
+    const int maxd_aspectype = 14;
+    const int ntot_amode = 4;
+    const int nvars = 40;
 
+    const int pver = input.get_array("pver")[0];
+    const auto state_q_db = input.get_array("state_q");
+     
+    const auto tair_db = input.get_array("temp");
+    const auto pmid_db = input.get_array("pmid");
 
-    ccncalc(state_q,
-            tair,
+    // ColumnView state_q[nvars];
+    
+    // for (int i = 0; i < nvars; ++i)
+    //  {
+    //    state_q[i] = haero::testing::create_column_view(pver);
+    //  } 
+    
+    int count=0;
+    // for (int i = 0; i < nvars; ++i)
+    // {
+    //   for (int kk = 0; kk < pver; ++kk)
+    //   {
+    //     state_q[i](kk) = state_q_db[count];
+    //     count++;
+    //   }
+    // }
+
+    // ColumnView tair;
+    // ColumnView pmid;
+    // tair = haero::testing::create_column_view(pver);
+    // pmid = haero::testing::create_column_view(pver);
+    // // FIXME. Find a better way of doing this:
+    // for (int kk = 0; kk < pver; ++kk)
+    // {
+    //    tair(kk) = tair_db[kk];
+    //    pmid(kk) = pmid_db[kk];
+    // }  
+    
+    Real qcldbrn[maxd_aspectype][ntot_amode] = {{zero}}; 
+    Real qcldbrn_num[ntot_amode] ={zero};
+
+    const auto lspectype_amode_db = input.get_array("lspectype_amode"); 
+    int lspectype_amode[maxd_aspectype][ntot_amode] = {};
+
+    const auto lmassptr_amode_db = input.get_array("lmassptr_amode");
+    int lmassptr_amode[maxd_aspectype][ntot_amode] = {};
+
+    const auto specdens_amode_db = input.get_array("specdens_amode");
+    const auto spechygro_db = input.get_array("spechygro");
+
+    count=0;
+    for (int i = 0; i < ntot_amode; ++i)
+    {
+      for (int j = 0; j < maxd_aspectype; ++j)
+      {
+        lspectype_amode[j][i] = lspectype_amode_db[count];
+        lmassptr_amode[j][i] = lspectype_amode_db[count];
+        count++;
+      }
+    }
+
+    const auto voltonumbhi_amode = input.get_array("voltonumbhi_amode");
+    const auto voltonumblo_amode = input.get_array("voltonumblo_amode");
+    const auto numptr_amode_db = input.get_array("numptr_amode");
+    const auto nspec_amode_db  = input.get_array("nspec_amode");
+
+    int numptr_amode[ntot_amode];
+    int nspec_amode[ntot_amode];
+    for (int i = 0; i < ntot_amode; ++i)
+    {
+      numptr_amode[i] = numptr_amode_db[i];
+      nspec_amode[i] = nspec_amode_db[i];
+    }
+
+    // ColumnView ccn[6];
+
+    // for (int i = 0; i < 6; ++i)
+    // {
+    //   ccn[i] = haero::testing::create_column_view(pver);
+    // }
+
+    std::vector<std::vector<Real>> ccn(6);
+
+    for (int i = 0; i < 6; ++i)
+    {
+      std::vector<Real> temp;
+      ccn[i] =temp;
+    }
+
+    // FIXME: use a Kokkos:parallel_for which requires to transfer data from host to device. 
+    for (int kk = 0; kk < pver; ++kk)
+    {
+
+      Real state_q_kk[nvars] = {zero}; 
+      int c1 =0;
+      for (int i = 0; i < nvars; ++i)
+      {
+        // state_q_kk[i] = state_q[i](kk);
+        state_q_kk[i] = state_q_db[c1];
+        c1++;
+      }
+
+      Real air_density =
+      conversions::density_of_ideal_gas(tair_db[kk], pmid_db[kk] );
+
+      Real ccn_kk[6] = {};
+
+      ndrop_od::ccncalc(state_q_kk,
+            tair_db[kk],
             qcldbrn,
             qcldbrn_num,
             air_density,
             lspectype_amode,
-            specdens_amode,
-            spechygro,
+            specdens_amode_db.data(),
+            spechygro_db.data(),
             lmassptr_amode,
-            voltonumbhi_amode,
-            voltonumblo_amode,
+            voltonumbhi_amode.data(),
+            voltonumblo_amode.data(),
             numptr_amode,
             nspec_amode,
-            ccn); 
+            ccn_kk); 
 
+      for (int i = 0; i < 6; ++i)
+      {
+       ccn[i].push_back(ccn_kk[i]); 
+      }
 
-    output.set("scavratenum", std::vector(1, scavratenum));
-    output.set("scavratevol", std::vector(1, scavratevol));
-#endif
+    } // end kk
+
+    for (int i = 0; i < 6; ++i)
+    {
+      output.set("ccn_"+std::to_string(i+1), ccn[i]);
+    }
+    
+
 
   });
 }

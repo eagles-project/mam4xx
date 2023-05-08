@@ -23,11 +23,13 @@ endforeach()
 
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
+    ccncalc_ts_1417
     )
 
 set(DEFAULT_TOL 1e-11)
 
-set(ERROR_THRESHOLDS  
+set(ERROR_THRESHOLDS
+    ${DEFAULT_TOL}  
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
