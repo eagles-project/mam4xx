@@ -114,7 +114,8 @@ void maxsat(
     return;
 
   for (int m = 0; m < nmode; m++) {
-    f1[m] = 0.5 * haero::exp(2.5 * haero::square(haero::log(modes(m).mean_std_dev))); 
+    f1[m] = 0.5 *
+            haero::exp(2.5 * haero::square(haero::log(modes(m).mean_std_dev)));
     f2[m] = 1.0 + 0.25 * haero::log(modes(m).mean_std_dev);
     if (eta[m] > small) {
       g1 = (zeta / eta[m]) * haero::sqrt(zeta / eta[m]);
@@ -122,7 +123,7 @@ void maxsat(
            haero::sqrt(smc[m] / haero::sqrt(eta[m] + 3.0 * zeta));
       sum += (f1[m] * g1 + f2[m] * g2) / (smc[m] * smc[m]);
     } else {
-      sum = big; 
+      sum = big;
     }
   }
   smax = 1.0 / haero::sqrt(sum);
