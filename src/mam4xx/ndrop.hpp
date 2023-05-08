@@ -71,7 +71,7 @@ void explmix(
                         (ek_km1 * ((overlap_km1 * qold_k) - qold_k))));
   }
   // force to non-negative
-  q = max(q, 0);
+  q = haero::max(q, 0);
 } // end explmix
 
 // calculates maximum supersaturation for multiple
@@ -79,26 +79,29 @@ void explmix(
 // Abdul-Razzak and Ghan, A parameterization of aerosol activation.
 // 2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
 KOKKOS_INLINE_FUNCTION
-void maxsat(const Real zeta,   // [dimensionless]
-            const Real eta[4], // [dimensionless]
-            const Real nmode,  // modes
-            const Real smc[4], // critical supersaturation for number mode
-                               // radius [fraction]
-            Real &smax         // maximum supersaturation [fraction] (output)
+void maxsat(
+    const Real zeta,                         // [dimensionless]
+    const Real eta[AeroConfig::num_modes()], // [dimensionless]
+    const Real nmode,                        // number of modes
+    const Real smc[AeroConfig::num_modes()], // critical supersaturation for
+                                             // number mode radius [fraction]
+    Real &smax // maximum supersaturation [fraction] (output)
 ) {
   // abdul-razzak functions of width
   Real f1[AeroConfig::num_modes()];
   Real f2[AeroConfig::num_modes()];
 
+  Real const small = 1e-20;     /*FIXME: BAD CONSTANT*/
+  Real const mid = 1e5;         /*FIXME: BAD CONSTANT*/
+  Real const big = 1.0 / small; /*FIXME: BAD CONSTANT*/
   Real sum = 0;
   Real g1, g2;
   bool weak_forcing = true; // whether forcing is sufficiently weak or not
 
   for (int m = 0; m < nmode; m++) {
-    if (zeta > 1e5 /*FIXME: BAD CONSTANT*/ * eta[m] ||
-        smc[m] * smc[m] > 1e5 /*FIXME: BAD CONSTANT*/ * eta[m]) {
+    if (zeta > mid * eta[m] || smc[m] * smc[m] > mid * eta[m]) {
       // weak forcing. essentially none activated
-      smax = 1e-20; /*FIXME: BAD CONSTANT*/
+      smax = small;
     } else {
       // significant activation of this mode. calc activation of all modes.
       weak_forcing = false;
@@ -106,6 +109,7 @@ void maxsat(const Real zeta,   // [dimensionless]
     }
   }
 
+  // if the forcing is weak, return
   if (weak_forcing)
     return;
 
@@ -113,13 +117,13 @@ void maxsat(const Real zeta,   // [dimensionless]
     f1[m] = 0.5 * haero::exp(2.5 * haero::log(modes(m).mean_std_dev) *
                              haero::log(modes(m).mean_std_dev));
     f2[m] = 1.0 + 0.25 * haero::log(modes(m).mean_std_dev);
-    if (eta[m] > 1e-20 /*FIXME: BAD CONSTANT*/) {
+    if (eta[m] > small) {
       g1 = (zeta / eta[m]) * haero::sqrt(zeta / eta[m]);
       g2 = (smc[m] / haero::sqrt(eta[m] + 3.0 * zeta)) *
            haero::sqrt(smc[m] / haero::sqrt(eta[m] + 3.0 * zeta));
       sum += (f1[m] * g1 + f2[m] * g2) / (smc[m] * smc[m]);
     } else {
-      sum = 1e20; /*FIXME: BAD CONSTANT*/
+      sum = big; /*FIXME: BAD CONSTANT*/
     }
   }
   smax = 1.0 / haero::sqrt(sum);

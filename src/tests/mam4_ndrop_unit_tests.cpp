@@ -200,8 +200,8 @@ TEST_CASE("test_maxsat", "mam4_ndrop") {
   logger.info("nmodes = {}", nmodes);
 
   Real zeta = 0;
-  Real eta[4];
-  Real smc[4];
+  Real eta[nmodes];
+  Real smc[nmodes];
   Real smax = 0;
 
   // set up smoketest values
