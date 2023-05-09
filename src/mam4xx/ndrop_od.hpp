@@ -48,17 +48,26 @@ void get_aer_mmr_sum(const int imode,
   // !Start to compute bulk volume conc / hygroscopicity by summing over species
   // per mode.
   for (int lspec = 0; lspec < nspec; ++lspec) {
-    const int type_idx = lspectype_amode[lspec][imode];
+    // Fortran indexing to C++
+    const int type_idx = lspectype_amode[lspec][imode] -1;
     // density at species / mode indices [kg/m3]
     const Real density_sp = specdens_amode[type_idx]; //! species density
     // hygroscopicity at species / mode indices [dimensionless]
     const Real hygro_sp = spechygro[type_idx]; // !species hygroscopicity
+    // Fortran indexing to C++
     const int spc_idx =
-        lmassptr_amode[lspec][imode]; //! index of species in state_q array
+        lmassptr_amode[lspec][imode] -1 ; //! index of species in state_q array
     // !aerosol volume mixing ratio [m3/kg]
-    vaerosolsum_icol += haero::max(state_q[spc_idx] + qcldbrn1d[lspec], zero) /
-                        density_sp;               // !volume = mmr/density
-    hygrosum_icol += vaerosolsum_icol * hygro_sp; // !bulk hygroscopicity
+    // printf("type_idx %d \n", type_idx); 
+    // printf("density_sp %e \n", density_sp); 
+    // printf("hygro_sp %e \n", hygro_sp); 
+    // printf("spc_idx %d \n", spc_idx); 
+    printf("state_q(spc_idx) %e \n", state_q[spc_idx]);
+    // printf("qcldbrn1d(lspec) %e \n", qcldbrn1d[lspec]);
+    const Real vol= haero::max(state_q[spc_idx] + qcldbrn1d[lspec], zero) /
+                        density_sp;               // !volume = mmr/density   
+    vaerosolsum_icol +=vol;              
+    hygrosum_icol += vol * hygro_sp; // !bulk hygroscopicity
   }                                               // end
 
 } // end get_aer_mmr_sum
@@ -162,9 +171,12 @@ void loadaer(const Real state_q[nvars],
     for (int ispec = 0; ispec < nspec; ++ispec) {
       qcldbrn1d_imode[ispec] = qcldbrn1d[imode][ispec];
     }
+
     get_aer_mmr_sum(imode, nspec, state_q, qcldbrn1d_imode, lspectype_amode,
                     specdens_amode, spechygro, lmassptr_amode, vaerosolsum,
                     hygrosum);
+
+    // printf("hygrosum[%d] %e \n", imode, hygrosum);
 
     //  Finalize computation of bulk hygrospopicity and volume conc
     if (vaerosolsum > even_smaller_val) {
@@ -176,7 +188,8 @@ void loadaer(const Real state_q[nvars],
     } //
 
     // ! Compute aerosol number concentration
-    const int num_idx = numptr_amode[imode];
+    // Fortran indexing to C++
+    const int num_idx = numptr_amode[imode] -1 ;
     get_aer_num(voltonumbhi_amode[imode], voltonumblo_amode[imode], num_idx,
                 state_q, air_density, vaerosol[imode], qcldbrn1d_num[imode],
                 naerosol[imode]);
@@ -241,6 +254,7 @@ void ccncalc(
   for (int imode = 0; imode < 4; ++imode) {
     alogsig[imode] = haero::log(modes(imode).mean_std_dev);
     exp45logsig[imode] = haero::exp(4.5 * alogsig[imode] * alogsig[imode]);
+    // printf("exp45logsig[imode] %e \n", exp45logsig[imode]);
   } // imode
   const Real sq2 = haero::sqrt(2.);
   //
@@ -284,6 +298,16 @@ void ccncalc(
           naerosol,
           vaerosol,
           hygro);
+  
+
+  // printf("hygro ");
+  // for (int i = 0; i < 4; ++i)
+  // {
+  //   printf("%e ", hygro[i]);
+  // }
+
+  // printf("\n");
+  
 
   ccn[psat] = {zero};
   for (int imode = 0; imode < nmodes; ++imode) {
