@@ -32,31 +32,38 @@ void ccncalc(Ensemble *ensemble) {
 
     ColumnView state_q[nvars];
     
-    for (int i = 0; i < nvars; ++i)
-     {
-       state_q[i] = haero::testing::create_column_view(pver);
-     } 
-    
     int count=0;
     for (int i = 0; i < nvars; ++i)
     {
+      state_q[i] = haero::testing::create_column_view(pver);
+      // input data is store on the cpu.
+      auto state_q_i_host = Kokkos::create_mirror_view(state_q[i]);
       for (int kk = 0; kk < pver; ++kk)
       {
-        state_q[i](kk) = state_q_db[count];
+        state_q_i_host(kk) = state_q_db[count];
         count++;
       }
+      // transfer data to GPU. 
+      Kokkos::deep_copy(state_q[i], state_q_i_host);
+
     }
 
     ColumnView tair;
     ColumnView pmid;
     tair = haero::testing::create_column_view(pver);
     pmid = haero::testing::create_column_view(pver);
+
+    auto tair_host = Kokkos::create_mirror_view(tair);
+    auto pmid_host = Kokkos::create_mirror_view(pmid);
+
     // // FIXME. Find a better way:
     for (int kk = 0; kk < pver; ++kk)
     {
-       tair(kk) = tair_db[kk];
-       pmid(kk) = pmid_db[kk];
-    }  
+       tair_host(kk) = tair_db[kk];
+       pmid_host(kk) = pmid_db[kk];
+    }
+    Kokkos::deep_copy(tair, tair_host); 
+    Kokkos::deep_copy(pmid, pmid_host);  
     
     Real qcldbrn[maxd_aspectype][ntot_amode] = {{zero}}; 
     Real qcldbrn_num[ntot_amode] ={zero};
@@ -66,9 +73,6 @@ void ccncalc(Ensemble *ensemble) {
 
     const auto lmassptr_amode_db = input.get_array("lmassptr_amode");
     int lmassptr_amode[maxd_aspectype][ntot_amode] = {};
-
-    const auto specdens_amode_db = input.get_array("specdens_amode");
-    const auto spechygro_db = input.get_array("spechygro");
 
     count=0;
     for (int i = 0; i < ntot_amode; ++i)
@@ -81,10 +85,20 @@ void ccncalc(Ensemble *ensemble) {
       }
     }
 
-    const auto voltonumbhi_amode = input.get_array("voltonumbhi_amode");
-    const auto voltonumblo_amode = input.get_array("voltonumblo_amode");
+    const auto specdens_amode_db = input.get_array("specdens_amode");
+    const auto spechygro_db = input.get_array("spechygro");
+
+    const auto specdens_amode = specdens_amode_db.data();
+    const auto spechygro = spechygro_db.data();
+
+
+    const auto voltonumbhi_amode_db = input.get_array("voltonumbhi_amode");
+    const auto voltonumblo_amode_db = input.get_array("voltonumblo_amode");
     const auto numptr_amode_db = input.get_array("numptr_amode");
     const auto nspec_amode_db  = input.get_array("nspec_amode");
+
+    const auto voltonumbhi_amode = voltonumbhi_amode_db.data();
+    const auto voltonumblo_amode = voltonumblo_amode_db.data();
 
     int numptr_amode[ntot_amode];
     int nspec_amode[ntot_amode];
@@ -101,18 +115,18 @@ void ccncalc(Ensemble *ensemble) {
       ccn[i] = haero::testing::create_column_view(pver);
     }
 
-    // FIXME: use a Kokkos:parallel_for which requires to transfer data from host to device. 
-    for (int kk = top_lev; kk < pver; ++kk)
-    {
-
+    Kokkos::parallel_for(
+        "ccncalc", pver-top_lev, KOKKOS_LAMBDA(int k) {
+      // k begins at 0          
+      const int kk = k+top_lev;
       Real state_q_kk[nvars] = {zero}; 
       for (int i = 0; i < nvars; ++i)
       {
         state_q_kk[i] = state_q[i](kk);
       }
 
-      Real air_density =
-      conversions::density_of_ideal_gas(tair_db[kk], pmid_db[kk] );
+      const Real air_density =
+      conversions::density_of_ideal_gas(tair(kk), pmid(kk) );
 
       Real ccn_kk[psat] = {zero};
 
@@ -122,32 +136,34 @@ void ccncalc(Ensemble *ensemble) {
             qcldbrn_num,
             air_density,
             lspectype_amode,
-            specdens_amode_db.data(),
-            spechygro_db.data(),
+            specdens_amode,
+            spechygro,
             lmassptr_amode,
-            voltonumbhi_amode.data(),
-            voltonumblo_amode.data(),
+            voltonumbhi_amode,
+            voltonumblo_amode,
             numptr_amode,
             nspec_amode,
             ccn_kk); 
-
-      
-
       for (int i = 0; i < psat; ++i)
       {
        ccn[i](kk) = ccn_kk[i]; 
       }
 
-    } // end kk
-    
+    });
     
 
-    // printf("ccn(%d) 0 %e \n",top_lev, ccn[0][top_lev]);
+    for (int i = 0; i < psat; ++i)
+    {
+      auto ccn_i_host = Kokkos::create_mirror_view(ccn[i]);
+      Kokkos::deep_copy(ccn_i_host, ccn[i]);  
+      std::vector<Real> ccn_v(pver);
+      for (int kk = 0; kk < pver; ++kk)
+      {
+        ccn_v[kk] = ccn_i_host(kk);
+      }
 
-    // for (int i = 0; i < 6; ++i)
-    // {
-    //   output.set("ccn_"+std::to_string(i+1), ccn[i]);
-    // }
+      output.set("ccn_"+std::to_string(i+1), ccn_v);
+    }
     
   });
 }
