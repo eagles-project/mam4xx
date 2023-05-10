@@ -26,6 +26,7 @@ install(FILES
         utils.hpp
         ndrop.hpp
         ndrop_od.hpp
+        ndrop_mjs.hpp
         vehkamaki2002.hpp
         wang2008.hpp
         hetfrz.hpp
