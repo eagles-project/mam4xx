@@ -62,7 +62,7 @@ void get_aer_mmr_sum(const int imode,
     // printf("density_sp %e \n", density_sp); 
     // printf("hygro_sp %e \n", hygro_sp); 
     // printf("spc_idx %d \n", spc_idx); 
-    printf("state_q(spc_idx) %e \n", state_q[spc_idx]);
+    // printf("state_q(spc_idx) %e \n", state_q[spc_idx]);
     // printf("qcldbrn1d(lspec) %e \n", qcldbrn1d[lspec]);
     const Real vol= haero::max(state_q[spc_idx] + qcldbrn1d[lspec], zero) /
                         density_sp;               // !volume = mmr/density   
@@ -73,8 +73,8 @@ void get_aer_mmr_sum(const int imode,
 } // end get_aer_mmr_sum
 
 KOKKOS_INLINE_FUNCTION
-void get_aer_num(const int voltonumbhi_amode,
-                 const int voltonumblo_amode,
+void get_aer_num(const Real voltonumbhi_amode,
+                 const Real voltonumblo_amode,
                  const int num_idx,
                  const Real state_q[nvars],
                  const Real air_density,
@@ -96,9 +96,18 @@ void get_aer_num(const int voltonumbhi_amode,
   // FIXME: num_idx for state_q: does this array contain only species?
   // or contains both species and modes concentrations ?
   naerosol = (state_q[num_idx] + qcldbrn1d_num) * air_density;
+
+  // printf(" Before naerosol %e \n", naerosol);
+  // printf("state_q[%d] %e \n", num_idx, state_q[num_idx]);
+  // printf("air_density %e \n", air_density);
+  // printf("vaerosol %e \n", vaerosol);
+  // printf("voltonumbhi_amode %e \n", voltonumbhi_amode);
+  // printf("vaerosol * voltonumbhi_amode %e \n", vaerosol * voltonumbhi_amode);
+  // printf("vaerosol * vaerosol * voltonumblo_amode %e \n", vaerosol * voltonumblo_amode);
   //! adjust number so that dgnumlo < dgnum < dgnumhi
   naerosol = utils::min_max_bound(vaerosol * voltonumbhi_amode,
                                   vaerosol * voltonumblo_amode, naerosol);
+  // printf(" After naerosol %e \n", naerosol);
 
 } // end get_aer_num
 
@@ -194,6 +203,8 @@ void loadaer(const Real state_q[nvars],
                 state_q, air_density, vaerosol[imode], qcldbrn1d_num[imode],
                 naerosol[imode]);
 
+
+
   } // end imode
 
 } // loadaer
@@ -268,7 +279,7 @@ void ccncalc(
   // supersaturation [fraction]
   const Real super[psat] = {
       0.0002, 0.0005, 0.001, 0.002,
-      0.005,  0.001}; //& ! supersaturation (%) to determine ccn concentration
+      0.005,  0.01}; //& ! supersaturation (%) to determine ccn concentration
   //  [m-K]
   const Real surften_coef = 2. * mwh2o * surften / (r_universal * rhoh2o);
 
@@ -309,7 +320,9 @@ void ccncalc(
   // printf("\n");
   
 
-  ccn[psat] = {zero};
+  for (int lsat = 0; lsat < psat; ++lsat) {
+    ccn[lsat] = {zero};
+  }  
   for (int imode = 0; imode < nmodes; ++imode) {
     // here we assume that value shouldn't matter much since naerosol is small
     // endwhere
@@ -328,9 +341,23 @@ void ccncalc(
       // [dimensionless]
       const Real arg_erf_ccn = argfactor_imode * haero::log(sm / super[lsat]);
       ccn[lsat] += naerosol[imode] * 0.5 * (1. - haero::erf(arg_erf_ccn));
+      if (lsat==5)
+      {
+      // printf("lsat %d \n", lsat);
+      // printf( "argfactor(imode) %e \n", argfactor_imode);
+      // printf( "sm %e \n", sm);
+      // printf( "haero::log(sm / super[lsat]) %e \n", haero::log(sm / super[lsat]));
+      // printf( "super(lsat)) %e \n", super[lsat]);   
+      // printf("arg_erf_ccn %e \n", arg_erf_ccn);
+      // // printf("naerosol[%d] %e \n", imode, naerosol[imode]);
+      // printf("ccn[%d] %e \n", lsat, ccn[lsat]);
+
+      }
     }
 
   } // imode end
+
+  // printf(" Before ccn[lsat] %e \n", ccn[5]);
 
   for (int lsat = 0; lsat < psat; ++lsat) {
     ccn[lsat] *= per_m3_to_per_cm3; // ! convert from #/m3 to #/cm3

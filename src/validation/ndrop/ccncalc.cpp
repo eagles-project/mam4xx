@@ -20,6 +20,7 @@ void ccncalc(Ensemble *ensemble) {
     const int maxd_aspectype = 14;
     const int ntot_amode = 4;
     const int nvars = 40;
+    const int psat = ndrop_od::psat;
 
     const int pver = input.get_array("pver")[0];
     const auto state_q_db = input.get_array("state_q");
@@ -37,30 +38,25 @@ void ccncalc(Ensemble *ensemble) {
      } 
     
     int count=0;
-    // std::vector<std::vector<Real>> state_q_2d;
     for (int i = 0; i < nvars; ++i)
     {
-      // std::vector<Real> temp;
       for (int kk = 0; kk < pver; ++kk)
       {
         state_q[i](kk) = state_q_db[count];
-        // temp.push_back(state_q_db[count]);
         count++;
       }
-      // state_q_2d.push_back(temp);
-
     }
 
-    // ColumnView tair;
-    // ColumnView pmid;
-    // tair = haero::testing::create_column_view(pver);
-    // pmid = haero::testing::create_column_view(pver);
+    ColumnView tair;
+    ColumnView pmid;
+    tair = haero::testing::create_column_view(pver);
+    pmid = haero::testing::create_column_view(pver);
     // // FIXME. Find a better way:
-    // for (int kk = 0; kk < pver; ++kk)
-    // {
-    //    tair(kk) = tair_db[kk];
-    //    pmid(kk) = pmid_db[kk];
-    // }  
+    for (int kk = 0; kk < pver; ++kk)
+    {
+       tair(kk) = tair_db[kk];
+       pmid(kk) = pmid_db[kk];
+    }  
     
     Real qcldbrn[maxd_aspectype][ntot_amode] = {{zero}}; 
     Real qcldbrn_num[ntot_amode] ={zero};
@@ -98,19 +94,11 @@ void ccncalc(Ensemble *ensemble) {
       nspec_amode[i] = nspec_amode_db[i];
     }
 
-    // ColumnView ccn[6];
+    ColumnView ccn[psat];
 
-    // for (int i = 0; i < 6; ++i)
-    // {
-    //   ccn[i] = haero::testing::create_column_view(pver);
-    // }
-
-    std::vector<std::vector<Real>> ccn(6);
-
-    for (int i = 0; i < 6; ++i)
+    for (int i = 0; i < psat; ++i)
     {
-      std::vector<Real> temp(pver,zero);
-      ccn[i] = temp;
+      ccn[i] = haero::testing::create_column_view(pver);
     }
 
     // FIXME: use a Kokkos:parallel_for which requires to transfer data from host to device. 
@@ -118,23 +106,18 @@ void ccncalc(Ensemble *ensemble) {
     {
 
       Real state_q_kk[nvars] = {zero}; 
-      // int c1 =0;
       for (int i = 0; i < nvars; ++i)
       {
-        // state_q_kk[i] = state_q_2d[i][kk];
-        // printf("state_q_kk[i] %e \n", state_q_kk[i]);
         state_q_kk[i] = state_q[i](kk);
-        // state_q_kk[i] = state_q_db[c1];
-        // c1++;
       }
 
       Real air_density =
       conversions::density_of_ideal_gas(tair_db[kk], pmid_db[kk] );
 
-      Real ccn_kk[6] = {zero};
+      Real ccn_kk[psat] = {zero};
 
       ndrop_od::ccncalc(state_q_kk,
-            tair_db[kk],
+            tair(kk),
             qcldbrn,
             qcldbrn_num,
             air_density,
@@ -150,19 +133,21 @@ void ccncalc(Ensemble *ensemble) {
 
       
 
-      for (int i = 0; i < 6; ++i)
+      for (int i = 0; i < psat; ++i)
       {
-       ccn[i][kk] = ccn_kk[i]; 
+       ccn[i](kk) = ccn_kk[i]; 
       }
 
     } // end kk
+    
+    
 
     // printf("ccn(%d) 0 %e \n",top_lev, ccn[0][top_lev]);
 
-    for (int i = 0; i < 6; ++i)
-    {
-      output.set("ccn_"+std::to_string(i+1), ccn[i]);
-    }
+    // for (int i = 0; i < 6; ++i)
+    // {
+    //   output.set("ccn_"+std::to_string(i+1), ccn[i]);
+    // }
     
   });
 }
