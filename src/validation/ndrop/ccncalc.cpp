@@ -14,8 +14,7 @@ using namespace mam4;
 
 void ccncalc(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-
-    // number of vertical points. 
+    // number of vertical points.
     const Real zero = 0;
     const int maxd_aspectype = 14;
     const int ntot_amode = 4;
@@ -24,28 +23,25 @@ void ccncalc(Ensemble *ensemble) {
 
     const int pver = input.get_array("pver")[0];
     const auto state_q_db = input.get_array("state_q");
-     
+
     const auto tair_db = input.get_array("temp");
     const auto pmid_db = input.get_array("pmid");
 
     const int top_lev = 6;
 
     ColumnView state_q[nvars];
-    
-    int count=0;
-    for (int i = 0; i < nvars; ++i)
-    {
+
+    int count = 0;
+    for (int i = 0; i < nvars; ++i) {
       state_q[i] = haero::testing::create_column_view(pver);
       // input data is store on the cpu.
       auto state_q_i_host = Kokkos::create_mirror_view(state_q[i]);
-      for (int kk = 0; kk < pver; ++kk)
-      {
+      for (int kk = 0; kk < pver; ++kk) {
         state_q_i_host(kk) = state_q_db[count];
         count++;
       }
-      // transfer data to GPU. 
+      // transfer data to GPU.
       Kokkos::deep_copy(state_q[i], state_q_i_host);
-
     }
 
     ColumnView tair;
@@ -57,28 +53,25 @@ void ccncalc(Ensemble *ensemble) {
     auto pmid_host = Kokkos::create_mirror_view(pmid);
 
     // // FIXME. Find a better way:
-    for (int kk = 0; kk < pver; ++kk)
-    {
-       tair_host(kk) = tair_db[kk];
-       pmid_host(kk) = pmid_db[kk];
+    for (int kk = 0; kk < pver; ++kk) {
+      tair_host(kk) = tair_db[kk];
+      pmid_host(kk) = pmid_db[kk];
     }
-    Kokkos::deep_copy(tair, tair_host); 
-    Kokkos::deep_copy(pmid, pmid_host);  
-    
-    Real qcldbrn[maxd_aspectype][ntot_amode] = {{zero}}; 
-    Real qcldbrn_num[ntot_amode] ={zero};
+    Kokkos::deep_copy(tair, tair_host);
+    Kokkos::deep_copy(pmid, pmid_host);
 
-    const auto lspectype_amode_db = input.get_array("lspectype_amode"); 
+    Real qcldbrn[maxd_aspectype][ntot_amode] = {{zero}};
+    Real qcldbrn_num[ntot_amode] = {zero};
+
+    const auto lspectype_amode_db = input.get_array("lspectype_amode");
     int lspectype_amode[maxd_aspectype][ntot_amode] = {};
 
     const auto lmassptr_amode_db = input.get_array("lmassptr_amode");
     int lmassptr_amode[maxd_aspectype][ntot_amode] = {};
 
-    count=0;
-    for (int i = 0; i < ntot_amode; ++i)
-    {
-      for (int j = 0; j < maxd_aspectype; ++j)
-      {
+    count = 0;
+    for (int i = 0; i < ntot_amode; ++i) {
+      for (int j = 0; j < maxd_aspectype; ++j) {
         lspectype_amode[j][i] = lspectype_amode_db[count];
         lmassptr_amode[j][i] = lmassptr_amode_db[count];
         count++;
@@ -91,79 +84,60 @@ void ccncalc(Ensemble *ensemble) {
     const auto specdens_amode = specdens_amode_db.data();
     const auto spechygro = spechygro_db.data();
 
-
     const auto voltonumbhi_amode_db = input.get_array("voltonumbhi_amode");
     const auto voltonumblo_amode_db = input.get_array("voltonumblo_amode");
     const auto numptr_amode_db = input.get_array("numptr_amode");
-    const auto nspec_amode_db  = input.get_array("nspec_amode");
+    const auto nspec_amode_db = input.get_array("nspec_amode");
 
     const auto voltonumbhi_amode = voltonumbhi_amode_db.data();
     const auto voltonumblo_amode = voltonumblo_amode_db.data();
 
     int numptr_amode[ntot_amode];
     int nspec_amode[ntot_amode];
-    for (int i = 0; i < ntot_amode; ++i)
-    {
+    for (int i = 0; i < ntot_amode; ++i) {
       numptr_amode[i] = numptr_amode_db[i];
       nspec_amode[i] = nspec_amode_db[i];
     }
 
     ColumnView ccn[psat];
 
-    for (int i = 0; i < psat; ++i)
-    {
+    for (int i = 0; i < psat; ++i) {
       ccn[i] = haero::testing::create_column_view(pver);
     }
 
     Kokkos::parallel_for(
-        "ccncalc", pver-top_lev, KOKKOS_LAMBDA(int k) {
-      // k begins at 0          
-      const int kk = k+top_lev;
-      Real state_q_kk[nvars] = {zero}; 
-      for (int i = 0; i < nvars; ++i)
-      {
-        state_q_kk[i] = state_q[i](kk);
-      }
+        "ccncalc", pver - top_lev, KOKKOS_LAMBDA(int k) {
+          // k begins at 0
+          const int kk = k + top_lev;
+          Real state_q_kk[nvars] = {zero};
+          for (int i = 0; i < nvars; ++i) {
+            state_q_kk[i] = state_q[i](kk);
+          }
 
-      const Real air_density =
-      conversions::density_of_ideal_gas(tair(kk), pmid(kk) );
+          const Real air_density =
+              conversions::density_of_ideal_gas(tair(kk), pmid(kk));
 
-      Real ccn_kk[psat] = {zero};
+          Real ccn_kk[psat] = {zero};
 
-      ndrop_od::ccncalc(state_q_kk,
-            tair(kk),
-            qcldbrn,
-            qcldbrn_num,
-            air_density,
-            lspectype_amode,
-            specdens_amode,
-            spechygro,
-            lmassptr_amode,
-            voltonumbhi_amode,
-            voltonumblo_amode,
-            numptr_amode,
-            nspec_amode,
-            ccn_kk); 
-      for (int i = 0; i < psat; ++i)
-      {
-       ccn[i](kk) = ccn_kk[i]; 
-      }
+          ndrop_od::ccncalc(state_q_kk, tair(kk), qcldbrn, qcldbrn_num,
+                            air_density, lspectype_amode, specdens_amode,
+                            spechygro, lmassptr_amode, voltonumbhi_amode,
+                            voltonumblo_amode, numptr_amode, nspec_amode,
+                            ccn_kk);
+          for (int i = 0; i < psat; ++i) {
+            ccn[i](kk) = ccn_kk[i];
+          }
+        });
 
-    });
-    
-
-    for (int i = 0; i < psat; ++i)
-    {
+    for (int i = 0; i < psat; ++i) {
       auto ccn_i_host = Kokkos::create_mirror_view(ccn[i]);
-      Kokkos::deep_copy(ccn_i_host, ccn[i]);  
+      Kokkos::deep_copy(ccn_i_host, ccn[i]);
       std::vector<Real> ccn_v(pver);
-      for (int kk = 0; kk < pver; ++kk)
-      {
+      for (int kk = 0; kk < pver; ++kk) {
         ccn_v[kk] = ccn_i_host(kk);
       }
 
-      output.set("ccn_"+std::to_string(i+1), ccn_v);
+      output.set("ccn_" + std::to_string(i + 1), ccn_v);
     }
-    
   });
 }

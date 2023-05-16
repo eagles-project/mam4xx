@@ -9,29 +9,28 @@
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/mam4_types.hpp>
+#include <mam4xx/ndrop.hpp>
 #include <mam4xx/utils.hpp>
+#include <mam4xx/wv_sat_methods.hpp>
 
 namespace mam4 {
 
 namespace ndrop_od {
 
-
 const int psat = 6; //  ! number of supersaturations to calc ccn concentration
-// FIXME: ask about state_q. Is it a prognostic variable? 
+// FIXME: ask about state_q. Is it a prognostic variable?
 const int nvars = 40;
 const int maxd_aspectype = 14;
 
 KOKKOS_INLINE_FUNCTION
-void get_aer_mmr_sum(const int imode,
-                     const int nspec,
-                     const Real state_q[nvars],
-                     const Real qcldbrn1d[maxd_aspectype],
-                     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-                     const Real specdens_amode[maxd_aspectype],
-                     const Real spechygro[maxd_aspectype],
-                     const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
-                     Real &vaerosolsum_icol,
-                     Real &hygrosum_icol) {
+void get_aer_mmr_sum(
+    const int imode, const int nspec, const Real state_q[nvars],
+    const Real qcldbrn1d[maxd_aspectype],
+    const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
+    const Real specdens_amode[maxd_aspectype],
+    const Real spechygro[maxd_aspectype],
+    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
+    Real &vaerosolsum_icol, Real &hygrosum_icol) {
   // add these for direct access to mmr (in state_q array), density and
   // hygroscopicity use modal_aero_data,   only: lspectype_amode,
   // specdens_amode, spechygro, lmassptr_amode
@@ -49,38 +48,34 @@ void get_aer_mmr_sum(const int imode,
   // per mode.
   for (int lspec = 0; lspec < nspec; ++lspec) {
     // Fortran indexing to C++
-    const int type_idx = lspectype_amode[lspec][imode] -1;
+    const int type_idx = lspectype_amode[lspec][imode] - 1;
     // density at species / mode indices [kg/m3]
     const Real density_sp = specdens_amode[type_idx]; //! species density
     // hygroscopicity at species / mode indices [dimensionless]
     const Real hygro_sp = spechygro[type_idx]; // !species hygroscopicity
     // Fortran indexing to C++
     const int spc_idx =
-        lmassptr_amode[lspec][imode] -1 ; //! index of species in state_q array
+        lmassptr_amode[lspec][imode] - 1; //! index of species in state_q array
     // !aerosol volume mixing ratio [m3/kg]
-    // printf("type_idx %d \n", type_idx); 
-    // printf("density_sp %e \n", density_sp); 
-    // printf("hygro_sp %e \n", hygro_sp); 
-    // printf("spc_idx %d \n", spc_idx); 
+    // printf("type_idx %d \n", type_idx);
+    // printf("density_sp %e \n", density_sp);
+    // printf("hygro_sp %e \n", hygro_sp);
+    // printf("spc_idx %d \n", spc_idx);
     // printf("state_q(spc_idx) %e \n", state_q[spc_idx]);
     // printf("qcldbrn1d(lspec) %e \n", qcldbrn1d[lspec]);
-    const Real vol= haero::max(state_q[spc_idx] + qcldbrn1d[lspec], zero) /
-                        density_sp;               // !volume = mmr/density   
-    vaerosolsum_icol +=vol;              
+    const Real vol = haero::max(state_q[spc_idx] + qcldbrn1d[lspec], zero) /
+                     density_sp; // !volume = mmr/density
+    vaerosolsum_icol += vol;
     hygrosum_icol += vol * hygro_sp; // !bulk hygroscopicity
-  }                                               // end
+  }                                  // end
 
 } // end get_aer_mmr_sum
 
 KOKKOS_INLINE_FUNCTION
-void get_aer_num(const Real voltonumbhi_amode,
-                 const Real voltonumblo_amode,
-                 const int num_idx,
-                 const Real state_q[nvars],
-                 const Real air_density,
-                 const Real vaerosol,
-                 const Real qcldbrn1d_num,
-                 Real &naerosol) {
+void get_aer_num(const Real voltonumbhi_amode, const Real voltonumblo_amode,
+                 const int num_idx, const Real state_q[nvars],
+                 const Real air_density, const Real vaerosol,
+                 const Real qcldbrn1d_num, Real &naerosol) {
 
   // input arguments
   // @param[in] imode        ! mode index
@@ -103,7 +98,8 @@ void get_aer_num(const Real voltonumbhi_amode,
   // printf("vaerosol %e \n", vaerosol);
   // printf("voltonumbhi_amode %e \n", voltonumbhi_amode);
   // printf("vaerosol * voltonumbhi_amode %e \n", vaerosol * voltonumbhi_amode);
-  // printf("vaerosol * vaerosol * voltonumblo_amode %e \n", vaerosol * voltonumblo_amode);
+  // printf("vaerosol * vaerosol * voltonumblo_amode %e \n", vaerosol *
+  // voltonumblo_amode);
   //! adjust number so that dgnumlo < dgnum < dgnumhi
   naerosol = utils::min_max_bound(vaerosol * voltonumbhi_amode,
                                   vaerosol * voltonumblo_amode, naerosol);
@@ -111,11 +107,9 @@ void get_aer_num(const Real voltonumbhi_amode,
 
 } // end get_aer_num
 
-
 KOKKOS_INLINE_FUNCTION
 void loadaer(const Real state_q[nvars],
-             const int nspec_amode[AeroConfig::num_modes()],
-             Real air_density,
+             const int nspec_amode[AeroConfig::num_modes()], Real air_density,
              const int phase,
              const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
              const Real specdens_amode[maxd_aspectype],
@@ -198,33 +192,28 @@ void loadaer(const Real state_q[nvars],
 
     // ! Compute aerosol number concentration
     // Fortran indexing to C++
-    const int num_idx = numptr_amode[imode] -1 ;
+    const int num_idx = numptr_amode[imode] - 1;
     get_aer_num(voltonumbhi_amode[imode], voltonumblo_amode[imode], num_idx,
                 state_q, air_density, vaerosol[imode], qcldbrn1d_num[imode],
                 naerosol[imode]);
-
-
 
   } // end imode
 
 } // loadaer
 
 KOKKOS_INLINE_FUNCTION
-void ccncalc(
-    const Real state_q[nvars], 
-    const Real tair,
-    const Real qcldbrn[maxd_aspectype][AeroConfig::num_modes()],
-    const Real qcldbrn_num[AeroConfig::num_modes()],
-    const Real air_density,
-    const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-    const Real specdens_amode[maxd_aspectype],
-    const Real spechygro[maxd_aspectype],
-    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
-    const Real voltonumbhi_amode[AeroConfig::num_modes()],
-    const Real voltonumblo_amode[AeroConfig::num_modes()],
-    const int numptr_amode[AeroConfig::num_modes()],
-    const int nspec_amode[AeroConfig::num_modes()],
-    Real ccn[psat]) {
+void ccncalc(const Real state_q[nvars], const Real tair,
+             const Real qcldbrn[maxd_aspectype][AeroConfig::num_modes()],
+             const Real qcldbrn_num[AeroConfig::num_modes()],
+             const Real air_density,
+             const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
+             const Real specdens_amode[maxd_aspectype],
+             const Real spechygro[maxd_aspectype],
+             const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
+             const Real voltonumbhi_amode[AeroConfig::num_modes()],
+             const Real voltonumblo_amode[AeroConfig::num_modes()],
+             const int numptr_amode[AeroConfig::num_modes()],
+             const int nspec_amode[AeroConfig::num_modes()], Real ccn[psat]) {
 
   // calculates number concentration of aerosols activated as CCN at
   // supersaturation supersat.
@@ -293,23 +282,10 @@ void ccncalc(
       zero}; // ! interstit+activated aerosol volume conc [m3/m3]
   Real hygro[nmodes] = {zero};
 
-  loadaer(state_q,
-          nspec_amode,
-          air_density,
-          phase,
-          lspectype_amode,
-          specdens_amode,
-          spechygro,
-          lmassptr_amode,
-          voltonumbhi_amode,
-          voltonumblo_amode,
-          numptr_amode,
-          qcldbrn,
-          qcldbrn_num,
-          naerosol,
-          vaerosol,
-          hygro);
-  
+  loadaer(state_q, nspec_amode, air_density, phase, lspectype_amode,
+          specdens_amode, spechygro, lmassptr_amode, voltonumbhi_amode,
+          voltonumblo_amode, numptr_amode, qcldbrn, qcldbrn_num, naerosol,
+          vaerosol, hygro);
 
   // printf("hygro ");
   // for (int i = 0; i < 4; ++i)
@@ -318,11 +294,10 @@ void ccncalc(
   // }
 
   // printf("\n");
-  
 
   for (int lsat = 0; lsat < psat; ++lsat) {
     ccn[lsat] = {zero};
-  }  
+  }
   for (int imode = 0; imode < nmodes; ++imode) {
     // here we assume that value shouldn't matter much since naerosol is small
     // endwhere
@@ -341,17 +316,15 @@ void ccncalc(
       // [dimensionless]
       const Real arg_erf_ccn = argfactor_imode * haero::log(sm / super[lsat]);
       ccn[lsat] += naerosol[imode] * 0.5 * (1. - haero::erf(arg_erf_ccn));
-      if (lsat==5)
-      {
-      // printf("lsat %d \n", lsat);
-      // printf( "argfactor(imode) %e \n", argfactor_imode);
-      // printf( "sm %e \n", sm);
-      // printf( "haero::log(sm / super[lsat]) %e \n", haero::log(sm / super[lsat]));
-      // printf( "super(lsat)) %e \n", super[lsat]);   
-      // printf("arg_erf_ccn %e \n", arg_erf_ccn);
-      // // printf("naerosol[%d] %e \n", imode, naerosol[imode]);
-      // printf("ccn[%d] %e \n", lsat, ccn[lsat]);
-
+      if (lsat == 5) {
+        // printf("lsat %d \n", lsat);
+        // printf( "argfactor(imode) %e \n", argfactor_imode);
+        // printf( "sm %e \n", sm);
+        // printf( "haero::log(sm / super[lsat]) %e \n", haero::log(sm /
+        // super[lsat])); printf( "super(lsat)) %e \n", super[lsat]);
+        // printf("arg_erf_ccn %e \n", arg_erf_ccn);
+        // // printf("naerosol[%d] %e \n", imode, naerosol[imode]);
+        // printf("ccn[%d] %e \n", lsat, ccn[lsat]);
       }
     }
 
@@ -366,14 +339,46 @@ void ccncalc(
 } /// ccncalc
 
 KOKKOS_INLINE_FUNCTION
-void qsat(const Real tair, const Real pres, Real es, Real qs) {
-  // implementation
-}
+Real estblf(const Real t) {
+  // ! Does linear interpolation from nearest values found
+  // ! in the table (estbl).
+  // BAD CONSTANT
+  // const Real tmin = 127.16;
+  // const Real tmax = 375.16;
+  // const Real one =1;
 
-// FIXME;Jaelyn Litzinger is porting  maxsat
+  // const Real zero;
+  // const Real t_tmp = haero::max(haero::min(t,tmax)-tmin, zero);//   !
+  // intermediate temperature for es look-up const int i = int(t_tmp) +
+  // 1;//Index for t in the table
+  // FIXME aint
+  // const Real weight = t_tmp;// - aint(t_tmp, r8) ;//      ! Fractional part
+  // of t_tmp (for interpolation). return (one - weight)*estbl(i) +
+  // weight*estbl(i+1);//
+  return wv_sat_methods::GoffGratch_svp_water(t);
+} // estblf
+
 KOKKOS_INLINE_FUNCTION
-void maxsat(const Real zeta, Real eta[4], const int nmode, const Real smc[4],
-            Real smax) {}
+void qsat(const Real t, const Real p, Real es, Real qs) {
+  //  ------------------------------------------------------------------!
+  // ! Purpose:                                                         !
+  // !   Look up and return saturation vapor pressure from precomputed  !
+  // !   table, then calculate and return saturation specific humidity. !
+  // !   Optionally return various temperature derivatives or enthalpy  !
+  // !   at saturation.                                                 !
+  // !------------------------------------------------------------------!
+  // Inputs
+  // @param [in] t    ! Temperature
+  // @param [in] p    ! Pressure
+  // Outputs
+  // @param [out] es  ! Saturation vapor pressure
+  // @param [out] qs  ! Saturation specific humidity
+
+  es = estblf(t);
+  qs = wv_sat_methods::wv_sat_svp_to_qsat(es, p);
+  // Ensures returned es is consistent with limiters on qs.
+  es = haero::min(es, p);
+} // qsat
 
 KOKKOS_INLINE_FUNCTION
 void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
@@ -567,7 +572,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // else
   // FIXME;Jaelyn Litzinger is porting maxsat
   Real smax = zero;
-  maxsat(zeta, eta, nmode, smc, smax);
+  ndrop::maxsat(zeta, eta, nmode, smc, smax);
   // endif
   // FIXME [unitless] ? lnsmax maybe has units of log(unit of smax ([fraction]))
   const Real lnsmax = haero::log(smax);
@@ -594,24 +599,20 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
 } // activate_modal
 
 KOKKOS_INLINE_FUNCTION
-void get_activate_frac(const Real state_q_kload[nvars],
-                       const Real air_density_kload,
-                       const Real air_density_kk,
-                       const Real wtke,
-                       const Real tair, // in
-                       const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-                       const Real specdens_amode[maxd_aspectype],
-                       const Real spechygro[maxd_aspectype],
-                       const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
-                       const Real voltonumbhi_amode[AeroConfig::num_modes()],
-                       const Real voltonumblo_amode[AeroConfig::num_modes()],
-                       const int numptr_amode[AeroConfig::num_modes()],
-                       const int nspec_amode[maxd_aspectype],
-                       Real fn[AeroConfig::num_modes()],
-                       Real fm[AeroConfig::num_modes()],
-                       Real fluxn[AeroConfig::num_modes()],
-                       Real fluxm[AeroConfig::num_modes()],
-                       Real flux_fullact) {
+void get_activate_frac(
+    const Real state_q_kload[nvars], const Real air_density_kload,
+    const Real air_density_kk, const Real wtke,
+    const Real tair, // in
+    const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
+    const Real specdens_amode[maxd_aspectype],
+    const Real spechygro[maxd_aspectype],
+    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
+    const Real voltonumbhi_amode[AeroConfig::num_modes()],
+    const Real voltonumblo_amode[AeroConfig::num_modes()],
+    const int numptr_amode[AeroConfig::num_modes()],
+    const int nspec_amode[maxd_aspectype], Real fn[AeroConfig::num_modes()],
+    Real fm[AeroConfig::num_modes()], Real fluxn[AeroConfig::num_modes()],
+    Real fluxm[AeroConfig::num_modes()], Real flux_fullact) {
 
   // input arguments
   //  @param [in] state_q_kload(:)         aerosol mmrs at level from which to
@@ -644,22 +645,10 @@ void get_activate_frac(const Real state_q_kload[nvars],
   Real hygro[nmodes] = {zero}; // hygroscopicity of aerosol mode [dimensionless]
 
   // load aerosol properties, assuming external mixtures
-  loadaer(state_q_kload,
-          nspec_amode,
-          air_density_kload,
-          phase,
-          lspectype_amode,
-          specdens_amode,
-          spechygro,
-          lmassptr_amode,
-          voltonumbhi_amode,
-          voltonumblo_amode,
-          numptr_amode,
-          qcldbrn,
-          qcldbrn_num,
-          naermod,
-          vaerosol,
-          hygro);
+  loadaer(state_q_kload, nspec_amode, air_density_kload, phase, lspectype_amode,
+          specdens_amode, spechygro, lmassptr_amode, voltonumbhi_amode,
+          voltonumblo_amode, numptr_amode, qcldbrn, qcldbrn_num, naermod,
+          vaerosol, hygro);
   //
   // Below is to avoid warning about not assigning value to intent(out)
   //  the assignment should have no affect because flux_fullact is intent(out)
