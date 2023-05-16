@@ -158,11 +158,25 @@ void get_activate_frac(Ensemble *ensemble) {
     // }
 
     std::vector<Real> fn_v;
+    std::vector<Real> fm_v;
+    std::vector<Real> fluxn_v;
+    std::vector<Real> fluxm_v;
     for (int i = 0; i < ntot_amode; ++i) {
       auto host = Kokkos::create_mirror_view(fn[i]);
       Kokkos::deep_copy(host, fn[i]);
       fn_v.push_back(host(top_lev));
+      Kokkos::deep_copy(host, fm[i]);
+      fm_v.push_back(host(top_lev));
+      Kokkos::deep_copy(host, fluxn[i]);
+      fluxn_v.push_back(host(top_lev));
+      Kokkos::deep_copy(host, fluxm[i]);
+      fluxm_v.push_back(host(top_lev));
+
     }
     output.set("fn", fn_v);
+    output.set("fm", fm_v);
+    output.set("fluxn", fluxn_v);
+    output.set("fluxm", fluxm_v);
+    output.set("flux_fullact", flux_fullact(top_lev));
   });
 }
