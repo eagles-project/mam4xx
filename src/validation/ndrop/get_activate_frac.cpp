@@ -27,8 +27,6 @@ void get_activate_frac(Ensemble *ensemble) {
     const auto pmid_db = input.get_array("pmid");
     const auto wsub_db = input.get_array("wsub");
 
-    const int top_lev = 6;
-
     ColumnView state_q[nvars];
 
     int count = 0;
@@ -116,9 +114,7 @@ void get_activate_frac(Ensemble *ensemble) {
     }
 
     Kokkos::parallel_for(
-        "get_activate_frac", 1, KOKKOS_LAMBDA(int k) {
-          // k begins at 0
-          const int kk = k + top_lev;
+        "get_activate_frac", pver, KOKKOS_LAMBDA(int kk) {
           Real state_q_kk[nvars] = {zero};
           for (int i = 0; i < nvars; ++i) {
             state_q_kk[i] = state_q[i](kk);
@@ -146,37 +142,46 @@ void get_activate_frac(Ensemble *ensemble) {
           }
         });
 
-    // for (int i = 0; i < ntot_amode; ++i) {
-    //   auto host = Kokkos::create_mirror_view(fn[i]);
-    //   Kokkos::deep_copy(host, fn[i]);
-    //   std::vector<Real> host_v(pver);
-    //   for (int kk = 0; kk < pver; ++kk) {
-    //     host_v[kk] = host(kk);
-    //   }
+    auto host = Kokkos::create_mirror_view(fn[0]);
+    std::vector<Real> host_v(pver);
 
-    //   output.set("fn_" + std::to_string(i + 1), host_v);
-    // }
-
-    std::vector<Real> fn_v;
-    std::vector<Real> fm_v;
-    std::vector<Real> fluxn_v;
-    std::vector<Real> fluxm_v;
     for (int i = 0; i < ntot_amode; ++i) {
-      auto host = Kokkos::create_mirror_view(fn[i]);
       Kokkos::deep_copy(host, fn[i]);
-      fn_v.push_back(host(top_lev));
+      for (int kk = 0; kk < pver; ++kk) {
+        host_v[kk] = host(kk);
+      }
+
+      output.set("fn_" + std::to_string(i + 1), host_v);
+
       Kokkos::deep_copy(host, fm[i]);
-      fm_v.push_back(host(top_lev));
+      for (int kk = 0; kk < pver; ++kk) {
+        host_v[kk] = host(kk);
+      }
+
+      output.set("fm_" + std::to_string(i + 1), host_v);
+
       Kokkos::deep_copy(host, fluxn[i]);
-      fluxn_v.push_back(host(top_lev));
+      for (int kk = 0; kk < pver; ++kk) {
+        host_v[kk] = host(kk);
+      }
+
+      output.set("fluxn_" + std::to_string(i + 1), host_v);
+
       Kokkos::deep_copy(host, fluxm[i]);
-      fluxm_v.push_back(host(top_lev));
+      for (int kk = 0; kk < pver; ++kk) {
+        host_v[kk] = host(kk);
+      }
+
+      output.set("fluxm_" + std::to_string(i + 1), host_v);
 
     }
-    output.set("fn", fn_v);
-    output.set("fm", fm_v);
-    output.set("fluxn", fluxn_v);
-    output.set("fluxm", fluxm_v);
-    output.set("flux_fullact", flux_fullact(top_lev));
+
+          Kokkos::deep_copy(host, flux_fullact);
+      for (int kk = 0; kk < pver; ++kk) {
+        host_v[kk] = host(kk);
+      }
+
+      output.set("flux_fullact", host_v);
+
   });
 }

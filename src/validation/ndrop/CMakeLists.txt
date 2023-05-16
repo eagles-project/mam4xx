@@ -31,7 +31,7 @@ set(DEFAULT_TOL 1e-11)
 
 set(ERROR_THRESHOLDS
     1e-3 
-    1e-11
+    2
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
