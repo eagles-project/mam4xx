@@ -171,17 +171,14 @@ void get_activate_frac(Ensemble *ensemble) {
       for (int kk = 0; kk < pver; ++kk) {
         host_v[kk] = host(kk);
       }
-
       output.set("fluxm_" + std::to_string(i + 1), host_v);
-
     }
 
-          Kokkos::deep_copy(host, flux_fullact);
-      for (int kk = 0; kk < pver; ++kk) {
-        host_v[kk] = host(kk);
-      }
+    Kokkos::deep_copy(host, flux_fullact);
+    for (int kk = 0; kk < pver; ++kk) {
+      host_v[kk] = host(kk);
+    }
 
-      output.set("flux_fullact", host_v);
-
+    output.set("flux_fullact", host_v);
   });
 }

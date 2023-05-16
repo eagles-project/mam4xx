@@ -359,7 +359,7 @@ Real estblf(const Real t) {
 } // estblf
 
 KOKKOS_INLINE_FUNCTION
-void qsat(const Real t, const Real p, Real& es, Real& qs) {
+void qsat(const Real t, const Real p, Real &es, Real &qs) {
   //  ------------------------------------------------------------------!
   // ! Purpose:                                                         !
   // !   Look up and return saturation vapor pressure from precomputed  !
@@ -502,7 +502,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // ! thermal conductivity [J / (m-s-K)]
   const Real conduct0 =
       (5.69 + 0.017 * (tair - t0)) * 4.186e2 * 1.e-5; // !convert to J/m/s/deg
-  // thermodynamic function [m2/s]  
+  // thermodynamic function [m2/s]
   const Real gthermfac =
       1. /
       (rhoh2o / (diff0 * rhoair * qs) +
@@ -584,8 +584,8 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
         twothird * (lnsm[imode] - lnsmax) / (sq2 * alogsig[imode]);
 
     fn[imode] = 0.5 * (1. - haero::erf(arg_erf_n)); //! activated number
-    // printf("fn[%d] %e haero::erf(arg_erf_n) %e\n", imode, fn[imode], haero::erf(arg_erf_n));
-    // ! [unitless]
+    // printf("fn[%d] %e haero::erf(arg_erf_n) %e\n", imode, fn[imode],
+    // haero::erf(arg_erf_n)); ! [unitless]
     const Real arg_erf_m = arg_erf_n - 1.5 * sq2 * alogsig[imode];
     fm[imode] = 0.5 * (1. - haero::erf(arg_erf_m)); // !activated mass
     fluxn[imode] = fn[imode] * w_in; // !activated aerosol number flux
@@ -612,7 +612,7 @@ void get_activate_frac(
     const int numptr_amode[AeroConfig::num_modes()],
     const int nspec_amode[maxd_aspectype], Real fn[AeroConfig::num_modes()],
     Real fm[AeroConfig::num_modes()], Real fluxn[AeroConfig::num_modes()],
-    Real fluxm[AeroConfig::num_modes()], Real& flux_fullact) {
+    Real fluxm[AeroConfig::num_modes()], Real &flux_fullact) {
 
   // input arguments
   //  @param [in] state_q_kload(:)         aerosol mmrs at level from which to
