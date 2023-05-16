@@ -26,6 +26,7 @@ using namespace mam4;
 
 // Parameterizations used by the aero_model process.
 void ccncalc(Ensemble *ensemble);
+void get_activate_frac(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -51,6 +52,8 @@ int main(int argc, char **argv) {
   try {
     if (func_name == "ccncalc") {
       ccncalc(ensemble);
+    } else if (func_name == "get_activate_frac") {
+      get_activate_frac(ensemble);
     }
 
   } catch (std::exception &e) {

@@ -8,7 +8,7 @@ set(NDROP_VALIDATION_SCRIPTS_DIR ${MAM_X_VALIDATION_DIR}/scripts)
 include_directories(${PROJECT_BINARY_DIR}/validation)
 
 # We use a single driver for all ndrop-related parameterizations.
-add_executable(ndrop_driver  ndrop_driver.cpp ccncalc.cpp)
+add_executable(ndrop_driver  ndrop_driver.cpp ccncalc.cpp get_activate_frac.cpp)
 target_link_libraries(ndrop_driver skywalker;validation;${HAERO_LIBRARIES})
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
@@ -24,12 +24,14 @@ endforeach()
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     ccncalc_ts_1417
+    get_activate_frac_ts_1417
     )
 
 set(DEFAULT_TOL 1e-11)
 
 set(ERROR_THRESHOLDS
     1e-3 
+    1e-11
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
