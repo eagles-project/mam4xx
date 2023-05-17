@@ -25,6 +25,20 @@ const int maxd_aspectype = 14;
 const Real t0 = 273;       // reference temperature [K]
 const Real p0 = 1013.25e2; //  ! reference pressure [Pa]
 
+// FIXME; surften is defined in ndrop_init
+// BAD CONSTANT
+const Real surften = 0.076;
+const Real sq2 = haero::sqrt(2.);
+const Real smcoefcoef = 2. / haero::sqrt(27.);
+
+//// const Real percent_to_fraction = 0.01;
+// super(:)=supersat(:)*percent_to_fraction
+// supersaturation [fraction]
+const Real super[psat] = {
+    0.0002, 0.0005, 0.001, 0.002,
+    0.005,  0.01}; //& ! supersaturation (%) to determine ccn concentration
+//  [m-K]
+
 KOKKOS_INLINE_FUNCTION
 void get_aer_mmr_sum(
     const int imode, const int nspec, const Real state_q[nvars],
@@ -216,7 +230,9 @@ void ccncalc(const Real state_q[nvars], const Real tair,
              const Real voltonumbhi_amode[AeroConfig::num_modes()],
              const Real voltonumblo_amode[AeroConfig::num_modes()],
              const int numptr_amode[AeroConfig::num_modes()],
-             const int nspec_amode[AeroConfig::num_modes()], Real ccn[psat]) {
+             const int nspec_amode[AeroConfig::num_modes()],
+             const Real exp45logsig[AeroConfig::num_modes()],
+             const Real alogsig[AeroConfig::num_modes()], Real ccn[psat]) {
 
   // calculates number concentration of aerosols activated as CCN at
   // supersaturation supersat.
@@ -239,6 +255,9 @@ void ccncalc(const Real state_q[nvars], const Real tair,
   const Real zero = 0;
   // BAD CONSTANT
   const Real nconc_thresh = 1.e-3;
+  const Real twothird = 2. / 3.;
+
+  const Real per_m3_to_per_cm3 = 1.e-6;
   // phase of aerosol
   const int phase = 3; // ! interstitial+cloudborne
   const int nmodes = AeroConfig::num_modes();
@@ -248,31 +267,6 @@ void ccncalc(const Real state_q[nvars], const Real tair,
   const Real rhoh2o = haero::Constants::density_h2o;
   const Real pi = haero::Constants::pi;
 
-  // FIXME; surften is defined in ndrop_init
-  // BAD CONSTANT
-  const Real surften = 0.076;
-  // FIME: drop_int
-  Real exp45logsig[4] = {};
-  Real alogsig[4] = {};
-  for (int imode = 0; imode < 4; ++imode) {
-    alogsig[imode] = haero::log(modes(imode).mean_std_dev);
-    exp45logsig[imode] = haero::exp(4.5 * alogsig[imode] * alogsig[imode]);
-    // printf("exp45logsig[imode] %e \n", exp45logsig[imode]);
-  } // imode
-  const Real sq2 = haero::sqrt(2.);
-  //
-  const Real twothird = 2. / 3.;
-
-  // const Real percent_to_fraction = 0.01;
-  const Real per_m3_to_per_cm3 = 1.e-6;
-  const Real smcoefcoef = 2. / haero::sqrt(27.);
-
-  // super(:)=supersat(:)*percent_to_fraction
-  // supersaturation [fraction]
-  const Real super[psat] = {
-      0.0002, 0.0005, 0.001, 0.002,
-      0.005,  0.01}; //& ! supersaturation (%) to determine ccn concentration
-  //  [m-K]
   const Real surften_coef = 2. * mwh2o * surften / (r_universal * rhoh2o);
 
   // surface tension parameter  [m]
@@ -289,14 +283,6 @@ void ccncalc(const Real state_q[nvars], const Real tair,
           specdens_amode, spechygro, lmassptr_amode, voltonumbhi_amode,
           voltonumblo_amode, numptr_amode, qcldbrn, qcldbrn_num, naerosol,
           vaerosol, hygro);
-
-  // printf("hygro ");
-  // for (int i = 0; i < 4; ++i)
-  // {
-  //   printf("%e ", hygro[i]);
-  // }
-
-  // printf("\n");
 
   for (int lsat = 0; lsat < psat; ++lsat) {
     ccn[lsat] = {zero};
@@ -319,16 +305,6 @@ void ccncalc(const Real state_q[nvars], const Real tair,
       // [dimensionless]
       const Real arg_erf_ccn = argfactor_imode * haero::log(sm / super[lsat]);
       ccn[lsat] += naerosol[imode] * 0.5 * (1. - haero::erf(arg_erf_ccn));
-      if (lsat == 5) {
-        // printf("lsat %d \n", lsat);
-        // printf( "argfactor(imode) %e \n", argfactor_imode);
-        // printf( "sm %e \n", sm);
-        // printf( "haero::log(sm / super[lsat]) %e \n", haero::log(sm /
-        // super[lsat])); printf( "super(lsat)) %e \n", super[lsat]);
-        // printf("arg_erf_ccn %e \n", arg_erf_ccn);
-        // // printf("naerosol[%d] %e \n", imode, naerosol[imode]);
-        // printf("ccn[%d] %e \n", lsat, ccn[lsat]);
-      }
     }
 
   } // imode end
@@ -396,7 +372,6 @@ inline void ndrop_int(Real exp45logsig[AeroConfig::num_modes()],
   const Real r_universal = haero::Constants::r_gas * 1e3;      //[J/K/kmole]
   const Real mwh2o = haero::Constants::molec_weight_h2o * 1e3; // [kg/kmol]
   // BAD CONSTANT
-  const Real surften = 0.076;
   aten = 2. * mwh2o * surften / (r_universal * t0 * rhoh2o);
 
 } // end ndrop_int

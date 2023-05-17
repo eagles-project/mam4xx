@@ -92,6 +92,12 @@ void ccncalc(Ensemble *ensemble) {
     const auto voltonumbhi_amode = voltonumbhi_amode_db.data();
     const auto voltonumblo_amode = voltonumblo_amode_db.data();
 
+    const auto exp45logsig_db = input.get_array("exp45logsig");
+    const auto alogsig_db = input.get_array("alogsig");
+
+    const auto exp45logsig = exp45logsig_db.data();
+    const auto alogsig = alogsig_db.data();
+
     int numptr_amode[ntot_amode];
     int nspec_amode[ntot_amode];
     for (int i = 0; i < ntot_amode; ++i) {
@@ -118,12 +124,11 @@ void ccncalc(Ensemble *ensemble) {
               conversions::density_of_ideal_gas(tair(kk), pmid(kk));
 
           Real ccn_kk[psat] = {zero};
-
           ndrop_od::ccncalc(state_q_kk, tair(kk), qcldbrn, qcldbrn_num,
                             air_density, lspectype_amode, specdens_amode,
                             spechygro, lmassptr_amode, voltonumbhi_amode,
                             voltonumblo_amode, numptr_amode, nspec_amode,
-                            ccn_kk);
+                            exp45logsig, alogsig, ccn_kk);
           for (int i = 0; i < psat; ++i) {
             ccn[i](kk) = ccn_kk[i];
           }
