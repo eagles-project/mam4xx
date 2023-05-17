@@ -360,11 +360,23 @@ void qsat(const Real t, const Real p, Real &es, Real &qs) {
 } // qsat
 
 inline void ndrop_int(Real exp45logsig[AeroConfig::num_modes()],
-                      Real alogsig[AeroConfig::num_modes()], Real &aten) {
-
+                      Real alogsig[AeroConfig::num_modes()], Real &aten,
+                      Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
+                      Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()]) {
+  const Real one = 1;
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
     alogsig[imode] = haero::log(modes(imode).mean_std_dev);
     exp45logsig[imode] = haero::exp(4.5 * alogsig[imode] * alogsig[imode]);
+
+    // voltonumbhi_amode
+    num2vol_ratio_min_nmodes[imode] =
+        one / conversions::mean_particle_volume_from_diameter(
+                  modes(imode).max_diameter, modes(imode).mean_std_dev);
+    // voltonumblo_amode
+    num2vol_ratio_max_nmodes[imode] =
+        one / conversions::mean_particle_volume_from_diameter(
+                  modes(imode).min_diameter, modes(imode).mean_std_dev);
+
   } // imode
 
   // SHR_CONST_RHOFW   = 1.000e3_R8      ! density of fresh water     ~ kg/m^3

@@ -12,6 +12,7 @@ add_executable(ndrop_driver
                ndrop_driver.cpp
                ccncalc.cpp
                get_activate_frac.cpp
+               loadaer.cpp
                activate_modal.cpp)
 
 target_link_libraries(ndrop_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -38,8 +39,7 @@ set(DEFAULT_TOL 1e-11)
 set(ERROR_THRESHOLDS
     1e-3 
     1
-    8e-2
-   )
+    8e-2)
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.

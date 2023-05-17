@@ -28,6 +28,7 @@ using namespace mam4;
 void ccncalc(Ensemble *ensemble);
 void get_activate_frac(Ensemble *ensemble);
 void activate_modal(Ensemble *ensemble);
+void loadaer(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -57,6 +58,8 @@ int main(int argc, char **argv) {
       get_activate_frac(ensemble);
     } else if (func_name == "activate_modal") {
       activate_modal(ensemble);
+    } else if (func_name == "loadaer") {
+      loadaer(ensemble);
     }
 
   } catch (std::exception &e) {
