@@ -93,6 +93,14 @@ void get_activate_frac(Ensemble *ensemble) {
     const auto voltonumbhi_amode = voltonumbhi_amode_db.data();
     const auto voltonumblo_amode = voltonumblo_amode_db.data();
 
+    const auto exp45logsig_db = input.get_array("exp45logsig");
+    const auto alogsig_db = input.get_array("alogsig");
+
+    const auto exp45logsig = exp45logsig_db.data();
+    const auto alogsig = alogsig_db.data();
+
+    const Real aten = input.get_array("aten")[0];
+
     int numptr_amode[ntot_amode];
     int nspec_amode[ntot_amode];
     for (int i = 0; i < ntot_amode; ++i) {
@@ -132,7 +140,8 @@ void get_activate_frac(Ensemble *ensemble) {
               state_q_kk, air_density, air_density, wsub(kk), tair(kk), // in
               lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
               voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
-              fn_kk, fm_kk, fluxn_kk, fluxm_kk, flux_fullact(kk));
+              exp45logsig, alogsig, aten, fn_kk, fm_kk, fluxn_kk, fluxm_kk,
+              flux_fullact(kk));
 
           for (int i = 0; i < ntot_amode; ++i) {
             fn[i](kk) = fn_kk[i];

@@ -21,6 +21,9 @@ const int psat = 6; //  ! number of supersaturations to calc ccn concentration
 // FIXME: ask about state_q. Is it a prognostic variable?
 const int nvars = 40;
 const int maxd_aspectype = 14;
+// BAD CONSTANT
+const Real t0 = 273;       // reference temperature [K]
+const Real p0 = 1013.25e2; //  ! reference pressure [Pa]
 
 KOKKOS_INLINE_FUNCTION
 void get_aer_mmr_sum(
@@ -380,12 +383,32 @@ void qsat(const Real t, const Real p, Real &es, Real &qs) {
   es = haero::min(es, p);
 } // qsat
 
+inline void ndrop_int(Real exp45logsig[AeroConfig::num_modes()],
+                      Real alogsig[AeroConfig::num_modes()], Real &aten) {
+
+  for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+    alogsig[imode] = haero::log(modes(imode).mean_std_dev);
+    exp45logsig[imode] = haero::exp(4.5 * alogsig[imode] * alogsig[imode]);
+  } // imode
+
+  // SHR_CONST_RHOFW   = 1.000e3_R8      ! density of fresh water     ~ kg/m^3
+  const Real rhoh2o = haero::Constants::density_h2o;
+  const Real r_universal = haero::Constants::r_gas * 1e3;      //[J/K/kmole]
+  const Real mwh2o = haero::Constants::molec_weight_h2o * 1e3; // [kg/kmol]
+  // BAD CONSTANT
+  const Real surften = 0.076;
+  aten = 2. * mwh2o * surften / (r_universal * t0 * rhoh2o);
+
+} // end ndrop_int
+
 KOKKOS_INLINE_FUNCTION
 void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
                     const Real rhoair, Real na[AeroConfig::num_modes()],
                     const Real volume[AeroConfig::num_modes()],
                     const Real hygro[AeroConfig::num_modes()],
-                    Real fn[AeroConfig::num_modes()],
+                    const Real exp45logsig[AeroConfig::num_modes()],
+                    const Real alogsig[AeroConfig::num_modes()],
+                    const Real aten, Real fn[AeroConfig::num_modes()],
                     Real fm[AeroConfig::num_modes()],
                     Real fluxn[AeroConfig::num_modes()],
                     Real fluxm[AeroConfig::num_modes()], Real &flux_fullact)
@@ -457,6 +480,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   //  ~ kg/kmole const Real SHR_CONST_MWWV    = 18.016;//       ! molecular
   //  weight water vapor const Real  rair = SHR_CONST_RGAS/SHR_CONST_MWDAIR;//
   //  ! Dry air gas constant     ~ J/K/kg
+  const Real twothird = 2. / 3.;
   const Real rair = haero::Constants::r_gas_dry_air;
   const Real rh2o = haero::Constants::r_gas_h2o_vapor;
   const Real latvap =
@@ -469,15 +493,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // SHR_CONST_RHOFW   = 1.000e3_R8      ! density of fresh water     ~ kg/m^3
   const Real rhoh2o = haero::Constants::density_h2o;
   const Real pi = haero::Constants::pi;
-  const Real twothird = 2. / 3.;
-  const Real r_universal = haero::Constants::r_gas * 1e3;      //[J/K/kmole]
-  const Real mwh2o = haero::Constants::molec_weight_h2o * 1e3; // [kg/kmol]
-  const Real t0 = 273; // reference temperature [K]
-  // BAD CONSTANT
-  const Real surften = 0.076;
-  const Real aten = 2. * mwh2o * surften / (r_universal * t0 * rhoh2o);
 
-  const Real p0 = 1013.25e2;              //  ! reference pressure [Pa]
   const Real pres = rair * rhoair * tair; // pressure [Pa]
   // Obtain Saturation vapor pressure (es) and saturation specific humidity (qs)
   //  FIXME: check if we have implemented qsat
@@ -518,19 +534,11 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
 
   Real amcube[nmode] = {}; // ! cube of dry mode radius [m3]
 
-  // critical supersaturation for number mode radius [fraction]
-  Real smc[nmode] = {};
-
-  // FIXME
-  // FIME: drop_int
-  Real exp45logsig[nmode] = {};
-  Real alogsig[nmode] = {};
   Real etafactor2[nmode] = {};
   Real lnsm[nmode] = {};
-  for (int imode = 0; imode < nmode; ++imode) {
-    alogsig[imode] = haero::log(modes(imode).mean_std_dev);
-    exp45logsig[imode] = haero::exp(4.5 * alogsig[imode] * alogsig[imode]);
-  } // imode
+
+  // critical supersaturation for number mode radius [fraction]
+  Real smc[nmode] = {};
 
   Real eta[nmode] = {};
   // !Here compute smc, eta for all modes for maxsat calculation
@@ -610,9 +618,12 @@ void get_activate_frac(
     const Real voltonumbhi_amode[AeroConfig::num_modes()],
     const Real voltonumblo_amode[AeroConfig::num_modes()],
     const int numptr_amode[AeroConfig::num_modes()],
-    const int nspec_amode[maxd_aspectype], Real fn[AeroConfig::num_modes()],
-    Real fm[AeroConfig::num_modes()], Real fluxn[AeroConfig::num_modes()],
-    Real fluxm[AeroConfig::num_modes()], Real &flux_fullact) {
+    const int nspec_amode[maxd_aspectype],
+    const Real exp45logsig[AeroConfig::num_modes()],
+    const Real alogsig[AeroConfig::num_modes()], const Real aten,
+    Real fn[AeroConfig::num_modes()], Real fm[AeroConfig::num_modes()],
+    Real fluxn[AeroConfig::num_modes()], Real fluxm[AeroConfig::num_modes()],
+    Real &flux_fullact) {
 
   // input arguments
   //  @param [in] state_q_kload(:)         aerosol mmrs at level from which to
@@ -655,9 +666,10 @@ void get_activate_frac(
   //  in activate_modal (and in that subroutine is initialized to zero anyway).
   // BAD CONSTANT
   const Real wmax = 10.;
-  activate_modal(wtke, wmax, tair, air_density_kk,    //   ! in
-                 naermod, vaerosol, hygro,            //  ! in
-                 fn, fm, fluxn, fluxm, flux_fullact); // out
+  activate_modal(wtke, wmax, tair, air_density_kk, //   ! in
+                 naermod, vaerosol, hygro,         //  ! in
+                 exp45logsig, alogsig, aten, fn, fm, fluxn, fluxm,
+                 flux_fullact); // out
 
 } // get_activate_frac
 
