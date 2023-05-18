@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
       ccncalc_single_cell(ensemble);
     }
     else if (func_name == "explmix") {
-      //explmix(ensemble);
+      explmix(ensemble);
     }
     else if (func_name == "maxsat") {
       //maxsat(ensemble);

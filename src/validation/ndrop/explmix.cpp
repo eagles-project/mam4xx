@@ -12,7 +12,7 @@
 using namespace skywalker;
 using namespace mam4;
 
-void ccncalc(Ensemble *ensemble) {
+void explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
 
      // number of vertical points. 

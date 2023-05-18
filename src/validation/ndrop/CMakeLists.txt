@@ -8,6 +8,7 @@ set(NDROP_VALIDATION_SCRIPTS_DIR ${MAM_X_VALIDATION_DIR}/scripts)
 include_directories(${PROJECT_BINARY_DIR}/validation)
 
 # We use a single driver for all ndrop-related parameterizations.
+<<<<<<< HEAD
 add_executable(ndrop_driver  
                ndrop_driver.cpp
                ccncalc.cpp
@@ -16,6 +17,9 @@ add_executable(ndrop_driver
                loadaer.cpp
                activate_modal.cpp)
 
+=======
+add_executable(ndrop_driver  ndrop_driver.cpp ccncalc.cpp get_activate_frac.cpp explmix.cpp)
+>>>>>>> explmix test runs
 target_link_libraries(ndrop_driver skywalker;validation;${HAERO_LIBRARIES})
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
@@ -35,6 +39,7 @@ set(TEST_LIST
     get_activate_frac_ts_1417
     loadaer_ts_1403_type3
     activate_modal_ts_1400_type1
+    explmix_ts_1417_actmm1
     )
 
 set(DEFAULT_TOL 1e-11)
@@ -45,7 +50,8 @@ set(ERROR_THRESHOLDS
     1
     5e-9 
     8e-2
-    )
+    1
+   )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
