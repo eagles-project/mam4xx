@@ -8,18 +8,17 @@ set(NDROP_VALIDATION_SCRIPTS_DIR ${MAM_X_VALIDATION_DIR}/scripts)
 include_directories(${PROJECT_BINARY_DIR}/validation)
 
 # We use a single driver for all ndrop-related parameterizations.
-<<<<<<< HEAD
 add_executable(ndrop_driver  
                ndrop_driver.cpp
                ccncalc.cpp
                ccncalc_single_cell.cpp
                get_activate_frac.cpp
                loadaer.cpp
-               activate_modal.cpp)
+               activate_modal.cpp
+               explmix.cpp
+               )
 
-=======
-add_executable(ndrop_driver  ndrop_driver.cpp ccncalc.cpp get_activate_frac.cpp explmix.cpp)
->>>>>>> explmix test runs
+
 target_link_libraries(ndrop_driver skywalker;validation;${HAERO_LIBRARIES})
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
