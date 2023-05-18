@@ -31,6 +31,7 @@ endforeach()
 set(TEST_LIST
     ccncalc_ts_1417
     get_activate_frac_ts_1417
+    loadaer_ts_1403_type3
     activate_modal_ts_1400_type1
     )
 
@@ -39,7 +40,9 @@ set(DEFAULT_TOL 1e-11)
 set(ERROR_THRESHOLDS
     1e-3 
     1
-    8e-2)
+    5e-9 
+    8e-2
+    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.

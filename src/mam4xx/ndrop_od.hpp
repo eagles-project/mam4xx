@@ -189,7 +189,7 @@ void loadaer(const Real state_q[nvars],
     const Real nspec = nspec_amode[imode];
 
     for (int ispec = 0; ispec < nspec; ++ispec) {
-      qcldbrn1d_imode[ispec] = qcldbrn1d[imode][ispec];
+      qcldbrn1d_imode[ispec] = qcldbrn1d[ispec][imode];
     }
 
     get_aer_mmr_sum(imode, nspec, state_q, qcldbrn1d_imode, lspectype_amode,
