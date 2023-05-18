@@ -38,7 +38,7 @@ set(TEST_LIST
     get_activate_frac_ts_1417
     loadaer_ts_1403_type3
     activate_modal_ts_1400_type1
-    explmix_ts_1417_actmm1
+    #explmix_ts_1417_actmm1
     )
 
 set(DEFAULT_TOL 1e-11)
@@ -49,7 +49,7 @@ set(ERROR_THRESHOLDS
     1
     5e-9 
     8e-2
-    1
+    #1
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)

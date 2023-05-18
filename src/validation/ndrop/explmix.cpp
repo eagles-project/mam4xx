@@ -14,8 +14,7 @@ using namespace mam4;
 
 void explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-
-     // number of vertical points. 
+    // number of vertical points.
     const Real zero = 0;
     const int maxd_aspectype = 14;
     const int ntot_amode = 4;
@@ -34,50 +33,45 @@ void explmix(Ensemble *ensemble) {
     const auto overlapm_db = input.get_array("overlapm");
 
     const int top_lev = 6;
-/*
-    ColumnView qold = haero::testing::create_column_view(pver);
-    ColumnView src = haero::testing::create_column_view(pver);
-    ColumnView ekkp = haero::testing::create_column_view(pver);
-    ColumnView ekkm = haero::testing::create_column_view(pver);
-    ColumnView overlapp = haero::testing::create_column_view(pver);
-    ColumnView overlapm = haero::testing::create_column_view(pver);
-    for (int kk = 0; kk < pver; ++kk)
-    {
-      qold(kk) = qold_db[kk];
-      src(kk) = src_db[kk];
-      ekkp(kk) = ekkp_db[kk];
-      ekkm(kk) = ekkm_db[kk];
-      overlapp(kk) = overlapp_db[kk];
-      overlapm(kk) = overlapm_db[kk];
-    } 
-    */
+    /*
+        ColumnView qold = haero::testing::create_column_view(pver);
+        ColumnView src = haero::testing::create_column_view(pver);
+        ColumnView ekkp = haero::testing::create_column_view(pver);
+        ColumnView ekkm = haero::testing::create_column_view(pver);
+        ColumnView overlapp = haero::testing::create_column_view(pver);
+        ColumnView overlapm = haero::testing::create_column_view(pver);
+        for (int kk = 0; kk < pver; ++kk)
+        {
+          qold(kk) = qold_db[kk];
+          src(kk) = src_db[kk];
+          ekkp(kk) = ekkp_db[kk];
+          ekkm(kk) = ekkm_db[kk];
+          overlapp(kk) = overlapp_db[kk];
+          overlapm(kk) = overlapm_db[kk];
+        }
+        */
 
     Real q[pver];
 
-    for(int k = 1; k < pver-1; k++) {     
+    for (int k = 1; k < pver - 1; k++) {
 
-      Real qold_km1 = qold_db[k-1];
+      Real qold_km1 = qold_db[k - 1];
       Real qold_k = qold_db[k];
-      Real qold_kp1 = qold_db[k+1];
+      Real qold_kp1 = qold_db[k + 1];
 
       Real src = src_db[k];
-      Real ek_km1 = ekkm_db[k]; //or -1 ??
-      Real ek_kp1 = ekkp_db[k]; //or +1 ??
+      Real ek_km1 = ekkm_db[k]; // or -1 ??
+      Real ek_kp1 = ekkp_db[k]; // or +1 ??
 
-      Real overlap_km1 = overlapm_db[k]; //or -1 ??
-      Real overlap_kp1 = overlapp_db[k]; //or +1 ?? 
-
+      Real overlap_km1 = overlapm_db[k]; // or -1 ??
+      Real overlap_kp1 = overlapp_db[k]; // or +1 ??
 
       ndrop::explmix(qold_km1, qold_k, qold_kp1, q[k], src, ek_kp1, ek_km1,
-                 overlap_kp1, overlap_km1, dt, is_unact); 
-
+                     overlap_kp1, overlap_km1, dt, is_unact);
     }
 
-    
-    for (int i = 0; i < pver; ++i)
-    {
-      output.set("qnew_"+std::to_string(i+1), q[i]);
+    for (int i = 0; i < pver; ++i) {
+      output.set("qnew_" + std::to_string(i + 1), q[i]);
     }
-    
   });
 }

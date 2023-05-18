@@ -74,12 +74,6 @@ void get_aer_mmr_sum(
     const int spc_idx =
         lmassptr_amode[lspec][imode] - 1; //! index of species in state_q array
     // !aerosol volume mixing ratio [m3/kg]
-    // printf("type_idx %d \n", type_idx);
-    // printf("density_sp %e \n", density_sp);
-    // printf("hygro_sp %e \n", hygro_sp);
-    // printf("spc_idx %d \n", spc_idx);
-    // printf("state_q(spc_idx) %e \n", state_q[spc_idx]);
-    // printf("qcldbrn1d(lspec) %e \n", qcldbrn1d[lspec]);
     const Real vol = haero::max(state_q[spc_idx] + qcldbrn1d[lspec], zero) /
                      density_sp; // !volume = mmr/density
     vaerosolsum_icol += vol;
@@ -105,22 +99,12 @@ void get_aer_num(const Real voltonumbhi_amode, const Real voltonumblo_amode,
 
   // convert number mixing ratios to number concentrations
   // Use bulk volume conc found previously to bound value
-  // FIXME: num_idx for state_q: does this array contain only species?
   // or contains both species and modes concentrations ?
   naerosol = (state_q[num_idx] + qcldbrn1d_num) * air_density;
 
-  // printf(" Before naerosol %e \n", naerosol);
-  // printf("state_q[%d] %e \n", num_idx, state_q[num_idx]);
-  // printf("air_density %e \n", air_density);
-  // printf("vaerosol %e \n", vaerosol);
-  // printf("voltonumbhi_amode %e \n", voltonumbhi_amode);
-  // printf("vaerosol * voltonumbhi_amode %e \n", vaerosol * voltonumbhi_amode);
-  // printf("vaerosol * vaerosol * voltonumblo_amode %e \n", vaerosol *
-  // voltonumblo_amode);
   //! adjust number so that dgnumlo < dgnum < dgnumhi
   naerosol = utils::min_max_bound(vaerosol * voltonumbhi_amode,
                                   vaerosol * voltonumblo_amode, naerosol);
-  // printf(" After naerosol %e \n", naerosol);
 
 } // end get_aer_num
 
@@ -196,8 +180,6 @@ void loadaer(const Real state_q[nvars],
                     specdens_amode, spechygro, lmassptr_amode, vaerosolsum,
                     hygrosum);
 
-    // printf("hygrosum[%d] %e \n", imode, hygrosum);
-
     //  Finalize computation of bulk hygrospopicity and volume conc
     if (vaerosolsum > even_smaller_val) {
       hygro[imode] = hygrosum / vaerosolsum;
@@ -250,12 +232,16 @@ void ccncalc(const Real state_q[nvars], const Real tair,
 
   // output arguments
   // ccn(pcols,pver,psat) ! number conc of aerosols activated at supersat [#/m3]
-  // qcldbrn(:,:,:,:) 1) icol 2) ispec 3) kk 4)imode
-  // state_q(:,:,:) 1) icol 2) kk 3) imode or ispec ?
+  // qcldbrn  1) icol 2) ispec 3) kk 4)imode
+  // state_q 1) icol 2) kk 3) imode and ispec
   const Real zero = 0;
   // BAD CONSTANT
   const Real nconc_thresh = 1.e-3;
   const Real twothird = 2. / 3.;
+  const Real two = 2.;
+  const Real three_fourths = 3. / 4.;
+  const Real half = 0.5;
+  const Real one = 1;
 
   const Real per_m3_to_per_cm3 = 1.e-6;
   // phase of aerosol
@@ -267,7 +253,7 @@ void ccncalc(const Real state_q[nvars], const Real tair,
   const Real rhoh2o = haero::Constants::density_h2o;
   const Real pi = haero::Constants::pi;
 
-  const Real surften_coef = 2. * mwh2o * surften / (r_universal * rhoh2o);
+  const Real surften_coef = two * mwh2o * surften / (r_universal * rhoh2o);
 
   // surface tension parameter  [m]
   const Real aparam = surften_coef / tair;
@@ -293,7 +279,7 @@ void ccncalc(const Real state_q[nvars], const Real tair,
     Real sm = 1; // critical supersaturation at mode radius [fraction]
     if (naerosol[imode] > nconc_thresh) {
       // [dimensionless]
-      const Real amcubecoef_imode = 3. / (4. * pi * exp45logsig[imode]);
+      const Real amcubecoef_imode = three_fourths / (pi * exp45logsig[imode]);
       // [m3]
       const Real amcube = amcubecoef_imode * vaerosol[imode] / naerosol[imode];
       sm = smcoef /
@@ -304,7 +290,7 @@ void ccncalc(const Real state_q[nvars], const Real tair,
     for (int lsat = 0; lsat < psat; ++lsat) {
       // [dimensionless]
       const Real arg_erf_ccn = argfactor_imode * haero::log(sm / super[lsat]);
-      ccn[lsat] += naerosol[imode] * 0.5 * (1. - haero::erf(arg_erf_ccn));
+      ccn[lsat] += naerosol[imode] * half * (one - haero::erf(arg_erf_ccn));
     }
 
   } // imode end
@@ -316,26 +302,6 @@ void ccncalc(const Real state_q[nvars], const Real tair,
   }                                 // lsat
 
 } /// ccncalc
-
-KOKKOS_INLINE_FUNCTION
-Real estblf(const Real t) {
-  // ! Does linear interpolation from nearest values found
-  // ! in the table (estbl).
-  // BAD CONSTANT
-  // const Real tmin = 127.16;
-  // const Real tmax = 375.16;
-  // const Real one =1;
-
-  // const Real zero;
-  // const Real t_tmp = haero::max(haero::min(t,tmax)-tmin, zero);//   !
-  // intermediate temperature for es look-up const int i = int(t_tmp) +
-  // 1;//Index for t in the table
-  // FIXME aint
-  // const Real weight = t_tmp;// - aint(t_tmp, r8) ;//      ! Fractional part
-  // of t_tmp (for interpolation). return (one - weight)*estbl(i) +
-  // weight*estbl(i+1);//
-  return wv_sat_methods::GoffGratch_svp_water(t);
-} // estblf
 
 KOKKOS_INLINE_FUNCTION
 void qsat(const Real t, const Real p, Real &es, Real &qs) {
@@ -353,7 +319,9 @@ void qsat(const Real t, const Real p, Real &es, Real &qs) {
   // @param [out] es  ! Saturation vapor pressure
   // @param [out] qs  ! Saturation specific humidity
 
-  es = estblf(t);
+  // Note. Fortran code uses a table lookup. In C++ version, we compute directly
+  // from the function.
+  es = wv_sat_methods::GoffGratch_svp_water(t);
   qs = wv_sat_methods::wv_sat_svp_to_qsat(es, p);
   // Ensures returned es is consistent with limiters on qs.
   es = haero::min(es, p);
@@ -364,6 +332,8 @@ inline void ndrop_int(Real exp45logsig[AeroConfig::num_modes()],
                       Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
                       Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()]) {
   const Real one = 1;
+  const Real two = 2;
+  const Real one_thousand = 1e3;
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
     alogsig[imode] = haero::log(modes(imode).mean_std_dev);
     exp45logsig[imode] = haero::exp(4.5 * alogsig[imode] * alogsig[imode]);
@@ -381,10 +351,11 @@ inline void ndrop_int(Real exp45logsig[AeroConfig::num_modes()],
 
   // SHR_CONST_RHOFW   = 1.000e3_R8      ! density of fresh water     ~ kg/m^3
   const Real rhoh2o = haero::Constants::density_h2o;
-  const Real r_universal = haero::Constants::r_gas * 1e3;      //[J/K/kmole]
-  const Real mwh2o = haero::Constants::molec_weight_h2o * 1e3; // [kg/kmol]
+  const Real r_universal = haero::Constants::r_gas * one_thousand; //[J/K/kmole]
+  const Real mwh2o =
+      haero::Constants::molec_weight_h2o * one_thousand; // [kg/kmol]
   // BAD CONSTANT
-  aten = 2. * mwh2o * surften / (r_universal * t0 * rhoh2o);
+  aten = two * mwh2o * surften / (r_universal * t0 * rhoh2o);
 
 } // end ndrop_int
 
@@ -398,9 +369,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
                     const Real aten, Real fn[AeroConfig::num_modes()],
                     Real fm[AeroConfig::num_modes()],
                     Real fluxn[AeroConfig::num_modes()],
-                    Real fluxm[AeroConfig::num_modes()], Real &flux_fullact)
-//, const Real smax_prescribed=999
-{
+                    Real fluxm[AeroConfig::num_modes()], Real &flux_fullact) {
   // 	  !---------------------------------------------------------------------------------
   // !Calculates number, surface, and mass fraction of aerosols activated as CCN
   // !calculates flux of cloud droplets, surface area, and aerosol mass into
@@ -444,6 +413,14 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // !---------------------------------------------------------------------------------
   // FIXME: hearo::Constants
   const Real zero = 0;
+  const Real one = 1;
+  const Real sq2 = haero::sqrt(2.);
+  const Real two = 2;
+  const Real three_fourths = 3. / 4.;
+  const Real twothird = 2. / 3.;
+  const Real half = 0.5;
+  const Real small = 1.e-39;
+
   constexpr int nmode = AeroConfig::num_modes();
   // BAD CONSTANT
   // return if aerosol number is negligible in the accumulation mode
@@ -467,7 +444,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   //  ~ kg/kmole const Real SHR_CONST_MWWV    = 18.016;//       ! molecular
   //  weight water vapor const Real  rair = SHR_CONST_RGAS/SHR_CONST_MWDAIR;//
   //  ! Dry air gas constant     ~ J/K/kg
-  const Real twothird = 2. / 3.;
+
   const Real rair = haero::Constants::r_gas_dry_air;
   const Real rh2o = haero::Constants::r_gas_h2o_vapor;
   const Real latvap =
@@ -493,10 +470,11 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   const Real dqsdt = latvap / (rh2o * tair * tair) * qs;
   // [/m]
   const Real alpha =
-      gravit * (latvap / (cpair * rh2o * tair * tair) - 1. / (rair * tair));
+      gravit * (latvap / (cpair * rh2o * tair * tair) - one / (rair * tair));
   // [m3/kg]
-  const Real gamma = (1 + latvap / cpair * dqsdt) / (rhoair * qs);
+  const Real gamma = (one + latvap / cpair * dqsdt) / (rhoair * qs);
   // [s^(3/2)]
+  // BAD CONSTANT
   const Real etafactor2max =
       1.e10 / haero::pow((alpha * wmaxf),
                          1.5); // !this should make eta big if na is very small.
@@ -511,7 +489,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
       (rhoh2o / (diff0 * rhoair * qs) +
        latvap * rhoh2o / (conduct0 * tair) *
            (latvap / (rh2o * tair) - 1.)); // gthermfac is same for all modes
-  const Real beta = 2. * pi * rhoh2o * gthermfac * gamma; //[m2/s]
+  const Real beta = two * pi * rhoh2o * gthermfac * gamma; //[m2/s]
   // nucleation w, but = w_in if wdiab == 0 [m/s]
   const Real wnuc = w_in;
   const Real alw = alpha * wnuc;                  // [/s]
@@ -531,27 +509,29 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // !Here compute smc, eta for all modes for maxsat calculation
   for (int imode = 0; imode < nmode; ++imode) {
     // BAD CONSTANT
-    if (volume[imode] > 1.e-39 && na[imode] > 1.e-39) {
+
+    if (volume[imode] > small && na[imode] > small) {
       // !number mode radius (m)
-      amcube[imode] = (3. * volume[imode] /
-                       (4. * pi * exp45logsig[imode] *
-                        na[imode])); // ! only if variable size dist
+      amcube[imode] =
+          three_fourths * volume[imode] /
+          (pi * exp45logsig[imode] * na[imode]); // ! only if variable size dist
       // !Growth coefficent Abdul-Razzak & Ghan 1998 eqn 16
       // !should depend on mean radius of mode to account for gas kinetic
       // effects !see Fountoukis and Nenes, JGR2005 and Meskhidze et al.,
       // JGR2006 !for approriate size to use for effective diffusivity.
-      etafactor2[imode] = 1. / (na[imode] * beta * haero::sqrt(gthermfac));
+      etafactor2[imode] = one / (na[imode] * beta * haero::sqrt(gthermfac));
       // BAD CONSTANT
       if (hygro[imode] > 1.e-10) {
         smc[imode] =
-            2. * aten *
+            two * aten *
             haero::sqrt(aten / (27. * hygro[imode] *
                                 amcube[imode])); // ! only if variable size dist
       } else {
+        // BAD CONSTANT
         smc[imode] = 100.;
       } // hygro
     } else {
-      smc[imode] = 1.;
+      smc[imode] = one;
       etafactor2[imode] =
           etafactor2max; // ! this should make eta big if na is very small.
     }                    // volumne
@@ -570,19 +550,18 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // endif
   // FIXME [unitless] ? lnsmax maybe has units of log(unit of smax ([fraction]))
   const Real lnsmax = haero::log(smax);
-  const Real sq2 = haero::sqrt(2.);
 
   // !Use maximum supersaturation to calculate aerosol activation output
-  for (int imode = 0; imode < 4; ++imode) {
+  for (int imode = 0; imode < nmode; ++imode) {
     // ! [unitless]
     const Real arg_erf_n =
         twothird * (lnsm[imode] - lnsmax) / (sq2 * alogsig[imode]);
 
-    fn[imode] = 0.5 * (1. - haero::erf(arg_erf_n)); //! activated number
+    fn[imode] = half * (one - haero::erf(arg_erf_n)); //! activated number
     // printf("fn[%d] %e haero::erf(arg_erf_n) %e\n", imode, fn[imode],
     // haero::erf(arg_erf_n)); ! [unitless]
     const Real arg_erf_m = arg_erf_n - 1.5 * sq2 * alogsig[imode];
-    fm[imode] = 0.5 * (1. - haero::erf(arg_erf_m)); // !activated mass
+    fm[imode] = half * (one - haero::erf(arg_erf_m)); // !activated mass
     fluxn[imode] = fn[imode] * w_in; // !activated aerosol number flux
     fluxm[imode] = fm[imode] * w_in; // !activated aerosol mass flux
   }
@@ -635,6 +614,7 @@ void get_activate_frac(
   const Real zero = 0;
   const int nmodes = AeroConfig::num_modes();
   const int phase = 1; // ! interstitial
+
   const Real qcldbrn[maxd_aspectype][AeroConfig::num_modes()] = {{zero}};
   const Real qcldbrn_num[AeroConfig::num_modes()] = {zero};
 

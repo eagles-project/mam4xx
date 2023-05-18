@@ -33,7 +33,6 @@ void ccncalc_single_cell(Ensemble *ensemble);
 void explmix(Ensemble *ensemble);
 void maxsat(Ensemble *ensemble);
 
-
 int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
@@ -66,12 +65,10 @@ int main(int argc, char **argv) {
       loadaer(ensemble);
     } else if (func_name == "ccncalc_single_cell") {
       ccncalc_single_cell(ensemble);
-    }
-    else if (func_name == "explmix") {
+    } else if (func_name == "explmix") {
       explmix(ensemble);
-    }
-    else if (func_name == "maxsat") {
-      //maxsat(ensemble);
+    } else if (func_name == "maxsat") {
+      // maxsat(ensemble);
     }
 
   } catch (std::exception &e) {
