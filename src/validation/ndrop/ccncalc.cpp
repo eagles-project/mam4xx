@@ -15,7 +15,7 @@ using namespace mam4;
 void ccncalc(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
-    // validation test from standalone ndrop. 
+    // validation test from standalone ndrop.
     const Real zero = 0;
     const int maxd_aspectype = 14;
     const int ntot_amode = 4;
