@@ -11,6 +11,7 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 add_executable(ndrop_driver  
                ndrop_driver.cpp
                ccncalc.cpp
+               ccncalc_single_cell.cpp
                get_activate_frac.cpp
                loadaer.cpp
                activate_modal.cpp)
@@ -30,6 +31,7 @@ endforeach()
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     ccncalc_ts_1417
+    ccncalc_ts_1400
     get_activate_frac_ts_1417
     loadaer_ts_1403_type3
     activate_modal_ts_1400_type1
@@ -38,7 +40,8 @@ set(TEST_LIST
 set(DEFAULT_TOL 1e-11)
 
 set(ERROR_THRESHOLDS
-    1e-3 
+    1e-3
+    5e-5 
     1
     5e-9 
     8e-2
