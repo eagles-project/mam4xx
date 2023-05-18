@@ -25,7 +25,6 @@ void ccncalc_single_cell(Ensemble *ensemble) {
 
     const Real tair = input.get_array("tair")[0];
 
-
     const auto qcldbrn_1d = input.get_array("qcldbrn");
     const auto qcldbrn_num = input.get_array("qcldbrn_num");
 
@@ -42,7 +41,7 @@ void ccncalc_single_cell(Ensemble *ensemble) {
       for (int j = 0; j < maxd_aspectype; ++j) {
         lspectype_amode[j][i] = lspectype_amode_db[count];
         lmassptr_amode[j][i] = lmassptr_amode_db[count];
-        qcldbrn[j][i] =qcldbrn_1d[count];
+        qcldbrn[j][i] = qcldbrn_1d[count];
         count++;
       }
     }
@@ -62,10 +61,9 @@ void ccncalc_single_cell(Ensemble *ensemble) {
     const auto voltonumbhi_amode = voltonumbhi_amode_db.data();
     const auto voltonumblo_amode = voltonumblo_amode_db.data();
 
-
     Real exp45logsig[AeroConfig::num_modes()], alogsig[AeroConfig::num_modes()],
-    num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
-    num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
+        num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
+        num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
 
     Real aten = zero;
 
@@ -79,15 +77,13 @@ void ccncalc_single_cell(Ensemble *ensemble) {
       numptr_amode[i] = numptr_amode_db[i];
       nspec_amode[i] = nspec_amode_db[i];
     }
-    std::vector<Real> ccn(psat,zero);
+    std::vector<Real> ccn(psat, zero);
     ndrop_od::ccncalc(state_q.data(), tair, qcldbrn, qcldbrn_num.data(),
-                      air_density, lspectype_amode, specdens_amode,
-                      spechygro, lmassptr_amode, voltonumbhi_amode,
-                      voltonumblo_amode, numptr_amode, nspec_amode,
-                      exp45logsig, alogsig, ccn.data());
+                      air_density, lspectype_amode, specdens_amode, spechygro,
+                      lmassptr_amode, voltonumbhi_amode, voltonumblo_amode,
+                      numptr_amode, nspec_amode, exp45logsig, alogsig,
+                      ccn.data());
 
     output.set("ccn", ccn);
-
-   }); 
-
+  });
 }
