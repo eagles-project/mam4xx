@@ -22,9 +22,26 @@ void loadaer(Ensemble *ensemble) {
     const auto state_q = input.get_array("state_q");
     const Real air_density = input.get_array("cs")[0];
     const Real phase = input.get_array("phase")[0];
-    const auto qcldbrn1d_1d = input.get_array("qcldbrn1d");
-    const auto qcldbrn1d_num = input.get_array("qcldbrn1d_num");
 
+    Real qcldbrn[maxd_aspectype][ntot_amode] = {};
+
+    if (input.has_array("qcldbrn1d")) {
+      const auto qcldbrn1d_1d = input.get_array("qcldbrn1d");
+      int count = 0;
+      for (int i = 0; i < ntot_amode; ++i) {
+        for (int j = 0; j < maxd_aspectype; ++j) {
+          qcldbrn[j][i] = qcldbrn1d_1d[count];
+          count++;
+        }
+      }
+    }
+
+    std::vector<Real> qcldbrn1d_num;
+    if (input.has_array("qcldbrn1d")) {
+      qcldbrn1d_num = input.get_array("qcldbrn1d_num");
+    } else {
+      qcldbrn1d_num = {zero, zero, zero, zero};
+    }
     // const auto  = input.get_array("");
     std::vector<Real> naerosol(ntot_amode, zero), vaerosol(ntot_amode, zero),
         hygro(ntot_amode, zero);
@@ -41,14 +58,12 @@ void loadaer(Ensemble *ensemble) {
 
     int lspectype_amode[maxd_aspectype][ntot_amode] = {};
     int lmassptr_amode[maxd_aspectype][ntot_amode] = {};
-    Real qcldbrn1d[maxd_aspectype][ntot_amode] = {};
 
     int count = 0;
     for (int i = 0; i < ntot_amode; ++i) {
       for (int j = 0; j < maxd_aspectype; ++j) {
         lspectype_amode[j][i] = lspectype_amode_1d[count];
         lmassptr_amode[j][i] = lmassptr_amode_1d[count];
-        qcldbrn1d[j][i] = qcldbrn1d_1d[count];
         count++;
       }
     }
@@ -79,7 +94,7 @@ void loadaer(Ensemble *ensemble) {
     ndrop_od::loadaer(
         state_q.data(), nspec_amode, air_density, phase, lspectype_amode,
         specdens_amode, spechygro, lmassptr_amode, num2vol_ratio_min_nmodes,
-        num2vol_ratio_max_nmodes, numptr_amode, qcldbrn1d, qcldbrn1d_num.data(),
+        num2vol_ratio_max_nmodes, numptr_amode, qcldbrn, qcldbrn1d_num.data(),
         naerosol.data(), vaerosol.data(), hygro.data());
 
     output.set("naerosol", naerosol);

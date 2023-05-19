@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
   try {
-    if (func_name == "ccncalc") {
+    if (func_name == "ccncalc_loop") {
       ccncalc(ensemble);
     } else if (func_name == "get_activate_frac") {
       get_activate_frac(ensemble);
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
       activate_modal(ensemble);
     } else if (func_name == "loadaer") {
       loadaer(ensemble);
-    } else if (func_name == "ccncalc_single_cell") {
+    } else if (func_name == "ccncalc") {
       ccncalc_single_cell(ensemble);
     } else if (func_name == "explmix") {
       explmix(ensemble);

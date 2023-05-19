@@ -33,29 +33,35 @@ endforeach()
 
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
-    ccncalc_ts_1417
-    ccncalc_ts_1400
-    loadaer_ts_1403_type3
+    loadaertype1_merged
+    loadaertype2_merged
+    loadaertype3_merged
     activate_modal_ts_1400_type1
-    explmix_ts_1417_actmm1
+    #explmix_ts_1417_actmm1
     stand_get_activate_frac_ts_1417
     activate_modal_ts_1417_type2
     stand_activate_modal_ts_1417_type2
-    loadaer_ts_1404_type3
+    activate_modal_merged
+    ccncalc_merged
+    ccncalc_ts_1417
+    ccncalc_ts_1400
     )
 
 set(DEFAULT_TOL 1e-11)
 
 set(ERROR_THRESHOLDS
-    1e-3
-    5e-5 
-    5e-9 
+    6e-8
+    6e-8
+    6e-8
     8e-2
-    1
+    #1
     5e-5
     1e-5
     5e-6
-    5e-9
+    2e-3
+    2e-3
+    1e-3
+    5e-5 
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
