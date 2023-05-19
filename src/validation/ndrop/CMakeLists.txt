@@ -37,7 +37,7 @@ set(TEST_LIST
     ccncalc_ts_1400
     loadaer_ts_1403_type3
     activate_modal_ts_1400_type1
-    #explmix_ts_1417_actmm1
+    explmix_ts_1417_actmm1
     stand_get_activate_frac_ts_1417
     activate_modal_ts_1417_type2
     stand_activate_modal_ts_1417_type2
@@ -51,7 +51,7 @@ set(ERROR_THRESHOLDS
     5e-5 
     5e-9 
     8e-2
-    #1
+    1
     5e-5
     1e-5
     5e-6
