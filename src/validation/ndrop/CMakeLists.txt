@@ -37,7 +37,7 @@ set(TEST_LIST
     loadaertype2_merged
     loadaertype3_merged
     activate_modal_ts_1400_type1
-    #explmix_ts_1417_actmm1
+    explmix_ts_1417_actmm1
     stand_get_activate_frac_ts_1417
     activate_modal_ts_1417_type2
     stand_activate_modal_ts_1417_type2
@@ -54,7 +54,7 @@ set(ERROR_THRESHOLDS
     6e-8
     6e-8
     8e-2
-    #1
+    9e-2
     5e-5
     1e-5
     5e-6
