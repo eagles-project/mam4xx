@@ -66,6 +66,7 @@ int main(int argc, char **argv) {
     } else if (func_name == "ccncalc") {
       ccncalc_single_cell(ensemble);
     } else if (func_name == "explmix") {
+      std::cout << "explmix" << std::endl;
       explmix(ensemble);
     } else if (func_name == "maxsat") {
       // maxsat(ensemble);
