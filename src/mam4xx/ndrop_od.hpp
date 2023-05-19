@@ -295,8 +295,6 @@ void ccncalc(const Real state_q[nvars], const Real tair,
 
   } // imode end
 
-  // printf(" Before ccn[lsat] %e \n", ccn[5]);
-
   for (int lsat = 0; lsat < psat; ++lsat) {
     ccn[lsat] *= per_m3_to_per_cm3; // ! convert from #/m3 to #/cm3
   }                                 // lsat
@@ -321,7 +319,7 @@ void qsat(const Real t, const Real p, Real &es, Real &qs) {
 
   // Note. Fortran code uses a table lookup. In C++ version, we compute directly
   // from the function.
-  es = wv_sat_methods::GoffGratch_svp_water(t);
+  es = wv_sat_methods::wv_sat_svp_trans(t);
   qs = wv_sat_methods::wv_sat_svp_to_qsat(es, p);
   // Ensures returned es is consistent with limiters on qs.
   es = haero::min(es, p);
@@ -411,7 +409,6 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // (ekd(k)*zs(k)) ! also, fluxm/flux_fullact gives fraction of aerosol mass
   // flux ! that is activated
   // !---------------------------------------------------------------------------------
-  // FIXME: hearo::Constants
   const Real zero = 0;
   const Real one = 1;
   const Real sq2 = haero::sqrt(2.);
@@ -485,10 +482,10 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
       (5.69 + 0.017 * (tair - t0)) * 4.186e2 * 1.e-5; // !convert to J/m/s/deg
   // thermodynamic function [m2/s]
   const Real gthermfac =
-      1. /
+      one /
       (rhoh2o / (diff0 * rhoair * qs) +
        latvap * rhoh2o / (conduct0 * tair) *
-           (latvap / (rh2o * tair) - 1.)); // gthermfac is same for all modes
+           (latvap / (rh2o * tair) - one)); // gthermfac is same for all modes
   const Real beta = two * pi * rhoh2o * gthermfac * gamma; //[m2/s]
   // nucleation w, but = w_in if wdiab == 0 [m/s]
   const Real wnuc = w_in;
@@ -546,8 +543,8 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // const Real smax = smax_prescribed;
   // else
   Real smax = zero;
+
   ndrop::maxsat(zeta, eta, nmode, smc, smax);
-  // endif
   // FIXME [unitless] ? lnsmax maybe has units of log(unit of smax ([fraction]))
   const Real lnsmax = haero::log(smax);
 
@@ -558,8 +555,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
         twothird * (lnsm[imode] - lnsmax) / (sq2 * alogsig[imode]);
 
     fn[imode] = half * (one - haero::erf(arg_erf_n)); //! activated number
-    // printf("fn[%d] %e haero::erf(arg_erf_n) %e\n", imode, fn[imode],
-    // haero::erf(arg_erf_n)); ! [unitless]
+
     const Real arg_erf_m = arg_erf_n - 1.5 * sq2 * alogsig[imode];
     fm[imode] = half * (one - haero::erf(arg_erf_m)); // !activated mass
     fluxn[imode] = fn[imode] * w_in; // !activated aerosol number flux

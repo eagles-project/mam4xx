@@ -24,9 +24,16 @@ void activate_modal(Ensemble *ensemble) {
     std::vector<Real> na = input.get_array("na");
     const auto volume = input.get_array("volume");
     const auto hygro = input.get_array("hygro");
-    const auto exp45logsig = input.get_array("exp45logsig");
-    const auto alogsig = input.get_array("alogsig");
-    const Real aten = input.get_array("aten")[0];
+
+    Real exp45logsig[AeroConfig::num_modes()], alogsig[AeroConfig::num_modes()],
+        num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
+        num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
+
+    Real aten = zero;
+
+    ndrop_od::ndrop_int(exp45logsig, alogsig, aten,
+                        num2vol_ratio_min_nmodes,  // voltonumbhi_amode
+                        num2vol_ratio_max_nmodes); // voltonumblo_amode
 
     // const auto  = input.get_array("");
     std::vector<Real> fn(ntot_amode, zero), fm(ntot_amode, zero),
@@ -34,9 +41,9 @@ void activate_modal(Ensemble *ensemble) {
     Real flux_fullact = zero;
 
     ndrop_od::activate_modal(w_in, wmaxf, tair, rhoair, na.data(),
-                             volume.data(), hygro.data(), exp45logsig.data(),
-                             alogsig.data(), aten, fn.data(), fm.data(),
-                             fluxn.data(), fluxm.data(), flux_fullact);
+                             volume.data(), hygro.data(), exp45logsig, alogsig,
+                             aten, fn.data(), fm.data(), fluxn.data(),
+                             fluxm.data(), flux_fullact);
 
     output.set("flux_fullact", flux_fullact);
     output.set("fn", fn);

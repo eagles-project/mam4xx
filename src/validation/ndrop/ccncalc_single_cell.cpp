@@ -53,13 +53,8 @@ void ccncalc_single_cell(Ensemble *ensemble) {
     const auto specdens_amode = specdens_amode_db.data();
     const auto spechygro = spechygro_db.data();
 
-    const auto voltonumbhi_amode_db = input.get_array("voltonumbhi_amode");
-    const auto voltonumblo_amode_db = input.get_array("voltonumblo_amode");
     const auto numptr_amode_db = input.get_array("numptr_amode");
     const auto nspec_amode_db = input.get_array("nspec_amode");
-
-    const auto voltonumbhi_amode = voltonumbhi_amode_db.data();
-    const auto voltonumblo_amode = voltonumblo_amode_db.data();
 
     Real exp45logsig[AeroConfig::num_modes()], alogsig[AeroConfig::num_modes()],
         num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
@@ -80,9 +75,9 @@ void ccncalc_single_cell(Ensemble *ensemble) {
     std::vector<Real> ccn(psat, zero);
     ndrop_od::ccncalc(state_q.data(), tair, qcldbrn, qcldbrn_num.data(),
                       air_density, lspectype_amode, specdens_amode, spechygro,
-                      lmassptr_amode, voltonumbhi_amode, voltonumblo_amode,
-                      numptr_amode, nspec_amode, exp45logsig, alogsig,
-                      ccn.data());
+                      lmassptr_amode, num2vol_ratio_min_nmodes,
+                      num2vol_ratio_max_nmodes, numptr_amode, nspec_amode,
+                      exp45logsig, alogsig, ccn.data());
 
     output.set("ccn", ccn);
   });
