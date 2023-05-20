@@ -16,6 +16,7 @@ add_executable(ndrop_driver
                loadaer.cpp
                activate_modal.cpp
                explmix.cpp
+               maxsat.cpp
                )
 
 
@@ -45,6 +46,7 @@ set(TEST_LIST
     ccncalc_merged
     ccncalc_ts_1417
     ccncalc_ts_1400
+    maxsat_ts_1400_type1
     )
 
 set(DEFAULT_TOL 1e-11)
@@ -62,6 +64,7 @@ set(ERROR_THRESHOLDS
     2e-3
     1e-3
     5e-5 
+    1e-11
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)

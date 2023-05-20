@@ -15,14 +15,9 @@ using namespace mam4;
 void explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
-    const Real zero = 0;
-    const int maxd_aspectype = 14;
-    const int ntot_amode = 4;
-    const int nvars = 40;
     
     const int pver = input.get_array("pver")[0];
     const Real dt = input.get("dt");
-    const Real dtmix = input.get_array("dtmix")[0];
     const Real is_unact = input.get_array("is_unact")[0];
 
     const auto qold_db = input.get_array("qold");
@@ -31,8 +26,6 @@ void explmix(Ensemble *ensemble) {
     const auto ekkm_db = input.get_array("ekkm");
     const auto overlapp_db = input.get_array("overlapp");
     const auto overlapm_db = input.get_array("overlapm");
-
-    const int top_lev = 6;
 
     /*
         ColumnView qold = haero::testing::create_column_view(pver);
