@@ -14,7 +14,6 @@ using namespace mam4;
 
 void maxsat(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-
     const Real zeta = input.get_array("zeta")[0];
     const int nmode = input.get_array("nmode")[0];
 
@@ -34,6 +33,5 @@ void maxsat(Ensemble *ensemble) {
     ndrop::maxsat(zeta, eta, nmode, smc, smax);
 
     output.set("smax", smax);
-    
-});
+  });
 }

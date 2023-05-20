@@ -15,7 +15,7 @@ using namespace mam4;
 void explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
-    
+
     const int pver = input.get_array("pver")[0];
     const Real dt = input.get("dt");
     const Real is_unact = input.get_array("is_unact")[0];
@@ -54,11 +54,11 @@ void explmix(Ensemble *ensemble) {
       Real qold_kp1 = qold_db[k + 1];
 
       Real src = src_db[k];
-      Real ek_km1 = ekkm_db[k-1]; // or -1 ??
-      Real ek_kp1 = ekkp_db[k+1]; // or +1 ??
+      Real ek_km1 = ekkm_db[k - 1]; // or -1 ??
+      Real ek_kp1 = ekkp_db[k + 1]; // or +1 ??
 
-      Real overlap_km1 = overlapm_db[k-1]; // or -1 ??
-      Real overlap_kp1 = overlapp_db[k+1]; // or +1 ??
+      Real overlap_km1 = overlapm_db[k - 1]; // or -1 ??
+      Real overlap_kp1 = overlapp_db[k + 1]; // or +1 ??
 
       ndrop::explmix(qold_km1, qold_k, qold_kp1, q[k], src, ek_kp1, ek_km1,
                      overlap_kp1, overlap_km1, dt, is_unact);
@@ -69,7 +69,5 @@ void explmix(Ensemble *ensemble) {
       qnew[k] = q[k];
     }
     output.set("qnew", qnew);
-
-
   });
 }
