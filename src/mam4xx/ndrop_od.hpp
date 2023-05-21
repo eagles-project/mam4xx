@@ -635,6 +635,187 @@ void get_activate_frac(
                  flux_fullact); // out
 
 } // get_activate_frac
+KOKKOS_INLINE_FUNCTION
+void update_from_cldn_profile(
+    const Real cldn_col_in, const Real cldn_col_in_kp1, const Real dtinv,
+    const Real wtke_col_in, const Real zs,
+    const Real dz, // ! in
+    const Real temp_col_in, const Real air_density, const Real air_density_kp1,
+    const Real csbot_cscen,
+    const Real state_q_col_in_kp1[nvars], // ! in
+    const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
+    const Real specdens_amode[maxd_aspectype],
+    const Real spechygro[maxd_aspectype],
+    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
+    const Real voltonumbhi_amode[AeroConfig::num_modes()],
+    const Real voltonumblo_amode[AeroConfig::num_modes()],
+    const int numptr_amode[AeroConfig::num_modes()],
+    const int nspec_amode[maxd_aspectype],
+    const Real exp45logsig[AeroConfig::num_modes()],
+    const Real alogsig[AeroConfig::num_modes()], const Real aten,
+    const int mam_idx[AeroConfig::num_modes()][10], Real raercol_nsav[40],
+    Real raercol_nsav_kp1[40], Real raercol_cw_nsav[40],
+    Real &nsource_col, // inout
+    Real &qcld, Real factnum_col[AeroConfig::num_modes()],
+    Real &ekd, // out
+    Real nact[AeroConfig::num_modes()], Real mact[AeroConfig::num_modes()]) {
+  // input arguments
+  // cldn_col_in(:)   ! cloud fraction [fraction] at kk
+  // cldn_col_in_kp1(:)   ! cloud fraction [fraction] at min0(kk+1, pver);
+  // dtinv      ! inverse time step for microphysics [s^{-1}]
+  // wtke_col_in(:)   ! subgrid vertical velocity [m/s] at kk
+  // zs(:)            ! inverse of distance between levels [m^-1]
+  // dz(:)         ! geometric thickness of layers [m]
+  // temp_col_in(:)   ! temperature [K]
+  // air_density(:)     ! air density [kg/m^3] at kk
+  // air_density_kp1  ! air density [kg/m^3] at min0(kk+1, pver);
+  // csbot_cscen(:)   ! inverse normalized air density csbot(i)/cs(i,k)
+  // [dimensionless] state_q_col_in(:,:)    ! aerosol mmrs [kg/kg]
+
+  // raercol_nsav(:,:)    ! single column of saved aerosol mass, number mixing
+  // ratios [#/kg or kg/kg] raercol_cw_nsav(:,:) ! same as raercol but for
+  // cloud-borne phase [#/kg or kg/kg] nsource_col(:)   ! droplet number mixing
+  // ratio source tendency [#/kg/s] qcld(:)  ! cloud droplet number mixing ratio
+  // [#/kg] factnum_col(:,:)  ! activation fraction for aerosol number
+  // [fraction] ekd(:)     ! diffusivity for droplets [m^2/s] nact(:,:)  !
+  // fractional aero. number  activation rate [/s] mact(:,:)  ! fractional aero.
+  // mass    activation rate [/s]
+
+  // ! ......................................................................
+  // ! start of k-loop for calc of old cloud activation tendencies ..........
+  // !
+  // ! rce-comment
+  // !    changed this part of code to use current cloud fraction (cldn)
+  // exclusively !    consider case of cldo(:)=0, cldn(k)=1, cldn(k+1)=0 !
+  // previous code (which used cldo below here) would have no cloud-base
+  // activation !       into layer k.  however, activated particles in k mix out
+  // to k+1, !       so they are incorrectly depleted with no replacement
+  // BAD CONSTANT
+  const Real cld_thresh = 0.01; //   !  threshold cloud fraction [fraction]
+  // kp1 = min0(kk+1, pver);
+  const int ntot_amode = AeroConfig::num_modes();
+  const Real zero = 0;
+
+  if (cldn_col_in > cld_thresh) {
+
+    if (cldn_col_in - cldn_col_in_kp1 > cld_thresh) {
+
+      // cloud base
+
+      // ! rce-comments
+      // !   first, should probably have 1/zs(k) here rather than dz(i,k)
+      // because !      the turbulent flux is proportional to ekd(k)*zs(k), !
+      // while the dz(i,k) is used to get flux divergences !      and mixing
+      // ratio tendency/change !   second and more importantly, using a single
+      // updraft velocity here !      means having monodisperse turbulent
+      // updraft and downdrafts. !      The sq2pi factor assumes a normal draft
+      // spectrum. !      The fluxn/fluxm from activate must be consistent with
+      // the !      fluxes calculated in explmix.
+      ekd = wtke_col_in / zs;
+      // ! rce-comment - use kp1 here as old-cloud activation involves
+      // !   aerosol from layer below
+
+      // Real fn[ntot_amode] = {};// activation fraction for aerosol number
+      // [fraction]
+      Real fm[ntot_amode] =
+          {}; // activation fraction for aerosol mass [fraction]
+      Real fluxm[ntot_amode] =
+          {}; // flux of activated aerosol mass fraction into cloud [m/s]
+      Real fluxn[ntot_amode] =
+          {}; // flux of activated aerosol number fraction into cloud [m/s]
+      Real flux_fullact = zero;
+      ; // flux of activated aerosol fraction assuming 100% activation [m/s]
+      get_activate_frac(
+          state_q_col_in_kp1, air_density_kp1, air_density, wtke_col_in,
+          temp_col_in, // in
+          lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
+          voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
+          exp45logsig, alogsig, aten, factnum_col, fm, fluxn, fluxm, // out
+          flux_fullact);
+
+      //
+      //  store for output activation fraction of aerosol
+      // factnum_col(kk,:) = fn
+      // vertical change in cloud raction [fraction]
+      const Real delz_cld = cldn_col_in - cldn_col_in_kp1;
+
+      // flux of activated aerosol number into cloud [#/m^2/s]
+      Real fluxntot = zero;
+
+      // ! rce-comment 1
+      // !    flux of activated mass into layer k (in kg/m2/s)
+      // !       = "actmassflux" = dumc*fluxm*raercol(kp1,lmass)*csbot(k)
+      // !    source of activated mass (in kg/kg/s) = flux divergence
+      // !       = actmassflux/(cs(i,k)*dz(i,k))
+      // !    so need factor of csbot_cscen = csbot(k)/cs(i,k)
+      // !                   dum=1./(dz(i,k))
+      // conversion factor from flux to rate [m^{-1}]
+      const Real crdz = csbot_cscen / dz;
+
+      // ! rce-comment 2
+      // !    code for k=pver was changed to use the following conceptual model
+      // !    in k=pver, there can be no cloud-base activation unless one
+      // considers !       a scenario such as the layer being partially cloudy,
+      // !       with clear air at bottom and cloudy air at top
+      // !    assume this scenario, and that the clear/cloudy portions mix with
+      // !       a timescale taumix_internal = dz(i,pver)/wtke_cen(i,pver)
+      // !    in the absence of other sources/sinks, qact (the activated
+      // particle !       mixratio) attains a steady state value given by !
+      // qact_ss = fcloud*fact*qtot !       where fcloud is cloud fraction, fact
+      // is activation fraction, !       qtot=qact+qint, qint is interstitial
+      // particle mixratio !    the activation rate (from mixing within the
+      // layer) can now be !       written as !          d(qact)/dt = (qact_ss -
+      // qact)/taumix_internal !                     =
+      // qtot*(fcloud*fact*wtke/dz) - qact*(wtke/dz) !    note that
+      // (fcloud*fact*wtke/dz) is equal to the nact/mact !    also, d(qact)/dt
+      // can be negative.  in the code below !       it is forced to be >= 0
+      // !
+      // ! steve --
+      // !    you will likely want to change this.  i did not really understand
+      // !       what was previously being done in k=pver
+      // !    in the cam3_5_3 code, wtke(i,pver) appears to be equal to the
+      // !       droplet deposition velocity which is quite small
+      // !    in the cam3_5_37 version, wtke is done differently and is much
+      // !       larger in k=pver, so the activation is stronger there
+      // !
+      for (int imode = 0; imode < ntot_amode; ++imode) {
+        // local array index for MAM number, species
+        const int mm = mam_idx[imode][0];
+        nact[imode] += fluxn[imode] * crdz * delz_cld;
+        mact[imode] += fluxm[imode] * crdz * delz_cld;
+        // ! note that kp1 is used here
+        fluxntot +=
+            fluxn[imode] * delz_cld * raercol_nsav_kp1[mm] * air_density;
+      } // end imode
+
+      nsource_col += fluxntot / (air_density * dz);
+    } // end cldn_col_in(kk) - cldn_col_in(kp1) > cld_thresh
+    else {
+
+      //         !  if cldn < 0.01_r8 at any level except kk=pver, deplete qcld,
+      //         turn all raercol_cw to raercol, put appropriate tendency
+      // !  in nsource
+      // !  Note that if cldn(kk) >= 0.01_r8 but cldn(kk) - cldn(kp1)  <= 0.01,
+      // nothing is done.
+
+      // ! no cloud
+
+      nsource_col -= qcld * dtinv;
+      qcld = zero;
+
+      // convert activated aerosol to interstitial in decaying cloud
+
+      for (int imode = 0; imode < ntot_amode; ++imode) {
+        // local array index for MAM number, species
+        int mm = mam_idx[imode][0];
+        raercol_nsav[mm] += raercol_cw_nsav[mm]; // ! cloud-borne aerosol
+        raercol_cw_nsav[mm] = zero;
+      }
+    }
+
+  } // end cldn_col_in(kk) > cld_thresh
+
+} // end update_from_cldn_profile
 
 } // namespace ndrop_od
 
