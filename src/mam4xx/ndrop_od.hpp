@@ -635,6 +635,7 @@ void get_activate_frac(
                  flux_fullact); // out
 
 } // get_activate_frac
+
 KOKKOS_INLINE_FUNCTION
 void update_from_cldn_profile(
     const Real cldn_col_in, const Real cldn_col_in_kp1, const Real dtinv,
@@ -816,6 +817,139 @@ void update_from_cldn_profile(
   } // end cldn_col_in(kk) > cld_thresh
 
 } // end update_from_cldn_profile
+
+KOKKOS_INLINE_FUNCTION
+void update_from_newcld(
+    const Real cldn_col_in, const Real cldo_col_in,
+    const Real dtinv, //& ! in
+    const Real wtke_col_in, const Real temp_col_in, const Real air_density,
+    const Real state_q_col_in[nvars], //& ! in
+    const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
+    const Real specdens_amode[maxd_aspectype],
+    const Real spechygro[maxd_aspectype],
+    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
+    const Real voltonumbhi_amode[AeroConfig::num_modes()],
+    const Real voltonumblo_amode[AeroConfig::num_modes()],
+    const int numptr_amode[AeroConfig::num_modes()],
+    const int nspec_amode[maxd_aspectype],
+    const Real exp45logsig[AeroConfig::num_modes()],
+    const Real alogsig[AeroConfig::num_modes()], const Real aten,
+    const int mam_idx[AeroConfig::num_modes()][10], Real &qcld,
+    Real raercol_nsav[40],
+    Real raercol_cw_nsav[40], //&      ! inout
+    Real &nsource_col_out, Real factnum_col_out[AeroConfig::num_modes()]) {
+
+  // // input arguments
+  // real(r8), intent(in) :: cldn_col_in(:)   ! cloud fraction [fraction]
+  // real(r8), intent(in) :: cldo_col_in(:)   ! cloud fraction on previous time
+  // step [fraction] real(r8), intent(in) :: dtinv     ! inverse time step for
+  // microphysics [s^{-1}] real(r8), intent(in) :: wtke_col_in(:)   ! subgrid
+  // vertical velocity [m/s] real(r8), intent(in) :: temp_col_in(:)   !
+  // temperature [K] real(r8), intent(in) :: cs_col_in(:)     ! air density at
+  // actual level kk [kg/m^3] real(r8), intent(in) :: state_q_col_in(:,:) !
+  // aerosol mmrs [kg/kg]
+
+  // real(r8), intent(inout) :: qcld(:)  ! cloud droplet number mixing ratio
+  // [#/kg] real(r8), intent(inout) :: nsource_col_out(:)   ! droplet number
+  // mixing ratio source tendency [#/kg/s] real(r8), intent(inout) ::
+  // raercol_nsav(:,:)   ! single column of saved aerosol mass, number mixing
+  // ratios [#/kg or kg/kg] real(r8), intent(inout) :: raercol_cw_nsav(:,:)  !
+  // same as raercol_nsav but for cloud-borne phase [#/kg or kg/kg] real(r8),
+  // intent(inout) :: factnum_col_out(:,:)  ! activation fraction for aerosol
+  // number [fraction] ! k-loop for growing/shrinking cloud calcs
+  // .............................
+  const Real zero = 0;
+  const Real one = 1;
+  const int ntot_amode = AeroConfig::num_modes();
+  // BAD CONSTANT
+  const Real grow_cld_thresh =
+      0.01; //   !  threshold cloud fraction growth [fraction]
+
+  // new - old cloud fraction [fraction]
+  const Real delt_cld = cldn_col_in - cldo_col_in;
+
+  // ! shrinking cloud ......................................................
+  // !    treat the reduction of cloud fraction from when cldn(i,k) < cldo(i,k)
+  // !    and also dissipate the portion of the cloud that will be regenerated
+
+  if (cldn_col_in < cldo_col_in) {
+    // !  droplet loss in decaying cloud
+    // !++ sungsup
+
+    nsource_col_out += qcld * (cldn_col_in - cldo_col_in) / cldo_col_in * dtinv;
+
+    qcld *= (one + (cldn_col_in - cldo_col_in) / cldo_col_in);
+    // !-- sungsup
+    // ! convert activated aerosol to interstitial in decaying cloud
+    // fractional change in cloud fraction [fraction]
+    const Real frac_delt_cld = (cldn_col_in - cldo_col_in) / cldo_col_in;
+
+    for (int imode = 0; imode < ntot_amode; ++imode) {
+      const int mm = mam_idx[imode][0];
+      // cloud-borne aerosol tendency due to cloud frac tendency [#/kg or
+      // kg/kg]
+      const Real dact = raercol_cw_nsav[mm] * frac_delt_cld;
+      raercol_cw_nsav[mm] += dact; //   ! cloud-borne aerosol
+      raercol_nsav[mm] -= dact;
+      for (int lspec = 0; lspec < nspec_amode[imode]; ++lspec) {
+        const int mm = mam_idx[imode][lspec];
+        const Real act = raercol_cw_nsav[mm] * frac_delt_cld;
+        raercol_cw_nsav[mm] += dact; //  ! cloud-borne aerosol
+        raercol_nsav[mm] -= act;
+      } // lspec
+    }   // imode
+
+  } // cldn_col_in < cldo_col_in
+
+  // ! growing cloud ......................................................
+  //        !    treat the increase of cloud fraction from when cldn(i,k) >
+  //        cldo(i,k) !    and also regenerate part of the cloud
+
+  if (cldn_col_in - cldo_col_in > grow_cld_thresh) {
+    Real fm[ntot_amode] = {}; // activation fraction for aerosol mass [fraction]
+    Real fluxm[ntot_amode] =
+        {}; // flux of activated aerosol mass fraction into cloud [m/s]
+    Real fluxn[ntot_amode] =
+        {}; // flux of activated aerosol number fraction into cloud [m/s]
+    Real flux_fullact = zero;
+    ; // flux of activated aerosol fraction assuming 100% activation [m/s]
+
+    get_activate_frac(state_q_col_in, air_density, air_density, wtke_col_in,
+                      temp_col_in, // in
+                      lspectype_amode, specdens_amode, spechygro,
+                      lmassptr_amode, voltonumbhi_amode, voltonumblo_amode,
+                      numptr_amode, nspec_amode, exp45logsig, alogsig, aten,
+                      factnum_col_out, fm, fluxn, fluxm, // out
+                      flux_fullact);
+    //
+    // !  store for output activation fraction of aerosol
+    // factnum_col_out(kk,:) = fn
+
+    for (int imode = 0; imode < ntot_amode; ++imode) {
+      const int mm = mam_idx[imode][0];
+      const int num_idx = numptr_amode[imode];
+      const Real dact = delt_cld * factnum_col_out[imode] *
+                        state_q_col_in[num_idx]; // ! interstitial only
+      qcld += dact;
+      nsource_col_out += dact * dtinv;
+      raercol_cw_nsav[mm] += dact; //  ! cloud-borne aerosol
+      raercol_nsav[mm] -= dact;
+      // fm change from fractional change in cloud fraction [fraction]
+      const Real fm_delt_cld = delt_cld * fm[imode];
+
+      for (int lspec = 0; lspec < nspec_amode[imode]; ++lspec) {
+        const int mm = mam_idx[imode][lspec];
+        const int spc_idx = lmassptr_amode[lspec][imode];
+        const Real dact =
+            fm_delt_cld * state_q_col_in[spc_idx]; // ! interstitial only
+        raercol_cw_nsav[mm] += dact;               //  ! cloud-borne aerosol
+        raercol_nsav[mm] -= dact;
+
+      } // lspec
+    }   // imode
+  }     // cldn_col_in - cldo_col_in  > grow_cld_thresh
+
+} // update_from_newcld
 
 } // namespace ndrop_od
 
