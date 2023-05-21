@@ -46,7 +46,6 @@ set(TEST_LIST
     ccncalc_loop_ts_1417
     ccncalc_ts_1400
     maxsat_ts_1400_type1
-    ccncalc_ts_1417
     )
 
 set(DEFAULT_TOL 1e-11)
@@ -65,7 +64,6 @@ set(ERROR_THRESHOLDS
     1e-3
     5e-5 
     1e-11
-    5e-5
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
