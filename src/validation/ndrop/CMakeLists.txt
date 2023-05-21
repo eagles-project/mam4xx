@@ -19,7 +19,6 @@ add_executable(ndrop_driver
                maxsat.cpp
                )
 
-
 target_link_libraries(ndrop_driver skywalker;validation;${HAERO_LIBRARIES})
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
@@ -44,9 +43,10 @@ set(TEST_LIST
     stand_activate_modal_ts_1417_type2
     activate_modal_merged
     ccncalc_merged
-    ccncalc_ts_1417
+    ccncalc_loop_ts_1417
     ccncalc_ts_1400
     maxsat_ts_1400_type1
+    ccncalc_ts_1417
     )
 
 set(DEFAULT_TOL 1e-11)
@@ -65,6 +65,7 @@ set(ERROR_THRESHOLDS
     1e-3
     5e-5 
     1e-11
+    5e-5
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
