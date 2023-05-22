@@ -30,11 +30,24 @@ public:
     Config &operator=(const Config &) = default;
   };
 
-  static constexpr int maxd_aspectype = 14;
-  static constexpr int gas_pcnst = 40;
   static constexpr int num_modes = AeroConfig::num_modes();
   static constexpr int num_aerosol_ids = AeroConfig::num_aerosol_ids();
+
+  // maxd_aspectype = maximum allowable number of chemical species
+  // in each aerosol mode.
+  static constexpr int maxd_aspectype = 14;
+  // gas_pcnst number of "gas phase" species
+  // This should come from the chemistry model being used and will
+  // probably need to be dynamic.  This forces lmassptr_amode to
+  // also be dynamic.
+  static constexpr int gas_pcnst = 40;
+
   // Where lmapcc_val_num are defined in lmapcc_all
+  //
+  // numptr_amode(m) = gchm r-array index for the number mixing ratio
+  // (particles/mole-air) for aerosol mode m that is in clear air or
+  // interstitial are (but not in cloud water).  If zero or negative,
+  // then number is not being simulated.
   KOKKOS_INLINE_FUNCTION
   static constexpr int numptr_amode(const int i) {
     const int numptr_amode[num_modes] = {22, 27, 35, 39};
@@ -43,7 +56,13 @@ public:
   // Use the same index for Q and QQCW arrays
   KOKKOS_INLINE_FUNCTION
   static constexpr int numptrcw_amode(const int i) { return numptr_amode(i); }
+
   // Where lmapcc_val_aer are defined in lmapcc_all
+  //
+  // lmassptr_amode(l,m) = gchm r-array index for the mixing ratio
+  // (moles-x/mole-air) for chemical species l in aerosol mode m
+  // that is in clear air or interstitial air (but not in cloud water).
+  // If negative then number is not being simulated.
   KOKKOS_INLINE_FUNCTION
   static constexpr int lmassptr_amode(const int i, const int j) {
     const int lmassptr_amode[maxd_aspectype][num_modes] = {
@@ -55,6 +74,10 @@ public:
   }
 
   // use the same index for Q and QQCW arrays
+  //
+  // lmassptrcw_amode(l,m) = gchm r-array index for the mixing ratio
+  // (moles-x/mole-air) for chemical species l in aerosol mode m
+  // that is currently bound/dissolved in cloud water
   KOKKOS_INLINE_FUNCTION
   static constexpr int lmassptrcw_amode(const int i, const int j) {
     return lmassptr_amode(i, j);
@@ -90,8 +113,8 @@ void assign_la_lc(const int imode, const int ispec, int &la, int &lc) {
   // ---------------------------------------------------------------------
   // get the index of interstital (la) and cloudborne (lc) aerosols
   // from mode index and species index
-  // is_lc_append_in is true when cloudborne aerosols are appended after
-  // interstitial aerosol array (default is false)
+  // Cloudborne aerosols are appended after interstitial aerosol array
+  // so lc (cloudborne) is offset from ic (interstitial) by gas_pcnst.
   //-----------------------------------------------------------------------
   if (ispec == -1) {
     la = ConvProc::numptr_amode(imode);
@@ -104,7 +127,13 @@ void assign_la_lc(const int imode, const int ispec, int &la, int &lc) {
 }
 
 // ====================================================================================
+// The diagnostic arrays are twice the lengths of ConvProc::gas_pcnst because
+// cloudborne aerosols are appended after interstitial aerosols both of which
+// are of length gas_pcnst.
 static constexpr int pcnst_extd = 2 * ConvProc::gas_pcnst;
+
+// nsrflx is the number of process-specific column tracer tendencies:
+// activation, resuspension, aqueous chemistry, wet removal, actual and pseudo.
 static constexpr int nsrflx = 6;
 // clang-format off
 KOKKOS_INLINE_FUNCTION
@@ -138,7 +167,7 @@ void update_tendency_diagnostics(
 
   // clang-format on
 
-  if (ConvProc::gas_pcnst < ncnst)
+  if (ConvProc::gas_pcnst != ncnst)
     Kokkos::abort("Invalid number of tracers to transport.");
   const int ntot_amode = AeroConfig::num_modes();
   int la = 0, lc = 0;
@@ -171,7 +200,8 @@ void update_tendency_diagnostics(
       //   2 = aqueous chemistry (not implemented yet, so zero)
       //   3 = wet removal
       //   4 = actual precip-evap resuspension (what actually is applied to a
-      //   species) 5 = pseudo precip-evap resuspension (for history file)
+      //   species)
+      //   5 = pseudo precip-evap resuspension (for history file)
       qsrflx_i[0] = sumactiva[icnst] * hund_ovr_g;
       qsrflx_i[1] = sumresusp[icnst] * hund_ovr_g;
       qsrflx_i[2] = sumaqchem[icnst] * hund_ovr_g;

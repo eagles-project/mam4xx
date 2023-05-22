@@ -51,6 +51,9 @@ int main(int argc, char **argv) {
   try {
     if (func_name == "update_tendency_final") {
       update_tendency_final(ensemble);
+    } else {
+      std::cerr << "Error: Test name not recognized:" << func_name << std::endl;
+      exit(1);
     }
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
