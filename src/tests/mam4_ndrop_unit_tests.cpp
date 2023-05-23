@@ -239,3 +239,49 @@ TEST_CASE("test_maxsat", "mam4_ndrop") {
               FloatingPoint<Real>::equiv(smax, single_answer);
   REQUIRE(test);
 }
+
+// TEST_CASE("test_constructor", "mam4_dropmixnuc_process") {
+//   ekat::Comm comm;
+//   ekat::logger::Logger<> logger("ndrop::dropmixnuc constructor test",
+//                                 ekat::logger::LogLevel::debug, comm);
+
+//   logger.info("start of constructor test");
+//   mam4::AeroConfig mam4_config;
+//   mam4::DropmixnucProcess process(mam4_config);
+//   REQUIRE(process.name() == "MAM4 dropmixnuc");
+//   REQUIRE(process.aero_config() == mam4_config);
+//   logger.info("end of constructor test");
+// }
+
+// TEST_CASE("WIP_empty-fxns", "mam4_ndrop") {
+//   ekat::Comm comm;
+//   ekat::logger::Logger<> logger("ndrop temp tests",
+//                                 ekat::logger::LogLevel::debug, comm);
+//   logger.info("start of ndrop temp tests");
+//   const int nmodes = AeroConfig::num_modes();
+
+//   Real cldn_col_in = 0;
+//   Real cldo_col_in = 0;
+//   Real dtinv = 0;
+//   Real wtke_col_in = 0;
+//   Real temp_col_in = 0;
+//   Real cs_col_in = 0;
+//   Real state_q_col_in[nmodes] = {0};
+//   Real qcld = 0;
+//   Real raercol_nsav[nmodes] = {0};
+//   Real raercol_cw_nsav[nmodes] = {0};
+//   Real nsource_col_out = 0;
+//   Real factnum_col_out[nmodes] = {0};
+
+//   ndrop_mjs::update_from_newcld(cldn_col_in, cldo_col_in, dtinv, wtke_col_in,
+//                                 temp_col_in, cs_col_in, state_q_col_in, qcld,
+//                                 raercol_nsav, raercol_cw_nsav, nsource_col_out,
+//                                 factnum_col_out);
+
+//   ndrop_mjs::update_from_cldn_profile();
+
+//   ndrop_mjs::dropmixnuc();
+
+// REQUIRE(FloatingPoint<Real>::equiv(1, 1));
+// logger.info("end of ndrop temp tests");
+// }

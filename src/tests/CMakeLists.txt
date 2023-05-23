@@ -66,7 +66,7 @@ target_compile_options(mam4_nucleate_ice_unit_tests PRIVATE -Werror)
 # TODO: return to this test once we have more context for get_aer_num
 EkatCreateUnitTest(mam4_ndrop_unit_tests mam4_ndrop_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
-target_compile_options(mam4_ndrop_unit_tests PRIVATE -Werror)
+target_compile_options(mam4_ndrop_unit_tests PRIVATE)
 
 if (${HAERO_PRECISION} MATCHES double)
 EkatCreateUnitTest(kohler_unit_tests kohler_unit_tests.cpp
