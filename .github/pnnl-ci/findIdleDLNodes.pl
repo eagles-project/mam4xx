@@ -6,7 +6,7 @@ my @idle_parts = grep /idle/, @partitions;
 
 # Set to dl_shared for now
 # Change here for desired partition
-print "dl_shared";
+print "dl_shared,fat_shared,dl,fat";
 
 # Logic for selecting dl(v)(t) partitions with idle nodes
 #if ( scalar @idle_parts eq 0 ) {
