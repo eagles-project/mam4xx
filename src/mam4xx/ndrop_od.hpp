@@ -782,7 +782,8 @@ void update_from_cldn_profile(
       // !
       for (int imode = 0; imode < ntot_amode; ++imode) {
         // local array index for MAM number, species
-        const int mm = mam_idx[imode][0];
+        // Fortran indexing to C++ indexing
+        const int mm = mam_idx[imode][0]-1;
         nact[imode] += fluxn[imode] * crdz * delz_cld;
         mact[imode] += fluxm[imode] * crdz * delz_cld;
         // ! note that kp1 is used here
@@ -809,7 +810,8 @@ void update_from_cldn_profile(
 
       for (int imode = 0; imode < ntot_amode; ++imode) {
         // local array index for MAM number, species
-        int mm = mam_idx[imode][0];
+        // Fortran indexing to C++ indexing
+        int mm = mam_idx[imode][0]-1;
         raercol_nsav[mm] += raercol_cw_nsav[mm]; // ! cloud-borne aerosol
         raercol_cw_nsav[mm] = zero;
       }
@@ -886,14 +888,16 @@ void update_from_newcld(
     const Real frac_delt_cld = (cldn_col_in - cldo_col_in) / cldo_col_in;
 
     for (int imode = 0; imode < ntot_amode; ++imode) {
-      const int mm = mam_idx[imode][0];
+      // Fortran indexing to C++ indexing
+      const int mm = mam_idx[imode][0] -1 ;
       // cloud-borne aerosol tendency due to cloud frac tendency [#/kg or
       // kg/kg]
       const Real dact = raercol_cw_nsav[mm] * frac_delt_cld;
       raercol_cw_nsav[mm] += dact; //   ! cloud-borne aerosol
       raercol_nsav[mm] -= dact;
       for (int lspec = 0; lspec < nspec_amode[imode]; ++lspec) {
-        const int mm = mam_idx[imode][lspec];
+        // Fortran indexing to C++ indexing
+        const int mm = mam_idx[imode][lspec]-1;
         const Real act = raercol_cw_nsav[mm] * frac_delt_cld;
         raercol_cw_nsav[mm] += dact; //  ! cloud-borne aerosol
         raercol_nsav[mm] -= act;
@@ -927,8 +931,10 @@ void update_from_newcld(
     // factnum_col_out(kk,:) = fn
 
     for (int imode = 0; imode < ntot_amode; ++imode) {
-      const int mm = mam_idx[imode][0];
-      const int num_idx = numptr_amode[imode];
+      // Fortran indexing to C++ indexing
+      const int mm = mam_idx[imode][0]-1;
+      // Fortran indexing to C++ indexing
+      const int num_idx = numptr_amode[imode]-1;
       const Real dact = delt_cld * factnum_col_out[imode] *
                         state_q_col_in[num_idx]; // ! interstitial only
       qcld += dact;
@@ -939,8 +945,10 @@ void update_from_newcld(
       const Real fm_delt_cld = delt_cld * fm[imode];
 
       for (int lspec = 0; lspec < nspec_amode[imode]; ++lspec) {
-        const int mm = mam_idx[imode][lspec];
-        const int spc_idx = lmassptr_amode[lspec][imode];
+        // Fortran indexing to C++ indexing
+        const int mm = mam_idx[imode][lspec]-1;
+        // Fortran indexing to C++ indexing
+        const int spc_idx = lmassptr_amode[lspec][imode]-1;
         const Real dact =
             fm_delt_cld * state_q_col_in[spc_idx]; // ! interstitial only
         raercol_cw_nsav[mm] += dact;               //  ! cloud-borne aerosol
@@ -1103,15 +1111,19 @@ void dropmixnuc(
   Real raercol_cw_1[ncnst_tot] = {};
 
   for (int imode = 0; imode < ntot_amode; ++imode) {
-    const int mm = mam_idx[imode][0];
+    // Fortran indexing to C++ indexing
+    const int mm = mam_idx[imode][0]-1;
     raercol_cw_1[mm] = qqcw_fld_kk[mm];
-    const int num_idx = numptr_amode[imode];
+    // Fortran indexing to C++ indexing
+    const int num_idx = numptr_amode[imode]-1;
     raercol_1[mm] = state_q[num_idx];
     raercol_1_kp1[mm] = state_q_kp1[num_idx];
     for (int lspec = 0; lspec < nspec_amode[imode]; ++lspec) {
-      const int mm = mam_idx[imode][lspec];
+      // Fortran indexing to C++ indexing
+      const int mm = mam_idx[imode][lspec]-1;
       raercol_cw_1[mm] = qqcw_fld_kk[mm];
-      const int spc_idx = lmassptr_amode[lspec][imode];
+      // Fortran indexing to C++ indexing
+      const int spc_idx = lmassptr_amode[lspec][imode]-1;
       raercol_1[mm] = state_q[spc_idx];
       raercol_1[mm] = state_q_kp1[spc_idx];
     } // lspec
@@ -1198,15 +1210,18 @@ void dropmixnuc(
     // species index for given mode
     for (int lspec = 0; lspec < nspec_amode[imode]; ++lspec) {
       // local array index for MAM number, species
-      const int mm = mam_idx[imode][lspec];
-      const int lptr = mam_cnst_idx[imode][lspec];
+      // Fortran indexing to C++ indexing
+      const int mm = mam_idx[imode][lspec]-1;
+      // Fortran indexing to C++ indexing
+      const int lptr = mam_cnst_idx[imode][lspec]-1;
       qqcwtend = (raercol_cw_2[mm] - qqcw_fld_kk[mm]) * dtinv;
       qqcw_fld_kk[mm] = haero::max(
           raercol_cw_2[mm],
           zero); // ! update cloud-borne aerosol; HW: ensure non-negative
 
       if (lspec == 0) {
-        const int num_idx = numptr_amode[imode];
+        // Fortran indexing to C++ indexing
+        const int num_idx = numptr_amode[imode]-1;
         raertend = (raercol_2[mm] - state_q[num_idx]) * dtinv;
         qcldbrn_num[imode] = qqcw_fld_kk[mm];
       } else {
