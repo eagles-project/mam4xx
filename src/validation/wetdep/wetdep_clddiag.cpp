@@ -109,7 +109,6 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
         Real cldvst[pver];
         Real rain[pver];
 
-        // TODO - actually run function
         mam4::wetdep::clddiag(temperature_arr, pmid_arr, pdel_arr, cmfdqr_arr,
                               evapc_arr, cldt_arr, cldcu_arr, cldst_arr,
                               evapr_arr, prain_arr, cldv, cldvcu, cldvst, rain,
