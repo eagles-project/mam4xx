@@ -87,9 +87,9 @@ TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
   Kokkos::deep_copy(lprec_view, lprec);
 
   for (int i = 0; i < pver; i++) {
-    REQUIRE(pdel_view(i) == 0.3395589227E+04);
-    REQUIRE(source_term_view(i) == 0.4201774770E-07);
-    REQUIRE(sink_term_view(i) == 0.7626064109E-09);
+    REQUIRE(pdel_view(i) == Approx(0.3395589227E+04));
+    REQUIRE(source_term_view(i) == Approx(0.4201774770E-07));
+    REQUIRE(sink_term_view(i) == Approx(0.7626064109E-09));
     REQUIRE(lprec_view(i) == Approx(0.1428546071E-04));
   }
 }
@@ -231,8 +231,8 @@ TEST_CASE("test_calculate_cloudy_volume", "mam4_wet_deposition_process") {
   Kokkos::deep_copy(sumppr_all_view, sumppr_all);
 
   for (int i = 0; i < pver; i++) {
-    REQUIRE(cld_view(i) == cld_input[i]);
-    REQUIRE(lprec_view(i) == lprec_input[i]);
+    REQUIRE(cld_view(i) == Approx(cld_input[i]));
+    REQUIRE(lprec_view(i) == Approx(lprec_input[i]));
     REQUIRE(cldv_view(i) == Approx(cldv_ref[i]));
     REQUIRE(sumppr_all_view(i) == Approx(sumppr_all_ref[i]));
   }
@@ -288,9 +288,9 @@ TEST_CASE("test_rain_mix_ratio", "mam4_wet_deposition_process") {
   Kokkos::deep_copy(rain_view, rain);
 
   for (int i = 0; i < pver; i++) {
-    REQUIRE(temperature_view(i) == 0.2804261386E+03);
-    REQUIRE(pmid_view(i) == 0.6753476429E+05);
-    REQUIRE(sumppr_view(i) == 0.8324652534E-04);
+    REQUIRE(temperature_view(i) == Approx(0.2804261386E+03));
+    REQUIRE(pmid_view(i) == Approx(0.6753476429E+05));
+    REQUIRE(sumppr_view(i) == Approx(0.8324652534E-04));
     REQUIRE(rain_view(i) == Approx(0.1351673886E-04));
   }
 }

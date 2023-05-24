@@ -43,8 +43,9 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
   }
 
   // Parse input
-  auto dt = input.get("dt");
-  auto ncol = input.get_array("ncol");
+  // These first two values are unused
+  // auto dt = input.get("dt");
+  // auto ncol = input.get_array("ncol");
   auto temperature = input.get_array("temperature");
   auto pmid = input.get_array("pmid");
   auto pdel = input.get_array("pdel");
@@ -72,16 +73,16 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
   // std::vectors can't be copied directly to device memory by Kokkos
   // Maybe this should be a unique_ptr..
   // Since pver is actually hard coded, maybe this isn't necessary
-  auto temperature_arr = new Real[temperature.size()];
-  auto pmid_arr = new Real[pmid.size()];
-  auto pdel_arr = new Real[pdel.size()];
-  auto cmfdqr_arr = new Real[cmfdqr.size()];
-  auto evapc_arr = new Real[evapc.size()];
-  auto cldt_arr = new Real[cldt.size()];
-  auto cldcu_arr = new Real[cldcu.size()];
-  auto cldst_arr = new Real[cldst.size()];
-  auto evapr_arr = new Real[evapr.size()];
-  auto prain_arr = new Real[prain.size()];
+  Real temperature_arr[pver];
+  Real pmid_arr[pver];
+  Real pdel_arr[pver];
+  Real cmfdqr_arr[pver];
+  Real evapc_arr[pver];
+  Real cldt_arr[pver];
+  Real cldcu_arr[pver];
+  Real cldst_arr[pver];
+  Real evapr_arr[pver];
+  Real prain_arr[pver];
 
   // Use std::copy to copy input arrays to Real arrays
   std::copy(temperature.begin(), temperature.end(), temperature_arr);
@@ -136,10 +137,10 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
   Kokkos::deep_copy(rain_host, rain_dev);
 
   // Copy into a temporary real array before putting into std::vector
-  auto cldv_arr = new Real[pver];
-  auto cldvcu_arr = new Real[pver];
-  auto cldvst_arr = new Real[pver];
-  auto rain_arr = new Real[pver];
+  Real cldv_arr[pver];
+  Real cldvcu_arr[pver];
+  Real cldvst_arr[pver];
+  Real rain_arr[pver];
 
   for (size_t i = 0; i < pver; ++i) {
     cldv_arr[i] = cldv_host(i);
@@ -159,21 +160,6 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
   output.set("cldvcu", cldvcu);
   output.set("cldvst", cldvst);
   output.set("rain", rain);
-
-  // Clean up Real arrays on the stack
-  delete[] pdel_arr;
-  delete[] pmid_arr;
-  delete[] cmfdqr_arr;
-  delete[] evapc_arr;
-  delete[] cldt_arr;
-  delete[] cldcu_arr;
-  delete[] cldst_arr;
-  delete[] evapr_arr;
-  delete[] prain_arr;
-  delete[] cldv_arr;
-  delete[] cldvcu_arr;
-  delete[] cldvst_arr;
-  delete[] rain_arr;
 }
 
 void test_wetdep_clddiag(std::unique_ptr<Ensemble> &ensemble) {

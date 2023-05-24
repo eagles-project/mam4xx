@@ -19,7 +19,7 @@ add_test(wetdep_validation wetdep_driver
 set(MAM4XX_WETDEP_RESULT mam4xx_clddiag_input_ts_355)
 # Just use skywalker diff since cmake compare is too specific
 add_test(NAME wetdep_compare_output
-  COMMAND ${MAM_X_VALIDATION_DIR}/tools/skywalker_diff.py ${MAM4XX_WETDEP_RESULT} ${SKYWALKER_RESULT}_ref
+  COMMAND python3 ${MAM_X_VALIDATION_DIR}/scripts/compare_mam4xx_mam4.py ${MAM4XX_WETDEP_RESULT} ${SKYWALKER_RESULT}_ref
 )
 
 set_tests_properties(wetdep_compare_output
