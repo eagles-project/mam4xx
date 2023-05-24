@@ -147,6 +147,14 @@ void rain_mix_ratio(/* cont int ncol, */ const Real *temperature, const Real *pm
   }
 }
 
+KOKKOS_INLINE_FUNCTION
+void clddiag()
+{
+  int i = 1;
+  i++;
+  //std::cout << "test\n";
+}
+
 } // namespace wetdep
 
 /// @class WedDeposition
