@@ -26,6 +26,7 @@ using namespace mam4;
 
 // Parameterizations used by the convproc process.
 void update_tendency_final(Ensemble *ensemble);
+void compute_column_tendency(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -51,6 +52,8 @@ int main(int argc, char **argv) {
   try {
     if (func_name == "update_tendency_final") {
       update_tendency_final(ensemble);
+    } else if (func_name == "compute_tendencies") {
+      compute_column_tendency(ensemble);
     } else {
       std::cerr << "Error: Test name not recognized:" << func_name << std::endl;
       exit(1);

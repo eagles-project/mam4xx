@@ -42,6 +42,12 @@ public:
   // also be dynamic.
   static constexpr int gas_pcnst = 40;
 
+  // ====================================================================================
+  // The diagnostic arrays are twice the lengths of ConvProc::gas_pcnst because
+  // cloudborne aerosols are appended after interstitial aerosols both of which
+  // are of length gas_pcnst.
+  static constexpr int pcnst_extd = 2 * gas_pcnst;
+
   // Where lmapcc_val_num are defined in lmapcc_all
   //
   // numptr_amode(m) = gchm r-array index for the number mixing ratio
@@ -126,12 +132,6 @@ void assign_la_lc(const int imode, const int ispec, int &la, int &lc) {
   lc += ConvProc::gas_pcnst;
 }
 
-// ====================================================================================
-// The diagnostic arrays are twice the lengths of ConvProc::gas_pcnst because
-// cloudborne aerosols are appended after interstitial aerosols both of which
-// are of length gas_pcnst.
-static constexpr int pcnst_extd = 2 * ConvProc::gas_pcnst;
-
 // nsrflx is the number of process-specific column tracer tendencies:
 // activation, resuspension, aqueous chemistry, wet removal, actual and pseudo.
 static constexpr int nsrflx = 6;
@@ -141,12 +141,12 @@ void update_tendency_diagnostics(
     const int ntsub,   // IN  number of sub timesteps
     const int ncnst,   // IN  number of tracers to transport
     const bool doconvproc[], // IN  flag for doing convective transport
-    Real sumactiva[pcnst_extd], // INOUT sum (over layers) of dp*dconudt_activa [kg/kg/s * mb]
-    Real sumaqchem[pcnst_extd], // INOUT sum (over layers) of dp*dconudt_aqchem [kg/kg/s * mb]
-    Real sumwetdep[pcnst_extd], // INOUT sum (over layers) of dp*dconudt_wetdep [kg/kg/s * mb]
-    Real sumresusp[pcnst_extd], // INOUT sum (over layers) of dp*dcondt_resusp [kg/kg/s * mb]
-    Real sumprevap[pcnst_extd], // INOUT sum (over layers) of dp*dcondt_prevap [kg/kg/s * mb]
-    Real sumprevap_hist[pcnst_extd],// INOUT sum (over layers) of dp*dcondt_prevap_hist [kg/kg/s * mb]
+    Real sumactiva[ConvProc::pcnst_extd], // INOUT sum (over layers) of dp*dconudt_activa [kg/kg/s * mb]
+    Real sumaqchem[ConvProc::pcnst_extd], // INOUT sum (over layers) of dp*dconudt_aqchem [kg/kg/s * mb]
+    Real sumwetdep[ConvProc::pcnst_extd], // INOUT sum (over layers) of dp*dconudt_wetdep [kg/kg/s * mb]
+    Real sumresusp[ConvProc::pcnst_extd], // INOUT sum (over layers) of dp*dcondt_resusp [kg/kg/s * mb]
+    Real sumprevap[ConvProc::pcnst_extd], // INOUT sum (over layers) of dp*dcondt_prevap [kg/kg/s * mb]
+    Real sumprevap_hist[ConvProc::pcnst_extd],// INOUT sum (over layers) of dp*dcondt_prevap_hist [kg/kg/s * mb]
     Real qsrflx[][nsrflx]) // INOUT process-specific column tracer tendencies [kg/m2/s]
 {
 
@@ -222,7 +222,7 @@ void update_tendency_final(
     const int jtsub,   // IN  index of sub timesteps from the outer loop
     const int ncnst,   // IN  number of tracers to transport
     const Real dt,     // IN delta t (model time increment) [s]
-    const Real dcondt[pcnst_extd], // IN grid-average TMR tendency for current column  [kg/kg/s]
+    const Real dcondt[ConvProc::pcnst_extd], // IN grid-average TMR tendency for current column  [kg/kg/s]
     const bool doconvproc[], // IN  flag for doing convective transport
     Real dqdt[],           // INOUT Tracer tendency array
     Real q_i[ConvProc::gas_pcnst]) // INOUT  q(icol,kk,icnst) at current icol
@@ -258,6 +258,56 @@ void update_tendency_final(
       // update the q_i for the next interation of the jtsub loop
       if (jtsub < ntsub) {
         q_i[icnst] = haero::max((q_i[icnst] + dqdt_i * dtsub), 0.0);
+      }
+    }
+  }
+}
+// =========================================================================================
+// clang-format off
+// nlev = number of atmospheric levels: 0 <= ktop <= kbot_prevap <= nvel
+// nlevp = nlev + 1
+KOKKOS_INLINE_FUNCTION
+void compute_column_tendency(
+  const int ktop,                          // top level index
+  const int kbot_prevap,                   // bottom level index, for resuspension and evaporation only
+  const bool doconvproc_extd[ConvProc::pcnst_extd],  // IN flag for doing convective transport
+  const Real dpdry_i[/*nlev*/],                      // IN dp [mb]
+  const Real dcondt_resusp[/*nlev*/][ConvProc::pcnst_extd],    // IN portion of TMR tendency due to resuspension [kg/kg/s]
+  const Real dcondt_prevap[/*nlev*/][ConvProc::pcnst_extd],    // IN portion of TMR tendency due to precip evaporation [kg/kg/s]
+  const Real dcondt_prevap_hist[/*nlev*/][ConvProc::pcnst_extd], // IN  of TMR tendency due to precip evaporation, goes into the history [kg/kg/s]    
+  const Real dconudt_activa[/*nlevp*/][ConvProc::pcnst_extd], //  IN (conu)/dt by activation [kg/kg/s]
+  const Real dconudt_wetdep[/*nlevp*/][ConvProc::pcnst_extd], //  IN (conu)/dt by wet removal[kg/kg/s]
+  const Real fa_u[/*nlev*/],                       //  IN  area of the updraft [fraction]
+  Real sumactiva[ConvProc::pcnst_extd],  //  IN/OUT sum (over layers) of dp*dconudt_activa [kg/kg/s * mb] 
+  Real sumaqchem[ConvProc::pcnst_extd],  //  IN/OUT sum (over layers) of dp*dconudt_aqchem [kg/kg/s * mb]
+  Real sumwetdep[ConvProc::pcnst_extd],  //  IN/OUT sum (over layers) of dp*dconudt_wetdep [kg/kg/s * mb]
+  Real sumresusp[ConvProc::pcnst_extd],  //  IN/OUT sum (over layers) of dp*dconudt_resusp [kg/kg/s * mb]
+  Real sumprevap[ConvProc::pcnst_extd],  //  IN/OUT sum (over layers) of dp*dconudt_prevap [kg/kg/s * mb]
+  Real sumprevap_hist[ConvProc::pcnst_extd]) // IN/OUT sum (over layers) of dp*dconudt_prevap_hist [kg/kg/s * mb]
+{
+  // clang-format on
+  const Real dconudt_aqchem = 0; // aqueous chemistry is ignored in current code
+  // initialize variables
+  for (int i = 0; i < ConvProc::pcnst_extd; ++i) {
+    sumactiva[i] = 0;
+    sumaqchem[i] = 0;
+    sumwetdep[i] = 0;
+    sumresusp[i] = 0;
+    sumprevap[i] = 0;
+    sumprevap_hist[i] = 0;
+  }
+
+  for (int icnst = 1; icnst < ConvProc::pcnst_extd; ++icnst) {
+    if (doconvproc_extd[icnst]) {
+      // should go to kk=pver for dcondt_prevap, and this should be safe for
+      // other sums
+      for (int kk = ktop; kk < kbot_prevap; ++kk) {
+        sumactiva[icnst] += dconudt_activa[kk][icnst] * dpdry_i[kk] * fa_u[kk];
+        sumaqchem[icnst] += dconudt_aqchem * dpdry_i[kk] * fa_u[kk];
+        sumwetdep[icnst] += dconudt_wetdep[kk][icnst] * dpdry_i[kk] * fa_u[kk];
+        sumresusp[icnst] += dcondt_resusp[kk][icnst] * dpdry_i[kk];
+        sumprevap[icnst] += dcondt_prevap[kk][icnst] * dpdry_i[kk];
+        sumprevap_hist[icnst] += dcondt_prevap_hist[kk][icnst] * dpdry_i[kk];
       }
     }
   }
