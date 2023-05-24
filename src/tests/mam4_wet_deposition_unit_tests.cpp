@@ -215,7 +215,7 @@ TEST_CASE("test_calculate_cloudy_volume", "mam4_wet_deposition_process") {
         Real *lprec_device = lprec.data();
         Real *cldv_device = cldv.data();
         Real *sumppr_all_device = sumppr_all.data();
-        // True only flag with validation data available
+        // True is the only flag with validation data available
         mam4::wetdep::calculate_cloudy_volume(cld_device, lprec_device, true,
                                               cldv_device, sumppr_all_device,
                                               atm);
@@ -230,7 +230,6 @@ TEST_CASE("test_calculate_cloudy_volume", "mam4_wet_deposition_process") {
   auto sumppr_all_view = Kokkos::create_mirror_view(sumppr_all);
   Kokkos::deep_copy(sumppr_all_view, sumppr_all);
 
-  // TODO - generate/use real validation data
   for (int i = 0; i < pver; i++) {
     REQUIRE(cld_view(i) == cld_input[i]);
     REQUIRE(lprec_view(i) == lprec_input[i]);
@@ -288,7 +287,6 @@ TEST_CASE("test_rain_mix_ratio", "mam4_wet_deposition_process") {
   auto rain_view = Kokkos::create_mirror_view(rain);
   Kokkos::deep_copy(rain_view, rain);
 
-  // TODO - generate/use real validation data
   for (int i = 0; i < pver; i++) {
     REQUIRE(temperature_view(i) == 0.2804261386E+03);
     REQUIRE(pmid_view(i) == 0.6753476429E+05);

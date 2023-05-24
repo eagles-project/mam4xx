@@ -16,17 +16,11 @@ configure_file(
 add_test(wetdep_validation wetdep_driver
          ${WETDEP_VALIDATION_DIR}/clddiag_input_ts_355.yaml)
 
+set(MAM4XX_WETDEP_RESULT mam4xx_clddiag_input_ts_355)
 # Just use skywalker diff since cmake compare is too specific
 add_test(NAME wetdep_compare_output
-  COMMAND ${MAM_X_VALIDATION_DIR}/tools/skywalker_diff.py ${SKYWALKER_RESULT} ${SKYWALKER_RESULT}_ref
+  COMMAND ${MAM_X_VALIDATION_DIR}/tools/skywalker_diff.py ${MAM4XX_WETDEP_RESULT} ${SKYWALKER_RESULT}_ref
 )
 
 set_tests_properties(wetdep_compare_output
   PROPERTIES DEPENDS wetdep_validation)
-
-# Copy a Python tool from mam_x_validation to the test directory.
-configure_file(
-  ${WETDEP_VALIDATION_TOOLS_DIR}/skywalker_diff.py
-  ${CMAKE_CURRENT_BINARY_DIR}/skywalker_diff.py
-  COPYONLY
-)
