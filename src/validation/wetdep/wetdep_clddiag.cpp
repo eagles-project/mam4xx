@@ -14,17 +14,15 @@ using namespace haero;
 using namespace skywalker;
 
 void test_wetdep_clddiag_process(const Input &input, Output &output) {
-  // pver is constant?
-  // making ncol constant seems easiest - a single value in an array in the yaml
+  // pver is constant and the size of our arrays
   const int pver = 72;
-  const int ncol = 4;
   // Ensemble parameters
   // Declare array of strings for input names
   std::string input_variables[] = {"dt"};
 
-  std::string input_arrays[] = {"temperature", "pmid", "pdel",  "cmfdqr",
-                                "evapc",       "cldt", "cldcu", "cldst",
-                                "evapr",       "prain"};
+  std::string input_arrays[] = {"ncol",   "temperature", "pmid", "pdel",
+                                "cmfdqr", "evapc",       "cldt", "cldcu",
+                                "cldst",  "evapr",       "prain"};
 
   // Iterate over input_variables and error if not in input
   for (std::string name : input_variables) {
@@ -43,6 +41,7 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
 
   // Parse input
   auto dt = input.get("dt");
+  auto ncol = input.get_array("ncol");
   auto temperature = input.get_array("temperature");
   auto pmid = input.get_array("pmid");
   auto pdel = input.get_array("pdel");

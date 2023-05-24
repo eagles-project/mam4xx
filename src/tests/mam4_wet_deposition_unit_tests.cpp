@@ -258,7 +258,8 @@ TEST_CASE("test_rain_mix_ratio", "mam4_wet_deposition_process") {
   ColumnView rain = mam4::testing::create_column_view(pver);
 
   // Need to use Kokkos to initialize values
-  // Validation data from e3sm_mam4_refactor/components/eam/src/chemistry/yaml/wetdep/rain_mix_ratio_output_ts_355.py
+  // Validation data from
+  // e3sm_mam4_refactor/components/eam/src/chemistry/yaml/wetdep/rain_mix_ratio_output_ts_355.py
   Kokkos::parallel_for(
       "intialize_values_local_precip", 1, KOKKOS_LAMBDA(const int) {
         for (int i = 0; i < pver; i++) {

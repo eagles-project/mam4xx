@@ -59,8 +59,10 @@ void local_precip_production(/* cont int ncol, */ const Real *pdel,
  * 
  * @param[in] cld Cloud faction [fraction, unitless].
  * @param[in] lprec Local production rate of precipitation [kg/m2/s].
- * @param[in] is_tot_cld Flag for ???
- *      -   TODO!! - unsure what this really means.
+ * @param[in] is_tot_cld When is_tot_cld is true, this function computes the 
+ *                       total cloud volume. Otherwise, it computes the cloud 
+ *                       volume of either the stratiform clouds or the 
+ *                       convective clouds (depending upon the provided cloud fraction).
  * @param[in] atm Atmosphere object (used for number of levels).
  * 
  * @param[out] cldv Fraction occupied by rain or cloud water [fraction, unitless].
@@ -143,6 +145,9 @@ void rain_mix_ratio(/* cont int ncol, */ const Real *temperature, const Real *pm
           rho = pmid[i] / (Constants::r_gas_dry_air * temperature[i]);
           vfall = convfw / haero::sqrt(rho);
           rain[i] = sumppr[i] / (rho * vfall);
+          if (rain[i] < 1e-14) {
+              rain[i] = 0.0;
+          }
       }
   }
 }
