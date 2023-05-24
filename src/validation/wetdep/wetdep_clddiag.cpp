@@ -16,6 +16,9 @@ using namespace skywalker;
 void test_wetdep_clddiag_process(const Input &input, Output &output) {
   // pver is constant and the size of our arrays
   const int pver = 72;
+  int nlev = 72;
+  Real pblh = 1000;
+  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
   // Ensemble parameters
   // Declare array of strings for input names
   std::string input_variables[] = {"dt"};
@@ -70,6 +73,7 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
   // Maybe this should be a unique_ptr..
   // Since pver is actually hard coded, maybe this isn't necessary
   auto temperature_arr = new Real[temperature.size()];
+  auto pmid_arr = new Real[pmid.size()];
   auto pdel_arr = new Real[pdel.size()];
   auto cmfdqr_arr = new Real[cmfdqr.size()];
   auto evapc_arr = new Real[evapc.size()];
@@ -81,6 +85,7 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
 
   // Use std::copy to copy input arrays to Real arrays
   std::copy(temperature.begin(), temperature.end(), temperature_arr);
+  std::copy(pmid.begin(), pmid.end(), pmid_arr);
   std::copy(pdel.begin(), pdel.end(), pdel_arr);
   std::copy(cmfdqr.begin(), cmfdqr.end(), cmfdqr_arr);
   std::copy(evapc.begin(), evapc.end(), evapc_arr);
@@ -105,7 +110,9 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
         Real rain[pver];
 
         // TODO - actually run function
-        mam4::wetdep::clddiag();
+        mam4::wetdep::clddiag(temperature_arr, pmid_arr, pdel_arr, cmfdqr_arr, 
+                              evapc_arr, cldt_arr, cldcu_arr, cldst_arr, evapr_arr,
+                              prain_arr, cldv, cldvcu, cldvst, rain, atm);
 
         // Copy values back to host
         for (size_t i = 0; i < pver; ++i) {
@@ -155,6 +162,7 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
 
   // Clean up Real arrays on the stack
   delete[] pdel_arr;
+  delete[] pmid_arr;
   delete[] cmfdqr_arr;
   delete[] evapc_arr;
   delete[] cldt_arr;

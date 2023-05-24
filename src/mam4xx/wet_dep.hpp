@@ -152,12 +152,87 @@ void rain_mix_ratio(/* cont int ncol, */ const Real *temperature, const Real *pm
   }
 }
 
+/**
+ * @brief Estimate the cloudy volume which is occupied by rain or cloud water as 
+ *        the max between the local cloud amount or the sum above of
+ *       (cloud * positive precip production)   sum total precip from above
+ *        ----------------------------------- X -------------------------
+ *        sum above of ( positive precip )      sum positive precip from above
+ * 
+ * @param[in] temperature Temperature [K].
+ * @param[in] pmid Pressure at layer midpoints [Pa].
+ * @param[in] pdel Pressure difference across layers [Pa].
+ * @param[in] cmfdqr to convective rainout [kg/kg/s].
+ * @param[in] evapc Evaporation rate of convective precipitation ( >= 0 ) [kg/kg/s].
+ * @param[in] cldt Total cloud fraction [fraction, unitless].
+ * @param[in] cldcu Cumulus cloud fraction [fraction, unitless].
+ * @param[in] clst Stratus cloud fraction [fraction, unitless].
+ * @param[in] evapr rate of evaporation of falling precipitation [kg/kg/s].
+ * @param[in] prain rate of conversion of condensate to precipitation [kg/kg/s].
+ * @param[in] atm Atmosphere object (used for number of levels).
+ * 
+ * @param[out] cldv Fraction occupied by rain or cloud water [fraction, unitless].
+ * @param[out] cldvcu Convective precipitation volume [fraction, unitless].
+ * @param[out] cldvst Stratiform precipitation volume [fraction, unitless].
+ * @param[out] rain Rain mixing ratio [kg/kg].
+ * 
+ * @pre In F90, ncol == 1 as we only operate over one column at a time
+ *      as outer loops will iterate over columns, so we drop ncol as input.
+ * @pre In F90 code, pcols is the number of columns in the mesh.
+ *      Since we are only operating over one column, pcols == 1.
+ * @pre In F90 code, ncol == pcols. Since ncol == 1, pcols == 1.
+ *
+ * @pre atm is initialized correctly and has the correct number of levels.
+*/
 KOKKOS_INLINE_FUNCTION
-void clddiag()
+void clddiag(const Real* temperature, const Real* pmid, const Real* pdel,
+             const Real* cmfdqr, const Real* evapc, const Real* cldt,
+             const Real* cldcu, const Real* cldst, const Real* evapr,
+             const Real* prain, Real* cldv, Real* cldvcu, Real* cldvst,
+             Real* rain, const Atmosphere &atm)
 {
-  int i = 1;
-  i++;
-  //std::cout << "test\n";
+  // Calculate local precipitation production rate
+  // In src/chemistry/aerosol/wetdep.F90, (prain + cmfdqr) is used for source_term
+  // This is just a temporary array that contains the sum of the two vectors...
+  const int pver = atm.num_levels();
+
+  // Have to use stack memory since pver is non-const
+  auto source_term = new Real[pver];
+  auto lprec = new Real[pver];
+  auto lprec_st = new Real[pver];
+  auto lprec_cu = new Real[pver];
+  auto sumppr_all = new Real[pver];
+  auto sumppr_all_cu = new Real[pver];
+  auto sumppr_all_st = new Real[pver];
+ 
+  for (int i = 0; i < pver; i++) {
+    source_term[i] = prain[i] + cmfdqr[i];
+  }
+
+  // ...and then we pass the temporary array to local_precip_production
+  // TODO - !FIXME: Possible bug: why there is no evapc in lprec calculation?
+  local_precip_production(/* ncol, */ pdel, source_term, evapc, lprec, atm);
+  local_precip_production(/* ncol, */ pdel, cmfdqr, evapr, lprec_cu, atm);
+  local_precip_production(/* ncol, */ pdel, prain, evapr, lprec_st, atm);
+
+  // Calculate cloudy volume which is occupied by rain or cloud water
+  // Total
+  calculate_cloudy_volume(/* ncol, */ cldt, lprec, true, cldv, sumppr_all, atm);
+  // Convective
+  calculate_cloudy_volume(/* ncol, */ cldcu, lprec_cu, false, cldvcu, sumppr_all_cu, atm);
+  // Stratiform
+  calculate_cloudy_volume(/* ncol, */ cldst, lprec_st, false, cldvst, sumppr_all_st, atm);
+
+  // Calculate rain mixing ratio
+  rain_mix_ratio(/* ncol, */ temperature, pmid, sumppr_all, rain, atm);
+
+  delete[] source_term;
+  delete[] lprec;
+  delete[] lprec_st;
+  delete[] lprec_cu;
+  delete[] sumppr_all;
+  delete[] sumppr_all_cu;
+  delete[] sumppr_all_st;
 }
 
 } // namespace wetdep
