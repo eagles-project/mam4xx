@@ -81,16 +81,16 @@ void compute_column_tendency(Ensemble *ensemble) {
         dconudt_wetdep_dev, dcondt_resusp_dev, dcondt_prevap_dev,
         dcondt_prevap_hist_dev;
     ColumnView fa_u_dev, dpdry_i_dev;
-    get_input(input, "dconudt_activa", nlevp, pcnst_extd, 
-              dconudt_activa_host, dconudt_activa_dev);
+    get_input(input, "dconudt_activa", nlevp, pcnst_extd, dconudt_activa_host,
+              dconudt_activa_dev);
 
-    get_input(input, "dconudt_wetdep", nlevp, pcnst_extd, 
-              dconudt_wetdep_host, dconudt_wetdep_dev);
-    get_input(input, "dcondt_resusp", nlev, pcnst_extd, 
-              dcondt_resusp_host, dcondt_resusp_dev);
-    get_input(input, "dcondt_prevap", nlev, pcnst_extd, 
-              dcondt_prevap_host, dcondt_prevap_dev);
-    get_input(input, "dcondt_prevap_hist", nlev, pcnst_extd, 
+    get_input(input, "dconudt_wetdep", nlevp, pcnst_extd, dconudt_wetdep_host,
+              dconudt_wetdep_dev);
+    get_input(input, "dcondt_resusp", nlev, pcnst_extd, dcondt_resusp_host,
+              dcondt_resusp_dev);
+    get_input(input, "dcondt_prevap", nlev, pcnst_extd, dcondt_prevap_host,
+              dcondt_prevap_dev);
+    get_input(input, "dcondt_prevap_hist", nlev, pcnst_extd,
               dcondt_prevap_hist_host, dcondt_prevap_hist_dev);
     get_input(input, "fa_u", nlev, fa_u_host, fa_u_dev);
     get_input(input, "dpdry_i", nlev, dpdry_i_host, dpdry_i_dev);
