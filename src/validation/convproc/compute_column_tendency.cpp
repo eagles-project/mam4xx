@@ -22,7 +22,7 @@ void get_input(const Input &input, const std::string &name, const int size,
   Kokkos::deep_copy(dev, host_view);
 }
 void get_input(const Input &input, const std::string &name, const int rows,
-               const int cols, const bool col_major, std::vector<Real> &host,
+               const int cols, std::vector<Real> &host,
                Kokkos::View<Real **, Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
   ColumnView col_view = mam4::validation::create_column_view(rows * cols);
@@ -31,14 +31,10 @@ void get_input(const Input &input, const std::string &name, const int rows,
   EKAT_ASSERT(host.size() == rows * cols);
   {
     std::vector<std::vector<Real>> matrix(rows, std::vector<Real>(cols));
-    if (col_major)
-      for (int j = 0, n = 0; j < cols; ++j)
-        for (int i = 0; i < rows; ++i, ++n)
-          matrix[i][j] = host[n];
-    else
-      for (int i = 0, n = 0; i < rows; ++i)
-        for (int j = 0; j < cols; ++j, ++n)
-          matrix[i][j] = host[n];
+    // Row Major layout
+    for (int i = 0, n = 0; i < rows; ++i)
+      for (int j = 0; j < cols; ++j, ++n)
+        matrix[i][j] = host[n];
     auto host_view = Kokkos::create_mirror_view(dev);
     for (int i = 0; i < rows; ++i)
       for (int j = 0; j < cols; ++j)
@@ -66,7 +62,6 @@ void compute_column_tendency(Ensemble *ensemble) {
     const int nlevp = 1 + nlev;
     const int gas_pcnst = ConvProc::gas_pcnst;
     const int pcnst_extd = 2 * gas_pcnst;
-    const bool col_major = false;
     // Fetch ensemble parameters
 
     // these variables depend on mode No and k
@@ -86,16 +81,16 @@ void compute_column_tendency(Ensemble *ensemble) {
         dconudt_wetdep_dev, dcondt_resusp_dev, dcondt_prevap_dev,
         dcondt_prevap_hist_dev;
     ColumnView fa_u_dev, dpdry_i_dev;
-    get_input(input, "dconudt_activa", nlevp, pcnst_extd, col_major,
+    get_input(input, "dconudt_activa", nlevp, pcnst_extd, 
               dconudt_activa_host, dconudt_activa_dev);
 
-    get_input(input, "dconudt_wetdep", nlevp, pcnst_extd, col_major,
+    get_input(input, "dconudt_wetdep", nlevp, pcnst_extd, 
               dconudt_wetdep_host, dconudt_wetdep_dev);
-    get_input(input, "dcondt_resusp", nlev, pcnst_extd, col_major,
+    get_input(input, "dcondt_resusp", nlev, pcnst_extd, 
               dcondt_resusp_host, dcondt_resusp_dev);
-    get_input(input, "dcondt_prevap", nlev, pcnst_extd, col_major,
+    get_input(input, "dcondt_prevap", nlev, pcnst_extd, 
               dcondt_prevap_host, dcondt_prevap_dev);
-    get_input(input, "dcondt_prevap_hist", nlev, pcnst_extd, col_major,
+    get_input(input, "dcondt_prevap_hist", nlev, pcnst_extd, 
               dcondt_prevap_hist_host, dcondt_prevap_hist_dev);
     get_input(input, "fa_u", nlev, fa_u_host, fa_u_dev);
     get_input(input, "dpdry_i", nlev, dpdry_i_host, dpdry_i_dev);
