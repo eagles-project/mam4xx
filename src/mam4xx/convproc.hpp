@@ -266,18 +266,21 @@ void update_tendency_final(
 // clang-format off
 // nlev = number of atmospheric levels: 0 <= ktop <= kbot_prevap <= nvel
 // nlevp = nlev + 1
+//
+// (note:  TMR = tracer mixing ratio)
+//
 KOKKOS_INLINE_FUNCTION
 void compute_column_tendency(
-  const int ktop,                          // top level index
-  const int kbot_prevap,                   // bottom level index, for resuspension and evaporation only
   const bool doconvproc_extd[ConvProc::pcnst_extd],  // IN flag for doing convective transport
+  const int ktop,                                    // IN top level index
+  const int kbot_prevap,                             // IN bottom level index, for resuspension and evaporation only
   const Real dpdry_i[/*nlev*/],                      // IN dp [mb]
   const Real dcondt_resusp[/*nlev*/][ConvProc::pcnst_extd],    // IN portion of TMR tendency due to resuspension [kg/kg/s]
   const Real dcondt_prevap[/*nlev*/][ConvProc::pcnst_extd],    // IN portion of TMR tendency due to precip evaporation [kg/kg/s]
-  const Real dcondt_prevap_hist[/*nlev*/][ConvProc::pcnst_extd], // IN  of TMR tendency due to precip evaporation, goes into the history [kg/kg/s]    
-  const Real dconudt_activa[/*nlevp*/][ConvProc::pcnst_extd], //  IN (conu)/dt by activation [kg/kg/s]
-  const Real dconudt_wetdep[/*nlevp*/][ConvProc::pcnst_extd], //  IN (conu)/dt by wet removal[kg/kg/s]
-  const Real fa_u[/*nlev*/],                       //  IN  area of the updraft [fraction]
+  const Real dcondt_prevap_hist[/*nlev*/][ConvProc::pcnst_extd], // IN portion of TMR tendency due to precip evaporation, goes into the history [kg/kg/s]
+  const Real dconudt_activa[/*nlevp*/][ConvProc::pcnst_extd], //  IN d(conu)/dt by activation [kg/kg/s]
+  const Real dconudt_wetdep[/*nlevp*/][ConvProc::pcnst_extd], //  IN d(conu)/dt by wet removal[kg/kg/s]
+  const Real fa_u[/*nlev*/],                       //  IN  fractional area of the updraft [fraction]
   Real sumactiva[ConvProc::pcnst_extd],  //  IN/OUT sum (over layers) of dp*dconudt_activa [kg/kg/s * mb] 
   Real sumaqchem[ConvProc::pcnst_extd],  //  IN/OUT sum (over layers) of dp*dconudt_aqchem [kg/kg/s * mb]
   Real sumwetdep[ConvProc::pcnst_extd],  //  IN/OUT sum (over layers) of dp*dconudt_wetdep [kg/kg/s * mb]

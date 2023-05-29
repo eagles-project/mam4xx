@@ -141,7 +141,7 @@ void compute_column_tendency(Ensemble *ensemble) {
           Real *sumprevap = sumprevap_dev.data();
           Real *sumprevap_hist = sumprevap_hist_dev.data();
           convproc::compute_column_tendency(
-              ktop, kbot_prevap, doconvproc_extd, dpdry_i, dcondt_resusp,
+              doconvproc_extd, ktop, kbot_prevap, dpdry_i, dcondt_resusp,
               dcondt_prevap, dcondt_prevap_hist, dconudt_activa, dconudt_wetdep,
               fa_u, sumactiva, sumaqchem, sumwetdep, sumresusp, sumprevap,
               sumprevap_hist);
