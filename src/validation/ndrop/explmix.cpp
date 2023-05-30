@@ -15,9 +15,9 @@ using namespace mam4;
 void explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
-
+    const int top_lev = 6;
     const int pver = input.get_array("pver")[0];
-    const Real dt = input.get("dt");
+    const Real dtmix = input.get_array("dtmix")[0];
     const Real is_unact = input.get_array("is_unact")[0];
 
     const auto qold_db = input.get_array("qold");
@@ -47,25 +47,28 @@ void explmix(Ensemble *ensemble) {
 
     Real q[pver];
 
-    for (int k = 1; k < pver - 1; k++) {
+    for (int k = top_lev; k < pver; k++) {
+      //add logic for km1 and kp1 from fortran
+      int kp1 = haero::min(k+1,pver);
+      int km1 = haero::max(k-1,top_lev);
 
-      Real qold_km1 = qold_db[k - 1];
+      Real qold_km1 = qold_db[km1];
       Real qold_k = qold_db[k];
-      Real qold_kp1 = qold_db[k + 1];
+      Real qold_kp1 = qold_db[kp1];
 
       Real src = src_db[k];
-      Real ek_km1 = ekkm_db[k - 1]; // or -1 ??
-      Real ek_kp1 = ekkp_db[k + 1]; // or +1 ??
+      Real ekkm = ekkm_db[k]; 
+      Real ekkp = ekkp_db[k]; 
 
-      Real overlap_km1 = overlapm_db[k - 1]; // or -1 ??
-      Real overlap_kp1 = overlapp_db[k + 1]; // or +1 ??
+      Real overlapm = overlapm_db[k]; 
+      Real overlapp = overlapp_db[k]; 
 
-      ndrop::explmix(qold_km1, qold_k, qold_kp1, q[k], src, ek_kp1, ek_km1,
-                     overlap_kp1, overlap_km1, dt, is_unact);
+      ndrop::explmix(qold_km1, qold_k, qold_kp1, q[k], src, ekkp, ekkm,
+                     overlapp, overlapm, dtmix, is_unact);
     }
 
-    std::vector<Real> qnew(pver);
-    for (int k = 0; k < pver; ++k) {
+    std::vector<Real> qnew(pver, 0.0);
+    for (int k = top_lev; k < pver; ++k) {
       qnew[k] = q[k];
     }
     output.set("qnew", qnew);
