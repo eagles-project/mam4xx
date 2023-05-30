@@ -28,4 +28,4 @@ install(FILES
         DESTINATION include/mam4xx)
 
 add_library(mam4xx aero_modes.cpp)
-install(TARGETS mam4xx DESTINATION ${CMAKE_INSTALL_LIBDIR}/mam4xx)
+install(TARGETS mam4xx DESTINATION ${CMAKE_INSTALL_LIBDIR})
