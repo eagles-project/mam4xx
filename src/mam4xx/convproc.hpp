@@ -317,8 +317,92 @@ void compute_column_tendency(
 }
 // =========================================================================================
 
+KOKKOS_INLINE_FUNCTION
+void tmr_tendency(const int la, const int lc, Real dcondt[ConvProc::pcnst_extd],
+                  Real dcondt_resusp[ConvProc::pcnst_extd]) {
+  // clang-format off
+  // -----------------------------------------------------------------------
+  //  calculate tendency of TMR
+  // -----------------------------------------------------------------------
+  // arguments (note:  TMR = tracer mixing ratio)
+  /*
+    in    :: la, lc             indices from assign_la_lc
+    inout :: dcondt[pcnst_extd]  overall TMR tendency from convection [#/kg/s or kg/kg/s] 
+    inout :: dcondt_resusp[pcnst_extd] portion of TMR tendency due to resuspension [#/kg/s or kg/kg/s]
+  */
+  // Only apply adjustments to dcondt for pairs of 
+  // unactivated (la) and activated (lc) aerosol species
+  // clang-format on
+  if (la > -1 && la < ConvProc::pcnst_extd && lc > -1 &&
+      lc < ConvProc::pcnst_extd) {
+    // cam5 approach
+    dcondt[la] += dcondt[lc];
+    dcondt_resusp[la] = dcondt[lc];
+    dcondt_resusp[lc] = -dcondt[lc];
+    dcondt[lc] = 0;
+  }
+}
+
+// =========================================================================================
+KOKKOS_INLINE_FUNCTION
+void ma_resuspend_convproc(Real dcondt[ConvProc::pcnst_extd],
+                           Real dcondt_resusp[ConvProc::pcnst_extd]) {
+  // -----------------------------------------------------------------------
+  //
+  //  Purpose:
+  //  Calculate resuspension of activated aerosol species resulting from both
+  //     detrainment from updraft and downdraft into environment
+  //     subsidence and lifting of environment, which may move air from
+  //        levels with large-scale cloud to levels with no large-scale cloud
+  //
+  //  Method:
+  //  Three possible approaches were considered:
+  //
+  //  1. Ad-hoc #1 approach.  At each level, adjust dcondt for the activated
+  //     and unactivated portions of a particular aerosol species so that the
+  //     ratio of dcondt (activated/unactivate) is equal to the ratio of the
+  //     mixing ratios before convection.
+  //     THIS WAS IMPLEMENTED IN MIRAGE2
+  //
+  //  2. Ad-hoc #2 approach.  At each level, adjust dcondt for the activated
+  //     and unactivated portions of a particular aerosol species so that the
+  //     change to the activated portion is minimized (zero if possible).  The
+  //     would minimize effects of convection on the large-scale cloud.
+  //     THIS IS CURRENTLY IMPLEMENTED IN CAM5 where we assume that convective
+  //     clouds have no impact on the stratiform-cloudborne aerosol
+  //
+  //  3. Mechanistic approach that treats the details of interactions between
+  //     the large-scale and convective clouds.  (Something for the future.)
+  //
+  //  Author: R. Easter
+  //
+  //  C++ porting: only method #2 is implemented.
+  // -----------------------------------------------------------------------
+
+  // -----------------------------------------------------------------------
+  //  arguments
+  //  (note:  TMR = tracer mixing ratio)
+  /*
+    inout :: dcondt[pcnst_extd]
+               overall TMR tendency from convection [#/kg/s or kg/kg/s]
+    out   :: dcondt_resusp[pcnst_extd]
+          portion of TMR tendency due to resuspension [#/kg/s or kg/kg/s]
+          (actually, due to the adjustments made here)
+  */
+  for (int i = 0; i < ConvProc::pcnst_extd; ++i)
+    dcondt_resusp[i] = 0;
+  const int ntot_amode = AeroConfig::num_modes();
+  int la, lc;
+  for (int imode = 0; imode < ntot_amode; ++imode) {
+    for (int ispec = -1; ispec < num_species_mode(imode); ++ispec) {
+      // cloudborne aerosols are appended after intersitial
+      assign_la_lc(imode, ispec, la, lc);
+      tmr_tendency(la, lc, dcondt, dcondt_resusp);
+    }
+  }
+}
+
 } // namespace convproc
 
 } // namespace mam4
-
 #endif
