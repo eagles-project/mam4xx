@@ -968,7 +968,7 @@ void update_from_explmix(const Real dtmicro, const Real csbot, const Real cldn,
 KOKKOS_INLINE_FUNCTION
 void dropmixnuc(
     const int kk, const int top_lev, const Real dtmicro, const Real temp,
-    const Real temp_kp1, const Real air_density, const Real air_density_kp1,
+    const Real temp_kp1, const Real pmid, const Real pmid_kp1,
     const Real pint_kp1, const Real pdel, const Real rpdel,
     const Real delta_zm, //  ! in zm[kk] - zm[kk+1], for pver zm[kk-1] - zm[kk]
     const Real state_q[nvars], const Real state_q_kp1[nvars],
@@ -1064,6 +1064,8 @@ void dropmixnuc(
   //! END NOTE FOR C++ PORT
   const Real gravit = haero::Constants::gravity;
   const Real rair = haero::Constants::r_gas_dry_air;
+  const Real air_density = pmid / (rair * temp);
+  const Real air_density_kp1 = pmid_kp1 / (rair * temp_kp1);
 
   Real nact[ntot_amode] = {};
   Real mact[ntot_amode] = {};
@@ -1269,23 +1271,17 @@ class Dropmixnuc {
 public:
   // dropmixnuc-specific configuration
   struct Config {
-    Real dtmicro; // time step for microphysics [s]
-    // Real pressure4interfaces[atmosphere.num_levels() + 1];
+    Real _dtmicro; // time step for microphysics [s]
+    int _numptr_amode[4] = {23, 28, 36, 40};
+    // FIXME: this should be a column variable
+      // currently taken from dropmixnuc_ts_1417.yaml
+    Real _ncldwtr = 0.1000000000e-11;
+    Real _scalar_const_vert_diffusivity;
 
     // default constructor--sets default values for parameters
-    Config() : dtmicro(1e-4) {
-      // nk = haero::atmosphere.num_levels();
-      // const Real half = 0.5;
-      // pressure4interfaces[0] = half * haero::atmosphere.pressure[0];
-      // pressure4interfaces[nk + 1] = haero::atmosphere.pressure[nk] + half *
-      //                           (haero::atmosphere.pressure[nk] -
-      //                            haero::atmosphere.pressure[nk - 1]);
-      // for (int k = 1; k < nk + 1; ++k)
-      // {
-      //   pressure4interfaces[k] = half * (haero::atmosphere.pressure[k - 1] +
-      //                            haero::atmosphere.pressure[k]);
-      // }
-    }
+    Config() : _dtmicro(1e-4)
+               {
+               }
 
     Config(const Config &) = default;
     ~Config() = default;
@@ -1294,6 +1290,7 @@ public:
 
 private:
   Config config_;
+  int _numptr_amode[4];
 
 public:
   // name--unique name of the process implemented by this class
@@ -1302,7 +1299,12 @@ public:
   // init--initializes the implementation with MAM4's configuration and with
   // a process-specific configuration.
   void init(const AeroConfig &aero_config,
-            const Config &dropmixnuc_config = Config()) {} // end(init)
+            const Config &dropmixnuc_config = Config()) {
+    for (int i = 0; i < AeroConfig::num_modes(); ++i)
+    {
+      _numptr_amode[i] = config_._numptr_amode[i];
+    }
+            } // end(init)
 
   KOKKOS_INLINE_FUNCTION
   void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
@@ -1314,73 +1316,173 @@ public:
     const int nk = atmosphere.num_levels();
     const int nmodes = AeroConfig::num_modes();
     const int nspec = AeroConfig::num_aerosol_ids();
+    const Real half = 0.5;
+    const Real dtmicro = config_._dtmicro;
+    // keep this here just in case, but I think I have this from Atmosphere
+    // const Real ncldwtr = config_._ncldwtr;
 
-    // Real pressure4interfaces[nk + 1];
-    // FIXME: this is just a very dumb midpoint calculation to get the code running
-    // pressure4interfaces[0] = half * atmosphere.pressure[0];
-    // pressure4interfaces[nk + 1] = atmosphere.pressure[nk] + half *
-    //                           (atmosphere.pressure[nk] -
-    //                            atmosphere.pressure[nk - 1]);
-    // for (int k = 1; k < nk + 1; ++k)
-    // {
-    //   pressure4interfaces[k] = half * (atmosphere.pressure[k - 1] +
-    //                            atmosphere.pressure[k]);
+    const auto _hydrostatic_dp = atmosphere.hydrostatic_dp;
+    const auto _temperature =  atmosphere.temperature;
+    const auto _pressure =  atmosphere.pressure;
+    const auto _height = atmosphere.height;
+    const auto _cloud_fraction = atmosphere.cloud_fraction;
+    const auto _cloud_liquid_num_mr =
+      atmosphere.cloud_liquid_number_mixing_ratio();
+
+    ColumnView _vertical_diffusivity;
+    Kokkos::deep_copy(_vertical_diffusivity,
+                      config_._scalar_const_vert_diffusivity);
+
+    // establish reference indices, based on AeroID
+    const int iaer_soa = static_cast<int>(AeroId::SOA);
+    const int iaer_so4 = static_cast<int>(AeroId::SO4);
+    const int iaer_pom = static_cast<int>(AeroId::POM);
+    const int iaer_bc = static_cast<int>(AeroId::BC);
+    const int iaer_nacl = static_cast<int>(AeroId::NaCL);
+    const int iaer_dust = static_cast<int>(AeroId::DST);
+    const int iaer_mom = static_cast<int>(AeroId::MOM);
+
+    const Real soa_density = aero_species(iaer_soa).density;
+    const Real so4_density = aero_species(iaer_so4).density;
+    const Real pom_density = aero_species(iaer_pom).density;
+    const Real bc_density = aero_species(iaer_bc).density;
+    const Real nacl_density = aero_species(iaer_nacl).density;
+    const Real dust_density = aero_species(iaer_dust).density;
+    const Real mom_density = aero_species(iaer_mom).density;
+
+    // KOKKOS_INLINE_FUNCTION AeroSpecies aero_species(const int i) {
+    //   static const AeroSpecies species[7] = {
+    //       AeroSpecies{Constants::molec_weight_c, mam4_density_soa,
+    //                   mam4_hyg_soa}, // secondary organic aerosol
+    //       AeroSpecies{Constants::molec_weight_so4, mam4_density_so4, mam4_hyg_so4},
+    //       AeroSpecies{Constants::molec_weight_c, mam4_density_pom,
+    //                   mam4_hyg_pom}, // primary organic matter
+    //       AeroSpecies{Constants::molec_weight_c, mam4_density_bc,
+    //                   mam4_hyg_bc}, // black carbon
+    //       AeroSpecies{Constants::molec_weight_nacl, mam4_density_nacl,
+    //                   mam4_hyg_nacl}, // sodium chloride
+    //       AeroSpecies{mam4_molec_weight_dst, mam4_density_dst,
+    //                   mam4_hyg_dst}, // dust
+    //       AeroSpecies{mam4_molec_weight_mom, mam4_density_mom,
+    //                   mam4_hyg_mom} // marine organic matter
+    //   };
+    //   return species[i];
     // }
 
-    // dropmixnuc(dtmicro, temp, pmid, pint, pdel, rpdel,
-    //                 zm, state_q, ncldwtr, kvh, wsub, cldn, cldo, // in
-    //                 qqcw, // inout
-    //                 ptend, tendnd, factnum) // out
-      // vertical diffusion and nucleation of cloud droplets
-      // assume cloud presence controlled by cloud fraction
-      // doesn't distinguish between warm, cold clouds
 
-      // FIXME: REMOVE--keeping these around for short-term reference
-      // use modal_aero_data,   only: qqcw_get_field, maxd_aspectype
-      // use mam_support, only: min_max_bound
-
-
-
-      // inout arguments
-      // type(ptr2d_t), intent(inout) :: qqcw(:)     // cloud-borne aerosol mass, number mixing ratios [#/kg or kg/kg]
-      // ColumnView n_mode_i[AeroConfig::num_modes()];
-      // ColumnView n_mode_c[AeroConfig::num_modes()];
-
-      // output arguments
-      // these are diagnostics/tendencies
-      // col_view real(r8), intent(out) :: tendnd // tendency in droplet number mixing ratio [#/kg/s]
-      // does this belong in prognostics?
-      // col_view (modal variable) real(r8), intent(out) :: factnum(,:)     // activation fraction for aerosol number [fraction]
     Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int kk) {
+        Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
+          // state_q(:,:,:) ! aerosol mmrs [kg/kg]
+          // ncldwtr(:,:) ! initial droplet number mixing ratio [#/kg]
+          // kvh(:,:)     ! vertical diffusivity [m^2/s]
+          // wsub(pcols,pver)    ! subgrid vertical velocity [m/s]
+          // cldn(pcols,pver)    ! cloud fraction [fraction]
+          // cldo(pcols,pver)    ! cloud fraction on previous time step [fraction]
+
+          // inout arguments
+          //  qqcw(:)     ! cloud-borne aerosol mass, number mixing ratios [#/kg or
+          //  kg/kg]
+
+          // output arguments
+          //   ptend
+          // tendnd(pcols,pver) ! tendency in droplet number mixing ratio [#/kg/s]
+          // factnum(:,:,:)     ! activation fraction for aerosol number [fraction]
+
+          // nsource droplet number mixing ratio source tendency [#/kg/s]
+
+          // ndropmix droplet number mixing ratio tendency due to mixing [#/kg/s]
+          // ccn number conc of aerosols activated at supersat [#/m^3]
+
+          //  !     note:  activation fraction fluxes are defined as
+          // !     fluxn = [flux of activated aero. number into cloud [#/m^2/s]]
+          // !           / [aero. number conc. in updraft, just below cloudbase [#/m^3]]
+
+          // coltend(:,:)       ! column tendency for diagnostic output
+          // coltend_cw(:,:)    ! column tendency
+
+          const Real grav = haero::Constants::gravity;
+          const int kp1 = k + 1;
+          const int top_lev = atmosphere.num_levels();
           // temperature [K]
-          Real temp = atmosphere.temperature[kk];
-          // // // mid-level pressure [Pa]
-          Real pmid = atmosphere.pressure[kk];
-          // // pressure at layer interfaces [Pa]
-          // Real pint = pressure4interfaces[kk];
-          // // // pressure thickness of layer [Pa]
-          // Real pdel = atmosphere.hydrostatic_dp[kk];
-          // // // inverse of pressure thickness of layer [/Pa]
-          // Real rpdel = FloatingPoint<Real>::safe_denominator(pdel);
-          // // geopotential height of level [m]
-          // Real zm = haero::Constants::gravity * atmosphere.height[kk];
-          // Real local = zm;
+          const Real temperature_k = _temperature[k];
+          const Real temperature_kp1 = _temperature[kp1];
+          // mid-level pressure [Pa]
+          const Real pmid = _pressure[k];
+          const Real pmid_kp1 = _pressure[k];
+          const Real pdel = _hydrostatic_dp[k];
+          const Real rpdel = FloatingPoint<Real>::safe_denominator(pdel);
+          // calculate the pressure at the lower (k + 1) level interface
+          const Real pint_kp1 = pmid + half * pdel;
+          const Real delta_zm = grav * (_height[k] - _height[kp1]);
+          // aerosol mass mixing ratios
+          // FIXME: which mmr's are these? interstitial, cloudborne, both?
+          // const Real state_q; //[nvars];
+          // const Real state_q_kp1; //[nvars];
+          // initial droplet number mixing ratio [#/kg]
+          // FIXME: what is this quantity?
+            // atmosphere.cloud_liquid_number_mixing_ratio() seems likely
+            // Note, also, that in the input yaml files, this is a single value
+            // for all levels
+          const Real ncldwtr = _cloud_liquid_num_mr[k]
+          // cloud fraction [fraction]
+          const Real cldn = _cloud_fraction[k];
+          const Real cldn_kp1 = _cloud_fraction[kp1];
+          // vertical diffusivity [m^2/s]
+          const Real kvh_kp1 = _vertical_diffusivity(kp1);
+          // subgrid vertical velocity [m/s]
+          // cloud fraction on previous time step [fraction]
+          // cloud-borne aerosol mass, number mixing ratios [#/kg or
+          // tendency in droplet number mixing ratio [#/kg/s]
+          // activation fraction for aerosol number [fraction]
+          //     note:  activation fraction fluxes are defined as
+          //     fluxn = [flux of activated aero. number into cloud [#/m^2/s]]
+          //           / [aero. number conc. in updraft, just below cloudbase [#/m^3]]
+          // column tendency for diagnostic output
+          // column tendency
 
-          // aerosol mmrs [kg/kg]
-          // Real state_q_i = q_aero_i[kk];
-          // // q_aero_c[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()]
+          // indexing array for modes/species
+          // FIXME: what is maxd_aspectype???
+          // const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()];
+          // species densities
+          // FIXME: how is this acquired?
+            // could it be aero_congfig.wet_density?
+          // const Real specdens_amode[maxd_aspectype];
 
-          // // initial droplet number mixing ratio [#/kg]
-          // Real ncldwtr
-          // // vertical diffusivity [m^2/s]
-          // Real kvh
-          // // subgrid vertical velocity [m/s]
-          // Real wsub
-          // // cloud fraction [fraction]
-          // Real cldn
-          // // cloud fraction on previous time step [fraction]
-          // Real cldo
+
+          // dropmixnuc(kk, top_lev, dtmicro, temperature_kk, temperature_kp1,
+          //            pmid, pmid_kp1, pint_kp1, pdel, rpdel, delta_zm,
+          //            state_q[nvars], state_q_kp1[nvars], ncldwtr, cldn,
+          //            kvh_kp1, kvh[kk+1], cldn_kp1,
+          //            lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
+          //            specdens_amode[maxd_aspectype]
+          //   const Real spechygro[maxd_aspectype]
+          //   const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()]
+          //   const Real voltonumbhi_amode[AeroConfig::num_modes()]
+          //   const Real voltonumblo_amode[AeroConfig::num_modes()]
+          //   const int numptr_amode[AeroConfig::num_modes()]
+          //   const int nspec_amode[maxd_aspectype]
+          //   const Real exp45logsig[AeroConfig::num_modes()]
+          //   const Real alogsig[AeroConfig::num_modes()]
+          //   const Real aten
+          //   const int mam_idx[AeroConfig::num_modes()][10]
+          //   const int mam_cnst_idx[AeroConfig::num_modes()][10]
+          //   Real &qcld
+          //   const Real wsub
+          //   const Real cldo
+          //        // in
+          //   Real qqcw_fld_kk[40]
+          //   // inout
+          //   Real ptend_q[40]
+          //   Real &tendnd
+          //   Real factnum[AeroConfig::num_modes()]
+          //   Real &ndropcol_kk
+          //   Real &ndropmix
+          //   Real &nsource
+          //   Real &wtke
+          //   Real ccn[psat]
+          //   Real coltend_kk[40]
+          //   Real coltend_cw_kk[40])
+
         }); // end kokkos::parfor(kk)
 
   } // end compute_tendencies()
