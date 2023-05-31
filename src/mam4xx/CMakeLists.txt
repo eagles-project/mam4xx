@@ -8,6 +8,7 @@ install(FILES
         aero_modes.hpp
         calcsize.hpp
         conversions.hpp
+        convproc.hpp
         gasaerexch.hpp
         gasaerexch_soaexch.hpp
         kerminen2002.hpp
