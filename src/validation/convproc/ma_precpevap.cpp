@@ -3,6 +3,9 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <catch2/catch.hpp>
+#include <iomanip>
+#include <iostream>
 #include <mam4xx/convproc.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
@@ -24,10 +27,8 @@ void get_input(const Input &input, const std::string &name, const int size,
 }
 } // namespace
 void ma_precpevap(Ensemble *ensemble) {
-
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
-
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
@@ -63,10 +64,65 @@ void ma_precpevap(Ensemble *ensemble) {
     auto host_view = Kokkos::create_mirror_view(return_vals);
     Kokkos::deep_copy(host_view, return_vals);
     pr_flux_base = host_view(0);
-    const Real pr_flux_tmp = host_view(1);
-    const Real x_ratio = host_view(2);
+    Real pr_flux_tmp = host_view(1);
+    Real x_ratio = host_view(2);
     output.set("pr_flux_base", pr_flux_base);
     output.set("pr_flux_tmp", pr_flux_tmp);
     output.set("x_ratio", x_ratio);
   });
+
+  // Check some corner cases.
+  const int nlev = 72;
+  ColumnView return_vals = mam4::validation::create_column_view(3);
+  Kokkos::parallel_for(
+      "ma_precpevap", 1, KOKKOS_LAMBDA(int) {
+        const int kk = 1;
+        Real evapc[nlev];
+        for (int i = 0; i < nlev; ++i)
+          evapc[i] = 99;
+        Real dpdry_i[nlev];
+        for (int i = 0; i < nlev; ++i)
+          dpdry_i[i] = 1123;
+        Real pr_flux = -1, pr_flux_tmp = -1, x_ratio = -1;
+        Real flux_base = 1.0e-40;
+        convproc::ma_precpevap(dpdry_i[kk], evapc[kk], pr_flux, flux_base,
+                               pr_flux_tmp, x_ratio);
+        return_vals(0) = flux_base;
+        return_vals(1) = pr_flux_tmp;
+        return_vals(2) = x_ratio;
+      });
+  auto host_view = Kokkos::create_mirror_view(return_vals);
+  Kokkos::deep_copy(host_view, return_vals);
+  Real pr_flux_base = host_view(0);
+  Real pr_flux_tmp = host_view(1);
+  Real x_ratio = host_view(2);
+  EKAT_REQUIRE_MSG(pr_flux_base == 0, "Special case of zero input failed.");
+  EKAT_REQUIRE_MSG(pr_flux_tmp == 0, "Special case of zero input failed.");
+  EKAT_REQUIRE_MSG(0 == x_ratio, "Special case of zero input failed.");
+
+  Kokkos::parallel_for(
+      "ma_precpevap", 1, KOKKOS_LAMBDA(int) {
+        const int kk = 1;
+        Real evapc[nlev];
+        for (int i = 0; i < nlev; ++i)
+          evapc[i] = 99;
+        Real dpdry_i[nlev];
+        for (int i = 0; i < nlev; ++i)
+          dpdry_i[i] = 1123;
+        Real pr_flux = 0, pr_flux_tmp = -1, x_ratio = -1;
+        Real flux_base = 1.0;
+        convproc::ma_precpevap(dpdry_i[kk], evapc[kk], pr_flux, flux_base,
+                               pr_flux_tmp, x_ratio);
+        return_vals(0) = flux_base;
+        return_vals(1) = pr_flux_tmp;
+        return_vals(2) = x_ratio;
+      });
+  host_view = Kokkos::create_mirror_view(return_vals);
+  Kokkos::deep_copy(host_view, return_vals);
+  pr_flux_base = host_view(0);
+  pr_flux_tmp = host_view(1);
+  x_ratio = host_view(2);
+  EKAT_REQUIRE_MSG(pr_flux_base == 0, "Special case of zero input failed.");
+  EKAT_REQUIRE_MSG(pr_flux_tmp == 0, "Special case of zero input failed.");
+  EKAT_REQUIRE_MSG(0 == x_ratio, "Special case of zero input failed.");
 }

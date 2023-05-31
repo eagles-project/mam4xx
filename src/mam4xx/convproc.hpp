@@ -17,7 +17,7 @@ namespace mam4 {
 // Namespace for WetDep function until wetdep is implimented.
 namespace WetDepTemp {
 KOKKOS_INLINE_FUNCTION
-Real faer_resusp_vs_fprec_evap_mpln(const Real fprec_evap, const int jstrcnv) {
+Real faer_resusp_vs_fprec_evap_mpln(const Real fprec_evap, const int) {
   // --------------------------------------------------------------------------------
   // corresponding fraction of precipitation-borne aerosol flux that is
   // resuspended Options of assuming log-normal or marshall-palmer raindrop size
@@ -31,33 +31,18 @@ Real faer_resusp_vs_fprec_evap_mpln(const Real fprec_evap, const int jstrcnv) {
   //    1 for marshall-palmer distribution
   //    2 for log-normal distribution
   Real a01, a02, a03, a04, a05, a06, a07, a08, a09, x_lox_lin, y_lox_lin;
-  if (jstrcnv <= 1) {
-    // marshall-palmer distribution
-    a01 = 8.6591133737322856E-02;
-    a02 = -1.7389168499601941E+00;
-    a03 = 2.7401882373663732E+01;
-    a04 = -1.5861714653209464E+02;
-    a05 = 5.1338179363011193E+02;
-    a06 = -9.6835933124501412E+02;
-    a07 = 1.0588489932213311E+03;
-    a08 = -6.2184513459217271E+02;
-    a09 = 1.5184126886039758E+02;
-    x_lox_lin = 5.0000000000000003E-02;
-    y_lox_lin = 2.5622471203221014E-03;
-  } else {
-    // log-normal distribution
-    a01 = 6.1944215103685640E-02;
-    a02 = -2.0095166685965378E+00;
-    a03 = 2.3882460251821236E+01;
-    a04 = -1.2695611774753374E+02;
-    a05 = 4.0086943562320101E+02;
-    a06 = -7.4954272875943707E+02;
-    a07 = 8.1701055892023624E+02;
-    a08 = -4.7941894659538502E+02;
-    a09 = 1.1710291076059025E+02;
-    x_lox_lin = 1.0000000000000001E-01;
-    y_lox_lin = 6.2227889828044350E-04;
-  }
+  // log-normal distribution
+  a01 = 6.1944215103685640E-02;
+  a02 = -2.0095166685965378E+00;
+  a03 = 2.3882460251821236E+01;
+  a04 = -1.2695611774753374E+02;
+  a05 = 4.0086943562320101E+02;
+  a06 = -7.4954272875943707E+02;
+  a07 = 8.1701055892023624E+02;
+  a08 = -4.7941894659538502E+02;
+  a09 = 1.1710291076059025E+02;
+  x_lox_lin = 1.0000000000000001E-01;
+  y_lox_lin = 6.2227889828044350E-04;
   Real x_var, y_var;
   x_var = utils::min_max_bound(0.0, 1.0, fprec_evap);
   if (x_var < x_lox_lin)
