@@ -73,8 +73,8 @@ void explmix(Ensemble *ensemble) {
       Real qactold_km1 = zero;
       Real qactold_kp1 = zero;
       if (is_unact) {
-        qactold_km1 = qactold[k];
-        qactold_kp1 = qactold[k];
+        qactold_km1 = qactold[km1];
+        qactold_kp1 = qactold[kp1];
       }
 
       ndrop::explmix(qold_km1, qold_k, qold_kp1, q[k], src, ekkp, ekkm,
