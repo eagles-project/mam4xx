@@ -83,7 +83,13 @@ public:
 
   static constexpr int num_modes = AeroConfig::num_modes();
   static constexpr int num_aerosol_ids = AeroConfig::num_aerosol_ids();
-
+  enum species_class {
+    undefined  = 0,
+    cldphysics = 1,
+    aerosol    = 2,
+    gas        = 3,
+    other      = 4
+  };
   // maxd_aspectype = maximum allowable number of chemical species
   // in each aerosol mode.
   static constexpr int maxd_aspectype = 14;
@@ -518,6 +524,107 @@ void ma_precpevap(const Real dpdry_i, const Real evapc, const Real pr_flux,
   }
 }
 
+//=========================================================================================
+KOKKOS_INLINE_FUNCTION
+void ma_precpprod(                                       
+  const Real rprd,   
+  const Real dpdry_i,  
+  const bool doconvproc_extd[ConvProc::pcnst_extd],  
+  const Real x_ratio,        
+  const int species_class[ConvProc::gas_pcnst], 
+  const int mmtoo_prevap_resusp[ConvProc::gas_pcnst], 
+  Real &pr_flux,        
+  Real &pr_flux_tmp,      
+  Real &pr_flux_base,    
+  Real wd_flux[ConvProc::pcnst_extd],    
+  Real dcondt_wetdep[ConvProc::pcnst_extd],                          
+  Real dcondt[ConvProc::pcnst_extd],    
+  Real dcondt_prevap[ConvProc::pcnst_extd],  
+  Real dcondt_prevap_hist[ConvProc::pcnst_extd])
+{
+  // clang-format off
+  // ------------------------------------------
+  //  step 2 in ma_precpevap_convproc: aerosol scavenging from precipitation production
+  // ------------------------------------------
+  /*
+  in  rprd  -  conv precip production  rate (at a certain level) [kg/kg/s]
+  in  dcondt_wetdep[pcnst_extd] - portion of TMR tendency due to wet removal [kg/kg/s]
+  in  dpdry_i      - pressure thickness of level [mb]
+  in  doconvproc_extd[pcnst_extd]  - indicates which species to process
+  in  x_ratio    - ratio of adjusted and old fraction of precipitation-borne aerosol 
+                   flux that is NOT resuspended, calculated in step 1
+  in  species_class(:) specify what kind of species it is. defined as
+          spec_class::undefined  = 0
+          spec_class::cldphysics = 1
+          spec_class::aerosol    = 2
+          spec_class::gas        = 3
+          spec_class::other      = 4
+  in  mmtoo_prevap_resusp[ConvProc::gas_pcnst]
+        pointers for resuspension mmtoo_prevap_resusp values are
+           >0 for aerosol mass species with    coarse mode counterpart
+           -1 for aerosol mass species WITHOUT coarse mode counterpart
+           -2 for aerosol number species
+            0 for other species
+
+  inout  pr_flux   - precip flux at base of current layer [(kg/kg/s)*mb]
+  inout  pr_flux_tmp   - precip flux at base of current layer, after adjustment in step 1 [(kg/kg/s)*mb]
+  inout  pr_flux_base   - precip flux at an effective cloud base for calculations in a particular layer
+  inout  wd_flux[pcnst_extd]   - tracer wet deposition flux at base of current layer [(kg/kg/s)*mb]
+  inout  dcondt[pcnst_extd]  - overall TMR tendency from convection at a certain layer [kg/kg/s]
+  inout  dcondt_prevap[pcnst_extd]  - portion of TMR tendency due to precip evaporation [kg/kg/s]
+  inout  dcondt_prevap_hist[pcnst_extd]   - dcondt_prevap_hist at a certain layer [kg/kg/s]
+  */
+  // clang-format on
+
+  // local precip flux [(kg/kg/s)*mb]
+  const Real pr_flux_local = haero::max(0.0, rprd*dpdry_i);
+  pr_flux_base = haero::max(0.0, pr_flux_base + pr_flux_local);
+  pr_flux = utils::min_max_bound(0.0, pr_flux_base, pr_flux_tmp+pr_flux_local);
+
+  for (int icnst = 1; icnst < ConvProc::pcnst_extd; ++icnst) {
+    if (doconvproc_extd[icnst]) {
+      // wet deposition flux from the aerosol resuspension
+      // wd_flux_tmp (updated) = 
+      //            (wd_flux coming into the layer) - (resuspension ! decrement)
+      // wd_flux_tmp - updated wet deposition flux [(kg/kg/s)*mb]
+      const Real wd_flux_tmp = haero::max(0.0, wd_flux[icnst] * x_ratio);
+
+      // change to wet deposition flux from evaporation [(kg/kg/s)*mb]
+      const Real del_wd_flux_evap = haero::max(0.0, wd_flux[icnst] - wd_flux_tmp);
+
+      // wet deposition flux from the aerosol scavenging
+      // wd_flux (updated) = (wd_flux after resuspension) - (scavenging ! increment)
+
+      // local wet deposition flux [(kg/kg/s)*mb]
+      const Real wd_flux_local = haero::max(0.0, -dcondt_wetdep[icnst]*dpdry_i);
+      wd_flux[icnst] = haero::max(0.0, wd_flux_tmp + wd_flux_local);
+
+      // dcondt due to wet deposition flux change [kg/kg/s]
+      const Real dcondt_wdflux = del_wd_flux_evap/dpdry_i;
+
+      // for interstitial icnst2=icnst;  for activated icnst2=icnst-pcnst
+      const int icnst2 = icnst % ConvProc::gas_pcnst; 
+
+      // not sure what this mean exactly. Only do it for aerosol mass species
+      // (mmtoo>0).  mmtoo<=0 represents aerosol number species
+      const int mmtoo = mmtoo_prevap_resusp[icnst2];
+      if (species_class[icnst2] == ConvProc::species_class::aerosol) {
+        if (mmtoo > 0) {
+          // add the precip-evap (resuspension) to the history-tendency of the current species
+          dcondt_prevap_hist[icnst] += dcondt_wdflux;
+          // add the precip-evap (resuspension) to the actual tendencies of appropriate coarse-mode species
+          dcondt_prevap[mmtoo] += dcondt_wdflux;
+          dcondt[mmtoo] += dcondt_wdflux;
+        }
+      } else { 
+        // do this for trace gases (although currently modal_aero_convproc does not treat trace gases)
+        dcondt_prevap_hist[icnst] += dcondt_wdflux;
+        dcondt_prevap[icnst] += dcondt_wdflux;
+        dcondt[icnst] += dcondt_wdflux;
+      }
+    }
+  }
+}
 } // namespace convproc
 
 } // namespace mam4
