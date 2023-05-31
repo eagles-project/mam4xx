@@ -29,6 +29,7 @@ void update_tendency_final(Ensemble *ensemble);
 void compute_column_tendency(Ensemble *ensemble);
 void ma_resuspend_convproc(Ensemble *ensemble);
 void ma_precpevap(Ensemble *ensemble);
+void ma_precpprod(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -60,12 +61,15 @@ int main(int argc, char **argv) {
       ma_resuspend_convproc(ensemble);
     } else if (func_name == "ma_precpevap") {
       ma_precpevap(ensemble);
+    } else if (func_name == "ma_precpprod") {
+      ma_precpprod(ensemble);
     } else {
       std::cerr << "Error: Test name not recognized:" << func_name << std::endl;
       exit(1);
     }
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
+    throw;
   }
 
   // Write out a Python module.
