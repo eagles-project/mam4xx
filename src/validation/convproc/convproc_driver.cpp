@@ -28,6 +28,7 @@ using namespace mam4;
 void update_tendency_final(Ensemble *ensemble);
 void compute_column_tendency(Ensemble *ensemble);
 void ma_resuspend_convproc(Ensemble *ensemble);
+void ma_precpevap(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -57,6 +58,8 @@ int main(int argc, char **argv) {
       compute_column_tendency(ensemble);
     } else if (func_name == "ma_resuspend_convproc") {
       ma_resuspend_convproc(ensemble);
+    } else if (func_name == "ma_precpevap") {
+      ma_precpevap(ensemble);
     } else {
       std::cerr << "Error: Test name not recognized:" << func_name << std::endl;
       exit(1);
