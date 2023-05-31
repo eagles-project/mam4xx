@@ -14,6 +14,72 @@
 #include <mam4xx/utils.hpp>
 
 namespace mam4 {
+// Namespace for WetDep function until wetdep is implimented.
+namespace WetDepTemp {
+KOKKOS_INLINE_FUNCTION
+Real faer_resusp_vs_fprec_evap_mpln(const Real fprec_evap, const int jstrcnv) {
+  // --------------------------------------------------------------------------------
+  // corresponding fraction of precipitation-borne aerosol flux that is
+  // resuspended Options of assuming log-normal or marshall-palmer raindrop size
+  // distribution note that these fractions are relative to the cloud-base
+  // fluxes, and not to the layer immediately above fluxes
+  // --------------------------------------------------------------------------------
+
+  // faer_resusp_vs_fprec_evap_mpln ! [fraction]
+  // in fprec_evap [fraction]
+  // in jstrcnv - current only two options:
+  //    1 for marshall-palmer distribution
+  //    2 for log-normal distribution
+  Real a01, a02, a03, a04, a05, a06, a07, a08, a09, x_lox_lin, y_lox_lin;
+  if (jstrcnv <= 1) {
+    // marshall-palmer distribution
+    a01 = 8.6591133737322856E-02;
+    a02 = -1.7389168499601941E+00;
+    a03 = 2.7401882373663732E+01;
+    a04 = -1.5861714653209464E+02;
+    a05 = 5.1338179363011193E+02;
+    a06 = -9.6835933124501412E+02;
+    a07 = 1.0588489932213311E+03;
+    a08 = -6.2184513459217271E+02;
+    a09 = 1.5184126886039758E+02;
+    x_lox_lin = 5.0000000000000003E-02;
+    y_lox_lin = 2.5622471203221014E-03;
+  } else {
+    // log-normal distribution
+    a01 = 6.1944215103685640E-02;
+    a02 = -2.0095166685965378E+00;
+    a03 = 2.3882460251821236E+01;
+    a04 = -1.2695611774753374E+02;
+    a05 = 4.0086943562320101E+02;
+    a06 = -7.4954272875943707E+02;
+    a07 = 8.1701055892023624E+02;
+    a08 = -4.7941894659538502E+02;
+    a09 = 1.1710291076059025E+02;
+    x_lox_lin = 1.0000000000000001E-01;
+    y_lox_lin = 6.2227889828044350E-04;
+  }
+  Real x_var, y_var;
+  x_var = utils::min_max_bound(0.0, 1.0, fprec_evap);
+  if (x_var < x_lox_lin)
+    y_var = y_lox_lin * (x_var / x_lox_lin);
+  else
+    y_var =
+        x_var *
+        (a01 +
+         x_var *
+             (a02 +
+              x_var *
+                  (a03 +
+                   x_var *
+                       (a04 +
+                        x_var * (a05 +
+                                 x_var * (a06 +
+                                          x_var * (a07 +
+                                                   x_var * (a08 +
+                                                            x_var * a09))))))));
+  return y_var;
+}
+} // namespace WetDepTemp
 
 /// @class ConvProc
 /// This class implements MAM4's ConvProc parameterization.
@@ -399,6 +465,71 @@ void ma_resuspend_convproc(Real dcondt[ConvProc::pcnst_extd],
       assign_la_lc(imode, ispec, la, lc);
       tmr_tendency(la, lc, dcondt, dcondt_resusp);
     }
+  }
+}
+
+// =========================================================================================
+KOKKOS_INLINE_FUNCTION
+void ma_precpevap(const Real dpdry_i, const Real evapc, const Real pr_flux,
+                  Real &pr_flux_base, Real &pr_flux_tmp, Real &x_ratio) {
+  // clang-format off
+  // ------------------------------------------
+  // step 1 in ma_precpevap_convproc: aerosol resuspension from precipitation evaporation
+  // ------------------------------------------
+
+  /*
+  in      :: evapc         conv precipitataion evaporation rate [kg/kg/s]
+  in      :: dpdry_i       pressure thickness of level [mb]
+  in      :: pr_flux       precip flux at base of current layer [(kg/kg/s)*mb]
+  inout   :: pr_flux_base  precip flux at an effective cloud base for calculations 
+                           in a particular layer
+  out     :: pr_flux_tmp   precip flux at base of current layer, after adjustment 
+                           in step 1 [(kg/kg/s)*mb]
+  out     :: x_ratio       ratio of adjusted and old fraction of precipitation-borne 
+                           aerosol flux that is NOT resuspended, used in step 2
+  */
+  // clang-format on
+
+  // a small value that variables smaller than it are considered as zero
+  const Real small_value = 1.0e-30;
+
+  // adjust pr_flux due to local evaporation
+  const Real ev_flux_local = haero::max(0.0, evapc * dpdry_i);
+  pr_flux_tmp =
+      utils::min_max_bound(0.0, pr_flux_base, pr_flux - ev_flux_local);
+
+  x_ratio = 0.0;
+  if (pr_flux_base < small_value) {
+    // this will start things fresh at the next layer
+    pr_flux_base = 0.0;
+    pr_flux_tmp = 0.0;
+    return;
+  }
+
+  // calculate fraction of resuspension
+  Real pr_ratio_old = pr_flux / pr_flux_base;
+  pr_ratio_old = utils::min_max_bound(0.0, 1.0, pr_ratio_old);
+  // 2: log-normal distribution
+  Real frac_aer_resusp_old =
+      1.0 - WetDepTemp::faer_resusp_vs_fprec_evap_mpln(1.0 - pr_ratio_old, 2);
+  frac_aer_resusp_old = utils::min_max_bound(0.0, 1.0, frac_aer_resusp_old);
+
+  Real pr_ratio_tmp =
+      utils::min_max_bound(0.0, 1.0, pr_flux_tmp / pr_flux_base);
+  pr_ratio_tmp = haero::min(pr_ratio_tmp, pr_ratio_old);
+  // 2: log-normal distribution
+  Real frac_aer_resusp_tmp =
+      1.0 - WetDepTemp::faer_resusp_vs_fprec_evap_mpln(1.0 - pr_ratio_tmp, 2);
+  frac_aer_resusp_tmp = utils::min_max_bound(0.0, 1.0, frac_aer_resusp_tmp);
+  frac_aer_resusp_tmp = haero::min(frac_aer_resusp_tmp, frac_aer_resusp_old);
+
+  // compute x_ratio
+  if (frac_aer_resusp_tmp > small_value) {
+    x_ratio = frac_aer_resusp_tmp / frac_aer_resusp_old;
+  } else {
+    // this will start things fresh at the next layer
+    pr_flux_base = 0.0;
+    pr_flux_tmp = 0.0;
   }
 }
 

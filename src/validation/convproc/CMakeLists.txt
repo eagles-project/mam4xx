@@ -12,7 +12,8 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 add_executable(convproc_driver convproc_driver.cpp
                update_tendency_final.cpp
                compute_column_tendency.cpp
-	       ma_resuspend_convproc.cpp)
+               ma_precpevap.cpp
+               ma_resuspend_convproc.cpp)
 target_link_libraries(convproc_driver skywalker;validation;${HAERO_LIBRARIES})
 
 
@@ -32,6 +33,7 @@ endforeach()
 foreach (input
          update_tendency_final
          compute_column_tendency
+         ma_precpevap
          ma_resuspend_convproc
          )
 
