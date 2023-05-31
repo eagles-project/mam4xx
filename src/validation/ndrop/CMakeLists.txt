@@ -47,8 +47,8 @@ set(TEST_LIST
     ccncalc_merged
     ccncalc_loop_ts_1417
     ccncalc_ts_1400
-    maxsattype1_merged
-    maxsattype2_merged
+    #maxsattype1_merged
+    #maxsattype2_merged
     )
 
 set(DEFAULT_TOL 1e-11)
@@ -58,7 +58,7 @@ set(ERROR_THRESHOLDS
     6e-8
     6e-8
     8e-2
-    1e-2 
+    1e-12 
     #9e-2
     5e-5
     1e-5
@@ -67,8 +67,8 @@ set(ERROR_THRESHOLDS
     2e-3
     1e-3
     5e-5 
-    1e-11
-    1e-11
+    #1e-11
+    #1e-11
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)

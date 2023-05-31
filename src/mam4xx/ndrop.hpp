@@ -37,17 +37,18 @@ void explmix(
                        // level k [# or kg / kg]
     const Real qold_kp1, // number / mass mixing ratio from previous time step
                          // at level k+1 [# or kg / kg]
-    Real &qnew, // OUTPUT, number / mass mixing ratio to be updated [# or kg / kg]
+    Real &
+        qnew, // OUTPUT, number / mass mixing ratio to be updated [# or kg / kg]
     const Real src, // source due to activation/nucleation at level k [# or kg /
                     // (kg-s)]
-    const Real ekkp, // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
-                       // [/s]; below layer k  (k,k+1 interface)
-    const Real ekkm, // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
-                       // [/s]; above layer k  (k,k+1 interface)
+    const Real ekkp,     // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
+                         // [/s]; below layer k  (k,k+1 interface)
+    const Real ekkm,     // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
+                         // [/s]; above layer k  (k,k+1 interface)
     const Real overlapp, // cloud overlap below [fraction]
     const Real overlapm, // cloud overlap above [fraction]
-    const Real dtmix,          // time step [s]
-    const bool is_unact,    // true if this is an unactivated species
+    const Real dtmix,    // time step [s]
+    const bool is_unact, // true if this is an unactivated species
     const Real qactold_km1 =
         1, // optional: number / mass mixing ratio of ACTIVATED species
            // from previous step at level k-1 *** this should only be present if
@@ -62,13 +63,12 @@ void explmix(
 
   if (is_unact) {
     qnew = qold_k +
-        dtmix *
-         (-src +
-          ekkp * (qold_kp1 - qold_k + qactold_kp1 * (1 - overlapp)) +
-          ekkm * (qold_km1 - qold_k + qactold_km1 * (1 - overlapm)));
+           dtmix * (-src +
+                    ekkp * (qold_kp1 - qold_k + qactold_kp1 * (1 - overlapp)) +
+                    ekkm * (qold_km1 - qold_k + qactold_km1 * (1 - overlapm)));
   } else {
     qnew = qold_k + dtmix * (src + ekkp * (overlapp * qold_kp1 - qold_k) +
-                        ekkm * (overlapm * qold_k - qold_k));
+                             ekkm * (overlapm * qold_k - qold_k));
   }
   // force to non-negative
   qnew = haero::max(qnew, 0);

@@ -275,8 +275,8 @@ TEST_CASE("test_maxsat", "mam4_ndrop") {
 
 //   ndrop_mjs::update_from_newcld(cldn_col_in, cldo_col_in, dtinv, wtke_col_in,
 //                                 temp_col_in, cs_col_in, state_q_col_in, qcld,
-//                                 raercol_nsav, raercol_cw_nsav, nsource_col_out,
-//                                 factnum_col_out);
+//                                 raercol_nsav, raercol_cw_nsav,
+//                                 nsource_col_out, factnum_col_out);
 
 //   ndrop_mjs::update_from_cldn_profile();
 

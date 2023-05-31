@@ -12,7 +12,7 @@
 #include <mam4xx/utils.hpp>
 
 namespace mam4 {
-
+#if 0
 namespace ndrop_mjs {
 
 const int psat = 6; //  ! number of supersaturations to calc ccn concentration
@@ -1491,7 +1491,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   void mam_dropmixnuc_1subarea_() {} // end mam_dropmixnuc_1subarea_()
 };  // end class Dropmixnuc
-
+#endif
 } // end namespace mam4
 
 #endif

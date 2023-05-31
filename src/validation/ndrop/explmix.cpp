@@ -27,6 +27,13 @@ void explmix(Ensemble *ensemble) {
     const auto overlapp_db = input.get_array("overlapp");
     const auto overlapm_db = input.get_array("overlapm");
 
+    std::vector<Real> qactold;
+    if (input.has_array("qactold")) {
+      qactold = input.get_array("qactold");
+    }
+
+    const Real zero = 0;
+
     /*
         ColumnView qold = haero::testing::create_column_view(pver);
         ColumnView src = haero::testing::create_column_view(pver);
@@ -48,23 +55,31 @@ void explmix(Ensemble *ensemble) {
     Real q[pver];
 
     for (int k = top_lev; k < pver; k++) {
-      //add logic for km1 and kp1 from fortran
-      int kp1 = haero::min(k+1,pver);
-      int km1 = haero::max(k-1,top_lev);
+      // add logic for km1 and kp1 from fortran
+      int kp1 = haero::min(k + 1, pver);
+      int km1 = haero::max(k - 1, top_lev);
 
       Real qold_km1 = qold_db[km1];
       Real qold_k = qold_db[k];
       Real qold_kp1 = qold_db[kp1];
 
       Real src = src_db[k];
-      Real ekkm = ekkm_db[k]; 
-      Real ekkp = ekkp_db[k]; 
+      Real ekkm = ekkm_db[k];
+      Real ekkp = ekkp_db[k];
 
-      Real overlapm = overlapm_db[k]; 
-      Real overlapp = overlapp_db[k]; 
+      Real overlapm = overlapm_db[k];
+      Real overlapp = overlapp_db[k];
+
+      Real qactold_km1 = zero;
+      Real qactold_kp1 = zero;
+      if (is_unact) {
+        qactold_km1 = qactold[k];
+        qactold_kp1 = qactold[k];
+      }
 
       ndrop::explmix(qold_km1, qold_k, qold_kp1, q[k], src, ekkp, ekkm,
-                     overlapp, overlapm, dtmix, is_unact);
+                     overlapp, overlapm, dtmix, is_unact, qactold_km1,
+                     qactold_kp1);
     }
 
     std::vector<Real> qnew(pver, 0.0);
