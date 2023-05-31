@@ -52,7 +52,7 @@ set(TEST_LIST
     maxsattype1_merged
     maxsattype2_merged
     update_from_newcld_ts_1407_iact2
-    update_from_cldn_profile_ts_1417_iact1)
+    update_from_cldn_profile_ts_1417_iact1
     )
 
 set(DEFAULT_TOL 1e-11)
