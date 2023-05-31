@@ -32,7 +32,7 @@ void explmix(Ensemble *ensemble) {
       qactold = input.get_array("qactold");
     }
 
-    const Real zero = 0;
+    const Real zero = 0.0;
 
     /*
         ColumnView qold = haero::testing::create_column_view(pver);
@@ -75,11 +75,13 @@ void explmix(Ensemble *ensemble) {
       if (is_unact) {
         qactold_km1 = qactold[km1];
         qactold_kp1 = qactold[kp1];
-      }
-
-      ndrop::explmix(qold_km1, qold_k, qold_kp1, q[k], src, ekkp, ekkm,
-                     overlapp, overlapm, dtmix, is_unact, qactold_km1,
+        ndrop::explmix(qold_km1, qold_k, qold_kp1, q[k], src, ekkp, ekkm,
+                     overlapp, overlapm, dtmix, qactold_km1,
                      qactold_kp1);
+      } else {
+        ndrop::explmix(qold_km1, qold_k, qold_kp1, q[k], src, ekkp, ekkm,
+                     overlapp, overlapm, dtmix);
+      }
     }
 
     std::vector<Real> qnew(pver, 0.0);
