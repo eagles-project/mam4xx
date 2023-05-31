@@ -30,7 +30,7 @@ const Real p0 = 1013.25e2; //  ! reference pressure [Pa]
 const Real surften = 0.076;
 const Real sq2 = haero::sqrt(2.);
 const Real smcoefcoef = 2. / haero::sqrt(27.);
-
+const int ncnst_tot = 25;
 //// const Real percent_to_fraction = 0.01;
 // super(:)=supersat(:)*percent_to_fraction
 // supersaturation [fraction]
@@ -38,7 +38,7 @@ const Real super[psat] = {
     0.0002, 0.0005, 0.001, 0.002,
     0.005,  0.01}; //& ! supersaturation (%) to determine ccn concentration
 //  [m-K]
-
+const int nspec_max = 8;
 KOKKOS_INLINE_FUNCTION
 void get_aer_mmr_sum(
     const int imode, const int nspec, const Real state_q[nvars],
@@ -654,7 +654,7 @@ void update_from_cldn_profile(
     const int nspec_amode[maxd_aspectype],
     const Real exp45logsig[AeroConfig::num_modes()],
     const Real alogsig[AeroConfig::num_modes()], const Real aten,
-    const int mam_idx[AeroConfig::num_modes()][10], Real raercol_nsav[40],
+    const int mam_idx[AeroConfig::num_modes()][nspec_max], Real raercol_nsav[40],
     Real raercol_nsav_kp1[40], Real raercol_cw_nsav[40],
     Real &nsource_col, // inout
     Real &qcld, Real factnum_col[AeroConfig::num_modes()],
@@ -837,9 +837,9 @@ void update_from_newcld(
     const int nspec_amode[maxd_aspectype],
     const Real exp45logsig[AeroConfig::num_modes()],
     const Real alogsig[AeroConfig::num_modes()], const Real aten,
-    const int mam_idx[AeroConfig::num_modes()][10], Real &qcld,
-    Real raercol_nsav[40],
-    Real raercol_cw_nsav[40], //&      ! inout
+    const int mam_idx[AeroConfig::num_modes()][nspec_max], Real &qcld,
+    Real raercol_nsav[ncnst_tot],
+    Real raercol_cw_nsav[ncnst_tot], //&      ! inout
     Real &nsource_col_out, Real factnum_col_out[AeroConfig::num_modes()]) {
 
   // // input arguments
@@ -964,7 +964,7 @@ void update_from_explmix(const Real dtmicro, const Real csbot, const Real cldn,
                          const Real zn, const Real zs, const Real ekd, //&  ! in
                          Real nact[AeroConfig::num_modes()],
                          Real mact[AeroConfig::num_modes()], Real qcld,
-                         Real raercol[10], Real raercol_cw[10], int nnew) {
+                         Real raercol[ncnst_tot], Real raercol_cw[ncnst_tot], int nnew) {
 
 } // update_from_explmix
 KOKKOS_INLINE_FUNCTION
@@ -987,7 +987,7 @@ void dropmixnuc(
     const int nspec_amode[maxd_aspectype],
     const Real exp45logsig[AeroConfig::num_modes()],
     const Real alogsig[AeroConfig::num_modes()], const Real aten,
-    const int mam_idx[AeroConfig::num_modes()][10],
+    const int mam_idx[AeroConfig::num_modes()][nspec_max],
     const int mam_cnst_idx[AeroConfig::num_modes()][10], Real &qcld,
     const Real wsub,
     const Real cldo,      // in
@@ -1052,7 +1052,7 @@ void dropmixnuc(
   const Real dtinv = one / dtmicro;
   const int ntot_amode = AeroConfig::num_modes();
   // THIS constant depends on the chem mechanism
-  const int ncnst_tot = 25;
+  
 
   // initialize variables to zero
   //  ndropmix(:,:) = 0._r8
