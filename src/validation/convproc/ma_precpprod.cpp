@@ -124,42 +124,23 @@ void ma_precpprod(Ensemble *ensemble) {
           for (int i = 0; i < ConvProc::gas_pcnst; ++i)
             mmtoo_prevap_resusp[i] = mmtoo_prevap_resusp_dev[i] - 1;
 
-          Real wd_flux[ConvProc::pcnst_extd];
-          for (int i = 0; i < ConvProc::pcnst_extd; ++i)
-            wd_flux[i] = wd_flux_dev[i];
-          Real dcondt_wetdep[ConvProc::pcnst_extd];
-          for (int i = 0; i < ConvProc::pcnst_extd; ++i)
-            dcondt_wetdep[i] = dcondt_wetdep_dev(kk, i);
-          Real dcondt[ConvProc::pcnst_extd];
-          for (int i = 0; i < ConvProc::pcnst_extd; ++i)
-            dcondt[i] = dcondt_dev(kk, i);
-          Real dcondt_prevap[ConvProc::pcnst_extd];
-          for (int i = 0; i < ConvProc::pcnst_extd; ++i)
-            dcondt_prevap[i] = dcondt_prevap_dev(kk, i);
-          Real dcondt_prevap_hist[ConvProc::pcnst_extd];
-          for (int i = 0; i < ConvProc::pcnst_extd; ++i)
-            dcondt_prevap_hist[i] = dcondt_prevap_hist_dev(kk, i);
+          ColumnView dcondt_wetdep =
+              Kokkos::subview(dcondt_wetdep_dev, kk, Kokkos::ALL());
+          ColumnView dcondt = Kokkos::subview(dcondt_dev, kk, Kokkos::ALL());
+          ColumnView dcondt_prevap =
+              Kokkos::subview(dcondt_prevap_dev, kk, Kokkos::ALL());
+          ColumnView dcondt_prevap_hist =
+              Kokkos::subview(dcondt_prevap_hist_dev, kk, Kokkos::ALL());
           Real flux = pr_flux;
           Real flux_tmp = pr_flux_tmp;
           Real flux_base = pr_flux_base;
           convproc::ma_precpprod(
               rprd[kk], dpdry_i[kk], doconvproc_extd, x_ratio, species_class,
-              mmtoo_prevap_resusp, flux, flux_tmp, flux_base, wd_flux,
+              mmtoo_prevap_resusp, flux, flux_tmp, flux_base, wd_flux_dev,
               dcondt_wetdep, dcondt, dcondt_prevap, dcondt_prevap_hist);
           return_vals[0] = flux;
           return_vals[1] = flux_tmp;
           return_vals[2] = flux_base;
-
-          for (int i = 0; i < ConvProc::pcnst_extd; ++i)
-            wd_flux_dev[i] = wd_flux[i];
-          for (int i = 0; i < ConvProc::pcnst_extd; ++i)
-            dcondt_wetdep_dev(kk, i) = dcondt_wetdep[i];
-          for (int i = 0; i < ConvProc::pcnst_extd; ++i)
-            dcondt_dev(kk, i) = dcondt[i];
-          for (int i = 0; i < ConvProc::pcnst_extd; ++i)
-            dcondt_prevap_dev(kk, i) = dcondt_prevap[i];
-          for (int i = 0; i < ConvProc::pcnst_extd; ++i)
-            dcondt_prevap_hist_dev(kk, i) = dcondt_prevap_hist[i];
         });
     auto host_view = Kokkos::create_mirror_view(return_vals);
     Kokkos::deep_copy(host_view, return_vals);
@@ -177,6 +158,16 @@ void ma_precpprod(Ensemble *ensemble) {
   // Check some corner cases.
   const int nlev = 72;
   ColumnView return_vals = mam4::validation::create_column_view(6);
+  ColumnView dcondt_wetdep =
+      mam4::validation::create_column_view(ConvProc::pcnst_extd);
+  ColumnView dcondt =
+      mam4::validation::create_column_view(ConvProc::pcnst_extd);
+  ColumnView dcondt_prevap =
+      mam4::validation::create_column_view(ConvProc::pcnst_extd);
+  ColumnView dcondt_prevap_hist =
+      mam4::validation::create_column_view(ConvProc::pcnst_extd);
+  ColumnView wd_flux =
+      mam4::validation::create_column_view(ConvProc::pcnst_extd);
   Kokkos::parallel_for(
       "ma_precpprod", 1, KOKKOS_LAMBDA(int) {
         Real rprd[nlev];
@@ -195,19 +186,14 @@ void ma_precpprod(Ensemble *ensemble) {
         for (int i = 0; i < ConvProc::gas_pcnst; ++i)
           mmtoo_prevap_resusp[i] = 1;
 
-        Real wd_flux[ConvProc::pcnst_extd];
         for (int i = 0; i < ConvProc::pcnst_extd; ++i)
           wd_flux[i] = 1;
-        Real dcondt_wetdep[ConvProc::pcnst_extd];
         for (int i = 0; i < ConvProc::pcnst_extd; ++i)
           dcondt_wetdep[i] = 1;
-        Real dcondt[ConvProc::pcnst_extd];
         for (int i = 0; i < ConvProc::pcnst_extd; ++i)
           dcondt[i] = 1;
-        Real dcondt_prevap[ConvProc::pcnst_extd];
         for (int i = 0; i < ConvProc::pcnst_extd; ++i)
           dcondt_prevap[i] = 1;
-        Real dcondt_prevap_hist[ConvProc::pcnst_extd];
         for (int i = 0; i < ConvProc::pcnst_extd; ++i)
           dcondt_prevap_hist[i] = 1;
         Real flux = 1;
@@ -237,16 +223,16 @@ void ma_precpprod(Ensemble *ensemble) {
   Real pr_flux_base = host_view(0);
   Real pr_flux_tmp = host_view(1);
   Real x_ratio = host_view(2);
-  Real dcondt = host_view(3);
-  Real dcondt_prevap = host_view(4);
-  Real dcondt_prevap_hist = host_view(5);
+  Real x_dcondt = host_view(3);
+  Real x_dcondt_prevap = host_view(4);
+  Real x_dcondt_prevap_hist = host_view(5);
   EKAT_REQUIRE_MSG(pr_flux_base == 1, "Special case of input failed.");
   EKAT_REQUIRE_MSG(pr_flux_tmp == 0, "Special case of input failed.");
   EKAT_REQUIRE_MSG(x_ratio == 1, "Special case of input failed.");
-  EKAT_REQUIRE_MSG(dcondt == 1 + 2 * (ConvProc::pcnst_extd - 1),
+  EKAT_REQUIRE_MSG(x_dcondt == 1 + 2 * (ConvProc::pcnst_extd - 1),
                    "Special case of input failed.");
-  EKAT_REQUIRE_MSG(dcondt_prevap == 1 + 2 * (ConvProc::pcnst_extd - 1),
+  EKAT_REQUIRE_MSG(x_dcondt_prevap == 1 + 2 * (ConvProc::pcnst_extd - 1),
                    "Special case of input failed.");
-  EKAT_REQUIRE_MSG(dcondt_prevap_hist == 1 + 2 * (ConvProc::pcnst_extd - 1),
+  EKAT_REQUIRE_MSG(x_dcondt_prevap_hist == 1 + 2 * (ConvProc::pcnst_extd - 1),
                    "Special case of input failed.");
 }

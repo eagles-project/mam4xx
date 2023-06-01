@@ -532,11 +532,9 @@ void ma_precpprod(const Real rprd, const Real dpdry_i,
                   const int species_class[ConvProc::gas_pcnst],
                   const int mmtoo_prevap_resusp[ConvProc::gas_pcnst],
                   Real &pr_flux, Real &pr_flux_tmp, Real &pr_flux_base,
-                  Real wd_flux[ConvProc::pcnst_extd],
-                  Real dcondt_wetdep[ConvProc::pcnst_extd],
-                  Real dcondt[ConvProc::pcnst_extd],
-                  Real dcondt_prevap[ConvProc::pcnst_extd],
-                  Real dcondt_prevap_hist[ConvProc::pcnst_extd]) {
+                  ColumnView wd_flux, const ColumnView dcondt_wetdep,
+                  ColumnView dcondt, ColumnView dcondt_prevap,
+                  ColumnView dcondt_prevap_hist) {
   // clang-format off
   // ------------------------------------------
   //  step 2 in ma_precpevap_convproc: aerosol scavenging from precipitation production
@@ -570,7 +568,6 @@ void ma_precpprod(const Real rprd, const Real dpdry_i,
   inout  dcondt_prevap_hist[pcnst_extd]   - dcondt_prevap_hist at a certain layer [kg/kg/s]
   */
   // clang-format on
-
   // local precip flux [(kg/kg/s)*mb]
   const Real pr_flux_local = haero::max(0.0, rprd * dpdry_i);
   pr_flux_base = haero::max(0.0, pr_flux_base + pr_flux_local);
@@ -578,6 +575,7 @@ void ma_precpprod(const Real rprd, const Real dpdry_i,
       utils::min_max_bound(0.0, pr_flux_base, pr_flux_tmp + pr_flux_local);
 
   for (int icnst = 1; icnst < ConvProc::pcnst_extd; ++icnst) {
+
     if (doconvproc_extd[icnst]) {
       // wet deposition flux from the aerosol resuspension
       // wd_flux_tmp (updated) =
@@ -625,6 +623,136 @@ void ma_precpprod(const Real rprd, const Real dpdry_i,
         dcondt[icnst] += dcondt_wdflux;
       }
     }
+  }
+}
+// =========================================================================================
+KOKKOS_INLINE_FUNCTION
+void ma_precpevap_convproc(
+    const int ktop, const int nlev,
+    const Kokkos::View<Real **, Kokkos::MemoryUnmanaged> dcondt_wetdep,
+    const ColumnView rprd, const ColumnView evapc, const ColumnView dpdry_i,
+    const bool doconvproc_extd[ConvProc::pcnst_extd],
+    const int species_class[ConvProc::gas_pcnst],
+    const int mmtoo_prevap_resusp[ConvProc::gas_pcnst], ColumnView wd_flux,
+    Kokkos::View<Real **, Kokkos::MemoryUnmanaged> dcondt_prevap,
+    Kokkos::View<Real **, Kokkos::MemoryUnmanaged> dcondt_prevap_hist,
+    Kokkos::View<Real **, Kokkos::MemoryUnmanaged> dcondt) {
+  // clang-format off
+  // -----------------------------------------------------------------------
+  // 
+  //  Purpose:
+  //  Calculate resuspension of wet-removed aerosol species resulting precip evaporation
+  // 
+  //      for aerosol mass   species, do non-linear resuspension to coarse mode
+  //      for aerosol number species, all the resuspension is done in wetdepa_v2, so do nothing here
+  // 
+  //  Author: R. Easter
+  // 
+  // -----------------------------------------------------------------------
+
+  // -----------------------------------------------------------------------
+  //  arguments
+  //  (note:  TMR = tracer mixing ratio)
+  /*
+    inout :: dcondt[nlev][pcnst_extd]
+                 overall TMR tendency from convection [kg/kg/s]
+    in    :: dcondt_wetdep[nlev][pcnst_extd]
+                 portion of TMR tendency due to wet removal [kg/kg/s]
+    inout :: dcondt_prevap[nlev][pcnst_extd]
+                 portion of TMR tendency due to precip evaporation [kg/kg/s]
+                 (actually, due to the adjustments made here)
+                 (on entry, this is 0.0)
+    inout :: dcondt_prevap_hist[nlev][pcnst_extd]
+                 this determines what goes into the history
+                    precip-evap SFSEC variables
+                 currently, the SFSEC resuspension are attributed
+                    to the species that got scavenged,
+                    WHICH IS NOT the species that actually
+                    receives the resuspension
+                    when modal_aero_wetdep_resusp_opt > 0
+                 so when scavenged so4_c1 is resuspended as so4_a1,
+                    this resuspension column-tendency shows
+                    up in so4_c1SFSES
+                 this is done to allow better tracking of the
+                    resuspension in the mass-budget post-processing s
+    in    :: rprd   conv precip production  rate (gathered) [kg/kg/s]
+    in    :: evapc  conv precip evaporation rate (gathered) [kg/kg/s]
+    in    :: dpdry_i  pressure thickness of leve
+    in    :: doconvproc_extd[pcnst_extd]   indicates which species to process
+    in    :: species_class[gas_pcnst]   specify what kind of species it is. defined at physconst.F90
+                                   undefined  = 0
+                                   cldphysics = 1
+                                   aerosol    = 2
+                                   gas        = 3
+                                   other      = 4
+    in  mmtoo_prevap_resusp[ConvProc::gas_pcnst]
+         pointers for resuspension mmtoo_prevap_resusp values are
+            >0 for aerosol mass species with    coarse mode counterpart
+            -1 for aerosol mass species WITHOUT coarse mode counterpart
+            -2 for aerosol number species
+             0 for other species
+  */
+  //
+  // *** note use of non-standard units
+  //
+  // precip
+  //    dpdry_i is mb
+  //    rprd and evapc are kgwtr/kgair/s
+  //    pr_flux = dpdry_i(kk)*rprd is mb*kgwtr/kgair/s
+  //
+  // precip-borne aerosol
+  //    dcondt_wetdep is kgaero/kgair/s
+  //    wd_flux = tmpdp*dcondt_wetdep is mb*kgaero/kgair/s
+  //    dcondt_prevap = del_wd_flux_evap/dpdry_i is kgaero/kgair/s
+  // so this works ok too
+  //
+  // *** dilip switched from tmpdg (or dpdry_i) to tmpdpg = tmpdp/gravit
+  // that is incorrect, but probably does not matter
+  //    for aerosol, wd_flux units do not matter
+  //        only important thing is that tmpdp (or tmpdpg) is used
+  //        consistently when going from dcondt to wd_flux then to dcondt
+  // clang-format on
+
+  // initiate variables that are integrated in vertical
+  // precip flux at base of current layer [(kg/kg/s)*mb]
+  Real pr_flux = 0.0;
+  // precip flux at an effective cloud base for calculations in a particular
+  // layer
+  Real pr_flux_base = 0.0;
+  // precip flux at base of current layer, after adjustment of resuspension in
+  // step 1 [(kg/kg/s)*mb]
+  Real pr_flux_tmp = 0;
+  // ratio of adjusted and old fraction of precipitation-borne aerosol
+  // flux that is NOT resuspended, calculated in step 1 and used in step 2 (see
+  // below)
+  Real x_ratio = 0;
+
+  // tracer wet deposition flux at base of current layer [(kg/kg/s)*mb]
+  for (int i = 0; i < ConvProc::pcnst_extd; ++i)
+    wd_flux[i] = 0;
+  for (int kk = 0; kk < nlev; ++kk)
+    for (int i = 0; i < ConvProc::pcnst_extd; ++i)
+      dcondt_prevap(kk, i) = 0;
+  for (int kk = 0; kk < nlev; ++kk)
+    for (int i = 0; i < ConvProc::pcnst_extd; ++i)
+      dcondt_prevap_hist(kk, i) = 0;
+
+  for (int kk = ktop; kk < nlev; ++kk) {
+    // step 1 - precip evaporation and aerosol resuspension
+    ma_precpevap(dpdry_i[kk], evapc[kk], pr_flux, pr_flux_base, pr_flux_tmp,
+                 x_ratio);
+    // step 2 - precip production and aerosol scavenging
+    ColumnView dcondt_wetdep_sub =
+        Kokkos::subview(dcondt_wetdep, kk, Kokkos::ALL());
+    ColumnView dcondt_sub = Kokkos::subview(dcondt, kk, Kokkos::ALL());
+    ColumnView dcondt_prevap_sub =
+        Kokkos::subview(dcondt_prevap, kk, Kokkos::ALL());
+    ColumnView dcondt_prevap_hist_sub =
+        Kokkos::subview(dcondt_prevap_hist, kk, Kokkos::ALL());
+    ma_precpprod(rprd[kk], dpdry_i[kk], doconvproc_extd, x_ratio, species_class,
+                 mmtoo_prevap_resusp, pr_flux, pr_flux_tmp, pr_flux_base,
+                 wd_flux, dcondt_wetdep_sub, dcondt_sub, dcondt_prevap_sub,
+                 dcondt_prevap_hist_sub);
   }
 }
 } // namespace convproc
