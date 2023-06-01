@@ -21,9 +21,8 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     const int ntot_amode = 4;
     const int nspec_max = 8;
 
-    const Real cldn_col_in = input.get_array("cldn_col_in")[0];
-    // FIXME
-    const Real cldn_col_in_kp1 = input.get_array("cldo_col_in")[0];
+    const Real cldn_col_in = input.get_array("cldn_col_in_kk")[0];
+    const Real cldn_col_in_kp1 = input.get_array("cldn_col_in_kp1")[0];
     const Real dtinv = input.get_array("dtinv")[0];
     const Real wtke_col_in = input.get_array("wtke_col_in")[0];
     const Real temp_col_in = input.get_array("temp_col_in")[0];
@@ -108,9 +107,9 @@ void update_from_cldn_profile(Ensemble *ensemble) {
       }
     }
 
-    auto raercol_nsav = input.get_array("raercol_nsav");
+    auto raercol_nsav = input.get_array("raercol_nsav_kk");
     //FIXME
-    auto raercol_nsav_kp1 = input.get_array("raercol_nsav");
+    auto raercol_nsav_kp1 = input.get_array("raercol_nsav_kp1");
     auto raercol_cw_nsav = input.get_array("raercol_cw_nsav");
     auto nsource_col = input.get_array("nsource_col")[0];
     auto factnum_col = input.get_array("factnum_col");

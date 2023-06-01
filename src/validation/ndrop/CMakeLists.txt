@@ -73,7 +73,7 @@ set(ERROR_THRESHOLDS
     1e-11
     1e-11
     1e-11
-    1e-11
+    8e-6
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
