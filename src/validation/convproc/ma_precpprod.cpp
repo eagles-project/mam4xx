@@ -136,12 +136,8 @@ void ma_precpprod(Ensemble *ensemble) {
           Real flux_base = pr_flux_base;
           convproc::ma_precpprod(
               rprd[kk], dpdry_i[kk], doconvproc_extd, x_ratio, species_class,
-              mmtoo_prevap_resusp, flux, flux_tmp, flux_base, 
-              wd_flux_dev,
-              dcondt_wetdep, 
-              dcondt, 
-              dcondt_prevap, 
-              dcondt_prevap_hist);
+              mmtoo_prevap_resusp, flux, flux_tmp, flux_base, wd_flux_dev,
+              dcondt_wetdep, dcondt, dcondt_prevap, dcondt_prevap_hist);
           return_vals[0] = flux;
           return_vals[1] = flux_tmp;
           return_vals[2] = flux_base;
