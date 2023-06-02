@@ -47,12 +47,12 @@ void explmix(
                          // [/s]; above layer k  (k,k+1 interface)
     const Real overlapp, // cloud overlap below [fraction]
     const Real overlapm, // cloud overlap above [fraction]
-    const Real dtmix    // time step [s]
+    const Real dtmix     // time step [s]
 ) {
 
   qnew = qold_k + dtmix * (src + ekkp * (overlapp * qold_kp1 - qold_k) +
-                             ekkm * (overlapm * qold_k - qold_k));
-  
+                           ekkm * (overlapm * qold_k - qold_k));
+
   // force to non-negative
   qnew = haero::max(qnew, 0);
 } // end explmix
@@ -77,21 +77,21 @@ void explmix(
     const Real overlapm, // cloud overlap above [fraction]
     const Real dtmix,    // time step [s]
     const Real qactold_km1,
-         // optional: number / mass mixing ratio of ACTIVATED species
-           // from previous step at level k-1 *** this should only be present if
-           // the current species is unactivated number/sfc/mass
-    const Real qactold_kp1 
-         // optional: number / mass mixing ratio of ACTIVATED species
-          // from previous step at level k+1 *** this should only be present if
-          // the current species is unactivated number/sfc/mass
+    // optional: number / mass mixing ratio of ACTIVATED species
+    // from previous step at level k-1 *** this should only be present if
+    // the current species is unactivated number/sfc/mass
+    const Real qactold_kp1
+    // optional: number / mass mixing ratio of ACTIVATED species
+    // from previous step at level k+1 *** this should only be present if
+    // the current species is unactivated number/sfc/mass
 ) {
 
   // the qactold*(1-overlap) terms are resuspension of activated material
   qnew = qold_k +
-          dtmix * (-src +
-                  ekkp * (qold_kp1 - qold_k + qactold_kp1 * (1 - overlapp)) +
-                  ekkm * (qold_km1 - qold_k + qactold_km1 * (1 - overlapm)));
- 
+         dtmix *
+             (-src + ekkp * (qold_kp1 - qold_k + qactold_kp1 * (1 - overlapp)) +
+              ekkm * (qold_km1 - qold_k + qactold_km1 * (1 - overlapm)));
+
   // force to non-negative
   qnew = haero::max(qnew, 0);
 } // end explmix

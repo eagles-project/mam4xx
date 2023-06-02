@@ -654,8 +654,9 @@ void update_from_cldn_profile(
     const int nspec_amode[maxd_aspectype],
     const Real exp45logsig[AeroConfig::num_modes()],
     const Real alogsig[AeroConfig::num_modes()], const Real aten,
-    const int mam_idx[AeroConfig::num_modes()][nspec_max], Real raercol_nsav[40],
-    Real raercol_nsav_kp1[40], Real raercol_cw_nsav[40],
+    const int mam_idx[AeroConfig::num_modes()][nspec_max],
+    Real raercol_nsav[ncnst_tot], Real raercol_nsav_kp1[ncnst_tot],
+    Real raercol_cw_nsav[ncnst_tot],
     Real &nsource_col, // inout
     Real &qcld, Real factnum_col[AeroConfig::num_modes()],
     Real &ekd, // out
@@ -964,9 +965,8 @@ void update_from_explmix(const Real dtmicro, const Real csbot, const Real cldn,
                          const Real zn, const Real zs, const Real ekd, //&  ! in
                          Real nact[AeroConfig::num_modes()],
                          Real mact[AeroConfig::num_modes()], Real qcld,
-                         Real raercol[ncnst_tot], Real raercol_cw[ncnst_tot], int nnew) {
-
-} // update_from_explmix
+                         Real raercol[ncnst_tot], Real raercol_cw[ncnst_tot],
+                         int nnew) {} // update_from_explmix
 KOKKOS_INLINE_FUNCTION
 void dropmixnuc(
     const int kk, const int top_lev, const Real dtmicro, const Real temp,
@@ -988,13 +988,14 @@ void dropmixnuc(
     const Real exp45logsig[AeroConfig::num_modes()],
     const Real alogsig[AeroConfig::num_modes()], const Real aten,
     const int mam_idx[AeroConfig::num_modes()][nspec_max],
-    const int mam_cnst_idx[AeroConfig::num_modes()][10], Real &qcld,
+    const int mam_cnst_idx[AeroConfig::num_modes()][nspec_max], Real &qcld,
     const Real wsub,
-    const Real cldo,      // in
-    Real qqcw_fld_kk[40], // inout
-    Real ptend_q[40], Real &tendnd, Real factnum[AeroConfig::num_modes()],
-    Real &ndropcol_kk, Real &ndropmix, Real &nsource, Real &wtke,
-    Real ccn[psat], Real coltend_kk[40], Real coltend_cw_kk[40]) {
+    const Real cldo,             // in
+    Real qqcw_fld_kk[ncnst_tot], // inout
+    Real ptend_q[ncnst_tot], Real &tendnd,
+    Real factnum[AeroConfig::num_modes()], Real &ndropcol_kk, Real &ndropmix,
+    Real &nsource, Real &wtke, Real ccn[psat], Real coltend_kk[ncnst_tot],
+    Real coltend_cw_kk[ncnst_tot]) {
   // vertical diffusion and nucleation of cloud droplets
   // assume cloud presence controlled by cloud fraction
   // doesn't distinguish between warm, cold clouds
@@ -1052,7 +1053,6 @@ void dropmixnuc(
   const Real dtinv = one / dtmicro;
   const int ntot_amode = AeroConfig::num_modes();
   // THIS constant depends on the chem mechanism
-  
 
   // initialize variables to zero
   //  ndropmix(:,:) = 0._r8

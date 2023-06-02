@@ -53,18 +53,34 @@ void update_from_newcld(Ensemble *ensemble) {
     }
     const int numptr_amode[ntot_amode] = {23, 28, 36, 40};
 
-    const Real specdens_amode[maxd_aspectype] = {
-        0.1770000000E+004, -1, -1,
-        0.1000000000E+004, 0.1000000000E+004, 0.1700000000E+004,
-        0.1900000000E+004, 0.2600000000E+004, 0.1601000000E+004,
-        0.0000000000E+000, 0.0000000000E+000, 0.0000000000E+000,
-        0.0000000000E+000, 0.0000000000E+000};
-    const Real spechygro[maxd_aspectype] = {
-        0.5070000000E+000, -1, -1,
-        0.1000000083E-009, 0.1400000000E+000, 0.1000000013E-009,
-        0.1160000000E+001, 0.6800000000E-001, 0.1000000015E+000,
-        0.0000000000E+000, 0.0000000000E+000, 0.0000000000E+000,
-        0.0000000000E+000, 0.0000000000E+000};
+    const Real specdens_amode[maxd_aspectype] = {0.1770000000E+004,
+                                                 -1,
+                                                 -1,
+                                                 0.1000000000E+004,
+                                                 0.1000000000E+004,
+                                                 0.1700000000E+004,
+                                                 0.1900000000E+004,
+                                                 0.2600000000E+004,
+                                                 0.1601000000E+004,
+                                                 0.0000000000E+000,
+                                                 0.0000000000E+000,
+                                                 0.0000000000E+000,
+                                                 0.0000000000E+000,
+                                                 0.0000000000E+000};
+    const Real spechygro[maxd_aspectype] = {0.5070000000E+000,
+                                            -1,
+                                            -1,
+                                            0.1000000083E-009,
+                                            0.1400000000E+000,
+                                            0.1000000013E-009,
+                                            0.1160000000E+001,
+                                            0.6800000000E-001,
+                                            0.1000000015E+000,
+                                            0.0000000000E+000,
+                                            0.0000000000E+000,
+                                            0.0000000000E+000,
+                                            0.0000000000E+000,
+                                            0.0000000000E+000};
 
     Real exp45logsig[AeroConfig::num_modes()], alogsig[AeroConfig::num_modes()],
         num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
@@ -77,7 +93,6 @@ void update_from_newcld(Ensemble *ensemble) {
                         num2vol_ratio_max_nmodes); // voltonumblo_amode
 
     const auto mam_idx_db = input.get_array("mam_idx");
-    
 
     count = 0;
     int mam_idx[ntot_amode][nspec_max];
@@ -93,16 +108,16 @@ void update_from_newcld(Ensemble *ensemble) {
     auto nsource_col_out = input.get_array("nsource_col_out")[0];
     auto factnum_col_out = input.get_array("factnum_col_out");
 
-    ndrop_od::update_from_newcld(
-        cldn_col_in, cldo_col_in, dtinv, //& ! in
-        wtke_col_in, temp_col_in, air_density,
-        state_q.data(), //& ! in
-        lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
-        num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode,
-        nspec_amode, exp45logsig, alogsig, aten, mam_idx, qcld,
-        raercol_nsav.data(),
-        raercol_cw_nsav.data(), //&      ! inout
-        nsource_col_out, factnum_col_out.data());
+    ndrop_od::update_from_newcld(cldn_col_in, cldo_col_in, dtinv, //& ! in
+                                 wtke_col_in, temp_col_in, air_density,
+                                 state_q.data(), //& ! in
+                                 lspectype_amode, specdens_amode, spechygro,
+                                 lmassptr_amode, num2vol_ratio_min_nmodes,
+                                 num2vol_ratio_max_nmodes, numptr_amode,
+                                 nspec_amode, exp45logsig, alogsig, aten,
+                                 mam_idx, qcld, raercol_nsav.data(),
+                                 raercol_cw_nsav.data(), //&      ! inout
+                                 nsource_col_out, factnum_col_out.data());
 
     output.set("qcld", qcld);
     output.set("nsource_col_out", nsource_col_out);

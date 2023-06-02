@@ -19,6 +19,7 @@ add_executable(ndrop_driver
                maxsat.cpp
                update_from_newcld.cpp
                update_from_cldn_profile.cpp
+               dropmixnuc.cpp
                )
 
 target_link_libraries(ndrop_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -52,6 +53,7 @@ set(TEST_LIST
     maxsattype2_merged
     update_from_newcld_ts_1407_iact2
     update_from_cldn_profile_ts_1417_iact1
+    dropmixnuc_ts_1417
     )
 
 set(DEFAULT_TOL 1e-11)
@@ -74,6 +76,7 @@ set(ERROR_THRESHOLDS
     1e-11
     1e-11
     8e-6
+    1e-11
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)

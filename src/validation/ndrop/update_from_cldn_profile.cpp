@@ -94,9 +94,9 @@ void update_from_cldn_profile(Ensemble *ensemble) {
                         num2vol_ratio_min_nmodes,  // voltonumbhi_amode
                         num2vol_ratio_max_nmodes); // voltonumblo_amode
 
-    const int mam_idx_db[nspec_max*ntot_amode] = {1,  9, 14, 22, 2,  10, 15, 23, 3,  11, 16,
-                            24, 4, 12, 17, 25, 5,  13, 18, 0,  6,  0,
-                            19, 0, 7,  0,  20, 0,  8,  0,  21, 0};
+    const int mam_idx_db[nspec_max * ntot_amode] = {
+        1, 9,  14, 22, 2, 10, 15, 23, 3, 11, 16, 24, 4, 12, 17, 25,
+        5, 13, 18, 0,  6, 0,  19, 0,  7, 0,  20, 0,  8, 0,  21, 0};
 
     count = 0;
     int mam_idx[ntot_amode][nspec_max];
@@ -108,7 +108,6 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     }
 
     auto raercol_nsav = input.get_array("raercol_nsav_kk");
-    //FIXME
     auto raercol_nsav_kp1 = input.get_array("raercol_nsav_kp1");
     auto raercol_cw_nsav = input.get_array("raercol_cw_nsav");
     auto nsource_col = input.get_array("nsource_col")[0];
@@ -127,11 +126,9 @@ void update_from_cldn_profile(Ensemble *ensemble) {
         temp_col_in, air_density, air_density_kp1, csbot_cscen,
         state_q_col_in_kp1.data(), // ! in
         lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
-        num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes,
-         numptr_amode, nspec_amode,
-        exp45logsig, alogsig, aten, mam_idx, raercol_nsav.data(),
-        raercol_nsav_kp1.data(),
-        raercol_cw_nsav.data(),
+        num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode,
+        nspec_amode, exp45logsig, alogsig, aten, mam_idx, raercol_nsav.data(),
+        raercol_nsav_kp1.data(), raercol_cw_nsav.data(),
         nsource_col, // inout
         qcld, factnum_col.data(),
         ekd, // out
