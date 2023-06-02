@@ -124,20 +124,24 @@ void ma_precpprod(Ensemble *ensemble) {
           for (int i = 0; i < ConvProc::gas_pcnst; ++i)
             mmtoo_prevap_resusp[i] = mmtoo_prevap_resusp_dev[i] - 1;
 
-          ColumnView dcondt_wetdep =
+          auto dcondt_wetdep =
               Kokkos::subview(dcondt_wetdep_dev, kk, Kokkos::ALL());
-          ColumnView dcondt = Kokkos::subview(dcondt_dev, kk, Kokkos::ALL());
-          ColumnView dcondt_prevap =
+          auto dcondt = Kokkos::subview(dcondt_dev, kk, Kokkos::ALL());
+          auto dcondt_prevap =
               Kokkos::subview(dcondt_prevap_dev, kk, Kokkos::ALL());
-          ColumnView dcondt_prevap_hist =
+          auto dcondt_prevap_hist =
               Kokkos::subview(dcondt_prevap_hist_dev, kk, Kokkos::ALL());
           Real flux = pr_flux;
           Real flux_tmp = pr_flux_tmp;
           Real flux_base = pr_flux_base;
           convproc::ma_precpprod(
               rprd[kk], dpdry_i[kk], doconvproc_extd, x_ratio, species_class,
-              mmtoo_prevap_resusp, flux, flux_tmp, flux_base, wd_flux_dev,
-              dcondt_wetdep, dcondt, dcondt_prevap, dcondt_prevap_hist);
+              mmtoo_prevap_resusp, flux, flux_tmp, flux_base, 
+              wd_flux_dev,
+              dcondt_wetdep, 
+              dcondt, 
+              dcondt_prevap, 
+              dcondt_prevap_hist);
           return_vals[0] = flux;
           return_vals[1] = flux_tmp;
           return_vals[2] = flux_base;

@@ -525,6 +525,7 @@ void ma_precpevap(const Real dpdry_i, const Real evapc, const Real pr_flux,
 }
 
 //=========================================================================================
+template <typename SubView>
 KOKKOS_INLINE_FUNCTION
 void ma_precpprod(const Real rprd, const Real dpdry_i,
                   const bool doconvproc_extd[ConvProc::pcnst_extd],
@@ -532,9 +533,11 @@ void ma_precpprod(const Real rprd, const Real dpdry_i,
                   const int species_class[ConvProc::gas_pcnst],
                   const int mmtoo_prevap_resusp[ConvProc::gas_pcnst],
                   Real &pr_flux, Real &pr_flux_tmp, Real &pr_flux_base,
-                  ColumnView wd_flux, const ColumnView dcondt_wetdep,
-                  ColumnView dcondt, ColumnView dcondt_prevap,
-                  ColumnView dcondt_prevap_hist) {
+                  ColumnView wd_flux, 
+                  const SubView dcondt_wetdep,
+                  SubView dcondt, 
+                  SubView dcondt_prevap,
+                  SubView dcondt_prevap_hist) {
   // clang-format off
   // ------------------------------------------
   //  step 2 in ma_precpevap_convproc: aerosol scavenging from precipitation production
@@ -742,12 +745,12 @@ void ma_precpevap_convproc(
     ma_precpevap(dpdry_i[kk], evapc[kk], pr_flux, pr_flux_base, pr_flux_tmp,
                  x_ratio);
     // step 2 - precip production and aerosol scavenging
-    ColumnView dcondt_wetdep_sub =
+    auto dcondt_wetdep_sub =
         Kokkos::subview(dcondt_wetdep, kk, Kokkos::ALL());
-    ColumnView dcondt_sub = Kokkos::subview(dcondt, kk, Kokkos::ALL());
-    ColumnView dcondt_prevap_sub =
+    auto dcondt_sub = Kokkos::subview(dcondt, kk, Kokkos::ALL());
+    auto dcondt_prevap_sub =
         Kokkos::subview(dcondt_prevap, kk, Kokkos::ALL());
-    ColumnView dcondt_prevap_hist_sub =
+    auto dcondt_prevap_hist_sub =
         Kokkos::subview(dcondt_prevap_hist, kk, Kokkos::ALL());
     ma_precpprod(rprd[kk], dpdry_i[kk], doconvproc_extd, x_ratio, species_class,
                  mmtoo_prevap_resusp, pr_flux, pr_flux_tmp, pr_flux_base,
