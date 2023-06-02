@@ -23,6 +23,7 @@ void dropmixnuc(Ensemble *ensemble) {
     const int psat = ndrop_od::psat;
     const int ncnst_tot = ndrop_od::ncnst_tot;
     const int nspec_max = mam4::ndrop_od::nspec_max;
+    const int nvar_ptend_q = mam4::ndrop_od::nvar_ptend_q;
 
     const int pver = input.get_array("pver")[0];
     const auto state_q_db = input.get_array("state_q");
@@ -219,10 +220,10 @@ void dropmixnuc(Ensemble *ensemble) {
     nsource = haero::testing::create_column_view(pver);
     wtke = haero::testing::create_column_view(pver);
 
-    ColumnView ptend_q[ncnst_tot];
+    ColumnView ptend_q[nvar_ptend_q];
 
     count = 0;
-    for (int i = 0; i < ncnst_tot; ++i) {
+    for (int i = 0; i < nvar_ptend_q; ++i) {
       ptend_q[i] = haero::testing::create_column_view(pver);
     }
 
@@ -266,7 +267,7 @@ void dropmixnuc(Ensemble *ensemble) {
 
           Real factnum_kk[ntot_amode] = {zero};
           Real ccn[psat] = {zero};
-          Real ptend_q_kk[ncnst_tot] = {zero};
+          Real ptend_q_kk[nvar_ptend_q] = {zero};
           Real coltend_kk[ncnst_tot] = {zero};
           Real coltend_cw_kk[ncnst_tot] = {zero};
 
@@ -288,29 +289,16 @@ void dropmixnuc(Ensemble *ensemble) {
 
           for (int i = 0; i < ncnst_tot; ++i) {
             qqcw[i](kk) = qqcw_kk[i];
+          }
+          for (int i = 0; i < nvar_ptend_q; ++i) {
             ptend_q[i](kk) = ptend_q_kk[i];
           }
 
           for (int i = 0; i < ntot_amode; ++i) {
             factnum[i](kk) = factnum_kk[i];
           }
-
-          //       for (int i = 0; i < psat; ++i) {
-          //         ccn[i](kk) = ccn_kk[i];
-          //       }
-          //     });
         });
 
-    // for (int i = 0; i < psat; ++i) {
-    //   auto ccn_i_host = Kokkos::create_mirror_view(ccn[i]);
-    //   Kokkos::deep_copy(ccn_i_host, ccn[i]);
-    //   std::vector<Real> ccn_v(pver);
-    //   for (int kk = 0; kk < pver; ++kk) {
-    //     ccn_v[kk] = ccn_i_host(kk);
-    //   }
-
-    //
-    // }
     auto host = Kokkos::create_mirror_view(tendnd);
     Kokkos::deep_copy(host, tendnd);
     std::vector<Real> v_host(pver);
@@ -320,19 +308,17 @@ void dropmixnuc(Ensemble *ensemble) {
 
     output.set("tendnd", v_host);
 
-    // for (int i = 0; i < ncnst_tot; ++i) {
-    //   qqcw[i](kk) = qqcw_kk[i];
-    //   Kokkos::deep_copy(host, qqcw[i]);
-    // }
-
     std::vector<Real> output_qqcw;
-    std::vector<Real> output_ptend_q;
 
     for (int i = 0; i < ncnst_tot; ++i) {
       Kokkos::deep_copy(host, qqcw[i]);
       for (int kk = 0; kk < pver; ++kk) {
         output_qqcw.push_back(host(kk));
       }
+    }
+
+    std::vector<Real> output_ptend_q;
+    for (int i = 0; i < nvar_ptend_q; ++i) {
       Kokkos::deep_copy(host, ptend_q[i]);
       for (int kk = 0; kk < pver; ++kk) {
         output_ptend_q.push_back(host(kk));

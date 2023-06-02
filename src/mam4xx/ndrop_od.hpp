@@ -24,7 +24,7 @@ const int maxd_aspectype = 14;
 // BAD CONSTANT
 const Real t0 = 273;       // reference temperature [K]
 const Real p0 = 1013.25e2; //  ! reference pressure [Pa]
-
+const int nvar_ptend_q = 40;
 // FIXME; surften is defined in ndrop_init
 // BAD CONSTANT
 const Real surften = 0.076;
@@ -992,7 +992,7 @@ void dropmixnuc(
     const Real wsub,
     const Real cldo,             // in
     Real qqcw_fld_kk[ncnst_tot], // inout
-    Real ptend_q[ncnst_tot], Real &tendnd,
+    Real ptend_q[nvar_ptend_q], Real &tendnd,
     Real factnum[AeroConfig::num_modes()], Real &ndropcol_kk, Real &ndropmix,
     Real &nsource, Real &wtke, Real ccn[psat], Real coltend_kk[ncnst_tot],
     Real coltend_cw_kk[ncnst_tot]) {
