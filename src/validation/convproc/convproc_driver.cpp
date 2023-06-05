@@ -30,6 +30,7 @@ void compute_column_tendency(Ensemble *ensemble);
 void ma_resuspend_convproc(Ensemble *ensemble);
 void ma_precpevap(Ensemble *ensemble);
 void ma_precpprod(Ensemble *ensemble);
+void ma_precpevap_convproc(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -63,6 +64,8 @@ int main(int argc, char **argv) {
       ma_precpevap(ensemble);
     } else if (func_name == "ma_precpprod") {
       ma_precpprod(ensemble);
+    } else if (func_name == "ma_precpevap_convproc") {
+      ma_precpevap_convproc(ensemble);
     } else {
       std::cerr << "Error: Test name not recognized:" << func_name << std::endl;
       exit(1);
