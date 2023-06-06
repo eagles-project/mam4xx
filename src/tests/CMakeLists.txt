@@ -37,6 +37,8 @@ EkatCreateUnitTest(mam4_coagulation_unit_tests mam4_coagulation_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_calcsize_unit_tests mam4_calcsize_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
+EkatCreateUnitTest(mam4_convproc_unit_tests mam4_convproc_unit_tests.cpp
+  LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_rename_unit_tests mam4_rename_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_aging_unit_tests mam4_aging_unit_tests.cpp
@@ -53,6 +55,7 @@ target_compile_options(mam4_nucleation_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_gasaerexch_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_coagulation_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_calcsize_unit_tests PRIVATE -Werror)
+target_compile_options(mam4_convproc_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_amicphys_1gridcell_tests PRIVATE -Werror)
 target_compile_options(mam4_rename_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_aging_unit_tests PRIVATE -Werror)
@@ -61,9 +64,9 @@ target_compile_options(mam4_nucleate_ice_unit_tests PRIVATE -Werror)
 
 # TODO: this test is currently broken on GPU.
 # TODO: return to this test once we have more context for get_aer_num
-#EkatCreateUnitTest(mam4_ndrop_unit_tests mam4_ndrop_unit_tests.cpp
-#  LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
-#target_compile_options(mam4_ndrop_unit_tests PRIVATE -Werror)
+EkatCreateUnitTest(mam4_ndrop_unit_tests mam4_ndrop_unit_tests.cpp
+  LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
+target_compile_options(mam4_ndrop_unit_tests PRIVATE -Werror)
 
 if (${HAERO_PRECISION} MATCHES double)
 EkatCreateUnitTest(kohler_unit_tests kohler_unit_tests.cpp

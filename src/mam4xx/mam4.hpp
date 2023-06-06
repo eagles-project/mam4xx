@@ -14,6 +14,7 @@
 #include <mam4xx/aging.hpp>
 #include <mam4xx/calcsize.hpp>
 #include <mam4xx/coagulation.hpp>
+#include <mam4xx/convproc.hpp>
 #include <mam4xx/gasaerexch.hpp>
 #include <mam4xx/hetfrz.hpp>
 #include <mam4xx/mam4_types.hpp>
@@ -28,6 +29,7 @@ using NucleationProcess = haero::AeroProcess<AeroConfig, Nucleation>;
 using GasAerExchProcess = haero::AeroProcess<AeroConfig, GasAerExch>;
 using CoagulationProcess = haero::AeroProcess<AeroConfig, Coagulation>;
 using CalcSizeProcess = haero::AeroProcess<AeroConfig, CalcSize>;
+using ConvProcProcess = haero::AeroProcess<AeroConfig, ConvProc>;
 using AgingProcess = haero::AeroProcess<AeroConfig, Aging>;
 using RenameProcess = haero::AeroProcess<AeroConfig, Rename>;
 using HetfrzProcess = haero::AeroProcess<AeroConfig, Hetfrz>;

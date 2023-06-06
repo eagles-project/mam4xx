@@ -16,6 +16,7 @@ include_directories(${PROJECT_BINARY_DIR}/include) # for skywalker
 add_subdirectory(nucleation)
 add_subdirectory(gasaerexch)
 add_subdirectory(calcsize)
+add_subdirectory(convproc)
 add_subdirectory(coagulation)
 add_subdirectory(aging)
 add_subdirectory(rename)
