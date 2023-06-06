@@ -42,6 +42,7 @@ void get_aer_radius(Ensemble *ensemble);
 void calculate_mass_mean_radius(Ensemble *ensemble);
 void calculate_coated_fraction(Ensemble *ensemble);
 void calculate_vars_for_water_activity(Ensemble *ensemble);
+void hetfrz_classnuc_calc(Ensemble *ensemble);
 void hetfrz_rates_1box(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
@@ -50,7 +51,7 @@ int main(int argc, char **argv) {
     usage();
   }
 
-  Kokkos::initialize(argc, argv);
+  validation::initialize(argc, argv);
   std::string input_file = argv[1];
   std::string output_file = validation::output_name(input_file);
   std::cout << argv[0] << ": reading " << input_file << std::endl;
@@ -131,12 +132,12 @@ int main(int argc, char **argv) {
     if (func_name == "calculate_vars_for_water_activity") {
       calculate_vars_for_water_activity(ensemble);
     }
-    std::cout << "Func name " << func_name << std::endl;
-    if (func_name == "hetfrz_rates_1box"){
-      std::cout << "From DRIVER" << std::endl ; 
+    if (func_name == "hetfrz_rates_1box") {
       hetfrz_rates_1box(ensemble);
     }
-
+    if (func_name == "hetfrz_classnuc_calc") {
+      hetfrz_classnuc_calc(ensemble);
+    }
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
   }
@@ -148,5 +149,5 @@ int main(int argc, char **argv) {
 
   //
   delete ensemble;
-  Kokkos::finalize();
+  validation::finalize();
 }
