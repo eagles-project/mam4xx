@@ -103,16 +103,18 @@ KOKKOS_INLINE_FUNCTION Scalar height_at_hydrostatic_pressure(const Scalar p,
   Levels are spaced uniformly in height, water vapor decays exponentially
   with height, and virtual temperature decays linearly with height.
 
-  @param [in/out] atm Atmosphere column whose data need initialization
+  @param [in] num_levels the number of vertical levels in the Atmosphere
+  @param [in] pblh the planetary boundary layer height [m]
   @param [in] Tv0 Reference virtual temperature (surface) [K]
   @param [in] Gammav virtual temperature lapse rate [K/m]
   @param [in] qv0 mixing ratio at surface [kg H<sub>2</sub>O / kg air]
   @param [in] qv1 decay rate of water vapor [1/m]
+
+  @returns a newly constructed Atmosphere object
 */
-void init_atm_const_tv_lapse_rate(const Atmosphere &atm, const Real Tv0 = 300,
-                                  const Real Gammav = 0.01,
-                                  const Real qv0 = 0.005,
-                                  const Real qv1 = 1e-5);
+Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
+    const Real Tv0 = 300, const Real Gammav = 0.01, const Real qv0 = 0.005,
+    const Real qv1 = 1e-5);
 
 } // namespace mam4
 #endif

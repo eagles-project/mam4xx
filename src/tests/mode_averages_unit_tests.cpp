@@ -183,8 +183,6 @@ TEST_CASE("modal_averages", "") {
   } // section (hygroscopicity)
 
   SECTION("wet particle size") {
-    const Real pblh = 0;
-    Atmosphere atm = testing::create_atmosphere(nlev, pblh);
     // initialize a hydrostatically balanced moist air column
     // using constant lapse rate in virtual temperature to manufacture
     // exact solutions.
@@ -196,7 +194,8 @@ TEST_CASE("modal_averages", "") {
     const Real qv0 =
         0.015; // specific humidity at surface [kg h2o / kg moist air]
     const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
-    init_atm_const_tv_lapse_rate(atm, Tv0, Gammav, qv0, qv1);
+    const Real pblh = 0;
+    Atmosphere atm = init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
 
     const auto w = atm.vapor_mixing_ratio;
     const auto T = atm.temperature;

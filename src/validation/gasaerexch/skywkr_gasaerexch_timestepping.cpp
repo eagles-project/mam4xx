@@ -335,8 +335,12 @@ int main(int argc, char **argv) {
 
       // Call the MAM subroutine. Gas and aerosol mixing ratios will be updated
       // during the call
-      Kokkos::deep_copy(atm.temperature, temp);
-      Kokkos::deep_copy(atm.pressure, pmid);
+      auto d_temp = validation::create_column_view(nlev);
+      auto d_pmid = validation::create_column_view(nlev);
+      Kokkos::deep_copy(d_temp, temp);
+      Kokkos::deep_copy(d_pmid, pmid);
+      atm.temperature = d_temp;
+      atm.pressure = d_pmid;
       for (int n = 0; n < num_mode; ++n)
         for (int g = 0; g < num_aer; ++g)
           Kokkos::deep_copy(progs.q_aero_i[n][g], qaer_cur[g][n]);

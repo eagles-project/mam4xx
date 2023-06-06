@@ -73,6 +73,7 @@ fi
 echo "Cloning Haero repository into $(pwd)/.haero..."
 git clone git@github.com:eagles-project/haero.git .haero || exit
 cd .haero || exit
+git checkout pbosler/const_column_view || exit
 git submodule update --init --recursive || exit
 
 # Are we on a special machine?
