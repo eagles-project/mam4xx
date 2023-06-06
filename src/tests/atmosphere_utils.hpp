@@ -113,8 +113,10 @@ KOKKOS_INLINE_FUNCTION Scalar height_at_hydrostatic_pressure(const Scalar p,
   @returns a newly constructed Atmosphere object
 */
 Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
-    const Real Tv0 = 300, const Real Gammav = 0.01, const Real qv0 = 0.005,
-    const Real qv1 = 1e-5);
+                                        const Real Tv0 = 300,
+                                        const Real Gammav = 0.01,
+                                        const Real qv0 = 0.005,
+                                        const Real qv1 = 1e-5);
 
 } // namespace mam4
 #endif

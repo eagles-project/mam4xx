@@ -195,7 +195,8 @@ TEST_CASE("modal_averages", "") {
         0.015; // specific humidity at surface [kg h2o / kg moist air]
     const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
     const Real pblh = 0;
-    Atmosphere atm = init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
+    Atmosphere atm =
+        init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
 
     const auto w = atm.vapor_mixing_ratio;
     const auto T = atm.temperature;

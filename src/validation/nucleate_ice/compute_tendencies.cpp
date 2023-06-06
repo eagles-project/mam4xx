@@ -57,8 +57,7 @@ void compute_tendencies(Ensemble *ensemble) {
     Kokkos::deep_copy(d_temp, temp);
     Kokkos::deep_copy(d_pmid, pmid);
     Kokkos::deep_copy(d_cloud_fraction, cloud_fraction);
-    Kokkos::deep_copy(d_updraft_vel_ice_nucleation,
-                      updraft_vel_ice_nucleation);
+    Kokkos::deep_copy(d_updraft_vel_ice_nucleation, updraft_vel_ice_nucleation);
     Kokkos::deep_copy(d_vapor_mixing_ratio, vapor_mixing_ratio);
     atm.temperature = d_temp;
     atm.pressure = d_pmid;

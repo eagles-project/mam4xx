@@ -6,13 +6,14 @@
 #include "atmosphere_utils.hpp"
 #include <mam4xx/conversions.hpp>
 
-#include <haero/testing.hpp>
 #include <ekat/ekat_assert.hpp>
+#include <haero/testing.hpp>
 
 namespace mam4 {
 
 Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
-    const Real Tv0, const Real Gammav, const Real qv0, const Real qv1) {
+                                        const Real Tv0, const Real Gammav,
+                                        const Real qv0, const Real qv1) {
   EKAT_REQUIRE_MSG(FloatingPoint<Real>::in_bounds(Tv0, 273, 323),
                    "unexpected Tv0, check units = K");
   EKAT_REQUIRE_MSG(FloatingPoint<Real>::in_bounds(Gammav, 0, 0.02),
