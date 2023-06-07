@@ -61,12 +61,7 @@ void calculate_rgimm_and_determine_spec_flag(Ensemble *ensemble) {
     hetfrz::calculate_rgimm_and_determine_spec_flag(
         vwice, sigma_iw, temperature, aw, supersatice, rgimm, do_spec_flag);
 
-    skywalker::Real do_spec_flag_real;
-    if (do_spec_flag) {
-      do_spec_flag_real = 1.0;
-    } else {
-      do_spec_flag_real = 0.0;
-    }
+    skywalker::Real do_spec_flag_real = int(do_spec_flag);
 
     output.set("rgimm", rgimm);
     output.set("do_spec_flag", do_spec_flag_real);
