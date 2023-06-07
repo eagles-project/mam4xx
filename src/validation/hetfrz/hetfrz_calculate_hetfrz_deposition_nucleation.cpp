@@ -108,19 +108,19 @@ void calculate_hetfrz_deposition_nucleation(Ensemble *ensemble) {
     auto do_dst1 = input.get("do_dst1");
     auto do_dst3 = input.get("do_dst3");
 
-    bool do_bc_b = true, do_dst1_b = true, do_dst3_b = true;
+    bool do_bc_b = false, do_dst1_b = false, do_dst3_b = false;
 
     // Convert real to bool
     if (do_bc != 0.0) {
-      do_bc_b = false;
+      do_bc_b = true;
     }
 
     if (do_dst1 != 0.0) {
-      do_dst1_b = false;
+      do_dst1_b = true;
     }
 
     if (do_dst3 != 0.0) {
-      do_dst3_b = false;
+      do_dst3_b = true;
     }
 
     haero::Real frzbcdep;
