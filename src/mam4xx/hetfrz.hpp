@@ -299,7 +299,7 @@ void collkernel(const Real temperature, const Real pressure, const Real eswtr,
 
 KOKKOS_INLINE_FUNCTION
 Real get_form_factor(const Real alpha) {
-  const Real v_cos = cos(alpha); // This should resolve to haero cos
+  const Real v_cos = haero::cos(alpha);
   return (2.0 + v_cos) * haero::square(1.0 - v_cos) / 4.0;
 }
 
