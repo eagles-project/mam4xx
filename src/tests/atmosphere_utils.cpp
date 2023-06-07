@@ -23,12 +23,23 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
   const Real ztop = 10e3;
   const Real dz = ztop / num_levels;
 
-  using HostColumnView = typename haero::HostType::view_1d<Real>;
-  auto h_temperature = HostColumnView("T", num_levels);
-  auto h_pressure = HostColumnView("p", num_levels);
-  auto h_mix = HostColumnView("qv", num_levels);
-  auto h_height = HostColumnView("h", num_levels);
-  auto h_hdp = HostColumnView("hdp", num_levels);
+
+  auto d_temperature = haero::testing::create_column_view(num_levels);
+  auto d_pressure = haero::testing::create_column_view(num_levels);
+  auto d_mix = haero::testing::create_column_view(num_levels);
+  auto d_liq = haero::testing::create_column_view(num_levels);
+  auto d_nliq = haero::testing::create_column_view(num_levels);
+  auto d_ice = haero::testing::create_column_view(num_levels);
+  auto d_nice = haero::testing::create_column_view(num_levels);
+  auto d_height = haero::testing::create_column_view(num_levels);
+  auto d_hdp = haero::testing::create_column_view(num_levels);
+  auto d_cf = haero::testing::create_column_view(num_levels);
+  auto d_w = haero::testing::create_column_view(num_levels);
+  auto h_temperature = Kokkos::create_mirror_view(d_temperature);
+  auto h_pressure = Kokkos::create_mirror_view(d_pressure);
+  auto h_mix = Kokkos::create_mirror_view(d_mix);
+  auto h_height = Kokkos::create_mirror_view(d_height);
+  auto h_hdp = Kokkos::create_mirror_view(d_hdp);
 
   Real psum = hydrostatic_pressure_at_height(ztop, p0, Tv0, Gammav);
   for (int k = 0; k < num_levels; ++k) {
@@ -57,24 +68,24 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
   EKAT_ASSERT(FloatingPoint<Real>::rel(psum, p0,
                                        std::numeric_limits<float>::epsilon()));
 
-  auto d_temperature = haero::testing::create_column_view(num_levels);
-  auto d_pressure = haero::testing::create_column_view(num_levels);
-  auto d_mix = haero::testing::create_column_view(num_levels);
-  auto d_height = haero::testing::create_column_view(num_levels);
-  auto d_hdp = haero::testing::create_column_view(num_levels);
-
   Kokkos::deep_copy(d_temperature, h_temperature);
   Kokkos::deep_copy(d_pressure, h_pressure);
   Kokkos::deep_copy(d_mix, h_mix);
   Kokkos::deep_copy(d_height, h_height);
   Kokkos::deep_copy(d_hdp, h_hdp);
 
-  Atmosphere atm(num_levels, pblh);
-  atm.temperature = d_temperature;
-  atm.pressure = d_pressure;
-  atm.vapor_mixing_ratio = d_mix;
-  atm.height = d_height;
-  atm.hydrostatic_dp = d_hdp;
+  Atmosphere atm(d_temperature,
+                 d_pressure,
+                 d_mix,
+                 d_liq,
+                 d_nliq,
+                 d_ice,
+                 d_nice,
+                 d_height,
+                 d_hdp,
+                 d_cf,
+                 d_w,
+                 pblh);
 
   return atm;
 }

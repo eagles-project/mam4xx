@@ -17,8 +17,7 @@ void mam_rename_1subarea(Ensemble *ensemble) {
 
   ensemble->process([=](const Input &input, Output &output) {
     int nlev = 1;
-    Real pblh = 1000;
-    Atmosphere atm(nlev, pblh);
+
     mam4::Prognostics progs(nlev);
     mam4::Diagnostics diags(nlev);
     mam4::Tendencies tends(nlev);
