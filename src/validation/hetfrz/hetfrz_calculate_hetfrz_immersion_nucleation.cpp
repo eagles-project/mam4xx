@@ -150,20 +150,9 @@ void calculate_hetfrz_immersion_nucleation(Ensemble *ensemble) {
     auto do_dst1 = input.get("do_dst1");
     auto do_dst3 = input.get("do_dst3");
 
-    bool do_bc_b = true, do_dst1_b = true, do_dst3_b = true;
-
-    // Convert real to bool
-    if (do_bc != 0.0) {
-      do_bc_b = false;
-    }
-
-    if (do_dst1 != 0.0) {
-      do_dst1_b = false;
-    }
-
-    if (do_dst3 != 0.0) {
-      do_dst3_b = false;
-    }
+    bool do_bc_b = (do_bc != 0.0);
+    bool do_dst1_b = (do_dst1 != 0.0);
+    bool do_dst3_b = (do_dst3 != 0.0);
 
     haero::Real frzbcimm;
     haero::Real frzduimm;
