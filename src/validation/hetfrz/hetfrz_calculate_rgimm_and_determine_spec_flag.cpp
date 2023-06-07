@@ -63,9 +63,9 @@ void calculate_rgimm_and_determine_spec_flag(Ensemble *ensemble) {
 
     skywalker::Real do_spec_flag_real;
     if (do_spec_flag) {
-      do_spec_flag_real = 0.0;
-    } else {
       do_spec_flag_real = 1.0;
+    } else {
+      do_spec_flag_real = 0.0;
     }
 
     output.set("rgimm", rgimm);
