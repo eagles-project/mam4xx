@@ -40,39 +40,45 @@ public:
   void init(const AeroConfig &aero_config,
             const Config &process_config = Config());
 
-  static constexpr Real amu = 1.66053886e-27;
+  static constexpr Real amu = 1.66053886e-27; // (BAD CONSTANT)
 
   // frequ. of vibration [s-1] higher freq. (as in P&K, consistent with Anupam's
   // data)
-  static constexpr Real nus = 1.0e13;
+  static constexpr Real nus = 1.0e13; // (BAD CONSTANT)
 
   // 98% RH in mixed-phase clouds (Korolev & Isaac, JAS 2006)
-  static constexpr Real rhwincloud = 0.98;
+  static constexpr Real rhwincloud = 0.98; // (BAD CONSTANT)
 
   // max. ice nucleating fraction soot
-  static constexpr Real limfacbc = 0.01;
+  static constexpr Real limfacbc = 0.01; // (BAD CONSTANT)
 
-  static constexpr Real mincld = 0.0001; // Do we need ot read this
+  static constexpr Real mincld =
+      0.0001; // Do we need ot read this (BAD CONSTANT)
 
   // Wang et al., 2014 fitting parameters
   // freezing parameters for immersion freezing
   static constexpr Real theta_imm_bc =
       48.0; // contact angle [deg], converted to rad later !DeMott et al (1990)
-  static constexpr Real dga_imm_bc = 14.15E-20; // activation energy [J]
+            // (BAD CONSTANT)
+  static constexpr Real dga_imm_bc =
+      14.15E-20; // activation energy [J] (BAD CONSTANT)
   static constexpr Real theta_imm_dust =
       46.0; // contact angle [deg], converted to rad later !DeMott et al (2011)
-            // SD
-  static constexpr Real dga_imm_dust = 14.75E-20; // activation energy [J]
+            // (BAD CONSTANT) SD
+  static constexpr Real dga_imm_dust =
+      14.75E-20; // activation energy [J] (BAD CONSTANT)
 
   // freezing parameters for deposition nucleation
   static constexpr Real theta_dep_dust =
       20.0; // contact angle [deg], converted to rad later !Koehler et al (2010)
-            // SD
-  static constexpr Real dga_dep_dust = -8.1e-21; // activation energy [J]
+            // (BAD CONSTANT) SD
+  static constexpr Real dga_dep_dust =
+      -8.1e-21; // activation energy [J] (BAD CONSTANT)
   static constexpr Real theta_dep_bc =
       28.0; // contact angle [deg], converted to rad later !Moehler et al
-            // (2005), soot
-  static constexpr Real dga_dep_bc = -2.e-19; // activation energy [J]
+            // (2005), soot (BAD CONSTANT)
+  static constexpr Real dga_dep_bc =
+      -2.e-19; // activation energy [J] (BAD CONSTANT)
 
   static constexpr Real num_m3_to_cm3 =
       1.0e-6; // volume unit conversion, #/m^3 to #/cm^3
@@ -80,8 +86,6 @@ public:
       1.0e6; // volume unit conversion, #/cm^3 to #/m^3
   static constexpr Real frz_cm3_to_m3 =
       1.0e6; // het. frz. unit conversion [cm^-3 s^-1 to m^-3 s^-1]
-
-  static constexpr Real molec_weight_h2o = 18.015999999999998; // BAD CONSTANT
 
   // Index ids and number of species involved in heterogenous freezing
   static constexpr int id_bc = 0;
@@ -250,14 +254,13 @@ void collkernel(const Real temperature, const Real pressure, const Real eswtr,
                 Real &Kcoll_dust_a3) {
 
   // thermal conductivities from Seinfeld & Pandis, Table 8.6
-  constexpr Real Ktherm_bc = 4.2;    // Carbon
-  constexpr Real Ktherm_dust = 0.72; // Clay
+  constexpr Real Ktherm_bc = 4.2;    // Carbon (BAD CONSTANT)
+  constexpr Real Ktherm_dust = 0.72; // Clay (BAD CONSTANT)
 
   const Real tc = temperature - Constants::freezing_pt_h2o;
 
   // air viscosity for tc<0,
   const Real viscos_air = get_air_viscosity(tc);
-
   const Real r_gas_dry_air = 287.04231136504870; // (BAD CONSTANT)
   // air density
   const Real rho_air = pressure / (r_gas_dry_air * temperature);
@@ -312,7 +315,7 @@ KOKKOS_INLINE_FUNCTION
 Real get_Aimm(const Real vwice, const Real rgimm, const Real temperature,
               const Real dg0imm) {
   constexpr Real n1 = 1e19; // number of water molecules in contact with unit
-                            // area of substrate [m-2]
+                            // area of substrate [m-2] (BAD CONSTANT)
   constexpr Real hplanck = 6.63e-34; // Planck constant (BAD CONSTANT)
   constexpr Real rhplanck = 1.0 / hplanck;
 
@@ -335,26 +338,26 @@ void calculate_hetfrz_contact_nucleation(
   frzbccnt = 0.0;
   frzducnt = 0.0;
 
-  constexpr Real bad_pi = 3.141592654; // (BAD CONSTANT)
-
   // form factor
-  const Real f_cnt_bc = get_form_factor(Hetfrz::theta_dep_bc * bad_pi / 180.0);
+  const Real f_cnt_bc =
+      get_form_factor(Hetfrz::theta_dep_bc * Constants::pi / 180.0);
   const Real f_cnt_dust_a1 =
-      get_form_factor(Hetfrz::theta_dep_dust * bad_pi / 180.0);
+      get_form_factor(Hetfrz::theta_dep_dust * Constants::pi / 180.0);
   const Real f_cnt_dust_a3 =
-      get_form_factor(Hetfrz::theta_dep_dust * bad_pi / 180.0);
+      get_form_factor(Hetfrz::theta_dep_dust * Constants::pi / 180.0);
 
   // homogeneous energy of germ formation
-  const Real dg0cnt = 4.0 * bad_pi / 3.0 * sigma_iv * haero::square(rgimm);
+  const Real dg0cnt =
+      4.0 * Constants::pi / 3.0 * sigma_iv * haero::square(rgimm);
 
   // prefactor
   // attention: division of small numbers
   constexpr Real bad_boltzmann = 1.38e-23; // Boltzmann Constant (BAD CONSTANT)
-  constexpr Real mwh2o =
-      18.015999999999998; // Molecular weight water (BAD CONSTANT)
+  constexpr Real mwh2o = Constants::molec_weight_h2o *
+                         1000.0; // Molecular weight water (BAD CONSTANT)
   const Real Acnt =
-      Hetfrz::rhwincloud * eswtr * 4.0 * bad_pi /
-      (Hetfrz::nus * haero::sqrt(2.0 * bad_pi * mwh2o * Hetfrz::amu *
+      Hetfrz::rhwincloud * eswtr * 4.0 * Constants::pi /
+      (Hetfrz::nus * haero::sqrt(2.0 * Constants::pi * mwh2o * Hetfrz::amu *
                                  bad_boltzmann * temperature));
 
   // nucleation rate per particle
@@ -410,20 +413,20 @@ void calculate_hetfrz_deposition_nucleation(
   frzbcdep = 0.0;
   frzdudep = 0.0;
 
-  constexpr Real bad_pi = 3.1415926535897931; // (BAD CONSTANT)
-
   // form factor
-  const Real f_dep_bc = get_form_factor(Hetfrz::theta_dep_bc * bad_pi / 180.0);
+  const Real f_dep_bc =
+      get_form_factor(Hetfrz::theta_dep_bc * Constants::pi / 180.0);
   const Real f_dep_dust_a1 =
-      get_form_factor(Hetfrz::theta_dep_dust * bad_pi / 180.0);
+      get_form_factor(Hetfrz::theta_dep_dust * Constants::pi / 180.0);
   const Real f_dep_dust_a3 =
-      get_form_factor(Hetfrz::theta_dep_dust * bad_pi / 180.0);
+      get_form_factor(Hetfrz::theta_dep_dust * Constants::pi / 180.0);
 
   // homogeneous energy of germ formation
-  const Real dg0dep = 4.0 * bad_pi / 3.0 * sigma_iv * haero::square(rgdep);
+  const Real dg0dep =
+      4.0 * Constants::pi / 3.0 * sigma_iv * haero::square(rgdep);
 
-  constexpr Real mwh2o =
-      18.015999999999998; // Molecular weight water (BAD CONSTANT)
+  constexpr Real mwh2o = Constants::molec_weight_h2o *
+                         1000.0; // Molecular weight water (BAD CONSTANT)
 
   // prefactor
   // attention: division of small numbers
@@ -637,7 +640,7 @@ void calculate_water_activity(
     const Real r3lx, Real aw[Hetfrz::hetfrz_aer_nspec]) {
 
   Real molal[Hetfrz::hetfrz_aer_nspec];
-  constexpr Real mw_so4 = 96.06; /// BAD CONSTANT
+  constexpr Real mw_so4 = Constants::molec_weight_so4 * 1000.0; /// BAD CONSTANT
   constexpr Real coeff_c1 = 2.9244948e-2;
   constexpr Real coeff_c2 = 2.3141243e-3;
   constexpr Real coeff_c3 = 7.8184854e-7;
@@ -661,10 +664,11 @@ KOKKOS_INLINE_FUNCTION
 void calculate_vars_for_pdf_imm(Real dim_theta[Hetfrz::pdf_n_theta],
                                 Real pdf_imm_theta[Hetfrz::pdf_n_theta]) {
 
-  constexpr Real theta_min = 1.0 / 180.0 * Constants::pi;
-  constexpr Real theta_max = 179.0 / 180.0 * Constants::pi;
-  constexpr Real imm_dust_mean_theta = 46.0 / 180.0 * Constants::pi;
-  constexpr Real imm_dust_var_theta = 0.01;
+  constexpr Real theta_min = 1.0 / 180.0 * Constants::pi;   // (BAD CONSTANT)
+  constexpr Real theta_max = 179.0 / 180.0 * Constants::pi; // (BAD CONSTANT)
+  constexpr Real imm_dust_mean_theta =
+      46.0 / 180.0 * Constants::pi;         // (BAD CONSTANT)
+  constexpr Real imm_dust_var_theta = 0.01; // (BAD CONSTANT)
 
   const Real ln_theta_min = haero::log(theta_min);
   const Real ln_theta_max = haero::log(theta_max);
@@ -737,7 +741,8 @@ void hetfrz_classnuc_calc(
 
   const Real tc = temperature - Constants::freezing_pt_h2o;
   const Real rhoice = 916.7 - 0.175 * tc - 5.e-4 * haero::square(tc);
-  const Real vwice = Hetfrz::molec_weight_h2o * Hetfrz::amu / rhoice;
+  const Real vwice =
+      (1000.0 * Constants::molec_weight_h2o) * Hetfrz::amu / rhoice;
 
   const Real sigma_iw = (28.5 + 0.25 * tc) * 1e-3;
   const Real sigma_iv = (76.1 - 0.155 * tc + 28.5 + 0.25 * tc) * 1.0e-3;
@@ -836,10 +841,10 @@ void calculate_interstitial_aer_num(
     Real total_interstital_aer_num[Hetfrz::hetfrz_aer_nspec]) {
 
   // fixed ratio converting BC mass to number (based on BC emission) [#/kg]
-  constexpr Real bc_kg_to_num = 4.669152e+17;
+  constexpr Real bc_kg_to_num = 4.669152e+17; // (BAD CONSTANT)
 
   // fixed ratio converting accum mode dust mass to number [#/kg]
-  constexpr Real dst1_kg_to_num = 3.484e+15;
+  constexpr Real dst1_kg_to_num = 3.484e+15; // (BAD CONSTANT)
 
   total_interstital_aer_num[0] = bcmac * bc_kg_to_num * Hetfrz::num_m3_to_cm3;
   total_interstital_aer_num[0] += bcmpc * bc_kg_to_num * Hetfrz::num_m3_to_cm3;
