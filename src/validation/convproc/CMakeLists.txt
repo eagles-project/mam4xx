@@ -14,6 +14,8 @@ add_executable(convproc_driver convproc_driver.cpp
                compute_column_tendency.cpp
                ma_precpevap.cpp
                ma_precpprod.cpp
+               initialize_dcondt.cpp
+               compute_downdraft_mixing_ratio.cpp
                ma_precpevap_convproc.cpp
                ma_resuspend_convproc.cpp)
 target_link_libraries(convproc_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -37,6 +39,8 @@ foreach (input
          compute_column_tendency
          ma_precpevap
          ma_precpprod
+         initialize_dcondt
+         compute_downdraft_mixing_ratio
          ma_precpevap_convproc
          ma_resuspend_convproc
          )
