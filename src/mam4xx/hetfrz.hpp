@@ -1250,7 +1250,6 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
   auto &num_coarse = progs.n_mode_i[coarse_idx];
 
   // initialize rho
-  std::cout.precision(17);
   const Real rair = 287.0423114; // Bad Constant
   const Real air_density = atm.pressure[k] / (atm.temperature[k] * rair);
   const Real lcldm = haero::max(ast, Hetfrz::mincld);
