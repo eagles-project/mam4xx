@@ -25,6 +25,7 @@ install(FILES
         ndrop.hpp
         vehkamaki2002.hpp
         wang2008.hpp
+        hetfrz.hpp
         wv_sat_methods.hpp
         DESTINATION include/mam4xx)
 

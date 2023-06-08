@@ -43,6 +43,8 @@ EkatCreateUnitTest(mam4_rename_unit_tests mam4_rename_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_aging_unit_tests mam4_aging_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
+EkatCreateUnitTest(mam4_hetfrz_unit_tests mam4_hetfrz_unit_tests.cpp  
+  LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_amicphys_1gridcell_tests mam4_amicphys_1gridcell.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_nucleate_ice_unit_tests mam4_nucleate_ice_unit_tests.cpp
@@ -57,6 +59,7 @@ target_compile_options(mam4_convproc_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_amicphys_1gridcell_tests PRIVATE -Werror)
 target_compile_options(mam4_rename_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_aging_unit_tests PRIVATE -Werror)
+target_compile_options(mam4_hetfrz_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_nucleate_ice_unit_tests PRIVATE -Werror)
 
 # TODO: this test is currently broken on GPU.
