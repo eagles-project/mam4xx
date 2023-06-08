@@ -942,3 +942,6 @@ void update_conu_from_act_frac(Real conu[ConvProc::pcnst_extd],
   dconudt[lc] = delact * dt_u_inv;
 }
 // ======================================================================================
+} // namespace convproc
+} // namespace mam4
+#endif
