@@ -650,7 +650,8 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = nc[k];
     }
-    auto d_cloud_liquid_number_mixing_ratio = validation::create_column_view(nlev);
+    auto d_cloud_liquid_number_mixing_ratio =
+        validation::create_column_view(nlev);
     Kokkos::deep_copy(d_cloud_liquid_number_mixing_ratio, host_column);
 
     // Because the Atmosphere type uses ConstColumnViews, we have to construct
