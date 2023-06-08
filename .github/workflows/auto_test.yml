@@ -59,7 +59,6 @@ jobs:
       with:
         repository: eagles-project/haero
         submodules: recursive
-        ref: pbosler/const_column_view
         path: haero_src
 
     - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
