@@ -21,6 +21,7 @@ add_executable(ndrop_driver
                update_from_cldn_profile.cpp
                dropmixnuc.cpp
                update_from_explmix.cpp
+               dropmixnuc2.cpp
                )
 
 target_link_libraries(ndrop_driver skywalker;validation;${HAERO_LIBRARIES})

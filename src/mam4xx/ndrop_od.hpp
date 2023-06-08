@@ -1263,6 +1263,362 @@ void dropmixnuc(
 
 } // dropmixnuc
 
+// loops with 3 levels
+const int pver = 72;
+const int top_lev = 6;
+KOKKOS_INLINE_FUNCTION
+void dropmixnuc2(
+    const Real dtmicro, const Real temp[pver], const Real pmid[pver],
+    const Real pint[pver], const Real pdel[pver], const Real rpdel[pver],
+    const Real zm[pver], const Real state_q[pver][nvars],
+    const Real ncldwtr[pver],
+    const Real kvh[pver], // kvh[kk+1]
+    const Real cldn[pver],
+    const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
+    const Real specdens_amode[maxd_aspectype],
+    const Real spechygro[maxd_aspectype],
+    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
+    const Real voltonumbhi_amode[AeroConfig::num_modes()],
+    const Real voltonumblo_amode[AeroConfig::num_modes()],
+    const int numptr_amode[AeroConfig::num_modes()],
+    const int nspec_amode[maxd_aspectype],
+    const Real exp45logsig[AeroConfig::num_modes()],
+    const Real alogsig[AeroConfig::num_modes()], const Real aten,
+    const int mam_idx[AeroConfig::num_modes()][nspec_max],
+    const int mam_cnst_idx[AeroConfig::num_modes()][nspec_max], Real qcld[pver],
+    Real wsub[pver],
+    Real cldo[pver],                // in
+    Real qqcw_fld[pver][ncnst_tot], // inout
+    Real ptend_q[pver][nvar_ptend_q], Real tendnd[pver],
+    Real factnum[pver][AeroConfig::num_modes()], Real ndropcol[pver],
+    Real ndropmix[pver], Real nsource[pver], Real wtke[pver],
+    Real ccn[pver][psat], Real coltend[pver][ncnst_tot],
+    Real coltend_cw[pver][ncnst_tot]) {
+  // vertical diffusion and nucleation of cloud droplets
+  // assume cloud presence controlled by cloud fraction
+  // doesn't distinguish between warm, cold clouds
+
+  // input arguments
+  // lchnk               ! chunk identifier
+  // ncol                ! number of columns
+  // psetcols            ! maximum number of columns
+  // dtmicro     ! time step for microphysics [s]
+  // temp(:,:)    ! temperature [K]
+  // pmid(:,:)    ! mid-level pressure [Pa]
+  // pint(:,:)    ! pressure at layer interfaces [Pa]
+  // pdel(:,:)    ! pressure thickess of layer [Pa]
+  // rpdel(:,:)   ! inverse of pressure thickess of layer [/Pa]
+  // zm(:,:)      ! geopotential height of level [m]
+  // state_q(:,:,:) ! aerosol mmrs [kg/kg]
+  // ncldwtr(:,:) ! initial droplet number mixing ratio [#/kg]
+  // kvh(:,:)     ! vertical diffusivity [m^2/s]
+  // wsub(pcols,pver)    ! subgrid vertical velocity [m/s]
+  // cldn(pcols,pver)    ! cloud fraction [fraction]
+  // cldo(pcols,pver)    ! cloud fraction on previous time step [fraction]
+
+  // inout arguments
+  //  qqcw(:)     ! cloud-borne aerosol mass, number mixing ratios [#/kg or
+  //  kg/kg]
+
+  // output arguments
+  //   ptend
+  // tendnd(pcols,pver) ! tendency in droplet number mixing ratio [#/kg/s]
+  // factnum(:,:,:)     ! activation fraction for aerosol number [fraction]
+
+  // nsource droplet number mixing ratio source tendency [#/kg/s]
+
+  // ndropmix droplet number mixing ratio tendency due to mixing [#/kg/s]
+  // ccn number conc of aerosols activated at supersat [#/m^3]
+
+  //  !     note:  activation fraction fluxes are defined as
+  // !     fluxn = [flux of activated aero. number into cloud [#/m^2/s]]
+  // !           / [aero. number conc. in updraft, just below cloudbase [#/m^3]]
+
+  // coltend(:,:)       ! column tendency for diagnostic output
+  // coltend_cw(:,:)    ! column tendency
+
+  // BAD CONSTANT
+  const Real zkmin = 0.01;
+  const Real zkmax = 100; //  ! min, max vertical diffusivity [m^2/s]
+  const Real wmixmin =
+      0.1; //        ! minimum turbulence vertical velocity [m/s]
+
+  const Real zero = 0;
+  const Real one = 1;
+  const Real two = 2;
+
+  /// inverse time step for microphysics [s^-1]
+  const Real dtinv = one / dtmicro;
+  const int ntot_amode = AeroConfig::num_modes();
+  // THIS constant depends on the chem mechanism
+
+  // initialize variables to zero
+  //  ndropmix(:,:) = 0._r8
+  //  nsource(:,:) = 0._r8
+  //  wtke(:,:)    = 0._r8
+  //  factnum(:,:,:) = 0._r8
+
+  //! NOTE FOR C++ PORT: Get the cloud borne MMRs from AD in variable qcldbrn,
+  //! do not port the code before END NOTE
+  // qcldbrn(:,:,:,:) = huge(qcldbrn) !store invalid values
+  //! END NOTE FOR C++ PORT
+  const Real gravit = haero::Constants::gravity;
+  const Real rair = haero::Constants::r_gas_dry_air;
+
+  Real nact[pver][ntot_amode] = {};
+  Real mact[pver][ntot_amode] = {};
+
+  // const Real air_density = pmid/(rair*temp);//        ! air density (kg/m3)
+  // geometric thickness of layers [m]
+  // fractional aero. number  activation rate [/s]
+  Real raercol[pver][2][ncnst_tot] = {};
+  // same as raercol but for cloud-borne phase [#/kg or kg/kg]
+  Real raercol_cw[pver][2][ncnst_tot] = {};
+
+  // Initialize 1D (in space) versions of interstitial and cloud borne aerosol
+  const int nsav = 0;
+
+  for (int k = 0; k < pver; ++k) {
+
+    // // ! g/pdel for layer [m^2/kg]
+    // const Real zn = gravit * rpdel;
+    // turbulent vertical velocity at base of layer k [m/s]
+    wtke[k] = haero::max(wsub[k], wmixmin);
+    // qcld(:)  = ncldwtr(icol,:)
+    // cloud droplet number mixing ratio [#/kg]
+    qcld[k] = ncldwtr[k];
+
+    for (int imode = 0; imode < ntot_amode; ++imode) {
+      // Fortran indexing to C++ indexing
+      const int mm = mam_idx[imode][0] - 1;
+      raercol_cw[k][nsav][mm] = qqcw_fld[k][mm];
+      // Fortran indexing to C++ indexing
+      const int num_idx = numptr_amode[imode] - 1;
+      raercol[k][mm][nsav] = state_q[k][num_idx];
+      for (int lspec = 0; lspec < nspec_amode[imode]; ++lspec) {
+        // Fortran indexing to C++ indexing
+        const int mm = mam_idx[imode][lspec] - 1;
+        raercol_cw[k][nsav][mm] = qqcw_fld[k][mm];
+        // Fortran indexing to C++ indexing
+        const int spc_idx = lmassptr_amode[lspec][imode] - 1;
+        raercol[k][nsav][mm] = state_q[k][spc_idx];
+      } // lspec
+    }   // imode
+
+    // PART I:  changes of aerosol and cloud water from temporal changes in
+    // cloud
+    // fraction droplet nucleation/aerosol activation
+    nsource[k] = zero;
+    for (int imode = 0; imode < ntot_amode; ++imode) {
+      factnum[k][imode] = zero;
+    }
+
+    const Real air_density =
+        conversions::density_of_ideal_gas(temp[k], pmid[k]);
+
+    update_from_newcld(cldn[k], cldo[k], dtinv, //& ! in
+                       wtke[k], temp[k], air_density,
+                       state_q[k], //& ! in
+                       lspectype_amode, specdens_amode, spechygro,
+                       lmassptr_amode, voltonumbhi_amode, voltonumblo_amode,
+                       numptr_amode, nspec_amode, exp45logsig, alogsig, aten,
+                       mam_idx, qcld[k],
+                       raercol[k][nsav],        // inout
+                       raercol_cw[k][nsav],     //&      ! inout
+                       nsource[k], factnum[k]); // inout
+
+  } // k
+
+  Real csbot[pver] = {zero};
+  Real csbot_cscen[pver] = {zero};
+  Real zs[pver] = {zero};
+  Real z[pver] = {zero};
+  Real ekd[pver] = {zero};
+  Real dz[pver] = {zero};
+
+  for (int k = 0; k < pver; ++k) {
+
+    const Real air_density =
+        conversions::density_of_ideal_gas(temp[k], pmid[k]);
+    dz[k] = one / (air_density * gravit * rpdel[k]); // ! layer thickness in m
+
+    //  inverse of distance between levels [m^-1]
+    // inverse normalized air density csbot(i)/cs(i,k) [dimensionless]
+    // diffusivity for droplets [m^2/s]
+    ekd[k] = zero;
+    // air density at bottom (interface) of layer [kg/m^3]
+    csbot[k] = zero;
+
+    // delta_zm = zm - zm_kp1 or zm_km1 - zm
+    if (k >= top_lev && k < pver - 1) {
+      const Real delta_zm = zm[k] - zm[k + 1];
+      zs[k] = one / delta_zm;
+      ekd[k] = utils::min_max_bound(zkmin, zkmax, kvh[k + 1]);
+      csbot[k] = two * pint[k + 1] / (rair * (temp[k] + temp[k + 1]));
+      csbot_cscen[k] = csbot[k] / air_density;
+    } else {
+      zs[k] = zs[pver - 2];
+      csbot_cscen[k] = one;
+      csbot[k] = air_density;
+      csbot_cscen[k] = one;
+    }
+  }
+
+  for (int k = top_lev; k < pver - 1; ++k) {
+
+    const int kp1 = haero::min(k + 1, pver);
+
+    const Real air_density =
+        conversions::density_of_ideal_gas(temp[k], pmid[k]);
+
+    const Real air_density_kp1 =
+        conversions::density_of_ideal_gas(temp[kp1], pmid[kp1]);
+
+    for (int imode = 0; imode < ntot_amode; ++imode) {
+      // fractional aero. number  activation rate [/s]
+      nact[k][imode] = zero;
+      // fractional aero. mass    activation rate [/s]
+      mact[k][imode] = zero;
+    }
+
+    // PART II: changes in aerosol and cloud water from vertical profile of new
+    // cloud fraction
+
+    update_from_cldn_profile(
+        cldn[k], cldn[kp1], dtinv, wtke[k], zs[k], dz[k], // ! in
+        temp[k], air_density, air_density_kp1, csbot_cscen[k],
+        state_q[kp1], // ! in
+        lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
+        voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
+        exp45logsig, alogsig, aten, mam_idx, raercol[k][nsav],
+        raercol[kp1][nsav], raercol_cw[k][nsav],
+        nsource[k], // inout
+        qcld[k], factnum[k],
+        ekd[k], // out
+        nact[k], mact[k]);
+
+  } // k
+
+  // PART III:  perform explict integration of droplet/aerosol mixing using
+  // substepping
+
+  const int nnew = 1;
+  // NOTE: It will be ported by Jaelyn Litzinger
+  // // single column of aerosol mass, number mixing ratios [#/kg or kg/kg]
+  // Real raercol_2[ncnst_tot] = {};
+  // // same as raercol but for cloud-borne phase [#/kg or kg/kg]
+  // Real raercol_cw_2[ncnst_tot] = {};
+
+  for (int k = top_lev; k < pver; ++k) {
+    const int kp1 = haero::min(k + 1, pver);
+    const int km1 = haero::max(k - 1, top_lev);
+
+    const Real zn = gravit * rpdel[k];
+
+    ndrop::update_from_explmix(
+        dtmicro, csbot[k], csbot[km1], cldn[k], cldn[km1], cldn[kp1], zn, zs[k],
+        zs[km1], ekd[k], ekd[km1], nact[k], mact[k], qcld[k], qcld[km1],
+        qcld[kp1], raercol[k], raercol[km1], raercol[kp1], raercol_cw[k],
+        raercol_cw[km1], raercol_cw[kp1], nsav, nnew, nspec_amode, mam_idx);
+
+  } // end k
+
+  for (int k = top_lev; k < pver; ++k) {
+
+    // droplet number mixing ratio tendency due to mixing [#/kg/s]
+    ndropmix[k] = (qcld[k] - ncldwtr[k]) * dtinv - nsource[k];
+    // BAD CONSTANT
+    tendnd[k] = (haero::max(qcld[k], 1.e-6) - ncldwtr[k]) * dtinv;
+    // We need to port this outside of this function
+    // this is a reduction
+    // do kk = top_lev, pver
+    //           ndropcol(icol)   = ndropcol(icol) +
+    //           ncldwtr(icol,kk)*pdel(icol,kk)
+    // enddo
+    // ndropcol(icol) = ndropcol(icol)/gravit
+    // sum up ndropcol_kk outside of kk loop
+    // column-integrated droplet number [#/m2]
+    ndropcol[k] = ncldwtr[k] * pdel[k] / gravit;
+    // tendency of interstitial aerosol mass, number mixing ratios [#/kg/s or
+    // kg/kg/s]
+    Real raertend = zero;
+    // tendency of cloudborne aerosol mass, number mixing ratios [#/kg/s or
+    // kg/kg/s]
+    Real qqcwtend = zero;
+    // cloud-borne aerosol mass mixing ratios [kg/kg]
+    Real qcldbrn[maxd_aspectype][ntot_amode] = {};
+    // cloud-borne aerosol number mixing ratios [#/kg]
+    Real qcldbrn_num[ntot_amode] = {};
+
+    for (int imode = 0; imode < ntot_amode; ++imode) {
+      // species index for given mode
+      for (int lspec = 0; lspec < nspec_amode[imode]; ++lspec) {
+        // local array index for MAM number, species
+        // Fortran indexing to C++ indexing
+        const int mm = mam_idx[imode][lspec] - 1;
+        // Fortran indexing to C++ indexing
+        const int lptr = mam_cnst_idx[imode][lspec] - 1;
+        qqcwtend = (raercol_cw[k][nnew][mm] - qqcw_fld[k][mm]) * dtinv;
+        qqcw_fld[k][mm] = haero::max(
+            raercol_cw[k][nnew][mm],
+            zero); // ! update cloud-borne aerosol; HW: ensure non-negative
+
+        if (lspec == 0) {
+          // Fortran indexing to C++ indexing
+          const int num_idx = numptr_amode[imode] - 1;
+          raertend = (raercol[k][nnew][mm] - state_q[k][num_idx]) * dtinv;
+          qcldbrn_num[imode] = qqcw_fld[k][mm];
+        } else {
+          const int spc_idx = lmassptr_amode[lspec][imode];
+          raertend = (raercol[k][nnew][mm] - state_q[k][spc_idx]) * dtinv;
+          //! Extract cloud borne MMRs from qqcw pointer
+          qcldbrn[lspec][imode] = qqcw_fld[k][mm];
+        } // end if
+        // NOTE: perform sum after loop. Thus, we need to store coltend_kk and
+        // coltend_cw_kk Port this code outside of this function
+        // coltend(icol,mm)    = sum( pdel(icol,:)*raertend )/gravit
+        // coltend_cw(icol,mm) = sum( pdel(icol,:)*qqcwtend )/gravit
+        coltend[k][mm] = pdel[k] * raertend / gravit;
+        coltend_cw[k][mm] = pdel[k] * qqcwtend / gravit;
+        ptend_q[k][lptr] =
+            raertend; //          ! set tendencies for interstitial aerosol
+
+      } // lspec
+
+    } // imode
+
+    // !  Use interstitial and cloud-borne aerosol to compute output ccn fields.
+
+    const Real air_density =
+        conversions::density_of_ideal_gas(temp[k], pmid[k]);
+
+    ccncalc(state_q[k], temp[k], qcldbrn, qcldbrn_num, air_density,
+            lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
+            voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
+            exp45logsig, alogsig, ccn[k]);
+
+  } // end k
+
+#if 0
+
+
+
+
+
+
+  // we need to do this outside of kk loops
+
+  // ! do column tendencies
+  //    do imode = 1, ntot_amode
+  //       do lspec = 0, nspec_amode(imode)
+  //          mm = mam_idx(imode,lspec)
+  //          call outfld(fieldname(mm),    coltend(:,mm),    pcols, lchnk)
+  //          call outfld(fieldname_cw(mm), coltend_cw(:,mm), pcols, lchnk)
+  //       enddo
+  //    enddo
+#endif
+} // dropmixnuc
+
 } // namespace ndrop_od
 
 } // end namespace mam4

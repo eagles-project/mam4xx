@@ -36,6 +36,7 @@ void update_from_newcld(Ensemble *ensemble);
 void update_from_cldn_profile(Ensemble *ensemble);
 void dropmixnuc(Ensemble *ensemble);
 void update_from_explmix(Ensemble *ensemble);
+void dropmixnuc2(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -80,7 +81,7 @@ int main(int argc, char **argv) {
     } else if (func_name == "update_from_explmix") {
       update_from_explmix(ensemble);
     } else if (func_name == "dropmixnuc") {
-      dropmixnuc(ensemble);
+      dropmixnuc2(ensemble);
     }
 
   } catch (std::exception &e) {
