@@ -702,23 +702,18 @@ public:
           Real del_h2so4_gasprod = 0;
           Real del_h2so4_aeruptk = 0;
 
-          // extract gas mixing ratios
+          // extract relevant gas mixing ratios (H2SO4 only for now)
           Real qgas_cur[num_gases], qgas_avg[num_gases];
-          for (int g = 0; g < num_gases; ++g) {
-            qgas_cur[g] = progs.q_gas[g](k);
-            qgas_avg[g] = progs.q_gas[g](k); // FIXME: what should we do here??
-          }
+          qgas_cur[igas_h2so4] = progs.q_gas[igas_h2so4](k);
+          qgas_avg[igas_h2so4] = progs.q_gas[igas_h2so4](k); // is this good enough?
 
-          // extract aerosol mixing ratios
+          // extract relevant aerosol mixing ratios (SO4 in aitken mode only for now)
           Real qnum_cur[num_modes], qaer_cur[num_modes][max_num_mode_species];
-          for (int m = 0; m < num_modes; ++m) { // modes
-            qnum_cur[m] = progs.n_mode_i[m](k);
-            for (int a = 0; a < 7; ++a) { // aerosols
-              qaer_cur[m][a] = progs.q_aero_i[m][a](k);
-            }
-          }
+          qnum_cur[nait] = progs.n_mode_i[nait](k);
+          qaer_cur[nait][iaer_so4] = progs.q_aero_i[nait][iaer_so4](k);
 
-          Real qwtr_cur[num_modes] = {0, 0, 0, 0}; // water vapor mmr?
+          Real qwtr_cur[num_modes] = {}; // water vapor mmr
+          qwtr_cur[nait] = qv;
 
           // compute tendencies at this level
           Real dndt_ait, dmdt_ait, dso4dt_ait, dnh4dt_ait, dnclusterdt;
