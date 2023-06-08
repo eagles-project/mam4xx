@@ -31,6 +31,8 @@ void ma_resuspend_convproc(Ensemble *ensemble);
 void ma_precpevap(Ensemble *ensemble);
 void ma_precpprod(Ensemble *ensemble);
 void ma_precpevap_convproc(Ensemble *ensemble);
+void initialize_dcondt(Ensemble *ensemble);
+void compute_downdraft_mixing_ratio(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -66,6 +68,10 @@ int main(int argc, char **argv) {
       ma_precpprod(ensemble);
     } else if (func_name == "ma_precpevap_convproc") {
       ma_precpevap_convproc(ensemble);
+    } else if (func_name == "initialize_dcondt") {
+      initialize_dcondt(ensemble);
+    } else if (func_name == "compute_downdraft_mixing_ratio") {
+      compute_downdraft_mixing_ratio(ensemble);
     } else {
       std::cerr << "Error: Test name not recognized:" << func_name << std::endl;
       exit(1);
