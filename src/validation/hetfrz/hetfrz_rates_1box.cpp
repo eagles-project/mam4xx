@@ -656,12 +656,18 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
 
     // Because the Atmosphere type uses ConstColumnViews, we have to construct
     // an atm object with views for all its data or set them piecemeal.
-    Atmosphere atm;
-    atm.temperature = d_temperature;
-    atm.pressure = d_pressure;
-    atm.liquid_mixing_ratio = d_liquid_mixing_ratio;
-    atm.cloud_liquid_number_mixing_ratio = d_cloud_liquid_number_mixing_ratio;
-    atm.planetary_boundary_layer_height = pblh;
+    auto d_vapor_mixing_ratio = validation::create_column_view(nlev);
+    auto d_ice_mixing_ratio = validation::create_column_view(nlev);
+    auto d_cloud_ice_number_mixing_ratio = validation::create_column_view(nlev);
+    auto d_height = validation::create_column_view(nlev);
+    auto d_hydrostatic_dp = validation::create_column_view(nlev);
+    auto d_cloud_fraction = validation::create_column_view(nlev);
+    auto d_updraft_vel_ice_nucleation = validation::create_column_view(nlev);
+    Atmosphere atm(d_temperature, d_pressure, d_vapor_mixing_ratio,
+                   d_liquid_mixing_ratio, d_cloud_liquid_number_mixing_ratio,
+                   d_ice_mixing_ratio, d_cloud_ice_number_mixing_ratio,
+                   d_height, d_hydrostatic_dp, d_cloud_fraction,
+                   d_updraft_vel_ice_nucleation, pblh);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = ast[k];
