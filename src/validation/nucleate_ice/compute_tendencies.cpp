@@ -49,12 +49,21 @@ void compute_tendencies(Ensemble *ensemble) {
     // qn(:ncol,:pver) = state_q(:ncol,:pver,1)
     const Real vapor_mixing_ratio = state_q[0];
 
-    Kokkos::deep_copy(atm.temperature, temp);
-    Kokkos::deep_copy(atm.pressure, pmid);
-    Kokkos::deep_copy(atm.cloud_fraction, cloud_fraction);
-    Kokkos::deep_copy(atm.updraft_vel_ice_nucleation,
-                      updraft_vel_ice_nucleation);
-    Kokkos::deep_copy(atm.vapor_mixing_ratio, vapor_mixing_ratio);
+    auto d_temp = validation::create_column_view(nlev);
+    auto d_pmid = validation::create_column_view(nlev);
+    auto d_cloud_fraction = validation::create_column_view(nlev);
+    auto d_updraft_vel_ice_nucleation = validation::create_column_view(nlev);
+    auto d_vapor_mixing_ratio = validation::create_column_view(nlev);
+    Kokkos::deep_copy(d_temp, temp);
+    Kokkos::deep_copy(d_pmid, pmid);
+    Kokkos::deep_copy(d_cloud_fraction, cloud_fraction);
+    Kokkos::deep_copy(d_updraft_vel_ice_nucleation, updraft_vel_ice_nucleation);
+    Kokkos::deep_copy(d_vapor_mixing_ratio, vapor_mixing_ratio);
+    atm.temperature = d_temp;
+    atm.pressure = d_pmid;
+    atm.cloud_fraction = d_cloud_fraction;
+    atm.updraft_vel_ice_nucleation = d_updraft_vel_ice_nucleation;
+    atm.vapor_mixing_ratio = d_vapor_mixing_ratio;
 
     auto numptr_amode = input.get_array("numptr_amode");
     auto modeptr_aitken = int(input.get_array("modeptr_aitken")[0] - 1);

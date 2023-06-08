@@ -384,7 +384,6 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
 
     const int nlev = qc.size();
     Real pblh = 1000;
-    Atmosphere atm = validation::create_atmosphere(nlev, pblh);
     mam4::Prognostics progs = validation::create_prognostics(nlev);
     mam4::Diagnostics diags = validation::create_diagnostics(nlev);
     mam4::Tendencies tends = validation::create_tendencies(nlev);
@@ -633,22 +632,42 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = temperature[k];
     }
-    Kokkos::deep_copy(atm.temperature, host_column);
+    auto d_temperature = validation::create_column_view(nlev);
+    Kokkos::deep_copy(d_temperature, host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = pmid[k];
     }
-    Kokkos::deep_copy(atm.pressure, host_column);
+    auto d_pressure = validation::create_column_view(nlev);
+    Kokkos::deep_copy(d_pressure, host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = qc[k];
     }
-    Kokkos::deep_copy(atm.liquid_mixing_ratio, host_column);
+    auto d_liquid_mixing_ratio = validation::create_column_view(nlev);
+    Kokkos::deep_copy(d_liquid_mixing_ratio, host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = nc[k];
     }
-    Kokkos::deep_copy(atm.cloud_liquid_number_mixing_ratio, host_column);
+    auto d_cloud_liquid_number_mixing_ratio =
+        validation::create_column_view(nlev);
+    Kokkos::deep_copy(d_cloud_liquid_number_mixing_ratio, host_column);
+
+    // Because the Atmosphere type uses ConstColumnViews, we have to construct
+    // an atm object with views for all its data or set them piecemeal.
+    auto d_vapor_mixing_ratio = validation::create_column_view(nlev);
+    auto d_ice_mixing_ratio = validation::create_column_view(nlev);
+    auto d_cloud_ice_number_mixing_ratio = validation::create_column_view(nlev);
+    auto d_height = validation::create_column_view(nlev);
+    auto d_hydrostatic_dp = validation::create_column_view(nlev);
+    auto d_cloud_fraction = validation::create_column_view(nlev);
+    auto d_updraft_vel_ice_nucleation = validation::create_column_view(nlev);
+    Atmosphere atm(d_temperature, d_pressure, d_vapor_mixing_ratio,
+                   d_liquid_mixing_ratio, d_cloud_liquid_number_mixing_ratio,
+                   d_ice_mixing_ratio, d_cloud_ice_number_mixing_ratio,
+                   d_height, d_hydrostatic_dp, d_cloud_fraction,
+                   d_updraft_vel_ice_nucleation, pblh);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = ast[k];
