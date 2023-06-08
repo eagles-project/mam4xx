@@ -21,13 +21,14 @@ void get_input(const Input &input, const std::string &name, const int size,
     host_view[n] = host[n];
   Kokkos::deep_copy(dev, host_view);
 }
-void get_input(const Input &input, const std::string &name, const int rows,
-               const int cols, std::vector<Real> &host,
-               Kokkos::View<Real **, Kokkos::MemoryUnmanaged> &dev) {
+void get_input(
+    const Input &input, const std::string &name, const int rows, const int cols,
+    std::vector<Real> &host,
+    Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
   ColumnView col_view = mam4::validation::create_column_view(rows * cols);
-  dev = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(col_view.data(), rows,
-                                                       cols);
+  dev = Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged>(
+      col_view.data(), rows, cols);
   EKAT_ASSERT(host.size() == rows * cols);
   {
     std::vector<std::vector<Real>> matrix(rows, std::vector<Real>(cols));
@@ -60,8 +61,7 @@ void compute_column_tendency(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
     const int nlevp = 1 + nlev;
-    const int gas_pcnst = ConvProc::gas_pcnst;
-    const int pcnst_extd = 2 * gas_pcnst;
+    const int pcnst_extd = ConvProc::pcnst_extd;
     // Fetch ensemble parameters
 
     // these variables depend on mode No and k
@@ -77,13 +77,12 @@ void compute_column_tendency(Ensemble *ensemble) {
     std::vector<Real> dconudt_activa_host, dconudt_wetdep_host,
         dcondt_resusp_host, dcondt_prevap_host, dcondt_prevap_hist_host,
         fa_u_host, dpdry_i_host;
-    Kokkos::View<Real **, Kokkos::MemoryUnmanaged> dconudt_activa_dev,
-        dconudt_wetdep_dev, dcondt_resusp_dev, dcondt_prevap_dev,
-        dcondt_prevap_hist_dev;
+    Kokkos::View<Real *[pcnst_extd], Kokkos::MemoryUnmanaged>
+        dconudt_activa_dev, dconudt_wetdep_dev, dcondt_resusp_dev,
+        dcondt_prevap_dev, dcondt_prevap_hist_dev;
     ColumnView fa_u_dev, dpdry_i_dev;
     get_input(input, "dconudt_activa", nlevp, pcnst_extd, dconudt_activa_host,
               dconudt_activa_dev);
-
     get_input(input, "dconudt_wetdep", nlevp, pcnst_extd, dconudt_wetdep_host,
               dconudt_wetdep_dev);
     get_input(input, "dcondt_resusp", nlev, pcnst_extd, dcondt_resusp_host,
@@ -114,25 +113,6 @@ void compute_column_tendency(Ensemble *ensemble) {
           for (int n = 0; n < pcnst_extd; ++n)
             doconvproc_extd[n] = doconvproc_extd_dev[n];
           const Real *dpdry_i = dpdry_i_dev.data();
-          Real dcondt_resusp[nlev][pcnst_extd];
-          Real dcondt_prevap[nlev][pcnst_extd];
-          Real dcondt_prevap_hist[nlev][pcnst_extd];
-          for (size_t i = 0; i < nlev; ++i) {
-            for (size_t j = 0; j < pcnst_extd; ++j) {
-              dcondt_resusp[i][j] = dcondt_resusp_dev(i, j);
-              dcondt_prevap[i][j] = dcondt_prevap_dev(i, j);
-              dcondt_prevap_hist[i][j] = dcondt_prevap_hist_dev(i, j);
-            }
-          }
-
-          Real dconudt_activa[nlevp][pcnst_extd];
-          Real dconudt_wetdep[nlevp][pcnst_extd];
-          for (size_t i = 0; i < nlevp; ++i) {
-            for (size_t j = 0; j < pcnst_extd; ++j) {
-              dconudt_activa[i][j] = dconudt_activa_dev(i, j);
-              dconudt_wetdep[i][j] = dconudt_wetdep_dev(i, j);
-            }
-          }
           const Real *fa_u = fa_u_dev.data();
           Real *sumactiva = sumactiva_dev.data();
           Real *sumaqchem = sumaqchem_dev.data();
@@ -141,12 +121,11 @@ void compute_column_tendency(Ensemble *ensemble) {
           Real *sumprevap = sumprevap_dev.data();
           Real *sumprevap_hist = sumprevap_hist_dev.data();
           convproc::compute_column_tendency(
-              doconvproc_extd, ktop, kbot_prevap, dpdry_i, dcondt_resusp,
-              dcondt_prevap, dcondt_prevap_hist, dconudt_activa, dconudt_wetdep,
-              fa_u, sumactiva, sumaqchem, sumwetdep, sumresusp, sumprevap,
-              sumprevap_hist);
+              doconvproc_extd, ktop, kbot_prevap, dpdry_i, dcondt_resusp_dev,
+              dcondt_prevap_dev, dcondt_prevap_hist_dev, dconudt_activa_dev,
+              dconudt_wetdep_dev, fa_u, sumactiva, sumaqchem, sumwetdep,
+              sumresusp, sumprevap, sumprevap_hist);
         });
-
     set_output(output, "sumactiva", pcnst_extd, sumactiva_host, sumactiva_dev);
     set_output(output, "sumaqchem", pcnst_extd, sumaqchem_host, sumaqchem_dev);
     set_output(output, "sumwetdep", pcnst_extd, sumwetdep_host, sumwetdep_dev);

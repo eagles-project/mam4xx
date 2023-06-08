@@ -109,15 +109,6 @@ void ma_precpevap_convproc(Ensemble *ensemble) {
         mam4::validation::create_column_view(ConvProc::pcnst_extd);
     Kokkos::parallel_for(
         "ma_precpevap_convproc", 1, KOKKOS_LAMBDA(int) {
-          Real rprd[nlev];
-          for (int i = 0; i < nlev; ++i)
-            rprd[i] = rprd_dev(i);
-          Real evapc[nlev];
-          for (int i = 0; i < nlev; ++i)
-            evapc[i] = evapc_dev(i);
-          Real dpdry_i[nlev];
-          for (int i = 0; i < nlev; ++i)
-            dpdry_i[i] = dpdry_i_dev(i);
           bool doconvproc_extd[ConvProc::pcnst_extd];
           for (int i = 0; i < ConvProc::pcnst_extd; ++i)
             doconvproc_extd[i] = doconvproc_extd_dev[i];

@@ -577,9 +577,12 @@ void modal_aero_bcscavcoef_init(
   const Real press_750hPa = 0.75e6;                      //  ! dynes/cm2
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
     const Real sigmag = sigmag_amode[imode];
+    // clang-format off
     // Note: we replaced lspectype_amode and lspectype_amode for
-    // dry_aero_density const int ll = lspectype_amode[0][imode]; const Real
-    // rhodryaero = specdens_amode[ll];
+    // dry_aero_density 
+    // const int ll = lspectype_amode[0][imode]; 
+    // const Real rhodryaero = specdens_amode[ll];
+    // clang-format on
     const Real rhodryaero = aerosol_dry_density[imode];
     for (int jgrow = nimptblgrow_mind; jgrow <= nimptblgrow_maxd; ++jgrow) {
       // ratio of diameter for wet/dry aerosols [fraction]

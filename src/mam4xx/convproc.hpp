@@ -92,6 +92,8 @@ public:
   };
   // maxd_aspectype = maximum allowable number of chemical species
   // in each aerosol mode.
+  //
+  // TODO: Why is this not 7?
   static constexpr int maxd_aspectype = 14;
   // gas_pcnst number of "gas phase" species
   // This should come from the chemistry model being used and will
@@ -135,7 +137,6 @@ public:
         {-1, -1, -1, -1}, {-1, -1, -1, -1}};
     return lmassptr_amode[i][j];
   }
-
   // use the same index for Q and QQCW arrays
   //
   // lmassptrcw_amode(l,m) = gchm r-array index for the mixing ratio
@@ -170,6 +171,10 @@ public:
 };
 
 namespace convproc {
+using Const_Kokkos_2D_View =
+    Kokkos::View<const Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged>;
+using Kokkos_2D_View =
+    Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged>;
 
 KOKKOS_INLINE_FUNCTION
 void assign_la_lc(const int imode, const int ispec, int &la, int &lc) {
@@ -224,8 +229,7 @@ void update_tendency_diagnostics(
 
   // clang-format on
 
-  if (ConvProc::gas_pcnst != ncnst)
-    Kokkos::abort("Invalid number of tracers to transport.");
+  EKAT_KERNEL_REQUIRE(ConvProc::gas_pcnst == ncnst);
   const int ntot_amode = AeroConfig::num_modes();
   int la = 0, lc = 0;
   // update diagnostic variables
@@ -332,11 +336,11 @@ void compute_column_tendency(
   const int ktop,                                    // IN top level index
   const int kbot_prevap,                             // IN bottom level index, for resuspension and evaporation only
   const Real dpdry_i[/*nlev*/],                      // IN dp [mb]
-  const Real dcondt_resusp[/*nlev*/][ConvProc::pcnst_extd],    // IN portion of TMR tendency due to resuspension [kg/kg/s]
-  const Real dcondt_prevap[/*nlev*/][ConvProc::pcnst_extd],    // IN portion of TMR tendency due to precip evaporation [kg/kg/s]
-  const Real dcondt_prevap_hist[/*nlev*/][ConvProc::pcnst_extd], // IN portion of TMR tendency due to precip evaporation, goes into the history [kg/kg/s]
-  const Real dconudt_activa[/*nlevp*/][ConvProc::pcnst_extd], //  IN d(conu)/dt by activation [kg/kg/s]
-  const Real dconudt_wetdep[/*nlevp*/][ConvProc::pcnst_extd], //  IN d(conu)/dt by wet removal[kg/kg/s]
+  Const_Kokkos_2D_View dcondt_resusp,      // IN nlev - portion of TMR tendency due to resuspension [kg/kg/s]
+  Const_Kokkos_2D_View dcondt_prevap,      // IN nlev - portion of TMR tendency due to precip evaporation [kg/kg/s]
+  Const_Kokkos_2D_View dcondt_prevap_hist, // IN nlev - portion of TMR tendency due to precip evaporation, goes into the history [kg/kg/s]
+  Const_Kokkos_2D_View dconudt_activa,     // IN nlevp- d(conu)/dt by activation [kg/kg/s]
+  Const_Kokkos_2D_View dconudt_wetdep,     // IN nlevp- d(conu)/dt by wet removal[kg/kg/s]
   const Real fa_u[/*nlev*/],                       //  IN  fractional area of the updraft [fraction]
   Real sumactiva[ConvProc::pcnst_extd],  //  IN/OUT sum (over layers) of dp*dconudt_activa [kg/kg/s * mb] 
   Real sumaqchem[ConvProc::pcnst_extd],  //  IN/OUT sum (over layers) of dp*dconudt_aqchem [kg/kg/s * mb]
@@ -362,12 +366,12 @@ void compute_column_tendency(
       // should go to kk=pver for dcondt_prevap, and this should be safe for
       // other sums
       for (int kk = ktop; kk < kbot_prevap; ++kk) {
-        sumactiva[icnst] += dconudt_activa[kk][icnst] * dpdry_i[kk] * fa_u[kk];
+        sumactiva[icnst] += dconudt_activa(kk, icnst) * dpdry_i[kk] * fa_u[kk];
         sumaqchem[icnst] += dconudt_aqchem * dpdry_i[kk] * fa_u[kk];
-        sumwetdep[icnst] += dconudt_wetdep[kk][icnst] * dpdry_i[kk] * fa_u[kk];
-        sumresusp[icnst] += dcondt_resusp[kk][icnst] * dpdry_i[kk];
-        sumprevap[icnst] += dcondt_prevap[kk][icnst] * dpdry_i[kk];
-        sumprevap_hist[icnst] += dcondt_prevap_hist[kk][icnst] * dpdry_i[kk];
+        sumwetdep[icnst] += dconudt_wetdep(kk, icnst) * dpdry_i[kk] * fa_u[kk];
+        sumresusp[icnst] += dcondt_resusp(kk, icnst) * dpdry_i[kk];
+        sumprevap[icnst] += dcondt_prevap(kk, icnst) * dpdry_i[kk];
+        sumprevap_hist[icnst] += dcondt_prevap_hist(kk, icnst) * dpdry_i[kk];
       }
     }
   }
@@ -752,7 +756,189 @@ void ma_precpevap_convproc(
                  dcondt_prevap_hist_sub);
   }
 }
-} // namespace convproc
 
-} // namespace mam4
-#endif
+// =========================================================================================
+// TODO: initialize_dcondt uses multiple levels for computation but ONLY
+// sets a SINGLE level on output for the loop over ktop to kbot.  So, it should
+// be possible to input kk and then call in parallel from ktop to kbot.
+KOKKOS_INLINE_FUNCTION
+void initialize_dcondt(const bool doconvproc_extd[ConvProc::pcnst_extd],
+                       const int iflux_method, const int ktop, const int kbot,
+                       const int nlev, const Real dpdry_i[/* nlev */],
+                       const Real fa_u[/* nlev */],
+                       const Real mu_i[/* nlev+1 */],
+                       const Real md_i[/* nlev+1 */], Const_Kokkos_2D_View chat,
+                       Const_Kokkos_2D_View gath, Const_Kokkos_2D_View conu,
+                       Const_Kokkos_2D_View cond,
+                       Const_Kokkos_2D_View dconudt_activa,
+                       Const_Kokkos_2D_View dconudt_wetdep,
+                       const Real dudp[/* nlev */], const Real dddp[/* nlev */],
+                       const Real eudp[/* nlev */], const Real eddp[/* nlev */],
+                       Kokkos_2D_View dcondt) {
+  // clang-format off
+  // -----------------------------------------------------------------------
+  //  initialize dondt and update with aerosol activation and wetdeposition
+  //  will update later with dcondt_prevap and dcondt_resusp
+  //  NOTE:  The approach used in convtran applies to inert tracers and
+  //         must be modified to include source and sink terms
+  // -----------------------------------------------------------------------
+
+  /* cloudborne aerosol, so the arrays are dimensioned with pcnst_extd = pcnst*2
+   in :: doconvproc_extd(pcnst_extd) ! flag for doing convective transport
+   in :: iflux_method             ! 1=as in convtran (deep), 2=uwsh
+   in :: ktop                     ! top level index
+   in :: kbot                     ! bottom level index
+   in :: dpdry_i(pver)            ! dp [mb]
+   in :: fa_u(pver)               ! fractional area of the updraft [fraction]
+   in :: mu_i(pverp)              ! mu at current i (note pverp dimension, see ma_convproc_tend) [mb/s]
+   in :: md_i(pverp)              ! md at current i (note pverp dimension) [mb/s]
+   in :: chat(pverp,pcnst_extd)   ! mix ratio in env at interfaces [kg/kg]
+   in :: gath(pver,pcnst_extd)   ! gathered tracer array [kg/kg]
+   in :: conu(pverp,pcnst_extd)   ! mix ratio in updraft at interfaces [kg/kg]
+   in :: cond(pverp,pcnst_extd)   ! mix ratio in downdraft at interfaces [kg/kg]
+   in :: dconudt_activa(pverp,pcnst_extd) ! d(conu)/dt by activation [kg/kg/s]
+   in :: dconudt_wetdep(pverp,pcnst_extd) ! d(conu)/dt by wet removal[kg/kg/s]
+   in :: dudp(pver)           ! du(i,k)*dp(i,k) at current i [mb/s]
+   in :: dddp(pver)           ! dd(i,k)*dp(i,k) at current i [mb/s]
+   in :: eudp(pver)           ! eu(i,k)*dp(i,k) at current i [mb/s]
+   in :: eddp(pver)           ! ed(i,k)*dp(i,k) at current i [mb/s]
+   out :: dcondt(pver,pcnst_extd)  ! grid-average TMR tendency for current column  [kg/kg/s]
+  */
+  // clang-format on
+  // initialize variables
+  for (int i = 0; i < nlev; ++i)
+    for (int j = 0; j < ConvProc::pcnst_extd; ++j)
+      dcondt(i, j) = 0.;
+
+  // loop from ktop to kbot
+  for (int kk = ktop; kk < kbot; ++kk) {
+    const int kp1 = kk + 1;
+    const int kp1x = haero::min(kp1, nlev - 1);
+    const int km1x = haero::max(kk - 1, 0);
+    const Real fa_u_dp = fa_u[kk] * dpdry_i[kk];
+    for (int icnst = 1; icnst < ConvProc::pcnst_extd; ++icnst) {
+      if (doconvproc_extd[icnst]) {
+        // compute fluxes as in convtran, and also source/sink terms
+        // (version 3 limit fluxes outside convection to mass in appropriate
+        // layer (these limiters are probably only safe for positive definite
+        // quantitities (it assumes that mu and md already satify a courant
+        // number limit of 1)
+        Real fluxin = 0, fluxout = 0;
+        if (iflux_method != 2) {
+          fluxin =
+              mu_i[kp1] * conu(kp1, icnst) +
+              mu_i[kk] * haero::min(chat(kk, icnst), gath(km1x, icnst)) -
+              (md_i[kk] * cond(kk, icnst) +
+               md_i[kp1] * haero::min(chat(kp1, icnst), gath(kp1x, icnst)));
+          fluxout = mu_i[kk] * conu(kk, icnst) +
+                    mu_i[kp1] * haero::min(chat(kp1, icnst), gath(kk, icnst)) -
+                    (md_i[kp1] * cond(kp1, icnst) +
+                     md_i[kk] * haero::min(chat(kk, icnst), gath(kk, icnst)));
+        } else {
+          // new method -- simple upstream method for the env subsidence
+          // tmpa = net env mass flux (positive up) at top of layer k
+          fluxin = mu_i[kp1] * conu(kp1, icnst) - md_i[kk] * cond(kk, icnst);
+          fluxout = mu_i[kk] * conu(kk, icnst) - md_i[kp1] * cond(kp1, icnst);
+          Real tmpa = -(mu_i[kk] + md_i[kk]);
+          if (tmpa <= 0.0) {
+            fluxin -= tmpa * gath(km1x, icnst);
+          } else {
+            fluxout += tmpa * gath(kk, icnst);
+          }
+          // tmpa = net env mass flux (positive up) at base of layer k
+          tmpa = -(mu_i[kp1] + md_i[kp1]);
+          if (tmpa >= 0.0) {
+            fluxin += tmpa * gath(kp1x, icnst);
+          } else {
+            fluxout -= tmpa * gath(kk, icnst);
+          }
+        }
+        //  net flux [kg/kg/s * mb]
+        const Real netflux = fluxin - fluxout;
+
+        // note for C++ refactoring:
+        // I was trying to separate dconudt_activa and dconudt_wetdep out
+        // into a subroutine, but for some reason it doesn't give consistent
+        // dcondt values. have to leave them here.   Shuaiqi Tang, 2022
+        const Real netsrce =
+            fa_u_dp * (dconudt_activa(kk, icnst) + dconudt_wetdep(kk, icnst));
+        dcondt(kk, icnst) = (netflux + netsrce) / dpdry_i[kk];
+      }
+    }
+  }
+}
+// =========================================================================================
+// TODO: compute_downdraft_mixing_ratio uses multiple levels for computation but
+// ONLY sets a SINGLE level on output for the loop over ktop to kbot.  So, it
+// should be possible to input kk and then call in parallel from ktop to kbot.
+// It is a bit confusing that the level set is kk+1 so it would be better to
+// rewrite as kkp1=>kk and kk=>kk-1 and iterate from ktop+1 to kbot inclusive.
+KOKKOS_INLINE_FUNCTION
+void compute_downdraft_mixing_ratio(
+    const bool doconvproc_extd[ConvProc::pcnst_extd], const int ktop,
+    const int kbot, const Real md_i[/* nlev+1 */], const Real eddp[/* nlev */],
+    const Real gath[/* nlev */][ConvProc::pcnst_extd],
+    Real cond[/* nlev+1 */][ConvProc::pcnst_extd]) {
+  // clang-format off
+  //----------------------------------------------------------------------
+  // Compute downdraft mixing ratios from cloudtop to cloudbase
+  // No special treatment is needed at k=2
+  // No transformation or removal is applied in the downdraft
+  // ---------------------------------------------------------------------
+
+  /* cloudborne aerosol, so the arrays are dimensioned with pcnst_extd = pcnst*2
+   in doconvproc_extd[pcnst_extd] ! flag for doing convective transport
+   in ktop                     ! top level index
+   in kbot                     ! bottom level index
+   in md_i[pverp]              ! md at current i (note pverp dimension) [mb/s]
+   in eddp[pver]               ! ed(i,k)*dp(i,k) at current i [mb/s]
+   in gath[pver][(pcnst_extd]  ! gathered tracer array [kg/kg]
+   inout  cond[pverp][pcnst_extd,pverp] ! mix ratio in downdraft at interfaces [kg/kg]
+  */
+  // clang-format on
+  // threshold below which we treat the mass fluxes as zero [mb/s]
+  const Real mbsth = 1.e-15;
+  for (int kk = ktop; kk < kbot; ++kk) {
+    const int kp1 = kk + 1;
+    // md_m_eddp = downdraft massflux at kp1, without detrainment between k,kp1
+    const Real md_m_eddp = md_i[kk] - eddp[kk];
+    if (md_m_eddp < -mbsth) {
+      for (int icnst = 1; icnst < ConvProc::pcnst_extd; ++icnst) {
+        if (doconvproc_extd[icnst]) {
+          cond[kp1][icnst] =
+              (md_i[kk] * cond[kk][icnst] - eddp[kk] * gath[kk][icnst]) /
+              md_m_eddp;
+        }
+      }
+    }
+  }
+}
+// ==================================================================================
+KOKKOS_INLINE_FUNCTION
+void update_conu_from_act_frac(Real conu[ConvProc::pcnst_extd],
+                               Real dconudt[ConvProc::pcnst_extd], const int la,
+                               const int lc, const Real act_frac,
+                               const Real dt_u_inv) {
+  // clang-format off
+  // ---------------------------------------------------------------------
+  // update conu and dconudt from activation fraction
+  // ---------------------------------------------------------------------
+  /* arguments:
+   inout :: conu(pcnst_extd)    ! TMR concentration [#/kg or kg/kg]
+   inout :: dconudt(pcnst_extd) ! TMR tendencies due to activation [#/kg/s or kg/kg/s]
+   in    :: act_frac            ! activation fraction [fraction]
+   in    :: dt_u_inv            ! 1.0/dt_u  [1/s]
+   in    :: la                  ! indices for interstitial aerosols
+   in    :: lc                  ! indices for in-cloud water aerosols
+  */
+  // clang-format on
+
+  const Real delact = utils::min_max_bound(0.0, conu[la], conu[la] * act_frac);
+  // update conu in interstitial and in-cloud condition
+  conu[la] -= delact;
+  conu[lc] += delact;
+  // update dconu/dt
+  dconudt[la] = -delact * dt_u_inv;
+  dconudt[lc] = delact * dt_u_inv;
+}
+// ======================================================================================
