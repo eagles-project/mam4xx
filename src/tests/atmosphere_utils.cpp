@@ -23,7 +23,6 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
   const Real ztop = 10e3;
   const Real dz = ztop / num_levels;
 
-
   auto d_temperature = haero::testing::create_column_view(num_levels);
   auto d_pressure = haero::testing::create_column_view(num_levels);
   auto d_mix = haero::testing::create_column_view(num_levels);
@@ -74,18 +73,8 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
   Kokkos::deep_copy(d_height, h_height);
   Kokkos::deep_copy(d_hdp, h_hdp);
 
-  Atmosphere atm(d_temperature,
-                 d_pressure,
-                 d_mix,
-                 d_liq,
-                 d_nliq,
-                 d_ice,
-                 d_nice,
-                 d_height,
-                 d_hdp,
-                 d_cf,
-                 d_w,
-                 pblh);
+  Atmosphere atm(d_temperature, d_pressure, d_mix, d_liq, d_nliq, d_ice, d_nice,
+                 d_height, d_hdp, d_cf, d_w, pblh);
 
   return atm;
 }

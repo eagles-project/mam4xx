@@ -705,9 +705,11 @@ public:
           // extract relevant gas mixing ratios (H2SO4 only for now)
           Real qgas_cur[num_gases], qgas_avg[num_gases];
           qgas_cur[igas_h2so4] = progs.q_gas[igas_h2so4](k);
-          qgas_avg[igas_h2so4] = progs.q_gas[igas_h2so4](k); // is this good enough?
+          qgas_avg[igas_h2so4] =
+              progs.q_gas[igas_h2so4](k); // is this good enough?
 
-          // extract relevant aerosol mixing ratios (SO4 in aitken mode only for now)
+          // extract relevant aerosol mixing ratios (SO4 in aitken mode only for
+          // now)
           Real qnum_cur[num_modes], qaer_cur[num_modes][max_num_mode_species];
           qnum_cur[nait] = progs.n_mode_i[nait](k);
           qaer_cur[nait][iaer_so4] = progs.q_aero_i[nait][iaer_so4](k);
