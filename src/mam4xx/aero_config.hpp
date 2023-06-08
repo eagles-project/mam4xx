@@ -202,6 +202,9 @@ public:
   // Aerosol wet density
   ColumnView wet_density[AeroConfig::num_modes()];
 
+  // Activation fraction
+  ColumnView activation_fraction[AeroConfig::num_modes()];
+
   /// For gas-aerosol exchange process
   /// Uptake rate coefficient of H2SO4 gas, summed over all modes
   ColumnView uptkrate_h2so4;
@@ -236,6 +239,113 @@ public:
   ColumnView num_act_aerosol_ice_nucle_hom;
   // number of activated aerosol for ice nucleation [#/kg]
   ColumnView num_act_aerosol_ice_nucle;
+  // stratiform cloud fraction (called AST in F90 MAM4)
+  ColumnView stratiform_cloud_fraction;
+  // heterogenous freezing by immersion nucleation [cm^-3 s^-1]
+  // in mam4 this is called frzimm
+  ColumnView hetfrz_immersion_nucleation_tend;
+  // heterogenous freezing by contact nucleation [cm^3 s^-1]
+  // in mam4 this is called frzcnt
+  ColumnView hetfrz_contact_nucleation_tend;
+  // heterogenous freezing by deposition [cm^3 s^-1]
+  // in mam4 this is called frzdep
+  ColumnView hetfrz_depostion_nucleation_tend;
+  // total bc number [#/cm3]
+  ColumnView bc_num;
+  // total dst1 number [#/cm3]
+  ColumnView dst1_num;
+  // total dst3 number [#/cm3]
+  ColumnView dst3_num;
+  // coated bc number [#/cm3]
+  ColumnView bcc_num;
+  // coated dst1 number [#/cm3]
+  ColumnView dst1c_num;
+  // coated dst3 number [#/cm3]
+  ColumnView dst3c_num;
+  // uncoated bc number [#/cm3]
+  ColumnView bcuc_num;
+  // uncoated dst1 number [#/cm3]
+  ColumnView dst1uc_num;
+  // uncoated dst3 number [#/cm3]
+  ColumnView dst3uc_num;
+  // interstitial bc number [#/cm3]
+  ColumnView bc_a1_num;
+  // interstitial dst1 number [#/cm3]
+  ColumnView dst_a1_num;
+  // interstitial dst3 number [#/cm3]
+  ColumnView dst_a3_num;
+  // cloud borne bc number [#/cm3]
+  ColumnView bc_c1_num;
+  // cloud borne dst1 number [#/cm3]
+  ColumnView dst_c1_num;
+  // cloud borne dst3 number [#/cm3]
+  ColumnView dst_c3_num;
+  // cloud borne bc number derived from fn [#/cm3]
+  ColumnView fn_bc_c1_num;
+  // cloud borne dst1 number derived from fn [#/cm3]
+  ColumnView fn_dst_c1_num;
+  // cloud borne dst3 number derived from fn [#/cm3]
+  ColumnView fn_dst_c3_num;
+  // interstitial aerosol number with D>500 nm [#/cm3]
+  ColumnView na500;
+  // total aerosol number with D>500 nm [#/cm3]
+  ColumnView totna500;
+  // Fractional occurance of immersion  freezing [fraction]
+  ColumnView freqimm;
+  // Fractional occurance of contact  freezing [fraction]
+  ColumnView freqcnt;
+  // Fractional occurance of deposition freezing [fraction]
+  ColumnView freqdep;
+  // Fractional occurance of mixed-phase clouds [fraction]
+  ColumnView freqmix;
+  // dust immersion  freezing rate [m-3s-1]
+  ColumnView dstfrezimm;
+  // dust contact    freezing rate [m-3s-1]
+  ColumnView dstfrezcnt;
+  // dust deposition freezing rate [m-3s-1]
+  ColumnView dstfrezdep;
+  // bc immersion  freezing rate [m-3s-1]
+  ColumnView bcfrezimm;
+  // bc contact    freezing rate [m-3s-1]
+  ColumnView bcfrezcnt;
+  // bc deposition freezing rate [m-3s-1]
+  ColumnView bcfrezdep;
+  // Activated Ice Number Concentration due to het immersion freezing in Mixed
+  // Clouds [#/m3]
+  ColumnView nimix_imm;
+  // Activated Ice Number Concentration due to het contact freezing in Mixed
+  // Clouds [#/m3]
+  ColumnView nimix_cnt;
+  // Activated Ice Number Concentration due to het deposition freezing in Mixed
+  // Clouds [#/m3]
+  ColumnView nimix_dep;
+  // Activated Ice Number Concentration due to dst dep freezing in Mixed Clouds
+  // [#/m3]
+  ColumnView dstnidep;
+  // Activated Ice Number Concentration due to dst cnt freezing in Mixed Clouds
+  // [#/m3]
+  ColumnView dstnicnt;
+  // Activated Ice Number Concentration due to dst imm freezing in Mixed Clouds
+  // [#/m3]
+  ColumnView dstniimm;
+  // Activated Ice Number Concentration due to bc dep freezing in Mixed Clouds
+  // [#/m3]
+  ColumnView bcnidep;
+  // Activated Ice Number Concentration due to bc cnt freezing in Mixed Clouds
+  // [#/m3]
+  ColumnView bcnicnt;
+  // Activated Ice Number Concentration due to bc imm freezing in Mixed Clouds
+  // [#/m3]
+  ColumnView bcniimm;
+  // Ice Number Concentration due to het freezing in Mixed Clouds during 10-s
+  // period [#/m3]
+  ColumnView numice10s;
+  // Ice Number Concentration due to imm freezing by dst in Mixed Clouds during
+  // 10-s period [#/m3]
+  ColumnView numimm10sdst;
+  // Ice Number Concentration due to imm freezing by bc in Mixed Clouds during
+  // 10-s period [#/m3]
+  ColumnView numimm10sbc;
 };
 
 } // namespace mam4

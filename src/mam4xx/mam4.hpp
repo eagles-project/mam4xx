@@ -16,6 +16,7 @@
 #include <mam4xx/coagulation.hpp>
 #include <mam4xx/convproc.hpp>
 #include <mam4xx/gasaerexch.hpp>
+#include <mam4xx/hetfrz.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/ndrop.hpp>
 #include <mam4xx/nucleate_ice.hpp>
@@ -31,6 +32,7 @@ using CalcSizeProcess = haero::AeroProcess<AeroConfig, CalcSize>;
 using ConvProcProcess = haero::AeroProcess<AeroConfig, ConvProc>;
 using AgingProcess = haero::AeroProcess<AeroConfig, Aging>;
 using RenameProcess = haero::AeroProcess<AeroConfig, Rename>;
+using HetfrzProcess = haero::AeroProcess<AeroConfig, Hetfrz>;
 using NucleateIceProcess = haero::AeroProcess<AeroConfig, NucleateIce>;
 
 } // namespace mam4
