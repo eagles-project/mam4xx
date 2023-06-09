@@ -46,12 +46,14 @@ void aer_vol_num_hygro(Ensemble *ensemble) {
     EKAT_ASSERT(pcnst_extd == ConvProc::pcnst_extd);
     const Real rhoair = input.get("rhoair");
 
-    std::vector<Real> conu_host, vaerosol_host, naerosol_host, hygro_host;
-    ColumnView conu_dev, vaerosol_dev, naerosol_dev, hygro_dev;
+    std::vector<Real> conu_host, vaerosol_host, naerosol_host, hygro_host,
+        hygro_2_host;
+    ColumnView conu_dev, vaerosol_dev, naerosol_dev, hygro_dev, hygro_2_dev;
     get_input(input, "conu", ConvProc::pcnst_extd, conu_host, conu_dev);
     vaerosol_dev = mam4::validation::create_column_view(num_modes);
     naerosol_dev = mam4::validation::create_column_view(num_modes);
     hygro_dev = mam4::validation::create_column_view(num_modes);
+    hygro_2_dev = mam4::validation::create_column_view(num_modes);
     Kokkos::parallel_for(
         "aer_vol_num_hygro", 1, KOKKOS_LAMBDA(int) {
           Real conu[ConvProc::pcnst_extd];
@@ -67,10 +69,28 @@ void aer_vol_num_hygro(Ensemble *ensemble) {
             naerosol_dev[i] = naerosol[i];
           for (int i = 0; i < num_modes; ++i)
             hygro_dev[i] = hygro[i];
+          for (int i = 0; i < ConvProc::pcnst_extd; ++i)
+            conu[i] /= 1.0e21;
+          convproc::aer_vol_num_hygro(conu, rhoair, vaerosol, naerosol, hygro);
+          for (int i = 0; i < num_modes; ++i)
+            hygro_2_dev[i] = hygro[i];
         });
     // Check case of iflux_method == 2 which is not part of the e3sm tests.
     set_output(output, "vaerosol", num_modes, vaerosol_host, vaerosol_dev);
     set_output(output, "naerosol", num_modes, naerosol_host, naerosol_dev);
     set_output(output, "hygro", num_modes, hygro_host, hygro_dev);
+    hygro_2_host.resize(num_modes);
+    {
+      auto host_view = Kokkos::create_mirror_view(hygro_2_dev);
+      Kokkos::deep_copy(host_view, hygro_2_dev);
+      for (int n = 0; n < num_modes; ++n)
+        hygro_2_host[n] = host_view[n];
+    }
+    // This special test checks an if statement in aer_vol_num_hygro that
+    // sets hygro to 0.2 in case of very small volume. It is tripped twice:
+    EKAT_ASSERT(std::abs(hygro_host[0] - hygro_2_host[0]) < .0000001);
+    EKAT_ASSERT(std::abs(hygro_host[1] - hygro_2_host[1]) < .0000001);
+    EKAT_ASSERT(0.2 == hygro_2_host[2]);
+    EKAT_ASSERT(0.2 == hygro_2_host[3]);
   });
 }
