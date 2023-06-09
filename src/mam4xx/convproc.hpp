@@ -146,6 +146,78 @@ public:
   static constexpr int lmassptrcw_amode(const int i, const int j) {
     return lmassptr_amode(i, j);
   }
+  // lspectype_amode(l,m) = species type/i.d. for chemical species l
+  // in aerosol mode m.  (0=sulfate, others to be defined)
+  KOKKOS_INLINE_FUNCTION
+  static constexpr int lspectype_amode(const int i, const int j) {
+    const int lspectype_amode[maxd_aspectype][num_modes] = {
+        {0, 0, 7, 3},     {3, 4, 6, 5},     {4, 6, 0, 8},     {5, 8, 5, -1},
+        {7, -1, 3, -1},   {6, -1, 4, -1},   {8, -1, 8, -1},   {-1, -1, -1, -1},
+        {-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1},
+        {-1, -1, -1, -1}, {-1, -1, -1, -1}};
+    return lspectype_amode[i][j];
+  }
+
+  // specdens_amode(l) = dry density (kg/m^3) of aerosol chemical species type l
+  // This is indexed by the values returned from lspectype_amode and should
+  // be simplified to just a direct call to aero_species(i).density
+  // but there is the problem of the indexes being in a different order.
+  //
+  // TODO: figure out what maxd_aspectype is 14 and why not use 7?
+
+  KOKKOS_INLINE_FUNCTION
+  static constexpr Real specdens_amode(const int i) {
+    // clang-format off
+    const Real specdens_amode[maxd_aspectype] = {
+      mam4::mam4_density_so4,
+      std::numeric_limits<Real>::max(),
+      std::numeric_limits<Real>::max(),
+      mam4::mam4_density_pom,
+      mam4::mam4_density_soa,
+      mam4::mam4_density_bc ,
+      mam4::mam4_density_nacl,
+      mam4::mam4_density_dst,
+      mam4::mam4_density_mom,
+      0, 0, 0, 0, 0};
+    // clang-format on
+    return specdens_amode[i];
+  }
+
+  // specdens_amode(l) = dry density (kg/m^3) of aerosol chemical species type l
+  // The same concerns specified for specdens_amode apply to spechygro.
+  KOKKOS_INLINE_FUNCTION
+  static constexpr Real spechygro(const int i) {
+    // clang-format off
+    const Real spechygro[maxd_aspectype] = {
+       mam4::mam4_hyg_so4,
+       std::numeric_limits<Real>::max(),
+       std::numeric_limits<Real>::max(),
+       mam4::mam4_hyg_pom,
+       // (BAD CONSTANT) mam4::mam4_hyg_soa = 0.1
+       0.1400000000e+00,
+       mam4::mam4_hyg_bc,
+       mam4::mam4_hyg_nacl,
+       // (BAD CONSTANT) mam4_hyg_dst = 0.14
+       0.6800000000e-01,
+       mam4::mam4_hyg_mom,
+       0, 0, 0, 0, 0};
+    // clang-format on
+    return spechygro[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static constexpr Real voltonumbhi_amode(const int i) {
+    const Real voltonumbhi_amode[num_modes] = {
+        0.4736279937e+19, 0.5026599108e+22, 0.6303988596e+16, 0.7067799781e+21};
+    return voltonumbhi_amode[i];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  static constexpr Real voltonumblo_amode(const int i) {
+    const Real voltonumblo_amode[num_modes] = {
+        0.2634717443e+22, 0.1073313330e+25, 0.4034552701e+18, 0.7067800158e+24};
+    return voltonumblo_amode[i];
+  }
 
 private:
   Config config_;
@@ -940,6 +1012,66 @@ void update_conu_from_act_frac(Real conu[ConvProc::pcnst_extd],
   // update dconu/dt
   dconudt[la] = -delact * dt_u_inv;
   dconudt[lc] = delact * dt_u_inv;
+}
+KOKKOS_INLINE_FUNCTION
+void aer_vol_num_hygro(const Real conu[ConvProc::pcnst_extd], const Real rhoair,
+                       Real vaerosol[AeroConfig::num_modes()],
+                       Real naerosol[AeroConfig::num_modes()],
+                       Real hygro[AeroConfig::num_modes()]) {
+  // clang-format off
+  // -----------------------------------------------------------------------
+  //  calculate aerosol volume, number and hygroscopicity
+  // -----------------------------------------------------------------------
+
+  // -----------------------------------------------------------------------
+  //  arguments:
+  /*
+   conu = tracer mixing ratios in updraft at top of this (current) level. The
+   conu are changed by activation
+   in    :: conu[pcnst_extd]       ! TMR [#/kg or kg/kg]
+   in    :: rhoair                 ! air density [kg/m3]
+   out   :: vaerosol[ntot_amode]   ! int+act volume [m3/m3]
+   out   :: naerosol[ntot_amode]   ! interstitial+activated number conc [#/m3]
+   out   :: hygro[ntot_amode]      ! current hygroscopicity for int+act [unitless]
+  */
+  // clang-format on
+
+  // a small value that variables smaller than it are considered as zero for
+  // aerosol volume [m3/kg]
+  const Real small_vol = 1.0e-35;
+
+  // -----------------------------------------------------------------------
+  const int ntot_amode = AeroConfig::num_modes();
+  for (int imode = 0; imode < ntot_amode; ++imode) {
+    // compute aerosol (or a+cw) volume and hygroscopicity
+    Real tmp_vol = 0.0;
+    Real tmp_hygro = 0.0;
+    const int nspec_amode = mam4::num_species_mode(imode);
+    for (int ispec = 0; ispec < nspec_amode; ++ispec) {
+      // mass divided by density
+      const Real tmp_vol_spec =
+          haero::max(conu[ConvProc::lmassptr_amode(ispec, imode)], 0.0) /
+          ConvProc::specdens_amode(ConvProc::lspectype_amode(ispec, imode));
+      // total aerosol volume
+      tmp_vol += tmp_vol_spec;
+      //  volume*hygro suming up for all species
+      tmp_hygro += tmp_vol_spec *
+                   ConvProc::spechygro(ConvProc::lspectype_amode(ispec, imode));
+    }
+    // change volume from m3/kgair to m3/m3air
+    vaerosol[imode] = tmp_vol * rhoair;
+    if (tmp_vol < small_vol) {
+      hygro[imode] = 0.2;
+    } else {
+      hygro[imode] = tmp_hygro / tmp_vol;
+    }
+
+    // computer a (or a+cw) number and bound it
+    const Real tmp_num = haero::max(conu[ConvProc::numptr_amode(imode)], 0.0);
+    const Real n_min = vaerosol[imode] * ConvProc::voltonumbhi_amode(imode);
+    const Real n_max = vaerosol[imode] * ConvProc::voltonumblo_amode(imode);
+    naerosol[imode] = utils::min_max_bound(n_min, n_max, tmp_num * rhoair);
+  }
 }
 // ======================================================================================
 } // namespace convproc

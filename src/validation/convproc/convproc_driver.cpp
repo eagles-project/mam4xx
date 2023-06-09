@@ -33,6 +33,7 @@ void ma_precpprod(Ensemble *ensemble);
 void ma_precpevap_convproc(Ensemble *ensemble);
 void initialize_dcondt(Ensemble *ensemble);
 void compute_downdraft_mixing_ratio(Ensemble *ensemble);
+void aer_vol_num_hygro(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -48,10 +49,8 @@ int main(int argc, char **argv) {
 
   // the settings.
   Settings settings = ensemble->settings();
-  if (!settings.has("function")) {
-    std::cerr << "No function specified in mam4xx.settings!" << std::endl;
-    exit(1);
-  }
+  EKAT_REQUIRE_MSG(settings.has("function"),
+                   "No function specified in mam4xx.settings!");
 
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
@@ -72,6 +71,8 @@ int main(int argc, char **argv) {
       initialize_dcondt(ensemble);
     } else if (func_name == "compute_downdraft_mixing_ratio") {
       compute_downdraft_mixing_ratio(ensemble);
+    } else if (func_name == "aer_vol_num_hygro") {
+      aer_vol_num_hygro(ensemble);
     } else {
       std::cerr << "Error: Test name not recognized:" << func_name << std::endl;
       exit(1);
