@@ -34,6 +34,7 @@ void ma_precpevap_convproc(Ensemble *ensemble);
 void initialize_dcondt(Ensemble *ensemble);
 void compute_downdraft_mixing_ratio(Ensemble *ensemble);
 void aer_vol_num_hygro(Ensemble *ensemble);
+void compute_wup(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -73,6 +74,8 @@ int main(int argc, char **argv) {
       compute_downdraft_mixing_ratio(ensemble);
     } else if (func_name == "aer_vol_num_hygro") {
       aer_vol_num_hygro(ensemble);
+    } else if (func_name == "compute_wup") {
+      compute_wup(ensemble);
     } else {
       std::cerr << "Error: Test name not recognized:" << func_name << std::endl;
       exit(1);
