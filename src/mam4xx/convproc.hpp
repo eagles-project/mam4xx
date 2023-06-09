@@ -1074,6 +1074,59 @@ void aer_vol_num_hygro(const Real conu[ConvProc::pcnst_extd], const Real rhoair,
   }
 }
 // ======================================================================================
+// Note: compute_wup sets wup[kk] only so can be called in parallel over the
+// vertical level index, kk.
+KOKKOS_INLINE_FUNCTION
+void compute_wup(const int iconvtype, const int kk,
+                 const Real mu_i[/* nlev+1 */],
+                 const Real cldfrac_i[/* nlev */],
+                 const Real rhoair_i[/* nlev */], const Real zmagl[/* nlev */],
+                 Real wup[/* nlev */]) {
+  // -----------------------------------------------------------------------
+  //  estimate updraft velocity (wup)
+  //  do it differently for deep and shallow convection
+  // -----------------------------------------------------------------------
+
+  // clang-format off
+  /*
+  in :: iconvtype       ! 1=deep, 2=uw shallow
+  in :: kk              ! vertical level index
+  in :: mu_i[pver+1]     ! mu at current i (note pverp dimension) [mb/s]
+  in :: cldfrac_i[pver] ! cldfrac at current icol (with adjustments) [fraction]
+  in :: rhoair_i[pver]  ! air density at current i [kg/m3]
+  in :: zmagl[pver]     ! height above surface [m]
+  inout :: wup[pver]    ! mean updraft vertical velocity at current level updraft [m/s]
+  */
+  // clang-format on
+  // pre-defined minimum updraft [m/s]
+  const Real w_min = 0.1;
+  // pre-defined peak updraft [m/s]
+  const Real w_peak = 4.0;
+
+  const int kp1 = kk + 1;
+  const Real hund_ovr_g = 100.0 / Constants::gravity;
+
+  if (iconvtype != 1) {
+    // shallow - wup = (mup in kg/m2/s) / [rhoair * (updraft area)]
+    wup[kk] = (mu_i[kp1] + mu_i[kk]) * 0.5 * hund_ovr_g /
+              (rhoair_i[kk] * 0.5 * cldfrac_i[kk]);
+    wup[kk] = haero::max(w_min, wup[kk]);
+  } else {
+    // deep - the above method overestimates updraft area and underestimate wup
+    // the following is based Lemone and Zipser (J Atmos Sci, 1980, p. 2455)
+    // peak updraft (= 4 m/s) is sort of a "grand median" from their GATE data
+    // and Thunderstorm Project data which they also show
+    // the vertical profile shape is a crude fit to their median updraft profile
+    // height above surface [km]
+    const Real zkm = zmagl[kk] * 1.0e-3;
+    if (1.0 <= zkm) {
+      wup[kk] = w_peak * haero::pow((zkm / w_peak), 0.21);
+    } else {
+      wup[kk] = 2.9897 * haero::sqrt(zkm);
+    }
+    wup[kk] = utils::min_max_bound(w_min, w_peak, wup[kk]);
+  }
+}
 } // namespace convproc
 } // namespace mam4
 #endif
