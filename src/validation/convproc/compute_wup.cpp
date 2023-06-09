@@ -48,15 +48,16 @@ void compute_wup(Ensemble *ensemble) {
     EKAT_ASSERT(iconvtype == 1);
 
     std::vector<Real> mu_i_host, cldfrac_i_host, rhoair_i_host, zmagl_host,
-        wup_host, wup_2_host;
+        wup_host, wup_2_host, wup_3_host;
     ColumnView mu_i_dev, cldfrac_i_dev, rhoair_i_dev, zmagl_dev, wup_dev,
-        wup_2_dev;
+        wup_2_dev, wup_3_dev;
     get_input(input, "mu_i", nlev + 1, mu_i_host, mu_i_dev);
     get_input(input, "cldfrac_i", nlev, cldfrac_i_host, cldfrac_i_dev);
     get_input(input, "rhoair_i", nlev, rhoair_i_host, rhoair_i_dev);
     get_input(input, "zmagl", nlev, zmagl_host, zmagl_dev);
     get_input(input, "wup", nlev, wup_host, wup_dev);
     wup_2_dev = mam4::validation::create_column_view(nlev);
+    wup_3_dev = mam4::validation::create_column_view(nlev);
     Kokkos::parallel_for(
         "compute_wup", 1, KOKKOS_LAMBDA(int) {
           Real mu_i[nlev + 1];
@@ -71,22 +72,34 @@ void compute_wup(Ensemble *ensemble) {
           Real zmagl[nlev];
           for (int i = 0; i < nlev; ++i)
             zmagl[i] = zmagl_dev[i];
+          Real zmagl_2[nlev];
+          for (int i = 0; i < nlev; ++i)
+            zmagl_2[i] = zmagl_dev[i];
           Real wup[nlev];
           for (int i = 0; i < nlev; ++i)
             wup[i] = wup_dev[i];
           Real wup_2[nlev];
           for (int i = 0; i < nlev; ++i)
             wup_2[i] = wup_dev[i];
+          Real wup_3[nlev];
+          for (int i = 0; i < nlev; ++i)
+            wup_3[i] = wup_dev[i];
 
           convproc::compute_wup(iconvtype, kk, mu_i, cldfrac_i, rhoair_i, zmagl,
                                 wup);
           const int iconvtype_2 = 2;
           convproc::compute_wup(iconvtype_2, kk, mu_i, cldfrac_i, rhoair_i,
                                 zmagl, wup_2);
+
+          zmagl_2[kk] /= 10;
+          convproc::compute_wup(iconvtype, kk, mu_i, cldfrac_i, rhoair_i,
+                                zmagl_2, wup_3);
           for (int i = 0; i < nlev; ++i)
             wup_dev[i] = wup[i];
           for (int i = 0; i < nlev; ++i)
             wup_2_dev[i] = wup_2[i];
+          for (int i = 0; i < nlev; ++i)
+            wup_3_dev[i] = wup_3[i];
         });
     // This special test checks an if statement in compute_wup that
     // sets hygro to 0.2 in case of very small volume. It is tripped twice:
@@ -173,5 +186,19 @@ void compute_wup(Ensemble *ensemble) {
       EKAT_ASSERT(std::abs(wup_2_host[i] - wup_2_chk[i]) < .000001);
 
     set_output(output, "wup", nlev, wup_host, wup_dev);
+
+    wup_3_host.resize(nlev);
+    {
+      auto host_view = Kokkos::create_mirror_view(wup_3_dev);
+      Kokkos::deep_copy(host_view, wup_3_dev);
+      for (int n = 0; n < nlev; ++n)
+        wup_3_host[n] = host_view[n];
+    }
+    for (int i = 0; i < nlev; ++i) {
+      if (53 == i)
+        EKAT_ASSERT(std::abs(wup_3_host[i] - 1.39358046842) < .000001);
+      else
+        EKAT_ASSERT(std::abs(wup_3_host[i] - wup_host[i]) < .000001);
+    }
   });
 }
