@@ -1422,7 +1422,6 @@ void initialize_tmr_array(const int nlev, const int iconvtype,
     }
   }
 }
-
 } // namespace convproc
 } // namespace mam4
 #endif
