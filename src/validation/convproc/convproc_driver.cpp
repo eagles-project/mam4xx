@@ -35,6 +35,10 @@ void initialize_dcondt(Ensemble *ensemble);
 void compute_downdraft_mixing_ratio(Ensemble *ensemble);
 void aer_vol_num_hygro(Ensemble *ensemble);
 void compute_wup(Ensemble *ensemble);
+void compute_massflux(Ensemble *ensemble);
+void compute_ent_det_dp(Ensemble *ensemble);
+void compute_midlev_height(Ensemble *ensemble);
+void initialize_tmr_array(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -76,6 +80,14 @@ int main(int argc, char **argv) {
       aer_vol_num_hygro(ensemble);
     } else if (func_name == "compute_wup") {
       compute_wup(ensemble);
+    } else if (func_name == "compute_massflux") {
+      compute_massflux(ensemble);
+    } else if (func_name == "compute_ent_det_dp") {
+      compute_ent_det_dp(ensemble);
+    } else if (func_name == "compute_midlev_height") {
+      compute_midlev_height(ensemble);
+    } else if (func_name == "initialize_tmr_array") {
+      initialize_tmr_array(ensemble);
     } else {
       std::cerr << "Error: Test name not recognized:" << func_name << std::endl;
       exit(1);

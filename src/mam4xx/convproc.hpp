@@ -1127,6 +1127,302 @@ void compute_wup(const int iconvtype, const int kk,
     wup[kk] = utils::min_max_bound(w_min, w_peak, wup[kk]);
   }
 }
+// ======================================================================================
+KOKKOS_INLINE_FUNCTION
+void compute_massflux(const int nlev, const int ktop, const int kbot,
+                      const Real dpdry_i[/* nlev */], const Real du[/* nlev */],
+                      const Real eu[/* nlev */], const Real ed[/* nlev */],
+                      Real mu_i[/* nlev+1 */], Real md_i[/* nlev+1 */],
+                      Real &xx_mfup_max) {
+  // -----------------------------------------------------------------------
+  //  compute dry mass fluxes
+  //  This is approximate because the updraft air is has different temp and qv
+  //  than the grid mean, but the whole convective parameterization is highly
+  //  approximate values below a threshold and at "top of cloudtop", "base of
+  //  cloudbase" are set as zero
+  // -----------------------------------------------------------------------
+  // clang-format off
+  /*
+   in  :: nlev           ! number of levels
+   in  :: ktop           ! top level index
+   in  :: kbot           ! bottom level index
+   in  :: dpdry_i[nlev]  ! dp [mb]
+   in  :: du[nlev]       ! Mass detrain rate from updraft [1/s]
+   in  :: eu[nlev]       ! Mass entrain rate into updraft [1/s]
+   in  :: ed[nlev]       ! Mass entrain rate into downdraft [1/s]
+   out :: mu_i[nlev+1]   ! mu at current i (note nlev+1 dimension, see ma_convproc_tend) [mb/s]
+   out :: md_i[nlev+1]   ! md at current i (note nlev+1 dimension) [mb/s]
+   inout :: xx_mfup_max  ! diagnostic field of column maximum updraft mass flux [mb/s]
+  */
+  // clang-format on
+  // threshold below which we treat the mass fluxes as zero [mb/s]
+  const Real mbsth = 1.e-15;
+
+  // load mass fluxes at cloud layers
+  // then load mass fluxes only over cloud layers
+  // excluding "top of cloudtop", "base of cloudbase"
+
+  //  first calculate updraft and downdraft mass fluxes for all layers
+  for (int i = 0; i < nlev + 1; ++i)
+    mu_i[i] = 0, md_i[i] = 0;
+  // (eu-du) = d(mu)/dp -- integrate upwards, multiplying by dpdry
+  for (int kk = nlev - 1; 0 <= kk; --kk) {
+    mu_i[kk] = mu_i[kk + 1] + (eu[kk] - du[kk]) * dpdry_i[kk];
+    std::cout << __LINE__ << " mu_i[" << kk << "] = mu_i[" << kk + 1
+              << "] + (eu[" << kk << "]-du[" << kk << "])*dpdry_i[" << kk
+              << "]:" << mu_i[kk] << " = " << mu_i[kk + 1] << " + (" << eu[kk]
+              << "-" << du[kk] << ")*" << dpdry_i[kk] << " = " << mu_i[kk + 1]
+              << " + " << (eu[kk] - du[kk]) * dpdry_i[kk] << std::endl;
+    xx_mfup_max = haero::max(xx_mfup_max, mu_i[kk]);
+  }
+  // (ed) = d(md)/dp -- integrate downwards, multiplying by dpdry
+  for (int kk = 1; kk < nlev; ++kk)
+    md_i[kk] = md_i[kk - 1] - ed[kk - 1] * dpdry_i[kk - 1];
+
+  for (int kk = 0; kk < nlev + 1; ++kk) {
+    std::cout << __LINE__ << " mu_i[kk]:" << mu_i[kk] << std::endl;
+    if (ktop + 1 <= kk && kk < kbot) {
+      // zero out values below threshold
+      if (mu_i[kk] <= mbsth)
+        mu_i[kk] = 0;
+      if (md_i[kk] >= -mbsth)
+        md_i[kk] = 0;
+      std::cout << __LINE__ << " mu_i[kk]:" << mu_i[kk] << std::endl;
+    } else {
+      mu_i[kk] = 0, md_i[kk] = 0;
+      std::cout << __LINE__ << " mu_i[kk]:" << mu_i[kk] << std::endl;
+    }
+  }
+}
+// ======================================================================================
+// Because the local variable courantmax is over the whole column, this can not
+// be called in parallel.  Could pass courantmax back as an array and then
+// max-reduc over it.
+KOKKOS_INLINE_FUNCTION
+void compute_ent_det_dp(const int pver, const int ktop, const int kbot,
+                        const Real dt, const Real dpdry_i[/* nlev */],
+                        const Real mu_i[/* nlev+1 */],
+                        const Real md_i[/* nlev+1 */],
+                        const Real du[/* nlev */], const Real eu[/* nlev */],
+                        const Real ed[/* nlev */], int &ntsub,
+                        Real eudp[/* nlev */], Real dudp[/* nlev */],
+                        Real eddp[/* nlev */], Real dddp[/* nlev */]) {
+  // clang-format off
+  // -----------------------------------------------------------------------
+  //  calculate mass flux change (from entrainment or detrainment) in the current dp
+  //  also get number of time substeps
+  // -----------------------------------------------------------------------
+  /*
+  in  :: ii             ! index to gathered arrays
+  in  :: ktop           ! top level index
+  in  :: kbot           ! bottom level index
+  in  :: dt             ! delta t (model time increment) [s]
+  in  :: dpdry_i[pver]  ! dp [mb]
+  in  :: mu_i[pverp]    ! mu at current i (note pverp dimension, see ma_convproc_tend) [mb/s]
+  in  :: md_i[pverp]    ! md at current i (note pverp dimension) [mb/s]
+  in  :: du[pver]       ! Mass detrain rate from updraft [1/s]
+  in  :: eu[pver]       ! Mass entrain rate into updraft [1/s]
+  in  :: ed[pver]       ! Mass entrain rate into downdraft [1/s]
+
+  out :: ntsub          ! number of sub timesteps
+  out :: eudp[pver]     ! eu(i,k)*dp(i,k) at current i [mb/s]
+  out :: dudp[pver]     ! du(i,k)*dp(i,k) at current i [mb/s]
+  out :: eddp[pver]     ! ed(i,k)*dp(i,k) at current i [mb/s]
+  out :: dddp[pver]     ! dd(i,k)*dp(i,k) at current i [mb/s]
+  */
+  // clang-format on
+
+  for (int i = 0; i < pver; ++i)
+    eudp[i] = dudp[i] = eddp[i] = dddp[i] = 0.0;
+
+  // maximum value of courant number [unitless]
+  Real courantmax = 0.0;
+  ntsub = 1;
+
+  //  Compute updraft and downdraft "entrainment*dp" from eu and ed
+  //  Compute "detrainment*dp" from mass conservation (total is mass flux
+  //  difference between the top an bottom interface of this layer)
+  for (int kk = ktop; kk < kbot; ++kk) {
+    if ((mu_i[kk] > 0) || (mu_i[kk + 1] > 0)) {
+      if (du[kk] <= 0.0) {
+        eudp[kk] = mu_i[kk] - mu_i[kk + 1];
+      } else {
+        eudp[kk] = haero::max(eu[kk] * dpdry_i[kk], 0.0);
+        dudp[kk] = (mu_i[kk + 1] + eudp[kk]) - mu_i[kk];
+        if (dudp[kk] < 1.0e-12 * eudp[kk]) {
+          eudp[kk] = mu_i[kk] - mu_i[kk + 1];
+          dudp[kk] = 0.0;
+        }
+      }
+    }
+    if ((md_i[kk] < 0) || (md_i[kk + 1] < 0)) {
+      eddp[kk] = haero::max(ed[kk] * dpdry_i[kk], 0.0);
+      dddp[kk] = (md_i[kk + 1] + eddp[kk]) - md_i[kk];
+      std::cout << __FILE__ << ":" << __LINE__ << " " << md_i[kk + 1] << " "
+                << eddp[kk] << " " << md_i[kk] << std::endl;
+      std::cout << __FILE__ << ":" << __LINE__ << " " << dddp[kk] << " "
+                << 1.0e-12 * eddp[kk] << std::endl;
+      if (dddp[kk] < 1.0e-12 * eddp[kk]) {
+        eddp[kk] = md_i[kk] - md_i[kk + 1];
+        dddp[kk] = 0.0;
+      }
+    }
+    // get courantmax to calculate ntsub
+    courantmax =
+        haero::max(courantmax, (mu_i[kk + 1] + eudp[kk] - md_i[kk] + eddp[kk]) *
+                                   dt / dpdry_i[kk]);
+  }
+  // number of time substeps needed to maintain "courant number" <= 1
+  if (courantmax > (1.0 + 1.0e-6)) {
+    ntsub = 1 + static_cast<int>(courantmax);
+  }
+}
+// ======================================================================================
+// This function can not be called in parallel over kk,
+// it is a recursive calculation by level
+KOKKOS_INLINE_FUNCTION
+void compute_midlev_height(const int nlev, const Real dpdry_i[/* nlev */],
+                           const Real rhoair_i[/* nlev */],
+                           Real zmagl[/* nlev */]) {
+  // -----------------------------------------------------------------------
+  //  compute height above surface for middle of level kk
+  // -----------------------------------------------------------------------
+  /*
+  in  :: dpdry_i[nlev]  ! dp [mb]
+  in  :: rhoair_i[nlev] ! air density [kg/m3]
+  out :: zmagl[nlev]    ! height above surface at middle level [m]
+  */
+
+  const Real hund_ovr_g = 100.0 / Constants::gravity;
+  const int surface = nlev - 1;
+  for (int i = 0; i < nlev; ++i)
+    zmagl[i] = 0;
+  // at surface layer thickness [m]
+  Real dz = dpdry_i[surface] * hund_ovr_g / rhoair_i[surface];
+  zmagl[surface] = 0.5 * dz;
+  // other levels
+  for (int kk = surface - 1; 0 <= kk; --kk) {
+    // add half layer below
+    zmagl[kk] = zmagl[kk + 1] + 0.5 * dz;
+
+    // update layer thickness at level kk
+    dz = dpdry_i[kk] * hund_ovr_g / rhoair_i[kk];
+
+    // add half layer in this level
+    zmagl[kk] += 0.5 * dz;
+  }
+}
+
+// ======================================================================================
+// I think if gath were set to q_i before calling this function and then a const
+// gath was passed instead of a const q_i, then this function could take a kk
+// and be called in parallel over the levels.
+KOKKOS_INLINE_FUNCTION
+void initialize_tmr_array(const int nlev, const int iconvtype,
+                          const bool doconvproc_extd[ConvProc::pcnst_extd],
+                          const Real q_i[/* nlev */][ConvProc::gas_pcnst],
+                          Real gath[/* nlev   */][ConvProc::pcnst_extd],
+                          Real chat[/* nlev+1 */][ConvProc::pcnst_extd],
+                          Real conu[/* nlev+1 */][ConvProc::pcnst_extd],
+                          Real cond[/* nlev+1 */][ConvProc::pcnst_extd]) {
+  // -----------------------------------------------------------------------
+  //  initialize tracer mixing ratio arrays (const, chat, conu, cond)
+  //  chat, conu and cond are at interfaces; interpolation needed
+  //  Note: for deep convection, some values between the two layers
+  //  differ significantly, use geometric averaging under certain conditions
+  // -----------------------------------------------------------------------
+
+  // clang-format off
+  /*
+  in :: iconvtype                 ! 1=deep, 2=uw shallow
+  in :: doconvproc_extd[pcnst_extd] ! flag for doing convective transport
+  in :: q_i[nlev][pcnst]          ! q(icol,kk,icnst) at current icol
+
+  out :: gath[nlev]  [pcnst_extd]   ! gathered tracer array [kg/kg]
+  out :: chat[nlev+1][pcnst_extd]   ! mix ratio in env at interfaces [kg/kg]
+  out :: conu[nlev+1][pcnst_extd]   ! mix ratio in updraft at interfaces [kg/kg]
+  out :: cond[nlev+1][pcnst_extd]   ! mix ratio in downdraft at interfaces [kg/kg]
+  */
+  // clang-format on
+
+  // threshold of constitute as zero [kg/kg]
+  const Real small_con = 1.e-36;
+  // small value for relative comparison
+  const Real small_rel = 1.0e-6;
+
+  const int ncnst = ConvProc::gas_pcnst;
+  const int pcnst_extd = ConvProc::pcnst_extd;
+
+  // initiate variables
+  for (int j = 0; j < nlev; ++j)
+    for (int i = 0; i < pcnst_extd; ++i)
+      gath[j][i] = 0;
+  for (int icnst = 1; icnst < ncnst; ++icnst) {
+    if (doconvproc_extd[icnst]) {
+      // Gather up the constituent
+      for (int kk = 0; kk < nlev; ++kk)
+        gath[kk][icnst] = q_i[kk][icnst];
+    }
+  }
+
+  for (int j = 0; j < nlev + 1; ++j)
+    for (int i = 0; i < pcnst_extd; ++i)
+      chat[j][i] = conu[j][i] = cond[j][i] = 0;
+
+  for (int icnst = 1; icnst < ncnst; ++icnst) {
+    if (doconvproc_extd[icnst]) {
+      // Interpolate environment tracer values to interfaces
+      for (int kk = 0; kk < nlev; ++kk) {
+        const int km1 = haero::max(0, kk - 1);
+        // get relative difference between the two levels
+
+        // min gath concentration at level kk and kk-1 [kg/kg]
+        const Real min_con = haero::min(gath[km1][icnst], gath[kk][icnst]);
+        // max gath concentration at level kk and kk-1 [kg/kg]
+        const Real max_con = haero::max(gath[km1][icnst], gath[kk][icnst]);
+
+        // relative difference between level kk and kk-1 [unitless]
+        const Real c_dif_rel =
+            min_con < 0 ? 0
+                        : haero::abs(gath[kk][icnst] - gath[km1][icnst]) /
+                              haero::max(max_con, small_con);
+
+        // If the two layers differ significantly use a geometric averaging
+        // procedure But only do that for deep convection.  For shallow, use the
+        // simple averaging which is used in subr cmfmca
+        if (iconvtype != 1) {
+          // simple averaging for non-deep convection
+          chat[kk][icnst] = 0.5 * (gath[kk][icnst] + gath[km1][icnst]);
+        } else if (c_dif_rel > small_rel) {
+          // deep convection using geometric averaging
+
+          // gath at the above (kk-1 level) [kg/kg]
+          const Real c_above = haero::max(gath[km1][icnst], max_con * 1.e-12);
+
+          // gath at the below (kk level) [kg/kg]
+          const Real c_below = haero::max(gath[kk][icnst], max_con * 1.e-12);
+          chat[kk][icnst] = haero::log(c_above / c_below) /
+                            (c_above - c_below) * c_above * c_below;
+        } else {
+          // Small diff, so just arithmetic mean
+          chat[kk][icnst] = 0.5 * (gath[kk][icnst] + gath[kk][icnst]);
+        }
+        // Set provisional up and down draft values, and tendencies
+        conu[kk][icnst] = chat[kk][icnst];
+        cond[kk][icnst] = chat[kk][icnst];
+      }
+    }
+  }
+  for (int icnst = 1; icnst < ncnst; ++icnst) {
+    if (doconvproc_extd[icnst]) {
+      // Values at surface inferface == values in lowest layer
+      chat[nlev][icnst] = gath[nlev - 1][icnst];
+      conu[nlev][icnst] = gath[nlev - 1][icnst];
+      cond[nlev][icnst] = gath[nlev - 1][icnst];
+    }
+  }
+}
+
 } // namespace convproc
 } // namespace mam4
 #endif

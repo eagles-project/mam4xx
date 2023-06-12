@@ -19,6 +19,10 @@ add_executable(convproc_driver convproc_driver.cpp
                ma_precpevap_convproc.cpp
                aer_vol_num_hygro.cpp
                compute_wup.cpp
+               compute_massflux.cpp
+               compute_ent_det_dp.cpp
+               compute_midlev_height.cpp
+               initialize_tmr_array.cpp
                ma_resuspend_convproc.cpp)
 target_link_libraries(convproc_driver skywalker;validation;${HAERO_LIBRARIES})
 
@@ -47,6 +51,10 @@ foreach (input
          ma_resuspend_convproc
          aer_vol_num_hygro
          compute_wup
+#        compute_massflux
+#        compute_ent_det_dp
+         compute_midlev_height
+         initialize_tmr_array
          )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
