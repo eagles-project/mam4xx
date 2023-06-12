@@ -1413,21 +1413,20 @@ void initialize_tmr_array(const int nlev, const int iconvtype,
 
 // ======================================================================================
 KOKKOS_INLINE_FUNCTION
-void set_cloudborne_vars(
-  const bool doconvproc[ConvProc::gas_pcnst], 
-  Real aqfrac[ConvProc::pcnst_extd], 
-  bool doconvproc_extd[ConvProc::pcnst_extd])
-{
+void set_cloudborne_vars(const bool doconvproc[ConvProc::gas_pcnst],
+                         Real aqfrac[ConvProc::pcnst_extd],
+                         bool doconvproc_extd[ConvProc::pcnst_extd]) {
   // -----------------------------------------------------------------------
   //  set cloudborne aerosol related variables:
-  //  doconvproc_extd: extended array for both activated and unactivated aerosols
-  //  aqfrac: set as 1.0 for activated aerosols and 0.0 otherwise
+  //  doconvproc_extd: extended array for both activated and unactivated
+  //  aerosols aqfrac: set as 1.0 for activated aerosols and 0.0 otherwise
   // -----------------------------------------------------------------------
   /*
   // cloudborne aerosol, so the arrays are dimensioned with pcnst_extd = pcnst*2
   in :: doconvproc[pcnst]    ! flag for doing convective transport
   out :: doconvproc_extd[pcnst_extd]    ! flag for doing convective transport
-  out :: aqfrac[pcnst_extd]  ! aqueous fraction of constituent in updraft [fraction]
+  out :: aqfrac[pcnst_extd]  ! aqueous fraction of constituent in updraft
+  [fraction]
   */
 
   const int pcnst_extd = ConvProc::pcnst_extd;
@@ -1435,25 +1434,25 @@ void set_cloudborne_vars(
   const int num_modes = AeroConfig::num_modes();
   int la, lc;
 
-  for (int i=0; i<pcnst_extd; ++i)
+  for (int i = 0; i < pcnst_extd; ++i)
     doconvproc_extd[i] = false;
 
-  for (int i=1; i<gas_pcnst; ++i)
+  for (int i = 1; i < gas_pcnst; ++i)
     doconvproc_extd[i] = doconvproc[i];
 
-  for (int i=0; i<pcnst_extd; ++i)
+  for (int i = 0; i < pcnst_extd; ++i)
     aqfrac[i] = 0;
- 
+
   for (int imode = 0; imode < num_modes; ++imode) {
     const int nspec_amode = mam4::num_species_mode(imode);
     for (int ispec = 0; ispec < nspec_amode; ++ispec) {
       // append cloudborne aerosols after intersitial
       assign_la_lc(imode, ispec, la, lc);
-      if ( doconvproc[la] ) {
+      if (doconvproc[la]) {
         doconvproc_extd[lc] = true;
         aqfrac[lc] = 1.0;
       }
-    } 
+    }
   }
 }
 } // namespace convproc
