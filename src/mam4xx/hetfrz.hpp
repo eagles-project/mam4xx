@@ -34,7 +34,7 @@ private:
 
 public:
   // name -- unique name of the process implemented by this class
-  const char *name() const { return "MAM4 aging"; }
+  const char *name() const { return "MAM4 heterogeneous freezing"; }
 
   // init -- initializes the implementation with MAM4's configuration
   void init(const AeroConfig &aero_config,
