@@ -1168,11 +1168,6 @@ void compute_massflux(const int nlev, const int ktop, const int kbot,
   // (eu-du) = d(mu)/dp -- integrate upwards, multiplying by dpdry
   for (int kk = nlev - 1; 0 <= kk; --kk) {
     mu_i[kk] = mu_i[kk + 1] + (eu[kk] - du[kk]) * dpdry_i[kk];
-    std::cout << __LINE__ << " mu_i[" << kk << "] = mu_i[" << kk + 1
-              << "] + (eu[" << kk << "]-du[" << kk << "])*dpdry_i[" << kk
-              << "]:" << mu_i[kk] << " = " << mu_i[kk + 1] << " + (" << eu[kk]
-              << "-" << du[kk] << ")*" << dpdry_i[kk] << " = " << mu_i[kk + 1]
-              << " + " << (eu[kk] - du[kk]) * dpdry_i[kk] << std::endl;
     xx_mfup_max = haero::max(xx_mfup_max, mu_i[kk]);
   }
   // (ed) = d(md)/dp -- integrate downwards, multiplying by dpdry
@@ -1180,17 +1175,14 @@ void compute_massflux(const int nlev, const int ktop, const int kbot,
     md_i[kk] = md_i[kk - 1] - ed[kk - 1] * dpdry_i[kk - 1];
 
   for (int kk = 0; kk < nlev + 1; ++kk) {
-    std::cout << __LINE__ << " mu_i[kk]:" << mu_i[kk] << std::endl;
     if (ktop + 1 <= kk && kk < kbot) {
       // zero out values below threshold
       if (mu_i[kk] <= mbsth)
         mu_i[kk] = 0;
       if (md_i[kk] >= -mbsth)
         md_i[kk] = 0;
-      std::cout << __LINE__ << " mu_i[kk]:" << mu_i[kk] << std::endl;
     } else {
       mu_i[kk] = 0, md_i[kk] = 0;
-      std::cout << __LINE__ << " mu_i[kk]:" << mu_i[kk] << std::endl;
     }
   }
 }
@@ -1258,10 +1250,6 @@ void compute_ent_det_dp(const int pver, const int ktop, const int kbot,
     if ((md_i[kk] < 0) || (md_i[kk + 1] < 0)) {
       eddp[kk] = haero::max(ed[kk] * dpdry_i[kk], 0.0);
       dddp[kk] = (md_i[kk + 1] + eddp[kk]) - md_i[kk];
-      std::cout << __FILE__ << ":" << __LINE__ << " " << md_i[kk + 1] << " "
-                << eddp[kk] << " " << md_i[kk] << std::endl;
-      std::cout << __FILE__ << ":" << __LINE__ << " " << dddp[kk] << " "
-                << 1.0e-12 * eddp[kk] << std::endl;
       if (dddp[kk] < 1.0e-12 * eddp[kk]) {
         eddp[kk] = md_i[kk] - md_i[kk + 1];
         dddp[kk] = 0.0;
@@ -1420,6 +1408,52 @@ void initialize_tmr_array(const int nlev, const int iconvtype,
       conu[nlev][icnst] = gath[nlev - 1][icnst];
       cond[nlev][icnst] = gath[nlev - 1][icnst];
     }
+  }
+}
+
+// ======================================================================================
+KOKKOS_INLINE_FUNCTION
+void set_cloudborne_vars(
+  const bool doconvproc[ConvProc::gas_pcnst], 
+  Real aqfrac[ConvProc::pcnst_extd], 
+  bool doconvproc_extd[ConvProc::pcnst_extd])
+{
+  // -----------------------------------------------------------------------
+  //  set cloudborne aerosol related variables:
+  //  doconvproc_extd: extended array for both activated and unactivated aerosols
+  //  aqfrac: set as 1.0 for activated aerosols and 0.0 otherwise
+  // -----------------------------------------------------------------------
+  /*
+  // cloudborne aerosol, so the arrays are dimensioned with pcnst_extd = pcnst*2
+  in :: doconvproc[pcnst]    ! flag for doing convective transport
+  out :: doconvproc_extd[pcnst_extd]    ! flag for doing convective transport
+  out :: aqfrac[pcnst_extd]  ! aqueous fraction of constituent in updraft [fraction]
+  */
+
+  const int pcnst_extd = ConvProc::pcnst_extd;
+  const int gas_pcnst = ConvProc::gas_pcnst;
+  const int num_modes = AeroConfig::num_modes();
+  int la, lc;
+
+  for (int i=0; i<pcnst_extd; ++i)
+    doconvproc_extd[i] = false;
+
+  for (int i=1; i<gas_pcnst; ++i)
+    doconvproc_extd[i] = doconvproc[i];
+
+  for (int i=0; i<pcnst_extd; ++i)
+    aqfrac[i] = 0;
+ 
+  for (int imode = 0; imode < num_modes; ++imode) {
+    const int nspec_amode = mam4::num_species_mode(imode);
+    for (int ispec = 0; ispec < nspec_amode; ++ispec) {
+      // append cloudborne aerosols after intersitial
+      assign_la_lc(imode, ispec, la, lc);
+      if ( doconvproc[la] ) {
+        doconvproc_extd[lc] = true;
+        aqfrac[lc] = 1.0;
+      }
+    } 
   }
 }
 } // namespace convproc
