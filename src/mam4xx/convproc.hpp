@@ -1454,6 +1454,43 @@ void set_cloudborne_vars(const bool doconvproc[ConvProc::gas_pcnst],
     }
   }
 }
+// ======================================================================================
+KOKKOS_INLINE_FUNCTION
+void update_qnew_ptend(const bool dotend[ConvProc::gas_pcnst],
+                       const bool is_update_ptend,
+                       const Real dqdt[ConvProc::gas_pcnst], const Real dt,
+                       bool ptend_lq[ConvProc::gas_pcnst],
+                       Real ptend_q[ConvProc::gas_pcnst],
+                       Real qnew[ConvProc::gas_pcnst]) {
+  // ---------------------------------------------------------------------------------------
+  // update qnew, ptend_q and ptend_lq
+  // ---------------------------------------------------------------------------------------
+
+  // Arguments
+  // clang-format off
+  /*
+   in :: dotend[pcnst]     ! if do tendency
+   in :: is_update_ptend   ! if update ptend with dqdt
+   in :: dqdt[pcnst] ! time tendency of tracer [kg/kg/s]
+   in :: dt                ! model time step [s]
+   inout :: ptend_lq[pcnst]  ! if do tendency
+   inout :: ptend_q[pcnst] ! time tendency of q [kg/kg/s]
+   inout :: qnew[pcnst]    ! Tracer array including moisture [kg/kg]
+  */
+  // clang-format on 
+  for (int ll = 0; ll < ConvProc::gas_pcnst; ++ll) {
+    if (dotend[ll]) {
+      // calc new q (after ma_convproc_sh_intr)
+      qnew[ll] = haero::max(0.0, qnew[ll] + dt*dqdt[ll]);
+
+      if ( is_update_ptend ) {
+        // add dqdt onto ptend_q and set ptend_lq
+        ptend_lq[ll] = true;
+        ptend_q[ll] += dqdt[ll];
+      }
+    }
+  }
+}
 } // namespace convproc
 } // namespace mam4
 #endif

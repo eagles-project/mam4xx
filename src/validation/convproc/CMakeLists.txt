@@ -23,6 +23,7 @@ add_executable(convproc_driver convproc_driver.cpp
                compute_ent_det_dp.cpp
                compute_midlev_height.cpp
                initialize_tmr_array.cpp
+               update_qnew_ptend.cpp
                ma_resuspend_convproc.cpp)
 target_link_libraries(convproc_driver skywalker;validation;${HAERO_LIBRARIES})
 
@@ -55,6 +56,8 @@ foreach (input
          compute_ent_det_dp
          compute_midlev_height
          initialize_tmr_array
+         update_qnew_ptend_true
+         update_qnew_ptend_false
          )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?

@@ -39,6 +39,7 @@ void compute_massflux(Ensemble *ensemble);
 void compute_ent_det_dp(Ensemble *ensemble);
 void compute_midlev_height(Ensemble *ensemble);
 void initialize_tmr_array(Ensemble *ensemble);
+void update_qnew_ptend(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -88,6 +89,8 @@ int main(int argc, char **argv) {
       compute_midlev_height(ensemble);
     } else if (func_name == "initialize_tmr_array") {
       initialize_tmr_array(ensemble);
+    } else if (func_name == "update_qnew_ptend") {
+      update_qnew_ptend(ensemble);
     } else {
       std::cerr << "Error: Test name not recognized:" << func_name << std::endl;
       exit(1);
