@@ -1428,7 +1428,6 @@ void set_cloudborne_vars(const bool doconvproc[ConvProc::gas_pcnst],
   out :: aqfrac[pcnst_extd]  ! aqueous fraction of constituent in updraft
   [fraction]
   */
-
   const int pcnst_extd = ConvProc::pcnst_extd;
   const int gas_pcnst = ConvProc::gas_pcnst;
   const int num_modes = AeroConfig::num_modes();

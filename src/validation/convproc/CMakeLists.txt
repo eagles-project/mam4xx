@@ -51,8 +51,8 @@ foreach (input
          ma_resuspend_convproc
          aer_vol_num_hygro
          compute_wup
-#        compute_massflux
-#        compute_ent_det_dp
+         compute_massflux
+         compute_ent_det_dp
          compute_midlev_height
          initialize_tmr_array
          )

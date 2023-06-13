@@ -10,6 +10,7 @@
 #include <ekat/ekat_pack_kokkos.hpp>
 #include <ekat/logging/ekat_logger.hpp>
 #include <ekat/mpi/ekat_comm.hpp>
+#include <set>
 
 // if you need something from the data/ directory
 // std::string data_file = MAM4_TEST_DATA_DIR;
@@ -76,4 +77,70 @@ TEST_CASE("update_conu_from_act_frac", "mam4_convproc_process") {
   REQUIRE(conu[lc] == 6.5);
   REQUIRE(dconudt[la] == -3.0 / 8.0);
   REQUIRE(dconudt[lc] == 3.0 / 8.0);
+}
+TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
+  const int gas_pcnst = mam4::ConvProc::gas_pcnst;
+  const int num_modes = mam4::ConvProc::num_modes;
+  const int pcnst_extd = mam4::ConvProc::pcnst_extd;
+  const int maxd_aspectype = mam4::ConvProc::maxd_aspectype;
+  ColumnView aqfrac_dev = testing::create_column_view(pcnst_extd);
+  ColumnView doconvproc_extd_dev = testing::create_column_view(pcnst_extd);
+  Kokkos::parallel_for(
+      1, KOKKOS_LAMBDA(const int) {
+        Real aqfrac[pcnst_extd];
+        bool doconvproc_extd[pcnst_extd];
+        {
+          bool doconvproc[gas_pcnst];
+          for (int i = 0; i < gas_pcnst; ++i)
+            // Set every other values to true as a test.
+            doconvproc[i] = i % 2;
+          mam4::convproc::set_cloudborne_vars(doconvproc, aqfrac,
+                                              doconvproc_extd);
+        }
+        for (int i = 0; i < pcnst_extd; ++i)
+          aqfrac_dev[i] = aqfrac[i];
+        for (int i = 0; i < pcnst_extd; ++i)
+          doconvproc_extd_dev[i] = doconvproc_extd[i];
+      });
+  Real aqfrac[pcnst_extd];
+  {
+    auto host_view = Kokkos::create_mirror_view(aqfrac_dev);
+    Kokkos::deep_copy(host_view, aqfrac_dev);
+    for (int i = 0; i < pcnst_extd; ++i)
+      aqfrac[i] = host_view[i];
+  }
+  bool doconvproc_extd[pcnst_extd];
+  {
+    auto host_view = Kokkos::create_mirror_view(doconvproc_extd_dev);
+    Kokkos::deep_copy(host_view, doconvproc_extd_dev);
+    for (int i = 0; i < pcnst_extd; ++i)
+      doconvproc_extd[i] = host_view[i];
+  }
+  std::set<int> check;
+  for (int i = 0; i < maxd_aspectype; ++i)
+    for (int j = 0; j < num_modes; ++j) {
+      const int k = mam4::ConvProc::lmassptr_amode(i, j);
+      // k%2 because that is what is set in doconvproc above.
+      if (0 < k && k % 2)
+        check.insert(gas_pcnst + k);
+    }
+  for (int i = 0; i < pcnst_extd; ++i) {
+    if (check.count(i))
+      REQUIRE(aqfrac[i] == 1.0);
+    else
+      REQUIRE(aqfrac[i] == 0.0);
+  }
+  for (int i = 0; i < pcnst_extd; ++i) {
+    if (i < gas_pcnst) {
+      // Fist values are set as in doconvproc:
+      REQUIRE(doconvproc_extd[i] == i % 2);
+    } else {
+      // Extended values are set according to
+      // mam4::ConvProc::lmassptr_amode:
+      if (check.count(i))
+        REQUIRE(doconvproc_extd[i] == true);
+      else
+        REQUIRE(doconvproc_extd[i] == false);
+    }
+  }
 }
