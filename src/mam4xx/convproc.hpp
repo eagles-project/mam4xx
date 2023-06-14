@@ -87,7 +87,7 @@ public:
   static constexpr int num_modes = AeroConfig::num_modes();
   static constexpr int num_aerosol_ids = AeroConfig::num_aerosol_ids();
 
-  // Constantants for MAM spciesi classes
+  // Constantants for MAM species classes
   enum species_class {
     undefined = 0,  // spec_class_undefined
     cldphysics = 1, // spec_class_cldphysics
@@ -212,6 +212,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   static constexpr Real voltonumbhi_amode(const int i) {
+    // BAD_CONSTANT - Will eventually be defined and retrieved from ndrop
     const Real voltonumbhi_amode[num_modes] = {
         0.4736279937e+19, 0.5026599108e+22, 0.6303988596e+16, 0.7067799781e+21};
     return voltonumbhi_amode[i];
@@ -219,6 +220,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   static constexpr Real voltonumblo_amode(const int i) {
+    // BAD_CONSTANT - Will eventually be defined and retrieved from ndrop
     const Real voltonumblo_amode[num_modes] = {
         0.2634717443e+22, 0.1073313330e+25, 0.4034552701e+18, 0.7067800158e+24};
     return voltonumblo_amode[i];
@@ -974,6 +976,8 @@ void compute_downdraft_mixing_ratio(
   */
   // clang-format on
   // threshold below which we treat the mass fluxes as zero [mb/s]
+  //  BAD_CONSTANT - used for both compute_downdraft_mixing_ratio and
+  //  compute_massflux
   const Real mbsth = 1.e-15;
   for (int kk = ktop; kk < kbot; ++kk) {
     const int kp1 = kk + 1;
@@ -1104,8 +1108,10 @@ void compute_wup(const int iconvtype, const int kk,
   */
   // clang-format on
   // pre-defined minimum updraft [m/s]
+  // Based on Lemone and Zipser (J Atmos Sci, 1980, p. 2455)
   const Real w_min = 0.1;
   // pre-defined peak updraft [m/s]
+  // Lemone and Zipser (J Atmos Sci, 1980, p. 2455)
   const Real w_peak = 4.0;
 
   const int kp1 = kk + 1;
@@ -1161,6 +1167,8 @@ void compute_massflux(const int nlev, const int ktop, const int kbot,
   */
   // clang-format on
   // threshold below which we treat the mass fluxes as zero [mb/s]
+  //  BAD_CONSTANT - used for both compute_downdraft_mixing_ratio and
+  //  compute_massflux
   const Real mbsth = 1.e-15;
 
   // load mass fluxes at cloud layers
@@ -1341,6 +1349,7 @@ void initialize_tmr_array(const int nlev, const int iconvtype,
   // threshold of constitute as zero [kg/kg]
   const Real small_con = 1.e-36;
   // small value for relative comparison
+  // BAD_CONSTANT - is there a reference for this value?
   const Real small_rel = 1.0e-6;
 
   const int ncnst = ConvProc::gas_pcnst;
@@ -1557,6 +1566,8 @@ void compute_wetdep_tend(
   */
   // clang-format on
   // cutoff value of cloud water for doing updraft [kg/kg]
+  // BAD_CONSTANT - is there a reference for this value? and why is it
+  // the same as small_rel as defined above?
   const Real clw_cut = 1.0e-6;
 
   // (in-updraft first order wet removal rate) * dt [unitless]
