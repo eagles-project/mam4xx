@@ -79,16 +79,21 @@ public:
     Config(const Config &) = default;
     ~Config() = default;
     Config &operator=(const Config &) = default;
+
+    bool convproc_do_aer = true;
+    bool convproc_do_gas = false;
   };
 
   static constexpr int num_modes = AeroConfig::num_modes();
   static constexpr int num_aerosol_ids = AeroConfig::num_aerosol_ids();
+
+  // Constantants for MAM species classes
   enum species_class {
-    undefined = 0,
-    cldphysics = 1,
-    aerosol = 2,
-    gas = 3,
-    other = 4
+    undefined = 0,  // spec_class_undefined
+    cldphysics = 1, // spec_class_cldphysics
+    aerosol = 2,    // spec_class_aerosol
+    gas = 3,        // spec_class_gas
+    other = 4       // spec_class_other
   };
   // maxd_aspectype = maximum allowable number of chemical species
   // in each aerosol mode.
@@ -207,6 +212,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   static constexpr Real voltonumbhi_amode(const int i) {
+    // BAD_CONSTANT - Will eventually be defined and retrieved from ndrop
     const Real voltonumbhi_amode[num_modes] = {
         0.4736279937e+19, 0.5026599108e+22, 0.6303988596e+16, 0.7067799781e+21};
     return voltonumbhi_amode[i];
@@ -214,6 +220,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   static constexpr Real voltonumblo_amode(const int i) {
+    // BAD_CONSTANT - Will eventually be defined and retrieved from ndrop
     const Real voltonumblo_amode[num_modes] = {
         0.2634717443e+22, 0.1073313330e+25, 0.4034552701e+18, 0.7067800158e+24};
     return voltonumblo_amode[i];
@@ -969,6 +976,8 @@ void compute_downdraft_mixing_ratio(
   */
   // clang-format on
   // threshold below which we treat the mass fluxes as zero [mb/s]
+  //  BAD_CONSTANT - used for both compute_downdraft_mixing_ratio and
+  //  compute_massflux
   const Real mbsth = 1.e-15;
   for (int kk = ktop; kk < kbot; ++kk) {
     const int kp1 = kk + 1;
@@ -1099,8 +1108,10 @@ void compute_wup(const int iconvtype, const int kk,
   */
   // clang-format on
   // pre-defined minimum updraft [m/s]
+  // Based on Lemone and Zipser (J Atmos Sci, 1980, p. 2455)
   const Real w_min = 0.1;
   // pre-defined peak updraft [m/s]
+  // Lemone and Zipser (J Atmos Sci, 1980, p. 2455)
   const Real w_peak = 4.0;
 
   const int kp1 = kk + 1;
@@ -1127,6 +1138,485 @@ void compute_wup(const int iconvtype, const int kk,
     wup[kk] = utils::min_max_bound(w_min, w_peak, wup[kk]);
   }
 }
+// ======================================================================================
+KOKKOS_INLINE_FUNCTION
+void compute_massflux(const int nlev, const int ktop, const int kbot,
+                      const Real dpdry_i[/* nlev */], const Real du[/* nlev */],
+                      const Real eu[/* nlev */], const Real ed[/* nlev */],
+                      Real mu_i[/* nlev+1 */], Real md_i[/* nlev+1 */],
+                      Real &xx_mfup_max) {
+  // -----------------------------------------------------------------------
+  //  compute dry mass fluxes
+  //  This is approximate because the updraft air is has different temp and qv
+  //  than the grid mean, but the whole convective parameterization is highly
+  //  approximate values below a threshold and at "top of cloudtop", "base of
+  //  cloudbase" are set as zero
+  // -----------------------------------------------------------------------
+  // clang-format off
+  /*
+   in  :: nlev           ! number of levels
+   in  :: ktop           ! top level index
+   in  :: kbot           ! bottom level index
+   in  :: dpdry_i[nlev]  ! dp [mb]
+   in  :: du[nlev]       ! Mass detrain rate from updraft [1/s]
+   in  :: eu[nlev]       ! Mass entrain rate into updraft [1/s]
+   in  :: ed[nlev]       ! Mass entrain rate into downdraft [1/s]
+   out :: mu_i[nlev+1]   ! mu at current i (note nlev+1 dimension, see ma_convproc_tend) [mb/s]
+   out :: md_i[nlev+1]   ! md at current i (note nlev+1 dimension) [mb/s]
+   inout :: xx_mfup_max  ! diagnostic field of column maximum updraft mass flux [mb/s]
+  */
+  // clang-format on
+  // threshold below which we treat the mass fluxes as zero [mb/s]
+  //  BAD_CONSTANT - used for both compute_downdraft_mixing_ratio and
+  //  compute_massflux
+  const Real mbsth = 1.e-15;
+
+  // load mass fluxes at cloud layers
+  // then load mass fluxes only over cloud layers
+  // excluding "top of cloudtop", "base of cloudbase"
+
+  //  first calculate updraft and downdraft mass fluxes for all layers
+  for (int i = 0; i < nlev + 1; ++i)
+    mu_i[i] = 0, md_i[i] = 0;
+  // (eu-du) = d(mu)/dp -- integrate upwards, multiplying by dpdry
+  for (int kk = nlev - 1; 0 <= kk; --kk) {
+    mu_i[kk] = mu_i[kk + 1] + (eu[kk] - du[kk]) * dpdry_i[kk];
+    xx_mfup_max = haero::max(xx_mfup_max, mu_i[kk]);
+  }
+  // (ed) = d(md)/dp -- integrate downwards, multiplying by dpdry
+  for (int kk = 1; kk < nlev; ++kk)
+    md_i[kk] = md_i[kk - 1] - ed[kk - 1] * dpdry_i[kk - 1];
+
+  for (int kk = 0; kk < nlev + 1; ++kk) {
+    if (ktop < kk && kk < kbot) {
+      // zero out values below threshold
+      if (mu_i[kk] <= mbsth)
+        mu_i[kk] = 0;
+      if (md_i[kk] >= -mbsth)
+        md_i[kk] = 0;
+    } else {
+      mu_i[kk] = 0, md_i[kk] = 0;
+    }
+  }
+}
+// ======================================================================================
+// Because the local variable courantmax is over the whole column, this can not
+// be called in parallel.  Could pass courantmax back as an array and then
+// max-reduc over it.
+KOKKOS_INLINE_FUNCTION
+void compute_ent_det_dp(const int pver, const int ktop, const int kbot,
+                        const Real dt, const Real dpdry_i[/* nlev */],
+                        const Real mu_i[/* nlev+1 */],
+                        const Real md_i[/* nlev+1 */],
+                        const Real du[/* nlev */], const Real eu[/* nlev */],
+                        const Real ed[/* nlev */], int &ntsub,
+                        Real eudp[/* nlev */], Real dudp[/* nlev */],
+                        Real eddp[/* nlev */], Real dddp[/* nlev */]) {
+  // clang-format off
+  // -----------------------------------------------------------------------
+  //  calculate mass flux change (from entrainment or detrainment) in the current dp
+  //  also get number of time substeps
+  // -----------------------------------------------------------------------
+  /*
+  in  :: ii             ! index to gathered arrays
+  in  :: ktop           ! top level index
+  in  :: kbot           ! bottom level index
+  in  :: dt             ! delta t (model time increment) [s]
+  in  :: dpdry_i[pver]  ! dp [mb]
+  in  :: mu_i[pverp]    ! mu at current i (note pverp dimension, see ma_convproc_tend) [mb/s]
+  in  :: md_i[pverp]    ! md at current i (note pverp dimension) [mb/s]
+  in  :: du[pver]       ! Mass detrain rate from updraft [1/s]
+  in  :: eu[pver]       ! Mass entrain rate into updraft [1/s]
+  in  :: ed[pver]       ! Mass entrain rate into downdraft [1/s]
+
+  out :: ntsub          ! number of sub timesteps
+  out :: eudp[pver]     ! eu(i,k)*dp(i,k) at current i [mb/s]
+  out :: dudp[pver]     ! du(i,k)*dp(i,k) at current i [mb/s]
+  out :: eddp[pver]     ! ed(i,k)*dp(i,k) at current i [mb/s]
+  out :: dddp[pver]     ! dd(i,k)*dp(i,k) at current i [mb/s]
+  */
+  // clang-format on
+
+  for (int i = 0; i < pver; ++i)
+    eudp[i] = dudp[i] = eddp[i] = dddp[i] = 0.0;
+
+  // maximum value of courant number [unitless]
+  Real courantmax = 0.0;
+  ntsub = 1;
+
+  //  Compute updraft and downdraft "entrainment*dp" from eu and ed
+  //  Compute "detrainment*dp" from mass conservation (total is mass flux
+  //  difference between the top an bottom interface of this layer)
+  for (int kk = ktop; kk < kbot; ++kk) {
+    if ((mu_i[kk] > 0) || (mu_i[kk + 1] > 0)) {
+      if (du[kk] <= 0.0) {
+        eudp[kk] = mu_i[kk] - mu_i[kk + 1];
+      } else {
+        eudp[kk] = haero::max(eu[kk] * dpdry_i[kk], 0.0);
+        dudp[kk] = (mu_i[kk + 1] + eudp[kk]) - mu_i[kk];
+        if (dudp[kk] < 1.0e-12 * eudp[kk]) {
+          eudp[kk] = mu_i[kk] - mu_i[kk + 1];
+          dudp[kk] = 0.0;
+        }
+      }
+    }
+    if ((md_i[kk] < 0) || (md_i[kk + 1] < 0)) {
+      eddp[kk] = haero::max(ed[kk] * dpdry_i[kk], 0.0);
+      dddp[kk] = (md_i[kk + 1] + eddp[kk]) - md_i[kk];
+      if (dddp[kk] < 1.0e-12 * eddp[kk]) {
+        eddp[kk] = md_i[kk] - md_i[kk + 1];
+        dddp[kk] = 0.0;
+      }
+    }
+    // get courantmax to calculate ntsub
+    courantmax =
+        haero::max(courantmax, (mu_i[kk + 1] + eudp[kk] - md_i[kk] + eddp[kk]) *
+                                   dt / dpdry_i[kk]);
+  }
+  // number of time substeps needed to maintain "courant number" <= 1
+  if (courantmax > (1.0 + 1.0e-6)) {
+    ntsub = 1 + static_cast<int>(courantmax);
+  }
+}
+// ======================================================================================
+// This function can not be called in parallel over kk,
+// it is a recursive calculation by level
+KOKKOS_INLINE_FUNCTION
+void compute_midlev_height(const int nlev, const Real dpdry_i[/* nlev */],
+                           const Real rhoair_i[/* nlev */],
+                           Real zmagl[/* nlev */]) {
+  // -----------------------------------------------------------------------
+  //  compute height above surface for middle of level kk
+  // -----------------------------------------------------------------------
+  /*
+  in  :: dpdry_i[nlev]  ! dp [mb]
+  in  :: rhoair_i[nlev] ! air density [kg/m3]
+  out :: zmagl[nlev]    ! height above surface at middle level [m]
+  */
+
+  const Real hund_ovr_g = 100.0 / Constants::gravity;
+  const int surface = nlev - 1;
+  for (int i = 0; i < nlev; ++i)
+    zmagl[i] = 0;
+  // at surface layer thickness [m]
+  Real dz = dpdry_i[surface] * hund_ovr_g / rhoair_i[surface];
+  zmagl[surface] = 0.5 * dz;
+  // other levels
+  for (int kk = surface - 1; 0 <= kk; --kk) {
+    // add half layer below
+    zmagl[kk] = zmagl[kk + 1] + 0.5 * dz;
+
+    // update layer thickness at level kk
+    dz = dpdry_i[kk] * hund_ovr_g / rhoair_i[kk];
+
+    // add half layer in this level
+    zmagl[kk] += 0.5 * dz;
+  }
+}
+
+// ======================================================================================
+// I think if gath were set to q_i before calling this function and then a const
+// gath was passed instead of a const q_i, then this function could take a kk
+// and be called in parallel over the levels.
+KOKKOS_INLINE_FUNCTION
+void initialize_tmr_array(const int nlev, const int iconvtype,
+                          const bool doconvproc_extd[ConvProc::pcnst_extd],
+                          const Real q_i[/* nlev */][ConvProc::gas_pcnst],
+                          Real gath[/* nlev   */][ConvProc::pcnst_extd],
+                          Real chat[/* nlev+1 */][ConvProc::pcnst_extd],
+                          Real conu[/* nlev+1 */][ConvProc::pcnst_extd],
+                          Real cond[/* nlev+1 */][ConvProc::pcnst_extd]) {
+  // -----------------------------------------------------------------------
+  //  initialize tracer mixing ratio arrays (const, chat, conu, cond)
+  //  chat, conu and cond are at interfaces; interpolation needed
+  //  Note: for deep convection, some values between the two layers
+  //  differ significantly, use geometric averaging under certain conditions
+  // -----------------------------------------------------------------------
+
+  // clang-format off
+  /*
+  in :: iconvtype                 ! 1=deep, 2=uw shallow
+  in :: doconvproc_extd[pcnst_extd] ! flag for doing convective transport
+  in :: q_i[nlev][pcnst]          ! q(icol,kk,icnst) at current icol
+
+  out :: gath[nlev]  [pcnst_extd]   ! gathered tracer array [kg/kg]
+  out :: chat[nlev+1][pcnst_extd]   ! mix ratio in env at interfaces [kg/kg]
+  out :: conu[nlev+1][pcnst_extd]   ! mix ratio in updraft at interfaces [kg/kg]
+  out :: cond[nlev+1][pcnst_extd]   ! mix ratio in downdraft at interfaces [kg/kg]
+  */
+  // clang-format on
+
+  // threshold of constitute as zero [kg/kg]
+  const Real small_con = 1.e-36;
+  // small value for relative comparison
+  // BAD_CONSTANT - is there a reference for this value?
+  const Real small_rel = 1.0e-6;
+
+  const int ncnst = ConvProc::gas_pcnst;
+  const int pcnst_extd = ConvProc::pcnst_extd;
+
+  // initiate variables
+  for (int j = 0; j < nlev; ++j)
+    for (int i = 0; i < pcnst_extd; ++i)
+      gath[j][i] = 0;
+  for (int icnst = 1; icnst < ncnst; ++icnst) {
+    if (doconvproc_extd[icnst]) {
+      // Gather up the constituent
+      for (int kk = 0; kk < nlev; ++kk)
+        gath[kk][icnst] = q_i[kk][icnst];
+    }
+  }
+
+  for (int j = 0; j < nlev + 1; ++j)
+    for (int i = 0; i < pcnst_extd; ++i)
+      chat[j][i] = conu[j][i] = cond[j][i] = 0;
+
+  for (int icnst = 1; icnst < ncnst; ++icnst) {
+    if (doconvproc_extd[icnst]) {
+      // Interpolate environment tracer values to interfaces
+      for (int kk = 0; kk < nlev; ++kk) {
+        const int km1 = haero::max(0, kk - 1);
+        // get relative difference between the two levels
+
+        // min gath concentration at level kk and kk-1 [kg/kg]
+        const Real min_con = haero::min(gath[km1][icnst], gath[kk][icnst]);
+        // max gath concentration at level kk and kk-1 [kg/kg]
+        const Real max_con = haero::max(gath[km1][icnst], gath[kk][icnst]);
+
+        // relative difference between level kk and kk-1 [unitless]
+        const Real c_dif_rel =
+            min_con < 0 ? 0
+                        : haero::abs(gath[kk][icnst] - gath[km1][icnst]) /
+                              haero::max(max_con, small_con);
+
+        // If the two layers differ significantly use a geometric averaging
+        // procedure But only do that for deep convection.  For shallow, use the
+        // simple averaging which is used in subr cmfmca
+        if (iconvtype != 1) {
+          // simple averaging for non-deep convection
+          chat[kk][icnst] = 0.5 * (gath[kk][icnst] + gath[km1][icnst]);
+        } else if (c_dif_rel > small_rel) {
+          // deep convection using geometric averaging
+
+          // gath at the above (kk-1 level) [kg/kg]
+          const Real c_above = haero::max(gath[km1][icnst], max_con * 1.e-12);
+
+          // gath at the below (kk level) [kg/kg]
+          const Real c_below = haero::max(gath[kk][icnst], max_con * 1.e-12);
+          chat[kk][icnst] = haero::log(c_above / c_below) /
+                            (c_above - c_below) * c_above * c_below;
+        } else {
+          // Small diff, so just arithmetic mean
+          chat[kk][icnst] = 0.5 * (gath[kk][icnst] + gath[kk][icnst]);
+        }
+        // Set provisional up and down draft values, and tendencies
+        conu[kk][icnst] = chat[kk][icnst];
+        cond[kk][icnst] = chat[kk][icnst];
+      }
+    }
+  }
+  for (int icnst = 1; icnst < ncnst; ++icnst) {
+    if (doconvproc_extd[icnst]) {
+      // Values at surface inferface == values in lowest layer
+      chat[nlev][icnst] = gath[nlev - 1][icnst];
+      conu[nlev][icnst] = gath[nlev - 1][icnst];
+      cond[nlev][icnst] = gath[nlev - 1][icnst];
+    }
+  }
+}
+
+// ======================================================================================
+KOKKOS_INLINE_FUNCTION
+void set_cloudborne_vars(const bool doconvproc[ConvProc::gas_pcnst],
+                         Real aqfrac[ConvProc::pcnst_extd],
+                         bool doconvproc_extd[ConvProc::pcnst_extd]) {
+  // -----------------------------------------------------------------------
+  //  set cloudborne aerosol related variables:
+  //  doconvproc_extd: extended array for both activated and unactivated
+  //  aerosols aqfrac: set as 1.0 for activated aerosols and 0.0 otherwise
+  // -----------------------------------------------------------------------
+  /*
+  // cloudborne aerosol, so the arrays are dimensioned with pcnst_extd = pcnst*2
+  in :: doconvproc[pcnst]    ! flag for doing convective transport
+  out :: doconvproc_extd[pcnst_extd]    ! flag for doing convective transport
+  out :: aqfrac[pcnst_extd]  ! aqueous fraction of constituent in updraft
+  [fraction]
+  */
+  const int pcnst_extd = ConvProc::pcnst_extd;
+  const int gas_pcnst = ConvProc::gas_pcnst;
+  const int num_modes = AeroConfig::num_modes();
+  int la, lc;
+
+  for (int i = 0; i < pcnst_extd; ++i)
+    doconvproc_extd[i] = false;
+
+  for (int i = 1; i < gas_pcnst; ++i)
+    doconvproc_extd[i] = doconvproc[i];
+
+  for (int i = 0; i < pcnst_extd; ++i)
+    aqfrac[i] = 0;
+
+  for (int imode = 0; imode < num_modes; ++imode) {
+    const int nspec_amode = mam4::num_species_mode(imode);
+    for (int ispec = 0; ispec < nspec_amode; ++ispec) {
+      // append cloudborne aerosols after intersitial
+      assign_la_lc(imode, ispec, la, lc);
+      if (doconvproc[la]) {
+        doconvproc_extd[lc] = true;
+        aqfrac[lc] = 1.0;
+      }
+    }
+  }
+}
+// ======================================================================================
+KOKKOS_INLINE_FUNCTION
+void update_qnew_ptend(const bool dotend[ConvProc::gas_pcnst],
+                       const bool is_update_ptend,
+                       const Real dqdt[ConvProc::gas_pcnst], const Real dt,
+                       bool ptend_lq[ConvProc::gas_pcnst],
+                       Real ptend_q[ConvProc::gas_pcnst],
+                       Real qnew[ConvProc::gas_pcnst]) {
+  // ---------------------------------------------------------------------------------------
+  // update qnew, ptend_q and ptend_lq
+  // ---------------------------------------------------------------------------------------
+
+  // Arguments
+  // clang-format off
+  /*
+   in :: dotend[pcnst]     ! if do tendency
+   in :: is_update_ptend   ! if update ptend with dqdt
+   in :: dqdt[pcnst] ! time tendency of tracer [kg/kg/s]
+   in :: dt                ! model time step [s]
+   inout :: ptend_lq[pcnst]  ! if do tendency
+   inout :: ptend_q[pcnst] ! time tendency of q [kg/kg/s]
+   inout :: qnew[pcnst]    ! Tracer array including moisture [kg/kg]
+  */
+  // clang-format on 
+  for (int ll = 0; ll < ConvProc::gas_pcnst; ++ll) {
+    if (dotend[ll]) {
+      // calc new q (after ma_convproc_sh_intr)
+      qnew[ll] = haero::max(0.0, qnew[ll] + dt*dqdt[ll]);
+
+      if ( is_update_ptend ) {
+        // add dqdt onto ptend_q and set ptend_lq
+        ptend_lq[ll] = true;
+        ptend_q[ll] += dqdt[ll];
+      }
+    }
+  }
+}
+// ======================================================================================
+// This can be parallelized over kk. All the "nlev" dimensioned arrays could be subscripted 
+// with kk and passed as scalars or 1D arrays.
+KOKKOS_INLINE_FUNCTION
+void compute_wetdep_tend(
+  const bool doconvproc_extd[ConvProc::pcnst_extd],
+  const int kk,     
+  const Real dt,   
+  const Real dt_u[/* nlev */],   
+  const Real dp_i[/* nlev */],   
+  const Real cldfrac_i[/* nlev */],      
+  const Real mu_p_eudp[/* nlev */],   
+  const Real aqfrac[ConvProc::pcnst_extd],         
+  const Real icwmr[/* nlev */],          
+  const Real rprd[/* nlev */],       
+  Real conu[/* nlev+1 */][ConvProc::pcnst_extd],           
+  Real dconudt_wetdep[/* nlev+1 */][ConvProc::pcnst_extd])
+{
+  // clang-format off
+  // -----------------------------------------------------------------------
+  //  compute tendency from wet deposition
+  // 
+  //     rprd               = precip formation as a grid-cell average (kgW/kgA/s)
+  //     icwmr              = cloud water MR within updraft area (kgW/kgA)
+  //     fupdr              = updraft fractional area (--)
+  //     A = rprd/fupdr     = precip formation rate within updraft area (kgW/kgA/s)
+  //     clw_preloss = cloud water MR before loss to precip
+  //                 = icwmr + dt*(rprd/fupdr)
+  //     B = A/clw_preloss  = (rprd/fupdr)/(icwmr + dt*rprd/fupdr)
+  //                        = rprd/(fupdr*icwmr + dt*rprd)
+  //                        = first-order removal rate (1/s)
+  //     C = dp/(mup/fupdr) = updraft air residence time in the layer (s)
+  // 
+  //     fraction removed = (1.0 - exp(-cdt)) where
+  //                  cdt = B*C = (fupdr*dp/mup)*[rprd/(fupdr*icwmr + dt*rprd)]
+  // 
+  //     Note1:  *** cdt is now sensitive to fupdr, which we do not really know,
+  //                 and is not the same as the convective cloud fraction
+  //     Note2:  dt is appropriate in the above cdt expression, not dtsub
+  // 
+  //     Apply wet removal at levels where
+  //        icwmr(k) > clw_cut  AND  rprd(k) > 0.0
+  //     as wet removal occurs in both liquid and ice clouds
+  // -----------------------------------------------------------------------
+  /*
+   cloudborne aerosol, so the arrays are dimensioned with pcnst_extd = pcnst*2
+   in :: doconvproc_extd[pcnst_extd] ! flag for doing convective transport
+   in :: kk                   ! vertical level index
+   in :: dt                   ! Model timestep [s]
+   in :: dt_u[pver]           ! lagrangian transport time in the updraft[s]
+   in :: dp_i[pver]            ! dp [mb]
+   in :: cldfrac_i[pver]      ! cldfrac at current (with adjustments) [fraction]
+   in :: mu_p_eudp[pver]      ! = mu_i[kp1] + eudp[k] [mb/s]
+   in :: aqfrac[pcnst_extd]   ! aqueous fraction of constituent in updraft [fraction]
+   in :: icwmr[pver]    ! Convective cloud water from zm scheme [kg/kg]
+   in :: rprd[pver]     ! Convective precipitation formation rate [kg/kg/s]
+   inout :: conu[pverp][pcnst_extd]   ! mix ratio in updraft at interfaces [kg/kg]
+   inout :: dconudt_wetdep[pverp][pcnst_extd] ! d(conu)/dt by wet removal[kg/kg/s]
+  */
+  // clang-format on
+  // cutoff value of cloud water for doing updraft [kg/kg]
+  // BAD_CONSTANT - is there a reference for this value? and why is it
+  // the same as small_rel as defined above?
+  const Real clw_cut = 1.0e-6;
+
+  // (in-updraft first order wet removal rate) * dt [unitless]
+  Real cdt = 0.0;
+  if (icwmr[kk] > clw_cut && rprd[kk] > 0.0) {
+    const Real half_cld = 0.5 * cldfrac_i[kk];
+    cdt = (half_cld * dp_i[kk] / mu_p_eudp[kk]) * rprd[kk] /
+          (half_cld * icwmr[kk] + dt * rprd[kk]);
+  }
+  if (cdt > 0.0) {
+    const Real expcdtm1 = haero::exp(-cdt) - 1;
+    for (int icnst = 1; icnst < ConvProc::pcnst_extd; ++icnst) {
+      if (doconvproc_extd[icnst]) {
+        dconudt_wetdep[kk][icnst] = conu[kk][icnst] * aqfrac[icnst] * expcdtm1;
+        conu[kk][icnst] += dconudt_wetdep[kk][icnst];
+        dconudt_wetdep[kk][icnst] /= dt_u[kk];
+      }
+    }
+  }
+}
+// ======================================================================================
+KOKKOS_INLINE_FUNCTION
+void assign_dotend(const int species_class[ConvProc::gas_pcnst],
+                   const bool convproc_do_aer, // true by default
+                   const bool convproc_do_gas, // false by default
+                   bool dotend[ConvProc::gas_pcnst]) {
+  // ---------------------------------------------------------------------
+  //  assign do-tendency flag from species_class, convproc_do_aer and
+  //  convproc_do_gas. convproc_do_aer and convproc_do_gas are assigned in the
+  //  beginning of the  module
+  // ---------------------------------------------------------------------
+  /*
+  in    :: species_class[ConvProc::gas_pcnst]
+  out   :: dotend[ConvProc::gas_pcnst]
+  */
+  //  turn on/off calculations for aerosols and trace gases
+  for (int ll = 0; ll < ConvProc::gas_pcnst; ++ll) {
+    if (species_class[ll] == ConvProc::species_class::aerosol &&
+        convproc_do_aer) {
+      dotend[ll] = true;
+    } else if (species_class[ll] == ConvProc::species_class::gas &&
+               convproc_do_gas) {
+      dotend[ll] = true;
+    } else {
+      dotend[ll] = false;
+    }
+  }
+}
+
 } // namespace convproc
 } // namespace mam4
 #endif
