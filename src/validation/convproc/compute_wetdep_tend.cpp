@@ -23,7 +23,7 @@ void get_input(const Input &input, const std::string &name, const int size,
   Kokkos::deep_copy(dev, host_view);
 }
 void get_input(const Input &input, const std::string &name, const int rows,
-               const int cols, const bool col_major, std::vector<Real> &host,
+               const int cols, std::vector<Real> &host,
                Kokkos::View<Real **, Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
   ColumnView col_view = mam4::validation::create_column_view(rows * cols);
@@ -32,14 +32,9 @@ void get_input(const Input &input, const std::string &name, const int rows,
   EKAT_ASSERT(host.size() == rows * cols);
   {
     std::vector<std::vector<Real>> matrix(rows, std::vector<Real>(cols));
-    if (col_major)
-      for (int j = 0, n = 0; j < cols; ++j)
-        for (int i = 0; i < rows; ++i, ++n)
-          matrix[i][j] = host[n];
-    else
-      for (int i = 0, n = 0; i < rows; ++i)
-        for (int j = 0; j < cols; ++j, ++n)
-          matrix[i][j] = host[n];
+    for (int i = 0, n = 0; i < rows; ++i)
+      for (int j = 0; j < cols; ++j, ++n)
+        matrix[i][j] = host[n];
     auto host_view = Kokkos::create_mirror_view(dev);
     for (int i = 0; i < rows; ++i)
       for (int j = 0; j < cols; ++j)
@@ -49,18 +44,13 @@ void get_input(const Input &input, const std::string &name, const int rows,
 }
 
 void set_output(Output &output, const std::string &name, const int rows,
-                const int cols, const bool col_major, std::vector<Real> &host,
+                const int cols, std::vector<Real> &host,
                 const Kokkos::View<Real **, Kokkos::MemoryUnmanaged> &dev) {
   auto host_view = Kokkos::create_mirror_view(dev);
   Kokkos::deep_copy(host_view, dev);
-  if (col_major)
-    for (int j = 0, n = 0; j < cols; ++j)
-      for (int i = 0; i < rows; ++i, ++n)
-        host[n] = host_view(i, j);
-  else
-    for (int i = 0, n = 0; i < rows; ++i)
-      for (int j = 0; j < cols; ++j, ++n)
-        host[n] = host_view(i, j);
+  for (int i = 0, n = 0; i < rows; ++i)
+    for (int j = 0; j < cols; ++j, ++n)
+      host[n] = host_view(i, j);
   output.set(name, host);
 }
 } // namespace
@@ -99,8 +89,8 @@ void compute_wetdep_tend(Ensemble *ensemble) {
     get_input(input, "aqfrac", pcnst_extd, aqfrac_host, aqfrac_dev);
     get_input(input, "icwmr", nlev, icwmr_host, icwmr_dev);
     get_input(input, "rprd", nlev, rprd_host, rprd_dev);
-    get_input(input, "conu", nlev + 1, pcnst_extd, false, conu_host, conu_dev);
-    get_input(input, "dconudt_wetdep", nlev + 1, pcnst_extd, false,
+    get_input(input, "conu", nlev + 1, pcnst_extd, conu_host, conu_dev);
+    get_input(input, "dconudt_wetdep", nlev + 1, pcnst_extd,
               dconudt_wetdep_host, dconudt_wetdep_dev);
 
     Kokkos::parallel_for(
@@ -140,9 +130,8 @@ void compute_wetdep_tend(Ensemble *ensemble) {
           }
         });
 
-    set_output(output, "conu", nlev + 1, pcnst_extd, false, conu_host,
-               conu_dev);
-    set_output(output, "dconudt_wetdep", nlev + 1, pcnst_extd, false,
+    set_output(output, "conu", nlev + 1, pcnst_extd, conu_host, conu_dev);
+    set_output(output, "dconudt_wetdep", nlev + 1, pcnst_extd,
                dconudt_wetdep_host, dconudt_wetdep_dev);
   });
 }
