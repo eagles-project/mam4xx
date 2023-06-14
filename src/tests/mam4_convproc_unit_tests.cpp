@@ -178,4 +178,34 @@ TEST_CASE("assign_dotend", "mam4_convproc_process") {
       REQUIRE(dotend[i] == true);
     }
   }
+  Kokkos::parallel_for(
+      1, KOKKOS_LAMBDA(const int) {
+        bool dotend[gas_pcnst];
+        {
+          const int species_class[gas_pcnst] = {
+              0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2,
+              2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
+          const bool convproc_do_aer = false;
+          const bool convproc_do_gas = true;
+          mam4::convproc::assign_dotend(species_class, convproc_do_aer,
+                                        convproc_do_gas, dotend);
+        }
+        for (int i = 0; i < gas_pcnst; ++i)
+          dotend_dev[i] = dotend[i];
+      });
+  {
+    auto host_view = Kokkos::create_mirror_view(dotend_dev);
+    Kokkos::deep_copy(host_view, dotend_dev);
+    for (int i = 0; i < gas_pcnst; ++i)
+      dotend[i] = host_view[i];
+  }
+  for (int i = 0; i < gas_pcnst; ++i) {
+    if (i < 9 || 14 < i) {
+      // First values are set to species_class != 2
+      REQUIRE(dotend[i] == false);
+    } else {
+      // Rest of values are set to species_class == 2
+      REQUIRE(dotend[i] == true);
+    }
+  }
 }
