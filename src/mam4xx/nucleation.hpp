@@ -605,10 +605,11 @@ public:
 
     // default constructor -- sets default values for parameters
     Config()
-        : dens_so4a_host(0), mw_nh4a_host(mw_nh4a), mw_so4a_host(mw_so4a),
-          newnuc_method_user_choice(2), pbl_nuc_wang2008_user_choice(1),
-          adjust_factor_bin_tern_ratenucl(1.0), adjust_factor_pbl_ratenucl(1.0),
-          accom_coef_h2so4(1.0), newnuc_adjust_factor_dnaitdt(1.0) {}
+        : dens_so4a_host(mam4_density_so4), mw_nh4a_host(mw_nh4a),
+          mw_so4a_host(mw_so4a), newnuc_method_user_choice(2),
+          pbl_nuc_wang2008_user_choice(1), adjust_factor_bin_tern_ratenucl(1.0),
+          adjust_factor_pbl_ratenucl(1.0), accom_coef_h2so4(1.0),
+          newnuc_adjust_factor_dnaitdt(1.0) {}
 
     Config(const Config &) = default;
     ~Config() = default;
