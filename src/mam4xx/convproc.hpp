@@ -79,16 +79,21 @@ public:
     Config(const Config &) = default;
     ~Config() = default;
     Config &operator=(const Config &) = default;
+
+    bool convproc_do_aer = true;
+    bool convproc_do_gas = false;
   };
 
   static constexpr int num_modes = AeroConfig::num_modes();
   static constexpr int num_aerosol_ids = AeroConfig::num_aerosol_ids();
+
+  // Constantants for MAM spciesi classes
   enum species_class {
-    undefined = 0,
-    cldphysics = 1,
-    aerosol = 2,
-    gas = 3,
-    other = 4
+    undefined = 0,  // spec_class_undefined
+    cldphysics = 1, // spec_class_cldphysics
+    aerosol = 2,    // spec_class_aerosol
+    gas = 3,        // spec_class_gas
+    other = 4       // spec_class_other
   };
   // maxd_aspectype = maximum allowable number of chemical species
   // in each aerosol mode.
@@ -1569,6 +1574,34 @@ void compute_wetdep_tend(
         conu[kk][icnst] += dconudt_wetdep[kk][icnst];
         dconudt_wetdep[kk][icnst] /= dt_u[kk];
       }
+    }
+  }
+}
+// ======================================================================================
+KOKKOS_INLINE_FUNCTION
+void assign_dotend(const int species_class[ConvProc::gas_pcnst],
+                   const bool convproc_do_aer, // true by default
+                   const bool convproc_do_gas, // false by default
+                   bool dotend[ConvProc::gas_pcnst]) {
+  // ---------------------------------------------------------------------
+  //  assign do-tendency flag from species_class, convproc_do_aer and
+  //  convproc_do_gas. convproc_do_aer and convproc_do_gas are assigned in the
+  //  beginning of the  module
+  // ---------------------------------------------------------------------
+  /*
+  in    :: species_class[ConvProc::gas_pcnst]
+  out   :: dotend[ConvProc::gas_pcnst]
+  */
+  //  turn on/off calculations for aerosols and trace gases
+  for (int ll = 0; ll < ConvProc::gas_pcnst; ++ll) {
+    if (species_class[ll] == ConvProc::species_class::aerosol &&
+        convproc_do_aer) {
+      dotend[ll] = true;
+    } else if (species_class[ll] == ConvProc::species_class::gas &&
+               convproc_do_gas) {
+      dotend[ll] = true;
+    } else {
+      dotend[ll] = false;
     }
   }
 }

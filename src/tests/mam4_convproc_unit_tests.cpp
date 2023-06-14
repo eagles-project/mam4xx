@@ -144,3 +144,38 @@ TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
     }
   }
 }
+TEST_CASE("assign_dotend", "mam4_convproc_process") {
+  const int gas_pcnst = mam4::ConvProc::gas_pcnst;
+  ColumnView dotend_dev = testing::create_column_view(gas_pcnst);
+  Kokkos::parallel_for(
+      1, KOKKOS_LAMBDA(const int) {
+        bool dotend[gas_pcnst];
+        {
+          const int species_class[gas_pcnst] = {
+              0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2,
+              2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
+          const bool convproc_do_aer = true;
+          const bool convproc_do_gas = false;
+          mam4::convproc::assign_dotend(species_class, convproc_do_aer,
+                                        convproc_do_gas, dotend);
+        }
+        for (int i = 0; i < gas_pcnst; ++i)
+          dotend_dev[i] = dotend[i];
+      });
+  bool dotend[gas_pcnst];
+  {
+    auto host_view = Kokkos::create_mirror_view(dotend_dev);
+    Kokkos::deep_copy(host_view, dotend_dev);
+    for (int i = 0; i < gas_pcnst; ++i)
+      dotend[i] = host_view[i];
+  }
+  for (int i = 0; i < gas_pcnst; ++i) {
+    if (i < 15) {
+      // First values are set to species_class != 2
+      REQUIRE(dotend[i] == false);
+    } else {
+      // Rest of values are set to species_class == 2
+      REQUIRE(dotend[i] == true);
+    }
+  }
+}
