@@ -1180,7 +1180,7 @@ void compute_massflux(const int nlev, const int ktop, const int kbot,
     md_i[kk] = md_i[kk - 1] - ed[kk - 1] * dpdry_i[kk - 1];
 
   for (int kk = 0; kk < nlev + 1; ++kk) {
-    if (ktop + 1 <= kk && kk < kbot) {
+    if (ktop < kk && kk < kbot) {
       // zero out values below threshold
       if (mu_i[kk] <= mbsth)
         mu_i[kk] = 0;

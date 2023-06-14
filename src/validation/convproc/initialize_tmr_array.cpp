@@ -69,7 +69,6 @@ void initialize_tmr_array(Ensemble *ensemble) {
     const int ncnst = input.get("ncnst");
     EKAT_ASSERT(ncnst == 40);
     const int iconvtype = input.get("iconvtype");
-    EKAT_ASSERT(iconvtype == 1);
 
     std::vector<Real> doconvproc_extd_host, q_i_host, gath_host, chat_host,
         conu_host, cond_host;

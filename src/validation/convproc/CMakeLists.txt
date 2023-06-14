@@ -56,7 +56,8 @@ foreach (input
 #        compute_massflux
 #        compute_ent_det_dp
          compute_midlev_height
-         initialize_tmr_array
+         initialize_tmr_array_1
+         initialize_tmr_array_2
          update_qnew_ptend_true
          update_qnew_ptend_false
          compute_wetdep_tend
