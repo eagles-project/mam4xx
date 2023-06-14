@@ -1491,6 +1491,88 @@ void update_qnew_ptend(const bool dotend[ConvProc::gas_pcnst],
     }
   }
 }
+// ======================================================================================
+// This can be parallelized over kk. All the "nlev" dimensioned arrays could be subscripted 
+// with kk and passed as scalars or 1D arrays.
+KOKKOS_INLINE_FUNCTION
+void compute_wetdep_tend(
+  const bool doconvproc_extd[ConvProc::pcnst_extd],
+  const int kk,     
+  const Real dt,   
+  const Real dt_u[/* nlev */],   
+  const Real dp_i[/* nlev */],   
+  const Real cldfrac_i[/* nlev */],      
+  const Real mu_p_eudp[/* nlev */],   
+  const Real aqfrac[ConvProc::pcnst_extd],         
+  const Real icwmr[/* nlev */],          
+  const Real rprd[/* nlev */],       
+  Real conu[/* nlev+1 */][ConvProc::pcnst_extd],           
+  Real dconudt_wetdep[/* nlev+1 */][ConvProc::pcnst_extd])
+{
+  // clang-format off
+  // -----------------------------------------------------------------------
+  //  compute tendency from wet deposition
+  // 
+  //     rprd               = precip formation as a grid-cell average (kgW/kgA/s)
+  //     icwmr              = cloud water MR within updraft area (kgW/kgA)
+  //     fupdr              = updraft fractional area (--)
+  //     A = rprd/fupdr     = precip formation rate within updraft area (kgW/kgA/s)
+  //     clw_preloss = cloud water MR before loss to precip
+  //                 = icwmr + dt*(rprd/fupdr)
+  //     B = A/clw_preloss  = (rprd/fupdr)/(icwmr + dt*rprd/fupdr)
+  //                        = rprd/(fupdr*icwmr + dt*rprd)
+  //                        = first-order removal rate (1/s)
+  //     C = dp/(mup/fupdr) = updraft air residence time in the layer (s)
+  // 
+  //     fraction removed = (1.0 - exp(-cdt)) where
+  //                  cdt = B*C = (fupdr*dp/mup)*[rprd/(fupdr*icwmr + dt*rprd)]
+  // 
+  //     Note1:  *** cdt is now sensitive to fupdr, which we do not really know,
+  //                 and is not the same as the convective cloud fraction
+  //     Note2:  dt is appropriate in the above cdt expression, not dtsub
+  // 
+  //     Apply wet removal at levels where
+  //        icwmr(k) > clw_cut  AND  rprd(k) > 0.0
+  //     as wet removal occurs in both liquid and ice clouds
+  // -----------------------------------------------------------------------
+  /*
+   cloudborne aerosol, so the arrays are dimensioned with pcnst_extd = pcnst*2
+   in :: doconvproc_extd[pcnst_extd] ! flag for doing convective transport
+   in :: kk                   ! vertical level index
+   in :: dt                   ! Model timestep [s]
+   in :: dt_u[pver]           ! lagrangian transport time in the updraft[s]
+   in :: dp_i[pver]            ! dp [mb]
+   in :: cldfrac_i[pver]      ! cldfrac at current (with adjustments) [fraction]
+   in :: mu_p_eudp[pver]      ! = mu_i[kp1] + eudp[k] [mb/s]
+   in :: aqfrac[pcnst_extd]   ! aqueous fraction of constituent in updraft [fraction]
+   in :: icwmr[pver]    ! Convective cloud water from zm scheme [kg/kg]
+   in :: rprd[pver]     ! Convective precipitation formation rate [kg/kg/s]
+   inout :: conu[pverp][pcnst_extd]   ! mix ratio in updraft at interfaces [kg/kg]
+   inout :: dconudt_wetdep[pverp][pcnst_extd] ! d(conu)/dt by wet removal[kg/kg/s]
+  */
+  // clang-format on
+  // cutoff value of cloud water for doing updraft [kg/kg]
+  const Real clw_cut = 1.0e-6;
+
+  // (in-updraft first order wet removal rate) * dt [unitless]
+  Real cdt = 0.0;
+  if (icwmr[kk] > clw_cut && rprd[kk] > 0.0) {
+    const Real half_cld = 0.5 * cldfrac_i[kk];
+    cdt = (half_cld * dp_i[kk] / mu_p_eudp[kk]) * rprd[kk] /
+          (half_cld * icwmr[kk] + dt * rprd[kk]);
+  }
+  if (cdt > 0.0) {
+    const Real expcdtm1 = haero::exp(-cdt) - 1;
+    for (int icnst = 1; icnst < ConvProc::pcnst_extd; ++icnst) {
+      if (doconvproc_extd[icnst]) {
+        dconudt_wetdep[kk][icnst] = conu[kk][icnst] * aqfrac[icnst] * expcdtm1;
+        conu[kk][icnst] += dconudt_wetdep[kk][icnst];
+        dconudt_wetdep[kk][icnst] /= dt_u[kk];
+      }
+    }
+  }
+}
+
 } // namespace convproc
 } // namespace mam4
 #endif

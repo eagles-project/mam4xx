@@ -31,50 +31,6 @@ void set_output(Output &output, const std::string &name, const int size,
     host[n] = host_view[n];
   output.set(name, host);
 }
-
-void get_input(const Input &input, const std::string &name, const int rows,
-               const int cols, const bool col_major, std::vector<Real> &host,
-               Kokkos::View<Real **, Kokkos::MemoryUnmanaged> &dev) {
-  host = input.get_array(name);
-  ColumnView col_view = mam4::validation::create_column_view(rows * cols);
-  dev = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(col_view.data(), rows,
-                                                       cols);
-  std::cout << __FILE__ << ":" << __LINE__ << " " << name << " " << host.size()
-            << " " << rows << " " << cols << std::endl;
-  EKAT_ASSERT(host.size() == rows * cols);
-  {
-    std::vector<std::vector<Real>> matrix(rows, std::vector<Real>(cols));
-    if (col_major)
-      for (int j = 0, n = 0; j < cols; ++j)
-        for (int i = 0; i < rows; ++i, ++n)
-          matrix[i][j] = host[n];
-    else
-      for (int i = 0, n = 0; i < rows; ++i)
-        for (int j = 0; j < cols; ++j, ++n)
-          matrix[i][j] = host[n];
-    auto host_view = Kokkos::create_mirror_view(dev);
-    for (int i = 0; i < rows; ++i)
-      for (int j = 0; j < cols; ++j)
-        host_view(i, j) = matrix[i][j];
-    Kokkos::deep_copy(dev, host_view);
-  }
-}
-
-void set_output(Output &output, const std::string &name, const int rows,
-                const int cols, const bool col_major, std::vector<Real> &host,
-                const Kokkos::View<Real **, Kokkos::MemoryUnmanaged> &dev) {
-  auto host_view = Kokkos::create_mirror_view(dev);
-  Kokkos::deep_copy(host_view, dev);
-  if (col_major)
-    for (int j = 0, n = 0; j < cols; ++j)
-      for (int i = 0; i < rows; ++i, ++n)
-        host[n] = host_view(i, j);
-  else
-    for (int i = 0, n = 0; i < rows; ++i)
-      for (int j = 0; j < cols; ++j, ++n)
-        host[n] = host_view(i, j);
-  output.set(name, host);
-}
 } // namespace
 void update_qnew_ptend(Ensemble *ensemble) {
 
@@ -89,12 +45,9 @@ void update_qnew_ptend(Ensemble *ensemble) {
     // delta t (model time increment) [s]
     const Real dt = input.get("dt");
     EKAT_ASSERT(dt == 3600);
-    const bool is_update_ptend = input.get("is_update_ptend");
-    std::cout << __FILE__ << ":" << __LINE__
-              << " is_update_ptend:" << is_update_ptend << std::endl;
-    // index of sub timesteps from the outer loop
-
     // flag for doing convective transport
+    const bool is_update_ptend = input.get("is_update_ptend");
+
     std::vector<Real> dotend_host, dqdt_host, ptend_lq_host, ptend_q_host,
         qnew_host;
     ColumnView dotend_dev, ptend_lq_dev, dqdt_dev, ptend_q_dev, qnew_dev;
