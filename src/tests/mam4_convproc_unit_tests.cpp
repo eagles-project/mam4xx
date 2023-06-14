@@ -201,10 +201,10 @@ TEST_CASE("assign_dotend", "mam4_convproc_process") {
   }
   for (int i = 0; i < gas_pcnst; ++i) {
     if (i < 9 || 14 < i) {
-      // First values are set to species_class != 2
+      // First values are set to species_class != 3
       REQUIRE(dotend[i] == false);
     } else {
-      // Rest of values are set to species_class == 2
+      // Rest of values are set to species_class == 3
       REQUIRE(dotend[i] == true);
     }
   }
