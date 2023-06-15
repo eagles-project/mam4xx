@@ -456,7 +456,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
   molenh4a_per_moleso4a = 2.0 * tmp_n1 + tmp_n2;
 
   // (kg dry aerosol)/(mol aerosol so4)
-  kgaero_per_moleso4a = (tmp_m1 + tmp_m2 + tmp_m3);
+  kgaero_per_moleso4a = 1e-3 * (tmp_m1 + tmp_m2 + tmp_m3);
 
   // correction when host code sulfate is really ammonium bisulfate/sulfate
   kgaero_per_moleso4a = kgaero_per_moleso4a * (mw_so4a_host / mw_so4a);
@@ -698,7 +698,7 @@ public:
           Real pblh = atm.planetary_boundary_layer_height;
           Real qv = atm.vapor_mixing_ratio(k);
           Real relhum = conversions::relative_humidity_from_vapor_mixing_ratio(
-              qv, pmid, temp);
+              qv, temp, pmid);
           Real uptkrate_so4 = 0;
           Real del_h2so4_gasprod = 0;
           Real del_h2so4_aeruptk = 0;
@@ -730,7 +730,6 @@ public:
           tends.n_mode_i[nait](k) = dndt_ait;
           tends.q_aero_i[nait][iaer_so4](k) = dso4dt_ait;
           tends.q_gas[igas_h2so4](k) = -dso4dt_ait;
-          // FIXME: what about dmdt_ait?
         });
   }
 
@@ -747,10 +746,10 @@ public:
       const Real qwtr_cur[num_modes], Real &dndt_ait, Real &dmdt_ait,
       Real &dso4dt_ait, Real &dnh4dt_ait, Real &dnclusterdt) const {
     static constexpr Real avogadro =
-        6.02214e26; // BAD_CONSTANT (Avogadro's number ~ molecules/kmole)
+        6.02214e23; // BAD_CONSTANT (Avogadro's number ~ molecules/mol)
     static constexpr Real boltzmann =
         1.38065e-23; // BAD_CONSTANT (Boltzmann's constant ~ J/K/molecule)
-    static constexpr Real rgas = boltzmann * avogadro; // BAD_CONSTANT
+    static constexpr Real rgas = boltzmann * avogadro; // [J/K/mol] BAD_CONSTANT
     static constexpr Real ln_nuc_rate_cutoff = -13.82;
 
     // min h2so4 vapor for nuc calcs = 4.0e-16 mol/mol-air ~= 1.0e4
@@ -854,7 +853,6 @@ public:
       // are used below in the calculation of cluster "growth". I chose to keep
       // these variable names the same as in the old subroutine
       // mer07_veh02_nuc_mosaic_1box to facilitate comparison.
-
       nucleation::mer07_veh02_wang08_nuc_1box(
           newnuc_method_user_choice, newnuc_method_actual,       // in, out
           pbl_nuc_wang2008_user_choice, pbl_nuc_wang2008_actual, // in, out
