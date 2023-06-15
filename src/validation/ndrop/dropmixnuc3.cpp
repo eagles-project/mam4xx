@@ -12,7 +12,7 @@
 using namespace skywalker;
 using namespace mam4;
 
-void dropmixnuc2(Ensemble *ensemble) {
+void dropmixnuc3(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
 
 
@@ -43,8 +43,6 @@ void dropmixnuc2(Ensemble *ensemble) {
     const auto wsub_db = input.get_array("wsub");
     const auto cldo_db = input.get_array("cldo");
     const auto qqcw_db = input.get_array("qqcw");
-
-
 
     const int top_lev = 6;
     ColumnView state_q[nvars];
@@ -130,14 +128,18 @@ void dropmixnuc2(Ensemble *ensemble) {
     count = 0;
     for (int i = 0; i < ncnst_tot; ++i) {
       qqcw[i] = haero::testing::create_column_view(pver);
+     } 
+     
+    for (int kk = 0; kk < pver; ++kk) {
+    for (int i = 0; i < ncnst_tot; ++i) {
       // input data is store on the cpu.
-      auto qqcw_i_host = Kokkos::create_mirror_view(qqcw[i]);
-      for (int kk = 0; kk < pver; ++kk) {
-        qqcw_i_host(kk) = qqcw_db[count];
+      // auto qqcw_i_host = Kokkos::create_mirror_view(qqcw[i]);
+        // qqcw_i_host(kk) = qqcw_db[count];
+      qqcw[i](kk)= qqcw_db[count];
         count++;
       }
       // transfer data to GPU.
-      Kokkos::deep_copy(qqcw[i], qqcw_i_host);
+      // Kokkos::deep_copy(qqcw[i], qqcw_i_host);
     }
 
     const auto lspectype_amode_db = input.get_array("lspectype_amode");
@@ -238,40 +240,59 @@ void dropmixnuc2(Ensemble *ensemble) {
       factnum[i] = haero::testing::create_column_view(pver);
     }
 
-    Real state_q_v[pver][nvars] = {{zero}};
-    Real qqcw_v[pver][ncnst_tot] = {{zero}};
-    for (int k = 0; k < pver; ++k) {
-      for (int i = 0; i < nvars; ++i) {
-        state_q_v[k][i] = state_q[i](k);
-      }
+    ColumnView coltend[ncnst_tot]; 
+    ColumnView coltend_cw[ncnst_tot];
 
-      for (int i = 0; i < ncnst_tot; ++i) {
-        qqcw_v[k][i] = qqcw[i](k);
-      }
+    for (int i = 0; i < ncnst_tot; ++i) {
+      coltend[i] = haero::testing::create_column_view(pver);
+      coltend_cw[i] = haero::testing::create_column_view(pver);
     }
 
-    Real ptend_q_kk[pver][nvar_ptend_q] = {{zero}};
-    Real factnum_kk[pver][ntot_amode] = {{zero}};
 
-    Real ccn[pver][psat] = {};
-    Real coltend[pver][ncnst_tot] = {};
-    Real coltend_cw[pver][ncnst_tot] = {};
+    ColumnView ccn[psat];
 
-    ndrop_od::dropmixnuc2(
-        dtmicro, tair.data(), pmid.data(), pint.data(), pdel.data(),
-        rpdel.data(),
-        zm.data(), //  ! in zm[kk] - zm[kk+1], for pver zm[kk-1] - zm[kk]
-        state_q_v, ncldwtr.data(),
-        kvh.data(), // kvh[kk+1]
-        cldn.data(), lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
+    for (int i = 0; i < psat; ++i) {
+      ccn[i] = haero::testing::create_column_view(pver);
+    }
+
+    ColumnView raercol_cw[2][ncnst_tot];
+    ColumnView raercol[2][ncnst_tot];
+
+    for (int i = 0; i < ncnst_tot; ++i) {
+      raercol[0][i] = haero::testing::create_column_view(pver);
+      raercol[1][i] = haero::testing::create_column_view(pver);
+      raercol_cw[0][i] = haero::testing::create_column_view(pver);
+      raercol_cw[1][i] = haero::testing::create_column_view(pver);
+    }
+
+    ColumnView nact[ntot_amode];
+    ColumnView mact[ntot_amode];
+
+    for (int i = 0; i < ntot_amode; ++i) {
+      nact[i] = haero::testing::create_column_view(pver);
+      mact[i] = haero::testing::create_column_view(pver);
+    }
+
+    ndrop_od::dropmixnuc3(
+        dtmicro, tair, pmid, pint, pdel,
+        rpdel,
+        zm, //  ! in zm[kk] - zm[kk+1], for pver zm[kk-1] - zm[kk]
+        state_q, ncldwtr,
+        kvh, // kvh[kk+1]
+        cldn, lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
         num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode,
         nspec_amode, exp45logsig, alogsig, aten, mam_idx, mam_cnst_idx,
-        qcld.data(), //
-        wsub.data(),
-        cldo.data(), // in
-        qqcw_v,      // inout
-        ptend_q_kk, tendnd.data(), factnum_kk, ndropcol.data(), ndropmix.data(),
-        nsource.data(), wtke.data(), ccn, coltend, coltend_cw);
+        qcld, //
+        wsub,
+        cldo, // in
+        qqcw,      // inout
+        ptend_q, tendnd, factnum, ndropcol, ndropmix,
+        nsource, wtke, ccn, coltend, coltend_cw,
+        raercol_cw,
+        raercol,
+        nact, mact
+        );
+
 
     auto host = Kokkos::create_mirror_view(tendnd);
     Kokkos::deep_copy(host, tendnd);
@@ -286,35 +307,43 @@ void dropmixnuc2(Ensemble *ensemble) {
 
     for (int i = 0; i < ncnst_tot; ++i) {
       for (int kk = 0; kk < pver; ++kk) {
-        output_qqcw.push_back(qqcw_v[kk][i]);
+        output_qqcw.push_back(qqcw[i](kk));
       }
     }
+    output.set("qqcw", output_qqcw);
+
 
     std::vector<Real> output_ptend_q;
-    count =0;
+    // count =0;
     for (int i = 0; i < nvar_ptend_q; ++i) {
       // Kokkos::deep_copy(host, ptend_q[i]);
     for (int kk = 0; kk < pver; ++kk) {
-        output_ptend_q.push_back(ptend_q_kk[kk][i]);
-        
+        output_ptend_q.push_back(ptend_q[i](kk));
         // printf("%d ptend_q_kk[%d][%d] %e \n ",count, kk,i, ptend_q_kk[kk][i]);
-        count++;
+        // count++;
       }
     }
-
+    output.set("ptend_q", output_ptend_q);
 
     std::vector<Real> output_factnum;
 
     for (int i = 0; i < ntot_amode; ++i) {
       // Kokkos::deep_copy(host, factnum[i]);
       for (int kk = 0; kk < pver; ++kk) {
-        output_factnum.push_back(factnum_kk[kk][i]);
+        output_factnum.push_back(factnum[i](kk));
       }
     }
 
-    output.set("qqcw", output_qqcw);
-    output.set("ptend_q", output_ptend_q);
     output.set("factnum", output_factnum);
+
+    // std::vector<Real> output_raercol_cw;
+
+    // for (int i = 0; i < pver; ++i) {
+    //   output_raercol_cw.push_back(raercol_cw[0][0](i));
+    // }  
+
+    // output.set("raercol_cw_out", output_raercol_cw);
+
 
   });
 }

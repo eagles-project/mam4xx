@@ -22,6 +22,7 @@ add_executable(ndrop_driver
                dropmixnuc.cpp
                update_from_explmix.cpp
                dropmixnuc2.cpp
+               dropmixnuc3.cpp
                )
 
 target_link_libraries(ndrop_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -55,8 +56,10 @@ set(TEST_LIST
     maxsattype2_merged
     update_from_newcld_ts_1407_iact2
     update_from_cldn_profile_ts_1417_iact1
-    #dropmixnuc_ts_1417
     update_from_explmix_ts_1400
+    #stand_dropmixnuc_ts_1417
+    #dropmixnuc_ts_1407
+    stand_dropmixnuc_ts_1407
     )
 
 set(DEFAULT_TOL 1e-11)
