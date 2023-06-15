@@ -503,7 +503,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
     tmpa = max(tmpa, 0.0);
 
     // tmpb = h2so4 gas diffusivity ([m2/s], then [m2/h])
-    tmpb = 6.7037e-9 * pow(temp_in, 0.75) / cair;
+    tmpb = 6.7037e-6 * pow(temp_in, 0.75) / cair;
     tmpb *= 3600.0; // [m2/h] 3600 = seconds in hour
     cs_prime_kk = tmpa / (4.0 * pi * tmpb * accom_coef_h2so4);
 
