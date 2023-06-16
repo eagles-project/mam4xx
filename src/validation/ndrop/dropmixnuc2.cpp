@@ -14,8 +14,6 @@ using namespace mam4;
 
 void dropmixnuc2(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-
-
     // number of vertical points.
     // validation test from standalone ndrop.
     const Real zero = 0;
@@ -43,8 +41,6 @@ void dropmixnuc2(Ensemble *ensemble) {
     const auto wsub_db = input.get_array("wsub");
     const auto cldo_db = input.get_array("cldo");
     const auto qqcw_db = input.get_array("qqcw");
-
-
 
     const int top_lev = 6;
     ColumnView state_q[nvars];
@@ -224,7 +220,6 @@ void dropmixnuc2(Ensemble *ensemble) {
     nsource = haero::testing::create_column_view(pver);
     wtke = haero::testing::create_column_view(pver);
 
-
     ColumnView ptend_q[nvar_ptend_q];
 
     count = 0;
@@ -291,17 +286,17 @@ void dropmixnuc2(Ensemble *ensemble) {
     }
 
     std::vector<Real> output_ptend_q;
-    count =0;
+    count = 0;
     for (int i = 0; i < nvar_ptend_q; ++i) {
       // Kokkos::deep_copy(host, ptend_q[i]);
-    for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < pver; ++kk) {
         output_ptend_q.push_back(ptend_q_kk[kk][i]);
-        
-        // printf("%d ptend_q_kk[%d][%d] %e \n ",count, kk,i, ptend_q_kk[kk][i]);
+
+        // printf("%d ptend_q_kk[%d][%d] %e \n ",count, kk,i,
+        // ptend_q_kk[kk][i]);
         count++;
       }
     }
-
 
     std::vector<Real> output_factnum;
 
@@ -315,6 +310,5 @@ void dropmixnuc2(Ensemble *ensemble) {
     output.set("qqcw", output_qqcw);
     output.set("ptend_q", output_ptend_q);
     output.set("factnum", output_factnum);
-
   });
 }
