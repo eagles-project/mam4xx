@@ -15,7 +15,7 @@ using namespace mam4;
 void update_from_explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
-    const int top_lev = input.get_array("top_lev")[0];
+    const int top_lev = input.get_array("top_lev")[0] -1;
     const int pver = input.get_array("pver")[0];
     const int ntot_amode = input.get_array("ntot_amode")[0];
     const auto mam_idx_db = input.get_array("mam_idx");
@@ -95,6 +95,8 @@ void update_from_explmix(Ensemble *ensemble) {
 
           raercol[k][n][1] = raercol_2[counter];
           raercol_cw[k][n][1] = raercol_cw_2[counter];
+          counter++;
+
       }
     } 
 
@@ -151,8 +153,8 @@ void update_from_explmix(Ensemble *ensemble) {
 
     //nnew += 1;
     //nsav += 1;
-    nnew_out[0] = nnew;
-    nsav_out[0] = nsav; 
+    nnew_out[0] = nnew + 1;
+    nsav_out[0] = nsav + 1; 
     counter = 0;
     for(int n = 0; n < ncnst_tot; n++) {
        for (int k = 0; k < pver; k++){
@@ -161,11 +163,20 @@ void update_from_explmix(Ensemble *ensemble) {
 
           raercol_2_out[counter] = raercol[k][n][1];
           raercol_cw_2_out[counter] = raercol_cw[k][n][1];
+          counter++;
       }
     } 
     for (int k = 0; k < pver; k++) {
       qcld_out[k] = qcld[k]; 
     }
+    counter = 0;
+    for(int m = 0; m < nmodes; m++) {
+        for (int k = 0; k < pver; k++) {
+            nact[counter] = _nact[k][m];
+            mact[counter] = _mact[k][m];
+            counter++;
+        }
+    }  
     
     output.set("nact", nact_out);
     output.set("mact", mact_out);

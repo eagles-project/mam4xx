@@ -189,6 +189,50 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
                          int mam_idx[AeroConfig::num_modes()][nspec_max]
                          ) {
   
+    // debug input
+    if(k == 6) {
+      printf("dtmicro: %e\n", dtmicro);
+      printf("k: %d\n", k);
+      printf("pver: %d\n", pver);
+      printf("csbot_k: %e\n", csbot_k);
+      printf("csbot_km1: %e\n", csbot_km1);
+      printf("cldn_k: %e\n", cldn_k);
+      printf("cldn_km1: %e\n", cldn_km1);
+      printf("cldn_kp1: %e\n", cldn_kp1);
+      printf("zn_k: %e\n", zn_k);
+      printf("zs_k: %e\n", zs_k);
+      printf("zs_km1: %e\n", zs_km1);
+      printf("ekd_k: %e\n", ekd_k);
+      printf("ekd_km1: %e\n", ekd_km1);
+      printf("qcld_k: %e\n", qcld_k);
+      printf("qcld_km1: %e\n", qcld_km1);
+      printf("qcld_kp1: %e\n", qcld_kp1);
+      printf("nsav: %d\n", nsav);
+      printf("nnew: %d\n", nnew);
+      for(int m = 0; m < AeroConfig::num_modes(); m++) {
+        printf("nact_k[%d]: %e\n", m, nact_k[m]);
+        printf("mact_k[%d]: %e\n", m, mact_k[m]);
+        printf("nspec_amode[%d]: %e\n", m, nspec_amode[m]);
+        for(int j = 0; j < nspec_max; j++) {
+          printf("mam_idx[%d][%d]: %e\n", m, j, mam_idx[m][j]);
+        }
+      }
+      for(int n = 0; n < ncnst_tot; n++) {
+        printf("raercol_k[%d][0]: %e\n", n, raercol_k[n][0]);
+        printf("raercol_kp1[%d][0]: %e\n", n, raercol_kp1[n][0]);
+        printf("raercol_km1[%d][0]: %e\n", n, raercol_km1[n][0]);
+        printf("raercol_k[%d][1]: %e\n", n, raercol_k[n][1]);
+        printf("raercol_kp1[%d][1]: %e\n", n, raercol_kp1[n][1]);
+        printf("raercol_km1[%d][1]: %e\n", n, raercol_km1[n][1]);
+
+        printf("raercol_cw_k[%d][0]: %e\n", n, raercol_cw_k[n][0]);
+        printf("raercol_cw_kp1[%d][0]: %e\n", n, raercol_cw_kp1[n][0]);
+        printf("raercol_cw_km1[%d][0]: %e\n", n, raercol_cw_km1[n][0]);
+        printf("raercol_cwk[%d][1]: %e\n", n, raercol_cw_k[n][1]);
+        printf("raercol_cw_kp1[%d][1]: %e\n", n, raercol_cw_kp1[n][1]);
+        printf("raercol_cw_km1[%d][1]: %e\n", n, raercol_cw_km1[n][1]);
+      }
+    }
 
     // local arguments
     int imode;       // mode counter variable
@@ -247,7 +291,7 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
     ekkp = zn_k * ekk_k * zs_k;
     ekkm = zn_k * ekk_km1 * zs_km1;
     tinv = ekkp + ekkm;
-
+    //printf("%e\n", ekkp);
        // rce-comment -- tinv is the sum of all first-order-loss-rates
        //    for the layer.  for most layers, the activation loss rate
        //    (for interstitial particles) is accounted for by the loss by
@@ -368,8 +412,8 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
 
           // update aerosol species mass
 
-          for(int lspec = 0; lspec < nspec_amode[imode]; lspec++) {
-             mm = mam_idx[imode][0] - 1;
+          for(int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
+             mm = mam_idx[imode][lspec] - 1;
              // rce-comment -   activation source in layer k involves particles from k+1
              //	          source(:)= mact(:,m)*(raercol(:,mm,nsav))
              source_k = mact_k[imode]*raercol_kp1[mm][nsav];
@@ -415,7 +459,7 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
         raercol_k[mm][nnew] += raercol_cw_k[mm][nnew];
         raercol_cw_k[mm][nnew] = 0.0;
 
-        for(int lspec = 0; lspec < nspec_amode[imode]; lspec++) {
+        for(int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
           mm = mam_idx[imode][lspec] - 1;
           raercol_k[mm][nnew] += raercol_cw_k[mm][nnew];
           raercol_cw_k[mm][nnew] = 0.0;
