@@ -17,7 +17,7 @@ void update_from_explmix(Ensemble *ensemble) {
     // number of vertical points.
     const int top_lev = input.get_array("top_lev")[0] -1;
     const int pver = input.get_array("pver")[0];
-    const int ntot_amode = input.get_array("ntot_amode")[0];
+    // const int ntot_amode = input.get_array("ntot_amode")[0];
     const auto mam_idx_db = input.get_array("mam_idx");
     const auto nspec_amode_db = input.get_array("nspec_amode");
 
@@ -41,7 +41,7 @@ void update_from_explmix(Ensemble *ensemble) {
     const auto cldn_col = input.get_array("cldn_col");
     const auto csbot = input.get_array("csbot");
     
-    const Real dt = input.get("dt");
+    // const Real dt = input.get("dt");
     const Real dtmicro = input.get_array("dtmicro")[0];
 
     const Real zero = 0.0;
@@ -52,8 +52,8 @@ void update_from_explmix(Ensemble *ensemble) {
     int act_len = pver * nmodes;
 
     //std::vector<std::vector<Real>> nact_out(pver, std::vector<Real>(nmodes));
-    std::vector<Real> nact_out(act_len, 0.0);
-    std::vector<Real> mact_out(act_len, 0.0);
+    std::vector<Real> nact_out(act_len, zero);
+    std::vector<Real> mact_out(act_len, zero);
     std::vector<std::vector<Real>> _nact(pver, std::vector<Real>(nmodes));
     std::vector<std::vector<Real>> _mact(pver, std::vector<Real>(nmodes));
     

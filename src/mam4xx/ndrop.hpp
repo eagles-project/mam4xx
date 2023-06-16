@@ -237,21 +237,21 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
     }
 
     // local arguments
-    int imode;       // mode counter variable
+    // int imode;       // mode counter variable
     int mm;          // local array index for MAM number, species
-    int lspec;       // species counter variable
-    int nsubmix, nsubmix_bnd;  // number of substeps and bound
+    // int lspec;       // species counter variable
+    int nsubmix;//, nsubmix_bnd;  // number of substeps and bound
     int ntemp;   // temporary index for substepping
-    int isub;       // substep index
+    // int isub;       // substep index
 
-    Real overlap_cld_thresh = 1e-10;  //  threshold cloud fraction to compute overlap [fraction]
-
+    const Real overlap_cld_thresh = 1e-10;  //  threshold cloud fraction to compute overlap [fraction]
+    const Real zero =0;
     Real ekk_k;       // density*diffusivity for droplets [kg/m/s]
     Real ekk_km1;       // density*diffusivity for droplets [kg/m/s]
     Real dtmin;     // time step to determine subloop time step [s]
     Real qncld_k;     // updated cloud droplet number mixing ratio [#/kg]
-    Real qncld_kp1;     // updated cloud droplet number mixing ratio [#/kg]
-    Real qncld_km1;     // updated cloud droplet number mixing ratio [#/kg]
+    // Real qncld_kp1;     // updated cloud droplet number mixing ratio [#/kg]
+    // Real qncld_km1;     // updated cloud droplet number mixing ratio [#/kg]
     Real ekkp;      // zn*zs*density*diffusivity [/s]
     Real ekkm;      // zn*zs*density*diffusivity   [/s]
     Real overlapp;  // cloud overlap involving level kk+1 [fraction]
@@ -260,7 +260,7 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
     Real tinv;      // inverse timescale of droplet diffusivity [/s]
     Real dtt;       // timescale of droplet diffusivity [s]
     Real dtmix;     // timescale for subloop [s]
-    Real tmpa;      //  temporary aerosol tendency variable [/s]
+    Real tmpa=zero;      //  temporary aerosol tendency variable [/s]
     Real srcn_k;      // droplet source rate [/s]
 
     const int ntot_amode = AeroConfig::num_modes();
@@ -313,11 +313,12 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
 
     dtmix = 0.9 * dtmin;
     nsubmix = dtmicro / dtmix + 1;
-    if (nsubmix > 100) {
-       nsubmix_bnd = 100;
-    } else {
-       nsubmix_bnd = nsubmix;
-    }
+    //FIXME: nsubmix_bnd is used in the code. Ask Fortran team.  
+    // if (nsubmix > 100) {
+    //    nsubmix_bnd = 100;
+    // } else {
+    //    nsubmix_bnd = nsubmix;
+    // }
     dtmix = dtmicro / nsubmix;
 
     // rce-comment
@@ -343,8 +344,8 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
 
     for(int isub = 0; isub < nsubmix; isub++) {
        qncld_k = qcld_k;
-       qncld_km1 = qcld_km1;
-       qncld_kp1 = qcld_kp1;
+       // qncld_km1 = qcld_km1;
+       // qncld_kp1 = qcld_kp1;
        // after first pass, switch nsav, nnew so that nsav is the recently updated aerosol
        if(isub > 0) {
           ntemp = nsav;
@@ -363,7 +364,7 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
           
           srcn_k += nact_k[imode]*raercol_kp1[mm][nsav];
           if(k == pver-1) {
-            tmpa == raercol_k[mm][nsav] * nact_k[imode] + raercol_cw_k[mm][nsav] * nact_k[imode];
+            tmpa = raercol_k[mm][nsav] * nact_k[imode] + raercol_cw_k[mm][nsav] * nact_k[imode];
             srcn_k = haero::max(0.0, tmpa); 
           }
           
@@ -390,7 +391,7 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
           
           source_k = nact_k[imode]*raercol_kp1[mm][nsav];
           if(k == pver-1) {
-            tmpa == raercol_k[mm][nsav] * nact_k[imode] + raercol_cw_k[mm][nsav] * nact_k[imode];
+            tmpa = raercol_k[mm][nsav] * nact_k[imode] + raercol_cw_k[mm][nsav] * nact_k[imode];
             source_k = haero::max(0.0, tmpa); 
           }
 
@@ -420,7 +421,7 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
              //	          source(:)= mact(:,m)*(raercol(:,mm,nsav))
              source_k = mact_k[imode]*raercol_kp1[mm][nsav];
              if(k == pver-1) {
-                tmpa == raercol_k[mm][nsav] * nact_k[imode] + raercol_cw_k[mm][nsav] * nact_k[imode];
+                tmpa = raercol_k[mm][nsav] * nact_k[imode] + raercol_cw_k[mm][nsav] * nact_k[imode];
                 source_k = haero::max(0.0, tmpa); 
               }
 

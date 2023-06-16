@@ -997,6 +997,7 @@ void dropmixnuc(
     Real factnum[AeroConfig::num_modes()], Real &ndropcol_kk, Real &ndropmix,
     Real &nsource, Real &wtke, Real ccn[psat], Real coltend_kk[ncnst_tot],
     Real coltend_cw_kk[ncnst_tot]) {
+#if 0
   // vertical diffusion and nucleation of cloud droplets
   // assume cloud presence controlled by cloud fraction
   // doesn't distinguish between warm, cold clouds
@@ -1261,7 +1262,7 @@ void dropmixnuc(
   //          call outfld(fieldname_cw(mm), coltend_cw(:,mm), pcols, lchnk)
   //       enddo
   //    enddo
-
+#endif
 } // dropmixnuc
 
 // loops with 3 levels
@@ -2250,7 +2251,105 @@ void dropmixnuc3(
         raercol_cw[j][i](k) = raercol_cw_kk[j][i];
       }
     }
+
+
+    if (k == print_this_k) {
+
+    printf("After ... \n");
+
+    printf(" raercol_cw_kk 1 \n");
+      for (int i = 0; i < ncnst_tot; ++i) {
+        printf(" %e", raercol_cw_kk[i][0]);
+      }
+      printf("\n");
+
+      printf(" raercol_cw_kk 2 \n");
+      for (int i = 0; i < ncnst_tot; ++i) {
+        printf(" %e", raercol_cw_kk[i][1]);
+      }
+      printf("\n");
+
+      printf(" raercol_cw_km1 1 \n");
+      for (int i = 0; i < ncnst_tot; ++i) {
+        printf(" %e", raercol_cw_km1[i][0]);
+      }
+      printf("\n");
+
+      printf(" raercol_cw_km1 2 \n");
+      for (int i = 0; i < ncnst_tot; ++i) {
+        printf(" %e", raercol_cw_km1[i][1]);
+      }
+      printf("\n");
+
+      printf(" raercol_cw_kp1 1 \n");
+      for (int i = 0; i < ncnst_tot; ++i) {
+        printf(" %e", raercol_cw_kp1[i][0]);
+      }
+      printf("\n");
+
+      printf(" raercol_cw_kp1 2 \n");
+      for (int i = 0; i < ncnst_tot; ++i) {
+        printf(" %e", raercol_cw_kp1[i][1]);
+      }
+      printf("\n");
+
+      printf(" raercol_kk 1 \n");
+      for (int i = 0; i < ncnst_tot; ++i) {
+        printf(" %e", raercol_kk[i][0]);
+      }
+      printf("\n");
+
+      printf(" raercol_kk 2 \n");
+      for (int i = 0; i < ncnst_tot; ++i) {
+        printf(" %e", raercol_kk[i][1]);
+      }
+      printf("\n");
+
+      printf(" raercol_km1 1 \n");
+      for (int i = 0; i < ncnst_tot; ++i) {
+        printf(" %e", raercol_km1[i][0]);
+      }
+      printf("\n");
+
+      printf(" raercol_km1 2 \n");
+      for (int i = 0; i < ncnst_tot; ++i) {
+        printf(" %e", raercol_km1[i][1]);
+      }
+      printf("\n");
+
+      printf(" raercol_kp1 1 \n");
+      for (int i = 0; i < ncnst_tot; ++i) {
+        printf(" %e", raercol_kp1[i][0]);
+      }
+      printf("\n");
+
+      printf(" raercol_kp1 2 \n");
+      for (int i = 0; i < ncnst_tot; ++i) {
+        printf(" %e", raercol_kp1[i][1]);
+      }
+      printf("\n");
+
+      printf("\n");
+          printf("\n");
+          printf(" nact_kk \n");
+          for (int i = 0; i < ntot_amode; ++i) {
+            printf(" %e", nact_kk[i]);
+          }
+          printf("\n");
+          printf("\n");
+          printf(" mact_kk \n");
+          for (int i = 0; i < ntot_amode; ++i) {
+            printf(" %e", mact_kk[i]);
+          }
+          printf("\n");
+          printf("\n");
+
+    }
+
+
+
   }
+
 
   // });//k
 

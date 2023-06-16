@@ -21,7 +21,7 @@ add_executable(ndrop_driver
                update_from_cldn_profile.cpp
                dropmixnuc.cpp
                update_from_explmix.cpp
-               dropmixnuc2.cpp
+               #dropmixnuc2.cpp
                dropmixnuc3.cpp
                )
 
