@@ -57,10 +57,11 @@ void explmix(
 ) {
 
   qnew = qold_k + dtmix * (src + ekkp * (overlapp * qold_kp1 - qold_k) +
-                           ekkm * (overlapm * qold_k - qold_k));
+                           ekkm * (overlapm * qold_km1 - qold_k));
 
   // force to non-negative
   qnew = haero::max(qnew, 0);
+
 } // end explmix
 
 KOKKOS_INLINE_FUNCTION
@@ -93,10 +94,11 @@ void explmix(
 ) {
 
   // the qactold*(1-overlap) terms are resuspension of activated material
+  const Real one = 1.0;
   qnew = qold_k +
          dtmix *
-             (-src + ekkp * (qold_kp1 - qold_k + qactold_kp1 * (1 - overlapp)) +
-              ekkm * (qold_km1 - qold_k + qactold_km1 * (1 - overlapm)));
+             (-src + ekkp * (qold_kp1 - qold_k + qactold_kp1 * (one - overlapp)) +
+              ekkm * (qold_km1 - qold_k + qactold_km1 * (one - overlapm)));        
 
   // force to non-negative
   qnew = haero::max(qnew, 0);
@@ -185,8 +187,8 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
                          Real raercol_cw_kp1[ncnst_tot][2], // same as raercol but for cloud-borne phase [#/kg or kg/kg]
                          int &nsav, // indices for old, new time levels in substepping
                          int &nnew,  // indices for old, new time levels in substepping
-                         Real nspec_amode[AeroConfig::num_modes()],
-                         int mam_idx[AeroConfig::num_modes()][nspec_max]
+                         const int nspec_amode[AeroConfig::num_modes()],
+                         const int mam_idx[AeroConfig::num_modes()][nspec_max]
                          ) {
   
     // debug input
@@ -212,9 +214,9 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
       for(int m = 0; m < AeroConfig::num_modes(); m++) {
         printf("nact_k[%d]: %e\n", m, nact_k[m]);
         printf("mact_k[%d]: %e\n", m, mact_k[m]);
-        printf("nspec_amode[%d]: %e\n", m, nspec_amode[m]);
+        printf("nspec_amode[%d]: %d\n", m, nspec_amode[m]);
         for(int j = 0; j < nspec_max; j++) {
-          printf("mam_idx[%d][%d]: %e\n", m, j, mam_idx[m][j]);
+          printf("mam_idx[%d][%d]: %d\n", m, j, mam_idx[m][j]);
         }
       }
       for(int n = 0; n < ncnst_tot; n++) {

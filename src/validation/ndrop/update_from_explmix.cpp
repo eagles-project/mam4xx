@@ -73,7 +73,7 @@ void update_from_explmix(Ensemble *ensemble) {
     Real raercol[pver][ncnst_tot][2];
     Real raercol_cw[pver][ncnst_tot][2];
 
-    Real nspec_amode[nmodes];
+    int nspec_amode[nmodes];
     int mam_idx[nmodes][nspec_max];
     for(int m = 0; m < nmodes; m++) {
       nspec_amode[m] = nspec_amode_db[m];

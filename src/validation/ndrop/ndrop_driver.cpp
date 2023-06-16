@@ -36,7 +36,6 @@ void update_from_newcld(Ensemble *ensemble);
 void update_from_cldn_profile(Ensemble *ensemble);
 void dropmixnuc(Ensemble *ensemble);
 void update_from_explmix(Ensemble *ensemble);
-void dropmixnuc2(Ensemble *ensemble);
 void dropmixnuc3(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
