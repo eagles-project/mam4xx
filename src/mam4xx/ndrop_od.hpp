@@ -2356,8 +2356,13 @@ void dropmixnuc3(
   // printf("After explmix raercol(top_lev:pver,mm,nnew) %e \n ",
   // raercol[6][nnew][8]);
 
-  for (int k = top_lev; k < pver; ++k) {
+  // for (int k = top_lev; k < pver; ++k) {
 
+  Kokkos::parallel_for(
+      "dropmixnuc", pver - top_lev, KOKKOS_LAMBDA(int kk) {  
+
+    // 
+    const int k = kk + top_lev;
     // droplet number mixing ratio tendency due to mixing [#/kg/s]
     ndropmix(k) = (qcld(k) - ncldwtr(k)) * dtinv - nsource(k);
     // BAD CONSTANT
@@ -2444,7 +2449,7 @@ void dropmixnuc3(
       ccn[i](k) = ccn_kk[i];
     }
 
-  } // end k
+  });
 
 #endif
 } // dropmixnuc

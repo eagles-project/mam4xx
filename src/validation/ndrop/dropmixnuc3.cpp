@@ -42,7 +42,7 @@ void dropmixnuc3(Ensemble *ensemble) {
     const auto cldo_db = input.get_array("cldo");
     const auto qqcw_db = input.get_array("qqcw");
 
-    const int top_lev = 6;
+    // const int top_lev = 6;
     ColumnView state_q[nvars];
 
     int count = 0;
