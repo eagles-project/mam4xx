@@ -189,9 +189,33 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
                          int &nnew,  // indices for old, new time levels in substepping
                          const int nspec_amode[AeroConfig::num_modes()],
                          const int mam_idx[AeroConfig::num_modes()][nspec_max]
+                         );
+
+
+KOKKOS_INLINE_FUNCTION
+void update_from_explmix_v2(const Real dtmicro,  // time step for microphysics [s]
+                         int top_lev,          // top level
+                         int pver,             // number of levels
+                         ColumnView csbot,    // air density at bottom (interface) of layer [kg/m^3]
+                         ColumnView cldn,     // cloud fraction [fraction]
+                         ColumnView zn,       // g/pdel for layer [m^2/kg]
+                         ColumnView zs,       // inverse of distance between levels [m^-1]
+                         ColumnView ekd,      //diffusivity for droplets [m^2/s]
+                         ColumnView nact[AeroConfig::num_modes()], // fractional aero. number  activation rate [/s]
+                         ColumnView mact[AeroConfig::num_modes()], // fractional aero. mass    activation rate [/s]
+                         ColumnView qcld, // cloud droplet number mixing ratio [#/kg]
+                         ColumnView raercol[ncnst_tot][2], // single column of saved aerosol mass, number mixing ratios [#/kg or kg/kg]
+                         ColumnView raercol_cw[ncnst_tot][2], // same as raercol but for cloud-borne phase [#/kg or kg/kg]
+                         int &nsav, // indices for old, new time levels in substepping
+                         int &nnew,  // indices for old, new time levels in substepping
+                         const int nspec_amode[AeroConfig::num_modes()],
+                         const int mam_idx[AeroConfig::num_modes()][nspec_max],
+                         //work vars
+                         ColumnView overlapp, // cloud overlap involving level kk+1 [fraction]
+                         ColumnView overlapm // cloud overlap involving level kk-1 [fraction]
                          ) {
   
-    // debug input
+    /* // debug input
     if(k == 6) {
       printf("dtmicro: %e\n", dtmicro);
       printf("k: %d\n", k);
@@ -235,6 +259,7 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
         printf("raercol_cw_km1[%d][1]: %e\n", n, raercol_cw_km1[n][1]);
       }
     }
+    */
 
     // local arguments
     // int imode;       // mode counter variable
@@ -246,53 +271,59 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
 
     const Real overlap_cld_thresh = 1e-10;  //  threshold cloud fraction to compute overlap [fraction]
     const Real zero =0;
-    Real ekk_k;       // density*diffusivity for droplets [kg/m/s]
-    Real ekk_km1;       // density*diffusivity for droplets [kg/m/s]
+    Real ekk[pver+1];       // density*diffusivity for droplets [kg/m/s]
     Real dtmin;     // time step to determine subloop time step [s]
-    Real qncld_k;     // updated cloud droplet number mixing ratio [#/kg]
-    // Real qncld_kp1;     // updated cloud droplet number mixing ratio [#/kg]
-    // Real qncld_km1;     // updated cloud droplet number mixing ratio [#/kg]
-    Real ekkp;      // zn*zs*density*diffusivity [/s]
-    Real ekkm;      // zn*zs*density*diffusivity   [/s]
-    Real overlapp;  // cloud overlap involving level kk+1 [fraction]
-    Real overlapm;  // cloud overlap involving level kk-1 [fraction]
-    Real source_k;    //  source rate for activated number or species mass [/s]
+    Real qncld[pver];     // updated cloud droplet number mixing ratio [#/kg]
+    Real ekkp[pver];      // zn*zs*density*diffusivity [/s]
+    Real ekkm[pver];      // zn*zs*density*diffusivity   [/s]
+    Real source[pver];    //  source rate for activated number or species mass [/s]
     Real tinv;      // inverse timescale of droplet diffusivity [/s]
     Real dtt;       // timescale of droplet diffusivity [s]
     Real dtmix;     // timescale for subloop [s]
     Real tmpa=zero;      //  temporary aerosol tendency variable [/s]
-    Real srcn_k;      // droplet source rate [/s]
+    Real srcn[pver];      // droplet source rate [/s]
+
+    int kp1;
+    int km1;
 
     const int ntot_amode = AeroConfig::num_modes();
 
     // load new droplets in layers above, below clouds
 
     dtmin = dtmicro;
-  
+    ekk[top_lev - 1] = zero;
+    ekk[pver] = zero;
        // rce-comment -- ekd(k) is eddy-diffusivity at k/k+1 interface
        //   want ekk(k) = ekd(k) * (density at k/k+1 interface)
        //   so use pint(i,k+1) as pint is 1:pverp
        //           ekk(k)=ekd(k)*2.*pint(i,k)/(rair*(temp(i,k)+temp(i,k+1)))
        //           ekk(k)=ekd(k)*2.*pint(i,k+1)/(rair*(temp(i,k)+temp(i,k+1)))
-    ekk_k = ekd_k * csbot_k;
-    ekk_km1 = ekd_km1 * csbot_km1;
-
-    // maximum overlap assumption
-    if (cldn_kp1 > overlap_cld_thresh) {
-      overlapp = haero::min(cldn_k/cldn_kp1, 1.0);
-    } else {
-      overlapp = 1.0;
-    }
-    
-    if (cldn_km1 > overlap_cld_thresh) {
-      overlapm = haero::min(cldn_k/cldn_km1, 1.0);
-    } else {
-      overlapm = 1.0;
+    for(int k = top_lev; k < pver-1; k++) {
+      ekk[k] = ekd(k) * csbot(k);
     }
 
-    ekkp = zn_k * ekk_k * zs_k;
-    ekkm = zn_k * ekk_km1 * zs_km1;
-    tinv = ekkp + ekkm;
+    // start k for loop here. for k = top_lev to pver
+    // cldn will be columnviews of length pver, 
+    // overlaps also to columnview pass as parameter so it is allocated elsewhwere
+    for(int k = top_lev; k < pver; k++) {
+      kp1 = haero::min(k+1, pver);
+      km1 = haero::max(k-1, top_lev);
+      // maximum overlap assumption
+      if (cldn[kp1] > overlap_cld_thresh) {
+        overlapp(k) = haero::min(cldn(k)/cldn(kp1), 1.0);
+      } else {
+        overlapp(k) = 1.0;
+      }
+      
+      if (cldn[km1] > overlap_cld_thresh) {
+        overlapm(k) = haero::min(cldn(k)/cldn(km1), 1.0);
+      } else {
+        overlapm(k) = 1.0;
+      }
+
+      ekkp[k] = zn(k) * ekk[k] * zs(k);
+      ekkm[k] = zn(k) * ekk[km1] * zs(km1);
+      tinv = ekkp[k] + ekkm[k];
     //printf("%e\n", ekkp);
        // rce-comment -- tinv is the sum of all first-order-loss-rates
        //    for the layer.  for most layers, the activation loss rate
@@ -304,16 +335,28 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
        //    the negative values are reset to zero, resulting in an
        //    artificial source.
 
-    //FIXME: BAD CONSTANT
-    if (tinv > 1e-6) {
-      dtt   = 1.0 / tinv;
-      dtmin = haero::min(dtmin, dtt);
+      //FIXME: BAD CONSTANT
+      if (tinv > 1e-6) {
+        dtt   = 1.0 / tinv;
+        dtmin = haero::min(dtmin, dtt);
+      }
     }
-    
+    /*
 
+    */
+    // end for loop
+    // TODO
+    //    fix dtmin section
+    //    pass arrs as columnviews and k len instead of single values
+    //    loop over k for calls to explmis
+    //    for things like src, qcld, loop over to assign the values
+    //    pass overlapp etc as params as work vars so they are allocated elsewhere
+    
+    
     dtmix = 0.9 * dtmin;
     nsubmix = dtmicro / dtmix + 1;
     //FIXME: nsubmix_bnd is used in the code. Ask Fortran team.  
+    // re: nsubmix_bnd isn't used in the code?
     // if (nsubmix > 100) {
     //    nsubmix_bnd = 100;
     // } else {
@@ -328,9 +371,11 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
     //    however it might if things are not "just right" in subr activate
     //    the following is a safety measure to avoid negatives in explmix
 
-    for(int imode = 0; imode < ntot_amode; imode++) {
-      nact_k[imode] = haero::min(nact_k[imode], ekkp);
-      mact_k[imode] = haero::min(mact_k[imode], ekkp);
+    for(int k = top_lev; k < pver; k++) {
+      for(int imode = 0; imode < ntot_amode; imode++) {
+        nact[k][imode] = haero::min(nact[k][imode], ekkp[k]);
+        mact[k][imode] = haero::min(mact[k][imode], ekkp[k]);
+      }
     }
 
 
@@ -343,7 +388,10 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
     //  index of most recent updated values (either 1 or 2).
 
     for(int isub = 0; isub < nsubmix; isub++) {
-       qncld_k = qcld_k;
+       for(int k = top_lev; k < pver; k++) {
+          qncld[k] = qcld[k];
+          srcn[k] = 0.0;
+       }
        // qncld_km1 = qcld_km1;
        // qncld_kp1 = qcld_kp1;
        // after first pass, switch nsav, nnew so that nsav is the recently updated aerosol
@@ -352,7 +400,6 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
           nsav = nnew;
           nnew = ntemp;
        }
-       srcn_k = 0.0;
 
        for(int imode = 0; imode < ntot_amode; imode++) {
           mm = mam_idx[imode][0] - 1;
@@ -361,20 +408,27 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
 
           // rce-comment- activation source in layer k involves particles from k+1
           //	       srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
-          
-          srcn_k += nact_k[imode]*raercol_kp1[mm][nsav];
-          if(k == pver-1) {
-            tmpa = raercol_k[mm][nsav] * nact_k[imode] + raercol_cw_k[mm][nsav] * nact_k[imode];
-            srcn_k = haero::max(0.0, tmpa); 
+          for(int k = top_lev; k < pver; k++) {
+            kp1 = haero::min(k+1, pver);
+            km1 = haero::max(k-1, top_lev);
+            srcn[k] += nact[k][imode]*raercol[kp1][mm][nsav];
+            if(k == pver-1) {
+              tmpa = raercol[k][mm][nsav] * nact[k][imode] + raercol_cw[k][mm][nsav] * nact[k][imode];
+              srcn[k] = haero::max(0.0, tmpa); 
+            }
           }
           
        } 
        //qcld == qold
        //qncld == qnew
-       explmix(qcld_km1, qcld_k, qcld_kp1, qncld_k, srcn_k,  
-             ekkp, ekkm, overlapp,   
-            overlapm,   
-            dtmix);     
+       for(int k = top_lev; k < pver; k++) {
+          kp1 = haero::min(k+1, pver);
+          km1 = haero::max(k-1, top_lev);
+          explmix(qcld[km1], qcld[k], qcld[kp1], qncld[k], srcn[k],  
+                ekkp[k], ekkm[k], overlapp[k],   
+                overlapm[k],   
+                dtmix);  
+       }   
        // update aerosol number
 
        // rce-comment
@@ -388,30 +442,41 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
           mm = mam_idx[imode][0] - 1;
           // rce-comment -   activation source in layer k involves particles from k+1
           //	              source(:)= nact(:,m)*(raercol(:,mm,nsav))
-          
-          source_k = nact_k[imode]*raercol_kp1[mm][nsav];
-          if(k == pver-1) {
-            tmpa = raercol_k[mm][nsav] * nact_k[imode] + raercol_cw_k[mm][nsav] * nact_k[imode];
-            source_k = haero::max(0.0, tmpa); 
-          }
+         for(int k = top_lev; k < pver; k++) {
+            kp1 = haero::min(k+1, pver);
+            km1 = haero::max(k-1, top_lev); 
+            source[k] = nact[k][imode]*raercol[kp1][mm][nsav];
+            if(k == pver-1) {
+              tmpa = raercol[k][mm][nsav] * nact[k][imode] + raercol_cw[k][mm][nsav] * nact[k][imode];
+              source[k] = haero::max(0.0, tmpa); 
+            }
+         }
 
           // raercol_cw[mm][nnew] == qold
           // raercol_cw[mm][nsav] == qnew
-          explmix( raercol_cw_km1[mm][nnew], raercol_cw_k[mm][nnew], raercol_cw_kp1[mm][nnew], 
-               raercol_cw_k[mm][nsav], 
-               source_k, ekkp, ekkm, overlapp, 
-               overlapm,    
-               dtmix );
+          for(int k = top_lev; k < pver; k++) {
+            kp1 = haero::min(k+1, pver);
+            km1 = haero::max(k-1, top_lev); 
+            explmix( raercol_cw[km1][mm][nnew], raercol_cw[k][mm][nnew], raercol_cw[kp1][mm][nnew], 
+                raercol_cw[k][mm][nsav], 
+                source[k], ekkp[k], ekkm[k], overlapp[k], 
+                overlapm[k],    
+                dtmix );
+          }
 
           // raercol[mm][nnew] == qold
           // raercol[mm][nsav] == qnew
           // raercol_cw[mm][nsav] == qactold
-          explmix( raercol_km1[mm][nnew], raercol_k[mm][nnew], raercol_kp1[mm][nnew], 
-               raercol_k[mm][nsav],   
-               source_k, ekkp, ekkm, overlapp,  
-               overlapm,    
-               dtmix,  
-               raercol_km1[mm][nsav], raercol_kp1[mm][nsav]);  // optional in
+          for(int k = top_lev; k < pver; k++) {
+            kp1 = haero::min(k+1, pver);
+            km1 = haero::max(k-1, top_lev); 
+            explmix( raercol[km1][mm][nnew], raercol[k][mm][nnew], raercol[kp1][mm][nnew], 
+                raercol[k][mm][nsav],   
+                source[k], ekkp[k], ekkm[k], overlapp[k],  
+                overlapm[k],    
+                dtmix,  
+                raercol[km1][mm][nsav], raercol[kp1][mm][nsav]);  // optional in
+          }
 
           // update aerosol species mass
 
@@ -419,29 +484,42 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
              mm = mam_idx[imode][lspec] - 1;
              // rce-comment -   activation source in layer k involves particles from k+1
              //	          source(:)= mact(:,m)*(raercol(:,mm,nsav))
-             source_k = mact_k[imode]*raercol_kp1[mm][nsav];
-             if(k == pver-1) {
-                tmpa = raercol_k[mm][nsav] * nact_k[imode] + raercol_cw_k[mm][nsav] * nact_k[imode];
-                source_k = haero::max(0.0, tmpa); 
-              }
+             for(int k = top_lev; k < pver; k++) {
+                kp1 = haero::min(k+1, pver);
+                km1 = haero::max(k-1, top_lev); 
+                source[k] = mact[k][imode]*raercol[kp1][mm][nsav];
+             
+                if(k == pver-1) {
+                    tmpa = raercol[k][mm][nsav] * nact[k][imode] + raercol_cw[k][mm][nsav] * nact[k][imode];
+                    source[k] = haero::max(0.0, tmpa); 
+                  }
+             }
 
             // raercol_cw[mm][nnew] == qold
             // raercol_cw[mm][nsav] == qnew
-             explmix( raercol_cw_km1[mm][nnew], raercol_cw_k[mm][nnew], raercol_cw_kp1[mm][nnew], 
-                  raercol_cw_k[mm][nsav], 
-                  source_k, ekkp, ekkm, overlapp, 
-                  overlapm,   
-                  dtmix); 
+            for(int k = top_lev; k < pver; k++) {
+                kp1 = haero::min(k+1, pver);
+                km1 = haero::max(k-1, top_lev); 
+                explmix( raercol_cw[km1][mm][nnew], raercol_cw[k][mm][nnew], raercol_cw[kp1][mm][nnew], 
+                      raercol_cw[k][mm][nsav], 
+                      source[k], ekkp[k], ekkm[k], overlapp[k], 
+                      overlapm[k],   
+                      dtmix); 
+            }
 
              // raercol[mm][nnew] == qold
              // raercol[mm][nsav] == qnew
              // raercol_cw[mm][nsav] == qactold 
-             explmix( raercol_km1[mm][nnew], raercol_k[mm][nnew], raercol_kp1[mm][nnew], 
-                  raercol_k[mm][nsav], 
-                  source_k, ekkp, ekkm, overlapp,
-                  overlapm,  
-                  dtmix, 
-                  raercol_cw_km1[mm][nsav], raercol_cw_kp1[mm][nsav]);  // optional in
+             for(int k = top_lev; k < pver; k++) {
+                kp1 = haero::min(k+1, pver);
+                km1 = haero::max(k-1, top_lev); 
+                explmix( raercol[km1][mm][nnew], raercol[k][mm][nnew], raercol[kp1][mm][nnew], 
+                      raercol[k][mm][nsav], 
+                      source[k], ekkp[k], ekkm[k], overlapp[k],
+                      overlapm[k],  
+                      dtmix, 
+                      raercol_cw[km1][mm][nsav], raercol_cw[kp1][mm][nsav]);  // optional in
+             }
 
           }  // lspec loop
        }  //  imode loop
@@ -450,27 +528,25 @@ void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
 
     // evaporate particles again if no cloud
 
-    if (cldn_k == 0) {
-      // no cloud
-      qcld_k = 0.0;
-      qcld_kp1 = 0.0;
-      qcld_km1 = 0.0;
+    for(int k = top_lev; k < pver; k++) {
+      if (cldn[k] == 0) {
+        // no cloud
+        qcld[k] = 0.0;
 
-      // convert activated aerosol to interstitial in decaying cloud
-      for(int imode = 0; imode < ntot_amode; imode++) {
-        mm = mam_idx[imode][0] - 1;
-        raercol_k[mm][nnew] += raercol_cw_k[mm][nnew];
-        raercol_cw_k[mm][nnew] = 0.0;
+        // convert activated aerosol to interstitial in decaying cloud
+        for(int imode = 0; imode < ntot_amode; imode++) {
+          mm = mam_idx[imode][0] - 1;
+          raercol[k][mm][nnew] += raercol_cw[k][mm][nnew];
+          raercol_cw[k][mm][nnew] = 0.0;
 
-        for(int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
-          mm = mam_idx[imode][lspec] - 1;
-          raercol_k[mm][nnew] += raercol_cw_k[mm][nnew];
-          raercol_cw_k[mm][nnew] = 0.0;
-        } 
+          for(int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
+            mm = mam_idx[imode][lspec] - 1;
+            raercol[k][mm][nnew] += raercol_cw[k][mm][nnew];
+            raercol_cw[k][mm][nnew] = 0.0;
+          } 
+        }
       }
     }
-    
-
 } // end update_from_explmix
 
 } // namespace ndrop

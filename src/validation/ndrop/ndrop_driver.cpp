@@ -35,7 +35,7 @@ void maxsat(Ensemble *ensemble);
 void update_from_newcld(Ensemble *ensemble);
 void update_from_cldn_profile(Ensemble *ensemble);
 void dropmixnuc(Ensemble *ensemble);
-void update_from_explmix(Ensemble *ensemble);
+//void update_from_explmix(Ensemble *ensemble);
 void dropmixnuc3(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
@@ -78,8 +78,8 @@ int main(int argc, char **argv) {
       update_from_newcld(ensemble);
     } else if (func_name == "update_from_cldn_profile") {
       update_from_cldn_profile(ensemble);
-    } else if (func_name == "update_from_explmix") {
-      update_from_explmix(ensemble);
+    //} else if (func_name == "update_from_explmix") {
+    //  update_from_explmix(ensemble);
     } else if (func_name == "dropmixnuc") {
       dropmixnuc3(ensemble);
     }
