@@ -162,38 +162,6 @@ void maxsat(
 
 KOKKOS_INLINE_FUNCTION
 void update_from_explmix(const Real dtmicro,  // time step for microphysics [s]
-                         const int k,           // current level
-                         const int pver,        // max level
-                         const Real csbot_k,    // air density at bottom (interface) of layer [kg/m^3]
-                         const Real csbot_km1,    // air density at bottom (interface) of layer [kg/m^3]
-                         const Real cldn_k,     // cloud fraction [fraction]
-                         const Real cldn_km1,     // cloud fraction [fraction]
-                         const Real cldn_kp1,     // cloud fraction [fraction]
-                         const Real zn_k,       // g/pdel for layer [m^2/kg]
-                         const Real zs_k,       // inverse of distance between levels [m^-1]
-                         const Real zs_km1,       // inverse of distance between levels [m^-1]
-                         const Real ekd_k,      //diffusivity for droplets [m^2/s]
-                         const Real ekd_km1,      //diffusivity for droplets [m^2/s]
-                         Real nact_k[AeroConfig::num_modes()], // fractional aero. number  activation rate [/s]
-                         Real mact_k[AeroConfig::num_modes()], // fractional aero. mass    activation rate [/s]
-                         Real &qcld_k, // cloud droplet number mixing ratio [#/kg]
-                         Real &qcld_km1, // cloud droplet number mixing ratio [#/kg]
-                         Real &qcld_kp1, // cloud droplet number mixing ratio [#/kg]
-                         Real raercol_k[ncnst_tot][2], // single column of saved aerosol mass, number mixing ratios [#/kg or kg/kg]
-                         Real raercol_km1[ncnst_tot][2], // single column of saved aerosol mass, number mixing ratios [#/kg or kg/kg]
-                         Real raercol_kp1[ncnst_tot][2], // single column of saved aerosol mass, number mixing ratios [#/kg or kg/kg]
-                         Real raercol_cw_k[ncnst_tot][2], // same as raercol but for cloud-borne phase [#/kg or kg/kg]
-                         Real raercol_cw_km1[ncnst_tot][2], // same as raercol but for cloud-borne phase [#/kg or kg/kg]
-                         Real raercol_cw_kp1[ncnst_tot][2], // same as raercol but for cloud-borne phase [#/kg or kg/kg]
-                         int &nsav, // indices for old, new time levels in substepping
-                         int &nnew,  // indices for old, new time levels in substepping
-                         const int nspec_amode[AeroConfig::num_modes()],
-                         const int mam_idx[AeroConfig::num_modes()][nspec_max]
-                         );
-
-
-KOKKOS_INLINE_FUNCTION
-void update_from_explmix_v2(const Real dtmicro,  // time step for microphysics [s]
                          int top_lev,          // top level
                          int pver,             // number of levels
                          ColumnView csbot,    // air density at bottom (interface) of layer [kg/m^3]
@@ -214,63 +182,16 @@ void update_from_explmix_v2(const Real dtmicro,  // time step for microphysics [
                          ColumnView overlapp, // cloud overlap involving level kk+1 [fraction]
                          ColumnView overlapm // cloud overlap involving level kk-1 [fraction]
                          ) {
-  
-    /* // debug input
-    if(k == 6) {
-      printf("dtmicro: %e\n", dtmicro);
-      printf("k: %d\n", k);
-      printf("pver: %d\n", pver);
-      printf("csbot_k: %e\n", csbot_k);
-      printf("csbot_km1: %e\n", csbot_km1);
-      printf("cldn_k: %e\n", cldn_k);
-      printf("cldn_km1: %e\n", cldn_km1);
-      printf("cldn_kp1: %e\n", cldn_kp1);
-      printf("zn_k: %e\n", zn_k);
-      printf("zs_k: %e\n", zs_k);
-      printf("zs_km1: %e\n", zs_km1);
-      printf("ekd_k: %e\n", ekd_k);
-      printf("ekd_km1: %e\n", ekd_km1);
-      printf("qcld_k: %e\n", qcld_k);
-      printf("qcld_km1: %e\n", qcld_km1);
-      printf("qcld_kp1: %e\n", qcld_kp1);
-      printf("nsav: %d\n", nsav);
-      printf("nnew: %d\n", nnew);
-      for(int m = 0; m < AeroConfig::num_modes(); m++) {
-        printf("nact_k[%d]: %e\n", m, nact_k[m]);
-        printf("mact_k[%d]: %e\n", m, mact_k[m]);
-        printf("nspec_amode[%d]: %d\n", m, nspec_amode[m]);
-        for(int j = 0; j < nspec_max; j++) {
-          printf("mam_idx[%d][%d]: %d\n", m, j, mam_idx[m][j]);
-        }
-      }
-      for(int n = 0; n < ncnst_tot; n++) {
-        printf("raercol_k[%d][0]: %e\n", n, raercol_k[n][0]);
-        printf("raercol_kp1[%d][0]: %e\n", n, raercol_kp1[n][0]);
-        printf("raercol_km1[%d][0]: %e\n", n, raercol_km1[n][0]);
-        printf("raercol_k[%d][1]: %e\n", n, raercol_k[n][1]);
-        printf("raercol_kp1[%d][1]: %e\n", n, raercol_kp1[n][1]);
-        printf("raercol_km1[%d][1]: %e\n", n, raercol_km1[n][1]);
-
-        printf("raercol_cw_k[%d][0]: %e\n", n, raercol_cw_k[n][0]);
-        printf("raercol_cw_kp1[%d][0]: %e\n", n, raercol_cw_kp1[n][0]);
-        printf("raercol_cw_km1[%d][0]: %e\n", n, raercol_cw_km1[n][0]);
-        printf("raercol_cwk[%d][1]: %e\n", n, raercol_cw_k[n][1]);
-        printf("raercol_cw_kp1[%d][1]: %e\n", n, raercol_cw_kp1[n][1]);
-        printf("raercol_cw_km1[%d][1]: %e\n", n, raercol_cw_km1[n][1]);
-      }
-    }
-    */
 
     // local arguments
-    // int imode;       // mode counter variable
     int mm;          // local array index for MAM number, species
-    // int lspec;       // species counter variable
     int nsubmix;//, nsubmix_bnd;  // number of substeps and bound
     int ntemp;   // temporary index for substepping
-    // int isub;       // substep index
+    int kp1;    // current level + 1
+    int km1;    // current level -1
 
     const Real overlap_cld_thresh = 1e-10;  //  threshold cloud fraction to compute overlap [fraction]
-    const Real zero =0;
+    const Real zero = 0.0;
     Real ekk[pver+1];       // density*diffusivity for droplets [kg/m/s]
     Real dtmin;     // time step to determine subloop time step [s]
     Real qncld[pver];     // updated cloud droplet number mixing ratio [#/kg]
@@ -280,16 +201,12 @@ void update_from_explmix_v2(const Real dtmicro,  // time step for microphysics [
     Real tinv;      // inverse timescale of droplet diffusivity [/s]
     Real dtt;       // timescale of droplet diffusivity [s]
     Real dtmix;     // timescale for subloop [s]
-    Real tmpa=zero;      //  temporary aerosol tendency variable [/s]
+    Real tmpa = zero;      //  temporary aerosol tendency variable [/s]
     Real srcn[pver];      // droplet source rate [/s]
-
-    int kp1;
-    int km1;
 
     const int ntot_amode = AeroConfig::num_modes();
 
     // load new droplets in layers above, below clouds
-
     dtmin = dtmicro;
     ekk[top_lev - 1] = zero;
     ekk[pver] = zero;
@@ -324,7 +241,7 @@ void update_from_explmix_v2(const Real dtmicro,  // time step for microphysics [
       ekkp[k] = zn(k) * ekk[k] * zs(k);
       ekkm[k] = zn(k) * ekk[km1] * zs(km1);
       tinv = ekkp[k] + ekkm[k];
-    //printf("%e\n", ekkp);
+    
        // rce-comment -- tinv is the sum of all first-order-loss-rates
        //    for the layer.  for most layers, the activation loss rate
        //    (for interstitial particles) is accounted for by the loss by
@@ -341,10 +258,6 @@ void update_from_explmix_v2(const Real dtmicro,  // time step for microphysics [
         dtmin = haero::min(dtmin, dtt);
       }
     }
-    /*
-
-    */
-    // end for loop
     // TODO
     //    fix dtmin section
     //    pass arrs as columnviews and k len instead of single values
@@ -378,9 +291,7 @@ void update_from_explmix_v2(const Real dtmicro,  // time step for microphysics [
       }
     }
 
-
     // old_cloud_nsubmix_loop
-
     //  Note:  each pass in submix loop stores updated aerosol values at index nnew,
     //  current values at index nsav.  At the start of each pass, nnew values are
     //  copied to nsav.  However, this is accomplished by switching the values
@@ -392,8 +303,6 @@ void update_from_explmix_v2(const Real dtmicro,  // time step for microphysics [
           qncld[k] = qcld[k];
           srcn[k] = 0.0;
        }
-       // qncld_km1 = qcld_km1;
-       // qncld_kp1 = qcld_kp1;
        // after first pass, switch nsav, nnew so that nsav is the recently updated aerosol
        if(isub > 0) {
           ntemp = nsav;
@@ -430,7 +339,6 @@ void update_from_explmix_v2(const Real dtmicro,  // time step for microphysics [
                 dtmix);  
        }   
        // update aerosol number
-
        // rce-comment
        //    the interstitial particle mixratio is different in clear/cloudy portions
        //    of a layer, and generally higher in the clear portion.  (we have/had
@@ -479,7 +387,6 @@ void update_from_explmix_v2(const Real dtmicro,  // time step for microphysics [
           }
 
           // update aerosol species mass
-
           for(int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
              mm = mam_idx[imode][lspec] - 1;
              // rce-comment -   activation source in layer k involves particles from k+1
