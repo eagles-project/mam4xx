@@ -2066,7 +2066,7 @@ void dropmixnuc3(
   // Kokkos::parallel_for(
   // "dropmixnuc", pver - top_lev-1, KOKKOS_LAMBDA(int kk) {
 
-  print_this_k = 53;
+  print_this_k = 67;
 
   Kokkos::parallel_for(
       "dropmixnuc", pver - top_lev - 1, KOKKOS_LAMBDA(int kk) {
@@ -2182,6 +2182,8 @@ void dropmixnuc3(
         }
       }); // end k
 
+  printf("B qcld %e \n", qcld(print_this_k));
+
   ndrop::update_from_explmix(dtmicro, top_lev, pver, csbot, cldn, zn, zs, ekd,
                              nact, mact, qcld, raercol, raercol_cw, nsav, nnew,
                              nspec_amode, mam_idx,
@@ -2191,10 +2193,13 @@ void dropmixnuc3(
                              source);
 
   const int k = print_this_k;
-  const int kp1 = haero::min(k + 1, pver);
-  const int km1 = haero::max(k - 1, top_lev);
+  const int kp1 = haero::min(k + 1, pver-1);
+  const int km1 = haero::max(k - 1, top_lev-1);
 
   printf("After ... \n");
+
+  printf("nsav %d \n", nsav);
+  printf("nnew %d \n", nnew);
 
   printf(" raercol_cw_kk 1 \n");
   for (int i = 0; i < ncnst_tot; ++i) {
@@ -2280,7 +2285,13 @@ void dropmixnuc3(
   for (int i = 0; i < ntot_amode; ++i) {
     printf(" %e", mact[i](k));
   }
+
   printf("\n");
+  printf("B qcld %e \n", qcld(k));
+  printf("B nsource %e \n", nsource(k));
+  printf("B pdel %e \n", pdel(k));
+  printf("B ncldwtr %e \n", ncldwtr(k));
+  
   printf("\n");
 
   Kokkos::parallel_for(
@@ -2373,6 +2384,18 @@ void dropmixnuc3(
           ccn[i](k) = ccn_kk[i];
         }
       });
+
+      printf("A tendnd %e \n", tendnd(print_this_k));
+      
+      printf(" A ptend_q \n");
+      for (int i = 0; i < nvar_ptend_q; ++i)
+      {
+        printf(" %e ", ptend_q[i](print_this_k));
+      }
+
+      printf("\n");
+      
+
 
 } // dropmixnuc
 

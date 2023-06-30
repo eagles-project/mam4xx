@@ -59,7 +59,7 @@ set(TEST_LIST
     #update_from_explmix_ts_1400
     #stand_dropmixnuc_ts_1417
     #dropmixnuc_ts_1407
-    #stand_dropmixnuc_ts_1407
+    stand_dropmixnuc_ts_1407
     )
 
 set(DEFAULT_TOL 1e-11)
@@ -83,7 +83,7 @@ set(ERROR_THRESHOLDS
     1e-11
     8e-6
     #1e-11
-    #1e-3
+    1e-3
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
