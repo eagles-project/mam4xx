@@ -316,8 +316,8 @@ void dropmixnuc3(Ensemble *ensemble) {
 
     std::vector<Real> output_qqcw;
 
+    for (int kk = 0; kk < pver; ++kk) {
     for (int i = 0; i < ncnst_tot; ++i) {
-      for (int kk = 0; kk < pver; ++kk) {
         output_qqcw.push_back(qqcw[i](kk));
       }
     }

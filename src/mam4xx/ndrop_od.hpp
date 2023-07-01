@@ -1267,7 +1267,7 @@ void dropmixnuc(
 
 // loops with 3 levels
 const int pver = 72;
-const int top_lev = 6;
+const int top_lev = 7;
 KOKKOS_INLINE_FUNCTION
 void dropmixnuc2(
     const Real dtmicro, const Real temp[pver], const Real pmid[pver],
@@ -1770,14 +1770,19 @@ void dropmixnuc3(
 
   // Initialize 1D (in space) versions of interstitial and cloud borne aerosol
   int nsav = 0;
-  int print_this_k = -1;
+  int print_this_k = 71;
+  printf("pver %d \n", pver);
+  printf("top_lev %d \n", top_lev);
+
 
   Kokkos::parallel_for(
-      "dropmixnuc", pver - top_lev, KOKKOS_LAMBDA(int kk) {
+      "update_from_newcld", pver - top_lev + 1 , KOKKOS_LAMBDA(int kk) {
         // // ! g/pdel for layer [m^2/kg]
         // const Real zn = gravit * rpdel;
         // turbulent vertical velocity at base of layer k [m/s]
-        const int k = kk + top_lev;
+        const int k = kk + top_lev -1 ;
+        printf("update_from_newcld k %d \n", k);
+
         wtke(k) = haero::max(wsub(k), wmixmin);
         // qcld(:)  = ncldwtr(icol,:)
         // cloud droplet number mixing ratio [#/kg]
@@ -1850,7 +1855,7 @@ void dropmixnuc3(
           printf(" spechygro %e \n", spechygro[0]);
           printf(" specdens_amode %e \n", specdens_amode[0]);
           // printf(" %e \n",);
-          printf(" qcld%e \n", qcld(k));
+          printf(" qcld %e \n", qcld(k));
           // printf(" raercol_cw_1_kk%e \n",raercol_cw_1_kk[0]);
           printf("raercol_cw_1_kk");
           for (int i = 0; i < ncnst_tot; ++i) {
@@ -1900,11 +1905,13 @@ void dropmixnuc3(
           printf("\n");
         }
       }); // end k
-
+  print_this_k = 71;
+  // NOTE: update_from_cldn_profile loop from 7 to 71 in fortran code.
   Kokkos::parallel_for(
-      "dropmixnuc", pver - top_lev - 1, KOKKOS_LAMBDA(int kk) {
-        const int k = kk + top_lev;
-        const int kp1 = haero::min(k + 1, pver);
+      "update_from_cldn_profile", pver - top_lev , KOKKOS_LAMBDA(int kk) {
+        const int k = kk + top_lev -1 ;
+        const int kp1 = haero::min(k + 1, pver-1);
+        printf("update_from_cldn_profile k %d \n", k);
 
         const Real air_density =
             conversions::density_of_ideal_gas(temp(k), pmid(k));
@@ -2066,11 +2073,11 @@ void dropmixnuc3(
   // Kokkos::parallel_for(
   // "dropmixnuc", pver - top_lev-1, KOKKOS_LAMBDA(int kk) {
 
-  print_this_k = 71;
+  print_this_k = -1;
 
   Kokkos::parallel_for(
-      "dropmixnuc", pver , KOKKOS_LAMBDA(int kk) {
-        const int k = kk ;//+ top_lev -1;
+      "pre_update_from_explmix", pver , KOKKOS_LAMBDA(int k) {
+        printf("pre_update_from_explmix k %d \n", k);
         const int kp1 = haero::min(k + 1, pver-1);
         const int km1 = haero::max(k - 1, top_lev-1);
 
@@ -2082,7 +2089,7 @@ void dropmixnuc3(
 
         Real delta_zm = zero;
         // Real csbot_km1 = zero;
-        if (k >= top_lev && k < pver - 1) {
+        if (k >= top_lev-1 && k < pver - 1) {
           csbot(k) = two * pint(k + 1) / (rair * (temp(k) + temp(k + 1)));
           delta_zm = zm(k) - zm(k + 1);
 
@@ -2297,10 +2304,22 @@ void dropmixnuc3(
   printf("B ncldwtr %e \n", ncldwtr(k));
   
   printf("\n");
+  Kokkos::parallel_for(
+      "ccncalc", top_lev-1, KOKKOS_LAMBDA(int kk) {
+
+  for (int i = 0; i < ncnst_tot; ++i)
+  {
+    qqcw_fld[i](kk) = zero;
+  }
+        
+
+  });      
 
   Kokkos::parallel_for(
-      "dropmixnuc", pver - top_lev, KOKKOS_LAMBDA(int kk) {
-        const int k = kk + top_lev;
+      "ccncalc", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
+        const int k = kk + top_lev -1;
+        printf("ccncalc k %d \n", k);
+
         // droplet number mixing ratio tendency due to mixing [#/kg/s]
         ndropmix(k) = (qcld(k) - ncldwtr(k)) * dtinv - nsource(k);
         // BAD CONSTANT
