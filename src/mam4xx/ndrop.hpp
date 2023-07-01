@@ -201,6 +201,7 @@ void update_from_explmix(
   Real tmpa = zero; //  temporary aerosol tendency variable [/s]
 
   const int ntot_amode = AeroConfig::num_modes();
+  const int print_this_k=71;
 
   // load new droplets in layers above, below clouds
   Real dtmin = dtmicro;
@@ -211,7 +212,7 @@ void update_from_explmix(
   //   so use pint(i,k+1) as pint is 1:pverp
   //           ekk(k)=ekd(k)*2.*pint(i,k)/(rair*(temp(i,k)+temp(i,k+1)))
   //           ekk(k)=ekd(k)*2.*pint(i,k+1)/(rair*(temp(i,k)+temp(i,k+1)))
-  for (int k = top_lev; k < pver - 1; k++) {
+  for (int k = top_lev-1; k < pver - 1; k++) {
     ekk(k) = ekd(k) * csbot(k);
   } // end kk
 
@@ -235,8 +236,16 @@ void update_from_explmix(
     }
 
     ekkp(k) = zn(k) * ekk(k) * zs(k);
-    ekkm(k) = zn(k) * ekk(km1) * zs(km1);
+    // NOTE: ekk uses k-1 while sz uses km1.
+    ekkm(k) = zn(k) * ekk(k-1) * zs(km1);
     const Real tinv = ekkp(k) + ekkm(k);  
+
+    if (k==print_this_k)
+    {
+      printf("zs(k) %e \n",zs(k) );
+      printf("zs(km1) %e \n",zs(km1) );
+      printf("ekk(k-1) %e \n",ekk(k-1) );
+    }
 
     // rce-comment -- tinv is the sum of all first-order-loss-rates
     //    for the layer.  for most layers, the activation loss rate
@@ -275,6 +284,7 @@ void update_from_explmix(
   //  }
 
   dtmix = dtmicro / nsubmix;
+  
 
   // printf("  dtmix After %e \n ", dtmix);
   // printf(" dtmicro %e \n ",dtmicro );
@@ -288,7 +298,7 @@ void update_from_explmix(
   //    however it might if things are not "just right" in subr activate
   //    the following is a safety measure to avoid negatives in explmix
 
-  for (int k = top_lev; k < pver; k++) {
+  for (int k = top_lev-1; k < pver; k++) {
     for (int imode = 0; imode < ntot_amode; imode++) {
       nact[imode](k) = haero::min(nact[imode](k), ekkp(k));
       mact[imode](k) = haero::min(mact[imode](k), ekkp(k));
@@ -304,7 +314,7 @@ void update_from_explmix(
   //  nnew stores index of most recent updated values (either 1 or 2).
 
   for (int isub = 0; isub < nsubmix; isub++) {
-    for (int k = top_lev; k < pver; k++) {
+    for (int k = top_lev-1; k < pver; k++) {
       qncld(k) = qcld(k);
       srcn(k) = zero;
     } // end kk 
@@ -323,7 +333,7 @@ void update_from_explmix(
 
       // rce-comment- activation source in layer k involves particles from k+1
       //	       srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
-      for (int k = top_lev; k < pver - 1; k++) {
+      for (int k = top_lev-1; k < pver - 1; k++) {
         const int kp1 = haero::min(k + 1, pver-1);
         srcn(k) += nact[imode](k) * raercol[nsav][mm](kp1);
       } // kk
@@ -339,7 +349,7 @@ void update_from_explmix(
 
     // qcld == qold
     // qncld == qnew
-    for (int k = top_lev; k < pver; k++) {
+    for (int k = top_lev-1; k < pver; k++) {
       const int kp1 = haero::min(k + 1, pver-1);
       const int km1 = haero::max(k - 1, top_lev-1);
       explmix(qncld(km1),
@@ -364,7 +374,7 @@ void update_from_explmix(
       // rce-comment -   activation source in layer k involves particles from
       // k+1
       //	              source(:)= nact(:,m)*(raercol(:,mm,nsav))
-      for (int k = top_lev; k < pver - 1; k++) {
+      for (int k = top_lev-1; k < pver - 1; k++) {
         const int kp1 = haero::min(k + 1, pver-1);
         // const int km1 = haero::max(k-1, top_lev);
         source(k) = nact[imode](k) * raercol[nsav][mm](kp1);
@@ -376,9 +386,15 @@ void update_from_explmix(
 
       // raercol_cw[mm][nnew] == qold
       // raercol_cw[mm][nsav] == qnew
-      for (int k = top_lev; k < pver; k++) {
+
+
+      // printf("isub %d B raercol[nsav][mm](k) %e \n", isub, raercol[nsav][mm](print_this_k));
+      for (int k = top_lev-1; k < pver; k++) {
         const int kp1 = haero::min(k + 1, pver-1);
         const int km1 = haero::max(k - 1, top_lev-1);
+
+       //  kp1=min(kk+1,pver)
+       // km1=max(kk-1,top_lev)
 
         explmix(raercol_cw[nsav][mm](km1),
                 raercol_cw[nsav][mm](k),
@@ -389,6 +405,7 @@ void update_from_explmix(
         // raercol[mm][nnew] == qold
         // raercol[mm][nsav] == qnew
         // raercol_cw[mm][nsav] == qactold
+
         explmix(raercol[nsav][mm](km1),
                 raercol[nsav][mm](k),
                 raercol[nsav][mm](kp1),
@@ -397,8 +414,30 @@ void update_from_explmix(
                 ekkp(k), ekkm(k), overlapp(k), overlapm(k), dtmix,
                 raercol_cw[nsav][mm](km1),
                 raercol_cw[nsav][mm](kp1)); // optional in
+
+
     
       } // end kk
+       if (isub==0 || isub==0)
+      {
+        printf("isub %d imode %d B raercol[nsav][mm](k) ", isub,imode);
+        for (int i = -1; i < 1; ++i)
+        {
+          printf(" %e ", raercol[nsav][mm](print_this_k+i));
+        }
+        printf("\n");
+        printf("source %e \n",source(print_this_k));
+        printf("ekkp %e \n",ekkp(print_this_k));
+        printf("ekkm %e \n", ekkm(print_this_k));
+        printf("overlapp %e \n", overlapp(print_this_k));
+        printf("overlapm %e \n", overlapm(print_this_k));
+        
+        // printf("isub %d imode %d B raercol[nsav][mm](k) %e \n", isub,imode, raercol[nsav][mm](print_this_k));
+        printf("isub %d imode %d A raercol[nnew][mm](k) %e \n", isub,imode, raercol[nnew][mm](print_this_k));
+      }
+
+      // printf("isub %d A raercol[nnew][mm](k) %e \n", isub, raercol[nnew][mm](print_this_k));
+      // printf("isub %d A raercol[nsav][mm](k) %e \n", isub, raercol[nsav][mm](print_this_k));
      
 
       // update aerosol species mass
@@ -407,7 +446,7 @@ void update_from_explmix(
         // rce-comment -   activation source in layer k involves particles from
         // k+1
         //	          source(:)= mact(:,m)*(raercol(:,mm,nsav))
-        for (int k = top_lev; k < pver - 1; k++) {
+        for (int k = top_lev-1; k < pver - 1; k++) {
           const int kp1 = haero::min(k + 1, pver-1);
           source(k) = mact[imode](k) * raercol[nsav][mm](kp1);
 
@@ -419,7 +458,7 @@ void update_from_explmix(
 
         // raercol_cw[mm][nnew] == qold
         // raercol_cw[mm][nsav] == qnew
-        for (int k = top_lev; k < pver; k++) {
+        for (int k = top_lev-1; k < pver; k++) {
           const int kp1 = haero::min(k + 1, pver-1);
           const int km1 = haero::max(k - 1, top_lev-1);
           explmix(raercol_cw[nsav][mm](km1),
@@ -449,7 +488,7 @@ void update_from_explmix(
   } // old_cloud_nsubmix_loop
 
   // evaporate particles again if no cloud
-  for (int k = top_lev; k < pver; k++) {
+  for (int k = top_lev-1; k < pver; k++) {
     if (cldn(k) == zero) {
       // no cloud
       qcld(k) = zero;

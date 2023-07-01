@@ -2066,15 +2066,19 @@ void dropmixnuc3(
   // Kokkos::parallel_for(
   // "dropmixnuc", pver - top_lev-1, KOKKOS_LAMBDA(int kk) {
 
-  print_this_k = 67;
+  print_this_k = 71;
 
   Kokkos::parallel_for(
-      "dropmixnuc", pver - top_lev - 1, KOKKOS_LAMBDA(int kk) {
-        const int k = kk + top_lev;
-        const int kp1 = haero::min(k + 1, pver);
-        const int km1 = haero::max(k - 1, top_lev);
+      "dropmixnuc", pver , KOKKOS_LAMBDA(int kk) {
+        const int k = kk ;//+ top_lev -1;
+        const int kp1 = haero::min(k + 1, pver-1);
+        const int km1 = haero::max(k - 1, top_lev-1);
 
         zn(k) = gravit * rpdel[k];
+        if (k==print_this_k)
+        {
+          printf("zn(%d) %e \n", k, zn(k));
+        }
 
         Real delta_zm = zero;
         // Real csbot_km1 = zero;
@@ -2341,6 +2345,11 @@ void dropmixnuc3(
               // Fortran indexing to C++ indexing
               const int num_idx = numptr_amode[imode] - 1;
               raertend = (raercol[nnew][mm](k) - state_q[num_idx](k)) * dtinv;
+              if (k==print_this_k)
+              {
+                printf("lptr %d num_idx %d raercol[nnew][mm](k) %e \n", lptr, num_idx,  raercol[nnew][mm](k) );
+              }
+
               qcldbrn_num[imode] = qqcw_fld[mm](k);
             } else {
               // Fortran indexing to C++ indexing
@@ -2349,6 +2358,10 @@ void dropmixnuc3(
               //! Extract cloud borne MMRs from qqcw pointer
               qcldbrn[lspec][imode] = qqcw_fld[mm](k);
             } // end if
+            if (k==print_this_k)
+              {
+                printf("lptr %d raertend %e \n", lptr,  raertend );
+              }
             // NOTE: perform sum after loop. Thus, we need to store coltend_kk
             // and coltend_cw_kk Port this code outside of this function
             // coltend(icol,mm)    = sum( pdel(icol,:)*raertend )/gravit
@@ -2388,7 +2401,7 @@ void dropmixnuc3(
       printf("A tendnd %e \n", tendnd(print_this_k));
       
       printf(" A ptend_q \n");
-      for (int i = 0; i < nvar_ptend_q; ++i)
+      for (int i = nvar_ptend_q-1; i < nvar_ptend_q; ++i)
       {
         printf(" %e ", ptend_q[i](print_this_k));
       }
