@@ -1772,11 +1772,11 @@ void dropmixnuc3(
   printf("top_lev %d \n", top_lev);
 
   Kokkos::parallel_for(
-      "update_from_newcld", pver - top_lev + 1 , KOKKOS_LAMBDA(int kk) {
+      "update_from_newcld", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
         // // ! g/pdel for layer [m^2/kg]
         // const Real zn = gravit * rpdel;
         // turbulent vertical velocity at base of layer k [m/s]
-        const int k = kk + top_lev -1 ;
+        const int k = kk + top_lev - 1;
         printf("update_from_newcld k %d \n", k);
 
         wtke(k) = haero::max(wsub(k), wmixmin);
@@ -1904,9 +1904,9 @@ void dropmixnuc3(
   print_this_k = 6;
   // NOTE: update_from_cldn_profile loop from 7 to 71 in fortran code.
   Kokkos::parallel_for(
-      "update_from_cldn_profile", pver - top_lev , KOKKOS_LAMBDA(int kk) {
-        const int k = kk + top_lev -1 ;
-        const int kp1 = haero::min(k + 1, pver-1);
+      "update_from_cldn_profile", pver - top_lev, KOKKOS_LAMBDA(int kk) {
+        const int k = kk + top_lev - 1;
+        const int kp1 = haero::min(k + 1, pver - 1);
         printf("update_from_cldn_profile k %d \n", k);
 
         const Real air_density =
@@ -1926,7 +1926,7 @@ void dropmixnuc3(
         // new cloud fraction
 
         Real delta_zm, csbot, csbot_cscen = zero;
-        if (k >= top_lev-1 && k < pver - 1) {
+        if (k >= top_lev - 1 && k < pver - 1) {
           delta_zm = zm(k) - zm(k + 1);
           csbot = two * pint(k + 1) / (rair * (temp(k) + temp(k + 1)));
           csbot_cscen = csbot / air_density;
@@ -2069,20 +2069,19 @@ void dropmixnuc3(
   print_this_k = 6;
 
   Kokkos::parallel_for(
-      "pre_update_from_explmix", pver , KOKKOS_LAMBDA(int k) {
+      "pre_update_from_explmix", pver, KOKKOS_LAMBDA(int k) {
         printf("pre_update_from_explmix k %d \n", k);
-        const int kp1 = haero::min(k + 1, pver-1);
-        const int km1 = haero::max(k - 1, top_lev-1);
+        const int kp1 = haero::min(k + 1, pver - 1);
+        const int km1 = haero::max(k - 1, top_lev - 1);
 
         zn(k) = gravit * rpdel[k];
-        if (k==print_this_k)
-        {
+        if (k == print_this_k) {
           printf("zn(%d) %e \n", k, zn(k));
         }
 
         Real delta_zm = zero;
         // Real csbot_km1 = zero;
-        if (k >= top_lev-1 && k < pver - 1) {
+        if (k >= top_lev - 1 && k < pver - 1) {
           csbot(k) = two * pint(k + 1) / (rair * (temp(k) + temp(k + 1)));
           delta_zm = zm(k) - zm(k + 1);
 
@@ -2197,8 +2196,8 @@ void dropmixnuc3(
                              source);
 
   const int k = print_this_k;
-  const int kp1 = haero::min(k + 1, pver-1);
-  const int km1 = haero::max(k - 1, top_lev-1);
+  const int kp1 = haero::min(k + 1, pver - 1);
+  const int km1 = haero::max(k - 1, top_lev - 1);
 
   printf("After ... \n");
 
@@ -2295,20 +2294,18 @@ void dropmixnuc3(
   printf("B nsource %e \n", nsource(k));
   printf("B pdel %e \n", pdel(k));
   printf("B ncldwtr %e \n", ncldwtr(k));
-  
+
   printf("\n");
   Kokkos::parallel_for(
-      "ccncalc", top_lev-1, KOKKOS_LAMBDA(int kk) {
-  for (int i = 0; i < ncnst_tot; ++i)
-  {
-    qqcw_fld[i](kk) = zero;
-  }
-        
-  });      
+      "ccncalc", top_lev - 1, KOKKOS_LAMBDA(int kk) {
+        for (int i = 0; i < ncnst_tot; ++i) {
+          qqcw_fld[i](kk) = zero;
+        }
+      });
 
   Kokkos::parallel_for(
       "ccncalc", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
-        const int k = kk + top_lev -1;
+        const int k = kk + top_lev - 1;
         printf("ccncalc k %d \n", k);
 
         // droplet number mixing ratio tendency due to mixing [#/kg/s]
@@ -2355,9 +2352,9 @@ void dropmixnuc3(
               // Fortran indexing to C++ indexing
               const int num_idx = numptr_amode[imode] - 1;
               raertend = (raercol[nnew][mm](k) - state_q[num_idx](k)) * dtinv;
-              if (k==print_this_k)
-              {
-                printf("lptr %d num_idx %d raercol[nnew][mm](k) %e \n", lptr, num_idx,  raercol[nnew][mm](k) );
+              if (k == print_this_k) {
+                printf("lptr %d num_idx %d raercol[nnew][mm](k) %e \n", lptr,
+                       num_idx, raercol[nnew][mm](k));
               }
 
               qcldbrn_num[imode] = qqcw_fld[mm](k);
@@ -2368,10 +2365,9 @@ void dropmixnuc3(
               //! Extract cloud borne MMRs from qqcw pointer
               qcldbrn[lspec][imode] = qqcw_fld[mm](k);
             } // end if
-            if (k==print_this_k)
-              {
-                printf("lptr %d raertend %e \n", lptr,  raertend );
-              }
+            if (k == print_this_k) {
+              printf("lptr %d raertend %e \n", lptr, raertend);
+            }
             // NOTE: perform sum after loop. Thus, we need to store coltend_kk
             // and coltend_cw_kk Port this code outside of this function
             // coltend(icol,mm)    = sum( pdel(icol,:)*raertend )/gravit
@@ -2408,17 +2404,14 @@ void dropmixnuc3(
         }
       });
 
-      printf("A tendnd %e \n", tendnd(print_this_k));
-      
-      printf(" A ptend_q \n");
-      for (int i = nvar_ptend_q-1; i < nvar_ptend_q; ++i)
-      {
-        printf(" %e ", ptend_q[i](print_this_k));
-      }
+  printf("A tendnd %e \n", tendnd(print_this_k));
 
-      printf("\n");
-      
+  printf(" A ptend_q \n");
+  for (int i = nvar_ptend_q - 1; i < nvar_ptend_q; ++i) {
+    printf(" %e ", ptend_q[i](print_this_k));
+  }
 
+  printf("\n");
 
 } // dropmixnuc
 

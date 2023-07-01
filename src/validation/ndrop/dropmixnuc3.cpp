@@ -317,20 +317,19 @@ void dropmixnuc3(Ensemble *ensemble) {
     std::vector<Real> output_qqcw;
 
     for (int kk = 0; kk < pver; ++kk) {
-    for (int i = 0; i < ncnst_tot; ++i) {
+      for (int i = 0; i < ncnst_tot; ++i) {
         output_qqcw.push_back(qqcw[i](kk));
       }
     }
     output.set("qqcw", output_qqcw);
 
     std::vector<Real> output_ptend_q;
-    count =0;
+    count = 0;
     for (int i = 0; i < nvar_ptend_q; ++i) {
       // Kokkos::deep_copy(host, ptend_q[i]);
       for (int kk = 0; kk < pver; ++kk) {
         output_ptend_q.push_back(ptend_q[i](kk));
-        printf("%d ptend_q_kk[%d][%d] %e \n ",count, kk,i,
-        ptend_q[i](kk)); 
+        printf("%d ptend_q_kk[%d][%d] %e \n ", count, kk, i, ptend_q[i](kk));
         count++;
       }
     }
