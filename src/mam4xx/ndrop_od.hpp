@@ -1650,9 +1650,6 @@ void dropmixnuc2(
 #endif
 } // dropmixnuc
 
-// loops with 3 levels
-// const int nlevels = 3;
-// const int top_lev = 6;
 KOKKOS_INLINE_FUNCTION
 void dropmixnuc3(
     const Real dtmicro, ColumnView temp, ColumnView pmid, ColumnView pint,
@@ -1770,10 +1767,9 @@ void dropmixnuc3(
 
   // Initialize 1D (in space) versions of interstitial and cloud borne aerosol
   int nsav = 0;
-  int print_this_k = 71;
+  int print_this_k = 6;
   printf("pver %d \n", pver);
   printf("top_lev %d \n", top_lev);
-
 
   Kokkos::parallel_for(
       "update_from_newcld", pver - top_lev + 1 , KOKKOS_LAMBDA(int kk) {
@@ -1905,7 +1901,7 @@ void dropmixnuc3(
           printf("\n");
         }
       }); // end k
-  print_this_k = 71;
+  print_this_k = 6;
   // NOTE: update_from_cldn_profile loop from 7 to 71 in fortran code.
   Kokkos::parallel_for(
       "update_from_cldn_profile", pver - top_lev , KOKKOS_LAMBDA(int kk) {
@@ -1930,7 +1926,7 @@ void dropmixnuc3(
         // new cloud fraction
 
         Real delta_zm, csbot, csbot_cscen = zero;
-        if (k >= top_lev && k < pver - 1) {
+        if (k >= top_lev-1 && k < pver - 1) {
           delta_zm = zm(k) - zm(k + 1);
           csbot = two * pint(k + 1) / (rair * (temp(k) + temp(k + 1)));
           csbot_cscen = csbot / air_density;
@@ -2012,7 +2008,7 @@ void dropmixnuc3(
           printf(" nsource(k) %e \n", nsource(k));
           printf(" qcld(k) %e \n", qcld(k));
           printf(" ekd %e \n", ekd(k));
-          printf(" ekd %e \n", ekd(k - 1));
+          printf(" ekd(k-1) %e \n", ekd(k - 1));
           printf(" factnum_kk \n");
           for (int i = 0; i < ntot_amode; ++i) {
             printf(" %e", factnum_kk[i]);
@@ -2070,10 +2066,7 @@ void dropmixnuc3(
 
   // printf( "csbot %e \n", csbot[6]);
 
-  // Kokkos::parallel_for(
-  // "dropmixnuc", pver - top_lev-1, KOKKOS_LAMBDA(int kk) {
-
-  print_this_k = -1;
+  print_this_k = 6;
 
   Kokkos::parallel_for(
       "pre_update_from_explmix", pver , KOKKOS_LAMBDA(int k) {
@@ -2306,13 +2299,11 @@ void dropmixnuc3(
   printf("\n");
   Kokkos::parallel_for(
       "ccncalc", top_lev-1, KOKKOS_LAMBDA(int kk) {
-
   for (int i = 0; i < ncnst_tot; ++i)
   {
     qqcw_fld[i](kk) = zero;
   }
         
-
   });      
 
   Kokkos::parallel_for(
