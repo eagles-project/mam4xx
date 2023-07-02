@@ -31,7 +31,7 @@ void activate_modal(Ensemble *ensemble) {
 
     Real aten = zero;
 
-    ndrop_od::ndrop_int(exp45logsig, alogsig, aten,
+    ndrop::ndrop_int(exp45logsig, alogsig, aten,
                         num2vol_ratio_min_nmodes,  // voltonumbhi_amode
                         num2vol_ratio_max_nmodes); // voltonumblo_amode
 
@@ -40,7 +40,7 @@ void activate_modal(Ensemble *ensemble) {
         fluxn(ntot_amode, zero), fluxm(ntot_amode, zero);
     Real flux_fullact = zero;
 
-    ndrop_od::activate_modal(w_in, wmaxf, tair, rhoair, na.data(),
+    ndrop::activate_modal(w_in, wmaxf, tair, rhoair, na.data(),
                              volume.data(), hygro.data(), exp45logsig, alogsig,
                              aten, fn.data(), fm.data(), fluxn.data(),
                              fluxm.data(), flux_fullact);

@@ -90,7 +90,7 @@ void update_from_cldn_profile(Ensemble *ensemble) {
 
     Real aten = zero;
 
-    ndrop_od::ndrop_int(exp45logsig, alogsig, aten,
+    ndrop::ndrop_int(exp45logsig, alogsig, aten,
                         num2vol_ratio_min_nmodes,  // voltonumbhi_amode
                         num2vol_ratio_max_nmodes); // voltonumblo_amode
 
@@ -120,7 +120,7 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     auto dz = input.get_array("dz")[0];
     auto zs = input.get_array("zs")[0];
 
-    ndrop_od::update_from_cldn_profile(
+    ndrop::update_from_cldn_profile(
         cldn_col_in, cldn_col_in_kp1, dtinv, wtke_col_in, zs,
         dz, // ! in
         temp_col_in, air_density, air_density_kp1, csbot_cscen,

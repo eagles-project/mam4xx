@@ -88,7 +88,7 @@ void update_from_newcld(Ensemble *ensemble) {
 
     Real aten = zero;
 
-    ndrop_od::ndrop_int(exp45logsig, alogsig, aten,
+    ndrop::ndrop_int(exp45logsig, alogsig, aten,
                         num2vol_ratio_min_nmodes,  // voltonumbhi_amode
                         num2vol_ratio_max_nmodes); // voltonumblo_amode
 
@@ -108,7 +108,7 @@ void update_from_newcld(Ensemble *ensemble) {
     auto nsource_col_out = input.get_array("nsource_col_out")[0];
     auto factnum_col_out = input.get_array("factnum_col_out");
 
-    ndrop_od::update_from_newcld(cldn_col_in, cldo_col_in, dtinv, //& ! in
+    ndrop::update_from_newcld(cldn_col_in, cldo_col_in, dtinv, //& ! in
                                  wtke_col_in, temp_col_in, air_density,
                                  state_q.data(), //& ! in
                                  lspectype_amode, specdens_amode, spechygro,

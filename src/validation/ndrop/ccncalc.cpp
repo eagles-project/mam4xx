@@ -20,7 +20,7 @@ void ccncalc(Ensemble *ensemble) {
     const int maxd_aspectype = 14;
     const int ntot_amode = 4;
     const int nvars = 40;
-    const int psat = ndrop_od::psat;
+    const int psat = ndrop::psat;
 
     const int pver = input.get_array("pver")[0];
     const auto state_q_db = input.get_array("state_q");
@@ -124,7 +124,7 @@ void ccncalc(Ensemble *ensemble) {
               conversions::density_of_ideal_gas(tair(kk), pmid(kk));
 
           Real ccn_kk[psat] = {zero};
-          ndrop_od::ccncalc(state_q_kk, tair(kk), qcldbrn, qcldbrn_num,
+          ndrop::ccncalc(state_q_kk, tair(kk), qcldbrn, qcldbrn_num,
                             air_density, lspectype_amode, specdens_amode,
                             spechygro, lmassptr_amode, voltonumbhi_amode,
                             voltonumblo_amode, numptr_amode, nspec_amode,

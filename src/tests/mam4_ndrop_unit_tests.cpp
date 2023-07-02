@@ -49,7 +49,7 @@ TEST_CASE("test_ndrop_init", "mam4_ndrop_unit_tests") {
   // close to largest double value--for determining if values are positive
   const Real huge = 1.0e308;
 
-  mam4::ndrop_od::ndrop_int(exp45logsig, alogsig, aten,
+  mam4::ndrop::ndrop_int(exp45logsig, alogsig, aten,
                             num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes);
 
   for (int i = 0; i < AeroConfig::num_modes(); ++i) {
@@ -95,8 +95,8 @@ TEST_CASE("test_ndrop_init", "mam4_ndrop_unit_tests") {
   const Real r_universal = haero::Constants::r_gas * one_thousand; //[J/K/kmole]
   const Real mwh2o =
       haero::Constants::molec_weight_h2o * one_thousand; // [kg/kmol]
-  a_aten = two * mwh2o * mam4::ndrop_od::surften /
-           (r_universal * mam4::ndrop_od::t0 * rhoh2o);
+  a_aten = two * mwh2o * mam4::ndrop::surften /
+           (r_universal * mam4::ndrop::t0 * rhoh2o);
 
   logger.debug("reference and computed aten = {}, {}", a_aten, aten);
   REQUIRE(FloatingPoint<Real>::equiv(aten, a_aten));
@@ -126,7 +126,7 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop_unit_tests") {
   // and then work backward to get state_q
   // span the orders of magnitude with the top and bottom outside the interval
   const Real test_num[4] = {1.2e18, 3.4e19, 5.6e20, 7.9e21};
-  Real state_q[mam4::ndrop_od::nvars];
+  Real state_q[mam4::ndrop::nvars];
   Real naerosol;
   const Real ans[4] = {voltonumbhi_amode, test_num[1], test_num[2],
                        voltonumblo_amode};
@@ -135,7 +135,7 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop_unit_tests") {
   for (int i = 0; i < 4; ++i) {
     ans_i = ans[i] * vaerosol;
     state_q[num_idx] = ((test_num[i] * vaerosol) / air_density - qcldbrn1d_num);
-    mam4::ndrop_od::get_aer_num(voltonumbhi_amode, voltonumblo_amode, num_idx,
+    mam4::ndrop::get_aer_num(voltonumbhi_amode, voltonumblo_amode, num_idx,
                                 state_q, air_density, vaerosol, qcldbrn1d_num,
                                 naerosol);
     logger.debug("reference value and computed naerosol = {}, {}", ans_i,
@@ -173,7 +173,7 @@ TEST_CASE("test_qsat", "mam4_ndrop_unit_tests") {
     Real es_calc = es_base;
     Real qs_calc = qs_base;
 
-    mam4::ndrop_od::qsat(t[i], p[i], es_calc, qs_calc);
+    mam4::ndrop::qsat(t[i], p[i], es_calc, qs_calc);
     ss << "es [base]: [ ";
     ss << es_base << " ";
     ss << "]";

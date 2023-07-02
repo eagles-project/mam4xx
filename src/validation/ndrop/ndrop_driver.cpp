@@ -3,7 +3,7 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <mam4xx/ndrop_od.hpp>
+#include <mam4xx/ndrop.hpp>
 
 #include <iostream>
 #include <skywalker.hpp>

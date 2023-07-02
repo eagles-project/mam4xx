@@ -19,7 +19,7 @@ void ccncalc_single_cell(Ensemble *ensemble) {
     const Real zero = 0;
     const int maxd_aspectype = 14;
     const int ntot_amode = 4;
-    const int psat = ndrop_od::psat;
+    const int psat = ndrop::psat;
 
     const auto state_q = input.get_array("state_q");
 
@@ -62,7 +62,7 @@ void ccncalc_single_cell(Ensemble *ensemble) {
 
     Real aten = zero;
 
-    ndrop_od::ndrop_int(exp45logsig, alogsig, aten,
+    ndrop::ndrop_int(exp45logsig, alogsig, aten,
                         num2vol_ratio_min_nmodes,  // voltonumbhi_amode
                         num2vol_ratio_max_nmodes); // voltonumblo_amode
 
@@ -73,7 +73,7 @@ void ccncalc_single_cell(Ensemble *ensemble) {
       nspec_amode[i] = nspec_amode_db[i];
     }
     std::vector<Real> ccn(psat, zero);
-    ndrop_od::ccncalc(state_q.data(), tair, qcldbrn, qcldbrn_num.data(),
+    ndrop::ccncalc(state_q.data(), tair, qcldbrn, qcldbrn_num.data(),
                       air_density, lspectype_amode, specdens_amode, spechygro,
                       lmassptr_amode, num2vol_ratio_min_nmodes,
                       num2vol_ratio_max_nmodes, numptr_amode, nspec_amode,

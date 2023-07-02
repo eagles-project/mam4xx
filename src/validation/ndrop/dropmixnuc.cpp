@@ -20,10 +20,10 @@ void dropmixnuc(Ensemble *ensemble) {
     const int maxd_aspectype = 14;
     const int ntot_amode = 4;
     const int nvars = 40;
-    const int psat = ndrop_od::psat;
-    const int ncnst_tot = ndrop_od::ncnst_tot;
-    const int nspec_max = mam4::ndrop_od::nspec_max;
-    const int nvar_ptend_q = mam4::ndrop_od::nvar_ptend_q;
+    const int psat = ndrop::psat;
+    const int ncnst_tot = ndrop::ncnst_tot;
+    const int nspec_max = mam4::ndrop::nspec_max;
+    const int nvar_ptend_q = mam4::ndrop::nvar_ptend_q;
 
     const int pver = 72; // input.get_array("pver")[0];
     const auto state_q_db = input.get_array("state_q");
@@ -170,7 +170,7 @@ void dropmixnuc(Ensemble *ensemble) {
 
     Real aten = zero;
 
-    ndrop_od::ndrop_int(exp45logsig, alogsig, aten,
+    ndrop::ndrop_int(exp45logsig, alogsig, aten,
                         num2vol_ratio_min_nmodes,  // voltonumbhi_amode
                         num2vol_ratio_max_nmodes); // voltonumblo_amode
 
@@ -281,7 +281,7 @@ void dropmixnuc(Ensemble *ensemble) {
     srcn = haero::testing::create_column_view(pver);
     source = haero::testing::create_column_view(pver);
 
-    ndrop_od::dropmixnuc(
+    ndrop::dropmixnuc(
         dtmicro, tair, pmid, pint, pdel, rpdel,
         zm, //  ! in zm[kk] - zm[kk+1], for pver zm[kk-1] - zm[kk]
         state_q, ncldwtr,

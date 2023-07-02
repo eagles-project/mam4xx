@@ -136,7 +136,7 @@ void get_activate_frac(Ensemble *ensemble) {
           const Real air_density =
               conversions::density_of_ideal_gas(tair(kk), pmid(kk));
 
-          ndrop_od::get_activate_frac(
+          ndrop::get_activate_frac(
               state_q_kk, air_density, air_density, wsub(kk), tair(kk), // in
               lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
               voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
