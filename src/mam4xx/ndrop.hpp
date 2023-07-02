@@ -1119,7 +1119,6 @@ void update_from_explmix(
     // work vars
     ColumnView overlapp, // cloud overlap involving level kk+1 [fraction]
     ColumnView overlapm, // cloud overlap involving level kk-1 [fraction]
-    ColumnView ekk,      // density*diffusivity for droplets [kg/m/s]
     ColumnView ekkp,     // zn*zs*density*diffusivity [/s]
     ColumnView ekkm,     // zn*zs*density*diffusivity   [/s]
     ColumnView qncld,    // updated cloud droplet number mixing ratio [#/kg]
@@ -1127,25 +1126,23 @@ void update_from_explmix(
     ColumnView source //  source rate for activated number or species mass [/s]
 ) {
 
+
+  // BAD CONSTANT
   const Real overlap_cld_thresh =
       1e-10; //  threshold cloud fraction to compute overlap [fraction]
   const Real zero = 0.0;
+  const Real one = 1.0;
 
   Real tmpa = zero; //  temporary aerosol tendency variable [/s]
 
   const int ntot_amode = AeroConfig::num_modes();
   // load new droplets in layers above, below clouds
   Real dtmin = dtmicro;
-  ekk(top_lev - 1) = zero;
-  ekk(pver - 1) = zero;
   // rce-comment -- ekd(k) is eddy-diffusivity at k/k+1 interface
   //   want ekk(k) = ekd(k) * (density at k/k+1 interface)
   //   so use pint(i,k+1) as pint is 1:pverp
   //           ekk(k)=ekd(k)*2.*pint(i,k)/(rair*(temp(i,k)+temp(i,k+1)))
   //           ekk(k)=ekd(k)*2.*pint(i,k+1)/(rair*(temp(i,k)+temp(i,k+1)))
-  for (int k = top_lev - 1; k < pver - 1; k++) {
-    ekk(k) = ekd(k) * csbot(k);
-  } // end kk
 
   // start k for loop here. for k = top_lev to pver
   // cldn will be columnviews of length pver,
@@ -1155,21 +1152,34 @@ void update_from_explmix(
     const int km1 = haero::max(k - 1, top_lev - 1);
     // maximum overlap assumption
     if (cldn(kp1) > overlap_cld_thresh) {
-      overlapp(k) = haero::min(cldn(k) / cldn(kp1), 1.0);
+      overlapp(k) = haero::min(cldn(k) / cldn(kp1), one);
     } else {
-      overlapp(k) = 1.0;
+      overlapp(k) = one;
     }
 
     if (cldn(km1) > overlap_cld_thresh) {
-      overlapm(k) = haero::min(cldn(k) / cldn(km1), 1.0);
+      overlapm(k) = haero::min(cldn(k) / cldn(km1), one);
     } else {
-      overlapm(k) = 1.0;
+      overlapm(k) = one;
     }
 
-    ekkp(k) = zn(k) * ekk(k) * zs(k);
+    ekkp(k) = zn(k) * ekd(k) * csbot(k) * zs(k);
     // NOTE: ekk uses k-1 while sz uses km1.
-    ekkm(k) = zn(k) * ekk(k - 1) * zs(km1);
+    ekkm(k) = zn(k) * ekd(k-1) * csbot(k-1) * zs(km1);
     const Real tinv = ekkp(k) + ekkm(k);
+
+      // rce-comment
+  //    the activation source(k) = mact(k,m)*raercol(kp1,lmass)
+  //       should not exceed the rate of transfer of unactivated particles
+  //       from kp1 to k which = ekkp(k)*raercol(kp1,lmass)
+  //    however it might if things are not "just right" in subr activate
+  //    the following is a safety measure to avoid negatives in explmix
+
+  for (int imode = 0; imode < ntot_amode; imode++) {
+      nact[imode](k) = haero::min(nact[imode](k), ekkp(k));
+      mact[imode](k) = haero::min(mact[imode](k), ekkp(k));
+  }
+  
 
     // rce-comment -- tinv is the sum of all first-order-loss-rates
     //    for the layer.  for most layers, the activation loss rate
@@ -1183,7 +1193,7 @@ void update_from_explmix(
 
     // FIXME: BAD CONSTANT
     if (tinv > 1e-6) {
-      dtmin = haero::min(dtmin, 1.0 / tinv);
+      dtmin = haero::min(dtmin, one / tinv);
     }
   }
   // TODO
@@ -1207,20 +1217,6 @@ void update_from_explmix(
   //  }
 
   dtmix = dtmicro / nsubmix;
-
-  // rce-comment
-  //    the activation source(k) = mact(k,m)*raercol(kp1,lmass)
-  //       should not exceed the rate of transfer of unactivated particles
-  //       from kp1 to k which = ekkp(k)*raercol(kp1,lmass)
-  //    however it might if things are not "just right" in subr activate
-  //    the following is a safety measure to avoid negatives in explmix
-
-  for (int k = top_lev - 1; k < pver; k++) {
-    for (int imode = 0; imode < ntot_amode; imode++) {
-      nact[imode](k) = haero::min(nact[imode](k), ekkp(k));
-      mact[imode](k) = haero::min(mact[imode](k), ekkp(k));
-    }
-  }
 
   // old_cloud_nsubmix_loop
   //  Note:  each pass in submix loop stores updated aerosol values at index
@@ -1421,7 +1417,7 @@ void dropmixnuc(
     ColumnView nact[AeroConfig::num_modes()],
     ColumnView mact[AeroConfig::num_modes()], ColumnView ekd, ColumnView zn,
     ColumnView csbot, ColumnView zs, ColumnView overlapp, ColumnView overlapm,
-    ColumnView ekk, ColumnView ekkp, ColumnView ekkm, ColumnView qncld,
+    ColumnView ekkp, ColumnView ekkm, ColumnView qncld,
     ColumnView srcn, ColumnView source) {
   // vertical diffusion and nucleation of cloud droplets
   // assume cloud presence controlled by cloud fraction
@@ -1700,7 +1696,7 @@ void dropmixnuc(
                       mact, qcld, raercol, raercol_cw, nsav, nnew, nspec_amode,
                       mam_idx,
                       // work vars
-                      overlapp, overlapm, ekk, ekkp, ekkm, qncld,
+                      overlapp, overlapm, ekkp, ekkm, qncld,
                       srcn, // droplet source rate [/s]
                       source);
 
