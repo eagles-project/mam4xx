@@ -19,10 +19,8 @@ add_executable(ndrop_driver
                maxsat.cpp
                update_from_newcld.cpp
                update_from_cldn_profile.cpp
-               dropmixnuc.cpp
                #update_from_explmix.cpp
-               #dropmixnuc2.cpp
-               dropmixnuc3.cpp
+               dropmixnuc.cpp
                )
 
 target_link_libraries(ndrop_driver skywalker;validation;${HAERO_LIBRARIES})
