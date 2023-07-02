@@ -63,8 +63,8 @@ void ccncalc_single_cell(Ensemble *ensemble) {
     Real aten = zero;
 
     ndrop::ndrop_int(exp45logsig, alogsig, aten,
-                        num2vol_ratio_min_nmodes,  // voltonumbhi_amode
-                        num2vol_ratio_max_nmodes); // voltonumblo_amode
+                     num2vol_ratio_min_nmodes,  // voltonumbhi_amode
+                     num2vol_ratio_max_nmodes); // voltonumblo_amode
 
     int numptr_amode[ntot_amode];
     int nspec_amode[ntot_amode];
@@ -74,10 +74,10 @@ void ccncalc_single_cell(Ensemble *ensemble) {
     }
     std::vector<Real> ccn(psat, zero);
     ndrop::ccncalc(state_q.data(), tair, qcldbrn, qcldbrn_num.data(),
-                      air_density, lspectype_amode, specdens_amode, spechygro,
-                      lmassptr_amode, num2vol_ratio_min_nmodes,
-                      num2vol_ratio_max_nmodes, numptr_amode, nspec_amode,
-                      exp45logsig, alogsig, ccn.data());
+                   air_density, lspectype_amode, specdens_amode, spechygro,
+                   lmassptr_amode, num2vol_ratio_min_nmodes,
+                   num2vol_ratio_max_nmodes, numptr_amode, nspec_amode,
+                   exp45logsig, alogsig, ccn.data());
 
     output.set("ccn", ccn);
   });

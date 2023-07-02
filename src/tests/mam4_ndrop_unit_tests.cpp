@@ -49,8 +49,8 @@ TEST_CASE("test_ndrop_init", "mam4_ndrop_unit_tests") {
   // close to largest double value--for determining if values are positive
   const Real huge = 1.0e308;
 
-  mam4::ndrop::ndrop_int(exp45logsig, alogsig, aten,
-                            num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes);
+  mam4::ndrop::ndrop_int(exp45logsig, alogsig, aten, num2vol_ratio_min_nmodes,
+                         num2vol_ratio_max_nmodes);
 
   for (int i = 0; i < AeroConfig::num_modes(); ++i) {
     a_alogsig = haero::log(modes(i).mean_std_dev);
@@ -136,8 +136,8 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop_unit_tests") {
     ans_i = ans[i] * vaerosol;
     state_q[num_idx] = ((test_num[i] * vaerosol) / air_density - qcldbrn1d_num);
     mam4::ndrop::get_aer_num(voltonumbhi_amode, voltonumblo_amode, num_idx,
-                                state_q, air_density, vaerosol, qcldbrn1d_num,
-                                naerosol);
+                             state_q, air_density, vaerosol, qcldbrn1d_num,
+                             naerosol);
     logger.debug("reference value and computed naerosol = {}, {}", ans_i,
                  naerosol);
     REQUIRE(FloatingPoint<Real>::equiv(naerosol, ans_i));

@@ -1093,8 +1093,6 @@ void explmix(
   qnew = haero::max(qnew, 0);
 } // end explmix
 
-
-
 KOKKOS_INLINE_FUNCTION
 void update_from_explmix(
     const Real dtmicro, // time step for microphysics [s]
@@ -1391,7 +1389,6 @@ void update_from_explmix(
 
 } // end update_from_explmix
 
-
 KOKKOS_INLINE_FUNCTION
 void dropmixnuc(
     const Real dtmicro, ColumnView temp, ColumnView pmid, ColumnView pint,
@@ -1497,7 +1494,6 @@ void dropmixnuc(
   const Real gravit = haero::Constants::gravity;
   const Real rair = haero::Constants::r_gas_dry_air;
 
-
   // const Real air_density = pmid/(rair*temp);//        ! air density (kg/m3)
   // geometric thickness of layers [m]
   // fractional aero. number  activation rate [/s]
@@ -1577,7 +1573,6 @@ void dropmixnuc(
           raercol[nsav][i](k) = raercol_1_kk[i];
           raercol_cw[nsav][i](k) = raercol_cw_1_kk[i];
         }
-
       }); // end k
 
   // NOTE: update_from_cldn_profile loop from 7 to 71 in fortran code.
@@ -1699,16 +1694,15 @@ void dropmixnuc(
         }
 
         zs(k) = one / delta_zm;
-
       }); // end k
 
-  update_from_explmix(dtmicro, top_lev, pver, csbot, cldn, zn, zs, ekd,
-                             nact, mact, qcld, raercol, raercol_cw, nsav, nnew,
-                             nspec_amode, mam_idx,
-                             // work vars
-                             overlapp, overlapm, ekk, ekkp, ekkm, qncld,
-                             srcn, // droplet source rate [/s]
-                             source);
+  update_from_explmix(dtmicro, top_lev, pver, csbot, cldn, zn, zs, ekd, nact,
+                      mact, qcld, raercol, raercol_cw, nsav, nnew, nspec_amode,
+                      mam_idx,
+                      // work vars
+                      overlapp, overlapm, ekk, ekkp, ekkm, qncld,
+                      srcn, // droplet source rate [/s]
+                      source);
 
   Kokkos::parallel_for(
       "qqcw_fld initialization", top_lev - 1, KOKKOS_LAMBDA(int kk) {

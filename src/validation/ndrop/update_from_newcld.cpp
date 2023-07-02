@@ -89,8 +89,8 @@ void update_from_newcld(Ensemble *ensemble) {
     Real aten = zero;
 
     ndrop::ndrop_int(exp45logsig, alogsig, aten,
-                        num2vol_ratio_min_nmodes,  // voltonumbhi_amode
-                        num2vol_ratio_max_nmodes); // voltonumblo_amode
+                     num2vol_ratio_min_nmodes,  // voltonumbhi_amode
+                     num2vol_ratio_max_nmodes); // voltonumblo_amode
 
     const auto mam_idx_db = input.get_array("mam_idx");
 
@@ -109,15 +109,15 @@ void update_from_newcld(Ensemble *ensemble) {
     auto factnum_col_out = input.get_array("factnum_col_out");
 
     ndrop::update_from_newcld(cldn_col_in, cldo_col_in, dtinv, //& ! in
-                                 wtke_col_in, temp_col_in, air_density,
-                                 state_q.data(), //& ! in
-                                 lspectype_amode, specdens_amode, spechygro,
-                                 lmassptr_amode, num2vol_ratio_min_nmodes,
-                                 num2vol_ratio_max_nmodes, numptr_amode,
-                                 nspec_amode, exp45logsig, alogsig, aten,
-                                 mam_idx, qcld, raercol_nsav.data(),
-                                 raercol_cw_nsav.data(), //&      ! inout
-                                 nsource_col_out, factnum_col_out.data());
+                              wtke_col_in, temp_col_in, air_density,
+                              state_q.data(), //& ! in
+                              lspectype_amode, specdens_amode, spechygro,
+                              lmassptr_amode, num2vol_ratio_min_nmodes,
+                              num2vol_ratio_max_nmodes, numptr_amode,
+                              nspec_amode, exp45logsig, alogsig, aten, mam_idx,
+                              qcld, raercol_nsav.data(),
+                              raercol_cw_nsav.data(), //&      ! inout
+                              nsource_col_out, factnum_col_out.data());
 
     output.set("qcld", qcld);
     output.set("nsource_col_out", nsource_col_out);

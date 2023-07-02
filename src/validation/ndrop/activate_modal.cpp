@@ -32,18 +32,17 @@ void activate_modal(Ensemble *ensemble) {
     Real aten = zero;
 
     ndrop::ndrop_int(exp45logsig, alogsig, aten,
-                        num2vol_ratio_min_nmodes,  // voltonumbhi_amode
-                        num2vol_ratio_max_nmodes); // voltonumblo_amode
+                     num2vol_ratio_min_nmodes,  // voltonumbhi_amode
+                     num2vol_ratio_max_nmodes); // voltonumblo_amode
 
     // const auto  = input.get_array("");
     std::vector<Real> fn(ntot_amode, zero), fm(ntot_amode, zero),
         fluxn(ntot_amode, zero), fluxm(ntot_amode, zero);
     Real flux_fullact = zero;
 
-    ndrop::activate_modal(w_in, wmaxf, tair, rhoair, na.data(),
-                             volume.data(), hygro.data(), exp45logsig, alogsig,
-                             aten, fn.data(), fm.data(), fluxn.data(),
-                             fluxm.data(), flux_fullact);
+    ndrop::activate_modal(w_in, wmaxf, tair, rhoair, na.data(), volume.data(),
+                          hygro.data(), exp45logsig, alogsig, aten, fn.data(),
+                          fm.data(), fluxn.data(), fluxm.data(), flux_fullact);
 
     output.set("flux_fullact", flux_fullact);
     output.set("fn", fn);

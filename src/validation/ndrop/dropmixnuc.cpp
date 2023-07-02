@@ -171,8 +171,8 @@ void dropmixnuc(Ensemble *ensemble) {
     Real aten = zero;
 
     ndrop::ndrop_int(exp45logsig, alogsig, aten,
-                        num2vol_ratio_min_nmodes,  // voltonumbhi_amode
-                        num2vol_ratio_max_nmodes); // voltonumblo_amode
+                     num2vol_ratio_min_nmodes,  // voltonumbhi_amode
+                     num2vol_ratio_max_nmodes); // voltonumblo_amode
 
     int numptr_amode[ntot_amode];
     int nspec_amode[ntot_amode];

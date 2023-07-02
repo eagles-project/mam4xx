@@ -125,10 +125,10 @@ void ccncalc(Ensemble *ensemble) {
 
           Real ccn_kk[psat] = {zero};
           ndrop::ccncalc(state_q_kk, tair(kk), qcldbrn, qcldbrn_num,
-                            air_density, lspectype_amode, specdens_amode,
-                            spechygro, lmassptr_amode, voltonumbhi_amode,
-                            voltonumblo_amode, numptr_amode, nspec_amode,
-                            exp45logsig, alogsig, ccn_kk);
+                         air_density, lspectype_amode, specdens_amode,
+                         spechygro, lmassptr_amode, voltonumbhi_amode,
+                         voltonumblo_amode, numptr_amode, nspec_amode,
+                         exp45logsig, alogsig, ccn_kk);
           for (int i = 0; i < psat; ++i) {
             ccn[i](kk) = ccn_kk[i];
           }
