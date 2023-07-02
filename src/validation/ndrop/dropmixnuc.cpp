@@ -204,12 +204,6 @@ void dropmixnuc(Ensemble *ensemble) {
       }
     }
 
-    // ColumnView ccn[psat];
-
-    // for (int i = 0; i < psat; ++i) {
-    //   ccn[i] = haero::testing::create_column_view(pver);
-    // }
-
     // output
     ColumnView qcld;
     ColumnView tendnd;
@@ -324,13 +318,10 @@ void dropmixnuc(Ensemble *ensemble) {
     output.set("qqcw", output_qqcw);
 
     std::vector<Real> output_ptend_q;
-    count = 0;
     for (int i = 0; i < nvar_ptend_q; ++i) {
       // Kokkos::deep_copy(host, ptend_q[i]);
       for (int kk = 0; kk < pver; ++kk) {
         output_ptend_q.push_back(ptend_q[i](kk));
-        printf("%d ptend_q_kk[%d][%d] %e \n ", count, kk, i, ptend_q[i](kk));
-        count++;
       }
     }
     output.set("ptend_q", output_ptend_q);

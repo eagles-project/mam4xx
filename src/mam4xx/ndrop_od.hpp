@@ -17,6 +17,8 @@ namespace mam4 {
 
 namespace ndrop_od {
 
+const int pver = 72;
+const int top_lev = 7;
 const int psat = 6; //  ! number of supersaturations to calc ccn concentration
 // FIXME: ask about state_q. Is it a prognostic variable?
 const int nvars = 40;
@@ -39,6 +41,7 @@ const Real super[psat] = {
     0.005,  0.01}; //& ! supersaturation (%) to determine ccn concentration
 //  [m-K]
 const int nspec_max = 8;
+
 KOKKOS_INLINE_FUNCTION
 void get_aer_mmr_sum(
     const int imode, const int nspec, const Real state_q[nvars],
@@ -884,8 +887,6 @@ void update_from_newcld(
   if (cldn_col_in < cldo_col_in) {
     // !  droplet loss in decaying cloud
     // !++ sungsup
-    // printf("cldn_col_in < cldo_col_in \n");
-
     nsource_col_out += qcld * (cldn_col_in - cldo_col_in) / cldo_col_in * dtinv;
 
     qcld *= (one + (cldn_col_in - cldo_col_in) / cldo_col_in);
@@ -918,7 +919,6 @@ void update_from_newcld(
   //        cldo(i,k) !    and also regenerate part of the cloud
 
   if (cldn_col_in - cldo_col_in > grow_cld_thresh) {
-    // printf("cldn_col_in - cldo_col_in > grow_cld_thresh \n");
     Real fm[ntot_amode] = {}; // activation fraction for aerosol mass [fraction]
     Real fluxm[ntot_amode] =
         {}; // flux of activated aerosol mass fraction into cloud [m/s]
@@ -969,9 +969,7 @@ void update_from_newcld(
 } // update_from_newcld
 
 
-// loops with 3 levels
-const int pver = 72;
-const int top_lev = 7;
+
 KOKKOS_INLINE_FUNCTION
 void dropmixnuc(
     const Real dtmicro, ColumnView temp, ColumnView pmid, ColumnView pint,
@@ -1077,8 +1075,6 @@ void dropmixnuc(
   const Real gravit = haero::Constants::gravity;
   const Real rair = haero::Constants::r_gas_dry_air;
 
-  // Real nact[nlevels][ntot_amode] = {};
-  // Real mact[nlevels][ntot_amode] = {};
 
   // const Real air_density = pmid/(rair*temp);//        ! air density (kg/m3)
   // geometric thickness of layers [m]
@@ -1089,23 +1085,17 @@ void dropmixnuc(
 
   // Initialize 1D (in space) versions of interstitial and cloud borne aerosol
   int nsav = 0;
-  int print_this_k = 6;
-  printf("pver %d \n", pver);
-  printf("top_lev %d \n", top_lev);
-
   Kokkos::parallel_for(
       "update_from_newcld", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
         // // ! g/pdel for layer [m^2/kg]
         // const Real zn = gravit * rpdel;
         // turbulent vertical velocity at base of layer k [m/s]
         const int k = kk + top_lev - 1;
-        printf("update_from_newcld k %d \n", k);
 
         wtke(k) = haero::max(wsub(k), wmixmin);
         // qcld(:)  = ncldwtr(icol,:)
         // cloud droplet number mixing ratio [#/kg]
         qcld(k) = ncldwtr(k);
-        // printf("k %d \n ", k);
 
         Real raercol_1_kk[ncnst_tot] = {};
         Real raercol_cw_1_kk[ncnst_tot] = {};
@@ -1115,11 +1105,6 @@ void dropmixnuc(
 
           const int mm = mam_idx[imode][0] - 1;
           raercol_cw_1_kk[mm] = qqcw_fld[mm](k);
-          if (k == print_this_k) {
-            printf("m %d \n", mm);
-            printf("qqcw_fld[mm](k) %e \n", qqcw_fld[mm](k));
-            printf("nspec_amode[imode] %d \n", nspec_amode[imode]);
-          }
           // Fortran indexing to C++ indexing
           const int num_idx = numptr_amode[imode] - 1;
           raercol_1_kk[mm] = state_q[num_idx](k);
@@ -1130,9 +1115,6 @@ void dropmixnuc(
             raercol_cw_1_kk[mm] = qqcw_fld[mm](k);
             // Fortran indexing to C++ indexing
             const int spc_idx = lmassptr_amode[lspec - 1][imode] - 1;
-            if (k == print_this_k) {
-              printf("m %d lspec %d spc_idx %d \n", mm, lspec, spc_idx);
-            }
             raercol_1_kk[mm] = state_q[spc_idx](k);
           } // lspec
         }   // imode
@@ -1141,9 +1123,6 @@ void dropmixnuc(
         // cloud
         // fraction droplet nucleation/aerosol activation
         nsource(k) = zero;
-        // for (int imode = 0; imode < ntot_amode; ++imode) {
-        //   factnum[imode](k) = zero;
-        // }
 
         const Real air_density =
             conversions::density_of_ideal_gas(temp(k), pmid(k));
@@ -1156,37 +1135,6 @@ void dropmixnuc(
           state_q_kk[i] = state_q[i](k);
         }
         Real factnum_kk[ntot_amode] = {};
-
-        if (k == print_this_k) {
-          printf("state_q_kk[i]");
-          for (int i = 0; i < nvars; ++i) {
-            printf(" %e", state_q_kk[i]);
-          }
-          printf("\n");
-
-          printf(" cldn(k) %e \n", cldn(k));
-          printf(" cldo(k) %e \n", cldo(k));
-          printf(" dtinv %e \n", dtinv);
-          printf(" wtke(k) %e \n", wtke(k));
-          printf(" temp(k) %e \n", temp(k));
-          printf(" air_density %e \n", air_density);
-          printf(" spechygro %e \n", spechygro[0]);
-          printf(" specdens_amode %e \n", specdens_amode[0]);
-          // printf(" %e \n",);
-          printf(" qcld %e \n", qcld(k));
-          // printf(" raercol_cw_1_kk%e \n",raercol_cw_1_kk[0]);
-          printf("raercol_cw_1_kk");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol_cw_1_kk[i]);
-          }
-          printf("\n");
-
-          printf("raercol_1_kk");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol_1_kk[i]);
-          }
-          printf("\n");
-        }
 
         update_from_newcld(cldn(k), cldo(k), dtinv, //& ! in
                            wtke(k), temp(k), air_density,
@@ -1201,7 +1149,6 @@ void dropmixnuc(
         // FIXME
         for (int i = 0; i < ntot_amode; ++i) {
           factnum[i](k) = factnum_kk[i];
-          // printf("k:%d->factnum_kk[%d] %e \n",k,i, factnum_kk[i]);
         }
 
         for (int i = 0; i < ncnst_tot; ++i) {
@@ -1209,27 +1156,13 @@ void dropmixnuc(
           raercol_cw[nsav][i](k) = raercol_cw_1_kk[i];
         }
 
-        if (k == print_this_k) {
-          printf(" raercol_cw_1_kk \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol_cw_1_kk[i]);
-          }
-          printf("\n");
-
-          printf(" raercol_1_kk \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol_1_kk[i]);
-          }
-          printf("\n");
-        }
       }); // end k
-  print_this_k = 6;
+
   // NOTE: update_from_cldn_profile loop from 7 to 71 in fortran code.
   Kokkos::parallel_for(
       "update_from_cldn_profile", pver - top_lev, KOKKOS_LAMBDA(int kk) {
         const int k = kk + top_lev - 1;
         const int kp1 = haero::min(k + 1, pver - 1);
-        printf("update_from_cldn_profile k %d \n", k);
 
         const Real air_density =
             conversions::density_of_ideal_gas(temp(k), pmid(k));
@@ -1302,7 +1235,6 @@ void dropmixnuc(
             ekd(k), // out
             nact_kk, mact_kk);
 
-        //
         for (int i = 0; i < ncnst_tot; ++i) {
           raercol[nsav][i](k) = raercol_1_kk[i];
           raercol_cw[nsav][i](k) = raercol_cw_1_kk[i];
@@ -1313,94 +1245,20 @@ void dropmixnuc(
           nact[i](k) = nact_kk[i];
           mact[i](k) = mact_kk[i];
         }
-
-        if (k == print_this_k) {
-          printf(" raercol_cw_1_kk \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol_cw_1_kk[i]);
-          }
-          printf("\n");
-
-          printf(" raercol_1_kk \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol_1_kk[i]);
-          }
-          printf("\n");
-
-          printf(" nsource(k) %e \n", nsource(k));
-          printf(" qcld(k) %e \n", qcld(k));
-          printf(" ekd %e \n", ekd(k));
-          printf(" ekd(k-1) %e \n", ekd(k - 1));
-          printf(" factnum_kk \n");
-          for (int i = 0; i < ntot_amode; ++i) {
-            printf(" %e", factnum_kk[i]);
-          }
-          printf("\n");
-          printf("\n");
-          printf(" nact_kk \n");
-          for (int i = 0; i < ntot_amode; ++i) {
-            printf(" %e", nact_kk[i]);
-          }
-          printf("\n");
-          printf("\n");
-          printf(" mact_kk \n");
-          for (int i = 0; i < ntot_amode; ++i) {
-            printf(" %e", mact_kk[i]);
-          }
-          printf("\n");
-          printf("\n");
-        }
       });
 
   // PART III:  perform explict integration of droplet/aerosol mixing using
   // substepping
 
   int nnew = 1;
-  // NOTE: It will be ported by Jaelyn Litzinger
   // // single column of aerosol mass, number mixing ratios [#/kg or kg/kg]
   // Real raercol_2[ncnst_tot] = {};
   // // same as raercol but for cloud-borne phase [#/kg or kg/kg]
   // Real raercol_cw_2[ncnst_tot] = {};
 
-  // printf("Before explmix raercol(top_lev:pver,mm,nnew) %e \n ",
-  // raercol[6][nnew][8]);
-
-  // printf( "dtmicro %e \n", dtmicro);
-  // printf( "csbot %e \n", csbot[6]);
-  // printf( "cldn(icol,:) %e \n", cldn[6]);
-  // printf( "zn %e \n", gravit * rpdel[6]);
-  // printf( "zs %e \n", zs[6]);
-  // printf( "ekd %e \n", ekd[6]);
-
-  // for (int i = 0; i < ntot_amode; ++i)
-  // {
-  //   printf( "nact %e ", nact[6][i]);
-  // }
-  // printf("\n");
-
-  // for (int i = 0; i < ntot_amode; ++i)
-  // {
-  //   printf( "mact %e ", mact[6][i]);
-  // }
-
-  // printf("\n");
-  // printf( "qcld %e \n",qcld[6]);
-
-  // printf( "csbot %e \n", csbot[6]);
-
-  print_this_k = 6;
-
   Kokkos::parallel_for(
-      "pre_update_from_explmix", pver, KOKKOS_LAMBDA(int k) {
-        printf("pre_update_from_explmix k %d \n", k);
-        const int kp1 = haero::min(k + 1, pver - 1);
-        const int km1 = haero::max(k - 1, top_lev - 1);
-
+      "pre-update_from_explmix", pver, KOKKOS_LAMBDA(int k) {
         zn(k) = gravit * rpdel[k];
-        if (k == print_this_k) {
-          printf("zn(%d) %e \n", k, zn(k));
-        }
-
         Real delta_zm = zero;
         // Real csbot_km1 = zero;
         if (k >= top_lev - 1 && k < pver - 1) {
@@ -1416,98 +1274,11 @@ void dropmixnuc(
           // csbot_km1 = two * pint(k - 1) / (rair * (temp(k - 2) + temp(k -
           // 1)));
           delta_zm = zm(k - 1) - zm(k);
-          // delta_zm_km1 = zm(k - 2) - zm(k - 1);
         }
 
         zs(k) = one / delta_zm;
-        // const Real zs_km1 = one / delta_zm_km1;
 
-        if (k == print_this_k) {
-
-          printf("csbot %e\n", csbot(k));
-          printf("csbot_km1 %e\n", csbot(km1));
-          printf(" cldn(k) %e, cldn(km1) %e, cldn(kp1) %e\n", cldn(k),
-                 cldn(km1), cldn(kp1));
-          printf(" zn %e zs %e zs_km1 %e \n", zn(k), zs(k), zs(km1));
-          printf(" ekd %e ekd_km1 %e \n", ekd(k), ekd(km1));
-          printf(" qcld(k)%e  qcld(km1) %e qcld(kp1) %e \n", qcld(k), qcld(km1),
-                 qcld(kp1));
-
-          printf(" raercol_cw_kk 1 \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol_cw[0][i](k));
-          }
-          printf("\n");
-
-          printf(" raercol_cw_kk 2 \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol_cw[1][i](k));
-          }
-          printf("\n");
-
-          printf(" raercol_cw_km1 1 \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol_cw[0][i](km1));
-          }
-          printf("\n");
-
-          printf(" raercol_cw_km1 2 \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol_cw[1][i](km1));
-          }
-          printf("\n");
-
-          printf(" raercol_cw_kp1 1 \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol_cw[0][i](kp1));
-          }
-          printf("\n");
-
-          printf(" raercol_cw_kp1 2 \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol_cw[1][i](kp1));
-          }
-          printf("\n");
-
-          printf(" raercol_kk 1 \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol[0][i](k));
-          }
-          printf("\n");
-
-          printf(" raercol_kk 2 \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol[1][i](k));
-          }
-          printf("\n");
-
-          printf(" raercol_km1 1 \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol[0][i](km1));
-          }
-          printf("\n");
-
-          printf(" raercol_km1 2 \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol[1][i](km1));
-          }
-          printf("\n");
-
-          printf(" raercol_kp1 1 \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol[0][i](kp1));
-          }
-          printf("\n");
-
-          printf(" raercol_kp1 2 \n");
-          for (int i = 0; i < ncnst_tot; ++i) {
-            printf(" %e", raercol[1][i](kp1));
-          }
-          printf("\n");
-        }
       }); // end k
-
-  printf("B qcld %e \n", qcld(print_this_k));
 
   ndrop::update_from_explmix(dtmicro, top_lev, pver, csbot, cldn, zn, zs, ekd,
                              nact, mact, qcld, raercol, raercol_cw, nsav, nnew,
@@ -1517,109 +1288,8 @@ void dropmixnuc(
                              srcn, // droplet source rate [/s]
                              source);
 
-  const int k = print_this_k;
-  const int kp1 = haero::min(k + 1, pver - 1);
-  const int km1 = haero::max(k - 1, top_lev - 1);
-
-  printf("After ... \n");
-
-  printf("nsav %d \n", nsav);
-  printf("nnew %d \n", nnew);
-
-  printf(" raercol_cw_kk 1 \n");
-  for (int i = 0; i < ncnst_tot; ++i) {
-    printf(" %e", raercol_cw[0][i](k));
-  }
-  printf("\n");
-
-  printf(" raercol_cw_kk 2 \n");
-  for (int i = 0; i < ncnst_tot; ++i) {
-    printf(" %e", raercol_cw[1][i](k));
-  }
-  printf("\n");
-
-  printf(" raercol_cw_km1 1 \n");
-  for (int i = 0; i < ncnst_tot; ++i) {
-    printf(" %e", raercol_cw[0][i](km1));
-  }
-  printf("\n");
-
-  printf(" raercol_cw_km1 2 \n");
-  for (int i = 0; i < ncnst_tot; ++i) {
-    printf(" %e", raercol_cw[1][i](km1));
-  }
-  printf("\n");
-
-  printf(" raercol_cw_kp1 1 \n");
-  for (int i = 0; i < ncnst_tot; ++i) {
-    printf(" %e", raercol_cw[0][i](kp1));
-  }
-  printf("\n");
-
-  printf(" raercol_cw_kp1 2 \n");
-  for (int i = 0; i < ncnst_tot; ++i) {
-    printf(" %e", raercol_cw[1][i](kp1));
-  }
-  printf("\n");
-
-  printf(" raercol_kk 1 \n");
-  for (int i = 0; i < ncnst_tot; ++i) {
-    printf(" %e", raercol[0][i](k));
-  }
-  printf("\n");
-
-  printf(" raercol_kk 2 \n");
-  for (int i = 0; i < ncnst_tot; ++i) {
-    printf(" %e", raercol[1][i](k));
-  }
-  printf("\n");
-
-  printf(" raercol_km1 1 \n");
-  for (int i = 0; i < ncnst_tot; ++i) {
-    printf(" %e", raercol[0][i](km1));
-  }
-  printf("\n");
-
-  printf(" raercol_km1 2 \n");
-  for (int i = 0; i < ncnst_tot; ++i) {
-    printf(" %e", raercol[1][i](km1));
-  }
-  printf("\n");
-
-  printf(" raercol_kp1 1 \n");
-  for (int i = 0; i < ncnst_tot; ++i) {
-    printf(" %e", raercol[0][i](kp1));
-  }
-  printf("\n");
-
-  printf(" raercol_kp1 2 \n");
-  for (int i = 0; i < ncnst_tot; ++i) {
-    printf(" %e", raercol[1][i](kp1));
-  }
-  printf("\n");
-
-  printf("\n");
-  printf("\n");
-  printf(" nact_kk \n");
-  for (int i = 0; i < ntot_amode; ++i) {
-    printf(" %e", nact[i](k));
-  }
-  printf("\n");
-  printf("\n");
-  printf(" mact_kk \n");
-  for (int i = 0; i < ntot_amode; ++i) {
-    printf(" %e", mact[i](k));
-  }
-
-  printf("\n");
-  printf("B qcld %e \n", qcld(k));
-  printf("B nsource %e \n", nsource(k));
-  printf("B pdel %e \n", pdel(k));
-  printf("B ncldwtr %e \n", ncldwtr(k));
-
-  printf("\n");
   Kokkos::parallel_for(
-      "ccncalc", top_lev - 1, KOKKOS_LAMBDA(int kk) {
+      "qqcw_fld initialization", top_lev - 1, KOKKOS_LAMBDA(int kk) {
         for (int i = 0; i < ncnst_tot; ++i) {
           qqcw_fld[i](kk) = zero;
         }
@@ -1628,8 +1298,6 @@ void dropmixnuc(
   Kokkos::parallel_for(
       "ccncalc", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
         const int k = kk + top_lev - 1;
-        printf("ccncalc k %d \n", k);
-
         // droplet number mixing ratio tendency due to mixing [#/kg/s]
         ndropmix(k) = (qcld(k) - ncldwtr(k)) * dtinv - nsource(k);
         // BAD CONSTANT
@@ -1674,11 +1342,6 @@ void dropmixnuc(
               // Fortran indexing to C++ indexing
               const int num_idx = numptr_amode[imode] - 1;
               raertend = (raercol[nnew][mm](k) - state_q[num_idx](k)) * dtinv;
-              if (k == print_this_k) {
-                printf("lptr %d num_idx %d raercol[nnew][mm](k) %e \n", lptr,
-                       num_idx, raercol[nnew][mm](k));
-              }
-
               qcldbrn_num[imode] = qqcw_fld[mm](k);
             } else {
               // Fortran indexing to C++ indexing
@@ -1687,9 +1350,6 @@ void dropmixnuc(
               //! Extract cloud borne MMRs from qqcw pointer
               qcldbrn[lspec][imode] = qqcw_fld[mm](k);
             } // end if
-            if (k == print_this_k) {
-              printf("lptr %d raertend %e \n", lptr, raertend);
-            }
             // NOTE: perform sum after loop. Thus, we need to store coltend_kk
             // and coltend_cw_kk Port this code outside of this function
             // coltend(icol,mm)    = sum( pdel(icol,:)*raertend )/gravit
@@ -1725,15 +1385,6 @@ void dropmixnuc(
           ccn[i](k) = ccn_kk[i];
         }
       });
-
-  printf("A tendnd %e \n", tendnd(print_this_k));
-
-  printf(" A ptend_q \n");
-  for (int i = nvar_ptend_q - 1; i < nvar_ptend_q; ++i) {
-    printf(" %e ", ptend_q[i](print_this_k));
-  }
-
-  printf("\n");
 
 } // dropmixnuc
 

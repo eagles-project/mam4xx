@@ -200,8 +200,6 @@ void update_from_explmix(
   Real tmpa = zero; //  temporary aerosol tendency variable [/s]
 
   const int ntot_amode = AeroConfig::num_modes();
-  const int print_this_k = 71;
-
   // load new droplets in layers above, below clouds
   Real dtmin = dtmicro;
   ekk(top_lev - 1) = zero;
@@ -239,12 +237,6 @@ void update_from_explmix(
     ekkm(k) = zn(k) * ekk(k - 1) * zs(km1);
     const Real tinv = ekkp(k) + ekkm(k);
 
-    if (k == print_this_k) {
-      printf("zs(k) %e \n", zs(k));
-      printf("zs(km1) %e \n", zs(km1));
-      printf("ekk(k-1) %e \n", ekk(k - 1));
-    }
-
     // rce-comment -- tinv is the sum of all first-order-loss-rates
     //    for the layer.  for most layers, the activation loss rate
     //    (for interstitial particles) is accounted for by the loss by
@@ -270,7 +262,6 @@ void update_from_explmix(
   // timescale for subloop [s]
   //  BAD CONSTANT
   Real dtmix = 0.9 * dtmin;
-  // printf("  dtmix %e \n ", dtmix);
   // number of substeps and bound
   const int nsubmix = dtmicro / dtmix + 1;
   // FIXME: nsubmix_bnd is used in the code. Ask Fortran team.
@@ -282,10 +273,6 @@ void update_from_explmix(
   //  }
 
   dtmix = dtmicro / nsubmix;
-
-  // printf("  dtmix After %e \n ", dtmix);
-  // printf(" dtmicro %e \n ",dtmicro );
-  // printf("nsubmix %d \n ", nsubmix);
 
   // rce-comment
   //    the activation source(k) = mact(k,m)*raercol(kp1,lmass)
@@ -378,8 +365,6 @@ void update_from_explmix(
       // raercol_cw[mm][nnew] == qold
       // raercol_cw[mm][nsav] == qnew
 
-      // printf("isub %d B raercol[nsav][mm](k) %e \n", isub,
-      // raercol[nsav][mm](print_this_k));
       for (int k = top_lev - 1; k < pver; k++) {
         const int kp1 = haero::min(k + 1, pver - 1);
         const int km1 = haero::max(k - 1, top_lev - 1);
@@ -403,27 +388,6 @@ void update_from_explmix(
                 raercol_cw[nsav][mm](kp1)); // optional in
 
       } // end kk
-      if (isub == 0 || isub == 0) {
-        printf("isub %d imode %d B raercol[nsav][mm](k) ", isub, imode);
-        for (int i = -1; i < 1; ++i) {
-          printf(" %e ", raercol[nsav][mm](print_this_k + i));
-        }
-        printf("\n");
-        printf("source %e \n", source(print_this_k));
-        printf("ekkp %e \n", ekkp(print_this_k));
-        printf("ekkm %e \n", ekkm(print_this_k));
-        printf("overlapp %e \n", overlapp(print_this_k));
-        printf("overlapm %e \n", overlapm(print_this_k));
-
-        // printf("isub %d imode %d B raercol[nsav][mm](k) %e \n", isub,imode,
-        // raercol[nsav][mm](print_this_k));
-        printf("isub %d imode %d A raercol[nnew][mm](k) %e \n", isub, imode,
-               raercol[nnew][mm](print_this_k));
-      }
-
-      // printf("isub %d A raercol[nnew][mm](k) %e \n", isub,
-      // raercol[nnew][mm](print_this_k)); printf("isub %d A
-      // raercol[nsav][mm](k) %e \n", isub, raercol[nsav][mm](print_this_k));
 
       // update aerosol species mass
       for (int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
