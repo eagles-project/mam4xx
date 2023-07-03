@@ -1095,35 +1095,36 @@ void explmix(
 
 KOKKOS_INLINE_FUNCTION
 void update_from_explmix(
+    const ThreadTeam &team,
     const Real dtmicro, // time step for microphysics [s]
     int top_lev,        // top level
     int pver,           // number of levels
-    ColumnView csbot,   // air density at bottom (interface) of layer [kg/m^3]
-    ColumnView cldn,    // cloud fraction [fraction]
-    ColumnView zn,      // g/pdel for layer [m^2/kg]
-    ColumnView zs,      // inverse of distance between levels [m^-1]
-    ColumnView ekd,     // diffusivity for droplets [m^2/s]
-    ColumnView nact[pver],          // fractional aero. number
+    const ColumnView csbot,   // air density at bottom (interface) of layer [kg/m^3]
+    const ColumnView cldn,    // cloud fraction [fraction]
+    const ColumnView zn,      // g/pdel for layer [m^2/kg]
+    const ColumnView zs,      // inverse of distance between levels [m^-1]
+    const ColumnView ekd,     // diffusivity for droplets [m^2/s]
+    const ColumnView nact[pver],          // fractional aero. number
                                     // activation rate [/s]
-    ColumnView mact[pver],          // fractional aero. mass
+    const ColumnView mact[pver],          // fractional aero. mass
                                     // activation rate [/s]
-    ColumnView qcld,                // cloud droplet number mixing ratio [#/kg]
-    ColumnView raercol[pver][2],    // single column of saved aerosol mass,
+    const ColumnView qcld,                // cloud droplet number mixing ratio [#/kg]
+    const ColumnView raercol[pver][2],    // single column of saved aerosol mass,
                                     // number mixing ratios [#/kg or kg/kg]
-    ColumnView raercol_cw[pver][2], // same as raercol but for cloud-borne
+    const ColumnView raercol_cw[pver][2], // same as raercol but for cloud-borne
                                     // phase [#/kg or kg/kg]
     int &nsav, // indices for old, new time levels in substepping
     int &nnew, // indices for old, new time levels in substepping
     const int nspec_amode[AeroConfig::num_modes()],
     const int mam_idx[AeroConfig::num_modes()][nspec_max],
     // work vars
-    ColumnView overlapp, // cloud overlap involving level kk+1 [fraction]
-    ColumnView overlapm, // cloud overlap involving level kk-1 [fraction]
-    ColumnView ekkp,     // zn*zs*density*diffusivity [/s]
-    ColumnView ekkm,     // zn*zs*density*diffusivity   [/s]
-    ColumnView qncld,    // updated cloud droplet number mixing ratio [#/kg]
-    ColumnView srcn,     // droplet source rate [/s]
-    ColumnView source //  source rate for activated number or species mass [/s]
+    const ColumnView overlapp, // cloud overlap involving level kk+1 [fraction]
+    const ColumnView overlapm, // cloud overlap involving level kk-1 [fraction]
+    const ColumnView ekkp,     // zn*zs*density*diffusivity [/s]
+    const ColumnView ekkm,     // zn*zs*density*diffusivity   [/s]
+    const ColumnView qncld,    // updated cloud droplet number mixing ratio [#/kg]
+    const ColumnView srcn,     // droplet source rate [/s]
+    const ColumnView source //  source rate for activated number or species mass [/s]
 ) {
 
   // BAD CONSTANT
@@ -1146,7 +1147,10 @@ void update_from_explmix(
   // start k for loop here. for k = top_lev to pver
   // cldn will be columnviews of length pver,
   // overlaps also to columnview pass as parameter so it is allocated elsewhwere
-  for (int k = top_lev - 1; k < pver; k++) {
+  Kokkos::parallel_reduce(
+        Kokkos::TeamThreadRange(team, pver - top_lev + 1),
+        [&](int kk, Real &min_val) { 
+    const int k = top_lev-1 + kk;     
     const int kp1 = haero::min(k + 1, pver - 1);
     const int km1 = haero::max(k - 1, top_lev - 1);
     // maximum overlap assumption
@@ -1191,9 +1195,10 @@ void update_from_explmix(
 
     // FIXME: BAD CONSTANT
     if (tinv > 1e-6) {
-      dtmin = haero::min(dtmin, one / tinv);
+      min_val = haero::min(min_val, one / tinv);
     }
-  }
+  },Kokkos::Min<Real>(dtmin));
+
   // TODO
   //    fix dtmin section
   //    pass arrs as columnviews and k len instead of single values
@@ -1225,9 +1230,9 @@ void update_from_explmix(
 
 
   for (int isub = 0; isub < nsubmix; isub++) {
-
       Kokkos::parallel_for(
-      "", pver - top_lev + 1, KOKKOS_LAMBDA(int k) {
+        Kokkos::TeamThreadRange(team, pver - top_lev + 1),
+        KOKKOS_LAMBDA(int k) {  
         const int kk = top_lev -1 + k; 
        qncld(kk) = qcld(kk);
        srcn(kk) = zero;
@@ -1248,7 +1253,8 @@ void update_from_explmix(
       // rce-comment- activation source in layer k involves particles from k+1
       //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
       Kokkos::parallel_for(
-      "", pver - top_lev , KOKKOS_LAMBDA(int kk) {
+        Kokkos::TeamThreadRange(team, pver - top_lev),
+        KOKKOS_LAMBDA(int kk) { 
         const int k = top_lev -1 + kk; 
         const int kp1 = haero::min(k + 1, pver - 1);
         srcn(k) += nact[k](imode) * raercol[kp1][nsav](mm);
@@ -1267,7 +1273,8 @@ void update_from_explmix(
     // qncld == qnew
 
     Kokkos::parallel_for(
-      "", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
+        Kokkos::TeamThreadRange(team, pver - top_lev + 1),
+        KOKKOS_LAMBDA(int kk) { 
         const int k = top_lev -1 + kk;
       const int kp1 = haero::min(k + 1, pver - 1);
       const int km1 = haero::max(k - 1, top_lev - 1);
@@ -1290,7 +1297,8 @@ void update_from_explmix(
       // k+1
       //                source(:)= nact(:,m)*(raercol(:,mm,nsav))
       Kokkos::parallel_for(
-      "", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
+        Kokkos::TeamThreadRange(team, pver - top_lev + 1),
+        KOKKOS_LAMBDA(int kk) { 
         const int k = top_lev -1 + kk;
         const int kp1 = haero::min(k + 1, pver - 1);
         // const int km1 = haero::max(k-1, top_lev);
@@ -1305,7 +1313,8 @@ void update_from_explmix(
       // raercol_cw[mm][nsav] == qnew
 
       Kokkos::parallel_for(
-      "", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
+        Kokkos::TeamThreadRange(team, pver - top_lev + 1),
+        KOKKOS_LAMBDA(int kk) { 
         const int k = top_lev -1 + kk;
         const int kp1 = haero::min(k + 1, pver - 1);
         const int km1 = haero::max(k - 1, top_lev - 1);
@@ -1334,7 +1343,8 @@ void update_from_explmix(
         // k+1
         //            source(:)= mact(:,m)*(raercol(:,mm,nsav))
         Kokkos::parallel_for(
-      "", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
+        Kokkos::TeamThreadRange(team, pver - top_lev + 1),
+        KOKKOS_LAMBDA(int kk) { 
         const int k = top_lev -1 + kk;
           const int kp1 = haero::min(k + 1, pver - 1);
           source(k) = mact[k](imode) * raercol[kp1][nsav](mm);
@@ -1347,7 +1357,8 @@ void update_from_explmix(
         // raercol_cw[mm][nnew] == qold
         // raercol_cw[mm][nsav] == qnew
         Kokkos::parallel_for(
-      "", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
+        Kokkos::TeamThreadRange(team, pver - top_lev + 1),
+        KOKKOS_LAMBDA(int kk) { 
         const int k = top_lev -1 + kk;
           const int kp1 = haero::min(k + 1, pver - 1);
           const int km1 = haero::max(k - 1, top_lev - 1);
@@ -1375,7 +1386,8 @@ void update_from_explmix(
 
   // evaporate particles again if no cloud
   Kokkos::parallel_for(
-      "", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
+        Kokkos::TeamThreadRange(team, pver - top_lev + 1),
+        KOKKOS_LAMBDA(int kk) { 
         const int k = top_lev -1 + kk;
     if (cldn(k) == zero) {
       // no cloud
@@ -1400,11 +1412,18 @@ void update_from_explmix(
 
 KOKKOS_INLINE_FUNCTION
 void dropmixnuc(
-    const Real dtmicro, ColumnView temp, ColumnView pmid, ColumnView pint,
-    ColumnView pdel, ColumnView rpdel, ColumnView zm, ColumnView state_q[pver],
-    ColumnView ncldwtr,
-    ColumnView kvh, // kvh[kk+1]
-    ColumnView cldn,
+    const ThreadTeam &team,
+    const Real dtmicro,
+    const ColumnView temp, 
+    const ColumnView pmid, 
+    const ColumnView pint,
+    const ColumnView pdel, 
+    const ColumnView rpdel, 
+    const ColumnView zm, 
+    const ColumnView state_q[pver],
+    const ColumnView ncldwtr,
+    const ColumnView kvh, // kvh[kk+1]
+    const ColumnView cldn,
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
     const Real specdens_amode[maxd_aspectype],
     const Real spechygro[maxd_aspectype],
@@ -1414,25 +1433,47 @@ void dropmixnuc(
     const int numptr_amode[AeroConfig::num_modes()],
     const int nspec_amode[maxd_aspectype],
     const Real exp45logsig[AeroConfig::num_modes()],
-    const Real alogsig[AeroConfig::num_modes()], const Real aten,
+    const Real alogsig[AeroConfig::num_modes()], 
+    const Real aten,
     const int mam_idx[AeroConfig::num_modes()][nspec_max],
-    const int mam_cnst_idx[AeroConfig::num_modes()][nspec_max], ColumnView qcld,
-    ColumnView wsub,
-    ColumnView cldo,                // in
-    ColumnView qqcw_fld[ncnst_tot], // inout
-    ColumnView ptend_q[nvar_ptend_q], ColumnView tendnd,
-    ColumnView factnum[pver], ColumnView ndropcol, ColumnView ndropmix,
-    ColumnView nsource, ColumnView wtke, ColumnView ccn[pver],
-    ColumnView coltend[ncnst_tot], ColumnView coltend_cw[ncnst_tot],
+    const int mam_cnst_idx[AeroConfig::num_modes()][nspec_max], 
+    const ColumnView qcld,
+    const ColumnView wsub,
+    const ColumnView cldo,                // in
+    const ColumnView qqcw_fld[ncnst_tot], // inout
+    const ColumnView ptend_q[nvar_ptend_q],
+    const ColumnView tendnd,
+    const ColumnView factnum[pver],
+    const ColumnView ndropcol, 
+    const ColumnView ndropmix,
+    const ColumnView nsource, 
+    const ColumnView wtke, 
+    const ColumnView ccn[pver],
+    const ColumnView coltend[ncnst_tot],
+    const ColumnView coltend_cw[ncnst_tot],
     // work arrays
-    ColumnView raercol_cw[pver][2], ColumnView raercol[pver][2],
-    ColumnView nact[pver], ColumnView mact[pver], ColumnView ekd, ColumnView zn,
-    ColumnView csbot, ColumnView zs, ColumnView overlapp, ColumnView overlapm,
-    ColumnView ekkp, ColumnView ekkm, ColumnView qncld, ColumnView srcn,
-    ColumnView source, ColumnView dz, ColumnView csbot_cscen,
+    const ColumnView raercol_cw[pver][2],
+    const ColumnView raercol[pver][2],
+    const ColumnView nact[pver], 
+    const ColumnView mact[pver], 
+    const ColumnView ekd, 
+    const ColumnView zn,
+    const ColumnView csbot, 
+    const ColumnView zs, 
+    const ColumnView overlapp, 
+    const ColumnView overlapm,
+    const ColumnView ekkp, 
+    const ColumnView ekkm, 
+    const ColumnView qncld, 
+    const ColumnView srcn,
+    const ColumnView source,
+    const ColumnView dz,
+    const ColumnView csbot_cscen,
     // ColumnView qcldbrn[pver][maxd_aspectype],//[ntot_amode],
-    ColumnView qcldbrn_num[pver], // [ntot_amode]
-    ColumnView raertend, ColumnView qqcwtend) {
+    const ColumnView qcldbrn_num[pver], // [ntot_amode]
+    const ColumnView raertend,
+    const ColumnView qqcwtend) 
+{
   // vertical diffusion and nucleation of cloud droplets
   // assume cloud presence controlled by cloud fraction
   // doesn't distinguish between warm, cold clouds
@@ -1514,7 +1555,8 @@ void dropmixnuc(
   // Initialize 1D (in space) versions of interstitial and cloud borne aerosol
   int nsav = 0;
   Kokkos::parallel_for(
-      "update_from_newcld", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
+        Kokkos::TeamThreadRange(team, pver - top_lev + 1),
+        KOKKOS_LAMBDA(int kk) { 
         // // ! g/pdel for layer [m^2/kg]
         // const Real zn = gravit * rpdel;
         // turbulent vertical velocity at base of layer k [m/s]
@@ -1563,7 +1605,8 @@ void dropmixnuc(
       });                                                  // end k
 
   Kokkos::parallel_for(
-      "pre-update_from_explmix", pver, KOKKOS_LAMBDA(int k) {
+        Kokkos::TeamThreadRange(team, pver),
+        KOKKOS_LAMBDA(int k) { 
         zn(k) = gravit * rpdel[k];
         // Real csbot_km1 = zero;
         if (k >= top_lev - 1 && k < pver - 1) {
@@ -1588,7 +1631,8 @@ void dropmixnuc(
 
   // NOTE: update_from_cldn_profile loop from 7 to 71 in fortran code.
   Kokkos::parallel_for(
-      "update_from_cldn_profile", pver - top_lev, KOKKOS_LAMBDA(int kk) {
+        Kokkos::TeamThreadRange(team, pver - top_lev),
+        KOKKOS_LAMBDA(int kk) { 
         const int k = kk + top_lev - 1;
         const int kp1 = haero::min(k + 1, pver - 1);
 
@@ -1619,7 +1663,7 @@ void dropmixnuc(
   // // same as raercol but for cloud-borne phase [#/kg or kg/kg]
   // Real raercol_cw_2[ncnst_tot] = {};
 
-  update_from_explmix(dtmicro, top_lev, pver, csbot, cldn, zn, zs, ekd, nact,
+  update_from_explmix(team,dtmicro, top_lev, pver, csbot, cldn, zn, zs, ekd, nact,
                       mact, qcld, raercol, raercol_cw, nsav, nnew, nspec_amode,
                       mam_idx,
                       // work vars
@@ -1628,7 +1672,8 @@ void dropmixnuc(
                       source);
 
   Kokkos::parallel_for(
-      "qqcw_fld initialization", top_lev - 1, KOKKOS_LAMBDA(int kk) {
+        Kokkos::TeamThreadRange(team, top_lev - 1),
+        KOKKOS_LAMBDA(int kk) { 
         for (int i = 0; i < ncnst_tot; ++i) {
           qqcw_fld[i](kk) = zero;
         }
@@ -1636,7 +1681,8 @@ void dropmixnuc(
 
 
   Kokkos::parallel_for(
-      "ccncalc", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
+        Kokkos::TeamThreadRange(team, pver - top_lev + 1),
+        KOKKOS_LAMBDA(int kk) { 
         const int k = kk + top_lev - 1;
         // droplet number mixing ratio tendency due to mixing [#/kg/s]
         ndropmix(k) = (qcld(k) - ncldwtr(k)) * dtinv - nsource(k);

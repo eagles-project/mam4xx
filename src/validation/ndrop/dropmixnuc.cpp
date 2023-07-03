@@ -11,6 +11,7 @@
 
 using namespace skywalker;
 using namespace mam4;
+using namespace haero;
 
 void dropmixnuc(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -305,8 +306,10 @@ void dropmixnuc(Ensemble *ensemble) {
       // }
       qcldbrn_num[i] = haero::testing::create_column_view(ntot_amode);
     }
-
-    ndrop::dropmixnuc(
+    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    Kokkos::parallel_for(
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+    ndrop::dropmixnuc(team,
         dtmicro, tair, pmid, pint, pdel, rpdel,
         zm, //  ! in zm[kk] - zm[kk+1], for pver zm[kk-1] - zm[kk]
         state_q, ncldwtr,
@@ -324,6 +327,7 @@ void dropmixnuc(Ensemble *ensemble) {
         zn, csbot, zs, overlapp, overlapm, ekkp, ekkm, qncld, srcn, source, dz,
         csbot_cscen,
         /*qcldbrn*/ qcldbrn_num, raertend, qqcwtend);
+         });
 
     auto host = Kokkos::create_mirror_view(tendnd);
     Kokkos::deep_copy(host, tendnd);
