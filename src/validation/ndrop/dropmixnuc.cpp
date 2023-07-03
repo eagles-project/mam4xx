@@ -233,10 +233,10 @@ void dropmixnuc(Ensemble *ensemble) {
       ptend_q[i] = haero::testing::create_column_view(pver);
     }
 
-    ColumnView factnum[ntot_amode];
+    ColumnView factnum[pver];
 
-    for (int i = 0; i < ntot_amode; ++i) {
-      factnum[i] = haero::testing::create_column_view(pver);
+    for (int i = 0; i < pver; ++i) {
+      factnum[i] = haero::testing::create_column_view(ntot_amode);
     }
 
     ColumnView coltend[ncnst_tot];
@@ -338,7 +338,7 @@ void dropmixnuc(Ensemble *ensemble) {
     for (int i = 0; i < ntot_amode; ++i) {
       // Kokkos::deep_copy(host, factnum[i]);
       for (int kk = 0; kk < pver; ++kk) {
-        output_factnum.push_back(factnum[i](kk));
+        output_factnum.push_back(factnum[kk](i));
       }
     }
 

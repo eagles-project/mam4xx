@@ -1414,7 +1414,7 @@ void dropmixnuc(
     ColumnView cldo,                // in
     ColumnView qqcw_fld[ncnst_tot], // inout
     ColumnView ptend_q[nvar_ptend_q], ColumnView tendnd,
-    ColumnView factnum[AeroConfig::num_modes()], ColumnView ndropcol,
+    ColumnView factnum[pver], ColumnView ndropcol,
     ColumnView ndropmix, ColumnView nsource, ColumnView wtke,
     ColumnView ccn[psat], ColumnView coltend[ncnst_tot],
     ColumnView coltend_cw[ncnst_tot],
@@ -1554,7 +1554,7 @@ void dropmixnuc(
         //   // FIXME
         //   state_q_kk[i] = state_q[i](k);
         // }
-        Real factnum_kk[ntot_amode] = {};
+        // Real factnum_kk[ntot_amode] = {};
 
         update_from_newcld(cldn(k), cldo(k), dtinv, //& ! in
                            wtke(k), temp(k), air_density,
@@ -1565,11 +1565,11 @@ void dropmixnuc(
                            aten, mam_idx, qcld(k),
                            raercol_1_kk,            // inout
                            raercol_cw_1_kk,         //&      ! inout
-                           nsource(k), factnum_kk); // inout
+                           nsource(k), factnum[k].data()); // inout
         // FIXME
-        for (int i = 0; i < ntot_amode; ++i) {
-          factnum[i](k) = factnum_kk[i];
-        }
+        // for (int i = 0; i < ntot_amode; ++i) {
+        //   factnum[i](k) = factnum_kk[i];
+        // }
 
         for (int i = 0; i < ncnst_tot; ++i) {
           raercol[nsav][i](k) = raercol_1_kk[i];
@@ -1634,10 +1634,10 @@ void dropmixnuc(
           raercol_cw_1_kk[i] = raercol_cw[nsav][i](k);
         }
 
-        Real factnum_kk[ntot_amode] = {zero};
-        for (int i = 0; i < ntot_amode; ++i) {
-          factnum_kk[i] = factnum[i](k);
-        }
+        // Real factnum_kk[ntot_amode] = {zero};
+        // for (int i = 0; i < ntot_amode; ++i) {
+        //   factnum_kk[i] = factnum[i](k);
+        // }
         Real nact_kk[ntot_amode] = {zero};
         Real mact_kk[ntot_amode] = {zero};
 
@@ -1650,7 +1650,7 @@ void dropmixnuc(
             exp45logsig, alogsig, aten, mam_idx, raercol_1_kk, raercol_1_kp1,
             raercol_cw_1_kk,
             nsource(k), // inout
-            qcld(k), factnum_kk,
+            qcld(k), factnum[k].data(),
             ekd(k), // out
             nact_kk, mact_kk);
 
@@ -1660,7 +1660,7 @@ void dropmixnuc(
         }
 
         for (int i = 0; i < ntot_amode; ++i) {
-          factnum[i](k) = factnum_kk[i];
+          // factnum[i](k) = factnum_kk[i];
           nact[i](k) = nact_kk[i];
           mact[i](k) = mact_kk[i];
         }
