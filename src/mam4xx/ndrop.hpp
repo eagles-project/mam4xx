@@ -1099,16 +1099,16 @@ void update_from_explmix(
     const Real dtmicro, // time step for microphysics [s]
     int top_lev,        // top level
     int pver,           // number of levels
-    const ColumnView csbot,   // air density at bottom (interface) of layer [kg/m^3]
-    const ColumnView cldn,    // cloud fraction [fraction]
-    const ColumnView zn,      // g/pdel for layer [m^2/kg]
-    const ColumnView zs,      // inverse of distance between levels [m^-1]
-    const ColumnView ekd,     // diffusivity for droplets [m^2/s]
+    const ColumnView& csbot,   // air density at bottom (interface) of layer [kg/m^3]
+    const ColumnView& cldn,    // cloud fraction [fraction]
+    const ColumnView& zn,      // g/pdel for layer [m^2/kg]
+    const ColumnView& zs,      // inverse of distance between levels [m^-1]
+    const ColumnView& ekd,     // diffusivity for droplets [m^2/s]
     const ColumnView nact[pver],          // fractional aero. number
                                     // activation rate [/s]
     const ColumnView mact[pver],          // fractional aero. mass
                                     // activation rate [/s]
-    const ColumnView qcld,                // cloud droplet number mixing ratio [#/kg]
+    const ColumnView& qcld,                // cloud droplet number mixing ratio [#/kg]
     const ColumnView raercol[pver][2],    // single column of saved aerosol mass,
                                     // number mixing ratios [#/kg or kg/kg]
     const ColumnView raercol_cw[pver][2], // same as raercol but for cloud-borne
@@ -1118,13 +1118,13 @@ void update_from_explmix(
     const int nspec_amode[AeroConfig::num_modes()],
     const int mam_idx[AeroConfig::num_modes()][nspec_max],
     // work vars
-    const ColumnView overlapp, // cloud overlap involving level kk+1 [fraction]
-    const ColumnView overlapm, // cloud overlap involving level kk-1 [fraction]
-    const ColumnView ekkp,     // zn*zs*density*diffusivity [/s]
-    const ColumnView ekkm,     // zn*zs*density*diffusivity   [/s]
-    const ColumnView qncld,    // updated cloud droplet number mixing ratio [#/kg]
-    const ColumnView srcn,     // droplet source rate [/s]
-    const ColumnView source //  source rate for activated number or species mass [/s]
+    const ColumnView& overlapp, // cloud overlap involving level kk+1 [fraction]
+    const ColumnView& overlapm, // cloud overlap involving level kk-1 [fraction]
+    const ColumnView& ekkp,     // zn*zs*density*diffusivity [/s]
+    const ColumnView& ekkm,     // zn*zs*density*diffusivity   [/s]
+    const ColumnView& qncld,    // updated cloud droplet number mixing ratio [#/kg]
+    const ColumnView& srcn,     // droplet source rate [/s]
+    const ColumnView& source //  source rate for activated number or species mass [/s]
 ) {
 
   // BAD CONSTANT
@@ -1414,16 +1414,16 @@ KOKKOS_INLINE_FUNCTION
 void dropmixnuc(
     const ThreadTeam &team,
     const Real dtmicro,
-    const ColumnView temp, 
-    const ColumnView pmid, 
-    const ColumnView pint,
-    const ColumnView pdel, 
-    const ColumnView rpdel, 
-    const ColumnView zm, 
+    const ColumnView& temp, 
+    const ColumnView& pmid, 
+    const ColumnView& pint,
+    const ColumnView& pdel, 
+    const ColumnView& rpdel, 
+    const ColumnView& zm, 
     const ColumnView state_q[pver],
-    const ColumnView ncldwtr,
-    const ColumnView kvh, // kvh[kk+1]
-    const ColumnView cldn,
+    const ColumnView& ncldwtr,
+    const ColumnView& kvh, // kvh[kk+1]
+    const ColumnView& cldn,
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
     const Real specdens_amode[maxd_aspectype],
     const Real spechygro[maxd_aspectype],
@@ -1437,17 +1437,17 @@ void dropmixnuc(
     const Real aten,
     const int mam_idx[AeroConfig::num_modes()][nspec_max],
     const int mam_cnst_idx[AeroConfig::num_modes()][nspec_max], 
-    const ColumnView qcld,
-    const ColumnView wsub,
-    const ColumnView cldo,                // in
+    const ColumnView& qcld,
+    const ColumnView& wsub,
+    const ColumnView& cldo,                // in
     const ColumnView qqcw_fld[ncnst_tot], // inout
     const ColumnView ptend_q[nvar_ptend_q],
-    const ColumnView tendnd,
+    const ColumnView& tendnd,
     const ColumnView factnum[pver],
-    const ColumnView ndropcol, 
-    const ColumnView ndropmix,
-    const ColumnView nsource, 
-    const ColumnView wtke, 
+    const ColumnView& ndropcol, 
+    const ColumnView& ndropmix,
+    const ColumnView& nsource, 
+    const ColumnView& wtke, 
     const ColumnView ccn[pver],
     const ColumnView coltend[ncnst_tot],
     const ColumnView coltend_cw[ncnst_tot],
@@ -1456,23 +1456,23 @@ void dropmixnuc(
     const ColumnView raercol[pver][2],
     const ColumnView nact[pver], 
     const ColumnView mact[pver], 
-    const ColumnView ekd, 
-    const ColumnView zn,
-    const ColumnView csbot, 
-    const ColumnView zs, 
-    const ColumnView overlapp, 
-    const ColumnView overlapm,
-    const ColumnView ekkp, 
-    const ColumnView ekkm, 
-    const ColumnView qncld, 
-    const ColumnView srcn,
-    const ColumnView source,
-    const ColumnView dz,
-    const ColumnView csbot_cscen,
+    const ColumnView& ekd, 
+    const ColumnView& zn,
+    const ColumnView& csbot, 
+    const ColumnView& zs, 
+    const ColumnView& overlapp, 
+    const ColumnView& overlapm,
+    const ColumnView& ekkp, 
+    const ColumnView& ekkm, 
+    const ColumnView& qncld, 
+    const ColumnView& srcn,
+    const ColumnView& source,
+    const ColumnView& dz,
+    const ColumnView& csbot_cscen,
     // ColumnView qcldbrn[pver][maxd_aspectype],//[ntot_amode],
     const ColumnView qcldbrn_num[pver], // [ntot_amode]
-    const ColumnView raertend,
-    const ColumnView qqcwtend) 
+    const ColumnView& raertend,
+    const ColumnView& qqcwtend) 
 {
   // vertical diffusion and nucleation of cloud droplets
   // assume cloud presence controlled by cloud fraction
