@@ -1387,8 +1387,14 @@ void update_from_explmix(
 
 KOKKOS_INLINE_FUNCTION
 void dropmixnuc(
-    const Real dtmicro, ColumnView temp, ColumnView pmid, ColumnView pint,
-    ColumnView pdel, ColumnView rpdel, ColumnView zm, ColumnView state_q[nvars],
+    const Real dtmicro, 
+    ColumnView temp,
+    ColumnView pmid,
+    ColumnView pint,
+    ColumnView pdel,
+    ColumnView rpdel,
+    ColumnView zm,
+    ColumnView state_q[pver],
     ColumnView ncldwtr,
     ColumnView kvh, // kvh[kk+1]
     ColumnView cldn,
@@ -1521,7 +1527,7 @@ void dropmixnuc(
           raercol_cw_1_kk[mm] = qqcw_fld[mm](k);
           // Fortran indexing to C++ indexing
           const int num_idx = numptr_amode[imode] - 1;
-          raercol_1_kk[mm] = state_q[num_idx](k);
+          raercol_1_kk[mm] = state_q[k][num_idx];
           for (int lspec = 1; lspec < nspec_amode[imode] + 1; ++lspec) {
             // Fortran indexing to C++ indexing
             const int mm = mam_idx[imode][lspec] - 1;
@@ -1529,7 +1535,7 @@ void dropmixnuc(
             raercol_cw_1_kk[mm] = qqcw_fld[mm](k);
             // Fortran indexing to C++ indexing
             const int spc_idx = lmassptr_amode[lspec - 1][imode] - 1;
-            raercol_1_kk[mm] = state_q[spc_idx](k);
+            raercol_1_kk[mm] = state_q[k][spc_idx];
           } // lspec
         }   // imode
 
@@ -1542,17 +1548,17 @@ void dropmixnuc(
             conversions::density_of_ideal_gas(temp(k), pmid(k));
 
         //
-        Real state_q_kk[nvars];
+        // Real state_q_kk[nvars];
 
-        for (int i = 0; i < nvars; ++i) {
-          // FIXME
-          state_q_kk[i] = state_q[i](k);
-        }
+        // for (int i = 0; i < nvars; ++i) {
+        //   // FIXME
+        //   state_q_kk[i] = state_q[i](k);
+        // }
         Real factnum_kk[ntot_amode] = {};
 
         update_from_newcld(cldn(k), cldo(k), dtinv, //& ! in
                            wtke(k), temp(k), air_density,
-                           state_q_kk, //& ! in
+                           state_q[k].data(), //& ! in
                            lspectype_amode, specdens_amode, spechygro,
                            lmassptr_amode, voltonumbhi_amode, voltonumblo_amode,
                            numptr_amode, nspec_amode, exp45logsig, alogsig,
@@ -1570,7 +1576,7 @@ void dropmixnuc(
           raercol_cw[nsav][i](k) = raercol_cw_1_kk[i];
         }
       }); // end k
-
+#if 1
   // NOTE: update_from_cldn_profile loop from 7 to 71 in fortran code.
   Kokkos::parallel_for(
       "update_from_cldn_profile", pver - top_lev, KOKKOS_LAMBDA(int kk) {
@@ -1611,12 +1617,12 @@ void dropmixnuc(
         const Real dz =
             one / (air_density * gravit * rpdel(k)); // ! layer thickness in m
 
-        Real state_q_kp1[nvars];
+        // Real state_q_kp1[nvars];
 
-        for (int i = 0; i < nvars; ++i) {
-          // FIXME
-          state_q_kp1[i] = state_q[i](kp1);
-        }
+        // for (int i = 0; i < nvars; ++i) {
+        //   // FIXME
+        //   state_q_kp1[i] = state_q[i](kp1);
+        // }
 
         Real raercol_1_kk[ncnst_tot] = {zero};
         Real raercol_1_kp1[ncnst_tot] = {zero};
@@ -1638,7 +1644,7 @@ void dropmixnuc(
         update_from_cldn_profile(
             cldn(k), cldn(kp1), dtinv, wtke(k), zs, dz, // ! in
             temp(k), air_density, air_density_kp1, csbot_cscen,
-            state_q_kp1, // ! in
+            state_q[kp1].data(), // ! in
             lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
             voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
             exp45logsig, alogsig, aten, mam_idx, raercol_1_kk, raercol_1_kp1,
@@ -1753,12 +1759,12 @@ void dropmixnuc(
             if (lspec == 0) {
               // Fortran indexing to C++ indexing
               const int num_idx = numptr_amode[imode] - 1;
-              raertend = (raercol[nnew][mm](k) - state_q[num_idx](k)) * dtinv;
+              raertend = (raercol[nnew][mm](k) - state_q[k](num_idx)) * dtinv;
               qcldbrn_num[imode] = qqcw_fld[mm](k);
             } else {
               // Fortran indexing to C++ indexing
               const int spc_idx = lmassptr_amode[lspec - 1][imode] - 1;
-              raertend = (raercol[nnew][mm](k) - state_q[spc_idx](k)) * dtinv;
+              raertend = (raercol[nnew][mm](k) - state_q[k](spc_idx)) * dtinv;
               //! Extract cloud borne MMRs from qqcw pointer
               qcldbrn[lspec][imode] = qqcw_fld[mm](k);
             } // end if
@@ -1781,14 +1787,14 @@ void dropmixnuc(
         const Real air_density =
             conversions::density_of_ideal_gas(temp(k), pmid(k));
 
-        Real state_q_kk[nvars];
+        // Real state_q_kk[nvars];
 
-        for (int i = 0; i < nvars; ++i) {
-          // FIXME
-          state_q_kk[i] = state_q[i](k);
-        }
+        // for (int i = 0; i < nvars; ++i) {
+        //   // FIXME
+        //   state_q_kk[i] = state_q[i](k);
+        // }
         Real ccn_kk[psat] = {};
-        ccncalc(state_q_kk, temp(k), qcldbrn, qcldbrn_num, air_density,
+        ccncalc(state_q[k].data(), temp(k), qcldbrn, qcldbrn_num, air_density,
                 lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
                 voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
                 exp45logsig, alogsig, ccn_kk);
@@ -1797,7 +1803,7 @@ void dropmixnuc(
           ccn[i](k) = ccn_kk[i];
         }
       });
-
+#endif
 } // dropmixnuc
 
 } // namespace ndrop

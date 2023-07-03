@@ -43,19 +43,27 @@ void dropmixnuc(Ensemble *ensemble) {
     const auto qqcw_db = input.get_array("qqcw");
 
     // const int top_lev = 6;
-    ColumnView state_q[nvars];
+    ColumnView state_q[pver];
 
     int count = 0;
+    auto device_state = haero::testing::create_column_view(nvars);
+    auto state_host = Kokkos::create_mirror_view(device_state);
+
     for (int i = 0; i < nvars; ++i) {
-      state_q[i] = haero::testing::create_column_view(pver);
-      // input data is store on the cpu.
-      auto state_q_i_host = Kokkos::create_mirror_view(state_q[i]);
       for (int kk = 0; kk < pver; ++kk) {
-        state_q_i_host(kk) = state_q_db[count];
+        state_q[kk] = haero::testing::create_column_view(nvars);
+      } // kk
+    } // nvars
+
+    for (int i = 0; i < nvars; ++i) {
+      // input data is store on the cpu.
+      for (int kk = 0; kk < pver; ++kk) {
+        
+        state_q[kk](i) = state_q_db[count];
         count++;
       }
       // transfer data to GPU.
-      Kokkos::deep_copy(state_q[i], state_q_i_host);
+      // Kokkos::deep_copy(state_q[i], state_q_i_host);
     }
 
     ColumnView tair;
