@@ -1108,7 +1108,7 @@ void update_from_explmix(
     ColumnView mact[AeroConfig::num_modes()], // fractional aero. mass
                                               // activation rate [/s]
     ColumnView qcld, // cloud droplet number mixing ratio [#/kg]
-    ColumnView raercol[2][ncnst_tot],    // single column of saved aerosol mass,
+    ColumnView raercol[pver][2],    // single column of saved aerosol mass,
                                          // number mixing ratios [#/kg or kg/kg]
     ColumnView raercol_cw[pver][2], // same as raercol but for cloud-borne
                                          // phase [#/kg or kg/kg]
@@ -1247,13 +1247,13 @@ void update_from_explmix(
       //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
       for (int k = top_lev - 1; k < pver - 1; k++) {
         const int kp1 = haero::min(k + 1, pver - 1);
-        srcn(k) += nact[imode](k) * raercol[nsav][mm](kp1);
+        srcn(k) += nact[imode](k) * raercol[kp1][nsav](mm);
       } // kk
 
       // rce-comment- new formulation for k=pver
       //             srcn(  pver  )=srcn(  pver  )+nact(  pver  ,m)*(raercol(
       //             pver,mm,nsav))
-      tmpa = raercol[nsav][mm](pver - 1) * nact[imode](pver - 1) +
+      tmpa = raercol[pver - 1][nsav](mm) * nact[imode](pver - 1) +
              raercol_cw[pver - 1][nsav](mm) * nact[imode](pver - 1);
       srcn(pver - 1) += haero::max(zero, tmpa);
 
@@ -1285,10 +1285,10 @@ void update_from_explmix(
       for (int k = top_lev - 1; k < pver - 1; k++) {
         const int kp1 = haero::min(k + 1, pver - 1);
         // const int km1 = haero::max(k-1, top_lev);
-        source(k) = nact[imode](k) * raercol[nsav][mm](kp1);
+        source(k) = nact[imode](k) * raercol[kp1][nsav](mm);
       } // end k
 
-      tmpa = raercol[nsav][mm](pver - 1) * nact[imode](pver - 1) +
+      tmpa = raercol[pver - 1][nsav](mm) * nact[imode](pver - 1) +
              raercol_cw[pver - 1][nsav](mm) * nact[imode](pver - 1);
       source(pver - 1) = haero::max(zero, tmpa);
 
@@ -1310,9 +1310,9 @@ void update_from_explmix(
         // raercol[mm][nsav] == qnew
         // raercol_cw[mm][nsav] == qactold
 
-        explmix(raercol[nsav][mm](km1), raercol[nsav][mm](k),
-                raercol[nsav][mm](kp1),
-                raercol[nnew][mm](k), //// output FIXME: move to last position
+        explmix(raercol[km1][nsav](mm), raercol[k][nsav](mm),
+                raercol[kp1][nsav](mm),
+                raercol[k][nnew](mm), //// output FIXME: move to last position
                 source(k), ekkp(k), ekkm(k), overlapp(k), overlapm(k), dtmix,
                 raercol_cw[km1][nsav](mm),
                 raercol_cw[kp1][nsav](mm)); // optional in
@@ -1327,12 +1327,11 @@ void update_from_explmix(
         //            source(:)= mact(:,m)*(raercol(:,mm,nsav))
         for (int k = top_lev - 1; k < pver - 1; k++) {
           const int kp1 = haero::min(k + 1, pver - 1);
-          source(k) = mact[imode](k) * raercol[nsav][mm](kp1);
+          source(k) = mact[imode](k) * raercol[kp1][nsav](mm);
 
         } // end k
-
-        tmpa = raercol[nsav][mm](pver - 1) * nact[imode](pver - 1) +
-               raercol_cw[nsav][mm](pver - 1) * nact[imode](pver - 1);
+        tmpa = raercol[pver - 1][nsav](mm)* nact[imode](pver - 1) +
+               raercol_cw[pver - 1][nsav](mm)* nact[imode](pver - 1);
         source(pver - 1) = haero::max(zero, tmpa);
 
         // raercol_cw[mm][nnew] == qold
@@ -1349,9 +1348,9 @@ void update_from_explmix(
           // raercol[mm][nnew] == qold
           // raercol[mm][nsav] == qnew
           // raercol_cw[mm][nsav] == qactold
-          explmix(raercol[nsav][mm](km1), raercol[nsav][mm](k),
-                  raercol[nsav][mm](kp1),
-                  raercol[nnew][mm](k), //// output FIXME: move to last position
+          explmix(raercol[km1][nsav](mm), raercol[k][nsav](mm),
+                  raercol[kp1][nsav](mm),
+                  raercol[k][nnew](mm), //// output FIXME: move to last position
                   source(k), ekkp(k), ekkm(k), overlapp(k), overlapm(k), dtmix,
                   raercol_cw[km1][nsav](mm),
                   raercol_cw[kp1][nsav](mm)); // optional in
@@ -1371,12 +1370,12 @@ void update_from_explmix(
       // convert activated aerosol to interstitial in decaying cloud
       for (int imode = 0; imode < ntot_amode; imode++) {
         const int mm = mam_idx[imode][0] - 1;
-        raercol[nnew][mm](k) += raercol_cw[k][nnew](mm);
+        raercol[k][nnew](mm) += raercol_cw[k][nnew](mm);
         raercol_cw[k][nnew](mm) = zero;
 
         for (int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
           const int mm = mam_idx[imode][lspec] - 1;
-          raercol[nnew][mm](k) += raercol_cw[k][nnew](mm);
+          raercol[k][nnew](mm) += raercol_cw[k][nnew](mm);
           raercol_cw[k][nnew](mm) = zero;
         } // lspec
       }   // imode
@@ -1419,7 +1418,7 @@ void dropmixnuc(
     ColumnView ccn[pver], ColumnView coltend[ncnst_tot],
     ColumnView coltend_cw[ncnst_tot],
     // work arrays
-    ColumnView raercol_cw[pver][2], ColumnView raercol[2][ncnst_tot],
+    ColumnView raercol_cw[pver][2], ColumnView raercol[pver][2],
     ColumnView nact[AeroConfig::num_modes()],
     ColumnView mact[AeroConfig::num_modes()], ColumnView ekd, ColumnView zn,
     ColumnView csbot, ColumnView zs, ColumnView overlapp, ColumnView overlapm,
@@ -1517,9 +1516,6 @@ void dropmixnuc(
         // cloud droplet number mixing ratio [#/kg]
         qcld(k) = ncldwtr(k);
 
-        Real raercol_1_kk[ncnst_tot] = {};
-        // Real raercol_cw_1_kk[ncnst_tot] = {};
-
         for (int imode = 0; imode < ntot_amode; ++imode) {
           // Fortran indexing to C++ indexing
 
@@ -1527,7 +1523,7 @@ void dropmixnuc(
           raercol_cw[k][nsav](mm) = qqcw_fld[mm](k);
           // Fortran indexing to C++ indexing
           const int num_idx = numptr_amode[imode] - 1;
-          raercol_1_kk[mm] = state_q[k][num_idx];
+          raercol[k][nsav][mm] = state_q[k][num_idx];
           for (int lspec = 1; lspec < nspec_amode[imode] + 1; ++lspec) {
             // Fortran indexing to C++ indexing
             const int mm = mam_idx[imode][lspec] - 1;
@@ -1535,7 +1531,7 @@ void dropmixnuc(
             raercol_cw[k][nsav](mm) = qqcw_fld[mm](k);
             // Fortran indexing to C++ indexing
             const int spc_idx = lmassptr_amode[lspec - 1][imode] - 1;
-            raercol_1_kk[mm] = state_q[k][spc_idx];
+            raercol[k][nsav][mm] = state_q[k][spc_idx];
           } // lspec
         }   // imode
 
@@ -1547,15 +1543,6 @@ void dropmixnuc(
         const Real air_density =
             conversions::density_of_ideal_gas(temp(k), pmid(k));
 
-        //
-        // Real state_q_kk[nvars];
-
-        // for (int i = 0; i < nvars; ++i) {
-        //   // FIXME
-        //   state_q_kk[i] = state_q[i](k);
-        // }
-        // Real factnum_kk[ntot_amode] = {};
-
         update_from_newcld(cldn(k), cldo(k), dtinv, //& ! in
                            wtke(k), temp(k), air_density,
                            state_q[k].data(), //& ! in
@@ -1563,18 +1550,9 @@ void dropmixnuc(
                            lmassptr_amode, voltonumbhi_amode, voltonumblo_amode,
                            numptr_amode, nspec_amode, exp45logsig, alogsig,
                            aten, mam_idx, qcld(k),
-                           raercol_1_kk,            // inout
+                           raercol[k][nsav].data(),            // inout
                            raercol_cw[k][nsav].data(),         //&      ! inout
                            nsource(k), factnum[k].data()); // inout
-        // FIXME
-        // for (int i = 0; i < ntot_amode; ++i) {
-        //   factnum[i](k) = factnum_kk[i];
-        // }
-
-        for (int i = 0; i < ncnst_tot; ++i) {
-          raercol[nsav][i](k) = raercol_1_kk[i];
-          // raercol_cw[nsav][i](k) = raercol_cw_1_kk[i];
-        }
       }); // end k
 #if 1
   // NOTE: update_from_cldn_profile loop from 7 to 71 in fortran code.
@@ -1588,13 +1566,6 @@ void dropmixnuc(
 
         const Real air_density_kp1 =
             conversions::density_of_ideal_gas(temp(kp1), pmid(kp1));
-
-        for (int imode = 0; imode < ntot_amode; ++imode) {
-          // fractional aero. number  activation rate [/s]
-          nact[k][imode] = zero;
-          // fractional aero. mass    activation rate [/s]
-          mact[k][imode] = zero;
-        }
 
         // PART II: changes in aerosol and cloud water from vertical profile of
         // new cloud fraction
@@ -1617,27 +1588,6 @@ void dropmixnuc(
         const Real dz =
             one / (air_density * gravit * rpdel(k)); // ! layer thickness in m
 
-        // Real state_q_kp1[nvars];
-
-        // for (int i = 0; i < nvars; ++i) {
-        //   // FIXME
-        //   state_q_kp1[i] = state_q[i](kp1);
-        // }
-
-        Real raercol_1_kk[ncnst_tot] = {zero};
-        Real raercol_1_kp1[ncnst_tot] = {zero};
-        // Real raercol_cw_1_kk[ncnst_tot] = {zero};
-
-        for (int i = 0; i < ncnst_tot; ++i) {
-          raercol_1_kk[i] = raercol[nsav][i](k);
-          raercol_1_kp1[i] = raercol[nsav][i](kp1);
-          // raercol_cw_1_kk[i] = raercol_cw[nsav][i](k);
-        }
-
-        // Real factnum_kk[ntot_amode] = {zero};
-        // for (int i = 0; i < ntot_amode; ++i) {
-        //   factnum_kk[i] = factnum[i](k);
-        // }
         Real nact_kk[ntot_amode] = {zero};
         Real mact_kk[ntot_amode] = {zero};
 
@@ -1647,17 +1597,12 @@ void dropmixnuc(
             state_q[kp1].data(), // ! in
             lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
             voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
-            exp45logsig, alogsig, aten, mam_idx, raercol_1_kk, raercol_1_kp1,
+            exp45logsig, alogsig, aten, mam_idx, raercol[k][nsav].data(), raercol[kp1][nsav].data(),
             raercol_cw[k][nsav].data(),
             nsource(k), // inout
             qcld(k), factnum[k].data(),
             ekd(k), // out
             nact_kk, mact_kk);
-
-        for (int i = 0; i < ncnst_tot; ++i) {
-          raercol[nsav][i](k) = raercol_1_kk[i];
-          // raercol_cw[nsav][i](k) = raercol_cw_1_kk[i];
-        }
 
         for (int i = 0; i < ntot_amode; ++i) {
           // factnum[i](k) = factnum_kk[i];
@@ -1759,12 +1704,12 @@ void dropmixnuc(
             if (lspec == 0) {
               // Fortran indexing to C++ indexing
               const int num_idx = numptr_amode[imode] - 1;
-              raertend = (raercol[nnew][mm](k) - state_q[k](num_idx)) * dtinv;
+              raertend = (raercol[k][nnew](mm) - state_q[k](num_idx)) * dtinv;
               qcldbrn_num[imode] = qqcw_fld[mm](k);
             } else {
               // Fortran indexing to C++ indexing
               const int spc_idx = lmassptr_amode[lspec - 1][imode] - 1;
-              raertend = (raercol[nnew][mm](k) - state_q[k](spc_idx)) * dtinv;
+              raertend = (raercol[k][nnew](mm) - state_q[k](spc_idx)) * dtinv;
               //! Extract cloud borne MMRs from qqcw pointer
               qcldbrn[lspec][imode] = qqcw_fld[mm](k);
             } // end if
@@ -1787,21 +1732,12 @@ void dropmixnuc(
         const Real air_density =
             conversions::density_of_ideal_gas(temp(k), pmid(k));
 
-        // Real state_q_kk[nvars];
-
-        // for (int i = 0; i < nvars; ++i) {
-        //   // FIXME
-        //   state_q_kk[i] = state_q[i](k);
-        // }
-        // Real ccn_kk[psat] = {};
         ccncalc(state_q[k].data(), temp(k), qcldbrn, qcldbrn_num, air_density,
                 lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
                 voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
                 exp45logsig, alogsig, ccn[k].data());
 
-        // for (int i = 0; i < psat; ++i) {
-        //   ccn[i](k) = ccn_kk[i];
-        // }
+
       });
 #endif
 } // dropmixnuc
