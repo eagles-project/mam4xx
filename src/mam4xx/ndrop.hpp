@@ -1223,11 +1223,15 @@ void update_from_explmix(
   //  values of nsav and nnew rather than a physical copying.  At end of loop
   //  nnew stores index of most recent updated values (either 1 or 2).
 
+
   for (int isub = 0; isub < nsubmix; isub++) {
-    for (int k = top_lev - 1; k < pver; k++) {
-      qncld(k) = qcld(k);
-      srcn(k) = zero;
-    } // end kk
+
+      Kokkos::parallel_for(
+      "", pver - top_lev + 1, KOKKOS_LAMBDA(int k) {
+        const int kk = top_lev -1 + k; 
+       qncld(kk) = qcld(kk);
+       srcn(kk) = zero;
+      });
     // after first pass, switch nsav, nnew so that nsav is the recently updated
     // aerosol
     if (isub > 0) {
@@ -1243,11 +1247,13 @@ void update_from_explmix(
 
       // rce-comment- activation source in layer k involves particles from k+1
       //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
-      for (int k = top_lev - 1; k < pver - 1; k++) {
+      Kokkos::parallel_for(
+      "", pver - top_lev , KOKKOS_LAMBDA(int kk) {
+        const int k = top_lev -1 + kk; 
         const int kp1 = haero::min(k + 1, pver - 1);
         srcn(k) += nact[k](imode) * raercol[kp1][nsav](mm);
-      } // kk
-
+      }); 
+   
       // rce-comment- new formulation for k=pver
       //             srcn(  pver  )=srcn(  pver  )+nact(  pver  ,m)*(raercol(
       //             pver,mm,nsav))
@@ -1259,13 +1265,16 @@ void update_from_explmix(
 
     // qcld == qold
     // qncld == qnew
-    for (int k = top_lev - 1; k < pver; k++) {
+
+    Kokkos::parallel_for(
+      "", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
+        const int k = top_lev -1 + kk;
       const int kp1 = haero::min(k + 1, pver - 1);
       const int km1 = haero::max(k - 1, top_lev - 1);
       explmix(qncld(km1), qncld(k), qncld(kp1),
               qcld(k), // output FIXME: move to last position
               srcn(k), ekkp(k), ekkm(k), overlapp(k), overlapm(k), dtmix);
-    } // end kk
+     });
 
     // update aerosol number
     // rce-comment
@@ -1280,11 +1289,13 @@ void update_from_explmix(
       // rce-comment -   activation source in layer k involves particles from
       // k+1
       //                source(:)= nact(:,m)*(raercol(:,mm,nsav))
-      for (int k = top_lev - 1; k < pver - 1; k++) {
+      Kokkos::parallel_for(
+      "", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
+        const int k = top_lev -1 + kk;
         const int kp1 = haero::min(k + 1, pver - 1);
         // const int km1 = haero::max(k-1, top_lev);
         source(k) = nact[k](imode) * raercol[kp1][nsav](mm);
-      } // end k
+      }); // end k
 
       tmpa = raercol[pver - 1][nsav](mm) * nact[pver - 1](imode) +
              raercol_cw[pver - 1][nsav](mm) * nact[pver - 1](imode);
@@ -1293,7 +1304,9 @@ void update_from_explmix(
       // raercol_cw[mm][nnew] == qold
       // raercol_cw[mm][nsav] == qnew
 
-      for (int k = top_lev - 1; k < pver; k++) {
+      Kokkos::parallel_for(
+      "", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
+        const int k = top_lev -1 + kk;
         const int kp1 = haero::min(k + 1, pver - 1);
         const int km1 = haero::max(k - 1, top_lev - 1);
 
@@ -1312,7 +1325,7 @@ void update_from_explmix(
                 raercol_cw[km1][nsav](mm),
                 raercol_cw[kp1][nsav](mm)); // optional in
 
-      } // end kk
+      }); // end kk
 
       // update aerosol species mass
       for (int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
@@ -1320,18 +1333,22 @@ void update_from_explmix(
         // rce-comment -   activation source in layer k involves particles from
         // k+1
         //            source(:)= mact(:,m)*(raercol(:,mm,nsav))
-        for (int k = top_lev - 1; k < pver - 1; k++) {
+        Kokkos::parallel_for(
+      "", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
+        const int k = top_lev -1 + kk;
           const int kp1 = haero::min(k + 1, pver - 1);
           source(k) = mact[k](imode) * raercol[kp1][nsav](mm);
 
-        } // end k
+        });// end k
         tmpa = raercol[pver - 1][nsav](mm) * nact[pver - 1](imode) +
                raercol_cw[pver - 1][nsav](mm) * nact[pver - 1](imode);
         source(pver - 1) = haero::max(zero, tmpa);
 
         // raercol_cw[mm][nnew] == qold
         // raercol_cw[mm][nsav] == qnew
-        for (int k = top_lev - 1; k < pver; k++) {
+        Kokkos::parallel_for(
+      "", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
+        const int k = top_lev -1 + kk;
           const int kp1 = haero::min(k + 1, pver - 1);
           const int km1 = haero::max(k - 1, top_lev - 1);
           explmix(
@@ -1349,7 +1366,7 @@ void update_from_explmix(
                   source(k), ekkp(k), ekkm(k), overlapp(k), overlapm(k), dtmix,
                   raercol_cw[km1][nsav](mm),
                   raercol_cw[kp1][nsav](mm)); // optional in
-        }                                     // end kk
+        });// end k                                   
 
       } // lspec loop
     }   //  imode loop
@@ -1357,7 +1374,9 @@ void update_from_explmix(
   } // old_cloud_nsubmix_loop
 
   // evaporate particles again if no cloud
-  for (int k = top_lev - 1; k < pver; k++) {
+  Kokkos::parallel_for(
+      "", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
+        const int k = top_lev -1 + kk;
     if (cldn(k) == zero) {
       // no cloud
       qcld(k) = zero;
@@ -1375,7 +1394,7 @@ void update_from_explmix(
         } // lspec
       }   // imode
     }     // if cldn(k) == 0
-  }       // kk
+  });//      // kk
 
 } // end update_from_explmix
 
@@ -1614,6 +1633,7 @@ void dropmixnuc(
           qqcw_fld[i](kk) = zero;
         }
       });
+
 
   Kokkos::parallel_for(
       "ccncalc", pver - top_lev + 1, KOKKOS_LAMBDA(int kk) {
