@@ -287,6 +287,26 @@ void dropmixnuc(Ensemble *ensemble) {
     srcn = haero::testing::create_column_view(pver);
     source = haero::testing::create_column_view(pver);
 
+    ColumnView dz, csbot_cscen;
+    dz = haero::testing::create_column_view(pver);
+    csbot_cscen = haero::testing::create_column_view(pver);
+
+    // ColumnView qcldbrn[pver][maxd_aspectype];//[ntot_amode],
+    ColumnView qcldbrn_num[pver];// [ntot_amode]
+    ColumnView raertend, qqcwtend;
+
+    raertend = haero::testing::create_column_view(pver);
+    qqcwtend = haero::testing::create_column_view(pver);
+
+    for (int i = 0; i < pver; ++i)
+    {
+      // for (int j = 0; j < maxd_aspectype; ++j)
+      // {
+      //   qcldbrn[i][j] = haero::testing::create_column_view(ntot_amode);
+      // }
+      qcldbrn_num[i] = haero::testing::create_column_view(ntot_amode);
+    }
+
     ndrop::dropmixnuc(
         dtmicro, tair, pmid, pint, pdel, rpdel,
         zm, //  ! in zm[kk] - zm[kk+1], for pver zm[kk-1] - zm[kk]
@@ -303,7 +323,8 @@ void dropmixnuc(Ensemble *ensemble) {
         coltend, coltend_cw, raercol_cw, raercol, nact, mact, ekd,
         // work arrays
         zn, csbot, zs, overlapp, overlapm, ekkp, ekkm, qncld, srcn,
-        source);
+        source, dz, csbot_cscen,
+        /*qcldbrn*/ qcldbrn_num, raertend,  qqcwtend);
 
     auto host = Kokkos::create_mirror_view(tendnd);
     Kokkos::deep_copy(host, tendnd);
