@@ -308,26 +308,26 @@ void dropmixnuc(Ensemble *ensemble) {
     }
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-    ndrop::dropmixnuc(team,
-        dtmicro, tair, pmid, pint, pdel, rpdel,
-        zm, //  ! in zm[kk] - zm[kk+1], for pver zm[kk-1] - zm[kk]
-        state_q, ncldwtr,
-        kvh, // kvh[kk+1]
-        cldn, lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
-        num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode,
-        nspec_amode, exp45logsig, alogsig, aten, mam_idx, mam_cnst_idx,
-        qcld, //
-        wsub,
-        cldo, // in
-        qqcw, // inout
-        ptend_q, tendnd, factnum, ndropcol, ndropmix, nsource, wtke, ccn,
-        coltend, coltend_cw, raercol_cw, raercol, nact, mact, ekd,
-        // work arrays
-        zn, csbot, zs, overlapp, overlapm, ekkp, ekkm, qncld, srcn, source, dz,
-        csbot_cscen,
-        /*qcldbrn*/ qcldbrn_num, raertend, qqcwtend);
-         });
+        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          ndrop::dropmixnuc(
+              team, dtmicro, tair, pmid, pint, pdel, rpdel,
+              zm, //  ! in zm[kk] - zm[kk+1], for pver zm[kk-1] - zm[kk]
+              state_q, ncldwtr,
+              kvh, // kvh[kk+1]
+              cldn, lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
+              num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode,
+              nspec_amode, exp45logsig, alogsig, aten, mam_idx, mam_cnst_idx,
+              qcld, //
+              wsub,
+              cldo, // in
+              qqcw, // inout
+              ptend_q, tendnd, factnum, ndropcol, ndropmix, nsource, wtke, ccn,
+              coltend, coltend_cw, raercol_cw, raercol, nact, mact, ekd,
+              // work arrays
+              zn, csbot, zs, overlapp, overlapm, ekkp, ekkm, qncld, srcn,
+              source, dz, csbot_cscen,
+              /*qcldbrn*/ qcldbrn_num, raertend, qqcwtend);
+        });
 
     auto host = Kokkos::create_mirror_view(tendnd);
     Kokkos::deep_copy(host, tendnd);
