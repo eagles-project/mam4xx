@@ -1103,9 +1103,9 @@ void update_from_explmix(
     ColumnView zn,      // g/pdel for layer [m^2/kg]
     ColumnView zs,      // inverse of distance between levels [m^-1]
     ColumnView ekd,     // diffusivity for droplets [m^2/s]
-    ColumnView nact[AeroConfig::num_modes()], // fractional aero. number
+    ColumnView nact[pver], // fractional aero. number
                                               // activation rate [/s]
-    ColumnView mact[AeroConfig::num_modes()], // fractional aero. mass
+    ColumnView mact[pver], // fractional aero. mass
                                               // activation rate [/s]
     ColumnView qcld, // cloud droplet number mixing ratio [#/kg]
     ColumnView raercol[pver][2],    // single column of saved aerosol mass,
@@ -1176,11 +1176,10 @@ void update_from_explmix(
   //    the following is a safety measure to avoid negatives in explmix
 
   for (int imode = 0; imode < ntot_amode; imode++) {
-      nact[imode](k) = haero::min(nact[imode](k), ekkp(k));
-      mact[imode](k) = haero::min(mact[imode](k), ekkp(k));
+      nact[k](imode) = haero::min(nact[k](imode), ekkp(k));
+      mact[k](imode) = haero::min(mact[k](imode), ekkp(k));
   }
   
-
     // rce-comment -- tinv is the sum of all first-order-loss-rates
     //    for the layer.  for most layers, the activation loss rate
     //    (for interstitial particles) is accounted for by the loss by
@@ -1247,14 +1246,14 @@ void update_from_explmix(
       //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
       for (int k = top_lev - 1; k < pver - 1; k++) {
         const int kp1 = haero::min(k + 1, pver - 1);
-        srcn(k) += nact[imode](k) * raercol[kp1][nsav](mm);
+        srcn(k) += nact[k](imode) * raercol[kp1][nsav](mm);
       } // kk
 
       // rce-comment- new formulation for k=pver
       //             srcn(  pver  )=srcn(  pver  )+nact(  pver  ,m)*(raercol(
       //             pver,mm,nsav))
-      tmpa = raercol[pver - 1][nsav](mm) * nact[imode](pver - 1) +
-             raercol_cw[pver - 1][nsav](mm) * nact[imode](pver - 1);
+      tmpa = raercol[pver - 1][nsav](mm) * nact[pver - 1](imode) +
+             raercol_cw[pver - 1][nsav](mm) * nact[pver - 1](imode);
       srcn(pver - 1) += haero::max(zero, tmpa);
 
     } // end imode
@@ -1285,11 +1284,11 @@ void update_from_explmix(
       for (int k = top_lev - 1; k < pver - 1; k++) {
         const int kp1 = haero::min(k + 1, pver - 1);
         // const int km1 = haero::max(k-1, top_lev);
-        source(k) = nact[imode](k) * raercol[kp1][nsav](mm);
+        source(k) = nact[k](imode) * raercol[kp1][nsav](mm);
       } // end k
 
-      tmpa = raercol[pver - 1][nsav](mm) * nact[imode](pver - 1) +
-             raercol_cw[pver - 1][nsav](mm) * nact[imode](pver - 1);
+      tmpa = raercol[pver - 1][nsav](mm) * nact[pver - 1](imode) +
+             raercol_cw[pver - 1][nsav](mm) * nact[pver - 1](imode);
       source(pver - 1) = haero::max(zero, tmpa);
 
       // raercol_cw[mm][nnew] == qold
@@ -1298,9 +1297,6 @@ void update_from_explmix(
       for (int k = top_lev - 1; k < pver; k++) {
         const int kp1 = haero::min(k + 1, pver - 1);
         const int km1 = haero::max(k - 1, top_lev - 1);
-
-        //  kp1=min(kk+1,pver)
-        // km1=max(kk-1,top_lev)
 
         explmix(raercol_cw[km1][nsav](mm), raercol_cw[k][nsav](mm),
                 raercol_cw[kp1][nsav](mm),
@@ -1327,11 +1323,11 @@ void update_from_explmix(
         //            source(:)= mact(:,m)*(raercol(:,mm,nsav))
         for (int k = top_lev - 1; k < pver - 1; k++) {
           const int kp1 = haero::min(k + 1, pver - 1);
-          source(k) = mact[imode](k) * raercol[kp1][nsav](mm);
+          source(k) = mact[k](imode) * raercol[kp1][nsav](mm);
 
         } // end k
-        tmpa = raercol[pver - 1][nsav](mm)* nact[imode](pver - 1) +
-               raercol_cw[pver - 1][nsav](mm)* nact[imode](pver - 1);
+        tmpa = raercol[pver - 1][nsav](mm)* nact[pver - 1](imode) +
+               raercol_cw[pver - 1][nsav](mm)* nact[pver - 1](imode);
         source(pver - 1) = haero::max(zero, tmpa);
 
         // raercol_cw[mm][nnew] == qold
@@ -1419,8 +1415,9 @@ void dropmixnuc(
     ColumnView coltend_cw[ncnst_tot],
     // work arrays
     ColumnView raercol_cw[pver][2], ColumnView raercol[pver][2],
-    ColumnView nact[AeroConfig::num_modes()],
-    ColumnView mact[AeroConfig::num_modes()], ColumnView ekd, ColumnView zn,
+    ColumnView nact[pver],
+    ColumnView mact[pver],
+    ColumnView ekd, ColumnView zn,
     ColumnView csbot, ColumnView zs, ColumnView overlapp, ColumnView overlapm,
     ColumnView ekkp, ColumnView ekkm, ColumnView qncld,
     ColumnView srcn, ColumnView source) {
@@ -1554,7 +1551,7 @@ void dropmixnuc(
                            raercol_cw[k][nsav].data(),         //&      ! inout
                            nsource(k), factnum[k].data()); // inout
       }); // end k
-#if 1
+
   // NOTE: update_from_cldn_profile loop from 7 to 71 in fortran code.
   Kokkos::parallel_for(
       "update_from_cldn_profile", pver - top_lev, KOKKOS_LAMBDA(int kk) {
@@ -1588,9 +1585,6 @@ void dropmixnuc(
         const Real dz =
             one / (air_density * gravit * rpdel(k)); // ! layer thickness in m
 
-        Real nact_kk[ntot_amode] = {zero};
-        Real mact_kk[ntot_amode] = {zero};
-
         update_from_cldn_profile(
             cldn(k), cldn(kp1), dtinv, wtke(k), zs, dz, // ! in
             temp(k), air_density, air_density_kp1, csbot_cscen,
@@ -1602,13 +1596,7 @@ void dropmixnuc(
             nsource(k), // inout
             qcld(k), factnum[k].data(),
             ekd(k), // out
-            nact_kk, mact_kk);
-
-        for (int i = 0; i < ntot_amode; ++i) {
-          // factnum[i](k) = factnum_kk[i];
-          nact[i](k) = nact_kk[i];
-          mact[i](k) = mact_kk[i];
-        }
+            nact[k].data(), mact[k].data());
       });
 
   // PART III:  perform explict integration of droplet/aerosol mixing using
@@ -1739,7 +1727,7 @@ void dropmixnuc(
 
 
       });
-#endif
+
 } // dropmixnuc
 
 } // namespace ndrop
