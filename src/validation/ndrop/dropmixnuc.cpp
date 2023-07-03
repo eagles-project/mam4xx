@@ -247,20 +247,25 @@ void dropmixnuc(Ensemble *ensemble) {
       coltend_cw[i] = haero::testing::create_column_view(pver);
     }
 
-    ColumnView ccn[psat];
+    ColumnView ccn[pver];
 
-    for (int i = 0; i < psat; ++i) {
-      ccn[i] = haero::testing::create_column_view(pver);
+    for (int i = 0; i < pver; ++i) {
+      ccn[i] = haero::testing::create_column_view(psat);
     }
 
-    ColumnView raercol_cw[2][ncnst_tot];
+    ColumnView raercol_cw[pver][2];
     ColumnView raercol[2][ncnst_tot];
 
     for (int i = 0; i < ncnst_tot; ++i) {
       raercol[0][i] = haero::testing::create_column_view(pver);
       raercol[1][i] = haero::testing::create_column_view(pver);
-      raercol_cw[0][i] = haero::testing::create_column_view(pver);
-      raercol_cw[1][i] = haero::testing::create_column_view(pver);
+      // raercol_cw[0][i] = haero::testing::create_column_view(pver);
+      // raercol_cw[1][i] = haero::testing::create_column_view(pver);
+    }
+
+    for (int i = 0; i < pver; ++i) {
+      raercol_cw[i][0] = haero::testing::create_column_view(ncnst_tot);
+      raercol_cw[i][1] = haero::testing::create_column_view(ncnst_tot);
     }
 
     ColumnView nact[ntot_amode];
