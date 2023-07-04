@@ -1097,8 +1097,6 @@ KOKKOS_INLINE_FUNCTION
 void update_from_explmix(
     const ThreadTeam &team,
     const Real dtmicro, // time step for microphysics [s]
-    int top_lev,        // top level
-    int pver,           // number of levels
     const ColumnView
         &csbot, // air density at bottom (interface) of layer [kg/m^3]
     const ColumnView &cldn,      // cloud fraction [fraction]
@@ -1637,9 +1635,8 @@ void dropmixnuc(
   // // same as raercol but for cloud-borne phase [#/kg or kg/kg]
   // Real raercol_cw_2[ncnst_tot] = {};
 
-  update_from_explmix(team, dtmicro, top_lev, pver, csbot, cldn, zn, zs, ekd,
-                      nact, mact, qcld, raercol, raercol_cw, nsav, nnew,
-                      nspec_amode, mam_idx,
+  update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, ekd, nact, mact, qcld,
+                      raercol, raercol_cw, nsav, nnew, nspec_amode, mam_idx,
                       // work vars
                       overlapp, overlapm, ekkp, ekkm, qncld,
                       srcn, // droplet source rate [/s]
