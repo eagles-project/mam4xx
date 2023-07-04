@@ -363,7 +363,7 @@ void dropmixnuc(Ensemble *ensemble) {
     for (int kk = 0; kk < pver; ++kk) {
       factnum_host[kk] = ColumnHostView("factnum_host", ntot_amode);
       Kokkos::deep_copy(factnum_host[kk], factnum[kk]);
-    }  
+    }
 
     for (int i = 0; i < ntot_amode; ++i) {
       for (int kk = 0; kk < pver; ++kk) {
