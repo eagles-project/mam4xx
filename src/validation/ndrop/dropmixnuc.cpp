@@ -46,25 +46,49 @@ void dropmixnuc(Ensemble *ensemble) {
     // const int top_lev = 6;
     ColumnView state_q[pver];
 
-    int count = 0;
-    auto device_state = haero::testing::create_column_view(nvars);
-    auto state_host = Kokkos::create_mirror_view(device_state);
+    using ColumnHostView = typename HostType::view_1d<Real>;
 
-    for (int i = 0; i < nvars; ++i) {
-      for (int kk = 0; kk < pver; ++kk) {
-        state_q[kk] = haero::testing::create_column_view(nvars);
-      } // kk
-    }   // nvars
+    int count = 0;
+
+    ColumnHostView state_host[pver];
+
+    for (int kk = 0; kk < pver; ++kk) {
+      state_q[kk] = haero::testing::create_column_view(nvars);
+      state_host[kk] = ColumnHostView("state_host", nvars);
+    } // kk
 
     for (int i = 0; i < nvars; ++i) {
       // input data is store on the cpu.
       for (int kk = 0; kk < pver; ++kk) {
-
-        state_q[kk](i) = state_q_db[count];
+        state_host[kk](i) = state_q_db[count];
         count++;
       }
+    }
+
+    for (int kk = 0; kk < pver; ++kk) {
       // transfer data to GPU.
-      // Kokkos::deep_copy(state_q[i], state_q_i_host);
+      Kokkos::deep_copy(state_q[kk], state_host[kk]);
+    }
+
+    ColumnView qqcw[ncnst_tot];
+    ColumnHostView qqcw_host[ncnst_tot];
+
+    count = 0;
+    for (int i = 0; i < ncnst_tot; ++i) {
+      qqcw[i] = haero::testing::create_column_view(pver);
+      qqcw_host[i] = ColumnHostView("qqcw_host", pver);
+    }
+
+    for (int kk = 0; kk < pver; ++kk) {
+      for (int i = 0; i < ncnst_tot; ++i) {
+        qqcw_host[i](kk) = qqcw_db[count];
+        count++;
+      }
+    }
+
+    // transfer data to GPU.
+    for (int i = 0; i < ncnst_tot; ++i) {
+      Kokkos::deep_copy(qqcw[i], qqcw_host[i]);
     }
 
     ColumnView tair;
@@ -129,25 +153,6 @@ void dropmixnuc(Ensemble *ensemble) {
     Kokkos::deep_copy(cldn, cldn_host);
     Kokkos::deep_copy(wsub, wsub_host);
     Kokkos::deep_copy(cldo, cldo_host);
-
-    ColumnView qqcw[ncnst_tot];
-
-    count = 0;
-    for (int i = 0; i < ncnst_tot; ++i) {
-      qqcw[i] = haero::testing::create_column_view(pver);
-    }
-
-    for (int kk = 0; kk < pver; ++kk) {
-      for (int i = 0; i < ncnst_tot; ++i) {
-        // input data is store on the cpu.
-        // auto qqcw_i_host = Kokkos::create_mirror_view(qqcw[i]);
-        // qqcw_i_host(kk) = qqcw_db[count];
-        qqcw[i](kk) = qqcw_db[count];
-        count++;
-      }
-      // transfer data to GPU.
-      // Kokkos::deep_copy(qqcw[i], qqcw_i_host);
-    }
 
     const auto lspectype_amode_db = input.get_array("lspectype_amode");
     int lspectype_amode[maxd_aspectype][ntot_amode] = {};
@@ -300,10 +305,6 @@ void dropmixnuc(Ensemble *ensemble) {
     qqcwtend = haero::testing::create_column_view(pver);
 
     for (int i = 0; i < pver; ++i) {
-      // for (int j = 0; j < maxd_aspectype; ++j)
-      // {
-      //   qcldbrn[i][j] = haero::testing::create_column_view(ntot_amode);
-      // }
       qcldbrn_num[i] = haero::testing::create_column_view(ntot_amode);
     }
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
@@ -345,6 +346,7 @@ void dropmixnuc(Ensemble *ensemble) {
         output_qqcw.push_back(qqcw[i](kk));
       }
     }
+
     output.set("qqcw", output_qqcw);
 
     std::vector<Real> output_ptend_q;
