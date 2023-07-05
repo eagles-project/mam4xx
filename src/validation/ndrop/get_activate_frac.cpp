@@ -11,35 +11,44 @@
 
 using namespace skywalker;
 using namespace mam4;
+using namespace haero;
 
 void get_activate_frac(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
-    const Real zero = 0;
-    const int maxd_aspectype = 14;
+    const int maxd_aspectype = ndrop::maxd_aspectype;
     const int ntot_amode = 4;
-    const int nvars = 40;
+    const int nvars = ndrop::nvars;
 
-    const int pver = input.get_array("pver")[0];
+    const int pver = ndrop::pver;
     const auto state_q_db = input.get_array("state_q");
 
     const auto tair_db = input.get_array("temp");
     const auto pmid_db = input.get_array("pmid");
     const auto wsub_db = input.get_array("wsub");
 
-    ColumnView state_q[nvars];
+    using ColumnHostView = typename HostType::view_1d<Real>;
 
     int count = 0;
+    ColumnView state_q[pver];
+    ColumnHostView state_host[pver];
+
+    for (int kk = 0; kk < pver; ++kk) {
+      state_q[kk] = haero::testing::create_column_view(nvars);
+      state_host[kk] = ColumnHostView("state_host", nvars);
+    } // kk
+
     for (int i = 0; i < nvars; ++i) {
-      state_q[i] = haero::testing::create_column_view(pver);
       // input data is store on the cpu.
-      auto state_q_i_host = Kokkos::create_mirror_view(state_q[i]);
       for (int kk = 0; kk < pver; ++kk) {
-        state_q_i_host(kk) = state_q_db[count];
+        state_host[kk](i) = state_q_db[count];
         count++;
       }
+    }
+
+    for (int kk = 0; kk < pver; ++kk) {
       // transfer data to GPU.
-      Kokkos::deep_copy(state_q[i], state_q_i_host);
+      Kokkos::deep_copy(state_q[kk], state_host[kk]);
     }
 
     ColumnView tair;
@@ -108,80 +117,81 @@ void get_activate_frac(Ensemble *ensemble) {
       nspec_amode[i] = nspec_amode_db[i];
     }
 
-    ColumnView fn[ntot_amode];
-    ColumnView fm[ntot_amode];
-    ColumnView fluxn[ntot_amode];
-    ColumnView fluxm[ntot_amode];
+    ColumnView fn[pver];
+    ColumnView fm[pver];
+    ColumnView fluxn[pver];
+    ColumnView fluxm[pver];
     ColumnView flux_fullact = haero::testing::create_column_view(pver);
 
-    for (int i = 0; i < ntot_amode; ++i) {
-      fn[i] = haero::testing::create_column_view(pver);
-      fm[i] = haero::testing::create_column_view(pver);
-      fluxn[i] = haero::testing::create_column_view(pver);
-      fluxm[i] = haero::testing::create_column_view(pver);
+    for (int i = 0; i < pver; ++i) {
+      fn[i] = haero::testing::create_column_view(ntot_amode);
+      fm[i] = haero::testing::create_column_view(ntot_amode);
+      fluxn[i] = haero::testing::create_column_view(ntot_amode);
+      fluxm[i] = haero::testing::create_column_view(ntot_amode);
     }
 
     Kokkos::parallel_for(
         "get_activate_frac", pver, KOKKOS_LAMBDA(int kk) {
-          Real state_q_kk[nvars] = {zero};
-          for (int i = 0; i < nvars; ++i) {
-            state_q_kk[i] = state_q[i](kk);
-          }
-
-          Real fn_kk[ntot_amode] = {zero};
-          Real fm_kk[ntot_amode] = {zero};
-          Real fluxn_kk[ntot_amode] = {zero};
-          Real fluxm_kk[ntot_amode] = {zero};
-
           const Real air_density =
               conversions::density_of_ideal_gas(tair(kk), pmid(kk));
 
           ndrop::get_activate_frac(
-              state_q_kk, air_density, air_density, wsub(kk), tair(kk), // in
+              state_q[kk].data(), air_density, air_density, wsub(kk),
+              tair(kk), // in
               lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
               voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
-              exp45logsig, alogsig, aten, fn_kk, fm_kk, fluxn_kk, fluxm_kk,
-              flux_fullact(kk));
-
-          for (int i = 0; i < ntot_amode; ++i) {
-            fn[i](kk) = fn_kk[i];
-            fm[i](kk) = fm_kk[i];
-            fluxn[i](kk) = fluxn_kk[i];
-            fluxm[i](kk) = fluxm_kk[i];
-          }
+              exp45logsig, alogsig, aten, fn[kk].data(), fm[kk].data(),
+              fluxn[kk].data(), fluxm[kk].data(), flux_fullact(kk));
         });
 
-    auto host = Kokkos::create_mirror_view(fn[0]);
     std::vector<Real> host_v(pver);
 
+    ColumnHostView fn_host[pver];
+    ColumnHostView fm_host[pver];
+    ColumnHostView fluxn_host[pver];
+    ColumnHostView fluxm_host[pver];
+
+    for (int kk = 0; kk < pver; ++kk) {
+      fn_host[kk] = ColumnHostView("fn_host", ntot_amode);
+      Kokkos::deep_copy(fn_host[kk], fn[kk]);
+
+      fm_host[kk] = ColumnHostView("fm_host", ntot_amode);
+      Kokkos::deep_copy(fm_host[kk], fm[kk]);
+
+      fluxn_host[kk] = ColumnHostView("fluxn_host", ntot_amode);
+      Kokkos::deep_copy(fluxn_host[kk], fluxn[kk]);
+
+      fluxm_host[kk] = ColumnHostView("fluxm_host", ntot_amode);
+      Kokkos::deep_copy(fluxm_host[kk], fluxm[kk]);
+    }
+
     for (int i = 0; i < ntot_amode; ++i) {
-      Kokkos::deep_copy(host, fn[i]);
+
       for (int kk = 0; kk < pver; ++kk) {
-        host_v[kk] = host(kk);
-      }
+        host_v[kk] = fn_host[kk](i);
+      } // k
 
       output.set("fn_" + std::to_string(i + 1), host_v);
 
-      Kokkos::deep_copy(host, fm[i]);
       for (int kk = 0; kk < pver; ++kk) {
-        host_v[kk] = host(kk);
-      }
+        host_v[kk] = fm_host[kk](i);
+      } // k
 
       output.set("fm_" + std::to_string(i + 1), host_v);
 
-      Kokkos::deep_copy(host, fluxn[i]);
       for (int kk = 0; kk < pver; ++kk) {
-        host_v[kk] = host(kk);
-      }
+        host_v[kk] = fluxn_host[kk](i);
+      } // k
 
       output.set("fluxn_" + std::to_string(i + 1), host_v);
 
-      Kokkos::deep_copy(host, fluxm[i]);
       for (int kk = 0; kk < pver; ++kk) {
-        host_v[kk] = host(kk);
+        host_v[kk] = fluxm_host[kk](i);
       }
       output.set("fluxm_" + std::to_string(i + 1), host_v);
-    }
+    } // i
+
+    auto host = Kokkos::create_mirror_view(flux_fullact);
 
     Kokkos::deep_copy(host, flux_fullact);
     for (int kk = 0; kk < pver; ++kk) {
