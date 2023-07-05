@@ -30,16 +30,7 @@ const int nvar_ptend_q = 40;
 // FIXME; surften is defined in ndrop_init
 // BAD CONSTANT
 const Real surften = 0.076;
-const Real sq2 = haero::sqrt(2.);
-const Real smcoefcoef = 2. / haero::sqrt(27.);
 const int ncnst_tot = 25;
-//// const Real percent_to_fraction = 0.01;
-// super(:)=supersat(:)*percent_to_fraction
-// supersaturation [fraction]
-const Real super[psat] = {
-    0.0002, 0.0005, 0.001, 0.002,
-    0.005,  0.01}; //& ! supersaturation (%) to determine ccn concentration
-//  [m-K]
 const int nspec_max = 8;
 
 KOKKOS_INLINE_FUNCTION
@@ -303,6 +294,15 @@ void ccncalc(const Real state_q[nvars], const Real tair,
   const Real one = 1;
 
   const Real per_m3_to_per_cm3 = 1.e-6;
+  //// const Real percent_to_fraction = 0.01;
+  // super(:)=supersat(:)*percent_to_fraction
+  // supersaturation [fraction]
+  const Real sq2 = haero::sqrt(2.);
+  const Real smcoefcoef = 2. / haero::sqrt(27.);
+  const Real super[psat] = {
+      0.0002, 0.0005, 0.001, 0.002,
+      0.005,  0.01}; //& ! supersaturation (%) to determine ccn concentration
+                     //  [m-K]
   // phase of aerosol
   const int phase = 3; // ! interstitial+cloudborne
   const int nmodes = AeroConfig::num_modes();
