@@ -71,6 +71,43 @@ void update_from_explmix(Ensemble *ensemble) {
     Real raercol[pver][ncnst_tot][2];
     Real raercol_cw[pver][ncnst_tot][2];
 
+
+
+
+
+    ColumnView csbot;
+    ColumnView cldn;
+    ColumnView zn;
+    ColumnView zs;
+    ColumnView ekd;
+    ColumnView nact;
+    ColumnView mact;
+    ColumnView qcld;
+    ColumnView raercol;
+    ColumnView raercol_cw;
+    ColumnView overlapp;
+    ColumnView overlapm;
+    csbot = haero::testing::create_column_view(pver);
+    cldn = haero::testing::create_column_view(pver);
+    zn = haero::testing::create_column_view(pver);
+    zs = haero::testing::create_column_view(pver);
+    ekd = haero::testing::create_column_view(pver);
+    nact = haero::testing::create_column_view(pver);
+    mact = haero::testing::create_column_view(pver);
+    qcld = haero::testing::create_column_view(pver);
+    raercol = haero::testing::create_column_view(pver);
+    raercol_cw = haero::testing::create_column_view(pver);
+    overlapp = haero::testing::create_column_view(pver);
+    overlapm = haero::testing::create_column_view(pver);
+
+
+
+
+
+
+
+
+
     int nspec_amode[nmodes];
     int mam_idx[nmodes][nspec_max];
     for (int m = 0; m < nmodes; m++) {
@@ -97,53 +134,21 @@ void update_from_explmix(Ensemble *ensemble) {
     }
 
     counter = 0;
-    for (int m = 0; m < nmodes; m++) {
-      for (int k = 0; k < pver; k++) {
-        _nact[k][m] = nact[counter];
-        _mact[k][m] = mact[counter];
-        counter++;
-      }
-    }
+    for(int m = 0; m < nmodes; m++) {
+        for (int k = 0; k < pver; k++) {
+            _nact[k][m] = nact[counter];
+            _mact[k][m] = mact[counter];
+            counter++;
+        }
+    }  
+    
+      
+    ndrop::update_from_explmix(dtmicro, top_lev, pver, csbot.data(), cldn_col,
+                    zn, zs, ekd, nact, mact, 
+                    qcld, raercol, raercol_cw,  
+                    nsav, nnew, nspec_amode, mam_idx, overlapp, overlapm);
 
-    for (int k = top_lev; k < pver; k++) {
-      // add logic for km1 and kp1 from fortran
-      int kp1 = haero::min(k + 1, pver);
-      int km1 = haero::max(k - 1, top_lev);
 
-      Real csbot_k = csbot[k];
-      Real csbot_km1 = csbot[km1];
-      Real cldn_k = cldn_col[k];
-      Real cldn_km1 = cldn_col[km1];
-      Real cldn_kp1 = cldn_col[kp1];
-
-      Real zn_k = zn[k];
-      Real zs_k = zs[k];
-      Real zs_km1 = zs[km1];
-      Real ekd_k = ekd[k];
-      Real ekd_km1 = ekd[km1];
-
-      auto nact_k = _nact[k].data();
-      auto mact_k = _mact[k].data();
-
-      Real qcld_k = qcld[k];
-      Real qcld_km1 = qcld[km1];
-      Real qcld_kp1 = qcld[kp1];
-
-      ndrop::update_from_explmix(
-          dtmicro, k, pver, csbot_k, csbot_km1, cldn_k, cldn_km1, cldn_kp1,
-          zn_k, zs_k, zs_km1, ekd_k, ekd_km1, nact_k, mact_k, qcld_k, qcld_km1,
-          qcld_kp1, raercol[k], raercol[km1], raercol[kp1], raercol_cw[k],
-          raercol_cw[km1], raercol_cw[kp1], nsav, nnew, nspec_amode, mam_idx);
-
-      for (int m = 0; m < nmodes; m++) {
-        _nact[k][m] = nact_k[m];
-        _mact[k][m] = mact_k[m];
-      }
-
-      qcld[k] = qcld_k;
-      qcld[km1] = qcld_km1;
-      qcld[kp1] = qcld_kp1;
-    }
 
     // nnew += 1;
     // nsav += 1;
