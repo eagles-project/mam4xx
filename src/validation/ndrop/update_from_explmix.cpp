@@ -31,14 +31,14 @@ void update_from_explmix(Ensemble *ensemble) {
     const auto raercol_2 = input.get_array("raercol_2");
     const auto raercol_cw_2 = input.get_array("raercol_cw_2");
 
-    auto qcld = input.get_array("qcld");
-    auto mact = input.get_array("mact");
-    auto nact = input.get_array("nact");
-    const auto ekd = input.get_array("ekd");
-    const auto zs = input.get_array("zs");
-    const auto zn = input.get_array("zn");
-    const auto cldn_col = input.get_array("cldn_col");
-    const auto csbot = input.get_array("csbot");
+    auto qcld_db = input.get_array("qcld");
+    auto mact_db = input.get_array("mact");
+    auto nact_db = input.get_array("nact");
+    const auto ekd_db = input.get_array("ekd");
+    const auto zs_db = input.get_array("zs");
+    const auto zn_db = input.get_array("zn");
+    const auto cldn_col_db = input.get_array("cldn_col");
+    const auto csbot_db = input.get_array("csbot");
 
     // const Real dt = input.get("dt");
     const Real dtmicro = input.get_array("dtmicro")[0];
@@ -50,64 +50,136 @@ void update_from_explmix(Ensemble *ensemble) {
     int raer_len = pver * ncnst_tot;
     int act_len = pver * nmodes;
 
-    // std::vector<std::vector<Real>> nact_out(pver, std::vector<Real>(nmodes));
     std::vector<Real> nact_out(act_len, zero);
     std::vector<Real> mact_out(act_len, zero);
-    std::vector<std::vector<Real>> _nact(pver, std::vector<Real>(nmodes));
-    std::vector<std::vector<Real>> _mact(pver, std::vector<Real>(nmodes));
-
     std::vector<Real> qcld_out(pver);
 
     std::vector<Real> raercol_1_out(raer_len, 0.0);
     std::vector<Real> raercol_2_out(raer_len, 0.0);
     std::vector<Real> raercol_cw_1_out(raer_len, 0.0);
     std::vector<Real> raercol_cw_2_out(raer_len, 0.0);
-    // std::vector<std::vector<Real>> (pver, std::vector<Real>(ncnst_tot));
 
     std::vector<Real> nnew_out(1);
     std::vector<Real> nsav_out(1);
     int counter = 0;
 
-    Real raercol[pver][ncnst_tot][2];
-    Real raercol_cw[pver][ncnst_tot][2];
-
-
-
-
-
-    ColumnView csbot;
-    ColumnView cldn;
-    ColumnView zn;
-    ColumnView zs;
     ColumnView ekd;
-    ColumnView nact;
-    ColumnView mact;
-    ColumnView qcld;
-    ColumnView raercol;
-    ColumnView raercol_cw;
-    ColumnView overlapp;
-    ColumnView overlapm;
-    csbot = haero::testing::create_column_view(pver);
-    cldn = haero::testing::create_column_view(pver);
-    zn = haero::testing::create_column_view(pver);
-    zs = haero::testing::create_column_view(pver);
     ekd = haero::testing::create_column_view(pver);
-    nact = haero::testing::create_column_view(pver);
-    mact = haero::testing::create_column_view(pver);
-    qcld = haero::testing::create_column_view(pver);
-    raercol = haero::testing::create_column_view(pver);
-    raercol_cw = haero::testing::create_column_view(pver);
+
+    ColumnView zn, csbot, zs, overlapp, overlapm, ekkp, ekkm, qncld, srcn,
+        source, qcld, cldn;
+
+    zn = haero::testing::create_column_view(pver);
+    csbot = haero::testing::create_column_view(pver);
+    zs = haero::testing::create_column_view(pver);
     overlapp = haero::testing::create_column_view(pver);
     overlapm = haero::testing::create_column_view(pver);
+    ekkp = haero::testing::create_column_view(pver);
+    ekkm = haero::testing::create_column_view(pver);
+    qncld = haero::testing::create_column_view(pver);
+    qcld = haero::testing::create_column_view(pver);
+    cldn = haero::testing::create_column_view(pver);
+    srcn = haero::testing::create_column_view(pver);
+    source = haero::testing::create_column_view(pver);
+
+    ColumnView nact[pver];
+    ColumnView mact[pver];
+    ColumnHostView nact_host[pver];
+    ColumnHostView mact_host[pver];
+    for (int kk = 0; kk < pver; ++kk) {
+      nact[kk] = haero::testing::create_column_view(nmodes);
+      mact[kk] = haero::testing::create_column_view(nmodes);
+      nact_host[kk] = ColumnHostView("nact_host", nmodes);
+      mact_host[kk] = ColumnHostView("mact_host", nmodes);
+    }
+
+    ColumnView raercol[pver][2];
+    ColumnView raercol_cw[pver][2];
+    ColumnHostView raercol_host[pver][2];
+    ColumnHostView raercol_cw_host[pver][2];
+    for (int i = 0; i < pver; ++i) {
+      raercol[i][0] = haero::testing::create_column_view(ncnst_tot);
+      raercol[i][1] = haero::testing::create_column_view(ncnst_tot);
+      raercol_cw[i][0] = haero::testing::create_column_view(ncnst_tot);
+      raercol_cw[i][1] = haero::testing::create_column_view(ncnst_tot);
+      raercol_host[i][0] = ColumnHostView("raercol_host", ncnst_tot);
+      raercol_host[i][1] = ColumnHostView("raercol_host", ncnst_tot);
+      raercol_cw_host[i][0] = ColumnHostView("raercol_cw_host", ncnst_tot);
+      raercol_cw_host[i][1] = ColumnHostView("raercol_cw_host", ncnst_tot);
+    }
 
 
+    auto csbot_host = Kokkos::create_mirror_view(csbot);
+    auto cldn_host = Kokkos::create_mirror_view(cldn);
+    auto zn_host = Kokkos::create_mirror_view(zn);
+    auto zs_host = Kokkos::create_mirror_view(zs);
+    auto ekd_host = Kokkos::create_mirror_view(ekd);
+    auto qncld_host = Kokkos::create_mirror_view(qncld);
+    auto overlapp_host = Kokkos::create_mirror_view(overlapp);
+    auto overlapm_host = Kokkos::create_mirror_view(overlapm);
+
+    auto nact_host = Kokkos::create_mirror_view(nact);
+    auto mact_host = Kokkos::create_mirror_view(mact);
+    auto raercol_host = Kokkos::create_mirror_view(raercol);
+    auto raercol_cw_host = Kokkos::create_mirror_view(raercol_cw);
+    
+
+    // // FIXME. Find a better way:
+    for (int kk = 0; kk < pver; ++kk) {
+      qcld_host(kk) = qcld_db[kk];
+      qncld_host(kk) = qncld_db[kk]; //TODO: qncld_db doesn't exist, ah qncld is the ouput var?
+      nact_host(kk) = nact_db[kk];
+      mact_host(kk) = mact_db[kk];
+      ekd_host(kk) = ekd_db[kk];
+      zn_host(kk) = zn_db[kk];
+      zs_host(kk) = zs_db[kk];
+      cldn_host(kk) = cldn_col_db[kk];
+      csbot_host(kk) = zs_db[kk];
+    }
+    
+    Kokkos::deep_copy(qcld, qcld_host);
+    Kokkos::deep_copy(qncld, qncld_host);
+    Kokkos::deep_copy(nact, nact_host);
+    Kokkos::deep_copy(mact, mact_host);
+    Kokkos::deep_copy(ekd, ekd_host);
+    Kokkos::deep_copy(zn, zn_host);
+    Kokkos::deep_copy(zs, zs_host);
+    Kokkos::deep_copy(cldn, cldn_host);
+    Kokkos::deep_copy(csbod, csbot_host);
 
 
+    counter = 0;
+    for (int n = 0; n < ncnst_tot; n++) {
+      for (int k = 0; k < pver; k++) {
+        raercol[k][0](n) = raercol_1[counter];
+        raercol_cw[k][0](n) = raercol_cw_1[counter];
 
+        raercol[k][1](n) = raercol_2[counter];
+        raercol_cw[k][1](n) = raercol_cw_2[counter];
+        counter++;
+      }
+    }
+    
+    for (int k = 0; k < pver; k++) {
+      Kokkos::deep_copy(raercol[k][0], raercol_host[k][0]);
+      Kokkos::deep_copy(raercol[k][1], raercol_host[k][1]);
+      Kokkos::deep_copy(raercol_cw[k][0], raercol_cw_host[k][0]);
+      Kokkos::deep_copy(raercol_cw[k][1], raercol_cw_host[k][1]);
+    }
 
-
-
-
+    counter = 0;
+    for(int m = 0; m < nmodes; m++) {
+        for (int k = 0; k < pver; k++) {
+            nact[k](m) = nact_db[counter];
+            mact[k](m) = mact_db[counter];
+            counter++;
+        }
+    }  
+    for (int k = 0; k < pver; k++) {
+      Kokkos::deep_copy(nact[k], nact_host[k]);
+      Kokkos::deep_copy(mact[k], mact_host[k]);
+    }
+        
     int nspec_amode[nmodes];
     int mam_idx[nmodes][nspec_max];
     for (int m = 0; m < nmodes; m++) {
@@ -120,35 +192,16 @@ void update_from_explmix(Ensemble *ensemble) {
         counter++;
       }
     }
-
-    counter = 0;
-    for (int n = 0; n < ncnst_tot; n++) {
-      for (int k = 0; k < pver; k++) {
-        raercol[k][n][0] = raercol_1[counter];
-        raercol_cw[k][n][0] = raercol_cw_1[counter];
-
-        raercol[k][n][1] = raercol_2[counter];
-        raercol_cw[k][n][1] = raercol_cw_2[counter];
-        counter++;
-      }
-    }
-
-    counter = 0;
-    for(int m = 0; m < nmodes; m++) {
-        for (int k = 0; k < pver; k++) {
-            _nact[k][m] = nact[counter];
-            _mact[k][m] = mact[counter];
-            counter++;
-        }
-    }  
     
-      
-    ndrop::update_from_explmix(dtmicro, top_lev, pver, csbot.data(), cldn_col,
-                    zn, zs, ekd, nact, mact, 
-                    qcld, raercol, raercol_cw,  
-                    nsav, nnew, nspec_amode, mam_idx, overlapp, overlapm);
+    //TODO: need thread team here
+    ndrop::update_from_explmix(team, dtmicro, csbot, cldn,
+                               zn, zs, ekd, nact, mact, qcld, 
+                               raercol, raercol_cw, nsav, nnew, 
+                               nspec_amode, mam_idx, overlapp,
+                               overlapm, ekkp, ekkm, qncld,
+                               srcn, source)
 
-
+    //TODO: ColumnView-ify the output sequence
 
     // nnew += 1;
     // nsav += 1;
