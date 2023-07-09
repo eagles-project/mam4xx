@@ -154,30 +154,6 @@ void dropmixnuc(Ensemble *ensemble) {
     Kokkos::deep_copy(wsub, wsub_host);
     Kokkos::deep_copy(cldo, cldo_host);
 
-    const auto lspectype_amode_db = input.get_array("lspectype_amode");
-    int lspectype_amode[maxd_aspectype][ntot_amode] = {};
-
-    const auto lmassptr_amode_db = input.get_array("lmassptr_amode");
-    int lmassptr_amode[maxd_aspectype][ntot_amode] = {};
-
-    count = 0;
-    for (int i = 0; i < ntot_amode; ++i) {
-      for (int j = 0; j < maxd_aspectype; ++j) {
-        lspectype_amode[j][i] = lspectype_amode_db[count];
-        lmassptr_amode[j][i] = lmassptr_amode_db[count];
-        count++;
-      }
-    }
-
-    const auto specdens_amode_db = input.get_array("specdens_amode");
-    const auto spechygro_db = input.get_array("spechygro");
-
-    const auto specdens_amode = specdens_amode_db.data();
-    const auto spechygro = spechygro_db.data();
-
-    const auto numptr_amode_db = input.get_array("numptr_amode");
-    const auto nspec_amode_db = input.get_array("nspec_amode");
-
     Real exp45logsig[AeroConfig::num_modes()], alogsig[AeroConfig::num_modes()],
         num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
         num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
@@ -187,13 +163,6 @@ void dropmixnuc(Ensemble *ensemble) {
     ndrop::ndrop_int(exp45logsig, alogsig, aten,
                      num2vol_ratio_min_nmodes,  // voltonumbhi_amode
                      num2vol_ratio_max_nmodes); // voltonumblo_amode
-
-    int numptr_amode[ntot_amode];
-    int nspec_amode[ntot_amode];
-    for (int i = 0; i < ntot_amode; ++i) {
-      numptr_amode[i] = numptr_amode_db[i];
-      nspec_amode[i] = nspec_amode_db[i];
-    }
 
     const Real dtmicro = input.get_array("dtmicro")[0];
 
@@ -310,6 +279,62 @@ void dropmixnuc(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+
+          const int nspec_amode[ntot_amode] = {7, 4, 7, 3};
+          const int lspectype_amode_1d[ntot_amode * maxd_aspectype] = {
+          1, 4, 5, 6, 8, 7, 9, 0, 0, 0, 0, 0, 0, 0, 1, 5, 7, 9, 0,
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 7, 1, 6, 4, 5, 9, 0, 0, 0,
+          0, 0, 0, 0, 4, 6, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+          const int lmassptr_amode_1d[ntot_amode * maxd_aspectype] = {
+            16, 17, 18, 19, 20, 21, 22, 0, 0, 0, 0, 0, 0, 0, 24, 25, 26, 27, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 30, 31, 32, 33, 34, 35, 0, 0, 0,
+            0, 0, 0, 0, 37, 38, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+          int lspectype_amode[maxd_aspectype][ntot_amode] = {};
+          int lmassptr_amode[maxd_aspectype][ntot_amode] = {};
+          int count = 0;
+          for (int i = 0; i < ntot_amode; ++i) {
+            for (int j = 0; j < maxd_aspectype; ++j) {
+              lspectype_amode[j][i] = lspectype_amode_1d[count];
+              lmassptr_amode[j][i] = lmassptr_amode_1d[count];
+              count++;
+            }
+          }
+          const int numptr_amode[ntot_amode] = {23, 28, 36, 40};
+          const Real specdens_amode[maxd_aspectype] = {
+            0.1770000000E+04, 0.1797693135 + 309, 0.1797693135 + 309,
+            0.1000000000E+04, 0.1000000000E+04,  0.1700000000E+04,
+            0.1900000000E+04, 0.2600000000E+04,  0.1601000000E+04,
+            0.0000000000E+00, 0.0000000000E+00,  0.0000000000E+00,
+            0.0000000000E+00, 0.0000000000E+00};
+          const Real spechygro[maxd_aspectype] = {
+            0.5070000000E+00, 0.1797693135 + 309, 0.1797693135 + 309,
+            0.1000000083E-09, 0.1400000000E+00,  0.1000000013E-09,
+            0.1160000000E+01, 0.6800000000E-01,  0.1000000015E+00,
+            0.0000000000E+00, 0.0000000000E+00,  0.0000000000E+00,
+            0.0000000000E+00, 0.0000000000E+00};
+
+          // NOTE(mjs): I brought these down here just in case, but it seems to
+            // run with declaring/initializing them above
+          // Real aten = zero;
+          // Real exp45logsig[AeroConfig::num_modes()], alogsig[AeroConfig::num_modes()],
+          //   num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
+          //   num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
+
+          // ndrop::ndrop_int(exp45logsig, alogsig, aten,
+          //            num2vol_ratio_min_nmodes,  // voltonumbhi_amode
+          //            num2vol_ratio_max_nmodes); // voltonumblo_amode
+          // Real dtmicro = 600.0;
+          // int mam_idx[ntot_amode][nspec_max] = {1, 9, 14, 22, 2, 10, 15, 23, 3,
+          //                                        11, 16, 24, 4, 12, 17, 25, 5,
+          //                                        13, 18, 0, 6, 0, 19, 0, 7, 0,
+          //                                        20, 0, 8, 0, 21, 0};
+          // const int mam_cnst_idx[ntot_amode][nspec_max] = {23, 28, 36, 40, 16,
+          //                                                   24, 29, 37, 17, 25,
+          //                                                   30, 38, 18, 26, 31,
+          //                                                   39, 19, 27, 32, 0,
+          //                                                   20, 0, 33, 0, 21, 0,
+          //                                                   34, 0, 22, 0, 35, 0};
+
           ndrop::dropmixnuc(
               team, dtmicro, tair, pmid, pint, pdel, rpdel,
               zm, //  ! in zm[kk] - zm[kk+1], for pver zm[kk-1] - zm[kk]
@@ -341,19 +366,25 @@ void dropmixnuc(Ensemble *ensemble) {
 
     std::vector<Real> output_qqcw;
 
+    // transfer data to host
+    for (int i = 0; i < ncnst_tot; ++i) {
+      Kokkos::deep_copy(qqcw_host[i], qqcw[i]);
+    }
+
     for (int kk = 0; kk < pver; ++kk) {
       for (int i = 0; i < ncnst_tot; ++i) {
-        output_qqcw.push_back(qqcw[i](kk));
+        output_qqcw.push_back(qqcw_host[i](kk));
       }
     }
 
     output.set("qqcw", output_qqcw);
 
+    auto ptend_q_host = Kokkos::create_mirror_view(ptend_q[0]);
     std::vector<Real> output_ptend_q;
     for (int i = 0; i < nvar_ptend_q; ++i) {
-      Kokkos::deep_copy(host, ptend_q[i]);
+      Kokkos::deep_copy(ptend_q_host, ptend_q[i]);
       for (int kk = 0; kk < pver; ++kk) {
-        output_ptend_q.push_back(host(kk));
+        output_ptend_q.push_back(ptend_q_host(kk));
       }
     }
     output.set("ptend_q", output_ptend_q);

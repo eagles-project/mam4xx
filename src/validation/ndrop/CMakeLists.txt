@@ -8,7 +8,7 @@ set(NDROP_VALIDATION_SCRIPTS_DIR ${MAM_X_VALIDATION_DIR}/scripts)
 include_directories(${PROJECT_BINARY_DIR}/validation)
 
 # We use a single driver for all ndrop-related parameterizations.
-add_executable(ndrop_driver  
+add_executable(ndrop_driver
                ndrop_driver.cpp
                ccncalc.cpp
                ccncalc_single_cell.cpp
@@ -19,7 +19,7 @@ add_executable(ndrop_driver
                maxsat.cpp
                update_from_newcld.cpp
                update_from_cldn_profile.cpp
-               #update_from_explmix.cpp
+              #  update_from_explmix.cpp
                dropmixnuc.cpp
                )
 
@@ -43,6 +43,7 @@ set(TEST_LIST
     activate_modal_ts_1400_type1
     explmix1417_actmm_merged
     explmix1417_mm_merged
+    # update_from_explmix_merged
     stand_get_activate_frac_ts_1417
     activate_modal_ts_1417_type2
     stand_activate_modal_ts_1417_type2
@@ -52,13 +53,40 @@ set(TEST_LIST
     ccncalc_ts_1400
     maxsattype1_merged
     maxsattype2_merged
-    update_from_newcld_ts_1407_iact2
-    update_from_cldn_profile_ts_1417_iact1
+    # update_from_newcld_ts_1407_iact2
+    update_from_newcld_iact0_merged
+    update_from_newcld_iact1_merged
+    update_from_newcld_iact2_merged
+    update_from_cldn_profile_iact1_merged
+    update_from_cldn_profile_iact2_merged
     #update_from_explmix_ts_1400
     #stand_dropmixnuc_ts_1417
-    stand_dropmixnuc_ts_1407
-    dropmixnuc_ts_1407
+    # stand_dropmixnuc_ts_1407
+    dropmixnuc_merged
     )
+
+# # matching the tests and errors, just for convenience
+# loadaertype1_merged 6e-8
+# loadaertype2_merged 6e-8
+# loadaertype3_merged 6e-8
+# activate_modal_ts_1400_type1 8e-2
+# explmix1417_actmm_merged 9e-2
+# explmix1417_mm_merged 1e-9
+# stand_get_activate_frac_ts_1417 5e-5
+# activate_modal_ts_1417_type2 1e-5
+# stand_activate_modal_ts_1417_type2 5e-6
+# activate_modal_merged 2e-3
+# ccncalc_merged 2e-3
+# ccncalc_loop_ts_1417 1e-3
+# ccncalc_ts_1400 5e-5
+# maxsattype1_merged 1e-11
+# maxsattype2_merged 1e-11
+# update_from_newcld_iact0_merged 2e-9
+# update_from_newcld_iact1_merged 1e-3
+# update_from_newcld_iact2_merged 1e-11
+# update_from_cldn_profile_iact1_merged 1e-11
+# update_from_cldn_profile_iact2_merged 1e-11
+# dropmixnuc_merged 1e-?
 
 set(DEFAULT_TOL 1e-11)
 
@@ -75,19 +103,19 @@ set(ERROR_THRESHOLDS
     2e-3
     2e-3
     1e-3
-    5e-5 
-    1e-11
-    1e-11
-    1e-11
-    8e-6
-    #1e-11
     5e-5
+    1e-11
+    1e-11
+    2e-9
     1e-3
+    1e-11
+    1e-11
+    1e-11
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
-  
+
   configure_file(
     ${NDROP_VALIDATION_DIR}/mam_${input}.py
     ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.py
