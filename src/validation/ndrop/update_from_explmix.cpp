@@ -108,7 +108,6 @@ void update_from_explmix(Ensemble *ensemble) {
       raercol_cw_host[i][1] = ColumnHostView("raercol_cw_host", ncnst_tot);
     }
 
-
     auto csbot_host = Kokkos::create_mirror_view(csbot);
     auto cldn_host = Kokkos::create_mirror_view(cldn);
     auto zn_host = Kokkos::create_mirror_view(zn);
@@ -122,12 +121,12 @@ void update_from_explmix(Ensemble *ensemble) {
     auto mact_host = Kokkos::create_mirror_view(mact);
     auto raercol_host = Kokkos::create_mirror_view(raercol);
     auto raercol_cw_host = Kokkos::create_mirror_view(raercol_cw);
-    
 
     // // FIXME. Find a better way:
     for (int kk = 0; kk < pver; ++kk) {
       qcld_host(kk) = qcld_db[kk];
-      qncld_host(kk) = qncld_db[kk]; //TODO: qncld_db doesn't exist, ah qncld is the ouput var?
+      qncld_host(kk) = qncld_db[kk]; // TODO: qncld_db doesn't exist, ah qncld
+                                     // is the ouput var?
       nact_host(kk) = nact_db[kk];
       mact_host(kk) = mact_db[kk];
       ekd_host(kk) = ekd_db[kk];
@@ -136,7 +135,7 @@ void update_from_explmix(Ensemble *ensemble) {
       cldn_host(kk) = cldn_col_db[kk];
       csbot_host(kk) = zs_db[kk];
     }
-    
+
     Kokkos::deep_copy(qcld, qcld_host);
     Kokkos::deep_copy(qncld, qncld_host);
     Kokkos::deep_copy(nact, nact_host);
@@ -146,7 +145,6 @@ void update_from_explmix(Ensemble *ensemble) {
     Kokkos::deep_copy(zs, zs_host);
     Kokkos::deep_copy(cldn, cldn_host);
     Kokkos::deep_copy(csbod, csbot_host);
-
 
     counter = 0;
     for (int n = 0; n < ncnst_tot; n++) {
@@ -159,7 +157,7 @@ void update_from_explmix(Ensemble *ensemble) {
         counter++;
       }
     }
-    
+
     for (int k = 0; k < pver; k++) {
       Kokkos::deep_copy(raercol[k][0], raercol_host[k][0]);
       Kokkos::deep_copy(raercol[k][1], raercol_host[k][1]);
@@ -168,18 +166,18 @@ void update_from_explmix(Ensemble *ensemble) {
     }
 
     counter = 0;
-    for(int m = 0; m < nmodes; m++) {
-        for (int k = 0; k < pver; k++) {
-            nact[k](m) = nact_db[counter];
-            mact[k](m) = mact_db[counter];
-            counter++;
-        }
-    }  
+    for (int m = 0; m < nmodes; m++) {
+      for (int k = 0; k < pver; k++) {
+        nact[k](m) = nact_db[counter];
+        mact[k](m) = mact_db[counter];
+        counter++;
+      }
+    }
     for (int k = 0; k < pver; k++) {
       Kokkos::deep_copy(nact[k], nact_host[k]);
       Kokkos::deep_copy(mact[k], mact_host[k]);
     }
-        
+
     int nspec_amode[nmodes];
     int mam_idx[nmodes][nspec_max];
     for (int m = 0; m < nmodes; m++) {
@@ -192,20 +190,18 @@ void update_from_explmix(Ensemble *ensemble) {
         counter++;
       }
     }
-    
-    //TODO: need thread team here
-    ndrop::update_from_explmix(team, dtmicro, csbot, cldn,
-                               zn, zs, ekd, nact, mact, qcld, 
-                               raercol, raercol_cw, nsav, nnew, 
-                               nspec_amode, mam_idx, overlapp,
-                               overlapm, ekkp, ekkm, qncld,
-                               srcn, source)
 
-    //TODO: ColumnView-ify the output sequence
+    // TODO: need thread team here
+    ndrop::update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, ekd, nact,
+                               mact, qcld, raercol, raercol_cw, nsav, nnew,
+                               nspec_amode, mam_idx, overlapp, overlapm, ekkp,
+                               ekkm, qncld, srcn, source)
 
-    // nnew += 1;
-    // nsav += 1;
-    nnew_out[0] = nnew + 1;
+        // TODO: ColumnView-ify the output sequence
+
+        // nnew += 1;
+        // nsav += 1;
+        nnew_out[0] = nnew + 1;
     nsav_out[0] = nsav + 1;
     counter = 0;
     for (int n = 0; n < ncnst_tot; n++) {
