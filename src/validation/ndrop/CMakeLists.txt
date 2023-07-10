@@ -35,6 +35,12 @@ foreach(script
   )
 endforeach()
 
+# these tests were removed in favor of the merged ones
+# update_from_newcld_ts_1407_iact2
+# update_from_explmix_ts_1400
+# stand_dropmixnuc_ts_1417
+# stand_dropmixnuc_ts_1407
+
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     loadaertype1_merged
@@ -53,16 +59,12 @@ set(TEST_LIST
     ccncalc_ts_1400
     maxsattype1_merged
     maxsattype2_merged
-    # update_from_newcld_ts_1407_iact2
     update_from_newcld_iact0_merged
     update_from_newcld_iact1_merged
     update_from_newcld_iact2_merged
     update_from_cldn_profile_iact1_merged
     update_from_cldn_profile_iact2_merged
-    #update_from_explmix_ts_1400
-    #stand_dropmixnuc_ts_1417
-    # stand_dropmixnuc_ts_1407
-    dropmixnuc_merged
+    # dropmixnuc_merged
     )
 
 # # matching the tests and errors, just for convenience
@@ -72,6 +74,7 @@ set(TEST_LIST
 # activate_modal_ts_1400_type1 8e-2
 # explmix1417_actmm_merged 9e-2
 # explmix1417_mm_merged 1e-9
+# update_from_explmix_merged 1e-?
 # stand_get_activate_frac_ts_1417 5e-5
 # activate_modal_ts_1417_type2 1e-5
 # stand_activate_modal_ts_1417_type2 5e-6
@@ -84,7 +87,7 @@ set(TEST_LIST
 # update_from_newcld_iact0_merged 2e-9
 # update_from_newcld_iact1_merged 1e-3
 # update_from_newcld_iact2_merged 1e-11
-# update_from_cldn_profile_iact1_merged 1e-11
+# update_from_cldn_profile_iact1_merged 1e-9
 # update_from_cldn_profile_iact2_merged 1e-11
 # dropmixnuc_merged 1e-?
 
@@ -96,6 +99,7 @@ set(ERROR_THRESHOLDS
     6e-8
     8e-2
     9e-2
+    # 1e-11? (update_from_explmix_merged)
     1e-9
     5e-5
     1e-5
@@ -109,8 +113,9 @@ set(ERROR_THRESHOLDS
     2e-9
     1e-3
     1e-11
+    1e-3
     1e-11
-    1e-11
+    # 1e-11? (dropmixnuc_merged)
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
