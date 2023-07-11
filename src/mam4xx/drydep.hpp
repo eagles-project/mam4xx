@@ -51,7 +51,33 @@ public:
                           const Tendencies &tends) const;
 };
 
-namespace hetfrz {}
+namespace hetfrz {
+
+KOKKOS_INLINE_FUNCTION
+Real gravit_settling_velocity(const Real particle_radius,
+                              const Real particle_density,
+                              const Real slip_correction,
+                              const Real dynamic_viscosity,
+                              const Real particle_sig) {
+
+  // Calculate terminal velocity following, e.g.,
+  //  -  Seinfeld and Pandis (1997),  p. 466
+  //  - Zhang L. et al. (2001), DOI: 10.1016/S1352-2310(00)00326-5, Eq. 2.
+
+  const Real gravit_settling_velocity =
+      (4.0 / 18.0) * particle_radius * particle_radius * particle_density *
+      Constants::gravity * slip_correction / dynamic_viscosity;
+
+  // Account for size distribution (i.e., we are calculating the bulk velocity
+  // for a particle population instead of a single particle).
+
+  const Real lnsig = haero::log(particle_sig);
+  const Real dispersion = haero::exp(2.0 * lnsig * lnsig);
+
+  return gravit_settling_velocity * dispersion;
+}
+
+} // namespace hetfrz
 
 } // namespace mam4
 
