@@ -39,7 +39,7 @@ endforeach()
 # update_from_newcld_ts_1407_iact2
 # update_from_explmix_ts_1400
 # stand_dropmixnuc_ts_1417
-# stand_dropmixnuc_ts_1407
+# 
 
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
@@ -65,6 +65,7 @@ set(TEST_LIST
     update_from_cldn_profile_iact1_merged
     update_from_cldn_profile_iact2_merged
     # dropmixnuc_merged
+    stand_dropmixnuc_ts_1407
     )
 
 # # matching the tests and errors, just for convenience
@@ -115,6 +116,7 @@ set(ERROR_THRESHOLDS
     1e-11
     1e-3
     1e-11
+    5e-5
     # 1e-11? (dropmixnuc_merged)
    )
 
