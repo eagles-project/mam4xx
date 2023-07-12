@@ -152,9 +152,9 @@ void lu_fac(Real lu[31]) {
   lu[30] /= one;
   lu[31] /= one;
 }
-
+// update
 KOKKOS_INLINE_FUNCTION
-void lin_matrix(Real mat[32], Real rxt[7], Real het_rates[7]) {
+void lin_matrix(Real mat[31], const Real rxt[7], const Real het_rates[7]) {
   mat[0] = -(+rxt[0] + rxt[2] + het_rates[1]);
   mat[1] = -(+het_rates[2]);
   mat[2] = +rxt[3];
@@ -190,7 +190,8 @@ void lin_matrix(Real mat[32], Real rxt[7], Real het_rates[7]) {
 }
 
 KOKKOS_INLINE_FUNCTION
-void indprd(const int class_id, Real prod[31], const Real rxt[7], const Real extfrc[7]) {
+void indprd(const int class_id, Real prod[31], const Real rxt[7],
+            const Real extfrc[7]) {
   const Real zero = 0;
   if (class_id == 1) {
     prod[0] = zero;
@@ -312,8 +313,8 @@ void adjrxt(Real rate[7], Real inv[7], Real m) {
   rate[1] *= inv[6] * inv[6] / m;
 }
 KOKKOS_INLINE_FUNCTION
-void nlnmat(Real sys_jac[nzcnt],             //   & ! out
-            Real lin_jac, const Real dti) {} // nlnmat
+void nlnmat(Real sys_jac[nzcnt],                          //   & ! out
+            const Real lin_jac[nzcnt], const Real dti) {} // nlnmat
 
 const int rxntot = 7;
 const int gas_pcnst = 7;
@@ -321,7 +322,7 @@ const int clscnt4 = 31;
 const int itermax = 11;
 KOKKOS_INLINE_FUNCTION
 void newton_raphson_iter(
-    const Real dti, const Real lin_jac, const Real lrxt[rxntot],
+    const Real dti, const Real lin_jac[nzcnt], const Real lrxt[rxntot],
     const Real lhet[gas_pcnst],        // & ! in
     const int iter_invariant[clscnt4], //              & ! in
     const bool factor[itermax], int permute_4[gas_pcnst],
@@ -448,134 +449,220 @@ void newton_raphson_iter(
   } // end nr_iter
 
 } // newton_raphson_iter
-const int extcnt= 7 ; 
+const int extcnt = 7;
 
 KOKKOS_INLINE_FUNCTION
-void imp_sol( 
-	Real base_sol[gas_pcnst],  //    ! species mixing ratios [vmr]           & ! inout
-    const Real reaction_rates[rxntot],
-    const Real het_rates[gas_pcnst], 
-    const Real extfrc[extcnt],
-    const Real dt,
-    int permute_4[gas_pcnst],
-    int clsmap_4[gas_pcnst]
-    //, delt, & ! in
-    //                   xhnm, ncol, lchnk, ltrop 
-                      )
-{
-#if 0
-	//     !-----------------------------------------------------------------------
-    // ! ... imp_sol advances the volumetric mixing ratio
-    // ! forward one time step via the fully implicit euler scheme.
-    // ! this source is meant for small l1 cache machines such as
-    // ! the intel pentium and itanium cpus
-    // !-----------------------------------------------------------------------
-    const Real zero = 0;
-    const Real one = 1;
-    Real ind_prd[clscnt4]={};
-    Real lin_jac[nzcnt] = {};
-    bool converged[clscnt4]={}; 
-    bool convergence=false;
-    Real prod[clscnt4]={};
-    Real loss[clscnt4]={};
-    Real max_delta[clscnt4]={};
-    // ! initiate variables
-    // prod_out(:,:,:) = 0._r8
-    // loss_out(:,:,:) = 0._r8
-    // solution(:) = 0._r8
+void imp_sol(Real base_sol[gas_pcnst], //    ! species mixing ratios [vmr] & !
+                                       //    inout
+             const Real reaction_rates[rxntot], const Real het_rates[gas_pcnst],
+             const Real extfrc[extcnt], Real &delt, int permute_4[gas_pcnst],
+             int clsmap_4[gas_pcnst], const bool factor[itermax],
+             Real epsilon[clscnt4], Real prod_out[clscnt4],
+             Real loss_out[clscnt4]
+             //                   xhnm, ncol, lchnk, ltrop
+) {
 
-    // !-----------------------------------------------------------------------
-    // ! ... class independent forcing
-    // !-----------------------------------------------------------------------
-    indprd( 4,       //                  & ! in
-            ind_prd,    //               & ! inout
-            reaction_rates, extfrc //   & ! in
-            );// ! in
+  //     !-----------------------------------------------------------------------
+  // ! ... imp_sol advances the volumetric mixing ratio
+  // ! forward one time step via the fully implicit euler scheme.
+  // ! this source is meant for small l1 cache machines such as
+  // ! the intel pentium and itanium cpus
+  // !-----------------------------------------------------------------------
+  const Real zero = 0;
+  const Real half = 0.5;
+  const Real one = 1;
+  const Real two = 2;
 
-    // level_loop : do lev = 1,pver
-    //    column_loop : do icol = 1,ncol
-    //       if (lev <= ltrop(icol)) cycle column_loop
+  const int cut_limit = 5;
 
-    // !-----------------------------------------------------------------------
-    // ! ... transfer from base to local work arrays
-    // !-----------------------------------------------------------------------
+  Real ind_prd[clscnt4] = {};
+  Real lin_jac[nzcnt] = {};
+  bool converged[clscnt4] = {};
+  bool convergence = false;
+  Real prod[clscnt4] = {};
+  Real loss[clscnt4] = {};
+  Real max_delta[clscnt4] = {};
+  // ! initiate variables
+  // prod_out(:,:,:) = 0._r8
+  // loss_out(:,:,:) = 0._r8
+  // solution(:) = 0._r8
 
-    // do mm = 1,rxntot
-    //   lrxt(mm) = reaction_rates(icol,lev,mm)
-    // enddo
-    // if( gas_pcnst > 0 ) then
-    //   do mm = 1,gas_pcnst
-    //     lhet(mm) = het_rates(icol,lev,mm)
-    //   enddo
-    // endif
+  // !-----------------------------------------------------------------------
+  // ! ... class independent forcing
+  // !-----------------------------------------------------------------------
+  indprd(4,                     //                  & ! in
+         ind_prd,               //               & ! inout
+         reaction_rates, extfrc //   & ! in
+  );                            // ! in
 
-    // !-----------------------------------------------------------------------
-    //       ! ... time step loop
-    //       !-----------------------------------------------------------------------
-          // dt = delt
-    int cut_cnt = 0;
-    int fail_cnt = 0;
-    int stp_con_cnt = 0;
-    Real interval_done = zero;
-    // time_step_loop : do
+  // level_loop : do lev = 1,pver
+  //    column_loop : do icol = 1,ncol
+  //       if (lev <= ltrop(icol)) cycle column_loop
+
+  // !-----------------------------------------------------------------------
+  // ! ... transfer from base to local work arrays
+  // !-----------------------------------------------------------------------
+
+  // do mm = 1,rxntot
+  //   lrxt(mm) = reaction_rates(icol,lev,mm)
+  // enddo
+  // if( gas_pcnst > 0 ) then
+  //   do mm = 1,gas_pcnst
+  //     lhet(mm) = het_rates(icol,lev,mm)
+  //   enddo
+  // endif
+
+  Real solution[clscnt4] = {};
+  int iter_invariant[clscnt4] = {};
+
+  // !-----------------------------------------------------------------------
+  //       ! ... time step loop
+  //       !-----------------------------------------------------------------------
+  Real dt = delt;
+  int cut_cnt = 0;
+  int fail_cnt = 0;
+  int stp_con_cnt = 0;
+  Real interval_done = zero;
+  // time_step_loop : do
+  for (int i = 0; i < 10; ++i) {
     const Real dti = one / dt;
     // !-----------------------------------------------------------------------
     // ! ... transfer from base to local work arrays
     // !-----------------------------------------------------------------------
-    auto & lsol = base_sol;
+    auto &lsol = base_sol;
     // !-----------------------------------------------------------------------
     // ! ... transfer from base to class array
     // !-----------------------------------------------------------------------
 
-    Real solution[clscnt4] = {};
-    Real iter_invariant[clscnt4] = {};
-
-    for (int kk = 0; kk < clscnt4; ++kk)
-    {
-       int jj = clsmap_4[kk];
-       int mm = permute_4[kk];
-       solution[mm] = lsol[jj];
-    } // kk 
+    for (int kk = 0; kk < clscnt4; ++kk) {
+      int jj = clsmap_4[kk];
+      int mm = permute_4[kk];
+      solution[mm] = lsol[jj];
+    } // kk
 
     // !-----------------------------------------------------------------------
     // ! ... set the iteration invariant part of the function f(y)
     // !-----------------------------------------------------------------------
-    for (int mm = 0; mm < clscnt4; ++mm)
-    {
-    	iter_invariant[mm] = dti * solution[mm] + ind_prd[mm];
-    } // mm 
+    for (int mm = 0; mm < clscnt4; ++mm) {
+      iter_invariant[mm] = dti * solution[mm] + ind_prd[mm];
+    } // mm
 
     //-----------------------------------------------------------------------
     // ... the linear component
     //-----------------------------------------------------------------------
     // linmat( lin_jac,  //         & ! out
     //        lsol, lrxt, lhet   );// ! in
-    lin_matrix(lin_jac,// ! out
-    	       reaction_rates, het_rates); // in
+    lin_matrix(lin_jac,                    // ! out
+               reaction_rates, het_rates); // in
 
     // !=======================================================================
     // ! the newton-raphson iteration for f(y) = 0
     // !=======================================================================
-    newton_raphson_iter( dti, lin_jac, reaction_rates, het_rates,// & ! in
-                         iter_invariant,//                & ! in
-                         lsol,   solution, //              & ! inout
-                         converged, convergence, //       & ! out
-                         prod, loss, max_delta          );// ! out
+
+    newton_raphson_iter(dti, lin_jac, reaction_rates, het_rates, // & ! in
+                        iter_invariant, //                & ! in
+                        factor, permute_4, clsmap_4, lsol,
+                        solution,               //              & ! inout
+                        converged, convergence, //       & ! out
+                        prod, loss, max_delta, epsilon); // ! out
 
     // -----------------------------------------------------------------------
     //  ... check for newton-raphson convergence
     // -----------------------------------------------------------------------
 
-    if (!convergence)
-    {
+    if (!convergence) {
+      // !-----------------------------------------------------------------------
+      //           ! ... non-convergence
+      //           !-----------------------------------------------------------------------
 
-    }
-#endif            
-             
-         
+      // !-----------------------------------------------------------------------
+      //           ! ... non-convergence
+      //           !-----------------------------------------------------------------------
+      fail_cnt += fail_cnt;
+      // nstep = get_nstep()
+      // write(iulog,'('' imp_sol: Time step '',1p,e21.13,'' failed to converge
+      // @ (lchnk,lev,col,nstep) = '',4i6)') &
+      //      dt,lchnk,lev,icol,nstep
 
+      stp_con_cnt = 0;
 
+      if (cut_cnt < cut_limit) {
+        cut_cnt += cut_cnt;
 
+        if (cut_cnt < cut_limit) {
+          dt *= half;
+
+        } else {
+          dt *= 0.1;
+        } // cut_cnt < cut_limit
+        // break;
+        // cycle time_step_loop
+      } else {
+        // write(iulog,'('' imp_sol: Failed to converge @
+        // (lchnk,lev,col,nstep,dt,time) = '',4i6,1p,2e21.13)') &
+        //                   lchnk,lev,icol,nstep,dt,interval_done+dt
+        // do mm = 1,clscnt4
+        //                 if( .not. converged(mm) ) then
+        //                    write(iulog,'(1x,a8,1x,1pe10.3)')
+        //                    solsym(clsmap(mm,4)), max_delta(mm)
+        //                 endif
+        //              enddo
+      } //  cut_cnt < cut_limit
+
+    } // ! convergence
+
+    // !-----------------------------------------------------------------------
+    //            ! ... check for interval done
+    //            !-----------------------------------------------------------------------
+
+    interval_done += dt;
+
+    // BAD CONSTANT
+    if (haero::abs(delt - interval_done) <= .0001) {
+      if (fail_cnt > 0) {
+        printf("'imp_sol : @ (lchnk,lev,col) = \n");
+        // write(iulog,*) 'imp_sol : @ (lchnk,lev,col) = ',lchnk,lev,icol,'
+        // failed ',fail_cnt,' times'
+      }
+      break;
+    } else {
+      //                  !-----------------------------------------------------------------------
+      // ! ... transfer latest solution back to base array
+      // !-----------------------------------------------------------------------
+      if (convergence) {
+        stp_con_cnt += 1;
+      }
+
+      for (int mm = 0; mm < gas_pcnst; ++mm) {
+        base_sol[mm] = lsol[mm];
+      }
+
+      if (stp_con_cnt >= 2) {
+        dt *= two;
+        stp_con_cnt = 0;
+      }
+
+      dt = haero::min(dt, delt - interval_done);
+
+    } // abs( delt - interval_done ) <= .0001
+
+  } // time_step_loop
+
+  // !-----------------------------------------------------------------------
+  //         ! ... Transfer latest solution back to base array
+  //         !     and calculate Prod/Loss history buffers
+  //         !-----------------------------------------------------------------------
+
+  for (int kk = 0; kk < clscnt4; ++kk) {
+    const int jj = clsmap_4[kk];
+    const int mm = permute_4[kk];
+    // ! ... Transfer latest solution back to base array
+    base_sol[jj] = solution[mm];
+    // ! ... Prod/Loss history buffers...
+    prod_out[kk] = prod[mm] + ind_prd[mm];
+    loss_out[kk] = loss[mm];
+
+  } // cls_loop
 
 } // imp_sol
 
