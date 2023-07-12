@@ -1272,7 +1272,7 @@ void update_from_explmix(
         }
       },
       Kokkos::Min<Real>(dtmin));
-
+  team.team_barrier();
   // TODO
   //    fix dtmin section
   //    pass arrs as columnviews and k len instead of single values
@@ -1312,6 +1312,7 @@ void update_from_explmix(
         });
     // after first pass, switch nsav, nnew so that nsav is the recently updated
     // aerosol
+    team.team_barrier();
     if (isub > 0) {
       const int ntemp = nsav;
       nsav = nnew;
@@ -1344,6 +1345,7 @@ void update_from_explmix(
     // qcld == qold
     // qncld == qnew
 
+    team.team_barrier();
     Kokkos::parallel_for(
         Kokkos::TeamThreadRange(team, pver - top_lev + 1),
         KOKKOS_LAMBDA(int kk) {
@@ -1355,6 +1357,7 @@ void update_from_explmix(
                   srcn(k), ekkp(k), ekkm(k), overlapp(k), overlapm(k), dtmix);
         });
 
+    team.team_barrier();
     // update aerosol number
     // rce-comment
     //    the interstitial particle mixratio is different in clear/cloudy
@@ -1453,6 +1456,7 @@ void update_from_explmix(
                   raercol_cw[kp1][nsav](mm)); // optional in
             });                               // end k
 
+        team.team_barrier();
       } // lspec loop
     }   //  imode loop
 
@@ -1650,7 +1654,7 @@ void dropmixnuc(
                            raercol_cw[k][nsav].data(),     //&      ! inout
                            nsource(k), factnum[k].data()); // inout
       });                                                  // end k
-
+  team.team_barrier();
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int k) {
         zn(k) = gravit * rpdel[k];
@@ -1674,6 +1678,8 @@ void dropmixnuc(
         dz(k) = one / (conversions::density_of_ideal_gas(temp(k), pmid(k)) *
                        gravit * rpdel(k)); // ! layer thickness in m
       });                                  // end k
+
+  team.team_barrier();
 
   // NOTE: update_from_cldn_profile loop from 7 to 71 in fortran code.
   Kokkos::parallel_for(
@@ -1699,6 +1705,8 @@ void dropmixnuc(
             nact[k].data(), mact[k].data());
       });
 
+  team.team_barrier();
+
   // PART III:  perform explict integration of droplet/aerosol mixing using
   // substepping
 
@@ -1715,13 +1723,15 @@ void dropmixnuc(
                       srcn, // droplet source rate [/s]
                       source);
 
+  team.team_barrier();
+
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, top_lev - 1), KOKKOS_LAMBDA(int kk) {
         for (int i = 0; i < ncnst_tot; ++i) {
           qqcw_fld[i](kk) = zero;
         }
       });
-
+  team.team_barrier();
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, pver - top_lev + 1), KOKKOS_LAMBDA(int kk) {
         const int k = kk + top_lev - 1;
