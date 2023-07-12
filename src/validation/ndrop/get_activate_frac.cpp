@@ -94,13 +94,13 @@ void get_activate_frac(Ensemble *ensemble) {
     // const auto specdens_amode = specdens_amode_db.data();
     // const auto spechygro = spechygro_db.data();
 
-    const auto voltonumbhi_amode_db = input.get_array("voltonumbhi_amode");
-    const auto voltonumblo_amode_db = input.get_array("voltonumblo_amode");
+    // const auto voltonumbhi_amode_db = input.get_array("voltonumbhi_amode");
+    // const auto voltonumblo_amode_db = input.get_array("voltonumblo_amode");
     // const auto numptr_amode_db = input.get_array("numptr_amode");
     // const auto nspec_amode_db = input.get_array("nspec_amode");
 
-    const auto voltonumbhi_amode = voltonumbhi_amode_db.data();
-    const auto voltonumblo_amode = voltonumblo_amode_db.data();
+    // const auto voltonumbhi_amode = voltonumbhi_amode_db.data();
+    // const auto voltonumblo_amode = voltonumblo_amode_db.data();
 
     const auto exp45logsig_db = input.get_array("exp45logsig");
     const auto alogsig_db = input.get_array("alogsig");

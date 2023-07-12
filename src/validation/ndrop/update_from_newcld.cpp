@@ -88,9 +88,9 @@ void update_from_newcld(Ensemble *ensemble) {
 
     Real aten = zero;
 
-    ndrop::ndrop_int(exp45logsig, alogsig, aten,
-                     num2vol_ratio_min_nmodes,  // voltonumbhi_amode
-                     num2vol_ratio_max_nmodes); // voltonumblo_amode
+    ndrop::ndrop_init(exp45logsig, alogsig, aten,
+                      num2vol_ratio_min_nmodes,  // voltonumbhi_amode
+                      num2vol_ratio_max_nmodes); // voltonumblo_amode
 
     const auto mam_idx_db = input.get_array("mam_idx");
 

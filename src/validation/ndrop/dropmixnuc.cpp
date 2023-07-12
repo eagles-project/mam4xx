@@ -160,9 +160,9 @@ void dropmixnuc(Ensemble *ensemble) {
 
     Real aten = zero;
 
-    ndrop::ndrop_int(exp45logsig, alogsig, aten,
-                     num2vol_ratio_min_nmodes,  // voltonumbhi_amode
-                     num2vol_ratio_max_nmodes); // voltonumblo_amode
+    ndrop::ndrop_init(exp45logsig, alogsig, aten,
+                      num2vol_ratio_min_nmodes,  // voltonumbhi_amode
+                      num2vol_ratio_max_nmodes); // voltonumblo_amode
 
     const Real dtmicro = input.get_array("dtmicro")[0];
 
@@ -321,7 +321,7 @@ void dropmixnuc(Ensemble *ensemble) {
           //   num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
           //   num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
 
-          // ndrop::ndrop_int(exp45logsig, alogsig, aten,
+          // ndrop::ndrop_init(exp45logsig, alogsig, aten,
           //            num2vol_ratio_min_nmodes,  // voltonumbhi_amode
           //            num2vol_ratio_max_nmodes); // voltonumblo_amode
           // Real dtmicro = 600.0;

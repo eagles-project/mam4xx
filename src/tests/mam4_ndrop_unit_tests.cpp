@@ -49,8 +49,8 @@ TEST_CASE("test_ndrop_init", "mam4_ndrop_unit_tests") {
   // close to largest double value--for determining if values are positive
   const Real huge = 1.0e308;
 
-  mam4::ndrop::ndrop_int(exp45logsig, alogsig, aten, num2vol_ratio_min_nmodes,
-                         num2vol_ratio_max_nmodes);
+  mam4::ndrop::ndrop_init(exp45logsig, alogsig, aten, num2vol_ratio_min_nmodes,
+                          num2vol_ratio_max_nmodes);
 
   for (int i = 0; i < AeroConfig::num_modes(); ++i) {
     a_alogsig = haero::log(modes(i).mean_std_dev);

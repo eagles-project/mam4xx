@@ -31,9 +31,9 @@ void activate_modal(Ensemble *ensemble) {
 
     Real aten = zero;
 
-    ndrop::ndrop_int(exp45logsig, alogsig, aten,
-                     num2vol_ratio_min_nmodes,  // voltonumbhi_amode
-                     num2vol_ratio_max_nmodes); // voltonumblo_amode
+    ndrop::ndrop_init(exp45logsig, alogsig, aten,
+                      num2vol_ratio_min_nmodes,  // voltonumbhi_amode
+                      num2vol_ratio_max_nmodes); // voltonumblo_amode
 
     // const auto  = input.get_array("");
     std::vector<Real> fn(ntot_amode, zero), fm(ntot_amode, zero),

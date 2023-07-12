@@ -384,10 +384,11 @@ void qsat(const Real t, const Real p, Real &es, Real &qs) {
   es = haero::min(es, p);
 } // qsat
 
-inline void ndrop_int(Real exp45logsig[AeroConfig::num_modes()],
-                      Real alogsig[AeroConfig::num_modes()], Real &aten,
-                      Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
-                      Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()]) {
+KOKKOS_INLINE_FUNCTION
+void ndrop_init(Real exp45logsig[AeroConfig::num_modes()],
+                Real alogsig[AeroConfig::num_modes()], Real &aten,
+                Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
+                Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()]) {
   const Real one = 1;
   const Real two = 2;
   const Real one_thousand = 1e3;
@@ -414,7 +415,7 @@ inline void ndrop_int(Real exp45logsig[AeroConfig::num_modes()],
   // BAD CONSTANT
   aten = two * mwh2o * surften / (r_universal * t0 * rhoh2o);
 
-} // end ndrop_int
+} // end ndrop_init
 
 KOKKOS_INLINE_FUNCTION
 void activate_modal(const Real w_in, const Real wmaxf, const Real tair,

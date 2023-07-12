@@ -87,9 +87,9 @@ void loadaer(Ensemble *ensemble) {
 
     Real aten = zero;
 
-    ndrop::ndrop_int(exp45logsig, alogsig, aten,
-                     num2vol_ratio_min_nmodes,  // voltonumbhi_amode
-                     num2vol_ratio_max_nmodes); // voltonumblo_amode
+    ndrop::ndrop_init(exp45logsig, alogsig, aten,
+                      num2vol_ratio_min_nmodes,  // voltonumbhi_amode
+                      num2vol_ratio_max_nmodes); // voltonumblo_amode
 
     ndrop::loadaer(state_q.data(), nspec_amode, air_density, phase,
                    lspectype_amode, specdens_amode, spechygro, lmassptr_amode,

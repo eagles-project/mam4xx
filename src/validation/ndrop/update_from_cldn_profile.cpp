@@ -90,9 +90,9 @@ void update_from_cldn_profile(Ensemble *ensemble) {
 
     Real aten = zero;
 
-    ndrop::ndrop_int(exp45logsig, alogsig, aten,
-                     num2vol_ratio_min_nmodes,  // voltonumbhi_amode
-                     num2vol_ratio_max_nmodes); // voltonumblo_amode
+    ndrop::ndrop_init(exp45logsig, alogsig, aten,
+                      num2vol_ratio_min_nmodes,  // voltonumbhi_amode
+                      num2vol_ratio_max_nmodes); // voltonumblo_amode
 
     const int mam_idx_db[nspec_max * ntot_amode] = {
         1, 9,  14, 22, 2, 10, 15, 23, 3, 11, 16, 24, 4, 12, 17, 25,
