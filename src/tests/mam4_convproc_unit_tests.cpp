@@ -117,13 +117,18 @@ TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
       doconvproc_extd[i] = host_view[i];
   }
   std::set<int> check;
-  for (int i = 0; i < maxd_aspectype; ++i)
-    for (int j = 0; j < num_modes; ++j) {
+  for (int j = 0; j < num_modes; ++j) {
+    const int k = mam4::ConvProc::numptr_amode(j);
+    // k%2 because that is what is set in doconvproc above.
+    if (0 <= k && k % 2)
+      check.insert(gas_pcnst + k);
+    for (int i = 0; i < maxd_aspectype; ++i) {
       const int k = mam4::ConvProc::lmassptr_amode(i, j);
       // k%2 because that is what is set in doconvproc above.
-      if (0 < k && k % 2)
+      if (0 <= k && k % 2)
         check.insert(gas_pcnst + k);
     }
+  }
   for (int i = 0; i < pcnst_extd; ++i) {
     if (check.count(i))
       REQUIRE(aqfrac[i] == 1.0);

@@ -85,15 +85,18 @@ void compute_wup(Ensemble *ensemble) {
           for (int i = 0; i < nlev; ++i)
             wup_3[i] = wup_dev[i];
 
-          convproc::compute_wup(iconvtype, kk, mu_i, cldfrac_i, rhoair_i, zmagl,
-                                wup);
+          wup[kk] =
+              convproc::compute_wup(iconvtype, mu_i[kk], mu_i[kk + 1],
+                                    cldfrac_i[kk], rhoair_i[kk], zmagl[kk]);
           const int iconvtype_2 = 2;
-          convproc::compute_wup(iconvtype_2, kk, mu_i, cldfrac_i, rhoair_i,
-                                zmagl, wup_2);
+          wup_2[kk] =
+              convproc::compute_wup(iconvtype_2, mu_i[kk], mu_i[kk + 1],
+                                    cldfrac_i[kk], rhoair_i[kk], zmagl[kk]);
 
           zmagl_2[kk] /= 10;
-          convproc::compute_wup(iconvtype, kk, mu_i, cldfrac_i, rhoair_i,
-                                zmagl_2, wup_3);
+          wup_3[kk] =
+              convproc::compute_wup(iconvtype, mu_i[kk], mu_i[kk + 1],
+                                    cldfrac_i[kk], rhoair_i[kk], zmagl_2[kk]);
           for (int i = 0; i < nlev; ++i)
             wup_dev[i] = wup[i];
           for (int i = 0; i < nlev; ++i)
