@@ -41,6 +41,10 @@ void compute_midlev_height(Ensemble *ensemble);
 void initialize_tmr_array(Ensemble *ensemble);
 void update_qnew_ptend(Ensemble *ensemble);
 void compute_wetdep_tend(Ensemble *ensemble);
+void ma_activate_convproc(Ensemble *ensemble);
+void compute_activation_tend(Ensemble *ensemble);
+void compute_updraft_mixing_ratio(Ensemble *ensemble);
+void ma_convproc_tend(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -94,6 +98,14 @@ int main(int argc, char **argv) {
       update_qnew_ptend(ensemble);
     } else if (func_name == "compute_wetdep_tend") {
       compute_wetdep_tend(ensemble);
+    } else if (func_name == "ma_activate_convproc") {
+      ma_activate_convproc(ensemble);
+    } else if (func_name == "compute_activation_tend") {
+      compute_activation_tend(ensemble);
+    } else if (func_name == "compute_updraft_mixing_ratio") {
+      compute_updraft_mixing_ratio(ensemble);
+    } else if (func_name == "ma_convproc_tend") {
+      ma_convproc_tend(ensemble);
     } else {
       std::cerr << "Error: Test name not recognized:" << func_name << std::endl;
       exit(1);

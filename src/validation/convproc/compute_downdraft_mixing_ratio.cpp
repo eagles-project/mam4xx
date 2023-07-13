@@ -24,9 +24,10 @@ void get_input(const Input &input, const std::string &name, const int size,
     host_view[n] = host[n];
   Kokkos::deep_copy(dev, host_view);
 }
-void get_input(const Input &input, const std::string &name, const int rows,
-               const int cols, std::vector<Real> &host,
-               Kokkos::View<Real **, Kokkos::MemoryUnmanaged> &dev) {
+void get_input(
+    const Input &input, const std::string &name, const int rows, const int cols,
+    std::vector<Real> &host,
+    Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
   EKAT_ASSERT(host.size() == rows * cols);
   ColumnView col_view = mam4::validation::create_column_view(rows * cols);
@@ -47,7 +48,8 @@ void get_input(const Input &input, const std::string &name, const int rows,
 }
 void set_output(Output &output, const std::string &name, const int rows,
                 const int cols, std::vector<Real> &host,
-                const Kokkos::View<Real **, Kokkos::MemoryUnmanaged> &dev) {
+                const Kokkos::View<Real * [ConvProc::pcnst_extd],
+                                   Kokkos::MemoryUnmanaged> &dev) {
   host.resize(rows * cols);
   auto host_view = Kokkos::create_mirror_view(dev);
   Kokkos::deep_copy(host_view, dev);
@@ -63,6 +65,7 @@ void compute_downdraft_mixing_ratio(Ensemble *ensemble) {
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
+    const int pcnst_extd = ConvProc::pcnst_extd;
     // Fetch ensemble parameters
     // Convert to C++ index by subtracting one.
     const int ktop = input.get("ktop") - 1;
@@ -73,45 +76,32 @@ void compute_downdraft_mixing_ratio(Ensemble *ensemble) {
     std::vector<Real> doconvproc_extd_host, md_i_host, eddp_host, gath_host,
         cond_host;
     ColumnView doconvproc_extd_dev, md_i_dev, eddp_dev;
-    Kokkos::View<Real **, Kokkos::MemoryUnmanaged> gath_dev, cond_dev;
+    Kokkos::View<Real *[pcnst_extd], Kokkos::MemoryUnmanaged> gath_dev,
+        cond_dev;
 
-    get_input(input, "doconvproc_extd", ConvProc::pcnst_extd,
-              doconvproc_extd_host, doconvproc_extd_dev);
+    get_input(input, "doconvproc_extd", pcnst_extd, doconvproc_extd_host,
+              doconvproc_extd_dev);
     get_input(input, "md_i", nlev + 1, md_i_host, md_i_dev);
     get_input(input, "eddp", nlev, eddp_host, eddp_dev);
-    get_input(input, "const", nlev, ConvProc::pcnst_extd, gath_host, gath_dev);
-    get_input(input, "cond", nlev + 1, ConvProc::pcnst_extd, cond_host,
-              cond_dev);
+    get_input(input, "const", nlev, pcnst_extd, gath_host, gath_dev);
+    get_input(input, "cond", nlev + 1, pcnst_extd, cond_host, cond_dev);
 
     Kokkos::parallel_for(
         "compute_downdraft_mixing_ratio", 1, KOKKOS_LAMBDA(int) {
-          bool doconvproc_extd[ConvProc::pcnst_extd];
+          bool doconvproc_extd[pcnst_extd];
           Real md_i[nlev + 1];
           Real eddp[nlev];
-          Real gath[nlev][ConvProc::pcnst_extd];
-          Real cond[nlev + 1][ConvProc::pcnst_extd];
 
-          for (int i = 0; i < ConvProc::pcnst_extd; ++i)
+          for (int i = 0; i < pcnst_extd; ++i)
             doconvproc_extd[i] = doconvproc_extd_dev[i];
           for (int i = 0; i < nlev + 1; ++i)
             md_i[i] = md_i_dev(i);
           for (int i = 0; i < nlev; ++i)
             eddp[i] = eddp_dev(i);
-          for (int i = 0; i < nlev; ++i)
-            for (int j = 0; j < ConvProc::pcnst_extd; ++j)
-              gath[i][j] = gath_dev(i, j);
-          for (int i = 0; i < nlev + 1; ++i)
-            for (int j = 0; j < ConvProc::pcnst_extd; ++j)
-              cond[i][j] = cond_dev(i, j);
 
-          convproc::compute_downdraft_mixing_ratio(doconvproc_extd, ktop, kbot,
-                                                   md_i, eddp, gath, cond);
-
-          for (int i = 0; i < nlev + 1; ++i)
-            for (int j = 0; j < ConvProc::pcnst_extd; ++j)
-              cond_dev(i, j) = cond[i][j];
+          convproc::compute_downdraft_mixing_ratio(
+              doconvproc_extd, ktop, kbot, md_i, eddp, gath_dev, cond_dev);
         });
-    set_output(output, "cond", nlev + 1, ConvProc::pcnst_extd, cond_host,
-               cond_dev);
+    set_output(output, "cond", nlev + 1, pcnst_extd, cond_host, cond_dev);
   });
 }
