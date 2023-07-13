@@ -704,7 +704,7 @@ void update_tendency_diagnostics(
 }
 // =========================================================================================
 // clang-format off
-template<class SubView, class ConstSubView>
+template <typename SubView, typename ConstSubView>
 KOKKOS_INLINE_FUNCTION
 void update_tendency_final(
     const int ntsub,   // IN  number of sub timesteps
@@ -805,7 +805,7 @@ void compute_column_tendency(
   }
 }
 // =========================================================================================
-template <class SubView>
+template <typename SubView>
 KOKKOS_INLINE_FUNCTION void tmr_tendency(const int la, const int lc,
                                          SubView dcondt,
                                          SubView dcondt_resusp) {
@@ -957,14 +957,14 @@ void ma_precpevap(const Real dpdry_i, const Real evapc, const Real pr_flux,
 }
 
 //=========================================================================================
-template <typename Const_SubView, typename SubView>
+template <typename SubView, typename ConstSubView>
 KOKKOS_INLINE_FUNCTION void
 ma_precpprod(const Real rprd, const Real dpdry_i,
              const bool doconvproc_extd[ConvProc::pcnst_extd],
              const Real x_ratio, const int species_class[ConvProc::gas_pcnst],
              const int mmtoo_prevap_resusp[ConvProc::gas_pcnst], Real &pr_flux,
              Real &pr_flux_tmp, Real &pr_flux_base, ColumnView wd_flux,
-             Const_SubView dcondt_wetdep, SubView dcondt, SubView dcondt_prevap,
+             ConstSubView dcondt_wetdep, SubView dcondt, SubView dcondt_prevap,
              SubView dcondt_prevap_hist) {
   // clang-format off
   // ------------------------------------------
@@ -1212,25 +1212,25 @@ void initialize_dcondt(const bool doconvproc_extd[ConvProc::pcnst_extd],
   // -----------------------------------------------------------------------
 
   /* cloudborne aerosol, so the arrays are dimensioned with pcnst_extd = pcnst*2
-   in :: doconvproc_extd(pcnst_extd) ! flag for doing convective transport
+   in :: doconvproc_extd[pcnst_extd] ! flag for doing convective transport
    in :: iflux_method             ! 1=as in convtran (deep), 2=uwsh
    in :: ktop                     ! top level index
    in :: kbot                     ! bottom level index
-   in :: dpdry(nlev)              ! dp [mb]
-   in :: fa_u(nlev)               ! fractional area of the updraft [fraction]
-   in :: mu(nlev+1)               ! mu at current i (note nlev+1 dimension, see ma_convproc_tend) [mb/s]
-   in :: md(nlev+1)               ! md at current i (note nlev+1 dimension) [mb/s]
-   in :: chat(nlev+1,pcnst_extd)  ! mix ratio in env at interfaces [kg/kg]
-   in :: gath(nlev,pcnst_extd)    ! gathered tracer array [kg/kg]
-   in :: conu(nlev+1,pcnst_extd)  ! mix ratio in updraft at interfaces [kg/kg]
-   in :: cond(nlev+1,pcnst_extd)  ! mix ratio in downdraft at interfaces [kg/kg]
-   in :: dconudt_activa(nlev+1,pcnst_extd) ! d(conu)/dt by activation [kg/kg/s]
-   in :: dconudt_wetdep(nlev+1,pcnst_extd) ! d(conu)/dt by wet removal[kg/kg/s]
-   in :: dudp(nlev)           ! du(i,k)*dp(i,k) at current i [mb/s]
-   in :: dddp(nlev)           ! dd(i,k)*dp(i,k) at current i [mb/s]
-   in :: eudp(nlev)           ! eu(i,k)*dp(i,k) at current i [mb/s]
-   in :: eddp(nlev)           ! ed(i,k)*dp(i,k) at current i [mb/s]
-   out :: dcondt(nlev,pcnst_extd)  ! grid-average TMR tendency for current column  [kg/kg/s]
+   in :: dpdry[nlev]              ! dp [mb]
+   in :: fa_u[nlev]               ! fractional area of the updraft [fraction]
+   in :: mu[nlev+1]               ! mu at current i (note nlev+1 dimension, see ma_convproc_tend) [mb/s]
+   in :: md[nlev+1]               ! md at current i (note nlev+1 dimension) [mb/s]
+   in :: chat[nlev+1][pcnst_extd]  ! mix ratio in env at interfaces [kg/kg]
+   in :: gath[nlev][pcnst_extd]    ! gathered tracer array [kg/kg]
+   in :: conu[nlev+1][pcnst_extd]  ! mix ratio in updraft at interfaces [kg/kg]
+   in :: cond[nlev+1][pcnst_extd]  ! mix ratio in downdraft at interfaces [kg/kg]
+   in :: dconudt_activa[nlev+1][pcnst_extd] ! d(conu)/dt by activation [kg/kg/s]
+   in :: dconudt_wetdep[nlev+1][pcnst_extd] ! d(conu)/dt by wet removal[kg/kg/s]
+   in :: dudp[nlev]           ! du[i][k]*dp[i][k] at current i [mb/s]
+   in :: dddp[nlev]           ! dd[i][k]*dp[i][k] at current i [mb/s]
+   in :: eudp[nlev]           ! eu[i][k]*dp[i][k] at current i [mb/s]
+   in :: eddp[nlev]           ! ed[i][k]*dp[i][k] at current i [mb/s]
+   out :: dcondt[nlev,pcnst_extd]  ! grid-average TMR tendency for current column  [kg/kg/s]
   */
   // clang-format on
   // initialize variables
@@ -1354,8 +1354,8 @@ update_conu_from_act_frac(SubView conu, SubView dconudt, const int la,
   // update conu and dconudt from activation fraction
   // ---------------------------------------------------------------------
   /* arguments:
-   inout :: conu(pcnst_extd)    ! TMR concentration [#/kg or kg/kg]
-   inout :: dconudt(pcnst_extd) ! TMR tendencies due to activation [#/kg/s or kg/kg/s]
+   inout :: conu[pcnst_extd]    ! TMR concentration [#/kg or kg/kg]
+   inout :: dconudt[pcnst_extd] ! TMR tendencies due to activation [#/kg/s or kg/kg/s]
    in    :: act_frac            ! activation fraction [fraction]
    in    :: dt_u_inv            ! 1.0/dt_u  [1/s]
    in    :: la                  ! indices for interstitial aerosols
@@ -1578,10 +1578,10 @@ void compute_ent_det_dp(const int nlev, const int ktop, const int kbot,
   in  :: ed[nlev]       ! Mass entrain rate into downdraft [1/s]
 
   out :: ntsub          ! number of sub timesteps
-  out :: eudp[nlev]     ! eu(i,k)*dp(i,k) at current i [mb/s]
-  out :: dudp[nlev]     ! du(i,k)*dp(i,k) at current i [mb/s]
-  out :: eddp[nlev]     ! ed(i,k)*dp(i,k) at current i [mb/s]
-  out :: dddp[nlev]     ! dd(i,k)*dp(i,k) at current i [mb/s]
+  out :: eudp[nlev]     ! eu[i][k]*dp[i][k] at current i [mb/s]
+  out :: dudp[nlev]     ! du[i][k]*dp[i][k] at current i [mb/s]
+  out :: eddp[nlev]     ! ed[i][k]*dp[i][k] at current i [mb/s]
+  out :: dddp[nlev]     ! dd[i][k]*dp[i][k] at current i [mb/s]
   */
   // clang-format on
 
@@ -1684,12 +1684,12 @@ void initialize_tmr_array(
   /*
   in :: iconvtype                 ! 1=deep, 2=uw shallow
   in :: doconvproc_extd[pcnst_extd] ! flag for doing convective transport
-  in :: q[nlev,pcnst]          ! q(icol,kk,icnst) at current icol
+  in :: q[nlev][pcnst]          ! q[icol][kk][icnst] at current icol
 
-  out :: gath[nlev,  pcnst_extd]   ! gathered tracer array [kg/kg]
-  out :: chat[nlev+1,pcnst_extd]   ! mix ratio in env at interfaces [kg/kg]
-  out :: conu[nlev+1,pcnst_extd]   ! mix ratio in updraft at interfaces [kg/kg]
-  out :: cond[nlev+1,pcnst_extd]   ! mix ratio in downdraft at interfaces [kg/kg]
+  out :: gath[nlev  ][pcnst_extd]   ! gathered tracer array [kg/kg]
+  out :: chat[nlev+1][pcnst_extd]   ! mix ratio in env at interfaces [kg/kg]
+  out :: conu[nlev+1][pcnst_extd]   ! mix ratio in updraft at interfaces [kg/kg]
+  out :: cond[nlev+1][pcnst_extd]   ! mix ratio in downdraft at interfaces [kg/kg]
   */
   // clang-format on
 
@@ -2239,10 +2239,10 @@ void compute_updraft_mixing_ratio(
   in :: aqfrac[pcnst_extd]   ! aqueous fraction of constituent in updraft [fraction]
   in :: icwmr[nlev]    ! Convective cloud water from zm scheme [kg/kg]
   in :: rprd[nlev]     ! Convective precipitation formation rate [kg/kg/s]
-  out :: dconudt_wetdep[nlev+1,pcnst_extd1] ! d(conu)/dt by wet removal[kg/kg/s]
-  out :: dconudt_activa[nlev+1,pcnst_extd] ! d(conu)/dt by activation [kg/kg/s]
+  out :: dconudt_wetdep[nlev+1][pcnst_extd1] ! d(conu)/dt by wet removal[kg/kg/s]
+  out :: dconudt_activa[nlev+1][pcnst_extd] ! d(conu)/dt by activation [kg/kg/s]
   out :: fa_u[nlev]           ! fractional area of in the updraft
-  inout :: conu[nlev+1,pcnst_extd]   ! mix ratio in updraft at interfaces [kg/kg]
+  inout :: conu[nlev+1][pcnst_extd]   ! mix ratio in updraft at interfaces [kg/kg]
   inout :: xx_wcldbase ! w at first cloudy layer [m/s]
   inout :: xx_kcldbase ! level of cloud base
   */
@@ -2415,19 +2415,19 @@ void ma_convproc_tend(
                    ! convection ("deep", "shcu")
    in :: gas_pcnst         ! number of tracers to transport
    in :: dt                ! Model timestep [s]
-   in :: temperature(nlev)     ! Temperature [K]
-   in :: qnew(nlev,ConvProc::gas_pcnst)      ! Tracer array including moisture [kg/kg]
+   in :: temperature[nlev]     ! Temperature [K]
+   in :: qnew[nlev][ConvProc::gas_pcnst]      ! Tracer array including moisture [kg/kg]
 
-   in :: du(nlev)    ! Mass detrain rate from updraft [1/s]
-   in :: eu(nlev)    ! Mass entrain rate into updraft [1/s]
-   in :: ed(nlev)    ! Mass entrain rate into downdraft [1/s]
+   in :: du[nlev]    ! Mass detrain rate from updraft [1/s]
+   in :: eu[nlev]    ! Mass entrain rate into updraft [1/s]
+   in :: ed[nlev]    ! Mass entrain rate into downdraft [1/s]
       *** note1 - mu, md, eu, ed, du, dp, dpdry are GATHERED ARRAYS ***
       *** note2 - mu and md units are (mb/s), which is used in the zm_conv code
                 - eventually these should be changed to (kg/m2/s)
       *** note3 - eu, ed, du are "d(massflux)/dp" (with dp units = mb), and are all >= 0
 
-   in :: dp(nlev)    ! Delta pressure between interfaces [mb]
-   in :: dpdry(nlev) ! Delta dry-pressure [mb]
+   in :: dp[nlev]    ! Delta pressure between interfaces [mb]
+   in :: dpdry[nlev] ! Delta dry-pressure [mb]
 
                      ! Cloud-flux top    
                      ! Layers between kbot,ktop have mass fluxes
@@ -2436,14 +2436,14 @@ void ma_convproc_tend(
    in :: ktop        ! Index of cloud top for column
    in :: kbot         Cloud-flux bottom layer for current i (=mx(i))
 
-   in :: cldfrac(nlev)  ! Convective cloud fractional area [fraction]
-   in :: icwmr(nlev)    ! Convective cloud water from zhang [kg/kg]
-   in :: rprd(nlev)     ! Convective precipitation formation rate [kg/kg/s]
-   in :: evapc(nlev)    ! Convective precipitation evaporation rate [kg/kg/s]
+   in :: cldfrac[nlev]  ! Convective cloud fractional area [fraction]
+   in :: icwmr[nlev]    ! Convective cloud water from zhang [kg/kg]
+   in :: rprd[nlev]     ! Convective precipitation formation rate [kg/kg/s]
+   in :: evapc[nlev]    ! Convective precipitation evaporation rate [kg/kg/s]
 
-   out:: dqdt(nlev,ConvProc::gas_pcnst)  ! Tracer tendency array [kg/kg/s]
-   in :: doconvproc(ConvProc::gas_pcnst) ! flag for doing convective transport
-   out:: qsrflx(pcnst,nsrflx)
+   out:: dqdt[nlev][ConvProc::gas_pcnst]  ! Tracer tendency array [kg/kg/s]
+   in :: doconvproc[ConvProc::gas_pcnst] ! flag for doing convective transport
+   out:: qsrflx[pcnst][nsrflx]
          ! process-specific column tracer tendencies [kg/m2/s]
          !  1 = activation   of interstial to conv-cloudborne
          !  2 = resuspension of conv-cloudborne to interstital
@@ -2451,7 +2451,7 @@ void ma_convproc_tend(
          !  4 = wet removal
          !  5 = actual precip-evap resuspension (what actually is applied to a species)
          !  6 = pseudo precip-evap resuspension (for history file) 
-   in :: species_class(:)  ! specify what kind of species it is. defined at physconst.F90
+   in :: species_class[:]  ! specify what kind of species it is. defined at physconst.F90
                                                 ! undefined  = 0
                                                 ! cldphysics = 1
                                                 ! aerosol    = 2
