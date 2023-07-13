@@ -51,7 +51,7 @@ public:
                           const Tendencies &tends) const;
 };
 
-namespace hetfrz {
+namespace drydep {
 
 KOKKOS_INLINE_FUNCTION
 Real gravit_settling_velocity(const Real particle_radius,
@@ -77,7 +77,7 @@ Real gravit_settling_velocity(const Real particle_radius,
   return gravit_settling_velocity * dispersion;
 }
 
-} // namespace hetfrz
+} // namespace drydep
 
 } // namespace mam4
 
