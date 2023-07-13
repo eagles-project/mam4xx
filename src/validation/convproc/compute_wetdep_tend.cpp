@@ -69,7 +69,7 @@ void compute_wetdep_tend(Ensemble *ensemble) {
     const Real dt = input.get("dt");
     EKAT_ASSERT(dt == 3600);
     // Convert to C++ offset
-    const Real kk = input.get("kk") - 1;
+    const int kk = input.get("kk") - 1;
     EKAT_ASSERT(kk == 53);
 
     // flag for doing convective transport
@@ -119,9 +119,10 @@ void compute_wetdep_tend(Ensemble *ensemble) {
             doconvproc_extd[n] = doconvproc_extd_dev[n];
           }
 
-          convproc::compute_wetdep_tend(doconvproc_extd, kk, dt, dt_u, dp_i,
-                                        cldfrac_i, mu_p_eudp, aqfrac, icwmr,
-                                        rprd, conu, dconudt_wetdep);
+          convproc::compute_wetdep_tend(doconvproc_extd, dt, dt_u[kk], dp_i[kk],
+                                        cldfrac_i[kk], mu_p_eudp[kk], aqfrac,
+                                        icwmr[kk], rprd[kk], conu[kk],
+                                        dconudt_wetdep[kk]);
           for (int i = 0; i < nlev + 1; ++i) {
             for (int j = 0; j < pcnst_extd; ++j) {
               conu_dev(i, j) = conu[i][j];

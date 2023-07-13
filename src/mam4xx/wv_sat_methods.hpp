@@ -131,6 +131,34 @@ void wv_sat_qsat_water(const Real t, const Real p, Real &es, Real &qs) {
 KOKKOS_INLINE_FUNCTION
 Real svp_ice(const Real temperature) { return GoffGratch_svp_ice(temperature); }
 
+KOKKOS_INLINE_FUNCTION
+Real wv_sat_svp_trans(const Real t) {
+
+  // BAD CONSTANT
+  const Real ttrice = 20.00; // transition range from es over H2O to es over ice
+  const Real zero = 0;
+  const Real one = 1;
+  const Real tmelt = haero::Constants::melting_pt_h2o;
+  // Water
+  Real es = zero;
+  if (t >= (tmelt - ttrice)) {
+    es = wv_sat_methods::GoffGratch_svp_water(t);
+  }
+  // Ice
+  // Intermediate scratch variable for es transition
+  if (t < tmelt) {
+    // Saturation vapor pressure over ice
+    Real weight = one;
+    const Real esice = wv_sat_methods::GoffGratch_svp_ice(t);
+    if ((tmelt - t) < ttrice) {
+      weight = (tmelt - t) / ttrice;
+    }
+    es = weight * esice + (one - weight) * es;
+  }
+
+  return es;
+}
+
 } // namespace wv_sat_methods
 } // namespace mam4
 

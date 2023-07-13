@@ -310,3 +310,21 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_nucleateIce_process") {
                                    mc_diags(icol), mc_tends(icol));
       });
 }
+
+TEST_CASE("test_wv_sat_svp_trans", "mam4_nucleate_ice_process") {
+  ekat::Comm comm;
+  ekat::logger::Logger<> logger("wv_sat_svp_trans unit tests",
+                                ekat::logger::LogLevel::debug, comm);
+
+  const Real epsilon = ekat::is_single_precision<Real>::value ? 0.01 : 0.0001;
+  const Real tmelt = haero::Constants::melting_pt_h2o;
+  Real temperature = tmelt + 40;
+  REQUIRE(std::abs(7373.80964886279 - mam4::wv_sat_methods::wv_sat_svp_trans(
+                                          temperature)) < epsilon);
+  temperature = tmelt - 10;
+  REQUIRE(std::abs(272.7574754946415 - mam4::wv_sat_methods::wv_sat_svp_trans(
+                                           temperature)) < epsilon);
+  temperature = tmelt - 30;
+  REQUIRE(std::abs(37.94098622403198 - mam4::wv_sat_methods::wv_sat_svp_trans(
+                                           temperature)) < epsilon);
+}

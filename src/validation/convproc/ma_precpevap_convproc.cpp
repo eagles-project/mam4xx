@@ -25,13 +25,14 @@ void get_input(const Input &input, const std::string &name, const int size,
     host_view[n] = host[n];
   Kokkos::deep_copy(dev, host_view);
 }
-void get_input(const Input &input, const std::string &name, const int rows,
-               const int cols, std::vector<Real> &host,
-               Kokkos::View<Real **, Kokkos::MemoryUnmanaged> &dev) {
+void get_input(
+    const Input &input, const std::string &name, const int rows, const int cols,
+    std::vector<Real> &host,
+    Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
   ColumnView col_view = mam4::validation::create_column_view(rows * cols);
-  dev = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(col_view.data(), rows,
-                                                       cols);
+  dev = Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged>(
+      col_view.data(), rows, cols);
   EKAT_ASSERT(host.size() == rows * cols);
   {
     std::vector<std::vector<Real>> matrix(rows, std::vector<Real>(cols));
@@ -46,12 +47,13 @@ void get_input(const Input &input, const std::string &name, const int rows,
     Kokkos::deep_copy(dev, host_view);
   }
 }
-void get_input(const int rows, const int cols, std::vector<Real> &host,
-               Kokkos::View<Real **, Kokkos::MemoryUnmanaged> &dev) {
+void get_input(
+    const int rows, const int cols, std::vector<Real> &host,
+    Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged> &dev) {
   host.resize(rows * cols, 0);
   ColumnView col_view = mam4::validation::create_column_view(rows * cols);
-  dev = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(col_view.data(), rows,
-                                                       cols);
+  dev = Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged>(
+      col_view.data(), rows, cols);
   auto host_view = Kokkos::create_mirror_view(dev);
   for (int i = 0; i < rows; ++i)
     for (int j = 0; j < cols; ++j)
@@ -60,7 +62,8 @@ void get_input(const int rows, const int cols, std::vector<Real> &host,
 }
 void set_output(Output &output, const std::string &name, const int rows,
                 const int cols, std::vector<Real> &host,
-                const Kokkos::View<Real **, Kokkos::MemoryUnmanaged> &dev) {
+                const Kokkos::View<Real * [ConvProc::pcnst_extd],
+                                   Kokkos::MemoryUnmanaged> &dev) {
   auto host_view = Kokkos::create_mirror_view(dev);
   Kokkos::deep_copy(host_view, dev);
   for (int i = 0, n = 0; i < rows; ++i)
@@ -87,8 +90,9 @@ void ma_precpevap_convproc(Ensemble *ensemble) {
         doconvproc_extd_host, species_class_host, mmtoo_prevap_resusp_host;
     ColumnView rprd_dev, evapc_dev, dpdry_i_dev, doconvproc_extd_dev,
         species_class_dev, mmtoo_prevap_resusp_dev;
-    Kokkos::View<Real **, Kokkos::MemoryUnmanaged> dcondt_dev,
-        dcondt_prevap_dev, dcondt_prevap_hist_dev, dcondt_wetdep_dev;
+    Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged>
+        dcondt_dev, dcondt_prevap_dev, dcondt_prevap_hist_dev,
+        dcondt_wetdep_dev;
     get_input(input, "rprd", nlev, rprd_host, rprd_dev);
     get_input(input, "evapc", nlev, evapc_host, evapc_dev);
     get_input(input, "dpdry_i", nlev, dpdry_i_host, dpdry_i_dev);
@@ -120,9 +124,10 @@ void ma_precpevap_convproc(Ensemble *ensemble) {
             mmtoo_prevap_resusp[i] = mmtoo_prevap_resusp_dev[i] - 1;
 
           convproc::ma_precpevap_convproc(
-              ktop, nlev, dcondt_wetdep_dev, rprd_dev, evapc_dev, dpdry_i_dev,
-              doconvproc_extd, species_class, mmtoo_prevap_resusp, wd_flux,
-              dcondt_prevap_dev, dcondt_prevap_hist_dev, dcondt_dev);
+              ktop, nlev, dcondt_wetdep_dev, rprd_dev.data(), evapc_dev.data(),
+              dpdry_i_dev.data(), doconvproc_extd, species_class,
+              mmtoo_prevap_resusp, wd_flux, dcondt_prevap_dev,
+              dcondt_prevap_hist_dev, dcondt_dev);
         });
     set_output(output, "dcondt", nlev, pcnst_extd, dcondt_host, dcondt_dev);
     set_output(output, "dcondt_prevap", nlev, pcnst_extd, dcondt_prevap_host,
