@@ -16,6 +16,12 @@ using Real = haero::Real;
 namespace mam4 {
 namespace gas_chemistry {
 const int nzcnt = 31;
+const int rxntot = 7;
+const int gas_pcnst = 7;
+const int clscnt4 = 31;
+const int itermax = 11;
+const int extcnt = 7;
+
 enum class SpeciesId {
   O3 = 0,
   H2O2 = 1,
@@ -312,14 +318,44 @@ void adjrxt(Real rate[7], Real inv[7], Real m) {
   rate[6] *= inv[5];
   rate[1] *= inv[6] * inv[6] / m;
 }
-KOKKOS_INLINE_FUNCTION
-void nlnmat(Real sys_jac[nzcnt],                          //   & ! out
-            const Real lin_jac[nzcnt], const Real dti) {} // nlnmat
 
-const int rxntot = 7;
-const int gas_pcnst = 7;
-const int clscnt4 = 31;
-const int itermax = 11;
+KOKKOS_INLINE_FUNCTION
+void nlnmat(Real mat[nzcnt], const Real lmat[nzcnt], const Real dti) 
+{
+mat[0] = lmat[0] - dti;
+mat[1] = lmat[1] - dti;
+mat[2] = lmat[2];
+mat[3] = lmat[3] - dti;
+mat[4] = lmat[4];
+mat[5] = lmat[5] - dti;
+mat[6] = lmat[6] - dti;
+mat[7] = lmat[7] - dti;
+mat[8] = lmat[8] - dti;
+mat[9] = lmat[9] - dti;
+mat[10] = lmat[10] - dti;
+mat[11] = lmat[11] - dti;
+mat[12] = lmat[12] - dti;
+mat[13] = lmat[13] - dti;
+mat[14] = lmat[14] - dti;
+mat[15] = lmat[15] - dti;
+mat[16] = lmat[16] - dti;
+mat[17] = lmat[17] - dti;
+mat[18] = lmat[18] - dti;
+mat[19] = lmat[19] - dti;
+mat[20] = lmat[20] - dti;
+mat[21] = lmat[21] - dti;
+mat[22] = lmat[22] - dti;
+mat[23] = lmat[23] - dti;
+mat[24] = lmat[24] - dti;
+mat[25] = lmat[25] - dti;
+mat[26] = lmat[26] - dti;
+mat[27] = lmat[27] - dti;
+mat[28] = lmat[28] - dti;
+mat[29] = lmat[29] - dti;
+mat[30] = lmat[30] - dti;
+mat[31] = lmat[31] - dti;
+}
+
 KOKKOS_INLINE_FUNCTION
 void newton_raphson_iter(
     const Real dti, const Real lin_jac[nzcnt], const Real lrxt[rxntot],
@@ -449,7 +485,7 @@ void newton_raphson_iter(
   } // end nr_iter
 
 } // newton_raphson_iter
-const int extcnt = 7;
+
 
 KOKKOS_INLINE_FUNCTION
 void imp_sol(Real base_sol[gas_pcnst], //    ! species mixing ratios [vmr] & !
