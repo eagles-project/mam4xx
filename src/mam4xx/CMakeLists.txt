@@ -27,6 +27,7 @@ install(FILES
         wang2008.hpp
         hetfrz.hpp
         wv_sat_methods.hpp
+        drydep.hpp
         DESTINATION include/mam4xx)
 
 add_library(mam4xx aero_modes.cpp)
