@@ -9,6 +9,7 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 
 # We use a single driver for all gas_chem-related parameterizations.
 add_executable(gas_chem_driver  gas_chem_driver.cpp linmat.cpp
+               nlnmat.cpp 
                indprd.cpp)
 target_link_libraries(gas_chem_driver skywalker;validation;${HAERO_LIBRARIES})
 
@@ -27,12 +28,14 @@ endforeach()
 set(TEST_LIST
     indprd_ts_355
     linmat_ts_355
+    nlnmat_ts_355
     )
 
 set(DEFAULT_TOL 1e-12)
 # gas_chem
 
 set(ERROR_THRESHOLDS  
+   ${DEFAULT_TOL}
    ${DEFAULT_TOL}
    ${DEFAULT_TOL}
    )
