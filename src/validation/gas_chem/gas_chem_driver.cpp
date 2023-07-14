@@ -26,6 +26,7 @@ using namespace mam4;
 
 // Parameterizations used by the gas_chemistry process.
 void mam_indprd(Ensemble *ensemble);
+void mam_linmat(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -51,6 +52,8 @@ int main(int argc, char **argv) {
   try {
     if (func_name == "indprd") {
       mam_indprd(ensemble);
+    } else if (func_name == "linmat") {
+      mam_linmat(ensemble);
     } 
 
   } catch (std::exception &e) {
