@@ -12,6 +12,12 @@ const int nzcnt = 32;     // number of non-zero matrix entries
 const int clscnt4 = 30;   // number of species in implicit class
 const int extcnt = 9;     // number of species with external forcing
 const int nfs = 8;        // number of fixed species
+const int permute_4[gas_pcnst] = {1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
+                                  11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+                                  21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
+const int clsmap_4[gas_pcnst] = {2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+                                 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+                                 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
 enum class SpeciesId {
   O3 = 0,
   H2O2 = 1,

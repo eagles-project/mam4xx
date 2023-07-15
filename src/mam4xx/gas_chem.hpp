@@ -8,27 +8,25 @@
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
-#include <mam4xx/mam4_types.hpp>
 #include <mam4xx/generated_gas_chem.hpp>
+#include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
 using Real = haero::Real;
 
 namespace mam4 {
 
-  
 namespace gas_chemistry {
 
 const int itermax = 11;
 
-
 KOKKOS_INLINE_FUNCTION
 void newton_raphson_iter(
     const Real dti, const Real lin_jac[nzcnt], const Real lrxt[rxntot],
-    const Real lhet[gas_pcnst],        // & ! in
-    const int iter_invariant[clscnt4], //              & ! in
-    const bool factor[itermax], int permute_4[gas_pcnst],
-    int clsmap_4[gas_pcnst], Real lsol[gas_pcnst],
+    const Real lhet[gas_pcnst],         // & ! in
+    const Real iter_invariant[clscnt4], //              & ! in
+    const bool factor[itermax], const int permute_4[gas_pcnst],
+    const int clsmap_4[gas_pcnst], Real lsol[gas_pcnst],
     Real solution[clscnt4],                    //              & ! inout
     bool converged[clscnt4], bool convergence, //         & ! out
     Real prod[clscnt4], Real loss[clscnt4], Real max_delta[clscnt4],
@@ -152,15 +150,14 @@ void newton_raphson_iter(
 
 } // newton_raphson_iter
 
-
 KOKKOS_INLINE_FUNCTION
 void imp_sol(Real base_sol[gas_pcnst], //    ! species mixing ratios [vmr] & !
                                        //    inout
              const Real reaction_rates[rxntot], const Real het_rates[gas_pcnst],
-             const Real extfrc[extcnt], Real &delt, int permute_4[gas_pcnst],
-             int clsmap_4[gas_pcnst], const bool factor[itermax],
-             Real epsilon[clscnt4], Real prod_out[clscnt4],
-             Real loss_out[clscnt4]
+             const Real extfrc[extcnt], Real &delt,
+             const int permute_4[gas_pcnst], const int clsmap_4[gas_pcnst],
+             const bool factor[itermax], Real epsilon[clscnt4],
+             Real prod_out[clscnt4], Real loss_out[clscnt4]
              //                   xhnm, ncol, lchnk, ltrop
 ) {
 
@@ -215,7 +212,7 @@ void imp_sol(Real base_sol[gas_pcnst], //    ! species mixing ratios [vmr] & !
   // endif
 
   Real solution[clscnt4] = {};
-  int iter_invariant[clscnt4] = {};
+  Real iter_invariant[clscnt4] = {};
 
   // !-----------------------------------------------------------------------
   //       ! ... time step loop

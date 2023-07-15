@@ -14,6 +14,7 @@ add_executable(gas_chem_driver
                nlnmat.cpp 
                indprd.cpp
                imp_prod_loss.cpp
+               newton_raphson_iter.cpp
                )
 target_link_libraries(gas_chem_driver skywalker;validation;${HAERO_LIBRARIES})
 
@@ -34,12 +35,14 @@ set(TEST_LIST
     linmat_ts_355
     nlnmat_ts_355
     imp_prod_loss_ts_355
+    newton_raphson_iter_ts_355
     )
 
 set(DEFAULT_TOL 1e-12)
 # gas_chem
 
 set(ERROR_THRESHOLDS  
+   ${DEFAULT_TOL}
    ${DEFAULT_TOL}
    ${DEFAULT_TOL}
    ${DEFAULT_TOL}

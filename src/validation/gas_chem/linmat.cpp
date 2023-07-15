@@ -17,17 +17,13 @@ using namespace gas_chemistry;
 void mam_linmat(Ensemble *ensemble) {
 
   ensemble->process([=](const Input &input, Output &output) {
-   
-    const Real zero =0;
-    std::vector<Real> mat(nzcnt,zero);
+    const Real zero = 0;
+    std::vector<Real> mat(nzcnt, zero);
     const auto rxt = input.get_array("rxt");
-    const auto het_rates= input.get_array("het_rates");
+    const auto het_rates = input.get_array("het_rates");
 
-    lin_matrix(mat.data(),rxt.data(),het_rates.data());
+    lin_matrix(mat.data(), rxt.data(), het_rates.data());
 
     output.set("mat", mat);
-
-
-    
   });
 }

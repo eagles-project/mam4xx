@@ -17,16 +17,12 @@ using namespace gas_chemistry;
 void mam_nlnmat(Ensemble *ensemble) {
 
   ensemble->process([=](const Input &input, Output &output) {
-   
-    const Real zero =0;
-    std::vector<Real> mat(nzcnt,zero);
+    const Real zero = 0;
+    std::vector<Real> mat(nzcnt, zero);
     const auto lmat = input.get_array("lmat");
     const auto dti = input.get_array("dti")[0];
-    nlnmat(mat.data(),  lmat.data(),dti);
+    nlnmat(mat.data(), lmat.data(), dti);
 
     output.set("mat", mat);
-
-
-    
   });
 }

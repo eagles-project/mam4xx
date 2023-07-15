@@ -17,19 +17,15 @@ using namespace gas_chemistry;
 void mam_indprd(Ensemble *ensemble) {
 
   ensemble->process([=](const Input &input, Output &output) {
-   
-    const Real zero =0;
+    const Real zero = 0;
     const int class_id = int(input.get_array("class_id")[0]);
-    std::vector<Real> prod(clscnt4,zero);
+    std::vector<Real> prod(clscnt4, zero);
 
     const auto rxt = input.get_array("rxt");
-    const auto extfrc= input.get_array("extfrc");
+    const auto extfrc = input.get_array("extfrc");
 
-    indprd(class_id, prod.data(), rxt.data(), extfrc.data()); 
+    indprd(class_id, prod.data(), rxt.data(), extfrc.data());
 
     output.set("prod", prod);
-
-
-    
   });
 }
