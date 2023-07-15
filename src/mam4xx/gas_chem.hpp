@@ -19,6 +19,20 @@ namespace mam4 {
 namespace gas_chemistry {
 
 const int itermax = 11;
+const Real rel_err = 1.e-3;
+const Real high_rel_err = 1.e-4;
+
+KOKKOS_INLINE_FUNCTION
+void imp_slv_inti(Real epsilon[clscnt4])
+{
+  Real eps[clscnt4] = {rel_err};
+  int ox_ndx= int(SpeciesId::O3);
+  eps[ox_ndx] = high_rel_err;
+  for (int i = 0; i < clscnt4; ++i)
+  {
+    epsilon[i] = eps[clsmap_4[i]];
+  }
+}
 
 KOKKOS_INLINE_FUNCTION
 void newton_raphson_iter(

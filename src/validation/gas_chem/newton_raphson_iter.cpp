@@ -31,6 +31,7 @@ void mam_newton_raphson_iter(Ensemble *ensemble) {
     std::vector<Real> max_delta(clscnt4, zero);
 
     Real epsilon[clscnt4] = {};
+    imp_slv_inti(epsilon);
 
     const bool factor[itermax] = {true};
     bool converged[clscnt4] = {true};
