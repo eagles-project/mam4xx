@@ -23,14 +23,18 @@ const Real rel_err = 1.e-3;
 const Real high_rel_err = 1.e-4;
 
 KOKKOS_INLINE_FUNCTION
-void imp_slv_inti(Real epsilon[clscnt4])
-{
-  Real eps[clscnt4] = {rel_err};
-  int ox_ndx= int(SpeciesId::O3);
+void imp_slv_inti(Real epsilon[clscnt4]) {
+  const Real zero = 0;
+  Real eps[clscnt4] = {zero};
+  for (int i = 0; i < clscnt4; ++i) {
+    eps[i] = rel_err;
+  }
+
+  int ox_ndx = int(SpeciesId::O3);
   eps[ox_ndx] = high_rel_err;
-  for (int i = 0; i < clscnt4; ++i)
-  {
-    epsilon[i] = eps[clsmap_4[i]];
+  // FIXME: follow fortran code.
+  for (int i = 0; i < clscnt4; ++i) {
+    epsilon[i] = rel_err; // eps[clsmap_4[i]];
   }
 }
 
@@ -63,13 +67,13 @@ void newton_raphson_iter(
     // !-----------------------------------------------------------------------
 
     if (factor[nr_iter]) {
-      nlnmat(
-          sys_jac, //   & ! out
-          lin_jac,
-          dti); // ! in
-                // !-----------------------------------------------------------------------
-      // ! ... factor the "system" matrix
-      // !-----------------------------------------------------------------------
+      nlnmat(sys_jac, //   & ! out
+             lin_jac,
+             dti); // ! in
+      // -----------------------------------------------------------------------
+      //  ... factor the "system" matrix
+      // -----------------------------------------------------------------------
+
       lu_fac(sys_jac);
 
     } // factor
@@ -99,6 +103,7 @@ void newton_raphson_iter(
     if (nr_iter > 0) {
       for (int kk = 0; kk < clscnt4; ++kk) {
         int mm = permute_4[kk];
+        // printf("mm %d \n", mm);
         // BAD CONSTANT
         if (haero::abs(solution[mm]) > 1.e-20) {
           max_delta[kk] = haero::abs(forcing[mm] / solution[mm]);

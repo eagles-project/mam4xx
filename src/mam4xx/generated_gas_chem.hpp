@@ -12,12 +12,12 @@ const int nzcnt = 32;     // number of non-zero matrix entries
 const int clscnt4 = 30;   // number of species in implicit class
 const int extcnt = 9;     // number of species with external forcing
 const int nfs = 8;        // number of fixed species
-const int permute_4[gas_pcnst] = {1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
-                                  11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-                                  21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
-const int clsmap_4[gas_pcnst] = {2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
-                                 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-                                 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+const int permute_4[gas_pcnst] = {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
+                                  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+                                  20, 21, 22, 23, 24, 25, 26, 27, 28, 29};
+const int clsmap_4[gas_pcnst] = {1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
+                                 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+                                 21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
 enum class SpeciesId {
   O3 = 0,
   H2O2 = 1,
@@ -204,36 +204,36 @@ void indprd(const int class_id, Real prod[clscnt4], const Real rxt[rxntot],
 KOKKOS_INLINE_FUNCTION
 void lu_fac(Real lu[nzcnt]) {
   const Real one = 1;
-  lu[0] /= one;
-  lu[1] /= one;
-  lu[3] /= one;
-  lu[5] /= one;
-  lu[6] /= one;
-  lu[7] /= one;
-  lu[8] /= one;
-  lu[9] /= one;
-  lu[10] /= one;
-  lu[11] /= one;
-  lu[12] /= one;
-  lu[13] /= one;
-  lu[14] /= one;
-  lu[15] /= one;
-  lu[16] /= one;
-  lu[17] /= one;
-  lu[18] /= one;
-  lu[19] /= one;
-  lu[20] /= one;
-  lu[21] /= one;
-  lu[22] /= one;
-  lu[23] /= one;
-  lu[24] /= one;
-  lu[25] /= one;
-  lu[26] /= one;
-  lu[27] /= one;
-  lu[28] /= one;
-  lu[29] /= one;
-  lu[30] /= one;
-  lu[31] /= one;
+  lu[0] = one / lu[0];
+  lu[1] = one / lu[1];
+  lu[3] = one / lu[3];
+  lu[5] = one / lu[5];
+  lu[6] = one / lu[6];
+  lu[7] = one / lu[7];
+  lu[8] = one / lu[8];
+  lu[9] = one / lu[9];
+  lu[10] = one / lu[10];
+  lu[11] = one / lu[11];
+  lu[12] = one / lu[12];
+  lu[13] = one / lu[13];
+  lu[14] = one / lu[14];
+  lu[15] = one / lu[15];
+  lu[16] = one / lu[16];
+  lu[17] = one / lu[17];
+  lu[18] = one / lu[18];
+  lu[19] = one / lu[19];
+  lu[20] = one / lu[20];
+  lu[21] = one / lu[21];
+  lu[22] = one / lu[22];
+  lu[23] = one / lu[23];
+  lu[24] = one / lu[24];
+  lu[25] = one / lu[25];
+  lu[26] = one / lu[26];
+  lu[27] = one / lu[27];
+  lu[28] = one / lu[28];
+  lu[29] = one / lu[29];
+  lu[30] = one / lu[30];
+  lu[31] = one / lu[31];
 }
 KOKKOS_INLINE_FUNCTION
 void lu_slv(Real lu[nzcnt], Real b[clscnt4]) {
