@@ -24,14 +24,14 @@ const Real high_rel_err = 1.e-4;
 const int max_time_steps = 1000;
 KOKKOS_INLINE_FUNCTION
 void imp_slv_inti(Real epsilon[clscnt4]) {
-  const Real zero = 0;
-  Real eps[clscnt4] = {zero};
-  for (int i = 0; i < clscnt4; ++i) {
-    eps[i] = rel_err;
-  }
+  // const Real zero = 0;
+  // Real eps[clscnt4] = {zero};
+  // for (int i = 0; i < clscnt4; ++i) {
+  //   eps[i] = rel_err;
+  // }
 
-  int ox_ndx = int(SpeciesId::O3);
-  eps[ox_ndx] = high_rel_err;
+  // int ox_ndx = int(SpeciesId::O3);
+  // eps[ox_ndx] = high_rel_err;
   // FIXME: follow fortran code.
   for (int i = 0; i < clscnt4; ++i) {
     epsilon[i] = rel_err; // eps[clsmap_4[i]];
