@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
       mam_imp_prod_loss(ensemble);
     } else if (func_name == "newton_raphson_iter") {
       mam_newton_raphson_iter(ensemble);
-    }else if (func_name == "imp_sol") {
+    } else if (func_name == "imp_sol") {
       mam_imp_sol(ensemble);
     }
 

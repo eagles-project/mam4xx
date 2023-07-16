@@ -31,24 +31,15 @@ void mam_imp_sol(Ensemble *ensemble) {
     imp_slv_inti(epsilon);
 
     bool factor[itermax];
-    for (int i = 0; i < itermax; ++i)
-    {
-      factor[i]=true;
+    for (int i = 0; i < itermax; ++i) {
+      factor[i] = true;
     }
 
-    imp_sol( base_sol.data(), //    ! species mixing ratios [vmr] & !
-             reaction_rates.data(),
-             het_rates.data(),
-             extfrc.data(),
-             delt,
-             permute_4, 
-             clsmap_4,
-             factor,
-             epsilon,
-             prod_out.data(), 
-             loss_out.data());
+    imp_sol(base_sol.data(), //    ! species mixing ratios [vmr] & !
+            reaction_rates.data(), het_rates.data(), extfrc.data(), delt,
+            permute_4, clsmap_4, factor, epsilon, prod_out.data(),
+            loss_out.data());
 
     output.set("base_sol", base_sol);
-
   });
 }
