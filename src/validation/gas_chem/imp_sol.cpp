@@ -30,7 +30,11 @@ void mam_imp_sol(Ensemble *ensemble) {
     Real epsilon[clscnt4] = {};
     imp_slv_inti(epsilon);
 
-    const bool factor[itermax] = {true};
+    bool factor[itermax];
+    for (int i = 0; i < itermax; ++i)
+    {
+      factor[i]=true;
+    }
 
     imp_sol( base_sol.data(), //    ! species mixing ratios [vmr] & !
              reaction_rates.data(),

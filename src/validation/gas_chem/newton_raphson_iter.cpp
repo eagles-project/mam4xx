@@ -35,7 +35,7 @@ void mam_newton_raphson_iter(Ensemble *ensemble) {
 
     const bool factor[itermax] = {true};
     bool converged[clscnt4] = {true};
-    bool convergence = true;
+    bool convergence = false;
 
     newton_raphson_iter(dti, lin_jac.data(), lrxt.data(),
                         lhet.data(),           // & ! in

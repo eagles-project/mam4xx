@@ -21,7 +21,7 @@ namespace gas_chemistry {
 const int itermax = 11;
 const Real rel_err = 1.e-3;
 const Real high_rel_err = 1.e-4;
-
+const int max_time_steps=1000;
 KOKKOS_INLINE_FUNCTION
 void imp_slv_inti(Real epsilon[clscnt4]) {
   const Real zero = 0;
@@ -46,7 +46,7 @@ void newton_raphson_iter(
     const bool factor[itermax], const int permute_4[gas_pcnst],
     const int clsmap_4[gas_pcnst], Real lsol[gas_pcnst],
     Real solution[clscnt4],                    //              & ! inout
-    bool converged[clscnt4], bool convergence, //         & ! out
+    bool converged[clscnt4], bool& convergence, //         & ! out
     Real prod[clscnt4], Real loss[clscnt4], Real max_delta[clscnt4],
     // work arrays
     Real epsilon[clscnt4]) {
@@ -242,7 +242,7 @@ void imp_sol(Real base_sol[gas_pcnst], //    ! species mixing ratios [vmr] & !
   int stp_con_cnt = 0;
   Real interval_done = zero;
   // time_step_loop : do
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < max_time_steps; ++i) {
     const Real dti = one / dt;
     // !-----------------------------------------------------------------------
     // ! ... transfer from base to local work arrays
@@ -261,10 +261,10 @@ void imp_sol(Real base_sol[gas_pcnst], //    ! species mixing ratios [vmr] & !
     // !-----------------------------------------------------------------------
     // ! ... set the iteration invariant part of the function f(y)
     // !-----------------------------------------------------------------------
+
     for (int mm = 0; mm < clscnt4; ++mm) {
       iter_invariant[mm] = dti * solution[mm] + ind_prd[mm];
     } // mm
-
     //-----------------------------------------------------------------------
     // ... the linear component
     //-----------------------------------------------------------------------
@@ -286,8 +286,7 @@ void imp_sol(Real base_sol[gas_pcnst], //    ! species mixing ratios [vmr] & !
 
     // -----------------------------------------------------------------------
     //  ... check for newton-raphson convergence
-    // -----------------------------------------------------------------------
-
+    // ----------------------------------------------------------------------- 
     if (!convergence) {
       // !-----------------------------------------------------------------------
       //           ! ... non-convergence
@@ -298,6 +297,7 @@ void imp_sol(Real base_sol[gas_pcnst], //    ! species mixing ratios [vmr] & !
       //           !-----------------------------------------------------------------------
       fail_cnt += fail_cnt;
       // nstep = get_nstep()
+      // FIXME: 
       // write(iulog,'('' imp_sol: Time step '',1p,e21.13,'' failed to converge
       // @ (lchnk,lev,col,nstep) = '',4i6)') &
       //      dt,lchnk,lev,icol,nstep
@@ -316,6 +316,7 @@ void imp_sol(Real base_sol[gas_pcnst], //    ! species mixing ratios [vmr] & !
         // break;
         // cycle time_step_loop
       } else {
+        // FIXME
         // write(iulog,'('' imp_sol: Failed to converge @
         // (lchnk,lev,col,nstep,dt,time) = '',4i6,1p,2e21.13)') &
         //                   lchnk,lev,icol,nstep,dt,interval_done+dt
@@ -327,17 +328,18 @@ void imp_sol(Real base_sol[gas_pcnst], //    ! species mixing ratios [vmr] & !
         //              enddo
       } //  cut_cnt < cut_limit
 
-    } // ! convergence
+    } // non-convergence
 
-    // !-----------------------------------------------------------------------
-    //            ! ... check for interval done
-    //            !-----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    // ... check for interval done
+    // -----------------------------------------------------------------------
 
     interval_done += dt;
 
     // BAD CONSTANT
     if (haero::abs(delt - interval_done) <= .0001) {
       if (fail_cnt > 0) {
+        // FIXME 
         printf("'imp_sol : @ (lchnk,lev,col) = \n");
         // write(iulog,*) 'imp_sol : @ (lchnk,lev,col) = ',lchnk,lev,icol,'
         // failed ',fail_cnt,' times'
