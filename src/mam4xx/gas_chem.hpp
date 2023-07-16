@@ -366,10 +366,10 @@ void imp_sol(Real base_sol[gas_pcnst], //    ! species mixing ratios [vmr] & !
 
   } // time_step_loop
 
-  // !-----------------------------------------------------------------------
-  //         ! ... Transfer latest solution back to base array
-  //         !     and calculate Prod/Loss history buffers
-  //         !-----------------------------------------------------------------------
+  //-----------------------------------------------------------------------
+  // ... Transfer latest solution back to base array
+  //    and calculate Prod/Loss history buffers
+  //-----------------------------------------------------------------------
 
   for (int kk = 0; kk < clscnt4; ++kk) {
     const int jj = clsmap_4[kk];

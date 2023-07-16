@@ -30,6 +30,8 @@ void mam_linmat(Ensemble *ensemble);
 void mam_nlnmat(Ensemble *ensemble);
 void mam_imp_prod_loss(Ensemble *ensemble);
 void mam_newton_raphson_iter(Ensemble *ensemble);
+void mam_imp_sol(Ensemble *ensemble);
+
 int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
@@ -62,6 +64,8 @@ int main(int argc, char **argv) {
       mam_imp_prod_loss(ensemble);
     } else if (func_name == "newton_raphson_iter") {
       mam_newton_raphson_iter(ensemble);
+    }else if (func_name == "imp_sol") {
+      mam_imp_sol(ensemble);
     }
 
   } catch (std::exception &e) {
