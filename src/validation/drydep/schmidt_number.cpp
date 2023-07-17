@@ -51,7 +51,7 @@ void schmidt_number(Ensemble *ensemble) {
     auto vsc_dyn_atm = input.get("vsc_dyn_atm");
     auto vsc_knm_atm = input.get("vsc_knm_atm");
 
-    auto schmidt_number = drydep::gravit_settling_velocity(
+    auto schmidt_number = drydep::schmidt_number(
         temp, pres, radius, vsc_dyn_atm, vsc_knm_atm);
 
     output.set("schmidt_number", schmidt_number);
