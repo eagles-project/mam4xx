@@ -31,6 +31,7 @@ void mam_nlnmat(Ensemble *ensemble);
 void mam_imp_prod_loss(Ensemble *ensemble);
 void mam_newton_raphson_iter(Ensemble *ensemble);
 void mam_imp_sol(Ensemble *ensemble);
+void adjrxt(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -66,6 +67,8 @@ int main(int argc, char **argv) {
       mam_newton_raphson_iter(ensemble);
     } else if (func_name == "imp_sol") {
       mam_imp_sol(ensemble);
+    } else if (func_name == "adjrxt") {
+      adjrxt(ensemble);
     }
 
   } catch (std::exception &e) {
