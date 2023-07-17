@@ -14,7 +14,7 @@ using namespace skywalker;
 using namespace mam4;
 using namespace gas_chemistry;
 
-void mam_imp_prod_loss(Ensemble *ensemble) {
+void imp_prod_loss(Ensemble *ensemble) {
 
   ensemble->process([=](const Input &input, Output &output) {
     const Real zero = 0;

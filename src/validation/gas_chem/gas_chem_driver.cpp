@@ -25,12 +25,12 @@ using namespace skywalker;
 using namespace mam4;
 
 // Parameterizations used by the gas_chemistry process.
-void mam_indprd(Ensemble *ensemble);
-void mam_linmat(Ensemble *ensemble);
-void mam_nlnmat(Ensemble *ensemble);
-void mam_imp_prod_loss(Ensemble *ensemble);
-void mam_newton_raphson_iter(Ensemble *ensemble);
-void mam_imp_sol(Ensemble *ensemble);
+void indprd(Ensemble *ensemble);
+void linmat(Ensemble *ensemble);
+void nlnmat(Ensemble *ensemble);
+void imp_prod_loss(Ensemble *ensemble);
+void newton_raphson_iter(Ensemble *ensemble);
+void imp_sol(Ensemble *ensemble);
 void adjrxt(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
@@ -56,17 +56,17 @@ int main(int argc, char **argv) {
   auto func_name = settings.get("function");
   try {
     if (func_name == "indprd") {
-      mam_indprd(ensemble);
+      indprd(ensemble);
     } else if (func_name == "linmat") {
-      mam_linmat(ensemble);
+      linmat(ensemble);
     } else if (func_name == "nlnmat") {
-      mam_nlnmat(ensemble);
+      nlnmat(ensemble);
     } else if (func_name == "imp_prod_loss") {
-      mam_imp_prod_loss(ensemble);
+      imp_prod_loss(ensemble);
     } else if (func_name == "newton_raphson_iter") {
-      mam_newton_raphson_iter(ensemble);
+      newton_raphson_iter(ensemble);
     } else if (func_name == "imp_sol") {
-      mam_imp_sol(ensemble);
+      imp_sol(ensemble);
     } else if (func_name == "adjrxt") {
       adjrxt(ensemble);
     }

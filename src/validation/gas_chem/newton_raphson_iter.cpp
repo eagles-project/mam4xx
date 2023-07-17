@@ -14,7 +14,7 @@ using namespace skywalker;
 using namespace mam4;
 using namespace gas_chemistry;
 
-void mam_newton_raphson_iter(Ensemble *ensemble) {
+void newton_raphson_iter(Ensemble *ensemble) {
 
   ensemble->process([=](const Input &input, Output &output) {
     const Real zero = 0;
