@@ -8,6 +8,11 @@ using namespace mam4;
 
 // Parameterizations used by the drydep process.
 void gravit_settling_velocity(Ensemble *ensemble);
+void schmidt_number(Ensemble *ensemble);
+void slip_correction_factor(Ensemble *ensemble);
+void air_kinematic_viscosity(Ensemble *ensemble);
+void air_dynamic_viscosity(Ensemble *ensemble);
+void radius_for_moment(Ensemble *ensemble);
 
 void usage() {
   std::cerr << "aging_driver: a Skywalker driver for validating the "
@@ -44,6 +49,21 @@ int main(int argc, char **argv) {
   try {
     if (func_name == "gravit_settling_velocity") {
       gravit_settling_velocity(ensemble);
+    }
+    if (func_name == "schmidt_number") {
+      schmidt_number(ensemble);
+    }
+    if (func_name == "slip_correction_factor") {
+      slip_correction_factor(ensemble);
+    }
+    if (func_name == "air_kinematic_viscosity") {
+      air_kinematic_viscosity(ensemble);
+    }
+    if (func_name == "air_dynamic_viscosity") {
+      air_dynamic_viscosity(ensemble);
+    }
+    if (func_name == "radius_for_moment") {
+      radius_for_moment(ensemble);
     }
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
