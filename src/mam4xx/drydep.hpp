@@ -53,6 +53,14 @@ public:
 
 namespace drydep {
 
+// ==========================================================================
+// Calculate dynamic viscosity of air, unit [kg m-1 s-1]. See RoY94 p. 102
+// ==========================================================================
+KOKKOS_INLINE_FUNCTION
+Real air_dynamic_viscosity(const Real temp) {
+  return 1.72e-5 * (haero::pow(temp / 273.0, 1.5)) * 393.0 / (temp + 120.0);
+}
+
 //==========================================================================
 // Calculate kinematic viscosity of air, unit [m2 s-1]
 //==========================================================================
