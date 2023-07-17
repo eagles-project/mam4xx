@@ -9,7 +9,12 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 # We use a single driver for all drydep-related parameterizations.
 add_executable(drydep_driver
                drydep_driver.cpp
+               air_dynamic_viscosity.cpp
+               air_kinematic_viscosity.cpp
                gravit_settling_velocity.cpp
+               radius_for_moment.cpp
+               schmidt_number.cpp
+               slip_correction_factor.cpp
                )
 target_link_libraries(drydep_driver skywalker;validation;${HAERO_LIBRARIES})
 
