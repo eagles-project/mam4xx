@@ -17,13 +17,11 @@ using namespace gas_chemistry;
 void adjrxt(Ensemble *ensemble) {
 
   ensemble->process([=](const Input &input, Output &output) {
-    
     auto inv = input.get_array("inv");
     auto mtot = input.get_array("mtot")[0];
     auto rate = input.get_array("rate");
 
-    adjrxt(rate.data(), inv.data(), mtot) ;
-
+    adjrxt(rate.data(), inv.data(), mtot);
 
     output.set("rate", rate);
   });

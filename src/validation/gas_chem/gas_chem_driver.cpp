@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
       imp_sol(ensemble);
     } else if (func_name == "adjrxt") {
       adjrxt(ensemble);
-    }else if (func_name == "setrxt") {
+    } else if (func_name == "setrxt") {
       setrxt(ensemble);
     }
 
