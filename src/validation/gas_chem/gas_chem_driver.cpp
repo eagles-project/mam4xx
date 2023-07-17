@@ -32,6 +32,7 @@ void imp_prod_loss(Ensemble *ensemble);
 void newton_raphson_iter(Ensemble *ensemble);
 void imp_sol(Ensemble *ensemble);
 void adjrxt(Ensemble *ensemble);
+void setrxt(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -69,6 +70,8 @@ int main(int argc, char **argv) {
       imp_sol(ensemble);
     } else if (func_name == "adjrxt") {
       adjrxt(ensemble);
+    }else if (func_name == "setrxt") {
+      setrxt(ensemble);
     }
 
   } catch (std::exception &e) {
