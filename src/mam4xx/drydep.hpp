@@ -53,9 +53,20 @@ public:
 
 namespace drydep {
 
-// ==========================================================================
+//==============================================================================
+// Calculate the radius for a moment of a lognormal size distribution
+//==============================================================================
+KOKKOS_INLINE_FUNCTION
+Real radius_for_moment(const int moment, const Real sig_part,
+                       const Real radius_part, const Real radius_max) {
+  const Real lnsig = haero::log(sig_part);
+  return haero::min(radius_max, radius_part) *
+         haero::exp((moment - 1.5) * lnsig * lnsig);
+}
+
+//==========================================================================
 // Calculate dynamic viscosity of air, unit [kg m-1 s-1]. See RoY94 p. 102
-// ==========================================================================
+//==========================================================================
 KOKKOS_INLINE_FUNCTION
 Real air_dynamic_viscosity(const Real temp) {
   return 1.72e-5 * (haero::pow(temp / 273.0, 1.5)) * 393.0 / (temp + 120.0);
