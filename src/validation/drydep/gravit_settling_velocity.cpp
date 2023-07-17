@@ -15,35 +15,15 @@ void gravit_settling_velocity(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-    if (!input.has("particle_radius")) {
-      std::cerr << "Required name: "
-                << "particle_radius" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has("particle_density")) {
-      std::cerr << "Required name: "
-                << "particle_density" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has("slip_correction")) {
-      std::cerr << "Required name: "
-                << "slip_correction" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has("dynamic_viscosity")) {
-      std::cerr << "Required name: "
-                << "dynamic_viscosity" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has("particle_sig")) {
-      std::cerr << "Required name: "
-                << "particle_radius" << std::endl;
-      exit(1);
-    }
+    EKAT_REQUIRE_MSG(input.has("particle_radius"),
+                     "Required name: particle_radius");
+    EKAT_REQUIRE_MSG(input.has("particle_density"),
+                     "Required name: particle_density");
+    EKAT_REQUIRE_MSG(input.has("slip_correction"),
+                     "Required name: slip_correction");
+    EKAT_REQUIRE_MSG(input.has("dynamic_viscosity"),
+                     "Required name: dynamic_viscosity");
+    EKAT_REQUIRE_MSG(input.has("particle_sig"), "Required name: particle_sig");
 
     auto particle_radius = input.get("particle_radius");
     auto particle_density = input.get("particle_density");

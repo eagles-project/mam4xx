@@ -9,7 +9,12 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 # We use a single driver for all drydep-related parameterizations.
 add_executable(drydep_driver
                drydep_driver.cpp
+               air_dynamic_viscosity.cpp
+               air_kinematic_viscosity.cpp
                gravit_settling_velocity.cpp
+               radius_for_moment.cpp
+               schmidt_number.cpp
+               slip_correction_factor.cpp
                )
 target_link_libraries(drydep_driver skywalker;validation;${HAERO_LIBRARIES})
 
@@ -24,6 +29,11 @@ target_link_libraries(drydep_driver skywalker;validation;${HAERO_LIBRARIES})
 
 foreach (input
           gravit_settling_velocity
+          air_dynamic_viscosity
+          air_kinematic_viscosity
+          radius_for_moment
+          schmidt_number
+          slip_correction_factor
           )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
