@@ -15,29 +15,11 @@ void slip_correction_factor(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-    if (!input.has("dyn_visc")) {
-      std::cerr << "Required name: "
-                << "dyn_visc" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has("pres")) {
-      std::cerr << "Required name: "
-                << "pres" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has("temp")) {
-      std::cerr << "Required name: "
-                << "temp" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has("particle_radius")) {
-      std::cerr << "Required name: "
-                << "particle_radius" << std::endl;
-      exit(1);
-    }
+    EKAT_REQUIRE_MSG(input.has("dyn_visc"), "Required name: dyn_visc");
+    EKAT_REQUIRE_MSG(input.has("pres"), "Required name: pres");
+    EKAT_REQUIRE_MSG(input.has("temp"), "Required name: temp");
+    EKAT_REQUIRE_MSG(input.has("particle_radius"),
+                     "Required name: particle_radius");
 
     auto dyn_visc = input.get("dyn_visc");
     auto pres = input.get("pres");

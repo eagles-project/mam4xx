@@ -15,17 +15,8 @@ void air_kinematic_viscosity(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-    if (!input.has("temp")) {
-      std::cerr << "Required name: "
-                << "temp" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has("pres")) {
-      std::cerr << "Required name: "
-                << "pres" << std::endl;
-      exit(1);
-    }
+    EKAT_REQUIRE_MSG(input.has("temp"), "Required name: temp");
+    EKAT_REQUIRE_MSG(input.has("pres"), "Required name: pres");
 
     auto temp = input.get("temp");
     auto pres = input.get("pres");

@@ -15,29 +15,10 @@ void radius_for_moment(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-    if (!input.has("moment")) {
-      std::cerr << "Required name: "
-                << "moment" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has("sig_part")) {
-      std::cerr << "Required name: "
-                << "sig_part" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has("radius_part")) {
-      std::cerr << "Required name: "
-                << "radius_part" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has("radius_max")) {
-      std::cerr << "Required name: "
-                << "radius_max" << std::endl;
-      exit(1);
-    }
+    EKAT_REQUIRE_MSG(input.has("moment"), "Required name: moment");
+    EKAT_REQUIRE_MSG(input.has("sig_part"), "Required name: sig_part");
+    EKAT_REQUIRE_MSG(input.has("radius_part"), "Required name: radius_part");
+    EKAT_REQUIRE_MSG(input.has("radius_max"), "Required name: radius_max");
 
     auto moment = input.get("moment");
     auto sig_part = input.get("sig_part");

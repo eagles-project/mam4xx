@@ -15,35 +15,11 @@ void schmidt_number(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-    if (!input.has("temp")) {
-      std::cerr << "Required name: "
-                << "temp" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has("pres")) {
-      std::cerr << "Required name: "
-                << "pres" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has("radius")) {
-      std::cerr << "Required name: "
-                << "radius" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has("vsc_dyn_atm")) {
-      std::cerr << "Required name: "
-                << "vsc_dyn_atm" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has("vsc_knm_atm")) {
-      std::cerr << "Required name: "
-                << "vsc_knm_atm" << std::endl;
-      exit(1);
-    }
+    EKAT_REQUIRE_MSG(input.has("temp"), "Required name: temp");
+    EKAT_REQUIRE_MSG(input.has("pres"), "Required name: pres");
+    EKAT_REQUIRE_MSG(input.has("radius"), "Required name: radius");
+    EKAT_REQUIRE_MSG(input.has("vsc_dyn_atm"), "Required name: vsc_dyn_atm");
+    EKAT_REQUIRE_MSG(input.has("vsc_knm_atm"), "Required name: vsc_knm_atm");
 
     auto temp = input.get("temp");
     auto pres = input.get("pres");

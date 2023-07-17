@@ -15,11 +15,7 @@ void air_dynamic_viscosity(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-    if (!input.has("temp")) {
-      std::cerr << "Required name: "
-                << "temp" << std::endl;
-      exit(1);
-    }
+    EKAT_REQUIRE_MSG(input.has("temp"), "Required name: temp");
 
     auto temp = input.get("temp");
 
