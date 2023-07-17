@@ -53,6 +53,29 @@ public:
 
 namespace drydep {
 
+//====================================================================
+// Calculate the Schmidt number of air [unitless], see SeP97 p.972
+//====================================================================
+KOKKOS_INLINE_FUNCTION
+Real schmidt_number(const Real temp, const Real pres, const Real radius,
+                    const Real vsc_dyn_atm, const Real vsc_knm_atm) {
+
+  //  slip correction factor [unitless]
+  const Real slp_crc = slip_correction_factor(vsc_dyn_atm, pres, temp, radius);
+
+  // Brownian diffusivity of particle [m2/s], see SeP97 p.474
+  const Real dff_aer = Constants::boltzmann * temp * slp_crc /
+                       (6.0 * Constants::pi * vsc_dyn_atm * radius);
+
+  return vsc_knm_atm / dff_aer;
+}
+
+//=======================================================================================
+// Calculate the bulk gravitational settling velocity [m s-1]
+//  - using the terminal velocity of sphere falling in a fluid based on Stokes's
+//    law and
+//  - taking into account the influces of size distribution.
+//=======================================================================================
 KOKKOS_INLINE_FUNCTION
 Real gravit_settling_velocity(const Real particle_radius,
                               const Real particle_density,
