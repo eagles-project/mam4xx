@@ -34,7 +34,7 @@ void ccncalc(Ensemble *ensemble) {
     int count = 0;
     for (int i = 0; i < nvars; ++i) {
       state_q[i] = haero::testing::create_column_view(pver);
-      // input data is store on the cpu.
+      // input data is stored on the cpu.
       auto state_q_i_host = Kokkos::create_mirror_view(state_q[i]);
       for (int kk = 0; kk < pver; ++kk) {
         state_q_i_host(kk) = state_q_db[count];
@@ -52,6 +52,7 @@ void ccncalc(Ensemble *ensemble) {
     auto tair_host = Kokkos::create_mirror_view(tair);
     auto pmid_host = Kokkos::create_mirror_view(pmid);
 
+    // FIXME: has this been done?
     // // FIXME. Find a better way:
     for (int kk = 0; kk < pver; ++kk) {
       tair_host(kk) = tair_db[kk];

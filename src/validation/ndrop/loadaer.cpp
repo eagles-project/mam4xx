@@ -42,7 +42,6 @@ void loadaer(Ensemble *ensemble) {
     } else {
       qcldbrn1d_num = {zero, zero, zero, zero};
     }
-    // const auto  = input.get_array("");
     std::vector<Real> naerosol(ntot_amode, zero), vaerosol(ntot_amode, zero),
         hygro(ntot_amode, zero);
     // from ccncalc_input_ts_1400.yaml

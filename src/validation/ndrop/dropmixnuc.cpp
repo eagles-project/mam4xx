@@ -12,7 +12,7 @@
 using namespace skywalker;
 using namespace mam4;
 using namespace haero;
-
+// FIXME: this is a work in progress but could probably be cleaned up a little
 void dropmixnuc(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.

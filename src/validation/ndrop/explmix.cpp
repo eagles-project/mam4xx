@@ -34,6 +34,7 @@ void explmix(Ensemble *ensemble) {
 
     const Real zero = 0.0;
 
+    // FIXME: can this be deleted?
     /*
         ColumnView qold = haero::testing::create_column_view(pver);
         ColumnView src = haero::testing::create_column_view(pver);

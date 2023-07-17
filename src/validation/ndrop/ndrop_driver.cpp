@@ -9,9 +9,6 @@
 #include <skywalker.hpp>
 #include <validation.hpp>
 
-// This driver computes the binary or ternary rename for the given
-// input.
-
 void usage() {
   std::cerr << "ndrop_driver: a Skywalker driver for validating the "
                "MAM4 rename parameterizations."
@@ -24,7 +21,7 @@ void usage() {
 using namespace skywalker;
 using namespace mam4;
 
-// Parameterizations used by the aero_model process.
+// Parameterizations used by the ndrop() process.
 void ccncalc(Ensemble *ensemble);
 void get_activate_frac(Ensemble *ensemble);
 void activate_modal(Ensemble *ensemble);

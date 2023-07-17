@@ -35,7 +35,6 @@ void activate_modal(Ensemble *ensemble) {
                       num2vol_ratio_min_nmodes,  // voltonumbhi_amode
                       num2vol_ratio_max_nmodes); // voltonumblo_amode
 
-    // const auto  = input.get_array("");
     std::vector<Real> fn(ntot_amode, zero), fm(ntot_amode, zero),
         fluxn(ntot_amode, zero), fluxm(ntot_amode, zero);
     Real flux_fullact = zero;

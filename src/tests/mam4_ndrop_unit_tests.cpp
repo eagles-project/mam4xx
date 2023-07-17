@@ -92,7 +92,7 @@ TEST_CASE("test_ndrop_init", "mam4_ndrop_unit_tests") {
   }
 
   const Real rhoh2o = haero::Constants::density_h2o;
-  const Real r_universal = haero::Constants::r_gas * one_thousand; //[J/K/kmole]
+  const Real r_universal = haero::Constants::r_gas * one_thousand; //[J/K/kmol]
   const Real mwh2o =
       haero::Constants::molec_weight_h2o * one_thousand; // [kg/kmol]
   a_aten = two * mwh2o * mam4::ndrop::surften /
@@ -109,8 +109,8 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop_unit_tests") {
   ekat::logger::Logger<> logger("ndrop unit tests",
                                 ekat::logger::LogLevel::debug, comm);
 
-  // some of these made up, others are intended to be representative of
-  // corresponding values in validation test inputs
+  // some of these values are made up, others are intended to be representative
+  // of corresponding values in validation test inputs
   const Real voltonumbhi_amode = 4.736279937e18;
   // believe it or not, lo is indeed supposed to be larger than hi
   // it appears to be because these are calculated using dgnumlo/hi... which
@@ -207,7 +207,7 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
 
   Real q = -1;
 
-  // set up smoketest values
+  // set up smoke test values
   // pretend this is from one level k, in nlev, with adjacent levels k-1 (km1)
   // and k+1 (kp1)
   Real qold_km1 = 1;
@@ -252,7 +252,7 @@ TEST_CASE("test_maxsat", "mam4_ndrop") {
   Real smc[nmodes];
   Real smax = 0;
 
-  // set up smoketest values
+  // set up smoke test values
   for (int m = 0; m < nmodes; m++) {
     eta[m] = 0;
     smc[m] = 1;
@@ -270,7 +270,7 @@ TEST_CASE("test_maxsat", "mam4_ndrop") {
   logger.info("smax = {}", smax);
   REQUIRE(FloatingPoint<Real>::equiv(smax, 1e-10));
 
-  // set up smoketest values
+  // set up smoke test values
   for (int m = 0; m < nmodes; m++) {
     eta[m] = 1;
     smc[m] = 1;

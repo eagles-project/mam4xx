@@ -39,7 +39,7 @@ void get_activate_frac(Ensemble *ensemble) {
     } // kk
 
     for (int i = 0; i < nvars; ++i) {
-      // input data is store on the cpu.
+      // input data is stored on the cpu.
       for (int kk = 0; kk < pver; ++kk) {
         state_host[kk](i) = state_q_db[count];
         count++;
@@ -62,6 +62,7 @@ void get_activate_frac(Ensemble *ensemble) {
     auto pmid_host = Kokkos::create_mirror_view(pmid);
     auto wsub_host = Kokkos::create_mirror_view(wsub);
 
+    // FIXME: has this been done?
     // // FIXME. Find a better way:
     for (int kk = 0; kk < pver; ++kk) {
       tair_host(kk) = tair_db[kk];
@@ -73,49 +74,11 @@ void get_activate_frac(Ensemble *ensemble) {
     Kokkos::deep_copy(pmid, pmid_host);
     Kokkos::deep_copy(wsub, wsub_host);
 
-    // const auto lspectype_amode_db = input.get_array("lspectype_amode");
-    // int lspectype_amode[maxd_aspectype][ntot_amode] = {};
-
-    // const auto lmassptr_amode_db = input.get_array("lmassptr_amode");
-    // int lmassptr_amode[maxd_aspectype][ntot_amode] = {};
-
-    // count = 0;
-    // for (int i = 0; i < ntot_amode; ++i) {
-    //   for (int j = 0; j < maxd_aspectype; ++j) {
-    //     lspectype_amode[j][i] = lspectype_amode_db[count];
-    //     lmassptr_amode[j][i] = lmassptr_amode_db[count];
-    //     count++;
-    //   }
-    // }
-
     const auto specdens_amode_db = input.get_array("specdens_amode");
     const auto spechygro_db = input.get_array("spechygro");
 
-    // const auto specdens_amode = specdens_amode_db.data();
-    // const auto spechygro = spechygro_db.data();
-
-    // const auto voltonumbhi_amode_db = input.get_array("voltonumbhi_amode");
-    // const auto voltonumblo_amode_db = input.get_array("voltonumblo_amode");
-    // const auto numptr_amode_db = input.get_array("numptr_amode");
-    // const auto nspec_amode_db = input.get_array("nspec_amode");
-
-    // const auto voltonumbhi_amode = voltonumbhi_amode_db.data();
-    // const auto voltonumblo_amode = voltonumblo_amode_db.data();
-
     const auto exp45logsig_db = input.get_array("exp45logsig");
     const auto alogsig_db = input.get_array("alogsig");
-
-    // const auto exp45logsig = exp45logsig_db.data();
-    // const auto alogsig = alogsig_db.data();
-
-    // const Real aten = input.get_array("aten")[0];
-
-    // int numptr_amode[ntot_amode];
-    // int nspec_amode[ntot_amode];
-    // for (int i = 0; i < ntot_amode; ++i) {
-    //   numptr_amode[i] = numptr_amode_db[i];
-    //   nspec_amode[i] = nspec_amode_db[i];
-    // }
 
     ColumnView fn[pver];
     ColumnView fm[pver];
@@ -136,7 +99,7 @@ void get_activate_frac(Ensemble *ensemble) {
               conversions::density_of_ideal_gas(tair(kk), pmid(kk));
 
           // there might be a more clever way to do this, but I'm not sure
-          // there's any reason to get more fancy
+          // there's any reason to get fancier than this
           Real exp45logsig[4] = {0.4733757267E+01, 0.2702197556E+01,
                                  0.4733757267E+01, 0.2702197727E+01};
           Real voltonumbhi_amode[4] = {0.4736279937E+19, 0.5026599108E+22,

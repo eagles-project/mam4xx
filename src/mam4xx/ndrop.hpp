@@ -563,8 +563,8 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
 
   // ---------------------------------------------------------------------------------
   // flux_fullact is used for consistency check -- this should match
-  // (ekd(k)*zs(k)) also, fluxm/flux_fullact gives fraction of aerosol mass
-  // flux that is activated
+  // (eddy_diff(k)*zs(k)) also, fluxm/flux_fullact gives fraction of aerosol
+  // mass flux that is activated
   // ---------------------------------------------------------------------------------
   const Real zero = 0;
   const Real one = 1;
@@ -804,7 +804,7 @@ void update_from_cldn_profile(
     Real raercol_cw_nsav[ncnst_tot],
     Real &nsource_col, // inout
     Real &qcld, Real factnum_col[AeroConfig::num_modes()],
-    Real &ekd, // out
+    Real &eddy_diff, // out
     Real nact[AeroConfig::num_modes()], Real mact[AeroConfig::num_modes()]) {
   // input arguments
   // cldn_col_in(:)   cloud fraction [fraction] at kk
@@ -825,7 +825,7 @@ void update_from_cldn_profile(
   // cloud-borne phase [#/kg or kg/kg] nsource_col(:)   droplet number mixing
   // ratio source tendency [#/kg/s] qcld(:)  cloud droplet number mixing ratio
   // [#/kg] factnum_col(:,:)  activation fraction for aerosol number
-  // [fraction] ekd(:)     diffusivity for droplets [m^2/s] nact(:,:)
+  // [fraction] eddy_diff(:)     diffusivity for droplets [m^2/s] nact(:,:)
   // fractional aero. number  activation rate [/s] mact(:,:)  fractional aero.
   // mass activation rate [/s]
 
@@ -851,14 +851,14 @@ void update_from_cldn_profile(
 
       // rce-comments
       // first, should probably have 1/zs(k) here rather than dz(i,k)
-      // because the turbulent flux is proportional to ekd(k)*zs(k),
+      // because the turbulent flux is proportional to eddy_diff(k)*zs(k),
       // while the dz(i,k) is used to get flux divergences and mixing
       // ratio tendency/change second and more importantly, using a single
       // updraft velocity here means having monodisperse turbulent
       // updraft and downdrafts. The sq2pi factor assumes a normal draft
       // spectrum. The fluxn/fluxm from activate must be consistent with
       // the fluxes calculated in explmix.
-      ekd = wtke_col_in / zs;
+      eddy_diff = wtke_col_in / zs;
       // rce-comment - use kp1 here as old-cloud activation involves
       // aerosol from layer below
 
@@ -1013,9 +1013,9 @@ void update_from_newcld(
   const Real zero = 0;
   const Real one = 1;
   const int ntot_amode = AeroConfig::num_modes();
-  threshold cloud fraction growth[fraction]
-      // BAD CONSTANT
-      const Real grow_cld_thresh = 0.01;
+  // threshold cloud fraction growth[fraction]
+  // BAD CONSTANT
+  const Real grow_cld_thresh = 0.01;
 
   // new - old cloud fraction [fraction]
   const Real delt_cld = cldn_col_in - cldo_col_in;
@@ -1122,17 +1122,19 @@ void explmix(
         qnew, // OUTPUT, number / mass mixing ratio to be updated [# or kg / kg]
     const Real src, // source due to activation/nucleation at level k [# or kg /
                     // (kg-s)]
-    const Real ekkp,     // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
-                         // [/s]; below layer k  (k,k+1 interface)
-    const Real ekkm,     // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
+    const Real
+        eddy_diff_kp, // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
+                      // [/s]; below layer k  (k,k+1 interface)
+    const Real
+        eddy_diff_km,    // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
                          // [/s]; above layer k  (k,k+1 interface)
     const Real overlapp, // cloud overlap below [fraction]
     const Real overlapm, // cloud overlap above [fraction]
     const Real dtmix     // time step [s]
 ) {
 
-  qnew = qold_k + dtmix * (src + ekkp * (overlapp * qold_kp1 - qold_k) +
-                           ekkm * (overlapm * qold_km1 - qold_k));
+  qnew = qold_k + dtmix * (src + eddy_diff_kp * (overlapp * qold_kp1 - qold_k) +
+                           eddy_diff_km * (overlapm * qold_km1 - qold_k));
 
   // force to non-negative
   qnew = haero::max(qnew, 0);
@@ -1150,9 +1152,11 @@ void explmix(
         qnew, // OUTPUT, number / mass mixing ratio to be updated [# or kg / kg]
     const Real src, // source due to activation/nucleation at level k [# or kg /
                     // (kg-s)]
-    const Real ekkp,     // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
-                         // [/s]; below layer k  (k,k+1 interface)
-    const Real ekkm,     // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
+    const Real
+        eddy_diff_kp, // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
+                      // [/s]; below layer k  (k,k+1 interface)
+    const Real
+        eddy_diff_km,    // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
                          // [/s]; above layer k  (k,k+1 interface)
     const Real overlapp, // cloud overlap below [fraction]
     const Real overlapm, // cloud overlap above [fraction]
@@ -1169,10 +1173,12 @@ void explmix(
 
   // the qactold*(1-overlap) terms are resuspension of activated material
   const Real one = 1.0;
-  qnew = qold_k +
-         dtmix * (-src +
-                  ekkp * (qold_kp1 - qold_k + qactold_kp1 * (one - overlapp)) +
-                  ekkm * (qold_km1 - qold_k + qactold_km1 * (one - overlapm)));
+  qnew =
+      qold_k +
+      dtmix *
+          (-src +
+           eddy_diff_kp * (qold_kp1 - qold_k + qactold_kp1 * (one - overlapp)) +
+           eddy_diff_km * (qold_km1 - qold_k + qactold_km1 * (one - overlapm)));
 
   // force to non-negative
   qnew = haero::max(qnew, 0);
@@ -1187,7 +1193,7 @@ void update_from_explmix(
     const ColumnView &cldn,      // cloud fraction [fraction]
     const ColumnView &zn,        // g/pdel for layer [m^2/kg]
     const ColumnView &zs,        // inverse of distance between levels [m^-1]
-    const ColumnView &ekd,       // diffusivity for droplets [m^2/s]
+    const ColumnView &eddy_diff, // diffusivity for droplets [m^2/s]
     const ColumnView nact[pver], // fractional aero. number
                                  // activation rate [/s]
     const ColumnView mact[pver], // fractional aero. mass
@@ -1204,8 +1210,8 @@ void update_from_explmix(
     // work vars
     const ColumnView &overlapp, // cloud overlap involving level kk+1 [fraction]
     const ColumnView &overlapm, // cloud overlap involving level kk-1 [fraction]
-    const ColumnView &ekkp,     // zn*zs*density*diffusivity [/s]
-    const ColumnView &ekkm,     // zn*zs*density*diffusivity   [/s]
+    const ColumnView &eddy_diff_kp, // zn*zs*density*diffusivity [/s]
+    const ColumnView &eddy_diff_km, // zn*zs*density*diffusivity   [/s]
     const ColumnView &qncld, // updated cloud droplet number mixing ratio [#/kg]
     const ColumnView &srcn,  // droplet source rate [/s]
     const ColumnView
@@ -1223,11 +1229,11 @@ void update_from_explmix(
   const int ntot_amode = AeroConfig::num_modes();
   // load new droplets in layers above, below clouds
   Real dtmin = dtmicro;
-  // rce-comment -- ekd(k) is eddy-diffusivity at k/k+1 interface
-  // want ekk(k) = ekd(k) * (density at k/k+1 interface)
+  // rce-comment -- eddy_diff(k) is eddy-diffusivity at k/k+1 interface
+  // want eddy_diff_k(k) = eddy_diff(k) * (density at k/k+1 interface)
   // so use pint(i,k+1) as pint is 1:pverp
-  // ekk(k)=ekd(k)*2.*pint(i,k)/(rair*(temp(i,k)+temp(i,k+1)))
-  // ekk(k)=ekd(k)*2.*pint(i,k+1)/(rair*(temp(i,k)+temp(i,k+1)))
+  // eddy_diff_k(k)=eddy_diff(k)*2.*pint(i,k)/(rair*(temp(i,k)+temp(i,k+1)))
+  // eddy_diff_k(k)=eddy_diff(k)*2.*pint(i,k+1)/(rair*(temp(i,k)+temp(i,k+1)))
 
   // start k for loop here. for k = top_lev to pver
   // cldn will be columnviews of length pver,
@@ -1251,21 +1257,21 @@ void update_from_explmix(
           overlapm(k) = one;
         }
 
-        ekkp(k) = zn(k) * ekd(k) * csbot(k) * zs(k);
-        // NOTE: ekk uses k-1 while sz uses km1.
-        ekkm(k) = zn(k) * ekd(k - 1) * csbot(k - 1) * zs(km1);
-        const Real tinv = ekkp(k) + ekkm(k);
+        eddy_diff_kp(k) = zn(k) * eddy_diff(k) * csbot(k) * zs(k);
+        // NOTE: eddy_diff_k uses k-1 while sz uses km1.
+        eddy_diff_km(k) = zn(k) * eddy_diff(k - 1) * csbot(k - 1) * zs(km1);
+        const Real tinv = eddy_diff_kp(k) + eddy_diff_km(k);
 
         // rce-comment
         // the activation source(k) = mact(k,m)*raercol(kp1,lmass)
         // should not exceed the rate of transfer of unactivated particles
-        // from kp1 to k which = ekkp(k)*raercol(kp1,lmass)
+        // from kp1 to k which = eddy_diff_kp(k)*raercol(kp1,lmass)
         // however it might if things are not "just right" in subr activate
         // the following is a safety measure to avoid negatives in explmix
 
         for (int imode = 0; imode < ntot_amode; imode++) {
-          nact[k](imode) = haero::min(nact[k](imode), ekkp(k));
-          mact[k](imode) = haero::min(mact[k](imode), ekkp(k));
+          nact[k](imode) = haero::min(nact[k](imode), eddy_diff_kp(k));
+          mact[k](imode) = haero::min(mact[k](imode), eddy_diff_kp(k));
         }
 
         // rce-comment -- tinv is the sum of all first-order-loss-rates
@@ -1277,7 +1283,7 @@ void update_from_explmix(
         // can be too big, and explmix can produce negative values.
         // the negative values are reset to zero, resulting in an
         // artificial source.
-      // FIXME: BAD CONSTANT
+        // FIXME: BAD CONSTANT
         if (tinv > 1e-6) {
           min_val = haero::min(min_val, one / tinv);
         }
@@ -1365,7 +1371,8 @@ void update_from_explmix(
           explmix(qncld(km1), qncld(k), qncld(kp1),
                   qcld(k), // output FIXME: move to last position
                   // FIXME: still looking at this?
-                  srcn(k), ekkp(k), ekkm(k), overlapp(k), overlapm(k), dtmix);
+                  srcn(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
+                  overlapm(k), dtmix);
         });
 
     team.team_barrier();
@@ -1410,20 +1417,20 @@ void update_from_explmix(
                 raercol_cw[km1][nsav](mm), raercol_cw[k][nsav](mm),
                 raercol_cw[kp1][nsav](mm),
                 raercol_cw[k][nnew](mm), // output FIXME: move to last position
-                source(k), ekkp(k), ekkm(k), overlapp(k), overlapm(k), dtmix);
+                source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
+                overlapm(k), dtmix);
             // raercol[mm][nnew] == qold
             // raercol[mm][nsav] == qnew
             // raercol_cw[mm][nsav] == qactold
             // FIXME: needed?
 
-            explmix(
-                raercol[km1][nsav](mm), raercol[k][nsav](mm),
-                raercol[kp1][nsav](mm),
-                raercol[k][nnew](mm), // output FIXME: move to last position
-                source(k), ekkp(k), ekkm(k), overlapp(k), overlapm(k), dtmix,
-                raercol_cw[km1][nsav](mm),
-                raercol_cw[kp1][nsav](mm)); // optional in
-          }); // end kk
+            explmix(raercol[km1][nsav](mm), raercol[k][nsav](mm),
+                    raercol[kp1][nsav](mm),
+                    raercol[k][nnew](mm), // output FIXME: move to last position
+                    source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
+                    overlapm(k), dtmix, raercol_cw[km1][nsav](mm),
+                    raercol_cw[kp1][nsav](mm)); // optional in
+          });                                   // end kk
 
       // update aerosol species mass
       for (int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
@@ -1454,8 +1461,8 @@ void update_from_explmix(
                       raercol_cw[kp1][nsav](mm),
                       raercol_cw[k][nnew](
                           mm), // output FIXME: move to last position
-                      source(k), ekkp(k), ekkm(k), overlapp(k), overlapm(k),
-                      dtmix);
+                      source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
+                      overlapm(k), dtmix);
               // FIXME
               // raercol[mm][nnew] == qold
               // raercol[mm][nsav] == qnew
@@ -1464,16 +1471,16 @@ void update_from_explmix(
                   raercol[km1][nsav](mm), raercol[k][nsav](mm),
                   raercol[kp1][nsav](mm),
                   raercol[k][nnew](mm), //// output FIXME: move to last position
-                  source(k), ekkp(k), ekkm(k), overlapp(k), overlapm(k), dtmix,
-                  raercol_cw[km1][nsav](mm),
+                  source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
+                  overlapm(k), dtmix, raercol_cw[km1][nsav](mm),
                   raercol_cw[kp1][nsav](mm)); // optional in
               // FIXME: i'm guessing that this has changed?
-            });                               // end k
+            }); // end k
 
         team.team_barrier();
       } // lspec loop
     }   //  imode loop
-  } // old_cloud_nsubmix_loop
+  }     // old_cloud_nsubmix_loop
 
   // evaporate particles again if no cloud
   Kokkos::parallel_for(
@@ -1497,7 +1504,6 @@ void update_from_explmix(
           }   // imode
         }     // if cldn(k) == 0
       });     // kk
-
 } // end update_from_explmix
 
 KOKKOS_INLINE_FUNCTION
@@ -1506,8 +1512,8 @@ void dropmixnuc(
     const ColumnView &pmid, const ColumnView &pint, const ColumnView &pdel,
     const ColumnView &rpdel, const ColumnView &zm,
     const ColumnView state_q[pver], const ColumnView &ncldwtr,
-    const ColumnView &kvh, // kvh[kk+1]
-    const ColumnView &cldn,
+    // v_diffusivity[kk+1] FIXME: what does this comment mean?
+    const ColumnView &v_diffusivity, const ColumnView &cldn,
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
     const Real specdens_amode[maxd_aspectype],
     const Real spechygro[maxd_aspectype],
@@ -1531,12 +1537,14 @@ void dropmixnuc(
     // work arrays
     const ColumnView raercol_cw[pver][2], const ColumnView raercol[pver][2],
     const ColumnView nact[pver], const ColumnView mact[pver],
-    const ColumnView &ekd, const ColumnView &zn, const ColumnView &csbot,
+    const ColumnView &eddy_diff, const ColumnView &zn, const ColumnView &csbot,
     const ColumnView &zs, const ColumnView &overlapp,
-    const ColumnView &overlapm, const ColumnView &ekkp, const ColumnView &ekkm,
-    const ColumnView &qncld, const ColumnView &srcn, const ColumnView &source,
-    const ColumnView &dz, const ColumnView &csbot_cscen,
-    // ColumnView qcldbrn[pver][maxd_aspectype],//[ntot_amode],
+    const ColumnView &overlapm, const ColumnView &eddy_diff_kp,
+    const ColumnView &eddy_diff_km, const ColumnView &qncld,
+    const ColumnView &srcn, const ColumnView &source, const ColumnView &dz,
+    const ColumnView &csbot_cscen,
+    // FIXME: can we get rid of this?
+    // ColumnView qcldbrn[pver][maxd_aspectype],//[ntot_amode]
     const ColumnView qcldbrn_num[pver], // [ntot_amode]
     const ColumnView &raertend, const ColumnView &qqcwtend) {
   // vertical diffusion and nucleation of cloud droplets
@@ -1551,22 +1559,21 @@ void dropmixnuc(
   // temp(:,:)    temperature [K]
   // pmid(:,:)    mid-level pressure [Pa]
   // pint(:,:)    pressure at layer interfaces [Pa]
-  // pdel(:,:)    pressure thickess of layer [Pa]
-  // rpdel(:,:)   inverse of pressure thickess of layer [/Pa]
+  // pdel(:,:)    pressure thickness of layer [Pa]
+  // rpdel(:,:)   inverse of pressure thickness of layer [/Pa]
   // zm(:,:)      geopotential height of level [m]
   // state_q(:,:,:) aerosol mmrs [kg/kg]
   // ncldwtr(:,:) initial droplet number mixing ratio [#/kg]
-  // kvh(:,:)     vertical diffusivity [m^2/s]
+  // v_diffusivity(:,:)     vertical diffusivity [m^2/s]
   // wsub(pcols,pver)    subgrid vertical velocity [m/s]
   // cldn(pcols,pver)    cloud fraction [fraction]
   // cldo(pcols,pver)    cloud fraction on previous time step [fraction]
 
   // inout arguments
-  //  qqcw(:)     cloud-borne aerosol mass, number mixing ratios [#/kg or
-  //  kg/kg]
+  //  qqcw(:)     cloud-borne aerosol mass, number mixing ratios [#/kg or kg/kg]
 
   // output arguments
-  //   ptend
+  // ptend
   // tendnd(pcols,pver) tendency in droplet number mixing ratio [#/kg/s]
   // factnum(:,:,:)     activation fraction for aerosol number [fraction]
 
@@ -1584,8 +1591,8 @@ void dropmixnuc(
 
   // BAD CONSTANT
   const Real zkmin = 0.01;
-  const Real zkmax = 100;   //  min, max vertical diffusivity [m^2/s]
-  const Real wmixmin = 0.1; //        minimum turbulence vertical velocity [m/s]
+  const Real zkmax = 100;   // min, max vertical diffusivity [m^2/s]
+  const Real wmixmin = 0.1; // minimum turbulence vertical velocity [m/s]
 
   const Real zero = 0;
   const Real one = 1;
@@ -1595,44 +1602,34 @@ void dropmixnuc(
   const Real dtinv = one / dtmicro;
   const int ntot_amode = AeroConfig::num_modes();
   // THIS constant depends on the chem mechanism
+  // FIXME: can we clarify this or delete? is it ntot_amode that depends?
 
-  // initialize variables to zero
-  //  ndropmix(:,:) = 0._r8
-  //  nsource(:,:) = 0._r8
-  //  wtke(:,:)    = 0._r8
-  //  factnum(:,:,:) = 0._r8
-
+  // FIXME: are we good on this? can delete?
   // NOTE FOR C++ PORT: Get the cloud borne MMRs from AD in variable qcldbrn,
   // do not port the code before END NOTE
-  // qcldbrn(:,:,:,:) = huge(qcldbrn) store invalid values
-  // END NOTE FOR C++ PORT
   const Real gravit = haero::Constants::gravity;
   const Real rair = haero::Constants::r_gas_dry_air;
 
-  // const Real air_density = pmid/(rair*temp);//        air density (kg/m3)
+  // air_density [kg/m3]
   // geometric thickness of layers [m]
+  // dz
   // fractional aero. number  activation rate [/s]
-  // Real raercol[nlevels][2][ncnst_tot] = {};
+  // raercol[nlevels][2][ncnst_tot]
   // same as raercol but for cloud-borne phase [#/kg or kg/kg]
-  // Real raercol_cw[nlevels][2][ncnst_tot] = {};
+  // raercol_cw[nlevels][2][ncnst_tot]
 
   // Initialize 1D (in space) versions of interstitial and cloud borne aerosol
   int nsav = 0;
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, pver - top_lev + 1), KOKKOS_LAMBDA(int kk) {
-        // // g/pdel for layer [m^2/kg]
-        // const Real zn = gravit * rpdel;
-        // turbulent vertical velocity at base of layer k [m/s]
         const int k = kk + top_lev - 1;
 
         wtke(k) = haero::max(wsub(k), wmixmin);
-        // qcld(:)  = ncldwtr(icol,:)
         // cloud droplet number mixing ratio [#/kg]
         qcld(k) = ncldwtr(k);
 
         for (int imode = 0; imode < ntot_amode; ++imode) {
           // Fortran indexing to C++ indexing
-
           const int mm = mam_idx[imode][0] - 1;
           raercol_cw[k][nsav](mm) = qqcw_fld[mm](k);
           // Fortran indexing to C++ indexing
@@ -1650,8 +1647,7 @@ void dropmixnuc(
         }   // imode
 
         // PART I:  changes of aerosol and cloud water from temporal changes in
-        // cloud
-        // fraction droplet nucleation/aerosol activation
+        // cloud fraction droplet nucleation/aerosol activation
         nsource(k) = zero;
 
         update_from_newcld(cldn(k), cldo(k), dtinv, // in
@@ -1663,24 +1659,24 @@ void dropmixnuc(
                            numptr_amode, nspec_amode, exp45logsig, alogsig,
                            aten, mam_idx, qcld(k),
                            raercol[k][nsav].data(),        // inout
-                           raercol_cw[k][nsav].data(),     //      inout
+                           raercol_cw[k][nsav].data(),     // inout
                            nsource(k), factnum[k].data()); // inout
       });                                                  // end k
   team.team_barrier();
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int k) {
         zn(k) = gravit * rpdel[k];
-        // Real csbot_km1 = zero;
         if (k >= top_lev - 1 && k < pver - 1) {
           csbot(k) = two * pint(k + 1) / (rair * (temp(k) + temp(k + 1)));
           csbot_cscen(k) =
               csbot(k) / conversions::density_of_ideal_gas(temp(k), pmid(k));
           zs(k) = one / (zm(k) - zm(k + 1));
-          ekd(k) = utils::min_max_bound(zkmin, zkmax, kvh(k + 1));
+          eddy_diff(k) =
+              utils::min_max_bound(zkmin, zkmax, v_diffusivity(k + 1));
         } else {
-          // FIXME: which density k or kp1?
+          // FIXME: which density k or kp1? FIXME
           csbot(k) = conversions::density_of_ideal_gas(temp(k), pmid(k));
-          // FIXME ; check this
+          // FIXME ; check this FIXME: delete?
           // csbot_km1 = two * pint(k - 1) / (rair * (temp(k - 2) + temp(k -
           // 1)));
           csbot_cscen(k) = one;
@@ -1688,12 +1684,12 @@ void dropmixnuc(
         }
 
         dz(k) = one / (conversions::density_of_ideal_gas(temp(k), pmid(k)) *
-                       gravit * rpdel(k)); // layer thickness in m
+                       gravit * rpdel(k)); // layer thickness [m]
       });                                  // end k
 
   team.team_barrier();
 
-  // NOTE: update_from_cldn_profile loop from 7 to 71 in fortran code.
+  // NOTE: update_from_cldn_profile loops from 7 to 71 in fortran code.
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, pver - top_lev), KOKKOS_LAMBDA(int kk) {
         const int k = kk + top_lev - 1;
@@ -1713,25 +1709,23 @@ void dropmixnuc(
             raercol[kp1][nsav].data(), raercol_cw[k][nsav].data(),
             nsource(k), // inout
             qcld(k), factnum[k].data(),
-            ekd(k), // out
+            eddy_diff(k), // out
             nact[k].data(), mact[k].data());
       });
 
   team.team_barrier();
 
-  // PART III:  perform explict integration of droplet/aerosol mixing using
+  // PART III:  perform explicit integration of droplet/aerosol mixing using
   // substepping
 
+  // FIXME: what is nnew?
   int nnew = 1;
-  // // single column of aerosol mass, number mixing ratios [#/kg or kg/kg]
-  // Real raercol_2[ncnst_tot] = {};
-  // // same as raercol but for cloud-borne phase [#/kg or kg/kg]
-  // Real raercol_cw_2[ncnst_tot] = {};
 
-  update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, ekd, nact, mact, qcld,
-                      raercol, raercol_cw, nsav, nnew, nspec_amode, mam_idx,
+  update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, eddy_diff, nact, mact,
+                      qcld, raercol, raercol_cw, nsav, nnew, nspec_amode,
+                      mam_idx,
                       // work vars
-                      overlapp, overlapm, ekkp, ekkm, qncld,
+                      overlapp, overlapm, eddy_diff_kp, eddy_diff_km, qncld,
                       srcn, // droplet source rate [/s]
                       source);
 
@@ -1751,6 +1745,7 @@ void dropmixnuc(
         ndropmix(k) = (qcld(k) - ncldwtr(k)) * dtinv - nsource(k);
         // BAD CONSTANT
         tendnd(k) = (haero::max(qcld(k), 1.e-6) - ncldwtr(k)) * dtinv;
+        // FIXME: has this been done?
         // We need to port this outside of this function
         // this is a reduction
         // do kk = top_lev, pver
@@ -1761,16 +1756,14 @@ void dropmixnuc(
         // sum up ndropcol_kk outside of kk loop
         // column-integrated droplet number [#/m2]
         ndropcol(k) = ncldwtr(k) * pdel(k) / gravit;
-        // tendency of interstitial aerosol mass, number mixing ratios [#/kg/s
-        // or kg/kg/s]
+        // tendency of interstitial aerosol mass, number mixing ratios
+        // [#/kg/s] or [kg/kg/s]
         raertend(k) = zero;
-        // tendency of cloudborne aerosol mass, number mixing ratios [#/kg/s or
-        // kg/kg/s]
+        // tendency of cloudborne aerosol mass, number mixing ratios
+        // [#/kg/s]or [kg/kg/s]
         qqcwtend(k) = zero;
         // cloud-borne aerosol mass mixing ratios [kg/kg]
         Real qcldbrn[maxd_aspectype][ntot_amode] = {{zero}};
-        // cloud-borne aerosol number mixing ratios [#/kg]
-        // Real qcldbrn_num[ntot_amode] = {zero};
 
         for (int imode = 0; imode < ntot_amode; ++imode) {
           // species index for given mode
@@ -1778,14 +1771,11 @@ void dropmixnuc(
             // local array index for MAM number, species
             // Fortran indexing to C++ indexing
             const int mm = mam_idx[imode][lspec] - 1;
-            //
             // Fortran indexing to C++ indexing
             const int lptr = mam_cnst_idx[imode][lspec] - 1;
-            //
             qqcwtend(k) = (raercol_cw[k][nnew](mm) - qqcw_fld[mm](k)) * dtinv;
-            qqcw_fld[mm](k) = haero::max(
-                raercol_cw[k][nnew](mm),
-                zero); // update cloud-borne aerosol; HW: ensure non-negative
+            qqcw_fld[mm](k) = haero::max(raercol_cw[k][nnew](mm),
+                                         zero); // update cloud-borne aerosol
 
             if (lspec == 0) {
               // Fortran indexing to C++ indexing
@@ -1803,31 +1793,24 @@ void dropmixnuc(
             } // end if
             // NOTE: perform sum after loop. Thus, we need to store coltend_kk
             // and coltend_cw_kk Port this code outside of this function
-            // coltend(icol,mm)    = sum( pdel(icol,:)*raertend )/gravit
-            // coltend_cw(icol,mm) = sum( pdel(icol,:)*qqcwtend )/gravit
             coltend[mm](k) = pdel(k) * raertend(k) / gravit;
             coltend_cw[mm](k) = pdel(k) * qqcwtend(k) / gravit;
-            ptend_q[lptr](k) =
-                raertend(k); //          set tendencies for interstitial aerosol
+            // set tendencies for interstitial aerosol
+            ptend_q[lptr](k) = raertend(k);
 
           } // lspec
+        }   // imode
 
-        } // imode
-
-        //  Use interstitial and cloud-borne aerosol to compute output ccn
-        // fields.
-
+        //  Use interstitial and cloud-borne aerosol to compute output
+        // ccn fields.
         ccncalc(state_q[k].data(), temp(k), qcldbrn, qcldbrn_num[k].data(),
                 conversions::density_of_ideal_gas(temp(k), pmid(k)),
                 lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
                 voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
                 exp45logsig, alogsig, ccn[k].data());
-      });
-
+      }); // end parfor(k)
 } // dropmixnuc
-
 } // namespace ndrop
-
 } // end namespace mam4
 
 #endif

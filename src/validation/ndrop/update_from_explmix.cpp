@@ -40,7 +40,6 @@ void update_from_explmix(Ensemble *ensemble) {
     const auto cldn_col_db = input.get_array("cldn_col");
     const auto csbot_db = input.get_array("csbot");
 
-    // const Real dt = input.get("dt");
     const Real dtmicro = input.get_array("dtmicro")[0];
 
     const Real zero = 0.0;
@@ -122,6 +121,7 @@ void update_from_explmix(Ensemble *ensemble) {
     auto raercol_host = Kokkos::create_mirror_view(raercol);
     auto raercol_cw_host = Kokkos::create_mirror_view(raercol_cw);
 
+    // FIXME: is this, and below, still open?
     // // FIXME. Find a better way:
     for (int kk = 0; kk < pver; ++kk) {
       qcld_host(kk) = qcld_db[kk];
@@ -191,17 +191,16 @@ void update_from_explmix(Ensemble *ensemble) {
       }
     }
 
+    // FIXME: done?
     // TODO: need thread team here
     ndrop::update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, ekd, nact,
                                mact, qcld, raercol, raercol_cw, nsav, nnew,
                                nspec_amode, mam_idx, overlapp, overlapm, ekkp,
-                               ekkm, qncld, srcn, source)
+                               ekkm, qncld, srcn, source);
 
-        // TODO: ColumnView-ify the output sequence
+    // TODO: ColumnView-ify the output sequence
 
-        // nnew += 1;
-        // nsav += 1;
-        nnew_out[0] = nnew + 1;
+    nnew_out[0] = nnew + 1;
     nsav_out[0] = nsav + 1;
     counter = 0;
     for (int n = 0; n < ncnst_tot; n++) {

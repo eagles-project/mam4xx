@@ -39,7 +39,6 @@ endforeach()
 # update_from_newcld_ts_1407_iact2
 # update_from_explmix_ts_1400
 # stand_dropmixnuc_ts_1417
-# 
 
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
@@ -137,5 +136,4 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error>
   add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
-
 endforeach()
