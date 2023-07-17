@@ -53,6 +53,40 @@ public:
 
 namespace drydep {
 
+//==========================================================================
+// Calculate kinematic viscosity of air, unit [m2 s-1]
+//==========================================================================
+KOKKOS_INLINE_FUNCTION
+Real air_kinematic_viscosity(const Real temp, const Real pres) {
+  const Real vsc_dyn_atm = air_dynamic_viscosity(temp);
+  const Real rho = pres / Constants::r_gas_dry_air / temp;
+  return vsc_dyn_atm / rho;
+}
+
+//======================================================
+// Slip correction factor [unitless].
+// See, e.g., SeP97 p. 464 and Zhang L. et al. (2001),
+// DOI: 10.1016/S1352-2310(00)00326-5, Eq. (3).
+// ======================================================
+KOKKOS_INLINE_FUNCTION
+Real slip_correction_factor(const Real dyn_visc, const Real pres,
+                            const Real temp, const Real particle_radius) {
+
+  // [m]
+  const Real mean_free_path =
+      2.0 * dyn_visc /
+      (pres *
+       haero::sqrt(8.0 / (Constants::pi * Constants::r_gas_dry_air * temp)));
+
+  const Real slip_correction_factor =
+      1.0 +
+      mean_free_path *
+          (1.257 + 0.4 * haero::exp(-1.1 * particle_radius / mean_free_path)) /
+          particle_radius;
+
+  return slip_correction_factor;
+}
+
 //====================================================================
 // Calculate the Schmidt number of air [unitless], see SeP97 p.972
 //====================================================================
