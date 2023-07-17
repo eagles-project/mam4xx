@@ -29,6 +29,11 @@ target_link_libraries(drydep_driver skywalker;validation;${HAERO_LIBRARIES})
 
 foreach (input
           gravit_settling_velocity
+          air_dynamic_viscosity
+          air_kinematic_viscosity
+          radius_for_moment
+          schmidt_number
+          slip_correction_factor
           )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
