@@ -69,6 +69,7 @@ Real radius_for_moment(const int moment, const Real sig_part,
 //==========================================================================
 KOKKOS_INLINE_FUNCTION
 Real air_dynamic_viscosity(const Real temp) {
+  // (BAD CONSTANTS)
   return 1.72e-5 * (haero::pow(temp / 273.0, 1.5)) * 393.0 / (temp + 120.0);
 }
 
@@ -94,14 +95,14 @@ Real slip_correction_factor(const Real dyn_visc, const Real pres,
   // [m]
   const Real mean_free_path =
       2.0 * dyn_visc /
-      (pres *
-       haero::sqrt(8.0 / (Constants::pi * Constants::r_gas_dry_air * temp)));
+      (pres * haero::sqrt(8.0 / (Constants::pi * Constants::r_gas_dry_air *
+                                 temp))); // (BAD CONSTANTS)
 
   const Real slip_correction_factor =
       1.0 +
       mean_free_path *
           (1.257 + 0.4 * haero::exp(-1.1 * particle_radius / mean_free_path)) /
-          particle_radius;
+          particle_radius; // (BAD CONSTANTS)
 
   return slip_correction_factor;
 }
