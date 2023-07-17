@@ -45,6 +45,7 @@ void ma_activate_convproc(Ensemble *ensemble);
 void compute_activation_tend(Ensemble *ensemble);
 void compute_updraft_mixing_ratio(Ensemble *ensemble);
 void ma_convproc_tend(Ensemble *ensemble);
+void ma_convproc_dp_intr(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -106,6 +107,8 @@ int main(int argc, char **argv) {
       compute_updraft_mixing_ratio(ensemble);
     } else if (func_name == "ma_convproc_tend") {
       ma_convproc_tend(ensemble);
+    } else if (func_name == "ma_convproc_dp_intr") {
+      ma_convproc_dp_intr(ensemble);
     } else {
       std::cerr << "Error: Test name not recognized:" << func_name << std::endl;
       exit(1);
