@@ -985,10 +985,10 @@ ma_precpprod(const Real rprd, const Real dpdry_i,
           spec_class::other      = 4
   in  mmtoo_prevap_resusp[ConvProc::gas_pcnst]
         pointers for resuspension mmtoo_prevap_resusp values are
-           >0 for aerosol mass species with    coarse mode counterpart
-           -1 for aerosol mass species WITHOUT coarse mode counterpart
-           -2 for aerosol number species
-            0 for other species
+           >=0 for aerosol mass species with    coarse mode counterpart
+           -2 for aerosol mass species WITHOUT coarse mode counterpart
+           -3 for aerosol number species
+           -1 for other species
 
   inout  pr_flux   - precip flux at base of current layer [(kg/kg/s)*mb]
   inout  pr_flux_tmp   - precip flux at base of current layer, after adjustment in step 1 [(kg/kg/s)*mb]
@@ -1037,7 +1037,7 @@ ma_precpprod(const Real rprd, const Real dpdry_i,
       // (mmtoo>0).  mmtoo<=0 represents aerosol number species
       const int mmtoo = mmtoo_prevap_resusp[icnst2];
       if (species_class[icnst2] == ConvProc::species_class::aerosol) {
-        if (mmtoo > 0) {
+        if (mmtoo >= 0) {
           // add the precip-evap (resuspension) to the history-tendency of the
           // current species
           dcondt_prevap_hist[icnst] += dcondt_wdflux;
@@ -1119,10 +1119,10 @@ void ma_precpevap_convproc(const int ktop, const int nlev,
                                    other      = 4
     in  mmtoo_prevap_resusp[ConvProc::gas_pcnst]
          pointers for resuspension mmtoo_prevap_resusp values are
-            >0 for aerosol mass species with    coarse mode counterpart
-            -1 for aerosol mass species WITHOUT coarse mode counterpart
-            -2 for aerosol number species
-             0 for other species
+            >=0 for aerosol mass species with    coarse mode counterpart
+            -2 for aerosol mass species WITHOUT coarse mode counterpart
+            -3 for aerosol number species
+            -1 for other species
   */
   //
   // *** note use of non-standard units
@@ -2716,6 +2716,11 @@ void ma_convproc_tend(
         sumactiva.data(), sumaqchem.data(), sumwetdep.data(), sumresusp.data(),
         sumprevap.data(), sumprevap_hist.data());
 
+    // NOTE: update_tendency_final Fortran =
+    //   update_tendency_diagnostics C++ + update_tendency_final C++
+    //   because of the two loops in this function it was easier
+    //   to split the function up so that one of these could
+    //   be done in a thread team.
     update_tendency_diagnostics(ntsub, pcnst, doconvproc, sumactiva.data(),
                                 sumaqchem.data(), sumwetdep.data(),
                                 sumresusp.data(), sumprevap.data(),
@@ -2727,6 +2732,116 @@ void ma_convproc_tend(
           doconvproc, dqdt[kk], Kokkos::subview(q, kk, Kokkos::ALL()));
     }
   } // of the main "for jtsub = 0, ntsub" loop
+}
+
+// =========================================================================================
+KOKKOS_INLINE_FUNCTION
+void ma_convproc_dp_intr(
+    const Kokkos::View<Real *>
+        scratch1Dviews[ConvProc::Col1DViewInd::NumScratch],
+    const int nlev, const Real temperature[/* nlev */],
+    const Real pmid[/* nlev */], const Real dpdry[/* nlev */], const Real dt,
+    const Real cldfrac[/* nlev */], const Real icwmr[/* nlev */],
+    const Real rprddp[/* nlev */], const Real evapcdp[/* nlev */],
+    const Real du[/* nlev */], const Real eu[/* nlev */],
+    const Real ed[/* nlev */], const Real dp[/* nlev */], const int ktop,
+    const int kbot, const Real qnew[/* nlev */][ConvProc::gas_pcnst],
+    const int species_class[/* ConvProc::gas_pcnst */],
+    const int mmtoo_prevap_resusp[/* ConvProc::gas_pcnst */],
+    Real dqdt[/* nlev */][ConvProc::gas_pcnst],
+    Real qsrflx[/* ConvProc::gas_pcnst */][nsrflx],
+    bool dotend[ConvProc::gas_pcnst]) {
+
+  // clang-format off
+  // ----------------------------------------------------------------------- 
+  //  
+  //  Purpose: 
+  //  Convective cloud processing (transport, activation/resuspension,
+  //     wet removal) of aerosols and trace gases.
+  //     (Currently no aqueous chemistry and no trace-gas wet removal)
+  //  Does aerosols    when convproc_do_aer is .true.
+  //  Does trace gases when convproc_do_gas is .true.
+  // 
+  //  This routine does deep convection
+  //  Uses mass fluxes, cloud water, precip production from the
+  //     convective cloud routines
+  //  
+  //  Author: R. Easter
+  //  
+  // -----------------------------------------------------------------------
+
+  /* 
+! Arguments
+   in    :: dpdry[nlev]           ! layer delta-p-dry [mb]
+   in    :: temperature[nlev]         ! Temperature [K]
+   in    :: pmid[nlev]      ! Pressure at model levels [Pa]
+
+   in    :: dt                   ! delta t (model time increment) [s]
+   in    :: qnew[nlev,pcnst]     ! tracer mixing ratio including water vapor [kg/kg]
+   in    :: nsrflx               ! last dimension of qsrflx
+
+   in    :: cldfrac[nlev] ! Deep conv cloud fraction [0-1]
+   in    :: icwmr[nlev] ! Deep conv cloud condensate (in cloud) [kg/kg]
+   in    :: rprddp[nlev]  ! Deep conv precip production (grid avg) [kg/kg/s]
+   in    :: evapcdp[nlev] ! Deep conv precip evaporation (grid avg) [kg/kg/s]
+   in    :: dlfdp[nlev]   ! Deep conv cldwtr detrainment (grid avg) [kg/kg/s]
+
+   in    :: du[nlev]   ! Mass detrain rate from updraft [1/s]
+   in    :: eu[nlev]   ! Mass entrain rate into updraft [1/s]
+   in    :: ed[nlev]   ! Mass entrain rate into downdraft [1/s]
+         ! eu, ed, du are "d(massflux)/dp" and are all positive
+   in    :: dp[nlev]   ! Delta pressure between interfaces [mb]
+
+   in    :: ktop              ! Index of cloud top
+   in    :: kbot              ! Index of cloud bottom
+   in    :: species_class[:]  ! species index
+   in    :: mmtoo_prevap_resusp values are:
+             >=0 for aerosol mass species with    coarse mode counterpart
+             -2 for aerosol mass species WITHOUT coarse mode counterpart
+             -3 for aerosol number species
+             -1 for other species
+
+   out   :: dotend[pcnst]        ! if do tendency
+   inout :: dqdt[nlev,pcnst]     ! time tendency of q [kg/kg/s]
+   inout :: qsrflx[pcnst,nsrflx] ! process-specific column tracer tendencies (see ma_convproc_intr for more information) [kg/m2/s]
+
+  */
+  // clang-format on
+  // Local variables
+
+  // diagnostics variables to write out.
+  // xx_kcldbase is filled with index kk. maybe better define as integer
+  // keep it in C++ refactoring for BFB comparison (by Shuaiqi Tang, 2022)
+  Real xx_mfup_max, xx_wcldbase;
+  int xx_kcldbase;
+
+  // turn on/off calculations for aerosols and trace gases
+  const bool convproc_do_aer = true;
+  const bool convproc_do_gas = false;
+  assign_dotend(species_class, convproc_do_aer, convproc_do_gas, dotend);
+
+  // clang-format off
+  //
+  // do ma_convproc_tend call
+  //
+  // question/issue - when computing first-order removal rate for convective cloud water,
+  //    should dlf be included as is done in wetdepa?
+  // detrainment does not change the in-cloud (= in updraft) cldwtr mixing ratio
+  // when you have detrainment, the updraft air mass flux is decreasing with height,
+  //    and the cldwtr flux may be decreasing also, 
+  //    but the in-cloud cldwtr mixing ratio is not changed by detrainment itself
+  // this suggests that wetdepa is incorrect, and dlf should not be included
+  //
+  // if dlf should be included, then you want to calculate
+  //    rprddp / (cldfrac*icwmr + dt*(rprddp + dlfdp)]
+  // so need to pass both rprddp and dlfdp to ma_convproc_tend
+  //
+  // clang-format on
+
+  ma_convproc_tend(scratch1Dviews, nlev, ConvProc::Deep, dt, temperature, pmid,
+                   qnew, du, eu, ed, dp, dpdry, ktop, kbot, mmtoo_prevap_resusp,
+                   cldfrac, icwmr, rprddp, evapcdp, dqdt, dotend, qsrflx,
+                   species_class, xx_mfup_max, xx_wcldbase, xx_kcldbase);
 }
 
 } // namespace convproc
