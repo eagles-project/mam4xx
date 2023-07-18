@@ -8,7 +8,7 @@
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
-#include <mam4xx/generated_gas_chem.hpp>
+#include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
@@ -270,8 +270,8 @@ void imp_sol(Real base_sol[gas_pcnst], //    ! species mixing ratios [vmr] & !
     //-----------------------------------------------------------------------
     // linmat( lin_jac,  //         & ! out
     //        lsol, lrxt, lhet   );// ! in
-    lin_matrix(lin_jac,                    // ! out
-               reaction_rates, het_rates); // in
+    linmat(lin_jac,                    // ! out
+           reaction_rates, het_rates); // in
 
     // !=======================================================================
     // ! the newton-raphson iteration for f(y) = 0

@@ -22,7 +22,7 @@ void linmat(Ensemble *ensemble) {
     const auto rxt = input.get_array("rxt");
     const auto het_rates = input.get_array("het_rates");
 
-    lin_matrix(mat.data(), rxt.data(), het_rates.data());
+    linmat(mat.data(), rxt.data(), het_rates.data());
 
     output.set("mat", mat);
   });

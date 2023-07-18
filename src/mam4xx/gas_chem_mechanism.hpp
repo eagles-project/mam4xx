@@ -1,5 +1,5 @@
-#ifndef MAM4XX_PP_CHEMISTRY_HPP
-#define MAM4XX_PP_CHEMISTRY_HPP
+#ifndef MAM4XX_GAS_CHEM_HPP
+#define MAM4XX_GAS_CHEM_HPP
 // pp_linoz_mam4_resus_mom_soag
 // Generated code.
 // Authors: Oscar Diaz-Ibarra (odiazib@sandia.gov)
@@ -18,54 +18,14 @@ const int permute_4[gas_pcnst] = {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
 const int clsmap_4[gas_pcnst] = {1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
                                  11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
                                  21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
-enum class SpeciesId {
-  O3 = 0,
-  H2O2 = 1,
-  H2SO4 = 2,
-  SO2 = 3,
-  DMS = 4,
-  SOAG = 5,
-  so4_a1 = 6,
-  pom_a1 = 7,
-  soa_a1 = 8,
-  bc_a1 = 9,
-  dst_a1 = 10,
-  ncl_a1 = 11,
-  mom_a1 = 12,
-  num_a1 = 13,
-  so4_a2 = 14,
-  soa_a2 = 15,
-  ncl_a2 = 16,
-  mom_a2 = 17,
-  num_a2 = 18,
-  dst_a3 = 19,
-  ncl_a3 = 20,
-  so4_a3 = 21,
-  bc_a3 = 22,
-  pom_a3 = 23,
-  soa_a3 = 24,
-  mom_a3 = 25,
-  num_a3 = 26,
-  pom_a4 = 27,
-  bc_a4 = 28,
-  mom_a4 = 29,
-  num_a4 = 30,
-}; // enum class GasId
-enum class ReactionId {
-  jh2o2 = 0,
-  usr_HO2_HO2 = 1,
-  r0003 = 2,
-  usr_SO2_OH = 3,
-  r0005 = 4,
-  usr_DMS_OH = 5,
-  r0007 = 6,
-}; // enum class ReactionId
+
 KOKKOS_INLINE_FUNCTION
 void setrxt(Real rates[rxntot], const Real temp) {
   rates[2] = 2.9000000000e-12 * haero::exp(-160.000000 / temp);
   rates[4] = 9.6000000000e-12 * haero::exp(-234.000000 / temp);
   rates[6] = 1.9000000000e-13 * haero::exp(520.000000 / temp);
-}
+} // setrxt
+
 KOKKOS_INLINE_FUNCTION
 void set_rates(Real rxt_rates[rxntot], Real sol[gas_pcnst]) {
   // rate_const*H2O2
@@ -80,7 +40,8 @@ void set_rates(Real rxt_rates[rxntot], Real sol[gas_pcnst]) {
   rxt_rates[5] *= sol[4];
   // rate_const*NO3*DMS
   rxt_rates[6] *= sol[4];
-}
+} // set_rates
+
 KOKKOS_INLINE_FUNCTION
 void adjrxt(Real rate[rxntot], Real inv[nfs], Real m) {
   rate[2] *= inv[4];
@@ -89,14 +50,8 @@ void adjrxt(Real rate[rxntot], Real inv[nfs], Real m) {
   rate[5] *= inv[4];
   rate[6] *= inv[5];
   rate[1] *= inv[6] * inv[6] / m;
-}
-KOKKOS_INLINE_FUNCTION
-void exp_prod_loss(Real prod[31], Real loss[31], Real y[31], Real rxt[7],
-                   Real het_rates[7]) {
-  const Real zero = 0;
-  loss[0] = (+het_rates[0]) * (+y[0]);
-  prod[0] = zero;
-}
+} // adjrxt
+
 KOKKOS_INLINE_FUNCTION
 void imp_prod_loss(Real prod[clscnt4], Real loss[clscnt4], Real y[gas_pcnst],
                    const Real rxt[rxntot], const Real het_rates[gas_pcnst]) {
@@ -161,7 +116,8 @@ void imp_prod_loss(Real prod[clscnt4], Real loss[clscnt4], Real y[gas_pcnst],
   prod[28] = zero;
   loss[29] = (+het_rates[30]) * (+y[30]);
   prod[29] = zero;
-}
+} // imp_prod_loss
+
 KOKKOS_INLINE_FUNCTION
 void indprd(const int class_id, Real prod[clscnt4], const Real rxt[rxntot],
             const Real extfrc[extcnt]) {
@@ -199,7 +155,7 @@ void indprd(const int class_id, Real prod[clscnt4], const Real rxt[rxntot],
     prod[27] = +extfrc[4];
     prod[28] = zero;
     prod[29] = +extfrc[7];
-  }
+  } // indprd
 }
 KOKKOS_INLINE_FUNCTION
 void lu_fac(Real lu[nzcnt]) {
@@ -234,7 +190,8 @@ void lu_fac(Real lu[nzcnt]) {
   lu[29] = one / lu[29];
   lu[30] = one / lu[30];
   lu[31] = one / lu[31];
-}
+} // lu_fac
+
 KOKKOS_INLINE_FUNCTION
 void lu_slv(Real lu[nzcnt], Real b[clscnt4]) {
   b[29] *= lu[31];
@@ -269,10 +226,11 @@ void lu_slv(Real lu[nzcnt], Real b[clscnt4]) {
   b[1] -= lu[2] * b[2];
   b[1] *= lu[1];
   b[0] *= lu[0];
-}
+} // lu_slv
+
 KOKKOS_INLINE_FUNCTION
-void lin_matrix(Real mat[nzcnt], const Real rxt[rxntot],
-                const Real het_rates[gas_pcnst]) {
+void linmat(Real mat[nzcnt], const Real rxt[rxntot],
+            const Real het_rates[gas_pcnst]) {
   mat[0] = -(+rxt[0] + rxt[2] + het_rates[1]);
   mat[1] = -(+het_rates[2]);
   mat[2] = +rxt[3];
@@ -305,7 +263,8 @@ void lin_matrix(Real mat[nzcnt], const Real rxt[rxntot],
   mat[29] = -(+het_rates[28]);
   mat[30] = -(+het_rates[29]);
   mat[31] = -(+het_rates[30]);
-}
+} // linmat
+
 KOKKOS_INLINE_FUNCTION
 void nlnmat(Real mat[nzcnt], const Real lmat[nzcnt], const Real dti) {
   mat[0] = lmat[0] - dti;
@@ -340,7 +299,8 @@ void nlnmat(Real mat[nzcnt], const Real lmat[nzcnt], const Real dti) {
   mat[29] = lmat[29] - dti;
   mat[30] = lmat[30] - dti;
   mat[31] = lmat[31] - dti;
-}
+} // nlnmat
+
 } // namespace gas_chemistry
 } // namespace mam4
 #endif
