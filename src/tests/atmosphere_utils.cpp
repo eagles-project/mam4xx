@@ -73,8 +73,8 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
   Kokkos::deep_copy(d_height, h_height);
   Kokkos::deep_copy(d_hdp, h_hdp);
 
-  Atmosphere atm(d_temperature, d_pressure, d_mix, d_liq, d_nliq, d_ice, d_nice,
-                 d_height, d_hdp, d_cf, d_w, pblh);
+  Atmosphere atm(num_levels, d_temperature, d_pressure, d_mix, d_liq, d_nliq,
+                 d_ice, d_nice, d_height, d_hdp, d_cf, d_w, pblh);
 
   return atm;
 }
