@@ -2716,6 +2716,11 @@ void ma_convproc_tend(
         sumactiva.data(), sumaqchem.data(), sumwetdep.data(), sumresusp.data(),
         sumprevap.data(), sumprevap_hist.data());
 
+    // NOTE: update_tendency_final Fortran =
+    //   update_tendency_diagnostics C++ + update_tendency_final C++
+    //   because of the two loops in this function it was easier
+    //   to split the function up so that one of these could
+    //   be done in a thread team.
     update_tendency_diagnostics(ntsub, pcnst, doconvproc, sumactiva.data(),
                                 sumaqchem.data(), sumwetdep.data(),
                                 sumresusp.data(), sumprevap.data(),
@@ -2767,25 +2772,25 @@ void ma_convproc_dp_intr(
 
   /* 
 ! Arguments
-   in    :: dpdry[pver]           ! layer delta-p-dry [mb]
-   in    :: temperature[pver]         ! Temperature [K]
-   in    :: pmid[pver]      ! Pressure at model levels [Pa]
+   in    :: dpdry[nlev]           ! layer delta-p-dry [mb]
+   in    :: temperature[nlev]         ! Temperature [K]
+   in    :: pmid[nlev]      ! Pressure at model levels [Pa]
 
    in    :: dt                   ! delta t (model time increment) [s]
-   in    :: qnew[pver,pcnst]     ! tracer mixing ratio including water vapor [kg/kg]
+   in    :: qnew[nlev,pcnst]     ! tracer mixing ratio including water vapor [kg/kg]
    in    :: nsrflx               ! last dimension of qsrflx
 
-   in    :: cldfrac[pver] ! Deep conv cloud fraction [0-1]
-   in    :: icwmr[pver] ! Deep conv cloud condensate (in cloud) [kg/kg]
-   in    :: rprddp[pver]  ! Deep conv precip production (grid avg) [kg/kg/s]
-   in    :: evapcdp[pver] ! Deep conv precip evaporation (grid avg) [kg/kg/s]
-   in    :: dlfdp[pver]   ! Deep conv cldwtr detrainment (grid avg) [kg/kg/s]
+   in    :: cldfrac[nlev] ! Deep conv cloud fraction [0-1]
+   in    :: icwmr[nlev] ! Deep conv cloud condensate (in cloud) [kg/kg]
+   in    :: rprddp[nlev]  ! Deep conv precip production (grid avg) [kg/kg/s]
+   in    :: evapcdp[nlev] ! Deep conv precip evaporation (grid avg) [kg/kg/s]
+   in    :: dlfdp[nlev]   ! Deep conv cldwtr detrainment (grid avg) [kg/kg/s]
 
-   in    :: du[pver]   ! Mass detrain rate from updraft [1/s]
-   in    :: eu[pver]   ! Mass entrain rate into updraft [1/s]
-   in    :: ed[pver]   ! Mass entrain rate into downdraft [1/s]
+   in    :: du[nlev]   ! Mass detrain rate from updraft [1/s]
+   in    :: eu[nlev]   ! Mass entrain rate into updraft [1/s]
+   in    :: ed[nlev]   ! Mass entrain rate into downdraft [1/s]
          ! eu, ed, du are "d(massflux)/dp" and are all positive
-   in    :: dp[pver]   ! Delta pressure between interfaces [mb]
+   in    :: dp[nlev]   ! Delta pressure between interfaces [mb]
 
    in    :: ktop              ! Index of cloud top
    in    :: kbot              ! Index of cloud bottom
@@ -2797,7 +2802,7 @@ void ma_convproc_dp_intr(
              -1 for other species
 
    out   :: dotend[pcnst]        ! if do tendency
-   inout :: dqdt[pver,pcnst]     ! time tendency of q [kg/kg/s]
+   inout :: dqdt[nlev,pcnst]     ! time tendency of q [kg/kg/s]
    inout :: qsrflx[pcnst,nsrflx] ! process-specific column tracer tendencies (see ma_convproc_intr for more information) [kg/m2/s]
 
   */
