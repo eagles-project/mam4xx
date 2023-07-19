@@ -31,10 +31,10 @@ void ccncalc(Ensemble *ensemble) {
     const int top_lev = ndrop::top_lev;
 
     const int nspec_max = ndrop::nspec_max;
-    
+
     using View2D = ndrop::View2D;
     using View1DHost = typename HostType::view_1d<Real>;
-    
+
     View2D state_q("state_q", pver, nvars);
     auto state_host = Kokkos::create_mirror_view(state_q);
 
@@ -49,27 +49,23 @@ void ccncalc(Ensemble *ensemble) {
 
     Kokkos::deep_copy(state_q, state_host);
 
-
     ColumnView tair;
     ColumnView pmid;
     tair = haero::testing::create_column_view(pver);
     pmid = haero::testing::create_column_view(pver);
 
-    auto tair_host = View1DHost((Real*)tair_db.data(),pver  );
-    auto pmid_host = View1DHost((Real*)pmid_db.data(),pver  );
+    auto tair_host = View1DHost((Real *)tair_db.data(), pver);
+    auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
 
     Kokkos::deep_copy(tair, tair_host);
     Kokkos::deep_copy(pmid, pmid_host);
 
-
-    View2D ccn("ccn", pver,psat);
-
+    View2D ccn("ccn", pver, psat);
 
     Kokkos::parallel_for(
         "ccncalc", pver - top_lev, KOKKOS_LAMBDA(int k) {
-
-           Real qcldbrn[maxd_aspectype][ntot_amode] = {{zero}};
-           Real qcldbrn_num[ntot_amode] = {zero};
+          Real qcldbrn[maxd_aspectype][ntot_amode] = {{zero}};
+          Real qcldbrn_num[ntot_amode] = {zero};
 
           const int kk = k + top_lev;
           const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
@@ -88,7 +84,7 @@ void ccncalc(Ensemble *ensemble) {
           ndrop::get_e3sm_parameters(
               nspec_amode, lspectype_amode, lmassptr_amode, numptr_amode,
               specdens_amode, spechygro, mam_idx, mam_cnst_idx);
-              
+
           Real exp45logsig[AeroConfig::num_modes()],
               alogsig[AeroConfig::num_modes()],
               num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
@@ -99,7 +95,6 @@ void ccncalc(Ensemble *ensemble) {
           ndrop::ndrop_init(exp45logsig, alogsig, aten,
                             num2vol_ratio_min_nmodes,  // voltonumbhi_amode
                             num2vol_ratio_max_nmodes); // voltonumblo_amode
-                                    
 
           const auto ccn_k = Kokkos::subview(ccn, kk, Kokkos::ALL());
           ndrop::ccncalc(state_q_k.data(), tair(kk), qcldbrn, qcldbrn_num,
@@ -114,7 +109,7 @@ void ccncalc(Ensemble *ensemble) {
     for (int i = 0; i < psat; ++i) {
       std::vector<Real> ccn_v(pver);
       for (int kk = 0; kk < pver; ++kk) {
-        ccn_v[kk] = ccn_host(kk,i);
+        ccn_v[kk] = ccn_host(kk, i);
       }
       output.set("ccn_" + std::to_string(i + 1), ccn_v);
     }

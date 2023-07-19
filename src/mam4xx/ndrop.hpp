@@ -1199,8 +1199,8 @@ void update_from_explmix(
     const ColumnView &zn,        // g/pdel for layer [m^2/kg]
     const ColumnView &zs,        // inverse of distance between levels [m^-1]
     const ColumnView &eddy_diff, // diffusivity for droplets [m^2/s]
-    const View2D& nact,     // fractional aero. number activation rate [/s]
-    const View2D& mact,     // fractional aero. mass activation rate [/s]
+    const View2D &nact,          // fractional aero. number activation rate [/s]
+    const View2D &mact,          // fractional aero. mass activation rate [/s]
     const ColumnView &qcld,      // cloud droplet number mixing ratio [#/kg]
     // single column of saved aerosol mass, number mixing ratios [#/kg or kg/kg]
     const View1D raercol[pver][2],
@@ -1272,8 +1272,8 @@ void update_from_explmix(
         // the following is a safety measure to avoid negatives in explmix
 
         for (int imode = 0; imode < ntot_amode; imode++) {
-          nact(k,imode) = haero::min(nact(k,imode), eddy_diff_kp(k));
-          mact(k,imode) = haero::min(mact(k,imode), eddy_diff_kp(k));
+          nact(k, imode) = haero::min(nact(k, imode), eddy_diff_kp(k));
+          mact(k, imode) = haero::min(mact(k, imode), eddy_diff_kp(k));
         }
 
         // rce-comment -- tinv is the sum of all first-order-loss-rates
@@ -1350,13 +1350,13 @@ void update_from_explmix(
           Kokkos::TeamThreadRange(team, pver - top_lev), KOKKOS_LAMBDA(int kk) {
             const int k = top_lev - 1 + kk;
             const int kp1 = haero::min(k + 1, pver - 1);
-            srcn(k) += nact(k,imode) * raercol[kp1][nsav](mm);
+            srcn(k) += nact(k, imode) * raercol[kp1][nsav](mm);
           });
 
       // rce-comment- new formulation for k=pver
       // srcn(  pver  )=srcn(  pver  )+nact(  pver  ,m)*(raercol(pver,mm,nsav))
-      tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1,imode) +
-             raercol_cw[pver - 1][nsav](mm) * nact(pver - 1,imode);
+      tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
+             raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
       srcn(pver - 1) += haero::max(zero, tmpa);
     } // end imode
 
@@ -1397,11 +1397,11 @@ void update_from_explmix(
             const int kp1 = haero::min(k + 1, pver - 1);
             // FIXME: is this still needed?
             // const int km1 = haero::max(k-1, top_lev);
-            source(k) = nact(k,imode) * raercol[kp1][nsav](mm);
+            source(k) = nact(k, imode) * raercol[kp1][nsav](mm);
           }); // end k
 
-      tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1,imode) +
-             raercol_cw[pver - 1][nsav](mm) * nact(pver - 1,imode);
+      tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
+             raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
       source(pver - 1) = haero::max(zero, tmpa);
 
       // FIXME: still needed?
@@ -1444,10 +1444,10 @@ void update_from_explmix(
             KOKKOS_LAMBDA(int kk) {
               const int k = top_lev - 1 + kk;
               const int kp1 = haero::min(k + 1, pver - 1);
-              source(k) = mact(k,imode) * raercol[kp1][nsav](mm);
+              source(k) = mact(k, imode) * raercol[kp1][nsav](mm);
             }); // end k
-        tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1,imode) +
-               raercol_cw[pver - 1][nsav](mm) * nact(pver - 1,imode);
+        tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
+               raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
         source(pver - 1) = haero::max(zero, tmpa);
 
         // FIXME: i'm guessing these aren't needed? :)
@@ -1534,17 +1534,16 @@ void dropmixnuc(
     const ColumnView ptend_q[nvar_ptend_q], const ColumnView &tendnd,
     const View2D &factnum, const ColumnView &ndropcol,
     const ColumnView &ndropmix, const ColumnView &nsource,
-    const ColumnView &wtke, const View2D& ccn,
+    const ColumnView &wtke, const View2D &ccn,
     const ColumnView coltend[ncnst_tot], const ColumnView coltend_cw[ncnst_tot],
     // work arrays
     const View1D raercol_cw[pver][2], const View1D raercol[pver][2],
-    const View2D& nact, const View2D& mact,
-    const ColumnView &eddy_diff, const ColumnView &zn, const ColumnView &csbot,
-    const ColumnView &zs, const ColumnView &overlapp,
-    const ColumnView &overlapm, const ColumnView &eddy_diff_kp,
-    const ColumnView &eddy_diff_km, const ColumnView &qncld,
-    const ColumnView &srcn, const ColumnView &source, const ColumnView &dz,
-    const ColumnView &csbot_cscen,
+    const View2D &nact, const View2D &mact, const ColumnView &eddy_diff,
+    const ColumnView &zn, const ColumnView &csbot, const ColumnView &zs,
+    const ColumnView &overlapp, const ColumnView &overlapm,
+    const ColumnView &eddy_diff_kp, const ColumnView &eddy_diff_km,
+    const ColumnView &qncld, const ColumnView &srcn, const ColumnView &source,
+    const ColumnView &dz, const ColumnView &csbot_cscen,
     const ColumnView &raertend, const ColumnView &qqcwtend) {
   // vertical diffusion and nucleation of cloud droplets
   // assume cloud presence controlled by cloud fraction

@@ -14,7 +14,6 @@ using namespace mam4;
 using namespace haero;
 void dropmixnuc(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-
     const Real zero = 0;
     const int maxd_aspectype = ndrop::maxd_aspectype;
     const int ntot_amode = AeroConfig::num_modes();
@@ -24,7 +23,7 @@ void dropmixnuc(Ensemble *ensemble) {
     const int nspec_max = mam4::ndrop::nspec_max;
     const int nvar_ptend_q = mam4::ndrop::nvar_ptend_q;
 
-    const int pver = ndrop::pver; 
+    const int pver = ndrop::pver;
     const auto state_q_db = input.get_array("state_q");
 
     const auto tair_db = input.get_array("temp");
@@ -105,17 +104,17 @@ void dropmixnuc(Ensemble *ensemble) {
     wsub = haero::testing::create_column_view(pver);
     cldo = haero::testing::create_column_view(pver);
 
-    auto tair_host = View1DHost((Real*)tair_db.data(),pver  );
-    auto pmid_host = View1DHost((Real*)pmid_db.data(),pver  );
-    auto pint_host = View1DHost((Real*)pint_db.data(),pver  );
-    auto pdel_host = View1DHost((Real*)pdel_db.data(),pver  );
-    auto rpdel_host = View1DHost((Real*)rpdel_db.data(),pver  );
-    auto zm_host = View1DHost((Real*)zm_db.data(),pver  );
-    auto ncldwtr_host = View1DHost((Real*)ncldwtr_db.data(),pver  );
-    auto kvh_host = View1DHost((Real*)kvh_db.data(),pver  );
-    auto cldn_host = View1DHost((Real*)cldn_db.data(),pver  );
-    auto wsub_host = View1DHost((Real*)wsub_db.data(),pver  );
-    auto cldo_host = View1DHost((Real*)cldo_db.data(),pver  );
+    auto tair_host = View1DHost((Real *)tair_db.data(), pver);
+    auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
+    auto pint_host = View1DHost((Real *)pint_db.data(), pver);
+    auto pdel_host = View1DHost((Real *)pdel_db.data(), pver);
+    auto rpdel_host = View1DHost((Real *)rpdel_db.data(), pver);
+    auto zm_host = View1DHost((Real *)zm_db.data(), pver);
+    auto ncldwtr_host = View1DHost((Real *)ncldwtr_db.data(), pver);
+    auto kvh_host = View1DHost((Real *)kvh_db.data(), pver);
+    auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
+    auto wsub_host = View1DHost((Real *)wsub_db.data(), pver);
+    auto cldo_host = View1DHost((Real *)cldo_db.data(), pver);
 
     Kokkos::deep_copy(tair, tair_host);
     Kokkos::deep_copy(pmid, pmid_host);
@@ -176,7 +175,6 @@ void dropmixnuc(Ensemble *ensemble) {
 
     View2D nact("nact", pver, ntot_amode);
     View2D mact("mact", pver, ntot_amode);
-
 
     ColumnView ekd;
     ekd = haero::testing::create_column_view(pver);
@@ -247,8 +245,7 @@ void dropmixnuc(Ensemble *ensemble) {
               coltend, coltend_cw, raercol_cw, raercol, nact, mact, ekd,
               // work arrays
               zn, csbot, zs, overlapp, overlapm, ekkp, ekkm, qncld, srcn,
-              source, dz, csbot_cscen,
-              raertend, qqcwtend);
+              source, dz, csbot_cscen, raertend, qqcwtend);
         });
 
     auto host = Kokkos::create_mirror_view(tendnd);
