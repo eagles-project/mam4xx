@@ -163,11 +163,7 @@ void dropmixnuc(Ensemble *ensemble) {
       coltend_cw[i] = haero::testing::create_column_view(pver);
     }
 
-    ColumnView ccn[pver];
-
-    for (int i = 0; i < pver; ++i) {
-      ccn[i] = haero::testing::create_column_view(psat);
-    }
+    View2D ccn("ccn", pver, psat);
 
     View1D raercol_cw[pver][2];
     View1D raercol[pver][2];

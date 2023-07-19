@@ -1534,7 +1534,7 @@ void dropmixnuc(
     const ColumnView ptend_q[nvar_ptend_q], const ColumnView &tendnd,
     const View2D &factnum, const ColumnView &ndropcol,
     const ColumnView &ndropmix, const ColumnView &nsource,
-    const ColumnView &wtke, const ColumnView ccn[pver],
+    const ColumnView &wtke, const View2D& ccn,
     const ColumnView coltend[ncnst_tot], const ColumnView coltend_cw[ncnst_tot],
     // work arrays
     const View1D raercol_cw[pver][2], const View1D raercol[pver][2],
@@ -1809,6 +1809,7 @@ void dropmixnuc(
         }   // imode
 
         const auto state_q_k = Kokkos::subview(state_q, k, Kokkos::ALL());
+        const auto ccn_k = Kokkos::subview(ccn, k, Kokkos::ALL());
 
         //  Use interstitial and cloud-borne aerosol to compute output
         // ccn fields.
@@ -1816,7 +1817,7 @@ void dropmixnuc(
                 conversions::density_of_ideal_gas(temp(k), pmid(k)),
                 lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
                 voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
-                exp45logsig, alogsig, ccn[k].data());
+                exp45logsig, alogsig, ccn_k.data());
       }); // end parfor(k)
 } // dropmixnuc
 } // namespace ndrop
