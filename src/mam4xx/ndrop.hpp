@@ -1532,7 +1532,7 @@ void dropmixnuc(
     const ColumnView &cldo,               // in
     const ColumnView qqcw_fld[ncnst_tot], // inout
     const ColumnView ptend_q[nvar_ptend_q], const ColumnView &tendnd,
-    const View1D factnum[pver], const ColumnView &ndropcol,
+    const View2D& factnum, const ColumnView &ndropcol,
     const ColumnView &ndropmix, const ColumnView &nsource,
     const ColumnView &wtke, const ColumnView ccn[pver],
     const ColumnView coltend[ncnst_tot], const ColumnView coltend_cw[ncnst_tot],
@@ -1650,6 +1650,7 @@ void dropmixnuc(
         // cloud fraction droplet nucleation/aerosol activation
         nsource(k) = zero;
         const auto state_q_k = Kokkos::subview(state_q, k, Kokkos::ALL());
+        const auto factnum_k = Kokkos::subview(factnum, k, Kokkos::ALL());
 
         update_from_newcld(cldn(k), cldo(k), dtinv, // in
                            wtke(k), temp(k),
@@ -1661,7 +1662,7 @@ void dropmixnuc(
                            aten, mam_idx, qcld(k),
                            raercol[k][nsav].data(),        // inout
                            raercol_cw[k][nsav].data(),     // inout
-                           nsource(k), factnum[k].data()); // inout
+                           nsource(k), factnum_k.data()); // inout
       });                                                  // end k
   team.team_barrier();
   Kokkos::parallel_for(
@@ -1699,6 +1700,7 @@ void dropmixnuc(
         // PART II: changes in aerosol and cloud water from vertical profile of
         // new cloud fraction
         const auto state_q_kp1 = Kokkos::subview(state_q, kp1, Kokkos::ALL());
+        const auto factnum_k = Kokkos::subview(factnum, k, Kokkos::ALL());
 
         update_from_cldn_profile(
             cldn(k), cldn(kp1), dtinv, wtke(k), zs(k), dz(k), // in
@@ -1711,7 +1713,7 @@ void dropmixnuc(
             exp45logsig, alogsig, aten, mam_idx, raercol[k][nsav].data(),
             raercol[kp1][nsav].data(), raercol_cw[k][nsav].data(),
             nsource(k), // inout
-            qcld(k), factnum[k].data(),
+            qcld(k), factnum_k.data(),
             eddy_diff(k), // out
             nact[k].data(), mact[k].data());
       });
