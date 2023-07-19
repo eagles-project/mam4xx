@@ -12,11 +12,9 @@
 using namespace skywalker;
 using namespace mam4;
 using namespace haero;
-// FIXME: this is a work in progress but could probably be cleaned up a little
 void dropmixnuc(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    // number of vertical points.
-    // validation test from standalone ndrop.
+
     const Real zero = 0;
     const int maxd_aspectype = 14;
     const int ntot_amode = 4;
@@ -26,7 +24,7 @@ void dropmixnuc(Ensemble *ensemble) {
     const int nspec_max = mam4::ndrop::nspec_max;
     const int nvar_ptend_q = mam4::ndrop::nvar_ptend_q;
 
-    const int pver = 72; // input.get_array("pver")[0];
+    const int pver = 72; 
     const auto state_q_db = input.get_array("state_q");
 
     const auto tair_db = input.get_array("temp");
@@ -107,33 +105,18 @@ void dropmixnuc(Ensemble *ensemble) {
     wsub = haero::testing::create_column_view(pver);
     cldo = haero::testing::create_column_view(pver);
 
-    auto tair_host = Kokkos::create_mirror_view(tair);
-    auto pmid_host = Kokkos::create_mirror_view(pmid);
-    auto pint_host = Kokkos::create_mirror_view(pint);
+    auto tair_host = View1DHost((Real*)tair_db.data(),pver  );
+    auto pmid_host = View1DHost((Real*)pmid_db.data(),pver  );
+    auto pint_host = View1DHost((Real*)pint_db.data(),pver  );
+    auto pdel_host = View1DHost((Real*)pdel_db.data(),pver  );
+    auto rpdel_host = View1DHost((Real*)rpdel_db.data(),pver  );
+    auto zm_host = View1DHost((Real*)zm_db.data(),pver  );
+    auto ncldwtr_host = View1DHost((Real*)ncldwtr_db.data(),pver  );
+    auto kvh_host = View1DHost((Real*)kvh_db.data(),pver  );
+    auto cldn_host = View1DHost((Real*)cldn_db.data(),pver  );
+    auto wsub_host = View1DHost((Real*)wsub_db.data(),pver  );
+    auto cldo_host = View1DHost((Real*)cldo_db.data(),pver  );
 
-    auto pdel_host = Kokkos::create_mirror_view(pdel);
-    auto rpdel_host = Kokkos::create_mirror_view(rpdel);
-    auto zm_host = Kokkos::create_mirror_view(zm);
-    auto ncldwtr_host = Kokkos::create_mirror_view(ncldwtr);
-    auto kvh_host = Kokkos::create_mirror_view(kvh);
-    auto cldn_host = Kokkos::create_mirror_view(cldn);
-    auto wsub_host = Kokkos::create_mirror_view(wsub);
-    auto cldo_host = Kokkos::create_mirror_view(cldo);
-
-    // // FIXME. Find a better way:
-    for (int kk = 0; kk < pver; ++kk) {
-      tair_host(kk) = tair_db[kk];
-      pmid_host(kk) = pmid_db[kk];
-      pint_host(kk) = pint_db[kk];
-      pdel_host(kk) = pdel_db[kk];
-      rpdel_host(kk) = rpdel_db[kk];
-      zm_host(kk) = zm_db[kk];
-      ncldwtr_host(kk) = ncldwtr_db[kk];
-      kvh_host(kk) = kvh_db[kk];
-      cldn_host(kk) = cldn_db[kk];
-      wsub_host(kk) = wsub_db[kk];
-      cldo_host(kk) = cldo_db[kk];
-    }
     Kokkos::deep_copy(tair, tair_host);
     Kokkos::deep_copy(pmid, pmid_host);
     Kokkos::deep_copy(pint, pint_host);
@@ -148,27 +131,6 @@ void dropmixnuc(Ensemble *ensemble) {
     Kokkos::deep_copy(cldo, cldo_host);
 
     const Real dtmicro = input.get_array("dtmicro")[0];
-
-    // const auto mam_idx_db = input.get_array("mam_idx");
-
-    // count = 0;
-    // int mam_idx[ntot_amode][nspec_max];
-    // for (int i = 0; i < nspec_max; ++i) {
-    //   for (int j = 0; j < ntot_amode; ++j) {
-    //     mam_idx[j][i] = mam_idx_db[count];
-    //     count++;
-    //   }
-    // }
-
-    // const auto mam_cnst_idx_db = input.get_array("mam_cnst_idx");
-    // count = 0;
-    // int mam_cnst_idx[ntot_amode][nspec_max];
-    // for (int i = 0; i < nspec_max; ++i) {
-    //   for (int j = 0; j < ntot_amode; ++j) {
-    //     mam_cnst_idx[j][i] = mam_cnst_idx_db[count];
-    //     count++;
-    //   }
-    // }
 
     // output
     ColumnView qcld;
