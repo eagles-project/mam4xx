@@ -19,7 +19,7 @@ namespace ndrop {
 
 // this is to differentiate the ColumnViews that are [pver][2]
 // rather than [nspec][nmode]
-using Ndrop_ColumnView = ColumnView;
+using View1D = DeviceType::view_1d<Real>;
 
 // number of vertical levels
 const int pver = 72;
@@ -1198,13 +1198,13 @@ void update_from_explmix(
     const ColumnView &zn,        // g/pdel for layer [m^2/kg]
     const ColumnView &zs,        // inverse of distance between levels [m^-1]
     const ColumnView &eddy_diff, // diffusivity for droplets [m^2/s]
-    const ColumnView nact[pver], // fractional aero. number activation rate [/s]
-    const ColumnView mact[pver], // fractional aero. mass activation rate [/s]
+    const View1D nact[pver],     // fractional aero. number activation rate [/s]
+    const View1D mact[pver],     // fractional aero. mass activation rate [/s]
     const ColumnView &qcld,      // cloud droplet number mixing ratio [#/kg]
     // single column of saved aerosol mass, number mixing ratios [#/kg or kg/kg]
-    const Ndrop_ColumnView raercol[pver][2],
+    const View1D raercol[pver][2],
     // same as raercol but for cloud-borne phase [#/kg or kg/kg]
-    const Ndrop_ColumnView raercol_cw[pver][2],
+    const View1D raercol_cw[pver][2],
     int &nsav, // indices for old, new time levels in substepping
     int &nnew, // indices for old, new time levels in substepping
     const int nspec_amode[AeroConfig::num_modes()],
@@ -1511,8 +1511,8 @@ KOKKOS_INLINE_FUNCTION
 void dropmixnuc(
     const ThreadTeam &team, const Real dtmicro, const ColumnView &temp,
     const ColumnView &pmid, const ColumnView &pint, const ColumnView &pdel,
-    const ColumnView &rpdel, const ColumnView &zm,
-    const ColumnView state_q[pver], const ColumnView &ncldwtr,
+    const ColumnView &rpdel, const ColumnView &zm, const View1D state_q[pver],
+    const ColumnView &ncldwtr,
     // v_diffusivity[kk+1] FIXME: what does this comment mean?
     const ColumnView &v_diffusivity, const ColumnView &cldn,
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
@@ -1531,22 +1531,20 @@ void dropmixnuc(
     const ColumnView &cldo,               // in
     const ColumnView qqcw_fld[ncnst_tot], // inout
     const ColumnView ptend_q[nvar_ptend_q], const ColumnView &tendnd,
-    const ColumnView factnum[pver], const ColumnView &ndropcol,
+    const View1D factnum[pver], const ColumnView &ndropcol,
     const ColumnView &ndropmix, const ColumnView &nsource,
     const ColumnView &wtke, const ColumnView ccn[pver],
     const ColumnView coltend[ncnst_tot], const ColumnView coltend_cw[ncnst_tot],
     // work arrays
-    const Ndrop_ColumnView raercol_cw[pver][2],
-    const Ndrop_ColumnView raercol[pver][2], const ColumnView nact[pver],
-    const ColumnView mact[pver], const ColumnView &eddy_diff,
-    const ColumnView &zn, const ColumnView &csbot, const ColumnView &zs,
-    const ColumnView &overlapp, const ColumnView &overlapm,
-    const ColumnView &eddy_diff_kp, const ColumnView &eddy_diff_km,
-    const ColumnView &qncld, const ColumnView &srcn, const ColumnView &source,
-    const ColumnView &dz, const ColumnView &csbot_cscen,
-    // FIXME: can we get rid of this?
-    // ColumnView qcldbrn[pver][maxd_aspectype],//[ntot_amode]
-    const ColumnView qcldbrn_num[pver], // [ntot_amode]
+    const View1D raercol_cw[pver][2], const View1D raercol[pver][2],
+    const View1D nact[pver], const View1D mact[pver],
+    const ColumnView &eddy_diff, const ColumnView &zn, const ColumnView &csbot,
+    const ColumnView &zs, const ColumnView &overlapp,
+    const ColumnView &overlapm, const ColumnView &eddy_diff_kp,
+    const ColumnView &eddy_diff_km, const ColumnView &qncld,
+    const ColumnView &srcn, const ColumnView &source, const ColumnView &dz,
+    const ColumnView &csbot_cscen,
+    const View1D qcldbrn_num[pver], // [ntot_amode]
     const ColumnView &raertend, const ColumnView &qqcwtend) {
   // vertical diffusion and nucleation of cloud droplets
   // assume cloud presence controlled by cloud fraction

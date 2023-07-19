@@ -43,18 +43,18 @@ void dropmixnuc(Ensemble *ensemble) {
     const auto cldo_db = input.get_array("cldo");
     const auto qqcw_db = input.get_array("qqcw");
 
-    // const int top_lev = 6;
-    ColumnView state_q[pver];
+    using View1D = ndrop::View1D;
+    View1D state_q[pver];
 
-    using ColumnHostView = typename HostType::view_1d<Real>;
+    using View1DHost = typename HostType::view_1d<Real>;
 
     int count = 0;
 
-    ColumnHostView state_host[pver];
+    View1DHost state_host[pver];
 
     for (int kk = 0; kk < pver; ++kk) {
-      state_q[kk] = haero::testing::create_column_view(nvars);
-      state_host[kk] = ColumnHostView("state_host", nvars);
+      state_q[kk] = View1D("state_q", nvars);
+      state_host[kk] = View1DHost("state_host", nvars);
     } // kk
 
     for (int i = 0; i < nvars; ++i) {
@@ -71,12 +71,12 @@ void dropmixnuc(Ensemble *ensemble) {
     }
 
     ColumnView qqcw[ncnst_tot];
-    ColumnHostView qqcw_host[ncnst_tot];
+    View1DHost qqcw_host[ncnst_tot];
 
     count = 0;
     for (int i = 0; i < ncnst_tot; ++i) {
       qqcw[i] = haero::testing::create_column_view(pver);
-      qqcw_host[i] = ColumnHostView("qqcw_host", pver);
+      qqcw_host[i] = View1DHost("qqcw_host", pver);
     }
 
     for (int kk = 0; kk < pver; ++kk) {
@@ -198,10 +198,10 @@ void dropmixnuc(Ensemble *ensemble) {
       ptend_q[i] = haero::testing::create_column_view(pver);
     }
 
-    ColumnView factnum[pver];
+    View1D factnum[pver];
 
     for (int i = 0; i < pver; ++i) {
-      factnum[i] = haero::testing::create_column_view(ntot_amode);
+      factnum[i] = View1D("factnum", ntot_amode);
     }
 
     ColumnView coltend[ncnst_tot];
@@ -218,21 +218,21 @@ void dropmixnuc(Ensemble *ensemble) {
       ccn[i] = haero::testing::create_column_view(psat);
     }
 
-    ndrop::Ndrop_ColumnView raercol_cw[pver][2];
-    ndrop::Ndrop_ColumnView raercol[pver][2];
+    View1D raercol_cw[pver][2];
+    View1D raercol[pver][2];
     for (int i = 0; i < pver; ++i) {
-      raercol[i][0] = haero::testing::create_column_view(ncnst_tot);
-      raercol[i][1] = haero::testing::create_column_view(ncnst_tot);
-      raercol_cw[i][0] = haero::testing::create_column_view(ncnst_tot);
-      raercol_cw[i][1] = haero::testing::create_column_view(ncnst_tot);
+      raercol[i][0] = View1D("raercol_0", ncnst_tot);
+      raercol[i][1] = View1D("raercol_1", ncnst_tot);
+      raercol_cw[i][0] = View1D("raercol_cw_0", ncnst_tot);
+      raercol_cw[i][1] = View1D("raercol_cw_0", ncnst_tot);
     }
 
-    ColumnView nact[pver];
-    ColumnView mact[pver];
+    View1D nact[pver];
+    View1D mact[pver];
 
     for (int i = 0; i < pver; ++i) {
-      nact[i] = haero::testing::create_column_view(ntot_amode);
-      mact[i] = haero::testing::create_column_view(ntot_amode);
+      nact[i] = View1D("nact", ntot_amode);
+      mact[i] = View1D("nact", ntot_amode);
     }
 
     ColumnView ekd;
@@ -257,14 +257,14 @@ void dropmixnuc(Ensemble *ensemble) {
     csbot_cscen = haero::testing::create_column_view(pver);
 
     // ColumnView qcldbrn[pver][maxd_aspectype];//[ntot_amode],
-    ColumnView qcldbrn_num[pver]; // [ntot_amode]
+    View1D qcldbrn_num[pver]; // [ntot_amode]
     ColumnView raertend, qqcwtend;
 
     raertend = haero::testing::create_column_view(pver);
     qqcwtend = haero::testing::create_column_view(pver);
 
     for (int i = 0; i < pver; ++i) {
-      qcldbrn_num[i] = haero::testing::create_column_view(ntot_amode);
+      qcldbrn_num[i] = View1D("qcldbrn_num", ntot_amode);
     }
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
@@ -348,9 +348,9 @@ void dropmixnuc(Ensemble *ensemble) {
     output.set("ptend_q", output_ptend_q);
 
     std::vector<Real> output_factnum;
-    ColumnHostView factnum_host[pver];
+    View1DHost factnum_host[pver];
     for (int kk = 0; kk < pver; ++kk) {
-      factnum_host[kk] = ColumnHostView("factnum_host", ntot_amode);
+      factnum_host[kk] = View1DHost("factnum_host", ntot_amode);
       Kokkos::deep_copy(factnum_host[kk], factnum[kk]);
     }
 
