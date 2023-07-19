@@ -1512,8 +1512,8 @@ KOKKOS_INLINE_FUNCTION
 void dropmixnuc(
     const ThreadTeam &team, const Real dtmicro, const ColumnView &temp,
     const ColumnView &pmid, const ColumnView &pint, const ColumnView &pdel,
-    const ColumnView &rpdel, const ColumnView &zm,
-    const View2D &state_q, const ColumnView &ncldwtr,
+    const ColumnView &rpdel, const ColumnView &zm, const View2D &state_q,
+    const ColumnView &ncldwtr,
     // v_diffusivity[kk+1] FIXME: what does this comment mean?
     const ColumnView &v_diffusivity, const ColumnView &cldn,
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
@@ -1532,7 +1532,7 @@ void dropmixnuc(
     const ColumnView &cldo,               // in
     const ColumnView qqcw_fld[ncnst_tot], // inout
     const ColumnView ptend_q[nvar_ptend_q], const ColumnView &tendnd,
-    const View2D& factnum, const ColumnView &ndropcol,
+    const View2D &factnum, const ColumnView &ndropcol,
     const ColumnView &ndropmix, const ColumnView &nsource,
     const ColumnView &wtke, const ColumnView ccn[pver],
     const ColumnView coltend[ncnst_tot], const ColumnView coltend_cw[ncnst_tot],
@@ -1660,10 +1660,10 @@ void dropmixnuc(
                            lmassptr_amode, voltonumbhi_amode, voltonumblo_amode,
                            numptr_amode, nspec_amode, exp45logsig, alogsig,
                            aten, mam_idx, qcld(k),
-                           raercol[k][nsav].data(),        // inout
-                           raercol_cw[k][nsav].data(),     // inout
+                           raercol[k][nsav].data(),       // inout
+                           raercol_cw[k][nsav].data(),    // inout
                            nsource(k), factnum_k.data()); // inout
-      });                                                  // end k
+      });                                                 // end k
   team.team_barrier();
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int k) {

@@ -342,7 +342,7 @@ void dropmixnuc(Ensemble *ensemble) {
     std::vector<Real> output_factnum;
     for (int i = 0; i < ntot_amode; ++i) {
       for (int kk = 0; kk < pver; ++kk) {
-        output_factnum.push_back(factnum_host(kk,i));
+        output_factnum.push_back(factnum_host(kk, i));
       }
     }
 
