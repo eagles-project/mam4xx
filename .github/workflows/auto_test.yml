@@ -59,6 +59,7 @@ jobs:
       with:
         repository: eagles-project/haero
         submodules: recursive
+        ref: kylepres/surface.hpp
         path: haero_src
 
     - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
