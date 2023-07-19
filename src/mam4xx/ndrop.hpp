@@ -591,9 +591,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
     return;
   }
 
-  =
-
-      const Real rair = haero::Constants::r_gas_dry_air;
+  const Real rair = haero::Constants::r_gas_dry_air;
   const Real rh2o = haero::Constants::r_gas_h2o_vapor;
   // latent heat of evaporation [J/kg]
   const Real latvap = haero::Constants::latent_heat_evap;
