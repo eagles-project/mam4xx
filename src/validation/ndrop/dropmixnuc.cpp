@@ -218,8 +218,8 @@ void dropmixnuc(Ensemble *ensemble) {
       ccn[i] = haero::testing::create_column_view(psat);
     }
 
-    ColumnView raercol_cw[pver][2];
-    ColumnView raercol[pver][2];
+    ndrop::Ndrop_ColumnView raercol_cw[pver][2];
+    ndrop::Ndrop_ColumnView raercol[pver][2];
     for (int i = 0; i < pver; ++i) {
       raercol[i][0] = haero::testing::create_column_view(ncnst_tot);
       raercol[i][1] = haero::testing::create_column_view(ncnst_tot);

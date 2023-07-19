@@ -49,6 +49,8 @@ void update_from_explmix(Ensemble *ensemble) {
     int raer_len = pver * ncnst_tot;
     int act_len = pver * nmodes;
 
+    using ColumnHostView = typename HostType::view_1d<Real>;
+
     std::vector<Real> nact_out(act_len, zero);
     std::vector<Real> mact_out(act_len, zero);
     std::vector<Real> qcld_out(pver);
@@ -92,8 +94,8 @@ void update_from_explmix(Ensemble *ensemble) {
       mact_host[kk] = ColumnHostView("mact_host", nmodes);
     }
 
-    ColumnView raercol[pver][2];
-    ColumnView raercol_cw[pver][2];
+    ndrop::Ndrop_ColumnView raercol[pver][2];
+    ndrop::Ndrop_ColumnView raercol_cw[pver][2];
     ColumnHostView raercol_host[pver][2];
     ColumnHostView raercol_cw_host[pver][2];
     for (int i = 0; i < pver; ++i) {

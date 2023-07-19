@@ -17,6 +17,10 @@ namespace mam4 {
 
 namespace ndrop {
 
+// this is to differentiate the ColumnViews that are [pver][2]
+// rather than [nspec][nmode]
+using Ndrop_ColumnView = ColumnView;
+
 // number of vertical levels
 const int pver = 72;
 // Top level for troposphere cloud physics
@@ -147,8 +151,8 @@ void get_aer_mmr_sum(
     // hygroscopicity at species / mode indices [dimensionless]
     const Real hygro_sp = spechygro[type_idx]; // species hygroscopicity
     // Fortran indexing to C++
-    const int spc_idx =
-        lmassptr_amode[lspec][imode] - 1; // index of species in state_q array
+    // index of species in state_q array
+    const int spc_idx = lmassptr_amode[lspec][imode] - 1;
     // aerosol volume mixing ratio [m3/kg]
     const Real vol = haero::max(state_q[spc_idx] + qcldbrn1d[lspec], zero) /
                      density_sp; // volume = mmr/density
@@ -193,9 +197,8 @@ void maxsat(
     const Real zeta,                         // [dimensionless]
     const Real eta[AeroConfig::num_modes()], // [dimensionless]
     const Real nmode,                        // number of modes
-    const Real
-        smode_crit[AeroConfig::num_modes()], // critical supersaturation for
-                                             // number mode radius [fraction]
+    // critical supersaturation for number mode radius [fraction]
+    const Real smode_crit[AeroConfig::num_modes()],
     Real &smax // maximum supersaturation [fraction] (output)
 ) {
   // abdul-razzak functions of width
@@ -504,7 +507,7 @@ void ndrop_init(Real exp45logsig[AeroConfig::num_modes()],
 
   // density of fresh water [kg/m^3]
   const Real rhoh2o = haero::Constants::density_h2o;
-  // [J/K/kmole]
+  // [J/K/kmol]
   const Real r_universal = haero::Constants::r_gas * one_thousand;
   // [kg/kmol]
   const Real mwh2o = haero::Constants::molec_weight_h2o * one_thousand;
@@ -588,14 +591,16 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
     return;
   }
 
-  const Real rair = haero::Constants::r_gas_dry_air;
+  =
+
+      const Real rair = haero::Constants::r_gas_dry_air;
   const Real rh2o = haero::Constants::r_gas_h2o_vapor;
-  const Real latvap =
-      haero::Constants::latent_heat_evap; // latent heat of evaporation [J/kg]
-  const Real cpair =
-      haero::Constants::cp_dry_air; // specific heat of dry air [J/kg/K]
-  const Real gravit =
-      haero::Constants::gravity; // acceleration of gravity [m/s^2]
+  // latent heat of evaporation [J/kg]
+  const Real latvap = haero::Constants::latent_heat_evap;
+  // specific heat of dry air [J/kg/K]
+  const Real cpair = haero::Constants::cp_dry_air;
+  // acceleration of gravity [m/s^2]
+  const Real gravity = haero::Constants::gravity;
   // density of fresh water [kg/m^3]
   const Real rhoh2o = haero::Constants::density_h2o;
   const Real pi = haero::Constants::pi;
@@ -613,7 +618,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   const Real dqsdt = latvap / (rh2o * tair * tair) * qs;
   // [/m]
   const Real alpha =
-      gravit * (latvap / (cpair * rh2o * tair * tair) - one / (rair * tair));
+      gravity * (latvap / (cpair * rh2o * tair * tair) - one / (rair * tair));
   // [m3/kg]
   const Real gamma = (one + latvap / cpair * dqsdt) / (rhoair * qs);
   // [s^(3/2)]
@@ -630,6 +635,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
                                 latvap * rhoh2o / (conduct0 * tair) *
                                     (latvap / (rh2o * tair) - one));
   const Real beta = two * pi * rhoh2o * gthermfac * gamma; // [m2/s]
+  // FIXME: is this comment still useful?
   // nucleation w, but = w_in if wdiab == 0 [m/s]
   const Real wnuc = w_in;
   const Real alw = alpha * wnuc;                  // [/s]
@@ -655,7 +661,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
       // only if variable size dist
       amcube[imode] =
           three_fourths * volume[imode] / (pi * exp45logsig[imode] * na[imode]);
-      // Growth coefficent Abdul-Razzak & Ghan 1998 eqn 16
+      // Growth coefficient Abdul-Razzak & Ghan 1998 eqn 16
       // should depend on mean radius of mode to account for gas kinetic
       // effects see Fountoukis and Nenes, JGR2005 and Meskhidze et al.,
       // JGR2006 for appropriate size to use for effective diffusivity.
@@ -1194,15 +1200,13 @@ void update_from_explmix(
     const ColumnView &zn,        // g/pdel for layer [m^2/kg]
     const ColumnView &zs,        // inverse of distance between levels [m^-1]
     const ColumnView &eddy_diff, // diffusivity for droplets [m^2/s]
-    const ColumnView nact[pver], // fractional aero. number
-                                 // activation rate [/s]
-    const ColumnView mact[pver], // fractional aero. mass
-                                 // activation rate [/s]
+    const ColumnView nact[pver], // fractional aero. number activation rate [/s]
+    const ColumnView mact[pver], // fractional aero. mass activation rate [/s]
     const ColumnView &qcld,      // cloud droplet number mixing ratio [#/kg]
-    const ColumnView raercol[pver][2], // single column of saved aerosol mass,
-                                       // number mixing ratios [#/kg or kg/kg]
-    const ColumnView raercol_cw[pver][2], // same as raercol but for cloud-borne
-                                          // phase [#/kg or kg/kg]
+    // single column of saved aerosol mass, number mixing ratios [#/kg or kg/kg]
+    const Ndrop_ColumnView raercol[pver][2],
+    // same as raercol but for cloud-borne phase [#/kg or kg/kg]
+    const Ndrop_ColumnView raercol_cw[pver][2],
     int &nsav, // indices for old, new time levels in substepping
     int &nnew, // indices for old, new time levels in substepping
     const int nspec_amode[AeroConfig::num_modes()],
@@ -1214,9 +1218,8 @@ void update_from_explmix(
     const ColumnView &eddy_diff_km, // zn*zs*density*diffusivity   [/s]
     const ColumnView &qncld, // updated cloud droplet number mixing ratio [#/kg]
     const ColumnView &srcn,  // droplet source rate [/s]
-    const ColumnView
-        &source //  source rate for activated number or species mass [/s]
-) {
+    // source rate for activated number or species mass [/s]
+    const ColumnView &source) {
 
   // threshold cloud fraction to compute overlap [fraction]
   // BAD CONSTANT
@@ -1237,7 +1240,7 @@ void update_from_explmix(
 
   // start k for loop here. for k = top_lev to pver
   // cldn will be columnviews of length pver,
-  // overlaps also to columnview pass as parameter so it is allocated elsewhwere
+  // overlaps also to columnview pass as parameter so it is allocated elsewhere
   Kokkos::parallel_reduce(
       Kokkos::TeamThreadRange(team, pver - top_lev + 1),
       [&](int kk, Real &min_val) {
@@ -1294,7 +1297,7 @@ void update_from_explmix(
   // TODO
   //    fix dtmin section
   //    pass arrs as columnviews and k len instead of single values
-  //    loop over k for calls to explmis
+  //    loop over k for calls to explmix
   //    for things like src, qcld, loop over to assign the values
   //    pass overlapp etc as params as work vars so they are allocated elsewhere
 
@@ -1535,14 +1538,14 @@ void dropmixnuc(
     const ColumnView &wtke, const ColumnView ccn[pver],
     const ColumnView coltend[ncnst_tot], const ColumnView coltend_cw[ncnst_tot],
     // work arrays
-    const ColumnView raercol_cw[pver][2], const ColumnView raercol[pver][2],
-    const ColumnView nact[pver], const ColumnView mact[pver],
-    const ColumnView &eddy_diff, const ColumnView &zn, const ColumnView &csbot,
-    const ColumnView &zs, const ColumnView &overlapp,
-    const ColumnView &overlapm, const ColumnView &eddy_diff_kp,
-    const ColumnView &eddy_diff_km, const ColumnView &qncld,
-    const ColumnView &srcn, const ColumnView &source, const ColumnView &dz,
-    const ColumnView &csbot_cscen,
+    const Ndrop_ColumnView raercol_cw[pver][2],
+    const Ndrop_ColumnView raercol[pver][2], const ColumnView nact[pver],
+    const ColumnView mact[pver], const ColumnView &eddy_diff,
+    const ColumnView &zn, const ColumnView &csbot, const ColumnView &zs,
+    const ColumnView &overlapp, const ColumnView &overlapm,
+    const ColumnView &eddy_diff_kp, const ColumnView &eddy_diff_km,
+    const ColumnView &qncld, const ColumnView &srcn, const ColumnView &source,
+    const ColumnView &dz, const ColumnView &csbot_cscen,
     // FIXME: can we get rid of this?
     // ColumnView qcldbrn[pver][maxd_aspectype],//[ntot_amode]
     const ColumnView qcldbrn_num[pver], // [ntot_amode]
@@ -1607,7 +1610,7 @@ void dropmixnuc(
   // FIXME: are we good on this? can delete?
   // NOTE FOR C++ PORT: Get the cloud borne MMRs from AD in variable qcldbrn,
   // do not port the code before END NOTE
-  const Real gravit = haero::Constants::gravity;
+  const Real gravity = haero::Constants::gravity;
   const Real rair = haero::Constants::r_gas_dry_air;
 
   // air_density [kg/m3]
@@ -1665,7 +1668,7 @@ void dropmixnuc(
   team.team_barrier();
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int k) {
-        zn(k) = gravit * rpdel[k];
+        zn(k) = gravity * rpdel[k];
         if (k >= top_lev - 1 && k < pver - 1) {
           csbot(k) = two * pint(k + 1) / (rair * (temp(k) + temp(k + 1)));
           csbot_cscen(k) =
@@ -1684,8 +1687,8 @@ void dropmixnuc(
         }
 
         dz(k) = one / (conversions::density_of_ideal_gas(temp(k), pmid(k)) *
-                       gravit * rpdel(k)); // layer thickness [m]
-      });                                  // end k
+                       gravity * rpdel(k)); // layer thickness [m]
+      });                                   // end k
 
   team.team_barrier();
 
@@ -1752,10 +1755,10 @@ void dropmixnuc(
         //           ndropcol(icol)   = ndropcol(icol) +
         //           ncldwtr(icol,kk)*pdel(icol,kk)
         // enddo
-        // ndropcol(icol) = ndropcol(icol)/gravit
+        // ndropcol(icol) = ndropcol(icol)/gravity
         // sum up ndropcol_kk outside of kk loop
         // column-integrated droplet number [#/m2]
-        ndropcol(k) = ncldwtr(k) * pdel(k) / gravit;
+        ndropcol(k) = ncldwtr(k) * pdel(k) / gravity;
         // tendency of interstitial aerosol mass, number mixing ratios
         // [#/kg/s] or [kg/kg/s]
         raertend(k) = zero;
@@ -1793,8 +1796,8 @@ void dropmixnuc(
             } // end if
             // NOTE: perform sum after loop. Thus, we need to store coltend_kk
             // and coltend_cw_kk Port this code outside of this function
-            coltend[mm](k) = pdel(k) * raertend(k) / gravit;
-            coltend_cw[mm](k) = pdel(k) * qqcwtend(k) / gravit;
+            coltend[mm](k) = pdel(k) * raertend(k) / gravity;
+            coltend_cw[mm](k) = pdel(k) * qqcwtend(k) / gravity;
             // set tendencies for interstitial aerosol
             ptend_q[lptr](k) = raertend(k);
 
