@@ -14,8 +14,6 @@ using namespace mam4;
 using namespace ndrop;
 void update_from_cldn_profile(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    // number of vertical points
-    // validation test from standalone ndrop
     const Real zero = 0;
     const int ntot_amode = AeroConfig::num_modes();
 

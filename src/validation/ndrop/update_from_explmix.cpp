@@ -12,6 +12,7 @@
 using namespace skywalker;
 using namespace mam4;
 
+// NOTE: to be done after merging.
 void update_from_explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
