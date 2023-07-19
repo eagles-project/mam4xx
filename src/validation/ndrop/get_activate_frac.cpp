@@ -70,11 +70,11 @@ void get_activate_frac(Ensemble *ensemble) {
         "get_activate_frac", pver, KOKKOS_LAMBDA(int kk) {
           const Real air_density =
               conversions::density_of_ideal_gas(tair(kk), pmid(kk));
-          // Note: Boltzmann's constant and Avogadro's number in
-          // haero::Constants have more digits that e3sm values. Thus, aten
+          // Note: Boltzmann’s constant and Avogadro’s number in
+          // haero::Constants have more digits than the e3sm values. Thus, aten
           // computed by ndrop_init has a relative difference of 1e-5 w.r.t
-          // e3sm’s aten which make this test fail. I will use value of aten
-          // from validation data only for testing proposes.
+          // e3sm’s aten which causes this to test fail. I will use value of
+          // aten from validation data only for testing proposes.
           Real aten_testing = 0.1206437615E-08;
 
           int nspec_amode[ntot_amode];
