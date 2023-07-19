@@ -15,8 +15,8 @@ using namespace mam4;
 void explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
-    const int top_lev = 6;
-    const int pver = input.get_array("pver")[0];
+    const int top_lev = ndrop::top_lev-1;
+    const int pver = ndrop::pver;
     const Real dtmix = input.get_array("dtmix")[0];
     const Real is_unact = input.get_array("is_unact")[0];
 
@@ -33,25 +33,6 @@ void explmix(Ensemble *ensemble) {
     }
 
     const Real zero = 0.0;
-
-    // FIXME: can this be deleted?
-    /*
-        ColumnView qold = haero::testing::create_column_view(pver);
-        ColumnView src = haero::testing::create_column_view(pver);
-        ColumnView ekkp = haero::testing::create_column_view(pver);
-        ColumnView ekkm = haero::testing::create_column_view(pver);
-        ColumnView overlapp = haero::testing::create_column_view(pver);
-        ColumnView overlapm = haero::testing::create_column_view(pver);
-        for (int kk = 0; kk < pver; ++kk)
-        {
-          qold(kk) = qold_db[kk];
-          src(kk) = src_db[kk];
-          ekkp(kk) = ekkp_db[kk];
-          ekkm(kk) = ekkm_db[kk];
-          overlapp(kk) = overlapp_db[kk];
-          overlapm(kk) = overlapm_db[kk];
-        }
-        */
 
     Real q[pver];
 

@@ -17,8 +17,8 @@ void ccncalc_single_cell(Ensemble *ensemble) {
     // number of vertical points.
     // validation test from standalone ndrop.
     const Real zero = 0;
-    const int maxd_aspectype = 14;
-    const int ntot_amode = 4;
+    const int maxd_aspectype = ndrop::maxd_aspectype;
+    const int ntot_amode = AeroConfig::num_modes();
     const int psat = ndrop::psat;
 
     const auto state_q = input.get_array("state_q");
