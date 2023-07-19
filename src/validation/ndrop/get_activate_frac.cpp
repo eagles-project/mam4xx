@@ -17,7 +17,7 @@ void get_activate_frac(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
     const int maxd_aspectype = ndrop::maxd_aspectype;
-    const int ntot_amode = 4;
+    const int ntot_amode = AeroConfig::num_modes();
     const int nvars = ndrop::nvars;
 
     const int pver = ndrop::pver;
@@ -27,29 +27,22 @@ void get_activate_frac(Ensemble *ensemble) {
     const auto pmid_db = input.get_array("pmid");
     const auto wsub_db = input.get_array("wsub");
 
-    using ColumnHostView = typename HostType::view_1d<Real>;
+    using View2D = ndrop::View2D;
+    using View1DHost = typename HostType::view_1d<Real>;
 
     int count = 0;
-    ColumnView state_q[pver];
-    ColumnHostView state_host[pver];
-
-    for (int kk = 0; kk < pver; ++kk) {
-      state_q[kk] = haero::testing::create_column_view(nvars);
-      state_host[kk] = ColumnHostView("state_host", nvars);
-    } // kk
+    View2D state_q("state_q", pver, nvars);
+    auto state_host = Kokkos::create_mirror_view(state_q);
 
     for (int i = 0; i < nvars; ++i) {
-      // input data is stored on the cpu.
+      // input data is store on the cpu.
       for (int kk = 0; kk < pver; ++kk) {
-        state_host[kk](i) = state_q_db[count];
+        state_host(kk, i) = state_q_db[count];
         count++;
       }
     }
 
-    for (int kk = 0; kk < pver; ++kk) {
-      // transfer data to GPU.
-      Kokkos::deep_copy(state_q[kk], state_host[kk]);
-    }
+    Kokkos::deep_copy(state_q, state_host);
 
     ColumnView tair;
     ColumnView pmid;
@@ -58,40 +51,20 @@ void get_activate_frac(Ensemble *ensemble) {
     pmid = haero::testing::create_column_view(pver);
     wsub = haero::testing::create_column_view(pver);
 
-    auto tair_host = Kokkos::create_mirror_view(tair);
-    auto pmid_host = Kokkos::create_mirror_view(pmid);
-    auto wsub_host = Kokkos::create_mirror_view(wsub);
 
-    // FIXME: has this been done?
-    // // FIXME. Find a better way:
-    for (int kk = 0; kk < pver; ++kk) {
-      tair_host(kk) = tair_db[kk];
-      pmid_host(kk) = pmid_db[kk];
-      wsub_host(kk) = wsub_db[kk];
-    }
+    auto tair_host = View1DHost((Real*)tair_db.data(),pver  );
+    auto pmid_host = View1DHost((Real*)pmid_db.data(),pver  );
+    auto wsub_host = View1DHost((Real*)wsub_db.data(),pver  );
 
     Kokkos::deep_copy(tair, tair_host);
     Kokkos::deep_copy(pmid, pmid_host);
     Kokkos::deep_copy(wsub, wsub_host);
 
-    const auto specdens_amode_db = input.get_array("specdens_amode");
-    const auto spechygro_db = input.get_array("spechygro");
-
-    const auto exp45logsig_db = input.get_array("exp45logsig");
-    const auto alogsig_db = input.get_array("alogsig");
-
-    ColumnView fn[pver];
-    ColumnView fm[pver];
-    ColumnView fluxn[pver];
-    ColumnView fluxm[pver];
+    View2D fn("fn", pver, ntot_amode );
+    View2D fm("fm", pver, ntot_amode );
+    View2D fluxn("fluxn", pver, ntot_amode );
+    View2D fluxm("fluxm", pver, ntot_amode );
     ColumnView flux_fullact = haero::testing::create_column_view(pver);
-
-    for (int i = 0; i < pver; ++i) {
-      fn[i] = haero::testing::create_column_view(ntot_amode);
-      fm[i] = haero::testing::create_column_view(ntot_amode);
-      fluxn[i] = haero::testing::create_column_view(ntot_amode);
-      fluxm[i] = haero::testing::create_column_view(ntot_amode);
-    }
 
     Kokkos::parallel_for(
         "get_activate_frac", pver, KOKKOS_LAMBDA(int kk) {
@@ -143,58 +116,59 @@ void get_activate_frac(Ensemble *ensemble) {
                                       0.5877866649E+00, 0.4700036441E+00};
           Real aten = 0.1206437615E-08;
 
+          const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
+          const auto fn_k = Kokkos::subview(fn, kk, Kokkos::ALL());
+          const auto fm_k = Kokkos::subview(fm, kk, Kokkos::ALL());
+          const auto fluxn_k = Kokkos::subview(fluxn, kk, Kokkos::ALL());
+          const auto fluxm_k = Kokkos::subview(fluxm, kk, Kokkos::ALL());
+
           ndrop::get_activate_frac(
-              state_q[kk].data(), air_density, air_density, wsub(kk),
+              state_q_k.data(), air_density, air_density, wsub(kk),
               tair(kk), // in
               lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
               voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
-              exp45logsig, alogsig, aten, fn[kk].data(), fm[kk].data(),
-              fluxn[kk].data(), fluxm[kk].data(), flux_fullact(kk));
+              exp45logsig, alogsig, aten, fn_k.data(), fm_k.data(),
+              fluxn_k.data(), fluxm_k.data(), flux_fullact(kk));
         });
+
+
+    auto fn_host = Kokkos::create_mirror_view(fn);
+    Kokkos::deep_copy(fn_host, fn);
+
+    auto fm_host = Kokkos::create_mirror_view(fm);
+    Kokkos::deep_copy(fm_host, fm);
+
+    auto fluxn_host = Kokkos::create_mirror_view(fluxn);
+    Kokkos::deep_copy(fluxn_host,fluxn );
+
+    auto fluxm_host = Kokkos::create_mirror_view(fluxm);
+    Kokkos::deep_copy(fluxm_host, fluxm);
 
     std::vector<Real> host_v(pver);
 
-    ColumnHostView fn_host[pver];
-    ColumnHostView fm_host[pver];
-    ColumnHostView fluxn_host[pver];
-    ColumnHostView fluxm_host[pver];
-
-    for (int kk = 0; kk < pver; ++kk) {
-      fn_host[kk] = ColumnHostView("fn_host", ntot_amode);
-      Kokkos::deep_copy(fn_host[kk], fn[kk]);
-
-      fm_host[kk] = ColumnHostView("fm_host", ntot_amode);
-      Kokkos::deep_copy(fm_host[kk], fm[kk]);
-
-      fluxn_host[kk] = ColumnHostView("fluxn_host", ntot_amode);
-      Kokkos::deep_copy(fluxn_host[kk], fluxn[kk]);
-
-      fluxm_host[kk] = ColumnHostView("fluxm_host", ntot_amode);
-      Kokkos::deep_copy(fluxm_host[kk], fluxm[kk]);
-    }
 
     for (int i = 0; i < ntot_amode; ++i) {
 
       for (int kk = 0; kk < pver; ++kk) {
-        host_v[kk] = fn_host[kk](i);
+        host_v[kk] = fn_host(kk,i);
       } // k
 
       output.set("fn_" + std::to_string(i + 1), host_v);
 
       for (int kk = 0; kk < pver; ++kk) {
-        host_v[kk] = fm_host[kk](i);
+        host_v[kk] = fm_host(kk,i);
       } // k
 
       output.set("fm_" + std::to_string(i + 1), host_v);
 
       for (int kk = 0; kk < pver; ++kk) {
-        host_v[kk] = fluxn_host[kk](i);
+        host_v[kk] = fluxn_host(kk,i);
       } // k
 
       output.set("fluxn_" + std::to_string(i + 1), host_v);
 
       for (int kk = 0; kk < pver; ++kk) {
-        host_v[kk] = fluxm_host[kk](i);
+        host_v[kk] = fluxm_host(kk,i);
       }
       output.set("fluxm_" + std::to_string(i + 1), host_v);
     } // i
