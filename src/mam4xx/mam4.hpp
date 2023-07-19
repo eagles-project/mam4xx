@@ -16,6 +16,8 @@
 #include <mam4xx/coagulation.hpp>
 #include <mam4xx/convproc.hpp>
 #include <mam4xx/drydep.hpp>
+#include <mam4xx/gas_chem.hpp>
+#include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/gasaerexch.hpp>
 #include <mam4xx/hetfrz.hpp>
 #include <mam4xx/mam4_types.hpp>
