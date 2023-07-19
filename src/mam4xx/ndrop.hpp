@@ -20,6 +20,7 @@ namespace ndrop {
 // this is to differentiate the ColumnViews that are [pver][2]
 // rather than [nspec][nmode]
 using View1D = DeviceType::view_1d<Real>;
+using View2D = DeviceType::view_2d<Real>;
 
 // number of vertical levels
 const int pver = 72;
@@ -1511,8 +1512,8 @@ KOKKOS_INLINE_FUNCTION
 void dropmixnuc(
     const ThreadTeam &team, const Real dtmicro, const ColumnView &temp,
     const ColumnView &pmid, const ColumnView &pint, const ColumnView &pdel,
-    const ColumnView &rpdel, const ColumnView &zm, const View1D state_q[pver],
-    const ColumnView &ncldwtr,
+    const ColumnView &rpdel, const ColumnView &zm,
+    const View2D &state_q, const ColumnView &ncldwtr,
     // v_diffusivity[kk+1] FIXME: what does this comment mean?
     const ColumnView &v_diffusivity, const ColumnView &cldn,
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
@@ -1633,7 +1634,7 @@ void dropmixnuc(
           raercol_cw[k][nsav](mm) = qqcw_fld[mm](k);
           // Fortran indexing to C++ indexing
           const int num_idx = numptr_amode[imode] - 1;
-          raercol[k][nsav][mm] = state_q[k][num_idx];
+          raercol[k][nsav][mm] = state_q(k, num_idx);
           for (int lspec = 1; lspec < nspec_amode[imode] + 1; ++lspec) {
             // Fortran indexing to C++ indexing
             const int mm = mam_idx[imode][lspec] - 1;
@@ -1641,18 +1642,19 @@ void dropmixnuc(
             raercol_cw[k][nsav](mm) = qqcw_fld[mm](k);
             // Fortran indexing to C++ indexing
             const int spc_idx = lmassptr_amode[lspec - 1][imode] - 1;
-            raercol[k][nsav][mm] = state_q[k][spc_idx];
+            raercol[k][nsav][mm] = state_q(k, spc_idx);
           } // lspec
         }   // imode
 
         // PART I:  changes of aerosol and cloud water from temporal changes in
         // cloud fraction droplet nucleation/aerosol activation
         nsource(k) = zero;
+        const auto state_q_k = Kokkos::subview(state_q, k, Kokkos::ALL());
 
         update_from_newcld(cldn(k), cldo(k), dtinv, // in
                            wtke(k), temp(k),
                            conversions::density_of_ideal_gas(temp(k), pmid(k)),
-                           state_q[k].data(), // in
+                           state_q_k.data(), // in
                            lspectype_amode, specdens_amode, spechygro,
                            lmassptr_amode, voltonumbhi_amode, voltonumblo_amode,
                            numptr_amode, nspec_amode, exp45logsig, alogsig,
@@ -1696,12 +1698,14 @@ void dropmixnuc(
 
         // PART II: changes in aerosol and cloud water from vertical profile of
         // new cloud fraction
+        const auto state_q_kp1 = Kokkos::subview(state_q, kp1, Kokkos::ALL());
+
         update_from_cldn_profile(
             cldn(k), cldn(kp1), dtinv, wtke(k), zs(k), dz(k), // in
             temp(k), conversions::density_of_ideal_gas(temp(k), pmid(k)),
             conversions::density_of_ideal_gas(temp(kp1), pmid(kp1)),
             csbot_cscen(k),
-            state_q[kp1].data(), // in
+            state_q_kp1.data(), // in
             lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
             voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
             exp45logsig, alogsig, aten, mam_idx, raercol[k][nsav].data(),
@@ -1780,13 +1784,13 @@ void dropmixnuc(
               // Fortran indexing to C++ indexing
               const int num_idx = numptr_amode[imode] - 1;
               raertend(k) =
-                  (raercol[k][nnew](mm) - state_q[k](num_idx)) * dtinv;
+                  (raercol[k][nnew](mm) - state_q(k, num_idx)) * dtinv;
               qcldbrn_num[k](imode) = qqcw_fld[mm](k);
             } else {
               // Fortran indexing to C++ indexing
               const int spc_idx = lmassptr_amode[lspec - 1][imode] - 1;
               raertend(k) =
-                  (raercol[k][nnew](mm) - state_q[k](spc_idx)) * dtinv;
+                  (raercol[k][nnew](mm) - state_q(k, spc_idx)) * dtinv;
               // Extract cloud borne MMRs from qqcw pointer
               qcldbrn[lspec][imode] = qqcw_fld[mm](k);
             } // end if
@@ -1800,9 +1804,11 @@ void dropmixnuc(
           } // lspec
         }   // imode
 
+        const auto state_q_k = Kokkos::subview(state_q, k, Kokkos::ALL());
+
         //  Use interstitial and cloud-borne aerosol to compute output
         // ccn fields.
-        ccncalc(state_q[k].data(), temp(k), qcldbrn, qcldbrn_num[k].data(),
+        ccncalc(state_q_k.data(), temp(k), qcldbrn, qcldbrn_num[k].data(),
                 conversions::density_of_ideal_gas(temp(k), pmid(k)),
                 lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
                 voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,

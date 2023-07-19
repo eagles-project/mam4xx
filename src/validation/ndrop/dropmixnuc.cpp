@@ -44,31 +44,24 @@ void dropmixnuc(Ensemble *ensemble) {
     const auto qqcw_db = input.get_array("qqcw");
 
     using View1D = ndrop::View1D;
-    View1D state_q[pver];
+    using View2D = ndrop::View2D;
 
     using View1DHost = typename HostType::view_1d<Real>;
 
     int count = 0;
 
-    View1DHost state_host[pver];
-
-    for (int kk = 0; kk < pver; ++kk) {
-      state_q[kk] = View1D("state_q", nvars);
-      state_host[kk] = View1DHost("state_host", nvars);
-    } // kk
+    View2D state_q("state_q", pver, nvars);
+    auto state_host = Kokkos::create_mirror_view(state_q);
 
     for (int i = 0; i < nvars; ++i) {
       // input data is store on the cpu.
       for (int kk = 0; kk < pver; ++kk) {
-        state_host[kk](i) = state_q_db[count];
+        state_host(kk, i) = state_q_db[count];
         count++;
       }
     }
 
-    for (int kk = 0; kk < pver; ++kk) {
-      // transfer data to GPU.
-      Kokkos::deep_copy(state_q[kk], state_host[kk]);
-    }
+    Kokkos::deep_copy(state_q, state_host);
 
     ColumnView qqcw[ncnst_tot];
     View1DHost qqcw_host[ncnst_tot];
