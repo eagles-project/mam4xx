@@ -28,6 +28,7 @@ void compute_tendencies(Ensemble *ensemble) {
     int nlev = 1;
     Real pblh = 1000;
     Atmosphere atm = validation::create_atmosphere(nlev, pblh);
+    Surface sfc = validation::create_surface();
     mam4::Prognostics progs = validation::create_prognostics(nlev);
     mam4::Diagnostics diags = validation::create_diagnostics(nlev);
     mam4::Tendencies tends = validation::create_tendencies(nlev);
@@ -74,7 +75,8 @@ void compute_tendencies(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
+          process.compute_tendencies(team, t, dt, atm, sfc, progs, diags,
+                                     tends);
         });
 
     // Outputs from e3sm are saved in 1D array of 21 inputs.

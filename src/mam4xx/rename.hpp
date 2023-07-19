@@ -514,11 +514,11 @@ public:
           // [m3-spc/kmol-air] (where m3-species) is meter cubed volume of a
           // species) used for avoiding overflow. it corresponds to dp = 1 nm
           // and number = 1e-5 #/mg-air ~= 1e-5 #/cm3-air
-          _smallest_dryvol_value{1.0e-25}, _mam4xx2rename_idx{
-                                               {0, 1, 2, 3, 4, 5, 6},
-                                               {0, 1, -1, -1, 4, 6, -1},
-                                               {0, 1, 2, 3, 4, 5, 6},
-                                               {2, 3, 6, -1, -1, -1, -1}} {}
+          _smallest_dryvol_value{1.0e-25},
+          _mam4xx2rename_idx{{0, 1, 2, 3, 4, 5, 6},
+                             {0, 1, -1, -1, 4, 6, -1},
+                             {0, 1, 2, 3, 4, 5, 6},
+                             {2, 3, 6, -1, -1, -1, -1}} {}
 
     Config(const Config &) = default;
     ~Config() = default;

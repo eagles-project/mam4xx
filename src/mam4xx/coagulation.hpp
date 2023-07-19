@@ -13,6 +13,7 @@
 #include <haero/atmosphere.hpp>
 #include <haero/constants.hpp>
 #include <haero/haero.hpp>
+#include <haero/surface.hpp>
 #include <iomanip>
 #include <iostream>
 
@@ -51,7 +52,8 @@ public:
   // valid, false if not
   KOKKOS_INLINE_FUNCTION
   bool validate(const AeroConfig &config, const ThreadTeam &team,
-                const Atmosphere &atm, const Prognostics &progs) const {
+                const Atmosphere &atm, const Surface &sfc,
+                const Prognostics &progs) const {
     // TODO
     return true;
   }
@@ -62,7 +64,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
                           Real t, Real dt, const Atmosphere &atm,
-                          const Prognostics &progs, const Diagnostics &diags,
+                          const Surface &sfc, const Prognostics &progs,
+                          const Diagnostics &diags,
                           const Tendencies &tends) const;
 
 private:
@@ -1201,7 +1204,7 @@ inline void Coagulation::init(const AeroConfig &aero_config,
 KOKKOS_INLINE_FUNCTION
 void Coagulation::compute_tendencies(const AeroConfig &config,
                                      const ThreadTeam &team, Real t, Real dt,
-                                     const Atmosphere &atm,
+                                     const Atmosphere &atm, const Surface &sfc,
                                      const Prognostics &progs,
                                      const Diagnostics &diags,
                                      const Tendencies &tends) const {

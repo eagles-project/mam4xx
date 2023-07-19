@@ -13,6 +13,7 @@
 #include <haero/constants.hpp>
 #include <haero/floating_point.hpp>
 #include <haero/gas_species.hpp>
+#include <haero/surface.hpp>
 
 namespace mam4 {
 
@@ -22,6 +23,7 @@ using Real = haero::Real;
 using ColumnView = haero::ColumnView;
 template <typename ST> using FloatingPoint = haero::FloatingPoint<ST>;
 using Atmosphere = haero::Atmosphere;
+using Surface = haero::Surface;
 using AeroSpecies = haero::AeroSpecies;
 using GasSpecies = haero::GasSpecies;
 using ThreadTeam = haero::ThreadTeam;

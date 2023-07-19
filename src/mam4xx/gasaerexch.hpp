@@ -147,7 +147,8 @@ public:
   // valid, false if not
   KOKKOS_INLINE_FUNCTION
   bool validate(const AeroConfig &config, const ThreadTeam &team,
-                const Atmosphere &atm, const Prognostics &progs) const {
+                const Atmosphere &atm, const Surface &sfc,
+                const Prognostics &progs) const {
     // Make sure relevant atmospheric quantities are physical.
     const int nk = atm.num_levels();
     int violations = 0;
@@ -176,7 +177,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
                           Real t, Real dt, const Atmosphere &atm,
-                          const Prognostics &progs, const Diagnostics &diags,
+                          const Surface &sfc, const Prognostics &progs,
+                          const Diagnostics &diags,
                           const Tendencies &tends) const;
 
 private:
@@ -848,7 +850,7 @@ inline void GasAerExch::init(const AeroConfig &aero_config,
 KOKKOS_INLINE_FUNCTION
 void GasAerExch::compute_tendencies(const AeroConfig &config,
                                     const ThreadTeam &team, Real t, Real dt,
-                                    const Atmosphere &atm,
+                                    const Atmosphere &atm, const Surface &sfc,
                                     const Prognostics &progs,
                                     const Diagnostics &diags,
                                     const Tendencies &tends) const {
