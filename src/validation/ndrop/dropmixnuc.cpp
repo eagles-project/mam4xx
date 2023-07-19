@@ -217,11 +217,8 @@ void dropmixnuc(Ensemble *ensemble) {
     }
 
     View2D nact("nact", pver, ntot_amode);
-    View1D mact[pver];
+    View2D mact("mact", pver, ntot_amode);
 
-    for (int i = 0; i < pver; ++i) {
-      mact[i] = View1D("nact", ntot_amode);
-    }
 
     ColumnView ekd;
     ekd = haero::testing::create_column_view(pver);
