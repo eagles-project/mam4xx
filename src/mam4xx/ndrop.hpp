@@ -17,8 +17,6 @@ namespace mam4 {
 
 namespace ndrop {
 
-// this is to differentiate the ColumnViews that are [pver][2]
-// rather than [nspec][nmode]
 using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;
 
@@ -27,8 +25,7 @@ const int pver = 72;
 // Top level for troposphere cloud physics
 const int top_lev = 7;
 const int psat = 6; //  number of supersaturations to calc ccn concentration
-// *** FIXME: please add comments for the nvars, maxd_aspectype, nvar_ptend_q
-// variables below?***
+//  number of variables in state_q
 const int nvars = 40;
 const int maxd_aspectype = 14;
 // BAD CONSTANT
@@ -39,8 +36,8 @@ const Real t0 = 273.0;
 // pressure at sea level [Pa] (1 atm)
 const Real p0 = 1013.25e2;
 const int nvar_ptend_q = 40;
-// FIXME; surften is defined in ndrop_init--mjs: is this comment still
-// meaningful? BAD CONSTANT surface tension of water w/respect to air (N/m)
+// BAD CONSTANT
+// surface tension of water w/respect to air (N/m)
 const Real surften = 0.076;
 // total number of mode number conc + mode species
 const int ncnst_tot = 25;
@@ -128,19 +125,17 @@ void get_aer_mmr_sum(
     const Real spechygro[maxd_aspectype],
     const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
     Real &vaerosolsum_icol, Real &hygrosum_icol) {
-  // FIXME(mjs): is this comment still meaningful?
-  // add these for direct access to mmr (in state_q array), density and
-  // hygroscopicity use modal_aero_data,   only: lspectype_amode,
-  // specdens_amode, spechygro, lmassptr_amode
+
+  // @param[in] imode  mode index
+  // @param[in] nspec  total # of species in mode imode
+  // @param[in] state_q interstitial aerosol mass mixing ratios [kg/kg]
+  // @param[in] qcldbrn1d cloud-borne aerosol mass mixing ratios [kg/kg]
+
   const Real zero = 0;
   // sum to find volume conc [m3/kg]
   vaerosolsum_icol = zero;
   // sum to bulk hygroscopicity of mode [m3/kg]
   hygrosum_icol = zero;
-  // @param[in] imode  mode index
-  // @param[in] nspec  total # of species in mode imode
-  // @param[in] state_q interstitial aerosol mass mixing ratios [kg/kg]
-  // @param[in] qcldbrn1d cloud-borne aerosol mass mixing ratios [kg/kg]
 
   // Start to compute bulk volume conc / hygroscopicity by summing over species
   // per mode.
@@ -188,10 +183,6 @@ void get_aer_num(const Real voltonumbhi_amode, const Real voltonumblo_amode,
 
 } // end get_aer_num
 
-// calculates maximum supersaturation for multiple
-// competing aerosol modes.
-// Abdul-Razzak and Ghan, A parameterization of aerosol activation.
-// 2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
 KOKKOS_INLINE_FUNCTION
 void maxsat(
     // TODO: what are zeta and eta?
@@ -202,15 +193,21 @@ void maxsat(
     const Real smode_crit[AeroConfig::num_modes()],
     Real &smax // maximum supersaturation [fraction] (output)
 ) {
+
+  /* calculates maximum supersaturation for multiple
+        competing aerosol modes.
+
+    Abdul-Razzak and Ghan, A parameterization of aerosol activation.
+    2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844. */
+
   // abdul-razzak functions of width
   Real ar_func1[AeroConfig::num_modes()];
   Real ar_func2[AeroConfig::num_modes()];
 
-  Real const small = 1e-20;     /*FIXME: BAD CONSTANT*/
-  Real const mid = 1e5;         /*FIXME: BAD CONSTANT*/
-  Real const big = 1.0 / small; /*FIXME: BAD CONSTANT*/
+  Real const small = 1e-20;     /*BAD CONSTANT*/
+  Real const mid = 1e5;         /*BAD CONSTANT*/
+  Real const big = 1.0 / small; /*BAD CONSTANT*/
   Real sum = 0;
-  // TODO: do g1, g2 have any meaning, or just temp variables?
   Real g1, g2;
   bool weak_forcing = true; // whether forcing is sufficiently weak or not
 
@@ -248,8 +245,6 @@ void maxsat(
   return;
 } // end maxsat
 
-// return aerosol number, volume concentrations, and bulk hygroscopicity at one
-// specific column and level
 KOKKOS_INLINE_FUNCTION
 void loadaer(const Real state_q[nvars],
              const int nspec_amode[AeroConfig::num_modes()], Real air_density,
@@ -266,6 +261,9 @@ void loadaer(const Real state_q[nvars],
              Real naerosol[AeroConfig::num_modes()],
              Real vaerosol[AeroConfig::num_modes()],
              Real hygro[AeroConfig::num_modes()]) {
+
+  // return aerosol number, volume concentrations, and bulk hygroscopicity at
+  // one specific column and level
 
   // input arguments
   // @param [in] state_q(:)         aerosol mmrs [kg/kg]
@@ -302,10 +300,7 @@ void loadaer(const Real state_q[nvars],
   // subroutine
 
   const Real zero = 0;
-  // FIXME mam4 arrays shape--mjs: what's the story on these FIXMEs?
-  // const Real nspec = AeroConfig::num_aerosol_ids();
   Real qcldbrn1d_imode[AeroConfig::num_aerosol_ids()] = {};
-  // FIXME number of species
   for (int imode = 0; imode < nmodes; ++imode) {
     Real vaerosolsum = zero;
     Real hygrosum = zero;
@@ -388,7 +383,7 @@ void ccncalc(const Real state_q[nvars], const Real tair,
   // supersaturation [fraction]
   const Real sq2 = haero::sqrt(2.0);
   const Real two_over_root27 = 2.0 / haero::sqrt(27.0);
-  // FIXME: BAD CONSTANT(?)
+  // BAD CONSTANT
   // supersaturation (%) to determine ccn concentration
   const Real super[psat] = {0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01};
   // phase of aerosol
@@ -551,8 +546,6 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // @param [in] nmode     number of aerosol modes
   // @param [in] volume(:) aerosol volume concentration [m3/m3]
   // @param [in] hygro(:)  hygroscopicity of aerosol mode [dimensionless]
-  // @param [in] smax_prescribed  prescribed max. supersaturation for
-  // secondary activation [fraction]
 
   // output
   // @param [out] fn(:)        number fraction of aerosols activated
@@ -564,6 +557,9 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // cloud [m/s]
   // @param [out] flux_fullact flux of activated aerosol fraction assuming
   // 100% activation [m/s]
+
+  // Note: We did not include  the optional parameters smax_prescribed(
+  // supersaturation for secondary activation [fraction])
 
   // ---------------------------------------------------------------------------------
   // flux_fullact is used for consistency check -- this should match
@@ -582,8 +578,8 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   constexpr int nmode = AeroConfig::num_modes();
   // BAD CONSTANT
   // return if aerosol number is negligible in the accumulation mode
-  // FIXME use index of accumulation mode
-  if (na[0] < 1.0e-20) {
+  const int accum_idx = int(ModeIndex::Accumulation);
+  if (na[accum_idx] < 1.0e-20) {
     return;
   }
 
@@ -607,7 +603,6 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   const Real pres = rair * rhoair * tair; // pressure [Pa]
   // Obtain Saturation vapor pressure (svp) and saturation specific humidity
   // (qs)
-  //  FIXME: check if we have implemented qsat
   //  water vapor saturation specific humidity [kg/kg]
   Real qs = zero;
   // saturation vapor pressure [Pa]
@@ -634,8 +629,6 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
                                 latvap * rhoh2o / (conduct0 * tair) *
                                     (latvap / (rh2o * tair) - one));
   const Real beta = two * pi * rhoh2o * gthermfac * gamma; // [m2/s]
-  // FIXME: is this comment still useful?
-  // nucleation w, but = w_in if wdiab == 0 [m/s]
   const Real wnuc = w_in;
   const Real alw = alpha * wnuc;                  // [/s]
   const Real etafactor1 = alw * haero::sqrt(alw); // [/ s^(3/2)]
@@ -685,13 +678,6 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
     eta[imode] = etafactor1 * etafactor2[imode];
   } // end imode
 
-  // FIXME: are these comments helpful still?
-  // Find maximum supersaturation
-  // Use supersat_prescribed if it is present; otherwise get supersat from subr
-  // maxsat if ( present( supersat_prescribed ) ) then
-  //  maximum supersaturation [fraction]
-  // const Real supersat = supersat_prescribed;
-  // else
   Real supersat = zero;
 
   maxsat(zeta, eta, nmode, ssat_crit_imode, supersat);
@@ -921,9 +907,6 @@ void update_from_cldn_profile(
       // also, d(qact)/dt can be negative.
       // in the code below it is forced to be >= 0
 
-      // Umm... FIXME FIXME FIXME?!?
-      // Is this comment relevant?
-
       // steve --
       // you will likely want to change this. i did not really understand
       // what was previously being done in k=pver
@@ -1031,12 +1014,12 @@ void update_from_newcld(
 
   if (cldn_col_in < cldo_col_in) {
     //  droplet loss in decaying cloud
-    // FIXME: does this mean anything?
+    // FIXME: does this mean anything? (from Fortran code)
     // ++ sungsup
     nsource_col_out += qcld * (cldn_col_in - cldo_col_in) / cldo_col_in * dtinv;
 
     qcld *= (one + (cldn_col_in - cldo_col_in) / cldo_col_in);
-    // FIXME: does this mean anything?
+    // FIXME: does this mean anything? (from Fortran code)
     // -- sungsup
     // convert activated aerosol to interstitial in decaying cloud
     // fractional change in cloud fraction [fraction]
@@ -1080,10 +1063,6 @@ void update_from_newcld(
                       numptr_amode, nspec_amode, exp45logsig, alogsig, aten,
                       factnum_col_out, fm, fluxn, fluxm, // out
                       flux_fullact);
-
-    // FIXME: is this just leftover?
-    //  store for output activation fraction of aerosol
-    // factnum_col_out(kk,:) = fn
 
     for (int imode = 0; imode < ntot_amode; ++imode) {
       // Fortran indexing to C++ indexing
@@ -1285,33 +1264,19 @@ void update_from_explmix(
         // can be too big, and explmix can produce negative values.
         // the negative values are reset to zero, resulting in an
         // artificial source.
-        // FIXME: BAD CONSTANT
+        //  BAD CONSTANT
         if (tinv > 1e-6) {
           min_val = haero::min(min_val, one / tinv);
         }
       },
       Kokkos::Min<Real>(dtmin));
   team.team_barrier();
-  // FIXME: is this still to be done?
-  // TODO
-  //    fix dtmin section
-  //    pass arrs as columnviews and k len instead of single values
-  //    loop over k for calls to explmix
-  //    for things like src, qcld, loop over to assign the values
-  //    pass overlapp etc as params as work vars so they are allocated elsewhere
 
   // timescale for subloop [s]
   //  BAD CONSTANT
   Real dtmix = 0.9 * dtmin;
   // number of substeps and bound
   const int nsubmix = dtmicro / dtmix + 1;
-  // FIXME: nsubmix_bnd is used in the code. Ask Fortran team.
-  //  re: nsubmix_bnd isn't used in the code?
-  //  if (nsubmix > 100) {
-  //     nsubmix_bnd = 100;
-  //  } else {
-  //     nsubmix_bnd = nsubmix;
-  //  }
 
   dtmix = dtmicro / nsubmix;
 
@@ -1370,11 +1335,9 @@ void update_from_explmix(
           const int k = top_lev - 1 + kk;
           const int kp1 = haero::min(k + 1, pver - 1);
           const int km1 = haero::max(k - 1, top_lev - 1);
-          explmix(qncld(km1), qncld(k), qncld(kp1),
-                  qcld(k), // output FIXME: move to last position
-                  // FIXME: still looking at this?
-                  srcn(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
-                  overlapm(k), dtmix);
+          explmix(qncld(km1), qncld(k), qncld(kp1), qcld(k), srcn(k),
+                  eddy_diff_kp(k), eddy_diff_km(k), overlapp(k), overlapm(k),
+                  dtmix);
         });
 
     team.team_barrier();
@@ -1395,18 +1358,12 @@ void update_from_explmix(
           KOKKOS_LAMBDA(int kk) {
             const int k = top_lev - 1 + kk;
             const int kp1 = haero::min(k + 1, pver - 1);
-            // FIXME: is this still needed?
-            // const int km1 = haero::max(k-1, top_lev);
             source(k) = nact(k, imode) * raercol[kp1][nsav](mm);
           }); // end k
 
       tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
              raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
       source(pver - 1) = haero::max(zero, tmpa);
-
-      // FIXME: still needed?
-      // raercol_cw[mm][nnew] == qold
-      // raercol_cw[mm][nsav] == qnew
 
       Kokkos::parallel_for(
           Kokkos::TeamThreadRange(team, pver - top_lev + 1),
@@ -1415,20 +1372,15 @@ void update_from_explmix(
             const int kp1 = haero::min(k + 1, pver - 1);
             const int km1 = haero::max(k - 1, top_lev - 1);
 
-            explmix(
-                raercol_cw[km1][nsav](mm), raercol_cw[k][nsav](mm),
-                raercol_cw[kp1][nsav](mm),
-                raercol_cw[k][nnew](mm), // output FIXME: move to last position
-                source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
-                overlapm(k), dtmix);
-            // raercol[mm][nnew] == qold
-            // raercol[mm][nsav] == qnew
-            // raercol_cw[mm][nsav] == qactold
-            // FIXME: needed?
+            explmix(raercol_cw[km1][nsav](mm), raercol_cw[k][nsav](mm),
+                    raercol_cw[kp1][nsav](mm),
+                    raercol_cw[k][nnew](mm), //
+                    source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
+                    overlapm(k), dtmix);
 
             explmix(raercol[km1][nsav](mm), raercol[k][nsav](mm),
                     raercol[kp1][nsav](mm),
-                    raercol[k][nnew](mm), // output FIXME: move to last position
+                    raercol[k][nnew](mm), // output
                     source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
                     overlapm(k), dtmix, raercol_cw[km1][nsav](mm),
                     raercol_cw[kp1][nsav](mm)); // optional in
@@ -1449,10 +1401,6 @@ void update_from_explmix(
         tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
                raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
         source(pver - 1) = haero::max(zero, tmpa);
-
-        // FIXME: i'm guessing these aren't needed? :)
-        // raercol_cw[mm][nnew] == qold
-        // raercol_cw[mm][nsav] == qnew
         Kokkos::parallel_for(
             Kokkos::TeamThreadRange(team, pver - top_lev + 1),
             KOKKOS_LAMBDA(int kk) {
@@ -1461,23 +1409,16 @@ void update_from_explmix(
               const int km1 = haero::max(k - 1, top_lev - 1);
               explmix(raercol_cw[km1][nsav](mm), raercol_cw[k][nsav](mm),
                       raercol_cw[kp1][nsav](mm),
-                      raercol_cw[k][nnew](
-                          mm), // output FIXME: move to last position
+                      raercol_cw[k][nnew](mm), // output
                       source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
                       overlapm(k), dtmix);
-              // FIXME
-              // raercol[mm][nnew] == qold
-              // raercol[mm][nsav] == qnew
-              // raercol_cw[mm][nsav] == qactold
-              explmix(
-                  raercol[km1][nsav](mm), raercol[k][nsav](mm),
-                  raercol[kp1][nsav](mm),
-                  raercol[k][nnew](mm), //// output FIXME: move to last position
-                  source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
-                  overlapm(k), dtmix, raercol_cw[km1][nsav](mm),
-                  raercol_cw[kp1][nsav](mm)); // optional in
-              // FIXME: i'm guessing that this has changed?
-            }); // end k
+              explmix(raercol[km1][nsav](mm), raercol[k][nsav](mm),
+                      raercol[kp1][nsav](mm),
+                      raercol[k][nnew](mm), // output
+                      source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
+                      overlapm(k), dtmix, raercol_cw[km1][nsav](mm),
+                      raercol_cw[kp1][nsav](mm)); // optional in
+            });                                   // end kk
 
         team.team_barrier();
       } // lspec loop
@@ -1513,9 +1454,8 @@ void dropmixnuc(
     const ThreadTeam &team, const Real dtmicro, const ColumnView &temp,
     const ColumnView &pmid, const ColumnView &pint, const ColumnView &pdel,
     const ColumnView &rpdel, const ColumnView &zm, const View2D &state_q,
-    const ColumnView &ncldwtr,
-    // v_diffusivity[kk+1] FIXME: what does this comment mean?
-    const ColumnView &v_diffusivity, const ColumnView &cldn,
+    const ColumnView &ncldwtr, const ColumnView &v_diffusivity,
+    const ColumnView &cldn,
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
     const Real specdens_amode[maxd_aspectype],
     const Real spechygro[maxd_aspectype],
@@ -1599,10 +1539,7 @@ void dropmixnuc(
   /// inverse time step for microphysics [s^-1]
   const Real dtinv = one / dtmicro;
   const int ntot_amode = AeroConfig::num_modes();
-  // THIS constant depends on the chem mechanism
-  // FIXME: can we clarify this or delete? is it ntot_amode that depends?
 
-  // FIXME: are we good on this? can delete?
   // NOTE FOR C++ PORT: Get the cloud borne MMRs from AD in variable qcldbrn,
   // do not port the code before END NOTE
   const Real gravity = haero::Constants::gravity;
@@ -1674,11 +1611,7 @@ void dropmixnuc(
           eddy_diff(k) =
               utils::min_max_bound(zkmin, zkmax, v_diffusivity(k + 1));
         } else {
-          // FIXME: which density k or kp1? FIXME
           csbot(k) = conversions::density_of_ideal_gas(temp(k), pmid(k));
-          // FIXME ; check this FIXME: delete?
-          // csbot_km1 = two * pint(k - 1) / (rair * (temp(k - 2) + temp(k -
-          // 1)));
           csbot_cscen(k) = one;
           zs(k) = one / (zm(k - 1) - zm(k));
         }
@@ -1723,7 +1656,6 @@ void dropmixnuc(
   // PART III:  perform explicit integration of droplet/aerosol mixing using
   // substepping
 
-  // FIXME: what is nnew?
   int nnew = 1;
 
   update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, eddy_diff, nact, mact,
@@ -1750,13 +1682,6 @@ void dropmixnuc(
         ndropmix(k) = (qcld(k) - ncldwtr(k)) * dtinv - nsource(k);
         // BAD CONSTANT
         tendnd(k) = (haero::max(qcld(k), 1.e-6) - ncldwtr(k)) * dtinv;
-        // FIXME: has this been done?
-        // We need to port this outside of this function
-        // this is a reduction
-        // do kk = top_lev, pver
-        //           ndropcol(icol)   = ndropcol(icol) +
-        //           ncldwtr(icol,kk)*pdel(icol,kk)
-        // enddo
         // ndropcol(icol) = ndropcol(icol)/gravity
         // sum up ndropcol_kk outside of kk loop
         // column-integrated droplet number [#/m2]
