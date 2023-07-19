@@ -241,16 +241,11 @@ void dropmixnuc(Ensemble *ensemble) {
     dz = haero::testing::create_column_view(pver);
     csbot_cscen = haero::testing::create_column_view(pver);
 
-    // ColumnView qcldbrn[pver][maxd_aspectype];//[ntot_amode],
-    View1D qcldbrn_num[pver]; // [ntot_amode]
     ColumnView raertend, qqcwtend;
 
     raertend = haero::testing::create_column_view(pver);
     qqcwtend = haero::testing::create_column_view(pver);
 
-    for (int i = 0; i < pver; ++i) {
-      qcldbrn_num[i] = View1D("qcldbrn_num", ntot_amode);
-    }
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -295,7 +290,7 @@ void dropmixnuc(Ensemble *ensemble) {
               // work arrays
               zn, csbot, zs, overlapp, overlapm, ekkp, ekkm, qncld, srcn,
               source, dz, csbot_cscen,
-              /*qcldbrn*/ qcldbrn_num, raertend, qqcwtend);
+              raertend, qqcwtend);
         });
 
     auto host = Kokkos::create_mirror_view(tendnd);

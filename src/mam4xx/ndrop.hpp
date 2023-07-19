@@ -1545,7 +1545,6 @@ void dropmixnuc(
     const ColumnView &eddy_diff_km, const ColumnView &qncld,
     const ColumnView &srcn, const ColumnView &source, const ColumnView &dz,
     const ColumnView &csbot_cscen,
-    const View1D qcldbrn_num[pver], // [ntot_amode]
     const ColumnView &raertend, const ColumnView &qqcwtend) {
   // vertical diffusion and nucleation of cloud droplets
   // assume cloud presence controlled by cloud fraction
@@ -1771,6 +1770,7 @@ void dropmixnuc(
         qqcwtend(k) = zero;
         // cloud-borne aerosol mass mixing ratios [kg/kg]
         Real qcldbrn[maxd_aspectype][ntot_amode] = {{zero}};
+        Real qcldbrn_num[ntot_amode] = {zero};
 
         for (int imode = 0; imode < ntot_amode; ++imode) {
           // species index for given mode
@@ -1789,7 +1789,7 @@ void dropmixnuc(
               const int num_idx = numptr_amode[imode] - 1;
               raertend(k) =
                   (raercol[k][nnew](mm) - state_q(k, num_idx)) * dtinv;
-              qcldbrn_num[k](imode) = qqcw_fld[mm](k);
+              qcldbrn_num[imode] = qqcw_fld[mm](k);
             } else {
               // Fortran indexing to C++ indexing
               const int spc_idx = lmassptr_amode[lspec - 1][imode] - 1;
@@ -1812,7 +1812,7 @@ void dropmixnuc(
 
         //  Use interstitial and cloud-borne aerosol to compute output
         // ccn fields.
-        ccncalc(state_q_k.data(), temp(k), qcldbrn, qcldbrn_num[k].data(),
+        ccncalc(state_q_k.data(), temp(k), qcldbrn, qcldbrn_num,
                 conversions::density_of_ideal_gas(temp(k), pmid(k)),
                 lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
                 voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
