@@ -15,7 +15,7 @@ using namespace haero;
 
 void get_activate_frac(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    const Real zero=0;
+    const Real zero = 0;
     const int maxd_aspectype = ndrop::maxd_aspectype;
     const int ntot_amode = AeroConfig::num_modes();
     const int nvars = ndrop::nvars;
@@ -52,27 +52,30 @@ void get_activate_frac(Ensemble *ensemble) {
     pmid = haero::testing::create_column_view(pver);
     wsub = haero::testing::create_column_view(pver);
 
-
-    auto tair_host = View1DHost((Real*)tair_db.data(),pver  );
-    auto pmid_host = View1DHost((Real*)pmid_db.data(),pver  );
-    auto wsub_host = View1DHost((Real*)wsub_db.data(),pver  );
+    auto tair_host = View1DHost((Real *)tair_db.data(), pver);
+    auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
+    auto wsub_host = View1DHost((Real *)wsub_db.data(), pver);
 
     Kokkos::deep_copy(tair, tair_host);
     Kokkos::deep_copy(pmid, pmid_host);
     Kokkos::deep_copy(wsub, wsub_host);
 
-    View2D fn("fn", pver, ntot_amode );
-    View2D fm("fm", pver, ntot_amode );
-    View2D fluxn("fluxn", pver, ntot_amode );
-    View2D fluxm("fluxm", pver, ntot_amode );
+    View2D fn("fn", pver, ntot_amode);
+    View2D fm("fm", pver, ntot_amode);
+    View2D fluxn("fluxn", pver, ntot_amode);
+    View2D fluxm("fluxm", pver, ntot_amode);
     ColumnView flux_fullact = haero::testing::create_column_view(pver);
 
     Kokkos::parallel_for(
         "get_activate_frac", pver, KOKKOS_LAMBDA(int kk) {
           const Real air_density =
               conversions::density_of_ideal_gas(tair(kk), pmid(kk));
-          // Note: Boltzmann's constant and Avogadro's number in haero::Constants have more digits that e3sm values. Thus, aten computed by ndrop_init has a relative difference of 1e-5 w.r.t  e3sm’s aten which make this test fail. I will use value of aten from validation data only for testing proposes.
-          Real aten_testing = 0.1206437615E-08;    
+          // Note: Boltzmann's constant and Avogadro's number in
+          // haero::Constants have more digits that e3sm values. Thus, aten
+          // computed by ndrop_init has a relative difference of 1e-5 w.r.t
+          // e3sm’s aten which make this test fail. I will use value of aten
+          // from validation data only for testing proposes.
+          Real aten_testing = 0.1206437615E-08;
 
           int nspec_amode[ntot_amode];
           int lspectype_amode[maxd_aspectype][ntot_amode];
@@ -86,7 +89,7 @@ void get_activate_frac(Ensemble *ensemble) {
           ndrop::get_e3sm_parameters(
               nspec_amode, lspectype_amode, lmassptr_amode, numptr_amode,
               specdens_amode, spechygro, mam_idx, mam_cnst_idx);
-           
+
           Real exp45logsig[AeroConfig::num_modes()],
               alogsig[AeroConfig::num_modes()],
               num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
@@ -108,11 +111,10 @@ void get_activate_frac(Ensemble *ensemble) {
               state_q_k.data(), air_density, air_density, wsub(kk),
               tair(kk), // in
               lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
-              num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode, nspec_amode,
-              exp45logsig, alogsig, aten_testing, fn_k.data(), fm_k.data(),
-              fluxn_k.data(), fluxm_k.data(), flux_fullact(kk));
+              num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode,
+              nspec_amode, exp45logsig, alogsig, aten_testing, fn_k.data(),
+              fm_k.data(), fluxn_k.data(), fluxm_k.data(), flux_fullact(kk));
         });
-
 
     auto fn_host = Kokkos::create_mirror_view(fn);
     Kokkos::deep_copy(fn_host, fn);
@@ -121,36 +123,35 @@ void get_activate_frac(Ensemble *ensemble) {
     Kokkos::deep_copy(fm_host, fm);
 
     auto fluxn_host = Kokkos::create_mirror_view(fluxn);
-    Kokkos::deep_copy(fluxn_host,fluxn );
+    Kokkos::deep_copy(fluxn_host, fluxn);
 
     auto fluxm_host = Kokkos::create_mirror_view(fluxm);
     Kokkos::deep_copy(fluxm_host, fluxm);
 
     std::vector<Real> host_v(pver);
 
-
     for (int i = 0; i < ntot_amode; ++i) {
 
       for (int kk = 0; kk < pver; ++kk) {
-        host_v[kk] = fn_host(kk,i);
+        host_v[kk] = fn_host(kk, i);
       } // k
 
       output.set("fn_" + std::to_string(i + 1), host_v);
 
       for (int kk = 0; kk < pver; ++kk) {
-        host_v[kk] = fm_host(kk,i);
+        host_v[kk] = fm_host(kk, i);
       } // k
 
       output.set("fm_" + std::to_string(i + 1), host_v);
 
       for (int kk = 0; kk < pver; ++kk) {
-        host_v[kk] = fluxn_host(kk,i);
+        host_v[kk] = fluxn_host(kk, i);
       } // k
 
       output.set("fluxn_" + std::to_string(i + 1), host_v);
 
       for (int kk = 0; kk < pver; ++kk) {
-        host_v[kk] = fluxm_host(kk,i);
+        host_v[kk] = fluxm_host(kk, i);
       }
       output.set("fluxm_" + std::to_string(i + 1), host_v);
     } // i
