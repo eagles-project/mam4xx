@@ -1199,7 +1199,7 @@ void update_from_explmix(
     const ColumnView &zn,        // g/pdel for layer [m^2/kg]
     const ColumnView &zs,        // inverse of distance between levels [m^-1]
     const ColumnView &eddy_diff, // diffusivity for droplets [m^2/s]
-    const View1D nact[pver],     // fractional aero. number activation rate [/s]
+    const View2D& nact,     // fractional aero. number activation rate [/s]
     const View1D mact[pver],     // fractional aero. mass activation rate [/s]
     const ColumnView &qcld,      // cloud droplet number mixing ratio [#/kg]
     // single column of saved aerosol mass, number mixing ratios [#/kg or kg/kg]
@@ -1272,7 +1272,7 @@ void update_from_explmix(
         // the following is a safety measure to avoid negatives in explmix
 
         for (int imode = 0; imode < ntot_amode; imode++) {
-          nact[k](imode) = haero::min(nact[k](imode), eddy_diff_kp(k));
+          nact(k,imode) = haero::min(nact(k,imode), eddy_diff_kp(k));
           mact[k](imode) = haero::min(mact[k](imode), eddy_diff_kp(k));
         }
 
@@ -1350,13 +1350,13 @@ void update_from_explmix(
           Kokkos::TeamThreadRange(team, pver - top_lev), KOKKOS_LAMBDA(int kk) {
             const int k = top_lev - 1 + kk;
             const int kp1 = haero::min(k + 1, pver - 1);
-            srcn(k) += nact[k](imode) * raercol[kp1][nsav](mm);
+            srcn(k) += nact(k,imode) * raercol[kp1][nsav](mm);
           });
 
       // rce-comment- new formulation for k=pver
       // srcn(  pver  )=srcn(  pver  )+nact(  pver  ,m)*(raercol(pver,mm,nsav))
-      tmpa = raercol[pver - 1][nsav](mm) * nact[pver - 1](imode) +
-             raercol_cw[pver - 1][nsav](mm) * nact[pver - 1](imode);
+      tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1,imode) +
+             raercol_cw[pver - 1][nsav](mm) * nact(pver - 1,imode);
       srcn(pver - 1) += haero::max(zero, tmpa);
     } // end imode
 
@@ -1397,11 +1397,11 @@ void update_from_explmix(
             const int kp1 = haero::min(k + 1, pver - 1);
             // FIXME: is this still needed?
             // const int km1 = haero::max(k-1, top_lev);
-            source(k) = nact[k](imode) * raercol[kp1][nsav](mm);
+            source(k) = nact(k,imode) * raercol[kp1][nsav](mm);
           }); // end k
 
-      tmpa = raercol[pver - 1][nsav](mm) * nact[pver - 1](imode) +
-             raercol_cw[pver - 1][nsav](mm) * nact[pver - 1](imode);
+      tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1,imode) +
+             raercol_cw[pver - 1][nsav](mm) * nact(pver - 1,imode);
       source(pver - 1) = haero::max(zero, tmpa);
 
       // FIXME: still needed?
@@ -1446,8 +1446,8 @@ void update_from_explmix(
               const int kp1 = haero::min(k + 1, pver - 1);
               source(k) = mact[k](imode) * raercol[kp1][nsav](mm);
             }); // end k
-        tmpa = raercol[pver - 1][nsav](mm) * nact[pver - 1](imode) +
-               raercol_cw[pver - 1][nsav](mm) * nact[pver - 1](imode);
+        tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1,imode) +
+               raercol_cw[pver - 1][nsav](mm) * nact(pver - 1,imode);
         source(pver - 1) = haero::max(zero, tmpa);
 
         // FIXME: i'm guessing these aren't needed? :)
@@ -1538,7 +1538,7 @@ void dropmixnuc(
     const ColumnView coltend[ncnst_tot], const ColumnView coltend_cw[ncnst_tot],
     // work arrays
     const View1D raercol_cw[pver][2], const View1D raercol[pver][2],
-    const View1D nact[pver], const View1D mact[pver],
+    const View2D& nact, const View1D mact[pver],
     const ColumnView &eddy_diff, const ColumnView &zn, const ColumnView &csbot,
     const ColumnView &zs, const ColumnView &overlapp,
     const ColumnView &overlapm, const ColumnView &eddy_diff_kp,
@@ -1701,6 +1701,7 @@ void dropmixnuc(
         // new cloud fraction
         const auto state_q_kp1 = Kokkos::subview(state_q, kp1, Kokkos::ALL());
         const auto factnum_k = Kokkos::subview(factnum, k, Kokkos::ALL());
+        const auto nact_k = Kokkos::subview(nact, k, Kokkos::ALL());
 
         update_from_cldn_profile(
             cldn(k), cldn(kp1), dtinv, wtke(k), zs(k), dz(k), // in
@@ -1715,7 +1716,7 @@ void dropmixnuc(
             nsource(k), // inout
             qcld(k), factnum_k.data(),
             eddy_diff(k), // out
-            nact[k].data(), mact[k].data());
+            nact_k.data(), mact[k].data());
       });
 
   team.team_barrier();

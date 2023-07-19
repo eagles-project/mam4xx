@@ -216,11 +216,10 @@ void dropmixnuc(Ensemble *ensemble) {
       raercol_cw[i][1] = View1D("raercol_cw_0", ncnst_tot);
     }
 
-    View1D nact[pver];
+    View2D nact("nact", pver, ntot_amode);
     View1D mact[pver];
 
     for (int i = 0; i < pver; ++i) {
-      nact[i] = View1D("nact", ntot_amode);
       mact[i] = View1D("nact", ntot_amode);
     }
 
