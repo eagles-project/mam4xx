@@ -17,18 +17,18 @@ void ccncalc(Ensemble *ensemble) {
     // number of vertical points.
     // validation test from standalone ndrop.
     const Real zero = 0;
-    const int maxd_aspectype = 14;
-    const int ntot_amode = 4;
-    const int nvars = 40;
+    const int maxd_aspectype = ndrop::maxd_aspectype;
+    const int ntot_amode = AeroConfig::num_modes();
+    const int nvars = ndrop::nvars;
     const int psat = ndrop::psat;
 
-    const int pver = input.get_array("pver")[0];
+    const int pver = ndrop::pver;
     const auto state_q_db = input.get_array("state_q");
 
     const auto tair_db = input.get_array("temp");
     const auto pmid_db = input.get_array("pmid");
 
-    const int top_lev = 6;
+    const int top_lev = ndrop::top_lev;
     ColumnView state_q[nvars];
 
     int count = 0;

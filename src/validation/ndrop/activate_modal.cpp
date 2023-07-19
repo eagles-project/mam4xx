@@ -14,9 +14,8 @@ using namespace mam4;
 
 void activate_modal(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    // number of vertical points.
     const Real zero = 0;
-    const int ntot_amode = 4;
+    const int ntot_amode = AeroConfig::num_modes();
     const Real w_in = input.get_array("w_in")[0];
     const Real wmaxf = input.get_array("wmaxf")[0];
     const Real tair = input.get_array("tair")[0];

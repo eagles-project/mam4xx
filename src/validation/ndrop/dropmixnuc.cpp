@@ -16,15 +16,15 @@ void dropmixnuc(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
 
     const Real zero = 0;
-    const int maxd_aspectype = 14;
-    const int ntot_amode = 4;
-    const int nvars = 40;
+    const int maxd_aspectype = ndrop::maxd_aspectype;
+    const int ntot_amode = AeroConfig::num_modes();
+    const int nvars = ndrop::nvars;
     const int psat = ndrop::psat;
     const int ncnst_tot = ndrop::ncnst_tot;
     const int nspec_max = mam4::ndrop::nspec_max;
     const int nvar_ptend_q = mam4::ndrop::nvar_ptend_q;
 
-    const int pver = 72; 
+    const int pver = ndrop::pver; 
     const auto state_q_db = input.get_array("state_q");
 
     const auto tair_db = input.get_array("temp");
