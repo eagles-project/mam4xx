@@ -34,7 +34,7 @@ const int maxd_aspectype = 14;
 // BAD CONSTANT
 // reference temperature [K] (from mam4)
 // approximation of sea level h2o freezing point
-const Real t0 = 273;
+const Real t0 = 273.0;
 // reference pressure [Pa] (from mam4)
 // pressure at sea level [Pa] (1 atm)
 const Real p0 = 1013.25e2;
@@ -488,8 +488,8 @@ void ndrop_init(Real exp45logsig[AeroConfig::num_modes()],
                 Real alogsig[AeroConfig::num_modes()], Real &aten,
                 Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
                 Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()]) {
-  const Real one = 1;
-  const Real two = 2;
+  const Real one = 1.0;
+  const Real two = 2.0;
   const Real one_thousand = 1e3;
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
     alogsig[imode] = haero::log(modes(imode).mean_std_dev);
