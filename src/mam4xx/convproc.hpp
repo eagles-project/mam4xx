@@ -2929,7 +2929,7 @@ void ma_convproc_intr(
     const Real dlf[/* nlev */], const Real dlfsh[/* nlev */],
     const Real cmfmcsh[/* nlev */], const Real sh_e_ed_ratio[/* nlev */],
     const int nsrflx_mzaer2cnvpr,
-    const Real qsrflx_mzaer2cnvpr[ConvProc::gas_pcnst][nsrflx_mzaer2cnvpr],
+    const Real qsrflx_mzaer2cnvpr[/*nsrflx_mzaer2cnvpr*/][ConvProc::gas_pcnst],
     const Real mu[/* nlev */], const Real md[/* nlev */],
     const Real du[/* nlev */], const Real eu[/* nlev */],
     const Real ed[/* nlev */], const Real dp[/* nlev */], const int ktop,
@@ -2982,9 +2982,9 @@ void ma_convproc_intr(
   in    :: dlfsh[nlev]         ! Shal conv cldwtr detrainment (grid avg) [kg/kg/s]
   in    :: cmfmcsh[nlev]      ! Shal conv mass flux [kg/m2/s]
   in    :: sh_e_ed_ratio[nlev] ! shallow conv [ent/(ent+det)] ratio [fraction]
-  in    :: nsrflx_mzaer2cnvpr        ! last dimension of qsrflx_mzaer2cnvpr
-  in    :: qsrflx_mzaer2cnvpr[pcnst][nsrflx_mzaer2cnvpr]
-                                                        ! process-specific column tracer tendencies [kg/m2/s]
+  in    :: nsrflx_mzaer2cnvpr        ! first dimension of qsrflx_mzaer2cnvpr
+             ! process-specific column tracer tendencies [kg/m2/s]
+  in    :: qsrflx_mzaer2cnvpr[nsrflx_mzaer2cnvpr][pcnst]
   inout :: aerdepwetis[pcnst]  ! aerosol wet deposition (interstitial) [kg/m2/s]
 
                               ! mu, md, ..., ideep, lengath are all deep conv variables
