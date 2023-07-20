@@ -103,7 +103,7 @@ set(TEST_LIST
 # dropmixnuc_merged 1e-?
 
 set(DEFAULT_TOL 1e-11)
-set(DEFAULT_TOL_DROPMIXNUC 9e-4)
+set(DEFAULT_TOL_DROPMIXNUC 6.9e-4)
 
 set(ERROR_THRESHOLDS
     6e-8
