@@ -44,7 +44,8 @@ public:
   // valid, false if not
   KOKKOS_INLINE_FUNCTION
   bool validate(const AeroConfig &config, const ThreadTeam &team,
-                const Atmosphere &atm, const Prognostics &progs) const;
+                const Atmosphere &atm, const Surface &sfc,
+                const Prognostics &progs) const;
 
   // compute_tendencies -- computes tendencies and updates diagnostics
   // NOTE: that both diags and tends are const below--this means their views
@@ -52,7 +53,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
                           Real t, Real dt, const Atmosphere &atm,
-                          const Prognostics &progs, const Diagnostics &diags,
+                          const Surface &sfc, const Prognostics &progs,
+                          const Diagnostics &diags,
                           const Tendencies &tends) const;
 };
 
@@ -423,7 +425,7 @@ inline void Aging::init(const AeroConfig &aero_config,
 KOKKOS_INLINE_FUNCTION
 void Aging::compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
                                Real t, Real dt, const Atmosphere &atm,
-                               const Prognostics &progs,
+                               const Surface &surface, const Prognostics &progs,
                                const Diagnostics &diags,
                                const Tendencies &tends) const {
 

@@ -9,6 +9,8 @@
 #include <ekat/util/ekat_math_utils.hpp>
 
 #include <haero/atmosphere.hpp>
+#include <haero/surface.hpp>
+
 #include <haero/math.hpp>
 
 #include <mam4xx/aero_config.hpp>
@@ -294,6 +296,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
                           Real t, Real dt, const Atmosphere &atmosphere,
+                          const Surface &surface,
                           const Prognostics &prognostics,
                           const Diagnostics &diagnostics,
                           const Tendencies &tendencies) const {

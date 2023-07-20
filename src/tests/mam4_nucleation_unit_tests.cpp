@@ -34,6 +34,7 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleation_process") {
   int nlev = 72;
   Real pblh = 1000;
   Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  Surface sfc = mam4::testing::create_surface();
   mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
   mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
   mam4::Tendencies tends = mam4::testing::create_tendencies(nlev);
@@ -73,7 +74,7 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleation_process") {
   Real t = 0.0, dt = 30.0;
   Kokkos::parallel_for(
       team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-        process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
+        process.compute_tendencies(team, t, dt, atm, sfc, progs, diags, tends);
       });
   Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);
   Kokkos::deep_copy(h_tend_qgas0, tend_qgas0);
@@ -104,12 +105,14 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_nucleation_process") {
   // "multi-column").
   int ncol = 8;
   DeviceType::view_1d<Atmosphere> mc_atm("mc_progs", ncol);
+  DeviceType::view_1d<Surface> mc_sfc("mc_sfc", ncol);
   DeviceType::view_1d<mam4::Prognostics> mc_progs("mc_atm", ncol);
   DeviceType::view_1d<mam4::Diagnostics> mc_diags("mc_diags", ncol);
   DeviceType::view_1d<mam4::Tendencies> mc_tends("mc_tends", ncol);
   int nlev = 72;
   Real pblh = 1000;
   Atmosphere atmosphere = mam4::testing::create_atmosphere(nlev, pblh);
+  Surface surface = mam4::testing::create_surface();
   mam4::Prognostics prognostics = mam4::testing::create_prognostics(nlev);
   mam4::Diagnostics diagnostics = mam4::testing::create_diagnostics(nlev);
   mam4::Tendencies tendencies = mam4::testing::create_tendencies(nlev);
@@ -117,6 +120,7 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_nucleation_process") {
     Kokkos::parallel_for(
         "Load multi-column views", 1, KOKKOS_LAMBDA(const int) {
           mc_atm(icol) = atmosphere;
+          mc_sfc(icol) = surface;
           mc_progs(icol) = prognostics;
           mc_diags(icol) = diagnostics;
           mc_tends(icol) = tendencies;
@@ -132,7 +136,8 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_nucleation_process") {
   Kokkos::parallel_for(
       team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
         const int icol = team.league_rank();
-        process.compute_tendencies(team, t, dt, mc_atm(icol), mc_progs(icol),
-                                   mc_diags(icol), mc_tends(icol));
+        process.compute_tendencies(team, t, dt, mc_atm(icol), mc_sfc(icol),
+                                   mc_progs(icol), mc_diags(icol),
+                                   mc_tends(icol));
       });
 }

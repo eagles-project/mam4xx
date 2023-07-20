@@ -8,6 +8,7 @@
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
+#include <mam4xx/mam4_types.hpp>
 #include <mam4xx/merikanto2007.hpp>
 #include <mam4xx/vehkamaki2002.hpp>
 #include <mam4xx/wang2008.hpp>
@@ -668,7 +669,8 @@ public:
   // valid, false if not
   KOKKOS_INLINE_FUNCTION
   bool validate(const AeroConfig &config, const ThreadTeam &team,
-                const Atmosphere &atm, const Prognostics &progs) const {
+                const Atmosphere &atm, const Surface &sfc,
+                const Prognostics &progs) const {
     return atm.quantities_nonnegative(team) &&
            progs.quantities_nonnegative(team);
   }
@@ -679,7 +681,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
                           Real t, Real dt, const Atmosphere &atm,
-                          const Prognostics &progs, const Diagnostics &diags,
+                          const Surface &sfc, const Prognostics &progs,
+                          const Diagnostics &diags,
                           const Tendencies &tends) const {
     int iaer_so4 = aerosol_index_for_mode(ModeIndex::Aitken, AeroId::SO4);
     static constexpr Real boltzmann =

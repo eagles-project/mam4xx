@@ -33,6 +33,7 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
   int nlev = 1;
   Real pblh = 1000;
   Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  Surface sfc = mam4::testing::create_surface();
   mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
   mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
   mam4::Tendencies tends = mam4::testing::create_tendencies(nlev);
@@ -109,7 +110,7 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
   Real t = 0.0, dt = 30.0;
   Kokkos::parallel_for(
       team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-        process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
+        process.compute_tendencies(team, t, dt, atm, sfc, progs, diags, tends);
       });
 
   for (int imode = 0; imode < nmodes; ++imode) {

@@ -8,6 +8,7 @@
 
 #include <haero/atmosphere.hpp>
 #include <haero/math.hpp>
+#include <haero/surface.hpp>
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
@@ -973,6 +974,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
                           Real t, Real dt, const Atmosphere &atmosphere,
+                          const Surface &surface,
                           const Prognostics &prognostics,
                           const Diagnostics &diagnostics,
                           const Tendencies &tendencies) const {
