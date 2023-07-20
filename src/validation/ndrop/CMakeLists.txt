@@ -35,11 +35,6 @@ foreach(script
   )
 endforeach()
 
-# these tests were removed in favor of the merged ones
-# update_from_newcld_ts_1407_iact2
-# update_from_explmix_ts_1400
-# stand_dropmixnuc_ts_1417
-
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     loadaertype1_merged
@@ -48,7 +43,6 @@ set(TEST_LIST
     activate_modal_ts_1400_type1
     explmix1417_actmm_merged
     explmix1417_mm_merged
-    # update_from_explmix_merged
     stand_get_activate_frac_ts_1417
     activate_modal_ts_1417_type2
     stand_activate_modal_ts_1417_type2
@@ -63,8 +57,25 @@ set(TEST_LIST
     update_from_newcld_iact2_merged
     update_from_cldn_profile_iact1_merged
     update_from_cldn_profile_iact2_merged
-    # dropmixnuc_merged
     stand_dropmixnuc_ts_1407
+    dropmixnuc_ts_1400
+    dropmixnuc_ts_1401
+    dropmixnuc_ts_1402
+    dropmixnuc_ts_1403
+    dropmixnuc_ts_1404
+    dropmixnuc_ts_1405
+    dropmixnuc_ts_1406
+    dropmixnuc_ts_1407
+    dropmixnuc_ts_1408
+    dropmixnuc_ts_1409
+    dropmixnuc_ts_1410
+    dropmixnuc_ts_1411
+    dropmixnuc_ts_1412
+    dropmixnuc_ts_1413
+    dropmixnuc_ts_1414
+    dropmixnuc_ts_1415
+    dropmixnuc_ts_1416
+    dropmixnuc_ts_1417
     )
 
 # # matching the tests and errors, just for convenience
@@ -92,6 +103,7 @@ set(TEST_LIST
 # dropmixnuc_merged 1e-?
 
 set(DEFAULT_TOL 1e-11)
+set(DEFAULT_TOL_DROPMIXNUC 9e-4)
 
 set(ERROR_THRESHOLDS
     6e-8
@@ -116,7 +128,24 @@ set(ERROR_THRESHOLDS
     1e-3
     1e-11
     5e-5
-    # 1e-11? (dropmixnuc_merged)
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL_DROPMIXNUC}
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
