@@ -395,17 +395,14 @@ void ccncalc(const Real state_q[nvars], const Real tair,
   const Real pi = haero::Constants::pi;
 
   // surface tension coefficient [m-K] (from mam4)
-  // FIXME: any thoughts on what [m-K] means?
   // surface tension has SI units [N m^-1] and [dyn cm^-1] in CGS, with
   // alternative definitions being [J m^-2] in SI and [erg cm^-2] in CGS
   // maybe it indicates MKS units?
   const Real surften_coef = two * mwh2o * surften / (r_universal * rhoh2o);
 
   // surface tension parameter [m]
-  // NOTE: What is happening here?
   const Real aparam = surften_coef / tair;
   // [m^(3/2)]
-  // ^ this makes my head hurt. The units line up in the end, but...
   const Real ssat_coeff = two_over_root27 * aparam * haero::sqrt(aparam);
 
   // interstitial + activated aerosol number conc [#/m3]
@@ -696,7 +693,6 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
     fluxn[imode] = fn[imode] * w_in; // activated aerosol number flux
     fluxm[imode] = fm[imode] * w_in; // activated aerosol mass flux
   }
-  // NOTE: what is this??
   // is vertical velocity equal to flux of activated aerosol fraction assuming
   // 100% activation [m/s]?
   flux_fullact = w_in;
