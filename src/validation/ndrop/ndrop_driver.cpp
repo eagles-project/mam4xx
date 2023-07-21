@@ -78,6 +78,10 @@ int main(int argc, char **argv) {
       //  update_from_explmix(ensemble);
     } else if (func_name == "dropmixnuc") {
       dropmixnuc(ensemble);
+    } else {
+      std::cerr << "Error: Function name '" << func_name
+                << "' does not have an implemented test!" << std::endl;
+      exit(1);
     }
 
   } catch (std::exception &e) {
