@@ -20,28 +20,28 @@ using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;
 
 // number of vertical levels
-const int pver = 72;
+constexpr int pver = 72;
 // Top level for troposphere cloud physics
-const int top_lev = 7;
-const int psat = 6; //  number of supersaturations to calc ccn concentration
+constexpr int top_lev = 7;
+constexpr int psat = 6; //  number of supersaturations to calc ccn concentration
 //  number of variables in state_q
-const int nvars = 40;
-const int maxd_aspectype = 14;
+constexpr int nvars = 40;
+constexpr int maxd_aspectype = 14;
 // BAD CONSTANT
 // reference temperature [K] (from mam4)
 // approximation of sea level h2o freezing point
-const Real t0 = 273.0;
+constexpr Real t0 = 273.0;
 // reference pressure [Pa] (from mam4)
 // pressure at sea level [Pa] (1 atm)
-const Real p0 = 1013.25e2;
-const int nvar_ptend_q = 40;
+constexpr Real p0 = 1013.25e2;
+constexpr int nvar_ptend_q = 40;
 // BAD CONSTANT
 // surface tension of water w/respect to air (N/m)
-const Real surften = 0.076;
+constexpr Real surften = 0.076;
 // total number of mode number conc + mode species
-const int ncnst_tot = 25;
+constexpr int ncnst_tot = 25;
 // max number of species in a mode
-const int nspec_max = 8;
+constexpr int nspec_max = 8;
 
 KOKKOS_INLINE_FUNCTION
 void get_e3sm_parameters(
@@ -387,7 +387,7 @@ void ccncalc(const Real state_q[nvars], const Real tair,
   const Real super[psat] = {0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01};
   // phase of aerosol
   const int phase = 3; // interstitial + cloudborne
-  const int nmodes = AeroConfig::num_modes();
+  const int nmodes = AeroConfig::num_modes() ;
 
   const Real mwh2o = haero::Constants::molec_weight_h2o * 1e3; // [kg/kmol]
   const Real r_universal = haero::Constants::r_gas * 1e3;      // [J/K/kmol]
@@ -406,10 +406,10 @@ void ccncalc(const Real state_q[nvars], const Real tair,
   const Real ssat_coeff = two_over_root27 * aparam * haero::sqrt(aparam);
 
   // interstitial + activated aerosol number conc [#/m3]
-  Real naerosol[nmodes] = {zero};
+  Real naerosol[AeroConfig::num_modes()] = {zero};
   // interstitial + activated aerosol volume conc [m3/m3]
-  Real vaerosol[nmodes] = {zero};
-  Real hygro[nmodes] = {zero};
+  Real vaerosol[AeroConfig::num_modes()] = {zero};
+  Real hygro[AeroConfig::num_modes()] = {zero};
 
   loadaer(state_q, nspec_amode, air_density, phase, lspectype_amode,
           specdens_amode, spechygro, lmassptr_amode, voltonumbhi_amode,
@@ -739,7 +739,7 @@ void get_activate_frac(
   // @param [out]   flux_fullact flux of activated aerosol fraction assuming
   // 100% activation [m/s]
   const Real zero = 0;
-  const int nmodes = AeroConfig::num_modes();
+  constexpr int nmodes = AeroConfig::num_modes();
   // NOTE: this gets set here, only to get passed to loadaer, where it's used
   // once for if(phase != 1 && phase != 3)
   const int phase = 1; // interstitial
@@ -827,7 +827,7 @@ void update_from_cldn_profile(
   // BAD CONSTANT
   const Real cld_thresh = 0.01; //    threshold cloud fraction [fraction]
   // kp1 = min0(kk+1, pver);
-  const int ntot_amode = AeroConfig::num_modes();
+  constexpr int ntot_amode = AeroConfig::num_modes();
   const Real zero = 0;
 
   if (cldn_col_in > cld_thresh) {
@@ -995,7 +995,7 @@ void update_from_newcld(
 
   const Real zero = 0;
   const Real one = 1;
-  const int ntot_amode = AeroConfig::num_modes();
+  constexpr int ntot_amode = AeroConfig::num_modes();
   // threshold cloud fraction growth[fraction]
   // BAD CONSTANT
   const Real grow_cld_thresh = 0.01;
@@ -1202,7 +1202,7 @@ void update_from_explmix(
 
   Real tmpa = zero; //  temporary aerosol tendency variable [/s]
 
-  const int ntot_amode = AeroConfig::num_modes();
+  constexpr int ntot_amode = AeroConfig::num_modes();
   // load new droplets in layers above, below clouds
   Real dtmin = dtmicro;
   // rce-comment -- eddy_diff(k) is eddy-diffusivity at k/k+1 interface
@@ -1533,7 +1533,7 @@ void dropmixnuc(
 
   /// inverse time step for microphysics [s^-1]
   const Real dtinv = one / dtmicro;
-  const int ntot_amode = AeroConfig::num_modes();
+  constexpr int ntot_amode = AeroConfig::num_modes();
 
   // NOTE FOR C++ PORT: Get the cloud borne MMRs from AD in variable qcldbrn,
   // do not port the code before END NOTE
