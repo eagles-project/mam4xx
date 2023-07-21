@@ -9,7 +9,6 @@
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/mam4_types.hpp>
-#include <mam4xx/ndrop.hpp>
 #include <mam4xx/utils.hpp>
 #include <mam4xx/wv_sat_methods.hpp>
 
