@@ -346,6 +346,52 @@ public:
   // Ice Number Concentration due to imm freezing by bc in Mixed Clouds during
   // 10-s period [#/m3]
   ColumnView numimm10sbc;
+
+  // Values consumed by the convective processes to be filled upstream.
+  // Delta pressure between interfaces for dry pressure [mb]
+  ColumnView hydrostatic_dry_dp;
+  // Deep cloud convective fraction [fraction]
+  ColumnView deep_convective_cloud_fraction;
+  // Shallow cloud convective fraction [fraction]
+  ColumnView shallow_convective_cloud_fraction;
+
+  // Deep cloud convective condensate [kg/kg]
+  ColumnView deep_convective_cloud_condensate;
+  // Shallow cloud convective condensate [kg/kg]
+  ColumnView shallow_convective_cloud_condensate;
+
+  // Deep convective precipitation production (grid avg) [kg/kg/s]
+  ColumnView deep_convective_precipitation_production;
+  // Shallow convective precipitation production (grid avg) [kg/kg/s]
+  ColumnView shallow_convective_precipitation_production;
+
+  // Deep convective precipitation evaporation (grid avg) [kg/kg/s]
+  ColumnView deep_convective_precipitation_evaporation;
+  // Shallow convective precipitation evaporation (grid avg) [kg/kg/s]
+  ColumnView shallow_convective_precipitation_evaporation;
+
+  // Shallow+Deep convective detrainment [kg/kg/s]
+  ColumnView total_convective_detrainment;
+  // Shallow convective detrainment [kg/kg/s]
+  ColumnView shallow_convective_detrainment;
+
+  // Shallow convective ratio: [entrainment/(entrainment+detrainment)]
+  // [fraction]
+  ColumnView shallow_convective_ratio;
+
+  // Next three are "d(massflux)/dp" and are all positive [1/s]
+  ColumnView mass_entrain_rate_into_updraft;
+  ColumnView mass_entrain_rate_into_downdraft;
+  ColumnView mass_detrain_rate_from_updraft;
+
+  // Delta pressure between interfaces [mb]
+  ColumnView delta_pressure;
+
+  // Tracer mixing ratio (TMR) including water vapor [kg/kg]
+  using ColumnTracerView = ekat::Unmanaged<typename DeviceType::view_2d<Real>>;
+  ColumnTracerView tracer_mixing_ratio;
+  // Time tendency of tracer mixing ratio (TMR) [kg/kg/s]
+  ColumnTracerView d_tracer_mixing_ratio_dt;
 };
 
 } // namespace mam4
