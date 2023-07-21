@@ -30,7 +30,7 @@ install(FILES
         hetfrz.hpp
         wv_sat_methods.hpp
         drydep.hpp
-        wetdep.hpp
+        water_uptake.hpp
         DESTINATION include/mam4xx)
 
 add_library(mam4xx aero_modes.cpp)

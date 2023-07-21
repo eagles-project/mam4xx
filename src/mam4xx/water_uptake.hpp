@@ -3,8 +3,8 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef MAM4XX_WETDEP_HPP
-#define MAM4XX_WETDEP_HPP
+#ifndef MAM4XX_WATER_UPTAKE_HPP
+#define MAM4XX_WATER_UPDATE_HPP
 
 #include <haero/atmosphere.hpp>
 #include <haero/surface.hpp>
@@ -53,6 +53,8 @@ public:
                           const Tendencies &tends) const;
 
 };
+
+ß
 
 
 
