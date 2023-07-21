@@ -387,7 +387,7 @@ void ccncalc(const Real state_q[nvars], const Real tair,
   const Real super[psat] = {0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01};
   // phase of aerosol
   const int phase = 3; // interstitial + cloudborne
-  const int nmodes = AeroConfig::num_modes() ;
+  const int nmodes = AeroConfig::num_modes();
 
   const Real mwh2o = haero::Constants::molec_weight_h2o * 1e3; // [kg/kmol]
   const Real r_universal = haero::Constants::r_gas * 1e3;      // [J/K/kmol]
