@@ -1839,8 +1839,8 @@ template <typename SubView, typename ConstSubView>
 KOKKOS_INLINE_FUNCTION void
 update_qnew_ptend(const bool dotend[ConvProc::gas_pcnst],
                   const bool is_update_ptend, ConstSubView dqdt, const Real dt,
-                  bool ptend_lq[ConvProc::gas_pcnst], 
-                  SubView ptend_q, SubView qnew) {
+                  bool ptend_lq[ConvProc::gas_pcnst], SubView ptend_q,
+                  SubView qnew) {
   // ---------------------------------------------------------------------------------------
   // update qnew, ptend_q and ptend_lq
   // ---------------------------------------------------------------------------------------
@@ -3021,8 +3021,6 @@ void ma_convproc_intr(
       dqdt(j,i) = ptend_q(j,i);  
 
   // qnew will update in the subroutines but not update back to state%q
-  //auto qnew = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(
-  //    scratch1Dviews[ConvProc::Col1DViewInd::qnew].data(), nlev, ConvProc::gas_pcnst);
   auto qnew = Diagnostics::ColumnTracerView(scratch1Dviews[ConvProc::Col1DViewInd::qnew].data(), nlev, ConvProc::gas_pcnst);
   EKAT_KERNEL_ASSERT(state_q.extent(0) == nlev);
   EKAT_KERNEL_ASSERT(state_q.extent(1) <= ConvProc::gas_pcnst);
