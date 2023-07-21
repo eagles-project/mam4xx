@@ -39,7 +39,7 @@ using RenameProcess = haero::AeroProcess<AeroConfig, Rename>;
 using HetfrzProcess = haero::AeroProcess<AeroConfig, Hetfrz>;
 using NucleateIceProcess = haero::AeroProcess<AeroConfig, NucleateIce>;
 using DryDepProcess = haero::AeroProcess<AeroConfig, DryDep>;
-using WaterUptake=haero::AeroProcess<AeroConfig, WaterUptake>;
+using WaterUptakeProcess = haero::AeroProcess<AeroConfig, WaterUptake>;
 
 } // namespace mam4
 

@@ -4,16 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #ifndef MAM4XX_WATER_UPTAKE_HPP
-#define MAM4XX_WATER_UPDATE_HPP
+#define MAM4XX_WATER_UPTAKE_HPP
 
 #include <haero/atmosphere.hpp>
 #include <haero/surface.hpp>
 #include <mam4xx/aero_config.hpp>
 
-
 namespace mam4 {
 
-class WetDep {
+class WaterUptake {
 
 public:
   struct Config {
@@ -25,8 +24,8 @@ public:
     Config &operator=(const Config &) = default;
   };
 
- private:
-  Config config_; 
+private:
+  Config config_;
 
 public:
   // name -- unique name of the process implemented by this class
@@ -41,23 +40,43 @@ public:
   // valid, false if not
   KOKKOS_INLINE_FUNCTION
   bool validate(const AeroConfig &config, const ThreadTeam &team,
-                const Atmosphere &atm, const Surface &sfc, const Prognostics &progs) const;
+                const Atmosphere &atm, const Surface &sfc,
+                const Prognostics &progs) const;
 
   // compute_tendencies -- computes tendencies and updates diagnostics
   // NOTE: that both diags and tends are const below--this means their views
   // NOTE: are fixed, but the data in those views is allowed to vary.
   KOKKOS_INLINE_FUNCTION
   void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
-                          Real t, Real dt, const Atmosphere &atm, const Surface &sfc,
-                          const Prognostics &progs, const Diagnostics &diags,
+                          Real t, Real dt, const Atmosphere &atm,
+                          const Surface &sfc, const Prognostics &progs,
+                          const Diagnostics &diags,
                           const Tendencies &tends) const;
-
 };
 
-ß
+KOKKOS_INLINE_FUNCTION
+void modeal_aero_wateruptake_wetdens(
+    const Real wetvol[AeroConfig::num_modes()],
+    const Real wtrvol[AeroConfig::num_modes()],
+    const Real drymass[AeroConfig::num_modes()],
+    const Real specdens_1[AeroConfig::num_modes()],
+    Real wetdens[AeroConfig::num_modes()]) {
 
-
-
+  // compute aerosol wet density (kg/m3)
+  // looping over densities
+  for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+    static constexpr Real small_value_30 = 1.0e-30; // (BAD CONSTANT)
+    if (wetvol[imode] > small_value_30) {
+      // ! wet density
+      wetdens[imode] =
+          (drymass[imode] + Constants::density_h2o * wtrvol[imode]) /
+          wetvol[imode];
+    } else {
+      // dry density
+      wetdens[imode] = specdens_1[imode]; 
+    }
+  }
+}
 
 } // namespace mam4
 
