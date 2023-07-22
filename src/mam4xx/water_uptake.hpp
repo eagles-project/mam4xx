@@ -73,7 +73,7 @@ void modeal_aero_wateruptake_wetdens(
           wetvol[imode];
     } else {
       // dry density
-      wetdens[imode] = specdens_1[imode]; 
+      wetdens[imode] = specdens_1[imode];
     }
   }
 }
