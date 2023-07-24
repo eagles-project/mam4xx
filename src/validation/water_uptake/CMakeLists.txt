@@ -9,6 +9,7 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 # We use a single driver for all drydep-related parameterizations.
 add_executable(water_uptake_driver
                water_uptake_driver.cpp
+               modal_aero_wateruptake_wetdens.cpp
                )
 target_link_libraries(water_uptake_driver skywalker;validation;${HAERO_LIBRARIES})
 
