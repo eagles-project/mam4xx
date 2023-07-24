@@ -1,5 +1,5 @@
 #include <iostream>
-#include <mam4xx/hetfrz.hpp>
+#include <mam4xx/water_uptake.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
 
@@ -7,6 +7,7 @@ using namespace skywalker;
 using namespace mam4;
 
 // Parameterizations used by the drydep process.
+void water_uptake_wetdens(Ensemble *ensemble);
 
 void usage() {
   std::cerr << "aging_driver: a Skywalker driver for validating the "
@@ -41,7 +42,9 @@ int main(int argc, char **argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
   try {
-
+    if (func_name == "water_uptake_wetdens") {
+      water_uptake_wetdens(ensemble);
+    }
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
   }
@@ -54,3 +57,4 @@ int main(int argc, char **argv) {
   //
   delete ensemble;
   validation::finalize();
+};

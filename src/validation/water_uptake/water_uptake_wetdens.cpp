@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <mam4xx/aero_modes.hpp>
+#include <mam4xx/mam4.hpp>
 #include <mam4xx/water_uptake.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
@@ -12,7 +13,7 @@
 using namespace skywalker;
 using namespace mam4;
 
-void wateruptake_wetdens(Ensemble *ensemble) {
+void water_uptake_wetdens(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
@@ -27,12 +28,12 @@ void wateruptake_wetdens(Ensemble *ensemble) {
     auto drymass = input.get_array("drymass");
     auto specdens_1 = input.get_array("specdens_1");
 
-    std::vector<Real> wetdens[AeroConfig::num_modes()];
+    std::vector<Real> wetdens(AeroConfig::num_modes(), 0);
 
     water_uptake::modal_aero_wateruptake_wetdens(
         wetvol.data(), wtrvol.data(), drymass.data(), specdens_1.data(),
         wetdens.data());
 
-    output.set("air_dynamic_viscosity", wetdens);
+    output.set("wetdens", wetdens);
   });
 }
