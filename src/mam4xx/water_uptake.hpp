@@ -26,7 +26,6 @@ public:
 private:
   Config config_;
 
-
 public:
   // name -- unique name of the process implemented by this class
   const char *name() const { return "MAM4 wet deposition"; }
@@ -94,29 +93,29 @@ void find_real_solution(const Real rdry, const Kokkos::complex<Real> cx[4],
                         Real &rwet, int &nsol) {
   rwet = 1000.0 * rdry;
   nsol = 0;
-  for(int nn = 0; nn < 4; ++nn){
+  for (int nn = 0; nn < 4; ++nn) {
     Real xr = cx[nn].real();
     Real xi = cx[nn].imag();
-    std::cout << "Here " << nn << " " << xr << " " << xi <<  std::endl; 
-    if(haero::abs(xi) > haero::abs(xr) * Water_Uptake::eps){
+    std::cout << "Here " << nn << " " << xr << " " << xi << std::endl;
+    if (haero::abs(xi) > haero::abs(xr) * Water_Uptake::eps) {
       continue;
     }
-    if(xr > rwet){
+    if (xr > rwet) {
       std::cout << "Here ii" << std::endl;
       continue;
     }
-    if(xr < rdry * (1.0 - Water_Uptake::eps)){
+    if (xr < rdry * (1.0 - Water_Uptake::eps)) {
       continue;
     }
-    if(isnan(xr)){
+    if (isnan(xr)) {
       continue;
     }
-    
-    rwet = xr; 
+
+    rwet = xr;
     nsol = nn;
-    std::cout << "rwet: " << rwet <<  " nn: " << nsol << std::endl;
+    std::cout << "rwet: " << rwet << " nn: " << nsol << std::endl;
   }
-    std::cout << "rwet: " << rwet <<  " nn: " << nsol << std::endl;
+  std::cout << "rwet: " << rwet << " nn: " << nsol << std::endl;
 }
 
 }; // namespace water_uptake

@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
     if (func_name == "water_uptake_wetdens") {
       water_uptake_wetdens(ensemble);
     }
-    if (func_name == "find_real_solution"){
+    if (func_name == "find_real_solution") {
       find_real_solution(ensemble);
     }
   } catch (std::exception &e) {

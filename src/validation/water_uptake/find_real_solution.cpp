@@ -13,11 +13,10 @@
 using namespace skywalker;
 using namespace mam4;
 
-void find_real_solution(Ensemble *ensemble){
+void find_real_solution(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-
     EKAT_REQUIRE_MSG(input.has("rdry"), "Required name: rdry");
     EKAT_REQUIRE_MSG(input.has_array("real_cx"), "Required name: real_cx");
     EKAT_REQUIRE_MSG(input.has_array("imag_cx"), "Required name: imag_cx");
@@ -31,19 +30,18 @@ void find_real_solution(Ensemble *ensemble){
 
     Kokkos::complex<Real> cx[4] = {};
     // fill complex array with input values
-    for(int i=0; i < 4; ++i){
-     cx[i].imag() = imag_cx[i];
-     cx[i].real() = real_cx[i];
+    for (int i = 0; i < 4; ++i) {
+      cx[i].imag() = imag_cx[i];
+      cx[i].real() = real_cx[i];
     }
 
     // Call the function
     water_uptake::find_real_solution(rdry, cx, rwet, nsol);
 
-    output.set("nsol", nsol + 1); // Adding one to account for Fortran vs C indexing
+    output.set("nsol",
+               nsol + 1); // Adding one to account for Fortran vs C indexing
     output.set("rwet", rwet);
 
-    std::cout << "rwet:" << rwet  << std::endl;
-
+    std::cout << "rwet:" << rwet << std::endl;
   });
-
 }
