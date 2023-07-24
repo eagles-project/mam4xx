@@ -79,8 +79,7 @@ void get_input(const Input &input, const std::string &name, const int rows,
                Diagnostics::ColumnTracerView &dev) {
   host = input.get_array(name);
   ColumnView col_view = mam4::validation::create_column_view(rows * cols);
-  dev = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(col_view.data(), rows,
-                                                       cols);
+  dev = Diagnostics::ColumnTracerView(col_view.data(), rows, cols);
   EKAT_ASSERT(host.size() == rows * cols);
   {
     std::vector<std::vector<Real>> matrix(rows, std::vector<Real>(cols));
