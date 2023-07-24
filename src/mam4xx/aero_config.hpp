@@ -392,7 +392,7 @@ public:
   using ColumnTracerView = ekat::Unmanaged<typename DeviceType::view_2d<Real>>;
   ColumnTracerView tracer_mixing_ratio;
   // Time tendency of tracer mixing ratio (TMR) [kg/kg/s]
-  // This is the only output of convproc that is to be applied to the 
+  // This is the only output of convproc that is to be applied to the
   // array tracer_mixing_ratio to update.
   ColumnTracerView d_tracer_mixing_ratio_dt;
 };
