@@ -11,8 +11,7 @@
 #include <mam4xx/aero_config.hpp>
 
 namespace mam4 {
-
-class WaterUptake {
+class Water_Uptake {
 
 public:
   struct Config {
@@ -54,8 +53,9 @@ public:
                           const Tendencies &tends) const;
 };
 
+namespace water_uptake {
 KOKKOS_INLINE_FUNCTION
-void modeal_aero_wateruptake_wetdens(
+void modal_aero_wateruptake_wetdens(
     const Real wetvol[AeroConfig::num_modes()],
     const Real wtrvol[AeroConfig::num_modes()],
     const Real drymass[AeroConfig::num_modes()],
@@ -77,7 +77,7 @@ void modeal_aero_wateruptake_wetdens(
     }
   }
 }
-
+}; // namespace water_uptake
 } // namespace mam4
 
 #endif
