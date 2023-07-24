@@ -96,12 +96,10 @@ void find_real_solution(const Real rdry, const Kokkos::complex<Real> cx[4],
   for (int nn = 0; nn < 4; ++nn) {
     Real xr = cx[nn].real();
     Real xi = cx[nn].imag();
-    std::cout << "Here " << nn << " " << xr << " " << xi << std::endl;
     if (haero::abs(xi) > haero::abs(xr) * Water_Uptake::eps) {
       continue;
     }
     if (xr > rwet) {
-      std::cout << "Here ii" << std::endl;
       continue;
     }
     if (xr < rdry * (1.0 - Water_Uptake::eps)) {
@@ -113,9 +111,7 @@ void find_real_solution(const Real rdry, const Kokkos::complex<Real> cx[4],
 
     rwet = xr;
     nsol = nn;
-    std::cout << "rwet: " << rwet << " nn: " << nsol << std::endl;
-  }
-  std::cout << "rwet: " << rwet << " nn: " << nsol << std::endl;
+  };
 }
 
 }; // namespace water_uptake

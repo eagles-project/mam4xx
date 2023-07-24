@@ -41,7 +41,5 @@ void find_real_solution(Ensemble *ensemble) {
     output.set("nsol",
                nsol + 1); // Adding one to account for Fortran vs C indexing
     output.set("rwet", rwet);
-
-    std::cout << "rwet:" << rwet << std::endl;
   });
 }
