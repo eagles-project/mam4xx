@@ -15,54 +15,6 @@ using namespace skywalker;
 using namespace mam4;
 
 namespace {
-
-void init_scratch(
-    Kokkos::View<Real *> scratch1Dviews[ConvProc::Col1DViewInd::NumScratch]) {
-  const ConvProc::Config config_;
-  Kokkos::resize(scratch1Dviews[ConvProc::q],
-                 config_.nlev * ConvProc::gas_pcnst);
-  Kokkos::resize(scratch1Dviews[ConvProc::mu], 1 + config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::md], 1 + config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::eudp], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::dudp], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::eddp], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::dddp], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::rhoair], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::zmagl], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::zmagl], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::gath],
-                 (1 + config_.nlev) * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::chat],
-                 (1 + config_.nlev) * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::conu],
-                 (1 + config_.nlev) * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::cond],
-                 (1 + config_.nlev) * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::dconudt_wetdep],
-                 (1 + config_.nlev) * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::dconudt_activa],
-                 (1 + config_.nlev) * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::fa_u], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::dcondt],
-                 config_.nlev * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::dcondt_wetdep],
-                 config_.nlev * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::dcondt_prevap],
-                 config_.nlev * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::dcondt_prevap_hist],
-                 config_.nlev * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::dcondt_resusp],
-                 config_.nlev * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::wd_flux], ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::sumactiva], ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::sumaqchem], ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::sumprevap], ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::sumprevap_hist],
-                 ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::sumresusp], ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::sumwetdep], ConvProc::pcnst_extd);
-}
-
 void get_input(const Input &input, const std::string &name, const int size,
                std::vector<Real> &host, ColumnView &dev) {
   host = input.get_array(name);
@@ -127,9 +79,6 @@ void compute_tendencies(Ensemble *ensemble) {
     // but mx is just a scalar iand l1g=il2g=71;
     EKAT_ASSERT(input.get("dt") == 3600);
     EKAT_ASSERT(input.get("jt") == 72);
-    EKAT_ASSERT(input.get("maxg") == 1);
-    EKAT_ASSERT(input.get("ideep") == 0);
-    EKAT_ASSERT(input.get("lengath") == 1);
 
     int mmtoo_prevap_resusp[pcnst];
     {
@@ -235,9 +184,6 @@ void compute_tendencies(Ensemble *ensemble) {
     get_input(input, "dp", nlev, dp_host, diagnostics.delta_pressure);
     get_input(input, "qnew", nlev, pcnst, dp_host,
               diagnostics.tracer_mixing_ratio);
-
-    Kokkos::View<Real *> scratch1Dviews[ConvProc::Col1DViewInd::NumScratch];
-    init_scratch(scratch1Dviews);
 
     auto team_policy = haero::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(

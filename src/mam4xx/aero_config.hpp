@@ -359,25 +359,38 @@ public:
   // Deep cloud convective condensate [kg/kg]
   ColumnView deep_convective_cloud_condensate;
   // Shallow cloud convective condensate [kg/kg]
+  // shallow_convective_cloud_condensate is in the
+  // convproc process but not acutally used. There
+  // is a note by "Shuaiqi Tang 2023.2.25" that
+  // shwllow convection is not computed in the
+  // Fortran version.
   ColumnView shallow_convective_cloud_condensate;
 
   // Deep convective precipitation production (grid avg) [kg/kg/s]
   ColumnView deep_convective_precipitation_production;
   // Shallow convective precipitation production (grid avg) [kg/kg/s]
+  // Shallow convection is not currently computed by convproc,
+  // See note with shallow_convective_cloud_condensate.
   ColumnView shallow_convective_precipitation_production;
 
   // Deep convective precipitation evaporation (grid avg) [kg/kg/s]
   ColumnView deep_convective_precipitation_evaporation;
   // Shallow convective precipitation evaporation (grid avg) [kg/kg/s]
+  // Shallow convection is not currently computed by convproc,
+  // See note with shallow_convective_cloud_condensate.
   ColumnView shallow_convective_precipitation_evaporation;
 
   // Shallow+Deep convective detrainment [kg/kg/s]
   ColumnView total_convective_detrainment;
   // Shallow convective detrainment [kg/kg/s]
+  // Shallow convection is not currently computed by convproc,
+  // See note with shallow_convective_cloud_condensate.
   ColumnView shallow_convective_detrainment;
 
   // Shallow convective ratio: [entrainment/(entrainment+detrainment)]
   // [fraction]
+  // Shallow convection is not currently computed by convproc,
+  // See note with shallow_convective_cloud_condensate.
   ColumnView shallow_convective_ratio;
 
   // Next three are "d(massflux)/dp" and are all positive [1/s]

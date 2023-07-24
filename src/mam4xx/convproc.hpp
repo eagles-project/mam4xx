@@ -353,7 +353,7 @@ public:
   //
   // TODO: Why is this not 7?
   static constexpr int maxd_aspectype = 14;
-  // gas_pcnst number of "gas phase" species
+  // TODO: gas_pcnst number of "gas phase" species
   // This should come from the chemistry model being used and will
   // probably need to be dynamic.  This forces lmassptr_amode to
   // also be dynamic.
@@ -3106,6 +3106,12 @@ void ma_convproc_intr(
   } // (convproc_do_aer || convproc_do_gas) 
 }
 } // namespace convproc
+ 
+// TODO: The ThreadTeam passed to compute_tendencies is not currently used
+// as there are some low-level function that can not be parallel over the
+// column due to the integration like algorithms.  But there are some
+// functions that could be parallel over the column and these need to 
+// be teased out and run with the team.
 KOKKOS_INLINE_FUNCTION
 void ConvProc::compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
                         Real t, Real dt, const Atmosphere &atmosphere,
