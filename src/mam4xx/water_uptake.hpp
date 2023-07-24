@@ -8,8 +8,8 @@
 
 #include <haero/atmosphere.hpp>
 #include <haero/surface.hpp>
+#include <kokkos/Kokkos_Complex.hpp>
 #include <mam4xx/aero_config.hpp>
-
 namespace mam4 {
 class Water_Uptake {
 
@@ -26,9 +26,12 @@ public:
 private:
   Config config_;
 
+
 public:
   // name -- unique name of the process implemented by this class
   const char *name() const { return "MAM4 wet deposition"; }
+
+  static constexpr Real eps = 1e-4; // Bad constant
 
   // init -- initializes the implementation with MAM4's configuration
   void init(const AeroConfig &aero_config,
@@ -54,6 +57,10 @@ public:
 };
 
 namespace water_uptake {
+
+//-----------------------------------------------------------------------
+// compute aerosol wet density
+//-----------------------------------------------------------------------
 KOKKOS_INLINE_FUNCTION
 void modal_aero_wateruptake_wetdens(
     const Real wetvol[AeroConfig::num_modes()],
@@ -77,6 +84,41 @@ void modal_aero_wateruptake_wetdens(
     }
   }
 }
+
+//----------------------------------------------------------------------
+//  find the smallest real solution from the polynomial solver
+//----------------------------------------------------------------------
+//
+KOKKOS_INLINE_FUNCTION
+void find_real_solution(const Real rdry, const Kokkos::complex<Real> cx[4],
+                        Real &rwet, int &nsol) {
+  rwet = 1000.0 * rdry;
+  nsol = 0;
+  for(int nn = 0; nn < 4; ++nn){
+    Real xr = cx[nn].real();
+    Real xi = cx[nn].imag();
+    std::cout << "Here " << nn << " " << xr << " " << xi <<  std::endl; 
+    if(haero::abs(xi) > haero::abs(xr) * Water_Uptake::eps){
+      continue;
+    }
+    if(xr > rwet){
+      std::cout << "Here ii" << std::endl;
+      continue;
+    }
+    if(xr < rdry * (1.0 - Water_Uptake::eps)){
+      continue;
+    }
+    if(isnan(xr)){
+      continue;
+    }
+    
+    rwet = xr; 
+    nsol = nn;
+    std::cout << "rwet: " << rwet <<  " nn: " << nsol << std::endl;
+  }
+    std::cout << "rwet: " << rwet <<  " nn: " << nsol << std::endl;
+}
+
 }; // namespace water_uptake
 } // namespace mam4
 
