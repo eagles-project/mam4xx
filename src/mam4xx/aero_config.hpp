@@ -348,6 +348,7 @@ public:
   ColumnView numimm10sbc;
 
   // Values consumed by the convective processes to be filled upstream.
+  // From hydrostatic_dry_dp to d_tracer_mixing_ratio_dt inclusive.
   // Delta pressure between interfaces for dry pressure [mb]
   ColumnView hydrostatic_dry_dp;
   // Deep cloud convective fraction [fraction]
@@ -391,6 +392,8 @@ public:
   using ColumnTracerView = ekat::Unmanaged<typename DeviceType::view_2d<Real>>;
   ColumnTracerView tracer_mixing_ratio;
   // Time tendency of tracer mixing ratio (TMR) [kg/kg/s]
+  // This is the only output of convproc that is to be applied to the 
+  // array tracer_mixing_ratio to update.
   ColumnTracerView d_tracer_mixing_ratio_dt;
 };
 

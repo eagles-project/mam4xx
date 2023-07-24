@@ -2590,7 +2590,7 @@ ma_convproc_tend(const Kokkos::View<Real *>
       scratch1Dviews[ConvProc::Col1DViewInd::sumwetdep];
 
   //  q(nlev,pcnst)      ! q(k,m) at current i [kg/kg]
-  auto q = Kokkos::View<Real *[pcnst], Kokkos::MemoryUnmanaged>(
+  auto q = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(
       scratch1Dviews[ConvProc::Col1DViewInd::q].data(), nlev, pcnst);
   for (int i = 0; i < nlev; ++i)
     for (int j = 0; j < pcnst; ++j)
@@ -2914,11 +2914,11 @@ KOKKOS_INLINE_FUNCTION void ma_convproc_sh_intr(
   // set them in default values for C++ porting.   - Shuaiqi Tang 2023.2.25
   // =========================================================================================
   for (int i = 0; i < nlev; ++i)
-    for (int j = 0; j < ConvProc::gas_pcnst; ++i)
+    for (int j = 0; j < ConvProc::gas_pcnst; ++j)
       dqdt(i, j) = 0;
 
   for (int i = 0; i < ConvProc::gas_pcnst; ++i)
-    for (int j = 0; j < nsrflx; ++i)
+    for (int j = 0; j < nsrflx; ++j)
       qsrflx[i][j] = 0;
   for (int i = 0; i < ConvProc::gas_pcnst; ++i)
     dotend[i] = false;
@@ -3001,7 +3001,7 @@ void ma_convproc_intr(
           spec_class::gas        = 3
           spec_class::other      = 4
   
-  in  mmtoo_prevap_resusp[ConvProc::gas_pcnst]
+  in  mmtoo_prevap_resConvProc::gas_pcnstusp[ConvProc::gas_pcnst]
         pointers for resuspension mmtoo_prevap_resusp values are
            >=0 for aerosol mass species with    coarse mode counterpart
            -2 for aerosol mass species WITHOUT coarse mode counterpart
@@ -3010,7 +3010,7 @@ void ma_convproc_intr(
   */ 
   // clang-format off
 
-  auto dqdt = Kokkos::View<Real *[ConvProc::gas_pcnst], Kokkos::MemoryUnmanaged>(
+  auto dqdt = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(
       scratch1Dviews[ConvProc::Col1DViewInd::dqdt].data(), nlev, ConvProc::gas_pcnst);
 
   auto dlfdp = Kokkos::View<Real *, Kokkos::MemoryUnmanaged>(
@@ -3124,7 +3124,7 @@ void ConvProc::compute_tendencies(const AeroConfig &config, const ThreadTeam &te
   for (int i=0; i<ConvProc::gas_pcnst; ++i)
     mmtoo_prevap_resusp[i] = config_.mmtoo_prevap_resusp[i];
 
-  const int nlev = 1;//config_.nlev;
+  const int nlev = atmosphere.num_levels();
   const Real *temperature = atmosphere.temperature.data();
   const Real *pmid = atmosphere.pressure.data();
   // pdel = Delta pressure between interfaces [mb]

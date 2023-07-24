@@ -6,6 +6,7 @@
 #include <catch2/catch.hpp>
 #include <iomanip>
 #include <iostream>
+#include "Kokkos_Core.hpp"
 #include <mam4xx/convproc.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
@@ -76,7 +77,7 @@ void get_input(const Input &input, const std::string &name, const int size,
 void get_input(
     const Input &input, const std::string &name, const int rows, const int cols,
     std::vector<Real> &host,
-    Kokkos::View<Real * [ConvProc::gas_pcnst], Kokkos::MemoryUnmanaged> &dev) {
+    Diagnostics::ColumnTracerView &dev) {
   host = input.get_array(name);
   ColumnView col_view = mam4::validation::create_column_view(rows * cols);
   dev = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(col_view.data(), rows,
@@ -94,10 +95,9 @@ void get_input(
     Kokkos::deep_copy(dev, host_view);
   }
 }
-template <int COLS>
 void set_output(Output &output, const std::string &name, const int rows,
                 const int cols, std::vector<Real> &host,
-                const Kokkos::View<Real *[COLS]> &dev) {
+                const Diagnostics::ColumnTracerView &dev) {
   host.resize(rows * cols);
   auto host_view = Kokkos::create_mirror_view(dev);
   Kokkos::deep_copy(host_view, dev);
@@ -108,7 +108,7 @@ void set_output(Output &output, const std::string &name, const int rows,
   output.set(name, host);
 }
 } // namespace
-void ma_convproc_tend(Ensemble *ensemble) {
+void compute_tendencies(Ensemble *ensemble) {
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
   // Run the ensemble.
@@ -116,24 +116,22 @@ void ma_convproc_tend(Ensemble *ensemble) {
     const int nlev = 72;
     const int ktop = 47;
     const int kbot = 71;
+    const Real t = 0;
     const Real dt = 36000;
-    const ConvProc::convtype convtype = ConvProc::Deep;
+    const Real pblh = 1000;
     // const int pcnst_extd = ConvProc::pcnst_extd;
     const int pcnst = ConvProc::gas_pcnst;
-    const int nsrflx = 6;
     // Fetch ensemble parameters
     // Convert to C++ index by subtracting one.
     // ktop is jt(il1g) to jt(il2g) in Fortran
     // but jt is just a scalar and il1g=il2g=48;
     // kbot is mx(il1g) to jt(il2g) in Fortran
     // but mx is just a scalar iand l1g=il2g=71;
-    EKAT_ASSERT(input.get("jt") == 48);
-    EKAT_ASSERT(input.get("mx") == 71);
-    EKAT_ASSERT(input.get("il1g") == 1);
-    EKAT_ASSERT(input.get("il2g") == 1);
     EKAT_ASSERT(input.get("dt") == 3600);
-    EKAT_ASSERT(input.get("ncnst") == 40);
-    EKAT_ASSERT(input.get("nsrflx") == 6);
+    EKAT_ASSERT(input.get("jt") == 72);
+    EKAT_ASSERT(input.get("maxg") == 1);
+    EKAT_ASSERT(input.get("ideep") == 0);
+    EKAT_ASSERT(input.get("lengath") == 1);
 
     int mmtoo_prevap_resusp[pcnst];
     {
@@ -145,102 +143,82 @@ void ma_convproc_tend(Ensemble *ensemble) {
         mmtoo_prevap_resusp[i] = resusp[i] - 1;
     }
 
-    std::vector<Real> temperature_host, pmid_host, qnew_host, mu_host, md_host,
+    Atmosphere atmosphere = validation::create_atmosphere(nlev, pblh);
+    Surface surface = validation::create_surface();
+    mam4::Prognostics prognostics = validation::create_prognostics(nlev);
+    mam4::Diagnostics diagnostics = validation::create_diagnostics(nlev);
+    mam4::Tendencies tendencies = validation::create_tendencies(nlev);
+    mam4::AeroConfig aero_config;
+    mam4::ConvProc::Config convproc_config;
+    convproc_config.convproc_do_aer = true;
+    convproc_config.convproc_do_gas = false;
+    convproc_config.nlev = nlev;
+    convproc_config.ktop = ktop;
+    convproc_config.kbot = kbot;
+
+    std::vector<Real> species_class_host;
+    ColumnView species_class_dev;
+    get_input(input, "species_class", pcnst, species_class_host, species_class_dev);
+    for (int i=0; i<pcnst; ++i)
+      convproc_config.species_class[i] = species_class_host[i];
+    for (int i=0; i<pcnst; ++i)
+      convproc_config.mmtoo_prevap_resusp[i] = mmtoo_prevap_resusp[i];
+
+    mam4::ConvProc convproc;
+    convproc.init(aero_config, convproc_config);
+
+    diagnostics.hydrostatic_dry_dp = mam4::validation::create_column_view(nlev);
+    diagnostics.deep_convective_cloud_fraction = mam4::validation::create_column_view(nlev);
+    diagnostics.shallow_convective_cloud_fraction = mam4::validation::create_column_view(nlev);
+    diagnostics.deep_convective_cloud_condensate = mam4::validation::create_column_view(nlev);
+    diagnostics.shallow_convective_cloud_condensate = mam4::validation::create_column_view(nlev);
+    diagnostics.deep_convective_precipitation_production = mam4::validation::create_column_view(nlev);
+    diagnostics.shallow_convective_precipitation_production = mam4::validation::create_column_view(nlev);
+    diagnostics.deep_convective_precipitation_evaporation = mam4::validation::create_column_view(nlev);
+    diagnostics.shallow_convective_precipitation_evaporation = mam4::validation::create_column_view(nlev);
+    diagnostics.total_convective_detrainment = mam4::validation::create_column_view(nlev);
+    diagnostics.shallow_convective_detrainment = mam4::validation::create_column_view(nlev);
+    diagnostics.shallow_convective_ratio = mam4::validation::create_column_view(nlev);
+    diagnostics.mass_entrain_rate_into_updraft = mam4::validation::create_column_view(nlev);
+    diagnostics.mass_entrain_rate_into_downdraft = mam4::validation::create_column_view(nlev);
+    diagnostics.mass_detrain_rate_from_updraft = mam4::validation::create_column_view(nlev);
+    diagnostics.delta_pressure = mam4::validation::create_column_view(nlev);
+    auto mixing_ratio = mam4::validation::create_column_view(nlev*ConvProc::gas_pcnst);
+    diagnostics.tracer_mixing_ratio = Diagnostics::ColumnTracerView(mixing_ratio.data(), nlev, ConvProc::gas_pcnst);
+    auto mixing_ratio_dt = mam4::validation::create_column_view(nlev*ConvProc::gas_pcnst);
+    diagnostics.d_tracer_mixing_ratio_dt = Diagnostics::ColumnTracerView(mixing_ratio_dt.data(), nlev, ConvProc::gas_pcnst);
+
+    std::vector<Real> temperature_host, pmid_host, 
         du_host, eu_host, ed_host, dp_host, dpdry_host, cldfrac_host,
-        icwmr_host, rprd_host, evapc_host, doconvproc_host, species_class_host,
-        dqdt_host, qsrflx_host;
-    ColumnView temperature_dev, pmid_dev, mu_dev, md_dev, du_dev, eu_dev,
-        ed_dev, dp_dev, dpdry_dev, cldfrac_dev, icwmr_dev, rprd_dev, evapc_dev,
-        doconvproc_dev, species_class_dev;
+        icwmr_host, rprd_host, evapc_host, dqdt_host;
+    ColumnView temperature_dev, pmid_dev;
 
-    Kokkos::View<Real *[pcnst]> dqdt_dev("dqdt", nlev, pcnst);
-    Kokkos::View<Real *[nsrflx]> qsrflx_dev("qsrflx", pcnst, nsrflx);
-    Kokkos::View<Real *[pcnst], Kokkos::MemoryUnmanaged> qnew_dev;
-
-    get_input(input, "temperature", nlev, temperature_host, temperature_dev);
-    get_input(input, "pmid", nlev, pmid_host, pmid_dev);
-    get_input(input, "qnew", nlev, pcnst, qnew_host, qnew_dev);
-    get_input(input, "mu", nlev, mu_host, mu_dev);
-    get_input(input, "md", nlev, md_host, md_dev);
-    get_input(input, "du", nlev, du_host, du_dev);
-    get_input(input, "eu", nlev, eu_host, eu_dev);
-    get_input(input, "ed", nlev, ed_host, ed_dev);
-    get_input(input, "dp", nlev, dp_host, dp_dev);
-    get_input(input, "dpdry", nlev, dpdry_host, dpdry_dev);
-    get_input(input, "cldfrac", nlev, cldfrac_host, cldfrac_dev);
-    get_input(input, "icwmr", nlev, icwmr_host, icwmr_dev);
-    get_input(input, "rprd", nlev, rprd_host, rprd_dev);
-    get_input(input, "evapc", nlev, evapc_host, evapc_dev);
-    get_input(input, "doconvproc", pcnst, doconvproc_host, doconvproc_dev);
-    get_input(input, "species_class", pcnst, species_class_host,
-              species_class_dev);
+    get_input(input, "state_pdeldry", nlev, dpdry_host, diagnostics.hydrostatic_dry_dp);
+    get_input(input, "state_t", nlev, temperature_host, temperature_dev);
+    atmosphere.temperature = temperature_dev;
+    get_input(input, "state_pmid", nlev, pmid_host, pmid_dev);
+    atmosphere.pressure = pmid_dev;
+    get_input(input, "dp_frac", nlev, cldfrac_host, diagnostics.deep_convective_cloud_fraction);
+    get_input(input, "cldfrac", nlev, cldfrac_host, diagnostics.total_convective_detrainment);
+    get_input(input, "icwmrdp", nlev, icwmr_host, diagnostics.deep_convective_cloud_condensate);
+    get_input(input, "rprddp", nlev, rprd_host, diagnostics.deep_convective_precipitation_production);
+    get_input(input, "evapcdp", nlev, evapc_host, diagnostics.deep_convective_precipitation_evaporation);
+    get_input(input, "du", nlev, du_host, diagnostics.mass_detrain_rate_from_updraft);
+    get_input(input, "eu", nlev, eu_host, diagnostics.mass_entrain_rate_into_updraft);
+    get_input(input, "ed", nlev, ed_host, diagnostics.mass_entrain_rate_into_downdraft);
+    get_input(input, "dp", nlev, dp_host,  diagnostics.delta_pressure);
+    get_input(input, "qnew", nlev, pcnst, dp_host,  diagnostics.tracer_mixing_ratio);
 
     Kokkos::View<Real *> scratch1Dviews[ConvProc::Col1DViewInd::NumScratch];
     init_scratch(scratch1Dviews);
 
-    ColumnView scalars_dev = mam4::validation::create_column_view(3);
-    Kokkos::parallel_for(
-        "ma_convproc_tend", 1, KOKKOS_LAMBDA(int) {
-          Real cldfrac[nlev], icwmr[nlev], pmid[nlev], rprd[nlev], dpdry[nlev],
-              evapc[nlev], du[nlev], eu[nlev], ed[nlev], dp[nlev],
-              temperature[nlev], dqdt[nlev][pcnst], qsrflx[pcnst][nsrflx];
-          int species_class[pcnst];
-          bool doconvproc[pcnst];
-          for (int i = 0; i < nlev; ++i) {
-            cldfrac[i] = cldfrac_dev[i];
-            icwmr[i] = icwmr_dev[i];
-            temperature[i] = temperature_dev[i];
-            pmid[i] = pmid_dev[i];
-            rprd[i] = rprd_dev[i];
-            dpdry[i] = dpdry_dev[i];
-            evapc[i] = evapc_dev[i];
-            du[i] = du_dev[i];
-            eu[i] = eu_dev[i];
-            ed[i] = ed_dev[i];
-            dp[i] = dp_dev[i];
-          }
-          for (int i = 0; i < pcnst; ++i) {
-            doconvproc[i] = doconvproc_dev[i];
-            species_class[i] = species_class_dev[i];
-          }
-          auto dqdt_view = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(
-              &dqdt[0][0], nlev, pcnst);
-          Real xx_mfup_max, xx_wcldbase;
-          int xx_kcldbase;
-          convproc::ma_convproc_tend(
-              scratch1Dviews, nlev, convtype, dt, temperature, pmid, qnew_dev,
-              du, eu, ed, dp, dpdry, ktop, kbot, mmtoo_prevap_resusp, cldfrac,
-              icwmr, rprd, evapc, dqdt_view, doconvproc, qsrflx, species_class,
-              xx_mfup_max, xx_wcldbase, xx_kcldbase);
+    auto team_policy = haero::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    Kokkos::parallel_for(team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
 
-          for (int i = 0; i < nlev; ++i) {
-            for (int j = 0; j < pcnst; ++j) {
-              dqdt_dev(i, j) = dqdt_view(i, j);
-            }
-          }
-          for (int i = 0; i < pcnst; ++i) {
-            for (int j = 0; j < nsrflx; ++j) {
-              qsrflx_dev(i, j) = qsrflx[i][j];
-            }
-          }
-          scalars_dev[0] = xx_mfup_max;
-          scalars_dev[1] = xx_wcldbase;
-          scalars_dev[2] = xx_kcldbase;
+	 convproc.compute_tendencies(aero_config, team, t, dt, atmosphere,
+           prognostics, diagnostics, tendencies);
+
         });
-    set_output(output, "dqdt", nlev, pcnst, dqdt_host, dqdt_dev);
-    set_output(output, "qsrflx", pcnst, nsrflx, qsrflx_host, qsrflx_dev);
-    Real xx_mfup_max_host, xx_wcldbase_host;
-    int xx_kcldbase_host;
-    {
-      auto host_view = Kokkos::create_mirror_view(scalars_dev);
-      Kokkos::deep_copy(host_view, scalars_dev);
-      xx_mfup_max_host = host_view[0];
-      xx_wcldbase_host = host_view[1];
-      xx_kcldbase_host = host_view[2];
-    }
-    // Make indexes Fortran based again.
-    output.set("xx_mfup_max", xx_mfup_max_host);
-    output.set("xx_wcldbase", xx_wcldbase_host);
-    output.set("xx_kcldbase", xx_kcldbase_host + 1);
+    set_output(output, "dqdt", nlev, pcnst, dqdt_host, diagnostics.d_tracer_mixing_ratio_dt);
   });
 }

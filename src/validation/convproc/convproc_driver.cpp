@@ -46,6 +46,7 @@ void compute_activation_tend(Ensemble *ensemble);
 void compute_updraft_mixing_ratio(Ensemble *ensemble);
 void ma_convproc_tend(Ensemble *ensemble);
 void ma_convproc_dp_intr(Ensemble *ensemble);
+void compute_tendencies(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -69,7 +70,7 @@ int main(int argc, char **argv) {
   try {
     if (func_name == "update_tendency_final") {
       update_tendency_final(ensemble);
-    } else if (func_name == "compute_tendencies") {
+    } else if (func_name == "compute_column_tendency") {
       compute_column_tendency(ensemble);
     } else if (func_name == "ma_resuspend_convproc") {
       ma_resuspend_convproc(ensemble);
@@ -109,6 +110,8 @@ int main(int argc, char **argv) {
       ma_convproc_tend(ensemble);
     } else if (func_name == "ma_convproc_dp_intr") {
       ma_convproc_dp_intr(ensemble);
+    } else if (func_name == "compute_tendencies") {
+      compute_tendencies(ensemble);
     } else {
       std::cerr << "Error: Test name not recognized:" << func_name << std::endl;
       exit(1);

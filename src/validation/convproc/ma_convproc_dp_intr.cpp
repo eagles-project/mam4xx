@@ -201,7 +201,7 @@ void ma_convproc_dp_intr(Ensemble *ensemble) {
           for (int i = 0; i < pcnst; ++i) {
             species_class[i] = species_class_dev[i];
           }
-          auto dqdt_view = Kokkos::View<Real *[pcnst], Kokkos::MemoryUnmanaged>(
+          auto dqdt_view = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(
               &dqdt[0][0], nlev, pcnst);
           convproc::ma_convproc_dp_intr(
               scratch1Dviews, nlev, temperature, pmid, dpdry, dt, cldfrac,
