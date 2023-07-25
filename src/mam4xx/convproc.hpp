@@ -351,7 +351,6 @@ public:
   // maxd_aspectype = maximum allowable number of chemical species
   // in each aerosol mode.
   //
-  // TODO: Why is this not 7?
   static constexpr int maxd_aspectype = 14;
   // TODO: gas_pcnst number of "gas phase" species
   // This should come from the chemistry model being used and will
@@ -460,8 +459,6 @@ public:
   // be simplified to just a direct call to aero_species(i).density
   // but there is the problem of the indexes being in a different order.
   //
-  // TODO: figure out what maxd_aspectype is 14 and why not use 7?
-
   KOKKOS_INLINE_FUNCTION
   static constexpr Real specdens_amode(const int i) {
     // clang-format off
@@ -3007,127 +3004,134 @@ void ma_convproc_intr(
            -2 for aerosol mass species WITHOUT coarse mode counterpart
            -3 for aerosol number species
            -1 for other species
-  */ 
-  // clang-format off
+  */
+  // clang-format on
 
   auto dqdt = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(
-      scratch1Dviews[ConvProc::Col1DViewInd::dqdt].data(), nlev, ConvProc::gas_pcnst);
+      scratch1Dviews[ConvProc::Col1DViewInd::dqdt].data(), nlev,
+      ConvProc::gas_pcnst);
 
   auto dlfdp = Kokkos::View<Real *, Kokkos::MemoryUnmanaged>(
       scratch1Dviews[ConvProc::Col1DViewInd::dlfdp].data(), nlev);
 
-  for (int j=0; j<nlev; ++j)
-    for (int i=0; i<ConvProc::gas_pcnst; ++i)
-      dqdt(j,i) = ptend_q(j,i);  
+  for (int j = 0; j < nlev; ++j)
+    for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+      dqdt(j, i) = ptend_q(j, i);
 
   // qnew will update in the subroutines but not update back to state%q
-  auto qnew = Diagnostics::ColumnTracerView(scratch1Dviews[ConvProc::Col1DViewInd::qnew].data(), nlev, ConvProc::gas_pcnst);
+  auto qnew = Diagnostics::ColumnTracerView(
+      scratch1Dviews[ConvProc::Col1DViewInd::qnew].data(), nlev,
+      ConvProc::gas_pcnst);
   EKAT_KERNEL_ASSERT(state_q.extent(0) == nlev);
   EKAT_KERNEL_ASSERT(state_q.extent(1) <= ConvProc::gas_pcnst);
-  for (int i=0; i<nlev; ++i)
-    for (int j=0; j<ConvProc::gas_pcnst; ++j)
-      qnew(i,j)  = state_q(i,j); 
+  for (int i = 0; i < nlev; ++i)
+    for (int j = 0; j < ConvProc::gas_pcnst; ++j)
+      qnew(i, j) = state_q(i, j);
 
   // if do tendency
-  bool  dotend[ConvProc::gas_pcnst];
-  for (int i=0; i<ConvProc::gas_pcnst; ++i)
+  bool dotend[ConvProc::gas_pcnst];
+  for (int i = 0; i < ConvProc::gas_pcnst; ++i)
     dotend[i] = ptend_lq[i];
 
   //
   // prepare for processing
   //
 
-  // The following loop can be done in parallel even though ptend_lq is overwritten each time
-  // I think it is OK since it is overwritten the same from each thread.
-  for (int kk=0; kk<nlev; ++kk)
-    update_qnew_ptend(dotend, false, Kokkos::subview(dqdt, kk, Kokkos::ALL()),     
-                      dt, ptend_lq, 
-                      Kokkos::subview(ptend_q, kk, Kokkos::ALL()), 
-		      Kokkos::subview(qnew, kk, Kokkos::ALL()));
+  // The following loop can be done in parallel even though ptend_lq is
+  // overwritten each time I think it is OK since it is overwritten the same
+  // from each thread.
+  for (int kk = 0; kk < nlev; ++kk)
+    update_qnew_ptend(dotend, false, Kokkos::subview(dqdt, kk, Kokkos::ALL()),
+                      dt, ptend_lq, Kokkos::subview(ptend_q, kk, Kokkos::ALL()),
+                      Kokkos::subview(qnew, kk, Kokkos::ALL()));
 
   if (convproc_do_aer || convproc_do_gas) {
     //
     // do deep conv processing
     //
     Real qsrflx[ConvProc::gas_pcnst][nsrflx] = {};
-    for (int j=0; j<nlev; ++j)
-      for (int i=0; i<ConvProc::gas_pcnst; ++i)
-       dqdt(j,i) = 0;
-    for (int j=0; j<nlev; ++j)
-      dlfdp[j]  = haero::max( (dlf[j] - dlfsh[j]), 0.0);
-    ma_convproc_dp_intr(            
-        scratch1Dviews, nlev, temperature,
-	pmid, dpdry, dt, 
-        dp_frac, icwmrdp, rprddp, evapcdp, 
-        du, eu, ed, dp, ktop, kbot, qnew,
-        species_class, mmtoo_prevap_resusp,
-        dqdt, qsrflx, dotend);
-    // apply deep conv processing tendency and prepare for shallow conv processing
-    for (int kk=0; kk<nlev; ++kk)
-      update_qnew_ptend(dotend, true,  Kokkos::subview(dqdt, kk, Kokkos::ALL()),
-              dt, ptend_lq, Kokkos::subview(ptend_q, kk, Kokkos::ALL()), 
-	      Kokkos::subview(qnew, kk, Kokkos::ALL()));
+    for (int j = 0; j < nlev; ++j)
+      for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+        dqdt(j, i) = 0;
+    for (int j = 0; j < nlev; ++j)
+      dlfdp[j] = haero::max((dlf[j] - dlfsh[j]), 0.0);
+    ma_convproc_dp_intr(scratch1Dviews, nlev, temperature, pmid, dpdry, dt,
+                        dp_frac, icwmrdp, rprddp, evapcdp, du, eu, ed, dp, ktop,
+                        kbot, qnew, species_class, mmtoo_prevap_resusp, dqdt,
+                        qsrflx, dotend);
+    // apply deep conv processing tendency and prepare for shallow conv
+    // processing
+    for (int kk = 0; kk < nlev; ++kk)
+      update_qnew_ptend(dotend, true, Kokkos::subview(dqdt, kk, Kokkos::ALL()),
+                        dt, ptend_lq,
+                        Kokkos::subview(ptend_q, kk, Kokkos::ALL()),
+                        Kokkos::subview(qnew, kk, Kokkos::ALL()));
     // update variables for output
-    for (int icnst=0; icnst<ConvProc::gas_pcnst; ++icnst) {
+    for (int icnst = 0; icnst < ConvProc::gas_pcnst; ++icnst) {
       // this used for surface coupling:
       //  4 = wet removal
-      //  5 = actual precip-evap resuspension (what actually is applied to a species)
-      if (dotend[icnst] && species_class[icnst] == ConvProc::species_class::aerosol) 
+      //  5 = actual precip-evap resuspension (what actually is applied to a
+      //  species)
+      if (dotend[icnst] &&
+          species_class[icnst] == ConvProc::species_class::aerosol)
         aerdepwetis[icnst] += qsrflx[icnst][4] + qsrflx[icnst][5];
     }
     //
     // do shallow conv processing
     //
-    for (int j=0; j<nlev; ++j)
-      for (int i=0; i<ConvProc::gas_pcnst; ++i)
-       dqdt(j,i) = 0;
-    for (int j=0; j<nsrflx; ++j)
-      for (int i=0; i<ConvProc::gas_pcnst; ++i)
+    for (int j = 0; j < nlev; ++j)
+      for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+        dqdt(j, i) = 0;
+    for (int j = 0; j < nsrflx; ++j)
+      for (int i = 0; i < ConvProc::gas_pcnst; ++i)
         qsrflx[i][j] = 0;
-    ma_convproc_sh_intr(nlev, temperature, 
-	pmid,  dpdry,    pdel,      dt,  
-        sh_frac, icwmrsh, rprdsh, evapcsh, 
-	qnew,    species_class,                
-        dqdt,    qsrflx, dotend);
+    ma_convproc_sh_intr(nlev, temperature, pmid, dpdry, pdel, dt, sh_frac,
+                        icwmrsh, rprdsh, evapcsh, qnew, species_class, dqdt,
+                        qsrflx, dotend);
 
     // apply shallow conv processing tendency
-    for (int kk=0; kk<nlev; ++kk)
-      update_qnew_ptend(dotend, true,   Kokkos::subview(dqdt, kk, Kokkos::ALL()),
-              dt, ptend_lq, Kokkos::subview(ptend_q, kk, Kokkos::ALL()), 
-	      Kokkos::subview(qnew, kk, Kokkos::ALL()));
+    for (int kk = 0; kk < nlev; ++kk)
+      update_qnew_ptend(dotend, true, Kokkos::subview(dqdt, kk, Kokkos::ALL()),
+                        dt, ptend_lq,
+                        Kokkos::subview(ptend_q, kk, Kokkos::ALL()),
+                        Kokkos::subview(qnew, kk, Kokkos::ALL()));
     // update variables for output
-    for (int icnst=0; icnst<ConvProc::gas_pcnst; ++icnst) {
+    for (int icnst = 0; icnst < ConvProc::gas_pcnst; ++icnst) {
       // this used for surface coupling
       //  4 = wet removal
-      //  5 = actual precip-evap resuspension (what actually is applied to a species)
-      if (dotend[icnst] && species_class[icnst] == ConvProc::species_class::aerosol)
+      //  5 = actual precip-evap resuspension (what actually is applied to a
+      //  species)
+      if (dotend[icnst] &&
+          species_class[icnst] == ConvProc::species_class::aerosol)
         aerdepwetis[icnst] += qsrflx[icnst][4] + qsrflx[icnst][5];
     }
-  } // (convproc_do_aer || convproc_do_gas) 
+  } // (convproc_do_aer || convproc_do_gas)
 }
 } // namespace convproc
- 
+
 // TODO: The ThreadTeam passed to compute_tendencies is not currently used
 // as there are some low-level function that can not be parallel over the
 // column due to the integration like algorithms.  But there are some
-// functions that could be parallel over the column and these need to 
+// functions that could be parallel over the column and these need to
 // be teased out and run with the team.
 KOKKOS_INLINE_FUNCTION
-void ConvProc::compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
-                        Real t, Real dt, const Atmosphere &atmosphere,
-                        const Prognostics &prognostics,
-                        const Diagnostics &diagnostics,
-                        const Tendencies &tendencies) const {
+void ConvProc::compute_tendencies(const AeroConfig &config,
+                                  const ThreadTeam &team, Real t, Real dt,
+                                  const Atmosphere &atmosphere,
+                                  const Prognostics &prognostics,
+                                  const Diagnostics &diagnostics,
+                                  const Tendencies &tendencies) const {
 
-  const bool convproc_do_aer = config_.convproc_do_aer; 
-  const bool convproc_do_gas = config_.convproc_do_gas; 
+  const bool convproc_do_aer = config_.convproc_do_aer;
+  const bool convproc_do_gas = config_.convproc_do_gas;
   const int ktop = config_.ktop;
   const int kbot = config_.kbot;
-  int species_class[ConvProc::gas_pcnst]; 
-  for (int i=0; i<ConvProc::gas_pcnst; ++i)
-    species_class[i] =  config_.species_class[i];
-  int mmtoo_prevap_resusp[ConvProc::gas_pcnst];;
-  for (int i=0; i<ConvProc::gas_pcnst; ++i)
+  int species_class[ConvProc::gas_pcnst];
+  for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+    species_class[i] = config_.species_class[i];
+  int mmtoo_prevap_resusp[ConvProc::gas_pcnst];
+  ;
+  for (int i = 0; i < ConvProc::gas_pcnst; ++i)
     mmtoo_prevap_resusp[i] = config_.mmtoo_prevap_resusp[i];
 
   const int nlev = atmosphere.num_levels();
@@ -3146,24 +3150,29 @@ void ConvProc::compute_tendencies(const AeroConfig &config, const ThreadTeam &te
   // Shallow cloud convective condensate [kg/kg]
   const Real *icwmrsh = diagnostics.shallow_convective_cloud_condensate.data();
   // Deep convective precipitation production (grid avg) [kg/kg/s]
-  const Real *rprddp = diagnostics.deep_convective_precipitation_production.data();
+  const Real *rprddp =
+      diagnostics.deep_convective_precipitation_production.data();
   // Shallow convective precipitation production (grid avg) [kg/kg/s]
-  const Real *rprdsh  = diagnostics.shallow_convective_precipitation_production.data();
+  const Real *rprdsh =
+      diagnostics.shallow_convective_precipitation_production.data();
   // Deep convective precipitation evaporation (grid avg) [kg/kg/s]
-  const Real *evapcdp = diagnostics.deep_convective_precipitation_evaporation.data();
+  const Real *evapcdp =
+      diagnostics.deep_convective_precipitation_evaporation.data();
   // Shallow convective precipitation evaporation (grid avg) [kg/kg/s]
-  const Real *evapcsh = diagnostics.shallow_convective_precipitation_evaporation.data();
+  const Real *evapcsh =
+      diagnostics.shallow_convective_precipitation_evaporation.data();
   // Shallow+Deep convective detrainment [kg/kg/s]
   const Real *dlftot = diagnostics.total_convective_detrainment.data();
   // Shallow convective detrainment [kg/kg/s]
   const Real *dlfsh = diagnostics.shallow_convective_detrainment.data();
-  // Shallow convective ratio: [entrainment/(entrainment+detrainment)] [fraction]
+  // Shallow convective ratio: [entrainment/(entrainment+detrainment)]
+  // [fraction]
   const Real *sh_e_ed_ratio = diagnostics.shallow_convective_ratio.data();
 
   // Next three are "d(massflux)/dp" and are all positive [1/s]
-  const Real *eu = diagnostics.mass_entrain_rate_into_updraft.data(); 
-  const Real *ed = diagnostics.mass_entrain_rate_into_downdraft.data(); 
-  const Real *du = diagnostics.mass_detrain_rate_from_updraft.data(); 
+  const Real *eu = diagnostics.mass_entrain_rate_into_updraft.data();
+  const Real *ed = diagnostics.mass_entrain_rate_into_downdraft.data();
+  const Real *du = diagnostics.mass_detrain_rate_from_updraft.data();
 
   // Delta pressure between interfaces [mb]
   const Real *dp = diagnostics.delta_pressure.data();
@@ -3178,16 +3187,12 @@ void ConvProc::compute_tendencies(const AeroConfig &config, const ThreadTeam &te
   bool ptend_lq[ConvProc::gas_pcnst] = {};
   // Aerosol wet deposition (interstitial) [kg/m2/s]
   Real aerdepwetis[ConvProc::gas_pcnst] = {};
-  convproc::ma_convproc_intr(team, scratch1Dviews, convproc_do_aer, convproc_do_gas, nlev,
-    temperature, pmid, dpdry, pdel, dt,
-    dp_frac, icwmrdp, rprddp, evapcdp,
-    sh_frac, icwmrsh, rprdsh, evapcsh,
-    dlftot, dlfsh, sh_e_ed_ratio,
-    du, eu, ed, dp, 
-    ktop, kbot, species_class, 
-    mmtoo_prevap_resusp, 
-    state_q, ptend_q,
-    ptend_lq, aerdepwetis);
+  convproc::ma_convproc_intr(
+      team, scratch1Dviews, convproc_do_aer, convproc_do_gas, nlev, temperature,
+      pmid, dpdry, pdel, dt, dp_frac, icwmrdp, rprddp, evapcdp, sh_frac,
+      icwmrsh, rprdsh, evapcsh, dlftot, dlfsh, sh_e_ed_ratio, du, eu, ed, dp,
+      ktop, kbot, species_class, mmtoo_prevap_resusp, state_q, ptend_q,
+      ptend_lq, aerdepwetis);
 }
 } // namespace mam4
 #endif

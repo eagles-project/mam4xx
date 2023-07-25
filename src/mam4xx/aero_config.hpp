@@ -347,6 +347,10 @@ public:
   // 10-s period [#/m3]
   ColumnView numimm10sbc;
 
+  // ************************************************************************
+  // ********** Begin Convective Process Diagnostic Arrays ******************
+
+  // INPUTS:
   // Values consumed by the convective processes to be filled upstream.
   // From hydrostatic_dry_dp to d_tracer_mixing_ratio_dt inclusive.
   // Delta pressure between interfaces for dry pressure [mb]
@@ -404,10 +408,14 @@ public:
   // Tracer mixing ratio (TMR) including water vapor [kg/kg]
   using ColumnTracerView = ekat::Unmanaged<typename DeviceType::view_2d<Real>>;
   ColumnTracerView tracer_mixing_ratio;
+
+  // OUTPUTS:
   // Time tendency of tracer mixing ratio (TMR) [kg/kg/s]
-  // This is the only output of convproc that is to be applied to the
+  // This is the only output of convproc and is to be applied to the
   // array tracer_mixing_ratio to update.
   ColumnTracerView d_tracer_mixing_ratio_dt;
+  // ********** End Convective Process Diagnostic Arrays ******************
+  // ************************************************************************
 };
 
 } // namespace mam4
