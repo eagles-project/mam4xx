@@ -9,6 +9,7 @@ using namespace mam4;
 // Parameterizations used by the drydep process.
 void water_uptake_wetdens(Ensemble *ensemble);
 void find_real_solution(Ensemble *ensemble);
+void makoh_quartic(Ensemble *ensemble);
 
 void usage() {
   std::cerr << "aging_driver: a Skywalker driver for validating the "
@@ -48,6 +49,9 @@ int main(int argc, char **argv) {
     }
     if (func_name == "find_real_solution") {
       find_real_solution(ensemble);
+    }
+    if (func_name == "makoh_quartic") {
+      makoh_quartic(ensemble);
     }
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;

@@ -105,13 +105,55 @@ void find_real_solution(const Real rdry, const Kokkos::complex<Real> cx[4],
     if (xr < rdry * (1.0 - Water_Uptake::eps)) {
       continue;
     }
-    if (isnan(xr)) {
+    if (haero::isnan(xr)) {
       continue;
     }
 
     rwet = xr;
     nsol = nn;
   };
+}
+
+//-----------------------------------------------------------------------
+//     solves x**4 + p3 x**3 + p2 x**2 + p1 x + p0 = 0
+//     where p0, p1, p2, p3 are real
+//-----------------------------------------------------------------------
+KOKKOS_INLINE_FUNCTION
+void makoh_quartic(Kokkos::complex<Real> cx[4], const Real p3, const Real p2,
+                   const Real p1, const Real p0) {
+
+  // set complex zeros and 1/3 values
+  Kokkos::complex<Real> czero = {};
+
+  Real qq = -p2 * p2 / 36.0 + (p3 * p1 - 4.0 * p0) / 12.0;
+  Real rr = -haero::cube(p2 / 6.0) + p2 * (p3 * p1 - 4.0 * p0) / 48.0 +
+            (4.0 * p0 * p2 - p0 * p3 * p3 - p1 * p1) / 16.0;
+
+  Kokkos::complex<Real> crad = Kokkos::sqrt(rr * rr + qq * qq * qq);
+  Kokkos::complex<Real> cb = rr - crad;
+
+  if (cb == czero) {
+    // insoluble particle
+    cx[0] = haero::cbrt(-p1);
+    cx[1] = cx[0];
+    cx[2] = cx[0];
+    cx[3] = cx[0];
+  } else {
+    cb = Kokkos::pow(cb, 1.0 / 3.0);
+    Kokkos::complex<Real> cy = -cb + qq / cb + p2 / 6.0;
+    Kokkos::complex<Real> cb0 = Kokkos::sqrt(cy * cy - p0);
+    Kokkos::complex<Real> cb1 = (p3 * cy - p1) / (2.0 * cb0);
+
+    cb = p3 / 2.0 + cb1;
+    crad = Kokkos::sqrt(cb * cb - 4.0 * (cy + cb0));
+    cx[0] = (-cb + crad) / 2.0;
+    cx[1] = (-cb - crad) / 2.0;
+
+    cb = p3 / 2.0 - cb1;
+    crad = Kokkos::sqrt(cb * cb - 4.0 * (cy - cb0));
+    cx[2] = (-cb + crad) / 2.0;
+    cx[3] = (-cb - crad) / 2.0;
+  }
 }
 
 }; // namespace water_uptake

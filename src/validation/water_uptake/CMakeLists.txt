@@ -11,6 +11,7 @@ add_executable(water_uptake_driver
                water_uptake_driver.cpp
                water_uptake_wetdens.cpp
                find_real_solution.cpp
+               makoh_quartic.cpp
                )
 target_link_libraries(water_uptake_driver skywalker;validation;${HAERO_LIBRARIES})
 
@@ -26,6 +27,7 @@ target_link_libraries(water_uptake_driver skywalker;validation;${HAERO_LIBRARIES
 foreach (input
           water_uptake_wetdens
           find_real_solution
+          makoh_quartic
           )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
