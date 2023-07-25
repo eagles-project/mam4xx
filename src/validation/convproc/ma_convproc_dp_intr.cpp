@@ -182,8 +182,7 @@ void ma_convproc_dp_intr(Ensemble *ensemble) {
         "ma_convproc_dp_intr", 1, KOKKOS_LAMBDA(int) {
           Real cldfrac[nlev], icwmr[nlev], pmid[nlev], rprd[nlev], dpdry[nlev],
               evapc[nlev], du[nlev], eu[nlev], ed[nlev], dp[nlev],
-              qnew[nlev][pcnst], temperature[nlev], dqdt[nlev][pcnst],
-              qsrflx[pcnst][nsrflx];
+              temperature[nlev], dqdt[nlev][pcnst], qsrflx[pcnst][nsrflx];
           int species_class[pcnst];
           bool dotend[pcnst];
           for (int i = 0; i < nlev; ++i) {
@@ -198,20 +197,20 @@ void ma_convproc_dp_intr(Ensemble *ensemble) {
             eu[i] = eu_dev[i];
             ed[i] = ed_dev[i];
             dp[i] = dp_dev[i];
-            for (int j = 0; j < pcnst; ++j)
-              qnew[i][j] = qnew_dev(i, j);
           }
           for (int i = 0; i < pcnst; ++i) {
             species_class[i] = species_class_dev[i];
           }
+          auto dqdt_view = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(
+              &dqdt[0][0], nlev, pcnst);
           convproc::ma_convproc_dp_intr(
               scratch1Dviews, nlev, temperature, pmid, dpdry, dt, cldfrac,
-              icwmr, rprd, evapc, du, eu, ed, dp, ktop, kbot, qnew,
-              species_class, mmtoo_prevap_resusp, dqdt, qsrflx, dotend);
+              icwmr, rprd, evapc, du, eu, ed, dp, ktop, kbot, qnew_dev,
+              species_class, mmtoo_prevap_resusp, dqdt_view, qsrflx, dotend);
 
           for (int i = 0; i < nlev; ++i) {
             for (int j = 0; j < pcnst; ++j) {
-              dqdt_dev(i, j) = dqdt[i][j];
+              dqdt_dev(i, j) = dqdt_view(i, j);
             }
           }
           for (int i = 0; i < pcnst; ++i) {
