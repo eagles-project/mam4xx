@@ -181,7 +181,8 @@ void modal_aero_kohler(const Real rdry_in, const Real hygro, const Real rh,
   static constexpr Real rmax = 30.0;             // (BAD CONSTANT)
 
   // effect of organics on surface tension is neglected'
-  const Real aa = 2.0e4 * mw * surften / (ugascon * tair * rhow);
+  const Real aa =
+      2.0e4 * mw * surften / (ugascon * tair * rhow); // (BAD CONSTANT)
 
   const Real rdry = rdry_in * factor_m2um; // convert (m) to (microns)
   const Real vol = haero::cube(rdry);      // vol is r**3, not volume
