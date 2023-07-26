@@ -30,6 +30,7 @@ install(FILES
         hetfrz.hpp
         wv_sat_methods.hpp
         drydep.hpp
+        water_uptake.hpp
         ndrop.hpp
         DESTINATION include/mam4xx)
 
