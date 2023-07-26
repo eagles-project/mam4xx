@@ -10,6 +10,7 @@
 #include <haero/surface.hpp>
 #include <kokkos/Kokkos_Complex.hpp>
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/utils.hpp>
 namespace mam4 {
 class Water_Uptake {
 
@@ -156,6 +157,63 @@ void makoh_quartic(Kokkos::complex<Real> cx[4], const Real p3, const Real p2,
   }
 }
 
+// calculates equlibrium radius r of haze droplets as function of
+// dry particle mass and relative humidity s using kohler solution
+// given in pruppacher and klett (eqn 6-35)
+//
+// for multiple aerosol types, assumes an internal mixture of aerosols
+//-----------------------------------------------------------------------
+KOKKOS_INLINE_FUNCTION
+void modal_aero_kohler(const Real rdry_in, const Real hygro, const Real rh,
+                       Real &rwet_out) {
+
+  static constexpr Real rhow = 1.0;      // (BAD CONSTANT)
+  static constexpr Real surften = 76.0;  // (BAD CONSTANT)
+  static constexpr Real mw = 18.0;       // (BAD CONSTANT)
+  static constexpr Real tair = 273.0;    // (BAD CONSTANT)
+  static constexpr Real ugascon = 8.3e7; // (BAD CONSTANT)
+  static constexpr Real factor_um2m =
+      1.e-6; // (BAD CONSTANT) convert micron to m
+  static constexpr Real factor_m2um =
+      1.e6; // (BAD CONSTANT) convert m to micron
+  static constexpr Real small_value_10 = 1.e-10; // (BAD CONSTANT)
+  static constexpr Real rmax = 30.0;             // (BAD CONSTANT)
+
+  // effect of organics on surface tension is neglected'
+  const Real aa =
+      2.0e4 * mw * surften / (ugascon * tair * rhow); // (BAD CONSTANT)
+
+  const Real rdry = rdry_in * factor_m2um; // convert (m) to (microns)
+  const Real vol = haero::cube(rdry);      // vol is r**3, not volume
+  const Real bb = vol * hygro;
+
+  // quartic
+  const Real ss =
+      utils::min_max_bound(small_value_10, 1.0 - Water_Uptake::eps, rh);
+
+  const Real slog = haero::log(ss);
+  const Real p43 = -aa / slog;
+  const Real p42 = 0.0;
+  const Real p41 = bb / slog - vol;
+  const Real p40 = aa * vol / slog;
+
+  const Real pp = haero::abs(-bb / aa) / (rdry * rdry);
+  Real rwet = 0.0;
+  int nsol = 0;
+  Kokkos::complex<Real> cx4[4] = {};
+  if (pp < Water_Uptake::eps) {
+    // approximate solution for small particles
+    rwet = rdry * (1.0 + pp * (1.0 / 3.0) / (1.0 - slog * rdry / aa));
+  } else {
+    makoh_quartic(cx4, p43, p42, p41, p40);
+    find_real_solution(rdry, cx4, rwet, nsol);
+  }
+
+  // bound and convert from microns to m
+  rwet = haero::min(rwet, rmax); // upper bound based on 1 day lifetime
+  rwet_out = rwet * factor_um2m;
+}
+
 //-----------------------------------------------------------------------
 //
 // Purpose: Compute aerosol wet radius and other properties
@@ -180,8 +238,18 @@ void modal_aero_wateruptake_wetaer(
   //-----------------------------------------------------------------------
   // loop over all aerosol modes
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+
+    const Real hystfac =
+        1.0 / haero::max(1.0e-5, (rhdeliques[imode] - rhcrystal[imode]));
+
     water_uptake::modal_aero_kohler(dryrad[imode], hygro[imode], rh,
                                     wetrad[imode]);
+
+    wetrad[imode] = haero::max(wetrad[imode], dryrad[imode]);
+    wetvol[imode] = (Constants::pi * 4.0 / 3.0) * haero::cube(wetrad[imode]);
+    wetvol[imode] = haero::max(wetvol[imode], dryvol[imode]);
+    wtrvol[imode] = wetvol[imode] - dryvol[imode];
+    wtrvol[imode] = haero::max(wtrvol[imode], 0.0);
   }
 }
 
