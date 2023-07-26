@@ -189,7 +189,8 @@ void modal_aero_kohler(const Real rdry_in, const Real hygro, const Real rh,
 
   // quartic
   const Real ss =
-      utils::min_max_bound(small_value_10, 1.0e-8 - Water_Uptake::eps, rh);
+      utils::min_max_bound(small_value_10, 1.0 - Water_Uptake::eps, rh);
+
   const Real slog = haero::log(ss);
   const Real p43 = -aa / slog;
   const Real p42 = 0.0;
@@ -210,7 +211,7 @@ void modal_aero_kohler(const Real rdry_in, const Real hygro, const Real rh,
 
   // bound and convert from microns to m
   rwet = haero::min(rwet, rmax); // upper bound based on 1 day lifetime
-  rwet_out = rwet*factor_um2m; 
+  rwet_out = rwet * factor_um2m;
 }
 
 }; // namespace water_uptake

@@ -29,6 +29,7 @@ foreach (input
           water_uptake_wetdens
           find_real_solution
           makoh_quartic
+          modal_aero_kohler
           )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
