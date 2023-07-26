@@ -19,6 +19,7 @@
 #include <iomanip>
 
 namespace mam4 {
+
 // Namespace for WetDep function until wetdep is implimented.
 namespace WetDepTemp {
 KOKKOS_INLINE_FUNCTION
@@ -347,6 +348,22 @@ void activate_modal(
 /// This class implements MAM4's ConvProc parameterization.
 class ConvProc {
 public:
+  // maxd_aspectype = maximum allowable number of chemical species
+  // in each aerosol mode.
+  //
+  static constexpr int maxd_aspectype = 14;
+  // TODO: gas_pcnst number of "gas phase" species
+  // This should come from the chemistry model being used and will
+  // probably need to be dynamic.  This forces lmassptr_amode to
+  // also be dynamic.
+  static constexpr int gas_pcnst = 40;
+
+  // ====================================================================================
+  // The diagnostic arrays are twice the lengths of ConvProc::gas_pcnst because
+  // cloudborne aerosols are appended after interstitial aerosols both of which
+  // are of length gas_pcnst.
+  static constexpr int pcnst_extd = 2 * gas_pcnst;
+
   // nucleation-specific configuration
   struct Config {
 
@@ -360,6 +377,16 @@ public:
     bool convproc_do_aer = true;
     bool convproc_do_gas = false;
     int nlev = 72;
+    int ktop = 47;
+    int kbot = 71;
+    // Flags are defined in "enum ConvProc::species_class".
+    int species_class[ConvProc::gas_pcnst] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2,
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
+    int mmtoo_prevap_resusp[ConvProc::gas_pcnst] = {
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, 30, 32, 33, 31, 28, 29, 34, -3, 30, 33, 29, 34, -3,
+        28, 29, 30, 31, 32, 33, 34, -3, 32, 31, 34, -3};
   };
 
   static constexpr int num_modes = AeroConfig::num_modes();
@@ -376,23 +403,6 @@ public:
     gas = 3,        // spec_class_gas
     other = 4       // spec_class_other
   };
-  // maxd_aspectype = maximum allowable number of chemical species
-  // in each aerosol mode.
-  //
-  // TODO: Why is this not 7?
-  static constexpr int maxd_aspectype = 14;
-  // gas_pcnst number of "gas phase" species
-  // This should come from the chemistry model being used and will
-  // probably need to be dynamic.  This forces lmassptr_amode to
-  // also be dynamic.
-  static constexpr int gas_pcnst = 40;
-
-  // ====================================================================================
-  // The diagnostic arrays are twice the lengths of ConvProc::gas_pcnst because
-  // cloudborne aerosols are appended after interstitial aerosols both of which
-  // are of length gas_pcnst.
-  static constexpr int pcnst_extd = 2 * gas_pcnst;
-
   // Where lmapcc_val_num are defined in lmapcc_all
   //
   // numptr_amode(m) = gchm r-array index for the number mixing ratio
@@ -449,8 +459,6 @@ public:
   // be simplified to just a direct call to aero_species(i).density
   // but there is the problem of the indexes being in a different order.
   //
-  // TODO: figure out what maxd_aspectype is 14 and why not use 7?
-
   KOKKOS_INLINE_FUNCTION
   static constexpr Real specdens_amode(const int i) {
     // clang-format off
@@ -536,6 +544,9 @@ public:
     sumprevap_hist,
     sumresusp,
     sumwetdep,
+    dqdt,
+    qnew,
+    dlfdp,
     NumScratch
   };
 
@@ -586,6 +597,9 @@ public:
     Kokkos::resize(scratch1Dviews[sumprevap_hist], pcnst_extd);
     Kokkos::resize(scratch1Dviews[sumresusp], pcnst_extd);
     Kokkos::resize(scratch1Dviews[sumwetdep], pcnst_extd);
+    Kokkos::resize(scratch1Dviews[dqdt], config_.nlev * ConvProc::gas_pcnst);
+    Kokkos::resize(scratch1Dviews[qnew], config_.nlev * ConvProc::gas_pcnst);
+    Kokkos::resize(scratch1Dviews[dlfdp], config_.nlev);
   } // end(init)
 
   KOKKOS_INLINE_FUNCTION
@@ -593,7 +607,7 @@ public:
                           Real t, Real dt, const Atmosphere &atmosphere,
                           const Prognostics &prognostics,
                           const Diagnostics &diagnostics,
-                          const Tendencies &tendencies) const {}
+                          const Tendencies &tendencies) const;
 };
 
 namespace convproc {
@@ -713,8 +727,8 @@ void update_tendency_final(
     const Real dt,     // IN delta t (model time increment) [s]
     const ConstSubView dcondt, // IN grid-average TMR tendency for current column  [kg/kg/s]
     const bool doconvproc[], // IN  flag for doing convective transport
-    Real dqdt[],           // INOUT Tracer tendency array
-    SubView q_i) // INOUT  q(icol,kk,icnst) at current icol
+    SubView dqdt, // INOUT Tracer tendency array
+    SubView q_i)  // INOUT  q(icol,kk,icnst) at current icol
 {
 
   // -----------------------------------------------------------------------
@@ -762,7 +776,7 @@ void compute_column_tendency(
   const bool doconvproc_extd[ConvProc::pcnst_extd],  // IN flag for doing convective transport
   const int ktop,                                    // IN top level index
   const int kbot_prevap,                             // IN bottom level index, for resuspension and evaporation only
-  const Real dpdry_i[/*nlev*/],                      // IN dp [mb]
+  const Real dpdry[/*nlev*/],                        // IN dp [mb]
   Const_Kokkos_2D_View dcondt_resusp,      // IN nlev - portion of TMR tendency due to resuspension [kg/kg/s]
   Const_Kokkos_2D_View dcondt_prevap,      // IN nlev - portion of TMR tendency due to precip evaporation [kg/kg/s]
   Const_Kokkos_2D_View dcondt_prevap_hist, // IN nlev - portion of TMR tendency due to precip evaporation, goes into the history [kg/kg/s]
@@ -794,12 +808,12 @@ void compute_column_tendency(
       // should go to kk=nlev for dcondt_prevap, and this should be safe for
       // other sums
       for (int kk = ktop; kk < kbot_prevap; ++kk) {
-        sumactiva[icnst] += dconudt_activa(kk, icnst) * dpdry_i[kk] * fa_u[kk];
-        sumaqchem[icnst] += dconudt_aqchem * dpdry_i[kk] * fa_u[kk];
-        sumwetdep[icnst] += dconudt_wetdep(kk, icnst) * dpdry_i[kk] * fa_u[kk];
-        sumresusp[icnst] += dcondt_resusp(kk, icnst) * dpdry_i[kk];
-        sumprevap[icnst] += dcondt_prevap(kk, icnst) * dpdry_i[kk];
-        sumprevap_hist[icnst] += dcondt_prevap_hist(kk, icnst) * dpdry_i[kk];
+        sumactiva[icnst] += dconudt_activa(kk, icnst) * dpdry[kk] * fa_u[kk];
+        sumaqchem[icnst] += dconudt_aqchem * dpdry[kk] * fa_u[kk];
+        sumwetdep[icnst] += dconudt_wetdep(kk, icnst) * dpdry[kk] * fa_u[kk];
+        sumresusp[icnst] += dcondt_resusp(kk, icnst) * dpdry[kk];
+        sumprevap[icnst] += dcondt_prevap(kk, icnst) * dpdry[kk];
+        sumprevap_hist[icnst] += dcondt_prevap_hist(kk, icnst) * dpdry[kk];
       }
     }
   }
@@ -893,7 +907,7 @@ KOKKOS_INLINE_FUNCTION void ma_resuspend_convproc(SubView dcondt,
 
 // =========================================================================================
 KOKKOS_INLINE_FUNCTION
-void ma_precpevap(const Real dpdry_i, const Real evapc, const Real pr_flux,
+void ma_precpevap(const Real dpdry, const Real evapc, const Real pr_flux,
                   Real &pr_flux_base, Real &pr_flux_tmp, Real &x_ratio) {
   // clang-format off
   // ------------------------------------------
@@ -902,7 +916,7 @@ void ma_precpevap(const Real dpdry_i, const Real evapc, const Real pr_flux,
 
   /*
   in      :: evapc         conv precipitataion evaporation rate [kg/kg/s]
-  in      :: dpdry_i       pressure thickness of level [mb]
+  in      :: dpdry         pressure thickness of level [mb]
   in      :: pr_flux       precip flux at base of current layer [(kg/kg/s)*mb]
   inout   :: pr_flux_base  precip flux at an effective cloud base for calculations 
                            in a particular layer
@@ -917,7 +931,7 @@ void ma_precpevap(const Real dpdry_i, const Real evapc, const Real pr_flux,
   const Real small_value = 1.0e-30;
 
   // adjust pr_flux due to local evaporation
-  const Real ev_flux_local = haero::max(0.0, evapc * dpdry_i);
+  const Real ev_flux_local = haero::max(0.0, evapc * dpdry);
   pr_flux_tmp =
       utils::min_max_bound(0.0, pr_flux_base, pr_flux - ev_flux_local);
 
@@ -959,7 +973,7 @@ void ma_precpevap(const Real dpdry_i, const Real evapc, const Real pr_flux,
 //=========================================================================================
 template <typename SubView, typename ConstSubView>
 KOKKOS_INLINE_FUNCTION void
-ma_precpprod(const Real rprd, const Real dpdry_i,
+ma_precpprod(const Real rprd, const Real dpdry,
              const bool doconvproc_extd[ConvProc::pcnst_extd],
              const Real x_ratio, const int species_class[ConvProc::gas_pcnst],
              const int mmtoo_prevap_resusp[ConvProc::gas_pcnst], Real &pr_flux,
@@ -973,7 +987,7 @@ ma_precpprod(const Real rprd, const Real dpdry_i,
   /*
   in  rprd  -  conv precip production  rate (at a certain level) [kg/kg/s]
   in  dcondt_wetdep[pcnst_extd] - portion of TMR tendency due to wet removal [kg/kg/s]
-  in  dpdry_i      - pressure thickness of level [mb]
+  in  dpdry      - pressure thickness of level [mb]
   in  doconvproc_extd[pcnst_extd]  - indicates which species to process
   in  x_ratio    - ratio of adjusted and old fraction of precipitation-borne aerosol 
                    flux that is NOT resuspended, calculated in step 1
@@ -1000,7 +1014,7 @@ ma_precpprod(const Real rprd, const Real dpdry_i,
   */
   // clang-format on
   // local precip flux [(kg/kg/s)*mb]
-  const Real pr_flux_local = haero::max(0.0, rprd * dpdry_i);
+  const Real pr_flux_local = haero::max(0.0, rprd * dpdry);
   pr_flux_base = haero::max(0.0, pr_flux_base + pr_flux_local);
   pr_flux =
       utils::min_max_bound(0.0, pr_flux_base, pr_flux_tmp + pr_flux_local);
@@ -1023,12 +1037,11 @@ ma_precpprod(const Real rprd, const Real dpdry_i,
       // increment)
 
       // local wet deposition flux [(kg/kg/s)*mb]
-      const Real wd_flux_local =
-          haero::max(0.0, -dcondt_wetdep[icnst] * dpdry_i);
+      const Real wd_flux_local = haero::max(0.0, -dcondt_wetdep[icnst] * dpdry);
       wd_flux[icnst] = haero::max(0.0, wd_flux_tmp + wd_flux_local);
 
       // dcondt due to wet deposition flux change [kg/kg/s]
-      const Real dcondt_wdflux = del_wd_flux_evap / dpdry_i;
+      const Real dcondt_wdflux = del_wd_flux_evap / dpdry;
 
       // for interstitial icnst2=icnst;  for activated icnst2=icnst-pcnst
       const int icnst2 = icnst % ConvProc::gas_pcnst;
@@ -1819,13 +1832,12 @@ void set_cloudborne_vars(const bool doconvproc[ConvProc::gas_pcnst],
   }
 }
 // ======================================================================================
-KOKKOS_INLINE_FUNCTION
-void update_qnew_ptend(const bool dotend[ConvProc::gas_pcnst],
-                       const bool is_update_ptend,
-                       const Real dqdt[ConvProc::gas_pcnst], const Real dt,
-                       bool ptend_lq[ConvProc::gas_pcnst],
-                       Real ptend_q[ConvProc::gas_pcnst],
-                       Real qnew[ConvProc::gas_pcnst]) {
+template <typename SubView, typename ConstSubView>
+KOKKOS_INLINE_FUNCTION void
+update_qnew_ptend(const bool dotend[ConvProc::gas_pcnst],
+                  const bool is_update_ptend, ConstSubView dqdt, const Real dt,
+                  bool ptend_lq[ConvProc::gas_pcnst], SubView ptend_q,
+                  SubView qnew) {
   // ---------------------------------------------------------------------------------------
   // update qnew, ptend_q and ptend_lq
   // ---------------------------------------------------------------------------------------
@@ -1843,15 +1855,14 @@ void update_qnew_ptend(const bool dotend[ConvProc::gas_pcnst],
   */
   // clang-format on 
   for (int ll = 0; ll < ConvProc::gas_pcnst; ++ll) {
-    if (dotend[ll]) {
-      // calc new q (after ma_convproc_sh_intr)
-      qnew[ll] = haero::max(0.0, qnew[ll] + dt*dqdt[ll]);
-
-      if ( is_update_ptend ) {
-        // add dqdt onto ptend_q and set ptend_lq
-        ptend_lq[ll] = true;
-        ptend_q[ll] += dqdt[ll];
-      }
+    // calc new q (after ma_convproc_sh_intr)
+    if (dotend[ll]) qnew[ll] = haero::max(0.0, qnew[ll] + dt*dqdt[ll]);
+  }
+  for (int ll = 0; ll < ConvProc::gas_pcnst; ++ll) {
+    if (dotend[ll] && is_update_ptend) {
+      // add dqdt onto ptend_q and set ptend_lq
+      ptend_lq[ll] = true;
+      ptend_q[ll] += dqdt[ll];
     }
   }
 }
@@ -2350,24 +2361,23 @@ void compute_updraft_mixing_ratio(
   }   // "kk = kbot-1; ktop <= kk; --kk"
 }
 // ======================================================================================
-
-KOKKOS_INLINE_FUNCTION
-void ma_convproc_tend(
-    const Kokkos::View<Real *>
-        scratch1Dviews[ConvProc::Col1DViewInd::NumScratch],
-    const int nlev, const ConvProc::convtype convtype, const Real dt,
-    const Real temperature[/* nlev */], const Real pmid[/* nlev */],
-    const Real qnew[/* nlev */][ConvProc::gas_pcnst], const Real du[/* nlev */],
-    const Real eu[/* nlev */], const Real ed[/* nlev */],
-    const Real dp[/* nlev */], const Real dpdry[/* nlev */], const int ktop,
-    const int kbot, const int mmtoo_prevap_resusp[/* ConvProc::gas_pcnst */],
-    const Real cldfrac[/* nlev */], const Real icwmr[/* nlev */],
-    const Real rprd[/* nlev */], const Real evapc[/* nlev */],
-    Real dqdt[/* nlev */][ConvProc::gas_pcnst],
-    const bool doconvproc[/* ConvProc::gas_pcnst */],
-    Real qsrflx[/* ConvProc::gas_pcnst */][nsrflx],
-    const int species_class[/* ConvProc::gas_pcnst */], Real &xx_mfup_max,
-    Real &xx_wcldbase, int &xx_kcldbase) {
+template <typename SubView, typename ConstSubView>
+KOKKOS_INLINE_FUNCTION void
+ma_convproc_tend(const Kokkos::View<Real *>
+                     scratch1Dviews[ConvProc::Col1DViewInd::NumScratch],
+                 const int nlev, const ConvProc::convtype convtype,
+                 const Real dt, const Real temperature[/* nlev */],
+                 const Real pmid[/* nlev */], ConstSubView qnew,
+                 const Real du[/* nlev */], const Real eu[/* nlev */],
+                 const Real ed[/* nlev */], const Real dp[/* nlev */],
+                 const Real dpdry[/* nlev */], const int ktop, const int kbot,
+                 const int mmtoo_prevap_resusp[/* ConvProc::gas_pcnst */],
+                 const Real cldfrac[/* nlev */], const Real icwmr[/* nlev */],
+                 const Real rprd[/* nlev */], const Real evapc[/* nlev */],
+                 SubView dqdt, const bool doconvproc[/* ConvProc::gas_pcnst */],
+                 Real qsrflx[/* ConvProc::gas_pcnst */][nsrflx],
+                 const int species_class[/* ConvProc::gas_pcnst */],
+                 Real &xx_mfup_max, Real &xx_wcldbase, int &xx_kcldbase) {
   // clang-format off
   /*
   // ----------------------------------------------------------------------- 
@@ -2577,11 +2587,11 @@ void ma_convproc_tend(
       scratch1Dviews[ConvProc::Col1DViewInd::sumwetdep];
 
   //  q(nlev,pcnst)      ! q(k,m) at current i [kg/kg]
-  auto q = Kokkos::View<Real *[pcnst], Kokkos::MemoryUnmanaged>(
+  auto q = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(
       scratch1Dviews[ConvProc::Col1DViewInd::q].data(), nlev, pcnst);
   for (int i = 0; i < nlev; ++i)
     for (int j = 0; j < pcnst; ++j)
-      q(i, j) = qnew[i][j];
+      q(i, j) = qnew(i, j);
 
   // precip-borne aerosol
   //    dcondt_wetdep is kgaero/kgair/s
@@ -2603,7 +2613,7 @@ void ma_convproc_tend(
       qsrflx[i][j] = 0;
   for (int i = 0; i < nlev; ++i)
     for (int j = 0; j < pcnst; ++j)
-      dqdt[i][j] = 0;
+      dqdt(i, j) = 0;
   xx_mfup_max = 0;
   xx_wcldbase = 0;
   xx_kcldbase = 0;
@@ -2729,14 +2739,15 @@ void ma_convproc_tend(
     for (int kk = ktop; kk < kbot_prevap; ++kk) {
       update_tendency_final(
           ntsub, jtsub, pcnst, dt, Kokkos::subview(dcondt, kk, Kokkos::ALL()),
-          doconvproc, dqdt[kk], Kokkos::subview(q, kk, Kokkos::ALL()));
+          doconvproc, Kokkos::subview(dqdt, kk, Kokkos::ALL()),
+          Kokkos::subview(q, kk, Kokkos::ALL()));
     }
   } // of the main "for jtsub = 0, ntsub" loop
 }
 
 // =========================================================================================
-KOKKOS_INLINE_FUNCTION
-void ma_convproc_dp_intr(
+template <typename SubView, typename ConstSubView>
+KOKKOS_INLINE_FUNCTION void ma_convproc_dp_intr(
     const Kokkos::View<Real *>
         scratch1Dviews[ConvProc::Col1DViewInd::NumScratch],
     const int nlev, const Real temperature[/* nlev */],
@@ -2745,10 +2756,9 @@ void ma_convproc_dp_intr(
     const Real rprddp[/* nlev */], const Real evapcdp[/* nlev */],
     const Real du[/* nlev */], const Real eu[/* nlev */],
     const Real ed[/* nlev */], const Real dp[/* nlev */], const int ktop,
-    const int kbot, const Real qnew[/* nlev */][ConvProc::gas_pcnst],
+    const int kbot, ConstSubView qnew,
     const int species_class[/* ConvProc::gas_pcnst */],
-    const int mmtoo_prevap_resusp[/* ConvProc::gas_pcnst */],
-    Real dqdt[/* nlev */][ConvProc::gas_pcnst],
+    const int mmtoo_prevap_resusp[/* ConvProc::gas_pcnst */], SubView dqdt,
     Real qsrflx[/* ConvProc::gas_pcnst */][nsrflx],
     bool dotend[ConvProc::gas_pcnst]) {
 
@@ -2777,14 +2787,13 @@ void ma_convproc_dp_intr(
    in    :: pmid[nlev]      ! Pressure at model levels [Pa]
 
    in    :: dt                   ! delta t (model time increment) [s]
-   in    :: qnew[nlev,pcnst]     ! tracer mixing ratio including water vapor [kg/kg]
+   in    :: qnew[nlev][pcnst]     ! tracer mixing ratio including water vapor [kg/kg]
    in    :: nsrflx               ! last dimension of qsrflx
 
    in    :: cldfrac[nlev] ! Deep conv cloud fraction [0-1]
    in    :: icwmr[nlev] ! Deep conv cloud condensate (in cloud) [kg/kg]
    in    :: rprddp[nlev]  ! Deep conv precip production (grid avg) [kg/kg/s]
    in    :: evapcdp[nlev] ! Deep conv precip evaporation (grid avg) [kg/kg/s]
-   in    :: dlfdp[nlev]   ! Deep conv cldwtr detrainment (grid avg) [kg/kg/s]
 
    in    :: du[nlev]   ! Mass detrain rate from updraft [1/s]
    in    :: eu[nlev]   ! Mass entrain rate into updraft [1/s]
@@ -2802,7 +2811,7 @@ void ma_convproc_dp_intr(
              -1 for other species
 
    out   :: dotend[pcnst]        ! if do tendency
-   inout :: dqdt[nlev,pcnst]     ! time tendency of q [kg/kg/s]
+   inout :: dqdt[nlev][pcnst]     ! time tendency of q [kg/kg/s]
    inout :: qsrflx[pcnst,nsrflx] ! process-specific column tracer tendencies (see ma_convproc_intr for more information) [kg/m2/s]
 
   */
@@ -2844,6 +2853,346 @@ void ma_convproc_dp_intr(
                    species_class, xx_mfup_max, xx_wcldbase, xx_kcldbase);
 }
 
+// =========================================================================================
+template <typename SubView, typename ConstSubView>
+KOKKOS_INLINE_FUNCTION void ma_convproc_sh_intr(
+    const int nlev, const Real temperature[/* nlev */],
+    const Real pmid[/* nlev */], const Real dpdry[/* nlev */],
+    const Real pdel[/* nlev */], const Real dt, const Real cldfrac[/* nlev */],
+    const Real icwmr[/* nlev */], const Real rprddp[/* nlev */],
+    const Real evapcdp[/* nlev */], ConstSubView qnew,
+    const int species_class[/* ConvProc::gas_pcnst */], SubView dqdt,
+    Real qsrflx[/* ConvProc::gas_pcnst */][nsrflx],
+    bool dotend[ConvProc::gas_pcnst]) {
+  // clang-format off
+  // ----------------------------------------------------------------------- 
+  //  
+  //  Purpose: 
+  //  Convective cloud processing (transport, activation/resuspension,
+  //     wet removal) of aerosols and trace gases.
+  //     (Currently no aqueous chemistry and no trace-gas wet removal)
+  //  Does aerosols    when convproc_do_aer is .true.
+  //  Does trace gases when convproc_do_gas is .true.
+  // 
+  //  This routine does shallow convection
+  //  Uses mass fluxes, cloud water, precip production from the
+  //     convective cloud routines
+  //  
+  //  Author: R. Easter
+  //  
+  // -----------------------------------------------------------------------
+
+  //  Arguments
+  /*   
+  in    :: dpdry[pver]           ! layer delta-p-dry [mb]
+  in    :: pdel[pver]            ! layer delta-p [mb]
+  in    :: temperature[pver]     ! Temperature [K]
+  in    :: pmid[pver]            ! Pressure at model levels [Pa]
+
+  in    :: dt                    ! delta t (model time increment) [s]
+  in    :: qnew[pver][pcnst]      ! tracer mixing ratio (TMR) including water vapor [kg/kg]
+
+  in    :: sh_frac[pver]         ! Shallow conv cloud frac [0-1]
+  in    :: icwmrsh[pver]         ! Shallow conv cloud condensate (in cloud) [kg/kg]
+  in    :: rprddp[pver]          ! Shallow conv precip production (grid avg) [kg/kg/s]
+  in    :: evapcdp[pver]         ! Shallow conv precip evaporation (grid avg) [kg/kg/s]
+  in    :: species_class[:]      ! species index
+
+  out   :: dotend[pcnst]         ! flag if do tendency
+  inout :: dqdt[pver][pcnst]     ! time tendency of TMR [kg/kg/s]
+  inout :: qsrflx[pcnst][nsrflx] ! process-specific column tracer tendencies  (see ma_convproc_intr for more information) [kg/m2/s] 
+  */
+  // clang-format on
+
+  // the original FORTRAN code has code to calculate mass fluxes from shallow
+  // convection, but the mass flux from CLUBB is currently set as zero,
+  // (see subroutine convect_shallow_tend in physics/cam/convect_shallow.F90)
+  // Therefore, we remove the calculation of the following variables and simply
+  // set them in default values for C++ porting.   - Shuaiqi Tang 2023.2.25
+  // =========================================================================================
+  for (int i = 0; i < nlev; ++i)
+    for (int j = 0; j < ConvProc::gas_pcnst; ++j)
+      dqdt(i, j) = 0;
+
+  for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+    for (int j = 0; j < nsrflx; ++j)
+      qsrflx[i][j] = 0;
+  for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+    dotend[i] = false;
+}
+
+// =========================================================================================
+KOKKOS_INLINE_FUNCTION
+void ma_convproc_intr(
+    const ThreadTeam &team,
+    const Kokkos::View<Real *>
+        scratch1Dviews[ConvProc::Col1DViewInd::NumScratch],
+    const bool convproc_do_aer, const bool convproc_do_gas, const int nlev,
+    const Real temperature[/* nlev */], const Real pmid[/* nlev */],
+    const Real dpdry[/* nlev */], const Real pdel[/* nlev */], const Real dt,
+    const Real dp_frac[/* nlev */], const Real icwmrdp[/* nlev */],
+    const Real rprddp[/* nlev */], const Real evapcdp[/* nlev */],
+    const Real sh_frac[/* nlev */], const Real icwmrsh[/* nlev */],
+    const Real rprdsh[/* nlev */], const Real evapcsh[/* nlev */],
+    const Real dlf[/* nlev */], const Real dlfsh[/* nlev */],
+    const Real sh_e_ed_ratio[/* nlev */], const Real du[/* nlev */],
+    const Real eu[/* nlev */], const Real ed[/* nlev */],
+    const Real dp[/* nlev */], const int ktop, const int kbot,
+    const int species_class[ConvProc::gas_pcnst],
+    const int mmtoo_prevap_resusp[ConvProc::gas_pcnst],
+    const Diagnostics::ColumnTracerView state_q,
+    Diagnostics::ColumnTracerView ptend_q, bool ptend_lq[ConvProc::gas_pcnst],
+    Real aerdepwetis[ConvProc::gas_pcnst]) {
+
+  //-----------------------------------------------------------------------
+  //
+  // Purpose:
+  // Convective cloud processing (transport, activation/resuspension,
+  //    wet removal) of aerosols and trace gases.
+  //    (Currently no aqueous chemistry and no trace-gas wet removal)
+  // Does aerosols    when convproc_do_aer is .true.
+  // Does trace gases when convproc_do_gas is .true.
+  //
+  // Does deep and shallow convection
+  // Uses mass fluxes, cloud water, precip production from the
+  //    convective cloud routines
+  //
+  // Author: R. Easter
+  //
+  //-----------------------------------------------------------------------
+
+  // clang-format off
+  // Arguments
+  /*  
+  in    :: dpdry[nlev]           ! layer delta-p-dry [mb]
+  in    :: pdel[nlev]            ! layer delta-p [mb]
+  in    :: temperature[nlev]     ! Temperature [K]
+  in    :: pmid[nlev]            ! Pressure at model levels [Pa]
+
+  in    :: dt                        ! 2 delta t [s]
+                                ! from input this is just model time step, 
+                                ! not sure why it is "2" delta t. Shuaiqi Tang 2022
+  in    :: dp_frac[nlev]       ! Deep conv cloud frac [fraction]
+  in    :: icwmrdp[nlev]         ! Deep conv cloud condensate (in cloud) [kg/kg]
+  in    :: rprddp[nlev]        ! Deep conv precip production (grid avg) [kg/kg/s]
+  in    :: evapcdp[nlev]       ! Deep conv precip evaporation (grid avg) [kg/kg/s]
+  in    :: sh_frac[nlev]       ! Shal conv cloud frac [fraction]
+  in    :: icwmrsh[nlev]       ! Shal conv cloud condensate (in cloud) [kg/kg]
+  in    :: rprdsh[nlev]        ! Shal conv precip production (grid avg) [kg/kg/s]
+  in    :: evapcsh[nlev]       ! Shal conv precip evaporation (grid avg) [kg/kg/s]
+  in    :: dlf[nlev]           ! Tot  conv cldwtr detrainment (grid avg) [kg/kg/s]
+  in    :: dlfsh[nlev]         ! Shal conv cldwtr detrainment (grid avg) [kg/kg/s]
+  in    :: sh_e_ed_ratio[nlev] ! shallow conv [ent/(ent+det)] ratio [fraction]
+  inout :: aerdepwetis[pcnst]  ! aerosol wet deposition (interstitial) [kg/m2/s]
+                       ! eu, ed, du are "d(massflux)/dp" and are all positive
+  in    :: eu[nlev]    ! Mass entrain rate into updraft [1/s]
+  in    :: ed[nlev]    ! Mass entrain rate into downdraft [1/s]
+  in    :: du[nlev]    ! Mass detrain rate from updraft [1/s]
+  in    :: dp[nlev]    ! Delta pressure between interfaces [mb]
+  in    :: ktop           ! Index of cloud top (updraft top) for each column in w grid
+  in    :: kbot         ! Index of cloud base (level of maximum moist static energy) for each column in w grid
+  in    :: species_class[ConvProc::gas_pcnst]  ! species index defined as
+          spec_class::undefined  = 0
+          spec_class::cldphysics = 1
+          spec_class::aerosol    = 2
+          spec_class::gas        = 3
+          spec_class::other      = 4
+  
+  in  mmtoo_prevap_resConvProc::gas_pcnstusp[ConvProc::gas_pcnst]
+        pointers for resuspension mmtoo_prevap_resusp values are
+           >=0 for aerosol mass species with    coarse mode counterpart
+           -2 for aerosol mass species WITHOUT coarse mode counterpart
+           -3 for aerosol number species
+           -1 for other species
+  */
+  // clang-format on
+
+  auto dqdt = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(
+      scratch1Dviews[ConvProc::Col1DViewInd::dqdt].data(), nlev,
+      ConvProc::gas_pcnst);
+
+  auto dlfdp = Kokkos::View<Real *, Kokkos::MemoryUnmanaged>(
+      scratch1Dviews[ConvProc::Col1DViewInd::dlfdp].data(), nlev);
+
+  for (int j = 0; j < nlev; ++j)
+    for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+      dqdt(j, i) = ptend_q(j, i);
+
+  // qnew will update in the subroutines but not update back to state%q
+  auto qnew = Diagnostics::ColumnTracerView(
+      scratch1Dviews[ConvProc::Col1DViewInd::qnew].data(), nlev,
+      ConvProc::gas_pcnst);
+  EKAT_KERNEL_ASSERT(state_q.extent(0) == nlev);
+  EKAT_KERNEL_ASSERT(state_q.extent(1) <= ConvProc::gas_pcnst);
+  for (int i = 0; i < nlev; ++i)
+    for (int j = 0; j < ConvProc::gas_pcnst; ++j)
+      qnew(i, j) = state_q(i, j);
+
+  // if do tendency
+  bool dotend[ConvProc::gas_pcnst];
+  for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+    dotend[i] = ptend_lq[i];
+
+  //
+  // prepare for processing
+  //
+
+  // The following loop can be done in parallel even though ptend_lq is
+  // overwritten each time I think it is OK since it is overwritten the same
+  // from each thread.
+  for (int kk = 0; kk < nlev; ++kk)
+    update_qnew_ptend(dotend, false, Kokkos::subview(dqdt, kk, Kokkos::ALL()),
+                      dt, ptend_lq, Kokkos::subview(ptend_q, kk, Kokkos::ALL()),
+                      Kokkos::subview(qnew, kk, Kokkos::ALL()));
+
+  if (convproc_do_aer || convproc_do_gas) {
+    //
+    // do deep conv processing
+    //
+    Real qsrflx[ConvProc::gas_pcnst][nsrflx] = {};
+    for (int j = 0; j < nlev; ++j)
+      for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+        dqdt(j, i) = 0;
+    for (int j = 0; j < nlev; ++j)
+      dlfdp[j] = haero::max((dlf[j] - dlfsh[j]), 0.0);
+    ma_convproc_dp_intr(scratch1Dviews, nlev, temperature, pmid, dpdry, dt,
+                        dp_frac, icwmrdp, rprddp, evapcdp, du, eu, ed, dp, ktop,
+                        kbot, qnew, species_class, mmtoo_prevap_resusp, dqdt,
+                        qsrflx, dotend);
+    // apply deep conv processing tendency and prepare for shallow conv
+    // processing
+    for (int kk = 0; kk < nlev; ++kk)
+      update_qnew_ptend(dotend, true, Kokkos::subview(dqdt, kk, Kokkos::ALL()),
+                        dt, ptend_lq,
+                        Kokkos::subview(ptend_q, kk, Kokkos::ALL()),
+                        Kokkos::subview(qnew, kk, Kokkos::ALL()));
+    // update variables for output
+    for (int icnst = 0; icnst < ConvProc::gas_pcnst; ++icnst) {
+      // this used for surface coupling:
+      //  4 = wet removal
+      //  5 = actual precip-evap resuspension (what actually is applied to a
+      //  species)
+      if (dotend[icnst] &&
+          species_class[icnst] == ConvProc::species_class::aerosol)
+        aerdepwetis[icnst] += qsrflx[icnst][4] + qsrflx[icnst][5];
+    }
+    //
+    // do shallow conv processing
+    //
+    for (int j = 0; j < nlev; ++j)
+      for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+        dqdt(j, i) = 0;
+    for (int j = 0; j < nsrflx; ++j)
+      for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+        qsrflx[i][j] = 0;
+    ma_convproc_sh_intr(nlev, temperature, pmid, dpdry, pdel, dt, sh_frac,
+                        icwmrsh, rprdsh, evapcsh, qnew, species_class, dqdt,
+                        qsrflx, dotend);
+
+    // apply shallow conv processing tendency
+    for (int kk = 0; kk < nlev; ++kk)
+      update_qnew_ptend(dotend, true, Kokkos::subview(dqdt, kk, Kokkos::ALL()),
+                        dt, ptend_lq,
+                        Kokkos::subview(ptend_q, kk, Kokkos::ALL()),
+                        Kokkos::subview(qnew, kk, Kokkos::ALL()));
+    // update variables for output
+    for (int icnst = 0; icnst < ConvProc::gas_pcnst; ++icnst) {
+      // this used for surface coupling
+      //  4 = wet removal
+      //  5 = actual precip-evap resuspension (what actually is applied to a
+      //  species)
+      if (dotend[icnst] &&
+          species_class[icnst] == ConvProc::species_class::aerosol)
+        aerdepwetis[icnst] += qsrflx[icnst][4] + qsrflx[icnst][5];
+    }
+  } // (convproc_do_aer || convproc_do_gas)
+}
 } // namespace convproc
+
+// TODO: The ThreadTeam passed to compute_tendencies is not currently used
+// as there are some low-level function that can not be parallel over the
+// column due to the integration like algorithms.  But there are some
+// functions that could be parallel over the column and these need to
+// be teased out and run with the team.
+KOKKOS_INLINE_FUNCTION
+void ConvProc::compute_tendencies(const AeroConfig &config,
+                                  const ThreadTeam &team, Real t, Real dt,
+                                  const Atmosphere &atmosphere,
+                                  const Prognostics &prognostics,
+                                  const Diagnostics &diagnostics,
+                                  const Tendencies &tendencies) const {
+
+  const bool convproc_do_aer = config_.convproc_do_aer;
+  const bool convproc_do_gas = config_.convproc_do_gas;
+  const int ktop = config_.ktop;
+  const int kbot = config_.kbot;
+  int species_class[ConvProc::gas_pcnst];
+  for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+    species_class[i] = config_.species_class[i];
+  int mmtoo_prevap_resusp[ConvProc::gas_pcnst];
+  ;
+  for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+    mmtoo_prevap_resusp[i] = config_.mmtoo_prevap_resusp[i];
+
+  const int nlev = atmosphere.num_levels();
+  const Real *temperature = atmosphere.temperature.data();
+  const Real *pmid = atmosphere.pressure.data();
+  // pdel = Delta pressure between interfaces [mb]
+  const Real *pdel = atmosphere.hydrostatic_dp.data();
+  // dpdry =  Delta dry-pressure [mb]
+  const Real *dpdry = diagnostics.hydrostatic_dry_dp.data();
+  // dp_frac = Deep conv cloud frac [fraction]
+  const Real *dp_frac = diagnostics.deep_convective_cloud_fraction.data();
+  // sh_frac = Shallow conv cloud frac [fraction]
+  const Real *sh_frac = diagnostics.shallow_convective_cloud_fraction.data();
+  // Deep cloud convective condensate [kg/kg]
+  const Real *icwmrdp = diagnostics.deep_convective_cloud_condensate.data();
+  // Shallow cloud convective condensate [kg/kg]
+  const Real *icwmrsh = diagnostics.shallow_convective_cloud_condensate.data();
+  // Deep convective precipitation production (grid avg) [kg/kg/s]
+  const Real *rprddp =
+      diagnostics.deep_convective_precipitation_production.data();
+  // Shallow convective precipitation production (grid avg) [kg/kg/s]
+  const Real *rprdsh =
+      diagnostics.shallow_convective_precipitation_production.data();
+  // Deep convective precipitation evaporation (grid avg) [kg/kg/s]
+  const Real *evapcdp =
+      diagnostics.deep_convective_precipitation_evaporation.data();
+  // Shallow convective precipitation evaporation (grid avg) [kg/kg/s]
+  const Real *evapcsh =
+      diagnostics.shallow_convective_precipitation_evaporation.data();
+  // Shallow+Deep convective detrainment [kg/kg/s]
+  const Real *dlftot = diagnostics.total_convective_detrainment.data();
+  // Shallow convective detrainment [kg/kg/s]
+  const Real *dlfsh = diagnostics.shallow_convective_detrainment.data();
+  // Shallow convective ratio: [entrainment/(entrainment+detrainment)]
+  // [fraction]
+  const Real *sh_e_ed_ratio = diagnostics.shallow_convective_ratio.data();
+
+  // Next three are "d(massflux)/dp" and are all positive [1/s]
+  const Real *eu = diagnostics.mass_entrain_rate_into_updraft.data();
+  const Real *ed = diagnostics.mass_entrain_rate_into_downdraft.data();
+  const Real *du = diagnostics.mass_detrain_rate_from_updraft.data();
+
+  // Delta pressure between interfaces [mb]
+  const Real *dp = diagnostics.delta_pressure.data();
+
+  // Tracer mixing ratio (TMR) including water vapor [kg/kg]
+  const auto state_q = diagnostics.tracer_mixing_ratio;
+  // Time tendency of tracer mixing ratio (TMR) [kg/kg/s]
+  auto ptend_q = diagnostics.d_tracer_mixing_ratio_dt;
+
+  // Diagnostic values that might be of use but not sure.
+  // ptend_lq is just a flag that signifies if the gas was updated.
+  bool ptend_lq[ConvProc::gas_pcnst] = {};
+  // Aerosol wet deposition (interstitial) [kg/m2/s]
+  Real aerdepwetis[ConvProc::gas_pcnst] = {};
+  convproc::ma_convproc_intr(
+      team, scratch1Dviews, convproc_do_aer, convproc_do_gas, nlev, temperature,
+      pmid, dpdry, pdel, dt, dp_frac, icwmrdp, rprddp, evapcdp, sh_frac,
+      icwmrsh, rprdsh, evapcsh, dlftot, dlfsh, sh_e_ed_ratio, du, eu, ed, dp,
+      ktop, kbot, species_class, mmtoo_prevap_resusp, state_q, ptend_q,
+      ptend_lq, aerdepwetis);
+}
 } // namespace mam4
 #endif
