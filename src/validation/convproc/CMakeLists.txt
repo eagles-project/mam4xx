@@ -10,7 +10,28 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 
 # We use a single driver for all convproc-related parameterizations.
 add_executable(convproc_driver convproc_driver.cpp
-               update_tendency_final.cpp)
+               update_tendency_final.cpp
+               compute_column_tendency.cpp
+               ma_precpevap.cpp
+               ma_precpprod.cpp
+               initialize_dcondt.cpp
+               compute_downdraft_mixing_ratio.cpp
+               ma_precpevap_convproc.cpp
+               aer_vol_num_hygro.cpp
+               compute_wup.cpp
+               compute_massflux.cpp
+               compute_ent_det_dp.cpp
+               compute_midlev_height.cpp
+               initialize_tmr_array.cpp
+               update_qnew_ptend.cpp
+               compute_wetdep_tend.cpp
+               ma_activate_convproc.cpp
+               compute_activation_tend.cpp
+               compute_updraft_mixing_ratio.cpp
+               ma_convproc_tend.cpp
+               ma_convproc_dp_intr.cpp
+               compute_tendencies.cpp
+               ma_resuspend_convproc.cpp)
 target_link_libraries(convproc_driver skywalker;validation;${HAERO_LIBRARIES})
 
 
@@ -29,6 +50,32 @@ endforeach()
 # convproc
 foreach (input
          update_tendency_final
+         compute_column_tendency
+         ma_precpevap
+         ma_precpprod
+         initialize_dcondt
+         compute_downdraft_mixing_ratio
+         ma_precpevap_convproc
+         ma_resuspend_convproc
+         aer_vol_num_hygro
+         compute_wup
+         compute_massflux
+         compute_massflux_small
+         compute_ent_det_dp
+         compute_midlev_height
+         initialize_tmr_array_1
+         initialize_tmr_array_2
+         update_qnew_ptend_true
+         update_qnew_ptend_false
+         compute_wetdep_tend
+         ma_activate_convproc_54
+         ma_activate_convproc_68
+         compute_activation_tend_do_act_true
+         compute_activation_tend_do_act_false
+         compute_updraft_mixing_ratio
+         ma_convproc_tend
+         ma_convproc_dp_intr
+         compute_tendencies
          )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
@@ -45,6 +92,17 @@ foreach (input
   # Select a threshold error slightly bigger than the largest relative error for the threshold error.
   # Conservative approach: At the time of this commit, threshold error=2e-6.
   # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error> 
-  add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True 2e-6)
+  if (${input} STREQUAL compute_activation_tend_do_act_true) 
+    set(TOL 6e-6)
+  elseif (${input} STREQUAL ma_activate_convproc_54) 
+    set(TOL 6e-5)
+  elseif (${input} STREQUAL ma_convproc_tend) 
+    set(TOL 1e-4)
+  elseif (${input} STREQUAL compute_updraft_mixing_ratio) 
+    set(TOL 2e-4)
+  else ()
+    set(TOL 2e-6)
+  endif ()
+  add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${TOL})
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
 endforeach()

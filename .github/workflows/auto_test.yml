@@ -27,7 +27,6 @@ jobs:
 
     # Environment variables
     env:
-      FC: gfortran
       CI: 1   # indicates that we are running in a CI environment.
 
     # Steps for building and running tests.
@@ -41,7 +40,6 @@ jobs:
         cmake \
         gcc \
         g++ \
-        gfortran \
         git \
         lcov \
         make \

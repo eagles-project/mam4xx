@@ -15,13 +15,21 @@
 #include <mam4xx/calcsize.hpp>
 #include <mam4xx/coagulation.hpp>
 #include <mam4xx/convproc.hpp>
+#include <mam4xx/drydep.hpp>
+#include <mam4xx/gas_chem.hpp>
+#include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/gasaerexch.hpp>
+#include <mam4xx/hetfrz.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/ndrop.hpp>
 #include <mam4xx/nucleate_ice.hpp>
 #include <mam4xx/nucleation.hpp>
 #include <mam4xx/rename.hpp>
+<<<<<<< HEAD
 #include <mam4xx/wet_dep.hpp>
+=======
+#include <mam4xx/water_uptake.hpp>
+>>>>>>> main
 
 namespace mam4 {
 
@@ -32,8 +40,11 @@ using CalcSizeProcess = haero::AeroProcess<AeroConfig, CalcSize>;
 using ConvProcProcess = haero::AeroProcess<AeroConfig, ConvProc>;
 using AgingProcess = haero::AeroProcess<AeroConfig, Aging>;
 using RenameProcess = haero::AeroProcess<AeroConfig, Rename>;
+using HetfrzProcess = haero::AeroProcess<AeroConfig, Hetfrz>;
 using NucleateIceProcess = haero::AeroProcess<AeroConfig, NucleateIce>;
 using WetDepositionProcess = haero::AeroProcess<AeroConfig, WetDeposition>;
+using DryDepProcess = haero::AeroProcess<AeroConfig, DryDep>;
+using WaterUptakeProcess = haero::AeroProcess<AeroConfig, Water_Uptake>;
 
 } // namespace mam4
 

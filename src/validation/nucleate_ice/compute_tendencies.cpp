@@ -26,6 +26,7 @@ void compute_tendencies(Ensemble *ensemble) {
     int nlev = 1;
     Real pblh = 1000;
     Atmosphere atm = validation::create_atmosphere(nlev, pblh);
+    Surface sfc = validation::create_surface();
     mam4::Prognostics progs = validation::create_prognostics(nlev);
     mam4::Diagnostics diags = validation::create_diagnostics(nlev);
     mam4::Tendencies tends = validation::create_tendencies(nlev);
@@ -49,12 +50,21 @@ void compute_tendencies(Ensemble *ensemble) {
     // qn(:ncol,:pver) = state_q(:ncol,:pver,1)
     const Real vapor_mixing_ratio = state_q[0];
 
-    Kokkos::deep_copy(atm.temperature, temp);
-    Kokkos::deep_copy(atm.pressure, pmid);
-    Kokkos::deep_copy(atm.cloud_fraction, cloud_fraction);
-    Kokkos::deep_copy(atm.updraft_vel_ice_nucleation,
-                      updraft_vel_ice_nucleation);
-    Kokkos::deep_copy(atm.vapor_mixing_ratio, vapor_mixing_ratio);
+    auto d_temp = validation::create_column_view(nlev);
+    auto d_pmid = validation::create_column_view(nlev);
+    auto d_cloud_fraction = validation::create_column_view(nlev);
+    auto d_updraft_vel_ice_nucleation = validation::create_column_view(nlev);
+    auto d_vapor_mixing_ratio = validation::create_column_view(nlev);
+    Kokkos::deep_copy(d_temp, temp);
+    Kokkos::deep_copy(d_pmid, pmid);
+    Kokkos::deep_copy(d_cloud_fraction, cloud_fraction);
+    Kokkos::deep_copy(d_updraft_vel_ice_nucleation, updraft_vel_ice_nucleation);
+    Kokkos::deep_copy(d_vapor_mixing_ratio, vapor_mixing_ratio);
+    atm.temperature = d_temp;
+    atm.pressure = d_pmid;
+    atm.cloud_fraction = d_cloud_fraction;
+    atm.updraft_vel_ice_nucleation = d_updraft_vel_ice_nucleation;
+    atm.vapor_mixing_ratio = d_vapor_mixing_ratio;
 
     auto numptr_amode = input.get_array("numptr_amode");
     auto modeptr_aitken = int(input.get_array("modeptr_aitken")[0] - 1);
@@ -114,7 +124,8 @@ void compute_tendencies(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          process.compute_tendencies(team, t, dt, atm, progs, diags, tends);
+          process.compute_tendencies(team, t, dt, atm, sfc, progs, diags,
+                                     tends);
         });
 
     auto h_icenuc_num_hetfrz =

@@ -8,6 +8,7 @@
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
+#include <mam4xx/mam4_types.hpp>
 #include <mam4xx/merikanto2007.hpp>
 #include <mam4xx/vehkamaki2002.hpp>
 #include <mam4xx/wang2008.hpp>
@@ -456,7 +457,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
   molenh4a_per_moleso4a = 2.0 * tmp_n1 + tmp_n2;
 
   // (kg dry aerosol)/(mol aerosol so4)
-  kgaero_per_moleso4a = (tmp_m1 + tmp_m2 + tmp_m3);
+  kgaero_per_moleso4a = 1e-3 * (tmp_m1 + tmp_m2 + tmp_m3);
 
   // correction when host code sulfate is really ammonium bisulfate/sulfate
   kgaero_per_moleso4a = kgaero_per_moleso4a * (mw_so4a_host / mw_so4a);
@@ -503,7 +504,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
     tmpa = max(tmpa, 0.0);
 
     // tmpb = h2so4 gas diffusivity ([m2/s], then [m2/h])
-    tmpb = 6.7037e-9 * pow(temp_in, 0.75) / cair;
+    tmpb = 6.7037e-6 * pow(temp_in, 0.75) / cair;
     tmpb *= 3600.0; // [m2/h] 3600 = seconds in hour
     cs_prime_kk = tmpa / (4.0 * pi * tmpb * accom_coef_h2so4);
 
@@ -605,10 +606,11 @@ public:
 
     // default constructor -- sets default values for parameters
     Config()
-        : dens_so4a_host(0), mw_nh4a_host(mw_nh4a), mw_so4a_host(mw_so4a),
-          newnuc_method_user_choice(2), pbl_nuc_wang2008_user_choice(1),
-          adjust_factor_bin_tern_ratenucl(1.0), adjust_factor_pbl_ratenucl(1.0),
-          accom_coef_h2so4(1.0), newnuc_adjust_factor_dnaitdt(1.0) {}
+        : dens_so4a_host(mam4_density_so4), mw_nh4a_host(mw_nh4a),
+          mw_so4a_host(mw_so4a), newnuc_method_user_choice(2),
+          pbl_nuc_wang2008_user_choice(1), adjust_factor_bin_tern_ratenucl(1.0),
+          adjust_factor_pbl_ratenucl(1.0), accom_coef_h2so4(1.0),
+          newnuc_adjust_factor_dnaitdt(1.0) {}
 
     Config(const Config &) = default;
     ~Config() = default;
@@ -667,7 +669,8 @@ public:
   // valid, false if not
   KOKKOS_INLINE_FUNCTION
   bool validate(const AeroConfig &config, const ThreadTeam &team,
-                const Atmosphere &atm, const Prognostics &progs) const {
+                const Atmosphere &atm, const Surface &sfc,
+                const Prognostics &progs) const {
     return atm.quantities_nonnegative(team) &&
            progs.quantities_nonnegative(team);
   }
@@ -678,7 +681,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
                           Real t, Real dt, const Atmosphere &atm,
-                          const Prognostics &progs, const Diagnostics &diags,
+                          const Surface &sfc, const Prognostics &progs,
+                          const Diagnostics &diags,
                           const Tendencies &tends) const {
     int iaer_so4 = aerosol_index_for_mode(ModeIndex::Aitken, AeroId::SO4);
     static constexpr Real boltzmann =
@@ -697,28 +701,25 @@ public:
           Real pblh = atm.planetary_boundary_layer_height;
           Real qv = atm.vapor_mixing_ratio(k);
           Real relhum = conversions::relative_humidity_from_vapor_mixing_ratio(
-              qv, pmid, temp);
+              qv, temp, pmid);
           Real uptkrate_so4 = 0;
           Real del_h2so4_gasprod = 0;
           Real del_h2so4_aeruptk = 0;
 
-          // extract gas mixing ratios
+          // extract relevant gas mixing ratios (H2SO4 only for now)
           Real qgas_cur[num_gases], qgas_avg[num_gases];
-          for (int g = 0; g < num_gases; ++g) {
-            qgas_cur[g] = progs.q_gas[g](k);
-            qgas_avg[g] = progs.q_gas[g](k); // FIXME: what should we do here??
-          }
+          qgas_cur[igas_h2so4] = progs.q_gas[igas_h2so4](k);
+          qgas_avg[igas_h2so4] =
+              progs.q_gas[igas_h2so4](k); // is this good enough?
 
-          // extract aerosol mixing ratios
+          // extract relevant aerosol mixing ratios (SO4 in aitken mode only for
+          // now)
           Real qnum_cur[num_modes], qaer_cur[num_modes][max_num_mode_species];
-          for (int m = 0; m < num_modes; ++m) { // modes
-            qnum_cur[m] = progs.n_mode_i[m](k);
-            for (int a = 0; a < 7; ++a) { // aerosols
-              qaer_cur[m][a] = progs.q_aero_i[m][a](k);
-            }
-          }
+          qnum_cur[nait] = progs.n_mode_i[nait](k);
+          qaer_cur[nait][iaer_so4] = progs.q_aero_i[nait][iaer_so4](k);
 
-          Real qwtr_cur[num_modes] = {0, 0, 0, 0}; // water vapor mmr?
+          Real qwtr_cur[num_modes] = {}; // water vapor mmr
+          qwtr_cur[nait] = qv;
 
           // compute tendencies at this level
           Real dndt_ait, dmdt_ait, dso4dt_ait, dnh4dt_ait, dnclusterdt;
@@ -732,7 +733,6 @@ public:
           tends.n_mode_i[nait](k) = dndt_ait;
           tends.q_aero_i[nait][iaer_so4](k) = dso4dt_ait;
           tends.q_gas[igas_h2so4](k) = -dso4dt_ait;
-          // FIXME: what about dmdt_ait?
         });
   }
 
@@ -749,10 +749,10 @@ public:
       const Real qwtr_cur[num_modes], Real &dndt_ait, Real &dmdt_ait,
       Real &dso4dt_ait, Real &dnh4dt_ait, Real &dnclusterdt) const {
     static constexpr Real avogadro =
-        6.02214e26; // BAD_CONSTANT (Avogadro's number ~ molecules/kmole)
+        6.02214e23; // BAD_CONSTANT (Avogadro's number ~ molecules/mol)
     static constexpr Real boltzmann =
         1.38065e-23; // BAD_CONSTANT (Boltzmann's constant ~ J/K/molecule)
-    static constexpr Real rgas = boltzmann * avogadro; // BAD_CONSTANT
+    static constexpr Real rgas = boltzmann * avogadro; // [J/K/mol] BAD_CONSTANT
     static constexpr Real ln_nuc_rate_cutoff = -13.82;
 
     // min h2so4 vapor for nuc calcs = 4.0e-16 mol/mol-air ~= 1.0e4
@@ -856,7 +856,6 @@ public:
       // are used below in the calculation of cluster "growth". I chose to keep
       // these variable names the same as in the old subroutine
       // mer07_veh02_nuc_mosaic_1box to facilitate comparison.
-
       nucleation::mer07_veh02_wang08_nuc_1box(
           newnuc_method_user_choice, newnuc_method_actual,       // in, out
           pbl_nuc_wang2008_user_choice, pbl_nuc_wang2008_actual, // in, out
