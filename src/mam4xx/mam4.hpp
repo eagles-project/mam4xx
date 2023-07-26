@@ -25,11 +25,8 @@
 #include <mam4xx/nucleate_ice.hpp>
 #include <mam4xx/nucleation.hpp>
 #include <mam4xx/rename.hpp>
-<<<<<<< HEAD
 #include <mam4xx/wet_dep.hpp>
-=======
 #include <mam4xx/water_uptake.hpp>
->>>>>>> main
 
 namespace mam4 {
 
