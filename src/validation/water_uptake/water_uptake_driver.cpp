@@ -10,6 +10,7 @@ using namespace mam4;
 void water_uptake_wetdens(Ensemble *ensemble);
 void find_real_solution(Ensemble *ensemble);
 void makoh_quartic(Ensemble *ensemble);
+void modal_aero_kohler(Ensemble *ensemble);
 
 void usage() {
   std::cerr << "aging_driver: a Skywalker driver for validating the "
@@ -52,6 +53,9 @@ int main(int argc, char **argv) {
     }
     if (func_name == "makoh_quartic") {
       makoh_quartic(ensemble);
+    }
+    if (func_name == "modal_aero_kohler"){
+        modal_aero_kohler(ensemble);
     }
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;

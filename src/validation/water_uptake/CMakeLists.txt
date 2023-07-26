@@ -12,6 +12,7 @@ add_executable(water_uptake_driver
                water_uptake_wetdens.cpp
                find_real_solution.cpp
                makoh_quartic.cpp
+               modal_aero_kohler.cpp
                )
 target_link_libraries(water_uptake_driver skywalker;validation;${HAERO_LIBRARIES})
 
