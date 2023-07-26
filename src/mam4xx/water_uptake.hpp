@@ -91,7 +91,7 @@ void modal_aero_wateruptake_wetdens(
 KOKKOS_INLINE_FUNCTION
 void find_real_solution(const Real rdry, const Kokkos::complex<Real> cx[4],
                         Real &rwet, int &nsol) {
-  rwet = 1000.0 * rdry;
+  rwet = 1000.0 * rdry; // (BAD CONSTANT or UNIT CONVERSION)
   nsol = 0;
   for (int nn = 0; nn < 4; ++nn) {
     Real xr = cx[nn].real();
