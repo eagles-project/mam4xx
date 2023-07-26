@@ -54,8 +54,8 @@ int main(int argc, char **argv) {
     if (func_name == "makoh_quartic") {
       makoh_quartic(ensemble);
     }
-    if (func_name == "modal_aero_kohler"){
-        modal_aero_kohler(ensemble);
+    if (func_name == "modal_aero_kohler") {
+      modal_aero_kohler(ensemble);
     }
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
