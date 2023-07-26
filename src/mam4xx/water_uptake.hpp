@@ -156,6 +156,35 @@ void makoh_quartic(Kokkos::complex<Real> cx[4], const Real p3, const Real p2,
   }
 }
 
+//-----------------------------------------------------------------------
+//
+// Purpose: Compute aerosol wet radius and other properties
+//
+// Method:  Kohler theory
+//
+// Author:  S. Ghan
+//
+//-----------------------------------------------------------------------
+KOKKOS_INLINE_FUNCTION
+void modal_aero_wateruptake_wetaer(
+    Real rhcrystal[AeroConfig::num_modes()],
+    Real rhdeliques[AeroConfig::num_modes()],
+    Real dgncur_a[AeroConfig::num_modes()],
+    Real dryrad[AeroConfig::num_modes()], Real hygro[AeroConfig::num_modes()],
+    const Real rh, Real naer[AeroConfig::num_modes()],
+    Real dryvol[AeroConfig::num_modes()], Real wetrad[AeroConfig::num_modes()],
+    Real wetvol[AeroConfig::num_modes()], Real wtrvol[AeroConfig::num_modes()],
+    Real dgncur_awet[AeroConfig::num_modes()],
+    Real qaerwat[AeroConfig::num_modes()]) {
+
+  //-----------------------------------------------------------------------
+  // loop over all aerosol modes
+  for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+    water_uptake::modal_aero_kohler(dryrad[imode], hygro[imode], rh,
+                                    wetrad[imode]);
+  }
+}
+
 }; // namespace water_uptake
 } // namespace mam4
 
