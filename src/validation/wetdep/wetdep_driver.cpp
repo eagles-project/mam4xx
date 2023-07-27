@@ -13,6 +13,7 @@ using namespace mam4;
 using namespace skywalker;
 
 void test_wetdep_clddiag(std::unique_ptr<Ensemble> &ensemble);
+void test_update_scavenging(std::unique_ptr<Ensemble> &ensemble);
 
 void usage(const std::string &prog_name) {
   std::cerr << prog_name << ": usage:" << std::endl;
@@ -39,7 +40,7 @@ int main(int argc, char **argv) {
     exit(1);
   }
   const std::string name = settings.get("function");
-  if ((name != "wetdep_clddiag")) {
+  if (name != "wetdep_clddiag" && name != "update_scavenging") {
     std::cerr << "Invalid name: " << name << std::endl;
     std::cerr << "Currently the only valid name is: wetdep_clddiag"
               << std::endl;
@@ -49,6 +50,8 @@ int main(int argc, char **argv) {
   try {
     if (name == "wetdep_clddiag") {
       test_wetdep_clddiag(ensemble);
+    } else if (name == "update_scavenging") {
+      test_update_scavenging(ensemble);
     }
     // Write out a Python module.
     std::cout << argv[0] << ": writing " << output_file << std::endl;

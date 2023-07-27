@@ -235,13 +235,120 @@ void clddiag(const Real* temperature, const Real* pmid, const Real* pdel,
   delete[] sumppr_all_st;
 }
 
+
+
+// ==============================================================================
+KOKKOS_INLINE_FUNCTION
+void update_scavenging(
+  const int mam_prevap_resusp_optcc,   
+  const Real pdel_ik,              
+  const Real omsm,   
+  const Real srcc,   
+  const Real srcs,      
+  const Real srct,    
+  const Real fins,   
+  const Real finc,
+  const Real fracev_st, 
+  const Real fracev_cu,      
+  const Real resusp_c,   
+  const Real resusp_s, 
+  const Real precs_ik,  
+  const Real evaps_ik,       
+  const Real cmfdqr_ik,  
+  const Real evapc_ik,  
+  Real &scavt_ik,  
+  Real &iscavt_ik,      
+  Real &icscavt_ik, 
+  Real &isscavt_ik, 
+  Real &bcscavt_ik,
+  Real &bsscavt_ik,     
+  Real &rcscavt_ik, 
+  Real &rsscavt_ik,
+  Real &scavabs,   
+  Real &scavabc,        
+  Real &precabc,    
+  Real &precabs)
+{
+  // clang-format off
+  // ------------------------------------------------------------------------------
+  // update scavenging variables
+  // *_ik are variables at the grid (icol, kk)
+  // ------------------------------------------------------------------------------
+  /*
+  // input variables
+  in :: mam_prevap_resusp_optcc       ! suspension options
+  in :: pdel_ik       ! pressure thikness [Pa]
+  in :: omsm          ! 1 - (a small number), to prevent roundoff errors below zero
+  in :: srcc          ! tend for convective rain scavenging [kg/kg/s]
+  in :: srcs          ! tend for stratiform rain scavenging [kg/kg/s]
+  in :: srct          ! total scavenging tendency for conv+strat rain [kg/kg/s]
+  in :: fins          ! fraction of rem. rate by strat rain [fraction]
+  in :: finc          ! fraction of rem. rate by conv. rain [fraction]
+  in :: fracev_st     ! fraction of stratiform precip from above that is evaporating [fraction]
+  in :: fracev_cu     ! Fraction of convective precip from above that is evaporating [fraction]
+  in :: resusp_c      ! aerosol mass re-suspension in a particular layer from convective rain [kg/m2/s]
+  in :: resusp_s      ! aerosol mass re-suspension in a particular layer from stratiform rain [kg/m2/s]
+  in :: precs_ik      ! rate of production of stratiform precip [kg/kg/s]
+  in :: evaps_ik      ! rate of evaporation of precip [kg/kg/s]
+  in :: cmfdqr_ik     ! rate of production of convective precip [kg/kg/s]
+  in :: evapc_ik      ! Evaporation rate of convective precipitation [kg/kg/s]
+  // output variables
+  out :: scavt_ik    ! scavenging tend [kg/kg/s]
+  out :: iscavt_ik   ! incloud scavenging tends [kg/kg/s]
+  out :: icscavt_ik  ! incloud, convective [kg/kg/s]
+  out :: isscavt_ik  ! incloud, stratiform [kg/kg/s]
+  out :: bcscavt_ik  ! below cloud, convective [kg/kg/s]
+  out :: bsscavt_ik  ! below cloud, stratiform [kg/kg/s]
+  out :: rcscavt_ik  ! resuspension, convective [kg/kg/s]
+  out :: rsscavt_ik  ! resuspension, stratiform [kg/kg/s]
+  inout :: scavabs   ! stratiform scavenged tracer flux from above [kg/m2/s]
+  inout :: scavabc   ! convective scavenged tracer flux from above [kg/m2/s]
+  inout :: precabc   ! conv precip from above [kg/m2/s]
+  inout :: precabs   ! strat precip from above [kg/m2/s]
+  */
+  // clang-format on
+  const Real gravit = Constants::gravity;
+
+  if (mam_prevap_resusp_optcc == 0)
+    scavt_ik =
+        -srct + (fracev_st * scavabs + fracev_cu * scavabc) * gravit / pdel_ik;
+  else
+    scavt_ik = -srct + (resusp_s + resusp_c) * gravit / pdel_ik;
+
+  iscavt_ik = -(srcc * finc + srcs * fins) * omsm;
+  icscavt_ik = -(srcc * finc) * omsm;
+  isscavt_ik = -(srcs * fins) * omsm;
+
+  if (mam_prevap_resusp_optcc == 0) {
+    bcscavt_ik =
+        -(srcc * (1 - finc)) * omsm + fracev_cu * scavabc * gravit / pdel_ik;
+    bsscavt_ik =
+        -(srcs * (1 - fins)) * omsm + fracev_st * scavabs * gravit / pdel_ik;
+    rcscavt_ik = 0.0;
+    rsscavt_ik = 0.0;
+  } else {
+    // here mam_prevap_resusp_optcc == 130, 210, 230
+    bcscavt_ik = -(srcc * (1 - finc)) * omsm;
+    rcscavt_ik = resusp_c * gravit / pdel_ik;
+    bsscavt_ik = -(srcs * (1 - fins)) * omsm;
+    rsscavt_ik = resusp_s * gravit / pdel_ik;
+  }
+
+  // now keep track of scavenged mass and precip
+  if (mam_prevap_resusp_optcc == 0) {
+    scavabs = scavabs * (1 - fracev_st) + srcs * pdel_ik / gravit;
+    scavabc = scavabc * (1 - fracev_cu) + srcc * pdel_ik / gravit;
+    precabs = precabs + (precs_ik - evaps_ik) * pdel_ik / gravit;
+    precabc = precabc + (cmfdqr_ik - evapc_ik) * pdel_ik / gravit;
+  }
+}
+// ==============================================================================
 } // namespace wetdep
 
 /// @class WedDeposition
 /// Wet Deposition process for MAM4 aerosol model.
 class WetDeposition {
 public:
-
   struct Config {
     Config() = default;
     Config(const Config &) = default;
@@ -258,7 +365,6 @@ public:
 
 private:
   Config config_;
-
 };
 
 } // namespace mam4
