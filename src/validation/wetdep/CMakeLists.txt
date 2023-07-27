@@ -4,7 +4,7 @@ set(WETDEP_VALIDATION_TOOLS_DIR ${MAM_X_VALIDATION_DIR}/tools)
 include_directories(${PROJECT_BINARY_DIR}/haero)
 include_directories(${PROJECT_BINARY_DIR}/validation)
 
-add_executable(wetdep_driver wetdep_driver.cpp wetdep_clddiag.cpp update_scavenging.cpp wetdep_prevap.cpp)
+add_executable(wetdep_driver wetdep_driver.cpp wetdep_clddiag.cpp update_scavenging.cpp wetdep_prevap.cpp wetdep_resusp_nonlinear.cpp)
 target_link_libraries(wetdep_driver skywalker;validation;${HAERO_LIBRARIES})
 
 foreach (TEST_NAME
@@ -14,6 +14,8 @@ foreach (TEST_NAME
 	 update_scavenging_230
 	 wetdep_prevap_130
 	 wetdep_prevap_230
+	 wetdep_resusp_nonlinear_130
+	 wetdep_resusp_nonlinear_230
 	)
   set(SKYWALKER_RESULT ${TEST_NAME}_output_ts_355)
   configure_file(

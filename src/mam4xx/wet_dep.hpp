@@ -382,6 +382,149 @@ Real flux_precnum_vs_flux_prec_mpln(const Real flux_prec, const int jstrcnv) {
   }
   return y_var;
 }
+
+// ==============================================================================
+KOKKOS_INLINE_FUNCTION
+Real faer_resusp_vs_fprec_evap_mpln(const Real fprec_evap, const int jstrcnv) {
+  // clang-format off
+  //  --------------------------------------------------------------------------------
+  //  corresponding fraction of precipitation-borne aerosol flux that is resuspended
+  //  Options of assuming log-normal or marshall-palmer raindrop size distribution
+  //  note that these fractions are relative to the cloud-base fluxes,
+  //  and not to the layer immediately above fluxes
+  //  --------------------------------------------------------------------------------
+  /*
+  in :: fprec_evap ! [fraction]
+  in :: jstrcnv !  current only two options: 1 for marshall-palmer distribution, 2 for log-normal distribution
+  out : faer_resusp_vs_fprec_evap_mpln ! [fraction]
+  */
+  // clang-format on
+
+  // current only two options: 1 for marshall-palmer distribution, 2 for
+  // log-normal distribution
+  Real a01, a02, a03, a04, a05, a06, a07, a08, a09, x_lox_lin, y_lox_lin;
+  if (jstrcnv <= 1) {
+    // marshall-palmer distribution
+    a01 = 8.6591133737322856e-02;
+    a02 = -1.7389168499601941e+00;
+    a03 = 2.7401882373663732e+01;
+    a04 = -1.5861714653209464e+02;
+    a05 = 5.1338179363011193e+02;
+    a06 = -9.6835933124501412e+02;
+    a07 = 1.0588489932213311e+03;
+    a08 = -6.2184513459217271e+02;
+    a09 = 1.5184126886039758e+02;
+    x_lox_lin = 5.0000000000000003e-02;
+    y_lox_lin = 2.5622471203221014e-03;
+  } else {
+    // log-normal distribution
+    a01 = 6.1944215103685640e-02;
+    a02 = -2.0095166685965378e+00;
+    a03 = 2.3882460251821236e+01;
+    a04 = -1.2695611774753374e+02;
+    a05 = 4.0086943562320101e+02;
+    a06 = -7.4954272875943707e+02;
+    a07 = 8.1701055892023624e+02;
+    a08 = -4.7941894659538502e+02;
+    a09 = 1.1710291076059025e+02;
+    x_lox_lin = 1.0000000000000001e-01;
+    y_lox_lin = 6.2227889828044350e-04;
+  }
+
+  Real y_var;
+  const Real x_var = utils::min_max_bound(0.0, 1.0, fprec_evap);
+  if (x_var < x_lox_lin)
+    y_var = y_lox_lin * (x_var / x_lox_lin);
+  else
+    y_var =
+        x_var *
+        (a01 +
+         x_var *
+             (a02 +
+              x_var *
+                  (a03 +
+                   x_var *
+                       (a04 +
+                        x_var * (a05 +
+                                 x_var * (a06 +
+                                          x_var * (a07 +
+                                                   x_var * (a08 +
+                                                            x_var * a09))))))));
+
+  return y_var;
+}
+
+//==============================================================================
+KOKKOS_INLINE_FUNCTION
+Real fprecn_resusp_vs_fprec_evap_mpln(const Real fprec_evap,
+                                      const int jstrcnv) {
+  // clang-format off
+  // --------------------------------------------------------------------------------
+  // Rain number evaporation fraction
+  // Options of assuming log-normal or marshall-palmer raindrop size distribution
+  // note that these fractions are relative to the cloud-base fluxes,
+  // and not to the layer immediately above fluxes
+  // --------------------------------------------------------------------------------
+  /*
+  in :: fprec_evap     ! [fraction]
+  in :: jstrcnv  ! current only two options: 1 for marshall-palmer distribution, 2 for log-normal distribution
+  out :: fprecn_resusp_vs_fprec_evap_mpln  ! [fraction]
+  */
+  // clang-format on
+
+  // current only two options: 1 for marshall-palmer distribution, 2 for
+  // log-normal distribution
+  Real a01, a02, a03, a04, a05, a06, a07, a08, a09, x_lox_lin, y_lox_lin;
+  if (jstrcnv <= 1) {
+    // marshall-palmer distribution
+    a01 = 4.5461070198414655e+00;
+    a02 = -3.0381753620077529e+01;
+    a03 = 1.7959619926085665e+02;
+    a04 = -6.7152282193785618e+02;
+    a05 = 1.5651931323557126e+03;
+    a06 = -2.2743927701175126e+03;
+    a07 = 2.0004645897056735e+03;
+    a08 = -9.7351466279626209e+02;
+    a09 = 2.0101198012962413e+02;
+    x_lox_lin = 5.0000000000000003e-02;
+    y_lox_lin = 1.7005858490684875e-01;
+  } else {
+    // log-normal distribution
+    a01 = -5.2335291116884175e-02;
+    a02 = 2.7203158069178226e+00;
+    a03 = 9.4730878152409375e+00;
+    a04 = -5.0573187592544798e+01;
+    a05 = 9.4732631441282862e+01;
+    a06 = -8.8265926556465814e+01;
+    a07 = 3.5247835268269142e+01;
+    a08 = 1.5404586576716444e+00;
+    a09 = -3.8228795492549068e+00;
+    x_lox_lin = 1.0000000000000001e-01;
+    y_lox_lin = 2.7247994766566485e-02;
+  }
+
+  Real y_var;
+  const Real x_var = utils::min_max_bound(0.0, 1.0, fprec_evap);
+  if (x_var < x_lox_lin)
+    y_var = y_lox_lin * (x_var / x_lox_lin);
+  else
+    y_var =
+        x_var *
+        (a01 +
+         x_var *
+             (a02 +
+              x_var *
+                  (a03 +
+                   x_var *
+                       (a04 +
+                        x_var * (a05 +
+                                 x_var * (a06 +
+                                          x_var * (a07 +
+                                                   x_var * (a08 +
+                                                            x_var * a09))))))));
+
+  return y_var;
+}
 // ==============================================================================
 KOKKOS_INLINE_FUNCTION
 void wetdep_prevap(const int is_st_cu, const int mam_prevap_resusp_optcc,
@@ -446,6 +589,84 @@ void wetdep_prevap(const int is_st_cu, const int mam_prevap_resusp_optcc,
     } else {
       precnumx_base_new = precnumx_base_old;
     }
+  }
+}
+// ==============================================================================
+// ==============================================================================
+KOKKOS_INLINE_FUNCTION
+void wetdep_resusp_nonlinear(
+    const int is_st_cu, const int mam_prevap_resusp_optcc,
+    const Real precabx_old, const Real precabx_base_old, const Real scavabx_old,
+    const Real precnumx_base_old, const Real precabx_new, Real &scavabx_new,
+    Real &resusp_x) {
+
+  // clang-format off
+  //  ------------------------------------------------------------------------------
+  //  do nonlinear resuspension of aerosol mass or number
+  //  ------------------------------------------------------------------------------
+  /*
+   in :: is_st_cu      ! options for stratiform (1) or convective (2) clouds
+                       ! raindrop size distribution is
+                       ! different for different cloud:
+                       ! 1: assume marshall-palmer distribution
+                       ! 2: assume log-normal distribution
+   in :: mam_prevap_resusp_optcc       ! suspension options
+   in :: precabx_base_old ! input of precipitation at cloud base [kg/m2/s]
+   in :: precabx_old  ! input of precipitation above this layer [kg/m2/s]
+   in :: scavabx_old  ! input scavenged tracer flux from above [kg/m2/s]
+   in :: precnumx_base_old ! precipitation number at cloud base [#/m2/s]
+   in :: precabx_new  ! output of precipitation above this layer [kg/m2/s]
+   out :: scavabx_new ! output scavenged tracer flux from above [kg/m2/s]
+   out :: resusp_x    ! aerosol mass re-suspension in a particular layer [kg/m2/s]
+  */
+  // clang-format on
+
+  // BAD CONSTANT
+  const Real small_value_30 = 1.e-30;
+
+  // fraction of precabx and precabx_base
+  const Real u_old =
+      utils::min_max_bound(0.0, 1.0, precabx_old / precabx_base_old);
+  // fraction after calling function *_resusp_vs_fprec_evap_mpln
+  Real x_old, x_new;
+  if (mam_prevap_resusp_optcc <= 130) {
+    // non-linear resuspension of aerosol mass
+    x_old = 1.0 - faer_resusp_vs_fprec_evap_mpln(1.0 - u_old, is_st_cu);
+  } else {
+    // non-linear resuspension of aerosol number based on raindrop number
+    x_old = 1.0 - fprecn_resusp_vs_fprec_evap_mpln(1.0 - u_old, is_st_cu);
+  }
+  x_old = utils::min_max_bound(0.0, 1.0, x_old);
+
+  Real x_ratio; // fraction of x_tmp/x_old
+  if (x_old < small_value_30) {
+    x_new = 0.0;
+    x_ratio = 0.0;
+  } else {
+    // fraction of precabx and precabx_base
+    Real u_new = utils::min_max_bound(0.0, 1.0, precabx_new / precabx_base_old);
+    u_new = haero::min(u_new, u_old);
+    if (mam_prevap_resusp_optcc <= 130) {
+      // non-linear resuspension of aerosol mass
+      x_new = 1.0 - faer_resusp_vs_fprec_evap_mpln(1.0 - u_new, is_st_cu);
+    } else {
+      // non-linear resuspension of aerosol number based on raindrop number
+      x_new = 1.0 - fprecn_resusp_vs_fprec_evap_mpln(1.0 - u_new, is_st_cu);
+    }
+    x_new = utils::min_max_bound(0.0, 1.0, x_new);
+    x_new = haero::min(x_new, x_old);
+    x_ratio = utils::min_max_bound(0.0, 1.0, x_new / x_old);
+  }
+
+  // update aerosol resuspension
+  if (mam_prevap_resusp_optcc <= 130) {
+    // aerosol mass resuspension
+    scavabx_new = haero::max(0.0, scavabx_old * x_ratio);
+    resusp_x = haero::max(0.0, scavabx_old - scavabx_new);
+  } else {
+    // number resuspension
+    scavabx_new = 0;
+    resusp_x = haero::max(0.0, precnumx_base_old * (x_old - x_new));
   }
 }
 // ==============================================================================
