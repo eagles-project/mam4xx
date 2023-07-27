@@ -10,7 +10,8 @@ add_executable(wetdep_driver
   update_scavenging.cpp 
   wetdep_prevap.cpp 
   wetdep_resusp_nonlinear.cpp
-  wetdep_resusp_noprecip.cpp)
+  wetdep_resusp_noprecip.cpp
+  wetdep_scavenging.cpp)
 target_link_libraries(wetdep_driver skywalker;validation;${HAERO_LIBRARIES})
 
 foreach (TEST_NAME
@@ -24,6 +25,8 @@ foreach (TEST_NAME
 	 wetdep_resusp_nonlinear_230
 	 wetdep_resusp_noprecip_130 
 	 wetdep_resusp_noprecip_230 
+	 wetdep_scavenging_true
+	 wetdep_scavenging_false
 	)
   set(SKYWALKER_RESULT ${TEST_NAME}_output_ts_355)
   configure_file(

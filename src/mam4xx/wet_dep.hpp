@@ -728,7 +728,84 @@ void wetdep_resusp_noprecip(const int is_st_cu,
   precabx_base_new = 0.0;
 }
 // ==============================================================================
+// ==============================================================================
+KOKKOS_INLINE_FUNCTION
+void wetdep_scavenging(const int is_st_cu, const bool is_strat_cloudborne,
+                       const Real deltat, const Real fracp, const Real precabx,
+                       const Real cldv_ik, const Real scavcoef_ik,
+                       const Real sol_factb, const Real sol_facti,
+                       const Real tracer_1, const Real tracer_2, Real &src,
+                       Real &fin) {
+  // clang-format off
+  // ------------------------------------------------------------------------------
+  // do scavenging for both convective and stratiform
+  //
+  // assuming liquid clouds (no ice)
+  //
+  // set odds proportional to fraction of the grid box that is swept by the
+  // precipitation =precabc/rhoh20*(area of sphere projected on plane
+  //                                /volume of sphere)*deltat
+  // assume the radius of a raindrop is 1 e-3 m from Rogers and Yau,
+  // unless the fraction of the area that is cloud is less than odds, in which
+  // case use the cloud fraction (assumes precabs is in kg/m2/s)
+  // is really: precabs*3/4/1000./1e-3*deltat
+  // here I use .1 from Balkanski
+  // ------------------------------------------------------------------------------
+  /*
+  in :: is_strat_cloudborne   ! if tracer is stratiform-cloudborne aerosol or not
+  in :: is_st_cu ! options for stratiform (1) or convective (2) clouds
 
+  in :: deltat       ! timestep [s]
+  in :: fracp        ! fraction of cloud water converted to precip [fraction]
+  in :: precabx      ! precip from above of the layer [kg/m2/s]
+  in :: cldv_ik      ! precipitation area at the top interface [fraction]
+  in :: scavcoef_ik  ! Dana and Hales coefficient [1/mm]
+  in :: sol_factb    ! solubility factor (frac of aerosol scavenged below cloud) [fraction]
+  in :: sol_facti    ! solubility factor (frac of aerosol scavenged in cloud) [fraction]
+  in :: tracer_1     ! tracer input for calculate src1 [kg/kg]
+  in :: tracer_2     ! tracer input for calculate src2 [kg/kg]
+  out :: src         ! total scavenging (incloud + belowcloud) [kg/kg/s]
+  out :: fin         ! fraction of incloud scavenging [fraction]
+
+  */
+  // clang-format on
+  // BAD CONSTANT
+  const Real small_value_36 = 1.e-36;
+  const Real small_value_5 = 1.e-5; // for cloud fraction
+
+  // calculate limitation of removal rate using Dana and Hales coefficient
+  // odds  : limit on removal rate (proportional to prec) [fraction]
+  Real odds =
+      precabx / haero::max(cldv_ik, small_value_5) * scavcoef_ik * deltat;
+  odds = utils::min_max_bound(0.0, 1.0, odds);
+
+  Real src1; // incloud scavenging tendency [kg/kg/s]
+  Real src2; // below-cloud scavenging tendency [kg/kg/s]
+  if (is_strat_cloudborne) {
+    if (is_st_cu == 2) {
+      // convective cloud does not affect strat-cloudborne aerosol
+      src1 = 0;
+    } else {
+      // strat in-cloud removal only affects strat-cloudborne aerosol
+      // in-cloud scavenging:
+      src1 = sol_facti * fracp * tracer_1 / deltat;
+    }
+    // no below-cloud scavenging for strat-cloudborne aerosol
+    src2 = 0;
+  } else {
+    if (is_st_cu == 2) { // convective
+      src1 = sol_facti * fracp * tracer_1 / deltat;
+    } else { // stratiform
+      // strat in-cloud removal only affects strat-cloudborne aerosol
+      src1 = 0;
+    }
+    src2 = sol_factb * cldv_ik * odds * tracer_2 / deltat;
+  }
+
+  src = src1 + src2; // total stratiform or convective scavenging
+  fin = src1 / (src + small_value_36); // fraction taken by incloud processes
+}
+// ==============================================================================
 } // namespace wetdep
 
 /// @class WedDeposition
