@@ -38,7 +38,7 @@ void test_update_scavenging_process(const Input &input, Output &output) {
 
   // Parse input
   // These first two values are unused
-  assert(0 == input.get("dt"));
+  EKAT_ASSERT(0 == input.get("dt"));
   const int mam_prevap_resusp_optcc = input.get("mam_prevap_resusp_optcc");
   const Real pdel_ik = input.get("pdel_ik");
   const Real omsm = input.get("omsm");

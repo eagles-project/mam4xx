@@ -808,11 +808,8 @@ void wetdep_scavenging(const int is_st_cu, const bool is_strat_cloudborne,
 // =============================================================================
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
-void compute_evap_frac(
-  const int mam_prevap_resusp_optcc, 
-  const Real pdel_ik, const Real evap_ik,  const Real precabx,
-  Real &fracevx)
-{
+void compute_evap_frac(const int mam_prevap_resusp_optcc, const Real pdel_ik,
+                       const Real evap_ik, const Real precabx, Real &fracevx) {
   // clang-format off
   //  ------------------------------------------------------------------------------
   //  calculate the fraction of strat precip from above
@@ -832,12 +829,55 @@ void compute_evap_frac(
   if (mam_prevap_resusp_optcc == 0) {
     fracevx = 0.0;
   } else {
-    fracevx = evap_ik*pdel_ik/gravit/haero::max(small_value_12,precabx);
+    fracevx = evap_ik * pdel_ik / gravit / haero::max(small_value_12, precabx);
     // trap to ensure reasonable ratio bounds
     fracevx = utils::min_max_bound(0., 1., fracevx);
   }
 }
 // =============================================================================
+// =============================================================================
+KOKKOS_INLINE_FUNCTION
+void rain_mix_ratio(const Real temperature, const Real pmid, const Real sumppr,
+                    Real rain) {
+  // clang-format off
+  // -----------------------------------------------------------------------
+  //  Purpose:
+  //  calculate rain mixing ratio from precipitation rate above.
+  // 
+  //  extracted from clddiag subroutine
+  //  for C++ portint, Shuaiqi Tang in 9/22/2022
+  // -----------------------------------------------------------------------
+  /*
+  in :: temperature      ! temperature [K]
+  in :: pmid   ! pressure at layer midpoints [Pa]
+  in :: sumppr ! sum of precipitation rate above each layer [kg/m2/s]
+  out :: rain ! mixing ratio of rain [kg/kg]
+  */
+  // clang-format on
+
+  // BAD CONSTANT
+  const Real small_value_14 = 1.e-14;
+  const Real gravit = Constants::gravity;
+  const Real rhoh2o = Constants::density_h2o;
+  const Real tmelt = Constants::freezing_pt_h2o;
+  const Real rair = Constants::r_gas_dry_air;
+
+  // define the constant convfw. taken from cldwat.F90
+  // reference: Tripoli and Cotton (1980)
+  // falling velocity at air density = 1 kg/m3 [m/s * sqrt(rho)]
+  const Real convfw = 1.94 * 2.13 * haero::sqrt(rhoh2o * gravit * 2.7e-4);
+
+  rain = 0;
+  if (temperature > tmelt) {
+    // rho =air density [kg/m3]
+    const Real rho = pmid / (rair * temperature);
+    //  vfall = calculated raindrop falling velocity [m/s]
+    const Real vfall = convfw / haero::sqrt(rho);
+    rain = sumppr / (rho * vfall);
+    if (rain < small_value_14)
+      rain = 0;
+  }
+}
 
 } // namespace wetdep
 

@@ -13,11 +13,11 @@
 using namespace haero;
 using namespace skywalker;
 
-void test_compute_evap_frac_process(const Input &input, Output &output) {
+void test_rain_mix_ratio_process(const Input &input, Output &output) {
   // Ensemble parameters
   // Declare array of strings for input names
-  std::string input_variables[] = {"dt", "mam_prevap_resusp_optcc", "pdel_ik",
-                                   "evap_ik", "precabx"};
+  std::string input_variables[] = {"dt", "ncol", "temperature", "pmid",
+                                   "sumppr"};
 
   // Iterate over input_variables and error if not in input
   for (std::string name : input_variables) {
@@ -30,19 +30,18 @@ void test_compute_evap_frac_process(const Input &input, Output &output) {
   // Parse input
   // These first two values are unused
   EKAT_ASSERT(0 == input.get("dt"));
-  const int mam_prevap_resusp_optcc = input.get("mam_prevap_resusp_optcc");
-  const Real pdel_ik = input.get("pdel_ik");
-  const Real evap_ik = input.get("evap_ik");
-  const Real precabx = input.get("precabx");
+  EKAT_ASSERT(4 == input.get("ncol"));
+  const Real temperature = input.get("temperature");
+  const Real pmid = input.get("pmid");
+  const Real sumppr = input.get("sumppr");
 
   ColumnView return_vals = mam4::validation::create_column_view(1);
   Kokkos::parallel_for(
-      "wetdep::compute_evap_frac", 1, KOKKOS_LAMBDA(const int) {
-        Real fracevx = 0;
-        mam4::wetdep::compute_evap_frac(mam_prevap_resusp_optcc, pdel_ik,
-                                        evap_ik, precabx, fracevx);
+      "wetdep::rain_mix_ratio", 1, KOKKOS_LAMBDA(const int) {
+        Real rain = 0;
+        mam4::wetdep::rain_mix_ratio(temperature, pmid, sumppr, rain);
 
-        return_vals[0] = fracevx;
+        return_vals[0] = rain;
       });
 
   // Create mirror views for output arrays
@@ -52,11 +51,11 @@ void test_compute_evap_frac_process(const Input &input, Output &output) {
   Kokkos::deep_copy(vals_host, return_vals);
 
   // Set the output values
-  output.set("fracevx", vals_host[0]);
+  output.set("rain", vals_host[0]);
 }
 
-void test_compute_evap_frac(std::unique_ptr<Ensemble> &ensemble) {
+void test_rain_mix_ratio(std::unique_ptr<Ensemble> &ensemble) {
   ensemble->process([&](const Input &input, Output &output) {
-    test_compute_evap_frac_process(input, output);
+    test_rain_mix_ratio_process(input, output);
   });
 }

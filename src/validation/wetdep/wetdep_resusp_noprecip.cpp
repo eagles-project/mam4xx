@@ -34,7 +34,7 @@ void test_wetdep_resusp_noprecip_process(const Input &input, Output &output) {
 
   // Parse input
   // These first two values are unused
-  assert(0 == input.get("dt"));
+  EKAT_ASSERT(0 == input.get("dt"));
   const int is_st_cu = input.get("is_st_cu");
   const int mam_prevap_resusp_optcc = input.get("mam_prevap_resusp_optcc");
   const Real precabx_base_old = input.get("precabx_base_old");

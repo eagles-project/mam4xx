@@ -19,6 +19,7 @@ void test_wetdep_resusp_nonlinear(std::unique_ptr<Ensemble> &ensemble);
 void test_wetdep_resusp_noprecip(std::unique_ptr<Ensemble> &ensemble);
 void test_wetdep_scavenging(std::unique_ptr<Ensemble> &ensemble);
 void test_compute_evap_frac(std::unique_ptr<Ensemble> &ensemble);
+void test_rain_mix_ratio(std::unique_ptr<Ensemble> &ensemble);
 
 void usage(const std::string &prog_name) {
   std::cerr << prog_name << ": usage:" << std::endl;
@@ -48,14 +49,13 @@ int main(int argc, char **argv) {
   if (name != "wetdep_clddiag" && name != "update_scavenging" &&
       name != "wetdep_prevap" && name != "wetdep_resusp_nonlinear" &&
       name != "wetdep_resusp_noprecip" && name != "wetdep_scavenging" &&
-      name != "compute_evap_frac") {
+      name != "compute_evap_frac" && name != "rain_mix_ratio") {
     std::cerr << "Invalid name: " << name << std::endl;
-    std::cerr
-        << "Currently the only valid name are: "
-        << "wetdep_clddiag, update_scavenging, wetdep_prevap, "
-           "wetdep_resusp_nonlinear, wetdep_resusp_noprecip, "
-	   "wetdep_scavenging, compute_evap_frac"
-        << std::endl;
+    std::cerr << "Currently the only valid name are: "
+              << "wetdep_clddiag, update_scavenging, wetdep_prevap, "
+                 "wetdep_resusp_nonlinear, wetdep_resusp_noprecip, "
+                 "wetdep_scavenging, compute_evap_frac, rain_mix_ratio"
+              << std::endl;
     exit(1);
   }
   // Run the ensemble.
@@ -74,6 +74,8 @@ int main(int argc, char **argv) {
       test_wetdep_scavenging(ensemble);
     } else if (name == "compute_evap_frac") {
       test_compute_evap_frac(ensemble);
+    } else if (name == "rain_mix_ratio") {
+      test_rain_mix_ratio(ensemble);
     }
     // Write out a Python module.
     std::cout << argv[0] << ": writing " << output_file << std::endl;

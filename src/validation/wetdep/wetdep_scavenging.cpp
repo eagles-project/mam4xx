@@ -31,7 +31,7 @@ void test_wetdep_scavenging_process(const Input &input, Output &output) {
 
   // Parse input
   // These first two values are unused
-  assert(0 == input.get("dt"));
+  EKAT_ASSERT(0 == input.get("dt"));
   const int is_st_cu = input.get("is_st_cu");
   const int is_strat_cloudborne = input.get("is_strat_cloudborne");
   const Real deltat = input.get("deltat");

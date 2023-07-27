@@ -58,16 +58,16 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
   auto prain = input.get_array("prain");
 
   // Assert arrays are the correct size
-  assert(temperature.size() == pver);
-  assert(pmid.size() == pver);
-  assert(pdel.size() == pver);
-  assert(cmfdqr.size() == pver);
-  assert(evapc.size() == pver);
-  assert(cldt.size() == pver);
-  assert(cldcu.size() == pver);
-  assert(cldst.size() == pver);
-  assert(evapr.size() == pver);
-  assert(prain.size() == pver);
+  EKAT_ASSERT(temperature.size() == pver);
+  EKAT_ASSERT(pmid.size() == pver);
+  EKAT_ASSERT(pdel.size() == pver);
+  EKAT_ASSERT(cmfdqr.size() == pver);
+  EKAT_ASSERT(evapc.size() == pver);
+  EKAT_ASSERT(cldt.size() == pver);
+  EKAT_ASSERT(cldcu.size() == pver);
+  EKAT_ASSERT(cldst.size() == pver);
+  EKAT_ASSERT(evapr.size() == pver);
+  EKAT_ASSERT(prain.size() == pver);
 
   // Create Real arrays for inputs
   // std::vectors can't be copied directly to device memory by Kokkos
