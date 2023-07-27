@@ -11,6 +11,7 @@
 #include <kokkos/Kokkos_Complex.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/utils.hpp>
+#include <mam4xx/wv_sat_methods.hpp>
 namespace mam4 {
 class Water_Uptake {
 
@@ -250,7 +251,47 @@ void modal_aero_wateruptake_wetaer(
     wetvol[imode] = haero::max(wetvol[imode], dryvol[imode]);
     wtrvol[imode] = wetvol[imode] - dryvol[imode];
     wtrvol[imode] = haero::max(wtrvol[imode], 0.0);
+
+    // apply simple treatment of deliquesence/crystallization hysteresis
+    // for rhcrystal < rh < rhdeliques, aerosol water is a fraction of
+    // the "upper curve" value, and the fraction is a linear function of rh
+    if (rh < rhcrystal[imode]) {
+      wetrad[imode] = dryrad[imode];
+      wetvol[imode] = dryvol[imode];
+      wtrvol[imode] = 0.0;
+    } else if (rh < rhdeliques[imode]) {
+      wtrvol[imode] = wtrvol[imode] * hystfac * (rh - rhcrystal[imode]);
+      wtrvol[imode] = haero::max(wtrvol[imode], 0.0);
+      wetvol[imode] = dryvol[imode] + wtrvol[imode];
+      wetrad[imode] = haero::cube(wetvol[imode] / (4.0 / 3.0 * Constants::pi));
+    }
+
+    // calculate wet aerosol diameter and aerosol water
+    dgncur_awet[imode] = dgncur_a[imode] * (wetrad[imode] / dryrad[imode]);
+    qaerwat[imode] = Constants::density_h2o * naer[imode] * wtrvol[imode];
   }
+}
+
+//-----------------------------------------------------------------------
+// estimate clear air relative humidity using cloud fraction
+//-----------------------------------------------------------------------
+KOKKOS_INLINE_FUNCTION
+void modal_aero_water_uptake_rh_clearair(const Real temperature,
+                                         const Real pmid, const Real h2ommr,
+                                         const Real cldn, Real rh) {
+
+  Real es = 0.0;
+  Real qs = 0.0;
+
+  wv_sat_methods::wv_sat_qsat_water(temperature, pmid, es, qs);
+
+  static constexpr Real rh_max = 0.98; // (BAD CONSTANT)
+  if (qs > h2ommr) {
+    rh = h2ommr / qs;
+  } else {
+    rh = rh_max;
+  }
+  rh = utils::min_max_bound(0.0, rh_max, rh);
 }
 
 }; // namespace water_uptake
