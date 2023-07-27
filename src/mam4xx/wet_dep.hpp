@@ -805,7 +805,40 @@ void wetdep_scavenging(const int is_st_cu, const bool is_strat_cloudborne,
   src = src1 + src2; // total stratiform or convective scavenging
   fin = src1 / (src + small_value_36); // fraction taken by incloud processes
 }
-// ==============================================================================
+// =============================================================================
+// =============================================================================
+KOKKOS_INLINE_FUNCTION
+void compute_evap_frac(
+  const int mam_prevap_resusp_optcc, 
+  const Real pdel_ik, const Real evap_ik,  const Real precabx,
+  Real &fracevx)
+{
+  // clang-format off
+  //  ------------------------------------------------------------------------------
+  //  calculate the fraction of strat precip from above
+  //                  which evaporates within this layer
+  //  ------------------------------------------------------------------------------
+  /*
+  in :: mam_prevap_resusp_optcc       ! suspension options
+  in :: pdel_ik       ! pressure thikness at current column and level [Pa]
+  in :: evap_ik       ! evaporation in this layer [kg/kg/s]
+  in :: precabx       ! precipitation from above [kg/m2/s]
+  out :: fracevx      ! fraction of evaporation [fraction]
+  */
+  // clang-format on
+  // BAD CONSTANT
+  const Real small_value_12 = 1.e-12;
+  const Real gravit = Constants::gravity;
+  if (mam_prevap_resusp_optcc == 0) {
+    fracevx = 0.0;
+  } else {
+    fracevx = evap_ik*pdel_ik/gravit/haero::max(small_value_12,precabx);
+    // trap to ensure reasonable ratio bounds
+    fracevx = utils::min_max_bound(0., 1., fracevx);
+  }
+}
+// =============================================================================
+
 } // namespace wetdep
 
 /// @class WedDeposition

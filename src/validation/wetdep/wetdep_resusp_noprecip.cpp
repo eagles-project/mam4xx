@@ -65,10 +65,10 @@ void test_wetdep_resusp_noprecip_process(const Input &input, Output &output) {
   Kokkos::deep_copy(vals_host, return_vals);
 
   // Set the output values
-  output.set("precabx_base_new", vals_host[1]);
-  output.set("precabx_new", vals_host[2]);
-  output.set("scavabx_new", vals_host[3]);
-  output.set("resusp_x", vals_host[4]);
+  output.set("precabx_base_new", vals_host[0]);
+  output.set("precabx_new", vals_host[1]);
+  output.set("scavabx_new", vals_host[2]);
+  output.set("resusp_x", vals_host[3]);
 }
 
 void test_wetdep_resusp_noprecip(std::unique_ptr<Ensemble> &ensemble) {
