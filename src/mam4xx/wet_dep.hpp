@@ -670,6 +670,64 @@ void wetdep_resusp_nonlinear(
   }
 }
 // ==============================================================================
+// ==============================================================================
+KOKKOS_INLINE_FUNCTION
+void wetdep_resusp_noprecip(const int is_st_cu,
+                            const int mam_prevap_resusp_optcc,
+                            const Real precabx_old, const Real precabx_base_old,
+                            const Real scavabx_old,
+                            const Real precnumx_base_old, Real &precabx_new,
+                            Real &precabx_base_new, Real &scavabx_new,
+                            Real &resusp_x) {
+  // clang-format off
+  // ------------------------------------------------------------------------------
+  // do complete resuspension when precipitation rate is zero
+  // ------------------------------------------------------------------------------
+  /*
+  in :: is_st_cu      ! options for stratiform (1) or convective (2) clouds
+                      ! raindrop size distribution is
+                      ! different for different cloud:
+                      ! 1: assume marshall-palmer distribution
+                      ! 2: assume log-normal distribution
+  in :: mam_prevap_resusp_optcc       ! suspension options
+  in :: precabx_base_old ! input of precipitation at cloud base [kg/m2/s]
+  in :: precabx_old ! input of precipitation above this layer [kg/m2/s]
+  in :: scavabx_old ! input of scavenged tracer flux from above [kg/m2/s]
+  in :: precnumx_base_old ! precipitation number at cloud base [#/m2/s]
+  out :: precabx_base_new ! output of precipitation at cloud base [kg/m2/s]
+  out :: precabx_new ! output of precipitation above this layer [kg/m2/s]
+  inout :: scavabx_new ! output of scavenged tracer flux from above [kg/m2/s]
+  out :: resusp_x    ! aerosol mass re-suspension in a particular layer [kg/m2/s]
+  */
+  // clang-format on
+
+  // BAD CONSTANT
+  const Real small_value_30 = 1.e-30;
+
+  if (mam_prevap_resusp_optcc <= 130) {
+    scavabx_new = 0.0;
+    // linear resuspension based on scavenged aerosol mass or number
+    resusp_x = scavabx_old;
+  } else {
+    if (precabx_base_old < small_value_30) {
+      resusp_x = 0.0;
+    } else {
+      // non-linear resuspension of aerosol number based on raindrop number
+      const Real u_old =
+          utils::min_max_bound(0.0, 1.0, precabx_old / precabx_base_old);
+      Real x_old =
+          1.0 - fprecn_resusp_vs_fprec_evap_mpln(1.0 - u_old, is_st_cu);
+      x_old = utils::min_max_bound(0.0, 1.0, x_old);
+      const Real x_new = 0.0;
+      resusp_x = haero::max(0.0, precnumx_base_old * (x_old - x_new));
+    }
+  }
+  // setting both these precip rates to zero causes the resuspension
+  // calculations to start fresh if there is any more precip production
+  precabx_new = 0.0;
+  precabx_base_new = 0.0;
+}
+// ==============================================================================
 
 } // namespace wetdep
 

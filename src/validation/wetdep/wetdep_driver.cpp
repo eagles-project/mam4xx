@@ -16,6 +16,7 @@ void test_wetdep_clddiag(std::unique_ptr<Ensemble> &ensemble);
 void test_update_scavenging(std::unique_ptr<Ensemble> &ensemble);
 void test_wetdep_prevap(std::unique_ptr<Ensemble> &ensemble);
 void test_wetdep_resusp_nonlinear(std::unique_ptr<Ensemble> &ensemble);
+void test_wetdep_resusp_noprecip(std::unique_ptr<Ensemble> &ensemble);
 
 void usage(const std::string &prog_name) {
   std::cerr << prog_name << ": usage:" << std::endl;
@@ -43,11 +44,12 @@ int main(int argc, char **argv) {
   }
   const std::string name = settings.get("function");
   if (name != "wetdep_clddiag" && name != "update_scavenging" &&
-      name != "wetdep_prevap" && name != "wetdep_resusp_nonlinear") {
+      name != "wetdep_prevap" && name != "wetdep_resusp_nonlinear" &&
+      name != "wetdep_resusp_noprecip") {
     std::cerr << "Invalid name: " << name << std::endl;
     std::cerr << "Currently the only valid name are: "
               << "wetdep_clddiag, update_scavenging, wetdep_prevap, "
-                 "wetdep_resusp_nonlinear"
+                 "wetdep_resusp_nonlinear, wetdep_resusp_noprecip"
               << std::endl;
     exit(1);
   }
@@ -61,6 +63,8 @@ int main(int argc, char **argv) {
       test_wetdep_prevap(ensemble);
     } else if (name == "wetdep_resusp_nonlinear") {
       test_wetdep_resusp_nonlinear(ensemble);
+    } else if (name == "wetdep_resusp_noprecip") {
+      test_wetdep_resusp_noprecip(ensemble);
     }
     // Write out a Python module.
     std::cout << argv[0] << ": writing " << output_file << std::endl;
