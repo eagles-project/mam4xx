@@ -13,6 +13,7 @@ add_executable(water_uptake_driver
                find_real_solution.cpp
                makoh_quartic.cpp
                modal_aero_kohler.cpp
+               modal_aero_water_uptake_rh_clearair.cpp
                )
 target_link_libraries(water_uptake_driver skywalker;validation;${HAERO_LIBRARIES})
 
@@ -30,6 +31,7 @@ foreach (input
           find_real_solution
           makoh_quartic
           modal_aero_kohler
+          modal_aero_water_uptake_rh_clearair
           )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?

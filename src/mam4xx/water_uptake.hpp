@@ -278,7 +278,7 @@ void modal_aero_wateruptake_wetaer(
 KOKKOS_INLINE_FUNCTION
 void modal_aero_water_uptake_rh_clearair(const Real temperature,
                                          const Real pmid, const Real h2ommr,
-                                         const Real cldn, Real rh) {
+                                         const Real cldn, Real &rh) {
 
   Real es = 0.0;
   Real qs = 0.0;
@@ -292,6 +292,12 @@ void modal_aero_water_uptake_rh_clearair(const Real temperature,
     rh = rh_max;
   }
   rh = utils::min_max_bound(0.0, rh_max, rh);
+
+  static constexpr Real cldn_thresh = 1.0;
+  if (cldn < cldn_thresh) {
+    rh = (rh - cldn) / (1.0 - cldn); // RH of clear portion
+  }
+  rh = haero::max(rh, 0.0);
 }
 
 }; // namespace water_uptake
