@@ -10,6 +10,7 @@
 #include <haero/constants.hpp>
 #include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/utils.hpp>
 
 // Based on e3sm_mam4_refactor/components/eam/src/chemistry/aerosol/wetdep.F90
 namespace mam4 {
@@ -343,6 +344,112 @@ void update_scavenging(
   }
 }
 // ==============================================================================
+KOKKOS_INLINE_FUNCTION
+Real flux_precnum_vs_flux_prec_mpln(const Real flux_prec, const int jstrcnv) {
+  // clang-format off
+  // --------------------------------------------------------------------------------
+  //  flux_precnum_vs_flux_prec_mp = precipitation number flux at the cloud base [drops/m^2/s]
+  //  Options of assuming log-normal or marshall-palmer raindrop size distribution
+  // --------------------------------------------------------------------------------
+  /*
+  in :: flux_prec     ! [drops/m^2/s]
+  in :: jstrcnv   
+  out :: flux_precnum_vs_flux_prec_mpln  ! [drops/m^2/s]
+  */
+  // clang-format on
+
+  // BAD CONSTANT
+  const Real small_value_36 = 1.e-36;
+
+  // current only two options: 1 for marshall-palmer distribution, 2 for
+  // log-normal distribution
+  Real a0, a1;
+  if (jstrcnv <= 1) {
+    // marshall-palmer distribution
+    a0 = 1.0885896550304022e+01;
+    a1 = 4.3660645528167907e-01;
+  } else {
+    // log-normal distribution
+    a0 = 9.9067806476181524e+00;
+    a1 = 4.2690709912134056e-01;
+  }
+  Real y_var;
+  if (flux_prec >= small_value_36) {
+    const Real x_var = haero::log(flux_prec);
+    y_var = haero::exp(a0 + a1 * x_var);
+  } else {
+    y_var = 0.0;
+  }
+  return y_var;
+}
+// ==============================================================================
+KOKKOS_INLINE_FUNCTION
+void wetdep_prevap(const int is_st_cu, const int mam_prevap_resusp_optcc,
+                   const Real pdel_ik, const Real pprdx, const Real srcx,
+                   const Real arainx, const Real precabx_old,
+                   const Real precabx_base_old, const Real scavabx_old,
+                   const Real precnumx_base_old, Real &precabx_new,
+                   Real &precabx_base_new, Real &scavabx_new,
+                   Real &precnumx_base_new) {
+  // clang-format off
+  // ------------------------------------------------------------------------------
+  // do precip production and scavenging
+  // ------------------------------------------------------------------------------
+  /*
+  in :: is_st_cu      ! options for stratiform (1) or convective (2) clouds
+                      ! raindrop size distribution is
+                      ! different for different cloud:
+                      ! 1: assume marshall-palmer distribution
+                      ! 2: assume log-normal distribution
+  in :: mam_prevap_resusp_optcc       ! suspension options
+  in :: pdel_ik       ! pressure thikness at current column and level [Pa]
+  in :: pprdx  ! precipitation generation rate [kg/kg/s]
+  in :: srcx   ! scavenging tendency [kg/kg/s]
+  in :: arainx ! precipitation and cloudy volume,at the top interface of current layer [fraction]
+  in :: precabx_base_old ! input of precipitation at cloud base [kg/m2/s]
+  in :: precabx_old ! input of precipitation above this layer [kg/m2/s]
+  in :: scavabx_old ! input scavenged tracer flux from above [kg/m2/s]
+  in :: precnumx_base_old ! input of rain number at cloud base [#/m2/s]
+  out :: precabx_base_new ! output of precipitation at cloud base [kg/m2/s]
+  out :: precabx_new ! output of precipitation above this layer [kg/m2/s]
+  out :: scavabx_new ! output scavenged tracer flux from above [kg/m2/s]
+  out :: precnumx_base_new ! output of rain number at cloud base [#/m2/s]
+  */
+  // clang-format on
+  // BAD CONSTANT
+  const Real small_value_30 = 1.e-30;
+  const Real gravit = Constants::gravity;
+
+  // initiate *_new in case they are not calculated
+  // precabx_base_new and precabx_new are always calculated
+  scavabx_new = scavabx_old;
+  precnumx_base_new = precnumx_base_old;
+
+  Real tmpa = haero::max(0.0, pprdx * pdel_ik / gravit);
+  precabx_base_new = haero::max(0.0, precabx_base_old + tmpa);
+  precabx_new = utils::min_max_bound(0.0, precabx_base_new, precabx_old + tmpa);
+
+  if (mam_prevap_resusp_optcc <= 130) {
+    // aerosol mass scavenging
+    tmpa = haero::max(0.0, srcx * pdel_ik / gravit);
+    scavabx_new = haero::max(0.0, scavabx_old + tmpa);
+  } else {
+    // raindrop number increase
+    if (precabx_base_new < small_value_30) {
+      precnumx_base_new = 0.0;
+    } else if (precabx_base_new > precabx_base_old) {
+      // note - calc rainshaft number flux from rainshaft water flux,
+      // then multiply by rainshaft area to get grid-average number flux
+      tmpa = arainx * flux_precnum_vs_flux_prec_mpln(precabx_base_new / arainx,
+                                                     is_st_cu);
+      precnumx_base_new = haero::max(0.0, tmpa);
+    } else {
+      precnumx_base_new = precnumx_base_old;
+    }
+  }
+}
+// ==============================================================================
+
 } // namespace wetdep
 
 /// @class WedDeposition
