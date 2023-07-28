@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
     if (func_name == "modal_aero_water_uptake_rh_clearair") {
       modal_aero_water_uptake_rh_clearair(ensemble);
     }
-    if (func_name == "modal_aero_water_uptake_wetaer"){
+    if (func_name == "modal_aero_water_uptake_wetaer") {
       modal_aero_water_uptake_wetaer(ensemble);
     }
   } catch (std::exception &e) {

@@ -36,7 +36,6 @@ void modal_aero_water_uptake_wetaer(Ensemble *ensemble) {
     auto naer = input.get_array("naer");
     auto dryvol = input.get_array("dryvol");
 
-
     std::vector<Real> wetrad(AeroConfig::num_modes(), 0);
     std::vector<Real> wetvol(AeroConfig::num_modes(), 0);
     std::vector<Real> wtrvol(AeroConfig::num_modes(), 0);
@@ -47,7 +46,6 @@ void modal_aero_water_uptake_wetaer(Ensemble *ensemble) {
         rhcrystal.data(), rhdeliques.data(), dgncur_a.data(), dryrad.data(),
         hygro.data(), rh.data()[0], naer.data(), dryvol.data(), wetrad.data(),
         wetvol.data(), wtrvol.data(), dgncur_awet.data(), qaerwat.data());
-
 
     output.set("wetrad", wetrad);
     output.set("wetvol", wetvol);
