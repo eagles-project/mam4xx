@@ -41,7 +41,8 @@ namespace wetdep {
  * @pre atm is initialized correctly and has the correct number of levels.
  */
 KOKKOS_INLINE_FUNCTION
-Real local_precip_production(const Real pdel, const Real source_term, const Real sink_term) {
+Real local_precip_production(const Real pdel, const Real source_term,
+                             const Real sink_term) {
   return (pdel / Constants::gravity) * (source_term - sink_term);
 }
 
@@ -1078,29 +1079,31 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
 // ==============================================================================
 
 /**
- * @brief Estimate the cloudy volume which is occupied by rain or cloud water as 
+ * @brief Estimate the cloudy volume which is occupied by rain or cloud water as
  *        the max between the local cloud amount or the sum above of
  *       (cloud * positive precip production)   sum total precip from above
  *        ----------------------------------- X -------------------------
  *        sum above of ( positive precip )      sum positive precip from above
- * 
+ *
  * @param[in] temperature Temperature [K].
  * @param[in] pmid Pressure at layer midpoints [Pa].
  * @param[in] pdel Pressure difference across layers [Pa].
  * @param[in] cmfdqr to convective rainout [kg/kg/s].
- * @param[in] evapc Evaporation rate of convective precipitation ( >= 0 ) [kg/kg/s].
+ * @param[in] evapc Evaporation rate of convective precipitation ( >= 0 )
+ * [kg/kg/s].
  * @param[in] cldt Total cloud fraction [fraction, unitless].
  * @param[in] cldcu Cumulus cloud fraction [fraction, unitless].
  * @param[in] clst Stratus cloud fraction [fraction, unitless].
  * @param[in] evapr rate of evaporation of falling precipitation [kg/kg/s].
  * @param[in] prain rate of conversion of condensate to precipitation [kg/kg/s].
  * @param[in] atm Atmosphere object (used for number of levels).
- * 
- * @param[out] cldv Fraction occupied by rain or cloud water [fraction, unitless].
+ *
+ * @param[out] cldv Fraction occupied by rain or cloud water [fraction,
+ * unitless].
  * @param[out] cldvcu Convective precipitation volume [fraction, unitless].
  * @param[out] cldvst Stratiform precipitation volume [fraction, unitless].
  * @param[out] rain Rain mixing ratio [kg/kg].
- * 
+ *
  * @pre In F90, ncol == 1 as we only operate over one column at a time
  *      as outer loops will iterate over columns, so we drop ncol as input.
  * @pre In F90 code, pcols is the number of columns in the mesh.
@@ -1108,22 +1111,23 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
  * @pre In F90 code, ncol == pcols. Since ncol == 1, pcols == 1.
  *
  * @pre atm is initialized correctly and has the correct number of levels.
-*/
+ */
 KOKKOS_INLINE_FUNCTION
-void clddiag(const int nlev, const Real* temperature, const Real* pmid, const Real* pdel,
-             const Real* cmfdqr, const Real* evapc, const Real* cldt,
-             const Real* cldcu, const Real* cldst, const Real* evapr,
-             const Real* prain, Real* cldv, Real* cldvcu, Real* cldvst,
-             Real* rain)
-{
+void clddiag(const int nlev, const Real *temperature, const Real *pmid,
+             const Real *pdel, const Real *cmfdqr, const Real *evapc,
+             const Real *cldt, const Real *cldcu, const Real *cldst,
+             const Real *evapr, const Real *prain, Real *cldv, Real *cldvcu,
+             Real *cldvst, Real *rain) {
   // Calculate local precipitation production rate
-  // In src/chemistry/aerosol/wetdep.F90, (prain + cmfdqr) is used for source_term
+  // In src/chemistry/aerosol/wetdep.F90, (prain + cmfdqr) is used for
+  // source_term
 
-  // TODO - !FIXME: Possible bug: why there is no evapc in sumppr_all calculation?
+  // TODO - !FIXME: Possible bug: why there is no evapc in sumppr_all
+  // calculation?
   Real sumppr_all = 0;
   for (int i = 0; i < nlev; i++) {
     const Real source_term = prain[i] + cmfdqr[i];
-    sumppr_all +=  local_precip_production(pdel[i], source_term, evapc[i]);
+    sumppr_all += local_precip_production(pdel[i], source_term, evapc[i]);
     // Calculate rain mixing ratio
     rain_mix_ratio(temperature[i], pmid[i], sumppr_all, rain[i]);
   }
@@ -1138,17 +1142,16 @@ void clddiag(const int nlev, const Real* temperature, const Real* pmid, const Re
 
   // Convective
   auto prec_cu = [&](int i) -> Real {
-    return local_precip_production(pdel[i], cmfdqr[i], evapr[i]);  
+    return local_precip_production(pdel[i], cmfdqr[i], evapr[i]);
   };
   calculate_cloudy_volume(nlev, cldcu, prec_cu, false, cldvcu);
 
   // Stratiform
   auto prec_st = [&](int i) -> Real {
-    return local_precip_production(pdel[i], prain[i], evapr[i]);  
+    return local_precip_production(pdel[i], prain[i], evapr[i]);
   };
   calculate_cloudy_volume(nlev, cldst, prec_st, false, cldvst);
 }
-
 
 } // namespace wetdep
 
