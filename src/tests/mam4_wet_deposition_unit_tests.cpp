@@ -216,9 +216,9 @@ TEST_CASE("test_calculate_cloudy_volume", "mam4_wet_deposition_process") {
         Real *cldv_device = cldv.data();
         Real *sumppr_all_device = sumppr_all.data();
         // True is the only flag with validation data available
-        mam4::wetdep::calculate_cloudy_volume(cld_device, lprec_device, true,
-                                              cldv_device, sumppr_all_device,
-                                              atm);
+        mam4::wetdep::calculate_cloudy_volume(nlev, cld_device, lprec_device,
+                                              true, cldv_device,
+                                              sumppr_all_device);
       });
 
   auto cld_view = Kokkos::create_mirror_view(cld);

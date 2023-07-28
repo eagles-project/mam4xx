@@ -70,7 +70,7 @@ void local_precip_production(/* cont int ncol, */ const Real *pdel,
  * @param[out] sumppr_all Sum of precipitation rate above each layer, for calling rain_mix_ratio use [kg/m2/s]
  *
  * @pre cld, lprec, cldv and sumppr_all are all an array
- *      of size pver == atm.num_levels().
+ *      of size nlev == atm.num_levels().
  *
  * @pre In F90, ncol == 1 as we only operate over one column at a time
  *      as outer loops will iterate over columns, so we drop ncol as input.
@@ -83,30 +83,34 @@ void local_precip_production(/* cont int ncol, */ const Real *pdel,
  */
 // clang-format on 
 KOKKOS_INLINE_FUNCTION
-void calculate_cloudy_volume(/* cont int ncol, */ const Real *cld, const Real *lprec,
-                             const bool is_tot_cld, Real *cldv, Real *sumppr_all,
-                             const Atmosphere &atm) {
-  const int pver = atm.num_levels();
+void calculate_cloudy_volume(const int nlev, const Real cld[/*nlev*/], const Real lprec[/*nlev*/],
+                             const bool is_tot_cld, Real cldv[/*nlev*/], Real sumppr_all[/*nlev*/]) {
+  // BAD CONSTANT
+  const Real small_value_30 = 1.e-30;
+  const Real small_value_36 = 1.e-36;
   Real sumppr = 0.0; // Precipitation rate [kg/m2/s]
   Real cldv1 = 0.0; // Precip weighted cloud fraction from above [kg/m2/s]
-  Real sumpppr = 1e-36; // Sum of positive precips from above
+  Real sumpppr = small_value_36; // Sum of positive precips from above
 
-  Real lprecp = 0.0; // Local production rate of precip [kg/m2/s] if positive
+  sumppr_all[0] = lprec[0];
+  for (int i = 0; i < nlev; i++) 
+    sumppr_all[i] = sumppr_all[i-1] + lprec[i];
 
-  for (int i = 0; i < pver; i++) {
-      if (is_tot_cld) {
-          cldv[i] = haero::max( haero::min(1.0, cldv1 / sumpppr) * sumppr / sumpppr, cld[i]);
-      }
-      else {
-          // For convective and stratiform precipitation volume at the top 
-          // interface of each layer. Neglect the current layer.
-          cldv[i] = haero::max( haero::min(1.0, cldv1 / sumpppr) * (sumppr / sumpppr), 0.0);
-      }
-      lprecp = haero::max(lprec[i], 1e-30);
-      cldv1 += cld[i] * lprecp;
-      sumppr += lprec[i];
-      sumppr_all[i] = sumppr;
-      sumpppr += lprecp;
+  for (int i = 0; i < nlev; i++) {
+    const Real clouds = haero::min(1.0, cldv1 / sumpppr) * (sumppr / sumpppr);
+    if (is_tot_cld) {
+      cldv[i] = haero::max( clouds, cld[i]);
+    }
+    else {
+      // For convective and stratiform precipitation volume at the top 
+      // interface of each layer. Neglect the current layer.
+      cldv[i] = haero::max( clouds, 0.0);
+    }
+    // Local production rate of precip [kg/m2/s] if positive
+    const Real lprecp = haero::max(lprec[i], small_value_30);
+    cldv1 += cld[i] * lprecp;
+    sumppr = sumppr_all[i];
+    sumpppr += lprecp;
   }
 }
 
@@ -195,18 +199,18 @@ void clddiag(const Real* temperature, const Real* pmid, const Real* pdel,
   // Calculate local precipitation production rate
   // In src/chemistry/aerosol/wetdep.F90, (prain + cmfdqr) is used for source_term
   // This is just a temporary array that contains the sum of the two vectors...
-  const int pver = atm.num_levels();
+  const int nlev = atm.num_levels();
 
-  // Have to use stack memory since pver is non-const
-  auto source_term = new Real[pver];
-  auto lprec = new Real[pver];
-  auto lprec_st = new Real[pver];
-  auto lprec_cu = new Real[pver];
-  auto sumppr_all = new Real[pver];
-  auto sumppr_all_cu = new Real[pver];
-  auto sumppr_all_st = new Real[pver];
+  // Have to use stack memory since nlev is non-const
+  auto source_term = new Real[nlev];
+  auto lprec = new Real[nlev];
+  auto lprec_st = new Real[nlev];
+  auto lprec_cu = new Real[nlev];
+  auto sumppr_all = new Real[nlev];
+  auto sumppr_all_cu = new Real[nlev];
+  auto sumppr_all_st = new Real[nlev];
  
-  for (int i = 0; i < pver; i++) {
+  for (int i = 0; i < nlev; i++) {
     source_term[i] = prain[i] + cmfdqr[i];
   }
 
@@ -218,11 +222,11 @@ void clddiag(const Real* temperature, const Real* pmid, const Real* pdel,
 
   // Calculate cloudy volume which is occupied by rain or cloud water
   // Total
-  calculate_cloudy_volume(/* ncol, */ cldt, lprec, true, cldv, sumppr_all, atm);
+  calculate_cloudy_volume(nlev, cldt, lprec, true, cldv, sumppr_all);
   // Convective
-  calculate_cloudy_volume(/* ncol, */ cldcu, lprec_cu, false, cldvcu, sumppr_all_cu, atm);
+  calculate_cloudy_volume(nlev, cldcu, lprec_cu, false, cldvcu, sumppr_all_cu);
   // Stratiform
-  calculate_cloudy_volume(/* ncol, */ cldst, lprec_st, false, cldvst, sumppr_all_st, atm);
+  calculate_cloudy_volume(nlev, cldst, lprec_st, false, cldvst, sumppr_all_st);
 
   // Calculate rain mixing ratio
   rain_mix_ratio(/* ncol, */ temperature, pmid, sumppr_all, rain, atm);
