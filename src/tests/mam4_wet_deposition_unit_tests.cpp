@@ -73,9 +73,8 @@ TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
         Real *sink_term_device = sink_term.data();
         Real *lprec_device = lprec.data();
         for (int i = 0; i < nlev; i++)
-          mam4::wetdep::local_precip_production(
-              pdel_device[i], source_term_device[i], sink_term_device[i],
-              lprec_device[i]);
+          lprec_device[i] = mam4::wetdep::local_precip_production(
+              pdel_device[i], source_term_device[i], sink_term_device[i]);
       });
 
   auto pdel_view = Kokkos::create_mirror_view(pdel);
@@ -217,9 +216,12 @@ TEST_CASE("test_calculate_cloudy_volume", "mam4_wet_deposition_process") {
         Real *cldv_device = cldv.data();
         Real *sumppr_all_device = sumppr_all.data();
         // True is the only flag with validation data available
-        mam4::wetdep::calculate_cloudy_volume(nlev, cld_device, lprec_device,
-                                              true, cldv_device,
-                                              sumppr_all_device);
+	 auto lprec = [&](int i){ return lprec_device[i]; };
+        mam4::wetdep::calculate_cloudy_volume(nlev, cld_device, lprec,
+                                              true, cldv_device);
+	sumppr_all_device[0] = lprec_device[0];
+	for (int i = 1; i < nlev; i++) 
+	  sumppr_all_device[i] = sumppr_all_device[i-1] + lprec_device[i];
       });
 
   auto cld_view = Kokkos::create_mirror_view(cld);
@@ -275,8 +277,9 @@ TEST_CASE("test_rain_mix_ratio", "mam4_wet_deposition_process") {
         Real *pmid_device = pmid.data();
         Real *sumppr_device = sumppr.data();
         Real *rain_device = rain.data();
-        mam4::wetdep::rain_mix_ratio(temperature_device, pmid_device,
-                                     sumppr_device, rain_device, atm);
+	for (int i=0; i<nlev; ++i)
+          mam4::wetdep::rain_mix_ratio(temperature_device[i], pmid_device[i],
+                                       sumppr_device[i], rain_device[i]);
       });
 
   auto temperature_view = Kokkos::create_mirror_view(temperature);

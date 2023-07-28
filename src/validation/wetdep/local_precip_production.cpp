@@ -38,10 +38,7 @@ void test_local_precip_production_process(const Input &input, Output &output) {
   ColumnView return_vals = mam4::validation::create_column_view(1);
   Kokkos::parallel_for(
       "wetdep::local_precip_production", 1, KOKKOS_LAMBDA(const int) {
-        Real lprec = 0;
-        mam4::wetdep::local_precip_production(pdel, source_term, sink_term,
-                                              lprec);
-        return_vals[0] = lprec;
+        return_vals[0] = mam4::wetdep::local_precip_production(pdel, source_term, sink_term);
       });
 
   // Create mirror views for output arrays
