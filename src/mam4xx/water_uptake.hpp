@@ -263,7 +263,7 @@ void modal_aero_wateruptake_wetaer(
       wtrvol[imode] = wtrvol[imode] * hystfac * (rh - rhcrystal[imode]);
       wtrvol[imode] = haero::max(wtrvol[imode], 0.0);
       wetvol[imode] = dryvol[imode] + wtrvol[imode];
-      wetrad[imode] = haero::cube(wetvol[imode] / (4.0 / 3.0 * Constants::pi));
+      wetrad[imode] = haero::cbrt(wetvol[imode] / (4.0 / 3.0 * Constants::pi));
     }
 
     // calculate wet aerosol diameter and aerosol water
