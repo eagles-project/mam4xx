@@ -41,13 +41,9 @@ namespace wetdep {
  * @pre atm is initialized correctly and has the correct number of levels.
  */
 KOKKOS_INLINE_FUNCTION
-void local_precip_production(/* cont int ncol, */ const Real *pdel,
-                             const Real *source_term, const Real *sink_term,
-                             Real *lprec, const Atmosphere &atm) {
-  const int pver = atm.num_levels();
-  for (int i = 0; i < pver; i++) {
-    lprec[i] = (pdel[i] / Constants::gravity) * (source_term[i] - sink_term[i]);
-  }
+void local_precip_production(const Real pdel, const Real source_term,
+                             const Real sink_term, Real &lprec) {
+  lprec = (pdel / Constants::gravity) * (source_term - sink_term);
 }
 
 // clang-format off
@@ -216,10 +212,11 @@ void clddiag(const Real* temperature, const Real* pmid, const Real* pdel,
 
   // ...and then we pass the temporary array to local_precip_production
   // TODO - !FIXME: Possible bug: why there is no evapc in lprec calculation?
-  local_precip_production(/* ncol, */ pdel, source_term, evapc, lprec, atm);
-  local_precip_production(/* ncol, */ pdel, cmfdqr, evapr, lprec_cu, atm);
-  local_precip_production(/* ncol, */ pdel, prain, evapr, lprec_st, atm);
-
+  for (int i = 0; i < nlev; i++) {
+    local_precip_production(pdel[i], source_term[i], evapc[i], lprec[i]);
+    local_precip_production(pdel[i], cmfdqr[i], evapr[i], lprec_cu[i]);
+    local_precip_production(pdel[i], prain[i], evapr[i], lprec_st[i]);
+  }
   // Calculate cloudy volume which is occupied by rain or cloud water
   // Total
   calculate_cloudy_volume(nlev, cldt, lprec, true, cldv, sumppr_all);
