@@ -880,6 +880,75 @@ void rain_mix_ratio(const Real temperature, const Real pmid, const Real sumppr,
   }
 }
 
+// ==============================================================================
+// ==============================================================================
+KOKKOS_INLINE_FUNCTION
+void wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
+                   const Real pdel_ik, const Real evapx, const Real precabx_old,
+                   const Real precabx_base_old, const Real scavabx_old,
+                   const Real precnumx_base_old, Real &precabx_new,
+                   Real &precabx_base_new, Real &scavabx_new,
+                   Real &precnumx_base_new, Real &resusp_x) {
+  // clang-format off
+  // ------------------------------------------------------------------------------
+  // do precip production, resuspension and scavenging
+  // ------------------------------------------------------------------------------
+  /*
+  in :: is_st_cu ! options for stratiform (1) or convective (2) clouds
+                      ! raindrop size distribution is
+                      ! different for different cloud:
+                      ! 1: assume marshall-palmer distribution
+                      ! 2: assume log-normal distribution
+  in :: mam_prevap_resusp_optcc       ! suspension options
+  in :: pdel_ik       ! pressure thikness at current column and level [Pa]
+  in :: evapx         ! evaporation at current layer [kg/kg/s]
+  in :: precabx_base_old ! input of precipitation at cloud base [kg/m2/s]
+  in :: precabx_old ! input of precipitation above this layer [kg/m2/s]
+  in :: scavabx_old ! input of scavenged tracer flux from above [kg/m2/s]
+  in :: precnumx_base_old ! input of precipitation number at cloud base [#/m2/s]
+  out :: precabx_base_new ! output of precipitation at cloud base [kg/m2/s]
+  out :: precabx_new ! output of precipitation above this layer [kg/m2/s]
+  out :: scavabx_new ! output of scavenged tracer flux from above [kg/m2/s]
+  out :: precnumx_base_new ! output of precipitation number at cloud base [#/m2/s]
+  out :: resusp_x    ! aerosol mass re-suspension in a particular layer [kg/m2/s]
+  */
+  // clang-format on
+
+  // BAD CONSTANT
+  const Real small_value_30 = 1.e-30;
+
+  const Real gravit = Constants::gravity;
+
+  // initiate *_new in case they are not calculated
+  scavabx_new = scavabx_old;
+  precnumx_base_new = precnumx_base_old;
+  precabx_base_new = precabx_base_old;
+
+  const Real tmpa = haero::max(0.0, evapx * pdel_ik / gravit);
+  precabx_new = utils::min_max_bound(0.0, precabx_base_new, precabx_old - tmpa);
+
+  if (precabx_new < small_value_30) {
+    // precip rate is essentially zero so do complete resuspension
+    wetdep_resusp_noprecip(is_st_cu, mam_prevap_resusp_optcc, precabx_old,
+                           precabx_base_old, scavabx_old, precnumx_base_old,
+                           precabx_new, precabx_base_new, scavabx_new,
+                           resusp_x);
+  } else if (evapx <= 0.0) {
+    // no evap so no resuspension
+    if (mam_prevap_resusp_optcc <= 130) {
+      scavabx_new = scavabx_old;
+    }
+    resusp_x = 0.0;
+  } else {
+    // regular non-linear resuspension
+    wetdep_resusp_nonlinear(is_st_cu, mam_prevap_resusp_optcc, precabx_old,
+                            precabx_base_old, scavabx_old, precnumx_base_old,
+                            precabx_new, scavabx_new, resusp_x);
+  }
+}
+
+// ==============================================================================
+
 } // namespace wetdep
 
 /// @class WedDeposition

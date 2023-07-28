@@ -16,6 +16,7 @@ add_executable(wetdep_driver
                rain_mix_ratio.cpp
                calculate_cloudy_volume.cpp
                local_precip_production.cpp
+               wetdep_resusp.cpp
               )
 target_link_libraries(wetdep_driver skywalker;validation;${HAERO_LIBRARIES})
 
@@ -36,6 +37,8 @@ foreach (TEST_NAME
 	 rain_mix_ratio
 	 calculate_cloudy_volume
 	 local_precip_production
+	 wetdep_resusp_130
+	 wetdep_resusp_230
 	)
   set(SKYWALKER_RESULT ${TEST_NAME}_output_ts_355)
   configure_file(

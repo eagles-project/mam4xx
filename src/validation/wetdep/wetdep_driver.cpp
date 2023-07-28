@@ -22,6 +22,7 @@ void test_compute_evap_frac(std::unique_ptr<Ensemble> &ensemble);
 void test_rain_mix_ratio(std::unique_ptr<Ensemble> &ensemble);
 void test_calculate_cloudy_volume(std::unique_ptr<Ensemble> &ensemble);
 void test_local_precip_production(std::unique_ptr<Ensemble> &ensemble);
+void test_wetdep_resusp(std::unique_ptr<Ensemble> &ensemble);
 
 void usage(const std::string &prog_name) {
   std::cerr << prog_name << ": usage:" << std::endl;
@@ -52,13 +53,15 @@ int main(int argc, char **argv) {
       name != "wetdep_prevap" && name != "wetdep_resusp_nonlinear" &&
       name != "wetdep_resusp_noprecip" && name != "wetdep_scavenging" &&
       name != "compute_evap_frac" && name != "rain_mix_ratio" &&
-      name != "calculate_cloudy_volume" && name != "local_precip_production") {
+      name != "calculate_cloudy_volume" && name != "local_precip_production" &&
+      name != "wetdep_resusp") {
     std::cerr << "Invalid name: " << name << std::endl;
     std::cerr << "Currently the only valid name are: "
               << "wetdep_clddiag, update_scavenging, wetdep_prevap, "
                  "wetdep_resusp_nonlinear, wetdep_resusp_noprecip, "
                  "wetdep_scavenging, compute_evap_frac, rain_mix_ratio, "
-                 "calculate_cloudy_volume, local_precip_production"
+                 "calculate_cloudy_volume, local_precip_production, "
+                 "wetdep_resusp"
               << std::endl;
     exit(1);
   }
@@ -84,6 +87,8 @@ int main(int argc, char **argv) {
       test_calculate_cloudy_volume(ensemble);
     } else if (name == "local_precip_production") {
       test_local_precip_production(ensemble);
+    } else if (name == "wetdep_resusp") {
+      test_wetdep_resusp(ensemble);
     }
     // Write out a Python module.
     std::cout << argv[0] << ": writing " << output_file << std::endl;
