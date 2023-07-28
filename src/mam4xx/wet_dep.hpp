@@ -9,9 +9,9 @@
 #include <haero/atmosphere.hpp>
 #include <haero/constants.hpp>
 #include <haero/math.hpp>
+#include <limits>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/utils.hpp>
-
 // Based on e3sm_mam4_refactor/components/eam/src/chemistry/aerosol/wetdep.F90
 namespace mam4 {
 
@@ -947,6 +947,267 @@ void wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
   }
 }
 
+// ==============================================================================
+// ==============================================================================
+KOKKOS_INLINE_FUNCTION
+void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
+                const Real evapc, const Real dlf, const Real conicw,
+                const Real precs, const Real evaps, const Real cwat,
+                const Real cldt, const Real cldc, const Real cldvcu,
+                const Real cldvcu_lower_level, const Real cldvst,
+                const Real cldvst_lower_level, const Real sol_factb,
+                const Real sol_facti, const Real sol_factic,
+                const int mam_prevap_resusp_optcc,
+                const bool is_strat_cloudborne, const Real scavcoef,
+                const Real f_act_conv, const Real tracer, const Real qqcw,
+                Real &fracis, Real &scavt, Real &iscavt, Real &icscavt,
+                Real &isscavt, Real &bcscavt, Real &bsscavt, Real &rcscavt,
+                Real &rsscavt) {
+  // clang-format off
+  // -----------------------------------------------------------------------
+  //  Purpose:
+  //  scavenging code for very soluble aerosols
+  // 
+  //  Author: P. Rasch
+  //  Modified by T. Bond 3/2003 to track different removals
+  //  Sungsu Park. Mar.2010 : Impose consistencies with a few changes in physics.
+
+  //  this section of code is for highly soluble aerosols,
+  //  the assumption is that within the cloud that
+  //  all the tracer is in the cloud water
+  // 
+  //  for both convective and stratiform clouds,
+  //  the fraction of cloud water converted to precip defines
+  //  the amount of tracer which is pulled out.
+  // -----------------------------------------------------------------------
+  /*
+  in ::
+         deltat,   ! time step [s]
+         pdel,     ! pressure thikness [Pa]
+         cmfdqr,   ! rate of production of convective precip [kg/kg/s]
+         evapc,    ! Evaporation rate of convective precipitation [kg/kg/s]
+         dlf,      ! Detrainment of convective condensate [kg/kg/s]
+         conicw,   ! convective cloud water [kg/kg]
+         precs,    ! rate of production of stratiform precip [kg/kg/s]
+         evaps,    ! rate of evaporation of precip [kg/kg/s]
+         cwat,     ! cloud water amount [kg/kg]
+         cldt,     ! total cloud fraction [fraction]
+         cldc,     ! convective cloud fraction [fraction]
+         cldvcu,   ! Convective precipitation area at the top interface of each layer [fraction]
+         cldvcu_lower_level  Convective precipitation at the next lower level, (kk+1 relative to cldvcu[kk]
+	                     or at cldvcu[nlev-1] if kk==nlev) area at the top interface of each layer [fraction]
+         cldvst,   ! Stratiform precipitation area at the top interface of each layer [fraction]
+         cldvst_lower_level, Stratiform precipitation at the next lower level, (kk+1 relative to cldvst[kk]
+                             or at cldvst[nlev-1] if kk==nlev)area at the top interface of each layer [fraction]
+         tracer    ! trace species [kg/kg]
+
+  in :: mam_prevap_resusp_optcc ! suspension options.
+     0 = no resuspension
+     1 = linear resuspension of aerosol mass or number following original mam
+         coding and history_aero_prevap_resusp = .false.
+     2 = same as 1 but history_aero_prevap_resusp = .true.
+     3 = same as 2 but with some added "xxx = max( 0, xxx)" lines
+   130 = non-linear resuspension of aerosol mass   based on scavenged aerosol mass
+   230 = non-linear resuspension of aerosol number based on raindrop number
+     (1,2,3 are not used in the current code)
+
+
+  in :: is_strat_cloudborne = true if tracer is stratiform-cloudborne aerosol; else false
+
+  in :: scavcoef ! Dana and Hales coefficient [1/mm]
+  in :: f_act_conv ! [fraction] ! f_act_conv = conv-cloud activation fraction when is_strat_cloudborne==.false.; else 0.0
+  in :: qqcw  ! [kg/kg] ! qqcw = strat-cloudborne aerosol corresponding to tracer when is_strat_cloudborne==.false.; else 0.0
+  in :: sol_factb   ! solubility factor (frac of aerosol scavenged below cloud) [fraction]
+  in :: sol_facti   ! solubility factor (frac of aerosol scavenged in cloud) [fraction]
+  in :: sol_factic  ! sol_facti for convective clouds [fraction]
+
+  out :: fracis  ! fraction of species not scavenged [fraction]
+  out :: scavt   ! scavenging tend [kg/kg/s]
+  out :: iscavt  ! incloud scavenging tends [kg/kg/s]
+  out :: icscavt  ! incloud, convective [kg/kg/s]
+  out :: isscavt  ! incloud, stratiform [kg/kg/s]
+  out :: bcscavt  ! below cloud, convective [kg/kg/s]
+  out :: bsscavt  ! below cloud, stratiform [kg/kg/s]
+  out :: rcscavt  ! resuspension, convective [kg/kg/s]
+  out :: rsscavt  ! resuspension, stratiform [kg/kg/s]
+  */
+  // clang-format on
+#if 0
+      ! local variables
+      integer  :: icol          ! column index
+      integer  :: kk            ! z index
+
+#endif
+  // BAD CONSTANT
+  const Real small_value_2 = 1.e-2;
+  const Real small_value_12 = 1.e-12;
+  const Real small_value_36 = 1.e-36;
+
+  // omsm = (1 - small number) used to prevent roundoff errors below zero
+  // in Fortran EPSILON(X) returns the smallest number E of the same kind
+  // as X such that 1 + E > 1.
+  // C++ Returns the machine epsilon, that is, the difference between 1.0
+  // and the next value representable by the floating-point type T.
+  const Real omsm = 1.0 - 2 * std::numeric_limits<Real>::epsilon();
+
+  // initiate variables
+  // strat precip from above [kg/m2/s]
+  Real precabs = 0.0;
+  // conv precip from above [kg/m2/s]
+  Real precabc = 0.0;
+  // // stratiform scavenged tracer flux from above [kg/m2/s]
+  Real scavabs = 0.0;
+  // convective scavenged tracer flux from above [kg/m2/s]
+  Real scavabc = 0.0;
+
+  // strat precip at an effective cloud base for calculations in a particular
+  // layer [kg/m2/s]
+  Real precabs_base = 0.0;
+  // conv precip at an effective cloud base for calculations in a particular
+  // layer [kg/m2/s]
+  Real precabc_base = 0.0;
+  // stratiform precip number flux at the bottom of a particular layer [#/m2/s]
+  Real precnums_base = 0.0;
+  // convective precip number flux at the bottom of a particular layer [#/m2/s]
+  Real precnumc_base = 0.0;
+  // ****************** Evaporation **************************
+  // fraction of stratiform precip from above that is evaporating [fraction]
+  Real fracev_st;
+  // Fraction of convective precip from above that is evaporating [fraction]
+  Real fracev_cu;
+  // stratiform
+  compute_evap_frac(mam_prevap_resusp_optcc, pdel, evaps, precabs, fracev_st);
+  // convective
+  compute_evap_frac(mam_prevap_resusp_optcc, pdel, evapc, precabc, fracev_cu);
+
+  // ****************** Scavenging **************************
+
+  // temporary saved tracer value
+  const Real clddiff = cldt - cldc;
+  // temporarily calculation of tracer [kg/kg]
+  const Real tracer_tmp = haero::min(
+      qqcw, tracer * (clddiff / haero::max(small_value_2, (1. - clddiff))));
+  // calculate in-cumulus and mean tracer values for wetdep_scavenging use
+  // in-cumulus tracer concentration [kg/kg]
+  const Real tracer_incu = f_act_conv * (tracer + tracer_tmp);
+  // mean tracer concenration [kg/kg]
+  Real tracer_mean =
+      tracer * (1. - cldc * f_act_conv) - cldc * f_act_conv * tracer_tmp;
+  tracer_mean = haero::max(0., tracer_mean);
+
+  // now do the convective scavenging
+
+  // fracp: fraction of convective cloud water converted to rain
+  // Sungsu: Below new formula of 'fracp' is necessary since 'conicw'
+  // is a LWC/IWC that has already precipitated out, that is, 'conicw' does
+  // not contain precipitation at all !
+  Real fracp =
+      cmfdqr * deltat /
+      haero::max(small_value_12, cldc * conicw + (cmfdqr + dlf) * deltat);
+  fracp = utils::min_max_bound(0.0, 1.0, fracp) * cldc;
+
+  Real srcc; // tendency for convective rain scavenging [kg/kg/s]
+  Real finc; // fraction of rem. rate by conv. rain [fraction]
+  // 2 is for convective:
+  wetdep_scavenging(2, is_strat_cloudborne, deltat, fracp, precabc, cldvcu,
+                    scavcoef, sol_factb, sol_factic, tracer_incu, tracer_mean,
+                    srcc, finc);
+
+  // now do the stratiform scavenging
+
+  // fracp: fraction of convective cloud water converted to rain
+  fracp = precs * deltat / haero::max(cwat + precs * deltat, small_value_12);
+  fracp = utils::min_max_bound(0.0, 1.0, fracp);
+
+  Real srcs; // tendency for stratiform rain scavenging [kg/kg/s]
+  Real fins; // fraction of rem. rate by strat rain [fraction]
+  // 1 for stratiform:
+  wetdep_scavenging(1, is_strat_cloudborne, deltat, fracp, precabs, cldvst,
+                    scavcoef, sol_factb, sol_facti, tracer, tracer_mean, srcs,
+                    fins);
+
+  // rat =  ratio of amount available to amount removed [fraction]
+  // make sure we dont take out more than is there
+  // ratio of amount available to amount removed
+  const Real rat = tracer / haero::max(deltat * (srcc + srcs), small_value_36);
+  if (rat < 1) {
+    srcs = srcs * rat;
+    srcc = srcc * rat;
+  }
+  // total scavenging tendency [kg/kg/s]
+  const Real srct = (srcc + srcs) * omsm;
+
+  // fraction that is not removed within the cloud
+  // (assumed to be interstitial, and subject to convective transport)
+  fracp = deltat * srct / haero::max(cldvst * tracer, small_value_36);
+  fracis = 1. - utils::min_max_bound(0.0, 1.0, fracp);
+
+  // ****************** Resuspension **************************
+
+  Real resusp_c; // aerosol mass re-suspension in a particular layer from
+                 // convective rain [kg/m2/s]
+  Real resusp_s; // aerosol mass re-suspension in a particular layer from
+                 // stratiform rain [kg/m2/s]
+  // tend is all tracer removed by scavenging, plus all re-appearing from
+  // evaporation above
+  if (mam_prevap_resusp_optcc >= 100) {
+    // for stratiform clouds
+    // precipitation and cloudy volume,at the top interface of current layer
+    // [fraction]
+    Real arainx = haero::max(cldvst_lower_level, small_value_2); // non-zero
+    Real precabx_tmp;       // temporary store precabc or precabs [kg/m2/s]
+    Real precabx_base_tmp;  // temporarily store precab*_base [kg/m2/s]
+    Real precnumx_base_tmp; // temporarily store precnum*_base [#/m2/s]
+    Real scavabx_tmp;       // temporarily store scavab* [kg/m2/s]
+    // step 1 - do evaporation and resuspension
+    wetdep_resusp(1, mam_prevap_resusp_optcc, pdel, evaps, precabs,
+                  precabs_base, scavabs, precnums_base, precabx_tmp,
+                  precabx_base_tmp, scavabx_tmp, precnumx_base_tmp, resusp_s);
+    // step 2 - do precip production and scavenging
+    wetdep_prevap(1, mam_prevap_resusp_optcc, pdel, precs, srcs, arainx,
+                  precabx_tmp, precabx_base_tmp, scavabx_tmp, precnumx_base_tmp,
+                  precabs, precabs_base, scavabs, precnums_base);
+
+    // for convective clouds
+    arainx = haero::max(cldvcu_lower_level, small_value_2); // non-zero
+    wetdep_resusp(2, mam_prevap_resusp_optcc, pdel, evapc, precabc,
+                  precabc_base, scavabc, precnumc_base, precabx_tmp,
+                  precabx_base_tmp, scavabx_tmp, precnumx_base_tmp, resusp_c);
+    // step 2 - do precip production and scavenging
+    wetdep_prevap(2, mam_prevap_resusp_optcc, pdel, cmfdqr, srcc, arainx,
+                  precabx_tmp, precabx_base_tmp, scavabx_tmp, precnumx_base_tmp,
+                  precabc, precabc_base, scavabc, precnumc_base);
+  } else { // mam_prevap_resusp_optcc = 0, no resuspension
+    resusp_c = fracev_cu * scavabc;
+    resusp_s = fracev_st * scavabs;
+  }
+
+  // ****************** update scavengingfor output ***************
+  Real scavt_ik;   // scavenging tend at current  [kg/kg/s]
+  Real iscavt_ik;  // incloud scavenging tends at current  [kg/kg/s]
+  Real icscavt_ik; // incloud, convective scavenging tends at current  [kg/kg/s]
+  Real isscavt_ik; // incloud, stratiform scavenging tends at current  [kg/kg/s]
+  Real bcscavt_ik; // below cloud, convective scavenging tends at current
+                   // [kg/kg/s]
+  Real bsscavt_ik; // below cloud, stratiform scavenging tends at current
+                   // [kg/kg/s]
+  Real rcscavt_ik; // resuspension, convective tends at current  [kg/kg/s]
+  Real rsscavt_ik; // resuspension, stratiform tends at current  [kg/kg/s]
+  update_scavenging(mam_prevap_resusp_optcc, pdel, omsm, srcc, srcs, srct, fins,
+                    finc, fracev_st, fracev_cu, resusp_c, resusp_s, precs,
+                    evaps, cmfdqr, evapc, scavt_ik, iscavt_ik, icscavt_ik,
+                    isscavt_ik, bcscavt_ik, bsscavt_ik, rcscavt_ik, rsscavt_ik,
+                    scavabs, scavabc, precabc, precabs);
+
+  scavt = scavt_ik;
+  iscavt = iscavt_ik;
+  icscavt = icscavt_ik;
+  isscavt = isscavt_ik;
+  bcscavt = bcscavt_ik;
+  bsscavt = bsscavt_ik;
+  rcscavt = rcscavt_ik;
+  rsscavt = rsscavt_ik;
+}
 // ==============================================================================
 
 } // namespace wetdep
