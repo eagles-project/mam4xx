@@ -241,7 +241,8 @@ void modal_aero_wateruptake_wetaer(
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
 
     const Real hystfac =
-        1.0 / haero::max(1.0e-5, (rhdeliques[imode] - rhcrystal[imode]));
+        1.0 / haero::max(1.0e-5, (rhdeliques[imode] -
+                                  rhcrystal[imode])); // (BAD CONSTANT)
 
     water_uptake::modal_aero_kohler(dryrad[imode], hygro[imode], rh,
                                     wetrad[imode]);
@@ -293,7 +294,7 @@ void modal_aero_water_uptake_rh_clearair(const Real temperature,
   }
   rh = utils::min_max_bound(0.0, rh_max, rh);
 
-  static constexpr Real cldn_thresh = 1.0;
+  static constexpr Real cldn_thresh = 1.0; // (BAD CONSTANT)
   if (cldn < cldn_thresh) {
     rh = (rh - cldn) / (1.0 - cldn); // RH of clear portion
   }
