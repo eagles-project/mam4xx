@@ -377,6 +377,8 @@ public:
   // See note with shallow_convective_cloud_condensate.
   ColumnView shallow_convective_precipitation_production;
 
+  // rate of evaporation of falling precipitation [kg/kg/s].
+  ColumnView evaporation_of_falling_precipitation;
   // Deep convective precipitation evaporation (grid avg) [kg/kg/s]
   ColumnView deep_convective_precipitation_evaporation;
   // Shallow convective precipitation evaporation (grid avg) [kg/kg/s]

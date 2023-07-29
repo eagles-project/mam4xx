@@ -1134,20 +1134,20 @@ void clddiag(const int nlev, const Real *temperature, const Real *pmid,
 
   // Calculate cloudy volume which is occupied by rain or cloud water
   // Total
-  auto prec = [&](int i) -> Real {
+  auto prec = KOKKOS_LAMBDA(int i) -> Real {
     const Real source_term = prain[i] + cmfdqr[i];
     return local_precip_production(pdel[i], source_term, evapc[i]);
   };
   calculate_cloudy_volume(nlev, cldt, prec, true, cldv);
 
   // Convective
-  auto prec_cu = [&](int i) -> Real {
+  auto prec_cu = KOKKOS_LAMBDA(int i) -> Real {
     return local_precip_production(pdel[i], cmfdqr[i], evapr[i]);
   };
   calculate_cloudy_volume(nlev, cldcu, prec_cu, false, cldvcu);
 
   // Stratiform
-  auto prec_st = [&](int i) -> Real {
+  auto prec_st = KOKKOS_LAMBDA(int i) -> Real {
     return local_precip_production(pdel[i], prain[i], evapr[i]);
   };
   calculate_cloudy_volume(nlev, cldst, prec_st, false, cldvst);
@@ -1160,23 +1160,118 @@ void clddiag(const int nlev, const Real *temperature, const Real *pmid,
 class WetDeposition {
 public:
   struct Config {
-    Config() = default;
+    Config(){};
     Config(const Config &) = default;
     ~Config() = default;
     Config &operator=(const Config &) = default;
+    int nlev = 72;
   };
 
   const char *name() const { return "MAM4 Wet Deposition"; }
 
   void init(const AeroConfig &aero_config,
-            const Config &wed_dep_config = Config()) {
-    config_ = wed_dep_config;
-  }
+            const Config &wed_dep_config = Config());
+
+  // compute_tendencies -- computes tendencies and updates diagnostics
+  // NOTE: that both diags and tends are const below--this means their views
+  // NOTE: are fixed, but the data in those views is allowed to vary.
+  KOKKOS_INLINE_FUNCTION
+  void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
+                          Real t, Real dt, const Atmosphere &atm,
+                          const Surface &sfc, const Prognostics &progs,
+                          const Diagnostics &diags,
+                          const Tendencies &tends) const;
 
 private:
   Config config_;
+  Kokkos::View<Real *> cldv;
+  Kokkos::View<Real *> cldvcu;
+  Kokkos::View<Real *> cldvst;
+  Kokkos::View<Real *> rain;
+  Kokkos::View<Real *> cldcu;
+  Kokkos::View<Real *> cldt;
+  Kokkos::View<Real *> evapc;
+  Kokkos::View<Real *> cmfdqr;
+  Kokkos::View<Real *> prain;
 };
 
+inline void WetDeposition::init(const AeroConfig &aero_config,
+                                const Config &wed_dep_config) {
+  config_ = wed_dep_config;
+  const int nlev = config_.nlev;
+  Kokkos::resize(cldv, nlev);
+  Kokkos::resize(cldvcu, nlev);
+  Kokkos::resize(cldvst, nlev);
+  Kokkos::resize(rain, nlev);
+  Kokkos::resize(cldcu, nlev);
+  Kokkos::resize(cldt, nlev);
+  Kokkos::resize(evapc, nlev);
+  Kokkos::resize(cmfdqr, nlev);
+  Kokkos::resize(prain, nlev);
+}
+// compute_tendencies -- computes tendencies and updates diagnostics
+// NOTE: that both diags and tends are const below--this means their views
+// NOTE: are fixed, but the data in those views is allowed to vary.
+KOKKOS_INLINE_FUNCTION
+void WetDeposition::compute_tendencies(
+    const AeroConfig &config, const ThreadTeam &team, Real t, Real dt,
+    const Atmosphere &atm, const Surface &sfc, const Prognostics &progs,
+    const Diagnostics &diags, const Tendencies &tends) const {
+  const int nlev = atm.num_levels();
+  haero::ConstColumnView temperature = atm.temperature;
+  haero::ConstColumnView pmid = atm.pressure;
+  haero::ConstColumnView pdel = atm.hydrostatic_dp;
+  // calculate some variables needed in wetdepa_v2
+  ColumnView dp_frac = diags.deep_convective_cloud_fraction;
+  ColumnView sh_frac = diags.shallow_convective_cloud_fraction;
+  ColumnView dp_ccf = diags.deep_convective_cloud_fraction;
+  ColumnView sh_ccf = diags.shallow_convective_cloud_fraction;
+  ColumnView evapcdp = diags.deep_convective_precipitation_evaporation;
+  ColumnView evapcsh = diags.shallow_convective_precipitation_evaporation;
+  ColumnView cldst = diags.stratiform_cloud_fraction;
+  ColumnView evapr = diags.evaporation_of_falling_precipitation;
+  ColumnView rprddp = diags.deep_convective_precipitation_production;
+  ColumnView rprdsh = diags.shallow_convective_precipitation_production;
+  ColumnView dp_ccc = diags.deep_convective_cloud_condensate;
+  ColumnView sh_ccc = diags.shallow_convective_cloud_condensate;
+
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, nlev), KOKKOS_CLASS_LAMBDA(int k) {
+        cldcu[k] = dp_frac[k] + sh_frac[k]; // cumulus cloud fraction
+        cldt[k] = dp_ccf[k] + sh_ccf[k];    // total cloud fraction [fraction]
+        evapc[k] = evapcsh[k] +
+                   evapcdp[k]; // evaporation from convection (deep + shallow)
+        cmfdqr[k] = rprddp[k] + rprdsh[k]; // dq/dt due to convective rainout
+        prain[k] = dp_ccc[k] + sh_ccc[k]; // rate of conversion of condensate to
+                                          // precipitation [kg/kg/s].
+      });
+  team.team_barrier();
+  wetdep::clddiag(nlev, temperature.data(), pmid.data(), pdel.data(),
+                  cmfdqr.data(), evapc.data(), cldt.data(), cldcu.data(),
+                  cldst.data(), evapr.data(), prain.data(), cldv.data(),
+                  cldvcu.data(), cldvst.data(), rain.data());
+  // const Real deltat = dt;
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, nlev), KOKKOS_CLASS_LAMBDA(int k) {
+#if 0
+wetdepa_v2(deltat, pdel[k], cmfdqr[k],
+                evapc[k], 
+		const Real dlf, const Real conicw,
+                const Real precs, const Real evaps, const Real cwat,
+                cldt[k], cldc[k], 
+		cldvcu[k], cldvcu[haero::min(k + 1, nlev - 1)], 
+		cldvst[k], cldvst[haero::min(k + 1, nlev - 1)], 
+		const Real sol_factb,
+                const Real sol_facti, const Real sol_factic,
+                const int mam_prevap_resusp_optcc,
+                const bool is_strat_cloudborne, const Real scavcoef,
+                const Real f_act_conv, const Real tracer, const Real qqcw,
+                Real &fracis, Real &scavt, Real &iscavt, Real &icscavt,
+                Real &isscavt, Real &bcscavt, Real &bsscavt, Real &rcscavt,
+                Real &rsscavt) {
+#endif
+      });
+}
 } // namespace mam4
 
 #endif
