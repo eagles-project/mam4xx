@@ -122,27 +122,28 @@ void test_wetdepa_v2_process(const Input &input, Output &output) {
   copy_to_dev(qqcw_dev, qqcw);
   copy_to_dev(sol_factic_dev, sol_factic);
 
-  ColumnView fracis = mam4::validation::create_column_view(nlev);
-  ColumnView scavt = mam4::validation::create_column_view(nlev);
-  ColumnView iscavt = mam4::validation::create_column_view(nlev);
-  ColumnView icscavt = mam4::validation::create_column_view(nlev);
-  ColumnView isscavt = mam4::validation::create_column_view(nlev);
-  ColumnView bcscavt = mam4::validation::create_column_view(nlev);
-  ColumnView bsscavt = mam4::validation::create_column_view(nlev);
-  ColumnView rcscavt = mam4::validation::create_column_view(nlev);
-  ColumnView rsscavt = mam4::validation::create_column_view(nlev);
+  ColumnView fracis_dev = mam4::validation::create_column_view(nlev);
+  ColumnView scavt_dev = mam4::validation::create_column_view(nlev);
+  ColumnView iscavt_dev = mam4::validation::create_column_view(nlev);
+  ColumnView icscavt_dev = mam4::validation::create_column_view(nlev);
+  ColumnView isscavt_dev = mam4::validation::create_column_view(nlev);
+  ColumnView bcscavt_dev = mam4::validation::create_column_view(nlev);
+  ColumnView bsscavt_dev = mam4::validation::create_column_view(nlev);
+  ColumnView rcscavt_dev = mam4::validation::create_column_view(nlev);
+  ColumnView rsscavt_dev = mam4::validation::create_column_view(nlev);
 
   Kokkos::parallel_for(
       "wetdep::wetdepa_v2", nlev, KOKKOS_LAMBDA(const int kk) {
+        const int kk_p1 = (kk+1 < nlev) ? kk+1 : nlev-1;
         mam4::wetdep::wetdepa_v2(
-            deltat, pdel[kk], cmfdqr[kk], evapc[kk], dlf[kk], conicw[kk],
-            precs[kk], evaps[kk], cwat[kk], cldt[kk], cldc[kk], cldvcu[kk],
-            cldvcu[haero::min(kk + 1, nlev - 1)], cldvst[kk],
-            cldvst[haero::min(kk + 1, nlev - 1)], sol_factb, sol_facti,
-            sol_factic[kk], mam_prevap_resusp_optcc, is_strat_cloudborne,
-            scavcoef[kk], f_act_conv[kk], tracer[kk], qqcw[kk], fracis[kk],
-            scavt[kk], iscavt[kk], icscavt[kk], isscavt[kk], bcscavt[kk],
-            bsscavt[kk], rcscavt[kk], rsscavt[kk]);
+            deltat, pdel_dev[kk], cmfdqr_dev[kk], evapc_dev[kk], dlf_dev[kk], conicw_dev[kk],
+            precs_dev[kk], evaps_dev[kk], cwat_dev[kk], cldt_dev[kk], cldc_dev[kk], cldvcu_dev[kk],
+            cldvcu_dev[kk_p1], cldvst_dev[kk],
+            cldvst_dev[kk_p1], sol_factb, sol_facti,
+            sol_factic_dev[kk], mam_prevap_resusp_optcc, is_strat_cloudborne,
+            scavcoef_dev[kk], f_act_conv_dev[kk], tracer_dev[kk], qqcw_dev[kk], fracis_dev[kk],
+            scavt_dev[kk], iscavt_dev[kk], icscavt_dev[kk], isscavt_dev[kk], bcscavt_dev[kk],
+            bsscavt_dev[kk], rcscavt_dev[kk], rsscavt_dev[kk]);
       });
 
   auto copy_to_host = [&](std::string name, ColumnView dev) {
@@ -154,15 +155,15 @@ void test_wetdepa_v2_process(const Input &input, Output &output) {
     output.set(name, vec);
   };
   // Create mirror views for output arrays
-  copy_to_host("fracis", fracis);
-  copy_to_host("scavt", scavt);
-  copy_to_host("iscavt", iscavt);
-  copy_to_host("icscavt", icscavt);
-  copy_to_host("isscavt", isscavt);
-  copy_to_host("bcscavt", bcscavt);
-  copy_to_host("bsscavt", bsscavt);
-  copy_to_host("rcscavt", rcscavt);
-  copy_to_host("rsscavt", rsscavt);
+  copy_to_host("fracis", fracis_dev);
+  copy_to_host("scavt", scavt_dev);
+  copy_to_host("iscavt", iscavt_dev);
+  copy_to_host("icscavt", icscavt_dev);
+  copy_to_host("isscavt", isscavt_dev);
+  copy_to_host("bcscavt", bcscavt_dev);
+  copy_to_host("bsscavt", bsscavt_dev);
+  copy_to_host("rcscavt", rcscavt_dev);
+  copy_to_host("rsscavt", rsscavt_dev);
 }
 
 void test_wetdepa_v2(std::unique_ptr<Ensemble> &ensemble) {
