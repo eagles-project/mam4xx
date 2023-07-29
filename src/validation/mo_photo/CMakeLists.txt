@@ -27,12 +27,13 @@ endforeach()
 
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
+    cloud_mod_ts_355
     )
-
 # # matching the tests and errors, just for convenience
 
 set(DEFAULT_TOL 1e-11)
 set(ERROR_THRESHOLDS
+    ${DEFAUL_TOL}
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
@@ -45,7 +46,7 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   )
 
   # add a test to run the skywalker driver
-  add_test(run_${input} mo_phot_driver ${MO_PHOTO_VALIDATION_DIR}/${input}.yaml)
+  add_test(run_${input} mo_photo_driver ${MO_PHOTO_VALIDATION_DIR}/${input}.yaml)
 
   # add a test to validate mam4xx's results against the baseline.
   # Select a threshold error slightly bigger than the largest relative error for the threshold error.
