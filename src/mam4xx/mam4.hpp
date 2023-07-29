@@ -21,6 +21,7 @@
 #include <mam4xx/gasaerexch.hpp>
 #include <mam4xx/hetfrz.hpp>
 #include <mam4xx/mam4_types.hpp>
+#include <mam4xx/mo_photo.hpp>
 #include <mam4xx/ndrop.hpp>
 #include <mam4xx/nucleate_ice.hpp>
 #include <mam4xx/nucleation.hpp>
