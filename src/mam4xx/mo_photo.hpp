@@ -2,7 +2,7 @@
 #define MAM4XX_MO_PHOTO_HPP
 
 #include <haero/math.hpp>
-
+#include <mam4xx/mam4_types.hpp>
 namespace mam4 {
 
 namespace mo_photo {
@@ -12,7 +12,10 @@ constexpr int pver = 72;
 constexpr int pverm = pver - 1;
 
 KOKKOS_INLINE_FUNCTION
-void cloud_mod(const Real zen_angle, const Real *clouds, Real *lwc, Real *delp,
+void cloud_mod(const Real zen_angle,
+               const Real *clouds,
+               const Real *lwc,
+               const Real *delp,
                const Real srf_alb, //  in
                Real *eff_alb, Real *cld_mult) {
   /*-----------------------------------------------------------------------
