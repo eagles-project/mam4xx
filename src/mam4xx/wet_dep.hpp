@@ -1134,20 +1134,20 @@ void clddiag(const int nlev, const Real *temperature, const Real *pmid,
 
   // Calculate cloudy volume which is occupied by rain or cloud water
   // Total
-  auto prec = KOKKOS_LAMBDA(int i) -> Real {
+  auto prec = KOKKOS_LAMBDA(int i)->Real {
     const Real source_term = prain[i] + cmfdqr[i];
     return local_precip_production(pdel[i], source_term, evapc[i]);
   };
   calculate_cloudy_volume(nlev, cldt, prec, true, cldv);
 
   // Convective
-  auto prec_cu = KOKKOS_LAMBDA(int i) -> Real {
+  auto prec_cu = KOKKOS_LAMBDA(int i)->Real {
     return local_precip_production(pdel[i], cmfdqr[i], evapr[i]);
   };
   calculate_cloudy_volume(nlev, cldcu, prec_cu, false, cldvcu);
 
   // Stratiform
-  auto prec_st = KOKKOS_LAMBDA(int i) -> Real {
+  auto prec_st = KOKKOS_LAMBDA(int i)->Real {
     return local_precip_production(pdel[i], prain[i], evapr[i]);
   };
   calculate_cloudy_volume(nlev, cldst, prec_st, false, cldvst);
