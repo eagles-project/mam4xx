@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
   try {
     if (func_name == "cloud_mod") {
       cloud_mod(ensemble);
-    }  else {
+    } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
       exit(1);

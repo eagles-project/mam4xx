@@ -12,9 +12,7 @@ constexpr int pver = 72;
 constexpr int pverm = pver - 1;
 
 KOKKOS_INLINE_FUNCTION
-void cloud_mod(const Real zen_angle,
-               const Real *clouds,
-               const Real *lwc,
+void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
                const Real *delp,
                const Real srf_alb, //  in
                Real *eff_alb, Real *cld_mult) {
@@ -39,14 +37,12 @@ void cloud_mod(const Real zen_angle,
   const Real one = 1;
   const Real half = 0.5;
 
-
   // cloud optical depth in each layer
   Real del_tau[pver] = {};
-    // cloud optical depth below this layer
+  // cloud optical depth below this layer
   Real below_tau[pver] = {};
-    // cloud cover below this layer
+  // cloud cover below this layer
   Real below_cld[pver] = {};
-
 
   // BAD CONSTANT
   const Real rgrav = one / 9.80616; //  1/g [s^2/m]
@@ -54,12 +50,11 @@ void cloud_mod(const Real zen_angle,
       .155; // factor converting LWP to tau [unknown source and unit]
   const Real tau_min = 5.0; // tau threshold below which assign cloud as zero
 
-
   for (int kk = 0; kk < pver; kk++) {
     if (clouds[kk] != zero) {
       // liquid water path in each layer [g/m2]
       const Real del_lwp = rgrav * lwc[kk] * delp[kk] * thousand /
-                    clouds[kk]; // the unit is (likely) g/m^2
+                           clouds[kk]; // the unit is (likely) g/m^2
       del_tau[kk] = del_lwp * f_lwp2tau * haero::pow(clouds[kk], 1.5);
     } else {
       del_tau[kk] = zero;
@@ -118,7 +113,7 @@ void cloud_mod(const Real zen_angle,
       above_cld[kk] = zero;
     } // end if
 
-  }   // end kk
+  } // end kk
 
   for (int kk = 0; kk < pverm; kk++) {
     if (below_cld[kk] != zero) {
@@ -128,7 +123,7 @@ void cloud_mod(const Real zen_angle,
       below_cld[kk] = zero;
     } // end if
 
-  }   // end kk
+  } // end kk
 
   /*---------------------------------------------------------
       ... form transmission factors
@@ -143,9 +138,9 @@ void cloud_mod(const Real zen_angle,
 
   for (int kk = 0; kk < pver; kk++) {
 
-     /*---------------------------------------------------------
-      ... form effective albedo
-  ---------------------------------------------------------*/
+    /*---------------------------------------------------------
+     ... form effective albedo
+ ---------------------------------------------------------*/
     if (below_cld[kk] != zero) {
       // // transmission factor below this layer
       const Real below_tra = C1 / (C2 + below_tau[kk]);
@@ -160,9 +155,9 @@ void cloud_mod(const Real zen_angle,
     Real del_lwp = zero;
     if (clouds[kk] != zero) {
       // liquid water path in each layer [g/m2]
-    del_lwp = rgrav * lwc[kk] * delp[kk] * thousand /
-                    clouds[kk]; // the unit is (likely) g/m^2
-   }
+      del_lwp = rgrav * lwc[kk] * delp[kk] * thousand /
+                clouds[kk]; // the unit is (likely) g/m^2
+    }
     if (del_lwp * f_lwp2tau >= tau_min) {
       // BAD CONSTANT
       fac1 = 1.4 * coschi - one;
