@@ -72,6 +72,7 @@ void cloud_mod(const Real zen_angle,
   for (int kk = 0; kk < pverm; kk++) {
     above_tau[kk + 1] = del_tau[kk] + above_tau[kk];
     above_cld[kk + 1] = clouds[kk] * del_tau[kk] + above_cld[kk];
+
   } // end kk
 
   for (int kk = 1; kk < pver; kk++) {
@@ -113,11 +114,12 @@ void cloud_mod(const Real zen_angle,
     if (above_cld[kk] != zero) {
       above_tau[kk] /= above_cld[kk];
     } // end if
+
   }   // end kk
 
   for (int kk = 0; kk < pverm; kk++) {
     if (below_cld[kk] != zero) {
-      above_tau[kk] /= below_cld[kk];
+      below_tau[kk] /= below_cld[kk];
     } // end if
   }   // end kk
 
@@ -166,14 +168,15 @@ void cloud_mod(const Real zen_angle,
       fac1 = 1.4 * coschi - one;
     } // end if
 
+
+
     // transmission factor above this layer
     const Real above_tra = C1 / (C2 + above_tau[kk]);
     // factor to calculate cld_mult
-    Real fac2 = haero::min(zero, (1.6 * coschi * above_tra) - one);
+    Real fac2 = haero::min(zero, 1.6 * coschi * above_tra - one);
     // BAD CONSTANT
     cld_mult[kk] =
         haero::max(.05, one + fac1 * clouds[kk] + fac2 * above_cld[kk]);
-
   } // end kk
 
 } // end cloud_mod

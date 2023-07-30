@@ -27,13 +27,13 @@ endforeach()
 
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
-    cloud_mod_ts_355
+    stand_cloud_mod_ts_355
     )
 # # matching the tests and errors, just for convenience
 
-set(DEFAULT_TOL 1e-11)
+set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
-    ${DEFAUL_TOL}
+    ${DEFAULT_TOL}
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
