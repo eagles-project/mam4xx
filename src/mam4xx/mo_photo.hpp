@@ -42,6 +42,11 @@ void cloud_mod(const Real zen_angle,
 
   // cloud optical depth in each layer
   Real del_tau[pver] = {};
+    // cloud optical depth below this layer
+  Real below_tau[pver] = {};
+    // cloud cover below this layer
+  Real below_cld[pver] = {};
+
 
   // BAD CONSTANT
   const Real rgrav = one / 9.80616; //  1/g [s^2/m]
@@ -85,11 +90,8 @@ void cloud_mod(const Real zen_angle,
   /*---------------------------------------------------------
               ... form integrated tau and cloud cover from bottom up
   ---------------------------------------------------------*/
-  // cloud optical depth below this layer
-  Real below_tau[pver] = {};
+
   below_tau[pver - 1] = zero;
-  // cloud cover below this layer
-  Real below_cld[pver] = {};
   below_cld[pver - 1] = zero;
 
   for (int kk = pverm - 1; kk > 0; kk--) {
