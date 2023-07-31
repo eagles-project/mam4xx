@@ -31,7 +31,9 @@ Real first_order_pbl_nucleation_rate(Real c_h2so4) { return 1e-6 * c_h2so4; }
 /// Shito et al (2006).
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 KOKKOS_INLINE_FUNCTION
-Real second_order_pbl_nucleation_rate(Real c_h2so4) { return 1e-12 * c_h2so4; }
+Real second_order_pbl_nucleation_rate(Real c_h2so4) {
+  return 1e-12 * c_h2so4 * c_h2so4;
+}
 
 } // namespace mam4::wang2008
 
