@@ -13,13 +13,15 @@ using namespace skywalker;
 using namespace mam4;
 using namespace haero;
 using namespace mo_photo;
-void interpolate_rsf(Ensemble *ensemble) {
+
+void jlong(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // validation test from standalone mo_photo.
     const auto alb_in = input.get_array("alb_in");
     const auto sza_in = input.get_array("sza_in")[0];
     const auto p_in = input.get_array("p_in");
     const auto colo3_in = input.get_array("colo3_in");
+    const auto t_in = input.get_array("t_in");
 
     // FIXME; ask for following variables
     const auto sza = input.get_array("sza");
@@ -33,8 +35,10 @@ void interpolate_rsf(Ensemble *ensemble) {
     const auto del_o3rat = input.get_array("del_o3rat");
     const auto etfphot = input.get_array("etfphot");
     const auto  rsf_tab_1d = input.get_array("rsf_tab");
-
-
+    const auto  xsqy_1d = input.get_array("xsqy");
+    const auto  prs = input.get_array("prs");
+    const auto  dprs = input.get_array("dprs");
+  //
 
     Real rsf_tab[nw][nump][numsza][numcolo3][numalb] = {};
 
@@ -42,17 +46,24 @@ void interpolate_rsf(Ensemble *ensemble) {
      Real psum_l[nw]={};
      Real psum_u[nw] = {};
 
-     interpolate_rsf(alb_in.data(), sza_in, p_in.data(),
-                     colo3_in.data(),
-                     pver, //  in
-                     sza.data(), del_sza.data(), alb.data(),
-                     press.data(), del_p.data(), colo3.data(),
-                     o3rat.data(), del_alb.data(),
-                     del_o3rat.data(), etfphot.data(),
-                     rsf_tab,
-                     rsf, // out
-                     // work array
-                     psum_l, psum_u);
+     Real xsqy[numj][nw][nt][np_xs] = {};
+
+     Real xswk[numj][nw] = {};
+     Real j_long = {};
+
+    mo_photo::jlong( sza_in, alb_in.data(), p_in.data(), t_in.data(),
+    colo3_in.data(), xsqy, sza.data(),
+    del_sza.data(), alb.data(),  press.data(), del_p.data(),
+    colo3.data(), o3rat.data(), del_alb.data(),
+    del_o3rat.data(), etfphot.data(),
+    rsf_tab, // in
+    prs.data(),  dprs.data(),
+    j_long, //output
+    // work arrays
+    rsf, xswk,
+    psum_l,
+    psum_u);
+
 
   });
 }

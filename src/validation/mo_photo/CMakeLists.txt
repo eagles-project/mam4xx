@@ -14,6 +14,7 @@ add_executable(mo_photo_driver
                find_index.cpp
                calc_sum_wght.cpp
                interpolate_rsf.cpp
+               jlong.cpp
                )
 
 target_link_libraries(mo_photo_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -34,6 +35,7 @@ set(TEST_LIST
     find_index_ts_355
     calc_sum_wght_ts_355
     interpolate_rsf_ts_355
+    jlong_ts_355
     )
 # # matching the tests and errors, just for convenience
 
@@ -41,6 +43,7 @@ set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
     ${DEFAULT_TOL}
     0
+    ${DEFAULT_TOL}
     ${DEFAULT_TOL}
     ${DEFAULT_TOL}
    )

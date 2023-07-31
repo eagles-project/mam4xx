@@ -24,7 +24,8 @@ using namespace mam4;
 // Parameterizations used by the mo_photo() process.
 void cloud_mod(Ensemble *ensemble);
 void find_index(Ensemble *ensemble);
-
+void interpolate_rsf(Ensemble *ensemble);
+void jlong(Ensemble *ensemble);
 int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
@@ -51,6 +52,10 @@ int main(int argc, char **argv) {
       cloud_mod(ensemble);
     } else if (func_name == "find_index") {
       find_index(ensemble);
+    } else if (func_name == "interpolate_rsf") {
+      interpolate_rsf(ensemble);
+     } else if (func_name == "jlong") {
+      jlong(ensemble);
     }else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;

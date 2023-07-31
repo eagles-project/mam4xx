@@ -399,11 +399,12 @@ void jlong(
     const Real *colo3, const Real *o3rat, const Real *del_alb,
     const Real *del_o3rat, const Real *etfphot,
     const Real rsf_tab[nw][nump][numsza][numcolo3][numalb], // in
-    const Real *prs, Real *j_long, Real *dprs,
+    const Real *prs, const Real *dprs,
+    Real& j_long, // output
 
     // work arrays
-    Real rsf[nw][nlev], Real xswk[numj][nw],
-    // work array
+    Real rsf[nw][nlev],
+    Real xswk[numj][nw],
     Real psum_l[nw],
     Real psum_u[nw]) // out
 {
