@@ -193,14 +193,14 @@ void find_index(const Real *var_in, const int var_len,
   for (int ii = 0; ii < var_len; ii++) {
     if (var_in[ii] > var_min) {
       // Fortran to C++ indexing
-      idx_out = haero::max(haero::min(ii, var_len-1) - 1, 0);
+      idx_out = haero::max(haero::min(ii, var_len - 1) - 1, 0);
       break;
     } // end if
   }   // end for ii
 
 } // find_index
 // FIXME: get values of the following parameters:
-constexpr int nw = 67;       // wavelengths >200nm
+constexpr int nw = 67;      // wavelengths >200nm
 constexpr int nump = 1;     // number of altitudes in rsf
 constexpr int numsza = 1;   // number of zen angles in rsf
 constexpr int numcolo3 = 1; // number of o3 columns in rsf
@@ -400,12 +400,10 @@ void jlong(
     const Real *del_o3rat, const Real *etfphot,
     const Real rsf_tab[nw][nump][numsza][numcolo3][numalb], // in
     const Real *prs, const Real *dprs,
-    Real& j_long, // output
+    Real &j_long, // output
 
     // work arrays
-    Real rsf[nw][nlev],
-    Real xswk[numj][nw],
-    Real psum_l[nw],
+    Real rsf[nw][nlev], Real xswk[numj][nw], Real psum_l[nw],
     Real psum_u[nw]) // out
 {
   /*==============================================================================

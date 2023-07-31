@@ -25,12 +25,12 @@ void calc_sum_wght(Ensemble *ensemble) {
     const auto rsf_tab_1d = input.get_array("rsf_tab");
     const Real rsf_tab[nw][nump][numsza][numcolo3][numalb] = {};
 
-    const Real zero =0;
-    std::vector<Real> psum(nw,zero);
+    const Real zero = 0;
+    std::vector<Real> psum(nw, zero);
 
     calc_sum_wght(dels.data(), wrk0, // in
-                  iz, is, iv, ial,                                          // in
-                  rsf_tab, // in
+                  iz, is, iv, ial,   // in
+                  rsf_tab,           // in
                   psum.data());
 
     // C++ indexing to fortran indexing

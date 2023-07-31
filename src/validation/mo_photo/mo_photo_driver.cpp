@@ -54,9 +54,9 @@ int main(int argc, char **argv) {
       find_index(ensemble);
     } else if (func_name == "interpolate_rsf") {
       interpolate_rsf(ensemble);
-     } else if (func_name == "jlong") {
+    } else if (func_name == "jlong") {
       jlong(ensemble);
-    }else {
+    } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
       exit(1);

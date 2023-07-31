@@ -20,11 +20,11 @@ void find_index(Ensemble *ensemble) {
     const auto var_len = input.get_array("var_len")[0];
     const auto var_min = input.get_array("var_min")[0];
 
-    int idx_out = 0 ;
+    int idx_out = 0;
     find_index(var_in.data(), var_len,
-              var_min, //  in
-              idx_out);
+               var_min, //  in
+               idx_out);
     // C++ indexing to fortran indexing
-    output.set("idx_out", idx_out+1);
+    output.set("idx_out", idx_out + 1);
   });
 }
