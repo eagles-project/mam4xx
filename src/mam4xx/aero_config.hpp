@@ -418,6 +418,16 @@ public:
   ColumnTracerView d_tracer_mixing_ratio_dt;
   // ********** End Convective Process Diagnostic Arrays ******************
   // ************************************************************************
+
+  // ************************************************************************
+  // ********** Begin Wet Deposition Diagnostic Arrays ******************
+
+  // INPUTS:
+  // Rate of production of stratiform precipitation [kg/kg/s]
+  ColumnView rate_of_production_of_stratiform_precipitatio;
+
+  // ********** End Wet Deposition Diagnostic Arrays ******************
+  // ************************************************************************
 };
 
 } // namespace mam4

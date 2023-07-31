@@ -38,10 +38,8 @@ void test_rain_mix_ratio_process(const Input &input, Output &output) {
   ColumnView return_vals = mam4::validation::create_column_view(1);
   Kokkos::parallel_for(
       "wetdep::rain_mix_ratio", 1, KOKKOS_LAMBDA(const int) {
-        Real rain = 0;
-        mam4::wetdep::rain_mix_ratio(temperature, pmid, sumppr, rain);
-
-        return_vals[0] = rain;
+        return_vals[0] =
+            mam4::wetdep::rain_mix_ratio(temperature, pmid, sumppr);
       });
 
   // Create mirror views for output arrays

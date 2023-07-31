@@ -278,8 +278,8 @@ TEST_CASE("test_rain_mix_ratio", "mam4_wet_deposition_process") {
         Real *sumppr_device = sumppr.data();
         Real *rain_device = rain.data();
         for (int i = 0; i < nlev; ++i)
-          mam4::wetdep::rain_mix_ratio(temperature_device[i], pmid_device[i],
-                                       sumppr_device[i], rain_device[i]);
+          rain_device[i] = mam4::wetdep::rain_mix_ratio(
+              temperature_device[i], pmid_device[i], sumppr_device[i]);
       });
 
   auto temperature_view = Kokkos::create_mirror_view(temperature);
