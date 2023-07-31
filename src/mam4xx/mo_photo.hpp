@@ -17,8 +17,8 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
                const Real srf_alb, //  in
                Real *eff_alb, Real *cld_mult) {
   /*-----------------------------------------------------------------------
-  ! 	... cloud alteration factors for photorates and albedo
-  !-----------------------------------------------------------------------*/
+        ... cloud alteration factors for photorates and albedo
+  -----------------------------------------------------------------------*/
 
   // @param[in]   zen_angle         ! zenith angle [deg]
   // @param[in]   srf_alb           ! surface albedo [fraction]
@@ -29,9 +29,9 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
   // @param[out]     cld_mult(pver)     ! photolysis mult factor
 
   /*---------------------------------------------------------
-  !	... modify lwc for cloud fraction and form
-  !	    liquid water path and tau for each layer
-  !---------------------------------------------------------*/
+        ... modify lwc for cloud fraction and form
+            liquid water path and tau for each layer
+  ---------------------------------------------------------*/
   const Real zero = 0.0;
   const Real thousand = 1000.0;
   const Real one = 1;
