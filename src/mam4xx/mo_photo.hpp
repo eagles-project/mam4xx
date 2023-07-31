@@ -200,7 +200,7 @@ void find_index(const Real *var_in, const int var_len,
 
 } // find_index
 // FIXME: get values of the following parameters:
-constexpr int nw = 1;       // wavelengths >200nm
+constexpr int nw = 67;       // wavelengths >200nm
 constexpr int nump = 1;     // number of altitudes in rsf
 constexpr int numsza = 1;   // number of zen angles in rsf
 constexpr int numcolo3 = 1; // number of o3 columns in rsf
