@@ -193,7 +193,7 @@ void find_index(const Real *var_in, const int var_len,
   for (int ii = 0; ii < var_len; ii++) {
     if (var_in[ii] > var_min) {
       // Fortran to C++ indexing
-      idx_out = haero::max(haero::min(ii, var_len) - 1, 1) - 1;
+      idx_out = haero::max(haero::min(ii, var_len-1) - 1, 0);
       break;
     } // end if
   }   // end for ii
