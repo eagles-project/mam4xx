@@ -19,7 +19,7 @@ add_executable(ndrop_driver
                maxsat.cpp
                update_from_newcld.cpp
                update_from_cldn_profile.cpp
-              #  update_from_explmix.cpp
+               update_from_explmix.cpp
                dropmixnuc.cpp
                )
 
