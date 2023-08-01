@@ -732,7 +732,7 @@ int numptr_amode(const int i) {
   return numptr_amode[i];
 }
 KOKKOS_INLINE_FUNCTION
-static constexpr int numptrcw_amode(const int i) { return numptr_amode(i); }
+int numptrcw_amode(const int i) { return numptr_amode(i); }
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
 void index_ordering(const int lspec, const int imode, const int lphase, int &mm,
