@@ -6,7 +6,6 @@
 #ifndef MAM4XX_WET_DEPOSITION_HPP
 #define MAM4XX_WET_DEPOSITION_HPP
 
-#include <functional>
 #include <haero/atmosphere.hpp>
 #include <haero/constants.hpp>
 #include <haero/math.hpp>
@@ -79,8 +78,9 @@ Real local_precip_production(const Real pdel, const Real source_term,
  * 
  */
 // clang-format on 
+template<typename FUNC>
 KOKKOS_INLINE_FUNCTION
-void calculate_cloudy_volume(const int nlev, const Real cld[/*nlev*/], std::function<Real(int)> lprec, 
+void calculate_cloudy_volume(const int nlev, const Real cld[/*nlev*/], FUNC lprec, 
                              const bool is_tot_cld, Real cldv[/*nlev*/]) {
   // BAD CONSTANT
   const Real small_value_30 = 1.e-30;

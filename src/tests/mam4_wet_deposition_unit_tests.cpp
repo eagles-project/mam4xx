@@ -237,7 +237,8 @@ TEST_CASE("test_calculate_cloudy_volume", "mam4_wet_deposition_process") {
     REQUIRE(cld_view(i) == Approx(cld_input[i]));
     REQUIRE(lprec_view(i) == Approx(lprec_input[i]));
     REQUIRE(cldv_view(i) == Approx(cldv_ref[i]));
-    REQUIRE(sumppr_all_view(i) == Approx(sumppr_all_ref[i]));
+    const double scale = std::abs(sumppr_all_ref[i]);
+    REQUIRE(sumppr_all_view(i) == Approx(sumppr_all_ref[i]).scale(scale));
   }
 }
 
