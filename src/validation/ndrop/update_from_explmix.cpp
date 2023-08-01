@@ -13,10 +13,10 @@ using namespace skywalker;
 using namespace mam4;
 using namespace haero;
 
-// NOTE: to be done after merging.
 void update_from_explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
+    const int ntot_amode = AeroConfig::num_modes();
     const int top_lev = input.get_array("top_lev")[0] - 1;
     const int pver = input.get_array("pver")[0];
     // const int ntot_amode = input.get_array("ntot_amode")[0];
@@ -69,12 +69,11 @@ void update_from_explmix(Ensemble *ensemble) {
     std::vector<Real> nsav_out(1);
     int counter = 0;
 
-    ColumnView ekd;
-    ekd = haero::testing::create_column_view(pver);
 
-    ColumnView zn, csbot, zs, overlapp, overlapm, ekkp, ekkm, qncld, srcn,
+    ColumnView zn, csbot, zs, ekd, overlapp, overlapm, ekkp, ekkm, qncld, srcn,
         source, qcld, cldn;
 
+    ekd = haero::testing::create_column_view(pver);
     zn = haero::testing::create_column_view(pver);
     csbot = haero::testing::create_column_view(pver);
     zs = haero::testing::create_column_view(pver);
@@ -88,17 +87,53 @@ void update_from_explmix(Ensemble *ensemble) {
     srcn = haero::testing::create_column_view(pver);
     source = haero::testing::create_column_view(pver);
 
-    ColumnView nact[pver];
-    ColumnView mact[pver];
-    View1DHost nact_host[pver];
-    View1DHost mact_host[pver];
-    for (int kk = 0; kk < pver; ++kk) {
-      nact[kk] = haero::testing::create_column_view(nmodes);
-      mact[kk] = haero::testing::create_column_view(nmodes);
-      nact_host[kk] = View1DHost("nact_host", nmodes);
-      mact_host[kk] = View1DHost("mact_host", nmodes);
+    auto csbot_host = View1DHost((Real *)csbot_db.data(), pver);
+    auto cldn_host = View1DHost((Real *)cldn_col_db.data(), pver);
+    auto zn_host = View1DHost((Real *)zn_db.data(), pver);
+    auto zs_host = View1DHost((Real *)zs_db.data(), pver);
+    auto ekd_host = View1DHost((Real *)ekd_db.data(), pver);
+    auto qcld_host = View1DHost((Real *)qcld_db.data(), pver);
+    //auto overlapp_host = View1DHost(pver);
+    //auto overlapm_host = View1DHost(pver);
+
+    Kokkos::deep_copy(qcld, qcld_host);
+    Kokkos::deep_copy(ekd, ekd_host);
+    Kokkos::deep_copy(zn, zn_host);
+    Kokkos::deep_copy(zs, zs_host);
+    Kokkos::deep_copy(cldn, cldn_host);
+    Kokkos::deep_copy(csbot, csbot_host);
+
+
+
+    View2D nact("nact", pver, ntot_amode);
+    View2D mact("mact", pver, ntot_amode);
+    auto nact_host = Kokkos::create_mirror_view(nact);
+    auto mact_host = Kokkos::create_mirror_view(mact);
+    counter = 0;
+    for (int i = 0; i < ntot_amode; ++i) {
+      // input data is store on the cpu.
+      for (int kk = 0; kk < pver; ++kk) {
+        nact_host(kk, i) = nact_db[counter];
+        mact_host(kk, i) = mact_db[counter];
+        counter++;
+      }
     }
 
+    View1D raercol_cw[pver][2];
+    View1D raercol[pver][2];
+    View1DHost raercol_host[pver][2];
+    View1DHost raercol_cw_host[pver][2];
+    for (int i = 0; i < pver; ++i) {
+      raercol[i][0] = View1D("raercol_0", ncnst_tot);
+      raercol[i][1] = View1D("raercol_1", ncnst_tot);
+      raercol_cw[i][0] = View1D("raercol_cw_0", ncnst_tot);
+      raercol_cw[i][1] = View1D("raercol_cw_0", ncnst_tot);
+      raercol_host[i][0] = View1DHost("raercol_host", ncnst_tot);
+      raercol_host[i][1] = View1DHost("raercol_host", ncnst_tot);
+      raercol_cw_host[i][0] = View1DHost("raercol_cw_host", ncnst_tot);
+      raercol_cw_host[i][1] = View1DHost("raercol_cw_host", ncnst_tot);
+    }
+/*
     ColumnView raercol[pver][2];
     ColumnView raercol_cw[pver][2];
     View1DHost raercol_host[pver][2];
@@ -113,49 +148,33 @@ void update_from_explmix(Ensemble *ensemble) {
       raercol_cw_host[i][0] = View1DHost("raercol_cw_host", ncnst_tot);
       raercol_cw_host[i][1] = View1DHost("raercol_cw_host", ncnst_tot);
     }
+*/
 
-    auto csbot_host = Kokkos::create_mirror_view(csbot);
-    auto cldn_host = Kokkos::create_mirror_view(cldn);
-    auto zn_host = Kokkos::create_mirror_view(zn);
-    auto zs_host = Kokkos::create_mirror_view(zs);
-    auto ekd_host = Kokkos::create_mirror_view(ekd);
-    auto qncld_host = Kokkos::create_mirror_view(qncld);
-    auto qcld_host = Kokkos::create_mirror_view(qcld);
-    auto overlapp_host = Kokkos::create_mirror_view(overlapp);
-    auto overlapm_host = Kokkos::create_mirror_view(overlapm);
-
+/*
     // FIXME: is this, and below, still open?
     // // FIXME. Find a better way:
     for (int kk = 0; kk < pver; ++kk) {
       qcld_host(kk) = qcld_db[kk];
       qncld_host(kk) = 0; 
-      nact_host(kk) = nact_db[kk];
-      mact_host(kk) = mact_db[kk];
+      nact_host[kk] = nact_db[kk];
+      mact_host[kk] = mact_db[kk];
       ekd_host(kk) = ekd_db[kk];
       zn_host(kk) = zn_db[kk];
       zs_host(kk) = zs_db[kk];
       cldn_host(kk) = cldn_col_db[kk];
       csbot_host(kk) = zs_db[kk];
     }
+*/
 
-    Kokkos::deep_copy(qcld, qcld_host);
-    Kokkos::deep_copy(qncld, qncld_host);
-    Kokkos::deep_copy(nact, nact_host);
-    Kokkos::deep_copy(mact, mact_host);
-    Kokkos::deep_copy(ekd, ekd_host);
-    Kokkos::deep_copy(zn, zn_host);
-    Kokkos::deep_copy(zs, zs_host);
-    Kokkos::deep_copy(cldn, cldn_host);
-    Kokkos::deep_copy(csbot, csbot_host);
 
     counter = 0;
     for (int n = 0; n < ncnst_tot; n++) {
       for (int k = 0; k < pver; k++) {
-        raercol[k][0](n) = raercol_1[counter];
-        raercol_cw[k][0](n) = raercol_cw_1[counter];
+        raercol_host[k][0][n] = raercol_1[counter];
+        raercol_cw_host[k][0][n] = raercol_cw_1[counter];
 
-        raercol[k][1](n) = raercol_2[counter];
-        raercol_cw[k][1](n) = raercol_cw_2[counter];
+        raercol_host[k][1][n] = raercol_2[counter];
+        raercol_cw_host[k][1][n] = raercol_cw_2[counter];
         counter++;
       }
     }
@@ -167,18 +186,10 @@ void update_from_explmix(Ensemble *ensemble) {
       Kokkos::deep_copy(raercol_cw[k][1], raercol_cw_host[k][1]);
     }
 
-    counter = 0;
-    for (int m = 0; m < nmodes; m++) {
-      for (int k = 0; k < pver; k++) {
-        nact[k](m) = nact_db[counter];
-        mact[k](m) = mact_db[counter];
-        counter++;
-      }
-    }
-    for (int k = 0; k < pver; k++) {
-      Kokkos::deep_copy(nact[k], nact_host[k]);
-      Kokkos::deep_copy(mact[k], mact_host[k]);
-    }
+    //for (int k = 0; k < pver; k++) {
+    Kokkos::deep_copy(nact, nact_host);
+    Kokkos::deep_copy(mact, mact_host);
+    //}
 
     int nspec_amode[nmodes];
     int mam_idx[nmodes][nspec_max];
@@ -228,12 +239,13 @@ void update_from_explmix(Ensemble *ensemble) {
         counter++;
       }
     }
-        
-    for (int k = 0; k < pver; k++) {
-      Kokkos::deep_copy(nact_host[k], nact[k]);
-      Kokkos::deep_copy(mact_host[k], mact[k]);
-    }
 
+       /*
+    for (int k = 0; k < pver; k++) {
+      Kokkos::deep_copy(nact_host(k), nact[k]);
+      Kokkos::deep_copy(mact_host(k), mact[k]);
+    }
+*/
     output.set("nact", nact_out);
     output.set("mact", mact_out);
     output.set("qcld", qcld_out);
