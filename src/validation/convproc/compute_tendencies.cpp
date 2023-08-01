@@ -171,9 +171,9 @@ void compute_tendencies(Ensemble *ensemble) {
           diagnostics.mass_entrain_rate_into_downdraft[i] = 0;
           diagnostics.mass_detrain_rate_from_updraft[i] = 0;
           diagnostics.delta_pressure[i] = 0;
-          for (int j=0; j<ConvProc::gas_pcnst; ++j) {
-            diagnostics.tracer_mixing_ratio(i,j) = 0;
-            diagnostics.d_tracer_mixing_ratio_dt(i,j) = 0;
+          for (int j = 0; j < ConvProc::gas_pcnst; ++j) {
+            diagnostics.tracer_mixing_ratio(i, j) = 0;
+            diagnostics.d_tracer_mixing_ratio_dt(i, j) = 0;
           }
         });
     std::vector<Real> temperature_host, pmid_host, du_host, eu_host, ed_host,
