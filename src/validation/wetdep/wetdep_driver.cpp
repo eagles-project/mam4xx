@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
                  "wetdep_resusp_nonlinear, wetdep_resusp_noprecip, "
                  "wetdep_scavenging, compute_evap_frac, rain_mix_ratio, "
                  "calculate_cloudy_volume, local_precip_production, "
-                 "wetdep_resusp, wetdepa_v2"
+                 "wetdep_resusp, wetdepa_v2."
               << std::endl;
     exit(1);
   }
