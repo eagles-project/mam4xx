@@ -423,8 +423,24 @@ public:
   // ********** Begin Wet Deposition Diagnostic Arrays ******************
 
   // INPUTS:
-  // Rate of production of stratiform precipitation [kg/kg/s]
-  ColumnView rate_of_production_of_stratiform_precipitatio;
+  // All the inputs are shared with other processes and are already defined:
+  //   deep_convective_cloud_fraction
+  //   shallow_convective_cloud_fraction
+  //   deep_convective_cloud_fraction
+  //   shallow_convective_cloud_fraction
+  //   deep_convective_precipitation_evaporation
+  //   shallow_convective_precipitation_evaporation
+  //   stratiform_cloud_fraction
+  //   evaporation_of_falling_precipitation
+  //   deep_convective_precipitation_production
+  //   shallow_convective_precipitation_production
+  //   deep_convective_cloud_condensate
+  //   shallow_convective_cloud_condensate
+  //   tracer_mixing_ratio
+  //   d_tracer_mixing_ratio_dt
+
+  // OUTPUTS:
+  // To be defined once compute_tendencies is implemented....
 
   // ********** End Wet Deposition Diagnostic Arrays ******************
   // ************************************************************************
