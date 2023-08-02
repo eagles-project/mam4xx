@@ -214,6 +214,7 @@ void compute_tendencies(Ensemble *ensemble) {
           convproc.compute_tendencies(aero_config, team, t, dt, atmosphere,
                                       prognostics, diagnostics, tendencies);
         });
+    Kokkos::fence();
     set_output(output, "dqdt", nlev, pcnst, dqdt_host,
                diagnostics.d_tracer_mixing_ratio_dt);
   });
