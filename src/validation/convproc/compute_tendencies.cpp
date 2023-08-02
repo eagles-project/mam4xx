@@ -153,7 +153,30 @@ void compute_tendencies(Ensemble *ensemble) {
         mam4::validation::create_column_view(nlev * ConvProc::gas_pcnst);
     diagnostics.d_tracer_mixing_ratio_dt = Diagnostics::ColumnTracerView(
         mixing_ratio_dt.data(), nlev, ConvProc::gas_pcnst);
-
+    Kokkos::parallel_for(
+        "init_column_views", nlev, KOKKOS_LAMBDA(int i) {
+          diagnostics.hydrostatic_dry_dp[i] = 0;
+          diagnostics.deep_convective_cloud_fraction[i] = 0;
+          diagnostics.shallow_convective_cloud_fraction[i] = 0;
+          diagnostics.deep_convective_cloud_condensate[i] = 0;
+          diagnostics.shallow_convective_cloud_condensate[i] = 0;
+          diagnostics.deep_convective_precipitation_production[i] = 0;
+          diagnostics.shallow_convective_precipitation_production[i] = 0;
+          diagnostics.deep_convective_precipitation_evaporation[i] = 0;
+          diagnostics.shallow_convective_precipitation_evaporation[i] = 0;
+          diagnostics.total_convective_detrainment[i] = 0;
+          diagnostics.shallow_convective_detrainment[i] = 0;
+          diagnostics.shallow_convective_ratio[i] = 0;
+          diagnostics.mass_entrain_rate_into_updraft[i] = 0;
+          diagnostics.mass_entrain_rate_into_downdraft[i] = 0;
+          diagnostics.mass_detrain_rate_from_updraft[i] = 0;
+          diagnostics.delta_pressure[i] = 0;
+          for (int j = 0; j < ConvProc::gas_pcnst; ++j) {
+            diagnostics.tracer_mixing_ratio(i, j) = 0;
+            diagnostics.d_tracer_mixing_ratio_dt(i, j) = 0;
+          }
+        });
+    Kokkos::fence();
     std::vector<Real> temperature_host, pmid_host, du_host, eu_host, ed_host,
         dp_host, dpdry_host, cldfrac_host, icwmr_host, rprd_host, evapc_host,
         dqdt_host;
@@ -191,6 +214,7 @@ void compute_tendencies(Ensemble *ensemble) {
           convproc.compute_tendencies(aero_config, team, t, dt, atmosphere,
                                       prognostics, diagnostics, tendencies);
         });
+    Kokkos::fence();
     set_output(output, "dqdt", nlev, pcnst, dqdt_host,
                diagnostics.d_tracer_mixing_ratio_dt);
   });
