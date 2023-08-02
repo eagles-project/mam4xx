@@ -1177,9 +1177,9 @@ void update_from_explmix(
     const View2D &mact,          // fractional aero. mass activation rate [/s]
     const ColumnView &qcld,      // cloud droplet number mixing ratio [#/kg]
     // single column of saved aerosol mass, number mixing ratios [#/kg or kg/kg]
-    const View1D (&raercol)[pver][2],
+    const View1D raercol[pver][2],
     // same as raercol but for cloud-borne phase [#/kg or kg/kg]
-    const View1D (&raercol_cw)[pver][2],
+    const View1D raercol_cw[pver][2],
     int &nsav, // indices for old, new time levels in substepping
     int &nnew, // indices for old, new time levels in substepping
     const int nspec_amode[AeroConfig::num_modes()],
@@ -1472,7 +1472,7 @@ void dropmixnuc(
     const ColumnView &wtke, const View2D &ccn,
     const ColumnView coltend[ncnst_tot], const ColumnView coltend_cw[ncnst_tot],
     // work arrays
-    const View1D (&raercol_cw)[pver][2], const View1D (&raercol)[pver][2],
+    const View1D raercol_cw[pver][2], const View1D raercol[pver][2],
     const View2D &nact, const View2D &mact, const ColumnView &eddy_diff,
     const ColumnView &zn, const ColumnView &csbot, const ColumnView &zs,
     const ColumnView &overlapp, const ColumnView &overlapm,

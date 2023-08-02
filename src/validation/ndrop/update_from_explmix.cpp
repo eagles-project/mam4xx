@@ -17,16 +17,15 @@ void update_from_explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
     const int ntot_amode = AeroConfig::num_modes();
-    const int top_lev = input.get_array("top_lev")[0] - 1;
-    const int pver = input.get_array("pver")[0];
+    // const int top_lev = ndrop::top_lev;//input.get_array("top_lev")[0] - 1;
+    const int pver = ndrop::pver;//input.get_array("pver")[0];
     // const int ntot_amode = input.get_array("ntot_amode")[0];
     const auto mam_idx_db = input.get_array("mam_idx");
     const auto nspec_amode_db = input.get_array("nspec_amode");
 
     int nnew = input.get_array("nnew")[0];
     int nsav = input.get_array("nsav")[0];
-    nnew -= 1;
-    nsav -= 1;
+    
 
     const auto raercol_1 = input.get_array("raercol_1");
     const auto raercol_cw_1 = input.get_array("raercol_cw_1");
@@ -133,6 +132,8 @@ void update_from_explmix(Ensemble *ensemble) {
       raercol_cw_host[i][0] = View1DHost("raercol_cw_host", ncnst_tot);
       raercol_cw_host[i][1] = View1DHost("raercol_cw_host", ncnst_tot);
     }
+
+
 /*
     ColumnView raercol[pver][2];
     ColumnView raercol_cw[pver][2];
@@ -207,6 +208,8 @@ void update_from_explmix(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          int nnew = 1;
+          int nsav = 1;
             ndrop::update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, ekd, nact,
                                mact, qcld, raercol, raercol_cw, nsav, nnew,
                                nspec_amode, mam_idx, overlapp, overlapm, ekkp,
