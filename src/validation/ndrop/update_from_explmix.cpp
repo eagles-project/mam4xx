@@ -218,6 +218,22 @@ void update_from_explmix(Ensemble *ensemble) {
     Kokkos::deep_copy(nact_host, nact);
     Kokkos::deep_copy(mact_host, mact);
 
+    counter = 0;
+    for (int i = 0; i < ntot_amode; ++i) {
+      // input data is store on the cpu.
+      for (int kk = 0; kk < pver; ++kk) {
+        nact_out[counter] = nact_host(kk, i); 
+        mact_out[counter] = mact_host(kk, i); 
+        counter++;
+      }
+    }
+
+    counter = 0;
+    for (int k = 0; k < pver; k++) {
+      qcld_out[counter] = qcld_host[k];
+      counter++;
+    }
+
     for (int k = 0; k < pver; k++) {
       Kokkos::deep_copy(raercol_host[k][0], raercol[k][0]);
       Kokkos::deep_copy(raercol_host[k][1], raercol[k][1]);
@@ -233,8 +249,8 @@ void update_from_explmix(Ensemble *ensemble) {
         raercol_1_out[counter] = raercol_host[k][0](n);
         raercol_cw_1_out[counter] = raercol_cw_host[k][0](n);
 
-        raercol_1_out[counter] = raercol_host[k][1](n);
-        raercol_cw_1_out[counter] = raercol_cw_host[k][1](n);
+        raercol_2_out[counter] = raercol_host[k][1](n);
+        raercol_cw_2_out[counter] = raercol_cw_host[k][1](n);
         counter++;
       }
     }
