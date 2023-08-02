@@ -91,10 +91,12 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
   below_tau[pver - 1] = zero;
   below_cld[pver - 1] = zero;
 
-  for (int kk = pverm - 1; kk > 0; kk--) {
+  for (int kk = pverm - 1; kk > -1; kk--) {
     below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
     below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
+  } // end kk
 
+  for (int kk = pverm - 1; kk > -1; kk--) {
     if (below_tau[kk] != zero) {
       below_cld[kk] /= below_tau[kk];
     } else {
@@ -141,16 +143,11 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
   for (int kk = 0; kk < pver; kk++) {
 
     /*---------------------------------------------------------
-     ... form effective albedo
- ---------------------------------------------------------*/
-    if (below_cld[kk] != zero) {
-      // // transmission factor below this layer
-      const Real below_tra = C1 / (C2 + below_tau[kk]);
-      eff_alb[kk] =
-          srf_alb + below_cld[kk] * (one - below_tra) * (one - srf_alb);
-    } else {
-      eff_alb[kk] = srf_alb;
-    } // end if
+      ... form effective albedo
+      ---------------------------------------------------------*/
+    // transmission factor below this layer
+    const Real below_tra = C1 / (C2 + below_tau[kk]);
+    eff_alb[kk] = srf_alb + below_cld[kk] * (one - below_tra) * (one - srf_alb);
 
     // factor to calculate cld_mult
     Real fac1 = zero;

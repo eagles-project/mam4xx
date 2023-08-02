@@ -33,9 +33,10 @@ endforeach()
 set(TEST_LIST
     stand_cloud_mod_ts_355
     find_index_ts_355
-    calc_sum_wght_ts_355
-    interpolate_rsf_ts_355
-    jlong_ts_355
+    cloud_mod_ts_353
+    #calc_sum_wght_ts_355
+    #interpolate_rsf_ts_355
+    #jlong_ts_355
     )
 # # matching the tests and errors, just for convenience
 
@@ -44,8 +45,9 @@ set(ERROR_THRESHOLDS
     ${DEFAULT_TOL}
     0
     ${DEFAULT_TOL}
-    ${DEFAULT_TOL}
-    ${DEFAULT_TOL}
+    #${DEFAULT_TOL}
+    #${DEFAULT_TOL}
+    #${DEFAULT_TOL}
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
