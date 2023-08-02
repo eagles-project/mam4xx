@@ -176,6 +176,7 @@ void compute_tendencies(Ensemble *ensemble) {
             diagnostics.d_tracer_mixing_ratio_dt(i, j) = 0;
           }
         });
+    Kokkos::fence();
     std::vector<Real> temperature_host, pmid_host, du_host, eu_host, ed_host,
         dp_host, dpdry_host, cldfrac_host, icwmr_host, rprd_host, evapc_host,
         dqdt_host;
