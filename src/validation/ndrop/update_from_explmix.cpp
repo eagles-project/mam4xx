@@ -17,9 +17,7 @@ void update_from_explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
     const int ntot_amode = AeroConfig::num_modes();
-    // const int top_lev = ndrop::top_lev;//input.get_array("top_lev")[0] - 1;
-    const int pver = ndrop::pver; // input.get_array("pver")[0];
-    // const int ntot_amode = input.get_array("ntot_amode")[0];
+    const int pver = ndrop::pver;
     const auto mam_idx_db = input.get_array("mam_idx");
     const auto nspec_amode_db = input.get_array("nspec_amode");
 
@@ -92,8 +90,6 @@ void update_from_explmix(Ensemble *ensemble) {
     auto zs_host = View1DHost((Real *)zs_db.data(), pver);
     auto ekd_host = View1DHost((Real *)ekd_db.data(), pver);
     auto qcld_host = View1DHost((Real *)qcld_db.data(), pver);
-    // auto overlapp_host = View1DHost(pver);
-    // auto overlapm_host = View1DHost(pver);
 
     Kokkos::deep_copy(qcld, qcld_host);
     Kokkos::deep_copy(ekd, ekd_host);
@@ -131,39 +127,6 @@ void update_from_explmix(Ensemble *ensemble) {
       raercol_cw_host[i][1] = View1DHost("raercol_cw_host", ncnst_tot);
     }
 
-    /*
-        ColumnView raercol[pver][2];
-        ColumnView raercol_cw[pver][2];
-        View1DHost raercol_host[pver][2];
-        View1DHost raercol_cw_host[pver][2];
-        for (int i = 0; i < pver; ++i) {
-          raercol[i][0] = haero::testing::create_column_view(ncnst_tot);
-          raercol[i][1] = haero::testing::create_column_view(ncnst_tot);
-          raercol_cw[i][0] = haero::testing::create_column_view(ncnst_tot);
-          raercol_cw[i][1] = haero::testing::create_column_view(ncnst_tot);
-          raercol_host[i][0] = View1DHost("raercol_host", ncnst_tot);
-          raercol_host[i][1] = View1DHost("raercol_host", ncnst_tot);
-          raercol_cw_host[i][0] = View1DHost("raercol_cw_host", ncnst_tot);
-          raercol_cw_host[i][1] = View1DHost("raercol_cw_host", ncnst_tot);
-        }
-    */
-
-    /*
-        // FIXME: is this, and below, still open?
-        // // FIXME. Find a better way:
-        for (int kk = 0; kk < pver; ++kk) {
-          qcld_host(kk) = qcld_db[kk];
-          qncld_host(kk) = 0;
-          nact_host[kk] = nact_db[kk];
-          mact_host[kk] = mact_db[kk];
-          ekd_host(kk) = ekd_db[kk];
-          zn_host(kk) = zn_db[kk];
-          zs_host(kk) = zs_db[kk];
-          cldn_host(kk) = cldn_col_db[kk];
-          csbot_host(kk) = zs_db[kk];
-        }
-    */
-
     counter = 0;
     for (int n = 0; n < ncnst_tot; n++) {
       for (int k = 0; k < pver; k++) {
@@ -183,10 +146,8 @@ void update_from_explmix(Ensemble *ensemble) {
       Kokkos::deep_copy(raercol_cw[k][1], raercol_cw_host[k][1]);
     }
 
-    // for (int k = 0; k < pver; k++) {
     Kokkos::deep_copy(nact, nact_host);
     Kokkos::deep_copy(mact, mact_host);
-    //}
 
     int nspec_amode[nmodes];
     int mam_idx[nmodes][nspec_max];
@@ -210,9 +171,7 @@ void update_from_explmix(Ensemble *ensemble) {
                                      nact, mact, qcld, raercol, raercol_cw,
                                      nsav, nnew, nspec_amode, mam_idx, overlapp,
                                      overlapm, ekkp, ekkm, qncld, srcn, source);
-          
         });
-    // TODO: ColumnView-ify the output sequence
 
     Kokkos::deep_copy(qcld_host, qcld);
     Kokkos::deep_copy(nact_host, nact);
@@ -222,8 +181,8 @@ void update_from_explmix(Ensemble *ensemble) {
     for (int i = 0; i < ntot_amode; ++i) {
       // input data is store on the cpu.
       for (int kk = 0; kk < pver; ++kk) {
-        nact_out[counter] = nact_host(kk, i); 
-        mact_out[counter] = mact_host(kk, i); 
+        nact_out[counter] = nact_host(kk, i);
+        mact_out[counter] = mact_host(kk, i);
         counter++;
       }
     }
@@ -255,12 +214,6 @@ void update_from_explmix(Ensemble *ensemble) {
       }
     }
 
-    /*
- for (int k = 0; k < pver; k++) {
-   Kokkos::deep_copy(nact_host(k), nact[k]);
-   Kokkos::deep_copy(mact_host(k), mact[k]);
- }
-*/
     output.set("nact", nact_out);
     output.set("mact", mact_out);
     output.set("qcld", qcld_out);
