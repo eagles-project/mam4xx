@@ -208,7 +208,9 @@ void compute_tendencies(Ensemble *ensemble) {
     get_input(input, "qnew", nlev, pcnst, dp_host,
               diagnostics.tracer_mixing_ratio);
 
-    auto team_policy = haero::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    // NOTE: we haven't parallelized convproc over vertical levels because of
+    // NOTE: data dependencies, so we run this serially
+    auto team_policy = haero::ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           convproc.compute_tendencies(aero_config, team, t, dt, atmosphere,
