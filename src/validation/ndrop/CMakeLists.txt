@@ -76,6 +76,7 @@ set(TEST_LIST
     dropmixnuc_ts_1415
     dropmixnuc_ts_1416
     dropmixnuc_ts_1417
+    update_from_explmix_ts_1400
     )
 
 # # matching the tests and errors, just for convenience
@@ -123,6 +124,7 @@ set(ERROR_THRESHOLDS
     ${DEFAULT_TOL_DROPMIXNUC}
     ${DEFAULT_TOL_DROPMIXNUC}
     ${DEFAULT_TOL_DROPMIXNUC}
+    1
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
