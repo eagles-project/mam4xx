@@ -32,11 +32,6 @@ cleanup() {
   exit $2
 }
 
-echo $BUILD_TYPE "detected for BUILD_TYPE"
-echo $HAERO_INSTALL "detected for HAERO install location"
-echo $PRECISION "detected for PRECISION"
-echo $SYSTEM_NAME "is the target cluster"
-
 PREFIX=$HAERO_INSTALL
 DEVICE=gpu
 PRECISION=$PRECISION
@@ -83,6 +78,12 @@ if [[ "$BUILD_TYPE" != "Debug" && "$BUILD_TYPE" != "Release" ]]; then
   echo "Invalid optimization specified: $BUILD_TYPE (must be Debug or Release)"
   exit
 fi
+
+echo $BUILD_TYPE "detected for BUILD_TYPE"
+echo $HAERO_INSTALL "detected for HAERO install location"
+echo $PRECISION "detected for PRECISION"
+echo $SYSTEM_NAME "is the target cluster"
+echo $DEVICE "is the target backend"
 
 # We need to keep a copy of HAERO src code present for the mometn
 # TODO - remove this `cd` and install without referencing source code

@@ -1,4 +1,5 @@
 set(EXCH_VALIDATION_DIR ${MAM_X_VALIDATION_DIR}/gasaerexch)
+set(GASAER_SIZE_VALIDATION_TOOLS_DIR ${MAM_X_VALIDATION_DIR}/tools)
 
 # Include directory for .mod files.
 include_directories(${PROJECT_BINARY_DIR}/haero)
@@ -34,8 +35,6 @@ set_tests_properties(gasaerexch_compare_output
   PROPERTIES DEPENDS gasaerexch_uptkrates_1box1gas)
 
 # Copy a Python tool from mam_x_validation to the test directory.
-set(GASAER_SIZE_VALIDATION_DIR ${MAM_X_VALIDATION_DIR}/gasaerexch)
-set(GASAER_SIZE_VALIDATION_TOOLS_DIR ${MAM_X_VALIDATION_DIR}/tools)
 configure_file(
   ${GASAER_SIZE_VALIDATION_TOOLS_DIR}/skywalker_diff.py
   ${CMAKE_CURRENT_BINARY_DIR}/skywalker_diff.py

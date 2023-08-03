@@ -628,6 +628,188 @@ void modal_aero_bcscavcoef_init(
 
 } // modal_aero_bcscavcoef_init
 
+// =============================================================================
+KOKKOS_INLINE_FUNCTION
+void define_act_frac(const int lphase, const int imode, Real &sol_facti,
+                     Real &sol_factic, Real &sol_factb, Real &f_act_conv) {
+  // clang-format off
+  // -----------------------------------------------------------------------
+  //  define sol_factb and sol_facti values, and f_act_conv
+  // sol_factb - currently this is basically a tuning factor
+  // sol_facti & sol_factic - currently has a physical basis, and
+  // reflects activation fraction
+  // f_act_conv is the activation fraction
+  //
+  // 2008-mar-07 rce - sol_factb (interstitial) changed from 0.3 to 0.1
+  // - sol_factic (interstitial, dust modes) changed from 1.0 to 0.5
+  // - sol_factic (cloud-borne, pcarb modes) no need to set it to 0.0
+  // because the cloud-borne pcarbon == 0 (no activation)
+  //
+  // rce 2010/05/02
+  // prior to this date, sol_factic was used for convective in-cloud wet removal,
+  // and its value reflected a combination of an activation fraction
+  // (which varied between modes) and a tuning factor
+  // from this date forward, two parameters are used for convective
+  // in-cloud wet removal
+  //
+  // note that "non-activation" of aerosol in air entrained into updrafts should
+  // be included here
+  // eventually we might use the activate routine (with w ~= 1 m/s) to calculate
+  // this, but there is still the entrainment issue
+  //
+  // sol_factic is strictly a tuning factor
+  //-----------------------------------------------------------------------
+  /*
+
+  in :: lphase ! index for interstitial / cloudborne aerosol
+  in :: imode  ! index for aerosol mode
+
+  out :: sol_facti  ! in-cloud scavenging fraction
+  out :: sol_factb  ! below-cloud scavenging fraction
+  out :: sol_factic ! in-cloud convective scavenging fraction
+  out :: f_act_conv ! convection activation fraction
+  */
+  // clang-format on
+  const int modeptr_pcarbon = static_cast<int>(mam4::ModeIndex::PrimaryCarbon);
+  const Real sol_facti_cloud_borne = 1.0;
+  if (lphase == 1) { // interstial aerosol
+    sol_facti = 0.0; // strat in-cloud scav totally OFF for institial
+    // if modal aero convproc is turned on for aerosols, then
+    // turn off the convective in-cloud removal for interstitial aerosols
+    // (but leave the below-cloud on, as convproc only does in-cloud)
+    // and turn off the outfld SFWET, SFSIC, SFSID, SFSEC, and SFSED calls
+    // for (stratiform)-cloudborne aerosols, convective wet removal
+    // (all forms) is zero, so no action is needed
+    sol_factic = 0.0;
+    // all below-cloud scav ON (0.1 "tuning factor")
+    sol_factb = 0.03;
+    if (imode == modeptr_pcarbon)
+      f_act_conv = 0.0;
+    else
+      f_act_conv = 0.4;
+
+  } else {
+    // cloud-borne aerosol (borne by stratiform cloud drops)
+    // all below-cloud scav OFF (anything cloud-borne is located "in-cloud")
+    sol_factb = 0.0;
+    // strat  in-cloud scav totally ON for cloud-borne
+    sol_facti = haero::min(0.6, sol_facti_cloud_borne);
+    // conv   in-cloud scav OFF (having this on would mean
+    // that conv precip collects strat droplets)
+    sol_factic = 0.0;
+    // conv   in-cloud scav OFF (having this on would mean
+    f_act_conv = 0.0;
+  }
+}
+
+// lmassptr_amode(l,m) = gchm r-array index for the mixing ratio
+// (moles-x/mole-air) for chemical species l in aerosol mode m
+// that is in clear air or interstitial air (but not in cloud water).
+// If negative then number is not being simulated.
+KOKKOS_INLINE_FUNCTION
+int lmassptr_amode(const int i, const int j) {
+  const int num_modes = AeroConfig::num_modes();
+  const int lmassptr_amode[maxd_aspectype][num_modes] = {
+      {15, 23, 28, 36}, {16, 24, 29, 37}, {17, 25, 30, 38}, {18, 26, 31, -1},
+      {19, -1, 32, -1}, {20, -1, 33, -1}, {21, -1, 34, -1}, {-1, -1, -1, -1},
+      {-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1},
+      {-1, -1, -1, -1}, {-1, -1, -1, -1}};
+  return lmassptr_amode[i][j];
+}
+// lmassptrcw_amode(l,m) = gchm r-array index for the mixing ratio
+// (moles-x/mole-air) for chemical species l in aerosol mode m
+// that is currently bound/dissolved in cloud water
+KOKKOS_INLINE_FUNCTION
+int lmassptrcw_amode(const int i, const int j) { return lmassptr_amode(i, j); }
+// numptr_amode(m) = gchm r-array index for the number mixing ratio
+// (particles/mole-air) for aerosol mode m that is in clear air or
+// interstitial are (but not in cloud water).  If zero or negative,
+// then number is not being simulated.
+KOKKOS_INLINE_FUNCTION
+int numptr_amode(const int i) {
+  const int num_modes = AeroConfig::num_modes();
+  const int numptr_amode[num_modes] = {22, 27, 35, 39};
+  return numptr_amode[i];
+}
+KOKKOS_INLINE_FUNCTION
+int numptrcw_amode(const int i) { return numptr_amode(i); }
+// =============================================================================
+KOKKOS_INLINE_FUNCTION
+void index_ordering(const int lspec, const int imode, const int lphase, int &mm,
+                    int &jnv, int &jnummaswtr) {
+  // clang-format off
+  //-----------------------------------------------------------------------
+  // changed ordering (mass then number) for prevap resuspend to coarse
+  //-----------------------------------------------------------------------
+  /*
+  in :: lspec  ! index for aerosol number / chem-mass / water-mass
+  in :: imode  ! index for aerosol mode
+  in :: lphase ! index for 1 == interstitial / 2 == cloudborne aerosol
+  out :: mm         ! index of the tracers
+  out :: jnv        ! index for scavcoefnv 3rd dimension
+  out :: jnummaswtr ! indicates current aerosol species type (0 = number, 1 = dry mass, 2 = water)
+  */
+  // clang-format on
+  const int jaeronumb = 0;
+  const int jaeromass = 1;
+  const int jaerowater = 2;
+  const int nspec_amode = mam4::num_species_mode(imode);
+  if (lspec < nspec_amode) { // non-water mass
+    jnummaswtr = jaeromass;
+    if (lphase == 1) {
+      mm = lmassptr_amode(lspec, imode);
+      jnv = 2;
+    } else {
+      mm = lmassptrcw_amode(lspec, imode);
+      jnv = 0;
+    }
+  } else if (lspec == nspec_amode) { // number
+    jnummaswtr = jaeronumb;
+    if (lphase == 1) {
+      mm = numptr_amode(imode);
+      jnv = 1;
+    } else {
+      mm = numptrcw_amode(imode);
+      jnv = 0;
+    }
+  } else { // water mass
+    jnummaswtr = jaerowater;
+  }
+}
+
+// =============================================================================
+KOKKOS_INLINE_FUNCTION
+bool examine_prec_exist(const int level_for_precipitation, const Real pdel[],
+                        const Real prain[], const Real cmfdqr[],
+                        const Real evapr[]) {
+  // clang-format off
+  // ----------------------------------------------------------------------
+  // examine if level level_for_precipitation has precipitation.
+  // ----------------------------------------------------------------------
+  /*
+  in :: pdel     ! pressure difference between two layers [Pa]
+  in :: prain    ! rain production rate from stratiform clouds [kg/kg/s]
+  in :: cmfdqr   ! dq/dt due to convective rainout [kg/kg/s]
+  in :: evapr    ! rain evaporation rate [kg/kg/s]
+  out :: examine_prec_exist   ! if there is precipitation falling into the level
+  */
+  // clang-format on
+  // BAD CONSTANT
+  const Real small_value_7 = 1.0e-7;
+  const Real gravit = Constants::gravity;
+
+  // initiate precipitation at the top level
+  // precipitation falling from layers above [kg/m2/s]
+  Real prec = 0;
+  // check from the top level downward
+  for (int k = 0; k < level_for_precipitation; ++k) {
+    // update precipitation to the level below k
+    prec += (prain[k] + cmfdqr[k] - evapr[k]) * pdel[k] / gravit;
+  }
+  const bool isprx = prec >= small_value_7;
+  return isprx;
+}
+
 } // end namespace aero_model
 
 } // end namespace mam4
