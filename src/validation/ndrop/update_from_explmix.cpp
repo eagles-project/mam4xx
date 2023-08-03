@@ -52,6 +52,10 @@ void update_from_explmix(Ensemble *ensemble) {
 
     using View1DHost = typename HostType::view_1d<Real>;
 
+    View1D indexes = haero::testing::create_column_view(2);
+    auto indexes_host = View1DHost("nnew_nsav", 2);
+    Kokkos::deep_copy(indexes, indexes_host);
+
     std::vector<Real> nact_out(act_len, zero);
     std::vector<Real> mact_out(act_len, zero);
     std::vector<Real> qcld_out(pver);
@@ -169,11 +173,14 @@ void update_from_explmix(Ensemble *ensemble) {
                                      nact, mact, qcld, raercol, raercol_cw,
                                      nsav, nnew, nspec_amode, mam_idx, overlapp,
                                      overlapm, ekkp, ekkm, qncld, srcn, source);
+          indexes(0) = nnew;
+          indexes(1) = nsav;
         });
 
     Kokkos::deep_copy(qcld_host, qcld);
     Kokkos::deep_copy(nact_host, nact);
     Kokkos::deep_copy(mact_host, mact);
+    Kokkos::deep_copy(indexes_host, indexes);
 
     counter = 0;
     for (int i = 0; i < ntot_amode; ++i) {
@@ -198,8 +205,8 @@ void update_from_explmix(Ensemble *ensemble) {
       Kokkos::deep_copy(raercol_cw_host[k][1], raercol_cw[k][1]);
     }
 
-    nnew_out[0] = 2;
-    nsav_out[0] = 1;
+    nnew_out[0] = indexes_host(0) + 1;
+    nsav_out[0] = indexes_host(1) + 1;
     counter = 0;
     for (int n = 0; n < ncnst_tot; n++) {
       for (int k = 0; k < pver; k++) {
