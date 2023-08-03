@@ -23,8 +23,6 @@ void update_from_explmix(Ensemble *ensemble) {
 
     int nnew_in = input.get_array("nnew")[0];
     int nsav_in = input.get_array("nsav")[0];
-    int nnew_mid;
-    int nsav_mid;
 
     const auto raercol_1 = input.get_array("raercol_1");
     const auto raercol_cw_1 = input.get_array("raercol_cw_1");
