@@ -38,7 +38,7 @@ void explmix(Ensemble *ensemble) {
 
     for (int k = top_lev; k < pver; k++) {
       // add logic for km1 and kp1 from fortran
-      int kp1 = haero::min(k + 1, pver);
+      int kp1 = haero::min(k + 1, pver - 1);
       int km1 = haero::max(k - 1, top_lev);
 
       Real qold_km1 = qold_db[km1];
