@@ -19,7 +19,7 @@ add_executable(ndrop_driver
                maxsat.cpp
                update_from_newcld.cpp
                update_from_cldn_profile.cpp
-              #  update_from_explmix.cpp
+               update_from_explmix.cpp
                dropmixnuc.cpp
                )
 
@@ -76,6 +76,7 @@ set(TEST_LIST
     dropmixnuc_ts_1415
     dropmixnuc_ts_1416
     dropmixnuc_ts_1417
+    update_from_explmix_merged
     )
 
 # # matching the tests and errors, just for convenience
@@ -123,6 +124,7 @@ set(ERROR_THRESHOLDS
     ${DEFAULT_TOL_DROPMIXNUC}
     ${DEFAULT_TOL_DROPMIXNUC}
     ${DEFAULT_TOL_DROPMIXNUC}
+    9e-8 #    update_from_explmix_merged
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
