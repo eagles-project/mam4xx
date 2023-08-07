@@ -702,19 +702,43 @@ void define_act_frac(const int lphase, const int imode, Real &sol_facti,
   }
 }
 
+KOKKOS_INLINE_FUNCTION
+int lptr_dust_a_amode(const int imode) {
+  const int num_modes = AeroConfig::num_modes();
+  const int lptr_dust_a_amode[num_modes] = {19, -999888777, 28, -999888777};
+  return lptr_dust_a_amode[imode];
+}
+
+KOKKOS_INLINE_FUNCTION
+int lptr_nacl_a_amode(const int imode) {
+  const int num_modes = AeroConfig::num_modes();
+  const int lptr_nacl_a_amode[num_modes] = {20, 25, 29, -999888777};
+  return lptr_nacl_a_amode[imode];
+}
+
+KOKKOS_INLINE_FUNCTION
+int mmtoo_prevap_resusp(const int i) {
+  static constexpr int gas_pcnst = 40;
+  const int mmtoo_prevap_resusp[gas_pcnst] = {
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+      -1, 30, 32, 33, 31, 28, 29, 34, -3, 30, 33, 29, 34, -3,
+      28, 29, 30, 31, 32, 33, 34, -3, 32, 31, 34, -3};
+  return mmtoo_prevap_resusp[i];
+}
+
 // lmassptr_amode(l,m) = gchm r-array index for the mixing ratio
 // (moles-x/mole-air) for chemical species l in aerosol mode m
 // that is in clear air or interstitial air (but not in cloud water).
 // If negative then number is not being simulated.
 KOKKOS_INLINE_FUNCTION
-int lmassptr_amode(const int i, const int j) {
+int lmassptr_amode(const int i, const int imode) {
   const int num_modes = AeroConfig::num_modes();
   const int lmassptr_amode[maxd_aspectype][num_modes] = {
       {15, 23, 28, 36}, {16, 24, 29, 37}, {17, 25, 30, 38}, {18, 26, 31, -1},
       {19, -1, 32, -1}, {20, -1, 33, -1}, {21, -1, 34, -1}, {-1, -1, -1, -1},
       {-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1},
       {-1, -1, -1, -1}, {-1, -1, -1, -1}};
-  return lmassptr_amode[i][j];
+  return lmassptr_amode[i][imode];
 }
 // lmassptrcw_amode(l,m) = gchm r-array index for the mixing ratio
 // (moles-x/mole-air) for chemical species l in aerosol mode m
@@ -754,6 +778,7 @@ void index_ordering(const int lspec, const int imode, const int lphase, int &mm,
   const int jaeromass = 1;
   const int jaerowater = 2;
   const int nspec_amode = mam4::num_species_mode(imode);
+  mm = -1;
   if (lspec < nspec_amode) { // non-water mass
     jnummaswtr = jaeromass;
     if (lphase == 1) {
@@ -808,6 +833,171 @@ bool examine_prec_exist(const int level_for_precipitation, const Real pdel[],
   }
   const bool isprx = prec >= small_value_7;
   return isprx;
+}
+
+// =============================================================================
+KOKKOS_INLINE_FUNCTION
+void set_f_act_coarse(const int kk,
+                      const Diagnostics::ColumnTracerView &state_q,
+                      const Diagnostics::ColumnTracerView &ptend_q,
+                      const Real dt, Real &f_act_conv_coarse,
+                      Real &f_act_conv_coarse_dust,
+                      Real &f_act_conv_coarse_nacl) {
+  // -----------------------------------------------------------------------
+  //  set the mass-weighted sol_factic for coarse mode species
+  // -----------------------------------------------------------------------
+  // clang-format off
+  /*
+  in  :: kk;
+       state_q and ptend_q only use dust and seasalt in this subroutine
+  in  :: state_q    ! tracer of state%q [kg/kg]
+  in  :: ptend_q    ! tracer tendency (ptend%q) [kg/kg/s]
+  in  :: dt         ! time step [s]
+  out :: f_act_conv_coarse      ! prescribed coarse mode aerosol activation fraction for convective
+  out :: f_act_conv_coarse_dust ! prescribed dust aerosol activation fraction for convective cloud [fracti
+  out :: f_act_conv_coarse_nacl ! prescribed seasalt aerosol activation fraction for convective cloud [fra
+  */
+  // clang-format on
+
+  // initial value
+  // BAD CONSTANT
+  const Real small_value_30 = 1.0e-30;
+  f_act_conv_coarse = 0.60;
+  f_act_conv_coarse_dust = 0.40;
+  f_act_conv_coarse_nacl = 0.80;
+
+  // dust and seasalt mass concentration [kg/kg]
+  const int lcoardust = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::DST);
+  const int lcoarnacl = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::NaCl);
+  const Real tmpdust =
+      haero::max(0.0, state_q(kk, lcoardust) + ptend_q(kk, lcoardust) * dt);
+  const Real tmpnacl =
+      haero::max(0.0, state_q(kk, lcoarnacl) + ptend_q(kk, lcoarnacl) * dt);
+  if (tmpdust + tmpnacl > small_value_30)
+    f_act_conv_coarse =
+        (f_act_conv_coarse_dust * tmpdust + f_act_conv_coarse_nacl * tmpnacl) /
+        (tmpdust + tmpnacl);
+}
+
+// =============================================================================
+KOKKOS_INLINE_FUNCTION
+void calc_resusp_to_coarse(const int mm, const bool update_dqdt,
+                           const Real rcscavt, const Real rsscavt,
+                           Real &dqdt_tmp, Real rtscavt_sv[]) {
+  // clang-format off
+  //-----------------------------------------------------------------------
+  // resuspension goes to coarse mode
+  //-----------------------------------------------------------------------
+  /*
+  in :: ncol, mm
+  in :: update_dqdt  ! if update dqdt_tmp with rtscavt_sv
+  in :: rcscavt      ! resuspention from convective [kg/kg/s]
+  in :: rsscavt      ! resuspention from stratiform [kg/kg/s]
+
+  inout :: dqdt_tmp ! temporary array to hold tendency for the "current" aerosol species [kg/kg/s]
+  inout :: rtscavt_sv ! resuspension that goes to coarse mode [kg/kg/s]
+  */
+  // clang-format on
+
+  const int mmtoo = aero_model::mmtoo_prevap_resusp(mm);
+
+  // first deduct the current resuspension from the dqdt_tmp of the current
+  // species
+  dqdt_tmp -= (rcscavt + rsscavt);
+
+  // then add the current resuspension to the rtscavt_sv of the appropriate
+  // coarse mode species
+  if (mmtoo > 0)
+    rtscavt_sv[mmtoo] += (rcscavt + rsscavt);
+
+  // then add the rtscavt_sv of the current species to the dqdt_tmp
+  // of the current species. This is not called when lphase==2
+  // note that for so4_a3 and mam3, the rtscavt_sv at this point will have
+  //  resuspension contributions from so4_a1/2/3 and so4c1/2/3
+  if (update_dqdt)
+    dqdt_tmp += rtscavt_sv[mm];
+}
+// =============================================================================
+KOKKOS_INLINE_FUNCTION
+Real calc_sfc_flux(
+    const ThreadTeam &team,
+    Kokkos::View<Real[1], Kokkos::MemoryTraits<Kokkos::Atomic>> scratch,
+    const Real layer_tend, const Real pdel) {
+  // clang-format off
+  // -----------------------------------------------------------------------
+  //  calculate surface fluxes of wet deposition from vertical integration of tendencies
+  // -----------------------------------------------------------------------
+  /*
+  in :: pdel       ! pressure difference between two layers [Pa]
+  in :: layer_tend ! physical tendencies in each layer [kg/kg/s]
+  out :: sflx      ! integrated surface fluxes [kg/m2/s]
+  */
+  // clang-format on
+  const Real gravit = Constants::gravity;
+
+  scratch[0] = 0;
+  team.team_barrier();
+  scratch[0] += layer_tend * pdel / gravit;
+  team.team_barrier();
+  return scratch[0];
+}
+
+// =============================================================================
+KOKKOS_INLINE_FUNCTION
+void apportion_sfc_flux_deep(const Real rprddpsum, const Real rprdshsum,
+                             const Real evapcdpsum, const Real evapcshsum,
+                             const Real sflxbc, const Real sflxec,
+                             Real &sflxbcdp, Real &sflxecdp) {
+  // clang-format off
+  // -----------------------------------------------------------------------
+  //  apportion convective surface fluxes to deep and shallow conv
+  //  this could be done more accurately in subr wetdepa
+  //  since deep and shallow rarely occur simultaneously, and these
+  //  fields are just diagnostics, this approximate method is adequate
+  //  only do this for interstitial aerosol, because conv clouds to not
+  //  affect the stratiform-cloudborne aerosol
+  // -----------------------------------------------------------------------
+  /*
+  in :: rprddpsum  ! vertical integration of deep rain production [kg/m2/s]
+  in :: rprdshsum  ! vertical integration of shallow rain production [kg/m2/s]
+  in :: evapcdpsum ! vertical integration of deep rain evaporation [kg/m2/s]
+  in :: evapcshsum ! vertical integration of shallow rain evaporation [kg/m2/s]
+  in :: sflxbc     ! surface flux of resuspension from bcscavt [kg/m2/s]
+  in :: sflxec     ! surface flux of resuspension from rcscavt [kg/m2/s]
+  out:: sflxbcdp   ! surface flux of resuspension from bcscavt in deep conv. [kg/m2/s]
+  out:: sflxecdp   ! surface flux of resuspension from rcscavt in deep conv. [kg/m2/s]
+  */
+  // clang-format on
+
+  // BAD CONSTANT
+  Real small_value_35 = 1.0e-35;
+  Real small_value_36 = 1.0e-36;
+
+  // working variables for precipitation and evaporation from deep and shallow
+  // convection
+  const Real tmp_precdp = haero::max(rprddpsum, small_value_35);
+  const Real tmp_precsh = haero::max(rprdshsum, small_value_35);
+  const Real tmp_evapdp = haero::max(evapcdpsum, small_value_36);
+  const Real tmp_evapsh = haero::max(evapcshsum, small_value_36);
+
+  // assume that in- and below-cloud removal are proportional to
+  // column precip production
+  // working variables of deep fraction
+  Real tmpa = tmp_precdp / (tmp_precdp + tmp_precsh);
+  tmpa = utils::min_max_bound(0.0, 1.0, tmpa);
+  sflxbcdp = sflxbc * tmpa;
+
+  // assume that resuspension is proportional to
+  // (wet removal)*[(precip evap)/(precip production)]
+  //  working variables for resuspension from deep and shallow convection
+  const Real tmp_resudp = tmpa * haero::min(tmp_evapdp / tmp_precdp, 1.0);
+  const Real tmp_resush =
+      (1.0 - tmpa) * haero::min(tmp_evapsh / tmp_precsh, 1.0);
+  Real tmpb = haero::max(tmp_resudp, small_value_35) /
+              haero::max(tmp_resudp + tmp_resush, small_value_35);
+  tmpb = utils::min_max_bound(0.0, 1.0, tmpb);
+
+  sflxecdp = sflxec * tmpb;
 }
 
 } // end namespace aero_model
