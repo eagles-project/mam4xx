@@ -854,8 +854,8 @@ void set_f_act_coarse(const int kk,
   in  :: ptend_q    ! tracer tendency (ptend%q) [kg/kg/s]
   in  :: dt         ! time step [s]
   out :: f_act_conv_coarse      ! prescribed coarse mode aerosol activation fraction for convective
-  out :: f_act_conv_coarse_dust ! prescribed dust aerosol activation fraction for convective cloud [fracti
-  out :: f_act_conv_coarse_nacl ! prescribed seasalt aerosol activation fraction for convective cloud [fra
+  out :: f_act_conv_coarse_dust ! prescribed dust aerosol activation fraction for convective cloud [fraction]
+  out :: f_act_conv_coarse_nacl ! prescribed seasalt aerosol activation fraction for convective cloud [fraction]
   */
   // clang-format on
 
