@@ -440,7 +440,10 @@ public:
   //   d_tracer_mixing_ratio_dt
 
   // OUTPUTS:
-  // To be defined once compute_tendencies is implemented....
+  // aerosol wet deposition (interstitial) [kg/m2/s]
+  ColumnView aerosol_wet_deposition_interstitial;
+  // aerosol wet deposition (cloud water)  [kg/m2/s]
+  ColumnView aerosol_wet_deposition_cloud_water;
 
   // ********** End Wet Deposition Diagnostic Arrays ******************
   // ************************************************************************

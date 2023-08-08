@@ -1168,16 +1168,6 @@ public:
     Config &operator=(const Config &) = default;
     int nlev = 72;
 
-    // do cloudborne (2) first then interstitial (1)
-    int lphase = 2;
-
-    // for mam4:
-    // do   accum = 0,
-    // then aitken = 1,
-    // then pcarbon - 3,
-    // then coarse = 2
-    int imode = 0;
-
     // mam_prevap_resusp_optcc values control the prevap_resusp calculations in
     // wetdepa_v2:
     //     0 = no resuspension
@@ -1187,12 +1177,8 @@ public:
     //   block in subr wetdepa_v2
     int mam_prevap_resusp_optcc = 0;
 
-    // index for aerosol number / chem-mass / water-mass
-    int lspec = 0;
-
-    // is_strat_cloudborne = true if tracer is stratiform-cloudborne aerosol;
-    // else false
-    bool is_strat_cloudborne = true;
+    // change mode order as mmode_loop_aa loops in a different order
+    static constexpr int mode_order_change[4] = {0, 1, 3, 2};
   };
 
   const char *name() const { return "MAM4 Wet Deposition"; }
@@ -1212,10 +1198,6 @@ public:
 
 private:
   Config config_;
-  Real sol_facti;
-  Real sol_factic;
-  Real sol_factb;
-  Real f_act_conv;
   Kokkos::View<Real *> cldv;
   Kokkos::View<Real *> cldvcu;
   Kokkos::View<Real *> cldvst;
@@ -1227,6 +1209,7 @@ private:
   Kokkos::View<Real *> prain;
   Kokkos::View<Real *> conicw;
   Kokkos::View<Real *> totcond;
+  Kokkos::View<Real[1], Kokkos::MemoryTraits<Kokkos::Atomic>> scratch;
   Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()];
   Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()];
 };
@@ -1246,11 +1229,6 @@ inline void WetDeposition::init(const AeroConfig &aero_config,
   Kokkos::resize(prain, nlev);
   Kokkos::resize(conicw, nlev);
   Kokkos::resize(totcond, nlev);
-
-  const int lphase = config_.lphase;
-  const int imode = config_.imode;
-  aero_model::define_act_frac(lphase, imode, sol_facti, sol_factic, sol_factb,
-                              f_act_conv);
 
   const int num_modes = AeroConfig::num_modes();
   Real dgnum_amode[num_modes];
@@ -1281,15 +1259,18 @@ void WetDeposition::compute_tendencies(
   // BAD CONSTANT
   const Real small_value_2 = 1.e-2;
   const int nlev = config_.nlev;
-  int mam_prevap_resusp_optcc = config_.mam_prevap_resusp_optcc;
-  bool is_strat_cloudborne = config_.is_strat_cloudborne;
-  const int imode = config_.imode;
-  const int lspec = config_.lspec;
-  const int lphase = config_.lphase;
-  int mm, jnv, jnummaswtr;
-  aero_model::index_ordering(lspec, imode, lphase, mm, jnv, jnummaswtr);
-  if (mm < 0)
-    return;
+  static constexpr int gas_pcnst = 40;
+
+  //   0 = no resuspension
+  // 130 = non-linear resuspension of aerosol mass   based on scavenged aerosol
+  // mass 230 = non-linear resuspension of aerosol number based on raindrop
+  // number the 130 thru 230 all use the new prevap_resusp code block in subr
+  // wetdepa_v2
+  const int mam_prevap_resusp_no = 0;
+  const int mam_prevap_resusp_mass = 130;
+  const int mam_prevap_resusp_num = 230;
+
+  const int jaeronumb = 0, jaeromass = 1; //, jaerowater=2;
 
   haero::ConstColumnView temperature = atm.temperature;
   haero::ConstColumnView pmid = atm.pressure;
@@ -1297,7 +1278,6 @@ void WetDeposition::compute_tendencies(
   haero::ConstColumnView q_liq = atm.liquid_mixing_ratio;
   haero::ConstColumnView q_ice = atm.ice_mixing_ratio;
 
-  ColumnView dgn_awet_imode = diags.wet_geometric_mean_diameter_i[imode];
   // calculate some variables needed in wetdepa_v2
   ColumnView dp_frac = diags.deep_convective_cloud_fraction;
   ColumnView sh_frac = diags.shallow_convective_cloud_fraction;
@@ -1313,6 +1293,21 @@ void WetDeposition::compute_tendencies(
   ColumnView icwmrsh = diags.shallow_convective_cloud_condensate;
   Diagnostics::ColumnTracerView state_q = diags.tracer_mixing_ratio;
   Diagnostics::ColumnTracerView ptend_q = diags.d_tracer_mixing_ratio_dt;
+
+  ColumnView aerdepwetis = diags.aerosol_wet_deposition_interstitial;
+  ColumnView aerdepwetcw = diags.aerosol_wet_deposition_cloud_water;
+
+  Real rprdshsum = 0, rprddpsum = 0, evapcdpsum = 0, evapcshsum = 0;
+  for (int i = 0; i < nlev; ++i)
+    rprdshsum += rprdsh[i];
+  for (int i = 0; i < nlev; ++i)
+    rprddpsum += rprddp[i];
+  for (int i = 0; i < nlev; ++i)
+    evapcdpsum += evapcdp[i];
+  for (int i = 0; i < nlev; ++i)
+    evapcshsum += evapcsh[i];
+
+  team.team_barrier();
 
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nlev), KOKKOS_CLASS_LAMBDA(int k) {
@@ -1335,48 +1330,228 @@ void WetDeposition::compute_tendencies(
         totcond[k] = q_liq[k] + q_ice[k];
       });
   team.team_barrier();
-  wetdep::clddiag(nlev, temperature.data(), pmid.data(), pdel.data(),
-                  cmfdqr.data(), evapc.data(), cldt.data(), cldcu.data(),
-                  cldst.data(), evapr.data(), prain.data(), cldv.data(),
-                  cldvcu.data(), cldvst.data(), rain.data());
+
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, 1), KOKKOS_CLASS_LAMBDA(int k) {
+        wetdep::clddiag(nlev, temperature.data(), pmid.data(), pdel.data(),
+                        cmfdqr.data(), evapc.data(), cldt.data(), cldcu.data(),
+                        cldst.data(), evapr.data(), prain.data(), cldv.data(),
+                        cldvcu.data(), cldvst.data(), rain.data());
+      });
+  team.team_barrier();
   ColumnView dlf = diags.total_convective_detrainment;
+
+  // I don't have a good way to integrate the values computed for each
+  // level half way through the next Kokkos::parallel_for as the function
+  // calc_sfc_flux does.
+  // TODO: Determine a better way to implement calc_sfc_flux without
+  // team_fence() to avoid locking if the team size is not nlev;
+  EKAT_KERNEL_REQUIRE(team.team_size() == nlev);
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nlev), KOKKOS_CLASS_LAMBDA(int k) {
+        aerdepwetis[k] = 0;
+        aerdepwetcw[k] = 0;
+        Real rtscavt_sv[gas_pcnst] = {};
         const bool isprx_k = aero_model::examine_prec_exist(
             k, pdel.data(), prain.data(), cmfdqr.data(), evapr.data());
-        const Real dgn_awet_imode_k = dgn_awet_imode[k];
-        const Real dgnum_amode_imode = modes(imode).nom_diameter;
-        Real scavcoefnum_k, scavcoefvol_k;
-        aero_model::modal_aero_bcscavcoef_get(
-            imode, isprx_k, dgn_awet_imode_k, dgnum_amode_imode, scavimptblvol,
-            scavimptblnum, scavcoefnum_k, scavcoefvol_k);
 
-        Real scavcoef = 0;
-        if (jnv)
-          scavcoef = (1 == jnv) ? scavcoefnum_k : scavcoefvol_k;
+        Real f_act_conv_coarse = 0, f_act_conv_coarse_dust = 0,
+             f_act_conv_coarse_nacl = 0;
+        aero_model::set_f_act_coarse(k, state_q, ptend_q, dt, f_act_conv_coarse,
+                                     f_act_conv_coarse_dust,
+                                     f_act_conv_coarse_nacl);
+        // main loop over aerosol modes
+        for (int mtmp = 0; mtmp < AeroConfig::num_modes(); ++mtmp) {
+          // for mam4, do accum, aitken, pcarbon, then coarse
+          // so change the order of 2 and 3 here
+          // for mam4:
+          // do   accum = 0,
+          // then aitken = 1,
+          // then pcarbon - 3,
+          // then coarse = 2
+          const int imode = Config::mode_order_change[mtmp];
 
-        const int k_p1 = static_cast<int>(haero::min(k + 1, nlev - 1));
+          // loop over interstitial (1) and cloud-borne (2) forms
+          // BSINGH (09/12/2014):Do cloudborne first for unified convection
+          // scheme so that the resuspension of cloudborne can be saved then
+          // applied to interstitial (RCE)
 
-        const Real tracer = state_q(k, mm) + ptend_q(k, mm) * dt;
-        // It seems that qqcw is not used in the Fortran version.
-        const Real qqcw = 0;
+          // do cloudborne (2) first then interstitial (1)
+          for (int lphase = 2; 1 <= lphase; --lphase) {
+            Real scavcoefnum_k, scavcoefvol_k;
+            if (lphase == 1) { // interstial aerosol
+              const Real dgnum_amode_imode = modes(imode).nom_diameter;
+              ColumnView dgn_awet_imode =
+                  diags.wet_geometric_mean_diameter_i[imode];
+              const Real dgn_awet_imode_k = dgn_awet_imode[k];
+              aero_model::modal_aero_bcscavcoef_get(
+                  imode, isprx_k, dgn_awet_imode_k, dgnum_amode_imode,
+                  scavimptblvol, scavimptblnum, scavcoefnum_k, scavcoefvol_k);
+            }
 
-        Real fracis;  // fraction of species not scavenged [fraction]
-        Real scavt;   // scavenging tend [kg/kg/s]
-        Real iscavt;  // incloud scavenging tends [kg/kg/s]
-        Real icscavt; // incloud, convective [kg/kg/s]
-        Real isscavt; // incloud, stratiform [kg/kg/s]
-        Real bcscavt; // below cloud, convective [kg/kg/s]
-        Real bsscavt; // below cloud, stratiform [kg/kg/s]
-        Real rcscavt; // resuspension, convective [kg/kg/s]
-        Real rsscavt; // resuspension, stratiform [kg/kg/s]
-        wetdep::wetdepa_v2(
-            dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k], prain[k],
-            evapr[k], totcond[k], cldt[k], cldcu[k], cldvcu[k], cldvcu[k_p1],
-            cldvst[k], cldvst[k_p1], sol_factb, sol_facti, sol_factic,
-            mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef, f_act_conv,
-            tracer, qqcw, fracis, scavt, iscavt, icscavt, isscavt, bcscavt,
-            bsscavt, rcscavt, rsscavt);
+            Real sol_facti = 0, sol_factic = 0, sol_factb = 0;
+            Real f_act_conv = 0;
+            aero_model::define_act_frac(lphase, imode, sol_facti, sol_factic,
+                                        sol_factb, f_act_conv);
+
+            // REASTER 08/12/2015 - changed ordering (mass then number) for
+            // prevap resuspend to coarse loop over number + chem constituents +
+            // water index for aerosol number / chem-mass / water-mass
+            for (int lspec = 0; lspec < num_species_mode(imode) + 2; ++lspec) {
+
+              int mm, jnv, jnummaswtr;
+              aero_model::index_ordering(lspec, imode, lphase, mm, jnv,
+                                         jnummaswtr);
+              // by pass wet aerosols
+              if (0 <= mm) {
+
+                // mam_prevap_resusp_optcc values control the prevap_resusp
+                // calculations in wetdepa_v2:
+                //     0 = no resuspension
+                //   130 = non-linear resuspension of aerosol mass   based on
+                //   scavenged aerosol mass 230 = non-linear resuspension of
+                //   aerosol number based on raindrop number the 130 thru 230
+                //   all use the new prevap_resusp code block in subr wetdepa_v2
+                int mam_prevap_resusp_optcc = mam_prevap_resusp_no;
+                const int modeptr_coarse = static_cast<int>(ModeIndex::Coarse);
+                if (jnummaswtr == jaeromass) // dry mass
+                  mam_prevap_resusp_optcc = mam_prevap_resusp_mass;
+                else if (jnummaswtr == jaeronumb && lphase == 1 &&
+                         imode == modeptr_coarse) // number
+                  mam_prevap_resusp_optcc = mam_prevap_resusp_num;
+
+                // set f_act_conv for interstitial (lphase=1) coarse mode
+                // species for the convective in-cloud, we conceptually treat
+                // the coarse dust and seasalt as being externally mixed, and
+                // apply f_act_conv = f_act_conv_coarse_dust/nacl to
+                // dust/seasalt number and sulfate are conceptually partitioned
+                // to the dust and seasalt on a mass basis, so the f_act_conv
+                // for number and sulfate are mass-weighted averages of the
+                // values used for dust/seasalt
+                if (lphase == 1 && imode == modeptr_coarse) {
+                  f_act_conv = f_act_conv_coarse;
+                  if (jnummaswtr == jaeromass) {
+                    if (aero_model::lmassptr_amode(lspec, imode) ==
+                        aero_model::lptr_dust_a_amode(imode))
+                      f_act_conv = f_act_conv_coarse_dust;
+                    else if (aero_model::lmassptr_amode(lspec, imode) ==
+                             aero_model::lptr_nacl_a_amode(imode))
+                      f_act_conv = f_act_conv_coarse_nacl;
+                  }
+                }
+
+                if (lphase == 1) {
+                  // traces reflects changes from modal_aero_calcsize and is the
+                  // "most current" q
+                  const Real tracer = state_q(k, mm) + ptend_q(k, mm) * dt;
+
+                  // It seems that qqcw is not used in the Fortran version.
+                  // (From Fortran: Feed in the saved cloudborne mixing ratios
+                  // from phase 2
+                  //        qqcw = qqcw_sav(lspec)
+                  const Real qqcw = 0;
+
+                  Real scavcoef = 0;
+                  if (jnv)
+                    scavcoef = (1 == jnv) ? scavcoefnum_k : scavcoefvol_k;
+
+                  const int k_p1 =
+                      static_cast<int>(haero::min(k + 1, nlev - 1));
+
+                  Real fracis;  // fraction of species not scavenged [fraction]
+                  Real scavt;   // scavenging tend [kg/kg/s]
+                  Real iscavt;  // incloud scavenging tends [kg/kg/s]
+                  Real icscavt; // incloud, convective [kg/kg/s]
+                  Real isscavt; // incloud, stratiform [kg/kg/s]
+                  Real bcscavt; // below cloud, convective [kg/kg/s]
+                  Real bsscavt; // below cloud, stratiform [kg/kg/s]
+                  Real rcscavt; // resuspension, convective [kg/kg/s]
+                  Real rsscavt; // resuspension, stratiform [kg/kg/s]
+                  // is_strat_cloudborne = true if tracer is
+                  // stratiform-cloudborne aerosol; else false
+                  const bool is_strat_cloudborne = false;
+                  wetdep::wetdepa_v2(
+                      dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k],
+                      prain[k], evapr[k], totcond[k], cldt[k], cldcu[k],
+                      cldvcu[k], cldvcu[k_p1], cldvst[k], cldvst[k_p1],
+                      sol_factb, sol_facti, sol_factic, mam_prevap_resusp_optcc,
+                      is_strat_cloudborne, scavcoef, f_act_conv, tracer, qqcw,
+                      fracis, scavt, iscavt, icscavt, isscavt, bcscavt, bsscavt,
+                      rcscavt, rsscavt);
+                  const bool update_dqdt = true;
+                  aero_model::calc_resusp_to_coarse(mm, update_dqdt, rcscavt,
+                                                    rsscavt, scavt, rtscavt_sv);
+                  ptend_q(k, mm) += scavt;
+
+                  aerdepwetis[k] =
+                      aero_model::calc_sfc_flux(team, scratch, scavt, pdel[k]);
+                  const Real sflxbc = aero_model::calc_sfc_flux(
+                      team, scratch, bcscavt, pdel[k]);
+                  const Real sflxec = aero_model::calc_sfc_flux(
+                      team, scratch, rcscavt, pdel[k]);
+
+                  // apportion convective surface fluxes to deep and shallow
+                  // conv this could be done more accurately in subr wetdepa
+                  // since deep and shallow rarely occur simultaneously, and
+                  // these fields are just diagnostics, this approximate method
+                  // is adequate only do this for interstitial aerosol, because
+                  // conv clouds to not affect the stratiform-cloudborne
+                  // aerosol.
+                  Real sflxbcdp, sflxecdp;
+                  aero_model::apportion_sfc_flux_deep(
+                      rprddpsum, rprdshsum, evapcdpsum, evapcshsum, sflxbc,
+                      sflxec, sflxbcdp, sflxecdp);
+
+                  // when ma_convproc_intr is used, convective in-cloud wet
+                  // removal is done there the convective (total and deep)
+                  // precip-evap-resuspension includes in- and below-cloud
+                  // contributions, so pass the below-cloud contribution to
+                  // ma_convproc_intr
+                  //
+                  // NOTE: ma_convproc_intr no longer uses these
+                  // qsrflx_mzaer2cnvpr(1:ncol,mm,1) = sflxec(  1:ncol)
+                  // qsrflx_mzaer2cnvpr(1:ncol,mm,2) = sflxecdp(1:ncol)
+
+                } else if (lphase == 2) {
+                  // There is no cloud-borne aerosol water in the model, so this
+                  // code block should NEVER execute for lspec =
+                  // nspec_amode(m)+1 (i.e., jnummaswtr = 2). The code only
+                  // worked because the "do lspec" loop cycles when lspec =
+                  // nspec_amode(m)+1, but that does not make the code correct.
+                }
+              }
+            }
+          }
+        }
+#if 0   
+	The rest of the FORTRAN function of aero_model_wetdep().  It belongs not belong in wetdep
+	  since ma_convproc_intr is the compute_tendencies() of convproc and so conproc should
+	  be called now.
+	     
+        // if the user has specified prescribed aerosol dep fluxes then
+        // do not set cam_out dep fluxes according to the prognostic aerosols
+        if (.not.aerodep_flx_prescribed()) then
+           call set_srf_wetdep(aerdepwetis, aerdepwetcw, cam_out)
+        endif
+
+        call pbuf_get_field(pbuf, icwmrdp_idx,     icwmrdp )
+        call pbuf_get_field(pbuf, icwmrsh_idx,     icwmrsh )
+        call pbuf_get_field(pbuf, sh_frac_idx,     sh_frac )
+        call pbuf_get_field(pbuf, dp_frac_idx,     dp_frac )
+
+        call ma_convproc_intr( state, dt,          
+             dp_frac, icwmrdp, rprddp, evapcdp,   
+             sh_frac, icwmrsh, rprdsh, evapcsh,  
+             dlf, dlf2, cmfmc2, sh_e_ed_ratio,          
+             nsrflx_mzaer2cnvpr, qsrflx_mzaer2cnvpr,   
+             mu, md, du, eu, ed, dp, jt, maxg,        
+             ideep, lengath,  species_class,         
+             ptend, aerdepwetis                                )
+
+     call wetdep_inputs_unset(dep_inputs)
+
+   end subroutine aero_model_wetdep
+#endif
       });
   team.team_barrier();
 }
