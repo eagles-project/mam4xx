@@ -301,6 +301,29 @@ void modal_aero_water_uptake_rh_clearair(const Real temperature,
   rh = haero::max(rh, 0.0);
 }
 
+KOKKOS_INLINE_FUNCTION
+void modal_aero_wateruptake_dryaer(Real state_q[AeroConfig::num_modes()],
+                                   Real dgncur_a[AeroConfig::num_modes()],
+                                   Real hygro[AeroConfig::num_modes()],
+                                   Real naer[AeroConfig::num_modes()],
+                                   Real dryrad[AeroConfig::num_modes()],
+                                   Real dryvol[AeroConfig::num_modes()],
+                                   Real drymass[AeroConfig::num_modes()],
+                                   Real rhcrystal[AeroConfig::num_modes()],
+                                   Real rhdeliques[AeroConfig::num_modes()],
+                                   Real specdens_1[AeroConfig::num_modes()]) {
+
+    Real dryvolmr[AeroConfig::num_modes()] = {};
+    Real maer[AeroConfig::num_modes()] = {};
+
+    for(int  imode = 0; imode < AeroConfig::num_modes(); ++imode){
+      hygro[imode] = 0.0; 
+      
+    }
+
+
+  }
+
 }; // namespace water_uptake
 } // namespace mam4
 
