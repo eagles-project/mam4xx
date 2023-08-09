@@ -59,6 +59,7 @@ public:
 
 namespace water_uptake {
 
+constexpr int maxd_aspectype = 14;
 //-----------------------------------------------------------------------
 // compute aerosol wet density
 //-----------------------------------------------------------------------
@@ -302,6 +303,31 @@ void modal_aero_water_uptake_rh_clearair(const Real temperature,
 }
 
 KOKKOS_INLINE_FUNCTION
+void get_e3sm_parameters(int nspec_amode[AeroConfig::num_modes()],
+      int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()]){
+
+  const int ntot_amode = AeroConfig::num_modes();
+  int nspec_amode_temp[ntot_amode] = {7, 4, 7, 3};
+
+  for (int i = 0; i < ntot_amode; ++i) {
+    nspec_amode[i] = nspec_amode_temp[i];
+  }
+
+  const int lspectype_amode_1d[ntot_amode * maxd_aspectype] = {
+      1, 4, 5, 6, 8, 7, 9, 0, 0, 0, 0, 0, 0, 0, 1, 5, 7, 9, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 7, 1, 6, 4, 5, 9, 0, 0, 0,
+      0, 0, 0, 0, 4, 6, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+  int count = 0;
+  for (int i = 0; i < ntot_amode; ++i) {
+    for (int j = 0; j < maxd_aspectype; ++j) {
+      lspectype_amode[j][i] = lspectype_amode_1d[count];
+      count++;
+    }
+  }
+}
+
+KOKKOS_INLINE_FUNCTION
 void modal_aero_wateruptake_dryaer(Real state_q[AeroConfig::num_modes()],
                                    Real dgncur_a[AeroConfig::num_modes()],
                                    Real hygro[AeroConfig::num_modes()],
@@ -316,10 +342,10 @@ void modal_aero_wateruptake_dryaer(Real state_q[AeroConfig::num_modes()],
     Real dryvolmr[AeroConfig::num_modes()] = {};
     Real maer[AeroConfig::num_modes()] = {};
 
-    for(int  imode = 0; imode < AeroConfig::num_modes(); ++imode){
-      hygro[imode] = 0.0; 
-      
-    }
+    // for(int  imode = 0; imode < AeroConfig::num_modes(); ++imode){
+    //   hygro[imode] = 0.0; 
+
+    // }
 
 
   }
