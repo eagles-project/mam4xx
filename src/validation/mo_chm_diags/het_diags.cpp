@@ -43,8 +43,6 @@ void het_diags(Ensemble *ensemble) {
     }
 
     int count = 0;
-    // for (int kk = 0; kk < pver; ++kk) {
-    //   for (int mm = 0; mm < gas_pcnst; ++mm) {
     for (int mm = 0; mm < gas_pcnst; ++mm) {
       for (int kk = 0; kk < pver; ++kk) {
         het_rates_host[mm](kk) = het_rates_in[count];
