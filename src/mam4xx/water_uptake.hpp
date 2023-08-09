@@ -10,6 +10,7 @@
 #include <haero/surface.hpp>
 #include <kokkos/Kokkos_Complex.hpp>
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/convproc.hpp>
 #include <mam4xx/utils.hpp>
 #include <mam4xx/wv_sat_methods.hpp>
 namespace mam4 {
@@ -58,8 +59,11 @@ public:
 };
 
 namespace water_uptake {
-
+//  number of variables in state_q
+constexpr int nvars = 40;
 constexpr int maxd_aspectype = 14;
+constexpr Real small_value_30 = 1e-30; // (Bad Constant)
+constexpr Real small_value_31 = 1e-31; // (Bad Constant)
 //-----------------------------------------------------------------------
 // compute aerosol wet density
 //-----------------------------------------------------------------------
@@ -303,14 +307,34 @@ void modal_aero_water_uptake_rh_clearair(const Real temperature,
 }
 
 KOKKOS_INLINE_FUNCTION
-void get_e3sm_parameters(int nspec_amode[AeroConfig::num_modes()],
-      int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()]){
+void get_e3sm_parameters(
+    int nspec_amode[AeroConfig::num_modes()],
+    int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
+    Real specdens_amode[maxd_aspectype], Real spechygro[maxd_aspectype]) {
 
   const int ntot_amode = AeroConfig::num_modes();
   int nspec_amode_temp[ntot_amode] = {7, 4, 7, 3};
 
   for (int i = 0; i < ntot_amode; ++i) {
     nspec_amode[i] = nspec_amode_temp[i];
+  }
+
+  Real specdens_amode_temp[maxd_aspectype] = {
+      0.1770000000E+04, 0.1797693135 + 309, 0.1797693135 + 309,
+      0.1000000000E+04, 0.1000000000E+04,   0.1700000000E+04,
+      0.1900000000E+04, 0.2600000000E+04,   0.1601000000E+04,
+      0.0000000000E+00, 0.0000000000E+00,   0.0000000000E+00,
+      0.0000000000E+00, 0.0000000000E+00};
+  Real spechygro_temp[maxd_aspectype] = {
+      0.5070000000E+00, 0.1797693135 + 309, 0.1797693135 + 309,
+      0.1000000083E-09, 0.1400000000E+00,   0.1000000013E-09,
+      0.1160000000E+01, 0.6800000000E-01,   0.1000000015E+00,
+      0.0000000000E+00, 0.0000000000E+00,   0.0000000000E+00,
+      0.0000000000E+00, 0.0000000000E+00};
+
+  for (int i = 0; i < maxd_aspectype; ++i) {
+    specdens_amode[i] = specdens_amode_temp[i];
+    spechygro[i] = spechygro_temp[i];
   }
 
   const int lspectype_amode_1d[ntot_amode * maxd_aspectype] = {
@@ -328,27 +352,82 @@ void get_e3sm_parameters(int nspec_amode[AeroConfig::num_modes()],
 }
 
 KOKKOS_INLINE_FUNCTION
-void modal_aero_wateruptake_dryaer(Real state_q[AeroConfig::num_modes()],
-                                   Real dgncur_a[AeroConfig::num_modes()],
-                                   Real hygro[AeroConfig::num_modes()],
-                                   Real naer[AeroConfig::num_modes()],
-                                   Real dryrad[AeroConfig::num_modes()],
-                                   Real dryvol[AeroConfig::num_modes()],
-                                   Real drymass[AeroConfig::num_modes()],
-                                   Real rhcrystal[AeroConfig::num_modes()],
-                                   Real rhdeliques[AeroConfig::num_modes()],
-                                   Real specdens_1[AeroConfig::num_modes()]) {
+void modal_aero_wateruptake_dryaer(
+    int nspec_amode[AeroConfig::num_modes()],
+    Real specdens_amode[maxd_aspectype], Real spechygro[maxd_aspectype],
+    int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
+    Real state_q[nvars], Real dgncur_a[AeroConfig::num_modes()],
+    Real hygro[AeroConfig::num_modes()], Real naer[AeroConfig::num_modes()],
+    Real dryrad[AeroConfig::num_modes()], Real dryvol[AeroConfig::num_modes()],
+    Real drymass[AeroConfig::num_modes()],
+    Real rhcrystal[AeroConfig::num_modes()],
+    Real rhdeliques[AeroConfig::num_modes()],
+    Real specdens_1[AeroConfig::num_modes()]) {
 
-    Real dryvolmr[AeroConfig::num_modes()] = {};
-    Real maer[AeroConfig::num_modes()] = {};
+  for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+    hygro[imode] = 0.0;
 
-    // for(int  imode = 0; imode < AeroConfig::num_modes(); ++imode){
-    //   hygro[imode] = 0.0; 
+    Real dryvolmr = 0.0;
+    Real maer = 0.0;
 
-    // }
+    const Real sigmag = modes(imode).mean_std_dev;
+    rhcrystal[imode] = modes(imode).crystallization_pt;
+    rhdeliques[imode] = modes(imode).deliquescence_pt;
+    const int nspec = nspec_amode[imode];
+    int type_idx = lspectype_amode[0][imode] - 1; // Fortran to C++ indexing
+    specdens_1[imode] = specdens_amode[type_idx];
+    const Real spechygro_1 = spechygro[type_idx];
 
+    const Real alnsg = haero::log(sigmag);
 
+    for (int ispec = 0; ispec < nspec; ++ispec) {
+      type_idx = lspectype_amode[ispec][imode] - 1;
+      const Real spechygro_i = spechygro[type_idx];
+      const Real specdens = specdens_amode[type_idx];
+
+      int la, lc;
+      convproc::assign_la_lc(imode, ispec, la, lc);
+
+      const Real raer = state_q[la];
+      const Real vol_tmp = raer / specdens;
+      maer = maer + raer;
+
+      // hygro currently is sum(hygro * volume) of each species,
+      // need to divided by sum(volume) later to get mean hygro for all species
+      hygro[imode] += vol_tmp * spechygro_i;
+
+      if (dryvolmr > small_value_30) {
+        hygro[imode] /= dryvolmr;
+      } else {
+        hygro[imode] = spechygro_1;
+      }
+
+      const Real v2ncur_a =
+          1.0 / ((Constants::pi / 6.0) * haero::cube(dgncur_a[imode]) *
+                 haero::exp(4.5 * haero::square(alnsg)));
+      // naer = aerosol number (#/kg)
+      naer[imode] = dryvolmr * v2ncur_a;
+
+      // compute mean (1 particle) dry volume and mass for each mode
+      // old coding is replaced because the new (1/v2ncur_a) is equal to
+      // the mean particle volume
+      // also moletomass forces maer >= 1.0e-30, so (maer/dryvolmr)
+      // should never cause problems (but check for maer < 1.0e-31 anyway)
+      Real drydens;
+      if (maer > small_value_31) {
+        drydens = maer / dryvolmr;
+      } else {
+        drydens = 1.0;
+      }
+
+      // C++ porting note: these are output but defined in the module
+      // thus not in the subroutine output
+      dryvol[imode] = 1.0 / v2ncur_a;
+      drymass[imode] = drydens * dryvol[imode];
+      dryrad[imode] = haero::cbrt(dryvol[imode] / (Constants::pi * 4.0 / 3.0));
+    }
   }
+}
 
 }; // namespace water_uptake
 } // namespace mam4
