@@ -32,11 +32,37 @@ void interpolate_rsf(Ensemble *ensemble) {
     const auto del_alb = input.get_array("del_alb");
     const auto del_o3rat = input.get_array("del_o3rat");
     const auto etfphot = input.get_array("etfphot");
-    const auto rsf_tab_1d = input.get_array("rsf_tab");
+    // const auto rsf_tab_1d = input.get_array("rsf_tab");
 
-    Real rsf_tab[nw][nump][numsza][numcolo3][numalb] = {};
+    View5D rsf_tab("rsf_tab", nw, nump, numsza, numcolo3, numalb);
+    auto rsf_tab_1 = Kokkos::subview(rsf_tab, Kokkos::ALL(), 1,
+                                     Kokkos::ALL(),Kokkos::ALL(), Kokkos::ALL());
 
-    Real rsf[nw][nlev] = {};
+    auto rsf_tab_2 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(), 6,
+                                     Kokkos::ALL(), Kokkos::ALL());
+
+    auto rsf_tab_3 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(),
+                                      Kokkos::ALL(), 7, Kokkos::ALL());
+
+    auto rsf_tab_4 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(),
+                                      Kokkos::ALL(), Kokkos::ALL(), 3);
+
+    auto rsf_tab_5 = Kokkos::subview(rsf_tab, 0, Kokkos::ALL(), Kokkos::ALL(),
+                                      Kokkos::ALL(), Kokkos::ALL());
+
+    auto rsf_tab_6 = Kokkos::subview(rsf_tab, 9, Kokkos::ALL(), Kokkos::ALL(),
+                                      Kokkos::ALL(), Kokkos::ALL());
+
+    Kokkos::deep_copy(rsf_tab,0.1);
+    Kokkos::deep_copy(rsf_tab_1,2.0);
+    Kokkos::deep_copy(rsf_tab_2,3.0);
+    Kokkos::deep_copy(rsf_tab_3,1.0);
+    Kokkos::deep_copy(rsf_tab_4,0.8);
+    Kokkos::deep_copy(rsf_tab_5,6.0);
+    Kokkos::deep_copy(rsf_tab_6,1e-2);
+
+    View2D rsf("rsf",nw, nlev);
+
     Real psum_l[nw] = {};
     Real psum_u[nw] = {};
 
@@ -48,5 +74,24 @@ void interpolate_rsf(Ensemble *ensemble) {
                     rsf, // out
                     // work array
                     psum_l, psum_u);
+
+    const Real zero=0;
+    std::vector<Real> rsf_out(nw*nlev,zero);
+
+    int count=0;
+    for (int j = 0; j < nlev; ++j)
+    {
+      for (int i = 0; i < nw; ++i)
+      {
+        rsf_out[count] = rsf(i,j);
+        count += 1;
+      }
+    }
+
+    output.set("rsf", rsf_out);
+
+
+
+
   });
 }

@@ -13,6 +13,11 @@ namespace mo_photo {
 constexpr int pver = 72;
 constexpr int pverm = pver - 1;
 
+using View5D = Kokkos::View<Real*****>;
+using View4D = Kokkos::View<Real****>;
+using View2D = DeviceType::view_2d<Real>;
+
+
 KOKKOS_INLINE_FUNCTION
 void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
                const Real *delp,
@@ -198,10 +203,10 @@ void find_index(const Real *var_in, const int var_len,
 } // find_index
 // FIXME: get values of the following parameters:
 constexpr int nw = 67;      // wavelengths >200nm
-constexpr int nump = 1;     // number of altitudes in rsf
-constexpr int numsza = 1;   // number of zen angles in rsf
-constexpr int numcolo3 = 1; // number of o3 columns in rsf
-constexpr int numalb = 1;   // number of albedos in rsf
+constexpr int nump = 135;     // number of altitudes in rsf
+constexpr int numsza = 100;   // number of zen angles in rsf
+constexpr int numcolo3 = 100; // number of o3 columns in rsf
+constexpr int numalb = 100;   // number of albedos in rsf
 constexpr int numj = 1;     // number of photorates in xsqy, rsf
 constexpr int nt = 1;       // number of temperatures in xsection table
 constexpr int np_xs = 1;    // number of pressure levels in xsection table
@@ -210,7 +215,7 @@ KOKKOS_INLINE_FUNCTION
 void calc_sum_wght(const Real dels[3], const Real wrk0, // in
                    const int iz, const int is, const int iv,
                    const int ial,                                          // in
-                   const Real rsf_tab[nw][nump][numsza][numcolo3][numalb], // in
+                   const View5D& rsf_tab, // in
                    Real *psum) // out
 {
 
@@ -238,14 +243,14 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
 
   // nw and rsf_tab are module variables
   for (int wn = 0; wn < nw; wn++) {
-    psum[wn] = wght_0_0_0 * rsf_tab[wn][iz][is][iv][ial] +
-               wght_0_0_1 * rsf_tab[wn][iz][is][iv][ialp1] +
-               wght_0_1_0 * rsf_tab[wn][iz][is][ivp1][ial] +
-               wght_0_1_1 * rsf_tab[wn][iz][is][ivp1][ialp1] +
-               wght_1_0_0 * rsf_tab[wn][iz][isp1][iv][ial] +
-               wght_1_0_1 * rsf_tab[wn][iz][isp1][iv][ialp1] +
-               wght_1_1_0 * rsf_tab[wn][iz][isp1][ivp1][ial] +
-               wght_1_1_1 * rsf_tab[wn][iz][isp1][ivp1][ialp1];
+    psum[wn] = wght_0_0_0 * rsf_tab(wn,iz,is,iv,ial) +
+               wght_0_0_1 * rsf_tab(wn,iz,is,iv,ialp1) +
+               wght_0_1_0 * rsf_tab(wn,iz,is,ivp1,ial) +
+               wght_0_1_1 * rsf_tab(wn,iz,is,ivp1,ialp1) +
+               wght_1_0_0 * rsf_tab(wn,iz,isp1,iv,ial) +
+               wght_1_0_1 * rsf_tab(wn,iz,isp1,iv,ialp1) +
+               wght_1_1_0 * rsf_tab(wn,iz,isp1,ivp1,ial) +
+               wght_1_1_1 * rsf_tab(wn,iz,isp1,ivp1,ialp1);
   } // end wn
   // #endif
 } // calc_sum_wght
@@ -259,8 +264,8 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
                      const Real *press, const Real *del_p, const Real *colo3,
                      const Real *o3rat, const Real *del_alb,
                      const Real *del_o3rat, const Real *etfphot,
-                     const Real rsf_tab[nw][nump][numsza][numcolo3][numalb],
-                     Real rsf[nw][nlev], // out
+                     const View5D& rsf_tab, // in
+                     const View2D& rsf, // out
                      // work array
                      Real psum_l[nw], Real psum_u[nw]) {
   /*----------------------------------------------------------------------
@@ -289,7 +294,6 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
   const Real wrk0 = one - dels[0];
   int izl = 2; //   may change in the level_loop
   for (int kk = kbot - 1; kk > -1; kk--) {
-
     /*----------------------------------------------------------------------
        ... find albedo indicies
      ----------------------------------------------------------------------*/
@@ -302,10 +306,12 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
     int pind = 0;
     Real wght1 = 0;
     if (p_in[kk] > press[0]) {
-      pind = 2;
+      pind = 1;
       wght1 = one;
-    } else if (p_in[kk] <= press[nump]) {
-      pind = nump;
+      // Fortran to C++ indexing
+    } else if (p_in[kk] <= press[nump-1]) {
+      // Fortran to C++ indexing
+      pind = nump-1;
       wght1 = zero;
     } else {
       int iz = 0;
@@ -316,7 +322,8 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
           break;
         } // end if
       }   // end for iz
-      pind = haero::max(haero::min(iz, nump), 2);
+      // Fortran to C++ indexing
+      pind = haero::max(haero::min(iz, nump-1), 1);
       wght1 = utils::min_max_bound(zero, one,
                                    (p_in[kk] - press[pind]) * del_p[pind - 1]);
     } // end if
@@ -368,7 +375,7 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
                   psum_u); //  inout
 
     for (int wn = 0; wn < nw; wn++) {
-      rsf[wn][kk] = psum_l[wn] + wght1 * (psum_u[wn] - psum_l[wn]);
+      rsf(wn,kk) = psum_l[wn] + wght1 * (psum_u[wn] - psum_l[wn]);
     }
 
     /*------------------------------------------------------------------------------
@@ -377,7 +384,7 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
        ... --> convert to photons/cm^2/s
      ------------------------------------------------------------------------------*/
     for (int wn = 0; wn < nw; wn++) {
-      rsf[wn][kk] *= etfphot[wn];
+      rsf(wn,kk) *= etfphot[wn];
     } // end for wn
 
   } // end Level_loop
@@ -385,22 +392,22 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
   // #endif
 
 } // interpolate_rsf
-#if 1
+
 //======================================================================================
 KOKKOS_INLINE_FUNCTION
 void jlong(
     //  const int nlev,
     const Real sza_in, const Real *alb_in, const Real *p_in, const Real *t_in,
-    const Real *colo3_in, Real xsqy[numj][nw][nt][np_xs], const Real *sza,
+    const Real *colo3_in, const View4D& xsqy, const Real *sza,
     const Real *del_sza, const Real *alb, const Real *press, const Real *del_p,
     const Real *colo3, const Real *o3rat, const Real *del_alb,
     const Real *del_o3rat, const Real *etfphot,
-    const Real rsf_tab[nw][nump][numsza][numcolo3][numalb], // in
+    const View5D& rsf_tab,
     const Real *prs, const Real *dprs,
     Real &j_long, // output
 
     // work arrays
-    Real rsf[nw][nlev], Real xswk[numj][nw], Real psum_l[nw],
+    const View2D& rsf, const View2D& xswk, Real psum_l[nw],
     Real psum_u[nw]) // out
 {
   /*==============================================================================
@@ -463,7 +470,7 @@ void jlong(
     if (ptarget >= prs[0]) {
       for (int wn = 0; wn < nw; wn++) {
         for (int i = 0; i < numj; i++) {
-          xswk[i][wn] = xsqy[i][wn][t_index][0];
+          xswk(i,wn) = xsqy(i,wn,t_index,0);
         } // end for i
       }   // end for wn
       // Fortran to C++ indexing conversion
@@ -471,7 +478,7 @@ void jlong(
       for (int wn = 0; wn < nw; wn++) {
         for (int i = 0; i < numj; i++) {
           // Fortran to C++ indexing conversion
-          xswk[i][wn] = xsqy[i][wn][t_index][np_xs - 1];
+          xswk(i,wn) = xsqy(i,wn,t_index,np_xs - 1);
         } // end for i
       }   // end for wn
 
@@ -491,9 +498,9 @@ void jlong(
       } // end for km
       for (int wn = 0; wn < nw; wn++) {
         for (int i = 0; i < numj; i++) {
-          xswk[i][wn] = xsqy[i][wn][t_index][pndx] +
-                        delp * (xsqy[i][wn][t_index][pndx + 1] -
-                                xsqy[i][wn][t_index][pndx]);
+          xswk(i,wn) = xsqy(i,wn,t_index,pndx) +
+                        delp * (xsqy(i,wn,t_index,pndx + 1) -
+                                xsqy(i,wn,t_index,pndx));
 
         } // end for i
       }   // end for wn
@@ -505,7 +512,7 @@ void jlong(
   } // end kk
 
 } // jlong
-#endif
+
 } // namespace mo_photo
 } // end namespace mam4
 

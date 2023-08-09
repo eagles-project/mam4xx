@@ -26,6 +26,7 @@ void cloud_mod(Ensemble *ensemble);
 void find_index(Ensemble *ensemble);
 void interpolate_rsf(Ensemble *ensemble);
 void jlong(Ensemble *ensemble);
+void calc_sum_wght(Ensemble *ensemble);
 int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
@@ -56,7 +57,9 @@ int main(int argc, char **argv) {
       interpolate_rsf(ensemble);
     } else if (func_name == "jlong") {
       jlong(ensemble);
-    } else {
+    } else if (func_name == "calc_sum_wght") {
+      calc_sum_wght(ensemble);
+    }else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
       exit(1);

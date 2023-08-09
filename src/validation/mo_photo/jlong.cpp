@@ -40,15 +40,16 @@ void jlong(Ensemble *ensemble) {
     const auto dprs = input.get_array("dprs");
     //
 
-    Real rsf_tab[nw][nump][numsza][numcolo3][numalb] = {};
+    View5D rsf_tab;
+    View2D rsf("rsf",nw, nlev);
+    View4D xsqy("xsqy",numj, nw, nt, np_xs);
+    View2D xswk("xswk",numj, nw);
 
-    Real rsf[nw][nlev] = {};
+    // Real rsf[nw][nlev] = {};
     Real psum_l[nw] = {};
     Real psum_u[nw] = {};
 
-    Real xsqy[numj][nw][nt][np_xs] = {};
-
-    Real xswk[numj][nw] = {};
+    // Real xswk[numj][nw] = {};
     Real j_long = {};
 
     jlong(sza_in, alb_in.data(), p_in.data(), t_in.data(), colo3_in.data(),

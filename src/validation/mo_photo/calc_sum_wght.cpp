@@ -18,12 +18,40 @@ void calc_sum_wght(Ensemble *ensemble) {
     // validation test from standalone mo_photo.
     const auto dels = input.get_array("dels");
     const auto wrk0 = input.get_array("wrk0")[0];
-    const int iz = int(input.get_array("iz")[0]);
-    const int is = int(input.get_array("is")[0]);
-    const int iv = int(input.get_array("iv")[0]);
-    const int ial = int(input.get_array("ial")[0]);
+    const int iz = int(input.get_array("iz")[0])-1;
+    const int is = int(input.get_array("is_")[0])-1;
+    const int iv = int(input.get_array("iv")[0])-1;
+    const int ial = int(input.get_array("ial")[0])-1;
     const auto rsf_tab_1d = input.get_array("rsf_tab");
-    const Real rsf_tab[nw][nump][numsza][numcolo3][numalb] = {};
+
+    auto shape_rsf_tab = input.get_array("shape_rsf_tab");
+
+    View5D rsf_tab("rsf_tab", nw, nump, numsza, numcolo3, numalb);
+    auto rsf_tab_1 = Kokkos::subview(rsf_tab, Kokkos::ALL(), 1,
+                                     Kokkos::ALL(),Kokkos::ALL(), Kokkos::ALL());
+
+    auto rsf_tab_2 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(), 6,
+                                     Kokkos::ALL(), Kokkos::ALL());
+
+    auto rsf_tab_3 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(),
+                                      Kokkos::ALL(), 7, Kokkos::ALL());
+
+    auto rsf_tab_4 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(),
+                                      Kokkos::ALL(), Kokkos::ALL(), 3);
+
+    auto rsf_tab_5 = Kokkos::subview(rsf_tab, 0, Kokkos::ALL(), Kokkos::ALL(),
+                                      Kokkos::ALL(), Kokkos::ALL());
+
+    auto rsf_tab_6 = Kokkos::subview(rsf_tab, 9, Kokkos::ALL(), Kokkos::ALL(),
+                                      Kokkos::ALL(), Kokkos::ALL());
+
+    Kokkos::deep_copy(rsf_tab,0.1);
+    Kokkos::deep_copy(rsf_tab_1,2.0);
+    Kokkos::deep_copy(rsf_tab_2,3.0);
+    Kokkos::deep_copy(rsf_tab_3,1.0);
+    Kokkos::deep_copy(rsf_tab_4,0.8);
+    Kokkos::deep_copy(rsf_tab_5,6.0);
+    Kokkos::deep_copy(rsf_tab_6,1e-2);
 
     const Real zero = 0;
     std::vector<Real> psum(nw, zero);
