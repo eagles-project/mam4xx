@@ -387,45 +387,45 @@ void modal_aero_wateruptake_dryaer(
 
       int la, lc;
       convproc::assign_la_lc(imode, ispec, la, lc);
-
       const Real raer = state_q[la];
       const Real vol_tmp = raer / specdens;
       maer = maer + raer;
+      dryvolmr += vol_tmp;
 
       // hygro currently is sum(hygro * volume) of each species,
       // need to divided by sum(volume) later to get mean hygro for all species
       hygro[imode] += vol_tmp * spechygro_i;
+    } // end loop over species
+    if (dryvolmr > small_value_30) {
+      hygro[imode] = hygro[imode] / dryvolmr;
+    } else {
 
-      if (dryvolmr > small_value_30) {
-        hygro[imode] /= dryvolmr;
-      } else {
-        hygro[imode] = spechygro_1;
-      }
-
-      const Real v2ncur_a =
-          1.0 / ((Constants::pi / 6.0) * haero::cube(dgncur_a[imode]) *
-                 haero::exp(4.5 * haero::square(alnsg)));
-      // naer = aerosol number (#/kg)
-      naer[imode] = dryvolmr * v2ncur_a;
-
-      // compute mean (1 particle) dry volume and mass for each mode
-      // old coding is replaced because the new (1/v2ncur_a) is equal to
-      // the mean particle volume
-      // also moletomass forces maer >= 1.0e-30, so (maer/dryvolmr)
-      // should never cause problems (but check for maer < 1.0e-31 anyway)
-      Real drydens;
-      if (maer > small_value_31) {
-        drydens = maer / dryvolmr;
-      } else {
-        drydens = 1.0;
-      }
-
-      // C++ porting note: these are output but defined in the module
-      // thus not in the subroutine output
-      dryvol[imode] = 1.0 / v2ncur_a;
-      drymass[imode] = drydens * dryvol[imode];
-      dryrad[imode] = haero::cbrt(dryvol[imode] / (Constants::pi * 4.0 / 3.0));
+      hygro[imode] = spechygro_1;
     }
+
+    const Real v2ncur_a =
+        1.0 / ((Constants::pi / 6.0) * haero::cube(dgncur_a[imode]) *
+               haero::exp(4.5 * haero::square(alnsg)));
+    // naer = aerosol number (#/kg)
+    naer[imode] = dryvolmr * v2ncur_a;
+
+    // compute mean (1 particle) dry volume and mass for each mode
+    // old coding is replaced because the new (1/v2ncur_a) is equal to
+    // the mean particle volume
+    // also moletomass forces maer >= 1.0e-30, so (maer/dryvolmr)
+    // should never cause problems (but check for maer < 1.0e-31 anyway)
+    Real drydens;
+    if (maer > small_value_31) {
+      drydens = maer / dryvolmr;
+    } else {
+      drydens = 1.0;
+    }
+
+    // C++ porting note: these are output but defined in the module
+    // thus not in the subroutine output
+    dryvol[imode] = 1.0 / v2ncur_a;
+    drymass[imode] = drydens * dryvol[imode];
+    dryrad[imode] = haero::cbrt(dryvol[imode] / (Constants::pi * 4.0 / 3.0));
   }
 }
 
