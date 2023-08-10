@@ -25,7 +25,7 @@ using namespace mam4;
 void cloud_mod(Ensemble *ensemble);
 void find_index(Ensemble *ensemble);
 void interpolate_rsf(Ensemble *ensemble);
-void jlong(Ensemble *ensemble);
+// void jlong(Ensemble *ensemble);
 void calc_sum_wght(Ensemble *ensemble);
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -55,8 +55,8 @@ int main(int argc, char **argv) {
       find_index(ensemble);
     } else if (func_name == "interpolate_rsf") {
       interpolate_rsf(ensemble);
-    } else if (func_name == "jlong") {
-      jlong(ensemble);
+    // } else if (func_name == "jlong") {
+    //   jlong(ensemble);
     } else if (func_name == "calc_sum_wght") {
       calc_sum_wght(ensemble);
     }else {

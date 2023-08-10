@@ -14,7 +14,7 @@ add_executable(mo_photo_driver
                find_index.cpp
                calc_sum_wght.cpp
                interpolate_rsf.cpp
-               jlong.cpp
+               #jlong.cpp
                )
 
 target_link_libraries(mo_photo_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -28,14 +28,14 @@ foreach(script
     COPYONLY
   )
 endforeach()
-
+# stand_calc_sum_wght_ts_355
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     stand_cloud_mod_ts_355
     find_index_ts_355
     cloud_mod_ts_353
-    stand_calc_sum_wght_ts_355
-    stand_interpolate_rsf_ts_355
+    stand_small_table_calc_sum_wght_ts_355
+    stand_small_table_interpolate_rsf_ts_355
     #interpolate_rsf_ts_355
     #jlong_ts_355
     )

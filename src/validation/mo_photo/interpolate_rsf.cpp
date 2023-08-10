@@ -33,6 +33,11 @@ void interpolate_rsf(Ensemble *ensemble) {
     const auto del_o3rat = input.get_array("del_o3rat");
     const auto etfphot = input.get_array("etfphot");
     // const auto rsf_tab_1d = input.get_array("rsf_tab");
+    const int nw = 67;
+    const int nump = 15;
+    const int numsza = 10;
+    const int numcolo3 = 10;
+    const int numalb = 10;
 
     View5D rsf_tab("rsf_tab", nw, nump, numsza, numcolo3, numalb);
     auto rsf_tab_1 = Kokkos::subview(rsf_tab, Kokkos::ALL(), 1,
@@ -66,11 +71,13 @@ void interpolate_rsf(Ensemble *ensemble) {
     Real psum_l[nw] = {};
     Real psum_u[nw] = {};
 
+
     interpolate_rsf(alb_in.data(), sza_in, p_in.data(), colo3_in.data(),
                     pver, //  in
                     sza.data(), del_sza.data(), alb.data(), press.data(),
                     del_p.data(), colo3.data(), o3rat.data(), del_alb.data(),
                     del_o3rat.data(), etfphot.data(), rsf_tab,
+                    nw, nump, numsza, numcolo3, numalb,
                     rsf, // out
                     // work array
                     psum_l, psum_u);

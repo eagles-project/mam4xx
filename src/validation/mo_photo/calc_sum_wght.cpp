@@ -25,6 +25,12 @@ void calc_sum_wght(Ensemble *ensemble) {
     const auto rsf_tab_1d = input.get_array("rsf_tab");
 
     auto shape_rsf_tab = input.get_array("shape_rsf_tab");
+    
+    const int nw = 67;
+    const int nump = 15;
+    const int numsza = 10;
+    const int numcolo3 = 10;
+    const int numalb = 10;
 
     View5D rsf_tab("rsf_tab", nw, nump, numsza, numcolo3, numalb);
     auto rsf_tab_1 = Kokkos::subview(rsf_tab, Kokkos::ALL(), 1,
@@ -56,9 +62,11 @@ void calc_sum_wght(Ensemble *ensemble) {
     const Real zero = 0;
     std::vector<Real> psum(nw, zero);
 
+
     calc_sum_wght(dels.data(), wrk0, // in
                   iz, is, iv, ial,   // in
                   rsf_tab,           // in
+                  nw, //
                   psum.data());
 
     // C++ indexing to fortran indexing

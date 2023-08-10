@@ -202,20 +202,21 @@ void find_index(const Real *var_in, const int var_len,
 
 } // find_index
 // FIXME: get values of the following parameters:
-constexpr int nw = 67;      // wavelengths >200nm
-constexpr int nump = 135;     // number of altitudes in rsf
-constexpr int numsza = 100;   // number of zen angles in rsf
-constexpr int numcolo3 = 100; // number of o3 columns in rsf
-constexpr int numalb = 100;   // number of albedos in rsf
-constexpr int numj = 1;     // number of photorates in xsqy, rsf
-constexpr int nt = 1;       // number of temperatures in xsection table
-constexpr int np_xs = 1;    // number of pressure levels in xsection table
+// constexpr int nw = 67;      // wavelengths >200nm
+// constexpr int nump = 135;     // number of altitudes in rsf
+// constexpr int numsza = 100;   // number of zen angles in rsf
+// constexpr int numcolo3 = 100; // number of o3 columns in rsf
+// constexpr int numalb = 100;   // number of albedos in rsf
+// constexpr int numj = 1;     // number of photorates in xsqy, rsf
+// constexpr int nt = 1;       // number of temperatures in xsection table
+// constexpr int np_xs = 1;    // number of pressure levels in xsection table
 
 KOKKOS_INLINE_FUNCTION
 void calc_sum_wght(const Real dels[3], const Real wrk0, // in
                    const int iz, const int is, const int iv,
                    const int ial,                                          // in
                    const View5D& rsf_tab, // in
+                   const int nw, 
                    Real *psum) // out
 {
 
@@ -265,9 +266,14 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
                      const Real *o3rat, const Real *del_alb,
                      const Real *del_o3rat, const Real *etfphot,
                      const View5D& rsf_tab, // in
+                     const int nw, 
+                     const int nump,
+                     const int numsza, 
+                     const int numcolo3, 
+                     const int numalb, 
                      const View2D& rsf, // out
                      // work array
-                     Real psum_l[nw], Real psum_u[nw]) {
+                     Real *psum_l, Real *psum_u) {
   /*----------------------------------------------------------------------
           ... interpolate table rsf to model variables
   ----------------------------------------------------------------------*/
@@ -364,6 +370,7 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
     calc_sum_wght(dels, wrk0,        // in
                   pind, is, iv, ial, // in
                   rsf_tab,
+                  nw, 
                   psum_l); // out
 
     iv = ratindu;
@@ -372,6 +379,7 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
     calc_sum_wght(dels, wrk0,            // in
                   pind - 1, is, iv, ial, // in
                   rsf_tab,
+                  nw,
                   psum_u); //  inout
 
     for (int wn = 0; wn < nw; wn++) {
@@ -407,9 +415,10 @@ void jlong(
     Real &j_long, // output
 
     // work arrays
-    const View2D& rsf, const View2D& xswk, Real psum_l[nw],
-    Real psum_u[nw]) // out
+    const View2D& rsf, const View2D& xswk, Real* psum_l,
+    Real* psum_u) // out
 {
+#if 0
   /*==============================================================================
      Purpose:
        To calculate the total J for selective species longward of 200nm.
@@ -510,7 +519,7 @@ void jlong(
     // j_long(:,kk) = matmul( xswk(:,:),rsf(:,kk) )
 
   } // end kk
-
+#endif
 } // jlong
 
 } // namespace mo_photo
