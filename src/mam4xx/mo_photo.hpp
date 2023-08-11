@@ -412,13 +412,19 @@ void jlong(
     const Real *del_o3rat, const Real *etfphot,
     const View5D& rsf_tab,
     const Real *prs, const Real *dprs,
-    Real &j_long, // output
+    const int nw, 
+    const int nump,
+    const int numsza, 
+    const int numcolo3, 
+    const int numalb,
+    const int np_xs, 
+    const int numj,
+    const View2D&j_long, // output
 
     // work arrays
     const View2D& rsf, const View2D& xswk, Real* psum_l,
     Real* psum_u) // out
 {
-#if 0
   /*==============================================================================
      Purpose:
        To calculate the total J for selective species longward of 200nm.
@@ -452,6 +458,7 @@ void jlong(
   interpolate_rsf(alb_in, sza_in, p_in, colo3_in, nlev, sza, del_sza, alb,
                   press, del_p, colo3, o3rat, del_alb, del_o3rat, etfphot,
                   rsf_tab,              //  in
+                  nw, nump, numsza, numcolo3, numalb,
                   rsf, psum_l, psum_u); // out
   /*------------------------------------------------------------------------------
   ... calculate total Jlong for wavelengths >200nm
@@ -515,11 +522,17 @@ void jlong(
       }   // end for wn
     }     // end if
 
-    // FIXME: Does haero have matrix multiplication ?
     // j_long(:,kk) = matmul( xswk(:,:),rsf(:,kk) )
-
+    for (int i = 0; i < numj; ++i)
+    {
+      Real suma =zero;
+      for (int wn = 0; wn < nw; wn++) {
+        suma += xswk(i,wn) * rsf(wn,kk);
+      } // wn  
+      j_long(i,kk) = suma;
+    } // i
   } // end kk
-#endif
+
 } // jlong
 
 } // namespace mo_photo
