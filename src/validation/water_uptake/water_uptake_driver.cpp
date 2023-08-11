@@ -14,6 +14,7 @@ void modal_aero_kohler(Ensemble *ensemble);
 void modal_aero_water_uptake_rh_clearair(Ensemble *ensemble);
 void modal_aero_water_uptake_wetaer(Ensemble *ensemble);
 void modal_aero_water_uptake_dryaer(Ensemble *ensemble);
+void modal_aero_water_uptake_dr(Ensemble *ensemble);
 
 void usage() {
   std::cerr << "aging_driver: a Skywalker driver for validating the "
@@ -68,6 +69,9 @@ int main(int argc, char **argv) {
     }
     if (func_name == "modal_aero_water_uptake_dryaer") {
       modal_aero_water_uptake_dryaer(ensemble);
+    }
+    if (func_name == "modal_aero_water_uptake_dr"){
+      modal_aero_water_uptake_dr(ensemble);
     }
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
