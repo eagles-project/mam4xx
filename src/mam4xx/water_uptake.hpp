@@ -430,14 +430,16 @@ void modal_aero_water_uptake_dryaer(
 }
 
 KOKKOS_INLINE_FUNCTION
-void modal_aero_water_uptake_dr(
+void modal_aero_water_uptake_dr_b4_wetdnes(
     int nspec_amode[AeroConfig::num_modes()],
     Real specdens_amode[maxd_aspectype], Real spechygro[maxd_aspectype],
     int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
     Real state_q[nvars], Real temperature, Real pmid, Real cldn,
     Real dgncur_a[AeroConfig::num_modes()],
     Real dgncur_awet[AeroConfig::num_modes()],
-    Real wetdens[AeroConfig::num_modes()], const bool compute_wetdens) {
+    Real wetvol[AeroConfig::num_modes()], Real wtrvol[AeroConfig::num_modes()],
+    Real drymass[AeroConfig::num_modes()],
+    Real specdens_1[AeroConfig::num_modes()]) {
 
   //----------------------------------------------------------------------------
   // retreive aerosol properties
@@ -446,10 +448,8 @@ void modal_aero_water_uptake_dr(
   Real naer[AeroConfig::num_modes()];
   Real dryrad[AeroConfig::num_modes()];
   Real dryvol[AeroConfig::num_modes()];
-  Real drymass[AeroConfig::num_modes()];
   Real rhcrystal[AeroConfig::num_modes()];
   Real rhdeliques[AeroConfig::num_modes()];
-  Real specdens_1[AeroConfig::num_modes()];
 
   modal_aero_water_uptake_dryaer(nspec_amode, specdens_amode, spechygro,
                                  lspectype_amode, state_q, dgncur_a, hygro,
@@ -466,19 +466,56 @@ void modal_aero_water_uptake_dr(
 
   // compute aerosol wet radius, volume, diameter and aerosol water
   Real wetrad[AeroConfig::num_modes()];
-  Real wetvol[AeroConfig::num_modes()];
-  Real wtrvol[AeroConfig::num_modes()];
   Real qaerwat[AeroConfig::num_modes()];
   modal_aero_water_uptake_wetaer(rhcrystal, rhdeliques, dgncur_a, dryrad, hygro,
                                  rh, naer, dryvol, wetrad, wetvol, wtrvol,
                                  dgncur_awet, qaerwat);
+}
+
+KOKKOS_INLINE_FUNCTION
+void modal_aero_water_uptake_dr(
+    int nspec_amode[AeroConfig::num_modes()],
+    Real specdens_amode[maxd_aspectype], Real spechygro[maxd_aspectype],
+    int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
+    Real state_q[nvars], Real temperature, Real pmid, Real cldn,
+    Real dgncur_a[AeroConfig::num_modes()],
+    Real dgncur_awet[AeroConfig::num_modes()],
+    Real wetdens[AeroConfig::num_modes()]) {
+
+  Real drymass[AeroConfig::num_modes()];
+  Real specdens_1[AeroConfig::num_modes()];
+  Real wetvol[AeroConfig::num_modes()];
+  Real wtrvol[AeroConfig::num_modes()];
+
+  modal_aero_water_uptake_dr_b4_wetdnes(nspec_amode, specdens_amode, spechygro,
+                                        lspectype_amode, state_q, temperature,
+                                        pmid, cldn, dgncur_a, dgncur_awet,
+                                        wetvol, wtrvol, drymass, specdens_1);
 
   // compute wet aerosol density
-  if (compute_wetdens) {
-    modal_aero_water_uptake_wetdens(wetvol, wtrvol, drymass, specdens_1,
-                                    wetdens);
-  }
+  modal_aero_water_uptake_wetdens(wetvol, wtrvol, drymass, specdens_1, wetdens);
 }
+
+KOKKOS_INLINE_FUNCTION
+void modal_aero_water_uptake_dr(
+    int nspec_amode[AeroConfig::num_modes()],
+    Real specdens_amode[maxd_aspectype], Real spechygro[maxd_aspectype],
+    int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
+    Real state_q[nvars], Real temperature, Real pmid, Real cldn,
+    Real dgncur_a[AeroConfig::num_modes()],
+    Real dgncur_awet[AeroConfig::num_modes()]) {
+
+  Real drymass[AeroConfig::num_modes()];
+  Real specdens_1[AeroConfig::num_modes()];
+  Real wetvol[AeroConfig::num_modes()];
+  Real wtrvol[AeroConfig::num_modes()];
+
+  modal_aero_water_uptake_dr_b4_wetdnes(nspec_amode, specdens_amode, spechygro,
+                                        lspectype_amode, state_q, temperature,
+                                        pmid, cldn, dgncur_a, dgncur_awet,
+                                        wetvol, wtrvol, drymass, specdens_1);
+}
+
 }; // namespace water_uptake
 
 // init -- initializes the implementation with MAM4's configuration
