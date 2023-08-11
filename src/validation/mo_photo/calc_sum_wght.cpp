@@ -80,9 +80,9 @@ void calc_sum_wght(Ensemble *ensemble) {
         });
 
     std::vector<Real> psum_db(nw, zero);
-    // auto psum_host = View1DHost((Real *)psum_db.data(), nw);
-    // Kokkos::deep_copy(psum_host, psum);
-    // C++ indexing to fortran indexing
-    output.set("psum", psum_db.data());
+    auto psum_host = View1DHost((Real *)psum_db.data(), nw);
+    Kokkos::deep_copy(psum_host, psum);
+
+    output.set("psum", psum_db);
   });
 }
