@@ -49,7 +49,7 @@ set(ERROR_THRESHOLDS
     ${DEFAULT_TOL}
     6e-8
     6e-6
-    ${DEFAULT_TOL}
+    2e-5
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.

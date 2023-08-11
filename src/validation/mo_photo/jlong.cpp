@@ -73,7 +73,7 @@ void jlong(Ensemble *ensemble) {
     Kokkos::deep_copy(rsf_tab_6,1e-2);
 
     const int np_xs = 10;
-    const int nt = 10;
+    const int nt = 201;
     const int numj = 10;
     View2D rsf("rsf",nw, nlev);
     View4D xsqy("xsqy",numj, nw, nt, np_xs);

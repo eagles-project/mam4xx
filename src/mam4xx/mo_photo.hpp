@@ -460,6 +460,7 @@ void jlong(
                   rsf_tab,              //  in
                   nw, nump, numsza, numcolo3, numalb,
                   rsf, psum_l, psum_u); // out
+
   /*------------------------------------------------------------------------------
   ... calculate total Jlong for wavelengths >200nm
   ------------------------------------------------------------------------------
@@ -477,7 +478,7 @@ void jlong(
      ----------------------------------------------------------------------*/
     // BAD CONSTANT
     // Fortran indexing to C++ indexing
-    const int t_index = haero::min(201, haero::max(t_in[kk] - 148.5, 1)) - 1;
+    const int t_index = haero::min(201, haero::max(t_in[kk] - 148.5, 0)) - 1;
 
     /*----------------------------------------------------------------------
                ... find pressure level
@@ -517,6 +518,8 @@ void jlong(
           xswk(i,wn) = xsqy(i,wn,t_index,pndx) +
                         delp * (xsqy(i,wn,t_index,pndx + 1) -
                                 xsqy(i,wn,t_index,pndx));
+          
+                      
 
         } // end for i
       }   // end for wn
