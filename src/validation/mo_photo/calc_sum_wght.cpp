@@ -75,8 +75,8 @@ void calc_sum_wght(Ensemble *ensemble) {
                         rsf_tab,           // in
                         nw,                //
                         psum.data());
-    });
-    const Real zero =0;
+        });
+    const Real zero = 0;
     std::vector<Real> psum_db(nw, zero);
     auto psum_host = View1DHost((Real *)psum_db.data(), nw);
     Kokkos::deep_copy(psum_host, psum);
