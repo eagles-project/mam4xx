@@ -15,16 +15,18 @@ using namespace haero;
 using namespace mo_photo;
 void calc_sum_wght(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    // validation test from standalone mo_photo.
-    const auto dels = input.get_array("dels");
-    const auto wrk0 = input.get_array("wrk0")[0];
+    using View1DHost = typename HostType::view_1d<Real>;
+    using View1D = typename DeviceType::view_1d<Real>;
+
+    const auto dels_db = input.get_array("dels");
+    const Real wrk0 = input.get_array("wrk0")[0];
     const int iz = int(input.get_array("iz")[0]) - 1;
     const int is = int(input.get_array("is_")[0]) - 1;
     const int iv = int(input.get_array("iv")[0]) - 1;
     const int ial = int(input.get_array("ial")[0]) - 1;
-    const auto rsf_tab_1d = input.get_array("rsf_tab");
+    // const auto rsf_tab_1d = input.get_array("rsf_tab");
 
-    auto shape_rsf_tab = input.get_array("shape_rsf_tab");
+    // auto shape_rsf_tab = input.get_array("shape_rsf_tab");
 
     const int nw = 67;
     const int nump = 15;
@@ -59,16 +61,28 @@ void calc_sum_wght(Ensemble *ensemble) {
     Kokkos::deep_copy(rsf_tab_5, 6.0);
     Kokkos::deep_copy(rsf_tab_6, 1e-2);
 
+    const auto dels = View1D("dels", 3);
+    auto dels_host = View1DHost((Real *)dels_db.data(), 3);
+    Kokkos::deep_copy(dels, dels_host);
+
     const Real zero = 0;
-    std::vector<Real> psum(nw, zero);
 
-    calc_sum_wght(dels.data(), wrk0, // in
-                  iz, is, iv, ial,   // in
-                  rsf_tab,           // in
-                  nw,                //
-                  psum.data());
+    const auto psum = View1D("psum", nw);
 
+    auto team_policy = ThreadTeamPolicy(1u, 1u);
+    Kokkos::parallel_for(
+        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          calc_sum_wght(dels.data(), wrk0, // in
+                        iz, is, iv, ial,   // in
+                        rsf_tab,           // in
+                        nw,                //
+                        psum.data());
+        });
+
+    std::vector<Real> psum_db(nw, zero);
+    // auto psum_host = View1DHost((Real *)psum_db.data(), nw);
+    // Kokkos::deep_copy(psum_host, psum);
     // C++ indexing to fortran indexing
-    output.set("psum", psum);
+    output.set("psum", psum_db.data());
   });
 }
