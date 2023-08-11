@@ -19,13 +19,14 @@ void modal_aero_water_uptake_dr(Ensemble *ensemble) {
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     EKAT_REQUIRE_MSG(input.has_array("state_q"), "Required name: state_q");
-    EKAT_REQUIRE_MSG(input.has_array("temperature"), "Required name: temperature");
+    EKAT_REQUIRE_MSG(input.has_array("temperature"),
+                     "Required name: temperature");
     EKAT_REQUIRE_MSG(input.has_array("pmid"), "Required name: pmid");
     EKAT_REQUIRE_MSG(input.has_array("cldn"), "Required name: cldn");
     EKAT_REQUIRE_MSG(input.has_array("dgncur_a"), "Required name: dgncur_a");
-    EKAT_REQUIRE_MSG(input.has_array("dgncur_awet"), "Required name: dgncur_awet");
+    EKAT_REQUIRE_MSG(input.has_array("dgncur_awet"),
+                     "Required name: dgncur_awet");
     EKAT_REQUIRE_MSG(input.has_array("qaerwat"), "Required name: qaerwat");
-
 
     auto temperature = input.get_array("temperature")[0];
     auto pmid = input.get_array("pmid")[0];
@@ -43,15 +44,11 @@ void modal_aero_water_uptake_dr(Ensemble *ensemble) {
     water_uptake::get_e3sm_parameters(nspec_amode, lspectype_amode,
                                       specdens_amode, spechygro);
 
+    water_uptake::modal_aero_water_uptake_dr(
+        nspec_amode, specdens_amode, spechygro, lspectype_amode, state_q.data(),
+        temperature, pmid, cldn, dgncur_a.data(), dgncur_awet.data());
 
-    water_uptake::modal_aero_water_uptake_dr(nspec_amode, specdens_amode, spechygro, lspectype_amode, 
-        state_q.data(), temperature, pmid, cldn, dgncur_a.data(), dgncur_awet.data());
-
-    
     output.set("dgncur_awet", dgncur_awet);
     output.set("qaerwat", qaerwat);
-
-
   });
-
 }
