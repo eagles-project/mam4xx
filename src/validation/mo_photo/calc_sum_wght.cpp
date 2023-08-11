@@ -65,8 +65,6 @@ void calc_sum_wght(Ensemble *ensemble) {
     auto dels_host = View1DHost((Real *)dels_db.data(), 3);
     Kokkos::deep_copy(dels, dels_host);
 
-    const Real zero = 0;
-
     const auto psum = View1D("psum", nw);
 
     auto team_policy = ThreadTeamPolicy(1u, 1u);
@@ -77,8 +75,8 @@ void calc_sum_wght(Ensemble *ensemble) {
                         rsf_tab,           // in
                         nw,                //
                         psum.data());
-        });
-
+    });
+    const Real zero =0;
     std::vector<Real> psum_db(nw, zero);
     auto psum_host = View1DHost((Real *)psum_db.data(), nw);
     Kokkos::deep_copy(psum_host, psum);
