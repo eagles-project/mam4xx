@@ -45,74 +45,68 @@ void jlong(Ensemble *ensemble) {
     const int numalb = 10;
 
     View5D rsf_tab("rsf_tab", nw, nump, numsza, numcolo3, numalb);
-    auto rsf_tab_1 = Kokkos::subview(rsf_tab, Kokkos::ALL(), 1,
-                                     Kokkos::ALL(),Kokkos::ALL(), Kokkos::ALL());
+    auto rsf_tab_1 = Kokkos::subview(rsf_tab, Kokkos::ALL(), 1, Kokkos::ALL(),
+                                     Kokkos::ALL(), Kokkos::ALL());
 
     auto rsf_tab_2 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(), 6,
                                      Kokkos::ALL(), Kokkos::ALL());
 
     auto rsf_tab_3 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(),
-                                      Kokkos::ALL(), 7, Kokkos::ALL());
+                                     Kokkos::ALL(), 7, Kokkos::ALL());
 
     auto rsf_tab_4 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(),
-                                      Kokkos::ALL(), Kokkos::ALL(), 3);
+                                     Kokkos::ALL(), Kokkos::ALL(), 3);
 
     auto rsf_tab_5 = Kokkos::subview(rsf_tab, 0, Kokkos::ALL(), Kokkos::ALL(),
-                                      Kokkos::ALL(), Kokkos::ALL());
+                                     Kokkos::ALL(), Kokkos::ALL());
 
     auto rsf_tab_6 = Kokkos::subview(rsf_tab, 9, Kokkos::ALL(), Kokkos::ALL(),
-                                      Kokkos::ALL(), Kokkos::ALL());
+                                     Kokkos::ALL(), Kokkos::ALL());
 
-
-    Kokkos::deep_copy(rsf_tab,0.1);
-    Kokkos::deep_copy(rsf_tab_1,2.0);
-    Kokkos::deep_copy(rsf_tab_2,3.0);
-    Kokkos::deep_copy(rsf_tab_3,1.0);
-    Kokkos::deep_copy(rsf_tab_4,0.8);
-    Kokkos::deep_copy(rsf_tab_5,6.0);
-    Kokkos::deep_copy(rsf_tab_6,1e-2);
+    Kokkos::deep_copy(rsf_tab, 0.1);
+    Kokkos::deep_copy(rsf_tab_1, 2.0);
+    Kokkos::deep_copy(rsf_tab_2, 3.0);
+    Kokkos::deep_copy(rsf_tab_3, 1.0);
+    Kokkos::deep_copy(rsf_tab_4, 0.8);
+    Kokkos::deep_copy(rsf_tab_5, 6.0);
+    Kokkos::deep_copy(rsf_tab_6, 1e-2);
 
     const int np_xs = 10;
     const int nt = 201;
     const int numj = 10;
-    View2D rsf("rsf",nw, nlev);
-    View4D xsqy("xsqy",numj, nw, nt, np_xs);
-    View2D xswk("xswk",numj, nw);
+    View2D rsf("rsf", nw, nlev);
+    View4D xsqy("xsqy", numj, nw, nt, np_xs);
+    View2D xswk("xswk", numj, nw);
 
-    Kokkos::deep_copy(xsqy,0.1);
+    Kokkos::deep_copy(xsqy, 0.1);
 
     Real psum_l[nw] = {};
     Real psum_u[nw] = {};
 
-    View2D j_long("j_long",numj,pver );
+    View2D j_long("j_long", numj, pver);
 
     jlong(sza_in, alb_in.data(), p_in.data(), t_in.data(), colo3_in.data(),
           xsqy, sza.data(), del_sza.data(), alb.data(), press.data(),
           del_p.data(), colo3.data(), o3rat.data(), del_alb.data(),
           del_o3rat.data(), etfphot.data(),
           rsf_tab, // in
-          prs.data(), dprs.data(),
-          nw, nump, numsza, numcolo3, numalb,
-          np_xs,numj,
+          prs.data(), dprs.data(), nw, nump, numsza, numcolo3, numalb, np_xs,
+          numj,
           j_long, // output
           // work arrays
           rsf, xswk, psum_l, psum_u);
 
+    const Real zero = 0;
+    std::vector<Real> jlong_out(pver * numj, zero);
 
-    const Real zero=0;
-    std::vector<Real> jlong_out(pver*numj,zero);
-
-    int count=0;
-    for (int j = 0; j < pver; ++j)
-    {
-      for (int i = 0; i < numj; ++i)
-      {
-        jlong_out[count] = j_long(i,j);
+    int count = 0;
+    for (int j = 0; j < pver; ++j) {
+      for (int i = 0; i < numj; ++i) {
+        jlong_out[count] = j_long(i, j);
         count += 1;
       }
     }
 
     output.set("j_long", jlong_out);
-
   });
 }

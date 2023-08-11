@@ -40,65 +40,58 @@ void interpolate_rsf(Ensemble *ensemble) {
     const int numalb = 10;
 
     View5D rsf_tab("rsf_tab", nw, nump, numsza, numcolo3, numalb);
-    auto rsf_tab_1 = Kokkos::subview(rsf_tab, Kokkos::ALL(), 1,
-                                     Kokkos::ALL(),Kokkos::ALL(), Kokkos::ALL());
+    auto rsf_tab_1 = Kokkos::subview(rsf_tab, Kokkos::ALL(), 1, Kokkos::ALL(),
+                                     Kokkos::ALL(), Kokkos::ALL());
 
     auto rsf_tab_2 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(), 6,
                                      Kokkos::ALL(), Kokkos::ALL());
 
     auto rsf_tab_3 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(),
-                                      Kokkos::ALL(), 7, Kokkos::ALL());
+                                     Kokkos::ALL(), 7, Kokkos::ALL());
 
     auto rsf_tab_4 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(),
-                                      Kokkos::ALL(), Kokkos::ALL(), 3);
+                                     Kokkos::ALL(), Kokkos::ALL(), 3);
 
     auto rsf_tab_5 = Kokkos::subview(rsf_tab, 0, Kokkos::ALL(), Kokkos::ALL(),
-                                      Kokkos::ALL(), Kokkos::ALL());
+                                     Kokkos::ALL(), Kokkos::ALL());
 
     auto rsf_tab_6 = Kokkos::subview(rsf_tab, 9, Kokkos::ALL(), Kokkos::ALL(),
-                                      Kokkos::ALL(), Kokkos::ALL());
+                                     Kokkos::ALL(), Kokkos::ALL());
 
-    Kokkos::deep_copy(rsf_tab,0.1);
-    Kokkos::deep_copy(rsf_tab_1,2.0);
-    Kokkos::deep_copy(rsf_tab_2,3.0);
-    Kokkos::deep_copy(rsf_tab_3,1.0);
-    Kokkos::deep_copy(rsf_tab_4,0.8);
-    Kokkos::deep_copy(rsf_tab_5,6.0);
-    Kokkos::deep_copy(rsf_tab_6,1e-2);
+    Kokkos::deep_copy(rsf_tab, 0.1);
+    Kokkos::deep_copy(rsf_tab_1, 2.0);
+    Kokkos::deep_copy(rsf_tab_2, 3.0);
+    Kokkos::deep_copy(rsf_tab_3, 1.0);
+    Kokkos::deep_copy(rsf_tab_4, 0.8);
+    Kokkos::deep_copy(rsf_tab_5, 6.0);
+    Kokkos::deep_copy(rsf_tab_6, 1e-2);
 
-    View2D rsf("rsf",nw, nlev);
+    View2D rsf("rsf", nw, nlev);
 
     Real psum_l[nw] = {};
     Real psum_u[nw] = {};
-
 
     interpolate_rsf(alb_in.data(), sza_in, p_in.data(), colo3_in.data(),
                     pver, //  in
                     sza.data(), del_sza.data(), alb.data(), press.data(),
                     del_p.data(), colo3.data(), o3rat.data(), del_alb.data(),
-                    del_o3rat.data(), etfphot.data(), rsf_tab,
-                    nw, nump, numsza, numcolo3, numalb,
+                    del_o3rat.data(), etfphot.data(), rsf_tab, nw, nump, numsza,
+                    numcolo3, numalb,
                     rsf, // out
                     // work array
                     psum_l, psum_u);
 
-    const Real zero=0;
-    std::vector<Real> rsf_out(nw*nlev,zero);
+    const Real zero = 0;
+    std::vector<Real> rsf_out(nw * nlev, zero);
 
-    int count=0;
-    for (int j = 0; j < nlev; ++j)
-    {
-      for (int i = 0; i < nw; ++i)
-      {
-        rsf_out[count] = rsf(i,j);
+    int count = 0;
+    for (int j = 0; j < nlev; ++j) {
+      for (int i = 0; i < nw; ++i) {
+        rsf_out[count] = rsf(i, j);
         count += 1;
       }
     }
 
     output.set("rsf", rsf_out);
-
-
-
-
   });
 }

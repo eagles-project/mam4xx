@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
       jlong(ensemble);
     } else if (func_name == "calc_sum_wght") {
       calc_sum_wght(ensemble);
-    }else {
+    } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
       exit(1);
