@@ -39,7 +39,7 @@ void modal_aero_water_uptake_dryaer(Ensemble *ensemble) {
     std::vector<Real> rhdeliques(AeroConfig::num_modes(), 0.0);
     std::vector<Real> specdens_1(AeroConfig::num_modes(), 0.0);
 
-    water_uptake::modal_aero_wateruptake_dryaer(
+    water_uptake::modal_aero_water_uptake_dryaer(
         nspec_amode, specdens_amode, spechygro, lspectype_amode, state_q.data(),
         dgncur_a.data(), hygro.data(), naer.data(), dryrad.data(),
         dryvol.data(), drymass.data(), rhcrystal.data(), rhdeliques.data(),
