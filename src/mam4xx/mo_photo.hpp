@@ -492,10 +492,10 @@ void jlong(
       int pndx = 0;
       // Question: delp is not initialized in fortran code. What if the
       // following code does not satify this if condition: ptarget >= prs[km]
+      // Conversion indexing from Fortran to C++
       for (int km = 1; km < np_xs; km++) {
         if (ptarget >= prs[km]) {
-          // Fortran to C++ indexing convertion
-          pndx = km - 1 - 1;
+          pndx = km - 1;
           delp = (prs[pndx] - ptarget) * dprs[pndx];
           break;
         } // end if
