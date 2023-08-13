@@ -107,7 +107,7 @@ void interpolate_rsf(Ensemble *ensemble) {
     auto psum_l = View1D("psum_l", nw);
     auto psum_u = View1D("psum_u", nw);
 
-    View2D rsf("rsf", nw, nlev);
+    View2D rsf("rsf", nw, pver);
     auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -123,12 +123,12 @@ void interpolate_rsf(Ensemble *ensemble) {
         });
 
     const Real zero = 0;
-    std::vector<Real> rsf_out(nw * nlev, zero);
+    std::vector<Real> rsf_out(nw * pver, zero);
     auto rsf_host = Kokkos::create_mirror_view(rsf);
     Kokkos::deep_copy(rsf_host, rsf);
 
     int count = 0;
-    for (int j = 0; j < nlev; ++j) {
+    for (int j = 0; j < pver; ++j) {
       for (int i = 0; i < nw; ++i) {
         rsf_out[count] = rsf_host(i, j);
         count += 1;

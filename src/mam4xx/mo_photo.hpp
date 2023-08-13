@@ -27,9 +27,9 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
   -----------------------------------------------------------------------*/
 
   // @param[in]   zen_angle         zenith angle [deg]
-  // @param[in]   srf_alb           surface albedo [fraction]
   // @param[in]   clouds(pver)      cloud fraction [fraction]
   // @param[in]   lwc(pver)         liquid water content [kg/kg]
+  // @param[in]   srf_alb           surface albedo [fraction]
   // @param[in]   delp(pver)        del press about midpoint [Pa]
   // @param[out]  eff_alb(pver)    effective albedo [fraction]
   // @param[out]  cld_mult(pver) photolysis mult factor
@@ -186,8 +186,8 @@ void find_index(const Real *var_in, const int var_len,
    find the index of the first element in var_in(1:var_len) where the value is >
   var_min
   ------------------------------------------------------------------------------*/
-  // @param[in]  var_len   length of the input variable
   // @param[in]  var_in(var_len)    input variable
+  // @param[in]  var_len   length of the input variable
   // @param[in]  var_min   variable threshold
   // @param[out]  idx_out   index
 
@@ -200,15 +200,6 @@ void find_index(const Real *var_in, const int var_len,
   }   // end for ii
 
 } // find_index
-// FIXME: get values of the following parameters:
-// constexpr int nw = 67;      // wavelengths >200nm
-// constexpr int nump = 135;     // number of altitudes in rsf
-// constexpr int numsza = 100;   // number of zen angles in rsf
-// constexpr int numcolo3 = 100; // number of o3 columns in rsf
-// constexpr int numalb = 100;   // number of albedos in rsf
-// constexpr int numj = 1;     // number of photorates in xsqy, rsf
-// constexpr int nt = 1;       // number of temperatures in xsection table
-// constexpr int np_xs = 1;    // number of pressure levels in xsection table
 
 KOKKOS_INLINE_FUNCTION
 void calc_sum_wght(const Real dels[3], const Real wrk0, // in
@@ -222,12 +213,13 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
   // @param[in]   dels(3)
   // @param[in]   wrk0
   // @param[in]  iz, is, iv, ial
+  // @param[in]   nw// wavelengths >200nm
   // @param[in/out] psum(:)
   const int isp1 = is + 1;
   const int ivp1 = iv + 1;
   const int ialp1 = ial + 1;
   const Real one = 1;
-  // #if 0
+
   Real wrk1 = (one - dels[1]) * (one - dels[2]);
   const Real wght_0_0_0 = wrk0 * wrk1;
   const Real wght_1_0_0 = dels[0] * wrk1;
@@ -252,10 +244,8 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
                wght_1_1_0 * rsf_tab(wn, iz, isp1, ivp1, ial) +
                wght_1_1_1 * rsf_tab(wn, iz, isp1, ivp1, ialp1);
   } // end wn
-  // #endif
 } // calc_sum_wght
 
-constexpr int nlev = 72;
 KOKKOS_INLINE_FUNCTION
 void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
                      const Real *colo3_in,
@@ -276,10 +266,26 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
 
   // @param[in]  alb_in(:)        albedo [unitless]
   // @param[in]  sza_in           solar zenith angle [degrees]
-  // @param[in]  kbot            ! heating levels [level]
-  // @param[in]  p_in(:)         ! midpoint pressure [hPa]
-  // @param[in]  colo3_in(:)     ! o3 column density [molecules/cm^3]
-  // @param[in] rsf(:,:)        ! Radiative Source Function [quanta cm-2 sec-1]
+  // @param[in]  p_in(:)          midpoint pressure [hPa]
+  // @param[in]  colo3_in(:)      o3 column density [molecules/cm^3]
+  // @param[in]  kbot             heating levels [level]
+  // @param[in]  sza
+  // @param[in]  del_sza
+  // @param[in]  alb
+  // @param[in]  press
+  // @param[in]  del_p
+  // @param[in]  colo3
+  // @param[in]  o3rat
+  // @param[in]  del_alb
+  // @param[in]  del_o3rat
+  // @param[in]  etfphot
+  // @param[in]  rsf_tab
+  // @param[in]  nw             wavelengths >200nm
+  // @param[in]  nump           number of altitudes in rsf
+  // @param[in]  numsza         number of zen angles in rsf
+  // @param[in]  numcolo3       number of o3 columns in rsf
+  // @param[in]  numalb         number of albedos in rsf
+  // @param[out] rsf(:,:)       Radiative Source Function [quanta cm-2 sec-1]
 
   /*----------------------------------------------------------------------
           ... find the zenith angle index ( same for all levels )
@@ -362,7 +368,6 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
     int iv = ratindl;
     dels[1] =
         utils::min_max_bound(zero, one, (v3ratl - o3rat[iv]) * del_o3rat[iv]);
-    // FIXME
     calc_sum_wght(dels, wrk0,        // in
                   pind, is, iv, ial, // in
                   rsf_tab, nw,
@@ -391,27 +396,23 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
 
   } // end Level_loop
 
-  // #endif
-
 } // interpolate_rsf
 
 //======================================================================================
 KOKKOS_INLINE_FUNCTION
-void jlong(
-    //  const int nlev,
-    const Real sza_in, const Real *alb_in, const Real *p_in, const Real *t_in,
-    const Real *colo3_in, const View4D &xsqy, const Real *sza,
-    const Real *del_sza, const Real *alb, const Real *press, const Real *del_p,
-    const Real *colo3, const Real *o3rat, const Real *del_alb,
-    const Real *del_o3rat, const Real *etfphot, const View5D &rsf_tab,
-    const Real *prs, const Real *dprs, const int nw, const int nump,
-    const int numsza, const int numcolo3, const int numalb, const int np_xs,
-    const int numj,
-    const View2D &j_long, // output
-
-    // work arrays
-    const View2D &rsf, const View2D &xswk, Real *psum_l,
-    Real *psum_u) // out
+void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
+           const Real *t_in, const Real *colo3_in, const View4D &xsqy,
+           const Real *sza, const Real *del_sza, const Real *alb,
+           const Real *press, const Real *del_p, const Real *colo3,
+           const Real *o3rat, const Real *del_alb, const Real *del_o3rat,
+           const Real *etfphot, const View5D &rsf_tab, const Real *prs,
+           const Real *dprs, const int nw, const int nump, const int numsza,
+           const int numcolo3, const int numalb, const int np_xs,
+           const int numj,
+           const View2D &j_long, // output
+           // work arrays
+           const View2D &rsf, const View2D &xswk, Real *psum_l,
+           Real *psum_u) // out
 {
   /*==============================================================================
      Purpose:
@@ -431,17 +432,38 @@ void jlong(
           will be derived.
   ==============================================================================*/
 
-  // @param[in] nlev               ! number vertical levels
   // @param[in] sza_in             ! solar zenith angle [degrees]
   // @param[in] alb_in(nlev)       ! albedo
   // @param[in]  p_in(nlev)         ! midpoint pressure [hPa]
   // @param[in]  t_in(nlev)         ! Temperature profile [K]
   // @param[in]  colo3_in(nlev)     ! o3 column density [molecules/cm^3]
-  // @param[out]  j_long(:,:)        ! photo rates [1/s]
+  // @param[in]  xsqy
+  // @param[in]  sza
+  // @param[in]  del_sza
+  // @param[in]  alb
+  // @param[in]  press
+  // @param[in]  del_p
+  // @param[in]  colo3
+  // @param[in]  o3rat
+  // @param[in]  del_alb
+  // @param[in]  del_o3rat
+  // @param[in]  etfphot
+  // @param[in]  rsf_tab
+  // @param[in]  prs
+  // @param[in]  dprs
+  // @param[in]  nw             wavelengths >200nm
+  // @param[in]  nump           number of altitudes in rsf
+  // @param[in]  numsza         number of zen angles in rsf
+  // @param[in]  numcolo3       number of o3 columns in rsf
+  // @param[in]  numalb         number of albedos in rsf
+  // @param[in]  np_xs          number of pressure levels in xsection table
+  // @param[in]  numj           number of photorates in xsqy, rsf
+  // @param[out]  j_long(:,:)   photo rates [1/s]
 
   /*----------------------------------------------------------------------
     ... interpolate table rsf to model variables
 ----------------------------------------------------------------------*/
+  const Real nlev = pver;
   const Real zero = 0;
   interpolate_rsf(alb_in, sza_in, p_in, colo3_in, nlev, sza, del_sza, alb,
                   press, del_p, colo3, o3rat, del_alb, del_o3rat, etfphot,
@@ -466,6 +488,7 @@ void jlong(
      ----------------------------------------------------------------------*/
     // BAD CONSTANT
     // Fortran indexing to C++ indexing
+    // number of temperatures in xsection table
     const int t_index = haero::min(201, haero::max(t_in[kk] - 148.5, 0)) - 1;
 
     /*----------------------------------------------------------------------

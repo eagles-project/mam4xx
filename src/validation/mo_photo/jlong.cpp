@@ -126,7 +126,7 @@ void jlong(Ensemble *ensemble) {
     const auto dprs = View1D("dprs", np_xs - 1);
     Kokkos::deep_copy(dprs, dprs_host);
 
-    View2D rsf("rsf", nw, nlev);
+    View2D rsf("rsf", nw, pver);
     View4D xsqy("xsqy", numj, nw, nt, np_xs);
     View2D xswk("xswk", numj, nw);
 
