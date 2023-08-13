@@ -24,8 +24,8 @@ void calc_sum_wght(Ensemble *ensemble) {
     const int is = int(input.get_array("is_")[0]) - 1;
     const int iv = int(input.get_array("iv")[0]) - 1;
     const int ial = int(input.get_array("ial")[0]) - 1;
+    
     auto shape_rsf_tab = input.get_array("shape_rsf_tab");
-
     auto synthetic_values= input.get_array("synthetic_values_rsf_tab");
 
     const int nw = int(shape_rsf_tab[0]);
