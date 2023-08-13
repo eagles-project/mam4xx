@@ -7,6 +7,7 @@
 #define HAERO_VALIDATION_HPP
 #include <haero/testing.hpp>
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/mo_photo.hpp>
 #include <string>
 
 namespace mam4 {
@@ -116,6 +117,15 @@ void convert_modal_array_to_vector(
 // Convert 1D std::vector to 1D Real array for num mode
 void convert_vector_to_modal_array(const std::vector<Real> &vector_in,
                                    Real values[AeroConfig::num_modes()]);
+
+using namespace mo_photo; 
+void create_synthetic_rsf_tab(View5D& rsf_tab, 
+                              const int nw,
+                              const int nump,
+                              const int numsza,
+                              const int numcolo3,
+                              const int numalb,
+                              Real* synthetic_values);
 
 } // namespace validation
 } // namespace mam4

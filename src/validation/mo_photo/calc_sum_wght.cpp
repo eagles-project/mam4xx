@@ -24,42 +24,25 @@ void calc_sum_wght(Ensemble *ensemble) {
     const int is = int(input.get_array("is_")[0]) - 1;
     const int iv = int(input.get_array("iv")[0]) - 1;
     const int ial = int(input.get_array("ial")[0]) - 1;
-    // const auto rsf_tab_1d = input.get_array("rsf_tab");
+    auto shape_rsf_tab = input.get_array("shape_rsf_tab");
 
-    // auto shape_rsf_tab = input.get_array("shape_rsf_tab");
+    auto synthetic_values= input.get_array("synthetic_values_rsf_tab");
 
-    const int nw = 67;
-    const int nump = 15;
-    const int numsza = 10;
-    const int numcolo3 = 10;
-    const int numalb = 10;
+    const int nw = int(shape_rsf_tab[0]);
+    const int nump = int(shape_rsf_tab[1]);
+    const int numsza = int(shape_rsf_tab[2]);
+    const int numcolo3 = int(shape_rsf_tab[3]);
+    const int numalb = int(shape_rsf_tab[4]);
 
-    View5D rsf_tab("rsf_tab", nw, nump, numsza, numcolo3, numalb);
-    auto rsf_tab_1 = Kokkos::subview(rsf_tab, Kokkos::ALL(), 1, Kokkos::ALL(),
-                                     Kokkos::ALL(), Kokkos::ALL());
+    View5D rsf_tab; 
 
-    auto rsf_tab_2 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(), 6,
-                                     Kokkos::ALL(), Kokkos::ALL());
-
-    auto rsf_tab_3 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(),
-                                     Kokkos::ALL(), 7, Kokkos::ALL());
-
-    auto rsf_tab_4 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(),
-                                     Kokkos::ALL(), Kokkos::ALL(), 3);
-
-    auto rsf_tab_5 = Kokkos::subview(rsf_tab, 0, Kokkos::ALL(), Kokkos::ALL(),
-                                     Kokkos::ALL(), Kokkos::ALL());
-
-    auto rsf_tab_6 = Kokkos::subview(rsf_tab, 9, Kokkos::ALL(), Kokkos::ALL(),
-                                     Kokkos::ALL(), Kokkos::ALL());
-
-    Kokkos::deep_copy(rsf_tab, 0.1);
-    Kokkos::deep_copy(rsf_tab_1, 2.0);
-    Kokkos::deep_copy(rsf_tab_2, 3.0);
-    Kokkos::deep_copy(rsf_tab_3, 1.0);
-    Kokkos::deep_copy(rsf_tab_4, 0.8);
-    Kokkos::deep_copy(rsf_tab_5, 6.0);
-    Kokkos::deep_copy(rsf_tab_6, 1e-2);
+    mam4::validation::create_synthetic_rsf_tab(rsf_tab, 
+                              nw,
+                              nump,
+                              numsza,
+                              numcolo3,
+                              numalb,
+                              synthetic_values.data());
 
     const auto dels = View1D("dels", 3);
     auto dels_host = View1DHost((Real *)dels_db.data(), 3);

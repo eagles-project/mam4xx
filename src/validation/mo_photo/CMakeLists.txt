@@ -34,11 +34,9 @@ set(TEST_LIST
     stand_cloud_mod_ts_355
     find_index_ts_355
     cloud_mod_ts_353
-    stand_small_table_calc_sum_wght_ts_355
-    stand_small_table_interpolate_rsf_ts_355
-    stand_jlong_ts_355
-    #interpolate_rsf_ts_355
-    #jlong_ts_355
+    stand_synthetic_calc_sum_wght_ts_355
+    stand_synthetic_interpolate_rsf_ts_355
+    stand_synthetic_jlong_ts_355
     )
 # # matching the tests and errors, just for convenience
 
