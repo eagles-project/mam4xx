@@ -39,7 +39,6 @@ void jlong(Ensemble *ensemble) {
     Kokkos::deep_copy(colo3_in, colo3_in_host);
     Kokkos::deep_copy(t_in, t_in_host);
 
-    // FIXME; ask for following variables
     const auto sza_db = input.get_array("sza");
     const auto del_sza_db = input.get_array("del_sza");
     const auto alb_db = input.get_array("alb");
@@ -52,7 +51,7 @@ void jlong(Ensemble *ensemble) {
     const auto etfphot_db = input.get_array("etfphot");
 
     auto shape_rsf_tab = input.get_array("shape_rsf_tab");
-    auto synthetic_values= input.get_array("synthetic_values_rsf_tab");
+    auto synthetic_values = input.get_array("synthetic_values_rsf_tab");
 
     const int nw = int(shape_rsf_tab[0]);
     const int nump = int(shape_rsf_tab[1]);
@@ -60,15 +59,10 @@ void jlong(Ensemble *ensemble) {
     const int numcolo3 = int(shape_rsf_tab[3]);
     const int numalb = int(shape_rsf_tab[4]);
 
-    View5D rsf_tab; 
+    View5D rsf_tab;
 
-    mam4::validation::create_synthetic_rsf_tab(rsf_tab, 
-                              nw,
-                              nump,
-                              numsza,
-                              numcolo3,
-                              numalb,
-                              synthetic_values.data());
+    mam4::validation::create_synthetic_rsf_tab(
+        rsf_tab, nw, nump, numsza, numcolo3, numalb, synthetic_values.data());
 
     auto sza_host = View1DHost((Real *)sza_db.data(), numsza);
     const auto sza = View1D("sza", numsza);
@@ -115,8 +109,8 @@ void jlong(Ensemble *ensemble) {
     // Kokkos::deep_copy(, );
 
     auto shape_xsqy = input.get_array("shape_xsqy");
-    auto synthetic_values_xsqy= input.get_array("synthetic_values_xsqy");
-    
+    auto synthetic_values_xsqy = input.get_array("synthetic_values_xsqy");
+
     const int numj = int(shape_xsqy[0]);
     const int nt = int(shape_xsqy[2]);
     const int np_xs = int(shape_xsqy[3]);
@@ -147,7 +141,6 @@ void jlong(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-
           jlong(sza_in, alb_in.data(), p_in.data(), t_in.data(),
                 colo3_in.data(), xsqy, sza.data(), del_sza.data(), alb.data(),
                 press.data(), del_p.data(), colo3.data(), o3rat.data(),

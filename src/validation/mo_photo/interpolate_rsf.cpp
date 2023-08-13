@@ -35,7 +35,6 @@ void interpolate_rsf(Ensemble *ensemble) {
     Kokkos::deep_copy(p_in, p_in_host);
     Kokkos::deep_copy(colo3_in, colo3_in_host);
 
-    // FIXME; ask for following variables
     const auto sza_db = input.get_array("sza");
     const auto del_sza_db = input.get_array("del_sza");
     const auto alb_db = input.get_array("alb");
@@ -46,11 +45,9 @@ void interpolate_rsf(Ensemble *ensemble) {
     const auto del_alb_db = input.get_array("del_alb");
     const auto del_o3rat_db = input.get_array("del_o3rat");
     const auto etfphot_db = input.get_array("etfphot");
-    // const auto rsf_tab_1d = input.get_array("rsf_tab");
-
 
     auto shape_rsf_tab = input.get_array("shape_rsf_tab");
-    auto synthetic_values= input.get_array("synthetic_values_rsf_tab");
+    auto synthetic_values = input.get_array("synthetic_values_rsf_tab");
 
     const int nw = int(shape_rsf_tab[0]);
     const int nump = int(shape_rsf_tab[1]);
@@ -58,15 +55,10 @@ void interpolate_rsf(Ensemble *ensemble) {
     const int numcolo3 = int(shape_rsf_tab[3]);
     const int numalb = int(shape_rsf_tab[4]);
 
-    View5D rsf_tab; 
+    View5D rsf_tab;
 
-    mam4::validation::create_synthetic_rsf_tab(rsf_tab, 
-                              nw,
-                              nump,
-                              numsza,
-                              numcolo3,
-                              numalb,
-                              synthetic_values.data());
+    mam4::validation::create_synthetic_rsf_tab(
+        rsf_tab, nw, nump, numsza, numcolo3, numalb, synthetic_values.data());
 
     auto sza_host = View1DHost((Real *)sza_db.data(), numsza);
     const auto sza = View1D("sza", numsza);

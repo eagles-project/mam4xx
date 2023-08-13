@@ -24,9 +24,9 @@ void calc_sum_wght(Ensemble *ensemble) {
     const int is = int(input.get_array("is_")[0]) - 1;
     const int iv = int(input.get_array("iv")[0]) - 1;
     const int ial = int(input.get_array("ial")[0]) - 1;
-    
+
     auto shape_rsf_tab = input.get_array("shape_rsf_tab");
-    auto synthetic_values= input.get_array("synthetic_values_rsf_tab");
+    auto synthetic_values = input.get_array("synthetic_values_rsf_tab");
 
     const int nw = int(shape_rsf_tab[0]);
     const int nump = int(shape_rsf_tab[1]);
@@ -34,15 +34,10 @@ void calc_sum_wght(Ensemble *ensemble) {
     const int numcolo3 = int(shape_rsf_tab[3]);
     const int numalb = int(shape_rsf_tab[4]);
 
-    View5D rsf_tab; 
+    View5D rsf_tab;
 
-    mam4::validation::create_synthetic_rsf_tab(rsf_tab, 
-                              nw,
-                              nump,
-                              numsza,
-                              numcolo3,
-                              numalb,
-                              synthetic_values.data());
+    mam4::validation::create_synthetic_rsf_tab(
+        rsf_tab, nw, nump, numsza, numcolo3, numalb, synthetic_values.data());
 
     const auto dels = View1D("dels", 3);
     auto dels_host = View1DHost((Real *)dels_db.data(), 3);

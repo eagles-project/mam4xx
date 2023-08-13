@@ -118,14 +118,10 @@ void convert_modal_array_to_vector(
 void convert_vector_to_modal_array(const std::vector<Real> &vector_in,
                                    Real values[AeroConfig::num_modes()]);
 
-using namespace mo_photo; 
-void create_synthetic_rsf_tab(View5D& rsf_tab, 
-                              const int nw,
-                              const int nump,
-                              const int numsza,
-                              const int numcolo3,
-                              const int numalb,
-                              Real* synthetic_values);
+using namespace mo_photo;
+void create_synthetic_rsf_tab(View5D &rsf_tab, const int nw, const int nump,
+                              const int numsza, const int numcolo3,
+                              const int numalb, Real *synthetic_values);
 
 } // namespace validation
 } // namespace mam4
