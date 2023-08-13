@@ -51,11 +51,24 @@ void jlong(Ensemble *ensemble) {
     const auto del_o3rat_db = input.get_array("del_o3rat");
     const auto etfphot_db = input.get_array("etfphot");
 
-    const int nw = 67;
-    const int nump = 15;
-    const int numsza = 10;
-    const int numcolo3 = 10;
-    const int numalb = 10;
+    auto shape_rsf_tab = input.get_array("shape_rsf_tab");
+    auto synthetic_values= input.get_array("synthetic_values_rsf_tab");
+
+    const int nw = int(shape_rsf_tab[0]);
+    const int nump = int(shape_rsf_tab[1]);
+    const int numsza = int(shape_rsf_tab[2]);
+    const int numcolo3 = int(shape_rsf_tab[3]);
+    const int numalb = int(shape_rsf_tab[4]);
+
+    View5D rsf_tab; 
+
+    mam4::validation::create_synthetic_rsf_tab(rsf_tab, 
+                              nw,
+                              nump,
+                              numsza,
+                              numcolo3,
+                              numalb,
+                              synthetic_values.data());
 
     auto sza_host = View1DHost((Real *)sza_db.data(), numsza);
     const auto sza = View1D("sza", numsza);
@@ -101,9 +114,12 @@ void jlong(Ensemble *ensemble) {
     // const auto  = View1D("", );
     // Kokkos::deep_copy(, );
 
-    const int np_xs = 10;
-    const int nt = 201;
-    const int numj = 10;
+    auto shape_xsqy = input.get_array("shape_xsqy");
+    auto synthetic_values_xsqy= input.get_array("synthetic_values_xsqy");
+    
+    const int numj = int(shape_xsqy[0]);
+    const int nt = int(shape_xsqy[2]);
+    const int np_xs = int(shape_xsqy[3]);
 
     const auto prs_db = input.get_array("prs");
     const auto dprs_db = input.get_array("dprs");
@@ -116,46 +132,21 @@ void jlong(Ensemble *ensemble) {
     const auto dprs = View1D("dprs", np_xs - 1);
     Kokkos::deep_copy(dprs, dprs_host);
 
-    View5D rsf_tab("rsf_tab", nw, nump, numsza, numcolo3, numalb);
-    auto rsf_tab_1 = Kokkos::subview(rsf_tab, Kokkos::ALL(), 1, Kokkos::ALL(),
-                                     Kokkos::ALL(), Kokkos::ALL());
-
-    auto rsf_tab_2 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(), 6,
-                                     Kokkos::ALL(), Kokkos::ALL());
-
-    auto rsf_tab_3 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(),
-                                     Kokkos::ALL(), 7, Kokkos::ALL());
-
-    auto rsf_tab_4 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(),
-                                     Kokkos::ALL(), Kokkos::ALL(), 3);
-
-    auto rsf_tab_5 = Kokkos::subview(rsf_tab, 0, Kokkos::ALL(), Kokkos::ALL(),
-                                     Kokkos::ALL(), Kokkos::ALL());
-
-    auto rsf_tab_6 = Kokkos::subview(rsf_tab, 9, Kokkos::ALL(), Kokkos::ALL(),
-                                     Kokkos::ALL(), Kokkos::ALL());
-
-    Kokkos::deep_copy(rsf_tab, 0.1);
-    Kokkos::deep_copy(rsf_tab_1, 2.0);
-    Kokkos::deep_copy(rsf_tab_2, 3.0);
-    Kokkos::deep_copy(rsf_tab_3, 1.0);
-    Kokkos::deep_copy(rsf_tab_4, 0.8);
-    Kokkos::deep_copy(rsf_tab_5, 6.0);
-    Kokkos::deep_copy(rsf_tab_6, 1e-2);
-
     View2D rsf("rsf", nw, nlev);
     View4D xsqy("xsqy", numj, nw, nt, np_xs);
     View2D xswk("xswk", numj, nw);
 
-    Kokkos::deep_copy(xsqy, 0.1);
+    const Real values_xsqy = synthetic_values_xsqy[0];
+    Kokkos::deep_copy(xsqy, values_xsqy);
 
     View2D j_long("j_long", numj, pver);
+
+    auto psum_l = View1D("psum_l", nw);
+    auto psum_u = View1D("psum_u", nw);
 
     auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          Real psum_l[nw] = {};
-          Real psum_u[nw] = {};
 
           jlong(sza_in, alb_in.data(), p_in.data(), t_in.data(),
                 colo3_in.data(), xsqy, sza.data(), del_sza.data(), alb.data(),
@@ -166,7 +157,7 @@ void jlong(Ensemble *ensemble) {
                 np_xs, numj,
                 j_long, // output
                 // work arrays
-                rsf, xswk, psum_l, psum_u);
+                rsf, xswk, psum_l.data(), psum_u.data());
         });
 
     const Real zero = 0;
