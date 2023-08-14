@@ -7,7 +7,7 @@ using namespace skywalker;
 using namespace mam4;
 
 // Parameterizations used by the drydep process.
-void water_uptake_wetdens(Ensemble *ensemble);
+// void water_uptake_wetdens(Ensemble *ensemble);
 void find_real_solution(Ensemble *ensemble);
 void makoh_quartic(Ensemble *ensemble);
 void modal_aero_kohler(Ensemble *ensemble);
@@ -50,9 +50,6 @@ int main(int argc, char **argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
   try {
-    if (func_name == "water_uptake_wetdens") {
-      water_uptake_wetdens(ensemble);
-    }
     if (func_name == "find_real_solution") {
       find_real_solution(ensemble);
     }

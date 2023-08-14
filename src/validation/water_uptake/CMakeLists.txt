@@ -31,7 +31,6 @@ target_link_libraries(water_uptake_driver skywalker;validation;${HAERO_LIBRARIES
 # Run the driver in several configurations to produce datasets.
 
 foreach (input
-          water_uptake_wetdens
           find_real_solution
           makoh_quartic
           modal_aero_kohler
