@@ -168,6 +168,7 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
     // transmission factor above this layer
     const Real above_tra = C1 / (C2 + above_tau[kk]);
     // factor to calculate cld_mult
+    // BAD CONSTANT
     Real fac2 = haero::min(zero, 1.6 * coschi * above_tra - one);
     // BAD CONSTANT
     cld_mult[kk] =
@@ -433,10 +434,10 @@ void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
   ==============================================================================*/
 
   // @param[in] sza_in             ! solar zenith angle [degrees]
-  // @param[in] alb_in(nlev)       ! albedo
-  // @param[in]  p_in(nlev)         ! midpoint pressure [hPa]
-  // @param[in]  t_in(nlev)         ! Temperature profile [K]
-  // @param[in]  colo3_in(nlev)     ! o3 column density [molecules/cm^3]
+  // @param[in] alb_in(pver)       ! albedo
+  // @param[in]  p_in(pver)         ! midpoint pressure [hPa]
+  // @param[in]  t_in(pver)         ! Temperature profile [K]
+  // @param[in]  colo3_in(pver)     ! o3 column density [molecules/cm^3]
   // @param[in]  xsqy
   // @param[in]  sza
   // @param[in]  del_sza
@@ -463,9 +464,8 @@ void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
   /*----------------------------------------------------------------------
     ... interpolate table rsf to model variables
 ----------------------------------------------------------------------*/
-  const Real nlev = pver;
   const Real zero = 0;
-  interpolate_rsf(alb_in, sza_in, p_in, colo3_in, nlev, sza, del_sza, alb,
+  interpolate_rsf(alb_in, sza_in, p_in, colo3_in, pver, sza, del_sza, alb,
                   press, del_p, colo3, o3rat, del_alb, del_o3rat, etfphot,
                   rsf_tab, //  in
                   nw, nump, numsza, numcolo3, numalb, rsf, psum_l,
@@ -482,13 +482,14 @@ void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
    between 1 and 201.
   ------------------------------------------------------------------------------*/
 
-  for (int kk = 0; kk < nlev; kk++) {
+  for (int kk = 0; kk < pver; kk++) {
     /*----------------------------------------------------------------------
       ... get index into xsqy
      ----------------------------------------------------------------------*/
-    // BAD CONSTANT
+    
     // Fortran indexing to C++ indexing
     // number of temperatures in xsection table
+    // BAD CONSTANT for 201 and 148.5
     const int t_index = haero::min(201, haero::max(t_in[kk] - 148.5, 0)) - 1;
 
     /*----------------------------------------------------------------------
