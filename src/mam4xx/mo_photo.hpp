@@ -486,7 +486,7 @@ void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
     /*----------------------------------------------------------------------
       ... get index into xsqy
      ----------------------------------------------------------------------*/
-    
+
     // Fortran indexing to C++ indexing
     // number of temperatures in xsection table
     // BAD CONSTANT for 201 and 148.5
