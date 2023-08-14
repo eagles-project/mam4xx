@@ -1166,7 +1166,7 @@ public:
     Config(const Config &) = default;
     ~Config() = default;
     Config &operator=(const Config &) = default;
-    int nlev = 72;
+    int nlev = mam4::nlev;
 
     // mam_prevap_resusp_optcc values control the prevap_resusp calculations in
     // wetdepa_v2:

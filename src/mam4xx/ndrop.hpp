@@ -20,7 +20,7 @@ using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;
 
 // number of vertical levels
-constexpr int pver = 72;
+constexpr int pver = mam4::nlev;
 // Top level for troposphere cloud physics
 constexpr int top_lev = 7;
 constexpr int psat = 6; //  number of supersaturations to calc ccn concentration
