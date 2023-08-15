@@ -14,7 +14,7 @@ using namespace skywalker;
 using namespace mam4;
 using namespace haero;
 
-void modal_aero_water_uptake_wetdens(Ensemble *ensemble) {
+void modal_aero_water_uptake_dr_wetdens(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {

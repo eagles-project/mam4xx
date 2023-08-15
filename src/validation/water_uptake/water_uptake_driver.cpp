@@ -8,6 +8,7 @@ using namespace mam4;
 
 // Parameterizations used by the drydep process.
 // void water_uptake_wetdens(Ensemble *ensemble);
+void water_uptake_wetdens(Ensemble *ensemble);
 void find_real_solution(Ensemble *ensemble);
 void makoh_quartic(Ensemble *ensemble);
 void modal_aero_kohler(Ensemble *ensemble);
@@ -15,7 +16,7 @@ void modal_aero_water_uptake_rh_clearair(Ensemble *ensemble);
 void modal_aero_water_uptake_wetaer(Ensemble *ensemble);
 void modal_aero_water_uptake_dryaer(Ensemble *ensemble);
 void modal_aero_water_uptake_dr(Ensemble *ensemble);
-void modal_aero_water_uptake_wetdens(Ensemble *ensemble);
+void modal_aero_water_uptake_dr_wetdens(Ensemble *ensemble);
 
 void usage() {
   std::cerr << "aging_driver: a Skywalker driver for validating the "
@@ -50,6 +51,9 @@ int main(int argc, char **argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
   try {
+    if (func_name == "water_uptake_wetdens") {
+      water_uptake_wetdens(ensemble);
+    }
     if (func_name == "find_real_solution") {
       find_real_solution(ensemble);
     }
@@ -71,8 +75,8 @@ int main(int argc, char **argv) {
     if (func_name == "modal_aero_water_uptake_dr") {
       modal_aero_water_uptake_dr(ensemble);
     }
-    if (func_name == "modal_aero_water_uptake_wetdens") {
-      modal_aero_water_uptake_wetdens(ensemble);
+    if (func_name == "modal_aero_water_uptake_dr_wetdens") {
+      modal_aero_water_uptake_dr_wetdens(ensemble);
     }
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
