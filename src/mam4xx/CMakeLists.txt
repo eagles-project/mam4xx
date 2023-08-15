@@ -32,6 +32,7 @@ install(FILES
         drydep.hpp
         water_uptake.hpp
         ndrop.hpp
+        mo_photo.hpp
         DESTINATION include/mam4xx)
 
 add_library(mam4xx aero_modes.cpp)
