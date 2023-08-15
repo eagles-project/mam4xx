@@ -10,7 +10,7 @@ namespace mam4 {
 namespace mo_photo {
 
 // number of vertical levels
-constexpr int pver = 72;
+constexpr int pver = mam4::nlev;
 constexpr int pverm = pver - 1;
 
 using View5D = Kokkos::View<Real *****>;
