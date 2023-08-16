@@ -68,5 +68,38 @@ void convert_mass_mixing_ratios_to_vector(
   }
 }
 
+void create_synthetic_rsf_tab(View5D &rsf_tab, const int nw, const int nump,
+                              const int numsza, const int numcolo3,
+                              const int numalb, Real *synthetic_values) {
+
+  rsf_tab = View5D("rsf_tab", nw, nump, numsza, numcolo3, numalb);
+
+  auto rsf_tab_1 = Kokkos::subview(rsf_tab, Kokkos::ALL(), 1, Kokkos::ALL(),
+                                   Kokkos::ALL(), Kokkos::ALL());
+
+  auto rsf_tab_2 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(), 6,
+                                   Kokkos::ALL(), Kokkos::ALL());
+
+  auto rsf_tab_3 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(),
+                                   Kokkos::ALL(), 7, Kokkos::ALL());
+
+  auto rsf_tab_4 = Kokkos::subview(rsf_tab, Kokkos::ALL(), Kokkos::ALL(),
+                                   Kokkos::ALL(), Kokkos::ALL(), 3);
+
+  auto rsf_tab_5 = Kokkos::subview(rsf_tab, 0, Kokkos::ALL(), Kokkos::ALL(),
+                                   Kokkos::ALL(), Kokkos::ALL());
+
+  auto rsf_tab_6 = Kokkos::subview(rsf_tab, 9, Kokkos::ALL(), Kokkos::ALL(),
+                                   Kokkos::ALL(), Kokkos::ALL());
+
+  Kokkos::deep_copy(rsf_tab, synthetic_values[0]);
+  Kokkos::deep_copy(rsf_tab_1, synthetic_values[1]);
+  Kokkos::deep_copy(rsf_tab_2, synthetic_values[2]);
+  Kokkos::deep_copy(rsf_tab_3, synthetic_values[3]);
+  Kokkos::deep_copy(rsf_tab_4, synthetic_values[4]);
+  Kokkos::deep_copy(rsf_tab_5, synthetic_values[5]);
+  Kokkos::deep_copy(rsf_tab_6, synthetic_values[6]);
+}
+
 } // namespace validation
 } // namespace mam4

@@ -17,8 +17,17 @@ else() #CPU
   message(STATUS "Building for CPU")
 endif()
 
+#----------------------
+# Configurable options
+#----------------------
+
 option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
 option(ENABLE_SKYWALKER "Enable Skywalker cross validation" ON)
+set(NUM_VERTICAL_LEVELS 72 CACHE STRING "the number of vertical levels per column")
+
+if (NUM_VERTICAL_LEVELS LESS 72)
+  message(FATAL_ERROR "NUM_VERTICAL_LEVELS must be at least 72")
+endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
@@ -68,6 +77,7 @@ include_directories(${HAERO_INCLUDE_DIRS})
 include_directories("${PROJECT_BINARY_DIR}")
 include_directories("${MAM4XX_HAERO_DIR}/include")
 include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_BINARY_DIR}/src)
 
 link_directories("${MAM4XX_HAERO_DIR}/lib")
 

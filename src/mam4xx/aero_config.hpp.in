@@ -19,6 +19,10 @@ class Diagnostics; // fwd decl
 // Tendencies are identical in structure to prognostics.
 using Tendencies = Prognostics; // fwd decl
 
+// Number of vertical levels per column (must match the number in the
+// host model)
+constexpr int nlev = @NUM_VERTICAL_LEVELS@;
+
 /// @struct MAM4::AeroConfig: for use with all MAM4 process implementations
 class AeroConfig final {
 public:
@@ -74,6 +78,9 @@ public:
 
   /// Creates a container for prognostic variables on the specified number of
   /// vertical levels. All views must be set manually.
+  /// NOTE: it's currently possible to configure a Prognostics object with a
+  /// NOTE: number of vertical levels different from mam4::nlev above, in order
+  /// NOTE: to support various testing configurations.
   explicit Prognostics(int num_levels) : nlev_(num_levels) {}
 
   Prognostics() = default; // use only for creating containers of Prognostics!
@@ -164,6 +171,9 @@ public:
 
   /// Creates a container for diagnostic variables on the specified number of
   /// vertical levels. All views must be set manually.
+  /// NOTE: it's currently possible to configure a Prognostics object with a
+  /// NOTE: number of vertical levels different from mam4::nlev above, in order
+  /// NOTE: to support various testing configurations.
   explicit Diagnostics(int num_levels) : nlev_(num_levels) {}
 
   Diagnostics() = default; // use only for creating containers of Diagnostics!
