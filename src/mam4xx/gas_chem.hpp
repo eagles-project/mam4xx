@@ -58,8 +58,8 @@ void usrrxt(Real rxt[rxntot], // inout
     const Real fc = 3.0e-31 * haero::pow(300. / temp, 3.3);
     const Real ko = fc * mtot / (one + fc * mtot / 1.5e-12);
     rxt[usr_SO2_OH_ndx] =
-        ko /
-        haero::pow(0.6, one + haero::square(haero::log10(fc * mtot / 1.5e-12)));
+        ko * haero::pow(0.6, one / (one + haero::square(haero::log10(
+                                              fc * mtot / 1.5e-12))));
   }
 
 } // usrrxt
