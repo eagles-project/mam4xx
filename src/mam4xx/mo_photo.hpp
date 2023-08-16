@@ -17,6 +17,8 @@ constexpr int pverm = pver - 1;
 using View5D = Kokkos::View<Real *****>;
 using View4D = Kokkos::View<Real ****>;
 using View2D = DeviceType::view_2d<Real>;
+using View1D = DeviceType::view_1d<Real>;
+using ViewInt1D = DeviceType::view_1d<int>;
 
 KOKKOS_INLINE_FUNCTION
 void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
@@ -547,6 +549,146 @@ void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
   }   // end kk
 
 } // jlong
+const Real phtcnt = 1;// number of photolysis reactions
+KOKKOS_INLINE_FUNCTION
+void table_photo(const View2D &photo, // out
+                 const ColumnView &pmid,
+                 const ColumnView &pdel,
+                 const ColumnView &temper, // in
+                 const ColumnView &colo3_in,
+                 const Real zen_angle,
+                 const Real srf_alb,
+                 const ColumnView &lwc,
+                 const ColumnView &clouds, // in
+                 const Real esfact, 
+                 const View4D &xsqy,
+                 const View1D& sza,
+                 const View1D&del_sza,
+                 const View1D&alb,
+                 const View1D&press,
+                 const View1D&del_p,
+                 const View1D&colo3,
+                 const View1D&o3rat,
+                 const View1D&del_alb,
+                 const View1D&del_o3rat,
+                 const View1D&etfphot,
+                 const View5D &rsf_tab,
+                 const View1D&prs,
+                 const View1D&dprs,
+                 const int nw,
+                 const int nump,
+                 const int numsza,
+                 const int numcolo3,
+                 const int numalb,
+                 const int np_xs,
+                 const int numj,
+                 const View1D&pht_alias_mult_1,
+                 const ViewInt1D&lng_indexer,
+                 // work arrays
+                 const View2D &j_long,  
+                 const View2D &rsf,
+                 const View2D &xswk,
+                 const View1D &psum_l,
+                 const View1D &psum_u,
+                 const View2D &lng_prates
+                  )
+{
+ /*-----------------------------------------------------------------
+     ... table photorates for wavelengths > 200nm
+-----------------------------------------------------------------*/
+
+  //@param[in] photos_icol (pver,phtcnt)     photodissociation rates at icol [1/s]
+  //@param[in] pmid(pver)              midpoint pressure [Pa]
+  //@param[in] pdel(pver) pressure delta about midpoint [Pa]
+  //@param[in] temper(pver)            midpoint temperature [K]
+  //@param[in] colo3_in(pver) col_dens(icol,pver,0) ! column densities [molecules/cm^2]
+  //@param[in] zen_angle(icol)               solar zenith angle [radians]
+  //@param[in] srf_alb(icols)                surface albedo
+  //@param[in] lwc(icol,pver)                liquid water content [kg/kg]
+  //@param[in] clouds(icol,pver)             cloud fraction
+  //@param[in] esfact                        earth sun distance factor
+
+
+  if( phtcnt < 1 ) {
+   return;
+  }  
+
+  const Real zero =0;
+
+  const Real Pa2mb = 1.e-2;// pascals to mb
+  const Real r2d   = 180.0/haero::Constants::pi;// degrees to radians 
+  const Real max_zen_angle = 88.85;//  degrees
+  // lng_prates(nlng,pver) work array 
+
+  // vertical pressure array [hPa]
+  Real parg[pver]= {};
+  Real eff_alb[pver]= {};
+  Real cld_mult[pver]= {};
+
+  /*-----------------------------------------------------------------
+    ... zero all photorates
+    -----------------------------------------------------------------*/
+  // col_loop
+  // for (int i = 0; i < ncol; ++i)
+  // {
+    const Real sza_in = zen_angle*r2d;
+    // daylight
+    if( sza_in >= zero && sza_in < max_zen_angle )
+    {      
+      // auto fac1 = Kokkos::subview(pdel, i, Kokkos::ALL());
+      // auto cld_line = Kokkos::subview(clouds, i, Kokkos::ALL());
+      // auto lwc_line = Kokkos::subview(lwc, i, Kokkos::ALL());
+      // auto colo3 = Kokkos::subview(col_dens, i, Kokkos::ALL(),0);
+      // parg(:)     = Pa2mb*pmid(i,:)
+      // auto un_parg = Kokkos::subview(pmid, i, Kokkos::ALL());
+      // auto tline = Kokkos::subview(temper, i, Kokkos::ALL());
+
+      // auto photo_icol = Kokkos::subview(photo,  i, Kokkos::ALL(), Kokkos::ALL());
+
+      /*-----------------------------------------------------------------
+           ... compute eff_alb and cld_mult -- needs to be before jlong
+      -----------------------------------------------------------------*/
+      cloud_mod(zen_angle, clouds.data(), lwc.data(), pdel.data(),
+              srf_alb, //  in
+              eff_alb, cld_mult);
+
+
+       for (int kk = 0; kk < pver; ++kk)
+      {
+        parg[kk] = pmid(kk)*Pa2mb;
+        cld_mult[kk] *=  esfact;
+      } // kk 
+      /*-----------------------------------------------------------------
+       ... long wave length component
+      -----------------------------------------------------------------*/
+
+      jlong(sza_in, eff_alb, parg, temper.data(),
+                colo3_in.data(), xsqy, sza.data(), del_sza.data(), alb.data(),
+                press.data(), del_p.data(), colo3.data(), o3rat.data(),
+                del_alb.data(), del_o3rat.data(), etfphot.data(),
+                rsf_tab, // in
+                prs.data(), dprs.data(), nw, nump, numsza, numcolo3, numalb,
+                np_xs, numj,
+                lng_prates, // output
+                // work arrays
+                rsf, xswk, psum_l.data(), psum_u.data());
+
+      for (int mm = 0; mm < phtcnt; ++mm)
+      {
+        if( lng_indexer(mm) > 0 ){
+          for (int kk = 0; kk < pver; ++kk)
+            {
+          photo(kk,mm) = cld_mult[kk]*(photo(kk,mm) +
+                             pht_alias_mult_1(mm)*lng_prates(lng_indexer(mm),kk));
+        }// end kk  
+        } // end if 
+      }// end mm
+    }
+  // } // end col_loop
+
+}
+
+
 
 } // namespace mo_photo
 } // end namespace mam4
