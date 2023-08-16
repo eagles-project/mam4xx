@@ -33,6 +33,7 @@ void newton_raphson_iter(Ensemble *ensemble);
 void imp_sol(Ensemble *ensemble);
 void adjrxt(Ensemble *ensemble);
 void setrxt(Ensemble *ensemble);
+void usrrxt(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -72,7 +73,13 @@ int main(int argc, char **argv) {
       adjrxt(ensemble);
     } else if (func_name == "setrxt") {
       setrxt(ensemble);
-    }
+    } else if (func_name == "usrrxt") {
+      usrrxt(ensemble);
+    } else {
+      std::cerr << "Error: Function name '" << func_name
+                << "' does not have an implemented test!" << std::endl;
+      exit(1);
+    }  
 
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
