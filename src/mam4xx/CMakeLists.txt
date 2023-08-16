@@ -1,9 +1,16 @@
 include(GNUInstallDirs)
 
+# Generate aero_config.hpp, which contains build-time parameters.
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/aero_config.hpp.in
+  ${CMAKE_CURRENT_BINARY_DIR}/aero_config.hpp
+  @ONLY
+)
+
 # Most of mam4xx is implemented in C++ headers, so we must
 # install them for a client.
 install(FILES
-        aero_config.hpp
+        ${CMAKE_CURRENT_BINARY_DIR}/aero_config.hpp
         aero_model.hpp
         aero_modes.hpp
         calcsize.hpp

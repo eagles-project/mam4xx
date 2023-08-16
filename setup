@@ -53,6 +53,13 @@ PREFIX=$PWD/$1
 HAERO_DIR=$DIR_HAERO
 
 #-----------------------------------------------------------------------------
+#                       Aerosol parameterization settings
+#-----------------------------------------------------------------------------
+
+# the number of vertical levels in each column
+NUM_VERTICAL_LEVELS=72
+
+#-----------------------------------------------------------------------------
 #                         Build features and parameters
 #-----------------------------------------------------------------------------
 
@@ -90,6 +97,7 @@ cmake \
  -DCMAKE_INSTALL_PREFIX:PATH=\$PREFIX \
  -DCMAKE_BUILD_TYPE=\$BUILD_TYPE \
  -DMAM4XX_HAERO_DIR=\$HAERO_DIR \
+ -DNUM_VERTICAL_LEVELS=\$NUM_VERTICAL_LEVELS \
  -DENABLE_SKYWALKER=ON \
  \$OPTIONS \
  -G "\$GENERATOR" \

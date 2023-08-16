@@ -2,6 +2,7 @@
 #define MAM4XX_MO_PHOTO_HPP
 
 #include <haero/math.hpp>
+#include <mam4xx/aero_config.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
@@ -10,7 +11,7 @@ namespace mam4 {
 namespace mo_photo {
 
 // number of vertical levels
-constexpr int pver = 72;
+constexpr int pver = mam4::nlev;
 constexpr int pverm = pver - 1;
 
 using View5D = Kokkos::View<Real *****>;

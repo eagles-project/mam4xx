@@ -55,6 +55,7 @@ git submodule update --init || exit
 
 cmake \
   -DMAM4XX_HAERO_DIR=$HAERO_INSTALL \
+  -DNUM_VERTICAL_LEVELS=72 \
   -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
   -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
   -DCMAKE_C_COMPILER=$CC \
