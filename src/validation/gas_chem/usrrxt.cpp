@@ -16,28 +16,21 @@ using namespace gas_chemistry;
 
 void usrrxt(Ensemble *ensemble) {
 
-	ensemble->process([=](const Input &input, Output &output) {
+  ensemble->process([=](const Input &input, Output &output) {
+    const Real temp = input.get_array("temp")[0];
+    const Real mtot = input.get_array("mtot")[0];
 
-		const Real temp = input.get_array("temp")[0];
-		const Real mtot = input.get_array("mtot")[0];
+    auto rxt = input.get_array("rxt");
+    const auto invariants = input.get_array("invariants");
+    const int usr_HO2_HO2_ndx = int(input.get_array("usr_HO2_HO2_ndx")[0]) - 1;
+    const int usr_DMS_OH_ndx = int(input.get_array("usr_DMS_OH_ndx")[0]) - 1;
+    const int usr_SO2_OH_ndx = int(input.get_array("usr_SO2_OH_ndx")[0]) - 1;
+    const int inv_h2o_ndx = int(input.get_array("inv_h2o_ndx")[0]) - 1;
 
-		auto rxt = input.get_array("rxt");
-		const auto invariants  = input.get_array("invariants");
-		const int usr_HO2_HO2_ndx = int(input.get_array("usr_HO2_HO2_ndx")[0])-1;
-		const int usr_DMS_OH_ndx = int(input.get_array("usr_DMS_OH_ndx")[0])-1;
-		const int usr_SO2_OH_ndx = int(input.get_array("usr_SO2_OH_ndx")[0])-1;
-		const int inv_h2o_ndx = int(input.get_array("inv_h2o_ndx")[0])-1;
+    usrrxt(rxt.data(), // inout
+           temp, invariants.data(), mtot, usr_HO2_HO2_ndx, usr_DMS_OH_ndx,
+           usr_SO2_OH_ndx, inv_h2o_ndx);
 
-		usrrxt(rxt.data(), // inout
-               temp, invariants.data(),
-               mtot,
-               usr_HO2_HO2_ndx,
-               usr_DMS_OH_ndx,
-               usr_SO2_OH_ndx, 
-               inv_h2o_ndx);
-
-		output.set("rxt", rxt);
-  
+    output.set("rxt", rxt);
   });
 }
-
