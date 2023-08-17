@@ -36,6 +36,7 @@ void usrrxt(Real rxt[rxntot], // inout
   -----------------------------------------------------------------*/
   const Real one = 1.0;
   if (usr_HO2_HO2_ndx > 0) {
+    // BAD CONSTANT
     const Real ko = 3.5e-13 * haero::exp(430.0 / temp);
     const Real kinf = 1.7e-33 * mtot * haero::exp(1000. / temp);
     const Real fc =
@@ -47,6 +48,7 @@ void usrrxt(Real rxt[rxntot], // inout
        ... DMS + OH  --> .5 * SO2
    -----------------------------------------------------------------*/
   if (usr_DMS_OH_ndx > 0) {
+    // BAD CONSTANT
     const Real ko = one + 5.5e-31 * haero::exp(7460. / temp) * mtot * 0.21;
     rxt[usr_DMS_OH_ndx] = 1.7e-42 * haero::exp(7810. / temp) * mtot * 0.21 / ko;
   }
@@ -55,6 +57,7 @@ void usrrxt(Real rxt[rxntot], // inout
          ... SO2 + OH  --> SO4  (REFERENCE?? - not Liao)
   -----------------------------------------------------------------*/
   if (usr_SO2_OH_ndx > 0) {
+    // BAD CONSTANT
     const Real fc = 3.0e-31 * haero::pow(300. / temp, 3.3);
     const Real ko = fc * mtot / (one + fc * mtot / 1.5e-12);
     rxt[usr_SO2_OH_ndx] =
