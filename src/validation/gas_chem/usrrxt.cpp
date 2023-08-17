@@ -17,7 +17,7 @@ using namespace gas_chemistry;
 void usrrxt(Ensemble *ensemble) {
 
   ensemble->process([=](const Input &input, Output &output) {
-    const Real temp = input.get_array("temp")[0];
+    const Real temperature = input.get_array("temp")[0];
     const Real mtot = input.get_array("mtot")[0];
 
     auto rxt = input.get_array("rxt");
@@ -28,7 +28,7 @@ void usrrxt(Ensemble *ensemble) {
     const int inv_h2o_ndx = int(input.get_array("inv_h2o_ndx")[0]) - 1;
 
     usrrxt(rxt.data(), // inout
-           temp, invariants.data(), mtot, usr_HO2_HO2_ndx, usr_DMS_OH_ndx,
+           temperature, invariants.data(), mtot, usr_HO2_HO2_ndx, usr_DMS_OH_ndx,
            usr_SO2_OH_ndx, inv_h2o_ndx);
 
     output.set("rxt", rxt);
