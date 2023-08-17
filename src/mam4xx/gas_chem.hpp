@@ -39,8 +39,8 @@ void usrrxt(Real rxt[rxntot], // inout
     // BAD CONSTANT
     const Real ko = 3.5e-13 * haero::exp(430.0 / temperature);
     const Real kinf = 1.7e-33 * mtot * haero::exp(1000. / temperature);
-    const Real fc =
-        one + 1.4e-21 * invariants[inv_h2o_ndx] * haero::exp(2200. / temperature);
+    const Real fc = one + 1.4e-21 * invariants[inv_h2o_ndx] *
+                              haero::exp(2200. / temperature);
     rxt[usr_HO2_HO2_ndx] = (ko + kinf) * fc;
   }
 
@@ -49,8 +49,10 @@ void usrrxt(Real rxt[rxntot], // inout
    -----------------------------------------------------------------*/
   if (usr_DMS_OH_ndx > 0) {
     // BAD CONSTANT
-    const Real ko = one + 5.5e-31 * haero::exp(7460. / temperature) * mtot * 0.21;
-    rxt[usr_DMS_OH_ndx] = 1.7e-42 * haero::exp(7810. / temperature) * mtot * 0.21 / ko;
+    const Real ko =
+        one + 5.5e-31 * haero::exp(7460. / temperature) * mtot * 0.21;
+    rxt[usr_DMS_OH_ndx] =
+        1.7e-42 * haero::exp(7810. / temperature) * mtot * 0.21 / ko;
   }
 
   /*-----------------------------------------------------------------

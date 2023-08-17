@@ -28,8 +28,8 @@ void usrrxt(Ensemble *ensemble) {
     const int inv_h2o_ndx = int(input.get_array("inv_h2o_ndx")[0]) - 1;
 
     usrrxt(rxt.data(), // inout
-           temperature, invariants.data(), mtot, usr_HO2_HO2_ndx, usr_DMS_OH_ndx,
-           usr_SO2_OH_ndx, inv_h2o_ndx);
+           temperature, invariants.data(), mtot, usr_HO2_HO2_ndx,
+           usr_DMS_OH_ndx, usr_SO2_OH_ndx, inv_h2o_ndx);
 
     output.set("rxt", rxt);
   });
