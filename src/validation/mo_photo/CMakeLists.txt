@@ -15,6 +15,7 @@ add_executable(mo_photo_driver
                calc_sum_wght.cpp
                interpolate_rsf.cpp
                jlong.cpp
+               table_photo.cpp
                )
 
 target_link_libraries(mo_photo_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -37,6 +38,7 @@ set(TEST_LIST
     stand_synthetic_calc_sum_wght_ts_355
     stand_synthetic_interpolate_rsf_ts_355
     stand_synthetic_jlong_ts_355
+    stand_synthetic_table_photo_ts_355
     )
 # # matching the tests and errors, just for convenience
 
@@ -48,6 +50,7 @@ set(ERROR_THRESHOLDS
     6e-8
     6e-6
     8e-6
+    ${DEFAULT_TOL}
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.

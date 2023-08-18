@@ -567,9 +567,9 @@ void table_photo(const View2D &photo, // out
                  const int numalb, const int np_xs, const int numj,
                  const View1D &pht_alias_mult_1, const ViewInt1D &lng_indexer,
                  // work arrays
-                 const View2D &j_long, const View2D &rsf, const View2D &xswk,
-                 const View1D &psum_l, const View1D &psum_u,
-                 const View2D &lng_prates) {
+                 const View2D &lng_prates, const View2D &rsf, const View2D &xswk,
+                 const View1D &psum_l, const View1D &psum_u
+                 ) {
   /*-----------------------------------------------------------------
       ... table photorates for wavelengths > 200nm
  -----------------------------------------------------------------*/

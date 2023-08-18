@@ -26,6 +26,8 @@ Tendencies create_tendencies(int num_levels);
 
 namespace validation {
 
+using View2D = typename DeviceType::view_2d<Real>;
+
 // forward functions from mam4::testing
 using namespace mam4::testing;
 
@@ -123,6 +125,12 @@ void create_synthetic_rsf_tab(View5D &rsf_tab, const int nw, const int nump,
                               const int numsza, const int numcolo3,
                               const int numalb, Real *synthetic_values);
 
+void convert_1d_std_to_2d_view_device(const std::vector<Real>& pmid_db,
+                                 const View2D& var_device);
+
+void convert_2d_view_device_to_1d_std(const View2D& var_device,
+                                      std::vector<Real>& var_std
+                                 );
 } // namespace validation
 } // namespace mam4
 
