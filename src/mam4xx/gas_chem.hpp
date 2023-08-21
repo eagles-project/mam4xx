@@ -21,7 +21,8 @@ namespace gas_chemistry {
 // BAD CONSTANTs
 const int itermax = 11;
 const Real rel_err = 1.0e-3;
-const Real high_rel_err = 1.0e-4;
+// NOTE: high_rel_err is unused currently
+// const Real high_rel_err = 1.0e-4;
 const int max_time_steps = 1000;
 
 // initialize the solver (error tolerance)
@@ -46,6 +47,27 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
                          Real max_delta[clscnt4],
                          // work array
                          Real epsilon[clscnt4]) {
+
+  // dti := 1 / dt
+  // lrxt := reaction rates in 1D array [1/cm^3/s]
+  // lhet := washout rates [1/s]
+  // iter_invariant := dti * solution + ind_prd
+  // factor := boolean controlling whether to do LU factorization
+  // lsol is local solution--appears to be identical to 'solution'
+  // looks like 'solution' is local to imp_sol() and 'lsol' is local to
+  // newton_raphson_iter(), and the final solutions is 'base_sol'
+  // these are volume mixing ratios [kmol species/kmol dry air]
+  // lsol := base_sol (at initialization), then when converged base_sol = lsol
+  // solution := array from imp_sol that holds the intermediate solutions and
+  //             also holds the solution after converged
+  // converged := array for entrywise convergence bools
+  // convergence := overall bool flag for convergence
+  // prod/loss := chemical production/loss rates [1/cm^3/s]
+  // NOTE: max_delta doesn't appear to be used for anything within gas_chem.hpp
+  //       however, it looks like it's written to output in MAM4
+  // max_delta := abs(forcing / solution) if abs(solution) > 1.0e-20 and
+  //              0 otherwise
+  // epsilon := rel_err = 1.0e-3 (hardcoded above)
 
   // -----------------------------------------------------
   //  the newton-raphson iteration for f(y) = 0
@@ -79,6 +101,9 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
     imp_prod_loss(prod, loss,        // out
                   lsol, lrxt, lhet); // in
 
+    // the units are internally consistent here, providing that
+    // iter_invariant, prod, loss all have units [1/s] to match up with
+    // solution (vmr) [-] and dti [1/s]. however, there could be other answers
     for (int mm = 0; mm < clscnt4; ++mm) {
       forcing[mm] =
           solution[mm] * dti - (iter_invariant[mm] + prod[mm] - loss[mm]);
@@ -96,6 +121,9 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
     //  ... convergence measures
     // -----------------------------------------------------------------------
 
+    // NOTE: is there a particular reason we don't check on the first iteration?
+    // seems like it'd be better to avoid the if on every iteration loop.
+    // same deal below
     if (nr_iter > 0) {
       for (int kk = 0; kk < clscnt4; ++kk) {
         int mm = permute_4[kk];
@@ -133,19 +161,28 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
     //  ... check for convergence
     // -----------------------------------------------------------------------
 
+
     if (nr_iter > 0) {
       convergence = true;
       for (int kk = 0; kk < clscnt4; ++kk) {
         converged[kk] = true;
 
         int mm = permute_4[kk];
+        // FIXME: is there a computational reason this needs to happen?
+        // I suspect not, given that epsilon is hard-coded to 1e-3, meaning that
+        // all of this logic surrounding 'converged[kk] = ...' is unnecessary
         bool frc_mask = haero::abs(forcing[mm]) > small;
         if (frc_mask) {
+          // this ends up effectively being:
+          //                         if (small < abs(forcing) <= eps * abs(sol))
+          //                            => converged
+          // so the lower bound appears unnecessary
           converged[kk] =
               haero::abs(forcing[mm]) <= epsilon[kk] * haero::abs(solution[mm]);
         } else {
+          // and this is just; if (abs(forcing) <= small <= eps) => converged
+          // and the implicit comparison of small and eps is not helpful
           converged[kk] = true;
-
         } // frc_mask
         if (!converged[kk]) {
           convergence = false;
@@ -155,9 +192,9 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
       if (convergence) {
         return;
       }
-    } // end nr_iter
-  }   // end nr_iter
-} // newton_raphson_iter
+    } // end if (nr_iter > 0)
+  }   // end nr_iter loop
+} // newton_raphson_iter() function
 
 KOKKOS_INLINE_FUNCTION
 void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
@@ -176,6 +213,10 @@ void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
   // this source is meant for small l1 cache machines such as
   // the intel pentium and itanium cpus
   // ---------------------------------------------------------------------------
+
+  // NOTE:
+  // extfrc := external in-situ forcing [1/cm^3/s]
+
   const Real zero = 0;
   const Real half = 0.5;
   const Real one = 1;
@@ -194,6 +235,8 @@ void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
   // -----------------------------------------------------------------------
   //  ... class independent forcing
   // -----------------------------------------------------------------------
+  // FIXME: BAD CONSTANT
+  // what does this 4 represent, and would it ever be different?
   indprd(4,                       // in
          ind_prd,                 // inout
          reaction_rates, extfrc); // in
@@ -208,6 +251,8 @@ void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
   int cut_cnt = 0;
   int fail_cnt = 0;
   int stp_con_cnt = 0;
+  // track how much of the outer time step = delt (interval) has been completed
+  // during Newton-Raphson iteration
   Real interval_done = zero;
   // time_step_loop
   for (int i = 0; i < max_time_steps; ++i) {
@@ -230,6 +275,13 @@ void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
     //  ... set the iteration invariant part of the function f(y)
     // -----------------------------------------------------------------------
 
+    // FIXME: the units seem wrong here--could these arrays hold quantities
+    // with different units?
+    // ind_prd has units [1/cm^3/s] (for the entries that are nonzero)
+    // dti units are [1/s], and
+    // solution is a volume mixing ratio [kmol species/kmol dry air]
+    // NOTE: this could be correct if solution had units [1/cm^3]
+    // which would line up with a number concentration
     for (int mm = 0; mm < clscnt4; ++mm) {
       iter_invariant[mm] = dti * solution[mm] + ind_prd[mm];
     } // mm
@@ -262,11 +314,9 @@ void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
       stp_con_cnt = 0;
 
       if (cut_cnt < cut_limit) {
-        cut_cnt += cut_cnt;
-
+        cut_cnt += 1;
         if (cut_cnt < cut_limit) {
           dt *= half;
-
         } else {
           dt *= 0.1;
         } // cut_cnt < cut_limit
@@ -297,7 +347,7 @@ void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
     if (haero::abs(delt - interval_done) <= 0.0001) {
       if (fail_cnt > 0) {
         // FIXME: probably handle this more gracefully via error logging?
-        printf("'imp_sol : @ (lchnk,lev,col) = \n");
+        printf("ERROR: imp_sol failure @ (lchnk,lev,col) = \n");
       }
       break;
     } else {
