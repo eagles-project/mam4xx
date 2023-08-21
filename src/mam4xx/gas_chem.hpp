@@ -24,6 +24,51 @@ const Real rel_err = 1.0e-3;
 const Real high_rel_err = 1.0e-4;
 const int max_time_steps = 1000;
 
+KOKKOS_INLINE_FUNCTION
+void usrrxt(Real rxt[rxntot], // inout
+            const Real temperature, const Real invariants[nfs], const Real mtot,
+            const int usr_HO2_HO2_ndx, const int usr_DMS_OH_ndx,
+            const int usr_SO2_OH_ndx, const int inv_h2o_ndx) {
+
+  /*-----------------------------------------------------------------
+   ... ho2 + ho2 --> h2o2
+   note: this rate involves the water vapor number density
+  -----------------------------------------------------------------*/
+  const Real one = 1.0;
+  if (usr_HO2_HO2_ndx > 0) {
+    // BAD CONSTANT
+    const Real ko = 3.5e-13 * haero::exp(430.0 / temperature);
+    const Real kinf = 1.7e-33 * mtot * haero::exp(1000. / temperature);
+    const Real fc = one + 1.4e-21 * invariants[inv_h2o_ndx] *
+                              haero::exp(2200. / temperature);
+    rxt[usr_HO2_HO2_ndx] = (ko + kinf) * fc;
+  }
+
+  /*-----------------------------------------------------------------
+       ... DMS + OH  --> .5 * SO2
+   -----------------------------------------------------------------*/
+  if (usr_DMS_OH_ndx > 0) {
+    // BAD CONSTANT
+    const Real ko =
+        one + 5.5e-31 * haero::exp(7460. / temperature) * mtot * 0.21;
+    rxt[usr_DMS_OH_ndx] =
+        1.7e-42 * haero::exp(7810. / temperature) * mtot * 0.21 / ko;
+  }
+
+  /*-----------------------------------------------------------------
+         ... SO2 + OH  --> SO4  (REFERENCE?? - not Liao)
+  -----------------------------------------------------------------*/
+  if (usr_SO2_OH_ndx > 0) {
+    // BAD CONSTANT
+    const Real fc = 3.0e-31 * haero::pow(300. / temperature, 3.3);
+    const Real ko = fc * mtot / (one + fc * mtot / 1.5e-12);
+    rxt[usr_SO2_OH_ndx] =
+        ko * haero::pow(0.6, one / (one + haero::square(haero::log10(
+                                              fc * mtot / 1.5e-12))));
+  }
+
+} // usrrxt
+
 // initialize the solver (error tolerance)
 KOKKOS_INLINE_FUNCTION
 void imp_slv_inti(Real epsilon[clscnt4]) {
