@@ -614,12 +614,12 @@ void table_photo(const View2D &photo, // out
     return;
   }
 
-  const Real zero = 0;
+  constexpr Real zero = 0;
 
-  const Real Pa2mb = 1.e-2;                      // pascals to mb
-  const Real r2d = 180.0 / haero::Constants::pi; // degrees to radians
-  const Real max_zen_angle = 88.85;              //  degrees
-  // lng_prates(nlng,pver) work array
+  constexpr Real Pa2mb = 1.e-2;                      // pascals to mb
+  constexpr Real r2d = 180.0 / haero::Constants::pi; // degrees to radians
+  // BAD CONSTANT
+  constexpr Real max_zen_angle = 88.85; //  degrees
 
   // vertical pressure array [hPa]
   Real parg[pver] = {};

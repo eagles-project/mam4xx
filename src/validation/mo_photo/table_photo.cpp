@@ -150,12 +150,13 @@ void table_photo(Ensemble *ensemble) {
     View2D lwc("lwc", ncol, pver);
     View2D clouds("clouds", ncol, pver);
 
-    mam4::validation::convert_1d_std_to_2d_view_device(pmid_db, pmid);
-    mam4::validation::convert_1d_std_to_2d_view_device(pdel_db, pdel);
-    mam4::validation::convert_1d_std_to_2d_view_device(temper_db, temper);
-    mam4::validation::convert_1d_std_to_2d_view_device(colo3_in_db, colo3_in);
-    mam4::validation::convert_1d_std_to_2d_view_device(lwc_db, lwc);
-    mam4::validation::convert_1d_std_to_2d_view_device(clouds_db, clouds);
+    mam4::validation::convert_1d_vector_to_2d_view_device(pmid_db, pmid);
+    mam4::validation::convert_1d_vector_to_2d_view_device(pdel_db, pdel);
+    mam4::validation::convert_1d_vector_to_2d_view_device(temper_db, temper);
+    mam4::validation::convert_1d_vector_to_2d_view_device(colo3_in_db,
+                                                          colo3_in);
+    mam4::validation::convert_1d_vector_to_2d_view_device(lwc_db, lwc);
+    mam4::validation::convert_1d_vector_to_2d_view_device(clouds_db, clouds);
 
     auto srf_alb_host = View1DHost((Real *)srf_alb_db.data(), ncol);
     auto zen_angle_host = View1DHost((Real *)zen_angle_db.data(), ncol);
@@ -202,8 +203,8 @@ void table_photo(Ensemble *ensemble) {
         Kokkos::subview(photo, Kokkos::ALL(), Kokkos::ALL(), 0);
     const Real zero = 0;
     std::vector<Real> photo_out(pver * ncol, zero);
-    mam4::validation::convert_2d_view_device_to_1d_std(photo_out_device,
-                                                       photo_out);
+    mam4::validation::convert_2d_view_device_to_1d_vector(photo_out_device,
+                                                          photo_out);
     output.set("photo", photo_out);
   });
 }

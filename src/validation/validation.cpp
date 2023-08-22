@@ -101,8 +101,8 @@ void create_synthetic_rsf_tab(View5D &rsf_tab, const int nw, const int nump,
   Kokkos::deep_copy(rsf_tab_6, synthetic_values[6]);
 }
 
-void convert_1d_std_to_2d_view_device(const std::vector<Real> &var_std,
-                                      const View2D &var_device) {
+void convert_1d_vector_to_2d_view_device(const std::vector<Real> &var_std,
+                                         const View2D &var_device) {
   auto host = Kokkos::create_mirror_view(var_device);
   int count = 0;
   for (int d2 = 0; d2 < var_device.extent(1); ++d2) {
@@ -114,8 +114,8 @@ void convert_1d_std_to_2d_view_device(const std::vector<Real> &var_std,
   Kokkos::deep_copy(var_device, host);
 }
 
-void convert_2d_view_device_to_1d_std(const View2D &var_device,
-                                      std::vector<Real> &var_std) {
+void convert_2d_view_device_to_1d_vector(const View2D &var_device,
+                                         std::vector<Real> &var_std) {
   auto host = Kokkos::create_mirror_view(var_device);
   Kokkos::deep_copy(host, var_device);
   int count = 0;
