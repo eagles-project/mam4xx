@@ -74,7 +74,7 @@ foreach (input
          compute_activation_tend_do_act_false
          compute_updraft_mixing_ratio
          ma_convproc_tend
-         #ma_convproc_dp_intr
+         ma_convproc_dp_intr
          compute_tendencies
          )
 
