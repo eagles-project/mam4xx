@@ -2,7 +2,6 @@
 #define MAM4XX_MO_PHOTO_HPP
 
 #include <haero/math.hpp>
-#include <mam4xx/aero_config.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
@@ -320,6 +319,7 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
     if (p_in[kk] > press[0]) {
       pind = 1;
       wght1 = one;
+
       // Fortran to C++ indexing
     } else if (p_in[kk] <= press[nump - 1]) {
       // Fortran to C++ indexing
@@ -628,23 +628,9 @@ void table_photo(const View2D &photo, // out
   /*-----------------------------------------------------------------
     ... zero all photorates
     -----------------------------------------------------------------*/
-  // col_loop
-  // for (int i = 0; i < ncol; ++i)
-  // {
   const Real sza_in = zen_angle * r2d;
   // daylight
   if (sza_in >= zero && sza_in < max_zen_angle) {
-    // auto fac1 = Kokkos::subview(pdel, i, Kokkos::ALL());
-    // auto cld_line = Kokkos::subview(clouds, i, Kokkos::ALL());
-    // auto lwc_line = Kokkos::subview(lwc, i, Kokkos::ALL());
-    // auto colo3 = Kokkos::subview(col_dens, i, Kokkos::ALL(),0);
-    // parg(:)     = Pa2mb*pmid(i,:)
-    // auto un_parg = Kokkos::subview(pmid, i, Kokkos::ALL());
-    // auto tline = Kokkos::subview(temper, i, Kokkos::ALL());
-
-    // auto photo_icol = Kokkos::subview(photo,  i, Kokkos::ALL(),
-    // Kokkos::ALL());
-
     /*-----------------------------------------------------------------
          ... compute eff_alb and cld_mult -- needs to be before jlong
     -----------------------------------------------------------------*/
@@ -672,7 +658,7 @@ void table_photo(const View2D &photo, // out
           rsf, xswk, psum_l.data(), psum_u.data());
 
     for (int mm = 0; mm < phtcnt; ++mm) {
-      if (lng_indexer(mm) > 0) {
+      if (lng_indexer(mm) > -1) {
         for (int kk = 0; kk < pver; ++kk) {
           photo(kk, mm) = cld_mult[kk] *
                           (photo(kk, mm) + pht_alias_mult_1(mm) *

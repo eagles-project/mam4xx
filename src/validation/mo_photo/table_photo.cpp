@@ -4,8 +4,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
 
@@ -17,7 +15,6 @@ using namespace mo_photo;
 void table_photo(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
 
-#if 1
     using View1DHost = typename HostType::view_1d<Real>;
     using View1D = typename DeviceType::view_1d<Real>;
     using View2D = typename DeviceType::view_2d<Real>;
@@ -93,10 +90,6 @@ void table_photo(Ensemble *ensemble) {
     const auto etfphot = View1D("etfphot", nw);
     Kokkos::deep_copy(etfphot, etfphot_host);
 
-    // auto _host = View1DHost((Real *).data(), );
-    // const auto  = View1D("", );
-    // Kokkos::deep_copy(, );
-
     auto shape_xsqy = input.get_array("shape_xsqy");
     auto synthetic_values_xsqy = input.get_array("synthetic_values_xsqy");
 
@@ -165,22 +158,17 @@ void table_photo(Ensemble *ensemble) {
     mam4::validation::convert_1d_std_to_2d_view_device(clouds_db, clouds);
 
     auto srf_alb_host = View1DHost((Real *)srf_alb_db.data(), ncol);
-    // auto esfact_host = View1DHost((Real *)esfact_db.data(), ncol);
     auto zen_angle_host = View1DHost((Real *)zen_angle_db.data(), ncol);
 
     View1D srf_alb("srf_alb", ncol);
-    // View1D esfact("esfact", ncol);
     View1D zen_angle("zen_angle", ncol);
     Kokkos::deep_copy(srf_alb, srf_alb_host);
-    // Kokkos::deep_copy(esfact,esfact_host );
     Kokkos::deep_copy(zen_angle,zen_angle_host );
 
     auto team_policy = ThreadTeamPolicy(ncol, 1u);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
         const int i = team.league_rank();
-        printf("i %d\n", i );
-
         auto photo_icol = Kokkos::subview(photo,  i, Kokkos::ALL(),Kokkos::ALL());
         auto pmid_icol = Kokkos::subview(pmid, i, Kokkos::ALL());
         auto pdel_icol = Kokkos::subview(pdel, i, Kokkos::ALL());
@@ -188,9 +176,7 @@ void table_photo(Ensemble *ensemble) {
         auto colo3_in_icol = Kokkos::subview(colo3_in, i, Kokkos::ALL());
         auto lwc_icol = Kokkos::subview(lwc, i, Kokkos::ALL());
         auto clouds_icol = Kokkos::subview(clouds, i, Kokkos::ALL());
-        // auto _icol = Kokkos::subview(, i, Kokkos::ALL());
 
-        // printf(" pht_alias_mult_1 %e\n", pht_alias_mult_1(0));
         auto j_long_icol = Kokkos::subview(j_long, i, Kokkos::ALL(), Kokkos::ALL());
         auto rsf_icol = Kokkos::subview(rsf, i, Kokkos::ALL(), Kokkos::ALL());
         auto xswk_icol = Kokkos::subview(xswk, i, Kokkos::ALL(), Kokkos::ALL());
@@ -221,9 +207,6 @@ void table_photo(Ensemble *ensemble) {
     const Real zero = 0;
     std::vector<Real> photo_out(pver * ncol, zero);
     mam4::validation::convert_2d_view_device_to_1d_std(photo_out_device, photo_out);
-    printf(" photo_out_device%e\n", photo_out_device(0,0));
-
     output.set("photo", photo_out);
-#endif    
   });
 }
