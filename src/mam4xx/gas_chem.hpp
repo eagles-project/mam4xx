@@ -59,7 +59,7 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
   // these are volume mixing ratios [kmol species/kmol dry air]
   // lsol := base_sol (at initialization), then when converged base_sol = lsol
   // solution := array from imp_sol that holds the intermediate solutions and
-  //             also holds the solution after converged
+  //         also holds the solution after converged [kmol species/kmol dry air]
   // converged := array for entrywise convergence bools
   // convergence := overall bool flag for convergence
   // prod/loss := chemical production/loss rates [1/cm^3/s]
@@ -160,7 +160,6 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
     // -----------------------------------------------------------------------
     //  ... check for convergence
     // -----------------------------------------------------------------------
-
 
     if (nr_iter > 0) {
       convergence = true;
