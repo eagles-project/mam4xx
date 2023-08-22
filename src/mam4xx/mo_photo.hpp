@@ -2,6 +2,7 @@
 #define MAM4XX_MO_PHOTO_HPP
 
 #include <haero/math.hpp>
+#include <mam4xx/aero_config.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
@@ -567,9 +568,9 @@ void table_photo(const View2D &photo, // out
                  const int numalb, const int np_xs, const int numj,
                  const View1D &pht_alias_mult_1, const ViewInt1D &lng_indexer,
                  // work arrays
-                 const View2D &lng_prates, const View2D &rsf, const View2D &xswk,
-                 const View1D &psum_l, const View1D &psum_u
-                 ) {
+                 const View2D &lng_prates, const View2D &rsf,
+                 const View2D &xswk, const View1D &psum_l,
+                 const View1D &psum_u) {
   /*-----------------------------------------------------------------
       ... table photorates for wavelengths > 200nm
  -----------------------------------------------------------------*/

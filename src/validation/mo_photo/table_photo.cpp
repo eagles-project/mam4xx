@@ -14,7 +14,6 @@ using namespace mo_photo;
 
 void table_photo(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-
     using View1DHost = typename HostType::view_1d<Real>;
     using View1D = typename DeviceType::view_1d<Real>;
     using View2D = typename DeviceType::view_2d<Real>;
@@ -23,7 +22,7 @@ void table_photo(Ensemble *ensemble) {
     // using ViewInt1DHost = typename HostType::view_1d<int>;
     using ViewInt1D = typename DeviceType::view_1d<int>;
 
-    const int ncol =4;
+    const int ncol = 4;
 
     const auto sza_db = input.get_array("sza");
     const auto del_sza_db = input.get_array("del_sza");
@@ -121,15 +120,16 @@ void table_photo(Ensemble *ensemble) {
     auto psum_u = View2D("psum_u", ncol, nw);
 
     auto pht_alias_mult_1_db = input.get_array("pht_alias_mult");
-    auto pht_alias_mult_1_host = View1DHost((Real *)pht_alias_mult_1_db.data(), 2);
+    auto pht_alias_mult_1_host =
+        View1DHost((Real *)pht_alias_mult_1_db.data(), 2);
     const auto pht_alias_mult_1 = View1D("pht_alias_mult_1", 2);
     Kokkos::deep_copy(pht_alias_mult_1, pht_alias_mult_1_host);
 
-
     auto lng_indexer_db = input.get_array("lng_indexer");
-    // auto lng_indexer_host = ViewInt1DHost((int *)pht_alias_mult_1_db.data(), 1);
+    // auto lng_indexer_host = ViewInt1DHost((int *)pht_alias_mult_1_db.data(),
+    // 1);
     const auto lng_indexer = ViewInt1D("lng_indexer", 1);
-    Kokkos::deep_copy(lng_indexer, lng_indexer_db[0]-1);
+    Kokkos::deep_copy(lng_indexer, lng_indexer_db[0] - 1);
 
     View3D photo("photo", ncol, pver, 1);
 
@@ -153,7 +153,7 @@ void table_photo(Ensemble *ensemble) {
     mam4::validation::convert_1d_std_to_2d_view_device(pmid_db, pmid);
     mam4::validation::convert_1d_std_to_2d_view_device(pdel_db, pdel);
     mam4::validation::convert_1d_std_to_2d_view_device(temper_db, temper);
-    mam4::validation::convert_1d_std_to_2d_view_device(colo3_in_db,colo3_in );
+    mam4::validation::convert_1d_std_to_2d_view_device(colo3_in_db, colo3_in);
     mam4::validation::convert_1d_std_to_2d_view_device(lwc_db, lwc);
     mam4::validation::convert_1d_std_to_2d_view_device(clouds_db, clouds);
 
@@ -163,50 +163,47 @@ void table_photo(Ensemble *ensemble) {
     View1D srf_alb("srf_alb", ncol);
     View1D zen_angle("zen_angle", ncol);
     Kokkos::deep_copy(srf_alb, srf_alb_host);
-    Kokkos::deep_copy(zen_angle,zen_angle_host );
+    Kokkos::deep_copy(zen_angle, zen_angle_host);
 
     auto team_policy = ThreadTeamPolicy(ncol, 1u);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-        const int i = team.league_rank();
-        auto photo_icol = Kokkos::subview(photo,  i, Kokkos::ALL(),Kokkos::ALL());
-        auto pmid_icol = Kokkos::subview(pmid, i, Kokkos::ALL());
-        auto pdel_icol = Kokkos::subview(pdel, i, Kokkos::ALL());
-        auto temper_icol = Kokkos::subview(temper, i, Kokkos::ALL());
-        auto colo3_in_icol = Kokkos::subview(colo3_in, i, Kokkos::ALL());
-        auto lwc_icol = Kokkos::subview(lwc, i, Kokkos::ALL());
-        auto clouds_icol = Kokkos::subview(clouds, i, Kokkos::ALL());
+          const int i = team.league_rank();
+          auto photo_icol =
+              Kokkos::subview(photo, i, Kokkos::ALL(), Kokkos::ALL());
+          auto pmid_icol = Kokkos::subview(pmid, i, Kokkos::ALL());
+          auto pdel_icol = Kokkos::subview(pdel, i, Kokkos::ALL());
+          auto temper_icol = Kokkos::subview(temper, i, Kokkos::ALL());
+          auto colo3_in_icol = Kokkos::subview(colo3_in, i, Kokkos::ALL());
+          auto lwc_icol = Kokkos::subview(lwc, i, Kokkos::ALL());
+          auto clouds_icol = Kokkos::subview(clouds, i, Kokkos::ALL());
 
-        auto j_long_icol = Kokkos::subview(j_long, i, Kokkos::ALL(), Kokkos::ALL());
-        auto rsf_icol = Kokkos::subview(rsf, i, Kokkos::ALL(), Kokkos::ALL());
-        auto xswk_icol = Kokkos::subview(xswk, i, Kokkos::ALL(), Kokkos::ALL());
-        auto psum_l_icol = Kokkos::subview(psum_l, i, Kokkos::ALL());
-        auto psum_u_icol = Kokkos::subview(psum_u, i, Kokkos::ALL());
-          table_photo(photo_icol, // out
-                 pmid_icol, pdel_icol,
-                 temper_icol, // in
-                 colo3_in_icol, zen_angle(i),
-                 srf_alb(i), lwc_icol,
-                 clouds_icol, // in
-                 esfact, xsqy, sza,
-                 del_sza, alb, press,
-                 del_p, colo3, o3rat,
-                 del_alb, del_o3rat,
-                 etfphot, rsf_tab,
-                 prs, dprs, nw,
-                 nump, numsza, numcolo3,
-                 numalb, np_xs, numj,
-                 pht_alias_mult_1, lng_indexer,
-                 // work arrays
-                 j_long_icol, rsf_icol, xswk_icol,
-                 psum_l_icol, psum_u_icol);
-
+          auto j_long_icol =
+              Kokkos::subview(j_long, i, Kokkos::ALL(), Kokkos::ALL());
+          auto rsf_icol = Kokkos::subview(rsf, i, Kokkos::ALL(), Kokkos::ALL());
+          auto xswk_icol =
+              Kokkos::subview(xswk, i, Kokkos::ALL(), Kokkos::ALL());
+          auto psum_l_icol = Kokkos::subview(psum_l, i, Kokkos::ALL());
+          auto psum_u_icol = Kokkos::subview(psum_u, i, Kokkos::ALL());
+          table_photo(
+              photo_icol, // out
+              pmid_icol, pdel_icol,
+              temper_icol, // in
+              colo3_in_icol, zen_angle(i), srf_alb(i), lwc_icol,
+              clouds_icol, // in
+              esfact, xsqy, sza, del_sza, alb, press, del_p, colo3, o3rat,
+              del_alb, del_o3rat, etfphot, rsf_tab, prs, dprs, nw, nump, numsza,
+              numcolo3, numalb, np_xs, numj, pht_alias_mult_1, lng_indexer,
+              // work arrays
+              j_long_icol, rsf_icol, xswk_icol, psum_l_icol, psum_u_icol);
         });
 
-    auto photo_out_device = Kokkos::subview(photo,  Kokkos::ALL(),Kokkos::ALL(), 0);
+    auto photo_out_device =
+        Kokkos::subview(photo, Kokkos::ALL(), Kokkos::ALL(), 0);
     const Real zero = 0;
     std::vector<Real> photo_out(pver * ncol, zero);
-    mam4::validation::convert_2d_view_device_to_1d_std(photo_out_device, photo_out);
+    mam4::validation::convert_2d_view_device_to_1d_std(photo_out_device,
+                                                       photo_out);
     output.set("photo", photo_out);
   });
 }
