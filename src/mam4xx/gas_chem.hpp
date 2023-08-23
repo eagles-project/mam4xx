@@ -167,7 +167,7 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
         converged[kk] = true;
 
         int mm = permute_4[kk];
-        // FIXME: is there a computational reason this needs to happen?
+        // TODO: is there a computational reason this needs to happen?
         // I suspect not, given that epsilon is hard-coded to 1e-3, meaning that
         // all of this logic surrounding 'converged[kk] = ...' is unnecessary
         bool frc_mask = haero::abs(forcing[mm]) > small;
@@ -274,7 +274,7 @@ void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
     //  ... set the iteration invariant part of the function f(y)
     // -----------------------------------------------------------------------
 
-    // FIXME: the units seem wrong here--could these arrays hold quantities
+    // TODO: the units seem wrong here--could these arrays hold quantities
     // with different units?
     // ind_prd has units [1/cm^3/s] (for the entries that are nonzero)
     // dti units are [1/s], and
@@ -319,11 +319,10 @@ void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
         } else {
           dt *= 0.1;
         } // cut_cnt < cut_limit
-        // FIXME: is this part of the below FIXME?
+        // FIXME: figure out how we want to do error handling/logging
         // break;
         // cycle time_step_loop
       } else {
-        // FIXME
         // write(iulog,'('' imp_sol: Failed to converge @
         // (lchnk,lev,col,nstep,dt,time) = '',4i6,1p,2e21.13)') &
         //                   lchnk,lev,icol,nstep,dt,interval_done+dt

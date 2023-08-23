@@ -52,7 +52,7 @@ void adjrxt(Real rate[rxntot], Real inv[nfs], Real m) {
   rate[1] *= inv[6] * inv[6] / m;
 } // adjrxt
 
-// FIXME: unless rxt[0:6] and/or het_rates[1:4] have different units than the
+// TODO: unless rxt[0:6] and/or het_rates[1:4] have different units than the
 // rest of the arrays the below additions seem fishy
 // Units:
 // rxt := reaction rates in 1D array [1/cm^3/s]
@@ -206,7 +206,7 @@ void lu_fac(Real lu[nzcnt]) {
   lu[31] = one / lu[31];
 } // lu_fac
 
-// FIXME: again, the units for b[1:2] look like they could be inconsistent
+// TODO: again, the units for b[1:2] look like they could be inconsistent
 // lu = sys_jac [s]--mostly, maybe?; when passed in within gas_chem.hpp
 // b = forcing [1/s]--maybe; when passed in from gas_chem.hpp
 KOKKOS_INLINE_FUNCTION
@@ -247,7 +247,7 @@ void lu_slv(Real lu[nzcnt], Real b[clscnt4]) {
   b[0] *= lu[0];
 } // lu_slv
 
-// FIXME: as in imp_prod_loss() unless rxt[0:6] and/or het_rates[1:4] have
+// TODO: as in imp_prod_loss() unless rxt[0:6] and/or het_rates[1:4] have
 // different units than the rest of the arrays the below additions seem suspect
 // Units:
 // rxt := reaction rates in 1D array [1/cm^3/s]
@@ -292,7 +292,7 @@ void linmat(Real mat[nzcnt], const Real rxt[rxntot],
   mat[31] = -(+het_rates[30]);
 } // linmat
 
-// FIXME: the below calculations appear to have inconsistent units for
+// TODO: the below calculations appear to have inconsistent units for
 // mat[0, 2, 3, 5]
 // NOTE: it's *possible* we could be ok, if the odd-looking sums in linmat()
 // turn out to be ok
