@@ -44,6 +44,7 @@ install(FILES
         lin_strat_chem.hpp
         mo_chm_diags.hpp
         mo_setext.hpp
+        mo_setsox.hpp
         DESTINATION include/mam4xx)
 
 add_library(mam4xx aero_modes.cpp)

@@ -51,6 +51,8 @@ EkatCreateUnitTest(mam4_nucleate_ice_unit_tests mam4_nucleate_ice_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_wet_deposition_unit_tests mam4_wet_deposition_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
+EkatCreateUnitTest(mam4_mo_setsox_unit_tests mam4_mo_setsox_unit_tests.cpp
+  LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 
 target_compile_options(utils_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_nucleation_unit_tests PRIVATE -Werror)
@@ -63,6 +65,7 @@ target_compile_options(mam4_rename_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_aging_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_hetfrz_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_nucleate_ice_unit_tests PRIVATE -Werror)
+# target_compile_options(mam4_mo_setsox_unit_tests PRIVATE -Werror)
 
 
 if (${HAERO_PRECISION} MATCHES double)
