@@ -52,6 +52,14 @@ void adjrxt(Real rate[rxntot], Real inv[nfs], Real m) {
   rate[1] *= inv[6] * inv[6] / m;
 } // adjrxt
 
+// TODO: unless rxt[0:6] and/or het_rates[1:4] have different units than the
+// rest of the arrays the below additions seem fishy
+// Units:
+// rxt := reaction rates in 1D array [1/cm^3/s]
+// het_rates := washout rates [1/s]
+// TODO: the lines of concern *kind of* bear resemblance to the similarly
+// concerning lines in linmat(), though it's difficult to tell if that results
+// in consistent units
 KOKKOS_INLINE_FUNCTION
 void imp_prod_loss(Real prod[clscnt4], Real loss[clscnt4], Real y[gas_pcnst],
                    const Real rxt[rxntot], const Real het_rates[gas_pcnst]) {
@@ -121,7 +129,10 @@ void imp_prod_loss(Real prod[clscnt4], Real loss[clscnt4], Real y[gas_pcnst],
 KOKKOS_INLINE_FUNCTION
 void indprd(const int class_id, Real prod[clscnt4], const Real rxt[rxntot],
             const Real extfrc[extcnt]) {
+  // extfrc := external in-situ forcing [1/cm^3/s]
+  // thus, prod must have units [1/cm^3/s]
   const Real zero = 0;
+  // this is hard-coded to 4 outside of this function
   if (class_id == 1) {
     prod[0] = zero;
   } else if (class_id == 4) {
@@ -157,6 +168,9 @@ void indprd(const int class_id, Real prod[clscnt4], const Real rxt[rxntot],
     prod[29] = +extfrc[7];
   } // indprd
 }
+
+// NOTE: at this point we are taking RHS units of (maybe) [1/s] to [s]
+// and the units are internally consistent
 KOKKOS_INLINE_FUNCTION
 void lu_fac(Real lu[nzcnt]) {
   const Real one = 1;
@@ -192,6 +206,9 @@ void lu_fac(Real lu[nzcnt]) {
   lu[31] = one / lu[31];
 } // lu_fac
 
+// TODO: again, the units for b[1:2] look like they could be inconsistent
+// lu = sys_jac [s]--mostly, maybe?; when passed in within gas_chem.hpp
+// b = forcing [1/s]--maybe; when passed in from gas_chem.hpp
 KOKKOS_INLINE_FUNCTION
 void lu_slv(Real lu[nzcnt], Real b[clscnt4]) {
   b[29] *= lu[31];
@@ -223,11 +240,21 @@ void lu_slv(Real lu[nzcnt], Real b[clscnt4]) {
   b[3] *= lu[5];
   b[2] -= lu[4] * b[3];
   b[2] *= lu[3];
+  // the above 2 lines are equivalent to b[2] = (b[2] - (lu[4] * b[3])) * lu[3]
   b[1] -= lu[2] * b[2];
   b[1] *= lu[1];
+  // the above 2 lines are equivalent to b[1] = (b[1] - (lu[2] * b[2])) * lu[1]
   b[0] *= lu[0];
 } // lu_slv
 
+// TODO: as in imp_prod_loss() unless rxt[0:6] and/or het_rates[1:4] have
+// different units than the rest of the arrays the below additions seem suspect
+// Units:
+// rxt := reaction rates in 1D array [1/cm^3/s]
+// het_rates := washout rates [1/s]
+// TODO: the lines of concern *kind of* bear resemblance to the similarly
+// concerning lines in imp_prod_loss(), though it's difficult to tell if that
+// results in consistent units
 KOKKOS_INLINE_FUNCTION
 void linmat(Real mat[nzcnt], const Real rxt[rxntot],
             const Real het_rates[gas_pcnst]) {
@@ -265,6 +292,10 @@ void linmat(Real mat[nzcnt], const Real rxt[rxntot],
   mat[31] = -(+het_rates[30]);
 } // linmat
 
+// TODO: the below calculations appear to have inconsistent units for
+// mat[0, 2, 3, 5]
+// NOTE: it's *possible* we could be ok, if the odd-looking sums in linmat()
+// turn out to be ok
 KOKKOS_INLINE_FUNCTION
 void nlnmat(Real mat[nzcnt], const Real lmat[nzcnt], const Real dti) {
   mat[0] = lmat[0] - dti;
