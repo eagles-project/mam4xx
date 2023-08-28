@@ -27,7 +27,7 @@ the rest.
 
 For example, to download the relevant software on your Mac using Homebrew, type
 
-```
+```bash
 brew install cmake openmpi
 ```
 
@@ -45,11 +45,11 @@ First, go get the [source code](https://github.com/eagles-project/mam4xx)
 at GitHub:
 
 === "SSH"
-    ```
+    ```bash
     git clone git@github.com:eagles-project/mam4xx.git
     ```
 === "HTTPS"
-    ```
+    ```bash
     git clone https://github.com/eagles-project/mam4xx.git
     ```
 
@@ -66,7 +66,7 @@ To configure MAM4xx:
 
 1. Create a build directory by running the `setup` script from the top-level
    source directory:
-   ```
+   ```bash
    ./setup build
    ```
 2. Change to your build directory and edit the `config.sh` file to select
@@ -100,7 +100,7 @@ you work in order to be productive in this kind of environment.
 When you make a code change, make sure you build from the build directory that
 you created in step 1 above:
 
-```
+```bash
 cd /path/to/mam4xx/build
 make -j
 ```
