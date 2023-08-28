@@ -18,6 +18,7 @@ add_executable(wetdep_driver
                local_precip_production.cpp
                wetdep_resusp.cpp
                wetdepa_v2.cpp
+               compute_tendencies.cpp
               )
 target_link_libraries(wetdep_driver skywalker;validation;${HAERO_LIBRARIES})
 
@@ -43,6 +44,7 @@ foreach (TEST_NAME
 	 wetdepa_v2_0
 	 wetdepa_v2_130
 	 wetdepa_v2_230
+	 compute_tendencies
 	)
   set(SKYWALKER_RESULT ${TEST_NAME}_output_ts_355)
   configure_file(
