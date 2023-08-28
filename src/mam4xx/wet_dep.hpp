@@ -1178,7 +1178,6 @@ public:
     //   raindrop number the 130 thru 230 all use the new prevap_resusp code
     //   block in subr wetdepa_v2
     int mam_prevap_resusp_optcc = 0;
-
   };
 
   const char *name() const { return "MAM4 Wet Deposition"; }
