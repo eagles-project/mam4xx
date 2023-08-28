@@ -1179,8 +1179,6 @@ public:
     //   block in subr wetdepa_v2
     int mam_prevap_resusp_optcc = 0;
 
-    // change mode order as mmode_loop_aa loops in a different order
-    static constexpr int mode_order_change[4] = {0, 1, 3, 2};
   };
 
   const char *name() const { return "MAM4 Wet Deposition"; }
@@ -1263,6 +1261,9 @@ void WetDeposition::compute_tendencies(
   const Real small_value_2 = 1.e-2;
   const int nlev = config_.nlev;
   static constexpr int gas_pcnst = 40;
+
+  // change mode order as mmode_loop_aa loops in a different order
+  static constexpr int mode_order_change[4] = {0, 1, 3, 2};
 
   //   0 = no resuspension
   // 130 = non-linear resuspension of aerosol mass   based on scavenged aerosol
@@ -1372,7 +1373,7 @@ void WetDeposition::compute_tendencies(
           // then aitken = 1,
           // then pcarbon - 3,
           // then coarse = 2
-          const int imode = Config::mode_order_change[mtmp];
+          const int imode = mode_order_change[mtmp];
 
           // loop over interstitial (1) and cloud-borne (2) forms
           // BSINGH (09/12/2014):Do cloudborne first for unified convection

@@ -70,16 +70,6 @@ void test_compute_tendencies(std::unique_ptr<Ensemble> &ensemble) {
     const int gas_pcnst = 40;
     EKAT_ASSERT(input.get("dt") == 3600);
 
-    int mmtoo_prevap_resusp[gas_pcnst];
-    {
-      const int resusp[gas_pcnst] = {0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
-                                     0,  0,  0,  0,  0,  31, 33, 34, 32, 29,
-                                     30, 35, -2, 31, 34, 30, 35, -2, 29, 30,
-                                     31, 32, 33, 34, 35, -2, 33, 32, 35, -2};
-      for (int i = 0; i < gas_pcnst; ++i)
-        mmtoo_prevap_resusp[i] = resusp[i] - 1;
-    }
-
     Atmosphere atmosphere = validation::create_atmosphere(nlev, pblh);
     Surface surface = validation::create_surface();
     mam4::Prognostics prognostics = validation::create_prognostics(nlev);
