@@ -32,49 +32,41 @@ constexpr int pverm = pver - 1;
     sox_species = (/ id_so2, id_so4, id_h2so4 /)
 
 KOKKOS_INLINE_FUNCTION
-void het_diags(Real het_rates[ncol][pver][gas_pcnst], //inout
-               Real mmr[ncol][pver][gas_pcnst],
-               Real pdel[ncol][pver], 
+void het_diags(Real het_rates[pver][gas_pcnst], //in
+               Real mmr[pver][gas_pcnst],
+               Real pdel[pver], 
                int lchnk, 
                int ncol, 
-               Real wght[ncol],
-               Real wrk_wd[ncol], //output
-               Real noy_wk[ncol], //output
-               Real sox_wk[ncol], //output
-               Real nhx_wk[ncol], //output
+               Real wght,
+               Real wrk_wd[gas_pcnst], //output
+               //Real noy_wk, //output //this isn't actually used in this function?
+               Real sox_wk, //output
+               //Real nhx_wk, //output //this isn't actually used in this function?
+               Real adv_mass[gas_pcnst] //constant
                ) {
-
+                  //change to pass values for a single col
     //===========
     // output integrated wet deposition field
     //===========
-    for(int i = 0; i < ncol; i++) {
-        noy_wk[i] = 0; //this isn't actually used in this function?
-        sox_wk[i] = 0;
-        nhx_wk[i] = 0; //this isn't actually used in this function?
-    }
+   
 
-    for(int mm = 0; mm < gas_pcnst; mm++) {
-       //
-       // compute vertical integral
-       //
-       for(int i = 0; i < ncol; i++) 
-         wrk_wd[i] = 0;
+   for(int mm = 0; mm < gas_pcnst; mm++) {
+      //
+      // compute vertical integral
+      //
+   wrk_wd[mm] = 0;
+   sox_wk[mm] = 0;
 
-       for(int kk = 1; kk < pver; kk++) {
-         for(int i = 0; i < ncol; i++) 
-          wrk_wd[i] = het_rates[i][kk][mm] * mmr[i][kk][mm] * pdel[i][kk];
-       }
-       
-       for(int i = 0; i < ncol; i++) 
-         wrk_wd[i] *= rgrav * wght[i] * haero::square(rearth);
+   for(int kk = 1; kk < pver; kk++) {
+      wrk_wd[mm] += het_rates[kk][mm] * mmr[kk][mm] * pdel[kk]; //parallel_reduce in the future?
+   }
+      
+   wrk_wd[mm] *= rgrav * wght * haero::square(rearth);
 
-       if( any(sox_species == mm ) ) {
-         for(int i = 0; i < ncol; i++) 
-            sox_wk[i] += wrk_wd[i] * S_molwgt / adv_mass(mm);
-       }
-
-    }
-
+   if( any(sox_species == mm ) ) {
+      sox_wk[mm] += wrk_wd[mm] * S_molwgt / adv_mass[mm];
+   }
+   }
 
  } // het_diags
 
