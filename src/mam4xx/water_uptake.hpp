@@ -8,7 +8,7 @@
 
 #include <haero/atmosphere.hpp>
 #include <haero/surface.hpp>
-#include <kokkos/Kokkos_Complex.hpp>
+#include <Kokkos_Complex.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/convproc.hpp>
 #include <mam4xx/utils.hpp>
