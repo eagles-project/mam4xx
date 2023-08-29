@@ -6,9 +6,9 @@
 #ifndef MAM4XX_WATER_UPTAKE_HPP
 #define MAM4XX_WATER_UPTAKE_HPP
 
+#include <Kokkos_Complex.hpp>
 #include <haero/atmosphere.hpp>
 #include <haero/surface.hpp>
-#include <Kokkos_Complex.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/convproc.hpp>
 #include <mam4xx/utils.hpp>
