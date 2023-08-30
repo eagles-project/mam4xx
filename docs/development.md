@@ -248,7 +248,7 @@ you can run from your build directory:
 These targets are only available if you have `clang-format` on your system, and
 they only perform their work if you have the version we support. If you have an
 unsupported version of `clang-format`, the targets will tell you the right
-version to install.
+version to install. [Here](clang-format.md) is a guide to getting the supported version of `clang-format` that is a bit more geared toward Mac users than others.
 
 ### Best practices
 
