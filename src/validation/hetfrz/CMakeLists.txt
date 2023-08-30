@@ -70,17 +70,18 @@ foreach (input
           )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
-   configure_file(
+  configure_file(
      ${HETFRZ_VALIDATION_DIR}/${input}.py
      ${CMAKE_CURRENT_BINARY_DIR}/${input}.py
      COPYONLY
-   )
+  )
 
   # add a test to run the skywalker driver
-   add_test(run_${input} hetfrz_driver ${HETFRZ_VALIDATION_DIR}/${input}.yaml)
+  add_test(run_${input} hetfrz_driver ${HETFRZ_VALIDATION_DIR}/${input}.yaml)
   
   # add a test to validate mam4xx's results against the baseline.
   add_test(validate_${input} python3 compare_hetfzr.py mam4xx_${input}.py ${input}.py)
+  set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
 endforeach() 
 
 
