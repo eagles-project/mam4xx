@@ -38,6 +38,7 @@ install(FILES
         wv_sat_methods.hpp
         drydep.hpp
         water_uptake.hpp
+        wet_dep.hpp
         ndrop.hpp
         mo_photo.hpp
         DESTINATION include/mam4xx)
