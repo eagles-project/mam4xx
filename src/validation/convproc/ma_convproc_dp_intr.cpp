@@ -128,9 +128,9 @@ void ma_convproc_dp_intr(Ensemble *ensemble) {
     // but mx is just a scalar iand l1g=il2g=71;
     EKAT_ASSERT(input.get("dt") == 3600);
     EKAT_ASSERT(input.get("nsrflx") == 6);
-    EKAT_ASSERT(input.get("jt") == 72);
-    EKAT_ASSERT(input.get("maxg") == 1);
-    EKAT_ASSERT(input.get("ideep") == 0);
+    EKAT_ASSERT(input.get("jt") == 48);
+    EKAT_ASSERT(input.get("maxg") == 71);
+    EKAT_ASSERT(input.get("ideep") == 2);
     EKAT_ASSERT(input.get("lengath") == 1);
 
     int mmtoo_prevap_resusp[pcnst];
