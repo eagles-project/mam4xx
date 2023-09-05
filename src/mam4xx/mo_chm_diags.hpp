@@ -5,7 +5,6 @@
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 #include <mam4xx/gas_chem.hpp>
-#include <mam4xx/phys_grid.hpp>
 
 namespace mam4 {
 
@@ -18,13 +17,14 @@ constexpr Real DUfac = 2.687e20;   // 1 DU in molecules per m^2
 Real rearth  = 6.37122e6;
 Real rgrav = 1.0 / 9.80616; // reciprocal of acceleration of gravity ~ m/s^2
 Real avogadro = haero::Constants::avogadro;
-constexpr int gas_pcnst = gas_chem::gas_pcnst;
+constexpr int gas_pcnst = gas_chemistry::gas_pcnst;
 char solsym[gas_pcnst][16];
 
 // number of vertical levels
 constexpr int pver = 72;
 constexpr int pverm = pver - 1;
 
+Real sox_species[3] = {0, 1, 2};
 /* will be ported from set_sox
     Real sox_species[3];
     id_so2     = get_spc_ndx( 'SO2' )
@@ -40,7 +40,7 @@ void het_diags(Real het_rates[pver][gas_pcnst], //in
                Real wght,
                Real wrk_wd[gas_pcnst], //output
                //Real noy_wk, //output //this isn't actually used in this function?
-               Real sox_wk, //output
+               Real sox_wk[gas_pcnst], //output
                //Real nhx_wk, //output //this isn't actually used in this function?
                Real adv_mass[gas_pcnst] //constant from elsewhere
                ) {
@@ -63,13 +63,14 @@ void het_diags(Real het_rates[pver][gas_pcnst], //in
       
    wrk_wd[mm] *= rgrav * wght * haero::square(rearth);
 
-   if( any(sox_species == mm ) ) { //what is this any doing? is this just if sox species has any value calc sox_wk?
-      sox_wk[mm] += wrk_wd[mm] * S_molwgt / adv_mass[mm];
-   }
+   //if( any(sox_species == mm ) ) { //what is this any doing? is this just if sox species has any value calc sox_wk?
+   //  sox_wk[mm] += wrk_wd[mm] * S_molwgt / adv_mass[mm];
+   //}
    }
 
  } // het_diags
 
+/*
  //========================================================================
 KOKKOS_INLINE_FUNCTION 
 void chm_diags(int lchnk, int ncol, Real vmr[pver][gas_pcnst], 
@@ -85,7 +86,7 @@ void chm_diags(int lchnk, int ncol, Real vmr[pver][gas_pcnst],
                //output fields
                Real mass,
                Real drymass,
-               Real ozone_laye[pver],   // ozone concentration [DU]
+               Real ozone_layer[pver],   // ozone concentration [DU]
                Real ozone_col,          // vertical integration of ozone [DU]
                Real ozone_trop,         // vertical integration of ozone in troposphere [DU]
                Real ozone_strat,        // vertical integration of ozone in stratosphere [DU]
@@ -180,40 +181,34 @@ void chm_diags(int lchnk, int ncol, Real vmr[pver][gas_pcnst],
       drymass[kk] = pdeldry[kk] * area * rgrav;
    }
 
-    call outfld( 'AREA', area(:ncol),   ncol, lchnk )
-    call outfld( 'MASS', mass(:ncol,:), ncol, lchnk )
-    call outfld( 'DRYMASS', drymass(:ncol,:), ncol, lchnk )
-
     // convert ozone from mol/mol (w.r.t. dry air mass) to DU
-    ozone_layer(:ncol,:) = pdeldry(:ncol,:)*vmr(:ncol,:,id_o3)*avogadro*rgrav/mwdry/DUfac*1.e3_r8
+    for(int kk = 1; kk < pver; kk++) {
+      ozone_layer[kk] = pdeldry[kk]*vmr[kk][id_o3]*avogadro*rgrav/mwdry/DUfac*1e3;
+    }
     // total column ozone
-    ozone_col(:) = 0;
-    ozone_trop(:) = 0;
-    ozone_strat(:) = 0;
-    do icol = 1,ncol
-       do kk = 1,pver
-          ozone_col(icol) = ozone_col(icol) + ozone_layer(icol,kk)
-          if (kk <= ltrop(icol)) then
-             ozone_strat(icol) = ozone_strat(icol) + ozone_layer(icol,kk)
-          else
-             ozone_trop(icol) = ozone_trop(icol) + ozone_layer(icol,kk)
-          endif
-       enddo
-    enddo
-    call outfld( 'TOZ', ozone_col, ncol, lchnk )
-    // stratospheric column ozone
-    call outfld( 'SCO', ozone_strat, ncol, lchnk )
-    // tropospheric column ozone
-    call outfld( 'TCO', ozone_trop, ncol, lchnk )
+    ozone_col = 0;
+    ozone_trop = 0;
+    ozone_strat = 0;
+    
+    for(int kk = 1; kk < pver; kk++) {
+      ozone_col += ozone_layer[kk];
+      if (kk <= ltrop) {
+         // stratospheric column ozone
+         ozone_strat += ozone_layer[kk];
+      } else {
+         // tropospheric column ozone
+         ozone_trop += ozone_layer[kk];
+      }
+    } 
 
-    do mm = 1,gas_pcnst
-
+    for(int mm = 0; mm < gas_pcnst; mm++) {
       // other options of species are not used, only use weight=1
-       wgt = 1._r8
+       wgt = 1;
 
        if ( any( sox_species == mm ) ) then
-          mmr_sox(:ncol,:) = mmr_sox(:ncol,:) +  wgt * mmr(:ncol,:,mm)
-       endif
+       for(int kk = 1; kk < pver; kk++) {
+          mmr_sox[kk] = mmr_sox[kk] +  wgt * mmr[kk][mm];
+       }
        
        if ( any( aer_species == mm ) ) then
           call outfld( solsym(mm), mmr(:ncol,:,mm), ncol ,lchnk )
@@ -248,14 +243,12 @@ void chm_diags(int lchnk, int ncol, Real vmr[pver][gas_pcnst],
           df_sox(:ncol) = df_sox(:ncol) +  wgt * depflx(:ncol,mm)*S_molwgt/adv_mass(mm)
        endif
 
-       do kk=1,pver
-          do icol=1,ncol
-             net_chem(icol,kk) = mmr_tend(icol,kk,mm) * mass(icol,kk) 
-          enddo
-       enddo
+       for(int kk = 1; kk < pver; kk++) {
+             net_chem[kk] = mmr_tend[kk][mm] * mass[kk]; 
+       } 
        call outfld( dtchem_name(mm), net_chem(:ncol,:), ncol, lchnk )
 
-    enddo
+    }
 
     // diagnostics for cloud-borne aerosols, then add to corresponding mass accumulators
     if (history_aerosol .and. .not. history_verbose) then
@@ -306,6 +299,7 @@ void chm_diags(int lchnk, int ncol, Real vmr[pver][gas_pcnst],
 
 
   }  //chm_diags
-
+*/
 } //namespace mo_chm_diags
 } //namespace mam4
+#endif
