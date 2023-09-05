@@ -5,7 +5,6 @@
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 #include <mam4xx/gas_chem.hpp>
-#include <mam4xx/phys_grid.hpp>
 
 namespace mam4 {
 
@@ -18,13 +17,14 @@ constexpr Real DUfac = 2.687e20;   // 1 DU in molecules per m^2
 Real rearth  = 6.37122e6;
 Real rgrav = 1.0 / 9.80616; // reciprocal of acceleration of gravity ~ m/s^2
 Real avogadro = haero::Constants::avogadro;
-constexpr int gas_pcnst = gas_chem::gas_pcnst;
+constexpr int gas_pcnst = gas_chemistry::gas_pcnst;
 char solsym[gas_pcnst][16];
 
 // number of vertical levels
 constexpr int pver = 72;
 constexpr int pverm = pver - 1;
 
+Real sox_species[3] = {0, 1, 2};
 /* will be ported from set_sox
     Real sox_species[3];
     id_so2     = get_spc_ndx( 'SO2' )
@@ -40,7 +40,7 @@ void het_diags(Real het_rates[pver][gas_pcnst], //in
                Real wght,
                Real wrk_wd[gas_pcnst], //output
                //Real noy_wk, //output //this isn't actually used in this function?
-               Real sox_wk, //output
+               Real sox_wk[gas_pcnst], //output
                //Real nhx_wk, //output //this isn't actually used in this function?
                Real adv_mass[gas_pcnst] //constant from elsewhere
                ) {
@@ -63,13 +63,14 @@ void het_diags(Real het_rates[pver][gas_pcnst], //in
       
    wrk_wd[mm] *= rgrav * wght * haero::square(rearth);
 
-   if( any(sox_species == mm ) ) { //what is this any doing? is this just if sox species has any value calc sox_wk?
-      sox_wk[mm] += wrk_wd[mm] * S_molwgt / adv_mass[mm];
-   }
+   //if( any(sox_species == mm ) ) { //what is this any doing? is this just if sox species has any value calc sox_wk?
+   //  sox_wk[mm] += wrk_wd[mm] * S_molwgt / adv_mass[mm];
+   //}
    }
 
  } // het_diags
 
+/*
  //========================================================================
 KOKKOS_INLINE_FUNCTION 
 void chm_diags(int lchnk, int ncol, Real vmr[pver][gas_pcnst], 
@@ -306,6 +307,7 @@ void chm_diags(int lchnk, int ncol, Real vmr[pver][gas_pcnst],
 
 
   }  //chm_diags
-
+*/
 } //namespace mo_chm_diags
 } //namespace mam4
+#endif
