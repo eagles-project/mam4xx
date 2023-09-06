@@ -6,6 +6,8 @@
 #include <mam4xx/utils.hpp>
 #include <mam4xx/gas_chem.hpp>
 
+using Real = haero::Real;
+
 namespace mam4 {
 
 namespace mo_chm_diags {
@@ -14,17 +16,17 @@ namespace mo_chm_diags {
 constexpr Real S_molwgt = 32.066;
 // constants for converting O3 mixing ratio to DU
 constexpr Real DUfac = 2.687e20;   // 1 DU in molecules per m^2
-Real rearth  = 6.37122e6;
-Real rgrav = 1.0 / 9.80616; // reciprocal of acceleration of gravity ~ m/s^2
-Real avogadro = haero::Constants::avogadro;
+constexpr Real rearth  = 6.37122e6;
+constexpr Real rgrav = 1.0 / 9.80616; // reciprocal of acceleration of gravity ~ m/s^2
+constexpr Real avogadro = haero::Constants::avogadro;
 constexpr int gas_pcnst = gas_chemistry::gas_pcnst;
-char solsym[gas_pcnst][16];
+//char solsym[gas_pcnst][16]; //solution system
 
 // number of vertical levels
 constexpr int pver = 72;
 constexpr int pverm = pver - 1;
 
-Real sox_species[3] = {0, 1, 2};
+//Real sox_species[3] = {0, 1, 2};
 /* will be ported from set_sox
     Real sox_species[3];
     id_so2     = get_spc_ndx( 'SO2' )
@@ -54,18 +56,18 @@ void het_diags(Real het_rates[pver][gas_pcnst], //in
       //
       // compute vertical integral
       //
-   wrk_wd[mm] = 0;
-   sox_wk[mm] = 0;
+      wrk_wd[mm] = 0;
+      sox_wk[mm] = 0;
 
-   for(int kk = 1; kk < pver; kk++) {
-      wrk_wd[mm] += het_rates[kk][mm] * mmr[kk][mm] * pdel[kk]; //parallel_reduce in the future?
-   }
-      
-   wrk_wd[mm] *= rgrav * wght * haero::square(rearth);
+      for(int kk = 1; kk < pver; kk++) {
+         wrk_wd[mm] += het_rates[kk][mm] * mmr[kk][mm] * pdel[kk]; //parallel_reduce in the future?
+      }
+         
+      wrk_wd[mm] *= rgrav * wght * haero::square(rearth);
 
-   //if( any(sox_species == mm ) ) { //what is this any doing? is this just if sox species has any value calc sox_wk?
-   //  sox_wk[mm] += wrk_wd[mm] * S_molwgt / adv_mass[mm];
-   //}
+      //if( any(sox_species == mm ) ) { //what is this any doing? is this just if sox species has any value calc sox_wk?
+      //  sox_wk[mm] += wrk_wd[mm] * S_molwgt / adv_mass[mm];
+      //}
    }
 
  } // het_diags
