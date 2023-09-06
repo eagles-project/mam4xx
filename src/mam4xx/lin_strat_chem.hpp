@@ -292,7 +292,7 @@ void lin_strat_sfcsink(const Real delta_t, const ColumnView &pdel, // in
   const Real efactor =
       (one - haero::exp(-delta_t / o3_tau)); // !compute time scale factor
   Real do3mass_icol = 0;
-  for (int kk = pver - 1; kk > pver - o3_lbl-1; --kk) {
+  for (int kk = pver - 1; kk > pver - o3_lbl - 1; --kk) {
     const Real mass = pdel(kk) * rgrav; //   air mass in kg/m2
 
     const Real o3l_old = o3l_vmr(kk);              // vmr
