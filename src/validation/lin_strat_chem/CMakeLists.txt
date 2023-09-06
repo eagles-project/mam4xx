@@ -30,6 +30,8 @@ endforeach()
 set(TEST_LIST
     lin_strat_chem_solve_ts_1415
     lin_strat_sfcsink_ts_1415_multicol
+    lin_strat_sfcsinkmulticol_merged
+    lin_strat_chem_solve_merged
     )
 # # matching the tests and errors, just for convenience
 
@@ -37,6 +39,8 @@ set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
     6e-11
     ${DEFAULT_TOL}
+    6e-13
+    2e-9
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
