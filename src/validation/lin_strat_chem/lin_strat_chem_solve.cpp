@@ -36,8 +36,6 @@ void lin_strat_chem_solve(Ensemble *ensemble) {
       Real  o3_vmr= input.get_array("o3_vmr")[0];
 
       constexpr Real zero =0;
-
-      // std::vector<Real> ss_o3(1,zero); 
       Real ss_o3=zero;
       Real do3_linoz = zero; 
       Real do3_linoz_psc = zero;

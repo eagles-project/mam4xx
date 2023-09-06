@@ -11,6 +11,7 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 add_executable(lin_strat_chem_driver
                lin_strat_chem_driver.cpp
                lin_strat_chem_solve.cpp
+               lin_strat_sfcsink.cpp
                )
 
 target_link_libraries(lin_strat_chem_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -28,12 +29,14 @@ endforeach()
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     lin_strat_chem_solve_ts_1415
+    lin_strat_sfcsink_ts_1415_multicol
     )
 # # matching the tests and errors, just for convenience
 
 set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
     6e-11
+    ${DEFAULT_TOL}
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
