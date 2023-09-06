@@ -17,6 +17,9 @@
 #ifndef MAM4XX_LIN_STRAY_CHEM_HPP
 #define MAM4XX_LIN_STRAY_CHEM_HPP
 
+#include <haero/math.hpp>
+#include <mam4xx/aero_config.hpp>
+
 namespace mam4 {
 namespace lin_strat_chem {
 
