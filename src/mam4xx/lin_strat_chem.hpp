@@ -243,9 +243,9 @@ void lin_strat_chem_solve(
     const Real psc_T, // PSC ozone loss T (K) threshold
     const ColumnView &o3_vmr,
     // diagnostic variables outputs
-    ColumnView &do3_linoz, ColumnView &do3_linoz_psc, ColumnView &ss_o3,
-    ColumnView &o3col_du_diag, ColumnView &o3clim_linoz_diag,
-    ColumnView &sza_degrees) {
+    const ColumnView &do3_linoz, const ColumnView &do3_linoz_psc,
+    const ColumnView &ss_o3, const ColumnView &o3col_du_diag,
+    const ColumnView &o3clim_linoz_diag, const ColumnView &sza_degrees) {
 
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, ltrop), KOKKOS_LAMBDA(int kk) {

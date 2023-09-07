@@ -11,6 +11,7 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 add_executable(lin_strat_chem_driver
                lin_strat_chem_driver.cpp
                lin_strat_chem_solve.cpp
+               lin_strat_chem_solve_multicol.cpp
                lin_strat_sfcsink.cpp
                )
 
