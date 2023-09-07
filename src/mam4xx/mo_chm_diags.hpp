@@ -7,6 +7,8 @@
 #include <mam4xx/gas_chem.hpp>
 
 using Real = haero::Real;
+using View1D = DeviceType::view_1d<Real>;
+using View2D = DeviceType::view_2d<Real>;
 
 namespace mam4 {
 
@@ -19,14 +21,18 @@ constexpr Real DUfac = 2.687e20;   // 1 DU in molecules per m^2
 constexpr Real rearth  = 6.37122e6;
 constexpr Real rgrav = 1.0 / 9.80616; // reciprocal of acceleration of gravity ~ m/s^2
 constexpr Real avogadro = haero::Constants::avogadro;
-constexpr int gas_pcnst = gas_chemistry::gas_pcnst;
-//char solsym[gas_pcnst][16]; //solution system
-
+constexpr const int gas_pcnst = gas_chemistry::gas_pcnst;
+/*char solsymmmm[gas_pcnst][17] = {"O3              ","H2O2            ","H2SO4           ","SO2             ","DMS             ", 
+                        "SOAG            ","so4_a1          ","pom_a1          ","soa_a1          ","bc_a1           ", 
+                        "dst_a1          ","ncl_a1          ","mom_a1          ","num_a1          ","so4_a2          ", 
+                        "soa_a2          ","ncl_a2          ","mom_a2          ","num_a2          ","dst_a3          ", 
+                        "ncl_a3          ","so4_a3          ","bc_a3           ","pom_a3          ","soa_a3          ", 
+                        "mom_a3          ","num_a3          ","pom_a4          ","bc_a4           ","mom_a4          ", 
+                        "num_a4          "}; //solution system
+*/
 // number of vertical levels
-constexpr int pver = 72;
-constexpr int pverm = pver - 1;
+constexpr const int pver = mam4::nlev;
 
-//Real sox_species[3] = {0, 1, 2};
 /* will be ported from set_sox
     Real sox_species[3];
     id_so2     = get_spc_ndx( 'SO2' )
@@ -36,15 +42,16 @@ constexpr int pverm = pver - 1;
 */
 
 KOKKOS_INLINE_FUNCTION
-void het_diags(Real het_rates[pver][gas_pcnst], //in
-               Real mmr[pver][gas_pcnst],
-               Real pdel[pver], 
-               Real wght,
-               Real wrk_wd[gas_pcnst], //output
+void het_diags(const View2D &het_rates, //[pver][gas_pcnst], //in
+               const View2D &mmr, //[pver][gas_pcnst],
+               const ColumnView &pdel, //[pver], 
+               Real &wght,
+               View1D &wrk_wd, //[gas_pcnst], //output
                //Real noy_wk, //output //this isn't actually used in this function?
-               Real sox_wk[gas_pcnst], //output
+               Real &sox_wk, //output
                //Real nhx_wk, //output //this isn't actually used in this function?
-               Real adv_mass[gas_pcnst] //constant from elsewhere
+               Real &adv_mass[gas_pcnst], //constant from elsewhere
+               Real &sox_species[3]
                ) {
                   //change to pass values for a single col
     //===========
@@ -56,18 +63,19 @@ void het_diags(Real het_rates[pver][gas_pcnst], //in
       //
       // compute vertical integral
       //
-      wrk_wd[mm] = 0;
-      sox_wk[mm] = 0;
+      wrk_wd(mm) = 0;
+      sox_wk = 0;
 
       for(int kk = 1; kk < pver; kk++) {
-         wrk_wd[mm] += het_rates[kk][mm] * mmr[kk][mm] * pdel[kk]; //parallel_reduce in the future?
+         wrk_wd(mm) += het_rates(kk)(mm) * mmr(kk)(mm) * pdel(kk); //parallel_reduce in the future?
       }
          
-      wrk_wd[mm] *= rgrav * wght * haero::square(rearth);
+      wrk_wd(mm) *= rgrav * wght * haero::square(rearth);
 
-      //if( any(sox_species == mm ) ) { //what is this any doing? is this just if sox species has any value calc sox_wk?
-      //  sox_wk[mm] += wrk_wd[mm] * S_molwgt / adv_mass[mm];
-      //}
+      for(int i = 0; i < 3; i++) { //FIXME: bad constant (len of sox species)
+         if(sox_species[i] == mm)
+            sox_wk += wrk_wd(mm) * S_molwgt / adv_mass[mm]; 
+      }
    }
 
  } // het_diags
