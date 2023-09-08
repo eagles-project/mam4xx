@@ -14,8 +14,8 @@
       4 Jul 2019 -- Qi Tang (LLNL), Juno Hsu (UCI), -- added sfcsink
 --------------------------------------------------------------------*/
 
-#ifndef MAM4XX_LIN_STRAY_CHEM_HPP
-#define MAM4XX_LIN_STRAY_CHEM_HPP
+#ifndef MAM4XX_LIN_STRAT_CHEM_HPP
+#define MAM4XX_LIN_STRAT_CHEM_HPP
 
 #include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
