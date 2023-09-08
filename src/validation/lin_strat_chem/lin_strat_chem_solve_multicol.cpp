@@ -77,7 +77,7 @@ void lin_strat_chem_solve_multicol(Ensemble *ensemble) {
     Kokkos::deep_copy(sza, sza_host);
 
     const Real delta_t = input.get_array("delta_t")[0];
-    const Real rlats = input.get_array("rlats")[0];
+    const auto rlats_db = input.get_array("rlats");
     const Real chlorine_loading = input.get_array("chlorine_loading")[0];
     const Real psc_T = input.get_array("psc_T")[0];
 
@@ -91,9 +91,11 @@ void lin_strat_chem_solve_multicol(Ensemble *ensemble) {
     const auto ltrop_db = input.get_array("ltrop");
 
     int ltrop[ncol] = {};
+    Real rlats[ncol] = {};
 
     for (int i = 0; i < ncol; ++i) {
       ltrop[i] = int(ltrop_db[i]);
+      rlats[i] = rlats_db[i]; 
     }
 
     auto team_policy = ThreadTeamPolicy(ncol, 1u);
@@ -134,7 +136,7 @@ void lin_strat_chem_solve_multicol(Ensemble *ensemble) {
 
           lin_strat_chem_solve(
               team, o3col_icol, temperature_icol, sza(icol), pmid_icol, delta_t,
-              rlats,
+              rlats[icol],
               // ltrop, & !in
               linoz_o3_clim_icol, linoz_t_clim_icol, linoz_o3col_clim_icol,
               linoz_PmL_clim_icol, linoz_dPmL_dO3_icol,
