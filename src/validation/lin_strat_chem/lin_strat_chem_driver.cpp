@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
       lin_strat_sfcsink(ensemble);
     } else if (func_name == "lin_strat_chem_solve_multicol") {
       lin_strat_chem_solve_multicol(ensemble);
-    }else {
+    } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
       exit(1);
