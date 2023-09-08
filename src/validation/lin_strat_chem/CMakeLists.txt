@@ -33,6 +33,8 @@ set(TEST_LIST
     lin_strat_sfcsink_ts_1415_multicol
     lin_strat_sfcsinkmulticol_merged
     lin_strat_chem_solve_merged
+    lin_strat_chem_solve_ts_1415_multicol
+    lin_strat_chem_solvemulticol_merged
     )
 # # matching the tests and errors, just for convenience
 
@@ -42,6 +44,8 @@ set(ERROR_THRESHOLDS
     ${DEFAULT_TOL}
     6e-13
     2e-9
+    6e-9
+    9e-7
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.

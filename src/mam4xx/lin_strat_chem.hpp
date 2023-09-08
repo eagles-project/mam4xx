@@ -179,7 +179,7 @@ void lin_strat_chem_solve_kk(const Real o3col, const Real temperature,
       0.0000; // EESC value [ppbv] for background conditions
   // BAD CONSTANT
   constexpr Real convert_to_du =
-      1.0 / (2.687e16); //      ! convert ozone column from [mol/cm^2] to [DU]
+      1.0 / 2.687e16; //      ! convert ozone column from [mol/cm^2] to [DU]
   constexpr Real one = 1;
   constexpr Real zero = 0;
   const Real lats =

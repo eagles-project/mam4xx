@@ -24,6 +24,7 @@ using namespace mam4;
 // Parameterizations used by the lin_strat_chem() process.
 void lin_strat_chem_solve(Ensemble *ensemble);
 void lin_strat_sfcsink(Ensemble *ensemble);
+void lin_strat_chem_solve_multicol(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -51,7 +52,9 @@ int main(int argc, char **argv) {
       lin_strat_chem_solve(ensemble);
     } else if (func_name == "lin_strat_sfcsink") {
       lin_strat_sfcsink(ensemble);
-    } else {
+    } else if (func_name == "lin_strat_chem_solve_multicol") {
+      lin_strat_chem_solve_multicol(ensemble);
+    }else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
       exit(1);
