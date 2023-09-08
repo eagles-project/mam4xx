@@ -95,7 +95,7 @@ void lin_strat_chem_solve_multicol(Ensemble *ensemble) {
 
     for (int i = 0; i < ncol; ++i) {
       ltrop[i] = int(ltrop_db[i]);
-      rlats[i] = rlats_db[i]; 
+      rlats[i] = rlats_db[i];
     }
 
     auto team_policy = ThreadTeamPolicy(ncol, 1u);
