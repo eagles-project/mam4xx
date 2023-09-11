@@ -69,7 +69,6 @@ void psc_activation(const Real lats, const Real temp, const Real pmid,
   if (haero::abs(lats) > lats_threshold) {
     if (excess_chlorine) {
       if (temp <= psc_T) {
-
         // define maximum SZA for PSC loss (= tangent height at sunset)
         const Real max_sza =
             (ninety + haero::sqrt(haero::max(
@@ -147,8 +146,6 @@ void lin_strat_chem_solve_kk(const Real o3col, const Real temperature,
                              Real &do3_linoz, Real &do3_linoz_psc, Real &ss_o3,
                              Real &o3col_du_diag, Real &o3clim_linoz_diag,
                              Real &sza_degrees) {
-
-  //
   // @param[in] o3col               ! ozone column above box [mol/cm^2]
   // @param[in] temp                ! temperature [K]
   // @param[in] sza                 ! local solar zenith angle
@@ -189,7 +186,6 @@ void lin_strat_chem_solve_kk(const Real o3col, const Real temperature,
   const bool excess_chlorine =
       (chlorine_loading - chlorine_loading_bgnd) > zero;
 
-  // for (int kk = 0; kk < n_ltrop; ++kk) {
   const Real o3_clim = linoz_o3_clim; // climatological ozone
   o3clim_linoz_diag = o3_clim;        //  diagnostic for output
   const Real o3_old = o3_vmr;         //              old ozone mixing ratio
@@ -222,8 +218,6 @@ void lin_strat_chem_solve_kk(const Real o3col, const Real temperature,
 
   sza_degrees = sza * radians_to_degrees;
 
-  // } // kk
-
 } // lin_strat_chem_solve_kk
 
 KOKKOS_INLINE_FUNCTION
@@ -238,7 +232,6 @@ void lin_strat_chem_solve(
     const ColumnView &linoz_dPmL_dT, // in
     const ColumnView &linoz_dPmL_dO3col,
     const ColumnView &linoz_cariolle_psc, // in
-    //
     const int ltrop, const Real chlorine_loading,
     const Real psc_T, // PSC ozone loss T (K) threshold
     const ColumnView &o3_vmr,
@@ -257,7 +250,6 @@ void lin_strat_chem_solve(
             linoz_dPmL_dT(kk), // in
             linoz_dPmL_dO3col(kk),
             linoz_cariolle_psc(kk), // in
-                                    //
             chlorine_loading,
             psc_T, // PSC ozone loss T (K) threshold
             o3_vmr(kk),
