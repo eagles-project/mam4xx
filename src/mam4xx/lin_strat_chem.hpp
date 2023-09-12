@@ -152,18 +152,17 @@ void lin_strat_chem_solve_kk(const Real o3col, const Real temperature,
   // @param[in] pmid                ! midpoint pressure [Pa]
   // @param[in] delta_t             ! timestep size [secs]
   // @param[in] rlats(ncol)         ! column latitudes (radians)
-  // @param[in] ltrop               ! chunk index
-
-  // @param[in] linoz_o3_clim      ! ozone (climatology) [vmr]
-  // @param[in]linoz_t_clim       ! temperature (climatology) [K]
-  // @param[in]linoz_o3col_clim   ! Column O3 above box (climatology) [Dobson
+  // @param[in] ltrop               ! vertical index of the tropopause
+  // @param[in] linoz_o3_clim       ! ozone (climatology) [vmr]
+  // @param[in]linoz_t_clim         ! temperature (climatology) [K]
+  // @param[in]linoz_o3col_clim     ! Column O3 above box (climatology) [Dobson
   // Units or DU]
-  // @param[in] linoz_PmL_clim     ! P minus L (climatology) [vmr/s]
-  // @param[in] linoz_dPmL_dO3     ! Sensitivity of P minus L to O3 [1/s]
-  // @param[in] linoz_dPmL_dT      ! Sensitivity of P minus L to T [K]
-  // @param[in]linoz_dPmL_dO3col  ! Sensitivity of P minus L to overhead O3
+  // @param[in] linoz_PmL_clim      ! P minus L (climatology) [vmr/s]
+  // @param[in] linoz_dPmL_dO3      ! Sensitivity of P minus L to O3 [1/s]
+  // @param[in] linoz_dPmL_dT       ! Sensitivity of P minus L to T [K]
+  // @param[in]linoz_dPmL_dO3col    ! Sensitivity of P minus L to overhead O3
   // column [vmr/DU]
-  // @param[in] linoz_cariolle_psc ! Cariolle parameter for PSC loss of ozone
+  // @param[in] linoz_cariolle_psc  ! Cariolle parameter for PSC loss of ozone
   // [1/s]
 
   // intent in-out
