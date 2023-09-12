@@ -35,8 +35,6 @@ public:
   static constexpr int npca = static_cast<int>(ModeIndex::PrimaryCarbon);
   static constexpr int igas_h2so4 = static_cast<int>(GasId::H2SO4);
   static constexpr int igas_soag = static_cast<int>(GasId::SOAG);
-  static constexpr int igas_nh3 = static_cast<int>(GasId::NH3);
-  static constexpr int iaer_h2so4 = static_cast<int>(GasId::H2SO4);
   static constexpr int iaer_so4 = static_cast<int>(AeroId::SO4);
   static constexpr int iaer_pom = static_cast<int>(AeroId::POM);
   static constexpr int iaer_soag_bgn = static_cast<int>(AeroId::SOA);
@@ -51,26 +49,23 @@ public:
   }
   KOKKOS_INLINE_FUNCTION
   static const GasId (&Gases())[num_gas] {
-    static const GasId gases[num_gas] = {GasId::SOAG, GasId::H2SO4, GasId::NH3};
+    // see mam4xx/aero_modes.hpp
+    static const GasId gases[num_gas] = {GasId::O3,  GasId::H2O2, GasId::H2SO4,
+                                         GasId::SO2, GasId::DMS,  GasId::SOAG};
     return gases;
   }
-  // AeroId::NH4 is a future enhancement.
-  static constexpr int iaer_nh4 = -1; // static_cast<int>(AeroId::NH4);
-                                      //
-  // what aerosol species does the gas become when condensing?
-  // There are two gases that condense to aerosols:
-  static constexpr int igas_nh3_index = 2;
+  // NH3 -> NH4 condensation is a future enhancement
+  static constexpr int iaer_nh4 = -1;
+  static constexpr int igas_nh3 = -1;
 
-  // There are three gases, AeroConfig::num_gas_ids(), and for each
-  // one it can condense to an aerosol.
-  // 0 = GasId::SOAG  -> AeroId::SOA
-  // 1 = GasId::H2SO4 -> AeroId::SO4
-  // 2 = GasId::NH3   -> AeroId::None
-  // Gas/Aerosol exchange does not handle NH3 but the code is
-  // written in an extensible way so it could in the future.
+  // In MAM4, there are only two gases that condense to aerosols:
+  // 1. H2SO4 -> SO4
+  // 2. SOAG  -> SOA
   KOKKOS_INLINE_FUNCTION
   static constexpr AeroId gas_to_aer(const GasId gas) {
-    const AeroId gas_to_aer[num_gas] = {AeroId::SOA, AeroId::SO4, AeroId::None};
+    const AeroId gas_to_aer[num_gas] = {AeroId::None, AeroId::None,
+                                        AeroId::SO4,  AeroId::None,
+                                        AeroId::None, AeroId::SOA};
     return gas_to_aer[static_cast<int>(gas)];
   }
   //------------------------------------------------------------------
@@ -79,13 +74,11 @@ public:
   // Here the array uptk_rate_factor contains the uptake rate ratio
   // w.r.t. that of H2SO4.
   //------------------------------------------------------------------
-  //  Indices correspond to those in idx_gas_to_aer: gas_soag, gas_h2so4,
-  //  gas_nh3
+  //  Indices correspond to those in the gases array above
   KOKKOS_INLINE_FUNCTION
   static constexpr Real uptk_rate_factor(const int i) {
-    const Real uptk_rate[num_gas] = {Constants::soag_h2so4_uptake_coeff_ratio,
-                                     1.0,
-                                     Constants::nh3_h2so4_uptake_coeff_ratio};
+    const Real uptk_rate[num_gas] = {
+        0.0, 0.0, 1.0, 0.0, 0.0, Constants::soag_h2so4_uptake_coeff_ratio};
     return uptk_rate[i];
   }
 
@@ -131,8 +124,8 @@ public:
     // this allows the condensation (gasaerexch) routine to apply production and
     // condensation loss together, which is more accurate numerically
     // NOTE - must be >= zero, as numerical method can fail when it is negative
-    // NOTE - currently only the values for h2so4 and nh3 should be non-zero
-    Real qgas_netprod_otrproc[num_gas] = {0, 5.0e-016, 0};
+    // NOTE - currently only the value for h2so4 should be non-zero
+    Real qgas_netprod_otrproc[num_gas] = {0, 0, 5.0e-016, 0, 0, 0};
   };
 
   // name -- unique name of the process implemented by this class
@@ -204,7 +197,7 @@ void mam_gasaerexch_1subarea_1gas_nonvolatile(
   // condensation loss
   //    together, which is more accurate numerically
   // NOTE - must be >= zero, as numerical method can fail when it is negative
-  // NOTE - currently only the values for h2so4 and nh3 should be non-zero
+  // NOTE - currently only the values for h2so4 should be non-zero
 
   const int num_mode = GasAerExch::num_mode;
 
@@ -620,8 +613,7 @@ void mam_gasaerexch_1subarea(
   // easier to see the assumed relationship between species.)
   //---------------------------------------------------------------------
   if (igas_nh3) {
-    // We know that igas_nh3 is the third entry in 1Gn
-    const int igas = GasAerExch::igas_nh3_index;
+    const int igas = GasAerExch::igas_nh3;
     const AeroId aer = gas_to_aer[igas];
     if (aer != AeroId::None) {
       for (ModeIndex mode : GasAerExch::Modes()) {
@@ -816,7 +808,6 @@ inline void GasAerExch::init(const AeroConfig &aero_config,
     eqn_and_numerics_category[k] = NA;
   eqn_and_numerics_category[igas_soag] = IMPL;
   eqn_and_numerics_category[igas_h2so4] = ANAL;
-  eqn_and_numerics_category[igas_nh3] = ANAL;
 
   //-------------------------------------------------------------------
   // Determine whether specific gases will condense to specific modes
