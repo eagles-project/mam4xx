@@ -14,7 +14,7 @@ using namespace mam4;
 using namespace haero;
 using namespace mo_chm_diags;
 
-//constexpr const int gas_pcnst = gas_chemistry::gas_pcnst;
+// constexpr const int gas_pcnst = gas_chemistry::gas_pcnst;
 
 void het_diags(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -27,17 +27,13 @@ void het_diags(Ensemble *ensemble) {
     const auto pdel_in = input.get_array("pdel");
     const auto wght_in = input.get_array("wght");
 
-    std::cout << "Read inputs " << std::endl;
     Real wght = wght_in[0];
 
-    //const auto pdel = View1D("pdel", pver);
     ColumnView het_rates[gas_pcnst];
     ColumnView mmr[gas_pcnst];
     View1DHost het_rates_host[gas_pcnst];
     View1DHost mmr_host[gas_pcnst];
 
-    std::cout << "start creating views " << std::endl;
-    
     for (int mm = 0; mm < gas_pcnst; ++mm) {
       het_rates[mm] = haero::testing::create_column_view(pver);
       mmr[mm] = haero::testing::create_column_view(pver);
@@ -47,8 +43,10 @@ void het_diags(Ensemble *ensemble) {
     }
 
     int count = 0;
-    for (int kk = 0; kk < pver; ++kk) {
-      for (int mm = 0; mm < gas_pcnst; ++mm) {
+    // for (int kk = 0; kk < pver; ++kk) {
+    //   for (int mm = 0; mm < gas_pcnst; ++mm) {
+    for (int mm = 0; mm < gas_pcnst; ++mm) {
+      for (int kk = 0; kk < pver; ++kk) {
         het_rates_host[mm](kk) = het_rates_in[count];
         mmr_host[mm](kk) = mmr_in[count];
         count++;
@@ -60,83 +58,52 @@ void het_diags(Ensemble *ensemble) {
       Kokkos::deep_copy(het_rates[mm], het_rates_host[mm]);
       Kokkos::deep_copy(mmr[mm], mmr_host[mm]);
     }
-    
-    std::cout << "finished het_rates and mmr init" << std::endl;
-   
+
     ColumnView pdel;
-    auto pdel_host = View1DHost((Real *)pdel_in.data(), pver); //puts data into host
+    auto pdel_host =
+        View1DHost((Real *)pdel_in.data(), pver); // puts data into host
     pdel = haero::testing::create_column_view(pver);
     Kokkos::deep_copy(pdel, pdel_host);
-    
+
     std::vector<Real> vector0(gas_pcnst, 0);
     std::vector<Real> single_vector0(1, 0);
-    
+
     auto wrk_wd_host = View1DHost(vector0.data(), gas_pcnst);
     const auto wrk_wd = View1D("wrk_wd", gas_pcnst);
     Kokkos::deep_copy(wrk_wd, wrk_wd_host);
-    std::cout << "wrk_wd_host[0]: " << wrk_wd_host(0) << std::endl;
-    std::cout << "wrk_wd_host[1]: " << wrk_wd_host(1) << std::endl;
 
     auto sox_wk_host = View1DHost(single_vector0.data(), 1);
     const auto sox_wk = View1D("sox_wk", 1);
     Kokkos::deep_copy(sox_wk, sox_wk_host);
 
     const Real sox_species[3] = {4, -1, 3};
-    const Real adv_mass[gas_pcnst] = {47.998200,      34.013600,      98.078400,      64.064800,      62.132400, 
-                               12.011000,     115.107340,      12.011000,      12.011000,      12.011000, 
-                              135.064039,      58.442468,  250092.672000,       1.007400,     115.107340, 
-                               12.011000,      58.442468,  250092.672000,       1.007400,     135.064039, 
-                               58.442468,     115.107340,      12.011000,      12.011000,      12.011000, 
-                           250092.672000,       1.007400,      12.011000,      12.011000,  250092.672000, 
-                                1.007400};
-
-    //int counter = 0;
-    /*for(int mm = 0; mm < gas_pcnst; mm++) {
-      for(int k = 0; k < pver; k++) {
-        het_rates[k][mm] = het_rates_in[counter];
-        mmr[k][mm] = mmr_in[counter];
-        counter++;
-      }
-      wrk_wd[mm] = 0;
-    }
-    */
-/*
-    counter = 0;
-    for(int k = 0; k < pver; k++) {
-      pdel[k] = pdel_in[counter];
-      counter++;
-    }
-*/
-    std::cout << "before kkokks for" << std::endl;
+    const Real adv_mass[gas_pcnst] = {
+        47.998200,     34.013600,  98.078400,     64.064800, 62.132400,
+        12.011000,     115.107340, 12.011000,     12.011000, 12.011000,
+        135.064039,    58.442468,  250092.672000, 1.007400,  115.107340,
+        12.011000,     58.442468,  250092.672000, 1.007400,  135.064039,
+        58.442468,     115.107340, 12.011000,     12.011000, 12.011000,
+        250092.672000, 1.007400,   12.011000,     12.011000, 250092.672000,
+        1.007400};
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-    
-        mo_chm_diags::het_diags(team, het_rates, mmr, pdel, wght, wrk_wd, sox_wk, adv_mass, sox_species); 
-
+          mo_chm_diags::het_diags(team, het_rates, mmr, pdel, wght, wrk_wd,
+                                  sox_wk, adv_mass, sox_species);
         });
-
-    std::cout << "after kkokks for" << std::endl;
 
     std::vector<Real> wrk_wd_mm(gas_pcnst);
     Kokkos::deep_copy(wrk_wd_host, wrk_wd);
-    std::cout << "wrk deep copies" << std::endl;
-    for(int mm = 0; mm < gas_pcnst; mm++) {
-      std::cout << "mm: " << mm << std::endl;
-      std::cout << "wrk_wd_mm[mm]: " << wrk_wd_mm[mm] << std::endl;
-      std::cout << "wrk_wd_host[mm]: " << wrk_wd_host(mm) << std::endl;
+    for (int mm = 0; mm < gas_pcnst; mm++) {
       wrk_wd_mm[mm] = wrk_wd_host(mm);
     }
-    std::cout << "post wrk  copies" << std::endl;
-    
+
     Kokkos::deep_copy(sox_wk_host, sox_wk);
 
     std::vector<Real> sox_wk_out(1);
 
-    std::cout << "sox_wk_host(0) = " << sox_wk_host(0) << std::endl;
     output.set("wrk_wd_mm", wrk_wd_mm);
     output.set("sox_wk", sox_wk_host[0]);
-
   });
 }
