@@ -207,13 +207,14 @@ Real soa_exch_substepsize(
 //===============================================================================================
 KOKKOS_INLINE_FUNCTION
 void mam_soaexch_advance_in_time(
-    const int ntot_soamode,  // in
-    const int ntot_soaspec,  // in
-    const GasId soaspec[],   // in len ntot_soaspec
-    const Real dt_full,      // in
-    const Real dt_sub_fixed, // in
-    const int niter_max,     // in
-    const Real alpha_astem,  // in
+    const int ntot_soamode,    // in
+    const int ntot_soaspec,    // in
+    const GasId soaspec[],     // in len ntot_soaspec
+    const AeroId gas_to_aer[], // in
+    const Real dt_full,        // in
+    const Real dt_sub_fixed,   // in
+    const int niter_max,       // in
+    const Real alpha_astem,    // in
     const Real uptkaer[AeroConfig::num_gas_ids()]
                       [AeroConfig::num_modes()], // in
     const Real g0_soa[],                         // in len ntot_soaspec
@@ -228,6 +229,7 @@ void mam_soaexch_advance_in_time(
   // int ntot_soamode 
   // int ntot_soaspec  "last" gas species that can be SOA
   // int soaspec[ntot_soaspec]
+  // const AeroId gas_to_aer[GasAerExch::num_gas], 
   // dt_full       Host model dt (s)
   // dt_sub_fixed  Fixed sub-step. A negative value means using adaptive step sizes
   // niter_max     Maximum number of substeps
@@ -343,7 +345,8 @@ void mam_soaexch_advance_in_time(
     for (int n = 0; n < ntot_soamode; ++n) {
       if (!skip_soamode[n]) {
         for (int i = 0; i < ntot_soaspec; ++i) {
-          const int soa = static_cast<int>(soaspec[i]);
+          const int soa =
+              static_cast<int>(gas_to_aer[static_cast<int>(soaspec[i])]);
           a_soa[i][n] = max(qaer_cur[soa][n], 0.0);
         }
       }
@@ -498,7 +501,8 @@ void mam_soaexch_advance_in_time(
     //  Save mix ratios for soa species
     // ------------------------------------------------------------------------------------------
     for (int igas = 0; igas < ntot_soaspec; ++igas) {
-      const int soa = static_cast<int>(soaspec[igas]);
+      const int soa =
+          static_cast<int>(gas_to_aer[static_cast<int>(soaspec[igas])]);
       for (int n = 0; n < ntot_soamode; ++n) {
         qaer_cur[soa][n] = a_soa[igas][n];
       }
@@ -536,6 +540,7 @@ void mam_soaexch_1subarea(const int mode_pca,          // in
                           const int ntot_soamode,      // in
                           const int ntot_soaspec,      // in
                           const GasId soaspec[],       // in len ntot_soaspec
+                          const AeroId gas_to_aer[],   // in
                           const Real dt,               // in
                           const Real dt_sub_soa_fixed, // in
                           const Real pstd,             // in
@@ -557,6 +562,7 @@ void mam_soaexch_1subarea(const int mode_pca,          // in
   // ntot_soamode      
   // ntot_soaspec      
   // soaspec[ntot_soaspec]
+  // const AeroId gas_to_aer[GasAerExch::num_gas], 
   // dt               time step size used by parent subroutine
   // dt_sub_soa_fixed fixed sub-step in s. A negative value  means using adaptive step sizes
   // pstd             standard atmosphere in Pa
@@ -625,10 +631,10 @@ void mam_soaexch_1subarea(const int mode_pca,          // in
   // -----------------------------------------------------------
   const int niter_max = 1000;
 
-  mam_soaexch_advance_in_time(ntot_soamode, ntot_soaspec, soaspec, dt,
-                              dt_sub_soa_fixed, niter_max, alpha_astem, uptkaer,
-                              &g0_soa, qgas_cur, a_opoa, qaer_cur, qgas_avg,
-                              niter);
+  mam_soaexch_advance_in_time(ntot_soamode, ntot_soaspec, soaspec, gas_to_aer,
+                              dt, dt_sub_soa_fixed, niter_max, alpha_astem,
+                              uptkaer, &g0_soa, qgas_cur, a_opoa, qaer_cur,
+                              qgas_avg, niter);
 }
 } // namespace gasaerexch
 } // namespace mam4

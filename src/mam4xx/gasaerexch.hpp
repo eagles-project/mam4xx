@@ -667,9 +667,9 @@ void mam_gasaerexch_1subarea(
   const int ntot_soaspec = 1;
   const GasId soaspec[ntot_soaspec] = {GasId::SOAG};
   mam_soaexch_1subarea(GasAerExch::npca, ntot_soamode, ntot_soaspec, soaspec,
-                       dt, dtsub_soa_fixed, pstd, r_universal_mJ, temp, pmid,
-                       uptkaer, qaer_poa, qgas_cur, qgas_avg, qaer_cur, niter,
-                       soa_out);
+                       gas_to_aer, dt, dtsub_soa_fixed, pstd, r_universal_mJ,
+                       temp, pmid, uptkaer, qaer_poa, qgas_cur, qgas_avg,
+                       qaer_cur, niter, soa_out);
   niter_out = niter;
   g0_soa_out = soa_out;
 }
