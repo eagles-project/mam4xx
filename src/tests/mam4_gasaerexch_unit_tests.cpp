@@ -496,7 +496,7 @@ TEST_CASE("mam_gasaerexch_1subarea", "mam_gasaerexch") {
   const Real pmid = 100000.0;
   const Real aircon = 4.4055781358372036e-02;
   const int ngas = GasAerExch::num_gas_to_aer;
-  const Real qgas_netprod_otrproc[num_gas] = {0.0, 5.00e-16, 0.0};
+  const Real qgas_netprod_otrproc[num_gas] = {0, 0, 5.00e-16, 0, 0, 0};
 
   Real modes_mean_std_dev[num_mode];
   for (int imode = 0; imode < num_mode; ++imode)
