@@ -41,6 +41,7 @@ install(FILES
         wet_dep.hpp
         ndrop.hpp
         mo_photo.hpp
+        lin_strat_chem.hpp
         DESTINATION include/mam4xx)
 
 add_library(mam4xx aero_modes.cpp)
