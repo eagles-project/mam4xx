@@ -6,13 +6,12 @@
 #include <mam4xx/utils.hpp>
 #include <mam4xx/gas_chem.hpp>
 
-using Real = haero::Real;
-using View1D = DeviceType::view_1d<Real>;
-using View2D = DeviceType::view_2d<Real>;
-
 namespace mam4 {
 
 namespace mo_chm_diags {
+
+using Real = haero::Real;
+using View1D = DeviceType::view_1d<Real>;
 
 //FIXME: bad constants
 constexpr Real S_molwgt = 32.066;
@@ -42,42 +41,45 @@ constexpr const int pver = mam4::nlev;
 */
 
 KOKKOS_INLINE_FUNCTION
-void het_diags(const View2D &het_rates, //[pver][gas_pcnst], //in
-               const View2D &mmr, //[pver][gas_pcnst],
+void het_diags(const ThreadTeam &team,
+               const ColumnView het_rates[gas_pcnst], //[pver][gas_pcnst], //in
+               const ColumnView mmr[gas_pcnst], //[pver][gas_pcnst],
                const ColumnView &pdel, //[pver], 
-               Real &wght,
-               View1D &wrk_wd, //[gas_pcnst], //output
+               const Real &wght,
+               View1D wrk_wd, //[gas_pcnst], //output
                //Real noy_wk, //output //this isn't actually used in this function?
-               Real &sox_wk, //output
+               View1D sox_wk, //output
                //Real nhx_wk, //output //this isn't actually used in this function?
-               Real &adv_mass[gas_pcnst], //constant from elsewhere
-               Real &sox_species[3]
+               const Real adv_mass[gas_pcnst], //constant from elsewhere
+               const Real sox_species[3]
                ) {
                   //change to pass values for a single col
     //===========
     // output integrated wet deposition field
     //===========
    
-
-   for(int mm = 0; mm < gas_pcnst; mm++) {
+   sox_wk[0] = 0;
+   Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, gas_pcnst), KOKKOS_LAMBDA(int mm) {
       //
       // compute vertical integral
       //
-      wrk_wd(mm) = 0;
-      sox_wk = 0;
+      wrk_wd[mm] = 0;
+      
 
       for(int kk = 1; kk < pver; kk++) {
-         wrk_wd(mm) += het_rates(kk)(mm) * mmr(kk)(mm) * pdel(kk); //parallel_reduce in the future?
+         wrk_wd[mm] += het_rates[mm](kk) * mmr[mm](kk) * pdel(kk); //parallel_reduce in the future?
       }
          
-      wrk_wd(mm) *= rgrav * wght * haero::square(rearth);
+      wrk_wd[mm] *= rgrav * wght * haero::square(rearth);
+   });
 
+   for(int mm = 0; mm < gas_pcnst; mm++) {
       for(int i = 0; i < 3; i++) { //FIXME: bad constant (len of sox species)
          if(sox_species[i] == mm)
-            sox_wk += wrk_wd(mm) * S_molwgt / adv_mass[mm]; 
+            sox_wk[0] += wrk_wd[mm] * S_molwgt / adv_mass[mm]; 
       }
    }
-
  } // het_diags
 
 /*

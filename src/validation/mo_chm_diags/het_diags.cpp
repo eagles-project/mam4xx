@@ -20,28 +20,60 @@ void het_diags(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
     using View1D = typename DeviceType::view_1d<Real>;
-    using View2D = typename DeviceType::view_2d<Real>;
+    using ColumnView = haero::ColumnView;
 
     const auto het_rates_in = input.get_array("het_rates");
     const auto mmr_in = input.get_array("mmr");
     const auto pdel_in = input.get_array("pdel");
-    const auto wght = input.get_array("wght")[0];
+    const auto wght_in = input.get_array("wght");
 
-    auto pdel_host = View1DHost((Real *)pdel_in.data(), pver);
-    const auto pdel = View1D("pdel", pver);
+    Real wght = wght_in[0];
+
+    //const auto pdel = View1D("pdel", pver);
+    ColumnView het_rates[gas_pcnst];
+    ColumnView mmr[gas_pcnst];
+    View1DHost het_rates_host[gas_pcnst];
+    View1DHost mmr_host[gas_pcnst];
+
+    
+    for (int mm = 0; mm < gas_pcnst; ++mm) {
+      het_rates[mm] = haero::testing::create_column_view(pver);
+      mmr[mm] = haero::testing::create_column_view(pver);
+
+      het_rates_host[mm] = View1DHost("het_rates_host", pver);
+      mmr_host[mm] = View1DHost("mmr_host", pver);
+    }
+
+    int count = 0;
+    for (int kk = 0; kk < pver; ++kk) {
+      for (int mm = 0; mm < gas_pcnst; ++mm) {
+        het_rates_host[mm](kk) = het_rates_in[count];
+        mmr_host[mm](kk) = mmr_in[count];
+        count++;
+      }
+    }
+
+    // transfer data to GPU.
+    for (int mm = 0; mm < gas_pcnst; ++mm) {
+      Kokkos::deep_copy(het_rates[mm], het_rates_host[mm]);
+      Kokkos::deep_copy(mmr[mm], mmr_host[mm]);
+    }
+   
+    ColumnView pdel;
+    auto pdel_host = View1DHost((Real *)pdel_in.data(), pver); //puts data into host
+    pdel = haero::testing::create_column_view(pver);
     Kokkos::deep_copy(pdel, pdel_host);
-
-    View2D het_rates("het_rates", pver, gas_pcnst);
-    View2D mmr("mmr", pver, gas_pcnst);
-    View1D pdel("pdel", pver);
-    mam4::validation::convert_1d_vector_to_2d_view_device(het_rates_in, het_rates);
-    mam4::validation::convert_1d_vector_to_2d_view_device(mmr_in, mmr);
-
-    auto wrk_wd_host = View1DHost([0], pver);
+    
+    auto wrk_wd_host = View1DHost({0}, gas_pcnst);
     const auto wrk_wd = View1D("wrk_wd", gas_pcnst);
-    Real sox_wk;
-    Real sox_species[3] = {4, -1, 3};
-    Real adv_mass[gas_pcnst] = {47.998200,      34.013600,      98.078400,      64.064800,      62.132400, 
+    Kokkos::deep_copy(wrk_wd, wrk_wd_host);
+
+    auto sox_wk_host = View1DHost(0, 1);
+    const auto sox_wk = View1D("sox_wk", 1);
+    Kokkos::deep_copy(sox_wk, sox_wk_host);
+
+    const Real sox_species[3] = {4, -1, 3};
+    const Real adv_mass[gas_pcnst] = {47.998200,      34.013600,      98.078400,      64.064800,      62.132400, 
                                12.011000,     115.107340,      12.011000,      12.011000,      12.011000, 
                               135.064039,      58.442468,  250092.672000,       1.007400,     115.107340, 
                                12.011000,      58.442468,  250092.672000,       1.007400,     135.064039, 
@@ -49,7 +81,7 @@ void het_diags(Ensemble *ensemble) {
                            250092.672000,       1.007400,      12.011000,      12.011000,  250092.672000, 
                                 1.007400};
 
-    int counter = 0;
+    //int counter = 0;
     /*for(int mm = 0; mm < gas_pcnst; mm++) {
       for(int k = 0; k < pver; k++) {
         het_rates[k][mm] = het_rates_in[counter];
@@ -59,7 +91,6 @@ void het_diags(Ensemble *ensemble) {
       wrk_wd[mm] = 0;
     }
     */
-    sox_wk = 0;
 /*
     counter = 0;
     for(int k = 0; k < pver; k++) {
@@ -67,16 +98,25 @@ void het_diags(Ensemble *ensemble) {
       counter++;
     }
 */
-    mo_chm_diags::het_diags(het_rates, mmr, pdel, wght, wrk_wd, sox_wk, adv_mass, sox_species); 
+
+    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    Kokkos::parallel_for(
+        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+    
+        mo_chm_diags::het_diags(team, het_rates, mmr, pdel, wght, wrk_wd, sox_wk, adv_mass, sox_species); 
+
+        });
 
     std::vector<Real> wrk_wd_mm(gas_pcnst);
     Kokkos::deep_copy(wrk_wd_host, wrk_wd);
     for(int mm = 0; mm < gas_pcnst; mm++) {
       wrk_wd_mm[mm] = wrk_wd_host(mm);
     }
+    
+    Kokkos::deep_copy(sox_wk_host, sox_wk);
 
     output.set("wrk_wd_mm", wrk_wd_mm);
-    output.set("sox_wk", sox_wk);
+    output.set("sox_wk", sox_wk_host[0]);
 
   });
 }
