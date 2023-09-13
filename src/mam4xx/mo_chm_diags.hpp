@@ -64,14 +64,14 @@ void het_diags(const ThreadTeam &team,
       //
       // compute vertical integral
       //
-      wrk_wd[mm] = 0;
+      wrk_wd(mm) = 0;
       
 
-      for(int kk = 1; kk < pver; kk++) {
-         wrk_wd[mm] += het_rates[mm](kk) * mmr[mm](kk) * pdel(kk); //parallel_reduce in the future?
+      for(int kk = 0; kk < pver; kk++) {
+         wrk_wd(mm) += het_rates[mm](kk) * mmr[mm](kk) * pdel(kk); //parallel_reduce in the future?
       }
          
-      wrk_wd[mm] *= rgrav * wght * haero::square(rearth);
+      wrk_wd(mm) *= rgrav * wght * haero::square(rearth);
    });
 
    for(int mm = 0; mm < gas_pcnst; mm++) {

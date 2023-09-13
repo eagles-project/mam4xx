@@ -27,7 +27,6 @@ void het_diags(Ensemble *ensemble) {
     const auto pdel_in = input.get_array("pdel");
     const auto wght_in = input.get_array("wght");
 
-    std::cout << "Read inputs " << std::endl;
     Real wght = wght_in[0];
 
     //const auto pdel = View1D("pdel", pver);
@@ -36,7 +35,6 @@ void het_diags(Ensemble *ensemble) {
     View1DHost het_rates_host[gas_pcnst];
     View1DHost mmr_host[gas_pcnst];
 
-    std::cout << "start creating views " << std::endl;
     
     for (int mm = 0; mm < gas_pcnst; ++mm) {
       het_rates[mm] = haero::testing::create_column_view(pver);
@@ -47,8 +45,10 @@ void het_diags(Ensemble *ensemble) {
     }
 
     int count = 0;
-    for (int kk = 0; kk < pver; ++kk) {
-      for (int mm = 0; mm < gas_pcnst; ++mm) {
+    //for (int kk = 0; kk < pver; ++kk) {
+    //  for (int mm = 0; mm < gas_pcnst; ++mm) {
+    for (int mm = 0; mm < gas_pcnst; ++mm) {
+      for (int kk = 0; kk < pver; ++kk) {
         het_rates_host[mm](kk) = het_rates_in[count];
         mmr_host[mm](kk) = mmr_in[count];
         count++;
@@ -61,7 +61,6 @@ void het_diags(Ensemble *ensemble) {
       Kokkos::deep_copy(mmr[mm], mmr_host[mm]);
     }
     
-    std::cout << "finished het_rates and mmr init" << std::endl;
    
     ColumnView pdel;
     auto pdel_host = View1DHost((Real *)pdel_in.data(), pver); //puts data into host
@@ -74,8 +73,6 @@ void het_diags(Ensemble *ensemble) {
     auto wrk_wd_host = View1DHost(vector0.data(), gas_pcnst);
     const auto wrk_wd = View1D("wrk_wd", gas_pcnst);
     Kokkos::deep_copy(wrk_wd, wrk_wd_host);
-    std::cout << "wrk_wd_host[0]: " << wrk_wd_host(0) << std::endl;
-    std::cout << "wrk_wd_host[1]: " << wrk_wd_host(1) << std::endl;
 
     auto sox_wk_host = View1DHost(single_vector0.data(), 1);
     const auto sox_wk = View1D("sox_wk", 1);
@@ -107,7 +104,6 @@ void het_diags(Ensemble *ensemble) {
       counter++;
     }
 */
-    std::cout << "before kkokks for" << std::endl;
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
@@ -117,24 +113,17 @@ void het_diags(Ensemble *ensemble) {
 
         });
 
-    std::cout << "after kkokks for" << std::endl;
 
     std::vector<Real> wrk_wd_mm(gas_pcnst);
     Kokkos::deep_copy(wrk_wd_host, wrk_wd);
-    std::cout << "wrk deep copies" << std::endl;
     for(int mm = 0; mm < gas_pcnst; mm++) {
-      std::cout << "mm: " << mm << std::endl;
-      std::cout << "wrk_wd_mm[mm]: " << wrk_wd_mm[mm] << std::endl;
-      std::cout << "wrk_wd_host[mm]: " << wrk_wd_host(mm) << std::endl;
       wrk_wd_mm[mm] = wrk_wd_host(mm);
     }
-    std::cout << "post wrk  copies" << std::endl;
     
     Kokkos::deep_copy(sox_wk_host, sox_wk);
 
     std::vector<Real> sox_wk_out(1);
 
-    std::cout << "sox_wk_host(0) = " << sox_wk_host(0) << std::endl;
     output.set("wrk_wd_mm", wrk_wd_mm);
     output.set("sox_wk", sox_wk_host[0]);
 
