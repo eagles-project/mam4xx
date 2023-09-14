@@ -194,16 +194,15 @@ int main(int argc, char **argv) {
   //  prepare output
   // =======================================================================
   ensemble->process([=](const Input &input, Output &output) {
-    Real qgas_netprod_otrproc[num_gas];
-    Real qgas_cur[num_gas];
+    Real qgas_netprod_otrproc[num_gas] = {};
+    Real qgas_cur[num_gas] = {};
     // ----------------------------------------
     //  Process input for this ensemble member
-    // -----------------------------------saerexch_module_va-----
+    // ----------------------------------------
     //  Ambient conditions
 
     const Real pmid = input.get("pmid"); // air pressure
     const Real temp = input.get("temp"); // air temperature
-    // const Real aircon = pmid/(Constants::r_gas*temp); // air density
 
     // gas production rates and mixing ratio ICs
 
@@ -334,7 +333,7 @@ int main(int argc, char **argv) {
       //  tendencies after the subroutine call.
       // Note: qgas_cur[num_gas] is out of bounds but the constructor is for
       // [begin,end)
-      const std::vector<Real> zqgas_bef(&qgas_cur[0], &qgas_cur[num_mode]);
+      const std::vector<Real> zqgas_bef(&qgas_cur[0], &qgas_cur[num_gas]);
 
       // Call the MAM subroutine. Gas and aerosol mixing ratios will be updated
       // during the call
