@@ -2280,14 +2280,14 @@ TEST_CASE("cloudy", "test_mam4_amicphys") {
               Approx(check_qgas_delaa[i][j]).epsilon(epsilon).scale(scale));
     }
   }
-  for (int i = 0; i < num_gas_ids; ++i) {
+  for (int i = 0; i < num_modes; ++i) {
     if (!(qnum4[i] == Approx(check_qnum4[i])))
       std::cout << "qnum4[i] != Approx(check_qnum4[i])): "
                 << std::setprecision(14) << qnum4[i] << " != " << check_qnum4[i]
                 << std::endl;
     REQUIRE(qnum4[i] == Approx(check_qnum4[i]));
   }
-  for (int i = 0; i < num_gas_ids; ++i) {
+  for (int i = 0; i < num_modes; ++i) {
     for (int j = 0; j < nqtendaa; ++j) {
 #ifdef HAERO_DOUBLE_PRECISION
       const double epsilon = 0.001;

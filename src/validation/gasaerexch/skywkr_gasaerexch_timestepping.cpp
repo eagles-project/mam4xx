@@ -195,7 +195,7 @@ int main(int argc, char **argv) {
   // =======================================================================
   ensemble->process([=](const Input &input, Output &output) {
     Real qgas_netprod_otrproc[num_gas];
-    Real qgas_cur[num_mode];
+    Real qgas_cur[num_gas];
     // ----------------------------------------
     //  Process input for this ensemble member
     // -----------------------------------saerexch_module_va-----
