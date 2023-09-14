@@ -31,7 +31,7 @@ static constexpr int iqtend_coag = 3;
 static constexpr int iqtend_cond_only = 4;
 static constexpr int iqqcwtend_rnam = 0;
 static constexpr int maxsubarea = 2;
-const Real fcvt_gas[AeroConfig::num_gas_ids()] = {1, 1, 1};
+const Real fcvt_gas[AeroConfig::num_gas_ids()] = {1, 1, 1, 1, 1, 1};
 const Real fcvt_aer[AeroConfig::num_aerosol_ids()] = {1, 1, 1, 1, 1, 1, 1};
 // leave number mix-ratios unchanged (#/kmol-air)
 const Real fcvt_num = 1.0;
@@ -99,15 +99,18 @@ void mam_amicphys_1subarea_clear(
   static constexpr int iaer_pom = static_cast<int>(AeroId::POM);
   static constexpr int newnuc_h2so4_conc_optaa = 2;
 
-  const AeroId gas_to_aer[num_gas_ids] = {AeroId::SOA, AeroId::SO4,
-                                          AeroId::None};
+  const AeroId gas_to_aer[num_gas_ids] = {AeroId::None, AeroId::None,
+                                          AeroId::SO4,  AeroId::None,
+                                          AeroId::None, AeroId::SOA};
 
   const bool l_gas_condense_to_mode[num_gas_ids][num_modes] = {
-      {true, true, true, true},
-      {true, true, true, true},
-      {false, false, false, false}};
+      {false, false, false, false}, {false, false, false, false},
+      {true, true, true, true}, // H2SO4
+      {false, false, false, false}, {false, false, false, false},
+      {true, true, true, true}}; // SOAG
   enum { NA, ANAL, IMPL };
-  const int eqn_and_numerics_category[num_gas_ids] = {IMPL, ANAL, ANAL};
+  const int eqn_and_numerics_category[num_gas_ids] = {NA, NA, ANAL,
+                                                      NA, NA, IMPL};
 
   // air molar density (kmol/m3)
   // const Real r_universal = Constants::r_gas; // [mJ/(K mol)]
@@ -115,7 +118,7 @@ void mam_amicphys_1subarea_clear(
   const Real aircon = pmid / (1000 * r_universal * temp);
   const Real alnsg_aer[num_modes] = {0.58778666490211906, 0.47000362924573563,
                                      0.58778666490211906, 0.47000362924573563};
-  const Real uptk_rate_factor[num_gas_ids] = {0.81, 1.0, 1.0};
+  const Real uptk_rate_factor[num_gas_ids] = {0, 0, 1.0, 0, 0, 0.81};
   // calculates changes to gas and aerosol sub-area TMRs (tracer mixing ratios)
   // qgas3, qaer3, qnum3 are the current incoming TMRs
   // qgas4, qaer4, qnum4 are the updated outgoing TMRs
@@ -601,14 +604,17 @@ void mam_amicphys_1subarea_cloudy(
   static constexpr int iaer_pom = static_cast<int>(AeroId::POM);
   static constexpr int newnuc_h2so4_conc_optaa = 2;
 
-  const AeroId gas_to_aer[num_gas_ids] = {AeroId::SOA, AeroId::SO4,
-                                          AeroId::None};
+  const AeroId gas_to_aer[num_gas_ids] = {AeroId::None, AeroId::None,
+                                          AeroId::SO4,  AeroId::None,
+                                          AeroId::None, AeroId::SOA};
   const bool l_gas_condense_to_mode[num_gas_ids][num_modes] = {
-      {true, true, true, true},
-      {true, true, true, true},
-      {false, false, false, false}};
+      {false, false, false, false}, {false, false, false, false},
+      {true, true, true, true}, // H2SO4
+      {false, false, false, false}, {false, false, false, false},
+      {true, true, true, true}}; // SOAG
   enum { NA, ANAL, IMPL };
-  const int eqn_and_numerics_category[num_gas_ids] = {IMPL, ANAL, ANAL};
+  const int eqn_and_numerics_category[num_gas_ids] = {NA, NA, ANAL,
+                                                      NA, NA, IMPL};
   // air molar density (kmol/m3)
   // In order to try to match the results in mam_refactor
   // set r_universal as  [mJ/(mol)] as in mam_refactor.
@@ -617,7 +623,7 @@ void mam_amicphys_1subarea_cloudy(
   const Real aircon = pmid / (1000 * r_universal * temp);
   const Real alnsg_aer[num_modes] = {0.58778666490211906, 0.47000362924573563,
                                      0.58778666490211906, 0.47000362924573563};
-  const Real uptk_rate_factor[num_gas_ids] = {0.81, 1.0, 1.0};
+  const Real uptk_rate_factor[num_gas_ids] = {0, 0, 1.0, 0, 0, 0.81};
 
   Real qgas_cur[num_gas_ids];
   for (int i = 0; i < num_gas_ids; ++i)
@@ -1781,11 +1787,13 @@ TEST_CASE("clear", "test_mam4_amicphys") {
       1.2730137346646958e-007, 2.9756030032807321e-008, 2.3266870254473761e-006, 5.2963711345420440e-008};
   Real wetdens[AeroConfig::num_modes()] = {
       1311.3148168539929, 1377.8279737773473, 1310.8221954835647, 1490.5543769930989};
-  const Real qgas1[AeroConfig::num_gas_ids()] = {9.6553333333333350e-011, 1.9196785428799816e-011, 0};
-  const Real qgas3[AeroConfig::num_gas_ids()] = {9.6553333333333350e-011, 1.9196785428799816e-011, 0};
-  Real qgas4[AeroConfig::num_gas_ids()] =       {9.6553333333333350e-011, 1.9196785428799816e-011, 0};
-  Real qgas_delaa[AeroConfig::num_gas_ids()][nqtendaa] = {
-      {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}};
+  const Real qgas1[AeroConfig::num_gas_ids()] = {0, 0, 1.9196785428799816e-011,
+                                                 0, 0, 9.6553333333333350e-011};
+  const Real qgas3[AeroConfig::num_gas_ids()] = {0, 0, 1.9196785428799816e-011,
+                                                 0, 0, 9.6553333333333350e-011};
+  Real qgas4[AeroConfig::num_gas_ids()] = {0, 0, 1.9196785428799816e-011,
+                                           0, 0, 9.6553333333333350e-011};
+  Real qgas_delaa[AeroConfig::num_gas_ids()][nqtendaa] = {};
   const Real qnum3[AeroConfig::num_modes()] = {
     2253176148.8415728, 22531761488.415726, 2253176.1488415725, 4506352297.6831455};
   Real qnum4[AeroConfig::num_modes()] = {
@@ -1832,11 +1840,13 @@ TEST_CASE("clear", "test_mam4_amicphys") {
       1.2730137346646958e-007, 2.9756030032807321e-008, 2.3266870254473761e-006, 5.2963711345420440e-008};
   const Real check_wetdens[AeroConfig::num_modes()] = {
       1311.3148168539929, 1377.8279737773473, 1310.8221954835647, 1490.5543769930989};
-  const Real check_qgas4[AeroConfig::num_gas_ids()] = {9.6509455923714994e-011, 1.9012167647987512e-011, 0};
+  const Real check_qgas4[AeroConfig::num_gas_ids()] = {0, 0, 1.9012167647987512e-011,
+                                                       0, 0, 9.6509455923714994e-011};
   const Real check_qgas_delaa[AeroConfig::num_gas_ids()][nqtendaa] = {
-      {-4.3877409618355718e-014, 0.0000000000000000,  0.0000000000000000,      0.0000000000000000, -4.3877409618355718e-014 },
+      {}, {},
       {-1.0806949256924317e-014, 0.0000000000000000, -1.7431083155538128e-013, 0.0000000000000000, -1.0806949256924317e-014 },
-      { 0.0000000000000000,      0.0000000000000000,  0.0000000000000000,      0.0000000000000000,  0.0000000000000000,    }};
+      {}, {},
+      {-4.3877409618355718e-014, 0.0000000000000000,  0.0000000000000000,      0.0000000000000000, -4.3877409618355718e-014 }};
   const Real check_qnum4[AeroConfig::num_modes()] = {
       2276787216.2584395l, 31806406005.471962, 2253176.1488415725, 4484126983.6989059};
   const Real check_qnum_delaa[AeroConfig::num_modes()][nqtendaa] = {
@@ -2079,9 +2089,10 @@ TEST_CASE("cloudy", "test_mam4_amicphys") {
   Real qgas4[num_gas_ids] = {};
   // clang-format off
   Real qgas_delaa[num_gas_ids][nqtendaa] = {
-      {-4.3877409618355718e-014, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000, -4.3877409618355718e-014},
+      {}, {},
       {-1.0806949256924317e-014, 0.0000000000000000, -1.7431083155538128e-013, 0.0000000000000000, -1.0806949256924317e-014},
-      {}};
+      {}, {},
+      {-4.3877409618355718e-014, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000, -4.3877409618355718e-014}};
   const Real qnum3[num_modes] = {2253176148.8415728, 22531761488.415726, 2253176.1488415725, 4506352297.6831455};
   Real qnum4[num_modes] = {2253176148.8415728, 22531761488.415726, 2253176.1488415725, 4506352297.6831455};
   Real qnum_delaa[num_modes][nqtendaa] = {
@@ -2163,11 +2174,10 @@ TEST_CASE("cloudy", "test_mam4_amicphys") {
       1.2730137346646958e-007, 2.9756030032807321e-008, 2.3266870254473761e-006, 5.2963711345420440e-008};
   const Real check_wetdens[num_modes] = {
       1311.3148168539929, 1377.8279737773473, 1310.8221954835647, 1490.5543769930989};
-  const Real check_qgas4[num_gas_ids] = {1.1708228956931740e-016, 0.00000000000};
+  const Real check_qgas4[num_gas_ids] = {0.0, 0.0, 0.0, 0.0, 0.0, 1.1708228956931740e-016};
   const Real check_qgas_delaa[num_gas_ids][nqtendaa] = {
-      {1.1708228956931740e-016,  0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 1.1708228956931740e-016},
-      {0.0000000000000000     ,  0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000},
-      {}};
+      {}, {}, {}, {}, {},
+      {1.1708228956931740e-016,  0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 1.1708228956931740e-016}};
   const Real check_qnum4[num_modes] = {
       2253176148.8415728, 22531761488.415726, 2253176.1488415725, 4506352297.6831455};
   const Real check_qnum_delaa[num_modes][nqtendaa] = {
@@ -2177,12 +2187,12 @@ TEST_CASE("cloudy", "test_mam4_amicphys") {
       {-7.7571933637159115e-003,  0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000}};
 
   const Real check_qaer4[num_aerosol_ids][num_modes] = {
-    {2.6484020766304678e-011,  1.9963154347230245e-012,   1.5918312144742561e-010,   0.0000000000000000      }, 
-    {3.4543891238118804e-011,  2.6039003387624206e-012,   1.3841779609564254e-010,   0.0000000000000000      }, 
-    {8.8280308243457502e-012,  0.0000000000000000     ,   5.3061041769150948e-011,   1.8930709966802244e-012 }, 
-    {1.6293574938721667e-022,  0.0000000000000000     ,   0.0000000000000000     ,   9.4653549834011203e-011 }, 
-    {6.8037089632647984e-011,  6.8381333387002322e-012,   5.4525090614694088e-010,   0.0000000000000000      }, 
-    {0.0000000000000000     ,  0.0000000000000000     ,   0.0000000000000000     ,   0.0000000000000000      }, 
+    {2.6484020766304678e-011,  1.9963154347230245e-012,   1.5918312144742561e-010,   0.0000000000000000      },
+    {3.4543891238118804e-011,  2.6039003387624206e-012,   1.3841779609564254e-010,   0.0000000000000000      },
+    {8.8280308243457502e-012,  0.0000000000000000     ,   5.3061041769150948e-011,   1.8930709966802244e-012 },
+    {1.6293574938721667e-022,  0.0000000000000000     ,   0.0000000000000000     ,   9.4653549834011203e-011 },
+    {6.8037089632647984e-011,  6.8381333387002322e-012,   5.4525090614694088e-010,   0.0000000000000000      },
+    {0.0000000000000000     ,  0.0000000000000000     ,   0.0000000000000000     ,   0.0000000000000000      },
     {0.0000000000000000     ,  0.0000000000000000     ,   0.0000000000000000     ,   0.0000000000000000      }
   };
   const Real check_qaer_delaa[num_aerosol_ids][num_modes][nqtendaa] = {
@@ -2272,14 +2282,14 @@ TEST_CASE("cloudy", "test_mam4_amicphys") {
               Approx(check_qgas_delaa[i][j]).epsilon(epsilon).scale(scale));
     }
   }
-  for (int i = 0; i < num_gas_ids; ++i) {
+  for (int i = 0; i < num_modes; ++i) {
     if (!(qnum4[i] == Approx(check_qnum4[i])))
       std::cout << "qnum4[i] != Approx(check_qnum4[i])): "
                 << std::setprecision(14) << qnum4[i] << " != " << check_qnum4[i]
                 << std::endl;
     REQUIRE(qnum4[i] == Approx(check_qnum4[i]));
   }
-  for (int i = 0; i < num_gas_ids; ++i) {
+  for (int i = 0; i < num_modes; ++i) {
     for (int j = 0; j < nqtendaa; ++j) {
 #ifdef HAERO_DOUBLE_PRECISION
       const double epsilon = 0.001;
@@ -2405,7 +2415,7 @@ TEST_CASE("modal_aero_amicphys_intr", "test_mam4_amicphys") {
   const Real qv = 2.6351112225030129e-003;
   const Real cld = 0.4;
   // clang-format off
-  Real q[gas_pcnst] = 
+  Real q[gas_pcnst] =
     {0.0000000000000000, 1.9197285428799817e-011, 4.5213596233813260e-005, 0.0000000000000000, 1.2058113396053620e-009,
      3.4543891238118811e-011, 1.1035038530428116e-010, 3.3105115591284347e-010, 0.0000000000000000, 0.0000000000000000,
      6.8037089632647997e-011, 0.0000000000000000, 2253176148.8415728, 2.6039003387624210e-012, 2.4954461878281674e-011,
@@ -2413,30 +2423,30 @@ TEST_CASE("modal_aero_amicphys_intr", "test_mam4_amicphys") {
      1.3841779609564252e-010, 0.0000000000000000, 6.6326302211438671e-010, 1.9897890663431605e-009, -2.6523783784846809e-029,
      2253176.1488415725, 2.3663387458543536e-011, 9.4653549834174144e-011, 0.0000000000000000, 4506352297.6831455};
   Real qqcw[gas_pcnst] = {};
-  const Real q_pregaschem[gas_pcnst] = 
+  const Real q_pregaschem[gas_pcnst] =
         {0.0000000000000000, 1.9196785428799816e-011, 4.5213596233813260e-005, 0.0000000000000000, 1.2058113396053620e-009,
-         3.4543891238118811e-011, 1.1035038530428116e-010, 3.3105115591284347e-010, 0.0000000000000000, 0.0000000000000000, 
-         6.8037089632647997e-011, 0.0000000000000000, 2253176148.8415728, 2.6039003387624210e-012, 2.4954461878281674e-011, 
-         6.8381333387002338e-012, 0.0000000000000000, 22531761488.415726, 0.0000000000000000, 5.4525090614694077e-010, 
-         1.3841779609564252e-010, 0.0000000000000000, 6.6326302211438671e-010, 1.9897890663431605e-009, -2.6523783784846809e-029, 
+         3.4543891238118811e-011, 1.1035038530428116e-010, 3.3105115591284347e-010, 0.0000000000000000, 0.0000000000000000,
+         6.8037089632647997e-011, 0.0000000000000000, 2253176148.8415728, 2.6039003387624210e-012, 2.4954461878281674e-011,
+         6.8381333387002338e-012, 0.0000000000000000, 22531761488.415726, 0.0000000000000000, 5.4525090614694077e-010,
+         1.3841779609564252e-010, 0.0000000000000000, 6.6326302211438671e-010, 1.9897890663431605e-009, -2.6523783784846809e-029,
          2253176.1488415725, 2.3663387458543536e-011, 9.4653549834174144e-011, 0.0000000000000000, 4506352297.6831455};
-  const Real q_precldchem[gas_pcnst] = 
-       { 0.0000000000000000, 1.9197285428799817e-011, 4.5213596233813260e-005, 0.0000000000000000, 1.2058113396053620e-009, 
-         3.4543891238118811e-011, 1.1035038530428116e-010, 3.3105115591284347e-010, 0.0000000000000000, 0.0000000000000000, 
-         6.8037089632647997e-011, 0.0000000000000000, 2253176148.8415728, 2.6039003387624210e-012, 2.4954461878281674e-011, 
-         6.8381333387002338e-012, 0.0000000000000000, 22531761488.415726, 0.0000000000000000, 5.4525090614694077e-010, 
-         1.3841779609564252e-010, 0.0000000000000000, 6.6326302211438671e-010, 1.9897890663431605e-009, -2.6523783784846809e-029, 
+  const Real q_precldchem[gas_pcnst] =
+       { 0.0000000000000000, 1.9197285428799817e-011, 4.5213596233813260e-005, 0.0000000000000000, 1.2058113396053620e-009,
+         3.4543891238118811e-011, 1.1035038530428116e-010, 3.3105115591284347e-010, 0.0000000000000000, 0.0000000000000000,
+         6.8037089632647997e-011, 0.0000000000000000, 2253176148.8415728, 2.6039003387624210e-012, 2.4954461878281674e-011,
+         6.8381333387002338e-012, 0.0000000000000000, 22531761488.415726, 0.0000000000000000, 5.4525090614694077e-010,
+         1.3841779609564252e-010, 0.0000000000000000, 6.6326302211438671e-010, 1.9897890663431605e-009, -2.6523783784846809e-029,
          2253176.1488415725, 2.3663387458543536e-011, 9.4653549834174144e-011, 0.0000000000000000, 4506352297.6831455};
   const Real qqcw_precldchem[gas_pcnst] = {};
   Real q_tendbb[gas_pcnst][nqtendbb] = {};
   Real qqcw_tendbb[gas_pcnst][nqtendbb] = {};
-  Real dgncur_a[AeroConfig::num_modes()] = 
+  Real dgncur_a[AeroConfig::num_modes()] =
      {1.1944240222260541e-007, 2.5790443175784844e-008, 2.1718927087931639e-006, 5.2939491368692156e-008};
-  Real dgncur_awet[AeroConfig::num_modes()] = 
+  Real dgncur_awet[AeroConfig::num_modes()] =
      {1.2705960055085835e-007, 2.7734941184652717e-008, 2.3266884562632178e-006, 5.2963714752164382e-008};
-  Real wetdens_host[AeroConfig::num_modes()] = 
+  Real wetdens_host[AeroConfig::num_modes()] =
      {1311.2951371145170, 1380.1581535473508, 1310.8217483170163, 1490.5543769911476};
-  Real qaerwat[AeroConfig::num_modes()] = 
+  Real qaerwat[AeroConfig::num_modes()] =
      {6.7869256482212516e-011, 5.7791168928194034e-012, 4.5651595092659412e-010, 4.5048502047402045e-014};
   // clang-format on
   modal_aero_amicphys_intr(mdo_gasaerexch, mdo_rename, mdo_newnuc, mdo_coag,

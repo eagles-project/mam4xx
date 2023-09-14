@@ -96,7 +96,7 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_gasaerexch_process") {
 TEST_CASE("gas_aer_uptkrates_1box1gas", "mam_gasaerexch") {
 
   ekat::Comm comm;
-  ekat::logger::Logger<> logger("nucleation unit tests",
+  ekat::logger::Logger<> logger("gasaerexch unit tests",
                                 ekat::logger::LogLevel::debug, comm);
 
   const int num_mode = mam4::GasAerExch::num_mode;
@@ -243,7 +243,7 @@ TEST_CASE("mam_gasaerexch_1subarea_1gas_nonvolatile", "mam_gasaerexch") {
                              : std::numeric_limits<float>::epsilon() * 100;
 
   ekat::Comm comm;
-  ekat::logger::Logger<> logger("nucleation unit tests",
+  ekat::logger::Logger<> logger("gasaerexch unit tests",
                                 ekat::logger::LogLevel::debug, comm);
 
   const int num_mode = mam4::GasAerExch::num_mode;
@@ -426,14 +426,12 @@ void GasAerExch_init(const GasAerExch::Config &config,
   const int num_gas = AeroConfig::num_gas_ids();
   const int igas_h2so4 = static_cast<int>(GasId::H2SO4);
   const int igas_soag = static_cast<int>(GasId::SOAG);
-  const int igas_nh3 = static_cast<int>(GasId::NH3);
   const int num_mode = GasAerExch::num_mode;
 
   for (int k = 0; k < num_gas; ++k)
     eqn_and_numerics_category[k] = mam4::GasAerExch::NA;
   eqn_and_numerics_category[igas_soag] = mam4::GasAerExch::IMPL;
   eqn_and_numerics_category[igas_h2so4] = mam4::GasAerExch::ANAL;
-  eqn_and_numerics_category[igas_nh3] = mam4::GasAerExch::ANAL;
 
   for (int igas = 0; igas < num_gas; ++igas)
     for (int imode = 0; imode < num_mode; ++imode)
@@ -471,7 +469,7 @@ TEST_CASE("mam_gasaerexch_1subarea", "mam_gasaerexch") {
                              : std::numeric_limits<float>::epsilon() * 100;
 
   ekat::Comm comm;
-  ekat::logger::Logger<> logger("nucleation unit tests",
+  ekat::logger::Logger<> logger("gasaerexch unit tests",
                                 ekat::logger::LogLevel::debug, comm);
 
   const int num_mode = mam4::GasAerExch::num_mode;
@@ -498,7 +496,7 @@ TEST_CASE("mam_gasaerexch_1subarea", "mam_gasaerexch") {
   const Real pmid = 100000.0;
   const Real aircon = 4.4055781358372036e-02;
   const int ngas = GasAerExch::num_gas_to_aer;
-  const Real qgas_netprod_otrproc[num_gas] = {0.0, 5.00e-16, 0.0};
+  const Real qgas_netprod_otrproc[num_gas] = {0, 0, 5.00e-16, 0, 0, 0};
 
   Real modes_mean_std_dev[num_mode];
   for (int imode = 0; imode < num_mode; ++imode)
@@ -720,6 +718,8 @@ TEST_CASE("mam_gasaerexch_1subarea", "mam_gasaerexch") {
        {0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000},
        {0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000}}};
 
+  // FIXME: the following two arrays probably need to be modified to reflect the changes
+  // FIXME: in our gas IDs
   const Real in_uptkaer[10][AeroConfig::num_gas_ids()][num_mode] = {
       {{0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000},
        {0.0000000000000000, 0.0000000000000000, 0.0000000000000000, 0.0000000000000000},
@@ -805,8 +805,8 @@ TEST_CASE("mam_gasaerexch_1subarea", "mam_gasaerexch") {
     }
     AeroId gas_to_aer[num_gas];
     for (int i = 0; i < num_gas; ++i) {
-      const AeroId air = GasAerExch::gas_to_aer(static_cast<GasId>(i));
-      gas_to_aer[i] = air;
+      const AeroId aero = GasAerExch::gas_to_aer(static_cast<GasId>(i));
+      gas_to_aer[i] = aero;
     }
 
     Real uptk_rate_factor[num_gas];
