@@ -179,15 +179,16 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  const int h2so4 = static_cast<int>(mam4::GasId::H2SO4);
+  const int i_h2so4 = static_cast<int>(mam4::GasId::H2SO4);
+  const int i_soag = static_cast<int>(mam4::GasId::SOAG);
 
-  const int soa = static_cast<int>(mam4::AeroId::SOA);
-  const int so4 = static_cast<int>(mam4::AeroId::SO4);
-  const int pom = static_cast<int>(mam4::AeroId::POM);
-  const int bc = static_cast<int>(mam4::AeroId::BC);
-  const int ncl = static_cast<int>(mam4::AeroId::NaCl);
-  const int dst = static_cast<int>(mam4::AeroId::DST);
-  const int mom = static_cast<int>(mam4::AeroId::MOM);
+  const int i_soa = static_cast<int>(mam4::AeroId::SOA);
+  const int i_so4 = static_cast<int>(mam4::AeroId::SO4);
+  const int i_pom = static_cast<int>(mam4::AeroId::POM);
+  const int i_bc = static_cast<int>(mam4::AeroId::BC);
+  const int i_ncl = static_cast<int>(mam4::AeroId::NaCl);
+  const int i_dst = static_cast<int>(mam4::AeroId::DST);
+  const int i_mom = static_cast<int>(mam4::AeroId::MOM);
   // =======================================================================
   //  Loop over all members of the ensemble. Process input, do calculations, and
   //  prepare output
@@ -206,11 +207,11 @@ int main(int argc, char **argv) {
 
     // gas production rates and mixing ratio ICs
 
-    qgas_netprod_otrproc[h2so4] = input.get("qgas_prod_rate_h2so4");
-    qgas_netprod_otrproc[soa] = input.get("qgas_prod_rate_soag");
+    qgas_netprod_otrproc[i_h2so4] = input.get("qgas_prod_rate_h2so4");
+    qgas_netprod_otrproc[i_soag] = input.get("qgas_prod_rate_soag");
 
-    qgas_cur[h2so4] = input.get("qgas_cur_h2so4");
-    qgas_cur[soa] = input.get("qgas_cur_soag");
+    qgas_cur[i_h2so4] = input.get("qgas_cur_h2so4");
+    qgas_cur[i_soag] = input.get("qgas_cur_soag");
 
     // aerosol mixing ratio ICs
     Real qnum_cur[num_mode];
@@ -230,13 +231,13 @@ int main(int argc, char **argv) {
       val[5] = input.get_array("qaer_dst");
       val[6] = input.get_array("qaer_mom");
       for (int i = 0; i < num_mode; ++i) {
-        qaer_cur[soa][i] = val[0][i];
-        qaer_cur[so4][i] = val[1][i];
-        qaer_cur[pom][i] = val[2][i];
-        qaer_cur[bc][i] = val[3][i];
-        qaer_cur[ncl][i] = val[4][i];
-        qaer_cur[dst][i] = val[5][i];
-        qaer_cur[mom][i] = val[6][i];
+        qaer_cur[i_soa][i] = val[0][i];
+        qaer_cur[i_so4][i] = val[1][i];
+        qaer_cur[i_pom][i] = val[2][i];
+        qaer_cur[i_bc][i] = val[3][i];
+        qaer_cur[i_ncl][i] = val[4][i];
+        qaer_cur[i_dst][i] = val[5][i];
+        qaer_cur[i_mom][i] = val[6][i];
       }
     }
     // Time-stepping
@@ -278,12 +279,12 @@ int main(int argc, char **argv) {
     {
       const int istep = 0;
       time[istep] = 0;
-      so4g[istep] = qgas_cur[h2so4];
-      soag[istep] = qgas_cur[soa];
+      so4g[istep] = qgas_cur[i_h2so4];
+      soag[istep] = qgas_cur[i_soag];
       for (int i = 0; i < n_mode; ++i)
-        so4a[istep] += qaer_cur[so4][i];
+        so4a[istep] += qaer_cur[i_so4][i];
       for (int i = 0; i < n_mode; ++i)
-        soaa[istep] += qaer_cur[soa][i];
+        soaa[istep] += qaer_cur[i_soa][i];
       // ------------------------------------------------------------------
       //  Time loop, in which the MAM subroutine we want to test is called.
       // ------------------------------------------------------------------
@@ -314,7 +315,8 @@ int main(int argc, char **argv) {
       //  advection). This is done here for SOA only, because the production
       //  rate of H2SO4 gas is handled inside the MAM subroutine we are testing.
       // ------------------------------------------------------------------
-      qgas_cur[soa] = qgas_cur[soa] + qgas_netprod_otrproc[soa] * dt_mam;
+      qgas_cur[i_soag] =
+          qgas_cur[i_soag] + qgas_netprod_otrproc[i_soag] * dt_mam;
 
       // ------------------------------------------------------------------
       //  Calculate/update wet geometric mean diameter of each aerosol mode
@@ -413,25 +415,25 @@ int main(int argc, char **argv) {
       time[istep] = istep * dt_mam;
 
       // so4
-      so4g[istep] = qgas_cur[h2so4];
+      so4g[istep] = qgas_cur[i_h2so4];
       so4a[istep] = 0;
       for (int n = 0; n < num_mode; ++n)
-        so4a[istep] += qaer_cur[so4][n];
+        so4a[istep] += qaer_cur[i_so4][n];
 
-      so4g_ddt_exch[istep] = (qgas_cur[h2so4] - zqgas_bef[h2so4]) / dt_mam -
-                             qgas_netprod_otrproc[h2so4];
+      so4g_ddt_exch[istep] = (qgas_cur[i_h2so4] - zqgas_bef[i_h2so4]) / dt_mam -
+                             qgas_netprod_otrproc[i_h2so4];
 
       // soa
-      soag[istep] = qgas_cur[soa];
+      soag[istep] = qgas_cur[i_soag];
       soaa[istep] = 0;
       for (int n = 0; n < num_mode; ++n)
-        soaa[istep] += qaer_cur[soa][n];
-      soag_ddt_exch[istep] = (qgas_cur[soa] - zqgas_bef[soa]) / dt_mam;
+        soaa[istep] += qaer_cur[i_soa][n];
+      soag_ddt_exch[istep] = (qgas_cur[i_soag] - zqgas_bef[i_soag]) / dt_mam;
       soag_amb_qsat[istep] = g0_soa;
       soag_niter[istep] = niter;
       // Print some numbers to stdout for quick checks
       std::cout << "step " << istep << ", dqSOAG/dt = " << soag_ddt_exch[istep]
-                << ", qSOAG after = " << qgas_cur[soa]
+                << ", qSOAG after = " << qgas_cur[i_soag]
                 << ", g0_soa = " << g0_soa << ", niter = " << niter
                 << std::endl;
       // ----------------------------------------------
