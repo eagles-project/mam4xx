@@ -244,8 +244,9 @@ void mam_amicphys_1subarea_clear(
       const int ntot_soamode = 4;
       int niter_out = 0;
       Real g0_soa_out = 0;
+      const bool use_nh3 = false;
       gasaerexch::mam_gasaerexch_1subarea(
-          nghq, igas_h2so4, igas_nh3, ntot_soamode, gas_to_aer, iaer_so4,
+          nghq, igas_h2so4, use_nh3, ntot_soamode, gas_to_aer, iaer_so4,
           iaer_pom, l_calc_gas_uptake_coeff, l_gas_condense_to_mode,
           eqn_and_numerics_category, dtsubstep, dtsub_soa_fixed, temp, pmid,
           aircon, num_gas_ids, qgas_cur, qgas_avg, qgas_netprod_otrproc,
@@ -717,8 +718,9 @@ void mam_amicphys_1subarea_cloudy(
       Real g0_soa_out = 0;
       // time sub-step
       const Real dtsub_soa_fixed = -1.0;
+      const bool use_nh3 = false;
       gasaerexch::mam_gasaerexch_1subarea(
-          nghq, igas_h2so4, igas_nh3, ntot_soamode, gas_to_aer, iaer_so4,
+          nghq, igas_h2so4, use_nh3, ntot_soamode, gas_to_aer, iaer_so4,
           iaer_pom, l_calc_gas_uptake_coeff, l_gas_condense_to_mode,
           eqn_and_numerics_category, dtsubstep, dtsub_soa_fixed, temp, pmid,
           aircon, num_gas_ids, qgas_cur, qgas_avg, qgas_netprod_otrproc,
