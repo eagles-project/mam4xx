@@ -10,6 +10,7 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 # We use a single driver for all mo_setsox-related parameterizations.
 add_executable(mo_setsox_driver
                mo_setsox_driver.cpp
+               setsox_test.cpp
                vtest_test.cpp
                )
 
@@ -28,12 +29,14 @@ endforeach()
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     vtest_test
+    setsox_ts_355_xlwc_small
     )
 
 set(DEFAULT_TOL 1e-11)
 
 set(ERROR_THRESHOLDS
     ${DEFAULT_TOL} # vtest_test
+    ${DEFAULT_TOL} # setsox_test
     # 4e-8
     # ${DEFAULT_TOL_DROPMIXNUC}
    )
