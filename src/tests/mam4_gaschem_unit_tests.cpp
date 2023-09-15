@@ -13,7 +13,8 @@ using namespace gas_chemistry;
 // validation/gas_chem/newton_raphson_iter.cpp
 // the first test uses the standard error tolerance of 1.0e-3
 // and all entries converge
-// the second test uses a ridiculously small error tolerance of 1.0e-200
+// the second test uses a ridiculously small error tolerance of 1.0e-35
+// (to be close to the smallest single-precision number)
 // and all entries fail to converge
 // the third test uses a an error tolerance of 1.0e-17
 // and results in 25 failures on the machine this test was written on
@@ -29,6 +30,8 @@ TEST_CASE("test_solver_4_full_converge", "mam4_gaschem_unit_tests") {
   const Real zero = 0;
   const Real dti = 0.2777777778e-3;
   const Real eps_val = 1.0e-3;
+
+  logger.debug("case 1 error tolerance = {}", eps_val);
 
   std::vector<Real> prod(clscnt4, zero);
   std::vector<Real> loss(clscnt4, zero);
@@ -131,12 +134,14 @@ TEST_CASE("test_solver_4_full_failure", "mam4_gaschem_unit_tests") {
   ekat::Comm comm;
   ekat::logger::Logger<> logger("gaschem unit tests",
                                 ekat::logger::LogLevel::debug, comm);
-  logger.debug("=================================================");
-  logger.debug("\n ***gas chem unit tests Case 2: full failure***");
-  logger.debug("=================================================");
+  logger.debug("===============================================");
+  logger.debug("\n **gas chem unit tests Case 2: full failure**");
+  logger.debug("===============================================");
   const Real zero = 0;
   const Real dti = 0.2777777778e-3;
-  const Real eps_val = 1.0e-200;
+  const Real eps_val = 1.0e-35;
+
+  logger.debug("case 2 error tolerance = {}", eps_val);
 
   std::vector<Real> prod(clscnt4, zero);
   std::vector<Real> loss(clscnt4, zero);
@@ -245,6 +250,8 @@ TEST_CASE("test_solver_4_partial_failure", "mam4_gaschem_unit_tests") {
   const Real zero = 0;
   const Real dti = 0.2777777778e-3;
   const Real eps_val = 1.0e-17;
+
+  logger.debug("case 3 error tolerance = {}", eps_val);
 
   std::vector<Real> prod(clscnt4, zero);
   std::vector<Real> loss(clscnt4, zero);
