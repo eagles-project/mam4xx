@@ -124,6 +124,9 @@ TEST_CASE("test_solver_4_full_converge", "mam4_gaschem_unit_tests") {
       conv_count += 1;
       logger.debug("Did not converge for i = {} and max_delta[{}] = {}", i, i,
                    max_delta[i]);
+    } else {
+      logger.debug("Converged for i = {} and max_delta[{}] = {}", i, i,
+                   max_delta[i]);
     }
   }
   logger.debug("{} entries failed to converge", conv_count);
@@ -234,6 +237,9 @@ TEST_CASE("test_solver_4_full_failure", "mam4_gaschem_unit_tests") {
       conv_count += 1;
       logger.debug("Did not converge for i = {} and max_delta[{}] = {}", i, i,
                    max_delta[i]);
+    } else {
+      logger.debug("Converged for i = {} and max_delta[{}] = {}", i, i,
+                   max_delta[i]);
     }
   }
   logger.debug("{} entries failed to converge", conv_count);
@@ -343,6 +349,9 @@ TEST_CASE("test_solver_4_partial_failure", "mam4_gaschem_unit_tests") {
     if (!converged[i]) {
       conv_count += 1;
       logger.debug("Did not converge for i = {} and max_delta[{}] = {}", i, i,
+                   max_delta[i]);
+    } else {
+      logger.debug("Converged for i = {} and max_delta[{}] = {}", i, i,
                    max_delta[i]);
     }
   }
