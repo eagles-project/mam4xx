@@ -14,6 +14,7 @@ constexpr Real rmmin = 0.01e-6;
 constexpr Real rmmax = 25.e-6;
 const Real xrmin = haero::log(rmmin);
 const Real xrmax = haero::log(rmmax);
+
 KOKKOS_INLINE_FUNCTION
 void modal_size_parameters(const Real sigma_logr_aer,
                            const Real dgnumwet,// in
@@ -71,6 +72,27 @@ void modal_size_parameters(const Real sigma_logr_aer,
      }// nc
 
 }// modal_size_parameters
+
+KOKKOS_INLINE_FUNCTION
+void calc_parameterized(const Real coef[ncoef],
+                        const Real cheb_k[ncoef], 
+                        Real & para)
+{
+ // calculate parameterized absorption, extinction or asymmetry factor
+ // further calculations are needed. see modal_aero_sw and modal_aero_lw
+ // ncol,ncoef
+ // coef(pcols,ncoef)
+  // cheb_k(ncoef,pcols)
+  // para(pcols)
+	constexpr Real half = 0.5;
+	para = half*coef[0];
+	for (int nc = 1; nc < ncoef; ++nc)
+	{
+	  para += cheb_k[nc]*coef[nc];
+	}
+
+}// calc_parameterized
+
 
 } // namespace modal_aer_opt
 
