@@ -17,6 +17,7 @@ const Real xrmax = haero::log(rmmax);
 using View2D = DeviceType::view_2d<Real>;
 // From radconstants
 constexpr int nswbands = 14; 
+constexpr int nlwbands = 16;
 
 KOKKOS_INLINE_FUNCTION
 void modal_size_parameters(const Real sigma_logr_aer,
@@ -144,6 +145,7 @@ void calc_volc_ext()
 } // calc_volc_ext
 #endif
 
+// FIXME; to move volcanic_cmip_sw to a new file, aer_rad_props
 KOKKOS_INLINE_FUNCTION
 void volcanic_cmip_sw(const ColumnView& zi,
                       const int ilev_tropp,
@@ -231,6 +233,41 @@ void volcanic_cmip_sw(const ColumnView& zi,
        } // kk 
 
 }//volcanic_cmip_sw
+// FIXME; to move compute_odap_volcanic_at_troplayer_lw to a new file, aer_rad_props
+KOKKOS_INLINE_FUNCTION
+void compute_odap_volcanic_at_troplayer_lw(const int ilev_tropp,
+     const ColumnView& zi, const View2D &ext_cmip6_lw_inv_m, 
+       const View2D &odap_aer)
+{
+ // Update odap_aer with a combination read in volcanic aerosol extinction [1/m] (50%)
+ // and module computed values (50%).
+
+ // intent-ins
+ //  ncol
+ // trop_level(:)
+  // zi(:,:) !geopotential height above surface at interfaces [m]
+  // ext_cmip6_lw_inv_m(:,:,:) !long wave extinction in the units of [1/m]
+
+   //!intent-inouts
+  //  odap_aer(:,:,:)  ! [fraction] absorption optical depth, per layer [unitless]
+
+    // !local
+    // integer :: icol, ilev_tropp
+    // real(r8) :: lyr_thk !layer thickness [m]
+       // do icol = 1, ncol
+   // ilev_tropp = trop_level(icol) !tropopause level
+    const Real lyr_thk    = zi(ilev_tropp) - zi(ilev_tropp+1);//! compute layer thickness in meters
+    constexpr Real half=0.5;
+   //!update taus with 50% contributuions from the volcanic input file
+   //!and 50% from the existing model computed values at the tropopause layer
+    for (int i = 0; i < nlwbands; ++i)
+    {
+    odap_aer(ilev_tropp,i) = half*( odap_aer(ilev_tropp,i) + (lyr_thk * ext_cmip6_lw_inv_m(ilev_tropp,i)) );
+    }
+
+
+}// compute_odap_volcanic_at_troplayer_lw
+
 
 
 
