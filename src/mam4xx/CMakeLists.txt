@@ -43,6 +43,7 @@ install(FILES
         mo_photo.hpp
         lin_strat_chem.hpp
         mo_chm_diags.hpp
+        modal_aero_opt.hpp
         DESTINATION include/mam4xx)
 
 add_library(mam4xx aero_modes.cpp)
