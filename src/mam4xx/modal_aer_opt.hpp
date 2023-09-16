@@ -93,6 +93,30 @@ void calc_parameterized(const Real coef[ncoef],
 
 }// calc_parameterized
 
+KOKKOS_INLINE_FUNCTION
+void update_aod_spec(const Real scath2o,
+                     const Real absh2o, // in
+                     const Real sumhygro, 
+                     const Real sumscat,
+                     const Real sumabs, // in
+                     const Real hygro_s, 
+                     const Real palb,
+                     const Real dopaer,     // in
+                     Real& scat_s,
+                     Real& abs_s, 
+                     Real& aod_s      )
+{
+	// scath2o, absh2o, sumscat, sumabs, sumhygro
+// hygro_s, palb, dopaer	
+  // scat_s, abs_s, aod_s  ! scatering, absorption and aod for a species	
+  // update aerosol optical depth from scattering and absorption	
+   constexpr Real one =1.0;	
+   scat_s     = (scat_s + scath2o*hygro_s/sumhygro)/sumscat;
+   abs_s      = (abs_s + absh2o*hygro_s/sumhygro)/sumabs;
+   aod_s      += (abs_s*(one - palb) + palb*scat_s)*dopaer;
+
+}// update_aod_spec
+
 
 } // namespace modal_aer_opt
 
