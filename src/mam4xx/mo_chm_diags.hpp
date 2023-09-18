@@ -15,6 +15,8 @@ using View1D = DeviceType::view_1d<Real>;
 
 // FIXME: bad constants
 constexpr Real S_molwgt = 32.066;
+// constants for converting O3 mixing ratio to DU
+constexpr Real DUfac = 2.687e20; // 1 DU in molecules per m^2
 constexpr Real rearth = 6.37122e6;
 constexpr Real rgrav =
     1.0 / 9.80616; // reciprocal of acceleration of gravity ~ m/s^2
@@ -63,7 +65,6 @@ void het_diags(
     }
   }
 } // het_diags
-
 } // namespace mo_chm_diags
 } // namespace mam4
 #endif
