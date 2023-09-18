@@ -31,6 +31,7 @@
 #include <mam4xx/water_uptake.hpp>
 #include <mam4xx/wet_dep.hpp>
 #include <mam4xx/modal_aer_opt.hpp>
+#include <mam4xx/aer_rad_props.hpp>
 
 namespace mam4 {
 
