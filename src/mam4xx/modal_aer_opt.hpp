@@ -15,6 +15,7 @@ constexpr Real rmmax = 25.e-6;
 const Real xrmin = haero::log(rmmin);
 const Real xrmax = haero::log(rmmax);
 using View2D = DeviceType::view_2d<Real>;
+using View3D = DeviceType::view_3d<Real>;
 using ComplexView2D = DeviceType::view_2d<Kokkos::complex<Real>>;
 // From radconstants
 constexpr int nswbands = 14; 
@@ -25,6 +26,14 @@ constexpr int nlwbands = 16;
 constexpr int ncoef=5;
 constexpr int prefr=7;
 constexpr int prefi=10;
+
+// BAD CONSTANT
+constexpr Real small_value_40 = 1.e-40;
+// BAD CONSTANT
+constexpr Real small_value_60 = 1.e-60;
+
+//Density of liquid water (STP)
+constexpr Real rhoh2o=haero::Constants::density_h2o; 
 
 KOKKOS_INLINE_FUNCTION
 void modal_size_parameters(const Real sigma_logr_aer,
@@ -128,7 +137,6 @@ void update_aod_spec(const Real scath2o,
 
 }// update_aod_spec
 
-#if 0
 KOKKOS_INLINE_FUNCTION
 void calc_volc_ext(const int trop_level,
                    const ColumnView& state_zm,
@@ -144,19 +152,22 @@ void calc_volc_ext(const int trop_level,
  // tropopause_m(pcols) ! tropopause height [m]
 	// kk_tropp = trop_level(icol)
 	//
+  
+  constexpr Real half =0.5 ;
 
  // diagnose tropopause height
   tropopause_m = state_zm(trop_level);//!in meters
   //update tropopause layer first
-  extinct(trop_level-1) = half*( extinct(trop_level-1) + ext_cmip6_sw(trop_level-1));
+  extinct(trop_level-1) = half*(extinct(trop_level-1) + ext_cmip6_sw(trop_level-1));
   //extinction is assigned read in values only for visible band above tropopause
   for (int kk = 0; kk < trop_level; ++kk)
   {
-  	extinct(kk) = ext_cmip6_sw(kk)
+  	extinct(kk) = ext_cmip6_sw(kk);
   }
   
 
 } // calc_volc_ext
+
 
 
 KOKKOS_INLINE_FUNCTION
@@ -198,6 +209,9 @@ void calc_refin_complex(const int lwsw,
                         const Real qaerwat_kk, 
                         const Real *specvol,
                         const ComplexView2D& specrefindex, 
+                        const int nspec,
+                        const Kokkos::complex<Real> crefwlw[nlwbands],
+                        const Kokkos::complex<Real> crefwsw[nswbands],
                         Real &dryvol, Real &wetvol, Real &watervol,
                         Kokkos::complex<Real> & crefin, Real&refr, Real&refi)
 {
@@ -220,18 +234,21 @@ void calc_refin_complex(const int lwsw,
     // refi(pcols)      ! imaginary part of refractive index
     // complex(r8),intent(out) :: crefin(pcols) ! complex refractive index
 
+    // refractive index for water read in read_water_refindex
+    // crefwsw(nswbands) ! complex refractive index for water visible
+    // crefwlw(nlwbands) ! complex refractive index for water infrared
+
     // FIXME 
     // if ((lwsw /= 'lw') .and. (lwsw /= 'sw')) then
     //     call endrun('calc_refin_complex is called with '// lwsw// ', it should be called with either lw or sw')
     // endif
 
     // crefin(:ncol) = (0._r8, 0._r8)
-    const Real zero=0;
+    constexpr Real zero=0;
     dryvol = zero;
 
     crefin={};
-    nspec
-
+    
     for (int i = 0; i < nspec; ++i)
     {
      dryvol += specvol[i];
@@ -256,17 +273,17 @@ void calc_refin_complex(const int lwsw,
     // ! some different treatments for lw and sw
     if (lwsw==0) //lwsw=='lw'
     {
-      crefin += watervol*crefwlw(ilwsw);
+      crefin += watervol*crefwlw[ilwsw];
       // BAD CONSTANT 
       if (wetvol > small_value_40) 
       {
-       crefin /= wetvol(icol);
+       crefin /= wetvol;
       } // end if wetvol(icol) > small_value_40
 
     } else if ( lwsw==1) //  lwsw=='sw
     {
 
-    	crefin +=  watervol*crefwsw(ilwsw);
+    	crefin +=  watervol*crefwsw[ilwsw];
     	// BAD CONTANT
          crefin /= haero::max(wetvol, small_value_60);
 
@@ -298,12 +315,13 @@ void compute_factors(const int prefri,
   // ix(:)
   // tt(:)
   constexpr Real threshold = 1.e-20;
-  constexpr zero =0;
-  ix = 1
+  constexpr Real zero =0;
+  ix = 1;
   tt = zero;
   if(prefri > 1) {
 
-  	for (int ii = 0; ii < prefri; ++ii)
+    int ii = 0;
+  	for (ii = 0; ii < prefri; ++ii)
   	{
   		if(ref_ind < ref_table[ii]) 
   		{break;}
@@ -360,7 +378,8 @@ void binterp(const View3D& table,
   // ttab(pcols), utab(pcols)
   // coef(pcols,ncoef) !coefficient interpolated bilinearly
   // FIXME; maybe we need to loop over cols	
-  if (itab_1 < -1)
+  constexpr Real one =1.0;	
+  if (itab_1 <= 0.0)
   {
   	// compute factors for the real part
   	compute_factors(prefr,
@@ -373,13 +392,13 @@ void binterp(const View3D& table,
                     jtab, utab); 
   } // itab_1 < -1
 
-  tu   = ttab*utab;
-  tuc  = ttab-tu;
-  tcuc = one-tuc-utab;
-  tcu = utab-tu;
+  const Real tu   = ttab*utab;
+  const Real tuc  = ttab-tu;
+  const Real tcuc = one-tuc-utab;
+  const Real tcu = utab-tu;
   // FIXME: check Fortran to C++ indexing 
-  jp1 = haero::min(jtab+1,prefi);
-  ip1 = haero::min(itab+1,prefr);
+  const int jp1 = haero::min(jtab+1,prefi);
+  const int ip1 = haero::min(itab+1,prefr);
   for (int icoef = 0; icoef < ncoef; ++icoef)
   {
   	coef[icoef] = tcuc * table(icoef,itab,jtab) + 
@@ -390,7 +409,7 @@ void binterp(const View3D& table,
 
 
 }// binterp
-
+#if 0
 KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, pdeldry, & ! in
                    cldn, nnite, idxnite, is_cmip6_volc, ext_cmip6_sw, trop_level,  & ! in
