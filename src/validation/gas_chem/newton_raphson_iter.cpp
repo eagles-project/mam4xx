@@ -6,6 +6,7 @@
 #include <mam4xx/mam4.hpp>
 
 #include <mam4xx/aero_config.hpp>
+#include <ekat/logging/ekat_logger.hpp>
 #include <mam4xx/gas_chem.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
@@ -71,5 +72,22 @@ void newton_raphson_iter(Ensemble *ensemble) {
     output.set("prod", prod);
     output.set("loss", loss);
     output.set("max_delta", max_delta);
+
+    ekat::Comm comm;
+    ekat::logger::Logger<> logger("gaschem unit tests",
+                                  ekat::logger::LogLevel::debug, comm);
+
+    int conv_count = 0;
+    for (int i = 0; i < clscnt4; ++i) {
+      if (!converged_out[i]) {
+        conv_count += 1;
+        logger.debug("Did not converge for i = {} and max_delta[{}] = {}", i, i,
+                     max_delta[i]);
+      } else {
+        logger.debug("Converged for i = {} and max_delta[{}] = {}", i, i,
+                     max_delta[i]);
+      }
+    }
+    logger.debug("{} entries failed to converge", conv_count);
   });
 }
