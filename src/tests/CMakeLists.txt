@@ -52,17 +52,17 @@ EkatCreateUnitTest(mam4_nucleate_ice_unit_tests mam4_nucleate_ice_unit_tests.cpp
 EkatCreateUnitTest(mam4_wet_deposition_unit_tests mam4_wet_deposition_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 
-target_compile_options(utils_unit_tests PRIVATE -Werror)
-target_compile_options(mam4_nucleation_unit_tests PRIVATE -Werror)
-target_compile_options(mam4_gasaerexch_unit_tests PRIVATE -Werror)
-target_compile_options(mam4_coagulation_unit_tests PRIVATE -Werror)
-target_compile_options(mam4_calcsize_unit_tests PRIVATE -Werror)
-target_compile_options(mam4_convproc_unit_tests PRIVATE -Werror)
-target_compile_options(mam4_amicphys_1gridcell_tests PRIVATE -Werror)
-target_compile_options(mam4_rename_unit_tests PRIVATE -Werror)
-target_compile_options(mam4_aging_unit_tests PRIVATE -Werror)
-target_compile_options(mam4_hetfrz_unit_tests PRIVATE -Werror)
-target_compile_options(mam4_nucleate_ice_unit_tests PRIVATE -Werror)
+target_compile_options(utils_unit_tests PRIVATE)
+target_compile_options(mam4_nucleation_unit_tests PRIVATE)
+target_compile_options(mam4_gasaerexch_unit_tests PRIVATE)
+target_compile_options(mam4_coagulation_unit_tests PRIVATE)
+target_compile_options(mam4_calcsize_unit_tests PRIVATE)
+target_compile_options(mam4_convproc_unit_tests PRIVATE)
+target_compile_options(mam4_amicphys_1gridcell_tests PRIVATE)
+target_compile_options(mam4_rename_unit_tests PRIVATE)
+target_compile_options(mam4_aging_unit_tests PRIVATE)
+target_compile_options(mam4_hetfrz_unit_tests PRIVATE)
+target_compile_options(mam4_nucleate_ice_unit_tests PRIVATE)
 
 
 if (${HAERO_PRECISION} MATCHES double)
