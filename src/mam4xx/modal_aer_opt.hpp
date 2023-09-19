@@ -8,15 +8,20 @@
 namespace mam4 {
 namespace modal_aer_opt {
 
+using View2D = DeviceType::view_2d<Real>;
+using View3D = DeviceType::view_3d<Real>;
+using ComplexView2D = DeviceType::view_2d<Kokkos::complex<Real>>;
+using View5D = Kokkos::View<Real *****>;
 
+constexpr int pver = mam4::nlev;
+constexpr int ntot_amode=mam4::AeroConfig::num_modes();
+constexpr int top_lev= ndrop::top_lev;
 // ! min, max aerosol surface mode radius treated [m]
 constexpr Real rmmin = 0.01e-6;
 constexpr Real rmmax = 25.e-6;
 const Real xrmin = haero::log(rmmin);
 const Real xrmax = haero::log(rmmax);
-using View2D = DeviceType::view_2d<Real>;
-using View3D = DeviceType::view_3d<Real>;
-using ComplexView2D = DeviceType::view_2d<Kokkos::complex<Real>>;
+
 // From radconstants
 constexpr int nswbands = 14; 
 constexpr int nlwbands = 16;
@@ -34,7 +39,19 @@ constexpr Real small_value_60 = 1.e-60;
 
 //Density of liquid water (STP)
 constexpr Real rhoh2o=haero::Constants::density_h2o; 
+// ! reciprocal of gravit
+constexpr Real rga = 1.0/haero::Constants::gravity;
+// FIXME: this values may cause differences because of number of digits in the Boltzmann's constant and Avogadro's number 
+constexpr Real rair = haero::Constants::r_gas_dry_air;
 
+// ! These are indices to the band for diagnostic output
+constexpr int idx_sw_diag = 10;// index to sw visible band
+constexpr int idx_nir_diag = 8;// index to sw near infrared (778-1240 nm) band
+constexpr int idx_uv_diag = 11;// index to sw uv (345-441 nm) band
+
+constexpr int maxd_aspectype = 14;
+// FIXME; is this values set somewhere else? 
+constexpr int max_nspec =7;
 KOKKOS_INLINE_FUNCTION
 void modal_size_parameters(const Real sigma_logr_aer,
                            const Real dgnumwet,// in
@@ -409,11 +426,55 @@ void binterp(const View3D& table,
 
 
 }// binterp
-#if 0
+
 KOKKOS_INLINE_FUNCTION
-void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, pdeldry, & ! in
-                   cldn, nnite, idxnite, is_cmip6_volc, ext_cmip6_sw, trop_level,  & ! in
-                         qqcw, tauxar, wa, ga, fa) 
+void modal_aero_sw(const Real dt, const View2D & state_q,
+                   const ColumnView& state_zm,
+                   const ColumnView& temperature,
+                   const ColumnView& pmid,
+                   const ColumnView& pdel,
+                   const ColumnView& pdeldry, 
+                   const ColumnView& cldn, 
+                   // const int nnite, 
+                   // idxnite,
+                   const bool is_cmip6_volc,
+                   const ColumnView& ext_cmip6_sw,
+                   const int trop_level,  
+                         // qqcw,
+                   const View2D &tauxar, 
+                   const View2D &wa, 
+                   const View2D &ga,
+                   const View2D &fa,
+                   // 
+                   const int nspec_amode[ntot_amode],
+   				   const Real sigmag_amode[ntot_amode],
+                   int lmassptr_amode[maxd_aspectype][ntot_amode],
+                   const Real spechygro[maxd_aspectype],
+                   const Real specdens_amode[maxd_aspectype],
+                   const int lspectype_amode[maxd_aspectype][ntot_amode],
+                   const ComplexView2D& specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
+                   const Kokkos::complex<Real> crefwlw[nlwbands],
+                   const Kokkos::complex<Real> crefwsw[nswbands],
+                   // FIXME
+                   mam4::AeroId specname_amode[6],
+                   const View5D & extpsw,
+                   const View5D & abspsw,
+                   const View5D & asmpsw,
+                   const View3D &refrtabsw,
+                   const View3D &refitabsw,
+                   // diagnostic
+                   const ColumnView& extinct,//        ! aerosol extinction [1/m]
+                   const ColumnView&  absorb,//         ! aerosol absorption [1/m]
+                   // work views
+                   const ColumnView& mass,
+                   const ColumnView& air_density,
+                   const View2D &cheb,
+                   const View2D &dgnumwet_m,
+                   const ColumnView& radsurf,
+                   const ColumnView& logradsurf,
+                   const ComplexView2D& specrefindex,
+                   const View2D &qaerwat_m
+                   ) 
 {
    // ! calculates aerosol sw radiative properties
    // dt               !timestep [s]
@@ -471,71 +532,66 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
    // real(r8) :: watervol(pcols) ! volume concentration of water in each mode [m3/kg]
    // real(r8) :: wetvol(pcols)   ! volume concentration of wet mode [m3/kg]
 
-   // integer  :: itab(pcols), jtab(pcols)  ! index for Bilinear interpolation
-   // real(r8) :: ttab(pcols), utab(pcols)  ! coef for Bilinear interpolation
-   // real(r8) :: cext(pcols,ncoef), cabs(pcols,ncoef), casm(pcols,ncoef)  ! coefficient for extinction, absoption, and asymmetry [unitless] 
    // real(r8) :: pext(pcols)     ! parameterized specific extinction [m2/kg]
-   // real(r8) :: specpext(pcols) ! specific extinction [m2/kg]
-   // real(r8) :: dopaer(pcols)   ! aerosol optical depth in layer [1]
+
    // real(r8) :: pabs(pcols)     ! parameterized specific absorption [m2/kg]
    // real(r8) :: pasm(pcols)     ! parameterized asymmetry factor [unitless?]
    // real(r8) :: palb(pcols)     ! parameterized single scattering albedo [unitless]
 
    // ! Diagnostics
-   // real(r8) :: tropopause_m(pcols)         ! tropopause height [m]
-   // real(r8) :: extinct(pcols,pver)         ! aerosol extinction [1/m]
-   // real(r8) :: absorb(pcols,pver)          ! aerosol absorption [1/m]
-   // real(r8) :: aodvis(pcols)               ! extinction optical depth
-   // real(r8) :: aodall(pcols)               ! extinction optical depth
-   // real(r8) :: aodabs(pcols)               ! absorption optical depth
+   
+    // qaerwat_m(:,:,:)  ! aerosol water (g/g) for all modes
 
-   // real(r8) :: aodabsbc(pcols)             ! absorption optical depth of BC
+  
+    
+   constexpr Real zero = 0.0;
+   constexpr Real one =1.0;
 
-   // real(r8) :: burdenmode(pcols)           ! aerosol burden for each mode [kg/m2]
-   // real(r8) :: aodmode(pcols)              ! aerosol optical depth for each mode [1]
+   Real burdenmode = zero;//           ! aerosol burden for each mode [kg/m2]
+   
+   Real dustaodmode = zero;//         ! dust aod in aerosol mode [1]
+   Real dustvol= zero;  //           ! volume concentration of dust in aerosol mode (m3/kg)
 
-   // real(r8) :: dustaodmode(pcols)          ! dust aod in aerosol mode [1]
-   // real(r8) :: dustvol(pcols)              ! volume concentration of dust in aerosol mode (m3/kg)
+   Real  burdendust, burdenso4, burdenbc, 
+               burdenpom, burdensoa, burdenseasalt, 
+               burdenmom; // ! burden for each aerosol species [kg/m2]
+   Real scatdust, scatso4, scatbc, 
+               scatpom, scatsoa, scatseasalt, 
+               scatmom;//  ! scattering albedo (?) for each aerosol species [unitless]
+   Real absdust, absso4, absbc, 
+               abspom, abssoa, absseasalt, 
+               absmom;//  ! absoprtion for each aerosol species [unit?] 
+   Real hygrodust, hygroso4, hygrobc, 
+               hygropom, hygrosoa, hygroseasalt, 
+               hygromom;//  ! hygroscopicity for each aerosol species [unitless]
 
-   // real(r8) :: burdendust(pcols), burdenso4(pcols), burdenbc(pcols), &
-   //             burdenpom(pcols), burdensoa(pcols), burdenseasalt(pcols), &
-   //             burdenmom(pcols)  ! burden for each aerosol species [kg/m2]
-   // real(r8) :: scatdust(pcols), scatso4(pcols), scatbc(pcols), &
-   //             scatpom(pcols), scatsoa(pcols), scatseasalt(pcols), &
-   //             scatmom(pcols)  ! scattering albedo (?) for each aerosol species [unitless]
-   // real(r8) :: absdust(pcols), absso4(pcols), absbc(pcols), &
-   //             abspom(pcols), abssoa(pcols), absseasalt(pcols), &
-   //             absmom(pcols)   ! absoprtion for each aerosol species [unit?] 
-   // real(r8) :: hygrodust(pcols), hygroso4(pcols), hygrobc(pcols), &
-   //             hygropom(pcols), hygrosoa(pcols), hygroseasalt(pcols), &
-   //             hygromom(pcols)  ! hygroscopicity for each aerosol species [unitless]
+   // diagnostic
+   Real tropopause_m=zero; // tropopause height [m]
+   Real aodabsbc=zero;  //       absorption optical depth of BC
+   Real aoduv=zero;//               extinction optical depth in uv
+   Real aodnir=zero;//              extinction optical depth in nir   
+   Real aodvis=zero;// extinction optical depth
+   Real aodall=zero;// extinction optical depth
+   Real aodabs=zero;//absorption optical depth      
 
-   // real(r8) :: ssavis(pcols)    ! Aerosol singel-scatter albedo [unitless]
-   // real(r8) :: specrefr, specrefi  ! real and imag parts of specref
-   // real(r8) :: scath2o, absh2o   ! scattering and absorption of h2o
-   // real(r8) :: sumscat, sumabs, sumhygro ! sum of scattering , absoprtion and hygroscopicity
+   Real aodmode = zero;//             ! aerosol optical depth for each mode [1]  
+
+   Real ssavis=zero;// Aerosol singel-scatter albedo [unitless]
+   Real specrefr, specrefi=zero;// real and imag parts of specref
+   Real scath2o, absh2o=zero;// scattering and absorption of h2o
+   Real sumscat, sumabs, sumhygro=zero;// sum of scattering , absoprtion and hygroscopicity
 
    // ! total species AOD
-   // real(r8) :: dustaod(pcols), so4aod(pcols), bcaod(pcols), &
-   //             pomaod(pcols), soaaod(pcols), seasaltaod(pcols), momaod(pcols)
+   Real dustaod, so4aod, bcaod, 
+                pomaod, soaaod, seasaltaod, momaod=zero;
 
-   // logical :: savaervis ! true if visible wavelength (0.55 micron)
-   // logical :: savaernir ! true if near ir wavelength (~0.88 micron)
-   // logical :: savaeruv  ! true if uv wavelength (~0.35 micron)
-
-   // real(r8) :: aoduv(pcols)               ! extinction optical depth in uv
-   // real(r8) :: aodnir(pcols)              ! extinction optical depth in nir
-
-   // character(len=32) :: outname
-	rga
-	rair
 
    for (int kk = 0; kk < pver; ++kk)
    {
    	  mass(kk)        = pdeldry(kk)*rga;
       air_density(kk) = pmid(kk)/(rair*temperature(kk));
    }
-
+#if 0
    // Calculate aerosol size distribution parameters and aerosol water uptake
    //For prognostic aerosols
    modal_aero_calcsize_sub(ncol, lchnk, state_q, pdel, dt, qqcw, 
@@ -546,17 +602,19 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
                                   cldn, dgnumdry_m, 
                                   dgnumwet_m, qaerwat_m, 
                                   list_idx_in=list_idx   ); 
-   //
+#endif
+ 
       // ! loop over all aerosol modes
-   nspec_amode[ntot_amode]
-   sigmag_amode[ntot_amode]
 
+
+
+   Real  specvol[max_nspec] = {};
    for (int mm = 0; mm < ntot_amode; ++mm)
    {
    	// ! diagnostics for visible band for each mode
    	burdenmode = zero;
    	aodmode = zero;
-   	dustaodmode=zero;
+   	dustaodmode = zero;
    	// ! get mode info
     const int nspec = nspec_amode[mm];
     const Real sigma_logr_aer = sigmag_amode[mm];
@@ -568,55 +626,70 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
      modal_size_parameters(sigma_logr_aer,
                            dgnumwet_m(kk,mm),// in
                            radsurf(kk), logradsurf(kk),
-                           cheb_kk,      
+                           cheb_kk.data(),      
                            false );
     } // kk
 
-    for (int i = 0; i < nswbands; ++i)
+    for (int isw = 0; isw < nswbands; ++isw)
     {
+
+
+   // savaervis ! true if visible wavelength (0.55 micron)
+   // savaernir ! true if near ir wavelength (~0.88 micron)
+   // savaeruv  ! true if uv wavelength (~0.35 micron)    
+
     const bool savaervis = isw == idx_sw_diag ? true : false;
     const bool savaeruv =  isw == idx_uv_diag ? true : false;
     const bool savaernir = isw == idx_nir_diag ? true : false;
 
-    kk = top_lev, pver
-
     for (int kk = top_lev; kk < pver; ++kk)
     {
-    	dustvol = zero;
-        scatdust     = zero;
-            absdust      = zero;
-            hygrodust    = zero;
-            scatso4      = zero;
-            absso4       = zero;
-            hygroso4     = zero;
-            scatbc       = zero;
-            absbc        = zero;
-            hygrobc      = zero;
-            scatpom      = zero;
-            abspom       = zero;
-            hygropom     = zero;
-            scatsoa      = zero;
-            abssoa       = zero;
-            hygrosoa     = zero;
-            scatseasalt  = zero;
-            absseasalt   = zero;
-            hygroseasalt = zero;
-            scatmom      = zero;
-            absmom       = zero;
-            hygromom     = zero;
-
+#if 1
+     Real dustvol = zero;
+     Real scatdust     = zero;
+     Real absdust      = zero;
+     Real hygrodust    = zero;
+     Real scatso4      = zero;
+     Real absso4       = zero;
+     Real hygroso4     = zero;
+     Real scatbc       = zero;
+     Real absbc        = zero;
+     Real hygrobc      = zero;
+     Real scatpom      = zero;
+     Real abspom       = zero;
+     Real hygropom     = zero;
+     Real scatsoa      = zero;
+     Real abssoa       = zero;
+     Real hygrosoa     = zero;
+     Real scatseasalt  = zero;
+     Real absseasalt   = zero;
+     Real hygroseasalt = zero;
+     Real scatmom      = zero;
+     Real absmom       = zero;
+     Real hygromom     = zero;
+#endif
             // ! aerosol species loop
+    
     for (int ll = 0; ll < nspec; ++ll)
     {
+       
       // get aerosol properties and save for each species
-      auto specmmr     = Kokkos::subview(state_q(Kokkos::ALL(),lmassptr_amode[ll][mm]));
-      auto spectype  = specname_amode(lspectype_amode[ll][mm]);
-      const Real hygro_aer        = spechygro(lspectype_amode[ll][mm]);
-      specdens(ll)     = specdens_amode(lspectype_amode[ll][mm]);
+      auto specmmr  = Kokkos::subview(state_q,Kokkos::ALL(),lmassptr_amode[ll][mm]);
+      auto spectype = specname_amode[lspectype_amode[ll][mm]];
+      const Real hygro_aer = spechygro[lspectype_amode[ll][mm]];
+      const Real specdens = specdens_amode[lspectype_amode[ll][mm]];
       // FIXME is a complex number
+      // auto specrefindex_ll = Kokkos::subview(specrefndxsw,Kokkos::ALL(),spectype_amode[ll][mm]);
+      // FIXME: is there a way of avoiding this copy? 
       // specrefindex(ll,:) = specrefndxsw(:,lspectype_amode[ll][mm])
+      for (int iswbands = 0; iswbands < nswbands; ++iswbands)
+      {
+          specrefindex(ll,iswbands) = specrefndxsw(iswbands,lspectype_amode[ll][mm]);
+      }
       // allocate(specvol(pcols,nspec),stat=istat)
-      specvol(ll)    = specmmr(kk)/specdens(ll);
+      specvol[ll]    = specmmr(kk)/specdens;
+
+
 
       // ! compute some diagnostics for visible band only
       if (savaervis) {
@@ -625,13 +698,13 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
         const Real specrefi = specrefindex(ll,isw).imag(); 
 
         burdenmode += specmmr(kk)*mass(kk);
-        // FIXME, use enums
+       
         if (spectype==AeroId::DST)
         {
 
           calc_diag_spec( specmmr(kk),
                           mass(kk),
-                          specvol(ll), 
+                          specvol[ll], 
                           specrefr, 
                           specrefi, 
                           hygro_aer,
@@ -639,13 +712,13 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
                     scatdust,
                     absdust,
                     hygrodust);	
-          dustvol  = specvol(ll);
+          dustvol  = specvol[ll];
         }
-
-        if (spectype == AeroId:SO4) {
+ 
+        if (spectype == AeroId::SO4) {
         	calc_diag_spec( specmmr(kk),
                           mass(kk),
-                          specvol(ll), 
+                          specvol[ll], 
                           specrefr, 
                           specrefi, 
                           hygro_aer,
@@ -654,11 +727,11 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
                     absso4,
                     hygroso4);
         }
-
-        if (spectype == AeroId:BC) {
+#if 1 
+        if (spectype == AeroId::BC) {
         	calc_diag_spec( specmmr(kk),
                           mass(kk),
-                          specvol(ll), 
+                          specvol[ll], 
                           specrefr, 
                           specrefi, 
                           hygro_aer,
@@ -668,10 +741,10 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
                     hygrobc);
         }
 
-        if (spectype == AeroId:POM) {
+        if (spectype == AeroId::POM) {
         	calc_diag_spec( specmmr(kk),
                           mass(kk),
-                          specvol(ll), 
+                          specvol[ll], 
                           specrefr, 
                           specrefi, 
                           hygro_aer,
@@ -681,10 +754,10 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
                     hygropom);
         }
 
-        if (spectype == AeroId:SOA) {
+        if (spectype == AeroId::SOA) {
         	calc_diag_spec( specmmr(kk),
                           mass(kk),
-                          specvol(ll), 
+                          specvol[ll], 
                           specrefr, 
                           specrefi, 
                           hygro_aer,
@@ -694,10 +767,10 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
                     hygrosoa);
         }
 
-        if (spectype == AeroId:NaCl) {
+        if (spectype == AeroId::NaCl) {
         	calc_diag_spec( specmmr(kk),
                           mass(kk),
-                          specvol(ll), 
+                          specvol[ll], 
                           specrefr, 
                           specrefi, 
                           hygro_aer,
@@ -707,10 +780,10 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
                     hygroseasalt);
         }
 
-        if (spectype == AeroId:MOM) {
+        if (spectype == AeroId::MOM) {
         	calc_diag_spec( specmmr(kk),
                           mass(kk),
-                          specvol(ll), 
+                          specvol[ll], 
                           specrefr, 
                           specrefi, 
                           hygro_aer,
@@ -718,11 +791,14 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
                     scatmom,
                     absmom,
                     hygromom);
+
         }
 
+#endif
       } //savaervis
 
     }// ll species loop ll
+
 
     // lw =0 and sw =1
     Real dryvol, wetvol, watervol= {};
@@ -734,24 +810,33 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
                        qaerwat_m(kk,mm), 
                        specvol,
                        specrefindex, 
+                       nspec,
+                       crefwlw,
+                       crefwsw,
                        dryvol, wetvol, watervol,
                        crefin, refr, refi);
 
+
     // interpolate coefficients linear in refractive index
     // first call calcs itab,jtab,ttab,utab
+
     const auto sub_extpsw = Kokkos::subview(extpsw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(),isw); 
     const auto ref_real_tab = Kokkos::subview(refrtabsw, mm, Kokkos::ALL(),isw); 
     const auto ref_img_tab = Kokkos::subview(refitabsw, mm, Kokkos::ALL(),isw); 
 
 
-    itab=zero;
-    itab_1=zero;
+    int itab=zero; // index for Bilinear interpolation
+    int itab_1=zero; // ! index for Bilinear interpolation column 1 
     // FIXME: part of binterp only apply for first column 
+    int jtab = zero; 
+    Real ttab, utab = {}; // coef for Bilinear interpolation
+    Real cext[ncoef], cabs[ncoef], casm[ncoef] = {};//  ! coefficient for extinction, absoption, and asymmetry [unitless] 
+
     binterp(sub_extpsw,
-	         refr
+	         refr,
 	         refi, 
-	         ref_real_tab,
-	         ref_img_tab,
+	         ref_real_tab.data(),
+	         ref_img_tab.data(),
              itab, jtab,
              ttab, utab,
              cext,
@@ -760,10 +845,10 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
     const auto sub_abspsw = Kokkos::subview(abspsw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(),isw); 
 
     binterp(sub_abspsw,
-	         refr
+	         refr,
 	         refi, 
-	         ref_real_tab,
-	         ref_img_tab,
+	         ref_real_tab.data(),
+	         ref_img_tab.data(),
              itab, jtab,
              ttab, utab,
              cabs,
@@ -773,10 +858,10 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
      const auto sub_asmpsw = Kokkos::subview(asmpsw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(),isw); 
 
     binterp(sub_asmpsw,
-	         refr
+	         refr,
 	         refi, 
-	         ref_real_tab,
-	         ref_img_tab,
+	         ref_real_tab.data(),
+	         ref_img_tab.data(),
              itab, jtab,
              ttab, utab,
              casm,
@@ -785,16 +870,18 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
 
     // parameterized optical properties
     const auto cheb_k = Kokkos::subview(cheb, Kokkos::ALL(), kk); 
+    Real pext=zero;//    parameterized specific extinction [m2/kg]
     calc_parameterized(cext,
-                       cheb_k, 
+                       cheb_k.data(), 
                        pext);
-
+    Real pabs=zero;// parameterized specific absorption [m2/kg]
     calc_parameterized(cabs,
-                       cheb_k, 
+                       cheb_k.data(), 
                        pabs);
 
+    Real pasm=zero;// parameterized asymmetry factor [unitless?]
     calc_parameterized(casm,
-                       cheb_k, 
+                       cheb_k.data(), 
                        pasm);
 
     //  do icol=1,ncol
@@ -805,16 +892,18 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
     } else 
     {
       // BAD CONSTANT	
-      pext(icol) = 1.5/(radsurf(kk)*rhoh2o);// ! geometric optics 	
+      pext = 1.5/(radsurf(kk)*rhoh2o);// ! geometric optics 	
     }// if logradsurf(kk) <= xrmax
 
+
+
     // convert from m2/kg water to m2/kg aerosol
-    specpext = pext;
+    const Real specpext = pext;// specific extinction [m2/kg]
     pext *= wetvol*rhoh2o;
     pabs *= wetvol*rhoh2o;
-    pabs = mam4::utils:min_max_bound(zero, pext, pabs);
-    palb = one-pabs/haero::max(pext, small_value_40);
-    dopaer = pext*mass(kk);
+    pabs = mam4::utils::min_max_bound(zero, pext, pabs);
+    Real palb = one-pabs/haero::max(pext, small_value_40); // parameterized single scattering albedo [unitless]
+    const Real dopaer = pext*mass(kk);//aerosol optical depth in layer [1]
     if (savaeruv)
     {
      aoduv += dopaer;
@@ -827,6 +916,7 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
 
     // Save aerosol optical depth at longest visible wavelength
     // sum over layers
+   
     if (savaervis){
     	// ! aerosol extinction (/m)
         // do icol = 1, ncol
@@ -844,8 +934,8 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
       	// partition optical depth into contributions from each constituent
         // assume contribution is proportional to refractive index X volume
 
-        scath2o  = watervol*crefwsw(isw).real();
-        absh2o   = -watervol*crefwsw(isw).imag();
+        scath2o  = watervol*crefwsw[isw].real();
+        absh2o   = -watervol*crefwsw[isw].imag();
         sumscat  = scatso4 + scatpom + scatsoa + scatbc + 
                    scatdust + scatseasalt + scath2o + scatmom;
         sumabs   = absso4 + abspom + abssoa + absbc + 
@@ -940,13 +1030,12 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
                      absmom, 
                      momaod );  
 
-    aodabsbc(icol) += absbc*dopaer*(one-palb);
+    aodabsbc += absbc*dopaer*(one-palb);
 
 
-      } // if wetvol(icol) > small_value_40
+    } // if wetvol(icol) > small_value_40
 
     } // savaervis
-
      // do icol = 1, ncol
     //FIXME: I did not port the following:
      // call check_error_warning('sw', icol, kk, mm, isw, nspec,list_idx, & ! in
@@ -958,16 +1047,15 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
      tauxar(kk,isw) += dopaer;
      wa(kk,isw)     += dopaer*palb;
      ga(kk,isw)     += dopaer*palb*pasm;
-     fa(kk,isw)     += dopaer*palb*pasm*pasm;
+     fa(kk,isw)     += dopaer*palb*pasm*pasm;   
     // enddo
     } // k
     }// isw
 
 
 
-
    } // mm
-
+#if 1  
    if(is_cmip6_volc){
    	calc_volc_ext(trop_level,
                   state_zm,
@@ -977,11 +1065,10 @@ void modal_aero_sw(dt, lchnk, ncol, state_q, state_zm, temperature, pmid, pdel, 
 
    }
 
-
-
+#endif
 
 }
-#endif
+
 
 } // namespace modal_aer_opt
 
