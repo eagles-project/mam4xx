@@ -465,6 +465,29 @@ void modal_aero_sw(const Real dt, const View2D & state_q,
                    // diagnostic
                    const ColumnView& extinct,//        ! aerosol extinction [1/m]
                    const ColumnView&  absorb,//         ! aerosol absorption [1/m]
+                   Real &aodnir, Real& aoduv,
+                   Real dustaodmode[ntot_amode],
+                   Real aodmode[ntot_amode],
+                   Real burdenmode[ntot_amode],
+                   Real & aodabsbc,
+                   Real & aodvis,
+                   Real & aodall,
+                   Real & ssavis,
+                   Real& aodabs,
+                   Real& burdendust,
+                   Real& burdenso4,
+                   Real& burdenbc, 
+                   Real& burdenpom,
+                   Real& burdensoa,
+                   Real& burdenseasalt, 
+                   Real& burdenmom,
+                   Real& momaod,
+                   Real& dustaod,
+                   Real& so4aod,// total species AOD
+                   Real& pomaod,
+                   Real& soaaod,
+                   Real& bcaod, 
+                   Real& seasaltaod,
                    // work views
                    const ColumnView& mass,
                    const ColumnView& air_density,
@@ -538,58 +561,105 @@ void modal_aero_sw(const Real dt, const View2D & state_q,
    // real(r8) :: pasm(pcols)     ! parameterized asymmetry factor [unitless?]
    // real(r8) :: palb(pcols)     ! parameterized single scattering albedo [unitless]
 
-   // ! Diagnostics
-   
-    // qaerwat_m(:,:,:)  ! aerosol water (g/g) for all modes
-
-  
-    
    constexpr Real zero = 0.0;
    constexpr Real one =1.0;
 
-   Real burdenmode = zero;//           ! aerosol burden for each mode [kg/m2]
+   //FORTRAN refactoring: For prognostic aerosols only, other options are removed
+   // list_idx = 0   ! index of the climate or a diagnostic list
    
-   Real dustaodmode = zero;//         ! dust aod in aerosol mode [1]
-   Real dustvol= zero;  //           ! volume concentration of dust in aerosol mode (m3/kg)
 
-   Real  burdendust, burdenso4, burdenbc, 
-               burdenpom, burdensoa, burdenseasalt, 
-               burdenmom; // ! burden for each aerosol species [kg/m2]
-   Real scatdust, scatso4, scatbc, 
-               scatpom, scatsoa, scatseasalt, 
-               scatmom;//  ! scattering albedo (?) for each aerosol species [unitless]
-   Real absdust, absso4, absbc, 
-               abspom, abssoa, absseasalt, 
-               absmom;//  ! absoprtion for each aerosol species [unit?] 
-   Real hygrodust, hygroso4, hygrobc, 
-               hygropom, hygrosoa, hygroseasalt, 
-               hygromom;//  ! hygroscopicity for each aerosol species [unitless]
 
-   // diagnostic
-   Real tropopause_m=zero; // tropopause height [m]
-   Real aodabsbc=zero;  //       absorption optical depth of BC
-   Real aoduv=zero;//               extinction optical depth in uv
-   Real aodnir=zero;//              extinction optical depth in nir   
-   Real aodvis=zero;// extinction optical depth
-   Real aodall=zero;// extinction optical depth
-   Real aodabs=zero;//absorption optical depth      
+   //FIXME: We need to set these values outside of this subroutine 
+   // ! zero'th layer does not contain aerosol
+   // tauxar(1:ncol,0,:)  = 0._r8
+   // wa(1:ncol,0,:)      = 0.925_r8
+   // ga(1:ncol,0,:)      = 0.850_r8
+   // fa(1:ncol,0,:)      = 0.7225_r8
 
-   Real aodmode = zero;//             ! aerosol optical depth for each mode [1]  
 
-   Real ssavis=zero;// Aerosol singel-scatter albedo [unitless]
-   Real specrefr, specrefi=zero;// real and imag parts of specref
+   // diagnostics for visible band summed over modes/output diagnostics 
+   aodvis=zero;// extinction optical depth
+   aodall=zero;// extinction optical depth
+   aodabs=zero;//absorption optical depth  
+   burdendust=zero;// ! burden for each aerosol species [kg/m2]
+   burdenso4=zero;
+   burdenbc=zero; 
+   burdenpom=zero;
+   burdensoa=zero;
+   burdenseasalt=zero; 
+   burdenmom=zero; // ! burden for each aerosol species [kg/m2]
+   momaod=zero; // total species AOD
+   // FIXME: I need to add code at the end this subroutine. if (list_idx == 0) then
+   ssavis=zero;// Aerosol singel-scatter albedo [unitless]
+
+   aodabsbc=zero;  //       absorption optical depth of BC
+   dustaod = zero;
+   so4aod=zero;// total species AOD
+   pomaod=zero;
+   soaaod=zero;
+   bcaod=zero; 
+   seasaltaod=zero;// total species AOD
+   
+   //diags for other bands
+   aodnir=zero;//              extinction optical depth in nir  
+   aoduv=zero;//               extinction optical depth in uv 
+   // dustaodmode[ntot_amode] = zero;//         ! dust aod in aerosol mode [1]
+  
+
+   // Local variables
+   Real dustvol= zero;  //  volume concentration of dust in aerosol mode (m3/kg)
+   //  scattering albedo (?) for each aerosol species [unitless]            
+   Real scatdust=zero;
+   Real scatso4=zero;
+   Real scatbc =zero;
+   Real scatpom=zero;
+   Real scatsoa=zero;
+   Real scatseasalt=zero; 
+   Real scatmom=zero;// 
+   
+   // absoprtion for each aerosol species [unit?] 
+   Real absdust=zero; 
+   Real absso4=zero;
+   Real absbc=zero; 
+   Real abspom=zero;
+   Real abssoa=zero;
+   Real absseasalt=zero;
+   Real absmom=zero;// 
+
+   // hygroscopicity for each aerosol species [unitless]
+   Real hygrodust=zero;
+   Real hygroso4=zero;
+   Real hygrobc=zero;
+   Real hygropom=zero;
+   Real hygrosoa=zero;
+   Real hygroseasalt=zero; 
+   Real hygromom=zero; 
+
+   Real tropopause_m=zero; // tropopause height [m]   
+
+   // FIXME: are these diag variables?
+   // Real specrefr, specrefi=zero;// real and imag parts of specref
    Real scath2o, absh2o=zero;// scattering and absorption of h2o
    Real sumscat, sumabs, sumhygro=zero;// sum of scattering , absoprtion and hygroscopicity
-
-   // ! total species AOD
-   Real dustaod, so4aod, bcaod, 
-                pomaod, soaaod, seasaltaod, momaod=zero;
 
 
    for (int kk = 0; kk < pver; ++kk)
    {
    	  mass(kk)        = pdeldry(kk)*rga;
       air_density(kk) = pmid(kk)/(rair*temperature(kk));
+
+      // diagnostics for visible band summed over modes
+      extinct(kk) = zero;
+      absorb(kk) = zero;
+      // initialize output variables
+      for (int i = 0; i < nswbands; ++i)
+      {
+       tauxar(kk,i) = zero;
+       wa(kk,i)     = zero;
+       ga(kk,i)     = zero;
+       fa(kk,i)     = zero;
+      }
+
    }
 #if 0
    // Calculate aerosol size distribution parameters and aerosol water uptake
@@ -612,9 +682,9 @@ void modal_aero_sw(const Real dt, const View2D & state_q,
    for (int mm = 0; mm < ntot_amode; ++mm)
    {
    	// ! diagnostics for visible band for each mode
-   	burdenmode = zero;
-   	aodmode = zero;
-   	dustaodmode = zero;
+   	burdenmode[mm] = zero;
+   	aodmode[mm] = zero;
+   	dustaodmode[mm] = zero; //  dust aod in aerosol mode [1]
    	// ! get mode info
     const int nspec = nspec_amode[mm];
     const Real sigma_logr_aer = sigmag_amode[mm];
@@ -645,28 +715,37 @@ void modal_aero_sw(const Real dt, const View2D & state_q,
     for (int kk = top_lev; kk < pver; ++kk)
     {
 #if 1
-     Real dustvol = zero;
-     Real scatdust     = zero;
-     Real absdust      = zero;
-     Real hygrodust    = zero;
-     Real scatso4      = zero;
-     Real absso4       = zero;
-     Real hygroso4     = zero;
-     Real scatbc       = zero;
-     Real absbc        = zero;
-     Real hygrobc      = zero;
-     Real scatpom      = zero;
-     Real abspom       = zero;
-     Real hygropom     = zero;
-     Real scatsoa      = zero;
-     Real abssoa       = zero;
-     Real hygrosoa     = zero;
-     Real scatseasalt  = zero;
-     Real absseasalt   = zero;
-     Real hygroseasalt = zero;
-     Real scatmom      = zero;
-     Real absmom       = zero;
-     Real hygromom     = zero;
+         
+     // FIXME: Note that these variables will be only saved for pver and nswbands.
+
+     dustvol = zero;
+        
+     hygrodust    = zero;
+     hygroso4     = zero;
+     hygrobc      = zero;
+     hygropom     = zero;
+     hygrosoa     = zero;
+     hygroseasalt = zero;
+     hygromom     = zero;
+
+     scatdust     = zero;
+     scatso4      = zero;
+     scatbc       = zero;
+     scatpom      = zero;
+     scatsoa      = zero;
+     scatseasalt  = zero;
+     scatmom      = zero;
+
+     absdust      = zero;
+     absso4       = zero;
+     absbc        = zero;
+     abspom       = zero;
+     abssoa       = zero;
+     absseasalt   = zero;
+     absmom       = zero;
+
+
+
 #endif
             // ! aerosol species loop
     
@@ -697,7 +776,7 @@ void modal_aero_sw(const Real dt, const View2D & state_q,
       	const Real specrefr = specrefindex(ll,isw).real(); 
         const Real specrefi = specrefindex(ll,isw).imag(); 
 
-        burdenmode += specmmr(kk)*mass(kk);
+        burdenmode[mm] += specmmr(kk)*mass(kk);
        
         if (spectype==AeroId::DST)
         {
@@ -898,7 +977,8 @@ void modal_aero_sw(const Real dt, const View2D & state_q,
 
 
     // convert from m2/kg water to m2/kg aerosol
-    const Real specpext = pext;// specific extinction [m2/kg]
+    // FIXME: specpext is used by check_error_warning, which is not ported yet. 
+    // const Real specpext = pext;// specific extinction [m2/kg]
     pext *= wetvol*rhoh2o;
     pabs *= wetvol*rhoh2o;
     pabs = mam4::utils::min_max_bound(zero, pext, pabs);
@@ -925,12 +1005,12 @@ void modal_aero_sw(const Real dt, const View2D & state_q,
       aodvis    += dopaer;
       aodall += dopaer;
       aodabs += pabs*mass(kk);
-      aodmode += dopaer;
+      aodmode[mm] += dopaer;
       ssavis += dopaer*palb;
 
       if (wetvol > small_value_40)
       {
-      	dustaodmode += dopaer*dustvol/wetvol;
+      	dustaodmode[mm] += dopaer*dustvol/wetvol;
       	// partition optical depth into contributions from each constituent
         // assume contribution is proportional to refractive index X volume
 
