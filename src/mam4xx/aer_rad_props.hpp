@@ -4,7 +4,10 @@
 #include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
 
+#include <mam4xx/modal_aer_opt.hpp>
+
 namespace mam4 {
+
 namespace aer_rad_props {
 
 // From radconstants
