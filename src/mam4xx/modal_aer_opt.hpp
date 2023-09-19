@@ -4,6 +4,7 @@
 #include <Kokkos_Complex.hpp>
 #include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/ndrop.hpp>
 
 namespace mam4 {
 namespace modal_aer_opt {
@@ -16,6 +17,7 @@ using View5D = Kokkos::View<Real *****>;
 constexpr int pver = mam4::nlev;
 constexpr int ntot_amode = mam4::AeroConfig::num_modes();
 constexpr int top_lev = ndrop::top_lev;
+constexpr int ncnst_tot = ndrop::ncnst_tot;
 // ! min, max aerosol surface mode radius treated [m]
 constexpr Real rmmin = 0.01e-6;
 constexpr Real rmmax = 25.e-6;
@@ -382,6 +384,25 @@ void binterp(const View3D &table, const Real ref_real, const Real ref_img,
 } // binterp
 
 KOKKOS_INLINE_FUNCTION
+void modal_aero_calcsize_sub(const View2D &state_q, const ColumnView &pdel,
+                             const Real dt,
+                             const ColumnView qqcw_fld[ncnst_tot],
+                             const int list_idx_in, const bool update_mmr_in,
+                             const View2D &dgnumdry_m) {
+  // placeholder
+} // modal_aero_calcsize_sub
+
+KOKKOS_INLINE_FUNCTION
+void modal_aero_wateruptake_dr(const View2D &state_q,
+                               const ColumnView &temperature,
+                               const ColumnView &pmid, const ColumnView &cldn,
+                               const View2D &dgnumdry_m,
+                               const View2D &dgnumwet_m,
+                               const View2D &qaerwat_m, const int list_idx_in) {
+  // placeholder
+} // modal_aero_wateruptake_dr
+
+KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(
     const Real dt, const View2D &state_q, const ColumnView &state_zm,
     const ColumnView &temperature, const ColumnView &pmid,
@@ -389,8 +410,7 @@ void modal_aero_sw(
     // const int nnite,
     // idxnite,
     const bool is_cmip6_volc, const ColumnView &ext_cmip6_sw,
-    const int trop_level,
-    // qqcw,
+    const int trop_level, const ColumnView qqcw_fld[ncnst_tot],
     const View2D &tauxar, const View2D &wa, const View2D &ga, const View2D &fa,
     //
     const int nspec_amode[ntot_amode], const Real sigmag_amode[ntot_amode],
@@ -417,9 +437,9 @@ void modal_aero_sw(
     Real &pomaod, Real &soaaod, Real &bcaod, Real &seasaltaod,
     // work views
     const ColumnView &mass, const ColumnView &air_density, const View2D &cheb,
-    const View2D &dgnumwet_m, const ColumnView &radsurf,
-    const ColumnView &logradsurf, const ComplexView2D &specrefindex,
-    const View2D &qaerwat_m) {
+    const View2D &dgnumwet_m, const View2D &dgnumdry_m,
+    const ColumnView &radsurf, const ColumnView &logradsurf,
+    const ComplexView2D &specrefindex, const View2D &qaerwat_m) {
   // ! calculates aerosol sw radiative properties
   // dt               !timestep [s]
   // lchnk            ! chunk id
@@ -478,7 +498,7 @@ void modal_aero_sw(
 
   // FORTRAN refactoring: For prognostic aerosols only, other options are
   // removed
-  //  list_idx = 0   ! index of the climate or a diagnostic list
+  const int list_idx = 0; //   ! index of the climate or a diagnostic list
 
   // FIXME: We need to set these values outside of this subroutine
   //  ! zero'th layer does not contain aerosol
@@ -570,19 +590,14 @@ void modal_aero_sw(
       fa(kk, i) = zero;
     }
   }
-#if 0
-   // Calculate aerosol size distribution parameters and aerosol water uptake
-   //For prognostic aerosols
-   modal_aero_calcsize_sub(ncol, lchnk, state_q, pdel, dt, qqcw, 
-                list_idx_in=list_idx, update_mmr_in = .false., 
-                dgnumdry_m=dgnumdry_m); // ! out
 
-   modal_aero_wateruptake_dr(lchnk, ncol, state_q, temperature, pmid,  
-                                  cldn, dgnumdry_m, 
-                                  dgnumwet_m, qaerwat_m, 
-                                  list_idx_in=list_idx   );
-#endif
+  // Calculate aerosol size distribution parameters and aerosol water uptake
+  // For prognostic aerosols
+  modal_aero_calcsize_sub(state_q, pdel, dt, qqcw_fld, list_idx, false,
+                          dgnumdry_m); // ! out
 
+  modal_aero_wateruptake_dr(state_q, temperature, pmid, cldn, dgnumdry_m,
+                            dgnumwet_m, qaerwat_m, list_idx);
   // ! loop over all aerosol modes
 
   Real specvol[max_nspec] = {};
@@ -613,7 +628,6 @@ void modal_aero_sw(
       const bool savaernir = isw == idx_nir_diag ? true : false;
 
       for (int kk = top_lev; kk < pver; ++kk) {
-#if 1
 
         // FIXME: Note that these variables will be only saved for pver and
         // nswbands.
@@ -644,7 +658,6 @@ void modal_aero_sw(
         absseasalt = zero;
         absmom = zero;
 
-#endif
         // ! aerosol species loop
 
         for (int ll = 0; ll < nspec; ++ll) {
@@ -688,7 +701,6 @@ void modal_aero_sw(
                              specrefi, hygro_aer, burdenso4, scatso4, absso4,
                              hygroso4);
             }
-#if 1
             if (spectype == AeroId::BC) {
               calc_diag_spec(specmmr(kk), mass(kk), specvol[ll], specrefr,
                              specrefi, hygro_aer, burdenbc, scatbc, absbc,
@@ -719,7 +731,6 @@ void modal_aero_sw(
                              hygromom);
             }
 
-#endif
           } // savaervis
 
         } // ll species loop ll
@@ -915,12 +926,10 @@ void modal_aero_sw(
     }   // isw
 
   } // mm
-#if 1
+
   if (is_cmip6_volc) {
     calc_volc_ext(trop_level, state_zm, ext_cmip6_sw, extinct, tropopause_m);
   }
-
-#endif
 }
 
 } // namespace modal_aer_opt
