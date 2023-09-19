@@ -23,6 +23,7 @@ using namespace mam4;
 
 // Parameterizations used by the mo_chm_diags() process.
 void het_diags(Ensemble *ensemble);
+void chm_diags(Ensemble *ensemble);
 int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
@@ -47,6 +48,8 @@ int main(int argc, char **argv) {
   try {
     if (func_name == "het_diags") {
       het_diags(ensemble);
+    } else if (func_name == "chm_diags") {
+      chm_diags(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
