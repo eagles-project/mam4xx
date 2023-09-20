@@ -14,6 +14,7 @@ namespace aer_rad_props {
 constexpr int nswbands = modal_aer_opt::nswbands;
 constexpr int nlwbands = modal_aer_opt::nlwbands;
 using View2D = DeviceType::view_2d<Real>;
+using namespace mam4::modal_aer_opt;
 
 KOKKOS_INLINE_FUNCTION
 void volcanic_cmip_sw(const ColumnView &zi, const int ilev_tropp,
@@ -177,8 +178,139 @@ void compute_odap_volcanic_above_troplayer_lw(const int ilev_tropp,
 
 } // compute_odap_volcanic_above_troplayer_lw
 
-} // namespace aer_rad_props
+// This routine uses an implementation of Reichler et al. [2003] done by
+// Reichler and downloaded from his web site. This is similar to the WMO
+//  routines, but is designed for GCMs with a coarse vertical grid.
+// KOKKOS_INLINE_FUNCTION
+//   void tropopause_twmo(ncol,pmid,pint,temp,zm,zi,
+//              tropLev,tropP,tropT,tropZ)
+//   {
+//     // BAD CONSTANT
+//     constexpr Real gam    = -0.002; //       ! lapse rate to indicate
+//     tropopause [K/m] constexpr Real  plimu    = 45000;//       ! upper limit
+//     of tropopause pressure [Pa] constexpr Real  pliml    = 7500;//        !
+//     lower limit of tropopause pressure [Pa]
 
+//     // Use the routine from Reichler.
+//         call twmo(temp(icol, :), pmid(icol, :), plimu, pliml, gam, &  ! in
+//              tP)  ! out
+
+//   } // tropopause_twmo
+
+KOKKOS_INLINE_FUNCTION
+int tropopause_or_quit(const ColumnView &pmid, const ColumnView &pint,
+                       const ColumnView &temperature, const ColumnView &zm,
+                       const ColumnView &zi) {
+  // Find tropopause or quit the simulation if not found
+
+  // lchnk            ! number of chunks
+  // ncol             ! number of columns
+  // pmid(:,:)        ! midpoint pressure [Pa]
+  // pint(:,:)        ! interface pressure [Pa]
+  // temperature(:,:) ! temperature [K]
+  // zm(:,:)          ! geopotential height above surface at midpoints [m]
+  // zi(:,:)          ! geopotential height above surface at interfaces [m]
+  // !return value [out]
+  // trop_level(pcols) !return value
+
+  // !trop_level has a value for tropopause for each column
+  // call tropopause_find(lchnk, ncol, pmid, pint, temperature, zm, zi, & !in
+  //        trop_level) !out
+
+  // TROP_ALG_TWMO: primary
+  int trop_level = 0;
+  return trop_level;
+} // tropopause_or_quit
+
+//   !==============================================================================
+//   function tropopause_or_quit (lchnk, ncol, pmid, pint, temperature, zm, zi)
+//   result (trop_level)
+
+//     use tropopause,           only: tropopause_find
+//     use cam_logfile,          only: iulog
+//     use cam_abortutils,       only: endrun
+
+//     !Local
+//     integer :: icol
+
+//     !Quit if tropopause is not found
+//     if (any(trop_level(1:ncol) == -1)) then
+//        do icol = 1, ncol
+//           write(iulog,*)'tropopause
+//           level,lchnk,column:',trop_level(icol),lchnk,icol
+//        enddo
+//        call endrun('aer_rad_props: tropopause not found')
+//     endif
+//   end function tropopause_or_quit
+
+//
+KOKKOS_INLINE_FUNCTION
+void aer_rad_props_lw(
+    const Real dt, const ColumnView &pmid, const ColumnView &pint,
+    const ColumnView &temperature, const ColumnView &zm, const ColumnView &zi,
+    const View2D &state_q, const ColumnView &pdel, const ColumnView &pdeldry,
+    const ColumnView &cldn, const View2D &ext_cmip6_lw,
+    const ColumnView qqcw_fld[ncnst_tot], const View2D &odap_aer,
+    //
+    const int nspec_amode[ntot_amode], const Real sigmag_amode[ntot_amode],
+    const int lmassptr_amode[maxd_aspectype][ntot_amode],
+    const Real specdens_amode[maxd_aspectype],
+    const int lspectype_amode[maxd_aspectype][ntot_amode],
+    const ComplexView2D &specrefndxlw,
+    const Kokkos::complex<Real> crefwlw[nlwbands],
+    const Kokkos::complex<Real> crefwsw[nswbands], const View5D &absplw,
+    const View3D &refrtablw, const View3D &refitablw,
+    // work views
+    const ColumnView &mass, const View2D &cheb, const View2D &dgnumwet_m,
+    const View2D &dgnumdry_m, const ColumnView &radsurf,
+    const ColumnView &logradsurf, const ComplexView2D &specrefindex,
+    const View2D &qaerwat_m, const View2D &ext_cmip6_lw_inv_m
+
+) {
+
+  constexpr Real km_inv_to_m_inv = 0.001; // 1/km to 1/m
+
+  // Compute contributions from the modal aerosols.
+  modal_aero_lw(dt, state_q, temperature, pmid, pdel, pdeldry, cldn, qqcw_fld,
+                odap_aer,
+                // parameters
+                nspec_amode, sigmag_amode, lmassptr_amode, specdens_amode,
+                lspectype_amode, specrefndxlw, crefwlw, crefwsw, absplw,
+                refrtablw, refitablw,
+                // work views
+                mass, cheb, dgnumwet_m, dgnumdry_m, radsurf, logradsurf,
+                specrefindex, qaerwat_m);
+
+  // !write out ext from the volcanic input file
+  // call outfld('extinct_lw_inp',ext_cmip6_lw(:,:,idx_lw_diag), pcols, lchnk)
+  // !convert from 1/km to 1/m
+  for (int kk = 0; kk < pver; ++kk) {
+    for (int i = 0; i < nlwbands; ++i) {
+      ext_cmip6_lw_inv_m(kk, i) = ext_cmip6_lw(kk, i) * km_inv_to_m_inv;
+    } /// end i
+  }   // end kk
+
+  // FIXME: port tropopause_or_quit
+  // !Find tropopause or quit simulation if not found
+  // trop_level(1:pcols) = tropopause_or_quit(lchnk, ncol, pmid, pint,
+  // temperature, zm, zi)
+  const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
+
+  // We are here because tropopause is found, update taus with 50%
+  // contributuions from the volcanic input file and 50% from the existing model
+  // computed values at the tropopause layer
+  compute_odap_volcanic_at_troplayer_lw(ilev_tropp, zi, ext_cmip6_lw_inv_m,
+                                        odap_aer);
+  // Above the tropopause, the read in values from the file include both the
+  // stratospheric
+  //  and volcanic aerosols. Therefore, we need to zero out odap_aer above the
+  //  tropopause and populate it exclusively from the read in values.
+  compute_odap_volcanic_above_troplayer_lw(ilev_tropp, zi, ext_cmip6_lw_inv_m,
+                                           odap_aer);
+  // call outfld('extinct_lw_bnd7',odap_aer(:,:,idx_lw_diag), pcols, lchnk)
+
+} // aer_rad_props_lw
+} // namespace aer_rad_props
 } // end namespace mam4
 
 #endif
