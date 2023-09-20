@@ -394,6 +394,19 @@ void tropopause_twmo(const ColumnView &pmid, const ColumnView &pint,
 
 } // tropopause_twmo
 
+/* Read the tropopause pressure in from a file containging a climatology. The
+  ! data is interpolated to the current dat of year and latitude.
+  !
+  ! NOTE: The data is read in during tropopause_init and stored in the module
+  ! variable trop */
+
+#if 0
+  KOKKOS_INLINE_FUNCTION
+void tropopause_climate(lchnk,ncol,pmid,pint,temp,zm,zi,    &  ! in
+             tropLev,tropP,tropT,tropZ)   {
+// TO be ported...
+} // tropopause_climate
+#endif
 KOKKOS_INLINE_FUNCTION
 int tropopause_or_quit(const ColumnView &pmid, const ColumnView &pint,
                        const ColumnView &temperature, const ColumnView &zm,
@@ -413,32 +426,17 @@ int tropopause_or_quit(const ColumnView &pmid, const ColumnView &pint,
   // !trop_level has a value for tropopause for each column
   // call tropopause_find(lchnk, ncol, pmid, pint, temperature, zm, zi, & !in
   //        trop_level) !out
-
-  // TROP_ALG_TWMO: primary
   int trop_level = 0;
+  tropopause_twmo(pmid, pint, temperature, zm, zi, trop_level);
+
+  if (trop_level < -1) {
+    Kokkos::abort("aer_rad_props: tropopause not found\n");
+  }
+
+  // Need to ported default_backup, i.e., tropopause_climate
+
   return trop_level;
 } // tropopause_or_quit
-
-//   !==============================================================================
-//   function tropopause_or_quit (lchnk, ncol, pmid, pint, temperature, zm, zi)
-//   result (trop_level)
-
-//     use tropopause,           only: tropopause_find
-//     use cam_logfile,          only: iulog
-//     use cam_abortutils,       only: endrun
-
-//     !Local
-//     integer :: icol
-
-//     !Quit if tropopause is not found
-//     if (any(trop_level(1:ncol) == -1)) then
-//        do icol = 1, ncol
-//           write(iulog,*)'tropopause
-//           level,lchnk,column:',trop_level(icol),lchnk,icol
-//        enddo
-//        call endrun('aer_rad_props: tropopause not found')
-//     endif
-//   end function tropopause_or_quit
 
 //
 KOKKOS_INLINE_FUNCTION
