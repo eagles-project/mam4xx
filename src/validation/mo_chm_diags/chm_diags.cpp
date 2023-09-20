@@ -42,7 +42,7 @@ void chm_diags(Ensemble *ensemble) {
 
     const auto depvel_in = input.get_array("depvel");
     const auto depflx_in = input.get_array("depflx");
-    
+
     const auto fldcw_nn16_in = input.get_array("fldcw_nn16");
     const auto fldcw_nn17_in = input.get_array("fldcw_nn17");
     const auto fldcw_nn18_in = input.get_array("fldcw_nn18");
@@ -69,16 +69,20 @@ void chm_diags(Ensemble *ensemble) {
     const auto fldcw_nn39_in = input.get_array("fldcw_nn39");
     const auto fldcw_nn40_in = input.get_array("fldcw_nn40");
 
-
-/*char solsymmmm[gas_pcnst][17] = {"O3              ","H2O2            ","H2SO4
-   ","SO2             ","DMS             ", "SOAG            ","so4_a1 ","pom_a1
-   ","soa_a1          ","bc_a1           ", "dst_a1          ","ncl_a1 ","mom_a1
-   ","num_a1          ","so4_a2          ", "soa_a2          ","ncl_a2 ","mom_a2
-   ","num_a2          ","dst_a3          ", "ncl_a3          ","so4_a3 ","bc_a3
-   ","pom_a3          ","soa_a3          ", "mom_a3          ","num_a3 ","pom_a4
-   ","bc_a4           ","mom_a4          ", "num_a4          "}; //solution
-   system
-*/
+    /*char solsymmmm[gas_pcnst][17] = {"O3              ","H2O2 ","H2SO4
+       ","SO2             ","DMS             ", "SOAG            ","so4_a1
+       ","pom_a1
+       ","soa_a1          ","bc_a1           ", "dst_a1          ","ncl_a1
+       ","mom_a1
+       ","num_a1          ","so4_a2          ", "soa_a2          ","ncl_a2
+       ","mom_a2
+       ","num_a2          ","dst_a3          ", "ncl_a3          ","so4_a3
+       ","bc_a3
+       ","pom_a3          ","soa_a3          ", "mom_a3          ","num_a3
+       ","pom_a4
+       ","bc_a4           ","mom_a4          ", "num_a4          "}; //solution
+       system
+    */
 
     //=========init views==========
 
@@ -118,8 +122,10 @@ void chm_diags(Ensemble *ensemble) {
 
     ColumnView pdel;
     ColumnView pdeldry;
-    auto pdel_host = View1DHost((Real *)pdel_in.data(), pver); // puts data into host
-    auto pdeldry_host = View1DHost((Real *)pdeldry_in.data(), pver); // puts data into host
+    auto pdel_host =
+        View1DHost((Real *)pdel_in.data(), pver); // puts data into host
+    auto pdeldry_host =
+        View1DHost((Real *)pdeldry_in.data(), pver); // puts data into host
     pdel = haero::testing::create_column_view(pver);
     pdeldry = haero::testing::create_column_view(pver);
     Kokkos::deep_copy(pdel, pdel_host);
@@ -135,7 +141,7 @@ void chm_diags(Ensemble *ensemble) {
     ColumnView mass_bc, mass_dst, mass_mom, mass_ncl;
     ColumnView mass_pom, mass_so4, mass_soa;
 
-    //TODO: if I init these to zero in chm_diags do I need to do so before?
+    // TODO: if I init these to zero in chm_diags do I need to do so before?
     auto vmr_nox_host = View1DHost(vector0_pver.data(), pver);
     auto vmr_noy_host = View1DHost(vector0_pver.data(), pver);
     auto vmr_clox_host = View1DHost(vector0_pver.data(), pver);
@@ -154,7 +160,7 @@ void chm_diags(Ensemble *ensemble) {
     auto mass_pom_host = View1DHost(vector0_pver.data(), pver);
     auto mass_so4_host = View1DHost(vector0_pver.data(), pver);
     auto mass_soa_host = View1DHost(vector0_pver.data(), pver);
-    
+
     Kokkos::deep_copy(vmr_nox, vmr_nox_host);
     Kokkos::deep_copy(vmr_noy, vmr_noy_host);
     Kokkos::deep_copy(vmr_clox, vmr_clox_host);
@@ -190,7 +196,7 @@ void chm_diags(Ensemble *ensemble) {
     }
 
     count = 0;
-    for (int kk = 0; kk < pver; ++kk) { 
+    for (int kk = 0; kk < pver; ++kk) {
       fldcw_host[16](kk) = fldcw_nn16[count];
       fldcw_host[17](kk) = fldcw_nn17[count];
       fldcw_host[18](kk) = fldcw_nn18[count];
@@ -224,7 +230,7 @@ void chm_diags(Ensemble *ensemble) {
       Kokkos::deep_copy(fldcw[nn], fldcw_host[nn]);
     }
 
-    //const Real sox_species[3] = {4, -1, 3};
+    // const Real sox_species[3] = {4, -1, 3};
     const Real adv_mass[gas_pcnst] = {
         47.998200,     34.013600,  98.078400,     64.064800, 62.132400,
         12.011000,     115.107340, 12.011000,     12.011000, 12.011000,
@@ -234,21 +240,17 @@ void chm_diags(Ensemble *ensemble) {
         250092.672000, 1.007400,   12.011000,     12.011000, 250092.672000,
         1.007400};
 
-
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          mo_chm_diags::chm_diags(team, lchnk, ncol, id_o3, vmr, mmr, depvel, depflx
-                                  mmr_tend, pdel, pdeldry, fldcw,
-                                  ltrop, area, sox_species.data(), aer_species.data(),
-                                  adv_mass, solsym, mass, drymass, ozone_layer,
-                                  ozone_col, ozone_trop, ozone_strat,
-                                  vmr_nox, vmr_noy, vmr_clox, vmr_cloy,
-                                  vmr_brox, vmr_broy, vmr_toth, 
-                                  mmr_noy, mmr_sox, mmr_nhx, net_chem,
-                                  df_noy, df_sox, df_nhx,
-                                  mass_bc, mass_dst, mass_mom, mass_ncl,
-                                  mass_pom, mass_so4, mass_soa);
+          mo_chm_diags::chm_diags(
+              team, lchnk, ncol, id_o3, vmr, mmr, depvel, depflx mmr_tend, pdel,
+              pdeldry, fldcw, ltrop, area, sox_species.data(),
+              aer_species.data(), adv_mass, solsym, mass, drymass, ozone_layer,
+              ozone_col, ozone_trop, ozone_strat, vmr_nox, vmr_noy, vmr_clox,
+              vmr_cloy, vmr_brox, vmr_broy, vmr_toth, mmr_noy, mmr_sox, mmr_nhx,
+              net_chem, df_noy, df_sox, df_nhx, mass_bc, mass_dst, mass_mom,
+              mass_ncl, mass_pom, mass_so4, mass_soa);
         });
 
     Kokkos::deep_copy(vmr_nox_host, vmr_nox);
@@ -289,28 +291,28 @@ void chm_diags(Ensemble *ensemble) {
     std::vector<Real> mass_so4_out(pver);
     std::vector<Real> mass_soa_out(pver);
 
-    for(int kk = 0; kk < pver; kk++) {
-      vmr_nox_out[kk] = vmr_nox_host(kk);            
-      vmr_noy_out[kk] = vmr_noy_host(kk);            
-      vmr_clox_out[kk] = vmr_clox_host(kk);           
-      vmr_cloy_out[kk] = vmr_cloy_host(kk);           
-      vmr_brox_out[kk] = vmr_brox_host(kk);           
-      vmr_broy_out[kk] = vmr_broy_host(kk);           
-      vmr_toth_out[kk] = vmr_toth_host(kk);           
-      mmr_noy_out[kk] = mmr_noy__host(kk);           
-      mmr_sox_out[kk] = mmr_sox__host(kk);           
-      mmr_nhx_out[kk] = mmr_nhx__host(kk);           
-      net_chem[kk] = net_chem_host(kk);           
-      mass_bc_out[kk] =  mass_bc_host(kk);            
-      mass_dst_out[kk] =  mass_dst_host(kk);           
-      mass_mom_out[kk] =  mass_mom_host(kk);           
-      mass_ncl_out[kk] =  mass_ncl_host(kk);           
-      mass_pom_out[kk] =  mass_pom_host(kk);           
-      mass_so4_out[kk] =  mass_so4_host(kk);           
-      mass_soa_out[kk] =  mass_soa_host(kk);           
+    for (int kk = 0; kk < pver; kk++) {
+      vmr_nox_out[kk] = vmr_nox_host(kk);
+      vmr_noy_out[kk] = vmr_noy_host(kk);
+      vmr_clox_out[kk] = vmr_clox_host(kk);
+      vmr_cloy_out[kk] = vmr_cloy_host(kk);
+      vmr_brox_out[kk] = vmr_brox_host(kk);
+      vmr_broy_out[kk] = vmr_broy_host(kk);
+      vmr_toth_out[kk] = vmr_toth_host(kk);
+      mmr_noy_out[kk] = mmr_noy__host(kk);
+      mmr_sox_out[kk] = mmr_sox__host(kk);
+      mmr_nhx_out[kk] = mmr_nhx__host(kk);
+      net_chem[kk] = net_chem_host(kk);
+      mass_bc_out[kk] = mass_bc_host(kk);
+      mass_dst_out[kk] = mass_dst_host(kk);
+      mass_mom_out[kk] = mass_mom_host(kk);
+      mass_ncl_out[kk] = mass_ncl_host(kk);
+      mass_pom_out[kk] = mass_pom_host(kk);
+      mass_so4_out[kk] = mass_so4_host(kk);
+      mass_soa_out[kk] = mass_soa_host(kk);
     }
 
-    //TODO: just listing all the vars to be output...
+    // TODO: just listing all the vars to be output...
     output.set("area", area);
     output.set("mass", mass);
     output.set("drymass", drymass);
@@ -336,10 +338,9 @@ void chm_diags(Ensemble *ensemble) {
     output.set("vmr_tcly", vmr_toth_out); // TODO: maybe?
     output.set("mmr_noy", mmr_noy_out);
     output.set("mmr_sox", mmr_sox_out);
-    output.set("mmr_nhx", mmr_nhx_out); 
+    output.set("mmr_nhx", mmr_nhx_out);
     output.set("df_noy", df_noy_out);
     output.set("df_sox", df_sox_out);
     output.set("df_nhx", df_nhx_out);
-
   });
 }
