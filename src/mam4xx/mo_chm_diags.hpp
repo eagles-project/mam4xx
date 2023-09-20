@@ -25,7 +25,7 @@ constexpr Real rgrav =
     1.0 / 9.80616; // reciprocal of acceleration of gravity ~ m/s^2
 constexpr Real avogadro = haero::Constants::avogadro;
 constexpr const int gas_pcnst = gas_chemistry::gas_pcnst;
-constexpr const int pcsnt = 80; // FIXME, 80 is the only value I found for this
+constexpr const int pcnst = 80; // FIXME, 80 is the only value I found for this
                                 // in the fortran, but using 41 in the test
 // number of vertical levels
 constexpr const int pver = mam4::nlev;
@@ -73,17 +73,18 @@ void het_diags(
 } // het_diags
 
 //========================================================================
+//TODO: toth and tcly vars not actually used in the function...
 KOKKOS_INLINE_FUNCTION
 void chm_diags(
     const ThreadTeam &team, int lchnk, int ncol, int id_o3,
     const ColumnView vmr[gas_pcnst], //[pver][gas_pcnst],
     const ColumnView mmr[gas_pcnst], //[pver][gas_pcnst],
-    Real depvel[gas_pcnst], Real depflx[gas_pcnst],
+    Real depvel[gas_pcnst], Real depflx[gas_pcnst], //TODO: i'm not convinced I have all these types correct, they'll probably all be views
     const ColumnView mmr_tend[gas_pcnst], //[pver][gas_pcnst],
     const ColumnView &pdel,               //[pver],
     const ColumnView &pdeldry,            //[pver]
     const ColumnView fldcw[pcnst],        //[pver][pcnst],
-    int ltrop, // index of the lowest stratospheric level
+    const int ltrop, // index of the lowest stratospheric level
     Real area, // NEW input from host model (and output)
     const Real sox_species[3], const Real aer_species[gas_pcnst],
     const Real adv_mass[gas_pcnst], // constant from elsewhere
@@ -100,7 +101,6 @@ void chm_diags(
     const ColumnView &vmr_cloy, //[pver],
     const ColumnView &vmr_brox, //[pver],
     const ColumnView &vmr_broy, //[pver],
-    const ColumnView &vmr_toth, //[pver],
     const ColumnView &mmr_noy,  //[pver],
     const ColumnView &mmr_sox,  //[pver],
     const ColumnView &mmr_nhx,  //[pver],
@@ -140,10 +140,8 @@ void chm_diags(
     vmr_noy(kk) = 0;
     vmr_clox(kk) = 0;
     vmr_cloy(kk) = 0;
-    vmr_tcly(kk) = 0;
     vmr_brox(kk) = 0;
     vmr_broy(kk) = 0;
-    vmr_toth(kk) = 0;
     mmr_noy(kk) = 0;
     mmr_sox(kk) = 0;
     mmr_nhx(kk) = 0;
@@ -186,7 +184,7 @@ void chm_diags(
   // convert ozone from mol/mol (w.r.t. dry air mass) to DU
   for (int kk = 1; kk < pver; kk++) {
     ozone_layer(kk) =
-        pdeldry(kk) * vmr(kk)[id_o3] * avogadro * rgrav / mwdry / DUfac * 1e3;
+        pdeldry(kk) * vmr[id_o3](kk) * avogadro * rgrav / mwdry / DUfac * 1e3;
   }
   // total column ozone
   ozone_col = 0;
@@ -219,38 +217,38 @@ void chm_diags(
     if (aer_species[mm] == mm) {
       // if (history_aerosol.and..not .history_verbose)
       switch (
-          trim(solsym(mm))) { // TODO: what is the trim function's replacement?
-      case 'bc_a1', 'bc_a3', 'bc_a4':
+          trim(solsym(mm))) { // TODO: what is the trim function"s replacement?
+      case "bc_a1" || "bc_a3" || "bc_a4":
         for (int kk = 1; kk < pver; kk++) {
           mass_bc(kk) += mmr[mm](kk);
         }
         break;
-      case 'dst_a1', 'dst_a3':
+      case "dst_a1" || "dst_a3":
         for (int kk = 1; kk < pver; kk++) {
           mass_dst(kk) += mmr[mm](kk);
         }
         break;
-      case 'mom_a1', 'mom_a2', 'mom_a3', 'mom_a4':
+      case "mom_a1" || "mom_a2" || "mom_a3" || "mom_a4":
         for (int kk = 1; kk < pver; kk++) {
           mass_mom(kk) += mmr[mm](kk);
         }
         break;
-      case 'ncl_a1', 'ncl_a2', 'ncl_a3':
+      case "ncl_a1" || "ncl_a2" || "ncl_a3":
         for (int kk = 1; kk < pver; kk++) {
           mass_ncl(kk) += mmr[mm](kk);
         }
         break;
-      case 'pom_a1', 'pom_a3', 'pom_a4':
+      case "pom_a1" ||  "pom_a3" ||  "pom_a4":
         for (int kk = 1; kk < pver; kk++) {
           mass_pom(kk) += mmr[mm](kk);
         }
         break;
-      case 'so4_a1', 'so4_a2', 'so4_a3':
+      case "so4_a1" || "so4_a2" || "so4_a3":
         for (int kk = 1; kk < pver; kk++) {
           mass_so4(kk) += mmr[mm](kk);
         }
         break;
-      case 'soa_a1', 'soa_a2', 'soa_a3':
+      case "soa_a1" ||  "soa_a2" || "soa_a3":
         for (int kk = 1; kk < pver; kk++) {
           mass_soa(kk) += mmr[mm](kk);
         }
@@ -260,7 +258,7 @@ void chm_diags(
 
     for (int i = 0; i < 3; i++) { // FIXME: bad constant (len of sox species)
       if (sox_species[i] == mm) {
-        df_sox += wgt * depflx[mm] * S_molwgt / adv_mass(mm);
+        df_sox += wgt * depflx[mm] * S_molwgt / adv_mass[mm];
       }
     }
 
@@ -278,39 +276,39 @@ void chm_diags(
     // fldcw = > qqcw_get_field(pbuf, nn, lchnk, errorhandle =.true.)
     // if(associated(fldcw)) then
     switch (trim(cnst_name_cw(nn))) { // what is this array
-    case 'bc_c1', 'bc_c3', 'bc_c4':
+    case "bc_c1" || "bc_c3" || "bc_c4":
       for (int kk = 1; kk < pver; kk++) {
         mass_bc(kk) += fldcw[nn](kk);
       }
       break;
-    case 'dst_c1', 'dst_c3':
+    case "dst_c1" || "dst_c3":
       for (int kk = 1; kk < pver; kk++) {
-        mass_dst(kk) += mmr[mm](kk);
+        mass_dst(kk) += fldcw[nn](kk);
       }
       break;
-    case 'mom_c1', 'mom_c2', 'mom_c3', 'mom_c4':
+    case "mom_c1" || "mom_c2" || "mom_c3" || "mom_c4":
       for (int kk = 1; kk < pver; kk++) {
-        mass_mom(kk) += mmr[mm](kk);
+        mass_mom(kk) += fldcw[nn](kk);
       }
       break;
-    case 'ncl_c1', 'ncl_c2', 'ncl_c3':
+    case "ncl_c1" || "ncl_c2" || "ncl_c3":
       for (int kk = 1; kk < pver; kk++) {
-        mass_ncl(kk) += mmr[mm](kk);
+        mass_ncl(kk) += fldcw[nn](kk);
       }
       break;
-    case 'pom_c1', 'pom_c3', 'pom_c4':
+    case "pom_c1" || "pom_c3" || "pom_c4":
       for (int kk = 1; kk < pver; kk++) {
-        mass_pom(kk) += mmr[mm](kk);
+        mass_pom(kk) += fldcw[nn](kk);
       }
       break;
-    case 'so4_c1', 'so4_c2', 'so4_c3':
+    case "so4_c1" || "so4_c2" || "so4_c3":
       for (int kk = 1; kk < pver; kk++) {
-        mass_so4(kk) += mmr[mm](kk);
+        mass_so4(kk) += fldcw[nn](kk);
       }
       break;
-    case 'soa_c1', 'soa_c2', 'soa_c3':
+    case "soa_c1" || "soa_c2" || "soa_c3":
       for (int kk = 1; kk < pver; kk++) {
-        mass_soa(kk) += mmr[mm](kk);
+        mass_soa(kk) += fldcw[nn](kk);
       }
       break;
     }

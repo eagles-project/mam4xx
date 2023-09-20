@@ -131,12 +131,12 @@ void chm_diags(Ensemble *ensemble) {
     Kokkos::deep_copy(pdel, pdel_host);
     Kokkos::deep_copy(pdeldry, pdeldry_host);
 
-    std::vector<Real> vector0_gas_pcsnt(gas_pcnst, 0);
+    std::vector<Real> vector0_gas_pcnst(gas_pcnst, 0);
     std::vector<Real> vector0_pver(pver, 0);
     std::vector<Real> vector0_single(1, 0);
 
     ColumnView vmr_nox, vmr_noy, vmr_clox, vmr_cloy;
-    ColumnView vmr_brox, vmr_broy, vmr_toth;
+    ColumnView vmr_brox, vmr_broy;
     ColumnView mmr_noy, mmr_sox, mmr_nhx net_chem;
     ColumnView mass_bc, mass_dst, mass_mom, mass_ncl;
     ColumnView mass_pom, mass_so4, mass_soa;
@@ -148,7 +148,6 @@ void chm_diags(Ensemble *ensemble) {
     auto vmr_cloy_host = View1DHost(vector0_pver.data(), pver);
     auto vmr_brox_host = View1DHost(vector0_pver.data(), pver);
     auto vmr_broy_host = View1DHost(vector0_pver.data(), pver);
-    auto vmr_toth_host = View1DHost(vector0_pver.data(), pver);
     auto mmr_noy_host = View1DHost(vector0_pver.data(), pver);
     auto mmr_sox_host = View1DHost(vector0_pver.data(), pver);
     auto mmr_nhx_host = View1DHost(vector0_pver.data(), pver);
@@ -167,7 +166,6 @@ void chm_diags(Ensemble *ensemble) {
     Kokkos::deep_copy(vmr_cloy, vmr_cloy_host);
     Kokkos::deep_copy(vmr_brox, vmr_brox_host);
     Kokkos::deep_copy(vmr_broy, vmr_broy_host);
-    Kokkos::deep_copy(vmr_toth, vmr_toth_host);
     Kokkos::deep_copy(mmr_noy, mmr_noy_host);
     Kokkos::deep_copy(mmr_sox, mmr_sox_host);
     Kokkos::deep_copy(mmr_nhx, mmr_nhx_host);
@@ -248,7 +246,7 @@ void chm_diags(Ensemble *ensemble) {
               pdeldry, fldcw, ltrop, area, sox_species.data(),
               aer_species.data(), adv_mass, solsym, mass, drymass, ozone_layer,
               ozone_col, ozone_trop, ozone_strat, vmr_nox, vmr_noy, vmr_clox,
-              vmr_cloy, vmr_brox, vmr_broy, vmr_toth, mmr_noy, mmr_sox, mmr_nhx,
+              vmr_cloy, vmr_brox, vmr_broy, mmr_noy, mmr_sox, mmr_nhx,
               net_chem, df_noy, df_sox, df_nhx, mass_bc, mass_dst, mass_mom,
               mass_ncl, mass_pom, mass_so4, mass_soa);
         });
@@ -259,7 +257,6 @@ void chm_diags(Ensemble *ensemble) {
     Kokkos::deep_copy(vmr_cloy_host, vmr_cloy);
     Kokkos::deep_copy(vmr_brox_host, vmr_brox);
     Kokkos::deep_copy(vmr_broy_host, vmr_broy);
-    Kokkos::deep_copy(vmr_toth_host, vmr_toth);
     Kokkos::deep_copy(mmr_noy_host, mmr_noy);
     Kokkos::deep_copy(mmr_sox_host, mmr_sox);
     Kokkos::deep_copy(mmr_nhx_host, mmr_nhx);
@@ -278,7 +275,6 @@ void chm_diags(Ensemble *ensemble) {
     std::vector<Real> vmr_cloy_out(pver);
     std::vector<Real> vmr_brox_out(pver);
     std::vector<Real> vmr_broy_out(pver);
-    std::vector<Real> vmr_toth_out(pver);
     std::vector<Real> mmr_noy_out(pver);
     std::vector<Real> mmr_sox_out(pver);
     std::vector<Real> mmr_nhx_out(pver);
@@ -298,7 +294,6 @@ void chm_diags(Ensemble *ensemble) {
       vmr_cloy_out[kk] = vmr_cloy_host(kk);
       vmr_brox_out[kk] = vmr_brox_host(kk);
       vmr_broy_out[kk] = vmr_broy_host(kk);
-      vmr_toth_out[kk] = vmr_toth_host(kk);
       mmr_noy_out[kk] = mmr_noy__host(kk);
       mmr_sox_out[kk] = mmr_sox__host(kk);
       mmr_nhx_out[kk] = mmr_nhx__host(kk);
@@ -335,12 +330,12 @@ void chm_diags(Ensemble *ensemble) {
     output.set("vmr_cloy", vmr_cloy_out);
     output.set("vmr_brox", vmr_brox_out);
     output.set("vmr_broy", vmr_broy_out);
-    output.set("vmr_tcly", vmr_toth_out); // TODO: maybe?
     output.set("mmr_noy", mmr_noy_out);
     output.set("mmr_sox", mmr_sox_out);
     output.set("mmr_nhx", mmr_nhx_out);
     output.set("df_noy", df_noy_out);
     output.set("df_sox", df_sox_out);
     output.set("df_nhx", df_nhx_out);
+    //toth and tcly not used...
   });
 }
