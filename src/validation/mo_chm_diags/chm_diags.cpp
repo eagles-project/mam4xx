@@ -23,7 +23,7 @@ void chm_diags(Ensemble *ensemble) {
     using ColumnView = haero::ColumnView;
 
     const int lchnk = 16;
-    const int pcnst = 40;
+    const int pcnst = 41;
 
     //=========read input==========
 
@@ -69,6 +69,16 @@ void chm_diags(Ensemble *ensemble) {
     const auto fldcw_nn39_in = input.get_array("fldcw_nn39");
     const auto fldcw_nn40_in = input.get_array("fldcw_nn40");
 
+
+/*char solsymmmm[gas_pcnst][17] = {"O3              ","H2O2            ","H2SO4
+   ","SO2             ","DMS             ", "SOAG            ","so4_a1 ","pom_a1
+   ","soa_a1          ","bc_a1           ", "dst_a1          ","ncl_a1 ","mom_a1
+   ","num_a1          ","so4_a2          ", "soa_a2          ","ncl_a2 ","mom_a2
+   ","num_a2          ","dst_a3          ", "ncl_a3          ","so4_a3 ","bc_a3
+   ","pom_a3          ","soa_a3          ", "mom_a3          ","num_a3 ","pom_a4
+   ","bc_a4           ","mom_a4          ", "num_a4          "}; //solution
+   system
+*/
 
     //=========init views==========
 
@@ -121,10 +131,11 @@ void chm_diags(Ensemble *ensemble) {
 
     ColumnView vmr_nox, vmr_noy, vmr_clox, vmr_cloy;
     ColumnView vmr_brox, vmr_broy, vmr_toth;
-    ColumnView mmr_noy, mmr_sox, net_chem;
+    ColumnView mmr_noy, mmr_sox, mmr_nhx net_chem;
     ColumnView mass_bc, mass_dst, mass_mom, mass_ncl;
     ColumnView mass_pom, mass_so4, mass_soa;
 
+    //TODO: if I init these to zero in chm_diags do I need to do so before?
     auto vmr_nox_host = View1DHost(vector0_pver.data(), pver);
     auto vmr_noy_host = View1DHost(vector0_pver.data(), pver);
     auto vmr_clox_host = View1DHost(vector0_pver.data(), pver);
@@ -134,6 +145,7 @@ void chm_diags(Ensemble *ensemble) {
     auto vmr_toth_host = View1DHost(vector0_pver.data(), pver);
     auto mmr_noy_host = View1DHost(vector0_pver.data(), pver);
     auto mmr_sox_host = View1DHost(vector0_pver.data(), pver);
+    auto mmr_nhx_host = View1DHost(vector0_pver.data(), pver);
     auto net_chem_host = View1DHost(vector0_pver.data(), pver);
     auto mass_bc_host = View1DHost(vector0_pver.data(), pver);
     auto mass_dst_host = View1DHost(vector0_pver.data(), pver);
@@ -152,6 +164,7 @@ void chm_diags(Ensemble *ensemble) {
     Kokkos::deep_copy(vmr_toth, vmr_toth_host);
     Kokkos::deep_copy(mmr_noy, mmr_noy_host);
     Kokkos::deep_copy(mmr_sox, mmr_sox_host);
+    Kokkos::deep_copy(mmr_nhx, mmr_nhx_host);
     Kokkos::deep_copy(net_chem, net_chem_host);
     Kokkos::deep_copy(mass_bc, mass_bc_host);
     Kokkos::deep_copy(mass_dst, mass_dst_host);
@@ -203,7 +216,6 @@ void chm_diags(Ensemble *ensemble) {
       fldcw_host[38](kk) = fldcw_nn38[count];
       fldcw_host[38](kk) = fldcw_nn39[count];
       fldcw_host[40](kk) = fldcw_nn40[count];
-
       count++;
     }
 
@@ -211,7 +223,6 @@ void chm_diags(Ensemble *ensemble) {
     for (int nn = 0; nn < pcnst; ++nn) {
       Kokkos::deep_copy(fldcw[nn], fldcw_host[nn]);
     }
-
 
     //const Real sox_species[3] = {4, -1, 3};
     const Real adv_mass[gas_pcnst] = {
@@ -234,23 +245,101 @@ void chm_diags(Ensemble *ensemble) {
                                   ozone_col, ozone_trop, ozone_strat,
                                   vmr_nox, vmr_noy, vmr_clox, vmr_cloy,
                                   vmr_brox, vmr_broy, vmr_toth, 
-                                  mmr_noy, mmr_sox, net_chem,
+                                  mmr_noy, mmr_sox, mmr_nhx, net_chem,
                                   df_noy, df_sox, df_nhx,
                                   mass_bc, mass_dst, mass_mom, mass_ncl,
                                   mass_pom, mass_so4, mass_soa);
         });
 
-    std::vector<Real> wrk_wd_mm(gas_pcnst);
-    Kokkos::deep_copy(wrk_wd_host, wrk_wd);
-    for (int mm = 0; mm < gas_pcnst; mm++) {
-      wrk_wd_mm[mm] = wrk_wd_host(mm);
+    Kokkos::deep_copy(vmr_nox_host, vmr_nox);
+    Kokkos::deep_copy(vmr_noy_host, vmr_noy);
+    Kokkos::deep_copy(vmr_clox_host, vmr_clox);
+    Kokkos::deep_copy(vmr_cloy_host, vmr_cloy);
+    Kokkos::deep_copy(vmr_brox_host, vmr_brox);
+    Kokkos::deep_copy(vmr_broy_host, vmr_broy);
+    Kokkos::deep_copy(vmr_toth_host, vmr_toth);
+    Kokkos::deep_copy(mmr_noy_host, mmr_noy);
+    Kokkos::deep_copy(mmr_sox_host, mmr_sox);
+    Kokkos::deep_copy(mmr_nhx_host, mmr_nhx);
+    Kokkos::deep_copy(net_chem_host, net_chem);
+    Kokkos::deep_copy(mass_bc_host, mass_bc);
+    Kokkos::deep_copy(mass_dst_host, mass_dst);
+    Kokkos::deep_copy(mass_mom_host, mass_mom);
+    Kokkos::deep_copy(mass_ncl_host, mass_ncl);
+    Kokkos::deep_copy(mass_pom_host, mass_pom);
+    Kokkos::deep_copy(mass_so4_host, mass_so4);
+    Kokkos::deep_copy(mass_soa_host, mass_soa);
+
+    std::vector<Real> vmr_nox_out(pver);
+    std::vector<Real> vmr_noy_out(pver);
+    std::vector<Real> vmr_clox_out(pver);
+    std::vector<Real> vmr_cloy_out(pver);
+    std::vector<Real> vmr_brox_out(pver);
+    std::vector<Real> vmr_broy_out(pver);
+    std::vector<Real> vmr_toth_out(pver);
+    std::vector<Real> mmr_noy_out(pver);
+    std::vector<Real> mmr_sox_out(pver);
+    std::vector<Real> mmr_nhx_out(pver);
+    std::vector<Real> net_chem(pver);
+    std::vector<Real> mass_bc_out(pver);
+    std::vector<Real> mass_dst_out(pver);
+    std::vector<Real> mass_mom_out(pver);
+    std::vector<Real> mass_ncl_out(pver);
+    std::vector<Real> mass_pom_out(pver);
+    std::vector<Real> mass_so4_out(pver);
+    std::vector<Real> mass_soa_out(pver);
+
+    for(int kk = 0; kk < pver; kk++) {
+      vmr_nox_out[kk] = vmr_nox_host(kk);            
+      vmr_noy_out[kk] = vmr_noy_host(kk);            
+      vmr_clox_out[kk] = vmr_clox_host(kk);           
+      vmr_cloy_out[kk] = vmr_cloy_host(kk);           
+      vmr_brox_out[kk] = vmr_brox_host(kk);           
+      vmr_broy_out[kk] = vmr_broy_host(kk);           
+      vmr_toth_out[kk] = vmr_toth_host(kk);           
+      mmr_noy_out[kk] = mmr_noy__host(kk);           
+      mmr_sox_out[kk] = mmr_sox__host(kk);           
+      mmr_nhx_out[kk] = mmr_nhx__host(kk);           
+      net_chem[kk] = net_chem_host(kk);           
+      mass_bc_out[kk] =  mass_bc_host(kk);            
+      mass_dst_out[kk] =  mass_dst_host(kk);           
+      mass_mom_out[kk] =  mass_mom_host(kk);           
+      mass_ncl_out[kk] =  mass_ncl_host(kk);           
+      mass_pom_out[kk] =  mass_pom_host(kk);           
+      mass_so4_out[kk] =  mass_so4_host(kk);           
+      mass_soa_out[kk] =  mass_soa_host(kk);           
     }
 
-    Kokkos::deep_copy(sox_wk_host, sox_wk);
+    //TODO: just listing all the vars to be output...
+    output.set("area", area);
+    output.set("mass", mass);
+    output.set("drymass", drymass);
+    output.set("ozone_col", ozone_col);
+    output.set("ozone_strat", ozone_strat);
+    output.set("ozone_trop", ozone_trop);
+    output.set("net_chem", net_chem_out);
 
-    std::vector<Real> sox_wk_out(1);
+    output.set("mass_bc", mass_bc_out);
+    output.set("mass_dst", mass_dst_out);
+    output.set("mass_mom", mass_mom_out);
+    output.set("mass_ncl", mass_ncl_out);
+    output.set("mass_pom", mass_pom_out);
+    output.set("mass_so4", mass_so4_out);
+    output.set("mass_soa", mass_soa_out);
 
-    output.set("wrk_wd_mm", wrk_wd_mm);
-    output.set("sox_wk", sox_wk_host[0]);
+    output.set("vmr_nox", vmr_nox_out);
+    output.set("vmr_noy", vmr_noy_out);
+    output.set("vmr_clox", vmr_clox_out);
+    output.set("vmr_cloy", vmr_cloy_out);
+    output.set("vmr_brox", vmr_brox_out);
+    output.set("vmr_broy", vmr_broy_out);
+    output.set("vmr_tcly", vmr_toth_out); // TODO: maybe?
+    output.set("mmr_noy", mmr_noy_out);
+    output.set("mmr_sox", mmr_sox_out);
+    output.set("mmr_nhx", mmr_nhx_out); 
+    output.set("df_noy", df_noy_out);
+    output.set("df_sox", df_sox_out);
+    output.set("df_nhx", df_nhx_out);
+
   });
 }

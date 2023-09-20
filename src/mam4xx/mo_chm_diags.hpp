@@ -25,16 +25,7 @@ constexpr Real rgrav =
     1.0 / 9.80616; // reciprocal of acceleration of gravity ~ m/s^2
 constexpr Real avogadro = haero::Constants::avogadro;
 constexpr const int gas_pcnst = gas_chemistry::gas_pcnst;
-constexpr const int pcsnt = 80; //FIXME
-/*char solsymmmm[gas_pcnst][17] = {"O3              ","H2O2            ","H2SO4
-   ","SO2             ","DMS             ", "SOAG            ","so4_a1 ","pom_a1
-   ","soa_a1          ","bc_a1           ", "dst_a1          ","ncl_a1 ","mom_a1
-   ","num_a1          ","so4_a2          ", "soa_a2          ","ncl_a2 ","mom_a2
-   ","num_a2          ","dst_a3          ", "ncl_a3          ","so4_a3 ","bc_a3
-   ","pom_a3          ","soa_a3          ", "mom_a3          ","num_a3 ","pom_a4
-   ","bc_a4           ","mom_a4          ", "num_a4          "}; //solution
-   system
-*/
+constexpr const int pcsnt = 80; //FIXME, 80 is the only value I found for this in the fortran, but using 41 in the test
 // number of vertical levels
 constexpr const int pver = mam4::nlev;
 
@@ -121,6 +112,7 @@ void chm_diags(const ThreadTeam &team, int lchnk, int ncol, int id_o3,
                const ColumnView &vmr_toth, //[pver], 
                const ColumnView &mmr_noy, //[pver], 
                const ColumnView &mmr_sox, //[pver], 
+               const ColumnView &mmr_nhx, //[pver], 
                const ColumnView &net_chem, //[pver], 
                Real &df_noy, 
                Real &df_sox, 
