@@ -15,7 +15,7 @@ constexpr int nswbands = modal_aer_opt::nswbands;
 constexpr int nlwbands = modal_aer_opt::nlwbands;
 using View2D = DeviceType::view_2d<Real>;
 using namespace mam4::modal_aer_opt;
-
+constexpr Real km_inv_to_m_inv = 0.001; // 1/km to 1/m
 KOKKOS_INLINE_FUNCTION
 void volcanic_cmip_sw(const ColumnView &zi, const int ilev_tropp,
                       const View2D &ext_cmip6_sw_inv_m,
@@ -268,7 +268,29 @@ void aer_rad_props_lw(
 
 ) {
 
-  constexpr Real km_inv_to_m_inv = 0.001; // 1/km to 1/m
+  // Purpose: Compute aerosol transmissions needed in absorptivity/
+  // emissivity calculations
+
+  // Intent-ins
+  //  is_cmip6_volc    ! flag for using cmip6 style volc emissions
+  //  dt               ! time step[s]
+  //  lchnk            ! number of chunks
+  //  ncol             ! number of columns
+  //  pmid(:,:)        ! midpoint pressure [Pa]
+  //  pint(:,:)        ! interface pressure [Pa]
+  //  temperature(:,:) ! temperature [K]
+  //  zm(:,:)          ! geopotential height above surface at midpoints [m]
+  //  zi(:,:)          ! geopotential height above surface at interfaces [m]
+  //  state_q(:,:,:)
+  //  pdel(:,:)
+  //  pdeldry(:,:)
+  //  cldn(:,:)
+  //  ext_cmip6_lw(:,:,:) !long wave extinction in the units of [1/km]
+  //  qqcw(:)   ! Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
+
+  // intent-outs
+  //  odap_aer(pcols,pver,nlwbands) ! [fraction] absorption optical depth, per
+  //  layer [unitless]
 
   // Compute contributions from the modal aerosols.
   modal_aero_lw(dt, state_q, temperature, pmid, pdel, pdeldry, cldn, qqcw_fld,
@@ -310,6 +332,146 @@ void aer_rad_props_lw(
   // call outfld('extinct_lw_bnd7',odap_aer(:,:,idx_lw_diag), pcols, lchnk)
 
 } // aer_rad_props_lw
+KOKKOS_INLINE_FUNCTION
+void aer_rad_props_sw(
+    const Real dt, const ColumnView &zi, const ColumnView &pmid,
+    const ColumnView &pint, const ColumnView &temperature, const ColumnView &zm,
+    const View2D &state_q, const ColumnView &pdel, const ColumnView &pdeldry,
+    const ColumnView &cldn, const View2D &ssa_cmip6_sw,
+    const View2D &af_cmip6_sw, const View2D &ext_cmip6_sw,
+    // nnite, idxnite,
+    // is_cmip6_volc,
+    const ColumnView qqcw_fld[ncnst_tot], const View2D &tau,
+    const View2D &tau_w, const View2D &tau_w_g, const View2D &tau_w_f,
+    const int nspec_amode[ntot_amode], const Real sigmag_amode[ntot_amode],
+    int lmassptr_amode[maxd_aspectype][ntot_amode],
+    const Real spechygro[maxd_aspectype],
+    const Real specdens_amode[maxd_aspectype],
+    const int lspectype_amode[maxd_aspectype][ntot_amode],
+    const ComplexView2D
+        &specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
+    const Kokkos::complex<Real> crefwlw[nlwbands],
+    const Kokkos::complex<Real> crefwsw[nswbands],
+    // FIXME
+    mam4::AeroId specname_amode[6], const View5D &extpsw, const View5D &abspsw,
+    const View5D &asmpsw, const View3D &refrtabsw, const View3D &refitabsw,
+    // diagnostic
+    const ColumnView &extinct, //        ! aerosol extinction [1/m]
+    const ColumnView &absorb,  //         ! aerosol absorption [1/m]
+    Real &aodnir, Real &aoduv, Real dustaodmode[ntot_amode],
+    Real aodmode[ntot_amode], Real burdenmode[ntot_amode], Real &aodabsbc,
+    Real &aodvis, Real &aodall, Real &ssavis, Real &aodabs, Real &burdendust,
+    Real &burdenso4, Real &burdenbc, Real &burdenpom, Real &burdensoa,
+    Real &burdenseasalt, Real &burdenmom, Real &momaod, Real &dustaod,
+    Real &so4aod, // total species AOD
+    Real &pomaod, Real &soaaod, Real &bcaod, Real &seasaltaod,
+    // work views
+    const ColumnView &mass, const ColumnView &air_density, const View2D &cheb,
+    const View2D &dgnumwet_m, const View2D &dgnumdry_m,
+    const ColumnView &radsurf, const ColumnView &logradsurf,
+    const ComplexView2D &specrefindex, const View2D &qaerwat_m,
+    const View2D &ext_cmip6_sw_inv_m) {
+
+  // call outfld('extinct_sw_inp',ext_cmip6_sw(:,:,idx_sw_diag), pcols, lchnk)
+
+  // Return bulk layer tau, omega, g, f for all spectral intervals.
+
+  // Arguments
+  // pmid(:,:)        ! midpoint pressure [Pa]
+  // pint(:,:)        ! interface pressure [Pa]
+  // temperature(:,:) ! temperature [K]
+  // zm(:,:)          ! geopotential height above surface at midpoints [m]
+  // zi(:,:)          ! geopotential height above surface at interfaces [m]
+  //  state_q(:,:,:)
+  // pdel(:,:)
+  // pdeldry(:,:)
+  // cldn(:,:)
+  // ext_cmip6_sw(:,:,:)
+  // ssa_cmip6_sw(:,:,:)
+  // af_cmip6_sw(:,:,:)
+
+  // nnite                ! number of night columns
+  // idxnite(:)           ! local column indices of night columns
+  // is_cmip6_volc        ! true if cmip6 style volcanic file is read otherwise
+  // false
+  // dt                   ! time step (s)
+
+  // qqcw(:)               ! Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
+  // tau    (pcols,0:pver,nswbands) ! aerosol extinction optical depth
+  // tau_w  (pcols,0:pver,nswbands) ! aerosol single scattering albedo * tau
+  // tau_w_g(pcols,0:pver,nswbands) ! aerosol assymetry parameter * tau * w
+  // tau_w_f(pcols,0:pver,nswbands) ! aerosol forward scattered fraction * tau *
+  // w
+
+  // FORTRAN REFACTOR: This is done to fill invalid values in columns where
+  // pcols>ncol C++ port can ignore this as C++ model is a single column model
+  //  initialize to conditions that would cause failure
+  //  tau     (:,:,:) = -100._r8
+  //  tau_w   (:,:,:) = -100._r8
+  //  tau_w_g (:,:,:) = -100._r8
+  //  tau_w_f (:,:,:) = -100._r8
+
+  // ! top layer (ilev = 0) has no aerosol (ie tau = 0)
+  // ! also initialize rest of layers to accumulate od's
+  // tau    (1:ncol,:,:) = 0._r8
+  // tau_w  (1:ncol,:,:) = 0._r8
+  // tau_w_g(1:ncol,:,:) = 0._r8
+  // tau_w_f(1:ncol,:,:) = 0._r8
+
+  // !Converting it from 1/km to 1/m
+  constexpr int idx_sw_diag = 10; // index to sw visible band
+
+  for (int kk = 0; kk < pver; ++kk) {
+    for (int i = 0; i < nlwbands; ++i) {
+      ext_cmip6_sw_inv_m(kk, i) = ext_cmip6_sw(kk, i) * km_inv_to_m_inv;
+    } /// end i
+  }   // end kk
+
+  // Find tropopause (or quit simulation if not found) as extinction should be
+  // applied only above tropopause
+  const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
+
+  auto ext_cmip6_sw_inv_m_idx_sw_diag =
+      Kokkos::subview(ext_cmip6_sw_inv_m, Kokkos::ALL(), idx_sw_diag);
+
+  // Special treatment for CMIP6 volcanic aerosols, where extinction, ssa
+  // and af are directly read from the prescribed volcanic aerosol file
+  modal_aero_sw(dt, state_q, zm, temperature, pmid, pdel, pdeldry, cldn,
+                // const int nnite,
+                // idxnite,
+                true, ext_cmip6_sw_inv_m_idx_sw_diag, ilev_tropp, qqcw_fld, tau,
+                tau_w, tau_w_g, tau_w_f,
+                //
+                nspec_amode, sigmag_amode, lmassptr_amode, spechygro,
+                specdens_amode, lspectype_amode,
+                specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
+                crefwlw, crefwsw,
+                // FIXME
+                specname_amode, extpsw, abspsw, asmpsw, refrtabsw, refitabsw,
+                // diagnostic
+                extinct, //        ! aerosol extinction [1/m]
+                absorb,  //         ! aerosol absorption [1/m]
+                aodnir, aoduv, dustaodmode, aodmode, burdenmode, aodabsbc,
+                aodvis, aodall, ssavis, aodabs, burdendust, burdenso4, burdenbc,
+                burdenpom, burdensoa, burdenseasalt, burdenmom, momaod, dustaod,
+                so4aod, // total species AOD
+                pomaod, soaaod, bcaod, seasaltaod,
+                // work views
+                mass, air_density, cheb, dgnumwet_m, dgnumdry_m, radsurf,
+                logradsurf, specrefindex, qaerwat_m);
+
+  // Update tau, tau_w, tau_w_g, and tau_w_f with the read in values of
+  // extinction, ssa and asymmetry factors
+  volcanic_cmip_sw(zi, ilev_tropp, ext_cmip6_sw_inv_m, ssa_cmip6_sw,
+                   af_cmip6_sw, tau, tau_w, tau_w_g, tau_w_f);
+
+  //  Diagnostic output of total aerosol optical properties
+  //  currently implemented for climate list only
+  // FIXME: to be ported
+  // call aer_vis_diag_out(lchnk, ncol, nnite, idxnite, tau(:,:,idx_sw_diag))
+  // !in
+
+} // aer_rad_props_sw
 } // namespace aer_rad_props
 } // end namespace mam4
 
