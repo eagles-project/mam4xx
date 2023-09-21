@@ -79,24 +79,25 @@ void chm_diags(
     const ThreadTeam &team, int lchnk, int ncol, int id_o3,
     const ColumnView vmr[gas_pcnst], //[pver][gas_pcnst],
     const ColumnView mmr[gas_pcnst], //[pver][gas_pcnst],
-    Real depvel[gas_pcnst],
-    Real depflx[gas_pcnst], // TODO: i'm not convinced I have all these types
-                            // correct, they'll probably all be views
+    Real depvel[gas_pcnst], Real depflx[gas_pcnst],
     const ColumnView mmr_tend[gas_pcnst], //[pver][gas_pcnst],
     const ColumnView &pdel,               //[pver],
     const ColumnView &pdeldry,            //[pver]
     const ColumnView fldcw[pcnst],        //[pver][pcnst],
-    const int ltrop, // index of the lowest stratospheric level
-    Real &area,      // NEW input from host model (and output)
+    const int ltrop,        // index of the lowest stratospheric level
+    const ColumnView &area, // [1], input and output
     const Real sox_species[3], const Real aer_species[gas_pcnst],
     const Real adv_mass[gas_pcnst], // constant from elsewhere
-    char solsym[gas_pcnst][17],
+    const char solsym[gas_pcnst][17],
     // output fields
-    const ColumnView &mass, const ColumnView &drymass,
+    const ColumnView &mass,        //[pver],
+    const ColumnView &drymass,     //[pver],
     const ColumnView &ozone_layer, //[pver], ozone concentration [DU]
-    Real &ozone_col,               // vertical integration of ozone [DU]
-    Real &ozone_trop,  // vertical integration of ozone in troposphere [DU]
-    Real &ozone_strat, // vertical integration of ozone instratosphere [DU]
+    const ColumnView &ozone_col,   // [1], vertical integration of ozone
+    const ColumnView
+        &ozone_trop, // [1], vertical integration of ozone in troposphere [DU]
+    const ColumnView
+        &ozone_strat, // [1], vertical integration of ozone instratosphere [DU]
     const ColumnView &vmr_nox,  //[pver],
     const ColumnView &vmr_noy,  //[pver],
     const ColumnView &vmr_clox, //[pver],
@@ -107,7 +108,9 @@ void chm_diags(
     const ColumnView &mmr_sox,  //[pver],
     const ColumnView &mmr_nhx,  //[pver],
     const ColumnView &net_chem, //[pver],
-    Real &df_noy, Real &df_sox, Real &df_nhx,
+    const ColumnView &df_noy,   //[1],
+    const ColumnView &df_sox,   //[1],
+    const ColumnView &df_nhx,   //[1],
     const ColumnView &mass_bc,  //[pver],
     const ColumnView &mass_dst, //[pver],
     const ColumnView &mass_mom, //[pver],
@@ -149,9 +152,9 @@ void chm_diags(
     mmr_sox(kk) = 0;
     mmr_nhx(kk) = 0;
   }
-  df_noy = 0;
-  df_sox = 0;
-  df_nhx = 0;
+  df_noy(0) = 0;
+  df_sox(0) = 0;
+  df_nhx(0) = 0;
 
   // Save the sum of mass mixing ratios for each class instea of individual
   // species to reduce history file size
@@ -177,11 +180,11 @@ void chm_diags(
     mass_soa(kk) = 0;
   }
 
-  area *= haero::square(rearth);
+  area(0) *= haero::square(rearth);
 
   for (int kk = 1; kk < pver; kk++) {
-    mass(kk) = pdel(kk) * area * rgrav;
-    drymass(kk) = pdeldry(kk) * area * rgrav;
+    mass(kk) = pdel(kk) * area(0) * rgrav;
+    drymass(kk) = pdeldry(kk) * area(0) * rgrav;
   }
 
   // convert ozone from mol/mol (w.r.t. dry air mass) to DU
@@ -190,18 +193,18 @@ void chm_diags(
         pdeldry(kk) * vmr[id_o3](kk) * avogadro * rgrav / mwdry / DUfac * 1e3;
   }
   // total column ozone
-  ozone_col = 0;
-  ozone_trop = 0;
-  ozone_strat = 0;
+  ozone_col(0) = 0;
+  ozone_trop(0) = 0;
+  ozone_strat(0) = 0;
 
   for (int kk = 1; kk < pver; kk++) {
-    ozone_col += ozone_layer(kk);
+    ozone_col(0) += ozone_layer(kk);
     if (kk <= ltrop) {
       // stratospheric column ozone
-      ozone_strat += ozone_layer(kk);
+      ozone_strat(0) += ozone_layer(kk);
     } else {
       // tropospheric column ozone
-      ozone_trop += ozone_layer(kk);
+      ozone_trop(0) += ozone_layer(kk);
     }
   }
 
@@ -218,7 +221,7 @@ void chm_diags(
     }
 
     if (aer_species[mm] == mm) {
-      char *symbol = solsym[mm];
+      const char *symbol = solsym[mm];
       if (strstr(symbol, "bc_a")) {
         for (int kk = 1; kk < pver; kk++) {
           mass_bc(kk) += mmr[mm](kk);
@@ -252,7 +255,7 @@ void chm_diags(
 
     for (int i = 0; i < 3; i++) { // FIXME: bad constant (len of sox species)
       if (sox_species[i] == mm) {
-        df_sox += wgt * depflx[mm] * S_molwgt / adv_mass[mm];
+        df_sox(0) += wgt * depflx[mm] * S_molwgt / adv_mass[mm];
       }
     }
 
@@ -272,7 +275,7 @@ void chm_diags(
     // NOTE: counterparts with "_a" (and "_A") replaced by "_c" (and "_C").
     // NOTE: See initaermodes_set_cnstnamecw in
     // NOTE: eam/src/chemistry/modal_aero/modal_aero_initialize_data.F90.
-    char *symbol = solsym[nn];
+    const char *symbol = solsym[nn];
     char symbol_cw[17];
     strcpy(symbol_cw, symbol);
     char *suffix = strstr(symbol_cw, "_a");
