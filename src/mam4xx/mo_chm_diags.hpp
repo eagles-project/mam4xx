@@ -72,15 +72,33 @@ void het_diags(
   }
 } // het_diags
 
+namespace {
+
+// this helper function returns true if the name string contains the (literal)
+// pattern string, false if not
+KOKKOS_INLINE_FUNCTION
+bool name_matches(const char *name, const char *pattern) {
+  size_t name_len = strlen(name), pattern_len = strlen(pattern);
+  if (pattern_len > name_len)
+    return false;
+  for (size_t i = 0; i < name_len; ++i) {
+    if (name[i] != pattern[i])
+      return false;
+  }
+  return true;
+}
+
+} // namespace
+
 //========================================================================
 // TODO: toth and tcly vars not actually used in the function...
 KOKKOS_INLINE_FUNCTION
 void chm_diags(
     const ThreadTeam &team, int lchnk, int ncol, int id_o3,
-    const ColumnView vmr[gas_pcnst], //[pver][gas_pcnst],
-    const ColumnView mmr[gas_pcnst], //[pver][gas_pcnst],
-    const ColumnView &depvel,//[gas_pcnst],
-    const ColumnView &depflx,//[gas_pcnst],
+    const ColumnView vmr[gas_pcnst],      //[pver][gas_pcnst],
+    const ColumnView mmr[gas_pcnst],      //[pver][gas_pcnst],
+    const ColumnView &depvel,             //[gas_pcnst],
+    const ColumnView &depflx,             //[gas_pcnst],
     const ColumnView mmr_tend[gas_pcnst], //[pver][gas_pcnst],
     const ColumnView &pdel,               //[pver],
     const ColumnView &pdeldry,            //[pver]
@@ -223,31 +241,31 @@ void chm_diags(
 
     if (aer_species[mm] == mm) {
       const char *symbol = solsym[mm];
-      if (strstr(symbol, "bc_a")) {
+      if (name_matches(symbol, "bc_a")) {
         for (int kk = 1; kk < pver; kk++) {
           mass_bc(kk) += mmr[mm](kk);
         }
-      } else if (strstr(symbol, "dst_a")) {
+      } else if (name_matches(symbol, "dst_a")) {
         for (int kk = 1; kk < pver; kk++) {
           mass_dst(kk) += mmr[mm](kk);
         }
-      } else if (strstr(symbol, "mom_a")) {
+      } else if (name_matches(symbol, "mom_a")) {
         for (int kk = 1; kk < pver; kk++) {
           mass_mom(kk) += mmr[mm](kk);
         }
-      } else if (strstr(symbol, "ncl_a")) {
+      } else if (name_matches(symbol, "ncl_a")) {
         for (int kk = 1; kk < pver; kk++) {
           mass_ncl(kk) += mmr[mm](kk);
         }
-      } else if (strstr(symbol, "pom_a")) {
+      } else if (name_matches(symbol, "pom_a")) {
         for (int kk = 1; kk < pver; kk++) {
           mass_pom(kk) += mmr[mm](kk);
         }
-      } else if (strstr(symbol, "so4_a")) {
+      } else if (name_matches(symbol, "so4_a")) {
         for (int kk = 1; kk < pver; kk++) {
           mass_so4(kk) += mmr[mm](kk);
         }
-      } else if (strstr(symbol, "soa_a")) {
+      } else if (name_matches(symbol, "soa_a")) {
         for (int kk = 1; kk < pver; kk++) {
           mass_soa(kk) += mmr[mm](kk);
         }
@@ -278,36 +296,44 @@ void chm_diags(
     // NOTE: eam/src/chemistry/modal_aero/modal_aero_initialize_data.F90.
     const char *symbol = solsym[nn];
     char symbol_cw[17];
-    strcpy(symbol_cw, symbol);
-    char *suffix = strstr(symbol_cw, "_a");
-    if (suffix) {
-      suffix[1] = 'c';
+    {
+      size_t symbol_len = strlen(symbol);
+      bool change_next = false;
+      for (size_t i = 0; i < symbol_len; ++i) {
+        if (symbol[i] == 'a' && change_next) {
+          symbol_cw[i] = 'c';
+        } else if (symbol[i] == '_') {
+          change_next = true;
+        } else {
+          symbol_cw[i] = symbol[i];
+        }
+      }
     }
-    if (strstr(symbol_cw, "bc_c")) {
+    if (name_matches(symbol_cw, "bc_c")) {
       for (int kk = 1; kk < pver; kk++) {
         mass_bc(kk) += fldcw[nn](kk);
       }
-    } else if (strstr(symbol_cw, "dst_c")) {
+    } else if (name_matches(symbol_cw, "dst_c")) {
       for (int kk = 1; kk < pver; kk++) {
         mass_dst(kk) += fldcw[nn](kk);
       }
-    } else if (strstr(symbol_cw, "mom_c")) {
+    } else if (name_matches(symbol_cw, "mom_c")) {
       for (int kk = 1; kk < pver; kk++) {
         mass_mom(kk) += fldcw[nn](kk);
       }
-    } else if (strstr(symbol_cw, "ncl_c")) {
+    } else if (name_matches(symbol_cw, "ncl_c")) {
       for (int kk = 1; kk < pver; kk++) {
         mass_ncl(kk) += fldcw[nn](kk);
       }
-    } else if (strstr(symbol_cw, "pom_c")) {
+    } else if (name_matches(symbol_cw, "pom_c")) {
       for (int kk = 1; kk < pver; kk++) {
         mass_pom(kk) += fldcw[nn](kk);
       }
-    } else if (strstr(symbol_cw, "so4_c")) {
+    } else if (name_matches(symbol_cw, "so4_c")) {
       for (int kk = 1; kk < pver; kk++) {
         mass_so4(kk) += fldcw[nn](kk);
       }
-    } else if (strstr(symbol_cw, "soa_c")) {
+    } else if (name_matches(symbol_cw, "soa_c")) {
       for (int kk = 1; kk < pver; kk++) {
         mass_soa(kk) += fldcw[nn](kk);
       }
