@@ -73,19 +73,21 @@ void het_diags(
 } // het_diags
 
 //========================================================================
-//TODO: toth and tcly vars not actually used in the function...
+// TODO: toth and tcly vars not actually used in the function...
 KOKKOS_INLINE_FUNCTION
 void chm_diags(
     const ThreadTeam &team, int lchnk, int ncol, int id_o3,
     const ColumnView vmr[gas_pcnst], //[pver][gas_pcnst],
     const ColumnView mmr[gas_pcnst], //[pver][gas_pcnst],
-    Real depvel[gas_pcnst], Real depflx[gas_pcnst], //TODO: i'm not convinced I have all these types correct, they'll probably all be views
+    Real depvel[gas_pcnst],
+    Real depflx[gas_pcnst], // TODO: i'm not convinced I have all these types
+                            // correct, they'll probably all be views
     const ColumnView mmr_tend[gas_pcnst], //[pver][gas_pcnst],
     const ColumnView &pdel,               //[pver],
     const ColumnView &pdeldry,            //[pver]
     const ColumnView fldcw[pcnst],        //[pver][pcnst],
     const int ltrop, // index of the lowest stratospheric level
-    Real area, // NEW input from host model (and output)
+    Real &area,      // NEW input from host model (and output)
     const Real sox_species[3], const Real aer_species[gas_pcnst],
     const Real adv_mass[gas_pcnst], // constant from elsewhere
     char solsym[gas_pcnst][17],
@@ -124,7 +126,8 @@ void chm_diags(
   // sum of mass for aerosol classes
 
   //---------------------------not
-  //needed?-------------------------------------------- bool history_aerosol; //
+  // needed?-------------------------------------------- bool history_aerosol;
+  // //
   // output aerosol variables bool history_verbose;      // produce verbose
   // history output
 
@@ -215,44 +218,35 @@ void chm_diags(
     }
 
     if (aer_species[mm] == mm) {
-      // if (history_aerosol.and..not .history_verbose)
-      switch (
-          trim(solsym(mm))) { // TODO: what is the trim function"s replacement?
-      case "bc_a1" || "bc_a3" || "bc_a4":
+      char *symbol = solsym[mm];
+      if (strstr(symbol, "bc_a")) {
         for (int kk = 1; kk < pver; kk++) {
           mass_bc(kk) += mmr[mm](kk);
         }
-        break;
-      case "dst_a1" || "dst_a3":
+      } else if (strstr(symbol, "dst_a")) {
         for (int kk = 1; kk < pver; kk++) {
           mass_dst(kk) += mmr[mm](kk);
         }
-        break;
-      case "mom_a1" || "mom_a2" || "mom_a3" || "mom_a4":
+      } else if (strstr(symbol, "mom_a")) {
         for (int kk = 1; kk < pver; kk++) {
           mass_mom(kk) += mmr[mm](kk);
         }
-        break;
-      case "ncl_a1" || "ncl_a2" || "ncl_a3":
+      } else if (strstr(symbol, "ncl_a")) {
         for (int kk = 1; kk < pver; kk++) {
           mass_ncl(kk) += mmr[mm](kk);
         }
-        break;
-      case "pom_a1" ||  "pom_a3" ||  "pom_a4":
+      } else if (strstr(symbol, "pom_a")) {
         for (int kk = 1; kk < pver; kk++) {
           mass_pom(kk) += mmr[mm](kk);
         }
-        break;
-      case "so4_a1" || "so4_a2" || "so4_a3":
+      } else if (strstr(symbol, "so4_a")) {
         for (int kk = 1; kk < pver; kk++) {
           mass_so4(kk) += mmr[mm](kk);
         }
-        break;
-      case "soa_a1" ||  "soa_a2" || "soa_a3":
+      } else if (strstr(symbol, "soa_a")) {
         for (int kk = 1; kk < pver; kk++) {
           mass_soa(kk) += mmr[mm](kk);
         }
-        break;
       }
     }
 
@@ -269,48 +263,50 @@ void chm_diags(
 
   // diagnostics for cloud-borne aerosols, then add to corresponding mass
   // accumulators
-  // TODO: is it okay to ignore these ifs?
   // if (history_aerosol.and..not .history_verbose) then
 
   for (int nn = lchnk; nn < pcnst; nn++) {
     // fldcw = > qqcw_get_field(pbuf, nn, lchnk, errorhandle =.true.)
     // if(associated(fldcw)) then
-    switch (trim(cnst_name_cw(nn))) { // what is this array
-    case "bc_c1" || "bc_c3" || "bc_c4":
+    // NOTE: The "cloud-water" constituent name are the same as their "aerosol"
+    // NOTE: counterparts with "_a" (and "_A") replaced by "_c" (and "_C").
+    // NOTE: See initaermodes_set_cnstnamecw in
+    // NOTE: eam/src/chemistry/modal_aero/modal_aero_initialize_data.F90.
+    char *symbol = solsym[nn];
+    char symbol_cw[17];
+    strcpy(symbol_cw, symbol);
+    char *suffix = strstr(symbol_cw, "_a");
+    if (suffix) {
+      suffix[1] = 'c';
+    }
+    if (strstr(symbol_cw, "bc_c")) {
       for (int kk = 1; kk < pver; kk++) {
         mass_bc(kk) += fldcw[nn](kk);
       }
-      break;
-    case "dst_c1" || "dst_c3":
+    } else if (strstr(symbol_cw, "dst_c")) {
       for (int kk = 1; kk < pver; kk++) {
         mass_dst(kk) += fldcw[nn](kk);
       }
-      break;
-    case "mom_c1" || "mom_c2" || "mom_c3" || "mom_c4":
+    } else if (strstr(symbol_cw, "mom_c")) {
       for (int kk = 1; kk < pver; kk++) {
         mass_mom(kk) += fldcw[nn](kk);
       }
-      break;
-    case "ncl_c1" || "ncl_c2" || "ncl_c3":
+    } else if (strstr(symbol_cw, "ncl_c")) {
       for (int kk = 1; kk < pver; kk++) {
         mass_ncl(kk) += fldcw[nn](kk);
       }
-      break;
-    case "pom_c1" || "pom_c3" || "pom_c4":
+    } else if (strstr(symbol_cw, "pom_c")) {
       for (int kk = 1; kk < pver; kk++) {
         mass_pom(kk) += fldcw[nn](kk);
       }
-      break;
-    case "so4_c1" || "so4_c2" || "so4_c3":
+    } else if (strstr(symbol_cw, "so4_c")) {
       for (int kk = 1; kk < pver; kk++) {
         mass_so4(kk) += fldcw[nn](kk);
       }
-      break;
-    case "soa_c1" || "soa_c2" || "soa_c3":
+    } else if (strstr(symbol_cw, "soa_c")) {
       for (int kk = 1; kk < pver; kk++) {
         mass_soa(kk) += fldcw[nn](kk);
       }
-      break;
     }
   }
 } // chm_diags

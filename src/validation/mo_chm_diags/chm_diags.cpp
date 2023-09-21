@@ -69,20 +69,13 @@ void chm_diags(Ensemble *ensemble) {
     const auto fldcw_nn39_in = input.get_array("fldcw_nn39");
     const auto fldcw_nn40_in = input.get_array("fldcw_nn40");
 
-    /*char solsymmmm[gas_pcnst][17] = {"O3              ","H2O2 ","H2SO4
-       ","SO2             ","DMS             ", "SOAG            ","so4_a1
-       ","pom_a1
-       ","soa_a1          ","bc_a1           ", "dst_a1          ","ncl_a1
-       ","mom_a1
-       ","num_a1          ","so4_a2          ", "soa_a2          ","ncl_a2
-       ","mom_a2
-       ","num_a2          ","dst_a3          ", "ncl_a3          ","so4_a3
-       ","bc_a3
-       ","pom_a3          ","soa_a3          ", "mom_a3          ","num_a3
-       ","pom_a4
-       ","bc_a4           ","mom_a4          ", "num_a4          "}; //solution
-       system
-    */
+    // names of gas-phase chemical constituents
+    char solsym[gas_pcnst][17] = {
+        "O3",     "H2O2",   "H2SO4",  "SO2",    "DMS",    "SOAG",   "so4_a1",
+        "pom_a1", "soa_a1", "bc_a1",  "dst_a1", "ncl_a1", "mom_a1", "num_a1",
+        "so4_a2", "soa_a2", "ncl_a2", "mom_a2", "num_a2", "dst_a3", "ncl_a3",
+        "so4_a3", "bc_a3",  "pom_a3", "soa_a3", "mom_a3", "num_a3", "pom_a4",
+        "bc_a4",  "mom_a4", "num_a4"};
 
     //=========init views==========
 
@@ -137,11 +130,10 @@ void chm_diags(Ensemble *ensemble) {
 
     ColumnView vmr_nox, vmr_noy, vmr_clox, vmr_cloy;
     ColumnView vmr_brox, vmr_broy;
-    ColumnView mmr_noy, mmr_sox, mmr_nhx net_chem;
+    ColumnView mmr_noy, mmr_sox, mmr_nhx, net_chem;
     ColumnView mass_bc, mass_dst, mass_mom, mass_ncl;
     ColumnView mass_pom, mass_so4, mass_soa;
 
-    // TODO: if I init these to zero in chm_diags do I need to do so before?
     auto vmr_nox_host = View1DHost(vector0_pver.data(), pver);
     auto vmr_noy_host = View1DHost(vector0_pver.data(), pver);
     auto vmr_clox_host = View1DHost(vector0_pver.data(), pver);
@@ -195,31 +187,31 @@ void chm_diags(Ensemble *ensemble) {
 
     count = 0;
     for (int kk = 0; kk < pver; ++kk) {
-      fldcw_host[16](kk) = fldcw_nn16[count];
-      fldcw_host[17](kk) = fldcw_nn17[count];
-      fldcw_host[18](kk) = fldcw_nn18[count];
-      fldcw_host[19](kk) = fldcw_nn19[count];
-      fldcw_host[20](kk) = fldcw_nn20[count];
-      fldcw_host[21](kk) = fldcw_nn21[count];
-      fldcw_host[22](kk) = fldcw_nn22[count];
-      fldcw_host[23](kk) = fldcw_nn23[count];
-      fldcw_host[24](kk) = fldcw_nn24[count];
-      fldcw_host[25](kk) = fldcw_nn25[count];
-      fldcw_host[26](kk) = fldcw_nn26[count];
-      fldcw_host[27](kk) = fldcw_nn27[count];
-      fldcw_host[28](kk) = fldcw_nn28[count];
-      fldcw_host[29](kk) = fldcw_nn29[count];
-      fldcw_host[30](kk) = fldcw_nn30[count];
-      fldcw_host[31](kk) = fldcw_nn31[count];
-      fldcw_host[32](kk) = fldcw_nn32[count];
-      fldcw_host[33](kk) = fldcw_nn33[count];
-      fldcw_host[34](kk) = fldcw_nn34[count];
-      fldcw_host[35](kk) = fldcw_nn35[count];
-      fldcw_host[36](kk) = fldcw_nn36[count];
-      fldcw_host[37](kk) = fldcw_nn37[count];
-      fldcw_host[38](kk) = fldcw_nn38[count];
-      fldcw_host[38](kk) = fldcw_nn39[count];
-      fldcw_host[40](kk) = fldcw_nn40[count];
+      fldcw_host[16](kk) = fldcw_nn16_in[count];
+      fldcw_host[17](kk) = fldcw_nn17_in[count];
+      fldcw_host[18](kk) = fldcw_nn18_in[count];
+      fldcw_host[19](kk) = fldcw_nn19_in[count];
+      fldcw_host[20](kk) = fldcw_nn20_in[count];
+      fldcw_host[21](kk) = fldcw_nn21_in[count];
+      fldcw_host[22](kk) = fldcw_nn22_in[count];
+      fldcw_host[23](kk) = fldcw_nn23_in[count];
+      fldcw_host[24](kk) = fldcw_nn24_in[count];
+      fldcw_host[25](kk) = fldcw_nn25_in[count];
+      fldcw_host[26](kk) = fldcw_nn26_in[count];
+      fldcw_host[27](kk) = fldcw_nn27_in[count];
+      fldcw_host[28](kk) = fldcw_nn28_in[count];
+      fldcw_host[29](kk) = fldcw_nn29_in[count];
+      fldcw_host[30](kk) = fldcw_nn30_in[count];
+      fldcw_host[31](kk) = fldcw_nn31_in[count];
+      fldcw_host[32](kk) = fldcw_nn32_in[count];
+      fldcw_host[33](kk) = fldcw_nn33_in[count];
+      fldcw_host[34](kk) = fldcw_nn34_in[count];
+      fldcw_host[35](kk) = fldcw_nn35_in[count];
+      fldcw_host[36](kk) = fldcw_nn36_in[count];
+      fldcw_host[37](kk) = fldcw_nn37_in[count];
+      fldcw_host[38](kk) = fldcw_nn38_in[count];
+      fldcw_host[38](kk) = fldcw_nn39_in[count];
+      fldcw_host[40](kk) = fldcw_nn40_in[count];
       count++;
     }
 
@@ -242,13 +234,13 @@ void chm_diags(Ensemble *ensemble) {
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           mo_chm_diags::chm_diags(
-              team, lchnk, ncol, id_o3, vmr, mmr, depvel, depflx mmr_tend, pdel,
-              pdeldry, fldcw, ltrop, area, sox_species.data(),
-              aer_species.data(), adv_mass, solsym, mass, drymass, ozone_layer,
-              ozone_col, ozone_trop, ozone_strat, vmr_nox, vmr_noy, vmr_clox,
-              vmr_cloy, vmr_brox, vmr_broy, mmr_noy, mmr_sox, mmr_nhx,
-              net_chem, df_noy, df_sox, df_nhx, mass_bc, mass_dst, mass_mom,
-              mass_ncl, mass_pom, mass_so4, mass_soa);
+              team, lchnk, ncol, id_o3, vmr, mmr, depvel_in, depflx_in,
+              mmr_tend, pdel, pdeldry, fldcw, ltrop, area,
+              sox_species_in.data(), aer_species_in.data(), adv_mass, solsym,
+              mass, drymass, ozone_layer, ozone_col, ozone_trop, ozone_strat,
+              vmr_nox, vmr_noy, vmr_clox, vmr_cloy, vmr_brox, vmr_broy, mmr_noy,
+              mmr_sox, mmr_nhx, net_chem, df_noy, df_sox, df_nhx, mass_bc,
+              mass_dst, mass_mom, mass_ncl, mass_pom, mass_so4, mass_soa);
         });
 
     Kokkos::deep_copy(vmr_nox_host, vmr_nox);
@@ -336,6 +328,6 @@ void chm_diags(Ensemble *ensemble) {
     output.set("df_noy", df_noy_out);
     output.set("df_sox", df_sox_out);
     output.set("df_nhx", df_nhx_out);
-    //toth and tcly not used...
+    // toth and tcly not used...
   });
 }
