@@ -79,12 +79,22 @@ void chm_diags(Ensemble *ensemble) {
 
     //=========init views==========
 
+    for (int kk = 0; kk < pver; ++kk) {
+    }
+
     ColumnView mmr[gas_pcnst];
     ColumnView vmr[gas_pcnst];
     ColumnView mmr_tend[gas_pcnst];
     View1DHost mmr_host[gas_pcnst];
     View1DHost vmr_host[gas_pcnst];
     View1DHost mmr_tend_host[gas_pcnst];
+
+    View1DHost depvel_host("depvel_host", gas_pcnst);
+    View1DHost depflx_host("depflx_host", gas_pcnst);
+    for (int mm = 0; mm < gas_pcnst; ++mm) {
+      depvel_host(mm) = depvel_in[mm];
+      depflx_host(mm) = depflx_in[mm];
+    }
 
     for (int mm = 0; mm < gas_pcnst; ++mm) {
       mmr[mm] = haero::testing::create_column_view(pver);
@@ -127,6 +137,9 @@ void chm_diags(Ensemble *ensemble) {
     std::vector<Real> vector0_gas_pcnst(gas_pcnst, 0);
     std::vector<Real> vector0_pver(pver, 0);
     std::vector<Real> vector0_single(1, 0);
+
+    View1D depvel("depvel", gas_pcnst);
+    View1D depflx("depflx", gas_pcnst);
 
     auto vmr_nox = haero::testing::create_column_view(pver);
     auto vmr_noy = haero::testing::create_column_view(pver);
@@ -172,6 +185,8 @@ void chm_diags(Ensemble *ensemble) {
     auto mass_so4_host = View1DHost(vector0_pver.data(), pver);
     auto mass_soa_host = View1DHost(vector0_pver.data(), pver);
 
+    Kokkos::deep_copy(depvel, depvel_host);
+    Kokkos::deep_copy(depflx, depflx_host);
     Kokkos::deep_copy(vmr_nox, vmr_nox_host);
     Kokkos::deep_copy(vmr_noy, vmr_noy_host);
     Kokkos::deep_copy(vmr_clox, vmr_clox_host);
@@ -250,10 +265,6 @@ void chm_diags(Ensemble *ensemble) {
         250092.672000, 1.007400,   12.011000,     12.011000, 250092.672000,
         1.007400};
 
-    Real depvel[pcnst], depflx[pcnst];
-    memcpy(depvel, &depvel_in[0], sizeof(Real) * pcnst);
-    memcpy(depflx, &depflx_in[0], sizeof(Real) * pcnst);
-
     auto ozone_col = haero::testing::create_column_view(1);
     auto ozone_trop = haero::testing::create_column_view(1);
     auto ozone_strat = haero::testing::create_column_view(1);
@@ -265,8 +276,8 @@ void chm_diags(Ensemble *ensemble) {
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           mo_chm_diags::chm_diags(
-              team, lchnk, ncol, id_o3, vmr, mmr, (Real *)depvel,
-              (Real *)depflx, mmr_tend, pdel, pdeldry, fldcw, ltrop, area,
+              team, lchnk, ncol, id_o3, vmr, mmr, depvel, depflx, mmr_tend,
+              pdel, pdeldry, fldcw, ltrop, area,
               sox_species_in.data(), aer_species_in.data(), adv_mass, solsym,
               mass, drymass, ozone_layer, ozone_col, ozone_trop, ozone_strat,
               vmr_nox, vmr_noy, vmr_clox, vmr_cloy, vmr_brox, vmr_broy, mmr_noy,
@@ -353,7 +364,6 @@ void chm_diags(Ensemble *ensemble) {
       drymass_out[kk] = drymass_host(kk);
     }
 
-    // TODO: just listing all the vars to be output...
     output.set("area", area_host(0));
     output.set("mass", mass_out);
     output.set("drymass", drymass_out);
@@ -382,6 +392,10 @@ void chm_diags(Ensemble *ensemble) {
     output.set("df_noy", df_noy_host(0));
     output.set("df_sox", df_sox_host(0));
     output.set("df_nhx", df_nhx_host(0));
-    // toth and tcly not used...
+
+    // toth and tcly not used, but tcly is in reference output and is all zeros,
+    // so we replicate it here.
+    std::vector<Real> vmr_tcly(pver, 0.0);
+    output.set("vmr_tcly", vmr_tcly);
   });
 }

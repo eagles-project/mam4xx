@@ -79,7 +79,8 @@ void chm_diags(
     const ThreadTeam &team, int lchnk, int ncol, int id_o3,
     const ColumnView vmr[gas_pcnst], //[pver][gas_pcnst],
     const ColumnView mmr[gas_pcnst], //[pver][gas_pcnst],
-    Real depvel[gas_pcnst], Real depflx[gas_pcnst],
+    const ColumnView &depvel,//[gas_pcnst],
+    const ColumnView &depflx,//[gas_pcnst],
     const ColumnView mmr_tend[gas_pcnst], //[pver][gas_pcnst],
     const ColumnView &pdel,               //[pver],
     const ColumnView &pdeldry,            //[pver]
