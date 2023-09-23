@@ -26,6 +26,7 @@ void binterp(Ensemble *ensemble);
 void calc_diag_spec(Ensemble *ensemble);
 void calc_refin_complex(Ensemble *ensemble);
 void calc_volc_ext(Ensemble *ensemble);
+void modal_size_parameters(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -56,7 +57,9 @@ int main(int argc, char **argv) {
     } else if (func_name == "calc_refin_complex") {
       calc_refin_complex(ensemble);
     } else if (func_name == "calc_volc_ext") {
-      calc_volc_ext(ensemble);  
+      calc_volc_ext(ensemble);
+    } else if (func_name == "modal_size_parameters") {
+      modal_size_parameters(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;

@@ -163,8 +163,7 @@ void calc_volc_ext(const int trop_level, const ColumnView &state_zm,
   // diagnose tropopause height
   tropopause_m = state_zm(trop_level); //! in meters
   // update tropopause layer first
-  extinct(trop_level) =
-      half * (extinct(trop_level) + ext_cmip6_sw(trop_level));
+  extinct(trop_level) = half * (extinct(trop_level) + ext_cmip6_sw(trop_level));
   // extinction is assigned read in values only for visible band above
   // tropopause
   for (int kk = 0; kk < trop_level; ++kk) {
@@ -299,6 +298,7 @@ void compute_factors(const int prefri, const Real ref_ind,
   // !intent-inouts/outs
   // ix(:)
   // tt(:)
+  // BAD CONSTANT
   constexpr Real threshold = 1.e-20;
   constexpr Real zero = 0;
   ix = 1;
