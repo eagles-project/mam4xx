@@ -74,11 +74,20 @@ void het_diags(
 
 namespace {
 
+KOKKOS_INLINE_FUNCTION
+size_t gpu_safe_strlen(const char *s) {
+  size_t l = 0;
+  while (s[l])
+    ++l;
+  return l;
+}
+
 // this helper function returns true if the name string contains the (literal)
 // pattern string, false if not
 KOKKOS_INLINE_FUNCTION
 bool name_matches(const char *name, const char *pattern) {
-  size_t name_len = strlen(name), pattern_len = strlen(pattern);
+  size_t name_len = gpu_safe_strlen(name),
+         pattern_len = gpu_safe_strlen(pattern);
   if (pattern_len > name_len)
     return false;
   for (size_t i = 0; i < name_len; ++i) {
@@ -200,7 +209,6 @@ void chm_diags(
   }
 
   area(0) *= haero::square(rearth);
-  printf("area: %g\n", area(0));
 
   for (int kk = 0; kk < pver; kk++) {
     mass(kk) = pdel(kk) * area(0) * rgrav;
@@ -298,7 +306,7 @@ void chm_diags(
     const char *symbol = solsym[nn];
     char symbol_cw[17];
     {
-      size_t symbol_len = strlen(symbol);
+      size_t symbol_len = gpu_safe_strlen(symbol);
       bool change_next = false;
       for (size_t i = 0; i < symbol_len; ++i) {
         if (symbol[i] == 'a' && change_next) {

@@ -258,6 +258,11 @@ void chm_diags(Ensemble *ensemble) {
       Kokkos::deep_copy(fldcw[nn], fldcw_host[nn]);
     }
 
+    Real sox_species[3] = {};
+    std::copy(sox_species_in.begin(), sox_species_in.begin() + 3, sox_species);
+    Real aer_species[gas_pcnst] = {};
+    std::copy(aer_species_in.begin(), aer_species_in.begin() + gas_pcnst,
+              aer_species);
     const Real adv_mass[gas_pcnst] = {
         47.998200,     34.013600,  98.078400,     64.064800, 62.132400,
         12.011000,     115.107340, 12.011000,     12.011000, 12.011000,
@@ -279,12 +284,12 @@ void chm_diags(Ensemble *ensemble) {
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           mo_chm_diags::chm_diags(
               team, lchnk, ncol, id_o3, vmr, mmr, depvel, depflx, mmr_tend,
-              pdel, pdeldry, fldcw, ltrop, area, sox_species_in.data(),
-              aer_species_in.data(), adv_mass, solsym, mass, drymass,
-              ozone_layer, ozone_col, ozone_trop, ozone_strat, vmr_nox, vmr_noy,
-              vmr_clox, vmr_cloy, vmr_brox, vmr_broy, mmr_noy, mmr_sox, mmr_nhx,
-              net_chem, df_noy, df_sox, df_nhx, mass_bc, mass_dst, mass_mom,
-              mass_ncl, mass_pom, mass_so4, mass_soa);
+              pdel, pdeldry, fldcw, ltrop, area, sox_species, aer_species,
+              adv_mass, solsym, mass, drymass, ozone_layer, ozone_col,
+              ozone_trop, ozone_strat, vmr_nox, vmr_noy, vmr_clox, vmr_cloy,
+              vmr_brox, vmr_broy, mmr_noy, mmr_sox, mmr_nhx, net_chem, df_noy,
+              df_sox, df_nhx, mass_bc, mass_dst, mass_mom, mass_ncl, mass_pom,
+              mass_so4, mass_soa);
         });
 
     Kokkos::deep_copy(vmr_nox_host, vmr_nox);
