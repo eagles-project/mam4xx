@@ -167,23 +167,23 @@ void chm_diags(Ensemble *ensemble) {
     auto drymass = haero::testing::create_column_view(pver);
     auto ozone_layer = haero::testing::create_column_view(pver);
 
-    auto vmr_nox_host = View1DHost(vector0_pver.data(), pver);
-    auto vmr_noy_host = View1DHost(vector0_pver.data(), pver);
-    auto vmr_clox_host = View1DHost(vector0_pver.data(), pver);
-    auto vmr_cloy_host = View1DHost(vector0_pver.data(), pver);
-    auto vmr_brox_host = View1DHost(vector0_pver.data(), pver);
-    auto vmr_broy_host = View1DHost(vector0_pver.data(), pver);
-    auto mmr_noy_host = View1DHost(vector0_pver.data(), pver);
-    auto mmr_sox_host = View1DHost(vector0_pver.data(), pver);
-    auto mmr_nhx_host = View1DHost(vector0_pver.data(), pver);
-    auto net_chem_host = View1DHost(vector0_pver.data(), pver);
-    auto mass_bc_host = View1DHost(vector0_pver.data(), pver);
-    auto mass_dst_host = View1DHost(vector0_pver.data(), pver);
-    auto mass_mom_host = View1DHost(vector0_pver.data(), pver);
-    auto mass_ncl_host = View1DHost(vector0_pver.data(), pver);
-    auto mass_pom_host = View1DHost(vector0_pver.data(), pver);
-    auto mass_so4_host = View1DHost(vector0_pver.data(), pver);
-    auto mass_soa_host = View1DHost(vector0_pver.data(), pver);
+    auto vmr_nox_host = View1DHost("vmr_nox_host", pver);
+    auto vmr_noy_host = View1DHost("vmr_noy_host", pver);
+    auto vmr_clox_host = View1DHost("vmr_clox_host", pver);
+    auto vmr_cloy_host = View1DHost("vmr_cloy_host", pver);
+    auto vmr_brox_host = View1DHost("vmr_brox_host", pver);
+    auto vmr_broy_host = View1DHost("vmr_broy_host", pver);
+    auto mmr_noy_host = View1DHost("mmr_noy_host", pver);
+    auto mmr_sox_host = View1DHost("mmr_sox_host", pver);
+    auto mmr_nhx_host = View1DHost("mmr_nhx_host", pver);
+    auto net_chem_host = View1DHost("net_chem_host", pver);
+    auto mass_bc_host = View1DHost("mass_bc_host", pver);
+    auto mass_dst_host = View1DHost("mass_dst_host", pver);
+    auto mass_mom_host = View1DHost("mass_mom_host", pver);
+    auto mass_ncl_host = View1DHost("mass_ncl_host", pver);
+    auto mass_pom_host = View1DHost("mass_pom_host", pver);
+    auto mass_so4_host = View1DHost("mass_so4_host", pver);
+    auto mass_soa_host = View1DHost("mass_soa_host", pver);
 
     Kokkos::deep_copy(depvel, depvel_host);
     Kokkos::deep_copy(depflx, depflx_host);
@@ -204,7 +204,7 @@ void chm_diags(Ensemble *ensemble) {
     Kokkos::deep_copy(mass_pom, mass_pom_host);
     Kokkos::deep_copy(mass_so4, mass_so4_host);
     Kokkos::deep_copy(mass_soa, mass_soa_host);
-    Kokkos::deep_copy(area, 1.0);
+    Kokkos::deep_copy(area, 0.029210577134805595);
 
     //===fldcw===
     ColumnView fldcw[pcnst];
@@ -303,15 +303,15 @@ void chm_diags(Ensemble *ensemble) {
     Kokkos::deep_copy(mass_so4_host, mass_so4);
     Kokkos::deep_copy(mass_soa_host, mass_soa);
 
-    auto area_host = View1DHost(vector0_pver.data(), 1);
-    auto mass_host = View1DHost(vector0_pver.data(), pver);
-    auto drymass_host = View1DHost(vector0_pver.data(), pver);
-    auto ozone_col_host = View1DHost(vector0_pver.data(), 1);
-    auto ozone_trop_host = View1DHost(vector0_pver.data(), 1);
-    auto ozone_strat_host = View1DHost(vector0_pver.data(), 1);
-    auto df_nhx_host = View1DHost(vector0_pver.data(), 1);
-    auto df_noy_host = View1DHost(vector0_pver.data(), 1);
-    auto df_sox_host = View1DHost(vector0_pver.data(), 1);
+    auto area_host = View1DHost("area_host", 1);
+    auto mass_host = View1DHost("mass_host", pver);
+    auto drymass_host = View1DHost("drymass_host", pver);
+    auto ozone_col_host = View1DHost("ozone_col_host", 1);
+    auto ozone_trop_host = View1DHost("ozone_trop_host", 1);
+    auto ozone_strat_host = View1DHost("ozone_strat_host", 1);
+    auto df_nhx_host = View1DHost("df_nhx_host", 1);
+    auto df_noy_host = View1DHost("df_noy_host", 1);
+    auto df_sox_host = View1DHost("df_sox_host", 1);
     Kokkos::deep_copy(area_host, area);
     Kokkos::deep_copy(mass_host, mass);
     Kokkos::deep_copy(drymass_host, drymass);

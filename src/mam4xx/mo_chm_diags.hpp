@@ -160,7 +160,7 @@ void chm_diags(
   //--------------------------------------------------------------------
   //	... "diagnostic" groups
   //--------------------------------------------------------------------
-  for (int kk = 1; kk < pver; kk++) {
+  for (int kk = 0; kk < pver; kk++) {
     vmr_nox(kk) = 0;
     vmr_noy(kk) = 0;
     vmr_clox(kk) = 0;
@@ -189,7 +189,7 @@ void chm_diags(
   // initialize the mass arrays
   // if (history_aerosol .and. .not. history_verbose) then // what was this used
   // for?
-  for (int kk = 1; kk < pver; kk++) {
+  for (int kk = 0; kk < pver; kk++) {
     mass_bc(kk) = 0;
     mass_dst(kk) = 0;
     mass_mom(kk) = 0;
@@ -200,14 +200,15 @@ void chm_diags(
   }
 
   area(0) *= haero::square(rearth);
+  printf("area: %g\n", area(0));
 
-  for (int kk = 1; kk < pver; kk++) {
+  for (int kk = 0; kk < pver; kk++) {
     mass(kk) = pdel(kk) * area(0) * rgrav;
     drymass(kk) = pdeldry(kk) * area(0) * rgrav;
   }
 
   // convert ozone from mol/mol (w.r.t. dry air mass) to DU
-  for (int kk = 1; kk < pver; kk++) {
+  for (int kk = 0; kk < pver; kk++) {
     ozone_layer(kk) =
         pdeldry(kk) * vmr[id_o3](kk) * avogadro * rgrav / mwdry / DUfac * 1e3;
   }
@@ -216,7 +217,7 @@ void chm_diags(
   ozone_trop(0) = 0;
   ozone_strat(0) = 0;
 
-  for (int kk = 1; kk < pver; kk++) {
+  for (int kk = 0; kk < pver; kk++) {
     ozone_col(0) += ozone_layer(kk);
     if (kk <= ltrop) {
       // stratospheric column ozone
@@ -233,7 +234,7 @@ void chm_diags(
 
     for (int i = 0; i < 3; i++) { // FIXME: bad constant (len of sox species)
       if (sox_species[i] == mm) {
-        for (int kk = 1; kk < pver; kk++) {
+        for (int kk = 0; kk < pver; kk++) {
           mmr_sox(kk) = mmr_sox(kk) + wgt * mmr[mm](kk);
         }
       }
@@ -242,31 +243,31 @@ void chm_diags(
     if (aer_species[mm] == mm) {
       const char *symbol = solsym[mm];
       if (name_matches(symbol, "bc_a")) {
-        for (int kk = 1; kk < pver; kk++) {
+        for (int kk = 0; kk < pver; kk++) {
           mass_bc(kk) += mmr[mm](kk);
         }
       } else if (name_matches(symbol, "dst_a")) {
-        for (int kk = 1; kk < pver; kk++) {
+        for (int kk = 0; kk < pver; kk++) {
           mass_dst(kk) += mmr[mm](kk);
         }
       } else if (name_matches(symbol, "mom_a")) {
-        for (int kk = 1; kk < pver; kk++) {
+        for (int kk = 0; kk < pver; kk++) {
           mass_mom(kk) += mmr[mm](kk);
         }
       } else if (name_matches(symbol, "ncl_a")) {
-        for (int kk = 1; kk < pver; kk++) {
+        for (int kk = 0; kk < pver; kk++) {
           mass_ncl(kk) += mmr[mm](kk);
         }
       } else if (name_matches(symbol, "pom_a")) {
-        for (int kk = 1; kk < pver; kk++) {
+        for (int kk = 0; kk < pver; kk++) {
           mass_pom(kk) += mmr[mm](kk);
         }
       } else if (name_matches(symbol, "so4_a")) {
-        for (int kk = 1; kk < pver; kk++) {
+        for (int kk = 0; kk < pver; kk++) {
           mass_so4(kk) += mmr[mm](kk);
         }
       } else if (name_matches(symbol, "soa_a")) {
-        for (int kk = 1; kk < pver; kk++) {
+        for (int kk = 0; kk < pver; kk++) {
           mass_soa(kk) += mmr[mm](kk);
         }
       }
@@ -278,7 +279,7 @@ void chm_diags(
       }
     }
 
-    for (int kk = 1; kk < pver; kk++) {
+    for (int kk = 0; kk < pver; kk++) {
       net_chem(kk) = mmr_tend[mm](kk) * mass(kk);
     }
   }
@@ -310,31 +311,31 @@ void chm_diags(
       }
     }
     if (name_matches(symbol_cw, "bc_c")) {
-      for (int kk = 1; kk < pver; kk++) {
+      for (int kk = 0; kk < pver; kk++) {
         mass_bc(kk) += fldcw[nn](kk);
       }
     } else if (name_matches(symbol_cw, "dst_c")) {
-      for (int kk = 1; kk < pver; kk++) {
+      for (int kk = 0; kk < pver; kk++) {
         mass_dst(kk) += fldcw[nn](kk);
       }
     } else if (name_matches(symbol_cw, "mom_c")) {
-      for (int kk = 1; kk < pver; kk++) {
+      for (int kk = 0; kk < pver; kk++) {
         mass_mom(kk) += fldcw[nn](kk);
       }
     } else if (name_matches(symbol_cw, "ncl_c")) {
-      for (int kk = 1; kk < pver; kk++) {
+      for (int kk = 0; kk < pver; kk++) {
         mass_ncl(kk) += fldcw[nn](kk);
       }
     } else if (name_matches(symbol_cw, "pom_c")) {
-      for (int kk = 1; kk < pver; kk++) {
+      for (int kk = 0; kk < pver; kk++) {
         mass_pom(kk) += fldcw[nn](kk);
       }
     } else if (name_matches(symbol_cw, "so4_c")) {
-      for (int kk = 1; kk < pver; kk++) {
+      for (int kk = 0; kk < pver; kk++) {
         mass_so4(kk) += fldcw[nn](kk);
       }
     } else if (name_matches(symbol_cw, "soa_c")) {
-      for (int kk = 1; kk < pver; kk++) {
+      for (int kk = 0; kk < pver; kk++) {
         mass_soa(kk) += fldcw[nn](kk);
       }
     }
