@@ -18,6 +18,7 @@ add_executable(gas_chem_driver
                imp_sol.cpp
                adjrxt.cpp
                setrxt.cpp
+               usrrxt.cpp
                )
 target_link_libraries(gas_chem_driver skywalker;validation;${HAERO_LIBRARIES})
 
@@ -42,6 +43,8 @@ set(TEST_LIST
     imp_sol_ts_355
     adjrxt_ts_1400
     setrxt_ts_1400
+    usrrxt_merged
+    usrrxt_ts_1416
     )
 
 set(DEFAULT_TOL 1e-12)
@@ -53,6 +56,8 @@ set(ERROR_THRESHOLDS
    ${DEFAULT_TOL}
    ${DEFAULT_TOL}
    7e-11
+   ${DEFAULT_TOL}
+   ${DEFAULT_TOL}
    ${DEFAULT_TOL}
    ${DEFAULT_TOL}
    ${DEFAULT_TOL}

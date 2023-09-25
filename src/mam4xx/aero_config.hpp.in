@@ -56,15 +56,20 @@ public:
   /// Returns the number of aerosol modes.
   static constexpr int num_modes() { return 4; }
 
-  /// Returns the number of aerosol ids. This is the number of enums in
+  /// Returns the number of aerosol ids. This is the number of valid enums in
   /// mam4::AeroId.
   static constexpr int num_aerosol_ids() { return 7; }
 
-  /// Returns the number of gas ids. This is the number of enums in mam4::GasId.
-  static constexpr int num_gas_ids() { return 3; }
+  /// Returns the number of gas ids. This is the number of valid enums in mam4::GasId.
+  static constexpr int num_gas_ids() { return 6; }
 
   /// Returns the number of aging pairs
   static constexpr int max_agepair() { return 1; }
+
+  /// Returns the number of species involved in gas phase chemistry
+  /// (hardwired to chemical mechanism for now -- see gas_pcnst in
+  ///  gas_chem_mechanism.hpp)
+  static constexpr int num_gas_phase_species() { return 31; }
 };
 
 /// MAM4 column-wise prognostic aerosol fields (also used for tendencies).
@@ -171,7 +176,7 @@ public:
 
   /// Creates a container for diagnostic variables on the specified number of
   /// vertical levels. All views must be set manually.
-  /// NOTE: it's currently possible to configure a Prognostics object with a
+  /// NOTE: it's currently possible to configure a Diagnostics object with a
   /// NOTE: number of vertical levels different from mam4::nlev above, in order
   /// NOTE: to support various testing configurations.
   explicit Diagnostics(int num_levels) : nlev_(num_levels) {}
@@ -457,6 +462,40 @@ public:
 
   // ********** End Wet Deposition Diagnostic Arrays ******************
   // ************************************************************************
+};
+
+/// MAM4 column-wise aerosol source terms.
+class Sources final {
+  // number of vertical levels
+  int nlev_;
+
+public:
+  using ColumnView = haero::ColumnView;
+
+  /// Creates a container for sources on the specified number of
+  /// vertical levels. All views must be set manually.
+  /// NOTE: it's currently possible to configure a Sources object with a
+  /// NOTE: number of vertical levels different from mam4::nlev above, in order
+  /// NOTE: to support various testing configurations.
+  explicit Sources(int num_levels) : nlev_(num_levels) {}
+
+  Sources() = default; // use only for creating containers of Sources!
+  ~Sources() = default;
+
+  // these are used to populate containers of Sources objects
+  Sources(const Sources &rhs) = default;
+  Sources &operator=(const Sources &rhs) = default;
+
+  int num_levels() const { return nlev_; }
+
+  /// surface number mixing ratio fluxes (per mode) [#/m2/s]
+  Real surface_nmr_flux[AeroConfig::num_modes()];
+  /// surface mass mixing ratio fluxes (per mode) [kg/m2/s]
+  Real surface_mmr_flux[AeroConfig::num_modes()];
+
+  /// volumetric sources (per species, indexing is hard-wired to chemistry
+  /// mechanism for now) [#/cc/s]
+  ColumnView volume_tends[AeroConfig::num_gas_phase_species()];
 };
 
 } // namespace mam4

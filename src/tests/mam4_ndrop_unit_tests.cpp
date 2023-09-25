@@ -160,12 +160,8 @@ TEST_CASE("test_qsat", "mam4_ndrop_unit_tests") {
                                            0.1999170945E005, 0.9524671355E005};
 
   for (int i = 0; i < AeroConfig::num_modes(); ++i) {
-    ss << "i = " << i;
-    logger.debug(ss.str());
-    ss.str("");
-    ss << "temperature, pressure = " << t[i] << ", " << p[i];
-    logger.debug(ss.str());
-    ss.str("");
+    logger.debug("i = {}", i);
+    logger.debug("temperature, pressure = {}, {}", t[i], p[i]);
 
     Real es_base = mam4::wv_sat_methods::wv_sat_svp_trans(t[i]);
     Real qs_base = mam4::wv_sat_methods::wv_sat_svp_to_qsat(es_base, p[i]);
@@ -174,26 +170,11 @@ TEST_CASE("test_qsat", "mam4_ndrop_unit_tests") {
     Real qs_calc = qs_base;
 
     mam4::ndrop::qsat(t[i], p[i], es_calc, qs_calc);
-    ss << "es [base]: [ ";
-    ss << es_base << " ";
-    ss << "]";
-    logger.debug(ss.str());
-    ss.str("");
-    ss << "es [calc]: [ ";
-    ss << es_calc << " ";
-    ss << "]";
-    logger.debug(ss.str());
-    ss.str("");
-    ss << "qs [base]: [ ";
-    ss << qs_base << " ";
-    ss << "]";
-    logger.debug(ss.str());
-    ss.str("");
-    ss << "qs [calc]: [ ";
-    ss << qs_calc << " ";
-    ss << "]";
-    logger.debug(ss.str());
-    ss.str("");
+
+    logger.debug("es [base]: [ {} ]", es_base);
+    logger.debug("es [calc]: [ {} ]", es_calc);
+    logger.debug("qs [base]: [ {} ]", qs_base);
+    logger.debug("qs [calc]: [ {} ]", qs_calc);
 
     REQUIRE(FloatingPoint<Real>::equiv(es_calc, haero::min(es_base, p[i])));
     REQUIRE(FloatingPoint<Real>::equiv(qs_calc, qs_base));

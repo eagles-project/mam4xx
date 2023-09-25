@@ -38,8 +38,11 @@ install(FILES
         wv_sat_methods.hpp
         drydep.hpp
         water_uptake.hpp
+        wet_dep.hpp
         ndrop.hpp
         mo_photo.hpp
+        lin_strat_chem.hpp
+        mo_chm_diags.hpp
         DESTINATION include/mam4xx)
 
 add_library(mam4xx aero_modes.cpp)

@@ -31,8 +31,8 @@ void soa_equilib_mixing_ratio_no_solute(const Real &T_in_K,     // in
                                         Real &g0_soa) {         // out
 
   // clang-format off
-  // T_in_K         temperature in Kelvin 
-  // p_in_Pa        air pressure in Pascal 
+  // T_in_K         temperature in Kelvin
+  // p_in_Pa        air pressure in Pascal
   // pstd_in_Pa     standard air pressure in Pascal
   // r_universal    universal gas constant in J/K/mol
   // g0_soa         ambient soa gas equilib mixing ratio (mol/mol at actual mw)
@@ -80,7 +80,7 @@ Real soa_exch_substepsize(
     Real &t_cur)                                          // inout
 {
   // clang-format off
-  // ntot_soaspec 
+  // ntot_soaspec
   //  "last" gas species that can be SOA, MAM4 had this variable but it was
   //  a work in progress and not suported in mam4xx but it was desired to
   //  keep these variables around to help support variable number of SOA
@@ -89,13 +89,13 @@ Real soa_exch_substepsize(
   // ntot_soamode  "last" mode on which soa is allowed to condense
   //
   // skip_soamode          true if this mode does not have soa
-  // uptkaer_soag_tmpmodes evolving SOA aerosol mixrat (mol/mol at actual mw), 
+  // uptkaer_soag_tmpmodes evolving SOA aerosol mixrat (mol/mol at actual mw),
   //                       part of the unknowns of the ODEs
   // a_soa                 soa aerosol mixrat (mol/mol at actual mw)
   // a_opoa                oxidized-poa aerosol mixrat (mol/mol at actual mw)
-  // g_soa                 evolving SOA gas mixrat (mol/mol at actual mw), 
+  // g_soa                 evolving SOA gas mixrat (mol/mol at actual mw),
   //                       part of the unknowns of the ODEs
-  // g0_soa                ambient soa gas equilib mixrat (mol/mol at actual mw), 
+  // g0_soa                ambient soa gas equilib mixrat (mol/mol at actual mw),
   //                       length based on ntot_soaspec=1
   // alpha_astem           error control parameter for sub-timesteps
   // dt_fulln              host model dt (s)
@@ -207,13 +207,14 @@ Real soa_exch_substepsize(
 //===============================================================================================
 KOKKOS_INLINE_FUNCTION
 void mam_soaexch_advance_in_time(
-    const int ntot_soamode,  // in
-    const int ntot_soaspec,  // in
-    const GasId soaspec[],   // in len ntot_soaspec
-    const Real dt_full,      // in
-    const Real dt_sub_fixed, // in
-    const int niter_max,     // in
-    const Real alpha_astem,  // in
+    const int ntot_soamode,    // in
+    const int ntot_soaspec,    // in
+    const GasId soaspec[],     // in len ntot_soaspec
+    const AeroId gas_to_aer[], // in
+    const Real dt_full,        // in
+    const Real dt_sub_fixed,   // in
+    const int niter_max,       // in
+    const Real alpha_astem,    // in
     const Real uptkaer[AeroConfig::num_gas_ids()]
                       [AeroConfig::num_modes()], // in
     const Real g0_soa[],                         // in len ntot_soaspec
@@ -225,19 +226,20 @@ void mam_soaexch_advance_in_time(
     int &niter)                               // out
 {
   // clang-format off
-  // int ntot_soamode 
+  // int ntot_soamode
   // int ntot_soaspec  "last" gas species that can be SOA
   // int soaspec[ntot_soaspec]
+  // const AeroId gas_to_aer[GasAerExch::num_gas],
   // dt_full       Host model dt (s)
   // dt_sub_fixed  Fixed sub-step. A negative value means using adaptive step sizes
   // niter_max     Maximum number of substeps
   // alpha_astem   Error control parameter for sub-timesteps
   // uptkaer       Uptake rate coefficient
-  // g0_soa        Ambient soa gas equilib mixrat (mol/mol at / actual mw), 
+  // g0_soa        Ambient soa gas equilib mixrat (mol/mol at / actual mw),
   //               len ntot_soaspec=1 since multiple soa not currently supported
   // qgas_cur
   // a_opoa        Oxidized-poa aerosol mixrat (mol/mol at actual mw)
-  // qaer_cur 
+  // qaer_cur
   // qgas_avg
   // niter         Total number of sub-steps
   // clang-format on
@@ -343,7 +345,8 @@ void mam_soaexch_advance_in_time(
     for (int n = 0; n < ntot_soamode; ++n) {
       if (!skip_soamode[n]) {
         for (int i = 0; i < ntot_soaspec; ++i) {
-          const int soa = static_cast<int>(soaspec[i]);
+          const int soa =
+              static_cast<int>(gas_to_aer[static_cast<int>(soaspec[i])]);
           a_soa[i][n] = max(qaer_cur[soa][n], 0.0);
         }
       }
@@ -498,7 +501,8 @@ void mam_soaexch_advance_in_time(
     //  Save mix ratios for soa species
     // ------------------------------------------------------------------------------------------
     for (int igas = 0; igas < ntot_soaspec; ++igas) {
-      const int soa = static_cast<int>(soaspec[igas]);
+      const int soa =
+          static_cast<int>(gas_to_aer[static_cast<int>(soaspec[igas])]);
       for (int n = 0; n < ntot_soamode; ++n) {
         qaer_cur[soa][n] = a_soa[igas][n];
       }
@@ -536,6 +540,7 @@ void mam_soaexch_1subarea(const int mode_pca,          // in
                           const int ntot_soamode,      // in
                           const int ntot_soaspec,      // in
                           const GasId soaspec[],       // in len ntot_soaspec
+                          const AeroId gas_to_aer[],   // in
                           const Real dt,               // in
                           const Real dt_sub_soa_fixed, // in
                           const Real pstd,             // in
@@ -554,9 +559,10 @@ void mam_soaexch_1subarea(const int mode_pca,          // in
 
   // clang-format off
   // mode_pca         mam4::ModeIndex::PrimaryCarbon
-  // ntot_soamode      
-  // ntot_soaspec      
+  // ntot_soamode
+  // ntot_soaspec
   // soaspec[ntot_soaspec]
+  // const AeroId gas_to_aer[GasAerExch::num_gas],
   // dt               time step size used by parent subroutine
   // dt_sub_soa_fixed fixed sub-step in s. A negative value  means using adaptive step sizes
   // pstd             standard atmosphere in Pa
@@ -566,7 +572,7 @@ void mam_soaexch_1subarea(const int mode_pca,          // in
   // uptkaer          uptake rate
   // qaer_poa         POA mixing ratio (mol/mol at actual mw)
   // qgas_cur         current gas mixing ratio
-  // qgas_avg               
+  // qgas_avg
   // qaer_cur         current aerosol mass mix ratio (mol/mol)
   // niter
   // g0_soa           ambient soa gas equilib mixrat (mol/mol at actual mw)
@@ -625,10 +631,10 @@ void mam_soaexch_1subarea(const int mode_pca,          // in
   // -----------------------------------------------------------
   const int niter_max = 1000;
 
-  mam_soaexch_advance_in_time(ntot_soamode, ntot_soaspec, soaspec, dt,
-                              dt_sub_soa_fixed, niter_max, alpha_astem, uptkaer,
-                              &g0_soa, qgas_cur, a_opoa, qaer_cur, qgas_avg,
-                              niter);
+  mam_soaexch_advance_in_time(ntot_soamode, ntot_soaspec, soaspec, gas_to_aer,
+                              dt, dt_sub_soa_fixed, niter_max, alpha_astem,
+                              uptkaer, &g0_soa, qgas_cur, a_opoa, qaer_cur,
+                              qgas_avg, niter);
 }
 } // namespace gasaerexch
 } // namespace mam4

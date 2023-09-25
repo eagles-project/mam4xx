@@ -976,8 +976,8 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
       haero::max(small_value_12, cldc * conicw + (cmfdqr + dlf) * deltat);
   fracp = utils::min_max_bound(0.0, 1.0, fracp) * cldc;
 
-  Real srcc; // tendency for convective rain scavenging [kg/kg/s]
-  Real finc; // fraction of rem. rate by conv. rain [fraction]
+  Real srcc = 0; // tendency for convective rain scavenging [kg/kg/s]
+  Real finc = 0; // fraction of rem. rate by conv. rain [fraction]
   // 2 is for convective:
   wetdep_scavenging(2, is_strat_cloudborne, deltat, fracp, precabc, cldvcu,
                     scavcoef, sol_factb, sol_factic, tracer_incu, tracer_mean,
@@ -1053,16 +1053,18 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   }
 
   // ****************** update scavengingfor output ***************
-  Real scavt_ik;   // scavenging tend at current  [kg/kg/s]
-  Real iscavt_ik;  // incloud scavenging tends at current  [kg/kg/s]
-  Real icscavt_ik; // incloud, convective scavenging tends at current  [kg/kg/s]
-  Real isscavt_ik; // incloud, stratiform scavenging tends at current  [kg/kg/s]
-  Real bcscavt_ik; // below cloud, convective scavenging tends at current
-                   // [kg/kg/s]
-  Real bsscavt_ik; // below cloud, stratiform scavenging tends at current
-                   // [kg/kg/s]
-  Real rcscavt_ik; // resuspension, convective tends at current  [kg/kg/s]
-  Real rsscavt_ik; // resuspension, stratiform tends at current  [kg/kg/s]
+  Real scavt_ik = 0;  // scavenging tend at current  [kg/kg/s]
+  Real iscavt_ik = 0; // incloud scavenging tends at current  [kg/kg/s]
+  Real icscavt_ik =
+      0; // incloud, convective scavenging tends at current  [kg/kg/s]
+  Real isscavt_ik =
+      0; // incloud, stratiform scavenging tends at current  [kg/kg/s]
+  Real bcscavt_ik = 0; // below cloud, convective scavenging tends at current
+                       // [kg/kg/s]
+  Real bsscavt_ik = 0; // below cloud, stratiform scavenging tends at current
+                       // [kg/kg/s]
+  Real rcscavt_ik = 0; // resuspension, convective tends at current  [kg/kg/s]
+  Real rsscavt_ik = 0; // resuspension, stratiform tends at current  [kg/kg/s]
   update_scavenging(mam_prevap_resusp_optcc, pdel, omsm, srcc, srcs, srct, fins,
                     finc, fracev_st, fracev_cu, resusp_c, resusp_s, precs,
                     evaps, cmfdqr, evapc, scavt_ik, iscavt_ik, icscavt_ik,
@@ -1176,9 +1178,6 @@ public:
     //   raindrop number the 130 thru 230 all use the new prevap_resusp code
     //   block in subr wetdepa_v2
     int mam_prevap_resusp_optcc = 0;
-
-    // change mode order as mmode_loop_aa loops in a different order
-    static constexpr int mode_order_change[4] = {0, 1, 3, 2};
   };
 
   const char *name() const { return "MAM4 Wet Deposition"; }
@@ -1209,7 +1208,7 @@ private:
   Kokkos::View<Real *> prain;
   Kokkos::View<Real *> conicw;
   Kokkos::View<Real *> totcond;
-  Kokkos::View<Real[1], Kokkos::MemoryTraits<Kokkos::Atomic>> scratch;
+  Kokkos::View<Real *, Kokkos::MemoryTraits<Kokkos::Atomic>> scratch;
   Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()];
   Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()];
 };
@@ -1229,6 +1228,7 @@ inline void WetDeposition::init(const AeroConfig &aero_config,
   Kokkos::resize(prain, nlev);
   Kokkos::resize(conicw, nlev);
   Kokkos::resize(totcond, nlev);
+  Kokkos::resize(scratch, 1);
 
   const int num_modes = AeroConfig::num_modes();
   Real dgnum_amode[num_modes];
@@ -1260,6 +1260,9 @@ void WetDeposition::compute_tendencies(
   const Real small_value_2 = 1.e-2;
   const int nlev = config_.nlev;
   static constexpr int gas_pcnst = 40;
+
+  // change mode order as mmode_loop_aa loops in a different order
+  static constexpr int mode_order_change[4] = {0, 1, 3, 2};
 
   //   0 = no resuspension
   // 130 = non-linear resuspension of aerosol mass   based on scavenged aerosol
@@ -1346,7 +1349,7 @@ void WetDeposition::compute_tendencies(
   // calc_sfc_flux does.
   // TODO: Determine a better way to implement calc_sfc_flux without
   // team_fence() to avoid locking if the team size is not nlev;
-  EKAT_KERNEL_REQUIRE(team.team_size() == nlev);
+  EKAT_KERNEL_REQUIRE(team.team_size() == nlev || team.team_size() == 1);
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nlev), KOKKOS_CLASS_LAMBDA(int k) {
         aerdepwetis[k] = 0;
@@ -1369,7 +1372,7 @@ void WetDeposition::compute_tendencies(
           // then aitken = 1,
           // then pcarbon - 3,
           // then coarse = 2
-          const int imode = Config::mode_order_change[mtmp];
+          const int imode = mode_order_change[mtmp];
 
           // loop over interstitial (1) and cloud-borne (2) forms
           // BSINGH (09/12/2014):Do cloudborne first for unified convection
@@ -1439,7 +1442,6 @@ void WetDeposition::compute_tendencies(
                       f_act_conv = f_act_conv_coarse_nacl;
                   }
                 }
-
                 if (lphase == 1) {
                   // traces reflects changes from modal_aero_calcsize and is the
                   // "most current" q
@@ -1458,15 +1460,16 @@ void WetDeposition::compute_tendencies(
                   const int k_p1 =
                       static_cast<int>(haero::min(k + 1, nlev - 1));
 
-                  Real fracis;  // fraction of species not scavenged [fraction]
-                  Real scavt;   // scavenging tend [kg/kg/s]
-                  Real iscavt;  // incloud scavenging tends [kg/kg/s]
-                  Real icscavt; // incloud, convective [kg/kg/s]
-                  Real isscavt; // incloud, stratiform [kg/kg/s]
-                  Real bcscavt; // below cloud, convective [kg/kg/s]
-                  Real bsscavt; // below cloud, stratiform [kg/kg/s]
-                  Real rcscavt; // resuspension, convective [kg/kg/s]
-                  Real rsscavt; // resuspension, stratiform [kg/kg/s]
+                  Real fracis =
+                      0; // fraction of species not scavenged [fraction]
+                  Real scavt = 0;   // scavenging tend [kg/kg/s]
+                  Real iscavt = 0;  // incloud scavenging tends [kg/kg/s]
+                  Real icscavt = 0; // incloud, convective [kg/kg/s]
+                  Real isscavt = 0; // incloud, stratiform [kg/kg/s]
+                  Real bcscavt = 0; // below cloud, convective [kg/kg/s]
+                  Real bsscavt = 0; // below cloud, stratiform [kg/kg/s]
+                  Real rcscavt = 0; // resuspension, convective [kg/kg/s]
+                  Real rsscavt = 0; // resuspension, stratiform [kg/kg/s]
                   // is_strat_cloudborne = true if tracer is
                   // stratiform-cloudborne aerosol; else false
                   const bool is_strat_cloudborne = false;

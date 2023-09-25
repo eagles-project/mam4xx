@@ -3,31 +3,29 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <mam4xx/mo_photo.hpp>
+#include <mam4xx/lin_strat_chem.hpp>
 
 #include <iostream>
 #include <skywalker.hpp>
 #include <validation.hpp>
 
 void usage() {
-  std::cerr << "mo_photo_driver: a Skywalker driver for validating the "
+  std::cerr << "lin_strat_chem_driver: a Skywalker driver for validating the "
                "MAM4 rename parameterizations."
             << std::endl;
-  std::cerr << "mo_photo_driver: usage:" << std::endl;
-  std::cerr << "mo_photo_driver <input.yaml>" << std::endl;
+  std::cerr << "lin_strat_chem_driver: usage:" << std::endl;
+  std::cerr << "lin_strat_chem_driver <input.yaml>" << std::endl;
   exit(0);
 }
 
 using namespace skywalker;
 using namespace mam4;
 
-// Parameterizations used by the mo_photo() process.
-void cloud_mod(Ensemble *ensemble);
-void find_index(Ensemble *ensemble);
-void interpolate_rsf(Ensemble *ensemble);
-void jlong(Ensemble *ensemble);
-void calc_sum_wght(Ensemble *ensemble);
-void table_photo(Ensemble *ensemble);
+// Parameterizations used by the lin_strat_chem() process.
+void lin_strat_chem_solve(Ensemble *ensemble);
+void lin_strat_sfcsink(Ensemble *ensemble);
+void lin_strat_chem_solve_multicol(Ensemble *ensemble);
+
 int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
@@ -50,18 +48,12 @@ int main(int argc, char **argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
   try {
-    if (func_name == "cloud_mod") {
-      cloud_mod(ensemble);
-    } else if (func_name == "find_index") {
-      find_index(ensemble);
-    } else if (func_name == "interpolate_rsf") {
-      interpolate_rsf(ensemble);
-    } else if (func_name == "jlong") {
-      jlong(ensemble);
-    } else if (func_name == "calc_sum_wght") {
-      calc_sum_wght(ensemble);
-    } else if (func_name == "table_photo") {
-      table_photo(ensemble);
+    if (func_name == "lin_strat_chem_solve") {
+      lin_strat_chem_solve(ensemble);
+    } else if (func_name == "lin_strat_sfcsink") {
+      lin_strat_sfcsink(ensemble);
+    } else if (func_name == "lin_strat_chem_solve_multicol") {
+      lin_strat_chem_solve_multicol(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
