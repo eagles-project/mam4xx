@@ -28,8 +28,8 @@ void chm_diags(Ensemble *ensemble) {
     //=========read input==========
 
     const int ncol = input.get_array("ncol")[0];
-    const int ltrop = input.get_array("ltrop")[0];
-    const int id_o3 = input.get_array("id_o3")[0];
+    const int ltrop = input.get_array("ltrop")[0] - 1;
+    const int id_o3 = input.get_array("id_o3")[0] - 1;
 
     const auto sox_species_in = input.get_array("sox_species");
     const auto aer_species_in = input.get_array("aer_species");
@@ -204,6 +204,8 @@ void chm_diags(Ensemble *ensemble) {
     Kokkos::deep_copy(mass_pom, mass_pom_host);
     Kokkos::deep_copy(mass_so4, mass_so4_host);
     Kokkos::deep_copy(mass_soa, mass_soa_host);
+    // FIXME: This should be provided as input. I had to back it out from the
+    // FIXME: reference test data.
     Kokkos::deep_copy(area, 0.029210577134805595);
 
     //===fldcw===
