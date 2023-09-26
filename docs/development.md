@@ -193,9 +193,6 @@ HAERO contains several other data structures in addition those mentioned above.
 More details on these data structures can be found in the
 [HAERO documentation](https://eagles-project.github.io/haero/).
 
-_NOTE: This site will be published when we finish the open source paperwork
-for HAERO._
-
 ## C++ Guidelines
 
 C++ is a large, multi-paradigm programming language. The way C++ is used has
@@ -230,7 +227,7 @@ with a few notable _exceptions_:
 * We allow the use of C++ exceptions, since simulation codes have rather
   simplistic error handling requirements.
 * Names of functions, methods, and variables use `snake_case`, not
-  `camelCase` or `UpperCamelCase`.
+  `camelCase` or `PascalCase`.
 * We typically use braces to enclose logic for all `if`/`else`/loop statements
   even if they are only a single line, for consistency and readability.
 * We use `EKAT_ASSERT` instead of `assert` to ensure that all MPI processes
@@ -248,7 +245,8 @@ you can run from your build directory:
 These targets are only available if you have `clang-format` on your system, and
 they only perform their work if you have the version we support. If you have an
 unsupported version of `clang-format`, the targets will tell you the right
-version to install. [Here](clang-format.md) is a guide to getting the supported version of `clang-format` that is a bit more geared toward Mac users than others.
+version to install. [Here](clang-format.md) is a guide to getting the supported
+version of `clang-format` that is a bit more geared toward Mac users than others.
 
 ### Best practices
 

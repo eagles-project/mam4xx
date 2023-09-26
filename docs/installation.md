@@ -3,7 +3,7 @@
 MAM4xx builds and runs on the following platforms:
 
 * Mac and Linux laptops and workstations
-* NERSC Cori
+* NERSC Perlmutter
 * Compy and Constance at PNNL
 
 ## Required Software

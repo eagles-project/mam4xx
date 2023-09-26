@@ -52,8 +52,8 @@ install HAERO yourself, you can follow the instructions in the
 [HAERO repository](https://github.com/eagles-project/haero). Make sure you run
 all the steps, including `make install`.
 
-If you're on a machine that requires modules to get access to compilers, etc, 
-use 
+If you're on a machine that requires modules to get access to compilers, etc,
+use
 ```
 source build-haero.sh <path>
 ```
@@ -138,7 +138,7 @@ targets.
 You can get a code coverage report if you've enabled mam4xx to build with
 code coverage instrumentation. This option is configurable in your `config.sh`
 script if you uncomment the `COVERAGE=ON` line, or if you run CMake directly
-with the `--DMAM4XX_ENABLE_COVERAGE=ON` flag. You must have the
+with the `-DENABLE_COVERAGE=ON` flag. You must have the
 [LCOV](https://lcov.readthedocs.io/en/latest/index.html) tool
 installed to generate reports.
 
