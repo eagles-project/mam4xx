@@ -1,0 +1,1122 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../installation/">
+      
+      
+        <link rel="next" href="../testing/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.2">
+    
+    
+      
+        <title>Developing MAM4xx - MAM4xx: A C++ implementation of MAM4 for E3SM</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.d451bc0e.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.a5377069.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#developing-mam4xx" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="MAM4xx: A C++ implementation of MAM4 for E3SM" class="md-header__button md-logo" aria-label="MAM4xx: A C++ implementation of MAM4 for E3SM" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MAM4xx: A C++ implementation of MAM4 for E3SM
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Developing MAM4xx
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5c-.84 0-1.65.15-2.39.42L12 2M3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29L3.34 7m.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14L3.36 17M20.65 7l-1.77 3.79a7.023 7.023 0 0 0-2.38-4.15l4.15.36m-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29L20.64 17M12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44L12 22Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="cyan" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3 3.19.09m3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05m-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/eagles-project/mam4xx" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="MAM4xx: A C++ implementation of MAM4 for E3SM" class="md-nav__button md-logo" aria-label="MAM4xx: A C++ implementation of MAM4 for E3SM" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    MAM4xx: A C++ implementation of MAM4 for E3SM
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/eagles-project/mam4xx" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Developing MAM4xx
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Developing MAM4xx
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#getting-help" class="md-nav__link">
+    Getting Help
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-big-picture" class="md-nav__link">
+    The Big Picture
+  </a>
+  
+    <nav class="md-nav" aria-label="The Big Picture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terminology" class="md-nav__link">
+    Terminology
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#eamxxs-atmosphere-driver" class="md-nav__link">
+    EAMxx's atmosphere driver
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#eamxxs-atmosphere-processes" class="md-nav__link">
+    EAMxx's atmosphere processes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aerosol-atmosphere-processes" class="md-nav__link">
+    Aerosol atmosphere processes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mam4xx-code-structure" class="md-nav__link">
+    MAM4xx Code Structure
+  </a>
+  
+    <nav class="md-nav" aria-label="MAM4xx Code Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#aerosol-processes-and-parameterizations" class="md-nav__link">
+    Aerosol processes and parameterizations
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aerosol-process-data-structures" class="md-nav__link">
+    Aerosol process data structures
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-guidelines" class="md-nav__link">
+    C++ Guidelines
+  </a>
+  
+    <nav class="md-nav" aria-label="C++ Guidelines">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#style" class="md-nav__link">
+    Style
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    Best practices
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kokkos-ekat-haero-intra-node-parallelism" class="md-nav__link">
+    Kokkos, EKAT, Haero: Intra-node Parallelism
+  </a>
+  
+    <nav class="md-nav" aria-label="Kokkos, EKAT, Haero: Intra-node Parallelism">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#views-c-multidimensional-arrays" class="md-nav__link">
+    Views: C++ multidimensional arrays
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parallel-dispatch-host-and-device" class="md-nav__link">
+    Parallel dispatch: host and device
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frequently-asked-questions" class="md-nav__link">
+    Frequently Asked Questions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resources" class="md-nav__link">
+    Resources
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Testing Aerosol Processes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#getting-help" class="md-nav__link">
+    Getting Help
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-big-picture" class="md-nav__link">
+    The Big Picture
+  </a>
+  
+    <nav class="md-nav" aria-label="The Big Picture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terminology" class="md-nav__link">
+    Terminology
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#eamxxs-atmosphere-driver" class="md-nav__link">
+    EAMxx's atmosphere driver
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#eamxxs-atmosphere-processes" class="md-nav__link">
+    EAMxx's atmosphere processes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aerosol-atmosphere-processes" class="md-nav__link">
+    Aerosol atmosphere processes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mam4xx-code-structure" class="md-nav__link">
+    MAM4xx Code Structure
+  </a>
+  
+    <nav class="md-nav" aria-label="MAM4xx Code Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#aerosol-processes-and-parameterizations" class="md-nav__link">
+    Aerosol processes and parameterizations
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aerosol-process-data-structures" class="md-nav__link">
+    Aerosol process data structures
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-guidelines" class="md-nav__link">
+    C++ Guidelines
+  </a>
+  
+    <nav class="md-nav" aria-label="C++ Guidelines">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#style" class="md-nav__link">
+    Style
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    Best practices
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kokkos-ekat-haero-intra-node-parallelism" class="md-nav__link">
+    Kokkos, EKAT, Haero: Intra-node Parallelism
+  </a>
+  
+    <nav class="md-nav" aria-label="Kokkos, EKAT, Haero: Intra-node Parallelism">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#views-c-multidimensional-arrays" class="md-nav__link">
+    Views: C++ multidimensional arrays
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parallel-dispatch-host-and-device" class="md-nav__link">
+    Parallel dispatch: host and device
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#frequently-asked-questions" class="md-nav__link">
+    Frequently Asked Questions
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resources" class="md-nav__link">
+    Resources
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="developing-mam4xx">Developing MAM4xx</h1>
+<p>Welcome to the MAM4xx development team! MAM4xx is a function-by-function
+port of MAM4 (the 4-mode Modal Aerosol Model package) from Fortran to
+"performance portable" C++ code that can run on GPU accelerators as well as
+traditional CPUs.</p>
+<p>This C++ port of MAM4 provides a much-needed prognostic aerosol capability to
+the <a href="https://e3sm.org">Energy Exascale Earth System Model (E3SM)</a>, which is
+designed to run on the Department of Energy's
+<a href="https://www.doeleadershipcomputing.org">leadership-class computing facilities</a>.</p>
+<h2 id="getting-help">Getting Help</h2>
+<p>You're part of a team. That means you shouldn't have to sit alone with a problem
+and scratch your head until the solution magically appears inside it. If you're
+stuck, organize your thoughts and ask another member of the team for their
+input. Not only can this save you time, but it can also help you build
+productive relationships with other team members.</p>
+<p>If you're a member of the MAM4xx development team on the EAGLES Project, the
+easiest way to seek help is to post a Slack message to the appropriate channel.
+We have access to an <code>ESMD-BER</code> Slack workspace with some useful channels for
+asynchronous team communication:</p>
+<ul>
+<li><code>eagles-mam-cpp</code>: This is the best channel for discussing and troubleshooting
+  issues related to MAM4xx development.</li>
+<li><code>eagles_haero</code>: This channel is for discussing the HAERO aerosol package
+  "toolbox" used by MAM4xx.</li>
+<li><code>eagles_mamrefactor</code>: In this channel, you can ask questions about the
+  <a href="https://github.com/eagles-project/mam_refactor">MAM4 box model</a> used for
+  porting MAM4's aerosol microphysics parameterizations.</li>
+</ul>
+<p>If you're not already on the <code>ESMD-BER</code> Slack workspace, please ask a team
+member to send you an invitation.</p>
+<p>If you like, you can also create issues in the <a href="https://github.com/eagles-project/mam4xx">MAM4xx repository</a>
+itself.</p>
+<h2 id="the-big-picture">The Big Picture</h2>
+<p>MAM4xx makes the 4-mode modal aerosol model ("MAM4") available to
+<a href="https://github.com/E3SM-Project/scream">EAMxx (aka "SCREAM")</a>, which is written
+in C++ and uses <a href="https://github.com/kokkos/kokkos">Kokkos</a> to achieve good
+parallel performance on platforms of interest to the DOE's Office of Science.
+EAMxx has a lot of moving parts, but MAM4xx mainly interacts only with a data
+structure called the Atmosphere Driver (AD).</p>
+<h3 id="terminology">Terminology</h3>
+<ul>
+<li>A <strong>host model</strong> is an atmospheric model containing a dynamical core that
+  solves a transport equation for mass in the atmosphere, and several physics
+  packages that parameterize important atmospheric processes that can't be
+  resolved by the underlying grid. EAMxx is the atmospheric host model used
+  by E3SM version 4, so when we refer to the "host model", we refer to EAMxx.</li>
+<li>An <strong>aerosol package</strong> is a physics package that provides a representation of
+  aerosols (prognostic and diagnostic variables, and tendencies for evolving
+  the prognostics) for use by a host model. The aerosol package of interest for
+  us, of course, is MAM4xx.</li>
+<li>An <strong>aerosol process</strong> is a set of functions associated with a specific part
+  of the aerosol lifecycle (e.g. nucleation, coagulation, aging) that calculate
+  updates to aerosol-related quantities.</li>
+<li>An <strong>aerosol parameterization</strong> is a function that computes one or more
+  quantities needed to update aerosol-related quantities. An aerosol process can
+  contain one or more related parameterizations.</li>
+<li>A <strong>prognostic variable</strong> is a quantity in the atmosphere whose evolution is
+  described by a differential equation. Prognostic variables cannot be obtained
+  using closed-form (algebraic) equations.</li>
+<li>A <strong>diagnostic variable</strong> is a quantity in the atmosphere that can be
+  expressed in terms of prognostic variables in closed form (usually some
+  algebraic expression).</li>
+<li>A <strong>tendency</strong> is a time derivative ("rate of change") associated with a
+  prognostic variable. An aerosol process computes tendencies given a set of
+  prognostic variables.</li>
+<li>An <strong>atmospheric state</strong> is a complete quantitative description of the
+  atmosphere according to a host model. This description consists entirely of
+  prognostic and diagnostic variables.</li>
+</ul>
+<h3 id="eamxxs-atmosphere-driver">EAMxx's atmosphere driver</h3>
+<p>In essence, an atmospheric host model does the following things:
+1. it initializes the state of the atmosphere at the beginning of the simulation
+2. it advances the state of the atmosphere and the simulation time in a sequence
+   of discrete "time steps". Within each time step of length <code>dt</code>, tendencies
+   are computed for each of the prognostic variables, and the atmospheric state
+   is updated from time <code>t</code> to time <code>t + dt</code> by integrating these tendencies</p>
+<h3 id="eamxxs-atmosphere-processes">EAMxx's atmosphere processes</h3>
+<p>To evolve the state of the atmosphere over a time period <code>[t, t+dt]</code>, EAMxx has
+an <a href="https://github.com/E3SM-Project/scream/blob/master/components/scream/src/control/atmosphere_driver.hpp"><code>AtmosphereDriver</code></a>
+object that orchestrates changes to the atmospheric state resulting from
+different atmospheric processes. Each of these processes is represented by a
+class derived from the <a href="https://github.com/E3SM-Project/scream/blob/master/components/scream/src/share/atm_process/atmosphere_process.hpp"><code>AtmosphereProcess</code></a>
+base class. The slide below, taken from the MAM4xx kick-off meeting, illustrates
+the different atmospheric processes within EAMxx.</p>
+<p><img alt="EAMxx's atmosphere processes and our addition(s)" src="../figures/eamxx_atm_procs.png" /></p>
+<p>The objective of our project is to implement one or more <code>AtmosphereProcess</code>
+subclasses that represent the effects of aerosols on the atmosphere.</p>
+<h3 id="aerosol-atmosphere-processes">Aerosol atmosphere processes</h3>
+<p>Within an aerosol-related <code>AtmosphereProcess</code> subclass, we extract data from
+EAMxx, feed it into MAM4xx's data structures, run a set of aerosol processes,
+and then incorporate the resulting output back into EAMxx's atmospheric state.
+The process is roughly illustrated in this slide (also taken from the MAM4xx
+kick-off meeting):</p>
+<p><img alt="The innards of an aerosol atmosphere process" src="../figures/aero_atm_proc.png" /></p>
+<h2 id="mam4xx-code-structure">MAM4xx Code Structure</h2>
+<h3 id="aerosol-processes-and-parameterizations">Aerosol processes and parameterizations</h3>
+<p>Aerosols are long polymer chains that are emitted from the surface of the earth
+and/or that form in the atmosphere as a result of collisions between gas
+particles. Aerosol particles have an outsized influence on cooling and warming
+processes in the atmosphere, and interact strongly with incoming solar
+radiation.</p>
+<p><img alt="Journal of Advances in Modeling Earth Systems, Volume: 12, Issue: 1, First published: 06 December 2019, DOI: (10.1029/2019MS001851)" src="../figures/aerosol_lifecycle.jpg" /></p>
+<p>It is not possible to describe aerosol dynamics in terms of purely mechanistic
+processes. Instead, aerosols are assumed to form and evolve over a set of
+distinct stages in an "aerosol life cycle." These stages are conceptually
+convenient and represent phenomenology that can be compared with experimental
+observations. Because of this phenomenological approach, each stage of the
+aerosol lifecycle (which we call an "aerosol process") must be <em>parameterized</em>:
+in other words, an aerosol process is <em>quantified</em> in terms of a set of
+parameters that determine how the aerosols evolve over time.</p>
+<p>Different aerosol models can decompose the aerosol lifecycle into different
+stages (processes). MAM4xx uses the aerosol processes defined by MAM4.</p>
+<h3 id="aerosol-process-data-structures">Aerosol process data structures</h3>
+<p>MAM4xx uses several data structures defined in <a href="https://github.com/eagles-project/haero">HAERO</a>.
+In particular:</p>
+<ul>
+<li>The <a href="https://github.com/eagles-project/haero/blob/main/haero/haero.hpp"><code>Real</code></a>
+  type is a floating point number in single or double precision, depending on
+  how HAERO was configured.</li>
+<li>The <a href="https://github.com/eagles-project/haero/blob/main/haero/haero.hpp"><code>ColumnView</code></a>
+  type is a Kokkos view (array) representing a quantity defined on an
+  atmospheric column. See the section on Kokkos views below for more details on
+  this type.</li>
+<li>The <a href="https://github.com/eagles-project/haero/blob/main/haero/aero_process.hpp"><code>AeroProcess</code></a>
+  class template defines the interface for an aerosol process.</li>
+<li>The <a href="https://github.com/eagles-project/haero/blob/main/haero/atmosphere.hpp"><code>Atmosphere</code></a>
+  class defines the state of the atmosphere, which is typically used as input
+  data for aerosol processes.</li>
+<li>The <a href="https://github.com/eagles-project/haero/blob/main/haero/aero_species.hpp"><code>AeroSpecies</code></a>
+  and <a href="https://github.com/eagles-project/haero/blob/main/haero/gas_species.hpp"><code>GasSpecies</code></a>
+  types define the respective physical properties of aerosol and gas
+  molecules present in the atmosphere.</li>
+<li>The <a href="https://github.com/eagles-project/haero/blob/main/haero/haero.hpp"><code>ThreadTeam</code></a>
+  type is used to control a team of threads allocated to a single atmospheric
+  column. It's used in Kokkos <code>parallel_for</code> loops.</li>
+</ul>
+<p>The most interesting of these data types is the <code>AeroProcess</code> class template.
+<code>AeroProcess</code> has two template parameters that define its behavior:</p>
+<ol>
+<li><code>AerosolConfig</code>, which defines parameters that describe the aerosols of concern
+   and their particle size distribution properties. It also defines data types
+   used by aerosol processes, like <code>Prognostics</code> (prognostic variables),
+   <code>Diagnostics</code> (diagnostic variables), and <code>Tendencies</code> (rates of change for
+   prognostic variables). In MAM4xx, we use the
+   <a href="https://github.com/eagles-project/mam4xx/blob/main/src/aero_config.hpp"><code>mam4::AeroConfig</code></a>
+   type for the <code>AerosolConfig</code> template parameter for all <code>AeroProcess</code> types.</li>
+<li><code>AerosolProcessImpl</code>, which implements the behavior for an <code>AeroProcess</code> type
+   in several methods, including<ul>
+<li>an <code>init</code> method, which is called upon construction and accepts an
+   <code>AerosolConfig</code> object and a process-specific <code>AerosolProcessImpl::Config</code>
+   object that can be used by the process implementation</li>
+<li>a <code>validate</code> method, which validates data in the given <code>Atmosphere</code> and
+   <code>Prognostics</code> objects. Often, this means checking for negative quantities,
+   which are unphysical.</li>
+<li>a <code>compute_tendencies</code> method, which "runs the process" at a given time
+   over a given duration and computes tendencies for each of the prognostic
+   variables present</li>
+</ul>
+</li>
+</ol>
+<p>When we say we're porting MAM4 to C++ from Fortran, we're talking about
+writing an <code>AerosolProcessImpl</code> class for each of the aerosol processes in MAM4
+and filling the <code>compute_tendencies</code> method with the relevant ported Fortran
+code. To see specific examples of aerosol process implementations, take a look
+at the <a href="https://github.com/eagles-project/mam4xx/blob/main/src/nucleation.hpp"><code>mam4::Nucleation</code></a>
+and <a href="https://github.com/eagles-project/mam4xx/blob/main/src/gasaerexch.hpp"><code>mam4::GasAerExch</code></a>
+classes, which implement nucleation and gas-aerosol exchange (a.k.a. "condensation").</p>
+<p>HAERO contains several other data structures in addition those mentioned above.
+More details on these data structures can be found in the
+<a href="https://eagles-project.github.io/haero/">HAERO documentation</a>.</p>
+<h2 id="c-guidelines">C++ Guidelines</h2>
+<p>C++ is a large, multi-paradigm programming language. The way C++ is used has
+changed so many times over the years that it's crucial for us to decide how
+much of the language we use, and how we'll use it.</p>
+<p>Much of this section is up for debate/discussion, but here are some guiding
+principles that are unlikely to change:</p>
+<ol>
+<li><strong>Favor clarity over cleverness.</strong> Anyone can write code that no one else
+   can understand. Writing simple code that is intelligible to people of various
+   skill levels is challenging, but worth the investment in time and effort.
+   <em>"Don't be clever."</em> -Bjarne Stroustrup</li>
+<li><strong>Avoid frivolous use of C++ features.</strong> The language is huge, and our job is
+   not to maximize our use of it, but to use it effectively.
+   <em>"Every new powerful feature will be overused and misused."</em>
+   -Bjarne Stroustrup</li>
+<li><strong>Remember your audience.</strong> We're writing science codes, so what we write
+   must be intelligible to scientists and others without formal training in
+   software engineering. Don't use <code>int x{};</code> when <code>int x = 0;</code> does the same
+   thing with more clarity.
+   <em>"Only half of the C++ community is above average."</em> -Bjarne Stroustrup</li>
+</ol>
+<p>The astute reader may notice a certain redundancy or even repetition in these
+principles. It is left as an exercise to ponder why that might be so.</p>
+<h3 id="style">Style</h3>
+<p>We adhere somewhat loosely to <a href="https://llvm.org/docs/CodingStandards.html">LLVM's C++ Style Guide</a>,
+with a few notable <em>exceptions</em>:</p>
+<ul>
+<li>We allow the use of C++ exceptions, since simulation codes have rather
+  simplistic error handling requirements.</li>
+<li>Names of functions, methods, and variables use <code>snake_case</code>, not
+  <code>camelCase</code> or <code>PascalCase</code>.</li>
+<li>We typically use braces to enclose logic for all <code>if</code>/<code>else</code>/loop statements
+  even if they are only a single line, for consistency and readability.</li>
+<li>We use <code>EKAT_ASSERT</code> instead of <code>assert</code> to ensure that all MPI processes
+  are properly shut down when a program terminates because of a violated
+  assertion (when MPI is enabled).</li>
+</ul>
+<p>These style conventions are enforced with the following build targets, which
+you can run from your build directory:</p>
+<ul>
+<li><code>make format-cxx-check</code>: checks C++ formatting in all source files and reports
+  any non-conforming code</li>
+<li><code>make format-cxx</code>: applies C++ formatting rules to all source files, editing
+  them in place. Try to do this in a separate commit from your other work.</li>
+</ul>
+<p>These targets are only available if you have <code>clang-format</code> on your system, and
+they only perform their work if you have the version we support. If you have an
+unsupported version of <code>clang-format</code>, the targets will tell you the right
+version to install. <a href="../clang-format/">Here</a> is a guide to getting the supported
+version of <code>clang-format</code> that is a bit more geared toward Mac users than others.</p>
+<h3 id="best-practices">Best practices</h3>
+<p>The bullets in the <a href="https://llvm.org/docs/CodingStandards.html">LLVM C++ Style Guide</a>
+provide good guidelines for best practices. Here are some additional
+tips/opinions:</p>
+<ul>
+<li><strong>Avoid inheritance where possible</strong>: C++'s model of inheritance is easy to
+  use but often hard to understand. When possible organize things so that
+  objects belong to other objects instead of inheriting from them. Sometimes
+  this approach is articulated as <a href="https://en.wikipedia.org/wiki/Composition_over_inheritance"><strong>composition over inheritance</strong></a>.
+  In particular, when you are tempted to use inheritance to bestow the
+  capabilities of one type upon another, pause for a moment to think about
+  whether there's a better way to accomplish what you're trying to do.</li>
+<li><strong>Make effective use of the standard library, but don't overdo it</strong>: Sometimes
+  the clearest expression of an algorithm uses a <code>for</code> loop and not a devilishly
+  clever concoction of esoteric STL types, traits, and functional wizardry.
+  <em>This is particularly true when writing code that runs on a GPU, for which the
+  standard template library is largely unavailable!</em></li>
+</ul>
+<h2 id="kokkos-ekat-haero-intra-node-parallelism">Kokkos, EKAT, Haero: Intra-node Parallelism</h2>
+<p>MAM4xx is written in "performance-portable" C++ code using <a href="https://kokkos.github.io/kokkos-core-wiki/">Kokkos</a>
+to dispatch parallelizable workloads to threads on CPUs or GPUs on a compute
+node. Kokkos allows developers to write code that is very nearly standard C++
+that can run on GPU accelerators, which makes it unnecessary to learn
+specialized accelerator languages like CUDA and HIP.</p>
+<p>Because MAM4xx is based on column physics, it operates on sets of independent
+vertical atmospheric columns and can do all of its work within a single compute
+node. In other words, a MAM4xx instance on a compute node has no specific need
+to communicate with other nodes. However, the host model that uses MAM4xx almost
+certainly needs inter-nodal communication, for which <a href="https://www.mpi-forum.org">MPI</a>
+is used.</p>
+<p>The high-performance data types in MAM4xx used for these parallel dispatches are
+all provided by Kokkos. Kokkos is a general-purpose parallel programming model,
+and is accordingly complex, with many elaborate features and options. In order
+to reduce this complexity and focus on decisions and logic related to earth
+system models (ESMs) in general and aerosols in particular, we make use of a
+couple of additional layers:</p>
+<ul>
+<li><a href="https://github.com/E3SM-Project/EKAT"><strong>E3SM/Kokkos Application Toolkit (EKAT)</strong></a>:
+  A library that defines specific Kokkos-based data structures relevant to
+  E3SM-related projects, and some useful bundled external libraries:<ul>
+<li><code>yamlcpp</code>: a C++ YAML parser for handling configuration files</li>
+<li><code>spdlog</code>: a fancy C++ logging system that provides multiple loggers and
+            extensible logging levels</li>
+<li><code>fmt</code>: a fancy C++ formatting system that provides Python-like formatting
+         for C++ strings</li>
+</ul>
+</li>
+<li><a href="https://github.com/eagles-project/haero"><strong>High performance AEROsol interface (HAERO)</strong></a>:
+  A library that defines data types for aerosol packages. HAERO relies heavily
+  upon EKAT, but makes a lot of choices appropriate for aerosol column physics
+  so we can focus on solving relevant problems and not reinventing the wheel
+  over and over.</li>
+</ul>
+<p>If MPI is enabled, EKAT configures MPI in its own build system, and this
+configuration is passed along to HAERO and MAM4xx. If you enable MPI, you'll
+need an implementation on your system like <a href="https://www.open-mpi.org">OpenMPI</a>
+or <a href="https://www.mpich.org">MPICH</a>.</p>
+<p>In this section, we describe the data structures provided by HAERO (via EKAT
+and Kokkos). The <a href="https://kokkos.github.io/kokkos-core-wiki/">Kokkos documentation</a>
+and <a href="https://github.com/kokkos/kokkos-tutorials">tutorials</a> are fantastic
+resources for understanding the most important data structures and
+techniques we use.</p>
+<h3 id="views-c-multidimensional-arrays">Views: C++ multidimensional arrays</h3>
+<p>Fortran programmers have long been skeptical about using C++ as a scientific
+programming language because C++ doesn't have multidimensional arrays. (This has
+also frustrated a lot of C++ programmers in the HPC community!)</p>
+<p>Kokkos provides a solution to this problem: the <a href="https://kokkos.github.io/kokkos-core-wiki/API/core/view/view.html">View</a>
+data structure. A <code>View</code> is basically a multidimensional array that lives in a
+specific memory location (either on a CPU or a GPU). The <code>View</code> type has several
+template parameters that dictate what it stores, where it stores things, and
+how it indexes them.</p>
+<p>As a multidimensional array, a <code>View</code> has a <strong>rank</strong> that indicates the number
+of indices it possesses. For example, a rank-1 <code>View</code> <code>V</code> has a single index,
+allowing you to retrieve the <code>i</code>th value with the syntax <code>V(i)</code>. A rank-3 <code>View</code>
+<code>T</code> has three indexes, providing access to an element with the syntax
+<code>T(i, j, k)</code>.</p>
+<p>Some people refer to the rank of a View as its <strong>dimension</strong>, but this term
+actually refers to the number of elements for a specific index. For example, the
+dimension of the second index of <code>T</code> above is the valid number of values of <code>j</code>
+that can be used in the expression <code>T(i, j, k)</code>. Indices in a <code>View</code> run from
+<code>0</code> to <code>dim-1</code>, where <code>dim</code> is the dimension relative to the index in question.
+The <strong>shape</strong> of a <code>View</code> is the set of dimensions of its indices. For example,
+the rank-3 <code>View</code> <code>T</code> may have a shape of <code>(100, 100, 100)</code>.</p>
+<p>The <code>View</code> type is very flexible, so it can be complicated to work with
+directly. HAERO provides a few useful types that nail down the various
+parameters according to the needs of aerosol column physics:</p>
+<ul>
+<li><code>ColumnView</code>: a rank-1 <code>View</code> whose index (typically written <code>k</code>) identifies
+  a specific vertical level in a column of "air" in the atmosphere. This type
+  of <code>View</code> is used to represent all quantities of interest in an aerosol
+  parameterization.</li>
+<li><code>TracersView</code>: a rank-3 <code>View</code> with indices <code>n</code>, <code>i</code>, <code>k</code>, that identify a
+  specific tracer (advected quantity) <code>n</code> in a specific column <code>i</code> at a specific
+  vertical level <code>k</code>. This <code>View</code> type is used to extract prognostic aerosol
+  data from an atmospheric host model (e.g. EAMxx) so it can be advanced by
+  MAM4xx.</li>
+<li><code>DiagnosticsView</code>: a rank-3 <code>View</code> similar to <code>TracersView</code>, used to index
+  diagnostic aerosol data from an atmosphereic host model for use and updating
+  by MAM4xx.</li>
+</ul>
+<p>These three <code>View</code> types should be all you need to implement aerosol processes
+and their parameterizations. In fact, the aerosol processes themselves really
+only use the <code>ColumnView</code> type.</p>
+<p><strong>NOTE</strong>: You may be tempted to use <code>View::extent</code> to determine the size of a
+<code>View</code>. While this is perfectly reasonable under normal circumstances, there are
+cases where a <code>View</code> might be larger than you would expect. This has to do with
+EAMxx's vectorization strategy, which allocates and aligns memory for <code>View</code>s
+assuming a minimum "block size" for data. For MAM4xx, all of our <code>ColumnView</code>
+variables will be functionally equal in length to the number of vertical levels
+in the atmosphere, but the actual extents may be greater.</p>
+<h3 id="parallel-dispatch-host-and-device">Parallel dispatch: host and device</h3>
+<p>MAM4xx runs within a single process runs on an entire compute node, no matter
+how many CPUs or GPUs are available to that node. Within MAM4xx, processes on
+different compute nodes typically don't communicate directly with each other.
+Instead, the host model coordinates communication between these processes using
+MPI, and MAM4xx relies on the host model to get consistent data.</p>
+<p>To understand the <em>intranodal</em> parallelism used by MAM4xx, we need some
+terminology:</p>
+<ul>
+<li>The <strong>compute host</strong> is the CPU running the process containing the atmospheric
+  host model and MAM4xx. The compute host manages the control flow of the host
+  model and MAM4xx--it can also do numerical calculations, but such
+  calculations can't be done in parallel on the host.</li>
+<li>The <strong>compute device</strong> is where numerical calculations are performed in
+  parallel. On a node with only CPUs, the role of the compute device is played
+  by the same CPU as that for the compute host. On a node with access to GPUs,
+  the compute device is the GPU, which has its own memory and (very different!)
+  processing hardware. Logically, the compute device is distinct from the
+  compute host, because only the compute device can execute code in parallel.</li>
+</ul>
+<p>Strictly speaking, a machine can have more than one compute device. For example,
+a many-core CPU with a GPU has two potential compute devices: the CPU and the
+GPU. We will ignore this possibility and assume that all calculations are done
+on a single compute device, which we call the <strong>device</strong>.</p>
+<p>To make use of the <strong>device</strong> on a compute node, MAM4xx uses the
+<a href="https://kokkos.github.io/kokkos-core-wiki/API/core/ParallelDispatch.html">parallel dispatch</a>
+capabilities provided by Kokkos. MAM4xx's "column physics" approach allows it
+to take advantage of a specific parallel dispatch approach based on the Kokkos
+<a href="https://kokkos.github.io/kokkos-core-wiki/API/core/policies/TeamPolicy.html">TeamPolicy</a>.
+<a href="https://acme-climate.atlassian.net/wiki/spaces/NGDNA/pages/1749155880/On-Node+Parallelism+in+SCREAM+Physics">This EAMxx Confluence page</a>
+explains how it works.</p>
+<h3 id="frequently-asked-questions">Frequently Asked Questions</h3>
+<p><strong>How are the atmospheric columns laid out in EAMxx?</strong></p>
+<p><a href="https://acme-climate.atlassian.net/wiki/spaces/DOC/pages/34113147/SE+Atmosphere+Grid+Overview+EAM+CAM">This Confluence page</a>
+describes the computational grid(s) used by EAMxx.</p>
+<h2 id="resources">Resources</h2>
+<ul>
+<li><a href="https://github.com/E3SM-Project/EKAT">EKAT repository</a></li>
+<li><a href="https://e3sm.org">E3SM website</a></li>
+<li><a href="https://kokkos.github.io/kokkos-core-wiki/">Kokkos documentation</a></li>
+<li><a href="https://github.com/eagles-project/haero">HAERO repository</a></li>
+<li><a href="https://llvm.org/docs/CodingStandards.html">LLVM C++ Style Guide</a></li>
+<li><a href="https://github.com/eagles-project/mam_refactor">MAM4 box model repository</a></li>
+<li><a href="https://github.com/E3SM-Project/scream">SCREAM (EAMxx) repository</a></li>
+<li><a href="https://eagles-project.github.io/skywalker/">Skywalker documentation</a></li>
+</ul>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+            Back to top
+          </button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.indices", "navigation.instant", "navigation.sections", "navigation.top"], "search": "../assets/javascripts/workers/search.a264c092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.726fbb30.min.js"></script>
+      
+        <script src="../javascript/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
