@@ -41,6 +41,7 @@ set(TEST_LIST
     modal_size_parameters_ts_355_ismethod2_false
     modal_size_parameters_ts_355_ismethod2_true
     modal_aero_sw_ts_355
+    modal_aero_lw_ts_355
     )
 # # matching the tests and errors, just for convenience
 
@@ -52,6 +53,7 @@ set(ERROR_THRESHOLDS
    3e-10
    2e-8
    2e-8
+   ${DEFAULT_TOL}
    ${DEFAULT_TOL}
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
