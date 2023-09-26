@@ -11,6 +11,7 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 add_executable(mo_chm_diags_driver
                mo_chm_diags_driver.cpp
                het_diags.cpp
+               chm_diags.cpp
                )
 
 target_link_libraries(mo_chm_diags_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -28,11 +29,13 @@ endforeach()
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     het_diags_ts_355
+    chm_diags_ts_355
     )
 # # matching the tests and errors, just for convenience
 
 set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
+   9e-2
    9e-2
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
