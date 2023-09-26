@@ -28,7 +28,7 @@ void calc_refin_complex(Ensemble *ensemble);
 void calc_volc_ext(Ensemble *ensemble);
 void modal_size_parameters(Ensemble *ensemble);
 void modal_aero_sw(Ensemble *ensemble);
-
+void modal_aero_lw(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -64,6 +64,8 @@ int main(int argc, char **argv) {
       modal_size_parameters(ensemble);
     } else if (func_name == "modal_aero_sw") {
       modal_aero_sw(ensemble);
+    } else if (func_name == "modal_aero_lw") {
+      modal_aero_lw(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;

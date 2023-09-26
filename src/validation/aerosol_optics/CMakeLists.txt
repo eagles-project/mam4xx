@@ -17,6 +17,7 @@ add_executable(aerosol_optics_driver
                calc_volc_ext.cpp
                modal_size_parameters.cpp
                modal_aero_sw.cpp
+               modal_aero_lw.cpp
                )
 
 target_link_libraries(aerosol_optics_driver skywalker;validation;${HAERO_LIBRARIES})
