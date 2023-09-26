@@ -1,0 +1,467 @@
+// mam4xx: Copyright (c) 2022,
+// Battelle Memorial Institute and
+// National Technology & Engineering Solutions of Sandia, LLC (NTESS)
+// SPDX-License-Identifier: BSD-3-Clause
+
+#include <mam4xx/mam4.hpp>
+
+#include <mam4xx/aero_config.hpp>
+#include <skywalker.hpp>
+#include <validation.hpp>
+
+using namespace skywalker;
+using namespace mam4;
+using namespace haero;
+using namespace modal_aer_opt;
+using namespace ndrop;
+
+void modal_aero_sw(Ensemble *ensemble) {
+  ensemble->process([=](const Input &input, Output &output) {
+    using View1DHost = typename HostType::view_1d<Real>;
+    constexpr Real zero = 0;
+
+    constexpr int maxd_aspectype = ndrop::maxd_aspectype;
+    constexpr int ncnst_tot = ndrop::ncnst_tot;
+    constexpr int pver = mam4::nlev;
+
+    const auto dt = input.get_array("dt")[0];
+    const auto state_q_db = input.get_array("state_q");
+
+    int count = 0;
+
+    View2D state_q("state_q", pver, nvars);
+    auto state_host = Kokkos::create_mirror_view(state_q);
+
+    for (int i = 0; i < nvars; ++i) {
+      // input data is store on the cpu.
+      for (int kk = 0; kk < pver; ++kk) {
+        state_host(kk, i) = state_q_db[count];
+        count++;
+      }
+    }
+
+    Kokkos::deep_copy(state_q, state_host);
+
+    const auto state_zm_db = input.get_array("state_zm");
+    const auto temperature_db = input.get_array("temperature");
+    const auto pmid_db = input.get_array("pmid");
+    const auto pdel_db = input.get_array("pdel");
+    const auto pdeldry_db = input.get_array("pdeldry");
+    const auto cldn_db = input.get_array("cldn");
+    const auto is_cmip6_volc = input.get_array("is_cmip6_volc")[0];
+    const auto ext_cmip6_sw_db = input.get_array("ext_cmip6_sw");
+
+    ColumnView state_zm;
+    state_zm = haero::testing::create_column_view(pver);
+    auto state_zm_host = View1DHost((Real *)state_zm_db.data(), pver);
+    Kokkos::deep_copy(state_zm, state_zm_host);
+
+    ColumnView temperature;
+    ColumnView pmid;
+    ColumnView pdeldry;
+    ColumnView pdel;
+    ColumnView cldn;
+    ColumnView ext_cmip6_sw;
+
+    temperature = haero::testing::create_column_view(pver);
+    auto temperature_host = View1DHost((Real *)temperature_db.data(), pver);
+    Kokkos::deep_copy(temperature, temperature_host);
+
+    pmid = haero::testing::create_column_view(pver);
+    auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
+    Kokkos::deep_copy(pmid, pmid_host);
+
+    pdeldry = haero::testing::create_column_view(pver);
+    auto pdeldry_host = View1DHost((Real *)pdeldry_db.data(), pver);
+    Kokkos::deep_copy(pdeldry, pdeldry_host);
+
+    pdel = haero::testing::create_column_view(pver);
+    auto pdel_host = View1DHost((Real *)pdel_db.data(), pver);
+    Kokkos::deep_copy(pdel, pdel_host);
+
+    cldn = haero::testing::create_column_view(pver);
+    auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
+    Kokkos::deep_copy(cldn, cldn_host);
+
+    ext_cmip6_sw = haero::testing::create_column_view(pver);
+    auto ext_cmip6_sw_host = View1DHost((Real *)ext_cmip6_sw_db.data(), pver);
+    Kokkos::deep_copy(ext_cmip6_sw, ext_cmip6_sw_host);
+
+    // = haero::testing::create_column_view(pver);
+    // auto _host = View1DHost((Real *)_db.data(), pver);
+    // Kokkos::deep_copy(, _host);
+
+    // = haero::testing::create_column_view(pver);
+    // auto _host = View1DHost((Real *)_db.data(), pver);
+    // Kokkos::deep_copy(, _host);
+
+    const int trop_level = int(input.get_array("trop_level")[0]);
+    const auto qqcw_db = input.get_array("qqcw"); // 2d
+
+    ColumnView qqcw[ncnst_tot];
+    View1DHost qqcw_host[ncnst_tot];
+
+    count = 0;
+    for (int i = 0; i < ncnst_tot; ++i) {
+      qqcw[i] = haero::testing::create_column_view(pver);
+      qqcw_host[i] = View1DHost("qqcw_host", pver);
+    }
+
+    for (int kk = 0; kk < pver; ++kk) {
+      for (int i = 0; i < ncnst_tot; ++i) {
+        qqcw_host[i](kk) = qqcw_db[count];
+        count++;
+      }
+    }
+
+    // transfer data to GPU.
+    for (int i = 0; i < ncnst_tot; ++i) {
+      Kokkos::deep_copy(qqcw[i], qqcw_host[i]);
+    }
+
+    // 2D
+    const auto specrefndxsw_real_db = input.get_array("specrefndxsw_real");
+    const auto specrefndxsw_imag_db = input.get_array("specrefndxsw_imag");
+
+    ComplexView2D specrefndxsw("specrefndxsw", nswbands, maxd_aspectype);
+    auto specrefndxsw_host = Kokkos::create_mirror_view(specrefndxsw);
+
+    count = 0;
+    for (int j = 0; j < maxd_aspectype; ++j) {
+      for (int i = 0; i < nswbands; ++i) {
+        specrefndxsw_host(i, j).real() = specrefndxsw_real_db[count];
+        specrefndxsw_host(i, j).imag() = specrefndxsw_imag_db[count];
+        count += 1;
+      }
+    }
+
+    Kokkos::deep_copy(specrefndxsw, specrefndxsw_host);
+
+    const auto crefwsw_real = input.get_array("crefwsw_real");
+    const auto crefwsw_imag = input.get_array("crefwsw_imag");
+
+    const auto crefwlw_real = input.get_array("crefwlw_real");
+    const auto crefwlw_imag = input.get_array("crefwlw_imag");
+
+    Kokkos::complex<Real> crefwlw[nlwbands];
+
+    Kokkos::complex<Real> crefwsw[nswbands];
+
+    for (int j = 0; j < nswbands; ++j) {
+      crefwsw[j].real() = crefwsw_real[j];
+      crefwsw[j].imag() = crefwsw_imag[j];
+    }
+
+    for (int j = 0; j < nlwbands; ++j) {
+      crefwlw[j].real() = crefwlw_real[j];
+      crefwlw[j].imag() = crefwlw_imag[j];
+    }
+
+    View5D extpsw, abspsw, asmpsw;
+
+    const auto extpsw_db = input.get_array("extpsw");
+    const auto abspsw_db = input.get_array("abspsw");
+    const auto asmpsw_db = input.get_array("asmpsw");
+
+    abspsw = View5D("abspsw", ntot_amode, coef_number, refindex_real,
+                    refindex_im, nswbands);
+    extpsw = View5D("abspsw", ntot_amode, coef_number, refindex_real,
+                    refindex_im, nswbands);
+    asmpsw = View5D("asmpsw", ntot_amode, coef_number, refindex_real,
+                    refindex_im, nswbands);
+
+    auto abspsw_host = Kokkos::create_mirror_view(abspsw);
+    auto extpsw_host = Kokkos::create_mirror_view(extpsw);
+    auto asmpsw_host = Kokkos::create_mirror_view(asmpsw);
+
+    // assuming 1d array is saved using column-major layout
+    for (int d1 = 0; d1 < ntot_amode; ++d1) {
+      for (int d2 = 0; d2 < coef_number; ++d2) {
+        for (int d3 = 0; d3 < refindex_real; ++d3) {
+          for (int d4 = 0; d4 < refindex_im; ++d4) {
+            for (int d5 = 0; d5 < nswbands; ++d5) {
+              const int offset =
+                  d1 +
+                  ntot_amode *
+                      (d2 + coef_number *
+                                (d3 + refindex_real * (d4 + refindex_im * d5)));
+              abspsw_host(d1, d2, d3, d4, d5) = abspsw_db[offset];
+              extpsw_host(d1, d2, d3, d4, d5) = extpsw_db[offset];
+              asmpsw_host(d1, d2, d3, d4, d5) = asmpsw_db[offset];
+            } // d5
+          }   // d4
+        }     // d3
+      }       // d2
+    }         // d1
+
+    Kokkos::deep_copy(abspsw, abspsw_host);
+    Kokkos::deep_copy(extpsw, extpsw_host);
+    Kokkos::deep_copy(asmpsw, asmpsw_host);
+
+    View3D refrtabsw, refitabsw;
+
+    const auto refrtabsw_db = input.get_array("refrtabsw");
+    const auto refitabsw_db = input.get_array("refitabsw");
+
+    refrtabsw = View3D("refrtabsw", ntot_amode, refindex_real, nswbands);
+    auto refrtabsw_host = Kokkos::create_mirror_view(refrtabsw);
+
+    int N1 = ntot_amode;
+    int N2 = refindex_real;
+    int N3 = nswbands;
+
+    for (int d1 = 0; d1 < N1; ++d1)
+      for (int d2 = 0; d2 < N2; ++d2)
+        for (int d3 = 0; d3 < N3; ++d3) {
+          const int offset = d1 + N1 * (d2 + d3 * N2);
+          refrtabsw_host(d1, d2, d3) = refrtabsw_db[offset];
+
+        } // d3
+
+    Kokkos::deep_copy(refrtabsw, refrtabsw_host);
+
+    refitabsw = View3D("refitabsw", ntot_amode, refindex_im, nswbands);
+    auto refitabsw_host = Kokkos::create_mirror_view(refitabsw);
+
+    N1 = ntot_amode;
+    N2 = refindex_im;
+    N3 = nswbands;
+
+    for (int d1 = 0; d1 < N1; ++d1)
+      for (int d2 = 0; d2 < N2; ++d2)
+        for (int d3 = 0; d3 < N3; ++d3) {
+          const int offset = d1 + N1 * (d2 + d3 * N2);
+          refitabsw_host(d1, d2, d3) = refitabsw_db[offset];
+        } // d3
+
+    Kokkos::deep_copy(refitabsw, refitabsw_host);
+
+    // output
+    View2D tauxar, wa, ga, fa;
+
+    tauxar =
+        View2D("tauxar", pver, nswbands); // layer extinction optical depth [1]
+    wa = View2D("wa", pver, nswbands);    // layer single-scatter albedo [1]
+    ga = View2D("ga", pver, nswbands);    // asymmetry factor [1]
+    fa = View2D("fa", pver, nswbands);    // forward scattered fraction [1]
+
+    // I need this:
+    // 1. crefwlw
+    // 2. specname_amode
+    // FIXME need to set these arras
+    Real sigmag_amode[ntot_amode] = {};
+
+    // outputs diagnostics:
+    ColumnView extinct, absorb;
+    extinct = haero::testing::create_column_view(pver);
+    absorb = haero::testing::create_column_view(pver);
+
+    View1D output_diagnostics_amode("output_diagnostics_amode", 3 * ntot_amode);
+
+    View1D output_diagnostics("output_diagnostics", 21);
+
+    // work views
+    ColumnView mass;
+    ColumnView air_density;
+    ColumnView radsurf;
+    ColumnView logradsurf;
+
+    mass = haero::testing::create_column_view(pver);
+    air_density = haero::testing::create_column_view(pver);
+    radsurf = haero::testing::create_column_view(pver);
+    logradsurf = haero::testing::create_column_view(pver);
+
+    View2D cheb("cheb", ncoef, pver);
+    View2D dgnumwet_m("dgnumwet_m", pver, ntot_amode);
+    View2D dgnumdry_m("dgnumdry_m", pver, ntot_amode);
+
+    ComplexView2D specrefindex("specrefindex", max_nspec, nswbands);
+    View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
+
+    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    Kokkos::parallel_for(
+        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          int nspec_amode[ntot_amode];
+          int lspectype_amode[maxd_aspectype][ntot_amode];
+          int lmassptr_amode[maxd_aspectype][ntot_amode];
+          Real specdens_amode[maxd_aspectype];
+          Real spechygro[maxd_aspectype];
+          int numptr_amode[ntot_amode];
+          int mam_idx[ntot_amode][nspec_max];
+          int mam_cnst_idx[ntot_amode][nspec_max];
+
+          get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
+                              numptr_amode, specdens_amode, spechygro, mam_idx,
+                              mam_cnst_idx);
+
+          // FIXME: need to set values
+          mam4::AeroId specname_amode[6] = {};
+
+          Real aodnir = zero;
+          Real aoduv = zero;
+          Real aodabsbc = zero;
+          Real aodvis = zero;
+          Real aodall = zero;
+          Real ssavis = zero;
+          Real aodabs = zero;
+          Real burdendust = zero;
+          Real burdenso4 = zero;
+          Real burdenbc = zero;
+          Real burdenpom = zero;
+          Real burdensoa = zero;
+          Real burdenseasalt = zero;
+          Real burdenmom = zero;
+          Real momaod = zero;
+          Real dustaod = zero;
+          Real so4aod = zero; // total species AOD
+          Real pomaod = zero;
+          Real soaaod = zero;
+          Real bcaod = zero;
+          Real seasaltaod = zero;
+
+          Real dustaodmode[ntot_amode] = {};
+          Real aodmode[ntot_amode] = {};
+          Real burdenmode[ntot_amode] = {};
+
+          modal_aero_sw(
+              dt, state_q, state_zm, temperature, pmid, pdel, pdeldry, cldn,
+              // const int nnite,
+              // idxnite,
+              is_cmip6_volc, ext_cmip6_sw, trop_level, qqcw,
+
+              tauxar, wa, ga, fa,
+              //
+              nspec_amode, sigmag_amode, lmassptr_amode, spechygro,
+              specdens_amode, lspectype_amode,
+              specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
+              crefwlw, crefwsw,
+              // FIXME
+              specname_amode, extpsw, abspsw, asmpsw, refrtabsw, refitabsw,
+              // diagnostic
+              extinct, //        ! aerosol extinction [1/m]
+              absorb,  //         ! aerosol absorption [1/m]
+              aodnir, aoduv, dustaodmode, aodmode, burdenmode, aodabsbc, aodvis,
+              aodall, ssavis, aodabs, burdendust, burdenso4, burdenbc,
+              burdenpom, burdensoa, burdenseasalt, burdenmom, momaod, dustaod,
+              so4aod, // total species AOD
+              pomaod, soaaod, bcaod, seasaltaod,
+              // work views
+              mass, air_density, cheb, dgnumwet_m, dgnumdry_m, radsurf,
+              logradsurf, specrefindex, qaerwat_m);
+
+          output_diagnostics(0) = aodnir;
+          output_diagnostics(1) = aoduv;
+          output_diagnostics(2) = aodabsbc;
+          output_diagnostics(3) = aodvis;
+          output_diagnostics(4) = aodall;
+          output_diagnostics(5) = ssavis;
+          output_diagnostics(6) = aodabs;
+          output_diagnostics(7) = burdendust;
+          output_diagnostics(8) = burdenso4;
+          output_diagnostics(9) = burdenbc;
+          output_diagnostics(10) = burdenpom;
+          output_diagnostics(11) = burdensoa;
+          output_diagnostics(12) = burdenseasalt;
+          output_diagnostics(13) = burdenmom;
+          output_diagnostics(14) = momaod;
+          output_diagnostics(15) = dustaod;
+          output_diagnostics(16) = so4aod; // total species AOD
+          output_diagnostics(17) = pomaod;
+          output_diagnostics(18) = soaaod;
+          output_diagnostics(19) = bcaod;
+          output_diagnostics(20) = seasaltaod;
+
+          for (int m = 0; m < ntot_amode; ++m) {
+            output_diagnostics_amode(m) = dustaodmode[m];
+            output_diagnostics_amode(m + ntot_amode) = aodmode[m];
+            output_diagnostics_amode(m + 2 * ntot_amode) = burdenmode[m];
+          }
+        });
+
+    std::vector<Real> output_qqcw;
+
+    // transfer data to host
+    for (int i = 0; i < ncnst_tot; ++i) {
+      Kokkos::deep_copy(qqcw_host[i], qqcw[i]);
+    }
+
+    for (int kk = 0; kk < pver; ++kk) {
+      for (int i = 0; i < ncnst_tot; ++i) {
+        output_qqcw.push_back(qqcw_host[i](kk));
+      }
+    }
+
+    output.set("qqcw", output_qqcw);
+
+    std::vector<Real> tauxar_out(pver * nswbands, zero);
+    mam4::validation::convert_2d_view_device_to_1d_vector(tauxar, tauxar_out);
+    output.set("tauxar", tauxar_out);
+
+    std::vector<Real> wa_out(pver * nswbands, zero);
+    mam4::validation::convert_2d_view_device_to_1d_vector(wa, wa_out);
+    output.set("wa", wa_out);
+
+    std::vector<Real> ga_out(pver * nswbands, zero);
+    mam4::validation::convert_2d_view_device_to_1d_vector(ga, ga_out);
+    output.set("ga", ga_out);
+
+    std::vector<Real> fa_out(pver * nswbands, zero);
+    mam4::validation::convert_2d_view_device_to_1d_vector(fa, fa_out);
+    output.set("fa", fa_out);
+
+    auto extinct_host = Kokkos::create_mirror_view(extinct);
+
+    Kokkos::deep_copy(extinct_host, extinct);
+    std::vector<Real> extinct_out(extinct_host.data(),
+                                  extinct_host.data() + pver);
+    output.set("extinct", extinct_out);
+
+    auto absorb_host = Kokkos::create_mirror_view(absorb);
+    Kokkos::deep_copy(absorb_host, absorb);
+    std::vector<Real> absorb_out(absorb_host.data(), absorb_host.data() + pver);
+    output.set("absorb", absorb_out);
+
+    auto output_diagnostics_host =
+        Kokkos::create_mirror_view(output_diagnostics);
+
+    // Real aodnir=output_diagnostics_host(0);
+    // Real aoduv=output_diagnostics_host(1);
+    // Real aodabsbc=output_diagnostics_host(2);
+    Real aodvis = output_diagnostics_host(3);
+    Real aodall = output_diagnostics_host(4);
+    // Real ssavis=output_diagnostics_host(5);
+    Real aodabs = output_diagnostics_host(6);
+    Real burdendust = output_diagnostics_host(7);
+    Real burdenso4 = output_diagnostics_host(8);
+    Real burdenbc = output_diagnostics_host(9);
+    Real burdenpom = output_diagnostics_host(10);
+    Real burdensoa = output_diagnostics_host(11);
+    Real burdenseasalt = output_diagnostics_host(12);
+    Real burdenmom = output_diagnostics_host(13);
+    Real momaod = output_diagnostics_host(14);
+    Real dustaod = output_diagnostics_host(15);
+    Real so4aod = output_diagnostics_host(16); // total species AOD
+    Real pomaod = output_diagnostics_host(17);
+    Real soaaod = output_diagnostics_host(18);
+    Real bcaod = output_diagnostics_host(19);
+    Real seasaltaod = output_diagnostics_host(20);
+
+    output.set("aodabs", std::vector<Real>(1, aodabs));
+    output.set("aodvis", std::vector<Real>(1, aodvis));
+    output.set("aodall", std::vector<Real>(1, aodall));
+    output.set("burdendust", std::vector<Real>(1, burdendust));
+    output.set("burdenso4", std::vector<Real>(1, burdenso4));
+    output.set("burdenpom", std::vector<Real>(1, burdenpom));
+    output.set("burdensoa", std::vector<Real>(1, burdensoa));
+    output.set("burdenbc", std::vector<Real>(1, burdenbc));
+    output.set("burdenseasalt", std::vector<Real>(1, burdenseasalt));
+    output.set("burdenmom", std::vector<Real>(1, burdenmom));
+    output.set("dustaod", std::vector<Real>(1, dustaod));
+    output.set("so4aod", std::vector<Real>(1, so4aod));
+    output.set("pomaod", std::vector<Real>(1, pomaod));
+    output.set("soaaod", std::vector<Real>(1, soaaod));
+    output.set("bcaod", std::vector<Real>(1, bcaod));
+    output.set("seasaltaod", std::vector<Real>(1, seasaltaod));
+    output.set("momaod", std::vector<Real>(1, momaod));
+  });
+}

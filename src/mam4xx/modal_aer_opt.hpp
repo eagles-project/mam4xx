@@ -55,6 +55,12 @@ constexpr int idx_uv_diag = 11; // index to sw uv (345-441 nm) band
 constexpr int maxd_aspectype = 14;
 // FIXME; is this values set somewhere else?
 constexpr int max_nspec = 7;
+
+// dimensions for reading refractive index from modal radiative properties files
+constexpr int coef_number = 5;   // number of coeficients
+constexpr int refindex_real = 7; // real refractive index
+constexpr int refindex_im = 10;  // imaginery refractive index
+
 KOKKOS_INLINE_FUNCTION
 void modal_size_parameters(const Real sigma_logr_aer,
                            const Real dgnumwet, // in
