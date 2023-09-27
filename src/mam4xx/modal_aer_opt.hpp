@@ -21,8 +21,7 @@ constexpr int ncnst_tot = ndrop::ncnst_tot;
 // ! min, max aerosol surface mode radius treated [m]
 constexpr Real rmmin = 0.01e-6;
 constexpr Real rmmax = 25.e-6;
-const Real xrmin = haero::log(rmmin);
-const Real xrmax = haero::log(rmmax);
+
 
 // From radconstants
 constexpr int nswbands = 14;
@@ -85,6 +84,8 @@ void modal_size_parameters(const Real sigma_logr_aer,
   constexpr Real half = 0.5;
   constexpr Real one = 1.0;
   constexpr Real two = 2.0;
+  const Real xrmin = haero::log(rmmin);
+  const Real xrmax = haero::log(rmmax);
 
   const Real alnsg_amode = haero::log(sigma_logr_aer);
   const Real explnsigma = haero::exp(two * alnsg_amode * alnsg_amode);
@@ -446,6 +447,9 @@ void modal_aero_sw(
     const View2D &dgnumwet_m, const View2D &dgnumdry_m,
     const ColumnView &radsurf, const ColumnView &logradsurf,
     const ComplexView2D &specrefindex, const View2D &qaerwat_m) {
+
+        const Real xrmin = haero::log(rmmin);
+  const Real xrmax = haero::log(rmmax);
   // ! calculates aerosol sw radiative properties
   // dt               !timestep [s]
   // lchnk            ! chunk id
