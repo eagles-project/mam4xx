@@ -613,8 +613,11 @@ public:
           adjust_factor_pbl_ratenucl(1.0), accom_coef_h2so4(1.0),
           newnuc_adjust_factor_dnaitdt(1.0) {}
 
+    KOKKOS_INLINE_FUNCTION
     Config(const Config &) = default;
+    KOKKOS_INLINE_FUNCTION
     ~Config() = default;
+    KOKKOS_INLINE_FUNCTION
     Config &operator=(const Config &) = default;
   };
 

@@ -522,8 +522,11 @@ public:
                                                {0, 1, 2, 3, 4, 5, 6},
                                                {2, 3, 6, -1, -1, -1, -1}} {}
 
+    KOKKOS_INLINE_FUNCTION
     Config(const Config &) = default;
+    KOKKOS_INLINE_FUNCTION
     ~Config() = default;
+    KOKKOS_INLINE_FUNCTION
     Config &operator=(const Config &) = default;
   };
 
