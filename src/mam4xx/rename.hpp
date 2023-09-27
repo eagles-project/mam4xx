@@ -507,7 +507,9 @@ public:
     // rename_spec_arr[x \in {0,...,3}][y \in {0,...,6}] =
     //                                  m4x_spec_arr[x][mam4xx2rename_idx[x][y]]
     int _mam4xx2rename_idx[4][7];
+
     // default constructor--sets default values for parameters
+    KOKKOS_INLINE_FUNCTION
     Config()
         : _dest_mode_of_mode{-1, 0, -1, -1},
           // NOTE: smallest_dryvol_value is a very small molar mixing ratio

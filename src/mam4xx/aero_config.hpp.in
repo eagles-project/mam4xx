@@ -34,15 +34,18 @@ public:
   bool calculate_gas_uptake_coefficient = false;
   int number_gauss_points_for_integration = 2;
   // Default constructor.
+  KOKKOS_INLINE_FUNCTION
   AeroConfig() {}
 
   // Copy constructor.
+  KOKKOS_INLINE_FUNCTION
   AeroConfig(const AeroConfig &) = default;
 
   // Destructor.
   ~AeroConfig() = default;
 
   // Assignment operator.
+  KOKKOS_INLINE_FUNCTION
   AeroConfig &operator=(const AeroConfig &) = default;
 
   // Comparison operators.
@@ -185,6 +188,7 @@ public:
   /// NOTE: it's currently possible to configure a Diagnostics object with a
   /// NOTE: number of vertical levels different from mam4::nlev above, in order
   /// NOTE: to support various testing configurations.
+  KOKKOS_INLINE_FUNCTION
   explicit Diagnostics(int num_levels) : nlev_(num_levels) {}
 
   Diagnostics() = default; // use only for creating containers of Diagnostics!
