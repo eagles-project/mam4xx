@@ -54,21 +54,26 @@ public:
   }
 
   /// Returns the number of aerosol modes.
+  KOKKOS_INLINE_FUNCTION
   static constexpr int num_modes() { return 4; }
 
   /// Returns the number of aerosol ids. This is the number of valid enums in
   /// mam4::AeroId.
+  KOKKOS_INLINE_FUNCTION
   static constexpr int num_aerosol_ids() { return 7; }
 
   /// Returns the number of gas ids. This is the number of valid enums in mam4::GasId.
+  KOKKOS_INLINE_FUNCTION
   static constexpr int num_gas_ids() { return 6; }
 
   /// Returns the number of aging pairs
+  KOKKOS_INLINE_FUNCTION
   static constexpr int max_agepair() { return 1; }
 
   /// Returns the number of species involved in gas phase chemistry
   /// (hardwired to chemical mechanism for now -- see gas_pcnst in
   ///  gas_chem_mechanism.hpp)
+  KOKKOS_INLINE_FUNCTION
   static constexpr int num_gas_phase_species() { return 31; }
 };
 
@@ -86,6 +91,7 @@ public:
   /// NOTE: it's currently possible to configure a Prognostics object with a
   /// NOTE: number of vertical levels different from mam4::nlev above, in order
   /// NOTE: to support various testing configurations.
+  KOKKOS_INLINE_FUNCTION
   explicit Prognostics(int num_levels) : nlev_(num_levels) {}
 
   Prognostics() = default; // use only for creating containers of Prognostics!
