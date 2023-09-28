@@ -259,6 +259,7 @@ void modal_aero_lw(Ensemble *ensemble) {
 
     ComplexView2D specrefindex("specrefindex", max_nspec, nlwbands);
     View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
+    Kokkos::deep_copy(qaerwat_m, zero);
 
     // output
 

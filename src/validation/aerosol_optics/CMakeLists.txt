@@ -8,7 +8,7 @@ set(AEROSOL_OPTICS_VALIDATION_SCRIPTS_DIR ${MAM_X_VALIDATION_DIR}/scripts)
 include_directories(${PROJECT_BINARY_DIR}/validation)
 
 # We use a single driver for all aerosol_optics-related parameterizations.
-               #modal_aero_sw.cpp
+
 add_executable(aerosol_optics_driver
                aerosol_optics_driver.cpp
                binterp.cpp
