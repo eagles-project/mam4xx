@@ -486,7 +486,7 @@ void aer_rad_props_lw(
   // intent-outs
   //  odap_aer(pcols,pver,nlwbands) ! [fraction] absorption optical depth, per
   //  layer [unitless]
-
+#if 0
   // Compute contributions from the modal aerosols.
   modal_aero_lw(dt, state_q, temperature, pmid, pdel, pdeldry, cldn, qqcw_fld,
                 odap_aer,
@@ -497,7 +497,7 @@ void aer_rad_props_lw(
                 // work views
                 mass, cheb, dgnumwet_m, dgnumdry_m, radsurf, logradsurf,
                 specrefindex, qaerwat_m);
-
+#endif
   // !write out ext from the volcanic input file
   // call outfld('extinct_lw_inp',ext_cmip6_lw(:,:,idx_lw_diag), pcols, lchnk)
   // !convert from 1/km to 1/m

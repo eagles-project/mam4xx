@@ -9,6 +9,7 @@
 namespace mam4 {
 namespace modal_aer_opt {
 
+using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;
 using View3D = DeviceType::view_3d<Real>;
 using ComplexView2D = DeviceType::view_2d<Kokkos::complex<Real>>;
@@ -957,8 +958,9 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
                    const ComplexView2D &specrefndxlw,
                    const Kokkos::complex<Real> crefwlw[nlwbands],
                    const Kokkos::complex<Real> crefwsw[nswbands],
-                   const View5D &absplw, const View3D &refrtablw,
-                   const View3D &refitablw,
+                   const View3D absplw[ntot_amode][nlwbands],
+                   const View1D refrtablw[ntot_amode][nlwbands],
+                   const View1D refitablw[ntot_amode][nlwbands],
                    // work views
                    const ColumnView &mass, const View2D &cheb,
                    const View2D &dgnumwet_m, const View2D &dgnumdry_m,
@@ -1044,13 +1046,14 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
                            nspec, crefwlw, crefwsw, dryvol, wetvol, watervol,
                            crefin, refr, refi);
 
-        const auto sub_absplw = Kokkos::subview(
-            absplw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), ilw);
+        const auto sub_absplw = absplw[mm][ilw];
+        // Kokkos::subview(
+        // absplw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), ilw);
 
-        const auto ref_real_tab =
-            Kokkos::subview(refrtablw, mm, Kokkos::ALL(), ilw);
-        const auto ref_img_tab =
-            Kokkos::subview(refitablw, mm, Kokkos::ALL(), ilw);
+        const auto ref_real_tab = refrtablw[mm][ilw];
+        // Kokkos::subview(refrtablw, mm, Kokkos::ALL(), ilw);
+        const auto ref_img_tab = refitablw[mm][ilw];
+        // Kokkos::subview(refitablw, mm, Kokkos::ALL(), ilw);
 
         // interpolate coefficients linear in refractive index
         // first call calcs itab,jtab,ttab,utab
@@ -1059,8 +1062,8 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
         int jtab = zero;
         Real ttab, utab = {};
         Real cabs[ncoef] = {};
-        binterp(sub_absplw, refr, refi, ref_real_tab.data(), ref_img_tab.data(),
-                itab, jtab, ttab, utab, cabs, itab_1);
+        binterp(absplw[mm][ilw], refr, refi, ref_real_tab.data(),
+                ref_img_tab.data(), itab, jtab, ttab, utab, cabs, itab_1);
 
         // parameterized optical properties
         Real pabs = zero; //    parameterized specific extinction [m2/kg]
