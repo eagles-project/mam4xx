@@ -30,7 +30,7 @@ void water_uptake_wetdens(Ensemble *ensemble) {
 
     std::vector<Real> wetdens(AeroConfig::num_modes(), 0);
 
-    water_uptake::modal_aero_wateruptake_wetdens(
+    water_uptake::modal_aero_water_uptake_wetdens(
         wetvol.data(), wtrvol.data(), drymass.data(), specdens_1.data(),
         wetdens.data());
 

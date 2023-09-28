@@ -42,7 +42,7 @@ void modal_aero_water_uptake_wetaer(Ensemble *ensemble) {
     std::vector<Real> dgncur_awet(AeroConfig::num_modes(), 0);
     std::vector<Real> qaerwat(AeroConfig::num_modes(), 0);
 
-    water_uptake::modal_aero_wateruptake_wetaer(
+    water_uptake::modal_aero_water_uptake_wetaer(
         rhcrystal.data(), rhdeliques.data(), dgncur_a.data(), dryrad.data(),
         hygro.data(), rh.data()[0], naer.data(), dryvol.data(), wetrad.data(),
         wetvol.data(), wtrvol.data(), dgncur_awet.data(), qaerwat.data());
