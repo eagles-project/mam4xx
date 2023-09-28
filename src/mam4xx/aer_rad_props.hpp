@@ -453,8 +453,10 @@ void aer_rad_props_lw(
     const int lspectype_amode[maxd_aspectype][ntot_amode],
     const ComplexView2D &specrefndxlw,
     const Kokkos::complex<Real> crefwlw[nlwbands],
-    const Kokkos::complex<Real> crefwsw[nswbands], const View5D &absplw,
-    const View3D &refrtablw, const View3D &refitablw,
+    const Kokkos::complex<Real> crefwsw[nswbands],
+    const View3D absplw[ntot_amode][nlwbands],
+    const View1D refrtablw[ntot_amode][nlwbands],
+    const View1D refitablw[ntot_amode][nlwbands],
     // work views
     const ColumnView &mass, const View2D &cheb, const View2D &dgnumwet_m,
     const View2D &dgnumdry_m, const ColumnView &radsurf,
@@ -486,7 +488,6 @@ void aer_rad_props_lw(
   // intent-outs
   //  odap_aer(pcols,pver,nlwbands) ! [fraction] absorption optical depth, per
   //  layer [unitless]
-#if 0
   // Compute contributions from the modal aerosols.
   modal_aero_lw(dt, state_q, temperature, pmid, pdel, pdeldry, cldn, qqcw_fld,
                 odap_aer,
@@ -497,7 +498,7 @@ void aer_rad_props_lw(
                 // work views
                 mass, cheb, dgnumwet_m, dgnumdry_m, radsurf, logradsurf,
                 specrefindex, qaerwat_m);
-#endif
+
   // !write out ext from the volcanic input file
   // call outfld('extinct_lw_inp',ext_cmip6_lw(:,:,idx_lw_diag), pcols, lchnk)
   // !convert from 1/km to 1/m
@@ -548,8 +549,11 @@ void aer_rad_props_sw(
     const Kokkos::complex<Real> crefwlw[nlwbands],
     const Kokkos::complex<Real> crefwsw[nswbands],
     // FIXME
-    mam4::AeroId specname_amode[6], const View5D &extpsw, const View5D &abspsw,
-    const View5D &asmpsw, const View3D &refrtabsw, const View3D &refitabsw,
+    mam4::AeroId specname_amode[6], const View3D extpsw[ntot_amode][nswbands],
+    const View3D abspsw[ntot_amode][nswbands],
+    const View3D asmpsw[ntot_amode][nswbands],
+    const View1D refrtabsw[ntot_amode][nswbands],
+    const View1D refitabsw[ntot_amode][nswbands],
     // diagnostic
     const ColumnView &extinct, //        ! aerosol extinction [1/m]
     const ColumnView &absorb,  //         ! aerosol absorption [1/m]
@@ -628,7 +632,7 @@ void aer_rad_props_sw(
 
   auto ext_cmip6_sw_inv_m_idx_sw_diag =
       Kokkos::subview(ext_cmip6_sw_inv_m, Kokkos::ALL(), idx_sw_diag);
-#if 0
+
   // Special treatment for CMIP6 volcanic aerosols, where extinction, ssa
   // and af are directly read from the prescribed volcanic aerosol file
   modal_aero_sw(dt, state_q, zm, temperature, pmid, pdel, pdeldry, cldn,
@@ -654,7 +658,7 @@ void aer_rad_props_sw(
                 // work views
                 mass, air_density, cheb, dgnumwet_m, dgnumdry_m, radsurf,
                 logradsurf, specrefindex, qaerwat_m);
-#endif
+
   // Update tau, tau_w, tau_w_g, and tau_w_f with the read in values of
   // extinction, ssa and asymmetry factors
   volcanic_cmip_sw(zi, ilev_tropp, ext_cmip6_sw_inv_m, ssa_cmip6_sw,
