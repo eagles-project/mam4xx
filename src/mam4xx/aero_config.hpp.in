@@ -97,11 +97,15 @@ public:
   KOKKOS_INLINE_FUNCTION
   explicit Prognostics(int num_levels) : nlev_(num_levels) {}
 
+  KOKKOS_INLINE_FUNCTION
   Prognostics() = default; // use only for creating containers of Prognostics!
+  KOKKOS_INLINE_FUNCTION
   ~Prognostics() = default;
 
   // these are used to populate containers of Prognostics objects
+  KOKKOS_INLINE_FUNCTION
   Prognostics(const Prognostics &rhs) = default;
+  KOKKOS_INLINE_FUNCTION
   Prognostics &operator=(const Prognostics &rhs) = default;
 
   ///  modal interstitial aerosol number mixing ratios (see aero_mode.hpp for
@@ -191,13 +195,18 @@ public:
   KOKKOS_INLINE_FUNCTION
   explicit Diagnostics(int num_levels) : nlev_(num_levels) {}
 
+  KOKKOS_INLINE_FUNCTION
   Diagnostics() = default; // use only for creating containers of Diagnostics!
+  KOKKOS_INLINE_FUNCTION
   ~Diagnostics() = default;
 
   // these are used to populate containers of Diagnostics objects
+  KOKKOS_INLINE_FUNCTION
   Diagnostics(const Diagnostics &rhs) = default;
+  KOKKOS_INLINE_FUNCTION
   Diagnostics &operator=(const Diagnostics &rhs) = default;
 
+  KOKKOS_INLINE_FUNCTION
   int num_levels() const { return nlev_; }
 
   /// Hygroscopicity is a modal mass-weighted average over all species
@@ -487,15 +496,21 @@ public:
   /// NOTE: it's currently possible to configure a Sources object with a
   /// NOTE: number of vertical levels different from mam4::nlev above, in order
   /// NOTE: to support various testing configurations.
+  KOKKOS_INLINE_FUNCTION
   explicit Sources(int num_levels) : nlev_(num_levels) {}
 
+  KOKKOS_INLINE_FUNCTION
   Sources() = default; // use only for creating containers of Sources!
+  KOKKOS_INLINE_FUNCTION
   ~Sources() = default;
 
   // these are used to populate containers of Sources objects
+  KOKKOS_INLINE_FUNCTION
   Sources(const Sources &rhs) = default;
+  KOKKOS_INLINE_FUNCTION
   Sources &operator=(const Sources &rhs) = default;
 
+  KOKKOS_INLINE_FUNCTION
   int num_levels() const { return nlev_; }
 
   /// surface number mixing ratio fluxes (per mode) [#/m2/s]

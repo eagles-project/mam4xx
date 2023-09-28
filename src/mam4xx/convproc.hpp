@@ -133,17 +133,17 @@ void ndrop_int(Real exp45logsig[AeroConfig::num_modes()],
 } // end ndrop_int
 
 KOKKOS_INLINE_FUNCTION
-void activate_modal(
-    const Real w_in, const Real wmaxf, const Real tair, const Real rhoair,
-    Real na[AeroConfig::num_modes()],
-    const Real volume[AeroConfig::num_modes()],
-    const Real hygro[AeroConfig::num_modes()],
-    const Real exp45logsig[AeroConfig::num_modes()],
-    const Real alogsig[AeroConfig::num_modes()], const Real aten,
-    Real fn[AeroConfig::num_modes()], Real fm[AeroConfig::num_modes()],
-    Real fluxn[AeroConfig::num_modes()], Real fluxm[AeroConfig::num_modes()],
-    Real &flux_fullact,
-    const Real smax_prescribed = std::numeric_limits<Real>::max()) {
+void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
+                    const Real rhoair, Real na[AeroConfig::num_modes()],
+                    const Real volume[AeroConfig::num_modes()],
+                    const Real hygro[AeroConfig::num_modes()],
+                    const Real exp45logsig[AeroConfig::num_modes()],
+                    const Real alogsig[AeroConfig::num_modes()],
+                    const Real aten, Real fn[AeroConfig::num_modes()],
+                    Real fm[AeroConfig::num_modes()],
+                    Real fluxn[AeroConfig::num_modes()],
+                    Real fluxm[AeroConfig::num_modes()], Real &flux_fullact,
+                    const Real smax_prescribed = haero::max()) {
   // 	  !---------------------------------------------------------------------------------
   // !Calculates number, surface, and mass fraction of aerosols activated as CCN
   // !calculates flux of cloud droplets, surface area, and aerosol mass into
@@ -316,7 +316,7 @@ void activate_modal(
   // Find maximum supersaturation
   // Use smax_prescribed if it is present; otherwise get smax from subr maxsat
   Real smax = smax_prescribed;
-  if (smax_prescribed == std::numeric_limits<Real>::max())
+  if (smax_prescribed == haero::max())
     ndrop::maxsat(zeta, eta, nmode, smc, smax);
 
   // FIXME [unitless] ? lnsmax maybe has units of log(unit of smax ([fraction]))
@@ -464,8 +464,8 @@ public:
     // clang-format off
     const Real specdens_amode[maxd_aspectype] = {
       mam4::mam4_density_so4,
-      std::numeric_limits<Real>::max(),
-      std::numeric_limits<Real>::max(),
+      haero::max(),
+      haero::max(),
       mam4::mam4_density_pom,
       mam4::mam4_density_soa,
       mam4::mam4_density_bc ,
@@ -484,8 +484,8 @@ public:
     // clang-format off
     const Real spechygro[maxd_aspectype] = {
        mam4::mam4_hyg_so4,
-       std::numeric_limits<Real>::max(),
-       std::numeric_limits<Real>::max(),
+       haero::max(),
+       haero::max(),
        mam4::mam4_hyg_pom,
        // (BAD CONSTANT) mam4::mam4_hyg_soa = 0.1
        0.1400000000e+00,
