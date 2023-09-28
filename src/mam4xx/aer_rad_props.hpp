@@ -628,7 +628,7 @@ void aer_rad_props_sw(
 
   auto ext_cmip6_sw_inv_m_idx_sw_diag =
       Kokkos::subview(ext_cmip6_sw_inv_m, Kokkos::ALL(), idx_sw_diag);
-
+#if 0
   // Special treatment for CMIP6 volcanic aerosols, where extinction, ssa
   // and af are directly read from the prescribed volcanic aerosol file
   modal_aero_sw(dt, state_q, zm, temperature, pmid, pdel, pdeldry, cldn,
@@ -654,7 +654,7 @@ void aer_rad_props_sw(
                 // work views
                 mass, air_density, cheb, dgnumwet_m, dgnumdry_m, radsurf,
                 logradsurf, specrefindex, qaerwat_m);
-
+#endif
   // Update tau, tau_w, tau_w_g, and tau_w_f with the read in values of
   // extinction, ssa and asymmetry factors
   volcanic_cmip_sw(zi, ilev_tropp, ext_cmip6_sw_inv_m, ssa_cmip6_sw,

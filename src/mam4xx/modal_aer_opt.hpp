@@ -431,8 +431,11 @@ void modal_aero_sw(
     const Kokkos::complex<Real> crefwlw[nlwbands],
     const Kokkos::complex<Real> crefwsw[nswbands],
     // FIXME
-    mam4::AeroId specname_amode[6], const View5D &extpsw, const View5D &abspsw,
-    const View5D &asmpsw, const View3D &refrtabsw, const View3D &refitabsw,
+    mam4::AeroId specname_amode[6], const View3D extpsw[ntot_amode][nswbands],
+    const View3D abspsw[ntot_amode][nswbands],
+    const View3D asmpsw[ntot_amode][nswbands],
+    const View1D refrtabsw[ntot_amode][nswbands],
+    const View1D refitabsw[ntot_amode][nswbands],
     // diagnostic
     const ColumnView &extinct, //        ! aerosol extinction [1/m]
     const ColumnView &absorb,  //         ! aerosol absorption [1/m]
@@ -758,12 +761,13 @@ void modal_aero_sw(
         // interpolate coefficients linear in refractive index
         // first call calcs itab,jtab,ttab,utab
 
-        const auto sub_extpsw = Kokkos::subview(
-            extpsw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), isw);
-        const auto ref_real_tab =
-            Kokkos::subview(refrtabsw, mm, Kokkos::ALL(), isw);
-        const auto ref_img_tab =
-            Kokkos::subview(refitabsw, mm, Kokkos::ALL(), isw);
+        const auto sub_extpsw = extpsw[mm][isw];
+        // Kokkos::subview(
+        // extpsw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), isw);
+        const auto ref_real_tab = refrtabsw[mm][isw];
+        // Kokkos::subview(refrtabsw, mm, Kokkos::ALL(), isw);
+        const auto ref_img_tab = refitabsw[mm][isw];
+        // Kokkos::subview(refitabsw, mm, Kokkos::ALL(), isw);
 
         int itab = zero;   // index for Bilinear interpolation
         int itab_1 = zero; // ! index for Bilinear interpolation column 1
@@ -777,14 +781,16 @@ void modal_aero_sw(
         binterp(sub_extpsw, refr, refi, ref_real_tab.data(), ref_img_tab.data(),
                 itab, jtab, ttab, utab, cext, itab_1);
 
-        const auto sub_abspsw = Kokkos::subview(
-            abspsw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), isw);
+        const auto sub_abspsw = abspsw[mm][isw];
+        // Kokkos::subview(
+        // abspsw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), isw);
 
         binterp(sub_abspsw, refr, refi, ref_real_tab.data(), ref_img_tab.data(),
                 itab, jtab, ttab, utab, cabs, itab_1);
 
-        const auto sub_asmpsw = Kokkos::subview(
-            asmpsw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), isw);
+        const auto sub_asmpsw = asmpsw[mm][isw];
+        // Kokkos::subview(
+        // asmpsw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), isw);
 
         binterp(sub_asmpsw, refr, refi, ref_real_tab.data(), ref_img_tab.data(),
                 itab, jtab, ttab, utab, casm, itab_1);

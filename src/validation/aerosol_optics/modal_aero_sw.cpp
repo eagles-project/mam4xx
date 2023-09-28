@@ -18,6 +18,7 @@ using namespace ndrop;
 void modal_aero_sw(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
+    using View3DHost = typename HostType::view_3d<Real>;
     constexpr Real zero = 0;
 
     constexpr int maxd_aspectype = ndrop::maxd_aspectype;
@@ -157,22 +158,34 @@ void modal_aero_sw(Ensemble *ensemble) {
       crefwlw[j].imag() = crefwlw_imag[j];
     }
 
-    View5D extpsw, abspsw, asmpsw;
+    // View5D extpsw, abspsw, asmpsw;
 
     const auto extpsw_db = input.get_array("extpsw");
     const auto abspsw_db = input.get_array("abspsw");
     const auto asmpsw_db = input.get_array("asmpsw");
 
-    abspsw = View5D("abspsw", ntot_amode, coef_number, refindex_real,
-                    refindex_im, nswbands);
-    extpsw = View5D("abspsw", ntot_amode, coef_number, refindex_real,
-                    refindex_im, nswbands);
-    asmpsw = View5D("asmpsw", ntot_amode, coef_number, refindex_real,
-                    refindex_im, nswbands);
+    // abspsw = View5D("abspsw", ntot_amode, coef_number, refindex_real,
+    //                 refindex_im, nswbands);
+    // extpsw = View5D("abspsw", ntot_amode, coef_number, refindex_real,
+    //                 refindex_im, nswbands);
+    // asmpsw = View5D("asmpsw", ntot_amode, coef_number, refindex_real,
+    //                 refindex_im, nswbands);
 
-    auto abspsw_host = Kokkos::create_mirror_view(abspsw);
-    auto extpsw_host = Kokkos::create_mirror_view(extpsw);
-    auto asmpsw_host = Kokkos::create_mirror_view(asmpsw);
+    // auto abspsw_host = Kokkos::create_mirror_view(abspsw);
+    // auto extpsw_host = Kokkos::create_mirror_view(extpsw);
+    // auto asmpsw_host = Kokkos::create_mirror_view(asmpsw);
+    View3DHost abspsw_host[ntot_amode][nswbands];
+    View3DHost extpsw_host[ntot_amode][nswbands];
+    View3DHost asmpsw_host[ntot_amode][nswbands];
+    for (int d1 = 0; d1 < ntot_amode; ++d1)
+      for (int d5 = 0; d5 < nswbands; ++d5) {
+        abspsw_host[d1][d5] =
+            View3DHost("abspsw_host", coef_number, refindex_real, refindex_im);
+        extpsw_host[d1][d5] =
+            View3DHost("extpsw_host", coef_number, refindex_real, refindex_im);
+        asmpsw_host[d1][d5] =
+            View3DHost("asmpsw_host", coef_number, refindex_real, refindex_im);
+      } // d5
 
     // assuming 1d array is saved using column-major layout
     for (int d1 = 0; d1 < ntot_amode; ++d1) {
@@ -185,43 +198,74 @@ void modal_aero_sw(Ensemble *ensemble) {
                   ntot_amode *
                       (d2 + coef_number *
                                 (d3 + refindex_real * (d4 + refindex_im * d5)));
-              abspsw_host(d1, d2, d3, d4, d5) = abspsw_db[offset];
-              extpsw_host(d1, d2, d3, d4, d5) = extpsw_db[offset];
-              asmpsw_host(d1, d2, d3, d4, d5) = asmpsw_db[offset];
+              abspsw_host[d1][d5](d2, d3, d4) = abspsw_db[offset];
+              extpsw_host[d1][d5](d2, d3, d4) = extpsw_db[offset];
+              asmpsw_host[d1][d5](d2, d3, d4) = asmpsw_db[offset];
             } // d5
           }   // d4
         }     // d3
       }       // d2
     }         // d1
 
-    Kokkos::deep_copy(abspsw, abspsw_host);
-    Kokkos::deep_copy(extpsw, extpsw_host);
-    Kokkos::deep_copy(asmpsw, asmpsw_host);
+    View3D abspsw[ntot_amode][nswbands];
+    View3D extpsw[ntot_amode][nswbands];
+    View3D asmpsw[ntot_amode][nswbands];
 
-    View3D refrtabsw, refitabsw;
+    for (int d1 = 0; d1 < ntot_amode; ++d1)
+      for (int d5 = 0; d5 < nswbands; ++d5) {
+        abspsw[d1][d5] =
+            View3D("abspsw", coef_number, refindex_real, refindex_im);
+        extpsw[d1][d5] =
+            View3D("extpsw", coef_number, refindex_real, refindex_im);
+        asmpsw[d1][d5] =
+            View3D("asmpsw", coef_number, refindex_real, refindex_im);
+        Kokkos::deep_copy(abspsw[d1][d5], abspsw_host[d1][d5]);
+        Kokkos::deep_copy(extpsw[d1][d5], extpsw_host[d1][d5]);
+        Kokkos::deep_copy(asmpsw[d1][d5], asmpsw_host[d1][d5]);
+      } // d5
+
+    // View3D refrtabsw, refitabsw;
 
     const auto refrtabsw_db = input.get_array("refrtabsw");
     const auto refitabsw_db = input.get_array("refitabsw");
 
-    refrtabsw = View3D("refrtabsw", ntot_amode, refindex_real, nswbands);
-    auto refrtabsw_host = Kokkos::create_mirror_view(refrtabsw);
-
+    // refrtabsw = View3D("refrtabsw", ntot_amode, refindex_real, nswbands);
+    // auto refrtabsw_host = Kokkos::create_mirror_view(refrtabsw);
     int N1 = ntot_amode;
     int N2 = refindex_real;
     int N3 = nswbands;
+
+    View1DHost refrtabsw_host[ntot_amode][nswbands];
+    View1D refrtabsw[ntot_amode][nswbands];
+    for (int d1 = 0; d1 < N1; ++d1)
+      for (int d3 = 0; d3 < N3; ++d3) {
+        refrtabsw_host[d1][d3] = View1DHost("refrtabsw_host", refindex_real);
+        refrtabsw[d1][d3] = View1D("refrtabsw", refindex_real);
+      } // d3
 
     for (int d1 = 0; d1 < N1; ++d1)
       for (int d2 = 0; d2 < N2; ++d2)
         for (int d3 = 0; d3 < N3; ++d3) {
           const int offset = d1 + N1 * (d2 + d3 * N2);
-          refrtabsw_host(d1, d2, d3) = refrtabsw_db[offset];
+          refrtabsw_host[d1][d3](d2) = refrtabsw_db[offset];
 
         } // d3
 
-    Kokkos::deep_copy(refrtabsw, refrtabsw_host);
+    for (int d1 = 0; d1 < N1; ++d1)
+      for (int d3 = 0; d3 < N3; ++d3) {
+        Kokkos::deep_copy(refrtabsw[d1][d3], refrtabsw_host[d1][d3]);
+      } // d3
 
-    refitabsw = View3D("refitabsw", ntot_amode, refindex_im, nswbands);
-    auto refitabsw_host = Kokkos::create_mirror_view(refitabsw);
+    // refitabsw = View3D("refitabsw", ntot_amode, refindex_im, nswbands);
+    // auto refitabsw_host = Kokkos::create_mirror_view(refitabsw);
+
+    View1DHost refitabsw_host[ntot_amode][nswbands];
+    View1D refitabsw[ntot_amode][nswbands];
+    for (int d1 = 0; d1 < N1; ++d1)
+      for (int d3 = 0; d3 < N3; ++d3) {
+        refitabsw_host[d1][d3] = View1DHost("refitabsw_host", refindex_im);
+        refitabsw[d1][d3] = View1D("refitabsw", refindex_im);
+      } // d3
 
     N1 = ntot_amode;
     N2 = refindex_im;
@@ -231,10 +275,13 @@ void modal_aero_sw(Ensemble *ensemble) {
       for (int d2 = 0; d2 < N2; ++d2)
         for (int d3 = 0; d3 < N3; ++d3) {
           const int offset = d1 + N1 * (d2 + d3 * N2);
-          refitabsw_host(d1, d2, d3) = refitabsw_db[offset];
+          refitabsw_host[d1][d3](d2) = refitabsw_db[offset];
         } // d3
 
-    Kokkos::deep_copy(refitabsw, refitabsw_host);
+    for (int d1 = 0; d1 < N1; ++d1)
+      for (int d3 = 0; d3 < N3; ++d3) {
+        Kokkos::deep_copy(refitabsw[d1][d3], refitabsw_host[d1][d3]);
+      } // d3
 
     // output
     View2D tauxar, wa, ga, fa;
