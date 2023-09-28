@@ -133,17 +133,17 @@ void ndrop_int(Real exp45logsig[AeroConfig::num_modes()],
 } // end ndrop_int
 
 KOKKOS_INLINE_FUNCTION
-void activate_modal(
-    const Real w_in, const Real wmaxf, const Real tair, const Real rhoair,
-    Real na[AeroConfig::num_modes()],
-    const Real volume[AeroConfig::num_modes()],
-    const Real hygro[AeroConfig::num_modes()],
-    const Real exp45logsig[AeroConfig::num_modes()],
-    const Real alogsig[AeroConfig::num_modes()], const Real aten,
-    Real fn[AeroConfig::num_modes()], Real fm[AeroConfig::num_modes()],
-    Real fluxn[AeroConfig::num_modes()], Real fluxm[AeroConfig::num_modes()],
-    Real &flux_fullact,
-    const Real smax_prescribed = haero::max()) {
+void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
+                    const Real rhoair, Real na[AeroConfig::num_modes()],
+                    const Real volume[AeroConfig::num_modes()],
+                    const Real hygro[AeroConfig::num_modes()],
+                    const Real exp45logsig[AeroConfig::num_modes()],
+                    const Real alogsig[AeroConfig::num_modes()],
+                    const Real aten, Real fn[AeroConfig::num_modes()],
+                    Real fm[AeroConfig::num_modes()],
+                    Real fluxn[AeroConfig::num_modes()],
+                    Real fluxm[AeroConfig::num_modes()], Real &flux_fullact,
+                    const Real smax_prescribed = haero::max()) {
   // 	  !---------------------------------------------------------------------------------
   // !Calculates number, surface, and mass fraction of aerosols activated as CCN
   // !calculates flux of cloud droplets, surface area, and aerosol mass into
