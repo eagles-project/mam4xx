@@ -295,7 +295,7 @@ void modal_aero_sw(Ensemble *ensemble) {
                               mam_cnst_idx);
 
           // FIXME: need to set values
-          mam4::AeroId specname_amode[6] = {};
+          mam4::AeroId specname_amode[9] = {};
 
           Real aodnir = zero;
           Real aoduv = zero;
@@ -378,6 +378,7 @@ void modal_aero_sw(Ensemble *ensemble) {
           }
         });
 
+#if 1
     std::vector<Real> output_qqcw;
 
     // transfer data to host
@@ -463,5 +464,7 @@ void modal_aero_sw(Ensemble *ensemble) {
     output.set("bcaod", std::vector<Real>(1, bcaod));
     output.set("seasaltaod", std::vector<Real>(1, seasaltaod));
     output.set("momaod", std::vector<Real>(1, momaod));
+
+#endif
   });
 }

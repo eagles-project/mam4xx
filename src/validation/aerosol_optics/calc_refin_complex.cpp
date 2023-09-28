@@ -29,8 +29,8 @@ void calc_refin_complex(Ensemble *ensemble) {
 
     const int nspec = specvol.size();
 
-    const auto real_specrefindex = input.get_array("real_specrefindex");
-    const auto imag_specrefindex = input.get_array("imag_specrefindex");
+    const auto real_specrefindex = input.get_array("specrefindex_real");
+    const auto imag_specrefindex = input.get_array("specrefindex_imag");
 
     int nbands = 0;
     if (lwsw == 0) {

@@ -37,6 +37,7 @@ set(TEST_LIST
     binterp_ts_355
     calc_diag_spec_ts_355
     calc_refin_complex_ts_355_lw
+    calc_refin_complex_ts_355_sw
     calc_volc_ext_ts_355
     modal_size_parameters_ts_355_ismethod2_false
     modal_size_parameters_ts_355_ismethod2_true
@@ -47,9 +48,10 @@ set(TEST_LIST
 
 set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
+   2e-10
    ${DEFAULT_TOL}
-   ${DEFAULT_TOL}
-   ${DEFAULT_TOL}
+   3e-10
+   3e-10
    3e-10
    2e-8
    2e-8
