@@ -359,7 +359,7 @@ public:
 
             const Real zero = 0;
             const Real half = 0.5;
-            const Real sqrt_two = haero::sqrt(2);
+            const Real sqrt_two = haero::sqrt(2.0);
 
             const Real pmid = atmosphere.pressure(kk);
             const Real air_density =

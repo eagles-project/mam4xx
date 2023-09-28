@@ -649,6 +649,7 @@ public:
 
   // init -- initializes the implementation with MAM4's configuration and with
   // a process-specific configuration.
+  KOKKOS_INLINE_FUNCTION
   void init(const AeroConfig &aero_config,
             const Config &nucl_config = Config()) {
     // Set nucleation-specific config parameters.

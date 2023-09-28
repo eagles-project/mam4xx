@@ -918,7 +918,7 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   // as X such that 1 + E > 1.
   // C++ Returns the machine epsilon, that is, the difference between 1.0
   // and the next value representable by the floating-point type T.
-  const Real omsm = 1.0 - 2 * std::numeric_limits<Real>::epsilon();
+  const Real omsm = 1.0 - 2 * haero::epsilon();
 
   // initiate variables
   // strat precip from above [kg/m2/s]

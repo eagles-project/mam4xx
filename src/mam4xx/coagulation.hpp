@@ -886,7 +886,7 @@ void mam_coag_aer_update(
   const Real bijqnumj2 = haero::max(0.0, ybetaij3[2] * qnum_tavg[npca]);
   Real decay_const = bijqnumj1 + bijqnumj2;
 
-  constexpr Real epsilonx2 = std::numeric_limits<Real>::epsilon() * 2.0;
+  constexpr Real epsilonx2 = haero::epsilon() * 2.0;
   Real decay_factor =
       deltat * decay_const; // calculate coag-induced changes only when this
                             // number is not ~= zero

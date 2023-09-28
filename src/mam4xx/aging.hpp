@@ -146,8 +146,7 @@ void mam_pcarbon_aging_frac(
   const Real fac_volsfc = haero::exp(
       2.5 * haero::square(haero::log(mam4::modes(imom_pc).mean_std_dev)));
 
-  const Real xferfrac_max =
-      1.0 - 10.0 * std::numeric_limits<Real>::epsilon(); //  1-eps
+  const Real xferfrac_max = 1.0 - 10.0 * haero::epsilon(); //  1-eps
 
   Real xferfrac_tmp1 = vol_shell * dgn_a[imom_pc] * fac_volsfc;
   Real xferfrac_tmp2 =
