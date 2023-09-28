@@ -129,6 +129,7 @@ void calc_parameterized(const Real coef[ncoef], const Real cheb_k[ncoef],
   constexpr Real half = 0.5;
   para = half * coef[0];
   for (int nc = 1; nc < ncoef; ++nc) {
+    // printf("cheb_k[nc] %e coef[nc] %e \n", cheb_k[nc],  coef[nc]);
     para += cheb_k[nc] * coef[nc];
   }
 
@@ -251,9 +252,11 @@ also output wetvol and watervol
     dryvol += specvol[i];
     crefin += specvol[i] * specrefindex(i, ilwsw);
   }
+  // printf("qaerwat_kk %e  rhoh2o %e \n", qaerwat_kk,  rhoh2o);
 
   watervol = qaerwat_kk / rhoh2o;
   wetvol = watervol + dryvol;
+  // printf("wetvol %e watervol %e dryvol %e \n ", wetvol, watervol,dryvol);
   if (watervol < zero && lwsw == 0) // lwsw=='lw'
   {
     // BAD CONSTANT
@@ -677,19 +680,22 @@ void modal_aero_sw(
         for (int ll = 0; ll < nspec; ++ll) {
 
           // get aerosol properties and save for each species
+          // Fortran to C++ indexing 
           auto specmmr =
-              Kokkos::subview(state_q, Kokkos::ALL(), lmassptr_amode[ll][mm]);
-          auto spectype = specname_amode[lspectype_amode[ll][mm]];
-          const Real hygro_aer = spechygro[lspectype_amode[ll][mm]];
-          const Real specdens = specdens_amode[lspectype_amode[ll][mm]];
+              Kokkos::subview(state_q, Kokkos::ALL(), lmassptr_amode[ll][mm]-1);
+          // Fortran to C++ indexing  
+          auto spectype = specname_amode[lspectype_amode[ll][mm]-1];
+          const Real hygro_aer = spechygro[lspectype_amode[ll][mm]-1];
+          const Real specdens = specdens_amode[lspectype_amode[ll][mm]-1];
           // FIXME is a complex number
           // auto specrefindex_ll =
           // Kokkos::subview(specrefndxsw,Kokkos::ALL(),spectype_amode[ll][mm]);
           // FIXME: is there a way of avoiding this copy?
           // specrefindex(ll,:) = specrefndxsw(:,lspectype_amode[ll][mm])
           for (int iswbands = 0; iswbands < nswbands; ++iswbands) {
+            // Fortran to C++ indexing  
             specrefindex(ll, iswbands) =
-                specrefndxsw(iswbands, lspectype_amode[ll][mm]);
+                specrefndxsw(iswbands, lspectype_amode[ll][mm]-1);
           }
           // allocate(specvol(pcols,nspec),stat=istat)
           specvol[ll] = specmmr(kk) / specdens;
@@ -753,6 +759,9 @@ void modal_aero_sw(
         Real dryvol, wetvol, watervol = {};
         Kokkos::complex<Real> crefin = {};
         Real refr, refi = {};
+
+
+        
 
         calc_refin_complex(1, isw, qaerwat_m(kk, mm), specvol, specrefindex,
                            nspec, crefwlw, crefwsw, dryvol, wetvol, watervol,
@@ -1029,25 +1038,35 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
     for (int ilw = 0; ilw < nlwbands; ++ilw) {
       for (int kk = top_lev; kk < pver; ++kk) {
         for (int ll = 0; ll < nspec; ++ll) {
+          // Fortran to C++ indexing 
           auto specmmr =
-              Kokkos::subview(state_q, Kokkos::ALL(), lmassptr_amode[ll][mm]);
-          const Real specdens = specdens_amode[lspectype_amode[ll][mm]];
+              Kokkos::subview(state_q, Kokkos::ALL(), lmassptr_amode[ll][mm]-1);
+          // Fortran to C++ indexing   
+          const Real specdens = specdens_amode[lspectype_amode[ll][mm]-1];
 
           // FIXME: is there a way of avoiding this copy?
           // specrefindex(ll,:) = specrefndxsw(:,lspectype_amode[ll][mm])
           for (int ilwbands = 0; ilwbands < nlwbands; ++ilwbands) {
+            // // Fortran to C++ indexing  
             specrefindex(ll, ilwbands) =
-                specrefndxlw(ilwbands, lspectype_amode[ll][mm]);
+                specrefndxlw(ilwbands, lspectype_amode[ll][mm]-1);
           } // ilwbands
           specvol[ll] = specmmr(kk) / specdens;
+          // printf("lspectype_amode[ll][mm] %d lspectype_amode[ll][mm] %d specmmr(kk) %e specdens %e state_q %e \n ",lspectype_amode[ll][mm],lspectype_amode[ll][mm], specmmr(kk), specdens, state_q(kk,lmassptr_amode[ll][mm]-1));
         } // ll
 
         // lw =0 and sw =1
         // calculate complex refractive index
-        Real dryvol, wetvol, watervol = {};
+        Real dryvol=zero;
+        Real wetvol=zero;
+        Real watervol = zero;
         Kokkos::complex<Real> crefin = {};
         Real refr, refi = {};
-
+        // printf("wetvol %e nspec %d \n ", wetvol,nspec  );
+        // for (int i = 0; i < nspec; ++i) 
+        //   printf("specvol[%d] %e \n ", i,specvol[i]);
+        // FIXME: remove
+        // qaerwat_m(kk, mm)=zero;
         calc_refin_complex(0, ilw, qaerwat_m(kk, mm), specvol, specrefindex,
                            nspec, crefwlw, crefwsw, dryvol, wetvol, watervol,
                            crefin, refr, refi);
@@ -1076,12 +1095,16 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
         auto cheb_kk = Kokkos::subview(cheb, kk, Kokkos::ALL());
         calc_parameterized(cabs, cheb_kk.data(), pabs);
 
+        // printf("pabs %e \n", pabs);
         pabs *= wetvol * rhoh2o;
+        // printf("wetvol %e rhoh2o %e \n ", wetvol, rhoh2o );
         pabs = haero::max(zero, pabs);
         Real dopaer = pabs * mass(kk);
 
         // update absorption optical depth
+        // printf("dopaer %e pabs %e mass(kk) %e \n", dopaer, pabs, mass(kk));
         tauxar(kk, ilw) += dopaer;
+        // printf("tauxar %e \n", tauxar(kk, ilw));
 
         // FIXME: specpext is used by check_error_warning, which is not ported
         // yet.
