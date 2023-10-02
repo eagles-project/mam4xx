@@ -986,7 +986,8 @@ KOKKOS_INLINE_FUNCTION
 void modal_aero_lw(const Real dt, const View2D &state_q,
                    const ColumnView &temperature, const ColumnView &pmid,
                    const ColumnView &pdel, const ColumnView &pdeldry,
-                   const ColumnView &cldn, const ColumnView qqcw_fld[pcnst],
+                   const ColumnView &cldn,
+                   // const ColumnView qqcw_fld[pcnst],
                    const View2D &tauxar,
                    // parameters
                    int nspec_amode[ntot_amode], Real sigmag_amode[ntot_amode],
