@@ -663,10 +663,25 @@ void modal_aero_sw(
 
     for (int kk = top_lev; kk < pver; ++kk) {
 
-      auto cheb_kk = Kokkos::subview(cheb, kk, Kokkos::ALL());
+      auto cheb_kk = Kokkos::subview(cheb, Kokkos::ALL(), kk);
       modal_size_parameters(sigma_logr_aer, dgnumwet_m(kk, mm), // in
                             radsurf(kk), logradsurf(kk), cheb_kk.data(), false);
     } // kk
+
+
+              // FIXME is a complex number
+          // auto specrefindex_ll =
+          // Kokkos::subview(specrefndxsw,Kokkos::ALL(),spectype_amode[ll][mm]);
+          // FIXME: is there a way of avoiding this copy?
+          // specrefindex(ll,:) = specrefndxsw(:,lspectype_amode[ll][mm])
+          for (int iswbands = 0; iswbands < nswbands; ++iswbands) {
+            for (int ll = 0; ll < nspec; ++ll) {
+            // Fortran to C++ indexing
+            specrefindex(ll, iswbands) =
+                specrefndxsw(iswbands, lspectype_amode[ll][mm] - 1);
+            }    
+          }
+
 
     for (int isw = 0; isw < nswbands; ++isw) {
 
@@ -721,16 +736,7 @@ void modal_aero_sw(
           auto spectype = specname_amode[lspectype_amode[ll][mm] - 1];
           const Real hygro_aer = spechygro[lspectype_amode[ll][mm] - 1];
           const Real specdens = specdens_amode[lspectype_amode[ll][mm] - 1];
-          // FIXME is a complex number
-          // auto specrefindex_ll =
-          // Kokkos::subview(specrefndxsw,Kokkos::ALL(),spectype_amode[ll][mm]);
-          // FIXME: is there a way of avoiding this copy?
-          // specrefindex(ll,:) = specrefndxsw(:,lspectype_amode[ll][mm])
-          for (int iswbands = 0; iswbands < nswbands; ++iswbands) {
-            // Fortran to C++ indexing
-            specrefindex(ll, iswbands) =
-                specrefndxsw(iswbands, lspectype_amode[ll][mm] - 1);
-          }
+
           // allocate(specvol(pcols,nspec),stat=istat)
           specvol[ll] = specmmr(kk) / specdens;
 
@@ -1035,7 +1041,7 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
     mass(kk) = pdeldry(kk) * rga;
 
     // initialize output variables
-    for (int i = 0; i < nswbands; ++i) {
+    for (int i = 0; i < nlwbands; ++i) {
       tauxar(kk, i) = zero;
     }
   } // k
@@ -1057,16 +1063,25 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
     // get mode info
     const int nspec = nspec_amode[mm];
     const Real sigma_logr_aer = sigmag_amode[mm];
-
     for (int kk = top_lev; kk < pver; ++kk) {
 
       // calc size parameter for all columns
       // FORTRAN refactoring: ismethod2 is tempararily used to ensure BFB test.
       // can be removed when porting to C++
-      auto cheb_kk = Kokkos::subview(cheb, kk, Kokkos::ALL());
+      auto cheb_kk = Kokkos::subview(cheb, Kokkos::ALL(), kk);
       modal_size_parameters(sigma_logr_aer, dgnumwet_m(kk, mm), // in
                             radsurf(kk), logradsurf(kk), cheb_kk.data(), true);
     } // kk
+
+              // FIXME: is there a way of avoiding this copy?
+          // specrefindex(ll,:) = specrefndxsw(:,lspectype_amode[ll][mm])
+          for (int ilwbands = 0; ilwbands < nlwbands; ++ilwbands) {
+            // // Fortran to C++ indexing
+            for (int ll = 0; ll < nspec; ++ll) {
+            specrefindex(ll, ilwbands) =
+                specrefndxlw(ilwbands, lspectype_amode[ll][mm] - 1);
+              } // ll 
+          } // ilwbands
 
     for (int ilw = 0; ilw < nlwbands; ++ilw) {
       for (int kk = top_lev; kk < pver; ++kk) {
@@ -1077,13 +1092,7 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
           // Fortran to C++ indexing
           const Real specdens = specdens_amode[lspectype_amode[ll][mm] - 1];
 
-          // FIXME: is there a way of avoiding this copy?
-          // specrefindex(ll,:) = specrefndxsw(:,lspectype_amode[ll][mm])
-          for (int ilwbands = 0; ilwbands < nlwbands; ++ilwbands) {
-            // // Fortran to C++ indexing
-            specrefindex(ll, ilwbands) =
-                specrefndxlw(ilwbands, lspectype_amode[ll][mm] - 1);
-          } // ilwbands
+
           specvol[ll] = specmmr(kk) / specdens;
           // printf("lspectype_amode[ll][mm] %d lspectype_amode[ll][mm] %d
           // specmmr(kk) %e specdens %e state_q %e \n
@@ -1128,7 +1137,7 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
 
         // parameterized optical properties
         Real pabs = zero; //    parameterized specific extinction [m2/kg]
-        auto cheb_kk = Kokkos::subview(cheb, kk, Kokkos::ALL());
+        auto cheb_kk = Kokkos::subview(cheb, Kokkos::ALL(), kk);
         calc_parameterized(cabs, cheb_kk.data(), pabs);
 
         // printf("pabs %e \n", pabs);
