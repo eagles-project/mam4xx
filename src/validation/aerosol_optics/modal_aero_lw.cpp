@@ -19,12 +19,12 @@ void modal_aero_lw(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     constexpr int pver = mam4::nlev;
     constexpr int maxd_aspectype = ndrop::maxd_aspectype;
-    constexpr int ncnst_tot = ndrop::ncnst_tot;
     using View1DHost = typename HostType::view_1d<Real>;
     using View3DHost = typename HostType::view_3d<Real>;
     constexpr Real zero = 0;
 
     const auto dt = input.get_array("dt")[0];
+    const Real t = zero;
     const auto state_q_db = input.get_array("state_q");
 
     int count = 0;
@@ -76,25 +76,34 @@ void modal_aero_lw(Ensemble *ensemble) {
 
     const auto qqcw_db = input.get_array("qqcw"); // 2d
 
-    ColumnView qqcw[ncnst_tot];
-    View1DHost qqcw_host[ncnst_tot];
+    ColumnView qqcw[pcnst];
+    View1DHost qqcw_host[pcnst];
 
     count = 0;
-    for (int i = 0; i < ncnst_tot; ++i) {
+    for (int i = 0; i < pcnst; ++i) {
       qqcw[i] = haero::testing::create_column_view(pver);
       qqcw_host[i] = View1DHost("qqcw_host", pver);
     }
 
     for (int kk = 0; kk < pver; ++kk) {
-      for (int i = 0; i < ncnst_tot; ++i) {
+      for (int i = 0; i < pcnst; ++i) {
         qqcw_host[i](kk) = qqcw_db[count];
         count++;
       }
     }
 
     // transfer data to GPU.
-    for (int i = 0; i < ncnst_tot; ++i) {
+    for (int i = 0; i < pcnst; ++i) {
       Kokkos::deep_copy(qqcw[i], qqcw_host[i]);
+    }
+
+    const auto sigmag_amode_db = input.get_array("sigmag_amode");
+
+    Real sigmag_amode[ntot_amode] = {};
+
+    for (int imode = 0; imode < ntot_amode; ++imode)
+    {
+      sigmag_amode[imode] = sigmag_amode_db[imode];
     }
 
     
@@ -264,6 +273,18 @@ void modal_aero_lw(Ensemble *ensemble) {
 
     View2D tauxar("tauxar", pver, nlwbands);
 
+    int nlev = pver;
+    Real pblh = 1000;
+    Atmosphere atm = validation::create_atmosphere(nlev, pblh);
+    Surface sfc = validation::create_surface();
+    mam4::Prognostics progs = validation::create_prognostics(nlev);
+    mam4::Diagnostics diags = validation::create_diagnostics(nlev);
+    mam4::Tendencies tends = validation::create_tendencies(nlev);
+
+    mam4::AeroConfig mam4_config;
+    mam4::CalcSizeProcess calcsize_process(mam4_config);
+
+
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -280,13 +301,75 @@ void modal_aero_lw(Ensemble *ensemble) {
                               numptr_amode, specdens_amode, spechygro, mam_idx,
                               mam_cnst_idx);
 
+           team.team_barrier();
+
+
+          {
+
+          for (int imode = 0; imode < ntot_amode; ++imode) {
+          const auto n_spec = num_species_mode(imode);
+           for (int isp = 0; isp < n_spec; ++isp) {
+             const int isp_mam4xx =
+             validation::e3sm_to_mam4xx_aerosol_idx[imode][isp];
+             const int idx_e3sm = lmassptr_amode[isp][imode]-1;
+             // FIXME: try to avoid this deep copy 
+
+             // printf("idx_e3sm %d isp_mam4xx %d nvars %d pcnst %d \n", idx_e3sm, isp_mam4xx, nvars, pcnst);
+             for (int kk = 0; kk < pver; ++kk)
+             {
+               progs.q_aero_i[imode][isp_mam4xx](kk) = state_q(kk,idx_e3sm);
+               progs.q_aero_c[imode][isp_mam4xx](kk) = qqcw[idx_e3sm](kk);
+             }          
+          } //isp 
+          // printf("After setting up calcsize\n");
+
+          // FIXME: try to avoid this deep copy 
+          const int num_mode_idx = numptr_amode[imode]-1;
+          // NOTE: numptr_amode is equal to numptrcw_amode
+          // const int num_cldbrn_mode_idx = numptr_amode[imode];
+          // progs.n_mode_c[imode] = qqcw[num_mode_idx];  
+          for (int kk = 0; kk < pver; ++kk)
+             {
+               progs.n_mode_i[imode](kk) = state_q(kk,num_mode_idx);
+               progs.n_mode_c[imode](kk) = qqcw[num_mode_idx](kk);
+             }
+
+          } /// imode
+
+          }
+          team.team_barrier();
+
+
+          calcsize_process.compute_tendencies(team, t, dt, atm, sfc, progs, diags,
+                                     tends);
+
+          team.team_barrier();
+
+          // FIXME Try to avoid this deep copy.  
+          for (int imode = 0; imode < ntot_amode; ++imode)
+          {
+            for (int kk = 0; kk < pver; ++kk)
+             {
+              dgnumdry_m(kk,imode) = diags.dry_geometric_mean_diameter_i[imode](kk);
+             } 
+          }
+
+          team.team_barrier();
+
+
           // FIXME need to set these arras
-    Real sigmag_amode[ntot_amode] = {};
+    // FIXME
+          Real sigmag_amode_[ntot_amode] = {}; 
+
+          for (int i = 0; i < ntot_amode; ++i)
+          {
+            sigmag_amode_[i] =sigmag_amode[i];
+          }
 
           modal_aero_lw(dt, state_q, temperature, pmid, pdel, pdeldry, cldn,
                         qqcw, tauxar,
                         // parameters
-                        nspec_amode, sigmag_amode, lmassptr_amode,spechygro,
+                        nspec_amode, sigmag_amode_, lmassptr_amode,spechygro,
                         specdens_amode, lspectype_amode, specrefndxlw, crefwlw,
                         crefwsw, absplw3, refrtablw, refitablw,
                         // work views
@@ -297,12 +380,12 @@ void modal_aero_lw(Ensemble *ensemble) {
     std::vector<Real> output_qqcw;
 
     // transfer data to host
-    for (int i = 0; i < ncnst_tot; ++i) {
+    for (int i = 0; i < pcnst; ++i) {
       Kokkos::deep_copy(qqcw_host[i], qqcw[i]);
     }
 
     for (int kk = 0; kk < pver; ++kk) {
-      for (int i = 0; i < ncnst_tot; ++i) {
+      for (int i = 0; i < pcnst; ++i) {
         output_qqcw.push_back(qqcw_host[i](kk));
       }
     }

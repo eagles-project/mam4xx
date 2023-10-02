@@ -366,8 +366,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     mam4::AeroConfig mam4_config;
     mam4::CalcSizeProcess calcsize_process(mam4_config);
 
-    printf("Before parallel_for \n");
-#if 1
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -385,7 +383,6 @@ void modal_aero_sw(Ensemble *ensemble) {
                               mam_cnst_idx);
 
           // setting up calcsize
-          printf("Before setting up calcsize \n");
 
           {
 
@@ -422,15 +419,11 @@ void modal_aero_sw(Ensemble *ensemble) {
           }
           team.team_barrier();
 
-          printf("Before calcsize_process \n");
-
-
           calcsize_process.compute_tendencies(team, t, dt, atm, sfc, progs, diags,
                                      tends);
 
           team.team_barrier();
 
-          printf("After calcsize_process \n");
 
           // FIXME Try to avoid this deep copy.  
           for (int imode = 0; imode < ntot_amode; ++imode)
@@ -440,7 +433,6 @@ void modal_aero_sw(Ensemble *ensemble) {
               dgnumdry_m(kk,imode) = diags.dry_geometric_mean_diameter_i[imode](kk);
              } 
           }
-          printf("After dgnumdry_m \n");
 
           team.team_barrier();
           
@@ -532,8 +524,7 @@ void modal_aero_sw(Ensemble *ensemble) {
             output_diagnostics_amode(m + 2 * ntot_amode) = burdenmode[m];
           }
         });
-#endif
-#if 1
+
     std::vector<Real> output_qqcw;
 
     // transfer data to host
@@ -620,6 +611,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     output.set("seasaltaod", std::vector<Real>(1, seasaltaod));
     output.set("momaod", std::vector<Real>(1, momaod));
 
-#endif
+
   });
 }
