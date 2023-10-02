@@ -445,7 +445,7 @@ void aer_rad_props_lw(
     const ColumnView &temperature, const ColumnView &zm, const ColumnView &zi,
     const View2D &state_q, const ColumnView &pdel, const ColumnView &pdeldry,
     const ColumnView &cldn, const View2D &ext_cmip6_lw,
-    const ColumnView qqcw_fld[ncnst_tot], const View2D &odap_aer,
+    const ColumnView qqcw_fld[pcnst], const View2D &odap_aer,
     //
     int nspec_amode[ntot_amode], 
     Real sigmag_amode[ntot_amode],
@@ -539,7 +539,7 @@ void aer_rad_props_sw(
     const View2D &af_cmip6_sw, const View2D &ext_cmip6_sw,
     // nnite, idxnite,
     // is_cmip6_volc,
-    const ColumnView qqcw_fld[ncnst_tot], const View2D &tau,
+    const ColumnView qqcw_fld[pcnst], const View2D &tau,
     const View2D &tau_w, const View2D &tau_w_g, const View2D &tau_w_f,
     int nspec_amode[ntot_amode], 
     Real sigmag_amode[ntot_amode],

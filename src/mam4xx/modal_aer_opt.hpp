@@ -19,7 +19,7 @@ using View5D = Kokkos::View<Real *****>;
 constexpr int pver = mam4::nlev;
 constexpr int ntot_amode = mam4::AeroConfig::num_modes();
 constexpr int top_lev = ndrop::top_lev;
-constexpr int ncnst_tot = ndrop::ncnst_tot;
+constexpr int pcnst = 40;
 // ! min, max aerosol surface mode radius treated [m]
 constexpr Real rmmin = 0.01e-6;
 constexpr Real rmmax = 25.e-6;
@@ -397,7 +397,7 @@ void binterp(const View3D &table, const Real ref_real, const Real ref_img,
 KOKKOS_INLINE_FUNCTION
 void modal_aero_calcsize_sub(const View2D &state_q, const ColumnView &pdel,
                              const Real dt,
-                             const ColumnView qqcw_fld[ncnst_tot],
+                             const ColumnView qqcw_fld[pcnst],
                              const int list_idx_in, const bool update_mmr_in,
                              const View2D &dgnumdry_m) {
 
@@ -454,7 +454,7 @@ void modal_aero_sw(
     // const int nnite,
     // idxnite,
     const bool is_cmip6_volc, const ColumnView &ext_cmip6_sw,
-    const int trop_level, const ColumnView qqcw_fld[ncnst_tot],
+    const int trop_level, const ColumnView qqcw_fld[pcnst],
     const View2D &tauxar, const View2D &wa, const View2D &ga, const View2D &fa,
     //
     int nspec_amode[ntot_amode], Real sigmag_amode[ntot_amode],
@@ -993,7 +993,7 @@ KOKKOS_INLINE_FUNCTION
 void modal_aero_lw(const Real dt, const View2D &state_q,
                    const ColumnView &temperature, const ColumnView &pmid,
                    const ColumnView &pdel, const ColumnView &pdeldry,
-                   const ColumnView &cldn, const ColumnView qqcw_fld[ncnst_tot],
+                   const ColumnView &cldn, const ColumnView qqcw_fld[pcnst],
                    const View2D &tauxar,
                    // parameters
                    int nspec_amode[ntot_amode],
