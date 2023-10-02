@@ -347,7 +347,6 @@ void modal_aero_lw(Ensemble *ensemble) {
 
           team.team_barrier();
 
-          // FIXME need to set these arras
           // FIXME
           Real sigmag_amode_[ntot_amode] = {};
 
@@ -356,7 +355,8 @@ void modal_aero_lw(Ensemble *ensemble) {
           }
 
           modal_aero_lw(dt, state_q, temperature, pmid, pdel, pdeldry, cldn,
-                        qqcw, tauxar,
+                        // qqcw,
+                        tauxar,
                         // parameters
                         nspec_amode, sigmag_amode_, lmassptr_amode, spechygro,
                         specdens_amode, lspectype_amode, specrefndxlw, crefwlw,
@@ -364,6 +364,32 @@ void modal_aero_lw(Ensemble *ensemble) {
                         // work views
                         mass, cheb, dgnumwet_m, dgnumdry_m, radsurf, logradsurf,
                         specrefindex, qaerwat_m);
+
+
+          {
+
+            for (int imode = 0; imode < ntot_amode; ++imode) {
+              const auto n_spec = num_species_mode(imode);
+              for (int isp = 0; isp < n_spec; ++isp) {
+                const int isp_mam4xx =
+                    validation::e3sm_to_mam4xx_aerosol_idx[imode][isp];
+                const int idx_e3sm = lmassptr_amode[isp][imode] - 1;
+                // FIXME: try to avoid this deep copy
+                for (int kk = 0; kk < pver; ++kk) {
+                  qqcw[idx_e3sm](kk)  = progs.q_aero_c[imode][isp_mam4xx](kk);
+                }
+              } // isp
+
+              // FIXME: try to avoid this deep copy
+              const int num_mode_idx = numptr_amode[imode] - 1;
+              for (int kk = 0; kk < pver; ++kk) {
+                // progs.n_mode_i[imode](kk) = state_q(kk, num_mode_idx);
+                qqcw[num_mode_idx](kk) = progs.n_mode_c[imode](kk);
+              }
+
+            } /// imode
+          }
+
         });
 
     std::vector<Real> output_qqcw;

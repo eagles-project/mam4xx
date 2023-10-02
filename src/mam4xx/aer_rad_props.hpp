@@ -489,7 +489,8 @@ void aer_rad_props_lw(
   //  odap_aer(pcols,pver,nlwbands) ! [fraction] absorption optical depth, per
   //  layer [unitless]
   // Compute contributions from the modal aerosols.
-  modal_aero_lw(dt, state_q, temperature, pmid, pdel, pdeldry, cldn, qqcw_fld,
+  modal_aero_lw(dt, state_q, temperature, pmid, pdel, pdeldry, cldn,
+                // qqcw_fld,
                 odap_aer,
                 // parameters
                 nspec_amode, sigmag_amode, lmassptr_amode, spechygro,
