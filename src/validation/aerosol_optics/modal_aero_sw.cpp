@@ -296,7 +296,7 @@ void modal_aero_sw(Ensemble *ensemble) {
     // 1. crefwlw
     // 2. specname_amode
     // FIXME need to set these arras
-    Real sigmag_amode[ntot_amode] = {};
+    
 
     // outputs diagnostics:
     ColumnView extinct, absorb;
@@ -369,6 +369,9 @@ void modal_aero_sw(Ensemble *ensemble) {
           Real dustaodmode[ntot_amode] = {};
           Real aodmode[ntot_amode] = {};
           Real burdenmode[ntot_amode] = {};
+
+          // FIXME
+          Real sigmag_amode[ntot_amode] = {};
 
           modal_aero_sw(
               dt, state_q, state_zm, temperature, pmid, pdel, pdeldry, cldn,

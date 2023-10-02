@@ -5,6 +5,7 @@
 #include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/ndrop.hpp>
+#include <mam4xx/water_uptake.hpp>
 
 namespace mam4 {
 namespace modal_aer_opt {
@@ -402,15 +403,50 @@ void modal_aero_calcsize_sub(const View2D &state_q, const ColumnView &pdel,
   // placeholder
 } // modal_aero_calcsize_sub
 
+
+
 KOKKOS_INLINE_FUNCTION
 void modal_aero_wateruptake_dr(const View2D &state_q,
                                const ColumnView &temperature,
                                const ColumnView &pmid, const ColumnView &cldn,
                                const View2D &dgnumdry_m,
                                const View2D &dgnumwet_m,
-                               const View2D &qaerwat_m, const int list_idx_in) {
+                               const View2D &qaerwat_m,
+                                // const int list_idx_in,
+                               int nspec_amode[AeroConfig::num_modes()],
+                               Real specdens_amode[maxd_aspectype],
+                               Real spechygro[maxd_aspectype],
+                               int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()]) {
+
+
+   // dgnumdry_m => dgncur_a
+   // dgnumwet_m => dgncur_awet
+   // qaerwat_m => qaerwat
+// int &nspec_amode2 = nspec_amode;
+// Real &specdens_amode2 = specdens_amode;
+// Real & spechygro2 = spechygro;
+// int &lspectype_amode2 = lspectype_amode;
+for (int kk = top_lev; kk < pver; ++kk)
+{
+
+ const auto state_q_kk = Kokkos::subview(state_q,kk, Kokkos::ALL());
+ const auto dgnumdry_m_kk = Kokkos::subview(dgnumdry_m,kk, Kokkos::ALL());
+ const auto dgnumwet_m_kk = Kokkos::subview(dgnumwet_m,kk, Kokkos::ALL());
+ const auto qaerwat_m_kk = Kokkos::subview(qaerwat_m,kk, Kokkos::ALL());
+  mam4::water_uptake::modal_aero_water_uptake_dr(
+    nspec_amode,
+    specdens_amode, spechygro,
+    lspectype_amode,
+    state_q_kk.data(),  temperature(kk),  pmid(kk), cldn(kk),
+    dgnumdry_m_kk.data(),
+    dgnumwet_m_kk.data(),qaerwat_m_kk.data());
+  
+}// kk
+
+
   // placeholder
 } // modal_aero_wateruptake_dr
+
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(
@@ -423,11 +459,11 @@ void modal_aero_sw(
     const int trop_level, const ColumnView qqcw_fld[ncnst_tot],
     const View2D &tauxar, const View2D &wa, const View2D &ga, const View2D &fa,
     //
-    const int nspec_amode[ntot_amode], const Real sigmag_amode[ntot_amode],
+    int nspec_amode[ntot_amode], Real sigmag_amode[ntot_amode],
     int lmassptr_amode[maxd_aspectype][ntot_amode],
-    const Real spechygro[maxd_aspectype],
-    const Real specdens_amode[maxd_aspectype],
-    const int lspectype_amode[maxd_aspectype][ntot_amode],
+    Real spechygro[maxd_aspectype],
+    Real specdens_amode[maxd_aspectype],
+    int lspectype_amode[maxd_aspectype][ntot_amode],
     const ComplexView2D
         &specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
     const Kokkos::complex<Real> crefwlw[nlwbands],
@@ -612,7 +648,8 @@ void modal_aero_sw(
                           dgnumdry_m); // ! out
 
   modal_aero_wateruptake_dr(state_q, temperature, pmid, cldn, dgnumdry_m,
-                            dgnumwet_m, qaerwat_m, list_idx);
+                            dgnumwet_m, qaerwat_m, 
+                            nspec_amode, specdens_amode, spechygro, lspectype_amode);
   // ! loop over all aerosol modes
 
   Real specvol[max_nspec] = {};
@@ -960,11 +997,12 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
                    const ColumnView &cldn, const ColumnView qqcw_fld[ncnst_tot],
                    const View2D &tauxar,
                    // parameters
-                   const int nspec_amode[ntot_amode],
-                   const Real sigmag_amode[ntot_amode],
-                   const int lmassptr_amode[maxd_aspectype][ntot_amode],
-                   const Real specdens_amode[maxd_aspectype],
-                   const int lspectype_amode[maxd_aspectype][ntot_amode],
+                   int nspec_amode[ntot_amode],
+                   Real sigmag_amode[ntot_amode],
+                   int lmassptr_amode[maxd_aspectype][ntot_amode],
+                   Real spechygro[maxd_aspectype],
+                   Real specdens_amode[maxd_aspectype],
+                   int lspectype_amode[maxd_aspectype][ntot_amode],
                    const ComplexView2D &specrefndxlw,
                    const Kokkos::complex<Real> crefwlw[nlwbands],
                    const Kokkos::complex<Real> crefwsw[nswbands],
@@ -1011,7 +1049,8 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
                           dgnumdry_m); // ! out
 
   modal_aero_wateruptake_dr(state_q, temperature, pmid, cldn, dgnumdry_m,
-                            dgnumwet_m, qaerwat_m, list_idx);
+                            dgnumwet_m, qaerwat_m, 
+                            nspec_amode, specdens_amode, spechygro, lspectype_amode);
 
   Real specvol[max_nspec] = {};
   for (int mm = 0; mm < ntot_amode; ++mm) {
