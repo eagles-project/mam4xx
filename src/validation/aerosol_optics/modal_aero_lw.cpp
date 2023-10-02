@@ -101,12 +101,9 @@ void modal_aero_lw(Ensemble *ensemble) {
 
     Real sigmag_amode[ntot_amode] = {};
 
-    for (int imode = 0; imode < ntot_amode; ++imode)
-    {
+    for (int imode = 0; imode < ntot_amode; ++imode) {
       sigmag_amode[imode] = sigmag_amode_db[imode];
     }
-
-    
 
     const auto specrefndxlw_real_db = input.get_array("specrefndxlw_real");
     const auto specrefndxlw_imag_db = input.get_array("specrefndxlw_imag");
@@ -284,7 +281,6 @@ void modal_aero_lw(Ensemble *ensemble) {
     mam4::AeroConfig mam4_config;
     mam4::CalcSizeProcess calcsize_process(mam4_config);
 
-
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -301,75 +297,68 @@ void modal_aero_lw(Ensemble *ensemble) {
                               numptr_amode, specdens_amode, spechygro, mam_idx,
                               mam_cnst_idx);
 
-           team.team_barrier();
-
+          team.team_barrier();
 
           {
 
+            for (int imode = 0; imode < ntot_amode; ++imode) {
+              const auto n_spec = num_species_mode(imode);
+              for (int isp = 0; isp < n_spec; ++isp) {
+                const int isp_mam4xx =
+                    validation::e3sm_to_mam4xx_aerosol_idx[imode][isp];
+                const int idx_e3sm = lmassptr_amode[isp][imode] - 1;
+                // FIXME: try to avoid this deep copy
+
+                // printf("idx_e3sm %d isp_mam4xx %d nvars %d pcnst %d \n",
+                // idx_e3sm, isp_mam4xx, nvars, pcnst);
+                for (int kk = 0; kk < pver; ++kk) {
+                  progs.q_aero_i[imode][isp_mam4xx](kk) = state_q(kk, idx_e3sm);
+                  progs.q_aero_c[imode][isp_mam4xx](kk) = qqcw[idx_e3sm](kk);
+                }
+              } // isp
+              // printf("After setting up calcsize\n");
+
+              // FIXME: try to avoid this deep copy
+              const int num_mode_idx = numptr_amode[imode] - 1;
+              // NOTE: numptr_amode is equal to numptrcw_amode
+              // const int num_cldbrn_mode_idx = numptr_amode[imode];
+              // progs.n_mode_c[imode] = qqcw[num_mode_idx];
+              for (int kk = 0; kk < pver; ++kk) {
+                progs.n_mode_i[imode](kk) = state_q(kk, num_mode_idx);
+                progs.n_mode_c[imode](kk) = qqcw[num_mode_idx](kk);
+              }
+
+            } /// imode
+          }
+          team.team_barrier();
+
+          calcsize_process.compute_tendencies(team, t, dt, atm, sfc, progs,
+                                              diags, tends);
+
+          team.team_barrier();
+
+          // FIXME Try to avoid this deep copy.
           for (int imode = 0; imode < ntot_amode; ++imode) {
-          const auto n_spec = num_species_mode(imode);
-           for (int isp = 0; isp < n_spec; ++isp) {
-             const int isp_mam4xx =
-             validation::e3sm_to_mam4xx_aerosol_idx[imode][isp];
-             const int idx_e3sm = lmassptr_amode[isp][imode]-1;
-             // FIXME: try to avoid this deep copy 
-
-             // printf("idx_e3sm %d isp_mam4xx %d nvars %d pcnst %d \n", idx_e3sm, isp_mam4xx, nvars, pcnst);
-             for (int kk = 0; kk < pver; ++kk)
-             {
-               progs.q_aero_i[imode][isp_mam4xx](kk) = state_q(kk,idx_e3sm);
-               progs.q_aero_c[imode][isp_mam4xx](kk) = qqcw[idx_e3sm](kk);
-             }          
-          } //isp 
-          // printf("After setting up calcsize\n");
-
-          // FIXME: try to avoid this deep copy 
-          const int num_mode_idx = numptr_amode[imode]-1;
-          // NOTE: numptr_amode is equal to numptrcw_amode
-          // const int num_cldbrn_mode_idx = numptr_amode[imode];
-          // progs.n_mode_c[imode] = qqcw[num_mode_idx];  
-          for (int kk = 0; kk < pver; ++kk)
-             {
-               progs.n_mode_i[imode](kk) = state_q(kk,num_mode_idx);
-               progs.n_mode_c[imode](kk) = qqcw[num_mode_idx](kk);
-             }
-
-          } /// imode
-
-          }
-          team.team_barrier();
-
-
-          calcsize_process.compute_tendencies(team, t, dt, atm, sfc, progs, diags,
-                                     tends);
-
-          team.team_barrier();
-
-          // FIXME Try to avoid this deep copy.  
-          for (int imode = 0; imode < ntot_amode; ++imode)
-          {
-            for (int kk = 0; kk < pver; ++kk)
-             {
-              dgnumdry_m(kk,imode) = diags.dry_geometric_mean_diameter_i[imode](kk);
-             } 
+            for (int kk = 0; kk < pver; ++kk) {
+              dgnumdry_m(kk, imode) =
+                  diags.dry_geometric_mean_diameter_i[imode](kk);
+            }
           }
 
           team.team_barrier();
-
 
           // FIXME need to set these arras
-    // FIXME
-          Real sigmag_amode_[ntot_amode] = {}; 
+          // FIXME
+          Real sigmag_amode_[ntot_amode] = {};
 
-          for (int i = 0; i < ntot_amode; ++i)
-          {
-            sigmag_amode_[i] =sigmag_amode[i];
+          for (int i = 0; i < ntot_amode; ++i) {
+            sigmag_amode_[i] = sigmag_amode[i];
           }
 
           modal_aero_lw(dt, state_q, temperature, pmid, pdel, pdeldry, cldn,
                         qqcw, tauxar,
                         // parameters
-                        nspec_amode, sigmag_amode_, lmassptr_amode,spechygro,
+                        nspec_amode, sigmag_amode_, lmassptr_amode, spechygro,
                         specdens_amode, lspectype_amode, specrefndxlw, crefwlw,
                         crefwsw, absplw3, refrtablw, refitablw,
                         // work views
