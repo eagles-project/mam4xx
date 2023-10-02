@@ -41,12 +41,14 @@ void modal_aero_water_uptake_dr(Ensemble *ensemble) {
     Real specdens_amode[water_uptake::maxd_aspectype];
     Real spechygro[water_uptake::maxd_aspectype];
 
+    // Real qaerwat[AeroConfig::num_modes()];
+
     water_uptake::get_e3sm_parameters(nspec_amode, lspectype_amode,
                                       specdens_amode, spechygro);
 
     water_uptake::modal_aero_water_uptake_dr(
         nspec_amode, specdens_amode, spechygro, lspectype_amode, state_q.data(),
-        temperature, pmid, cldn, dgncur_a.data(), dgncur_awet.data());
+        temperature, pmid, cldn, dgncur_a.data(), dgncur_awet.data(), qaerwat.data());
 
     output.set("dgncur_awet", dgncur_awet);
     output.set("qaerwat", qaerwat);

@@ -400,10 +400,9 @@ void modal_aero_calcsize_sub(const View2D &state_q, const ColumnView &pdel,
                              const ColumnView qqcw_fld[ncnst_tot],
                              const int list_idx_in, const bool update_mmr_in,
                              const View2D &dgnumdry_m) {
-  // placeholder
+
+
 } // modal_aero_calcsize_sub
-
-
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_wateruptake_dr(const View2D &state_q,
@@ -442,7 +441,6 @@ for (int kk = top_lev; kk < pver; ++kk)
     dgnumwet_m_kk.data(),qaerwat_m_kk.data());
   
 }// kk
-
 
   // placeholder
 } // modal_aero_wateruptake_dr
@@ -549,7 +547,7 @@ void modal_aero_sw(
 
   // FORTRAN refactoring: For prognostic aerosols only, other options are
   // removed
-  const int list_idx = 0; //   ! index of the climate or a diagnostic list
+  // const int list_idx = 0; //   ! index of the climate or a diagnostic list
 
   // FIXME: We need to set these values outside of this subroutine
   //  ! zero'th layer does not contain aerosol
@@ -644,8 +642,9 @@ void modal_aero_sw(
 
   // Calculate aerosol size distribution parameters and aerosol water uptake
   // For prognostic aerosols
-  modal_aero_calcsize_sub(state_q, pdel, dt, qqcw_fld, list_idx, false,
-                          dgnumdry_m); // ! out
+  // We compute dgnumdry_m using calcsize process. 
+  // modal_aero_calcsize_sub(state_q, pdel, dt, qqcw_fld, list_idx, false,
+  //                         dgnumdry_m); // ! out
 
   modal_aero_wateruptake_dr(state_q, temperature, pmid, cldn, dgnumdry_m,
                             dgnumwet_m, qaerwat_m, 
@@ -1043,10 +1042,10 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
 
   // FORTRAN refactoring: For prognostic aerosols only, other options are
   // removed
-  const int list_idx = 0; //   index of the climate or a diagnostic list
-
-  modal_aero_calcsize_sub(state_q, pdel, dt, qqcw_fld, list_idx, false,
-                          dgnumdry_m); // ! out
+  // const int list_idx = 0; //   index of the climate or a diagnostic list
+  // We compute dgnumdry_m with the calcize process.
+  // modal_aero_calcsize_sub(state_q, pdel, dt, qqcw_fld, list_idx, false,
+  //                         dgnumdry_m); // ! out
 
   modal_aero_wateruptake_dr(state_q, temperature, pmid, cldn, dgnumdry_m,
                             dgnumwet_m, qaerwat_m, 
