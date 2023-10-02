@@ -104,7 +104,6 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     printf("qqcw_db size  %lu \n ", qqcw_db.size());
 
-
     count = 0;
     for (int i = 0; i < pcnst; ++i) {
       qqcw[i] = haero::testing::create_column_view(pver);
@@ -299,7 +298,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     // 1. crefwlw
     // 2. specname_amode
     // FIXME need to set these arras
-    
 
     // outputs diagnostics:
     ColumnView extinct, absorb;
@@ -328,29 +326,26 @@ void modal_aero_sw(Ensemble *ensemble) {
     ComplexView2D specrefindex("specrefindex", max_nspec, nswbands);
     View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
 
-
     const auto sigmag_amode_db = input.get_array("sigmag_amode");
 
     Real sigmag_amode[ntot_amode] = {};
 
-    for (int imode = 0; imode < ntot_amode; ++imode)
-    {
+    for (int imode = 0; imode < ntot_amode; ++imode) {
       sigmag_amode[imode] = sigmag_amode_db[imode];
     }
 
     //
     // specname_amode=[[sulfate,ammonium,nitrate,p-organic,s-organic,black-c,seasalt,dust,m-organic,],]
 
-
-              // FIXME: need to set values
-    mam4::AeroId specname_amode[9] = {AeroId::SO4, // sulfate
+    // FIXME: need to set values
+    mam4::AeroId specname_amode[9] = {AeroId::SO4,  // sulfate
                                       AeroId::None, // ammonium
                                       AeroId::None, // nitrate
-                                      AeroId::POM, // p-organic
-                                      AeroId::SOA, // s-organic
-                                      AeroId::BC, // black-c
+                                      AeroId::POM,  // p-organic
+                                      AeroId::SOA,  // s-organic
+                                      AeroId::BC,   // black-c
                                       AeroId::NaCl, // seasalt
-                                      AeroId::DST, // dust
+                                      AeroId::DST,  // dust
                                       AeroId::MOM}; // m-organic
 
     // calcsize process:
@@ -386,56 +381,52 @@ void modal_aero_sw(Ensemble *ensemble) {
 
           {
 
+            for (int imode = 0; imode < ntot_amode; ++imode) {
+              const auto n_spec = num_species_mode(imode);
+              for (int isp = 0; isp < n_spec; ++isp) {
+                const int isp_mam4xx =
+                    validation::e3sm_to_mam4xx_aerosol_idx[imode][isp];
+                const int idx_e3sm = lmassptr_amode[isp][imode] - 1;
+                // FIXME: try to avoid this deep copy
+
+                // printf("idx_e3sm %d isp_mam4xx %d nvars %d pcnst %d \n",
+                // idx_e3sm, isp_mam4xx, nvars, pcnst);
+                for (int kk = 0; kk < pver; ++kk) {
+                  progs.q_aero_i[imode][isp_mam4xx](kk) = state_q(kk, idx_e3sm);
+                  progs.q_aero_c[imode][isp_mam4xx](kk) = qqcw[idx_e3sm](kk);
+                }
+              } // isp
+              // printf("After setting up calcsize\n");
+
+              // FIXME: try to avoid this deep copy
+              const int num_mode_idx = numptr_amode[imode] - 1;
+              // NOTE: numptr_amode is equal to numptrcw_amode
+              // const int num_cldbrn_mode_idx = numptr_amode[imode];
+              // progs.n_mode_c[imode] = qqcw[num_mode_idx];
+              for (int kk = 0; kk < pver; ++kk) {
+                progs.n_mode_i[imode](kk) = state_q(kk, num_mode_idx);
+                progs.n_mode_c[imode](kk) = qqcw[num_mode_idx](kk);
+              }
+
+            } /// imode
+          }
+          team.team_barrier();
+
+          calcsize_process.compute_tendencies(team, t, dt, atm, sfc, progs,
+                                              diags, tends);
+
+          team.team_barrier();
+
+          // FIXME Try to avoid this deep copy.
           for (int imode = 0; imode < ntot_amode; ++imode) {
-          const auto n_spec = num_species_mode(imode);
-           for (int isp = 0; isp < n_spec; ++isp) {
-             const int isp_mam4xx =
-             validation::e3sm_to_mam4xx_aerosol_idx[imode][isp];
-             const int idx_e3sm = lmassptr_amode[isp][imode]-1;
-             // FIXME: try to avoid this deep copy 
-
-             // printf("idx_e3sm %d isp_mam4xx %d nvars %d pcnst %d \n", idx_e3sm, isp_mam4xx, nvars, pcnst);
-             for (int kk = 0; kk < pver; ++kk)
-             {
-               progs.q_aero_i[imode][isp_mam4xx](kk) = state_q(kk,idx_e3sm);
-               progs.q_aero_c[imode][isp_mam4xx](kk) = qqcw[idx_e3sm](kk);
-             }          
-          } //isp 
-          // printf("After setting up calcsize\n");
-
-          // FIXME: try to avoid this deep copy 
-          const int num_mode_idx = numptr_amode[imode]-1;
-          // NOTE: numptr_amode is equal to numptrcw_amode
-          // const int num_cldbrn_mode_idx = numptr_amode[imode];
-          // progs.n_mode_c[imode] = qqcw[num_mode_idx];  
-          for (int kk = 0; kk < pver; ++kk)
-             {
-               progs.n_mode_i[imode](kk) = state_q(kk,num_mode_idx);
-               progs.n_mode_c[imode](kk) = qqcw[num_mode_idx](kk);
-             }
-
-          } /// imode
-
-          }
-          team.team_barrier();
-
-          calcsize_process.compute_tendencies(team, t, dt, atm, sfc, progs, diags,
-                                     tends);
-
-          team.team_barrier();
-
-
-          // FIXME Try to avoid this deep copy.  
-          for (int imode = 0; imode < ntot_amode; ++imode)
-          {
-            for (int kk = 0; kk < pver; ++kk)
-             {
-              dgnumdry_m(kk,imode) = diags.dry_geometric_mean_diameter_i[imode](kk);
-             } 
+            for (int kk = 0; kk < pver; ++kk) {
+              dgnumdry_m(kk, imode) =
+                  diags.dry_geometric_mean_diameter_i[imode](kk);
+            }
           }
 
           team.team_barrier();
-          
+
           Real aodnir = zero;
           Real aoduv = zero;
           Real aodabsbc = zero;
@@ -463,11 +454,10 @@ void modal_aero_sw(Ensemble *ensemble) {
           Real burdenmode[ntot_amode] = {};
 
           // FIXME
-          Real sigmag_amode_[ntot_amode] = {}; 
+          Real sigmag_amode_[ntot_amode] = {};
 
-          for (int i = 0; i < ntot_amode; ++i)
-          {
-            sigmag_amode_[i] =sigmag_amode[i];
+          for (int i = 0; i < ntot_amode; ++i) {
+            sigmag_amode_[i] = sigmag_amode[i];
           }
 
           modal_aero_sw(
@@ -610,7 +600,5 @@ void modal_aero_sw(Ensemble *ensemble) {
     output.set("bcaod", std::vector<Real>(1, bcaod));
     output.set("seasaltaod", std::vector<Real>(1, seasaltaod));
     output.set("momaod", std::vector<Real>(1, momaod));
-
-
   });
 }

@@ -396,55 +396,44 @@ void binterp(const View3D &table, const Real ref_real, const Real ref_img,
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_calcsize_sub(const View2D &state_q, const ColumnView &pdel,
-                             const Real dt,
-                             const ColumnView qqcw_fld[pcnst],
+                             const Real dt, const ColumnView qqcw_fld[pcnst],
                              const int list_idx_in, const bool update_mmr_in,
                              const View2D &dgnumdry_m) {
-
 
 } // modal_aero_calcsize_sub
 
 KOKKOS_INLINE_FUNCTION
-void modal_aero_wateruptake_dr(const View2D &state_q,
-                               const ColumnView &temperature,
-                               const ColumnView &pmid, const ColumnView &cldn,
-                               const View2D &dgnumdry_m,
-                               const View2D &dgnumwet_m,
-                               const View2D &qaerwat_m,
-                                // const int list_idx_in,
-                               int nspec_amode[AeroConfig::num_modes()],
-                               Real specdens_amode[maxd_aspectype],
-                               Real spechygro[maxd_aspectype],
-                               int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()]) {
+void modal_aero_wateruptake_dr(
+    const View2D &state_q, const ColumnView &temperature,
+    const ColumnView &pmid, const ColumnView &cldn, const View2D &dgnumdry_m,
+    const View2D &dgnumwet_m, const View2D &qaerwat_m,
+    // const int list_idx_in,
+    int nspec_amode[AeroConfig::num_modes()],
+    Real specdens_amode[maxd_aspectype], Real spechygro[maxd_aspectype],
+    int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()]) {
 
+  // dgnumdry_m => dgncur_a
+  // dgnumwet_m => dgncur_awet
+  // qaerwat_m => qaerwat
+  // int &nspec_amode2 = nspec_amode;
+  // Real &specdens_amode2 = specdens_amode;
+  // Real & spechygro2 = spechygro;
+  // int &lspectype_amode2 = lspectype_amode;
+  for (int kk = top_lev; kk < pver; ++kk) {
 
-   // dgnumdry_m => dgncur_a
-   // dgnumwet_m => dgncur_awet
-   // qaerwat_m => qaerwat
-// int &nspec_amode2 = nspec_amode;
-// Real &specdens_amode2 = specdens_amode;
-// Real & spechygro2 = spechygro;
-// int &lspectype_amode2 = lspectype_amode;
-for (int kk = top_lev; kk < pver; ++kk)
-{
+    const auto state_q_kk = Kokkos::subview(state_q, kk, Kokkos::ALL());
+    const auto dgnumdry_m_kk = Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
+    const auto dgnumwet_m_kk = Kokkos::subview(dgnumwet_m, kk, Kokkos::ALL());
+    const auto qaerwat_m_kk = Kokkos::subview(qaerwat_m, kk, Kokkos::ALL());
+    mam4::water_uptake::modal_aero_water_uptake_dr(
+        nspec_amode, specdens_amode, spechygro, lspectype_amode,
+        state_q_kk.data(), temperature(kk), pmid(kk), cldn(kk),
+        dgnumdry_m_kk.data(), dgnumwet_m_kk.data(), qaerwat_m_kk.data());
 
- const auto state_q_kk = Kokkos::subview(state_q,kk, Kokkos::ALL());
- const auto dgnumdry_m_kk = Kokkos::subview(dgnumdry_m,kk, Kokkos::ALL());
- const auto dgnumwet_m_kk = Kokkos::subview(dgnumwet_m,kk, Kokkos::ALL());
- const auto qaerwat_m_kk = Kokkos::subview(qaerwat_m,kk, Kokkos::ALL());
-  mam4::water_uptake::modal_aero_water_uptake_dr(
-    nspec_amode,
-    specdens_amode, spechygro,
-    lspectype_amode,
-    state_q_kk.data(),  temperature(kk),  pmid(kk), cldn(kk),
-    dgnumdry_m_kk.data(),
-    dgnumwet_m_kk.data(),qaerwat_m_kk.data());
-  
-}// kk
+  } // kk
 
   // placeholder
 } // modal_aero_wateruptake_dr
-
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(
@@ -459,15 +448,15 @@ void modal_aero_sw(
     //
     int nspec_amode[ntot_amode], Real sigmag_amode[ntot_amode],
     int lmassptr_amode[maxd_aspectype][ntot_amode],
-    Real spechygro[maxd_aspectype],
-    Real specdens_amode[maxd_aspectype],
+    Real spechygro[maxd_aspectype], Real specdens_amode[maxd_aspectype],
     int lspectype_amode[maxd_aspectype][ntot_amode],
     const ComplexView2D
         &specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
     const Kokkos::complex<Real> crefwlw[nlwbands],
     const Kokkos::complex<Real> crefwsw[nswbands],
     // FIXME
-    const mam4::AeroId specname_amode[9], const View3D extpsw[ntot_amode][nswbands],
+    const mam4::AeroId specname_amode[9],
+    const View3D extpsw[ntot_amode][nswbands],
     const View3D abspsw[ntot_amode][nswbands],
     const View3D asmpsw[ntot_amode][nswbands],
     const View1D refrtabsw[ntot_amode][nswbands],
@@ -642,13 +631,13 @@ void modal_aero_sw(
 
   // Calculate aerosol size distribution parameters and aerosol water uptake
   // For prognostic aerosols
-  // We compute dgnumdry_m using calcsize process. 
+  // We compute dgnumdry_m using calcsize process.
   // modal_aero_calcsize_sub(state_q, pdel, dt, qqcw_fld, list_idx, false,
   //                         dgnumdry_m); // ! out
 
   modal_aero_wateruptake_dr(state_q, temperature, pmid, cldn, dgnumdry_m,
-                            dgnumwet_m, qaerwat_m, 
-                            nspec_amode, specdens_amode, spechygro, lspectype_amode);
+                            dgnumwet_m, qaerwat_m, nspec_amode, specdens_amode,
+                            spechygro, lspectype_amode);
   // ! loop over all aerosol modes
 
   Real specvol[max_nspec] = {};
@@ -668,20 +657,18 @@ void modal_aero_sw(
                             radsurf(kk), logradsurf(kk), cheb_kk.data(), false);
     } // kk
 
-
-              // FIXME is a complex number
-          // auto specrefindex_ll =
-          // Kokkos::subview(specrefndxsw,Kokkos::ALL(),spectype_amode[ll][mm]);
-          // FIXME: is there a way of avoiding this copy?
-          // specrefindex(ll,:) = specrefndxsw(:,lspectype_amode[ll][mm])
-          for (int iswbands = 0; iswbands < nswbands; ++iswbands) {
-            for (int ll = 0; ll < nspec; ++ll) {
-            // Fortran to C++ indexing
-            specrefindex(ll, iswbands) =
-                specrefndxsw(iswbands, lspectype_amode[ll][mm] - 1);
-            }    
-          }
-
+    // FIXME is a complex number
+    // auto specrefindex_ll =
+    // Kokkos::subview(specrefndxsw,Kokkos::ALL(),spectype_amode[ll][mm]);
+    // FIXME: is there a way of avoiding this copy?
+    // specrefindex(ll,:) = specrefndxsw(:,lspectype_amode[ll][mm])
+    for (int iswbands = 0; iswbands < nswbands; ++iswbands) {
+      for (int ll = 0; ll < nspec; ++ll) {
+        // Fortran to C++ indexing
+        specrefindex(ll, iswbands) =
+            specrefndxsw(iswbands, lspectype_amode[ll][mm] - 1);
+      }
+    }
 
     for (int isw = 0; isw < nswbands; ++isw) {
 
@@ -1002,8 +989,7 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
                    const ColumnView &cldn, const ColumnView qqcw_fld[pcnst],
                    const View2D &tauxar,
                    // parameters
-                   int nspec_amode[ntot_amode],
-                   Real sigmag_amode[ntot_amode],
+                   int nspec_amode[ntot_amode], Real sigmag_amode[ntot_amode],
                    int lmassptr_amode[maxd_aspectype][ntot_amode],
                    Real spechygro[maxd_aspectype],
                    Real specdens_amode[maxd_aspectype],
@@ -1054,8 +1040,8 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
   //                         dgnumdry_m); // ! out
 
   modal_aero_wateruptake_dr(state_q, temperature, pmid, cldn, dgnumdry_m,
-                            dgnumwet_m, qaerwat_m, 
-                            nspec_amode, specdens_amode, spechygro, lspectype_amode);
+                            dgnumwet_m, qaerwat_m, nspec_amode, specdens_amode,
+                            spechygro, lspectype_amode);
 
   Real specvol[max_nspec] = {};
   for (int mm = 0; mm < ntot_amode; ++mm) {
@@ -1073,15 +1059,15 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
                             radsurf(kk), logradsurf(kk), cheb_kk.data(), true);
     } // kk
 
-              // FIXME: is there a way of avoiding this copy?
-          // specrefindex(ll,:) = specrefndxsw(:,lspectype_amode[ll][mm])
-          for (int ilwbands = 0; ilwbands < nlwbands; ++ilwbands) {
-            // // Fortran to C++ indexing
-            for (int ll = 0; ll < nspec; ++ll) {
-            specrefindex(ll, ilwbands) =
-                specrefndxlw(ilwbands, lspectype_amode[ll][mm] - 1);
-              } // ll 
-          } // ilwbands
+    // FIXME: is there a way of avoiding this copy?
+    // specrefindex(ll,:) = specrefndxsw(:,lspectype_amode[ll][mm])
+    for (int ilwbands = 0; ilwbands < nlwbands; ++ilwbands) {
+      // // Fortran to C++ indexing
+      for (int ll = 0; ll < nspec; ++ll) {
+        specrefindex(ll, ilwbands) =
+            specrefndxlw(ilwbands, lspectype_amode[ll][mm] - 1);
+      } // ll
+    }   // ilwbands
 
     for (int ilw = 0; ilw < nlwbands; ++ilw) {
       for (int kk = top_lev; kk < pver; ++kk) {
@@ -1091,7 +1077,6 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
                                          lmassptr_amode[ll][mm] - 1);
           // Fortran to C++ indexing
           const Real specdens = specdens_amode[lspectype_amode[ll][mm] - 1];
-
 
           specvol[ll] = specmmr(kk) / specdens;
           // printf("lspectype_amode[ll][mm] %d lspectype_amode[ll][mm] %d

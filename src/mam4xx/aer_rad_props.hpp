@@ -447,11 +447,9 @@ void aer_rad_props_lw(
     const ColumnView &cldn, const View2D &ext_cmip6_lw,
     const ColumnView qqcw_fld[pcnst], const View2D &odap_aer,
     //
-    int nspec_amode[ntot_amode], 
-    Real sigmag_amode[ntot_amode],
+    int nspec_amode[ntot_amode], Real sigmag_amode[ntot_amode],
     int lmassptr_amode[maxd_aspectype][ntot_amode],
-     Real spechygro[maxd_aspectype],
-    Real specdens_amode[maxd_aspectype],
+    Real spechygro[maxd_aspectype], Real specdens_amode[maxd_aspectype],
     int lspectype_amode[maxd_aspectype][ntot_amode],
     const ComplexView2D &specrefndxlw,
     const Kokkos::complex<Real> crefwlw[nlwbands],
@@ -494,9 +492,9 @@ void aer_rad_props_lw(
   modal_aero_lw(dt, state_q, temperature, pmid, pdel, pdeldry, cldn, qqcw_fld,
                 odap_aer,
                 // parameters
-                nspec_amode, sigmag_amode, lmassptr_amode,spechygro, specdens_amode,
-                lspectype_amode, specrefndxlw, crefwlw, crefwsw, absplw,
-                refrtablw, refitablw,
+                nspec_amode, sigmag_amode, lmassptr_amode, spechygro,
+                specdens_amode, lspectype_amode, specrefndxlw, crefwlw, crefwsw,
+                absplw, refrtablw, refitablw,
                 // work views
                 mass, cheb, dgnumwet_m, dgnumdry_m, radsurf, logradsurf,
                 specrefindex, qaerwat_m);
@@ -539,13 +537,11 @@ void aer_rad_props_sw(
     const View2D &af_cmip6_sw, const View2D &ext_cmip6_sw,
     // nnite, idxnite,
     // is_cmip6_volc,
-    const ColumnView qqcw_fld[pcnst], const View2D &tau,
-    const View2D &tau_w, const View2D &tau_w_g, const View2D &tau_w_f,
-    int nspec_amode[ntot_amode], 
+    const ColumnView qqcw_fld[pcnst], const View2D &tau, const View2D &tau_w,
+    const View2D &tau_w_g, const View2D &tau_w_f, int nspec_amode[ntot_amode],
     Real sigmag_amode[ntot_amode],
     int lmassptr_amode[maxd_aspectype][ntot_amode],
-    Real spechygro[maxd_aspectype],
-    Real specdens_amode[maxd_aspectype],
+    Real spechygro[maxd_aspectype], Real specdens_amode[maxd_aspectype],
     int lspectype_amode[maxd_aspectype][ntot_amode],
     const ComplexView2D
         &specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
