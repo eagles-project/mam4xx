@@ -97,8 +97,7 @@ void modal_aero_lw(Ensemble *ensemble) {
       Kokkos::deep_copy(qqcw[i], qqcw_host[i]);
     }
 
-    // FIXME need to set these arras
-    Real sigmag_amode[ntot_amode] = {};
+    
 
     const auto specrefndxlw_real_db = input.get_array("specrefndxlw_real");
     const auto specrefndxlw_imag_db = input.get_array("specrefndxlw_imag");
@@ -281,10 +280,13 @@ void modal_aero_lw(Ensemble *ensemble) {
                               numptr_amode, specdens_amode, spechygro, mam_idx,
                               mam_cnst_idx);
 
+          // FIXME need to set these arras
+    Real sigmag_amode[ntot_amode] = {};
+
           modal_aero_lw(dt, state_q, temperature, pmid, pdel, pdeldry, cldn,
                         qqcw, tauxar,
                         // parameters
-                        nspec_amode, sigmag_amode, lmassptr_amode,
+                        nspec_amode, sigmag_amode, lmassptr_amode,spechygro,
                         specdens_amode, lspectype_amode, specrefndxlw, crefwlw,
                         crefwsw, absplw3, refrtablw, refitablw,
                         // work views
