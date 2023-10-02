@@ -326,6 +326,31 @@ void modal_aero_sw(Ensemble *ensemble) {
     ComplexView2D specrefindex("specrefindex", max_nspec, nswbands);
     View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
 
+    const auto sigmag_amode_db = input.get_array("sigmag_amode");
+
+    Real sigmag_amode[ntot_amode] = {};
+
+    for (int imode = 0; imode < count; ++imode)
+    {
+      sigmag_amode[imode] = sigmag_amode_db[imode];
+    }
+
+    //
+    // specname_amode=[[sulfate,ammonium,nitrate,p-organic,s-organic,black-c,seasalt,dust,m-organic,],]
+
+
+              // FIXME: need to set values
+    mam4::AeroId specname_amode[9] = {AeroId::SO4, // sulfate
+                                      AeroId::None, // ammonium
+                                      AeroId::None, // nitrate
+                                      AeroId::POM, // p-organic
+                                      AeroId::SOA, // s-organic
+                                      AeroId::BC, // black-c
+                                      AeroId::NaCl, // seasalt
+                                      AeroId::DST, // dust
+                                      AeroId::MOM}; // m-organic
+
+
     // calcsize process:
 
     int nlev = pver;
@@ -402,8 +427,7 @@ void modal_aero_sw(Ensemble *ensemble) {
              } 
           }
           
-          // FIXME: need to set values
-          mam4::AeroId specname_amode[9] = {};
+
 
           Real aodnir = zero;
           Real aoduv = zero;
@@ -432,8 +456,12 @@ void modal_aero_sw(Ensemble *ensemble) {
           Real burdenmode[ntot_amode] = {};
 
           // FIXME
-          Real sigmag_amode[ntot_amode] = {};
+          Real sigmag_amode_[ntot_amode] = {}; 
 
+          for (int i = 0; i < count; ++i)
+          {
+            sigmag_amode_[i] =sigmag_amode[i];
+          }
           modal_aero_sw(
               dt, state_q, state_zm, temperature, pmid, pdel, pdeldry, cldn,
               // const int nnite,
@@ -442,7 +470,7 @@ void modal_aero_sw(Ensemble *ensemble) {
 
               tauxar, wa, ga, fa,
               //
-              nspec_amode, sigmag_amode, lmassptr_amode, spechygro,
+              nspec_amode, sigmag_amode_, lmassptr_amode, spechygro,
               specdens_amode, lspectype_amode,
               specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
               crefwlw, crefwsw,

@@ -467,7 +467,7 @@ void modal_aero_sw(
     const Kokkos::complex<Real> crefwlw[nlwbands],
     const Kokkos::complex<Real> crefwsw[nswbands],
     // FIXME
-    mam4::AeroId specname_amode[6], const View3D extpsw[ntot_amode][nswbands],
+    const mam4::AeroId specname_amode[9], const View3D extpsw[ntot_amode][nswbands],
     const View3D abspsw[ntot_amode][nswbands],
     const View3D asmpsw[ntot_amode][nswbands],
     const View1D refrtabsw[ntot_amode][nswbands],
