@@ -26,6 +26,7 @@ void modal_aero_sw(Ensemble *ensemble) {
     constexpr int pver = mam4::nlev;
 
     const auto dt = input.get_array("dt")[0];
+    const Real t = zero;
     const auto state_q_db = input.get_array("state_q");
 
     int count = 0;
@@ -325,6 +326,19 @@ void modal_aero_sw(Ensemble *ensemble) {
     ComplexView2D specrefindex("specrefindex", max_nspec, nswbands);
     View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
 
+    // calcsize process:
+
+    int nlev = pver;
+    Real pblh = 1000;
+    Atmosphere atm = validation::create_atmosphere(nlev, pblh);
+    Surface sfc = validation::create_surface();
+    mam4::Prognostics progs = validation::create_prognostics(nlev);
+    mam4::Diagnostics diags = validation::create_diagnostics(nlev);
+    mam4::Tendencies tends = validation::create_tendencies(nlev);
+
+    mam4::AeroConfig mam4_config;
+    mam4::CalcSizeProcess calcsize_process(mam4_config);
+
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -341,6 +355,53 @@ void modal_aero_sw(Ensemble *ensemble) {
                               numptr_amode, specdens_amode, spechygro, mam_idx,
                               mam_cnst_idx);
 
+          // setting up calcsize
+
+          {
+
+          for (int imode = 0; imode < ntot_amode; ++imode) {
+          const auto n_spec = num_species_mode(imode);
+           for (int isp = 0; isp < n_spec; ++isp) {
+             const int isp_mam4xx =
+             validation::e3sm_to_mam4xx_aerosol_idx[imode][isp];
+             const int idx_e3sm = lmassptr_amode[isp][imode];
+             // FIXME: try to avoid this deep copy 
+             for (int kk = 0; kk < pver; ++kk)
+             {
+               progs.q_aero_i[imode][isp_mam4xx](kk) = state_q(kk,idx_e3sm);
+               progs.q_aero_c[imode][isp_mam4xx](kk) = qqcw[isp_mam4xx](kk);
+             }          
+
+          } //isp 
+
+          // FIXME: try to avoid this deep copy 
+          const int num_mode_idx = numptr_amode[imode];
+          // NOTE: numptr_amode is equal to numptrcw_amode
+          // const int num_cldbrn_mode_idx = numptr_amode[imode];
+          // progs.n_mode_c[imode] = qqcw[num_mode_idx];  
+          for (int kk = 0; kk < pver; ++kk)
+             {
+               progs.n_mode_i[imode](kk) = state_q(kk,num_mode_idx);
+               progs.n_mode_c[imode](kk) = qqcw[num_mode_idx](kk);
+             }
+
+          } /// imode
+
+          }
+
+
+          calcsize_process.compute_tendencies(team, t, dt, atm, sfc, progs, diags,
+                                     tends);
+
+          // FIXME Try to avoid this deep copy.  
+          for (int imode = 0; imode < count; ++imode)
+          {
+            for (int kk = 0; kk < pver; ++kk)
+             {
+              dgnumdry_m(kk,imode) = diags.dry_geometric_mean_diameter_i[imode](kk);
+             } 
+          }
+          
           // FIXME: need to set values
           mam4::AeroId specname_amode[9] = {};
 
