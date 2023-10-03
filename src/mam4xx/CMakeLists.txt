@@ -43,7 +43,6 @@ install(FILES
         mo_photo.hpp
         lin_strat_chem.hpp
         mo_chm_diags.hpp
-        modal_aero_opt.hpp
         modal_aer_opt.hpp
         aer_rad_props.hpp 
         DESTINATION include/mam4xx)
