@@ -464,7 +464,8 @@ void modal_aero_sw(Ensemble *ensemble) {
               dt, state_q, state_zm, temperature, pmid, pdel, pdeldry, cldn,
               // const int nnite,
               // idxnite,
-              is_cmip6_volc, ext_cmip6_sw, trop_level, qqcw,
+              is_cmip6_volc, ext_cmip6_sw, trop_level,
+               // qqcw,
 
               tauxar, wa, ga, fa,
               //
@@ -513,6 +514,31 @@ void modal_aero_sw(Ensemble *ensemble) {
             output_diagnostics_amode(m + ntot_amode) = aodmode[m];
             output_diagnostics_amode(m + 2 * ntot_amode) = burdenmode[m];
           }
+
+
+          {
+
+            for (int imode = 0; imode < ntot_amode; ++imode) {
+              const auto n_spec = num_species_mode(imode);
+              for (int isp = 0; isp < n_spec; ++isp) {
+                const int isp_mam4xx =
+                    validation::e3sm_to_mam4xx_aerosol_idx[imode][isp];
+                const int idx_e3sm = lmassptr_amode[isp][imode] - 1;
+                // FIXME: try to avoid this deep copy
+                for (int kk = 0; kk < pver; ++kk) {
+                  qqcw[idx_e3sm](kk)  = progs.q_aero_c[imode][isp_mam4xx](kk);
+                }
+              } // isp
+
+              // FIXME: try to avoid this deep copy
+              const int num_mode_idx = numptr_amode[imode] - 1;
+              for (int kk = 0; kk < pver; ++kk) {
+                // progs.n_mode_i[imode](kk) = state_q(kk, num_mode_idx);
+                qqcw[num_mode_idx](kk) = progs.n_mode_c[imode](kk);
+              }
+
+            } /// imode
+          }
         });
 
     std::vector<Real> output_qqcw;
@@ -551,6 +577,8 @@ void modal_aero_sw(Ensemble *ensemble) {
     Kokkos::deep_copy(extinct_host, extinct);
     std::vector<Real> extinct_out(extinct_host.data(),
                                   extinct_host.data() + pver);
+
+    printf("extinct %lu \n", extinct.size());
     output.set("extinct", extinct_out);
 
     auto absorb_host = Kokkos::create_mirror_view(absorb);
