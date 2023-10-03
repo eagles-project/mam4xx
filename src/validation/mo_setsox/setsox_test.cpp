@@ -19,8 +19,8 @@ void setsox_test(Ensemble *ensemble) {
     std::string input_variables[] = {"dt"};
 
     std::string input_arrays[] = {
-        "ncol", "loffset", "dtime",  "press", "pdel", "tfld",
-        "mbar", "lwc",  "cldfrc",  "cldnum", "xhnm",  "qcw",  "qin"};
+        "ncol", "loffset", "dtime",  "press", "pdel", "tfld", "mbar",
+        "lwc",  "cldfrc",  "cldnum", "xhnm",  "qcw",  "qin"};
 
     // Iterate over input_variables and error if not in input
     for (std::string name : input_variables) {
@@ -53,8 +53,6 @@ void setsox_test(Ensemble *ensemble) {
 
     auto qcw = input.get_array("qcw");
     auto qin = input.get_array("qin");
-
-    mam4::mo_setsox::sox_init(dt);
 
     output.set("qcw", qcw);
     output.set("qin", qin);
