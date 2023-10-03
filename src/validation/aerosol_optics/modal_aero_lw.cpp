@@ -79,12 +79,12 @@ void modal_aero_lw(Ensemble *ensemble) {
     ColumnView qqcw[pcnst];
     View1DHost qqcw_host[pcnst];
 
-    count = 0;
     for (int i = 0; i < pcnst; ++i) {
       qqcw[i] = haero::testing::create_column_view(pver);
       qqcw_host[i] = View1DHost("qqcw_host", pver);
     }
 
+    count = 0;
     for (int kk = 0; kk < pver; ++kk) {
       for (int i = 0; i < pcnst; ++i) {
         qqcw_host[i](kk) = qqcw_db[count];
@@ -143,8 +143,10 @@ void modal_aero_lw(Ensemble *ensemble) {
     }
 
     const auto absplw_db = input.get_array("absplw");
-    View5D absplw("absplw", ntot_amode, coef_number, refindex_real, refindex_im,
-                  nlwbands);
+    // View5D absplw("absplw", ntot_amode, coef_number, refindex_real,
+    // refindex_im,
+    //               nlwbands);
+    printf("ntot_amode %d nlwbands %d  ", ntot_amode, nlwbands);
 
     View3DHost absplw3_host[ntot_amode][nlwbands];
     // ("absplw3", coef_number, refindex_real, refindex_im);
@@ -168,7 +170,7 @@ void modal_aero_lw(Ensemble *ensemble) {
                       (d2 + coef_number *
                                 (d3 + refindex_real * (d4 + refindex_im * d5)));
               // absplw_host(d1, d2, d3, d4, d5) = absplw_db[offset];
-              absplw3_host[d1][d5](d2, d3, d5) = absplw_db[offset];
+              absplw3_host[d1][d5](d2, d3, d4) = absplw_db[offset];
             } // d5
           }   // d4
         }     // d3
@@ -177,7 +179,7 @@ void modal_aero_lw(Ensemble *ensemble) {
 
     // Kokkos::deep_copy(absplw, absplw_host);
 
-    View3DHost absplw3[ntot_amode][nlwbands];
+    View3D absplw3[ntot_amode][nlwbands];
     // ("absplw3", coef_number, refindex_real, refindex_im);
     for (int d1 = 0; d1 < ntot_amode; ++d1)
       for (int d5 = 0; d5 < nlwbands; ++d5) {
@@ -365,7 +367,6 @@ void modal_aero_lw(Ensemble *ensemble) {
                         mass, cheb, dgnumwet_m, dgnumdry_m, radsurf, logradsurf,
                         specrefindex, qaerwat_m);
 
-
           {
 
             for (int imode = 0; imode < ntot_amode; ++imode) {
@@ -376,7 +377,7 @@ void modal_aero_lw(Ensemble *ensemble) {
                 const int idx_e3sm = lmassptr_amode[isp][imode] - 1;
                 // FIXME: try to avoid this deep copy
                 for (int kk = 0; kk < pver; ++kk) {
-                  qqcw[idx_e3sm](kk)  = progs.q_aero_c[imode][isp_mam4xx](kk);
+                  qqcw[idx_e3sm](kk) = progs.q_aero_c[imode][isp_mam4xx](kk);
                 }
               } // isp
 
@@ -389,7 +390,6 @@ void modal_aero_lw(Ensemble *ensemble) {
 
             } /// imode
           }
-
         });
 
     std::vector<Real> output_qqcw;
