@@ -444,7 +444,7 @@ void modal_aero_sw(
     // idxnite,
     const bool is_cmip6_volc, const ColumnView &ext_cmip6_sw,
     const int trop_level,
-     // const ColumnView qqcw_fld[pcnst],
+    // const ColumnView qqcw_fld[pcnst],
     const View2D &tauxar, const View2D &wa, const View2D &ga, const View2D &fa,
     //
     int nspec_amode[ntot_amode], Real sigmag_amode[ntot_amode],

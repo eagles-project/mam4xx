@@ -465,7 +465,7 @@ void modal_aero_sw(Ensemble *ensemble) {
               // const int nnite,
               // idxnite,
               is_cmip6_volc, ext_cmip6_sw, trop_level,
-               // qqcw,
+              // qqcw,
 
               tauxar, wa, ga, fa,
               //
@@ -515,7 +515,6 @@ void modal_aero_sw(Ensemble *ensemble) {
             output_diagnostics_amode(m + 2 * ntot_amode) = burdenmode[m];
           }
 
-
           {
 
             for (int imode = 0; imode < ntot_amode; ++imode) {
@@ -526,7 +525,7 @@ void modal_aero_sw(Ensemble *ensemble) {
                 const int idx_e3sm = lmassptr_amode[isp][imode] - 1;
                 // FIXME: try to avoid this deep copy
                 for (int kk = 0; kk < pver; ++kk) {
-                  qqcw[idx_e3sm](kk)  = progs.q_aero_c[imode][isp_mam4xx](kk);
+                  qqcw[idx_e3sm](kk) = progs.q_aero_c[imode][isp_mam4xx](kk);
                 }
               } // isp
 
