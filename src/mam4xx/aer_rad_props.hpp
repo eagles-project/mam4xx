@@ -242,7 +242,7 @@ void get_dtdz(const Real pm, const Real pmk, const Real pmid1d_up,
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 KOKKOS_INLINE_FUNCTION
-void twmo(const ColumnView &temp1d, const ConstColumnView &pmid1d, const Real plimu,
+void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d, const Real plimu,
           const Real pliml, const Real gam, Real &trp) {
 
   // temp1d   !  temperature in column [K]
@@ -363,7 +363,7 @@ void twmo(const ColumnView &temp1d, const ConstColumnView &pmid1d, const Real pl
 //  routines, but is designed for GCMs with a coarse vertical grid.
 KOKKOS_INLINE_FUNCTION
 void tropopause_twmo(const ConstColumnView &pmid, const ColumnView &pint,
-                     const ColumnView &temp, const ColumnView &zm,
+                     const ConstColumnView &temp, const ColumnView &zm,
                      const ColumnView &zi, int &tropLev) {
   // BAD CONSTANT
   constexpr Real gam =
@@ -410,7 +410,7 @@ void tropopause_climate(lchnk,ncol,pmid,pint,temp,zm,zi,    &  ! in
 #endif
 KOKKOS_INLINE_FUNCTION
 int tropopause_or_quit(const ConstColumnView &pmid, const ColumnView &pint,
-                       const ColumnView &temperature, const ColumnView &zm,
+                       const ConstColumnView &temperature, const ColumnView &zm,
                        const ColumnView &zi) {
   // Find tropopause or quit the simulation if not found
 
@@ -443,7 +443,7 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ColumnView &pint,
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_lw(
     const Real dt, const ConstColumnView &pmid, const ColumnView &pint,
-    const ColumnView &temperature, const ColumnView &zm, const ColumnView &zi,
+    const ConstColumnView &temperature, const ColumnView &zm, const ColumnView &zi,
     const View2D &state_q, const ColumnView &pdel, const ColumnView &pdeldry,
     const ColumnView &cldn, const View2D &ext_cmip6_lw,
     // const ColumnView qqcw_fld[pcnst],
@@ -534,7 +534,7 @@ void aer_rad_props_lw(
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_sw(
     const Real dt, const ColumnView &zi, const ConstColumnView &pmid,
-    const ColumnView &pint, const ColumnView &temperature, const ColumnView &zm,
+    const ColumnView &pint, const ConstColumnView &temperature, const ColumnView &zm,
     const View2D &state_q, const ColumnView &pdel, const ColumnView &pdeldry,
     const ColumnView &cldn, const View2D &ssa_cmip6_sw,
     const View2D &af_cmip6_sw, const View2D &ext_cmip6_sw,
