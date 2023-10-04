@@ -10,6 +10,7 @@ namespace mam4 {
 
 namespace aer_rad_props {
 
+using ConstColumnView = haero::ConstColumnView;
 // From radconstants
 constexpr int nswbands = modal_aer_opt::nswbands;
 constexpr int nlwbands = modal_aer_opt::nlwbands;
@@ -241,7 +242,7 @@ void get_dtdz(const Real pm, const Real pmk, const Real pmid1d_up,
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 KOKKOS_INLINE_FUNCTION
-void twmo(const ColumnView &temp1d, const ColumnView &pmid1d, const Real plimu,
+void twmo(const ColumnView &temp1d, const ConstColumnView &pmid1d, const Real plimu,
           const Real pliml, const Real gam, Real &trp) {
 
   // temp1d   !  temperature in column [K]
@@ -361,7 +362,7 @@ void twmo(const ColumnView &temp1d, const ColumnView &pmid1d, const Real plimu,
 // Reichler and downloaded from his web site. This is similar to the WMO
 //  routines, but is designed for GCMs with a coarse vertical grid.
 KOKKOS_INLINE_FUNCTION
-void tropopause_twmo(const ColumnView &pmid, const ColumnView &pint,
+void tropopause_twmo(const ConstColumnView &pmid, const ColumnView &pint,
                      const ColumnView &temp, const ColumnView &zm,
                      const ColumnView &zi, int &tropLev) {
   // BAD CONSTANT
@@ -408,7 +409,7 @@ void tropopause_climate(lchnk,ncol,pmid,pint,temp,zm,zi,    &  ! in
 } // tropopause_climate
 #endif
 KOKKOS_INLINE_FUNCTION
-int tropopause_or_quit(const ColumnView &pmid, const ColumnView &pint,
+int tropopause_or_quit(const ConstColumnView &pmid, const ColumnView &pint,
                        const ColumnView &temperature, const ColumnView &zm,
                        const ColumnView &zi) {
   // Find tropopause or quit the simulation if not found
@@ -441,7 +442,7 @@ int tropopause_or_quit(const ColumnView &pmid, const ColumnView &pint,
 //
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_lw(
-    const Real dt, const ColumnView &pmid, const ColumnView &pint,
+    const Real dt, const ConstColumnView &pmid, const ColumnView &pint,
     const ColumnView &temperature, const ColumnView &zm, const ColumnView &zi,
     const View2D &state_q, const ColumnView &pdel, const ColumnView &pdeldry,
     const ColumnView &cldn, const View2D &ext_cmip6_lw,
@@ -532,7 +533,7 @@ void aer_rad_props_lw(
 } // aer_rad_props_lw
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_sw(
-    const Real dt, const ColumnView &zi, const ColumnView &pmid,
+    const Real dt, const ColumnView &zi, const ConstColumnView &pmid,
     const ColumnView &pint, const ColumnView &temperature, const ColumnView &zm,
     const View2D &state_q, const ColumnView &pdel, const ColumnView &pdeldry,
     const ColumnView &cldn, const View2D &ssa_cmip6_sw,
