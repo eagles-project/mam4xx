@@ -108,12 +108,12 @@ void modal_aero_lw(Ensemble *ensemble) {
     const auto specrefndxlw_real_db = input.get_array("specrefndxlw_real");
     const auto specrefndxlw_imag_db = input.get_array("specrefndxlw_imag");
 
-    ComplexView2D specrefndxlw("specrefndxlw", nswbands, maxd_aspectype);
+    ComplexView2D specrefndxlw("specrefndxlw", nlwbands, maxd_aspectype);
     auto specrefndxlw_host = Kokkos::create_mirror_view(specrefndxlw);
 
     count = 0;
     for (int j = 0; j < maxd_aspectype; ++j) {
-      for (int i = 0; i < nswbands; ++i) {
+      for (int i = 0; i < nlwbands; ++i) {
         specrefndxlw_host(i, j).real() = specrefndxlw_real_db[count];
         specrefndxlw_host(i, j).imag() = specrefndxlw_imag_db[count];
         count += 1;
