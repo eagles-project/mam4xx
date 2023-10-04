@@ -405,7 +405,7 @@ void modal_aero_calcsize_sub(const View2D &state_q, const ColumnView &pdel,
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_wateruptake_dr(
-    const View2D &state_q, const ColumnView &temperature,
+    const View2D &state_q, const ConstColumnView &temperature,
     const ConstColumnView &pmid, const ColumnView &cldn, const View2D &dgnumdry_m,
     const View2D &dgnumwet_m, const View2D &qaerwat_m,
     // const int list_idx_in,
@@ -439,7 +439,7 @@ void modal_aero_wateruptake_dr(
 KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(
     const Real dt, const View2D &state_q, const ColumnView &state_zm,
-    const ColumnView &temperature, const ConstColumnView &pmid,
+    const ConstColumnView &temperature, const ConstColumnView &pmid,
     const ColumnView &pdel, const ColumnView &pdeldry, const ColumnView &cldn,
     // const int nnite,
     // idxnite,
@@ -986,7 +986,7 @@ void modal_aero_sw(
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_lw(const Real dt, const View2D &state_q,
-                   const ColumnView &temperature, const ConstColumnView &pmid,
+                   const ConstColumnView &temperature, const ConstColumnView &pmid,
                    const ColumnView &pdel, const ColumnView &pdeldry,
                    const ColumnView &cldn,
                    // const ColumnView qqcw_fld[pcnst],
