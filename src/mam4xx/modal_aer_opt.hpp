@@ -396,7 +396,7 @@ void binterp(const View3D &table, const Real ref_real, const Real ref_img,
 } // binterp
 
 KOKKOS_INLINE_FUNCTION
-void modal_aero_calcsize_sub(const View2D &state_q, const ColumnView &pdel,
+void modal_aero_calcsize_sub(const View2D &state_q, const ConstColumnView &pdel,
                              const Real dt, const ColumnView qqcw_fld[pcnst],
                              const int list_idx_in, const bool update_mmr_in,
                              const View2D &dgnumdry_m) {
@@ -440,7 +440,7 @@ KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(
     const Real dt, const View2D &state_q, const ColumnView &state_zm,
     const ConstColumnView &temperature, const ConstColumnView &pmid,
-    const ColumnView &pdel, const ColumnView &pdeldry, const ColumnView &cldn,
+    const ConstColumnView &pdel, const ColumnView &pdeldry, const ColumnView &cldn,
     // const int nnite,
     // idxnite,
     const bool is_cmip6_volc, const ColumnView &ext_cmip6_sw,
@@ -987,7 +987,7 @@ void modal_aero_sw(
 KOKKOS_INLINE_FUNCTION
 void modal_aero_lw(const Real dt, const View2D &state_q,
                    const ConstColumnView &temperature, const ConstColumnView &pmid,
-                   const ColumnView &pdel, const ColumnView &pdeldry,
+                   const ConstColumnView &pdel, const ColumnView &pdeldry,
                    const ColumnView &cldn,
                    // const ColumnView qqcw_fld[pcnst],
                    const View2D &tauxar,
