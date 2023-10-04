@@ -444,7 +444,7 @@ KOKKOS_INLINE_FUNCTION
 void aer_rad_props_lw(
     const Real dt, const ConstColumnView &pmid, const ColumnView &pint,
     const ConstColumnView &temperature, const ColumnView &zm, const ColumnView &zi,
-    const View2D &state_q, const ColumnView &pdel, const ColumnView &pdeldry,
+    const View2D &state_q, const ConstColumnView &pdel, const ColumnView &pdeldry,
     const ColumnView &cldn, const View2D &ext_cmip6_lw,
     // const ColumnView qqcw_fld[pcnst],
     const View2D &odap_aer,
@@ -535,7 +535,7 @@ KOKKOS_INLINE_FUNCTION
 void aer_rad_props_sw(
     const Real dt, const ColumnView &zi, const ConstColumnView &pmid,
     const ColumnView &pint, const ConstColumnView &temperature, const ColumnView &zm,
-    const View2D &state_q, const ColumnView &pdel, const ColumnView &pdeldry,
+    const View2D &state_q, const ConstColumnView &pdel, const ColumnView &pdeldry,
     const ColumnView &cldn, const View2D &ssa_cmip6_sw,
     const View2D &af_cmip6_sw, const View2D &ext_cmip6_sw,
     // nnite, idxnite,
