@@ -385,8 +385,8 @@ void binterp(const View3D &table, const Real ref_real, const Real ref_img,
   const Real tcuc = one - tuc - utab;
   const Real tcu = utab - tu;
   // FIXME: check Fortran to C++ indexing
-  const int jp1 = haero::min(jtab + 1, prefi);
-  const int ip1 = haero::min(itab + 1, prefr);
+  const int jp1 = haero::min(jtab + 1, prefi-1);
+  const int ip1 = haero::min(itab + 1, prefr-1);
   for (int icoef = 0; icoef < ncoef; ++icoef) {
     coef[icoef] = tcuc * table(icoef, itab, jtab) +
                   tuc * table(icoef, ip1, jtab) + tu * table(icoef, ip1, jp1) +
