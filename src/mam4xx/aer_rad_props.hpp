@@ -34,7 +34,7 @@ constexpr Real cnst_faktor =
                                      // gas constant     ~ J/K/kg
 constexpr Real cnst_ka1 = cnst_kap - 1.0;
 KOKKOS_INLINE_FUNCTION
-void volcanic_cmip_sw(const ColumnView &zi, const int ilev_tropp,
+void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
                       const View2D &ext_cmip6_sw_inv_m,
                       const View2D &ssa_cmip6_sw, const View2D &af_cmip6_sw,
                       const View2D &tau, const View2D &tau_w,
@@ -120,7 +120,7 @@ void volcanic_cmip_sw(const ColumnView &zi, const int ilev_tropp,
 // aer_rad_props
 KOKKOS_INLINE_FUNCTION
 void compute_odap_volcanic_at_troplayer_lw(const int ilev_tropp,
-                                           const ColumnView &zi,
+                                           const ConstColumnView &zi,
                                            const View2D &ext_cmip6_lw_inv_m,
                                            const View2D &odap_aer) {
   // Update odap_aer with a combination read in volcanic aerosol extinction
@@ -156,7 +156,7 @@ void compute_odap_volcanic_at_troplayer_lw(const int ilev_tropp,
 
 KOKKOS_INLINE_FUNCTION
 void compute_odap_volcanic_above_troplayer_lw(const int ilev_tropp,
-                                              const ColumnView &zi,
+                                              const ConstColumnView &zi,
                                               const View2D &ext_cmip6_lw_inv_m,
                                               const View2D &odap_aer) {
 
@@ -362,9 +362,9 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d, const Re
 // Reichler and downloaded from his web site. This is similar to the WMO
 //  routines, but is designed for GCMs with a coarse vertical grid.
 KOKKOS_INLINE_FUNCTION
-void tropopause_twmo(const ConstColumnView &pmid, const ColumnView &pint,
-                     const ConstColumnView &temp, const ColumnView &zm,
-                     const ColumnView &zi, int &tropLev) {
+void tropopause_twmo(const ConstColumnView &pmid, const ConstColumnView &pint,
+                     const ConstColumnView &temp, const ConstColumnView &zm,
+                     const ConstColumnView &zi, int &tropLev) {
   // BAD CONSTANT
   constexpr Real gam =
       -0.002; //       ! lapse rate to indicate tropopause [K/m]
@@ -409,9 +409,9 @@ void tropopause_climate(lchnk,ncol,pmid,pint,temp,zm,zi,    &  ! in
 } // tropopause_climate
 #endif
 KOKKOS_INLINE_FUNCTION
-int tropopause_or_quit(const ConstColumnView &pmid, const ColumnView &pint,
-                       const ConstColumnView &temperature, const ColumnView &zm,
-                       const ColumnView &zi) {
+int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
+                       const ConstColumnView &temperature, const ConstColumnView &zm,
+                       const ConstColumnView &zi) {
   // Find tropopause or quit the simulation if not found
 
   // lchnk            ! number of chunks
@@ -442,9 +442,9 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ColumnView &pint,
 //
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_lw(
-    const Real dt, const ConstColumnView &pmid, const ColumnView &pint,
-    const ConstColumnView &temperature, const ColumnView &zm, const ColumnView &zi,
-    const View2D &state_q, const ConstColumnView &pdel, const ColumnView &pdeldry,
+    const Real dt, const ConstColumnView &pmid, const ConstColumnView &pint,
+    const ConstColumnView &temperature, const ConstColumnView &zm, const ConstColumnView &zi,
+    const View2D &state_q, const ConstColumnView &pdel, const ConstColumnView &pdeldry,
     const ConstColumnView &cldn, const View2D &ext_cmip6_lw,
     // const ColumnView qqcw_fld[pcnst],
     const View2D &odap_aer,
@@ -533,9 +533,9 @@ void aer_rad_props_lw(
 } // aer_rad_props_lw
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_sw(
-    const Real dt, const ColumnView &zi, const ConstColumnView &pmid,
-    const ColumnView &pint, const ConstColumnView &temperature, const ColumnView &zm,
-    const View2D &state_q, const ConstColumnView &pdel, const ColumnView &pdeldry,
+    const Real dt, const ConstColumnView &zi, const ConstColumnView &pmid,
+    const ConstColumnView &pint, const ConstColumnView &temperature, const ConstColumnView &zm,
+    const View2D &state_q, const ConstColumnView &pdel, const ConstColumnView &pdeldry,
     const ConstColumnView &cldn, const View2D &ssa_cmip6_sw,
     const View2D &af_cmip6_sw, const View2D &ext_cmip6_sw,
     // nnite, idxnite,

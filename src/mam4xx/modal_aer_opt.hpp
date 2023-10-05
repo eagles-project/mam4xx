@@ -156,7 +156,7 @@ void update_aod_spec(const Real scath2o,
 } // update_aod_spec
 
 KOKKOS_INLINE_FUNCTION
-void calc_volc_ext(const int trop_level, const ColumnView &state_zm,
+void calc_volc_ext(const int trop_level, const ConstColumnView &state_zm,
                    const ColumnView &ext_cmip6_sw, const ColumnView &extinct,
                    Real &tropopause_m) {
   // calculate contributions from volcanic aerosol extinction
@@ -438,9 +438,9 @@ void modal_aero_wateruptake_dr(
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(
-    const Real dt, const View2D &state_q, const ColumnView &state_zm,
+    const Real dt, const View2D &state_q, const ConstColumnView &state_zm,
     const ConstColumnView &temperature, const ConstColumnView &pmid,
-    const ConstColumnView &pdel, const ColumnView &pdeldry, const ConstColumnView &cldn,
+    const ConstColumnView &pdel, const ConstColumnView &pdeldry, const ConstColumnView &cldn,
     // const int nnite,
     // idxnite,
     const bool is_cmip6_volc, const ColumnView &ext_cmip6_sw,
@@ -987,7 +987,7 @@ void modal_aero_sw(
 KOKKOS_INLINE_FUNCTION
 void modal_aero_lw(const Real dt, const View2D &state_q,
                    const ConstColumnView &temperature, const ConstColumnView &pmid,
-                   const ConstColumnView &pdel, const ColumnView &pdeldry,
+                   const ConstColumnView &pdel, const ConstColumnView &pdeldry,
                    const ConstColumnView &cldn,
                    // const ColumnView qqcw_fld[pcnst],
                    const View2D &tauxar,
