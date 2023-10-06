@@ -57,7 +57,6 @@ void get_dtdz(const Real pm, const Real pmk, const Real pmid1d_up,
   dtdz = cnst_faktor * dtdp * pm / tm;
 
 } // get_dtdz
-// FIXME: move to tropopause.hpp
 /* This routine is an implementation of Reichler et al. [2003] done by
 ! Reichler and downloaded from his web site. Minimal modifications were
 ! made to have the routine work within the CAM framework (i.e. using
@@ -197,7 +196,6 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d, const Re
   } // kk
 
 } // twmo
-// FIXME: move to tropopause.hpp
 // This routine uses an implementation of Reichler et al. [2003] done by
 // Reichler and downloaded from his web site. This is similar to the WMO
 //  routines, but is designed for GCMs with a coarse vertical grid.

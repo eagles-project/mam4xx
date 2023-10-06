@@ -11,6 +11,7 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 add_executable(tropopause_driver
                tropopause_driver.cpp
                get_dtdz.cpp
+               twmo.cpp
                )
 
 target_link_libraries(tropopause_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -28,12 +29,14 @@ endforeach()
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     get_dtdz_merged
+    twmo_ts_1400
     )
 # # matching the tests and errors, just for convenience
 
 set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
    9e-3
+   1e-2
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.

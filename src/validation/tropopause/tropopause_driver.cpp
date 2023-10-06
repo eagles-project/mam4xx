@@ -23,6 +23,7 @@ using namespace mam4;
 
 // Parameterizations used by the tropopause() process.
 void get_dtdz(Ensemble *ensemble);
+void twmo(Ensemble *ensemble);
 int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
@@ -47,6 +48,8 @@ int main(int argc, char **argv) {
   try {
     if (func_name == "get_dtdz") {
       get_dtdz(ensemble);
+    } else if(func_name == "twmo") {
+      twmo(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
