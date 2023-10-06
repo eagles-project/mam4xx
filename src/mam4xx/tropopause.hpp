@@ -81,8 +81,8 @@ void get_dtdz(const Real pm, const Real pmk, const Real pmid1d_up,
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 KOKKOS_INLINE_FUNCTION
-void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d, const Real plimu,
-          const Real pliml, const Real gam, Real &trp) {
+void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
+          const Real plimu, const Real pliml, const Real gam, Real &trp) {
 
   // temp1d   !  temperature in column [K]
   // pmid1d   !  midpoint pressure in column [Pa]
@@ -248,8 +248,8 @@ void tropopause_climate(lchnk,ncol,pmid,pint,temp,zm,zi,    &  ! in
 #endif
 KOKKOS_INLINE_FUNCTION
 int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
-                       const ConstColumnView &temperature, const ConstColumnView &zm,
-                       const ConstColumnView &zi) {
+                       const ConstColumnView &temperature,
+                       const ConstColumnView &zm, const ConstColumnView &zi) {
   // Find tropopause or quit the simulation if not found
 
   // lchnk            ! number of chunks
@@ -277,8 +277,7 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
   return trop_level;
 } // tropopause_or_quit
 
-
-} // namespace tropopause 
+} // namespace tropopause
 } // end namespace mam4
 
 #endif

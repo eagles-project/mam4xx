@@ -25,13 +25,13 @@ void twmo(Ensemble *ensemble) {
     const Real pliml = input.get_array("pliml")[0];
     const Real gam = input.get_array("gam")[0];
     Real trp = input.get_array("trp")[0];
-    //const Real cnst_kap = input.get_array("cnst_kap")[0];
-    //const Real cnst_ka1 = input.get_array("cnst_ka1")[0];
-    //const Real cnst_faktor = input.get_array("cnst_faktor")[0];
+    // const Real cnst_kap = input.get_array("cnst_kap")[0];
+    // const Real cnst_ka1 = input.get_array("cnst_ka1")[0];
+    // const Real cnst_faktor = input.get_array("cnst_faktor")[0];
 
     ColumnView pmid1d, temp1d;
-    auto pmid1d_host = View1DHost((Real *)pmid1d_in.data(), pver); 
-    auto temp1d_host = View1DHost((Real *)temp1d_in.data(), pver); 
+    auto pmid1d_host = View1DHost((Real *)pmid1d_in.data(), pver);
+    auto temp1d_host = View1DHost((Real *)temp1d_in.data(), pver);
     pmid1d = haero::testing::create_column_view(pver);
     temp1d = haero::testing::create_column_view(pver);
     Kokkos::deep_copy(pmid1d, pmid1d_host);

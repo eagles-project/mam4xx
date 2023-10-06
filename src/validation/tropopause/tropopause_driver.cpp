@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
   try {
     if (func_name == "get_dtdz") {
       get_dtdz(ensemble);
-    } else if(func_name == "twmo") {
+    } else if (func_name == "twmo") {
       twmo(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name
