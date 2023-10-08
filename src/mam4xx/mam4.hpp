@@ -35,6 +35,7 @@
 #include <mam4xx/tropopause.hpp>
 #include <mam4xx/water_uptake.hpp>
 #include <mam4xx/wet_dep.hpp>
+#include <mam4xx/modal_aero_calcsize.hpp>
 
 namespace mam4 {
 
