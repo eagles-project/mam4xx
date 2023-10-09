@@ -1202,14 +1202,14 @@ public:
           if (do_aitacc_transfer) {
 
 
-  Real dgncur_i_aitken =
+  Real & dgncur_i_aitken =
       diagnostics.dry_geometric_mean_diameter_i[aitken_idx](k);
-  Real dgncur_i_accum =
+  Real & dgncur_i_accum =
       diagnostics.dry_geometric_mean_diameter_i[accumulation_idx](k);
 
-  Real dgncur_c_aitken =
+  Real & dgncur_c_aitken =
       diagnostics.dry_geometric_mean_diameter_c[aitken_idx](k);
-  Real dgncur_c_accum =
+  Real &  dgncur_c_accum =
       diagnostics.dry_geometric_mean_diameter_c[accumulation_idx](k);
 
 
