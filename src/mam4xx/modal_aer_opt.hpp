@@ -385,8 +385,8 @@ void binterp(const View3D &table, const Real ref_real, const Real ref_img,
   const Real tcuc = one - tuc - utab;
   const Real tcu = utab - tu;
   // FIXME: check Fortran to C++ indexing
-  const int jp1 = haero::min(jtab + 1, prefi-1);
-  const int ip1 = haero::min(itab + 1, prefr-1);
+  const int jp1 = haero::min(jtab + 1, prefi - 1);
+  const int ip1 = haero::min(itab + 1, prefr - 1);
   for (int icoef = 0; icoef < ncoef; ++icoef) {
     coef[icoef] = tcuc * table(icoef, itab, jtab) +
                   tuc * table(icoef, ip1, jtab) + tu * table(icoef, ip1, jp1) +
@@ -406,8 +406,8 @@ void modal_aero_calcsize_sub(const View2D &state_q, const ConstColumnView &pdel,
 KOKKOS_INLINE_FUNCTION
 void modal_aero_wateruptake_dr(
     const View2D &state_q, const ConstColumnView &temperature,
-    const ConstColumnView &pmid, const ConstColumnView &cldn, const View2D &dgnumdry_m,
-    const View2D &dgnumwet_m, const View2D &qaerwat_m,
+    const ConstColumnView &pmid, const ConstColumnView &cldn,
+    const View2D &dgnumdry_m, const View2D &dgnumwet_m, const View2D &qaerwat_m,
     // const int list_idx_in,
     int nspec_amode[AeroConfig::num_modes()],
     Real specdens_amode[maxd_aspectype], Real spechygro[maxd_aspectype],
@@ -440,7 +440,8 @@ KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(
     const Real dt, const View2D &state_q, const ConstColumnView &state_zm,
     const ConstColumnView &temperature, const ConstColumnView &pmid,
-    const ConstColumnView &pdel, const ConstColumnView &pdeldry, const ConstColumnView &cldn,
+    const ConstColumnView &pdel, const ConstColumnView &pdeldry,
+    const ConstColumnView &cldn,
     // const int nnite,
     // idxnite,
     const bool is_cmip6_volc, const ColumnView &ext_cmip6_sw,
@@ -986,9 +987,9 @@ void modal_aero_sw(
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_lw(const Real dt, const View2D &state_q,
-                   const ConstColumnView &temperature, const ConstColumnView &pmid,
-                   const ConstColumnView &pdel, const ConstColumnView &pdeldry,
-                   const ConstColumnView &cldn,
+                   const ConstColumnView &temperature,
+                   const ConstColumnView &pmid, const ConstColumnView &pdel,
+                   const ConstColumnView &pdeldry, const ConstColumnView &cldn,
                    // const ColumnView qqcw_fld[pcnst],
                    const View2D &tauxar,
                    // parameters

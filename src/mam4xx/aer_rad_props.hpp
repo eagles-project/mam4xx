@@ -242,8 +242,8 @@ void get_dtdz(const Real pm, const Real pmk, const Real pmid1d_up,
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 KOKKOS_INLINE_FUNCTION
-void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d, const Real plimu,
-          const Real pliml, const Real gam, Real &trp) {
+void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
+          const Real plimu, const Real pliml, const Real gam, Real &trp) {
 
   // temp1d   !  temperature in column [K]
   // pmid1d   !  midpoint pressure in column [Pa]
@@ -410,8 +410,8 @@ void tropopause_climate(lchnk,ncol,pmid,pint,temp,zm,zi,    &  ! in
 #endif
 KOKKOS_INLINE_FUNCTION
 int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
-                       const ConstColumnView &temperature, const ConstColumnView &zm,
-                       const ConstColumnView &zi) {
+                       const ConstColumnView &temperature,
+                       const ConstColumnView &zm, const ConstColumnView &zi) {
   // Find tropopause or quit the simulation if not found
 
   // lchnk            ! number of chunks
@@ -443,8 +443,9 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_lw(
     const Real dt, const ConstColumnView &pmid, const ConstColumnView &pint,
-    const ConstColumnView &temperature, const ConstColumnView &zm, const ConstColumnView &zi,
-    const View2D &state_q, const ConstColumnView &pdel, const ConstColumnView &pdeldry,
+    const ConstColumnView &temperature, const ConstColumnView &zm,
+    const ConstColumnView &zi, const View2D &state_q,
+    const ConstColumnView &pdel, const ConstColumnView &pdeldry,
     const ConstColumnView &cldn, const View2D &ext_cmip6_lw,
     // const ColumnView qqcw_fld[pcnst],
     const View2D &odap_aer,
@@ -534,8 +535,9 @@ void aer_rad_props_lw(
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_sw(
     const Real dt, const ConstColumnView &zi, const ConstColumnView &pmid,
-    const ConstColumnView &pint, const ConstColumnView &temperature, const ConstColumnView &zm,
-    const View2D &state_q, const ConstColumnView &pdel, const ConstColumnView &pdeldry,
+    const ConstColumnView &pint, const ConstColumnView &temperature,
+    const ConstColumnView &zm, const View2D &state_q,
+    const ConstColumnView &pdel, const ConstColumnView &pdeldry,
     const ConstColumnView &cldn, const View2D &ssa_cmip6_sw,
     const View2D &af_cmip6_sw, const View2D &ext_cmip6_sw,
     // nnite, idxnite,

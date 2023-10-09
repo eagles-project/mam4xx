@@ -26,13 +26,13 @@
 #include <mam4xx/mo_chm_diags.hpp>
 #include <mam4xx/mo_photo.hpp>
 #include <mam4xx/modal_aer_opt.hpp>
+#include <mam4xx/modal_aero_calcsize.hpp>
 #include <mam4xx/ndrop.hpp>
 #include <mam4xx/nucleate_ice.hpp>
 #include <mam4xx/nucleation.hpp>
 #include <mam4xx/rename.hpp>
 #include <mam4xx/water_uptake.hpp>
 #include <mam4xx/wet_dep.hpp>
-#include <mam4xx/modal_aero_calcsize.hpp>
 
 namespace mam4 {
 
