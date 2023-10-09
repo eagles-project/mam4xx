@@ -130,12 +130,12 @@ void aitken_accum_exchange(Ensemble *ensemble) {
         "aitken_accum_exchange_k", max_k, KOKKOS_LAMBDA(const int &k) {
                         Real dgncur_i_aitken =
       diags.dry_geometric_mean_diameter_i[aitken_idx](k);
-  Real dgncur_i_accum =
+  Real & dgncur_i_accum =
       diags.dry_geometric_mean_diameter_i[accum_idx](k);
 
-  Real dgncur_c_aitken =
+  Real & dgncur_c_aitken =
       diags.dry_geometric_mean_diameter_c[aitken_idx](k);
-  Real dgncur_c_accum =
+  Real & dgncur_c_accum =
       diags.dry_geometric_mean_diameter_c[accum_idx](k);
       
           calcsize::aitken_accum_exchange(
