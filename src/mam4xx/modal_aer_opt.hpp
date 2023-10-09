@@ -396,14 +396,6 @@ void binterp(const View3D &table, const Real ref_real, const Real ref_img,
 } // binterp
 
 KOKKOS_INLINE_FUNCTION
-void modal_aero_calcsize_sub(const View2D &state_q, const ConstColumnView &pdel,
-                             const Real dt, const ColumnView qqcw_fld[pcnst],
-                             const int list_idx_in, const bool update_mmr_in,
-                             const View2D &dgnumdry_m) {
-
-} // modal_aero_calcsize_sub
-
-KOKKOS_INLINE_FUNCTION
 void modal_aero_wateruptake_dr(
     const View2D &state_q, const ConstColumnView &temperature,
     const ConstColumnView &pmid, const ConstColumnView &cldn,

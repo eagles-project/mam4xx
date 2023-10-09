@@ -41,14 +41,11 @@ void modal_aero_lw(Ensemble *ensemble) {
       }
     }
 
-
     Kokkos::deep_copy(state_q, state_host);
-
-
 
     View2D qqcw("qqcw", pver, pcnst);
     auto qqcw_host = Kokkos::create_mirror_view(qqcw);
-    count=0;
+    count = 0;
 
     for (int i = 0; i < pcnst; ++i) {
       // input data is store on the cpu.
@@ -91,7 +88,6 @@ void modal_aero_lw(Ensemble *ensemble) {
     cldn = haero::testing::create_column_view(pver);
     auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
     Kokkos::deep_copy(cldn, cldn_host);
-
 
     const auto sigmag_amode_db = input.get_array("sigmag_amode");
 
@@ -268,9 +264,9 @@ void modal_aero_lw(Ensemble *ensemble) {
 
     View2D tauxar("tauxar", pver, nlwbands);
 
-    const bool do_adjust=true;
-    const bool do_aitacc_transfer=true;
-    const bool update_mmr=false;
+    const bool do_adjust = true;
+    const bool do_aitacc_transfer = true;
+    const bool update_mmr = false;
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
@@ -291,72 +287,53 @@ void modal_aero_lw(Ensemble *ensemble) {
           team.team_barrier();
 
           // compute with calcsize:
-      
-      Real inv_density[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()]= {};
-      Real num2vol_ratio_min[AeroConfig::num_modes()]={};
-                   Real num2vol_ratio_max[AeroConfig::num_modes()]={};
-                   Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()]={};
-                   Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()]={};
-                   Real num2vol_ratio_nom_nmodes[AeroConfig::num_modes()]={};
-                   Real dgnmin_nmodes[AeroConfig::num_modes()]={};
-                   Real dgnmax_nmodes[AeroConfig::num_modes()]={};
-                   Real dgnnom_nmodes[AeroConfig::num_modes()]={};
-                   Real mean_std_dev_nmodes[AeroConfig::num_modes()]={};
-    // outputs
-                  bool noxf_acc2ait[AeroConfig::num_aerosol_ids()]={};
-                  int n_common_species_ait_accum={};
-                  int ait_spec_in_acc[AeroConfig::num_aerosol_ids()]={};
-                  int acc_spec_in_ait[AeroConfig::num_aerosol_ids()]={};
 
-      modal_aero_calcsize::init_calcsize(inv_density,
-                    num2vol_ratio_min,
-                    num2vol_ratio_max,
-                    num2vol_ratio_max_nmodes,
-                    num2vol_ratio_min_nmodes,
-                    num2vol_ratio_nom_nmodes,
-                    dgnmin_nmodes,
-                    dgnmax_nmodes,
-                    dgnnom_nmodes,
-                    mean_std_dev_nmodes,
-    // outputs
-                   noxf_acc2ait,
-                   n_common_species_ait_accum,
-                   ait_spec_in_acc,
-                   acc_spec_in_ait );
+          Real inv_density[AeroConfig::num_modes()]
+                          [AeroConfig::num_aerosol_ids()] = {};
+          Real num2vol_ratio_min[AeroConfig::num_modes()] = {};
+          Real num2vol_ratio_max[AeroConfig::num_modes()] = {};
+          Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
+          Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()] = {};
+          Real num2vol_ratio_nom_nmodes[AeroConfig::num_modes()] = {};
+          Real dgnmin_nmodes[AeroConfig::num_modes()] = {};
+          Real dgnmax_nmodes[AeroConfig::num_modes()] = {};
+          Real dgnnom_nmodes[AeroConfig::num_modes()] = {};
+          Real mean_std_dev_nmodes[AeroConfig::num_modes()] = {};
+          // outputs
+          bool noxf_acc2ait[AeroConfig::num_aerosol_ids()] = {};
+          int n_common_species_ait_accum = {};
+          int ait_spec_in_acc[AeroConfig::num_aerosol_ids()] = {};
+          int acc_spec_in_ait[AeroConfig::num_aerosol_ids()] = {};
 
+          modal_aero_calcsize::init_calcsize(
+              inv_density, num2vol_ratio_min, num2vol_ratio_max,
+              num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
+              num2vol_ratio_nom_nmodes, dgnmin_nmodes, dgnmax_nmodes,
+              dgnnom_nmodes, mean_std_dev_nmodes,
+              // outputs
+              noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
+              acc_spec_in_ait);
 
-   for (int kk = mam4::ndrop::top_lev; kk < pver; ++kk) {
+          for (int kk = mam4::ndrop::top_lev; kk < pver; ++kk) {
 
-    const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
-    const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
-    auto dgncur_i = Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
-    Real dgncur_c[ntot_amode] = {};
-    modal_aero_calcsize::modal_aero_calcsize_sub(
-          state_q_k.data(), // in
-          qqcw_k.data(),    // in
-          dt,do_adjust,do_aitacc_transfer,
-          update_mmr,
-          lmassptr_amode,
-          numptr_amode,
-          inv_density, // in
-          num2vol_ratio_min,
-          num2vol_ratio_max,
-          num2vol_ratio_max_nmodes,
-    num2vol_ratio_min_nmodes,
-    num2vol_ratio_nom_nmodes,
-    dgnmin_nmodes,
-    dgnmax_nmodes,
-    dgnnom_nmodes,
-    mean_std_dev_nmodes,
-    // outputs
-    noxf_acc2ait,
-    n_common_species_ait_accum,
-    ait_spec_in_acc,
-    acc_spec_in_ait,
-    dgncur_i.data(),
-    dgncur_c
-    );
-   } // k        
+            const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
+            const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
+            auto dgncur_i = Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
+            Real dgncur_c[ntot_amode] = {};
+            modal_aero_calcsize::modal_aero_calcsize_sub(
+                state_q_k.data(), // in
+                qqcw_k.data(),    // in
+                dt, do_adjust, do_aitacc_transfer, update_mmr, lmassptr_amode,
+                numptr_amode,
+                inv_density, // in
+                num2vol_ratio_min, num2vol_ratio_max, num2vol_ratio_max_nmodes,
+                num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes,
+                dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
+                mean_std_dev_nmodes,
+                // outputs
+                noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
+                acc_spec_in_ait, dgncur_i.data(), dgncur_c);
+          } // k
 
           team.team_barrier();
 
@@ -377,7 +354,6 @@ void modal_aero_lw(Ensemble *ensemble) {
                         // work views
                         mass, cheb, dgnumwet_m, dgnumdry_m, radsurf, logradsurf,
                         specrefindex, qaerwat_m);
-
         });
 
     std::vector<Real> qqcw_out(pver * pcnst, zero);
