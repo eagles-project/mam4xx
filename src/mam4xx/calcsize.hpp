@@ -610,14 +610,9 @@ void aitken_accum_exchange(
     const Real &adj_tscale_inv, const Real &dt, const Prognostics &prognostics,
     const Real &drv_i_aitsv, const Real &num_i_aitsv, const Real &drv_c_aitsv,
     const Real &num_c_aitsv, const Real &drv_i_accsv, const Real &num_i_accsv,
-    const Real &drv_c_accsv, const Real &num_c_accsv,
-    Real & dgncur_i_aitken, 
-    Real & dgncur_i_accum, 
-    Real & dgncur_c_aitken, 
-    Real & dgncur_c_accum, 
-     const Tendencies &tendencies) {
-
-
+    const Real &drv_c_accsv, const Real &num_c_accsv, Real &dgncur_i_aitken,
+    Real &dgncur_i_accum, Real &dgncur_c_aitken, Real &dgncur_c_accum,
+    const Tendencies &tendencies) {
 
   // -----------------------------------------------------------------------------
   // Purpose: Exchange aerosols between aitken and accumulation modes based on
@@ -1201,17 +1196,15 @@ public:
           // ------------------------------------------------------------------
           if (do_aitacc_transfer) {
 
+            Real &dgncur_i_aitken =
+                diagnostics.dry_geometric_mean_diameter_i[aitken_idx](k);
+            Real &dgncur_i_accum =
+                diagnostics.dry_geometric_mean_diameter_i[accumulation_idx](k);
 
-  Real & dgncur_i_aitken =
-      diagnostics.dry_geometric_mean_diameter_i[aitken_idx](k);
-  Real & dgncur_i_accum =
-      diagnostics.dry_geometric_mean_diameter_i[accumulation_idx](k);
-
-  Real & dgncur_c_aitken =
-      diagnostics.dry_geometric_mean_diameter_c[aitken_idx](k);
-  Real &  dgncur_c_accum =
-      diagnostics.dry_geometric_mean_diameter_c[accumulation_idx](k);
-
+            Real &dgncur_c_aitken =
+                diagnostics.dry_geometric_mean_diameter_c[aitken_idx](k);
+            Real &dgncur_c_accum =
+                diagnostics.dry_geometric_mean_diameter_c[accumulation_idx](k);
 
             calcsize::aitken_accum_exchange(
                 k, aitken_idx, accumulation_idx, noxf_acc2ait,
@@ -1221,12 +1214,8 @@ public:
                 dgnnom_nmodes, mean_std_dev_nmodes, inv_density, adj_tscale_inv,
                 dt, prognostics, dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv,
                 num_c_k_aitsv, dryvol_i_accsv, num_i_k_accsv, dryvol_c_accsv,
-                num_c_k_accsv,
-                dgncur_i_aitken,
-                dgncur_i_accum,
-                dgncur_c_aitken, 
-                dgncur_c_accum,
-                  tendencies);
+                num_c_k_accsv, dgncur_i_aitken, dgncur_i_accum, dgncur_c_aitken,
+                dgncur_c_accum, tendencies);
 
           } // end do_aitacc_transfer
         }); // kokkos::parfor(k)
