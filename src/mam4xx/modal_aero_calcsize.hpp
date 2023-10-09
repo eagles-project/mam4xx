@@ -29,6 +29,90 @@ constexpr int maxd_aspectype = ndrop::maxd_aspectype;
 //                 &!output num_a_accsv, num_c_accsv, num_a_aitsv, num_c_aitsv,
 //                 num_a_sv, num_c_sv, &!output dotend, dotendqqcw, dqdt,
 //                 dqqcwdt, qsrflx)
+KOKKOS_INLINE_FUNCTION
+void init_calcsize(Real inv_density[AeroConfig::num_modes()]
+                                   [AeroConfig::num_aerosol_ids()],
+                   Real num2vol_ratio_min[AeroConfig::num_modes()],
+                   Real num2vol_ratio_max[AeroConfig::num_modes()],
+                   Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()],
+                   Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
+                   Real num2vol_ratio_nom_nmodes[AeroConfig::num_modes()],
+                   Real dgnmin_nmodes[AeroConfig::num_modes()],
+                   Real dgnmax_nmodes[AeroConfig::num_modes()],
+                   Real dgnnom_nmodes[AeroConfig::num_modes()],
+                   Real mean_std_dev_nmodes[AeroConfig::num_modes()],
+    // outputs
+                  bool noxf_acc2ait[AeroConfig::num_aerosol_ids()],
+                  int n_common_species_ait_accum,
+                  int ait_spec_in_acc[AeroConfig::num_aerosol_ids()],
+                  int acc_spec_in_ait[AeroConfig::num_aerosol_ids()] )
+{
+
+      const Real one = 1.0;
+
+    // find aerosol species in accumulation that can be transfer to aitken mode
+    const int accum_idx = int(ModeIndex::Accumulation);
+    const int aitken_idx = int(ModeIndex::Aitken);
+
+    // check if accumulation species exists in aitken mode
+    // also save idx for transfer
+    int count = 0;
+    for (int isp = 0; isp < num_species_mode(accum_idx); ++isp) {
+      // assume species can not be transfer.
+      noxf_acc2ait[isp] = true;
+      AeroId sp_accum = mode_aero_species(accum_idx, isp);
+
+      for (int jsp = 0; jsp < num_species_mode(aitken_idx); ++jsp) {
+        AeroId sp_aitken = mode_aero_species(aitken_idx, jsp);
+        if (sp_accum == sp_aitken) {
+          // false : can be transfer.
+          noxf_acc2ait[isp] = false;
+          // save index for transfer from accumulation to aitken mode
+          acc_spec_in_ait[count] = isp;
+          // save index for transfer from aitken to accumulation mode
+          ait_spec_in_acc[count] = jsp;
+          count++;
+          break;
+        }
+      } // end aitken foor
+    }   // end accumulation for
+    n_common_species_ait_accum = count;
+
+
+      // Set mode parameters.
+    for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+      // FIXME: There is a comment in modal_aero_newnuc.F90 that Dick Easter
+      // FIXME: thinks that dgnum_aer isn't used in MAM4, but it is actually
+      // FIXME: used in this nucleation parameterization. So we will have to
+      // FIXME: figure this out.
+      dgnnom_nmodes[m] = modes(m).nom_diameter;
+      dgnmin_nmodes[m] = modes(m).min_diameter;
+      dgnmax_nmodes[m] = modes(m).max_diameter;
+      mean_std_dev_nmodes[m] = modes(m).mean_std_dev;
+      num2vol_ratio_nom_nmodes[m] =
+          one / conversions::mean_particle_volume_from_diameter(
+                    dgnnom_nmodes[m], modes(m).mean_std_dev);
+      num2vol_ratio_min_nmodes[m] =
+          one / conversions::mean_particle_volume_from_diameter(
+                    dgnmax_nmodes[m], modes(m).mean_std_dev);
+      num2vol_ratio_max_nmodes[m] =
+          one / conversions::mean_particle_volume_from_diameter(
+                    dgnmin_nmodes[m], modes(m).mean_std_dev);
+
+      // compute inv density; density is constant, so we can compute in init.
+      const auto n_spec = num_species_mode(m);
+      for (int ispec = 0; ispec < n_spec; ispec++) {
+        const int aero_id = int(mode_aero_species(m, ispec));
+        inv_density[m][ispec] = Real(1.0) / aero_species(aero_id).density;
+      } // for(ispec)
+      // FIXME: do we need to update num2vol_ratio_min_nmodes and
+      // num2vol_ratio_max_nmodes as well?
+      num2vol_ratio_min[m] = num2vol_ratio_min_nmodes[m];
+      num2vol_ratio_max[m] = num2vol_ratio_max_nmodes[m];
+
+    } // for(m)
+
+}// init_calcsize
 
 // NOTE: this version uses state_q and qqcw variables using format from e3sm
 KOKKOS_INLINE_FUNCTION
@@ -511,9 +595,10 @@ void modal_aero_calcsize_sub(
     const Real *qqcw,    // in
     const Real dt, const bool do_adjust, const bool do_aitacc_transfer,
     const bool update_mmr,
+        const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
+    const int numptr_amode[AeroConfig::num_modes()],
     const Real inv_density[AeroConfig::num_modes()]
                           [AeroConfig::num_aerosol_ids()], // in
-
     const Real num2vol_ratio_min[AeroConfig::num_modes()],
     const Real num2vol_ratio_max[AeroConfig::num_modes()],
     const Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()],
@@ -523,8 +608,6 @@ void modal_aero_calcsize_sub(
     const Real dgnmax_nmodes[AeroConfig::num_modes()],
     const Real dgnnom_nmodes[AeroConfig::num_modes()],
     const Real mean_std_dev_nmodes[AeroConfig::num_modes()],
-    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
-    const int numptr_amode[AeroConfig::num_modes()],
     // outputs
     const bool noxf_acc2ait[AeroConfig::num_aerosol_ids()],
     const int n_common_species_ait_accum, const int *ait_spec_in_acc,
