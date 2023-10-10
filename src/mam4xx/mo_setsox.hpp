@@ -975,13 +975,13 @@ void sox_cldaero_update(int loffset, Real dt, Real mbar, Real pdel, Real press,
     Real dso4dt_aqrxn = (delso4_o3rxn + delso4_hprxn) / dt;
     Real dso4dt_hprxn = delso4_hprxn / dt;
 
-  /*
-  -----------------------------------------------------------------------
-  now compute TMR tendencies
-  this includes the above aqueous so2 chemistry AND
-  the uptake of highly soluble aerosol precursor gases (h2so4, ...)
-  The wetremoval of dissolved, unreacted so2 and h2o2 are assumed as zero
-  */
+    /*
+    -----------------------------------------------------------------------
+    now compute TMR tendencies
+    this includes the above aqueous so2 chemistry AND
+    the uptake of highly soluble aerosol precursor gases (h2so4, ...)
+    The wetremoval of dissolved, unreacted so2 and h2o2 are assumed as zero
+    */
 
     // dqdt due to aqueous chemistry [mol/mol/s]
     Real dqdt_aq;
