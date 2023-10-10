@@ -626,7 +626,7 @@ void aer_rad_props_sw(
   constexpr int idx_sw_diag = 10; // index to sw visible band
 
   for (int kk = 0; kk < pver; ++kk) {
-    for (int i = 0; i < nlwbands; ++i) {
+    for (int i = 0; i < nswbands; ++i) {
       ext_cmip6_sw_inv_m(kk, i) = ext_cmip6_sw(kk, i) * km_inv_to_m_inv;
     } /// end i
   }   // end kk
