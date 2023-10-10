@@ -625,9 +625,13 @@ void aer_rad_props_sw(
   // !Converting it from 1/km to 1/m
   constexpr int idx_sw_diag = 10; // index to sw visible band
 
+
+  // Note: Changing order of dimension in ext_cmip6_sw_inv_m from (level, nswbands) to  (nswbands, level)
+  // because original layout produces this error: View assignment must have compatible layouts in  ext_cmip6_sw_inv_m_idx_sw_diag
+
   for (int kk = 0; kk < pver; ++kk) {
     for (int i = 0; i < nswbands; ++i) {
-      ext_cmip6_sw_inv_m(kk, i) = ext_cmip6_sw(kk, i) * km_inv_to_m_inv;
+      ext_cmip6_sw_inv_m(i,kk) = ext_cmip6_sw(kk, i) * km_inv_to_m_inv;
     } /// end i
   }   // end kk
 
@@ -636,7 +640,7 @@ void aer_rad_props_sw(
   const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
 
   auto ext_cmip6_sw_inv_m_idx_sw_diag =
-      Kokkos::subview(ext_cmip6_sw_inv_m, Kokkos::ALL(), idx_sw_diag);
+      Kokkos::subview(ext_cmip6_sw_inv_m, idx_sw_diag, Kokkos::ALL());
 
   // Special treatment for CMIP6 volcanic aerosols, where extinction, ssa
   // and af are directly read from the prescribed volcanic aerosol file
