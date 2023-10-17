@@ -106,12 +106,8 @@ logical :: cloud_borne = .false.
 logical :: modal_aerosols = .false.
 */
 
-// these are for initial "unit testing"
-KOKKOS_INLINE_FUNCTION
-void setsox() {}
-
 /*
-NOTE: this appears not to do anything that the mam4xx requires
+NOTE: this appears not to do anything that mam4xx requires
 KOKKOS_INLINE_FUNCTION
 void sox_init(AeroConfig aero_config) {
 -----------------------------------------------------------------------
@@ -695,23 +691,27 @@ void compute_aer_factor(Real *tmr, int loffset,
 
   int ll;
   for (int m = 0; m < nmodes; ++m) {
+    // NOTE: at least for the case of mam4, this might always be > 0
     ll = numptrcw_amode[m] - loffset;
+    // FIXME: I believe these two logic blocks can be combined
     if (ll > 0) {
       qnum_c[m] = haero::max(zero, tmr[ll]);
     }
-    // force qnum_c(m) to be positive for m=modeptr_accum or m=1
+    // force qnum_c(m) to be positive for m = modeptr_accum or m = 1
     if (m == modeptr_accum) {
       // FIXME: BAD CONSTANT
       qnum_c[m] = haero::max(1.0e-10, qnum_c[m]);
     }
 
+    // NOTE: given what I've seen for the value of lptr_so4_cw_amode in mam4,
+    // this could probably be a loop
     // faqgain_so4(m) := fraction of total so4_c gain going to mode n
     // these are proportional to the activated particle MR for each mode
     if (lptr_so4_cw_amode[m] > 0) {
       faqgain_so4[m] = qnum_c[m];
       sumf += faqgain_so4[m];
     }
-  }
+  } // end for(nmodes)
   // at this point, (sumf <= 0.0) only when all the faqgain_so4 are zero
   if (sumf > zero) {
     for (int m = 0; m < nmodes; ++m) {
@@ -822,7 +822,7 @@ Real cldaero_uptakerate(Real xl, Real cldnum, Real cfact, Real cldfrc,
 } // end function cldaero_uptakerate
 
 KOKKOS_INLINE_FUNCTION
-void update_tmr(Real tmr, Real dqdt, Real dtime) {
+void update_tmr(Real &tmr, Real dqdt, Real dtime) {
   // -----------------------------------------------------------------------
   //  update tracer mixing ratio by adding tendencies
   // -----------------------------------------------------------------------
@@ -834,9 +834,10 @@ void update_tmr(Real tmr, Real dqdt, Real dtime) {
 } // end subroutine update_tmr
 
 KOKKOS_INLINE_FUNCTION
-void update_tmr_nonzero(Real *tmr, int idx) {
+void update_tmr_nonzero(Real &tmr, int idx) {
   //-----------------------------------------------------------------------
-  // basically it just makes sure the value is greater than zero
+  // this just makes sure the value is greater than zero
+  // aka: max(a, tol)
   //-----------------------------------------------------------------------
   // tracer mixing ratio [vmr]
   // Real tmr;
@@ -846,8 +847,12 @@ void update_tmr_nonzero(Real *tmr, int idx) {
   // FIXME: BAD CONSTANT
   constexpr Real small_value_20 = 1.0e-20;
 
-  if (idx > 0) {
-    tmr[idx] = haero::max(tmr[idx], small_value_20);
+  // NOTE: in the fortran version, this if statement is if (idx > 0), so I
+  // believe this is the correct way to port it
+  if (idx >= 0) {
+    std::cout << "**IN FUNCTION** tmr = " << tmr << "\n";
+    tmr = haero::max(tmr, small_value_20);
+    std::cout << "**AFTER max()** tmr = " << tmr << "\n";
   }
 
 } // end subroutine update_tmr_nonzero
@@ -1042,14 +1047,16 @@ void sox_cldaero_update(int loffset, Real dt, Real mbar, Real pdel, Real press,
   // FIXME: this is very ugly. we loop through this array, 1 by 1, and if
   // (lptr_so4_cw_amode[m] - loffset) := idx > 0,
   // then it sets qcw to max(qcw, 1e-20)
+  int tmp_idx;
   for (int m = 0; m < nmodes; ++m) {
-    update_tmr_nonzero(qcw, (lptr_so4_cw_amode[m] - loffset));
+    tmp_idx = lptr_so4_cw_amode[m] - loffset;
+    update_tmr_nonzero(qcw[tmp_idx], tmp_idx);
     // FIXME: I believe this is spurious.
     // as far as I can gather, lptr_nh4_cw_amode = [0, 0, 0, 0],
     // meaning that this results in a no-op
     // update_tmr_nonzero(qcw, (lptr_nh4_cw_amode[m] - loffset));
   }
-  update_tmr_nonzero(qin, id_so2);
+  update_tmr_nonzero(qin[id_so2], id_so2);
 
   /*
   FIXME: sflx is a local variable that is calculated and then passed to
