@@ -22,6 +22,7 @@ using namespace mam4;
 // using namespace mam4::conversions;
 const int nmodes = AeroConfig::num_modes();
 const int loffset = 9;
+const mam4::mo_setsox::Config setsox_config_;
 
 TEST_CASE("test_sox_cldaero_create_obj", "mam4_mo_setsox_unit_tests") {
   ekat::Comm comm;
@@ -30,7 +31,9 @@ TEST_CASE("test_sox_cldaero_create_obj", "mam4_mo_setsox_unit_tests") {
       ekat::logger::LogLevel::debug, comm);
   logger.debug("");
 
-  const int nspec = mam4::mo_setsox::nspec_gas;
+  const mam4::mo_setsox::Config config_;
+
+  const int nspec = AeroConfig::num_gas_phase_species();
   const Real cldfrc1 = 1.0;
   const Real cldfrc0 = 0.0;
   Real qcw[nspec];
@@ -45,7 +48,7 @@ TEST_CASE("test_sox_cldaero_create_obj", "mam4_mo_setsox_unit_tests") {
   // cldfrc > 0 => calculate xlwc, so4c comes from adding 3 entries of qwc,
   // and so4_fact = 1
   mam4::mo_setsox::Cloudconc cldconc = mam4::mo_setsox::sox_cldaero_create_obj(
-      cldfrc1, qcw, lwc, cfact, loffset);
+      cldfrc1, qcw, lwc, cfact, loffset, setsox_config_);
   logger.debug("so4c = {}, xlwc = {}, so4_fact = {}", cldconc.so4c,
                cldconc.xlwc, cldconc.so4_fact);
   REQUIRE(FloatingPoint<Real>::equiv(cldconc.so4c, 3.0));
@@ -54,7 +57,7 @@ TEST_CASE("test_sox_cldaero_create_obj", "mam4_mo_setsox_unit_tests") {
 
   // cldfrc = 0 => xlwc = 0
   cldconc = mam4::mo_setsox::sox_cldaero_create_obj(cldfrc0, qcw, lwc, cfact,
-                                                    loffset);
+                                                    loffset, config_);
   logger.debug("so4c = {}, xlwc = {}, so4_fact = {}", cldconc.so4c,
                cldconc.xlwc, cldconc.so4_fact);
   REQUIRE(FloatingPoint<Real>::equiv(cldconc.so4c, 3.0));
@@ -152,21 +155,22 @@ TEST_CASE("test_compute_aer_factor", "mam4_mo_setsox_unit_tests") {
   ekat::logger::Logger<> logger("mo_setsox unit tests: test_compute_aer_factor",
                                 ekat::logger::LogLevel::debug, comm);
   logger.debug("");
+  mam4::mo_setsox::Config config_;
   // for reference:
   // lptr_so4_cw_amode[4] = {15, 23, 30, -1};
-  const int numptrcw_amode[nmodes] = {23, 28, 36, 40};
+  // numptrcw_amode[nmodes] = {23, 28, 36, 40};
 
   Real tmr[32] = {0};
   for (int i = 0; i < nmodes; ++i) {
     // this is completely arbitrary, checking +/- values, since tmr is only used
     // to assign a variable = max(0, tmr[i])
-    tmr[numptrcw_amode[i] - loffset] = haero::pow(-1, i) * 0.5e-10 * (i + 1);
+    tmr[config_.numptrcw_amode[i] - loffset] = haero::pow(-1, i) * 0.5e-10 * (i + 1);
   }
   Real *tmr_ptr = tmr;
   Real faqgain_so4[nmodes];
   Real ref_faqgain_so4[nmodes] = {0.4, 0.0, 0.6, 0.0};
 
-  mam4::mo_setsox::compute_aer_factor(tmr_ptr, loffset, faqgain_so4);
+  mam4::mo_setsox::compute_aer_factor(tmr_ptr, loffset, config_, faqgain_so4);
 
   for (int i = 0; i < nmodes; ++i) {
     logger.debug("faqgain_so4[i] = {}", faqgain_so4[i]);

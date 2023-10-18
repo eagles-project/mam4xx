@@ -39,6 +39,7 @@ void setsox_test(Ensemble *ensemble) {
 
     // Parse input
     const Real dt = input.get_array("dtime")[0];
+    const int loffset = input.get_array("loffset")[0];
     const Real press = input.get_array("press")[0];
     const Real pdel = input.get_array("pdel")[0];
     const Real tfld = input.get_array("tfld")[0];
@@ -51,8 +52,8 @@ void setsox_test(Ensemble *ensemble) {
     auto qcw = input.get_array("qcw");
     auto qin = input.get_array("qin");
 
-    mam4::mo_setsox::setsox(xhnm, cldfrc, &qcw[0], lwc, tfld, press, &qin[0],
-                            dt, mbar, pdel, cldnum);
+    mam4::mo_setsox::setsox_single_level(loffset, dt, press, pdel, tfld, mbar, lwc, cldfrc,
+                            cldnum, xhnm, &qcw[0], &qin[0]);
 
     output.set("qcw", qcw);
     output.set("qin", qin);

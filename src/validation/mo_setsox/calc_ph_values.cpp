@@ -37,6 +37,10 @@ void calc_ph_values(Ensemble *ensemble) {
       }
     }
 
+    const mam4::mo_setsox::Config setsox_config_;
+    const Real co2g = setsox_config_.co2g;
+    const int itermax = setsox_config_.itermax;
+
     // Parse input
     const Real temperature = input.get_array("temperature")[0];
     const Real patm = input.get_array("patm")[0];
@@ -54,7 +58,8 @@ void calc_ph_values(Ensemble *ensemble) {
     Real xph;
 
     mam4::mo_setsox::calc_ph_values(temperature, patm, xlwc, t_factor, xso2,
-                                    xso4, xhnm, so4_fact, Ra, xkw, const0,
+                                    xso4, xhnm, so4_fact, Ra, xkw, const0, co2g,
+                                    itermax,
                                     converged, xph);
 
     output.set("converged", converged);

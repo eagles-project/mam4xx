@@ -16,66 +16,72 @@ namespace mam4 {
 
 namespace mo_setsox {
 
-// number of vertical levels
-const int pver = mam4::nlev;
-const int nmodes = AeroConfig::num_modes();
-const int nspec_gas = AeroConfig::num_gas_phase_species();
-const int modeptr_accum = int(ModeIndex::Accumulation);
-/*
-these are the entries/indices in the gas-phase species array
-from: eam/src/chemistry/pp_linoz_mam4_resus_mom_soag/mo_sim_dat.F90#L23)
-solsym(: 31) = (/ 'O3', 'H2O2', 'H2SO4', 'SO2', 'DMS',  'SOAG', 'so4_a1',
-                  'pom_a1', 'soa_a1', 'bc_a1',  'dst_a1', 'ncl_a1',
-                  'mom_a1', 'num_a1', 'so4_a2',  'soa_a2', 'ncl_a2',
-                  'mom_a2', 'm_a2', 'dst_a3',  'ncl_a3', 'so4_a3', 'bc_a3',
-                  'pom_a3', 'soa_a3', 'mom_a3', 'num_a3', 'pom_a4',
-                  'bc_a4', 'mom_a4', 'num_a4' /)
-Fortran-indexed:
-1: 'O3', 2: 'H2O2', 3: 'H2SO4', 4: 'SO2', 5: 'DMS', 6: 'SOAG', 7: 'so4_a1',
-8: 'pom_a1', 9: 'soa_a1', 10: 'bc_a1', 11: 'dst_a1', 12: 'ncl_a1',
-13: 'mom_a1', 14: 'num_a1', 15: 'so4_a2', 16: 'soa_a2', 17: 'ncl_a2',
-18: 'mom_a2', 19: 'num_a2', 20: 'dst_a3', 21: 'ncl_a3', 22: 'so4_a3',
-23: 'bc_a3', 24: 'pom_a3', 25: 'soa_a3', 26: 'mom_a3', 27: 'num_a3',
-28: 'pom_a4', 29: 'bc_a4', 30: 'mom_a4', 31: 'num_a4'
-c++ indexed:
-0: 'O3', 1: 'H2O2', 2: 'H2SO4', 3: 'SO2', 4: 'DMS', 5: 'SOAG', 6: 'so4_a1',
-7: 'pom_a1', 8: 'soa_a1', 9: 'bc_a1', 10: 'dst_a1', 11: 'ncl_a1',
-12: 'mom_a1', 13: 'num_a1', 14: 'so4_a2', 15: 'soa_a2', 16: 'ncl_a2',
-17: 'mom_a2', 18: 'num_a2', 19: 'dst_a3', 20: 'ncl_a3', 21: 'so4_a3',
-22: 'bc_a3', 23: 'pom_a3', 24: 'soa_a3', 25: 'mom_a3', 26: 'num_a3',
-27: 'pom_a4', 28: 'bc_a4', 29: 'mom_a4', 30: 'num_a4'
-*/
-constexpr int id_so2 = 3;
-constexpr int id_h2o2 = 1;
-constexpr int id_o3 = 0;
-constexpr int id_h2so4 = 2;
+// mo_setsox-specific configuration
+struct Config {
 
-// ===========================================================================
-//     BAD CONSTANTS (let's just put the global ones in one place for now)
-// ===========================================================================
-constexpr Real lwc = 0.2302286341e-4;
-constexpr int lptr_so4_cw_amode[4] = {15, 23, 30, -1};
-constexpr int loffset = 9;
-constexpr Real small_value_lwc = 1.0e-8;
-constexpr Real small_value_cf = 1.0e-5;
-constexpr Real p0 = 101300.0;
-constexpr bool cloud_borne = false;
-constexpr bool modal_aerosols = false;
-// universal gas constant (sort of)
-// FIXME: TERRIBLE CONSTANT
-constexpr Real Ra = 8314.0 / 101325.0;
-// water acidity
-constexpr Real xkw = 1.0e-14;
-// FIXME: AWFUL CONSTANT
-// [cm3/L / Avogadro constant]
-constexpr Real const0 = 1.0e3 / 6.023e23;
-// 330 ppm = 330.0e-6 atm
-constexpr Real co2g = 330.0e-6;
-constexpr int itermax = 20;
-constexpr Real small_value_20 = 1.0e-20;
-constexpr Real small_value_30 = 1.0e-30;
-constexpr int numptrcw_amode[nmodes] = {23, 28, 36, 40};
-// ===========================================================================
+  // number of vertical levels
+  int pver = mam4::nlev;
+  int modeptr_accum = int(ModeIndex::Accumulation);
+  /*
+  these are the entries/indices in the gas-phase species array
+  from: eam/src/chemistry/pp_linoz_mam4_resus_mom_soag/mo_sim_dat.F90#L23)
+  solsym(: 31) = (/ 'O3', 'H2O2', 'H2SO4', 'SO2', 'DMS',  'SOAG', 'so4_a1',
+                    'pom_a1', 'soa_a1', 'bc_a1',  'dst_a1', 'ncl_a1',
+                    'mom_a1', 'num_a1', 'so4_a2',  'soa_a2', 'ncl_a2',
+                    'mom_a2', 'm_a2', 'dst_a3',  'ncl_a3', 'so4_a3', 'bc_a3',
+                    'pom_a3', 'soa_a3', 'mom_a3', 'num_a3', 'pom_a4',
+                    'bc_a4', 'mom_a4', 'num_a4' /)
+  Fortran-indexed:
+  1: 'O3', 2: 'H2O2', 3: 'H2SO4', 4: 'SO2', 5: 'DMS', 6: 'SOAG', 7: 'so4_a1',
+  8: 'pom_a1', 9: 'soa_a1', 10: 'bc_a1', 11: 'dst_a1', 12: 'ncl_a1',
+  13: 'mom_a1', 14: 'num_a1', 15: 'so4_a2', 16: 'soa_a2', 17: 'ncl_a2',
+  18: 'mom_a2', 19: 'num_a2', 20: 'dst_a3', 21: 'ncl_a3', 22: 'so4_a3',
+  23: 'bc_a3', 24: 'pom_a3', 25: 'soa_a3', 26: 'mom_a3', 27: 'num_a3',
+  28: 'pom_a4', 29: 'bc_a4', 30: 'mom_a4', 31: 'num_a4'
+  c++ indexed:
+  0: 'O3', 1: 'H2O2', 2: 'H2SO4', 3: 'SO2', 4: 'DMS', 5: 'SOAG', 6: 'so4_a1',
+  7: 'pom_a1', 8: 'soa_a1', 9: 'bc_a1', 10: 'dst_a1', 11: 'ncl_a1',
+  12: 'mom_a1', 13: 'num_a1', 14: 'so4_a2', 15: 'soa_a2', 16: 'ncl_a2',
+  17: 'mom_a2', 18: 'num_a2', 19: 'dst_a3', 20: 'ncl_a3', 21: 'so4_a3',
+  22: 'bc_a3', 23: 'pom_a3', 24: 'soa_a3', 25: 'mom_a3', 26: 'num_a3',
+  27: 'pom_a4', 28: 'bc_a4', 29: 'mom_a4', 30: 'num_a4'
+  */
+  int id_so2 = 3;
+  int id_h2o2 = 1;
+  int id_o3 = 0;
+  int id_h2so4 = 2;
+
+  // ===========================================================================
+  //     BAD CONSTANTS (let's just put the global ones in one place for now)
+  // ===========================================================================
+  // Real lwc = 0.2302286341e-4;
+  int lptr_so4_cw_amode[4] = {15, 23, 30, -1};
+  // int loffset = 9;
+  Real small_value_lwc = 1.0e-8;
+  // Real small_value_cf = 1.0e-5;
+  Real p0 = 101300.0;
+  bool cloud_borne = false;
+  bool modal_aerosols = false;
+  // universal gas constant (sort of)
+  // FIXME: TERRIBLE CONSTANT
+  Real Ra = 8314.0 / 101325.0;
+  // water acidity
+  Real xkw = 1.0e-14;
+  // FIXME: AWFUL CONSTANT
+  // [cm3/L / Avogadro constant]
+  Real const0 = 1.0e3 / 6.023e23;
+  // 330 ppm = 330.0e-6 atm
+  Real co2g = 330.0e-6;
+  int itermax = 20;
+  // Real small_value_20 = 1.0e-20;
+  // Real small_value_30 = 1.0e-30;
+  int numptrcw_amode[AeroConfig::num_modes()] = {23, 28, 36, 40};
+
+  Config() = default;
+  Config(const Config &) = default;
+  ~Config() = default;
+  Config &operator=(const Config &) = default;
+};
 
 // struct for the sox_cldaero_create_obj()
 // NOTE: maybe ditch this in the future to make life simpler?
@@ -84,148 +90,11 @@ struct Cloudconc {
   Real xlwc;
   Real so4_fact;
 };
-/*
-use shr_kind_mod, only : r8 => shr_kind0
-use cam_logfile,  only : iulog
-
-private
-public :: sox_inti, setsox
-public :: has_sox
-
-save
-logical            ::  inv_o3
-integer            ::  id_msa
-
-integer :: id_so2, id_nh3, id_hno3, id_h2o2, id_o3, id_ho2
-integer :: id_so4, id_h2so4
-
-logical :: has_sox = .true.
-logical :: inv_so2, inv_nh3, inv_hno3, inv_h2o2, inv_ox, inv_nh4no3, inv_ho2
-
-logical :: cloud_borne = .false.
-logical :: modal_aerosols = .false.
-*/
-
-/*
-NOTE: this appears not to do anything that mam4xx requires
-KOKKOS_INLINE_FUNCTION
-void sox_init(AeroConfig aero_config) {
------------------------------------------------------------------------
-... initialize the hetero sox routine
------------------------------------------------------------------------
-
-use mo_chem_utls, only : get_spc_ndx, get_inv_ndx
-use spmd_utils,   only : masterproc
-use cam_history,  only : addfld
-use cam_history,  only : add_default
-use ppgrid,       only : pver
-use phys_control, only : phys_getopts
-use sox_cldaero_mod, only : sox_cldaero_init
-
-implicit none
-
-logical :: history_aerosol   // Output aerosol diagnostics
-logical :: history_verbose   // produce verbose history output
-
-call phys_getopts( &
-     history_aerosol_out = history_aerosol, &
-     history_verbose_out = history_verbose, &
-     prog_modal_aero_out=modal_aerosols )
-
-cloud_borne = modal_aerosols
-
-//-----------------------------------------------------------------
-//       ... get species indices
-//-----------------------------------------------------------------
-
-if (cloud_borne) then
-   id_h2so4 = get_spc_ndx( 'H2SO4' )
-else
-   id_so4 = get_spc_ndx( 'SO4' )
-endif
-id_msa = get_spc_ndx( 'MSA' )
-
-inv_so2 = .false.
-id_so2 = get_inv_ndx( 'SO2' )
-inv_so2 = id_so2 > 0
-if ( .not. inv_so2 ) then
-   id_so2 = get_spc_ndx( 'SO2' )
-endif
-
-inv_NH3 = .false.
-id_NH3 = get_inv_ndx( 'NH3' )
-inv_NH3 = id_NH3 > 0
-if ( .not. inv_NH3 ) then
-   id_NH3 = get_spc_ndx( 'NH3' )
-endif
-
-inv_HNO3 = .false.
-id_HNO3 = get_inv_ndx( 'HNO3' )
-inv_HNO3 = id_hno3 > 0
-if ( .not. inv_HNO3 ) then
-   id_HNO3 = get_spc_ndx( 'HNO3' )
-endif
-
-inv_H2O2 = .false.
-id_H2O2 = get_inv_ndx( 'H2O2' )
-inv_H2O2 = id_H2O2 > 0
-if ( .not. inv_H2O2 ) then
-   id_H2O2 = get_spc_ndx( 'H2O2' )
-endif
-
-inv_HO2 = .false.
-id_HO2 = get_inv_ndx( 'HO2' )
-inv_HO2 = id_HO2 > 0
-if ( .not. inv_HO2 ) then
-   id_HO2 = get_spc_ndx( 'HO2' )
-endif
-
-inv_o3 = get_inv_ndx( 'O3' ) > 0
-if (inv_o3) then
-   id_o3 = get_inv_ndx( 'O3' )
-else
-   id_o3 = get_spc_ndx( 'O3' )
-endif
-inv_ho2 = get_inv_ndx( 'HO2' ) > 0
-if (inv_ho2) then
-   id_ho2 = get_inv_ndx( 'HO2' )
-else
-   id_ho2 = get_spc_ndx( 'HO2' )
-endif
-
-has_sox = (id_so2>0) .and. (id_h2o2>0) .and. (id_o3>0) .and. (id_ho2>0)
-if (cloud_borne) then
-   has_sox = has_sox .and. (id_h2so4>0)
-else
-   has_sox = has_sox .and. (id_so4>0) .and. (id_nh3>0)
-endif
-
-if (masterproc) then
-   write(iulog,*) 'sox_inti: has_sox = ',has_sox
-endif
-
-if( has_sox ) then
-   if (masterproc) then
-      write(iulog,*) '-----------------------------------------'
-      write(iulog,*) 'mozart will do sox aerosols'
-      write(iulog,*) '-----------------------------------------'
-   endif
-else
-   return
-end if
-
-call addfld( 'XPH_LWC',(/ 'lev' /), 'A','kg/kg', 'pH value multiplied by
-lwc') if ( history_aerosol .and. history_verbose ) then
-   call add_default ('XPH_LWC', 1, ' ')
-endif
-
-call sox_cldaero_init()
-}
-*/
 
 KOKKOS_INLINE_FUNCTION
-Cloudconc sox_cldaero_create_obj(Real cldfrc, Real qcw[nspec_gas], Real lwc,
-                                 Real cfact, int loffset) {
+Cloudconc sox_cldaero_create_obj(
+    const Real cldfrc, const Real qcw[AeroConfig::num_gas_phase_species()],
+    const Real lwc, const Real cfact, const int loffset, const Config config_) {
   /*
   input variables
   cldfrc: cloud fraction [fraction]
@@ -251,9 +120,9 @@ Cloudconc sox_cldaero_create_obj(Real cldfrc, Real qcw[nspec_gas], Real lwc,
   // BAD ASSUMPTION?
   // lptr_so4_cw_amode is a modal variable, but here it's hard-coded to only
   // look at the first 3. Granted, entry 4 is zero, but will it always be?
-  int id_so4_1a = lptr_so4_cw_amode[0] - loffset;
-  int id_so4_2a = lptr_so4_cw_amode[1] - loffset;
-  int id_so4_3a = lptr_so4_cw_amode[2] - loffset;
+  int id_so4_1a = config_.lptr_so4_cw_amode[0] - loffset;
+  int id_so4_2a = config_.lptr_so4_cw_amode[1] - loffset;
+  int id_so4_3a = config_.lptr_so4_cw_amode[2] - loffset;
   so4c = qcw[id_so4_1a] + qcw[id_so4_2a] + qcw[id_so4_3a];
 
   // with 3-mode, assume so4 is nh4hso4, and so half-neutralized
@@ -268,7 +137,7 @@ Cloudconc sox_cldaero_create_obj(Real cldfrc, Real qcw[nspec_gas], Real lwc,
 
 //===========================================================================
 KOKKOS_INLINE_FUNCTION
-void henry_factor_so2(Real t_factor, Real &xk, Real &xe, Real &x2) {
+void henry_factor_so2(const Real t_factor, Real &xk, Real &xe, Real &x2) {
   //-----------------------------------------------------------------
   // get Henry Law parameters xk, xe and x2 for SO2
   //-----------------------------------------------------------------
@@ -282,7 +151,7 @@ void henry_factor_so2(Real t_factor, Real &xk, Real &xe, Real &x2) {
 
 //===========================================================================
 KOKKOS_INLINE_FUNCTION
-void henry_factor_co2(Real t_factor, Real &xk, Real &xe) {
+void henry_factor_co2(const Real t_factor, Real &xk, Real &xe) {
   //-----------------------------------------------------------------
   // get Henry Law parameters xk and xe for CO2
   //-----------------------------------------------------------------
@@ -295,7 +164,7 @@ void henry_factor_co2(Real t_factor, Real &xk, Real &xe) {
 
 //===========================================================================
 KOKKOS_INLINE_FUNCTION
-void henry_factor_h2o2(Real t_factor, Real &xk, Real &xe) {
+void henry_factor_h2o2(const Real t_factor, Real &xk, Real &xe) {
   //-----------------------------------------------------------------
   // get Henry Law parameters xk and xe for H2O2
   //-----------------------------------------------------------------
@@ -309,7 +178,7 @@ void henry_factor_h2o2(Real t_factor, Real &xk, Real &xe) {
 
 //===========================================================================
 KOKKOS_INLINE_FUNCTION
-void henry_factor_o3(Real t_factor, Real &xk) {
+void henry_factor_o3(const Real t_factor, Real &xk) {
   //-----------------------------------------------------------------
   // get Henry Law parameters xk and xe for O3
   //-----------------------------------------------------------------
@@ -324,9 +193,9 @@ void henry_factor_o3(Real t_factor, Real &xk) {
 // behavior, then the xph calculation below should maybe be done directly and
 // this function be deleted
 KOKKOS_INLINE_FUNCTION
-void calc_ynetpos(Real yph, Real fact1_so2, Real fact2_so2, Real fact3_so2,
-                  Real fact4_so2, Real Eco2, Real Eh2o, Real Eso4,
-                  Real so4_fact,
+void calc_ynetpos(const Real yph, const Real fact1_so2, const Real fact2_so2,
+                  const Real fact3_so2, const Real fact4_so2, const Real Eco2,
+                  const Real Eh2o, const Real Eso4, const Real so4_fact,
                   // out
                   Real &xph, Real &ynetpos) {
   //-----------------------------------------------------------------
@@ -360,10 +229,13 @@ void calc_ynetpos(Real yph, Real fact1_so2, Real fact2_so2, Real fact3_so2,
 
 //===========================================================================
 KOKKOS_INLINE_FUNCTION
-void calc_ph_values(Real temperature, Real patm, Real xlwc, Real t_factor,
-                    Real xso2, Real xso4, Real xhnm, Real so4_fact, Real Ra,
-                    Real xkw, Real const0, bool &converged, Real &xph) // out
-{
+void calc_ph_values(const Real temperature, const Real patm, const Real xlwc,
+                    const Real t_factor, const Real xso2, const Real xso4,
+                    const Real xhnm, const Real so4_fact, const Real Ra,
+                    const Real xkw, const Real const0, const Real co2g,
+                    const int itermax,
+                    // out
+                    bool &converged, Real &xph) {
   /*
   ---------------------------------------------------------------------------
   calculate PH value and H+ concentration
@@ -547,9 +419,11 @@ void calc_ph_values(Real temperature, Real patm, Real xlwc, Real t_factor,
 
 //===========================================================================
 KOKKOS_INLINE_FUNCTION
-void calc_sox_aqueous(bool modal_aerosols, Real rah2o2, Real h2o2g, Real so2g,
-                      Real o3g, Real rao3, Real patm, Real dt, Real t_factor,
-                      Real xlwc, Real const0, Real xhnm, Real heo3, Real heso2,
+void calc_sox_aqueous(const bool modal_aerosols, const Real rah2o2,
+                      const Real h2o2g, const Real so2g, const Real o3g,
+                      const Real rao3, const Real patm, const Real dt,
+                      const Real t_factor, const Real xlwc, const Real const0,
+                      const Real xhnm, const Real heo3, const Real heso2,
                       // inout
                       Real &xso2, Real &xso4, Real &xso4_init, Real &xh2o2,
                       // out
@@ -601,6 +475,9 @@ void calc_sox_aqueous(bool modal_aerosols, Real rah2o2, Real h2o2g, Real so2g,
     henry_factor_h2o2(t_factor, xk_h2o2, xe)
     pso4 = rah2o2 * xk_h2o2* h2o2g * patm * xk_so2 * so2g * patm
   */
+  // FIXME: BAD CONSTANTS
+  constexpr Real small_value_20 = 1.0e-20;
+  constexpr Real small_value_30 = 1.0e-30;
   Real pso4 = rah2o2 * 7.4e4 * haero::exp(6621.0 * t_factor) * h2o2g * patm *
               1.23 * haero::exp(3120.0 * t_factor) * so2g * patm;
   // [M/s] = [mole/L(w)/s] / [mole/L(a)/s] / [/L(a)/s]
@@ -651,9 +528,10 @@ void calc_sox_aqueous(bool modal_aerosols, Real rah2o2, Real h2o2g, Real so2g,
 
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
-void compute_aer_factor(Real *tmr, int loffset,
+void compute_aer_factor(const Real *tmr, const int loffset,
+                        const Config config_,
                         // out
-                        Real faqgain_so4[nmodes]) {
+                        Real faqgain_so4[AeroConfig::num_modes()]) {
   /*
   as called by sox_cldaero_update()
   compute_aer_factor(qcw, loffset, faqgain_so4)
@@ -681,6 +559,7 @@ void compute_aer_factor(Real *tmr, int loffset,
   -------------------------------------------------------------------------
   */
   constexpr Real zero = 0.0;
+  const int nmodes = AeroConfig::num_modes();
 
   Real sumf = zero;
   Real qnum_c[nmodes];
@@ -692,13 +571,13 @@ void compute_aer_factor(Real *tmr, int loffset,
   int ll;
   for (int m = 0; m < nmodes; ++m) {
     // NOTE: at least for the case of mam4, this might always be > 0
-    ll = numptrcw_amode[m] - loffset;
+    ll = config_.numptrcw_amode[m] - loffset;
     // FIXME: I believe these two logic blocks can be combined
     if (ll > 0) {
       qnum_c[m] = haero::max(zero, tmr[ll]);
     }
     // force qnum_c(m) to be positive for m = modeptr_accum or m = 1
-    if (m == modeptr_accum) {
+    if (m == config_.modeptr_accum) {
       // FIXME: BAD CONSTANT
       qnum_c[m] = haero::max(1.0e-10, qnum_c[m]);
     }
@@ -707,14 +586,14 @@ void compute_aer_factor(Real *tmr, int loffset,
     // this could probably be a loop
     // faqgain_so4(m) := fraction of total so4_c gain going to mode n
     // these are proportional to the activated particle MR for each mode
-    if (lptr_so4_cw_amode[m] > 0) {
+    if (config_.lptr_so4_cw_amode[m] > 0) {
       faqgain_so4[m] = qnum_c[m];
       sumf += faqgain_so4[m];
     }
   } // end for(nmodes)
   // at this point, (sumf <= 0.0) only when all the faqgain_so4 are zero
   if (sumf > zero) {
-    for (int m = 0; m < nmodes; ++m) {
+    for (int m = 0; m < AeroConfig::num_modes(); ++m) {
       faqgain_so4[m] /= sumf;
     }
   }
@@ -722,8 +601,8 @@ void compute_aer_factor(Real *tmr, int loffset,
 } // end subroutine compute_aer_factor
 
 KOKKOS_INLINE_FUNCTION
-Real cldaero_uptakerate(Real xl, Real cldnum, Real cfact, Real cldfrc,
-                        Real tfld, Real press) {
+Real cldaero_uptakerate(const Real xl, const Real cldnum, const Real cfact,
+                        const Real cldfrc, const Real tfld, const Real press) {
 
   /*
   -----------------------------------------------------------------------
@@ -822,7 +701,7 @@ Real cldaero_uptakerate(Real xl, Real cldnum, Real cfact, Real cldfrc,
 } // end function cldaero_uptakerate
 
 KOKKOS_INLINE_FUNCTION
-void update_tmr(Real &tmr, Real dqdt, Real dtime) {
+void update_tmr(Real &tmr, const Real dqdt, const Real dtime) {
   // -----------------------------------------------------------------------
   //  update tracer mixing ratio by adding tendencies
   // -----------------------------------------------------------------------
@@ -834,7 +713,7 @@ void update_tmr(Real &tmr, Real dqdt, Real dtime) {
 } // end subroutine update_tmr
 
 KOKKOS_INLINE_FUNCTION
-void update_tmr_nonzero(Real &tmr, int idx) {
+void update_tmr_nonzero(Real &tmr, const int idx) {
   //-----------------------------------------------------------------------
   // this just makes sure the value is greater than zero
   // aka: max(a, tol)
@@ -857,10 +736,12 @@ void update_tmr_nonzero(Real &tmr, int idx) {
 
 //=================================================================================
 KOKKOS_INLINE_FUNCTION
-void sox_cldaero_update(int loffset, Real dt, Real mbar, Real pdel, Real press,
-                        Real tfld, Real cldnum, Real cldfrc, Real cfact,
-                        Real xlwc, Real delso4_hprxn, Real xh2so4, Real xso4,
-                        Real xso4_init,
+void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
+                        const Real pdel, const Real press, const Real tfld,
+                        const Real cldnum, const Real cldfrc, const Real cfact,
+                        const Real xlwc, const Real delso4_hprxn,
+                        const Real xh2so4, const Real xso4,
+                        const Real xso4_init, const Config config_,
                         // inout
                         Real *qcw, Real *qin) {
   /*
@@ -942,6 +823,9 @@ void sox_cldaero_update(int loffset, Real dt, Real mbar, Real pdel, Real press,
   constexpr Real zero = 0.0;
   constexpr Real one = 1.0;
 
+  const int nmodes = AeroConfig::num_modes();
+  const int nspec_gas = AeroConfig::num_gas_phase_species();
+
   // make sure dqdt is zero initially, for budgets
   Real dqdt_aqso4[nspec_gas], dqdt_aqh2so4[nspec_gas];
   for (int i = 0; i < nspec_gas; ++i) {
@@ -963,7 +847,7 @@ void sox_cldaero_update(int loffset, Real dt, Real mbar, Real pdel, Real press,
     Aitken and coarse sea-salt particles are same size)
     */
     Real faqgain_so4[nmodes];
-    compute_aer_factor(qcw, loffset,
+    compute_aer_factor(qcw, loffset, config_,
                        // out
                        faqgain_so4);
 
@@ -994,7 +878,7 @@ void sox_cldaero_update(int loffset, Real dt, Real mbar, Real pdel, Real press,
     // FIXME: there's a better way to do this
     int l;
     for (int m = 0; m < nmodes; ++m) {
-      l = lptr_so4_cw_amode[m] - loffset;
+      l = config_.lptr_so4_cw_amode[m] - loffset;
       if (l > 0) {
         dqdt_aqso4[l] = faqgain_so4[m] * dso4dt_aqrxn * cldfrc;
         dqdt_aqh2so4[l] = faqgain_so4[m] * dso4dt_gasuptk * cldfrc;
@@ -1014,7 +898,8 @@ void sox_cldaero_update(int loffset, Real dt, Real mbar, Real pdel, Real press,
     */
 
     // h2so4 (g)
-    qin[id_h2so4] = qin[id_h2so4] - dso4dt_gasuptk * dt * cldfrc;
+    qin[config_.id_h2so4] =
+        qin[config_.id_h2so4] - dso4dt_gasuptk * dt * cldfrc;
     // FORTRAN refactor: The order of multiplying cldfrc makes the following
     // call failing BFB test, so this calculation is not refactored with new
     // subroutine NOTE: I don't know what this refers to
@@ -1023,13 +908,13 @@ void sox_cldaero_update(int loffset, Real dt, Real mbar, Real pdel, Real press,
     // don't have wet removal here
     dqdt_wr = 0.0;
     dqdt_aq = -dso4dt_aqrxn * cldfrc;
-    update_tmr(qin[id_so2], dqdt_aq + dqdt_wr, dt);
+    update_tmr(qin[config_.id_so2], dqdt_aq + dqdt_wr, dt);
 
     // h2o2 -- the first order loss rate for h2o2 is frh2o2_c*clwlrat(i,k)
     // don't have wet removal here
     dqdt_wr = 0.0;
     dqdt_aq = -dso4dt_hprxn * cldfrc;
-    update_tmr(qin[id_h2o2], dqdt_aq + dqdt_wr, dt);
+    update_tmr(qin[config_.id_h2o2], dqdt_aq + dqdt_wr, dt);
 
     /*
     for SO4 from H2O2/O3 budgets
@@ -1047,14 +932,15 @@ void sox_cldaero_update(int loffset, Real dt, Real mbar, Real pdel, Real press,
   // then it sets qcw to max(qcw, 1e-20)
   int tmp_idx;
   for (int m = 0; m < nmodes; ++m) {
-    tmp_idx = lptr_so4_cw_amode[m] - loffset;
+    tmp_idx = config_.lptr_so4_cw_amode[m] - loffset;
+    // this is ugly, but better than passing the whole array--FIXME?
     update_tmr_nonzero(qcw[tmp_idx], tmp_idx);
     // FIXME: I believe this is spurious.
     // as far as I can gather, lptr_nh4_cw_amode = [0, 0, 0, 0],
     // meaning that this results in a no-op
     // update_tmr_nonzero(qcw, (lptr_nh4_cw_amode[m] - loffset));
   }
-  update_tmr_nonzero(qin[id_so2], id_so2);
+  update_tmr_nonzero(qin[config_.id_so2], config_.id_so2);
 
   /*
   FIXME: sflx is a local variable that is calculated and then passed to
@@ -1085,9 +971,13 @@ void sox_cldaero_update(int loffset, Real dt, Real mbar, Real pdel, Real press,
 //-----------------------------------------------------------------------
 //-----------------------------------------------------------------------
 KOKKOS_INLINE_FUNCTION
-void setsox(Real xhnm, Real cldfrc, Real qcw[nspec_gas], Real lwc, Real tfld,
-            Real press, Real qin[nspec_gas], Real dt, Real mbar, Real pdel,
-            Real cldnum) {
+void setsox_single_level(const int loffset, const Real dt, const Real press,
+                         const Real pdel, const Real tfld, const Real mbar,
+                         const Real lwc, const Real cldfrc, const Real cldnum,
+                         const Real xhnm,
+                         // inout
+                         Real qcw[AeroConfig::num_gas_phase_species()],
+                         Real qin[AeroConfig::num_gas_phase_species()]) {
   /*
   don't know dimension of: mbar
 
@@ -1194,6 +1084,8 @@ void setsox(Real xhnm, Real cldfrc, Real qcw[nspec_gas], Real lwc, Real tfld,
             The values of so2, so4 are after (1) SLT, and CHEM
   -----------------------------------------------------------------
   */
+
+  Config setsox_config_;
   constexpr Real one = 1.0;
   constexpr Real zero = 0.0;
   constexpr Real t298K = 298.0;
@@ -1209,7 +1101,8 @@ void setsox(Real xhnm, Real cldfrc, Real qcw[nspec_gas], Real lwc, Real tfld,
   // initialize species concentrations
   Cloudconc cldconc;
   // this name doesn't make sense after porting
-  cldconc = sox_cldaero_create_obj(cldfrc, qcw, lwc, cfact, loffset);
+  cldconc =
+      sox_cldaero_create_obj(cldfrc, qcw, lwc, cfact, loffset, setsox_config_);
 
   /*
   if ( inv_so2 .or. id_hno3>0 .or. inv_h2o2 .or. id_nh3>0 .or. inv_o3 &
@@ -1227,10 +1120,10 @@ void setsox(Real xhnm, Real cldfrc, Real qcw[nspec_gas], Real lwc, Real tfld,
   Real xso4 = zero;
   // initial PH value
   Real xph = xph0;
-  Real xso2 = qin[id_so2];
-  Real xh2o2 = qin[id_h2o2];
-  Real xo3 = qin[id_o3];
-  Real xh2so4 = qin[id_h2so4];
+  Real xso2 = qin[setsox_config_.id_so2];
+  Real xh2o2 = qin[setsox_config_.id_h2o2];
+  Real xo3 = qin[setsox_config_.id_o3];
+  Real xh2so4 = qin[setsox_config_.id_h2so4];
 
   /*
   -----------------------------------------------------------------
@@ -1239,25 +1132,27 @@ void setsox(Real xhnm, Real cldfrc, Real qcw[nspec_gas], Real lwc, Real tfld,
       ver_loop0: do kk = 1,pver          //// pver loop for STEP 0
          col_loop0: do icol = 1,ncol
   */
-
   Real t_factor, patm;
   // there doesn't appear to be any reason for doing this
   Real xso4c = cldconc.so4c;
   // in-cloud liquid water content
+
   Real xlwc = cldconc.xlwc;
-  if (xlwc >= small_value_lwc) {
+  if (xlwc >= setsox_config_.small_value_lwc) {
     t_factor = (one / tfld) - (one / t298K);
     // calculate press in atm
-    patm = press / p0;
+    patm = press / setsox_config_.p0;
 
-    if ((cloud_borne > zero) && (cldfrc > zero)) {
+    if ((setsox_config_.cloud_borne > zero) && (cldfrc > zero)) {
       xso4 = xso4c / cldfrc;
     }
     bool converged = false;
     calc_ph_values(tfld, patm, xlwc, t_factor, xso2, xso4, xhnm,
-                   cldconc.so4_fact, Ra, xkw, const0, converged,
+                   cldconc.so4_fact, setsox_config_.Ra, setsox_config_.xkw,
+                   setsox_config_.const0, setsox_config_.co2g,
+                   setsox_config_.itermax,
                    // out
-                   xph);
+                   converged, xph);
 
     /*
     FIXME: better error handling
@@ -1269,8 +1164,7 @@ void setsox(Real xhnm, Real cldfrc, Real qcw[nspec_gas], Real lwc, Real tfld,
   } else {
     // FIXME: BAD CONSTANT
     xph = 1.0e-7;
-  }
-
+  } // end if (xlwc >= small_value_xlwc)
   //==============================================================
   //          ... Now use the actual pH
   //==============================================================
@@ -1278,7 +1172,7 @@ void setsox(Real xhnm, Real cldfrc, Real qcw[nspec_gas], Real lwc, Real tfld,
   t_factor = (one / tfld) - (one / t298K);
   xlwc = cldconc.xlwc;
   // calculate press in atm
-  patm = press / p0;
+  patm = press / setsox_config_.p0;
 
   Real xk, xe, x2;
 
@@ -1314,19 +1208,19 @@ void setsox(Real xhnm, Real cldfrc, Real qcw[nspec_gas], Real lwc, Real tfld,
   //------------------------------------------------------------------------
   //        ... h2o2
   //------------------------------------------------------------------------
-  Real px = heh2o2 * Ra * tz * xlwc;
+  Real px = heh2o2 * setsox_config_.Ra * tz * xlwc;
   Real h2o2g = xh2o2 / (one + px);
 
   //------------------------------------------------------------------------
   //         ... so2
   //------------------------------------------------------------------------
-  px = heso2 * Ra * tz * xlwc;
+  px = heso2 * setsox_config_.Ra * tz * xlwc;
   Real so2g = xso2 / (one + px);
 
   //------------------------------------------------------------------------
   //         ... o3
   //------------------------------------------------------------------------
-  px = heo3 * Ra * tz * xlwc;
+  px = heo3 * setsox_config_.Ra * tz * xlwc;
   Real o3g = xo3 / (one + px);
 
   //-----------------------------------------------
@@ -1371,9 +1265,10 @@ void setsox(Real xhnm, Real cldfrc, Real qcw[nspec_gas], Real lwc, Real tfld,
   // currently handling this by making it zero in the `else` case that does not
   // exist in the MAM4 fortran code
   // WHEN CLOUD IS PRESENTED (present?)
-  if (xlwc >= small_value_lwc) {
-    calc_sox_aqueous(modal_aerosols, rah2o2, h2o2g, so2g, o3g, rao3, patm, dt,
-                     t_factor, xlwc, const0, xhnm, heo3, heso2,
+  if (xlwc >= setsox_config_.small_value_lwc) {
+    calc_sox_aqueous(setsox_config_.modal_aerosols, rah2o2, h2o2g, so2g, o3g,
+                     rao3, patm, dt, t_factor, xlwc, setsox_config_.const0,
+                     xhnm, heo3, heso2,
                      // inout
                      xso2, xso4, xso4_init, xh2o2,
                      // out
@@ -1386,6 +1281,7 @@ void setsox(Real xhnm, Real cldfrc, Real qcw[nspec_gas], Real lwc, Real tfld,
   // mean wet atmospheric mass [amu or g/mol]
   sox_cldaero_update(loffset, dt, mbar, pdel, press, tfld, cldnum, cldfrc,
                      cfact, cldconc.xlwc, xdelso4hp, xh2so4, xso4, xso4_init,
+                     setsox_config_,
                      // inout
                      qcw, qin);
 
@@ -1406,6 +1302,40 @@ void setsox(Real xhnm, Real cldfrc, Real qcw[nspec_gas], Real lwc, Real tfld,
   */
 
 } //   end subroutine setsox
+/*KOKKOS_INLINE_FUNCTION
+void setsox(const int loffset, const Real dt, const Real press, const Real pdel,
+            const Real tfld, const Real mbar, const ColumnView lwc,
+            const Real cldfrc, const Real cldnum, const Real xhnm,
+            // inout
+            Real qcw[AeroConfig::num_gas_phase_species()],
+            Real qin[AeroConfig::num_gas_phase_species()]) {
+
+  // **NEED THESE COLUMN VARIABLES**
+  // pressure
+  // temperature
+  // cloud liquid water content
+  // cloud fraction
+  // droplet number concentration
+  // total atmospheric density
+  // vmr: cloudborne aerosol
+  // vmr: transported species
+
+  // NOTE: pdel and mbar seem to be entirely unused and only used in mam4 to
+  // calculate a quantity that is written out and otherwise unused
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
+        const Real press_k = press(k);
+        const Real tfld_k = tfld(k);
+        const Real lwc_k = lwc(k);
+        const Real cldfrc_k = cldfrc(k);
+        const Real cldnum_k = cldnum(k);
+        const Real xhnm_k = xhnm(k);
+        const Real qcw_k = qcw(k);
+        const Real qin_k = qin(k);
+        setsox_single_level(loffset, dt, press_k, pdel, tfld_k, mbar, lwc_k,
+                            cldnum_k, xhnm_k, qcw_k, qin_k);
+      }); // end kokkos::parfor(k)
+} // end setsox()*/
 } // namespace mo_setsox
 } // namespace mam4
 #endif
