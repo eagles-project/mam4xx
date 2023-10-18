@@ -59,8 +59,7 @@ void calc_ph_values(Ensemble *ensemble) {
 
     mam4::mo_setsox::calc_ph_values(temperature, patm, xlwc, t_factor, xso2,
                                     xso4, xhnm, so4_fact, Ra, xkw, const0, co2g,
-                                    itermax,
-                                    converged, xph);
+                                    itermax, converged, xph);
 
     output.set("converged", converged);
     output.set("xph", xph);

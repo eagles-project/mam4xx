@@ -52,8 +52,9 @@ void setsox_test(Ensemble *ensemble) {
     auto qcw = input.get_array("qcw");
     auto qin = input.get_array("qin");
 
-    mam4::mo_setsox::setsox_single_level(loffset, dt, press, pdel, tfld, mbar, lwc, cldfrc,
-                            cldnum, xhnm, &qcw[0], &qin[0]);
+    mam4::mo_setsox::setsox_single_level(loffset, dt, press, pdel, tfld, mbar,
+                                         lwc, cldfrc, cldnum, xhnm, &qcw[0],
+                                         &qin[0]);
 
     output.set("qcw", qcw);
     output.set("qin", qin);

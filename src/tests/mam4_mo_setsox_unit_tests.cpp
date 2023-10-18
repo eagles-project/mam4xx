@@ -164,7 +164,8 @@ TEST_CASE("test_compute_aer_factor", "mam4_mo_setsox_unit_tests") {
   for (int i = 0; i < nmodes; ++i) {
     // this is completely arbitrary, checking +/- values, since tmr is only used
     // to assign a variable = max(0, tmr[i])
-    tmr[config_.numptrcw_amode[i] - loffset] = haero::pow(-1, i) * 0.5e-10 * (i + 1);
+    tmr[config_.numptrcw_amode[i] - loffset] =
+        haero::pow(-1, i) * 0.5e-10 * (i + 1);
   }
   Real *tmr_ptr = tmr;
   Real faqgain_so4[nmodes];
