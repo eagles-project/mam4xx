@@ -850,9 +850,7 @@ void update_tmr_nonzero(Real &tmr, int idx) {
   // NOTE: in the fortran version, this if statement is if (idx > 0), so I
   // believe this is the correct way to port it
   if (idx >= 0) {
-    std::cout << "**IN FUNCTION** tmr = " << tmr << "\n";
     tmr = haero::max(tmr, small_value_20);
-    std::cout << "**AFTER max()** tmr = " << tmr << "\n";
   }
 
 } // end subroutine update_tmr_nonzero
