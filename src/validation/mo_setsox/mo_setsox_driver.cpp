@@ -22,8 +22,10 @@ using namespace skywalker;
 using namespace mam4;
 
 // Parameterizations used by the mo_setsox() process.
-void vtest_test(Ensemble *ensemble);
 void setsox_test(Ensemble *ensemble);
+void calc_ph_values(Ensemble *ensemble);
+void calc_sox_aqueous(Ensemble *ensemble);
+void calc_ynetpos(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -47,10 +49,14 @@ int main(int argc, char **argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
   try {
-    if (func_name == "vtest_test") {
-      vtest_test(ensemble);
-    } else if (func_name == "setsox_test") {
+    if (func_name == "setsox_test") {
       setsox_test(ensemble);
+    } else if (func_name == "calc_ph_values") {
+      calc_ph_values(ensemble);
+    } else if (func_name == "calc_sox_aqueous") {
+      calc_sox_aqueous(ensemble);
+    } else if (func_name == "calc_ynetpos") {
+      calc_ynetpos(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;

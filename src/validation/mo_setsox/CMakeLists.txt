@@ -11,7 +11,9 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 add_executable(mo_setsox_driver
                mo_setsox_driver.cpp
                setsox_test.cpp
-               vtest_test.cpp
+               calc_ph_values.cpp
+               calc_sox_aqueous.cpp
+               calc_ynetpos.cpp
                )
 
 target_link_libraries(mo_setsox_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -28,17 +30,19 @@ endforeach()
 
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
-    vtest_test
-    setsox_ts_355_xlwc_small
+    setsox_ts_355_merged
+    calc_ph_values_ts_355
+    calc_sox_aqueous_ts_355_merged
+    calc_ynetpos_ts_355
     )
 
 set(DEFAULT_TOL 1e-11)
 
 set(ERROR_THRESHOLDS
-    ${DEFAULT_TOL} # vtest_test
     ${DEFAULT_TOL} # setsox_test
-    # 4e-8
-    # ${DEFAULT_TOL_DROPMIXNUC}
+    ${DEFAULT_TOL} # calc_ph_values
+    ${DEFAULT_TOL} # calc_sox_aqueous
+    ${DEFAULT_TOL} # calc_ynetpos
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)

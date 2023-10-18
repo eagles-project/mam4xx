@@ -12,15 +12,15 @@
 using namespace skywalker;
 using namespace mam4;
 using namespace haero;
-void setsox_test(Ensemble *ensemble) {
+void calc_ynetpos(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters
     // Declare array of strings for input names
     std::string input_variables[] = {"dt"};
 
-    std::string input_arrays[] = {
-        "ncol", "loffset", "dtime",  "press", "pdel", "tfld", "mbar",
-        "lwc",  "cldfrc",  "cldnum", "xhnm",  "qcw",  "qin"};
+    std::string input_arrays[] = {"yph",       "fact1_so2", "fact2_so2",
+                                  "fact3_so2", "fact4_so2", "Eco2",
+                                  "Eh2o",      "Eso4",      "so4_fact"};
 
     // Iterate over input_variables and error if not in input
     for (std::string name : input_variables) {
@@ -38,23 +38,24 @@ void setsox_test(Ensemble *ensemble) {
     }
 
     // Parse input
-    const Real dt = input.get_array("dtime")[0];
-    const Real press = input.get_array("press")[0];
-    const Real pdel = input.get_array("pdel")[0];
-    const Real tfld = input.get_array("tfld")[0];
-    const Real mbar = input.get_array("mbar")[0];
-    const Real lwc = input.get_array("lwc")[0];
-    const Real cldfrc = input.get_array("cldfrc")[0];
-    const Real cldnum = input.get_array("cldnum")[0];
-    const Real xhnm = input.get_array("xhnm")[0];
+    const Real yph = input.get_array("yph")[0];
+    const Real fact1_so2 = input.get_array("fact1_so2")[0];
+    const Real fact2_so2 = input.get_array("fact2_so2")[0];
+    const Real fact3_so2 = input.get_array("fact3_so2")[0];
+    const Real fact4_so2 = input.get_array("fact4_so2")[0];
+    const Real Eco2 = input.get_array("Eco2")[0];
+    const Real Eh2o = input.get_array("Eh2o")[0];
+    const Real Eso4 = input.get_array("Eso4")[0];
+    const Real so4_fact = input.get_array("so4_fact")[0];
 
-    auto qcw = input.get_array("qcw");
-    auto qin = input.get_array("qin");
+    Real xph;
+    Real ynetpos;
 
-    mam4::mo_setsox::setsox(xhnm, cldfrc, &qcw[0], lwc, tfld, press, &qin[0],
-                            dt, mbar, pdel, cldnum);
+    mam4::mo_setsox::calc_ynetpos(yph, fact1_so2, fact2_so2, fact3_so2,
+                                  fact4_so2, Eco2, Eh2o, Eso4, so4_fact, xph,
+                                  ynetpos);
 
-    output.set("qcw", qcw);
-    output.set("qin", qin);
+    output.set("xph", xph);
+    output.set("ynetpos", ynetpos);
   });
 }
