@@ -9,18 +9,21 @@
 namespace mam4 {
 
 namespace mo_setext {
+  using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;
+using View3D = DeviceType::view_3d<Real>;
 constexpr int pver = mam4::nlev;
 // FIXME get this constant
-constexpr int extfrc_cnt = 1;
+constexpr int extfrc_cnt = 9;
 // FIXME check if this constant is defined somewhere else.
 constexpr int extcnt = 9; //, & ! number of species with external forcing
 
 KOKKOS_INLINE_FUNCTION
-void extfrc_set(const ColumnView &zint, const int *forcings_frc_ndx,
+void extfrc_set(
+                const int *forcings_frc_ndx,
                 const int *forcings_nsectors,
                 const bool *forcings_file_alt_data,
-                const View2D &forcings_fields_data, const View2D &frcing) {
+                const View1D forcings_fields_data[extfrc_cnt][4], const View2D &frcing) {
   /*--------------------------------------------------------
   ! ... form the external forcing
   !--------------------------------------------------------*/
@@ -29,6 +32,9 @@ void extfrc_set(const ColumnView &zint, const int *forcings_frc_ndx,
   // lchnk                 ! chunk index
   // zint(ncol, pverp)     ! interface geopot above surface [km]
   // frcing(ncol,pver,extcnt)   ! insitu forcings [molec/cm^3/s]
+  // Note: we do not need zint to compute frcing
+  // const ColumnView &zint, 
+
   constexpr Real zero = 0.0;
 
   // frcing(:,:,:) = zero;
@@ -41,22 +47,23 @@ void extfrc_set(const ColumnView &zint, const int *forcings_frc_ndx,
   !--------------------------------------------------------*/
 
   for (int mm = 0; mm < extfrc_cnt; ++mm) {
-    const int nn = forcings_frc_ndx[mm];
+    // Fortran to C++ indexing
+    const int nn = forcings_frc_ndx[mm]-1;
     for (int kk = 0; kk < pver; ++kk) {
       frcing(kk, nn) = zero;
     } // k
 
     for (int isec = 0; isec < forcings_nsectors[mm]; ++isec) {
       if (forcings_file_alt_data[mm]) {
-        // FIXME: forcings(mm)%fields(isec)%data(:ncol,pver:1:-1,lchnk)
-        // Note pver:1:-1
-        for (int kk = pver; kk < -1; --kk) {
-          frcing(kk, nn) += forcings_fields_data(isec, kk);
+        for (int kk = 0; kk < pver; ++kk) {  
+          // frcing(:ncol,:,nn) = frcing(:ncol,:,nn) + &
+                                // forcings(mm)%fields(isec)%data(:ncol,pver:1:-1,lchnk)
+          frcing(kk, nn) += forcings_fields_data[mm][isec](pver-1-kk);
         } // kk
       } else {
         // // forcings(mm)%fields(isec)%data(:ncol,:,lchnk)
         for (int kk = 0; kk < pver; ++kk) {
-          frcing(kk, nn) += forcings_fields_data(isec, kk);
+          frcing(kk, nn) += forcings_fields_data[mm][isec](kk);
         }
       }
     } // isec
@@ -76,9 +83,9 @@ void extfrc_set(const ColumnView &zint, const int *forcings_frc_ndx,
 } // extfrc_set
 
 KOKKOS_INLINE_FUNCTION
-void setext(const ColumnView &zint, const int *forcings_frc_ndx,
+void setext(const int *forcings_frc_ndx,
             const int *forcings_nsectors, const bool *forcings_file_alt_data,
-            const View2D &forcings_fields_data,
+            const View1D forcings_fields_data[extfrc_cnt][4],
             const View2D &extfrc) // ! out
 {
 
@@ -102,7 +109,7 @@ void setext(const ColumnView &zint, const int *forcings_frc_ndx,
   /*--------------------------------------------------------
   !     ... set frcing from datasets
   !--------------------------------------------------------*/
-  extfrc_set(zint, // in
+  extfrc_set(
              forcings_frc_ndx, forcings_nsectors, forcings_file_alt_data,
              forcings_fields_data,
              extfrc); // out
