@@ -18,6 +18,59 @@ constexpr int extfrc_cnt = 9;
 // FIXME check if this constant is defined somewhere else.
 constexpr int extcnt = 9; //, & ! number of species with external forcing
 
+
+struct forcing{
+int frc_ndx; 
+bool file_alt_data;
+View2D fields_data;
+int nsectors; 
+}; 
+
+KOKKOS_INLINE_FUNCTION
+void extfrc_set2(const forcing* forcings,
+                const View2D &frcing) {
+
+#if 1
+  constexpr Real zero = 0.0;
+
+  // frcing(:,:,:) = zero;
+  if (extfrc_cnt < 1 || extcnt < 1) {
+    return;
+  }
+
+  /*--------------------------------------------------------
+  ! ... set non-zero forcings
+  !--------------------------------------------------------*/
+
+  for (int mm = 0; mm < extfrc_cnt; ++mm) {
+    // Fortran to C++ indexing
+    auto forcing_mm  = forcings[mm]; 
+    const int nn = forcing_mm.frc_ndx - 1;
+    printf("nn %d \n", nn);
+    for (int kk = 0; kk < pver; ++kk) {
+      frcing(kk, nn) = zero;
+    } // k
+
+    for (int isec = 0; isec < forcing_mm.nsectors; ++isec) {
+      if (forcing_mm.file_alt_data) {
+        for (int kk = 0; kk < pver; ++kk) {
+          // frcing(:ncol,:,nn) = frcing(:ncol,:,nn) + &
+          // forcings(mm)%fields(isec)%data(:ncol,pver:1:-1,lchnk)
+          frcing(kk, nn) += forcing_mm.fields_data(isec,pver - 1 - kk);
+        } // kk
+      } else {
+        // // forcings(mm)%fields(isec)%data(:ncol,:,lchnk)
+        for (int kk = 0; kk < pver; ++kk) {
+          frcing(kk, nn) += forcing_mm.fields_data(isec,kk);
+        }
+      }
+    } // isec
+
+     } // end mm
+#endif
+
+ }// extfrc_set2
+  
 KOKKOS_INLINE_FUNCTION
 void extfrc_set(const int *forcings_frc_ndx, const int *forcings_nsectors,
                 const bool *forcings_file_alt_data,
