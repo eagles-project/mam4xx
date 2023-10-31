@@ -89,6 +89,9 @@ KOKKOS_INLINE_FUNCTION
 void setext(const Forcing *forcings,
             const View2D &extfrc) // ! out
 {
+  // Note: we do not need setext.
+  // Because I removed diagnostic variables(i.e., output variable in outfld),
+  // setext and extfrc_set are equivalent.
   /*--------------------------------------------------------
        ... for this latitude slice:
            - form the production from datasets
