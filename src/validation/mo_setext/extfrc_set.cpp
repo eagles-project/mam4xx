@@ -16,20 +16,11 @@ using namespace mo_setext;
 void extfrc_set(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
-    // using View2DHost = typename HostType::view_2d<Real>;
 
-    forcing forcings[extfrc_cnt];
-
-    // int forcings_frc_ndx[extfrc_cnt] = {};
-    // int forcings_nsectors[extfrc_cnt] = {};
-    // std::vector<std::vector<Real>> data;
-
-    // bool forcings_file_alt_data[extfrc_cnt] = {};
-    // View1DHost forcings_fields_data_host;
-    // View1D forcings_fields_data[extfrc_cnt][4];
+    Forcing forcings[extfrc_cnt];
     for (int i = 1; i <= extfrc_cnt; ++i) {
 
-      forcing forcing_mm;
+      Forcing forcing_mm;
 
       forcing_mm.frc_ndx =
           int(input.get_array("forcings" + std::to_string(i) + "_frc_ndx")[0]);
@@ -63,10 +54,7 @@ void extfrc_set(Ensemble *ensemble) {
 
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          // extfrc_set(forcings_frc_ndx, forcings_nsectors,
-          //            forcings_file_alt_data, forcings_fields_data, frcing);
-
-          extfrc_set2(forcings, frcing);
+          extfrc_set(forcings, frcing);
         });
     std::vector<Real> frcing_out(pver * extcnt, 0.0);
     mam4::validation::convert_2d_view_device_to_1d_vector(frcing, frcing_out);
