@@ -287,7 +287,7 @@ TEST_CASE("test_update_tmr_nonzero", "mam4_mo_setsox_unit_tests") {
   }
 }
 
-// NOTE: I tried to make a test with conclusive results and coudn't get it
+// NOTE: I tried to make a test with conclusive results and couldn't get it
 // working--revisit eventually
 /*TEST_CASE("test_sox_cldaero_update", "mam4_mo_setsox_unit_tests") {
   ekat::Comm comm;
@@ -380,22 +380,22 @@ TEST_CASE("test_update_tmr_nonzero", "mam4_mo_setsox_unit_tests") {
   }
 }*/
 
-// NOTE: These have validation tests, so skip for now
-// void calc_ph_values(Real temperature, Real patm, Real xlwc, Real t_factor,
-//                     Real xso2, Real xso4, Real xhnm, Real so4_fact, Real Ra,
-//                     Real xkw, Real const0, bool &converged, Real &xph)
-/*void calc_sox_aqueous(bool modal_aerosols, Real rah2o2, Real h2o2g, Real so2g,
+/*NOTE: These have validation tests, so skip for now
+void calc_ph_values(Real temperature, Real patm, Real xlwc, Real t_factor,
+                    Real xso2, Real xso4, Real xhnm, Real so4_fact, Real Ra,
+                    Real xkw, Real const0, bool &converged, Real &xph)
+void calc_sox_aqueous(bool modal_aerosols, Real rah2o2, Real h2o2g, Real so2g,
                       Real o3g, Real rao3, Real patm, Real dt, Real t_factor,
                       Real xlwc, Real const0, Real xhnm, Real heo3, Real heso2,
                       // inout
                       Real &xso2, Real &xso4, Real &xso4_init, Real &xh2o2,
                       // out
-                      Real &xdelso4hp)*/
-/*void calc_ynetpos(Real yph, Real fact1_so2, Real fact2_so2, Real fact3_so2,
+                      Real &xdelso4hp)
+void calc_ynetpos(Real yph, Real fact1_so2, Real fact2_so2, Real fact3_so2,
                   Real fact4_so2, Real Eco2, Real Eh2o, Real Eso4,
                   Real so4_fact,
                   // out
-                  Real &xph, Real &ynetpos)*/
-// void setsox(Real xhnm, Real cldfrc, Real qcw[nspec_gas], Real lwc, Real tfld,
-//             Real press, Real qin[nspec_gas], Real dt, Real mbar, Real pdel,
-//             Real cldnum)
+                  Real &xph, Real &ynetpos)
+void setsox(Real xhnm, Real cldfrc, Real qcw[nspec_gas], Real lwc, Real tfld,
+            Real press, Real qin[nspec_gas], Real dt, Real mbar, Real pdel,
+            Real cldnum)*/

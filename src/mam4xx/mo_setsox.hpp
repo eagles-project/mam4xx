@@ -147,7 +147,7 @@ void henry_factor_so2(const Real t_factor, Real &xk, Real &xe, Real &x2) {
   xk = 1.230 * haero::exp(3120.0 * t_factor);
   xe = 1.7e-2 * haero::exp(2090.0 * t_factor);
   x2 = 6.0e-8 * haero::exp(1120.0 * t_factor);
-} // end subroutine henry_factor_so2
+} // end henry_factor_so2
 
 //===========================================================================
 KOKKOS_INLINE_FUNCTION
@@ -160,7 +160,7 @@ void henry_factor_co2(const Real t_factor, Real &xk, Real &xe) {
   // for co2
   xk = 3.1e-2 * haero::exp(2423.0 * t_factor);
   xe = 4.3e-7 * haero::exp(-913.0 * t_factor);
-} // end subroutine henry_factor_co2
+} // end henry_factor_co2
 
 //===========================================================================
 KOKKOS_INLINE_FUNCTION
@@ -174,7 +174,7 @@ void henry_factor_h2o2(const Real t_factor, Real &xk, Real &xe) {
   xk = 7.4e4 * haero::exp(6621.0 * t_factor);
   xe = 2.2e-12 * haero::exp(-3730.0 * t_factor);
 
-} // end subroutine henry_factor_h2o2
+} // end henry_factor_h2o2
 
 //===========================================================================
 KOKKOS_INLINE_FUNCTION
@@ -186,7 +186,7 @@ void henry_factor_o3(const Real t_factor, Real &xk) {
   // FIXME: BAD CONSTANTS
   // for o3
   xk = 1.15e-2 * haero::exp(2560.0 * t_factor);
-} // end subroutine henry_factor_o3
+} // end henry_factor_o3
 
 //===========================================================================
 // FIXME: it appears that ynetpos is never used. if this is the correct
@@ -225,7 +225,7 @@ void calc_ynetpos(const Real yph, const Real fact1_so2, const Real fact2_so2,
   Real tmp_neg = tmp_oh + tmp_hco3 + tmp_hso3 + tmp_so3 + tmp_so4;
 
   ynetpos = tmp_pos - tmp_neg;
-} // end subroutine calc_ynetpos
+} // end calc_ynetpos
 
 //===========================================================================
 KOKKOS_INLINE_FUNCTION
@@ -415,7 +415,7 @@ void calc_ph_values(const Real temperature, const Real patm, const Real xlwc,
       return;
     }
   } // end for(iter)
-} // end subroutine calc_ph_values
+} // end calc_ph_values
 
 //===========================================================================
 KOKKOS_INLINE_FUNCTION
@@ -459,7 +459,7 @@ void calc_sox_aqueous(const bool modal_aerosols, const Real rah2o2,
     // local variables
     real(r8) :: pso4    // production rate of so4
     real(r8) :: delta_s // so4 production in the time step
-    real(r8) :: xk_so2, xk_h2o2 // for the use of Henry Law subroutines
+    real(r8) :: xk_so2, xk_h2o2 // for the use of Henry Laws
     real(r8) :: xe, x2  // output of henry law subroutines but not used
     real(r8), parameter :: small_value_20 = 1.0e-2 // small value
     real(r8), parameter :: small_value_30 = 1.0e-3 // small value
@@ -524,7 +524,7 @@ void calc_sox_aqueous(const bool modal_aerosols, const Real rah2o2,
     xso4 = xso4 + delta_s;
     xso2 = xso2 - delta_s;
   }
-} // end subroutine calc_sox_aqueous
+} // end calc_sox_aqueous
 
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
@@ -598,7 +598,7 @@ void compute_aer_factor(const Real *tmr, const int loffset,
     }
   }
 
-} // end subroutine compute_aer_factor
+} // end compute_aer_factor
 
 KOKKOS_INLINE_FUNCTION
 Real cldaero_uptakerate(const Real xl, const Real cldnum, const Real cfact,
@@ -710,7 +710,7 @@ void update_tmr(Real &tmr, const Real dqdt, const Real dtime) {
   // real(r8), intent(in)    :: dtime time step [s]
 
   tmr += dqdt * dtime;
-} // end subroutine update_tmr
+} // end update_tmr
 
 KOKKOS_INLINE_FUNCTION
 void update_tmr_nonzero(Real &tmr, const int idx) {
@@ -732,7 +732,7 @@ void update_tmr_nonzero(Real &tmr, const int idx) {
     tmr = haero::max(tmr, small_value_20);
   }
 
-} // end subroutine update_tmr_nonzero
+} // end update_tmr_nonzero
 
 //=================================================================================
 KOKKOS_INLINE_FUNCTION
@@ -786,7 +786,7 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
       processes:
       //       S(IV) + H2O2 = S(VI)
       //       S(IV) + O3   = S(VI)
-      // see the parent subroutine in mo_setsox for reference
+      // see the parent in mo_setsox for reference
   change of so4 due to O3 chemistry [mol/mol]
   real(r8) :: delso4_o3rxn
   so4_c tendency from aqueous chemistry [mol/mol/s]
@@ -873,18 +873,18 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
     // dqdt due to aqueous chemistry [mol/mol/s]
     Real dqdt_aq;
     // dqdt due to wet removal, currently set as zero [mol/mol/s]
-    Real dqdt_wr;
+    // FIXME: this could probably be removed altogether, since it remains zero
+    // throughout this function
+    Real dqdt_wr = 0.0;
     // compute TMR tendencies for so4 aerosol-in-cloud-water
     // FIXME: there's a better way to do this
-    int l;
     for (int m = 0; m < nmodes; ++m) {
-      l = config_.lptr_so4_cw_amode[m] - loffset;
+      int l = config_.lptr_so4_cw_amode[m] - loffset;
       if (l > 0) {
         dqdt_aqso4[l] = faqgain_so4[m] * dso4dt_aqrxn * cldfrc;
         dqdt_aqh2so4[l] = faqgain_so4[m] * dso4dt_gasuptk * cldfrc;
         dqdt_aq = dqdt_aqso4[l] + dqdt_aqh2so4[l];
         // don't have wet removal here
-        dqdt_wr = 0.0;
         // FIXME: maybe seems pointless for this to be a function?
         update_tmr(qcw[l], dqdt_aq + dqdt_wr, dt);
       }
@@ -930,9 +930,8 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
   // FIXME: this is very ugly. we loop through this array, 1 by 1, and if
   // (lptr_so4_cw_amode[m] - loffset) := idx > 0,
   // then it sets qcw to max(qcw, 1e-20)
-  int tmp_idx;
   for (int m = 0; m < nmodes; ++m) {
-    tmp_idx = config_.lptr_so4_cw_amode[m] - loffset;
+    int tmp_idx = config_.lptr_so4_cw_amode[m] - loffset;
     // this is ugly, but better than passing the whole array--FIXME?
     update_tmr_nonzero(qcw[tmp_idx], tmp_idx);
     // FIXME: I believe this is spurious.
@@ -966,7 +965,7 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
   call calc_sfc_flux( dqdt_aqo3rxn*specmw_so4_amode/mbar, pdel, sflx)
   call outfld( 'AQSO4_O3', sflx(:ncol), ncol, lchnk)
   */
-} // end subroutine sox_cldaero_update
+} // end sox_cldaero_update
 
 //-----------------------------------------------------------------------
 //-----------------------------------------------------------------------
@@ -974,10 +973,14 @@ KOKKOS_INLINE_FUNCTION
 void setsox_single_level(const int loffset, const Real dt, const Real press,
                          const Real pdel, const Real tfld, const Real mbar,
                          const Real lwc, const Real cldfrc, const Real cldnum,
-                         const Real xhnm,
+                         const Real xhnm, Config setsox_config_,
                          // inout
                          Real qcw[AeroConfig::num_gas_phase_species()],
                          Real qin[AeroConfig::num_gas_phase_species()]) {
+
+  // setsox_single_level(loffset, dt, press_k, pdel, tfld_k, mbar, lwc_k,
+  //                           cldfrc_k, cldnum_k, xhnm_k, setsox_config_,
+  //                           qcw_k, qin_k);
   /*
   don't know dimension of: mbar
 
@@ -1085,7 +1088,6 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
   -----------------------------------------------------------------
   */
 
-  Config setsox_config_;
   constexpr Real one = 1.0;
   constexpr Real zero = 0.0;
   constexpr Real t298K = 298.0;
@@ -1132,16 +1134,15 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
       ver_loop0: do kk = 1,pver          //// pver loop for STEP 0
          col_loop0: do icol = 1,ncol
   */
-  Real t_factor, patm;
   // there doesn't appear to be any reason for doing this
   Real xso4c = cldconc.so4c;
   // in-cloud liquid water content
 
   Real xlwc = cldconc.xlwc;
   if (xlwc >= setsox_config_.small_value_lwc) {
-    t_factor = (one / tfld) - (one / t298K);
+    Real t_factor = (one / tfld) - (one / t298K);
     // calculate press in atm
-    patm = press / setsox_config_.p0;
+    Real patm = press / setsox_config_.p0;
 
     if ((setsox_config_.cloud_borne > zero) && (cldfrc > zero)) {
       xso4 = xso4c / cldfrc;
@@ -1169,10 +1170,10 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
   //          ... Now use the actual pH
   //==============================================================
 
-  t_factor = (one / tfld) - (one / t298K);
+  Real t_factor = (one / tfld) - (one / t298K);
   xlwc = cldconc.xlwc;
   // calculate press in atm
-  patm = press / setsox_config_.p0;
+  Real patm = press / setsox_config_.p0;
 
   Real xk, xe, x2;
 
@@ -1301,41 +1302,48 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
   call sox_cldaero_destroy_obj(cldconc)
   */
 
-} //   end subroutine setsox
-/*KOKKOS_INLINE_FUNCTION
-void setsox(const int loffset, const Real dt, const Real press, const Real pdel,
-            const Real tfld, const Real mbar, const ColumnView lwc,
-            const Real cldfrc, const Real cldnum, const Real xhnm,
-            // inout
-            Real qcw[AeroConfig::num_gas_phase_species()],
-            Real qin[AeroConfig::num_gas_phase_species()]) {
+} //   end setsox_single_level
 
-  // **NEED THESE COLUMN VARIABLES**
-  // pressure
-  // temperature
-  // cloud liquid water content
-  // cloud fraction
-  // droplet number concentration
-  // total atmospheric density
-  // vmr: cloudborne aerosol
-  // vmr: transported species
+KOKKOS_INLINE_FUNCTION
+void setsox(const ThreadTeam &team, const int loffset, const Real dt,
+            const ColumnView &press, const ColumnView &pdel,
+            const ColumnView &tfld, const ColumnView &mbar,
+            const ColumnView &lwc, const ColumnView &cldfrc,
+            const ColumnView &cldnum, const ColumnView &xhnm,
+            // inout
+            const ColumnView qcw[AeroConfig::num_gas_phase_species()],
+            const ColumnView qin[AeroConfig::num_gas_phase_species()]) {
+
+  const Config setsox_config_;
+  constexpr int nk = mam4::nlev;
 
   // NOTE: pdel and mbar seem to be entirely unused and only used in mam4 to
   // calculate a quantity that is written out and otherwise unused
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
+      Kokkos::TeamThreadRange(team, nk), KOKKOS_LAMBDA(int k) {
+        // auto press = mam4::Atmosphere.pressure;
         const Real press_k = press(k);
+        const Real pdel_k = pdel(k);
         const Real tfld_k = tfld(k);
+        const Real mbar_k = mbar(k);
         const Real lwc_k = lwc(k);
         const Real cldfrc_k = cldfrc(k);
         const Real cldnum_k = cldnum(k);
         const Real xhnm_k = xhnm(k);
-        const Real qcw_k = qcw(k);
-        const Real qin_k = qin(k);
-        setsox_single_level(loffset, dt, press_k, pdel, tfld_k, mbar, lwc_k,
-                            cldnum_k, xhnm_k, qcw_k, qin_k);
+        const int nspec = AeroConfig::num_gas_phase_species();
+        Real qcw_k[nspec];
+        Real qin_k[nspec];
+        for (int i = 0; i < nspec; ++i)
+        {
+          qcw_k[i] = qcw[i](k);
+          qin_k[i] = qin[i](k);
+        }
+        setsox_single_level(loffset, dt, press_k, pdel_k, tfld_k, mbar_k, lwc_k,
+                            cldfrc_k, cldnum_k, xhnm_k, setsox_config_,
+                            qcw_k, qin_k);
       }); // end kokkos::parfor(k)
-} // end setsox()*/
+} // end setsox()
+
 } // namespace mo_setsox
 } // namespace mam4
 #endif

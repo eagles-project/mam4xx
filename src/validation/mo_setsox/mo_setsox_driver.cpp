@@ -23,6 +23,7 @@ using namespace mam4;
 
 // Parameterizations used by the mo_setsox() process.
 void setsox_test(Ensemble *ensemble);
+void setsox_test_nlev(Ensemble *ensemble);
 void calc_ph_values(Ensemble *ensemble);
 void calc_sox_aqueous(Ensemble *ensemble);
 void calc_ynetpos(Ensemble *ensemble);
@@ -51,6 +52,8 @@ int main(int argc, char **argv) {
   try {
     if (func_name == "setsox_test") {
       setsox_test(ensemble);
+    } else if (func_name == "setsox_test_nlev") {
+      setsox_test_nlev(ensemble);
     } else if (func_name == "calc_ph_values") {
       calc_ph_values(ensemble);
     } else if (func_name == "calc_sox_aqueous") {

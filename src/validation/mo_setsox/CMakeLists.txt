@@ -11,6 +11,7 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 add_executable(mo_setsox_driver
                mo_setsox_driver.cpp
                setsox_test.cpp
+               setsox_test_nlev.cpp
                calc_ph_values.cpp
                calc_sox_aqueous.cpp
                calc_ynetpos.cpp
@@ -31,6 +32,7 @@ endforeach()
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     setsox_ts_355_merged
+    setsox_ts_355_nlev
     calc_ph_values_ts_355
     calc_sox_aqueous_ts_355_merged
     calc_ynetpos_ts_355
@@ -40,6 +42,7 @@ set(DEFAULT_TOL 1e-11)
 
 set(ERROR_THRESHOLDS
     ${DEFAULT_TOL} # setsox_test
+    ${DEFAULT_TOL} # setsox_test_nlev
     ${DEFAULT_TOL} # calc_ph_values
     ${DEFAULT_TOL} # calc_sox_aqueous
     ${DEFAULT_TOL} # calc_ynetpos
