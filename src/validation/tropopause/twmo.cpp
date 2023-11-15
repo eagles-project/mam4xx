@@ -41,6 +41,7 @@ void twmo(Ensemble *ensemble) {
 
     tropopause::twmo(temp1d, pmid1d, plimu, pliml, gam, trp);
 
+    std::cout << "trp: " << trp << std::endl;
     output.set("trp", trp);
   });
 }

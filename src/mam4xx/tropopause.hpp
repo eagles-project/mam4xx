@@ -4,6 +4,8 @@
 #include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
 
+#include <fstream>
+#include <iostream>
 #include <mam4xx/modal_aer_opt.hpp>
 
 namespace mam4 {
@@ -95,14 +97,22 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
   constexpr Real zero = 0.0;
   constexpr Real one = 1.0;
   constexpr Real half = 0.5;
+  bool can_finish = false;
 
   trp = -99.0; //                           ! negative means not valid
+
+  std::ofstream my_file("testtwmo.txt");
+  my_file << "start" << std::endl;
+
+  // my_file.open();
 
   // initialize start level
   // dt/dz
   const Real pmk = half * (haero::pow(pmid1d(pver - 2), cnst_kap) +
                            haero::pow(pmid1d(pver - 1), cnst_kap));
-  const Real pm = haero::pow(pmk, one / cnst_kap);
+  const Real pm = haero::pow(pmk, (one / cnst_kap));
+  my_file << "pmk " << pmk << std::endl;
+  my_file << "pm " << pm << std::endl;
   // temperature lapse rate vs. height [K/m]
   Real dtdz = zero;
   // mean temperature [K]
@@ -110,92 +120,135 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
 
   get_dtdz(pm, pmk, pmid1d(pver - 2), pmid1d(pver - 1), temp1d(pver - 2),
            temp1d(pver - 1), dtdz, tm);
-  for (int kk = pver - 2; kk < 1; --kk) {
+  my_file << "dtdz " << dtdz << std::endl;
+  my_file << "tm " << tm << std::endl;
+  for (int kk = pver - 2; kk > 1; --kk) { // main_loop
     // const Real pm0 = pm;
     const Real pmk0 = pmk;
     const Real dtdz0 = dtdz;
-
+    my_file << "kk " << kk << std::endl;
     // dt/dz
     const Real pmk = half * (haero::pow(pmid1d(kk - 1), cnst_kap) +
                              haero::pow(pmid1d(kk), cnst_kap));
     const Real pm = haero::pow(pmk, one / cnst_kap);
+    my_file << "pmk " << pmk << std::endl;
+    my_file << "pm " << pm << std::endl;
 
     get_dtdz(pm, pmk, pmid1d(kk - 1), pmid1d(kk), temp1d(kk - 1), temp1d(kk),
              dtdz, tm);
+
+    // my_file << "dtdz " << dtdz << " <= gam " << gam <<std::endl;
+    // my_file << "pm " << pm << " > plimu " << plimu <<std::endl;
 
     // dt/dz valid?
     if (dtdz <= gam) {
       // nothing here go to next iteration
       // no, dt/dz < -2 K/km
-    } else if (pm > plimu) {
+      my_file << "continue dtdz <= gam" << std::endl;
+      continue;
+    } // dtdz<=gam
+    if (pm > plimu) {
       // nothing here go to next iteration
       // no, too low
+      my_file << "continue pm > plimu" << std::endl;
+      continue;
+    } // pm>plimu
+
+    my_file << "calc" << std::endl;
+    //  dtdz is valid, calculate tropopause pressure
+    Real ag = zero;
+    Real bg = zero;
+    Real ptph = zero;
+    my_file << "ptph = " << ptph << std::endl;
+    my_file << "dtdz0 = " << dtdz0 << std::endl;
+    my_file << "gam = " << gam << std::endl;
+    if (dtdz0 < gam) {
+      ag = (dtdz - dtdz0) / (pmk - pmk0);
+      bg = dtdz0 - (ag * pmk0);
+      my_file << "gam = " << gam << std::endl;
+      my_file << "bg = " << bg << std::endl;
+      my_file << "ag = " << ag << std::endl;
+      my_file << "cnst_kap = " << cnst_kap << std::endl;
+      ptph = haero::exp(haero::log((gam - bg) / ag) / cnst_kap);
     } else {
+      my_file << "pm = " << pm << std::endl;
+      ptph = pm;
+    } // if dtdz0<gam
 
-      //  dtdz is valid, calculate tropopause pressure
-      Real ag = zero;
-      Real bg = zero;
-      Real ptph = zero;
-      if (dtdz0 < gam) {
-        ag = (dtdz - dtdz0) / (pmk - pmk0);
-        bg = dtdz0 - (ag * pmk0);
-        ptph = haero::exp(haero::log((gam - bg) / ag) / cnst_kap);
-      } else {
-        ptph = pm;
-      } // if dtdz0<gam
+    my_file << "ptph = " << ptph << std::endl;
+    my_file << "pliml = " << pliml << std::endl;
+    my_file << "plimu = " << plimu << std::endl;
+    if (ptph < pliml) {
+      // cycle main_loop
+      my_file << "continue ptph < pliml" << std::endl;
+      continue;
+    } // ptph<pliml
+    if (ptph > plimu) {
+      // cycle main_loop
+      my_file << "continue ptph > plimu" << std::endl;
+      continue;
+    } // ptph>plimu
 
-      if (ptph < pliml) {
-        // cycle main_loop
-      } else if (ptph > plimu) {
-        // cycle main_loop
-      } else {
+    //  2nd test: dtdz above 2 km must not exceed gam
+    const Real p2km =
+        ptph + deltaz * (pm / tm) * cnst_faktor; //     p at ptph + 2km
+    Real asum = zero; //                                dtdz above
+    int icount = 0;   //   number of levels above
 
-        //  2nd test: dtdz above 2 km must not exceed gam
-        const Real p2km =
-            ptph + deltaz * (pm / tm) * cnst_faktor; //     p at ptph + 2km
-        Real asum = zero; //                                dtdz above
-        int icount =
-            0; //                                  number of levels above
-
-        // test until apm < p2km
-        for (int jj = kk; jj < 1; --jj) {
-          const Real pmk2 =
-              half * (haero::pow(pmid1d(jj - 1), cnst_kap) +
-                      haero::pow(pmid1d(jj), cnst_kap)); // ! p mean ^kappa
-          const Real pm2 = haero::pow(
-              pmk2, one / cnst_kap); //                           ! p mean
-          if (pm2 > ptph) {
-            // cycle in_loop      doesn't happen
-          } else if (pm2 < p2km) {
-            // exit in_loop      ptropo is valid
-            break;
-          } else {
-            Real dtdz2 = zero;
-            Real tm2 = zero;
-            get_dtdz(pm2, pmk2, pmid1d(jj - 1), pmid1d(jj), temp1d(jj - 1),
-                     temp1d(jj), dtdz2, tm2);
-            asum += dtdz2;
-            icount++;
-            const Real aquer =
-                asum / Real(icount); //               ! dt/dz mean
-            // ! discard ptropo ?
-
-            if (aquer <= gam) {
-              // cycle main_loop      ! dt/dz above < gam
-              jj = 1;
-            }
-
-          } // pm2>ptph
-
-        } // jj test next level
-        trp = ptph;
+    my_file << "p2km = " << p2km << std::endl;
+    my_file << "ptph = " << ptph << std::endl;
+    // test until apm < p2km
+    for (int jj = kk; jj > 1; --jj) { // in_loop
+      my_file << "jj " << jj << std::endl;
+      const Real pmk2 =
+          half * (haero::pow(pmid1d(jj - 1), cnst_kap) +
+                  haero::pow(pmid1d(jj), cnst_kap)); // ! p mean ^kappa
+      const Real pm2 = haero::pow(
+          pmk2, one / cnst_kap); //                           ! p mean
+      if (pm2 > ptph) {
+        // cycle in_loop      doesn't happen
+        my_file << "continue pm2 > ptph" << std::endl;
+        continue;
+      } // pm2>ptph
+      if (pm2 < p2km) {
+        // exit in_loop      ptropo is valid
+        my_file << "ptropo is valid " << std::endl;
+        my_file << "pm2 = " << pm2 << std::endl;
+        my_file << "p2km = " << p2km << std::endl;
+        can_finish = true;
         break;
-      } // ptph<pliml
-    }   // dtdz<=gam
+      } // pm2<p2km
 
-  } // kk
+      Real dtdz2 = zero;
+      Real tm2 = zero;
+      get_dtdz(pm2, pmk2, pmid1d(jj - 1), pmid1d(jj), temp1d(jj - 1),
+               temp1d(jj), dtdz2, tm2);
+      my_file << "get_dtdz = " << dtdz2 << std::endl;
+      asum += dtdz2;
+      icount++;
+      const Real aquer = asum / Real(icount); //               ! dt/dz mean
 
+      my_file << "aquer = " << aquer << std::endl;
+      my_file << "gam = " << gam << std::endl;
+      if (aquer <= gam) { // ! discard ptropo ?
+        my_file << "back to the main loop pls " << std::endl;
+        // cycle main_loop      ! dt/dz above < gam
+        jj = 1;
+        break;
+      }
+
+    } // jj test next level (inner loop)
+    my_file << " almost end trp: " << trp << std::endl;
+    if (can_finish) {
+      trp = ptph;
+      my_file << "FINISH REAL" << std::endl;
+      break;
+    }
+  } // kk (main loop)
+  my_file << "end trp: " << trp << std::endl;
+  my_file.close();
 } // twmo
+
 // This routine uses an implementation of Reichler et al. [2003] done by
 // Reichler and downloaded from his web site. This is similar to the WMO
 //  routines, but is designed for GCMs with a coarse vertical grid.

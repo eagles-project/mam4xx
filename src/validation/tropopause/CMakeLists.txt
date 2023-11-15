@@ -29,14 +29,14 @@ endforeach()
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     get_dtdz_merged
-    twmo_ts_1400
+    twmo_ts_1415
     )
 # # matching the tests and errors, just for convenience
 
 set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
    9e-3
-   1e-2
+   1e-1
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.

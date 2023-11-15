@@ -34,7 +34,6 @@ constexpr Real cnst_faktor =
                                      // gas constant     ~ J/K/kg
 constexpr Real cnst_ka1 = cnst_kap - 1.0;
 
-
 #if 0
 KOKKOS_INLINE_FUNCTION
 void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
@@ -441,7 +440,7 @@ void aer_rad_props_sw(
 
 } // aer_rad_props_sw
 
-#endif 
+#endif
 
 } // namespace aer_rad_props
 } // end namespace mam4
