@@ -135,8 +135,7 @@ void setsox_test_nlev(Ensemble *ensemble) {
       qcw_out[i] = qcw_h[i](0);
       Kokkos::deep_copy(qin_h[i], qin[i]);
       qin_out[i] = qin_h[i](0);
-      for (int k = 0; k < nlev; ++k)
-      {
+      for (int k = 0; k < nlev; ++k) {
         // make sure every level got the same answer
         EKAT_ASSERT(qcw_h[i](0) == qcw_h[i](k));
         EKAT_ASSERT(qin_h[i](0) == qin_h[i](k));

@@ -56,8 +56,7 @@ void setsox_test(Ensemble *ensemble) {
 
     mam4::mo_setsox::setsox_single_level(loffset, dt, press, pdel, tfld, mbar,
                                          lwc, cldfrc, cldnum, xhnm,
-                                         setsox_config_,
-                                         &qcw[0], &qin[0]);
+                                         setsox_config_, &qcw[0], &qin[0]);
 
     output.set("qcw", qcw);
     output.set("qin", qin);

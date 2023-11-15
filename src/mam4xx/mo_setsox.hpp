@@ -1333,14 +1333,13 @@ void setsox(const ThreadTeam &team, const int loffset, const Real dt,
         const int nspec = AeroConfig::num_gas_phase_species();
         Real qcw_k[nspec];
         Real qin_k[nspec];
-        for (int i = 0; i < nspec; ++i)
-        {
+        for (int i = 0; i < nspec; ++i) {
           qcw_k[i] = qcw[i](k);
           qin_k[i] = qin[i](k);
         }
         setsox_single_level(loffset, dt, press_k, pdel_k, tfld_k, mbar_k, lwc_k,
-                            cldfrc_k, cldnum_k, xhnm_k, setsox_config_,
-                            qcw_k, qin_k);
+                            cldfrc_k, cldnum_k, xhnm_k, setsox_config_, qcw_k,
+                            qin_k);
       }); // end kokkos::parfor(k)
 } // end setsox()
 
