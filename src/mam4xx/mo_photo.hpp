@@ -36,6 +36,8 @@ struct PhotoTableData {
   View5D rsf_tab;
   View1D prs;
   View1D dprs;
+  View1D pht_alias_mult_1;
+  ViewInt1D lng_indexer;
 
   int nw;       // number of wavelengths >200nm
   int nt;       // number of temperatures in xsection table
@@ -45,12 +47,50 @@ struct PhotoTableData {
   int numsza;   // number of zenith angles in rsf
   int numcolo3; // number of o3 columns in rsf
   int numalb;   // number of albedos in rsf
-
-  View1D pht_alias_mult_1;
-  ViewInt1D lng_indexer;
 };
 
-// per-column work arrays f
+// this host-only function creates a new PhotoTableData instance given its
+// various dimensions, and initializes the necessary device Views
+inline PhotoTableData create_photo_table_data(int nw, int nt, int np_xs,
+                                              int numj, int nump, int numsza,
+                                              int numcolo3, int numalb) {
+  PhotoTableData table_data{};
+
+  // set dimensions
+  table_data.nw = nw;
+  table_data.nump = nump;
+  table_data.numsza = numsza;
+  table_data.numcolo3 = numcolo3;
+  table_data.numalb = numalb;
+  table_data.numj = numj;
+  table_data.nt = nt;
+  table_data.np_xs = np_xs;
+
+  // create views
+  table_data.xsqy = View4D("photo_table_data.xsqy", table_data.numj,
+                           table_data.nw, table_data.nt, table_data.np_xs);
+  table_data.sza = View1D("photo_table_data.sza", table_data.numsza);
+  table_data.del_sza =
+      View1D("photo_table_data.del_sza", table_data.numsza - 1);
+  table_data.alb = View1D("photo_table_data.alb", table_data.numalb);
+  table_data.press = View1D("photo_table_data.press", table_data.nump);
+  table_data.del_p = View1D("photo_table_data.del_p", table_data.nump - 1);
+  table_data.colo3 = View1D("photo_table_data.colo3", table_data.nump);
+  table_data.o3rat = View1D("photo_table_data.o3rat", table_data.numcolo3);
+  table_data.del_alb =
+      View1D("photo_table_data.del_alb", table_data.numalb - 1);
+  table_data.del_o3rat =
+      View1D("photo_table_data.del_o3rat", table_data.numcolo3 - 1);
+  table_data.etfphot = View1D("photo_table_data.etfphot", table_data.nw);
+  table_data.prs = View1D("photo_table_data.prs", table_data.np_xs);
+  table_data.dprs = View1D("photo_table_data.dprs", table_data.np_xs - 1);
+  table_data.pht_alias_mult_1 = View1D("photo_table_data.pht_alias_mult_1", 2);
+  table_data.lng_indexer = ViewInt1D("photo_table_data.lng_indexer", 1);
+
+  return table_data;
+}
+
+// column-specific photolysis work arrays
 struct PhotoTableWorkArrays {
   View2D lng_prates;
   View2D rsf;

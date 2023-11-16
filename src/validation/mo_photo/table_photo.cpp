@@ -19,9 +19,6 @@ void table_photo(Ensemble *ensemble) {
     using View2D = typename DeviceType::view_2d<Real>;
     using View3D = typename DeviceType::view_3d<Real>;
 
-    // using ViewInt1DHost = typename HostType::view_1d<int>;
-    using ViewInt1D = typename DeviceType::view_1d<int>;
-
     const int ncol = 4;
 
     const auto sza_db = input.get_array("sza");
@@ -37,86 +34,71 @@ void table_photo(Ensemble *ensemble) {
 
     auto shape_rsf_tab = input.get_array("shape_rsf_tab");
     auto synthetic_values = input.get_array("synthetic_values_rsf_tab");
+    auto shape_xsqy = input.get_array("shape_xsqy");
 
-    PhotoTableData table_data{};
+    int nw = int(shape_rsf_tab[0]);
+    int nt = int(shape_xsqy[2]);
+    int np_xs = int(shape_xsqy[3]);
+    int numj = int(shape_xsqy[0]);
+    int nump = int(shape_rsf_tab[1]);
+    int numsza = int(shape_rsf_tab[2]);
+    int numcolo3 = int(shape_rsf_tab[3]);
+    int numalb = int(shape_rsf_tab[4]);
 
-    table_data.nw = int(shape_rsf_tab[0]);
-    table_data.nump = int(shape_rsf_tab[1]);
-    table_data.numsza = int(shape_rsf_tab[2]);
-    table_data.numcolo3 = int(shape_rsf_tab[3]);
-    table_data.numalb = int(shape_rsf_tab[4]);
+    PhotoTableData table_data = create_photo_table_data(
+        nw, nt, np_xs, numj, nump, numsza, numcolo3, numalb);
 
+    auto synthetic_values_xsqy = input.get_array("synthetic_values_xsqy");
     mam4::validation::create_synthetic_rsf_tab(
         table_data.rsf_tab, table_data.nw, table_data.nump, table_data.numsza,
         table_data.numcolo3, table_data.numalb, synthetic_values.data());
 
     auto sza_host = View1DHost((Real *)sza_db.data(), table_data.numsza);
-    table_data.sza = View1D("sza", table_data.numsza);
     Kokkos::deep_copy(table_data.sza, sza_host);
 
     auto del_sza_host =
         View1DHost((Real *)del_sza_db.data(), table_data.numsza - 1);
-    table_data.del_sza = View1D("del_sza", table_data.numsza - 1);
     Kokkos::deep_copy(table_data.del_sza, del_sza_host);
 
     auto alb_host = View1DHost((Real *)alb_db.data(), table_data.numalb);
-    table_data.alb = View1D("alb", table_data.numalb);
     Kokkos::deep_copy(table_data.alb, alb_host);
 
     auto press_host = View1DHost((Real *)press_db.data(), table_data.nump);
-    table_data.press = View1D("press", table_data.nump);
     Kokkos::deep_copy(table_data.press, press_host);
 
     auto del_p_host = View1DHost((Real *)del_p_db.data(), table_data.nump - 1);
-    table_data.del_p = View1D("del_p", table_data.nump - 1);
     Kokkos::deep_copy(table_data.del_p, del_p_host);
 
     auto colo3_host = View1DHost((Real *)colo3_db.data(), table_data.nump);
-    table_data.colo3 = View1D("colo3", table_data.nump);
     Kokkos::deep_copy(table_data.colo3, colo3_host);
 
     auto o3rat_host = View1DHost((Real *)o3rat_db.data(), table_data.numcolo3);
-    table_data.o3rat = View1D("o3rat", table_data.numcolo3);
     Kokkos::deep_copy(table_data.o3rat, o3rat_host);
 
     auto del_alb_host =
         View1DHost((Real *)del_alb_db.data(), table_data.numalb - 1);
-    table_data.del_alb = View1D("del_alb", table_data.numalb - 1);
     Kokkos::deep_copy(table_data.del_alb, del_alb_host);
 
     auto del_o3rat_host =
         View1DHost((Real *)del_o3rat_db.data(), table_data.numcolo3 - 1);
-    table_data.del_o3rat = View1D("del_o3rat", table_data.numcolo3 - 1);
     Kokkos::deep_copy(table_data.del_o3rat, del_o3rat_host);
 
     auto etfphot_host = View1DHost((Real *)etfphot_db.data(), table_data.nw);
-    table_data.etfphot = View1D("etfphot", table_data.nw);
     Kokkos::deep_copy(table_data.etfphot, etfphot_host);
-
-    auto shape_xsqy = input.get_array("shape_xsqy");
-    auto synthetic_values_xsqy = input.get_array("synthetic_values_xsqy");
-
-    table_data.numj = int(shape_xsqy[0]);
-    table_data.nt = int(shape_xsqy[2]);
-    table_data.np_xs = int(shape_xsqy[3]);
 
     const auto prs_db = input.get_array("prs");
     const auto dprs_db = input.get_array("dprs");
 
     auto prs_host = View1DHost((Real *)prs_db.data(), table_data.np_xs);
-    table_data.prs = View1D("prs", table_data.np_xs);
     Kokkos::deep_copy(table_data.prs, prs_host);
 
     auto dprs_host = View1DHost((Real *)dprs_db.data(), table_data.np_xs - 1);
-    table_data.dprs = View1D("dprs", table_data.np_xs - 1);
     Kokkos::deep_copy(table_data.dprs, dprs_host);
 
     View3D rsf("rsf", ncol, table_data.nw, pver);
     View3D xswk("xswk", ncol, table_data.numj, table_data.nw);
 
     const Real values_xsqy = synthetic_values_xsqy[0];
-    table_data.xsqy = View4D("xsqy", table_data.numj, table_data.nw,
-                             table_data.nt, table_data.np_xs);
     Kokkos::deep_copy(table_data.xsqy, values_xsqy);
 
     View3D j_long("j_long", ncol, table_data.numj, pver);
@@ -127,13 +109,9 @@ void table_photo(Ensemble *ensemble) {
     auto pht_alias_mult_1_db = input.get_array("pht_alias_mult");
     auto pht_alias_mult_1_host =
         View1DHost((Real *)pht_alias_mult_1_db.data(), 2);
-    table_data.pht_alias_mult_1 = View1D("pht_alias_mult_1", 2);
     Kokkos::deep_copy(table_data.pht_alias_mult_1, pht_alias_mult_1_host);
 
     auto lng_indexer_db = input.get_array("lng_indexer");
-    // auto lng_indexer_host = ViewInt1DHost((int *)pht_alias_mult_1_db.data(),
-    // 1);
-    table_data.lng_indexer = ViewInt1D("lng_indexer", 1);
     Kokkos::deep_copy(table_data.lng_indexer, lng_indexer_db[0] - 1);
 
     View3D photo("photo", ncol, pver, 1);
