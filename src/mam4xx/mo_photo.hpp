@@ -20,6 +20,45 @@ using View2D = DeviceType::view_2d<Real>;
 using View1D = DeviceType::view_1d<Real>;
 using ViewInt1D = DeviceType::view_1d<int>;
 
+// photolysis table data (common to all columns)
+struct PhotoTableData {
+  View4D xsqy;
+  View1D sza;
+  View1D del_sza;
+  View1D alb;
+  View1D press;
+  View1D del_p;
+  View1D colo3;
+  View1D o3rat;
+  View1D del_alb;
+  View1D del_o3rat;
+  View1D etfphot;
+  View5D rsf_tab;
+  View1D prs;
+  View1D dprs;
+
+  int nw;       // number of wavelengths >200nm
+  int nt;       // number of temperatures in xsection table
+  int np_xs;    // number of pressure levels in xsection table
+  int numj;     // number of photorates in xsqy, rsf
+  int nump;     // number of altitudes in rsf
+  int numsza;   // number of zenith angles in rsf
+  int numcolo3; // number of o3 columns in rsf
+  int numalb;   // number of albedos in rsf
+
+  View1D pht_alias_mult_1;
+  ViewInt1D lng_indexer;
+};
+
+// per-column work arrays f
+struct PhotoTableWorkArrays {
+  View2D lng_prates;
+  View2D rsf;
+  View2D xswk;
+  View1D psum_l;
+  View1D psum_u;
+};
+
 KOKKOS_INLINE_FUNCTION
 void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
                const Real *delp,
@@ -237,7 +276,6 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
   const Real wght_0_1_1 = wrk0 * wrk1;
   const Real wght_1_1_1 = dels[0] * wrk1;
 
-  // nw and rsf_tab are module variables
   for (int wn = 0; wn < nw; wn++) {
     psum[wn] = wght_0_0_0 * rsf_tab(wn, iz, is, iv, ial) +
                wght_0_0_1 * rsf_tab(wn, iz, is, iv, ialp1) +
@@ -558,57 +596,24 @@ void table_photo(const View2D &photo, // out
                  const ColumnView &colo3_in, const Real zen_angle,
                  const Real srf_alb, const ColumnView &lwc,
                  const ColumnView &clouds, // in
-                 const Real esfact, const View4D &xsqy, const View1D &sza,
-                 const View1D &del_sza, const View1D &alb, const View1D &press,
-                 const View1D &del_p, const View1D &colo3, const View1D &o3rat,
-                 const View1D &del_alb, const View1D &del_o3rat,
-                 const View1D &etfphot, const View5D &rsf_tab,
-                 const View1D &prs, const View1D &dprs, const int nw,
-                 const int nump, const int numsza, const int numcolo3,
-                 const int numalb, const int np_xs, const int numj,
-                 const View1D &pht_alias_mult_1, const ViewInt1D &lng_indexer,
-                 // work arrays
-                 const View2D &lng_prates, const View2D &rsf,
-                 const View2D &xswk, const View1D &psum_l,
-                 const View1D &psum_u) {
+                 const Real esfact, const PhotoTableData &table_data,
+                 PhotoTableWorkArrays &work_arrays) {
   /*-----------------------------------------------------------------
       ... table photorates for wavelengths > 200nm
  -----------------------------------------------------------------*/
 
-  //@param[in] photos_icol (pver,phtcnt)     photodissociation rates at icol
-  //[1/s]
-  //@param[in] pmid(pver)              midpoint pressure [Pa]
-  //@param[in] pdel(pver) pressure delta about midpoint [Pa]
-  //@param[in] temper(pver)            midpoint temperature [K]
-  //@param[in] colo3_in(pver) col_dens(icol,pver,0) ! column densities
-  //[molecules/cm^2]
-  //@param[in] zen_angle(icol)               solar zenith angle [radians]
-  //@param[in] srf_alb(icols)                surface albedo
-  //@param[in] lwc(icol,pver)                liquid water content [kg/kg]
-  //@param[in] clouds(icol,pver)             cloud fraction
-  //@param[in] esfact                        earth sun distance factor
-  // @param[in]  xsqy
-  // @param[in]  sza
-  // @param[in]  del_sza
-  // @param[in]  alb
-  // @param[in]  press
-  // @param[in]  del_p
-  // @param[in]  colo3
-  // @param[in]  o3rat
-  // @param[in]  del_alb
-  // @param[in]  del_o3rat
-  // @param[in]  etfphot
-  // @param[in]  rsf_tab
-  // @param[in]  prs
-  // @param[in]  dprs
-  // @param[in]  nw             wavelengths >200nm
-  // @param[in]  nump           number of altitudes in rsf
-  // @param[in]  numsza         number of zen angles in rsf
-  // @param[in]  numcolo3       number of o3 columns in rsf
-  // @param[in]  numalb         number of albedos in rsf
-  // @param[in]  np_xs          number of pressure levels in xsection table
-  // @param[in]  numj           number of photorates in xsqy, rsf
-  // @param[out]  j_long(:,:)   photo rates [1/s]
+  //@param[out] photo(pver,phtcnt)  column photodissociation rates [1/s]
+  //@param[in]  pmid(pver)          midpoint pressure [Pa]
+  //@param[in]  pdel(pver)          pressure delta about midpoint [Pa]
+  //@param[in]  temper(pver)        midpoint temperature [K]
+  //@param[in]  colo3_in(pver)      column densities [molecules/cm^2]
+  //@param[in]  zen_angle(icol)     solar zenith angle [radians]
+  //@param[in]  srf_alb(icols)      surface albedo
+  //@param[in]  lwc(icol,pver)      liquid water content [kg/kg]
+  //@param[in]  clouds(icol,pver)   cloud fraction
+  //@param[in]  esfact              earth sun distance factor
+  //@param[in]  table_data          column-independent photolysis table data
+  //@param[out] work_arrays         column-specific photolysis work arrays
 
   if (phtcnt < 1) {
     return;
@@ -647,23 +652,29 @@ void table_photo(const View2D &photo, // out
      ... long wave length component
     -----------------------------------------------------------------*/
 
-    jlong(sza_in, eff_alb, parg, temper.data(), colo3_in.data(), xsqy,
-          sza.data(), del_sza.data(), alb.data(), press.data(), del_p.data(),
-          colo3.data(), o3rat.data(), del_alb.data(), del_o3rat.data(),
-          etfphot.data(),
-          rsf_tab, // in
-          prs.data(), dprs.data(), nw, nump, numsza, numcolo3, numalb, np_xs,
-          numj,
-          lng_prates, // output
+    jlong(sza_in, eff_alb, parg, temper.data(), colo3_in.data(),
+          table_data.xsqy, table_data.sza.data(), table_data.del_sza.data(),
+          table_data.alb.data(), table_data.press.data(),
+          table_data.del_p.data(), table_data.colo3.data(),
+          table_data.o3rat.data(), table_data.del_alb.data(),
+          table_data.del_o3rat.data(), table_data.etfphot.data(),
+          table_data.rsf_tab, // in
+          table_data.prs.data(), table_data.dprs.data(), table_data.nw,
+          table_data.nump, table_data.numsza, table_data.numcolo3,
+          table_data.numalb, table_data.np_xs, table_data.numj,
+          work_arrays.lng_prates, // output
           // work arrays
-          rsf, xswk, psum_l.data(), psum_u.data());
+          work_arrays.rsf, work_arrays.xswk, work_arrays.psum_l.data(),
+          work_arrays.psum_u.data());
 
     for (int mm = 0; mm < phtcnt; ++mm) {
-      if (lng_indexer(mm) > -1) {
+      if (table_data.lng_indexer(mm) > -1) {
         for (int kk = 0; kk < pver; ++kk) {
-          photo(kk, mm) = cld_mult[kk] *
-                          (photo(kk, mm) + pht_alias_mult_1(mm) *
-                                               lng_prates(lng_indexer(mm), kk));
+          photo(kk, mm) =
+              cld_mult[kk] *
+              (photo(kk, mm) +
+               table_data.pht_alias_mult_1(mm) *
+                   work_arrays.lng_prates(table_data.lng_indexer(mm), kk));
         } // end kk
       }   // end if
     }     // end mm
