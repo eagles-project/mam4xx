@@ -86,9 +86,9 @@ void setsox_test_nlev(Ensemble *ensemble) {
 
     for (int i = 0; i < nspec; ++i) {
       qcw[i] = haero::testing::create_column_view(nlev);
-      qcw_h[i] = haero::testing::create_column_view(nlev);
+      qcw_h[i] = Kokkos::create_mirror_view(qcw[i]);
       qin[i] = haero::testing::create_column_view(nlev);
-      qin_h[i] = haero::testing::create_column_view(nlev);
+      qin_h[i] = Kokkos::create_mirror_view(qin[i]);
     }
 
     for (int k = 0; k < nlev; ++k) {
