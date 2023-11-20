@@ -19,7 +19,7 @@ namespace mam4 {
 namespace gas_chemistry {
 
 // BAD CONSTANTs
-const int itermax = 11;
+constexpr int itermax = 11;
 const Real rel_err = 1.0e-3;
 // NOTE: high_rel_err is unused currently
 // const Real high_rel_err = 1.0e-4;
