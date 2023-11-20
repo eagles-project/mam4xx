@@ -20,6 +20,11 @@ using View2D = DeviceType::view_2d<Real>;
 using View1D = DeviceType::view_1d<Real>;
 using ViewInt1D = DeviceType::view_1d<int>;
 
+// FIXME: We need this to expose certain columns in the Atmosphere class.
+// FIXME: This is a great example of how "const correctness" can complicate
+// FIXME: things in C++. -JNJ
+using ConstColumnView = haero::ConstColumnView;
+
 // photolysis table data (common to all columns)
 struct PhotoTableData {
   View4D xsqy;
@@ -629,13 +634,16 @@ void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
 
 } // jlong
 const int phtcnt = 1; // number of photolysis reactions
+
+// FIXME: note the use of ConstColumnView for views we get from the
+// FIXME: haero::Atmosphere type
 KOKKOS_INLINE_FUNCTION
 void table_photo(const View2D &photo, // out
-                 const ColumnView &pmid, const ColumnView &pdel,
-                 const ColumnView &temper, // in
+                 const ConstColumnView &pmid, const ConstColumnView &pdel,
+                 const ConstColumnView &temper, // in
                  const ColumnView &colo3_in, const Real zen_angle,
                  const Real srf_alb, const ColumnView &lwc,
-                 const ColumnView &clouds, // in
+                 const ConstColumnView &clouds, // in
                  const Real esfact, const PhotoTableData &table_data,
                  PhotoTableWorkArrays &work_arrays) {
   /*-----------------------------------------------------------------
