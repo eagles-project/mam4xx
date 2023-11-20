@@ -628,7 +628,7 @@ void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
   }   // end kk
 
 } // jlong
-const Real phtcnt = 1; // number of photolysis reactions
+const int phtcnt = 1; // number of photolysis reactions
 KOKKOS_INLINE_FUNCTION
 void table_photo(const View2D &photo, // out
                  const ColumnView &pmid, const ColumnView &pdel,
