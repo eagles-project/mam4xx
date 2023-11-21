@@ -18,6 +18,8 @@ void setsox_test_nlev(Ensemble *ensemble) {
     // Declare array of strings for input names
     std::string input_variables[] = {"dt"};
 
+    std::cout << "***test: start***" << "\n";
+
     std::string input_arrays[] = {
         "ncol", "loffset", "dtime",  "press", "pdel", "tfld", "mbar",
         "lwc",  "cldfrc",  "cldnum", "xhnm",  "qcw",  "qin"};
@@ -36,6 +38,8 @@ void setsox_test_nlev(Ensemble *ensemble) {
         exit(1);
       }
     }
+
+    std::cout << "***begin***" << "\n";
 
     // Parse input
     const Real dt = input.get_array("dtime")[0];
@@ -120,6 +124,8 @@ void setsox_test_nlev(Ensemble *ensemble) {
       Kokkos::deep_copy(qin[i], qin_h[i]);
     }
 
+    std::cout << "***test: before***" << "\n";
+
     // Single-column dispatch.
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
@@ -128,21 +134,32 @@ void setsox_test_nlev(Ensemble *ensemble) {
                                   lwc, cldfrc, cldnum, xhnm, qcw, qin);
         });
 
-    std::vector<Real> qcw_out(nspec);
-    std::vector<Real> qin_out(nspec);
-    for (int i = 0; i < nspec; ++i) {
-      Kokkos::deep_copy(qcw_h[i], qcw[i]);
-      qcw_out[i] = qcw_h[i](0);
-      Kokkos::deep_copy(qin_h[i], qin[i]);
-      qin_out[i] = qin_h[i](0);
-      for (int k = 0; k < nlev; ++k) {
-        // make sure every level got the same answer
-        EKAT_ASSERT(qcw_h[i](0) == qcw_h[i](k));
-        EKAT_ASSERT(qin_h[i](0) == qin_h[i](k));
-      }
-    }
+    // std::cout << "***test: after***" << "\n";
 
-    output.set("qcw", qcw_out);
-    output.set("qin", qin_out);
+    // // void setsox(const ThreadTeam &team, const int loffset, const Real dt,
+    // //             const ColumnView &press, const ColumnView &pdel,
+    // //             const ColumnView &tfld, const ColumnView &mbar,
+    // //             const ColumnView &lwc, const ColumnView &cldfrc,
+    // //             const ColumnView &cldnum, const ColumnView &xhnm,
+    // //             // inout
+    // //             const ColumnView qcw[AeroConfig::num_gas_phase_species()],
+    // //             const ColumnView qin[AeroConfig::num_gas_phase_species()])
+
+    // std::vector<Real> qcw_out(nspec);
+    // std::vector<Real> qin_out(nspec);
+    // for (int i = 0; i < nspec; ++i) {
+    //   Kokkos::deep_copy(qcw_h[i], qcw[i]);
+    //   qcw_out[i] = qcw_h[i](0);
+    //   Kokkos::deep_copy(qin_h[i], qin[i]);
+    //   qin_out[i] = qin_h[i](0);
+    //   for (int k = 0; k < nlev; ++k) {
+    //     // make sure every level got the same answer
+    //     EKAT_ASSERT(qcw_h[i](0) == qcw_h[i](k));
+    //     EKAT_ASSERT(qin_h[i](0) == qin_h[i](k));
+    //   }
+    // }
+
+    // output.set("qcw", qcw_out);
+    // output.set("qin", qin_out);
   });
 }

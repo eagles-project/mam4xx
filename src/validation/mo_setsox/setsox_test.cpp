@@ -52,11 +52,26 @@ void setsox_test(Ensemble *ensemble) {
     auto qcw = input.get_array("qcw");
     auto qin = input.get_array("qin");
 
+    const int nspec = AeroConfig::num_gas_phase_species();
+    const Real zero = 0.0;
+    Real dqdt_aqso4[nspec];
+    Real dqdt_aqh2so4[nspec];
+    for (int i = 0; i < nspec; ++i)
+    {
+      dqdt_aqso4[i] = zero;
+      dqdt_aqh2so4[i] = zero;
+    }
+    Real dqdt_aqhprxn = zero;
+    Real dqdt_aqo3rxn = zero;
+
     const mam4::mo_setsox::Config setsox_config_;
 
     mam4::mo_setsox::setsox_single_level(loffset, dt, press, pdel, tfld, mbar,
                                          lwc, cldfrc, cldnum, xhnm,
-                                         setsox_config_, &qcw[0], &qin[0]);
+                                         setsox_config_,
+                                         dqdt_aqso4, dqdt_aqh2so4,
+                                         dqdt_aqhprxn, dqdt_aqo3rxn,
+                                         &qcw[0], &qin[0]);
 
     output.set("qcw", qcw);
     output.set("qin", qin);
