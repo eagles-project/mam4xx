@@ -263,10 +263,18 @@ KOKKOS_INLINE_FUNCTION
 void lin_strat_sfcsink_kk(const Real delta_t, const Real pdel, // in
                           Real &o3l_vmr, const Real o3_sfc, const int o3_lbl,
                           const Real o3_tau, Real &do3mass) {
-  const Real mass = pdel(kk) * rgrav; //   air mass in kg/m2
-  const Real o3l_old = o3l_vmr(kk);   // vmr
+  constexpr Real one = 1.0;
+  // BAD CONSTANT
+  constexpr Real mwo3 = 48.; // molecular weight O3
+  constexpr Real mwdry = haero::Constants::molec_weight_dry_air *
+                         1e3; //     ! molecular weight dry air ~ kg/kmole;//!
+  constexpr Real rgrav =
+      one / haero::Constants::gravity; // reciprocal of gravit
   const Real efactor =
       (one - haero::exp(-delta_t / o3_tau));     // !compute time scale factor
+                                                 //
+  const Real mass = pdel * rgrav;                //   air mass in kg/m2
+  const Real o3l_old = o3l_vmr;                  // vmr
   const Real do3 = (o3_sfc - o3l_old) * efactor; // vmr
   o3l_vmr = o3l_old + do3;
   do3mass += do3 * mass * mwo3 / mwdry; // loss in kg/m2 summed over boundary
@@ -284,15 +292,6 @@ void lin_strat_sfcsink(const Real delta_t, const ColumnView &pdel, // in
   // !inten in-outs
   // @param[inout]:: o3l_vmr(ncol ,pver)             ! ozone volume mixing ratio
   // [vmr]
-
-  constexpr Real one = 1.0;
-  // BAD CONSTANT
-  constexpr Real mwo3 = 48.; // molecular weight O3
-  constexpr Real mwdry = haero::Constants::molec_weight_dry_air *
-                         1e3; //     ! molecular weight dry air ~ kg/kmole;//!
-                              //     molecular weight dry air
-  constexpr Real rgrav =
-      one / haero::Constants::gravity; // reciprocal of gravit
 
   Real do3mass_icol = 0;
   for (int kk = pver - 1; kk > pver - o3_lbl - 1; --kk) {
