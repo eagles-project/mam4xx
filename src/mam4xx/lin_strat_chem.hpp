@@ -261,8 +261,8 @@ void lin_strat_chem_solve(
 
 KOKKOS_INLINE_FUNCTION
 void lin_strat_sfcsink_kk(const Real delta_t, const Real pdel, // in
-                          Real &o3l_vmr, const Real o3_sfc, const int o3_lbl,
-                          const Real o3_tau, Real &do3mass) {
+                          Real &o3l_vmr, const Real o3_sfc, const Real o3_tau,
+                          Real &do3mass) {
   constexpr Real one = 1.0;
   // BAD CONSTANT
   constexpr Real mwo3 = 48.; // molecular weight O3
