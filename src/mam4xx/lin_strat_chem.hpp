@@ -260,6 +260,20 @@ void lin_strat_chem_solve(
 } // lin_strat_chem_solve
 
 KOKKOS_INLINE_FUNCTION
+void lin_strat_sfcsink_kk(const Real delta_t, const Real pdel, // in
+                          Real &o3l_vmr, const Real o3_sfc, const int o3_lbl,
+                          const Real o3_tau, Real &do3mass) {
+  const Real mass = pdel(kk) * rgrav; //   air mass in kg/m2
+  const Real o3l_old = o3l_vmr(kk);   // vmr
+  const Real efactor =
+      (one - haero::exp(-delta_t / o3_tau));     // !compute time scale factor
+  const Real do3 = (o3_sfc - o3l_old) * efactor; // vmr
+  o3l_vmr = o3l_old + do3;
+  do3mass += do3 * mass * mwo3 / mwdry; // loss in kg/m2 summed over boundary
+                                        // layers within one time step
+}
+
+KOKKOS_INLINE_FUNCTION
 void lin_strat_sfcsink(const Real delta_t, const ColumnView &pdel, // in
                        const ColumnView &o3l_vmr, const Real o3_sfc,
                        const int o3_lbl, const Real o3_tau, Real &o3l_sfcsink) {
@@ -280,19 +294,10 @@ void lin_strat_sfcsink(const Real delta_t, const ColumnView &pdel, // in
   constexpr Real rgrav =
       one / haero::Constants::gravity; // reciprocal of gravit
 
-  const Real efactor =
-      (one - haero::exp(-delta_t / o3_tau)); // !compute time scale factor
   Real do3mass_icol = 0;
   for (int kk = pver - 1; kk > pver - o3_lbl - 1; --kk) {
-    const Real mass = pdel(kk) * rgrav; //   air mass in kg/m2
-
-    const Real o3l_old = o3l_vmr(kk);              // vmr
-    const Real do3 = (o3_sfc - o3l_old) * efactor; // vmr
-    const Real o3l_new = o3l_old + do3;
-    do3mass_icol +=
-        do3 * mass * mwo3 / mwdry; //   loss in kg/m2 summed over boundary
-                                   //   layers within one time step
-    o3l_vmr(kk) = o3l_new;
+    lin_strat_sfcsink_kk(delta_t, pdel(kk), o3l_vmr(kk), o3_sfc, o3_lbl, o3_tau,
+                         do3mass_icol);
   }
 
   // Two parameters are applied to Linoz O3 for surface sink, O3l is not coupled
