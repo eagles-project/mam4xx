@@ -43,7 +43,7 @@ EkatCreateUnitTest(mam4_rename_unit_tests mam4_rename_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_aging_unit_tests mam4_aging_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
-EkatCreateUnitTest(mam4_hetfrz_unit_tests mam4_hetfrz_unit_tests.cpp
+EkatCreateUnitTest(mam4_hetfrz_unit_tests mam4_hetfrz_unit_tests.cpp  
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_amicphys_1gridcell_tests mam4_amicphys_1gridcell.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
@@ -54,6 +54,7 @@ EkatCreateUnitTest(mam4_wet_deposition_unit_tests mam4_wet_deposition_unit_tests
 EkatCreateUnitTest(mam4_mo_setsox_unit_tests mam4_mo_setsox_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 
+if (NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel") #The Intel compiler always emit a warning for inline functions.
 target_compile_options(utils_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_nucleation_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_gasaerexch_unit_tests PRIVATE -Werror)
@@ -66,6 +67,7 @@ target_compile_options(mam4_aging_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_hetfrz_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_nucleate_ice_unit_tests PRIVATE -Werror)
 target_compile_options(mam4_mo_setsox_unit_tests PRIVATE -Werror)
+endif ()
 
 
 if (${HAERO_PRECISION} MATCHES double)
