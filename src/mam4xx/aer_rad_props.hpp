@@ -454,9 +454,6 @@ void aer_rad_props_lw(
     int lmassptr_amode[maxd_aspectype][ntot_amode],
     Real spechygro[maxd_aspectype], Real specdens_amode[maxd_aspectype],
     int lspectype_amode[maxd_aspectype][ntot_amode],
-    const ComplexView2D &specrefndxlw,
-    const Kokkos::complex<Real> crefwlw[nlwbands],
-    const Kokkos::complex<Real> crefwsw[nswbands],
     const AerosolOpticsDeviceData &aersol_optics_data,
     // work views
     const ColumnView &mass, const View2D &cheb, const View2D &dgnumwet_m,
@@ -549,7 +546,6 @@ void aer_rad_props_sw(
     int lspectype_amode[maxd_aspectype][ntot_amode],
     // FIXME
     const mam4::AeroId specname_amode[9],
-    const View3D extpsw[ntot_amode][nswbands],
     const AerosolOpticsDeviceData &aersol_optics_data,
     // diagnostic
     const ColumnView &extinct, //        ! aerosol extinction [1/m]
