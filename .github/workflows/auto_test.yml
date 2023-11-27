@@ -22,9 +22,6 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
-#    # Pre-fab container with third-party libs installed.
-#    container: coherellc/haero-tpl:${{ matrix.build-type }}-${{ matrix.fp-precision }}
-
     # Environment variables
     env:
       CI: 1   # indicates that we are running in a CI environment.
