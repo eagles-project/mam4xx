@@ -166,6 +166,12 @@ void modal_aero_sw(Ensemble *ensemble) {
     const auto abspsw_db = input.get_array("abspsw");
     const auto asmpsw_db = input.get_array("asmpsw");
 
+
+    AerosolOpticsDeviceData aersol_optics_data{};
+    // allocate views.  
+    set_aerosol_optics_data_for_modal_aero_sw_views(aersol_optics_data);
+
+
     // abspsw = View5D("abspsw", ntot_amode, coef_number, refindex_real,
     //                 refindex_im, nswbands);
     // extpsw = View5D("abspsw", ntot_amode, coef_number, refindex_real,
@@ -189,6 +195,8 @@ void modal_aero_sw(Ensemble *ensemble) {
             View3DHost("asmpsw_host", coef_number, refindex_real, refindex_im);
       } // d5
 
+
+
     // assuming 1d array is saved using column-major layout
     for (int d1 = 0; d1 < ntot_amode; ++d1) {
       for (int d2 = 0; d2 < coef_number; ++d2) {
@@ -209,21 +217,22 @@ void modal_aero_sw(Ensemble *ensemble) {
       }       // d2
     }         // d1
 
-    View3D abspsw[ntot_amode][nswbands];
-    View3D extpsw[ntot_amode][nswbands];
-    View3D asmpsw[ntot_amode][nswbands];
+
+    // View3D abspsw[ntot_amode][nswbands];
+    // View3D extpsw[ntot_amode][nswbands];
+    // View3D asmpsw[ntot_amode][nswbands];
 
     for (int d1 = 0; d1 < ntot_amode; ++d1)
       for (int d5 = 0; d5 < nswbands; ++d5) {
-        abspsw[d1][d5] =
-            View3D("abspsw", coef_number, refindex_real, refindex_im);
-        extpsw[d1][d5] =
-            View3D("extpsw", coef_number, refindex_real, refindex_im);
-        asmpsw[d1][d5] =
-            View3D("asmpsw", coef_number, refindex_real, refindex_im);
-        Kokkos::deep_copy(abspsw[d1][d5], abspsw_host[d1][d5]);
-        Kokkos::deep_copy(extpsw[d1][d5], extpsw_host[d1][d5]);
-        Kokkos::deep_copy(asmpsw[d1][d5], asmpsw_host[d1][d5]);
+        // abspsw[d1][d5] =
+        //     View3D("abspsw", coef_number, refindex_real, refindex_im);
+        // extpsw[d1][d5] =
+        //     View3D("extpsw", coef_number, refindex_real, refindex_im);
+        // asmpsw[d1][d5] =
+        //     View3D("asmpsw", coef_number, refindex_real, refindex_im);
+        Kokkos::deep_copy(aersol_optics_data.abspsw[d1][d5], abspsw_host[d1][d5]);
+        Kokkos::deep_copy(aersol_optics_data.extpsw[d1][d5], extpsw_host[d1][d5]);
+        Kokkos::deep_copy(aersol_optics_data.asmpsw[d1][d5], asmpsw_host[d1][d5]);
       } // d5
 
     // View3D refrtabsw, refitabsw;
@@ -242,7 +251,7 @@ void modal_aero_sw(Ensemble *ensemble) {
     for (int d1 = 0; d1 < N1; ++d1)
       for (int d3 = 0; d3 < N3; ++d3) {
         refrtabsw_host[d1][d3] = View1DHost("refrtabsw_host", refindex_real);
-        refrtabsw[d1][d3] = View1D("refrtabsw", refindex_real);
+        // refrtabsw[d1][d3] = View1D("refrtabsw", refindex_real);
       } // d3
 
     for (int d1 = 0; d1 < N1; ++d1)
@@ -255,7 +264,7 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     for (int d1 = 0; d1 < N1; ++d1)
       for (int d3 = 0; d3 < N3; ++d3) {
-        Kokkos::deep_copy(refrtabsw[d1][d3], refrtabsw_host[d1][d3]);
+        Kokkos::deep_copy(aersol_optics_data.refrtabsw[d1][d3], refrtabsw_host[d1][d3]);
       } // d3
 
     // refitabsw = View3D("refitabsw", ntot_amode, refindex_im, nswbands);
@@ -266,7 +275,7 @@ void modal_aero_sw(Ensemble *ensemble) {
     for (int d1 = 0; d1 < N1; ++d1)
       for (int d3 = 0; d3 < N3; ++d3) {
         refitabsw_host[d1][d3] = View1DHost("refitabsw_host", refindex_im);
-        refitabsw[d1][d3] = View1D("refitabsw", refindex_im);
+        // refitabsw[d1][d3] = View1D("refitabsw", refindex_im);
       } // d3
 
     N1 = ntot_amode;
@@ -282,7 +291,7 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     for (int d1 = 0; d1 < N1; ++d1)
       for (int d3 = 0; d3 < N3; ++d3) {
-        Kokkos::deep_copy(refitabsw[d1][d3], refitabsw_host[d1][d3]);
+        Kokkos::deep_copy(aersol_optics_data.refitabsw[d1][d3], refitabsw_host[d1][d3]);
       } // d3
 
     // output
@@ -360,6 +369,9 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     mam4::AeroConfig mam4_config;
     mam4::CalcSizeProcess calcsize_process(mam4_config);
+
+
+
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
@@ -474,7 +486,8 @@ void modal_aero_sw(Ensemble *ensemble) {
               specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
               crefwlw, crefwsw,
               // FIXME
-              specname_amode, extpsw, abspsw, asmpsw, refrtabsw, refitabsw,
+              specname_amode, 
+              aersol_optics_data,
               // diagnostic
               extinct, //        ! aerosol extinction [1/m]
               absorb,  //         ! aerosol absorption [1/m]

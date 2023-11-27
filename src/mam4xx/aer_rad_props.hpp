@@ -457,9 +457,7 @@ void aer_rad_props_lw(
     const ComplexView2D &specrefndxlw,
     const Kokkos::complex<Real> crefwlw[nlwbands],
     const Kokkos::complex<Real> crefwsw[nswbands],
-    const View3D absplw[ntot_amode][nlwbands],
-    const View1D refrtablw[ntot_amode][nlwbands],
-    const View1D refitablw[ntot_amode][nlwbands],
+    const AerosolOpticsDeviceData& aersol_optics_data, 
     // work views
     const ColumnView &mass, const View2D &cheb, const View2D &dgnumwet_m,
     const View2D &dgnumdry_m, const ColumnView &radsurf,
@@ -498,7 +496,7 @@ void aer_rad_props_lw(
                 // parameters
                 nspec_amode, sigmag_amode, lmassptr_amode, spechygro,
                 specdens_amode, lspectype_amode, specrefndxlw, crefwlw, crefwsw,
-                absplw, refrtablw, refitablw,
+                aersol_optics_data, 
                 // work views
                 mass, cheb, dgnumwet_m, dgnumdry_m, radsurf, logradsurf,
                 specrefindex, qaerwat_m);
@@ -555,10 +553,7 @@ void aer_rad_props_sw(
     const Kokkos::complex<Real> crefwsw[nswbands],
     // FIXME
     const mam4::AeroId specname_amode[9], const View3D extpsw[ntot_amode][nswbands],
-    const View3D abspsw[ntot_amode][nswbands],
-    const View3D asmpsw[ntot_amode][nswbands],
-    const View1D refrtabsw[ntot_amode][nswbands],
-    const View1D refitabsw[ntot_amode][nswbands],
+    const AerosolOpticsDeviceData& aersol_optics_data, 
     // diagnostic
     const ColumnView &extinct, //        ! aerosol extinction [1/m]
     const ColumnView &absorb,  //         ! aerosol absorption [1/m]
@@ -656,7 +651,8 @@ void aer_rad_props_sw(
                 specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
                 crefwlw, crefwsw,
                 // FIXME
-                specname_amode, extpsw, abspsw, asmpsw, refrtabsw, refitabsw,
+                specname_amode, 
+                aersol_optics_data,
                 // diagnostic
                 extinct, //        ! aerosol extinction [1/m]
                 absorb,  //         ! aerosol absorption [1/m]

@@ -9,13 +9,15 @@
 
 namespace mam4 {
 namespace modal_aer_opt {
-using ConstColumnView = haero::ConstColumnView;
+
 
 using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;
 using View3D = DeviceType::view_3d<Real>;
 using ComplexView2D = DeviceType::view_2d<Kokkos::complex<Real>>;
 using View5D = Kokkos::View<Real *****>;
+
+using ConstColumnView = haero::ConstColumnView;
 
 constexpr int pver = mam4::nlev;
 constexpr int ntot_amode = mam4::AeroConfig::num_modes();
@@ -57,10 +59,60 @@ constexpr int maxd_aspectype = 14;
 // FIXME; is this values set somewhere else?
 constexpr int max_nspec = 7;
 
-// dimensions for reading refractive index from modal radiative properties files
-constexpr int coef_number = 5;   // number of coeficients
+// dimensions for reading refractive index from modal radioactive properties files
+constexpr int coef_number = 5;   // number of coefficients
 constexpr int refindex_real = 7; // real refractive index
-constexpr int refindex_im = 10;  // imaginery refractive index
+constexpr int refindex_im = 10;  // imaginary refractive index
+
+
+struct AerosolOpticsDeviceData {
+// devices views
+// FIXME: add description of these tables.
+View1D refitabsw[ntot_amode][nswbands];
+View1D refrtabsw[ntot_amode][nswbands];
+View3D abspsw[ntot_amode][nswbands];
+View3D asmpsw[ntot_amode][nswbands];
+
+View1D refrtablw[ntot_amode][nlwbands];
+View1D refitablw[ntot_amode][nlwbands];
+View3D absplw[ntot_amode][nlwbands];
+View3D extpsw[ntot_amode][nswbands];
+
+};
+
+inline
+void  set_aerosol_optics_data_for_modal_aero_sw_views(AerosolOpticsDeviceData& aersol_optics_data){
+
+   for (int d1 = 0; d1 < ntot_amode; ++d1)
+    {   
+      for (int d5 = 0; d5 < nswbands; ++d5) {
+        aersol_optics_data.abspsw[d1][d5] =
+            View3D("abspsw", coef_number, refindex_real, refindex_im);
+        aersol_optics_data.extpsw[d1][d5] =
+            View3D("extpsw", coef_number, refindex_real, refindex_im);
+        aersol_optics_data.asmpsw[d1][d5] =
+            View3D("asmpsw", coef_number, refindex_real, refindex_im);
+    
+        aersol_optics_data.refrtabsw[d1][d5] = View1D("refrtabsw", refindex_real);
+
+        aersol_optics_data.refitabsw[d1][d5] = View1D("refitabsw", refindex_im);
+      } // d5
+    } //d1
+
+} // configure_aerosol_optics_data
+
+inline
+void  set_aerosol_optics_data_for_modal_aero_lw_views(AerosolOpticsDeviceData& aersol_optics_data){
+
+ for (int d1 = 0; d1 < ntot_amode; ++d1)
+      for (int d5 = 0; d5 < nlwbands; ++d5) {
+        aersol_optics_data.absplw[d1][d5] = View3D("absplw3", coef_number, refindex_real, refindex_im);
+        aersol_optics_data.refrtablw[d1][d5] = View1D("refrtablw", refindex_real);
+        aersol_optics_data.refitablw[d1][d5] = View1D("refitablw", refindex_im);
+ }// d5
+
+} // set_aerosol_optics_data_for_modal_aero_lw_views
+
 
 KOKKOS_INLINE_FUNCTION
 void modal_size_parameters(const Real sigma_logr_aer,
@@ -451,11 +503,7 @@ void modal_aero_sw(
     const Kokkos::complex<Real> crefwsw[nswbands],
     // FIXME
     const mam4::AeroId specname_amode[9],
-    const View3D extpsw[ntot_amode][nswbands],
-    const View3D abspsw[ntot_amode][nswbands],
-    const View3D asmpsw[ntot_amode][nswbands],
-    const View1D refrtabsw[ntot_amode][nswbands],
-    const View1D refitabsw[ntot_amode][nswbands],
+    const AerosolOpticsDeviceData& aersol_optics_data, 
     // diagnostic
     const ColumnView &extinct, //        ! aerosol extinction [1/m]
     const ColumnView &absorb,  //         ! aerosol absorption [1/m]
@@ -789,12 +837,12 @@ void modal_aero_sw(
         // interpolate coefficients linear in refractive index
         // first call calcs itab,jtab,ttab,utab
 
-        const auto sub_extpsw = extpsw[mm][isw];
+        const auto sub_extpsw = aersol_optics_data.extpsw[mm][isw];
         // Kokkos::subview(
         // extpsw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), isw);
-        const auto ref_real_tab = refrtabsw[mm][isw];
+        const auto ref_real_tab = aersol_optics_data.refrtabsw[mm][isw];
         // Kokkos::subview(refrtabsw, mm, Kokkos::ALL(), isw);
-        const auto ref_img_tab = refitabsw[mm][isw];
+        const auto ref_img_tab = aersol_optics_data.refitabsw[mm][isw];
         // Kokkos::subview(refitabsw, mm, Kokkos::ALL(), isw);
 
         int itab = zero;   // index for Bilinear interpolation
@@ -809,14 +857,14 @@ void modal_aero_sw(
         binterp(sub_extpsw, refr, refi, ref_real_tab.data(), ref_img_tab.data(),
                 itab, jtab, ttab, utab, cext, itab_1);
 
-        const auto sub_abspsw = abspsw[mm][isw];
+        const auto sub_abspsw = aersol_optics_data.abspsw[mm][isw];
         // Kokkos::subview(
         // abspsw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), isw);
 
         binterp(sub_abspsw, refr, refi, ref_real_tab.data(), ref_img_tab.data(),
                 itab, jtab, ttab, utab, cabs, itab_1);
 
-        const auto sub_asmpsw = asmpsw[mm][isw];
+        const auto sub_asmpsw = aersol_optics_data.asmpsw[mm][isw];
         // Kokkos::subview(
         // asmpsw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), isw);
 
@@ -993,9 +1041,7 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
                    const ComplexView2D &specrefndxlw,
                    const Kokkos::complex<Real> crefwlw[nlwbands],
                    const Kokkos::complex<Real> crefwsw[nswbands],
-                   const View3D absplw[ntot_amode][nlwbands],
-                   const View1D refrtablw[ntot_amode][nlwbands],
-                   const View1D refitablw[ntot_amode][nlwbands],
+                   const AerosolOpticsDeviceData& aersol_optics_data, 
                    // work views
                    const ColumnView &mass, const View2D &cheb,
                    const View2D &dgnumwet_m, const View2D &dgnumdry_m,
@@ -1097,13 +1143,12 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
                            nspec, crefwlw, crefwsw, dryvol, wetvol, watervol,
                            crefin, refr, refi);
 
-        const auto sub_absplw = absplw[mm][ilw];
         // Kokkos::subview(
         // absplw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), ilw);
 
-        const auto ref_real_tab = refrtablw[mm][ilw];
+        const auto ref_real_tab = aersol_optics_data.refrtablw[mm][ilw];
         // Kokkos::subview(refrtablw, mm, Kokkos::ALL(), ilw);
-        const auto ref_img_tab = refitablw[mm][ilw];
+        const auto ref_img_tab = aersol_optics_data.refitablw[mm][ilw];
         // Kokkos::subview(refitablw, mm, Kokkos::ALL(), ilw);
 
         // interpolate coefficients linear in refractive index
@@ -1113,7 +1158,7 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
         int jtab = zero;
         Real ttab, utab = {};
         Real cabs[ncoef] = {};
-        binterp(absplw[mm][ilw], refr, refi, ref_real_tab.data(),
+        binterp(aersol_optics_data.absplw[mm][ilw], refr, refi, ref_real_tab.data(),
                 ref_img_tab.data(), itab, jtab, ttab, utab, cabs, itab_1);
 
         // parameterized optical properties
