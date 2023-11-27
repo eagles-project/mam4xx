@@ -76,6 +76,11 @@ struct AerosolOpticsDeviceData {
   View1D refitablw[ntot_amode][nlwbands];
   View3D absplw[ntot_amode][nlwbands];
   View3D extpsw[ntot_amode][nswbands];
+
+  ComplexView2D specrefndxsw; // specrefndxsw( nswbands, maxd_aspectype )
+  ComplexView2D specrefndxlw;
+  Kokkos::complex<Real> crefwlw[nlwbands];
+  Kokkos::complex<Real> crefwsw[nswbands];
 };
 
 inline void set_aerosol_optics_data_for_modal_aero_sw_views(
@@ -110,6 +115,12 @@ inline void set_aerosol_optics_data_for_modal_aero_lw_views(
     } // d5
 
 } // set_aerosol_optics_data_for_modal_aero_lw_views
+
+inline void set_complex_views_modal_aero(AerosolOpticsDeviceData &aersol_optics_data){
+ aersol_optics_data.specrefndxsw = ComplexView2D("specrefndxsw", nswbands, maxd_aspectype);
+ aersol_optics_data.specrefndxlw = ComplexView2D("specrefndxlw", nlwbands, maxd_aspectype);
+} // set_complex_views_modal_aero
+
 
 KOKKOS_INLINE_FUNCTION
 void modal_size_parameters(const Real sigma_logr_aer,
@@ -494,10 +505,10 @@ void modal_aero_sw(
     int lmassptr_amode[maxd_aspectype][ntot_amode],
     Real spechygro[maxd_aspectype], Real specdens_amode[maxd_aspectype],
     int lspectype_amode[maxd_aspectype][ntot_amode],
-    const ComplexView2D
-        &specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
-    const Kokkos::complex<Real> crefwlw[nlwbands],
-    const Kokkos::complex<Real> crefwsw[nswbands],
+    // const ComplexView2D
+    //     &specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
+    // const Kokkos::complex<Real> crefwlw[nlwbands],
+    // const Kokkos::complex<Real> crefwsw[nswbands],
     // FIXME
     const mam4::AeroId specname_amode[9],
     const AerosolOpticsDeviceData &aersol_optics_data,
@@ -705,8 +716,8 @@ void modal_aero_sw(
     for (int iswbands = 0; iswbands < nswbands; ++iswbands) {
       for (int ll = 0; ll < nspec; ++ll) {
         // Fortran to C++ indexing
-        specrefindex(ll, iswbands) =
-            specrefndxsw(iswbands, lspectype_amode[ll][mm] - 1);
+        specrefindex(ll, iswbands) = aersol_optics_data.specrefndxsw(
+            iswbands, lspectype_amode[ll][mm] - 1);
       }
     }
 
@@ -828,7 +839,8 @@ void modal_aero_sw(
         Real refr, refi = {};
 
         calc_refin_complex(1, isw, qaerwat_m(kk, mm), specvol, specrefindex,
-                           nspec, crefwlw, crefwsw, dryvol, wetvol, watervol,
+                           nspec, aersol_optics_data.crefwlw,
+                           aersol_optics_data.crefwsw, dryvol, wetvol, watervol,
                            crefin, refr, refi);
 
         // interpolate coefficients linear in refractive index
@@ -927,8 +939,8 @@ void modal_aero_sw(
             // partition optical depth into contributions from each constituent
             // assume contribution is proportional to refractive index X volume
 
-            scath2o = watervol * crefwsw[isw].real();
-            absh2o = -watervol * crefwsw[isw].imag();
+            scath2o = watervol * aersol_optics_data.crefwsw[isw].real();
+            absh2o = -watervol * aersol_optics_data.crefwsw[isw].imag();
             sumscat = scatso4 + scatpom + scatsoa + scatbc + scatdust +
                       scatseasalt + scath2o + scatmom;
             sumabs = absso4 + abspom + abssoa + absbc + absdust + absseasalt +
@@ -1035,9 +1047,6 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
                    Real spechygro[maxd_aspectype],
                    Real specdens_amode[maxd_aspectype],
                    int lspectype_amode[maxd_aspectype][ntot_amode],
-                   const ComplexView2D &specrefndxlw,
-                   const Kokkos::complex<Real> crefwlw[nlwbands],
-                   const Kokkos::complex<Real> crefwsw[nswbands],
                    const AerosolOpticsDeviceData &aersol_optics_data,
                    // work views
                    const ColumnView &mass, const View2D &cheb,
@@ -1070,6 +1079,10 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
       tauxar(kk, i) = zero;
     }
   } // k
+
+  const auto specrefndxlw = aersol_optics_data.specrefndxlw;
+  const auto crefwlw = aersol_optics_data.crefwlw;
+  const auto crefwsw = aersol_optics_data.crefwsw;
 
   // FORTRAN refactoring: For prognostic aerosols only, other options are
   // removed

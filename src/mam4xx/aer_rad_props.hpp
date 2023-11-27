@@ -495,7 +495,7 @@ void aer_rad_props_lw(
                 odap_aer,
                 // parameters
                 nspec_amode, sigmag_amode, lmassptr_amode, spechygro,
-                specdens_amode, lspectype_amode, specrefndxlw, crefwlw, crefwsw,
+                specdens_amode, lspectype_amode,
                 aersol_optics_data,
                 // work views
                 mass, cheb, dgnumwet_m, dgnumdry_m, radsurf, logradsurf,
@@ -547,10 +547,6 @@ void aer_rad_props_sw(
     int lmassptr_amode[maxd_aspectype][ntot_amode],
     Real spechygro[maxd_aspectype], Real specdens_amode[maxd_aspectype],
     int lspectype_amode[maxd_aspectype][ntot_amode],
-    const ComplexView2D
-        &specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
-    const Kokkos::complex<Real> crefwlw[nlwbands],
-    const Kokkos::complex<Real> crefwsw[nswbands],
     // FIXME
     const mam4::AeroId specname_amode[9],
     const View3D extpsw[ntot_amode][nswbands],
@@ -650,10 +646,9 @@ void aer_rad_props_sw(
                 //
                 nspec_amode, sigmag_amode, lmassptr_amode, spechygro,
                 specdens_amode, lspectype_amode,
-                specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
-                crefwlw, crefwsw,
                 // FIXME
-                specname_amode, aersol_optics_data,
+                specname_amode, 
+                aersol_optics_data,
                 // diagnostic
                 extinct, //        ! aerosol extinction [1/m]
                 absorb,  //         ! aerosol absorption [1/m]
