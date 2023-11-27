@@ -457,7 +457,7 @@ void aer_rad_props_lw(
     const ComplexView2D &specrefndxlw,
     const Kokkos::complex<Real> crefwlw[nlwbands],
     const Kokkos::complex<Real> crefwsw[nswbands],
-    const AerosolOpticsDeviceData& aersol_optics_data, 
+    const AerosolOpticsDeviceData &aersol_optics_data,
     // work views
     const ColumnView &mass, const View2D &cheb, const View2D &dgnumwet_m,
     const View2D &dgnumdry_m, const ColumnView &radsurf,
@@ -496,7 +496,7 @@ void aer_rad_props_lw(
                 // parameters
                 nspec_amode, sigmag_amode, lmassptr_amode, spechygro,
                 specdens_amode, lspectype_amode, specrefndxlw, crefwlw, crefwsw,
-                aersol_optics_data, 
+                aersol_optics_data,
                 // work views
                 mass, cheb, dgnumwet_m, dgnumdry_m, radsurf, logradsurf,
                 specrefindex, qaerwat_m);
@@ -552,8 +552,9 @@ void aer_rad_props_sw(
     const Kokkos::complex<Real> crefwlw[nlwbands],
     const Kokkos::complex<Real> crefwsw[nswbands],
     // FIXME
-    const mam4::AeroId specname_amode[9], const View3D extpsw[ntot_amode][nswbands],
-    const AerosolOpticsDeviceData& aersol_optics_data, 
+    const mam4::AeroId specname_amode[9],
+    const View3D extpsw[ntot_amode][nswbands],
+    const AerosolOpticsDeviceData &aersol_optics_data,
     // diagnostic
     const ColumnView &extinct, //        ! aerosol extinction [1/m]
     const ColumnView &absorb,  //         ! aerosol absorption [1/m]
@@ -620,13 +621,14 @@ void aer_rad_props_sw(
   // !Converting it from 1/km to 1/m
   constexpr int idx_sw_diag = 10; // index to sw visible band
 
-
-  // Note: Changing order of dimension in ext_cmip6_sw_inv_m from (level, nswbands) to  (nswbands, level)
-  // because original layout produces this error: View assignment must have compatible layouts in  ext_cmip6_sw_inv_m_idx_sw_diag
+  // Note: Changing order of dimension in ext_cmip6_sw_inv_m from (level,
+  // nswbands) to  (nswbands, level) because original layout produces this
+  // error: View assignment must have compatible layouts in
+  // ext_cmip6_sw_inv_m_idx_sw_diag
 
   for (int kk = 0; kk < pver; ++kk) {
     for (int i = 0; i < nswbands; ++i) {
-      ext_cmip6_sw_inv_m(i,kk) = ext_cmip6_sw(kk, i) * km_inv_to_m_inv;
+      ext_cmip6_sw_inv_m(i, kk) = ext_cmip6_sw(kk, i) * km_inv_to_m_inv;
     } /// end i
   }   // end kk
 
@@ -651,8 +653,7 @@ void aer_rad_props_sw(
                 specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
                 crefwlw, crefwsw,
                 // FIXME
-                specname_amode, 
-                aersol_optics_data,
+                specname_amode, aersol_optics_data,
                 // diagnostic
                 extinct, //        ! aerosol extinction [1/m]
                 absorb,  //         ! aerosol absorption [1/m]

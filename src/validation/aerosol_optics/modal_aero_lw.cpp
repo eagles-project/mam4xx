@@ -170,19 +170,19 @@ void modal_aero_lw(Ensemble *ensemble) {
     }         // d1
 
     // Kokkos::deep_copy(absplw, absplw_host);
-    AerosolOpticsDeviceData aersol_optics_data{}; 
-    set_aerosol_optics_data_for_modal_aero_lw_views(aersol_optics_data);  
-
+    AerosolOpticsDeviceData aersol_optics_data{};
+    set_aerosol_optics_data_for_modal_aero_lw_views(aersol_optics_data);
 
     // View3D absplw3[ntot_amode][nlwbands];
     // ("absplw3", coef_number, refindex_real, refindex_im);
     for (int d1 = 0; d1 < ntot_amode; ++d1)
       for (int d5 = 0; d5 < nlwbands; ++d5) {
-        // absplw3[d1][d5] = View3D("t1", coef_number, refindex_real, refindex_im);
-        Kokkos::deep_copy(aersol_optics_data.absplw[d1][d5], absplw3_host[d1][d5]);
+        // absplw3[d1][d5] = View3D("t1", coef_number, refindex_real,
+        // refindex_im);
+        Kokkos::deep_copy(aersol_optics_data.absplw[d1][d5],
+                          absplw3_host[d1][d5]);
         //
       }
-
 
     // View3D refrtablw, refitablw;
 
@@ -214,7 +214,8 @@ void modal_aero_lw(Ensemble *ensemble) {
     for (int d1 = 0; d1 < N1; ++d1)
       for (int d3 = 0; d3 < N3; ++d3) {
         // refrtablw[d1][d3] = View1D("refrtablw", refindex_real);
-        Kokkos::deep_copy(aersol_optics_data.refrtablw[d1][d3], refrtablw_host[d1][d3]);
+        Kokkos::deep_copy(aersol_optics_data.refrtablw[d1][d3],
+                          refrtablw_host[d1][d3]);
       } // d3
 
     // refitablw = View3D("refitablw", ntot_amode, refindex_im, nlwbands);
@@ -244,7 +245,8 @@ void modal_aero_lw(Ensemble *ensemble) {
     for (int d1 = 0; d1 < N1; ++d1)
       for (int d3 = 0; d3 < N3; ++d3) {
         // refitablw[d1][d3] = View1D("refitablw", refindex_im);
-        Kokkos::deep_copy(aersol_optics_data.refitablw[d1][d3], refitablw_host[d1][d3]);
+        Kokkos::deep_copy(aersol_optics_data.refitablw[d1][d3],
+                          refitablw_host[d1][d3]);
       } // d3
 
     // work views
@@ -354,9 +356,9 @@ void modal_aero_lw(Ensemble *ensemble) {
                         // parameters
                         nspec_amode, sigmag_amode_, lmassptr_amode, spechygro,
                         specdens_amode, lspectype_amode, specrefndxlw, crefwlw,
-                        crefwsw, 
+                        crefwsw,
                         // absplw3, refrtablw, refitablw,
-                        aersol_optics_data, 
+                        aersol_optics_data,
                         // work views
                         mass, cheb, dgnumwet_m, dgnumdry_m, radsurf, logradsurf,
                         specrefindex, qaerwat_m);
