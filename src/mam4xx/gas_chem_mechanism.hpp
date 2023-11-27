@@ -6,7 +6,7 @@
 //          Mike Schmidt (mjschm@sandia.gov)
 namespace mam4 {
 namespace gas_chemistry {
-constexpr int nabscol = 2; // number of absorbing densities
+constexpr int nabscol = 2;    // number of absorbing densities
 constexpr int rxntot = 7;     // number of total reactions
 constexpr int gas_pcnst = 31; // number of gas phase species
 constexpr int nzcnt = 32;     // number of non-zero matrix entries
