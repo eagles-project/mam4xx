@@ -153,26 +153,30 @@ void modal_aero_sw(Ensemble *ensemble) {
     const auto crefwlw_real = input.get_array("crefwlw_real");
     const auto crefwlw_imag = input.get_array("crefwlw_imag");
 
-    // Kokkos::complex<Real> crefwlw[nlwbands];
 
-    // Kokkos::complex<Real> crefwsw[nswbands];
+    auto crefwsw_host = Kokkos::create_mirror_view(aersol_optics_data.crefwsw);
+
 
     for (int j = 0; j < nswbands; ++j) {
-      aersol_optics_data.crefwsw[j].real() = crefwsw_real[j];
-      aersol_optics_data.crefwsw[j].imag() = crefwsw_imag[j];
+      crefwsw_host(j).real() = crefwsw_real[j];
+      crefwsw_host(j).imag() = crefwsw_imag[j];
     }
+    Kokkos::deep_copy(aersol_optics_data.crefwsw, crefwsw_host);
+
+    auto crefwlw_host = Kokkos::create_mirror_view(aersol_optics_data.crefwlw);
 
     for (int j = 0; j < nlwbands; ++j) {
-      aersol_optics_data.crefwlw[j].real() = crefwlw_real[j];
-      aersol_optics_data.crefwlw[j].imag() = crefwlw_imag[j];
+      crefwlw_host(j).real() = crefwlw_real[j];
+      crefwlw_host(j).imag() = crefwlw_imag[j];
     }
+
+    Kokkos::deep_copy(aersol_optics_data.crefwlw, crefwlw_host);
 
     // View5D extpsw, abspsw, asmpsw;
 
     const auto extpsw_db = input.get_array("extpsw");
     const auto abspsw_db = input.get_array("abspsw");
     const auto asmpsw_db = input.get_array("asmpsw");
-
 
 
     // abspsw = View5D("abspsw", ntot_amode, coef_number, refindex_real,

@@ -14,6 +14,7 @@ using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;
 using View3D = DeviceType::view_3d<Real>;
 using ComplexView2D = DeviceType::view_2d<Kokkos::complex<Real>>;
+using ComplexView1D = DeviceType::view_1d<Kokkos::complex<Real>>;
 using View5D = Kokkos::View<Real *****>;
 
 using ConstColumnView = haero::ConstColumnView;
@@ -79,8 +80,8 @@ struct AerosolOpticsDeviceData {
 
   ComplexView2D specrefndxsw; // specrefndxsw( nswbands, maxd_aspectype )
   ComplexView2D specrefndxlw;
-  Kokkos::complex<Real> crefwlw[nlwbands];
-  Kokkos::complex<Real> crefwsw[nswbands];
+  ComplexView1D crefwlw;
+  ComplexView1D crefwsw;
 };
 
 inline void set_aerosol_optics_data_for_modal_aero_sw_views(
@@ -119,6 +120,9 @@ inline void set_aerosol_optics_data_for_modal_aero_lw_views(
 inline void set_complex_views_modal_aero(AerosolOpticsDeviceData &aersol_optics_data){
  aersol_optics_data.specrefndxsw = ComplexView2D("specrefndxsw", nswbands, maxd_aspectype);
  aersol_optics_data.specrefndxlw = ComplexView2D("specrefndxlw", nlwbands, maxd_aspectype);
+
+ aersol_optics_data.crefwlw = ComplexView1D("crefwlw",nlwbands); 
+ aersol_optics_data.crefwsw = ComplexView1D("crefwsw",nswbands);
 } // set_complex_views_modal_aero
 
 
@@ -271,8 +275,8 @@ KOKKOS_INLINE_FUNCTION
 void calc_refin_complex(const int lwsw, const int ilwsw, const Real qaerwat_kk,
                         const Real *specvol, const ComplexView2D &specrefindex,
                         const int nspec,
-                        const Kokkos::complex<Real> crefwlw[nlwbands],
-                        const Kokkos::complex<Real> crefwsw[nswbands],
+                        const ComplexView1D& crefwlw,
+                        const ComplexView1D& crefwsw,
                         Real &dryvol, Real &wetvol, Real &watervol,
                         Kokkos::complex<Real> &crefin, Real &refr, Real &refi) {
   /*-------------------------------------------------------------------
@@ -334,7 +338,7 @@ also output wetvol and watervol
   // ! some different treatments for lw and sw
   if (lwsw == 0) // lwsw=='lw'
   {
-    crefin += watervol * crefwlw[ilwsw];
+    crefin += watervol * crefwlw(ilwsw);
     // BAD CONSTANT
     if (wetvol > small_value_40) {
       crefin /= wetvol;
@@ -343,7 +347,7 @@ also output wetvol and watervol
   } else if (lwsw == 1) //  lwsw=='sw
   {
 
-    crefin += watervol * crefwsw[ilwsw];
+    crefin += watervol * crefwsw(ilwsw);
     // BAD CONTANT
     crefin /= haero::max(wetvol, small_value_60);
 
@@ -505,10 +509,6 @@ void modal_aero_sw(
     int lmassptr_amode[maxd_aspectype][ntot_amode],
     Real spechygro[maxd_aspectype], Real specdens_amode[maxd_aspectype],
     int lspectype_amode[maxd_aspectype][ntot_amode],
-    // const ComplexView2D
-    //     &specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
-    // const Kokkos::complex<Real> crefwlw[nlwbands],
-    // const Kokkos::complex<Real> crefwsw[nswbands],
     // FIXME
     const mam4::AeroId specname_amode[9],
     const AerosolOpticsDeviceData &aersol_optics_data,
@@ -939,8 +939,8 @@ void modal_aero_sw(
             // partition optical depth into contributions from each constituent
             // assume contribution is proportional to refractive index X volume
 
-            scath2o = watervol * aersol_optics_data.crefwsw[isw].real();
-            absh2o = -watervol * aersol_optics_data.crefwsw[isw].imag();
+            scath2o = watervol * aersol_optics_data.crefwsw(isw).real();
+            absh2o = -watervol * aersol_optics_data.crefwsw(isw).imag();
             sumscat = scatso4 + scatpom + scatsoa + scatbc + scatdust +
                       scatseasalt + scath2o + scatmom;
             sumabs = absso4 + abspom + abssoa + absbc + absdust + absseasalt +
