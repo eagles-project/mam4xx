@@ -21,6 +21,7 @@ using DeviceType = haero::DeviceType;
 using Constants = haero::Constants;
 using Real = haero::Real;
 using ColumnView = haero::ColumnView;
+using ConstColumnView = haero::ConstColumnView;
 template <typename ST> using FloatingPoint = haero::FloatingPoint<ST>;
 using Atmosphere = haero::Atmosphere;
 using Surface = haero::Surface;

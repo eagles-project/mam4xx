@@ -6,18 +6,19 @@
 //          Mike Schmidt (mjschm@sandia.gov)
 namespace mam4 {
 namespace gas_chemistry {
-const int rxntot = 7;     // number of total reactions
-const int gas_pcnst = 31; // number of gas phase species
-const int nzcnt = 32;     // number of non-zero matrix entries
-const int clscnt4 = 30;   // number of species in implicit class
-const int extcnt = 9;     // number of species with external forcing
-const int nfs = 8;        // number of fixed species
-const int permute_4[gas_pcnst] = {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
-                                  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-                                  20, 21, 22, 23, 24, 25, 26, 27, 28, 29};
-const int clsmap_4[gas_pcnst] = {1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
-                                 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-                                 21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
+constexpr int nabscol = 2;    // number of absorbing densities
+constexpr int rxntot = 7;     // number of total reactions
+constexpr int gas_pcnst = 31; // number of gas phase species
+constexpr int nzcnt = 32;     // number of non-zero matrix entries
+constexpr int clscnt4 = 30;   // number of species in implicit class
+constexpr int extcnt = 9;     // number of species with external forcing
+constexpr int nfs = 8;        // number of fixed species
+constexpr int permute_4[gas_pcnst] = {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
+                                      10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+                                      20, 21, 22, 23, 24, 25, 26, 27, 28, 29};
+constexpr int clsmap_4[gas_pcnst] = {1,  2,  3,  4,  5,  6,  7,  8,  9,  10,
+                                     11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+                                     21, 22, 23, 24, 25, 26, 27, 28, 29, 30};
 
 KOKKOS_INLINE_FUNCTION
 void setrxt(Real rates[rxntot], const Real temp) {
