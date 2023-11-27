@@ -20,11 +20,6 @@ using View2D = DeviceType::view_2d<Real>;
 using View1D = DeviceType::view_1d<Real>;
 using ViewInt1D = DeviceType::view_1d<int>;
 
-// FIXME: We need this to expose certain columns in the Atmosphere class.
-// FIXME: This is a great example of how "const correctness" can complicate
-// FIXME: things in C++. -JNJ
-using ConstColumnView = haero::ConstColumnView;
-
 // photolysis table data (common to all columns)
 struct PhotoTableData {
   View4D xsqy;
