@@ -523,6 +523,14 @@ void modal_aero_wateruptake_dr(
   // placeholder
 } // modal_aero_wateruptake_dr
 
+inline int get_worksize_modal_aero_sw()
+{
+  // mass, air_density, radsurf, logradsurf  => pver 
+  // dgnumwet_m, dgnumdry_m, qaerwat_m => pver*ntot_amode
+  // cheb => pver*ncoef 
+  // specrefindex => 2*max_nspec*nswbands
+  return 4*pver + pver*ncoef + 3* pver*ntot_amode;// + 2*max_nspec*nswbands;
+}
 KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(
     const Real dt, const View2D &state_q, const ConstColumnView &state_zm,
@@ -546,10 +554,31 @@ void modal_aero_sw(
     // diagnostic
     DiagnosticsAerosolOpticsSW &diagnostics_aerosol_optics_sw,
     // work view
-    const ColumnView &mass, const ColumnView &air_density, const View2D &cheb,
-    const View2D &dgnumwet_m, const View2D &dgnumdry_m,
-    const ColumnView &radsurf, const ColumnView &logradsurf,
-    const ComplexView2D &specrefindex, const View2D &qaerwat_m) {
+    const View2D &dgnumdry_m,
+    const ComplexView2D &specrefindex, 
+    const View1D& work) {
+
+    auto work_ptr = (Real*)work.data();
+    auto mass = ColumnView(work_ptr, pver);
+    work_ptr += pver;
+    auto air_density = ColumnView(work_ptr, pver);
+    work_ptr += pver;
+    auto cheb = View2D(work_ptr, ncoef, pver);
+    work_ptr += pver*ncoef;
+    auto dgnumwet_m= View2D(work_ptr,pver, ntot_amode);
+    work_ptr += pver*ntot_amode;
+    // auto dgnumdry_m = View2D(work_ptr,pver, ntot_amode);
+    // work_ptr += pver*ntot_amode;
+    auto radsurf = ColumnView(work_ptr, pver);
+    work_ptr += pver;
+    auto logradsurf = ColumnView(work_ptr, pver);
+    work_ptr += pver;
+    // auto specrefindex = ComplexView2D(work_ptr, max_nspec, nswbands);
+    // // CHECK 
+    // work_ptr += 2*max_nspec*nswbands;
+    auto qaerwat_m = View2D(work_ptr,pver, ntot_amode);
+    work_ptr += pver*ntot_amode;
+
 
   auto extinct = diagnostics_aerosol_optics_sw
                      .extinct; //        ! aerosol extinction [1/m]

@@ -305,26 +305,28 @@ void modal_aero_sw(Ensemble *ensemble) {
     // FIXME need to set these arras
 
     View1D output_diagnostics_amode("output_diagnostics_amode", 3 * ntot_amode);
-
     View1D output_diagnostics("output_diagnostics", 21);
 
     // work views
-    ColumnView mass;
-    ColumnView air_density;
-    ColumnView radsurf;
-    ColumnView logradsurf;
+    // ColumnView mass;
+    // ColumnView air_density;
+    // ColumnView radsurf;
+    // ColumnView logradsurf;
 
-    mass = haero::testing::create_column_view(pver);
-    air_density = haero::testing::create_column_view(pver);
-    radsurf = haero::testing::create_column_view(pver);
-    logradsurf = haero::testing::create_column_view(pver);
+    // mass = haero::testing::create_column_view(pver);
+    // air_density = haero::testing::create_column_view(pver);
+    // radsurf = haero::testing::create_column_view(pver);
+    // logradsurf = haero::testing::create_column_view(pver);
 
-    View2D cheb("cheb", ncoef, pver);
-    View2D dgnumwet_m("dgnumwet_m", pver, ntot_amode);
+    // View2D cheb("cheb", ncoef, pver);
+    // View2D dgnumwet_m("dgnumwet_m", pver, ntot_amode);
     View2D dgnumdry_m("dgnumdry_m", pver, ntot_amode);
 
     ComplexView2D specrefindex("specrefindex", max_nspec, nswbands);
     View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
+
+    const int work_len = get_worksize_modal_aero_sw();
+    View1D work("work", work_len);
 
     const auto sigmag_amode_db = input.get_array("sigmag_amode");
 
@@ -410,7 +412,7 @@ void modal_aero_sw(Ensemble *ensemble) {
 
             const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
             const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
-            auto dgncur_i = Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
+            const auto dgncur_i = Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
             Real dgncur_c[ntot_amode] = {};
             modal_aero_calcsize::modal_aero_calcsize_sub(
                 state_q_k.data(), // in
@@ -462,8 +464,12 @@ void modal_aero_sw(Ensemble *ensemble) {
                         // diagnostic
                         diagnostics_aerosol_optics_sw,
                         // work views
-                        mass, air_density, cheb, dgnumwet_m, dgnumdry_m,
-                        radsurf, logradsurf, specrefindex, qaerwat_m);
+                        dgnumdry_m, // FIXME: is this a work array?
+                        specrefindex,
+                        work
+                        // mass, air_density, cheb, dgnumwet_m, 
+                        // radsurf, logradsurf, specrefindex, qaerwat_m
+                        );
 
           output_diagnostics(0) = diagnostics_aerosol_optics_sw.aodnir;
           output_diagnostics(1) = diagnostics_aerosol_optics_sw.aoduv;
