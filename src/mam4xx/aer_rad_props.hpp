@@ -492,8 +492,7 @@ void aer_rad_props_lw(
                 odap_aer,
                 // parameters
                 nspec_amode, sigmag_amode, lmassptr_amode, spechygro,
-                specdens_amode, lspectype_amode,
-                aersol_optics_data,
+                specdens_amode, lspectype_amode, aersol_optics_data,
                 // work views
                 mass, cheb, dgnumwet_m, dgnumdry_m, radsurf, logradsurf,
                 specrefindex, qaerwat_m);
@@ -548,7 +547,7 @@ void aer_rad_props_sw(
     const mam4::AeroId specname_amode[9],
     const AerosolOpticsDeviceData &aersol_optics_data,
     // diagnostic
-    DiagnosticsAerosolOpticsSW& diagnostics_aerosol_optics_sw,
+    DiagnosticsAerosolOpticsSW &diagnostics_aerosol_optics_sw,
     // work views
     const ColumnView &mass, const ColumnView &air_density, const View2D &cheb,
     const View2D &dgnumwet_m, const View2D &dgnumdry_m,
@@ -635,8 +634,7 @@ void aer_rad_props_sw(
                 nspec_amode, sigmag_amode, lmassptr_amode, spechygro,
                 specdens_amode, lspectype_amode,
                 // FIXME
-                specname_amode, 
-                aersol_optics_data,
+                specname_amode, aersol_optics_data,
                 // diagnostic
                 diagnostics_aerosol_optics_sw,
                 // work views

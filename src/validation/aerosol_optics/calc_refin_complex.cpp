@@ -31,8 +31,8 @@ void calc_refin_complex(Ensemble *ensemble) {
     const int nspec = specvol_db.size();
 
     auto specvol_host = View1DHost((Real *)specvol_db.data(), nspec);
-    View1D specvol("specvol",nspec);
-    Kokkos::deep_copy(specvol,specvol_host);
+    View1D specvol("specvol", nspec);
+    Kokkos::deep_copy(specvol, specvol_host);
 
     const auto real_specrefindex = input.get_array("specrefindex_real");
     const auto imag_specrefindex = input.get_array("specrefindex_imag");
@@ -56,7 +56,7 @@ void calc_refin_complex(Ensemble *ensemble) {
       }
     }
 
-    Kokkos::deep_copy(specrefindex,specrefindex_host);
+    Kokkos::deep_copy(specrefindex, specrefindex_host);
 
     const auto crefwlw_real = input.get_array("crefwlw_real");
     const auto crefwlw_imag = input.get_array("crefwlw_imag");
@@ -69,7 +69,7 @@ void calc_refin_complex(Ensemble *ensemble) {
       crefwlw_host(j).imag() = crefwlw_imag[j];
     }
 
-    Kokkos::deep_copy(crefwlw,crefwlw_host);
+    Kokkos::deep_copy(crefwlw, crefwlw_host);
 
     const auto crefwsw_real = input.get_array("crefwsw_real");
     const auto crefwsw_imag = input.get_array("crefwsw_imag");
@@ -82,34 +82,32 @@ void calc_refin_complex(Ensemble *ensemble) {
       crefwsw_host(j).imag() = crefwsw_imag[j];
     }
 
-    Kokkos::deep_copy(crefwsw,crefwsw_host);
+    Kokkos::deep_copy(crefwsw, crefwsw_host);
 
     View1D outputs("outputs", 5);
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          Real refr = zero;
+          Real refi = zero;
+          Real dryvol = zero;
+          Real wetvol = zero;
+          Real watervol = zero;
+          Kokkos::complex<Real> crefin{};
 
-    Real refr = zero;
-    Real refi = zero;
-    Real dryvol = zero;
-    Real wetvol = zero;
-    Real watervol = zero;
-    Kokkos::complex<Real> crefin{};
+          calc_refin_complex(lwsw, ilwsw, qaerwat_kk, specvol.data(),
+                             specrefindex, nspec, crefwlw, crefwsw, dryvol,
+                             wetvol, watervol, crefin, refr, refi);
 
-    calc_refin_complex(lwsw, ilwsw, qaerwat_kk, specvol.data(), specrefindex,
-                       nspec, crefwlw, crefwsw, dryvol, wetvol, watervol,
-                       crefin, refr, refi);
+          outputs(0) = dryvol;
+          outputs(1) = wetvol;
+          outputs(2) = watervol;
+          outputs(3) = refr;
+          outputs(4) = refi;
+        });
 
-    outputs(0) = dryvol;
-    outputs(1) = wetvol;
-    outputs(2) = watervol;
-    outputs(3) = refr;
-    outputs(4) = refi;
-
-    });
-
-    const auto ouputs_host =Kokkos::create_mirror_view(outputs);
-    Kokkos::deep_copy(ouputs_host,outputs);
+    const auto ouputs_host = Kokkos::create_mirror_view(outputs);
+    Kokkos::deep_copy(ouputs_host, outputs);
 
     output.set("dryvol", std::vector<Real>(1, ouputs_host(0)));
     output.set("wetvol", std::vector<Real>(1, ouputs_host(1)));

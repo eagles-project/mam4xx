@@ -100,12 +100,12 @@ void modal_aero_lw(Ensemble *ensemble) {
     const auto specrefndxlw_real_db = input.get_array("specrefndxlw_real");
     const auto specrefndxlw_imag_db = input.get_array("specrefndxlw_imag");
 
-
     AerosolOpticsDeviceData aersol_optics_data{};
     set_complex_views_modal_aero(aersol_optics_data);
 
     // ComplexView2D specrefndxlw("specrefndxlw", nlwbands, maxd_aspectype);
-    auto specrefndxlw_host = Kokkos::create_mirror_view(aersol_optics_data.specrefndxlw);
+    auto specrefndxlw_host =
+        Kokkos::create_mirror_view(aersol_optics_data.specrefndxlw);
 
     count = 0;
     for (int j = 0; j < maxd_aspectype; ++j) {
@@ -174,7 +174,7 @@ void modal_aero_lw(Ensemble *ensemble) {
     }         // d1
 
     // Kokkos::deep_copy(absplw, absplw_host);
-    
+
     set_aerosol_optics_data_for_modal_aero_lw_views(aersol_optics_data);
 
     // View3D absplw3[ntot_amode][nlwbands];
@@ -359,8 +359,7 @@ void modal_aero_lw(Ensemble *ensemble) {
                         tauxar,
                         // parameters
                         nspec_amode, sigmag_amode_, lmassptr_amode, spechygro,
-                        specdens_amode, lspectype_amode,
-                        aersol_optics_data,
+                        specdens_amode, lspectype_amode, aersol_optics_data,
                         // work views
                         mass, cheb, dgnumwet_m, dgnumdry_m, radsurf, logradsurf,
                         specrefindex, qaerwat_m);

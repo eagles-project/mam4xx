@@ -130,11 +130,12 @@ void modal_aero_sw(Ensemble *ensemble) {
     const auto specrefndxsw_real_db = input.get_array("specrefndxsw_real");
     const auto specrefndxsw_imag_db = input.get_array("specrefndxsw_imag");
 
-
     set_complex_views_modal_aero(aersol_optics_data);
 
-     // aersol_optics_data.specrefndxsw = ComplexView2D("specrefndxsw", nswbands, maxd_aspectype);
-    auto specrefndxsw_host = Kokkos::create_mirror_view(aersol_optics_data.specrefndxsw);
+    // aersol_optics_data.specrefndxsw = ComplexView2D("specrefndxsw", nswbands,
+    // maxd_aspectype);
+    auto specrefndxsw_host =
+        Kokkos::create_mirror_view(aersol_optics_data.specrefndxsw);
 
     count = 0;
     for (int j = 0; j < maxd_aspectype; ++j) {
@@ -153,9 +154,7 @@ void modal_aero_sw(Ensemble *ensemble) {
     const auto crefwlw_real = input.get_array("crefwlw_real");
     const auto crefwlw_imag = input.get_array("crefwlw_imag");
 
-
     auto crefwsw_host = Kokkos::create_mirror_view(aersol_optics_data.crefwsw);
-
 
     for (int j = 0; j < nswbands; ++j) {
       crefwsw_host(j).real() = crefwsw_real[j];
@@ -177,7 +176,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     const auto extpsw_db = input.get_array("extpsw");
     const auto abspsw_db = input.get_array("abspsw");
     const auto asmpsw_db = input.get_array("asmpsw");
-
 
     // abspsw = View5D("abspsw", ntot_amode, coef_number, refindex_real,
     //                 refindex_im, nswbands);
@@ -317,8 +315,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     // 2. specname_amode
     // FIXME need to set these arras
 
-    
-
     View1D output_diagnostics_amode("output_diagnostics_amode", 3 * ntot_amode);
 
     View1D output_diagnostics("output_diagnostics", 21);
@@ -376,7 +372,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     mam4::AeroConfig mam4_config;
     mam4::CalcSizeProcess calcsize_process(mam4_config);
 
-  
     // allocate Column views for diagnostics:
     auto extinct = haero::testing::create_column_view(pver);
     auto absorb = haero::testing::create_column_view(pver);
@@ -447,7 +442,6 @@ void modal_aero_sw(Ensemble *ensemble) {
 
           team.team_barrier();
 
-
           // FIXME
           Real sigmag_amode_[ntot_amode] = {};
 
@@ -459,58 +453,58 @@ void modal_aero_sw(Ensemble *ensemble) {
           diagnostics_aerosol_optics_sw.extinct = extinct;
           diagnostics_aerosol_optics_sw.absorb = absorb;
 
+          modal_aero_sw(dt, state_q, state_zm, temperature, pmid, pdel, pdeldry,
+                        cldn,
+                        // const int nnite,
+                        // idxnite,
+                        is_cmip6_volc, ext_cmip6_sw, trop_level,
+                        // qqcw,
 
-          modal_aero_sw(
-              dt, state_q, state_zm, temperature, pmid, pdel, pdeldry, cldn,
-              // const int nnite,
-              // idxnite,
-              is_cmip6_volc, ext_cmip6_sw, trop_level,
-              // qqcw,
+                        tauxar, wa, ga, fa,
+                        //
+                        nspec_amode, sigmag_amode_, lmassptr_amode, spechygro,
+                        specdens_amode, lspectype_amode,
+                        // specrefndxsw, // specrefndxsw( nswbands,
+                        // maxd_aspectype ) crefwlw, crefwsw,
+                        // FIXME
+                        specname_amode, aersol_optics_data,
+                        // diagnostic
+                        diagnostics_aerosol_optics_sw,
+                        // work views
+                        mass, air_density, cheb, dgnumwet_m, dgnumdry_m,
+                        radsurf, logradsurf, specrefindex, qaerwat_m);
 
-              tauxar, wa, ga, fa,
-              //
-              nspec_amode, sigmag_amode_, lmassptr_amode, spechygro,
-              specdens_amode, lspectype_amode,
-              // specrefndxsw, // specrefndxsw( nswbands, maxd_aspectype )
-              // crefwlw, crefwsw,
-              // FIXME
-              specname_amode,
-              aersol_optics_data,
-              // diagnostic
-              diagnostics_aerosol_optics_sw,
-              // work views
-              mass, air_density, cheb, dgnumwet_m, dgnumdry_m, radsurf,
-              logradsurf, specrefindex, qaerwat_m);
+          output_diagnostics(0) = diagnostics_aerosol_optics_sw.aodnir;
+          output_diagnostics(1) = diagnostics_aerosol_optics_sw.aoduv;
+          output_diagnostics(2) = diagnostics_aerosol_optics_sw.aodabsbc;
+          output_diagnostics(3) = diagnostics_aerosol_optics_sw.aodvis;
+          output_diagnostics(4) = diagnostics_aerosol_optics_sw.aodall;
+          output_diagnostics(5) = diagnostics_aerosol_optics_sw.ssavis;
+          output_diagnostics(6) = diagnostics_aerosol_optics_sw.aodabs;
+          output_diagnostics(7) = diagnostics_aerosol_optics_sw.burdendust;
+          output_diagnostics(8) = diagnostics_aerosol_optics_sw.burdenso4;
+          output_diagnostics(9) = diagnostics_aerosol_optics_sw.burdenbc;
+          output_diagnostics(10) = diagnostics_aerosol_optics_sw.burdenpom;
+          output_diagnostics(11) = diagnostics_aerosol_optics_sw.burdensoa;
+          output_diagnostics(12) = diagnostics_aerosol_optics_sw.burdenseasalt;
+          output_diagnostics(13) = diagnostics_aerosol_optics_sw.burdenmom;
+          output_diagnostics(14) = diagnostics_aerosol_optics_sw.momaod;
+          output_diagnostics(15) = diagnostics_aerosol_optics_sw.dustaod;
+          output_diagnostics(16) =
+              diagnostics_aerosol_optics_sw.so4aod; // total species AOD
+          output_diagnostics(17) = diagnostics_aerosol_optics_sw.pomaod;
+          output_diagnostics(18) = diagnostics_aerosol_optics_sw.soaaod;
+          output_diagnostics(19) = diagnostics_aerosol_optics_sw.bcaod;
+          output_diagnostics(20) = diagnostics_aerosol_optics_sw.seasaltaod;
 
-
-           output_diagnostics(0) = diagnostics_aerosol_optics_sw.aodnir;
-           output_diagnostics(1) = diagnostics_aerosol_optics_sw.aoduv;
-           output_diagnostics(2) = diagnostics_aerosol_optics_sw.aodabsbc;
-           output_diagnostics(3) = diagnostics_aerosol_optics_sw.aodvis;
-           output_diagnostics(4) = diagnostics_aerosol_optics_sw.aodall;
-           output_diagnostics(5) = diagnostics_aerosol_optics_sw.ssavis;
-           output_diagnostics(6) = diagnostics_aerosol_optics_sw.aodabs;
-           output_diagnostics(7) = diagnostics_aerosol_optics_sw.burdendust;
-           output_diagnostics(8) = diagnostics_aerosol_optics_sw.burdenso4;
-           output_diagnostics(9) = diagnostics_aerosol_optics_sw.burdenbc;
-           output_diagnostics(10) = diagnostics_aerosol_optics_sw.burdenpom;
-           output_diagnostics(11) = diagnostics_aerosol_optics_sw.burdensoa;
-           output_diagnostics(12) = diagnostics_aerosol_optics_sw.burdenseasalt;
-           output_diagnostics(13) = diagnostics_aerosol_optics_sw.burdenmom;
-           output_diagnostics(14) = diagnostics_aerosol_optics_sw.momaod;
-           output_diagnostics(15) = diagnostics_aerosol_optics_sw.dustaod;
-           output_diagnostics(16) = diagnostics_aerosol_optics_sw.so4aod; // total species AOD
-           output_diagnostics(17) = diagnostics_aerosol_optics_sw.pomaod;
-           output_diagnostics(18) = diagnostics_aerosol_optics_sw.soaaod;
-           output_diagnostics(19) = diagnostics_aerosol_optics_sw.bcaod;
-           output_diagnostics(20) = diagnostics_aerosol_optics_sw.seasaltaod;
-
-           for (int m = 0; m < ntot_amode; ++m) {
-             output_diagnostics_amode(m) = diagnostics_aerosol_optics_sw.dustaodmode[m];
-             output_diagnostics_amode(m + ntot_amode) = diagnostics_aerosol_optics_sw.aodmode[m];
-             output_diagnostics_amode(m + 2 * ntot_amode) = diagnostics_aerosol_optics_sw.burdenmode[m];
-           }
-
+          for (int m = 0; m < ntot_amode; ++m) {
+            output_diagnostics_amode(m) =
+                diagnostics_aerosol_optics_sw.dustaodmode[m];
+            output_diagnostics_amode(m + ntot_amode) =
+                diagnostics_aerosol_optics_sw.aodmode[m];
+            output_diagnostics_amode(m + 2 * ntot_amode) =
+                diagnostics_aerosol_optics_sw.burdenmode[m];
+          }
 
           {
 
@@ -576,7 +570,7 @@ void modal_aero_sw(Ensemble *ensemble) {
     output.set("extinct", extinct_out);
 
     auto absorb_host = Kokkos::create_mirror_view(absorb);
-    Kokkos::deep_copy(absorb_host,absorb);
+    Kokkos::deep_copy(absorb_host, absorb);
     std::vector<Real> absorb_out(absorb_host.data(), absorb_host.data() + pver);
     output.set("absorb", absorb_out);
 
