@@ -126,6 +126,37 @@ inline void set_complex_views_modal_aero(AerosolOpticsDeviceData &aersol_optics_
 } // set_complex_views_modal_aero
 
 
+struct DiagnosticsAerosolOpticsSW
+{
+  // FIXME; add description of these diagnostics variables 
+  ColumnView extinct; //        ! aerosol extinction [1/m]
+  ColumnView absorb; //         ! aerosol absorption [1/m]
+  Real aodnir;
+  Real aoduv; 
+  Real dustaodmode[ntot_amode];
+  Real aodmode[ntot_amode];
+  Real burdenmode[ntot_amode];
+  Real aodabsbc;
+  Real aodvis;
+  Real aodall;
+  Real ssavis; 
+  Real aodabs;
+  Real burdendust;
+  Real burdenso4;
+  Real burdenbc;
+  Real burdenpom;
+  Real burdensoa;
+  Real burdenseasalt;
+  Real burdenmom;
+  Real momaod;
+  Real dustaod;
+  Real so4aod; // total species AOD
+  Real pomaod; 
+  Real soaaod;
+  Real bcaod;
+  Real seasaltaod;
+};
+
 KOKKOS_INLINE_FUNCTION
 void modal_size_parameters(const Real sigma_logr_aer,
                            const Real dgnumwet, // in
@@ -513,20 +544,40 @@ void modal_aero_sw(
     const mam4::AeroId specname_amode[9],
     const AerosolOpticsDeviceData &aersol_optics_data,
     // diagnostic
-    const ColumnView &extinct, //        ! aerosol extinction [1/m]
-    const ColumnView &absorb,  //         ! aerosol absorption [1/m]
-    Real &aodnir, Real &aoduv, Real dustaodmode[ntot_amode],
-    Real aodmode[ntot_amode], Real burdenmode[ntot_amode], Real &aodabsbc,
-    Real &aodvis, Real &aodall, Real &ssavis, Real &aodabs, Real &burdendust,
-    Real &burdenso4, Real &burdenbc, Real &burdenpom, Real &burdensoa,
-    Real &burdenseasalt, Real &burdenmom, Real &momaod, Real &dustaod,
-    Real &so4aod, // total species AOD
-    Real &pomaod, Real &soaaod, Real &bcaod, Real &seasaltaod,
-    // work views
+    DiagnosticsAerosolOpticsSW& diagnostics_aerosol_optics_sw,
+    // work view
     const ColumnView &mass, const ColumnView &air_density, const View2D &cheb,
     const View2D &dgnumwet_m, const View2D &dgnumdry_m,
     const ColumnView &radsurf, const ColumnView &logradsurf,
-    const ComplexView2D &specrefindex, const View2D &qaerwat_m) {
+    const ComplexView2D &specrefindex, const View2D &qaerwat_m) 
+{
+
+    auto extinct = diagnostics_aerosol_optics_sw.extinct; //        ! aerosol extinction [1/m]
+    auto absorb = diagnostics_aerosol_optics_sw.absorb;  //         ! aerosol absorption [1/m]
+    auto &aodnir = diagnostics_aerosol_optics_sw.aodnir;
+    auto &aoduv = diagnostics_aerosol_optics_sw.aoduv;
+    auto &dustaodmode = diagnostics_aerosol_optics_sw.dustaodmode;
+    auto &aodmode = diagnostics_aerosol_optics_sw.aodmode;
+    auto &burdenmode = diagnostics_aerosol_optics_sw.burdenmode;
+    auto &aodabsbc = diagnostics_aerosol_optics_sw.aodabsbc;
+    auto &aodvis = diagnostics_aerosol_optics_sw.aodvis;
+    auto &aodall = diagnostics_aerosol_optics_sw.aodall;
+    auto &ssavis = diagnostics_aerosol_optics_sw.ssavis;
+    auto &aodabs = diagnostics_aerosol_optics_sw.aodabs;
+    auto &burdendust = diagnostics_aerosol_optics_sw.burdendust;
+    auto &burdenso4 = diagnostics_aerosol_optics_sw.burdenso4;
+    auto &burdenbc = diagnostics_aerosol_optics_sw.burdenbc;
+    auto &burdenpom = diagnostics_aerosol_optics_sw.burdenpom;
+    auto &burdensoa = diagnostics_aerosol_optics_sw.burdensoa;
+    auto &burdenseasalt = diagnostics_aerosol_optics_sw.burdenseasalt;
+    auto &burdenmom = diagnostics_aerosol_optics_sw.burdenmom;
+    auto &momaod = diagnostics_aerosol_optics_sw.momaod;
+    auto &dustaod = diagnostics_aerosol_optics_sw.dustaod;
+    auto &so4aod = diagnostics_aerosol_optics_sw.so4aod; // total species AOD
+    auto &pomaod = diagnostics_aerosol_optics_sw.pomaod;
+    auto &soaaod = diagnostics_aerosol_optics_sw.soaaod;
+    auto &bcaod = diagnostics_aerosol_optics_sw.bcaod;
+    auto &seasaltaod = diagnostics_aerosol_optics_sw.seasaltaod;
 
   const Real xrmax = haero::log(rmmax);
   // ! calculates aerosol sw radiative properties

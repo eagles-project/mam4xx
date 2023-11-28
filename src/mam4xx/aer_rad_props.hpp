@@ -548,15 +548,7 @@ void aer_rad_props_sw(
     const mam4::AeroId specname_amode[9],
     const AerosolOpticsDeviceData &aersol_optics_data,
     // diagnostic
-    const ColumnView &extinct, //        ! aerosol extinction [1/m]
-    const ColumnView &absorb,  //         ! aerosol absorption [1/m]
-    Real &aodnir, Real &aoduv, Real dustaodmode[ntot_amode],
-    Real aodmode[ntot_amode], Real burdenmode[ntot_amode], Real &aodabsbc,
-    Real &aodvis, Real &aodall, Real &ssavis, Real &aodabs, Real &burdendust,
-    Real &burdenso4, Real &burdenbc, Real &burdenpom, Real &burdensoa,
-    Real &burdenseasalt, Real &burdenmom, Real &momaod, Real &dustaod,
-    Real &so4aod, // total species AOD
-    Real &pomaod, Real &soaaod, Real &bcaod, Real &seasaltaod,
+    DiagnosticsAerosolOpticsSW& diagnostics_aerosol_optics_sw,
     // work views
     const ColumnView &mass, const ColumnView &air_density, const View2D &cheb,
     const View2D &dgnumwet_m, const View2D &dgnumdry_m,
@@ -646,13 +638,7 @@ void aer_rad_props_sw(
                 specname_amode, 
                 aersol_optics_data,
                 // diagnostic
-                extinct, //        ! aerosol extinction [1/m]
-                absorb,  //         ! aerosol absorption [1/m]
-                aodnir, aoduv, dustaodmode, aodmode, burdenmode, aodabsbc,
-                aodvis, aodall, ssavis, aodabs, burdendust, burdenso4, burdenbc,
-                burdenpom, burdensoa, burdenseasalt, burdenmom, momaod, dustaod,
-                so4aod, // total species AOD
-                pomaod, soaaod, bcaod, seasaltaod,
+                diagnostics_aerosol_optics_sw,
                 // work views
                 mass, air_density, cheb, dgnumwet_m, dgnumdry_m, radsurf,
                 logradsurf, specrefindex, qaerwat_m);
