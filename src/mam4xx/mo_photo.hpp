@@ -3,6 +3,7 @@
 
 #include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
@@ -258,6 +259,41 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
   } // end kk
 
 } // end cloud_mod
+
+// NOTE: set_ub_col and setcol compute only the density of o3 in the atmosphere
+// NOTE: (o2 is not computed--if we want to add it back to the calculation,
+// NOTE: we should properly reorganize the code before we do it)
+KOKKOS_INLINE_FUNCTION
+void set_ub_col(Real &o3_col_delta,
+                const Real vmr[mam4::gas_chemistry::gas_pcnst],
+                const Real invariants[mam4::gas_chemistry::nfs],
+                const Real pdel) {
+  // NOTE: chemical characteristics of our current mechanism are generated in
+  // NOTE: eam/src/chemistry/pp_linoz_mam4_resus_mom_soag/mo_sim_dat.F90
+
+  // NOTE: o3_exo_col is 0 because O2 does not appear in the solsym array.
+  // NOTE: Further, it's only used to initialize the 0th vertical level, so
+  // NOTE: we ignore it in this single-level calculation.
+
+  // the following logic was extracted from the calc_col_delta subroutine under
+  // the above conditions that o3_ndx == 0, o3_inv_ndx == -1, and O2 is not
+  // a species or an invariant of interest
+  constexpr Real xfactor = 2.8704e21 / (9.80616 * 1.38044); // BAD_CONSTANT!
+  constexpr int o3_ndx = 0;
+  o3_col_delta = xfactor * pdel * vmr[o3_ndx];
+}
+
+KOKKOS_INLINE_FUNCTION
+void setcol(const Real o3_col_deltas[mam4::nlev + 1], ColumnView &o3_col_dens) {
+  // we can probably accelerate this with a parallel_scan, but let's just do
+  // a simple loop for now
+  constexpr int nlev = mam4::nlev;
+  o3_col_dens(0) = 0.5 * (o3_col_deltas[0] + o3_col_deltas[1]);
+  for (int k = 1; k < nlev; ++k) {
+    o3_col_dens(k) =
+        o3_col_dens(k - 1) + 0.5 * (o3_col_deltas[k] + o3_col_deltas[k + 1]);
+  }
+}
 
 KOKKOS_INLINE_FUNCTION
 void find_index(const Real *var_in, const int var_len,
