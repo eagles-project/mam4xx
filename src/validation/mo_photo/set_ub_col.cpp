@@ -13,51 +13,44 @@ using namespace mam4;
 using namespace haero;
 void set_ub_col(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
+    using View1D = typename DeviceType::view_1d<Real>;
     using View2D = typename DeviceType::view_2d<Real>;
-    using View3D = typename DeviceType::view_3d<Real>;
 
-    constexpr int ncol = 4;
     constexpr int pver = mam4::nlev;
+    constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
+    constexpr int nfs = mam4::gas_chemistry::nfs;
+
+    const Real spc_exo_col = input.get_array("spc_exo_col")[0];
     const auto vmr_in = input.get_array("vmr");
     const auto invariants_in = input.get_array("invariants");
     const auto pdel_in = input.get_array("pdel");
 
-    View3D vmr("vmr", ncol, pver, mam4::gas_chemistry::gas_pcnst);
-    View3D invariants("invariants", ncol, pver, mam4::gas_chemistry::nfs);
-    View2D pdel("pdel", ncol, pver);
+    View2D vmr("vmr", pver, gas_pcnst);
+    View2D invariants("invariants", pver, nfs);
+    View1D pdel("pdel", pver);
 
-    mam4::validation::convert_1d_vector_to_3d_view_device(vmr_in, vmr);
-    mam4::validation::convert_1d_vector_to_3d_view_device(invariants_in, invariants);
-    mam4::validation::convert_1d_vector_to_2d_view_device(pdel_in, pdel);
+    mam4::validation::convert_1d_vector_to_2d_view_device(vmr_in, vmr);
+    mam4::validation::convert_1d_vector_to_2d_view_device(invariants_in, invariants);
+    auto pdel_host = Kokkos::create_mirror_view(pdel);
+    std::copy(pdel_in.data(), pdel_in.data() + pver, pdel_host.data());
+    Kokkos::deep_copy(pdel, pdel_host);
 
-    View2D col_delta("col_delta", ncol, pver+1);
-    auto team_policy = ThreadTeamPolicy(ncol, 1u);
-    Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-        constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
-        constexpr int nfs = mam4::gas_chemistry::nfs;
-        const int icol = team.league_rank();
-        auto vmr_icol = Kokkos::subview(vmr, icol, Kokkos::ALL(), Kokkos::ALL());
-        auto invariants_icol = Kokkos::subview(invariants, icol, Kokkos::ALL(), Kokkos::ALL());
-        auto pdel_icol = Kokkos::subview(pdel, icol, Kokkos::ALL());
-        auto col_delta_icol = Kokkos::subview(col_delta, icol, Kokkos::ALL());
-        col_delta_icol(0) = 0.0;
-        Kokkos::parallel_for(pver, KOKKOS_LAMBDA(const int k) {
-          Real vmr_ik[gas_pcnst];
-          for (int l = 0; l < gas_pcnst; ++l) {
-            vmr_ik[l] = vmr_icol(k, l);
-          }
-          Real inv_ik[nfs];
-          for (int l = 0; l < nfs; ++l) {
-            inv_ik[l] = invariants_icol(k, l);
-          }
-          mam4::mo_photo::set_ub_col(col_delta_icol(k+1), vmr_ik, inv_ik, pdel_icol(k));
-        });
+    View1D col_delta("col_delta", pver+1);
+    col_delta(0) = spc_exo_col;
+    Kokkos::parallel_for(pver, KOKKOS_LAMBDA(const int k) {
+      Real vmr_ik[gas_pcnst];
+      for (int l = 0; l < gas_pcnst; ++l) {
+        vmr_ik[l] = vmr(k, l);
+      }
+      Real inv_ik[nfs];
+      for (int l = 0; l < nfs; ++l) {
+        inv_ik[l] = invariants(k, l);
+      }
+      mam4::mo_photo::set_ub_col(col_delta(k+1), vmr_ik, inv_ik, pdel(k));
     });
 
-    constexpr Real zero = 0;
-    std::vector<Real> col_delta_out(ncol * (pver+1), zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(col_delta, col_delta_out);
+    auto col_delta_host = Kokkos::create_mirror_view(col_delta);
+    std::vector<Real> col_delta_out(col_delta_host.data(), col_delta_host.data() + pver+1);
     output.set("col_delta", col_delta_out);
   });
 }

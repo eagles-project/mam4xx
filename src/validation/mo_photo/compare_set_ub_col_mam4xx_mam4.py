@@ -97,11 +97,10 @@ if __name__ == '__main__':
     o1_a = o1_a.ravel()
     o2_a = o2_a.ravel()
 
-    # knock out every other value in the first array
-    o1_a1 = []
-    for l in range(len(o1_a)//2):
-        o1_a1.append(o1_a[2*l])
-    L1, L2, Linf = norms(o1_a1, o2_a)
+    # take only the first half of the values in the reference dataset (o2),
+    # which correspond to O3 density (number concentration) increments
+    o2_a = o2_a[:len(o2_a)//2]
+    L1, L2, Linf = norms(o1_a, o2_a)
 
     print(o_name)
     print('L1',L1)
