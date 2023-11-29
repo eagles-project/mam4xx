@@ -37,7 +37,7 @@ void set_ub_col(Ensemble *ensemble) {
     Kokkos::deep_copy(pdel, pdel_host);
 
     View1D col_delta("col_delta", pver + 1);
-    col_delta(0) = spc_exo_col;
+    Kokkos::deep_copy(col_delta, spc_exo_col); // sets col_delta(0)
     Kokkos::parallel_for(
         pver, KOKKOS_LAMBDA(const int k) {
           Real vmr_ik[gas_pcnst];
@@ -52,6 +52,7 @@ void set_ub_col(Ensemble *ensemble) {
         });
 
     auto col_delta_host = Kokkos::create_mirror_view(col_delta);
+    Kokkos::deep_copy(col_delta_host, col_delta);
     std::vector<Real> col_delta_out(col_delta_host.data(),
                                     col_delta_host.data() + pver + 1);
     output.set("col_delta", col_delta_out);
