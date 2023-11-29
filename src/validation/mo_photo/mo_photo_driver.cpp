@@ -27,6 +27,7 @@ void find_index(Ensemble *ensemble);
 void interpolate_rsf(Ensemble *ensemble);
 void jlong(Ensemble *ensemble);
 void calc_sum_wght(Ensemble *ensemble);
+void set_ub_col(Ensemble *ensemble);
 void table_photo(Ensemble *ensemble);
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -60,6 +61,8 @@ int main(int argc, char **argv) {
       jlong(ensemble);
     } else if (func_name == "calc_sum_wght") {
       calc_sum_wght(ensemble);
+    } else if (func_name == "set_ub_col") {
+      set_ub_col(ensemble);
     } else if (func_name == "table_photo") {
       table_photo(ensemble);
     } else {

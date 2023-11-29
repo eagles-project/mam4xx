@@ -15,6 +15,7 @@ add_executable(mo_photo_driver
                calc_sum_wght.cpp
                interpolate_rsf.cpp
                jlong.cpp
+               set_ub_col.cpp
                table_photo.cpp
                )
 
@@ -70,3 +71,26 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
 endforeach()
+
+# Test set_ub_col separately, since we're only computing O3 "densities" and not
+# O2 densities.
+set(input "set_ub_col_ts_355")
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/compare_set_ub_col_mam4xx_mam4.py
+  ${CMAKE_CURRENT_BINARY_DIR}/compare_set_ub_col_mam4xx_mam4.py
+  COPYONLY
+)
+configure_file(
+  ${MO_PHOTO_VALIDATION_DIR}/mam_${input}.py
+  ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.py
+  COPYONLY
+)
+
+# add a test to run the skywalker driver
+add_test(run_${input} mo_photo_driver ${MO_PHOTO_VALIDATION_DIR}/${input}.yaml)
+
+# add a test to validate mam4xx's results against the baseline.
+# Select a threshold error slightly bigger than the largest relative error for the threshold error.
+# compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error>
+add_test(validate_${input} python3 compare_set_ub_col_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
+set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
