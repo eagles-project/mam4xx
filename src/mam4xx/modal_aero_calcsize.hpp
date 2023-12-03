@@ -321,13 +321,28 @@ KOKKOS_INLINE_FUNCTION void size_adjustment(
   // update diameters and volume to num ratios for interstitial
   // aerosols
 
-  calcsize::update_diameter_and_vol2num(
-      dryvol_i, num_i_k, num2vol_ratio_min_imode, num2vol_ratio_max_imode,
-      dgnmin, dgnmax, mean_std_dev, dgncur_i_imode, num2vol_ratio_cur_i);
+  // FIXME: Need to add this adjustment with szadj_block_fac to match values from Fortran code.
+  // for n=nait, divide v2nmin by 1.0e6 to effectively turn off the
+  //         adjustment when number is too small (size is too big)
+  // BAD CONSTANT
+  constexpr Real szadj_block_fac = 1.0e6;
+  auto v2nmin = num2vol_ratio_min_imode;
+  auto v2nmax = num2vol_ratio_max_imode;
+  if (imode == aitken_idx)
+    v2nmin /= szadj_block_fac;
+
+  // for n=nacc, multiply v2nmax by 1.0e6 to effectively turn off the
+  //          adjustment when number is too big (size is too small)
+  if (imode == accumulation_idx)
+    v2nmax *= szadj_block_fac;
+
+  calcsize::update_diameter_and_vol2num(dryvol_i, num_i_k, v2nmin, v2nmax,
+                                        dgnmin, dgnmax, mean_std_dev,
+                                        dgncur_i_imode, num2vol_ratio_cur_i);
 
   // update diameters and volume to num ratios for cloudborne aerosols
   calcsize::update_diameter_and_vol2num(
-      dryvol_c, num_c_k, num2vol_ratio_min_imode, num2vol_ratio_max_imode,
+      dryvol_c, num_c_k, v2nmin, v2nmax,
       dgnmin, dgnmax, mean_std_dev, dgncur_c_imode, num2vol_ratio_cur_c);
 
   // save number concentrations and dry volumes for explicit
@@ -713,7 +728,7 @@ void modal_aero_calcsize_sub(
     // cloud borne
     dgncur_c[imode] = dgnnom_nmodes[imode]; // diameter [m]
     Real num2vol_ratio_cur_c =
-        num2vol_ratio_nom_nmodes[imode]; // volume to number
+        num2vol_ratio_nom_nmodes[imode]; // volume to number   
 
     // dry volume is set to zero inside compute_dry_volume_k
     //----------------------------------------------------------------------

@@ -25,7 +25,7 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
     using View2D = DeviceType::view_2d<Real>;
 
     auto state_q_db = input.get_array("state_q");
-    const auto qqcw_db = input.get_array("qqcw");
+    auto qqcw_db = input.get_array("qqcw");
     const auto dt = input.get_array("dt")[0];
     
 
@@ -104,7 +104,7 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
 
     for (int kk = top_lev; kk < pver; ++kk) {
       // int kk =6;
-    // for (int kk = top_lev; kk < 7; ++kk) {  
+    // for (int kk = 6; kk < 7; ++kk) {  
       const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
       const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
       const auto dgncur_i = Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
@@ -134,12 +134,17 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
     mam4::validation::convert_2d_view_device_to_1d_vector(dgnumdry_m,
                                                           dgnumdry_m_out);
 
-    std::vector<Real> qqcw_out(pver * pcnst, zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(qqcw, qqcw_out);
+    Kokkos::deep_copy(qqcw_host, qqcw);
+    count = 0;
+    for (int kk = 0; kk < pver; ++kk) {
+      for (int i = 0; i < pcnst; ++i) {
+        qqcw_db[count]=qqcw_host(kk,i);
+        count++;
+      }
+    }
 
-    output.set("qqcw", qqcw_out);
+    output.set("qqcw", qqcw_db);
     output.set("dgnumdry_m", dgnumdry_m_out);
 
-    // add more outputs (diagnostics)
   });
 }
