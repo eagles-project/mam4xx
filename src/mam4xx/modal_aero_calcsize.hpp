@@ -742,10 +742,11 @@ void modal_aero_calcsize_sub(
     // aerosols
     // Both num_mode_idx and num_cldbrn_mode_idx should be exactly same and
     // should be same for both prognostic and diagnostic radiation lists
-
-    const int num_mode_idx = numptr_amode[imode];
+    // Fortran to C++ indexing
+    const int num_mode_idx = numptr_amode[imode] -1 ;
+    // Fortran to C++ indexing
     const int num_cldbrn_mode_idx =
-        numptr_amode[imode];                          // numptrcw_amode[imode];
+        numptr_amode[imode] -1 ;                          // numptrcw_amode[imode];
     const Real n_i_imode = state_q[num_mode_idx];     // from state_q
     const Real n_c_imode = qqcw[num_cldbrn_mode_idx]; // from qqcw
     // const bool update_mmr
