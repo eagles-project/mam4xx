@@ -29,19 +29,32 @@ foreach(script
 endforeach()
 
 # Run the driver in several configurations to produce datasets.
+set(TEST_LIST
+    adjust_num_sizes_case1
+    adjust_num_sizes_case2
+    calcsize_e3sm
+    calcsize_sub
+    aitken_accum_exchange_case1
+    calcsize_compute_dry_volume
+    stand_modal_aero_calcsize_sub
+    )
+# # matching the tests and errors, just for convenience
 
-# Calcsize
-foreach (input
-         adjust_num_sizes_case1
-         adjust_num_sizes_case2
-         calcsize_e3sm
-         calcsize_sub
-         aitken_accum_exchange_case1
-         calcsize_compute_dry_volume
-         stand_modal_aero_calcsize_sub
-         )
+set(DEFAULT_TOL 2e-6)
+set(ERROR_THRESHOLDS
+    1e-12
+    1e-12
+    2e-6
+    2e-6
+    1e-12
+    1e-12
+    5e-11
+   )
 
-  # copy the baseline file into place; is the skywalker file produced by fortran code?
+
+foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
+  # copy the baseline file into place.
+
   configure_file(
     ${CALCSIZE_VALIDATION_DIR}/mam_${input}.py
     ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.py
@@ -53,8 +66,9 @@ foreach (input
 
   # add a test to validate mam4xx's results against the baseline.
   # Select a threshold error slightly bigger than the largest relative error for the threshold error.
-  # Conservative approach: At the time of this commit, threshold error=2e-6.
-  # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error> 
-  add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True 2e-6)
+  # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error>
+  add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
 endforeach()
+
+
