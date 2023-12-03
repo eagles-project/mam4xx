@@ -28,10 +28,10 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
                      "Required name: dgncur_awet");
     EKAT_REQUIRE_MSG(input.has_array("qaerwat"), "Required name: qaerwat");
 
-    auto temperature_db = input.get_array("temperature");// done
-    auto pmid_db = input.get_array("pmid");// done
-    auto cldn_db = input.get_array("cldn");// done
-    auto state_q_db = input.get_array("state_q"); // done
+    auto temperature_db = input.get_array("temperature"); // done
+    auto pmid_db = input.get_array("pmid");               // done
+    auto cldn_db = input.get_array("cldn");               // done
+    auto state_q_db = input.get_array("state_q");         // done
     auto dgncur_a_db = input.get_array("dgncur_a");
     auto dgncur_awet_db = input.get_array("dgncur_awet");
     auto qaerwat_db = input.get_array("qaerwat");
@@ -44,8 +44,7 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
     constexpr int ntot_amode = AeroConfig::num_modes();
 
     View2D state_q("state_q", pver, nvars);
-    mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db,
-                                                          state_q);
+    mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
     ColumnView temperature;
     temperature = haero::testing::create_column_view(pver);
@@ -63,7 +62,6 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
     Kokkos::deep_copy(pmid, pmid_host);
     Kokkos::deep_copy(cldn, cldn_host);
 
-
     View2D dgncur_a("dgncur_a_db", pver, ntot_amode);
     View2D dgncur_awet("dgncur_awet", pver, ntot_amode);
     View2D qaerwat("qaerwat", pver, ntot_amode);
@@ -73,10 +71,8 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
     mam4::validation::convert_1d_vector_to_2d_view_device(dgncur_awet_db,
                                                           dgncur_awet);
 
-    mam4::validation::convert_1d_vector_to_2d_view_device(qaerwat_db,
-                                                          qaerwat);
+    mam4::validation::convert_1d_vector_to_2d_view_device(qaerwat_db, qaerwat);
 
-  
     int nspec_amode[AeroConfig::num_modes()];
     int lspectype_amode[water_uptake::maxd_aspectype][AeroConfig::num_modes()];
     Real specdens_amode[water_uptake::maxd_aspectype];
@@ -85,26 +81,20 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
     water_uptake::get_e3sm_parameters(nspec_amode, lspectype_amode,
                                       specdens_amode, spechygro);
 
-
     modal_aer_opt::modal_aero_wateruptake_dr(
-    state_q, temperature,
-    pmid, cldn,
-    dgncur_a, dgncur_awet, qaerwat,
-    // const int list_idx_in,
-    nspec_amode,
-    specdens_amode, spechygro,
-    lspectype_amode); 
+        state_q, temperature, pmid, cldn, dgncur_a, dgncur_awet, qaerwat,
+        // const int list_idx_in,
+        nspec_amode, specdens_amode, spechygro, lspectype_amode);
 
     constexpr Real zero = 0;
     std::vector<Real> dgncur_awet_out(pver * ntot_amode, zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(dgncur_awet, dgncur_awet_out);
+    mam4::validation::convert_2d_view_device_to_1d_vector(dgncur_awet,
+                                                          dgncur_awet_out);
 
     std::vector<Real> qaerwat_out(pver * ntot_amode, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(qaerwat, qaerwat_out);
 
     output.set("dgncur_awet", dgncur_awet_out);
     output.set("qaerwat", qaerwat_out);
-
-
   });
 }

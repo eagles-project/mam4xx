@@ -321,8 +321,9 @@ KOKKOS_INLINE_FUNCTION void size_adjustment(
   // update diameters and volume to num ratios for interstitial
   // aerosols
 
-  // FIXME: Need to add this adjustment with szadj_block_fac to match values from Fortran code.
-  // for n=nait, divide v2nmin by 1.0e6 to effectively turn off the
+  // FIXME: Need to add this adjustment with szadj_block_fac to match values
+  // from Fortran code. for n=nait, divide v2nmin by 1.0e6 to effectively turn
+  // off the
   //         adjustment when number is too small (size is too big)
   // BAD CONSTANT
   constexpr Real szadj_block_fac = 1.0e6;
@@ -341,9 +342,9 @@ KOKKOS_INLINE_FUNCTION void size_adjustment(
                                         dgncur_i_imode, num2vol_ratio_cur_i);
 
   // update diameters and volume to num ratios for cloudborne aerosols
-  calcsize::update_diameter_and_vol2num(
-      dryvol_c, num_c_k, v2nmin, v2nmax,
-      dgnmin, dgnmax, mean_std_dev, dgncur_c_imode, num2vol_ratio_cur_c);
+  calcsize::update_diameter_and_vol2num(dryvol_c, num_c_k, v2nmin, v2nmax,
+                                        dgnmin, dgnmax, mean_std_dev,
+                                        dgncur_c_imode, num2vol_ratio_cur_c);
 
   // save number concentrations and dry volumes for explicit
   // aitken <--> accum mode transfer, which is the next step in
@@ -728,7 +729,7 @@ void modal_aero_calcsize_sub(
     // cloud borne
     dgncur_c[imode] = dgnnom_nmodes[imode]; // diameter [m]
     Real num2vol_ratio_cur_c =
-        num2vol_ratio_nom_nmodes[imode]; // volume to number   
+        num2vol_ratio_nom_nmodes[imode]; // volume to number
 
     // dry volume is set to zero inside compute_dry_volume_k
     //----------------------------------------------------------------------
@@ -758,10 +759,10 @@ void modal_aero_calcsize_sub(
     // Both num_mode_idx and num_cldbrn_mode_idx should be exactly same and
     // should be same for both prognostic and diagnostic radiation lists
     // Fortran to C++ indexing
-    const int num_mode_idx = numptr_amode[imode] -1 ;
+    const int num_mode_idx = numptr_amode[imode] - 1;
     // Fortran to C++ indexing
     const int num_cldbrn_mode_idx =
-        numptr_amode[imode] -1 ;                          // numptrcw_amode[imode];
+        numptr_amode[imode] - 1;                      // numptrcw_amode[imode];
     const Real n_i_imode = state_q[num_mode_idx];     // from state_q
     const Real n_c_imode = qqcw[num_cldbrn_mode_idx]; // from qqcw
     // const bool update_mmr

@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
     if (func_name == "modal_aero_water_uptake_dr") {
       modal_aero_water_uptake_dr(ensemble);
     }
-     if (func_name == "modal_aero_water_uptake_dr_col") {
+    if (func_name == "modal_aero_water_uptake_dr_col") {
       modal_aero_water_uptake_dr_col(ensemble);
     }
     if (func_name == "modal_aero_water_uptake_dr_wetdens") {

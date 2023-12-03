@@ -110,7 +110,6 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     Kokkos::deep_copy(qqcw, qqcw_host);
 
-
     AerosolOpticsDeviceData aersol_optics_data{};
     // allocate views.
     set_aerosol_optics_data_for_modal_aero_sw_views(aersol_optics_data);
@@ -358,7 +357,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     const bool do_aitacc_transfer = true;
     const bool update_mmr = false;
 
-
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -375,12 +373,11 @@ void modal_aero_sw(Ensemble *ensemble) {
                               numptr_amode, specdens_amode, spechygro, mam_idx,
                               mam_cnst_idx);
 
-
           team.team_barrier();
 
           // setting up calcsize
 
-                    // compute with calcsize:
+          // compute with calcsize:
 
           Real inv_density[AeroConfig::num_modes()]
                           [AeroConfig::num_aerosol_ids()] = {};
@@ -412,7 +409,8 @@ void modal_aero_sw(Ensemble *ensemble) {
 
             const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
             const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
-            const auto dgncur_i = Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
+            const auto dgncur_i =
+                Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
             Real dgncur_c[ntot_amode] = {};
             modal_aero_calcsize::modal_aero_calcsize_sub(
                 state_q_k.data(), // in
@@ -428,10 +426,6 @@ void modal_aero_sw(Ensemble *ensemble) {
                 noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
                 acc_spec_in_ait, dgncur_i.data(), dgncur_c);
           } // k
-
-
-
-
 
           team.team_barrier();
 
@@ -465,11 +459,10 @@ void modal_aero_sw(Ensemble *ensemble) {
                         diagnostics_aerosol_optics_sw,
                         // work views
                         dgnumdry_m, // FIXME: is this a work array?
-                        specrefindex,
-                        work
-                        // mass, air_density, cheb, dgnumwet_m, 
+                        specrefindex, work
+                        // mass, air_density, cheb, dgnumwet_m,
                         // radsurf, logradsurf, specrefindex, qaerwat_m
-                        );
+          );
 
           output_diagnostics(0) = diagnostics_aerosol_optics_sw.aodnir;
           output_diagnostics(1) = diagnostics_aerosol_optics_sw.aoduv;
@@ -508,7 +501,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     mam4::validation::convert_2d_view_device_to_1d_vector(qqcw, qqcw_out);
 
     output.set("qqcw", qqcw_out);
-
 
     std::vector<Real> tauxar_out(pver * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(tauxar, tauxar_out);

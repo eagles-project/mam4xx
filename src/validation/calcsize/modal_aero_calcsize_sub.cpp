@@ -27,7 +27,6 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
     auto state_q_db = input.get_array("state_q");
     auto qqcw_db = input.get_array("qqcw");
     const auto dt = input.get_array("dt")[0];
-    
 
     View2D state_q("state_q", pver, nvars);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
@@ -37,7 +36,7 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
     int count = 0;
     for (int kk = 0; kk < pver; ++kk) {
       for (int i = 0; i < pcnst; ++i) {
-        qqcw_host(kk,i) = qqcw_db[count];
+        qqcw_host(kk, i) = qqcw_db[count];
         count++;
       }
     }
@@ -86,25 +85,20 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
                                numptr_amode, specdens_amode, spechygro, mam_idx,
                                mam_cnst_idx);
 
-    for (int imode = 0; imode < ntot_amode; ++imode)
-    {
-      const int nspec= nspec_amode[imode];
-
-      for (int isp = 0; isp < nspec; ++isp)
-      {
-        const int idx = lspectype_amode[isp][imode]-1;
-        inv_density[imode][isp] = 1.0/ specdens_amode[idx];
-      }// isp
-    }// imode
-
+    // Note: Need to compute inv density using indexing from e3sm
+    for (int imode = 0; imode < ntot_amode; ++imode) {
+      const int nspec = nspec_amode[imode];
+      for (int isp = 0; isp < nspec; ++isp) {
+        const int idx = lspectype_amode[isp][imode] - 1;
+        inv_density[imode][isp] = 1.0 / specdens_amode[idx];
+      } // isp
+    }   // imode
 
     View2D dgnumdry_m("dgnumdry_m", pver, ntot_amode);
     // FIXME: top_lev is set to 1 in calcsize ?
-    const int top_lev = 0;  //1( in fortran )
+    const int top_lev = 0; // 1( in fortran )
 
     for (int kk = top_lev; kk < pver; ++kk) {
-      // int kk =6;
-    // for (int kk = 6; kk < 7; ++kk) {  
       const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
       const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
       const auto dgncur_i = Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
@@ -115,15 +109,9 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
           dt, do_adjust, do_aitacc_transfer, update_mmr, lmassptr_amode,
           numptr_amode,
           inv_density, // in
-          num2vol_ratio_min, 
-          num2vol_ratio_max, 
-          num2vol_ratio_max_nmodes,
-          num2vol_ratio_min_nmodes,
-          num2vol_ratio_nom_nmodes,
-          dgnmin_nmodes,
-          dgnmax_nmodes,
-          dgnnom_nmodes,
-          mean_std_dev_nmodes,
+          num2vol_ratio_min, num2vol_ratio_max, num2vol_ratio_max_nmodes,
+          num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes, dgnmin_nmodes,
+          dgnmax_nmodes, dgnnom_nmodes, mean_std_dev_nmodes,
           // outputs
           noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
           acc_spec_in_ait, dgncur_i.data(), dgncur_c);
@@ -138,13 +126,12 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
     count = 0;
     for (int kk = 0; kk < pver; ++kk) {
       for (int i = 0; i < pcnst; ++i) {
-        qqcw_db[count]=qqcw_host(kk,i);
+        qqcw_db[count] = qqcw_host(kk, i);
         count++;
       }
     }
 
     output.set("qqcw", qqcw_db);
     output.set("dgnumdry_m", dgnumdry_m_out);
-
   });
 }

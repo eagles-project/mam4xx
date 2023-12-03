@@ -548,14 +548,13 @@ void aer_rad_props_sw(
     const AerosolOpticsDeviceData &aersol_optics_data,
     // diagnostic
     DiagnosticsAerosolOpticsSW &diagnostics_aerosol_optics_sw,
-    const View2D &dgnumdry_m,
-    const ComplexView2D &specrefindex, 
-    const View1D& work, 
+    const View2D &dgnumdry_m, const ComplexView2D &specrefindex,
+    const View1D &work,
     // work views
-    // const ColumnView &mass, const ColumnView &air_density, const View2D &cheb,
-    // const View2D &dgnumwet_m, 
-    // const ColumnView &radsurf, const ColumnView &logradsurf,
-    // const ComplexView2D &specrefindex, const View2D &qaerwat_m,
+    // const ColumnView &mass, const ColumnView &air_density, const View2D
+    // &cheb, const View2D &dgnumwet_m, const ColumnView &radsurf, const
+    // ColumnView &logradsurf, const ComplexView2D &specrefindex, const View2D
+    // &qaerwat_m,
 
     const View2D &ext_cmip6_sw_inv_m) {
 
@@ -642,13 +641,11 @@ void aer_rad_props_sw(
                 // diagnostic
                 diagnostics_aerosol_optics_sw,
                 // work views
-                dgnumdry_m,
-                specrefindex,
-                work
-                // , 
+                dgnumdry_m, specrefindex, work
+                // ,
                 // mass, air_density, cheb, dgnumwet_m,  radsurf,
                 // logradsurf, specrefindex, qaerwat_m
-                );
+  );
 
   // Update tau, tau_w, tau_w_g, and tau_w_f with the read in values of
   // extinction, ssa and asymmetry factors
