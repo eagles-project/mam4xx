@@ -20,8 +20,6 @@ void get_dtdz(Ensemble *ensemble) {
     const Real pmid1d_down = input.get_array("pmid1d_down")[0];
     const Real temp1d_up = input.get_array("temp1d_up")[0];
     const Real temp1d_down = input.get_array("temp1d_down")[0];
-    // const Real cnst_kap = input.get_array("cnst_kap")[0];
-    // const Real cnst_faktor = input.get_array("cnst_faktor")[0];
 
     Real dtdz = 0;
     Real tm = 0;

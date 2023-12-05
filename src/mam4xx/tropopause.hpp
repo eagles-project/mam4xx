@@ -12,7 +12,7 @@ namespace mam4 {
 namespace tropopause {
 
 using ConstColumnView = haero::ConstColumnView;
-// From radconstants
+// From radconstants //FIXME: BAD CONSTANT
 constexpr int nswbands = 14;
 constexpr int nlwbands = 16;
 using View2D = DeviceType::view_2d<Real>;
@@ -23,7 +23,7 @@ constexpr Real shr_const_rgas =
 constexpr Real shr_const_mwdair = haero::Constants::molec_weight_dry_air *
                                   1e3; // molecular weight dry air ~ kg/kmole
 constexpr Real shr_const_cpdair =
-    haero::Constants::cp_dry_air; // specific heat of dry air   ~ J/kg/K
+    haero::Constants::cp_dry_air; // specific heat of dry air [J/K/kmole]
 
 constexpr Real cnst_kap =
     (shr_const_rgas / shr_const_mwdair) / shr_const_cpdair; //  ! R/Cp
