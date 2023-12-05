@@ -14,9 +14,13 @@
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
+#include <mam4xx/calcsize.hpp>
 
 namespace mam4 {
 namespace modal_aero_calcsize {
+using haero::max;
+using haero::min;
+using haero::sqrt;
 
 constexpr int maxd_aspectype = ndrop::maxd_aspectype;
 

@@ -451,9 +451,9 @@ void aer_rad_props_lw(
     const View2D &odap_aer,
     //
     int nspec_amode[ntot_amode], Real sigmag_amode[ntot_amode],
-    int lmassptr_amode[maxd_aspectype][ntot_amode],
-    Real spechygro[maxd_aspectype], Real specdens_amode[maxd_aspectype],
-    int lspectype_amode[maxd_aspectype][ntot_amode],
+    int lmassptr_amode[ndrop::maxd_aspectype][ntot_amode],
+    Real spechygro[ndrop::maxd_aspectype], Real specdens_amode[ndrop::maxd_aspectype],
+    int lspectype_amode[ndrop::maxd_aspectype][ntot_amode],
     const AerosolOpticsDeviceData &aersol_optics_data,
     // work views
     const ColumnView &mass, const View2D &cheb, const View2D &dgnumwet_m,
@@ -531,31 +531,20 @@ void aer_rad_props_sw(
     const Real dt, const ConstColumnView &zi, const ConstColumnView &pmid,
     const ConstColumnView &pint, const ConstColumnView &temperature,
     const ConstColumnView &zm, const View2D &state_q,
+    const View2D qqcw, 
     const ConstColumnView &pdel, const ConstColumnView &pdeldry,
     const ConstColumnView &cldn, const View2D &ssa_cmip6_sw,
     const View2D &af_cmip6_sw, const View2D &ext_cmip6_sw,
-    // nnite, idxnite,
-    // is_cmip6_volc,
-    // const ColumnView qqcw_fld[pcnst],
     const View2D &tau, const View2D &tau_w, const View2D &tau_w_g,
-    const View2D &tau_w_f, int nspec_amode[ntot_amode],
-    Real sigmag_amode[ntot_amode],
-    int lmassptr_amode[maxd_aspectype][ntot_amode],
-    Real spechygro[maxd_aspectype], Real specdens_amode[maxd_aspectype],
-    int lspectype_amode[maxd_aspectype][ntot_amode],
+    const View2D &tau_w_f,
     // FIXME
     const mam4::AeroId specname_amode[9],
     const AerosolOpticsDeviceData &aersol_optics_data,
     // diagnostic
     DiagnosticsAerosolOpticsSW &diagnostics_aerosol_optics_sw,
-    const View2D &dgnumdry_m, const ComplexView2D &specrefindex,
+    const ComplexView2D &specrefindex,
     const View1D &work,
     // work views
-    // const ColumnView &mass, const ColumnView &air_density, const View2D
-    // &cheb, const View2D &dgnumwet_m, const ColumnView &radsurf, const
-    // ColumnView &logradsurf, const ComplexView2D &specrefindex, const View2D
-    // &qaerwat_m,
-
     const View2D &ext_cmip6_sw_inv_m) {
 
   // call outfld('extinct_sw_inp',ext_cmip6_sw(:,:,idx_sw_diag), pcols, lchnk)
@@ -627,25 +616,19 @@ void aer_rad_props_sw(
 
   // Special treatment for CMIP6 volcanic aerosols, where extinction, ssa
   // and af are directly read from the prescribed volcanic aerosol file
-  modal_aero_sw(dt, state_q, zm, temperature, pmid, pdel, pdeldry, cldn,
+  modal_aero_sw(dt, state_q, qqcw, zm, temperature, pmid, pdel, pdeldry, cldn,
                 // const int nnite,
                 // idxnite,
                 true, ext_cmip6_sw_inv_m_idx_sw_diag, ilev_tropp,
                 // qqcw_fld,
                 tau, tau_w, tau_w_g, tau_w_f,
                 //
-                nspec_amode, sigmag_amode, lmassptr_amode, spechygro,
-                specdens_amode, lspectype_amode,
-                // FIXME
-                specname_amode, aersol_optics_data,
+                specname_amode, // FIXME: move this parameters?
+                aersol_optics_data,
                 // diagnostic
                 diagnostics_aerosol_optics_sw,
                 // work views
-                dgnumdry_m, specrefindex, work
-                // ,
-                // mass, air_density, cheb, dgnumwet_m,  radsurf,
-                // logradsurf, specrefindex, qaerwat_m
-  );
+                specrefindex, work);
 
   // Update tau, tau_w, tau_w_g, and tau_w_f with the read in values of
   // extinction, ssa and asymmetry factors

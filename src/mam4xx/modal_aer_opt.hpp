@@ -6,6 +6,7 @@
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/ndrop.hpp>
 #include <mam4xx/water_uptake.hpp>
+#include <mam4xx/modal_aero_calcsize.hpp>
 
 namespace mam4 {
 namespace modal_aer_opt {
@@ -55,7 +56,6 @@ constexpr int idx_sw_diag = 10; // index to sw visible band
 constexpr int idx_nir_diag = 8; // index to sw near infrared (778-1240 nm) band
 constexpr int idx_uv_diag = 11; // index to sw uv (345-441 nm) band
 
-constexpr int maxd_aspectype = 14;
 // FIXME; is this values set somewhere else?
 constexpr int max_nspec = 7;
 
@@ -120,9 +120,9 @@ inline void set_aerosol_optics_data_for_modal_aero_lw_views(
 inline void
 set_complex_views_modal_aero(AerosolOpticsDeviceData &aersol_optics_data) {
   aersol_optics_data.specrefndxsw =
-      ComplexView2D("specrefndxsw", nswbands, maxd_aspectype);
+      ComplexView2D("specrefndxsw", nswbands, ndrop::maxd_aspectype);
   aersol_optics_data.specrefndxlw =
-      ComplexView2D("specrefndxlw", nlwbands, maxd_aspectype);
+      ComplexView2D("specrefndxlw", nlwbands, ndrop::maxd_aspectype);
 
   aersol_optics_data.crefwlw = ComplexView1D("crefwlw", nlwbands);
   aersol_optics_data.crefwsw = ComplexView1D("crefwsw", nswbands);
@@ -496,9 +496,9 @@ void modal_aero_wateruptake_dr(
     const ConstColumnView &pmid, const ConstColumnView &cldn,
     const View2D &dgnumdry_m, const View2D &dgnumwet_m, const View2D &qaerwat_m,
     // const int list_idx_in,
-    int nspec_amode[AeroConfig::num_modes()],
-    Real specdens_amode[maxd_aspectype], Real spechygro[maxd_aspectype],
-    int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()]) {
+    int nspec_amode[ntot_amode],
+    Real specdens_amode[ndrop::maxd_aspectype], Real spechygro[ndrop::maxd_aspectype],
+    int lspectype_amode[ndrop::maxd_aspectype][ntot_amode]) {
 
   // dgnumdry_m => dgncur_a
   // dgnumwet_m => dgncur_awet
@@ -531,32 +531,26 @@ inline int get_worksize_modal_aero_sw() {
   return 4 * pver + pver * ncoef +
          3 * pver * ntot_amode; // + 2*max_nspec*nswbands;
 }
+
 KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(const Real dt, const View2D &state_q,
+                   const View2D qqcw, 
                    const ConstColumnView &state_zm,
                    const ConstColumnView &temperature,
                    const ConstColumnView &pmid, const ConstColumnView &pdel,
                    const ConstColumnView &pdeldry, const ConstColumnView &cldn,
-                   // const int nnite,
-                   // idxnite,
                    const bool is_cmip6_volc, const ColumnView &ext_cmip6_sw,
                    const int trop_level,
                    // const ColumnView qqcw_fld[pcnst],
                    const View2D &tauxar, const View2D &wa, const View2D &ga,
                    const View2D &fa,
-                   //
-                   int nspec_amode[ntot_amode], Real sigmag_amode[ntot_amode],
-                   int lmassptr_amode[maxd_aspectype][ntot_amode],
-                   Real spechygro[maxd_aspectype],
-                   Real specdens_amode[maxd_aspectype],
-                   int lspectype_amode[maxd_aspectype][ntot_amode],
                    // FIXME
                    const mam4::AeroId specname_amode[9],
                    const AerosolOpticsDeviceData &aersol_optics_data,
                    // diagnostic
                    DiagnosticsAerosolOpticsSW &diagnostics_aerosol_optics_sw,
                    // work view
-                   const View2D &dgnumdry_m, const ComplexView2D &specrefindex,
+                  const ComplexView2D &specrefindex,
                    const View1D &work) {
 
   auto work_ptr = (Real *)work.data();
@@ -761,15 +755,92 @@ void modal_aero_sw(const Real dt, const View2D &state_q,
     }
   }
 
-  // Calculate aerosol size distribution parameters and aerosol water uptake
-  // For prognostic aerosols
-  // We compute dgnumdry_m using calcsize process.
-  // modal_aero_calcsize_sub(state_q, pdel, dt, qqcw_fld, list_idx, false,
-  //                         dgnumdry_m); // ! out
 
-  modal_aero_wateruptake_dr(state_q, temperature, pmid, cldn, dgnumdry_m,
-                            dgnumwet_m, qaerwat_m, nspec_amode, specdens_amode,
-                            spechygro, lspectype_amode);
+  int nspec_amode[ntot_amode];
+  int lspectype_amode[ndrop::maxd_aspectype][ntot_amode];
+  int lmassptr_amode[ndrop::maxd_aspectype][ntot_amode];
+  Real specdens_amode[ndrop::maxd_aspectype];
+  Real spechygro[ndrop::maxd_aspectype];
+  int numptr_amode[ntot_amode];
+  int mam_idx[ntot_amode][ndrop::nspec_max];
+  int mam_cnst_idx[ntot_amode][ndrop::nspec_max];
+
+  ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
+                               numptr_amode, specdens_amode, spechygro, mam_idx,
+                               mam_cnst_idx);
+
+
+  const bool do_adjust = true;
+  const bool do_aitacc_transfer = true;
+  const bool update_mmr = false;
+
+  // FIXME: inv_density: we have different order of species in mam4xx. 
+  Real inv_density[ntot_amode][AeroConfig::num_aerosol_ids()] =
+        {};
+  Real num2vol_ratio_min[ntot_amode] = {};
+  Real num2vol_ratio_max[ntot_amode] = {};
+  Real num2vol_ratio_max_nmodes[ntot_amode] = {};
+  Real num2vol_ratio_min_nmodes[ntot_amode] = {};
+  Real num2vol_ratio_nom_nmodes[ntot_amode] = {};
+  Real dgnmin_nmodes[ntot_amode] = {};
+  Real dgnmax_nmodes[ntot_amode] = {};
+  Real dgnnom_nmodes[ntot_amode] = {};
+  Real mean_std_dev_nmodes[ntot_amode] = {};
+    // outputs
+  bool noxf_acc2ait[AeroConfig::num_aerosol_ids()] = {};
+  int n_common_species_ait_accum = {};
+  int ait_spec_in_acc[AeroConfig::num_aerosol_ids()] = {};
+  int acc_spec_in_ait[AeroConfig::num_aerosol_ids()] = {};
+  // FIXME: inv_density 
+  modal_aero_calcsize::init_calcsize(
+        inv_density, num2vol_ratio_min, num2vol_ratio_max,
+        num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
+        num2vol_ratio_nom_nmodes, dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
+        mean_std_dev_nmodes,
+        // outputs
+        noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
+        acc_spec_in_ait);
+
+  // Note: Need to compute inv density using indexing from e3sm
+  for (int imode = 0; imode < ntot_amode; ++imode) {
+      const int nspec = nspec_amode[imode];
+      for (int isp = 0; isp < nspec; ++isp) {
+        const int idx = lspectype_amode[isp][imode] - 1;
+        inv_density[imode][isp] = 1.0 / specdens_amode[idx];
+      } // isp
+  }   // imode
+
+
+  for (int kk = top_lev; kk < pver; ++kk) {
+      const auto state_q_kk = Kokkos::subview(state_q, kk, Kokkos::ALL());
+      const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
+      Real dgncur_c_kk[ntot_amode] = {};
+      Real dgnumdry_m_kk[ntot_amode] = {};
+      //  Calculate aerosol size distribution parameters and aerosol water uptake
+      //For prognostic aerosols
+      modal_aero_calcsize::modal_aero_calcsize_sub(
+          state_q_kk.data(), // in
+          qqcw_k.data(),    // in/out
+          dt, do_adjust, do_aitacc_transfer, update_mmr, lmassptr_amode,
+          numptr_amode,
+          inv_density, // in
+          num2vol_ratio_min, num2vol_ratio_max, num2vol_ratio_max_nmodes,
+          num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes, dgnmin_nmodes,
+          dgnmax_nmodes, dgnnom_nmodes, mean_std_dev_nmodes,
+          // outputs
+          noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
+          acc_spec_in_ait, dgnumdry_m_kk, dgncur_c_kk);
+
+      const auto dgnumwet_m_kk = Kokkos::subview(dgnumwet_m, kk, Kokkos::ALL());
+      const auto qaerwat_m_kk = Kokkos::subview(qaerwat_m, kk, Kokkos::ALL());
+
+      mam4::water_uptake::modal_aero_water_uptake_dr(
+        nspec_amode, specdens_amode, spechygro, lspectype_amode,
+        state_q_kk.data(), temperature(kk), pmid(kk), cldn(kk),
+        dgnumdry_m_kk, dgnumwet_m_kk.data(), qaerwat_m_kk.data());
+
+  } // k
+
   // ! loop over all aerosol modes
 
   Real specvol[max_nspec] = {};
@@ -780,7 +851,9 @@ void modal_aero_sw(const Real dt, const View2D &state_q,
     dustaodmode[mm] = zero; //  dust aod in aerosol mode [1]
     // ! get mode info
     const int nspec = nspec_amode[mm];
-    const Real sigma_logr_aer = sigmag_amode[mm];
+    // const Real sigma_logr_aer = sigmag_amode[mm];
+    // CHECK if mean_std_dev_nmodes is equivalent to sigmag_amode
+    const Real sigma_logr_aer = mean_std_dev_nmodes[mm];
 
     for (int kk = top_lev; kk < pver; ++kk) {
 
@@ -1124,10 +1197,10 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
                    const View2D &tauxar,
                    // parameters
                    int nspec_amode[ntot_amode], Real sigmag_amode[ntot_amode],
-                   int lmassptr_amode[maxd_aspectype][ntot_amode],
-                   Real spechygro[maxd_aspectype],
-                   Real specdens_amode[maxd_aspectype],
-                   int lspectype_amode[maxd_aspectype][ntot_amode],
+                   int lmassptr_amode[ndrop::maxd_aspectype][ntot_amode],
+                   Real spechygro[ndrop::maxd_aspectype],
+                   Real specdens_amode[ndrop::maxd_aspectype],
+                   int lspectype_amode[ndrop::maxd_aspectype][ntot_amode],
                    const AerosolOpticsDeviceData &aersol_optics_data,
                    // work views
                    const ColumnView &mass, const View2D &cheb,
