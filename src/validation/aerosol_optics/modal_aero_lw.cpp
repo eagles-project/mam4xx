@@ -26,25 +26,22 @@ void modal_aero_lw(Ensemble *ensemble) {
     const auto dt = input.get_array("dt")[0];
     // const Real t = zero;
     const auto state_q_db = input.get_array("state_q");
-    const auto qqcw_db = input.get_array("qqcw"); // 2d
+    auto qqcw_db = input.get_array("qqcw"); // 2d
 
-    int count = 0;
 
     View2D state_q("state_q", pver, nvars);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
     View2D qqcw("qqcw", pver, pcnst);
     auto qqcw_host = Kokkos::create_mirror_view(qqcw);
-    count = 0;
 
-    for (int i = 0; i < pcnst; ++i) {
-      // input data is store on the cpu.
-      for (int kk = 0; kk < pver; ++kk) {
+    int count = 0;
+    for (int kk = 0; kk < pver; ++kk) {
+      for (int i = 0; i < pcnst; ++i) {
         qqcw_host(kk, i) = qqcw_db[count];
         count++;
       }
     }
-
     Kokkos::deep_copy(qqcw, qqcw_host);
 
     const auto temperature_db = input.get_array("temperature");
@@ -236,10 +233,17 @@ void modal_aero_lw(Ensemble *ensemble) {
                         // work views
                         specrefindex, work);
         });
-    std::vector<Real> qqcw_out(pver * pcnst, zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(qqcw, qqcw_out);
 
-    output.set("qqcw", qqcw_out);
+    Kokkos::deep_copy(qqcw_host, qqcw);
+    count = 0;
+    for (int kk = 0; kk < pver; ++kk) {
+      for (int i = 0; i < pcnst; ++i) {
+        qqcw_db[count] = qqcw_host(kk, i);
+        count++;
+      }
+    }
+
+    output.set("qqcw", qqcw_db);
 
     std::vector<Real> tauxar_out(pver * nlwbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(tauxar, tauxar_out);

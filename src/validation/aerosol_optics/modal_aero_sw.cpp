@@ -78,19 +78,17 @@ void modal_aero_sw(Ensemble *ensemble) {
     Kokkos::deep_copy(ext_cmip6_sw, ext_cmip6_sw_host);
 
     const int trop_level = int(input.get_array("trop_level")[0]);
-    const auto qqcw_db = input.get_array("qqcw"); // 2d
+    auto qqcw_db = input.get_array("qqcw"); // 2d
 
     View2D qqcw("qqcw", pver, pcnst);
     auto qqcw_host = Kokkos::create_mirror_view(qqcw);
     count = 0;
-    for (int i = 0; i < pcnst; ++i) {
-      // input data is store on the cpu.
-      for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < pver; ++kk) {
+      for (int i = 0; i < pcnst; ++i) {
         qqcw_host(kk, i) = qqcw_db[count];
         count++;
       }
     }
-
     Kokkos::deep_copy(qqcw, qqcw_host);
 
     AerosolOpticsDeviceData aersol_optics_data{};
@@ -276,10 +274,10 @@ void modal_aero_sw(Ensemble *ensemble) {
     View2D tauxar, wa, ga, fa;
 
     tauxar =
-        View2D("tauxar", pver, nswbands); // layer extinction optical depth [1]
-    wa = View2D("wa", pver, nswbands);    // layer single-scatter albedo [1]
-    ga = View2D("ga", pver, nswbands);    // asymmetry factor [1]
-    fa = View2D("fa", pver, nswbands);    // forward scattered fraction [1]
+        View2D("tauxar", pver+1, nswbands); // layer extinction optical depth [1]
+    wa = View2D("wa", pver+1, nswbands);    // layer single-scatter albedo [1]
+    ga = View2D("ga", pver+1, nswbands);    // asymmetry factor [1]
+    fa = View2D("fa", pver+1, nswbands);    // forward scattered fraction [1]
 
     // I need this:
     // 1. crefwlw
@@ -364,24 +362,30 @@ void modal_aero_sw(Ensemble *ensemble) {
           }
         });
 
-    std::vector<Real> qqcw_out(pver * pcnst, zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(qqcw, qqcw_out);
+    Kokkos::deep_copy(qqcw_host, qqcw);
+    count = 0;
+    for (int kk = 0; kk < pver; ++kk) {
+      for (int i = 0; i < pcnst; ++i) {
+        qqcw_db[count] = qqcw_host(kk, i);
+        count++;
+      }
+    }
 
-    output.set("qqcw", qqcw_out);
-
-    std::vector<Real> tauxar_out(pver * nswbands, zero);
+    output.set("qqcw", qqcw_db);
+    const int pver_po = pver +1; 
+    std::vector<Real> tauxar_out(pver_po * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(tauxar, tauxar_out);
     output.set("tauxar", tauxar_out);
 
-    std::vector<Real> wa_out(pver * nswbands, zero);
+    std::vector<Real> wa_out(pver_po * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(wa, wa_out);
     output.set("wa", wa_out);
 
-    std::vector<Real> ga_out(pver * nswbands, zero);
+    std::vector<Real> ga_out(pver_po * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(ga, ga_out);
     output.set("ga", ga_out);
 
-    std::vector<Real> fa_out(pver * nswbands, zero);
+    std::vector<Real> fa_out(pver_po * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(fa, fa_out);
     output.set("fa", fa_out);
 
