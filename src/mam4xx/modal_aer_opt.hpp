@@ -746,14 +746,26 @@ void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
     // diagnostics for visible band summed over modes
     extinct(kk) = zero;
     absorb(kk) = zero;
-    // initialize output variables
-    for (int i = 0; i < nswbands; ++i) {
+
+  }
+  // initialize output variables
+    // zero'th layer does not contain aerosol
+  for (int i = 0; i < nswbands; ++i) {
+  // BAD CONSTANT
+  tauxar(0,i)  = zero;  // BAD CONSTANT
+  wa(0,i)      = 0.925; // BAD CONSTANT
+  ga(0,i)      = 0.850; // BAD CONSTANT
+  fa(0,i)      = 0.7225;
+ }
+for (int kk = 1; kk < pver; ++kk) {
+ for (int i = 0; i < nswbands; ++i) {
       tauxar(kk, i) = zero;
       wa(kk, i) = zero;
       ga(kk, i) = zero;
       fa(kk, i) = zero;
     }
   }
+
 
   int nspec_amode[ntot_amode];
   int lspectype_amode[ndrop::maxd_aspectype][ntot_amode];
@@ -1171,9 +1183,9 @@ void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
         //                     inout pext(icol), specpext(icol) ) ! optional in
         // NOTE: fortran code has an additional index
         tauxar(kk+1, isw) += dopaer;
-        wa(kk, isw) += dopaer * palb;
-        ga(kk, isw) += dopaer * palb * pasm;
-        fa(kk, isw) += dopaer * palb * pasm * pasm;
+        wa(kk+1, isw) += dopaer * palb;
+        ga(kk+1, isw) += dopaer * palb * pasm;
+        fa(kk+1, isw) += dopaer * palb * pasm * pasm;
         // enddo
       } // k
     }   // isw
