@@ -12,6 +12,7 @@
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/calcsize.hpp>
+#include <mam4xx/ndrop.hpp>
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
@@ -24,15 +25,6 @@ using haero::sqrt;
 
 constexpr int maxd_aspectype = ndrop::maxd_aspectype;
 
-// size_adjustment(list_idx_local, top_lev, ncol, lchnk, imode, dryvol_a,
-// state_q,
-//                 &!input dryvol_c, pdel, do_adjust, update_mmr,
-//                 do_aitacc_transfer, deltatinv, fracadj, qqcw, &!input
-//                 dgncur_a, dgncur_c, v2ncur_a, v2ncur_c, &!output drv_a_accsv,
-//                 drv_c_accsv, drv_a_aitsv, drv_c_aitsv, drv_a_sv, drv_c_sv,
-//                 &!output num_a_accsv, num_c_accsv, num_a_aitsv, num_c_aitsv,
-//                 num_a_sv, num_c_sv, &!output dotend, dotendqqcw, dqdt,
-//                 dqqcwdt, qsrflx)
 KOKKOS_INLINE_FUNCTION
 void init_calcsize(
     Real inv_density[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],

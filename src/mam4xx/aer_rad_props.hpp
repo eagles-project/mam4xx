@@ -442,25 +442,18 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
 //
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_lw(
+    // inputs
     const Real dt, const ConstColumnView &pmid, const ConstColumnView &pint,
     const ConstColumnView &temperature, const ConstColumnView &zm,
-    const ConstColumnView &zi, const View2D &state_q,
+    const ConstColumnView &zi, const View2D &state_q, const View2D &qqcw,
     const ConstColumnView &pdel, const ConstColumnView &pdeldry,
     const ConstColumnView &cldn, const View2D &ext_cmip6_lw,
-    // const ColumnView qqcw_fld[pcnst],
-    const View2D &odap_aer,
-    //
-    int nspec_amode[ntot_amode], Real sigmag_amode[ntot_amode],
-    int lmassptr_amode[ndrop::maxd_aspectype][ntot_amode],
-    Real spechygro[ndrop::maxd_aspectype],
-    Real specdens_amode[ndrop::maxd_aspectype],
-    int lspectype_amode[ndrop::maxd_aspectype][ntot_amode],
     const AerosolOpticsDeviceData &aersol_optics_data,
+    // output
+    const View2D &odap_aer,
     // work views
-    const ColumnView &mass, const View2D &cheb, const View2D &dgnumwet_m,
-    const View2D &dgnumdry_m, const ColumnView &radsurf,
-    const ColumnView &logradsurf, const ComplexView2D &specrefindex,
-    const View2D &qaerwat_m, const View2D &ext_cmip6_lw_inv_m
+    const ComplexView2D &specrefindex,
+    const View1D &work, const View2D &ext_cmip6_lw_inv_m
 
 ) {
 
@@ -488,15 +481,12 @@ void aer_rad_props_lw(
   //  odap_aer(pcols,pver,nlwbands) ! [fraction] absorption optical depth, per
   //  layer [unitless]
   // Compute contributions from the modal aerosols.
-  modal_aero_lw(dt, state_q, temperature, pmid, pdel, pdeldry, cldn,
-                // qqcw_fld,
+  modal_aero_lw(dt, state_q, qqcw,  temperature, pmid, pdel, pdeldry, cldn,
+                aersol_optics_data,
+                // outputs 
                 odap_aer,
-                // parameters
-                nspec_amode, sigmag_amode, lmassptr_amode, spechygro,
-                specdens_amode, lspectype_amode, aersol_optics_data,
                 // work views
-                mass, cheb, dgnumwet_m, dgnumdry_m, radsurf, logradsurf,
-                specrefindex, qaerwat_m);
+                specrefindex, work);
 
   // !write out ext from the volcanic input file
   // call outfld('extinct_lw_inp',ext_cmip6_lw(:,:,idx_lw_diag), pcols, lchnk)

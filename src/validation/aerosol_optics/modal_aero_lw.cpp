@@ -31,17 +31,7 @@ void modal_aero_lw(Ensemble *ensemble) {
     int count = 0;
 
     View2D state_q("state_q", pver, nvars);
-    auto state_host = Kokkos::create_mirror_view(state_q);
-
-    for (int i = 0; i < nvars; ++i) {
-      // input data is store on the cpu.
-      for (int kk = 0; kk < pver; ++kk) {
-        state_host(kk, i) = state_q_db[count];
-        count++;
-      }
-    }
-
-    Kokkos::deep_copy(state_q, state_host);
+    mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
     View2D qqcw("qqcw", pver, pcnst);
     auto qqcw_host = Kokkos::create_mirror_view(qqcw);
@@ -103,7 +93,6 @@ void modal_aero_lw(Ensemble *ensemble) {
     AerosolOpticsDeviceData aersol_optics_data{};
     set_complex_views_modal_aero(aersol_optics_data);
 
-    // ComplexView2D specrefndxlw("specrefndxlw", nlwbands, maxd_aspectype);
     auto specrefndxlw_host =
         Kokkos::create_mirror_view(aersol_optics_data.specrefndxlw);
 
@@ -139,20 +128,15 @@ void modal_aero_lw(Ensemble *ensemble) {
     }
 
     const auto absplw_db = input.get_array("absplw");
-    // View5D absplw("absplw", ntot_amode, coef_number, refindex_real,
-    // refindex_im,
-    //               nlwbands);
+
     printf("ntot_amode %d nlwbands %d  ", ntot_amode, nlwbands);
 
     View3DHost absplw3_host[ntot_amode][nlwbands];
-    // ("absplw3", coef_number, refindex_real, refindex_im);
     for (int d1 = 0; d1 < ntot_amode; ++d1)
       for (int d5 = 0; d5 < nlwbands; ++d5) {
         absplw3_host[d1][d5] =
             View3DHost("t1", coef_number, refindex_real, refindex_im);
       }
-
-    // auto absplw_host = Kokkos::create_mirror_view(absplw);
 
     // assuming 1d array is saved using column-major layout
     for (int d1 = 0; d1 < ntot_amode; ++d1) {
@@ -165,7 +149,6 @@ void modal_aero_lw(Ensemble *ensemble) {
                   ntot_amode *
                       (d2 + coef_number *
                                 (d3 + refindex_real * (d4 + refindex_im * d5)));
-              // absplw_host(d1, d2, d3, d4, d5) = absplw_db[offset];
               absplw3_host[d1][d5](d2, d3, d4) = absplw_db[offset];
             } // d5
           }   // d4
@@ -173,28 +156,18 @@ void modal_aero_lw(Ensemble *ensemble) {
       }       // d2
     }         // d1
 
-    // Kokkos::deep_copy(absplw, absplw_host);
 
     set_aerosol_optics_data_for_modal_aero_lw_views(aersol_optics_data);
 
-    // View3D absplw3[ntot_amode][nlwbands];
-    // ("absplw3", coef_number, refindex_real, refindex_im);
     for (int d1 = 0; d1 < ntot_amode; ++d1)
       for (int d5 = 0; d5 < nlwbands; ++d5) {
-        // absplw3[d1][d5] = View3D("t1", coef_number, refindex_real,
-        // refindex_im);
         Kokkos::deep_copy(aersol_optics_data.absplw[d1][d5],
                           absplw3_host[d1][d5]);
-        //
       }
 
-    // View3D refrtablw, refitablw;
 
     const auto refrtablw_db = input.get_array("refrtablw");
     const auto refitablw_db = input.get_array("refitablw");
-
-    // refrtablw = View3D("refrtablw", ntot_amode, refindex_real, nlwbands);
-    // auto refrtablw_host = Kokkos::create_mirror_view(refrtablw);
 
     int N1 = ntot_amode;
     int N2 = refindex_real;
@@ -214,16 +187,11 @@ void modal_aero_lw(Ensemble *ensemble) {
 
         } // d3
 
-    // View1D refrtablw[ntot_amode][nlwbands];
     for (int d1 = 0; d1 < N1; ++d1)
       for (int d3 = 0; d3 < N3; ++d3) {
-        // refrtablw[d1][d3] = View1D("refrtablw", refindex_real);
         Kokkos::deep_copy(aersol_optics_data.refrtablw[d1][d3],
                           refrtablw_host[d1][d3]);
       } // d3
-
-    // refitablw = View3D("refitablw", ntot_amode, refindex_im, nlwbands);
-    // auto refitablw_host = Kokkos::create_mirror_view(refitablw);
 
     N1 = ntot_amode;
     N2 = refindex_im;
@@ -239,132 +207,35 @@ void modal_aero_lw(Ensemble *ensemble) {
       for (int d2 = 0; d2 < N2; ++d2)
         for (int d3 = 0; d3 < N3; ++d3) {
           const int offset = d1 + N1 * (d2 + d3 * N2);
-          // refitablw_host(d1, d2, d3) = refitablw_db[offset];
           refitablw_host[d1][d3](d2) = refitablw_db[offset];
         } // d3
 
-    // Kokkos::deep_copy(refitablw, refitablw_host);
-
-    // View1D refitablw[ntot_amode][nlwbands];
     for (int d1 = 0; d1 < N1; ++d1)
       for (int d3 = 0; d3 < N3; ++d3) {
-        // refitablw[d1][d3] = View1D("refitablw", refindex_im);
         Kokkos::deep_copy(aersol_optics_data.refitablw[d1][d3],
                           refitablw_host[d1][d3]);
       } // d3
 
     // work views
-    ColumnView mass;
-    ColumnView radsurf;
-    ColumnView logradsurf;
-
-    mass = haero::testing::create_column_view(pver);
-    radsurf = haero::testing::create_column_view(pver);
-    logradsurf = haero::testing::create_column_view(pver);
-
-    View2D cheb("cheb", ncoef, pver);
-    View2D dgnumwet_m("dgnumwet_m", pver, ntot_amode);
-    View2D dgnumdry_m("dgnumdry_m", pver, ntot_amode);
-
     ComplexView2D specrefindex("specrefindex", max_nspec, nlwbands);
-    View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
-    Kokkos::deep_copy(qaerwat_m, zero);
 
-    // output
+    const int wlen = get_worksize_modal_aero_lw();
+    View1D work("work", wlen);
 
     View2D tauxar("tauxar", pver, nlwbands);
-
-    const bool do_adjust = true;
-    const bool do_aitacc_transfer = true;
-    const bool update_mmr = false;
-
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          int nspec_amode[ntot_amode];
-          int lspectype_amode[maxd_aspectype][ntot_amode];
-          int lmassptr_amode[maxd_aspectype][ntot_amode];
-          Real specdens_amode[maxd_aspectype];
-          Real spechygro[maxd_aspectype];
-          int numptr_amode[ntot_amode];
-          int mam_idx[ntot_amode][nspec_max];
-          int mam_cnst_idx[ntot_amode][nspec_max];
 
-          get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
-                              numptr_amode, specdens_amode, spechygro, mam_idx,
-                              mam_cnst_idx);
-
-          team.team_barrier();
-
-          // compute with calcsize:
-
-          Real inv_density[AeroConfig::num_modes()]
-                          [AeroConfig::num_aerosol_ids()] = {};
-          Real num2vol_ratio_min[AeroConfig::num_modes()] = {};
-          Real num2vol_ratio_max[AeroConfig::num_modes()] = {};
-          Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
-          Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()] = {};
-          Real num2vol_ratio_nom_nmodes[AeroConfig::num_modes()] = {};
-          Real dgnmin_nmodes[AeroConfig::num_modes()] = {};
-          Real dgnmax_nmodes[AeroConfig::num_modes()] = {};
-          Real dgnnom_nmodes[AeroConfig::num_modes()] = {};
-          Real mean_std_dev_nmodes[AeroConfig::num_modes()] = {};
-          // outputs
-          bool noxf_acc2ait[AeroConfig::num_aerosol_ids()] = {};
-          int n_common_species_ait_accum = {};
-          int ait_spec_in_acc[AeroConfig::num_aerosol_ids()] = {};
-          int acc_spec_in_ait[AeroConfig::num_aerosol_ids()] = {};
-
-          modal_aero_calcsize::init_calcsize(
-              inv_density, num2vol_ratio_min, num2vol_ratio_max,
-              num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
-              num2vol_ratio_nom_nmodes, dgnmin_nmodes, dgnmax_nmodes,
-              dgnnom_nmodes, mean_std_dev_nmodes,
-              // outputs
-              noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
-              acc_spec_in_ait);
-
-          for (int kk = mam4::ndrop::top_lev; kk < pver; ++kk) {
-
-            const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
-            const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
-            auto dgncur_i = Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
-            Real dgncur_c[ntot_amode] = {};
-            modal_aero_calcsize::modal_aero_calcsize_sub(
-                state_q_k.data(), // in
-                qqcw_k.data(),    // in
-                dt, do_adjust, do_aitacc_transfer, update_mmr, lmassptr_amode,
-                numptr_amode,
-                inv_density, // in
-                num2vol_ratio_min, num2vol_ratio_max, num2vol_ratio_max_nmodes,
-                num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes,
-                dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
-                mean_std_dev_nmodes,
-                // outputs
-                noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
-                acc_spec_in_ait, dgncur_i.data(), dgncur_c);
-          } // k
-
-          team.team_barrier();
-
-          // FIXME
-          Real sigmag_amode_[ntot_amode] = {};
-
-          for (int i = 0; i < ntot_amode; ++i) {
-            sigmag_amode_[i] = sigmag_amode[i];
-          }
-
-          modal_aero_lw(dt, state_q, temperature, pmid, pdel, pdeldry, cldn,
-                        // qqcw,
+          modal_aero_lw(dt, state_q, qqcw,
+                        temperature, pmid,
+                        pdel, pdeldry, cldn,
+                        aersol_optics_data,
                         tauxar,
                         // parameters
-                        nspec_amode, sigmag_amode_, lmassptr_amode, spechygro,
-                        specdens_amode, lspectype_amode, aersol_optics_data,
                         // work views
-                        mass, cheb, dgnumwet_m, dgnumdry_m, radsurf, logradsurf,
-                        specrefindex, qaerwat_m);
+                        specrefindex, work);
         });
-
     std::vector<Real> qqcw_out(pver * pcnst, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(qqcw, qqcw_out);
 
