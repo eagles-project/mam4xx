@@ -77,7 +77,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     auto ext_cmip6_sw_host = View1DHost((Real *)ext_cmip6_sw_db.data(), pver);
     Kokkos::deep_copy(ext_cmip6_sw, ext_cmip6_sw_host);
 
-
     const int trop_level = int(input.get_array("trop_level")[0]);
     const auto qqcw_db = input.get_array("qqcw"); // 2d
 
@@ -317,24 +316,20 @@ void modal_aero_sw(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-
           DiagnosticsAerosolOpticsSW diagnostics_aerosol_optics_sw{};
           diagnostics_aerosol_optics_sw.extinct = extinct;
           diagnostics_aerosol_optics_sw.absorb = absorb;
 
-          modal_aero_sw(dt, state_q, qqcw, state_zm, temperature, pmid, pdel, pdeldry,
-                        cldn,
-                        is_cmip6_volc, ext_cmip6_sw, trop_level,
-                        //outputs
+          modal_aero_sw(dt, state_q, qqcw, state_zm, temperature, pmid, pdel,
+                        pdeldry, cldn, is_cmip6_volc, ext_cmip6_sw, trop_level,
+                        // outputs
                         tauxar, wa, ga, fa,
                         //
-                        specname_amode,
-                        aersol_optics_data,
+                        specname_amode, aersol_optics_data,
                         // diagnostic
                         diagnostics_aerosol_optics_sw,
                         // work views
-                        specrefindex, work
-          );
+                        specrefindex, work);
 
           output_diagnostics(0) = diagnostics_aerosol_optics_sw.aodnir;
           output_diagnostics(1) = diagnostics_aerosol_optics_sw.aoduv;
