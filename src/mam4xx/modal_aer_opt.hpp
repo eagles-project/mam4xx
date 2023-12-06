@@ -558,7 +558,7 @@ void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
   work_ptr += pver;
   auto air_density = ColumnView(work_ptr, pver);
   work_ptr += pver;
-  auto cheb = View2D(work_ptr, ncoef, pver);
+  auto cheb = View2D(work_ptr,pver, ncoef);
   work_ptr += pver * ncoef;
   auto dgnumwet_m = View2D(work_ptr, pver, ntot_amode);
   work_ptr += pver * ntot_amode;
@@ -853,7 +853,7 @@ void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
 
     for (int kk = top_lev; kk < pver; ++kk) {
 
-      auto cheb_kk = Kokkos::subview(cheb, Kokkos::ALL(), kk);
+      auto cheb_kk = Kokkos::subview(cheb, kk, Kokkos::ALL());
       modal_size_parameters(sigma_logr_aer, dgnumwet_m(kk, mm), // in
                             radsurf(kk), logradsurf(kk), cheb_kk.data(), false);
     } // kk
@@ -1032,7 +1032,7 @@ void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
 
         // parameterized optical properties
         // FIXME: this can be an issue
-        const auto cheb_k = Kokkos::subview(cheb, Kokkos::ALL(), kk);
+        const auto cheb_k = Kokkos::subview(cheb, kk, Kokkos::ALL());
         Real pext = zero; //    parameterized specific extinction [m2/kg]
         calc_parameterized(cext, cheb_k.data(), pext);
         Real pabs = zero; // parameterized specific absorption [m2/kg]
