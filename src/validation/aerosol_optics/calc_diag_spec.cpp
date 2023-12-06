@@ -38,7 +38,7 @@ void calc_diag_spec(Ensemble *ensemble) {
 
     calc_diag_spec(specmmr_k, mass_k, vol, specrefr, specrefi, hygro_aer,
                    burden_s, scat_s, abs_s, hygro_s);
-    // NOTE: skywalker fails if there is duplicates in outputs.
+    // NOTE: skywalker fails if there are duplicates in outputs.
     output.set("burden_s", std::vector<Real>(1, burden_s));
     output.set("scat_s", std::vector<Real>(1, scat_s));
     output.set("abs_s", std::vector<Real>(1, abs_s));

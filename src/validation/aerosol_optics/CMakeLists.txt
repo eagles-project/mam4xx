@@ -18,6 +18,7 @@ add_executable(aerosol_optics_driver
                modal_size_parameters.cpp
                modal_aero_sw.cpp
                modal_aero_lw.cpp
+               calc_parameterized.cpp
                )
 
 target_link_libraries(aerosol_optics_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -43,6 +44,7 @@ set(TEST_LIST
     modal_size_parameters_ts_355_ismethod2_true
     modal_aero_sw_ts_355
     modal_aero_lw_ts_355
+    calc_parameterized_ts_355
     )
 # # matching the tests and errors, just for convenience
 
@@ -57,6 +59,7 @@ set(ERROR_THRESHOLDS
    2e-8
    ${DEFAULT_TOL}
    ${DEFAULT_TOL}
+   2e-11
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.

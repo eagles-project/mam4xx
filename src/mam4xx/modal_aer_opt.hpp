@@ -22,7 +22,9 @@ using ConstColumnView = haero::ConstColumnView;
 
 constexpr int pver = mam4::nlev;
 constexpr int ntot_amode = mam4::AeroConfig::num_modes();
-constexpr int top_lev = ndrop::top_lev;
+// FIXME:  is top_lev equal to 1 in aerosol optics ?
+constexpr int top_lev = 0;
+//
 constexpr int pcnst = 40;
 // ! min, max aerosol surface mode radius treated [m]
 constexpr Real rmmin = 0.01e-6;
@@ -1029,6 +1031,7 @@ void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
                 itab, jtab, ttab, utab, casm, itab_1);
 
         // parameterized optical properties
+        // FIXME: this can be an issue
         const auto cheb_k = Kokkos::subview(cheb, Kokkos::ALL(), kk);
         Real pext = zero; //    parameterized specific extinction [m2/kg]
         calc_parameterized(cext, cheb_k.data(), pext);
@@ -1166,8 +1169,8 @@ void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
         //                     watervol, crefin,cabs,& ! in specdens,
         //                     specrefindex, specvol, & ! in nerr_dopaer, & !
         //                     inout pext(icol), specpext(icol) ) ! optional in
-
-        tauxar(kk, isw) += dopaer;
+        // NOTE: fortran code has an additional index
+        tauxar(kk+1, isw) += dopaer;
         wa(kk, isw) += dopaer * palb;
         ga(kk, isw) += dopaer * palb * pasm;
         fa(kk, isw) += dopaer * palb * pasm * pasm;
