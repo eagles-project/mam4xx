@@ -494,39 +494,6 @@ void binterp(const View3D &table, const Real ref_real, const Real ref_img,
 
 } // binterp
 
-KOKKOS_INLINE_FUNCTION
-void modal_aero_wateruptake_dr(
-    const View2D &state_q, const ConstColumnView &temperature,
-    const ConstColumnView &pmid, const ConstColumnView &cldn,
-    const View2D &dgnumdry_m, const View2D &dgnumwet_m, const View2D &qaerwat_m,
-    // const int list_idx_in,
-    int nspec_amode[ntot_amode], Real specdens_amode[ndrop::maxd_aspectype],
-    Real spechygro[ndrop::maxd_aspectype],
-    int lspectype_amode[ndrop::maxd_aspectype][ntot_amode]) {
-
-  // dgnumdry_m => dgncur_a
-  // dgnumwet_m => dgncur_awet
-  // qaerwat_m => qaerwat
-  // int &nspec_amode2 = nspec_amode;
-  // Real &specdens_amode2 = specdens_amode;
-  // Real & spechygro2 = spechygro;
-  // int &lspectype_amode2 = lspectype_amode;
-  for (int kk = top_lev; kk < pver; ++kk) {
-
-    const auto state_q_kk = Kokkos::subview(state_q, kk, Kokkos::ALL());
-    const auto dgnumdry_m_kk = Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
-    const auto dgnumwet_m_kk = Kokkos::subview(dgnumwet_m, kk, Kokkos::ALL());
-    const auto qaerwat_m_kk = Kokkos::subview(qaerwat_m, kk, Kokkos::ALL());
-    mam4::water_uptake::modal_aero_water_uptake_dr(
-        nspec_amode, specdens_amode, spechygro, lspectype_amode,
-        state_q_kk.data(), temperature(kk), pmid(kk), cldn(kk),
-        dgnumdry_m_kk.data(), dgnumwet_m_kk.data(), qaerwat_m_kk.data());
-
-  } // kk
-
-  // placeholder
-} // modal_aero_wateruptake_dr
-
 inline int get_worksize_modal_aero_sw() {
   // mass, air_density, radsurf, logradsurf  => pver
   // dgnumwet_m, dgnumdry_m, qaerwat_m => pver*ntot_amode
