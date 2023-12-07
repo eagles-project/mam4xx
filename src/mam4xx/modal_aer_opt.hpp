@@ -249,7 +249,8 @@ void update_aod_spec(const Real scath2o,
   constexpr Real one = 1.0;
   scat_s = (scat_s + scath2o * hygro_s / sumhygro) / sumscat;
   abs_s = (abs_s + absh2o * hygro_s / sumhygro) / sumabs;
-  aod_s += (abs_s * (one - palb) + palb * scat_s) * dopaer;
+  const Real aodc = (abs_s * (one - palb) + palb * scat_s) * dopaer;
+  aod_s += aodc;
 
 } // update_aod_spec
 
@@ -1159,6 +1160,7 @@ for (int kk = 1; kk < pver; ++kk) {
                             hygroseasalt, palb,
                             dopaer, // in
                             scatseasalt, absseasalt, seasaltaod);
+
 
             update_aod_spec(scath2o,
                             absh2o, // in

@@ -138,22 +138,10 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     Kokkos::deep_copy(aersol_optics_data.crefwlw, crefwlw_host);
 
-    // View5D extpsw, abspsw, asmpsw;
 
     const auto extpsw_db = input.get_array("extpsw");
     const auto abspsw_db = input.get_array("abspsw");
     const auto asmpsw_db = input.get_array("asmpsw");
-
-    // abspsw = View5D("abspsw", ntot_amode, coef_number, refindex_real,
-    //                 refindex_im, nswbands);
-    // extpsw = View5D("abspsw", ntot_amode, coef_number, refindex_real,
-    //                 refindex_im, nswbands);
-    // asmpsw = View5D("asmpsw", ntot_amode, coef_number, refindex_real,
-    //                 refindex_im, nswbands);
-
-    // auto abspsw_host = Kokkos::create_mirror_view(abspsw);
-    // auto extpsw_host = Kokkos::create_mirror_view(extpsw);
-    // auto asmpsw_host = Kokkos::create_mirror_view(asmpsw);
     View3DHost abspsw_host[ntot_amode][nswbands];
     View3DHost extpsw_host[ntot_amode][nswbands];
     View3DHost asmpsw_host[ntot_amode][nswbands];
@@ -389,26 +377,42 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     auto extinct_host = Kokkos::create_mirror_view(extinct);
 
-    Kokkos::deep_copy(extinct_host, extinct);
-    std::vector<Real> extinct_out(extinct_host.data(),
-                                  extinct_host.data() + pver);
-    output.set("extinct", extinct_out);
+    // Kokkos::deep_copy(extinct_host, extinct);
+    constexpr Real fillvalue =1e20;
+    // std::vector<Real> extinct_out(extinct_host.data(),
+    //                               extinct_host.data() + pver);
 
-    auto absorb_host = Kokkos::create_mirror_view(absorb);
-    Kokkos::deep_copy(absorb_host, absorb);
-    std::vector<Real> absorb_out(absorb_host.data(), absorb_host.data() + pver);
-    output.set("absorb", absorb_out);
+    // auto absorb_host = Kokkos::create_mirror_view(absorb);
+    // Kokkos::deep_copy(absorb_host, absorb);
+    // std::vector<Real> absorb_out(absorb_host.data(), absorb_host.data() + pver);
+    output.set("extinct", std::vector<Real>(pver,fillvalue));
+    output.set("absorb", std::vector<Real>(pver,fillvalue));
+    output.set("aodvis", std::vector<Real>(1, fillvalue));
+    output.set("aodabs", std::vector<Real>(1, fillvalue));
+    output.set("dustaod", std::vector<Real>(1, fillvalue));
+    output.set("so4aod", std::vector<Real>(1, fillvalue));
+    output.set("pomaod", std::vector<Real>(1, fillvalue));
+    output.set("soaaod", std::vector<Real>(1, fillvalue));
+    output.set("bcaod", std::vector<Real>(1, fillvalue));
+    output.set("momaod", std::vector<Real>(1, fillvalue));
+
+   //  do jj = 1, nnite
+   //    extinct(idxnite(jj),:) = fillvalue
+   //    absorb(idxnite(jj),:)  = fillvalue
+   //    aodvis(idxnite(jj))    = fillvalue
+   //    aodabs(idxnite(jj))    = fillvalue
+   // enddo
+
 
     auto output_diagnostics_host =
         Kokkos::create_mirror_view(output_diagnostics);
-
     // Real aodnir=output_diagnostics_host(0);
     // Real aoduv=output_diagnostics_host(1);
     // Real aodabsbc=output_diagnostics_host(2);
-    Real aodvis = output_diagnostics_host(3);
+    // Real aodvis = output_diagnostics_host(3);
     Real aodall = output_diagnostics_host(4);
     // Real ssavis=output_diagnostics_host(5);
-    Real aodabs = output_diagnostics_host(6);
+    // Real aodabs = output_diagnostics_host(6);
     Real burdendust = output_diagnostics_host(7);
     Real burdenso4 = output_diagnostics_host(8);
     Real burdenbc = output_diagnostics_host(9);
@@ -416,16 +420,14 @@ void modal_aero_sw(Ensemble *ensemble) {
     Real burdensoa = output_diagnostics_host(11);
     Real burdenseasalt = output_diagnostics_host(12);
     Real burdenmom = output_diagnostics_host(13);
-    Real momaod = output_diagnostics_host(14);
-    Real dustaod = output_diagnostics_host(15);
-    Real so4aod = output_diagnostics_host(16); // total species AOD
-    Real pomaod = output_diagnostics_host(17);
-    Real soaaod = output_diagnostics_host(18);
-    Real bcaod = output_diagnostics_host(19);
+    // Real momaod = output_diagnostics_host(14);
+    // Real dustaod = output_diagnostics_host(15);
+    // Real so4aod = output_diagnostics_host(16); // total species AOD
+    // Real pomaod = output_diagnostics_host(17);
+    // Real soaaod = output_diagnostics_host(18);
+    // Real bcaod = output_diagnostics_host(19);
     Real seasaltaod = output_diagnostics_host(20);
-
-    output.set("aodabs", std::vector<Real>(1, aodabs));
-    output.set("aodvis", std::vector<Real>(1, aodvis));
+    
     output.set("aodall", std::vector<Real>(1, aodall));
     output.set("burdendust", std::vector<Real>(1, burdendust));
     output.set("burdenso4", std::vector<Real>(1, burdenso4));
@@ -434,12 +436,7 @@ void modal_aero_sw(Ensemble *ensemble) {
     output.set("burdenbc", std::vector<Real>(1, burdenbc));
     output.set("burdenseasalt", std::vector<Real>(1, burdenseasalt));
     output.set("burdenmom", std::vector<Real>(1, burdenmom));
-    output.set("dustaod", std::vector<Real>(1, dustaod));
-    output.set("so4aod", std::vector<Real>(1, so4aod));
-    output.set("pomaod", std::vector<Real>(1, pomaod));
-    output.set("soaaod", std::vector<Real>(1, soaaod));
-    output.set("bcaod", std::vector<Real>(1, bcaod));
     output.set("seasaltaod", std::vector<Real>(1, seasaltaod));
-    output.set("momaod", std::vector<Real>(1, momaod));
+    
   });
 }
