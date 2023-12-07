@@ -5,7 +5,7 @@
 #include <mam4xx/aero_config.hpp>
 
 #include <mam4xx/modal_aer_opt.hpp>
-
+#include  <mam4xx/tropopause.hpp>
 namespace mam4 {
 
 namespace aer_rad_props {
@@ -194,29 +194,6 @@ void compute_odap_volcanic_above_troplayer_lw(const int ilev_tropp,
   } // end kk
 
 } // compute_odap_volcanic_above_troplayer_lw
-KOKKOS_INLINE_FUNCTION
-void get_dtdz(const Real pm, const Real pmk, const Real pmid1d_up,
-              const Real pmid1d_down, const Real temp1d_up,
-              const Real temp1d_down, Real &dtdz, Real &tm) {
-
-  // pm      ! mean pressure [Pa]
-  // pmk
-  // pmid1d_up     !  midpoint pressure in column at upper level [Pa]
-  // pmid1d_down   !  midpoint pressure in column at lower level [Pa]
-  // temp1d_up     !  temperature in column at upper level [K]
-  // temp1d_down   !  temperature in column at lower level [K]
-  // dtdz     ! temperature lapse rate vs. height [K/m]
-  // tm       ! mean temperature [K] -- needed to find pressure at trop + 2 km
-
-  const Real a1 =
-      (temp1d_up - temp1d_down) /
-      (haero::pow(pmid1d_up, cnst_kap) - haero::pow(pmid1d_down, cnst_kap));
-  const Real b1 = temp1d_down - a1 * haero::pow(pmid1d_down, cnst_kap);
-  tm = a1 * pmk + b1;
-  const Real dtdp = a1 * cnst_kap * (haero::pow(pm, cnst_ka1));
-  dtdz = cnst_faktor * dtdp * pm / tm;
-
-} // get_dtdz
 // FIXME: move to tropopause.hpp
 /* This routine is an implementation of Reichler et al. [2003] done by
 ! Reichler and downloaded from his web site. Minimal modifications were
@@ -269,7 +246,7 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
   // mean temperature [K]
   Real tm = zero;
 
-  get_dtdz(pm, pmk, pmid1d(pver - 2), pmid1d(pver - 1), temp1d(pver - 2),
+  mam4::tropopause::get_dtdz(pm, pmk, pmid1d(pver - 2), pmid1d(pver - 1), temp1d(pver - 2),
            temp1d(pver - 1), dtdz, tm);
   for (int kk = pver - 2; kk < 1; --kk) {
     // const Real pm0 = pm;
@@ -281,7 +258,7 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
                              haero::pow(pmid1d(kk), cnst_kap));
     const Real pm = haero::pow(pmk, one / cnst_kap);
 
-    get_dtdz(pm, pmk, pmid1d(kk - 1), pmid1d(kk), temp1d(kk - 1), temp1d(kk),
+    mam4::tropopause::get_dtdz(pm, pmk, pmid1d(kk - 1), pmid1d(kk), temp1d(kk - 1), temp1d(kk),
              dtdz, tm);
 
     // dt/dz valid?
@@ -333,7 +310,7 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
           } else {
             Real dtdz2 = zero;
             Real tm2 = zero;
-            get_dtdz(pm2, pmk2, pmid1d(jj - 1), pmid1d(jj), temp1d(jj - 1),
+            mam4::tropopause::get_dtdz(pm2, pmk2, pmid1d(jj - 1), pmid1d(jj), temp1d(jj - 1),
                      temp1d(jj), dtdz2, tm2);
             asum += dtdz2;
             icount++;
