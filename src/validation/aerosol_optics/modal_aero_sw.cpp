@@ -138,7 +138,6 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     Kokkos::deep_copy(aersol_optics_data.crefwlw, crefwlw_host);
 
-
     const auto extpsw_db = input.get_array("extpsw");
     const auto abspsw_db = input.get_array("abspsw");
     const auto asmpsw_db = input.get_array("asmpsw");
@@ -174,7 +173,6 @@ void modal_aero_sw(Ensemble *ensemble) {
         }     // d3
       }       // d2
     }         // d1
-
 
     for (int d1 = 0; d1 < ntot_amode; ++d1)
       for (int d5 = 0; d5 < nswbands; ++d5) {
@@ -241,11 +239,11 @@ void modal_aero_sw(Ensemble *ensemble) {
     // output
     View2D tauxar, wa, ga, fa;
 
-    tauxar =
-        View2D("tauxar", pver+1, nswbands); // layer extinction optical depth [1]
-    wa = View2D("wa", pver+1, nswbands);    // layer single-scatter albedo [1]
-    ga = View2D("ga", pver+1, nswbands);    // asymmetry factor [1]
-    fa = View2D("fa", pver+1, nswbands);    // forward scattered fraction [1]
+    tauxar = View2D("tauxar", pver + 1,
+                    nswbands);             // layer extinction optical depth [1]
+    wa = View2D("wa", pver + 1, nswbands); // layer single-scatter albedo [1]
+    ga = View2D("ga", pver + 1, nswbands); // asymmetry factor [1]
+    fa = View2D("fa", pver + 1, nswbands); // forward scattered fraction [1]
 
     View1D output_diagnostics_amode("output_diagnostics_amode", 3 * ntot_amode);
     View1D output_diagnostics("output_diagnostics", 21);
@@ -332,7 +330,7 @@ void modal_aero_sw(Ensemble *ensemble) {
     }
 
     output.set("qqcw", qqcw_db);
-    const int pver_po = pver +1; 
+    const int pver_po = pver + 1;
     std::vector<Real> tauxar_out(pver_po * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(tauxar, tauxar_out);
     output.set("tauxar", tauxar_out);
@@ -352,16 +350,17 @@ void modal_aero_sw(Ensemble *ensemble) {
     auto extinct_host = Kokkos::create_mirror_view(extinct);
 
     // Kokkos::deep_copy(extinct_host, extinct);
-    constexpr Real fillvalue =1e20;
+    constexpr Real fillvalue = 1e20;
     // std::vector<Real> extinct_out(extinct_host.data(),
     //                               extinct_host.data() + pver);
 
     // auto absorb_host = Kokkos::create_mirror_view(absorb);
     // Kokkos::deep_copy(absorb_host, absorb);
-    // std::vector<Real> absorb_out(absorb_host.data(), absorb_host.data() + pver);
-    // FIXME: I cannot validate the outputs with fillvalue. 
-    output.set("extinct", std::vector<Real>(pver,fillvalue));
-    output.set("absorb", std::vector<Real>(pver,fillvalue));
+    // std::vector<Real> absorb_out(absorb_host.data(), absorb_host.data() +
+    // pver);
+    // FIXME: I cannot validate the outputs with fillvalue.
+    output.set("extinct", std::vector<Real>(pver, fillvalue));
+    output.set("absorb", std::vector<Real>(pver, fillvalue));
     output.set("aodvis", std::vector<Real>(1, fillvalue));
     output.set("aodabs", std::vector<Real>(1, fillvalue));
     output.set("dustaod", std::vector<Real>(1, fillvalue));
@@ -394,7 +393,7 @@ void modal_aero_sw(Ensemble *ensemble) {
     // Real soaaod = output_diagnostics_host(18);
     // Real bcaod = output_diagnostics_host(19);
     Real seasaltaod = output_diagnostics_host(20);
-    
+
     output.set("aodall", std::vector<Real>(1, aodall));
     output.set("burdendust", std::vector<Real>(1, burdendust));
     output.set("burdenso4", std::vector<Real>(1, burdenso4));
@@ -404,6 +403,5 @@ void modal_aero_sw(Ensemble *ensemble) {
     output.set("burdenseasalt", std::vector<Real>(1, burdenseasalt));
     output.set("burdenmom", std::vector<Real>(1, burdenmom));
     output.set("seasaltaod", std::vector<Real>(1, seasaltaod));
-    
   });
 }

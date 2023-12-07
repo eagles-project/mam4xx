@@ -36,7 +36,6 @@
 #include <mam4xx/tropopause.hpp>
 #include <mam4xx/water_uptake.hpp>
 #include <mam4xx/wet_dep.hpp>
-#include <mam4xx/tropopause.hpp>
 
 namespace mam4 {
 

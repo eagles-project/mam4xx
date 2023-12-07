@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
     } else if (func_name == "calc_parameterized") {
       calc_parameterized(ensemble);
     } else if (func_name == "update_aod_spec") {
-      update_aod_spec(ensemble);  
+      update_aod_spec(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;

@@ -5,7 +5,7 @@
 #include <mam4xx/aero_config.hpp>
 
 #include <mam4xx/modal_aer_opt.hpp>
-#include  <mam4xx/tropopause.hpp>
+#include <mam4xx/tropopause.hpp>
 namespace mam4 {
 
 namespace aer_rad_props {
@@ -246,8 +246,8 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
   // mean temperature [K]
   Real tm = zero;
 
-  mam4::tropopause::get_dtdz(pm, pmk, pmid1d(pver - 2), pmid1d(pver - 1), temp1d(pver - 2),
-           temp1d(pver - 1), dtdz, tm);
+  mam4::tropopause::get_dtdz(pm, pmk, pmid1d(pver - 2), pmid1d(pver - 1),
+                             temp1d(pver - 2), temp1d(pver - 1), dtdz, tm);
   for (int kk = pver - 2; kk < 1; --kk) {
     // const Real pm0 = pm;
     const Real pmk0 = pmk;
@@ -258,8 +258,8 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
                              haero::pow(pmid1d(kk), cnst_kap));
     const Real pm = haero::pow(pmk, one / cnst_kap);
 
-    mam4::tropopause::get_dtdz(pm, pmk, pmid1d(kk - 1), pmid1d(kk), temp1d(kk - 1), temp1d(kk),
-             dtdz, tm);
+    mam4::tropopause::get_dtdz(pm, pmk, pmid1d(kk - 1), pmid1d(kk),
+                               temp1d(kk - 1), temp1d(kk), dtdz, tm);
 
     // dt/dz valid?
     if (dtdz <= gam) {
@@ -310,8 +310,8 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
           } else {
             Real dtdz2 = zero;
             Real tm2 = zero;
-            mam4::tropopause::get_dtdz(pm2, pmk2, pmid1d(jj - 1), pmid1d(jj), temp1d(jj - 1),
-                     temp1d(jj), dtdz2, tm2);
+            mam4::tropopause::get_dtdz(pm2, pmk2, pmid1d(jj - 1), pmid1d(jj),
+                                       temp1d(jj - 1), temp1d(jj), dtdz2, tm2);
             asum += dtdz2;
             icount++;
             const Real aquer =
@@ -429,8 +429,8 @@ void aer_rad_props_lw(
     // output
     const View2D &odap_aer,
     // work views
-    const ComplexView2D &specrefindex,
-    const View1D &work, const View2D &ext_cmip6_lw_inv_m
+    const ComplexView2D &specrefindex, const View1D &work,
+    const View2D &ext_cmip6_lw_inv_m
 
 ) {
 
@@ -458,9 +458,9 @@ void aer_rad_props_lw(
   //  odap_aer(pcols,pver,nlwbands) ! [fraction] absorption optical depth, per
   //  layer [unitless]
   // Compute contributions from the modal aerosols.
-  modal_aero_lw(dt, state_q, qqcw,  temperature, pmid, pdel, pdeldry, cldn,
+  modal_aero_lw(dt, state_q, qqcw, temperature, pmid, pdel, pdeldry, cldn,
                 aersol_optics_data,
-                // outputs 
+                // outputs
                 odap_aer,
                 // work views
                 specrefindex, work);

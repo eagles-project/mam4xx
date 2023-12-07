@@ -54,10 +54,12 @@ constexpr Real rga = 1.0 / haero::Constants::gravity;
 constexpr Real rair = haero::Constants::r_gas_dry_air;
 
 // ! These are indices to the band for diagnostic output
-  // Fortran to C++ indexing 
+// Fortran to C++ indexing
 constexpr int idx_sw_diag = 9; // index to sw visible band (10 in Fortran)
-constexpr int idx_nir_diag = 7; // index to sw near infrared (778-1240 nm) band(8 in Fortran
-constexpr int idx_uv_diag = 10; // index to sw uv (345-441 nm) band (11 in Fortran)
+constexpr int idx_nir_diag =
+    7; // index to sw near infrared (778-1240 nm) band(8 in Fortran
+constexpr int idx_uv_diag =
+    10; // index to sw uv (345-441 nm) band (11 in Fortran)
 
 // FIXME; is this values set somewhere else?
 constexpr int max_nspec = 7;
@@ -527,7 +529,7 @@ void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
   work_ptr += pver;
   auto air_density = ColumnView(work_ptr, pver);
   work_ptr += pver;
-  auto cheb = View2D(work_ptr,pver, ncoef);
+  auto cheb = View2D(work_ptr, pver, ncoef);
   work_ptr += pver * ncoef;
   auto dgnumwet_m = View2D(work_ptr, pver, ntot_amode);
   work_ptr += pver * ntot_amode;
@@ -715,26 +717,24 @@ void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
     // diagnostics for visible band summed over modes
     extinct(kk) = zero;
     absorb(kk) = zero;
-
   }
   // initialize output variables
-    // zero'th layer does not contain aerosol
+  // zero'th layer does not contain aerosol
   for (int i = 0; i < nswbands; ++i) {
-  // BAD CONSTANT
-  tauxar(0,i)  = zero;  // BAD CONSTANT
-  wa(0,i)      = 0.925; // BAD CONSTANT
-  ga(0,i)      = 0.850; // BAD CONSTANT
-  fa(0,i)      = 0.7225;
- }
-for (int kk = 1; kk < pver; ++kk) {
- for (int i = 0; i < nswbands; ++i) {
+    // BAD CONSTANT
+    tauxar(0, i) = zero; // BAD CONSTANT
+    wa(0, i) = 0.925;    // BAD CONSTANT
+    ga(0, i) = 0.850;    // BAD CONSTANT
+    fa(0, i) = 0.7225;
+  }
+  for (int kk = 1; kk < pver; ++kk) {
+    for (int i = 0; i < nswbands; ++i) {
       tauxar(kk, i) = zero;
       wa(kk, i) = zero;
       ga(kk, i) = zero;
       fa(kk, i) = zero;
     }
   }
-
 
   int nspec_amode[ntot_amode];
   int lspectype_amode[ndrop::maxd_aspectype][ntot_amode];
@@ -857,7 +857,7 @@ for (int kk = 1; kk < pver; ++kk) {
       // savaervis ! true if visible wavelength (0.55 micron)
       // savaernir ! true if near ir wavelength (~0.88 micron)
       // savaeruv  ! true if uv wavelength (~0.35 micron)
-    
+
       const bool savaervis = isw == idx_sw_diag ? true : false;
       const bool savaeruv = isw == idx_uv_diag ? true : false;
       const bool savaernir = isw == idx_nir_diag ? true : false;
@@ -1129,7 +1129,6 @@ for (int kk = 1; kk < pver; ++kk) {
                             dopaer, // in
                             scatseasalt, absseasalt, seasaltaod);
 
-
             update_aod_spec(scath2o,
                             absh2o, // in
                             sumhygro, sumscat,
@@ -1152,10 +1151,10 @@ for (int kk = 1; kk < pver; ++kk) {
         //                     specrefindex, specvol, & ! in nerr_dopaer, & !
         //                     inout pext(icol), specpext(icol) ) ! optional in
         // NOTE: fortran code has an additional index
-        tauxar(kk+1, isw) += dopaer;
-        wa(kk+1, isw) += dopaer * palb;
-        ga(kk+1, isw) += dopaer * palb * pasm;
-        fa(kk+1, isw) += dopaer * palb * pasm * pasm;
+        tauxar(kk + 1, isw) += dopaer;
+        wa(kk + 1, isw) += dopaer * palb;
+        ga(kk + 1, isw) += dopaer * palb * pasm;
+        fa(kk + 1, isw) += dopaer * palb * pasm * pasm;
         // enddo
       } // k
     }   // isw
@@ -1171,12 +1170,10 @@ inline int get_worksize_modal_aero_lw() {
   // mass, radsurf, logradsurf  => pver
   // dgnumwet_m qaerwat_m => pver*ntot_amode
   // cheb => pver*ncoef
-  return 3 * pver + pver * ncoef +
-         2 * pver * ntot_amode; 
+  return 3 * pver + pver * ncoef + 2 * pver * ntot_amode;
 }
 KOKKOS_INLINE_FUNCTION
-void modal_aero_lw(const Real dt, const View2D &state_q,
-                   const View2D& qqcw,
+void modal_aero_lw(const Real dt, const View2D &state_q, const View2D &qqcw,
                    const ConstColumnView &temperature,
                    const ConstColumnView &pmid, const ConstColumnView &pdel,
                    const ConstColumnView &pdeldry, const ConstColumnView &cldn,
@@ -1317,8 +1314,6 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
 
   } // k
   // }
-
-
 
   Real specvol[max_nspec] = {};
   for (int mm = 0; mm < ntot_amode; ++mm) {

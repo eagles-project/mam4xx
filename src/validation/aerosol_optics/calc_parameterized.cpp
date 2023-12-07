@@ -16,19 +16,14 @@ using namespace modal_aer_opt;
 
 void calc_parameterized(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-
-
     EKAT_REQUIRE_MSG(input.has_array("coef"), "Required name: coef");
     EKAT_REQUIRE_MSG(input.has_array("cheb_k"), "Required name: cheb_k");
     const auto coef = input.get_array("coef");
     const auto cheb_k = input.get_array("cheb_k");
-    constexpr Real zero =0;
+    constexpr Real zero = 0;
 
     Real para = zero;
-    calc_parameterized(coef.data(), cheb_k.data(),para);
+    calc_parameterized(coef.data(), cheb_k.data(), para);
     output.set("para", std::vector<Real>(1, para));
-
-
-
   });
-}    
+}

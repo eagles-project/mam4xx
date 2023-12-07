@@ -73,42 +73,42 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
 
     mam4::validation::convert_1d_vector_to_2d_view_device(qaerwat_db, qaerwat);
 
+    {
 
+      const int top_lev = 1;
+      auto team_policy = ThreadTeamPolicy(1, 1u);
+      Kokkos::parallel_for(
+          team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+            for (int kk = top_lev; kk < pver; ++kk) {
 
- {
+              int nspec_amode[AeroConfig::num_modes()];
+              int lspectype_amode[water_uptake::maxd_aspectype]
+                                 [AeroConfig::num_modes()];
+              Real specdens_amode[water_uptake::maxd_aspectype];
+              Real spechygro[water_uptake::maxd_aspectype];
 
-  const int top_lev=1;
-  auto team_policy = ThreadTeamPolicy(1, 1u);
-    Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-  for (int kk = top_lev; kk < pver; ++kk) {
+              water_uptake::get_e3sm_parameters(nspec_amode, lspectype_amode,
+                                                specdens_amode, spechygro);
 
-    int nspec_amode[AeroConfig::num_modes()];
-    int lspectype_amode[water_uptake::maxd_aspectype][AeroConfig::num_modes()];
-    Real specdens_amode[water_uptake::maxd_aspectype];
-    Real spechygro[water_uptake::maxd_aspectype];
+              const auto state_q_kk =
+                  Kokkos::subview(state_q, kk, Kokkos::ALL());
+              const auto dgnumdry_m_kk =
+                  Kokkos::subview(dgncur_a, kk, Kokkos::ALL());
+              const auto dgnumwet_m_kk =
+                  Kokkos::subview(dgncur_awet, kk, Kokkos::ALL());
+              const auto qaerwat_m_kk =
+                  Kokkos::subview(qaerwat, kk, Kokkos::ALL());
+              mam4::water_uptake::modal_aero_water_uptake_dr(
+                  nspec_amode, specdens_amode, spechygro, lspectype_amode,
+                  state_q_kk.data(), temperature(kk), pmid(kk), cldn(kk),
+                  dgnumdry_m_kk.data(), dgnumwet_m_kk.data(),
+                  qaerwat_m_kk.data());
 
-    water_uptake::get_e3sm_parameters(nspec_amode, lspectype_amode,
-                                      specdens_amode, spechygro);
+            } // kk
+          });
 
-
-    const auto state_q_kk = Kokkos::subview(state_q, kk, Kokkos::ALL());
-    const auto dgnumdry_m_kk = Kokkos::subview(dgncur_a, kk, Kokkos::ALL());
-    const auto dgnumwet_m_kk = Kokkos::subview(dgncur_awet, kk, Kokkos::ALL());
-    const auto qaerwat_m_kk = Kokkos::subview(qaerwat, kk, Kokkos::ALL());
-    mam4::water_uptake::modal_aero_water_uptake_dr(
-        nspec_amode, specdens_amode, spechygro, lspectype_amode,
-        state_q_kk.data(), temperature(kk), pmid(kk), cldn(kk),
-        dgnumdry_m_kk.data(), dgnumwet_m_kk.data(), qaerwat_m_kk.data());
-
-  } // kk
-  });
-
-  // placeholder
-} // modal_aero_wateruptake_dr
-
-
-
+      // placeholder
+    } // modal_aero_wateruptake_dr
 
     constexpr Real zero = 0;
     std::vector<Real> dgncur_awet_out(pver * ntot_amode, zero);

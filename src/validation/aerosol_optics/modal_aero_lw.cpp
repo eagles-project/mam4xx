@@ -28,7 +28,6 @@ void modal_aero_lw(Ensemble *ensemble) {
     const auto state_q_db = input.get_array("state_q");
     auto qqcw_db = input.get_array("qqcw"); // 2d
 
-
     View2D state_q("state_q", pver, nvars);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
@@ -110,12 +109,9 @@ void modal_aero_lw(Ensemble *ensemble) {
     const auto crefwlw_real = input.get_array("crefwlw_real");
     const auto crefwlw_imag = input.get_array("crefwlw_imag");
 
-    auto crefwlw_host =
-        Kokkos::create_mirror_view(aersol_optics_data.crefwlw);
+    auto crefwlw_host = Kokkos::create_mirror_view(aersol_optics_data.crefwlw);
 
-    auto crefwsw_host =
-        Kokkos::create_mirror_view(aersol_optics_data.crefwsw);    
-
+    auto crefwsw_host = Kokkos::create_mirror_view(aersol_optics_data.crefwsw);
 
     for (int j = 0; j < nswbands; ++j) {
       crefwsw_host[j].real() = crefwsw_real[j];
@@ -129,7 +125,6 @@ void modal_aero_lw(Ensemble *ensemble) {
 
     Kokkos::deep_copy(aersol_optics_data.crefwlw, crefwlw_host);
     Kokkos::deep_copy(aersol_optics_data.crefwsw, crefwsw_host);
-
 
     const auto absplw_db = input.get_array("absplw");
 
@@ -160,7 +155,6 @@ void modal_aero_lw(Ensemble *ensemble) {
       }       // d2
     }         // d1
 
-
     set_aerosol_optics_data_for_modal_aero_lw_views(aersol_optics_data);
 
     for (int d1 = 0; d1 < ntot_amode; ++d1)
@@ -168,7 +162,6 @@ void modal_aero_lw(Ensemble *ensemble) {
         Kokkos::deep_copy(aersol_optics_data.absplw[d1][d5],
                           absplw3_host[d1][d5]);
       }
-
 
     const auto refrtablw_db = input.get_array("refrtablw");
     const auto refitablw_db = input.get_array("refitablw");
@@ -230,12 +223,8 @@ void modal_aero_lw(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-
-          modal_aero_lw(dt, state_q, qqcw,
-                        temperature, pmid,
-                        pdel, pdeldry, cldn,
-                        aersol_optics_data,
-                        tauxar,
+          modal_aero_lw(dt, state_q, qqcw, temperature, pmid, pdel, pdeldry,
+                        cldn, aersol_optics_data, tauxar,
                         // parameters
                         // work views
                         specrefindex, work);
