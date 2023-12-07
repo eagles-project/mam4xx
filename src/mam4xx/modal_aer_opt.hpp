@@ -1234,7 +1234,7 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
   auto work_ptr = (Real *)work.data();
   auto mass = ColumnView(work_ptr, pver);
   work_ptr += pver;
-  auto cheb = View2D(work_ptr, ncoef, pver);
+  auto cheb = View2D(work_ptr, pver, ncoef);
   work_ptr += pver * ncoef;
   auto dgnumwet_m = View2D(work_ptr, pver, ntot_amode);
   work_ptr += pver * ntot_amode;
@@ -1363,7 +1363,7 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
       // calc size parameter for all columns
       // FORTRAN refactoring: ismethod2 is tempararily used to ensure BFB test.
       // can be removed when porting to C++
-      auto cheb_kk = Kokkos::subview(cheb, Kokkos::ALL(), kk);
+      auto cheb_kk = Kokkos::subview(cheb, kk, Kokkos::ALL());
       modal_size_parameters(sigma_logr_aer, dgnumwet_m(kk, mm), // in
                             radsurf(kk), logradsurf(kk), cheb_kk.data(), true);
     } // kk
@@ -1431,7 +1431,7 @@ void modal_aero_lw(const Real dt, const View2D &state_q,
 
         // parameterized optical properties
         Real pabs = zero; //    parameterized specific extinction [m2/kg]
-        auto cheb_kk = Kokkos::subview(cheb, Kokkos::ALL(), kk);
+        auto cheb_kk = Kokkos::subview(cheb, kk, Kokkos::ALL());
         calc_parameterized(cabs, cheb_kk.data(), pabs);
 
         // printf("pabs %e \n", pabs);

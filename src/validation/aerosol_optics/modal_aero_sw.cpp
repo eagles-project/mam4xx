@@ -101,8 +101,6 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     set_complex_views_modal_aero(aersol_optics_data);
 
-    // aersol_optics_data.specrefndxsw = ComplexView2D("specrefndxsw", nswbands,
-    // maxd_aspectype);
     auto specrefndxsw_host =
         Kokkos::create_mirror_view(aersol_optics_data.specrefndxsw);
 

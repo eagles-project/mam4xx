@@ -110,19 +110,26 @@ void modal_aero_lw(Ensemble *ensemble) {
     const auto crefwlw_real = input.get_array("crefwlw_real");
     const auto crefwlw_imag = input.get_array("crefwlw_imag");
 
-    Kokkos::complex<Real> crefwlw[nlwbands];
+    auto crefwlw_host =
+        Kokkos::create_mirror_view(aersol_optics_data.crefwlw);
 
-    Kokkos::complex<Real> crefwsw[nswbands];
+    auto crefwsw_host =
+        Kokkos::create_mirror_view(aersol_optics_data.crefwsw);    
+
 
     for (int j = 0; j < nswbands; ++j) {
-      crefwsw[j].real() = crefwsw_real[j];
-      crefwsw[j].imag() = crefwsw_imag[j];
+      crefwsw_host[j].real() = crefwsw_real[j];
+      crefwsw_host[j].imag() = crefwsw_imag[j];
     }
 
     for (int j = 0; j < nlwbands; ++j) {
-      crefwlw[j].real() = crefwlw_real[j];
-      crefwlw[j].imag() = crefwlw_imag[j];
+      crefwlw_host[j].real() = crefwlw_real[j];
+      crefwlw_host[j].imag() = crefwlw_imag[j];
     }
+
+    Kokkos::deep_copy(aersol_optics_data.crefwlw, crefwlw_host);
+    Kokkos::deep_copy(aersol_optics_data.crefwsw, crefwsw_host);
+
 
     const auto absplw_db = input.get_array("absplw");
 

@@ -58,7 +58,7 @@ set(ERROR_THRESHOLDS
    2e-8
    2e-8
    ${DEFAULT_TOL}
-   ${DEFAULT_TOL}
+   7e-11
    2e-11
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
