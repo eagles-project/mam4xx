@@ -54,9 +54,10 @@ constexpr Real rga = 1.0 / haero::Constants::gravity;
 constexpr Real rair = haero::Constants::r_gas_dry_air;
 
 // ! These are indices to the band for diagnostic output
-constexpr int idx_sw_diag = 10; // index to sw visible band
-constexpr int idx_nir_diag = 8; // index to sw near infrared (778-1240 nm) band
-constexpr int idx_uv_diag = 11; // index to sw uv (345-441 nm) band
+  // Fortran to C++ indexing 
+constexpr int idx_sw_diag = 9; // index to sw visible band (10 in Fortran)
+constexpr int idx_nir_diag = 7; // index to sw near infrared (778-1240 nm) band(8 in Fortran
+constexpr int idx_uv_diag = 10; // index to sw uv (345-441 nm) band (11 in Fortran)
 
 // FIXME; is this values set somewhere else?
 constexpr int max_nspec = 7;
@@ -889,7 +890,7 @@ for (int kk = 1; kk < pver; ++kk) {
       // savaervis ! true if visible wavelength (0.55 micron)
       // savaernir ! true if near ir wavelength (~0.88 micron)
       // savaeruv  ! true if uv wavelength (~0.35 micron)
-
+    
       const bool savaervis = isw == idx_sw_diag ? true : false;
       const bool savaeruv = isw == idx_uv_diag ? true : false;
       const bool savaernir = isw == idx_nir_diag ? true : false;

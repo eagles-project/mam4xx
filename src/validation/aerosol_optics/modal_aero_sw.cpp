@@ -175,18 +175,9 @@ void modal_aero_sw(Ensemble *ensemble) {
       }       // d2
     }         // d1
 
-    // View3D abspsw[ntot_amode][nswbands];
-    // View3D extpsw[ntot_amode][nswbands];
-    // View3D asmpsw[ntot_amode][nswbands];
 
     for (int d1 = 0; d1 < ntot_amode; ++d1)
       for (int d5 = 0; d5 < nswbands; ++d5) {
-        // abspsw[d1][d5] =
-        //     View3D("abspsw", coef_number, refindex_real, refindex_im);
-        // extpsw[d1][d5] =
-        //     View3D("extpsw", coef_number, refindex_real, refindex_im);
-        // asmpsw[d1][d5] =
-        //     View3D("asmpsw", coef_number, refindex_real, refindex_im);
         Kokkos::deep_copy(aersol_optics_data.abspsw[d1][d5],
                           abspsw_host[d1][d5]);
         Kokkos::deep_copy(aersol_optics_data.extpsw[d1][d5],
@@ -195,13 +186,9 @@ void modal_aero_sw(Ensemble *ensemble) {
                           asmpsw_host[d1][d5]);
       } // d5
 
-    // View3D refrtabsw, refitabsw;
-
     const auto refrtabsw_db = input.get_array("refrtabsw");
     const auto refitabsw_db = input.get_array("refitabsw");
 
-    // refrtabsw = View3D("refrtabsw", ntot_amode, refindex_real, nswbands);
-    // auto refrtabsw_host = Kokkos::create_mirror_view(refrtabsw);
     int N1 = ntot_amode;
     int N2 = refindex_real;
     int N3 = nswbands;
@@ -211,7 +198,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     for (int d1 = 0; d1 < N1; ++d1)
       for (int d3 = 0; d3 < N3; ++d3) {
         refrtabsw_host[d1][d3] = View1DHost("refrtabsw_host", refindex_real);
-        // refrtabsw[d1][d3] = View1D("refrtabsw", refindex_real);
       } // d3
 
     for (int d1 = 0; d1 < N1; ++d1)
@@ -228,15 +214,11 @@ void modal_aero_sw(Ensemble *ensemble) {
                           refrtabsw_host[d1][d3]);
       } // d3
 
-    // refitabsw = View3D("refitabsw", ntot_amode, refindex_im, nswbands);
-    // auto refitabsw_host = Kokkos::create_mirror_view(refitabsw);
-
     View1DHost refitabsw_host[ntot_amode][nswbands];
     View1D refitabsw[ntot_amode][nswbands];
     for (int d1 = 0; d1 < N1; ++d1)
       for (int d3 = 0; d3 < N3; ++d3) {
         refitabsw_host[d1][d3] = View1DHost("refitabsw_host", refindex_im);
-        // refitabsw[d1][d3] = View1D("refitabsw", refindex_im);
       } // d3
 
     N1 = ntot_amode;
@@ -265,11 +247,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     ga = View2D("ga", pver+1, nswbands);    // asymmetry factor [1]
     fa = View2D("fa", pver+1, nswbands);    // forward scattered fraction [1]
 
-    // I need this:
-    // 1. crefwlw
-    // 2. specname_amode
-    // FIXME need to set these arras
-
     View1D output_diagnostics_amode("output_diagnostics_amode", 3 * ntot_amode);
     View1D output_diagnostics("output_diagnostics", 21);
 
@@ -278,9 +255,6 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     const int work_len = get_worksize_modal_aero_sw();
     View1D work("work", work_len);
-
-    //
-    // specname_amode=[[sulfate,ammonium,nitrate,p-organic,s-organic,black-c,seasalt,dust,m-organic,],]
 
     // FIXME: need to set values
     mam4::AeroId specname_amode[9] = {AeroId::SO4,  // sulfate
@@ -385,6 +359,7 @@ void modal_aero_sw(Ensemble *ensemble) {
     // auto absorb_host = Kokkos::create_mirror_view(absorb);
     // Kokkos::deep_copy(absorb_host, absorb);
     // std::vector<Real> absorb_out(absorb_host.data(), absorb_host.data() + pver);
+    // FIXME: I cannot validate the outputs with fillvalue. 
     output.set("extinct", std::vector<Real>(pver,fillvalue));
     output.set("absorb", std::vector<Real>(pver,fillvalue));
     output.set("aodvis", std::vector<Real>(1, fillvalue));
@@ -395,14 +370,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     output.set("soaaod", std::vector<Real>(1, fillvalue));
     output.set("bcaod", std::vector<Real>(1, fillvalue));
     output.set("momaod", std::vector<Real>(1, fillvalue));
-
-   //  do jj = 1, nnite
-   //    extinct(idxnite(jj),:) = fillvalue
-   //    absorb(idxnite(jj),:)  = fillvalue
-   //    aodvis(idxnite(jj))    = fillvalue
-   //    aodabs(idxnite(jj))    = fillvalue
-   // enddo
-
 
     auto output_diagnostics_host =
         Kokkos::create_mirror_view(output_diagnostics);
