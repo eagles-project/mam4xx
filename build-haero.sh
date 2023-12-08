@@ -23,6 +23,8 @@ PREFIX=$1
 DEVICE=$2
 PRECISION=$3
 BUILD_TYPE=$4
+# Turn off search for yaml libraries. EKAT will build yaml-cpp from submodules. 
+SKIP_FIND_YAML_CPP=ON
 
 # Default compilers (can be overridden by environment variables)
 if [[ -z $CC ]]; then
@@ -106,6 +108,7 @@ cmake -S ./.haero -B ./.haero/build \
   -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
   -DCMAKE_INSTALL_PREFIX="$PREFIX" \
   -DCMAKE_C_COMPILER=$CC \
+  -DHAERO_SKIP_FIND_YAML_CPP=$SKIP_FIND_YAML_CPP \
   -DCMAKE_CXX_COMPILER=$CXX \
   -DHAERO_ENABLE_MPI=OFF \
   -DHAERO_ENABLE_GPU=$ENABLE_GPU \
