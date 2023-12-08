@@ -21,8 +21,19 @@ void binterp(Ensemble *ensemble) {
     const auto table_db = input.get_array("table");
     const auto ref_real = input.get_array("ref_real")[0];
     const auto ref_img = input.get_array("ref_img")[0];
-    const auto ref_real_tab = input.get_array("ref_real_tab");
-    const auto ref_img_tab = input.get_array("ref_img_tab");
+    const auto ref_real_tab_db = input.get_array("ref_real_tab");
+    const auto ref_img_tab_db = input.get_array("ref_img_tab");
+
+    using View1DHost = typename HostType::view_1d<Real>;
+    auto ref_real_tab_host =
+        View1DHost((Real *)ref_real_tab_db.data(), ref_real_tab_db.size());
+    auto ref_real_tab = Kokkos::create_mirror_view(ref_real_tab_host);
+    Kokkos::deep_copy(ref_real_tab, ref_real_tab_host);
+
+    auto ref_img_tab_host =
+        View1DHost((Real *)ref_img_tab_db.data(), ref_img_tab_db.size());
+    auto ref_img_tab = Kokkos::create_mirror_view(ref_img_tab_host);
+    Kokkos::deep_copy(ref_img_tab, ref_img_tab_host);
 
     int itab_1 = 0;
     int ncoef = 5;
