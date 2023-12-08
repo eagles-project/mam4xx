@@ -46,7 +46,6 @@ install(FILES
         mo_setext.hpp
         mo_setsox.hpp
         tropopause.hpp
-        modal_aero_opt.hpp
         modal_aer_opt.hpp
         aer_rad_props.hpp 
         modal_aero_calcsize.hpp 

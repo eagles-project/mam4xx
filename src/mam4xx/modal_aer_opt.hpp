@@ -1,5 +1,5 @@
-#ifndef MAM4XX_MODALAER_OPT_HPP
-#define MAM4XX_MODALAER_OPT_HPP
+#ifndef MAM4XX_MODAL_AER_OPT_HPP
+#define MAM4XX_MODAL_AER_OPT_HPP
 
 #include <Kokkos_Complex.hpp>
 #include <haero/math.hpp>
