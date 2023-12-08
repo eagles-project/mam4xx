@@ -17,6 +17,7 @@ void binterp(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     constexpr Real zero = 0;
     using View1D = DeviceType::view_1d<Real>;
+    using View1DHost = typename HostType::view_1d<Real>;
 
     const auto table_db = input.get_array("table");
     const auto ref_real = input.get_array("ref_real")[0];
@@ -24,15 +25,15 @@ void binterp(Ensemble *ensemble) {
     const auto ref_real_tab_db = input.get_array("ref_real_tab");
     const auto ref_img_tab_db = input.get_array("ref_img_tab");
 
-    using View1DHost = typename HostType::view_1d<Real>;
+
     auto ref_real_tab_host =
         View1DHost((Real *)ref_real_tab_db.data(), ref_real_tab_db.size());
-    auto ref_real_tab = Kokkos::create_mirror_view(ref_real_tab_host);
+    View1D ref_real_tab("ref_real_tab", ref_real_tab_db.size());
     Kokkos::deep_copy(ref_real_tab, ref_real_tab_host);
 
     auto ref_img_tab_host =
         View1DHost((Real *)ref_img_tab_db.data(), ref_img_tab_db.size());
-    auto ref_img_tab = Kokkos::create_mirror_view(ref_img_tab_host);
+    View1D ref_img_tab("ref_img_tab", ref_img_tab_db.size());
     Kokkos::deep_copy(ref_img_tab, ref_img_tab_host);
 
     int itab_1 = 0;
@@ -85,8 +86,8 @@ void binterp(Ensemble *ensemble) {
 
     output.set("itab", std::vector<Real>(1, tab_host(0) + 1));
     output.set("jtab", std::vector<Real>(1, tab_host(1) + 1));
-    output.set("ttab", std::vector<Real>(1, tab(2)));
-    output.set("utab", std::vector<Real>(1, tab(3)));
+    output.set("ttab", std::vector<Real>(1, tab_host(2)));
+    output.set("utab", std::vector<Real>(1, tab_host(3)));
     output.set("coef", coef_out);
   });
 }
