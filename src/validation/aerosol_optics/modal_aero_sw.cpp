@@ -268,8 +268,8 @@ void modal_aero_sw(Ensemble *ensemble) {
     // allocate Column views for diagnostics:
     auto extinct = haero::testing::create_column_view(pver);
     auto absorb = haero::testing::create_column_view(pver);
-
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    // FIXME: there are race conditions!!
+    auto team_policy = ThreadTeamPolicy(1u, 1);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           DiagnosticsAerosolOpticsSW diagnostics_aerosol_optics_sw{};
@@ -372,7 +372,7 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     auto output_diagnostics_host =
         Kokkos::create_mirror_view(output_diagnostics);
-    Kokkos::deep_copy(output_diagnostics_host,output_diagnostics);
+    Kokkos::deep_copy(output_diagnostics_host, output_diagnostics);
     // Real aodnir=output_diagnostics_host(0);
     // Real aoduv=output_diagnostics_host(1);
     // Real aodabsbc=output_diagnostics_host(2);

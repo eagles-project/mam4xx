@@ -25,7 +25,6 @@ void binterp(Ensemble *ensemble) {
     const auto ref_real_tab_db = input.get_array("ref_real_tab");
     const auto ref_img_tab_db = input.get_array("ref_img_tab");
 
-
     auto ref_real_tab_host =
         View1DHost((Real *)ref_real_tab_db.data(), ref_real_tab_db.size());
     View1D ref_real_tab("ref_real_tab", ref_real_tab_db.size());
