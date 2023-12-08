@@ -372,6 +372,7 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     auto output_diagnostics_host =
         Kokkos::create_mirror_view(output_diagnostics);
+    Kokkos::deep_copy(output_diagnostics_host,output_diagnostics);
     // Real aodnir=output_diagnostics_host(0);
     // Real aoduv=output_diagnostics_host(1);
     // Real aodabsbc=output_diagnostics_host(2);
