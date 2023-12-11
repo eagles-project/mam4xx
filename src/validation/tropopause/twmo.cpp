@@ -37,9 +37,9 @@ void twmo(Ensemble *ensemble) {
     DeviceType::view_1d<Real> trp_out_val("Return from Device", 1);
     Kokkos::parallel_for(
         "twmo", 1, KOKKOS_LAMBDA(int i) {
-            Real trp_use = trp_in;
-            tropopause::twmo(temp1d, pmid1d, plimu, pliml, gam, trp_use);
-            trp_out_val[0] = trp_use;
+          Real trp_use = trp_in;
+          tropopause::twmo(temp1d, pmid1d, plimu, pliml, gam, trp_use);
+          trp_out_val[0] = trp_use;
         });
 
     auto trp_host = Kokkos::create_mirror_view(trp_out_val);
