@@ -24,7 +24,7 @@ void twmo(Ensemble *ensemble) {
     const Real plimu = input.get_array("plimu")[0];
     const Real pliml = input.get_array("pliml")[0];
     const Real gam = input.get_array("gam")[0];
-    Real trp = input.get_array("trp")[0];
+    Real trp_in = input.get_array("trp")[0];
 
     ColumnView pmid1d, temp1d;
     auto pmid1d_host = View1DHost((Real *)pmid1d_in.data(), pver);
@@ -34,8 +34,18 @@ void twmo(Ensemble *ensemble) {
     Kokkos::deep_copy(pmid1d, pmid1d_host);
     Kokkos::deep_copy(temp1d, temp1d_host);
 
-    tropopause::twmo(temp1d, pmid1d, plimu, pliml, gam, trp);
+    DeviceType::view_1d<Real> trp_out_val("Return from Device", 1);
+    Kokkos::parallel_for(
+        "twmo", 1, KOKKOS_LAMBDA(int i) {
+            Real trp_use = trp_in;
+            tropopause::twmo(temp1d, pmid1d, plimu, pliml, gam, trp_use);
+            trp_out_val[0] = trp_use;
+        });
 
-    output.set("trp", trp);
+    auto trp_host = Kokkos::create_mirror_view(trp_out_val);
+    Kokkos::deep_copy(trp_host, trp_out_val);
+    const Real trp_out = trp_host[0];
+
+    output.set("trp", trp_out);
   });
 }
