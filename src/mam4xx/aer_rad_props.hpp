@@ -194,146 +194,7 @@ void compute_odap_volcanic_above_troplayer_lw(const int ilev_tropp,
   } // end kk
 
 } // compute_odap_volcanic_above_troplayer_lw
-// FIXME: move to tropopause.hpp
-/* This routine is an implementation of Reichler et al. [2003] done by
-! Reichler and downloaded from his web site. Minimal modifications were
-! made to have the routine work within the CAM framework (i.e. using
-! CAM constants and types).
-!
-! NOTE: I am not a big fan of the goto's and multiple returns in this
-! code, but for the moment I have left them to preserve as much of the
-! original and presumably well tested code as possible.
-! UPDATE: The most "obvious" substitutions have been made to replace
-! goto/return statements with cycle/exit. The structure is still
-! somewhat tangled.
-! UPDATE 2: "gamma" renamed to "gam" in order to avoid confusion
-! with the Fortran 2008 intrinsic. "level" argument removed because
-! a physics column is not contiguous, so using explicit dimensions
-! will cause the data to be needlessly copied.
-!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
-! determination of tropopause height from gridded temperature data
-!
-! reference: Reichler, T., M. Dameris, and R. Sausen (2003)
-!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-KOKKOS_INLINE_FUNCTION
-void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
-          const Real plimu, const Real pliml, const Real gam, Real &trp) {
 
-  // temp1d   !  temperature in column [K]
-  // pmid1d   !  midpoint pressure in column [Pa]
-  // plimu    ! upper limit of tropopause pressure [Pa]
-  // pliml    ! lower limit of tropopause pressure [Pa]
-  // gam      ! lapse rate to indicate tropopause [K/m]
-  // trp      ! tropopause pressure [Pa]
-  // BAD CONSTANT
-  constexpr Real deltaz = 2000.0; //   ! [m]
-  constexpr Real zero = 0.0;
-  constexpr Real one = 1.0;
-  constexpr Real half = 0.5;
-
-  trp = -99.0; //                           ! negative means not valid
-
-  // initialize start level
-  // dt/dz
-  const Real pmk = half * (haero::pow(pmid1d(pver - 2), cnst_kap) +
-                           haero::pow(pmid1d(pver - 1), cnst_kap));
-  const Real pm = haero::pow(pmk, one / cnst_kap);
-  // temperature lapse rate vs. height [K/m]
-  Real dtdz = zero;
-  // mean temperature [K]
-  Real tm = zero;
-
-  mam4::tropopause::get_dtdz(pm, pmk, pmid1d(pver - 2), pmid1d(pver - 1),
-                             temp1d(pver - 2), temp1d(pver - 1), dtdz, tm);
-  for (int kk = pver - 2; kk < 1; --kk) {
-    // const Real pm0 = pm;
-    const Real pmk0 = pmk;
-    const Real dtdz0 = dtdz;
-
-    // dt/dz
-    const Real pmk = half * (haero::pow(pmid1d(kk - 1), cnst_kap) +
-                             haero::pow(pmid1d(kk), cnst_kap));
-    const Real pm = haero::pow(pmk, one / cnst_kap);
-
-    mam4::tropopause::get_dtdz(pm, pmk, pmid1d(kk - 1), pmid1d(kk),
-                               temp1d(kk - 1), temp1d(kk), dtdz, tm);
-
-    // dt/dz valid?
-    if (dtdz <= gam) {
-      // nothing here go to next iteration
-      // no, dt/dz < -2 K/km
-    } else if (pm > plimu) {
-      // nothing here go to next iteration
-      // no, too low
-    } else {
-
-      //  dtdz is valid, calculate tropopause pressure
-      Real ag = zero;
-      Real bg = zero;
-      Real ptph = zero;
-      if (dtdz0 < gam) {
-        ag = (dtdz - dtdz0) / (pmk - pmk0);
-        bg = dtdz0 - (ag * pmk0);
-        ptph = haero::exp(haero::log((gam - bg) / ag) / cnst_kap);
-      } else {
-        ptph = pm;
-      } // if dtdz0<gam
-
-      if (ptph < pliml) {
-        // cycle main_loop
-      } else if (ptph > plimu) {
-        // cycle main_loop
-      } else {
-
-        //  2nd test: dtdz above 2 km must not exceed gam
-        const Real p2km =
-            ptph + deltaz * (pm / tm) * cnst_faktor; //     p at ptph + 2km
-        Real asum = zero; //                                dtdz above
-        int icount =
-            0; //                                  number of levels above
-
-        // test until apm < p2km
-        for (int jj = kk; jj < 1; --jj) {
-          const Real pmk2 =
-              half * (haero::pow(pmid1d(jj - 1), cnst_kap) +
-                      haero::pow(pmid1d(jj), cnst_kap)); // ! p mean ^kappa
-          const Real pm2 = haero::pow(
-              pmk2, one / cnst_kap); //                           ! p mean
-          if (pm2 > ptph) {
-            // cycle in_loop      doesn't happen
-          } else if (pm2 < p2km) {
-            // exit in_loop      ptropo is valid
-            break;
-          } else {
-            Real dtdz2 = zero;
-            Real tm2 = zero;
-            mam4::tropopause::get_dtdz(pm2, pmk2, pmid1d(jj - 1), pmid1d(jj),
-                                       temp1d(jj - 1), temp1d(jj), dtdz2, tm2);
-            asum += dtdz2;
-            icount++;
-            const Real aquer =
-                asum / Real(icount); //               ! dt/dz mean
-            // ! discard ptropo ?
-
-            if (aquer <= gam) {
-              // cycle main_loop      ! dt/dz above < gam
-              jj = 1;
-            }
-
-          } // pm2>ptph
-
-        } // jj test next level
-        trp = ptph;
-        break;
-      } // ptph<pliml
-    }   // dtdz<=gam
-
-  } // kk
-
-} // twmo
 // FIXME: move to tropopause.hpp
 // This routine uses an implementation of Reichler et al. [2003] done by
 // Reichler and downloaded from his web site. This is similar to the WMO
@@ -352,7 +213,7 @@ void tropopause_twmo(const ConstColumnView &pmid, const ConstColumnView &pint,
 
   // Use the routine from Reichler.
   Real tP = 0;
-  twmo(temp, pmid, plimu, pliml, gam, tP);
+  tropopause::twmo(temp, pmid, plimu, pliml, gam, tP);
 
   // if successful, store of the results and find the level and temperature.
   if (tP > 0) {
