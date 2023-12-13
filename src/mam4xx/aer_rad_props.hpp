@@ -40,19 +40,20 @@ void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
                       const View2D &tau, const View2D &tau_w,
                       const View2D &tau_w_g, const View2D &tau_w_f) {
 
-  //Intent-in
-  // ncol       ! Number of columns
-  // zi(:,:)    ! Height above surface at interfaces [m]
-  // trop_level(pcols)  ! tropopause level index
-  // ext_cmip6_sw_inv_m(pcols,pver,nswbands)  ! short wave extinction [m^{-1}]
-  // ssa_cmip6_sw(:,:,:),af_cmip6_sw(:,:,:)
+  // Intent-in
+  //  ncol       ! Number of columns
+  //  zi(:,:)    ! Height above surface at interfaces [m]
+  //  trop_level(pcols)  ! tropopause level index
+  //  ext_cmip6_sw_inv_m(pcols,pver,nswbands)  ! short wave extinction [m^{-1}]
+  //  ssa_cmip6_sw(:,:,:),af_cmip6_sw(:,:,:)
 
-  //Intent-inout
-  // tau    (pcols,0:pver,nswbands) ! aerosol extinction optical depth
-  // tau_w  (pcols,0:pver,nswbands) ! aerosol single scattering albedo * tau
-  // tau_w_g(pcols,0:pver,nswbands) ! aerosol assymetry parameter * tau * w
-  // tau_w_f(pcols,0:pver,nswbands) ! aerosol forward scattered fraction * tau *
-  // w
+  // Intent-inout
+  //  tau    (pcols,0:pver,nswbands) ! aerosol extinction optical depth
+  //  tau_w  (pcols,0:pver,nswbands) ! aerosol single scattering albedo * tau
+  //  tau_w_g(pcols,0:pver,nswbands) ! aerosol assymetry parameter * tau * w
+  //  tau_w_f(pcols,0:pver,nswbands) ! aerosol forward scattered fraction * tau
+  //  *
+  //  w
 
   // !Local variables
   // icol, ipver, ilev_tropp
