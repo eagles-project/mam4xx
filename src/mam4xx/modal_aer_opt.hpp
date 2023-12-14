@@ -140,9 +140,9 @@ struct DiagnosticsAerosolOpticsSW {
   ColumnView absorb;  //         ! aerosol absorption [1/m]
   View0D aodnir;
   View0D aoduv;
-  View1D dustaodmode; //[ntot_amode]
-  View1D aodmode;     //[ntot_amode]
-  View1D burdenmode;  //[ntot_amode]
+  View1D dustaodmode; // ntot_amode
+  View1D aodmode;     // ntot_amode
+  View1D burdenmode;  // ntot_amode
   View0D aodabsbc;
   View0D aodvis;
   View0D aodall;
