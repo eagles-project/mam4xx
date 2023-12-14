@@ -244,9 +244,8 @@ void modal_aero_sw(Ensemble *ensemble) {
     wa = View2D("wa", pver + 1, nswbands); // layer single-scatter albedo [1]
     ga = View2D("ga", pver + 1, nswbands); // asymmetry factor [1]
     fa = View2D("fa", pver + 1, nswbands); // forward scattered fraction [1]
-
-    View1D output_diagnostics_amode("output_diagnostics_amode", 3 * ntot_amode);
     View1D output_diagnostics("output_diagnostics", 21);
+    View2D output_diagnostics_amode("output_diagnostics_amode", 3, ntot_amode);
 
     ComplexView2D specrefindex("specrefindex", max_nspec, nswbands);
     View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
@@ -272,9 +271,59 @@ void modal_aero_sw(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, 1);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          DiagnosticsAerosolOpticsSW diagnostics_aerosol_optics_sw{};
+          DiagnosticsAerosolOpticsSW diagnostics_aerosol_optics_sw;
           diagnostics_aerosol_optics_sw.extinct = extinct;
           diagnostics_aerosol_optics_sw.absorb = absorb;
+          diagnostics_aerosol_optics_sw.aodnir =
+              Kokkos::subview(output_diagnostics, 0);
+          diagnostics_aerosol_optics_sw.aoduv =
+              Kokkos::subview(output_diagnostics, 1);
+          diagnostics_aerosol_optics_sw.aodabsbc =
+              Kokkos::subview(output_diagnostics, 2);
+          diagnostics_aerosol_optics_sw.aodvis =
+              Kokkos::subview(output_diagnostics, 3);
+          diagnostics_aerosol_optics_sw.aodall =
+              Kokkos::subview(output_diagnostics, 4);
+          diagnostics_aerosol_optics_sw.ssavis =
+              Kokkos::subview(output_diagnostics, 5);
+          diagnostics_aerosol_optics_sw.aodabs =
+              Kokkos::subview(output_diagnostics, 6);
+          diagnostics_aerosol_optics_sw.burdendust =
+              Kokkos::subview(output_diagnostics, 7);
+          diagnostics_aerosol_optics_sw.burdenso4 =
+              Kokkos::subview(output_diagnostics, 8);
+          diagnostics_aerosol_optics_sw.burdenbc =
+              Kokkos::subview(output_diagnostics, 9);
+          diagnostics_aerosol_optics_sw.burdenpom =
+              Kokkos::subview(output_diagnostics, 10);
+          diagnostics_aerosol_optics_sw.burdensoa =
+              Kokkos::subview(output_diagnostics, 11);
+          diagnostics_aerosol_optics_sw.burdenseasalt =
+              Kokkos::subview(output_diagnostics, 12);
+          diagnostics_aerosol_optics_sw.burdenmom =
+              Kokkos::subview(output_diagnostics, 13);
+          diagnostics_aerosol_optics_sw.momaod =
+              Kokkos::subview(output_diagnostics, 14);
+          diagnostics_aerosol_optics_sw.dustaod =
+              Kokkos::subview(output_diagnostics, 15);
+          diagnostics_aerosol_optics_sw.so4aod =
+              Kokkos::subview(output_diagnostics, 16);
+          ; // total species AOD
+          diagnostics_aerosol_optics_sw.pomaod =
+              Kokkos::subview(output_diagnostics, 17);
+          diagnostics_aerosol_optics_sw.soaaod =
+              Kokkos::subview(output_diagnostics, 18);
+          diagnostics_aerosol_optics_sw.bcaod =
+              Kokkos::subview(output_diagnostics, 19);
+          diagnostics_aerosol_optics_sw.seasaltaod =
+              Kokkos::subview(output_diagnostics, 20);
+
+          diagnostics_aerosol_optics_sw.dustaodmode =
+              Kokkos::subview(output_diagnostics_amode, 0, Kokkos::ALL);
+          diagnostics_aerosol_optics_sw.aodmode =
+              Kokkos::subview(output_diagnostics_amode, 1, Kokkos::ALL);
+          diagnostics_aerosol_optics_sw.burdenmode =
+              Kokkos::subview(output_diagnostics_amode, 2, Kokkos::ALL);
 
           modal_aero_sw(dt, state_q, qqcw, state_zm, temperature, pmid, pdel,
                         pdeldry, cldn, is_cmip6_volc, ext_cmip6_sw, trop_level,
@@ -286,38 +335,6 @@ void modal_aero_sw(Ensemble *ensemble) {
                         diagnostics_aerosol_optics_sw,
                         // work views
                         specrefindex, work);
-
-          output_diagnostics(0) = diagnostics_aerosol_optics_sw.aodnir;
-          output_diagnostics(1) = diagnostics_aerosol_optics_sw.aoduv;
-          output_diagnostics(2) = diagnostics_aerosol_optics_sw.aodabsbc;
-          output_diagnostics(3) = diagnostics_aerosol_optics_sw.aodvis;
-          output_diagnostics(4) = diagnostics_aerosol_optics_sw.aodall;
-          output_diagnostics(5) = diagnostics_aerosol_optics_sw.ssavis;
-          output_diagnostics(6) = diagnostics_aerosol_optics_sw.aodabs;
-          output_diagnostics(7) = diagnostics_aerosol_optics_sw.burdendust;
-          output_diagnostics(8) = diagnostics_aerosol_optics_sw.burdenso4;
-          output_diagnostics(9) = diagnostics_aerosol_optics_sw.burdenbc;
-          output_diagnostics(10) = diagnostics_aerosol_optics_sw.burdenpom;
-          output_diagnostics(11) = diagnostics_aerosol_optics_sw.burdensoa;
-          output_diagnostics(12) = diagnostics_aerosol_optics_sw.burdenseasalt;
-          output_diagnostics(13) = diagnostics_aerosol_optics_sw.burdenmom;
-          output_diagnostics(14) = diagnostics_aerosol_optics_sw.momaod;
-          output_diagnostics(15) = diagnostics_aerosol_optics_sw.dustaod;
-          output_diagnostics(16) =
-              diagnostics_aerosol_optics_sw.so4aod; // total species AOD
-          output_diagnostics(17) = diagnostics_aerosol_optics_sw.pomaod;
-          output_diagnostics(18) = diagnostics_aerosol_optics_sw.soaaod;
-          output_diagnostics(19) = diagnostics_aerosol_optics_sw.bcaod;
-          output_diagnostics(20) = diagnostics_aerosol_optics_sw.seasaltaod;
-
-          for (int m = 0; m < ntot_amode; ++m) {
-            output_diagnostics_amode(m) =
-                diagnostics_aerosol_optics_sw.dustaodmode[m];
-            output_diagnostics_amode(m + ntot_amode) =
-                diagnostics_aerosol_optics_sw.aodmode[m];
-            output_diagnostics_amode(m + 2 * ntot_amode) =
-                diagnostics_aerosol_optics_sw.burdenmode[m];
-          }
         });
 
     Kokkos::deep_copy(qqcw_host, qqcw);
