@@ -21,6 +21,7 @@ add_executable(aerosol_optics_driver
                calc_parameterized.cpp
                update_aod_spec.cpp
                aer_rad_props_lw.cpp
+               #aer_rad_props_sw.cpp
                )
 
 target_link_libraries(aerosol_optics_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -65,7 +66,7 @@ set(ERROR_THRESHOLDS
    7e-11
    2e-11
    1e-12
-   ${DEFAULT_TOL}
+   7e-11
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.

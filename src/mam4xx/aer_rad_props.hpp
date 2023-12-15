@@ -364,7 +364,7 @@ void aer_rad_props_sw(const Real dt, const ConstColumnView &zi,
                       const View2D qqcw, const ConstColumnView &pdel,
                       const ConstColumnView &pdeldry,
                       const ConstColumnView &cldn, const View2D &ssa_cmip6_sw,
-                      const View2D &af_cmip6_sw, const View2D &ext_cmip6_sw,
+                      const View2D &af_cmip6_sw, const View2D &ext_cmip6_sw_m,
                       const View2D &tau, const View2D &tau_w,
                       const View2D &tau_w_g, const View2D &tau_w_f,
                       // FIXME
@@ -372,9 +372,8 @@ void aer_rad_props_sw(const Real dt, const ConstColumnView &zi,
                       const AerosolOpticsDeviceData &aersol_optics_data,
                       // diagnostic
                       DiagnosticsAerosolOpticsSW &diagnostics_aerosol_optics_sw,
-                      const ComplexView2D &specrefindex, const View1D &work,
-                      // work views
-                      const View2D &ext_cmip6_sw_inv_m) {
+                      const ComplexView2D &specrefindex, const View1D &work
+                      ) {
 
   // call outfld('extinct_sw_inp',ext_cmip6_sw(:,:,idx_sw_diag), pcols, lchnk)
 
@@ -390,7 +389,9 @@ void aer_rad_props_sw(const Real dt, const ConstColumnView &zi,
   // pdel(:,:)
   // pdeldry(:,:)
   // cldn(:,:)
-  // ext_cmip6_sw(:,:,:)
+  // NOTE: ext_cmip6_sw move unit conversion from km to m outside of this function 
+  // NOTE: ext_cmip6_sw (nswbands, pver)
+  // ext_cmip6_sw(:,:,:) [1/m] 
   // ssa_cmip6_sw(:,:,:)
   // af_cmip6_sw(:,:,:)
 
@@ -422,7 +423,7 @@ void aer_rad_props_sw(const Real dt, const ConstColumnView &zi,
   // tau_w_g(1:ncol,:,:) = 0._r8
   // tau_w_f(1:ncol,:,:) = 0._r8
 
-  // !Converting it from 1/km to 1/m
+  // CHECK: fortran to C++ indexing 
   constexpr int idx_sw_diag = 10; // index to sw visible band
 
   // Note: Changing order of dimension in ext_cmip6_sw_inv_m from (level,
@@ -430,18 +431,12 @@ void aer_rad_props_sw(const Real dt, const ConstColumnView &zi,
   // error: View assignment must have compatible layouts in
   // ext_cmip6_sw_inv_m_idx_sw_diag
 
-  for (int kk = 0; kk < pver; ++kk) {
-    for (int i = 0; i < nswbands; ++i) {
-      ext_cmip6_sw_inv_m(i, kk) = ext_cmip6_sw(kk, i) * km_inv_to_m_inv;
-    } /// end i
-  }   // end kk
-
   // Find tropopause (or quit simulation if not found) as extinction should be
   // applied only above tropopause
   const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
 
   auto ext_cmip6_sw_inv_m_idx_sw_diag =
-      Kokkos::subview(ext_cmip6_sw_inv_m, idx_sw_diag, Kokkos::ALL());
+      Kokkos::subview(ext_cmip6_sw_m, idx_sw_diag, Kokkos::ALL());
 
   // Special treatment for CMIP6 volcanic aerosols, where extinction, ssa
   // and af are directly read from the prescribed volcanic aerosol file
@@ -461,7 +456,7 @@ void aer_rad_props_sw(const Real dt, const ConstColumnView &zi,
 
   // Update tau, tau_w, tau_w_g, and tau_w_f with the read in values of
   // extinction, ssa and asymmetry factors
-  volcanic_cmip_sw(zi, ilev_tropp, ext_cmip6_sw_inv_m, ssa_cmip6_sw,
+  volcanic_cmip_sw(zi, ilev_tropp, ext_cmip6_sw_m, ssa_cmip6_sw,
                    af_cmip6_sw, tau, tau_w, tau_w_g, tau_w_f);
 
   //  Diagnostic output of total aerosol optical properties
