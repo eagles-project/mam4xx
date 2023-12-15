@@ -1,9 +1,7 @@
 #ifndef MAM4XX_TROPOPAUSE_HPP
 #define MAM4XX_TROPOPAUSE_HPP
 
-#include <fstream>
 #include <haero/math.hpp>
-#include <iostream>
 #include <mam4xx/aero_config.hpp>
 
 namespace mam4 {
@@ -213,12 +211,9 @@ void tropopause_twmo(const ConstColumnView &pmid, const ConstColumnView &pint,
                      const ConstColumnView &temp, const ConstColumnView &zm,
                      const ConstColumnView &zi, int &tropLev) {
   // BAD CONSTANT
-  constexpr Real gam =
-      -0.002; // lapse rate to indicate tropopause [K/m]
-  constexpr Real plimu =
-      45000; // upper limit of tropopause pressure [Pa]
-  constexpr Real pliml =
-      7500; // lower limit of tropopause pressure [Pa]
+  constexpr Real gam = -0.002;  // lapse rate to indicate tropopause [K/m]
+  constexpr Real plimu = 45000; // upper limit of tropopause pressure [Pa]
+  constexpr Real pliml = 7500;  // lower limit of tropopause pressure [Pa]
 
   // Use the routine from Reichler.
   Real tP = 0;
@@ -226,19 +221,14 @@ void tropopause_twmo(const ConstColumnView &pmid, const ConstColumnView &pint,
 
   // if successful, store of the results and find the level and temperature.
   if (tP > 0) {
-
     // Find the associated level.
     for (int kk = pver - 1; kk > 1; --kk) {
       if (tP >= pint(kk)) {
         tropLev = kk;
-        // tropLevValp1 = kk + 1;
-        // tropLevValm1 = kk - 1;
         break;
       }
     } // kk
-
-    // tropLev = tropLevVal
-  } // tP
+  }   // tP
 
 } // tropopause_twmo
 
