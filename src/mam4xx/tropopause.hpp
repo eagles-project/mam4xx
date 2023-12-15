@@ -214,11 +214,11 @@ void tropopause_twmo(const ConstColumnView &pmid, const ConstColumnView &pint,
                      const ConstColumnView &zi, int &tropLev) {
   // BAD CONSTANT
   constexpr Real gam =
-      -0.002; //       ! lapse rate to indicate tropopause [K/m]
+      -0.002; // lapse rate to indicate tropopause [K/m]
   constexpr Real plimu =
-      45000; //       ! upper limit of tropopause pressure [Pa]
+      45000; // upper limit of tropopause pressure [Pa]
   constexpr Real pliml =
-      7500; //        !lower limit of tropopause pressure [Pa]
+      7500; // lower limit of tropopause pressure [Pa]
 
   // Use the routine from Reichler.
   Real tP = 0;
