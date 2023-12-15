@@ -196,44 +196,6 @@ void compute_odap_volcanic_above_troplayer_lw(const int ilev_tropp,
 
 } // compute_odap_volcanic_above_troplayer_lw
 
-// FIXME: move to tropopause.hpp
-// This routine uses an implementation of Reichler et al. [2003] done by
-// Reichler and downloaded from his web site. This is similar to the WMO
-//  routines, but is designed for GCMs with a coarse vertical grid.
-KOKKOS_INLINE_FUNCTION
-void tropopause_twmo(const ConstColumnView &pmid, const ConstColumnView &pint,
-                     const ConstColumnView &temp, const ConstColumnView &zm,
-                     const ConstColumnView &zi, int &tropLev) {
-  // BAD CONSTANT
-  constexpr Real gam =
-      -0.002; //       ! lapse rate to indicate tropopause [K/m]
-  constexpr Real plimu =
-      45000; //       ! upper limit of tropopause pressure [Pa]
-  constexpr Real pliml =
-      7500; //        !lower limit of tropopause pressure [Pa]
-
-  // Use the routine from Reichler.
-  Real tP = 0;
-  tropopause::twmo(temp, pmid, plimu, pliml, gam, tP);
-
-  // if successful, store of the results and find the level and temperature.
-  if (tP > 0) {
-
-    // Find the associated level.
-    for (int kk = pver - 1; kk > 1; --kk) {
-      if (tP >= pint(kk)) {
-        tropLev = kk;
-        // tropLevValp1 = kk + 1;
-        // tropLevValm1 = kk - 1;
-        break;
-      }
-    } // kk
-
-    // tropLev = tropLevVal
-  } // tP
-
-} // tropopause_twmo
-
 /* Read the tropopause pressure in from a file containging a climatology. The
   ! data is interpolated to the current dat of year and latitude.
   !
@@ -267,7 +229,7 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
   // call tropopause_find(lchnk, ncol, pmid, pint, temperature, zm, zi, & !in
   //        trop_level) !out
   int trop_level = 0;
-  tropopause_twmo(pmid, pint, temperature, zm, zi, trop_level);
+  tropopause::tropopause_twmo(pmid, pint, temperature, zm, zi, trop_level);
 
   if (trop_level < -1) {
     Kokkos::abort("aer_rad_props: tropopause not found\n");

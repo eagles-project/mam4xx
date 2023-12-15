@@ -21,7 +21,7 @@ add_executable(aerosol_optics_driver
                calc_parameterized.cpp
                update_aod_spec.cpp
                aer_rad_props_lw.cpp
-               #aer_rad_props_sw.cpp
+               aer_rad_props_sw.cpp
                )
 
 target_link_libraries(aerosol_optics_driver skywalker;validation;${HAERO_LIBRARIES})
