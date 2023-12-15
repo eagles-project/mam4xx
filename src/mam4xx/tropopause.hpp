@@ -4,19 +4,14 @@
 #include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
 
-#include <fstream>
-#include <iostream>
-
 namespace mam4 {
 
 namespace tropopause {
 
 using ConstColumnView = haero::ConstColumnView;
-// From radconstants //FIXME: BAD CONSTANT
+// FIXME: Get these values from modal_aer_opt.
 constexpr int nswbands = 14;
 constexpr int nlwbands = 16;
-using View2D = DeviceType::view_2d<Real>;
-constexpr Real km_inv_to_m_inv = 0.001; // 1/km to 1/m
 constexpr int pver = mam4::nlev;
 
 constexpr Real shr_const_rgas =
@@ -40,14 +35,14 @@ void get_dtdz(const Real pm, const Real pmk, const Real pmid1d_up,
               const Real pmid1d_down, const Real temp1d_up,
               const Real temp1d_down, Real &dtdz, Real &tm) {
 
-  // pm      ! mean pressure [Pa]
+  // pm       mean pressure [Pa]
   // pmk
-  // pmid1d_up     !  midpoint pressure in column at upper level [Pa]
-  // pmid1d_down   !  midpoint pressure in column at lower level [Pa]
-  // temp1d_up     !  temperature in column at upper level [K]
-  // temp1d_down   !  temperature in column at lower level [K]
-  // dtdz     ! temperature lapse rate vs. height [K/m]
-  // tm       ! mean temperature [K] -- needed to find pressure at trop + 2 km
+  // pmid1d_up       midpoint pressure in column at upper level [Pa]
+  // pmid1d_down     midpoint pressure in column at lower level [Pa]
+  // temp1d_up       temperature in column at upper level [K]
+  // temp1d_down     temperature in column at lower level [K]
+  // dtdz      temperature lapse rate vs. height [K/m]
+  // tm        mean temperature [K] -- needed to find pressure at trop + 2 km
 
   const Real a1 =
       (temp1d_up - temp1d_down) /
@@ -86,12 +81,12 @@ KOKKOS_INLINE_FUNCTION
 void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
           const Real plimu, const Real pliml, const Real gam, Real &trp) {
 
-  // temp1d   !  temperature in column [K]
-  // pmid1d   !  midpoint pressure in column [Pa]
-  // plimu    ! upper limit of tropopause pressure [Pa]
-  // pliml    ! lower limit of tropopause pressure [Pa]
-  // gam      ! lapse rate to indicate tropopause [K/m]
-  // trp      ! tropopause pressure [Pa]
+  // temp1d    temperature in column [K]
+  // pmid1d    midpoint pressure in column [Pa]
+  // plimu     upper limit of tropopause pressure [Pa]
+  // pliml     lower limit of tropopause pressure [Pa]
+  // gam       lapse rate to indicate tropopause [K/m]
+  // trp       tropopause pressure [Pa]
   // BAD CONSTANT
   constexpr Real deltaz = 2000.0; //   ! [m]
   constexpr Real zero = 0.0;
@@ -207,6 +202,35 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
     }
   } // kk (main loop)
 } // twmo
+
+// This routine uses an implementation of Reichler et al. [2003] done by
+// Reichler and downloaded from his web site. This is similar to the WMO
+//  routines, but is designed for GCMs with a coarse vertical grid.
+KOKKOS_INLINE_FUNCTION
+void tropopause_twmo(const ConstColumnView &pmid, const ConstColumnView &pint,
+                     const ConstColumnView &temp, const ConstColumnView &zm,
+                     const ConstColumnView &zi, int &tropLev) {
+  // BAD CONSTANT
+  constexpr Real gam = -0.002;  // lapse rate to indicate tropopause [K/m]
+  constexpr Real plimu = 45000; // upper limit of tropopause pressure [Pa]
+  constexpr Real pliml = 7500;  // lower limit of tropopause pressure [Pa]
+
+  // Use the routine from Reichler.
+  Real tP = 0;
+  twmo(temp, pmid, plimu, pliml, gam, tP);
+
+  // if successful, store of the results and find the level and temperature.
+  if (tP > 0) {
+    // Find the associated level.
+    for (int kk = pver - 1; kk > 1; --kk) {
+      if (tP >= pint(kk)) {
+        tropLev = kk;
+        break;
+      }
+    } // kk
+  }   // tP
+
+} // tropopause_twmo
 
 } // namespace tropopause
 } // end namespace mam4
