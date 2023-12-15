@@ -31,6 +31,7 @@ void modal_aero_sw(Ensemble *ensemble);
 void modal_aero_lw(Ensemble *ensemble);
 void calc_parameterized(Ensemble *ensemble);
 void update_aod_spec(Ensemble *ensemble);
+void aer_rad_props_lw(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -72,6 +73,8 @@ int main(int argc, char **argv) {
       calc_parameterized(ensemble);
     } else if (func_name == "update_aod_spec") {
       update_aod_spec(ensemble);
+    } else if (func_name == "aer_rad_props_lw") {
+      aer_rad_props_lw(ensemble);   
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;

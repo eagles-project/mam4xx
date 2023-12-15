@@ -220,7 +220,7 @@ void tropopause_twmo(const ConstColumnView &pmid, const ConstColumnView &pint,
   if (tP > 0) {
 
     // Find the associated level.
-    for (int kk = pver - 1; kk < 1; --kk) {
+    for (int kk = pver - 1; kk > 1; --kk) {
       if (tP >= pint(kk)) {
         tropLev = kk;
         // tropLevValp1 = kk + 1;
