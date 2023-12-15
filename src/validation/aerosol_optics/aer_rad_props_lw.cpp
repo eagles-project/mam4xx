@@ -44,7 +44,7 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     Kokkos::deep_copy(qqcw, qqcw_host);
     
     const auto ext_cmip6_lw_db = input.get_array("ext_cmip6_lw");
-    View2D ext_cmip6_lw("ext_cmip6_lw", pver, nvars);
+    View2D ext_cmip6_lw("ext_cmip6_lw", pver, nlwbands);
     mam4::validation::convert_1d_vector_to_2d_view_device(ext_cmip6_lw_db, ext_cmip6_lw);
 
     const auto temperature_db = input.get_array("temperature");
