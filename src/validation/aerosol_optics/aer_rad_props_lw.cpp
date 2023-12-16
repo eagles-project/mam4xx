@@ -42,10 +42,11 @@ void aer_rad_props_lw(Ensemble *ensemble) {
       }
     }
     Kokkos::deep_copy(qqcw, qqcw_host);
-    
+
     const auto ext_cmip6_lw_db = input.get_array("ext_cmip6_lw");
     View2D ext_cmip6_lw("ext_cmip6_lw", pver, nlwbands);
-    mam4::validation::convert_1d_vector_to_2d_view_device(ext_cmip6_lw_db, ext_cmip6_lw);
+    mam4::validation::convert_1d_vector_to_2d_view_device(ext_cmip6_lw_db,
+                                                          ext_cmip6_lw);
 
     const auto temperature_db = input.get_array("temperature");
     const auto pmid_db = input.get_array("pmid");
@@ -56,7 +57,6 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     const auto pint_db = input.get_array("pint");
     const auto zm_db = input.get_array("zm");
     const auto zi_db = input.get_array("zi");
-
 
     ColumnView temperature;
     ColumnView pmid;
@@ -87,7 +87,7 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
     Kokkos::deep_copy(cldn, cldn_host);
 
-    pint= haero::testing::create_column_view(pver);
+    pint = haero::testing::create_column_view(pver);
     auto pint_host = View1DHost((Real *)pint_db.data(), pver);
     Kokkos::deep_copy(pint, pint_host);
 
@@ -106,8 +106,6 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     for (int imode = 0; imode < ntot_amode; ++imode) {
       sigmag_amode[imode] = sigmag_amode_db[imode];
     }
-
-
 
     const auto specrefndxlw_real_db = input.get_array("specrefndxlw_real");
     const auto specrefndxlw_imag_db = input.get_array("specrefndxlw_imag");
@@ -128,8 +126,6 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     }
 
     Kokkos::deep_copy(aersol_optics_data.specrefndxlw, specrefndxlw_host);
-
-
 
     const auto crefwsw_real = input.get_array("crefwsw_real");
     const auto crefwsw_imag = input.get_array("crefwsw_imag");
@@ -190,7 +186,7 @@ void aer_rad_props_lw(Ensemble *ensemble) {
         Kokkos::deep_copy(aersol_optics_data.absplw[d1][d5],
                           absplw3_host[d1][d5]);
       }
-  
+
     const auto refrtablw_db = input.get_array("refrtablw");
     const auto refitablw_db = input.get_array("refitablw");
 
@@ -252,18 +248,13 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          aer_rad_props::aer_rad_props_lw( dt, pmid, pint, temperature, zm,
-                            zi, state_q, qqcw,
-                           pdel, pdeldry,
-                           cldn, ext_cmip6_lw,
-                           aersol_optics_data,
-    // output
-                           odap_aer,
-    // work views
-                            specrefindex, 
-                            work,
-                            ext_cmip6_lw_inv_m);
-
+          aer_rad_props::aer_rad_props_lw(
+              dt, pmid, pint, temperature, zm, zi, state_q, qqcw, pdel, pdeldry,
+              cldn, ext_cmip6_lw, aersol_optics_data,
+              // output
+              odap_aer,
+              // work views
+              specrefindex, work, ext_cmip6_lw_inv_m);
         });
 
     Kokkos::deep_copy(qqcw_host, qqcw);
@@ -278,7 +269,8 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     output.set("qqcw", qqcw_db);
 
     std::vector<Real> odap_aer_out(pver * nlwbands, zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(odap_aer, odap_aer_out);
+    mam4::validation::convert_2d_view_device_to_1d_vector(odap_aer,
+                                                          odap_aer_out);
     output.set("odap_aer", odap_aer_out);
   });
 }

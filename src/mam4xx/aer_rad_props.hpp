@@ -81,16 +81,17 @@ void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
   const Real lyr_thk = zi(ilev_tropp) - zi(ilev_tropp + 1);
   for (int i = 0; i < nswbands; ++i) {
     // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,pver)
-    const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(i,ilev_tropp);
+    const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(i, ilev_tropp);
     const Real asym_unitless = af_cmip6_sw(ilev_tropp, i);
     const Real ext_ssa = ext_unitless * ssa_cmip6_sw(ilev_tropp, i);
     const Real ext_ssa_asym = ext_ssa * asym_unitless;
-     // NOTE: tau vars have one extra dimension in Fortran.
-    tau(ilev_tropp+1, i) = half * (tau(ilev_tropp+1, i) + ext_unitless);
-    tau_w(ilev_tropp+1, i) = half * (tau_w(ilev_tropp+1, i) + ext_ssa);
-    tau_w_g(ilev_tropp+1, i) = half * (tau_w_g(ilev_tropp+1, i) + ext_ssa_asym);
-    tau_w_f(ilev_tropp+1, i) =
-        half * (tau_w_f(ilev_tropp+1, i) + ext_ssa_asym * asym_unitless);  
+    // NOTE: tau vars have one extra dimension in Fortran.
+    tau(ilev_tropp + 1, i) = half * (tau(ilev_tropp + 1, i) + ext_unitless);
+    tau_w(ilev_tropp + 1, i) = half * (tau_w(ilev_tropp + 1, i) + ext_ssa);
+    tau_w_g(ilev_tropp + 1, i) =
+        half * (tau_w_g(ilev_tropp + 1, i) + ext_ssa_asym);
+    tau_w_f(ilev_tropp + 1, i) =
+        half * (tau_w_f(ilev_tropp + 1, i) + ext_ssa_asym * asym_unitless);
   } // end i
 
   // !As it will be more efficient for FORTRAN to loop over levels and then
@@ -104,14 +105,14 @@ void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
     const Real lyr_thk = zi(kk) - zi(kk + 1);
     for (int i = 0; i < nswbands; ++i) {
       // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,pver)
-      const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(i,kk);
+      const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(i, kk);
       const Real asym_unitless = af_cmip6_sw(kk, i);
       const Real ext_ssa = ext_unitless * ssa_cmip6_sw(kk, i);
       const Real ext_ssa_asym = ext_ssa * asym_unitless;
-      tau(kk+1, i) = ext_unitless;
-      tau_w(kk+1, i) = ext_ssa;
-      tau_w_g(kk+1, i) = ext_ssa_asym;
-      tau_w_f(kk+1, i) = ext_ssa_asym * asym_unitless;
+      tau(kk + 1, i) = ext_unitless;
+      tau_w(kk + 1, i) = ext_ssa;
+      tau_w_g(kk + 1, i) = ext_ssa_asym;
+      tau_w_f(kk + 1, i) = ext_ssa_asym * asym_unitless;
 
     } // end nswbands
 
@@ -335,8 +336,7 @@ void aer_rad_props_sw(const Real dt, const ConstColumnView &zi,
                       const AerosolOpticsDeviceData &aersol_optics_data,
                       // diagnostic
                       DiagnosticsAerosolOpticsSW &diagnostics_aerosol_optics_sw,
-                      const ComplexView2D &specrefindex, const View1D &work
-                      ) {
+                      const ComplexView2D &specrefindex, const View1D &work) {
 
   // call outfld('extinct_sw_inp',ext_cmip6_sw(:,:,idx_sw_diag), pcols, lchnk)
 
@@ -352,9 +352,8 @@ void aer_rad_props_sw(const Real dt, const ConstColumnView &zi,
   // pdel(:,:)
   // pdeldry(:,:)
   // cldn(:,:)
-  // NOTE: ext_cmip6_sw move unit conversion from km to m outside of this function 
-  // NOTE: ext_cmip6_sw (nswbands, pver)
-  // ext_cmip6_sw(:,:,:) [1/m] 
+  // NOTE: ext_cmip6_sw move unit conversion from km to m outside of this
+  // function NOTE: ext_cmip6_sw (nswbands, pver) ext_cmip6_sw(:,:,:) [1/m]
   // ssa_cmip6_sw(:,:,:)
   // af_cmip6_sw(:,:,:)
 
@@ -386,8 +385,8 @@ void aer_rad_props_sw(const Real dt, const ConstColumnView &zi,
   // tau_w_g(1:ncol,:,:) = 0._r8
   // tau_w_f(1:ncol,:,:) = 0._r8
 
-  // CHECK: fortran to C++ indexing 
-  constexpr int idx_sw_diag = 10-1; // index to sw visible band
+  // CHECK: fortran to C++ indexing
+  constexpr int idx_sw_diag = 10 - 1; // index to sw visible band
 
   // Note: Changing order of dimension in ext_cmip6_sw_inv_m from (level,
   // nswbands) to  (nswbands, level) because original layout produces this
@@ -419,8 +418,8 @@ void aer_rad_props_sw(const Real dt, const ConstColumnView &zi,
 
   // Update tau, tau_w, tau_w_g, and tau_w_f with the read in values of
   // extinction, ssa and asymmetry factors
-  volcanic_cmip_sw(zi, ilev_tropp, ext_cmip6_sw_m, ssa_cmip6_sw,
-                   af_cmip6_sw, tau, tau_w, tau_w_g, tau_w_f);
+  volcanic_cmip_sw(zi, ilev_tropp, ext_cmip6_sw_m, ssa_cmip6_sw, af_cmip6_sw,
+                   tau, tau_w, tau_w_g, tau_w_f);
 
   //  Diagnostic output of total aerosol optical properties
   //  currently implemented for climate list only

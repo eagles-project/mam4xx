@@ -40,7 +40,6 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     const auto cldn_db = input.get_array("cldn");
     const auto zi_db = input.get_array("zi");
     const auto pint_db = input.get_array("pint");
-    
 
     ColumnView zm;
     zm = haero::testing::create_column_view(pver);
@@ -75,12 +74,11 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
     Kokkos::deep_copy(cldn, cldn_host);
 
-
     zi = haero::testing::create_column_view(pver);
     auto zi_host = View1DHost((Real *)zi_db.data(), pver);
     Kokkos::deep_copy(zi, zi_host);
 
-    pint= haero::testing::create_column_view(pver);
+    pint = haero::testing::create_column_view(pver);
     auto pint_host = View1DHost((Real *)pint_db.data(), pver);
     Kokkos::deep_copy(pint, pint_host);
 
@@ -97,33 +95,32 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     }
     Kokkos::deep_copy(qqcw, qqcw_host);
 
-
     const auto ext_cmip6_sw_db = input.get_array("ext_cmip6_sw");
     // We need to reshape ext_cmip6_sw
     View2D ext_cmip6_sw("ext_cmip6_sw", nswbands, pver);
     auto ext_cmip6_sw_host = Kokkos::create_mirror_view(ext_cmip6_sw);
-    count=0;
+    count = 0;
     for (int d1 = 0; d1 < nswbands; ++d1) {
-    for (int d2 = 0; d2 < pver; ++d2) {
-      // reshape  (nswbands,pver) -> (pver,nswbands)
-        // unit conversion from km to m 
-        ext_cmip6_sw_host(d1, d2) = ext_cmip6_sw_db[count]*1e-3;
+      for (int d2 = 0; d2 < pver; ++d2) {
+        // reshape  (nswbands,pver) -> (pver,nswbands)
+        // unit conversion from km to m
+        ext_cmip6_sw_host(d1, d2) = ext_cmip6_sw_db[count] * 1e-3;
         count++;
       }
     }
 
-    Kokkos::deep_copy(ext_cmip6_sw,ext_cmip6_sw_host);
-    
+    Kokkos::deep_copy(ext_cmip6_sw, ext_cmip6_sw_host);
+
     const auto ssa_cmip6_sw_db = input.get_array("ssa_cmip6_sw");
 
     View2D ssa_cmip6_sw("ssa_cmip6_sw", pver, nswbands);
-    mam4::validation::convert_1d_vector_to_2d_view_device(ssa_cmip6_sw_db, ssa_cmip6_sw);
-
+    mam4::validation::convert_1d_vector_to_2d_view_device(ssa_cmip6_sw_db,
+                                                          ssa_cmip6_sw);
 
     const auto af_cmip6_sw_db = input.get_array("af_cmip6_sw");
     View2D af_cmip6_sw("af_cmip6_sw", pver, nswbands);
-    mam4::validation::convert_1d_vector_to_2d_view_device(af_cmip6_sw_db, af_cmip6_sw);
-
+    mam4::validation::convert_1d_vector_to_2d_view_device(af_cmip6_sw_db,
+                                                          af_cmip6_sw);
 
     AerosolOpticsDeviceData aersol_optics_data{};
     // allocate views.
@@ -274,10 +271,12 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     View2D tau, tau_w, tau_w_g, tau_w_f;
 
     tau = View2D("tau", pver + 1,
-                    nswbands);             // layer extinction optical depth [1]
-    tau_w = View2D("tau_w", pver + 1, nswbands); // layer single-scatter albedo [1]
+                 nswbands); // layer extinction optical depth [1]
+    tau_w =
+        View2D("tau_w", pver + 1, nswbands); // layer single-scatter albedo [1]
     tau_w_g = View2D("tau_w_g", pver + 1, nswbands); // asymmetry factor [1]
-    tau_w_f = View2D("tau_w_f", pver + 1, nswbands); // forward scattered fraction [1]
+    tau_w_f =
+        View2D("tau_w_f", pver + 1, nswbands); // forward scattered fraction [1]
     View1D output_diagnostics("output_diagnostics", 21);
     View2D output_diagnostics_amode("output_diagnostics_amode", 3, ntot_amode);
 
@@ -359,23 +358,15 @@ void aer_rad_props_sw(Ensemble *ensemble) {
           diagnostics_aerosol_optics_sw.burdenmode =
               Kokkos::subview(output_diagnostics_amode, 2, Kokkos::ALL);
 
-            // new vars: ssa_cmip6_sw, af_cmip6_sw
-              aer_rad_props::aer_rad_props_sw(dt, zi,
-                      pmid, pint,
-                      temperature,
-                      zm, state_q,
-                      qqcw, pdel,
-                      pdeldry,
-                      cldn, ssa_cmip6_sw,
-                      af_cmip6_sw, ext_cmip6_sw,
-                      tau, tau_w,
-                      tau_w_g, tau_w_f,
-                      // FIXME
-                      specname_amode,
-                      aersol_optics_data,
-                      // diagnostic
-                      diagnostics_aerosol_optics_sw,
-                      specrefindex, work);
+          // new vars: ssa_cmip6_sw, af_cmip6_sw
+          aer_rad_props::aer_rad_props_sw(
+              dt, zi, pmid, pint, temperature, zm, state_q, qqcw, pdel, pdeldry,
+              cldn, ssa_cmip6_sw, af_cmip6_sw, ext_cmip6_sw, tau, tau_w,
+              tau_w_g, tau_w_f,
+              // FIXME
+              specname_amode, aersol_optics_data,
+              // diagnostic
+              diagnostics_aerosol_optics_sw, specrefindex, work);
         });
 
     Kokkos::deep_copy(qqcw_host, qqcw);
@@ -404,7 +395,6 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     std::vector<Real> tau_w_f_out(pver_po * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(tau_w_f, tau_w_f_out);
     output.set("tau_w_f", tau_w_f_out);
-
 
 #if 0
     auto extinct_host = Kokkos::create_mirror_view(extinct);
@@ -464,6 +454,6 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     output.set("burdenmom", std::vector<Real>(1, burdenmom));
     output.set("seasaltaod", std::vector<Real>(1, seasaltaod));
 
- #endif   
+#endif
   });
 }

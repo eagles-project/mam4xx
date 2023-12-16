@@ -36,7 +36,7 @@ void volcanic_cmip_sw(Ensemble *ensemble) {
     auto ext_cmip6_sw_host = Kokkos::create_mirror_view(ext_cmip6_sw);
     int count = 0;
     for (int d1 = 0; d1 < nswbands; ++d1) {
-    for (int d2 = 0; d2 < pver; ++d2) {
+      for (int d2 = 0; d2 < pver; ++d2) {
         ext_cmip6_sw_host(d1, d2) = ext_cmip6_sw_db[count];
         count++;
       }

@@ -76,11 +76,11 @@ int main(int argc, char **argv) {
     } else if (func_name == "update_aod_spec") {
       update_aod_spec(ensemble);
     } else if (func_name == "aer_rad_props_lw") {
-      aer_rad_props_lw(ensemble);   
+      aer_rad_props_lw(ensemble);
     } else if (func_name == "aer_rad_props_sw") {
-      aer_rad_props_sw(ensemble); 
+      aer_rad_props_sw(ensemble);
     } else if (func_name == "volcanic_cmip_sw") {
-      volcanic_cmip_sw(ensemble);       
+      volcanic_cmip_sw(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;

@@ -265,19 +265,19 @@ void calc_volc_ext(const int trop_level, const ConstColumnView &state_zm,
   // calculate contributions from volcanic aerosol extinction
   // trop_level(pcols)!tropopause level for each column
   // state_zm(:,:) ! state%zm [m]
-  // ext_cmip6_sw(pcols,pver) ! aerosol shortwave extinction [1/m] 
+  // ext_cmip6_sw(pcols,pver) ! aerosol shortwave extinction [1/m]
   // extinct(pcols,pver) ! aerosol extinction [1/m]
   // tropopause_m(pcols) ! tropopause height [m]
   // kk_tropp = trop_level(icol)
   //
   constexpr Real half = 0.5;
 
-
   // diagnose tropopause height
   tropopause_m = state_zm(trop_level); //! in meters
   // update tropopause layer first
-  // Note: Multiplication by km_inv_to_m_inv 
-  extinct(trop_level) = half * (extinct(trop_level) + ext_cmip6_sw_m(trop_level));
+  // Note: Multiplication by km_inv_to_m_inv
+  extinct(trop_level) =
+      half * (extinct(trop_level) + ext_cmip6_sw_m(trop_level));
   // extinction is assigned read in values only for visible band above
   // tropopause
   for (int kk = 0; kk < trop_level; ++kk) {
