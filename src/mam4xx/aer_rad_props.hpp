@@ -78,19 +78,19 @@ void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
   // ilev_tropp = trop_level(icol) !tropopause level
   //
   constexpr Real half = 0.5;
-
   const Real lyr_thk = zi(ilev_tropp) - zi(ilev_tropp + 1);
   for (int i = 0; i < nswbands; ++i) {
-    const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(ilev_tropp, i);
+    // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,pver)
+    const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(i,ilev_tropp);
     const Real asym_unitless = af_cmip6_sw(ilev_tropp, i);
     const Real ext_ssa = ext_unitless * ssa_cmip6_sw(ilev_tropp, i);
     const Real ext_ssa_asym = ext_ssa * asym_unitless;
-
-    tau(ilev_tropp, i) = half * (tau(ilev_tropp, i) + ext_unitless);
-    tau_w(ilev_tropp, i) = half * (tau_w(ilev_tropp, i) + ext_ssa);
-    tau_w_g(ilev_tropp, i) = half * (tau_w_g(ilev_tropp, i) + ext_ssa_asym);
-    tau_w_f(ilev_tropp, i) =
-        half * (tau_w_f(ilev_tropp, i) + ext_ssa_asym * asym_unitless);
+     // NOTE: tau vars have one extra dimension in Fortran.
+    tau(ilev_tropp+1, i) = half * (tau(ilev_tropp+1, i) + ext_unitless);
+    tau_w(ilev_tropp+1, i) = half * (tau_w(ilev_tropp+1, i) + ext_ssa);
+    tau_w_g(ilev_tropp+1, i) = half * (tau_w_g(ilev_tropp+1, i) + ext_ssa_asym);
+    tau_w_f(ilev_tropp+1, i) =
+        half * (tau_w_f(ilev_tropp+1, i) + ext_ssa_asym * asym_unitless);  
   } // end i
 
   // !As it will be more efficient for FORTRAN to loop over levels and then
@@ -103,14 +103,15 @@ void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
 
     const Real lyr_thk = zi(kk) - zi(kk + 1);
     for (int i = 0; i < nswbands; ++i) {
-      const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(kk, i);
+      // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,pver)
+      const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(i,kk);
       const Real asym_unitless = af_cmip6_sw(kk, i);
       const Real ext_ssa = ext_unitless * ssa_cmip6_sw(kk, i);
       const Real ext_ssa_asym = ext_ssa * asym_unitless;
-      tau(kk, i) = ext_unitless;
-      tau_w(kk, i) = ext_ssa;
-      tau_w_g(kk, i) = ext_ssa_asym;
-      tau_w_f(kk, i) = ext_ssa_asym * asym_unitless;
+      tau(kk+1, i) = ext_unitless;
+      tau_w(kk+1, i) = ext_ssa;
+      tau_w_g(kk+1, i) = ext_ssa_asym;
+      tau_w_f(kk+1, i) = ext_ssa_asym * asym_unitless;
 
     } // end nswbands
 
@@ -386,7 +387,7 @@ void aer_rad_props_sw(const Real dt, const ConstColumnView &zi,
   // tau_w_f(1:ncol,:,:) = 0._r8
 
   // CHECK: fortran to C++ indexing 
-  constexpr int idx_sw_diag = 10; // index to sw visible band
+  constexpr int idx_sw_diag = 10-1; // index to sw visible band
 
   // Note: Changing order of dimension in ext_cmip6_sw_inv_m from (level,
   // nswbands) to  (nswbands, level) because original layout produces this

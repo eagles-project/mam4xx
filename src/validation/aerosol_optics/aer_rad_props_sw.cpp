@@ -99,9 +99,20 @@ void aer_rad_props_sw(Ensemble *ensemble) {
 
 
     const auto ext_cmip6_sw_db = input.get_array("ext_cmip6_sw");
-    // FIXME: I may need to reshape this view. 
-    View2D ext_cmip6_sw("ext_cmip6_sw", pver, nswbands);
-    mam4::validation::convert_1d_vector_to_2d_view_device(ext_cmip6_sw_db, ext_cmip6_sw);
+    // We need to reshape ext_cmip6_sw
+    View2D ext_cmip6_sw("ext_cmip6_sw", nswbands, pver);
+    auto ext_cmip6_sw_host = Kokkos::create_mirror_view(ext_cmip6_sw);
+    count=0;
+    for (int d1 = 0; d1 < nswbands; ++d1) {
+    for (int d2 = 0; d2 < pver; ++d2) {
+      // reshape  (nswbands,pver) -> (pver,nswbands)
+        // unit conversion from km to m 
+        ext_cmip6_sw_host(d1, d2) = ext_cmip6_sw_db[count]*1e-3;
+        count++;
+      }
+    }
+
+    Kokkos::deep_copy(ext_cmip6_sw,ext_cmip6_sw_host);
     
     const auto ssa_cmip6_sw_db = input.get_array("ssa_cmip6_sw");
 
@@ -348,8 +359,6 @@ void aer_rad_props_sw(Ensemble *ensemble) {
           diagnostics_aerosol_optics_sw.burdenmode =
               Kokkos::subview(output_diagnostics_amode, 2, Kokkos::ALL);
 
-              // need to divide ext_cmip6_sw by 1e-3 
-
             // new vars: ssa_cmip6_sw, af_cmip6_sw
               aer_rad_props::aer_rad_props_sw(dt, zi,
                       pmid, pint,
@@ -396,8 +405,9 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     mam4::validation::convert_2d_view_device_to_1d_vector(tau_w_f, tau_w_f_out);
     output.set("tau_w_f", tau_w_f_out);
 
-    auto extinct_host = Kokkos::create_mirror_view(extinct);
 
+#if 0
+    auto extinct_host = Kokkos::create_mirror_view(extinct);
     // Kokkos::deep_copy(extinct_host, extinct);
     constexpr Real fillvalue = 1e20;
     // std::vector<Real> extinct_out(extinct_host.data(),
@@ -453,5 +463,7 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     output.set("burdenseasalt", std::vector<Real>(1, burdenseasalt));
     output.set("burdenmom", std::vector<Real>(1, burdenmom));
     output.set("seasaltaod", std::vector<Real>(1, seasaltaod));
+
+ #endif   
   });
 }

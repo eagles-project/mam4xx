@@ -32,6 +32,8 @@ void modal_aero_lw(Ensemble *ensemble);
 void calc_parameterized(Ensemble *ensemble);
 void update_aod_spec(Ensemble *ensemble);
 void aer_rad_props_lw(Ensemble *ensemble);
+void aer_rad_props_sw(Ensemble *ensemble);
+void volcanic_cmip_sw(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -75,6 +77,10 @@ int main(int argc, char **argv) {
       update_aod_spec(ensemble);
     } else if (func_name == "aer_rad_props_lw") {
       aer_rad_props_lw(ensemble);   
+    } else if (func_name == "aer_rad_props_sw") {
+      aer_rad_props_sw(ensemble); 
+    } else if (func_name == "volcanic_cmip_sw") {
+      volcanic_cmip_sw(ensemble);       
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
