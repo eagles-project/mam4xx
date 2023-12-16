@@ -250,13 +250,12 @@ void aer_rad_props_lw(
     const ConstColumnView &temperature, const ConstColumnView &zm,
     const ConstColumnView &zi, const View2D &state_q, const View2D &qqcw,
     const ConstColumnView &pdel, const ConstColumnView &pdeldry,
-    const ConstColumnView &cldn, const View2D &ext_cmip6_lw,
+    const ConstColumnView &cldn, const View2D &ext_cmip6_lw_m,
     const AerosolOpticsDeviceData &aersol_optics_data,
     // output
     const View2D &odap_aer,
     // work views
-    const ComplexView2D &specrefindex, const View1D &work,
-    const View2D &ext_cmip6_lw_inv_m
+    const ComplexView2D &specrefindex, const View1D &work
 
 ) {
 
@@ -277,7 +276,7 @@ void aer_rad_props_lw(
   //  pdel(:,:)
   //  pdeldry(:,:)
   //  cldn(:,:)
-  //  ext_cmip6_lw(:,:,:) !long wave extinction in the units of [1/km]
+  //  ext_cmip6_lw_m(:,:,:) !long wave extinction in the units of [1/m]
   //  qqcw(:)   ! Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
 
   // intent-outs
@@ -291,15 +290,6 @@ void aer_rad_props_lw(
                 // work views
                 specrefindex, work);
 
-  // !write out ext from the volcanic input file
-  // call outfld('extinct_lw_inp',ext_cmip6_lw(:,:,idx_lw_diag), pcols, lchnk)
-  // !convert from 1/km to 1/m
-  for (int kk = 0; kk < pver; ++kk) {
-    for (int i = 0; i < nlwbands; ++i) {
-      ext_cmip6_lw_inv_m(kk, i) = ext_cmip6_lw(kk, i) * km_inv_to_m_inv;
-    } /// end i
-  }   // end kk
-
   // FIXME: port tropopause_or_quit
   // !Find tropopause or quit simulation if not found
   // trop_level(1:pcols) = tropopause_or_quit(lchnk, ncol, pmid, pint,
@@ -309,13 +299,13 @@ void aer_rad_props_lw(
   // We are here because tropopause is found, update taus with 50%
   // contributuions from the volcanic input file and 50% from the existing model
   // computed values at the tropopause layer
-  compute_odap_volcanic_at_troplayer_lw(ilev_tropp, zi, ext_cmip6_lw_inv_m,
+  compute_odap_volcanic_at_troplayer_lw(ilev_tropp, zi, ext_cmip6_lw_m,
                                         odap_aer);
   // Above the tropopause, the read in values from the file include both the
   // stratospheric
   //  and volcanic aerosols. Therefore, we need to zero out odap_aer above the
   //  tropopause and populate it exclusively from the read in values.
-  compute_odap_volcanic_above_troplayer_lw(ilev_tropp, zi, ext_cmip6_lw_inv_m,
+  compute_odap_volcanic_above_troplayer_lw(ilev_tropp, zi, ext_cmip6_lw_m,
                                            odap_aer);
   // call outfld('extinct_lw_bnd7',odap_aer(:,:,idx_lw_diag), pcols, lchnk)
 
