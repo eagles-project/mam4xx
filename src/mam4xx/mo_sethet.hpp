@@ -139,7 +139,7 @@ KOKKOS_INLINE_FUNCTION
 void find_ktop(int ncol,  
                Real rlat,  // latitude in radians for columns
                ColumnView press, // pressure [Pa] // in
-               int& ktop) // index that only calculate het_rates above this level //out 
+               int& ktop) { // index that only calculate het_rates above this level //out 
   //---------------------------------------------------------------------------
   // -------- find the top level that het_rates are set as 0 above it ---------
   //---------------------------------------------------------------------------
@@ -162,6 +162,7 @@ void find_ktop(int ncol,
 
 } // end subroutine find_ktop
 
+/*
 KOKKOS_INLINE_FUNCTION
 void sethet(const ColumnView het_rates[gas_pcnst], //[pver][gas_pcnst],  rainout loss rates [1/s] //out
             ColumnView press,           // pressure [pascals] //in
@@ -436,6 +437,8 @@ void sethet(const ColumnView het_rates[gas_pcnst], //[pver][gas_pcnst],  rainout
        endif
     enddo
 #include "../yaml/mo_sethet/f90_yaml/sethet_end_yml.f90"
+} // sethet
+*/
 
 } // namespace mo_sethet
 } // namespace mam4
