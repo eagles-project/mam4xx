@@ -792,29 +792,33 @@ void update_from_cldn_profile(
     Real &qcld, Real factnum_col[AeroConfig::num_modes()],
     Real &eddy_diff, // out
     Real nact[AeroConfig::num_modes()], Real mact[AeroConfig::num_modes()]) {
+  // clang-format off
   // input arguments
-  // cldn_col_in(:)   cloud fraction [fraction] at kk
+  // cldn_col_in(:)       cloud fraction [fraction] at kk
   // cldn_col_in_kp1(:)   cloud fraction [fraction] at min0(kk+1, pver);
-  // dtinv      inverse time step for microphysics [s^{-1}]
-  // wtke_col_in(:)   subgrid vertical velocity [m/s] at kk
-  // zs(:)            inverse of distance between levels [m^-1]
-  // dz(:)         geometric thickness of layers [m]
-  // temp_col_in(:)   temperature [K]
-  // air_density(:)     air density [kg/m^3] at kk
-  // air_density_kp1  air density [kg/m^3] at min0(kk+1, pver);
-  // csbot_cscen(:)   inverse normalized air density csbot(i)/cs(i,k)
-  // [dimensionless] [dimensionless] state_q_col_in(:,:)    aerosol mmrs
-  // [kg/kg]
+  // dtinv                inverse time step for microphysics [s^{-1}]
+  // wtke_col_in(:)       subgrid vertical velocity [m/s] at kk
+  // zs(:)                inverse of distance between levels [m^-1]
+  // dz(:)                geometric thickness of layers [m]
+  // temp_col_in(:)       temperature [K]
+  // air_density(:)       air density [kg/m^3] at kk
+  // air_density_kp1      air density [kg/m^3] at min0(kk+1, pver);
+  // csbot_cscen(:)       inverse normalized air density csbot(i)/cs(i,k)
+  //                                       [dimensionless] [dimensionless] 
+  // state_q_col_in(:,:)    aerosol mmrs/ [kg/kg]
 
+  // output arguments
   // raercol_nsav(:,:)    single column of saved aerosol mass, number mixing
-  // ratios [#/kg or kg/kg] raercol_cw_nsav(:,:) same as raercol but for
-  // cloud-borne phase [#/kg or kg/kg] nsource_col(:)   droplet number mixing
-  // ratio source tendency [#/kg/s] qcld(:)  cloud droplet number mixing ratio
-  // [#/kg] factnum_col(:,:)  activation fraction for aerosol number
-  // [fraction] eddy_diff(:)     diffusivity for droplets [m^2/s] nact(:,:)
-  // fractional aero. number  activation rate [/s] mact(:,:)  fractional aero.
-  // mass activation rate [/s]
+  //                      ratios [#/kg or kg/kg] 
+  // raercol_cw_nsav(:,:) same as raercol but for cloud-borne phase [#/kg or kg/kg] 
+  // nsource_col(:)       droplet number mixing ratio source tendency [#/kg/s] 
+  // qcld(:)              cloud droplet number mixing ratio [#/kg] 
+  // factnum_col(:,:)     activation fraction for aerosol number [fraction] 
+  // eddy_diff(:)         diffusivity for droplets [m^2/s]  
+  // nact(:,:)            fractional aero. number activation rate [/s] 
+  // mact(:,:)            fractional aero. mass activation rate [/s]
 
+  // clang-format on
   // ......................................................................
   // start of k-loop for calc of old cloud activation tendencies ..........
   //
@@ -1446,11 +1450,12 @@ void update_from_explmix(
 
 KOKKOS_INLINE_FUNCTION
 void dropmixnuc(
-    const ThreadTeam &team, const Real dtmicro, const ColumnView &temp,
-    const ColumnView &pmid, const ColumnView &pint, const ColumnView &pdel,
-    const ColumnView &rpdel, const ColumnView &zm, const View2D &state_q,
-    const ColumnView &ncldwtr, const ColumnView &v_diffusivity,
-    const ColumnView &cldn,
+    const ThreadTeam &team, const Real dtmicro,
+    const haero::ConstColumnView &temp, const haero::ConstColumnView &pmid,
+    const haero::ConstColumnView &pint, const haero::ConstColumnView &pdel,
+    const haero::ConstColumnView &rpdel, const haero::ConstColumnView &zm,
+    const View2D &state_q, const haero::ConstColumnView &ncldwtr,
+    const haero::ConstColumnView &v_diffusivity, const ColumnView &cldn,
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
     const Real specdens_amode[maxd_aspectype],
     const Real spechygro[maxd_aspectype],
@@ -1484,6 +1489,7 @@ void dropmixnuc(
   // assume cloud presence controlled by cloud fraction
   // doesn't distinguish between warm, cold clouds
 
+  // clang-format off
   // input arguments
   // lchnk               chunk identifier
   // ncol                number of columns
@@ -1506,21 +1512,18 @@ void dropmixnuc(
   //  qqcw(:)     cloud-borne aerosol mass, number mixing ratios [#/kg or kg/kg]
 
   // output arguments
-  // ptend
+  // ptend_q[nvar_ptend_q]
   // tendnd(pcols,pver) tendency in droplet number mixing ratio [#/kg/s]
   // factnum(:,:,:)     activation fraction for aerosol number [fraction]
-
-  // nsource droplet number mixing ratio source tendency [#/kg/s]
-
-  // ndropmix droplet number mixing ratio tendency due to mixing [#/kg/s]
-  // ccn number conc of aerosols activated at supersat [#/m^3]
-
+  // nsource            droplet number mixing ratio source tendency [#/kg/s]
+  // ndropmix           droplet number mixing ratio tendency due to mixing [#/kg/s]
+  // ccn                number conc of aerosols activated at supersat [#/m^3]
   //      note:  activation fraction fluxes are defined as
   //     fluxn = [flux of activated aero. number into cloud [#/m^2/s]]
   //           / [aero. number conc. in updraft, just below cloudbase [#/m^3]]
-
   // coltend(:,:)       column tendency for diagnostic output
   // coltend_cw(:,:)    column tendency
+  // clang-format on
 
   // BAD CONSTANT
   const Real zkmin = 0.01;
@@ -1582,6 +1585,9 @@ void dropmixnuc(
         const auto state_q_k = Kokkos::subview(state_q, k, Kokkos::ALL());
         const auto factnum_k = Kokkos::subview(factnum, k, Kokkos::ALL());
 
+        // FIXME: It is dangerous to call data() on a view and expect the
+        // resulting vector to be continuous in memory. Depending on the
+        // 2D layout, the memory could be strided.
         update_from_newcld(cldn(k), cldo(k), dtinv, // in
                            wtke(k), temp(k),
                            conversions::density_of_ideal_gas(temp(k), pmid(k)),
@@ -1596,16 +1602,16 @@ void dropmixnuc(
       });                                                 // end k
   team.team_barrier();
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int k) {
+      Kokkos::TeamThreadRange(team, top_lev, pver), KOKKOS_LAMBDA(int k) {
         zn(k) = gravity * rpdel[k];
-        if (k >= top_lev - 1 && k < pver - 1) {
+        if (k < pver - 1) {
           csbot(k) = two * pint(k + 1) / (rair * (temp(k) + temp(k + 1)));
           csbot_cscen(k) =
               csbot(k) / conversions::density_of_ideal_gas(temp(k), pmid(k));
           zs(k) = one / (zm(k) - zm(k + 1));
           eddy_diff(k) =
               utils::min_max_bound(zkmin, zkmax, v_diffusivity(k + 1));
-        } else {
+        } else if (0 < k) {
           csbot(k) = conversions::density_of_ideal_gas(temp(k), pmid(k));
           csbot_cscen(k) = one;
           zs(k) = one / (zm(k - 1) - zm(k));
