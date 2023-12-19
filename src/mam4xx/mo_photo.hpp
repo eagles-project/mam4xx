@@ -15,6 +15,9 @@ namespace mo_photo {
 constexpr int pver = mam4::nlev;
 constexpr int pverm = pver - 1;
 
+// number of photolysis reactions
+constexpr int phtcnt = 1;
+
 using View5D = DeviceType::view_ND<Real, 5>;
 using View4D = DeviceType::view_ND<Real, 4>;
 using View2D = DeviceType::view_2d<Real>;
@@ -68,6 +71,9 @@ inline PhotoTableData create_photo_table_data(int nw, int nt, int np_xs,
   table_data.np_xs = np_xs;
 
   // create views
+  table_data.rsf_tab = View5D("photo_table_data.rsf_tab", table_data.nw,
+                              table_data.numalb, table_data.numcolo3,
+                              table_data.numsza, table_data.nump);
   table_data.xsqy = View4D("photo_table_data.xsqy", table_data.numj,
                            table_data.nw, table_data.nt, table_data.np_xs);
   table_data.sza = View1D("photo_table_data.sza", table_data.numsza);
@@ -86,7 +92,7 @@ inline PhotoTableData create_photo_table_data(int nw, int nt, int np_xs,
   table_data.prs = View1D("photo_table_data.prs", table_data.np_xs);
   table_data.dprs = View1D("photo_table_data.dprs", table_data.np_xs - 1);
   table_data.pht_alias_mult_1 = View1D("photo_table_data.pht_alias_mult_1", 2);
-  table_data.lng_indexer = ViewInt1D("photo_table_data.lng_indexer", 1);
+  table_data.lng_indexer = ViewInt1D("photo_table_data.lng_indexer", phtcnt);
 
   return table_data;
 }
@@ -664,7 +670,6 @@ void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
   }   // end kk
 
 } // jlong
-const int phtcnt = 1; // number of photolysis reactions
 
 // FIXME: note the use of ConstColumnView for views we get from the
 // FIXME: haero::Atmosphere type
