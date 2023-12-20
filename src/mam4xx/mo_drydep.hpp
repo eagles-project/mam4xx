@@ -6,7 +6,40 @@
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
-namespace mam4::mo_drydep {
+namespace mam4 {
+
+//==========================================================================
+//   mam4xx interface for E3SM dry deposition of tracers (seq_drydep_mod)
+//==========================================================================
+// These functions must be implemented elsewhere, either by a host model
+// or as part of a self-contained test setup. For an example
+// implementation, see the related mo_drydep validation tests in
+// ../validation/mo_drydep.
+namespace seq_drydep {
+
+// ON HOST: loads data onto the device for use by mam4xx (array shape)
+extern void set_drat(mam4::HostType::view_1d<Real> drat); // (n_drydep)
+extern void set_foxd(HostType::view_1d<Real> foxd);       // (n_drydep)
+extern void set_rac(HostType::view_1d<Real> rac);         // (1, NLUse)
+extern void set_rgso(HostType::view_1d<Real> rgso);       // (1, NLUse)
+extern void set_rgss(HostType::view_1d<Real> rgss);       // (1, NLUse)
+extern void set_ri(HostType::view_1d<Real> ri);           // (1, NLUse)
+extern void set_z0(HostType::view_1d<Real> z0);           // (NSeas, NLUse)
+
+// ON DEVICE: returns a view with the desired array data
+extern DeviceType::view_1d<Real> drat();
+extern DeviceType::view_1d<Real> foxd();
+extern DeviceType::view_1d<Real> rac();
+extern DeviceType::view_1d<Real> rgso();
+extern DeviceType::view_1d<Real> rgss();
+
+} // namespace seq_drydep
+
+//==========================================================================
+// end mam4xx interface for E3SM dry deposition of tracers (seq_drydep_mod)
+//==========================================================================
+
+namespace mo_drydep {
 
 constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
 constexpr int n_land_type = 11; // from eam/src/chemistry/mozart/mo_drydep.F90
@@ -651,6 +684,7 @@ void drydep_xactive(
                                     rsmx, rlux, rclx, rgsx, rdc, dvel, dflx);
 }
 
-} // namespace mam4::mo_drydep
+} // namespace mo_drydep
+} // namespace mam4
 
 #endif
