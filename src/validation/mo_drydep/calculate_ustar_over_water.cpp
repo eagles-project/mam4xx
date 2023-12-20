@@ -6,5 +6,4 @@
 using namespace skywalker;
 using namespace mam4;
 using namespace haero;
-void calculate_ustar_over_water(Ensemble *ensemble) {
-}
+void calculate_ustar_over_water(Ensemble *ensemble) {}

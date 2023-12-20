@@ -6,5 +6,4 @@
 using namespace skywalker;
 using namespace mam4;
 using namespace haero;
-void calculate_aerodynamic_and_quasilaminar_resistance(Ensemble *ensemble) {
-}
+void calculate_aerodynamic_and_quasilaminar_resistance(Ensemble *ensemble) {}

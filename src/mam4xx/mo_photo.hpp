@@ -71,9 +71,9 @@ inline PhotoTableData create_photo_table_data(int nw, int nt, int np_xs,
   table_data.np_xs = np_xs;
 
   // create views
-  table_data.rsf_tab = View5D("photo_table_data.rsf_tab", table_data.nw,
-                              table_data.numalb, table_data.numcolo3,
-                              table_data.numsza, table_data.nump);
+  table_data.rsf_tab =
+      View5D("photo_table_data.rsf_tab", table_data.nw, table_data.numalb,
+             table_data.numcolo3, table_data.numsza, table_data.nump);
   table_data.xsqy = View4D("photo_table_data.xsqy", table_data.numj,
                            table_data.nw, table_data.nt, table_data.np_xs);
   table_data.sza = View1D("photo_table_data.sza", table_data.numsza);
