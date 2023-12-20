@@ -206,7 +206,8 @@ void calculate_resistance_rgsx_and_rsmx(
     Real &cts,                // correction to rlu rcl and rgs for frost
     Real rgsx[gas_pcnst][n_land_type], // ground resistance [s/m]
     Real rsmx[gas_pcnst]
-             [n_land_type]) { // vegetative resistance (plant mesophyll) [s/m]
+             [n_land_type]) // vegetative resistance (plant mesophyll) [s/m]
+{
   // FIXME: use seq_drydep_mod, only: ri, rgso, rgss, foxd, drat
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     if (has_dvel[ispec]) {
