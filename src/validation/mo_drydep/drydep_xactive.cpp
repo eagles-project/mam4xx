@@ -6,5 +6,4 @@
 using namespace skywalker;
 using namespace mam4;
 using namespace haero;
-void drydep_xactive(Ensemble *ensemble) {
-}
+void drydep_xactive(Ensemble *ensemble) {}

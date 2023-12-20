@@ -6,5 +6,4 @@
 using namespace skywalker;
 using namespace mam4;
 using namespace haero;
-void calculate_gas_drydep_vlc_and_flux(Ensemble *ensemble) {
-}
+void calculate_gas_drydep_vlc_and_flux(Ensemble *ensemble) {}
