@@ -18,6 +18,7 @@
 namespace mam4 {
 
 using DeviceType = haero::DeviceType;
+using HostType = haero::DeviceType;
 using Constants = haero::Constants;
 using Real = haero::Real;
 using ColumnView = haero::ColumnView;
