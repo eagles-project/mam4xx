@@ -30,6 +30,7 @@
 #include <mam4xx/mo_setsox.hpp>
 #include <mam4xx/modal_aer_opt.hpp>
 #include <mam4xx/modal_aero_calcsize.hpp>
+#include <mam4xx/mo_sethet.hpp>
 #include <mam4xx/ndrop.hpp>
 #include <mam4xx/nucleate_ice.hpp>
 #include <mam4xx/nucleation.hpp>

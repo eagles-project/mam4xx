@@ -3,6 +3,7 @@
 
 #include <haero/math.hpp>
 #include <mam4xx/gas_chem.hpp>
+#include <mam4xx/mo_chm_diags.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
@@ -10,7 +11,8 @@ namespace mam4 {
 
 namespace mo_sethet {
 
-const int ktop = ConvProc::Config::ktop; //int ktop = 47; // BAD_CONSTANT: only true for nlev == 72
+//const int ktop = ConvProc::Config::ktop; 
+//int ktop = 47; // BAD_CONSTANT: only true for nlev == 72
 constexpr Real avo = haero::Constants::avogadro;
 const Real pi = haero::Constants::pi;
 constexpr Real rgrav =
@@ -35,7 +37,7 @@ void calc_het_rates(Real satf, // saturation fraction in cloud //in
                     Real rain, // rain rate [molecules/cm^3/s] //in
                     Real xhen,  // henry's law constant // in
                     Real tmp_hetrates, Real work1, Real work2,    // in
-                    Real het_rates) // rainout loss rates [1/s]// out
+                    Real& het_rates) // rainout loss rates [1/s]// out
 {
   //-----------------------------------------------------------------
   // calculate het_rates
@@ -45,7 +47,7 @@ void calc_het_rates(Real satf, // saturation fraction in cloud //in
     Real h2o_mol  = 1.0e3 / mass_h2o; // [gm/mol water]
     // FIXME: BAD CONSTANT should haero::Constants::molec_weight_h2o be used somewhere here instead?
 
-    work3 = satf *  max( rain / (h2o_mol*(work1 + 1.0 / (xhen * work2))), 0.0 );
+    work3 = satf * haero::max( rain / (h2o_mol*(work1 + 1.0 / (xhen * work2))), 0.0 );
     het_rates =  work3 + tmp_hetrates;
 
 } //end calc_het_rates
@@ -128,7 +130,7 @@ void gas_washout (int plev,         // calculate from this level below //in
         //-----------------------------------------------------------------
         allca = allca + xca;
         if( allca < xeqca ) {
-           xgas(kk) = max( xgas(kk) - xca, 0.0 );
+           xgas(kk) = haero::max( xgas(kk) - xca, 0.0 );
         }
      }
 
@@ -148,15 +150,15 @@ void find_ktop(int ncol,
    Real d2r = pi/180.0;   // degree to radian
 
    if ( haero::abs(rlat) > 60.0*d2r ) {
-      p_limit = 300.0e2   // 300hPa for high latitudes
+      p_limit = 300.0e2;   // 300hPa for high latitudes
    } else {
-      p_limit = 100.0e2   // 100hPa for low latitudes
+      p_limit = 100.0e2;   // 100hPa for low latitudes
    }
 
    for(int kk = pver-1; kk >= 0; kk--) {
       if( press(kk) < p_limit ) {
-         ktop(icol) = kk
-         return 
+         ktop = kk;
+         return;
       }
    } // k_loop
 
