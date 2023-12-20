@@ -6,5 +6,4 @@
 using namespace skywalker;
 using namespace mam4;
 using namespace haero;
-void calculate_uustar(Ensemble *ensemble) {
-}
+void calculate_uustar(Ensemble *ensemble) {}
