@@ -9,11 +9,7 @@
 
 namespace mam4 {
 
-//==========================================================================
-//   data views for E3SM dry deposition of tracers (seq_drydep_mod)
-//==========================================================================
-// These views store data from module variables in E3SM's ѕeq_drydep_mod.F90.
-namespace seq_drydep {
+namespace seq_drydep { // C++ version of E3SM's seq_drydep_mod.F90
 
 // maximum number of species involved in dry deposition
 constexpr int maxspc = 210;
@@ -22,6 +18,10 @@ constexpr int maxspc = 210;
 constexpr int NSeas = 5;
 
 // clang-format off
+//===============================================
+// data views for E3SM dry deposition of tracers
+//===============================================
+//
 //-------------------------------------//-----------------------------------------//----------------//
 // View                                // Description                             // Shape          //
 //-------------------------------------//-----------------------------------------//----------------//
@@ -36,7 +36,11 @@ static DeviceType::view_2d<Real> ri;   // richardson number [-]                 
 static DeviceType::view_2d<Real> rlu;  // resistance of leaves in upper canopy    // (NSeas, NLUse) //
 static DeviceType::view_2d<Real> z0;   // roughness length [m]                    // (NSeas, NLUse) //
 //-------------------------------------//-----------------------------------------//----------------//
-// clang-format on
+//
+//===================================================
+// end data views for E3SM dry deposition of tracers
+//===================================================
+// clang-format off
 
 // All resistances above have units of [s/m].
 
@@ -51,10 +55,6 @@ KOKKOS_FUNCTION void setHCoeff(Real sfc_temp, Real heff[maxspc]);
 // environment, for example.
 
 } // namespace seq_drydep
-
-//==========================================================================
-// end data views for E3SM dry deposition of tracers (seq_drydep_mod)
-//==========================================================================
 
 namespace mo_drydep {
 
