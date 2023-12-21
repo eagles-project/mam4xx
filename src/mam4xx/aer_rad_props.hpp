@@ -255,7 +255,7 @@ void aer_rad_props_lw(
     // output
     const View2D &odap_aer,
     // work views
-    const ComplexView2D &specrefindex, const View1D &work
+    const View1D &work
 
 ) {
 
@@ -288,7 +288,7 @@ void aer_rad_props_lw(
                 // outputs
                 odap_aer,
                 // work views
-                specrefindex, work);
+                work);
 
   // FIXME: port tropopause_or_quit
   // !Find tropopause or quit simulation if not found

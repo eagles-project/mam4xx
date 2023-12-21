@@ -84,11 +84,10 @@ struct AerosolOpticsDeviceData {
   View3D absplw[ntot_amode][nlwbands];
   View3D extpsw[ntot_amode][nswbands];
 
-  ComplexView2D specrefndxsw; // specrefndxsw( nswbands, maxd_aspectype )
-  ComplexView2D specrefndxlw;
   ComplexView1D crefwlw;
   ComplexView1D crefwsw;
   ComplexView2D specrefindex_sw[ntot_amode];
+  ComplexView2D specrefindex_lw[ntot_amode];
 };
 
 inline void set_aerosol_optics_data_for_modal_aero_sw_views(
@@ -128,11 +127,13 @@ inline void
 set_complex_views_modal_aero(AerosolOpticsDeviceData &aersol_optics_data) {
   for (int i = 0; i < ntot_amode; ++i) {
     aersol_optics_data.specrefindex_sw[i] =
-        ComplexView2D("specrefindex", max_nspec, nswbands);
+        ComplexView2D("specrefindex_sw", max_nspec, nswbands);
   }
 
-  aersol_optics_data.specrefndxlw =
-      ComplexView2D("specrefndxlw", nlwbands, ndrop::maxd_aspectype);
+  for (int i = 0; i < ntot_amode; ++i) {
+    aersol_optics_data.specrefindex_lw[i] =
+        ComplexView2D("specrefindex_lw", max_nspec, nlwbands);
+  }
 
   aersol_optics_data.crefwlw = ComplexView1D("crefwlw", nlwbands);
   aersol_optics_data.crefwsw = ComplexView1D("crefwsw", nswbands);
@@ -167,6 +168,57 @@ struct DiagnosticsAerosolOpticsSW {
   View0D bcaod;
   View0D seasaltaod;
 };
+
+// reshape specrefindex and copy to device
+inline void
+set_device_specrefindex(const ComplexView2D specrefindex[ntot_amode],
+                        const std::string &wave_type,
+                        const ComplexView2D::HostMirror &specrefndx_host) {
+
+  std::string view_name;
+  int nbands = 0;
+
+  if (wave_type == "short_wave") {
+    view_name = "specrefindex_sw";
+    nbands = nswbands;
+  } else if (wave_type == "long_wave") {
+    view_name = "specrefindex_lw";
+    nbands = nlwbands;
+  } else {
+    printf(
+        "wave type does not exit. Only two options: short_wave or long_wave");
+    exit(1);
+  } // end wave_type
+
+  ComplexView2D::HostMirror specrefindex_host(view_name, max_nspec, nbands);
+
+  int nspec_amode[ntot_amode];
+  int lspectype_amode[ndrop::maxd_aspectype][ntot_amode];
+  int lmassptr_amode[ndrop::maxd_aspectype][ntot_amode];
+  Real specdens_amode[ndrop::maxd_aspectype];
+  Real spechygro[ndrop::maxd_aspectype];
+  int numptr_amode[ntot_amode];
+  int mam_idx[ntot_amode][ndrop::nspec_max];
+  int mam_cnst_idx[ntot_amode][ndrop::nspec_max];
+
+  ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
+                             numptr_amode, specdens_amode, spechygro, mam_idx,
+                             mam_cnst_idx);
+
+  for (int mm = 0; mm < ntot_amode; ++mm) {
+    const int nspec = nspec_amode[mm];
+    for (int ibands = 0; ibands < nbands; ++ibands) {
+      // // Fortran to C++ indexing
+      for (int ll = 0; ll < nspec; ++ll) {
+        specrefindex_host(ll, ibands) =
+            specrefndx_host(ibands, lspectype_amode[ll][mm] - 1);
+      } // ll
+    }   // ibands
+    Kokkos::deep_copy(specrefindex[mm], specrefindex_host);
+
+  } // mm
+
+}; // set_device_specrefindex
 
 KOKKOS_INLINE_FUNCTION
 void modal_size_parameters(const Real sigma_logr_aer,
@@ -1145,7 +1197,7 @@ void modal_aero_lw(const Real dt, const View2D &state_q, const View2D &qqcw,
                    // output
                    const View2D &tauxar,
                    // work views
-                   const ComplexView2D &specrefindex, const View1D &work) {
+                   const View1D &work) {
 
   //
   // calculates aerosol lw radiative properties
@@ -1186,8 +1238,6 @@ void modal_aero_lw(const Real dt, const View2D &state_q, const View2D &qqcw,
       tauxar(kk, i) = zero;
     }
   } // k
-
-  const auto specrefndxlw = aersol_optics_data.specrefndxlw;
   const auto crefwlw = aersol_optics_data.crefwlw;
   const auto crefwsw = aersol_optics_data.crefwsw;
 
@@ -1298,13 +1348,13 @@ void modal_aero_lw(const Real dt, const View2D &state_q, const View2D &qqcw,
 
     // FIXME: is there a way of avoiding this copy?
     // specrefindex(ll,:) = specrefndxsw(:,lspectype_amode[ll][mm])
-    for (int ilwbands = 0; ilwbands < nlwbands; ++ilwbands) {
-      // // Fortran to C++ indexing
-      for (int ll = 0; ll < nspec; ++ll) {
-        specrefindex(ll, ilwbands) =
-            specrefndxlw(ilwbands, lspectype_amode[ll][mm] - 1);
-      } // ll
-    }   // ilwbands
+    // for (int ilwbands = 0; ilwbands < nlwbands; ++ilwbands) {
+    //   // // Fortran to C++ indexing
+    //   for (int ll = 0; ll < nspec; ++ll) {
+    //     specrefindex(ll, ilwbands) =
+    //         specrefndxlw(ilwbands, lspectype_amode[ll][mm] - 1);
+    //   } // ll
+    // }   // ilwbands
 
     for (int ilw = 0; ilw < nlwbands; ++ilw) {
       for (int kk = top_lev; kk < pver; ++kk) {
@@ -1334,9 +1384,10 @@ void modal_aero_lw(const Real dt, const View2D &state_q, const View2D &qqcw,
         //   printf("specvol[%d] %e \n ", i,specvol[i]);
         // FIXME: remove
         // qaerwat_m(kk, mm)=zero;
-        calc_refin_complex(0, ilw, qaerwat_m(kk, mm), specvol, specrefindex,
-                           nspec, crefwlw, crefwsw, dryvol, wetvol, watervol,
-                           crefin, refr, refi);
+        calc_refin_complex(0, ilw, qaerwat_m(kk, mm), specvol,
+                           aersol_optics_data.specrefindex_lw[mm], nspec,
+                           crefwlw, crefwsw, dryvol, wetvol, watervol, crefin,
+                           refr, refi);
 
         // Kokkos::subview(
         // absplw, mm, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), ilw);
