@@ -283,9 +283,6 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     ComplexView2D specrefindex("specrefindex", max_nspec, nswbands);
     View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
 
-    const int work_len = get_worksize_modal_aero_sw();
-    View1D work("work", work_len);
-
     // FIXME: need to set values
     mam4::AeroId specname_amode[9] = {AeroId::SO4,  // sulfate
                                       AeroId::None, // ammonium
@@ -366,7 +363,7 @@ void aer_rad_props_sw(Ensemble *ensemble) {
               // FIXME
               specname_amode, aersol_optics_data,
               // diagnostic
-              diagnostics_aerosol_optics_sw, specrefindex, work);
+              diagnostics_aerosol_optics_sw, specrefindex);
         });
 
     Kokkos::deep_copy(qqcw_host, qqcw);

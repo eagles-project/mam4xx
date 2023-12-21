@@ -498,15 +498,6 @@ void binterp(const View3D &table, const Real ref_real, const Real ref_img,
 
 } // binterp
 
-inline int get_worksize_modal_aero_sw() {
-  // mass, air_density, radsurf, logradsurf  => pver
-  // dgnumwet_m, dgnumdry_m, qaerwat_m => pver*ntot_amode
-  // cheb => pver*ncoef
-  // specrefindex => 2*max_nspec*nswbands
-  return 4 * pver + pver * ncoef +
-         3 * pver * ntot_amode; // + 2*max_nspec*nswbands;
-}
-
 KOKKOS_INLINE_FUNCTION
 void modal_aero_sw_k(const Real &pdeldry, const Real &pmid,
                      const Real &temperature, Real &cldn,
@@ -1044,7 +1035,7 @@ void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
                    // diagnostic
                    DiagnosticsAerosolOpticsSW &diagnostics_aerosol_optics_sw,
                    // work view
-                   const ComplexView2D &specrefindex, const View1D &work) {
+                   const ComplexView2D &specrefindex) {
 
   auto extinct = diagnostics_aerosol_optics_sw
                      .extinct; //        ! aerosol extinction [1/m]

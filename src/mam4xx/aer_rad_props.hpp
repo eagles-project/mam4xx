@@ -326,7 +326,7 @@ void aer_rad_props_sw(const Real dt, const ConstColumnView &zi,
                       const AerosolOpticsDeviceData &aersol_optics_data,
                       // diagnostic
                       DiagnosticsAerosolOpticsSW &diagnostics_aerosol_optics_sw,
-                      const ComplexView2D &specrefindex, const View1D &work) {
+                      const ComplexView2D &specrefindex) {
 
   // call outfld('extinct_sw_inp',ext_cmip6_sw(:,:,idx_sw_diag), pcols, lchnk)
 
@@ -404,7 +404,7 @@ void aer_rad_props_sw(const Real dt, const ConstColumnView &zi,
                 // diagnostic
                 diagnostics_aerosol_optics_sw,
                 // work views
-                specrefindex, work);
+                specrefindex);
 
   // Update tau, tau_w, tau_w_g, and tau_w_f with the read in values of
   // extinction, ssa and asymmetry factors
