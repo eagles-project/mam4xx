@@ -1,10 +1,11 @@
 #include <mam4xx/mam4.hpp>
 
-#include <skywalker.h>
+#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
+using namespace mam4::mo_drydep;
 using namespace haero;
 void calculate_ustar_over_water(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -22,23 +23,23 @@ void calculate_ustar_over_water(Ensemble *ensemble) {
     const auto index_season = input.get_array("index_season");
     const auto fr_lnduse = input.get_array("fr_lnduse");
     const bool unstable = static_cast<bool>(input.get("unstable"));
-    const Real zl = input.get("zl");
-    const Real uustar = input.get("uustar");
-    const Real ribn = input.get("ribn");
+    const Real zl = input.get_array("zl")[0];
+    const Real uustar = input.get_array("uustar")[0];
+    const Real ribn = input.get_array("ribn")[0];
 
-    Viewint1DHost index_season_h("index_season", n_land_type);
+    ViewInt1DHost index_season_h("index_season", n_land_type);
     for (int lt = 0; lt < n_land_type; ++lt) {
       index_season_h(lt) = int(index_season[lt]);
     }
     ViewInt1D index_season_d("index_season", n_land_type);
-    Kokkos::deepcopy(index_season_d, index_season_h);
+    Kokkos::deep_copy(index_season_d, index_season_h);
 
     ViewBool1DHost fr_lnduse_h("fr_lnduse", n_land_type);
     for (int lt = 0; lt < n_land_type; ++lt) {
       fr_lnduse_h(lt) = static_cast<bool>(fr_lnduse[lt]);
     }
     ViewBool1D fr_lnduse_d("fr_lnduse", n_land_type);
-    Kokkos::deepcopy(fr_lnduse_d, fr_lnduse_h);
+    Kokkos::deep_copy(fr_lnduse_d, fr_lnduse_h);
 
     View1D ustar_d("ustar", n_land_type);
     View1D cvar_d("cvar", n_land_type);
