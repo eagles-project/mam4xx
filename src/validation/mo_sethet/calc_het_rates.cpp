@@ -16,7 +16,6 @@ using namespace mo_sethet;
 
 void calc_het_rates(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-
     Real satf = input.get_array("satf")[0];
     Real rain = input.get_array("rain")[0];
     Real xhen = input.get_array("xhen")[0];
@@ -25,8 +24,8 @@ void calc_het_rates(Ensemble *ensemble) {
     Real work2 = input.get_array("work2")[0];
 
     Real het_rates = 0;
-         
-    calc_het_rates( satf, rain, xhen, tmp_hetrates, work1, work2, het_rates);
+
+    calc_het_rates(satf, rain, xhen, tmp_hetrates, work1, work2, het_rates);
 
     output.set("het_rates", het_rates);
   });

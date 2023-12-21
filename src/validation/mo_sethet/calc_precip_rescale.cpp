@@ -23,7 +23,6 @@ void calc_precip_rescale(Ensemble *ensemble) {
     const auto cmfdqr_in = input.get_array("cmfdqr");
     const auto nrain_in = input.get_array("nrain");
     const auto nevapr_in = input.get_array("nevapr");
-    
 
     ColumnView cmfdqr, nrain, nevapr;
     auto cmfdqr_host = View1DHost((Real *)cmfdqr_in.data(), pver);
@@ -41,16 +40,16 @@ void calc_precip_rescale(Ensemble *ensemble) {
     auto precip_host = View1DHost(vector0.data(), pver);
     precip = haero::testing::create_column_view(pver);
     Kokkos::deep_copy(precip, precip_host);
-    //std::vector<Real> precip(pver, zero);
+    // std::vector<Real> precip(pver, zero);
     DeviceType::view_1d<Real> trp_out_val("Return from Device", 1);
     Kokkos::parallel_for(
-        "calc_precip_rescale", 1, KOKKOS_LAMBDA(int i) { 
+        "calc_precip_rescale", 1, KOKKOS_LAMBDA(int i) {
           calc_precip_rescale(cmfdqr, nrain, nevapr, precip);
         });
 
     Kokkos::deep_copy(precip_host, precip);
     std::vector<Real> precip_out(pver);
-    for(int k = 0; k < pver; k++)
+    for (int k = 0; k < pver; k++)
       precip_out[k] = precip_host(k);
 
     output.set("precip", precip_out);

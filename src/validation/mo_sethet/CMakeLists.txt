@@ -12,6 +12,7 @@ add_executable(sethet_driver
                sethet_driver.cpp
                calc_het_rates.cpp
                calc_precip_rescale.cpp
+               find_ktop.cpp
                )
 
 target_link_libraries(sethet_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -30,6 +31,7 @@ endforeach()
 set(TEST_LIST
     calc_het_rates_ts_355
     calc_precip_rescale_ts_355
+    find_ktop_ts_355
     )
 # # matching the tests and errors, just for convenience
 
@@ -37,6 +39,7 @@ set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
     ${DEFAULT_TOL}
     ${DEFAULT_TOL}
+    ${DEFAULT_TOL} # output is an int
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.

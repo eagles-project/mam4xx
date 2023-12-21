@@ -24,6 +24,7 @@ using namespace mam4;
 // Parameterizations used by the sethet() process.
 void calc_het_rates(Ensemble *ensemble);
 void calc_precip_rescale(Ensemble *ensemble);
+void find_ktop(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -51,6 +52,8 @@ int main(int argc, char **argv) {
       calc_het_rates(ensemble);
     } else if (func_name == "calc_precip_rescale") {
       calc_precip_rescale(ensemble);
+    } else if (func_name == "find_ktop") {
+      find_ktop(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
