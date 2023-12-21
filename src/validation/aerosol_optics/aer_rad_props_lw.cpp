@@ -128,7 +128,7 @@ void aer_rad_props_lw(Ensemble *ensemble) {
         count += 1;
       }
     }
-    // reshape specrefndxlw_host and copy it to device 
+    // reshape specrefndxlw_host and copy it to device
     set_device_specrefindex(aersol_optics_data.specrefindex_lw, "long_wave",
                             specrefndxlw_host);
 
