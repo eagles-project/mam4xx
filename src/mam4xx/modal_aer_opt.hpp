@@ -88,6 +88,7 @@ struct AerosolOpticsDeviceData {
   ComplexView2D specrefndxlw;
   ComplexView1D crefwlw;
   ComplexView1D crefwsw;
+  ComplexView2D specrefindex[ntot_amode];
 };
 
 inline void set_aerosol_optics_data_for_modal_aero_sw_views(
@@ -125,8 +126,11 @@ inline void set_aerosol_optics_data_for_modal_aero_lw_views(
 
 inline void
 set_complex_views_modal_aero(AerosolOpticsDeviceData &aersol_optics_data) {
-  aersol_optics_data.specrefndxsw =
-      ComplexView2D("specrefndxsw", nswbands, ndrop::maxd_aspectype);
+  for (int i = 0; i < ntot_amode; ++i) {
+    aersol_optics_data.specrefindex[i] =
+        ComplexView2D("specrefindex", max_nspec, nswbands);
+  }
+
   aersol_optics_data.specrefndxlw =
       ComplexView2D("specrefndxlw", nlwbands, ndrop::maxd_aspectype);
 
@@ -499,20 +503,17 @@ void binterp(const View3D &table, const Real ref_real, const Real ref_img,
 } // binterp
 
 KOKKOS_INLINE_FUNCTION
-void modal_aero_sw_k(const Real &pdeldry, const Real &pmid,
-                     const Real &temperature, Real &cldn,
-
-                     Real *state_q_kk,   // in
-                     const Real *qqcw_k, // in
-                     const Real &dt,
-                     const AerosolOpticsDeviceData &aersol_optics_data,
-                     const mam4::AeroId specname_amode[9],
-                     // outputs
-                     Real *tauxar, Real *wa, Real *ga, Real *fa,
-                     // diagnostics
-                     Real &extinct, Real &absorb, // diagnostic
-                     DiagnosticsAerosolOpticsSW &diagnostics_aerosol_optics_sw,
-                     const ComplexView2D &specrefindex) {
+void modal_aero_sw_k(
+    const Real &pdeldry, const Real &pmid, const Real &temperature, Real &cldn,
+    Real *state_q_kk,   // in
+    const Real *qqcw_k, // in
+    const Real &dt, const AerosolOpticsDeviceData &aersol_optics_data,
+    const mam4::AeroId specname_amode[9],
+    // outputs
+    Real *tauxar, Real *wa, Real *ga, Real *fa,
+    // diagnostics
+    Real &extinct, Real &absorb, // diagnostic
+    DiagnosticsAerosolOpticsSW &diagnostics_aerosol_optics_sw) {
 
   auto dustaodmode = diagnostics_aerosol_optics_sw.dustaodmode;
   auto aodmode = diagnostics_aerosol_optics_sw.aodmode;
@@ -710,20 +711,16 @@ void modal_aero_sw_k(const Real &pdeldry, const Real &pmid,
     Real radsurf = 0;
     modal_size_parameters(sigma_logr_aer, dgnumwet_m_kk[mm], // in
                           radsurf, logradsurf, cheb_kk, false);
-    // } // kk
 
-    // FIXME is a complex number
-    // auto specrefindex_ll =
-    // Kokkos::subview(specrefndxsw,Kokkos::ALL(),spectype_amode[ll][mm]);
     // FIXME: is there a way of avoiding this copy?
     // specrefindex(ll,:) = specrefndxsw(:,lspectype_amode[ll][mm])
-    for (int iswbands = 0; iswbands < nswbands; ++iswbands) {
-      for (int ll = 0; ll < nspec; ++ll) {
-        // Fortran to C++ indexing
-        specrefindex(ll, iswbands) = aersol_optics_data.specrefndxsw(
-            iswbands, lspectype_amode[ll][mm] - 1);
-      }
-    }
+    // for (int iswbands = 0; iswbands < nswbands; ++iswbands) {
+    //   for (int ll = 0; ll < nspec; ++ll) {
+    //     // Fortran to C++ indexing
+    //     specrefindex(ll, iswbands) = aersol_optics_data.specrefndxsw(
+    //         iswbands, lspectype_amode[ll][mm] - 1);
+    //   }
+    // }
 
     for (int isw = 0; isw < nswbands; ++isw) {
       // savaervis ! true if visible wavelength (0.55 micron)
@@ -782,8 +779,10 @@ void modal_aero_sw_k(const Real &pdeldry, const Real &pmid,
         // ! compute some diagnostics for visible band only
         if (savaervis) {
           /// FIXME complex
-          const Real specrefr = specrefindex(ll, isw).real();
-          const Real specrefi = specrefindex(ll, isw).imag();
+          const Real specrefr =
+              aersol_optics_data.specrefindex[mm](ll, isw).real();
+          const Real specrefi =
+              aersol_optics_data.specrefindex[mm](ll, isw).imag();
 
           burdenmode[mm] += specmmr * mass;
 
@@ -833,7 +832,8 @@ void modal_aero_sw_k(const Real &pdeldry, const Real &pmid,
       Kokkos::complex<Real> crefin = {};
       Real refr, refi = {};
 
-      calc_refin_complex(1, isw, qaerwat_m_kk[mm], specvol, specrefindex, nspec,
+      calc_refin_complex(1, isw, qaerwat_m_kk[mm], specvol,
+                         aersol_optics_data.specrefindex[mm], nspec,
                          aersol_optics_data.crefwlw, aersol_optics_data.crefwsw,
                          dryvol, wetvol, watervol, crefin, refr, refi);
 
@@ -1033,9 +1033,7 @@ void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
                    const mam4::AeroId specname_amode[9],
                    const AerosolOpticsDeviceData &aersol_optics_data,
                    // diagnostic
-                   DiagnosticsAerosolOpticsSW &diagnostics_aerosol_optics_sw,
-                   // work view
-                   const ComplexView2D &specrefindex) {
+                   DiagnosticsAerosolOpticsSW &diagnostics_aerosol_optics_sw) {
 
   auto extinct = diagnostics_aerosol_optics_sw
                      .extinct; //        ! aerosol extinction [1/m]
@@ -1131,9 +1129,7 @@ void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
                     tauxar_kkp.data(), wa_kkp.data(), ga_kkp.data(),
                     fa_kkp.data(),
                     // diagnostics
-                    extinct(kk), absorb(kk), diagnostics_aerosol_optics_sw,
-                    //
-                    specrefindex);
+                    extinct(kk), absorb(kk), diagnostics_aerosol_optics_sw);
 
   } // mm
 

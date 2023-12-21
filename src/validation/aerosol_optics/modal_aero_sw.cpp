@@ -101,9 +101,8 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     set_complex_views_modal_aero(aersol_optics_data);
 
-    auto specrefndxsw_host =
-        Kokkos::create_mirror_view(aersol_optics_data.specrefndxsw);
-
+    auto specrefndxsw_host = ComplexView2D::HostMirror(
+        "specrefndxsw_host", nswbands, maxd_aspectype);
     count = 0;
     for (int j = 0; j < maxd_aspectype; ++j) {
       for (int i = 0; i < nswbands; ++i) {
@@ -113,7 +112,34 @@ void modal_aero_sw(Ensemble *ensemble) {
       }
     }
 
-    Kokkos::deep_copy(aersol_optics_data.specrefndxsw, specrefndxsw_host);
+    ComplexView2D::HostMirror specrefindex_host("specrefindex", max_nspec,
+                                                nswbands);
+
+    int nspec_amode[ntot_amode];
+    int lspectype_amode[ndrop::maxd_aspectype][ntot_amode];
+    int lmassptr_amode[ndrop::maxd_aspectype][ntot_amode];
+    Real specdens_amode[ndrop::maxd_aspectype];
+    Real spechygro[ndrop::maxd_aspectype];
+    int numptr_amode[ntot_amode];
+    int mam_idx[ntot_amode][ndrop::nspec_max];
+    int mam_cnst_idx[ntot_amode][ndrop::nspec_max];
+
+    ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
+                               numptr_amode, specdens_amode, spechygro, mam_idx,
+                               mam_cnst_idx);
+
+    for (int mm = 0; mm < ntot_amode; ++mm) {
+      const int nspec = nspec_amode[mm];
+      for (int iswbands = 0; iswbands < nswbands; ++iswbands) {
+        for (int ll = 0; ll < nspec; ++ll) {
+          // Fortran to C++ indexing
+          specrefindex_host(ll, iswbands) =
+              specrefndxsw_host(iswbands, lspectype_amode[ll][mm] - 1);
+        } // ll
+      }   // iswbands
+
+      Kokkos::deep_copy(aersol_optics_data.specrefindex[mm], specrefindex_host);
+    } // mm
 
     const auto crefwsw_real = input.get_array("crefwsw_real");
     const auto crefwsw_imag = input.get_array("crefwsw_imag");
@@ -247,7 +273,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     View1D output_diagnostics("output_diagnostics", 21);
     View2D output_diagnostics_amode("output_diagnostics_amode", 3, ntot_amode);
 
-    ComplexView2D specrefindex("specrefindex", max_nspec, nswbands);
     View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
 
     // FIXME: need to set values
@@ -329,9 +354,7 @@ void modal_aero_sw(Ensemble *ensemble) {
                         //
                         specname_amode, aersol_optics_data,
                         // diagnostic
-                        diagnostics_aerosol_optics_sw,
-                        // work views
-                        specrefindex);
+                        diagnostics_aerosol_optics_sw);
         });
 
     Kokkos::deep_copy(qqcw_host, qqcw);

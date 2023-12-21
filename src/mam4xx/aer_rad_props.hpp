@@ -311,22 +311,19 @@ void aer_rad_props_lw(
 
 } // aer_rad_props_lw
 KOKKOS_INLINE_FUNCTION
-void aer_rad_props_sw(const Real dt, const ConstColumnView &zi,
-                      const ConstColumnView &pmid, const ConstColumnView &pint,
-                      const ConstColumnView &temperature,
-                      const ConstColumnView &zm, const View2D &state_q,
-                      const View2D qqcw, const ConstColumnView &pdel,
-                      const ConstColumnView &pdeldry,
-                      const ConstColumnView &cldn, const View2D &ssa_cmip6_sw,
-                      const View2D &af_cmip6_sw, const View2D &ext_cmip6_sw_m,
-                      const View2D &tau, const View2D &tau_w,
-                      const View2D &tau_w_g, const View2D &tau_w_f,
-                      // FIXME
-                      const mam4::AeroId specname_amode[9],
-                      const AerosolOpticsDeviceData &aersol_optics_data,
-                      // diagnostic
-                      DiagnosticsAerosolOpticsSW &diagnostics_aerosol_optics_sw,
-                      const ComplexView2D &specrefindex) {
+void aer_rad_props_sw(
+    const Real dt, const ConstColumnView &zi, const ConstColumnView &pmid,
+    const ConstColumnView &pint, const ConstColumnView &temperature,
+    const ConstColumnView &zm, const View2D &state_q, const View2D qqcw,
+    const ConstColumnView &pdel, const ConstColumnView &pdeldry,
+    const ConstColumnView &cldn, const View2D &ssa_cmip6_sw,
+    const View2D &af_cmip6_sw, const View2D &ext_cmip6_sw_m, const View2D &tau,
+    const View2D &tau_w, const View2D &tau_w_g, const View2D &tau_w_f,
+    // FIXME
+    const mam4::AeroId specname_amode[9],
+    const AerosolOpticsDeviceData &aersol_optics_data,
+    // diagnostic
+    DiagnosticsAerosolOpticsSW &diagnostics_aerosol_optics_sw) {
 
   // call outfld('extinct_sw_inp',ext_cmip6_sw(:,:,idx_sw_diag), pcols, lchnk)
 
@@ -402,9 +399,7 @@ void aer_rad_props_sw(const Real dt, const ConstColumnView &zi,
                 specname_amode, // FIXME: move this parameters?
                 aersol_optics_data,
                 // diagnostic
-                diagnostics_aerosol_optics_sw,
-                // work views
-                specrefindex);
+                diagnostics_aerosol_optics_sw);
 
   // Update tau, tau_w, tau_w_g, and tau_w_f with the read in values of
   // extinction, ssa and asymmetry factors
