@@ -242,13 +242,6 @@ void aer_rad_props_lw(Ensemble *ensemble) {
                           refitablw_host[d1][d3]);
       } // d3
 
-    // work views
-    ComplexView2D specrefindex("specrefindex", max_nspec, nlwbands);
-
-    const int wlen = get_worksize_modal_aero_lw();
-    View1D work("work", wlen);
-    View2D ext_cmip6_lw_inv_m("ext_cmip6_lw_inv_m", pver, nlwbands);
-
     View2D odap_aer("odap_aer", pver, nlwbands);
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
@@ -257,9 +250,7 @@ void aer_rad_props_lw(Ensemble *ensemble) {
                                           state_q, qqcw, pdel, pdeldry, cldn,
                                           ext_cmip6_lw, aersol_optics_data,
                                           // output
-                                          odap_aer,
-                                          // work views
-                                          work);
+                                          odap_aer);
         });
 
     Kokkos::deep_copy(qqcw_host, qqcw);

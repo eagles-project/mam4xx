@@ -253,9 +253,7 @@ void aer_rad_props_lw(
     const ConstColumnView &cldn, const View2D &ext_cmip6_lw_m,
     const AerosolOpticsDeviceData &aersol_optics_data,
     // output
-    const View2D &odap_aer,
-    // work views
-    const View1D &work
+    const View2D &odap_aer
 
 ) {
 
@@ -286,9 +284,7 @@ void aer_rad_props_lw(
   modal_aero_lw(dt, state_q, qqcw, temperature, pmid, pdel, pdeldry, cldn,
                 aersol_optics_data,
                 // outputs
-                odap_aer,
-                // work views
-                work);
+                odap_aer);
 
   // FIXME: port tropopause_or_quit
   // !Find tropopause or quit simulation if not found
