@@ -301,7 +301,7 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     auto extinct = haero::testing::create_column_view(pver);
     auto absorb = haero::testing::create_column_view(pver);
     // FIXME: there are race conditions!!
-    auto team_policy = ThreadTeamPolicy(1u, 1);
+    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           DiagnosticsAerosolOpticsSW diagnostics_aerosol_optics_sw;
