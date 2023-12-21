@@ -73,8 +73,13 @@ void volcanic_cmip_sw(Ensemble *ensemble) {
     mam4::validation::convert_1d_vector_to_2d_view_device(tau_w_g_db, tau_w_g);
     mam4::validation::convert_1d_vector_to_2d_view_device(tau_w_f_db, tau_w_f);
 
-    aer_rad_props::volcanic_cmip_sw(zi, ilev_tropp, ext_cmip6_sw, ssa_cmip6_sw,
-                                    af_cmip6_sw, tau, tau_w, tau_w_g, tau_w_f);
+    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    Kokkos::parallel_for(
+        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          aer_rad_props::volcanic_cmip_sw(zi, ilev_tropp, ext_cmip6_sw,
+                                          ssa_cmip6_sw, af_cmip6_sw, tau, tau_w,
+                                          tau_w_g, tau_w_f);
+        });
 
     const int pver_po = pver + 1;
 

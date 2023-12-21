@@ -75,14 +75,6 @@ void modal_aero_lw(Ensemble *ensemble) {
     auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
     Kokkos::deep_copy(cldn, cldn_host);
 
-    const auto sigmag_amode_db = input.get_array("sigmag_amode");
-
-    Real sigmag_amode[ntot_amode] = {};
-
-    for (int imode = 0; imode < ntot_amode; ++imode) {
-      sigmag_amode[imode] = sigmag_amode_db[imode];
-    }
-
     const auto specrefndxlw_real_db = input.get_array("specrefndxlw_real");
     const auto specrefndxlw_imag_db = input.get_array("specrefndxlw_imag");
 
