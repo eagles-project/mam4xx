@@ -88,7 +88,7 @@ struct AerosolOpticsDeviceData {
   ComplexView2D specrefndxlw;
   ComplexView1D crefwlw;
   ComplexView1D crefwsw;
-  ComplexView2D specrefindex[ntot_amode];
+  ComplexView2D specrefindex_sw[ntot_amode];
 };
 
 inline void set_aerosol_optics_data_for_modal_aero_sw_views(
@@ -127,7 +127,7 @@ inline void set_aerosol_optics_data_for_modal_aero_lw_views(
 inline void
 set_complex_views_modal_aero(AerosolOpticsDeviceData &aersol_optics_data) {
   for (int i = 0; i < ntot_amode; ++i) {
-    aersol_optics_data.specrefindex[i] =
+    aersol_optics_data.specrefindex_sw[i] =
         ComplexView2D("specrefindex", max_nspec, nswbands);
   }
 
@@ -712,16 +712,6 @@ void modal_aero_sw_k(
     modal_size_parameters(sigma_logr_aer, dgnumwet_m_kk[mm], // in
                           radsurf, logradsurf, cheb_kk, false);
 
-    // FIXME: is there a way of avoiding this copy?
-    // specrefindex(ll,:) = specrefndxsw(:,lspectype_amode[ll][mm])
-    // for (int iswbands = 0; iswbands < nswbands; ++iswbands) {
-    //   for (int ll = 0; ll < nspec; ++ll) {
-    //     // Fortran to C++ indexing
-    //     specrefindex(ll, iswbands) = aersol_optics_data.specrefndxsw(
-    //         iswbands, lspectype_amode[ll][mm] - 1);
-    //   }
-    // }
-
     for (int isw = 0; isw < nswbands; ++isw) {
       // savaervis ! true if visible wavelength (0.55 micron)
       // savaernir ! true if near ir wavelength (~0.88 micron)
@@ -780,9 +770,9 @@ void modal_aero_sw_k(
         if (savaervis) {
           /// FIXME complex
           const Real specrefr =
-              aersol_optics_data.specrefindex[mm](ll, isw).real();
+              aersol_optics_data.specrefindex_sw[mm](ll, isw).real();
           const Real specrefi =
-              aersol_optics_data.specrefindex[mm](ll, isw).imag();
+              aersol_optics_data.specrefindex_sw[mm](ll, isw).imag();
 
           burdenmode[mm] += specmmr * mass;
 
@@ -833,7 +823,7 @@ void modal_aero_sw_k(
       Real refr, refi = {};
 
       calc_refin_complex(1, isw, qaerwat_m_kk[mm], specvol,
-                         aersol_optics_data.specrefindex[mm], nspec,
+                         aersol_optics_data.specrefindex_sw[mm], nspec,
                          aersol_optics_data.crefwlw, aersol_optics_data.crefwsw,
                          dryvol, wetvol, watervol, crefin, refr, refi);
 

@@ -138,7 +138,8 @@ void modal_aero_sw(Ensemble *ensemble) {
         } // ll
       }   // iswbands
 
-      Kokkos::deep_copy(aersol_optics_data.specrefindex[mm], specrefindex_host);
+      Kokkos::deep_copy(aersol_optics_data.specrefindex_sw[mm],
+                        specrefindex_host);
     } // mm
 
     const auto crefwsw_real = input.get_array("crefwsw_real");
