@@ -1,10 +1,11 @@
 #include <mam4xx/mam4.hpp>
 
-#include <skywalker.h>
+#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
+using namespace mam4::mo_drydep;
 using namespace haero;
 void calculate_obukhov_length(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -18,32 +19,32 @@ void calculate_obukhov_length(Ensemble *ensemble) {
     const int endlt = int(input.get_array("endlt")[0]) - 1;
     const auto fr_lnduse = input.get_array("fr_lnduse");
     const bool unstable = static_cast<bool>(input.get("unstable"));
-    const Real tha = input.get("tha");
-    const Real thg = input.get("tha");
+    const Real tha = input.get_array("tha")[0];
+    const Real thg = input.get_array("tha")[0];
     const auto ustar = input.get_array("ustar");
     const auto cvar = input.get_array("cvar");
-    const Real va = input.get("va");
+    const Real va = input.get_array("va")[0];
     const auto bycp = input.get_array("bycp");
-    const Real ribn = input.get("ribn");
+    const Real ribn = input.get_array("ribn")[0];
 
     ViewBool1DHost fr_lnduse_h("fr_lnduse", n_land_type);
     for (int lt = 0; lt < n_land_type; ++lt) {
       fr_lnduse_h(lt) = static_cast<bool>(fr_lnduse[lt]);
     }
     ViewBool1D fr_lnduse_d("fr_lnduse", n_land_type);
-    Kokkos::deepcopy(fr_lnduse_d, fr_lnduse_h);
+    Kokkos::deep_copy(fr_lnduse_d, fr_lnduse_h);
 
     View1DHost ustar_h((Real *)ustar.data(), n_land_type);
     View1D ustar_d("ustar", n_land_type);
-    Kokkos::deepcopy(ustar_d, ustar_h);
+    Kokkos::deep_copy(ustar_d, ustar_h);
 
     View1DHost cvar_h((Real *)cvar.data(), n_land_type);
     View1D cvar_d("ustar", n_land_type);
-    Kokkos::deepcopy(cvar_d, cvar_h);
+    Kokkos::deep_copy(cvar_d, cvar_h);
 
     View1DHost bycp_h((Real *)bycp.data(), n_land_type);
     View1D bycp_d("bycp", n_land_type);
-    Kokkos::deepcopy(bycp_d, bycp_h);
+    Kokkos::deep_copy(bycp_d, bycp_h);
 
     View1D obklen_d("obklen", n_land_type);
 

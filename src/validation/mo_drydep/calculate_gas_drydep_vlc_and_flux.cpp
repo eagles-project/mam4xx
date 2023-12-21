@@ -1,10 +1,11 @@
 #include <mam4xx/mam4.hpp>
 
-#include <skywalker.h>
+#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
+using namespace mam4::mo_drydep;
 using namespace haero;
 void calculate_gas_drydep_vlc_and_flux(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -25,58 +26,58 @@ void calculate_gas_drydep_vlc_and_flux(Ensemble *ensemble) {
     const auto mmr = input.get_array("mmr");
     const auto dep_ra = input.get_array("dep_ra");
     const auto dep_rb = input.get_array("dep_rb");
-    const Real term = input.get("term");
+    const Real term = input.get_array("term")[0];
     const auto rsmx = input.get_array("rsmx");
     const auto rlux = input.get_array("rlux");
     const auto rclx = input.get_array("rclx");
     const auto rgsx = input.get_array("rgsx");
-    const Real rdc = input.get("rdc");
+    const Real rdc = input.get_array("rdc")[0];
 
-    Viewint1DHost index_season_h("index_season", n_land_type);
+    ViewInt1DHost index_season_h("index_season", n_land_type);
     for (int lt = 0; lt < n_land_type; ++lt) {
       index_season_h(lt) = int(index_season[lt]);
     }
     ViewInt1D index_season_d("index_season", n_land_type);
-    Kokkos::deepcopy(index_season_d, index_season_h);
+    Kokkos::deep_copy(index_season_d, index_season_h);
 
     ViewBool1DHost fr_lnduse_h("fr_lnduse", n_land_type);
     for (int lt = 0; lt < n_land_type; ++lt) {
       fr_lnduse_h(lt) = static_cast<bool>(fr_lnduse[lt]);
     }
     ViewBool1D fr_lnduse_d("fr_lnduse", n_land_type);
-    Kokkos::deepcopy(fr_lnduse_d, fr_lnduse_h);
+    Kokkos::deep_copy(fr_lnduse_d, fr_lnduse_h);
 
     View1D lcl_frc_landuse_d("lcl_frc_landuse", n_land_type);
     View1DHost lcl_frc_landuse_h((Real *)lcl_frc_landuse.data(), n_land_type);
-    Kokkos::deepcopy(lcl_frc_lnduse_d, lcl_frc_lnduse_h);
+    Kokkos::deep_copy(lcl_frc_landuse_d, lcl_frc_landuse_h);
 
     View1D mmr_d("mmr", gas_pcnst);
     View1DHost mmr_h((Real *)mmr.data(), gas_pcnst);
-    Kokkos::deepcopy(mmr_d, mmr_h);
+    Kokkos::deep_copy(mmr_d, mmr_h);
 
     View1D dep_ra_d("dep_ra", n_land_type);
     View1DHost dep_ra_h((Real *)dep_ra.data(), n_land_type);
-    Kokkos::deepcopy(dep_ra_d, dep_ra_h);
+    Kokkos::deep_copy(dep_ra_d, dep_ra_h);
 
     View1D dep_rb_d("dep_rb", n_land_type);
     View1DHost dep_rb_h((Real *)dep_rb.data(), n_land_type);
-    Kokkos::deepcopy(dep_rb_d, dep_rb_h);
+    Kokkos::deep_copy(dep_rb_d, dep_rb_h);
 
-    View1D rsmx_d("dep_rb", gas_pcsnt * n_land_type);
+    View1D rsmx_d("dep_rb", gas_pcnst * n_land_type);
     View1DHost rsmx_h((Real *)rsmx.data(), gas_pcnst * n_land_type);
-    Kokkos::deepcopy(rsmx_d, rsmx_h);
+    Kokkos::deep_copy(rsmx_d, rsmx_h);
 
-    View1D rlux_d("dep_rb", gas_pcsnt * n_land_type);
+    View1D rlux_d("dep_rb", gas_pcnst * n_land_type);
     View1DHost rlux_h((Real *)rlux.data(), gas_pcnst * n_land_type);
-    Kokkos::deepcopy(rlux_d, rlux_h);
+    Kokkos::deep_copy(rlux_d, rlux_h);
 
-    View1D rclx_d("dep_rb", gas_pcsnt * n_land_type);
+    View1D rclx_d("dep_rb", gas_pcnst * n_land_type);
     View1DHost rclx_h((Real *)rclx.data(), gas_pcnst * n_land_type);
-    Kokkos::deepcopy(rclx_d, rclx_h);
+    Kokkos::deep_copy(rclx_d, rclx_h);
 
-    View1D rgsx_d("dep_rb", gas_pcsnt * n_land_type);
+    View1D rgsx_d("dep_rb", gas_pcnst * n_land_type);
     View1DHost rgsx_h((Real *)rgsx.data(), gas_pcnst * n_land_type);
-    Kokkos::deepcopy(rgsx_d, rgsx_h);
+    Kokkos::deep_copy(rgsx_d, rgsx_h);
 
     View1D dvel_d("dvel", n_land_type);
     View1D dflx_d("dflx", n_land_type);
