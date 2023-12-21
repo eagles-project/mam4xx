@@ -1,10 +1,11 @@
 #include <mam4xx/mam4.hpp>
 
-#include <skywalker.h>
+#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
+using namespace mam4::mo_drydep;
 using namespace haero;
 void calculate_resistance_rclx(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -24,30 +25,30 @@ void calculate_resistance_rclx(Ensemble *ensemble) {
     const auto heff = input.get_array("heff");
     const Real cts = input.get_array("cts")[0];
 
-    Viewint1DHost index_season_h("index_season", n_land_type);
+    ViewInt1DHost index_season_h("index_season", n_land_type);
     for (int lt = 0; lt < n_land_type; ++lt) {
       index_season_h(lt) = int(index_season[lt]);
     }
     ViewInt1D index_season_d("index_season", n_land_type);
-    Kokkos::deepcopy(index_season_d, index_season_h);
+    Kokkos::deep_copy(index_season_d, index_season_h);
 
     ViewBool1DHost fr_lnduse_h("fr_lnduse", n_land_type);
     for (int lt = 0; lt < n_land_type; ++lt) {
       fr_lnduse_h(lt) = static_cast<bool>(fr_lnduse[lt]);
     }
     ViewBool1D fr_lnduse_d("fr_lnduse", n_land_type);
-    Kokkos::deepcopy(fr_lnduse_d, fr_lnduse_h);
+    Kokkos::deep_copy(fr_lnduse_d, fr_lnduse_h);
 
     View1D heff_d("heff", nddvels);
     View1DHost heff_h((Real *)heff.data(), nddvels);
-    Kokkos::deepcopy(heff_d, heff_h);
+    Kokkos::deep_copy(heff_d, heff_h);
 
     View1D rclx_d("rclx", gas_pcnst * n_land_type);
 
     auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
-        Real rclx[gas_pcnst][n_land_type];
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          Real rclx[gas_pcnst][n_land_type];
           calculate_resistance_rclx(beglt, endlt, index_season_d.data(),
                                     fr_lnduse_d.data(), heff_d.data(), cts,
                                     rclx);
@@ -63,6 +64,6 @@ void calculate_resistance_rclx(Ensemble *ensemble) {
     std::vector<Real> rclx(gas_pcnst * n_land_type);
     auto rclx_h = View1DHost((Real *)rclx.data(), gas_pcnst * n_land_type);
     Kokkos::deep_copy(rclx_h, rclx_d);
-    output.set("rclx","rclx);
+    output.set("rclx", rclx);
   });
 }

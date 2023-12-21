@@ -3,40 +3,57 @@
 
 #include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
 namespace mam4 {
 
 //==========================================================================
-//   mam4xx interface for E3SM dry deposition of tracers (seq_drydep_mod)
+//   data views for E3SM dry deposition of tracers (seq_drydep_mod)
 //==========================================================================
-// These functions must be implemented elsewhere, either by a host model
-// or as part of a self-contained test setup. For an example
-// implementation, see the related mo_drydep validation tests in
-// ../validation/mo_drydep.
+// These views store data from module variables in E3SM's ѕeq_drydep_mod.F90.
 namespace seq_drydep {
 
-// ON HOST: loads data onto the device for use by mam4xx (array shape)
-extern void set_drat(mam4::HostType::view_1d<Real> drat); // (n_drydep)
-extern void set_foxd(HostType::view_1d<Real> foxd);       // (n_drydep)
-extern void set_rac(HostType::view_1d<Real> rac);         // (1, NLUse)
-extern void set_rgso(HostType::view_1d<Real> rgso);       // (1, NLUse)
-extern void set_rgss(HostType::view_1d<Real> rgss);       // (1, NLUse)
-extern void set_ri(HostType::view_1d<Real> ri);           // (1, NLUse)
-extern void set_z0(HostType::view_1d<Real> z0);           // (NSeas, NLUse)
+// maximum number of species involved in dry deposition
+constexpr int maxspc = 210;
 
-// ON DEVICE: returns a view with the desired array data
-extern DeviceType::view_1d<Real> drat();
-extern DeviceType::view_1d<Real> foxd();
-extern DeviceType::view_1d<Real> rac();
-extern DeviceType::view_1d<Real> rgso();
-extern DeviceType::view_1d<Real> rgss();
+// number of seasons
+constexpr int NSeas = 5;
+
+// clang-format off
+//-------------------------------------//-----------------------------------------//----------------//
+// View                                // Description                             // Shape          //
+//-------------------------------------//-----------------------------------------//----------------//
+static DeviceType::view_1d<Real> drat; // molecular diffusivity ratio (D_H2O/D_X) // (n_drydep)     //
+static DeviceType::view_1d<Real> foxd; // reactive factor for oxidation           // (n_drydep)     //
+static DeviceType::view_2d<Real> rac;  // aerodynamic resistance to lower canopy  // (NSeas, NLUse) //
+static DeviceType::view_2d<Real> rclo; // lower canopy resistance for O3          // (NSeas, NLUse) //
+static DeviceType::view_2d<Real> rcls; // lower canopy resistance for SO2         // (NSeas, NLUse) //
+static DeviceType::view_2d<Real> rgso; // ground ѕurface resistance for O3        // (NSeas, NLUse) //
+static DeviceType::view_2d<Real> rgss; // ground surface resistance for SO2       // (NSeas, NLUse) //
+static DeviceType::view_2d<Real> ri;   // richardson number [-]                   // (NSeas, NLUse) //
+static DeviceType::view_2d<Real> rlu;  // resistance of leaves in upper canopy    // (NSeas, NLUse) //
+static DeviceType::view_2d<Real> z0;   // roughness length [m]                    // (NSeas, NLUse) //
+//-------------------------------------//-----------------------------------------//----------------//
+// clang-format on
+
+// All resistances above have units of [s/m].
+
+//======================
+// seq_drydep_SetHCoeff
+//======================
+KOKKOS_FUNCTION void setHCoeff(Real sfc_temp, Real heff[maxspc]);
+
+// The function above, which computes the H coefficients corresponding to the
+// given surface temperature, must be implemented as an on-device Kokkos
+// function. It can be implemented in the atmospheric host model or in a testing
+// environment, for example.
 
 } // namespace seq_drydep
 
 //==========================================================================
-// end mam4xx interface for E3SM dry deposition of tracers (seq_drydep_mod)
+// end data views for E3SM dry deposition of tracers (seq_drydep_mod)
 //==========================================================================
 
 namespace mo_drydep {
@@ -45,6 +62,7 @@ constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
 constexpr int n_land_type = 11; // from eam/src/chemistry/mozart/mo_drydep.F90
 constexpr int lt_for_water = 7; // from eam/src/chemistry/mozart/mo_drydep.F90
 constexpr int so2_ndx = -1;     // FIXME
+constexpr int NSeas = mam4::seq_drydep::NSeas;
 
 // BAD_CONSTANTS
 constexpr Real large_value = 1e36;
@@ -53,8 +71,17 @@ constexpr Real grav = 9.81;
 constexpr Real karman = 0.4;   // from shr_const_mod.F90
 constexpr Real tmelt = 273.15; // from shr_const_mod.F90 via physconst.F90
 
-// FIXME: Where is seq_drydep_mod.F90??
-constexpr int nddvels = 0; // FIXME
+// nddvels is used only to determine array sizes, and is not involved in
+// logic below. Because we rely on its constancy for C++ array sizes, we
+// must use its maximum value, which is maxspc above
+constexpr int nddvels = mam4::seq_drydep::maxspc;
+
+// these views represent module arrays in mo_drydep.F90 that determine whether
+// a given specіes is subject to dry deposition, and, if so, maps the index of
+// the species to its corresponding index for dry deposition
+static DeviceType::view_1d<bool> has_dvel; // true iff given ѕpecies does drydep
+static DeviceType::view_1d<int>
+    map_dvel; // maps given ѕpecies index to drydep index
 
 KOKKOS_INLINE_FUNCTION
 void calculate_uustar(
@@ -64,7 +91,7 @@ void calculate_uustar(
     const Real zl,   // height of lowest level
     const Real ribn, // richardson number [-]
     Real &uustar) {  // u * ustar (assumed constant over grid) [m^2/s^2]
-  // FIXME: use seq_drydep_mod, only: z0
+  const auto z0 = mam4::seq_drydep::z0;
 
   //-------------------------------------------------------------------------------------
   // find grid averaged z0: z0bar (the roughness length)
@@ -74,8 +101,7 @@ void calculate_uustar(
   Real z0b = 0.0; // average roughness length over grid
   for (int lt = 0; lt < n_land_type; ++lt) {
     if (fr_lnduse[lt]) {
-      // FIXME: z0 may need its indices switched?
-      z0b += lcl_frc_landuse[lt] * log(z0[index_season[lt]][lt]);
+      z0b += lcl_frc_landuse[lt] * log(z0(index_season[lt], lt));
     }
   }
 
@@ -110,20 +136,23 @@ void calculate_ustar(
     Real ustar[n_land_type],  // friction velocity [m/s]
     Real cvar[n_land_type],   // height parameter
     Real bycp[n_land_type]) { // buoyancy parameter for unstable conditions
-  // FIXME: use seq_drydep_mod, only: z0
+  const auto z0 = mam4::seq_drydep::z0;
 
   //-------------------------------------------------------------------------------------
   // calculate the friction velocity for each land type u_i=uustar/u*_i
   //-------------------------------------------------------------------------------------
   for (int lt = beglt; lt < endlt; ++lt) {
     if (fr_lnduse[lt]) { // BAD_CONSTANTS
-      // FIXME: z0 may need its indices switched?
       if (unstable) {
-        cvar[lt] = karman / haero::log(zl / z0[index_season[lt]][lt]);
-        bycp[lt]  = 9.4 * haero::square(cvar[lt] * haero::sqrt(haero::abs(ribn)*zl/z0[index_season[lt]][lt]]);
-        ustar[lt] = haero::sqrt(cvar[lt]*uustar*haero::sqrt(1.0 - (9.4*ribn/(1.0 + 7.4*bycp[lt]))));
+        cvar[lt] = karman / haero::log(zl / z0(index_season[lt], lt));
+        bycp[lt] = 9.4 * haero::square(cvar[lt] *
+                                       haero::sqrt(haero::abs(ribn) * zl /
+                                                   z0(index_season[lt], lt)));
+        ustar[lt] = haero::sqrt(
+            cvar[lt] * uustar *
+            haero::sqrt(1.0 - (9.4 * ribn / (1.0 + 7.4 * bycp[lt]))));
       } else {
-        cvar[lt] = karman / haero::log(zl / z0[index_season[lt]][lt]);
+        cvar[lt] = karman / haero::log(zl / z0(index_season[lt], lt));
         ustar[lt] = haero::sqrt(cvar[lt] * uustar / (1.0 + 4.7 * ribn));
       }
     }
@@ -217,9 +246,8 @@ void calculate_aerodynamic_and_quasilaminar_resistance(
         zeta = haero::min(1.0, zeta);
         psih = -5.0 * zeta;
       }
-      // FIXME: crb is a mo_drpdep module variable initialized from diffm, difft
-      // params
-      // FIXME: it's only used here, so we hardwire it here
+      // NOTE: crb is a mo_drydep module variable initialized from the
+      // NOTE: diffm, difft params. It's only used here, so we hardwire it
       constexpr Real diffm = 1.789e-5;
       constexpr Real difft = 2.060e-5;
       constexpr Real crb = haero::pow(difft / diffm, 2.0 / 3.0);
@@ -241,10 +269,15 @@ void calculate_resistance_rgsx_and_rsmx(
     Real rsmx[gas_pcnst]
              [n_land_type]) // vegetative resistance (plant mesophyll) [s/m]
 {
-  // FIXME: use seq_drydep_mod, only: ri, rgso, rgss, foxd, drat
+  const auto ri = mam4::seq_drydep::ri;
+  const auto rgso = mam4::seq_drydep::rgso;
+  const auto rgss = mam4::seq_drydep::rgss;
+  const auto foxd = mam4::seq_drydep::foxd;
+  const auto drat = mam4::seq_drydep::drat;
+
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (has_dvel[ispec]) {
-      int idx_drydep = map_dvel[ispec];
+    if (has_dvel(ispec)) {
+      int idx_drydep = map_dvel(ispec);
       for (int lt = beglt; lt < endlt; ++lt) {
         if (fr_lnduse[lt]) {
           Real rmx;
@@ -252,25 +285,24 @@ void calculate_resistance_rgsx_and_rsmx(
           if (ispec == so2_ndx) {
             rmx = 0.0;
           } else { // BAD_CONSTANTS
-            rmx = 1.0 / (heff[idx_drydep] / 3000.0 + 100.0 * foxd[idx_drydep]);
+            rmx = 1.0 / (heff[idx_drydep] / 3000.0 + 100.0 * foxd(idx_drydep));
           }
           cts = 1000.0 * haero::exp(-tc - 4.0); // correction for frost
-          // FIXME: rgss, rgso indices probably need to be swapped
           rgsx[ispec][lt] =
-              cts + 1.0 / ((heff[idx_drydep] / (1e5 * rgss[sndx][lt])) +
-                           (foxd[idx_drydep] / rgso[sndx][lt]));
+              cts + 1.0 / ((heff[idx_drydep] / (1e5 * rgss(sndx, lt))) +
+                           (foxd[idx_drydep] / rgso(sndx, lt)));
 
           if (lt == lt_for_water) {
             rsmx[ispec][lt] = large_value;
           } else {
-            // FIXME: ri indices probably need to be swapped
-            Real rs = ri[sndx][lt] * crs;
+            Real rs = ri(sndx, lt) * crs;
+            Real dewm;
             if (has_dew || has_rain) {
               dewm = 3.0;
             } else {
               dewm = 1.0;
             }
-            rsmx[ispec][lt] = (dewm * rs * drat[idx_drydep] + rmx);
+            rsmx[ispec][lt] = (dewm * rs * drat(idx_drydep) + rmx);
           }
         }
       }
@@ -285,10 +317,13 @@ void calculate_resistance_rclx(
     const Real heff[nddvels], // Henry's law coefficients
     const Real cts,           // correction to rlu rcl and rgs for frost
     Real rclx[gas_pcnst][n_land_type]) { // lower canopy resistance [s/m]
-  // FIXME: use seq_drydep_mod, only: rclo, rcls, foxd
+  const auto rclo = mam4::seq_drydep::rclo;
+  const auto rcls = mam4::seq_drydep::rcls;
+  const auto foxd = mam4::seq_drydep::foxd;
+
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (has_dvel[ispec]) {
-      idx_drydep = map_dvel[ispec];
+    if (has_dvel(ispec)) {
+      int idx_drydep = map_dvel(ispec);
       for (int lt = beglt; lt < endlt; ++lt) {
         if (fr_lnduse[lt]) {
           if (lt == lt_for_water) {
@@ -296,10 +331,9 @@ void calculate_resistance_rclx(
           } else {
             int sndx = index_season[lt];
             // BAD_CONSTANT
-            // FIXME: rcls and rclo probably need indices swapped
             rclx[ispec][lt] =
-                cts + 1.0 / ((heff[idx_drydep] / (1e5 * rcls[sndx][lt])) +
-                             (foxd[idx_drydep] / rclo[sndx][lt]));
+                cts + 1.0 / ((heff[idx_drydep] / (1e5 * rcls(sndx, lt))) +
+                             (foxd(idx_drydep) / rclo(sndx, lt)));
           }
         }
       }
@@ -307,12 +341,11 @@ void calculate_resistance_rclx(
   }
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (has_dvel[ispec] && (ispec == so2_ndx)) {
+    if (has_dvel(ispec) && (ispec == so2_ndx)) {
       for (int lt = beglt; lt < endlt; ++lt) {
         if (lt != lt_for_water) {
           if (fr_lnduse[lt]) {
-            // FIXME: rcls probably needs its indices swapped
-            rclx[ispec][lt] = cts + rcls[index_season[lt]][lt];
+            rclx[ispec][lt] = cts + rcls(index_season[lt], lt);
           }
         }
       }
@@ -329,24 +362,23 @@ void calculate_resistance_rlux(
     const Real spec_hum,      // specific humidity [kg/kg]
     const Real heff[nddvels], // Henry's Law coefficients
     const Real cts,           // correction to rlu rcl and rgs for frost
-    Real rlux[gas_pcnst][n_land_type]) { // lower canopy resistance [s/m] ! out
-  // FIXME: use seq_drydep_mod, only: rclo, rcls, rlu, foxd
+    Real rlux[gas_pcnst][n_land_type]) // lower canopy resistance [s/m] ! out
+{
+  const auto rlu = mam4::seq_drydep::rlu;
+  const auto foxd = mam4::seq_drydep::foxd;
 
-  integer ::icol, lt, ispec, idx_drydep,
-      sndx Real rlux_o3[n_land_type] =
-          {}; // vegetative resistance (upper canopy) [s/m]
+  Real rlux_o3[n_land_type] = {}; // vegetative resistance (upper canopy) [s/m]
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (has_dvel[ispec]) {
-      int idx_drydep = map_dvel[ispec];
+    if (has_dvel(ispec)) {
+      int idx_drydep = map_dvel(ispec);
       for (int lt = beglt; lt < endlt; ++lt) {
         if (fr_lnduse[lt]) {
           if (lt == lt_for_water) {
             rlux[ispec][lt] = large_value;
           } else { // BAD_CONSTANT
             int sndx = index_season[lt];
-            // FIXME: rlu probably needs its indices swapped
-            rlux[ispec][lt] = cts + rlu[sndx][lt] / (1e-5 * heff[idx_drydep] +
-                                                     foxd[idx_drydep]);
+            rlux[ispec][lt] = cts + rlu(sndx, lt) / (1e-5 * heff[idx_drydep] +
+                                                     foxd(idx_drydep));
           }
         }
       }
@@ -362,13 +394,12 @@ void calculate_resistance_rlux(
         //-------------------------------------------------------------------------------------
         if (sfc_temp > tmelt) {
           // BAD_CONSTANTS
-          // FIXME: rlu probably needs its indices swapped
           if (has_dew) {
-            rlux_o3[lt] = 3000.0 * rlu[sndx][lt] / (1000.0 + rlu[sndx][lt]);
+            rlux_o3[lt] = 3000.0 * rlu(sndx, lt) / (1000.0 + rlu(sndx, lt));
           }
           if (has_rain) {
             rlux_o3[lt] =
-                3000.0 * rlu[sndx][lt] / (1000.0 + 3.0 * rlu[sndx][lt]);
+                3000.0 * rlu(sndx, lt) / (1000.0 + 3.0 * rlu(sndx, lt));
           }
         }
       }
@@ -376,8 +407,8 @@ void calculate_resistance_rlux(
   }
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    int idx_drydep = map_dvel[ispec];
-    if (has_dvel[ispec] && (ispec != so2_ndx)) {
+    int idx_drydep = map_dvel(ispec);
+    if (has_dvel(ispec) && (ispec != so2_ndx)) {
       for (int lt = beglt; lt < endlt; ++lt) {
         if (lt != lt_for_water) {
           if (fr_lnduse[lt] && (sfc_temp > tmelt) && has_dew) {
@@ -387,7 +418,7 @@ void calculate_resistance_rlux(
             // BAD_CONSTANTS
             rlux[ispec][lt] = 1.0 / ((1.0 / (3. * rlux[ispec][lt])) +
                                      1e-7 * heff[idx_drydep] +
-                                     foxd[idx_drydep] / rlux_o3[lt]);
+                                     foxd(idx_drydep) / rlux_o3[lt]);
           }
         }
       }
@@ -404,9 +435,8 @@ void calculate_resistance_rlux(
                 rlux[ispec][lt] = 100.0;
               }
               if (has_rain) {
-                // FIXME: rlu probably needs its indices swapped
-                rlux[ispec][lt] = 15.0 * rlu[index_season[lt]][lt] /
-                                  (5.0 + 3e-3 * rlu[index_season[lt]][lt]);
+                rlux[ispec][lt] = 15.0 * rlu(index_season[lt], lt) /
+                                  (5.0 + 3e-3 * rlu(index_season[lt], lt));
               }
             }
             rlux[ispec][lt] += cts;
@@ -439,41 +469,39 @@ void calculate_gas_drydep_vlc_and_flux(
     Real dvel[gas_pcnst],   // deposition velocity [cm/s]
     Real dflx[gas_pcnst]) { // deposition flux [1/cm^2/s]
   constexpr Real m_to_cm_per_s = 100.0;
-
-  // FIXME: use seq_drydep_mod, only: rac
-  const Real rac[n_land_type][???];
+  const auto rac = mam4::seq_drydep::rac;
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (has_dvel[ispec]) {
+    if (has_dvel(ispec)) {
       Real wrk = 0.0;
       Real resc, lnd_frc;
       for (int lt = beglt; lt < endlt; ++lt) {
         if (fr_lnduse[lt]) {
           resc = 1.0 / (1.0 / rsmx[ispec][lt] + 1.0 / rlux[ispec][lt]) +
                  1.0 / (rdc + rclx[ispec][lt]) +
-                 1.0 / (rac[lt][index_season[lt]] + rgsx[ispec][lt]);
+                 1.0 / (rac(index_season[lt], lt) + rgsx[ispec][lt]);
           resc = haero::max(10.0, resc);
           lnd_frc = lcl_frc_landuse[lt];
         }
-      }
 
-      //-------------------------------------------------------------------------------------
-      //  ... compute average deposition velocity
-      //-------------------------------------------------------------------------------------
-      if (ispec == so2_ndx) {
-        if (lt == lt_for_water) {
-          if (fr_lnduse[lt]) {
-            // assume no surface resistance for SO2 over water
-            wrk += lnd_frc / (dep_ra[lt] + dep_rb[lt]);
+        //-------------------------------------------------------------------------------------
+        //  ... compute average deposition velocity
+        //-------------------------------------------------------------------------------------
+        if (ispec == so2_ndx) {
+          if (lt == lt_for_water) {
+            if (fr_lnduse[lt]) {
+              // assume no surface resistance for SO2 over water
+              wrk += lnd_frc / (dep_ra[lt] + dep_rb[lt]);
+            }
+          } else {
+            if (fr_lnduse[lt]) {
+              wrk += lnd_frc / (dep_ra[lt] + dep_rb[lt] + resc);
+            }
           }
         } else {
           if (fr_lnduse[lt]) {
             wrk += lnd_frc / (dep_ra[lt] + dep_rb[lt] + resc);
           }
-        }
-      } else {
-        if (fr_lnduse[lt]) {
-          wrk += lnd_frc / (dep_ra[lt] + dep_rb[lt] + resc);
         }
       }
 
@@ -510,7 +538,9 @@ Real get_saturation_specific_humidity(const Real temperature, // [K]
 
 KOKKOS_INLINE_FUNCTION
 void drydep_xactive(
-    const int ncdate,               // date [YYMMDD]
+    const Real fraction_landuse[n_land_type], // fraction of land use for column
+                                              // by land type
+    const int ncdate,                         // date [YYMMDD]
     const int col_index_season[12], // column-specific mapping of month indices
                                     // to seasonal land-type indices [-]
     const Real sfc_temp,            // surface temperature [K]
@@ -531,22 +561,16 @@ void drydep_xactive(
   constexpr Real temp_highbound = 313.15; // [K]
   constexpr Real ric = 0.2;               // ???
 
-  // NOTE: our set of species is fixed, so in principle we know which ones can
-  // NOTE: be deposited
-  // FIXME: populate this array
-  bool has_dvel[gas_pcnst] = {};
-
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     dvel[ispec] = 0.0;
+    dflx[ispec] = 0.0;
   }
 
   //-------------------------------------------------------------------------------------
   // define species-dependent parameters (temperature dependent)
   //-------------------------------------------------------------------------------------
   Real heff[nddvels];
-  seq_drydep_setHCoeff(sfc_temp, heff);
-
-  Real dep_ra[n_land_type] = {}, dep_rb[n_land_type] = {};
+  mam4::seq_drydep::setHCoeff(sfc_temp, heff);
 
   //-------------------------------------------------------------------------------------
   // 	... set month
@@ -584,7 +608,7 @@ void drydep_xactive(
   // potential temperature
   //-------------------------------------------------------------------------------------
   Real tha = get_potential_temperature(air_temp, pressure_10m, spec_hum);
-  l Real thg = get_potential_temperature(sfc_temp, pressure_sfc, spec_hum);
+  Real thg = get_potential_temperature(sfc_temp, pressure_sfc, spec_hum);
 
   //-------------------------------------------------------------------------------------
   // height of 1st level
@@ -640,23 +664,29 @@ void drydep_xactive(
   //-------------------------------------------------------------------------------------
   // 	... form working arrays
   //-------------------------------------------------------------------------------------
+  bool fr_lnduse[n_land_type] = {};
+  Real lcl_frc_landuse[n_land_type];
   for (int lt = 0; lt < n_land_type; ++lt) {
-    lcl_frc_landuse[lt] = fraction_landuse(icol, lt, lchnk); // FIXME: ???
+    lcl_frc_landuse[lt] = fraction_landuse[lt];
     fr_lnduse[lt] = (lcl_frc_landuse[lt] > 0.0);
   }
 
+  Real uustar;
   calculate_uustar(index_season, fr_lnduse, unstable, lcl_frc_landuse, va, zl,
                    ribn, uustar);
 
+  Real ustar[n_land_type], cvar[n_land_type], bycp[n_land_type];
   calculate_ustar(0, n_land_type, index_season, fr_lnduse, unstable, zl, uustar,
                   ribn, ustar, cvar, bycp);
 
   calculate_ustar_over_water(0, n_land_type, index_season, fr_lnduse, unstable,
                              zl, uustar, ribn, ustar, cvar, bycp);
 
+  Real obklen[n_land_type];
   calculate_obukhov_length(0, n_land_type, fr_lnduse, unstable, tha, thg, ustar,
                            cvar, va, bycp, ribn, obklen);
 
+  Real dep_ra[n_land_type], dep_rb[n_land_type];
   calculate_aerodynamic_and_quasilaminar_resistance(
       0, n_land_type, fr_lnduse, zl, obklen, ustar, cvar, dep_ra, dep_rb);
 
@@ -668,13 +698,16 @@ void drydep_xactive(
   //
   // compute rsmx = 1/(rs+rm) : multiply by 3 if surface is wet
   //-------------------------------------------------------------------------------------
+  Real cts, rgsx[gas_pcnst][n_land_type], rsmx[gas_pcnst][n_land_type];
   calculate_resistance_rgsx_and_rsmx(0, n_land_type, index_season, fr_lnduse,
                                      has_rain, has_dew, tc, heff, crs, cts,
                                      rgsx, rsmx);
 
+  Real rclx[gas_pcnst][n_land_type];
   calculate_resistance_rclx(0, n_land_type, index_season, fr_lnduse, heff, cts,
                             rclx);
 
+  Real rlux[gas_pcnst][n_land_type];
   calculate_resistance_rlux(0, n_land_type, index_season, fr_lnduse, has_rain,
                             has_dew, sfc_temp, qs, spec_hum, heff, cts, rlux);
 

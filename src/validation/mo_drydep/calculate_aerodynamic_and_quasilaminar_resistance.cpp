@@ -1,10 +1,11 @@
 #include <mam4xx/mam4.hpp>
 
-#include <skywalker.h>
+#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
+using namespace mam4::mo_drydep;
 using namespace haero;
 void calculate_aerodynamic_and_quasilaminar_resistance(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -16,7 +17,7 @@ void calculate_aerodynamic_and_quasilaminar_resistance(Ensemble *ensemble) {
 
     const int beglt = int(input.get_array("beglt")[0]) - 1;
     const int endlt = int(input.get_array("endlt")[0]) - 1;
-    const Real zl = input.get("zl");
+    const Real zl = input.get_array("zl")[0];
     const auto fr_lnduse = input.get_array("fr_lnduse");
     const auto obklen = input.get_array("obklen");
     const auto ustar = input.get_array("ustar");
@@ -27,19 +28,19 @@ void calculate_aerodynamic_and_quasilaminar_resistance(Ensemble *ensemble) {
       fr_lnduse_h(lt) = static_cast<bool>(fr_lnduse[lt]);
     }
     ViewBool1D fr_lnduse_d("fr_lnduse", n_land_type);
-    Kokkos::deepcopy(fr_lnduse_d, fr_lnduse_h);
+    Kokkos::deep_copy(fr_lnduse_d, fr_lnduse_h);
 
     View1DHost obklen_h((Real *)obklen.data(), n_land_type);
     View1D obklen_d("obklen", n_land_type);
-    Kokkos::deepcopy(obklen_d, obklen_h);
+    Kokkos::deep_copy(obklen_d, obklen_h);
 
     View1DHost ustar_h((Real *)ustar.data(), n_land_type);
     View1D ustar_d("ustar", n_land_type);
-    Kokkos::deepcopy(ustar_d, ustar_h);
+    Kokkos::deep_copy(ustar_d, ustar_h);
 
     View1DHost cvar_h((Real *)cvar.data(), n_land_type);
     View1D cvar_d("ustar", n_land_type);
-    Kokkos::deepcopy(cvar_d, cvar_h);
+    Kokkos::deep_copy(cvar_d, cvar_h);
 
     View1D dep_ra_d("dep_ra", n_land_type);
     View1D dep_rb_d("dep_rb", n_land_type);

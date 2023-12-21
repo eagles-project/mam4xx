@@ -1,10 +1,11 @@
 #include <mam4xx/mam4.hpp>
 
-#include <skywalker.h>
+#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
+using namespace mam4::mo_drydep;
 using namespace haero;
 void calculate_resistance_rgsx_and_rsmx(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -27,51 +28,53 @@ void calculate_resistance_rgsx_and_rsmx(Ensemble *ensemble) {
     const auto heff = input.get_array("heff");
     const Real crs = input.get_array("crs")[0];
 
-    Viewint1DHost index_season_h("index_season", n_land_type);
+    ViewInt1DHost index_season_h("index_season", n_land_type);
     for (int lt = 0; lt < n_land_type; ++lt) {
       index_season_h(lt) = int(index_season[lt]);
     }
     ViewInt1D index_season_d("index_season", n_land_type);
-    Kokkos::deepcopy(index_season_d, index_season_h);
+    Kokkos::deep_copy(index_season_d, index_season_h);
 
     ViewBool1DHost fr_lnduse_h("fr_lnduse", n_land_type);
     for (int lt = 0; lt < n_land_type; ++lt) {
       fr_lnduse_h(lt) = static_cast<bool>(fr_lnduse[lt]);
     }
     ViewBool1D fr_lnduse_d("fr_lnduse", n_land_type);
-    Kokkos::deepcopy(fr_lnduse_d, fr_lnduse_h);
+    Kokkos::deep_copy(fr_lnduse_d, fr_lnduse_h);
 
     View1D heff_d("heff", nddvels);
     View1DHost heff_h((Real *)heff.data(), nddvels);
-    Kokkos::deepcopy(heff_d, heff_h);
+    Kokkos::deep_copy(heff_d, heff_h);
 
-    Real cts;
+    View1D cts_d("cts", 1);
     View1D rgsx_d("rgsx", gas_pcnst * n_land_type);
     View1D rsmx_d("rsmx", gas_pcnst * n_land_type);
 
     auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
-        Real rgsx[gas_pcnst][n_land_type]; Real rsmx[gas_pcnst][n_land_type];
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          Real rgsx[gas_pcnst][n_land_type], rsmx[gas_pcnst][n_land_type];
           calculate_resistance_rgsx_and_rsmx(
               beglt, endlt, index_season_d.data(), fr_lnduse_d.data(), has_rain,
-              has_dew, tc, heff_d.data(), crs, cts, rgsx, rsmx);
+              has_dew, tc, heff_d.data(), crs, cts_d(0), rgsx, rsmx);
           // shuffle array data into views
           int l = 0;
           for (int i = 0; i < gas_pcnst; ++i) {
             for (int lt = 0; lt < n_land_type; ++lt, ++l) {
               rgsx_d(l) = rgsx[i][lt];
-              rsmd_d(l) = rsmx[i][lt];
+              rsmx_d(l) = rsmx[i][lt];
             }
           }
         });
 
-    output.set("cts", cts);
+    auto cts_h = Kokkos::create_mirror_view(cts_d);
+    Kokkos::deep_copy(cts_h, cts_d);
+    output.set("cts", cts_h(0));
 
     std::vector<Real> rgsx(gas_pcnst * n_land_type);
     auto rgsx_h = View1DHost((Real *)rgsx.data(), gas_pcnst * n_land_type);
     Kokkos::deep_copy(rgsx_h, rgsx_d);
-    output.set("rgsx","rgsx);
+    output.set("rgsx", rgsx);
 
     std::vector<Real> rsmx(gas_pcnst * n_land_type);
     auto rsmx_h = View1DHost((Real *)rsmx.data(), gas_pcnst * n_land_type);
