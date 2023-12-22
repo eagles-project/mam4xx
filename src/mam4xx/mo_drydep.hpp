@@ -22,6 +22,9 @@ constexpr int NSeas = 5;
 // data views for E3SM dry deposition of tracers
 //===============================================
 //
+// The views below must be allocated and populated with data by a host model,
+// testing environment, etc.
+//
 //-------------------------------------//-----------------------------------------//----------------//
 // View                                // Description                             // Shape          //
 //-------------------------------------//-----------------------------------------//----------------//
@@ -36,23 +39,17 @@ static DeviceType::view_2d<Real> ri;   // richardson number [-]                 
 static DeviceType::view_2d<Real> rlu;  // resistance of leaves in upper canopy    // (NSeas, NLUse) //
 static DeviceType::view_2d<Real> z0;   // roughness length [m]                    // (NSeas, NLUse) //
 //-------------------------------------//-----------------------------------------//----------------//
-//
+// (All resistances above have units of [s/m].)
 //===================================================
 // end data views for E3SM dry deposition of tracers
 //===================================================
 // clang-format off
 
-// All resistances above have units of [s/m].
-
-//======================
-// seq_drydep_SetHCoeff
-//======================
+// This function computes the H coefficients corresponding to the given surface
+// temperature. It must be implemented by the client application as an on-device
+// Kokkos function. It can be implemented in the atmospheric host model or in a
+// testing environment, for example.
 KOKKOS_FUNCTION void setHCoeff(Real sfc_temp, Real heff[maxspc]);
-
-// The function above, which computes the H coefficients corresponding to the
-// given surface temperature, must be implemented as an on-device Kokkos
-// function. It can be implemented in the atmospheric host model or in a testing
-// environment, for example.
 
 } // namespace seq_drydep
 
@@ -76,12 +73,11 @@ constexpr Real tmelt = 273.15; // from shr_const_mod.F90 via physconst.F90
 // must use its maximum value, which is maxspc above
 constexpr int nddvels = mam4::seq_drydep::maxspc;
 
-// these views represent module arrays in mo_drydep.F90 that determine whether
-// a given specіes is subject to dry deposition, and, if so, maps the index of
-// the species to its corresponding index for dry deposition
-static DeviceType::view_1d<bool> has_dvel; // true iff given ѕpecies does drydep
-static DeviceType::view_1d<int>
-    map_dvel; // maps given ѕpecies index to drydep index
+// has_dvel and map_dvel are arrays with fixed indices based on the chemical
+// mechanism we're using.
+// FIXME: need to populate these arrays!
+#define DECLARE_HAS_DVEL static const Real has_dvel[gas_pcnst] = {};
+#define DECLARE_MAP_DVEL static const Real map_dvel[gas_pcnst] = {};
 
 KOKKOS_INLINE_FUNCTION
 void calculate_uustar(
@@ -269,6 +265,9 @@ void calculate_resistance_rgsx_and_rsmx(
     Real rsmx[gas_pcnst]
              [n_land_type]) // vegetative resistance (plant mesophyll) [s/m]
 {
+  DECLARE_HAS_DVEL
+  DECLARE_MAP_DVEL
+
   const auto ri = mam4::seq_drydep::ri;
   const auto rgso = mam4::seq_drydep::rgso;
   const auto rgss = mam4::seq_drydep::rgss;
@@ -276,8 +275,8 @@ void calculate_resistance_rgsx_and_rsmx(
   const auto drat = mam4::seq_drydep::drat;
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (has_dvel(ispec)) {
-      int idx_drydep = map_dvel(ispec);
+    if (has_dvel[ispec]) {
+      int idx_drydep = map_dvel[ispec];
       for (int lt = beglt; lt < endlt; ++lt) {
         if (fr_lnduse[lt]) {
           Real rmx;
@@ -317,13 +316,16 @@ void calculate_resistance_rclx(
     const Real heff[nddvels], // Henry's law coefficients
     const Real cts,           // correction to rlu rcl and rgs for frost
     Real rclx[gas_pcnst][n_land_type]) { // lower canopy resistance [s/m]
+  DECLARE_HAS_DVEL
+  DECLARE_MAP_DVEL
+
   const auto rclo = mam4::seq_drydep::rclo;
   const auto rcls = mam4::seq_drydep::rcls;
   const auto foxd = mam4::seq_drydep::foxd;
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (has_dvel(ispec)) {
-      int idx_drydep = map_dvel(ispec);
+    if (has_dvel[ispec]) {
+      int idx_drydep = map_dvel[ispec];
       for (int lt = beglt; lt < endlt; ++lt) {
         if (fr_lnduse[lt]) {
           if (lt == lt_for_water) {
@@ -341,7 +343,7 @@ void calculate_resistance_rclx(
   }
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (has_dvel(ispec) && (ispec == so2_ndx)) {
+    if (has_dvel[ispec] && (ispec == so2_ndx)) {
       for (int lt = beglt; lt < endlt; ++lt) {
         if (lt != lt_for_water) {
           if (fr_lnduse[lt]) {
@@ -364,13 +366,16 @@ void calculate_resistance_rlux(
     const Real cts,           // correction to rlu rcl and rgs for frost
     Real rlux[gas_pcnst][n_land_type]) // lower canopy resistance [s/m] ! out
 {
+  DECLARE_HAS_DVEL
+  DECLARE_MAP_DVEL
+
   const auto rlu = mam4::seq_drydep::rlu;
   const auto foxd = mam4::seq_drydep::foxd;
 
   Real rlux_o3[n_land_type] = {}; // vegetative resistance (upper canopy) [s/m]
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (has_dvel(ispec)) {
-      int idx_drydep = map_dvel(ispec);
+    if (has_dvel[ispec]) {
+      int idx_drydep = map_dvel[ispec];
       for (int lt = beglt; lt < endlt; ++lt) {
         if (fr_lnduse[lt]) {
           if (lt == lt_for_water) {
@@ -407,8 +412,8 @@ void calculate_resistance_rlux(
   }
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    int idx_drydep = map_dvel(ispec);
-    if (has_dvel(ispec) && (ispec != so2_ndx)) {
+    int idx_drydep = map_dvel[ispec];
+    if (has_dvel[ispec] && (ispec != so2_ndx)) {
       for (int lt = beglt; lt < endlt; ++lt) {
         if (lt != lt_for_water) {
           if (fr_lnduse[lt] && (sfc_temp > tmelt) && has_dew) {
@@ -468,11 +473,13 @@ void calculate_gas_drydep_vlc_and_flux(
     const Real rdc,         // part of lower canopy resistance [s/m]
     Real dvel[gas_pcnst],   // deposition velocity [cm/s]
     Real dflx[gas_pcnst]) { // deposition flux [1/cm^2/s]
+  DECLARE_HAS_DVEL
+
   constexpr Real m_to_cm_per_s = 100.0;
   const auto rac = mam4::seq_drydep::rac;
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (has_dvel(ispec)) {
+    if (has_dvel[ispec]) {
       Real wrk = 0.0;
       Real resc, lnd_frc;
       for (int lt = beglt; lt < endlt; ++lt) {
@@ -556,6 +563,7 @@ void drydep_xactive(
     const Real mmr[gas_pcnst], // constituent MMRs [kg/kg]
     Real dvel[gas_pcnst],      // deposition velocity [1/cm/s]
     Real dflx[gas_pcnst]) {    // deposition flux [1/cm^2/s]
+
   // BAD_CONSTANTS
   constexpr Real rain_threshold = 1e-7;   // of the order of 1cm/day [m/s]
   constexpr Real temp_highbound = 313.15; // [K]

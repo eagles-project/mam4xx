@@ -64,6 +64,146 @@ KOKKOS_FUNCTION void setHCoeff(Real sfc_temp, Real heff[maxspc]) {
 
 } // namespace mam4::seq_drydep
 
+namespace {
+
+void deallocate_drydep_data_views() {
+  using namespace mam4::seq_drydep;
+
+  // This is a total hack intended to decrement the reference count of these
+  // views. Doing things The C++ Way results in a much more complicated way of
+  // manipulating "global" (static) views such as these.
+  drat.assign_data(nullptr);
+  foxd.assign_data(nullptr);
+  rac.assign_data(nullptr);
+  rclo.assign_data(nullptr);
+  rcls.assign_data(nullptr);
+  rgso.assign_data(nullptr);
+  rgss.assign_data(nullptr);
+  ri.assign_data(nullptr);
+  rlu.assign_data(nullptr);
+  z0.assign_data(nullptr);
+}
+
+// this function populates the data views for dry deposition of tracers
+void populate_drydep_data_views() {
+  using namespace mam4::seq_drydep;
+
+  using View1DHost = typename HostType::view_1d<Real>;
+  using View2DHost = typename HostType::view_2d<Real>;
+  using View1D = typename DeviceType::view_1d<Real>;
+  using View2D = typename DeviceType::view_2d<Real>;
+
+  // allocate the views
+  drat = View1D("drat", 3);
+  foxd = View1D("foxd", 3);
+  rac = View2D("rac", NSeas, 11);
+  rclo = View2D("rclo", NSeas, 11);
+  rcls = View2D("rcls", NSeas, 11);
+  rgso = View2D("rgso", NSeas, 11);
+  rgss = View2D("rgss", NSeas, 11);
+  ri = View2D("ri", NSeas, 11);
+  rlu = View2D("rlu", NSeas, 11);
+  z0 = View2D("z0", NSeas, 11);
+
+  Real drat_a[3] = {1.3740328303634228, 2.3332297194282963, 1.8857345177418792};
+  View1DHost drat_h(drat_a, 3);
+  Kokkos::deep_copy(drat, drat_h);
+
+  Real foxd_a[3] = {1.0, 1e-36, 1e-36};
+  View1DHost foxd_h(foxd_a, 3);
+  Kokkos::deep_copy(foxd, foxd_h);
+
+  Real rac_a[] = {100.0,  100.0,  100.0,  100.0,  100.0,  200.0,  150.0,
+                  10.0,   10.0,   50.0,   100.0,  100.0,  100.0,  10.0,
+                  80.0,   2000.0, 1500.0, 1000.0, 1000.0, 1200.0, 2000.0,
+                  2000.0, 2000.0, 2000.0, 2000.0, 2000.0, 1700.0, 1500.0,
+                  1500.0, 1500.0, 1e-36,  1e-36,  1e-36,  1e-36,  1e-36,
+                  1e-36,  1e-36,  1e-36,  1e-36,  1e-36,  300.0,  200.0,
+                  100.0,  50.0,   200.0,  150.0,  120.0,  50.0,   10.0,
+                  60.0,   200.0,  140.0,  120.0,  50.0,   120.0};
+  View2DHost rac_h(rac_a, NSeas, 11);
+  Kokkos::deep_copy(rac, rac_h);
+
+  Real rclo_a[] = {1e+36,  1e+36,  1e+36,  1e+36,  1e+36,  1000.0, 400.0,
+                   1000.0, 1000.0, 1000.0, 1000.0, 400.0,  400.0,  1000.0,
+                   500.0,  1000.0, 400.0,  400.0,  400.0,  500.0,  1000.0,
+                   1000.0, 1000.0, 1500.0, 1500.0, 1000.0, 600.0,  600.0,
+                   600.0,  700.0,  1e+36,  1e+36,  1e+36,  1e+36,  1e+36,
+                   1e+36,  1e+36,  1e+36,  1e+36,  1e+36,  1000.0, 400.0,
+                   800.0,  800.0,  600.0,  1000.0, 400.0,  600.0,  1000.0,
+                   800.0,  1000.0, 400.0,  600.0,  800.0,  800.0};
+  View2DHost rclo_h(rclo_a, NSeas, 11);
+  Kokkos::deep_copy(rclo, rclo_h);
+
+  Real rcls_a[] = {1e+36,  1e+36,  1e+36,  1e+36,  1e+36,  2000.0, 9000.0,
+                   1e+36,  1e+36,  4000.0, 2000.0, 9000.0, 9000.0, 1e+36,
+                   4000.0, 2000.0, 9000.0, 9000.0, 9000.0, 4000.0, 2000.0,
+                   2000.0, 3000.0, 200.0,  2000.0, 2000.0, 4000.0, 6000.0,
+                   400.0,  3000.0, 1e+36,  1e+36,  1e+36,  1e+36,  1e+36,
+                   1e+36,  1e+36,  1e+36,  1e+36,  1e+36,  2500.0, 9000.0,
+                   9000.0, 9000.0, 4000.0, 2000.0, 9000.0, 9000.0, 1e+36,
+                   4000.0, 4000.0, 9000.0, 9000.0, 9000.0, 8000.0};
+  View2DHost rcls_h(rcls_a, NSeas, 11);
+  Kokkos::deep_copy(rcls, rcls_h);
+
+  Real rgso_a[] = {300.0,  300.0,  300.0,  600.0,  300.0,  150.0,  150.0,
+                   150.0,  3500.0, 150.0,  200.0,  200.0,  200.0,  3500.0,
+                   200.0,  200.0,  200.0,  200.0,  3500.0, 200.0,  200.0,
+                   200.0,  200.0,  3500.0, 200.0,  300.0,  300.0,  300.0,
+                   3500.0, 300.0,  2000.0, 2000.0, 2000.0, 2000.0, 2000.0,
+                   400.0,  400.0,  400.0,  400.0,  400.0,  1000.0, 800.0,
+                   1000.0, 3500.0, 1000.0, 180.0,  180.0,  180.0,  3500.0,
+                   180.0,  200.0,  200.0,  200.0,  3500.0, 200.0};
+  View2DHost rgso_h(rgso_a, NSeas, 11);
+  Kokkos::deep_copy(rgso, rgso_h);
+
+  Real rgss_a[] = {400.0, 400.0, 400.0, 100.0,  500.0,  150.0,  200.0,  150.0,
+                   100.0, 150.0, 350.0, 350.0,  350.0,  100.0,  350.0,  500.0,
+                   500.0, 500.0, 100.0, 500.0,  500.0,  500.0,  500.0,  100.0,
+                   500.0, 100.0, 100.0, 200.0,  100.0,  200.0,  1.0,    1.0,
+                   1.0,   1.0,   1.0,   1000.0, 1000.0, 1000.0, 1000.0, 1000.0,
+                   1.0,   1.0,   1.0,   100.0,  1.0,    220.0,  300.0,  200.0,
+                   100.0, 250.0, 400.0, 400.0,  400.0,  50.0,   400.0};
+  View2DHost rgss_h(rgss_a, NSeas, 11);
+  Kokkos::deep_copy(rgss, rgss_h);
+
+  Real ri_a[] = {1e+36, 1e+36, 1e+36, 1e+36, 1e+36, 60.0,  1e+36, 1e+36,
+                 1e+36, 120.0, 120.0, 1e+36, 1e+36, 1e+36, 240.0, 70.0,
+                 1e+36, 1e+36, 1e+36, 140.0, 130.0, 250.0, 250.0, 400.0,
+                 250.0, 100.0, 500.0, 500.0, 800.0, 190.0, 1e+36, 1e+36,
+                 1e+36, 1e+36, 1e+36, 1e+36, 1e+36, 1e+36, 1e+36, 1e+36,
+                 80.0,  1e+36, 1e+36, 1e+36, 160.0, 100.0, 1e+36, 1e+36,
+                 1e+36, 200.0, 150.0, 1e+36, 1e+36, 1e+36, 300.0};
+  View2DHost ri_h(ri_a, NSeas, 11);
+  Kokkos::deep_copy(ri, ri_h);
+
+  Real rlu_a[] = {1e+36,  1e+36,  1e+36,  1e+36,  1e+36,  2000.0, 9000.0,
+                  1e+36,  1e+36,  4000.0, 2000.0, 9000.0, 9000.0, 1e+36,
+                  4000.0, 2000.0, 9000.0, 9000.0, 1e+36,  4000.0, 2000.0,
+                  4000.0, 4000.0, 6000.0, 2000.0, 2000.0, 8000.0, 8000.0,
+                  9000.0, 3000.0, 1e+36,  1e+36,  1e+36,  1e+36,  1e+36,
+                  1e+36,  1e+36,  1e+36,  1e+36,  1e+36,  2500.0, 9000.0,
+                  9000.0, 9000.0, 4000.0, 2000.0, 9000.0, 9000.0, 9000.0,
+                  4000.0, 4000.0, 9000.0, 9000.0, 9000.0, 8000.0};
+  View2DHost rlu_h(rlu_a, NSeas, 11);
+  Kokkos::deep_copy(rlu, rlu_h);
+
+  Real z0_a[] = {1.0,    1.0,    1.0,    1.0,   1.0,   0.25,  0.1,    0.005,
+                 0.001,  0.03,   0.05,   0.05,  0.05,  0.001, 0.02,   1.0,
+                 1.0,    1.0,    1.0,    1.0,   1.0,   1.0,   1.0,    1.0,
+                 1.0,    1.0,    1.0,    1.0,   1.0,   1.0,   0.0006, 0.0006,
+                 0.0006, 0.0006, 0.0006, 0.002, 0.002, 0.002, 0.002,  0.002,
+                 0.15,   0.1,    0.1,    0.001, 0.01,  0.1,   0.08,   0.02,
+                 0.001,  0.03,   0.1,    0.08,  0.06,  0.04,  0.06};
+  View2DHost z0_h(z0_a, NSeas, 11);
+  Kokkos::deep_copy(z0, z0_h);
+
+  // we're also responsible for deallocating these views!
+  Kokkos::push_finalize_hook(deallocate_drydep_data_views);
+}
+
+} // namespace
+
 int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
@@ -72,6 +212,8 @@ int main(int argc, char **argv) {
   std::string input_file = argv[1];
   std::string output_file = validation::output_name(input_file);
   std::cout << argv[0] << ": reading " << input_file << std::endl;
+
+  populate_drydep_data_views();
 
   // Load the ensemble. Any error encountered is fatal.
   Ensemble *ensemble = skywalker::load_ensemble(input_file, "mam4xx");
@@ -96,7 +238,7 @@ int main(int argc, char **argv) {
       calculate_resistance_rclx(ensemble);
     } else if (func_name == "calculate_resistance_rgsx_and_rsmx") {
       calculate_resistance_rgsx_and_rsmx(ensemble);
-    } else if (func_name == "calculate_rlux") {
+    } else if (func_name == "calculate_resistance_rlux") {
       calculate_resistance_rlux(ensemble);
     } else if (func_name == "calculate_ustar_over_water") {
       calculate_ustar_over_water(ensemble);
