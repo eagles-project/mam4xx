@@ -210,8 +210,8 @@ void modal_aero_lw(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          modal_aero_lw(dt, state_q, qqcw, temperature, pmid, pdel, pdeldry,
-                        cldn, aersol_optics_data, tauxar);
+          modal_aero_lw(team, dt, state_q, qqcw, temperature, pmid, pdel,
+                        pdeldry, cldn, aersol_optics_data, tauxar);
         });
 
     Kokkos::deep_copy(qqcw_host, qqcw);

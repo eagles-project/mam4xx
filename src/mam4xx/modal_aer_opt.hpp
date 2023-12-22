@@ -1608,8 +1608,8 @@ void modal_aero_lw_k(const Real &pdeldry, const Real &pmid,
 } // kk
 
 KOKKOS_INLINE_FUNCTION
-void modal_aero_lw(const Real dt, const View2D &state_q, const View2D &qqcw,
-                   const ConstColumnView &temperature,
+void modal_aero_lw(const ThreadTeam &team, const Real dt, const View2D &state_q,
+                   const View2D &qqcw, const ConstColumnView &temperature,
                    const ConstColumnView &pmid, const ConstColumnView &pdel,
                    const ConstColumnView &pdeldry, const ConstColumnView &cldn,
                    // parameters
@@ -1632,28 +1632,30 @@ void modal_aero_lw(const Real dt, const View2D &state_q, const View2D &qqcw,
   // tauxar(pcols,pver,nlwbands) ! layer absorption optical depth
   constexpr Real zero = 0.0;
   // dry mass in each cell
-  for (int kk = 0; kk < pver; ++kk) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, pver), [&](int kk) {
     // initialize output variables
     for (int i = 0; i < nlwbands; ++i) {
       tauxar(kk, i) = zero;
     }
-  } // k
+  });
+  team.team_barrier();
 
   // inputs
 
-  for (int kk = top_lev; kk < pver; ++kk) {
-    Real cldn_kk = cldn(kk);
-    const auto state_q_kk = Kokkos::subview(state_q, kk, Kokkos::ALL());
-    const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
-    const auto tauxar_kkp = Kokkos::subview(tauxar, kk, Kokkos::ALL());
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, top_lev, pver), [&](int kk) {
+        Real cldn_kk = cldn(kk);
+        const auto state_q_kk = Kokkos::subview(state_q, kk, Kokkos::ALL());
+        const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
+        const auto tauxar_kkp = Kokkos::subview(tauxar, kk, Kokkos::ALL());
 
-    modal_aero_lw_k(pdeldry(kk), pmid(kk), temperature(kk), cldn_kk,
-                    state_q_kk.data(), // in
-                    qqcw_k.data(),     // in
-                    dt, aersol_optics_data,
-                    // outputs
-                    tauxar_kkp.data());
-  } // kk
+        modal_aero_lw_k(pdeldry(kk), pmid(kk), temperature(kk), cldn_kk,
+                        state_q_kk.data(), // in
+                        qqcw_k.data(),     // in
+                        dt, aersol_optics_data,
+                        // outputs
+                        tauxar_kkp.data());
+      });
 } // modal_aero_lw
 
 } // namespace modal_aer_opt

@@ -238,11 +238,11 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          aer_rad_props::aer_rad_props_lw(dt, pmid, pint, temperature, zm, zi,
-                                          state_q, qqcw, pdel, pdeldry, cldn,
-                                          ext_cmip6_lw, aersol_optics_data,
-                                          // output
-                                          odap_aer);
+          aer_rad_props::aer_rad_props_lw(
+              team, dt, pmid, pint, temperature, zm, zi, state_q, qqcw, pdel,
+              pdeldry, cldn, ext_cmip6_lw, aersol_optics_data,
+              // output
+              odap_aer);
         });
 
     Kokkos::deep_copy(qqcw_host, qqcw);

@@ -246,11 +246,12 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_lw(
     // inputs
-    const Real dt, const ConstColumnView &pmid, const ConstColumnView &pint,
-    const ConstColumnView &temperature, const ConstColumnView &zm,
-    const ConstColumnView &zi, const View2D &state_q, const View2D &qqcw,
-    const ConstColumnView &pdel, const ConstColumnView &pdeldry,
-    const ConstColumnView &cldn, const View2D &ext_cmip6_lw_m,
+    const ThreadTeam &team, const Real dt, const ConstColumnView &pmid,
+    const ConstColumnView &pint, const ConstColumnView &temperature,
+    const ConstColumnView &zm, const ConstColumnView &zi, const View2D &state_q,
+    const View2D &qqcw, const ConstColumnView &pdel,
+    const ConstColumnView &pdeldry, const ConstColumnView &cldn,
+    const View2D &ext_cmip6_lw_m,
     const AerosolOpticsDeviceData &aersol_optics_data,
     // output
     const View2D &odap_aer
@@ -281,7 +282,7 @@ void aer_rad_props_lw(
   //  odap_aer(pcols,pver,nlwbands) ! [fraction] absorption optical depth, per
   //  layer [unitless]
   // Compute contributions from the modal aerosols.
-  modal_aero_lw(dt, state_q, qqcw, temperature, pmid, pdel, pdeldry, cldn,
+  modal_aero_lw(team, dt, state_q, qqcw, temperature, pmid, pdel, pdeldry, cldn,
                 aersol_optics_data,
                 // outputs
                 odap_aer);
