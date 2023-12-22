@@ -640,6 +640,199 @@ void compute_calcsize_and_water_uptake_dr(
 } // compute_calcsize_water_uptake_dr
 
 KOKKOS_INLINE_FUNCTION
+void modal_aero_sw_wo_diagnostics_k(
+    const Real &pdeldry, const Real &pmid, const Real &temperature, Real &cldn,
+    Real *state_q_kk,   // in
+    const Real *qqcw_k, // in
+    const Real &dt, const AerosolOpticsDeviceData &aersol_optics_data,
+    // outputs
+    Real tauxar[ntot_amode][nswbands], Real wa[ntot_amode][nswbands],
+    Real ga[ntot_amode][nswbands], Real fa[ntot_amode][nswbands]) {
+
+  const Real xrmax = haero::log(rmmax);
+  // ! calculates aerosol sw radiative properties
+  // dt               !timestep [s]
+  // lchnk            ! chunk id
+  // ncol             ! number of active columns in the chunk
+  //  state_q(:,:,:)   ! water and tracers (state%q) in state [kg/kg]
+  //  state_zm(:,:)    ! mid-point height (state%zm) [m]
+  //  temperature(:,:) ! temperature [K]
+  //  pmid(:,:)        ! mid-point pressure [Pa]
+  //  pdel(:,:)        ! pressure interval [Pa]
+  //  pdeldry(:,:)     ! dry mass pressure interval [Pa]
+
+  //  cldn(:,:)         ! layer cloud fraction [fraction]
+
+  //  nnite          ! number of night columns
+  //  idxnite(nnite) ! local column indices of night columns
+  //  trop_level(pcols)!tropopause level for each column
+  //  ext_cmip6_sw(pcols,pver) ! aerosol shortwave extinction [1/m]
+  //  is_cmip6_volc
+
+  //  qqcw(:)               ! Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
+  //  tauxar(pcols,0:pver,nswbands) ! layer extinction optical depth [1]
+  //  wa(pcols,0:pver,nswbands)     ! layer single-scatter albedo [1]
+  //  ga(pcols,0:pver,nswbands)     ! asymmetry factor [1]
+  //  fa(pcols,0:pver,nswbands)     ! forward scattered fraction [1]
+
+  // ! Local variables
+  // real(r8),    pointer :: specmmr(:,:)        ! species mass mixing ratio
+  // [kg/kg] spectype            ! species type hygro_aer           !
+  // hygroscopicity [1]
+
+  // sigma_logr_aer         ! geometric standard deviation of number
+  // distribution radsurf(pcols,pver)    ! aerosol surface mode radius
+  // logradsurf(pcols,pver) ! log(aerosol surface mode radius)
+  // cheb(ncoef,pcols,pver) ! chebychev polynomial parameters
+
+  // specvol(:,:)        ! volume concentration of aerosol specie [m3/kg]
+  // specdens(:)         ! species density for all species [kg/m3]
+  // specrefindex(:,:)     ! species refractive index
+
+  // refr(pcols)     ! real part of refractive index
+  // refi(pcols)     ! imaginary part of refractive index
+  // crefin(pcols)   ! complex refractive index
+
+  // dryvol(pcols)   ! volume concentration of aerosol mode [m3/kg]
+  // watervol(pcols) ! volume concentration of water in each mode [m3/kg]
+  // wetvol(pcols)   ! volume concentration of wet mode [m3/kg]
+
+  // pext(pcols)     ! parameterized specific extinction [m2/kg]
+
+  // pabs(pcols)     ! parameterized specific absorption [m2/kg]
+  // pasm(pcols)     ! parameterized asymmetry factor [unitless?]
+  // palb(pcols)     ! parameterized single scattering albedo [unitless]
+
+  constexpr Real zero = 0.0;
+  constexpr Real one = 1.0;
+
+  const Real mass = pdeldry * rga;
+
+  Real cheb_kk[ncoef] = {};
+  Real specvol[max_nspec] = {};
+  // inputs
+  int nspec_amode[ntot_amode];
+  int lspectype_amode[ndrop::maxd_aspectype][ntot_amode];
+  int lmassptr_amode[ndrop::maxd_aspectype][ntot_amode];
+  Real specdens_amode[ndrop::maxd_aspectype];
+  Real spechygro[ndrop::maxd_aspectype];
+
+  Real mean_std_dev_nmodes[ntot_amode] = {};
+  Real dgnumwet_m_kk[ntot_amode] = {};
+  Real qaerwat_m_kk[ntot_amode] = {};
+  compute_calcsize_and_water_uptake_dr(
+      pmid, temperature, cldn, state_q_kk, qqcw_k, dt, // in
+      nspec_amode, lspectype_amode, specdens_amode, lmassptr_amode, spechygro,
+      mean_std_dev_nmodes, dgnumwet_m_kk, qaerwat_m_kk);
+
+  for (int mm = 0; mm < ntot_amode; ++mm) {
+    // ! get mode info
+    const int nspec = nspec_amode[mm];
+    // const Real sigma_logr_aer = sigmag_amode[mm];
+    // CHECK if mean_std_dev_nmodes is equivalent to sigmag_amode
+    const Real sigma_logr_aer = mean_std_dev_nmodes[mm];
+
+    Real logradsurf = 0;
+    Real radsurf = 0;
+    modal_size_parameters(sigma_logr_aer, dgnumwet_m_kk[mm], // in
+                          radsurf, logradsurf, cheb_kk, false);
+
+    for (int isw = 0; isw < nswbands; ++isw) {
+      // ! aerosol species loop
+
+      for (int ll = 0; ll < nspec; ++ll) {
+
+        // get aerosol properties and save for each species
+        // Fortran to C++ indexing
+        auto specmmr = state_q_kk[lmassptr_amode[ll][mm] - 1];
+        // Fortran to C++ indexing
+        const Real specdens = specdens_amode[lspectype_amode[ll][mm] - 1];
+
+        // allocate(specvol(pcols,nspec),stat=istat)
+        specvol[ll] = specmmr / specdens;
+      } // ll
+
+      // lw =0 and sw =1
+      Real dryvol, wetvol, watervol = {};
+      Kokkos::complex<Real> crefin = {};
+      Real refr, refi = {};
+
+      calc_refin_complex(1, isw, qaerwat_m_kk[mm], specvol,
+                         aersol_optics_data.specrefindex_sw[mm], nspec,
+                         aersol_optics_data.crefwlw, aersol_optics_data.crefwsw,
+                         dryvol, wetvol, watervol, crefin, refr, refi);
+
+      // interpolate coefficients linear in refractive index
+      // first call calcs itab,jtab,ttab,utab
+
+      const auto sub_extpsw = aersol_optics_data.extpsw[mm][isw];
+      const auto ref_real_tab = aersol_optics_data.refrtabsw[mm][isw];
+      const auto ref_img_tab = aersol_optics_data.refitabsw[mm][isw];
+
+      int itab = zero;   // index for Bilinear interpolation
+      int itab_1 = zero; // ! index for Bilinear interpolation column 1
+      // FIXME: part of binterp only apply for first column
+      int jtab = zero;
+      Real ttab, utab = {}; // coef for Bilinear interpolation
+      Real cext[ncoef], cabs[ncoef],
+          casm[ncoef] = {}; //  ! coefficient for extinction, absoption, and
+                            //  asymmetry [unitless]
+
+      binterp(sub_extpsw, refr, refi, ref_real_tab.data(), ref_img_tab.data(),
+              itab, jtab, ttab, utab, cext, itab_1);
+
+      const auto sub_abspsw = aersol_optics_data.abspsw[mm][isw];
+
+      binterp(sub_abspsw, refr, refi, ref_real_tab.data(), ref_img_tab.data(),
+              itab, jtab, ttab, utab, cabs, itab_1);
+
+      const auto sub_asmpsw = aersol_optics_data.asmpsw[mm][isw];
+
+      binterp(sub_asmpsw, refr, refi, ref_real_tab.data(), ref_img_tab.data(),
+              itab, jtab, ttab, utab, casm, itab_1);
+
+      // parameterized optical properties
+      Real pext = zero; //    parameterized specific extinction [m2/kg]
+      calc_parameterized(cext, cheb_kk, pext);
+      Real pabs = zero; // parameterized specific absorption [m2/kg]
+      calc_parameterized(cabs, cheb_kk, pabs);
+
+      Real pasm = zero; // parameterized asymmetry factor [unitless?]
+      calc_parameterized(casm, cheb_kk, pasm);
+
+      //  do icol=1,ncol
+
+      if (logradsurf <= xrmax) {
+        pext = haero::exp(pext);
+      } else {
+        // BAD CONSTANT
+        pext = 1.5 / (radsurf * rhoh2o); // ! geometric optics
+      }                                  // if logradsurf(kk) <= xrmax
+
+      // convert from m2/kg water to m2/kg aerosol
+      // FIXME: specpext is used by check_error_warning, which is not ported
+      // yet. const Real specpext = pext;// specific extinction [m2/kg]
+      pext *= wetvol * rhoh2o;
+      pabs *= wetvol * rhoh2o;
+      pabs = mam4::utils::min_max_bound(zero, pext, pabs);
+      Real palb =
+          one -
+          pabs / haero::max(pext,
+                            small_value_40); // parameterized single
+                                             // scattering albedo [unitless]
+      const Real dopaer = pext * mass; // aerosol optical depth in layer [1]
+
+      // end cols
+      tauxar[mm][isw] = dopaer;
+      wa[mm][isw] = dopaer * palb;
+      ga[mm][isw] = dopaer * palb * pasm;
+      fa[mm][isw] = dopaer * palb * pasm * pasm;
+
+    } // isw
+  }   // k
+} // k
+
+KOKKOS_INLINE_FUNCTION
 void modal_aero_sw_k(
     const Real &pdeldry, const Real &pmid, const Real &temperature, Real &cldn,
     Real *state_q_kk,   // in
@@ -1069,6 +1262,67 @@ void modal_aero_sw_k(
   }   // k
 } // k
 
+KOKKOS_INLINE_FUNCTION
+void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
+                   const ConstColumnView &state_zm,
+                   const ConstColumnView &temperature,
+                   const ConstColumnView &pmid, const ConstColumnView &pdel,
+                   const ConstColumnView &pdeldry, const ConstColumnView &cldn,
+                   // const ColumnView qqcw_fld[pcnst],
+                   const View2D &tauxar, const View2D &wa, const View2D &ga,
+                   const View2D &fa,
+                   const AerosolOpticsDeviceData &aersol_optics_data)
+
+{
+
+  constexpr Real zero = 0;
+
+  for (int i = 0; i < nswbands; ++i) {
+    // BAD CONSTANT
+    tauxar(0, i) = zero; // BAD CONSTANT
+    wa(0, i) = 0.925;    // BAD CONSTANT
+    ga(0, i) = 0.850;    // BAD CONSTANT
+    fa(0, i) = 0.7225;
+  }
+
+  for (int kk = 1; kk < pver; ++kk) {
+    for (int i = 0; i < nswbands; ++i) {
+      tauxar(kk, i) = zero;
+      wa(kk, i) = zero;
+      ga(kk, i) = zero;
+      fa(kk, i) = zero;
+    }
+  }
+
+  for (int kk = top_lev; kk < pver; ++kk) {
+    const auto state_q_kk = Kokkos::subview(state_q, kk, Kokkos::ALL());
+    const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
+    Real cldn_kk = cldn(kk);
+    Real tauxar_kkp[ntot_amode][nswbands] = {};
+    Real wa_kkp[ntot_amode][nswbands] = {};
+    Real ga_kkp[ntot_amode][nswbands] = {};
+    Real fa_kkp[ntot_amode][nswbands] = {};
+
+    modal_aero_sw_wo_diagnostics_k(pdeldry(kk), pmid(kk), temperature(kk),
+                                   cldn_kk,
+                                   state_q_kk.data(), // in
+                                   qqcw_k.data(),     // in
+                                   dt, aersol_optics_data,
+                                   // outputs
+                                   tauxar_kkp, wa_kkp, ga_kkp, fa_kkp);
+
+    for (int imode = 0; imode < ntot_amode; ++imode) {
+      for (int isw = 0; isw < nswbands; ++isw) {
+        tauxar(kk + 1, isw) += tauxar_kkp[imode][isw];
+        wa(kk + 1, isw) += wa_kkp[imode][isw];
+        ga(kk + 1, isw) += ga_kkp[imode][isw];
+        fa(kk + 1, isw) += fa_kkp[imode][isw];
+      } // isw
+    }   // imode
+
+  } // mm
+
+} //
 KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
                    const ConstColumnView &state_zm,
