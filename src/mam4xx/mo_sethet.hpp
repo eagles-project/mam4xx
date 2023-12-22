@@ -97,14 +97,14 @@ void calc_precip_rescale(
 
 //=================================================================================
 KOKKOS_INLINE_FUNCTION
-void gas_washout(const ThreadTeam &team,
-                 int plev,          // calculate from this level below //in
-                 Real xkgm,         // mass flux on rain drop //in
-                 Real xliq_ik,      // liquid rain water content [gm/m^3] // in
-                 ColumnView xhen_i, // henry's law constant
-                 ColumnView tfld_i, // temperature [K]
-                 ColumnView delz_i, // layer depth about interfaces [cm]  // in
-                 ColumnView xgas) { // gas concentration // inout
+void gas_washout(      // const ThreadTeam &team,
+    int plev,          // calculate from this level below //in
+    Real xkgm,         // mass flux on rain drop //in
+    Real xliq_ik,      // liquid rain water content [gm/m^3] // in
+    ColumnView xhen_i, // henry's law constant
+    ColumnView tfld_i, // temperature [K]
+    ColumnView delz_i, // layer depth about interfaces [cm]  // in
+    ColumnView xgas) { // gas concentration // inout
   //------------------------------------------------------------------------
   // calculate gas washout by cloud if not saturated
   //------------------------------------------------------------------------
@@ -119,30 +119,30 @@ void gas_washout(const ThreadTeam &team,
   //-----------------------------------------------------------------
   //       ... calculate the saturation concentration eqca
   //-----------------------------------------------------------------
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
-        // cal washout below cloud
-        xeqca = xgas(kk) /
-                (xliq_ik * avo2 + 1.0 / (xhen_i(kk) * const0 * tfld_i(kk))) *
-                xliq_ik * avo2;
+  for (int kk = 0; kk < plev;
+       kk++) { // FIXME: not sure if this should be a Kokkos for or not...
+    // cal washout below cloud
+    xeqca = xgas(kk) /
+            (xliq_ik * avo2 + 1.0 / (xhen_i(kk) * const0 * tfld_i(kk))) *
+            xliq_ik * avo2;
 
-        //-----------------------------------------------------------------
-        //       ... calculate ca; inside cloud concentration in  #/cm3(air)
-        //-----------------------------------------------------------------
-        xca = geo_fac * xkgm * xgas(kk) / (xrm * xum) * delz_i(kk) * xliq_ik *
-              cm3_2_m3;
+    //-----------------------------------------------------------------
+    //       ... calculate ca; inside cloud concentration in  #/cm3(air)
+    //-----------------------------------------------------------------
+    xca = geo_fac * xkgm * xgas(kk) / (xrm * xum) * delz_i(kk) * xliq_ik *
+          cm3_2_m3;
 
-        //-----------------------------------------------------------------
-        //       ... if is not saturated (take hno3 as an example)
-        //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
-        //           otherwise
-        //               hno3(gas)_new = hno3(gas)_old
-        //-----------------------------------------------------------------
-        allca = allca + xca;
-        if (allca < xeqca) {
-          xgas(kk) = haero::max(xgas(kk) - xca, 0.0);
-        }
-      });
+    //-----------------------------------------------------------------
+    //       ... if is not saturated (take hno3 as an example)
+    //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
+    //           otherwise
+    //               hno3(gas)_new = hno3(gas)_old
+    //-----------------------------------------------------------------
+    allca = allca + xca;
+    if (allca < xeqca) {
+      xgas(kk) = haero::max(xgas(kk) - xca, 0.0);
+    }
+  }
 } // end subroutine gas_washout
 
 //=================================================================================
