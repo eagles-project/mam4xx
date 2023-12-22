@@ -283,16 +283,19 @@ void aer_rad_props_sw(Ensemble *ensemble) {
 
     View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
 
+    const int work_len = modal_aer_opt::get_work_len_aerosol_optics();
+    View1D work("work", work_len);
+
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           // new vars: ssa_cmip6_sw, af_cmip6_sw
           aer_rad_props::aer_rad_props_sw(
-              dt, zi, pmid, pint, temperature, zm, state_q, qqcw, pdel, pdeldry,
-              cldn, ssa_cmip6_sw, af_cmip6_sw, ext_cmip6_sw, tau, tau_w,
-              tau_w_g, tau_w_f,
+              team, dt, zi, pmid, pint, temperature, zm, state_q, qqcw, pdel,
+              pdeldry, cldn, ssa_cmip6_sw, af_cmip6_sw, ext_cmip6_sw, tau,
+              tau_w, tau_w_g, tau_w_f,
               // FIXME
-              aersol_optics_data);
+              aersol_optics_data, work);
         });
 
     Kokkos::deep_copy(qqcw_host, qqcw);

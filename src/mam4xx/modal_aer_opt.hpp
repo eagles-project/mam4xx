@@ -646,8 +646,8 @@ void modal_aero_sw_wo_diagnostics_k(
     const Real *qqcw_k, // in
     const Real &dt, const AerosolOpticsDeviceData &aersol_optics_data,
     // outputs
-    Real tauxar[ntot_amode][nswbands], Real wa[ntot_amode][nswbands],
-    Real ga[ntot_amode][nswbands], Real fa[ntot_amode][nswbands]) {
+    const View2D &tauxar, const View2D &wa, const View2D &ga,
+    const View2D &fa) {
 
   const Real xrmax = haero::log(rmmax);
   // ! calculates aerosol sw radiative properties
@@ -823,10 +823,10 @@ void modal_aero_sw_wo_diagnostics_k(
       const Real dopaer = pext * mass; // aerosol optical depth in layer [1]
 
       // end cols
-      tauxar[mm][isw] = dopaer;
-      wa[mm][isw] = dopaer * palb;
-      ga[mm][isw] = dopaer * palb * pasm;
-      fa[mm][isw] = dopaer * palb * pasm * pasm;
+      tauxar(mm, isw) = dopaer;
+      wa(mm, isw) = dopaer * palb;
+      ga(mm, isw) = dopaer * palb * pasm;
+      fa(mm, isw) = dopaer * palb * pasm * pasm;
 
     } // isw
   }   // k
@@ -1262,67 +1262,110 @@ void modal_aero_sw_k(
   }   // k
 } // k
 
+inline int get_work_len_aerosol_optics() {
+  // tauxar, wa, ga, fa
+  // Note:
+  return 4 * pver * ntot_amode * nswbands;
+}
+
 KOKKOS_INLINE_FUNCTION
-void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
-                   const ConstColumnView &state_zm,
+void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
+                   const View2D qqcw, const ConstColumnView &state_zm,
                    const ConstColumnView &temperature,
                    const ConstColumnView &pmid, const ConstColumnView &pdel,
                    const ConstColumnView &pdeldry, const ConstColumnView &cldn,
                    // const ColumnView qqcw_fld[pcnst],
                    const View2D &tauxar, const View2D &wa, const View2D &ga,
                    const View2D &fa,
-                   const AerosolOpticsDeviceData &aersol_optics_data)
+                   const AerosolOpticsDeviceData &aersol_optics_data,
+                   const View1D &work)
 
 {
+  auto work_ptr = (Real *)work.data();
+  const auto tauxar_work = View3D(work_ptr, pver, ntot_amode, nswbands);
+  work_ptr += pver * ntot_amode * nswbands;
+  const auto wa_work = View3D(work_ptr, pver, ntot_amode, nswbands);
+  work_ptr += pver * ntot_amode * nswbands;
+  const auto ga_work = View3D(work_ptr, pver, ntot_amode, nswbands);
+  work_ptr += pver * ntot_amode * nswbands;
+  const auto fa_work = View3D(work_ptr, pver, ntot_amode, nswbands);
+  work_ptr += pver * ntot_amode * nswbands;
 
   constexpr Real zero = 0;
 
-  for (int i = 0; i < nswbands; ++i) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nswbands), [&](int i) {
     // BAD CONSTANT
     tauxar(0, i) = zero; // BAD CONSTANT
     wa(0, i) = 0.925;    // BAD CONSTANT
     ga(0, i) = 0.850;    // BAD CONSTANT
-    fa(0, i) = 0.7225;
-  }
+    fa(0, i) = 0.7225;   // BAD CONSTANT
+  });
 
-  for (int kk = 1; kk < pver; ++kk) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 1, pver), [&](int kk) {
     for (int i = 0; i < nswbands; ++i) {
       tauxar(kk, i) = zero;
       wa(kk, i) = zero;
       ga(kk, i) = zero;
       fa(kk, i) = zero;
     }
-  }
+  });
+
+  team.team_barrier();
+
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, top_lev, pver), [&](int kk) {
+        const auto state_q_kk = Kokkos::subview(state_q, kk, Kokkos::ALL());
+        const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
+        Real cldn_kk = cldn(kk);
+        const auto tauxar_kkp =
+            Kokkos::subview(tauxar_work, kk, Kokkos::ALL(), Kokkos::ALL());
+        const auto wa_kkp =
+            Kokkos::subview(wa_work, kk, Kokkos::ALL(), Kokkos::ALL());
+        const auto ga_kkp =
+            Kokkos::subview(ga_work, kk, Kokkos::ALL(), Kokkos::ALL());
+        const auto fa_kkp =
+            Kokkos::subview(fa_work, kk, Kokkos::ALL(), Kokkos::ALL());
+
+        modal_aero_sw_wo_diagnostics_k(pdeldry(kk), pmid(kk), temperature(kk),
+                                       cldn_kk,
+                                       state_q_kk.data(), // in
+                                       qqcw_k.data(),     // in
+                                       dt, aersol_optics_data,
+                                       // outputs
+                                       tauxar_kkp, wa_kkp, ga_kkp, fa_kkp);
+      });
+
+  team.team_barrier();
 
   for (int kk = top_lev; kk < pver; ++kk) {
-    const auto state_q_kk = Kokkos::subview(state_q, kk, Kokkos::ALL());
-    const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
-    Real cldn_kk = cldn(kk);
-    Real tauxar_kkp[ntot_amode][nswbands] = {};
-    Real wa_kkp[ntot_amode][nswbands] = {};
-    Real ga_kkp[ntot_amode][nswbands] = {};
-    Real fa_kkp[ntot_amode][nswbands] = {};
 
-    modal_aero_sw_wo_diagnostics_k(pdeldry(kk), pmid(kk), temperature(kk),
-                                   cldn_kk,
-                                   state_q_kk.data(), // in
-                                   qqcw_k.data(),     // in
-                                   dt, aersol_optics_data,
-                                   // outputs
-                                   tauxar_kkp, wa_kkp, ga_kkp, fa_kkp);
+    for (int isw = 0; isw < nswbands; ++isw) {
+      Kokkos::parallel_reduce(
+          Kokkos::TeamThreadRange(team, ntot_amode),
+          [&](int imode, Real &suma) { suma += tauxar_work(kk, imode, isw); },
+          tauxar(kk + 1, isw));
 
-    for (int imode = 0; imode < ntot_amode; ++imode) {
-      for (int isw = 0; isw < nswbands; ++isw) {
-        tauxar(kk + 1, isw) += tauxar_kkp[imode][isw];
-        wa(kk + 1, isw) += wa_kkp[imode][isw];
-        ga(kk + 1, isw) += ga_kkp[imode][isw];
-        fa(kk + 1, isw) += fa_kkp[imode][isw];
-      } // isw
-    }   // imode
+      Kokkos::parallel_reduce(
+          Kokkos::TeamThreadRange(team, ntot_amode),
+          [&](int imode, Real &suma) { suma += wa_work(kk, imode, isw); },
+          wa(kk + 1, isw));
 
-  } // mm
+      Kokkos::parallel_reduce(
+          Kokkos::TeamThreadRange(team, ntot_amode),
+          [&](int imode, Real &suma) { suma += ga_work(kk, imode, isw); },
+          ga(kk + 1, isw));
+
+      Kokkos::parallel_reduce(
+          Kokkos::TeamThreadRange(team, ntot_amode),
+          [&](int imode, Real &suma) { suma += fa_work(kk, imode, isw); },
+          fa(kk + 1, isw));
+
+    } // isw
+
+  } // kk
 
 } //
+
 KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(const Real dt, const View2D &state_q, const View2D qqcw,
                    const ConstColumnView &state_zm,
