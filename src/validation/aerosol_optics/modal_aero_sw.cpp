@@ -38,8 +38,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     const auto pdel_db = input.get_array("pdel");
     const auto pdeldry_db = input.get_array("pdeldry");
     const auto cldn_db = input.get_array("cldn");
-    const auto is_cmip6_volc = input.get_array("is_cmip6_volc")[0];
-    const auto ext_cmip6_sw_db = input.get_array("ext_cmip6_sw");
 
     ColumnView state_zm;
     state_zm = haero::testing::create_column_view(pver);
@@ -51,7 +49,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     ColumnView pdeldry;
     ColumnView pdel;
     ColumnView cldn;
-    ColumnView ext_cmip6_sw;
 
     temperature = haero::testing::create_column_view(pver);
     auto temperature_host = View1DHost((Real *)temperature_db.data(), pver);
@@ -73,11 +70,6 @@ void modal_aero_sw(Ensemble *ensemble) {
     auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
     Kokkos::deep_copy(cldn, cldn_host);
 
-    ext_cmip6_sw = haero::testing::create_column_view(pver);
-    auto ext_cmip6_sw_host = View1DHost((Real *)ext_cmip6_sw_db.data(), pver);
-    Kokkos::deep_copy(ext_cmip6_sw, ext_cmip6_sw_host);
-
-    const int trop_level = int(input.get_array("trop_level")[0]);
     auto qqcw_db = input.get_array("qqcw"); // 2d
 
     View2D qqcw("qqcw", pver, pcnst);
@@ -249,87 +241,18 @@ void modal_aero_sw(Ensemble *ensemble) {
     View2D output_diagnostics_amode("output_diagnostics_amode", 3, ntot_amode);
 
     View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
+    const int work_len = modal_aer_opt::get_work_len_aerosol_optics();
+    View1D work("work", work_len);
 
-    // FIXME: need to set values
-    mam4::AeroId specname_amode[9] = {AeroId::SO4,  // sulfate
-                                      AeroId::None, // ammonium
-                                      AeroId::None, // nitrate
-                                      AeroId::POM,  // p-organic
-                                      AeroId::SOA,  // s-organic
-                                      AeroId::BC,   // black-c
-                                      AeroId::NaCl, // seasalt
-                                      AeroId::DST,  // dust
-                                      AeroId::MOM}; // m-organic
-
-    // allocate Column views for diagnostics:
-    auto extinct = haero::testing::create_column_view(pver);
-    auto absorb = haero::testing::create_column_view(pver);
-    // FIXME: there are race conditions!!
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          DiagnosticsAerosolOpticsSW diagnostics_aerosol_optics_sw;
-          diagnostics_aerosol_optics_sw.extinct = extinct;
-          diagnostics_aerosol_optics_sw.absorb = absorb;
-          diagnostics_aerosol_optics_sw.aodnir =
-              Kokkos::subview(output_diagnostics, 0);
-          diagnostics_aerosol_optics_sw.aoduv =
-              Kokkos::subview(output_diagnostics, 1);
-          diagnostics_aerosol_optics_sw.aodabsbc =
-              Kokkos::subview(output_diagnostics, 2);
-          diagnostics_aerosol_optics_sw.aodvis =
-              Kokkos::subview(output_diagnostics, 3);
-          diagnostics_aerosol_optics_sw.aodall =
-              Kokkos::subview(output_diagnostics, 4);
-          diagnostics_aerosol_optics_sw.ssavis =
-              Kokkos::subview(output_diagnostics, 5);
-          diagnostics_aerosol_optics_sw.aodabs =
-              Kokkos::subview(output_diagnostics, 6);
-          diagnostics_aerosol_optics_sw.burdendust =
-              Kokkos::subview(output_diagnostics, 7);
-          diagnostics_aerosol_optics_sw.burdenso4 =
-              Kokkos::subview(output_diagnostics, 8);
-          diagnostics_aerosol_optics_sw.burdenbc =
-              Kokkos::subview(output_diagnostics, 9);
-          diagnostics_aerosol_optics_sw.burdenpom =
-              Kokkos::subview(output_diagnostics, 10);
-          diagnostics_aerosol_optics_sw.burdensoa =
-              Kokkos::subview(output_diagnostics, 11);
-          diagnostics_aerosol_optics_sw.burdenseasalt =
-              Kokkos::subview(output_diagnostics, 12);
-          diagnostics_aerosol_optics_sw.burdenmom =
-              Kokkos::subview(output_diagnostics, 13);
-          diagnostics_aerosol_optics_sw.momaod =
-              Kokkos::subview(output_diagnostics, 14);
-          diagnostics_aerosol_optics_sw.dustaod =
-              Kokkos::subview(output_diagnostics, 15);
-          diagnostics_aerosol_optics_sw.so4aod =
-              Kokkos::subview(output_diagnostics, 16);
-          ; // total species AOD
-          diagnostics_aerosol_optics_sw.pomaod =
-              Kokkos::subview(output_diagnostics, 17);
-          diagnostics_aerosol_optics_sw.soaaod =
-              Kokkos::subview(output_diagnostics, 18);
-          diagnostics_aerosol_optics_sw.bcaod =
-              Kokkos::subview(output_diagnostics, 19);
-          diagnostics_aerosol_optics_sw.seasaltaod =
-              Kokkos::subview(output_diagnostics, 20);
-
-          diagnostics_aerosol_optics_sw.dustaodmode =
-              Kokkos::subview(output_diagnostics_amode, 0, Kokkos::ALL);
-          diagnostics_aerosol_optics_sw.aodmode =
-              Kokkos::subview(output_diagnostics_amode, 1, Kokkos::ALL);
-          diagnostics_aerosol_optics_sw.burdenmode =
-              Kokkos::subview(output_diagnostics_amode, 2, Kokkos::ALL);
-
-          modal_aero_sw(dt, state_q, qqcw, state_zm, temperature, pmid, pdel,
-                        pdeldry, cldn, is_cmip6_volc, ext_cmip6_sw, trop_level,
+          modal_aero_sw(team, dt, state_q, qqcw, state_zm, temperature, pmid,
+                        pdel, pdeldry, cldn,
                         // outputs
                         tauxar, wa, ga, fa,
                         //
-                        specname_amode, aersol_optics_data,
-                        // diagnostic
-                        diagnostics_aerosol_optics_sw);
+                        aersol_optics_data, work);
         });
 
     Kokkos::deep_copy(qqcw_host, qqcw);
@@ -358,63 +281,5 @@ void modal_aero_sw(Ensemble *ensemble) {
     std::vector<Real> fa_out(pver_po * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(fa, fa_out);
     output.set("fa", fa_out);
-
-    auto extinct_host = Kokkos::create_mirror_view(extinct);
-
-    // Kokkos::deep_copy(extinct_host, extinct);
-    constexpr Real fillvalue = 1e20;
-    // std::vector<Real> extinct_out(extinct_host.data(),
-    //                               extinct_host.data() + pver);
-
-    // auto absorb_host = Kokkos::create_mirror_view(absorb);
-    // Kokkos::deep_copy(absorb_host, absorb);
-    // std::vector<Real> absorb_out(absorb_host.data(), absorb_host.data() +
-    // pver);
-    // FIXME: I cannot validate the outputs with fillvalue.
-    output.set("extinct", std::vector<Real>(pver, fillvalue));
-    output.set("absorb", std::vector<Real>(pver, fillvalue));
-    output.set("aodvis", std::vector<Real>(1, fillvalue));
-    output.set("aodabs", std::vector<Real>(1, fillvalue));
-    output.set("dustaod", std::vector<Real>(1, fillvalue));
-    output.set("so4aod", std::vector<Real>(1, fillvalue));
-    output.set("pomaod", std::vector<Real>(1, fillvalue));
-    output.set("soaaod", std::vector<Real>(1, fillvalue));
-    output.set("bcaod", std::vector<Real>(1, fillvalue));
-    output.set("momaod", std::vector<Real>(1, fillvalue));
-
-    auto output_diagnostics_host =
-        Kokkos::create_mirror_view(output_diagnostics);
-    Kokkos::deep_copy(output_diagnostics_host, output_diagnostics);
-    // Real aodnir=output_diagnostics_host(0);
-    // Real aoduv=output_diagnostics_host(1);
-    // Real aodabsbc=output_diagnostics_host(2);
-    // Real aodvis = output_diagnostics_host(3);
-    Real aodall = output_diagnostics_host(4);
-    // Real ssavis=output_diagnostics_host(5);
-    // Real aodabs = output_diagnostics_host(6);
-    Real burdendust = output_diagnostics_host(7);
-    Real burdenso4 = output_diagnostics_host(8);
-    Real burdenbc = output_diagnostics_host(9);
-    Real burdenpom = output_diagnostics_host(10);
-    Real burdensoa = output_diagnostics_host(11);
-    Real burdenseasalt = output_diagnostics_host(12);
-    Real burdenmom = output_diagnostics_host(13);
-    // Real momaod = output_diagnostics_host(14);
-    // Real dustaod = output_diagnostics_host(15);
-    // Real so4aod = output_diagnostics_host(16); // total species AOD
-    // Real pomaod = output_diagnostics_host(17);
-    // Real soaaod = output_diagnostics_host(18);
-    // Real bcaod = output_diagnostics_host(19);
-    Real seasaltaod = output_diagnostics_host(20);
-
-    output.set("aodall", std::vector<Real>(1, aodall));
-    output.set("burdendust", std::vector<Real>(1, burdendust));
-    output.set("burdenso4", std::vector<Real>(1, burdenso4));
-    output.set("burdenpom", std::vector<Real>(1, burdenpom));
-    output.set("burdensoa", std::vector<Real>(1, burdensoa));
-    output.set("burdenbc", std::vector<Real>(1, burdenbc));
-    output.set("burdenseasalt", std::vector<Real>(1, burdenseasalt));
-    output.set("burdenmom", std::vector<Real>(1, burdenmom));
-    output.set("seasaltaod", std::vector<Real>(1, seasaltaod));
   });
 }
