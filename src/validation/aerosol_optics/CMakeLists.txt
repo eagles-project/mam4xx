@@ -36,7 +36,6 @@ foreach(script
     COPYONLY
   )
 endforeach()
-# stand_calc_sum_wght_ts_355
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     binterp_ts_355
