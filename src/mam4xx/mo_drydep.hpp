@@ -246,7 +246,7 @@ void calculate_aerodynamic_and_quasilaminar_resistance(
       // NOTE: diffm, difft params. It's only used here, so we hardwire it
       constexpr Real diffm = 1.789e-5;
       constexpr Real difft = 2.060e-5;
-      constexpr Real crb = haero::pow(difft / diffm, 2.0 / 3.0);
+      const Real crb = haero::pow(difft / diffm, 2.0 / 3.0);
       dep_ra[lt] = (karman - psih * cvar[lt]) / (ustar[lt] * karman * cvar[lt]);
       dep_rb[lt] = (2.0 / (karman * ustar[lt])) * crb;
     }
