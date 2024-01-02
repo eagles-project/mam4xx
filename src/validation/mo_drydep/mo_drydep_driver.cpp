@@ -162,56 +162,57 @@ int main(int argc, char **argv) {
   std::string output_file = validation::output_name(input_file);
   std::cout << argv[0] << ": reading " << input_file << std::endl;
 
-  auto data = create_drydep_data();
+  {
+    auto data = create_drydep_data();
 
-  // Load the ensemble. Any error encountered is fatal.
-  Ensemble *ensemble = skywalker::load_ensemble(input_file, "mam4xx");
+    // Load the ensemble. Any error encountered is fatal.
+    Ensemble *ensemble = skywalker::load_ensemble(input_file, "mam4xx");
 
-  // the settings.
-  Settings settings = ensemble->settings();
-  if (!settings.has("function")) {
-    std::cerr << "No function specified in mam4xx.settings!" << std::endl;
-    exit(1);
-  }
-
-  // Dispatch to the requested function.
-  auto func_name = settings.get("function");
-  try {
-    if (func_name == "calculate_aerodynamic_and_quasilaminar_resistance") {
-      calculate_aerodynamic_and_quasilaminar_resistance(ensemble);
-    } else if (func_name == "calculate_gas_drydep_vlc_and_flux") {
-      calculate_gas_drydep_vlc_and_flux(data, ensemble);
-    } else if (func_name == "calculate_obukhov_length") {
-      calculate_obukhov_length(ensemble);
-    } else if (func_name == "calculate_resistance_rclx") {
-      calculate_resistance_rclx(data, ensemble);
-    } else if (func_name == "calculate_resistance_rgsx_and_rsmx") {
-      calculate_resistance_rgsx_and_rsmx(data, ensemble);
-    } else if (func_name == "calculate_resistance_rlux") {
-      calculate_resistance_rlux(data, ensemble);
-    } else if (func_name == "calculate_ustar_over_water") {
-      calculate_ustar_over_water(ensemble);
-    } else if (func_name == "calculate_ustar") {
-      calculate_ustar(data, ensemble);
-    } else if (func_name == "calculate_uustar") {
-      calculate_uustar(data, ensemble);
-    } else if (func_name == "drydep_xactive") {
-      drydep_xactive(data, ensemble);
-    } else {
-      std::cerr << "Error: Function name '" << func_name
-                << "' does not have an implemented test!" << std::endl;
+    // the settings.
+    Settings settings = ensemble->settings();
+    if (!settings.has("function")) {
+      std::cerr << "No function specified in mam4xx.settings!" << std::endl;
       exit(1);
     }
 
-  } catch (std::exception &e) {
-    std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
+    // Dispatch to the requested function.
+    auto func_name = settings.get("function");
+    try {
+      if (func_name == "calculate_aerodynamic_and_quasilaminar_resistance") {
+        calculate_aerodynamic_and_quasilaminar_resistance(ensemble);
+      } else if (func_name == "calculate_gas_drydep_vlc_and_flux") {
+        calculate_gas_drydep_vlc_and_flux(data, ensemble);
+      } else if (func_name == "calculate_obukhov_length") {
+        calculate_obukhov_length(ensemble);
+      } else if (func_name == "calculate_resistance_rclx") {
+        calculate_resistance_rclx(data, ensemble);
+      } else if (func_name == "calculate_resistance_rgsx_and_rsmx") {
+        calculate_resistance_rgsx_and_rsmx(data, ensemble);
+      } else if (func_name == "calculate_resistance_rlux") {
+        calculate_resistance_rlux(data, ensemble);
+      } else if (func_name == "calculate_ustar_over_water") {
+        calculate_ustar_over_water(ensemble);
+      } else if (func_name == "calculate_ustar") {
+        calculate_ustar(data, ensemble);
+      } else if (func_name == "calculate_uustar") {
+        calculate_uustar(data, ensemble);
+      } else if (func_name == "drydep_xactive") {
+        drydep_xactive(data, ensemble);
+      } else {
+        std::cerr << "Error: Function name '" << func_name
+                  << "' does not have an implemented test!" << std::endl;
+        exit(1);
+      }
+
+    } catch (std::exception &e) {
+      std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
+    }
+
+    // Write out a Python module.
+    std::cout << argv[0] << ": writing " << output_file << std::endl;
+    ensemble->write(output_file);
+
+    delete ensemble;
   }
-
-  // Write out a Python module.
-  std::cout << argv[0] << ": writing " << output_file << std::endl;
-  ensemble->write(output_file);
-
-  // Clean up.
-  delete ensemble;
   validation::finalize();
 }
