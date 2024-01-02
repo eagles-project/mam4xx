@@ -98,8 +98,7 @@ if (ENABLE_COVERAGE)
     COMMAND ${LCOV_EXE} --remove unfiltered_coverage.info -o coverage.info '*/external/*' '*/tests/*' '*/validation/*'
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     COMMENT "Generating coverage report (coverage.info)")
-endif()
- 
+endif() 
 
 # Support for valgrind (Linux only)
 include(add_memcheck_target)

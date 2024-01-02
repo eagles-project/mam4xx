@@ -466,7 +466,6 @@ void modal_aero_water_uptake_dr_b4_wetdens(
 
   // compute aerosol wet radius, volume, diameter and aerosol water
   Real wetrad[AeroConfig::num_modes()];
-  // Real qaerwat[AeroConfig::num_modes()];
   modal_aero_water_uptake_wetaer(rhcrystal, rhdeliques, dgncur_a, dryrad, hygro,
                                  rh, naer, dryvol, wetrad, wetvol, wtrvol,
                                  dgncur_awet, qaerwat);
