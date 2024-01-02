@@ -1,3 +1,5 @@
+#include "set_h_coeff.hpp" // <-- implementation of seq_drydep::setHCoeff
+
 #include <mam4xx/mam4.hpp>
 
 #include <skywalker.hpp>
@@ -7,7 +9,7 @@ using namespace skywalker;
 using namespace mam4;
 using namespace mam4::mo_drydep;
 using namespace haero;
-void drydep_xactive(Ensemble *ensemble) {
+void drydep_xactive(const seq_drydep::Data &data, Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
     using View1D = typename DeviceType::view_1d<Real>;
@@ -51,7 +53,7 @@ void drydep_xactive(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          drydep_xactive(fraction_landuse_d.data(), ncdate,
+          drydep_xactive(data, fraction_landuse_d.data(), ncdate,
                          col_index_season_d.data(), sfc_temp, air_temp, tv,
                          pressure_sfc, pressure_10m, spec_hum, wind_speed, rain,
                          snow, solar_flux, mmr_d.data(), dvel_d.data(),

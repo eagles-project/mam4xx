@@ -7,7 +7,7 @@ using namespace skywalker;
 using namespace mam4;
 using namespace mam4::mo_drydep;
 using namespace haero;
-void calculate_ustar(Ensemble *ensemble) {
+void calculate_ustar(const seq_drydep::Data &data, Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
     using View1D = typename DeviceType::view_1d<Real>;
@@ -48,7 +48,7 @@ void calculate_ustar(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          calculate_ustar(beglt, endlt, index_season_d.data(),
+          calculate_ustar(data, beglt, endlt, index_season_d.data(),
                           fr_lnduse_d.data(), unstable, zl, uustar, ribn,
                           ustar_d.data(), cvar_d.data(), bycp_d.data());
         });
