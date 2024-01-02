@@ -7,7 +7,8 @@ using namespace skywalker;
 using namespace mam4;
 using namespace mam4::mo_drydep;
 using namespace haero;
-void calculate_resistance_rlux(Ensemble *ensemble) {
+void calculate_resistance_rlux(const seq_drydep::Data &data,
+                               Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
     using View1D = typename DeviceType::view_1d<Real>;
@@ -54,9 +55,10 @@ void calculate_resistance_rlux(Ensemble *ensemble) {
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           Real rlux[gas_pcnst][n_land_type];
-          calculate_resistance_rlux(
-              beglt, endlt, index_season_d.data(), fr_lnduse_d.data(), has_rain,
-              has_dew, sfc_temp, qs, spec_hum, heff_d.data(), cts, rlux);
+          calculate_resistance_rlux(data, beglt, endlt, index_season_d.data(),
+                                    fr_lnduse_d.data(), has_rain, has_dew,
+                                    sfc_temp, qs, spec_hum, heff_d.data(), cts,
+                                    rlux);
           // shuffle array data into view
           int l = 0;
           for (int i = 0; i < gas_pcnst; ++i) {
