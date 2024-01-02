@@ -7,7 +7,8 @@ using namespace skywalker;
 using namespace mam4;
 using namespace mam4::mo_drydep;
 using namespace haero;
-void calculate_resistance_rgsx_and_rsmx(Ensemble *ensemble) {
+void calculate_resistance_rgsx_and_rsmx(const seq_drydep::Data &data,
+                                        Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
     using View1D = typename DeviceType::view_1d<Real>;
@@ -55,8 +56,8 @@ void calculate_resistance_rgsx_and_rsmx(Ensemble *ensemble) {
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           Real rgsx[gas_pcnst][n_land_type], rsmx[gas_pcnst][n_land_type];
           calculate_resistance_rgsx_and_rsmx(
-              beglt, endlt, index_season_d.data(), fr_lnduse_d.data(), has_rain,
-              has_dew, tc, heff_d.data(), crs, cts_d(0), rgsx, rsmx);
+              data, beglt, endlt, index_season_d.data(), fr_lnduse_d.data(),
+              has_rain, has_dew, tc, heff_d.data(), crs, cts_d(0), rgsx, rsmx);
           // shuffle array data into views
           int l = 0;
           for (int i = 0; i < gas_pcnst; ++i) {

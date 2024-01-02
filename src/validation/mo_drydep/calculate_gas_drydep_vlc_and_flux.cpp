@@ -7,7 +7,8 @@ using namespace skywalker;
 using namespace mam4;
 using namespace mam4::mo_drydep;
 using namespace haero;
-void calculate_gas_drydep_vlc_and_flux(Ensemble *ensemble) {
+void calculate_gas_drydep_vlc_and_flux(const seq_drydep::Data &data,
+                                       Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
     using View1D = typename DeviceType::view_1d<Real>;
@@ -100,7 +101,7 @@ void calculate_gas_drydep_vlc_and_flux(Ensemble *ensemble) {
             }
           }
           calculate_gas_drydep_vlc_and_flux(
-              beglt, endlt, index_season_d.data(), fr_lnduse_d.data(),
+              data, beglt, endlt, index_season_d.data(), fr_lnduse_d.data(),
               lcl_frc_landuse_d.data(), mmr_d.data(), dep_ra_d.data(),
               dep_rb_d.data(), term, rsmx, rlux, rclx, rgsx, rdc, dvel_d.data(),
               dflx_d.data());
