@@ -17,7 +17,7 @@ void modal_aero_water_uptake_wetaer(Ensemble *ensemble);
 void modal_aero_water_uptake_dryaer(Ensemble *ensemble);
 void modal_aero_water_uptake_dr(Ensemble *ensemble);
 void modal_aero_water_uptake_dr_wetdens(Ensemble *ensemble);
-
+void modal_aero_water_uptake_dr_col(Ensemble *ensemble);
 void usage() {
   std::cerr << "aging_driver: a Skywalker driver for validating the "
                "MAM4 water_uptake parameterizations."
@@ -74,6 +74,9 @@ int main(int argc, char **argv) {
     }
     if (func_name == "modal_aero_water_uptake_dr") {
       modal_aero_water_uptake_dr(ensemble);
+    }
+    if (func_name == "modal_aero_water_uptake_dr_col") {
+      modal_aero_water_uptake_dr_col(ensemble);
     }
     if (func_name == "modal_aero_water_uptake_dr_wetdens") {
       modal_aero_water_uptake_dr_wetdens(ensemble);

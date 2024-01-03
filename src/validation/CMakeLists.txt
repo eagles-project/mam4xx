@@ -34,3 +34,5 @@ add_subdirectory(mo_chm_diags)
 add_subdirectory(mo_setext)
 add_subdirectory(mo_setsox)
 add_subdirectory(tropopause)
+add_subdirectory(aerosol_optics)
+

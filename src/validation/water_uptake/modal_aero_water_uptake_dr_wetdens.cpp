@@ -48,7 +48,7 @@ void modal_aero_water_uptake_dr_wetdens(Ensemble *ensemble) {
     water_uptake::modal_aero_water_uptake_dr(
         nspec_amode, specdens_amode, spechygro, lspectype_amode, state_q.data(),
         temperature, pmid, cldn, dgncur_a.data(), dgncur_awet.data(),
-        wetdens.data());
+        qaerwat.data(), wetdens.data());
 
     output.set("dgncur_awet", dgncur_awet);
     output.set("qaerwat", qaerwat);

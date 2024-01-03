@@ -9,6 +9,7 @@
 // This header makes all MAM4 processes available.
 
 #include <haero/aero_process.hpp>
+#include <mam4xx/aer_rad_props.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/aero_model.hpp>
 #include <mam4xx/aging.hpp>
@@ -26,6 +27,8 @@
 #include <mam4xx/mo_photo.hpp>
 #include <mam4xx/mo_setext.hpp>
 #include <mam4xx/mo_setsox.hpp>
+#include <mam4xx/modal_aer_opt.hpp>
+#include <mam4xx/modal_aero_calcsize.hpp>
 #include <mam4xx/ndrop.hpp>
 #include <mam4xx/nucleate_ice.hpp>
 #include <mam4xx/nucleation.hpp>
@@ -33,7 +36,6 @@
 #include <mam4xx/tropopause.hpp>
 #include <mam4xx/water_uptake.hpp>
 #include <mam4xx/wet_dep.hpp>
-
 namespace mam4 {
 
 using NucleationProcess = haero::AeroProcess<AeroConfig, Nucleation>;

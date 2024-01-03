@@ -437,8 +437,8 @@ void modal_aero_water_uptake_dr_b4_wetdens(
     Real state_q[nvars], Real temperature, Real pmid, Real cldn,
     Real dgncur_a[AeroConfig::num_modes()],
     Real dgncur_awet[AeroConfig::num_modes()],
-    Real wetvol[AeroConfig::num_modes()], Real wtrvol[AeroConfig::num_modes()],
-    Real drymass[AeroConfig::num_modes()],
+    Real qaerwat[AeroConfig::num_modes()], Real wetvol[AeroConfig::num_modes()],
+    Real wtrvol[AeroConfig::num_modes()], Real drymass[AeroConfig::num_modes()],
     Real specdens_1[AeroConfig::num_modes()]) {
 
   //----------------------------------------------------------------------------
@@ -466,7 +466,6 @@ void modal_aero_water_uptake_dr_b4_wetdens(
 
   // compute aerosol wet radius, volume, diameter and aerosol water
   Real wetrad[AeroConfig::num_modes()];
-  Real qaerwat[AeroConfig::num_modes()];
   modal_aero_water_uptake_wetaer(rhcrystal, rhdeliques, dgncur_a, dryrad, hygro,
                                  rh, naer, dryvol, wetrad, wetvol, wtrvol,
                                  dgncur_awet, qaerwat);
@@ -480,6 +479,7 @@ void modal_aero_water_uptake_dr(
     Real state_q[nvars], Real temperature, Real pmid, Real cldn,
     Real dgncur_a[AeroConfig::num_modes()],
     Real dgncur_awet[AeroConfig::num_modes()],
+    Real qaerwat[AeroConfig::num_modes()],
     Real wetdens[AeroConfig::num_modes()]) {
 
   // This function is a port modal_aero_wateruptake_dr
@@ -490,10 +490,10 @@ void modal_aero_water_uptake_dr(
   Real wetvol[AeroConfig::num_modes()];
   Real wtrvol[AeroConfig::num_modes()];
 
-  modal_aero_water_uptake_dr_b4_wetdens(nspec_amode, specdens_amode, spechygro,
-                                        lspectype_amode, state_q, temperature,
-                                        pmid, cldn, dgncur_a, dgncur_awet,
-                                        wetvol, wtrvol, drymass, specdens_1);
+  modal_aero_water_uptake_dr_b4_wetdens(
+      nspec_amode, specdens_amode, spechygro, lspectype_amode, state_q,
+      temperature, pmid, cldn, dgncur_a, dgncur_awet, qaerwat, wetvol, wtrvol,
+      drymass, specdens_1);
 
   // compute wet aerosol density
   modal_aero_water_uptake_wetdens(wetvol, wtrvol, drymass, specdens_1, wetdens);
@@ -506,7 +506,8 @@ void modal_aero_water_uptake_dr(
     int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
     Real state_q[nvars], Real temperature, Real pmid, Real cldn,
     Real dgncur_a[AeroConfig::num_modes()],
-    Real dgncur_awet[AeroConfig::num_modes()]) {
+    Real dgncur_awet[AeroConfig::num_modes()],
+    Real qaerwat[AeroConfig::num_modes()]) {
 
   // This function is a port modal_aero_wateruptake_dr
   // without the computation of the wetdensity.
@@ -516,10 +517,10 @@ void modal_aero_water_uptake_dr(
   Real wetvol[AeroConfig::num_modes()];
   Real wtrvol[AeroConfig::num_modes()];
 
-  modal_aero_water_uptake_dr_b4_wetdens(nspec_amode, specdens_amode, spechygro,
-                                        lspectype_amode, state_q, temperature,
-                                        pmid, cldn, dgncur_a, dgncur_awet,
-                                        wetvol, wtrvol, drymass, specdens_1);
+  modal_aero_water_uptake_dr_b4_wetdens(
+      nspec_amode, specdens_amode, spechygro, lspectype_amode, state_q,
+      temperature, pmid, cldn, dgncur_a, dgncur_awet, qaerwat, wetvol, wtrvol,
+      drymass, specdens_1);
 }
 
 }; // namespace water_uptake

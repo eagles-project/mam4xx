@@ -126,6 +126,16 @@ void aitken_accum_exchange(Ensemble *ensemble) {
 
     Kokkos::parallel_for(
         "aitken_accum_exchange_k", max_k, KOKKOS_LAMBDA(const int &k) {
+          Real dgncur_i_aitken =
+              diags.dry_geometric_mean_diameter_i[aitken_idx](k);
+          Real &dgncur_i_accum =
+              diags.dry_geometric_mean_diameter_i[accum_idx](k);
+
+          Real &dgncur_c_aitken =
+              diags.dry_geometric_mean_diameter_c[aitken_idx](k);
+          Real &dgncur_c_accum =
+              diags.dry_geometric_mean_diameter_c[accum_idx](k);
+
           calcsize::aitken_accum_exchange(
               k, aitken_idx, accum_idx, no_transfer_acc2ait,
               n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
@@ -133,7 +143,8 @@ void aitken_accum_exchange(Ensemble *ensemble) {
               dgnmin_nmodes, dgnnom_nmodes, common_factor_nmodes, inv_density,
               adj_tscale_inv, dt, progs, dryvol_i_aitsv, num_i_k_aitsv,
               dryvol_c_aitsv, num_c_k_aitsv, dryvol_i_accsv, num_i_k_accsv,
-              dryvol_c_accsv, num_c_k_accsv, diags, tends);
+              dryvol_c_accsv, num_c_k_accsv, dgncur_i_aitken, dgncur_i_accum,
+              dgncur_c_aitken, dgncur_c_accum, tends);
         });
 
     std::vector<Real> tend_aero_i_out;
