@@ -28,8 +28,8 @@ constexpr int top_lev = 0;
 //
 constexpr int pcnst = 40;
 // ! min, max aerosol surface mode radius treated [m]
-constexpr Real rmmin = 0.01e-6;
-constexpr Real rmmax = 25.e-6;
+constexpr Real rmmin = 0.01e-6; // BAD CONSTANT
+constexpr Real rmmax = 25.e-6;  // BAD CONSTANT
 
 // From radconstants
 constexpr int nswbands = 14;
@@ -499,7 +499,6 @@ void binterp(const View3D &table, const Real ref_real, const Real ref_img,
   // itab(pcols), jtab(pcols)
   // ttab(pcols), utab(pcols)
   // coef(pcols,ncoef) !coefficient interpolated bilinearly
-  // FIXME; maybe we need to loop over cols
   constexpr Real one = 1.0;
   if (itab_1 <= 0.0) {
     // compute factors for the real part
@@ -513,7 +512,6 @@ void binterp(const View3D &table, const Real ref_real, const Real ref_img,
   const Real tuc = ttab - tu;
   const Real tcuc = one - tuc - utab;
   const Real tcu = utab - tu;
-  // FIXME: check Fortran to C++ indexing
   const int jp1 = haero::min(jtab + 1, prefi - 1);
   const int ip1 = haero::min(itab + 1, prefr - 1);
   for (int icoef = 0; icoef < ncoef; ++icoef) {

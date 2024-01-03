@@ -106,8 +106,6 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
 
             } // kk
           });
-
-      // placeholder
     } // modal_aero_wateruptake_dr
 
     constexpr Real zero = 0;

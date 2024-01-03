@@ -628,8 +628,7 @@ void modal_aero_calcsize_sub(
     // ncol, lchnk, state_q, pdel, deltat, qqcw, ptend, do_adjust_in, &
     // do_aitacc_transfer_in, list_idx_in, update_mmr_in, dgnumdry_m
 ) {
-  // dgncur_a => dgnumdry_m(:,:,:)
-#if 1
+
   const Real zero = 0.0;
   const int aitken_idx = int(ModeIndex::Aitken);
   const int accumulation_idx = int(ModeIndex::Accumulation);
@@ -801,7 +800,6 @@ void modal_aero_calcsize_sub(
         dgncur_i[aitken_idx], dgncur_i[accumulation_idx], dgncur_c[aitken_idx],
         dgncur_c[accumulation_idx]);
   }
-#endif
 } // modal_aero_calcsize_sub
 
 } // namespace modal_aero_calcsize
