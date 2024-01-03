@@ -44,15 +44,26 @@ mam4::seq_drydep::Data create_drydep_data() {
   using View2DHost = typename HostType::view_2d<Real>;
   using View1D = typename DeviceType::view_1d<Real>;
   using View2D = typename DeviceType::view_2d<Real>;
+  using ViewBool1D = typename DeviceType::view_1d<bool>;
+  using ViewInt1D = typename DeviceType::view_1d<int>;
 
   // allocate the views
   constexpr int NSeas = mam4::seq_drydep::NSeas;
+  constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
   seq_drydep::Data data{
-      View1D("drat", 3),         View1D("foxd", 3),
-      View2D("rac", NSeas, 11),  View2D("rclo", NSeas, 11),
-      View2D("rcls", NSeas, 11), View2D("rgso", NSeas, 11),
-      View2D("rgss", NSeas, 11), View2D("ri", NSeas, 11),
-      View2D("rlu", NSeas, 11),  View2D("z0", NSeas, 11),
+      View1D("drat", 3),
+      View1D("foxd", 3),
+      View2D("rac", NSeas, 11),
+      View2D("rclo", NSeas, 11),
+      View2D("rcls", NSeas, 11),
+      View2D("rgso", NSeas, 11),
+      View2D("rgss", NSeas, 11),
+      View2D("ri", NSeas, 11),
+      View2D("rlu", NSeas, 11),
+      View2D("z0", NSeas, 11),
+      ViewBool1D("has_dvel", gas_pcnst),
+      ViewInt1D("map_dvel", gas_pcnst),
+      -1, // FIXME: so2_ndx
   };
 
   Real drat_a[3] = {1.3740328303634228, 2.3332297194282963, 1.8857345177418792};
