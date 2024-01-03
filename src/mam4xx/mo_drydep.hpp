@@ -91,7 +91,7 @@ void calculate_ustar(
   //-------------------------------------------------------------------------------------
   // calculate the friction velocity for each land type u_i=uustar/u*_i
   //-------------------------------------------------------------------------------------
-  for (int lt = beglt; lt < endlt; ++lt) {
+  for (int lt = beglt; lt <= endlt; ++lt) {
     if (fr_lnduse[lt]) { // BAD_CONSTANTS
       if (unstable) {
         cvar[lt] = karman / haero::log(zl / z0(index_season[lt], lt));
@@ -158,7 +158,7 @@ void calculate_obukhov_length(
     const Real bycp[n_land_type],  // buoyancy parameter for unstable conditions
     const Real ribn,               // richardson number [unitless]
     Real obklen[n_land_type]) {    // monin-obukhov length [m]
-  for (int lt = beglt; lt < endlt; ++lt) {
+  for (int lt = beglt; lt <= endlt; ++lt) {
     if (fr_lnduse[lt]) {
       // BAD_CONSTANTS
       Real hvar = (va / 0.74) * (tha - thg) * haero::square(cvar[lt]);
@@ -182,7 +182,7 @@ void calculate_aerodynamic_and_quasilaminar_resistance(
     const Real cvar[n_land_type],   // height parameter
     Real dep_ra[n_land_type],       // aerodynamic resistance [s/m]
     Real dep_rb[n_land_type]) {     // sublayer resistance [s/m]
-  for (int lt = beglt; lt < endlt; ++lt) {
+  for (int lt = beglt; lt <= endlt; ++lt) {
     if (fr_lnduse[lt]) {
       Real psih; // stability correction factor [-]
       // BAD_CONSTANTS
@@ -229,7 +229,7 @@ void calculate_resistance_rgsx_and_rsmx(
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     if (drydep_data.has_dvel[ispec]) {
       int idx_drydep = drydep_data.map_dvel(ispec);
-      for (int lt = beglt; lt < endlt; ++lt) {
+      for (int lt = beglt; lt <= endlt; ++lt) {
         if (fr_lnduse[lt]) {
           Real rmx;
           int sndx = index_season[lt];
@@ -276,7 +276,7 @@ void calculate_resistance_rclx(
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     if (drydep_data.has_dvel(ispec)) {
       int idx_drydep = drydep_data.map_dvel(ispec);
-      for (int lt = beglt; lt < endlt; ++lt) {
+      for (int lt = beglt; lt <= endlt; ++lt) {
         if (fr_lnduse[lt]) {
           if (lt == lt_for_water) {
             rclx[ispec][lt] = large_value;
@@ -294,7 +294,7 @@ void calculate_resistance_rclx(
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     if (drydep_data.has_dvel(ispec) && (ispec == drydep_data.so2_ndx)) {
-      for (int lt = beglt; lt < endlt; ++lt) {
+      for (int lt = beglt; lt <= endlt; ++lt) {
         if (lt != lt_for_water) {
           if (fr_lnduse[lt]) {
             rclx[ispec][lt] = cts + rcls(index_season[lt], lt);
@@ -324,7 +324,7 @@ void calculate_resistance_rlux(
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     if (drydep_data.has_dvel(ispec)) {
       int idx_drydep = drydep_data.map_dvel(ispec);
-      for (int lt = beglt; lt < endlt; ++lt) {
+      for (int lt = beglt; lt <= endlt; ++lt) {
         if (fr_lnduse[lt]) {
           if (lt == lt_for_water) {
             rlux[ispec][lt] = large_value;
@@ -338,7 +338,7 @@ void calculate_resistance_rlux(
     }
   }
 
-  for (int lt = beglt; lt < endlt; ++lt) {
+  for (int lt = beglt; lt <= endlt; ++lt) {
     if (lt != lt_for_water) {
       if (fr_lnduse[lt]) {
         int sndx = index_season[lt];
@@ -362,7 +362,7 @@ void calculate_resistance_rlux(
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     int idx_drydep = drydep_data.map_dvel(ispec);
     if (drydep_data.has_dvel(ispec) && (ispec != drydep_data.so2_ndx)) {
-      for (int lt = beglt; lt < endlt; ++lt) {
+      for (int lt = beglt; lt <= endlt; ++lt) {
         if (lt != lt_for_water) {
           if (fr_lnduse[lt] && (sfc_temp > tmelt) && has_dew) {
             //-------------------------------------------------------------------------------------
@@ -376,7 +376,7 @@ void calculate_resistance_rlux(
         }
       }
     } else if (ispec == drydep_data.so2_ndx) {
-      for (int lt = beglt; lt < endlt; ++lt) {
+      for (int lt = beglt; lt <= endlt; ++lt) {
         if (lt != lt_for_water) {
           if (fr_lnduse[lt]) {
             //-------------------------------------------------------------------------------------
@@ -430,7 +430,7 @@ void calculate_gas_drydep_vlc_and_flux(
     if (drydep_data.has_dvel(ispec)) {
       Real wrk = 0.0;
       Real resc, lnd_frc;
-      for (int lt = beglt; lt < endlt; ++lt) {
+      for (int lt = beglt; lt <= endlt; ++lt) {
         if (fr_lnduse[lt]) {
           resc = 1.0 / (1.0 / rsmx[ispec][lt] + 1.0 / rlux[ispec][lt]) +
                  1.0 / (rdc + rclx[ispec][lt]) +

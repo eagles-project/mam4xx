@@ -39,7 +39,7 @@ void calculate_aerodynamic_and_quasilaminar_resistance(Ensemble *ensemble) {
     Kokkos::deep_copy(ustar_d, ustar_h);
 
     View1DHost cvar_h((Real *)cvar.data(), n_land_type);
-    View1D cvar_d("ustar", n_land_type);
+    View1D cvar_d("cvar", n_land_type);
     Kokkos::deep_copy(cvar_d, cvar_h);
 
     View1D dep_ra_d("dep_ra", n_land_type);
