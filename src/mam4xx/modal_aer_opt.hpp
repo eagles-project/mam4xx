@@ -998,20 +998,17 @@ void modal_aero_lw_k(const Real &pdeldry, const Real &pmid,
       Real pabs = zero; //    parameterized specific extinction [m2/kg]
       calc_parameterized(cabs, cheb_kk, pabs);
 
-      // printf("pabs %e \n", pabs);
       pabs *= wetvol * rhoh2o;
-      // printf("wetvol %e rhoh2o %e \n ", wetvol, rhoh2o );
       pabs = haero::max(zero, pabs);
       Real dopaer = pabs * mass;
 
       // update absorption optical depth
-      // printf("dopaer %e pabs %e mass(kk) %e \n", dopaer, pabs, mass(kk));
       tauxar[ilw] += dopaer;
-      // printf("tauxar %e \n", tauxar(kk, ilw));
 
       // FIXME: specpext is used by check_error_warning, which is not ported
       // yet.
       // FORTRAN refactor: check and writeout error/warning message
+      // FORTRAN refactor: This if condition is never met in testing run ...
       // call check_error_warning('lw', icol, kk,mm, ilw, nspec, list_idx,& !
       // in
       //                 dopaer, pabs(icol), dryvol, wetvol, watervol,
