@@ -32,12 +32,6 @@ constexpr Real tmelt = 273.15; // from shr_const_mod.F90 via physconst.F90
 // must use its maximum value, which is maxspc above
 constexpr int nddvels = mam4::seq_drydep::maxspc;
 
-// has_dvel and map_dvel are arrays with fixed indices based on the chemical
-// mechanism we're using.
-// FIXME: need to populate these arrays!
-#define DECLARE_HAS_DVEL static const Real has_dvel[gas_pcnst] = {};
-#define DECLARE_MAP_DVEL static const Real map_dvel[gas_pcnst] = {};
-
 KOKKOS_INLINE_FUNCTION
 void calculate_uustar(
     const seq_drydep::Data &drydep_data, const int index_season[n_land_type],
@@ -227,9 +221,6 @@ void calculate_resistance_rgsx_and_rsmx(
     Real rsmx[gas_pcnst]
              [n_land_type]) // vegetative resistance (plant mesophyll) [s/m]
 {
-  DECLARE_HAS_DVEL
-  DECLARE_MAP_DVEL
-
   const auto ri = drydep_data.ri;
   const auto rgso = drydep_data.rgso;
   const auto rgss = drydep_data.rgss;
@@ -237,8 +228,8 @@ void calculate_resistance_rgsx_and_rsmx(
   const auto drat = drydep_data.drat;
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (has_dvel[ispec]) {
-      int idx_drydep = map_dvel[ispec];
+    if (drydep_data.has_dvel[ispec]) {
+      int idx_drydep = drydep_data.map_dvel(ispec);
       for (int lt = beglt; lt < endlt; ++lt) {
         if (fr_lnduse[lt]) {
           Real rmx;
@@ -278,16 +269,14 @@ void calculate_resistance_rclx(
     const Real heff[nddvels], // Henry's law coefficients
     const Real cts,           // correction to rlu rcl and rgs for frost
     Real rclx[gas_pcnst][n_land_type]) { // lower canopy resistance [s/m]
-  DECLARE_HAS_DVEL
-  DECLARE_MAP_DVEL
 
   const auto rclo = drydep_data.rclo;
   const auto rcls = drydep_data.rcls;
   const auto foxd = drydep_data.foxd;
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (has_dvel[ispec]) {
-      int idx_drydep = map_dvel[ispec];
+    if (drydep_data.has_dvel(ispec)) {
+      int idx_drydep = drydep_data.map_dvel(ispec);
       for (int lt = beglt; lt < endlt; ++lt) {
         if (fr_lnduse[lt]) {
           if (lt == lt_for_water) {
@@ -305,7 +294,7 @@ void calculate_resistance_rclx(
   }
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (has_dvel[ispec] && (ispec == so2_ndx)) {
+    if (drydep_data.has_dvel(ispec) && (ispec == so2_ndx)) {
       for (int lt = beglt; lt < endlt; ++lt) {
         if (lt != lt_for_water) {
           if (fr_lnduse[lt]) {
@@ -329,16 +318,13 @@ void calculate_resistance_rlux(
     const Real cts,           // correction to rlu rcl and rgs for frost
     Real rlux[gas_pcnst][n_land_type]) // lower canopy resistance [s/m] ! out
 {
-  DECLARE_HAS_DVEL
-  DECLARE_MAP_DVEL
-
   const auto rlu = drydep_data.rlu;
   const auto foxd = drydep_data.foxd;
 
   Real rlux_o3[n_land_type] = {}; // vegetative resistance (upper canopy) [s/m]
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (has_dvel[ispec]) {
-      int idx_drydep = map_dvel[ispec];
+    if (drydep_data.has_dvel(ispec)) {
+      int idx_drydep = drydep_data.map_dvel(ispec);
       for (int lt = beglt; lt < endlt; ++lt) {
         if (fr_lnduse[lt]) {
           if (lt == lt_for_water) {
@@ -375,8 +361,8 @@ void calculate_resistance_rlux(
   }
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    int idx_drydep = map_dvel[ispec];
-    if (has_dvel[ispec] && (ispec != so2_ndx)) {
+    int idx_drydep = drydep_data.map_dvel(ispec);
+    if (drydep_data.has_dvel(ispec) && (ispec != so2_ndx)) {
       for (int lt = beglt; lt < endlt; ++lt) {
         if (lt != lt_for_water) {
           if (fr_lnduse[lt] && (sfc_temp > tmelt) && has_dew) {
@@ -437,13 +423,12 @@ void calculate_gas_drydep_vlc_and_flux(
     const Real rdc,         // part of lower canopy resistance [s/m]
     Real dvel[gas_pcnst],   // deposition velocity [cm/s]
     Real dflx[gas_pcnst]) { // deposition flux [1/cm^2/s]
-  DECLARE_HAS_DVEL
 
   constexpr Real m_to_cm_per_s = 100.0;
   const auto rac = drydep_data.rac;
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (has_dvel[ispec]) {
+    if (drydep_data.has_dvel(ispec)) {
       Real wrk = 0.0;
       Real resc, lnd_frc;
       for (int lt = beglt; lt < endlt; ++lt) {
