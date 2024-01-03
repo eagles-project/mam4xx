@@ -41,81 +41,87 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
       }
     }
     Kokkos::deep_copy(qqcw, qqcw_host);
-
-    Real inv_density[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()] =
-        {};
-    Real num2vol_ratio_min[AeroConfig::num_modes()] = {};
-    Real num2vol_ratio_max[AeroConfig::num_modes()] = {};
-    Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
-    Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()] = {};
-    Real num2vol_ratio_nom_nmodes[AeroConfig::num_modes()] = {};
-    Real dgnmin_nmodes[AeroConfig::num_modes()] = {};
-    Real dgnmax_nmodes[AeroConfig::num_modes()] = {};
-    Real dgnnom_nmodes[AeroConfig::num_modes()] = {};
-    Real mean_std_dev_nmodes[AeroConfig::num_modes()] = {};
-    // outputs
-    bool noxf_acc2ait[AeroConfig::num_aerosol_ids()] = {};
-    int n_common_species_ait_accum = {};
-    int ait_spec_in_acc[AeroConfig::num_aerosol_ids()] = {};
-    int acc_spec_in_ait[AeroConfig::num_aerosol_ids()] = {};
-
-    modal_aero_calcsize::init_calcsize(
-        inv_density, num2vol_ratio_min, num2vol_ratio_max,
-        num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
-        num2vol_ratio_nom_nmodes, dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
-        mean_std_dev_nmodes,
-        // outputs
-        noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
-        acc_spec_in_ait);
-
-    const bool do_adjust = true;
-    const bool do_aitacc_transfer = true;
-    const bool update_mmr = false;
-
-    int nspec_amode[ntot_amode];
-    int lspectype_amode[maxd_aspectype][ntot_amode];
-    int lmassptr_amode[maxd_aspectype][ntot_amode];
-    Real specdens_amode[maxd_aspectype];
-    Real spechygro[maxd_aspectype];
-    int numptr_amode[ntot_amode];
-    int mam_idx[ntot_amode][nspec_max];
-    int mam_cnst_idx[ntot_amode][nspec_max];
-
-    ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
-                               numptr_amode, specdens_amode, spechygro, mam_idx,
-                               mam_cnst_idx);
-
-    // Note: Need to compute inv density using indexing from e3sm
-    for (int imode = 0; imode < ntot_amode; ++imode) {
-      const int nspec = nspec_amode[imode];
-      for (int isp = 0; isp < nspec; ++isp) {
-        const int idx = lspectype_amode[isp][imode] - 1;
-        inv_density[imode][isp] = 1.0 / specdens_amode[idx];
-      } // isp
-    }   // imode
-
     View2D dgnumdry_m("dgnumdry_m", pver, ntot_amode);
-    // FIXME: top_lev is set to 1 in calcsize ?
-    const int top_lev = 0; // 1( in fortran )
 
-    for (int kk = top_lev; kk < pver; ++kk) {
-      const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
-      const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
-      const auto dgncur_i = Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
-      Real dgncur_c[ntot_amode] = {};
-      modal_aero_calcsize::modal_aero_calcsize_sub(
-          state_q_k.data(), // in
-          qqcw_k.data(),    // in/out
-          dt, do_adjust, do_aitacc_transfer, update_mmr, lmassptr_amode,
-          numptr_amode,
-          inv_density, // in
-          num2vol_ratio_min, num2vol_ratio_max, num2vol_ratio_max_nmodes,
-          num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes, dgnmin_nmodes,
-          dgnmax_nmodes, dgnnom_nmodes, mean_std_dev_nmodes,
+    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    Kokkos::parallel_for(
+        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          Real inv_density[AeroConfig::num_modes()]
+                          [AeroConfig::num_aerosol_ids()] = {};
+          Real num2vol_ratio_min[AeroConfig::num_modes()] = {};
+          Real num2vol_ratio_max[AeroConfig::num_modes()] = {};
+          Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
+          Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()] = {};
+          Real num2vol_ratio_nom_nmodes[AeroConfig::num_modes()] = {};
+          Real dgnmin_nmodes[AeroConfig::num_modes()] = {};
+          Real dgnmax_nmodes[AeroConfig::num_modes()] = {};
+          Real dgnnom_nmodes[AeroConfig::num_modes()] = {};
+          Real mean_std_dev_nmodes[AeroConfig::num_modes()] = {};
           // outputs
-          noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
-          acc_spec_in_ait, dgncur_i.data(), dgncur_c);
-    } // k
+          bool noxf_acc2ait[AeroConfig::num_aerosol_ids()] = {};
+          int n_common_species_ait_accum = {};
+          int ait_spec_in_acc[AeroConfig::num_aerosol_ids()] = {};
+          int acc_spec_in_ait[AeroConfig::num_aerosol_ids()] = {};
+
+          modal_aero_calcsize::init_calcsize(
+              inv_density, num2vol_ratio_min, num2vol_ratio_max,
+              num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
+              num2vol_ratio_nom_nmodes, dgnmin_nmodes, dgnmax_nmodes,
+              dgnnom_nmodes, mean_std_dev_nmodes,
+              // outputs
+              noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
+              acc_spec_in_ait);
+
+          const bool do_adjust = true;
+          const bool do_aitacc_transfer = true;
+          const bool update_mmr = false;
+
+          int nspec_amode[ntot_amode];
+          int lspectype_amode[maxd_aspectype][ntot_amode];
+          int lmassptr_amode[maxd_aspectype][ntot_amode];
+          Real specdens_amode[maxd_aspectype];
+          Real spechygro[maxd_aspectype];
+          int numptr_amode[ntot_amode];
+          int mam_idx[ntot_amode][nspec_max];
+          int mam_cnst_idx[ntot_amode][nspec_max];
+
+          ndrop::get_e3sm_parameters(
+              nspec_amode, lspectype_amode, lmassptr_amode, numptr_amode,
+              specdens_amode, spechygro, mam_idx, mam_cnst_idx);
+
+          // Note: Need to compute inv density using indexing from e3sm
+          for (int imode = 0; imode < ntot_amode; ++imode) {
+            const int nspec = nspec_amode[imode];
+            for (int isp = 0; isp < nspec; ++isp) {
+              const int idx = lspectype_amode[isp][imode] - 1;
+              inv_density[imode][isp] = 1.0 / specdens_amode[idx];
+            } // isp
+          }   // imode
+
+          // FIXME: top_lev is set to 1 in calcsize ?
+          const int top_lev = 0; // 1( in fortran )
+
+          for (int kk = top_lev; kk < pver; ++kk) {
+            const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
+            const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
+            const auto dgncur_i =
+                Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
+            Real dgncur_c[ntot_amode] = {};
+            modal_aero_calcsize::modal_aero_calcsize_sub(
+                state_q_k.data(), // in
+                qqcw_k.data(),    // in/out
+                dt, do_adjust, do_aitacc_transfer, update_mmr, lmassptr_amode,
+                numptr_amode,
+                inv_density, // in
+                num2vol_ratio_min, num2vol_ratio_max, num2vol_ratio_max_nmodes,
+                num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes,
+                dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
+                mean_std_dev_nmodes,
+                // outputs
+                noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
+                acc_spec_in_ait, dgncur_i.data(), dgncur_c);
+          } // k
+        });
 
     constexpr Real zero = 0;
     std::vector<Real> dgnumdry_m_out(pver * ntot_amode, zero);
