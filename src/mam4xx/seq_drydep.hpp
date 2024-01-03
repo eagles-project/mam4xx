@@ -40,6 +40,13 @@ struct Data {
   DeviceType::view_2d<Real> rlu;
   // roughness length [m], shape=(NSeas, NLUse)
   DeviceType::view_2d<Real> z0;
+
+  // This array maps species indices to true or false, depending on whether
+  // the species participates in dry deposition.
+  DeviceType::view_1d<bool> has_dvel; // shape=(gas_pcnst)
+  // This array maps species indices to dry deposition indices. These
+  // dry deposition indices count range from 0 to n_drydep-1.
+  DeviceType::view_1d<Real> map_dvel; // shape=(gas_pcnst)
 };
 
 // This function computes the H coefficients corresponding to the given surface

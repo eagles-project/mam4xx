@@ -148,6 +148,8 @@ mam4::seq_drydep::Data create_drydep_data() {
   View2DHost z0_h(z0_a, NSeas, 11);
   Kokkos::deep_copy(data.z0, z0_h);
 
+  // FIXME: initialize have_dvel and map_dvel views
+
   return data;
 }
 
