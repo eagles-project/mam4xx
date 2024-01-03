@@ -40,12 +40,15 @@ namespace {
 
 // this function creates data views for dry deposition of tracers
 mam4::seq_drydep::Data create_drydep_data() {
-  using View1DHost = typename HostType::view_1d<Real>;
-  using View2DHost = typename HostType::view_2d<Real>;
   using View1D = typename DeviceType::view_1d<Real>;
   using View2D = typename DeviceType::view_2d<Real>;
+  using View1DHost = typename HostType::view_1d<Real>;
+  using View2DHost = typename HostType::view_2d<Real>;
+
   using ViewBool1D = typename DeviceType::view_1d<bool>;
   using ViewInt1D = typename DeviceType::view_1d<int>;
+  using ViewBool1DHost = typename HostType::view_1d<bool>;
+  using ViewInt1DHost = typename HostType::view_1d<int>;
 
   // allocate the views
   constexpr int NSeas = mam4::seq_drydep::NSeas;
@@ -159,7 +162,35 @@ mam4::seq_drydep::Data create_drydep_data() {
   View2DHost z0_h(z0_a, NSeas, 11);
   Kokkos::deep_copy(data.z0, z0_h);
 
-  // FIXME: initialize have_dvel and map_dvel views
+  // initialize has_dvel and map_dvel views from namelist-like values similar
+  // to those used by EAM to determine (0-based) species indices
+  /*
+  std::string drydep_list[] = {"H2O2", "H2SO4", "SO2"};
+  std::string solsym[] = {"O3", "H2O2", "H2SO4", "SO2", "DMS", "SOAG",
+                          "so4_a1", "pom_a1", "soa_a1", "bc_a1", "dst_a1",
+                          "ncl_a1", "mom_a1", "num_a1", "so4_a2", "soa_a2",
+                          "ncl_a2", "mom_a2", "num_a2", "dst_a3", "ncl_a3",
+                          "so4_a3", "bc_a3", "pom_a3", "soa_a3", "mom_a3",
+                          "num_a3", "pom_a4", "bc_a4", "mom_a4", "num_a4"};
+   */
+  bool has_dvel_a[gas_pcnst] = {}; // all false by default
+  has_dvel_a[1] = true;            // H2O2
+  has_dvel_a[2] = true;            // H2SO4
+  has_dvel_a[3] = true;            // SO2
+  ViewBool1DHost has_dvel_h(has_dvel_a, gas_pcnst);
+  Kokkos::deep_copy(data.has_dvel, has_dvel_h);
+
+  int map_dvel_a[gas_pcnst] = {};
+  for (int i = 0; i < gas_pcnst; ++i) {
+    map_dvel_a[i] = -1; // most indices unmapped
+  }
+  map_dvel_a[1] = 0; // H2O2
+  map_dvel_a[2] = 1; // H2SO4
+  map_dvel_a[3] = 1; // SO2
+  ViewInt1DHost map_dvel_h(map_dvel_a, gas_pcnst);
+  Kokkos::deep_copy(data.map_dvel, map_dvel_h);
+
+  data.so2_ndx = 3;
 
   return data;
 }
