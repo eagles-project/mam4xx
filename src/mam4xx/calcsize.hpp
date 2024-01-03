@@ -594,7 +594,7 @@ void update_tends_flx(const int klev,          // in
  */
 KOKKOS_INLINE_FUNCTION
 void aitken_accum_exchange(
-    const int &k, const int &aitken_idx, const int &accum_idx,
+    const int k, const int aitken_idx, const int accum_idx,
     const bool noxf_acc2ait[AeroConfig::num_aerosol_ids()],
     const int n_common_species_ait_accum, const int *ait_spec_in_acc,
     const int *acc_spec_in_ait,
@@ -607,10 +607,10 @@ void aitken_accum_exchange(
     const Real mean_std_dev_nmodes[AeroConfig::num_modes()],
     const Real inv_density[AeroConfig::num_modes()]
                           [AeroConfig::num_aerosol_ids()],
-    const Real &adj_tscale_inv, const Real &dt, const Prognostics &prognostics,
-    const Real &drv_i_aitsv, const Real &num_i_aitsv, const Real &drv_c_aitsv,
-    const Real &num_c_aitsv, const Real &drv_i_accsv, const Real &num_i_accsv,
-    const Real &drv_c_accsv, const Real &num_c_accsv, Real &dgncur_i_aitken,
+    const Real adj_tscale_inv, const Real dt, const Prognostics &prognostics,
+    const Real drv_i_aitsv, const Real num_i_aitsv, const Real drv_c_aitsv,
+    const Real num_c_aitsv, const Real drv_i_accsv, const Real num_i_accsv,
+    const Real drv_c_accsv, const Real num_c_accsv, Real &dgncur_i_aitken,
     Real &dgncur_i_accum, Real &dgncur_c_aitken, Real &dgncur_c_accum,
     const Tendencies &tendencies) {
 
