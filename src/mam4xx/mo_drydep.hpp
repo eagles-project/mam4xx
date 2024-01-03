@@ -17,7 +17,6 @@ namespace mam4::mo_drydep {
 constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
 constexpr int n_land_type = 11; // from eam/src/chemistry/mozart/mo_drydep.F90
 constexpr int lt_for_water = 7; // from eam/src/chemistry/mozart/mo_drydep.F90
-constexpr int so2_ndx = -1;     // FIXME
 constexpr int NSeas = mam4::seq_drydep::NSeas;
 
 // BAD_CONSTANTS
@@ -234,7 +233,7 @@ void calculate_resistance_rgsx_and_rsmx(
         if (fr_lnduse[lt]) {
           Real rmx;
           int sndx = index_season[lt];
-          if (ispec == so2_ndx) {
+          if (ispec == drydep_data.so2_ndx) {
             rmx = 0.0;
           } else { // BAD_CONSTANTS
             rmx = 1.0 / (heff[idx_drydep] / 3000.0 + 100.0 * foxd(idx_drydep));
@@ -294,7 +293,7 @@ void calculate_resistance_rclx(
   }
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    if (drydep_data.has_dvel(ispec) && (ispec == so2_ndx)) {
+    if (drydep_data.has_dvel(ispec) && (ispec == drydep_data.so2_ndx)) {
       for (int lt = beglt; lt < endlt; ++lt) {
         if (lt != lt_for_water) {
           if (fr_lnduse[lt]) {
@@ -362,7 +361,7 @@ void calculate_resistance_rlux(
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     int idx_drydep = drydep_data.map_dvel(ispec);
-    if (drydep_data.has_dvel(ispec) && (ispec != so2_ndx)) {
+    if (drydep_data.has_dvel(ispec) && (ispec != drydep_data.so2_ndx)) {
       for (int lt = beglt; lt < endlt; ++lt) {
         if (lt != lt_for_water) {
           if (fr_lnduse[lt] && (sfc_temp > tmelt) && has_dew) {
@@ -376,7 +375,7 @@ void calculate_resistance_rlux(
           }
         }
       }
-    } else if (ispec == so2_ndx) {
+    } else if (ispec == drydep_data.so2_ndx) {
       for (int lt = beglt; lt < endlt; ++lt) {
         if (lt != lt_for_water) {
           if (fr_lnduse[lt]) {
@@ -443,7 +442,7 @@ void calculate_gas_drydep_vlc_and_flux(
         //-------------------------------------------------------------------------------------
         //  ... compute average deposition velocity
         //-------------------------------------------------------------------------------------
-        if (ispec == so2_ndx) {
+        if (ispec == drydep_data.so2_ndx) {
           if (lt == lt_for_water) {
             if (fr_lnduse[lt]) {
               // assume no surface resistance for SO2 over water

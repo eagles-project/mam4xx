@@ -46,7 +46,10 @@ struct Data {
   DeviceType::view_1d<bool> has_dvel; // shape=(gas_pcnst)
   // This array maps species indices to dry deposition indices. These
   // dry deposition indices count range from 0 to n_drydep-1.
-  DeviceType::view_1d<Real> map_dvel; // shape=(gas_pcnst)
+  DeviceType::view_1d<int> map_dvel; // shape=(gas_pcnst)
+
+  // the constituent index corresponding to SO2 gas (or -1 if not present)
+  int so2_ndx;
 };
 
 // This function computes the H coefficients corresponding to the given surface
