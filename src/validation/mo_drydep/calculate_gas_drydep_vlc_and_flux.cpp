@@ -64,24 +64,24 @@ void calculate_gas_drydep_vlc_and_flux(const seq_drydep::Data &data,
     View1DHost dep_rb_h((Real *)dep_rb.data(), n_land_type);
     Kokkos::deep_copy(dep_rb_d, dep_rb_h);
 
-    View1D rsmx_d("dep_rb", gas_pcnst * n_land_type);
+    View1D rsmx_d("rsmx", gas_pcnst * n_land_type);
     View1DHost rsmx_h((Real *)rsmx.data(), gas_pcnst * n_land_type);
     Kokkos::deep_copy(rsmx_d, rsmx_h);
 
-    View1D rlux_d("dep_rb", gas_pcnst * n_land_type);
+    View1D rlux_d("rlux", gas_pcnst * n_land_type);
     View1DHost rlux_h((Real *)rlux.data(), gas_pcnst * n_land_type);
     Kokkos::deep_copy(rlux_d, rlux_h);
 
-    View1D rclx_d("dep_rb", gas_pcnst * n_land_type);
+    View1D rclx_d("rclx", gas_pcnst * n_land_type);
     View1DHost rclx_h((Real *)rclx.data(), gas_pcnst * n_land_type);
     Kokkos::deep_copy(rclx_d, rclx_h);
 
-    View1D rgsx_d("dep_rb", gas_pcnst * n_land_type);
+    View1D rgsx_d("rgsx", gas_pcnst * n_land_type);
     View1DHost rgsx_h((Real *)rgsx.data(), gas_pcnst * n_land_type);
     Kokkos::deep_copy(rgsx_d, rgsx_h);
 
-    View1D dvel_d("dvel", n_land_type);
-    View1D dflx_d("dflx", n_land_type);
+    View1D dvel_d("dvel", gas_pcnst);
+    View1D dflx_d("dflx", gas_pcnst);
 
     auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
@@ -107,13 +107,13 @@ void calculate_gas_drydep_vlc_and_flux(const seq_drydep::Data &data,
               dflx_d.data());
         });
 
-    std::vector<Real> dvel(n_land_type);
-    auto dvel_h = View1DHost((Real *)dvel.data(), n_land_type);
+    std::vector<Real> dvel(gas_pcnst);
+    auto dvel_h = View1DHost((Real *)dvel.data(), gas_pcnst);
     Kokkos::deep_copy(dvel_h, dvel_d);
     output.set("dvel", dvel);
 
-    std::vector<Real> dflx(n_land_type);
-    auto dflx_h = View1DHost((Real *)dflx.data(), n_land_type);
+    std::vector<Real> dflx(gas_pcnst);
+    auto dflx_h = View1DHost((Real *)dflx.data(), gas_pcnst);
     Kokkos::deep_copy(dflx_h, dflx_d);
     output.set("dflx", dflx);
   });

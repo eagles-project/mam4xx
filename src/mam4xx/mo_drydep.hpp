@@ -65,7 +65,8 @@ void calculate_uustar(
   //-------------------------------------------------------------------------------------
   Real ustarb;
   if (unstable) {
-    Real bb = 9.4 * (cvarb * cvarb) * haero::sqrt(haero::abs(ribn) * zl / z0b);
+    Real bb =
+        9.4 * haero::square(cvarb) * haero::sqrt(haero::abs(ribn) * zl / z0b);
     ustarb =
         cvarb * va *
         haero::sqrt(1.0 - (9.4 * ribn / (1.0 + 7.4 * bb))); // BAD_CONSTANTS
@@ -93,16 +94,15 @@ void calculate_ustar(
   //-------------------------------------------------------------------------------------
   for (int lt = beglt; lt <= endlt; ++lt) {
     if (fr_lnduse[lt]) { // BAD_CONSTANTS
+      cvar[lt] = karman / haero::log(zl / z0(index_season[lt], lt));
       if (unstable) {
-        cvar[lt] = karman / haero::log(zl / z0(index_season[lt], lt));
-        bycp[lt] = 9.4 * haero::square(cvar[lt] *
-                                       haero::sqrt(haero::abs(ribn) * zl /
-                                                   z0(index_season[lt], lt)));
+        bycp[lt] =
+            9.4 * haero::square(cvar[lt]) *
+            haero::sqrt(haero::abs(ribn) * zl / z0(index_season[lt], lt));
         ustar[lt] = haero::sqrt(
             cvar[lt] * uustar *
             haero::sqrt(1.0 - (9.4 * ribn / (1.0 + 7.4 * bycp[lt]))));
       } else {
-        cvar[lt] = karman / haero::log(zl / z0(index_season[lt], lt));
         ustar[lt] = haero::sqrt(cvar[lt] * uustar / (1.0 + 4.7 * ribn));
       }
     }
@@ -633,19 +633,19 @@ void drydep_xactive(
                    lcl_frc_landuse, va, zl, ribn, uustar);
 
   Real ustar[n_land_type], cvar[n_land_type], bycp[n_land_type];
-  calculate_ustar(drydep_data, 0, n_land_type, index_season, fr_lnduse,
+  calculate_ustar(drydep_data, 0, n_land_type - 1, index_season, fr_lnduse,
                   unstable, zl, uustar, ribn, ustar, cvar, bycp);
 
-  calculate_ustar_over_water(0, n_land_type, index_season, fr_lnduse, unstable,
-                             zl, uustar, ribn, ustar, cvar, bycp);
+  calculate_ustar_over_water(0, n_land_type - 1, index_season, fr_lnduse,
+                             unstable, zl, uustar, ribn, ustar, cvar, bycp);
 
   Real obklen[n_land_type];
-  calculate_obukhov_length(0, n_land_type, fr_lnduse, unstable, tha, thg, ustar,
-                           cvar, va, bycp, ribn, obklen);
+  calculate_obukhov_length(0, n_land_type - 1, fr_lnduse, unstable, tha, thg,
+                           ustar, cvar, va, bycp, ribn, obklen);
 
   Real dep_ra[n_land_type], dep_rb[n_land_type];
   calculate_aerodynamic_and_quasilaminar_resistance(
-      0, n_land_type, fr_lnduse, zl, obklen, ustar, cvar, dep_ra, dep_rb);
+      0, n_land_type - 1, fr_lnduse, zl, obklen, ustar, cvar, dep_ra, dep_rb);
 
   //-------------------------------------------------------------------------------------
   // surface resistance : depends on both land type and species
@@ -656,22 +656,22 @@ void drydep_xactive(
   // compute rsmx = 1/(rs+rm) : multiply by 3 if surface is wet
   //-------------------------------------------------------------------------------------
   Real cts, rgsx[gas_pcnst][n_land_type], rsmx[gas_pcnst][n_land_type];
-  calculate_resistance_rgsx_and_rsmx(drydep_data, 0, n_land_type, index_season,
-                                     fr_lnduse, has_rain, has_dew, tc, heff,
-                                     crs, cts, rgsx, rsmx);
+  calculate_resistance_rgsx_and_rsmx(drydep_data, 0, n_land_type - 1,
+                                     index_season, fr_lnduse, has_rain, has_dew,
+                                     tc, heff, crs, cts, rgsx, rsmx);
 
   Real rclx[gas_pcnst][n_land_type];
-  calculate_resistance_rclx(drydep_data, 0, n_land_type, index_season,
+  calculate_resistance_rclx(drydep_data, 0, n_land_type - 1, index_season,
                             fr_lnduse, heff, cts, rclx);
 
   Real rlux[gas_pcnst][n_land_type];
-  calculate_resistance_rlux(drydep_data, 0, n_land_type, index_season,
+  calculate_resistance_rlux(drydep_data, 0, n_land_type - 1, index_season,
                             fr_lnduse, has_rain, has_dew, sfc_temp, qs,
                             spec_hum, heff, cts, rlux);
 
   Real term = 1e-2 * pressure_10m / (rair * tv); // BAD_CONSTANT
   calculate_gas_drydep_vlc_and_flux(
-      drydep_data, 0, n_land_type, index_season, fr_lnduse, lcl_frc_landuse,
+      drydep_data, 0, n_land_type - 1, index_season, fr_lnduse, lcl_frc_landuse,
       mmr, dep_ra, dep_rb, term, rsmx, rlux, rclx, rgsx, rdc, dvel, dflx);
 }
 

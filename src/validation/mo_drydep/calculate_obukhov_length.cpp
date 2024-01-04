@@ -18,9 +18,9 @@ void calculate_obukhov_length(Ensemble *ensemble) {
     const int beglt = int(input.get_array("beglt")[0]) - 1;
     const int endlt = int(input.get_array("endlt")[0]) - 1;
     const auto fr_lnduse = input.get_array("fr_lnduse");
-    const bool unstable = static_cast<bool>(input.get("unstable"));
+    const bool unstable = static_cast<bool>(input.get_array("unstable")[0]);
     const Real tha = input.get_array("tha")[0];
-    const Real thg = input.get_array("tha")[0];
+    const Real thg = input.get_array("thg")[0];
     const auto ustar = input.get_array("ustar");
     const auto cvar = input.get_array("cvar");
     const Real va = input.get_array("va")[0];
@@ -47,6 +47,7 @@ void calculate_obukhov_length(Ensemble *ensemble) {
     Kokkos::deep_copy(bycp_d, bycp_h);
 
     View1D obklen_d("obklen", n_land_type);
+    Kokkos::deep_copy(obklen_d, 0);
 
     auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
