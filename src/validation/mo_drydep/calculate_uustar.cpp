@@ -20,7 +20,7 @@ void calculate_uustar(const seq_drydep::Data &data, Ensemble *ensemble) {
 
     const auto index_season = input.get_array("index_season");
     const auto fr_lnduse = input.get_array("fr_lnduse");
-    const bool unstable = static_cast<bool>(input.get("unstable"));
+    const bool unstable = static_cast<bool>(input.get_array("unstable")[0]);
     const auto lcl_frc_landuse = input.get_array("lcl_frc_landuse");
     const Real va = input.get_array("va")[0];
     const Real zl = input.get_array("zl")[0];
