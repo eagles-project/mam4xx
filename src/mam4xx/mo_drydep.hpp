@@ -15,8 +15,8 @@
 namespace mam4::mo_drydep {
 
 constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
-constexpr int n_land_type = 11; // from eam/src/chemistry/mozart/mo_drydep.F90
-constexpr int lt_for_water = 7; // from eam/src/chemistry/mozart/mo_drydep.F90
+constexpr int n_land_type = mam4::seq_drydep::NLUse;
+constexpr int lt_for_water = 6; // from eam/src/chemistry/mozart/mo_drydep.F90
 constexpr int NSeas = mam4::seq_drydep::NSeas;
 
 // BAD_CONSTANTS
@@ -285,7 +285,7 @@ void calculate_resistance_rclx(
             // BAD_CONSTANT
             rclx[ispec][lt] =
                 cts + 1.0 / ((heff[idx_drydep] / (1e5 * rcls(sndx, lt))) +
-                             (foxd(idx_drydep) / rclo(sndx, lt)));
+                             foxd(idx_drydep) / rclo(sndx, lt));
           }
         }
       }
@@ -405,8 +405,7 @@ void calculate_resistance_rlux(
 
 KOKKOS_INLINE_FUNCTION
 void calculate_gas_drydep_vlc_and_flux(
-    const seq_drydep::Data &drydep_data, const int beglt,
-    const int endlt, // land type index endpoints
+    const seq_drydep::Data &drydep_data, const int beglt, const int endlt,
     const int index_season[n_land_type], const bool fr_lnduse[n_land_type],
     const Real lcl_frc_landuse[n_land_type],
     const Real mmr[gas_pcnst],      // constituent mmrs at surface [kg/kg]

@@ -34,6 +34,14 @@ void calculate_gas_drydep_vlc_and_flux(const seq_drydep::Data &data,
     const auto rgsx = input.get_array("rgsx");
     const Real rdc = input.get_array("rdc")[0];
 
+    /*
+    // FIXME: this is for helping to debug the rac array
+    const auto rac = input.get_array("rac");
+    using View2DHost = typename HostType::view_2d<Real>;
+    View2DHost rac_h((Real*)rac.data(), mam4::seq_drydep::NSeas,
+    mam4::seq_drydep::NLUse); Kokkos::deep_copy(data.rac, rac_h);
+    */
+
     ViewInt1DHost index_season_h("index_season", n_land_type);
     for (int lt = 0; lt < n_land_type; ++lt) {
       index_season_h(lt) = int(index_season[lt]);
