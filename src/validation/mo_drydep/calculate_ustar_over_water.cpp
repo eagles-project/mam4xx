@@ -22,7 +22,7 @@ void calculate_ustar_over_water(Ensemble *ensemble) {
     const int endlt = int(input.get_array("endlt")[0]) - 1;
     const auto index_season = input.get_array("index_season");
     const auto fr_lnduse = input.get_array("fr_lnduse");
-    const bool unstable = static_cast<bool>(input.get("unstable"));
+    const bool unstable = static_cast<bool>(input.get_array("unstable")[0]);
     const Real zl = input.get_array("zl")[0];
     const Real uustar = input.get_array("uustar")[0];
     const Real ribn = input.get_array("ribn")[0];
