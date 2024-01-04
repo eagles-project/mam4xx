@@ -11,6 +11,9 @@ constexpr int maxspc = 210;
 // number of seasons
 constexpr int NSeas = 5;
 
+// number of land use types
+constexpr int NLUse = 11;
+
 //=========================================
 // data for E3SM dry deposition of tracers
 //=========================================
