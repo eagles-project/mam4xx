@@ -431,9 +431,9 @@ void calculate_gas_drydep_vlc_and_flux(
       Real resc, lnd_frc;
       for (int lt = beglt; lt <= endlt; ++lt) {
         if (fr_lnduse[lt]) {
-          resc = 1.0 / (1.0 / rsmx[ispec][lt] + 1.0 / rlux[ispec][lt]) +
-                 1.0 / (rdc + rclx[ispec][lt]) +
-                 1.0 / (rac(index_season[lt], lt) + rgsx[ispec][lt]);
+          resc = 1.0 / (1.0 / rsmx[ispec][lt] + 1.0 / rlux[ispec][lt] +
+                           1.0 / (rdc + rclx[ispec][lt]) +
+                           1.0 / (rac(index_season[lt], lt) + rgsx[ispec][lt]));
           resc = haero::max(10.0, resc);
           lnd_frc = lcl_frc_landuse[lt];
         }
