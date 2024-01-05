@@ -78,6 +78,7 @@ mam4::seq_drydep::Data create_drydep_data() {
   View1DHost drat_h(drat_a, n_drydep);
   Kokkos::deep_copy(data.drat, drat_h);
 
+
   Real foxd_a[n_drydep] = {1.0, 1e-36, 1e-36};
   View1DHost foxd_h(foxd_a, n_drydep);
   Kokkos::deep_copy(data.foxd, foxd_h);
@@ -94,8 +95,8 @@ mam4::seq_drydep::Data create_drydep_data() {
                    300.0,  200.0,  100.0,   50.0,  200.0,
                    150.0,  120.0,   50.0,   10.0,   60.0,
                    200.0,  140.0,  120.0,  50.0,   120.0};
-  View2DHost rac_h(rac_a, NSeas, NLUse);
-  Kokkos::deep_copy(data.rac, rac_h);
+  mam4::validation::convert_1d_real_to_2d_view_device(rac_a, data.rac);
+
 
   Real rclo_a[] = {1e+36,   1e+36,  1e+36,  1e+36,  1e+36,
                    1000.0,  400.0, 1000.0, 1000.0, 1000.0,
@@ -108,8 +109,7 @@ mam4::seq_drydep::Data create_drydep_data() {
                    1000.0,  400.0,  800.0,  800.0,  600.0,
                    1000.0,  400.0,  600.0, 1000.0,  800.0,
                    1000.0,  400.0,  600.0,  800.0,  800.0};
-  View2DHost rclo_h(rclo_a, NSeas, NLUse);
-  Kokkos::deep_copy(data.rclo, rclo_h);
+  mam4::validation::convert_1d_real_to_2d_view_device(rclo_a, data.rclo);
 
   Real rcls_a[] = { 1e+36,  1e+36,  1e+36,  1e+36,  1e+36,
                    2000.0, 9000.0,  1e+36,  1e+36, 4000.0,
@@ -122,8 +122,7 @@ mam4::seq_drydep::Data create_drydep_data() {
                    2500.0, 9000.0, 9000.0, 9000.0, 4000.0,
                    2000.0, 9000.0, 9000.0,  1e+36, 4000.0,
                    4000.0, 9000.0, 9000.0, 9000.0, 8000.0};
-  View2DHost rcls_h(rcls_a, NSeas, NLUse);
-  Kokkos::deep_copy(data.rcls, rcls_h);
+  mam4::validation::convert_1d_real_to_2d_view_device(rcls_a, data.rcls);
 
   Real rgso_a[] = { 300.0,  300.0,  300.0,  600.0,  300.0,
                     150.0,  150.0,  150.0, 3500.0,  150.0,
@@ -135,8 +134,7 @@ mam4::seq_drydep::Data create_drydep_data() {
                    1000.0,  800.0, 1000.0, 3500.0, 1000.0,
                     180.0,  180.0,  180.0, 3500.0,  180.0,
                     200.0,  200.0,  200.0, 3500.0,  200.0};
-  View2DHost rgso_h(rgso_a, NSeas, NLUse);
-  Kokkos::deep_copy(data.rgso, rgso_h);
+  mam4::validation::convert_1d_real_to_2d_view_device(rgso_a, data.rgso);
 
   Real rgss_a[] = { 400.0,  400.0,  400.0,  100.0,  500.0,
                     150.0,  200.0,  150.0,  100.0,  150.0,
@@ -149,8 +147,8 @@ mam4::seq_drydep::Data create_drydep_data() {
                       1.0,    1.0,    1.0,  100.0,    1.0,
                     220.0,  300.0,  200.0,  100.0,  250.0,
                     400.0,  400.0,  400.0,   50.0,  400.0};
-  View2DHost rgss_h(rgss_a, NSeas, NLUse);
-  Kokkos::deep_copy(data.rgss, rgss_h);
+
+  mam4::validation::convert_1d_real_to_2d_view_device(rgss_a, data.rgss);
 
   Real ri_a[] = {1e+36, 1e+36, 1e+36, 1e+36, 1e+36,
                   60.0, 1e+36, 1e+36, 1e+36, 120.0,
@@ -163,8 +161,7 @@ mam4::seq_drydep::Data create_drydep_data() {
                   80.0, 1e+36, 1e+36, 1e+36, 160.0,
                  100.0, 1e+36, 1e+36, 1e+36, 200.0,
                  150.0, 1e+36, 1e+36, 1e+36, 300.0};
-  View2DHost ri_h(ri_a, NSeas, NLUse);
-  Kokkos::deep_copy(data.ri, ri_h);
+  mam4::validation::convert_1d_real_to_2d_view_device(ri_a, data.ri);
 
   Real rlu_a[] = { 1e+36,  1e+36,  1e+36,  1e+36,  1e+36,
                   2000.0, 9000.0,  1e+36,  1e+36, 4000.0,
@@ -177,8 +174,7 @@ mam4::seq_drydep::Data create_drydep_data() {
                   2500.0, 9000.0, 9000.0, 9000.0, 4000.0,
                   2000.0, 9000.0, 9000.0, 9000.0, 4000.0,
                   4000.0, 9000.0, 9000.0, 9000.0, 8000.0};
-  View2DHost rlu_h(rlu_a, NSeas, NLUse);
-  Kokkos::deep_copy(data.rlu, rlu_h);
+  mam4::validation::convert_1d_real_to_2d_view_device(rlu_a, data.rlu);
 
   Real z0_a[] = {   1.0,    1.0,    1.0,    1.0,    1.0,
                    0.25,    0.1,  0.005,  0.001,   0.03,
@@ -191,8 +187,7 @@ mam4::seq_drydep::Data create_drydep_data() {
                    0.15,    0.1,    0.1,  0.001,   0.01,
                     0.1,   0.08,   0.02,  0.001,   0.03,
                     0.1,   0.08,   0.06,   0.04,   0.06};
-  View2DHost z0_h(z0_a, NSeas, NLUse);
-  Kokkos::deep_copy(data.z0, z0_h);
+  mam4::validation::convert_1d_real_to_2d_view_device(z0_a, data.z0);
   // clang-format on
 
   // initialize has_dvel and map_dvel views from namelist-like values similar
@@ -214,6 +209,15 @@ mam4::seq_drydep::Data create_drydep_data() {
   has_dvel_a[3] = true;            // SO2
   ViewBool1DHost has_dvel_h(has_dvel_a, gas_pcnst);
   Kokkos::deep_copy(data.has_dvel, has_dvel_h);
+
+  // for (int i = 0; i < gas_pcnst; ++i)
+  // {
+  //   if (has_dvel_a[i]){
+  //     printf("has_dvel_a is true \n");
+  //   } else {
+
+  //   }printf("has_dvel_a is false \n");
+  // }
 
   // map_dvel maps indices of species in solsym to those in drydep_list
   int map_dvel_a[gas_pcnst] = {};

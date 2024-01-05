@@ -115,6 +115,10 @@ void convert_3d_view_device_to_1d_vector(const View3D &var_device,
 ColumnView get_input_in_columnview(const skywalker::Input &input,
                                    const std::string &name);
 
+
+void convert_1d_real_to_2d_view_device(const Real  var_std[],
+                                       const View2D &var_device);
+
 } // namespace validation
 } // namespace mam4
 
