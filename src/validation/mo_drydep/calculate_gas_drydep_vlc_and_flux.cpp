@@ -45,8 +45,8 @@ void calculate_gas_drydep_vlc_and_flux(const seq_drydep::Data &data,
 
     ViewInt1DHost index_season_h("index_season", n_land_type);
     for (int lt = 0; lt < n_land_type; ++lt) {
-      // Fortran to C++ indexing 
-      index_season_h(lt) = int(index_season[lt])-1;
+      // Fortran to C++ indexing
+      index_season_h(lt) = int(index_season[lt]) - 1;
     }
     ViewInt1D index_season_d("index_season", n_land_type);
     Kokkos::deep_copy(index_season_d, index_season_h);
@@ -68,8 +68,8 @@ void calculate_gas_drydep_vlc_and_flux(const seq_drydep::Data &data,
 
     View2D mmr_view("mmr_view", mam4::ndrop::pver, gas_pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(mmr, mmr_view);
-    const auto mmr_d = Kokkos::subview(mmr_view, mam4::ndrop::pver-1, Kokkos::ALL);    
-
+    const auto mmr_d =
+        Kokkos::subview(mmr_view, mam4::ndrop::pver - 1, Kokkos::ALL);
 
     View1D dep_ra_d("dep_ra", n_land_type);
     View1DHost dep_ra_h((Real *)dep_ra.data(), n_land_type);
@@ -102,16 +102,15 @@ void calculate_gas_drydep_vlc_and_flux(const seq_drydep::Data &data,
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           // shuffle data rsmx, rlux, rclx, rgsx arrays
-    
-         
-        Real rsmx[gas_pcnst][n_land_type];
+
+          Real rsmx[gas_pcnst][n_land_type];
           Real rlux[gas_pcnst][n_land_type];
           Real rclx[gas_pcnst][n_land_type];
           Real rgsx[gas_pcnst][n_land_type];
           int l = 0;
-          
-        for (int i = 0; i < gas_pcnst; ++i) {  
-        for (int lt = 0; lt < n_land_type; ++lt, ++l) {    
+
+          for (int i = 0; i < gas_pcnst; ++i) {
+            for (int lt = 0; lt < n_land_type; ++lt, ++l) {
               rsmx[i][lt] = rsmx_d(l);
               rlux[i][lt] = rlux_d(l);
               rclx[i][lt] = rclx_d(l);
@@ -123,10 +122,9 @@ void calculate_gas_drydep_vlc_and_flux(const seq_drydep::Data &data,
               lcl_frc_landuse_d.data(), mmr_d.data(), dep_ra_d.data(),
               dep_rb_d.data(), term, rsmx, rlux, rclx, rgsx, rdc, dvel_d.data(),
               dflx_d.data());
-        
         });
 
-    std::vector<Real> dvel(gas_pcnst,0.0);
+    std::vector<Real> dvel(gas_pcnst, 0.0);
     auto dvel_h = View1DHost((Real *)dvel.data(), gas_pcnst);
     Kokkos::deep_copy(dvel_h, dvel_d);
     output.set("dvel", dvel);
