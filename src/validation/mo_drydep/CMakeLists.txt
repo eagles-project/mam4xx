@@ -45,6 +45,7 @@ set(TEST_LIST
     calculate_ustar
     calculate_uustar
     drydep_xactive
+    stand_calculate_gas_drydep_vlc_and_flux_ts_100
     )
 
 set(DEFAULT_TOL 1e-11)
@@ -60,6 +61,7 @@ set(ERROR_THRESHOLDS
     ${DEFAULT_TOL} # calculate_ustar # FIXME: still off by too much
     ${DEFAULT_TOL} # calculate_uustar FIXME: still off by too much
     ${DEFAULT_TOL} # drydep_xactive FIXME: needs work, including reading data from fraction_landuse file!
+    ${DEFAULT_TOL}
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
