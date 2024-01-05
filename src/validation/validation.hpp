@@ -149,6 +149,10 @@ void convert_1d_vector_to_3d_view_device(const std::vector<Real> &pmid_db,
 // to 1D std::vector
 void convert_3d_view_device_to_1d_vector(const View3D &var_device,
                                          std::vector<Real> &var_std);
+
+void convert_1d_real_to_2d_view_device(const Real  var_std[],
+                                       const View2D &var_device);
+
 } // namespace validation
 } // namespace mam4
 
