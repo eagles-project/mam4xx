@@ -145,7 +145,6 @@ void convert_1d_real_to_2d_view_device(const Real var_std[],
   Kokkos::deep_copy(var_device, host);
 }
 
-
 void convert_2d_view_device_to_1d_vector(const View2D &var_device,
                                          std::vector<Real> &var_std) {
   auto host = Kokkos::create_mirror_view(var_device);

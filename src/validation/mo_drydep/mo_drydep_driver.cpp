@@ -78,7 +78,6 @@ mam4::seq_drydep::Data create_drydep_data() {
   View1DHost drat_h(drat_a, n_drydep);
   Kokkos::deep_copy(data.drat, drat_h);
 
-
   Real foxd_a[n_drydep] = {1.0, 1e-36, 1e-36};
   View1DHost foxd_h(foxd_a, n_drydep);
   Kokkos::deep_copy(data.foxd, foxd_h);
