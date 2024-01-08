@@ -15,8 +15,8 @@ namespace mo_photo {
 constexpr int pver = mam4::nlev;
 constexpr int pverm = pver - 1;
 
-using View5D = Kokkos::View<Real *****>;
-using View4D = Kokkos::View<Real ****>;
+using View5D = DeviceType::view_ND<Real, 5>;
+using View4D = DeviceType::view_ND<Real, 4>;
 using View2D = DeviceType::view_2d<Real>;
 using View1D = DeviceType::view_1d<Real>;
 using ViewInt1D = DeviceType::view_1d<int>;
