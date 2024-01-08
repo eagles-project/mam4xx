@@ -21,8 +21,9 @@ endif()
 # Configurable options
 #----------------------
 
-option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
+option(ENABLE_COVERAGE  "Enable code coverage instrumentation" OFF)
 option(ENABLE_SKYWALKER "Enable Skywalker cross validation" ON)
+option(ENABLE_TESTS     "Enable unit tests" ON)
 set(NUM_VERTICAL_LEVELS 72 CACHE STRING "the number of vertical levels per column")
 
 if (NUM_VERTICAL_LEVELS LESS 72)
@@ -98,15 +99,17 @@ if (ENABLE_COVERAGE)
     COMMAND ${LCOV_EXE} --remove unfiltered_coverage.info -o coverage.info '*/external/*' '*/tests/*' '*/validation/*'
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     COMMENT "Generating coverage report (coverage.info)")
-endif() 
+endif()
 
 # Support for valgrind (Linux only)
 include(add_memcheck_target)
 add_memcheck_target()
 
 # Testing
-include(CTest)
-enable_testing()
+if (ENABLE_TESTS OR ENABLE_SKYWALKER)
+  include(CTest)
+  enable_testing()
+endif()
 
 # Third-party libraries.
 add_subdirectory(ext)
