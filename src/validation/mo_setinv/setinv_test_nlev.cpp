@@ -53,46 +53,35 @@ void setinv_test_nlev(Ensemble *ensemble) {
     using View1DHost = typename HostType::view_1d<Real>;
     ColumnView invariants[nfs];
     View1DHost invariants_h[nfs];
-    ColumnView vmr[nspec];
-    View1DHost vmr_h[nspec];
-    ColumnView c_off[num_tracer_cnst];
-    View1DHost c_off_h[num_tracer_cnst];
-
     for (int i = 0; i < nfs; ++i) {
       invariants[i] = haero::testing::create_column_view(nlev);
       invariants_h[i] = Kokkos::create_mirror_view(invariants[i]);
     }
-    for (int i = 0; i < nspec; ++i) {
-      vmr[i] = haero::testing::create_column_view(nlev);
-      vmr_h[i] = Kokkos::create_mirror_view(vmr[i]);
-    }
-    for (int i = 0; i < num_tracer_cnst; ++i) {
-      c_off[i] = haero::testing::create_column_view(nlev);
-      c_off_h[i] = Kokkos::create_mirror_view(c_off[i]);
-    }
+
+    using View2D = DeviceType::view_2d<Real>;
+    using View2DHost = typename HostType::view_2d<Real>;
+    View2D vmr("vmr", nlev, nspec);
+    View2DHost vmr_h("vmr_h", nlev, nspec);
+    View2D c_off("c_off", nlev, num_tracer_cnst);
+    View2DHost c_off_h("c_off_h", nlev, num_tracer_cnst);
 
     for (int k = 0; k < nlev; ++k) {
       tfld_h(k) = tfld_in;
       h2ovmr_h(k) = h2ovmr_in;
       pmid_h(k) = pmid_in;
       for (int i = 0; i < nspec; ++i) {
-        vmr_h[i](k) = vmr_in[i];
+        vmr_h(k, i) = vmr_in[i];
       }
       for (int i = 0; i < num_tracer_cnst; ++i) {
-        c_off_h[i](k) = c_off_in[i];
+        c_off_h(k, i) = c_off_in[i];
       }
     }
 
     Kokkos::deep_copy(tfld, tfld_h);
     Kokkos::deep_copy(h2ovmr, h2ovmr_h);
     Kokkos::deep_copy(pmid, pmid_h);
-
-    for (int i = 0; i < nspec; ++i) {
-      Kokkos::deep_copy(vmr[i], vmr_h[i]);
-    }
-    for (int i = 0; i < num_tracer_cnst; ++i) {
-      Kokkos::deep_copy(c_off[i], c_off_h[i]);
-    }
+    Kokkos::deep_copy(vmr, vmr_h);
+    Kokkos::deep_copy(c_off, c_off_h);
 
     // Single-column dispatch.
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);

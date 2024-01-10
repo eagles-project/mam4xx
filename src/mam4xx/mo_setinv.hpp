@@ -13,6 +13,9 @@ namespace mo_setinv {
 constexpr int nfs = mam4::gas_chemistry::nfs;
 static const int num_tracer_cnst = 4;
 
+using View1D = DeviceType::view_1d<Real>;
+using View2D = DeviceType::view_2d<Real>;
+
 struct Config {
   // FIXME: BAD CONSTANTS!
   // conversion factor for Pascals to dyne/cm^2
@@ -114,6 +117,32 @@ void setinv(const ThreadTeam &team, const ColumnView invariants[nfs],
         }
         setinv_single_level(invariants_k, tfld_k, h2ovmr_k, vmr_k, pmid_k,
                             cnst_offline_k, setinv_config_);
+        for (int i = 0; i < nfs; ++i) {
+          invariants[i](k) = invariants_k[i];
+        }
+      }); // end kokkos::parfor(k)
+} // end setinv_nlev()
+
+KOKKOS_INLINE_FUNCTION
+void setinv(const ThreadTeam &team, const ColumnView invariants[nfs],
+            const ColumnView &tfld, const ColumnView &h2ovmr, const View2D &vmr,
+            const View2D &cnst_offline, const ColumnView &pmid) {
+
+  Config setinv_config_;
+  constexpr int nk = mam4::nlev;
+
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, nk), KOKKOS_LAMBDA(int k) {
+        const Real tfld_k = tfld(k);
+        const Real h2ovmr_k = h2ovmr(k);
+        const Real pmid_k = pmid(k);
+        Real invariants_k[nfs];
+        View1D vmr_k = Kokkos::subview(vmr, k, Kokkos::ALL());
+        View1D cnst_offline_k = Kokkos::subview(cnst_offline, k, Kokkos::ALL());
+
+        setinv_single_level(invariants_k, tfld_k, h2ovmr_k, vmr_k.data(),
+                            pmid_k, cnst_offline_k.data(), setinv_config_);
+
         for (int i = 0; i < nfs; ++i) {
           invariants[i](k) = invariants_k[i];
         }
