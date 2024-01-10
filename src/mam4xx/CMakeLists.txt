@@ -47,8 +47,9 @@ install(FILES
         mo_setsox.hpp
         tropopause.hpp
         modal_aer_opt.hpp
-        aer_rad_props.hpp 
-        modal_aero_calcsize.hpp 
+        aer_rad_props.hpp
+        modal_aero_calcsize.hpp
+        mo_setinv.hpp
         DESTINATION include/mam4xx)
 
 add_library(mam4xx aero_modes.cpp)
