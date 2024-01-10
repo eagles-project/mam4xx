@@ -20,8 +20,7 @@ struct Config {
   // FIXME: BAD CONSTANTS!
   // conversion factor for Pascals to dyne/cm^2
   Real Pa_xfac = 10.0;
-  // presumably, the boltzman constant, in CGS units
-  // NOTE: passed in via yaml input file for now
+  // presumably, the boltzmann constant, in CGS units
   Real boltz_cgs = 0.13806500000000001E-015;
   // NOTE: the indices (xyz_ndx) are translated to zero-indexed in the
   // constructor
