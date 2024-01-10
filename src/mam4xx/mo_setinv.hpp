@@ -4,12 +4,13 @@
 #include <haero/atmosphere.hpp>
 
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/mam4_types.hpp>
 
 namespace mam4 {
 namespace mo_setinv {
 // number of invariants
-static const int nfs = 8;
+constexpr int nfs = mam4::gas_chemistry::nfs;
 static const int num_tracer_cnst = 4;
 
 struct Config {

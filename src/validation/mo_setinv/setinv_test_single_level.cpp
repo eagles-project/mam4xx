@@ -37,14 +37,6 @@ void setinv_test_single_level(Ensemble *ensemble) {
     auto vmr = input.get_array("vmr");
     const Real pmid = input.get_array("pmid")[0];
     const int nfs = input.get_array("nfs")[0];
-    const Real boltz_cgs = input.get_array("boltz_cgs")[0];
-    const int has_n2 = input.get_array("has_n2")[0];
-    const int m_ndx = input.get_array("m_ndx")[0];
-    const int n2_ndx = input.get_array("n2_ndx")[0];
-    const int has_o2 = input.get_array("has_o2")[0];
-    const int o2_ndx = input.get_array("o2_ndx")[0];
-    const int has_h2o = input.get_array("has_h2o")[0];
-    const int h2o_ndx = input.get_array("h2o_ndx")[0];
     auto cnst_offline = input.get_array("cnst_offline_yaml");
 
     const mam4::mo_setinv::Config setinv_config_;
