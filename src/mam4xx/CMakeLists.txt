@@ -16,6 +16,7 @@ install(FILES
         calcsize.hpp
         conversions.hpp
         convproc.hpp
+        modal_aero_calcsize.hpp
         gasaerexch.hpp
         gasaerexch_soaexch.hpp
         gas_chem.hpp
