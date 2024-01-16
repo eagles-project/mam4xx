@@ -21,7 +21,13 @@ void air_kinematic_viscosity(Ensemble *ensemble) {
     auto temp = input.get("temp");
     auto pres = input.get("pres");
 
-    auto air_kinematic_viscosity = drydep::air_kinematic_viscosity(temp, pres);
+    Real air_kinematic_viscosity = 0;
+    Kokkos::parallel_reduce(
+        1,
+        KOKKOS_LAMBDA(const int, Real &vis) {
+          vis = drydep::air_kinematic_viscosity(temp, pres);
+        },
+        air_kinematic_viscosity);
 
     output.set("air_kinematic_viscosity", air_kinematic_viscosity);
   });
