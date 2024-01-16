@@ -661,12 +661,13 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
     auto d_cloud_ice_number_mixing_ratio = validation::create_column_view(nlev);
     auto d_height = validation::create_column_view(nlev);
     auto d_hydrostatic_dp = validation::create_column_view(nlev);
+    auto d_interface_pressure = validation::create_column_view(nlev+1);
     auto d_cloud_fraction = validation::create_column_view(nlev);
     auto d_updraft_vel_ice_nucleation = validation::create_column_view(nlev);
     Atmosphere atm(nlev, d_temperature, d_pressure, d_vapor_mixing_ratio,
                    d_liquid_mixing_ratio, d_cloud_liquid_number_mixing_ratio,
                    d_ice_mixing_ratio, d_cloud_ice_number_mixing_ratio,
-                   d_height, d_hydrostatic_dp, d_cloud_fraction,
+                   d_height, d_hydrostatic_dp, d_interface_pressure, d_cloud_fraction,
                    d_updraft_vel_ice_nucleation, pblh);
     Surface sfc = mam4::testing::create_surface();
 

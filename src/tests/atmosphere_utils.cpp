@@ -32,6 +32,7 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
   auto d_nice = haero::testing::create_column_view(num_levels);
   auto d_height = haero::testing::create_column_view(num_levels);
   auto d_hdp = haero::testing::create_column_view(num_levels);
+  auto d_intp = haero::testing::create_column_view(num_levels+1);
   auto d_cf = haero::testing::create_column_view(num_levels);
   auto d_w = haero::testing::create_column_view(num_levels);
   auto h_temperature = Kokkos::create_mirror_view(d_temperature);
@@ -39,6 +40,7 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
   auto h_mix = Kokkos::create_mirror_view(d_mix);
   auto h_height = Kokkos::create_mirror_view(d_height);
   auto h_hdp = Kokkos::create_mirror_view(d_hdp);
+  auto h_intp = Kokkos::create_mirror_view(d_intp);
 
   Real psum = hydrostatic_pressure_at_height(ztop, p0, Tv0, Gammav);
   for (int k = 0; k < num_levels; ++k) {
@@ -48,6 +50,7 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
     const Real p_up = hydrostatic_pressure_at_height(z_up, p0, Tv0, Gammav);
     const Real p_down = hydrostatic_pressure_at_height(z_down, p0, Tv0, Gammav);
     const Real hdp = p_down - p_up;
+    const Real intp = 0;
 
     const Real w = init_specific_humidity(z_mid, qv0, qv1);
     const Real qv = conversions::specific_humidity_from_vapor_mixing_ratio(w);
@@ -59,6 +62,7 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
     h_mix(k) = w;
     h_height(k) = z_mid;
     h_hdp(k) = hdp;
+    h_intp(k) = intp;
 
     psum += hdp;
   }
@@ -72,9 +76,10 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
   Kokkos::deep_copy(d_mix, h_mix);
   Kokkos::deep_copy(d_height, h_height);
   Kokkos::deep_copy(d_hdp, h_hdp);
+  Kokkos::deep_copy(d_intp, h_intp);
 
   Atmosphere atm(num_levels, d_temperature, d_pressure, d_mix, d_liq, d_nliq,
-                 d_ice, d_nice, d_height, d_hdp, d_cf, d_w, pblh);
+                 d_ice, d_nice, d_height, d_hdp, d_intp, d_cf, d_w, pblh);
 
   return atm;
 }
