@@ -39,7 +39,7 @@ set(TEST_LIST
 
 set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
-    ${DEFAULT_TOL}
+    9e-8 #this is due to using a more specific value for mass_h2o
     ${DEFAULT_TOL}
     ${DEFAULT_TOL} # output is an int
     9e-3
