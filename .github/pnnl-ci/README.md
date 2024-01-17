@@ -58,6 +58,15 @@ This token is set to expire in one year, and someone will need to ensure that th
 
 https://code.pnnl.gov/help/user/project/repository/mirror/pull.md - make sure that when you create the PAT for this integration, that you use `write` as the scope, so that GitHub actions can write to the PNNL GitLab with updates as they are added.
 
+**Update:** 
+
+Jaelyn Litzinger has updated this to her PAT, set to expire Feb 2025. Followed instructions [here](https://docs.gitlab.com/ee/ci/ci_cd_for_external_repos/github_integration.html) under "Connect manually".
+
+In Summary:
+1. in [GitHub](https://github.com/settings/tokens/new), generate a Personal Access Token with permissions `repo` and `admin:repo_hook`
+2. have Owner permissions in GitLab
+3. in GitLab, go to Settings > Integrations > GitHub - paste your PAT in the new token field, test settings to see if connection is successful, then save changes.
+
 ## Pipeline Trigger Token
 
 You will need to setup up a pipeline trigger token in order to allow GitHub acitons to trigger CI pipelines.

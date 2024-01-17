@@ -43,8 +43,6 @@ constexpr int prefi = 10;
 
 // BAD CONSTANT
 constexpr Real small_value_40 = 1.e-40;
-// BAD CONSTANT
-constexpr Real small_value_60 = 1.e-60;
 
 // Density of liquid water (STP)
 constexpr Real rhoh2o = haero::Constants::density_h2o;
@@ -414,7 +412,7 @@ also output wetvol and watervol
 
     crefin += watervol * crefwsw(ilwsw);
     // BAD CONTANT
-    crefin /= haero::max(wetvol, small_value_60);
+    crefin /= haero::max(wetvol, small_value_40);
 
   } // lwsw=='lw'
   // FIXME
