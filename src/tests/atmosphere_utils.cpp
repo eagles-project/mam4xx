@@ -50,7 +50,7 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
     const Real p_up = hydrostatic_pressure_at_height(z_up, p0, Tv0, Gammav);
     const Real p_down = hydrostatic_pressure_at_height(z_down, p0, Tv0, Gammav);
     const Real hdp = p_down - p_up;
-    const Real intp = 0;
+    const Real intp = (p_up+p_down)/2;
 
     const Real w = init_specific_humidity(z_mid, qv0, qv1);
     const Real qv = conversions::specific_humidity_from_vapor_mixing_ratio(w);
