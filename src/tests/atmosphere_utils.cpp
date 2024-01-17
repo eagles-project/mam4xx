@@ -32,7 +32,7 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
   auto d_nice = haero::testing::create_column_view(num_levels);
   auto d_height = haero::testing::create_column_view(num_levels);
   auto d_hdp = haero::testing::create_column_view(num_levels);
-  auto d_intp = haero::testing::create_column_view(num_levels+1);
+  auto d_intp = haero::testing::create_column_view(num_levels + 1);
   auto d_cf = haero::testing::create_column_view(num_levels);
   auto d_w = haero::testing::create_column_view(num_levels);
   auto h_temperature = Kokkos::create_mirror_view(d_temperature);
@@ -50,7 +50,7 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
     const Real p_up = hydrostatic_pressure_at_height(z_up, p0, Tv0, Gammav);
     const Real p_down = hydrostatic_pressure_at_height(z_down, p0, Tv0, Gammav);
     const Real hdp = p_down - p_up;
-    const Real intp = (p_up+p_down)/2;
+    const Real intp = (p_up + p_down) / 2;
 
     const Real w = init_specific_humidity(z_mid, qv0, qv1);
     const Real qv = conversions::specific_humidity_from_vapor_mixing_ratio(w);
