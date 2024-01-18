@@ -63,7 +63,9 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
     h_height(k) = z_mid;
     h_hdp(k) = hdp;
     h_intp(k) = intp;
-
+    // Fix the pressure on the last level.
+    if (k == num_levels - 1)
+      h_intp(num_levels) = intp + hdp / 2;
     psum += hdp;
   }
 
