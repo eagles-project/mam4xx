@@ -1180,6 +1180,73 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt, const View2D &state_q,
       });
 } // modal_aero_lw
 
+KOKKOS_INLINE_FUNCTION
+void modal_aero_lw(const ThreadTeam &team, const Real dt,
+                   const mam4::Prognostics &progs,
+                   const ConstColumnView &temperature,
+                   const ConstColumnView &pmid, const ConstColumnView &pdel,
+                   const ConstColumnView &pdeldry, const ConstColumnView &cldn,
+                   // parameters
+                   const AerosolOpticsDeviceData &aersol_optics_data,
+                   // output
+                   const View2D &tauxar) {
+
+  //
+  // calculates aerosol lw radiative properties
+
+  // dt       ! time step [s]
+  // state_q(:,:,:)   ! water and tracers (state%q) in state [kg/kg]
+  // temperature(:,:) ! temperature [K]
+  // pmid(:,:)        ! mid-point pressure [Pa]
+  // pdel(:,:)        ! pressure interval [Pa]
+  // pdeldry(:,:)     ! dry mass pressure interval [Pa]
+  // cldn(:,:)        ! layer cloud fraction [fraction]
+
+  // qqcw(:)               ! Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
+  // tauxar(pcols,pver,nlwbands) ! layer absorption optical depth
+  constexpr int gas_pcnst =   mam4::gas_chemistry::gas_pcnst; 
+
+  constexpr Real zero = 0.0;
+  // dry mass in each cell
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, pver), [&](int kk) {
+    // initialize output variables
+    for (int i = 0; i < nlwbands; ++i) {
+      tauxar(i, kk) = zero;
+    }
+  });
+  team.team_barrier();
+
+  // inputs
+
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, top_lev, pver), [&](int kk) {
+        Real cldn_kk = cldn(kk);
+
+        Real state_q[gas_pcnst] = {};
+        Real qqcw[gas_pcnst] = {};
+        utils::transfer_prognostics_to_work_arrays(progs, kk,state_q, qqcw );
+        
+        Real tauxar_kkp[ntot_amode] = {};
+
+        modal_aero_lw_k(pdeldry(kk), pmid(kk), temperature(kk), cldn_kk,
+                        state_q, // in
+                        qqcw,     // in
+                        dt, aersol_optics_data,
+                        // outputs
+                        tauxar_kkp);
+
+        for (int imode = 0; imode < ntot_amode; ++imode)
+        {
+          tauxar(imode,kk) = tauxar_kkp[imode]; 
+        }
+
+        // FIXME: we need to copy values from state_q and qqcw to progs
+
+      });
+} // modal_aero_lw
+
+
+
 } // namespace modal_aer_opt
 
 } // end namespace mam4
