@@ -976,6 +976,9 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
                                        dt, aersol_optics_data,
                                        // outputs
                                        tauxar_kkp, wa_kkp, ga_kkp, fa_kkp);
+
+
+        // FIXME: we need to copy values from state_q and qqcw to progs
       });
 
   team.team_barrier();
