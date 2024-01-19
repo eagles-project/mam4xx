@@ -24,8 +24,6 @@ Real min_max_bound(const Real &low, const Real &high, const Real &num) {
   return max(low, min(high, num));
 }
 
-
-
 // number of constituents in gas chemistry "work arrays"
 KOKKOS_INLINE_FUNCTION
 constexpr int gas_pcnst() {
@@ -38,50 +36,55 @@ constexpr int gas_pcnst() {
 // these constants where needed within two such functions so we don't define
 // them inconsistently. Yes, it's the 21st century and we're still struggling
 // with these basic things.
-#define DECLARE_PROG_TRANSFER_CONSTANTS \
-  /* mapping of constituent indices to aerosol modes */ \
-  const auto Accum = mam4::ModeIndex::Accumulation; \
-  const auto Aitken = mam4::ModeIndex::Aitken; \
-  const auto Coarse = mam4::ModeIndex::Coarse; \
-  const auto PC = mam4::ModeIndex::PrimaryCarbon; \
-  const auto NoMode = mam4::ModeIndex::None; \
-  static const mam4::ModeIndex mode_for_cnst[gas_pcnst()] = { \
-    NoMode, NoMode, NoMode, NoMode, NoMode, NoMode, /* gases (not aerosols) */ \
-    Accum, Accum, Accum, Accum, Accum, Accum, Accum, Accum,         /* 7 aero species + NMR */ \
-    Aitken, Aitken, Aitken, Aitken, Aitken,                         /* 4 aero species + NMR */ \
-    Coarse, Coarse, Coarse, Coarse, Coarse, Coarse, Coarse, Coarse, /* 7 aero species + NMR */ \
-    PC, PC, PC, PC,                                                 /* 3 aero species + NMR */ \
-  }; \
-  /* mapping of constituent indices to aerosol species */ \
-  const auto SOA = mam4::AeroId::SOA; \
-  const auto SO4 = mam4::AeroId::SO4; \
-  const auto POM = mam4::AeroId::POM; \
-  const auto BC = mam4::AeroId::BC; \
-  const auto NaCl = mam4::AeroId::NaCl; \
-  const auto DST = mam4::AeroId::DST; \
-  const auto MOM = mam4::AeroId::MOM; \
-  const auto NoAero = mam4::AeroId::None; \
-  static const mam4::AeroId aero_for_cnst[gas_pcnst()] = { \
-    NoAero, NoAero, NoAero, NoAero, NoAero, NoAero, /* gases (not aerosols) */ \
-    SO4, POM, SOA, BC, DST, NaCl, MOM, NoAero,      /* accumulation mode */ \
-    SO4, SOA, NaCl, MOM, NoAero,                    /* aitken mode */ \
-    DST, NaCl, SO4, BC, POM, SOA, MOM, NoAero,      /* coarse mode */ \
-    POM, BC, MOM, NoAero,                           /* primary carbon mode */ \
-  }; \
-  /* mapping of constituent indices to gases */ \
-  const auto O3 = mam4::GasId::O3; \
-  const auto H2O2 = mam4::GasId::H2O2; \
-  const auto H2SO4 = mam4::GasId::H2SO4; \
-  const auto SO2 = mam4::GasId::SO2; \
-  const auto DMS = mam4::GasId::DMS; \
-  const auto SOAG = mam4::GasId::SOAG; \
-  const auto NoGas = mam4::GasId::None; \
-  static const mam4::GasId gas_for_cnst[gas_pcnst()] = { \
-    O3, H2O2, H2SO4, SO2, DMS, SOAG, \
-    NoGas, NoGas, NoGas, NoGas, NoGas, NoGas, NoGas, NoGas, \
-    NoGas, NoGas, NoGas, NoGas, NoGas, \
-    NoGas, NoGas, NoGas, NoGas, NoGas, NoGas, NoGas, NoGas, \
-    NoGas, NoGas, NoGas, NoGas, \
+#define DECLARE_PROG_TRANSFER_CONSTANTS                                        \
+  /* mapping of constituent indices to aerosol modes */                        \
+  const auto Accum = mam4::ModeIndex::Accumulation;                            \
+  const auto Aitken = mam4::ModeIndex::Aitken;                                 \
+  const auto Coarse = mam4::ModeIndex::Coarse;                                 \
+  const auto PC = mam4::ModeIndex::PrimaryCarbon;                              \
+  const auto NoMode = mam4::ModeIndex::None;                                   \
+  static const mam4::ModeIndex mode_for_cnst[gas_pcnst()] = {                  \
+      NoMode, NoMode, NoMode, NoMode, NoMode, NoMode, /* gases (not aerosols)  \
+                                                       */                      \
+      Accum,  Accum,  Accum,  Accum,  Accum,  Accum,                           \
+      Accum,  Accum,                          /* 7 aero species + NMR */       \
+      Aitken, Aitken, Aitken, Aitken, Aitken, /* 4 aero species + NMR */       \
+      Coarse, Coarse, Coarse, Coarse, Coarse, Coarse,                          \
+      Coarse, Coarse,             /* 7 aero species + NMR */                   \
+      PC,     PC,     PC,     PC, /* 3 aero species + NMR */                   \
+  };                                                                           \
+  /* mapping of constituent indices to aerosol species */                      \
+  const auto SOA = mam4::AeroId::SOA;                                          \
+  const auto SO4 = mam4::AeroId::SO4;                                          \
+  const auto POM = mam4::AeroId::POM;                                          \
+  const auto BC = mam4::AeroId::BC;                                            \
+  const auto NaCl = mam4::AeroId::NaCl;                                        \
+  const auto DST = mam4::AeroId::DST;                                          \
+  const auto MOM = mam4::AeroId::MOM;                                          \
+  const auto NoAero = mam4::AeroId::None;                                      \
+  static const mam4::AeroId aero_for_cnst[gas_pcnst()] = {                     \
+      NoAero, NoAero, NoAero, NoAero, NoAero, NoAero, /* gases (not aerosols)  \
+                                                       */                      \
+      SO4,    POM,    SOA,    BC,     DST,    NaCl,                            \
+      MOM,    NoAero,                         /* accumulation mode */          \
+      SO4,    SOA,    NaCl,   MOM,    NoAero, /* aitken mode */                \
+      DST,    NaCl,   SO4,    BC,     POM,    SOA,                             \
+      MOM,    NoAero,                 /* coarse mode */                        \
+      POM,    BC,     MOM,    NoAero, /* primary carbon mode */                \
+  };                                                                           \
+  /* mapping of constituent indices to gases */                                \
+  const auto O3 = mam4::GasId::O3;                                             \
+  const auto H2O2 = mam4::GasId::H2O2;                                         \
+  const auto H2SO4 = mam4::GasId::H2SO4;                                       \
+  const auto SO2 = mam4::GasId::SO2;                                           \
+  const auto DMS = mam4::GasId::DMS;                                           \
+  const auto SOAG = mam4::GasId::SOAG;                                         \
+  const auto NoGas = mam4::GasId::None;                                        \
+  static const mam4::GasId gas_for_cnst[gas_pcnst()] = {                       \
+      O3,    H2O2,  H2SO4, SO2,   DMS,   SOAG,  NoGas, NoGas,                  \
+      NoGas, NoGas, NoGas, NoGas, NoGas, NoGas, NoGas, NoGas,                  \
+      NoGas, NoGas, NoGas, NoGas, NoGas, NoGas, NoGas, NoGas,                  \
+      NoGas, NoGas, NoGas, NoGas, NoGas, NoGas, NoGas,                         \
   };
 
 // Given a Prognostics object, transfers data for interstitial aerosols to the
@@ -94,8 +97,7 @@ constexpr int gas_pcnst() {
 // NOTE: indices
 KOKKOS_INLINE_FUNCTION
 void transfer_prognostics_to_work_arrays(const mam4::Prognostics &progs,
-                                         const int k,
-                                         Real q[gas_pcnst()],
+                                         const int k, Real q[gas_pcnst()],
                                          Real qqcw[gas_pcnst()]) {
   DECLARE_PROG_TRANSFER_CONSTANTS
 

@@ -902,19 +902,15 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
 
 } //
 
-
 KOKKOS_INLINE_FUNCTION
-void modal_aero_sw(const ThreadTeam &team, const Real dt, 
-                   const mam4::Prognostics &progs,
-                   const ConstColumnView &state_zm,
-                   const ConstColumnView &temperature,
-                   const ConstColumnView &pmid, const ConstColumnView &pdel,
-                   const ConstColumnView &pdeldry, const ConstColumnView &cldn,
-                   // const ColumnView qqcw_fld[pcnst],
-                   const View2D &tauxar, const View2D &wa, const View2D &ga,
-                   const View2D &fa,
-                   const AerosolOpticsDeviceData &aersol_optics_data,
-                   const View1D &work)
+void modal_aero_sw(
+    const ThreadTeam &team, const Real dt, const mam4::Prognostics &progs,
+    const ConstColumnView &state_zm, const ConstColumnView &temperature,
+    const ConstColumnView &pmid, const ConstColumnView &pdel,
+    const ConstColumnView &pdeldry, const ConstColumnView &cldn,
+    // const ColumnView qqcw_fld[pcnst],
+    const View2D &tauxar, const View2D &wa, const View2D &ga, const View2D &fa,
+    const AerosolOpticsDeviceData &aersol_optics_data, const View1D &work)
 
 {
   auto work_ptr = (Real *)work.data();
@@ -927,16 +923,16 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
   const auto fa_work = View3D(work_ptr, pver, ntot_amode, nswbands);
   work_ptr += pver * ntot_amode * nswbands;
 
-  constexpr int gas_pcnst =   mam4::gas_chemistry::gas_pcnst; 
+  constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
 
   constexpr Real zero = 0;
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nswbands), [&](int i) {
     // BAD CONSTANT
-    tauxar(0,i) = zero; // BAD CONSTANT
-    wa(0,i) = 0.925;    // BAD CONSTANT
-    ga(0,i) = 0.850;    // BAD CONSTANT
-    fa(0,i) = 0.7225;   // BAD CONSTANT
+    tauxar(0, i) = zero; // BAD CONSTANT
+    wa(0, i) = 0.925;    // BAD CONSTANT
+    ga(0, i) = 0.850;    // BAD CONSTANT
+    fa(0, i) = 0.7225;   // BAD CONSTANT
   });
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 1, pver), [&](int kk) {
@@ -952,12 +948,10 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
 
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, top_lev, pver), [&](int kk) {
-        
         Real state_q[gas_pcnst] = {};
         Real qqcw[gas_pcnst] = {};
 
-        utils::transfer_prognostics_to_work_arrays(progs, kk,state_q, qqcw );
-
+        utils::transfer_prognostics_to_work_arrays(progs, kk, state_q, qqcw);
 
         Real cldn_kk = cldn(kk);
         const auto tauxar_kkp =
@@ -972,11 +966,10 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
         modal_aero_sw_wo_diagnostics_k(pdeldry(kk), pmid(kk), temperature(kk),
                                        cldn_kk,
                                        state_q, // in
-                                       qqcw,     // in
+                                       qqcw,    // in
                                        dt, aersol_optics_data,
                                        // outputs
                                        tauxar_kkp, wa_kkp, ga_kkp, fa_kkp);
-
 
         // FIXME: we need to copy values from state_q and qqcw to progs
       });
@@ -989,22 +982,22 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
       Kokkos::parallel_reduce(
           Kokkos::TeamThreadRange(team, ntot_amode),
           [&](int imode, Real &suma) { suma += tauxar_work(kk, imode, isw); },
-          tauxar(isw,kk + 1));
+          tauxar(isw, kk + 1));
 
       Kokkos::parallel_reduce(
           Kokkos::TeamThreadRange(team, ntot_amode),
           [&](int imode, Real &suma) { suma += wa_work(kk, imode, isw); },
-          wa(isw,kk + 1));
+          wa(isw, kk + 1));
 
       Kokkos::parallel_reduce(
           Kokkos::TeamThreadRange(team, ntot_amode),
           [&](int imode, Real &suma) { suma += ga_work(kk, imode, isw); },
-          ga(isw,kk + 1));
+          ga(isw, kk + 1));
 
       Kokkos::parallel_reduce(
           Kokkos::TeamThreadRange(team, ntot_amode),
           [&](int imode, Real &suma) { suma += fa_work(kk, imode, isw); },
-          fa(isw,kk + 1));
+          fa(isw, kk + 1));
 
     } // isw
 
@@ -1204,7 +1197,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
 
   // qqcw(:)               ! Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
   // tauxar(pcols,pver,nlwbands) ! layer absorption optical depth
-  constexpr int gas_pcnst =   mam4::gas_chemistry::gas_pcnst; 
+  constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
 
   constexpr Real zero = 0.0;
   // dry mass in each cell
@@ -1224,28 +1217,24 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
 
         Real state_q[gas_pcnst] = {};
         Real qqcw[gas_pcnst] = {};
-        utils::transfer_prognostics_to_work_arrays(progs, kk,state_q, qqcw );
-        
+        utils::transfer_prognostics_to_work_arrays(progs, kk, state_q, qqcw);
+
         Real tauxar_kkp[ntot_amode] = {};
 
         modal_aero_lw_k(pdeldry(kk), pmid(kk), temperature(kk), cldn_kk,
                         state_q, // in
-                        qqcw,     // in
+                        qqcw,    // in
                         dt, aersol_optics_data,
                         // outputs
                         tauxar_kkp);
 
-        for (int imode = 0; imode < ntot_amode; ++imode)
-        {
-          tauxar(imode,kk) = tauxar_kkp[imode]; 
+        for (int imode = 0; imode < ntot_amode; ++imode) {
+          tauxar(imode, kk) = tauxar_kkp[imode];
         }
 
         // FIXME: we need to copy values from state_q and qqcw to progs
-
       });
 } // modal_aero_lw
-
-
 
 } // namespace modal_aer_opt
 

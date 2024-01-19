@@ -37,10 +37,10 @@ constexpr Real cnst_ka1 = cnst_kap - 1.0;
 // FIXME: remove this function after, I fix validation tests
 KOKKOS_INLINE_FUNCTION
 void volcanic_cmip_sw2(const ConstColumnView &zi, const int ilev_tropp,
-                      const View2D &ext_cmip6_sw_inv_m,
-                      const View2D &ssa_cmip6_sw, const View2D &af_cmip6_sw,
-                      const View2D &tau, const View2D &tau_w,
-                      const View2D &tau_w_g, const View2D &tau_w_f) {
+                       const View2D &ext_cmip6_sw_inv_m,
+                       const View2D &ssa_cmip6_sw, const View2D &af_cmip6_sw,
+                       const View2D &tau, const View2D &tau_w,
+                       const View2D &tau_w_g, const View2D &tau_w_f) {
 
   // Intent-in
   //  ncol       ! Number of columns
@@ -50,7 +50,7 @@ void volcanic_cmip_sw2(const ConstColumnView &zi, const int ilev_tropp,
   //  ssa_cmip6_sw(:,:,:),af_cmip6_sw(:,:,:)
 
   // Intent-inout
-  // Note: we are using emaxx layouts 
+  // Note: we are using emaxx layouts
   //  tau    (pcols,nswbands,0:pver) ! aerosol extinction optical depth
   //  tau_w  (pcols,nswbands,0:pver) ! aerosol single scattering albedo * tau
   //  tau_w_g(pcols,nswbands,0:pver) ! aerosol assymetry parameter * tau * w
@@ -89,12 +89,12 @@ void volcanic_cmip_sw2(const ConstColumnView &zi, const int ilev_tropp,
     const Real ext_ssa = ext_unitless * ssa_cmip6_sw(ilev_tropp, i);
     const Real ext_ssa_asym = ext_ssa * asym_unitless;
     // NOTE: tau vars have one extra dimension in Fortran.
-    tau(i,ilev_tropp + 1) = half * (tau(i,ilev_tropp + 1) + ext_unitless);
-    tau_w(i,ilev_tropp + 1) = half * (tau_w(i,ilev_tropp + 1) + ext_ssa);
-    tau_w_g(i,ilev_tropp + 1) =
-        half * (tau_w_g(i,ilev_tropp + 1) + ext_ssa_asym);
-    tau_w_f(i,ilev_tropp + 1) =
-        half * (tau_w_f(i,ilev_tropp + 1) + ext_ssa_asym * asym_unitless);
+    tau(i, ilev_tropp + 1) = half * (tau(i, ilev_tropp + 1) + ext_unitless);
+    tau_w(i, ilev_tropp + 1) = half * (tau_w(i, ilev_tropp + 1) + ext_ssa);
+    tau_w_g(i, ilev_tropp + 1) =
+        half * (tau_w_g(i, ilev_tropp + 1) + ext_ssa_asym);
+    tau_w_f(i, ilev_tropp + 1) =
+        half * (tau_w_f(i, ilev_tropp + 1) + ext_ssa_asym * asym_unitless);
   } // end i
 
   // !As it will be more efficient for FORTRAN to loop over levels and then
@@ -122,7 +122,6 @@ void volcanic_cmip_sw2(const ConstColumnView &zi, const int ilev_tropp,
   } // kk
 
 } // volcanic_cmip_sw
-
 
 KOKKOS_INLINE_FUNCTION
 void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
@@ -251,9 +250,9 @@ void compute_odap_volcanic_at_troplayer_lw(const int ilev_tropp,
 // FIXME: remove after I fix validation tests
 KOKKOS_INLINE_FUNCTION
 void compute_odap_volcanic_at_troplayer_lw2(const int ilev_tropp,
-                                           const ConstColumnView &zi,
-                                           const View2D &ext_cmip6_lw_inv_m,
-                                           const View2D &odap_aer) {
+                                            const ConstColumnView &zi,
+                                            const View2D &ext_cmip6_lw_inv_m,
+                                            const View2D &odap_aer) {
   // Update odap_aer with a combination read in volcanic aerosol extinction
   // [1/m] (50%) and module computed values (50%).
 
@@ -284,7 +283,6 @@ void compute_odap_volcanic_at_troplayer_lw2(const int ilev_tropp,
   }
 
 } // compute_odap_volcanic_at_troplayer_lw
-
 
 KOKKOS_INLINE_FUNCTION
 void compute_odap_volcanic_above_troplayer_lw(const int ilev_tropp,
@@ -329,9 +327,9 @@ void compute_odap_volcanic_above_troplayer_lw(const int ilev_tropp,
 
 KOKKOS_INLINE_FUNCTION
 void compute_odap_volcanic_above_troplayer_lw2(const int ilev_tropp,
-                                              const ConstColumnView &zi,
-                                              const View2D &ext_cmip6_lw_inv_m,
-                                              const View2D &odap_aer) {
+                                               const ConstColumnView &zi,
+                                               const View2D &ext_cmip6_lw_inv_m,
+                                               const View2D &odap_aer) {
 
   //     !Above the tropopause, the read in values from the file include both
   //     the stratospheric
@@ -560,7 +558,6 @@ void aer_rad_props_sw(
 
 } // aer_rad_props_sw
 
-
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_sw(
     const ThreadTeam &team, const Real dt, const ConstColumnView &zi,
@@ -625,15 +622,15 @@ void aer_rad_props_sw(
   // applied only above tropopause
   const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
 
-  modal_aero_sw(team, dt, progs, zm, temperature, pmid, pdel, pdeldry,
-                cldn, tau, tau_w, tau_w_g, tau_w_f, aersol_optics_data, work);
+  modal_aero_sw(team, dt, progs, zm, temperature, pmid, pdel, pdeldry, cldn,
+                tau, tau_w, tau_w_g, tau_w_f, aersol_optics_data, work);
 
   // team.team_barrier();
 
   // Update tau, tau_w, tau_w_g, and tau_w_f with the read in values of
   // extinction, ssa and asymmetry factors
   volcanic_cmip_sw2(zi, ilev_tropp, ext_cmip6_sw_m, ssa_cmip6_sw, af_cmip6_sw,
-                   tau, tau_w, tau_w_g, tau_w_f);
+                    tau, tau_w, tau_w_g, tau_w_f);
 
   //  Diagnostic output of total aerosol optical properties
   //  currently implemented for climate list only
@@ -698,17 +695,16 @@ void aer_rad_props_lw(
   // contributuions from the volcanic input file and 50% from the existing model
   // computed values at the tropopause layer
   compute_odap_volcanic_at_troplayer_lw2(ilev_tropp, zi, ext_cmip6_lw_m,
-                                        odap_aer);
+                                         odap_aer);
   // Above the tropopause, the read in values from the file include both the
   // stratospheric
   //  and volcanic aerosols. Therefore, we need to zero out odap_aer above the
   //  tropopause and populate it exclusively from the read in values.
   compute_odap_volcanic_above_troplayer_lw2(ilev_tropp, zi, ext_cmip6_lw_m,
-                                           odap_aer);
+                                            odap_aer);
   // call outfld('extinct_lw_bnd7',odap_aer(:,:,idx_lw_diag), pcols, lchnk)
 
 } // aer_rad_props_lw
-
 
 } // namespace aer_rad_props
 } // end namespace mam4
