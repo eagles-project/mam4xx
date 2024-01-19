@@ -46,11 +46,11 @@ constexpr int gas_pcnst() {
   static const mam4::ModeIndex mode_for_cnst[gas_pcnst()] = {                  \
       NoMode, NoMode, NoMode, NoMode, NoMode, NoMode, /* gases (not aerosols)  \
                                                        */                      \
-      Accum,  Accum,  Accum,  Accum,  Accum,  Accum,                           \
-      Accum,  Accum,                          /* 7 aero species + NMR */       \
+      Accum,  Accum,  Accum,  Accum,  Accum,  Accum,  Accum,                   \
+      Accum,                                  /* 7 aero species + NMR */       \
       Aitken, Aitken, Aitken, Aitken, Aitken, /* 4 aero species + NMR */       \
-      Coarse, Coarse, Coarse, Coarse, Coarse, Coarse,                          \
-      Coarse, Coarse,             /* 7 aero species + NMR */                   \
+      Coarse, Coarse, Coarse, Coarse, Coarse, Coarse, Coarse,                  \
+      Coarse,                     /* 7 aero species + NMR */                   \
       PC,     PC,     PC,     PC, /* 3 aero species + NMR */                   \
   };                                                                           \
   /* mapping of constituent indices to aerosol species */                      \
@@ -65,11 +65,11 @@ constexpr int gas_pcnst() {
   static const mam4::AeroId aero_for_cnst[gas_pcnst()] = {                     \
       NoAero, NoAero, NoAero, NoAero, NoAero, NoAero, /* gases (not aerosols)  \
                                                        */                      \
-      SO4,    POM,    SOA,    BC,     DST,    NaCl,                            \
-      MOM,    NoAero,                         /* accumulation mode */          \
+      SO4,    POM,    SOA,    BC,     DST,    NaCl,   MOM,                     \
+      NoAero,                                 /* accumulation mode */          \
       SO4,    SOA,    NaCl,   MOM,    NoAero, /* aitken mode */                \
-      DST,    NaCl,   SO4,    BC,     POM,    SOA,                             \
-      MOM,    NoAero,                 /* coarse mode */                        \
+      DST,    NaCl,   SO4,    BC,     POM,    SOA,    MOM,                     \
+      NoAero,                         /* coarse mode */                        \
       POM,    BC,     MOM,    NoAero, /* primary carbon mode */                \
   };                                                                           \
   /* mapping of constituent indices to gases */                                \
@@ -125,6 +125,42 @@ void transfer_prognostics_to_work_arrays(const mam4::Prognostics &progs,
     }
   }
 }
+
+// Given work arrays with interstitial and cloudborne aerosol data, transfers
+// them to the given Prognostics object at the kth vertical level. This is the
+// "inverse operator" for transfer_prognostics_to_work_arrays, above.
+KOKKOS_INLINE_FUNCTION
+void transfer_work_arrays_to_prognostics(const Real q[gas_pcnst()],
+                                         const Real qqcw[gas_pcnst()],
+                                         mam4::Prognostics &progs,
+                                         const int k) {
+  DECLARE_PROG_TRANSFER_CONSTANTS
+
+  // copy number/mass mixing ratios from progs to q and qqcw at level k,
+  // converting them to VMR
+  for (int i = 0; i < gas_pcnst(); ++i) {
+    auto mode_index = mode_for_cnst[i];
+    auto aero_id = aero_for_cnst[i];
+    auto gas_id = gas_for_cnst[i];
+    if (gas_id != NoGas) { // constituent is a gas
+      int g = static_cast<int>(gas_id);
+      progs.q_gas[g](k) = q[i];
+    } else {
+      int m = static_cast<int>(mode_index);
+      if (aero_id != NoAero) { // constituent is an aerosol species
+        int a = aerosol_index_for_mode(mode_index, aero_id);
+        progs.q_aero_i[m][a](k) = q[i];
+        progs.q_aero_c[m][a](k) = qqcw[i];
+      } else { // constituent is a modal number mixing ratio
+        int m = static_cast<int>(mode_index);
+        progs.n_mode_i[m](k) = q[i];
+        progs.n_mode_c[m](k) = qqcw[i];
+      }
+    }
+  }
+}
+
+#undef DECLARE_PROG_TRANSFER_CONSTANTS
 
 } // end namespace mam4::utils
 

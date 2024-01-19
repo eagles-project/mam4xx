@@ -903,14 +903,16 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
 } //
 
 KOKKOS_INLINE_FUNCTION
-void modal_aero_sw(
-    const ThreadTeam &team, const Real dt, const mam4::Prognostics &progs,
-    const ConstColumnView &state_zm, const ConstColumnView &temperature,
-    const ConstColumnView &pmid, const ConstColumnView &pdel,
-    const ConstColumnView &pdeldry, const ConstColumnView &cldn,
-    // const ColumnView qqcw_fld[pcnst],
-    const View2D &tauxar, const View2D &wa, const View2D &ga, const View2D &fa,
-    const AerosolOpticsDeviceData &aersol_optics_data, const View1D &work)
+void modal_aero_sw(const ThreadTeam &team, const Real dt,
+                   mam4::Prognostics &progs, const ConstColumnView &state_zm,
+                   const ConstColumnView &temperature,
+                   const ConstColumnView &pmid, const ConstColumnView &pdel,
+                   const ConstColumnView &pdeldry, const ConstColumnView &cldn,
+                   // const ColumnView qqcw_fld[pcnst],
+                   const View2D &tauxar, const View2D &wa, const View2D &ga,
+                   const View2D &fa,
+                   const AerosolOpticsDeviceData &aersol_optics_data,
+                   const View1D &work)
 
 {
   auto work_ptr = (Real *)work.data();
@@ -971,7 +973,7 @@ void modal_aero_sw(
                                        // outputs
                                        tauxar_kkp, wa_kkp, ga_kkp, fa_kkp);
 
-        // FIXME: we need to copy values from state_q and qqcw to progs
+        utils::transfer_work_arrays_to_prognostics(state_q, qqcw, progs, kk);
       });
 
   team.team_barrier();
@@ -1175,8 +1177,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt, const View2D &state_q,
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_lw(const ThreadTeam &team, const Real dt,
-                   const mam4::Prognostics &progs,
-                   const ConstColumnView &temperature,
+                   mam4::Prognostics &progs, const ConstColumnView &temperature,
                    const ConstColumnView &pmid, const ConstColumnView &pdel,
                    const ConstColumnView &pdeldry, const ConstColumnView &cldn,
                    // parameters
@@ -1232,7 +1233,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
           tauxar(imode, kk) = tauxar_kkp[imode];
         }
 
-        // FIXME: we need to copy values from state_q and qqcw to progs
+        utils::transfer_work_arrays_to_prognostics(state_q, qqcw, progs, kk);
       });
 } // modal_aero_lw
 
