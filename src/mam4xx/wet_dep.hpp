@@ -1185,6 +1185,11 @@ public:
   void init(const AeroConfig &aero_config,
             const Config &wed_dep_config = Config());
 
+
+KOKKOS_INLINE_FUNCTION
+void compute_tendencies1(const AeroConfig &config, const ThreadTeam &team,
+                          Real t, Real dt, const Atmosphere &atm, const Surface &sfc, 
+                          const Prognostics &progs, const Diagnostics &diags,const Tendencies &tends ){}
   // compute_tendencies -- computes tendencies and updates diagnostics
   // NOTE: that both diags and tends are const below--this means their views
   // NOTE: are fixed, but the data in those views is allowed to vary.
@@ -1256,6 +1261,7 @@ void WetDeposition::compute_tendencies(
     const AeroConfig &config, const ThreadTeam &team, Real t, Real dt,
     const Atmosphere &atm, const Surface &sfc, const Prognostics &progs,
     const Diagnostics &diags, const Tendencies &tends) const {
+
   // BAD CONSTANT
   const Real small_value_2 = 1.e-2;
   const int nlev = config_.nlev;
@@ -1280,7 +1286,7 @@ void WetDeposition::compute_tendencies(
   haero::ConstColumnView pdel = atm.hydrostatic_dp;
   haero::ConstColumnView q_liq = atm.liquid_mixing_ratio;
   haero::ConstColumnView q_ice = atm.ice_mixing_ratio;
-
+#if 0
   // calculate some variables needed in wetdepa_v2
   ColumnView dp_frac = diags.deep_convective_cloud_fraction;
   ColumnView sh_frac = diags.shallow_convective_cloud_fraction;
@@ -1556,6 +1562,7 @@ void WetDeposition::compute_tendencies(
    end subroutine aero_model_wetdep
 #endif
       });
+#endif
   team.team_barrier();
 }
 } // namespace mam4
