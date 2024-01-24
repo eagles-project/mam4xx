@@ -931,18 +931,18 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nswbands), [&](int i) {
     // BAD CONSTANT
-    tauxar(0, i) = zero; // BAD CONSTANT
-    wa(0, i) = 0.925;    // BAD CONSTANT
-    ga(0, i) = 0.850;    // BAD CONSTANT
-    fa(0, i) = 0.7225;   // BAD CONSTANT
+    tauxar(i,0) = zero; // BAD CONSTANT
+    wa(i,0) = 0.925;    // BAD CONSTANT
+    ga(i,0) = 0.850;    // BAD CONSTANT
+    fa(i,0) = 0.7225;   // BAD CONSTANT
   });
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 1, pver), [&](int kk) {
     for (int i = 0; i < nswbands; ++i) {
-      tauxar(kk, i) = zero;
-      wa(kk, i) = zero;
-      ga(kk, i) = zero;
-      fa(kk, i) = zero;
+      tauxar(i, kk) = zero;
+      wa(i, kk) = zero;
+      ga(i, kk) = zero;
+      fa(i, kk) = zero;
     }
   });
 
@@ -1220,7 +1220,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
         Real qqcw[gas_pcnst] = {};
         utils::transfer_prognostics_to_work_arrays(progs, kk, state_q, qqcw);
 
-        Real tauxar_kkp[ntot_amode] = {};
+        Real tauxar_kkp[nlwbands] = {};
 
         modal_aero_lw_k(pdeldry(kk), pmid(kk), temperature(kk), cldn_kk,
                         state_q, // in
@@ -1229,8 +1229,8 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
                         // outputs
                         tauxar_kkp);
 
-        for (int imode = 0; imode < ntot_amode; ++imode) {
-          tauxar(imode, kk) = tauxar_kkp[imode];
+        for (int ilw = 0; ilw < nlwbands; ++ilw) {
+          tauxar(ilw, kk) = tauxar_kkp[ilw];
         }
 
         utils::transfer_work_arrays_to_prognostics(state_q, qqcw, progs, kk);
