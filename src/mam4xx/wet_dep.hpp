@@ -1286,9 +1286,10 @@ void WetDeposition::compute_tendencies(
   haero::ConstColumnView pdel = atm.hydrostatic_dp;
   haero::ConstColumnView q_liq = atm.liquid_mixing_ratio;
   haero::ConstColumnView q_ice = atm.ice_mixing_ratio;
-#if 0
+
   // calculate some variables needed in wetdepa_v2
   ColumnView dp_frac = diags.deep_convective_cloud_fraction;
+
   ColumnView sh_frac = diags.shallow_convective_cloud_fraction;
   ColumnView dp_ccf = diags.deep_convective_cloud_fraction;
   ColumnView sh_ccf = diags.shallow_convective_cloud_fraction;
@@ -1317,7 +1318,7 @@ void WetDeposition::compute_tendencies(
     evapcshsum += evapcsh[i];
 
   team.team_barrier();
-
+#if 0
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nlev), KOKKOS_CLASS_LAMBDA(int k) {
         // cumulus cloud fraction
