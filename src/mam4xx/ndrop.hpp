@@ -1173,7 +1173,7 @@ void update_from_explmix(
     const Real dtmicro, // time step for microphysics [s]
     const ColumnView
         &csbot, // air density at bottom (interface) of layer [kg/m^3]
-    const ColumnView &cldn,      // cloud fraction [fraction]
+    const haero::ConstColumnView &cldn,      // cloud fraction [fraction]
     const ColumnView &zn,        // g/pdel for layer [m^2/kg]
     const ColumnView &zs,        // inverse of distance between levels [m^-1]
     const ColumnView &eddy_diff, // diffusivity for droplets [m^2/s]
@@ -1455,7 +1455,7 @@ void dropmixnuc(
     const haero::ConstColumnView &pint, const haero::ConstColumnView &pdel,
     const haero::ConstColumnView &rpdel, const haero::ConstColumnView &zm,
     const View2D &state_q, const haero::ConstColumnView &ncldwtr,
-    const haero::ConstColumnView &v_diffusivity, const ColumnView &cldn,
+    const haero::ConstColumnView &v_diffusivity, const haero::ConstColumnView &cldn,
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
     const Real specdens_amode[maxd_aspectype],
     const Real spechygro[maxd_aspectype],
