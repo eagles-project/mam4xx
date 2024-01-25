@@ -64,7 +64,7 @@ cmake \
   -G "Unix Makefiles" && \
 
 cmake --build build -- -j 8 && \
-cd build && ctest -V 
+cd build && ctest --output-on-failure 
 
 EXIT_CODE=$?
 
