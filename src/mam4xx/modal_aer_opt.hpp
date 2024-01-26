@@ -904,10 +904,8 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(const ThreadTeam &team, const Real dt,
-                   mam4::Prognostics &progs,
-                   const haero::Atmosphere &atm, 
-                    const ConstColumnView &pdel,
-                   const ConstColumnView &pdeldry, 
+                   mam4::Prognostics &progs, const haero::Atmosphere &atm,
+                   const ConstColumnView &pdel, const ConstColumnView &pdeldry,
                    // const ColumnView qqcw_fld[pcnst],
                    const View2D &tauxar, const View2D &wa, const View2D &ga,
                    const View2D &fa,
@@ -915,11 +913,10 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
                    const View1D &work)
 
 {
-  const ConstColumnView temperature =  atm.temperature;
+  const ConstColumnView temperature = atm.temperature;
   const ConstColumnView pmid = atm.pressure;
   const ConstColumnView state_zm = atm.height;
   const ConstColumnView cldn = atm.cloud_fraction;
-
 
   auto work_ptr = (Real *)work.data();
   const auto tauxar_work = View3D(work_ptr, pver, ntot_amode, nswbands);
@@ -937,10 +934,10 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nswbands), [&](int i) {
     // BAD CONSTANT
-    tauxar(i,0) = zero; // BAD CONSTANT
-    wa(i,0) = 0.925;    // BAD CONSTANT
-    ga(i,0) = 0.850;    // BAD CONSTANT
-    fa(i,0) = 0.7225;   // BAD CONSTANT
+    tauxar(i, 0) = zero; // BAD CONSTANT
+    wa(i, 0) = 0.925;    // BAD CONSTANT
+    ga(i, 0) = 0.850;    // BAD CONSTANT
+    fa(i, 0) = 0.7225;   // BAD CONSTANT
   });
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 1, pver), [&](int kk) {
@@ -980,8 +977,8 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
                                        // outputs
                                        tauxar_kkp, wa_kkp, ga_kkp, fa_kkp);
 
-        utils::progs_from_qqcw_at_one_lev(qqcw,progs, kk);
-        utils::progs_from_state_q_at_one_lev(state_q,progs, kk);
+        utils::progs_from_qqcw_at_one_lev(qqcw, progs, kk);
+        utils::progs_from_state_q_at_one_lev(state_q, progs, kk);
       });
 
   team.team_barrier();
@@ -1185,16 +1182,14 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt, const View2D &state_q,
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_lw(const ThreadTeam &team, const Real dt,
-                   mam4::Prognostics &progs, 
-                   const haero::Atmosphere & atm,  
-                   const ConstColumnView &pdel,
-                   const ConstColumnView &pdeldry, 
+                   mam4::Prognostics &progs, const haero::Atmosphere &atm,
+                   const ConstColumnView &pdel, const ConstColumnView &pdeldry,
                    // parameters
                    const AerosolOpticsDeviceData &aersol_optics_data,
                    // output
                    const View2D &tauxar) {
 
-  const ConstColumnView temperature =  atm.temperature;
+  const ConstColumnView temperature = atm.temperature;
   const ConstColumnView pmid = atm.pressure;
   const ConstColumnView cldn = atm.cloud_fraction;
 
@@ -1233,7 +1228,6 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
         utils::state_q_from_progs_at_one_lev(progs, atm, state_q, kk);
         utils::qqcw_from_progs_at_one_lev(progs, qqcw, kk);
 
-
         Real tauxar_kkp[nlwbands] = {};
 
         modal_aero_lw_k(pdeldry(kk), pmid(kk), temperature(kk), cldn_kk,
@@ -1247,8 +1241,8 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
           tauxar(ilw, kk) = tauxar_kkp[ilw];
         }
 
-        utils::progs_from_qqcw_at_one_lev(qqcw,progs, kk);
-        utils::progs_from_state_q_at_one_lev(state_q,progs, kk);
+        utils::progs_from_qqcw_at_one_lev(qqcw, progs, kk);
+        utils::progs_from_state_q_at_one_lev(state_q, progs, kk);
       });
 } // modal_aero_lw
 
