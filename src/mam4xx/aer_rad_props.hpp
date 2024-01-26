@@ -560,18 +560,24 @@ void aer_rad_props_sw(
 
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_sw(
-    const ThreadTeam &team, const Real dt, const ConstColumnView &zi,
-    const ConstColumnView &pmid, const ConstColumnView &pint,
-    const ConstColumnView &temperature, const ConstColumnView &zm,
+    const ThreadTeam &team, const Real dt, 
     mam4::Prognostics &progs,
     const haero::Atmosphere & atm,
+    const ConstColumnView &zi,
+    const ConstColumnView &pint,
     const ConstColumnView &pdel,
-    const ConstColumnView &pdeldry, const ConstColumnView &cldn,
+    const ConstColumnView &pdeldry,
     const View2D &ssa_cmip6_sw, const View2D &af_cmip6_sw,
     const View2D &ext_cmip6_sw_m, const View2D &tau, const View2D &tau_w,
     const View2D &tau_w_g, const View2D &tau_w_f,
     // FIXME
     const AerosolOpticsDeviceData &aersol_optics_data, const View1D &work) {
+
+  const ConstColumnView temperature =  atm.temperature;
+  const ConstColumnView pmid = atm.pressure;
+  const ConstColumnView zm = atm.height;
+  const ConstColumnView cldn = atm.cloud_fraction;
+
 
   // call outfld('extinct_sw_inp',ext_cmip6_sw(:,:,idx_sw_diag), pcols, lchnk)
 
@@ -624,7 +630,7 @@ void aer_rad_props_sw(
   // applied only above tropopause
   const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
 
-  modal_aero_sw(team, dt, progs, atm, zm, temperature, pmid, pdel, pdeldry, cldn,
+  modal_aero_sw(team, dt, progs, atm, pdel, pdeldry,
                 tau, tau_w, tau_w_g, tau_w_f, aersol_optics_data, work);
 
   // team.team_barrier();
@@ -645,19 +651,24 @@ void aer_rad_props_sw(
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_lw(
     // inputs
-    const ThreadTeam &team, const Real dt, const ConstColumnView &pmid,
-    const ConstColumnView &pint, const ConstColumnView &temperature,
-    const ConstColumnView &zm, const ConstColumnView &zi,
+    const ThreadTeam &team, const Real dt, 
     mam4::Prognostics &progs,
     const haero::Atmosphere & atm, 
+    const ConstColumnView &pint, 
+    const ConstColumnView &zi,
     const ConstColumnView &pdel,
-    const ConstColumnView &pdeldry, const ConstColumnView &cldn,
+    const ConstColumnView &pdeldry,
     const View2D &ext_cmip6_lw_m,
     const AerosolOpticsDeviceData &aersol_optics_data,
     // output
     const View2D &odap_aer
 
 ) {
+   
+  const ConstColumnView temperature =  atm.temperature;
+  const ConstColumnView pmid = atm.pressure;
+  const ConstColumnView zm = atm.height;
+  const ConstColumnView cldn = atm.cloud_fraction;
 
   // Purpose: Compute aerosol transmissions needed in absorptivity/
   // emissivity calculations
@@ -684,7 +695,7 @@ void aer_rad_props_lw(
   //  odap_aer(pcols,nlwbands, pver) ! [fraction] absorption optical depth, per
   //  layer [unitless]
   // Compute contributions from the modal aerosols.
-  modal_aero_lw(team, dt, progs, atm, temperature, pmid, pdel, pdeldry, cldn,
+  modal_aero_lw(team, dt, progs, atm, pdel, pdeldry,
                 aersol_optics_data,
                 // outputs
                 odap_aer);

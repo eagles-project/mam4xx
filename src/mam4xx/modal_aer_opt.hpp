@@ -905,11 +905,9 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
 KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(const ThreadTeam &team, const Real dt,
                    mam4::Prognostics &progs,
-                   const haero::Atmosphere & atm, 
-                   const ConstColumnView &state_zm,
-                   const ConstColumnView &temperature,
-                   const ConstColumnView &pmid, const ConstColumnView &pdel,
-                   const ConstColumnView &pdeldry, const ConstColumnView &cldn,
+                   const haero::Atmosphere &atm, 
+                    const ConstColumnView &pdel,
+                   const ConstColumnView &pdeldry, 
                    // const ColumnView qqcw_fld[pcnst],
                    const View2D &tauxar, const View2D &wa, const View2D &ga,
                    const View2D &fa,
@@ -917,6 +915,12 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
                    const View1D &work)
 
 {
+  const ConstColumnView temperature =  atm.temperature;
+  const ConstColumnView pmid = atm.pressure;
+  const ConstColumnView state_zm = atm.height;
+  const ConstColumnView cldn = atm.cloud_fraction;
+
+
   auto work_ptr = (Real *)work.data();
   const auto tauxar_work = View3D(work_ptr, pver, ntot_amode, nswbands);
   work_ptr += pver * ntot_amode * nswbands;
@@ -1183,17 +1187,17 @@ KOKKOS_INLINE_FUNCTION
 void modal_aero_lw(const ThreadTeam &team, const Real dt,
                    mam4::Prognostics &progs, 
                    const haero::Atmosphere & atm,  
-                   const ConstColumnView &temperature,
-                   const ConstColumnView &pmid, 
                    const ConstColumnView &pdel,
                    const ConstColumnView &pdeldry, 
-                   const ConstColumnView &cldn,
                    // parameters
                    const AerosolOpticsDeviceData &aersol_optics_data,
                    // output
                    const View2D &tauxar) {
 
-  //
+  const ConstColumnView temperature =  atm.temperature;
+  const ConstColumnView pmid = atm.pressure;
+  const ConstColumnView cldn = atm.cloud_fraction;
+
   // calculates aerosol lw radiative properties
 
   // dt       ! time step [s]
