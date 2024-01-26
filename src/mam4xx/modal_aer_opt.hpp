@@ -925,7 +925,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
   const auto fa_work = View3D(work_ptr, pver, ntot_amode, nswbands);
   work_ptr += pver * ntot_amode * nswbands;
 
-  constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
+  constexpr int pcnst = mam4::ndrop::nvars;
 
   constexpr Real zero = 0;
 
@@ -950,10 +950,11 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
 
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, top_lev, pver), [&](int kk) {
-        Real state_q[gas_pcnst] = {};
-        Real qqcw[gas_pcnst] = {};
+        Real state_q[pcnst] = {};
+        Real qqcw[pcnst] = {};
 
-        utils::transfer_prognostics_to_work_arrays(progs, kk, state_q, qqcw);
+        utils::state_q_from_progs_at_one_lev(progs, state_q, kk);
+        utils::qqcw_from_progs_at_one_lev(progs, qqcw, kk);
 
         Real cldn_kk = cldn(kk);
         const auto tauxar_kkp =
@@ -973,7 +974,8 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
                                        // outputs
                                        tauxar_kkp, wa_kkp, ga_kkp, fa_kkp);
 
-        utils::transfer_work_arrays_to_prognostics(state_q, qqcw, progs, kk);
+        utils::progs_from_qqcw_at_one_lev(qqcw,progs, kk);
+        utils::progs_from_state_q_at_one_lev(state_q,progs, kk);
       });
 
   team.team_barrier();
@@ -1198,7 +1200,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
 
   // qqcw(:)               ! Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
   // tauxar(pcols,pver,nlwbands) ! layer absorption optical depth
-  constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
+  constexpr int pcnst = mam4::ndrop::nvars;
 
   constexpr Real zero = 0.0;
   // dry mass in each cell
@@ -1216,9 +1218,11 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
       Kokkos::TeamThreadRange(team, top_lev, pver), [&](int kk) {
         Real cldn_kk = cldn(kk);
 
-        Real state_q[gas_pcnst] = {};
-        Real qqcw[gas_pcnst] = {};
-        utils::transfer_prognostics_to_work_arrays(progs, kk, state_q, qqcw);
+        Real state_q[pcnst] = {};
+        Real qqcw[pcnst] = {};
+        utils::state_q_from_progs_at_one_lev(progs, state_q, kk);
+        utils::qqcw_from_progs_at_one_lev(progs, qqcw, kk);
+
 
         Real tauxar_kkp[nlwbands] = {};
 
@@ -1233,7 +1237,8 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
           tauxar(ilw, kk) = tauxar_kkp[ilw];
         }
 
-        utils::transfer_work_arrays_to_prognostics(state_q, qqcw, progs, kk);
+        utils::progs_from_qqcw_at_one_lev(qqcw,progs, kk);
+        utils::progs_from_state_q_at_one_lev(state_q,progs, kk);
       });
 } // modal_aero_lw
 
