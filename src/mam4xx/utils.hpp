@@ -176,10 +176,17 @@ void transfer_work_arrays_to_prognostics(const Real q[gas_pcnst()],
 //MUST FIXME: address James comments about making the code better.
 KOKKOS_INLINE_FUNCTION
 void state_q_from_progs_at_one_lev(const mam4::Prognostics &progs,
+                                   const haero::Atmosphere & atm,  
                                    Real * q,
                                    const int klev) {
 
   int s_idx = ekat::ScalarTraits<int>::invalid();
+  q[0] = atm.vapor_mixing_ratio(klev); // qv 
+  q[1] = atm.liquid_mixing_ratio(klev); // qc
+  q[2] = atm.ice_mixing_ratio(klev);//qi
+  q[3] = atm.cloud_liquid_number_mixing_ratio(klev); //  nc
+  q[4] = atm.cloud_ice_number_mixing_ratio(klev);//ni
+  //FIXME: I do not have info for  :RAINQM, SNOWQM, NUMRAI, NUMSNO
 
   if(progs.q_gas[0].data()) { // if gases are defined in dry_aero aerosol state
     s_idx = gasses_start_ind();  // gases start at index 9 (index 10 in Fortran version)

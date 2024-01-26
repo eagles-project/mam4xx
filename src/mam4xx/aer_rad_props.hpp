@@ -563,7 +563,9 @@ void aer_rad_props_sw(
     const ThreadTeam &team, const Real dt, const ConstColumnView &zi,
     const ConstColumnView &pmid, const ConstColumnView &pint,
     const ConstColumnView &temperature, const ConstColumnView &zm,
-    mam4::Prognostics &progs, const ConstColumnView &pdel,
+    mam4::Prognostics &progs,
+    const haero::Atmosphere & atm,
+    const ConstColumnView &pdel,
     const ConstColumnView &pdeldry, const ConstColumnView &cldn,
     const View2D &ssa_cmip6_sw, const View2D &af_cmip6_sw,
     const View2D &ext_cmip6_sw_m, const View2D &tau, const View2D &tau_w,
@@ -622,7 +624,7 @@ void aer_rad_props_sw(
   // applied only above tropopause
   const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
 
-  modal_aero_sw(team, dt, progs, zm, temperature, pmid, pdel, pdeldry, cldn,
+  modal_aero_sw(team, dt, progs, atm, zm, temperature, pmid, pdel, pdeldry, cldn,
                 tau, tau_w, tau_w_g, tau_w_f, aersol_optics_data, work);
 
   // team.team_barrier();
@@ -646,7 +648,9 @@ void aer_rad_props_lw(
     const ThreadTeam &team, const Real dt, const ConstColumnView &pmid,
     const ConstColumnView &pint, const ConstColumnView &temperature,
     const ConstColumnView &zm, const ConstColumnView &zi,
-    mam4::Prognostics &progs, const ConstColumnView &pdel,
+    mam4::Prognostics &progs,
+    const haero::Atmosphere & atm, 
+    const ConstColumnView &pdel,
     const ConstColumnView &pdeldry, const ConstColumnView &cldn,
     const View2D &ext_cmip6_lw_m,
     const AerosolOpticsDeviceData &aersol_optics_data,
@@ -680,7 +684,7 @@ void aer_rad_props_lw(
   //  odap_aer(pcols,nlwbands, pver) ! [fraction] absorption optical depth, per
   //  layer [unitless]
   // Compute contributions from the modal aerosols.
-  modal_aero_lw(team, dt, progs, temperature, pmid, pdel, pdeldry, cldn,
+  modal_aero_lw(team, dt, progs, atm, temperature, pmid, pdel, pdeldry, cldn,
                 aersol_optics_data,
                 // outputs
                 odap_aer);

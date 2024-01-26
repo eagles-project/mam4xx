@@ -904,7 +904,9 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(const ThreadTeam &team, const Real dt,
-                   mam4::Prognostics &progs, const ConstColumnView &state_zm,
+                   mam4::Prognostics &progs,
+                   const haero::Atmosphere & atm, 
+                   const ConstColumnView &state_zm,
                    const ConstColumnView &temperature,
                    const ConstColumnView &pmid, const ConstColumnView &pdel,
                    const ConstColumnView &pdeldry, const ConstColumnView &cldn,
@@ -953,7 +955,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
         Real state_q[pcnst] = {};
         Real qqcw[pcnst] = {};
 
-        utils::state_q_from_progs_at_one_lev(progs, state_q, kk);
+        utils::state_q_from_progs_at_one_lev(progs, atm, state_q, kk);
         utils::qqcw_from_progs_at_one_lev(progs, qqcw, kk);
 
         Real cldn_kk = cldn(kk);
@@ -1179,9 +1181,13 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt, const View2D &state_q,
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_lw(const ThreadTeam &team, const Real dt,
-                   mam4::Prognostics &progs, const ConstColumnView &temperature,
-                   const ConstColumnView &pmid, const ConstColumnView &pdel,
-                   const ConstColumnView &pdeldry, const ConstColumnView &cldn,
+                   mam4::Prognostics &progs, 
+                   const haero::Atmosphere & atm,  
+                   const ConstColumnView &temperature,
+                   const ConstColumnView &pmid, 
+                   const ConstColumnView &pdel,
+                   const ConstColumnView &pdeldry, 
+                   const ConstColumnView &cldn,
                    // parameters
                    const AerosolOpticsDeviceData &aersol_optics_data,
                    // output
@@ -1220,7 +1226,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
 
         Real state_q[pcnst] = {};
         Real qqcw[pcnst] = {};
-        utils::state_q_from_progs_at_one_lev(progs, state_q, kk);
+        utils::state_q_from_progs_at_one_lev(progs, atm, state_q, kk);
         utils::qqcw_from_progs_at_one_lev(progs, qqcw, kk);
 
 
