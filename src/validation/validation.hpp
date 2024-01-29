@@ -128,16 +128,29 @@ void create_synthetic_rsf_tab(View5D &rsf_tab, const int nw, const int nump,
 
 // Convert 1D std::vector to 2D view_device
 // copies data from 1D std::vector to a 2D view_host. Then, deep_copy to sync
-// data to device
+// 1 std::vector is saved in column-major order(Fortran layout)
 void convert_1d_vector_to_2d_view_device(const std::vector<Real> &pmid_db,
+                                         const View2D &var_device);
+
+// Convert 1D std::vector to 2D view_device
+// copies data from 1D std::vector to a 2D view_host. Then, deep_copy to sync
+// 1 std::vector is saved in column-major order(Fortran layout)
+// original matrix is transposed to match layout in eamxx
+void convert_1d_vector_to_transpose_2d_view_device(const std::vector<Real> &var_std,
                                          const View2D &var_device);
 
 // Convert 2D view_device to 1D std::vector
 // create a mirror view of 2d_view_device. Then, it copies data from mirror view
-// to 1D std::vector
+// to 1D std::vector using column-major order 
 void convert_2d_view_device_to_1d_vector(const View2D &var_device,
                                          std::vector<Real> &var_std);
 
+// Convert 2D view_device to 1D std::vector
+// create a mirror view of 2d_view_device. Then, it copies data from mirror view
+// to 1D std::vector using column-major order 
+// device views is transposed matrix of original matrix 
+void convert_transpose_2d_view_device_to_1d_vector(const View2D &var_device,
+                                         std::vector<Real> &var_std);
 // Convert 1D std::vector to 3D view_device
 // copies data from 1D std::vector to a 3D view_host. Then, deep_copy to sync
 // data to device

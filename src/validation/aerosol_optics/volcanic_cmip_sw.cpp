@@ -55,28 +55,27 @@ void volcanic_cmip_sw(Ensemble *ensemble) {
 
     View2D tau, tau_w, tau_w_g, tau_w_f;
 
-    tau = View2D("tau", pver + 1,
-                 nswbands); // layer extinction optical depth [1]
+    tau = View2D("tau", nswbands, pver + 1); // layer extinction optical depth [1]
     tau_w =
-        View2D("tau_w", pver + 1, nswbands); // layer single-scatter albedo [1]
-    tau_w_g = View2D("tau_w_g", pver + 1, nswbands); // asymmetry factor [1]
+        View2D("tau_w", nswbands, pver + 1); // layer single-scatter albedo [1]
+    tau_w_g = View2D("tau_w_g", nswbands, pver + 1); // asymmetry factor [1]
     tau_w_f =
-        View2D("tau_w_f", pver + 1, nswbands); // forward scattered fraction [1]
+        View2D("tau_w_f", nswbands, pver + 1); // forward scattered fraction [1]
 
     const auto tau_db = input.get_array("tau");
     const auto tau_w_db = input.get_array("tau_w");
     const auto tau_w_g_db = input.get_array("tau_w_g");
     const auto tau_w_f_db = input.get_array("tau_w_f");
 
-    mam4::validation::convert_1d_vector_to_2d_view_device(tau_db, tau);
-    mam4::validation::convert_1d_vector_to_2d_view_device(tau_w_db, tau_w);
-    mam4::validation::convert_1d_vector_to_2d_view_device(tau_w_g_db, tau_w_g);
-    mam4::validation::convert_1d_vector_to_2d_view_device(tau_w_f_db, tau_w_f);
+    mam4::validation::convert_1d_vector_to_transpose_2d_view_device(tau_db, tau);
+    mam4::validation::convert_1d_vector_to_transpose_2d_view_device(tau_w_db, tau_w);
+    mam4::validation::convert_1d_vector_to_transpose_2d_view_device(tau_w_g_db, tau_w_g);
+    mam4::validation::convert_1d_vector_to_transpose_2d_view_device(tau_w_f_db, tau_w_f);
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          aer_rad_props::volcanic_cmip_sw(zi, ilev_tropp, ext_cmip6_sw,
+          aer_rad_props::volcanic_cmip_sw2(zi, ilev_tropp, ext_cmip6_sw,
                                           ssa_cmip6_sw, af_cmip6_sw, tau, tau_w,
                                           tau_w_g, tau_w_f);
         });
@@ -84,19 +83,19 @@ void volcanic_cmip_sw(Ensemble *ensemble) {
     const int pver_po = pver + 1;
 
     std::vector<Real> tau_out(pver_po * nswbands, zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(tau, tau_out);
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(tau, tau_out);
     output.set("tau", tau_out);
 
     std::vector<Real> tau_w_out(pver_po * nswbands, zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(tau_w, tau_w_out);
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(tau_w, tau_w_out);
     output.set("tau_w", tau_w_out);
 
     std::vector<Real> tau_w_g_out(pver_po * nswbands, zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(tau_w_g, tau_w_g_out);
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(tau_w_g, tau_w_g_out);
     output.set("tau_w_g", tau_w_g_out);
 
     std::vector<Real> tau_w_f_out(pver_po * nswbands, zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(tau_w_f, tau_w_f_out);
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(tau_w_f, tau_w_f_out);
     output.set("tau_w_f", tau_w_f_out);
   });
 }
