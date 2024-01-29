@@ -34,6 +34,8 @@ cleanup() {
 
 set -xv
 
+hostname
+
 # TODO - add more verification to ensure variables are set before proceeding
 echo $BUILD_TYPE "detected for BUILD_TYPE"
 echo $HAERO_INSTALL "detected for HAERO install location"
