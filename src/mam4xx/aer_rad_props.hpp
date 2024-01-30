@@ -26,7 +26,7 @@ constexpr Real shr_const_cpdair =
     haero::Constants::cp_dry_air; // specific heat of dry air   ~ J/kg/K
 
 constexpr Real cnst_kap =
-    (shr_const_rgas / shr_const_mwdair) / shr_const_cpdair; //  ! R/Cp
+    (shr_const_rgas / shr_const_mwdair) / shr_const_cpdair; //   R/Cp
 
 constexpr Real cnst_faktor =
     -haero::Constants::gravity /
@@ -44,42 +44,42 @@ void volcanic_cmip_sw2(const ConstColumnView &zi, const int ilev_tropp,
                        const View2D &tau_w_g, const View2D &tau_w_f) {
 
   // Intent-in
-  //  ncol       ! Number of columns
-  //  zi(:,:)    ! Height above surface at interfaces [m]
-  //  trop_level(pcols)  ! tropopause level index
-  //  ext_cmip6_sw_inv_m(pcols,pver,nswbands)  ! short wave extinction [m^{-1}]
+  //  ncol        Number of columns
+  //  zi(:,:)     Height above surface at interfaces [m]
+  //  trop_level(pcols)   tropopause level index
+  //  ext_cmip6_sw_inv_m(pcols,pver,nswbands)   short wave extinction [m^{-1}]
   //  ssa_cmip6_sw(:,:,:),af_cmip6_sw(:,:,:)
 
   // Intent-inout
   // Note: we are using emaxx layouts
-  //  tau    (pcols,nswbands,0:pver) ! aerosol extinction optical depth
-  //  tau_w  (pcols,nswbands,0:pver) ! aerosol single scattering albedo * tau
-  //  tau_w_g(pcols,nswbands,0:pver) ! aerosol assymetry parameter * tau * w
-  //  tau_w_f(pcols,nswbands,0:pver) ! aerosol forward scattered fraction * tau
+  //  tau    (pcols,nswbands,0:pver)  aerosol extinction optical depth
+  //  tau_w  (pcols,nswbands,0:pver)  aerosol single scattering albedo * tau
+  //  tau_w_g(pcols,nswbands,0:pver)  aerosol assymetry parameter * tau * w
+  //  tau_w_f(pcols,nswbands,0:pver)  aerosol forward scattered fraction * tau
   //  *
   //  w
 
-  // !Local variables
+  // Local variables
   // icol, ipver, ilev_tropp
-  // lyr_thk ! thickness between level interfaces [m]
+  // lyr_thk  thickness between level interfaces [m]
   // ext_unitless(nswbands), asym_unitless(nswbands)
   // ext_ssa(nswbands),ext_ssa_asym(nswbands)
 
-  // !Logic:
-  // !Update taus, tau_w, tau_w_g and tau_w_f with the read in volcanic
-  // !aerosol extinction (1/km), single scattering albedo and asymmtry factors.
+  // Logic:
+  // Update taus, tau_w, tau_w_g and tau_w_f with the read in volcanic
+  // aerosol extinction (1/km), single scattering albedo and asymmtry factors.
 
-  // !Above the tropopause, the read in values from the file include both the
-  // stratospheric !and volcanic aerosols. Therefore, we need to zero out taus
-  // above the tropopause !and populate them exclusively from the read in
+  // Above the tropopause, the read in values from the file include both the
+  // stratospheric and volcanic aerosols. Therefore, we need to zero out taus
+  // above the tropopause and populate them exclusively from the read in
   // values.
 
-  // !If tropopause is found, update taus with 50% contributuions from the
-  // volcanic input !file and 50% from the existing model computed values
+  // If tropopause is found, update taus with 50% contributuions from the
+  // volcanic input file and 50% from the existing model computed values
 
-  // !First handle the case of tropopause layer itself:
+  // First handle the case of tropopause layer itself:
   // do icol = 1, ncol
-  // ilev_tropp = trop_level(icol) !tropopause level
+  // ilev_tropp = trop_level(icol) tropopause level
   //
   constexpr Real half = 0.5;
   const Real lyr_thk = zi(ilev_tropp) - zi(ilev_tropp + 1);
@@ -98,12 +98,7 @@ void volcanic_cmip_sw2(const ConstColumnView &zi, const int ilev_tropp,
         half * (tau_w_f(i, ilev_tropp + 1) + ext_ssa_asym * asym_unitless);
   } // end i
 
-  // !As it will be more efficient for FORTRAN to loop over levels and then
-  // columns, the following loops !are nested keeping that in mind Note that in
-  // C++ ported code, the loop over levels is nested. Thus, the previous comment
-  // does not apply.
-
-  // ilev_tropp = trop_level(icol) !tropopause level
+  // ilev_tropp = trop_level(icol) tropopause level
   for (int kk = 0; kk < ilev_tropp; ++kk) {
 
     const Real lyr_thk = zi(kk) - zi(kk + 1);
@@ -133,41 +128,41 @@ void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
                       const View2D &tau_w_g, const View2D &tau_w_f) {
 
   // Intent-in
-  //  ncol       ! Number of columns
-  //  zi(:,:)    ! Height above surface at interfaces [m]
-  //  trop_level(pcols)  ! tropopause level index
-  //  ext_cmip6_sw_inv_m(pcols,pver,nswbands)  ! short wave extinction [m^{-1}]
+  //  ncol        Number of columns
+  //  zi(:,:)     Height above surface at interfaces [m]
+  //  trop_level(pcols)   tropopause level index
+  //  ext_cmip6_sw_inv_m(pcols,pver,nswbands)   short wave extinction [m^{-1}]
   //  ssa_cmip6_sw(:,:,:),af_cmip6_sw(:,:,:)
 
   // Intent-inout
-  //  tau    (pcols,0:pver,nswbands) ! aerosol extinction optical depth
-  //  tau_w  (pcols,0:pver,nswbands) ! aerosol single scattering albedo * tau
-  //  tau_w_g(pcols,0:pver,nswbands) ! aerosol assymetry parameter * tau * w
-  //  tau_w_f(pcols,0:pver,nswbands) ! aerosol forward scattered fraction * tau
+  //  tau    (pcols,0:pver,nswbands)  aerosol extinction optical depth
+  //  tau_w  (pcols,0:pver,nswbands)  aerosol single scattering albedo * tau
+  //  tau_w_g(pcols,0:pver,nswbands)  aerosol assymetry parameter * tau * w
+  //  tau_w_f(pcols,0:pver,nswbands)  aerosol forward scattered fraction * tau
   //  *
   //  w
 
-  // !Local variables
+  // Local variables
   // icol, ipver, ilev_tropp
-  // lyr_thk ! thickness between level interfaces [m]
+  // lyr_thk  thickness between level interfaces [m]
   // ext_unitless(nswbands), asym_unitless(nswbands)
   // ext_ssa(nswbands),ext_ssa_asym(nswbands)
 
-  // !Logic:
-  // !Update taus, tau_w, tau_w_g and tau_w_f with the read in volcanic
-  // !aerosol extinction (1/km), single scattering albedo and asymmtry factors.
+  // Logic:
+  // Update taus, tau_w, tau_w_g and tau_w_f with the read in volcanic
+  // aerosol extinction (1/km), single scattering albedo and asymmtry factors.
 
-  // !Above the tropopause, the read in values from the file include both the
-  // stratospheric !and volcanic aerosols. Therefore, we need to zero out taus
-  // above the tropopause !and populate them exclusively from the read in
+  // Above the tropopause, the read in values from the file include both the
+  // stratospheric and volcanic aerosols. Therefore, we need to zero out taus
+  // above the tropopause and populate them exclusively from the read in
   // values.
 
-  // !If tropopause is found, update taus with 50% contributuions from the
-  // volcanic input !file and 50% from the existing model computed values
+  // If tropopause is found, update taus with 50% contributuions from the
+  // volcanic input file and 50% from the existing model computed values
 
-  // !First handle the case of tropopause layer itself:
+  // First handle the case of tropopause layer itself:
   // do icol = 1, ncol
-  // ilev_tropp = trop_level(icol) !tropopause level
+  // ilev_tropp = trop_level(icol) tropopause level
   //
   constexpr Real half = 0.5;
   const Real lyr_thk = zi(ilev_tropp) - zi(ilev_tropp + 1);
@@ -186,12 +181,12 @@ void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
         half * (tau_w_f(ilev_tropp + 1, i) + ext_ssa_asym * asym_unitless);
   } // end i
 
-  // !As it will be more efficient for FORTRAN to loop over levels and then
-  // columns, the following loops !are nested keeping that in mind Note that in
+  // As it will be more efficient for FORTRAN to loop over levels and then
+  // columns, the following loops are nested keeping that in mind Note that in
   // C++ ported code, the loop over levels is nested. Thus, the previous comment
   // does not apply.
 
-  // ilev_tropp = trop_level(icol) !tropopause level
+  // ilev_tropp = trop_level(icol) tropopause level
   for (int kk = 0; kk < ilev_tropp; ++kk) {
 
     const Real lyr_thk = zi(kk) - zi(kk + 1);
@@ -225,23 +220,23 @@ void compute_odap_volcanic_at_troplayer_lw(const int ilev_tropp,
   // intent-ins
   //  ncol
   // trop_level(:)
-  // zi(:,:) !geopotential height above surface at interfaces [m]
-  // ext_cmip6_lw_inv_m(:,:,:) !long wave extinction in the units of [1/m]
+  // zi(:,:) geopotential height above surface at interfaces [m]
+  // ext_cmip6_lw_inv_m(:,:,:) long wave extinction in the units of [1/m]
 
-  //! intent-inouts
-  //  odap_aer(:,:,:)  ! [fraction] absorption optical depth, per layer
+  // intent-inouts
+  //  odap_aer(:,:,:)   [fraction] absorption optical depth, per layer
   //  [unitless]
 
-  // !local
+  // local
   // integer :: icol, ilev_tropp
-  // real(r8) :: lyr_thk !layer thickness [m]
+  // real(r8) :: lyr_thk layer thickness [m]
   // do icol = 1, ncol
-  // ilev_tropp = trop_level(icol) !tropopause level
+  // ilev_tropp = trop_level(icol) tropopause level
   const Real lyr_thk =
-      zi(ilev_tropp) - zi(ilev_tropp + 1); //! compute layer thickness in meters
+      zi(ilev_tropp) - zi(ilev_tropp + 1); // compute layer thickness in meters
   constexpr Real half = 0.5;
-  //! update taus with 50% contributuions from the volcanic input file
-  //! and 50% from the existing model computed values at the tropopause layer
+  // update taus with 50% contributuions from the volcanic input file
+  // and 50% from the existing model computed values at the tropopause layer
   for (int i = 0; i < nlwbands; ++i) {
     odap_aer(ilev_tropp, i) =
         half * (odap_aer(ilev_tropp, i) +
@@ -263,23 +258,23 @@ void compute_odap_volcanic_at_troplayer_lw2(const int ilev_tropp,
   // intent-ins
   //  ncol
   // trop_level(:)
-  // zi(:,:) !geopotential height above surface at interfaces [m]
-  // ext_cmip6_lw_inv_m(:,:,:) !long wave extinction in the units of [1/m]
+  // zi(:,:) geopotential height above surface at interfaces [m]
+  // ext_cmip6_lw_inv_m(:,:,:) long wave extinction in the units of [1/m]
 
-  //! intent-inouts
-  //  odap_aer(:,:,:)  ! [fraction] absorption optical depth, per layer
+  // intent-inouts
+  //  odap_aer(:,:,:)   [fraction] absorption optical depth, per layer
   //  [unitless]
 
-  // !local
+  // local
   // integer :: icol, ilev_tropp
-  // real(r8) :: lyr_thk !layer thickness [m]
+  // real(r8) :: lyr_thk layer thickness [m]
   // do icol = 1, ncol
-  // ilev_tropp = trop_level(icol) !tropopause level
+  // ilev_tropp = trop_level(icol) tropopause level
   const Real lyr_thk =
-      zi(ilev_tropp) - zi(ilev_tropp + 1); //! compute layer thickness in meters
+      zi(ilev_tropp) - zi(ilev_tropp + 1); // compute layer thickness in meters
   constexpr Real half = 0.5;
-  //! update taus with 50% contributuions from the volcanic input file
-  //! and 50% from the existing model computed values at the tropopause layer
+  // update taus with 50% contributuions from the volcanic input file
+  // and 50% from the existing model computed values at the tropopause layer
   for (int i = 0; i < nlwbands; ++i) {
     odap_aer(i, ilev_tropp) =
         half * (odap_aer(i, ilev_tropp) +
@@ -294,33 +289,33 @@ void compute_odap_volcanic_above_troplayer_lw(const int ilev_tropp,
                                               const View2D &ext_cmip6_lw_inv_m,
                                               const View2D &odap_aer) {
 
-  //     !Above the tropopause, the read in values from the file include both
+  //     Above the tropopause, the read in values from the file include both
   //     the stratospheric
-  // !and volcanic aerosols. Therefore, we need to zero out odap_aer above the
-  // tropopause !and populate it exclusively from the read in values.
+  // and volcanic aerosols. Therefore, we need to zero out odap_aer above the
+  // tropopause and populate it exclusively from the read in values.
 
-  // !intent-ins
+  // intent-ins
   // integer, intent(in) :: pver, ncol
   // integer, intent(in) :: trop_level(:)
 
-  // real(r8), intent(in) :: zi(:,:) !geopotential height above surface at
-  // interfaces [m] real(r8), intent(in) :: ext_cmip6_lw_inv_m(:,:,:) !long wave
+  // real(r8), intent(in) :: zi(:,:) geopotential height above surface at
+  // interfaces [m] real(r8), intent(in) :: ext_cmip6_lw_inv_m(:,:,:) long wave
   // extinction in the units of [1/m]
 
-  // !intent-inouts
-  // real(r8), intent(inout) :: odap_aer(:,:,:) ! [fraction] absorption optical
+  // intent-inouts
+  // real(r8), intent(inout) :: odap_aer(:,:,:)  [fraction] absorption optical
   // depth, per layer [unitless]
 
-  // !local
+  // local
   // integer :: ipver, icol, ilev_tropp
-  // real(r8) :: lyr_thk !layer thickness [m]
+  // real(r8) :: lyr_thk layer thickness [m]
 
-  // !As it will be more efficient for FORTRAN to loop over levels and then
-  // columns, the following loops !are nested keeping that in mind
+  // As it will be more efficient for FORTRAN to loop over levels and then
+  // columns, the following loops are nested keeping that in mind
 
   for (int kk = 0; kk < ilev_tropp; ++kk) {
     const Real lyr_thk =
-        zi(kk) - zi(kk + 1); // ! compute layer thickness in meters
+        zi(kk) - zi(kk + 1); //  compute layer thickness in meters
     for (int i = 0; i < nlwbands; ++i) {
       odap_aer(kk, i) = lyr_thk * ext_cmip6_lw_inv_m(kk, i);
     } // end i
@@ -337,33 +332,33 @@ void compute_odap_volcanic_above_troplayer_lw2(const int ilev_tropp,
                                                const View2D &ext_cmip6_lw_inv_m,
                                                const View2D &odap_aer) {
 
-  //     !Above the tropopause, the read in values from the file include both
+  //     Above the tropopause, the read in values from the file include both
   //     the stratospheric
-  // !and volcanic aerosols. Therefore, we need to zero out odap_aer above the
-  // tropopause !and populate it exclusively from the read in values.
+  // and volcanic aerosols. Therefore, we need to zero out odap_aer above the
+  // tropopause and populate it exclusively from the read in values.
 
-  // !intent-ins
+  // intent-ins
   // integer, intent(in) :: pver, ncol
   // integer, intent(in) :: trop_level(:)
 
-  // real(r8), intent(in) :: zi(:,:) !geopotential height above surface at
-  // interfaces [m] real(r8), intent(in) :: ext_cmip6_lw_inv_m(:,:,:) !long wave
+  // real(r8), intent(in) :: zi(:,:) geopotential height above surface at
+  // interfaces [m] real(r8), intent(in) :: ext_cmip6_lw_inv_m(:,:,:) long wave
   // extinction in the units of [1/m]
 
-  // !intent-inouts
-  // real(r8), intent(inout) :: odap_aer(:,:,:) ! [fraction] absorption optical
+  // intent-inouts
+  // real(r8), intent(inout) :: odap_aer(:,:,:)  [fraction] absorption optical
   // depth, per layer [unitless]
 
-  // !local
+  // local
   // integer :: ipver, icol, ilev_tropp
-  // real(r8) :: lyr_thk !layer thickness [m]
+  // real(r8) :: lyr_thk layer thickness [m]
 
-  // !As it will be more efficient for FORTRAN to loop over levels and then
-  // columns, the following loops !are nested keeping that in mind
+  // As it will be more efficient for FORTRAN to loop over levels and then
+  // columns, the following loops are nested keeping that in mind
 
   for (int kk = 0; kk < ilev_tropp; ++kk) {
     const Real lyr_thk =
-        zi(kk) - zi(kk + 1); // ! compute layer thickness in meters
+        zi(kk) - zi(kk + 1); //  compute layer thickness in meters
     for (int i = 0; i < nlwbands; ++i) {
       odap_aer(i, kk) = lyr_thk * ext_cmip6_lw_inv_m(kk, i);
     } // end i
@@ -373,14 +368,14 @@ void compute_odap_volcanic_above_troplayer_lw2(const int ilev_tropp,
 } // compute_odap_volcanic_above_troplayer_lw
 
 /* Read the tropopause pressure in from a file containging a climatology. The
-  ! data is interpolated to the current dat of year and latitude.
-  !
-  ! NOTE: The data is read in during tropopause_init and stored in the module
-  ! variable trop */
+   data is interpolated to the current dat of year and latitude.
+  
+   NOTE: The data is read in during tropopause_init and stored in the module
+   variable trop */
 
 #if 0
   KOKKOS_INLINE_FUNCTION
-void tropopause_climate(lchnk,ncol,pmid,pint,temp,zm,zi,    &  ! in
+void tropopause_climate(lchnk,ncol,pmid,pint,temp,zm,zi,    &   in
              tropLev,tropP,tropT,tropZ)   {
 // TO be ported...
 } // tropopause_climate
@@ -391,19 +386,19 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
                        const ConstColumnView &zm, const ConstColumnView &zi) {
   // Find tropopause or quit the simulation if not found
 
-  // lchnk            ! number of chunks
-  // ncol             ! number of columns
-  // pmid(:,:)        ! midpoint pressure [Pa]
-  // pint(:,:)        ! interface pressure [Pa]
-  // temperature(:,:) ! temperature [K]
-  // zm(:,:)          ! geopotential height above surface at midpoints [m]
-  // zi(:,:)          ! geopotential height above surface at interfaces [m]
-  // !return value [out]
-  // trop_level(pcols) !return value
+  // lchnk             number of chunks
+  // ncol              number of columns
+  // pmid(:,:)         midpoint pressure [Pa]
+  // pint(:,:)         interface pressure [Pa]
+  // temperature(:,:)  temperature [K]
+  // zm(:,:)           geopotential height above surface at midpoints [m]
+  // zi(:,:)           geopotential height above surface at interfaces [m]
+  // return value [out]
+  // trop_level(pcols) return value
 
-  // !trop_level has a value for tropopause for each column
-  // call tropopause_find(lchnk, ncol, pmid, pint, temperature, zm, zi, & !in
-  //        trop_level) !out
+  // trop_level has a value for tropopause for each column
+  // call tropopause_find(lchnk, ncol, pmid, pint, temperature, zm, zi, & in
+  //        trop_level) out
   int trop_level = 0;
   tropopause::tropopause_twmo(pmid, pint, temperature, zm, zi, trop_level);
 
@@ -436,24 +431,24 @@ void aer_rad_props_lw(
   // emissivity calculations
 
   // Intent-ins
-  //  is_cmip6_volc    ! flag for using cmip6 style volc emissions
-  //  dt               ! time step[s]
-  //  lchnk            ! number of chunks
-  //  ncol             ! number of columns
-  //  pmid(:,:)        ! midpoint pressure [Pa]
-  //  pint(:,:)        ! interface pressure [Pa]
-  //  temperature(:,:) ! temperature [K]
-  //  zm(:,:)          ! geopotential height above surface at midpoints [m]
-  //  zi(:,:)          ! geopotential height above surface at interfaces [m]
+  //  is_cmip6_volc     flag for using cmip6 style volc emissions
+  //  dt                time step[s]
+  //  lchnk             number of chunks
+  //  ncol              number of columns
+  //  pmid(:,:)         midpoint pressure [Pa]
+  //  pint(:,:)         interface pressure [Pa]
+  //  temperature(:,:)  temperature [K]
+  //  zm(:,:)           geopotential height above surface at midpoints [m]
+  //  zi(:,:)           geopotential height above surface at interfaces [m]
   //  state_q(:,:,:)
   //  pdel(:,:)
   //  pdeldry(:,:)
   //  cldn(:,:)
-  //  ext_cmip6_lw_m(:,:,:) !long wave extinction in the units of [1/m]
-  //  qqcw(:)   ! Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
+  //  ext_cmip6_lw_m(:,:,:) long wave extinction in the units of [1/m]
+  //  qqcw(:)    Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
 
   // intent-outs
-  //  odap_aer(pcols,pver,nlwbands) ! [fraction] absorption optical depth, per
+  //  odap_aer(pcols,pver,nlwbands)  [fraction] absorption optical depth, per
   //  layer [unitless]
   // Compute contributions from the modal aerosols.
   modal_aero_lw(team, dt, state_q, qqcw, temperature, pmid, pdel, pdeldry, cldn,
@@ -462,7 +457,7 @@ void aer_rad_props_lw(
                 odap_aer);
 
   // FIXME: port tropopause_or_quit
-  // !Find tropopause or quit simulation if not found
+  // Find tropopause or quit simulation if not found
   // trop_level(1:pcols) = tropopause_or_quit(lchnk, ncol, pmid, pint,
   // temperature, zm, zi)
   const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
@@ -503,11 +498,11 @@ void aer_rad_props_sw(
   // Return bulk layer tau, omega, g, f for all spectral intervals.
 
   // Arguments
-  // pmid(:,:)        ! midpoint pressure [Pa]
-  // pint(:,:)        ! interface pressure [Pa]
-  // temperature(:,:) ! temperature [K]
-  // zm(:,:)          ! geopotential height above surface at midpoints [m]
-  // zi(:,:)          ! geopotential height above surface at interfaces [m]
+  // pmid(:,:)         midpoint pressure [Pa]
+  // pint(:,:)         interface pressure [Pa]
+  // temperature(:,:)  temperature [K]
+  // zm(:,:)           geopotential height above surface at midpoints [m]
+  // zi(:,:)           geopotential height above surface at interfaces [m]
   //  state_q(:,:,:)
   // pdel(:,:)
   // pdeldry(:,:)
@@ -517,17 +512,17 @@ void aer_rad_props_sw(
   // ssa_cmip6_sw(:,:,:)
   // af_cmip6_sw(:,:,:)
 
-  // nnite                ! number of night columns
-  // idxnite(:)           ! local column indices of night columns
-  // is_cmip6_volc        ! true if cmip6 style volcanic file is read otherwise
+  // nnite                 number of night columns
+  // idxnite(:)            local column indices of night columns
+  // is_cmip6_volc         true if cmip6 style volcanic file is read otherwise
   // false
-  // dt                   ! time step (s)
+  // dt                    time step (s)
 
-  // qqcw(:)               ! Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
-  // tau    (pcols,0:pver,nswbands) ! aerosol extinction optical depth
-  // tau_w  (pcols,0:pver,nswbands) ! aerosol single scattering albedo * tau
-  // tau_w_g(pcols,0:pver,nswbands) ! aerosol assymetry parameter * tau * w
-  // tau_w_f(pcols,0:pver,nswbands) ! aerosol forward scattered fraction * tau *
+  // qqcw(:)                Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
+  // tau    (pcols,0:pver,nswbands)  aerosol extinction optical depth
+  // tau_w  (pcols,0:pver,nswbands)  aerosol single scattering albedo * tau
+  // tau_w_g(pcols,0:pver,nswbands)  aerosol assymetry parameter * tau * w
+  // tau_w_f(pcols,0:pver,nswbands)  aerosol forward scattered fraction * tau *
   // w
 
   // FORTRAN REFACTOR: This is done to fill invalid values in columns where
@@ -538,8 +533,8 @@ void aer_rad_props_sw(
   //  tau_w_g (:,:,:) = -100._r8
   //  tau_w_f (:,:,:) = -100._r8
 
-  // ! top layer (ilev = 0) has no aerosol (ie tau = 0)
-  // ! also initialize rest of layers to accumulate od's
+  //  top layer (ilev = 0) has no aerosol (ie tau = 0)
+  //  also initialize rest of layers to accumulate od's
   // tau    (1:ncol,:,:) = 0._r8
   // tau_w  (1:ncol,:,:) = 0._r8
   // tau_w_g(1:ncol,:,:) = 0._r8
@@ -563,7 +558,7 @@ void aer_rad_props_sw(
   //  currently implemented for climate list only
   // FIXME: to be ported
   // call aer_vis_diag_out(lchnk, ncol, nnite, idxnite, tau(:,:,idx_sw_diag))
-  // !in
+  // in
 
 } // aer_rad_props_sw
 
@@ -588,11 +583,11 @@ void aer_rad_props_sw(
   // Return bulk layer tau, omega, g, f for all spectral intervals.
 
   // Arguments
-  // pmid(:,:)        ! midpoint pressure [Pa]
-  // pint(:,:)        ! interface pressure [Pa]
-  // temperature(:,:) ! temperature [K]
-  // zm(:,:)          ! geopotential height above surface at midpoints [m]
-  // zi(:,:)          ! geopotential height above surface at interfaces [m]
+  // pmid(:,:)         midpoint pressure [Pa]
+  // pint(:,:)         interface pressure [Pa]
+  // temperature(:,:)  temperature [K]
+  // zm(:,:)           geopotential height above surface at midpoints [m]
+  // zi(:,:)           geopotential height above surface at interfaces [m]
   //  state_q(:,:,:)
   // pdel(:,:)
   // pdeldry(:,:)
@@ -602,17 +597,17 @@ void aer_rad_props_sw(
   // ssa_cmip6_sw(:,:,:)
   // af_cmip6_sw(:,:,:)
 
-  // nnite                ! number of night columns
-  // idxnite(:)           ! local column indices of night columns
-  // is_cmip6_volc        ! true if cmip6 style volcanic file is read otherwise
+  // nnite                 number of night columns
+  // idxnite(:)            local column indices of night columns
+  // is_cmip6_volc         true if cmip6 style volcanic file is read otherwise
   // false
-  // dt                   ! time step (s)
+  // dt                    time step (s)
 
-  // qqcw(:)               ! Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
-  // tau    (pcols,0:pver,nswbands) ! aerosol extinction optical depth
-  // tau_w  (pcols,0:pver,nswbands) ! aerosol single scattering albedo * tau
-  // tau_w_g(pcols,0:pver,nswbands) ! aerosol assymetry parameter * tau * w
-  // tau_w_f(pcols,0:pver,nswbands) ! aerosol forward scattered fraction * tau *
+  // qqcw(:)                Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
+  // tau    (pcols,0:pver,nswbands)  aerosol extinction optical depth
+  // tau_w  (pcols,0:pver,nswbands)  aerosol single scattering albedo * tau
+  // tau_w_g(pcols,0:pver,nswbands)  aerosol assymetry parameter * tau * w
+  // tau_w_f(pcols,0:pver,nswbands)  aerosol forward scattered fraction * tau *
   // w
 
   // FORTRAN REFACTOR: This is done to fill invalid values in columns where
@@ -623,8 +618,8 @@ void aer_rad_props_sw(
   //  tau_w_g (:,:,:) = -100._r8
   //  tau_w_f (:,:,:) = -100._r8
 
-  // ! top layer (ilev = 0) has no aerosol (ie tau = 0)
-  // ! also initialize rest of layers to accumulate od's
+  //  top layer (ilev = 0) has no aerosol (ie tau = 0)
+  //  also initialize rest of layers to accumulate od's
   // tau    (1:ncol,:,:) = 0._r8
   // tau_w  (1:ncol,:,:) = 0._r8
   // tau_w_g(1:ncol,:,:) = 0._r8
@@ -648,7 +643,7 @@ void aer_rad_props_sw(
   //  currently implemented for climate list only
   // FIXME: to be ported
   // call aer_vis_diag_out(lchnk, ncol, nnite, idxnite, tau(:,:,idx_sw_diag))
-  // !in
+  // in
 
 } // aer_rad_props_sw
 
@@ -674,25 +669,25 @@ void aer_rad_props_lw(
   // emissivity calculations
 
   // Intent-ins
-  //  is_cmip6_volc    ! flag for using cmip6 style volc emissions
-  //  dt               ! time step[s]
-  //  lchnk            ! number of chunks
-  //  ncol             ! number of columns
-  //  pmid(:,:)        ! midpoint pressure [Pa]
-  //  pint(:,:)        ! interface pressure [Pa]
-  //  temperature(:,:) ! temperature [K]
-  //  zm(:,:)          ! geopotential height above surface at midpoints [m]
-  //  zi(:,:)          ! geopotential height above surface at interfaces [m]
+  //  is_cmip6_volc     flag for using cmip6 style volc emissions
+  //  dt                time step[s]
+  //  lchnk             number of chunks
+  //  ncol              number of columns
+  //  pmid(:,:)         midpoint pressure [Pa]
+  //  pint(:,:)         interface pressure [Pa]
+  //  temperature(:,:)  temperature [K]
+  //  zm(:,:)           geopotential height above surface at midpoints [m]
+  //  zi(:,:)           geopotential height above surface at interfaces [m]
   //  state_q(:,:,:)
   //  pdel(:,:)
   //  pdeldry(:,:)
   //  cldn(:,:)
-  //  ext_cmip6_lw_m(:,:,:) !long wave extinction in the units of [1/m]
-  //  qqcw(:)   ! Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
+  //  ext_cmip6_lw_m(:,:,:) long wave extinction in the units of [1/m]
+  //  qqcw(:)    Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
 
   // intent-outs
   // Note: using emaxx layout
-  //  odap_aer(pcols,nlwbands, pver) ! [fraction] absorption optical depth, per
+  //  odap_aer(pcols,nlwbands, pver)  [fraction] absorption optical depth, per
   //  layer [unitless]
   // Compute contributions from the modal aerosols.
   modal_aero_lw(team, dt, progs, atm, pdel, pdeldry, aersol_optics_data,
@@ -700,7 +695,7 @@ void aer_rad_props_lw(
                 odap_aer);
 
   // FIXME: port tropopause_or_quit
-  // !Find tropopause or quit simulation if not found
+  // Find tropopause or quit simulation if not found
   // trop_level(1:pcols) = tropopause_or_quit(lchnk, ncol, pmid, pint,
   // temperature, zm, zi)
   const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
