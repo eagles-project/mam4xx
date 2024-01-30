@@ -194,21 +194,16 @@ void modal_size_parameters(const Real sigma_logr_aer,
                            Real &radsurf, Real &logradsurf, Real cheb[ncoef],
                            const bool ismethod2) {
 
-  // ncol
-  // sigma_logr_aer   geometric standard deviation of number distribution
-  // dgnumwet(:,:)    aerosol wet number mode diameter [m]
-  // radsurf(:,:)     aerosol surface mode radius [m]
-  // logradsurf(:,:)  log(aerosol surface mode radius)
-  // cheb(:,:,:)      chebychev polynomial parameters
+  /* ncol
+   sigma_logr_aer   geometric standard deviation of number distribution
+   dgnumwet    aerosol wet number mode diameter [m]
+   radsurf     aerosol surface mode radius [m]
+   logradsurf  log(aerosol surface mode radius)
+   cheb      chebychev polynomial parameters
 
-  // FORTRAN refactoring: ismethod is tempararily used to ensure BFB test
-  /// bool ismethod2
-
-  // integer  :: icol, kk, nc
-  // real(r8) :: alnsg_amode       log(sigma)
-  // real(r8) :: explnsigma
-  // real(r8) :: xrad  normalized aerosol radius
-  // -------------------------------------------------------------------------------
+  FORTRAN refactoring: ismethod is tempararily used to ensure BFB test
+  bool ismethod2
+  */
   constexpr Real half = 0.5;
   constexpr Real one = 1.0;
   constexpr Real two = 2.0;
@@ -247,12 +242,11 @@ void modal_size_parameters(const Real sigma_logr_aer,
 KOKKOS_INLINE_FUNCTION
 void calc_parameterized(const Real coef[ncoef], const Real cheb_k[ncoef],
                         Real &para) {
-  // calculate parameterized absorption, extinction or asymmetry factor
-  // further calculations are needed. see modal_aero_sw and modal_aero_lw
-  // ncol,ncoef
-  // coef(pcols,ncoef)
-  // cheb_k(ncoef,pcols)
-  // para(pcols)
+  /* calculate parameterized absorption, extinction or asymmetry factor
+  further calculations are needed. see modal_aero_sw and modal_aero_lw
+  coef(ncoef)
+  cheb_k(ncoef)
+  para */
   constexpr Real half = 0.5;
   para = half * coef[0];
   for (int nc = 1; nc < ncoef; ++nc) {
@@ -270,10 +264,9 @@ void update_aod_spec(const Real scath2o,
                      const Real hygro_s, const Real palb,
                      const Real dopaer, // in
                      Real &scat_s, Real &abs_s, Real &aod_s) {
-  // scath2o, absh2o, sumscat, sumabs, sumhygro
-  // hygro_s, palb, dopaer
-  // scat_s, abs_s, aod_s   scatering, absorption and aod for a species
-  // update aerosol optical depth from scattering and absorption
+
+  /* scat_s, abs_s, aod_s   scatering, absorption and aod for a species
+  update aerosol optical depth from scattering and absorption*/
   constexpr Real one = 1.0;
   scat_s = (scat_s + scath2o * hygro_s / sumhygro) / sumscat;
   abs_s = (abs_s + absh2o * hygro_s / sumhygro) / sumabs;
@@ -286,16 +279,14 @@ KOKKOS_INLINE_FUNCTION
 void calc_volc_ext(const int trop_level, const ConstColumnView &state_zm,
                    const ColumnView &ext_cmip6_sw_m, const ColumnView &extinct,
                    Real &tropopause_m) {
-  // calculate contributions from volcanic aerosol extinction
-  // trop_level(pcols)tropopause level for each column
-  // state_zm(:,:)  state%zm [m]
-  // ext_cmip6_sw(pcols,pver)  aerosol shortwave extinction [1/m]
-  // extinct(pcols,pver)  aerosol extinction [1/m]
-  // tropopause_m(pcols)  tropopause height [m]
-  // kk_tropp = trop_level(icol)
-  //
+  /* calculate contributions from volcanic aerosol extinction
+  trop_level(pcols)tropopause level for each column
+  state_zm(:,:)  state%zm [m]
+  ext_cmip6_sw(pcols,pver)  aerosol shortwave extinction [1/m]
+  extinct(pcols,pver)  aerosol extinction [1/m]
+  tropopause_m(pcols)  tropopause height [m]
+  kk_tropp = trop_level(icol) */
   constexpr Real half = 0.5;
-
   // diagnose tropopause height
   tropopause_m = state_zm(trop_level); // in meters
   // update tropopause layer first
@@ -307,7 +298,6 @@ void calc_volc_ext(const int trop_level, const ConstColumnView &state_zm,
   for (int kk = 0; kk < trop_level; ++kk) {
     extinct(kk) = ext_cmip6_sw_m(kk);
   }
-
 } // calc_volc_ext
 
 KOKKOS_INLINE_FUNCTION
@@ -315,16 +305,16 @@ void calc_diag_spec(const Real specmmr_k, const Real mass_k, const Real vol,
                     const Real specrefr, const Real specrefi,
                     const Real hygro_aer, Real &burden_s, Real &scat_s,
                     Real &abs_s, Real &hygro_s) {
-  // calculate some diagnostics for a species
-  // specmmr_k(:)   mmr at level kk [kg/kg]
-  // mass_k(:)         mass at layer kk [kg/m2]
-  // vol(:)  volume concentration of aerosol species [m3/kg]
-  // specrefr, specrefi   real and image part of specrefindex
-  // hygro_aer        aerosol hygroscopicity [unitless]
-  // burden_s(pcols)  aerosol burden of species [kg/m2]
-  // scat_s(pcols)    scattering of species [unitless]
-  // abs_s(pcols)     absorption of species [unit?]
-  // hygro_s(pcols)   hygroscopicity of species [unitless]
+  /* calculate some diagnostics for a species
+  specmmr_k(:)   mmr at level kk [kg/kg]
+  mass_k(:)         mass at layer kk [kg/m2]
+  vol(:)  volume concentration of aerosol species [m3/kg]
+  specrefr, specrefi   real and image part of specrefindex
+  hygro_aer        aerosol hygroscopicity [unitless]
+  burden_s(pcols)  aerosol burden of species [kg/m2]
+  scat_s(pcols)    scattering of species [unitless]
+  abs_s(pcols)     absorption of species [unit?]
+  hygro_s(pcols)   hygroscopicity of species [unitless]*/
   constexpr Real zero = 0;
 
   burden_s = zero;
@@ -347,28 +337,27 @@ calculate complex refractive index
 also output wetvol and watervol
 -------------------------------------------------------------------*/
 
-  // lwsw    indicator if this is lw or sw lw =0 and sw =1
-  // ncol, ilwsw
-  // qaerwat_kk(:)    aerosol water at level kk [g/g]
-  // specvol(:,:)     volume concentration of aerosol specie [m3/kg]
-  // complex(r8), intent(in) :: specrefindex(:,:)      species refractive index
+  /* lwsw    indicator if this is lw or sw lw =0 and sw =1
+  qaerwat_kk(:)    aerosol water at level kk [g/g]
+  specvol(:,:)     volume concentration of aerosol specie [m3/kg]
+  complex(r8), intent(in) :: specrefindex(:,:)      species refractive index
+  dryvol(pcols)     volume concentration of aerosol mode [m3/kg]
+  wetvol(pcols)     volume concentration of wet mode [m3/kg]
+  watervol(pcols)   volume concentration of water in each mode [m3/kg]
+  refr(pcols)       real part of refractive index
+  refi(pcols)       imaginary part of refractive index
+  complex(r8),intent(out) :: crefin(pcols)  complex refractive index
 
-  // dryvol(pcols)     volume concentration of aerosol mode [m3/kg]
-  // wetvol(pcols)     volume concentration of wet mode [m3/kg]
-  // watervol(pcols)   volume concentration of water in each mode [m3/kg]
-  // refr(pcols)       real part of refractive index
-  // refi(pcols)       imaginary part of refractive index
-  // complex(r8),intent(out) :: crefin(pcols)  complex refractive index
+  refractive index for water read in read_water_refindex
+  crefwsw(nswbands)  complex refractive index for water visible
+  crefwlw(nlwbands)  complex refractive index for water infrared
 
-  // refractive index for water read in read_water_refindex
-  // crefwsw(nswbands)  complex refractive index for water visible
-  // crefwlw(nlwbands)  complex refractive index for water infrared
-
-  // FIXME
-  // if ((lwsw /= 'lw') .and. (lwsw /= 'sw')) then
-  //     call endrun('calc_refin_complex is called with '// lwsw// ', it should
-  //     be called with either lw or sw')
-  // endif
+  FIXME
+   if ((lwsw /= 'lw') .and. (lwsw /= 'sw')) then
+       call endrun('calc_refin_complex is called with '// lwsw// ', it should
+       be called with either lw or sw')
+   endif
+  */
 
   // crefin(:ncol) = (0._r8, 0._r8)
   constexpr Real zero = 0;
@@ -1138,10 +1127,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt, const View2D &state_q,
                    const AerosolOpticsDeviceData &aersol_optics_data,
                    // output
                    const View2D &tauxar) {
-
-  //
   // calculates aerosol lw radiative properties
-
   // dt        time step [s]
   // state_q(:,:,:)    water and tracers (state%q) in state [kg/kg]
   // temperature(:,:)  temperature [K]
@@ -1161,16 +1147,13 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt, const View2D &state_q,
     }
   });
   team.team_barrier();
-
   // inputs
-
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, top_lev, pver), [&](int kk) {
         Real cldn_kk = cldn(kk);
         const auto state_q_kk = Kokkos::subview(state_q, kk, Kokkos::ALL());
         const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
         const auto tauxar_kkp = Kokkos::subview(tauxar, kk, Kokkos::ALL());
-
         modal_aero_lw_k(pdeldry(kk), pmid(kk), temperature(kk), cldn_kk,
                         state_q_kk.data(), // in
                         qqcw_k.data(),     // in
@@ -1192,9 +1175,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
   const ConstColumnView temperature = atm.temperature;
   const ConstColumnView pmid = atm.pressure;
   const ConstColumnView cldn = atm.cloud_fraction;
-
   // calculates aerosol lw radiative properties
-
   // dt        time step [s]
   // state_q(:,:,:)    water and tracers (state%q) in state [kg/kg]
   // temperature(:,:)  temperature [K]
@@ -1202,7 +1183,6 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
   // pdel(:,:)         pressure interval [Pa]
   // pdeldry(:,:)      dry mass pressure interval [Pa]
   // cldn(:,:)         layer cloud fraction [fraction]
-
   // qqcw(:)                Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
   // tauxar(pcols,pver,nlwbands)  layer absorption optical depth
   constexpr int pcnst = mam4::ndrop::nvars;
