@@ -181,8 +181,8 @@ void transfer_work_arrays_to_prognostics(const Real q[gas_pcnst()],
 // MUST FIXME: address James comments about making the code better.
 KOKKOS_INLINE_FUNCTION
 void extract_stateq_from_prognostics(const mam4::Prognostics &progs,
-                                   const haero::Atmosphere &atm, Real *q,
-                                   const int klev) {
+                                     const haero::Atmosphere &atm, Real *q,
+                                     const int klev) {
 
   int s_idx = ekat::ScalarTraits<int>::invalid();
   q[0] = atm.vapor_mixing_ratio(klev);               // qv
@@ -219,7 +219,7 @@ void extract_stateq_from_prognostics(const mam4::Prognostics &progs,
 
 KOKKOS_INLINE_FUNCTION
 void inject_stateq_to_prognostics(const Real *q, mam4::Prognostics &progs,
-                                   const int klev) {
+                                  const int klev) {
 
   int s_idx = ekat::ScalarTraits<int>::invalid();
 
@@ -256,7 +256,7 @@ void inject_stateq_to_prognostics(const Real *q, mam4::Prognostics &progs,
 // This object can be provided to mam4xx for the column.
 KOKKOS_INLINE_FUNCTION
 void extract_qqcw_from_prognostics(const mam4::Prognostics &progs, Real *qqcw,
-                                const int klev) {
+                                   const int klev) {
 
   // NOTE: qqcw view has the same dimension and indexing as state_q array.
   //  This array doesn't store gasses, so the indexing starts at aerosols
