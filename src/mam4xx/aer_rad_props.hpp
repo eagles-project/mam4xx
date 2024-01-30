@@ -454,6 +454,7 @@ void aer_rad_props_lw(
                 aersol_optics_data,
                 // outputs
                 odap_aer);
+  team.team_barrier();
 
   // FIXME: port tropopause_or_quit
   // !Find tropopause or quit simulation if not found
@@ -464,8 +465,10 @@ void aer_rad_props_lw(
   // We are here because tropopause is found, update taus with 50%
   // contributuions from the volcanic input file and 50% from the existing model
   // computed values at the tropopause layer
+  team.team_barrier();
   compute_odap_volcanic_at_troplayer_lw(ilev_tropp, zi, ext_cmip6_lw_m,
                                         odap_aer);
+  team.team_barrier();
   // Above the tropopause, the read in values from the file include both the
   // stratospheric
   //  and volcanic aerosols. Therefore, we need to zero out odap_aer above the
