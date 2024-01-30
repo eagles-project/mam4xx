@@ -369,7 +369,7 @@ void compute_odap_volcanic_above_troplayer_lw2(const int ilev_tropp,
 
 /* Read the tropopause pressure in from a file containging a climatology. The
    data is interpolated to the current dat of year and latitude.
-  
+
    NOTE: The data is read in during tropopause_init and stored in the module
    variable trop */
 

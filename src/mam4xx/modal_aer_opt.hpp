@@ -643,7 +643,7 @@ void modal_aero_sw_wo_diagnostics_k(
 
   //  Local variables
   // real(r8),    pointer :: specmmr(:,:)         species mass mixing ratio
-  // [kg/kg] spectype             species type hygro_aer           
+  // [kg/kg] spectype             species type hygro_aer
   // hygroscopicity [1]
 
   // sigma_logr_aer          geometric standard deviation of number
@@ -1117,7 +1117,7 @@ void modal_aero_lw_k(const Real &pdeldry, const Real &pmid,
       // yet.
       // FORTRAN refactor: check and writeout error/warning message
       // FORTRAN refactor: This if condition is never met in testing run ...
-      // call check_error_warning('lw', icol, kk,mm, ilw, nspec, list_idx,& 
+      // call check_error_warning('lw', icol, kk,mm, ilw, nspec, list_idx,&
       // in
       //                 dopaer, pabs(icol), dryvol, wetvol, watervol,
       //                 crefin,cabs,&  in specdens, specrefindex, specvol, &
