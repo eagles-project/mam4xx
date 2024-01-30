@@ -124,7 +124,6 @@ void volcanic_cmip_sw2(const ConstColumnView &zi, const int ilev_tropp,
 
 } // volcanic_cmip_sw
 
-
 // tau, tau_w, tau_w_g, tau_w_f have layout (pver, nswbands)
 KOKKOS_INLINE_FUNCTION
 void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
@@ -212,7 +211,6 @@ void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
   } // kk
 
 } // volcanic_cmip_sw
-
 
 // aer_rad_props
 // odap_aer has layout (pver, nlwbands)
@@ -463,8 +461,6 @@ void aer_rad_props_lw(
                 // outputs
                 odap_aer);
 
-  
-
   // FIXME: port tropopause_or_quit
   // !Find tropopause or quit simulation if not found
   // trop_level(1:pcols) = tropopause_or_quit(lchnk, ncol, pmid, pint,
@@ -478,7 +474,7 @@ void aer_rad_props_lw(
 
   compute_odap_volcanic_at_troplayer_lw(ilev_tropp, zi, ext_cmip6_lw_m,
                                         odap_aer);
-  
+
   // Above the tropopause, the read in values from the file include both the
   // stratospheric
   //  and volcanic aerosols. Therefore, we need to zero out odap_aer above the
@@ -702,7 +698,6 @@ void aer_rad_props_lw(
   modal_aero_lw(team, dt, progs, atm, pdel, pdeldry, aersol_optics_data,
                 // outputs
                 odap_aer);
-
 
   // FIXME: port tropopause_or_quit
   // !Find tropopause or quit simulation if not found
