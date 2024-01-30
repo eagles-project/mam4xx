@@ -180,7 +180,7 @@ void transfer_work_arrays_to_prognostics(const Real q[gas_pcnst()],
 
 // MUST FIXME: address James comments about making the code better.
 KOKKOS_INLINE_FUNCTION
-void state_q_from_progs_at_one_lev(const mam4::Prognostics &progs,
+void extract_stateq_from_prognostics(const mam4::Prognostics &progs,
                                    const haero::Atmosphere &atm, Real *q,
                                    const int klev) {
 
@@ -215,10 +215,10 @@ void state_q_from_progs_at_one_lev(const mam4::Prognostics &progs,
     q[s_idx] = progs.n_mode_i[m](klev);
     s_idx++; // update index
   }
-} // state_q_from_progs_at_one_lev
+} // extract_stateq_from_prognostics
 
 KOKKOS_INLINE_FUNCTION
-void progs_from_state_q_at_one_lev(const Real *q, mam4::Prognostics &progs,
+void inject_stateq_to_prognostics(const Real *q, mam4::Prognostics &progs,
                                    const int klev) {
 
   int s_idx = ekat::ScalarTraits<int>::invalid();
@@ -255,7 +255,7 @@ void progs_from_state_q_at_one_lev(const Real *q, mam4::Prognostics &progs,
 // cloudborne aerosol mmr 1D view for the column with the given index.
 // This object can be provided to mam4xx for the column.
 KOKKOS_INLINE_FUNCTION
-void qqcw_from_progs_at_one_lev(const mam4::Prognostics &progs, Real *qqcw,
+void extract_qqcw_from_prognostics(const mam4::Prognostics &progs, Real *qqcw,
                                 const int klev) {
 
   // NOTE: qqcw view has the same dimension and indexing as state_q array.
@@ -284,7 +284,7 @@ void qqcw_from_progs_at_one_lev(const mam4::Prognostics &progs, Real *qqcw,
 // cloudborne aerosol mmr 1D view for the column with the given index.
 // This object can be provided to mam4xx for the column.
 KOKKOS_INLINE_FUNCTION
-void progs_from_qqcw_at_one_lev(const Real *qqcw, mam4::Prognostics &progs,
+void inject_qqcw_to_prognostics(const Real *qqcw, mam4::Prognostics &progs,
                                 const int klev) {
 
   // NOTE: qqcw view has the same dimension and indexing as state_q array.

@@ -128,13 +128,13 @@ void create_synthetic_rsf_tab(View5D &rsf_tab, const int nw, const int nump,
 
 // Convert 1D std::vector to 2D view_device
 // copies data from 1D std::vector to a 2D view_host. Then, deep_copy to sync
-// 1 std::vector is saved in column-major order(Fortran layout)
+// 1D std::vector is saved in column-major order(Fortran layout)
 void convert_1d_vector_to_2d_view_device(const std::vector<Real> &pmid_db,
                                          const View2D &var_device);
 
 // Convert 1D std::vector to 2D view_device
 // copies data from 1D std::vector to a 2D view_host. Then, deep_copy to sync
-// 1 std::vector is saved in column-major order(Fortran layout)
+// 1D std::vector is saved in column-major order(Fortran layout)
 // original matrix is transposed to match layout in eamxx
 void convert_1d_vector_to_transpose_2d_view_device(
     const std::vector<Real> &var_std, const View2D &var_device);

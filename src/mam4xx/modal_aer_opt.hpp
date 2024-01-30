@@ -945,8 +945,8 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
         Real state_q[pcnst] = {};
         Real qqcw[pcnst] = {};
 
-        utils::state_q_from_progs_at_one_lev(progs, atm, state_q, kk);
-        utils::qqcw_from_progs_at_one_lev(progs, qqcw, kk);
+        utils::extract_stateq_from_prognostics(progs, atm, state_q, kk);
+        utils::extract_qqcw_from_prognostics(progs, qqcw, kk);
 
         Real cldn_kk = cldn(kk);
         const auto tauxar_kkp =
@@ -966,8 +966,8 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
                                        // outputs
                                        tauxar_kkp, wa_kkp, ga_kkp, fa_kkp);
 
-        utils::progs_from_qqcw_at_one_lev(qqcw, progs, kk);
-        utils::progs_from_state_q_at_one_lev(state_q, progs, kk);
+        utils::inject_qqcw_to_prognostics(qqcw, progs, kk);
+        utils::inject_stateq_to_prognostics(state_q, progs, kk);
       });
 
   team.team_barrier();
@@ -1205,8 +1205,8 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
 
         Real state_q[pcnst] = {};
         Real qqcw[pcnst] = {};
-        utils::state_q_from_progs_at_one_lev(progs, atm, state_q, kk);
-        utils::qqcw_from_progs_at_one_lev(progs, qqcw, kk);
+        utils::extract_stateq_from_prognostics(progs, atm, state_q, kk);
+        utils::extract_qqcw_from_prognostics(progs, qqcw, kk);
 
         Real tauxar_kkp[nlwbands] = {};
 
@@ -1221,8 +1221,8 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
           tauxar(ilw, kk) = tauxar_kkp[ilw];
         }
 
-        utils::progs_from_qqcw_at_one_lev(qqcw, progs, kk);
-        utils::progs_from_state_q_at_one_lev(state_q, progs, kk);
+        utils::inject_qqcw_to_prognostics(qqcw, progs, kk);
+        utils::inject_stateq_to_prognostics(state_q, progs, kk);
       });
 } // modal_aero_lw
 
