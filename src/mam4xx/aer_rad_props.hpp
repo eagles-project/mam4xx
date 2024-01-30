@@ -34,7 +34,8 @@ constexpr Real cnst_faktor =
                                      // gas constant     ~ J/K/kg
 constexpr Real cnst_ka1 = cnst_kap - 1.0;
 
-// FIXME: remove this function after, I fix validation tests
+// Similar to volcanic_cmip_sw,
+// But, tau, tau_w, tau_w_g, tau_w_f have layout (nswbands, pver)
 KOKKOS_INLINE_FUNCTION
 void volcanic_cmip_sw2(const ConstColumnView &zi, const int ilev_tropp,
                        const View2D &ext_cmip6_sw_inv_m,
@@ -123,6 +124,8 @@ void volcanic_cmip_sw2(const ConstColumnView &zi, const int ilev_tropp,
 
 } // volcanic_cmip_sw
 
+
+// tau, tau_w, tau_w_g, tau_w_f have layout (pver, nswbands)
 KOKKOS_INLINE_FUNCTION
 void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
                       const View2D &ext_cmip6_sw_inv_m,
@@ -209,8 +212,10 @@ void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
   } // kk
 
 } // volcanic_cmip_sw
-// FIXME; to move compute_odap_volcanic_at_troplayer_lw to a new file,
+
+
 // aer_rad_props
+// odap_aer has layout (pver, nlwbands)
 KOKKOS_INLINE_FUNCTION
 void compute_odap_volcanic_at_troplayer_lw(const int ilev_tropp,
                                            const ConstColumnView &zi,
@@ -247,7 +252,8 @@ void compute_odap_volcanic_at_troplayer_lw(const int ilev_tropp,
 
 } // compute_odap_volcanic_at_troplayer_lw
 
-// FIXME: remove after I fix validation tests
+// similar to compute_odap_volcanic_at_troplayer_lw
+// but odap_aer has layout (nlwbands, pver)
 KOKKOS_INLINE_FUNCTION
 void compute_odap_volcanic_at_troplayer_lw2(const int ilev_tropp,
                                             const ConstColumnView &zi,
@@ -325,6 +331,8 @@ void compute_odap_volcanic_above_troplayer_lw(const int ilev_tropp,
 
 } // compute_odap_volcanic_above_troplayer_lw
 
+// similar to compute_odap_volcanic_above_troplayer_lw
+// but odap_aer has layout (nlwbands, pver)
 KOKKOS_INLINE_FUNCTION
 void compute_odap_volcanic_above_troplayer_lw2(const int ilev_tropp,
                                                const ConstColumnView &zi,
@@ -454,21 +462,23 @@ void aer_rad_props_lw(
                 aersol_optics_data,
                 // outputs
                 odap_aer);
-  team.team_barrier();
+
+  
 
   // FIXME: port tropopause_or_quit
   // !Find tropopause or quit simulation if not found
   // trop_level(1:pcols) = tropopause_or_quit(lchnk, ncol, pmid, pint,
   // temperature, zm, zi)
   const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
+  team.team_barrier();
 
   // We are here because tropopause is found, update taus with 50%
   // contributuions from the volcanic input file and 50% from the existing model
   // computed values at the tropopause layer
-  team.team_barrier();
+
   compute_odap_volcanic_at_troplayer_lw(ilev_tropp, zi, ext_cmip6_lw_m,
                                         odap_aer);
-  team.team_barrier();
+  
   // Above the tropopause, the read in values from the file include both the
   // stratospheric
   //  and volcanic aerosols. Therefore, we need to zero out odap_aer above the
@@ -546,7 +556,7 @@ void aer_rad_props_sw(
   modal_aero_sw(team, dt, state_q, qqcw, zm, temperature, pmid, pdel, pdeldry,
                 cldn, tau, tau_w, tau_w_g, tau_w_f, aersol_optics_data, work);
 
-  // team.team_barrier();
+  team.team_barrier();
 
   // Update tau, tau_w, tau_w_g, and tau_w_f with the read in values of
   // extinction, ssa and asymmetry factors
@@ -631,7 +641,7 @@ void aer_rad_props_sw(
   modal_aero_sw(team, dt, progs, atm, pdel, pdeldry, tau, tau_w, tau_w_g,
                 tau_w_f, aersol_optics_data, work);
 
-  // team.team_barrier();
+  team.team_barrier();
 
   // Update tau, tau_w, tau_w_g, and tau_w_f with the read in values of
   // extinction, ssa and asymmetry factors
@@ -693,11 +703,13 @@ void aer_rad_props_lw(
                 // outputs
                 odap_aer);
 
+
   // FIXME: port tropopause_or_quit
   // !Find tropopause or quit simulation if not found
   // trop_level(1:pcols) = tropopause_or_quit(lchnk, ncol, pmid, pint,
   // temperature, zm, zi)
   const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
+  team.team_barrier();
 
   // We are here because tropopause is found, update taus with 50%
   // contributuions from the volcanic input file and 50% from the existing model
