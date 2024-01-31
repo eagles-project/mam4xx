@@ -18,6 +18,7 @@ namespace ndrop {
 
 using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;
+using ConstView2D = DeviceType::view_2d<const Real>;
 
 // number of vertical levels
 constexpr int pver = mam4::nlev;
@@ -1454,7 +1455,7 @@ void dropmixnuc(
     const haero::ConstColumnView &temp, const haero::ConstColumnView &pmid,
     const haero::ConstColumnView &pint, const haero::ConstColumnView &pdel,
     const haero::ConstColumnView &rpdel, const haero::ConstColumnView &zm,
-    const View2D &state_q, const haero::ConstColumnView &ncldwtr,
+    const ConstView2D &state_q, const haero::ConstColumnView &ncldwtr,
     const haero::ConstColumnView &v_diffusivity,
     const haero::ConstColumnView &cldn,
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
