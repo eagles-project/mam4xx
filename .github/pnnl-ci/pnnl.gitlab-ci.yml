@@ -52,7 +52,7 @@ variables:
   # We can hard code the SLURM_Q, or have a perl script find any idle partition at runtime.
   # This is a magic string that matches a conditional in the job script
     SLURM_Q: "dl_gpu"
-    SLURM_ARGS: "--ntasks=3 --gres=gpu:1"
+    SLURM_ARGS: "-N 1 --ntasks=8 --gres=gpu:1"
     SCRIPT_NAME: ci.sh
 
 # Generic haero rebuild template
