@@ -28,7 +28,10 @@ void find_ktop(Ensemble *ensemble) {
     press = haero::testing::create_column_view(pver);
     Kokkos::deep_copy(press, press_host);
 
-    DeviceType::view_1d<int> ktop_out("Return from Device", 1);
+    auto ktop_out = haero::testing::create_column_view(1);
+    auto ktop_out_host = View1DHost("ktop_out_host", 1);
+    ktop_out_host(0) = 0;
+    Kokkos::deep_copy(ktop_out, ktop_out_host);
     Kokkos::parallel_for(
         "find_ktop", 1, KOKKOS_LAMBDA(int i) {
           int ktop = 0;
@@ -36,6 +39,7 @@ void find_ktop(Ensemble *ensemble) {
           ktop_out(0) = ktop;
         });
 
-    output.set("ktop", ktop_out(0) + 1);
+    Kokkos::deep_copy(ktop_out_host, ktop_out);
+    output.set("ktop", ktop_out_host(0) + 1);
   });
 }

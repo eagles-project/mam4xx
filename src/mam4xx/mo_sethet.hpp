@@ -157,7 +157,7 @@ void find_ktop(
   // -------- find the top level that het_rates are set as 0 above it ---------
   //---------------------------------------------------------------------------
 
-  Real p_limit;          // pressure limit [Pa]
+  Real p_limit = 0;          // pressure limit [Pa]
   Real d2r = pi / 180.0; // degree to radian
 
   if (haero::abs(rlat) > 60.0 * d2r) {
