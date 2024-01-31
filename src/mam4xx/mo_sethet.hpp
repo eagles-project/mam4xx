@@ -23,10 +23,10 @@ constexpr const int pver = mam4::nlev;
 
 // FIXME: BAD CONSTANT
 // mass of water vapor [amu] //convert to g/mol from kg/mol
-constexpr const Real mass_h2o = haero::Constants::molec_weight_h2o * 1000;
-constexpr const Real cm3_2_m3 = 1.0e-6; // convert cm^3 to m^3
-constexpr const Real liter_per_gram = 1.0e-3;
-constexpr const Real avo2 =
+constexpr Real mass_h2o = haero::Constants::molec_weight_h2o * 1000;
+constexpr Real cm3_2_m3 = 1.0e-6; // convert cm^3 to m^3
+constexpr Real liter_per_gram = 1.0e-3;
+constexpr Real avo2 =
     avo * liter_per_gram * cm3_2_m3; // [liter/gm/mol*(m/cm)^3]
 
 using Real = haero::Real;
