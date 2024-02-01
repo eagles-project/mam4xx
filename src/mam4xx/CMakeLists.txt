@@ -45,6 +45,7 @@ install(FILES
         mo_chm_diags.hpp
         mo_setext.hpp
         mo_setsox.hpp
+        mo_sethet.hpp
         tropopause.hpp
         modal_aer_opt.hpp
         aer_rad_props.hpp

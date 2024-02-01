@@ -33,6 +33,7 @@ cleanup() {
 }
 
 set -xv
+hostname
 
 # TODO - add more verification to ensure variables are set before proceeding
 echo $BUILD_TYPE "detected for BUILD_TYPE"
@@ -64,7 +65,7 @@ cmake \
   -G "Unix Makefiles" && \
 
 cmake --build build -- -j 8 && \
-cd build && ctest -V 
+cd build && ctest --output-on-failure 
 
 EXIT_CODE=$?
 
