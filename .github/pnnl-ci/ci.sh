@@ -63,7 +63,7 @@ cmake \
   -B build -S $(pwd) \
   -G "Unix Makefiles" && \
 
-cmake --build build -- -j && \
+cmake --build build -- -j 8 && \
 cd build && ctest -V 
 
 EXIT_CODE=$?
