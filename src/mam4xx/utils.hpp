@@ -7,7 +7,6 @@
 #define MAM4XX_UTILS_HPP
 
 #include <haero/math.hpp>
-#include <mam4xx/conversions.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>
 // This file contains utility-type functions that are available for use by
 // various processes, tests, etc.
@@ -31,6 +30,18 @@ constexpr int gas_pcnst() {
   constexpr int gas_pcnst_ = mam4::gas_chemistry::gas_pcnst;
   return gas_pcnst_;
 }
+// start index of gasses in state_q array of e3sm
+KOKKOS_INLINE_FUNCTION
+constexpr int gasses_start_ind() {
+  return 9;
+} // gases start at index 9 (index 10 in Fortran version)
+
+// start index of interstitial (or cloudborne) aerosols in state_q (or qqcw)
+// array of e3sm
+KOKKOS_INLINE_FUNCTION
+constexpr int aero_start_ind() {
+  return 15;
+} // aerosols start at index 15 (index 16 in Fortran version)
 
 // Because CUDA C++ doesn't allow us to declare and use constants outside of
 // KOKKOS_INLINE_FUNCTIONS, we define this macro that allows us to (re)define
@@ -161,70 +172,144 @@ void transfer_work_arrays_to_prognostics(const Real q[gas_pcnst()],
   }
 }
 
-// converts the quantities in the work arrays q and qqcw from mass/number
-// mixing ratios to volume/number mixing ratios
-KOKKOS_INLINE_FUNCTION
-void convert_work_arrays_to_vmr(const Real q[gas_pcnst()],
-                                const Real qqcw[gas_pcnst()],
-                                Real vmr[gas_pcnst()],
-                                Real vmrcw[gas_pcnst()]) {
-  DECLARE_PROG_TRANSFER_CONSTANTS
-
-  for (int i = 0; i < gas_pcnst(); ++i) {
-    auto mode_index = mode_for_cnst[i];
-    auto aero_id = aero_for_cnst[i];
-    auto gas_id = gas_for_cnst[i];
-    if (gas_id != NoGas) { // constituent is a gas
-      int g = static_cast<int>(gas_id);
-      const Real mw = mam4::gas_species(g).molecular_weight;
-      vmr[i] = mam4::conversions::vmr_from_mmr(q[i], mw);
-      vmrcw[i] = mam4::conversions::vmr_from_mmr(qqcw[i], mw);
-    } else {
-      if (aero_id != NoAero) { // constituent is an aerosol species
-        int a = aerosol_index_for_mode(mode_index, aero_id);
-        const Real mw = mam4::aero_species(a).molecular_weight;
-        vmr[i] = mam4::conversions::vmr_from_mmr(q[i], mw);
-        vmrcw[i] = mam4::conversions::vmr_from_mmr(qqcw[i], mw);
-      } else { // constituent is a modal number mixing ratio
-        vmr[i] = q[i];
-        vmrcw[i] = qqcw[i];
-      }
-    }
-  }
-}
-
-// converts the quantities in the work arrays vmrs and vmrscw from mass/number
-// mixing ratios to volume/number mixing ratios
-KOKKOS_INLINE_FUNCTION
-void convert_work_arrays_to_mmr(const Real vmr[gas_pcnst()],
-                                const Real vmrcw[gas_pcnst()],
-                                Real q[gas_pcnst()], Real qqcw[gas_pcnst()]) {
-  DECLARE_PROG_TRANSFER_CONSTANTS
-
-  for (int i = 0; i < gas_pcnst(); ++i) {
-    auto mode_index = mode_for_cnst[i];
-    auto aero_id = aero_for_cnst[i];
-    auto gas_id = gas_for_cnst[i];
-    if (gas_id != NoGas) { // constituent is a gas
-      int g = static_cast<int>(gas_id);
-      const Real mw = mam4::gas_species(g).molecular_weight;
-      q[i] = mam4::conversions::mmr_from_vmr(vmr[i], mw);
-      qqcw[i] = mam4::conversions::mmr_from_vmr(vmrcw[i], mw);
-    } else {
-      if (aero_id != NoAero) { // constituent is an aerosol species
-        int a = aerosol_index_for_mode(mode_index, aero_id);
-        const Real mw = mam4::aero_species(a).molecular_weight;
-        q[i] = mam4::conversions::mmr_from_vmr(vmr[i], mw);
-        qqcw[i] = mam4::conversions::mmr_from_vmr(vmrcw[i], mw);
-      } else { // constituent is a modal number mixing ratio
-        q[i] = vmr[i];
-        qqcw[i] = vmrcw[i];
-      }
-    }
-  }
-}
-
 #undef DECLARE_PROG_TRANSFER_CONSTANTS
+
+// Given an AerosolState with views for dry aerosol quantities, creates a
+// interstitial aerosols 1D view (state_q) for the column with the given index.
+// This object can be provided to mam4xx for the column.
+
+// MUST FIXME: address James comments about making the code better.
+KOKKOS_INLINE_FUNCTION
+void extract_stateq_from_prognostics(const mam4::Prognostics &progs,
+                                     const haero::Atmosphere &atm, Real *q,
+                                     const int klev) {
+
+  int s_idx = ekat::ScalarTraits<int>::invalid();
+  q[0] = atm.vapor_mixing_ratio(klev);               // qv
+  q[1] = atm.liquid_mixing_ratio(klev);              // qc
+  q[2] = atm.ice_mixing_ratio(klev);                 // qi
+  q[3] = atm.cloud_liquid_number_mixing_ratio(klev); //  nc
+  q[4] = atm.cloud_ice_number_mixing_ratio(klev);    // ni
+  // FIXME: I do not have info for  :RAINQM, SNOWQM, NUMRAI, NUMSNO
+
+  if (progs.q_gas[0].data()) { // if gases are defined in dry_aero aerosol state
+    s_idx = gasses_start_ind(); // gases start at index 9 (index 10 in Fortran
+                                // version)
+    for (int g = 0; g < AeroConfig::num_gas_ids(); ++g) {
+      // get mmr at level "klev"
+      q[s_idx] = progs.q_gas[g](klev);
+      s_idx++; // update index
+    }
+  } else {
+    s_idx = aero_start_ind(); // If no gasses; start with the first index of
+                              // aerosols
+  }
+
+  // Now start adding aerosols mmr into the state_q
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    // First add the aerosol species mmr
+    for (int a = 0; a < mam4::num_species_mode(m); ++a) {
+      q[s_idx] = progs.q_aero_i[m][a](klev);
+      s_idx++; // update index even if we lack some aerosol mmrs
+    }
+    q[s_idx] = progs.n_mode_i[m](klev);
+    s_idx++; // update index
+  }
+} // extract_stateq_from_prognostics
+
+KOKKOS_INLINE_FUNCTION
+void inject_stateq_to_prognostics(const Real *q, mam4::Prognostics &progs,
+                                  const int klev) {
+
+  int s_idx = ekat::ScalarTraits<int>::invalid();
+
+  if (progs.q_gas[0].data()) { // if gases are defined in dry_aero aerosol state
+    s_idx = gasses_start_ind(); // gases start at index 9 (index 10 in Fortran
+                                // version)
+    for (int g = 0; g < AeroConfig::num_gas_ids(); ++g) {
+      // get mmr at level "klev"
+      progs.q_gas[g](klev) = q[s_idx];
+      s_idx++; // update index
+    }
+  } else {
+    s_idx = aero_start_ind(); // If no gasses; start with the first index of
+                              // aerosols
+  }                           // end if
+
+  // Now start adding aerosols mmr into the state_q
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    //   // First add the aerosol species mmr
+    for (int a = 0; a < mam4::num_species_mode(m); ++a) {
+      if (progs.q_aero_i[m][a].data()) {
+        progs.q_aero_i[m][a](klev) = q[s_idx];
+        s_idx++; // update index even if we lack some aerosol mmrs
+      }          // end if
+    }            // a
+    // Now add aerosol number mmr
+    progs.n_mode_i[m](klev) = q[s_idx];
+    s_idx++; // update index
+  }          // m
+}
+
+// Given an AerosolState with views for dry aerosol quantities, creates a
+// cloudborne aerosol mmr 1D view for the column with the given index.
+// This object can be provided to mam4xx for the column.
+KOKKOS_INLINE_FUNCTION
+void extract_qqcw_from_prognostics(const mam4::Prognostics &progs, Real *qqcw,
+                                   const int klev) {
+
+  // NOTE: qqcw view has the same dimension and indexing as state_q array.
+  //  This array doesn't store gasses, so the indexing starts at aerosols
+
+  // Initialize the start index of qqcw array
+  int s_idx = aero_start_ind(); // If no gasses; start index with the first
+                                // index of aerosols
+
+  // Now start adding cloud borne aerosols mmr into the qqcw
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    // First add the aerosol species mmr
+    for (int a = 0; a < mam4::num_species_mode(m); ++a) {
+      if (progs.q_aero_c[m][a].data()) {
+        qqcw[s_idx] = progs.q_aero_c[m][a](klev);
+        s_idx++; // update index even if we lack some aerosol mmrs
+      }
+    } // a
+    // Now add aerosol number mmr
+    qqcw[s_idx] = progs.n_mode_c[m](klev);
+    s_idx++; // update index
+  }          // m
+}
+
+// Given an AerosolState with views for dry aerosol quantities, creates a
+// cloudborne aerosol mmr 1D view for the column with the given index.
+// This object can be provided to mam4xx for the column.
+KOKKOS_INLINE_FUNCTION
+void inject_qqcw_to_prognostics(const Real *qqcw, mam4::Prognostics &progs,
+                                const int klev) {
+
+  // NOTE: qqcw view has the same dimension and indexing as state_q array.
+  //  This array doesn't store gasses, so the indexing starts at aerosols
+
+  // Initialize the start index of qqcw array
+  int s_idx = aero_start_ind(); // If no gasses; start index with the first
+                                // index of aerosols
+
+  // Now start adding cloud borne aerosols mmr into the qqcw
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    // First add the aerosol species mmr
+    for (int a = 0; a < mam4::num_species_mode(m); ++a) {
+      if (progs.q_aero_c[m][a].data()) {
+        progs.q_aero_c[m][a](klev) = qqcw[s_idx];
+        s_idx++; // update index even if we lack some aerosol mmrs
+      }
+    }
+    // Now add aerosol number mmr
+    EKAT_KERNEL_ASSERT_MSG(progs.n_mode_c[m].data(),
+                           "cld_aero_nmr not defined for dry aerosol state!");
+    progs.n_mode_c[m](klev) = qqcw[s_idx];
+    s_idx++; // update index
+  }
+}
 
 } // end namespace mam4::utils
 
