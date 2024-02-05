@@ -103,8 +103,10 @@ if (ENABLE_COVERAGE)
 endif()
 
 # Support for valgrind (Linux only)
-include(add_memcheck_target)
-add_memcheck_target()
+if (NOT TARGET memcheck)
+  include(add_memcheck_target)
+  add_memcheck_target()
+endif()
 
 # Testing
 if (ENABLE_TESTS OR ENABLE_SKYWALKER)
@@ -119,29 +121,30 @@ add_subdirectory(ext)
 add_subdirectory(src)
 
 # Formatting and format checking using clang-format.
-find_program(CLANG_FORMAT clang-format)
-if (NOT CLANG_FORMAT STREQUAL "CLANG_FORMAT-NOTFOUND")
-  # Is this the blessed version? If not, we create targets that warn the user
-  # to obtain the right version.
-  execute_process(COMMAND clang-format --version
-    OUTPUT_VARIABLE CF_VERSION)
-  string(STRIP ${CF_VERSION} CF_VERSION)
-  if (NOT ${CF_VERSION} MATCHES ${CLANG_FORMAT_VERSION})
-    add_custom_target(format-cxx
-      echo "You have clang-format version ${CF_VERSION}, but ${CLANG_FORMAT_VERSION} is required."
-      "Please make sure this version appears in your path and rerun config.sh.")
-    add_custom_target(format-cxx-check
-      echo "You have clang-format version ${CF_VERSION}, but ${CLANG_FORMAT_VERSION} is required."
-      "Please make sure this version appears in your path and rerun config.sh.")
-  else()
-    add_custom_target(format-cxx
-      find ${PROJECT_SOURCE_DIR}/src -name "*.[hc]pp" -exec ${CLANG_FORMAT} -i {} \+;
-      VERBATIM
-      COMMENT "Auto-formatting C++ code...")
-    add_custom_target(format-cxx-check
-      find ${PROJECT_SOURCE_DIR}/src -name "*.[hc]pp" -exec ${CLANG_FORMAT} -n --Werror -ferror-limit=1 {} \+;
-      VERBATIM
-      COMMENT "Checking C++ formatting...")
+if (NOT TARGET format-cxx)
+  find_program(CLANG_FORMAT clang-format)
+  if (NOT CLANG_FORMAT STREQUAL "CLANG_FORMAT-NOTFOUND")
+    # Is this the blessed version? If not, we create targets that warn the user
+    # to obtain the right version.
+    execute_process(COMMAND clang-format --version
+      OUTPUT_VARIABLE CF_VERSION)
+    string(STRIP ${CF_VERSION} CF_VERSION)
+    if (NOT ${CF_VERSION} MATCHES ${CLANG_FORMAT_VERSION})
+      add_custom_target(format-cxx
+        echo "You have clang-format version ${CF_VERSION}, but ${CLANG_FORMAT_VERSION} is required."
+        "Please make sure this version appears in your path and rerun config.sh.")
+      add_custom_target(format-cxx-check
+        echo "You have clang-format version ${CF_VERSION}, but ${CLANG_FORMAT_VERSION} is required."
+        "Please make sure this version appears in your path and rerun config.sh.")
+    else()
+      add_custom_target(format-cxx
+        find ${PROJECT_SOURCE_DIR}/src -name "*.[hc]pp" -exec ${CLANG_FORMAT} -i {} \+;
+        VERBATIM
+        COMMENT "Auto-formatting C++ code...")
+      add_custom_target(format-cxx-check
+        find ${PROJECT_SOURCE_DIR}/src -name "*.[hc]pp" -exec ${CLANG_FORMAT} -n --Werror -ferror-limit=1 {} \+;
+        VERBATIM
+        COMMENT "Checking C++ formatting...")
+    endif()
   endif()
-
 endif()
