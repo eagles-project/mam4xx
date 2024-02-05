@@ -3,18 +3,19 @@ cmake_minimum_required(VERSION 3.17.0)
 message(STATUS "Configuring with build type: ${CMAKE_BUILD_TYPE}")
 
 # We rely on Haero for basic data structures and third-party libraries.
-if (NOT MAM4XX_HAERO_DIR)
-  message(FATAL_ERROR "MAM4XX_HAERO_DIR is not specified! Please provide a path to Haero.")
-elseif (NOT EXISTS ${MAM4XX_HAERO_DIR}/share)
-  message(FATAL_ERROR "Invalid MAM4XX_HAERO_DIR. Please provide a valid path to Haero.")
-endif()
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${MAM4XX_HAERO_DIR}/share/")
-include(haero)
-
-if(HAERO_ENABLE_GPU)
-  message(STATUS "Building for GPU")
-else() #CPU
-  message(STATUS "Building for CPU")
+if (NOT TARGET haero)
+  if (NOT MAM4XX_HAERO_DIR)
+    message(FATAL_ERROR "MAM4XX_HAERO_DIR is not specified! Please provide a path to Haero.")
+  elseif (NOT EXISTS ${MAM4XX_HAERO_DIR}/share)
+    message(FATAL_ERROR "Invalid MAM4XX_HAERO_DIR. Please provide a valid path to Haero.")
+  endif()
+  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${MAM4XX_HAERO_DIR}/share/")
+  include(haero)
+  if(HAERO_ENABLE_GPU)
+    message(STATUS "Building for GPU")
+  else() #CPU
+    message(STATUS "Building for CPU")
+  endif()
 endif()
 
 #----------------------
