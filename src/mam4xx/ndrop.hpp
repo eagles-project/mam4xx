@@ -1603,9 +1603,9 @@ void dropmixnuc(
       });                                                 // end k
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, 1, pver), KOKKOS_LAMBDA(int k) {
-        EKAT_KERNEL_ASSERT_MSG(
-            0 < zm(k - 1) - zm(k),
-            "Error: Geopotential height at level should be monotonically decreasing.\n");
+        EKAT_KERNEL_ASSERT_MSG(0 < zm(k - 1) - zm(k),
+                               "Error: Geopotential height at level should be "
+                               "monotonically decreasing.\n");
       });
   team.team_barrier();
   Kokkos::parallel_for(
