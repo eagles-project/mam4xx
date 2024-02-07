@@ -1437,6 +1437,9 @@ void compute_q_tendencies(
           }
         }
         const int k_p1 = static_cast<int>(haero::min(k + 1, nlev - 1));
+	// OK, this is from the old mam4: Phase 2 is before Phase 1.
+	// Note that the phase loops goes from 2 to 1 in reverse order
+	// and the qqcw_sav is set first in phase 2 the used in phase 1.
         if (lphase == 1) {
           // traces reflects changes from modal_aero_calcsize and is the
           // "most current" q
