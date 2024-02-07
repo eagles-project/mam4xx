@@ -67,7 +67,7 @@ void test_compute_tendencies(std::unique_ptr<Ensemble> &ensemble) {
     const Real t = 0;
     const Real dt = 36000;
     const Real pblh = 1000;
-    const int gas_pcnst = 40;
+    const int gas_pcnst = aero_model::gas_pcnst;
     EKAT_ASSERT(input.get("dt") == 3600);
 
     Atmosphere atmosphere = validation::create_atmosphere(nlev, pblh);

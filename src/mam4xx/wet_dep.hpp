@@ -1309,7 +1309,7 @@ void compute_q_tendencies_phase_1(
                                     rtscavt_sv);
 }
 
-static constexpr int gas_pcnst = 40;
+static constexpr int gas_pcnst = aero_model::gas_pcnst;
 KOKKOS_INLINE_FUNCTION
 void compute_q_tendencies_phase_2(
     Real &scavt, Real &bcscavt, Real &rcscavt, Real rtscavt_sv[],
@@ -1489,7 +1489,7 @@ void update_q_tendencies(const ThreadTeam &team,
 /// Wet Deposition process for MAM4 aerosol model.
 class WetDeposition {
 public:
-  static constexpr int gas_pcnst = 40;
+  static constexpr int gas_pcnst = aero_model::gas_pcnst;
   struct Config {
     Config(){};
     Config(const Config &) = default;

@@ -10,6 +10,7 @@
 #include <haero/math.hpp>
 
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/aero_model.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
@@ -356,7 +357,7 @@ public:
   // This should come from the chemistry model being used and will
   // probably need to be dynamic.  This forces lmassptr_amode to
   // also be dynamic.
-  static constexpr int gas_pcnst = 40;
+  static constexpr int gas_pcnst = aero_model::gas_pcnst;
 
   // ====================================================================================
   // The diagnostic arrays are twice the lengths of ConvProc::gas_pcnst because
