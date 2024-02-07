@@ -919,10 +919,8 @@ void calc_resusp_to_coarse(const int mm, const bool update_dqdt,
 }
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
-Real calc_sfc_flux(
-    const ThreadTeam &team,
-    Kokkos::View<Real[1], Kokkos::MemoryTraits<Kokkos::Atomic>> scratch,
-    const Real layer_tend, const Real pdel) {
+Real calc_sfc_flux(const ThreadTeam &team, Kokkos::View<Real *> layer_tend,
+                   haero::ConstColumnView pdel, const int nlev) {
   // clang-format off
   // -----------------------------------------------------------------------
   //  calculate surface fluxes of wet deposition from vertical integration of tendencies
@@ -933,13 +931,15 @@ Real calc_sfc_flux(
   out :: sflx      ! integrated surface fluxes [kg/m2/s]
   */
   // clang-format on
-  const Real gravit = Constants::gravity;
-
-  scratch[0] = 0;
-  team.team_barrier();
-  scratch[0] += layer_tend * pdel / gravit;
-  team.team_barrier();
-  return scratch[0];
+  Real scratch = 0;
+  Kokkos::parallel_reduce(
+      Kokkos::TeamThreadRange(team, nlev),
+      KOKKOS_LAMBDA(int k, Real &scratch) {
+        const Real gravit = Constants::gravity;
+        scratch += layer_tend[k] * pdel[k] / gravit;
+      },
+      scratch);
+  return scratch;
 }
 
 // =============================================================================
