@@ -3,18 +3,19 @@ cmake_minimum_required(VERSION 3.17.0)
 message(STATUS "Configuring with build type: ${CMAKE_BUILD_TYPE}")
 
 # We rely on Haero for basic data structures and third-party libraries.
-if (NOT MAM4XX_HAERO_DIR)
-  message(FATAL_ERROR "MAM4XX_HAERO_DIR is not specified! Please provide a path to Haero.")
-elseif (NOT EXISTS ${MAM4XX_HAERO_DIR}/share)
-  message(FATAL_ERROR "Invalid MAM4XX_HAERO_DIR. Please provide a valid path to Haero.")
-endif()
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${MAM4XX_HAERO_DIR}/share/")
-include(haero)
-
-if(HAERO_ENABLE_GPU)
-  message(STATUS "Building for GPU")
-else() #CPU
-  message(STATUS "Building for CPU")
+if (NOT TARGET haero)
+  if (NOT MAM4XX_HAERO_DIR)
+    message(FATAL_ERROR "MAM4XX_HAERO_DIR is not specified! Please provide a path to Haero.")
+  elseif (NOT EXISTS ${MAM4XX_HAERO_DIR}/share)
+    message(FATAL_ERROR "Invalid MAM4XX_HAERO_DIR. Please provide a valid path to Haero.")
+  endif()
+  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${MAM4XX_HAERO_DIR}/share/")
+  include(haero)
+  if(HAERO_ENABLE_GPU)
+    message(STATUS "Building for GPU")
+  else() #CPU
+    message(STATUS "Building for CPU")
+  endif()
 endif()
 
 #----------------------
@@ -102,8 +103,10 @@ if (ENABLE_COVERAGE)
 endif()
 
 # Support for valgrind (Linux only)
-include(add_memcheck_target)
-add_memcheck_target()
+if (NOT TARGET memcheck)
+  include(add_memcheck_target)
+  add_memcheck_target()
+endif()
 
 # Testing
 if (ENABLE_TESTS OR ENABLE_SKYWALKER)
@@ -118,29 +121,30 @@ add_subdirectory(ext)
 add_subdirectory(src)
 
 # Formatting and format checking using clang-format.
-find_program(CLANG_FORMAT clang-format)
-if (NOT CLANG_FORMAT STREQUAL "CLANG_FORMAT-NOTFOUND")
-  # Is this the blessed version? If not, we create targets that warn the user
-  # to obtain the right version.
-  execute_process(COMMAND clang-format --version
-    OUTPUT_VARIABLE CF_VERSION)
-  string(STRIP ${CF_VERSION} CF_VERSION)
-  if (NOT ${CF_VERSION} MATCHES ${CLANG_FORMAT_VERSION})
-    add_custom_target(format-cxx
-      echo "You have clang-format version ${CF_VERSION}, but ${CLANG_FORMAT_VERSION} is required."
-      "Please make sure this version appears in your path and rerun config.sh.")
-    add_custom_target(format-cxx-check
-      echo "You have clang-format version ${CF_VERSION}, but ${CLANG_FORMAT_VERSION} is required."
-      "Please make sure this version appears in your path and rerun config.sh.")
-  else()
-    add_custom_target(format-cxx
-      find ${PROJECT_SOURCE_DIR}/src -name "*.[hc]pp" -exec ${CLANG_FORMAT} -i {} \+;
-      VERBATIM
-      COMMENT "Auto-formatting C++ code...")
-    add_custom_target(format-cxx-check
-      find ${PROJECT_SOURCE_DIR}/src -name "*.[hc]pp" -exec ${CLANG_FORMAT} -n --Werror -ferror-limit=1 {} \+;
-      VERBATIM
-      COMMENT "Checking C++ formatting...")
+if (NOT TARGET format-cxx)
+  find_program(CLANG_FORMAT clang-format)
+  if (NOT CLANG_FORMAT STREQUAL "CLANG_FORMAT-NOTFOUND")
+    # Is this the blessed version? If not, we create targets that warn the user
+    # to obtain the right version.
+    execute_process(COMMAND clang-format --version
+      OUTPUT_VARIABLE CF_VERSION)
+    string(STRIP ${CF_VERSION} CF_VERSION)
+    if (NOT ${CF_VERSION} MATCHES ${CLANG_FORMAT_VERSION})
+      add_custom_target(format-cxx
+        echo "You have clang-format version ${CF_VERSION}, but ${CLANG_FORMAT_VERSION} is required."
+        "Please make sure this version appears in your path and rerun config.sh.")
+      add_custom_target(format-cxx-check
+        echo "You have clang-format version ${CF_VERSION}, but ${CLANG_FORMAT_VERSION} is required."
+        "Please make sure this version appears in your path and rerun config.sh.")
+    else()
+      add_custom_target(format-cxx
+        find ${PROJECT_SOURCE_DIR}/src -name "*.[hc]pp" -exec ${CLANG_FORMAT} -i {} \+;
+        VERBATIM
+        COMMENT "Auto-formatting C++ code...")
+      add_custom_target(format-cxx-check
+        find ${PROJECT_SOURCE_DIR}/src -name "*.[hc]pp" -exec ${CLANG_FORMAT} -n --Werror -ferror-limit=1 {} \+;
+        VERBATIM
+        COMMENT "Checking C++ formatting...")
+    endif()
   endif()
-
 endif()

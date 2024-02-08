@@ -54,4 +54,10 @@ install(FILES
         DESTINATION include/mam4xx)
 
 add_library(mam4xx aero_modes.cpp)
+target_include_directories(mam4xx PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
+  $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(mam4xx PUBLIC haero)
 install(TARGETS mam4xx DESTINATION ${CMAKE_INSTALL_LIBDIR})
