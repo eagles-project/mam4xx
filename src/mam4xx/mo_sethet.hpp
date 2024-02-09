@@ -14,8 +14,10 @@ namespace mo_sethet {
 // const int ktop = ConvProc::Config::ktop;
 constexpr Real avo = haero::Constants::avogadro;
 const Real pi = haero::Constants::pi;
-constexpr Real rgrav =
-    mo_chm_diags::rgrav; // reciprocal of acceleration of gravity ~ m/s^2
+// constexpr Real rgrav =
+//   mo_chm_diags::rgrav; // reciprocal of acceleration of gravity ~ m/s^2
+//   reciprocal of gravity
+constexpr Real rga = mam4::modal_aer_opt::rga;
 constexpr const int gas_pcnst = gas_chemistry::gas_pcnst;
 const Real boltz_cgs = haero::Constants::boltzmann * 1.e7; // erg/K
 // number of vertical levels
@@ -177,303 +179,307 @@ void find_ktop(
 
 } // end subroutine find_ktop
 
-
-
 KOKKOS_INLINE_FUNCTION
-void sethet(const ThreadTeam &team,
-            const ColumnView het_rates[gas_pcnst], //[pver][gas_pcnst], rainout rates [1/s] //out 
-            Real rlat,                  // latitude in radians for columns
-            ColumnView press,           // pressure [pascals] //in
-            ColumnView zmid,            // midpoint geopot [km]  //in
-            Real phis,                  // surf geopotential //in
-            ColumnView tfld,            // temperature [K]  //in
-            ColumnView cmfdqr,          // dq/dt for convection [kg/kg/s] //in
-            ColumnView nrain,           // stratoform precip [kg/kg/s] //in
-            ColumnView nevapr,          // evaporation [kg/kg/s] //in
-            Real delt,                  // time step [s] //in
-            ColumnView xhnm,            // total atms density [cm^-3] //in
-            ColumnView qin[gas_pcnst],  // xported species [vmr]  //in
-            int lchnk                   // chunk index //in
-            Real rlat                   // latitude in radians for columns
-            ) {
+void sethet(
+    const ThreadTeam &team,
+    const ColumnView
+        het_rates[gas_pcnst],  //[pver][gas_pcnst], rainout rates [1/s] //out
+    Real rlat,                 // latitude in radians for columns
+    ColumnView press,          // pressure [pascals] //in
+    ColumnView zmid,           // midpoint geopot [km]  //in
+    Real phis,                 // surf geopotential //in
+    ColumnView tfld,           // temperature [K]  //in
+    ColumnView cmfdqr,         // dq/dt for convection [kg/kg/s] //in
+    ColumnView nrain,          // stratoform precip [kg/kg/s] //in
+    ColumnView nevapr,         // evaporation [kg/kg/s] //in
+    Real delt,                 // time step [s] //in
+    ColumnView xhnm,           // total atms density [cm^-3] //in
+    ColumnView qin[gas_pcnst], // xported species [vmr]  //in
+    int lchnk,                 // chunk index //in
+    // working variables
+    ColumnView xeqca, // var for gas_washout
+    ColumnView xca,   // var for gas_washout
+    ColumnView
+        xgas2, // gas phase species for h2o2 (2) and so2 (3) [molecules/cm^3]
+    ColumnView
+        xgas3, // gas phase species for h2o2 (2) and so2 (3) [molecules/cm^3]
+    ColumnView delz,      // layer depth about interfaces [cm]
+    ColumnView xh2o2,     // h2o2 concentration [molecules/cm^3]
+    ColumnView xso2,      // so2 concentration [molecules/cm^3]
+    ColumnView xliq,      // liquid rain water content in a grid cell [gm/m^3]
+    ColumnView rain,      // precipitation (rain) rate [molecules/cm^3/s]
+    ColumnView precip,    // precipitation rate [kg/kg/s]
+    ColumnView xhen_h2o2, // henry law constants
+    ColumnView xhen_hno3, // henry law constants
+    ColumnView xhen_so2,  // henry law constants
+    ColumnView tmp_hetrates[8]) {
 
-    //-----------------------------------------------------------------------
-    //       ... compute rainout loss rates (1/s)
-    //-----------------------------------------------------------------------
+  //-----------------------------------------------------------------------
+  //       ... compute rainout loss rates (1/s)
+  //-----------------------------------------------------------------------
 
-    //-----------------------------------------------------------------------
-    //       ... local variables       //FIXME: BAD CONSTANT
-    //-----------------------------------------------------------------------
-    Real xrm   = .189;             // mean diameter of rain drop [cm]
-    Real xum   = 748.0;             // mean rain drop terminal velocity [cm/s]
-    Real xvv   = 6.18e-2;          // kinetic viscosity [cm^2/s]
-    Real xdg   = .112;             // mass transport coefficient [cm/s]
-    Real t0    = 298.0;             // reference temperature [K]
-    Real xph0  = 1.0e-5;            // cloud [h+]
-    Real satf_hno3  = .016;        // saturation factor for hno3 in clouds
-    Real satf_h2o2  = .016;        // saturation factor for h2o2 in clouds
-    Real satf_so2   = .016;        // saturation factor for so2 in clouds
-    Real const0   = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
-    Real hno3_diss = 15.4;         // hno3 dissociation constant
-    Real mass_air = 29.0;           // mass of background atmosphere [amu]
-    Real km2cm    = 1.0e5;          // convert km to cm
-    Real m2km     = 1.0e-3;         // convert m to km
-    Real m3_2_cm3 = 1.0e6;          // convert m^3 to cm^3
-    Real MISSING = -999999.0;
-    Real large_value_lifetime = 1.0e29;  // a large lifetime value if no washout
-    Real gas_wetdep_cnt = pcnst
+  //-----------------------------------------------------------------------
+  //       ... local variables       //FIXME: BAD CONSTANT
+  //-----------------------------------------------------------------------
+  Real xrm = .189;                  // mean diameter of rain drop [cm]
+  Real xum = 748.0;                 // mean rain drop terminal velocity [cm/s]
+  Real xvv = 6.18e-2;               // kinetic viscosity [cm^2/s]
+  Real xdg = .112;                  // mass transport coefficient [cm/s]
+  Real t0 = 298.0;                  // reference temperature [K]
+  Real xph0 = 1.0e-5;               // cloud [h+]
+  Real satf_hno3 = .016;            // saturation factor for hno3 in clouds
+  Real satf_h2o2 = .016;            // saturation factor for h2o2 in clouds
+  Real satf_so2 = .016;             // saturation factor for so2 in clouds
+  Real const0 = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
+  Real hno3_diss = 15.4;            // hno3 dissociation constant
+  Real mass_air = 29.0;             // mass of background atmosphere [amu]
+  Real km2cm = 1.0e5;               // convert km to cm
+  Real m2km = 1.0e-3;               // convert m to km
+  Real m3_2_cm3 = 1.0e6;            // convert m^3 to cm^3
+  Real MISSING = -999999.0;
+  Real large_value_lifetime = 1.0e29; // a large lifetime value if no washout
+  Real gas_wetdep_cnt = mam4::modal_aer_opt::pcnst;
 
-    character(len=3) :: hetratestrg
-    //int icol, kk, kk2  // indicies
-    //int mm, mm2        // indicies
-    int ktop;     // tropopause level, 100mb for lat < 60 and 300mb for lat > 60
-    int ktop_all;
-    Real xkgm;           // mass flux on rain drop
-    Real stay;           // fraction of layer traversed by falling drop in timestep delt 
-    Real xdtm;           // the traveling time in each dz [s] 
-    Real xxx2, xxx3;     // working variables for h2o2 (2) and so2 (3) 
-    Real yso2, yh2o2;   // washout lifetime [s] 
-    Real work1, work2;   // working variables 
-    Real t_factor;      // temperature factor to calculate henry's law parameters 
-    Real xk0;           // working variable 
-    Real zsurf;         // surface height [km] 
-    Real so2_diss;      //so2 dissociation constant 
-    ColumnView xgas2, xgas3;  // gas phase species for h2o2 (2) and so2 (3) [molecules/cm^3] 
-    ColumnView delz;              // layer depth about interfaces [cm] 
-    ColumnView xh2o2;              // h2o2 concentration [molecules/cm^3] 
-    ColumnView xso2;            // so2 concentration [molecules/cm^3] 
-    ColumnView xliq;            // liquid rain water content in a grid cell [gm/m^3] 
-    ColumnView rain;            // precipitation (rain) rate [molecules/cm^3/s] 
-    ColumnView precip;            // precipitation rate [kg/kg/s] 
-    ColumnView xhen_h2o2, xhen_hno3, xhen_so2;    // henry law constants
-    ColumnView tmp_hetrates[8];
+  // character(len=3) :: hetratestrg
+  // int icol, kk, kk2  // indicies
+  // int mm, mm2        // indicies
+  int ktop; // tropopause level, 100mb for lat < 60 and 300mb for lat > 60
+  int ktop_all;
+  Real xkgm; // mass flux on rain drop
+  Real stay; // fraction of layer traversed by falling drop in timestep delt
+  Real xdtm; // the traveling time in each dz [s]
+  Real xxx2, xxx3;   // working variables for h2o2 (2) and so2 (3)
+  Real yso2, yh2o2;  // washout lifetime [s]
+  Real work1, work2; // working variables
+  Real t_factor;     // temperature factor to calculate henry's law parameters
+  Real xk0;          // working variable
+  Real zsurf;        // surface height [km]
+  Real so2_diss;     // so2 dissociation constant
 
-    //-----------------------------------------------------------------
-    //        note: the press array is in pascals and must be
-    //              mutiplied by 10 to yield dynes/cm**2.
-    //-----------------------------------------------------------------
-    //       ... set wet deposition for
-    //           1. h2o2         2. hno3
-    //           3. ch2o         4. ch3ooh
-    //           5. pooh         6. ch3coooh
-    //           7. ho2no2       8. onit
-    //           9. mvk         10. macr
-    //          11. c2h5ooh     12. c3h7ooh
-    //          13. rooh        14. ch3cocho
-    //          15. pb          16. macrooh
-    //          17. xooh        18. onitr
-    //          19. isopooh     20. ch3oh
-    //          21. c2h5oh      22. glyald
-    //          23. hyac        24. hydrald
-    //          25. ch3cho      26. isopno3
-    //-----------------------------------------------------------------
-    // FORTRAN refactor note: current MAM4 only have three species in default:
-    // 'H2O2','H2SO4','SO2'.  Options for other species are then removed
-    //-----------------------------------------------------------------
+  //-----------------------------------------------------------------
+  //        note: the press array is in pascals and must be
+  //              mutiplied by 10 to yield dynes/cm**2.
+  //-----------------------------------------------------------------
+  //       ... set wet deposition for
+  //           1. h2o2         2. hno3
+  //           3. ch2o         4. ch3ooh
+  //           5. pooh         6. ch3coooh
+  //           7. ho2no2       8. onit
+  //           9. mvk         10. macr
+  //          11. c2h5ooh     12. c3h7ooh
+  //          13. rooh        14. ch3cocho
+  //          15. pb          16. macrooh
+  //          17. xooh        18. onitr
+  //          19. isopooh     20. ch3oh
+  //          21. c2h5oh      22. glyald
+  //          23. hyac        24. hydrald
+  //          25. ch3cho      26. isopno3
+  //-----------------------------------------------------------------
+  // FORTRAN refactor note: current MAM4 only have three species in default:
+  // 'H2O2','H2SO4','SO2'.  Options for other species are then removed
+  //-----------------------------------------------------------------
 
-    for (int mm = 0; mm < gas_pcnst; mm++) {
-      for (int kk = 0; kk < pver; kk++) {
-         het_rates[mm](kk) = 0.0;
-      }
+  for (int mm = 0; mm < gas_pcnst; mm++) {
+    for (int kk = 0; kk < pver; kk++) {
+      het_rates[mm](kk) = 0.0;
     }
+  }
 
-    //if ( .not. do_wetdep) return
+  // if ( .not. do_wetdep) return
 
-   // is this needed?
-   /*
-    do mm = 1,gas_wetdep_cnt
-       mm2 = wetdep_map(mm)
-       if ( mm2>0 ) then
-          het_rates(:,:,mm2) = MISSING
-       endif
-    enddo
-    */
+  // is this needed?
+  /*
+   do mm = 1,gas_wetdep_cnt
+      mm2 = wetdep_map(mm)
+      if ( mm2>0 ) then
+         het_rates(:,:,mm2) = MISSING
+      endif
+   enddo
+   */
 
-    //-----------------------------------------------------------------
-    //	... the 2 and .6 multipliers are from a formula by frossling (1938)
-    //-----------------------------------------------------------------
-    xkgm = xdg/xrm * 2.0 + xdg/xrm * .6 * haero::sqrt(xrm * xum / xvv) * haero::pow((xvv/xdg), (1.0/3.0));
+  //-----------------------------------------------------------------
+  //	... the 2 and .6 multipliers are from a formula by frossling (1938)
+  //-----------------------------------------------------------------
+  xkgm = xdg / xrm * 2.0 + xdg / xrm * .6 * haero::sqrt(xrm * xum / xvv) *
+                               haero::pow((xvv / xdg), (1.0 / 3.0));
 
-    //-----------------------------------------------------------------
-    //	... Find the level index that only calculate het_rates below
-    //-----------------------------------------------------------------
-    find_ktop(rlat, press,   // in
-             ktop); // out
-    //ktop_all = minval( ktop(:) )
+  //-----------------------------------------------------------------
+  //	... Find the level index that only calculate het_rates below
+  //-----------------------------------------------------------------
+  find_ktop(rlat, press, ktop); // populate ktop
+  // ktop_all = minval( ktop(:) )
 
-    // this is added to rescale the variable precip (which can only be positive)
-    // to the actual vertical integral of positive and negative values.  This
-    // removes point storms
-    calc_precip_rescale(cmfdqr, nrain, nevapr, // in
-                        precip); // out
+  // this is added to rescale the variable precip (which can only be positive)
+  // to the actual vertical integral of positive and negative values.  This
+  // removes point storms
+  calc_precip_rescale(cmfdqr, nrain, nevapr, precip); // populate precip
 
-    Kokkos::parallel_for(
+  Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
-       rain(kk)   = mass_air*precip(kk)*xhnm(kk) / mass_h2o;
-       xliq(kk)   = precip(kk) * delt * xhnm(kk) / avo*mass_air * m3_2_cm3;
-       xh2o2(kk)  = qin(kk)(spc_h2o2_ndx) * xhnm(kk);
-       xso2(kk)  = qin(kk)(spc_so2_ndx) * xhnm(kk);
-    });
-
-    zsurf = m2km * phis * rga;
-    
-    Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, ktop, pver-1), KOKKOS_LAMBDA(int kk) {
-         delz(kk) = haero::abs((zmid(kk) - zmid(kk+1))*km2cm);
-    });
-    delz(pver-1) = haero::abs((zmid(pver-1) - zsurf)*km2cm);
-
-    //-----------------------------------------------------------------
-    //       ... part 0b,  for temperature dependent of henrys
-    //                     xxhe1 = henry con for hno3
-    //                     xxhe2 = henry con for h2o2
-    //lwh 10/00 -- take henry''s law constants from brasseur et al. [1999],
-    //             appendix j. for hno3, also consider dissociation to
-    //             get effective henry''s law constant; equilibrium
-    //             constant for dissociation from brasseur et al. [1999],
-    //             appendix k. assume ph=5 (set as xph0 above).
-    //             heff = h*k/[h+] for hno3 (complete dissociation)
-    //             heff = h for h2o2 (no dissociation)
-    //             heff = h * (1 + k/[h+]) (in general)
-    //-----------------------------------------------------------------
-    for (int kk = ktop; kk < pver; kk++) {
-       //-----------------------------------------------------------------
-       // 	... effective henry''s law constants:
-       //	hno3, h2o2  (brasseur et al., 1999)
-       //-----------------------------------------------------------------
-       // temperature factor
-       t_factor = (t0 - tfld(kk))/(t0*tfld(kk));
-       xhen_h2o2(kk) = 7.45e4 * haero::exp( 6620.0 * t_factor);
-       // HNO3, for calculation of H2SO4 het rate use
-       xk0 = 2.1e5 * haero::exp(8700.0*t_factor);
-       xhen_hno3(kk) = xk0 * ( 1.0 + hno3_diss / xph0 );
-       // SO2
-       xk0  = 1.23 * haero::exp(3120.0 * t_factor);
-       so2_diss = 1.23e-2 * haero::exp(1960.0 * t_factor);
-       xhen_so2(kk)   = xk0 * ( 1.0 + so2_diss / xph0 );
-
-       // initiate temporary array
-       for (int mm = 0; mm < gas_pcnst; mm++) {
-         tmp_hetrates[mm](kk) = 0.0;
-       }
-    }
-
-    //-----------------------------------------------------------------
-    //       ... part 1, solve for high henry constant ( hno3, h2o2)
-    //-----------------------------------------------------------------
-    Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
-          xgas2(kk) = xh2o2(kk);                     // different levels wash
-          xgas3(kk) = xso2 (kk);
+        rain(kk) = mass_air * precip(kk) * xhnm(kk) / mass_h2o;
+        xliq(kk) = precip(kk) * delt * xhnm(kk) / avo * mass_air * m3_2_cm3;
+        xh2o2(kk) = qin[spc_h2o2_ndx](kk) * xhnm(kk);
+        xso2(kk) = qin[spc_so2_ndx](kk) * xhnm(kk);
       });
 
-    for (int kk = ktop; kk < pver; kk++) {
-      stay = 1.0;
-      if( rain(kk) != 0.0 ) {            // finding rain cloud
-          stay = ((zmid(kk) - zsurf)*km2cm)/(xum*delt);
-          stay = haero::min(stay,1.0);
-          // calculate gas washout by cloud
-          gas_washout(team, kk,  xkgm,   xliq(kk),       // in
-              xhen_h2o2, tfld, delz, // in
-              xgas2);                                           // inout
-          gas_washout(team, kk,  xkgm,   xliq(kk),        // in
-              xhen_so2, tfld, delz,   // in
-              xgas3);                                           // inout
-      }
-      //-----------------------------------------------------------------
-      //       ... calculate the lifetime of washout (second)
-      //             after all layers washout
-      //             the concentration of hno3 is reduced
-      //             then the lifetime xtt is calculated by
-      //
-      //                  xtt = (xhno3(ini) - xgas1(new))/(dt*xhno3(ini))
-      //                  where dt = passing time (s) in vertical
-      //                             path below the cloud
-      //                        dt = dz(cm)/um(cm/s)
-      //-----------------------------------------------------------------
-      xdtm = delz(kk) / xum;                     // the traveling time in each dz
+  zsurf = m2km * phis * rga;
 
-      xxx2 = (xh2o2(kk) - xgas2(kk));
-      if( xxx2 /= 0.0 ) {                       // if no washout lifetime = 1.e29 
-        yh2o2  = xh2o2(kk)/xxx2 * xdtm; 
-      } else {
-        yh2o2  = large_value_lifetime;
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, ktop, pver - 1), KOKKOS_LAMBDA(int kk) {
+        delz(kk) = haero::abs((zmid(kk) - zmid(kk + 1)) * km2cm);
+      });
+  delz(pver - 1) = haero::abs((zmid(pver - 1) - zsurf) * km2cm);
+
+  //-----------------------------------------------------------------
+  //       ... part 0b,  for temperature dependent of henrys
+  //                     xxhe1 = henry con for hno3
+  //                     xxhe2 = henry con for h2o2
+  // lwh 10/00 -- take henry''s law constants from brasseur et al. [1999],
+  //             appendix j. for hno3, also consider dissociation to
+  //             get effective henry''s law constant; equilibrium
+  //             constant for dissociation from brasseur et al. [1999],
+  //             appendix k. assume ph=5 (set as xph0 above).
+  //             heff = h*k/[h+] for hno3 (complete dissociation)
+  //             heff = h for h2o2 (no dissociation)
+  //             heff = h * (1 + k/[h+]) (in general)
+  //-----------------------------------------------------------------
+  for (int kk = ktop; kk < pver; kk++) {
+    //-----------------------------------------------------------------
+    // 	... effective henry''s law constants:
+    //	hno3, h2o2  (brasseur et al., 1999)
+    //-----------------------------------------------------------------
+    // temperature factor
+    t_factor = (t0 - tfld(kk)) / (t0 * tfld(kk));
+    xhen_h2o2(kk) = 7.45e4 * haero::exp(6620.0 * t_factor);
+    // HNO3, for calculation of H2SO4 het rate use
+    xk0 = 2.1e5 * haero::exp(8700.0 * t_factor);
+    xhen_hno3(kk) = xk0 * (1.0 + hno3_diss / xph0);
+    // SO2
+    xk0 = 1.23 * haero::exp(3120.0 * t_factor);
+    so2_diss = 1.23e-2 * haero::exp(1960.0 * t_factor);
+    xhen_so2(kk) = xk0 * (1.0 + so2_diss / xph0);
+
+    // initiate temporary array
+    for (int mm = 0; mm < gas_pcnst; mm++) {
+      tmp_hetrates[mm](kk) = 0.0;
+    }
+  }
+
+  //-----------------------------------------------------------------
+  //       ... part 1, solve for high henry constant ( hno3, h2o2)
+  //-----------------------------------------------------------------
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
+        xgas2(kk) = xh2o2(kk); // different levels wash
+        xgas3(kk) = xso2(kk);
+      });
+
+  for (int kk = ktop; kk < pver; kk++) {
+    stay = 1.0;
+    if (rain(kk) != 0.0) { // finding rain cloud
+      stay = ((zmid(kk) - zsurf) * km2cm) / (xum * delt);
+      stay = haero::min(stay, 1.0);
+      // calculate gas washout by cloud
+      gas_washout(team, kk, xkgm, xliq(kk), // in
+                  xhen_h2o2, tfld, delz,    // in
+                  xeqca, xca,
+                  xgas2);                   // inout
+      gas_washout(team, kk, xkgm, xliq(kk), // in
+                  xhen_so2, tfld, delz,     // in
+                  xeqca, xca,
+                  xgas3); // inout
+    }
+    //-----------------------------------------------------------------
+    //       ... calculate the lifetime of washout (second)
+    //             after all layers washout
+    //             the concentration of hno3 is reduced
+    //             then the lifetime xtt is calculated by
+    //
+    //                  xtt = (xhno3(ini) - xgas1(new))/(dt*xhno3(ini))
+    //                  where dt = passing time (s) in vertical
+    //                             path below the cloud
+    //                        dt = dz(cm)/um(cm/s)
+    //-----------------------------------------------------------------
+    xdtm = delz(kk) / xum; // the traveling time in each dz
+
+    xxx2 = (xh2o2(kk) - xgas2(kk));
+    if (xxx2 /= 0.0) { // if no washout lifetime = 1.e29
+      yh2o2 = xh2o2(kk) / xxx2 * xdtm;
+    } else {
+      yh2o2 = large_value_lifetime;
+    }
+    tmp_hetrates[1](kk) = max(1.0 / yh2o2, 0.0) * stay;
+
+    xxx3 = (xso2(kk) - xgas3(kk));
+    if (xxx3 /= 0.0) { // if no washout lifetime = 1.e29
+      yso2 = xso2(kk) / xxx3 * xdtm;
+    } else {
+      yso2 = large_value_lifetime;
+    }
+    tmp_hetrates[2](kk) = max(1.0 / yso2, 0.0) * stay;
+  }
+
+  //-----------------------------------------------------------------
+  //       ... part 2, in-cloud solve for low henry constant
+  //                   hno3 and h2o2 have both in and under cloud
+  //-----------------------------------------------------------------
+  for (int kk = ktop; kk < pver; kk++) {
+    for (int mm = 0; mm < gas_pcnst; mm++) {
+      if (rain(kk) <= 0.0) {
+        het_rates[mm](kk) = 0.0;
       }
-      tmp_hetrates[1](kk) = max( 1.0 / yh2o2, 0.0 ) * stay;
-      
-      xxx3 = (xso2(kk) - xgas3(kk));
-      if( xxx3 /= 0.0 ) {                       // if no washout lifetime = 1.e29
-          yso2  = xso2(kk)/xxx3 * xdtm; 
-      } else { 
-          yso2  = large_value_lifetime;
-      }
-      tmp_hetrates[2](kk) = max( 1.0 / yso2, 0.0 ) * stay;
     }
 
-
-    //-----------------------------------------------------------------
-    //       ... part 2, in-cloud solve for low henry constant
-    //                   hno3 and h2o2 have both in and under cloud
-    //-----------------------------------------------------------------
-    for (int kk = ktop; kk < pver; kk++) {
-      for(int mm = 0 mm < gas_pcnst; mm++) {
-        if (rain(kk) <= 0.0) {
-          het_rates[mm](kk) = 0.0;
-      }
-    }
-    
     for (int kk = ktop; kk < pver; kk++) {
 
       work1 = avo2 * xliq(kk);
       work2 = const0 * tfld(kk);
 
-      if( h2o2_ndx > 0 ) {
-          calc_het_rates(satf_h2o2, rain(kk), xhen_h2o2(kk), // in 
-                              tmp_hetrates[1](kk), work1, work2, // in 
-                              het_rates[h2o2_ndx](kk)); // out 
+      if (h2o2_ndx > 0) {
+        calc_het_rates(satf_h2o2, rain(kk), xhen_h2o2(kk), // in
+                       tmp_hetrates[1](kk), work1, work2,  // in
+                       het_rates[h2o2_ndx](kk));           // out
       }
 
-      //if ( prog_modal_aero .and. 
-      if(so2_ndx>0 && h2o2_ndx>0 ) {
-          het_rates[so2_ndx](kk) = het_rates[h2o2_ndx](kk);
-      } elseif( so2_ndx > 0 ) {
-          calc_het_rates(satf_so2, rain(kk), xhen_so2(kk),  //in
-                    tmp_hetrates[2](kk), work1, work2, // in
-                    het_rates[so2_ndx](kk)); // out
+      // if ( prog_modal_aero .and.
+      if (so2_ndx > 0 && h2o2_ndx > 0) {
+        het_rates[so2_ndx](kk) = het_rates[h2o2_ndx](kk);
+      } else if (so2_ndx > 0) {
+        calc_het_rates(satf_so2, rain(kk), xhen_so2(kk),  // in
+                       tmp_hetrates[2](kk), work1, work2, // in
+                       het_rates[so2_ndx](kk));           // out
       }
 
-      if( h2so4_ndx > 0 ) {
-          calc_het_rates(satf_hno3, rain(kk), xhen_hno3(kk), // in
-                    tmp_hetrates[0](kk), work1, work2, // in
-                    het_rates[h2so4_ndx](kk)); // out
+      if (h2so4_ndx > 0) {
+        calc_het_rates(satf_hno3, rain(kk), xhen_hno3(kk), // in
+                       tmp_hetrates[0](kk), work1, work2,  // in
+                       het_rates[h2so4_ndx](kk));          // out
       }
-
-    } 
+    }
 
     //-----------------------------------------------------------------
     //	... Set rates above tropopause = 0.
     //-----------------------------------------------------------------
-    for(int mm = 1; mm < gas_wetdep_cnt; mm++) {
-       mm2 = wetdep_map(mm);
-       for(int kk = 0; kk < ktop; kk++) {
-          het_rates[mm2](kk) = 0.0;
-       }
+    for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
+      mm2 = wetdep_map(mm);
+      for (int kk = 0; kk < ktop; kk++) {
+        het_rates[mm2](kk) = 0.0;
+      }
 
-       for(int kk = 0; kk < pver; kk++) {
-          if(het_rates[mm2](kk) == MISSING) {
-            return; //maybe?
-          }
-       } 
-    
-       //if ( any( het_rates(:ncol,:,mm2) == MISSING) ) then
-       //   write(hetratestrg,'(I3)') mm2
-       //   call endrun('sethet: het_rates (wet dep) not set for het reaction number : '//hetratestrg)
-       //endif
+      for (int kk = 0; kk < pver; kk++) {
+        if (het_rates[mm2](kk) == MISSING) {
+          return; // maybe?
+        }
+      }
 
+      // if ( any( het_rates(:ncol,:,mm2) == MISSING) ) then
+      //    write(hetratestrg,'(I3)') mm2
+      //    call endrun('sethet: het_rates (wet dep) not set for het reaction
+      //    number : '//hetratestrg)
+      // endif
     }
 
-} // end subroutine sethet
-
+  } // end subroutine sethet
 
 } // namespace mo_sethet
 } // namespace mam4
