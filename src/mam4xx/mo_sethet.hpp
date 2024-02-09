@@ -31,6 +31,14 @@ constexpr Real liter_per_gram = 1.0e-3;
 constexpr Real avo2 =
     avo * liter_per_gram * cm3_2_m3; // [liter/gm/mol*(m/cm)^3]
 
+//FIXME: is this right??
+const int spc_h2o2_ndx = static_cast<int>(mam4::GasId::H2O2);
+const int spc_so2_ndx = static_cast<int>(mam4::GasId::SO2);
+const int h2o2_ndx = static_cast<int>(mam4::GasId::H2O2);
+const int so2_ndx = static_cast<int>(mam4::GasId::SO2);
+const int h2so4_ndx = static_cast<int>(mam4::GasId::H2SO4);
+
+
 using Real = haero::Real;
 using View1D = DeviceType::view_1d<Real>;
 
@@ -236,15 +244,14 @@ void sethet(
   Real km2cm = 1.0e5;               // convert km to cm
   Real m2km = 1.0e-3;               // convert m to km
   Real m3_2_cm3 = 1.0e6;            // convert m^3 to cm^3
-  Real MISSING = -999999.0;
+  //Real MISSING = -999999.0;
   Real large_value_lifetime = 1.0e29; // a large lifetime value if no washout
-  Real gas_wetdep_cnt = mam4::modal_aer_opt::pcnst;
+  //Real gas_wetdep_cnt = mam4::modal_aer_opt::pcnst;
 
   // character(len=3) :: hetratestrg
   // int icol, kk, kk2  // indicies
   // int mm, mm2        // indicies
   int ktop; // tropopause level, 100mb for lat < 60 and 300mb for lat > 60
-  int ktop_all;
   Real xkgm; // mass flux on rain drop
   Real stay; // fraction of layer traversed by falling drop in timestep delt
   Real xdtm; // the traveling time in each dz [s]
@@ -318,7 +325,7 @@ void sethet(
       Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
         rain(kk) = mass_air * precip(kk) * xhnm(kk) / mass_h2o;
         xliq(kk) = precip(kk) * delt * xhnm(kk) / avo * mass_air * m3_2_cm3;
-        xh2o2(kk) = qin[spc_h2o2_ndx](kk) * xhnm(kk);
+        xh2o2(kk) = qin[spc_h2o2_ndx](kk) * xhnm(kk); 
         xso2(kk) = qin[spc_so2_ndx](kk) * xhnm(kk);
       });
 
@@ -460,8 +467,10 @@ void sethet(
     //-----------------------------------------------------------------
     //	... Set rates above tropopause = 0.
     //-----------------------------------------------------------------
+    /*
     for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
-      mm2 = wetdep_map(mm);
+      //FIXME: what is wetdep_map?
+      int mm2 = wetdep_map(mm);
       for (int kk = 0; kk < ktop; kk++) {
         het_rates[mm2](kk) = 0.0;
       }
@@ -477,6 +486,7 @@ void sethet(
       //    call endrun('sethet: het_rates (wet dep) not set for het reaction
       //    number : '//hetratestrg)
       // endif
+      */
     }
 
   } // end subroutine sethet
