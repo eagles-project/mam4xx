@@ -594,7 +594,6 @@ void compute_calcsize_and_water_uptake_dr(
       temperature, pmid, cldn, dgnumdry_m_kk, dgnumwet_m_kk, qaerwat_m_kk);
 } // compute_calcsize_water_uptake_dr
 
-
 KOKKOS_INLINE_FUNCTION
 void modal_aero_sw_wo_diagnostics_k(
     const Real &pdeldry, const Real &pmid, const Real &temperature, Real &cldn,
@@ -694,7 +693,6 @@ void modal_aero_sw_wo_diagnostics_k(
                           radsurf, logradsurf, cheb_kk, false);
 
     for (int isw = 0; isw < nswbands; ++isw) {
-    
 
       for (int ll = 0; ll < nspec; ++ll) {
 
@@ -777,7 +775,6 @@ void modal_aero_sw_wo_diagnostics_k(
                             small_value_40); // parameterized single
                                              // scattering albedo [unitless]
       const Real dopaer = pext * mass; // aerosol optical depth in layer [1]
-
 
       // end cols
       tauxar(mm, isw) = dopaer;
@@ -903,8 +900,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
                    const View2D &fa,
                    const AerosolOpticsDeviceData &aersol_optics_data,
                    // aerosol optical depth
-                   Real&aodvis, 
-                   const View1D &work)
+                   Real &aodvis, const View1D &work)
 
 {
   const ConstColumnView temperature = atm.temperature;
@@ -1004,22 +1000,20 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
 
   } // kk
 
-    // compute aerosol_optical depth 
-  aodvis=zero;
+  // compute aerosol_optical depth
+  aodvis = zero;
   Kokkos::parallel_reduce(
-          Kokkos::TeamThreadRange(team, top_lev, pver),
-          [&](int kk, Real &suma) { 
-            for (int imode = 0; imode < ntot_amode; ++imode)
-            {
-              //  aerosol species loop
-              // savaervis ! true if visible wavelength (0.55 micron)
-              // aodvis(icol )    = aodvis(icol) + dopaer(icol)
-              // dopaer = tauxar_work
-              suma += tauxar_work(kk, imode, idx_sw_diag);
-            }// imode
-             },
-          aodvis);
-
+      Kokkos::TeamThreadRange(team, top_lev, pver),
+      [&](int kk, Real &suma) {
+        for (int imode = 0; imode < ntot_amode; ++imode) {
+          //  aerosol species loop
+          // savaervis ! true if visible wavelength (0.55 micron)
+          // aodvis(icol )    = aodvis(icol) + dopaer(icol)
+          // dopaer = tauxar_work
+          suma += tauxar_work(kk, imode, idx_sw_diag);
+        } // imode
+      },
+      aodvis);
 
 } //
 
