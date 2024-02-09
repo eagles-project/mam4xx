@@ -25,8 +25,7 @@ constexpr Real rgrav =
     1.0 / 9.80616; // reciprocal of acceleration of gravity ~ m/s^2
 constexpr Real avogadro = haero::Constants::avogadro;
 constexpr const int gas_pcnst = gas_chemistry::gas_pcnst;
-constexpr const int pcnst = 80; // FIXME, 80 is the only value I found for this
-                                // in the fortran, but using 41 in the test
+constexpr const int pcnst = mam4::modal_aer_opt::pcnst;
 // number of vertical levels
 constexpr const int pver = mam4::nlev;
 
