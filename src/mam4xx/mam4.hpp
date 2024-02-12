@@ -26,6 +26,7 @@
 #include <mam4xx/mo_chm_diags.hpp>
 #include <mam4xx/mo_photo.hpp>
 #include <mam4xx/mo_setext.hpp>
+#include <mam4xx/mo_sethet.hpp>
 #include <mam4xx/mo_setinv.hpp>
 #include <mam4xx/mo_setsox.hpp>
 #include <mam4xx/modal_aer_opt.hpp>

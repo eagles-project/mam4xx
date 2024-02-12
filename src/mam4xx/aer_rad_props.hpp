@@ -557,15 +557,18 @@ void aer_rad_props_sw(
 } // aer_rad_props_sw
 
 KOKKOS_INLINE_FUNCTION
-void aer_rad_props_sw(
-    const ThreadTeam &team, const Real dt, mam4::Prognostics &progs,
-    const haero::Atmosphere &atm, const ConstColumnView &zi,
-    const ConstColumnView &pint, const ConstColumnView &pdel,
-    const ConstColumnView &pdeldry, const View2D &ssa_cmip6_sw,
-    const View2D &af_cmip6_sw, const View2D &ext_cmip6_sw_m, const View2D &tau,
-    const View2D &tau_w, const View2D &tau_w_g, const View2D &tau_w_f,
-    // FIXME
-    const AerosolOpticsDeviceData &aersol_optics_data, const View1D &work) {
+void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
+                      mam4::Prognostics &progs, const haero::Atmosphere &atm,
+                      const ConstColumnView &zi, const ConstColumnView &pint,
+                      const ConstColumnView &pdel,
+                      const ConstColumnView &pdeldry,
+                      const View2D &ssa_cmip6_sw, const View2D &af_cmip6_sw,
+                      const View2D &ext_cmip6_sw_m, const View2D &tau,
+                      const View2D &tau_w, const View2D &tau_w_g,
+                      const View2D &tau_w_f,
+                      // FIXME
+                      const AerosolOpticsDeviceData &aersol_optics_data,
+                      Real &aodvis, const View1D &work) {
 
   const ConstColumnView temperature = atm.temperature;
   const ConstColumnView pmid = atm.pressure;
@@ -624,7 +627,7 @@ void aer_rad_props_sw(
   const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
 
   modal_aero_sw(team, dt, progs, atm, pdel, pdeldry, tau, tau_w, tau_w_g,
-                tau_w_f, aersol_optics_data, work);
+                tau_w_f, aersol_optics_data, aodvis, work);
 
   team.team_barrier();
 

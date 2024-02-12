@@ -716,9 +716,9 @@ int lptr_nacl_a_amode(const int imode) {
   return lptr_nacl_a_amode[imode];
 }
 
+static constexpr int gas_pcnst = 40;
 KOKKOS_INLINE_FUNCTION
 int mmtoo_prevap_resusp(const int i) {
-  static constexpr int gas_pcnst = 40;
   const int mmtoo_prevap_resusp[gas_pcnst] = {
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
       -1, 30, 32, 33, 31, 28, 29, 34, -3, 30, 33, 29, 34, -3,
@@ -919,10 +919,8 @@ void calc_resusp_to_coarse(const int mm, const bool update_dqdt,
 }
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
-Real calc_sfc_flux(
-    const ThreadTeam &team,
-    Kokkos::View<Real[1], Kokkos::MemoryTraits<Kokkos::Atomic>> scratch,
-    const Real layer_tend, const Real pdel) {
+Real calc_sfc_flux(const ThreadTeam &team, Kokkos::View<Real *> layer_tend,
+                   haero::ConstColumnView pdel, const int nlev) {
   // clang-format off
   // -----------------------------------------------------------------------
   //  calculate surface fluxes of wet deposition from vertical integration of tendencies
@@ -933,13 +931,15 @@ Real calc_sfc_flux(
   out :: sflx      ! integrated surface fluxes [kg/m2/s]
   */
   // clang-format on
-  const Real gravit = Constants::gravity;
-
-  scratch[0] = 0;
-  team.team_barrier();
-  scratch[0] += layer_tend * pdel / gravit;
-  team.team_barrier();
-  return scratch[0];
+  Real scratch = 0;
+  Kokkos::parallel_reduce(
+      Kokkos::TeamThreadRange(team, nlev),
+      KOKKOS_LAMBDA(int k, Real &scratch) {
+        const Real gravit = Constants::gravity;
+        scratch += layer_tend[k] * pdel[k] / gravit;
+      },
+      scratch);
+  return scratch;
 }
 
 // =============================================================================

@@ -693,7 +693,6 @@ void modal_aero_sw_wo_diagnostics_k(
                           radsurf, logradsurf, cheb_kk, false);
 
     for (int isw = 0; isw < nswbands; ++isw) {
-      //  aerosol species loop
 
       for (int ll = 0; ll < nspec; ++ll) {
 
@@ -858,6 +857,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
                                        dt, aersol_optics_data,
                                        // outputs
                                        tauxar_kkp, wa_kkp, ga_kkp, fa_kkp);
+        //
       });
 
   team.team_barrier();
@@ -899,7 +899,8 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
                    const View2D &tauxar, const View2D &wa, const View2D &ga,
                    const View2D &fa,
                    const AerosolOpticsDeviceData &aersol_optics_data,
-                   const View1D &work)
+                   // aerosol optical depth
+                   Real &aodvis, const View1D &work)
 
 {
   const ConstColumnView temperature = atm.temperature;
@@ -998,6 +999,21 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
     } // isw
 
   } // kk
+
+  // compute aerosol_optical depth
+  aodvis = zero;
+  Kokkos::parallel_reduce(
+      Kokkos::TeamThreadRange(team, top_lev, pver),
+      [&](int kk, Real &suma) {
+        for (int imode = 0; imode < ntot_amode; ++imode) {
+          //  aerosol species loop
+          // savaervis ! true if visible wavelength (0.55 micron)
+          // aodvis(icol )    = aodvis(icol) + dopaer(icol)
+          // dopaer = tauxar_work
+          suma += tauxar_work(kk, imode, idx_sw_diag);
+        } // imode
+      },
+      aodvis);
 
 } //
 

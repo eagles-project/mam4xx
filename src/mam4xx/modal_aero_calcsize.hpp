@@ -39,7 +39,7 @@ void init_calcsize(
     Real mean_std_dev_nmodes[AeroConfig::num_modes()],
     // outputs
     bool noxf_acc2ait[AeroConfig::num_aerosol_ids()],
-    int n_common_species_ait_accum,
+    int &n_common_species_ait_accum,
     int ait_spec_in_acc[AeroConfig::num_aerosol_ids()],
     int acc_spec_in_ait[AeroConfig::num_aerosol_ids()]) {
 

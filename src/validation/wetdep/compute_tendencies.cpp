@@ -67,7 +67,7 @@ void test_compute_tendencies(std::unique_ptr<Ensemble> &ensemble) {
     const Real t = 0;
     const Real dt = 36000;
     const Real pblh = 1000;
-    const int gas_pcnst = 40;
+    const int gas_pcnst = aero_model::gas_pcnst;
     EKAT_ASSERT(input.get("dt") == 3600);
 
     Atmosphere atmosphere = validation::create_atmosphere(nlev, pblh);
@@ -106,9 +106,9 @@ void test_compute_tendencies(std::unique_ptr<Ensemble> &ensemble) {
     diagnostics.evaporation_of_falling_precipitation =
         mam4::validation::create_column_view(nlev);
     diagnostics.aerosol_wet_deposition_interstitial =
-        mam4::validation::create_column_view(nlev);
+        mam4::validation::create_column_view(gas_pcnst);
     diagnostics.aerosol_wet_deposition_cloud_water =
-        mam4::validation::create_column_view(nlev);
+        mam4::validation::create_column_view(gas_pcnst);
     for (int i = 0; i < AeroConfig::num_modes(); ++i)
       diagnostics.wet_geometric_mean_diameter_i[i] =
           mam4::validation::create_column_view(nlev);
@@ -133,12 +133,15 @@ void test_compute_tendencies(std::unique_ptr<Ensemble> &ensemble) {
           diagnostics.shallow_convective_detrainment[i] = 0;
           diagnostics.shallow_convective_ratio[i] = 0;
           diagnostics.evaporation_of_falling_precipitation[i] = 0;
-          diagnostics.aerosol_wet_deposition_interstitial[i] = 0;
-          diagnostics.aerosol_wet_deposition_cloud_water[i] = 0;
           for (int j = 0; j < gas_pcnst; ++j) {
             diagnostics.tracer_mixing_ratio(i, j) = 0;
             diagnostics.d_tracer_mixing_ratio_dt(i, j) = 0;
           }
+        });
+    Kokkos::parallel_for(
+        "init_column_views", gas_pcnst, KOKKOS_LAMBDA(int i) {
+          diagnostics.aerosol_wet_deposition_interstitial[i] = 0;
+          diagnostics.aerosol_wet_deposition_cloud_water[i] = 0;
         });
     Kokkos::fence();
     std::vector<Real> temperature_host, pdel_host, pmid_host, cldfrac_host,
