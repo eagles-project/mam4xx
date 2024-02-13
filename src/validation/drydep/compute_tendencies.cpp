@@ -15,7 +15,8 @@ void compute_tendencies(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-    const int nlev = 72;
+    const int nlev = mam4::nlev;
+    const int aerosol_index = DryDeposition::index_interstitial_aerosols;
 
     EKAT_REQUIRE_MSG(input.has_array("ntot_amode"),
                      "Required name: ntot_amode");
@@ -30,7 +31,7 @@ void compute_tendencies(Ensemble *ensemble) {
       EKAT_REQUIRE_MSG(input.has_array(s), "Required name: " + s);
 
     for (std::string s : {"statq_", "qqcw_"}) {
-      for (int i = 15; i < ConvProc::gas_pcnst; ++i) {
+      for (int i = aerosol_index; i < aero_model::gas_pcnst; ++i) {
         const std::string name = s + std::to_string(i + 1);
         EKAT_REQUIRE_MSG(input.has_array(name), "Required name: " + name);
         EKAT_REQUIRE_MSG(nlev == input.get_array(name).size(),
@@ -73,12 +74,12 @@ void compute_tendencies(Ensemble *ensemble) {
     haero::ConstColumnView pdel = to_dev(input.get_array("pdel"));
 
     auto state_q_mem =
-        mam4::validation::create_column_view(nlev * ConvProc::gas_pcnst);
+        mam4::validation::create_column_view(nlev * aero_model::gas_pcnst);
     Diagnostics::ColumnTracerView state_q(state_q_mem.data(), nlev,
-                                          ConvProc::gas_pcnst);
+                                          aero_model::gas_pcnst);
     {
       auto host_q = Kokkos::create_mirror_view(state_q);
-      for (int i = 15; i < ConvProc::gas_pcnst; ++i) {
+      for (int i = aerosol_index; i < aero_model::gas_pcnst; ++i) {
         const std::string name = "statq_" + std::to_string(i + 1);
         const std::vector<Real> vec = input.get_array(name);
         for (int j = 0; j < vec.size(); ++j)
@@ -87,10 +88,10 @@ void compute_tendencies(Ensemble *ensemble) {
       Kokkos::deep_copy(state_q, host_q);
     }
 
-    Kokkos::View<Real *> qqcw[ConvProc::gas_pcnst];
-    for (int i = 0; i < ConvProc::gas_pcnst; ++i) {
+    Kokkos::View<Real *> qqcw[aero_model::gas_pcnst];
+    for (int i = 0; i < aero_model::gas_pcnst; ++i) {
       const std::string name = "qqcw_" + std::to_string(i + 1);
-      if (i < 15)
+      if (i < aerosol_index)
         qqcw[i] = mam4::validation::create_column_view(nlev);
       else
         qqcw[i] = to_dev(input.get_array(name));
@@ -130,28 +131,29 @@ void compute_tendencies(Ensemble *ensemble) {
     const Real dt = input.get_array("dt").front();
 
     auto ptend_q_mem =
-        mam4::validation::create_column_view(nlev * ConvProc::gas_pcnst);
+        mam4::validation::create_column_view(nlev * aero_model::gas_pcnst);
     Diagnostics::ColumnTracerView ptend_q(ptend_q_mem.data(), nlev,
-                                          ConvProc::gas_pcnst);
+                                          aero_model::gas_pcnst);
 
     ColumnView aerdepdryis =
-        mam4::validation::create_column_view(ConvProc::gas_pcnst);
+        mam4::validation::create_column_view(aero_model::gas_pcnst);
     ColumnView aerdepdrycw =
-        mam4::validation::create_column_view(ConvProc::gas_pcnst);
+        mam4::validation::create_column_view(aero_model::gas_pcnst);
 
+    const int aerosol_categories = DryDeposition::aerosol_categories;
     ColumnView rho = mam4::validation::create_column_view(nlev);
-    Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()][4],
-        vlc_trb[AeroConfig::num_modes()][4],
-        vlc_grv[AeroConfig::num_modes()][4];
+    Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()][aerosol_categories],
+        vlc_trb[AeroConfig::num_modes()][aerosol_categories],
+        vlc_grv[AeroConfig::num_modes()][aerosol_categories];
     for (int j = 0; j < AeroConfig::num_modes(); ++j) {
-      for (int i = 0; i < 4; ++i) {
+      for (int i = 0; i < aerosol_categories; ++i) {
         Kokkos::resize(vlc_dry[j][i], nlev);
         Kokkos::resize(vlc_trb[j][i], nlev);
         Kokkos::resize(vlc_grv[j][i], nlev);
       }
     }
-    Kokkos::View<Real *> dqdt_tmp[ConvProc::gas_pcnst];
-    for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+    Kokkos::View<Real *> dqdt_tmp[aero_model::gas_pcnst];
+    for (int i = 0; i < aero_model::gas_pcnst; ++i)
       Kokkos::resize(dqdt_tmp[i], nlev);
 
     Real pblh = 1000;
@@ -163,7 +165,6 @@ void compute_tendencies(Ensemble *ensemble) {
 
     mam4::AeroConfig mam4_config;
     mam4::DryDepositionProcess::ProcessConfig process_config;
-    process_config.nlev = nlev;
     mam4::DryDepositionProcess process(mam4_config, process_config);
     const Real t = 0;
 
@@ -227,7 +228,7 @@ void compute_tendencies(Ensemble *ensemble) {
     std::vector<Real> cw_host = to_host(aerdepdrycw);
     Kokkos::deep_copy(ptend_host, ptend_q);
     std::vector<Real> ptend(nlev);
-    for (int m = 15; m < ConvProc::gas_pcnst; ++m) {
+    for (int m = aerosol_index; m < aero_model::gas_pcnst; ++m) {
       for (int lev = 0; lev < nlev; ++lev)
         ptend[lev] = ptend_host(lev, m);
       output.set("ptendq_" + std::to_string(m + 1), ptend);

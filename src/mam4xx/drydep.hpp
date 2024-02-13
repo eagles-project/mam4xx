@@ -18,16 +18,17 @@ class DryDeposition {
 
 public:
   // The value of n_land_type is taken from mozart as defined in mo_drydep.F90
+  // BAD CONSTANT
   static constexpr int n_land_type = 11;
 
   struct Config {
-    int nlev = 72;
     Config(){};
 
     Config(const Config &) = default;
     ~Config() = default;
     Config &operator=(const Config &) = default;
 
+    // BAD CONSTANT
     Real fraction_landuse[n_land_type] = {
         0.20918898065265040e-02, 0.10112323792561469e+00,
         0.19104123086831826e+00, 0.56703179010502225e+00,
@@ -37,18 +38,30 @@ public:
         0.43754228462347953e-02};
   };
 
+  // aerosol_categories denotes four different
+  // "categories" of aerosols. That is
+  //   0 - interstitial aerosol, 0th moment (i.e., number)
+  //   1 - interstitial aerosol, 3rd moment (i.e., volume/mass)
+  //   2 - cloud-borne aerosol,  0th moment (i.e., number)
+  //   3 - cloud-borne aerosol,  3rd moment (i.e., volume/mass)
+  static constexpr int aerosol_categories = 4;
+
+  // starting index of interstitial aerosols in state_q array.
+  static constexpr int index_interstitial_aerosols = 15;
+
 private:
   Config config_;
   Kokkos::View<Real *> rho;
-  Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()][4];
-  Kokkos::View<Real *> vlc_trb[AeroConfig::num_modes()][4];
-  Kokkos::View<Real *> vlc_grv[AeroConfig::num_modes()][4];
-  Kokkos::View<Real *> dqdt_tmp[ConvProc::gas_pcnst];
+
+  Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()][aerosol_categories];
+  Kokkos::View<Real *> vlc_trb[AeroConfig::num_modes()][aerosol_categories];
+  Kokkos::View<Real *> vlc_grv[AeroConfig::num_modes()][aerosol_categories];
+  Kokkos::View<Real *> dqdt_tmp[aero_model::gas_pcnst];
 
   // Computed tendenciesColumnView for
   // modal cloudborne aerosol number mixing ratios and
   // cloudborne aerosol mass mixing ratios within each mode.
-  Kokkos::View<Real *> qqcw_tends[ConvProc::gas_pcnst] = {};
+  Kokkos::View<Real *> qqcw_tends[aero_model::gas_pcnst] = {};
 
 public:
   // name -- unique name of the process implemented by this class
@@ -58,11 +71,11 @@ public:
   void init(const AeroConfig &aero_config,
             const Config &process_config = Config()) {
     config_ = process_config;
-    const int nlev = config_.nlev;
+    const int nlev = mam4::nlev;
     Kokkos::resize(rho, nlev);
     Kokkos::deep_copy(rho, 0);
     for (int j = 0; j < AeroConfig::num_modes(); ++j) {
-      for (int i = 0; i < 4; ++i) {
+      for (int i = 0; i < aerosol_categories; ++i) {
         Kokkos::resize(vlc_dry[j][i], nlev);
         Kokkos::resize(vlc_trb[j][i], nlev);
         Kokkos::resize(vlc_grv[j][i], nlev);
@@ -71,7 +84,7 @@ public:
         Kokkos::deep_copy(vlc_grv[j][i], 0);
       }
     }
-    for (int j = 0; j < ConvProc::gas_pcnst; ++j) {
+    for (int j = 0; j < aero_model::gas_pcnst; ++j) {
       Kokkos::resize(dqdt_tmp[j], nlev);
       Kokkos::deep_copy(dqdt_tmp[j], 0);
       Kokkos::resize(qqcw_tends[j], nlev);
@@ -99,17 +112,15 @@ public:
 
 namespace drydep {
 
-const static int pver = 72;
-
 // ##############################################################################
 //  Given a coordinate xw, an interpolating polynomial ff and its derivative
 //  fdot, calculate the value of the polynomial (psistar) at xin.
 // ##############################################################################
 KOKKOS_INLINE_FUNCTION
-Real cfint2(const int nlev, const haero::ConstColumnView xw /*nlev+1*/,
-            const Real ff[/*nlev+1*/], const Real fdot[/*nlev+1*/],
+Real cfint2(const haero::ConstColumnView xw /*nlev+1*/,
+            const Real ff[mam4::nlev + 1], const Real fdot[mam4::nlev + 1],
             const Real xin) {
-
+  const int nlev = mam4::nlev;
   const Real xins = spitfire::median(xw[0], xin, xw[nlev]);
   int intz = -1;
 
@@ -149,11 +160,6 @@ Real cfint2(const int nlev, const haero::ConstColumnView xw /*nlev+1*/,
 
   const Real psim = spitfire::median(psi1, psi2, psi3);
   const Real cfnew = spitfire::median(cfint, psi1, psim);
-
-  // if (haero::abs(cfnew-cfint)/(abs(cfnew)+abs(cfint)+1.e-36)  > .03) {
-  //    write(iulog,*) ' cfint2 limiting important ', cfint, cfnew
-  // }
-
   const Real psistar = cfnew;
 
   return psistar;
@@ -164,8 +170,8 @@ Real cfint2(const int nlev, const haero::ConstColumnView xw /*nlev+1*/,
 //  Multi column version.
 // ##############################################################################
 KOKKOS_INLINE_FUNCTION
-void cfdotmc_pro(const int nlev, const haero::ConstColumnView xw /*nlev+1*/,
-                 const Real ff[/*nlev+1*/], Real fdot[/*nlev+1*/]) {
+void cfdotmc_pro(const haero::ConstColumnView xw /*nlev+1*/,
+                 const Real ff[mam4::nlev + 1], Real fdot[mam4::nlev + 1]) {
   // clang-format off
   /*   
     Real   xw(nelv+1)   // coordinate variable
@@ -187,16 +193,16 @@ void cfdotmc_pro(const int nlev, const haero::ConstColumnView xw /*nlev+1*/,
   //     ................fdot3.....fdot4................     3,nlev-1 points
   */
   // clang-format on
-
-  Real delxh[pver] = {};
-  Real sh[pver] = {};  // first divided differences between nodes
-  Real ss[pver] = {};  // first divided differences at nodes
-  Real dd[pver] = {};  // second divided differences at nodes
-  Real dh[pver] = {};  // second divided differences between nodes
-  Real ee[pver] = {};  // third divided differences at nodes
-  Real eh[pver] = {};  // third divided differences between nodes
-  Real ppl[pver] = {}; // p prime on left
-  Real ppr[pver] = {}; // p prime on right
+  const int nlev = mam4::nlev;
+  Real delxh[nlev] = {};
+  Real sh[nlev] = {};  // first divided differences between nodes
+  Real ss[nlev] = {};  // first divided differences at nodes
+  Real dd[nlev] = {};  // second divided differences at nodes
+  Real dh[nlev] = {};  // second divided differences between nodes
+  Real ee[nlev] = {};  // third divided differences at nodes
+  Real eh[nlev] = {};  // third divided differences between nodes
+  Real ppl[nlev] = {}; // p prime on left
+  Real ppr[nlev] = {}; // p prime on right
 
   // -----------------
   for (int kk = 0; kk < nlev; ++kk) {
@@ -295,9 +301,9 @@ void cfdotmc_pro(const int nlev, const haero::ConstColumnView xw /*nlev+1*/,
 //===============================================================================
 template <typename VIEWTYPE>
 KOKKOS_INLINE_FUNCTION void
-getflx(const int nlev, const haero::ConstColumnView xw /*nlev+1*/,
-       const VIEWTYPE phi /*nlev*/, const Real vel[/*nlev+1*/],
-       const Real deltat, Real flux[/*nlev+1*/]) {
+getflx(const haero::ConstColumnView xw /*nlev+1*/, const VIEWTYPE phi /*nlev*/,
+       const Real vel[mam4::nlev + 1], const Real deltat,
+       Real flux[mam4::nlev + 1]) {
   // clang-format off
   // -----------------------------------------------------------------
   //  Assumed grid staggering:
@@ -330,7 +336,7 @@ getflx(const int nlev, const haero::ConstColumnView xw /*nlev+1*/,
   // clang-format on
 
   // Set fluxes at boundaries to zero
-
+  const int nlev = mam4::nlev;
   flux[0] = 0.0;
   flux[nlev] = 0.0;
 
@@ -338,21 +344,21 @@ getflx(const int nlev, const haero::ConstColumnView xw /*nlev+1*/,
   // See Rasch and Lawrence (1998), Eq (3) but note we are using a pressure
   // coordinate here.
 
-  Real psi[pver + 1] = {}; // integral of phi along the xw coordinate
+  Real psi[nlev + 1] = {}; // integral of phi along the xw coordinate
   for (int kk = 1; kk < nlev + 1; ++kk) {
     psi[kk] = phi[kk - 1] * (xw[kk] - xw[kk - 1]) + psi[kk - 1];
   }
 
   // Calculate the derivatives for the interpolating polynomial
-  Real fdot[pver + 1] = {}; // derivative of interpolating polynomial
-  cfdotmc_pro(nlev, xw, psi, fdot);
+  Real fdot[nlev + 1] = {}; // derivative of interpolating polynomial
+  cfdotmc_pro(xw, psi, fdot);
 
   // Calculate fluxes at interior interfaces
   for (int kk = 1; kk < nlev; ++kk) {
     // Find departure point. Rasch and Lawrence (1998), Eq (4)
     const Real xxk = xw[kk] - vel[kk] * deltat;
     // Calculate the integral, psistar, at the departure point xxk.
-    const Real psistar = cfint2(nlev, xw, psi, fdot, xxk);
+    const Real psistar = cfint2(xw, psi, fdot, xxk);
     // Calculate the flux at interface kk. Rasch and Lawrence (1998), Eq (5)
     flux[kk] = psi[kk] - psistar;
   }
@@ -363,7 +369,7 @@ getflx(const int nlev, const haero::ConstColumnView xw /*nlev+1*/,
 //-----------------------------------------------------------------------
 template <typename VIEWTYPE>
 KOKKOS_INLINE_FUNCTION Real sedimentation_solver_for_1_tracer(
-    const int nlev, const Real dt, const Kokkos::View<Real *> sed_vel /*nlev*/,
+    const Real dt, const Kokkos::View<Real *> sed_vel /*nlev*/,
     const VIEWTYPE qq_in /*nlev*/, const ColumnView rho /*nlev*/,
     const haero::ConstColumnView tair /*nlev*/,
     const haero::ConstColumnView pint /*nlev+1*/,
@@ -384,13 +390,14 @@ KOKKOS_INLINE_FUNCTION Real sedimentation_solver_for_1_tracer(
   out :: sflx           // deposition flux at the Earth's surface [kg/m2/s] or [1/m2/s]
   */
   // clang-format on
+  // BAD CONSTANT
   const Real mxsedfac = 0.99; // maximum sedimentation flux factor
   const Real gravit = Constants::gravity;
-
   // ---------------------------------------------------------------------------------------
   //  Set sedimentation velocity to zero at the top interface of the model
   //  domain.
-  Real pvmzaer[pver + 1] = {}; // sedimentation velocity in Pa (positive = down)
+  const int nlev = mam4::nlev;
+  Real pvmzaer[nlev + 1] = {}; // sedimentation velocity in Pa (positive = down)
 
   //  Assume the sedimentation velocities passed in are velocities
   //  at the bottom interface of each model layer, like an upwind scheme.
@@ -407,8 +414,8 @@ KOKKOS_INLINE_FUNCTION Real sedimentation_solver_for_1_tracer(
   //  Calculate mass flux * dt at each layer interface
   // ------------------------------------------------------
   // dt * mass fluxes at layer interfaces (positive = down)
-  Real dtmassflux[pver + 1] = {};
-  getflx(nlev, pint, qq_in, pvmzaer, dt, dtmassflux);
+  Real dtmassflux[nlev + 1] = {};
+  getflx(pint, qq_in, pvmzaer, dt, dtmassflux);
 
   // Filter out any negative fluxes from the getflx routine
 
@@ -544,6 +551,7 @@ Real gravit_settling_velocity(const Real particle_radius,
 
 KOKKOS_INLINE_FUNCTION
 Real gamma(const int n_land_type) {
+  // BAD CONSTANT
   const Real gamma_array[DryDeposition::n_land_type] = {
       0.56, 0.54, 0.54, 0.56, 0.56, 0.56, 0.50, 0.54, 0.54, 0.54, 0.54};
   return gamma_array[n_land_type];
@@ -551,6 +559,7 @@ Real gamma(const int n_land_type) {
 
 KOKKOS_INLINE_FUNCTION
 Real alpha(const int n_land_type) {
+  // BAD CONSTANT
   const Real alpha_array[DryDeposition::n_land_type] = {
       1.50, 1.20, 1.20, 0.80, 1.00, 0.80, 100.0, 50.0, 2.0, 1.2, 50.0};
   return alpha_array[n_land_type];
@@ -558,6 +567,7 @@ Real alpha(const int n_land_type) {
 
 KOKKOS_INLINE_FUNCTION
 Real radius_collector(const int n_land_type) {
+  // BAD CONSTANT
   const Real radius_collector_array[DryDeposition::n_land_type] = {
       10.0e-3, 3.5e-3, 3.5e-3,  5.1e-3, 2.0e-3, 5.0e-3,
       -1.0e0,  -1.0e0, 10.0e-3, 3.5e-3, -1.0e+0};
@@ -738,6 +748,7 @@ void calcram(const Real landfrac, const Real icefrac, const Real ocnfrac,
   // dry dep of sea salts and dust
 
   if (fv_out == 0.0) {
+    // BAD CONSTANT
     fv_out = 1.e-12;
   }
 
@@ -851,25 +862,28 @@ void modal_aero_depvel_part(
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
 void aero_model_drydep(
-    const ThreadTeam &team, const int nlev,
+    const ThreadTeam &team,
     const Real fraction_landuse[DryDeposition::n_land_type],
     const haero::ConstColumnView tair, const haero::ConstColumnView pmid,
     const haero::ConstColumnView pint, const haero::ConstColumnView pdel,
     const Diagnostics::ColumnTracerView state_q,
     const ColumnView dgncur_awet[AeroConfig::num_modes()],
     const ColumnView wetdens[AeroConfig::num_modes()],
-    const Kokkos::View<Real *> qqcw[ConvProc::gas_pcnst], const Real obklen,
+    const Kokkos::View<Real *> qqcw[aero_model::gas_pcnst], const Real obklen,
     const Real ustar, const Real landfrac, const Real icefrac,
     const Real ocnfrac, const Real fricvelin, const Real ram1in,
     const Diagnostics::ColumnTracerView ptend_q,
-    bool ptend_lq[ConvProc::gas_pcnst], const Real dt,
+    bool ptend_lq[aero_model::gas_pcnst], const Real dt,
     const ColumnView aerdepdrycw, const ColumnView aerdepdryis,
 
     const ColumnView rho,
-    const Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()][4],
-    const Kokkos::View<Real *> vlc_trb[AeroConfig::num_modes()][4],
-    const Kokkos::View<Real *> vlc_grv[AeroConfig::num_modes()][4],
-    const Kokkos::View<Real *> dqdt_tmp[ConvProc::gas_pcnst]) {
+    const Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()]
+                                      [DryDeposition::aerosol_categories],
+    const Kokkos::View<Real *> vlc_trb[AeroConfig::num_modes()]
+                                      [DryDeposition::aerosol_categories],
+    const Kokkos::View<Real *> vlc_grv[AeroConfig::num_modes()]
+                                      [DryDeposition::aerosol_categories],
+    const Kokkos::View<Real *> dqdt_tmp[aero_model::gas_pcnst]) {
   // clang-format off
   /*   
     // Arguments
@@ -889,7 +903,7 @@ void aero_model_drydep(
     in :: ram1in            : aerodynamical resistance from land model [s/m]
     in :: dt                : time step [s]
     inout  :: qqcw(nlev)    : Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
-    out    :: ptend_q (nlev, ConvProc::gas_pcnst) : diagnostics.d_tracer_mixing_ratio_dt
+    out    :: ptend_q (nlev, aero_model::gas_pcnst) : diagnostics.d_tracer_mixing_ratio_dt
 
     // Scratch Space
     rho(nlev)               : air density [kg/m3]
@@ -906,7 +920,7 @@ void aero_model_drydep(
     vlc_dry(nlev)     : dep velocity, sum of vlc_grv and vlc_trb [m/s]
   */  
   // clang-format on 
-
+  const int nlev = mam4::nlev;
   // Calculate rho:
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int kk) {
@@ -956,6 +970,7 @@ void aero_model_drydep(
         //  qcldwtr
 
         // rad_drop : cloud droplet radius [m]
+        // BAD CONSTANT
         const Real rad_drop = 5.0e-6;
         const Real rhoh2o = haero::Constants::density_h2o;
         // dens_drop  : cloud droplet density [kg/m3]
@@ -1014,7 +1029,7 @@ void aero_model_drydep(
           auto qq = qqcw[icnst];
           // sflx : surface deposition flux of a single species [kg/m2/s] or [1/m2/s]
           const Real sflx = drydep::sedimentation_solver_for_1_tracer(
-              nlev, dt, vlc_dry[0][jvlc], qq, rho, tair, pint, pmid, pdel,
+              dt, vlc_dry[0][jvlc], qq, rho, tair, pint, pmid, pdel,
               dqdt_tmp[kk]);
           // aerdepdrycw  : surface deposition flux of cloud-borne  aerosols, [kg/m2/s] or [1/m2/s]
           aerdepdrycw[icnst] = sflx;
@@ -1093,7 +1108,7 @@ void aero_model_drydep(
           auto qq = Kokkos::subview(state_q, Kokkos::ALL(), icnst);
           // sflx : surface deposition flux of a single species [kg/m2/s] or [1/m2/s]
           const Real sflx = drydep::sedimentation_solver_for_1_tracer(
-              nlev, dt, vlc_dry[imode][jvlc], qq,  // in
+              dt, vlc_dry[imode][jvlc], qq,  // in
               rho, tair, pint, pmid, pdel, // in
               dqdt_tmp[kk]);               // out
           // aerdepdryis  : surface deposition flux of interstitial aerosols, [kg/m2/s] or [1/m2/s]
@@ -1114,7 +1129,6 @@ void DryDeposition::compute_tendencies(const AeroConfig &config, const ThreadTea
                         const Tendencies &tends) const {
   // Time tendency of tracer mixing ratio (TMR) [kg/kg/s]
 
-  const int nlev = this->config_.nlev;
   auto fraction_landuse = this->config_.fraction_landuse;
   auto tair = atm.temperature;
   auto pmid = atm.pressure;
@@ -1143,7 +1157,7 @@ void DryDeposition::compute_tendencies(const AeroConfig &config, const ThreadTea
   const Real fricvelin = diags.friction_velocity;
   const Real ram1in = diags.aerodynamical_resistance;
   auto ptend_q = diags.d_tracer_mixing_ratio_dt;
-  bool ptend_lq[ConvProc::gas_pcnst];
+  bool ptend_lq[aero_model::gas_pcnst];
   auto aerdepdrycw = diags.deposition_flux_of_cloud_borne_aerosols;
   auto aerdepdryis = diags.deposition_flux_of_interstitial_aerosols;
   auto rho     = this->rho;
@@ -1153,7 +1167,7 @@ void DryDeposition::compute_tendencies(const AeroConfig &config, const ThreadTea
   auto dqdt_tmp= this->dqdt_tmp;
 
   mam4::aero_model_drydep(
-     team, nlev, fraction_landuse, tair, pmid, pint, pdel, state_q,
+     team, fraction_landuse, tair, pmid, pint, pdel, state_q,
      dgncur_awet, wetdens, qqcw_tends, obklen, ustar, landfrac, icefrac,
      ocnfrac, fricvelin, ram1in, ptend_q, ptend_lq, dt, aerdepdrycw,
      aerdepdryis, rho, vlc_dry, vlc_trb, vlc_grv, dqdt_tmp);

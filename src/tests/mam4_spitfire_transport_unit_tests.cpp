@@ -37,10 +37,10 @@ TEST_CASE("get_flux", "mam4_spitfire_transport") {
   auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
 
   const Real deltat = 10.0;
-  ColumnView xw = haero::testing::create_column_view(drydep::pver);
-  ColumnView phi = haero::testing::create_column_view(drydep::pver);
-  ColumnView vel = haero::testing::create_column_view(drydep::pver);
-  ColumnView flux = haero::testing::create_column_view(drydep::pver);
+  ColumnView xw = haero::testing::create_column_view(mam4::nlev);
+  ColumnView phi = haero::testing::create_column_view(mam4::nlev);
+  ColumnView vel = haero::testing::create_column_view(mam4::nlev);
+  ColumnView flux = haero::testing::create_column_view(mam4::nlev);
 
   spitfire::get_flux(team_policy, xw, phi, vel, deltat, flux);
 }
