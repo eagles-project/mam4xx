@@ -51,6 +51,10 @@ EkatCreateUnitTest(mam4_nucleate_ice_unit_tests mam4_nucleate_ice_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_wet_deposition_unit_tests mam4_wet_deposition_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
+EkatCreateUnitTest(mam4_dry_deposition_unit_tests mam4_dry_deposition_unit_tests.cpp
+  LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
+EkatCreateUnitTest(mam4_spitfire_transport_unit_tests mam4_spitfire_transport_unit_tests.cpp
+  LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_mo_setsox_unit_tests mam4_mo_setsox_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 
@@ -66,9 +70,9 @@ if (NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel") #The Intel compiler always em
   target_compile_options(mam4_aging_unit_tests PRIVATE -Werror)
   target_compile_options(mam4_hetfrz_unit_tests PRIVATE -Werror)
   target_compile_options(mam4_nucleate_ice_unit_tests PRIVATE -Werror)
+  target_compile_options(mam4_spitfire_transport_unit_tests PRIVATE -Werror)
   target_compile_options(mam4_mo_setsox_unit_tests PRIVATE -Werror)
 endif ()
-
 
 if (${HAERO_PRECISION} MATCHES double)
 EkatCreateUnitTest(kohler_unit_tests kohler_unit_tests.cpp

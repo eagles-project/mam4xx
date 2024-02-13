@@ -40,6 +40,7 @@ install(FILES
         water_uptake.hpp
         wet_dep.hpp
         ndrop.hpp
+        spitfire_transport.hpp
         mo_photo.hpp
         lin_strat_chem.hpp
         mo_chm_diags.hpp

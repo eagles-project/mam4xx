@@ -31,9 +31,15 @@ void gravit_settling_velocity(Ensemble *ensemble) {
     auto dynamic_viscosity = input.get("dynamic_viscosity");
     auto particle_sig = input.get("particle_sig");
 
-    auto gsv = drydep::gravit_settling_velocity(
-        particle_radius, particle_density, slip_correction, dynamic_viscosity,
-        particle_sig);
+    Real gsv = 0;
+    Kokkos::parallel_reduce(
+        1,
+        KOKKOS_LAMBDA(const int, Real &gsv) {
+          gsv = drydep::gravit_settling_velocity(
+              particle_radius, particle_density, slip_correction,
+              dynamic_viscosity, particle_sig);
+        },
+        gsv);
 
     output.set("gravit_settling_velocity", gsv);
   });

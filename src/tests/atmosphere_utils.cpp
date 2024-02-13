@@ -68,6 +68,8 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
       h_intp(num_levels) = intp + hdp / 2;
     psum += hdp;
   }
+  for (int k = 0; k < num_levels + 1; ++k)
+    h_intp(k) = 0;
 
   // Assert equality based on relative values, rather than absolute tolerance
   EKAT_ASSERT(FloatingPoint<Real>::rel(psum, p0,

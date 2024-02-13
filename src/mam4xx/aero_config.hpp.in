@@ -481,6 +481,57 @@ public:
 
   // ********** End Wet Deposition Diagnostic Arrays ******************
   // ************************************************************************
+     
+
+  // ************************************************************************
+  // ********** Begin Dry Deposition Diagnostic Arrays ******************
+
+  // INPUTS:
+  // All the inputs are shared with other processes and are already defined:
+  
+  // Obukhov length [m]
+  // Called obklen in mam4;
+  Real Obukhov_length;
+
+  // Surface friction velocity [m/s]
+  // Called ustart in mam4;
+  Real surface_friction_velocty;
+
+  // Land fraction [unitless]
+  // Called landfrac in mam4
+  Real land_fraction;
+
+  // ice fraction [unitless]
+  // Called icefrac in mam4
+  Real ice_fraction;
+
+  // ocean fraction [unitless]
+  // Called ocnfrac in mam4.
+  Real ocean_fraction;
+
+  // friction velocity from land model [m/s]
+  // call fv in mam4, seems to always be 0.1 but maybe that is just an initial value.
+  Real friction_velocity;
+
+  // aerodynamical resistance from land model [s/m]
+  // Called ram1 in mam4, seems to always be 0.1 but maybe that is just an initial value.
+  Real aerodynamical_resistance;
+
+  // OUTPUTS:
+
+  // Surface deposition flux of interstitial aerosols, [kg/m2/s] or [1/m2/s]
+  // Length: ConvProc::gas_pcnst
+  // Called aerdepdryis in mam4 
+  ColumnView deposition_flux_of_interstitial_aerosols;
+
+
+  // Surface deposition flux of cloud-borne aerosols, [kg/m2/s] or [1/m2/s]
+  // Length: ConvProc::gas_pcnst
+  // Called aerdepdrycw in mam4 
+  ColumnView deposition_flux_of_cloud_borne_aerosols;
+
+  // ********** End Dry Deposition Diagnostic Arrays ******************
+  // ************************************************************************
 };
 
 /// MAM4 column-wise aerosol source terms.
