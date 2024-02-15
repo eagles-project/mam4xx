@@ -93,7 +93,7 @@ void ma_precpprod(Ensemble *ensemble) {
         dcondt_dev, dcondt_prevap_dev, dcondt_prevap_hist_dev;
     get_input(input, "dcondt_wetdep", nlev, pcnst_extd, dcondt_wetdep_host,
               dcondt_wetdep_dev);
-    get_input(input, "species_class", ConvProc::gas_pcnst, species_class_host,
+    get_input(input, "species_class", aero_model::gas_pcnst, species_class_host,
               species_class_dev);
     get_input(input, "doconvproc_extd", pcnst_extd, doconvproc_extd_host,
               doconvproc_extd_dev);
@@ -103,7 +103,7 @@ void ma_precpprod(Ensemble *ensemble) {
               dcondt_prevap_dev);
     get_input(input, "dcondt_prevap_hist", nlev, pcnst_extd,
               dcondt_prevap_hist_host, dcondt_prevap_hist_dev);
-    get_input(input, "mmtoo_prevap_resusp", ConvProc::gas_pcnst,
+    get_input(input, "mmtoo_prevap_resusp", aero_model::gas_pcnst,
               mmtoo_prevap_resusp_host, mmtoo_prevap_resusp_dev);
     ColumnView return_vals = mam4::validation::create_column_view(3);
     Kokkos::parallel_for(
@@ -117,11 +117,11 @@ void ma_precpprod(Ensemble *ensemble) {
           bool doconvproc_extd[ConvProc::pcnst_extd];
           for (int i = 0; i < ConvProc::pcnst_extd; ++i)
             doconvproc_extd[i] = doconvproc_extd_dev[i];
-          int species_class[ConvProc::gas_pcnst];
-          for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+          int species_class[aero_model::gas_pcnst];
+          for (int i = 0; i < aero_model::gas_pcnst; ++i)
             species_class[i] = species_class_dev[i];
-          int mmtoo_prevap_resusp[ConvProc::gas_pcnst];
-          for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+          int mmtoo_prevap_resusp[aero_model::gas_pcnst];
+          for (int i = 0; i < aero_model::gas_pcnst; ++i)
             mmtoo_prevap_resusp[i] = mmtoo_prevap_resusp_dev[i] - 1;
 
           auto dcondt_wetdep =
@@ -179,11 +179,11 @@ void ma_precpprod(Ensemble *ensemble) {
         bool doconvproc_extd[ConvProc::pcnst_extd];
         for (int i = 0; i < ConvProc::pcnst_extd; ++i)
           doconvproc_extd[i] = 1;
-        int species_class[ConvProc::gas_pcnst];
-        for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+        int species_class[aero_model::gas_pcnst];
+        for (int i = 0; i < aero_model::gas_pcnst; ++i)
           species_class[i] = 1;
-        int mmtoo_prevap_resusp[ConvProc::gas_pcnst];
-        for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+        int mmtoo_prevap_resusp[aero_model::gas_pcnst];
+        for (int i = 0; i < aero_model::gas_pcnst; ++i)
           mmtoo_prevap_resusp[i] = 1;
 
         for (int i = 0; i < ConvProc::pcnst_extd; ++i)

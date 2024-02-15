@@ -1309,7 +1309,6 @@ void compute_q_tendencies_phase_1(
                                     rtscavt_sv);
 }
 
-static constexpr int gas_pcnst = aero_model::gas_pcnst;
 KOKKOS_INLINE_FUNCTION
 void compute_q_tendencies_phase_2(
     Real &scavt, Real &bcscavt, Real &rcscavt, Real rtscavt_sv[],
@@ -1324,6 +1323,7 @@ void compute_q_tendencies_phase_2(
     const Real pdel, const Real dt, const int mam_prevap_resusp_optcc,
     const int jnv, const int mm, const int k) {
 
+  static constexpr int gas_pcnst = aero_model::gas_pcnst;
   // There is no cloud-borne aerosol water in the model, so this
   // code block should NEVER execute for lspec =
   // nspec_amode(m)+1 (i.e., jnummaswtr = 2). The code only
@@ -1384,7 +1384,8 @@ void compute_q_tendencies(
     Kokkos::View<Real *> bcscavt, Kokkos::View<Real *> rcscavt,
     Kokkos::View<Real *> rtscavt_sv, Diagnostics::ColumnTracerView state_q,
     Diagnostics::ColumnTracerView ptend_q,
-    Kokkos::View<Real * [aero_model::maxd_aspectype + 2][gas_pcnst]> qqcw_sav,
+    Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::gas_pcnst]>
+        qqcw_sav,
     haero::ConstColumnView pdel, const Real dt, const int jnummaswtr,
     const int jnv, const int mm, const int lphase, const int imode,
     const int lspec) {
@@ -1489,7 +1490,6 @@ void update_q_tendencies(const ThreadTeam &team,
 /// Wet Deposition process for MAM4 aerosol model.
 class WetDeposition {
 public:
-  static constexpr int gas_pcnst = aero_model::gas_pcnst;
   struct Config {
     Config(){};
     Config(const Config &) = default;
@@ -1557,7 +1557,8 @@ private:
 
   Kokkos::View<Real *> rtscavt_sv;
 
-  Kokkos::View<Real * [aero_model::maxd_aspectype + 2][gas_pcnst]> qqcw_sav;
+  Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::gas_pcnst]>
+      qqcw_sav;
 
   Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()];
   Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()];
@@ -1588,14 +1589,15 @@ inline void WetDeposition::init(const AeroConfig &aero_config,
   Kokkos::resize(sol_factic, nlev);
   Kokkos::resize(sol_factb, nlev);
   Kokkos::resize(f_act_conv, nlev);
-  Kokkos::resize(qsrflx_mzaer2cnvpr, gas_pcnst, 2);
-  Kokkos::resize(qqcw_sav, nlev, aero_model::maxd_aspectype + 2, gas_pcnst);
+  Kokkos::resize(qsrflx_mzaer2cnvpr, aero_model::gas_pcnst, 2);
+  Kokkos::resize(qqcw_sav, nlev, aero_model::maxd_aspectype + 2,
+                 aero_model::gas_pcnst);
 
   Kokkos::resize(scavt, nlev);
   Kokkos::resize(bcscavt, nlev);
   Kokkos::resize(rcscavt, nlev);
 
-  Kokkos::resize(rtscavt_sv, gas_pcnst);
+  Kokkos::resize(rtscavt_sv, aero_model::gas_pcnst);
   Kokkos::deep_copy(rtscavt_sv, 0.0);
 
   const int num_modes = AeroConfig::num_modes();
@@ -1626,7 +1628,7 @@ void WetDeposition::compute_tendencies(
     const Atmosphere &atm, const Surface &sfc, const Prognostics &progs,
     const Diagnostics &diags, const Tendencies &tends) const {
   const int nlev = config_.nlev;
-  static constexpr int gas_pcnst = WetDeposition::gas_pcnst;
+  static constexpr int gas_pcnst = aero_model::gas_pcnst;
 
   // change mode order as mmode_loop_aa loops in a different order
   static constexpr int mode_order_change[4] = {0, 1, 3, 2};

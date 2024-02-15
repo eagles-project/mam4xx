@@ -24,10 +24,10 @@ void get_input(const Input &input, const std::string &name, const int size,
     host_view[n] = host[n];
   Kokkos::deep_copy(dev, host_view);
 }
-void get_input(
-    const Input &input, const std::string &name, const int rows, const int cols,
-    std::vector<Real> &host,
-    Kokkos::View<Real * [ConvProc::gas_pcnst], Kokkos::MemoryUnmanaged> &dev) {
+void get_input(const Input &input, const std::string &name, const int rows,
+               const int cols, std::vector<Real> &host,
+               Kokkos::View<Real * [aero_model::gas_pcnst],
+                            Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
   EKAT_ASSERT(host.size() == rows * cols);
   ColumnView col_view = mam4::validation::create_column_view(rows * cols);
@@ -65,7 +65,7 @@ void initialize_tmr_array(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
     const int pcnst_extd = ConvProc::pcnst_extd;
-    const int pcnst = ConvProc::gas_pcnst;
+    const int pcnst = aero_model::gas_pcnst;
     using Kokko2DView =
         Kokkos::View<Real *[pcnst_extd], Kokkos::MemoryUnmanaged>;
     // Fetch ensemble parameters

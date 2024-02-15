@@ -79,7 +79,7 @@ TEST_CASE("update_conu_from_act_frac", "mam4_convproc_process") {
   REQUIRE(dconudt[lc] == 3.0 / 8.0);
 }
 TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
-  const int gas_pcnst = mam4::ConvProc::gas_pcnst;
+  const int gas_pcnst = mam4::aero_model::gas_pcnst;
   const int num_modes = mam4::ConvProc::num_modes;
   const int pcnst_extd = mam4::ConvProc::pcnst_extd;
   const int maxd_aspectype = mam4::ConvProc::maxd_aspectype;
@@ -150,7 +150,7 @@ TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
   }
 }
 TEST_CASE("assign_dotend", "mam4_convproc_process") {
-  const int gas_pcnst = mam4::ConvProc::gas_pcnst;
+  const int gas_pcnst = mam4::aero_model::gas_pcnst;
   ColumnView dotend_dev = testing::create_column_view(gas_pcnst);
   Kokkos::parallel_for(
       1, KOKKOS_LAMBDA(const int) {

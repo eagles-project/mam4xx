@@ -51,7 +51,7 @@ void ma_resuspend_convproc(Ensemble *ensemble) {
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
-    const int gas_pcnst = ConvProc::gas_pcnst;
+    const int gas_pcnst = aero_model::gas_pcnst;
     // Fetch ensemble parameters
 
     // these variables depend on mode No and k

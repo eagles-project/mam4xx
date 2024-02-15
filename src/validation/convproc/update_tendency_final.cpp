@@ -82,7 +82,7 @@ void update_tendency_final(Ensemble *ensemble) {
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
-    const int gas_pcnst = ConvProc::gas_pcnst;
+    const int gas_pcnst = aero_model::gas_pcnst;
     // Fetch ensemble parameters
 
     // delta t (model time increment) [s]
