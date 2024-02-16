@@ -357,13 +357,13 @@ public:
   // This should come from the chemistry model being used and will
   // probably need to be dynamic.  This forces lmassptr_amode to
   // also be dynamic.
-  static constexpr int gas_pcnst = aero_model::gas_pcnst;
+  // static constexpr int gas_pcnst = aero_model::pcnst;
 
   // ====================================================================================
-  // The diagnostic arrays are twice the lengths of ConvProc::gas_pcnst because
-  // cloudborne aerosols are appended after interstitial aerosols both of which
-  // are of length gas_pcnst.
-  static constexpr int pcnst_extd = 2 * gas_pcnst;
+  // The diagnostic arrays are twice the lengths of aero_model::pcnst
+  // because cloudborne aerosols are appended after interstitial aerosols both
+  // of which are of length gas_pcnst.
+  static constexpr int pcnst_extd = 2 * aero_model::pcnst;
 
   // nucleation-specific configuration
   struct Config {
@@ -381,10 +381,10 @@ public:
     int ktop = 47; // BAD_CONSTANT: only true for nlev == 72
     int kbot = mam4::nlev - 1;
     // Flags are defined in "enum ConvProc::species_class".
-    int species_class[ConvProc::gas_pcnst] = {
+    int species_class[aero_model::pcnst] = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2,
         2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
-    int mmtoo_prevap_resusp[ConvProc::gas_pcnst] = {
+    int mmtoo_prevap_resusp[aero_model::pcnst] = {
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, 30, 32, 33, 31, 28, 29, 34, -3, 30, 33, 29, 34, -3,
         28, 29, 30, 31, 32, 33, 34, -3, 32, 31, 34, -3};
@@ -566,7 +566,7 @@ public:
             const Config &convproc_config = Config()) {
     // Set nucleation-specific config parameters.
     config_ = convproc_config;
-    Kokkos::resize(scratch1Dviews[q], config_.nlev * gas_pcnst);
+    Kokkos::resize(scratch1Dviews[q], config_.nlev * aero_model::pcnst);
     Kokkos::resize(scratch1Dviews[mu], config_.nlev);
     Kokkos::resize(scratch1Dviews[md], config_.nlev);
     Kokkos::resize(scratch1Dviews[eudp], config_.nlev);
@@ -598,8 +598,8 @@ public:
     Kokkos::resize(scratch1Dviews[sumprevap_hist], pcnst_extd);
     Kokkos::resize(scratch1Dviews[sumresusp], pcnst_extd);
     Kokkos::resize(scratch1Dviews[sumwetdep], pcnst_extd);
-    Kokkos::resize(scratch1Dviews[dqdt], config_.nlev * ConvProc::gas_pcnst);
-    Kokkos::resize(scratch1Dviews[qnew], config_.nlev * ConvProc::gas_pcnst);
+    Kokkos::resize(scratch1Dviews[dqdt], config_.nlev * aero_model::pcnst);
+    Kokkos::resize(scratch1Dviews[qnew], config_.nlev * aero_model::pcnst);
     Kokkos::resize(scratch1Dviews[dlfdp], config_.nlev);
   } // end(init)
 
@@ -623,7 +623,8 @@ void assign_la_lc(const int imode, const int ispec, int &la, int &lc) {
   // get the index of interstital (la) and cloudborne (lc) aerosols
   // from mode index and species index
   // Cloudborne aerosols are appended after interstitial aerosol array
-  // so lc (cloudborne) is offset from ic (interstitial) by gas_pcnst.
+  // so lc (cloudborne) is offset from ic (interstitial) by
+  // aero_model::pcnst.
   //-----------------------------------------------------------------------
   if (ispec == -1) {
     la = ConvProc::numptr_amode(imode);
@@ -632,7 +633,7 @@ void assign_la_lc(const int imode, const int ispec, int &la, int &lc) {
     la = ConvProc::lmassptr_amode(ispec, imode);
     lc = ConvProc::lmassptrcw_amode(ispec, imode);
   }
-  lc += ConvProc::gas_pcnst;
+  lc += aero_model::pcnst;
 }
 
 // nsrflx is the number of process-specific column tracer tendencies:
@@ -650,7 +651,7 @@ void update_tendency_diagnostics(
     Real sumresusp[ConvProc::pcnst_extd], // INOUT sum (over layers) of dp*dcondt_resusp [kg/kg/s * mb]
     Real sumprevap[ConvProc::pcnst_extd], // INOUT sum (over layers) of dp*dcondt_prevap [kg/kg/s * mb]
     Real sumprevap_hist[ConvProc::pcnst_extd],// INOUT sum (over layers) of dp*dcondt_prevap_hist [kg/kg/s * mb]
-    Real qsrflx[/* ConvProc::gas_pcnst */][nsrflx]) // INOUT process-specific column tracer tendencies [kg/m2/s]
+    Real qsrflx[/* aero_model::pcnst */][nsrflx]) // INOUT process-specific column tracer tendencies [kg/m2/s]
 {
 
   // -----------------------------------------------------------------------
@@ -670,7 +671,7 @@ void update_tendency_diagnostics(
 
   // clang-format on
 
-  EKAT_KERNEL_REQUIRE(ConvProc::gas_pcnst == ncnst);
+  EKAT_KERNEL_REQUIRE(aero_model::pcnst == ncnst);
   const int ntot_amode = AeroConfig::num_modes();
   int la = 0, lc = 0;
   // update diagnostic variables
@@ -976,8 +977,8 @@ template <typename SubView, typename ConstSubView>
 KOKKOS_INLINE_FUNCTION void
 ma_precpprod(const Real rprd, const Real dpdry,
              const bool doconvproc_extd[ConvProc::pcnst_extd],
-             const Real x_ratio, const int species_class[ConvProc::gas_pcnst],
-             const int mmtoo_prevap_resusp[ConvProc::gas_pcnst], Real &pr_flux,
+             const Real x_ratio, const int species_class[aero_model::pcnst],
+             const int mmtoo_prevap_resusp[aero_model::pcnst], Real &pr_flux,
              Real &pr_flux_tmp, Real &pr_flux_base, ColumnView wd_flux,
              ConstSubView dcondt_wetdep, SubView dcondt, SubView dcondt_prevap,
              SubView dcondt_prevap_hist) {
@@ -998,7 +999,7 @@ ma_precpprod(const Real rprd, const Real dpdry,
           spec_class::aerosol    = 2
           spec_class::gas        = 3
           spec_class::other      = 4
-  in  mmtoo_prevap_resusp[ConvProc::gas_pcnst]
+  in  mmtoo_prevap_resusp[aero_model::pcnst]
         pointers for resuspension mmtoo_prevap_resusp values are
            >=0 for aerosol mass species with    coarse mode counterpart
            -2 for aerosol mass species WITHOUT coarse mode counterpart
@@ -1045,7 +1046,7 @@ ma_precpprod(const Real rprd, const Real dpdry,
       const Real dcondt_wdflux = del_wd_flux_evap / dpdry;
 
       // for interstitial icnst2=icnst;  for activated icnst2=icnst-pcnst
-      const int icnst2 = icnst % ConvProc::gas_pcnst;
+      const int icnst2 = icnst % aero_model::pcnst;
 
       // not sure what this mean exactly. Only do it for aerosol mass species
       // (mmtoo>0).  mmtoo<=0 represents aerosol number species
@@ -1078,8 +1079,8 @@ void ma_precpevap_convproc(const int ktop, const int nlev,
                            const Real evapc[/* nlev */],
                            const Real dpdry[/* nlev */],
                            const bool doconvproc_extd[ConvProc::pcnst_extd],
-                           const int species_class[ConvProc::gas_pcnst],
-                           const int mmtoo_prevap_resusp[ConvProc::gas_pcnst],
+                           const int species_class[aero_model::pcnst],
+                           const int mmtoo_prevap_resusp[aero_model::pcnst],
                            ColumnView wd_flux, Kokkos_2D_View dcondt_prevap,
                            Kokkos_2D_View dcondt_prevap_hist,
                            Kokkos_2D_View dcondt) {
@@ -1131,7 +1132,7 @@ void ma_precpevap_convproc(const int ktop, const int nlev,
                                    aerosol    = 2
                                    gas        = 3
                                    other      = 4
-    in  mmtoo_prevap_resusp[ConvProc::gas_pcnst]
+    in  mmtoo_prevap_resusp[aero_model::pcnst]
          pointers for resuspension mmtoo_prevap_resusp values are
             >=0 for aerosol mass species with    coarse mode counterpart
             -2 for aerosol mass species WITHOUT coarse mode counterpart
@@ -1684,7 +1685,7 @@ KOKKOS_INLINE_FUNCTION
 void initialize_tmr_array(
     const int nlev, const int iconvtype,
     const bool doconvproc_extd[ConvProc::pcnst_extd],
-    Kokkos::View<Real * [ConvProc::gas_pcnst], Kokkos::MemoryUnmanaged> q,
+    Kokkos::View<Real * [aero_model::pcnst], Kokkos::MemoryUnmanaged> q,
     Kokkos_2D_View gath, Kokkos_2D_View chat, Kokkos_2D_View conu,
     Kokkos_2D_View cond) {
   // -----------------------------------------------------------------------
@@ -1713,7 +1714,7 @@ void initialize_tmr_array(
   // BAD_CONSTANT - is there a reference for this value?
   const Real small_rel = 1.0e-6;
 
-  const int ncnst = ConvProc::gas_pcnst;
+  const int ncnst = aero_model::pcnst;
   const int pcnst_extd = ConvProc::pcnst_extd;
 
   // initiate variables
@@ -1791,7 +1792,7 @@ void initialize_tmr_array(
 
 // ======================================================================================
 KOKKOS_INLINE_FUNCTION
-void set_cloudborne_vars(const bool doconvproc[ConvProc::gas_pcnst],
+void set_cloudborne_vars(const bool doconvproc[aero_model::pcnst],
                          Real aqfrac[ConvProc::pcnst_extd],
                          bool doconvproc_extd[ConvProc::pcnst_extd]) {
   // -----------------------------------------------------------------------
@@ -1807,7 +1808,7 @@ void set_cloudborne_vars(const bool doconvproc[ConvProc::gas_pcnst],
   [fraction]
   */
   const int pcnst_extd = ConvProc::pcnst_extd;
-  const int gas_pcnst = ConvProc::gas_pcnst;
+  const int gas_pcnst = aero_model::pcnst;
   const int num_modes = AeroConfig::num_modes();
   int la, lc;
 
@@ -1835,9 +1836,9 @@ void set_cloudborne_vars(const bool doconvproc[ConvProc::gas_pcnst],
 // ======================================================================================
 template <typename SubView, typename ConstSubView>
 KOKKOS_INLINE_FUNCTION void
-update_qnew_ptend(const bool dotend[ConvProc::gas_pcnst],
+update_qnew_ptend(const bool dotend[aero_model::pcnst],
                   const bool is_update_ptend, ConstSubView dqdt, const Real dt,
-                  bool ptend_lq[ConvProc::gas_pcnst], SubView ptend_q,
+                  bool ptend_lq[aero_model::pcnst], SubView ptend_q,
                   SubView qnew) {
   // ---------------------------------------------------------------------------------------
   // update qnew, ptend_q and ptend_lq
@@ -1855,11 +1856,11 @@ update_qnew_ptend(const bool dotend[ConvProc::gas_pcnst],
    inout :: qnew[pcnst]    ! Tracer array including moisture [kg/kg]
   */
   // clang-format on 
-  for (int ll = 0; ll < ConvProc::gas_pcnst; ++ll) {
+  for (int ll = 0; ll < aero_model::pcnst; ++ll) {
     // calc new q (after ma_convproc_sh_intr)
     if (dotend[ll]) qnew[ll] = haero::max(0.0, qnew[ll] + dt*dqdt[ll]);
   }
-  for (int ll = 0; ll < ConvProc::gas_pcnst; ++ll) {
+  for (int ll = 0; ll < aero_model::pcnst; ++ll) {
     if (dotend[ll] && is_update_ptend) {
       // add dqdt onto ptend_q and set ptend_lq
       ptend_lq[ll] = true;
@@ -1951,21 +1952,21 @@ void compute_wetdep_tend(
 }
 // ======================================================================================
 KOKKOS_INLINE_FUNCTION
-void assign_dotend(const int species_class[ConvProc::gas_pcnst],
+void assign_dotend(const int species_class[aero_model::pcnst],
                    const bool convproc_do_aer, // true by default
                    const bool convproc_do_gas, // false by default
-                   bool dotend[ConvProc::gas_pcnst]) {
+                   bool dotend[aero_model::pcnst]) {
   // ---------------------------------------------------------------------
   //  assign do-tendency flag from species_class, convproc_do_aer and
   //  convproc_do_gas. convproc_do_aer and convproc_do_gas are assigned in the
   //  beginning of the  module
   // ---------------------------------------------------------------------
   /*
-  in    :: species_class[ConvProc::gas_pcnst]
-  out   :: dotend[ConvProc::gas_pcnst]
+  in    :: species_class[aero_model::pcnst]
+  out   :: dotend[aero_model::pcnst]
   */
   //  turn on/off calculations for aerosols and trace gases
-  for (int ll = 0; ll < ConvProc::gas_pcnst; ++ll) {
+  for (int ll = 0; ll < aero_model::pcnst; ++ll) {
     if (species_class[ll] == ConvProc::species_class::aerosol &&
         convproc_do_aer) {
       dotend[ll] = true;
@@ -2372,12 +2373,12 @@ ma_convproc_tend(const Kokkos::View<Real *>
                  const Real du[/* nlev */], const Real eu[/* nlev */],
                  const Real ed[/* nlev */], const Real dp[/* nlev */],
                  const Real dpdry[/* nlev */], const int ktop, const int kbot,
-                 const int mmtoo_prevap_resusp[/* ConvProc::gas_pcnst */],
+                 const int mmtoo_prevap_resusp[/* aero_model::pcnst */],
                  const Real cldfrac[/* nlev */], const Real icwmr[/* nlev */],
                  const Real rprd[/* nlev */], const Real evapc[/* nlev */],
-                 SubView dqdt, const bool doconvproc[/* ConvProc::gas_pcnst */],
-                 Real qsrflx[/* ConvProc::gas_pcnst */][nsrflx],
-                 const int species_class[/* ConvProc::gas_pcnst */],
+                 SubView dqdt, const bool doconvproc[/* aero_model::pcnst */],
+                 Real qsrflx[/* aero_model::pcnst */][nsrflx],
+                 const int species_class[/* aero_model::pcnst */],
                  Real &xx_mfup_max, Real &xx_wcldbase, int &xx_kcldbase) {
   // clang-format off
   /*
@@ -2427,7 +2428,7 @@ ma_convproc_tend(const Kokkos::View<Real *>
    in :: gas_pcnst         ! number of tracers to transport
    in :: dt                ! Model timestep [s]
    in :: temperature[nlev]     ! Temperature [K]
-   in :: qnew[nlev][ConvProc::gas_pcnst]      ! Tracer array including moisture [kg/kg]
+   in :: qnew[nlev][aero_model::pcnst]      ! Tracer array including moisture [kg/kg]
 
    in :: du[nlev]    ! Mass detrain rate from updraft [1/s]
    in :: eu[nlev]    ! Mass entrain rate into updraft [1/s]
@@ -2452,8 +2453,8 @@ ma_convproc_tend(const Kokkos::View<Real *>
    in :: rprd[nlev]     ! Convective precipitation formation rate [kg/kg/s]
    in :: evapc[nlev]    ! Convective precipitation evaporation rate [kg/kg/s]
 
-   out:: dqdt[nlev][ConvProc::gas_pcnst]  ! Tracer tendency array [kg/kg/s]
-   in :: doconvproc[ConvProc::gas_pcnst] ! flag for doing convective transport
+   out:: dqdt[nlev][aero_model::pcnst]  ! Tracer tendency array [kg/kg/s]
+   in :: doconvproc[aero_model::pcnst] ! flag for doing convective transport
    out:: qsrflx[pcnst][nsrflx]
          ! process-specific column tracer tendencies [kg/m2/s]
          !  1 = activation   of interstial to conv-cloudborne
@@ -2475,7 +2476,7 @@ ma_convproc_tend(const Kokkos::View<Real *>
   */
   // clang-format on
   const int pcnst_extd = ConvProc::pcnst_extd;
-  const int pcnst = ConvProc::gas_pcnst;
+  const int pcnst = aero_model::pcnst;
   EKAT_KERNEL_REQUIRE(convtype == ConvProc::Deep || convtype == ConvProc::Uwsh);
   // iconvtype       ! 1=deep, 2=uw shallow
   const int iconvtype = convtype == ConvProc::Deep ? 1 : 2;
@@ -2748,20 +2749,21 @@ ma_convproc_tend(const Kokkos::View<Real *>
 
 // =========================================================================================
 template <typename SubView, typename ConstSubView>
-KOKKOS_INLINE_FUNCTION void ma_convproc_dp_intr(
-    const Kokkos::View<Real *>
-        scratch1Dviews[ConvProc::Col1DViewInd::NumScratch],
-    const int nlev, const Real temperature[/* nlev */],
-    const Real pmid[/* nlev */], const Real dpdry[/* nlev */], const Real dt,
-    const Real cldfrac[/* nlev */], const Real icwmr[/* nlev */],
-    const Real rprddp[/* nlev */], const Real evapcdp[/* nlev */],
-    const Real du[/* nlev */], const Real eu[/* nlev */],
-    const Real ed[/* nlev */], const Real dp[/* nlev */], const int ktop,
-    const int kbot, ConstSubView qnew,
-    const int species_class[/* ConvProc::gas_pcnst */],
-    const int mmtoo_prevap_resusp[/* ConvProc::gas_pcnst */], SubView dqdt,
-    Real qsrflx[/* ConvProc::gas_pcnst */][nsrflx],
-    bool dotend[ConvProc::gas_pcnst]) {
+KOKKOS_INLINE_FUNCTION void
+ma_convproc_dp_intr(const Kokkos::View<Real *>
+                        scratch1Dviews[ConvProc::Col1DViewInd::NumScratch],
+                    const int nlev, const Real temperature[/* nlev */],
+                    const Real pmid[/* nlev */], const Real dpdry[/* nlev */],
+                    const Real dt, const Real cldfrac[/* nlev */],
+                    const Real icwmr[/* nlev */], const Real rprddp[/* nlev */],
+                    const Real evapcdp[/* nlev */], const Real du[/* nlev */],
+                    const Real eu[/* nlev */], const Real ed[/* nlev */],
+                    const Real dp[/* nlev */], const int ktop, const int kbot,
+                    ConstSubView qnew,
+                    const int species_class[/* aero_model::pcnst */],
+                    const int mmtoo_prevap_resusp[/* aero_model::pcnst */],
+                    SubView dqdt, Real qsrflx[/* aero_model::pcnst */][nsrflx],
+                    bool dotend[aero_model::pcnst]) {
 
   // clang-format off
   // ----------------------------------------------------------------------- 
@@ -2856,15 +2858,16 @@ KOKKOS_INLINE_FUNCTION void ma_convproc_dp_intr(
 
 // =========================================================================================
 template <typename SubView, typename ConstSubView>
-KOKKOS_INLINE_FUNCTION void ma_convproc_sh_intr(
-    const int nlev, const Real temperature[/* nlev */],
-    const Real pmid[/* nlev */], const Real dpdry[/* nlev */],
-    const Real pdel[/* nlev */], const Real dt, const Real cldfrac[/* nlev */],
-    const Real icwmr[/* nlev */], const Real rprddp[/* nlev */],
-    const Real evapcdp[/* nlev */], ConstSubView qnew,
-    const int species_class[/* ConvProc::gas_pcnst */], SubView dqdt,
-    Real qsrflx[/* ConvProc::gas_pcnst */][nsrflx],
-    bool dotend[ConvProc::gas_pcnst]) {
+KOKKOS_INLINE_FUNCTION void
+ma_convproc_sh_intr(const int nlev, const Real temperature[/* nlev */],
+                    const Real pmid[/* nlev */], const Real dpdry[/* nlev */],
+                    const Real pdel[/* nlev */], const Real dt,
+                    const Real cldfrac[/* nlev */],
+                    const Real icwmr[/* nlev */], const Real rprddp[/* nlev */],
+                    const Real evapcdp[/* nlev */], ConstSubView qnew,
+                    const int species_class[/* aero_model::pcnst */],
+                    SubView dqdt, Real qsrflx[/* aero_model::pcnst */][nsrflx],
+                    bool dotend[aero_model::pcnst]) {
   // clang-format off
   // ----------------------------------------------------------------------- 
   //  
@@ -2912,13 +2915,13 @@ KOKKOS_INLINE_FUNCTION void ma_convproc_sh_intr(
   // set them in default values for C++ porting.   - Shuaiqi Tang 2023.2.25
   // =========================================================================================
   for (int i = 0; i < nlev; ++i)
-    for (int j = 0; j < ConvProc::gas_pcnst; ++j)
+    for (int j = 0; j < aero_model::pcnst; ++j)
       dqdt(i, j) = 0;
 
-  for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+  for (int i = 0; i < aero_model::pcnst; ++i)
     for (int j = 0; j < nsrflx; ++j)
       qsrflx[i][j] = 0;
-  for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+  for (int i = 0; i < aero_model::pcnst; ++i)
     dotend[i] = false;
 }
 
@@ -2939,11 +2942,11 @@ void ma_convproc_intr(
     const Real sh_e_ed_ratio[/* nlev */], const Real du[/* nlev */],
     const Real eu[/* nlev */], const Real ed[/* nlev */],
     const Real dp[/* nlev */], const int ktop, const int kbot,
-    const int species_class[ConvProc::gas_pcnst],
-    const int mmtoo_prevap_resusp[ConvProc::gas_pcnst],
+    const int species_class[aero_model::pcnst],
+    const int mmtoo_prevap_resusp[aero_model::pcnst],
     const Diagnostics::ColumnTracerView state_q,
-    Diagnostics::ColumnTracerView ptend_q, bool ptend_lq[ConvProc::gas_pcnst],
-    Real aerdepwetis[ConvProc::gas_pcnst]) {
+    Diagnostics::ColumnTracerView ptend_q, bool ptend_lq[aero_model::pcnst],
+    Real aerdepwetis[aero_model::pcnst]) {
 
   //-----------------------------------------------------------------------
   //
@@ -2992,14 +2995,14 @@ void ma_convproc_intr(
   in    :: dp[nlev]    ! Delta pressure between interfaces [mb]
   in    :: ktop           ! Index of cloud top (updraft top) for each column in w grid
   in    :: kbot         ! Index of cloud base (level of maximum moist static energy) for each column in w grid
-  in    :: species_class[ConvProc::gas_pcnst]  ! species index defined as
+  in    :: species_class[aero_model::pcnst]  ! species index defined as
           spec_class::undefined  = 0
           spec_class::cldphysics = 1
           spec_class::aerosol    = 2
           spec_class::gas        = 3
           spec_class::other      = 4
   
-  in  mmtoo_prevap_resConvProc::gas_pcnstusp[ConvProc::gas_pcnst]
+  in  mmtoo_prevap_resaero_model::pcnst[aero_model::pcnst]
         pointers for resuspension mmtoo_prevap_resusp values are
            >=0 for aerosol mass species with    coarse mode counterpart
            -2 for aerosol mass species WITHOUT coarse mode counterpart
@@ -3010,28 +3013,28 @@ void ma_convproc_intr(
 
   auto dqdt = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(
       scratch1Dviews[ConvProc::Col1DViewInd::dqdt].data(), nlev,
-      ConvProc::gas_pcnst);
+      aero_model::pcnst);
 
   auto dlfdp = Kokkos::View<Real *, Kokkos::MemoryUnmanaged>(
       scratch1Dviews[ConvProc::Col1DViewInd::dlfdp].data(), nlev);
 
   for (int j = 0; j < nlev; ++j)
-    for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+    for (int i = 0; i < aero_model::pcnst; ++i)
       dqdt(j, i) = ptend_q(j, i);
 
   // qnew will update in the subroutines but not update back to state%q
   auto qnew = Diagnostics::ColumnTracerView(
       scratch1Dviews[ConvProc::Col1DViewInd::qnew].data(), nlev,
-      ConvProc::gas_pcnst);
+      aero_model::pcnst);
   EKAT_KERNEL_ASSERT(state_q.extent(0) == nlev);
-  EKAT_KERNEL_ASSERT(state_q.extent(1) <= ConvProc::gas_pcnst);
+  EKAT_KERNEL_ASSERT(state_q.extent(1) <= aero_model::pcnst);
   for (int i = 0; i < nlev; ++i)
-    for (int j = 0; j < ConvProc::gas_pcnst; ++j)
+    for (int j = 0; j < aero_model::pcnst; ++j)
       qnew(i, j) = state_q(i, j);
 
   // if do tendency
-  bool dotend[ConvProc::gas_pcnst];
-  for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+  bool dotend[aero_model::pcnst];
+  for (int i = 0; i < aero_model::pcnst; ++i)
     dotend[i] = ptend_lq[i];
 
   //
@@ -3050,9 +3053,9 @@ void ma_convproc_intr(
     //
     // do deep conv processing
     //
-    Real qsrflx[ConvProc::gas_pcnst][nsrflx] = {};
+    Real qsrflx[aero_model::pcnst][nsrflx] = {};
     for (int j = 0; j < nlev; ++j)
-      for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+      for (int i = 0; i < aero_model::pcnst; ++i)
         dqdt(j, i) = 0;
     for (int j = 0; j < nlev; ++j)
       dlfdp[j] = haero::max((dlf[j] - dlfsh[j]), 0.0);
@@ -3068,7 +3071,7 @@ void ma_convproc_intr(
                         Kokkos::subview(ptend_q, kk, Kokkos::ALL()),
                         Kokkos::subview(qnew, kk, Kokkos::ALL()));
     // update variables for output
-    for (int icnst = 0; icnst < ConvProc::gas_pcnst; ++icnst) {
+    for (int icnst = 0; icnst < aero_model::pcnst; ++icnst) {
       // this used for surface coupling:
       //  4 = wet removal
       //  5 = actual precip-evap resuspension (what actually is applied to a
@@ -3081,10 +3084,10 @@ void ma_convproc_intr(
     // do shallow conv processing
     //
     for (int j = 0; j < nlev; ++j)
-      for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+      for (int i = 0; i < aero_model::pcnst; ++i)
         dqdt(j, i) = 0;
     for (int j = 0; j < nsrflx; ++j)
-      for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+      for (int i = 0; i < aero_model::pcnst; ++i)
         qsrflx[i][j] = 0;
     ma_convproc_sh_intr(nlev, temperature, pmid, dpdry, pdel, dt, sh_frac,
                         icwmrsh, rprdsh, evapcsh, qnew, species_class, dqdt,
@@ -3097,7 +3100,7 @@ void ma_convproc_intr(
                         Kokkos::subview(ptend_q, kk, Kokkos::ALL()),
                         Kokkos::subview(qnew, kk, Kokkos::ALL()));
     // update variables for output
-    for (int icnst = 0; icnst < ConvProc::gas_pcnst; ++icnst) {
+    for (int icnst = 0; icnst < aero_model::pcnst; ++icnst) {
       // this used for surface coupling
       //  4 = wet removal
       //  5 = actual precip-evap resuspension (what actually is applied to a
@@ -3127,12 +3130,12 @@ void ConvProc::compute_tendencies(const AeroConfig &config,
   const bool convproc_do_gas = config_.convproc_do_gas;
   const int ktop = config_.ktop;
   const int kbot = config_.kbot;
-  int species_class[ConvProc::gas_pcnst];
-  for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+  int species_class[aero_model::pcnst];
+  for (int i = 0; i < aero_model::pcnst; ++i)
     species_class[i] = config_.species_class[i];
-  int mmtoo_prevap_resusp[ConvProc::gas_pcnst];
+  int mmtoo_prevap_resusp[aero_model::pcnst];
   ;
-  for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+  for (int i = 0; i < aero_model::pcnst; ++i)
     mmtoo_prevap_resusp[i] = config_.mmtoo_prevap_resusp[i];
 
   const int nlev = atmosphere.num_levels();
@@ -3185,9 +3188,9 @@ void ConvProc::compute_tendencies(const AeroConfig &config,
 
   // Diagnostic values that might be of use but not sure.
   // ptend_lq is just a flag that signifies if the gas was updated.
-  bool ptend_lq[ConvProc::gas_pcnst] = {};
+  bool ptend_lq[aero_model::pcnst] = {};
   // Aerosol wet deposition (interstitial) [kg/m2/s]
-  Real aerdepwetis[ConvProc::gas_pcnst] = {};
+  Real aerdepwetis[aero_model::pcnst] = {};
   convproc::ma_convproc_intr(
       team, scratch1Dviews, convproc_do_aer, convproc_do_gas, nlev, temperature,
       pmid, dpdry, pdel, dt, dp_frac, icwmrdp, rprddp, evapcdp, sh_frac,

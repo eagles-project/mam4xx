@@ -56,12 +56,12 @@ private:
   Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()][aerosol_categories];
   Kokkos::View<Real *> vlc_trb[AeroConfig::num_modes()][aerosol_categories];
   Kokkos::View<Real *> vlc_grv[AeroConfig::num_modes()][aerosol_categories];
-  Kokkos::View<Real *> dqdt_tmp[aero_model::gas_pcnst];
+  Kokkos::View<Real *> dqdt_tmp[aero_model::pcnst];
 
   // Computed tendenciesColumnView for
   // modal cloudborne aerosol number mixing ratios and
   // cloudborne aerosol mass mixing ratios within each mode.
-  Kokkos::View<Real *> qqcw_tends[aero_model::gas_pcnst] = {};
+  Kokkos::View<Real *> qqcw_tends[aero_model::pcnst] = {};
 
 public:
   // name -- unique name of the process implemented by this class
@@ -84,7 +84,7 @@ public:
         Kokkos::deep_copy(vlc_grv[j][i], 0);
       }
     }
-    for (int j = 0; j < aero_model::gas_pcnst; ++j) {
+    for (int j = 0; j < aero_model::pcnst; ++j) {
       Kokkos::resize(dqdt_tmp[j], nlev);
       Kokkos::deep_copy(dqdt_tmp[j], 0);
       Kokkos::resize(qqcw_tends[j], nlev);
@@ -869,11 +869,11 @@ void aero_model_drydep(
     const Diagnostics::ColumnTracerView state_q,
     const ColumnView dgncur_awet[AeroConfig::num_modes()],
     const ColumnView wetdens[AeroConfig::num_modes()],
-    const Kokkos::View<Real *> qqcw[aero_model::gas_pcnst], const Real obklen,
+    const Kokkos::View<Real *> qqcw[aero_model::pcnst], const Real obklen,
     const Real ustar, const Real landfrac, const Real icefrac,
     const Real ocnfrac, const Real fricvelin, const Real ram1in,
     const Diagnostics::ColumnTracerView ptend_q,
-    bool ptend_lq[aero_model::gas_pcnst], const Real dt,
+    bool ptend_lq[aero_model::pcnst], const Real dt,
     const ColumnView aerdepdrycw, const ColumnView aerdepdryis,
 
     const ColumnView rho,
@@ -883,7 +883,7 @@ void aero_model_drydep(
                                       [DryDeposition::aerosol_categories],
     const Kokkos::View<Real *> vlc_grv[AeroConfig::num_modes()]
                                       [DryDeposition::aerosol_categories],
-    const Kokkos::View<Real *> dqdt_tmp[aero_model::gas_pcnst]) {
+    const Kokkos::View<Real *> dqdt_tmp[aero_model::pcnst]) {
   // clang-format off
   /*   
     // Arguments
@@ -903,7 +903,7 @@ void aero_model_drydep(
     in :: ram1in            : aerodynamical resistance from land model [s/m]
     in :: dt                : time step [s]
     inout  :: qqcw(nlev)    : Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
-    out    :: ptend_q (nlev, aero_model::gas_pcnst) : diagnostics.d_tracer_mixing_ratio_dt
+    out    :: ptend_q (nlev, aero_model::pcnst) : diagnostics.d_tracer_mixing_ratio_dt
 
     // Scratch Space
     rho(nlev)               : air density [kg/m3]
@@ -1157,7 +1157,7 @@ void DryDeposition::compute_tendencies(const AeroConfig &config, const ThreadTea
   const Real fricvelin = diags.friction_velocity;
   const Real ram1in = diags.aerodynamical_resistance;
   auto ptend_q = diags.d_tracer_mixing_ratio_dt;
-  bool ptend_lq[aero_model::gas_pcnst];
+  bool ptend_lq[aero_model::pcnst];
   auto aerdepdrycw = diags.deposition_flux_of_cloud_borne_aerosols;
   auto aerdepdryis = diags.deposition_flux_of_interstitial_aerosols;
   auto rho     = this->rho;

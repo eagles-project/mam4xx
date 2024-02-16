@@ -7,6 +7,7 @@
 #include <haero/math.hpp>
 
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/aero_model.hpp>
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
@@ -25,8 +26,6 @@ constexpr int pver = mam4::nlev;
 // Top level for troposphere cloud physics
 constexpr int top_lev = 7;
 constexpr int psat = 6; //  number of supersaturations to calc ccn concentration
-//  number of variables in state_q
-constexpr int nvars = 40;
 constexpr int maxd_aspectype = 14;
 // BAD CONSTANT
 // reference temperature [K] (from mam4)
@@ -35,7 +34,6 @@ constexpr Real t0 = 273.0;
 // reference pressure [Pa] (from mam4)
 // pressure at sea level [Pa] (1 atm)
 constexpr Real p0 = 1013.25e2;
-constexpr int nvar_ptend_q = 40;
 // BAD CONSTANT
 // surface tension of water w/respect to air (N/m)
 constexpr Real surften = 0.076;
@@ -118,7 +116,7 @@ void get_e3sm_parameters(
 
 KOKKOS_INLINE_FUNCTION
 void get_aer_mmr_sum(
-    const int imode, const int nspec, const Real state_q[nvars],
+    const int imode, const int nspec, const Real state_q[aero_model::pcnst],
     const Real qcldbrn1d[maxd_aspectype],
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
     const Real specdens_amode[maxd_aspectype],
@@ -159,7 +157,7 @@ void get_aer_mmr_sum(
 
 KOKKOS_INLINE_FUNCTION
 void get_aer_num(const Real voltonumbhi_amode, const Real voltonumblo_amode,
-                 const int num_idx, const Real state_q[nvars],
+                 const int num_idx, const Real state_q[aero_model::pcnst],
                  const Real air_density, const Real vaerosol,
                  const Real qcldbrn1d_num, Real &naerosol) {
 
@@ -246,7 +244,7 @@ void maxsat(
 } // end maxsat
 
 KOKKOS_INLINE_FUNCTION
-void loadaer(const Real state_q[nvars],
+void loadaer(const Real state_q[aero_model::pcnst],
              const int nspec_amode[AeroConfig::num_modes()], Real air_density,
              const int phase,
              const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
@@ -335,7 +333,7 @@ void loadaer(const Real state_q[nvars],
 } // loadaer
 
 KOKKOS_INLINE_FUNCTION
-void ccncalc(const Real state_q[nvars], const Real tair,
+void ccncalc(const Real state_q[aero_model::pcnst], const Real tair,
              const Real qcldbrn[maxd_aspectype][AeroConfig::num_modes()],
              const Real qcldbrn_num[AeroConfig::num_modes()],
              const Real air_density,
@@ -702,7 +700,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
 
 KOKKOS_INLINE_FUNCTION
 void get_activate_frac(
-    const Real state_q_kload[nvars], const Real air_density_kload,
+    const Real state_q_kload[aero_model::pcnst], const Real air_density_kload,
     const Real air_density_kk, const Real wtke,
     const Real tair, // in
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
@@ -775,7 +773,7 @@ void update_from_cldn_profile(
     const Real dz, // in
     const Real temp_col_in, const Real air_density, const Real air_density_kp1,
     const Real csbot_cscen,
-    const Real state_q_col_in_kp1[nvars], // in
+    const Real state_q_col_in_kp1[aero_model::pcnst], // in
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
     const Real specdens_amode[maxd_aspectype],
     const Real spechygro[maxd_aspectype],
@@ -963,7 +961,7 @@ void update_from_newcld(
     const Real cldn_col_in, const Real cldo_col_in,
     const Real dtinv, // in
     const Real wtke_col_in, const Real temp_col_in, const Real air_density,
-    const Real state_q_col_in[nvars], // in
+    const Real state_q_col_in[aero_model::pcnst], // in
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
     const Real specdens_amode[maxd_aspectype],
     const Real spechygro[maxd_aspectype],
@@ -1473,7 +1471,7 @@ void dropmixnuc(
     const ColumnView &qcld, const ColumnView &wsub,
     const ColumnView &cldo,               // in
     const ColumnView qqcw_fld[ncnst_tot], // inout
-    const ColumnView ptend_q[nvar_ptend_q], const ColumnView &tendnd,
+    const ColumnView ptend_q[aero_model::pcnst], const ColumnView &tendnd,
     const View2D &factnum, const ColumnView &ndropcol,
     const ColumnView &ndropmix, const ColumnView &nsource,
     const ColumnView &wtke, const View2D &ccn,
@@ -1514,7 +1512,7 @@ void dropmixnuc(
   //  qqcw(:)     cloud-borne aerosol mass, number mixing ratios [#/kg or kg/kg]
 
   // output arguments
-  // ptend_q[nvar_ptend_q]
+  // ptend_q[aero_model::pcnst]
   // tendnd(pcols,pver) tendency in droplet number mixing ratio [#/kg/s]
   // factnum(:,:,:)     activation fraction for aerosol number [fraction]
   // nsource            droplet number mixing ratio source tendency [#/kg/s]

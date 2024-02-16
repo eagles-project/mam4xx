@@ -15,10 +15,9 @@ using namespace haero;
 
 void modal_aero_calcsize_sub(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    constexpr int nvars = ndrop::nvars;
+    constexpr int pcnst = aero_model::pcnst;
     constexpr int pver = ndrop::pver;
     constexpr int ntot_amode = AeroConfig::num_modes();
-    constexpr int pcnst = modal_aer_opt::pcnst;
     constexpr int nspec_max = ndrop::nspec_max;
     constexpr int maxd_aspectype = ndrop::maxd_aspectype;
 
@@ -28,7 +27,7 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
     auto qqcw_db = input.get_array("qqcw");
     const auto dt = input.get_array("dt")[0];
 
-    View2D state_q("state_q", pver, nvars);
+    View2D state_q("state_q", pver, pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
     View2D qqcw("qqcw", pver, pcnst);
     auto qqcw_host = create_mirror_view(qqcw);

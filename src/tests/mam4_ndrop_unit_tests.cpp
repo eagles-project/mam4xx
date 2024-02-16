@@ -126,7 +126,7 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop_unit_tests") {
   // and then work backward to get state_q
   // span the orders of magnitude with the top and bottom outside the interval
   const Real test_num[4] = {1.2e18, 3.4e19, 5.6e20, 7.9e21};
-  Real state_q[mam4::ndrop::nvars];
+  Real state_q[mam4::aero_model::pcnst];
   Real naerosol;
   const Real ans[4] = {voltonumbhi_amode, test_num[1], test_num[2],
                        voltonumblo_amode};

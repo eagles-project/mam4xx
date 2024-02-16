@@ -18,8 +18,7 @@ namespace {
 void init_scratch(
     Kokkos::View<Real *> scratch1Dviews[ConvProc::Col1DViewInd::NumScratch]) {
   const ConvProc::Config config_;
-  Kokkos::resize(scratch1Dviews[ConvProc::q],
-                 config_.nlev * ConvProc::gas_pcnst);
+  Kokkos::resize(scratch1Dviews[ConvProc::q], config_.nlev * aero_model::pcnst);
   Kokkos::resize(scratch1Dviews[ConvProc::mu], 1 + config_.nlev);
   Kokkos::resize(scratch1Dviews[ConvProc::md], 1 + config_.nlev);
   Kokkos::resize(scratch1Dviews[ConvProc::eudp], config_.nlev);
@@ -76,7 +75,7 @@ void get_input(const Input &input, const std::string &name, const int size,
 void get_input(
     const Input &input, const std::string &name, const int rows, const int cols,
     std::vector<Real> &host,
-    Kokkos::View<Real * [ConvProc::gas_pcnst], Kokkos::MemoryUnmanaged> &dev) {
+    Kokkos::View<Real * [aero_model::pcnst], Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
   ColumnView col_view = mam4::validation::create_column_view(rows * cols);
   dev = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(col_view.data(), rows,
@@ -119,7 +118,7 @@ void ma_convproc_tend(Ensemble *ensemble) {
     const Real dt = 36000;
     const ConvProc::convtype convtype = ConvProc::Deep;
     // const int pcnst_extd = ConvProc::pcnst_extd;
-    const int pcnst = ConvProc::gas_pcnst;
+    const int pcnst = aero_model::pcnst;
     const int nsrflx = 6;
     // Fetch ensemble parameters
     // Convert to C++ index by subtracting one.

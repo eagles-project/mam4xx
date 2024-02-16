@@ -26,7 +26,7 @@ constexpr int ntot_amode = mam4::AeroConfig::num_modes();
 // FIXME:  is top_lev equal to 1 in aerosol optics ?
 constexpr int top_lev = 0;
 //
-constexpr int pcnst = 40;
+constexpr int pcnst = aero_model::pcnst;
 //  min, max aerosol surface mode radius treated [m]
 constexpr Real rmmin = 0.01e-6; // BAD CONSTANT
 constexpr Real rmmax = 25.e-6;  // BAD CONSTANT
@@ -798,7 +798,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
                    const ConstColumnView &temperature,
                    const ConstColumnView &pmid, const ConstColumnView &pdel,
                    const ConstColumnView &pdeldry, const ConstColumnView &cldn,
-                   // const ColumnView qqcw_fld[pcnst],
+                   // const ColumnView qqcw_fld[aero_model::pcnst],
                    const View2D &tauxar, const View2D &wa, const View2D &ga,
                    const View2D &fa,
                    const AerosolOpticsDeviceData &aersol_optics_data,
@@ -895,7 +895,7 @@ KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(const ThreadTeam &team, const Real dt,
                    mam4::Prognostics &progs, const haero::Atmosphere &atm,
                    const ConstColumnView &pdel, const ConstColumnView &pdeldry,
-                   // const ColumnView qqcw_fld[pcnst],
+                   // const ColumnView qqcw_fld[aero_model::pcnst],
                    const View2D &tauxar, const View2D &wa, const View2D &ga,
                    const View2D &fa,
                    const AerosolOpticsDeviceData &aersol_optics_data,
@@ -918,7 +918,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
   const auto fa_work = View3D(work_ptr, pver, ntot_amode, nswbands);
   work_ptr += pver * ntot_amode * nswbands;
 
-  constexpr int pcnst = mam4::ndrop::nvars;
+  constexpr int pcnst = aero_model::pcnst;
 
   constexpr Real zero = 0;
 
@@ -1201,7 +1201,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
   // cldn(:,:)         layer cloud fraction [fraction]
   // qqcw(:)                Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
   // tauxar(pcols,pver,nlwbands)  layer absorption optical depth
-  constexpr int pcnst = mam4::ndrop::nvars;
+  constexpr int pcnst = aero_model::pcnst;
 
   constexpr Real zero = 0.0;
   // dry mass in each cell

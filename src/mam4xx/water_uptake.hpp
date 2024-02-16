@@ -59,8 +59,6 @@ public:
 };
 
 namespace water_uptake {
-//  number of variables in state_q
-constexpr int nvars = 40;
 constexpr int maxd_aspectype = 14;
 constexpr Real small_value_30 = 1e-30; // (Bad Constant)
 constexpr Real small_value_31 = 1e-31; // (Bad Constant)
@@ -356,7 +354,7 @@ void modal_aero_water_uptake_dryaer(
     int nspec_amode[AeroConfig::num_modes()],
     Real specdens_amode[maxd_aspectype], Real spechygro[maxd_aspectype],
     int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-    Real state_q[nvars], Real dgncur_a[AeroConfig::num_modes()],
+    Real state_q[aero_model::pcnst], Real dgncur_a[AeroConfig::num_modes()],
     Real hygro[AeroConfig::num_modes()], Real naer[AeroConfig::num_modes()],
     Real dryrad[AeroConfig::num_modes()], Real dryvol[AeroConfig::num_modes()],
     Real drymass[AeroConfig::num_modes()],
@@ -434,7 +432,7 @@ void modal_aero_water_uptake_dr_b4_wetdens(
     int nspec_amode[AeroConfig::num_modes()],
     Real specdens_amode[maxd_aspectype], Real spechygro[maxd_aspectype],
     int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-    Real state_q[nvars], Real temperature, Real pmid, Real cldn,
+    Real state_q[aero_model::pcnst], Real temperature, Real pmid, Real cldn,
     Real dgncur_a[AeroConfig::num_modes()],
     Real dgncur_awet[AeroConfig::num_modes()],
     Real qaerwat[AeroConfig::num_modes()], Real wetvol[AeroConfig::num_modes()],
@@ -476,7 +474,7 @@ void modal_aero_water_uptake_dr(
     int nspec_amode[AeroConfig::num_modes()],
     Real specdens_amode[maxd_aspectype], Real spechygro[maxd_aspectype],
     int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-    Real state_q[nvars], Real temperature, Real pmid, Real cldn,
+    Real state_q[aero_model::pcnst], Real temperature, Real pmid, Real cldn,
     Real dgncur_a[AeroConfig::num_modes()],
     Real dgncur_awet[AeroConfig::num_modes()],
     Real qaerwat[AeroConfig::num_modes()],
@@ -504,7 +502,7 @@ void modal_aero_water_uptake_dr(
     int nspec_amode[AeroConfig::num_modes()],
     Real specdens_amode[maxd_aspectype], Real spechygro[maxd_aspectype],
     int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-    Real state_q[nvars], Real temperature, Real pmid, Real cldn,
+    Real state_q[aero_model::pcnst], Real temperature, Real pmid, Real cldn,
     Real dgncur_a[AeroConfig::num_modes()],
     Real dgncur_awet[AeroConfig::num_modes()],
     Real qaerwat[AeroConfig::num_modes()]) {

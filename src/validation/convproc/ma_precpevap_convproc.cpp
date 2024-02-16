@@ -102,12 +102,12 @@ void ma_precpevap_convproc(Ensemble *ensemble) {
     get_input(nlev, pcnst_extd, dcondt_prevap_hist_host,
               dcondt_prevap_hist_dev);
 
-    get_input(input, "species_class", ConvProc::gas_pcnst, species_class_host,
+    get_input(input, "species_class", aero_model::pcnst, species_class_host,
               species_class_dev);
     get_input(input, "doconvproc_extd", pcnst_extd, doconvproc_extd_host,
               doconvproc_extd_dev);
     get_input(input, "dcondt", nlev, pcnst_extd, dcondt_host, dcondt_dev);
-    get_input(input, "mmtoo_prevap_resusp", ConvProc::gas_pcnst,
+    get_input(input, "mmtoo_prevap_resusp", aero_model::pcnst,
               mmtoo_prevap_resusp_host, mmtoo_prevap_resusp_dev);
     ColumnView wd_flux =
         mam4::validation::create_column_view(ConvProc::pcnst_extd);
@@ -116,11 +116,11 @@ void ma_precpevap_convproc(Ensemble *ensemble) {
           bool doconvproc_extd[ConvProc::pcnst_extd];
           for (int i = 0; i < ConvProc::pcnst_extd; ++i)
             doconvproc_extd[i] = doconvproc_extd_dev[i];
-          int species_class[ConvProc::gas_pcnst];
-          for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+          int species_class[aero_model::pcnst];
+          for (int i = 0; i < aero_model::pcnst; ++i)
             species_class[i] = species_class_dev[i];
-          int mmtoo_prevap_resusp[ConvProc::gas_pcnst];
-          for (int i = 0; i < ConvProc::gas_pcnst; ++i)
+          int mmtoo_prevap_resusp[aero_model::pcnst];
+          for (int i = 0; i < aero_model::pcnst; ++i)
             mmtoo_prevap_resusp[i] = mmtoo_prevap_resusp_dev[i] - 1;
 
           convproc::ma_precpevap_convproc(

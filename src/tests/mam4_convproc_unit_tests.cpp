@@ -79,7 +79,7 @@ TEST_CASE("update_conu_from_act_frac", "mam4_convproc_process") {
   REQUIRE(dconudt[lc] == 3.0 / 8.0);
 }
 TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
-  const int gas_pcnst = mam4::ConvProc::gas_pcnst;
+  const int pcnst = mam4::aero_model::pcnst;
   const int num_modes = mam4::ConvProc::num_modes;
   const int pcnst_extd = mam4::ConvProc::pcnst_extd;
   const int maxd_aspectype = mam4::ConvProc::maxd_aspectype;
@@ -90,8 +90,8 @@ TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
         Real aqfrac[pcnst_extd];
         bool doconvproc_extd[pcnst_extd];
         {
-          bool doconvproc[gas_pcnst];
-          for (int i = 0; i < gas_pcnst; ++i)
+          bool doconvproc[pcnst];
+          for (int i = 0; i < pcnst; ++i)
             // Set every other values to true as a test.
             doconvproc[i] = i % 2;
           mam4::convproc::set_cloudborne_vars(doconvproc, aqfrac,
@@ -121,12 +121,12 @@ TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
     const int k = mam4::ConvProc::numptr_amode(j);
     // k%2 because that is what is set in doconvproc above.
     if (0 <= k && k % 2)
-      check.insert(gas_pcnst + k);
+      check.insert(pcnst + k);
     for (int i = 0; i < maxd_aspectype; ++i) {
       const int k = mam4::ConvProc::lmassptr_amode(i, j);
       // k%2 because that is what is set in doconvproc above.
       if (0 <= k && k % 2)
-        check.insert(gas_pcnst + k);
+        check.insert(pcnst + k);
     }
   }
   for (int i = 0; i < pcnst_extd; ++i) {
@@ -136,7 +136,7 @@ TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
       REQUIRE(aqfrac[i] == 0.0);
   }
   for (int i = 0; i < pcnst_extd; ++i) {
-    if (i < gas_pcnst) {
+    if (i < pcnst) {
       // Fist values are set as in doconvproc:
       REQUIRE(doconvproc_extd[i] == i % 2);
     } else {
@@ -150,13 +150,13 @@ TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
   }
 }
 TEST_CASE("assign_dotend", "mam4_convproc_process") {
-  const int gas_pcnst = mam4::ConvProc::gas_pcnst;
-  ColumnView dotend_dev = testing::create_column_view(gas_pcnst);
+  const int pcnst = mam4::aero_model::pcnst;
+  ColumnView dotend_dev = testing::create_column_view(pcnst);
   Kokkos::parallel_for(
       1, KOKKOS_LAMBDA(const int) {
-        bool dotend[gas_pcnst];
+        bool dotend[pcnst];
         {
-          const int species_class[gas_pcnst] = {
+          const int species_class[pcnst] = {
               0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2,
               2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
           const bool convproc_do_aer = true;
@@ -164,17 +164,17 @@ TEST_CASE("assign_dotend", "mam4_convproc_process") {
           mam4::convproc::assign_dotend(species_class, convproc_do_aer,
                                         convproc_do_gas, dotend);
         }
-        for (int i = 0; i < gas_pcnst; ++i)
+        for (int i = 0; i < pcnst; ++i)
           dotend_dev[i] = dotend[i];
       });
-  bool dotend[gas_pcnst];
+  bool dotend[pcnst];
   {
     auto host_view = Kokkos::create_mirror_view(dotend_dev);
     Kokkos::deep_copy(host_view, dotend_dev);
-    for (int i = 0; i < gas_pcnst; ++i)
+    for (int i = 0; i < pcnst; ++i)
       dotend[i] = host_view[i];
   }
-  for (int i = 0; i < gas_pcnst; ++i) {
+  for (int i = 0; i < pcnst; ++i) {
     if (i < 15) {
       // First values are set to species_class != 2
       REQUIRE(dotend[i] == false);
@@ -185,9 +185,9 @@ TEST_CASE("assign_dotend", "mam4_convproc_process") {
   }
   Kokkos::parallel_for(
       1, KOKKOS_LAMBDA(const int) {
-        bool dotend[gas_pcnst];
+        bool dotend[pcnst];
         {
-          const int species_class[gas_pcnst] = {
+          const int species_class[pcnst] = {
               0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2,
               2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
           const bool convproc_do_aer = false;
@@ -195,16 +195,16 @@ TEST_CASE("assign_dotend", "mam4_convproc_process") {
           mam4::convproc::assign_dotend(species_class, convproc_do_aer,
                                         convproc_do_gas, dotend);
         }
-        for (int i = 0; i < gas_pcnst; ++i)
+        for (int i = 0; i < pcnst; ++i)
           dotend_dev[i] = dotend[i];
       });
   {
     auto host_view = Kokkos::create_mirror_view(dotend_dev);
     Kokkos::deep_copy(host_view, dotend_dev);
-    for (int i = 0; i < gas_pcnst; ++i)
+    for (int i = 0; i < pcnst; ++i)
       dotend[i] = host_view[i];
   }
-  for (int i = 0; i < gas_pcnst; ++i) {
+  for (int i = 0; i < pcnst; ++i) {
     if (i < 9 || 14 < i) {
       // First values are set to species_class != 3
       REQUIRE(dotend[i] == false);

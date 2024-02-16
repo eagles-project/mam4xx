@@ -70,7 +70,7 @@ void compute_tendencies(Ensemble *ensemble) {
     const Real dt = 36000;
     const Real pblh = 1000;
     // const int pcnst_extd = ConvProc::pcnst_extd;
-    const int pcnst = ConvProc::gas_pcnst;
+    const int pcnst = aero_model::pcnst;
     // Fetch ensemble parameters
     // Convert to C++ index by subtracting one.
     // ktop is jt(il1g) to jt(il2g) in Fortran
@@ -146,13 +146,13 @@ void compute_tendencies(Ensemble *ensemble) {
         mam4::validation::create_column_view(nlev);
     diagnostics.delta_pressure = mam4::validation::create_column_view(nlev);
     auto mixing_ratio =
-        mam4::validation::create_column_view(nlev * ConvProc::gas_pcnst);
+        mam4::validation::create_column_view(nlev * aero_model::pcnst);
     diagnostics.tracer_mixing_ratio = Diagnostics::ColumnTracerView(
-        mixing_ratio.data(), nlev, ConvProc::gas_pcnst);
+        mixing_ratio.data(), nlev, aero_model::pcnst);
     auto mixing_ratio_dt =
-        mam4::validation::create_column_view(nlev * ConvProc::gas_pcnst);
+        mam4::validation::create_column_view(nlev * aero_model::pcnst);
     diagnostics.d_tracer_mixing_ratio_dt = Diagnostics::ColumnTracerView(
-        mixing_ratio_dt.data(), nlev, ConvProc::gas_pcnst);
+        mixing_ratio_dt.data(), nlev, aero_model::pcnst);
     Kokkos::parallel_for(
         "init_column_views", nlev, KOKKOS_LAMBDA(int i) {
           diagnostics.hydrostatic_dry_dp[i] = 0;
@@ -171,7 +171,7 @@ void compute_tendencies(Ensemble *ensemble) {
           diagnostics.mass_entrain_rate_into_downdraft[i] = 0;
           diagnostics.mass_detrain_rate_from_updraft[i] = 0;
           diagnostics.delta_pressure[i] = 0;
-          for (int j = 0; j < ConvProc::gas_pcnst; ++j) {
+          for (int j = 0; j < aero_model::pcnst; ++j) {
             diagnostics.tracer_mixing_ratio(i, j) = 0;
             diagnostics.d_tracer_mixing_ratio_dt(i, j) = 0;
           }

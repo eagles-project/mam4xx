@@ -17,11 +17,10 @@ void dropmixnuc(Ensemble *ensemble) {
     const Real zero = 0;
     const int maxd_aspectype = ndrop::maxd_aspectype;
     const int ntot_amode = AeroConfig::num_modes();
-    const int nvars = ndrop::nvars;
+    const int pcnst = aero_model::pcnst;
     const int psat = ndrop::psat;
     const int ncnst_tot = ndrop::ncnst_tot;
     const int nspec_max = mam4::ndrop::nspec_max;
-    const int nvar_ptend_q = mam4::ndrop::nvar_ptend_q;
 
     const int pver = ndrop::pver;
     const auto state_q_db = input.get_array("state_q");
@@ -47,10 +46,10 @@ void dropmixnuc(Ensemble *ensemble) {
 
     int count = 0;
 
-    View2D state_q("state_q", pver, nvars);
+    View2D state_q("state_q", pver, pcnst);
     auto state_host = Kokkos::create_mirror_view(state_q);
 
-    for (int i = 0; i < nvars; ++i) {
+    for (int i = 0; i < pcnst; ++i) {
       // input data is store on the cpu.
       for (int kk = 0; kk < pver; ++kk) {
         state_host(kk, i) = state_q_db[count];
@@ -145,10 +144,10 @@ void dropmixnuc(Ensemble *ensemble) {
     nsource = haero::testing::create_column_view(pver);
     wtke = haero::testing::create_column_view(pver);
 
-    ColumnView ptend_q[nvar_ptend_q];
+    ColumnView ptend_q[pcnst];
 
     count = 0;
-    for (int i = 0; i < nvar_ptend_q; ++i) {
+    for (int i = 0; i < pcnst; ++i) {
       ptend_q[i] = haero::testing::create_column_view(pver);
     }
 
@@ -274,7 +273,7 @@ void dropmixnuc(Ensemble *ensemble) {
 
     auto ptend_q_host = Kokkos::create_mirror_view(ptend_q[0]);
     std::vector<Real> output_ptend_q;
-    for (int i = 0; i < nvar_ptend_q; ++i) {
+    for (int i = 0; i < pcnst; ++i) {
       Kokkos::deep_copy(ptend_q_host, ptend_q[i]);
       for (int kk = 0; kk < pver; ++kk) {
         output_ptend_q.push_back(ptend_q_host(kk));

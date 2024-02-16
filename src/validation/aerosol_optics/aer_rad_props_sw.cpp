@@ -29,7 +29,7 @@ void aer_rad_props_sw(Ensemble *ensemble) {
 
     int count = 0;
 
-    View2D state_q("state_q", pver, nvars);
+    View2D state_q("state_q", pver, pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
     const auto zm_db = input.get_array("zm");
