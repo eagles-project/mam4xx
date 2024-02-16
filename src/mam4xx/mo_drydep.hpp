@@ -320,6 +320,16 @@ void calculate_resistance_rlux(
   const auto rlu = drydep_data.rlu;
   const auto foxd = drydep_data.foxd;
 
+  // NOTE: as it stands, since rlux gets passed in, and we can't guarantee all
+  // entries are initialized to 0, we do it here
+  for (size_t ispec = 0; ispec  < gas_pcnst; ++ispec)
+  {
+    for (size_t lt = 0; lt < n_land_type; ++lt)
+    {
+      rlux[ispec][lt] = 0.0;
+    }
+  }
+
   Real rlux_o3[n_land_type] = {}; // vegetative resistance (upper canopy) [s/m]
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     if (drydep_data.has_dvel(ispec)) {
@@ -369,6 +379,7 @@ void calculate_resistance_rlux(
             // no effect if sfc_temp < O C
             //-------------------------------------------------------------------------------------
             // BAD_CONSTANTS
+            // NOTE: this is currently not called
             rlux[ispec][lt] = 1.0 / ((1.0 / (3. * rlux[ispec][lt])) +
                                      1e-7 * heff[idx_drydep] +
                                      foxd(idx_drydep) / rlux_o3[lt]);
@@ -543,7 +554,7 @@ void drydep_xactive(
 
   int index_season[n_land_type];
   for (int lt = 0; lt < n_land_type; ++lt) {
-    index_season[lt] = index_season[month];
+    index_season[lt] = col_index_season[month];
   }
 
   //-------------------------------------------------------------------------------------
