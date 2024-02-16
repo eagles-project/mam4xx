@@ -918,7 +918,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
   const auto fa_work = View3D(work_ptr, pver, ntot_amode, nswbands);
   work_ptr += pver * ntot_amode * nswbands;
 
-  constexpr int pcnst = mam4::ndrop::nvars;
+  constexpr int pcnst = aero_model::pcnst;
 
   constexpr Real zero = 0;
 
@@ -1201,7 +1201,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
   // cldn(:,:)         layer cloud fraction [fraction]
   // qqcw(:)                Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
   // tauxar(pcols,pver,nlwbands)  layer absorption optical depth
-  constexpr int pcnst = mam4::ndrop::nvars;
+  constexpr int pcnst = aero_model::pcnst;
 
   constexpr Real zero = 0.0;
   // dry mass in each cell

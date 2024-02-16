@@ -24,10 +24,10 @@ void get_input(const Input &input, const std::string &name, const int size,
     host_view[n] = host[n];
   Kokkos::deep_copy(dev, host_view);
 }
-void get_input(const Input &input, const std::string &name, const int rows,
-               const int cols, std::vector<Real> &host,
-               Kokkos::View<Real * [aero_model::pcnst],
-                            Kokkos::MemoryUnmanaged> &dev) {
+void get_input(
+    const Input &input, const std::string &name, const int rows, const int cols,
+    std::vector<Real> &host,
+    Kokkos::View<Real * [aero_model::pcnst], Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
   EKAT_ASSERT(host.size() == rows * cols);
   ColumnView col_view = mam4::validation::create_column_view(rows * cols);

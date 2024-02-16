@@ -194,8 +194,7 @@ void update_tendency_final(Ensemble *ensemble) {
     set_output(output, "q_i", ncnst, kbot_prevap, row_major, q_i_host, q_i_dev);
     set_output(output, "qsrflx", ncnst, nsrflx, col_major, qsrflx_host,
                qsrflx_dev);
-    set_output(output, "doconvproc", pcnst, doconvproc_host,
-               doconvproc_dev);
+    set_output(output, "doconvproc", pcnst, doconvproc_host, doconvproc_dev);
     set_output(output, "sumactiva", 2 * ncnst, sumactiva_host, sumactiva_dev);
     set_output(output, "sumaqchem", 2 * ncnst, sumaqchem_host, sumaqchem_dev);
     set_output(output, "sumwetdep", 2 * ncnst, sumwetdep_host, sumwetdep_dev);

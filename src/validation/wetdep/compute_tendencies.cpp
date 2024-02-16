@@ -115,8 +115,7 @@ void test_compute_tendencies(std::unique_ptr<Ensemble> &ensemble) {
     auto mixing_ratio = mam4::validation::create_column_view(nlev * pcnst);
     diagnostics.tracer_mixing_ratio =
         Diagnostics::ColumnTracerView(mixing_ratio.data(), nlev, pcnst);
-    auto mixing_ratio_dt =
-        mam4::validation::create_column_view(nlev * pcnst);
+    auto mixing_ratio_dt = mam4::validation::create_column_view(nlev * pcnst);
     diagnostics.d_tracer_mixing_ratio_dt =
         Diagnostics::ColumnTracerView(mixing_ratio_dt.data(), nlev, pcnst);
     Kokkos::parallel_for(

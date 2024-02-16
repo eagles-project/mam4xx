@@ -18,8 +18,7 @@ namespace {
 void init_scratch(
     Kokkos::View<Real *> scratch1Dviews[ConvProc::Col1DViewInd::NumScratch]) {
   const ConvProc::Config config_;
-  Kokkos::resize(scratch1Dviews[ConvProc::q],
-                 config_.nlev * aero_model::pcnst);
+  Kokkos::resize(scratch1Dviews[ConvProc::q], config_.nlev * aero_model::pcnst);
   Kokkos::resize(scratch1Dviews[ConvProc::mu], 1 + config_.nlev);
   Kokkos::resize(scratch1Dviews[ConvProc::md], 1 + config_.nlev);
   Kokkos::resize(scratch1Dviews[ConvProc::eudp], config_.nlev);
@@ -73,10 +72,10 @@ void get_input(const Input &input, const std::string &name, const int size,
     host_view[n] = host[n];
   Kokkos::deep_copy(dev, host_view);
 }
-void get_input(const Input &input, const std::string &name, const int rows,
-               const int cols, std::vector<Real> &host,
-               Kokkos::View<Real * [aero_model::pcnst],
-                            Kokkos::MemoryUnmanaged> &dev) {
+void get_input(
+    const Input &input, const std::string &name, const int rows, const int cols,
+    std::vector<Real> &host,
+    Kokkos::View<Real * [aero_model::pcnst], Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
   ColumnView col_view = mam4::validation::create_column_view(rows * cols);
   dev = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(col_view.data(), rows,

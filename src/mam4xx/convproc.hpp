@@ -978,10 +978,10 @@ KOKKOS_INLINE_FUNCTION void
 ma_precpprod(const Real rprd, const Real dpdry,
              const bool doconvproc_extd[ConvProc::pcnst_extd],
              const Real x_ratio, const int species_class[aero_model::pcnst],
-             const int mmtoo_prevap_resusp[aero_model::pcnst],
-             Real &pr_flux, Real &pr_flux_tmp, Real &pr_flux_base,
-             ColumnView wd_flux, ConstSubView dcondt_wetdep, SubView dcondt,
-             SubView dcondt_prevap, SubView dcondt_prevap_hist) {
+             const int mmtoo_prevap_resusp[aero_model::pcnst], Real &pr_flux,
+             Real &pr_flux_tmp, Real &pr_flux_base, ColumnView wd_flux,
+             ConstSubView dcondt_wetdep, SubView dcondt, SubView dcondt_prevap,
+             SubView dcondt_prevap_hist) {
   // clang-format off
   // ------------------------------------------
   //  step 2 in ma_precpevap_convproc: aerosol scavenging from precipitation production
@@ -2364,21 +2364,22 @@ void compute_updraft_mixing_ratio(
 }
 // ======================================================================================
 template <typename SubView, typename ConstSubView>
-KOKKOS_INLINE_FUNCTION void ma_convproc_tend(
-    const Kokkos::View<Real *>
-        scratch1Dviews[ConvProc::Col1DViewInd::NumScratch],
-    const int nlev, const ConvProc::convtype convtype, const Real dt,
-    const Real temperature[/* nlev */], const Real pmid[/* nlev */],
-    ConstSubView qnew, const Real du[/* nlev */], const Real eu[/* nlev */],
-    const Real ed[/* nlev */], const Real dp[/* nlev */],
-    const Real dpdry[/* nlev */], const int ktop, const int kbot,
-    const int mmtoo_prevap_resusp[/* aero_model::pcnst */],
-    const Real cldfrac[/* nlev */], const Real icwmr[/* nlev */],
-    const Real rprd[/* nlev */], const Real evapc[/* nlev */], SubView dqdt,
-    const bool doconvproc[/* aero_model::pcnst */],
-    Real qsrflx[/* aero_model::pcnst */][nsrflx],
-    const int species_class[/* aero_model::pcnst */], Real &xx_mfup_max,
-    Real &xx_wcldbase, int &xx_kcldbase) {
+KOKKOS_INLINE_FUNCTION void
+ma_convproc_tend(const Kokkos::View<Real *>
+                     scratch1Dviews[ConvProc::Col1DViewInd::NumScratch],
+                 const int nlev, const ConvProc::convtype convtype,
+                 const Real dt, const Real temperature[/* nlev */],
+                 const Real pmid[/* nlev */], ConstSubView qnew,
+                 const Real du[/* nlev */], const Real eu[/* nlev */],
+                 const Real ed[/* nlev */], const Real dp[/* nlev */],
+                 const Real dpdry[/* nlev */], const int ktop, const int kbot,
+                 const int mmtoo_prevap_resusp[/* aero_model::pcnst */],
+                 const Real cldfrac[/* nlev */], const Real icwmr[/* nlev */],
+                 const Real rprd[/* nlev */], const Real evapc[/* nlev */],
+                 SubView dqdt, const bool doconvproc[/* aero_model::pcnst */],
+                 Real qsrflx[/* aero_model::pcnst */][nsrflx],
+                 const int species_class[/* aero_model::pcnst */],
+                 Real &xx_mfup_max, Real &xx_wcldbase, int &xx_kcldbase) {
   // clang-format off
   /*
   // ----------------------------------------------------------------------- 
@@ -2748,20 +2749,21 @@ KOKKOS_INLINE_FUNCTION void ma_convproc_tend(
 
 // =========================================================================================
 template <typename SubView, typename ConstSubView>
-KOKKOS_INLINE_FUNCTION void ma_convproc_dp_intr(
-    const Kokkos::View<Real *>
-        scratch1Dviews[ConvProc::Col1DViewInd::NumScratch],
-    const int nlev, const Real temperature[/* nlev */],
-    const Real pmid[/* nlev */], const Real dpdry[/* nlev */], const Real dt,
-    const Real cldfrac[/* nlev */], const Real icwmr[/* nlev */],
-    const Real rprddp[/* nlev */], const Real evapcdp[/* nlev */],
-    const Real du[/* nlev */], const Real eu[/* nlev */],
-    const Real ed[/* nlev */], const Real dp[/* nlev */], const int ktop,
-    const int kbot, ConstSubView qnew,
-    const int species_class[/* aero_model::pcnst */],
-    const int mmtoo_prevap_resusp[/* aero_model::pcnst */], SubView dqdt,
-    Real qsrflx[/* aero_model::pcnst */][nsrflx],
-    bool dotend[aero_model::pcnst]) {
+KOKKOS_INLINE_FUNCTION void
+ma_convproc_dp_intr(const Kokkos::View<Real *>
+                        scratch1Dviews[ConvProc::Col1DViewInd::NumScratch],
+                    const int nlev, const Real temperature[/* nlev */],
+                    const Real pmid[/* nlev */], const Real dpdry[/* nlev */],
+                    const Real dt, const Real cldfrac[/* nlev */],
+                    const Real icwmr[/* nlev */], const Real rprddp[/* nlev */],
+                    const Real evapcdp[/* nlev */], const Real du[/* nlev */],
+                    const Real eu[/* nlev */], const Real ed[/* nlev */],
+                    const Real dp[/* nlev */], const int ktop, const int kbot,
+                    ConstSubView qnew,
+                    const int species_class[/* aero_model::pcnst */],
+                    const int mmtoo_prevap_resusp[/* aero_model::pcnst */],
+                    SubView dqdt, Real qsrflx[/* aero_model::pcnst */][nsrflx],
+                    bool dotend[aero_model::pcnst]) {
 
   // clang-format off
   // ----------------------------------------------------------------------- 
@@ -2856,15 +2858,16 @@ KOKKOS_INLINE_FUNCTION void ma_convproc_dp_intr(
 
 // =========================================================================================
 template <typename SubView, typename ConstSubView>
-KOKKOS_INLINE_FUNCTION void ma_convproc_sh_intr(
-    const int nlev, const Real temperature[/* nlev */],
-    const Real pmid[/* nlev */], const Real dpdry[/* nlev */],
-    const Real pdel[/* nlev */], const Real dt, const Real cldfrac[/* nlev */],
-    const Real icwmr[/* nlev */], const Real rprddp[/* nlev */],
-    const Real evapcdp[/* nlev */], ConstSubView qnew,
-    const int species_class[/* aero_model::pcnst */], SubView dqdt,
-    Real qsrflx[/* aero_model::pcnst */][nsrflx],
-    bool dotend[aero_model::pcnst]) {
+KOKKOS_INLINE_FUNCTION void
+ma_convproc_sh_intr(const int nlev, const Real temperature[/* nlev */],
+                    const Real pmid[/* nlev */], const Real dpdry[/* nlev */],
+                    const Real pdel[/* nlev */], const Real dt,
+                    const Real cldfrac[/* nlev */],
+                    const Real icwmr[/* nlev */], const Real rprddp[/* nlev */],
+                    const Real evapcdp[/* nlev */], ConstSubView qnew,
+                    const int species_class[/* aero_model::pcnst */],
+                    SubView dqdt, Real qsrflx[/* aero_model::pcnst */][nsrflx],
+                    bool dotend[aero_model::pcnst]) {
   // clang-format off
   // ----------------------------------------------------------------------- 
   //  

@@ -39,11 +39,11 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
     using View2D = typename DeviceType::view_2d<Real>;
     using View1DHost = typename HostType::view_1d<Real>;
 
-    constexpr int nvars = ndrop::nvars;
+    constexpr int pcnst = aero_model::pcnst;
     constexpr int pver = ndrop::pver;
     constexpr int ntot_amode = AeroConfig::num_modes();
 
-    View2D state_q("state_q", pver, nvars);
+    View2D state_q("state_q", pver, pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
     ColumnView temperature;

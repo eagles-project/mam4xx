@@ -19,7 +19,7 @@ void ccncalc(Ensemble *ensemble) {
     const Real zero = 0;
     const int maxd_aspectype = ndrop::maxd_aspectype;
     const int ntot_amode = AeroConfig::num_modes();
-    const int nvars = ndrop::nvars;
+    const int pcnst = aero_model::pcnst;
     const int psat = ndrop::psat;
 
     const int pver = ndrop::pver;
@@ -35,11 +35,11 @@ void ccncalc(Ensemble *ensemble) {
     using View2D = ndrop::View2D;
     using View1DHost = typename HostType::view_1d<Real>;
 
-    View2D state_q("state_q", pver, nvars);
+    View2D state_q("state_q", pver, pcnst);
     auto state_host = Kokkos::create_mirror_view(state_q);
 
     int count = 0;
-    for (int i = 0; i < nvars; ++i) {
+    for (int i = 0; i < pcnst; ++i) {
       // input data is store on the cpu.
       for (int kk = 0; kk < pver; ++kk) {
         state_host(kk, i) = state_q_db[count];

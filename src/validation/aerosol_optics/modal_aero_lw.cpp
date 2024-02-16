@@ -28,7 +28,7 @@ void modal_aero_lw(Ensemble *ensemble) {
     const auto state_q_db = input.get_array("state_q");
     auto qqcw_db = input.get_array("qqcw"); // 2d
 
-    View2D state_q("state_q", pver, nvars);
+    View2D state_q("state_q", pver, pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
     View2D qqcw("qqcw", pver, pcnst);
