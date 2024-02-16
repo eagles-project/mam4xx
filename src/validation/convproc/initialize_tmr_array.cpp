@@ -26,7 +26,7 @@ void get_input(const Input &input, const std::string &name, const int size,
 }
 void get_input(const Input &input, const std::string &name, const int rows,
                const int cols, std::vector<Real> &host,
-               Kokkos::View<Real * [aero_model::gas_pcnst],
+               Kokkos::View<Real * [aero_model::pcnst],
                             Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
   EKAT_ASSERT(host.size() == rows * cols);
@@ -65,7 +65,7 @@ void initialize_tmr_array(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
     const int pcnst_extd = ConvProc::pcnst_extd;
-    const int pcnst = aero_model::gas_pcnst;
+    const int pcnst = aero_model::pcnst;
     using Kokko2DView =
         Kokkos::View<Real *[pcnst_extd], Kokkos::MemoryUnmanaged>;
     // Fetch ensemble parameters

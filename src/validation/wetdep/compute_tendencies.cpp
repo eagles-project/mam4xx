@@ -67,7 +67,7 @@ void test_compute_tendencies(std::unique_ptr<Ensemble> &ensemble) {
     const Real t = 0;
     const Real dt = 36000;
     const Real pblh = 1000;
-    const int gas_pcnst = aero_model::gas_pcnst;
+    const int pcnst = aero_model::pcnst;
     EKAT_ASSERT(input.get("dt") == 3600);
 
     Atmosphere atmosphere = validation::create_atmosphere(nlev, pblh);
@@ -106,19 +106,19 @@ void test_compute_tendencies(std::unique_ptr<Ensemble> &ensemble) {
     diagnostics.evaporation_of_falling_precipitation =
         mam4::validation::create_column_view(nlev);
     diagnostics.aerosol_wet_deposition_interstitial =
-        mam4::validation::create_column_view(gas_pcnst);
+        mam4::validation::create_column_view(pcnst);
     diagnostics.aerosol_wet_deposition_cloud_water =
-        mam4::validation::create_column_view(gas_pcnst);
+        mam4::validation::create_column_view(pcnst);
     for (int i = 0; i < AeroConfig::num_modes(); ++i)
       diagnostics.wet_geometric_mean_diameter_i[i] =
           mam4::validation::create_column_view(nlev);
-    auto mixing_ratio = mam4::validation::create_column_view(nlev * gas_pcnst);
+    auto mixing_ratio = mam4::validation::create_column_view(nlev * pcnst);
     diagnostics.tracer_mixing_ratio =
-        Diagnostics::ColumnTracerView(mixing_ratio.data(), nlev, gas_pcnst);
+        Diagnostics::ColumnTracerView(mixing_ratio.data(), nlev, pcnst);
     auto mixing_ratio_dt =
-        mam4::validation::create_column_view(nlev * gas_pcnst);
+        mam4::validation::create_column_view(nlev * pcnst);
     diagnostics.d_tracer_mixing_ratio_dt =
-        Diagnostics::ColumnTracerView(mixing_ratio_dt.data(), nlev, gas_pcnst);
+        Diagnostics::ColumnTracerView(mixing_ratio_dt.data(), nlev, pcnst);
     Kokkos::parallel_for(
         "init_column_views", nlev, KOKKOS_LAMBDA(int i) {
           diagnostics.deep_convective_cloud_fraction[i] = 0;
@@ -133,13 +133,13 @@ void test_compute_tendencies(std::unique_ptr<Ensemble> &ensemble) {
           diagnostics.shallow_convective_detrainment[i] = 0;
           diagnostics.shallow_convective_ratio[i] = 0;
           diagnostics.evaporation_of_falling_precipitation[i] = 0;
-          for (int j = 0; j < gas_pcnst; ++j) {
+          for (int j = 0; j < pcnst; ++j) {
             diagnostics.tracer_mixing_ratio(i, j) = 0;
             diagnostics.d_tracer_mixing_ratio_dt(i, j) = 0;
           }
         });
     Kokkos::parallel_for(
-        "init_column_views", gas_pcnst, KOKKOS_LAMBDA(int i) {
+        "init_column_views", pcnst, KOKKOS_LAMBDA(int i) {
           diagnostics.aerosol_wet_deposition_interstitial[i] = 0;
           diagnostics.aerosol_wet_deposition_cloud_water[i] = 0;
         });
@@ -165,7 +165,7 @@ void test_compute_tendencies(std::unique_ptr<Ensemble> &ensemble) {
               diagnostics.deep_convective_precipitation_production);
     get_input(input, "evapcdp", nlev, evapc_host,
               diagnostics.deep_convective_precipitation_evaporation);
-    get_input(input, "qnew", nlev, gas_pcnst, dp_host,
+    get_input(input, "qnew", nlev, pcnst, dp_host,
               diagnostics.tracer_mixing_ratio);
     get_input(input, "evapr", nlev, evapr_host,
               diagnostics.evaporation_of_falling_precipitation);
@@ -190,7 +190,7 @@ void test_compute_tendencies(std::unique_ptr<Ensemble> &ensemble) {
                                     tendencies);
         });
     Kokkos::fence();
-    set_output(output, "dqdt", nlev, gas_pcnst, dqdt_host,
+    set_output(output, "dqdt", nlev, pcnst, dqdt_host,
                diagnostics.d_tracer_mixing_ratio_dt);
   });
 }

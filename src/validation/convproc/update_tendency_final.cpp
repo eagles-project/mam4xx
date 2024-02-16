@@ -82,7 +82,7 @@ void update_tendency_final(Ensemble *ensemble) {
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
-    const int gas_pcnst = aero_model::gas_pcnst;
+    const int pcnst = aero_model::pcnst;
     // Fetch ensemble parameters
 
     // delta t (model time increment) [s]
@@ -97,13 +97,13 @@ void update_tendency_final(Ensemble *ensemble) {
     const int jtsub = input.get("jtsub");
     // number of tracers to transport
     const int ncnst = input.get("ncnst");
-    EKAT_ASSERT(ncnst == gas_pcnst);
+    EKAT_ASSERT(ncnst == pcnst);
     const int nsrflx = 6;
 
     // flag for doing convective transport
     std::vector<Real> doconvproc_host;
     ColumnView doconvproc_dev;
-    get_input(input, "doconvproc", gas_pcnst, doconvproc_host, doconvproc_dev);
+    get_input(input, "doconvproc", pcnst, doconvproc_host, doconvproc_dev);
 
     std::vector<Real> sumactiva_host, sumaqchem_host, sumwetdep_host,
         sumresusp_host, sumprevap_host, sumprevap_hist_host;
@@ -136,8 +136,8 @@ void update_tendency_final(Ensemble *ensemble) {
 
     Kokkos::parallel_for(
         "update_tendency_diagnostics", 1, KOKKOS_LAMBDA(int) {
-          bool doconvproc[gas_pcnst] = {};
-          for (int n = 0; n < gas_pcnst; ++n)
+          bool doconvproc[pcnst] = {};
+          for (int n = 0; n < pcnst; ++n)
             doconvproc[n] = doconvproc_dev[n];
 
           Real *sumactiva = sumactiva_dev.data();
@@ -146,7 +146,7 @@ void update_tendency_final(Ensemble *ensemble) {
           Real *sumresusp = sumresusp_dev.data();
           Real *sumprevap = sumprevap_dev.data();
           Real *sumprevap_hist = sumprevap_hist_dev.data();
-          Real qsrflx[gas_pcnst][nsrflx];
+          Real qsrflx[pcnst][nsrflx];
           for (int i = 0; i < ncnst; ++i)
             for (int j = 0; j < nsrflx; ++j)
               qsrflx[i][j] = qsrflx_dev(i, j);
@@ -162,19 +162,19 @@ void update_tendency_final(Ensemble *ensemble) {
         "update_tendency_final", kbot_prevap, KOKKOS_LAMBDA(int klev) {
           if (ktop - 1 <= klev) {
 
-            bool doconvproc[gas_pcnst] = {};
-            for (int n = 0; n < gas_pcnst; ++n)
+            bool doconvproc[pcnst] = {};
+            for (int n = 0; n < pcnst; ++n)
               doconvproc[n] = doconvproc_dev[n];
 
-            Real dcondt[2 * gas_pcnst];
+            Real dcondt[2 * pcnst];
             for (int i = 0; i < 2 * ncnst; ++i)
               dcondt[i] = dcondt_dev(i, klev);
 
-            Real dqdt[gas_pcnst];
+            Real dqdt[pcnst];
             for (int i = 0; i < ncnst; ++i)
               dqdt[i] = dqdt_dev(i, klev);
 
-            Real q_i[gas_pcnst];
+            Real q_i[pcnst];
             for (int i = 0; i < ncnst; ++i)
               q_i[i] = q_i_dev(i, klev);
 
@@ -194,7 +194,7 @@ void update_tendency_final(Ensemble *ensemble) {
     set_output(output, "q_i", ncnst, kbot_prevap, row_major, q_i_host, q_i_dev);
     set_output(output, "qsrflx", ncnst, nsrflx, col_major, qsrflx_host,
                qsrflx_dev);
-    set_output(output, "doconvproc", gas_pcnst, doconvproc_host,
+    set_output(output, "doconvproc", pcnst, doconvproc_host,
                doconvproc_dev);
     set_output(output, "sumactiva", 2 * ncnst, sumactiva_host, sumactiva_dev);
     set_output(output, "sumaqchem", 2 * ncnst, sumaqchem_host, sumaqchem_dev);

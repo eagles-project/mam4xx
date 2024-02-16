@@ -716,10 +716,10 @@ int lptr_nacl_a_amode(const int imode) {
   return lptr_nacl_a_amode[imode];
 }
 
-static constexpr int gas_pcnst = 40;
+static constexpr int pcnst = 40;
 KOKKOS_INLINE_FUNCTION
 int mmtoo_prevap_resusp(const int i) {
-  const int mmtoo_prevap_resusp[gas_pcnst] = {
+  const int mmtoo_prevap_resusp[pcnst] = {
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
       -1, 30, 32, 33, 31, 28, 29, 34, -3, 30, 33, 29, 34, -3,
       28, 29, 30, 31, 32, 33, 34, -3, 32, 31, 34, -3};

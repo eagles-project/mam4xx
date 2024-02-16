@@ -51,7 +51,7 @@ void ma_resuspend_convproc(Ensemble *ensemble) {
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
-    const int gas_pcnst = aero_model::gas_pcnst;
+    const int pcnst = aero_model::pcnst;
     // Fetch ensemble parameters
 
     // these variables depend on mode No and k
@@ -60,7 +60,7 @@ void ma_resuspend_convproc(Ensemble *ensemble) {
     EKAT_ASSERT(nlev == kbot_prevap);
     // number of tracers to transport
     const int pcnst_extd = input.get("pcnst_extd");
-    EKAT_ASSERT(pcnst_extd == 2 * gas_pcnst);
+    EKAT_ASSERT(pcnst_extd == 2 * pcnst);
 
     // flag for doing convective transport
     std::vector<Real> dcondt_host, dcondt_resusp_host;
@@ -78,15 +78,15 @@ void ma_resuspend_convproc(Ensemble *ensemble) {
         "ma_resuspend_convproc", kbot_prevap, KOKKOS_LAMBDA(int klev) {
           if (ktop - 1 <= klev) {
 
-            Real dcondt[2 * gas_pcnst];
-            for (int i = 0; i < 2 * gas_pcnst; ++i)
+            Real dcondt[2 * pcnst];
+            for (int i = 0; i < 2 * pcnst; ++i)
               dcondt[i] = dcondt_dev(i, klev);
-            Real dcondt_resusp[2 * gas_pcnst];
+            Real dcondt_resusp[2 * pcnst];
             convproc::ma_resuspend_convproc(dcondt, dcondt_resusp);
 
-            for (int i = 0; i < 2 * gas_pcnst; ++i)
+            for (int i = 0; i < 2 * pcnst; ++i)
               dcondt_dev(i, klev) = dcondt[i];
-            for (int i = 0; i < 2 * gas_pcnst; ++i)
+            for (int i = 0; i < 2 * pcnst; ++i)
               dcondt_resusp_dev(i, klev) = dcondt_resusp[i];
           }
         });
