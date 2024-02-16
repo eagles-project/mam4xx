@@ -27,9 +27,14 @@ void schmidt_number(Ensemble *ensemble) {
     auto vsc_dyn_atm = input.get("vsc_dyn_atm");
     auto vsc_knm_atm = input.get("vsc_knm_atm");
 
-    auto schmidt_number =
-        drydep::schmidt_number(temp, pres, radius, vsc_dyn_atm, vsc_knm_atm);
-
+    Real schmidt_number = 0;
+    Kokkos::parallel_reduce(
+        1,
+        KOKKOS_LAMBDA(const int, Real &schmidt) {
+          schmidt = drydep::schmidt_number(temp, pres, radius, vsc_dyn_atm,
+                                           vsc_knm_atm);
+        },
+        schmidt_number);
     output.set("schmidt_number", schmidt_number);
   });
 }

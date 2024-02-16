@@ -1253,7 +1253,6 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
   auto &coarse_pom = progs.q_aero_i[coarse_idx][int(AeroId::POM)];
   auto &coarse_soa = progs.q_aero_i[coarse_idx][int(AeroId::SOA)];
   auto &coarse_so4 = progs.q_aero_i[coarse_idx][int(AeroId::SO4)];
-
   auto &num_coarse = progs.n_mode_i[coarse_idx];
 
   // initialize rho
@@ -1311,7 +1310,7 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
   auto &coarse_pom_cb = progs.q_aero_c[coarse_idx][int(AeroId::POM)];
   auto &coarse_soa_cb = progs.q_aero_c[coarse_idx][int(AeroId::SOA)];
 
-  auto &num_coarse_cb = progs.n_mode_c[accum_idx];
+  auto &num_coarse_cb = progs.n_mode_c[coarse_idx];
 
   const Real dmc_cb = coarse_dust_cb[k] * air_density;
   const Real ssmc_cb = coarse_ncl_cb[k] * air_density;

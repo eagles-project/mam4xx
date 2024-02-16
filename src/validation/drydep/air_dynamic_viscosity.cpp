@@ -19,7 +19,13 @@ void air_dynamic_viscosity(Ensemble *ensemble) {
 
     auto temp = input.get("temp");
 
-    auto air_dynamic_viscosity = drydep::air_dynamic_viscosity(temp);
+    Real air_dynamic_viscosity = 0;
+    Kokkos::parallel_reduce(
+        1,
+        KOKKOS_LAMBDA(const int, Real &vis) {
+          vis = drydep::air_dynamic_viscosity(temp);
+        },
+        air_dynamic_viscosity);
 
     output.set("air_dynamic_viscosity", air_dynamic_viscosity);
   });

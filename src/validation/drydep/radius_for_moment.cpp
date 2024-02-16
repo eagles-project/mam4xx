@@ -25,9 +25,14 @@ void radius_for_moment(Ensemble *ensemble) {
     auto radius_part = input.get("radius_part");
     auto radius_max = input.get("radius_max");
 
-    auto radius_for_moment =
-        drydep::radius_for_moment(moment, sig_part, radius_part, radius_max);
-
+    Real radius_for_moment = 0;
+    Kokkos::parallel_reduce(
+        1,
+        KOKKOS_LAMBDA(const int, Real &rad) {
+          rad = drydep::radius_for_moment(moment, sig_part, radius_part,
+                                          radius_max);
+        },
+        radius_for_moment);
     output.set("radius_for_moment", radius_for_moment);
   });
 }

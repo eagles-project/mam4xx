@@ -26,9 +26,14 @@ void slip_correction_factor(Ensemble *ensemble) {
     auto temp = input.get("temp");
     auto particle_radius = input.get("particle_radius");
 
-    auto slip_correction_factor =
-        drydep::slip_correction_factor(dyn_visc, pres, temp, particle_radius);
-
+    Real slip_correction_factor = 0;
+    Kokkos::parallel_reduce(
+        1,
+        KOKKOS_LAMBDA(const int, Real &slip) {
+          slip = drydep::slip_correction_factor(dyn_visc, pres, temp,
+                                                particle_radius);
+        },
+        slip_correction_factor);
     output.set("slip_correction_factor", slip_correction_factor);
   });
 }

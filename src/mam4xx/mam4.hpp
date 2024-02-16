@@ -35,6 +35,7 @@
 #include <mam4xx/nucleate_ice.hpp>
 #include <mam4xx/nucleation.hpp>
 #include <mam4xx/rename.hpp>
+#include <mam4xx/spitfire_transport.hpp>
 #include <mam4xx/tropopause.hpp>
 #include <mam4xx/water_uptake.hpp>
 #include <mam4xx/wet_dep.hpp>
@@ -50,7 +51,7 @@ using RenameProcess = haero::AeroProcess<AeroConfig, Rename>;
 using HetfrzProcess = haero::AeroProcess<AeroConfig, Hetfrz>;
 using NucleateIceProcess = haero::AeroProcess<AeroConfig, NucleateIce>;
 using WetDepositionProcess = haero::AeroProcess<AeroConfig, WetDeposition>;
-using DryDepProcess = haero::AeroProcess<AeroConfig, DryDep>;
+using DryDepositionProcess = haero::AeroProcess<AeroConfig, DryDeposition>;
 using WaterUptakeProcess = haero::AeroProcess<AeroConfig, Water_Uptake>;
 
 } // namespace mam4
