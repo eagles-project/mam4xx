@@ -18,7 +18,7 @@ const Real pi = haero::Constants::pi;
 //   mo_chm_diags::rgrav; // reciprocal of acceleration of gravity ~ m/s^2
 //   reciprocal of gravity
 constexpr Real rga = mam4::modal_aer_opt::rga;
-constexpr const int gas_pcnst = gas_chemistry::gas_pcnst;
+constexpr const int gas_pcnst = mam4::aero_model::gas_pcnst;
 const Real boltz_cgs = haero::Constants::boltzmann * 1.e7; // erg/K
 // number of vertical levels
 constexpr const int pver = mam4::nlev;
@@ -30,14 +30,6 @@ constexpr Real cm3_2_m3 = 1.0e-6; // convert cm^3 to m^3
 constexpr Real liter_per_gram = 1.0e-3;
 constexpr Real avo2 =
     avo * liter_per_gram * cm3_2_m3; // [liter/gm/mol*(m/cm)^3]
-
-//FIXME: is this right??
-const int spc_h2o2_ndx = static_cast<int>(mam4::GasId::H2O2);
-const int spc_so2_ndx = static_cast<int>(mam4::GasId::SO2);
-const int h2o2_ndx = static_cast<int>(mam4::GasId::H2O2);
-const int so2_ndx = static_cast<int>(mam4::GasId::SO2);
-const int h2so4_ndx = static_cast<int>(mam4::GasId::H2SO4);
-
 
 using Real = haero::Real;
 using View1D = DeviceType::view_1d<Real>;
@@ -220,7 +212,15 @@ void sethet(
     ColumnView xhen_h2o2, // henry law constants
     ColumnView xhen_hno3, // henry law constants
     ColumnView xhen_so2,  // henry law constants
-    ColumnView tmp_hetrates[8]) {
+    ColumnView tmp_hetrates[8],
+    int spc_h2o2_ndx,
+    int spc_so2_ndx,
+    int h2o2_ndx,
+    int so2_ndx,
+    int h2so4_ndx,
+    int gas_wetdep_cnt,
+    int wetdep_map[3]) {
+
 
   //-----------------------------------------------------------------------
   //       ... compute rainout loss rates (1/s)
@@ -244,7 +244,7 @@ void sethet(
   Real km2cm = 1.0e5;               // convert km to cm
   Real m2km = 1.0e-3;               // convert m to km
   Real m3_2_cm3 = 1.0e6;            // convert m^3 to cm^3
-  //Real MISSING = -999999.0;
+  Real MISSING = -999999.0;
   Real large_value_lifetime = 1.0e29; // a large lifetime value if no washout
   //Real gas_wetdep_cnt = mam4::modal_aer_opt::pcnst;
 
@@ -294,15 +294,14 @@ void sethet(
 
   // if ( .not. do_wetdep) return
 
-  // is this needed?
-  /*
-   do mm = 1,gas_wetdep_cnt
-      mm2 = wetdep_map(mm)
-      if ( mm2>0 ) then
-         het_rates(:,:,mm2) = MISSING
-      endif
-   enddo
-   */
+  for(int mm=0; mm < gas_wetdep_cnt; mm++) {
+      int mm2 = wetdep_map[mm];
+      if ( mm2 > 0 ) {
+        for(int kk = 0; kk < pver; kk++) {
+          het_rates[mm2](kk) = MISSING;
+        }
+      }
+  }
 
   //-----------------------------------------------------------------
   //	... the 2 and .6 multipliers are from a formula by frossling (1938)
@@ -467,27 +466,30 @@ void sethet(
     //-----------------------------------------------------------------
     //	... Set rates above tropopause = 0.
     //-----------------------------------------------------------------
-    /*
-    for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
-      //FIXME: what is wetdep_map?
-      int mm2 = wetdep_map(mm);
-      for (int kk = 0; kk < ktop; kk++) {
-        het_rates[mm2](kk) = 0.0;
-      }
 
-      for (int kk = 0; kk < pver; kk++) {
-        if (het_rates[mm2](kk) == MISSING) {
-          return; // maybe?
+    for(int mm=0; mm < gas_wetdep_cnt; mm++) {
+      int mm2 = wetdep_map[mm];
+      if ( mm2 > 0 ) {
+        for (int kk = 0; kk < ktop; kk++) {
+          het_rates[mm2](kk) = 0.0;
+        }
+        for (int kk = 0; kk < pver; kk++) {
+          if (het_rates[mm2](kk) == MISSING) {
+            return; // maybe?
+          }
         }
       }
 
+      //Didn't port
       // if ( any( het_rates(:ncol,:,mm2) == MISSING) ) then
       //    write(hetratestrg,'(I3)') mm2
       //    call endrun('sethet: het_rates (wet dep) not set for het reaction
       //    number : '//hetratestrg)
       // endif
-      */
-    }
+    } 
+
+      
+    
 
   } // end subroutine sethet
 
