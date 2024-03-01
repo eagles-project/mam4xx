@@ -136,7 +136,8 @@ void makoh_quartic(Kokkos::complex<Real> cx[4], const Real p3, const Real p2,
   Real rr = -haero::cube(p2 / 6.0) + p2 * (p3 * p1 - 4.0 * p0) / 48.0 +
             (4.0 * p0 * p2 - p0 * p3 * p3 - p1 * p1) / 16.0;
 
-  // Note: Kokkos::sqrt<Real value> will return a Real and if input value is negative Kokkos::sqrt will return Nan.
+  // Note: Kokkos::sqrt<Real value> will return a Real and if input value is
+  // negative Kokkos::sqrt will return Nan.
   Kokkos::complex<Real> sq_crad = rr * rr + qq * qq * qq;
   // Note: we use Kokkos::complex<Real> Kokkos::sqrt<Real value>
   // for case where  Kokkos::sqrt<Real value>  is negative.
