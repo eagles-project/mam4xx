@@ -18,10 +18,10 @@ const Real pi = haero::Constants::pi;
 //   mo_chm_diags::rgrav; // reciprocal of acceleration of gravity ~ m/s^2
 //   reciprocal of gravity
 constexpr Real rga = mam4::modal_aer_opt::rga;
-constexpr const int pcnst = mam4::aero_model::pcnst;
+constexpr int pcnst = mam4::aero_model::pcnst;
 const Real boltz_cgs = haero::Constants::boltzmann * 1.e7; // erg/K
 // number of vertical levels
-constexpr const int pver = mam4::nlev;
+constexpr int pver = mam4::nlev;
 
 // FIXME: BAD CONSTANT
 // mass of water vapor [amu] //convert to g/mol from kg/mol
