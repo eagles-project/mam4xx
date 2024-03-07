@@ -18,7 +18,7 @@ const Real pi = haero::Constants::pi;
 //   mo_chm_diags::rgrav; // reciprocal of acceleration of gravity ~ m/s^2
 //   reciprocal of gravity
 constexpr Real rga = mam4::modal_aer_opt::rga;
-constexpr const int gas_pcnst = mam4::aero_model::gas_pcnst;
+constexpr const int pcnst = mam4::aero_model::pcnst;
 const Real boltz_cgs = haero::Constants::boltzmann * 1.e7; // erg/K
 // number of vertical levels
 constexpr const int pver = mam4::nlev;
@@ -183,7 +183,7 @@ KOKKOS_INLINE_FUNCTION
 void sethet(
     const ThreadTeam &team,
     const ColumnView
-        het_rates[gas_pcnst],  //[pver][gas_pcnst], rainout rates [1/s] //out
+        het_rates[pcnst],  //[pver][pcnst], rainout rates [1/s] //out
     Real rlat,                 // latitude in radians for columns
     ColumnView press,          // pressure [pascals] //in
     ColumnView zmid,           // midpoint geopot [km]  //in
@@ -194,7 +194,7 @@ void sethet(
     ColumnView nevapr,         // evaporation [kg/kg/s] //in
     Real delt,                 // time step [s] //in
     ColumnView xhnm,           // total atms density [cm^-3] //in
-    ColumnView qin[gas_pcnst], // xported species [vmr]  //in
+    ColumnView qin[pcnst], // xported species [vmr]  //in
     int lchnk,                 // chunk index //in
     // working variables
     ColumnView xeqca, // var for gas_washout
@@ -286,7 +286,7 @@ void sethet(
   // 'H2O2','H2SO4','SO2'.  Options for other species are then removed
   //-----------------------------------------------------------------
 
-  for (int mm = 0; mm < gas_pcnst; mm++) {
+  for (int mm = 0; mm < pcnst; mm++) {
     for (int kk = 0; kk < pver; kk++) {
       het_rates[mm](kk) = 0.0;
     }
@@ -366,7 +366,7 @@ void sethet(
     xhen_so2(kk) = xk0 * (1.0 + so2_diss / xph0);
 
     // initiate temporary array
-    for (int mm = 0; mm < gas_pcnst; mm++) {
+    for (int mm = 0; mm < pcnst; mm++) {
       tmp_hetrates[mm](kk) = 0.0;
     }
   }
@@ -430,7 +430,7 @@ void sethet(
   //                   hno3 and h2o2 have both in and under cloud
   //-----------------------------------------------------------------
   for (int kk = ktop; kk < pver; kk++) {
-    for (int mm = 0; mm < gas_pcnst; mm++) {
+    for (int mm = 0; mm < pcnst; mm++) {
       if (rain(kk) <= 0.0) {
         het_rates[mm](kk) = 0.0;
       }
@@ -462,36 +462,30 @@ void sethet(
                        het_rates[h2so4_ndx](kk));          // out
       }
     }
+  }
 
-    //-----------------------------------------------------------------
-    //	... Set rates above tropopause = 0.
-    //-----------------------------------------------------------------
+  //-----------------------------------------------------------------
+  //	... Set rates above tropopause = 0.
+  //-----------------------------------------------------------------
 
-    for(int mm=0; mm < gas_wetdep_cnt; mm++) {
-      int mm2 = wetdep_map[mm];
-      if ( mm2 > 0 ) {
-        for (int kk = 0; kk < ktop; kk++) {
-          het_rates[mm2](kk) = 0.0;
-        }
-        for (int kk = 0; kk < pver; kk++) {
-          if (het_rates[mm2](kk) == MISSING) {
-            return; // maybe?
-          }
-        }
-      }
-
+  for(int mm=0; mm < gas_wetdep_cnt; mm++) {
+    int mm2 = wetdep_map[mm];
+    for (int kk = 0; kk < ktop; kk++) {
+      het_rates[mm2](kk) = 0.0;
+    }
+    for (int kk = 0; kk < pver; kk++) {
+      if (het_rates[mm2](kk) == MISSING) {
+        return; // maybe?
+      } 
+    }
       //Didn't port
       // if ( any( het_rates(:ncol,:,mm2) == MISSING) ) then
       //    write(hetratestrg,'(I3)') mm2
       //    call endrun('sethet: het_rates (wet dep) not set for het reaction
       //    number : '//hetratestrg)
       // endif
-    } 
-
-      
-    
-
-  } // end subroutine sethet
+  } 
+} // end subroutine sethet
 
 } // namespace mo_sethet
 } // namespace mam4
