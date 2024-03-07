@@ -24,10 +24,10 @@ constexpr Real rearth = 6.37122e6;
 constexpr Real rgrav =
     1.0 / 9.80616; // reciprocal of acceleration of gravity ~ m/s^2
 constexpr Real avogadro = haero::Constants::avogadro;
-constexpr const int gas_pcnst = gas_chemistry::gas_pcnst;
-constexpr const int pcnst = mam4::modal_aer_opt::pcnst;
+constexpr int gas_pcnst = gas_chemistry::gas_pcnst;
+constexpr int pcnst = mam4::aero_model::pcnst;
 // number of vertical levels
-constexpr const int pver = mam4::nlev;
+constexpr int pver = mam4::nlev;
 
 KOKKOS_INLINE_FUNCTION
 void het_diags(
