@@ -2,12 +2,14 @@
 #define MAM4XX_MO_CHM_DIAGS_HPP
 
 #include <haero/math.hpp>
+#include <haero/atmosphere.hpp>
+#include <mam4xx/aero_config.hpp>
+#include <mam4xx/aero_model.hpp>
 #include <mam4xx/gas_chem.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
 namespace mam4 {
-
 namespace mo_chm_diags {
 
 using Real = haero::Real;
@@ -25,7 +27,7 @@ constexpr Real rgrav =
     1.0 / 9.80616; // reciprocal of acceleration of gravity ~ m/s^2
 constexpr Real avogadro = haero::Constants::avogadro;
 constexpr int gas_pcnst = gas_chemistry::gas_pcnst;
-constexpr int pcnst = mam4::aero_model::pcnst;
+constexpr int pcnst = aero_model::pcnst;
 // number of vertical levels
 constexpr int pver = mam4::nlev;
 
