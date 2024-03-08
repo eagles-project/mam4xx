@@ -16,8 +16,8 @@ constexpr Real avo = haero::Constants::avogadro;
 const Real pi = haero::Constants::pi;
 // constexpr Real rgrav =
 //   mo_chm_diags::rgrav; // reciprocal of acceleration of gravity ~ m/s^2
-//   reciprocal of gravity
-constexpr Real rga = mam4::modal_aer_opt::rga;
+//  reciprocal of gravity
+constexpr Real rga = 1.0 / haero::Constants::gravity;
 constexpr int pcnst = mam4::aero_model::pcnst;
 const Real boltz_cgs = haero::Constants::boltzmann * 1.e7; // erg/K
 // number of vertical levels
@@ -184,42 +184,41 @@ void sethet(
     const ThreadTeam &team,
     const ColumnView
         het_rates[pcnst],  //[pver][pcnst], rainout rates [1/s] //out
-    Real rlat,                 // latitude in radians for columns
-    ColumnView press,          // pressure [pascals] //in
-    ColumnView zmid,           // midpoint geopot [km]  //in
-    Real phis,                 // surf geopotential //in
-    ColumnView tfld,           // temperature [K]  //in
-    ColumnView cmfdqr,         // dq/dt for convection [kg/kg/s] //in
-    ColumnView nrain,          // stratoform precip [kg/kg/s] //in
-    ColumnView nevapr,         // evaporation [kg/kg/s] //in
-    Real delt,                 // time step [s] //in
-    ColumnView xhnm,           // total atms density [cm^-3] //in
-    ColumnView qin[pcnst], // xported species [vmr]  //in
-    int lchnk,                 // chunk index //in
+    const Real rlat,                 // latitude in radians for columns
+    const ColumnView press,          // pressure [pascals] //in
+    const ColumnView zmid,           // midpoint geopot [km]  //in
+    const Real phis,                 // surf geopotential //in
+    const ColumnView tfld,           // temperature [K]  //in
+    const ColumnView cmfdqr,         // dq/dt for convection [kg/kg/s] //in
+    const ColumnView nrain,          // stratoform precip [kg/kg/s] //in
+    const ColumnView nevapr,         // evaporation [kg/kg/s] //in
+    const Real delt,                 // time step [s] //in
+    const ColumnView xhnm,           // total atms density [cm^-3] //in
+    const ColumnView qin[pcnst], // xported species [vmr]  //in
     // working variables
-    ColumnView xeqca, // var for gas_washout
-    ColumnView xca,   // var for gas_washout
-    ColumnView
+    const ColumnView xeqca, // var for gas_washout
+    const ColumnView xca,   // var for gas_washout
+    const ColumnView
         xgas2, // gas phase species for h2o2 (2) and so2 (3) [molecules/cm^3]
-    ColumnView
+    const ColumnView
         xgas3, // gas phase species for h2o2 (2) and so2 (3) [molecules/cm^3]
-    ColumnView delz,      // layer depth about interfaces [cm]
-    ColumnView xh2o2,     // h2o2 concentration [molecules/cm^3]
-    ColumnView xso2,      // so2 concentration [molecules/cm^3]
-    ColumnView xliq,      // liquid rain water content in a grid cell [gm/m^3]
-    ColumnView rain,      // precipitation (rain) rate [molecules/cm^3/s]
-    ColumnView precip,    // precipitation rate [kg/kg/s]
-    ColumnView xhen_h2o2, // henry law constants
-    ColumnView xhen_hno3, // henry law constants
-    ColumnView xhen_so2,  // henry law constants
-    ColumnView tmp_hetrates[8],
-    int spc_h2o2_ndx,
-    int spc_so2_ndx,
-    int h2o2_ndx,
-    int so2_ndx,
-    int h2so4_ndx,
-    int gas_wetdep_cnt,
-    int wetdep_map[3]) {
+    const ColumnView delz,      // layer depth about interfaces [cm]
+    const ColumnView xh2o2,     // h2o2 concentration [molecules/cm^3]
+    const ColumnView xso2,      // so2 concentration [molecules/cm^3]
+    const ColumnView xliq,      // liquid rain water content in a grid cell [gm/m^3]
+    const ColumnView rain,      // precipitation (rain) rate [molecules/cm^3/s]
+    const ColumnView precip,    // precipitation rate [kg/kg/s]
+    const ColumnView xhen_h2o2, // henry law constants
+    const ColumnView xhen_hno3, // henry law constants
+    const ColumnView xhen_so2,  // henry law constants
+    const ColumnView tmp_hetrates[pcnst],
+    const int spc_h2o2_ndx,
+    const int spc_so2_ndx,
+    const int h2o2_ndx,
+    const int so2_ndx,
+    const int h2so4_ndx,
+    const int gas_wetdep_cnt,
+    const int wetdep_map[3]) {
 
 
   //-----------------------------------------------------------------------
@@ -414,7 +413,7 @@ void sethet(
     } else {
       yh2o2 = large_value_lifetime;
     }
-    tmp_hetrates[1](kk) = max(1.0 / yh2o2, 0.0) * stay;
+    tmp_hetrates[1](kk) = haero::max(1.0 / yh2o2, 0.0) * stay;
 
     xxx3 = (xso2(kk) - xgas3(kk));
     if (xxx3 /= 0.0) { // if no washout lifetime = 1.e29
@@ -422,7 +421,7 @@ void sethet(
     } else {
       yso2 = large_value_lifetime;
     }
-    tmp_hetrates[2](kk) = max(1.0 / yso2, 0.0) * stay;
+    tmp_hetrates[2](kk) = haero::max(1.0 / yso2, 0.0) * stay;
   }
 
   //-----------------------------------------------------------------
