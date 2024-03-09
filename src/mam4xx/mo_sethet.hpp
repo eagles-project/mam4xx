@@ -183,17 +183,17 @@ KOKKOS_INLINE_FUNCTION
 void sethet(
     const ThreadTeam &team,
     const ColumnView
-        het_rates[gas_pcnst],  //[pver][gas_pcnst], rainout rates [1/s] //out
-    const Real rlat,                 // latitude in radians for columns
-    const ColumnView press,          // pressure [pascals] //in
-    const ColumnView zmid,           // midpoint geopot [km]  //in
-    const Real phis,                 // surf geopotential //in
-    const ColumnView tfld,           // temperature [K]  //in
-    const ColumnView cmfdqr,         // dq/dt for convection [kg/kg/s] //in
-    const ColumnView nrain,          // stratoform precip [kg/kg/s] //in
-    const ColumnView nevapr,         // evaporation [kg/kg/s] //in
-    const Real delt,                 // time step [s] //in
-    const ColumnView xhnm,           // total atms density [cm^-3] //in
+        het_rates[gas_pcnst], //[pver][gas_pcnst], rainout rates [1/s] //out
+    const Real rlat,          // latitude in radians for columns
+    const ColumnView press,   // pressure [pascals] //in
+    const ColumnView zmid,    // midpoint geopot [km]  //in
+    const Real phis,          // surf geopotential //in
+    const ColumnView tfld,    // temperature [K]  //in
+    const ColumnView cmfdqr,  // dq/dt for convection [kg/kg/s] //in
+    const ColumnView nrain,   // stratoform precip [kg/kg/s] //in
+    const ColumnView nevapr,  // evaporation [kg/kg/s] //in
+    const Real delt,          // time step [s] //in
+    const ColumnView xhnm,    // total atms density [cm^-3] //in
     const ColumnView qin[gas_pcnst], // xported species [vmr]  //in
     // working variables
     const ColumnView xeqca, // var for gas_washout
@@ -202,24 +202,18 @@ void sethet(
         xgas2, // gas phase species for h2o2 (2) and so2 (3) [molecules/cm^3]
     const ColumnView
         xgas3, // gas phase species for h2o2 (2) and so2 (3) [molecules/cm^3]
-    const ColumnView delz,      // layer depth about interfaces [cm]
-    const ColumnView xh2o2,     // h2o2 concentration [molecules/cm^3]
-    const ColumnView xso2,      // so2 concentration [molecules/cm^3]
-    const ColumnView xliq,      // liquid rain water content in a grid cell [gm/m^3]
-    const ColumnView rain,      // precipitation (rain) rate [molecules/cm^3/s]
+    const ColumnView delz,  // layer depth about interfaces [cm]
+    const ColumnView xh2o2, // h2o2 concentration [molecules/cm^3]
+    const ColumnView xso2,  // so2 concentration [molecules/cm^3]
+    const ColumnView xliq,  // liquid rain water content in a grid cell [gm/m^3]
+    const ColumnView rain,  // precipitation (rain) rate [molecules/cm^3/s]
     const ColumnView precip,    // precipitation rate [kg/kg/s]
     const ColumnView xhen_h2o2, // henry law constants
     const ColumnView xhen_hno3, // henry law constants
     const ColumnView xhen_so2,  // henry law constants
-    const ColumnView tmp_hetrates[gas_pcnst],
-    const int spc_h2o2_ndx,
-    const int spc_so2_ndx,
-    const int h2o2_ndx,
-    const int so2_ndx,
-    const int h2so4_ndx,
-    const int gas_wetdep_cnt,
-    const int wetdep_map[3]) {
-
+    const ColumnView tmp_hetrates[gas_pcnst], const int spc_h2o2_ndx,
+    const int spc_so2_ndx, const int h2o2_ndx, const int so2_ndx,
+    const int h2so4_ndx, const int gas_wetdep_cnt, const int wetdep_map[3]) {
 
   //-----------------------------------------------------------------------
   //       ... compute rainout loss rates (1/s)
@@ -245,12 +239,12 @@ void sethet(
   Real m3_2_cm3 = 1.0e6;            // convert m^3 to cm^3
   Real MISSING = -999999.0;
   Real large_value_lifetime = 1.0e29; // a large lifetime value if no washout
-  //Real gas_wetdep_cnt = mam4::modal_aer_opt::gas_pcnst;
+  // Real gas_wetdep_cnt = mam4::modal_aer_opt::gas_pcnst;
 
   // character(len=3) :: hetratestrg
   // int icol, kk, kk2  // indicies
   // int mm, mm2        // indicies
-  int ktop; // tropopause level, 100mb for lat < 60 and 300mb for lat > 60
+  int ktop;  // tropopause level, 100mb for lat < 60 and 300mb for lat > 60
   Real xkgm; // mass flux on rain drop
   Real stay; // fraction of layer traversed by falling drop in timestep delt
   Real xdtm; // the traveling time in each dz [s]
@@ -293,13 +287,13 @@ void sethet(
 
   // if ( .not. do_wetdep) return
 
-  for(int mm=0; mm < gas_wetdep_cnt; mm++) {
-      int mm2 = wetdep_map[mm];
-      if ( mm2 > 0 ) {
-        for(int kk = 0; kk < pver; kk++) {
-          het_rates[mm2](kk) = MISSING;
-        }
+  for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
+    int mm2 = wetdep_map[mm];
+    if (mm2 > 0) {
+      for (int kk = 0; kk < pver; kk++) {
+        het_rates[mm2](kk) = MISSING;
       }
+    }
   }
 
   //-----------------------------------------------------------------
@@ -323,7 +317,7 @@ void sethet(
       Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
         rain(kk) = mass_air * precip(kk) * xhnm(kk) / mass_h2o;
         xliq(kk) = precip(kk) * delt * xhnm(kk) / avo * mass_air * m3_2_cm3;
-        xh2o2(kk) = qin[spc_h2o2_ndx](kk) * xhnm(kk); 
+        xh2o2(kk) = qin[spc_h2o2_ndx](kk) * xhnm(kk);
         xso2(kk) = qin[spc_so2_ndx](kk) * xhnm(kk);
       });
 
@@ -467,7 +461,7 @@ void sethet(
   //	... Set rates above tropopause = 0.
   //-----------------------------------------------------------------
 
-  for(int mm=0; mm < gas_wetdep_cnt; mm++) {
+  for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
     int mm2 = wetdep_map[mm];
     for (int kk = 0; kk < ktop; kk++) {
       het_rates[mm2](kk) = 0.0;
@@ -475,15 +469,15 @@ void sethet(
     for (int kk = 0; kk < pver; kk++) {
       if (het_rates[mm2](kk) == MISSING) {
         return; // maybe?
-      } 
+      }
     }
-      //Didn't port
-      // if ( any( het_rates(:ncol,:,mm2) == MISSING) ) then
-      //    write(hetratestrg,'(I3)') mm2
-      //    call endrun('sethet: het_rates (wet dep) not set for het reaction
-      //    number : '//hetratestrg)
-      // endif
-  } 
+    // Didn't port
+    //  if ( any( het_rates(:ncol,:,mm2) == MISSING) ) then
+    //     write(hetratestrg,'(I3)') mm2
+    //     call endrun('sethet: het_rates (wet dep) not set for het reaction
+    //     number : '//hetratestrg)
+    //  endif
+  }
 } // end subroutine sethet
 
 } // namespace mo_sethet
