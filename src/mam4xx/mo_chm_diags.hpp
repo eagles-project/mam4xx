@@ -1,8 +1,8 @@
 #ifndef MAM4XX_MO_CHM_DIAGS_HPP
 #define MAM4XX_MO_CHM_DIAGS_HPP
 
-#include <haero/math.hpp>
 #include <haero/atmosphere.hpp>
+#include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/aero_model.hpp>
 #include <mam4xx/gas_chem.hpp>
