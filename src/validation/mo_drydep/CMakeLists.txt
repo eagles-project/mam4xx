@@ -10,7 +10,6 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 add_executable(mo_drydep_driver
                mo_drydep_driver.cpp
                calculate_aerodynamic_and_quasilaminar_resistance.cpp
-               calculate_gas_drydep_vlc_and_flux.cpp
                calculate_obukhov_length.cpp
                calculate_resistance_rclx.cpp
                calculate_resistance_rgsx_and_rsmx.cpp
@@ -19,6 +18,7 @@ add_executable(mo_drydep_driver
                calculate_ustar.cpp
                calculate_uustar.cpp
                drydep_xactive.cpp
+               calculate_gas_drydep_vlc_and_flux.cpp
                )
 
 target_link_libraries(mo_drydep_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -36,7 +36,6 @@ endforeach()
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     calculate_aerodynamic_and_quasilaminar_resistance
-    calculate_gas_drydep_vlc_and_flux
     calculate_obukhov_length
     calculate_resistance_rclx
     calculate_resistance_rgsx_and_rsmx
@@ -45,23 +44,22 @@ set(TEST_LIST
     calculate_ustar
     calculate_uustar
     drydep_xactive
-    stand_calculate_gas_drydep_vlc_and_flux_ts_100
+    calculate_gas_drydep_vlc_and_flux
     )
 
 set(DEFAULT_TOL 1e-11)
 
 set(ERROR_THRESHOLDS
     1e-9 # calculate_aerodynamic_and_quasilaminar_resistance
-    4e-8 # calculate_gas_drydep_vlc_and_flux FIXME: still needs work!
     7e-8 # calculate_obukhov_length
     ${DEFAULT_TOL} # calculate_resistance_rclx FIXME: still needs work!
     1.1e-6 # calculate_resistance_rgsx_and_rsmx FIXME: still needs work!
-    1e-9# calculate_resistance_rlux FIXME: still needs work!
+    1e-9 # calculate_resistance_rlux FIXME: still needs work!
     ${DEFAULT_TOL} # calculate_ustar_over_water # FIXME: still needs work, esp regarding inout parameters???
     ${DEFAULT_TOL} # calculate_ustar # FIXME: still off by too much
     ${DEFAULT_TOL} # calculate_uustar FIXME: still off by too much
     ${DEFAULT_TOL} # drydep_xactive FIXME: needs work, including reading data from fraction_landuse file!
-    ${DEFAULT_TOL}
+    1e-10 # calculate_gas_drydep_vlc_and_flux
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
