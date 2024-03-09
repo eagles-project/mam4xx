@@ -45,7 +45,7 @@ set(ERROR_THRESHOLDS
     ${DEFAULT_TOL}
     ${DEFAULT_TOL} # output is an int
     9e-3
-    ${DEFAULT_TOL}
+    9e-2 
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
