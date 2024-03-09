@@ -19,7 +19,7 @@ void sethet(Ensemble *ensemble) {
     using View1DHost = typename HostType::view_1d<Real>;
     using ColumnView = haero::ColumnView;
     constexpr int pver = mam4::nlev;
-    constexpr int pcnst = mam4::aero_model::pcnst;
+    constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
 
     //non-ColumnView input values
     //const Real rlat = input.get_array("rlat")[0]; //need
@@ -143,14 +143,14 @@ void sethet(Ensemble *ensemble) {
     Kokkos::deep_copy(xhen_hno3, xhen_hno3_host);
     Kokkos::deep_copy(xhen_so2, xhen_so2_host);
 
-    ColumnView het_rates[pcnst];
-    ColumnView tmp_hetrates[pcnst];
-    ColumnView qin[pcnst];
-    View1DHost het_rates_host[pcnst];
-    View1DHost tmp_hetrates_host[pcnst];
-    View1DHost qin_host[pcnst];
+    ColumnView het_rates[gas_pcnst];
+    ColumnView tmp_hetrates[gas_pcnst];
+    ColumnView qin[gas_pcnst];
+    View1DHost het_rates_host[gas_pcnst];
+    View1DHost tmp_hetrates_host[gas_pcnst];
+    View1DHost qin_host[gas_pcnst];
 
-    for (int mm = 0; mm < pcnst; ++mm) {
+    for (int mm = 0; mm < gas_pcnst; ++mm) {
       het_rates[mm] = haero::testing::create_column_view(pver);
       tmp_hetrates[mm] = haero::testing::create_column_view(pver);
       qin[mm] = haero::testing::create_column_view(pver);
@@ -161,7 +161,7 @@ void sethet(Ensemble *ensemble) {
     }
 
     int count = 0;
-    for (int mm = 0; mm < pcnst; ++mm) {
+    for (int mm = 0; mm < gas_pcnst; ++mm) {
       for (int kk = 0; kk < pver; ++kk) {
         het_rates_host[mm](kk) = 0.0;
         tmp_hetrates_host[mm](kk) = 0.0;
@@ -171,7 +171,7 @@ void sethet(Ensemble *ensemble) {
     }
 
     // transfer data to GPU.
-    for (int mm = 0; mm < pcnst; ++mm) {
+    for (int mm = 0; mm < gas_pcnst; ++mm) {
       Kokkos::deep_copy(het_rates[mm], het_rates_host[mm]);
       Kokkos::deep_copy(tmp_hetrates[mm], tmp_hetrates_host[mm]);
       Kokkos::deep_copy(qin[mm], qin_host[mm]);
@@ -188,12 +188,12 @@ void sethet(Ensemble *ensemble) {
         });
 
     // transfer data to GPU.
-    for (int mm = 0; mm < pcnst; ++mm) {
+    for (int mm = 0; mm < gas_pcnst; ++mm) {
       Kokkos::deep_copy(het_rates_host[mm], het_rates[mm]);
     }
-    std::vector<Real> het_rates_out(pver * pcnst);
+    std::vector<Real> het_rates_out(pver * gas_pcnst);
     count = 0;
-    for (int mm = 0; mm < pcnst; ++mm) {
+    for (int mm = 0; mm < gas_pcnst; ++mm) {
       for (int kk = 0; kk < pver; ++kk) {
         het_rates_out[count] = het_rates_host[mm](kk);
         count++;
