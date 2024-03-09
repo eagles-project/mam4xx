@@ -18,7 +18,7 @@ const Real pi = haero::Constants::pi;
 //   mo_chm_diags::rgrav; // reciprocal of acceleration of gravity ~ m/s^2
 //  reciprocal of gravity
 constexpr Real rga = 1.0 / haero::Constants::gravity;
-constexpr int pcnst = mam4::aero_model::pcnst;
+constexpr int gas_pcnst = gas_chemistry::gas_pcnst;
 const Real boltz_cgs = haero::Constants::boltzmann * 1.e7; // erg/K
 // number of vertical levels
 constexpr int pver = mam4::nlev;
@@ -183,7 +183,7 @@ KOKKOS_INLINE_FUNCTION
 void sethet(
     const ThreadTeam &team,
     const ColumnView
-        het_rates[pcnst],  //[pver][pcnst], rainout rates [1/s] //out
+        het_rates[gas_pcnst],  //[pver][gas_pcnst], rainout rates [1/s] //out
     const Real rlat,                 // latitude in radians for columns
     const ColumnView press,          // pressure [pascals] //in
     const ColumnView zmid,           // midpoint geopot [km]  //in
@@ -194,7 +194,7 @@ void sethet(
     const ColumnView nevapr,         // evaporation [kg/kg/s] //in
     const Real delt,                 // time step [s] //in
     const ColumnView xhnm,           // total atms density [cm^-3] //in
-    const ColumnView qin[pcnst], // xported species [vmr]  //in
+    const ColumnView qin[gas_pcnst], // xported species [vmr]  //in
     // working variables
     const ColumnView xeqca, // var for gas_washout
     const ColumnView xca,   // var for gas_washout
@@ -211,7 +211,7 @@ void sethet(
     const ColumnView xhen_h2o2, // henry law constants
     const ColumnView xhen_hno3, // henry law constants
     const ColumnView xhen_so2,  // henry law constants
-    const ColumnView tmp_hetrates[pcnst],
+    const ColumnView tmp_hetrates[gas_pcnst],
     const int spc_h2o2_ndx,
     const int spc_so2_ndx,
     const int h2o2_ndx,
@@ -245,7 +245,7 @@ void sethet(
   Real m3_2_cm3 = 1.0e6;            // convert m^3 to cm^3
   Real MISSING = -999999.0;
   Real large_value_lifetime = 1.0e29; // a large lifetime value if no washout
-  //Real gas_wetdep_cnt = mam4::modal_aer_opt::pcnst;
+  //Real gas_wetdep_cnt = mam4::modal_aer_opt::gas_pcnst;
 
   // character(len=3) :: hetratestrg
   // int icol, kk, kk2  // indicies
@@ -285,7 +285,7 @@ void sethet(
   // 'H2O2','H2SO4','SO2'.  Options for other species are then removed
   //-----------------------------------------------------------------
 
-  for (int mm = 0; mm < pcnst; mm++) {
+  for (int mm = 0; mm < gas_pcnst; mm++) {
     for (int kk = 0; kk < pver; kk++) {
       het_rates[mm](kk) = 0.0;
     }
@@ -365,7 +365,7 @@ void sethet(
     xhen_so2(kk) = xk0 * (1.0 + so2_diss / xph0);
 
     // initiate temporary array
-    for (int mm = 0; mm < pcnst; mm++) {
+    for (int mm = 0; mm < gas_pcnst; mm++) {
       tmp_hetrates[mm](kk) = 0.0;
     }
   }
@@ -408,7 +408,7 @@ void sethet(
     xdtm = delz(kk) / xum; // the traveling time in each dz
 
     xxx2 = (xh2o2(kk) - xgas2(kk));
-    if (xxx2 /= 0.0) { // if no washout lifetime = 1.e29
+    if (xxx2 != 0.0) { // if no washout lifetime = 1.e29
       yh2o2 = xh2o2(kk) / xxx2 * xdtm;
     } else {
       yh2o2 = large_value_lifetime;
@@ -416,7 +416,7 @@ void sethet(
     tmp_hetrates[1](kk) = haero::max(1.0 / yh2o2, 0.0) * stay;
 
     xxx3 = (xso2(kk) - xgas3(kk));
-    if (xxx3 /= 0.0) { // if no washout lifetime = 1.e29
+    if (xxx3 != 0.0) { // if no washout lifetime = 1.e29
       yso2 = xso2(kk) / xxx3 * xdtm;
     } else {
       yso2 = large_value_lifetime;
@@ -429,7 +429,7 @@ void sethet(
   //                   hno3 and h2o2 have both in and under cloud
   //-----------------------------------------------------------------
   for (int kk = ktop; kk < pver; kk++) {
-    for (int mm = 0; mm < pcnst; mm++) {
+    for (int mm = 0; mm < gas_pcnst; mm++) {
       if (rain(kk) <= 0.0) {
         het_rates[mm](kk) = 0.0;
       }
