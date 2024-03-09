@@ -21,8 +21,8 @@ void sethet(Ensemble *ensemble) {
     constexpr int pver = mam4::nlev;
     constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
 
-    //non-ColumnView input values
-    //const Real rlat = input.get_array("rlat")[0]; //need
+    // non-ColumnView input values
+    // const Real rlat = input.get_array("rlat")[0]; //need
     const Real rlat = -.2320924702;
     const Real phis = input.get_array("phis")[0];
     const Real delt = input.get_array("delt")[0];
@@ -49,7 +49,7 @@ void sethet(Ensemble *ensemble) {
     const auto xhnm_in = input.get_array("xhnm");
     const auto qin_in = input.get_array("qin");
 
-    //ColumnView input values
+    // ColumnView input values
     ColumnView press, zmid, tfld, cmfdqr, nrain, nevapr, xhnm;
 
     auto press_host = View1DHost((Real *)press_in.data(), pver);
@@ -60,7 +60,6 @@ void sethet(Ensemble *ensemble) {
     auto nevapr_host = View1DHost((Real *)nevapr_in.data(), pver);
     auto xhnm_host = View1DHost((Real *)xhnm_in.data(), pver);
 
-
     press = haero::testing::create_column_view(pver);
     zmid = haero::testing::create_column_view(pver);
     tfld = haero::testing::create_column_view(pver);
@@ -68,7 +67,6 @@ void sethet(Ensemble *ensemble) {
     nrain = haero::testing::create_column_view(pver);
     nevapr = haero::testing::create_column_view(pver);
     xhnm = haero::testing::create_column_view(pver);
-    
 
     Kokkos::deep_copy(press, press_host);
     Kokkos::deep_copy(zmid, zmid_host);
@@ -77,27 +75,25 @@ void sethet(Ensemble *ensemble) {
     Kokkos::deep_copy(nrain, nrain_host);
     Kokkos::deep_copy(nevapr, nevapr_host);
     Kokkos::deep_copy(xhnm, xhnm_host);
-    
 
-
-/*    const auto xeqca_in = input.get_array("xeqca");
-    const auto xca_in = input.get_array("xca");
-    const auto xgas2_in = input.get_array("xgas2");
-    const auto xgas3_in = input.get_array("xgas3");
-    const auto delz_in = input.get_array("delz");
-    const auto xh2o2_in = input.get_array("xh2o2");
-    const auto xso2_in = input.get_array("xso2");
-    const auto xliq_in = input.get_array("xliq");
-    const auto rain_in = input.get_array("rain");
-    const auto precip_in = input.get_array("precip");
-    const auto xhen_h2o2_in = input.get_array("xhen_h2o2");
-    const auto xhen_hno3_in = input.get_array("xhen_hno3");
-    const auto xhen_no2_in = input.get_array("xhen_no2");
-    const auto tmp_hetrates_in = input.get_array("tmp_hetrates");
-*/
-    //working var inputs
+    /*    const auto xeqca_in = input.get_array("xeqca");
+        const auto xca_in = input.get_array("xca");
+        const auto xgas2_in = input.get_array("xgas2");
+        const auto xgas3_in = input.get_array("xgas3");
+        const auto delz_in = input.get_array("delz");
+        const auto xh2o2_in = input.get_array("xh2o2");
+        const auto xso2_in = input.get_array("xso2");
+        const auto xliq_in = input.get_array("xliq");
+        const auto rain_in = input.get_array("rain");
+        const auto precip_in = input.get_array("precip");
+        const auto xhen_h2o2_in = input.get_array("xhen_h2o2");
+        const auto xhen_hno3_in = input.get_array("xhen_hno3");
+        const auto xhen_no2_in = input.get_array("xhen_no2");
+        const auto tmp_hetrates_in = input.get_array("tmp_hetrates");
+    */
+    // working var inputs
     ColumnView xeqca, xca, xgas2, xgas3, delz, xh2o2, xso2, xliq, rain, precip,
-               xhen_h2o2, xhen_hno3, xhen_so2;
+        xhen_h2o2, xhen_hno3, xhen_so2;
 
     // initialize internal veriables
     std::vector<Real> vector0(pver, 0);
@@ -177,14 +173,15 @@ void sethet(Ensemble *ensemble) {
       Kokkos::deep_copy(qin[mm], qin_host[mm]);
     }
 
-
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          mo_sethet::sethet(team, het_rates, rlat, press, zmid, phis, tfld, cmfdqr, nrain,
-                 nevapr, delt, xhnm, qin, xeqca, xca, xgas2, xgas3, delz, 
-                 xh2o2, xso2, xliq, rain, precip, xhen_h2o2, xhen_hno3, xhen_so2, tmp_hetrates,
-                 spc_h2o2_ndx, spc_so2_ndx, h2o2_ndx, so2_ndx, h2so4_ndx, gas_wetdep_cnt, wetdep_map);
+          mo_sethet::sethet(team, het_rates, rlat, press, zmid, phis, tfld,
+                            cmfdqr, nrain, nevapr, delt, xhnm, qin, xeqca, xca,
+                            xgas2, xgas3, delz, xh2o2, xso2, xliq, rain, precip,
+                            xhen_h2o2, xhen_hno3, xhen_so2, tmp_hetrates,
+                            spc_h2o2_ndx, spc_so2_ndx, h2o2_ndx, so2_ndx,
+                            h2so4_ndx, gas_wetdep_cnt, wetdep_map);
         });
 
     // transfer data to GPU.
