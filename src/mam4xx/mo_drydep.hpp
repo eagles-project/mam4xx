@@ -322,10 +322,8 @@ void calculate_resistance_rlux(
 
   // NOTE: as it stands, since rlux gets passed in, and we can't guarantee all
   // entries are initialized to 0, we do it here
-  for (size_t ispec = 0; ispec  < gas_pcnst; ++ispec)
-  {
-    for (size_t lt = 0; lt < n_land_type; ++lt)
-    {
+  for (size_t ispec = 0; ispec < gas_pcnst; ++ispec) {
+    for (size_t lt = 0; lt < n_land_type; ++lt) {
       rlux[ispec][lt] = 0.0;
     }
   }
