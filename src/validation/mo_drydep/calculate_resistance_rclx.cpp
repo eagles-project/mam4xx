@@ -45,6 +45,7 @@ void calculate_resistance_rclx(const seq_drydep::Data &data,
     Kokkos::deep_copy(heff_d, heff_h);
 
     View1D rclx_d("rclx", gas_pcnst * n_land_type);
+    Kokkos::deep_copy(rclx_d, 0.0);
 
     auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
@@ -58,6 +59,10 @@ void calculate_resistance_rclx(const seq_drydep::Data &data,
           for (int i = 0; i < gas_pcnst; ++i) {
             for (int lt = 0; lt < n_land_type; ++lt, ++l) {
               rclx_d(l) = rclx[i][lt];
+              // std::cout << "rclx_d(l) = " << rclx_d(l) << "\n";
+              std::cout << "i, lt, l = " << i << ", " << lt << ", " << l
+                        << "\n";
+              std::cout << "rclx[i][lt] = " << rclx[i][lt] << "\n";
             }
           }
         });

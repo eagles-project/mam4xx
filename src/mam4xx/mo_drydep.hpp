@@ -286,6 +286,9 @@ void calculate_resistance_rclx(
             rclx[ispec][lt] =
                 cts + 1.0 / ((heff[idx_drydep] / (1e5 * rcls(sndx, lt))) +
                              foxd(idx_drydep) / rclo(sndx, lt));
+            std::cout << "***loop 1***"
+                      << "\n";
+            std::cout << "rclx[ispec][lt] = " << rclx[ispec][lt] << "\n";
           }
         }
       }
@@ -298,6 +301,9 @@ void calculate_resistance_rclx(
         if (lt != lt_for_water) {
           if (fr_lnduse[lt]) {
             rclx[ispec][lt] = cts + rcls(index_season[lt], lt);
+            std::cout << "***loop 2***"
+                      << "\n";
+            std::cout << "rclx[ispec][lt] = " << rclx[ispec][lt] << "\n";
           }
         }
       }
