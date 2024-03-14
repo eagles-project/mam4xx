@@ -52,6 +52,8 @@ install(FILES
         aer_rad_props.hpp
         modal_aero_calcsize.hpp
         mo_setinv.hpp
+        set_srf_emisssions.hpp
+        aero_model_emissions.hpp
         DESTINATION include/mam4xx)
 
 add_library(mam4xx aero_modes.cpp)
