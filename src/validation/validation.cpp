@@ -3,9 +3,9 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef NDEBUG
-#include <cfenv>
-#endif
+// #ifndef NDEBUG
+// #include <cfenv>
+// #endif
 
 #include "validation.hpp"
 
@@ -14,9 +14,12 @@ namespace validation {
 
 void initialize(int argc, char **argv) {
   Kokkos::initialize(argc, argv);
-#ifndef NDEBUG
-  ekat::enable_fpes(FE_INVALID | FE_INVALID | FE_OVERFLOW);
-#endif
+  // ekat::enable_fpes(fpes_);
+}
+
+void initialize(int argc, char **argv, int fpes_) {
+  Kokkos::initialize(argc, argv);
+  ekat::enable_fpes(fpes_);
 }
 
 void finalize() {
