@@ -5,11 +5,11 @@
 
 #ifndef HAERO_VALIDATION_HPP
 #define HAERO_VALIDATION_HPP
+#include <cfenv>
 #include <haero/testing.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/mo_photo.hpp>
 #include <string>
-#include <cfenv>
 
 namespace mam4 {
 
