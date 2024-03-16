@@ -54,15 +54,15 @@ Real local_precip_production(const Real pdel, const Real source_term,
  *          sum above of (cloud * positive precip production)      sum total precip from above
  *            ---------------------------------------------    X    -------------------------
  *                   sum above of ( positive precip )             sum positive precip from above
- * 
+ *
  * @param[in] cld Cloud faction [fraction, unitless].
  * @param[in] lprec Local production rate of precipitation [kg/m2/s].
- * @param[in] is_tot_cld When is_tot_cld is true, this function computes the 
- *                       total cloud volume. Otherwise, it computes the cloud 
- *                       volume of either the stratiform clouds or the 
+ * @param[in] is_tot_cld When is_tot_cld is true, this function computes the
+ *                       total cloud volume. Otherwise, it computes the cloud
+ *                       volume of either the stratiform clouds or the
  *                       convective clouds (depending upon the provided cloud fraction).
  * @param[in] atm Atmosphere object (used for number of levels).
- * 
+ *
  * @param[out] cldv Fraction occupied by rain or cloud water [fraction, unitless].
  *
  * @pre cld, lprec, cldv are all an array
@@ -75,12 +75,12 @@ Real local_precip_production(const Real pdel, const Real source_term,
  * @pre In F90 code, ncol == pcols. Since ncol == 1, pcols == 1.
  *
  * @pre atm is initialized correctly and has the correct number of levels.
- * 
+ *
  */
-// clang-format on 
+// clang-format on
 template<typename FUNC>
 KOKKOS_INLINE_FUNCTION
-void calculate_cloudy_volume(const int nlev, const Real cld[/*nlev*/], FUNC lprec, 
+void calculate_cloudy_volume(const int nlev, const Real cld[/*nlev*/], FUNC lprec,
                              const bool is_tot_cld, Real cldv[/*nlev*/]) {
   // BAD CONSTANT
   const Real small_value_30 = 1.e-30;
@@ -95,7 +95,7 @@ void calculate_cloudy_volume(const int nlev, const Real cld[/*nlev*/], FUNC lpre
       cldv[i] = haero::max( clouds, cld[i]);
     }
     else {
-      // For convective and stratiform precipitation volume at the top 
+      // For convective and stratiform precipitation volume at the top
       // interface of each layer. Neglect the current layer.
       cldv[i] = haero::max( clouds, 0.0);
     }
@@ -111,33 +111,33 @@ void calculate_cloudy_volume(const int nlev, const Real cld[/*nlev*/], FUNC lpre
 // ==============================================================================
 KOKKOS_INLINE_FUNCTION
 void update_scavenging(
-  const int mam_prevap_resusp_optcc,   
-  const Real pdel_ik,              
-  const Real omsm,   
-  const Real srcc,   
-  const Real srcs,      
-  const Real srct,    
-  const Real fins,   
+  const int mam_prevap_resusp_optcc,
+  const Real pdel_ik,
+  const Real omsm,
+  const Real srcc,
+  const Real srcs,
+  const Real srct,
+  const Real fins,
   const Real finc,
-  const Real fracev_st, 
-  const Real fracev_cu,      
-  const Real resusp_c,   
-  const Real resusp_s, 
-  const Real precs_ik,  
-  const Real evaps_ik,       
-  const Real cmfdqr_ik,  
-  const Real evapc_ik,  
-  Real &scavt_ik,  
-  Real &iscavt_ik,      
-  Real &icscavt_ik, 
-  Real &isscavt_ik, 
+  const Real fracev_st,
+  const Real fracev_cu,
+  const Real resusp_c,
+  const Real resusp_s,
+  const Real precs_ik,
+  const Real evaps_ik,
+  const Real cmfdqr_ik,
+  const Real evapc_ik,
+  Real &scavt_ik,
+  Real &iscavt_ik,
+  Real &icscavt_ik,
+  Real &isscavt_ik,
   Real &bcscavt_ik,
-  Real &bsscavt_ik,     
-  Real &rcscavt_ik, 
+  Real &bsscavt_ik,
+  Real &rcscavt_ik,
   Real &rsscavt_ik,
-  Real &scavabs,   
-  Real &scavabc,        
-  Real &precabc,    
+  Real &scavabs,
+  Real &scavabc,
+  Real &precabc,
   Real &precabs)
 {
   // clang-format off
@@ -223,7 +223,7 @@ Real flux_precnum_vs_flux_prec_mpln(const Real flux_prec, const int jstrcnv) {
   // --------------------------------------------------------------------------------
   /*
   in :: flux_prec     ! [drops/m^2/s]
-  in :: jstrcnv   
+  in :: jstrcnv
   out :: flux_precnum_vs_flux_prec_mpln  ! [drops/m^2/s]
   */
   // clang-format on
@@ -713,7 +713,7 @@ Real rain_mix_ratio(const Real temperature, const Real pmid,
   // -----------------------------------------------------------------------
   //  Purpose:
   //  calculate rain mixing ratio from precipitation rate above.
-  // 
+  //
   //  extracted from clddiag subroutine
   //  for C++ portint, Shuaiqi Tang in 9/22/2022
   // -----------------------------------------------------------------------
@@ -837,7 +837,7 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   // -----------------------------------------------------------------------
   //  Purpose:
   //  scavenging code for very soluble aerosols
-  // 
+  //
   //  Author: P. Rasch
   //  Modified by T. Bond 3/2003 to track different removals
   //  Sungsu Park. Mar.2010 : Impose consistencies with a few changes in physics.
@@ -845,7 +845,7 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   //  this section of code is for highly soluble aerosols,
   //  the assumption is that within the cloud that
   //  all the tracer is in the cloud water
-  // 
+  //
   //  for both convective and stratiform clouds,
   //  the fraction of cloud water converted to precip defines
   //  the amount of tracer which is pulled out.
@@ -1314,7 +1314,8 @@ void compute_q_tendencies_phase_2(
     Real &scavt, Real &bcscavt, Real &rcscavt, Real rtscavt_sv[],
     Real &qqcw_sav,
 
-    const Prognostics &progs, const Real f_act_conv, const Real scavcoefnum,
+    // const Prognostics &progs,
+    const Real f_act_conv, const Real scavcoefnum,
     const Real scavcoefvol, const Real totcond, const Real cmfdqr,
     const Real conicw, const Real evapc, const Real evapr, const Real prain,
     const Real dlf, const Real cldt, const Real cldcu, const Real cldvst_k,
@@ -1323,15 +1324,16 @@ void compute_q_tendencies_phase_2(
     const Real pdel, const Real dt, const int mam_prevap_resusp_optcc,
     const int jnv, const int mm, const int k) {
 
-  static constexpr int pcnst = aero_model::pcnst;
+  // static constexpr int pcnst = aero_model::pcnst;
   // There is no cloud-borne aerosol water in the model, so this
   // code block should NEVER execute for lspec =
   // nspec_amode(m)+1 (i.e., jnummaswtr = 2). The code only
   // worked because the "do lspec" loop cycles when lspec =
   // nspec_amode(m)+1, but that does not make the code correct.
-  Real qqcw_all[pcnst] = {};
-  utils::extract_qqcw_from_prognostics(progs, qqcw_all, k);
-  const Real tracer = qqcw_all[mm];
+  // Real qqcw_all[pcnst] = {};
+  // utils::extract_qqcw_from_prognostics(progs, qqcw_all, k);
+  // FIXME: get qqcw_all[mm]
+  const Real tracer = 0;//qqcw_all[mm];
   qqcw_sav = tracer;
   Real fracis = 0;  // fraction of species not scavenged [fraction]
   Real iscavt = 0;  // incloud scavenging tends [kg/kg/s]
@@ -1392,8 +1394,8 @@ void compute_q_tendencies(
 
   // clang-format off
   //   0 = no resuspension
-  // 130 = non-linear resuspension of aerosol mass based on scavenged aerosol mass 
-  // 230 = non-linear resuspension of aerosol number based on raindrop number 
+  // 130 = non-linear resuspension of aerosol mass based on scavenged aerosol mass
+  // 230 = non-linear resuspension of aerosol number based on raindrop number
   // the 130 thru 230 all use the new prevap_resusp code block in subr wetdepa_v2
   // clang-format on
   const int mam_prevap_resusp_no = 0;
@@ -1466,7 +1468,8 @@ void compute_q_tendencies(
               scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv.data(),
               qqcw_sav(k, lspec, mm),
               // The rest of the values are input only.
-              progs, f_act_conv[k], scavcoefnum[k], scavcoefvol[k], totcond[k],
+              // progs,
+              f_act_conv[k], scavcoefnum[k], scavcoefvol[k], totcond[k],
               cmfdqr[k], conicw[k], evapc[k], evapr[k], prain[k], dlf[k],
               cldt[k], cldcu[k], cldvst[k], cldvst[k_p1], cldvcu[k],
               cldvcu[k_p1], sol_facti[k], sol_factic[k], sol_factb[k], pdel[k],
