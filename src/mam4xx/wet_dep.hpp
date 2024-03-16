@@ -1370,7 +1370,8 @@ void compute_q_tendencies_phase_2(
 
 KOKKOS_INLINE_FUNCTION
 void compute_q_tendencies(
-    const ThreadTeam &team, const Prognostics &progs,
+    const ThreadTeam &team,
+    // const Prognostics &progs,
     Kokkos::View<Real *> f_act_conv, Kokkos::View<Real *> f_act_conv_coarse,
     Kokkos::View<Real *> f_act_conv_coarse_dust,
     Kokkos::View<Real *> f_act_conv_coarse_nacl,
@@ -1751,7 +1752,7 @@ void WetDeposition::compute_tendencies(
         if (0 <= mm && jnummaswtr != jaerowater) {
 
           wetdep::compute_q_tendencies( // tendencies are in scavt
-              team, progs, f_act_conv, f_act_conv_coarse,
+              team, f_act_conv, f_act_conv_coarse,
               f_act_conv_coarse_dust, f_act_conv_coarse_nacl, scavcoefnum,
               scavcoefvol, totcond, cmfdqr, conicw, evapc, evapr, prain, dlf,
               cldt, cldcu, cldst, cldvst, cldvcu, sol_facti, sol_factic,
