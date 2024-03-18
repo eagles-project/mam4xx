@@ -65,16 +65,16 @@ namespace aging {
 // change due to condenstion and coagulation
 KOKKOS_INLINE_FUNCTION
 void mam_pcarbon_aging_frac(
-    Real dgn_a[AeroConfig::num_modes()], // dry geometric mean diameter of
+    const Real dgn_a[AeroConfig::num_modes()], // dry geometric mean diameter of
                                          // number distribution [m]
-    Real qaer_cur[AeroConfig::num_aerosol_ids()]
+    const Real qaer_cur[AeroConfig::num_aerosol_ids()]
                  [AeroConfig::num_modes()], // aerosol mass mixing ratio
                                             // [mol/mol]
-    Real qaer_del_cond[AeroConfig::num_aerosol_ids()]
+    const Real qaer_del_cond[AeroConfig::num_aerosol_ids()]
                       [AeroConfig::num_modes()], // change of aerosol mass
                                                  // mixing ratio due to
                                                  // condensation [mol/mol]
-    Real qaer_del_coag_in[AeroConfig::num_aerosol_ids()]
+    const Real qaer_del_coag_in[AeroConfig::num_aerosol_ids()]
                          [AeroConfig::max_agepair()], // change of aerosol mass
                                                       // mixing ratio due to
                                                       // coagulation
@@ -226,7 +226,7 @@ void transfer_cond_coag_mass_to_accum(
 
 KOKKOS_INLINE_FUNCTION
 void mam_pcarbon_aging_1subarea(
-    Real dgn_a[AeroConfig::num_modes()],    // dry geometric mean diameter of
+    const Real dgn_a[AeroConfig::num_modes()],    // dry geometric mean diameter of
                                             // number distribution [m]
     Real qnum_cur[AeroConfig::num_modes()], // aerosol number mixing ratio
                                             // [#/kmol]
@@ -357,14 +357,14 @@ void aerosol_aging_rates_1box(const int k, const AeroConfig &aero_config,
 
   // These are variables that I don't know how to define at the moment for now
   // we will just allocate them here
-  Real dgn_a[num_mode];
+  Real dgn_a[num_mode]={};
   // Real qnum_cur[AeroConfig::num_modes()],
-  Real qnum_del_cond[num_mode];
-  Real qnum_del_coag[num_aer];
+  Real qnum_del_cond[num_mode]={};
+  Real qnum_del_coag[num_aer]={};
   //  Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-  Real qaer_del_cond[num_aer][num_mode];
-  Real qaer_del_coag[num_aer][num_mode];
-  Real qaer_del_coag_in[num_aer][AeroConfig::max_agepair()];
+  Real qaer_del_cond[num_aer][num_mode]={};
+  Real qaer_del_coag[num_aer][num_mode]={};
+  Real qaer_del_coag_in[num_aer][AeroConfig::max_agepair()]={};
 
   // Get prognostic fields
   // Aerosol mass
