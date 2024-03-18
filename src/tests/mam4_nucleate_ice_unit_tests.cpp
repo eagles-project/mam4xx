@@ -3,8 +3,8 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "testing.hpp"
 #include "atmosphere_utils.hpp"
+#include "testing.hpp"
 #include <mam4xx/mam4.hpp>
 #include <mam4xx/utils.hpp>
 // #include <mam4xx/wv_sat_methods.hpp>
