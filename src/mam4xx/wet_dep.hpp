@@ -1674,18 +1674,24 @@ void WetDeposition::compute_tendencies(
 
   ColumnView aerdepwetis = diags.aerosol_wet_deposition_interstitial;
   ColumnView aerdepwetcw = diags.aerosol_wet_deposition_cloud_water;
-  // FIXME: maybe use parallel_reduce?
-  Real rprdshsum = 0, rprddpsum = 0, evapcdpsum = 0, evapcshsum = 0;
-  for (int i = 0; i < nlev; ++i)
-    rprdshsum += rprdsh[i];
-  for (int i = 0; i < nlev; ++i)
-    rprddpsum += rprddp[i];
-  for (int i = 0; i < nlev; ++i)
-    evapcdpsum += evapcdp[i];
-  for (int i = 0; i < nlev; ++i)
-    evapcshsum += evapcsh[i];
 
-  team.team_barrier();
+  Real rprdshsum = 0, rprddpsum = 0, evapcdpsum = 0, evapcshsum = 0;
+  Kokkos::parallel_reduce(
+    Kokkos::TeamThreadRange(team, nlev), [&](int kk, Real &suma) {
+    suma += rprdsh[kk];
+  },rprdshsum);
+  Kokkos::parallel_reduce(
+    Kokkos::TeamThreadRange(team, nlev), [&](int kk, Real &suma) {
+    suma += rprddp[kk];
+    },rprddpsum);
+  Kokkos::parallel_reduce(
+    Kokkos::TeamThreadRange(team, nlev), [&](int kk, Real &suma) {
+    suma += evapcdp[kk];
+  },evapcdpsum);
+  Kokkos::parallel_reduce(
+    Kokkos::TeamThreadRange(team, nlev), [&](int kk, Real &suma) {
+    suma += evapcsh[kk];
+   },evapcshsum);
 
   // cumulus cloud fraction =  dp_frac + sh_frac
   wetdep::sum_values(team, cldcu, dp_frac, sh_frac, nlev);
