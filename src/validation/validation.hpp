@@ -33,11 +33,12 @@ using View3D = typename DeviceType::view_3d<Real>;
 // forward functions from mam4::testing
 using namespace mam4::testing;
 
-constexpr int default_fpes = FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW;
-void initialize(int argc, char **argv, const int fpes_);
-
 /// Call this function to initialize a validation driver.
 void initialize(int argc, char **argv);
+
+/// initialize with FPEs enabled, provided via argument
+constexpr int default_fpes = FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW;
+void initialize(int argc, char **argv, const int fpes_);
 
 /// Call this function to finalize a validation driver.
 void finalize();
