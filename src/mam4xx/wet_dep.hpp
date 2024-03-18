@@ -13,6 +13,7 @@
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/aero_model.hpp>
 #include <mam4xx/utils.hpp>
+#include <ekat/kokkos/ekat_subview_utils.hpp>
 // Based on e3sm_mam4_refactor/components/eam/src/chemistry/aerosol/wetdep.F90
 namespace mam4 {
 
@@ -1185,7 +1186,7 @@ void sum_deep_and_shallow(const ThreadTeam &team, Kokkos::View<Real *> conicw,
   // BAD CONSTANT
   const Real small_value_2 = 1.e-2;
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int k) {
+      Kokkos::TeamThreadRange(team, nlev), [&](int k) {
         // sum deep and shallow convection contributions
         conicw[k] = (icwmrdp[k] * dp_frac[k] + icwmrsh[k] * sh_frac[k]) /
                     haero::max(small_value_2, sh_frac[k] + dp_frac[k]);
@@ -1658,12 +1659,22 @@ void WetDeposition::compute_tendencies(
   ColumnView rprdsh = diags.shallow_convective_precipitation_production;
   ColumnView icwmrdp = diags.deep_convective_cloud_condensate;
   ColumnView icwmrsh = diags.shallow_convective_cloud_condensate;
+
+  // FIXME: move values from prog to state_q
   Diagnostics::ColumnTracerView state_q = diags.tracer_mixing_ratio;
   Diagnostics::ColumnTracerView ptend_q = diags.d_tracer_mixing_ratio_dt;
 
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, nlev), [&](int kk) {
+    // copy data from prog to stateq
+    const auto state_q_kk = ekat::subview(state_q,kk);
+    utils::extract_stateq_from_prognostics(progs, atm, state_q_kk.data(), kk);
+  });
+  team.team_barrier();
+
   ColumnView aerdepwetis = diags.aerosol_wet_deposition_interstitial;
   ColumnView aerdepwetcw = diags.aerosol_wet_deposition_cloud_water;
-
+  // FIXME: maybe use parallel_reduce?
   Real rprdshsum = 0, rprddpsum = 0, evapcdpsum = 0, evapcshsum = 0;
   for (int i = 0; i < nlev; ++i)
     rprdshsum += rprdsh[i];
