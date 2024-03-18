@@ -154,7 +154,7 @@ void binary_nuc_vehk2002(Real temp, Real rh, Real so4vol, Real &ratenucl,
 
   // calc nucleation rate
   // following eq. (12) in Vehkam\"aki et al. (2002)
-  rateloge = log(vehkamaki2002::nucleation_rate(so4vol, temp, rh, x_crit));
+  rateloge = vehkamaki2002::log_nucleation_rate(so4vol, temp, rh, x_crit);
   ratenucl = exp(min(rateloge, log(1e38)));
 
   // calc number of molecules in critical cluster
