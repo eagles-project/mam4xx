@@ -8,9 +8,7 @@
 namespace mam4 {
 namespace validation {
 
-void initialize(int argc, char **argv) {
-  Kokkos::initialize(argc, argv);
-}
+void initialize(int argc, char **argv) { Kokkos::initialize(argc, argv); }
 
 void initialize(int argc, char **argv, int fpes_) {
   Kokkos::initialize(argc, argv);
