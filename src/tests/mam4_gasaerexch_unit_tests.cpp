@@ -3,8 +3,8 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "testing.hpp"
 #include "atmosphere_utils.hpp"
+#include "testing.hpp"
 #include <mam4xx/aero_modes.hpp>
 #include <mam4xx/mam4.hpp>
 
@@ -40,7 +40,8 @@ TEST_CASE("test_compute_tendencies", "mam4_gasaerexch_process") {
   const Real qv0 =
       0.015; // specific humidity at surface [kg h2o / kg moist air]
   const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
-  Atmosphere atm = mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
+  Atmosphere atm =
+      mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
 
   Surface sfc = mam4::testing::create_surface();
   mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
@@ -81,7 +82,8 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_gasaerexch_process") {
   const Real qv0 =
       0.015; // specific humidity at surface [kg h2o / kg moist air]
   const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
-  Atmosphere atmosphere = mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
+  Atmosphere atmosphere =
+      mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
   Surface surface = mam4::testing::create_surface();
   mam4::Prognostics prognostics = mam4::testing::create_prognostics(nlev);
   mam4::Diagnostics diagnostics = mam4::testing::create_diagnostics(nlev);
