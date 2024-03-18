@@ -211,8 +211,10 @@ TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
   Real qnum_del_cond[AeroConfig::num_modes()] = {};
   Real qnum_del_coag[AeroConfig::num_modes()] = {};
   Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()] = {};
-  Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()] = {};
-  Real qaer_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()] = {};
+  Real qaer_del_cond[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()] =
+      {};
+  Real qaer_del_coag[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()] =
+      {};
   Real qaer_del_coag_in[AeroConfig::num_aerosol_ids()]
                        [AeroConfig::max_agepair()] = {};
 
