@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "testing.hpp"
+#include "atmosphere_utils.hpp"
 #include <mam4xx/mam4.hpp>
 #include <mam4xx/utils.hpp>
 // #include <mam4xx/wv_sat_methods.hpp>
@@ -206,7 +207,16 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleate_ice_process") {
                                 ekat::logger::LogLevel::debug, comm);
   int nlev = 72;
   Real pblh = 1000;
-  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  // these values correspond to a humid atmosphere with relative humidity
+  // values approximately between 32% and 98%
+  const Real Tv0 = 300;     // reference virtual temperature [K]
+  const Real Gammav = 0.01; // virtual temperature lapse rate [K/m]
+  const Real qv0 =
+      0.015; // specific humidity at surface [kg h2o / kg moist air]
+  const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
+  Atmosphere atm =
+      mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
+
   Surface sfc = mam4::testing::create_surface();
   mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
   mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
@@ -285,7 +295,15 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_nucleateIce_process") {
   DeviceType::view_1d<mam4::Tendencies> mc_tends("mc_tends", ncol);
   int nlev = 72;
   Real pblh = 1000;
-  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  // these values correspond to a humid atmosphere with relative humidity
+  // values approximately between 32% and 98%
+  const Real Tv0 = 300;     // reference virtual temperature [K]
+  const Real Gammav = 0.01; // virtual temperature lapse rate [K/m]
+  const Real qv0 =
+      0.015; // specific humidity at surface [kg h2o / kg moist air]
+  const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
+  Atmosphere atm =
+      mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
   Surface sfc = mam4::testing::create_surface();
   mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
   mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
