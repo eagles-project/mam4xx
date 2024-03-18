@@ -1142,20 +1142,20 @@ void clddiag(const int nlev, const Real *temperature, const Real *pmid,
 
   // Calculate cloudy volume which is occupied by rain or cloud water
   // Total
-  auto prec = KOKKOS_LAMBDA(int i)->Real {
+  auto prec = [&](int i)->Real {
     const Real source_term = prain[i] + cmfdqr[i];
     return local_precip_production(pdel[i], source_term, evapc[i]);
   };
   calculate_cloudy_volume(nlev, cldt, prec, true, cldv);
 
   // Convective
-  auto prec_cu = KOKKOS_LAMBDA(int i)->Real {
+  auto prec_cu = [&](int i)->Real {
     return local_precip_production(pdel[i], cmfdqr[i], evapr[i]);
   };
   calculate_cloudy_volume(nlev, cldcu, prec_cu, false, cldvcu);
 
   // Stratiform
-  auto prec_st = KOKKOS_LAMBDA(int i)->Real {
+  auto prec_st = [&](int i)->Real {
     return local_precip_production(pdel[i], prain[i], evapr[i]);
   };
   calculate_cloudy_volume(nlev, cldst, prec_st, false, cldvst);
@@ -1167,14 +1167,14 @@ KOKKOS_INLINE_FUNCTION void sum_values(const ThreadTeam &team,
                                        VIEWTYPE y, const int nlev) {
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nlev),
-      KOKKOS_LAMBDA(int k) { sum[k] = x[k] + y[k]; });
+      [&](int k) { sum[k] = x[k] + y[k]; });
 }
 KOKKOS_INLINE_FUNCTION
 void zero_values(const ThreadTeam &team, Kokkos::View<Real *> vec,
                  const int nlev) {
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nlev),
-      KOKKOS_LAMBDA(int k) { vec[k] = 0; });
+      [&](int k) { vec[k] = 0; });
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -1204,7 +1204,7 @@ void cloud_diagnostics(const ThreadTeam &team,
                        Kokkos::View<Real *> cldvcu, Kokkos::View<Real *> cldvst,
                        Kokkos::View<Real *> rain, const int nlev) {
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, 1), KOKKOS_LAMBDA(int k) {
+      Kokkos::TeamThreadRange(team, 1), [&](int k) {
         wetdep::clddiag(nlev, temperature.data(), pmid.data(), pdel.data(),
                         cmfdqr.data(), evapc.data(), cldt.data(), cldcu.data(),
                         cldst.data(), evapr.data(), prain.data(), cldv.data(),
@@ -1224,7 +1224,7 @@ void set_f_act(const ThreadTeam &team, Kokkos::View<bool *> isprx,
                const int nlev) {
 
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int k) {
+      Kokkos::TeamThreadRange(team, nlev), [&](int k) {
         isprx[k] = aero_model::examine_prec_exist(k, pdel.data(), prain.data(),
                                                   cmfdqr.data(), evapr.data());
 
@@ -1246,7 +1246,7 @@ void modal_aero_bcscavcoef_get(
     Kokkos::View<Real *> scavcoefnum, Kokkos::View<Real *> scavcoefvol,
     const int imode, const int nlev) {
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int k) {
+      Kokkos::TeamThreadRange(team, nlev), [&](int k) {
         const Real dgnum_amode_imode = modes(imode).nom_diameter;
         ColumnView dgn_awet_imode = diags.wet_geometric_mean_diameter_i[imode];
         const Real dgn_awet_imode_k = dgn_awet_imode[k];
@@ -1264,7 +1264,7 @@ void define_act_frac(const ThreadTeam &team, Kokkos::View<Real *> sol_facti,
                      Kokkos::View<Real *> f_act_conv, const int lphase,
                      const int imode, const int nlev) {
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int k) {
+      Kokkos::TeamThreadRange(team, nlev), [&](int k) {
         aero_model::define_act_frac(lphase, imode, sol_facti[k], sol_factic[k],
                                     sol_factb[k], f_act_conv[k]);
       });
@@ -1406,7 +1406,7 @@ void compute_q_tendencies(
   const int jaeronumb = 0, jaeromass = 1;
 
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int k) {
+      Kokkos::TeamThreadRange(team, nlev), [&](int k) {
         // mam_prevap_resusp_optcc values control the prevap_resusp
         // calculations in wetdepa_v2:
         //     0 = no resuspension
@@ -1487,7 +1487,9 @@ void update_q_tendencies(const ThreadTeam &team,
                          const int nlev) {
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nlev),
-      KOKKOS_LAMBDA(int k) { ptend_q(k, mm) += scavt[k]; });
+      [&](int k) {
+                  Kokkos::atomic_add(&ptend_q(k, mm), scavt[k]);
+  });
 }
 } // namespace wetdep
 
