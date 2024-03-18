@@ -67,8 +67,8 @@ Real h2so4_critical_mole_fraction(Real c_h2so4, Real temp, Real rel_hum) {
          1.50345e-6 * temp * cube(log(rel_hum));
 }
 
-/// Computes the binary nucleation rate [m-3 s-1] as parameterized by
-/// Vehkmaki et al (2002), eq 12.
+/// Computes the log of the binary nucleation rate [m-3 s-1] as parameterized by
+/// Vehkmaki et al (2002), eq 12. For use when the log will be taken anyway.
 /// @param [in] c_h2so4 The number concentration of H2SO4 gas [cm-3]
 /// @param [in] temp The atmospheric temperature [K]
 /// @param [in] rel_hum The relative humidity [-]
@@ -109,10 +109,9 @@ Real log_nucleation_rate(Real c_h2so4, Real temp, Real rel_hum, Real x_crit) {
   // Compute the nucleation rate using eq 12.
   auto N_a = c_h2so4;
   return a + b * log(rel_hum) + c * square(log(rel_hum)) +
-             d * cube(log(rel_hum)) + e * log(N_a) +
-             f * log(rel_hum) * log(N_a) +
-             g * square(log(rel_hum)) * (log(N_a)) + h * square(log(N_a)) +
-             i * log(rel_hum) * square(log(N_a)) + j * cube(log(N_a));
+         d * cube(log(rel_hum)) + e * log(N_a) + f * log(rel_hum) * log(N_a) +
+         g * square(log(rel_hum)) * (log(N_a)) + h * square(log(N_a)) +
+         i * log(rel_hum) * square(log(N_a)) + j * cube(log(N_a));
 }
 /// Computes the binary nucleation rate [m-3 s-1] as parameterized by
 /// Vehkmaki et al (2002), eq 12.
@@ -123,7 +122,7 @@ Real log_nucleation_rate(Real c_h2so4, Real temp, Real rel_hum, Real x_crit) {
 KOKKOS_INLINE_FUNCTION
 Real nucleation_rate(Real c_h2so4, Real temp, Real rel_hum, Real x_crit) {
   // Calculate of the coefficients in eq 12 of Vehkamaki et al (2002).
-  return (exp(nucleation_rate(c_h2so4, temp, rel_hum, x_crit)));
+  return (exp(log_nucleation_rate(c_h2so4, temp, rel_hum, x_crit)));
 }
 
 /// Computes the total number of molecules in a critical cluster as
