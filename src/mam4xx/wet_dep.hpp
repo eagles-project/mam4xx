@@ -1230,6 +1230,29 @@ void modal_aero_bcscavcoef_get(
   });
 }
 
+// Computes lookup table for aerosol impaction/interception scavenging rates
+KOKKOS_INLINE_FUNCTION
+void modal_aero_bcscavcoef_get(
+    const ThreadTeam &team, 
+    const ColumnView wet_geometric_mean_diameter_i[AeroConfig::num_modes()],
+    Kokkos::View<bool *> isprx,
+    const Real scavimptblvol[aero_model::nimptblgrow_total]
+                            [AeroConfig::num_modes()],
+    const Real scavimptblnum[aero_model::nimptblgrow_total]
+                            [AeroConfig::num_modes()],
+    Kokkos::View<Real *> scavcoefnum, Kokkos::View<Real *> scavcoefvol,
+    const int imode, const int nlev) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
+    const Real dgnum_amode_imode = modes(imode).nom_diameter;
+    ColumnView dgn_awet_imode = wet_geometric_mean_diameter_i[imode];
+    const Real dgn_awet_imode_k = dgn_awet_imode[k];
+    aero_model::modal_aero_bcscavcoef_get(
+        imode, isprx[k], dgn_awet_imode_k, dgnum_amode_imode, scavimptblvol,
+        scavimptblnum, scavcoefnum[k], scavcoefvol[k]);
+  });
+}
+
+
 // define sol_factb and sol_facti values, and f_act_conv
 KOKKOS_INLINE_FUNCTION
 void define_act_frac(const ThreadTeam &team, Kokkos::View<Real *> sol_facti,
