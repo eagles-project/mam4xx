@@ -45,7 +45,8 @@ surface_tension_water_air(double T = Constants::triple_pt_h2o) {
   constexpr double mu = 1.256;
   const auto tau = 1 - T / Tc;
   EKAT_KERNEL_ASSERT(haero::FloatingPoint<double>::in_bounds(
-      T, Constants::triple_pt_h2o - 25, Tc, std::numeric_limits<float>::epsilon()));
+      T, Constants::triple_pt_h2o - 25, Tc,
+      std::numeric_limits<float>::epsilon()));
   return B * pow(tau, mu) * (1 + b * tau);
 }
 
