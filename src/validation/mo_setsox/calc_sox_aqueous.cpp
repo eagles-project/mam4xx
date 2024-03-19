@@ -59,7 +59,7 @@ void calc_sox_aqueous(Ensemble *ensemble) {
     Real xso4_init = input.get_array("xso4_init")[0];
     Real xh2o2 = input.get_array("xh2o2")[0];
 
-    Real xdelso4hp;
+    Real xdelso4hp = 0;
 
     mam4::mo_setsox::calc_sox_aqueous(modal_aerosols, rah2o2, h2o2g, so2g, o3g,
                                       rao3, patm, dt, t_factor, xlwc, const0,

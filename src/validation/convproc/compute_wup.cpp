@@ -17,7 +17,7 @@ namespace {
 void get_input(const Input &input, const std::string &name, const int size,
                std::vector<Real> &host, ColumnView &dev) {
   host = input.get_array(name);
-  EKAT_ASSERT(host.size() == size);
+  EKAT_REQUIRE(host.size() == size);
   dev = mam4::validation::create_column_view(size);
   auto host_view = Kokkos::create_mirror_view(dev);
   for (int n = 0; n < size; ++n)
@@ -43,9 +43,9 @@ void compute_wup(Ensemble *ensemble) {
     // Fetch ensemble parameters
     // Convert to C++ index by subtracting one.
     const int kk = input.get("kk") - 1;
-    EKAT_ASSERT(kk == 53);
+    EKAT_REQUIRE(kk == 53);
     const Real iconvtype = input.get("iconvtype");
-    EKAT_ASSERT(iconvtype == 1);
+    EKAT_REQUIRE(iconvtype == 1);
 
     std::vector<Real> mu_i_host, cldfrac_i_host, rhoair_i_host, zmagl_host,
         wup_host, wup_2_host, wup_3_host;
@@ -186,7 +186,7 @@ void compute_wup(Ensemble *ensemble) {
                                   0.6919802548,
                                   0};
     for (int i = 0; i < nlev; ++i)
-      EKAT_ASSERT(std::abs(wup_2_host[i] - wup_2_chk[i]) < .000001);
+      EKAT_REQUIRE(std::abs(wup_2_host[i] - wup_2_chk[i]) < .000001);
 
     set_output(output, "wup", nlev, wup_host, wup_dev);
 
@@ -199,9 +199,9 @@ void compute_wup(Ensemble *ensemble) {
     }
     for (int i = 0; i < nlev; ++i) {
       if (53 == i)
-        EKAT_ASSERT(std::abs(wup_3_host[i] - 1.39358046842) < .000001);
+        EKAT_REQUIRE(std::abs(wup_3_host[i] - 1.39358046842) < .000001);
       else
-        EKAT_ASSERT(std::abs(wup_3_host[i] - wup_host[i]) < .000001);
+        EKAT_REQUIRE(std::abs(wup_3_host[i] - wup_host[i]) < .000001);
     }
   });
 }

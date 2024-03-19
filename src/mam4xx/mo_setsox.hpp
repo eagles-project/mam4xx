@@ -1260,7 +1260,7 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
   //       S(IV) + H2O2 = S(VI)
   //............................
 
-  Real xdelso4hp, xso4_init;
+  Real xdelso4hp = 0, xso4_init = 0;
   // FIXME: in MAM4, xdelso4hp and xso4_init are uninitialized in the case
   // xlwc < small, and then used in sox_cldaero_update()
   // currently handling this by making it zero in the `else` case that does not
