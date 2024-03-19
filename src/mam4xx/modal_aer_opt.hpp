@@ -26,7 +26,7 @@ constexpr int ntot_amode = mam4::AeroConfig::num_modes();
 // FIXME:  is top_lev equal to 1 in aerosol optics ?
 constexpr int top_lev = 0;
 //
-constexpr int pcnst = aero_model::pcnst;
+// constexpr int pcnst = mam4::pcnst;
 //  min, max aerosol surface mode radius treated [m]
 constexpr Real rmmin = 0.01e-6; // BAD CONSTANT
 constexpr Real rmmax = 25.e-6;  // BAD CONSTANT
@@ -911,7 +911,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
   const auto fa_work = View3D(work_ptr, pver, ntot_amode, nswbands);
   work_ptr += pver * ntot_amode * nswbands;
 
-  constexpr int pcnst = aero_model::pcnst;
+
 
   constexpr Real zero = 0;
 
@@ -1196,7 +1196,6 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
   // cldn(:,:)         layer cloud fraction [fraction]
   // qqcw(:)                Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
   // tauxar(pcols,pver,nlwbands)  layer absorption optical depth
-  constexpr int pcnst = aero_model::pcnst;
 
   constexpr Real zero = 0.0;
   // dry mass in each cell
