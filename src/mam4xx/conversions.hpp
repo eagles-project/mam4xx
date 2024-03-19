@@ -206,10 +206,10 @@ KOKKOS_INLINE_FUNCTION Real vapor_saturation_pressure_hardy(Real T) {
   // Fourth one is T.
   log_es += g[3] * T;
   // Fifth one is T squared.
-  log_es += g[4] * T * T;
+  log_es += g[4] * square(T);
   // Higher are powers of T
-  log_es += g[5] * T * T * T;
-  log_es += g[6] * T * T * T * T;
+  log_es += g[5] * cube(T);
+  log_es += g[6] * pow(T, 4);
   log_es += g[7] * log(T);
   return exp(log_es);
 }
