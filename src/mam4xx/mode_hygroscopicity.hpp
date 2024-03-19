@@ -47,8 +47,8 @@ void mode_hygroscopicity_i(const Diagnostics &diags, const Prognostics &progs,
       hyg += mass_mix_ratio * aero_species(s).hygroscopicity /
              aero_species(s).density;
     }
-    diags.hygroscopicity[mode_idx](k) = hyg / volume_mixing_ratio;
   }
+  diags.hygroscopicity[mode_idx](k) = hyg / volume_mixing_ratio;
 }
 
 ///  Compute the modal average hygroscopicity for all modes.

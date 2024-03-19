@@ -42,8 +42,7 @@ void aer_vol_num_hygro(Ensemble *ensemble) {
     const int num_modes = AeroConfig::num_modes();
     // Fetch ensemble parameters
     // Convert to C++ index by subtracting one.
-    const int pcnst_extd = input.get("pcnst_extd");
-    EKAT_ASSERT(pcnst_extd == ConvProc::pcnst_extd);
+    EKAT_ASSERT(input.get("pcnst_extd") == ConvProc::pcnst_extd);
     const Real rhoair = input.get("rhoair");
 
     std::vector<Real> conu_host, vaerosol_host, naerosol_host, hygro_host,

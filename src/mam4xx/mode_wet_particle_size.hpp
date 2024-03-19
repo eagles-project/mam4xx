@@ -58,7 +58,6 @@ void mode_avg_wet_particle_diam_water_uptake(const Diagnostics &diags,
   const Real to_microns = meters_to_microns;
   const Real to_meters = microns_to_meters;
   const Real rdry_min = dry_radius_min_microns;
-  const Real rdry_max = dry_radius_max_microns;
 
   // initialize result (default initializer is quiet nan)
   Real wet_diam = 0;
@@ -96,7 +95,7 @@ void mode_avg_wet_particle_diam_water_uptake(const Diagnostics &diags,
         0.5 * to_microns * diags.dry_geometric_mean_diameter_i[mode_idx](k);
 
     // check dry particle size is in bounds
-    EKAT_KERNEL_ASSERT((dry_radius_microns <= rdry_max));
+    EKAT_KERNEL_ASSERT((dry_radius_microns <= dry_radius_max_microns));
 
     // Set up Kohler solver
     // (requires double precision)

@@ -313,7 +313,7 @@ TEST_CASE("test_flux_precnum_vs_flux_prec_mpln(",
           const Real flux = 625774.9256400075;
 	  const Real ans = mam4::wetdep::flux_precnum_vs_flux_prec_mpln(flux_prec,jstrcnv);
 	  const Real err = haero::abs((flux-ans)/ans);
-          EKAT_KERNEL_ASSERT(err < 1.0e-6);
+          EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
   const Real flux_prec = 0.2804261386e+03;
@@ -322,7 +322,7 @@ TEST_CASE("test_flux_precnum_vs_flux_prec_mpln(",
   const Real ans =
       mam4::wetdep::flux_precnum_vs_flux_prec_mpln(flux_prec, jstrcnv);
   const Real err = haero::abs((flux - ans) / ans);
-  EKAT_KERNEL_ASSERT(err < 1.0e-6);
+  EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
   const Real flux_prec = 1.e-37;
@@ -331,7 +331,7 @@ TEST_CASE("test_flux_precnum_vs_flux_prec_mpln(",
   const Real ans =
       mam4::wetdep::flux_precnum_vs_flux_prec_mpln(flux_prec, jstrcnv);
   const Real err = haero::abs(flux - ans);
-  EKAT_KERNEL_ASSERT(err < 1.0e-6);
+  EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
   const Real flux_prec = 1.e-37;
@@ -340,7 +340,7 @@ TEST_CASE("test_flux_precnum_vs_flux_prec_mpln(",
   const Real ans =
       mam4::wetdep::flux_precnum_vs_flux_prec_mpln(flux_prec, jstrcnv);
   const Real err = haero::abs(flux - ans);
-  EKAT_KERNEL_ASSERT(err < 1.0e-6);
+  EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 });
 }
@@ -357,7 +357,7 @@ TEST_CASE("faer_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
           const Real flux = 0.007075389488885791; 
 	  const Real ans = mam4::wetdep::faer_resusp_vs_fprec_evap_mpln(fprec_evap,jstrcnv);
 	  const Real err = haero::abs((flux-ans)/ans);
-          EKAT_KERNEL_ASSERT(err < 1.0e-6);
+          EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
   const Real fprec_evap = 0.2;
@@ -366,7 +366,7 @@ TEST_CASE("faer_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
   const Real ans =
       mam4::wetdep::faer_resusp_vs_fprec_evap_mpln(fprec_evap, jstrcnv);
   const Real err = haero::abs((flux - ans) / ans);
-  EKAT_KERNEL_ASSERT(err < 1.0e-6);
+  EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
   const Real fprec_evap = 1.0e-2;
@@ -375,7 +375,7 @@ TEST_CASE("faer_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
   const Real ans =
       mam4::wetdep::faer_resusp_vs_fprec_evap_mpln(fprec_evap, jstrcnv);
   const Real err = haero::abs((flux - ans) / ans);
-  EKAT_KERNEL_ASSERT(err < 1.0e-6);
+  EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
   const Real fprec_evap = 1.0e-2;
@@ -384,7 +384,7 @@ TEST_CASE("faer_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
   const Real ans =
       mam4::wetdep::faer_resusp_vs_fprec_evap_mpln(fprec_evap, jstrcnv);
   const Real err = haero::abs((flux - ans) / ans);
-  EKAT_KERNEL_ASSERT(err < 1.0e-6);
+  EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 });
 }
@@ -401,7 +401,7 @@ TEST_CASE("fprecn_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
           const Real flux = 0.2768051337282046;   
 	  const Real ans = mam4::wetdep::fprecn_resusp_vs_fprec_evap_mpln(fprec_evap,jstrcnv);
 	  const Real err = haero::abs((flux-ans)/ans);
-          EKAT_KERNEL_ASSERT(err < 1.0e-6);
+          EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
   const Real fprec_evap = 0.2;
@@ -410,7 +410,7 @@ TEST_CASE("fprecn_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
   const Real ans =
       mam4::wetdep::fprecn_resusp_vs_fprec_evap_mpln(fprec_evap, jstrcnv);
   const Real err = haero::abs((flux - ans) / ans);
-  EKAT_KERNEL_ASSERT(err < 1.0e-6);
+  EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
   const Real fprec_evap = 1.0e-2;
@@ -419,7 +419,7 @@ TEST_CASE("fprecn_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
   const Real ans =
       mam4::wetdep::fprecn_resusp_vs_fprec_evap_mpln(fprec_evap, jstrcnv);
   const Real err = haero::abs((flux - ans) / ans);
-  EKAT_KERNEL_ASSERT(err < 1.0e-6);
+  EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
   const Real fprec_evap = 1.0e-2;
@@ -428,7 +428,7 @@ TEST_CASE("fprecn_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
   const Real ans =
       mam4::wetdep::fprecn_resusp_vs_fprec_evap_mpln(fprec_evap, jstrcnv);
   const Real err = haero::abs((flux - ans) / ans);
-  EKAT_KERNEL_ASSERT(err < 1.0e-6);
+  EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 });
 }

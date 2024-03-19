@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
   }
-  validation::initialize(argc, argv);
+  validation::initialize(argc, argv, validation::default_fpes);
   std::string input_file = argv[1];
   std::string output_file = validation::output_name(input_file);
   std::cout << argv[0] << ": reading " << input_file << std::endl;

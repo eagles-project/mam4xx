@@ -81,7 +81,6 @@ void update_tendency_final(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-    const int nlev = 72;
     const int pcnst = aero_model::pcnst;
     // Fetch ensemble parameters
 
@@ -90,7 +89,7 @@ void update_tendency_final(Ensemble *ensemble) {
     // these variables depend on mode No and k
     const int ktop = input.get("ktop");
     const int kbot_prevap = input.get("kbot_prevap");
-    EKAT_ASSERT(nlev == kbot_prevap);
+    EKAT_ASSERT(72 == kbot_prevap);
     // number of sub timesteps
     const int ntsub = input.get("ntsub");
     // index of sub timesteps from the outer loop

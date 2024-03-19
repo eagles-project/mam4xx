@@ -10,6 +10,11 @@ namespace validation {
 
 void initialize(int argc, char **argv) { Kokkos::initialize(argc, argv); }
 
+void initialize(int argc, char **argv, int fpes_) {
+  Kokkos::initialize(argc, argv);
+  ekat::enable_fpes(fpes_);
+}
+
 void finalize() {
   testing::finalize();
   Kokkos::finalize();

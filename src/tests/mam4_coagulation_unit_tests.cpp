@@ -3,6 +3,7 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "atmosphere_utils.hpp"
 #include "testing.hpp"
 #include <mam4xx/mam4.hpp>
 
@@ -76,20 +77,20 @@ TEST_CASE("bm3ij_data", "mam4_coagulation_process") {
 
 TEST_CASE("intra_coag_rate_for_0th_moment", "mam4_coagulation_process") {
 
-  Real a_const = 0.0;
-  Real knc = 0.0;
+  Real a_const = 1.0;
+  Real knc = 1.0;
 
-  Real kngxx = 0.0;
-  Real kfmxx = 0.0;
-  Real sqdgxx = 0.0;
+  Real kngxx = 1.0;
+  Real kfmxx = 1.0;
+  Real sqdgxx = 1.0;
 
-  Real esxx04 = 0.0;
-  Real esxx08 = 0.0;
-  Real esxx20 = 0.0;
+  Real esxx04 = 1.0;
+  Real esxx08 = 1.0;
+  Real esxx20 = 1.0;
 
-  Real esxx01 = 0.0;
-  Real esxx05 = 0.0;
-  Real esxx25 = 0.0;
+  Real esxx01 = 1.0;
+  Real esxx05 = 1.0;
+  Real esxx25 = 1.0;
 
   int n2x = 1;
   Real qnxx = 0.0;
@@ -106,7 +107,16 @@ TEST_CASE("test_compute_tendencies", "mam4_coagulation_process") {
                                 ekat::logger::LogLevel::debug, comm);
   int nlev = 72;
   Real pblh = 1000;
-  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  // these values correspond to a humid atmosphere with relative humidity
+  // values approximately between 32% and 98%
+  const Real Tv0 = 300;     // reference virtual temperature [K]
+  const Real Gammav = 0.01; // virtual temperature lapse rate [K/m]
+  const Real qv0 =
+      0.015; // specific humidity at surface [kg h2o / kg moist air]
+  const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
+  Atmosphere atm =
+      mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
+
   Surface sfc = mam4::testing::create_surface();
   mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
   mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);

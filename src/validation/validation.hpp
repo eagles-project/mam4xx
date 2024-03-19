@@ -5,6 +5,7 @@
 
 #ifndef HAERO_VALIDATION_HPP
 #define HAERO_VALIDATION_HPP
+#include <cfenv>
 #include <haero/testing.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/mo_photo.hpp>
@@ -34,6 +35,10 @@ using namespace mam4::testing;
 
 /// Call this function to initialize a validation driver.
 void initialize(int argc, char **argv);
+
+/// initialize with FPEs enabled, provided via argument
+constexpr int default_fpes = FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW;
+void initialize(int argc, char **argv, const int fpes_);
 
 /// Call this function to finalize a validation driver.
 void finalize();
