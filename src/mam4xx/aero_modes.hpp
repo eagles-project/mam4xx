@@ -128,12 +128,12 @@ KOKKOS_INLINE_FUNCTION const mam4::Mode &modes(const int i) {
 
 /// Identifiers for aerosol species that inhabit MAM4 modes.
 enum class AeroId {
-  SOA = 0,  // secondary organic aerosol
-  SO4 = 1,  // sulphate
-  POM = 2,  // primary organic matter
+  SO4 = 0,  // sulphate
+  POM = 1,  // primary organic matter
+  SOA = 2,  // secondary organic aerosol
   BC = 3,   // black carbon
-  NaCl = 4, // sodium chloride
-  DST = 5,  // dust
+  DST = 4,  // dust
+  NaCl = 5, // sodium chloride
   MOM = 6,  // marine organic matter,
   None = 7  // invalid aerosol species
 };
@@ -215,12 +215,12 @@ KOKKOS_INLINE_FUNCTION AeroId mode_aero_species(const int modeNo,
   // A list of species within each mode for MAM4.
   static constexpr AeroId mode_aero_species[4][7] = {
       {// accumulation mode
-       AeroId::SOA, AeroId::SO4, AeroId::POM, AeroId::BC, AeroId::NaCl,
-       AeroId::DST, AeroId::MOM},
+       AeroId::SO4, AeroId::POM, AeroId::SOA, AeroId::BC, AeroId::DST,
+       AeroId::NaCl, AeroId::MOM},
       {
           // aitken mode
-          AeroId::SOA,
           AeroId::SO4,
+          AeroId::SOA,
           AeroId::NaCl,
           AeroId::MOM,
           AeroId::None,
@@ -228,8 +228,8 @@ KOKKOS_INLINE_FUNCTION AeroId mode_aero_species(const int modeNo,
           AeroId::None,
       },
       {// coarse mode
-       AeroId::SOA, AeroId::SO4, AeroId::POM, AeroId::BC, AeroId::NaCl,
-       AeroId::DST, AeroId::MOM},
+       AeroId::DST, AeroId::NaCl, AeroId::SO4, AeroId::BC, AeroId::POM,
+       AeroId::SOA, AeroId::MOM},
       {// primary carbon mode
        AeroId::POM, AeroId::BC, AeroId::MOM, AeroId::None, AeroId::None,
        AeroId::None, AeroId::None}};
