@@ -1491,7 +1491,16 @@ void update_q_tendencies(const ThreadTeam &team,
 KOKKOS_INLINE_FUNCTION
 int get_aero_model_wetdep_work_len(){
   // wet_geometric_mean_diameter_i + state_q + qqcw
-return mam4::nlev*AeroConfig::num_modes() + 2*mam4::nlev * pcnst ;
+  int work_len = mam4::nlev*AeroConfig::num_modes()*mam4::nlev +  //
+                 2*mam4::nlev*pcnst + // state_q + qqcw
+                 25*mam4::nlev+// cldcu, cldt, evapc, cmfdqr, 
+                    // prain, totcond, conicw, isprx, f_act_conv_coarse,
+                   // f_act_conv_coarse_dust, f_act_conv_coarse_nacl
+                  // rain, ptend_q, cldv, cldvcu, cldvst, scavcoefnum, scavcoefvol
+                  // sol_facti, sol_factic, sol_factb, f_act_conv, scavt, rcscavt, bcscavt
+                  3 * pcnst +  //  qsrflx_mzaer2cnvpr, rtscavt_sv
+                  mam4::nlev * pcnst ; // ptend_q
+return  work_len;
 }
 // =============================================================================
 
@@ -1538,12 +1547,13 @@ void aero_model_wetdep(const ThreadTeam &team,
 
   // CHECK ; is this an input? 
   // cldst = diags.stratiform_cloud_fraction;
-  auto work_ptr = (Real *)work.data();
+  
   constexpr int ntot_amode = AeroConfig::num_modes();
   constexpr int nlev = mam4::nlev;
   constexpr int maxd_aspectype = mam4::aero_model::maxd_aspectype;
   constexpr int zero=0.0;
   
+  auto work_ptr = (Real *)work.data();
   ColumnView wet_geometric_mean_diameter_i[ntot_amode];
   for (int m = 0; m < ntot_amode; ++m)
   {
@@ -1578,8 +1588,6 @@ void aero_model_wetdep(const ThreadTeam &team,
 
   View1D conicw(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
-
-
   // inputs 
   Bool1D isprx((bool*)work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
@@ -1636,9 +1644,9 @@ void aero_model_wetdep(const ThreadTeam &team,
   View1D rcscavt(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
 
-  View1D rtscavt_sv(work_ptr, aero_model::pcnst);
-  work_ptr += aero_model::pcnst;
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, aero_model::pcnst), [&](int i) {
+  View1D rtscavt_sv(work_ptr, pcnst);
+  work_ptr += pcnst;
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, pcnst), [&](int i) {
    rtscavt_sv(i)=zero;   
   });
 
@@ -1654,6 +1662,12 @@ void aero_model_wetdep(const ThreadTeam &team,
   View2D qsrflx_mzaer2cnvpr(work_ptr, aero_model::pcnst, 2);
   work_ptr += aero_model::pcnst*2;
 
+  /// error check
+  const int workspace_used(work_ptr - work.data()),
+  workspace_extent(work.extent(0));
+  if (workspace_used > workspace_extent) {
+    Kokkos::abort("Error aero_model_wetdep : workspace used is larger than it is provided\n");
+  }
 
   // inputs:
   // cldn; can we get it from atm? 
