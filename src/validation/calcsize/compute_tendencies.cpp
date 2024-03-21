@@ -107,9 +107,8 @@ void compute_tendencies(Ensemble *ensemble) {
       for (int isp = 0; isp < n_spec; ++isp) {
 
         // save outputs using the same indexing from e3sm.
-        const int isp_mam4xx =
-            count_species + isp;
-            
+        const int isp_mam4xx = count_species + isp;
+
         auto h_tend_aero_i =
             Kokkos::create_mirror_view(tends.q_aero_i[imode][isp]);
         Kokkos::deep_copy(h_tend_aero_i, tends.q_aero_i[imode][isp]);
