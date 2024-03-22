@@ -911,8 +911,6 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
   const auto fa_work = View3D(work_ptr, pver, ntot_amode, nswbands);
   work_ptr += pver * ntot_amode * nswbands;
 
-
-
   constexpr Real zero = 0;
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nswbands), [&](int i) {

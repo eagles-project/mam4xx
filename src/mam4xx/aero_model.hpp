@@ -6,8 +6,8 @@
 #ifndef MAM4XX_AERO_MODEL_HPP
 #define MAM4XX_AERO_MODEL_HPP
 
-#include <ekat/util/ekat_math_utils.hpp>
 #include <ekat/kokkos/ekat_subview_utils.hpp>
+#include <ekat/util/ekat_math_utils.hpp>
 #include <haero/atmosphere.hpp>
 #include <haero/math.hpp>
 
@@ -15,7 +15,6 @@
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
-
 
 namespace mam4 {
 
@@ -719,7 +718,6 @@ int lptr_nacl_a_amode(const int imode) {
   return lptr_nacl_a_amode[imode];
 }
 
-
 KOKKOS_INLINE_FUNCTION
 int mmtoo_prevap_resusp(const int i) {
   const int mmtoo_prevap_resusp[pcnst] = {
@@ -1002,9 +1000,6 @@ void apportion_sfc_flux_deep(const Real rprddpsum, const Real rprdshsum,
 
   sflxecdp = sflxec * tmpb;
 }
-
-
-
 
 } // end namespace aero_model
 

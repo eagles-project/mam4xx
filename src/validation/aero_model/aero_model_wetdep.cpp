@@ -6,89 +6,68 @@
 #include <mam4xx/mam4.hpp>
 
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/mam4.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
-#include <mam4xx/mam4.hpp>
 using namespace skywalker;
 using namespace mam4;
 using namespace haero;
 using namespace haero::testing;
 
-
 void aero_model_wetdep(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
+    using View1DHost = typename HostType::view_1d<Real>;
+    mam4::Prognostics progs = validation::create_prognostics(nlev);
+    int nlev = mam4::nlev;
+    Real pblh = 1000;
+    Atmosphere atm = validation::create_atmosphere(nlev, pblh);
+    // FIXME get this yaml
+    const Real dt = 0;
 
-using View1DHost = typename HostType::view_1d<Real>;
-mam4::Prognostics progs = validation::create_prognostics(nlev);
-int nlev = mam4::nlev;
-Real pblh = 1000;
-Atmosphere atm = validation::create_atmosphere(nlev, pblh);
-// FIXME get this yaml
-const Real dt=0;
+    // inputs
+    ColumnView cldn_prev_step = create_column_view(nlev);
+    ColumnView rprdsh = create_column_view(nlev);
+    ColumnView rprddp = create_column_view(nlev);
+    ColumnView evapcdp = create_column_view(nlev);
+    ColumnView evapcsh = create_column_view(nlev);
+    ColumnView dp_frac = create_column_view(nlev);
+    ColumnView sh_frac = create_column_view(nlev);
+    ColumnView dp_ccf = create_column_view(nlev);
+    ColumnView sh_ccf = create_column_view(nlev);
+    ColumnView icwmrdp = create_column_view(nlev);
+    ColumnView icwmrsh = create_column_view(nlev);
+    ColumnView evapr = create_column_view(nlev);
+    ColumnView cldst = create_column_view(nlev);
 
-// inputs
-ColumnView cldn_prev_step = create_column_view(nlev);
-ColumnView rprdsh = create_column_view(nlev);
-ColumnView rprddp = create_column_view(nlev);
-ColumnView evapcdp = create_column_view(nlev);
-ColumnView evapcsh = create_column_view(nlev);
-ColumnView dp_frac = create_column_view(nlev);
-ColumnView sh_frac = create_column_view(nlev);
-ColumnView dp_ccf = create_column_view(nlev);
-ColumnView sh_ccf = create_column_view(nlev);
-ColumnView icwmrdp = create_column_view(nlev);
-ColumnView icwmrsh = create_column_view(nlev);
-ColumnView evapr = create_column_view(nlev);
-ColumnView cldst = create_column_view(nlev);
+    // outputs
+    ColumnView dlf = create_column_view(nlev);
+    ColumnView aerdepwetis = create_column_view(nlev);
+    ColumnView aerdepwetcw = create_column_view(nlev);
 
-// outputs
-ColumnView dlf = create_column_view(nlev);
-ColumnView aerdepwetis = create_column_view(nlev);
-ColumnView aerdepwetcw = create_column_view(nlev);
+    const int work_len = wetdep::get_aero_model_wetdep_work_len();
+    wetdep::View1D work("work", work_len);
 
-const int work_len = wetdep::get_aero_model_wetdep_work_len();
-wetdep::View1D work("work", work_len);
+    Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
+        qqcw_sav("qqcw_sav", nlev);
 
-Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
-                       qqcw_sav("qqcw_sav", nlev);
-
-auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          auto progs_in = progs;
+          wetdep::aero_model_wetdep(team, atm, progs_in, dt,
+                                    // inputs
+                                    cldn_prev_step, rprdsh, rprddp, evapcdp,
+                                    evapcsh, dp_frac, sh_frac, dp_ccf, sh_ccf,
+                                    icwmrdp, icwmrsh, evapr, cldst,
+                                    // output
+                                    dlf, aerdepwetis, aerdepwetcw,
+                                    // FIXME
+                                    qqcw_sav, work);
+        });
 
-    auto   progs_in = progs;
-    wetdep::aero_model_wetdep(team,
-                      atm,
-                      progs_in,
-                      dt,
-                       // inputs
-                      cldn_prev_step,
-                      rprdsh,
-                      rprddp,
-                      evapcdp,
-                      evapcsh,
-                      dp_frac,
-                      sh_frac,
-                      dp_ccf,
-                      sh_ccf,
-                      icwmrdp,
-                      icwmrsh,
-                      evapr,
-                      cldst,
-                       // output
-                      dlf,
-                      aerdepwetis,
-                      aerdepwetcw,
-                       // FIXME
-                      qqcw_sav,
-                      work);
-
- });
-
-  std::vector<Real > dlf_output (nlev, 0);
-  auto dlf_host = View1DHost((Real *)dlf_output.data(), nlev);
-  Kokkos::deep_copy(dlf, dlf_host);
-  output.set("dlf", dlf_output);
-
+    std::vector<Real> dlf_output(nlev, 0);
+    auto dlf_host = View1DHost((Real *)dlf_output.data(), nlev);
+    Kokkos::deep_copy(dlf, dlf_host);
+    output.set("dlf", dlf_output);
   });
 }
