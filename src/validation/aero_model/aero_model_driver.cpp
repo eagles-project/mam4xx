@@ -28,6 +28,7 @@ using namespace mam4;
 void modal_aero_bcscavcoef_init(Ensemble *ensemble);
 void calc_1_impact_rate(Ensemble *ensemble);
 void modal_aero_bcscavcoef_get(Ensemble *ensemble);
+void aero_model_wetdep(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
