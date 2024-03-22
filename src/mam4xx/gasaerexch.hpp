@@ -480,9 +480,6 @@ void gas_aer_uptkrates_1box1gas(
     // --------------------------------------------------------------------
     uptkaer[n] = l_condense_to_mode[n] ? uptkrate : 0.0; // zero means no uptake
   }
-  for (int n = 0; n < GasAerExch::num_mode; ++n)
-    std::cout << __FILE__ << ":" << __LINE__ << "  uptkaer[" << n
-              << "]:" << uptkaer[n] << std::endl;
 }
 
 KOKKOS_INLINE_FUNCTION
