@@ -58,6 +58,12 @@ int main(int argc, char **argv) {
       calc_1_impact_rate(ensemble);
     } else if (func_name == "modal_aero_bcscavcoef_get") {
       modal_aero_bcscavcoef_get(ensemble);
+    } else if (func_name == "aero_model_wetdep") {
+      aero_model_wetdep(ensemble);
+    } else {
+      std::cerr << "Error: Function name '" << func_name
+                << "' does not have an implemented test!" << std::endl;
+      exit(1);
     }
 
   } catch (std::exception &e) {
@@ -70,5 +76,5 @@ int main(int argc, char **argv) {
 
   // Clean up.
   delete ensemble;
-  Kokkos::finalize();
+  validation::finalize();
 }
