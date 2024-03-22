@@ -11,7 +11,8 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 add_executable(aero_model_driver  aero_model_driver.cpp
                modal_aero_bcscavcoef_init.cpp
               calc_1_impact_rate.cpp
-              modal_aero_bcscavcoef_get.cpp)
+              modal_aero_bcscavcoef_get.cpp
+              aero_model_wetdep.cpp)
 target_link_libraries(aero_model_driver skywalker;validation;${HAERO_LIBRARIES})
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
