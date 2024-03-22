@@ -39,16 +39,15 @@ void aero_model_wetdep(Ensemble *ensemble) {
     auto cloud_fraction = create_column_view(nlev);
     auto updraft_vel_ice_nucleation = create_column_view(nlev);
     // FIXME: update these values.
-    Kokkos::deep_copy(temperature,300);
-    Kokkos::deep_copy(pressure,1e5);
-    Kokkos::deep_copy(hydrostatic_dp,1e5);
+    Kokkos::deep_copy(temperature, 300);
+    Kokkos::deep_copy(pressure, 1e5);
+    Kokkos::deep_copy(hydrostatic_dp, 1e5);
 
     auto atm = Atmosphere(nlev, temperature, pressure, vapor_mixing_ratio,
-                    liquid_mixing_ratio, cloud_liquid_number_mixing_ratio,
-                    ice_mixing_ratio, cloud_ice_number_mixing_ratio, height,
-                    hydrostatic_dp, interface_pressure, cloud_fraction,
-                    updraft_vel_ice_nucleation, pblh);
-
+                          liquid_mixing_ratio, cloud_liquid_number_mixing_ratio,
+                          ice_mixing_ratio, cloud_ice_number_mixing_ratio,
+                          height, hydrostatic_dp, interface_pressure,
+                          cloud_fraction, updraft_vel_ice_nucleation, pblh);
 
     // inputs
     ColumnView cldn_prev_step = create_column_view(nlev);

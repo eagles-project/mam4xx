@@ -1511,8 +1511,7 @@ using View3D = DeviceType::view_2d<Real>;
 KOKKOS_INLINE_FUNCTION
 void aero_model_wetdep(
     const ThreadTeam &team, const Atmosphere &atm, Prognostics &progs,
-    Tendencies &tends,
-    const Real dt,
+    Tendencies &tends, const Real dt,
     // inputs
     const ColumnView &cldn_prev_step, const ColumnView &rprdsh,
     const ColumnView &rprddp, const ColumnView &evapcdp,
