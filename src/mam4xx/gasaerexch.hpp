@@ -63,10 +63,12 @@ public:
   // 2. SOAG  -> SOA
   KOKKOS_INLINE_FUNCTION
   static constexpr AeroId gas_to_aer(const GasId gas) {
-    const AeroId gas_to_aer[num_gas] = {AeroId::None, AeroId::None,
-                                        AeroId::SO4,  AeroId::None,
-                                        AeroId::None, AeroId::SOA};
-    return gas_to_aer[static_cast<int>(gas)];
+    AeroId air = AeroId::None;
+    if (GasId::H2SO4 == gas)
+      air = AeroId::SO4;
+    else if (GasId::SOAG == gas)
+      air = AeroId::SOA;
+    return air;
   }
   //------------------------------------------------------------------
   // MAM4xx currently assumes that the uptake rate of other gases
@@ -478,6 +480,9 @@ void gas_aer_uptkrates_1box1gas(
     // --------------------------------------------------------------------
     uptkaer[n] = l_condense_to_mode[n] ? uptkrate : 0.0; // zero means no uptake
   }
+  for (int n = 0; n < GasAerExch::num_mode; ++n)
+    std::cout << __FILE__ << ":" << __LINE__ << "  uptkaer[" << n
+              << "]:" << uptkaer[n] << std::endl;
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -648,8 +653,7 @@ void mam_gasaerexch_1subarea(
   const int npoa = 1;
   Real qaer_poa[npoa][num_mode] = {};
   for (ModeIndex mode : GasAerExch::Modes()) {
-    const int idxs =
-        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::POM);
+    const int idxs = static_cast<int>(AeroId::POM);
     const int n = static_cast<int>(mode);
     qaer_poa[0][n] = haero::max(qaer_cur[idxs][n], 0);
   }
