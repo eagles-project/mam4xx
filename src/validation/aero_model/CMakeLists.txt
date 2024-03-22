@@ -30,6 +30,7 @@ set(TEST_LIST
     calc_1_impact_rate_ts_0
     modal_aero_bcscavcoef_get_ts_355
     modal_aero_bcscavcoef_init_ts_0
+    aero_model_wetdep_fake
     )
 
 set(DEFAULT_TOL 1e-11)
