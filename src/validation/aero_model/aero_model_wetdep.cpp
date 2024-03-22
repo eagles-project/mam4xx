@@ -18,11 +18,37 @@ void aero_model_wetdep(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
     mam4::Prognostics progs = validation::create_prognostics(nlev);
+    mam4::Tendencies tends = validation::create_tendencies(nlev);
     int nlev = mam4::nlev;
     Real pblh = 1000;
-    Atmosphere atm = validation::create_atmosphere(nlev, pblh);
-    // FIXME get this yaml
-    const Real dt = 0;
+    // Atmosphere atm = validation::create_atmosphere(nlev, pblh);
+    // FIXME get dt yaml
+    const Real dt = 1;
+    //
+
+    auto temperature = create_column_view(nlev);
+    auto pressure = create_column_view(nlev);
+    auto vapor_mixing_ratio = create_column_view(nlev);
+    auto liquid_mixing_ratio = create_column_view(nlev);
+    auto cloud_liquid_number_mixing_ratio = create_column_view(nlev);
+    auto ice_mixing_ratio = create_column_view(nlev);
+    auto cloud_ice_number_mixing_ratio = create_column_view(nlev);
+    auto height = create_column_view(nlev);
+    auto hydrostatic_dp = create_column_view(nlev);
+    auto interface_pressure = create_column_view(nlev + 1);
+    auto cloud_fraction = create_column_view(nlev);
+    auto updraft_vel_ice_nucleation = create_column_view(nlev);
+    // FIXME: update these values.
+    Kokkos::deep_copy(temperature,300);
+    Kokkos::deep_copy(pressure,1e5);
+    Kokkos::deep_copy(hydrostatic_dp,1e5);
+
+    auto atm = Atmosphere(nlev, temperature, pressure, vapor_mixing_ratio,
+                    liquid_mixing_ratio, cloud_liquid_number_mixing_ratio,
+                    ice_mixing_ratio, cloud_ice_number_mixing_ratio, height,
+                    hydrostatic_dp, interface_pressure, cloud_fraction,
+                    updraft_vel_ice_nucleation, pblh);
+
 
     // inputs
     ColumnView cldn_prev_step = create_column_view(nlev);
@@ -54,7 +80,8 @@ void aero_model_wetdep(Ensemble *ensemble) {
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           auto progs_in = progs;
-          wetdep::aero_model_wetdep(team, atm, progs_in, dt,
+          auto tends_in = tends;
+          wetdep::aero_model_wetdep(team, atm, progs_in, tends_in, dt,
                                     // inputs
                                     cldn_prev_step, rprdsh, rprddp, evapcdp,
                                     evapcsh, dp_frac, sh_frac, dp_ccf, sh_ccf,

@@ -1511,6 +1511,7 @@ using View3D = DeviceType::view_2d<Real>;
 KOKKOS_INLINE_FUNCTION
 void aero_model_wetdep(
     const ThreadTeam &team, const Atmosphere &atm, Prognostics &progs,
+    Tendencies &tends,
     const Real dt,
     // inputs
     const ColumnView &cldn_prev_step, const ColumnView &rprdsh,
@@ -1593,6 +1594,7 @@ void aero_model_wetdep(
   work_ptr += mam4::nlev;
 
   // FIXME: I need to get this variables from calcsize
+  // need to connect ptend_q to tends
   View2D ptend_q(work_ptr, mam4::nlev, pcnst);
   work_ptr += mam4::nlev * pcnst;
 
