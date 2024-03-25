@@ -56,17 +56,15 @@ void compute_tendencies(Ensemble *ensemble) {
       const auto n_spec = num_species_mode(imode);
       for (int isp = 0; isp < n_spec; ++isp) {
         // correcting index for inputs.
-        const int isp_mam4xx =
-            validation::e3sm_to_mam4xx_aerosol_idx[imode][isp];
         auto h_prog_aero_i =
-            Kokkos::create_mirror_view(progs.q_aero_i[imode][isp_mam4xx]);
+            Kokkos::create_mirror_view(progs.q_aero_i[imode][isp]);
         h_prog_aero_i(0) = q_i[count];
-        Kokkos::deep_copy(progs.q_aero_i[imode][isp_mam4xx], h_prog_aero_i);
+        Kokkos::deep_copy(progs.q_aero_i[imode][isp], h_prog_aero_i);
 
         auto h_prog_aero_c =
-            Kokkos::create_mirror_view(progs.q_aero_c[imode][isp_mam4xx]);
+            Kokkos::create_mirror_view(progs.q_aero_c[imode][isp]);
         h_prog_aero_c(0) = q_c[count];
-        Kokkos::deep_copy(progs.q_aero_c[imode][isp_mam4xx], h_prog_aero_c);
+        Kokkos::deep_copy(progs.q_aero_c[imode][isp], h_prog_aero_c);
 
         count++;
       } // end species
@@ -109,8 +107,7 @@ void compute_tendencies(Ensemble *ensemble) {
       for (int isp = 0; isp < n_spec; ++isp) {
 
         // save outputs using the same indexing from e3sm.
-        const int isp_mam4xx =
-            count_species + validation::mam4xx_to_e3sm_aerosol_idx[imode][isp];
+        const int isp_mam4xx = count_species + isp;
 
         auto h_tend_aero_i =
             Kokkos::create_mirror_view(tends.q_aero_i[imode][isp]);
