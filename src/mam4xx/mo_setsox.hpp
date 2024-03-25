@@ -75,7 +75,7 @@ struct Config {
   int itermax = 20;
   // Real small_value_20 = 1.0e-20;
   // Real small_value_30 = 1.0e-30;
-  int numptrcw_amode[AeroConfig::num_modes()] = {23, 28, 36, 40};
+  int numptrcw_amode[AeroConfig::num_modes()] = {22, 27, 35, 39};
 
   Config() = default;
   Config(const Config &) = default;
