@@ -174,11 +174,19 @@ void transfer_work_arrays_to_prognostics(const Real q[gas_pcnst()],
 
 #undef DECLARE_PROG_TRANSFER_CONSTANTS
 
+// Get specie index of the HAERO's prognostics array given a specie index
+KOKKOS_INLINE_FUNCTION
+int get_haero_prognostics_index(const int mode, const int species_index) {
+  const mam4::AeroId aero_id = mam4::mode_aero_species(mode, species_index);
+  const int ind =
+      (mam4::AeroId::None != aero_id) ? static_cast<int>(aero_id) : -1;
+  return ind;
+};
+
 // Given an AerosolState with views for dry aerosol quantities, creates a
 // interstitial aerosols 1D view (state_q) for the column with the given index.
 // This object can be provided to mam4xx for the column.
 
-// MUST FIXME: address James comments about making the code better.
 KOKKOS_INLINE_FUNCTION
 void extract_stateq_from_prognostics(const mam4::Prognostics &progs,
                                      const haero::Atmosphere &atm, Real *q,
@@ -209,7 +217,9 @@ void extract_stateq_from_prognostics(const mam4::Prognostics &progs,
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
     // First add the aerosol species mmr
     for (int a = 0; a < mam4::num_species_mode(m); ++a) {
-      q[s_idx] = progs.q_aero_i[m][a](klev);
+      const int h_ind = get_haero_prognostics_index(
+          m, a); // Index of HAERO's prognostics array
+      q[s_idx] = progs.q_aero_i[m][hint](klev);
       s_idx++; // update index even if we lack some aerosol mmrs
     }
     q[s_idx] = progs.n_mode_i[m](klev);
@@ -269,7 +279,9 @@ void extract_qqcw_from_prognostics(const mam4::Prognostics &progs, Real *qqcw,
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
     // First add the aerosol species mmr
     for (int a = 0; a < mam4::num_species_mode(m); ++a) {
-      if (progs.q_aero_c[m][a].data()) {
+      const int h_ind = get_haero_prognostics_index(
+          m, a); // Index of HAERO's prognostics array
+      if (progs.q_aero_c[m][h_ind].data()) {
         qqcw[s_idx] = progs.q_aero_c[m][a](klev);
         s_idx++; // update index even if we lack some aerosol mmrs
       }
