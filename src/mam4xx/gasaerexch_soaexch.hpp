@@ -129,7 +129,7 @@ Real soa_exch_substepsize(
   // Then, for each species, we calculate the sum of its absolute value over all
   // modes, and saved the result in the array tot_frac_single_soa_species.
   //----------------------------------------------------------------------------------------------------------
-  Real tot_frac_single_soa_species[AeroConfig::num_gas_ids()];
+  Real tot_frac_single_soa_species[AeroConfig::num_gas_ids()] = {0};
   for (int i = 0; i < ntot_soaspec; ++i)
     tot_frac_single_soa_species[i] = 0.0;
 
