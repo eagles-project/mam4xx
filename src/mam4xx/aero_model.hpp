@@ -6,8 +6,8 @@
 #ifndef MAM4XX_AERO_MODEL_HPP
 #define MAM4XX_AERO_MODEL_HPP
 
+#include <ekat/kokkos/ekat_subview_utils.hpp>
 #include <ekat/util/ekat_math_utils.hpp>
-
 #include <haero/atmosphere.hpp>
 #include <haero/math.hpp>
 
@@ -26,6 +26,8 @@ constexpr int nimptblgrow_total = -nimptblgrow_mind + nimptblgrow_maxd + 1;
 const int nrainsvmax = 50; // maximum bin number for rain
 const int naerosvmax = 51; //  maximum bin number for aerosol
 const int maxd_aspectype = 14;
+
+constexpr int pcnst = mam4::pcnst;
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(
@@ -716,7 +718,6 @@ int lptr_nacl_a_amode(const int imode) {
   return lptr_nacl_a_amode[imode];
 }
 
-static constexpr int pcnst = 40;
 KOKKOS_INLINE_FUNCTION
 int mmtoo_prevap_resusp(const int i) {
   const int mmtoo_prevap_resusp[pcnst] = {
