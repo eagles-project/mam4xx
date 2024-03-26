@@ -37,7 +37,7 @@ endforeach()
 set(TEST_LIST
     calculate_aerodynamic_and_quasilaminar_resistance
     calculate_obukhov_length
-    # calculate_resistance_rclx
+    calculate_resistance_rclx
     # calculate_resistance_rgsx_and_rsmx
     calculate_resistance_rlux
     # calculate_ustar_over_water
@@ -52,7 +52,7 @@ set(DEFAULT_TOL 1e-11)
 set(ERROR_THRESHOLDS
     1e-9 # calculate_aerodynamic_and_quasilaminar_resistance
     7e-8 # calculate_obukhov_length
-    # ${DEFAULT_TOL} # calculate_resistance_rclx FIXME: still needs work!
+    ${DEFAULT_TOL} # calculate_resistance_rclx FIXME: still needs work!
     # 1.1e-6 # calculate_resistance_rgsx_and_rsmx FIXME: still needs work!
     1e-9 # calculate_resistance_rlux
     # ${DEFAULT_TOL} # calculate_ustar_over_water # FIXME: still needs work, esp regarding inout parameters???
