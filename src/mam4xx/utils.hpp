@@ -217,8 +217,8 @@ void extract_stateq_from_prognostics(const mam4::Prognostics &progs,
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
     // First add the aerosol species mmr
     for (int a = 0; a < mam4::num_species_mode(m); ++a) {
-      const int prg_idx = get_prognostics_index(
-          m, a); // Index of HAERO's prognostics array
+      const int prg_idx =
+          get_prognostics_index(m, a); // Index of HAERO's prognostics array
       q[s_idx] = progs.q_aero_i[m][prg_idx](klev);
       s_idx++; // update index even if we lack some aerosol mmrs
     }
@@ -279,8 +279,8 @@ void extract_qqcw_from_prognostics(const mam4::Prognostics &progs, Real *qqcw,
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
     // First add the aerosol species mmr
     for (int a = 0; a < mam4::num_species_mode(m); ++a) {
-      const int prg_idx = get_prognostics_index(
-          m, a); // Index of HAERO's prognostics array
+      const int prg_idx =
+          get_prognostics_index(m, a); // Index of HAERO's prognostics array
       if (progs.q_aero_c[m][prg_idx].data()) {
         qqcw[s_idx] = progs.q_aero_c[m][prg_idx](klev);
         s_idx++; // update index even if we lack some aerosol mmrs
