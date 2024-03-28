@@ -176,7 +176,7 @@ void transfer_work_arrays_to_prognostics(const Real q[gas_pcnst()],
 
 // Get specie index of the HAERO's prognostics array given a specie index
 KOKKOS_INLINE_FUNCTION
-int get_haero_prognostics_index(const int mode, const int species_index) {
+int get_prognostics_index(const int mode, const int species_index) {
   const mam4::AeroId aero_id = mam4::mode_aero_species(mode, species_index);
   const int ind =
       (mam4::AeroId::None != aero_id) ? static_cast<int>(aero_id) : -1;
@@ -217,9 +217,9 @@ void extract_stateq_from_prognostics(const mam4::Prognostics &progs,
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
     // First add the aerosol species mmr
     for (int a = 0; a < mam4::num_species_mode(m); ++a) {
-      const int h_ind = get_haero_prognostics_index(
+      const int prg_idx = get_prognostics_index(
           m, a); // Index of HAERO's prognostics array
-      q[s_idx] = progs.q_aero_i[m][h_ind](klev);
+      q[s_idx] = progs.q_aero_i[m][prg_idx](klev);
       s_idx++; // update index even if we lack some aerosol mmrs
     }
     q[s_idx] = progs.n_mode_i[m](klev);
@@ -279,10 +279,10 @@ void extract_qqcw_from_prognostics(const mam4::Prognostics &progs, Real *qqcw,
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
     // First add the aerosol species mmr
     for (int a = 0; a < mam4::num_species_mode(m); ++a) {
-      const int h_ind = get_haero_prognostics_index(
+      const int prg_idx = get_prognostics_index(
           m, a); // Index of HAERO's prognostics array
-      if (progs.q_aero_c[m][h_ind].data()) {
-        qqcw[s_idx] = progs.q_aero_c[m][h_ind](klev);
+      if (progs.q_aero_c[m][prg_idx].data()) {
+        qqcw[s_idx] = progs.q_aero_c[m][prg_idx](klev);
         s_idx++; // update index even if we lack some aerosol mmrs
       }
     } // a
