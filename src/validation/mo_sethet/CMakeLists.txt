@@ -28,7 +28,7 @@ foreach(script
     COPYONLY
   )
 endforeach()
-# stand_calc_sum_wght_ts_355
+
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     calc_het_rates_ts_355
@@ -41,11 +41,11 @@ set(TEST_LIST
 
 set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
-    9e-8 #this is due to using a more specific value for mass_h2o
-    ${DEFAULT_TOL}
-    ${DEFAULT_TOL} # output is an int
-    9e-3
-    9e-2 
+    9e-8 # calc_het_rates, this is due to using a more specific value for mass_h2o
+    ${DEFAULT_TOL} # calc_precip_rescale
+    ${DEFAULT_TOL} # find_ktop, output is an int
+    9e-3 # gas_washout
+    9e-2 # sethet
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
