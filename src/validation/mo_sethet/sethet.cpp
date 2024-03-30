@@ -22,23 +22,23 @@ void sethet(Ensemble *ensemble) {
     constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
 
     // non-ColumnView input values
-    // const Real rlat = input.get_array("rlat")[0]; //need
-    const Real rlat = -.2320924702;
+    const Real rlat = input.get_array("rlat")[0]; //need
+    //const Real rlat = -.2320924702;
     const Real phis = input.get_array("phis")[0];
     const Real delt = input.get_array("delt")[0];
 
-    const int spc_h2o2_ndx = input.get_array("spc_h2o2_ndx")[0];
-    const int spc_so2_ndx = input.get_array("spc_so2_ndx")[0];
-    const int h2o2_ndx = input.get_array("h2o2_ndx")[0];
-    const int so2_ndx = input.get_array("so2_ndx")[0];
-    const int h2so4_ndx = input.get_array("h2so4_ndx")[0];
+    const int spc_h2o2_ndx = input.get_array("spc_h2o2_ndx")[0] - 1;
+    const int spc_so2_ndx = input.get_array("spc_so2_ndx")[0] - 1;
+    const int h2o2_ndx = input.get_array("h2o2_ndx")[0] - 1;
+    const int so2_ndx = input.get_array("so2_ndx")[0] - 1;
+    const int h2so4_ndx = input.get_array("h2so4_ndx")[0] - 1;
     const int gas_wetdep_cnt = input.get_array("gas_wetdep_cnt")[0];
 
     int wetdep_map[3];
     const auto wetdep_map_in = input.get_array("wetdep_map");
-    wetdep_map[0] = wetdep_map_in[0];
-    wetdep_map[1] = wetdep_map_in[1];
-    wetdep_map[2] = wetdep_map_in[2];
+    wetdep_map[0] = wetdep_map_in[0] - 1;
+    wetdep_map[1] = wetdep_map_in[1] - 1;
+    wetdep_map[2] = wetdep_map_in[2] - 1;
 
     const auto press_in = input.get_array("press");
     const auto zmid_in = input.get_array("zmid");
