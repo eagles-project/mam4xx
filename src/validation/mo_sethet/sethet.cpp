@@ -22,8 +22,8 @@ void sethet(Ensemble *ensemble) {
     constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
 
     // non-ColumnView input values
-    const Real rlat = input.get_array("rlat")[0]; //need
-    //const Real rlat = -.2320924702;
+    const Real rlat = input.get_array("rlat")[0]; // need
+    // const Real rlat = -.2320924702;
     const Real phis = input.get_array("phis")[0];
     const Real delt = input.get_array("delt")[0];
 

@@ -100,9 +100,9 @@ void calc_precip_rescale(
 KOKKOS_INLINE_FUNCTION
 void gas_washout(
     const ThreadTeam &team,
-    const int plev,          // calculate from this level below //in
-    const Real xkgm,         // mass flux on rain drop //in
-    const Real xliq_ik,      // liquid rain water content [gm/m^3] // in
+    const int plev,           // calculate from this level below //in
+    const Real xkgm,          // mass flux on rain drop //in
+    const Real xliq_ik,       // liquid rain water content [gm/m^3] // in
     const ColumnView &xhen_i, // henry's law constant
     const ColumnView &tfld_i, // temperature [K]
     const ColumnView &delz_i, // layer depth about interfaces [cm]  // in
@@ -154,7 +154,7 @@ void gas_washout(
 //=================================================================================
 KOKKOS_INLINE_FUNCTION
 void find_ktop(
-    Real rlat,        // latitude in radians for columns
+    Real rlat,               // latitude in radians for columns
     const ColumnView &press, // pressure [Pa] // in
     int &ktop) { // index that only calculate het_rates above this level //out
   //---------------------------------------------------------------------------
@@ -185,15 +185,15 @@ void sethet(
     const ColumnView
         het_rates[gas_pcnst], //[pver][gas_pcnst], rainout rates [1/s] //out
     const Real rlat,          // latitude in radians for columns
-    const ColumnView &press,   // pressure [pascals] //in
-    const ColumnView &zmid,    // midpoint geopot [km]  //in
+    const ColumnView &press,  // pressure [pascals] //in
+    const ColumnView &zmid,   // midpoint geopot [km]  //in
     const Real phis,          // surf geopotential //in
-    const ColumnView &tfld,    // temperature [K]  //in
-    const ColumnView &cmfdqr,  // dq/dt for convection [kg/kg/s] //in
-    const ColumnView &nrain,   // stratoform precip [kg/kg/s] //in
-    const ColumnView &nevapr,  // evaporation [kg/kg/s] //in
+    const ColumnView &tfld,   // temperature [K]  //in
+    const ColumnView &cmfdqr, // dq/dt for convection [kg/kg/s] //in
+    const ColumnView &nrain,  // stratoform precip [kg/kg/s] //in
+    const ColumnView &nevapr, // evaporation [kg/kg/s] //in
     const Real delt,          // time step [s] //in
-    const ColumnView &xhnm,    // total atms density [cm^-3] //in
+    const ColumnView &xhnm,   // total atms density [cm^-3] //in
     const ColumnView qin[gas_pcnst], // xported species [vmr]  //in
     // working variables
     const ColumnView &xeqca, // var for gas_washout
@@ -205,8 +205,8 @@ void sethet(
     const ColumnView &delz,  // layer depth about interfaces [cm]
     const ColumnView &xh2o2, // h2o2 concentration [molecules/cm^3]
     const ColumnView &xso2,  // so2 concentration [molecules/cm^3]
-    const ColumnView &xliq,  // liquid rain water content in a grid cell [gm/m^3]
-    const ColumnView &rain,  // precipitation (rain) rate [molecules/cm^3/s]
+    const ColumnView &xliq, // liquid rain water content in a grid cell [gm/m^3]
+    const ColumnView &rain, // precipitation (rain) rate [molecules/cm^3/s]
     const ColumnView &precip,    // precipitation rate [kg/kg/s]
     const ColumnView &xhen_h2o2, // henry law constants
     const ColumnView &xhen_hno3, // henry law constants
