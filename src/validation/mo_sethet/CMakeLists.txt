@@ -44,8 +44,8 @@ set(ERROR_THRESHOLDS
     9e-8 # calc_het_rates, this is due to using a more specific value for mass_h2o
     ${DEFAULT_TOL} # calc_precip_rescale
     ${DEFAULT_TOL} # find_ktop, output is an int
-    9e-3 # gas_washout
-    9e-2 # sethet
+    9e-8 # gas_washout
+    9e-8 # sethet
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
