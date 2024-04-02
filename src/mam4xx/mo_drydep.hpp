@@ -273,6 +273,10 @@ void calculate_resistance_rclx(
   const auto rcls = drydep_data.rcls;
   const auto foxd = drydep_data.foxd;
 
+  for (int ispec = 0; ispec < gas_pcnst; ++ispec) 
+    for (int lt = 0; lt < n_land_type; ++lt)
+      rclx[ispec][lt] = 0;
+
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     if (drydep_data.has_dvel(ispec)) {
       int idx_drydep = drydep_data.map_dvel(ispec);
