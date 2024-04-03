@@ -92,6 +92,10 @@ void calculate_ustar(
   //-------------------------------------------------------------------------------------
   // calculate the friction velocity for each land type u_i=uustar/u*_i
   //-------------------------------------------------------------------------------------
+  for (int lt=0; lt<n_land_type; ++lt) ustar[lt] = 0;
+  for (int lt=0; lt<n_land_type; ++lt) cvar[lt] = 0;
+  for (int lt=0; lt<n_land_type; ++lt) bycp[lt] = 0;
+
   for (int lt = beglt; lt <= endlt; ++lt) {
     if (fr_lnduse[lt]) { // BAD_CONSTANTS
       cvar[lt] = karman / haero::log(zl / z0(index_season[lt], lt));
@@ -158,6 +162,8 @@ void calculate_obukhov_length(
     const Real bycp[n_land_type],  // buoyancy parameter for unstable conditions
     const Real ribn,               // richardson number [unitless]
     Real obklen[n_land_type]) {    // monin-obukhov length [m]
+				      
+  for (int lt=0; lt<n_land_type; ++lt) obklen[lt] = 0;
   for (int lt = beglt; lt <= endlt; ++lt) {
     if (fr_lnduse[lt]) {
       // BAD_CONSTANTS
@@ -182,6 +188,9 @@ void calculate_aerodynamic_and_quasilaminar_resistance(
     const Real cvar[n_land_type],   // height parameter
     Real dep_ra[n_land_type],       // aerodynamic resistance [s/m]
     Real dep_rb[n_land_type]) {     // sublayer resistance [s/m]
+				    //
+  for (int lt=0; lt<n_land_type; ++lt) dep_ra[lt] = 0;
+  for (int lt=0; lt<n_land_type; ++lt) dep_rb[lt] = 0;
   for (int lt = beglt; lt <= endlt; ++lt) {
     if (fr_lnduse[lt]) {
       Real psih; // stability correction factor [-]
@@ -225,6 +234,13 @@ void calculate_resistance_rgsx_and_rsmx(
   const auto rgss = drydep_data.rgss;
   const auto foxd = drydep_data.foxd;
   const auto drat = drydep_data.drat;
+
+  for (int ispec = 0; ispec < gas_pcnst; ++ispec) 
+    for (int lt=0; lt<n_land_type; ++lt)
+      rgsx[ispec][lt] = 0;
+  for (int ispec = 0; ispec < gas_pcnst; ++ispec) 
+    for (int lt=0; lt<n_land_type; ++lt)
+      rsmx[ispec][lt] = 0;
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     if (drydep_data.has_dvel[ispec]) {
@@ -443,6 +459,9 @@ void calculate_gas_drydep_vlc_and_flux(
 
   constexpr Real m_to_cm_per_s = 100.0;
   const auto rac = drydep_data.rac;
+
+  for (size_t ispec = 0; ispec < gas_pcnst; ++ispec) dvel[ispec] = 0;
+  for (size_t ispec = 0; ispec < gas_pcnst; ++ispec) dflx[ispec] = 0;
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     if (drydep_data.has_dvel(ispec)) {
