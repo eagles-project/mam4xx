@@ -624,9 +624,11 @@ void modal_aero_calcsize_sub(
     const int *acc_spec_in_ait,
 
     Real dgncur_i[AeroConfig::num_modes()],
-    Real dgncur_c[AeroConfig::num_modes()]
+    Real dgncur_c[AeroConfig::num_modes()],
     // ncol, lchnk, state_q, pdel, deltat, qqcw, ptend, do_adjust_in, &
     // do_aitacc_transfer_in, list_idx_in, update_mmr_in, dgnumdry_m
+    Real dnidt[AeroConfig::num_modes()], 
+    Real dncdt[AeroConfig::num_modes()]
 ) {
 
   const Real zero = 0.0;
@@ -679,8 +681,7 @@ void modal_aero_calcsize_sub(
   Real num_c_k_aitsv = zero;
   Real num_i_sv[nmodes] = {};
   Real num_c_sv[nmodes] = {};
-  Real dnidt[nmodes] = {};
-  Real dncdt[nmodes] = {};
+  
   for (int imode = 0; imode < nmodes; imode++) {
     /*----------------------------------------------------------------------
    Initialize all parameters to the default values for the mode

@@ -61,6 +61,7 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
           int n_common_species_ait_accum = {};
           int ait_spec_in_acc[AeroConfig::num_aerosol_ids()] = {};
           int acc_spec_in_ait[AeroConfig::num_aerosol_ids()] = {};
+          
 
           modal_aero_calcsize::init_calcsize(
               inv_density, num2vol_ratio_min, num2vol_ratio_max,
@@ -69,7 +70,8 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
               dgnnom_nmodes, mean_std_dev_nmodes,
               // outputs
               noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
-              acc_spec_in_ait);
+              acc_spec_in_ait
+              );
 
           const bool do_adjust = true;
           const bool do_aitacc_transfer = true;
@@ -106,6 +108,8 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
             const auto dgncur_i =
                 Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
             Real dgncur_c[ntot_amode] = {};
+            Real dnidt[AeroConfig::num_modes()]={}; 
+            Real dncdt[AeroConfig::num_modes()]={};
             modal_aero_calcsize::modal_aero_calcsize_sub(
                 state_q_k.data(), // in
                 qqcw_k.data(),    // in/out
@@ -118,7 +122,7 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
                 mean_std_dev_nmodes,
                 // outputs
                 noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
-                acc_spec_in_ait, dgncur_i.data(), dgncur_c);
+                acc_spec_in_ait, dgncur_i.data(), dgncur_c, dnidt, dncdt);
           } // k
         });
 
