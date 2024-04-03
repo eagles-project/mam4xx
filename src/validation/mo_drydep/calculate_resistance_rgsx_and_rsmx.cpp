@@ -31,7 +31,7 @@ void calculate_resistance_rgsx_and_rsmx(const seq_drydep::Data &data,
 
     ViewInt1DHost index_season_h("index_season", n_land_type);
     for (int lt = 0; lt < n_land_type; ++lt) {
-      index_season_h(lt) = int(index_season[lt]);
+      index_season_h(lt) = int(index_season[lt]) - 1;
     }
     ViewInt1D index_season_d("index_season", n_land_type);
     Kokkos::deep_copy(index_season_d, index_season_h);
