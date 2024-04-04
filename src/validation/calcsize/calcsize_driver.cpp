@@ -30,6 +30,8 @@ void adjust_num_sizes(Ensemble *ensemble);
 void compute_tendencies(Ensemble *ensemble);
 void aitken_accum_exchange(Ensemble *ensemble);
 void modal_aero_calcsize_sub(Ensemble *ensemble);
+void modal_aero_calcsize_sub_ptend(Ensemble *ensemble);
+
 int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
@@ -61,6 +63,8 @@ int main(int argc, char **argv) {
       aitken_accum_exchange(ensemble);
     } else if (func_name == "modal_aero_calcsize_sub") {
       modal_aero_calcsize_sub(ensemble);
+    } else if (func_name == "modal_aero_calcsize_sub_ptend") {
+      modal_aero_calcsize_sub_ptend(ensemble);
     }
 
   } catch (std::exception &e) {
