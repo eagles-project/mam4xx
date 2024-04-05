@@ -202,7 +202,8 @@ void transfer_tendencies_num_to_tendecines(const  Real n_mode_i[],
       // q[s_idx] = progs.q_aero_i[m][a](klev);
       s_idx++; // update index even if we lack some aerosol mmrs
     }
-    q[s_idx] = n_mode_i[m];
+    q[s_idx] += n_mode_i[m];
+    printf("q[%d] %e n_mode_i[%d] %e \n", s_idx, q[s_idx], m, n_mode_i[m]);
     s_idx++; // update index
     // printf(" %d ", s_idx);
   }

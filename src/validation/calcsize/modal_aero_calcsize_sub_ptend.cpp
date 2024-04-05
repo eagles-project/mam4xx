@@ -43,6 +43,7 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
     View2D dgnumdry_m("dgnumdry_m", pver, ntot_amode);
 
     View2D ptend_q("ptend_q", pver, pcnst);
+    View2D dqqcwdt("dqqcwdt", pver, pcnst);
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
@@ -74,6 +75,9 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
               noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
               acc_spec_in_ait
               );
+          int n_common_species_ait_accum_2 = 4; 
+          int ait_spec_in_acc_2[4] ={23, 24, 25, 26}; //frm aitken
+          int acc_spec_in_ait_2[4] = {15, 17, 20, 21 };// to accum
 
           const bool do_adjust = true;
           const bool do_aitacc_transfer = true;
@@ -114,8 +118,8 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
             const auto dgncur_i =
                 Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
             Real dgncur_c[ntot_amode] = {};
-            Real dnidt[AeroConfig::num_modes()]={}; 
-            Real dncdt[AeroConfig::num_modes()]={};
+            const auto ptend_q_k = Kokkos::subview(ptend_q, kk, Kokkos::ALL());
+            const auto dqqcwdt_k = Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
             modal_aero_calcsize::modal_aero_calcsize_sub(
                 state_q_k.data(), // in
                 qqcw_k.data(),    // in/out
@@ -127,21 +131,8 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
                 dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
                 mean_std_dev_nmodes,
                 // outputs
-                noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
-                acc_spec_in_ait, dgncur_i.data(), dgncur_c, dnidt, dncdt);
-
-          const auto ptend_q_k = Kokkos::subview(ptend_q, kk, Kokkos::ALL());
-          printf("dnidt at %d: \n",kk);
-          for (int m = 0; m < AeroConfig::num_modes(); ++m)
-          {
-            printf(" %e ",dnidt[m]);
-          }
-          printf(" \n ");
-          utils::transfer_tendencies_num_to_tendecines(dnidt,
-                                        ptend_q_k.data()
-                                        // ,
-                                        // Real qqcw[gas_pcnst()],
-                                        );   
+                noxf_acc2ait, n_common_species_ait_accum_2, ait_spec_in_acc_2,
+                acc_spec_in_ait_2, dgncur_i.data(), dgncur_c, ptend_q_k.data(), dqqcwdt_k.data());
           } // k
         });
 

@@ -478,8 +478,9 @@ void aitken_accum_exchange(
     const Real &drv_i_accsv, const Real &num_i_accsv, const Real &drv_c_accsv,
     const Real &num_c_accsv, Real &dgncur_i_aitken, Real &dgncur_i_accum,
     Real &dgncur_c_aitken, Real &dgncur_c_accum,
-    Real dnidt[AeroConfig::num_modes()],
-    Real dncdt[AeroConfig::num_modes()]) {
+    Real *ptend,
+    Real *dqqcwdt
+    ) {
 
   // FIXME: This version of does not include 	update_mmr=true, i.e tendencies
   // are not updated.
@@ -496,12 +497,8 @@ void aitken_accum_exchange(
   // -----------------------------------------------------------------------------
 
   const Real zero = 0;
-  Real ptend[40]={};
-  Real dqqcwdt[40]={};
-
-  // Real dnidt[4]={};
-  // Real dncdt[4]={};
-
+  Real dnidt[4]={};
+  Real dncdt[4]={};
 
   Real num2vol_ratio_cur_c_accum = zero;
   Real num2vol_ratio_cur_i_accum = zero;
@@ -729,6 +726,8 @@ void aitken_accum_exchange(
 #endif
   } // end if (ait2acc_index+acc2_ait_index > 0)
 
+  utils::transfer_tendencies_num_to_tendecines(dnidt,ptend); 
+
 } // aitken_accum_exchange
 
 KOKKOS_INLINE_FUNCTION
@@ -759,8 +758,8 @@ void modal_aero_calcsize_sub(
     Real dgncur_c[AeroConfig::num_modes()],
     // ncol, lchnk, state_q, pdel, deltat, qqcw, ptend, do_adjust_in, &
     // do_aitacc_transfer_in, list_idx_in, update_mmr_in, dgnumdry_m
-    Real dnidt[AeroConfig::num_modes()], 
-    Real dncdt[AeroConfig::num_modes()]
+    Real *ptend,
+    Real *dqqcwdt
 ) {
 
   const Real zero = 0.0;
@@ -813,6 +812,9 @@ void modal_aero_calcsize_sub(
   Real num_c_k_aitsv = zero;
   Real num_i_sv[nmodes] = {};
   Real num_c_sv[nmodes] = {};
+
+  Real dnidt[4] = {};
+  Real dncdt[4] = {};
   
   for (int imode = 0; imode < nmodes; imode++) {
     /*----------------------------------------------------------------------
@@ -910,8 +912,14 @@ void modal_aero_calcsize_sub(
                     drv_c_sv[imode], num_i_k_accsv, num_c_k_accsv,
                     num_i_k_aitsv, num_c_k_aitsv, num_i_sv[imode],
                     num_c_sv[imode], dnidt[imode], dncdt[imode]);
-
+  
+  printf("dnidt[%d] %e \n", imode, dnidt[imode]);
   } // imode
+
+
+  
+  utils::transfer_tendencies_num_to_tendecines(dnidt,ptend); 
+
   /*------------------------------------------------------------------------------
   ! when the aitken mode mean size is too big, the largest
   !    aitken particles are transferred into the accum mode
@@ -931,7 +939,7 @@ void modal_aero_calcsize_sub(
         dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv, num_c_k_aitsv,
         dryvol_i_accsv, num_i_k_accsv, dryvol_c_accsv, num_c_k_accsv,
         dgncur_i[aitken_idx], dgncur_i[accumulation_idx], dgncur_c[aitken_idx],
-        dgncur_c[accumulation_idx],dnidt, dncdt );
+        dgncur_c[accumulation_idx], ptend, dqqcwdt );
   }
 } // modal_aero_calcsize_sub
 
