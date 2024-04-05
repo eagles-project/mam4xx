@@ -520,8 +520,12 @@ KOKKOS_INLINE_FUNCTION
 void update_num_tends(const int jmode, const int aer_type, Real &dqdt_src,
                       Real &dqdt_dest, const Real xfertend_num[2][2]) {
   const Real xfertend = xfertend_num[jmode][aer_type];
+  printf("xfertend %e %d %d  \n", xfertend, jmode, aer_type);
+  printf("dqdt_src %e \n", dqdt_src);
+  printf("dqdt_dest %e \n", dqdt_dest);
   dqdt_src -= xfertend;
   dqdt_dest += xfertend;
+
 
 } // end update_num_tends
 
@@ -668,7 +672,7 @@ void aitken_accum_exchange(
   const auto num2vol_ratio_geomean =
       haero::sqrt(voltonum_ait) * haero::sqrt(voltonum_acc);
 
-  // Compute aitken -> accumulation transfer
+  
   compute_coef_ait_acc_transfer(
       accum_idx, num2vol_ratio_geomean, adj_tscale_inv, drv_i_aitsv,
       drv_c_aitsv, num_i_aitsv, num_c_aitsv, voltonum_acc, ait2acc_index,

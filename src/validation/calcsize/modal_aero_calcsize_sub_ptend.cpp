@@ -105,6 +105,8 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
           const int top_lev = 0; // 1( in fortran )
 
           for (int kk = top_lev; kk < pver; ++kk) {
+            printf("---- \n");
+            printf("kk %d \n", kk);
             const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
             
 
