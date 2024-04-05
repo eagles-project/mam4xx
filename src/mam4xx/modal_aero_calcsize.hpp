@@ -405,10 +405,10 @@ void update_tends_flx(
                       const int *src_species_idx, //
                       const int *dest_species_idx,
                       const Real xfertend_num[2][2], const Real xfercoef,
-                      const Real q_i[4][7],
-                      const Real q_c[4][7],
-                      Real didt[4][7],
-                      Real dcdt[4][7],
+                      const Real *state_q,
+                      const Real *qqcw, 
+                      Real *ptend,
+                      Real *dqqcwdt,
                       Real dnidt[],
                       Real dncdt[]) {
 
@@ -442,15 +442,15 @@ void update_tends_flx(
     const int ispec_dest = dest_species_idx[i];
     // interstitial species
     const Real xfertend_i =
-        haero::max(zero, q_i[src_mode_ixd][ispec_src]) * xfercoef;
-    didt[src_mode_ixd][ispec_src] -= xfertend_i;
-    didt[dest_mode_ixd][ispec_dest] += xfertend_i;
+        haero::max(zero, state_q[ispec_src]) * xfercoef;
+    ptend[ispec_src] -= xfertend_i;
+    ptend[ispec_dest] += xfertend_i;
 
     // cloud borne species
     const Real xfertend_c =
-        haero::max(zero, q_c[src_mode_ixd][ispec_src]) * xfercoef;
-    dcdt[src_mode_ixd][ispec_src] -= xfertend_c;
-    dcdt[dest_mode_ixd][ispec_dest] += xfertend_c;
+        haero::max(zero, qqcw[ispec_src]) * xfercoef;
+    dqqcwdt[ispec_src] -= xfertend_c;
+    dqqcwdt[ispec_dest] += xfertend_c;
   }
 
 } // end update_tends_flx
@@ -496,18 +496,9 @@ void aitken_accum_exchange(
   // -----------------------------------------------------------------------------
 
   const Real zero = 0;
-  //
-  // const Real q_i[][],
-  // const Real q_c[][],
-  // Real didt[][],
-  // Real dcdt[][],
-  // Real dnidt[],
-  // Real dncdt[]
+  Real ptend[40]={};
+  Real dqqcwdt[40]={};
 
-  Real q_i[4][7]={};
-  Real q_c[4][7]={};
-  Real didt[4][7]={};
-  Real dcdt[4][7]={};
   // Real dnidt[4]={};
   // Real dncdt[4]={};
 
@@ -704,10 +695,10 @@ void aitken_accum_exchange(
           ait_spec_in_acc, // defined in aero_modes - src => aitken
           acc_spec_in_ait, // defined in aero_modes - src => accumulation
           xfertend_num, xfercoef_vol_ait2acc,
-          q_i,
-          q_c,
-          didt,
-          dcdt,
+          state_q,
+          qqcw, 
+          ptend,
+          dqqcwdt,
           dnidt,
           dncdt);
     } // end if (ait2acc_index)
@@ -728,10 +719,10 @@ void aitken_accum_exchange(
           acc_spec_in_ait, // defined in aero_modes - src => accumulation
           ait_spec_in_acc, // defined in aero_modes - src => aitken
           xfertend_num, xfercoef_vol_acc2ait,
-          q_i,
-          q_c,
-          didt,
-          dcdt,
+          state_q,
+          qqcw, 
+          ptend,
+          dqqcwdt,
           dnidt,
           dncdt);
     } // end if (acc2_ait_index)
