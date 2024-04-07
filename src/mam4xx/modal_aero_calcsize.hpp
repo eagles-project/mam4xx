@@ -793,8 +793,9 @@ void modal_aero_calcsize_sub(
   Real num_i_sv[nmodes] = {};
   Real num_c_sv[nmodes] = {};
 
-  Real dnidt[4] = {};
-  Real dncdt[4] = {};
+  // get index of num concentration in state_q
+  int num_idx_state_q[nmodes]={};
+  utils::get_num_idx_in_state_q(num_idx_state_q);
   
   for (int imode = 0; imode < nmodes; imode++) {
     /*----------------------------------------------------------------------
@@ -891,12 +892,9 @@ void modal_aero_calcsize_sub(
                     dryvol_i_aitsv, dryvol_c_aitsv, drv_i_sv[imode],
                     drv_c_sv[imode], num_i_k_accsv, num_c_k_accsv,
                     num_i_k_aitsv, num_c_k_aitsv, num_i_sv[imode],
-                    num_c_sv[imode], dnidt[imode], dncdt[imode]);
-  } // imode
-
-
-  
-  utils::transfer_tendencies_num_to_tendecines(dnidt,ptend); 
+                    num_c_sv[imode],
+                    ptend[num_idx_state_q[imode]], dqqcwdt[num_idx_state_q[imode]]);
+  } // imode  
 
   /*------------------------------------------------------------------------------
   ! when the aitken mode mean size is too big, the largest
