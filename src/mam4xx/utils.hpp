@@ -186,27 +186,18 @@ void transfer_tendencies_num_to_tendecines(const  Real n_mode_i[],
                                         )
 {
     int s_idx = ekat::ScalarTraits<int>::invalid();
-    s_idx = gasses_start_ind(); // gases start at index 9 (index 10 in Fortran
+    s_idx = gasses_start_ind()+ AeroConfig::num_gas_ids(); // gases start at index 9 (index 10 in Fortran
                                 // version)
-    for (int g = 0; g < AeroConfig::num_gas_ids(); ++g) {
-      // get mmr at level "klev"
-      // q[s_idx] = progs.q_gas[g](klev);
-      s_idx++; // update index
-    }
-
 
   // Now start adding aerosols mmr into the state_q
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
-    // First add the aerosol species mmr
-    for (int a = 0; a < mam4::num_species_mode(m); ++a) {
-      // q[s_idx] = progs.q_aero_i[m][a](klev);
-      s_idx++; // update index even if we lack some aerosol mmrs
-    }
+    s_idx+=mam4::num_species_mode(m);
     q[s_idx] += n_mode_i[m];
     printf("q[%d] %e n_mode_i[%d] %e \n", s_idx, q[s_idx], m, n_mode_i[m]);
     s_idx++; // update index
     // printf(" %d ", s_idx);
   }
+
   // printf("\n "); 
 }
 // Given an AerosolState with views for dry aerosol quantities, creates a

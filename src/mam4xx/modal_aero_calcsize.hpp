@@ -118,7 +118,7 @@ void compute_coef_acc_ait_transfer(
     const Real voltonum_ait,
     const Real inv_density[AeroConfig::num_modes()]
                           [AeroConfig::num_aerosol_ids()],
-    const Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
+    const Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()],
     // additional parameters
     const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
     Real &drv_i_noxf, Real &drv_c_noxf, int &acc2_ait_index,
@@ -166,8 +166,9 @@ void compute_coef_acc_ait_transfer(
       drv_t_noxf =
           drv_i_noxf +
           drv_c_noxf; // total volume that can't be moved to the aitken mode
+      // Note: voltonumblo is equivalent to num2vol_ratio_max_nmodes    
       num_t_noxf = drv_t_noxf *
-                   num2vol_ratio_min_nmodes[iacc]; // total number that can't be
+                   num2vol_ratio_max_nmodes[iacc]; // total number that can't be
                                                    // moved to the aitken mode
       num_t0 = num_t;
       num_t = max(zero, num_t - num_t_noxf);
@@ -542,23 +543,10 @@ void aitken_accum_exchange(
       haero::sqrt(voltonum_ait) * haero::sqrt(voltonum_acc);
 
   // Compute aitken -> accumulation transfer
-  printf("accum_idx %d \n", accum_idx);
-  printf("num2vol_ratio_geomean %e \n", num2vol_ratio_geomean);
-  printf("adj_tscale_inv %e \n", adj_tscale_inv);
-  printf(" drv_i_aitsv %e \n", drv_i_aitsv);
-  printf(" drv_c_aitsv %e \n", drv_c_aitsv);
-  printf(" num_i_aitsv %e \n", num_i_aitsv);
-  printf(" num_c_aitsv %e \n", num_c_aitsv);
-  printf(" voltonum_acc %e \n", voltonum_acc);
-
   calcsize::compute_coef_ait_acc_transfer(
       accum_idx, num2vol_ratio_geomean, adj_tscale_inv, drv_i_aitsv,
       drv_c_aitsv, num_i_aitsv, num_c_aitsv, voltonum_acc, ait2acc_index,
       xfercoef_num_ait2acc, xfercoef_vol_ait2acc, xfertend_num);
-  printf(" ait2acc_index %d \n", ait2acc_index);
-  printf(" xfercoef_num_ait2acc %e \n", xfercoef_num_ait2acc);
-  printf(" xfercoef_vol_ait2acc %e \n", xfercoef_vol_ait2acc);
-
   //  ----------------------------------------------------------------------------------------
   //   compute accum --> aitken transfer rates
   //
@@ -572,12 +560,9 @@ void aitken_accum_exchange(
   compute_coef_acc_ait_transfer(
       accum_idx, num2vol_ratio_geomean, adj_tscale_inv, state_q, qqcw,
       drv_i_accsv, drv_c_accsv, num_i_accsv, num_c_accsv, noxf_acc2ait,
-      voltonum_ait, inv_density, num2vol_ratio_min_nmodes, lmassptr_amode,
+      voltonum_ait, inv_density, num2vol_ratio_max_nmodes, lmassptr_amode,
       drv_i_noxf, drv_c_noxf, acc2_ait_index, xfercoef_num_acc2ait,
       xfercoef_vol_acc2ait, xfertend_num);
-
-  printf(" xfertend_num[1][0] %e \n", xfertend_num[1][0]);
-  printf(" xfertend_num1][1] %e \n", xfertend_num[1][1]);
 
   // jump to end of loop if no transfer is needed
   if (ait2acc_index + acc2_ait_index > 0) {
@@ -676,7 +661,6 @@ void aitken_accum_exchange(
         mean_std_dev_nmodes[accum_idx], dgncur_c_accum,
         num2vol_ratio_cur_c_accum);
 
-#if 1
     //------------------------------------------------------------------
     // compute tendency amounts for aitken <--> accum transfer
     //------------------------------------------------------------------
@@ -723,7 +707,6 @@ void aitken_accum_exchange(
           dnidt,
           dncdt);
     } // end if (acc2_ait_index)
-#endif
   } // end if (ait2acc_index+acc2_ait_index > 0)
 
   utils::transfer_tendencies_num_to_tendecines(dnidt,ptend); 
@@ -912,8 +895,6 @@ void modal_aero_calcsize_sub(
                     drv_c_sv[imode], num_i_k_accsv, num_c_k_accsv,
                     num_i_k_aitsv, num_c_k_aitsv, num_i_sv[imode],
                     num_c_sv[imode], dnidt[imode], dncdt[imode]);
-  
-  printf("dnidt[%d] %e \n", imode, dnidt[imode]);
   } // imode
 
 

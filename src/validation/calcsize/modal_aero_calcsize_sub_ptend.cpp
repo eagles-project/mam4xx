@@ -78,6 +78,15 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
           int n_common_species_ait_accum_2 = 4; 
           int ait_spec_in_acc_2[4] ={23, 24, 25, 26}; //frm aitken
           int acc_spec_in_ait_2[4] = {15, 17, 20, 21 };// to accum
+          bool noxf_acc2ait_2[AeroConfig::num_aerosol_ids()]  = {true};
+          
+          noxf_acc2ait_2[0] = false;
+          noxf_acc2ait_2[1] = false;
+          noxf_acc2ait_2[2] = true;
+          noxf_acc2ait_2[3] = true;
+          noxf_acc2ait_2[4] = false;
+          noxf_acc2ait_2[5] = true;
+          noxf_acc2ait_2[6] = false;
 
           const bool do_adjust = true;
           const bool do_aitacc_transfer = true;
@@ -131,7 +140,7 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
                 dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
                 mean_std_dev_nmodes,
                 // outputs
-                noxf_acc2ait, n_common_species_ait_accum_2, ait_spec_in_acc_2,
+                noxf_acc2ait_2, n_common_species_ait_accum_2, ait_spec_in_acc_2,
                 acc_spec_in_ait_2, dgncur_i.data(), dgncur_c, ptend_q_k.data(), dqqcwdt_k.data());
           } // k
         });
