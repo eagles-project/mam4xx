@@ -520,9 +520,6 @@ KOKKOS_INLINE_FUNCTION
 void update_num_tends(const int jmode, const int aer_type, Real &dqdt_src,
                       Real &dqdt_dest, const Real xfertend_num[2][2]) {
   const Real xfertend = xfertend_num[jmode][aer_type];
-  printf("xfertend %e %d %d  \n", xfertend, jmode, aer_type);
-  printf("dqdt_src %e \n", dqdt_src);
-  printf("dqdt_dest %e \n", dqdt_dest);
   dqdt_src -= xfertend;
   dqdt_dest += xfertend;
 

@@ -414,9 +414,7 @@ void update_tends_flx(
                       const Real *state_q,
                       const Real *qqcw, 
                       Real *ptend,
-                      Real *dqqcwdt,
-                      Real dnidt[],
-                      Real dncdt[]) {
+                      Real *dqqcwdt) {
 
   // NOTES on arrays and indices:
   // jmode==0 is aitken->accumulation transfer;
@@ -429,16 +427,16 @@ void update_tends_flx(
   const Real zero = 0;
 
   // interstiatial species
-  Real &dqdt_src_i = dnidt[src_mode_ixd];
-  Real &dqdt_dest_i = dnidt[dest_mode_ixd];
+  Real &dqdt_src_i = ptend[src_mode_ixd];
+  Real &dqdt_dest_i = ptend[dest_mode_ixd];
   const int aer_interstiatial = 0;
   calcsize::update_num_tends(jmode, aer_interstiatial, dqdt_src_i, dqdt_dest_i,
                    xfertend_num);
 
   // cloud borne apecies
   const int aer_cloud_borne = 1;
-  Real &dqdt_src_c = dncdt[src_mode_ixd];
-  Real &dqdt_dest_c = dncdt[dest_mode_ixd];
+  Real &dqdt_src_c = dqqcwdt[src_mode_ixd];
+  Real &dqdt_dest_c = dqqcwdt[dest_mode_ixd];
 
   calcsize::update_num_tends(jmode, aer_cloud_borne, dqdt_src_c, dqdt_dest_c,
                    xfertend_num);
@@ -503,9 +501,6 @@ void aitken_accum_exchange(
   // -----------------------------------------------------------------------------
 
   const Real zero = 0;
-  Real dnidt[4]={};
-  Real dncdt[4]={};
-
   Real num2vol_ratio_cur_c_accum = zero;
   Real num2vol_ratio_cur_i_accum = zero;
 
@@ -670,13 +665,16 @@ void aitken_accum_exchange(
     // compute tendency amounts for aitken <--> accum transfer
     //------------------------------------------------------------------
     // jmode = 0 does aitken --> accum
+    // index of accum and aitken mode for num concetration in state_q 
+    const int accum_idx_q  = utils::aero_start_ind() + num_species_mode(accum_idx);
+    const int aitken_idx_q = accum_idx_q + 1 + num_species_mode(aitken_idx); 
     if (ait2acc_index > 0) {
       const int jmode = 0;
       // Since jmode = 0, source mode = aitken and destination mode accumulation
       update_tends_flx(
           jmode,      // in
-          aitken_idx, // in src => aitken
-          accum_idx,  // in dest => accumulation
+          aitken_idx_q, // in src => aitken
+          accum_idx_q,  // in dest => accumulation
           n_common_species_ait_accum,
           ait_spec_in_acc, // defined in aero_modes - src => aitken
           acc_spec_in_ait, // defined in aero_modes - src => accumulation
@@ -684,9 +682,7 @@ void aitken_accum_exchange(
           state_q,
           qqcw, 
           ptend,
-          dqqcwdt,
-          dnidt,
-          dncdt);
+          dqqcwdt);
     } // end if (ait2acc_index)
 
     // jmode = 1 does accum --> aitken
@@ -699,8 +695,8 @@ void aitken_accum_exchange(
       // transfer
       update_tends_flx(
           jmode,      // in
-          accum_idx,  // in src=> accumulation
-          aitken_idx, // in dest => aitken
+          accum_idx_q,  // in src=> accumulation
+          aitken_idx_q, // in dest => aitken
           n_common_species_ait_accum,
           acc_spec_in_ait, // defined in aero_modes - src => accumulation
           ait_spec_in_acc, // defined in aero_modes - src => aitken
@@ -708,13 +704,9 @@ void aitken_accum_exchange(
           state_q,
           qqcw, 
           ptend,
-          dqqcwdt,
-          dnidt,
-          dncdt);
+          dqqcwdt);
     } // end if (acc2_ait_index)
   } // end if (ait2acc_index+acc2_ait_index > 0)
-
-  utils::transfer_tendencies_num_to_tendecines(dnidt,ptend); 
 
 } // aitken_accum_exchange
 
