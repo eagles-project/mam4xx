@@ -64,7 +64,6 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
           int n_common_species_ait_accum = {};
           int ait_spec_in_acc[AeroConfig::num_aerosol_ids()] = {};
           int acc_spec_in_ait[AeroConfig::num_aerosol_ids()] = {};
-          
 
           modal_aero_calcsize::init_calcsize(
               inv_density, num2vol_ratio_min, num2vol_ratio_max,
@@ -73,8 +72,7 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
               dgnnom_nmodes, mean_std_dev_nmodes,
               // outputs
               noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
-              acc_spec_in_ait
-          );
+              acc_spec_in_ait);
 
           const bool do_adjust = true;
           const bool do_aitacc_transfer = true;
@@ -98,7 +96,6 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
 
           for (int kk = top_lev; kk < pver; ++kk) {
             const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
-            
 
             const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
             const auto dgncur_i =
@@ -115,10 +112,9 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
                 num2vol_ratio_min, num2vol_ratio_max, num2vol_ratio_max_nmodes,
                 num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes,
                 dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
-                mean_std_dev_nmodes,
-                noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
-                acc_spec_in_ait,
-                // outputs 
+                mean_std_dev_nmodes, noxf_acc2ait, n_common_species_ait_accum,
+                ait_spec_in_acc, acc_spec_in_ait,
+                // outputs
                 dgncur_i.data(), dgncur_c, ptend_q_k.data(), dqqcwdt_k.data());
           } // k
         });
@@ -127,10 +123,9 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
     std::vector<Real> dgnumdry_m_out(pver * ntot_amode, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(dgnumdry_m,
                                                           dgnumdry_m_out);
-    
+
     std::vector<Real> ptend_q_out(pver * pcnst, zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(ptend_q,
-                                                          ptend_q_out);
+    mam4::validation::convert_2d_view_device_to_1d_vector(ptend_q, ptend_q_out);
 
     Kokkos::deep_copy(qqcw_host, qqcw);
     count = 0;
