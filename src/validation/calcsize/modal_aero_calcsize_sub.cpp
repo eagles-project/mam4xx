@@ -106,8 +106,10 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
             const auto dgncur_i =
                 Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
             Real dgncur_c[ntot_amode] = {};
-            Real dnidt[AeroConfig::num_modes()] = {};
-            Real dncdt[AeroConfig::num_modes()] = {};
+            // update_mmr is false. Hence,  dqqcwdt and  ptend will not be updated. 
+            // if update_mmr is true. these two variables need to have a different size. 
+            Real ptend[1] = {};
+            Real dqqcwdt[1] = {};
             modal_aero_calcsize::modal_aero_calcsize_sub(
                 state_q_k.data(), // in
                 qqcw_k.data(),    // in/out
@@ -120,7 +122,7 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
                 mean_std_dev_nmodes,
                 // outputs
                 noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
-                acc_spec_in_ait, dgncur_i.data(), dgncur_c, dnidt, dncdt);
+                acc_spec_in_ait, dgncur_i.data(), dgncur_c, ptend, dqqcwdt);
           } // k
         });
 

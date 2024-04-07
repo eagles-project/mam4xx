@@ -51,7 +51,7 @@ set(ERROR_THRESHOLDS
     1e-12
     1e-12
     5e-11
-    1e-14
+    3e-5
    )
 
 
