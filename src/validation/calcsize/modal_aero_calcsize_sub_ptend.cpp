@@ -76,9 +76,6 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
               acc_spec_in_ait
           );
 
-          int ait_spec_in_acc_2[4] ={23, 24, 25, 26}; //frm aitken
-          int acc_spec_in_ait_2[4] ={15, 17, 20, 21};// to accum
-
           const bool do_adjust = true;
           const bool do_aitacc_transfer = true;
           const bool update_mmr = true;
@@ -119,8 +116,8 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
                 num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes,
                 dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
                 mean_std_dev_nmodes,
-                noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc_2,
-                acc_spec_in_ait_2,
+                noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
+                acc_spec_in_ait,
                 // outputs 
                 dgncur_i.data(), dgncur_c, ptend_q_k.data(), dqqcwdt_k.data());
           } // k

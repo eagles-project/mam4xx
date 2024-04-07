@@ -63,9 +63,14 @@ void init_calcsize(
         // false : can be transfer.
         noxf_acc2ait[isp] = false;
         // save index for transfer from accumulation to aitken mode
-        acc_spec_in_ait[count] = isp;
+        // adding offset because we are using this index for state_q 
+        // Note: we assuimg accum mode is the first mode
+        acc_spec_in_ait[count] = isp + utils::aero_start_ind();
         // save index for transfer from aitken to accumulation mode
-        ait_spec_in_acc[count] = jsp;
+        // adding offset because we are using this index for state_q
+        // offset: aero_start + num of spec accum + 1 (number concentration)  
+        // Note: we assuimg accum mode is the second mode
+        ait_spec_in_acc[count] = jsp + utils::aero_start_ind() + num_species_mode(accum_idx) +1;
         count++;
         break;
       }
