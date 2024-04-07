@@ -106,11 +106,8 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
             const auto dgncur_i =
                 Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
             Real dgncur_c[ntot_amode] = {};
-            // update_mmr is false. Hence,  dqqcwdt and  ptend will not be
-            // updated. if update_mmr is true. these two variables need to have
-            // a different size.
-            Real ptend[1] = {};
-            Real dqqcwdt[1] = {};
+            Real ptend[pcnst] = {};
+            Real dqqcwdt[pcnst] = {};
             modal_aero_calcsize::modal_aero_calcsize_sub(
                 state_q_k.data(), // in
                 qqcw_k.data(),    // in/out
