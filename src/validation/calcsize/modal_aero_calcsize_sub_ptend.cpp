@@ -74,19 +74,10 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
               // outputs
               noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
               acc_spec_in_ait
-              );
-          int n_common_species_ait_accum_2 = 4; 
+          );
+
           int ait_spec_in_acc_2[4] ={23, 24, 25, 26}; //frm aitken
-          int acc_spec_in_ait_2[4] = {15, 17, 20, 21 };// to accum
-          bool noxf_acc2ait_2[AeroConfig::num_aerosol_ids()]  = {true};
-          
-          noxf_acc2ait_2[0] = false;
-          noxf_acc2ait_2[1] = false;
-          noxf_acc2ait_2[2] = true;
-          noxf_acc2ait_2[3] = true;
-          noxf_acc2ait_2[4] = false;
-          noxf_acc2ait_2[5] = true;
-          noxf_acc2ait_2[6] = false;
+          int acc_spec_in_ait_2[4] ={15, 17, 20, 21};// to accum
 
           const bool do_adjust = true;
           const bool do_aitacc_transfer = true;
@@ -104,15 +95,6 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
           ndrop::get_e3sm_parameters(
               nspec_amode, lspectype_amode, lmassptr_amode, numptr_amode,
               specdens_amode, spechygro, mam_idx, mam_cnst_idx);
-
-          // Note: Need to compute inv density using indexing from e3sm
-          for (int imode = 0; imode < ntot_amode; ++imode) {
-            const int nspec = nspec_amode[imode];
-            for (int isp = 0; isp < nspec; ++isp) {
-              const int idx = lspectype_amode[isp][imode] - 1;
-              inv_density[imode][isp] = 1.0 / specdens_amode[idx];
-            } // isp
-          }   // imode
 
           // FIXME: top_lev is set to 1 in calcsize ?
           const int top_lev = 0; // 1( in fortran )
@@ -137,9 +119,10 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
                 num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes,
                 dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
                 mean_std_dev_nmodes,
-                // outputs
-                noxf_acc2ait_2, n_common_species_ait_accum_2, ait_spec_in_acc_2,
-                acc_spec_in_ait_2, dgncur_i.data(), dgncur_c, ptend_q_k.data(), dqqcwdt_k.data());
+                noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc_2,
+                acc_spec_in_ait_2,
+                // outputs 
+                dgncur_i.data(), dgncur_c, ptend_q_k.data(), dqqcwdt_k.data());
           } // k
         });
 
