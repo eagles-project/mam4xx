@@ -69,7 +69,7 @@ void init_calcsize(
         // save index for transfer from aitken to accumulation mode
         // adding offset because we are using this index for state_q
         // offset: aero_start + num of spec accum + 1 (number concentration)
-        // Note: we assuimg accum mode is the second mode
+        // Note: we assumig Aitken mode is the second mode
         ait_spec_in_acc[count] =
             jsp + utils::aero_start_ind() + num_species_mode(accum_idx) + 1;
         count++;
