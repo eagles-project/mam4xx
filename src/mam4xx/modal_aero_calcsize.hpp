@@ -63,9 +63,15 @@ void init_calcsize(
         // false : can be transfer.
         noxf_acc2ait[isp] = false;
         // save index for transfer from accumulation to aitken mode
-        acc_spec_in_ait[count] = isp;
+        // adding offset because we are using this index for state_q
+        // Note: we assuimg accum mode is the first mode
+        acc_spec_in_ait[count] = isp + utils::aero_start_ind();
         // save index for transfer from aitken to accumulation mode
-        ait_spec_in_acc[count] = jsp;
+        // adding offset because we are using this index for state_q
+        // offset: aero_start + num of spec accum + 1 (number concentration)
+        // Note: we assumig Aitken mode is the second mode
+        ait_spec_in_acc[count] =
+            jsp + utils::aero_start_ind() + num_species_mode(accum_idx) + 1;
         count++;
         break;
       }
@@ -118,7 +124,7 @@ void compute_coef_acc_ait_transfer(
     const Real voltonum_ait,
     const Real inv_density[AeroConfig::num_modes()]
                           [AeroConfig::num_aerosol_ids()],
-    const Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
+    const Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()],
     // additional parameters
     const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
     Real &drv_i_noxf, Real &drv_c_noxf, int &acc2_ait_index,
@@ -166,8 +172,9 @@ void compute_coef_acc_ait_transfer(
       drv_t_noxf =
           drv_i_noxf +
           drv_c_noxf; // total volume that can't be moved to the aitken mode
+      // Note: voltonumblo is equivalent to num2vol_ratio_max_nmodes
       num_t_noxf = drv_t_noxf *
-                   num2vol_ratio_min_nmodes[iacc]; // total number that can't be
+                   num2vol_ratio_max_nmodes[iacc]; // total number that can't be
                                                    // moved to the aitken mode
       num_t0 = num_t;
       num_t = max(zero, num_t - num_t_noxf);
@@ -395,6 +402,59 @@ void compute_dry_volume(
 
 } // end
 
+//------------------------------------------------------------------------------------------------
+KOKKOS_INLINE_FUNCTION
+void update_tends_flx(const int jmode,         // in
+                      const int src_mode_ixd,  // in
+                      const int dest_mode_ixd, // in
+                      const int n_common_species_ait_accum,
+                      const int *src_species_idx, //
+                      const int *dest_species_idx,
+                      const Real xfertend_num[2][2], const Real xfercoef,
+                      const Real *state_q, const Real *qqcw, Real *ptend,
+                      Real *dqqcwdt) {
+
+  // NOTES on arrays and indices:
+  // jmode==0 is aitken->accumulation transfer;
+  //     ==1 is accumulation->aitken transfer;
+
+  // xfertend_num(jmode,0) contains how much to transfer for interstitial
+  // aerosols xfertend_num(jmode,1) contains how much to transfer for cloudborne
+  // aerosols
+
+  const Real zero = 0;
+
+  // interstiatial species
+  Real &dqdt_src_i = ptend[src_mode_ixd];
+  Real &dqdt_dest_i = ptend[dest_mode_ixd];
+  const int aer_interstiatial = 0;
+  calcsize::update_num_tends(jmode, aer_interstiatial, dqdt_src_i, dqdt_dest_i,
+                             xfertend_num);
+
+  // cloud borne apecies
+  const int aer_cloud_borne = 1;
+  Real &dqdt_src_c = dqqcwdt[src_mode_ixd];
+  Real &dqdt_dest_c = dqqcwdt[dest_mode_ixd];
+
+  calcsize::update_num_tends(jmode, aer_cloud_borne, dqdt_src_c, dqdt_dest_c,
+                             xfertend_num);
+
+  for (int i = 0; i < n_common_species_ait_accum; ++i) {
+    const int ispec_src = src_species_idx[i];
+    const int ispec_dest = dest_species_idx[i];
+    // interstitial species
+    const Real xfertend_i = haero::max(zero, state_q[ispec_src]) * xfercoef;
+    ptend[ispec_src] -= xfertend_i;
+    ptend[ispec_dest] += xfertend_i;
+
+    // cloud borne species
+    const Real xfertend_c = haero::max(zero, qqcw[ispec_src]) * xfercoef;
+    dqqcwdt[ispec_src] -= xfertend_c;
+    dqqcwdt[ispec_dest] += xfertend_c;
+  }
+
+} // end update_tends_flx
+
 KOKKOS_INLINE_FUNCTION
 void aitken_accum_exchange(
     const Real *state_q, const Real *qqcw, const int &aitken_idx,
@@ -416,7 +476,7 @@ void aitken_accum_exchange(
     const Real &num_i_aitsv, const Real &drv_c_aitsv, const Real &num_c_aitsv,
     const Real &drv_i_accsv, const Real &num_i_accsv, const Real &drv_c_accsv,
     const Real &num_c_accsv, Real &dgncur_i_aitken, Real &dgncur_i_accum,
-    Real &dgncur_c_aitken, Real &dgncur_c_accum) {
+    Real &dgncur_c_aitken, Real &dgncur_c_accum, Real *ptend, Real *dqqcwdt) {
 
   // FIXME: This version of does not include 	update_mmr=true, i.e tendencies
   // are not updated.
@@ -433,7 +493,6 @@ void aitken_accum_exchange(
   // -----------------------------------------------------------------------------
 
   const Real zero = 0;
-
   Real num2vol_ratio_cur_c_accum = zero;
   Real num2vol_ratio_cur_i_accum = zero;
 
@@ -480,7 +539,6 @@ void aitken_accum_exchange(
       accum_idx, num2vol_ratio_geomean, adj_tscale_inv, drv_i_aitsv,
       drv_c_aitsv, num_i_aitsv, num_c_aitsv, voltonum_acc, ait2acc_index,
       xfercoef_num_ait2acc, xfercoef_vol_ait2acc, xfertend_num);
-
   //  ----------------------------------------------------------------------------------------
   //   compute accum --> aitken transfer rates
   //
@@ -494,7 +552,7 @@ void aitken_accum_exchange(
   compute_coef_acc_ait_transfer(
       accum_idx, num2vol_ratio_geomean, adj_tscale_inv, state_q, qqcw,
       drv_i_accsv, drv_c_accsv, num_i_accsv, num_c_accsv, noxf_acc2ait,
-      voltonum_ait, inv_density, num2vol_ratio_min_nmodes, lmassptr_amode,
+      voltonum_ait, inv_density, num2vol_ratio_max_nmodes, lmassptr_amode,
       drv_i_noxf, drv_c_noxf, acc2_ait_index, xfercoef_num_acc2ait,
       xfercoef_vol_acc2ait, xfertend_num);
 
@@ -595,7 +653,45 @@ void aitken_accum_exchange(
         mean_std_dev_nmodes[accum_idx], dgncur_c_accum,
         num2vol_ratio_cur_c_accum);
 
-  } // end if (ait2acc_index+acc2_ait_index > 0)
+    //------------------------------------------------------------------
+    // compute tendency amounts for aitken <--> accum transfer
+    //------------------------------------------------------------------
+    // jmode = 0 does aitken --> accum
+    // index of accum and aitken mode for num concetration in state_q
+    const int accum_idx_q =
+        utils::aero_start_ind() + num_species_mode(accum_idx);
+    const int aitken_idx_q = accum_idx_q + 1 + num_species_mode(aitken_idx);
+    if (ait2acc_index > 0) {
+      const int jmode = 0;
+      // Since jmode = 0, source mode = aitken and destination mode accumulation
+      update_tends_flx(
+          jmode,        // in
+          aitken_idx_q, // in src => aitken
+          accum_idx_q,  // in dest => accumulation
+          n_common_species_ait_accum,
+          ait_spec_in_acc, // defined in aero_modes - src => aitken
+          acc_spec_in_ait, // defined in aero_modes - src => accumulation
+          xfertend_num, xfercoef_vol_ait2acc, state_q, qqcw, ptend, dqqcwdt);
+    } // end if (ait2acc_index)
+
+    // jmode = 1 does accum --> aitken
+    if (acc2_ait_index > 0) {
+      const int jmode = 1;
+      // Same suboutine as above (update_tends_flx) is called but source
+      // and destination has been swapped so that transfer happens from
+      // accumulation to aitken mode xfercoef_vol_acc2ait is used instead of
+      // xfercoef_vol_ait2acc in this call as we are doing accum -> aitken
+      // transfer
+      update_tends_flx(
+          jmode,        // in
+          accum_idx_q,  // in src=> accumulation
+          aitken_idx_q, // in dest => aitken
+          n_common_species_ait_accum,
+          acc_spec_in_ait, // defined in aero_modes - src => accumulation
+          ait_spec_in_acc, // defined in aero_modes - src => aitken
+          xfertend_num, xfercoef_vol_acc2ait, state_q, qqcw, ptend, dqqcwdt);
+    } // end if (acc2_ait_index)
+  }   // end if (ait2acc_index+acc2_ait_index > 0)
 
 } // aitken_accum_exchange
 
@@ -624,10 +720,10 @@ void modal_aero_calcsize_sub(
     const int *acc_spec_in_ait,
 
     Real dgncur_i[AeroConfig::num_modes()],
-    Real dgncur_c[AeroConfig::num_modes()]
+    Real dgncur_c[AeroConfig::num_modes()],
     // ncol, lchnk, state_q, pdel, deltat, qqcw, ptend, do_adjust_in, &
     // do_aitacc_transfer_in, list_idx_in, update_mmr_in, dgnumdry_m
-) {
+    Real *ptend, Real *dqqcwdt) {
 
   const Real zero = 0.0;
   const int aitken_idx = int(ModeIndex::Aitken);
@@ -679,8 +775,11 @@ void modal_aero_calcsize_sub(
   Real num_c_k_aitsv = zero;
   Real num_i_sv[nmodes] = {};
   Real num_c_sv[nmodes] = {};
-  Real dnidt[nmodes] = {};
-  Real dncdt[nmodes] = {};
+
+  // get index of num concentration in state_q
+  int num_idx_state_q[nmodes] = {};
+  utils::get_num_idx_in_state_q(num_idx_state_q);
+
   for (int imode = 0; imode < nmodes; imode++) {
     /*----------------------------------------------------------------------
    Initialize all parameters to the default values for the mode
@@ -776,9 +875,10 @@ void modal_aero_calcsize_sub(
                     dryvol_i_aitsv, dryvol_c_aitsv, drv_i_sv[imode],
                     drv_c_sv[imode], num_i_k_accsv, num_c_k_accsv,
                     num_i_k_aitsv, num_c_k_aitsv, num_i_sv[imode],
-                    num_c_sv[imode], dnidt[imode], dncdt[imode]);
-
+                    num_c_sv[imode], ptend[num_idx_state_q[imode]],
+                    dqqcwdt[num_idx_state_q[imode]]);
   } // imode
+
   /*------------------------------------------------------------------------------
   ! when the aitken mode mean size is too big, the largest
   !    aitken particles are transferred into the accum mode
@@ -798,7 +898,7 @@ void modal_aero_calcsize_sub(
         dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv, num_c_k_aitsv,
         dryvol_i_accsv, num_i_k_accsv, dryvol_c_accsv, num_c_k_accsv,
         dgncur_i[aitken_idx], dgncur_i[accumulation_idx], dgncur_c[aitken_idx],
-        dgncur_c[accumulation_idx]);
+        dgncur_c[accumulation_idx], ptend, dqqcwdt);
   }
 } // modal_aero_calcsize_sub
 

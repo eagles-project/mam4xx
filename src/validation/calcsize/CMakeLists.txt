@@ -14,6 +14,7 @@ add_executable(calcsize_driver calcsize_driver.cpp
                adjust_num_sizes.cpp
                compute_tendencies.cpp
                modal_aero_calcsize_sub.cpp
+               modal_aero_calcsize_sub_ptend.cpp
                aitken_accum_exchange.cpp)
 target_link_libraries(calcsize_driver skywalker;validation;${HAERO_LIBRARIES})
 
@@ -37,6 +38,7 @@ set(TEST_LIST
     aitken_accum_exchange_case1
     calcsize_compute_dry_volume
     stand_modal_aero_calcsize_sub
+    stand_modal_aero_calcsize_sub_update_ptend
     )
 # # matching the tests and errors, just for convenience
 
@@ -49,6 +51,7 @@ set(ERROR_THRESHOLDS
     1e-12
     1e-12
     5e-11
+    3e-5
    )
 
 
