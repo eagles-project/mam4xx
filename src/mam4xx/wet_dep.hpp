@@ -1502,7 +1502,7 @@ int get_aero_model_wetdep_work_len() {
       // rain, ptend_q, cldv, cldvcu, cldvst, scavcoefnum, scavcoefvol
       // sol_facti, sol_factic, sol_factb, f_act_conv, scavt, rcscavt, bcscavt
       3 * pcnst +         //  qsrflx_mzaer2cnvpr, rtscavt_sv
-      mam4::nlev * pcnst; +// ptend_q
+      mam4::nlev * pcnst; // ptend_q
       // dry_geometric_mean_diameter_i, qaerwat, wetdens
       // 3* mam4::nlev * AeroConfig::num_modes() * mam4::nlev; 
   return work_len;
