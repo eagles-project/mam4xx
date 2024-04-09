@@ -1525,7 +1525,9 @@ void aero_model_wetdep(
     // const ColumnView &dp_ccf,
     // const ColumnView &sh_ccf, 
     const ColumnView &icwmrdp,
-    const ColumnView &icwmrsh, const ColumnView &evapr, const ColumnView &cldst,
+    const ColumnView &icwmrsh,
+    const ColumnView &evapr, 
+    // const ColumnView &cldst,
     const ColumnView &dlf, 
     // output
     const View1D &aerdepwetis,
@@ -1541,7 +1543,6 @@ void aero_model_wetdep(
   // ColumnView aerdepwetis = diags.aerosol_wet_deposition_interstitial;
   // ColumnView aerdepwetcw = diags.aerosol_wet_deposition_cloud_water;
 
-  // CHECK; is this an input?
   // evapr = diags.evaporation_of_falling_precipitation;
   // shallow+deep convective detrainment [kg/kg/s]
   // dlf = diags.total_convective_detrainment;
@@ -1596,10 +1597,8 @@ void aero_model_wetdep(
   View1D cldcu(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
 
-  // FIXME: cldt is an input in wetdep.F90
-  //  total cloud fraction [fraction]
-  // View1D cldt(work_ptr, mam4::nlev);
-  // work_ptr += mam4::nlev;
+  View1D cldst(work_ptr, mam4::nlev);
+  work_ptr += mam4::nlev;
 
   View1D evapc(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
@@ -1870,6 +1869,11 @@ void aero_model_wetdep(
     // cumulus cloud fraction =  dp_frac + sh_frac
     wetdep::sum_values(team, cldcu, dp_frac, sh_frac, nlev);
     // total cloud fraction [fraction] = dp_ccf + sh_ccf
+    // Stratiform cloud fraction cldst  = cldt - cldcu  Stratiform cloud fraction
+    team.team_barrier();
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
+                       [&](int k) { cldst[k] = cldt[k] + cldcu[k]; });
+
     // FIXME: where does eq come from?
     // FIXME: in fortran code cldt is equal to cln 
     // wetdep::sum_values(team, cldt, dp_ccf, sh_ccf, nlev);
