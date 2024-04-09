@@ -258,6 +258,39 @@ void extract_stateq_from_prognostics(const mam4::Prognostics &progs,
 } // extract_stateq_from_prognostics
 
 KOKKOS_INLINE_FUNCTION
+void extract_ptend_from_tendencies(const Tendencies &tends, Real *ptend,
+                                     const int klev) {
+
+  int s_idx = ekat::ScalarTraits<int>::invalid();
+  // FIXME: tendencies for first five item (qv, qc, qi, nc, ni) should no be modified by mam4xx
+  // is this correct ? 
+  if (tends.q_gas[0].data()) { // if gases are defined in dry_aero aerosol state
+    s_idx = gasses_start_ind(); // gases start at index 9 (index 10 in Fortran
+                                // version)
+    for (int g = 0; g < AeroConfig::num_gas_ids(); ++g) {
+      // get mmr at level "klev"
+      ptend[s_idx] = tends.q_gas[g](klev);
+      s_idx++; // update index
+    }
+  } else {
+    s_idx = aero_start_ind(); // If no gasses; start with the first index of
+                              // aerosols
+  }
+
+  // Now start adding aerosols mmr into the state_q
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    // First add the aerosol species mmr
+    for (int a = 0; a < mam4::num_species_mode(m); ++a) {
+      ptend[s_idx] = tends.q_aero_i[m][a](klev);
+      s_idx++; // update index even if we lack some aerosol mmrs
+    }
+    ptend[s_idx] = tends.n_mode_i[m](klev);
+    s_idx++; // update index
+  }
+} // extract_stateq_from_prognostics
+
+
+KOKKOS_INLINE_FUNCTION
 void inject_stateq_to_prognostics(const Real *q, mam4::Prognostics &progs,
                                   const int klev) {
 
@@ -287,6 +320,40 @@ void inject_stateq_to_prognostics(const Real *q, mam4::Prognostics &progs,
     }            // a
     // Now add aerosol number mmr
     progs.n_mode_i[m](klev) = q[s_idx];
+    s_idx++; // update index
+  }          // m
+}
+
+KOKKOS_INLINE_FUNCTION
+void inject_ptend_to_tendencies(const Real *ptend, const Tendencies &tends,
+                                  const int klev) {
+
+  int s_idx = ekat::ScalarTraits<int>::invalid();
+
+  if (tends.q_gas[0].data()) { // if gases are defined in dry_aero aerosol state
+    s_idx = gasses_start_ind(); // gases start at index 9 (index 10 in Fortran
+                                // version)
+    for (int g = 0; g < AeroConfig::num_gas_ids(); ++g) {
+      // get mmr at level "klev"
+      tends.q_gas[g](klev) = ptend[s_idx];
+      s_idx++; // update index
+    }
+  } else {
+    s_idx = aero_start_ind(); // If no gasses; start with the first index of
+                              // aerosols
+  }                           // end if
+
+  // Now start adding aerosols mmr into the state_q
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    //   // First add the aerosol species mmr
+    for (int a = 0; a < mam4::num_species_mode(m); ++a) {
+      if (tends.q_aero_i[m][a].data()) {
+        tends.q_aero_i[m][a](klev) = ptend[s_idx];
+        s_idx++; // update index even if we lack some aerosol mmrs
+      }          // end if
+    }            // a
+    // Now add aerosol number mmr
+    tends.n_mode_i[m](klev) = ptend[s_idx];
     s_idx++; // update index
   }          // m
 }

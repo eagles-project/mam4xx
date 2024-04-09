@@ -1695,15 +1695,14 @@ void aero_model_wetdep(
   haero::ConstColumnView q_liq = atm.liquid_mixing_ratio;
   haero::ConstColumnView q_ice = atm.ice_mixing_ratio;
 
-  // q_liq // liquid water mixing ratio[kg/kg]
-  // q_ice // ice water mixing ratio [kg/kg]
-
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int kk) {
     // copy data from prog to stateq
     const auto state_q_kk = ekat::subview(state_q, kk);
     const auto qqcw_kk = ekat::subview(qqcw, kk);
+    const auto ptend_q_kk =ekat::subview(ptend_q,kk);
     utils::extract_stateq_from_prognostics(progs, atm, state_q_kk.data(), kk);
-    mam4::utils::extract_qqcw_from_prognostics(progs, qqcw_kk.data(), kk);
+    utils::extract_qqcw_from_prognostics(progs, qqcw_kk.data(), kk);
+    utils::extract_ptend_from_tendencies(tends, ptend_q_kk.data(), kk);
   });
   team.team_barrier();
 
@@ -1719,29 +1718,93 @@ void aero_model_wetdep(
   // compute calcsize and
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0, nlev), [&](int kk) {
-    int nspec_amode[ntot_amode];
-    int lspectype_amode[maxd_aspectype][ntot_amode];
-    int lmassptr_amode[maxd_aspectype][ntot_amode];
-    Real specdens_amode[maxd_aspectype];
-    Real spechygro[maxd_aspectype];
-
-    Real mean_std_dev_nmodes[ntot_amode] = {};
-    Real dgnumwet_m_kk[ntot_amode] = {};
-    Real qaerwat_m_kk[ntot_amode] = {};
 
     const auto state_q_kk = ekat::subview(state_q, kk);
     const auto qqcw_kk = ekat::subview(qqcw, kk);
+    const auto ptend_q_kk =ekat::subview(ptend_q,kk);
     Real cldn = zero;
+    Real dgnumwet_m_kk[ntot_amode] = {};
+    {
 
-    mam4::modal_aer_opt::compute_calcsize_and_water_uptake_dr(
-        pmid(kk), temperature(kk), cldn, state_q_kk.data(), qqcw_kk.data(),
-        dt, // in
-        nspec_amode, lspectype_amode, specdens_amode, lmassptr_amode, spechygro,
-        mean_std_dev_nmodes, dgnumwet_m_kk, qaerwat_m_kk);
+  const bool do_adjust = true;
+  const bool do_aitacc_transfer = true;
+  const bool update_mmr = false;
+
+  int numptr_amode[ntot_amode];
+  int mam_idx[ntot_amode][ndrop::nspec_max];
+  int mam_cnst_idx[ntot_amode][ndrop::nspec_max];
+  int nspec_amode[ntot_amode];
+  int lspectype_amode[maxd_aspectype][ntot_amode];
+  int lmassptr_amode[maxd_aspectype][ntot_amode];
+  Real specdens_amode[maxd_aspectype];
+  Real spechygro[maxd_aspectype];
+
+  ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
+                             numptr_amode, specdens_amode, spechygro, mam_idx,
+                             mam_cnst_idx);
+
+  
+  Real inv_density[ntot_amode][AeroConfig::num_aerosol_ids()] = {};
+  Real num2vol_ratio_min[ntot_amode] = {};
+  Real num2vol_ratio_max[ntot_amode] = {};
+  Real num2vol_ratio_max_nmodes[ntot_amode] = {};
+  Real num2vol_ratio_min_nmodes[ntot_amode] = {};
+  Real num2vol_ratio_nom_nmodes[ntot_amode] = {};
+  Real dgnmin_nmodes[ntot_amode] = {};
+  Real dgnmax_nmodes[ntot_amode] = {};
+  Real dgnnom_nmodes[ntot_amode] = {};
+  //
+  Real mean_std_dev_nmodes[ntot_amode] = {};
+
+  // outputs
+  bool noxf_acc2ait[AeroConfig::num_aerosol_ids()] = {};
+  int n_common_species_ait_accum = {};
+  int ait_spec_in_acc[AeroConfig::num_aerosol_ids()] = {};
+  int acc_spec_in_ait[AeroConfig::num_aerosol_ids()] = {};
+  modal_aero_calcsize::init_calcsize(
+      inv_density, num2vol_ratio_min, num2vol_ratio_max,
+      num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
+      num2vol_ratio_nom_nmodes, dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
+      mean_std_dev_nmodes,
+      // outputs
+      noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
+      acc_spec_in_ait);
+
+  // FIXME: dgncur_a is aerosol particle diameter and is an input to calcsize. 
+  // But calcsize reset its value. 
+  Real dgnumdry_m_kk[ntot_amode] = {};
+  Real dgncur_c_kk[ntot_amode] = {};
+  Real dqqcwdt_kk[pcnst] = {};
+  //  Calculate aerosol size distribution parameters and aerosol water uptake
+  // For prognostic aerosols
+  modal_aero_calcsize::modal_aero_calcsize_sub(
+      state_q_kk.data(), // in/out
+      qqcw_kk.data(),     // in/out
+      dt, do_adjust, do_aitacc_transfer, update_mmr, lmassptr_amode,
+      numptr_amode,
+      inv_density, // in
+      num2vol_ratio_min, num2vol_ratio_max, num2vol_ratio_max_nmodes,
+      num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes, dgnmin_nmodes,
+      dgnmax_nmodes, dgnnom_nmodes, mean_std_dev_nmodes,
+      noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
+      acc_spec_in_ait,
+      // outputs 
+      dgnumdry_m_kk, dgncur_c_kk, ptend_q_kk.data(), dqqcwdt_kk);
+  
+   // FIXME: wetdens and qaerwat are input/ouput to water_uptake 
+  Real qaerwat_m_kk[ntot_amode] = {};
+  Real wetdens_kk[ntot_amode] = {};
+  mam4::water_uptake::modal_aero_water_uptake_dr(
+      nspec_amode, specdens_amode, spechygro, lspectype_amode, state_q_kk.data(),
+      temperature(kk), pmid(kk), cldn, dgnumdry_m_kk, dgnumwet_m_kk, qaerwat_m_kk, wetdens_kk);
+  }
+
+    // team.team_barrier();
 
     cldn_prev_step(kk) = cldn;
-    mam4::utils::inject_qqcw_to_prognostics(qqcw_kk.data(), progs, kk);
-    mam4::utils::inject_stateq_to_prognostics(state_q_kk.data(), progs, kk);
+    utils::inject_qqcw_to_prognostics(qqcw_kk.data(), progs, kk);
+    utils::inject_stateq_to_prognostics(state_q_kk.data(), progs, kk);
+    utils::inject_ptend_to_tendencies(ptend_q_kk.data(),tends, kk);
 
     // save diameters, we use them in wet_dep.
     for (int imode = 0; imode < ntot_amode; imode++) {
@@ -1914,6 +1977,12 @@ void aero_model_wetdep(
       }
     }
   }
+  // make sure that ptend is updated in tendencies
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0, nlev), [&](int kk) {
+    const auto ptend_q_kk =ekat::subview(ptend_q,kk);
+    utils::inject_ptend_to_tendencies(ptend_q_kk.data(),tends, kk);
+  });
   team.team_barrier();
 
 } // aero_model_wetdep
