@@ -1515,13 +1515,16 @@ void aero_model_wetdep(
     const ThreadTeam &team, const Atmosphere &atm, Prognostics &progs,
     Tendencies &tends, const Real dt,
     // inputs
-    const ColumnView &cldn,
+    const ColumnView &cldt,
     const ColumnView &cldn_prev_step,
     const ColumnView &rprdsh,
     const ColumnView &rprddp, const ColumnView &evapcdp,
-    const ColumnView &evapcsh, const ColumnView &dp_frac,
-    const ColumnView &sh_frac, const ColumnView &dp_ccf,
-    const ColumnView &sh_ccf, const ColumnView &icwmrdp,
+    const ColumnView &evapcsh,
+    const ColumnView &dp_frac,
+    const ColumnView &sh_frac,
+    // const ColumnView &dp_ccf,
+    const ColumnView &sh_ccf, 
+    const ColumnView &icwmrdp,
     const ColumnView &icwmrsh, const ColumnView &evapr, const ColumnView &cldst,
     const ColumnView &dlf, 
     // output
@@ -1595,8 +1598,8 @@ void aero_model_wetdep(
 
   // FIXME: cldt is an input in wetdep.F90
   //  total cloud fraction [fraction]
-  View1D cldt(work_ptr, mam4::nlev);
-  work_ptr += mam4::nlev;
+  // View1D cldt(work_ptr, mam4::nlev);
+  // work_ptr += mam4::nlev;
 
   View1D evapc(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
@@ -1869,7 +1872,7 @@ void aero_model_wetdep(
     // total cloud fraction [fraction] = dp_ccf + sh_ccf
     // FIXME: where does eq come from?
     // FIXME: in fortran code cldt is equal to cln 
-    wetdep::sum_values(team, cldt, dp_ccf, sh_ccf, nlev);
+    // wetdep::sum_values(team, cldt, dp_ccf, sh_ccf, nlev);
     // evaporation from convection (deep + shallow)
     wetdep::sum_values(team, evapc, evapcsh, evapcdp, nlev);
 
