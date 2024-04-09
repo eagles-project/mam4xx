@@ -51,6 +51,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
 
     // inputs
     ColumnView cldn_prev_step = create_column_view(nlev);
+    ColumnView cldn = create_column_view(nlev);
     ColumnView rprdsh = create_column_view(nlev);
     ColumnView rprddp = create_column_view(nlev);
     ColumnView evapcdp = create_column_view(nlev);
@@ -82,6 +83,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
           auto tends_in = tends;
           wetdep::aero_model_wetdep(team, atm, progs_in, tends_in, dt,
                                     // inputs
+                                    cldn, 
                                     cldn_prev_step, rprdsh, rprddp, evapcdp,
                                     evapcsh, dp_frac, sh_frac, dp_ccf, sh_ccf,
                                     icwmrdp, icwmrsh, evapr, cldst,

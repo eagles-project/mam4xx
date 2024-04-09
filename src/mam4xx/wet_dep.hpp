@@ -1515,7 +1515,9 @@ void aero_model_wetdep(
     const ThreadTeam &team, const Atmosphere &atm, Prognostics &progs,
     Tendencies &tends, const Real dt,
     // inputs
-    const ColumnView &cldn_prev_step, const ColumnView &rprdsh,
+    const ColumnView &cldn,
+    const ColumnView &cldn_prev_step,
+    const ColumnView &rprdsh,
     const ColumnView &rprddp, const ColumnView &evapcdp,
     const ColumnView &evapcsh, const ColumnView &dp_frac,
     const ColumnView &sh_frac, const ColumnView &dp_ccf,
@@ -1529,6 +1531,7 @@ void aero_model_wetdep(
     Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
         qqcw_sav,
     const View1D &work) {
+  // cldn layer cloud fraction [fraction]; CLD
 
 
   // FIXME: do we need to set the variables inside of set_srf_wetdep ? 
@@ -1754,7 +1757,6 @@ void aero_model_wetdep(
     const auto state_q_kk = ekat::subview(state_q, kk);
     const auto qqcw_kk = ekat::subview(qqcw, kk);
     const auto ptend_q_kk = ekat::subview(ptend_q, kk);
-    Real cldn = zero;
     Real dgnumwet_m_kk[ntot_amode] = {};
           // FIXME: wetdens and qaerwat are input/ouput to water_uptake
     Real qaerwat_m_kk[ntot_amode] = {};
@@ -1829,19 +1831,11 @@ void aero_model_wetdep(
 
       mam4::water_uptake::modal_aero_water_uptake_dr(
           nspec_amode, specdens_amode, spechygro, lspectype_amode,
-          state_q_kk.data(), temperature(kk), pmid(kk), cldn, dgnumdry_m_kk,
+          state_q_kk.data(), temperature(kk), pmid(kk), cldn_prev_step(kk), dgnumdry_m_kk,
           dgnumwet_m_kk, qaerwat_m_kk, wetdens_kk);
     }
 
     // team.team_barrier();
-
-
-
-
-    cldn_prev_step(kk) = cldn;
-    utils::inject_qqcw_to_prognostics(qqcw_kk.data(), progs, kk);
-    utils::inject_stateq_to_prognostics(state_q_kk.data(), progs, kk);
-    utils::inject_ptend_to_tendencies(ptend_q_kk.data(), tends, kk);
 
     // save diameters, we use them in wet_dep.
     for (int imode = 0; imode < ntot_amode; imode++) {
@@ -1874,6 +1868,7 @@ void aero_model_wetdep(
     wetdep::sum_values(team, cldcu, dp_frac, sh_frac, nlev);
     // total cloud fraction [fraction] = dp_ccf + sh_ccf
     // FIXME: where does eq come from?
+    // FIXME: in fortran code cldt is equal to cln 
     wetdep::sum_values(team, cldt, dp_ccf, sh_ccf, nlev);
     // evaporation from convection (deep + shallow)
     wetdep::sum_values(team, evapc, evapcsh, evapcdp, nlev);
@@ -2021,6 +2016,10 @@ void aero_model_wetdep(
   team.team_barrier();
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0, nlev), [&](int kk) {
     const auto ptend_q_kk = ekat::subview(ptend_q, kk);
+    const auto state_q_kk = ekat::subview(state_q, kk);
+    const auto qqcw_kk = ekat::subview(qqcw, kk);
+    utils::inject_qqcw_to_prognostics(qqcw_kk.data(), progs, kk);
+    utils::inject_stateq_to_prognostics(state_q_kk.data(), progs, kk);
     utils::inject_ptend_to_tendencies(ptend_q_kk.data(), tends, kk);
   });
   team.team_barrier();
