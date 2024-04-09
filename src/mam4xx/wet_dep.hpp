@@ -1499,7 +1499,9 @@ int get_aero_model_wetdep_work_len() {
       // rain, ptend_q, cldv, cldvcu, cldvst, scavcoefnum, scavcoefvol
       // sol_facti, sol_factic, sol_factb, f_act_conv, scavt, rcscavt, bcscavt
       3 * pcnst +         //  qsrflx_mzaer2cnvpr, rtscavt_sv
-      mam4::nlev * pcnst; // ptend_q
+      mam4::nlev * pcnst +// ptend_q
+      // dry_geometric_mean_diameter_i, qaerwat, wetdens
+      3* mam4::nlev * AeroConfig::num_modes() * mam4::nlev; 
   return work_len;
 }
 // =============================================================================
@@ -1543,14 +1545,41 @@ void aero_model_wetdep(
   constexpr int zero = 0.0;
 
   auto work_ptr = (Real *)work.data();
+  // FIXME: is an input/output wet_geometric_mean_diameter_i ?
+  // DGNUMWET
   ColumnView wet_geometric_mean_diameter_i[ntot_amode];
   for (int m = 0; m < ntot_amode; ++m) {
     wet_geometric_mean_diameter_i[m] = ColumnView(work_ptr, mam4::nlev);
     work_ptr += mam4::nlev;
   }
-
+  // FIXME: is an input/output dry_geometric_mean_diameter_i ? 
+  ColumnView dry_geometric_mean_diameter_i[ntot_amode];
+  // DGNUM
+  for (int m = 0; m < ntot_amode; ++m) {
+    dry_geometric_mean_diameter_i[m] = ColumnView(work_ptr, mam4::nlev);
+    work_ptr += mam4::nlev;
+  }
+  
+  // FIXME: is an input/output qaerwat ? 
+  // aerosol water [kg/kg]
+  // qaerwat_idx    = pbuf_get_index('QAERWAT')
+  ColumnView qaerwat[ntot_amode];
+  for (int m = 0; m < ntot_amode; ++m) {
+    qaerwat[m] = ColumnView(work_ptr, mam4::nlev);
+    work_ptr += mam4::nlev;
+  }
+  // FIXME: is an input/output wetdens ? 
+  // wet aerosol density [kg/m3]
+  // WETDENS_AP
+  ColumnView wetdens[ntot_amode];
+  for (int m = 0; m < ntot_amode; ++m) {
+    wetdens[m] = ColumnView(work_ptr, mam4::nlev);
+    work_ptr += mam4::nlev;
+  }
+  
   View2D state_q(work_ptr, mam4::nlev, pcnst);
   work_ptr += mam4::nlev * pcnst;
+
   View2D qqcw(work_ptr, mam4::nlev, pcnst);
   work_ptr += mam4::nlev * pcnst;
 
@@ -1800,6 +1829,9 @@ void aero_model_wetdep(
 
     // team.team_barrier();
 
+
+
+
     cldn_prev_step(kk) = cldn;
     utils::inject_qqcw_to_prognostics(qqcw_kk.data(), progs, kk);
     utils::inject_stateq_to_prognostics(state_q_kk.data(), progs, kk);
@@ -1807,8 +1839,11 @@ void aero_model_wetdep(
 
     // save diameters, we use them in wet_dep.
     for (int imode = 0; imode < ntot_amode; imode++) {
-      const auto dp_m = wet_geometric_mean_diameter_i[imode];
-      dp_m(kk) = dgnumwet_m_kk[imode];
+      wet_geometric_mean_diameter_i[imode](kk) = dgnumwet_m_kk[imode];
+      dry_geometric_mean_diameter_i[imode](kk) = dgnumdry_m_kk[imode];
+      qaerwat[imode](kk) = qaerwat_m_kk[imode];
+      wetdens[imode](kk) = wetdens_m_kk[imode];
+
     }
   }); // klev parallel_for loop
 
