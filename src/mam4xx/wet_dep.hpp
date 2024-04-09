@@ -1521,19 +1521,23 @@ void aero_model_wetdep(
     const ColumnView &sh_frac, const ColumnView &dp_ccf,
     const ColumnView &sh_ccf, const ColumnView &icwmrdp,
     const ColumnView &icwmrsh, const ColumnView &evapr, const ColumnView &cldst,
+    const ColumnView &dlf, 
     // output
-    const ColumnView &dlf, const ColumnView &aerdepwetis,
-    const ColumnView &aerdepwetcw,
+    const View1D &aerdepwetis,
+    const View1D &aerdepwetcw,
     // FIXME
     Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
         qqcw_sav,
     const View1D &work) {
 
+
+  // FIXME: do we need to set the variables inside of set_srf_wetdep ? 
   // ColumnView aerdepwetis = diags.aerosol_wet_deposition_interstitial;
   // ColumnView aerdepwetcw = diags.aerosol_wet_deposition_cloud_water;
 
   // CHECK; is this an input?
   // evapr = diags.evaporation_of_falling_precipitation;
+  // shallow+deep convective detrainment [kg/kg/s]
   // dlf = diags.total_convective_detrainment;
 
   // CHECK ; is this an input?
@@ -1752,6 +1756,12 @@ void aero_model_wetdep(
     const auto ptend_q_kk = ekat::subview(ptend_q, kk);
     Real cldn = zero;
     Real dgnumwet_m_kk[ntot_amode] = {};
+          // FIXME: wetdens and qaerwat are input/ouput to water_uptake
+    Real qaerwat_m_kk[ntot_amode] = {};
+    Real wetdens_kk[ntot_amode] = {};
+    // FIXME: dgncur_a is aerosol particle diameter and is an input to
+    // calcsize. But calcsize reset its value.
+    Real dgnumdry_m_kk[ntot_amode] = {};
     {
 
       const bool do_adjust = true;
@@ -1797,9 +1807,7 @@ void aero_model_wetdep(
           noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
           acc_spec_in_ait);
 
-      // FIXME: dgncur_a is aerosol particle diameter and is an input to
-      // calcsize. But calcsize reset its value.
-      Real dgnumdry_m_kk[ntot_amode] = {};
+
       Real dgncur_c_kk[ntot_amode] = {};
       Real dqqcwdt_kk[pcnst] = {};
       //  Calculate aerosol size distribution parameters and aerosol water
@@ -1818,9 +1826,7 @@ void aero_model_wetdep(
           // outputs
           dgnumdry_m_kk, dgncur_c_kk, ptend_q_kk.data(), dqqcwdt_kk);
 
-      // FIXME: wetdens and qaerwat are input/ouput to water_uptake
-      Real qaerwat_m_kk[ntot_amode] = {};
-      Real wetdens_kk[ntot_amode] = {};
+
       mam4::water_uptake::modal_aero_water_uptake_dr(
           nspec_amode, specdens_amode, spechygro, lspectype_amode,
           state_q_kk.data(), temperature(kk), pmid(kk), cldn, dgnumdry_m_kk,
@@ -1842,7 +1848,7 @@ void aero_model_wetdep(
       wet_geometric_mean_diameter_i[imode](kk) = dgnumwet_m_kk[imode];
       dry_geometric_mean_diameter_i[imode](kk) = dgnumdry_m_kk[imode];
       qaerwat[imode](kk) = qaerwat_m_kk[imode];
-      wetdens[imode](kk) = wetdens_m_kk[imode];
+      wetdens[imode](kk) = wetdens_kk[imode];
 
     }
   }); // klev parallel_for loop

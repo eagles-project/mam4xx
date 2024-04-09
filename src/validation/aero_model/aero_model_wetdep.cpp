@@ -66,8 +66,8 @@ void aero_model_wetdep(Ensemble *ensemble) {
 
     // outputs
     ColumnView dlf = create_column_view(nlev);
-    ColumnView aerdepwetis = create_column_view(nlev);
-    ColumnView aerdepwetcw = create_column_view(nlev);
+    wetdep::View1D aerdepwetcw("aerdepwetcw", aero_model::pcnst);
+    wetdep::View1D aerdepwetis("aerdepwetis", aero_model::pcnst);
 
     const int work_len = wetdep::get_aero_model_wetdep_work_len();
     wetdep::View1D work("work", work_len);
@@ -95,5 +95,15 @@ void aero_model_wetdep(Ensemble *ensemble) {
     auto dlf_host = View1DHost((Real *)dlf_output.data(), nlev);
     Kokkos::deep_copy(dlf, dlf_host);
     output.set("dlf", dlf_output);
+
+    std::vector<Real> aerdepwetcw_output(nlev, 0);
+    auto aerdepwetcw_host = View1DHost((Real *)aerdepwetcw_output.data(), aero_model::pcnst);
+    Kokkos::deep_copy(aerdepwetcw, aerdepwetcw_host);
+    output.set("aerdepwetcw", aerdepwetcw_output);
+
+    std::vector<Real> aerdepwetis_output(nlev, 0);
+    auto aerdepwetis_host = View1DHost((Real *)aerdepwetis_output.data(), aero_model::pcnst);
+    Kokkos::deep_copy(aerdepwetis, aerdepwetis_host);
+    output.set("aerdepwetis", aerdepwetis_output);
   });
 }
