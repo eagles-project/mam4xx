@@ -1494,7 +1494,7 @@ KOKKOS_INLINE_FUNCTION
 int get_aero_model_wetdep_work_len() {
   // wet_geometric_mean_diameter_i + state_q + qqcw
   int work_len =
-      mam4::nlev * AeroConfig::num_modes() * mam4::nlev + //
+      // mam4::nlev * AeroConfig::num_modes() * mam4::nlev + //
       2 * mam4::nlev * pcnst +                            // state_q + qqcw
       25 * mam4::nlev + // cldcu, cldt, evapc, cmfdqr,
                         // prain, totcond, conicw, isprx, f_act_conv_coarse,
@@ -1502,9 +1502,9 @@ int get_aero_model_wetdep_work_len() {
       // rain, ptend_q, cldv, cldvcu, cldvst, scavcoefnum, scavcoefvol
       // sol_facti, sol_factic, sol_factb, f_act_conv, scavt, rcscavt, bcscavt
       3 * pcnst +         //  qsrflx_mzaer2cnvpr, rtscavt_sv
-      mam4::nlev * pcnst +// ptend_q
+      mam4::nlev * pcnst; +// ptend_q
       // dry_geometric_mean_diameter_i, qaerwat, wetdens
-      3* mam4::nlev * AeroConfig::num_modes() * mam4::nlev; 
+      // 3* mam4::nlev * AeroConfig::num_modes() * mam4::nlev; 
   return work_len;
 }
 // =============================================================================

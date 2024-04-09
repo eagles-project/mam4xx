@@ -113,14 +113,16 @@ void aero_model_wetdep(Ensemble *ensemble) {
     Kokkos::deep_copy(dlf, dlf_host);
     output.set("dlf", dlf_output);
 
-    std::vector<Real> aerdepwetcw_output(nlev, 0);
+    std::vector<Real> aerdepwetcw_output(aero_model::pcnst, 0);
     auto aerdepwetcw_host = View1DHost((Real *)aerdepwetcw_output.data(), aero_model::pcnst);
     Kokkos::deep_copy(aerdepwetcw, aerdepwetcw_host);
     output.set("aerdepwetcw", aerdepwetcw_output);
 
-    std::vector<Real> aerdepwetis_output(nlev, 0);
+    std::vector<Real> aerdepwetis_output(aero_model::pcnst, 0);
     auto aerdepwetis_host = View1DHost((Real *)aerdepwetis_output.data(), aero_model::pcnst);
     Kokkos::deep_copy(aerdepwetis, aerdepwetis_host);
     output.set("aerdepwetis", aerdepwetis_output);
+
+    
   });
 }
