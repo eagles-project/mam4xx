@@ -1523,7 +1523,7 @@ void aero_model_wetdep(
     const ColumnView &dp_frac,
     const ColumnView &sh_frac,
     // const ColumnView &dp_ccf,
-    const ColumnView &sh_ccf, 
+    // const ColumnView &sh_ccf, 
     const ColumnView &icwmrdp,
     const ColumnView &icwmrsh, const ColumnView &evapr, const ColumnView &cldst,
     const ColumnView &dlf, 
