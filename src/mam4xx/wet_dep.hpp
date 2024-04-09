@@ -44,6 +44,10 @@ namespace wetdep {
  *
  * @pre atm is initialized correctly and has the correct number of levels.
  */
+using View1D = DeviceType::view_1d<Real>;
+using Bool1D = DeviceType::view_1d<bool>;
+using View2D = DeviceType::view_2d<Real>;
+using View3D = DeviceType::view_2d<Real>;  
 KOKKOS_INLINE_FUNCTION
 Real local_precip_production(const Real pdel, const Real source_term,
                              const Real sink_term) {
@@ -1236,7 +1240,7 @@ void modal_aero_bcscavcoef_get(
 KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(
     const ThreadTeam &team,
-    const ColumnView wet_geometric_mean_diameter_i[AeroConfig::num_modes()],
+    const View2D &wet_geometric_mean_diameter_i,
     Kokkos::View<bool *> isprx,
     const Real scavimptblvol[aero_model::nimptblgrow_total]
                             [AeroConfig::num_modes()],
@@ -1246,8 +1250,7 @@ void modal_aero_bcscavcoef_get(
     const int imode, const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     const Real dgnum_amode_imode = modes(imode).nom_diameter;
-    ColumnView dgn_awet_imode = wet_geometric_mean_diameter_i[imode];
-    const Real dgn_awet_imode_k = dgn_awet_imode[k];
+    const Real dgn_awet_imode_k = wet_geometric_mean_diameter_i(imode, k);
     aero_model::modal_aero_bcscavcoef_get(
         imode, isprx[k], dgn_awet_imode_k, dgnum_amode_imode, scavimptblvol,
         scavimptblnum, scavcoefnum[k], scavcoefvol[k]);
@@ -1506,10 +1509,7 @@ int get_aero_model_wetdep_work_len() {
 }
 // =============================================================================
 
-using View1D = DeviceType::view_1d<Real>;
-using Bool1D = DeviceType::view_1d<bool>;
-using View2D = DeviceType::view_2d<Real>;
-using View3D = DeviceType::view_2d<Real>;
+
 KOKKOS_INLINE_FUNCTION
 void aero_model_wetdep(
     const ThreadTeam &team, const Atmosphere &atm, Prognostics &progs,
@@ -1526,6 +1526,11 @@ void aero_model_wetdep(
     const ColumnView &icwmrsh,
     const ColumnView &evapr, 
     const ColumnView &dlf, 
+    // in/out calcsize and water_uptake
+    const View2D &wet_geometric_mean_diameter_i, 
+    const View2D &dry_geometric_mean_diameter_i, 
+    const View2D &qaerwat,
+    const View2D &wetdens, 
     // output
     const View1D &aerdepwetis,
     const View1D &aerdepwetcw,
@@ -1552,35 +1557,30 @@ void aero_model_wetdep(
   auto work_ptr = (Real *)work.data();
   // FIXME: is an input/output wet_geometric_mean_diameter_i ?
   // DGNUMWET
-  ColumnView wet_geometric_mean_diameter_i[ntot_amode];
-  for (int m = 0; m < ntot_amode; ++m) {
-    wet_geometric_mean_diameter_i[m] = ColumnView(work_ptr, mam4::nlev);
-    work_ptr += mam4::nlev;
-  }
   // FIXME: is an input/output dry_geometric_mean_diameter_i ? 
-  ColumnView dry_geometric_mean_diameter_i[ntot_amode];
-  // DGNUM
-  for (int m = 0; m < ntot_amode; ++m) {
-    dry_geometric_mean_diameter_i[m] = ColumnView(work_ptr, mam4::nlev);
-    work_ptr += mam4::nlev;
-  }
+  // ColumnView dry_geometric_mean_diameter_i[ntot_amode];
+  // // DGNUM
+  // for (int m = 0; m < ntot_amode; ++m) {
+  //   dry_geometric_mean_diameter_i[m] = ColumnView(work_ptr, mam4::nlev);
+  //   work_ptr += mam4::nlev;
+  // }
   
   // FIXME: is an input/output qaerwat ? 
   // aerosol water [kg/kg]
   // qaerwat_idx    = pbuf_get_index('QAERWAT')
-  ColumnView qaerwat[ntot_amode];
-  for (int m = 0; m < ntot_amode; ++m) {
-    qaerwat[m] = ColumnView(work_ptr, mam4::nlev);
-    work_ptr += mam4::nlev;
-  }
-  // FIXME: is an input/output wetdens ? 
-  // wet aerosol density [kg/m3]
-  // WETDENS_AP
-  ColumnView wetdens[ntot_amode];
-  for (int m = 0; m < ntot_amode; ++m) {
-    wetdens[m] = ColumnView(work_ptr, mam4::nlev);
-    work_ptr += mam4::nlev;
-  }
+  // ColumnView qaerwat[ntot_amode];
+  // for (int m = 0; m < ntot_amode; ++m) {
+  //   qaerwat[m] = ColumnView(work_ptr, mam4::nlev);
+  //   work_ptr += mam4::nlev;
+  // }
+  // // FIXME: is an input/output wetdens ? 
+  // // wet aerosol density [kg/m3]
+  // // WETDENS_AP
+  // ColumnView wetdens[ntot_amode];
+  // for (int m = 0; m < ntot_amode; ++m) {
+  //   wetdens[m] = ColumnView(work_ptr, mam4::nlev);
+  //   work_ptr += mam4::nlev;
+  // }
   
   View2D state_q(work_ptr, mam4::nlev, pcnst);
   work_ptr += mam4::nlev * pcnst;
@@ -1835,10 +1835,10 @@ void aero_model_wetdep(
 
     // save diameters, we use them in wet_dep.
     for (int imode = 0; imode < ntot_amode; imode++) {
-      wet_geometric_mean_diameter_i[imode](kk) = dgnumwet_m_kk[imode];
-      dry_geometric_mean_diameter_i[imode](kk) = dgnumdry_m_kk[imode];
-      qaerwat[imode](kk) = qaerwat_m_kk[imode];
-      wetdens[imode](kk) = wetdens_kk[imode];
+      wet_geometric_mean_diameter_i(imode, kk) = dgnumwet_m_kk[imode];
+      dry_geometric_mean_diameter_i(imode, kk) = dgnumdry_m_kk[imode];
+      qaerwat(imode, kk) = qaerwat_m_kk[imode];
+      wetdens(imode, kk) = wetdens_kk[imode];
 
     }
   }); // klev parallel_for loop

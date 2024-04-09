@@ -67,6 +67,19 @@ void aero_model_wetdep(Ensemble *ensemble) {
     wetdep::View1D aerdepwetcw("aerdepwetcw", aero_model::pcnst);
     wetdep::View1D aerdepwetis("aerdepwetis", aero_model::pcnst);
 
+    wetdep::View2D wet_geometric_mean_diameter_i("wet_geometric_mean_diameter_i",AeroConfig::num_modes(), nlev);
+    Kokkos::deep_copy(wet_geometric_mean_diameter_i, 1.0);
+
+    wetdep::View2D dry_geometric_mean_diameter_i("dry_geometric_mean_diameter_i",AeroConfig::num_modes(), nlev);
+    Kokkos::deep_copy(dry_geometric_mean_diameter_i, 1.0);
+
+    wetdep::View2D qaerwat("qaerwat",AeroConfig::num_modes(), nlev);
+    Kokkos::deep_copy(qaerwat, 1.0);
+
+    wetdep::View2D wetdens("wetdens",AeroConfig::num_modes(), nlev);
+    Kokkos::deep_copy(wetdens, 1.0);
+
+
     const int work_len = wetdep::get_aero_model_wetdep_work_len();
     wetdep::View1D work("work", work_len);
 
@@ -83,12 +96,14 @@ void aero_model_wetdep(Ensemble *ensemble) {
                                     cldt, 
                                     cldn_prev_step, rprdsh, rprddp, evapcdp,
                                     evapcsh, dp_frac, sh_frac,
-                                     // dp_ccf,
-                                    // sh_ccf,
                                     icwmrdp, icwmrsh, evapr,
-                                     // cldst,
+                                    dlf,
+                                    wet_geometric_mean_diameter_i,
+                                    dry_geometric_mean_diameter_i, 
+                                    qaerwat, 
+                                    wetdens, 
                                     // output
-                                    dlf, aerdepwetis, aerdepwetcw,
+                                    aerdepwetis, aerdepwetcw,
                                     // FIXME
                                     qqcw_sav, work);
         });
