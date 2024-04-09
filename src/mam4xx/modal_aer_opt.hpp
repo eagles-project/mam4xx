@@ -561,21 +561,10 @@ void compute_calcsize_and_water_uptake_dr(
       noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
       acc_spec_in_ait);
 
-  // diagnostics for visible band summed over modes
-
-  // Note: Need to compute inv density using indexing from e3sm
-  for (int imode = 0; imode < ntot_amode; ++imode) {
-    const int nspec = nspec_amode[imode];
-    for (int isp = 0; isp < nspec; ++isp) {
-      const int idx = lspectype_amode[isp][imode] - 1;
-      inv_density[imode][isp] = 1.0 / specdens_amode[idx];
-    } // isp
-  }   // imode
-
   Real dgncur_c_kk[ntot_amode] = {};
   Real dgnumdry_m_kk[ntot_amode] = {};
-  Real dnidt[ntot_amode] = {};
-  Real dncdt[ntot_amode] = {};
+  Real ptend[pcnst] = {};
+  Real dqqcwdt[pcnst] = {};
   //  Calculate aerosol size distribution parameters and aerosol water uptake
   // For prognostic aerosols
   modal_aero_calcsize::modal_aero_calcsize_sub(
@@ -589,7 +578,7 @@ void compute_calcsize_and_water_uptake_dr(
       dgnmax_nmodes, dgnnom_nmodes, mean_std_dev_nmodes,
       // outputs
       noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
-      acc_spec_in_ait, dgnumdry_m_kk, dgncur_c_kk, dnidt, dncdt);
+      acc_spec_in_ait, dgnumdry_m_kk, dgncur_c_kk, ptend, dqqcwdt);
 
   mam4::water_uptake::modal_aero_water_uptake_dr(
       nspec_amode, specdens_amode, spechygro, lspectype_amode, state_q_kk,
