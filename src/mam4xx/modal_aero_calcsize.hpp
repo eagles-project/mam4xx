@@ -49,7 +49,7 @@ void init_calcsize(
   const int accum_idx = int(ModeIndex::Accumulation);
   const int aitken_idx = int(ModeIndex::Aitken);
 
-  for (int i=0; i<AeroConfig::num_aerosol_ids(); ++i) {
+  for (int i = 0; i < AeroConfig::num_aerosol_ids(); ++i) {
     noxf_acc2ait[i] = false;
     ait_spec_in_acc[i] = 0;
     acc_spec_in_ait[i] = 0;
