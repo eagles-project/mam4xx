@@ -574,8 +574,8 @@ void compute_calcsize_and_water_uptake_dr(
 
   Real dgncur_c_kk[ntot_amode] = {};
   Real dgnumdry_m_kk[ntot_amode] = {};
-  Real dnidt[ntot_amode] = {};
-  Real dncdt[ntot_amode] = {};
+  Real dnidt[aero_model::pcnst] = {};
+  Real dncdt[aero_model::pcnst] = {};
   //  Calculate aerosol size distribution parameters and aerosol water uptake
   // For prognostic aerosols
   modal_aero_calcsize::modal_aero_calcsize_sub(

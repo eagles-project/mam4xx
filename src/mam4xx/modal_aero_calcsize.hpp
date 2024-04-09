@@ -27,6 +27,7 @@ constexpr int maxd_aspectype = ndrop::maxd_aspectype;
 
 KOKKOS_INLINE_FUNCTION
 void init_calcsize(
+    // outputs
     Real inv_density[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
     Real num2vol_ratio_min[AeroConfig::num_modes()],
     Real num2vol_ratio_max[AeroConfig::num_modes()],
@@ -37,7 +38,6 @@ void init_calcsize(
     Real dgnmax_nmodes[AeroConfig::num_modes()],
     Real dgnnom_nmodes[AeroConfig::num_modes()],
     Real mean_std_dev_nmodes[AeroConfig::num_modes()],
-    // outputs
     bool noxf_acc2ait[AeroConfig::num_aerosol_ids()],
     int &n_common_species_ait_accum,
     int ait_spec_in_acc[AeroConfig::num_aerosol_ids()],
@@ -48,6 +48,12 @@ void init_calcsize(
   // find aerosol species in accumulation that can be transfer to aitken mode
   const int accum_idx = int(ModeIndex::Accumulation);
   const int aitken_idx = int(ModeIndex::Aitken);
+
+  for (int i=0; i<AeroConfig::num_aerosol_ids(); ++i) {
+    noxf_acc2ait[i] = false;
+    ait_spec_in_acc[i] = 0;
+    acc_spec_in_ait[i] = 0;
+  }
 
   // check if accumulation species exists in aitken mode
   // also save idx for transfer
