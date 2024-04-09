@@ -1521,13 +1521,10 @@ void aero_model_wetdep(
     const ColumnView &rprddp, const ColumnView &evapcdp,
     const ColumnView &evapcsh,
     const ColumnView &dp_frac,
-    const ColumnView &sh_frac,
-    // const ColumnView &dp_ccf,
-    // const ColumnView &sh_ccf, 
+    const ColumnView &sh_frac, 
     const ColumnView &icwmrdp,
     const ColumnView &icwmrsh,
     const ColumnView &evapr, 
-    // const ColumnView &cldst,
     const ColumnView &dlf, 
     // output
     const View1D &aerdepwetis,
@@ -1540,15 +1537,12 @@ void aero_model_wetdep(
 
 
   // FIXME: do we need to set the variables inside of set_srf_wetdep ? 
-  // ColumnView aerdepwetis = diags.aerosol_wet_deposition_interstitial;
-  // ColumnView aerdepwetcw = diags.aerosol_wet_deposition_cloud_water;
+  // aerdepwetis aerosol_wet_deposition_interstitial;
+  // aerdepwetcw aerosol_wet_deposition_cloud_water;
 
-  // evapr = diags.evaporation_of_falling_precipitation;
+  // evapr evaporation_of_falling_precipitation;
   // shallow+deep convective detrainment [kg/kg/s]
   // dlf = diags.total_convective_detrainment;
-
-  // CHECK ; is this an input?
-  // cldst = diags.stratiform_cloud_fraction;
 
   constexpr int ntot_amode = AeroConfig::num_modes();
   constexpr int nlev = mam4::nlev;

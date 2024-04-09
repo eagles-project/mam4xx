@@ -58,12 +58,9 @@ void aero_model_wetdep(Ensemble *ensemble) {
     ColumnView evapcsh = create_column_view(nlev);
     ColumnView dp_frac = create_column_view(nlev);
     ColumnView sh_frac = create_column_view(nlev);
-    // ColumnView dp_ccf = create_column_view(nlev);
-    // ColumnView sh_ccf = create_column_view(nlev);
     ColumnView icwmrdp = create_column_view(nlev);
     ColumnView icwmrsh = create_column_view(nlev);
     ColumnView evapr = create_column_view(nlev);
-    // ColumnView cldst = create_column_view(nlev);
 
     // outputs
     ColumnView dlf = create_column_view(nlev);
