@@ -259,11 +259,11 @@ void extract_stateq_from_prognostics(const mam4::Prognostics &progs,
 
 KOKKOS_INLINE_FUNCTION
 void extract_ptend_from_tendencies(const Tendencies &tends, Real *ptend,
-                                     const int klev) {
+                                   const int klev) {
 
   int s_idx = ekat::ScalarTraits<int>::invalid();
-  // FIXME: tendencies for first five item (qv, qc, qi, nc, ni) should no be modified by mam4xx
-  // is this correct ? 
+  // FIXME: tendencies for first five item (qv, qc, qi, nc, ni) should no be
+  // modified by mam4xx is this correct ?
   if (tends.q_gas[0].data()) { // if gases are defined in dry_aero aerosol state
     s_idx = gasses_start_ind(); // gases start at index 9 (index 10 in Fortran
                                 // version)
@@ -288,7 +288,6 @@ void extract_ptend_from_tendencies(const Tendencies &tends, Real *ptend,
     s_idx++; // update index
   }
 } // extract_stateq_from_prognostics
-
 
 KOKKOS_INLINE_FUNCTION
 void inject_stateq_to_prognostics(const Real *q, mam4::Prognostics &progs,
@@ -326,7 +325,7 @@ void inject_stateq_to_prognostics(const Real *q, mam4::Prognostics &progs,
 
 KOKKOS_INLINE_FUNCTION
 void inject_ptend_to_tendencies(const Real *ptend, const Tendencies &tends,
-                                  const int klev) {
+                                const int klev) {
 
   int s_idx = ekat::ScalarTraits<int>::invalid();
 
