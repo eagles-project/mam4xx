@@ -67,18 +67,19 @@ void aero_model_wetdep(Ensemble *ensemble) {
     wetdep::View1D aerdepwetcw("aerdepwetcw", aero_model::pcnst);
     wetdep::View1D aerdepwetis("aerdepwetis", aero_model::pcnst);
 
-    wetdep::View2D wet_geometric_mean_diameter_i("wet_geometric_mean_diameter_i",AeroConfig::num_modes(), nlev);
+    wetdep::View2D wet_geometric_mean_diameter_i(
+        "wet_geometric_mean_diameter_i", AeroConfig::num_modes(), nlev);
     Kokkos::deep_copy(wet_geometric_mean_diameter_i, 1.0);
 
-    wetdep::View2D dry_geometric_mean_diameter_i("dry_geometric_mean_diameter_i",AeroConfig::num_modes(), nlev);
+    wetdep::View2D dry_geometric_mean_diameter_i(
+        "dry_geometric_mean_diameter_i", AeroConfig::num_modes(), nlev);
     Kokkos::deep_copy(dry_geometric_mean_diameter_i, 1.0);
 
-    wetdep::View2D qaerwat("qaerwat",AeroConfig::num_modes(), nlev);
+    wetdep::View2D qaerwat("qaerwat", AeroConfig::num_modes(), nlev);
     Kokkos::deep_copy(qaerwat, 1.0);
 
-    wetdep::View2D wetdens("wetdens",AeroConfig::num_modes(), nlev);
+    wetdep::View2D wetdens("wetdens", AeroConfig::num_modes(), nlev);
     Kokkos::deep_copy(wetdens, 1.0);
-
 
     const int work_len = wetdep::get_aero_model_wetdep_work_len();
     wetdep::View1D work("work", work_len);
@@ -91,21 +92,17 @@ void aero_model_wetdep(Ensemble *ensemble) {
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           auto progs_in = progs;
           auto tends_in = tends;
-          wetdep::aero_model_wetdep(team, atm, progs_in, tends_in, dt,
-                                    // inputs
-                                    cldt, 
-                                    cldn_prev_step, rprdsh, rprddp, evapcdp,
-                                    evapcsh, dp_frac, sh_frac,
-                                    icwmrdp, icwmrsh, evapr,
-                                    dlf,
-                                    wet_geometric_mean_diameter_i,
-                                    dry_geometric_mean_diameter_i, 
-                                    qaerwat, 
-                                    wetdens, 
-                                    // output
-                                    aerdepwetis, aerdepwetcw,
-                                    // FIXME
-                                    qqcw_sav, work);
+          wetdep::aero_model_wetdep(
+              team, atm, progs_in, tends_in, dt,
+              // inputs
+              cldt, cldn_prev_step, rprdsh, rprddp, evapcdp, evapcsh, dp_frac,
+              sh_frac, icwmrdp, icwmrsh, evapr, dlf,
+              wet_geometric_mean_diameter_i, dry_geometric_mean_diameter_i,
+              qaerwat, wetdens,
+              // output
+              aerdepwetis, aerdepwetcw,
+              // FIXME
+              qqcw_sav, work);
         });
 
     std::vector<Real> dlf_output(nlev, 0);
@@ -114,15 +111,15 @@ void aero_model_wetdep(Ensemble *ensemble) {
     output.set("dlf", dlf_output);
 
     std::vector<Real> aerdepwetcw_output(aero_model::pcnst, 0);
-    auto aerdepwetcw_host = View1DHost((Real *)aerdepwetcw_output.data(), aero_model::pcnst);
+    auto aerdepwetcw_host =
+        View1DHost((Real *)aerdepwetcw_output.data(), aero_model::pcnst);
     Kokkos::deep_copy(aerdepwetcw, aerdepwetcw_host);
     output.set("aerdepwetcw", aerdepwetcw_output);
 
     std::vector<Real> aerdepwetis_output(aero_model::pcnst, 0);
-    auto aerdepwetis_host = View1DHost((Real *)aerdepwetis_output.data(), aero_model::pcnst);
+    auto aerdepwetis_host =
+        View1DHost((Real *)aerdepwetis_output.data(), aero_model::pcnst);
     Kokkos::deep_copy(aerdepwetis, aerdepwetis_host);
     output.set("aerdepwetis", aerdepwetis_output);
-
-    
   });
 }
