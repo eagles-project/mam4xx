@@ -47,7 +47,7 @@ namespace wetdep {
 using View1D = DeviceType::view_1d<Real>;
 using Bool1D = DeviceType::view_1d<bool>;
 using View2D = DeviceType::view_2d<Real>;
-using View3D = DeviceType::view_2d<Real>;
+using View3D = DeviceType::view_2d<Real>;  
 KOKKOS_INLINE_FUNCTION
 Real local_precip_production(const Real pdel, const Real source_term,
                              const Real sink_term) {
@@ -1239,7 +1239,8 @@ void modal_aero_bcscavcoef_get(
 // Computes lookup table for aerosol impaction/interception scavenging rates
 KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(
-    const ThreadTeam &team, const View2D &wet_geometric_mean_diameter_i,
+    const ThreadTeam &team,
+    const View2D &wet_geometric_mean_diameter_i,
     Kokkos::View<bool *> isprx,
     const Real scavimptblvol[aero_model::nimptblgrow_total]
                             [AeroConfig::num_modes()],
@@ -1494,44 +1495,53 @@ int get_aero_model_wetdep_work_len() {
   // wet_geometric_mean_diameter_i + state_q + qqcw
   int work_len =
       // mam4::nlev * AeroConfig::num_modes() * mam4::nlev + //
-      2 * mam4::nlev * pcnst + // state_q + qqcw
-      25 * mam4::nlev +        // cldcu, cldt, evapc, cmfdqr,
+      2 * mam4::nlev * pcnst +                            // state_q + qqcw
+      25 * mam4::nlev + // cldcu, cldt, evapc, cmfdqr,
                         // prain, totcond, conicw, isprx, f_act_conv_coarse,
       // f_act_conv_coarse_dust, f_act_conv_coarse_nacl
       // rain, ptend_q, cldv, cldvcu, cldvst, scavcoefnum, scavcoefvol
       // sol_facti, sol_factic, sol_factb, f_act_conv, scavt, rcscavt, bcscavt
       3 * pcnst +         //  qsrflx_mzaer2cnvpr, rtscavt_sv
       mam4::nlev * pcnst; // ptend_q
-                          // dry_geometric_mean_diameter_i, qaerwat, wetdens
-  // 3* mam4::nlev * AeroConfig::num_modes() * mam4::nlev;
+      // dry_geometric_mean_diameter_i, qaerwat, wetdens
+      // 3* mam4::nlev * AeroConfig::num_modes() * mam4::nlev; 
   return work_len;
 }
 // =============================================================================
+
 
 KOKKOS_INLINE_FUNCTION
 void aero_model_wetdep(
     const ThreadTeam &team, const Atmosphere &atm, Prognostics &progs,
     Tendencies &tends, const Real dt,
     // inputs
-    const ColumnView &cldt, const ColumnView &cldn_prev_step,
-    const ColumnView &rprdsh, const ColumnView &rprddp,
-    const ColumnView &evapcdp, const ColumnView &evapcsh,
-    const ColumnView &dp_frac, const ColumnView &sh_frac,
-    const ColumnView &icwmrdp, const ColumnView &icwmrsh,
-    const ColumnView &evapr, const ColumnView &dlf,
+    const ColumnView &cldt,
+    const ColumnView &cldn_prev_step,
+    const ColumnView &rprdsh,
+    const ColumnView &rprddp, const ColumnView &evapcdp,
+    const ColumnView &evapcsh,
+    const ColumnView &dp_frac,
+    const ColumnView &sh_frac, 
+    const ColumnView &icwmrdp,
+    const ColumnView &icwmrsh,
+    const ColumnView &evapr, 
+    const ColumnView &dlf, 
     // in/out calcsize and water_uptake
-    const View2D &wet_geometric_mean_diameter_i,
-    const View2D &dry_geometric_mean_diameter_i, const View2D &qaerwat,
-    const View2D &wetdens,
+    const View2D &wet_geometric_mean_diameter_i, 
+    const View2D &dry_geometric_mean_diameter_i, 
+    const View2D &qaerwat,
+    const View2D &wetdens, 
     // output
-    const View1D &aerdepwetis, const View1D &aerdepwetcw,
+    const View1D &aerdepwetis,
+    const View1D &aerdepwetcw,
     // FIXME
     Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
         qqcw_sav,
     const View1D &work) {
   // cldn layer cloud fraction [fraction]; CLD
 
-  // FIXME: do we need to set the variables inside of set_srf_wetdep ?
+
+  // FIXME: do we need to set the variables inside of set_srf_wetdep ? 
   // aerdepwetis aerosol_wet_deposition_interstitial;
   // aerdepwetcw aerosol_wet_deposition_cloud_water;
 
@@ -1547,15 +1557,15 @@ void aero_model_wetdep(
   auto work_ptr = (Real *)work.data();
   // FIXME: is an input/output wet_geometric_mean_diameter_i ?
   // DGNUMWET
-  // FIXME: is an input/output dry_geometric_mean_diameter_i ?
+  // FIXME: is an input/output dry_geometric_mean_diameter_i ? 
   // ColumnView dry_geometric_mean_diameter_i[ntot_amode];
   // // DGNUM
   // for (int m = 0; m < ntot_amode; ++m) {
   //   dry_geometric_mean_diameter_i[m] = ColumnView(work_ptr, mam4::nlev);
   //   work_ptr += mam4::nlev;
   // }
-
-  // FIXME: is an input/output qaerwat ?
+  
+  // FIXME: is an input/output qaerwat ? 
   // aerosol water [kg/kg]
   // qaerwat_idx    = pbuf_get_index('QAERWAT')
   // ColumnView qaerwat[ntot_amode];
@@ -1563,7 +1573,7 @@ void aero_model_wetdep(
   //   qaerwat[m] = ColumnView(work_ptr, mam4::nlev);
   //   work_ptr += mam4::nlev;
   // }
-  // // FIXME: is an input/output wetdens ?
+  // // FIXME: is an input/output wetdens ? 
   // // wet aerosol density [kg/m3]
   // // WETDENS_AP
   // ColumnView wetdens[ntot_amode];
@@ -1571,7 +1581,7 @@ void aero_model_wetdep(
   //   wetdens[m] = ColumnView(work_ptr, mam4::nlev);
   //   work_ptr += mam4::nlev;
   // }
-
+  
   View2D state_q(work_ptr, mam4::nlev, pcnst);
   work_ptr += mam4::nlev * pcnst;
 
@@ -1744,7 +1754,7 @@ void aero_model_wetdep(
     const auto qqcw_kk = ekat::subview(qqcw, kk);
     const auto ptend_q_kk = ekat::subview(ptend_q, kk);
     Real dgnumwet_m_kk[ntot_amode] = {};
-    // FIXME: wetdens and qaerwat are input/ouput to water_uptake
+          // FIXME: wetdens and qaerwat are input/ouput to water_uptake
     Real qaerwat_m_kk[ntot_amode] = {};
     Real wetdens_kk[ntot_amode] = {};
     // FIXME: dgncur_a is aerosol particle diameter and is an input to
@@ -1795,6 +1805,7 @@ void aero_model_wetdep(
           noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
           acc_spec_in_ait);
 
+
       Real dgncur_c_kk[ntot_amode] = {};
       Real dqqcwdt_kk[pcnst] = {};
       //  Calculate aerosol size distribution parameters and aerosol water
@@ -1813,10 +1824,11 @@ void aero_model_wetdep(
           // outputs
           dgnumdry_m_kk, dgncur_c_kk, ptend_q_kk.data(), dqqcwdt_kk);
 
+
       mam4::water_uptake::modal_aero_water_uptake_dr(
           nspec_amode, specdens_amode, spechygro, lspectype_amode,
-          state_q_kk.data(), temperature(kk), pmid(kk), cldn_prev_step(kk),
-          dgnumdry_m_kk, dgnumwet_m_kk, qaerwat_m_kk, wetdens_kk);
+          state_q_kk.data(), temperature(kk), pmid(kk), cldn_prev_step(kk), dgnumdry_m_kk,
+          dgnumwet_m_kk, qaerwat_m_kk, wetdens_kk);
     }
 
     // team.team_barrier();
@@ -1827,6 +1839,7 @@ void aero_model_wetdep(
       dry_geometric_mean_diameter_i(imode, kk) = dgnumdry_m_kk[imode];
       qaerwat(imode, kk) = qaerwat_m_kk[imode];
       wetdens(imode, kk) = wetdens_kk[imode];
+
     }
   }); // klev parallel_for loop
 
@@ -1850,14 +1863,13 @@ void aero_model_wetdep(
     // cumulus cloud fraction =  dp_frac + sh_frac
     wetdep::sum_values(team, cldcu, dp_frac, sh_frac, nlev);
     // total cloud fraction [fraction] = dp_ccf + sh_ccf
-    // Stratiform cloud fraction cldst  = cldt - cldcu  Stratiform cloud
-    // fraction
+    // Stratiform cloud fraction cldst  = cldt - cldcu  Stratiform cloud fraction
     team.team_barrier();
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
-                         [&](int k) { cldst[k] = cldt[k] + cldcu[k]; });
+                       [&](int k) { cldst[k] = cldt[k] + cldcu[k]; });
 
     // FIXME: where does eq come from?
-    // FIXME: in fortran code cldt is equal to cln
+    // FIXME: in fortran code cldt is equal to cln 
     // wetdep::sum_values(team, cldt, dp_ccf, sh_ccf, nlev);
     // evaporation from convection (deep + shallow)
     wetdep::sum_values(team, evapc, evapcsh, evapcdp, nlev);
