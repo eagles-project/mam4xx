@@ -270,6 +270,15 @@ void calculate_resistance_rgsx_and_rsmx(
               dewm = 1.0;
             }
             rsmx[ispec][lt] = (dewm * rs * drat(idx_drydep) + rmx);
+            // if (rsmx[ispec][lt] == 0.0)  {
+              std::cout << "***in function***" << "\n";
+              std::cout  << "ispec, lt = [" << ispec << ", " << lt << "]" << "\n";
+              std::cout << "^^^^rsmx[ispec][lt] = " << rsmx[ispec][lt] << "\n";
+              std::cout << "dewm = " << dewm << "\n";
+              std::cout << "rs = " << rs << "\n";
+              std::cout << "drat(idx_drydep) = " << drat(idx_drydep) << "\n";
+              std::cout << "rmx = " << rmx << "\n";
+            // }
           }
         }
       }
