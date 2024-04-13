@@ -14,18 +14,7 @@ using namespace mam4;
 using namespace haero;
 using namespace haero::testing;
 // namespace validation {
-// given input from skywalker, return a ColumnView with data from yaml file. 
-ColumnView get_input_in_columnview(const Input &input, const std::string &name) {
-  using View1DHost = typename HostType::view_1d<Real>;
-  int nlev = mam4::nlev;
-  const auto host_vector = input.get_array(name);
-  // inputs needs to be nlev.
-  EKAT_ASSERT(host_vector.size() == nlev);
-  ColumnView dev = haero::testing::create_column_view(nlev);
-  auto host = View1DHost((Real *)host_vector.data(), nlev);
-  Kokkos::deep_copy(dev, host);
-  return dev; 
-}
+
 // } // namespace validation
 
 void aero_model_wetdep(Ensemble *ensemble) {
@@ -41,7 +30,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
     //
     View2D state_q("state_q", nlev, aero_model::pcnst);
     const auto state_q_db = input.get_array("state_q");
-    mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
+    validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
     auto qqcw_db = input.get_array("qqcw"); // 2d
 
     View2D qqcw("qqcw", nlev, aero_model::pcnst);
@@ -55,9 +44,9 @@ void aero_model_wetdep(Ensemble *ensemble) {
     }
     Kokkos::deep_copy(qqcw, qqcw_host);
 
-    ColumnView temperature = get_input_in_columnview(input,"temperature");
-    ColumnView pressure = get_input_in_columnview(input,"pmid");
-    ColumnView hydrostatic_dp = get_input_in_columnview(input,"pdel");
+    ColumnView temperature = validation::get_input_in_columnview(input,"temperature");
+    ColumnView pressure = validation::get_input_in_columnview(input,"pmid");
+    ColumnView hydrostatic_dp = validation::get_input_in_columnview(input,"pdel");
 
     // q[1] = atm.liquid_mixing_ratio(klev);              // qc
     auto liquid_mixing_ratio = Kokkos::subview(state_q, Kokkos::ALL(),1);
@@ -82,24 +71,24 @@ void aero_model_wetdep(Ensemble *ensemble) {
 
     // inputs
 
-    ColumnView cldt = get_input_in_columnview(input,"cldn");
+    ColumnView cldt = validation::get_input_in_columnview(input,"cldn");
     // Note that itim and itim_old are used separately for the cld variables although they are the same, as also indicated by the discussion on the Confluence page
     ColumnView cldn_prev_step = cldt;//d
 
-    ColumnView rprdsh = get_input_in_columnview(input,"rprdsh");
-    ColumnView rprddp = get_input_in_columnview(input,"rprddp");
-    ColumnView evapcdp = get_input_in_columnview(input,"evapcdp");
-    ColumnView evapcsh = get_input_in_columnview(input,"evapcsh");
+    ColumnView rprdsh = validation::get_input_in_columnview(input,"rprdsh");
+    ColumnView rprddp = validation::get_input_in_columnview(input,"rprddp");
+    ColumnView evapcdp = validation::get_input_in_columnview(input,"evapcdp");
+    ColumnView evapcsh = validation::get_input_in_columnview(input,"evapcsh");
 
-    ColumnView dp_frac = get_input_in_columnview(input,"p_dp_frac");
-    ColumnView sh_frac = get_input_in_columnview(input,"p_sh_frac");
-    ColumnView icwmrdp = get_input_in_columnview(input,"p_icwmrdp");
-    ColumnView icwmrsh = get_input_in_columnview(input,"p_icwmrsh");
+    ColumnView dp_frac = validation::get_input_in_columnview(input,"p_dp_frac");
+    ColumnView sh_frac = validation::get_input_in_columnview(input,"p_sh_frac");
+    ColumnView icwmrdp = validation::get_input_in_columnview(input,"p_icwmrdp");
+    ColumnView icwmrsh = validation::get_input_in_columnview(input,"p_icwmrsh");
 
-    ColumnView evapr = get_input_in_columnview(input,"inputs_evapr");// 
+    ColumnView evapr = validation::get_input_in_columnview(input,"inputs_evapr");// 
 
     // outputs
-    ColumnView dlf = get_input_in_columnview(input,"inputs_evapr");// 
+    ColumnView dlf = validation::get_input_in_columnview(input,"inputs_evapr");// 
     wetdep::View1D aerdepwetcw("aerdepwetcw", aero_model::pcnst);
     wetdep::View1D aerdepwetis("aerdepwetis", aero_model::pcnst);
     const int num_modes = AeroConfig::num_modes();
