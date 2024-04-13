@@ -9,8 +9,8 @@
 #include <haero/testing.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/mo_photo.hpp>
-#include <string>
 #include <skywalker.hpp>
+#include <string>
 
 namespace mam4 {
 
@@ -110,8 +110,10 @@ void convert_1d_vector_to_3d_view_device(const std::vector<Real> &pmid_db,
 void convert_3d_view_device_to_1d_vector(const View3D &var_device,
                                          std::vector<Real> &var_std);
 
-// Given an input from skywalker and its name, return a ColumnView with data from yaml file. 
-ColumnView get_input_in_columnview(const skywalker::Input &input, const std::string &name);
+// Given an input from skywalker and its name, return a ColumnView with data
+// from yaml file.
+ColumnView get_input_in_columnview(const skywalker::Input &input,
+                                   const std::string &name);
 
 } // namespace validation
 } // namespace mam4
