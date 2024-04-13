@@ -14,7 +14,7 @@ using namespace mam4;
 using namespace haero;
 using namespace haero::testing;
 // namespace validation {
-// given input from skywalker, it copy data to a ColumnView. 
+// given input from skywalker, return a ColumnView with data from yaml file. 
 ColumnView get_input_in_columnview(const Input &input, const std::string &name) {
   using View1DHost = typename HostType::view_1d<Real>;
   int nlev = mam4::nlev;
