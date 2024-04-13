@@ -13,35 +13,66 @@ using namespace skywalker;
 using namespace mam4;
 using namespace haero;
 using namespace haero::testing;
+// namespace validation {
+// given input from skywalker, it copy data to a ColumnView. 
+ColumnView get_input_in_columnview(const Input &input, const std::string &name) {
+  using View1DHost = typename HostType::view_1d<Real>;
+  int nlev = mam4::nlev;
+  const auto host_vector = input.get_array(name);
+  // inputs needs to be nlev.
+  EKAT_ASSERT(host_vector.size() == nlev);
+  ColumnView dev = haero::testing::create_column_view(nlev);
+  auto host = View1DHost((Real *)host_vector.data(), nlev);
+  Kokkos::deep_copy(dev, host);
+  return dev; 
+}
+// } // namespace validation
 
 void aero_model_wetdep(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
+    using View2D = DeviceType::view_2d<Real>;
+
     mam4::Prognostics progs = validation::create_prognostics(nlev);
     mam4::Tendencies tends = validation::create_tendencies(nlev);
     int nlev = mam4::nlev;
     Real pblh = 1000;
-    // Atmosphere atm = validation::create_atmosphere(nlev, pblh);
-    // FIXME get dt yaml
     const Real dt = 1;
     //
+    View2D state_q("state_q", nlev, aero_model::pcnst);
+    const auto state_q_db = input.get_array("state_q");
+    mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
+    auto qqcw_db = input.get_array("qqcw"); // 2d
 
-    auto temperature = create_column_view(nlev);
-    auto pressure = create_column_view(nlev);
+    View2D qqcw("qqcw", nlev, aero_model::pcnst);
+    auto qqcw_host = Kokkos::create_mirror_view(qqcw);
+    int count = 0;
+    for (int kk = 0; kk < nlev; ++kk) {
+      for (int i = 0; i < aero_model::pcnst; ++i) {
+        qqcw_host(kk, i) = qqcw_db[count];
+        count++;
+      }
+    }
+    Kokkos::deep_copy(qqcw, qqcw_host);
+
+    ColumnView temperature = get_input_in_columnview(input,"temperature");
+    ColumnView pressure = get_input_in_columnview(input,"pmid");
+    ColumnView hydrostatic_dp = get_input_in_columnview(input,"pdel");
+
+    // q[1] = atm.liquid_mixing_ratio(klev);              // qc
+    auto liquid_mixing_ratio = Kokkos::subview(state_q, Kokkos::ALL(),1);
+     // q[2] = atm.ice_mixing_ratio(klev);                 // qi
+    auto ice_mixing_ratio = Kokkos::subview(state_q, Kokkos::ALL(),2);
+    
+   
+    const auto cldn_db = input.get_array("cldn");
     auto vapor_mixing_ratio = create_column_view(nlev);
-    auto liquid_mixing_ratio = create_column_view(nlev);
     auto cloud_liquid_number_mixing_ratio = create_column_view(nlev);
-    auto ice_mixing_ratio = create_column_view(nlev);
     auto cloud_ice_number_mixing_ratio = create_column_view(nlev);
     auto height = create_column_view(nlev);
-    auto hydrostatic_dp = create_column_view(nlev);
     auto interface_pressure = create_column_view(nlev + 1);
     auto cloud_fraction = create_column_view(nlev);
     auto updraft_vel_ice_nucleation = create_column_view(nlev);
-    // FIXME: update these values.
-    Kokkos::deep_copy(temperature, 300);
-    Kokkos::deep_copy(pressure, 1e5);
-    Kokkos::deep_copy(hydrostatic_dp, 1e5);
 
     auto atm = Atmosphere(nlev, temperature, pressure, vapor_mixing_ratio,
                           liquid_mixing_ratio, cloud_liquid_number_mixing_ratio,
@@ -50,40 +81,54 @@ void aero_model_wetdep(Ensemble *ensemble) {
                           cloud_fraction, updraft_vel_ice_nucleation, pblh);
 
     // inputs
-    ColumnView cldn_prev_step = create_column_view(nlev);
-    ColumnView cldt = create_column_view(nlev);
-    ColumnView rprdsh = create_column_view(nlev);
-    ColumnView rprddp = create_column_view(nlev);
-    ColumnView evapcdp = create_column_view(nlev);
-    ColumnView evapcsh = create_column_view(nlev);
-    ColumnView dp_frac = create_column_view(nlev);
-    ColumnView sh_frac = create_column_view(nlev);
-    ColumnView icwmrdp = create_column_view(nlev);
-    ColumnView icwmrsh = create_column_view(nlev);
-    ColumnView evapr = create_column_view(nlev);
+
+    ColumnView cldt = get_input_in_columnview(input,"cldn");
+    // Note that itim and itim_old are used separately for the cld variables although they are the same, as also indicated by the discussion on the Confluence page
+    ColumnView cldn_prev_step = cldt;//d
+
+    ColumnView rprdsh = get_input_in_columnview(input,"rprdsh");
+    ColumnView rprddp = get_input_in_columnview(input,"rprddp");
+    ColumnView evapcdp = get_input_in_columnview(input,"evapcdp");
+    ColumnView evapcsh = get_input_in_columnview(input,"evapcsh");
+
+    ColumnView dp_frac = get_input_in_columnview(input,"p_dp_frac");
+    ColumnView sh_frac = get_input_in_columnview(input,"p_sh_frac");
+    ColumnView icwmrdp = get_input_in_columnview(input,"p_icwmrdp");
+    ColumnView icwmrsh = get_input_in_columnview(input,"p_icwmrsh");
+
+    ColumnView evapr = get_input_in_columnview(input,"inputs_evapr");// 
 
     // outputs
-    ColumnView dlf = create_column_view(nlev);
+    ColumnView dlf = get_input_in_columnview(input,"inputs_evapr");// 
     wetdep::View1D aerdepwetcw("aerdepwetcw", aero_model::pcnst);
     wetdep::View1D aerdepwetis("aerdepwetis", aero_model::pcnst);
     const int num_modes = AeroConfig::num_modes();
 
     wetdep::View2D wet_geometric_mean_diameter_i(
         "wet_geometric_mean_diameter_i", num_modes, nlev);
-    Kokkos::deep_copy(wet_geometric_mean_diameter_i, 1.0);
+    const auto dgnumwet_db = input.get_array("dgnumwet");
+    mam4::validation::convert_1d_vector_to_2d_view_device(dgnumwet_db,
+     wet_geometric_mean_diameter_i);
 
     wetdep::View2D dry_geometric_mean_diameter_i(
         "dry_geometric_mean_diameter_i", num_modes, nlev);
-    Kokkos::deep_copy(dry_geometric_mean_diameter_i, 1.0);
+    const auto dgncur_a_db = input.get_array("dgncur_a");
+    mam4::validation::convert_1d_vector_to_2d_view_device(dgncur_a_db,
+     dry_geometric_mean_diameter_i);
 
     wetdep::View2D qaerwat("qaerwat", num_modes, nlev);
-    Kokkos::deep_copy(qaerwat, 1.0);
+    const auto qaerwat_db = input.get_array("qaerwat");
+    mam4::validation::convert_1d_vector_to_2d_view_device(qaerwat_db,
+     qaerwat);
 
     wetdep::View2D wetdens("wetdens", num_modes, nlev);
-    Kokkos::deep_copy(wetdens, 1.0);
+    const auto wetdens_db = input.get_array("wetdens");
+    mam4::validation::convert_1d_vector_to_2d_view_device(wetdens_db,
+     wetdens);
 
     wetdep::View2D ptend_q("ptend_q", nlev, aero_model::pcnst);
 
+    // work arrays
     const int work_len = wetdep::get_aero_model_wetdep_work_len();
     wetdep::View1D work("work", work_len);
 
@@ -95,11 +140,26 @@ void aero_model_wetdep(Ensemble *ensemble) {
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           auto progs_in = progs;
           auto tends_in = tends;
+        
+        // we need to inject validation values to progs.
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int kk) {
+        // copy data from prog to stateq
+          const auto state_q_kk = ekat::subview(state_q, kk);
+          const auto qqcw_kk = ekat::subview(qqcw, kk);
+          utils::inject_qqcw_to_prognostics(qqcw_kk.data(), progs_in, kk);
+          utils::inject_stateq_to_prognostics(state_q_kk.data(), progs_in, kk);
+
+        });
+        team.team_barrier();
+
+
           wetdep::aero_model_wetdep(
               team, atm, progs_in, tends_in, dt,
               // inputs
               cldt, cldn_prev_step, rprdsh, rprddp, evapcdp, evapcsh, dp_frac,
-              sh_frac, icwmrdp, icwmrsh, evapr, dlf,
+              sh_frac, icwmrdp, icwmrsh, evapr, 
+              // outputs 
+              dlf,
               wet_geometric_mean_diameter_i, dry_geometric_mean_diameter_i,
               qaerwat, wetdens,
               // output
@@ -113,7 +173,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
                 const auto ptend_q_kk = ekat::subview(ptend_q, kk);
                 utils::extract_ptend_from_tendencies(tends_in,
                                                      ptend_q_kk.data(), kk);
-              });
+          });
         });
 
     std::vector<Real> dlf_output(nlev, 0);
@@ -140,7 +200,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
 
     mam4::validation::convert_2d_view_device_to_1d_vector(
         dry_geometric_mean_diameter_i, output_modes);
-    output.set("dgnumdry", output_modes);
+    output.set("dgncur_a", output_modes);
 
     mam4::validation::convert_2d_view_device_to_1d_vector(qaerwat,
                                                           output_modes);
