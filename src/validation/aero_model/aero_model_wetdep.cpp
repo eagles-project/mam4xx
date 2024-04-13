@@ -13,9 +13,6 @@ using namespace skywalker;
 using namespace mam4;
 using namespace haero;
 using namespace haero::testing;
-// namespace validation {
-
-// } // namespace validation
 
 void aero_model_wetdep(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -48,12 +45,16 @@ void aero_model_wetdep(Ensemble *ensemble) {
     ColumnView pressure = validation::get_input_in_columnview(input,"pmid");
     ColumnView hydrostatic_dp = validation::get_input_in_columnview(input,"pdel");
 
-    // q[1] = atm.liquid_mixing_ratio(klev);              // qc
-    auto liquid_mixing_ratio = Kokkos::subview(state_q, Kokkos::ALL(),1);
-     // q[2] = atm.ice_mixing_ratio(klev);                 // qi
-    auto ice_mixing_ratio = Kokkos::subview(state_q, Kokkos::ALL(),2);
     
-   
+    auto liquid_mixing_ratio = create_column_view(nlev);// 
+     
+    auto ice_mixing_ratio = create_column_view(nlev);// 
+    // We need deep_copy because of executation error due to different layout 
+    // q[1] = atm.liquid_mixing_ratio(klev);              // qc
+    Kokkos::deep_copy(liquid_mixing_ratio,  Kokkos::subview(state_q, Kokkos::ALL(),1)); 
+    // q[2] = atm.ice_mixing_ratio(klev);                 // qi
+    Kokkos::deep_copy(ice_mixing_ratio,  Kokkos::subview(state_q, Kokkos::ALL(),2)); 
+
     const auto cldn_db = input.get_array("cldn");
     auto vapor_mixing_ratio = create_column_view(nlev);
     auto cloud_liquid_number_mixing_ratio = create_column_view(nlev);
@@ -68,9 +69,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
                           ice_mixing_ratio, cloud_ice_number_mixing_ratio,
                           height, hydrostatic_dp, interface_pressure,
                           cloud_fraction, updraft_vel_ice_nucleation, pblh);
-
     // inputs
-
     ColumnView cldt = validation::get_input_in_columnview(input,"cldn");
     // Note that itim and itim_old are used separately for the cld variables although they are the same, as also indicated by the discussion on the Confluence page
     ColumnView cldn_prev_step = cldt;//d
@@ -165,10 +164,10 @@ void aero_model_wetdep(Ensemble *ensemble) {
           });
         });
 
-    std::vector<Real> dlf_output(nlev, 0);
-    auto dlf_host = View1DHost((Real *)dlf_output.data(), nlev);
-    Kokkos::deep_copy(dlf, dlf_host);
-    output.set("dlf", dlf_output);
+    // std::vector<Real> dlf_output(nlev, 0);
+    // auto dlf_host = View1DHost((Real *)dlf_output.data(), nlev);
+    // Kokkos::deep_copy(dlf, dlf_host);
+    // output.set("dlf", dlf_output);
 
     std::vector<Real> output_pcnst(aero_model::pcnst, 0);
     auto aerdepwetcw_host =
@@ -202,6 +201,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
     std::vector<Real> output_ptend(nlev * aero_model::pcnst, 0);
     mam4::validation::convert_2d_view_device_to_1d_vector(ptend_q,
                                                           output_ptend);
-    output.set("ptend_q", output_ptend);
+    output.set("ptend_lq", output_ptend);
+  
   });
 }
