@@ -1500,33 +1500,32 @@ int get_aero_model_wetdep_work_len() {
       // f_act_conv_coarse_dust, f_act_conv_coarse_nacl
       // rain, ptend_q, cldv, cldvcu, cldvst, scavcoefnum, scavcoefvol
       // sol_facti, sol_factic, sol_factb, f_act_conv, scavt, rcscavt, bcscavt
-      3 * pcnst +         //  qsrflx_mzaer2cnvpr, rtscavt_sv
-      mam4::nlev * pcnst+ // ptend_q
-                          // dry_geometric_mean_diameter_i, qaerwat, wetdens
-      mam4::nlev*(aero_model::maxd_aspectype + 2)*aero_model::pcnst;
+      3 * pcnst +          //  qsrflx_mzaer2cnvpr, rtscavt_sv
+      mam4::nlev * pcnst + // ptend_q
+                           // dry_geometric_mean_diameter_i, qaerwat, wetdens
+      mam4::nlev * (aero_model::maxd_aspectype + 2) * aero_model::pcnst;
   // 3* mam4::nlev * AeroConfig::num_modes() * mam4::nlev;
   return work_len;
 }
 // =============================================================================
 
 KOKKOS_INLINE_FUNCTION
-void aero_model_wetdep(
-    const ThreadTeam &team, const Atmosphere &atm, Prognostics &progs,
-    Tendencies &tends, const Real dt,
-    // inputs
-    const ColumnView &cldt, const ColumnView &cldn_prev_step,
-    const ColumnView &rprdsh, const ColumnView &rprddp,
-    const ColumnView &evapcdp, const ColumnView &evapcsh,
-    const ColumnView &dp_frac, const ColumnView &sh_frac,
-    const ColumnView &icwmrdp, const ColumnView &icwmrsh,
-    const ColumnView &evapr, const ColumnView &dlf,
-    // in/out calcsize and water_uptake
-    const View2D &wet_geometric_mean_diameter_i,
-    const View2D &dry_geometric_mean_diameter_i, const View2D &qaerwat,
-    const View2D &wetdens,
-    // output
-    const View1D &aerdepwetis, const View1D &aerdepwetcw,
-    const View1D &work) {
+void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
+                       Prognostics &progs, Tendencies &tends, const Real dt,
+                       // inputs
+                       const ColumnView &cldt, const ColumnView &cldn_prev_step,
+                       const ColumnView &rprdsh, const ColumnView &rprddp,
+                       const ColumnView &evapcdp, const ColumnView &evapcsh,
+                       const ColumnView &dp_frac, const ColumnView &sh_frac,
+                       const ColumnView &icwmrdp, const ColumnView &icwmrsh,
+                       const ColumnView &evapr, const ColumnView &dlf,
+                       // in/out calcsize and water_uptake
+                       const View2D &wet_geometric_mean_diameter_i,
+                       const View2D &dry_geometric_mean_diameter_i,
+                       const View2D &qaerwat, const View2D &wetdens,
+                       // output
+                       const View1D &aerdepwetis, const View1D &aerdepwetcw,
+                       const View1D &work) {
   // cldn layer cloud fraction [fraction]; CLD
 
   // FIXME: do we need to set the variables inside of set_srf_wetdep ?
@@ -1672,8 +1671,8 @@ void aero_model_wetdep(
   work_ptr += aero_model::pcnst * 2;
 
   Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
-  qqcw_sav(work_ptr, mam4::nlev);
-  work_ptr += mam4::nlev*(aero_model::maxd_aspectype + 2)*aero_model::pcnst;
+      qqcw_sav(work_ptr, mam4::nlev);
+  work_ptr += mam4::nlev * (aero_model::maxd_aspectype + 2) * aero_model::pcnst;
 
   /// error check
   const int workspace_used(work_ptr - work.data()),
