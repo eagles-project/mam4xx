@@ -1501,8 +1501,9 @@ int get_aero_model_wetdep_work_len() {
       // rain, ptend_q, cldv, cldvcu, cldvst, scavcoefnum, scavcoefvol
       // sol_facti, sol_factic, sol_factb, f_act_conv, scavt, rcscavt, bcscavt
       3 * pcnst +         //  qsrflx_mzaer2cnvpr, rtscavt_sv
-      mam4::nlev * pcnst; // ptend_q
+      mam4::nlev * pcnst+ // ptend_q
                           // dry_geometric_mean_diameter_i, qaerwat, wetdens
+      mam4::nlev*(aero_model::maxd_aspectype + 2)*aero_model::pcnst;
   // 3* mam4::nlev * AeroConfig::num_modes() * mam4::nlev;
   return work_len;
 }
@@ -1525,9 +1526,6 @@ void aero_model_wetdep(
     const View2D &wetdens,
     // output
     const View1D &aerdepwetis, const View1D &aerdepwetcw,
-    // FIXME
-    Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
-        qqcw_sav,
     const View1D &work) {
   // cldn layer cloud fraction [fraction]; CLD
 
@@ -1672,6 +1670,10 @@ void aero_model_wetdep(
 
   View2D qsrflx_mzaer2cnvpr(work_ptr, aero_model::pcnst, 2);
   work_ptr += aero_model::pcnst * 2;
+
+  Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
+  qqcw_sav(work_ptr, mam4::nlev);
+  work_ptr += mam4::nlev*(aero_model::maxd_aspectype + 2)*aero_model::pcnst;
 
   /// error check
   const int workspace_used(work_ptr - work.data()),

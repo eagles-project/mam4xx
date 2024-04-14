@@ -129,9 +129,6 @@ void aero_model_wetdep(Ensemble *ensemble) {
     const int work_len = wetdep::get_aero_model_wetdep_work_len();
     wetdep::View1D work("work", work_len);
 
-    Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
-        qqcw_sav("qqcw_sav", nlev);
-
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -159,9 +156,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
               dlf, wet_geometric_mean_diameter_i, dry_geometric_mean_diameter_i,
               qaerwat, wetdens,
               // output
-              aerdepwetis, aerdepwetcw,
-              // FIXME
-              qqcw_sav, work);
+              aerdepwetis, aerdepwetcw, work);
 
           team.team_barrier();
           Kokkos::parallel_for(
