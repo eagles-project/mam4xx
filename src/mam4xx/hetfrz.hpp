@@ -491,7 +491,7 @@ void calculate_hetfrz_immersion_nucleation(
     const Real pdf_imm_theta[Hetfrz::pdf_n_theta], const Real rgimm_bc,
     const Real rgimm_dust_a1, const Real rgimm_dust_a3, const Real r_bc,
     const Real r_dust_a1, const Real r_dust_a3, const bool do_bc,
-    const bool do_dst1, const bool do_dst3, Real &frzbcimm, Real &frzduimm) {
+    const bool do_dst1, const bool do_dst3, Real &frzbcimm, Real &frzduimm, int k) {
 
   frzbcimm = 0.0;
   frzduimm = 0.0;
@@ -590,6 +590,7 @@ void calculate_hetfrz_immersion_nucleation(
         haero::min(Hetfrz::limfacbc * total_cloudborne_aer_num[id_bc] / deltat,
                    total_cloudborne_aer_num[id_bc] / deltat *
                        (1.0 - haero::exp(-Jimm_bc * deltat)));
+    if (k==62)std::cout << "frzbcimm:" << frzbcimm<<" : "<< id_bc<<" : "<<Hetfrz::limfacbc<<" : "<<total_cloudborne_aer_num[id_bc]<<" : "<<deltat<<" : "<<Jimm_bc<<std::endl;
   }
 
   if (do_dst1) {
@@ -716,7 +717,7 @@ void hetfrz_classnuc_calc(
     Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
     Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec], Real &frzbcimm,
     Real &frzduimm, Real &frzbccnt, Real &frzducnt, Real &frzbcdep,
-    Real &frzdudep) {
+    Real &frzdudep, int k) {
 
   // *****************************************************************************
   //                 PDF theta model
@@ -810,7 +811,7 @@ void hetfrz_classnuc_calc(
       deltat, temperature, uncoated_aer_num, total_interstitial_aer_num,
       total_cloudborne_aer_num, sigma_iw, eswtr, vwice, dim_theta,
       pdf_imm_theta, rgimm_bc, rgimm_dust_a1, rgimm_dust_a3, r_bc, r_dust_a1,
-      r_dust_a3, do_bc, do_dst1, do_dst3, frzbcimm, frzduimm);
+      r_dust_a3, do_bc, do_dst1, do_dst3, frzbcimm, frzduimm,k);
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   //  Deposition nucleation
@@ -866,7 +867,7 @@ void calculate_cloudborne_aer_num(
     const Real mommac_cb, const Real num_accum_cb, const Real dmc_cb,
     const Real ssmc_cb, const Real mommc_cb, const Real bcmc_cb,
     const Real pommc_cb, const Real soamc_cb, const Real num_coarse_cb,
-    Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec]) {
+    Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec], int k) {
   // ***************************************************
   // calculate cloudborne aerosol concentrations for
   // BC and dust
@@ -877,6 +878,14 @@ void calculate_cloudborne_aer_num(
                                    soamac_cb + ssmac_cb + dmac_cb + mommac_cb) *
                                   num_accum_cb *
                                   Hetfrz::num_m3_to_cm3; // #/cm^3
+
+                                  /*as_bc/(as_so4+as_bc+as_pom+as_soa+as_ss+as_du+as_mom)* &
+                                    aer_cb(num_accum) * num_m3_to_cm3*/
+
+  
+    if (k==62)std::cout << "BC:" << total_cloudborne_aer_num[0]<<" : "<<bcmac_cb<<" : "<<so4mac_cb<<" : "<<pommac_cb
+    <<" : "<<soamac_cb<<" : "<<ssmac_cb<<" : "<<dmac_cb<<" : "<<mommac_cb<<" : "<<num_accum_cb<<" : "<<Hetfrz::num_m3_to_cm3<<std::endl;
+    //if(k==62)std::cout << "Accum_num_cb:" <<num_accum_cb<<std::endl;
   }
 
   if (dmac_cb > 0.0) {
@@ -1129,7 +1138,8 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
   const Real pmid = atm.pressure(k);
   const Real qc = atm.liquid_mixing_ratio(k);
   const Real nc = atm.cloud_liquid_number_mixing_ratio(k);
-  const Real ast = diags.stratiform_cloud_fraction(k);
+  //const Real ast = diags.stratiform_cloud_fraction(k);
+  const Real ast = atm.cloud_fraction(k);
 
   // These are the output tendencies from heterogeneous freezing that need to be
   // added correctly to the cloud-micorphysics scheme.
@@ -1293,7 +1303,8 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
   auto &accum_soa_cb = progs.q_aero_c[accum_idx][int(AeroId::SOA)];
   auto &accum_mom_cb = progs.q_aero_c[accum_idx][int(AeroId::MOM)];
 
-  auto &num_accum_cb = progs.n_mode_c[accum_idx];
+  auto &num_accum_cb1 = progs.n_mode_c[accum_idx];
+  const Real num_accum_cb = num_accum_cb1[k] * air_density;
 
   const Real dmac_cb = accum_dst_cb[k] * air_density;
   const Real ssmac_cb = accum_ss_cb[k] * air_density;
@@ -1310,7 +1321,8 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
   auto &coarse_pom_cb = progs.q_aero_c[coarse_idx][int(AeroId::POM)];
   auto &coarse_soa_cb = progs.q_aero_c[coarse_idx][int(AeroId::SOA)];
 
-  auto &num_coarse_cb = progs.n_mode_c[coarse_idx];
+  auto &num_coarse_cb1 = progs.n_mode_c[coarse_idx];
+  const Real num_coarse_cb=num_coarse_cb1[k]* air_density;
 
   const Real dmc_cb = coarse_dust_cb[k] * air_density;
   const Real ssmc_cb = coarse_ncl_cb[k] * air_density;
@@ -1322,8 +1334,8 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
   Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec] = {0.0};
   calculate_cloudborne_aer_num(
       dmac_cb, ssmac_cb, so4mac_cb, bcmaac_cb, pommac_cb, soamac_cb, mommac_cb,
-      num_accum_cb[k], dmc_cb, ssmc_cb, mommc_cb, bcmc_cb, pommc_cb, soamc_cb,
-      num_coarse_cb[k], total_cloudborne_aer_num);
+      num_accum_cb, dmc_cb, ssmc_cb, mommc_cb, bcmc_cb, pommc_cb, soamc_cb,
+      num_coarse_cb, total_cloudborne_aer_num,k);
 
   Real hetraer[Hetfrz::hetfrz_aer_nspec] = {0.0};
 
@@ -1411,11 +1423,13 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
         dt, temp, pmid, supersatice, fn, r3lx, ncic * air_density * 1e-6,
         hetraer, awcam, awfacm, dstcoat, total_aer_num, coated_aer_num,
         uncoated_aer_num, total_interstitial_aer_num, total_cloudborne_aer_num,
-        frzbcimm, frzduimm, frzbccnt, frzducnt, frzbcdep, frzdudep);
+        frzbcimm, frzduimm, frzbccnt, frzducnt, frzbcdep, frzdudep,k);
 
     // These are the output tendencies from hetfrz that need to be properly
     // coupled into the cloud micorphysical scheme
     hetfrz_immersion_nucleation_tend = frzbcimm + frzduimm;
+    if (k==62)std::cout << "hetfrz_immersion_nucleation_tend:" << hetfrz_immersion_nucleation_tend<<" : "<< frzbcimm<<" : "<<frzduimm<<std::endl;
+
     hetfrz_contact_nucleation_tend = frzbccnt + frzducnt;
     hetfrz_depostion_nucleation_tend = frzbcdep + frzdudep;
 
@@ -1485,10 +1499,12 @@ void Hetfrz::compute_tendencies(const AeroConfig &config,
   // to the relevant cloud-microphysical parameterization.
 
   const int nk = atm.num_levels();
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
+  //Kokkos::parallel_for(
+  //    Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
+    for (int k=0; k<72; ++k){
         hetfrz::hetfrz_rates_1box(k, dt, atm, progs, diags, tends, config_);
-      });
+    }
+  //    });
 }
 
 } // namespace mam4

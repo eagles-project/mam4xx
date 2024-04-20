@@ -238,10 +238,8 @@ KOKKOS_INLINE_FUNCTION AeroId mode_aero_species(const int modeNo,
       {// primary carbon mode
        AeroId::POM, AeroId::BC, AeroId::MOM, AeroId::None, AeroId::None,
        AeroId::None, AeroId::None}};
-
   return mode_aero_species[modeNo][speciesNo];
 }
-
 /// Returns number of species per mode
 KOKKOS_INLINE_FUNCTION int num_species_mode(const int i) {
   static constexpr int _num_species_mode[4] = {7, 4, 7, 3};
