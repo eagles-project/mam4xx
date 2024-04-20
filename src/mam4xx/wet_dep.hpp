@@ -1813,11 +1813,12 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
           n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
           // outputs
           dgnumdry_m_kk, dgncur_c_kk, ptend_q_kk.data(), dqqcwdt_kk);
-
+#if 1
       mam4::water_uptake::modal_aero_water_uptake_dr(
           nspec_amode, specdens_amode, spechygro, lspectype_amode,
           state_q_kk.data(), temperature(kk), pmid(kk), cldn_prev_step(kk),
           dgnumdry_m_kk, dgnumwet_m_kk, qaerwat_m_kk, wetdens_kk);
+#endif
     }
 
     // team.team_barrier();
@@ -1830,7 +1831,7 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
       wetdens(imode, kk) = wetdens_kk[imode];
     }
   }); // klev parallel_for loop
-
+#if 0
   team.team_barrier();
 
   // skip wet deposition if nwetdep is non-positive
@@ -2013,7 +2014,7 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
     utils::inject_ptend_to_tendencies(ptend_q_kk.data(), tends, kk);
   });
   team.team_barrier();
-
+#endif
 } // aero_model_wetdep
 
 } // namespace wetdep

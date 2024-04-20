@@ -185,19 +185,19 @@ void aero_model_wetdep(Ensemble *ensemble) {
     output.set("aerdepwetis", output_pcnst);
 
     std::vector<Real> output_modes(nlev * num_modes, 0);
-    mam4::validation::convert_2d_view_device_to_1d_vector(
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(
         wet_geometric_mean_diameter_i, output_modes);
     output.set("dgnumwet", output_modes);
 
-    mam4::validation::convert_2d_view_device_to_1d_vector(
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(
         dry_geometric_mean_diameter_i, output_modes);
     output.set("dgncur_a", output_modes);
 
-    mam4::validation::convert_2d_view_device_to_1d_vector(qaerwat,
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(qaerwat,
                                                           output_modes);
     output.set("qaerwat", output_modes);
 
-    mam4::validation::convert_2d_view_device_to_1d_vector(wetdens,
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(wetdens,
                                                           output_modes);
     output.set("wetdens", output_modes);
 
