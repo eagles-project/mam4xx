@@ -39,6 +39,7 @@ set(TEST_LIST
     calcsize_compute_dry_volume
     stand_modal_aero_calcsize_sub
     stand_modal_aero_calcsize_sub_update_ptend
+    stand_calcsize_aero_model_wetdep_ts_379
     )
 # # matching the tests and errors, just for convenience
 
@@ -52,6 +53,7 @@ set(ERROR_THRESHOLDS
     1e-12
     5e-11
     3e-5
+    1e-13
    )
 
 
