@@ -12,7 +12,8 @@ add_executable(aero_model_driver  aero_model_driver.cpp
                modal_aero_bcscavcoef_init.cpp
               calc_1_impact_rate.cpp
               modal_aero_bcscavcoef_get.cpp
-              aero_model_wetdep.cpp)
+              aero_model_wetdep.cpp
+              aero_model_calcsize_water_uptake_dr.cpp)
 target_link_libraries(aero_model_driver skywalker;validation;${HAERO_LIBRARIES})
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
@@ -31,6 +32,7 @@ set(TEST_LIST
     modal_aero_bcscavcoef_get_ts_355
     modal_aero_bcscavcoef_init_ts_0
     aero_model_wetdep_ts_379
+    stand_aero_model_calcsize_water_uptake_dr_ts_379
     )
 
 set(DEFAULT_TOL 1e-11)
@@ -40,6 +42,7 @@ set(ERROR_THRESHOLDS
    ${DEFAULT_TOL}
    2e-4
    1000000 ## FIXME
+   1e-3
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
