@@ -50,15 +50,15 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
     View2D ptend_q("ptend_q", pver, pcnst);
     View2D dqqcwdt("dqqcwdt", pver, pcnst);
 
-    wetdep::View2D qaerwat("qaerwat", ntot_amode, pver);
+    wetdep::View2D qaerwat("qaerwat", pver, ntot_amode);
     const auto qaerwat_db = input.get_array("qaerwat");
     mam4::validation::convert_1d_vector_to_2d_view_device(qaerwat_db, qaerwat);
 
-    wetdep::View2D wetdens("wetdens", ntot_amode, pver);
+    wetdep::View2D wetdens("wetdens", pver, ntot_amode);
     const auto wetdens_db = input.get_array("wetdens");
     mam4::validation::convert_1d_vector_to_2d_view_device(wetdens_db, wetdens);
 
-    wetdep::View2D dgnumwet("dgnumwet", ntot_amode, pver);
+    wetdep::View2D dgnumwet("dgnumwet", pver, ntot_amode);
     const auto dgnumwet_db = input.get_array("dgnumwet");
     mam4::validation::convert_1d_vector_to_2d_view_device(dgnumwet_db, dgnumwet);
 
@@ -120,6 +120,7 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
 
           for (int kk = top_lev; kk < pver; ++kk) {
             const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
+            std::cout << "kk : " << kk <<"\n";
 
             const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
             const auto dgncur_i =
@@ -154,6 +155,7 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
             nspec_amode, specdens_amode, spechygro, lspectype_amode,
             state_q_k.data(), temperature(kk), pmid(kk), cldn(kk),
             dgncur_i.data(), dgnumwet_kk.data(), qaerwat_kk.data(), wetdens_kk.data());
+            std::cout << "dgnumwet_kk[0] : " << dgnumwet_kk[0] <<"\n";
           } // k
         });
 
