@@ -855,29 +855,30 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
 
   for (int isw = 0; isw < nswbands; ++isw) {
 
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, top_lev, pver), [&] (int kk) {
+    Kokkos::parallel_for(
+        Kokkos::TeamThreadRange(team, top_lev, pver), [&](int kk) {
+          Kokkos::parallel_reduce(
+              Kokkos::ThreadVectorRange(team, ntot_amode),
+              [&](int imode, Real &suma) {
+                suma += tauxar_work(kk, imode, isw);
+              },
+              tauxar(kk + 1, isw));
 
-      Kokkos::parallel_reduce(
-          Kokkos::ThreadVectorRange(team, ntot_amode),
-          [&](int imode, Real &suma) { suma += tauxar_work(kk, imode, isw); },
-          tauxar(kk + 1, isw));
+          Kokkos::parallel_reduce(
+              Kokkos::ThreadVectorRange(team, ntot_amode),
+              [&](int imode, Real &suma) { suma += wa_work(kk, imode, isw); },
+              wa(kk + 1, isw));
 
-      Kokkos::parallel_reduce(
-          Kokkos::ThreadVectorRange(team, ntot_amode),
-          [&](int imode, Real &suma) { suma += wa_work(kk, imode, isw); },
-          wa(kk + 1, isw));
+          Kokkos::parallel_reduce(
+              Kokkos::ThreadVectorRange(team, ntot_amode),
+              [&](int imode, Real &suma) { suma += ga_work(kk, imode, isw); },
+              ga(kk + 1, isw));
 
-      Kokkos::parallel_reduce(
-          Kokkos::ThreadVectorRange(team, ntot_amode),
-          [&](int imode, Real &suma) { suma += ga_work(kk, imode, isw); },
-          ga(kk + 1, isw));
-
-      Kokkos::parallel_reduce(
-          Kokkos::ThreadVectorRange(team, ntot_amode),
-          [&](int imode, Real &suma) { suma += fa_work(kk, imode, isw); },
-          fa(kk + 1, isw));
-
-    }); // kk
+          Kokkos::parallel_reduce(
+              Kokkos::ThreadVectorRange(team, ntot_amode),
+              [&](int imode, Real &suma) { suma += fa_work(kk, imode, isw); },
+              fa(kk + 1, isw));
+        }); // kk
 
   } // isw
 
@@ -967,29 +968,30 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
 
   for (int isw = 0; isw < nswbands; ++isw) {
 
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, pver), [&] (const int kk) {
+    Kokkos::parallel_for(
+        Kokkos::TeamThreadRange(team, pver), [&](const int kk) {
+          Kokkos::parallel_reduce(
+              Kokkos::ThreadVectorRange(team, ntot_amode),
+              [&](int imode, Real &suma) {
+                suma += tauxar_work(kk, imode, isw);
+              },
+              tauxar(isw, kk + 1));
 
-      Kokkos::parallel_reduce(
-          Kokkos::ThreadVectorRange(team, ntot_amode),
-          [&](int imode, Real &suma) { suma += tauxar_work(kk, imode, isw); },
-          tauxar(isw, kk + 1));
+          Kokkos::parallel_reduce(
+              Kokkos::ThreadVectorRange(team, ntot_amode),
+              [&](int imode, Real &suma) { suma += wa_work(kk, imode, isw); },
+              wa(isw, kk + 1));
 
-      Kokkos::parallel_reduce(
-          Kokkos::ThreadVectorRange(team, ntot_amode),
-          [&](int imode, Real &suma) { suma += wa_work(kk, imode, isw); },
-          wa(isw, kk + 1));
+          Kokkos::parallel_reduce(
+              Kokkos::ThreadVectorRange(team, ntot_amode),
+              [&](int imode, Real &suma) { suma += ga_work(kk, imode, isw); },
+              ga(isw, kk + 1));
 
-      Kokkos::parallel_reduce(
-          Kokkos::ThreadVectorRange(team, ntot_amode),
-          [&](int imode, Real &suma) { suma += ga_work(kk, imode, isw); },
-          ga(isw, kk + 1));
-
-      Kokkos::parallel_reduce(
-          Kokkos::ThreadVectorRange(team, ntot_amode),
-          [&](int imode, Real &suma) { suma += fa_work(kk, imode, isw); },
-          fa(isw, kk + 1));
-
-    }); // kk
+          Kokkos::parallel_reduce(
+              Kokkos::ThreadVectorRange(team, ntot_amode),
+              [&](int imode, Real &suma) { suma += fa_work(kk, imode, isw); },
+              fa(isw, kk + 1));
+        }); // kk
 
   } // isw
 
