@@ -42,7 +42,7 @@ set(ERROR_THRESHOLDS
    ${DEFAULT_TOL}
    2e-4
    1000000 ## FIXME
-   1e-3
+   2e-5
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)

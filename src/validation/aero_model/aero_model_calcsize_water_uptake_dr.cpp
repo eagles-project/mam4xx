@@ -22,6 +22,7 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
     constexpr int maxd_aspectype = ndrop::maxd_aspectype;
 
     using View2D = DeviceType::view_2d<Real>;
+    constexpr Real zero =0.0;
 
     auto state_q_db = input.get_array("state_q");
     auto qqcw_db = input.get_array("qqcw");
@@ -119,9 +120,7 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
           const int top_lev = 0; // 1( in fortran )
 
           for (int kk = top_lev; kk < pver; ++kk) {
-            const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
-            std::cout << "kk : " << kk <<"\n";
-
+            const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());          
             const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
             const auto dgncur_i =
                 Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
@@ -155,11 +154,18 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
             nspec_amode, specdens_amode, spechygro, lspectype_amode,
             state_q_k.data(), temperature(kk), pmid(kk), cldn(kk),
             dgncur_i.data(), dgnumwet_kk.data(), qaerwat_kk.data(), wetdens_kk.data());
-            std::cout << "dgnumwet_kk[0] : " << dgnumwet_kk[0] <<"\n";
+
+            if (update_mmr) {
+              // Note: it only needs to update aerosol variables.
+            for (int i = utils::aero_start_ind(); i < pcnst; ++i)
+            {
+            qqcw(kk,i) = haero::max(zero, qqcw(kk,i) + dqqcwdt(kk,i)*dt);
+            }
+            }            
+            
           } // k
         });
 
-    constexpr Real zero = 0;
     std::vector<Real> dgnumdry_m_out(pver * ntot_amode, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(dgnumdry_m,
                                                           dgnumdry_m_out);
@@ -184,16 +190,18 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
     std::vector<Real> ptend_q_out(pver * pcnst, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(ptend_q, ptend_q_out);
 
-    Kokkos::deep_copy(qqcw_host, qqcw);
-    count = 0;
-    for (int kk = 0; kk < pver; ++kk) {
-      for (int i = 0; i < pcnst; ++i) {
-        qqcw_db[count] = qqcw_host(kk, i);
-        count++;
-      }
-    }
+    // Kokkos::deep_copy(qqcw_host, qqcw);
+    // count = 0;
+    // for (int kk = 0; kk < pver; ++kk) {
+    //   for (int i = 0; i < pcnst; ++i) {
+    //     qqcw_db[count] = qqcw_host(kk, i);
+    //     count++;
+    //   }
+    // }
+    std::vector<Real> qqcw_out(pver * pcnst, zero);
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(qqcw,qqcw_out);
 
-    output.set("qqcw", qqcw_db);
+    output.set("qqcw", qqcw_out);
     output.set("ptend_q", ptend_q_out);
 
     std::vector<Real> state_q_out(pver * 40, zero);
