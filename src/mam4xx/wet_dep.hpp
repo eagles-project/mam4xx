@@ -1751,6 +1751,13 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
     // FIXME: dgncur_a is aerosol particle diameter and is an input to
     // calcsize. But calcsize reset its value.
     Real dgnumdry_m_kk[ntot_amode] = {};
+    for (int imode = 0; imode < ntot_amode; imode++) {
+      dgnumwet_m_kk[imode] = wet_geometric_mean_diameter_i(imode, kk);
+      dgnumdry_m_kk[imode] = dry_geometric_mean_diameter_i(imode, kk);
+      qaerwat_m_kk[imode] = qaerwat(imode, kk);
+      wetdens_kk[imode] = wetdens(imode, kk);
+    }
+
     {
 
       const bool do_adjust = true;
@@ -1813,12 +1820,21 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
           n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
           // outputs
           dgnumdry_m_kk, dgncur_c_kk, ptend_q_kk.data(), dqqcwdt_kk);
-#if 1
+      // update could aerosol. 
+
+      if (update_mmr) {
+      // Note: it only needs to update aerosol variables.
+      for (int i = utils::aero_start_ind(); i < pcnst; ++i)
+      {
+            qqcw(kk,i) = haero::max(zero, qqcw(kk,i) + dqqcwdt_kk[i]*dt);
+      }
+      }// end update could aerosols.
+
       mam4::water_uptake::modal_aero_water_uptake_dr(
           nspec_amode, specdens_amode, spechygro, lspectype_amode,
           state_q_kk.data(), temperature(kk), pmid(kk), cldn_prev_step(kk),
           dgnumdry_m_kk, dgnumwet_m_kk, qaerwat_m_kk, wetdens_kk);
-#endif
+
     }
 
     // team.team_barrier();
@@ -1831,7 +1847,7 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
       wetdens(imode, kk) = wetdens_kk[imode];
     }
   }); // klev parallel_for loop
-#if 0
+#if 1
   team.team_barrier();
 
   // skip wet deposition if nwetdep is non-positive

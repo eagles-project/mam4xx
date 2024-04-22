@@ -106,22 +106,22 @@ void aero_model_wetdep(Ensemble *ensemble) {
     wetdep::View2D wet_geometric_mean_diameter_i(
         "wet_geometric_mean_diameter_i", num_modes, nlev);
     const auto dgnumwet_db = input.get_array("dgnumwet");
-    mam4::validation::convert_1d_vector_to_2d_view_device(
+    mam4::validation::convert_1d_vector_to_transpose_2d_view_device(
         dgnumwet_db, wet_geometric_mean_diameter_i);
 
     wetdep::View2D dry_geometric_mean_diameter_i(
         "dry_geometric_mean_diameter_i", num_modes, nlev);
     const auto dgncur_a_db = input.get_array("dgncur_a");
-    mam4::validation::convert_1d_vector_to_2d_view_device(
+    mam4::validation::convert_1d_vector_to_transpose_2d_view_device(
         dgncur_a_db, dry_geometric_mean_diameter_i);
 
     wetdep::View2D qaerwat("qaerwat", num_modes, nlev);
     const auto qaerwat_db = input.get_array("qaerwat");
-    mam4::validation::convert_1d_vector_to_2d_view_device(qaerwat_db, qaerwat);
+    mam4::validation::convert_1d_vector_to_transpose_2d_view_device(qaerwat_db, qaerwat);
 
     wetdep::View2D wetdens("wetdens", num_modes, nlev);
     const auto wetdens_db = input.get_array("wetdens");
-    mam4::validation::convert_1d_vector_to_2d_view_device(wetdens_db, wetdens);
+    mam4::validation::convert_1d_vector_to_transpose_2d_view_device(wetdens_db, wetdens);
 
     wetdep::View2D ptend_q("ptend_q", nlev, aero_model::pcnst);
 
