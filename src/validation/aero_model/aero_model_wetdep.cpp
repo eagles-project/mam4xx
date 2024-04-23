@@ -213,6 +213,9 @@ void aero_model_wetdep(Ensemble *ensemble) {
                                                           output_modes);
     output.set("wetdens", output_modes);
 
+    using range_type = Kokkos::pair<int, int>;
+    const auto& ptend_q_non = Kokkos::subview(ptend_q, Kokkos::ALL, range_type(0,utils::aero_start_ind()) );
+    Kokkos::deep_copy(ptend_q_non, -9999.900390625);
     std::vector<Real> output_ptend(nlev * aero_model::pcnst, 0);
     mam4::validation::convert_2d_view_device_to_1d_vector(ptend_q,
                                                           output_ptend);
