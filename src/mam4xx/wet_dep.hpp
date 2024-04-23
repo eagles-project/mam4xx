@@ -1741,6 +1741,7 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
   // compute calcsize and
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0, nlev), [&](int kk) {
+    std::cout << "kk : " << kk <<"\n";
     const auto state_q_kk = ekat::subview(state_q, kk);
     const auto qqcw_kk = ekat::subview(qqcw, kk);
     const auto ptend_q_kk = ekat::subview(ptend_q, kk);
@@ -1762,7 +1763,7 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
 
       const bool do_adjust = true;
       const bool do_aitacc_transfer = true;
-      const bool update_mmr = false;
+      const bool update_mmr = true;
 
       int numptr_amode[ntot_amode];
       int mam_idx[ntot_amode][ndrop::nspec_max];

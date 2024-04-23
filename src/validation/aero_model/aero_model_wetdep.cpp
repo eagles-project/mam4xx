@@ -23,7 +23,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
     mam4::Tendencies tends = validation::create_tendencies(nlev);
     int nlev = mam4::nlev;
     Real pblh = 1000;
-    const Real dt = 1;
+    const Real dt = input.get_array("dt")[0];
     //
     View2D state_q("state_q", nlev, aero_model::pcnst);
     const auto state_q_db = input.get_array("state_q");
@@ -47,21 +47,32 @@ void aero_model_wetdep(Ensemble *ensemble) {
     ColumnView hydrostatic_dp =
         validation::get_input_in_columnview(input, "pdel");
 
+    auto vapor_mixing_ratio = create_column_view(nlev);
     auto liquid_mixing_ratio = create_column_view(nlev); //
-
     auto ice_mixing_ratio = create_column_view(nlev); //
+    auto cloud_liquid_number_mixing_ratio = create_column_view(nlev);
+    auto cloud_ice_number_mixing_ratio = create_column_view(nlev);
     // We need deep_copy because of executation error due to different layout
+    // q[0] = atm.vapor_mixing_ratio(klev);               // qv
+    Kokkos::deep_copy(vapor_mixing_ratio,
+                      Kokkos::subview(state_q, Kokkos::ALL(), 0));
     // q[1] = atm.liquid_mixing_ratio(klev);              // qc
     Kokkos::deep_copy(liquid_mixing_ratio,
                       Kokkos::subview(state_q, Kokkos::ALL(), 1));
     // q[2] = atm.ice_mixing_ratio(klev);                 // qi
     Kokkos::deep_copy(ice_mixing_ratio,
                       Kokkos::subview(state_q, Kokkos::ALL(), 2));
+    // q[3] = atm.cloud_liquid_number_mixing_ratio(klev); //  nc
+    Kokkos::deep_copy(cloud_liquid_number_mixing_ratio,
+                      Kokkos::subview(state_q, Kokkos::ALL(), 3));
+    // q[4] = atm.cloud_ice_number_mixing_ratio(klev);    // ni
+    Kokkos::deep_copy(cloud_ice_number_mixing_ratio,
+                      Kokkos::subview(state_q, Kokkos::ALL(), 4));
 
-    const auto cldn_db = input.get_array("cldn");
-    auto vapor_mixing_ratio = create_column_view(nlev);
-    auto cloud_liquid_number_mixing_ratio = create_column_view(nlev);
-    auto cloud_ice_number_mixing_ratio = create_column_view(nlev);
+
+    
+    
+    
     auto height = create_column_view(nlev);
     auto interface_pressure = create_column_view(nlev + 1);
     auto cloud_fraction = create_column_view(nlev);
@@ -128,6 +139,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
     // work arrays
     const int work_len = wetdep::get_aero_model_wetdep_work_len();
     wetdep::View1D work("work", work_len);
+    std::cout << "aero_model_wetdep : " <<"\n";
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(

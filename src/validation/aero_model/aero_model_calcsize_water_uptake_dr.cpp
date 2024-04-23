@@ -42,12 +42,11 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
     }
     Kokkos::deep_copy(qqcw, qqcw_host);
     View2D dgnumdry_m("dgnumdry_m", pver, ntot_amode);
-    if (input.has("dgncur_a")){
+    if (input.has_array("dgncur_a")){
       auto dgncur_a_db = input.get_array("dgncur_a");
       mam4::validation::convert_1d_vector_to_2d_view_device(dgncur_a_db, dgnumdry_m);
-    }
+    } 
     
-
     View2D ptend_q("ptend_q", pver, pcnst);
     View2D dqqcwdt("dqqcwdt", pver, pcnst);
 
@@ -68,11 +67,14 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
     ColumnView pmid = validation::get_input_in_columnview(input, "pmid");
 
     ColumnView cldn = validation::get_input_in_columnview(input, "cldn");
+    std::cout << "calcsize : " <<"\n";
 
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+
+
           Real inv_density[AeroConfig::num_modes()]
                           [AeroConfig::num_aerosol_ids()] = {};
           Real num2vol_ratio_min[AeroConfig::num_modes()] = {};
@@ -120,6 +122,8 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
           const int top_lev = 0; // 1( in fortran )
 
           for (int kk = top_lev; kk < pver; ++kk) {
+            std::cout << "kk : " << kk <<"\n";
+
             const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());          
             const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
             const auto dgncur_i =
