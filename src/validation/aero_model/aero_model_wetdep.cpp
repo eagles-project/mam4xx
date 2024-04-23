@@ -212,7 +212,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
     mam4::validation::convert_transpose_2d_view_device_to_1d_vector(wetdens,
                                                           output_modes);
     output.set("wetdens", output_modes);
-
+    // Note: Fortran validation code uses -9999.9 for ptend that are not aerosols. 
     using range_type = Kokkos::pair<int, int>;
     const auto& ptend_q_non = Kokkos::subview(ptend_q, Kokkos::ALL, range_type(0,utils::aero_start_ind()) );
     Kokkos::deep_copy(ptend_q_non, -9999.900390625);
