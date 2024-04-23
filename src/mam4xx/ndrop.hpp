@@ -518,7 +518,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
                     const Real aten, Real fn[AeroConfig::num_modes()],
                     Real fm[AeroConfig::num_modes()],
                     Real fluxn[AeroConfig::num_modes()],
-                    Real fluxm[AeroConfig::num_modes()], Real &flux_fullact, int kk) {
+                    Real fluxm[AeroConfig::num_modes()], Real &flux_fullact) {
   //    ---------------------------------------------------------------------------------
   // Calculates number, surface, and mass fraction of aerosols activated as CCN
   // calculates flux of cloud droplets, surface area, and aerosol mass into
@@ -686,7 +686,6 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
         twothird * (lnsm[imode] - lnsupersat) / (sq2 * alogsig[imode]);
 
     fn[imode] = half * (one - haero::erf(arg_erf_n)); // activated number
-    //if(kk==62)std::cout<<"FN:"<<imode<<" : "<<fn[imode]<<" : "<<half<<" : "<<one<<" : "<<arg_erf_n<<std::endl;
 
     const Real arg_erf_m = arg_erf_n - 1.5 * sq2 * alogsig[imode];
     fm[imode] = half * (one - haero::erf(arg_erf_m)); // activated mass
@@ -716,7 +715,7 @@ void get_activate_frac(
     const Real alogsig[AeroConfig::num_modes()], const Real aten,
     Real fn[AeroConfig::num_modes()], Real fm[AeroConfig::num_modes()],
     Real fluxn[AeroConfig::num_modes()], Real fluxm[AeroConfig::num_modes()],
-    Real &flux_fullact, int kk) {
+    Real &flux_fullact) {
 
   // input arguments
   //  @param [in] state_q_kload(:)         aerosol mmrs at level from which to
@@ -763,8 +762,7 @@ void get_activate_frac(
   activate_modal(wtke, wmax, tair, air_density_kk, //   in
                  naermod, vaerosol, hygro,         //  in
                  exp45logsig, alogsig, aten, fn, fm, fluxn, fluxm,
-                 flux_fullact,kk); // out
-  //if(kk==62)std::cout<<"ACT:"<<fn[0]<<" : "<<fn[1]<<" : "<<fn[2]<<" : "<<fn[3]<<std::endl;
+                 flux_fullact); // out
 
 } // get_activate_frac
 
@@ -792,7 +790,7 @@ void update_from_cldn_profile(
     Real &nsource_col, // inout
     Real &qcld, Real factnum_col[AeroConfig::num_modes()],
     Real &eddy_diff, // out
-    Real nact[AeroConfig::num_modes()], Real mact[AeroConfig::num_modes()], int kk) {
+    Real nact[AeroConfig::num_modes()], Real mact[AeroConfig::num_modes()]) {
   // clang-format off
   // input arguments
   // cldn_col_in(:)       cloud fraction [fraction] at kk
@@ -869,8 +867,8 @@ void update_from_cldn_profile(
           lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
           voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
           exp45logsig, alogsig, aten, factnum_col, fm, fluxn, fluxm, // out
-          flux_fullact,kk);
-          //if(kk==62)std::cout<<"GET:"<<factnum_col[0]<<" : "<<factnum_col[1]<<" : "<<factnum_col[2]<<" : "<<factnum_col[3]<<std::endl;
+          flux_fullact);
+
       //  store for output activation fraction of aerosol
       // factnum_col(kk,:) = fn
       // vertical change in cloud fraction [fraction]
@@ -977,7 +975,7 @@ void update_from_newcld(
     const int mam_idx[AeroConfig::num_modes()][nspec_max], Real &qcld,
     Real raercol_nsav[ncnst_tot],
     Real raercol_cw_nsav[ncnst_tot], // inout
-    Real &nsource_col_out, Real factnum_col_out[AeroConfig::num_modes()],int kk) {
+    Real &nsource_col_out, Real factnum_col_out[AeroConfig::num_modes()]) {
 
   // // input arguments
   // real(r8), intent(in) :: cldn_col_in(:)   cloud fraction [fraction]
@@ -1062,8 +1060,7 @@ void update_from_newcld(
                       lmassptr_amode, voltonumbhi_amode, voltonumblo_amode,
                       numptr_amode, nspec_amode, exp45logsig, alogsig, aten,
                       factnum_col_out, fm, fluxn, fluxm, // out
-                      flux_fullact,kk);
-    //if(kk==62)std::cout<<"GETa:"<<factnum_col_out[0]<<" : "<<factnum_col_out[1]<<" : "<<factnum_col_out[2]<<" : "<<factnum_col_out[3]<<std::endl;
+                      flux_fullact);
 
     for (int imode = 0; imode < ntot_amode; ++imode) {
       // Fortran indexing to C++ indexing
@@ -1556,9 +1553,8 @@ void dropmixnuc(
 
   // Initialize 1D (in space) versions of interstitial and cloud borne aerosol
   int nsav = 0;
-  //Kokkos::parallel_for(
-  //    Kokkos::TeamThreadRange(team, pver - top_lev + 1), KOKKOS_LAMBDA(int kk) {
-    for (int kk=0; kk<pver - top_lev + 1; ++kk){
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, pver - top_lev + 1), KOKKOS_LAMBDA(int kk) {
         const int k = kk + top_lev - 1;
 
         wtke(k) = haero::max(wsub(k), wmixmin);
@@ -1602,14 +1598,11 @@ void dropmixnuc(
                            aten, mam_idx, qcld(k),
                            raercol[k][nsav].data(),       // inout
                            raercol_cw[k][nsav].data(),    // inout
-                           nsource(k), factnum_k.data(),k); // inout
-        for (int ii=0; ii<4; ++ii){
-          factnum_k(ii) = factnum_k.data()[ii];
+                           nsource(k), factnum_k.data()); // inout
+        for (int imode=0; imode<ntot_amode; ++imode){
+          factnum_k(imode) = factnum_k.data()[imode];
         }
-        //if(k==62)std::cout<<"DROP:"<<" : "<<factnum_k(0)<<" : "<<factnum_k(1)<<" : "<<factnum_k(2)<<" : "<<factnum_k(3)<<std::endl;
-        //if(k==62)std::cout<<"DROPaa:"<<" : "<<factnum_k.data()[0]<<" : "<<factnum_k.data()[1]<<" : "<<factnum_k.data()[2]<<" : "<<factnum_k.data()[3]<<std::endl;
-      //});
-      }                                                 // end k
+      });// end k
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, 1, pver), KOKKOS_LAMBDA(int k) {
         EKAT_KERNEL_ASSERT_MSG(0 < zm(k - 1) - zm(k),
@@ -1640,9 +1633,8 @@ void dropmixnuc(
   team.team_barrier();
 
   // NOTE: update_from_cldn_profile loops from 7 to 71 in fortran code.
-  //Kokkos::parallel_for(
-  //    Kokkos::TeamThreadRange(team, pver - top_lev), KOKKOS_LAMBDA(int kk) {
-      for (int kk=0; kk<pver - top_lev; ++kk){
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, pver - top_lev), KOKKOS_LAMBDA(int kk) {
         const int k = kk + top_lev - 1;
         const int kp1 = haero::min(k + 1, pver - 1);
 
@@ -1666,10 +1658,8 @@ void dropmixnuc(
             nsource(k), // inout
             qcld(k), factnum_k.data(),
             eddy_diff(k), // out
-            nact_k.data(), mact_k.data(),k);
-            //if(k==62)std::cout<<"DROP-nn:"<<" : "<<factnum_k.data()[0]<<" : "<<factnum_k.data()[1]<<" : "<<factnum_k.data()[2]<<" : "<<factnum_k.data()[4]<<std::endl;
-      //});
-      }
+            nact_k.data(), mact_k.data());
+      });
 
   team.team_barrier();
 
@@ -1702,7 +1692,6 @@ void dropmixnuc(
         ndropmix(k) = (qcld(k) - ncldwtr(k)) * dtinv - nsource(k);
         // BAD CONSTANT
         tendnd(k) = (haero::max(qcld(k), 1.e-6) - ncldwtr(k)) * dtinv;
-        if(k==62)std::cout<<"tendnd a:"<<" : "<<tendnd(k)<<" : "<<qcld(k)<<" : "<<ncldwtr(k)<<" : "<<dtinv<<std::endl;
         // ndropcol(icol) = ndropcol(icol)/gravity
         // sum up ndropcol_kk outside of kk loop
         // column-integrated droplet number [#/m2]

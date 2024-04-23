@@ -120,7 +120,8 @@ void calculate_Ni_hf(const Real A1, const Real B1, const Real C1, const Real A2,
 
 KOKKOS_INLINE_FUNCTION
 void hf(const Real temperature, const Real w_vlc, const Real RH, const Real Na,
-        const Real subgrid, Real &Ni, const int kk=0) {
+        const Real subgrid, Real &Ni) {
+
   /*-------------------------------------------------------------------------------
   Calculate number of ice crystals by homogeneous freezing (Ni) based on
   Liu & Penner (2005), Meteorol. Z.
@@ -191,7 +192,7 @@ void hf(const Real temperature, const Real w_vlc, const Real RH, const Real Na,
                       temperature, lnw, Na, Ni);
     } // end temperature >= regm
   }   // end temperature <= -Real(37.0)
-//if (kk == 62)std::cout<<temperature<<std::endl;//" : "<<w_vlc<<" : "<<RH<<" : "<<Na<<" : "<<Ni<<" : "<<subgrid<<std::endl;
+
 } // end hf
 
 KOKKOS_INLINE_FUNCTION
@@ -293,13 +294,13 @@ public:
   } // end(init)
 
   KOKKOS_INLINE_FUNCTION
-  void compute_tendencies(const AeroConfig &config/*, const ThreadTeam &team*/,
+  void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
                           Real t, Real dt, const Atmosphere &atmosphere,
                           const Surface &surface,
                           const Prognostics &prognostics,
                           const Diagnostics &diagnostics,
                           const Tendencies &tendencies) const {
-  const int kb = 62;
+
     const int nk = atmosphere.num_levels();
     const Real tmelt_m_five = haero::Constants::freezing_pt_h2o - 5;
     const int coarse_idx = int(ModeIndex::Coarse);
@@ -315,7 +316,6 @@ public:
     auto &coarse_soa = prognostics.q_aero_i[coarse_idx][int(AeroId::SOA)];
 
     auto &num_coarse = prognostics.n_mode_i[coarse_idx];
-    //std::cout<<"nuc_c_a:"<<num_coarse(kb)<<":"<<coarse_idx<<std::endl;
     auto &num_aitken = prognostics.n_mode_i[aitken_idx];
 
     // mode dry radius [m]
@@ -352,9 +352,8 @@ public:
     const Real mincld = _mincld;
     const Real alnsg_amode_aitken = _alnsg_amode_aitken;
 
-    //Kokkos::parallel_for(
-    //    Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int kk) {
-      for (int kk=0; kk<72; ++kk){
+    Kokkos::parallel_for(
+        Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int kk) {
           const Real temp = atmosphere.temperature(kk);
           if (temp < tmelt_m_five) {
 
@@ -400,7 +399,6 @@ public:
               const Real wght =
                   dmc / (ssmc + dmc + so4mc + bcmc + pommc + soamc + mommc);
               dst3_num = wght * num_coarse(kk) * air_density * num_m3_to_cm3;
-              //if (kk == kb)std::cout<<"nuc_c:"<<dst3_num<<":"<<wght<<":"<<num_coarse(kk)<<":"<<air_density<<":"<<num_m3_to_cm3<<":"<<std::endl;
             } // end dmc
 
             if (dgnum_aitken(kk) > zero) {
@@ -410,7 +408,6 @@ public:
                   (half - half * haero::erf(haero::log(so4_sz_thresh_icenuc /
                                                        dgnum_aitken(kk)) /
                                             (sqrt_two * alnsg_amode_aitken)));
-              //if (kk == 62)std::cout<<"so4_num:"<<num_aitken(kk)<<":"<<air_density<<":"<<num_m3_to_cm3<<":"<<half<<":"<<so4_sz_thresh_icenuc<<":"<<dgnum_aitken(kk)<<":"<<sqrt_two<<":"<<alnsg_amode_aitken<<std::endl;
             } // end dgnum_aitken
 
             so4_num = haero::max(zero, so4_num);
@@ -420,7 +417,7 @@ public:
             nucleati(wsubi(kk), temp, pmid, relhum, icldm, air_density, so4_num,
                      dst3_num, subgrid,
                      // outputs
-                     naai(kk), nihf(kk), niimm(kk), nidep(kk), nimey(kk),kk);
+                     naai(kk), nihf(kk), niimm(kk), nidep(kk), nimey(kk));
 
             // QUESTION why nihf instead of naai
             naai_hom(kk) = nihf(kk);
@@ -435,8 +432,7 @@ public:
             nimey(kk) *= air_density;
 
           } // end temp
-        //}); // kokkos::parfor(k)
-      }
+        }); // kokkos::parfor(k)
   }
 
 public:
@@ -449,7 +445,7 @@ public:
       const Real
           subgrid, // Subgrid scale factor on relative humidity (dimensionless)
       // outputs
-      Real &nuci, Real &onihf, Real &oniimm, Real &onidep, Real &onimey, int kk) const {
+      Real &nuci, Real &onihf, Real &oniimm, Real &onidep, Real &onimey) const {
     /*---------------------------------------------------------------
     Purpose:
      The parameterization of ice nucleation.
@@ -502,15 +498,13 @@ public:
 
     // BAD CONSTANT
     const Real num_threshold = 1.0e-10;
-    const int kb = 62;
-    //if (kk == kb)std::cout<<"Here1"<<std::endl;
+
     if (so4_num >= num_threshold && dst3_num >= num_threshold && cldn > zero) {
       if ((tc <= Real(-35.0)) && (relhum * wv_sat_methods::svp_water(tair) /
                                       wv_sat_methods::svp_ice(tair) * subgrid >=
                                   Real(1.2))) {
         // use higher RHi threshold
         nucleate_ice::calculate_regm_nucleati(wbar, dst3_num, regm);
-        //if (kk == kb)std::cout<<"Here1a:"<<wbar<<" : "<< dst3_num<<":"<<regm<<std::endl;
         if (tc > regm) {
           // heterogeneous nucleation only
           // BAD CONSTANT
@@ -531,7 +525,6 @@ public:
           } // end tc<Real(-40) ...
         } else if (tc < regm - Real(5.)) {
           // homogeneous nucleation only
-          //if (kk == kb)std::cout<<"Here2"<<std::endl;
           nucleate_ice::hf(tc, wbar, relhum, so4_num, subgrid, nihf);
           niimm = zero;
           nidep = zero;
@@ -543,25 +536,23 @@ public:
           // BAD CONSTANT
           if (tc < -Real(40.) && wbar > Real(1.)) {
             // exclude T < -40 & W > 1 m/s from hetero. nucleation
-            //if (kk == kb)std::cout<<"Here3"<<std::endl;
+
             nucleate_ice::hf(tc, wbar, relhum, so4_num, subgrid, nihf);
             niimm = zero;
             nidep = zero;
             n1 = nihf;
 
           } else {
-              //if (kk == kb)std::cout<<"Here4:"<<tair<<std::endl;
+
             nucleate_ice::hf(regm - Real(5.), wbar, relhum, so4_num, subgrid,
-                             nihf,kk);
+                             nihf);
             nucleate_ice::hetero(regm, wbar, dst3_num, niimm, nidep);
 
             if (nihf <= (niimm + nidep)) {
               n1 = nihf;
-              //if (kk == kb)std::cout<<"Here5:"<<tair<<std::endl;
             } else {
               n1 = (niimm + nidep) *
                    haero::pow((niimm + nidep) / nihf, (tc - regm) / Real(5.));
-              //if (kk == kb)std::cout<<"Here6:"<<n1<<" : "<<niimm<<" : "<<nidep<<" : "<<nihf<<" : "<<tc<<" : "<<regm<<std::endl;
 
             } // end nihf <= (niimm + nidep)
 
@@ -602,5 +593,3 @@ public:
 } // end namespace mam4
 
 #endif
-/*-37.8169676487580       0.200000000000000       0.981207128807609     
-  3.824914988555279E-002  3.824914988555279E-002*/
