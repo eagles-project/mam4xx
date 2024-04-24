@@ -407,7 +407,8 @@ void sethet(
     } else {
       yh2o2 = large_value_lifetime;
     }
-    tmp_hetrates[1](kk) = haero::max(1.0 / yh2o2, 0.0) * stay;
+    tmp_hetrates[1](kk) =
+        haero::max(1.0 / yh2o2, 0.0) * stay; // FIXME: bad constant index
 
     xxx3 = (xso2(kk) - xgas3(kk));
     if (xxx3 != 0.0) { // if no washout lifetime = 1.e29
@@ -415,7 +416,8 @@ void sethet(
     } else {
       yso2 = large_value_lifetime;
     }
-    tmp_hetrates[2](kk) = haero::max(1.0 / yso2, 0.0) * stay;
+    tmp_hetrates[2](kk) =
+        haero::max(1.0 / yso2, 0.0) * stay; // FIXME: bad constant index
   }
 
   //-----------------------------------------------------------------
@@ -423,37 +425,38 @@ void sethet(
   //                   hno3 and h2o2 have both in and under cloud
   //-----------------------------------------------------------------
   for (int kk = ktop; kk < pver; kk++) {
+    bool skip = false;
     for (int mm = 0; mm < gas_pcnst; mm++) {
       if (rain(kk) <= 0.0) {
         het_rates[mm](kk) = 0.0;
+        skip = true;
       }
     }
+    if (skip)
+      continue;
 
-    for (int kk = ktop; kk < pver; kk++) {
+    work1 = avo2 * xliq(kk);
+    work2 = const0 * tfld(kk);
 
-      work1 = avo2 * xliq(kk);
-      work2 = const0 * tfld(kk);
+    if (h2o2_ndx >= 0) {
+      calc_het_rates(satf_h2o2, rain(kk), xhen_h2o2(kk), // in
+                     tmp_hetrates[1](kk), work1, work2,  // in
+                     het_rates[h2o2_ndx](kk));           // out
+    }
 
-      if (h2o2_ndx >= 0) {
-        calc_het_rates(satf_h2o2, rain(kk), xhen_h2o2(kk), // in
-                       tmp_hetrates[1](kk), work1, work2,  // in
-                       het_rates[h2o2_ndx](kk));           // out
-      }
+    // if ( prog_modal_aero .and.
+    if (so2_ndx >= 0 && h2o2_ndx >= 0) {
+      het_rates[so2_ndx](kk) = het_rates[h2o2_ndx](kk);
+    } else if (so2_ndx >= 0) {
+      calc_het_rates(satf_so2, rain(kk), xhen_so2(kk),  // in
+                     tmp_hetrates[2](kk), work1, work2, // in
+                     het_rates[so2_ndx](kk));           // out
+    }
 
-      // if ( prog_modal_aero .and.
-      if (so2_ndx >= 0 && h2o2_ndx >= 0) {
-        het_rates[so2_ndx](kk) = het_rates[h2o2_ndx](kk);
-      } else if (so2_ndx >= 0) {
-        calc_het_rates(satf_so2, rain(kk), xhen_so2(kk),  // in
-                       tmp_hetrates[2](kk), work1, work2, // in
-                       het_rates[so2_ndx](kk));           // out
-      }
-
-      if (h2so4_ndx >= 0) {
-        calc_het_rates(satf_hno3, rain(kk), xhen_hno3(kk), // in
-                       tmp_hetrates[0](kk), work1, work2,  // in
-                       het_rates[h2so4_ndx](kk));          // out
-      }
+    if (h2so4_ndx >= 0) {
+      calc_het_rates(satf_hno3, rain(kk), xhen_hno3(kk), // in
+                     tmp_hetrates[0](kk), work1, work2,  // in
+                     het_rates[h2so4_ndx](kk));          // out
     }
   }
 
@@ -469,6 +472,8 @@ void sethet(
     for (int kk = 0; kk < pver; kk++) {
       if (het_rates[mm2](kk) == MISSING) {
         return; // maybe?
+        Kokkos::abort(
+            "sethet: het_rates (wet dep) not set for het reaction number");
       }
     }
     // Didn't port
