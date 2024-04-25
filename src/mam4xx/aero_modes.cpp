@@ -80,7 +80,7 @@ std::string aero_id_short_name(const AeroId aid) {
     return "bc";
   }
   case (AeroId::DST): {
-    return "dust";
+    return "dst";
   }
   case (AeroId::NaCl): {
     return "nacl";
