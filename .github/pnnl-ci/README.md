@@ -93,7 +93,7 @@ In Summary:
 
 ### Secrets
 
-The GitHub action in `/.github/workflows/pnnl_push_mirror.yml` relies on the following GitHub secrets. Make sure to configure these if they are expired/broken:
+The GitHub action in `/.github/workflows/pnnl_push_mirror.yml` relies on the following [GitHub secrets](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions). Make sure to configure these if they are expired/broken:
 1. `GITLAB_ACCESS_TOKEN` : This is the Project Access Token configured with write permissions for the push mirror action [generated in GitLab and pasted as a secret in GitHub]
 1. `GITLAB_PIPELINE_TRIGGER_TOKEN` : This is a separate token that allows you to use the pipeline trigger API [generated in GitLab and pasted as a secret in GitHub]
 1. `GITLAB_REPO_URL` : The same url that one would use for adding mam4xx GitLab as a remote w/ https connection 
