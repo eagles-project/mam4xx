@@ -64,4 +64,37 @@ std::string aero_id_str(const AeroId aid) {
   }
 }
 
+// give aerosol id return the aersol short name
+// this is name from e3sm  
+std::string aero_id_short_name(const AeroId aid) {
+  switch (aid) {
+  case (AeroId::SO4): {
+    return "so4";
+  }
+  case (AeroId::POM): {
+    return "pom";
+  }
+  case (AeroId::SOA): {
+    return "soa";
+  }
+  case (AeroId::BC): {
+    return "bc";
+  }
+  case (AeroId::DST): {
+    return "dust";
+  }
+  case (AeroId::NaCl): {
+    return "nacl";
+  }
+  case (AeroId::MOM): {
+    return "mom";
+  }
+  case (AeroId::None): {
+    return "none";
+  }
+  default:
+    return "invalid_aerosol_id";
+  }
+}
+
 } // namespace mam4
