@@ -64,8 +64,7 @@ std::string aero_id_str(const AeroId aid) {
   }
 }
 
-// give aerosol id return the aersol short name
-// this is name from e3sm  
+  
 std::string aero_id_short_name(const AeroId aid) {
   switch (aid) {
   case (AeroId::SO4): {

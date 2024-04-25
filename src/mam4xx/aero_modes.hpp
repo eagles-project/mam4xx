@@ -144,6 +144,11 @@ enum class AeroId {
 /// (which also cannot be called inside a kernel)
 std::string aero_id_str(const AeroId aid);
 
+/// Map ModeIndex to string (it is used by mam_coupling in emaxx)
+/// give aerosol id return the aersol short name
+/// this is name from e3sm
+std::string aero_id_short_name(const AeroId aid);
+
 /// Molecular weight of mam4 dust aerosol [kg/mol]
 static constexpr Real mam4_molec_weight_dst = 0.135065;
 
