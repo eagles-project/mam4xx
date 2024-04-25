@@ -64,7 +64,6 @@ std::string aero_id_str(const AeroId aid) {
   }
 }
 
-  
 std::string aero_id_short_name(const AeroId aid) {
   switch (aid) {
   case (AeroId::SO4): {
