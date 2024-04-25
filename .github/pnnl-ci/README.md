@@ -21,7 +21,7 @@ The possible  GPU architectures are:
 For some reason only the HPC runners are configured to run at the moment, and so all stages will share that base configuration.
 ## Rebuilding HAERO in CI
 
-You can either add `[hearo-rebuild]` or `[rebuild-haero]` directly to your commit message, or go to https://code.pnnl.gov/e3sm/eagles/mam4xx and trigger the rebuild pipeline manually once you have pushed to your branch.
+You can either add `[haero-rebuild]` or `[rebuild-haero]` directly to your commit message, or go to https://code.pnnl.gov/e3sm/eagles/mam4xx and trigger the rebuild pipeline manually once you have pushed to your branch.
 
 Make sure you either push to GitHub and have the mirror update first, or just push to the GitLab directly.
 
@@ -52,41 +52,24 @@ You can add `[skip-ci]` in order to prevent CI jobs from running at PNNL. TODO i
 - [x] Streamline CI rebuilding of HAERO to happen with one button (need to work around 2 max job limit)
 - [x] Use installed HAERO in project share to avoid re-building each time
 
-## Access Token
-@CameronRutherford currently maintains the access token used to enable GitHub mirroring. 
-This token is set to expire in one year, and someone will need to ensure that this integration is renewed each year.
+## Maintenance
+@cameronrutherford initially maintained the access token used to enable GitHub mirroring. @jaelynlitz is the current maintainer. 
 
-https://code.pnnl.gov/help/user/project/repository/mirror/pull.md - make sure that when you create the PAT for this integration, that you use `write` as the scope, so that GitHub actions can write to the PNNL GitLab with updates as they are added.
+Each token is set to expire after one year of use, and they will need to be regenerated each year to maintain integration.
 
-**Update:** 
-
-Jaelyn Litzinger has updated this to her PAT, set to expire Feb 2025. Followed instructions [here](https://docs.gitlab.com/ee/ci/ci_cd_for_external_repos/github_integration.html) under "Connect manually".
-
-In Summary:
-1. in [GitHub](https://github.com/settings/tokens/new), generate a Personal Access Token with permissions `repo` and `admin:repo_hook`
-2. have Owner permissions in GitLab
-3. in GitLab, go to Settings > Integrations > GitHub - paste your PAT in the new token field, test settings to see if connection is successful, then save changes.
-
-## Pipeline Trigger Token
-
-You will need to setup up a pipeline trigger token in order to allow GitHub acitons to trigger CI pipelines.
+Reference: https://code.pnnl.gov/help/user/project/repository/mirror/pull.md 
 
 ## PNNL Site Config
 We have manually configured PNNL CI to point to the YAML file in `/.github/pnnl-ci/pnnl.gitlab-ci.yml`. Make sure to re-configure this if you need to re-configure the repository.
 
 ## GitHub/GitLab Integration
-You need to generate a Personal Access Token (PAT) through GitHub project before starting this process per the section above.
 
 We are going to set up a push mirror that is updated with each pull request update. Through a GitHub action, each check will:
 1. Push updates to all branches in the GitLab
 1. Trigger a pipeline to run using the Pipeline Trigger token
 1. PNNL GitLab will post a new message describing pipeline status in a separate check
 
-The GitHub action in `/.github/workflows/pnnl_push_mirror.yml` relies on the following GitHub secrets. Make sure to configure these if they are expired/broken:
-1. GITLAB_ACCESS_TOKEN : This is the PAT configured with write permissions for the push mirror action
-1. GITLAB_PIPELINE_TRIGGER_TOKEN : This is a separate token that allows you to use the pipeline trigger API
-1. GITLAB_REPO_URL : The same url that one would use for adding mam4xx GitLab as a remote w/ https connection
-1. GITLAB_USER : The username to associate with push mirror actions (can be any valid user)
+### Initial Setup
 
 In order to set this up:
 1. Create an empty project in GitLab. **DO NOT** initialize using in-build GitHub integration, as this is broken for running pipelines.
@@ -96,6 +79,49 @@ In order to set this up:
 Since the pipeline status is automatically configured through GitLab premium + GitHub integration, pipeline status will automatically be posted to commits/PRs.
 
 There is a way to orchestrate this pipeline posting through non-premium GitLab as well - https://ecp-ci.gitlab.io/docs/guides/build-status-gitlab.html...
+
+#### Personal Access Token
+
+A Personal Access Token is needed to enable GitHub/GitLab integration.
+
+@jaelynlitz currently holds the PAT, set to expire Feb 2025. Followed instructions [here](https://docs.gitlab.com/ee/ci/ci_cd_for_external_repos/github_integration.html) under "Connect manually".
+
+In Summary:
+1. in [GitHub](https://github.com/settings/tokens/new), generate a Personal Access Token (classic) with permissions `repo` and `admin:repo_hook`
+2. have Owner permissions in GitLab
+3. in GitLab, go to Settings > Integrations > GitHub - paste your PAT in the new token field, test settings to see if connection is successful, then save changes.
+
+### Secrets
+
+The GitHub action in `/.github/workflows/pnnl_push_mirror.yml` relies on the following [GitHub secrets](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions). Make sure to configure these if they are expired/broken:
+1. `GITLAB_ACCESS_TOKEN` : This is the Project Access Token configured with write permissions for the push mirror action [generated in GitLab and pasted as a secret in GitHub]
+1. `GITLAB_PIPELINE_TRIGGER_TOKEN` : This is a separate token that allows you to use the pipeline trigger API [generated in GitLab and pasted as a secret in GitHub]
+1. `GITLAB_REPO_URL` : The same url that one would use for adding mam4xx GitLab as a remote w/ https connection 
+1. `GITLAB_USER` : The username to associate with push mirror actions (can be any valid user)
+
+#### GITLAB_ACCESS_TOKEN
+
+This is a Project Access Token generated in GitLab [here](https://code.pnnl.gov/e3sm/eagles/mam4xx/-/settings/access_tokens). 
+
+It needs to have the Developer role and `write_repository` permissions.
+
+Once you have generated this in GitLab, paste the token as a secret in the GitHub variable `GITLAB_ACCESS_TOKEN` [here](https://github.com/eagles-project/mam4xx/settings/secrets/actions).
+
+#### GITLAB_PIPELINE_TRIGGER_TOKEN
+
+You will need to setup up a pipeline trigger token in order to allow GitHub acitons to trigger CI pipelines. This is a pipeline trigger token generated in GitLab under [CI/CD in Settings](https://code.pnnl.gov/e3sm/eagles/mam4xx/-/settings/ci_cd).
+
+Once generated by clicking "Add new token", paste the token as a secret in the GitHub variable `GITLAB_PIPELINE_TRIGGER_TOKEN` [here](https://github.com/eagles-project/mam4xx/settings/secrets/actions).
+
+*Note:* The curl syntax in [`pnnl_push_mirror.yml`](../workflows/pnnl_push_mirror.yml#21) is given in the GitLab dropdown "View trigger token usage examples" after generating a pipeline trigger token.
+
+#### GITLAB_REPO_URL
+
+This value is the url given when you want to clone the GitLab repository via https. Paste the value as a secret in the GitHub variable `GITLAB_REPO_URL`.
+
+#### GITLAB_USER
+
+This value can be be any valid GitLab username. Paste the value as a secret in the GitHub variable `GITLAB_USER`.
 
 ## Scripts
 There are shared environment variables that are propogated across both scripts, and each job shares the same template in order to reduce code duplication.
