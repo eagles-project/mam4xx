@@ -34,6 +34,7 @@ void update_aod_spec(Ensemble *ensemble);
 void aer_rad_props_lw(Ensemble *ensemble);
 void aer_rad_props_sw(Ensemble *ensemble);
 void volcanic_cmip_sw(Ensemble *ensemble);
+void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -81,6 +82,8 @@ int main(int argc, char **argv) {
       aer_rad_props_sw(ensemble);
     } else if (func_name == "volcanic_cmip_sw") {
       volcanic_cmip_sw(ensemble);
+    } else if (func_name == "data_transfer_state_q_qqwc_to_prog") {
+      data_transfer_state_q_qqwc_to_prog(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;

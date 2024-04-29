@@ -23,6 +23,7 @@ add_executable(aerosol_optics_driver
                aer_rad_props_lw.cpp
                aer_rad_props_sw.cpp
                volcanic_cmip_sw.cpp
+               data_transfer_state_q_qqwc_to_prog.cpp
                )
 
 target_link_libraries(aerosol_optics_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -52,6 +53,7 @@ set(TEST_LIST
     aer_rad_props_lw_ts_355
     aer_rad_props_sw_ts_355
     volcanic_cmip_sw_ts_355
+    data_transfer_state_q_qqwc_to_prog
     )
 # # matching the tests and errors, just for convenience
 
@@ -71,6 +73,7 @@ set(ERROR_THRESHOLDS
    7e-11
    8e-11
    8e-11
+   1e-14
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
