@@ -41,11 +41,11 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
     }
     Kokkos::deep_copy(qqcw, qqcw_host);
     View2D dgnumdry_m("dgnumdry_m", pver, ntot_amode);
-    if (input.has("dgncur_a")){
+    if (input.has("dgncur_a")) {
       auto dgncur_a_db = input.get_array("dgncur_a");
-      mam4::validation::convert_1d_vector_to_2d_view_device(dgncur_a_db, dgnumdry_m);
+      mam4::validation::convert_1d_vector_to_2d_view_device(dgncur_a_db,
+                                                            dgnumdry_m);
     }
-    
 
     View2D ptend_q("ptend_q", pver, pcnst);
     View2D dqqcwdt("dqqcwdt", pver, pcnst);

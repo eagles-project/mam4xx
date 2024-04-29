@@ -1741,7 +1741,7 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
   // compute calcsize and
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0, nlev), [&](int kk) {
-    std::cout << "kk : " << kk <<"\n";
+    std::cout << "kk : " << kk << "\n";
     const auto state_q_kk = ekat::subview(state_q, kk);
     const auto qqcw_kk = ekat::subview(qqcw, kk);
     const auto ptend_q_kk = ekat::subview(ptend_q, kk);
@@ -1821,21 +1821,19 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
           n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
           // outputs
           dgnumdry_m_kk, dgncur_c_kk, ptend_q_kk.data(), dqqcwdt_kk);
-      // update could aerosol. 
+      // update could aerosol.
 
       if (update_mmr) {
-      // Note: it only needs to update aerosol variables.
-      for (int i = utils::aero_start_ind(); i < pcnst; ++i)
-      {
-            qqcw(kk,i) = haero::max(zero, qqcw(kk,i) + dqqcwdt_kk[i]*dt);
-      }
-      }// end update could aerosols.
+        // Note: it only needs to update aerosol variables.
+        for (int i = utils::aero_start_ind(); i < pcnst; ++i) {
+          qqcw(kk, i) = haero::max(zero, qqcw(kk, i) + dqqcwdt_kk[i] * dt);
+        }
+      } // end update could aerosols.
 
       mam4::water_uptake::modal_aero_water_uptake_dr(
           nspec_amode, specdens_amode, spechygro, lspectype_amode,
           state_q_kk.data(), temperature(kk), pmid(kk), cldn_prev_step(kk),
           dgnumdry_m_kk, dgnumwet_m_kk, qaerwat_m_kk, wetdens_kk);
-
     }
 
     // team.team_barrier();

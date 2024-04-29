@@ -49,7 +49,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
 
     auto vapor_mixing_ratio = create_column_view(nlev);
     auto liquid_mixing_ratio = create_column_view(nlev); //
-    auto ice_mixing_ratio = create_column_view(nlev); //
+    auto ice_mixing_ratio = create_column_view(nlev);    //
     auto cloud_liquid_number_mixing_ratio = create_column_view(nlev);
     auto cloud_ice_number_mixing_ratio = create_column_view(nlev);
     // We need deep_copy because of executation error due to different layout
@@ -69,10 +69,6 @@ void aero_model_wetdep(Ensemble *ensemble) {
     Kokkos::deep_copy(cloud_ice_number_mixing_ratio,
                       Kokkos::subview(state_q, Kokkos::ALL(), 4));
 
-
-    
-    
-    
     auto height = create_column_view(nlev);
     auto interface_pressure = create_column_view(nlev + 1);
     auto cloud_fraction = create_column_view(nlev);
@@ -128,18 +124,21 @@ void aero_model_wetdep(Ensemble *ensemble) {
 
     wetdep::View2D qaerwat("qaerwat", num_modes, nlev);
     const auto qaerwat_db = input.get_array("qaerwat");
-    mam4::validation::convert_1d_vector_to_transpose_2d_view_device(qaerwat_db, qaerwat);
+    mam4::validation::convert_1d_vector_to_transpose_2d_view_device(qaerwat_db,
+                                                                    qaerwat);
 
     wetdep::View2D wetdens("wetdens", num_modes, nlev);
     const auto wetdens_db = input.get_array("wetdens");
-    mam4::validation::convert_1d_vector_to_transpose_2d_view_device(wetdens_db, wetdens);
+    mam4::validation::convert_1d_vector_to_transpose_2d_view_device(wetdens_db,
+                                                                    wetdens);
 
     wetdep::View2D ptend_q("ptend_q", nlev, aero_model::pcnst);
 
     // work arrays
     const int work_len = wetdep::get_aero_model_wetdep_work_len();
     wetdep::View1D work("work", work_len);
-    std::cout << "aero_model_wetdep : " <<"\n";
+    std::cout << "aero_model_wetdep : "
+              << "\n";
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
@@ -205,16 +204,18 @@ void aero_model_wetdep(Ensemble *ensemble) {
         dry_geometric_mean_diameter_i, output_modes);
     output.set("dgncur_a", output_modes);
 
-    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(qaerwat,
-                                                          output_modes);
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(
+        qaerwat, output_modes);
     output.set("qaerwat", output_modes);
 
-    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(wetdens,
-                                                          output_modes);
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(
+        wetdens, output_modes);
     output.set("wetdens", output_modes);
-    // Note: Fortran validation code uses -9999.9 for ptend that are not aerosols. 
+    // Note: Fortran validation code uses -9999.9 for ptend that are not
+    // aerosols.
     using range_type = Kokkos::pair<int, int>;
-    const auto& ptend_q_non = Kokkos::subview(ptend_q, Kokkos::ALL, range_type(0,utils::aero_start_ind()) );
+    const auto &ptend_q_non = Kokkos::subview(
+        ptend_q, Kokkos::ALL, range_type(0, utils::aero_start_ind()));
     Kokkos::deep_copy(ptend_q_non, -9999.900390625);
     std::vector<Real> output_ptend(nlev * aero_model::pcnst, 0);
     mam4::validation::convert_2d_view_device_to_1d_vector(ptend_q,
