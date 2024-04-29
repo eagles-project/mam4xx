@@ -26,7 +26,7 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
     auto qqcw_db = input.get_array("qqcw"); // 2d
     Real pblh = 1000;
 
-    // using skywalker to get state_q and qqcw
+    // Using skywalker to get state_q and qqcw.
     View2D state_q("state_q", pver, pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
@@ -42,7 +42,7 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
     }
     Kokkos::deep_copy(qqcw, qqcw_host);
 
-    // we do not need temperature, pressure, and hydrostatic_dp in this test
+    // We do not need temperature, pressure, and hydrostatic_dp in this test
     ColumnView temperature = create_column_view(nlev);
     ColumnView pressure = create_column_view(nlev);
     ColumnView hydrostatic_dp = create_column_view(nlev);
@@ -52,7 +52,7 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
     auto ice_mixing_ratio = create_column_view(nlev);    //
     auto cloud_liquid_number_mixing_ratio = create_column_view(nlev);
     auto cloud_ice_number_mixing_ratio = create_column_view(nlev);
-    // Some variables from state_q are part of atm.
+    // Some variables of state_q are part of atm.
     // We need deep_copy because of executation error due to different layout
     // q[0] = atm.vapor_mixing_ratio(klev);               // qv
     Kokkos::deep_copy(vapor_mixing_ratio,
@@ -95,7 +95,8 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
     Kokkos::deep_copy(qqcw_output_non, -9999.900390625);
 
     // inject_stateq_to_prognostics is not emplying values from index 5 to
-    // utils::gasses_start_ind() Hence, set outout view with these values.
+    // utils::gasses_start_ind(). Hence, we set the output view with values from
+    // the original views.
     const auto &state_q_output_non = Kokkos::subview(
         state_q_output, Kokkos::ALL, range_type(5, utils::gasses_start_ind()));
     const auto &state_non = Kokkos::subview(
@@ -108,9 +109,9 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          // 1. We inject values of staque_q in prog.
+          // 1. We inject values of state_q in prog.
           //  inject_qqcw_to_prognostics and inject_stateq_to_prognostics are
-          //  mostly use for testing.
+          //  use in validation and testing.
           auto progs_in = progs;
           // we need to inject validation values to progs.
           Kokkos::parallel_for(
@@ -123,9 +124,7 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
                                                     kk);
               });
           team.team_barrier();
-          // 2. Let's extact state_q and qqcw from prog.
-          // Currently, many mam4xx function are using
-          // extract_stateq_from_prognostics and extract_qqcw_from_prognostics,
+          // 2. Let's extract state_q and qqcw from prog.
           Kokkos::parallel_for(
               Kokkos::TeamThreadRange(team, pver), [&](int kk) {
                 const auto state_q_output_kk =
@@ -140,7 +139,7 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
 
           team.team_barrier();
           // 3. Let's compute the difference between the original state_q (or
-          // qqcw ) with the one obtain after extracting the data from prog.
+          // qqcw ) with the one obtained after extracting the data from prog.
           Kokkos::parallel_for(
               Kokkos::TeamThreadRange(team, pver), [&](int kk) {
                 Kokkos::parallel_for(
