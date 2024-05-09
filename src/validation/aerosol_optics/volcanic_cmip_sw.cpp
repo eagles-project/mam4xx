@@ -80,7 +80,7 @@ void volcanic_cmip_sw(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          aer_rad_props::volcanic_cmip_sw2(zi, ilev_tropp, ext_cmip6_sw,
+          aer_rad_props::volcanic_cmip_sw2(team, zi, ilev_tropp, ext_cmip6_sw,
                                            ssa_cmip6_sw, af_cmip6_sw, tau,
                                            tau_w, tau_w_g, tau_w_f);
         });
