@@ -37,8 +37,8 @@ constexpr Real cnst_ka1 = cnst_kap - 1.0;
 // Similar to volcanic_cmip_sw,
 // But, tau, tau_w, tau_w_g, tau_w_f have layout (nswbands, pver)
 KOKKOS_INLINE_FUNCTION
-void volcanic_cmip_sw2(const ConstColumnView &zi, const int ilev_tropp,
-                       const View2D &ext_cmip6_sw_inv_m,
+void volcanic_cmip_sw2(const ThreadTeam &team, const ConstColumnView &zi,
+                       const int ilev_tropp, const View2D &ext_cmip6_sw_inv_m,
                        const View2D &ssa_cmip6_sw, const View2D &af_cmip6_sw,
                        const View2D &tau, const View2D &tau_w,
                        const View2D &tau_w_g, const View2D &tau_w_f) {
@@ -83,7 +83,7 @@ void volcanic_cmip_sw2(const ConstColumnView &zi, const int ilev_tropp,
 
   constexpr Real half = 0.5;
   const Real lyr_thk = zi(ilev_tropp) - zi(ilev_tropp + 1);
-  for (int i = 0; i < nswbands; ++i) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nswbands), [&](int i) {
     // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,pver)
     const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(i, ilev_tropp);
     const Real asym_unitless = af_cmip6_sw(ilev_tropp, i);
@@ -96,13 +96,11 @@ void volcanic_cmip_sw2(const ConstColumnView &zi, const int ilev_tropp,
         half * (tau_w_g(i, ilev_tropp + 1) + ext_ssa_asym);
     tau_w_f(i, ilev_tropp + 1) =
         half * (tau_w_f(i, ilev_tropp + 1) + ext_ssa_asym * asym_unitless);
-  } // end i
+  });
 
-  // ilev_tropp = trop_level(icol) tropopause level
-  for (int kk = 0; kk < ilev_tropp; ++kk) {
-
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, ilev_tropp), [&](int kk) {
     const Real lyr_thk = zi(kk) - zi(kk + 1);
-    for (int i = 0; i < nswbands; ++i) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, nswbands), [&](int i) {
       // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,pver)
       const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(i, kk);
       const Real asym_unitless = af_cmip6_sw(kk, i);
@@ -112,10 +110,9 @@ void volcanic_cmip_sw2(const ConstColumnView &zi, const int ilev_tropp,
       tau_w(i, kk + 1) = ext_ssa;
       tau_w_g(i, kk + 1) = ext_ssa_asym;
       tau_w_f(i, kk + 1) = ext_ssa_asym * asym_unitless;
-
-    } // end nswbands
-
-  } // kk
+    }); // end nswbands
+  });
+  // } // kk
 
 } // volcanic_cmip_sw
 
@@ -242,7 +239,8 @@ void compute_odap_volcanic_at_troplayer_lw(const int ilev_tropp,
 // similar to compute_odap_volcanic_at_troplayer_lw
 // but odap_aer has layout (nlwbands, pver)
 KOKKOS_INLINE_FUNCTION
-void compute_odap_volcanic_at_troplayer_lw2(const int ilev_tropp,
+void compute_odap_volcanic_at_troplayer_lw2(const ThreadTeam &team,
+                                            const int ilev_tropp,
                                             const ConstColumnView &zi,
                                             const View2D &ext_cmip6_lw_inv_m,
                                             const View2D &odap_aer) {
@@ -269,11 +267,11 @@ void compute_odap_volcanic_at_troplayer_lw2(const int ilev_tropp,
   constexpr Real half = 0.5;
   // update taus with 50% contributuions from the volcanic input file
   // and 50% from the existing model computed values at the tropopause layer
-  for (int i = 0; i < nlwbands; ++i) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlwbands), [&](int i) {
     odap_aer(i, ilev_tropp) =
         half * (odap_aer(i, ilev_tropp) +
                 (lyr_thk * ext_cmip6_lw_inv_m(ilev_tropp, i)));
-  }
+  });
 
 } // compute_odap_volcanic_at_troplayer_lw
 
@@ -321,7 +319,8 @@ void compute_odap_volcanic_above_troplayer_lw(const int ilev_tropp,
 // similar to compute_odap_volcanic_above_troplayer_lw
 // but odap_aer has layout (nlwbands, pver)
 KOKKOS_INLINE_FUNCTION
-void compute_odap_volcanic_above_troplayer_lw2(const int ilev_tropp,
+void compute_odap_volcanic_above_troplayer_lw2(const ThreadTeam &team,
+                                               const int ilev_tropp,
                                                const ConstColumnView &zi,
                                                const View2D &ext_cmip6_lw_inv_m,
                                                const View2D &odap_aer) {
@@ -350,14 +349,13 @@ void compute_odap_volcanic_above_troplayer_lw2(const int ilev_tropp,
    As it will be more efficient for FORTRAN to loop over levels and then
    columns, the following loops are nested keeping that in mind*/
 
-  for (int kk = 0; kk < ilev_tropp; ++kk) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, ilev_tropp), [&](int kk) {
     const Real lyr_thk =
         zi(kk) - zi(kk + 1); //  compute layer thickness in meters
-    for (int i = 0; i < nlwbands; ++i) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, nlwbands), [&](int i) {
       odap_aer(i, kk) = lyr_thk * ext_cmip6_lw_inv_m(kk, i);
-    } // end i
-
-  } // end kk
+    }); // end i
+  });   // end kk
 
 } // compute_odap_volcanic_above_troplayer_lw
 
@@ -624,8 +622,11 @@ void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
 
    Find tropopause (or quit simulation if not found) as extinction should be
    applied only above tropopause */
-  const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
-
+  int ilev_tropp = -1;
+  Kokkos::single(Kokkos::PerTeam(team), [&]() {
+    ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
+  });
+  // std::cout << ilev_tropp << " ilev_tropp \n";
   modal_aero_sw(team, dt, progs, atm, pdel, pdeldry, tau, tau_w, tau_w_g,
                 tau_w_f, aersol_optics_data, aodvis, work);
 
@@ -633,8 +634,10 @@ void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
 
   // Update tau, tau_w, tau_w_g, and tau_w_f with the read in values of
   // extinction, ssa and asymmetry factors
-  volcanic_cmip_sw2(zi, ilev_tropp, ext_cmip6_sw_m, ssa_cmip6_sw, af_cmip6_sw,
-                    tau, tau_w, tau_w_g, tau_w_f);
+  // Kokkos::single(Kokkos::PerTeam(team), [&]() {
+  volcanic_cmip_sw2(team, zi, ilev_tropp, ext_cmip6_sw_m, ssa_cmip6_sw,
+                    af_cmip6_sw, tau, tau_w, tau_w_g, tau_w_f);
+  // });
 
   /*  Diagnostic output of total aerosol optical properties
     currently implemented for climate list only
@@ -695,20 +698,23 @@ void aer_rad_props_lw(
    Find tropopause or quit simulation if not found
    trop_level(1:pcols) = tropopause_or_quit(lchnk, ncol, pmid, pint,
    temperature, zm, zi)*/
-  const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
+  int ilev_tropp = -1;
+  Kokkos::single(Kokkos::PerTeam(team), [&]() {
+    ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
+  });
   team.team_barrier();
 
-  /*We are here because tropopause is found, update taus with 50%
-  contributuions from the volcanic input file and 50% from the existing model
-  computed values at the tropopause layer*/
-  compute_odap_volcanic_at_troplayer_lw2(ilev_tropp, zi, ext_cmip6_lw_m,
+  // /*We are here because tropopause is found, update taus with 50%
+  // contributuions from the volcanic input file and 50% from the existing model
+  // computed values at the tropopause layer*/
+  compute_odap_volcanic_at_troplayer_lw2(team, ilev_tropp, zi, ext_cmip6_lw_m,
                                          odap_aer);
-  /* Above the tropopause, the read in values from the file include both the
-   stratospheric
-    and volcanic aerosols. Therefore, we need to zero out odap_aer above the
-    tropopause and populate it exclusively from the read in values.*/
-  compute_odap_volcanic_above_troplayer_lw2(ilev_tropp, zi, ext_cmip6_lw_m,
-                                            odap_aer);
+  // /* Above the tropopause, the read in values from the file include both the
+  //  stratospheric
+  //   and volcanic aerosols. Therefore, we need to zero out odap_aer above the
+  //   tropopause and populate it exclusively from the read in values.*/
+  compute_odap_volcanic_above_troplayer_lw2(team, ilev_tropp, zi,
+                                            ext_cmip6_lw_m, odap_aer);
   // call outfld('extinct_lw_bnd7',odap_aer(:,:,idx_lw_diag), pcols, lchnk)
 
 } // aer_rad_props_lw
