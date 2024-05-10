@@ -622,10 +622,7 @@ void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
 
    Find tropopause (or quit simulation if not found) as extinction should be
    applied only above tropopause */
-  int ilev_tropp = -1;
-  Kokkos::single(Kokkos::PerTeam(team), [&]() {
-    ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
-  });
+  const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
   // std::cout << ilev_tropp << " ilev_tropp \n";
   modal_aero_sw(team, dt, progs, atm, pdel, pdeldry, tau, tau_w, tau_w_g,
                 tau_w_f, aersol_optics_data, aodvis, work);
@@ -634,10 +631,8 @@ void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
 
   // Update tau, tau_w, tau_w_g, and tau_w_f with the read in values of
   // extinction, ssa and asymmetry factors
-  // Kokkos::single(Kokkos::PerTeam(team), [&]() {
   volcanic_cmip_sw2(team, zi, ilev_tropp, ext_cmip6_sw_m, ssa_cmip6_sw,
                     af_cmip6_sw, tau, tau_w, tau_w_g, tau_w_f);
-  // });
 
   /*  Diagnostic output of total aerosol optical properties
     currently implemented for climate list only
@@ -698,21 +693,18 @@ void aer_rad_props_lw(
    Find tropopause or quit simulation if not found
    trop_level(1:pcols) = tropopause_or_quit(lchnk, ncol, pmid, pint,
    temperature, zm, zi)*/
-  int ilev_tropp = -1;
-  Kokkos::single(Kokkos::PerTeam(team), [&]() {
-    ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
-  });
+  const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
   team.team_barrier();
 
   // /*We are here because tropopause is found, update taus with 50%
   // contributuions from the volcanic input file and 50% from the existing model
-  // computed values at the tropopause layer*/
+  // computed values at the tropopause layer
   compute_odap_volcanic_at_troplayer_lw2(team, ilev_tropp, zi, ext_cmip6_lw_m,
                                          odap_aer);
   // /* Above the tropopause, the read in values from the file include both the
   //  stratospheric
   //   and volcanic aerosols. Therefore, we need to zero out odap_aer above the
-  //   tropopause and populate it exclusively from the read in values.*/
+  //   tropopause and populate it exclusively from the read in values.
   compute_odap_volcanic_above_troplayer_lw2(team, ilev_tropp, zi,
                                             ext_cmip6_lw_m, odap_aer);
   // call outfld('extinct_lw_bnd7',odap_aer(:,:,idx_lw_diag), pcols, lchnk)
