@@ -1323,7 +1323,7 @@ void compute_q_tendencies_phase_1(
 KOKKOS_INLINE_FUNCTION
 void compute_q_tendencies_phase_2(
     Real &scavt, Real &bcscavt, Real &rcscavt, Real rtscavt_sv[],
-    Real &qqcw_sav, const Real qqcw,
+    const Real qqcw_tmp, const Real tracer,
 
     // const Prognostics &progs,
     const Real f_act_conv, const Real scavcoefnum, const Real scavcoefvol,
@@ -1350,10 +1350,6 @@ void compute_q_tendencies_phase_2(
   // nspec_amode(m)+1 (i.e., jnummaswtr = 2). The code only
   // worked because the "do lspec" loop cycles when lspec =
   // nspec_amode(m)+1, but that does not make the code correct.
-  // Real qqcw_all[pcnst] = {};
-  // utils::extract_qqcw_from_prognostics(progs, qqcw_all, k);
-  // FIXME: get qqcw_all[mm]
-  const Real tracer = qqcw; // qqcw_all[mm];
   // qqcw_sav = tracer;
   Real fracis = 0;  // fraction of species not scavenged [fraction]
   Real iscavt = 0;  // incloud scavenging tends [kg/kg/s]
@@ -1364,13 +1360,7 @@ void compute_q_tendencies_phase_2(
   Real scavcoef = 0;
   if (jnv)
     scavcoef = (1 == jnv) ? scavcoefnum : scavcoefvol;
-
-  // FIXME: Not sure if this is a bug or not as qqcw_tmp seem
-  // different from the previous call and qqcw_tmp is always
-  // zero. May need further check.  - Shuaiqi Tang in
-  // refactoring for MAM4xx
   const bool is_strat_cloudborne = true;
-  const Real qqcw_tmp = 0;
   wetdep::wetdepa_v2(dt, pdel, cmfdqr, evapc, dlf, conicw, prain, evapr,
                      totcond, cldt, cldcu, cldvcu_k, cldvcu_k_p1, cldvst_k,
                      cldvst_k_p1, sol_factb, sol_facti, sol_factic,
@@ -1510,10 +1500,16 @@ void compute_q_tendencies(
       // nspec_amode(m)+1 (i.e., jnummaswtr = 2). The code only
       // worked because the "do lspec" loop cycles when lspec =
       // nspec_amode(m)+1, but that does not make the code correct.
+      // FIXME: Not sure if this is a bug or not as qqcw_tmp seem
+      // different from the previous call and qqcw_tmp is always
+      // zero. May need further check.  - Shuaiqi Tang in
+      // refactoring for MAM4xx
+      //FIXME: should we fix this comment?
+      const Real qqcw_tmp=0.0;
       compute_q_tendencies_phase_2(
           // These are the output values
           scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv.data(),
-          qqcw_sav(k, lspec, mm), qqcw(k,mm),
+          qqcw_tmp, qqcw(k,mm),
           // The rest of the values are input only.
           // progs,
           f_act_conv[k], scavcoefnum[k], scavcoefvol[k], totcond[k], cmfdqr[k],
