@@ -1292,7 +1292,6 @@ void compute_q_tendencies_phase_1(
   // traces reflects changes from modal_aero_calcsize and is the
   // "most current" q
   const Real tracer = state_q + ptend_q * dt;
-  const Real qqcw = qqcw_sav;
   Real scavcoef = 0;
   if (jnv)
     scavcoef = (1 == jnv) ? scavcoefnum : scavcoefvol;
@@ -1310,7 +1309,7 @@ void compute_q_tendencies_phase_1(
                      totcond, cldt, cldcu, cldvcu_k, cldvcu_k_p1, cldvst_k,
                      cldvst_k_p1, sol_factb, sol_facti, sol_factic,
                      mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef,
-                     f_act_conv, tracer, qqcw, fracis, scavt, iscavt, icscavt,
+                     f_act_conv, tracer, qqcw_sav, fracis, scavt, iscavt, icscavt,
                      isscavt, bcscavt, bsscavt, rcscavt, rsscavt,
                      precabs, precabc,scavabs, scavabc, precabs_base,
                      precabc_base, precnums_base, precnumc_base );
@@ -1483,7 +1482,7 @@ void compute_q_tendencies(
           conicw[k], evapc[k], evapr[k], prain[k], dlf[k], cldt[k], cldcu[k],
           cldvst[k], cldvst[k_p1], cldvcu[k], cldvcu[k_p1], sol_facti[k],
           sol_factic[k], sol_factb[k], state_q(k, mm), ptend_q(k, mm),
-          qqcw_sav(k, lspec, mm), pdel[k], dt, mam_prevap_resusp_optcc, jnv,
+          qqcw(k,mm), pdel[k], dt, mam_prevap_resusp_optcc, jnv,
           mm,
           precabs,
           precabc,
