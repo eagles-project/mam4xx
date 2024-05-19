@@ -1118,6 +1118,7 @@ void clddiag(const int nlev, const Real *temperature, const Real *pmid,
 
   // TODO - !FIXME: Possible bug: why there is no evapc in sumppr_all
   // calculation?
+  // FIXME: Do we need a parallel_reduce ? 
   Real sumppr_all = 0;
   for (int i = 0; i < nlev; i++) {
     const Real source_term = prain[i] + cmfdqr[i];
@@ -1136,7 +1137,7 @@ void clddiag(const int nlev, const Real *temperature, const Real *pmid,
 
   // Convective
   auto prec_cu = [&](int i) -> Real {
-    return local_precip_production(pdel[i], cmfdqr[i], evapr[i]);
+    return local_precip_production(pdel[i], cmfdqr[i], evapc[i]);
   };
   calculate_cloudy_volume(nlev, cldcu, prec_cu, false, cldvcu);
 
