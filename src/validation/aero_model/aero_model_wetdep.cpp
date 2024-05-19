@@ -79,12 +79,15 @@ void aero_model_wetdep(Ensemble *ensemble) {
                           ice_mixing_ratio, cloud_ice_number_mixing_ratio,
                           height, hydrostatic_dp, interface_pressure,
                           cloud_fraction, updraft_vel_ice_nucleation, pblh);
+
+
+    auto prain = validation::get_input_in_columnview(input, "inputs_prain");
     // inputs
-    ColumnView cldt = validation::get_input_in_columnview(input, "cldn");
+    ColumnView cldt = validation::get_input_in_columnview(input, "inputs_cldt");
     // Note that itim and itim_old are used separately for the cld variables
     // although they are the same, as also indicated by the discussion on the
     // Confluence page
-    ColumnView cldn_prev_step = cldt; // d
+    ColumnView cldn_prev_step = validation::get_input_in_columnview(input, "cldn"); // d
 
     ColumnView rprdsh = validation::get_input_in_columnview(input, "rprdsh");
     ColumnView rprddp = validation::get_input_in_columnview(input, "rprddp");
@@ -105,7 +108,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
 
     // outputs
     ColumnView dlf =
-        validation::get_input_in_columnview(input, "inputs_evapr"); //
+        validation::get_input_in_columnview(input, "dlf"); //
     wetdep::View1D aerdepwetcw("aerdepwetcw", aero_model::pcnst);
     wetdep::View1D aerdepwetis("aerdepwetis", aero_model::pcnst);
     const int num_modes = AeroConfig::num_modes();
@@ -164,7 +167,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
               cldt, cldn_prev_step, rprdsh, rprddp, evapcdp, evapcsh, dp_frac,
               sh_frac, icwmrdp, icwmrsh, evapr,
               // outputs
-              dlf, wet_geometric_mean_diameter_i, dry_geometric_mean_diameter_i,
+              dlf, prain, wet_geometric_mean_diameter_i, dry_geometric_mean_diameter_i,
               qaerwat, wetdens,
               // output
               aerdepwetis, aerdepwetcw, work);
@@ -186,14 +189,14 @@ void aero_model_wetdep(Ensemble *ensemble) {
     std::vector<Real> output_pcnst(aero_model::pcnst, 0);
     auto aerdepwetcw_host =
         View1DHost((Real *)output_pcnst.data(), aero_model::pcnst);
-    Kokkos::deep_copy(aerdepwetcw, aerdepwetcw_host);
+    Kokkos::deep_copy(aerdepwetcw_host,aerdepwetcw);
     output.set("aerdepwetcw", output_pcnst);
 
     std::vector<Real> aerdepwetis_output(aero_model::pcnst, 0);
     auto aerdepwetis_host =
-        View1DHost((Real *)output_pcnst.data(), aero_model::pcnst);
-    Kokkos::deep_copy(aerdepwetis, aerdepwetis_host);
-    output.set("aerdepwetis", output_pcnst);
+        View1DHost((Real *)aerdepwetis_output.data(), aero_model::pcnst);
+    Kokkos::deep_copy(aerdepwetis_host,aerdepwetis);
+    output.set("aerdepwetis", aerdepwetis_output);
 
     std::vector<Real> output_modes(nlev * num_modes, 0);
     mam4::validation::convert_transpose_2d_view_device_to_1d_vector(

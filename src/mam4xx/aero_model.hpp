@@ -868,8 +868,9 @@ void set_f_act_coarse(const int kk,
   f_act_conv_coarse_nacl = 0.80;
 
   // dust and seasalt mass concentration [kg/kg]
-  const int lcoardust = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::DST);
-  const int lcoarnacl = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::NaCl);
+  const int idx_coarse = int(ModeIndex::Coarse);
+  const int lcoardust = aero_model::lptr_dust_a_amode(idx_coarse);
+  const int lcoarnacl = aero_model::lptr_nacl_a_amode(idx_coarse);
   const Real tmpdust =
       haero::max(0.0, state_q(kk, lcoardust) + ptend_q(kk, lcoardust) * dt);
   const Real tmpnacl =
