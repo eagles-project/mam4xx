@@ -122,8 +122,6 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
           const int top_lev = 0; // 1( in fortran )
 
           for (int kk = top_lev; kk < pver; ++kk) {
-            std::cout << "kk : " << kk << "\n";
-
             const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
             const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
             const auto dgncur_i =
