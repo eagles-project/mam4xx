@@ -1402,7 +1402,7 @@ void compute_q_tendencies(
     Kokkos::View<Real *> sol_facti, Kokkos::View<Real *> sol_factic,
     Kokkos::View<Real *> sol_factb, Kokkos::View<Real *> scavt,
     Kokkos::View<Real *> bcscavt, Kokkos::View<Real *> rcscavt,
-    Kokkos::View<Real *> rtscavt_sv, Diagnostics::ColumnTracerView state_q,
+    const View2D& rtscavt_sv, Diagnostics::ColumnTracerView state_q,
     Kokkos::View<Real **> qqcw,
     Diagnostics::ColumnTracerView ptend_q,
     Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
@@ -1429,10 +1429,13 @@ void compute_q_tendencies(
   Real precabc_base=0;
   Real precnums_base=0;
   Real precnumc_base=0;
+  // FIXME:
+  // Do I need to set rtscavt_sv to zero? 
 
   //Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
   for (int k = 0; k < nlev; ++k)
   {
+    const auto rtscavt_sv_k = ekat::subview(rtscavt_sv,k);
     // mam_prevap_resusp_optcc values control the prevap_resusp
     // calculations in wetdepa_v2:
     //     0 = no resuspension
@@ -1476,7 +1479,7 @@ void compute_q_tendencies(
       // "most current" q
       compute_q_tendencies_phase_1(
           // These are the output values
-          scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv.data(),
+          scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv_k.data(),
           // The rest of the values are input only.
           f_act_conv[k], scavcoefnum[k], scavcoefvol[k], totcond[k], cmfdqr[k],
           conicw[k], evapc[k], evapr[k], prain[k], dlf[k], cldt[k], cldcu[k],
@@ -1507,7 +1510,7 @@ void compute_q_tendencies(
       const Real qqcw_tmp=0.0;
       compute_q_tendencies_phase_2(
           // These are the output values
-          scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv.data(),
+          scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv_k.data(),
           qqcw_tmp, qqcw(k,mm),
           // The rest of the values are input only.
           // progs,
@@ -1551,10 +1554,9 @@ int get_aero_model_wetdep_work_len() {
       // rain, ptend_q, cldv, cldvcu, cldvst, scavcoefnum, scavcoefvol
       // sol_facti, sol_factic, sol_factb, f_act_conv, scavt, rcscavt, bcscavt
       3 * pcnst +          //  qsrflx_mzaer2cnvpr, rtscavt_sv
-      mam4::nlev * pcnst + // ptend_q
+      2*mam4::nlev * pcnst + // ptend_q, rtscavt_sv
                            // dry_geometric_mean_diameter_i, qaerwat, wetdens
       mam4::nlev * (aero_model::maxd_aspectype + 2) * aero_model::pcnst;
-  // 3* mam4::nlev * AeroConfig::num_modes() * mam4::nlev;
   return work_len;
 }
 // =============================================================================
@@ -1701,10 +1703,15 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
   View1D rcscavt(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
 
-  View1D rtscavt_sv(work_ptr, pcnst);
-  work_ptr += pcnst;
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, pcnst),
-                       [&](int i) { rtscavt_sv(i) = zero; });
+  View2D rtscavt_sv(work_ptr, mam4::nlev, pcnst);
+  work_ptr += pcnst*mam4::nlev;
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, mam4::nlev),
+    [&](int i) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pcnst),
+     [&](int j) { 
+        rtscavt_sv(i,j) = zero;
+      });
+  });
 
   View1D bcscavt(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
@@ -2026,15 +2033,19 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
                 dt, jnummaswtr, jnv, mm, lphase, imode, lspec);
             team.team_barrier();
 
-            // Update ptend_q from the tendency, scavt
-            wetdep::update_q_tendencies(team, ptend_q, scavt, mm, nlev);
 
+            // FIXME: update tendencies only in lphase == 1
             if (lphase == 1)
-              aerdepwetis[mm] =
-                  aero_model::calc_sfc_flux(team, scavt, pdel, nlev);
+            {
+              // Update ptend_q from the tendency, scavt
+              wetdep::update_q_tendencies(team, ptend_q, scavt, mm, nlev);
+            }
+            if (lphase == 1)
+              {aerdepwetis[mm] =
+                                aero_model::calc_sfc_flux(team, scavt, pdel, nlev);}
             else // if (lphase == 2)
-              aerdepwetcw[mm] =
-                  aero_model::calc_sfc_flux(team, scavt, pdel, nlev);
+              {aerdepwetcw[mm] =
+                                aero_model::calc_sfc_flux(team, scavt, pdel, nlev);}
             const Real sflxbc =
                 aero_model::calc_sfc_flux(team, bcscavt, pdel, nlev);
             const Real sflxec =
