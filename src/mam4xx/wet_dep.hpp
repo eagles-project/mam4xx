@@ -819,16 +819,9 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
                 const Real f_act_conv, const Real tracer, const Real qqcw,
                 Real &fracis, Real &scavt, Real &iscavt, Real &icscavt,
                 Real &isscavt, Real &bcscavt, Real &bsscavt, Real &rcscavt,
-                Real &rsscavt,
-                Real &precabs,
-                Real& precabc,
-                Real& scavabs,
-                Real& scavabc,
-                Real& precabs_base,
-                Real& precabc_base,
-                Real& precnums_base,
-                Real& precnumc_base
-                ) {
+                Real &rsscavt, Real &precabs, Real &precabc, Real &scavabs,
+                Real &scavabc, Real &precabs_base, Real &precabc_base,
+                Real &precnums_base, Real &precnumc_base) {
   // clang-format off
   // -----------------------------------------------------------------------
   //  Purpose:
@@ -918,18 +911,18 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   // C++ Returns the machine epsilon, that is, the difference between 1.0
   // and the next value representable by the floating-point type T.
   const Real omsm = 1.0 - 2 * haero::epsilon();
-  // precabs, precabc, scavabs, scavabc, precabs_base, precabc_base, 
+  // precabs, precabc, scavabs, scavabc, precabs_base, precabc_base,
   // precnums_base, and precnumc_base are input/output in this routine.
   // precabs: strat precip from above [kg/m2/s]
   // precabc: conv precip from above [kg/m2/s]
   // scavabs: stratiform scavenged tracer flux from above [kg/m2/s]
   // scavabc: convective scavenged tracer flux from above [kg/m2/s]
-  // precabs_base: strat precip at an effective cloud base for calculations in a particular
-  // layer [kg/m2/s]
-  // precabc_base: conv precip at an effective cloud base for calculations in a particular
-  // layer [kg/m2/s]
-  // precnums_base: stratiform precip number flux at the bottom of a particular layer [#/m2/s]
-  // precnumc_base: convective precip number flux at the bottom of a particular layer [#/m2/s]
+  // precabs_base: strat precip at an effective cloud base for calculations in a
+  // particular layer [kg/m2/s] precabc_base: conv precip at an effective cloud
+  // base for calculations in a particular layer [kg/m2/s] precnums_base:
+  // stratiform precip number flux at the bottom of a particular layer [#/m2/s]
+  // precnumc_base: convective precip number flux at the bottom of a particular
+  // layer [#/m2/s]
   // ****************** Evaporation **************************
   // fraction of stratiform precip from above that is evaporating [fraction]
   Real fracev_st;
@@ -1015,10 +1008,10 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
     // precipitation and cloudy volume,at the top interface of current layer
     // [fraction]
     Real arainx = haero::max(cldvst_lower_level, small_value_2); // non-zero
-    Real precabx_tmp=0;       // temporary store precabc or precabs [kg/m2/s]
-    Real precabx_base_tmp=0;  // temporarily store precab*_base [kg/m2/s]
-    Real precnumx_base_tmp=0; // temporarily store precnum*_base [#/m2/s]
-    Real scavabx_tmp=0;       // temporarily store scavab* [kg/m2/s]
+    Real precabx_tmp = 0;       // temporary store precabc or precabs [kg/m2/s]
+    Real precabx_base_tmp = 0;  // temporarily store precab*_base [kg/m2/s]
+    Real precnumx_base_tmp = 0; // temporarily store precnum*_base [#/m2/s]
+    Real scavabx_tmp = 0;       // temporarily store scavab* [kg/m2/s]
     // step 1 - do evaporation and resuspension
     wetdep_resusp(1, mam_prevap_resusp_optcc, pdel, evaps, precabs,
                   precabs_base, scavabs, precnums_base, precabx_tmp,
@@ -1118,7 +1111,7 @@ void clddiag(const int nlev, const Real *temperature, const Real *pmid,
 
   // TODO - !FIXME: Possible bug: why there is no evapc in sumppr_all
   // calculation?
-  // FIXME: Do we need a parallel_reduce ? 
+  // FIXME: Do we need a parallel_reduce ?
   Real sumppr_all = 0;
   for (int i = 0; i < nlev; i++) {
     const Real source_term = prain[i] + cmfdqr[i];
@@ -1281,14 +1274,9 @@ void compute_q_tendencies_phase_1(
     const Real sol_factic, const Real sol_factb, const Real state_q,
     const Real ptend_q, const Real qqcw_sav, const Real pdel, const Real dt,
     const int mam_prevap_resusp_optcc, const int jnv, const int mm,
-    Real &precabs,
-    Real& precabc,
-    Real& scavabs,
-    Real& scavabc,
-    Real& precabs_base,
-    Real& precabc_base,
-    Real& precnums_base,
-    Real& precnumc_base) {
+    Real &precabs, Real &precabc, Real &scavabs, Real &scavabc,
+    Real &precabs_base, Real &precabc_base, Real &precnums_base,
+    Real &precnumc_base) {
   // traces reflects changes from modal_aero_calcsize and is the
   // "most current" q
   const Real tracer = state_q + ptend_q * dt;
@@ -1305,14 +1293,13 @@ void compute_q_tendencies_phase_1(
   // is_strat_cloudborne = true if tracer is
   // stratiform-cloudborne aerosol; else false
   const bool is_strat_cloudborne = false;
-  wetdep::wetdepa_v2(dt, pdel, cmfdqr, evapc, dlf, conicw, prain, evapr,
-                     totcond, cldt, cldcu, cldvcu_k, cldvcu_k_p1, cldvst_k,
-                     cldvst_k_p1, sol_factb, sol_facti, sol_factic,
-                     mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef,
-                     f_act_conv, tracer, qqcw_sav, fracis, scavt, iscavt, icscavt,
-                     isscavt, bcscavt, bsscavt, rcscavt, rsscavt,
-                     precabs, precabc,scavabs, scavabc, precabs_base,
-                     precabc_base, precnums_base, precnumc_base );
+  wetdep::wetdepa_v2(
+      dt, pdel, cmfdqr, evapc, dlf, conicw, prain, evapr, totcond, cldt, cldcu,
+      cldvcu_k, cldvcu_k_p1, cldvst_k, cldvst_k_p1, sol_factb, sol_facti,
+      sol_factic, mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef,
+      f_act_conv, tracer, qqcw_sav, fracis, scavt, iscavt, icscavt, isscavt,
+      bcscavt, bsscavt, rcscavt, rsscavt, precabs, precabc, scavabs, scavabc,
+      precabs_base, precabc_base, precnums_base, precnumc_base);
   // resuspension goes to coarse mode
   const bool update_dqdt = true;
   aero_model::calc_resusp_to_coarse(mm, update_dqdt, rcscavt, rsscavt, scavt,
@@ -1331,17 +1318,10 @@ void compute_q_tendencies_phase_2(
     const Real cldcu, const Real cldvst_k, const Real cldvst_k_p1,
     const Real cldvcu_k, const Real cldvcu_k_p1, const Real sol_facti,
     const Real sol_factic, const Real sol_factb, const Real pdel, const Real dt,
-    const int mam_prevap_resusp_optcc, const int jnv, const int mm,
-    const int k,
-    Real &precabs,
-    Real& precabc,
-    Real& scavabs,
-    Real& scavabc,
-    Real& precabs_base,
-    Real& precabc_base,
-    Real& precnums_base,
-    Real& precnumc_base
-) {
+    const int mam_prevap_resusp_optcc, const int jnv, const int mm, const int k,
+    Real &precabs, Real &precabc, Real &scavabs, Real &scavabc,
+    Real &precabs_base, Real &precabc_base, Real &precnums_base,
+    Real &precnumc_base) {
 
   // static constexpr int pcnst = aero_model::pcnst;
   // There is no cloud-borne aerosol water in the model, so this
@@ -1360,20 +1340,13 @@ void compute_q_tendencies_phase_2(
   if (jnv)
     scavcoef = (1 == jnv) ? scavcoefnum : scavcoefvol;
   const bool is_strat_cloudborne = true;
-  wetdep::wetdepa_v2(dt, pdel, cmfdqr, evapc, dlf, conicw, prain, evapr,
-                     totcond, cldt, cldcu, cldvcu_k, cldvcu_k_p1, cldvst_k,
-                     cldvst_k_p1, sol_factb, sol_facti, sol_factic,
-                     mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef,
-                     f_act_conv, tracer, qqcw_tmp, fracis, scavt, iscavt, icscavt,
-                     isscavt, bcscavt, bsscavt, rcscavt, rsscavt,
-                     precabs,
-precabc,
-scavabs,
-scavabc,
-precabs_base,
-precabc_base,
-precnums_base,
-precnumc_base);
+  wetdep::wetdepa_v2(
+      dt, pdel, cmfdqr, evapc, dlf, conicw, prain, evapr, totcond, cldt, cldcu,
+      cldvcu_k, cldvcu_k_p1, cldvst_k, cldvst_k_p1, sol_factb, sol_facti,
+      sol_factic, mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef,
+      f_act_conv, tracer, qqcw_tmp, fracis, scavt, iscavt, icscavt, isscavt,
+      bcscavt, bsscavt, rcscavt, rsscavt, precabs, precabc, scavabs, scavabc,
+      precabs_base, precabc_base, precnums_base, precnumc_base);
 
   // resuspension goes to coarse mode
   const bool update_dqdt = false;
@@ -1402,9 +1375,8 @@ void compute_q_tendencies(
     Kokkos::View<Real *> sol_facti, Kokkos::View<Real *> sol_factic,
     Kokkos::View<Real *> sol_factb, Kokkos::View<Real *> scavt,
     Kokkos::View<Real *> bcscavt, Kokkos::View<Real *> rcscavt,
-    const View2D& rtscavt_sv, Diagnostics::ColumnTracerView state_q,
-    Kokkos::View<Real **> qqcw,
-    Diagnostics::ColumnTracerView ptend_q,
+    const View2D &rtscavt_sv, Diagnostics::ColumnTracerView state_q,
+    Kokkos::View<Real **> qqcw, Diagnostics::ColumnTracerView ptend_q,
     Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
         qqcw_sav,
     haero::ConstColumnView pdel, const Real dt, const int jnummaswtr,
@@ -1421,19 +1393,18 @@ void compute_q_tendencies(
   const int mam_prevap_resusp_mass = 130;
   const int mam_prevap_resusp_num = 230;
   const int jaeronumb = 0, jaeromass = 1;
-  Real precabs=0;
-  Real precabc=0;
-  Real scavabs=0;
-  Real scavabc=0;
-  Real precabs_base=0;
-  Real precabc_base=0;
-  Real precnums_base=0;
-  Real precnumc_base=0;
+  Real precabs = 0;
+  Real precabc = 0;
+  Real scavabs = 0;
+  Real scavabc = 0;
+  Real precabs_base = 0;
+  Real precabc_base = 0;
+  Real precnums_base = 0;
+  Real precnumc_base = 0;
   // NOTE: The following k loop cannot be converted to parallel_for
   // because precabs requires values from the previous elevation (k-1).
-  for (int k = 0; k < nlev; ++k)
-  {
-    const auto rtscavt_sv_k = ekat::subview(rtscavt_sv,k);
+  for (int k = 0; k < nlev; ++k) {
+    const auto rtscavt_sv_k = ekat::subview(rtscavt_sv, k);
     // mam_prevap_resusp_optcc values control the prevap_resusp
     // calculations in wetdepa_v2:
     //     0 = no resuspension
@@ -1483,15 +1454,8 @@ void compute_q_tendencies(
           conicw[k], evapc[k], evapr[k], prain[k], dlf[k], cldt[k], cldcu[k],
           cldvst[k], cldvst[k_p1], cldvcu[k], cldvcu[k_p1], sol_facti[k],
           sol_factic[k], sol_factb[k], state_q(k, mm), ptend_q(k, mm),
-          qqcw(k,mm), pdel[k], dt, mam_prevap_resusp_optcc, jnv,
-          mm,
-          precabs,
-          precabc,
-          scavabs,
-          scavabc,
-          precabs_base,
-          precabc_base,
-          precnums_base,
+          qqcw(k, mm), pdel[k], dt, mam_prevap_resusp_optcc, jnv, mm, precabs,
+          precabc, scavabs, scavabc, precabs_base, precabc_base, precnums_base,
           precnumc_base);
 
     } else { // if (lphase == 2)
@@ -1504,26 +1468,19 @@ void compute_q_tendencies(
       // different from the previous call and qqcw_tmp is always
       // zero. May need further check.  - Shuaiqi Tang in
       // refactoring for MAM4xx
-      const Real qqcw_tmp=0.0;
+      const Real qqcw_tmp = 0.0;
       compute_q_tendencies_phase_2(
           // These are the output values
-          scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv_k.data(),
-          qqcw_tmp, qqcw(k,mm),
+          scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv_k.data(), qqcw_tmp,
+          qqcw(k, mm),
           // The rest of the values are input only.
           // progs,
           f_act_conv[k], scavcoefnum[k], scavcoefvol[k], totcond[k], cmfdqr[k],
           conicw[k], evapc[k], evapr[k], prain[k], dlf[k], cldt[k], cldcu[k],
           cldvst[k], cldvst[k_p1], cldvcu[k], cldvcu[k_p1], sol_facti[k],
           sol_factic[k], sol_factb[k], pdel[k], dt, mam_prevap_resusp_optcc,
-          jnv, mm, k,
-          precabs,
-          precabc,
-          scavabs,
-          scavabc,
-          precabs_base,
-          precabc_base,
-          precnums_base,
-          precnumc_base);
+          jnv, mm, k, precabs, precabc, scavabs, scavabc, precabs_base,
+          precabc_base, precnums_base, precnumc_base);
     }
   }
 }
@@ -1550,9 +1507,10 @@ int get_aero_model_wetdep_work_len() {
       // f_act_conv_coarse_dust, f_act_conv_coarse_nacl
       // rain, ptend_q, cldv, cldvcu, cldvst, scavcoefnum, scavcoefvol
       // sol_facti, sol_factic, sol_factb, f_act_conv, scavt, rcscavt, bcscavt
-      3 * pcnst +          //  qsrflx_mzaer2cnvpr, rtscavt_sv
-      2*mam4::nlev * pcnst + // ptend_q, rtscavt_sv
-                           // dry_geometric_mean_diameter_i, qaerwat, wetdens
+      3 * pcnst + //  qsrflx_mzaer2cnvpr, rtscavt_sv
+      2 * mam4::nlev *
+          pcnst + // ptend_q, rtscavt_sv
+                  // dry_geometric_mean_diameter_i, qaerwat, wetdens
       mam4::nlev * (aero_model::maxd_aspectype + 2) * aero_model::pcnst;
   return work_len;
 }
@@ -1637,7 +1595,6 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
   View1D cmfdqr(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
 
-
   View1D totcond(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
 
@@ -1701,13 +1658,10 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
   work_ptr += mam4::nlev;
 
   View2D rtscavt_sv(work_ptr, mam4::nlev, pcnst);
-  work_ptr += pcnst*mam4::nlev;
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, mam4::nlev),
-    [&](int i) {
+  work_ptr += pcnst * mam4::nlev;
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, mam4::nlev), [&](int i) {
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pcnst),
-     [&](int j) { 
-        rtscavt_sv(i,j) = zero;
-      });
+                         [&](int j) { rtscavt_sv(i, j) = zero; });
   });
 
   View1D bcscavt(work_ptr, mam4::nlev);
@@ -1934,7 +1888,7 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
     // dq/dt due to convective cmfdqr =  rprddp + rprdsh
     wetdep::sum_values(team, cmfdqr, rprddp, rprdsh, nlev);
     // rate of conversion of condensate to precipitation [kg/kg/s].
-    //wetdep::sum_values(team, prain, icwmrdp, icwmrsh, nlev);
+    // wetdep::sum_values(team, prain, icwmrdp, icwmrsh, nlev);
     // wetdep::sum_values(team, prain, icwmrdp, icwmrsh, nlev);
     // total condensate (ice+liq) [kg/kg] = q_liq + q_ice
     wetdep::sum_values(team, totcond, q_liq, q_ice, nlev);
@@ -2026,23 +1980,23 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
                 f_act_conv_coarse_nacl, scavcoefnum, scavcoefvol, totcond,
                 cmfdqr, conicw, evapc, evapr, prain, dlf, cldt, cldcu, cldst,
                 cldvst, cldvcu, sol_facti, sol_factic, sol_factb, scavt,
-                bcscavt, rcscavt, rtscavt_sv, state_q, qqcw, ptend_q, qqcw_sav, pdel,
-                dt, jnummaswtr, jnv, mm, lphase, imode, lspec);
+                bcscavt, rcscavt, rtscavt_sv, state_q, qqcw, ptend_q, qqcw_sav,
+                pdel, dt, jnummaswtr, jnv, mm, lphase, imode, lspec);
             team.team_barrier();
 
-
             // Note: update tendencies only in lphase == 1
-            if (lphase == 1)
-            {
+            if (lphase == 1) {
               // Update ptend_q from the tendency, scavt
               wetdep::update_q_tendencies(team, ptend_q, scavt, mm, nlev);
             }
-            if (lphase == 1)
-              {aerdepwetis[mm] =
-                                aero_model::calc_sfc_flux(team, scavt, pdel, nlev);}
-            else // if (lphase == 2)
-              {aerdepwetcw[mm] =
-                                aero_model::calc_sfc_flux(team, scavt, pdel, nlev);}
+            if (lphase == 1) {
+              aerdepwetis[mm] =
+                  aero_model::calc_sfc_flux(team, scavt, pdel, nlev);
+            } else // if (lphase == 2)
+            {
+              aerdepwetcw[mm] =
+                  aero_model::calc_sfc_flux(team, scavt, pdel, nlev);
+            }
             const Real sflxbc =
                 aero_model::calc_sfc_flux(team, bcscavt, pdel, nlev);
             const Real sflxec =
