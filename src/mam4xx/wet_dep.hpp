@@ -1195,8 +1195,8 @@ void set_f_act(const ThreadTeam &team, Kokkos::View<bool *> isprx,
                const View1D & f_act_conv_coarse_nacl,
                haero::ConstColumnView pdel, haero::ConstColumnView prain,
                const View1D & cmfdqr, const View1D & evapr,
-               Diagnostics::ColumnTracerView state_q,
-               Diagnostics::ColumnTracerView ptend_q, const Real dt,
+               const View2D & state_q,
+               const View2D & ptend_q, const Real dt,
                const int nlev) {
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
@@ -1375,8 +1375,8 @@ void compute_q_tendencies(
     const View1D & sol_facti, const View1D & sol_factic,
     const View1D & sol_factb, const View1D & scavt,
     const View1D & bcscavt, const View1D & rcscavt,
-    const View2D &rtscavt_sv, Diagnostics::ColumnTracerView state_q,
-    const View2D & qqcw, Diagnostics::ColumnTracerView ptend_q,
+    const View2D &rtscavt_sv, const View2D & state_q,
+    const View2D & qqcw, const View2D & ptend_q,
     // Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
     //     qqcw_sav,
     haero::ConstColumnView pdel, const Real dt, const int jnummaswtr,
@@ -1487,7 +1487,7 @@ void compute_q_tendencies(
 
 KOKKOS_INLINE_FUNCTION
 void update_q_tendencies(const ThreadTeam &team,
-                         Diagnostics::ColumnTracerView ptend_q,
+                         const View2D & ptend_q,
                          const View1D & scavt, const int mm,
                          const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
