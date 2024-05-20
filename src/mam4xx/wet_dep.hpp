@@ -1376,7 +1376,7 @@ void compute_q_tendencies(
     const View1D & sol_factb, const View1D & scavt,
     const View1D & bcscavt, const View1D & rcscavt,
     const View2D &rtscavt_sv, Diagnostics::ColumnTracerView state_q,
-    Kokkos::View<Real **> qqcw, Diagnostics::ColumnTracerView ptend_q,
+    const View2D & qqcw, Diagnostics::ColumnTracerView ptend_q,
     // Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
     //     qqcw_sav,
     haero::ConstColumnView pdel, const Real dt, const int jnummaswtr,
