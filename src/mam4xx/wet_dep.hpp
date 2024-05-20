@@ -1429,10 +1429,8 @@ void compute_q_tendencies(
   Real precabc_base=0;
   Real precnums_base=0;
   Real precnumc_base=0;
-  // FIXME:
-  // Do I need to set rtscavt_sv to zero? 
-
-  //Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
+  // NOTE: The following k loop cannot be converted to parallel_for
+  // because precabs requires values from the previous elevation (k-1).
   for (int k = 0; k < nlev; ++k)
   {
     const auto rtscavt_sv_k = ekat::subview(rtscavt_sv,k);
@@ -1506,7 +1504,6 @@ void compute_q_tendencies(
       // different from the previous call and qqcw_tmp is always
       // zero. May need further check.  - Shuaiqi Tang in
       // refactoring for MAM4xx
-      //FIXME: should we fix this comment?
       const Real qqcw_tmp=0.0;
       compute_q_tendencies_phase_2(
           // These are the output values
@@ -1801,10 +1798,10 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
     const auto qqcw_kk = ekat::subview(qqcw, kk);
     const auto ptend_q_kk = ekat::subview(ptend_q, kk);
     Real dgnumwet_m_kk[ntot_amode] = {};
-    // FIXME: wetdens and qaerwat are input/ouput to water_uptake
+    // wetdens and qaerwat are input/ouput to water_uptake
     Real qaerwat_m_kk[ntot_amode] = {};
     Real wetdens_kk[ntot_amode] = {};
-    // FIXME: dgncur_a is aerosol particle diameter and is an input to
+    // dgncur_a is aerosol particle diameter and is an input to
     // calcsize. But calcsize reset its value.
     Real dgnumdry_m_kk[ntot_amode] = {};
     for (int imode = 0; imode < ntot_amode; imode++) {
@@ -2034,7 +2031,7 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
             team.team_barrier();
 
 
-            // FIXME: update tendencies only in lphase == 1
+            // Note: update tendencies only in lphase == 1
             if (lphase == 1)
             {
               // Update ptend_q from the tendency, scavt
