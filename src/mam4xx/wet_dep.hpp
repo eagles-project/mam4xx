@@ -1143,24 +1143,22 @@ void clddiag(const int nlev, const Real *temperature, const Real *pmid,
 
 template <typename VIEWTYPE>
 KOKKOS_INLINE_FUNCTION void sum_values(const ThreadTeam &team,
-                                       const View1D & sum, VIEWTYPE x,
+                                       const View1D &sum, VIEWTYPE x,
                                        VIEWTYPE y, const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                        [&](int k) { sum[k] = x[k] + y[k]; });
 }
 KOKKOS_INLINE_FUNCTION
-void zero_values(const ThreadTeam &team, const View1D & vec,
-                 const int nlev) {
+void zero_values(const ThreadTeam &team, const View1D &vec, const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                        [&](int k) { vec[k] = 0; });
 }
 
 KOKKOS_INLINE_FUNCTION
-void sum_deep_and_shallow(const ThreadTeam &team, const View1D & conicw,
-                          const View1D & icwmrdp,
-                          const View1D & dp_frac,
-                          const View1D & icwmrsh,
-                          const View1D & sh_frac, const int nlev) {
+void sum_deep_and_shallow(const ThreadTeam &team, const View1D &conicw,
+                          const View1D &icwmrdp, const View1D &dp_frac,
+                          const View1D &icwmrsh, const View1D &sh_frac,
+                          const int nlev) {
   // BAD CONSTANT
   const Real small_value_2 = 1.e-2;
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
@@ -1174,12 +1172,12 @@ KOKKOS_INLINE_FUNCTION
 void cloud_diagnostics(const ThreadTeam &team,
                        haero::ConstColumnView temperature,
                        haero::ConstColumnView pmid, haero::ConstColumnView pdel,
-                       const View1D & cmfdqr, const View1D & evapc,
-                       const View1D & cldt, const View1D & cldcu,
-                       const View1D & cldst, const View1D & evapr,
-                       const View1D & prain, const View1D & cldv,
-                       const View1D & cldvcu, const View1D & cldvst,
-                       const View1D & rain, const int nlev) {
+                       const View1D &cmfdqr, const View1D &evapc,
+                       const View1D &cldt, const View1D &cldcu,
+                       const View1D &cldst, const View1D &evapr,
+                       const View1D &prain, const View1D &cldv,
+                       const View1D &cldvcu, const View1D &cldvst,
+                       const View1D &rain, const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 1), [&](int k) {
     wetdep::clddiag(nlev, temperature.data(), pmid.data(), pdel.data(),
                     cmfdqr.data(), evapc.data(), cldt.data(), cldcu.data(),
@@ -1190,14 +1188,12 @@ void cloud_diagnostics(const ThreadTeam &team,
 
 KOKKOS_INLINE_FUNCTION
 void set_f_act(const ThreadTeam &team, Kokkos::View<bool *> isprx,
-               const View1D & f_act_conv_coarse,
-               const View1D & f_act_conv_coarse_dust,
-               const View1D & f_act_conv_coarse_nacl,
+               const View1D &f_act_conv_coarse,
+               const View1D &f_act_conv_coarse_dust,
+               const View1D &f_act_conv_coarse_nacl,
                haero::ConstColumnView pdel, haero::ConstColumnView prain,
-               const View1D & cmfdqr, const View1D & evapr,
-               const View2D & state_q,
-               const View2D & ptend_q, const Real dt,
-               const int nlev) {
+               const View1D &cmfdqr, const View1D &evapr, const View2D &state_q,
+               const View2D &ptend_q, const Real dt, const int nlev) {
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     isprx[k] = aero_model::examine_prec_exist(k, pdel.data(), prain.data(),
@@ -1218,8 +1214,8 @@ void modal_aero_bcscavcoef_get(
                             [AeroConfig::num_modes()],
     const Real scavimptblnum[aero_model::nimptblgrow_total]
                             [AeroConfig::num_modes()],
-    const View1D & scavcoefnum, const View1D & scavcoefvol,
-    const int imode, const int nlev) {
+    const View1D &scavcoefnum, const View1D &scavcoefvol, const int imode,
+    const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     const Real dgnum_amode_imode = modes(imode).nom_diameter;
     ColumnView dgn_awet_imode = diags.wet_geometric_mean_diameter_i[imode];
@@ -1239,8 +1235,8 @@ void modal_aero_bcscavcoef_get(
                             [AeroConfig::num_modes()],
     const Real scavimptblnum[aero_model::nimptblgrow_total]
                             [AeroConfig::num_modes()],
-    const View1D & scavcoefnum, const View1D & scavcoefvol,
-    const int imode, const int nlev) {
+    const View1D &scavcoefnum, const View1D &scavcoefvol, const int imode,
+    const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     const Real dgnum_amode_imode = modes(imode).nom_diameter;
     const Real dgn_awet_imode_k = wet_geometric_mean_diameter_i(imode, k);
@@ -1252,10 +1248,9 @@ void modal_aero_bcscavcoef_get(
 
 // define sol_factb and sol_facti values, and f_act_conv
 KOKKOS_INLINE_FUNCTION
-void define_act_frac(const ThreadTeam &team, const View1D & sol_facti,
-                     const View1D & sol_factic,
-                     const View1D & sol_factb,
-                     const View1D & f_act_conv, const int lphase,
+void define_act_frac(const ThreadTeam &team, const View1D &sol_facti,
+                     const View1D &sol_factic, const View1D &sol_factb,
+                     const View1D &f_act_conv, const int lphase,
                      const int imode, const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     aero_model::define_act_frac(lphase, imode, sol_facti[k], sol_factic[k],
@@ -1362,21 +1357,16 @@ KOKKOS_INLINE_FUNCTION
 void compute_q_tendencies(
     const ThreadTeam &team,
     // const Prognostics &progs,
-    const View1D & f_act_conv, const View1D & f_act_conv_coarse,
-    const View1D & f_act_conv_coarse_dust,
-    const View1D & f_act_conv_coarse_nacl,
-    const View1D & scavcoefnum, const View1D & scavcoefvol,
-    const View1D & totcond, const View1D & cmfdqr,
-    const View1D & conicw, const View1D & evapc,
-    const View1D & evapr, const View1D & prain,
-    const View1D & dlf, const View1D & cldt,
-    const View1D & cldcu, const View1D & cldst,
-    const View1D & cldvst, const View1D & cldvcu,
-    const View1D & sol_facti, const View1D & sol_factic,
-    const View1D & sol_factb, const View1D & scavt,
-    const View1D & bcscavt, const View1D & rcscavt,
-    const View2D &rtscavt_sv, const View2D & state_q,
-    const View2D & qqcw, const View2D & ptend_q,
+    const View1D &f_act_conv, const View1D &f_act_conv_coarse,
+    const View1D &f_act_conv_coarse_dust, const View1D &f_act_conv_coarse_nacl,
+    const View1D &scavcoefnum, const View1D &scavcoefvol, const View1D &totcond,
+    const View1D &cmfdqr, const View1D &conicw, const View1D &evapc,
+    const View1D &evapr, const View1D &prain, const View1D &dlf,
+    const View1D &cldt, const View1D &cldcu, const View1D &cldst,
+    const View1D &cldvst, const View1D &cldvcu, const View1D &sol_facti,
+    const View1D &sol_factic, const View1D &sol_factb, const View1D &scavt,
+    const View1D &bcscavt, const View1D &rcscavt, const View2D &rtscavt_sv,
+    const View2D &state_q, const View2D &qqcw, const View2D &ptend_q,
     // Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
     //     qqcw_sav,
     haero::ConstColumnView pdel, const Real dt, const int jnummaswtr,
@@ -1486,10 +1476,8 @@ void compute_q_tendencies(
 }
 
 KOKKOS_INLINE_FUNCTION
-void update_q_tendencies(const ThreadTeam &team,
-                         const View2D & ptend_q,
-                         const View1D & scavt, const int mm,
-                         const int nlev) {
+void update_q_tendencies(const ThreadTeam &team, const View2D &ptend_q,
+                         const View1D &scavt, const int mm, const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     Kokkos::atomic_add(&ptend_q(k, mm), scavt[k]);
   });
@@ -1507,10 +1495,9 @@ int get_aero_model_wetdep_work_len() {
       // f_act_conv_coarse_dust, f_act_conv_coarse_nacl
       // rain, ptend_q, cldv, cldvcu, cldvst, scavcoefnum, scavcoefvol
       // sol_facti, sol_factic, sol_factb, f_act_conv, scavt, rcscavt, bcscavt
-      3 * pcnst + //  qsrflx_mzaer2cnvpr, rtscavt_sv
-      2 * mam4::nlev *
-          pcnst; // ptend_q, rtscavt_sv
-                  // dry_geometric_mean_diameter_i, qaerwat, wetdens
+      3 * pcnst +             //  qsrflx_mzaer2cnvpr, rtscavt_sv
+      2 * mam4::nlev * pcnst; // ptend_q, rtscavt_sv
+                              // dry_geometric_mean_diameter_i, qaerwat, wetdens
   return work_len;
 }
 // =============================================================================
@@ -1672,7 +1659,6 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
   View2D qsrflx_mzaer2cnvpr(work_ptr, aero_model::pcnst, 2);
   work_ptr += aero_model::pcnst * 2;
 
- 
   /// error check
   const int workspace_used(work_ptr - work.data()),
       workspace_extent(work.extent(0));
@@ -1972,8 +1958,8 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
                 f_act_conv_coarse_nacl, scavcoefnum, scavcoefvol, totcond,
                 cmfdqr, conicw, evapc, evapr, prain, dlf, cldt, cldcu, cldst,
                 cldvst, cldvcu, sol_facti, sol_factic, sol_factb, scavt,
-                bcscavt, rcscavt, rtscavt_sv, state_q, qqcw, ptend_q, 
-                pdel, dt, jnummaswtr, jnv, mm, lphase, imode, lspec);
+                bcscavt, rcscavt, rtscavt_sv, state_q, qqcw, ptend_q, pdel, dt,
+                jnummaswtr, jnv, mm, lphase, imode, lspec);
             team.team_barrier();
 
             // Note: update tendencies only in lphase == 1
