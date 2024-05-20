@@ -33,9 +33,11 @@ set(TEST_LIST
     modal_aero_bcscavcoef_init_ts_0
     aero_model_wetdep_ts_379
     stand_aero_model_calcsize_water_uptake_dr_ts_379
+    baseline_aero_model_wetdep_ts_379 
     )
 
 set(DEFAULT_TOL 1e-11)
+set(DEFAULT_TOL_BASELINE 1e-13)
 
 set(ERROR_THRESHOLDS  
    5e-8
@@ -43,6 +45,7 @@ set(ERROR_THRESHOLDS
    2e-4
    2e-5
    2e-5
+   ${DEFAULT_TOL_BASELINE}
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
