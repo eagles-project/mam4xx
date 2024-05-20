@@ -1377,8 +1377,8 @@ void compute_q_tendencies(
     const View1D & bcscavt, const View1D & rcscavt,
     const View2D &rtscavt_sv, Diagnostics::ColumnTracerView state_q,
     Kokkos::View<Real **> qqcw, Diagnostics::ColumnTracerView ptend_q,
-    Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
-        qqcw_sav,
+    // Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
+    //     qqcw_sav,
     haero::ConstColumnView pdel, const Real dt, const int jnummaswtr,
     const int jnv, const int mm, const int lphase, const int imode,
     const int lspec) {
@@ -1509,9 +1509,8 @@ int get_aero_model_wetdep_work_len() {
       // sol_facti, sol_factic, sol_factb, f_act_conv, scavt, rcscavt, bcscavt
       3 * pcnst + //  qsrflx_mzaer2cnvpr, rtscavt_sv
       2 * mam4::nlev *
-          pcnst + // ptend_q, rtscavt_sv
+          pcnst; // ptend_q, rtscavt_sv
                   // dry_geometric_mean_diameter_i, qaerwat, wetdens
-      mam4::nlev * (aero_model::maxd_aspectype + 2) * aero_model::pcnst;
   return work_len;
 }
 // =============================================================================
@@ -1667,20 +1666,13 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
   View1D bcscavt(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
 
-  // View3D qqcw_sav(work_ptr, mam4::nlev, aero_model::maxd_aspectype +
-  // 2,aero_model::pcnst); work_ptr +=
-  // mam4::nlev*aero_model::maxd_aspectype*2*aero_model::pcnst;
-
   wetdep::zero_values(team, aerdepwetis, pcnst);
   wetdep::zero_values(team, aerdepwetcw, pcnst);
 
   View2D qsrflx_mzaer2cnvpr(work_ptr, aero_model::pcnst, 2);
   work_ptr += aero_model::pcnst * 2;
 
-  Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
-      qqcw_sav(work_ptr, mam4::nlev);
-  work_ptr += mam4::nlev * (aero_model::maxd_aspectype + 2) * aero_model::pcnst;
-
+ 
   /// error check
   const int workspace_used(work_ptr - work.data()),
       workspace_extent(work.extent(0));
@@ -1980,7 +1972,7 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
                 f_act_conv_coarse_nacl, scavcoefnum, scavcoefvol, totcond,
                 cmfdqr, conicw, evapc, evapr, prain, dlf, cldt, cldcu, cldst,
                 cldvst, cldvcu, sol_facti, sol_factic, sol_factb, scavt,
-                bcscavt, rcscavt, rtscavt_sv, state_q, qqcw, ptend_q, qqcw_sav,
+                bcscavt, rcscavt, rtscavt_sv, state_q, qqcw, ptend_q, 
                 pdel, dt, jnummaswtr, jnv, mm, lphase, imode, lspec);
             team.team_barrier();
 
