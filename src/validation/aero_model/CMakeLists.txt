@@ -41,7 +41,7 @@ set(ERROR_THRESHOLDS
    5e-8
    ${DEFAULT_TOL}
    2e-4
-   1## FIXME
+   2e-5
    2e-5
    )
 
