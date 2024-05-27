@@ -1393,6 +1393,8 @@ void compute_q_tendencies(
   Real precnumc_base = 0;
   // NOTE: The following k loop cannot be converted to parallel_for
   // because precabs requires values from the previous elevation (k-1).
+  Kokkos::parallel_for(
+              Kokkos::TeamThreadRange(team, 1), [&](int idummy) {
   for (int k = 0; k < nlev; ++k) {
     const auto rtscavt_sv_k = ekat::subview(rtscavt_sv, k);
     // mam_prevap_resusp_optcc values control the prevap_resusp
@@ -1473,6 +1475,7 @@ void compute_q_tendencies(
           precabc_base, precnums_base, precnumc_base);
     }
   }
+  });
 }
 
 KOKKOS_INLINE_FUNCTION
