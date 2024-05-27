@@ -121,50 +121,57 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
           // FIXME: top_lev is set to 1 in calcsize ?
           const int top_lev = 0; // 1( in fortran )
 
-          for (int kk = top_lev; kk < pver; ++kk) {
-            const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
-            const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
-            const auto dgncur_i =
-                Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
-            Real dgncur_c[ntot_amode] = {};
-            const auto ptend_q_k = Kokkos::subview(ptend_q, kk, Kokkos::ALL());
-            const auto dqqcwdt_k = Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
-            modal_aero_calcsize::modal_aero_calcsize_sub(
-                state_q_k.data(), // in
-                qqcw_k.data(),    // in/out
-                dt, do_adjust, do_aitacc_transfer, update_mmr, lmassptr_amode,
-                numptr_amode,
-                inv_density, // in
-                num2vol_ratio_min, num2vol_ratio_max, num2vol_ratio_max_nmodes,
-                num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes,
-                dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
-                mean_std_dev_nmodes, noxf_acc2ait, n_common_species_ait_accum,
-                ait_spec_in_acc, acc_spec_in_ait,
-                // outputs
-                dgncur_i.data(), dgncur_c, ptend_q_k.data(), dqqcwdt_k.data());
+          Kokkos::parallel_for(
+              Kokkos::TeamThreadRange(team, top_lev, pver), [&](int kk) {
+                const auto state_q_k =
+                    Kokkos::subview(state_q, kk, Kokkos::ALL());
+                const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
+                const auto dgncur_i =
+                    Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
+                Real dgncur_c[ntot_amode] = {};
+                const auto ptend_q_k =
+                    Kokkos::subview(ptend_q, kk, Kokkos::ALL());
+                const auto dqqcwdt_k =
+                    Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
+                modal_aero_calcsize::modal_aero_calcsize_sub(
+                    state_q_k.data(), // in
+                    qqcw_k.data(),    // in/out
+                    dt, do_adjust, do_aitacc_transfer, update_mmr,
+                    lmassptr_amode, numptr_amode,
+                    inv_density, // in
+                    num2vol_ratio_min, num2vol_ratio_max,
+                    num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
+                    num2vol_ratio_nom_nmodes, dgnmin_nmodes, dgnmax_nmodes,
+                    dgnnom_nmodes, mean_std_dev_nmodes, noxf_acc2ait,
+                    n_common_species_ait_accum, ait_spec_in_acc,
+                    acc_spec_in_ait,
+                    // outputs
+                    dgncur_i.data(), dgncur_c, ptend_q_k.data(),
+                    dqqcwdt_k.data());
 
-            const auto dgnumwet_kk =
-                Kokkos::subview(dgnumwet, kk, Kokkos::ALL());
+                const auto dgnumwet_kk =
+                    Kokkos::subview(dgnumwet, kk, Kokkos::ALL());
 
-            const auto qaerwat_kk = Kokkos::subview(qaerwat, kk, Kokkos::ALL());
+                const auto qaerwat_kk =
+                    Kokkos::subview(qaerwat, kk, Kokkos::ALL());
 
-            const auto wetdens_kk = Kokkos::subview(wetdens, kk, Kokkos::ALL());
+                const auto wetdens_kk =
+                    Kokkos::subview(wetdens, kk, Kokkos::ALL());
 
-            mam4::water_uptake::modal_aero_water_uptake_dr(
-                nspec_amode, specdens_amode, spechygro, lspectype_amode,
-                state_q_k.data(), temperature(kk), pmid(kk), cldn(kk),
-                dgncur_i.data(), dgnumwet_kk.data(), qaerwat_kk.data(),
-                wetdens_kk.data());
+                mam4::water_uptake::modal_aero_water_uptake_dr(
+                    nspec_amode, specdens_amode, spechygro, lspectype_amode,
+                    state_q_k.data(), temperature(kk), pmid(kk), cldn(kk),
+                    dgncur_i.data(), dgnumwet_kk.data(), qaerwat_kk.data(),
+                    wetdens_kk.data());
 
-            if (update_mmr) {
-              // Note: it only needs to update aerosol variables.
-              for (int i = utils::aero_start_ind(); i < pcnst; ++i) {
-                qqcw(kk, i) =
-                    haero::max(zero, qqcw(kk, i) + dqqcwdt(kk, i) * dt);
-              }
-            }
-
-          } // k
+                if (update_mmr) {
+                  // Note: it only needs to update aerosol variables.
+                  for (int i = utils::aero_start_ind(); i < pcnst; ++i) {
+                    qqcw(kk, i) =
+                        haero::max(zero, qqcw(kk, i) + dqqcwdt(kk, i) * dt);
+                  }
+                }
+              }); // k
         });
 
     std::vector<Real> dgnumdry_m_out(pver * ntot_amode, zero);
@@ -188,18 +195,9 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
     std::vector<Real> ptend_q_out(pver * pcnst, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(ptend_q, ptend_q_out);
 
-    // Kokkos::deep_copy(qqcw_host, qqcw);
-    // count = 0;
-    // for (int kk = 0; kk < pver; ++kk) {
-    //   for (int i = 0; i < pcnst; ++i) {
-    //     qqcw_db[count] = qqcw_host(kk, i);
-    //     count++;
-    //   }
-    // }
     std::vector<Real> qqcw_out(pver * pcnst, zero);
     mam4::validation::convert_transpose_2d_view_device_to_1d_vector(qqcw,
                                                                     qqcw_out);
-
     output.set("qqcw", qqcw_out);
     output.set("ptend_q", ptend_q_out);
 
