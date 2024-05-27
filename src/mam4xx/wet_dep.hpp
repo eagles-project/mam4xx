@@ -1393,88 +1393,87 @@ void compute_q_tendencies(
   Real precnumc_base = 0;
   // NOTE: The following k loop cannot be converted to parallel_for
   // because precabs requires values from the previous elevation (k-1).
-  Kokkos::parallel_for(
-              Kokkos::TeamThreadRange(team, 1), [&](int idummy) {
-  for (int k = 0; k < nlev; ++k) {
-    const auto rtscavt_sv_k = ekat::subview(rtscavt_sv, k);
-    // mam_prevap_resusp_optcc values control the prevap_resusp
-    // calculations in wetdepa_v2:
-    //     0 = no resuspension
-    //   130 = non-linear resuspension of aerosol mass   based on
-    //   scavenged aerosol mass 230 = non-linear resuspension of
-    //   aerosol number based on raindrop number the 130 thru 230
-    //   all use the new prevap_resusp code block in subr wetdepa_v2
-    int mam_prevap_resusp_optcc = mam_prevap_resusp_no;
-    const int modeptr_coarse = static_cast<int>(ModeIndex::Coarse);
-    if (jnummaswtr == jaeromass) // dry mass
-      mam_prevap_resusp_optcc = mam_prevap_resusp_mass;
-    else if (jnummaswtr == jaeronumb && lphase == 1 &&
-             imode == modeptr_coarse) // number
-      mam_prevap_resusp_optcc = mam_prevap_resusp_num;
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 1), [&](int idummy) {
+    for (int k = 0; k < nlev; ++k) {
+      const auto rtscavt_sv_k = ekat::subview(rtscavt_sv, k);
+      // mam_prevap_resusp_optcc values control the prevap_resusp
+      // calculations in wetdepa_v2:
+      //     0 = no resuspension
+      //   130 = non-linear resuspension of aerosol mass   based on
+      //   scavenged aerosol mass 230 = non-linear resuspension of
+      //   aerosol number based on raindrop number the 130 thru 230
+      //   all use the new prevap_resusp code block in subr wetdepa_v2
+      int mam_prevap_resusp_optcc = mam_prevap_resusp_no;
+      const int modeptr_coarse = static_cast<int>(ModeIndex::Coarse);
+      if (jnummaswtr == jaeromass) // dry mass
+        mam_prevap_resusp_optcc = mam_prevap_resusp_mass;
+      else if (jnummaswtr == jaeronumb && lphase == 1 &&
+               imode == modeptr_coarse) // number
+        mam_prevap_resusp_optcc = mam_prevap_resusp_num;
 
-    // set f_act_conv for interstitial (lphase=1) coarse mode
-    // species for the convective in-cloud, we conceptually treat
-    // the coarse dust and seasalt as being externally mixed, and
-    // apply f_act_conv = f_act_conv_coarse_dust/nacl to
-    // dust/seasalt number and sulfate are conceptually partitioned
-    // to the dust and seasalt on a mass basis, so the f_act_conv
-    // for number and sulfate are mass-weighted averages of the
-    // values used for dust/seasalt
-    if (lphase == 1 && imode == modeptr_coarse) {
-      f_act_conv[k] = f_act_conv_coarse[k];
-      if (jnummaswtr == jaeromass) {
-        if (aero_model::lmassptr_amode(lspec, imode) ==
-            aero_model::lptr_dust_a_amode(imode))
-          f_act_conv[k] = f_act_conv_coarse_dust[k];
-        else if (aero_model::lmassptr_amode(lspec, imode) ==
-                 aero_model::lptr_nacl_a_amode(imode))
-          f_act_conv[k] = f_act_conv_coarse_nacl[k];
+      // set f_act_conv for interstitial (lphase=1) coarse mode
+      // species for the convective in-cloud, we conceptually treat
+      // the coarse dust and seasalt as being externally mixed, and
+      // apply f_act_conv = f_act_conv_coarse_dust/nacl to
+      // dust/seasalt number and sulfate are conceptually partitioned
+      // to the dust and seasalt on a mass basis, so the f_act_conv
+      // for number and sulfate are mass-weighted averages of the
+      // values used for dust/seasalt
+      if (lphase == 1 && imode == modeptr_coarse) {
+        f_act_conv[k] = f_act_conv_coarse[k];
+        if (jnummaswtr == jaeromass) {
+          if (aero_model::lmassptr_amode(lspec, imode) ==
+              aero_model::lptr_dust_a_amode(imode))
+            f_act_conv[k] = f_act_conv_coarse_dust[k];
+          else if (aero_model::lmassptr_amode(lspec, imode) ==
+                   aero_model::lptr_nacl_a_amode(imode))
+            f_act_conv[k] = f_act_conv_coarse_nacl[k];
+        }
+      }
+      const int k_p1 = static_cast<int>(haero::min(k + 1, nlev - 1));
+      // OK, this is from the old mam4: Phase 2 is before Phase 1.
+      // Note that the phase loops goes from 2 to 1 in reverse order
+      // and the qqcw_sav is set first in phase 2 the used in phase 1.
+      if (lphase == 1) {
+        // traces reflects changes from modal_aero_calcsize and is the
+        // "most current" q
+        compute_q_tendencies_phase_1(
+            // These are the output values
+            scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv_k.data(),
+            // The rest of the values are input only.
+            f_act_conv[k], scavcoefnum[k], scavcoefvol[k], totcond[k],
+            cmfdqr[k], conicw[k], evapc[k], evapr[k], prain[k], dlf[k], cldt[k],
+            cldcu[k], cldvst[k], cldvst[k_p1], cldvcu[k], cldvcu[k_p1],
+            sol_facti[k], sol_factic[k], sol_factb[k], state_q(k, mm),
+            ptend_q(k, mm), qqcw(k, mm), pdel[k], dt, mam_prevap_resusp_optcc,
+            jnv, mm, precabs, precabc, scavabs, scavabc, precabs_base,
+            precabc_base, precnums_base, precnumc_base);
+
+      } else { // if (lphase == 2)
+        // There is no cloud-borne aerosol water in the model, so this
+        // code block should NEVER execute for lspec =
+        // nspec_amode(m)+1 (i.e., jnummaswtr = 2). The code only
+        // worked because the "do lspec" loop cycles when lspec =
+        // nspec_amode(m)+1, but that does not make the code correct.
+        // FIXME: Not sure if this is a bug or not as qqcw_tmp seem
+        // different from the previous call and qqcw_tmp is always
+        // zero. May need further check.  - Shuaiqi Tang in
+        // refactoring for MAM4xx
+        const Real qqcw_tmp = 0.0;
+        compute_q_tendencies_phase_2(
+            // These are the output values
+            scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv_k.data(), qqcw_tmp,
+            qqcw(k, mm),
+            // The rest of the values are input only.
+            // progs,
+            f_act_conv[k], scavcoefnum[k], scavcoefvol[k], totcond[k],
+            cmfdqr[k], conicw[k], evapc[k], evapr[k], prain[k], dlf[k], cldt[k],
+            cldcu[k], cldvst[k], cldvst[k_p1], cldvcu[k], cldvcu[k_p1],
+            sol_facti[k], sol_factic[k], sol_factb[k], pdel[k], dt,
+            mam_prevap_resusp_optcc, jnv, mm, k, precabs, precabc, scavabs,
+            scavabc, precabs_base, precabc_base, precnums_base, precnumc_base);
       }
     }
-    const int k_p1 = static_cast<int>(haero::min(k + 1, nlev - 1));
-    // OK, this is from the old mam4: Phase 2 is before Phase 1.
-    // Note that the phase loops goes from 2 to 1 in reverse order
-    // and the qqcw_sav is set first in phase 2 the used in phase 1.
-    if (lphase == 1) {
-      // traces reflects changes from modal_aero_calcsize and is the
-      // "most current" q
-      compute_q_tendencies_phase_1(
-          // These are the output values
-          scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv_k.data(),
-          // The rest of the values are input only.
-          f_act_conv[k], scavcoefnum[k], scavcoefvol[k], totcond[k], cmfdqr[k],
-          conicw[k], evapc[k], evapr[k], prain[k], dlf[k], cldt[k], cldcu[k],
-          cldvst[k], cldvst[k_p1], cldvcu[k], cldvcu[k_p1], sol_facti[k],
-          sol_factic[k], sol_factb[k], state_q(k, mm), ptend_q(k, mm),
-          qqcw(k, mm), pdel[k], dt, mam_prevap_resusp_optcc, jnv, mm, precabs,
-          precabc, scavabs, scavabc, precabs_base, precabc_base, precnums_base,
-          precnumc_base);
-
-    } else { // if (lphase == 2)
-      // There is no cloud-borne aerosol water in the model, so this
-      // code block should NEVER execute for lspec =
-      // nspec_amode(m)+1 (i.e., jnummaswtr = 2). The code only
-      // worked because the "do lspec" loop cycles when lspec =
-      // nspec_amode(m)+1, but that does not make the code correct.
-      // FIXME: Not sure if this is a bug or not as qqcw_tmp seem
-      // different from the previous call and qqcw_tmp is always
-      // zero. May need further check.  - Shuaiqi Tang in
-      // refactoring for MAM4xx
-      const Real qqcw_tmp = 0.0;
-      compute_q_tendencies_phase_2(
-          // These are the output values
-          scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv_k.data(), qqcw_tmp,
-          qqcw(k, mm),
-          // The rest of the values are input only.
-          // progs,
-          f_act_conv[k], scavcoefnum[k], scavcoefvol[k], totcond[k], cmfdqr[k],
-          conicw[k], evapc[k], evapr[k], prain[k], dlf[k], cldt[k], cldcu[k],
-          cldvst[k], cldvst[k_p1], cldvcu[k], cldvcu[k_p1], sol_facti[k],
-          sol_factic[k], sol_factb[k], pdel[k], dt, mam_prevap_resusp_optcc,
-          jnv, mm, k, precabs, precabc, scavabs, scavabc, precabs_base,
-          precabc_base, precnums_base, precnumc_base);
-    }
-  }
   });
 }
 
