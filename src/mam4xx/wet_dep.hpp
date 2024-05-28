@@ -1832,7 +1832,7 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
       wetdens(imode, kk) = wetdens_kk[imode];
     }
   }); // klev parallel_for loop
-#if 1
+
   team.team_barrier();
 
   // skip wet deposition if nwetdep is non-positive
@@ -1844,11 +1844,6 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
     const int mode_order_change[4] = {0, 1, 3, 2};
 
     const int jaerowater = 2;
-
-    Real rprdshsum = aero_model::calc_sfc_flux(team, rprdsh, pdel, nlev);
-    Real rprddpsum = aero_model::calc_sfc_flux(team, rprddp, pdel, nlev);
-    Real evapcdpsum = aero_model::calc_sfc_flux(team, evapcdp, pdel, nlev);
-    Real evapcshsum = aero_model::calc_sfc_flux(team, evapcsh, pdel, nlev);
 
     // cumulus cloud fraction =  dp_frac + sh_frac
     wetdep::sum_values(team, cldcu, dp_frac, sh_frac, nlev);
@@ -1977,6 +1972,15 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
               aerdepwetcw[mm] =
                   aero_model::calc_sfc_flux(team, scavt, pdel, nlev);
             }
+#if 0
+            // Note: Commenting it out because it produces unused variable warnings.
+            Real rprdshsum = aero_model::calc_sfc_flux(team, rprdsh, pdel, nlev);
+            Real rprddpsum = aero_model::calc_sfc_flux(team, rprddp, pdel, nlev);
+            Real evapcdpsum = aero_model::calc_sfc_flux(team, evapcdp, pdel, nlev);
+            Real evapcshsum = aero_model::calc_sfc_flux(team, evapcsh, pdel, nlev);
+
+            // NOTE. Adding this team_barrier fixed one race condition.
+            team.team_barrier();
             const Real sflxbc =
                 aero_model::calc_sfc_flux(team, bcscavt, pdel, nlev);
             const Real sflxec =
@@ -1989,23 +1993,32 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
             // is adequate only do this for interstitial aerosol, because
             // conv clouds to not affect the stratiform-cloudborne
             // aerosol.
-            Real sflxbcdp, sflxecdp;
-            aero_model::apportion_sfc_flux_deep(rprddpsum, rprdshsum,
+            // NOTE. Adding this team_barrier fixed one race condition.
+            team.team_barrier();
+
+            // FIXME: The following code is causing race condition errors in the
+            // computer-sanitizer.
+            //  I commented it out because we do not need it in the emaxx-mam4xx
+            //  interface.
+            {
+              Real sflxbcdp, sflxecdp;
+              aero_model::apportion_sfc_flux_deep(rprddpsum, rprdshsum,
                                                 evapcdpsum, evapcshsum, sflxbc,
                                                 sflxec, sflxbcdp, sflxecdp);
 
-            // when ma_convproc_intr is used, convective in-cloud wet
-            // removal is done there the convective (total and deep)
-            // precip-evap-resuspension includes in- and below-cloud
-            // contributions, so pass the below-cloud contribution to
-            // ma_convproc_intr
-            //
-            // NOTE: ma_convproc_intr no longer uses these
-            qsrflx_mzaer2cnvpr(mm, 0) = sflxec;
-            qsrflx_mzaer2cnvpr(mm, 1) = sflxecdp;
+              // when ma_convproc_intr is used, convective in-cloud wet
+              // removal is done there the convective (total and deep)
+              // precip-evap-resuspension includes in- and below-cloud
+              // contributions, so pass the below-cloud contribution to
+              // ma_convproc_intr
+              //
+              // NOTE: ma_convproc_intr no longer uses these
+              qsrflx_mzaer2cnvpr(mm, 0) = sflxec;
+              qsrflx_mzaer2cnvpr(mm, 1) = sflxecdp;
+            }
+#endif
           }
         }
-        team.team_barrier();
       }
     }
   }
@@ -2020,7 +2033,7 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
     utils::inject_ptend_to_tendencies(ptend_q_kk.data(), tends, kk);
   });
   team.team_barrier();
-#endif
+
 } // aero_model_wetdep
 
 } // namespace wetdep
