@@ -26,7 +26,6 @@ constexpr int ntot_amode = mam4::AeroConfig::num_modes();
 // FIXME:  is top_lev equal to 1 in aerosol optics ?
 constexpr int top_lev = 0;
 //
-// constexpr int pcnst = mam4::pcnst;
 //  min, max aerosol surface mode radius treated [m]
 constexpr Real rmmin = 0.01e-6; // BAD CONSTANT
 constexpr Real rmmax = 25.e-6;  // BAD CONSTANT
