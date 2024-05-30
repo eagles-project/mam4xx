@@ -581,8 +581,8 @@ void modal_aero_bcscavcoef_init(
     const Real sigmag = sigmag_amode[imode];
     // clang-format off
     // Note: we replaced lspectype_amode and lspectype_amode for
-    // dry_aero_density 
-    // const int ll = lspectype_amode[0][imode]; 
+    // dry_aero_density
+    // const int ll = lspectype_amode[0][imode];
     // const Real rhodryaero = specdens_amode[ll];
     // clang-format on
     const Real rhodryaero = aerosol_dry_density[imode];
@@ -868,7 +868,7 @@ void set_f_act_coarse(const int kk,
   f_act_conv_coarse_nacl = 0.80;
 
   // dust and seasalt mass concentration [kg/kg]
-  const int idx_coarse = int(ModeIndex::Coarse);
+  const int idx_coarse = static_cast<int>(ModeIndex::Coarse);
   const int lcoardust = aero_model::lptr_dust_a_amode(idx_coarse);
   const int lcoarnacl = aero_model::lptr_nacl_a_amode(idx_coarse);
   const Real tmpdust =
