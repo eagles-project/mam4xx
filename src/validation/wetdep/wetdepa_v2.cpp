@@ -132,8 +132,6 @@ void test_wetdepa_v2_process(const Input &input, Output &output) {
   ColumnView rcscavt_dev = mam4::validation::create_column_view(nlev);
   ColumnView rsscavt_dev = mam4::validation::create_column_view(nlev);
 
-  // Kokkos::parallel_for(
-  //     "wetdep::wetdepa_v2", nlev, KOKKOS_LAMBDA(const int kk) {
   Kokkos::parallel_for(
       "wetdep::wetdepa_v2", 1, KOKKOS_LAMBDA(const int i) {
         Real precabs = 0;
