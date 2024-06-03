@@ -66,9 +66,6 @@ message(STATUS "Configuring MAM4xx v${MAM4XX_VERSION}")
 # Precision of floating point numbers.
 message(STATUS "Using ${HAERO_PRECISION} precision floating point numbers")
 
-# We build static libraries only.
-set(BUILD_SHARED_LIBS OFF)
-
 # Report the installation prefix.
 message(STATUS "Installation prefix is ${CMAKE_INSTALL_PREFIX}")
 
