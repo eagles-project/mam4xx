@@ -188,5 +188,19 @@ void convert_3d_view_device_to_1d_vector(const View3D &var_device,
   }
 }
 
+// given input from skywalker, return a ColumnView with data from yaml file.
+ColumnView get_input_in_columnview(const skywalker::Input &input,
+                                   const std::string &name) {
+  using View1DHost = typename haero::HostType::view_1d<Real>;
+  int nlev = mam4::nlev;
+  const auto host_vector = input.get_array(name);
+  // inputs needs to be nlev.
+  EKAT_ASSERT(host_vector.size() == nlev);
+  ColumnView dev = haero::testing::create_column_view(nlev);
+  auto host = View1DHost((Real *)host_vector.data(), nlev);
+  Kokkos::deep_copy(dev, host);
+  return dev;
+}
+
 } // namespace validation
 } // namespace mam4

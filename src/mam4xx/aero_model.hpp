@@ -6,8 +6,8 @@
 #ifndef MAM4XX_AERO_MODEL_HPP
 #define MAM4XX_AERO_MODEL_HPP
 
+#include <ekat/kokkos/ekat_subview_utils.hpp>
 #include <ekat/util/ekat_math_utils.hpp>
-
 #include <haero/atmosphere.hpp>
 #include <haero/math.hpp>
 
@@ -26,6 +26,8 @@ constexpr int nimptblgrow_total = -nimptblgrow_mind + nimptblgrow_maxd + 1;
 const int nrainsvmax = 50; // maximum bin number for rain
 const int naerosvmax = 51; //  maximum bin number for aerosol
 const int maxd_aspectype = 14;
+
+constexpr int pcnst = mam4::pcnst;
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(
@@ -579,8 +581,8 @@ void modal_aero_bcscavcoef_init(
     const Real sigmag = sigmag_amode[imode];
     // clang-format off
     // Note: we replaced lspectype_amode and lspectype_amode for
-    // dry_aero_density 
-    // const int ll = lspectype_amode[0][imode]; 
+    // dry_aero_density
+    // const int ll = lspectype_amode[0][imode];
     // const Real rhodryaero = specdens_amode[ll];
     // clang-format on
     const Real rhodryaero = aerosol_dry_density[imode];
@@ -716,7 +718,6 @@ int lptr_nacl_a_amode(const int imode) {
   return lptr_nacl_a_amode[imode];
 }
 
-static constexpr int pcnst = 40;
 KOKKOS_INLINE_FUNCTION
 int mmtoo_prevap_resusp(const int i) {
   const int mmtoo_prevap_resusp[pcnst] = {
@@ -867,8 +868,9 @@ void set_f_act_coarse(const int kk,
   f_act_conv_coarse_nacl = 0.80;
 
   // dust and seasalt mass concentration [kg/kg]
-  const int lcoardust = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::DST);
-  const int lcoarnacl = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::NaCl);
+  const int idx_coarse = static_cast<int>(ModeIndex::Coarse);
+  const int lcoardust = aero_model::lptr_dust_a_amode(idx_coarse);
+  const int lcoarnacl = aero_model::lptr_nacl_a_amode(idx_coarse);
   const Real tmpdust =
       haero::max(0.0, state_q(kk, lcoardust) + ptend_q(kk, lcoardust) * dt);
   const Real tmpnacl =
