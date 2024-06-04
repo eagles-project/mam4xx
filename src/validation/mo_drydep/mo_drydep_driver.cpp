@@ -43,7 +43,6 @@ mam4::seq_drydep::Data create_drydep_data() {
   using View1D = typename DeviceType::view_1d<Real>;
   using View2D = typename DeviceType::view_2d<Real>;
   using View1DHost = typename HostType::view_1d<Real>;
-  using View2DHost = typename HostType::view_2d<Real>;
 
   using ViewBool1D = typename DeviceType::view_1d<bool>;
   using ViewInt1D = typename DeviceType::view_1d<int>;
@@ -125,6 +124,7 @@ mam4::seq_drydep::Data create_drydep_data() {
 
   Real rgso_a[] = { 300.0,  300.0,  300.0,  600.0,  300.0,
                     150.0,  150.0,  150.0, 3500.0,  150.0,
+                    200.0,  200.0,  200.0, 3500.0,  200.0,
                     200.0,  200.0,  200.0, 3500.0,  200.0,
                     200.0,  200.0,  200.0, 3500.0,  200.0,
                     300.0,  300.0,  300.0, 3500.0,  300.0,

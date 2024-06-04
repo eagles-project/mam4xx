@@ -54,8 +54,8 @@ void calculate_resistance_rgsx_and_rsmx(const seq_drydep::Data &data,
     auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          Real rgsx[gas_pcnst][n_land_type] = {0.0};
-          Real rsmx[gas_pcnst][n_land_type] = {0.0};
+          Real rgsx[gas_pcnst][n_land_type] = {};
+          Real rsmx[gas_pcnst][n_land_type] = {};
           calculate_resistance_rgsx_and_rsmx(
               data, beglt, endlt, index_season_d.data(), fr_lnduse_d.data(),
               has_rain, has_dew, tc, heff_d.data(), crs, cts_d(0), rgsx, rsmx);
