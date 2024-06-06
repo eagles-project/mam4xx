@@ -101,7 +101,8 @@ void compute_tendencies(Ensemble *ensemble) {
     auto coarse_soa = state_q[int(lptr_soa_a_amode[modeptr_coarse]) - 1];
 
     const int dst_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::DST);
-    const int nacl_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::NaCl);
+    const int nacl_idx =
+        aerosol_index_for_mode(ModeIndex::Coarse, AeroId::NaCl);
     const int so4_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::SO4);
     const int mom_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::MOM);
     const int bc_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::BC);

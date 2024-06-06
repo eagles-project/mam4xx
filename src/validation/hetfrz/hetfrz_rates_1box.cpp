@@ -392,26 +392,37 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
     const int crs = static_cast<int>(ModeIndex::Coarse);
     const int pc = static_cast<int>(ModeIndex::PrimaryCarbon);
 
-    const int acc_so4 = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::SO4);
-    const int acc_pom = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::POM);
-    const int acc_soa = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::SOA);
-    const int acc_bc = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::BC);
-    const int acc_dst = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::DST);
-    const int acc_nacl = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::NaCl);
-    const int acc_mom = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::MOM);
+    const int acc_so4 =
+        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::SO4);
+    const int acc_pom =
+        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::POM);
+    const int acc_soa =
+        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::SOA);
+    const int acc_bc =
+        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::BC);
+    const int acc_dst =
+        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::DST);
+    const int acc_nacl =
+        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::NaCl);
+    const int acc_mom =
+        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::MOM);
 
     const int crs_dst = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::DST);
-    const int crs_nacl = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::NaCl);
+    const int crs_nacl =
+        aerosol_index_for_mode(ModeIndex::Coarse, AeroId::NaCl);
     const int crs_so4 = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::SO4);
     const int crs_bc = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::BC);
     const int crs_pom = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::POM);
     const int crs_mom = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::MOM);
 
-    const int pc_pom = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::POM);
-    const int pc_bc = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::BC);
-    const int pc_mom = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::MOM);
+    const int pc_pom =
+        aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::POM);
+    const int pc_bc =
+        aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::BC);
+    const int pc_mom =
+        aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::MOM);
 
-    auto host_column = Kokkos::create_mirror_view( progs.n_mode_i[acc]);
+    auto host_column = Kokkos::create_mirror_view(progs.n_mode_i[acc]);
 
     // Copy data from input arrays to Kokkos views for aerosol number
     for (int k = 0; k < nlev; ++k) {
@@ -427,39 +438,38 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_num_pcarbon[k];
     }
-    Kokkos::deep_copy(progs.n_mode_i[pc],
-                      host_column);
+    Kokkos::deep_copy(progs.n_mode_i[pc], host_column);
 
     // Copy data from input arrays to Kokkos views for aerosol mass
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_bc_accum[k];
     }
-    Kokkos::deep_copy( progs.q_aero_i[acc][acc_bc], host_column);
+    Kokkos::deep_copy(progs.q_aero_i[acc][acc_bc], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_pom_accum[k];
     }
-    Kokkos::deep_copy( progs.q_aero_i[acc][acc_pom], host_column);
+    Kokkos::deep_copy(progs.q_aero_i[acc][acc_pom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_soa_accum[k];
     }
-    Kokkos::deep_copy( progs.q_aero_i[acc][acc_soa], host_column);
+    Kokkos::deep_copy(progs.q_aero_i[acc][acc_soa], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_dust_accum[k];
     }
-    Kokkos::deep_copy( progs.q_aero_i[acc][acc_dst], host_column);
+    Kokkos::deep_copy(progs.q_aero_i[acc][acc_dst], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_nacl_accum[k];
     }
-    Kokkos::deep_copy( progs.q_aero_i[acc][acc_nacl], host_column);
+    Kokkos::deep_copy(progs.q_aero_i[acc][acc_nacl], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_mom_accum[k];
     }
-    Kokkos::deep_copy( progs.q_aero_i[acc][acc_mom], host_column);
+    Kokkos::deep_copy(progs.q_aero_i[acc][acc_mom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_bc_coarse[k];
@@ -494,17 +504,17 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_bc_pcarbon[k];
     }
-    Kokkos::deep_copy( progs.q_aero_i[pc][pc_bc], host_column);
+    Kokkos::deep_copy(progs.q_aero_i[pc][pc_bc], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_pom_pcarbon[k];
     }
-    Kokkos::deep_copy( progs.q_aero_i[pc][pc_pom], host_column);
+    Kokkos::deep_copy(progs.q_aero_i[pc][pc_pom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_mom_pcarbon[k];
     }
-    Kokkos::deep_copy( progs.q_aero_i[pc][pc_mom], host_column);
+    Kokkos::deep_copy(progs.q_aero_i[pc][pc_mom], host_column);
 
     // Copy cloudborne aerosol numbers into host_column and copy to Kokkos view
     for (int k = 0; k < nlev; ++k) {
@@ -520,39 +530,38 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_num_pcarbon[k];
     }
-    Kokkos::deep_copy(progs.n_mode_c[pc],
-                      host_column);
+    Kokkos::deep_copy(progs.n_mode_c[pc], host_column);
 
     // Copy cloudborne aerosol mass into host_column and copy to Kokkos view
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_so4_accum[k];
     }
-    Kokkos::deep_copy( progs.q_aero_c[acc][acc_so4], host_column);
+    Kokkos::deep_copy(progs.q_aero_c[acc][acc_so4], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_dst_accum[k];
     }
-    Kokkos::deep_copy( progs.q_aero_c[acc][acc_dst], host_column);
+    Kokkos::deep_copy(progs.q_aero_c[acc][acc_dst], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_ncl_accum[k];
     }
-    Kokkos::deep_copy( progs.q_aero_c[acc][acc_nacl], host_column);
+    Kokkos::deep_copy(progs.q_aero_c[acc][acc_nacl], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_bc_accum[k];
     }
-    Kokkos::deep_copy( progs.q_aero_c[acc][acc_bc], host_column);
+    Kokkos::deep_copy(progs.q_aero_c[acc][acc_bc], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_pom_accum[k];
     }
-    Kokkos::deep_copy( progs.q_aero_c[acc][acc_pom], host_column);
+    Kokkos::deep_copy(progs.q_aero_c[acc][acc_pom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_mom_accum[k];
     }
-    Kokkos::deep_copy( progs.q_aero_c[acc][acc_mom], host_column);
+    Kokkos::deep_copy(progs.q_aero_c[acc][acc_mom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_so4_coarse[k];
@@ -587,17 +596,17 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_bc_pcarbon[k];
     }
-    Kokkos::deep_copy( progs.q_aero_c[pc][pc_bc], host_column);
+    Kokkos::deep_copy(progs.q_aero_c[pc][pc_bc], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_pom_pcarbon[k];
     }
-    Kokkos::deep_copy( progs.q_aero_c[pc][pc_pom], host_column);
+    Kokkos::deep_copy(progs.q_aero_c[pc][pc_pom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_mom_pcarbon[k];
     }
-    Kokkos::deep_copy( progs.q_aero_c[pc][pc_mom], host_column);
+    Kokkos::deep_copy(progs.q_aero_c[pc][pc_mom], host_column);
 
     // Copy data from input arrays to Kokkos views for temperature, pressure,
     // mixing-ratios
