@@ -151,7 +151,7 @@ void dropmixnuc(Ensemble *ensemble) {
       ptend_q[i] = haero::testing::create_column_view(pver);
     }
 
-    View2D factnum("factnum", pver, ntot_amode);
+    View2D factnum("factnum", ntot_amode, pver);
 
     ColumnView coltend[ncnst_tot];
     ColumnView coltend_cw[ncnst_tot];
@@ -287,7 +287,7 @@ void dropmixnuc(Ensemble *ensemble) {
     std::vector<Real> output_factnum;
     for (int i = 0; i < ntot_amode; ++i) {
       for (int kk = 0; kk < pver; ++kk) {
-        output_factnum.push_back(factnum_host(kk, i));
+        output_factnum.push_back(factnum_host(i, kk));
       }
     }
 

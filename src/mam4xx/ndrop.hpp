@@ -1583,7 +1583,10 @@ void dropmixnuc(
         // cloud fraction droplet nucleation/aerosol activation
         nsource(k) = zero;
         const auto state_q_k = Kokkos::subview(state_q, k, Kokkos::ALL());
-        const auto factnum_k = Kokkos::subview(factnum, k, Kokkos::ALL());
+
+        Real factnum_k[ntot_amode];
+        for (int imode = 0; imode < ntot_amode; ++imode)
+          factnum_k[imode] = factnum(imode, k);
 
         // FIXME: It is dangerous to call data() on a view and expect the
         // resulting vector to be continuous in memory. Depending on the
@@ -1596,10 +1599,13 @@ void dropmixnuc(
                            lmassptr_amode, voltonumbhi_amode, voltonumblo_amode,
                            numptr_amode, nspec_amode, exp45logsig, alogsig,
                            aten, mam_idx, qcld(k),
-                           raercol[k][nsav].data(),       // inout
-                           raercol_cw[k][nsav].data(),    // inout
-                           nsource(k), factnum_k.data()); // inout
-      });                                                 // end k
+                           raercol[k][nsav].data(),    // inout
+                           raercol_cw[k][nsav].data(), // inout
+                           nsource(k), factnum_k);     // inout
+
+        for (int imode = 0; imode < ntot_amode; ++imode)
+          factnum(imode, k) = factnum_k[imode];
+      }); // end k
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, 1, pver), KOKKOS_LAMBDA(int k) {
         EKAT_KERNEL_ASSERT_MSG(0 < zm(k - 1) - zm(k),
@@ -1638,7 +1644,9 @@ void dropmixnuc(
         // PART II: changes in aerosol and cloud water from vertical profile of
         // new cloud fraction
         const auto state_q_kp1 = Kokkos::subview(state_q, kp1, Kokkos::ALL());
-        const auto factnum_k = Kokkos::subview(factnum, k, Kokkos::ALL());
+        Real factnum_k[ntot_amode];
+        for (int imode = 0; imode < ntot_amode; ++imode)
+          factnum_k[imode] = factnum(imode, k);
         const auto nact_k = Kokkos::subview(nact, k, Kokkos::ALL());
         const auto mact_k = Kokkos::subview(mact, k, Kokkos::ALL());
 
@@ -1653,9 +1661,11 @@ void dropmixnuc(
             exp45logsig, alogsig, aten, mam_idx, raercol[k][nsav].data(),
             raercol[kp1][nsav].data(), raercol_cw[k][nsav].data(),
             nsource(k), // inout
-            qcld(k), factnum_k.data(),
+            qcld(k), factnum_k,
             eddy_diff(k), // out
             nact_k.data(), mact_k.data());
+        for (int imode = 0; imode < ntot_amode; ++imode)
+          factnum(imode, k) = factnum_k[imode];
       });
 
   team.team_barrier();

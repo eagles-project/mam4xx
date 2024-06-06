@@ -1234,25 +1234,48 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
   const int accum_idx = int(ModeIndex::Accumulation);
   const int pcarbon_idx = int(ModeIndex::PrimaryCarbon);
 
-  auto &accum_bc = progs.q_aero_i[accum_idx][int(AeroId::BC)];
-  auto &accum_dst = progs.q_aero_i[accum_idx][int(AeroId::DST)];
-  auto &accum_soa = progs.q_aero_i[accum_idx][int(AeroId::SOA)];
-  auto &accum_so4 = progs.q_aero_i[accum_idx][int(AeroId::SO4)];
-  auto &accum_pom = progs.q_aero_i[accum_idx][int(AeroId::POM)];
-  auto &accum_mom = progs.q_aero_i[accum_idx][int(AeroId::MOM)];
+  auto &accum_bc = progs.q_aero_i[accum_idx][aerosol_index_for_mode(
+      ModeIndex::Accumulation, AeroId::BC)];
+  auto &accum_dst = progs.q_aero_i[accum_idx][aerosol_index_for_mode(
+      ModeIndex::Accumulation, AeroId::DST)];
+  auto &accum_soa = progs.q_aero_i[accum_idx][aerosol_index_for_mode(
+      ModeIndex::Accumulation, AeroId::SOA)];
+  auto &accum_so4 = progs.q_aero_i[accum_idx][aerosol_index_for_mode(
+      ModeIndex::Accumulation, AeroId::SO4)];
+  auto &accum_pom = progs.q_aero_i[accum_idx][aerosol_index_for_mode(
+      ModeIndex::Accumulation, AeroId::POM)];
+  auto &accum_mom = progs.q_aero_i[accum_idx][aerosol_index_for_mode(
+      ModeIndex::Accumulation, AeroId::MOM)];
   auto &num_accum = progs.n_mode_i[accum_idx];
 
-  auto &pcarbon_bc = progs.q_aero_i[pcarbon_idx][int(AeroId::BC)];
-  auto &pcarbon_pom = progs.q_aero_i[pcarbon_idx][int(AeroId::POM)];
-  auto &pcarbon_mom = progs.q_aero_i[pcarbon_idx][int(AeroId::MOM)];
+  auto &pcarbon_bc = progs.q_aero_i[pcarbon_idx][aerosol_index_for_mode(
+      ModeIndex::PrimaryCarbon, AeroId::BC)];
+  auto &pcarbon_pom = progs.q_aero_i[pcarbon_idx][aerosol_index_for_mode(
+      ModeIndex::PrimaryCarbon, AeroId::POM)];
+  auto &pcarbon_mom = progs.q_aero_i[pcarbon_idx][aerosol_index_for_mode(
+      ModeIndex::PrimaryCarbon, AeroId::MOM)];
 
-  auto &coarse_dust = progs.q_aero_i[coarse_idx][int(AeroId::DST)];
-  auto &coarse_ncl = progs.q_aero_i[coarse_idx][int(AeroId::NaCl)];
-  auto &coarse_mom = progs.q_aero_i[coarse_idx][int(AeroId::MOM)];
-  auto &coarse_bc = progs.q_aero_i[coarse_idx][int(AeroId::BC)];
-  auto &coarse_pom = progs.q_aero_i[coarse_idx][int(AeroId::POM)];
-  auto &coarse_soa = progs.q_aero_i[coarse_idx][int(AeroId::SOA)];
-  auto &coarse_so4 = progs.q_aero_i[coarse_idx][int(AeroId::SO4)];
+  auto &coarse_dust =
+      progs.q_aero_i[coarse_idx]
+                    [aerosol_index_for_mode(ModeIndex::Coarse, AeroId::DST)];
+  auto &coarse_ncl =
+      progs.q_aero_i[coarse_idx]
+                    [aerosol_index_for_mode(ModeIndex::Coarse, AeroId::NaCl)];
+  auto &coarse_mom =
+      progs.q_aero_i[coarse_idx]
+                    [aerosol_index_for_mode(ModeIndex::Coarse, AeroId::MOM)];
+  auto &coarse_bc =
+      progs.q_aero_i[coarse_idx]
+                    [aerosol_index_for_mode(ModeIndex::Coarse, AeroId::BC)];
+  auto &coarse_pom =
+      progs.q_aero_i[coarse_idx]
+                    [aerosol_index_for_mode(ModeIndex::Coarse, AeroId::POM)];
+  auto &coarse_soa =
+      progs.q_aero_i[coarse_idx]
+                    [aerosol_index_for_mode(ModeIndex::Coarse, AeroId::SOA)];
+  auto &coarse_so4 =
+      progs.q_aero_i[coarse_idx]
+                    [aerosol_index_for_mode(ModeIndex::Coarse, AeroId::SO4)];
   auto &num_coarse = progs.n_mode_i[coarse_idx];
 
   // initialize rho
@@ -1285,15 +1308,23 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
                                  pommc, soamc, num_coarse[k],
                                  total_interstitial_aer_num);
 
-  auto &accum_dst_cb = progs.q_aero_c[accum_idx][int(AeroId::DST)];
-  auto &accum_ss_cb = progs.q_aero_c[accum_idx][int(AeroId::NaCl)];
-  auto &accum_so4_cb = progs.q_aero_c[accum_idx][int(AeroId::SO4)];
-  auto &accum_bc_cb = progs.q_aero_c[accum_idx][int(AeroId::BC)];
-  auto &accum_pom_cb = progs.q_aero_c[accum_idx][int(AeroId::POM)];
-  auto &accum_soa_cb = progs.q_aero_c[accum_idx][int(AeroId::SOA)];
-  auto &accum_mom_cb = progs.q_aero_c[accum_idx][int(AeroId::MOM)];
+  auto &accum_dst_cb = progs.q_aero_c[accum_idx][aerosol_index_for_mode(
+      ModeIndex::Accumulation, AeroId::DST)];
+  auto &accum_ss_cb = progs.q_aero_c[accum_idx][aerosol_index_for_mode(
+      ModeIndex::Accumulation, AeroId::NaCl)];
+  auto &accum_so4_cb = progs.q_aero_c[accum_idx][aerosol_index_for_mode(
+      ModeIndex::Accumulation, AeroId::SO4)];
+  auto &accum_bc_cb = progs.q_aero_c[accum_idx][aerosol_index_for_mode(
+      ModeIndex::Accumulation, AeroId::BC)];
+  auto &accum_pom_cb = progs.q_aero_c[accum_idx][aerosol_index_for_mode(
+      ModeIndex::Accumulation, AeroId::POM)];
+  auto &accum_soa_cb = progs.q_aero_c[accum_idx][aerosol_index_for_mode(
+      ModeIndex::Accumulation, AeroId::SOA)];
+  auto &accum_mom_cb = progs.q_aero_c[accum_idx][aerosol_index_for_mode(
+      ModeIndex::Accumulation, AeroId::MOM)];
 
-  auto &num_accum_cb = progs.n_mode_c[accum_idx];
+  auto &num_accum_cb_col = progs.n_mode_c[accum_idx];
+  const Real num_accum_cb = num_accum_cb_col[k] * air_density;
 
   const Real dmac_cb = accum_dst_cb[k] * air_density;
   const Real ssmac_cb = accum_ss_cb[k] * air_density;
@@ -1303,14 +1334,27 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
   const Real soamac_cb = accum_soa_cb[k] * air_density;
   const Real mommac_cb = accum_mom_cb[k] * air_density;
 
-  auto &coarse_dust_cb = progs.q_aero_c[coarse_idx][int(AeroId::DST)];
-  auto &coarse_ncl_cb = progs.q_aero_c[coarse_idx][int(AeroId::NaCl)];
-  auto &coarse_mom_cb = progs.q_aero_c[coarse_idx][int(AeroId::MOM)];
-  auto &coarse_bc_cb = progs.q_aero_c[coarse_idx][int(AeroId::BC)];
-  auto &coarse_pom_cb = progs.q_aero_c[coarse_idx][int(AeroId::POM)];
-  auto &coarse_soa_cb = progs.q_aero_c[coarse_idx][int(AeroId::SOA)];
+  auto &coarse_dust_cb =
+      progs.q_aero_c[coarse_idx]
+                    [aerosol_index_for_mode(ModeIndex::Coarse, AeroId::DST)];
+  auto &coarse_ncl_cb =
+      progs.q_aero_c[coarse_idx]
+                    [aerosol_index_for_mode(ModeIndex::Coarse, AeroId::NaCl)];
+  auto &coarse_mom_cb =
+      progs.q_aero_c[coarse_idx]
+                    [aerosol_index_for_mode(ModeIndex::Coarse, AeroId::MOM)];
+  auto &coarse_bc_cb =
+      progs.q_aero_c[coarse_idx]
+                    [aerosol_index_for_mode(ModeIndex::Coarse, AeroId::BC)];
+  auto &coarse_pom_cb =
+      progs.q_aero_c[coarse_idx]
+                    [aerosol_index_for_mode(ModeIndex::Coarse, AeroId::POM)];
+  auto &coarse_soa_cb =
+      progs.q_aero_c[coarse_idx]
+                    [aerosol_index_for_mode(ModeIndex::Coarse, AeroId::SOA)];
 
-  auto &num_coarse_cb = progs.n_mode_c[coarse_idx];
+  auto &num_coarse_cb_col = progs.n_mode_c[coarse_idx];
+  const Real num_coarse_cb = num_coarse_cb_col[k] * air_density;
 
   const Real dmc_cb = coarse_dust_cb[k] * air_density;
   const Real ssmc_cb = coarse_ncl_cb[k] * air_density;
@@ -1322,8 +1366,8 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
   Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec] = {0.0};
   calculate_cloudborne_aer_num(
       dmac_cb, ssmac_cb, so4mac_cb, bcmaac_cb, pommac_cb, soamac_cb, mommac_cb,
-      num_accum_cb[k], dmc_cb, ssmc_cb, mommc_cb, bcmc_cb, pommc_cb, soamc_cb,
-      num_coarse_cb[k], total_cloudborne_aer_num);
+      num_accum_cb, dmc_cb, ssmc_cb, mommc_cb, bcmc_cb, pommc_cb, soamc_cb,
+      num_coarse_cb, total_cloudborne_aer_num);
 
   Real hetraer[Hetfrz::hetfrz_aer_nspec] = {0.0};
 
