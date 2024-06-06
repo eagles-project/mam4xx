@@ -400,12 +400,12 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
     const int acc_nacl = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::NaCl);
     const int acc_mom = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::MOM);
 
-    const int crs_dst = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::DST);
-    const int crs_nacl = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::NaCl);
-    const int crs_so4 = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::SO4);
-    const int crs_bc = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::BC);
-    const int crs_pom = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::POM);
-    const int crs_mom = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::MOM);
+    const int crs_dst = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::DST);
+    const int crs_nacl = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::NaCl);
+    const int crs_so4 = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::SO4);
+    const int crs_bc = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::BC);
+    const int crs_pom = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::POM);
+    const int crs_mom = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::MOM);
 
     const int pc_pom = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::POM);
     const int pc_bc = aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::BC);

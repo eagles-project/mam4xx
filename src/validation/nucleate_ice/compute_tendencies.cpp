@@ -100,13 +100,14 @@ void compute_tendencies(Ensemble *ensemble) {
     auto coarse_pom = state_q[int(lptr_pom_a_amode[modeptr_coarse]) - 1];
     auto coarse_soa = state_q[int(lptr_soa_a_amode[modeptr_coarse]) - 1];
 
-    const int dst_idx = int(AeroId::DST);
-    const int nacl_idx = int(AeroId::NaCl);
-    const int so4_idx = int(AeroId::SO4);
-    const int mom_idx = int(AeroId::MOM);
-    const int bc_idx = int(AeroId::BC);
-    const int pom_idx = int(AeroId::POM);
-    const int soa_idx = int(AeroId::SOA);
+    const int dst_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::DST);
+    const int nacl_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::NaCl);
+    const int so4_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::SO4);
+    const int mom_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::MOM);
+    const int bc_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::BC);
+    const int pom_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::POM);
+    const int soa_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::SOA);
+
     // we only copy values of mass m.r that are use in this process.
     // Other values will be equal to zero
     Kokkos::deep_copy(progs.q_aero_i[coarse_idx][dst_idx], coarse_dust);
