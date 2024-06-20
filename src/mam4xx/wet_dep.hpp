@@ -44,10 +44,12 @@ namespace wetdep {
  *
  * @pre atm is initialized correctly and has the correct number of levels.
  */
+
+using ConstView1D = DeviceType::view_1d<const Real>;
+
 using View1D = DeviceType::view_1d<Real>;
 using Bool1D = DeviceType::view_1d<bool>;
 using View2D = DeviceType::view_2d<Real>;
-using View3D = DeviceType::view_2d<Real>;
 KOKKOS_INLINE_FUNCTION
 Real local_precip_production(const Real pdel, const Real source_term,
                              const Real sink_term) {
@@ -1143,7 +1145,7 @@ void clddiag(const int nlev, const Real *temperature, const Real *pmid,
 
 template <typename VIEWTYPE>
 KOKKOS_INLINE_FUNCTION void sum_values(const ThreadTeam &team,
-                                       const View1D &sum, VIEWTYPE x,
+                                       const View1D &sum, const ConstView1D x,
                                        VIEWTYPE y, const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                        [&](int k) { sum[k] = x[k] + y[k]; });
@@ -1156,7 +1158,7 @@ void zero_values(const ThreadTeam &team, const View1D &vec, const int nlev) {
 
 KOKKOS_INLINE_FUNCTION
 void sum_deep_and_shallow(const ThreadTeam &team, const View1D &conicw,
-                          const View1D &icwmrdp, const View1D &dp_frac,
+                          const View1D &icwmrdp, const ConstView1D &dp_frac,
                           const View1D &icwmrsh, const View1D &sh_frac,
                           const int nlev) {
   // BAD CONSTANT
@@ -1511,7 +1513,7 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
                        const ColumnView &cldt, const ColumnView &cldn_prev_step,
                        const ColumnView &rprdsh, const ColumnView &rprddp,
                        const ColumnView &evapcdp, const ColumnView &evapcsh,
-                       const ColumnView &dp_frac, const ColumnView &sh_frac,
+                       const haero::ConstColumnView &dp_frac, const ColumnView &sh_frac,
                        const ColumnView &icwmrdp, const ColumnView &icwmrsh,
                        const ColumnView &evapr, const ColumnView &dlf,
                        const ColumnView &prain,
@@ -1852,7 +1854,7 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
     // fraction
     team.team_barrier();
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
-                         [&](int k) { cldst[k] = cldt[k] + cldcu[k]; });
+                         [&](int k) { cldst[k] = cldt[k] - cldcu[k]; });
 
     // FIXME: where does eq come from?
     // FIXME: in fortran code cldt is equal to cln
@@ -2061,22 +2063,22 @@ public:
 
   const char *name() const { return "MAM4 Wet Deposition"; }
 
-  void init(const AeroConfig &aero_config,
-            const Config &wed_dep_config = Config());
+  /*void init(const AeroConfig &aero_config,
+            const Config &wed_dep_config = Config());*/
 
   // compute_tendencies -- computes tendencies and updates diagnostics
   // NOTE: that both diags and tends are const below--this means their views
   // NOTE: are fixed, but the data in those views is allowed to vary.
-  KOKKOS_INLINE_FUNCTION
+  /*KOKKOS_INLINE_FUNCTION
   void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
                           Real t, Real dt, const Atmosphere &atm,
                           const Surface &sfc, const Prognostics &progs,
                           const Diagnostics &diags,
-                          const Tendencies &tends) const;
+                          const Tendencies &tends) const;* b /
 
   Kokkos::View<Real *[2]> qsrflx_mzaer2cnvpr;
 
-private:
+/*private:
   Config config_;
   Kokkos::View<Real *> cldv;
   Kokkos::View<Real *> cldvcu;
@@ -2113,10 +2115,10 @@ private:
       qqcw_sav;
 
   Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()];
-  Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()];
+  Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()];*/
 };
 
-inline void WetDeposition::init(const AeroConfig &aero_config,
+/* void WetDeposition::init(const AeroConfig &aero_config,
                                 const Config &wed_dep_config) {
   config_ = wed_dep_config;
   const int nlev = config_.nlev;
@@ -2169,8 +2171,8 @@ inline void WetDeposition::init(const AeroConfig &aero_config,
   aero_model::modal_aero_bcscavcoef_init(dgnum_amode, sigmag_amode,
                                          aerosol_dry_density, scavimptblnum,
                                          scavimptblvol);
-}
-
+}*/
+/*
 // compute_tendencies -- computes tendencies and updates diagnostics
 // NOTE: that both diags and tends are const below--this means their views
 // NOTE: are fixed, but the data in those views is allowed to vary.
@@ -2362,7 +2364,7 @@ void WetDeposition::compute_tendencies(
     }
   }
   team.team_barrier();
-}
+}*/
 } // namespace mam4
 
 #endif
