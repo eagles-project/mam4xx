@@ -1145,7 +1145,7 @@ void clddiag(const int nlev, const Real *temperature, const Real *pmid,
 
 template <typename VIEWTYPE>
 KOKKOS_INLINE_FUNCTION void sum_values(const ThreadTeam &team,
-                                       const View1D &sum, const ConstView1D x,
+                                       const View1D &sum, VIEWTYPE x,
                                        VIEWTYPE y, const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                        [&](int k) { sum[k] = x[k] + y[k]; });
@@ -1159,7 +1159,7 @@ void zero_values(const ThreadTeam &team, const View1D &vec, const int nlev) {
 KOKKOS_INLINE_FUNCTION
 void sum_deep_and_shallow(const ThreadTeam &team, const View1D &conicw,
                           const View1D &icwmrdp, const ConstView1D &dp_frac,
-                          const View1D &icwmrsh, const View1D &sh_frac,
+                          const View1D &icwmrsh, const ConstView1D &sh_frac,
                           const int nlev) {
   // BAD CONSTANT
   const Real small_value_2 = 1.e-2;
@@ -1175,7 +1175,7 @@ void cloud_diagnostics(const ThreadTeam &team,
                        haero::ConstColumnView temperature,
                        haero::ConstColumnView pmid, haero::ConstColumnView pdel,
                        const View1D &cmfdqr, const View1D &evapc,
-                       const View1D &cldt, const View1D &cldcu,
+                       const haero::ConstColumnView &cldt, const View1D &cldcu,
                        const View1D &cldst, const View1D &evapr,
                        const View1D &prain, const View1D &cldv,
                        const View1D &cldvcu, const View1D &cldvst,
@@ -1364,7 +1364,7 @@ void compute_q_tendencies(
     const View1D &scavcoefnum, const View1D &scavcoefvol, const View1D &totcond,
     const View1D &cmfdqr, const View1D &conicw, const View1D &evapc,
     const View1D &evapr, const View1D &prain, const View1D &dlf,
-    const View1D &cldt, const View1D &cldcu, const View1D &cldst,
+    const ConstView1D &cldt, const View1D &cldcu, const View1D &cldst,
     const View1D &cldvst, const View1D &cldvcu, const View1D &sol_facti,
     const View1D &sol_factic, const View1D &sol_factb, const View1D &scavt,
     const View1D &bcscavt, const View1D &rcscavt, const View2D &rtscavt_sv,
@@ -1510,10 +1510,11 @@ KOKKOS_INLINE_FUNCTION
 void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
                        Prognostics &progs, Tendencies &tends, const Real dt,
                        // inputs
-                       const ColumnView &cldt, const ColumnView &cldn_prev_step,
+                       const haero::ConstColumnView &cldt,
                        const ColumnView &rprdsh, const ColumnView &rprddp,
                        const ColumnView &evapcdp, const ColumnView &evapcsh,
-                       const haero::ConstColumnView &dp_frac, const ColumnView &sh_frac,
+                       const haero::ConstColumnView &dp_frac,
+                       const haero::ConstColumnView &sh_frac,
                        const ColumnView &icwmrdp, const ColumnView &icwmrsh,
                        const ColumnView &evapr, const ColumnView &dlf,
                        const ColumnView &prain,
@@ -1673,7 +1674,7 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
 
   // inputs:
   // cldn; can we get it from atm?
-  // cldn_prev_step // layer cloud fraction [fraction] from pbuf_get_field
+  // cldt // layer cloud fraction [fraction] from pbuf_get_field
   // FIXME:
   constexpr int nwetdep = 1; // number of elements in wetdep_list
 
@@ -1820,8 +1821,8 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
 
       mam4::water_uptake::modal_aero_water_uptake_dr(
           nspec_amode, specdens_amode, spechygro, lspectype_amode,
-          state_q_kk.data(), temperature(kk), pmid(kk), cldn_prev_step(kk),
-          dgnumdry_m_kk, dgnumwet_m_kk, qaerwat_m_kk, wetdens_kk);
+          state_q_kk.data(), temperature(kk), pmid(kk), cldt(kk), dgnumdry_m_kk,
+          dgnumwet_m_kk, qaerwat_m_kk, wetdens_kk);
     }
 
     // team.team_barrier();
@@ -2074,48 +2075,49 @@ public:
                           Real t, Real dt, const Atmosphere &atm,
                           const Surface &sfc, const Prognostics &progs,
                           const Diagnostics &diags,
-                          const Tendencies &tends) const;* b /
+                          const Tendencies &tends) const;
 
-  Kokkos::View<Real *[2]> qsrflx_mzaer2cnvpr;
+  Kokkos::View<Real *[2]> qsrflx_mzaer2cnvpr;*/
 
-/*private:
-  Config config_;
-  Kokkos::View<Real *> cldv;
-  Kokkos::View<Real *> cldvcu;
-  Kokkos::View<Real *> cldvst;
-  Kokkos::View<Real *> rain;
-  Kokkos::View<Real *> cldcu;
-  Kokkos::View<Real *> cldt;
-  Kokkos::View<Real *> evapc;
-  Kokkos::View<Real *> cmfdqr;
-  Kokkos::View<Real *> prain;
-  Kokkos::View<Real *> conicw;
-  Kokkos::View<Real *> totcond;
+  /*private:
+    Config config_;
+    Kokkos::View<Real *> cldv;
+    Kokkos::View<Real *> cldvcu;
+    Kokkos::View<Real *> cldvst;
+    Kokkos::View<Real *> rain;
+    Kokkos::View<Real *> cldcu;
+    Kokkos::View<Real *> cldt;
+    Kokkos::View<Real *> evapc;
+    Kokkos::View<Real *> cmfdqr;
+    Kokkos::View<Real *> prain;
+    Kokkos::View<Real *> conicw;
+    Kokkos::View<Real *> totcond;
 
-  Kokkos::View<bool *> isprx;
-  Kokkos::View<Real *> f_act_conv_coarse;
-  Kokkos::View<Real *> f_act_conv_coarse_dust;
-  Kokkos::View<Real *> f_act_conv_coarse_nacl;
+    Kokkos::View<bool *> isprx;
+    Kokkos::View<Real *> f_act_conv_coarse;
+    Kokkos::View<Real *> f_act_conv_coarse_dust;
+    Kokkos::View<Real *> f_act_conv_coarse_nacl;
 
-  Kokkos::View<Real *> scavcoefnum;
-  Kokkos::View<Real *> scavcoefvol;
+    Kokkos::View<Real *> scavcoefnum;
+    Kokkos::View<Real *> scavcoefvol;
 
-  Kokkos::View<Real *> sol_facti;
-  Kokkos::View<Real *> sol_factic;
-  Kokkos::View<Real *> sol_factb;
-  Kokkos::View<Real *> f_act_conv;
+    Kokkos::View<Real *> sol_facti;
+    Kokkos::View<Real *> sol_factic;
+    Kokkos::View<Real *> sol_factb;
+    Kokkos::View<Real *> f_act_conv;
 
-  Kokkos::View<Real *> scavt;   // scavenging tend [kg/kg/s]
-  Kokkos::View<Real *> bcscavt; // below cloud, convective [kg/kg/s]
-  Kokkos::View<Real *> rcscavt; // resuspension, convective [kg/kg/s]
+    Kokkos::View<Real *> scavt;   // scavenging tend [kg/kg/s]
+    Kokkos::View<Real *> bcscavt; // below cloud, convective [kg/kg/s]
+    Kokkos::View<Real *> rcscavt; // resuspension, convective [kg/kg/s]
 
-  Kokkos::View<Real *> rtscavt_sv;
+    Kokkos::View<Real *> rtscavt_sv;
 
-  Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
-      qqcw_sav;
+    Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
+        qqcw_sav;
 
-  Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()];
-  Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()];*/
+    Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()];
+    Real
+    scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()];*/
 };
 
 /* void WetDeposition::init(const AeroConfig &aero_config,
