@@ -1158,9 +1158,10 @@ void zero_values(const ThreadTeam &team, const View1D &vec, const int nlev) {
 
 KOKKOS_INLINE_FUNCTION
 void sum_deep_and_shallow(const ThreadTeam &team, const View1D &conicw,
-                          const View1D &icwmrdp, const ConstView1D &dp_frac,
-                          const View1D &icwmrsh, const ConstView1D &sh_frac,
-                          const int nlev) {
+                          const ConstView1D &icwmrdp,
+                          const ConstView1D &dp_frac,
+                          const ConstView1D &icwmrsh,
+                          const ConstView1D &sh_frac, const int nlev) {
   // BAD CONSTANT
   const Real small_value_2 = 1.e-2;
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
@@ -1176,15 +1177,18 @@ void cloud_diagnostics(const ThreadTeam &team,
                        haero::ConstColumnView pmid, haero::ConstColumnView pdel,
                        const View1D &cmfdqr, const View1D &evapc,
                        const haero::ConstColumnView &cldt, const View1D &cldcu,
-                       const View1D &cldst, const View1D &evapr,
-                       const View1D &prain, const View1D &cldv,
-                       const View1D &cldvcu, const View1D &cldvst,
-                       const View1D &rain, const int nlev) {
+                       const View1D &cldst, const haero::ConstColumnView &evapr,
+                       const View1D &prain,
+                       // outputs
+                       const View1D &cldv, const View1D &cldvcu,
+                       const View1D &cldvst, const View1D &rain,
+                       const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 1), [&](int k) {
     wetdep::clddiag(nlev, temperature.data(), pmid.data(), pdel.data(),
                     cmfdqr.data(), evapc.data(), cldt.data(), cldcu.data(),
-                    cldst.data(), evapr.data(), prain.data(), cldv.data(),
-                    cldvcu.data(), cldvst.data(), rain.data());
+                    cldst.data(), evapr.data(), prain.data(),
+                    // outputs
+                    cldv.data(), cldvcu.data(), cldvst.data(), rain.data());
   });
 }
 
@@ -1194,7 +1198,7 @@ void set_f_act(const ThreadTeam &team, Kokkos::View<bool *> isprx,
                const View1D &f_act_conv_coarse_dust,
                const View1D &f_act_conv_coarse_nacl,
                haero::ConstColumnView pdel, haero::ConstColumnView prain,
-               const View1D &cmfdqr, const View1D &evapr, const View2D &state_q,
+               const View1D &cmfdqr, const ConstView1D &evapr, const View2D &state_q,
                const View2D &ptend_q, const Real dt, const int nlev) {
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
@@ -1363,7 +1367,7 @@ void compute_q_tendencies(
     const View1D &f_act_conv_coarse_dust, const View1D &f_act_conv_coarse_nacl,
     const View1D &scavcoefnum, const View1D &scavcoefvol, const View1D &totcond,
     const View1D &cmfdqr, const View1D &conicw, const View1D &evapc,
-    const View1D &evapr, const View1D &prain, const View1D &dlf,
+    const ConstView1D &evapr, const View1D &prain, const View1D &dlf,
     const ConstView1D &cldt, const View1D &cldcu, const View1D &cldst,
     const View1D &cldvst, const View1D &cldvcu, const View1D &sol_facti,
     const View1D &sol_factic, const View1D &sol_factb, const View1D &scavt,
@@ -1515,9 +1519,10 @@ void aero_model_wetdep(
     const haero::ConstColumnView &rprddp, const haero::ConstColumnView &evapcdp,
     const haero::ConstColumnView &evapcsh,
     const haero::ConstColumnView &dp_frac,
-    const haero::ConstColumnView &sh_frac, const ColumnView &icwmrdp,
-    const ColumnView &icwmrsh, const ColumnView &evapr, const ColumnView &dlf,
-    const ColumnView &prain,
+    const haero::ConstColumnView &sh_frac,
+    const haero::ConstColumnView &icwmrdp,
+    const haero::ConstColumnView &icwmrsh, const haero::ConstColumnView &evapr,
+    const ColumnView &dlf, const ColumnView &prain,
     // in/out calcsize and water_uptake
     const View2D &wet_geometric_mean_diameter_i,
     const View2D &dry_geometric_mean_diameter_i, const View2D &qaerwat,
@@ -1848,10 +1853,10 @@ void aero_model_wetdep(
     const int jaerowater = 2;
 
     // cumulus cloud fraction =  dp_frac + sh_frac
-    wetdep::sum_values(team, //input
-    cldcu, //output
-    dp_frac, sh_frac, nlev);//inputs
-    
+    wetdep::sum_values(team,                    // input
+                       cldcu,                   // output
+                       dp_frac, sh_frac, nlev); // inputs
+
     // total cloud fraction [fraction] = dp_ccf + sh_ccf
     // Stratiform cloud fraction cldst  = cldt - cldcu  Stratiform cloud
     // fraction
@@ -1863,23 +1868,32 @@ void aero_model_wetdep(
     // FIXME: in fortran code cldt is equal to cln
     // wetdep::sum_values(team, cldt, dp_ccf, sh_ccf, nlev);
     // evaporation from convection (deep + shallow)
-    wetdep::sum_values(team, evapc, evapcsh, evapcdp, nlev);
+    wetdep::sum_values(team,                    // input
+                       evapc,                   // output
+                       evapcsh, evapcdp, nlev); // inputs
 
     // dq/dt due to convective cmfdqr =  rprddp + rprdsh
-    wetdep::sum_values(team, cmfdqr, rprddp, rprdsh, nlev);
+    wetdep::sum_values(team,                  // input
+                       cmfdqr,                // output
+                       rprddp, rprdsh, nlev); // inputs
     // rate of conversion of condensate to precipitation [kg/kg/s].
     // wetdep::sum_values(team, prain, icwmrdp, icwmrsh, nlev);
     // wetdep::sum_values(team, prain, icwmrdp, icwmrsh, nlev);
     // total condensate (ice+liq) [kg/kg] = q_liq + q_ice
-    wetdep::sum_values(team, totcond, q_liq, q_ice, nlev);
+    wetdep::sum_values(team,                // input
+                       totcond,             // output
+                       q_liq, q_ice, nlev); // input
     // sum deep and shallow convection contributions
-    wetdep::sum_deep_and_shallow(team, conicw, icwmrdp, dp_frac, icwmrsh,
-                                 sh_frac, nlev);
+    wetdep::sum_deep_and_shallow(team,                               // input
+                                 conicw,                             // output
+                                 icwmrdp, dp_frac, icwmrsh, sh_frac, // inputs
+                                 nlev);                              // inputs
 
     // Estimate the cloudy volume which is occupied by rain or cloud water
     wetdep::cloud_diagnostics(team, temperature, pmid, pdel, cmfdqr, evapc,
-                              cldt, cldcu, cldst, evapr, prain, cldv, cldvcu,
-                              cldvst, rain, nlev);
+                              cldt, cldcu, cldst, evapr, prain,
+                              // outputs
+                              cldv, cldvcu, cldvst, rain, nlev);
 
     team.team_barrier(); // for cldcu
 
