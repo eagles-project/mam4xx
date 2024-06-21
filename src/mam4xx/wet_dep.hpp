@@ -1507,24 +1507,23 @@ int get_aero_model_wetdep_work_len() {
 // =============================================================================
 
 KOKKOS_INLINE_FUNCTION
-void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
-                       Prognostics &progs, Tendencies &tends, const Real dt,
-                       // inputs
-                       const haero::ConstColumnView &cldt,
-                       const ColumnView &rprdsh, const ColumnView &rprddp,
-                       const ColumnView &evapcdp, const ColumnView &evapcsh,
-                       const haero::ConstColumnView &dp_frac,
-                       const haero::ConstColumnView &sh_frac,
-                       const ColumnView &icwmrdp, const ColumnView &icwmrsh,
-                       const ColumnView &evapr, const ColumnView &dlf,
-                       const ColumnView &prain,
-                       // in/out calcsize and water_uptake
-                       const View2D &wet_geometric_mean_diameter_i,
-                       const View2D &dry_geometric_mean_diameter_i,
-                       const View2D &qaerwat, const View2D &wetdens,
-                       // output
-                       const View1D &aerdepwetis, const View1D &aerdepwetcw,
-                       const View1D &work) {
+void aero_model_wetdep(
+    const ThreadTeam &team, const Atmosphere &atm, Prognostics &progs,
+    Tendencies &tends, const Real dt,
+    // inputs
+    const haero::ConstColumnView &cldt, const haero::ConstColumnView &rprdsh,
+    const haero::ConstColumnView &rprddp, const haero::ConstColumnView &evapcdp,
+    const haero::ConstColumnView &evapcsh,
+    const haero::ConstColumnView &dp_frac,
+    const haero::ConstColumnView &sh_frac, const ColumnView &icwmrdp,
+    const ColumnView &icwmrsh, const ColumnView &evapr, const ColumnView &dlf,
+    const ColumnView &prain,
+    // in/out calcsize and water_uptake
+    const View2D &wet_geometric_mean_diameter_i,
+    const View2D &dry_geometric_mean_diameter_i, const View2D &qaerwat,
+    const View2D &wetdens,
+    // output
+    const View1D &aerdepwetis, const View1D &aerdepwetcw, const View1D &work) {
   // cldn layer cloud fraction [fraction]; CLD
 
   // FIXME: do we need to set the variables inside of set_srf_wetdep ?
@@ -1849,7 +1848,10 @@ void aero_model_wetdep(const ThreadTeam &team, const Atmosphere &atm,
     const int jaerowater = 2;
 
     // cumulus cloud fraction =  dp_frac + sh_frac
-    wetdep::sum_values(team, cldcu, dp_frac, sh_frac, nlev);
+    wetdep::sum_values(team, //input
+    cldcu, //output
+    dp_frac, sh_frac, nlev);//inputs
+    
     // total cloud fraction [fraction] = dp_ccf + sh_ccf
     // Stratiform cloud fraction cldst  = cldt - cldcu  Stratiform cloud
     // fraction
