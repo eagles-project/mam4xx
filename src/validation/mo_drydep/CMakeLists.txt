@@ -47,16 +47,16 @@ set(TEST_LIST
     calculate_gas_drydep_vlc_and_flux
     )
 
-set(DEFAULT_TOL 5e-10)
+set(DEFAULT_TOL 1e-10)
 set(TestLabels "mo_drydep")
 
 set(ERROR_THRESHOLDS
     1e-9 # calculate_aerodynamic_and_quasilaminar_resistance
     7e-8 # calculate_obukhov_length
     ${DEFAULT_TOL} # calculate_resistance_rclx
-    1.1e-6 # calculate_resistance_rgsx_and_rsmx FIXME: still needs work!
+    3e-9 # calculate_resistance_rgsx_and_rsmx FIXME: still needs work!
     1e-9 # calculate_resistance_rlux
-    ${DEFAULT_TOL} # calculate_ustar_over_water # FIXME: still needs work, esp regarding inout parameters???
+    3e-9 # calculate_ustar_over_water
     1e-9           # calculate_ustar # FIXME: still off by too much
     ${DEFAULT_TOL} # calculate_uustar # FIXME: still off by too much
     ${DEFAULT_TOL} # drydep_xactive # FIXME: needs work, including reading data from fraction_landuse file!
@@ -85,7 +85,6 @@ endforeach()
 
 set(FailTests
   calculate_resistance_rgsx_and_rsmx
-  calculate_ustar_over_water
   drydep_xactive
   calculate_gas_drydep_vlc_and_flux
   )

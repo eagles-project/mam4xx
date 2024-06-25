@@ -27,6 +27,10 @@ void calculate_ustar_over_water(Ensemble *ensemble) {
     const Real uustar = input.get_array("uustar")[0];
     const Real ribn = input.get_array("ribn")[0];
 
+    const auto bycp = input.get_array("bycp");
+    const auto cvar = input.get_array("cvar");
+    const auto ustar = input.get_array("ustar");
+
     ViewInt1DHost index_season_h("index_season", n_land_type);
     for (int lt = 0; lt < n_land_type; ++lt) {
       index_season_h(lt) = int(index_season[lt]) - 1;
@@ -41,9 +45,21 @@ void calculate_ustar_over_water(Ensemble *ensemble) {
     ViewBool1D fr_lnduse_d("fr_lnduse", n_land_type);
     Kokkos::deep_copy(fr_lnduse_d, fr_lnduse_h);
 
+    View1DHost ustar_h("ustar", n_land_type);
+    View1DHost cvar_h("cvar", n_land_type);
+    View1DHost bycp_h("bycp", n_land_type);
+    for (int lt = 0; lt < n_land_type; ++lt) {
+      ustar_h(lt) = ustar[lt];
+      cvar_h(lt) = cvar[lt];
+      bycp_h(lt) = bycp[lt];
+    }
     View1D ustar_d("ustar", n_land_type);
     View1D cvar_d("cvar", n_land_type);
     View1D bycp_d("bycp", n_land_type);
+
+    Kokkos::deep_copy(ustar_d, ustar_h);
+    Kokkos::deep_copy(cvar_d, cvar_h);
+    Kokkos::deep_copy(bycp_d, bycp_h);
 
     auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
@@ -53,19 +69,21 @@ void calculate_ustar_over_water(Ensemble *ensemble) {
               zl, uustar, ribn, ustar_d.data(), cvar_d.data(), bycp_d.data());
         });
 
-    std::vector<Real> ustar(n_land_type);
-    auto ustar_h = View1DHost((Real *)ustar.data(), n_land_type);
     Kokkos::deep_copy(ustar_h, ustar_d);
-    output.set("ustar", ustar);
-
-    std::vector<Real> cvar(n_land_type);
-    auto cvar_h = View1DHost((Real *)cvar.data(), n_land_type);
     Kokkos::deep_copy(cvar_h, cvar_d);
-    output.set("cvar", cvar);
-
-    std::vector<Real> bycp(n_land_type);
-    auto bycp_h = View1DHost((Real *)bycp.data(), n_land_type);
     Kokkos::deep_copy(bycp_h, bycp_d);
-    output.set("bycp", bycp);
+    std::vector<Real> bycp_out(n_land_type);
+    std::vector<Real> cvar_out(n_land_type);
+    std::vector<Real> ustar_out(n_land_type);
+
+    for (int lt = 0; lt < n_land_type; ++lt) {
+      ustar_out[lt] = ustar_h(lt);
+      cvar_out[lt] = cvar_h(lt);
+      bycp_out[lt] = bycp_h(lt);
+    }
+
+    output.set("ustar", ustar_out);
+    output.set("cvar", cvar_out);
+    output.set("bycp", bycp_out);
   });
 }

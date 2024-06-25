@@ -88,13 +88,12 @@ mam4::seq_drydep::Data create_drydep_data() {
                   2000.0, 1500.0, 1000.0, 1000.0, 1200.0,
                   2000.0, 2000.0, 2000.0, 2000.0, 2000.0,
                   2000.0, 1700.0, 1500.0, 1500.0, 1500.0,
-                   1e-36,  1e-36,  1e-36,  1e-36,  1e-36,
-                   1e-36,  1e-36,  1e-36,  1e-36,  1e-36,
+                     0.0,    0.0,    0.0,    0.0,    0.0,
+                     0.0,    0.0,    0.0,    0.0,    0.0,
                    300.0,  200.0,  100.0,   50.0,  200.0,
                    150.0,  120.0,   50.0,   10.0,   60.0,
                    200.0,  140.0,  120.0,  50.0,   120.0};
   mam4::validation::convert_1d_real_to_2d_view_device(rac_a, data.rac);
-
 
   Real rclo_a[] = {1e+36,   1e+36,  1e+36,  1e+36,  1e+36,
                    1000.0,  400.0, 1000.0, 1000.0, 1000.0,
@@ -208,15 +207,6 @@ mam4::seq_drydep::Data create_drydep_data() {
   has_dvel_a[3] = true;            // SO2
   ViewBool1DHost has_dvel_h(has_dvel_a, gas_pcnst);
   Kokkos::deep_copy(data.has_dvel, has_dvel_h);
-
-  // for (int i = 0; i < gas_pcnst; ++i)
-  // {
-  //   if (has_dvel_a[i]){
-  //     printf("has_dvel_a is true \n");
-  //   } else {
-
-  //   }printf("has_dvel_a is false \n");
-  // }
 
   // map_dvel maps indices of species in solsym to those in drydep_list
   int map_dvel_a[gas_pcnst] = {};

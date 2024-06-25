@@ -35,14 +35,6 @@ void calculate_gas_drydep_vlc_and_flux(const seq_drydep::Data &data,
     const auto rgsx = input.get_array("rgsx");
     const Real rdc = input.get_array("rdc")[0];
 
-    /*
-    // FIXME: this is for helping to debug the rac array
-    const auto rac = input.get_array("rac");
-    using View2DHost = typename HostType::view_2d<Real>;
-    View2DHost rac_h((Real*)rac.data(), mam4::seq_drydep::NSeas,
-    mam4::seq_drydep::NLUse); Kokkos::deep_copy(data.rac, rac_h);
-    */
-
     ViewInt1DHost index_season_h("index_season", n_land_type);
     for (int lt = 0; lt < n_land_type; ++lt) {
       // Fortran to C++ indexing
@@ -58,18 +50,35 @@ void calculate_gas_drydep_vlc_and_flux(const seq_drydep::Data &data,
     ViewBool1D fr_lnduse_d("fr_lnduse", n_land_type);
     Kokkos::deep_copy(fr_lnduse_d, fr_lnduse_h);
 
+    // FIXME:
+    // HACK: we currently have too many columns of lcl_frc_landuse, so we'll
+    // just choose the first for now
+    int lcl_frc_landuse_col = 0;
+
+    View1DHost lcl_frc_landuse_h("lcl_frc_landuse", n_land_type);
+    int ll = 0;
+    for (int i = 0; i < 4; ++i) {
+      for (int lt = 0; lt < n_land_type; ++lt, ++ll) {
+        if (i == lcl_frc_landuse_col) {
+          lcl_frc_landuse_h(lt) = lcl_frc_landuse[ll];
+        } else {
+          continue;
+        }
+      }
+    }
+
     View1D lcl_frc_landuse_d("lcl_frc_landuse", n_land_type);
-    View1DHost lcl_frc_landuse_h((Real *)lcl_frc_landuse.data(), n_land_type);
     Kokkos::deep_copy(lcl_frc_landuse_d, lcl_frc_landuse_h);
 
     // View1D mmr_d("mmr", gas_pcnst);
     // View1DHost mmr_h((Real *)mmr.data(), gas_pcnst);
     // Kokkos::deep_copy(mmr_d, mmr_h);
 
-    View2D mmr_view("mmr_view", mam4::ndrop::pver, gas_pcnst);
+    // FIXME: change this to compile time num_levels from balwinder's PR
+    View2D mmr_view("mmr_view", 72, gas_pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(mmr, mmr_view);
     const auto mmr_d =
-        Kokkos::subview(mmr_view, mam4::ndrop::pver - 1, Kokkos::ALL);
+        Kokkos::subview(mmr_view, 72 - 1, Kokkos::ALL);
 
     View1D dep_ra_d("dep_ra", n_land_type);
     View1DHost dep_ra_h((Real *)dep_ra.data(), n_land_type);
@@ -97,6 +106,8 @@ void calculate_gas_drydep_vlc_and_flux(const seq_drydep::Data &data,
 
     View1D dvel_d("dvel", gas_pcnst);
     View1D dflx_d("dflx", gas_pcnst);
+    Kokkos::deep_copy(dvel_d, 0.0);
+    Kokkos::deep_copy(dflx_d, 0.0);
 
     auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
@@ -124,14 +135,30 @@ void calculate_gas_drydep_vlc_and_flux(const seq_drydep::Data &data,
               dflx_d.data());
         });
 
-    std::vector<Real> dvel(gas_pcnst, 0.0);
-    auto dvel_h = View1DHost((Real *)dvel.data(), gas_pcnst);
-    Kokkos::deep_copy(dvel_h, dvel_d);
-    output.set("dvel", dvel);
+    // std::vector<Real> dvel(gas_pcnst, 0.0);
+    // auto dvel_h = View1DHost((Real *)dvel.data(), gas_pcnst);
+    // Kokkos::deep_copy(dvel_h, dvel_d);
+    // output.set("dvel", dvel);
 
-    std::vector<Real> dflx(gas_pcnst);
-    auto dflx_h = View1DHost((Real *)dflx.data(), gas_pcnst);
+    // std::vector<Real> dflx(gas_pcnst);
+    // auto dflx_h = View1DHost((Real *)dflx.data(), gas_pcnst);
+    // Kokkos::deep_copy(dflx_h, dflx_d);
+    // output.set("dflx", dflx);
+
+    View1DHost dvel_h("dvel_h", gas_pcnst);
+    View1DHost dflx_h("dflx_h", gas_pcnst);
+
+    Kokkos::deep_copy(dvel_h, dvel_d);
     Kokkos::deep_copy(dflx_h, dflx_d);
-    output.set("dflx", dflx);
+    std::vector<Real> dflx_out(gas_pcnst);
+    std::vector<Real> dvel_out(gas_pcnst);
+
+    for (int lt = 0; lt < gas_pcnst; ++lt) {
+      dvel_out[lt] = dvel_h(lt);
+      dflx_out[lt] = dflx_h(lt);
+    }
+
+    output.set("dvel", dvel_out);
+    output.set("dflx", dflx_out);
   });
 }
