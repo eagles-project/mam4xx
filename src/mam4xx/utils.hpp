@@ -174,6 +174,46 @@ void transfer_work_arrays_to_prognostics(const Real q[gas_pcnst()],
 
 #undef DECLARE_PROG_TRANSFER_CONSTANTS
 
+// given q and qqcs get arrays
+// FIXME!!!: need aditional work.
+KOKKOS_INLINE_FUNCTION
+void transfer_tendencies_num_to_tendecines(const Real n_mode_i[],
+                                           // const Real n_mode_c[],
+                                           Real q[gas_pcnst()]
+                                           // ,
+                                           // Real qqcw[gas_pcnst()],
+) {
+  int s_idx = ekat::ScalarTraits<int>::invalid();
+  s_idx = gasses_start_ind() +
+          AeroConfig::num_gas_ids(); // gases start at index 9 (index 10 in
+                                     // Fortran version)
+
+  // Now start adding aerosols mmr into the state_q
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    s_idx += mam4::num_species_mode(m);
+    q[s_idx] += n_mode_i[m];
+    printf("q[%d] %e n_mode_i[%d] %e \n", s_idx, q[s_idx], m, n_mode_i[m]);
+    s_idx++; // update index
+    // printf(" %d ", s_idx);
+  }
+
+  // printf("\n ");
+}
+
+// return idx of num concentration in state_q
+KOKKOS_INLINE_FUNCTION
+void get_num_idx_in_state_q(int idxs[AeroConfig::num_modes()]) {
+  // index of accum and aitken mode for num concetration in state_q
+  int s_idx =
+      gasses_start_ind() +
+      AeroConfig::num_gas_ids(); // gases start at index 9 (index 10 in Fortran
+  for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    s_idx += mam4::num_species_mode(m);
+    idxs[m] = s_idx;
+    s_idx++; // update index
+  }
+}
+
 // Given an AerosolState with views for dry aerosol quantities, creates a
 // interstitial aerosols 1D view (state_q) for the column with the given index.
 // This object can be provided to mam4xx for the column.

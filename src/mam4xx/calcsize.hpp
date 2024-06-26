@@ -668,7 +668,6 @@ void aitken_accum_exchange(
   const auto num2vol_ratio_geomean =
       haero::sqrt(voltonum_ait) * haero::sqrt(voltonum_acc);
 
-  // Compute aitken -> accumulation transfer
   compute_coef_ait_acc_transfer(
       accum_idx, num2vol_ratio_geomean, adj_tscale_inv, drv_i_aitsv,
       drv_c_aitsv, num_i_aitsv, num_c_aitsv, voltonum_acc, ait2acc_index,

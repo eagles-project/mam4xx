@@ -13,7 +13,7 @@ using namespace skywalker;
 using namespace mam4;
 using namespace haero;
 
-void modal_aero_calcsize_sub(Ensemble *ensemble) {
+void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     constexpr int pcnst = aero_model::pcnst;
     constexpr int pver = ndrop::pver;
@@ -41,6 +41,9 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
     }
     Kokkos::deep_copy(qqcw, qqcw_host);
     View2D dgnumdry_m("dgnumdry_m", pver, ntot_amode);
+
+    View2D ptend_q("ptend_q", pver, pcnst);
+    View2D dqqcwdt("dqqcwdt", pver, pcnst);
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
@@ -73,7 +76,7 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
 
           const bool do_adjust = true;
           const bool do_aitacc_transfer = true;
-          const bool update_mmr = false;
+          const bool update_mmr = true;
 
           int nspec_amode[ntot_amode];
           int lspectype_amode[maxd_aspectype][ntot_amode];
@@ -88,26 +91,18 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
               nspec_amode, lspectype_amode, lmassptr_amode, numptr_amode,
               specdens_amode, spechygro, mam_idx, mam_cnst_idx);
 
-          // Note: Need to compute inv density using indexing from e3sm
-          for (int imode = 0; imode < ntot_amode; ++imode) {
-            const int nspec = nspec_amode[imode];
-            for (int isp = 0; isp < nspec; ++isp) {
-              const int idx = lspectype_amode[isp][imode] - 1;
-              inv_density[imode][isp] = 1.0 / specdens_amode[idx];
-            } // isp
-          }   // imode
-
           // FIXME: top_lev is set to 1 in calcsize ?
           const int top_lev = 0; // 1( in fortran )
 
           for (int kk = top_lev; kk < pver; ++kk) {
             const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
+
             const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
             const auto dgncur_i =
                 Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
             Real dgncur_c[ntot_amode] = {};
-            Real ptend[pcnst] = {};
-            Real dqqcwdt[pcnst] = {};
+            const auto ptend_q_k = Kokkos::subview(ptend_q, kk, Kokkos::ALL());
+            const auto dqqcwdt_k = Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
             modal_aero_calcsize::modal_aero_calcsize_sub(
                 state_q_k.data(), // in
                 qqcw_k.data(),    // in/out
@@ -117,10 +112,10 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
                 num2vol_ratio_min, num2vol_ratio_max, num2vol_ratio_max_nmodes,
                 num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes,
                 dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
-                mean_std_dev_nmodes,
+                mean_std_dev_nmodes, noxf_acc2ait, n_common_species_ait_accum,
+                ait_spec_in_acc, acc_spec_in_ait,
                 // outputs
-                noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
-                acc_spec_in_ait, dgncur_i.data(), dgncur_c, ptend, dqqcwdt);
+                dgncur_i.data(), dgncur_c, ptend_q_k.data(), dqqcwdt_k.data());
           } // k
         });
 
@@ -128,6 +123,9 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
     std::vector<Real> dgnumdry_m_out(pver * ntot_amode, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(dgnumdry_m,
                                                           dgnumdry_m_out);
+
+    std::vector<Real> ptend_q_out(pver * pcnst, zero);
+    mam4::validation::convert_2d_view_device_to_1d_vector(ptend_q, ptend_q_out);
 
     Kokkos::deep_copy(qqcw_host, qqcw);
     count = 0;
@@ -140,5 +138,6 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
 
     output.set("qqcw", qqcw_db);
     output.set("dgnumdry_m", dgnumdry_m_out);
+    output.set("ptend_q", ptend_q_out);
   });
 }
