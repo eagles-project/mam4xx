@@ -803,18 +803,18 @@ void update_from_cldn_profile(
   // air_density(:)       air density [kg/m^3] at kk
   // air_density_kp1      air density [kg/m^3] at min0(kk+1, pver);
   // csbot_cscen(:)       inverse normalized air density csbot(i)/cs(i,k)
-  //                                       [dimensionless] [dimensionless] 
+  //                                       [dimensionless] [dimensionless]
   // state_q_col_in(:,:)    aerosol mmrs/ [kg/kg]
 
   // output arguments
   // raercol_nsav(:,:)    single column of saved aerosol mass, number mixing
-  //                      ratios [#/kg or kg/kg] 
-  // raercol_cw_nsav(:,:) same as raercol but for cloud-borne phase [#/kg or kg/kg] 
-  // nsource_col(:)       droplet number mixing ratio source tendency [#/kg/s] 
-  // qcld(:)              cloud droplet number mixing ratio [#/kg] 
-  // factnum_col(:,:)     activation fraction for aerosol number [fraction] 
-  // eddy_diff(:)         diffusivity for droplets [m^2/s]  
-  // nact(:,:)            fractional aero. number activation rate [/s] 
+  //                      ratios [#/kg or kg/kg]
+  // raercol_cw_nsav(:,:) same as raercol but for cloud-borne phase [#/kg or kg/kg]
+  // nsource_col(:)       droplet number mixing ratio source tendency [#/kg/s]
+  // qcld(:)              cloud droplet number mixing ratio [#/kg]
+  // factnum_col(:,:)     activation fraction for aerosol number [fraction]
+  // eddy_diff(:)         diffusivity for droplets [m^2/s]
+  // nact(:,:)            fractional aero. number activation rate [/s]
   // mact(:,:)            fractional aero. mass activation rate [/s]
 
   // clang-format on
@@ -1662,7 +1662,7 @@ void dropmixnuc(
       });
 
   team.team_barrier();
-
+  //BALLI-okay
   // PART III:  perform explicit integration of droplet/aerosol mixing using
   // substepping
 
@@ -1677,7 +1677,7 @@ void dropmixnuc(
                       source);
 
   team.team_barrier();
-
+  //balli-ok
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, top_lev - 1), KOKKOS_LAMBDA(int kk) {
         for (int i = 0; i < ncnst_tot; ++i) {
@@ -1685,17 +1685,24 @@ void dropmixnuc(
         }
       });
   team.team_barrier();
+  //balli-ok
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, pver - top_lev + 1), KOKKOS_LAMBDA(int kk) {
         const int k = kk + top_lev - 1;
         // droplet number mixing ratio tendency due to mixing [#/kg/s]
         ndropmix(k) = (qcld(k) - ncldwtr(k)) * dtinv - nsource(k);
         // BAD CONSTANT
-        tendnd(k) = (haero::max(qcld(k), 1.e-6) - ncldwtr(k)) * dtinv;
+
+
+
+        tendnd(k) = qcld(k)*1e-6 * dtinv; //(haero::max(qcld(k), 1.e-6) - ncldwtr(k)) * dtinv; //THIS IS BADDDD
+
+
+
         // ndropcol(icol) = ndropcol(icol)/gravity
         // sum up ndropcol_kk outside of kk loop
         // column-integrated droplet number [#/m2]
-        ndropcol(k) = ncldwtr(k) * pdel(k) / gravity;
+        /*ndropcol(k) = ncldwtr(k) * pdel(k) / gravity;
         // tendency of interstitial aerosol mass, number mixing ratios
         // [#/kg/s] or [kg/kg/s]
         raertend(k) = zero;
@@ -1704,9 +1711,9 @@ void dropmixnuc(
         qqcwtend(k) = zero;
         // cloud-borne aerosol mass mixing ratios [kg/kg]
         Real qcldbrn[maxd_aspectype][ntot_amode] = {{zero}};
-        Real qcldbrn_num[ntot_amode] = {zero};
+        Real qcldbrn_num[ntot_amode] = {zero};*/
 
-        for (int imode = 0; imode < ntot_amode; ++imode) {
+        /*for (int imode = 0; imode < ntot_amode; ++imode) {
           // species index for given mode
           for (int lspec = 0; lspec < nspec_amode[imode] + 1; ++lspec) {
             // local array index for MAM number, species
@@ -1752,7 +1759,9 @@ void dropmixnuc(
                 lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
                 voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
                 exp45logsig, alogsig, ccn_k.data());
+        */
       }); // end parfor(k)
+
 } // dropmixnuc
 } // namespace ndrop
 } // end namespace mam4
