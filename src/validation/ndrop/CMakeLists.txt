@@ -43,7 +43,7 @@ set(TEST_LIST
     activate_modal_ts_1400_type1
     explmix1417_actmm_merged
     explmix1417_mm_merged
-    # stand_get_activate_frac_ts_1417
+    stand_get_activate_frac_ts_1417
     activate_modal_ts_1417_type2
     stand_activate_modal_ts_1417_type2
     activate_modal_merged
@@ -91,8 +91,7 @@ set(ERROR_THRESHOLDS
     7e-5  #    activate_modal_ts_1400_type1
     2e-10 #    explmix1417_actmm_merged
     1e-9  #    explmix1417_mm_merged
-    # 5e-5  #    stand_get_activate_frac_ts_1417--FIXME--tol changed in repsonse to using rel error for pass/fail
-    #       #    returning NaN for output: fluxn_4
+    6e-5  #    stand_get_activate_frac_ts_1417--FIXME?--tol changed in repsonse to using rel error for pass/fail
     1e-5  #    activate_modal_ts_1417_type2
     5e-6  #    stand_activate_modal_ts_1417_type2
     2e-3  #    activate_modal_merged
