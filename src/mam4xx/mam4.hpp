@@ -24,6 +24,7 @@
 #include <mam4xx/lin_strat_chem.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/mo_chm_diags.hpp>
+#include <mam4xx/mo_drydep.hpp>
 #include <mam4xx/mo_photo.hpp>
 #include <mam4xx/mo_setext.hpp>
 #include <mam4xx/mo_sethet.hpp>
