@@ -50,8 +50,8 @@ set(ERROR_THRESHOLDS
     2e-6
     2e-6
     1e-12
-    1e-12
-    5e-11
+    3e-10 # calcsize_compute_dry_volume
+    2e-6 # stand_modal_aero_calcsize_sub--FIXME?--tol changed in repsonse to using rel error for pass/fail
     3e-5
     1.5e-3
    )

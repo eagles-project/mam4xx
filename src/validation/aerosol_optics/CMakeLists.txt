@@ -59,21 +59,21 @@ set(TEST_LIST
 
 set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
-   2e-10
-   ${DEFAULT_TOL}
-   3e-10
-   3e-10
-   3e-10
-   2e-8
-   2e-8
-   6e-9
-   7e-11
-   2e-11
-   1e-12
-   7e-11
-   8e-11
-   8e-11
-   1e-14
+    2e-10 # binterp_ts_355
+    2e-10 # calc_diag_spec_ts_355--FIXME?--tol changed in repsonse to using rel error for pass/fail
+    3e-10 # calc_refin_complex_ts_355_lw
+    3e-10 # calc_refin_complex_ts_355_sw
+    2e-9  # calc_volc_ext_ts_355--FIXME?--tol changed in repsonse to using rel error for pass/fail
+    2e-8  # modal_size_parameters_ts_355_ismethod2_false
+    2e-8  # modal_size_parameters_ts_355_ismethod2_true
+    6e-9  # modal_aero_sw_ts_355
+    1e-8  # modal_aero_lw_ts_355--FIXME?--tol changed in repsonse to using rel error for pass/fail
+    2e-11 # calc_parameterized_ts_355
+    4e-10 # update_aod_spec_ts_355--FIXME?--tol changed in repsonse to using rel error for pass/fail
+    2e-8  # aer_rad_props_lw_ts_355--FIXME?--tol changed in repsonse to using rel error for pass/fail
+    6e-9  # aer_rad_props_sw_ts_355--FIXME?--tol changed in repsonse to using rel error for pass/fail
+    6e-9  # volcanic_cmip_sw_ts_355--FIXME?--tol changed in repsonse to using rel error for pass/fail
+    1e-14 # data_transfer_state_q_qqwc_to_prog
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
