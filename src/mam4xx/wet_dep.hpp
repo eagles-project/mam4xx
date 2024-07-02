@@ -1198,8 +1198,9 @@ void set_f_act(const ThreadTeam &team, Kokkos::View<bool *> isprx,
                const View1D &f_act_conv_coarse_dust,
                const View1D &f_act_conv_coarse_nacl,
                haero::ConstColumnView pdel, haero::ConstColumnView prain,
-               const View1D &cmfdqr, const ConstView1D &evapr, const View2D &state_q,
-               const View2D &ptend_q, const Real dt, const int nlev) {
+               const View1D &cmfdqr, const ConstView1D &evapr,
+               const View2D &state_q, const View2D &ptend_q, const Real dt,
+               const int nlev) {
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     isprx[k] = aero_model::examine_prec_exist(k, pdel.data(), prain.data(),
@@ -1767,9 +1768,12 @@ void aero_model_wetdep(
       Real specdens_amode[maxd_aspectype];
       Real spechygro[maxd_aspectype];
 
-      ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
-                                 numptr_amode, specdens_amode, spechygro,
-                                 mam_idx, mam_cnst_idx);
+      // Get MAM4 parameters (all arguments in the following call are output
+      // variables)
+      ndrop::get_e3sm_parameters(
+          nspec_amode, lspectype_amode, lmassptr_amode, // output
+          numptr_amode, specdens_amode, spechygro,      // output
+          mam_idx, mam_cnst_idx);                       // output
 
       Real inv_density[ntot_amode][AeroConfig::num_aerosol_ids()] = {};
       Real num2vol_ratio_min[ntot_amode] = {};
@@ -1788,34 +1792,33 @@ void aero_model_wetdep(
       int n_common_species_ait_accum = {};
       int ait_spec_in_acc[AeroConfig::num_aerosol_ids()] = {};
       int acc_spec_in_ait[AeroConfig::num_aerosol_ids()] = {};
+
+      // Initialize all contast variables needed for calcsize
+      //(all arguments in the following call are output variables)
       modal_aero_calcsize::init_calcsize(
           inv_density, num2vol_ratio_min, num2vol_ratio_max,
           num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
           num2vol_ratio_nom_nmodes, dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
-          mean_std_dev_nmodes,
-          // outputs
-          noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
-          acc_spec_in_ait);
+          mean_std_dev_nmodes, noxf_acc2ait, n_common_species_ait_accum,
+          ait_spec_in_acc, acc_spec_in_ait);
 
       Real dgncur_c_kk[ntot_amode] = {};
       Real dqqcwdt_kk[pcnst] = {};
       //  Calculate aerosol size distribution parameters and aerosol water
-      //  uptake
-      // For prognostic aerosols
+      //  uptake for prognostic aerosols
       modal_aero_calcsize::modal_aero_calcsize_sub(
-          state_q_kk.data(), // in/out
-          qqcw_kk.data(),    // in/out
-          dt, do_adjust, do_aitacc_transfer, update_mmr, lmassptr_amode,
-          numptr_amode,
-          inv_density, // in
+          // Inputs
+          state_q_kk.data(), qqcw_kk.data(), dt, do_adjust, do_aitacc_transfer,
+          update_mmr, lmassptr_amode, numptr_amode, inv_density,
           num2vol_ratio_min, num2vol_ratio_max, num2vol_ratio_max_nmodes,
           num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes, dgnmin_nmodes,
           dgnmax_nmodes, dgnnom_nmodes, mean_std_dev_nmodes, noxf_acc2ait,
           n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
-          // outputs
+          // Outputs
           dgnumdry_m_kk, dgncur_c_kk, ptend_q_kk.data(), dqqcwdt_kk);
-      // update could aerosol.
+      // NOTE: dgnumdry_m_kk and dgncur_c_kk are exactly the same
 
+      // update could aerosol.
       if (update_mmr) {
         // Note: it only needs to update aerosol variables.
         for (int i = utils::aero_start_ind(); i < pcnst; ++i) {
@@ -1824,8 +1827,10 @@ void aero_model_wetdep(
       } // end update could aerosols.
 
       mam4::water_uptake::modal_aero_water_uptake_dr(
+          // inputs
           nspec_amode, specdens_amode, spechygro, lspectype_amode,
           state_q_kk.data(), temperature(kk), pmid(kk), cldt(kk), dgnumdry_m_kk,
+          // outputs
           dgnumwet_m_kk, qaerwat_m_kk, wetdens_kk);
     }
 
@@ -1893,15 +1898,22 @@ void aero_model_wetdep(
     wetdep::cloud_diagnostics(team, temperature, pmid, pdel, cmfdqr, evapc,
                               cldt, cldcu, cldst, evapr, prain,
                               // outputs
-                              cldv, cldvcu, cldvst, rain, nlev);
+                              cldv, cldvcu, cldvst, rain,
+                              // inputs
+                              nlev);
 
     team.team_barrier(); // for cldcu
 
     // calculate the mass-weighted sol_factic for coarse mode species
     // set the mass-weighted sol_factic for coarse mode species.
-    wetdep::set_f_act(team, isprx, f_act_conv_coarse, f_act_conv_coarse_dust,
-                      f_act_conv_coarse_nacl, pdel, prain, cmfdqr, evapr,
-                      state_q, ptend_q, dt, nlev);
+    wetdep::set_f_act(
+        // input
+        team,
+        // outputs
+        isprx, f_act_conv_coarse, f_act_conv_coarse_dust,
+        f_act_conv_coarse_nacl,
+        // inputs
+        pdel, prain, cmfdqr, evapr, state_q, ptend_q, dt, nlev);
     team.team_barrier();
 
     Real scavimptblnum[aero_model::nimptblgrow_total][ntot_amode];
@@ -1923,9 +1935,10 @@ void aero_model_wetdep(
       aerosol_dry_density[1] = mam4::mam4_density_so4;
       aerosol_dry_density[2] = mam4::mam4_density_dst;
       aerosol_dry_density[3] = mam4::mam4_density_pom;
-      aero_model::modal_aero_bcscavcoef_init(dgnum_amode, sigmag_amode,
-                                             aerosol_dry_density, scavimptblnum,
-                                             scavimptblvol);
+      aero_model::modal_aero_bcscavcoef_init(
+          dgnum_amode, sigmag_amode,     // inputs
+          aerosol_dry_density,           // inputs
+          scavimptblnum, scavimptblvol); // outputs
     }
 
     // main loop over aerosol modes
@@ -1951,12 +1964,22 @@ void aero_model_wetdep(
           // Computes lookup table for aerosol impaction/interception scavenging
           // rates
           wetdep::modal_aero_bcscavcoef_get(
+              // inputs
               team, wet_geometric_mean_diameter_i, isprx, scavimptblvol,
-              scavimptblnum, scavcoefnum, scavcoefvol, imode, nlev);
+              scavimptblnum,
+              // outputs
+              scavcoefnum, scavcoefvol,
+              // inputs
+              imode, nlev);
         }
         // define sol_factb and sol_facti values, and f_act_conv
-        wetdep::define_act_frac(team, sol_facti, sol_factic, sol_factb,
-                                f_act_conv, lphase, imode, nlev);
+        wetdep::define_act_frac(
+            // input
+            team,
+            // outputs
+            sol_facti, sol_factic, sol_factb, f_act_conv,
+            // inputs
+            lphase, imode, nlev);
         team.team_barrier();
 
         // REASTER 08/12/2015 - changed ordering (mass then number) for
@@ -1968,28 +1991,39 @@ void aero_model_wetdep(
           aero_model::index_ordering(lspec, imode, lphase, mm, jnv, jnummaswtr);
           // bypass wet aerosols
           if (0 <= mm && jnummaswtr != jaerowater) {
-
+            // The following call mimics wetdepa_v2 subroutine call in
+            // aero_model.F90
             wetdep::compute_q_tendencies( // tendencies are in scavt
                 team, f_act_conv, f_act_conv_coarse, f_act_conv_coarse_dust,
                 f_act_conv_coarse_nacl, scavcoefnum, scavcoefvol, totcond,
                 cmfdqr, conicw, evapc, evapr, prain, dlf, cldt, cldcu, cldst,
-                cldvst, cldvcu, sol_facti, sol_factic, sol_factb, scavt,
-                bcscavt, rcscavt, rtscavt_sv, state_q, qqcw, ptend_q, pdel, dt,
-                jnummaswtr, jnv, mm, lphase, imode, lspec);
+                cldvst, cldvcu, sol_facti, sol_factic, sol_factb,
+                // outputs
+                scavt, bcscavt, rcscavt, rtscavt_sv,
+                // inputs
+                state_q, qqcw,
+                // outputs
+                ptend_q,
+                // inputs
+                pdel, dt, jnummaswtr, jnv, mm, lphase, imode, lspec);
             team.team_barrier();
 
             // Note: update tendencies only in lphase == 1
             if (lphase == 1) {
               // Update ptend_q from the tendency, scavt
-              wetdep::update_q_tendencies(team, ptend_q, scavt, mm, nlev);
+              wetdep::update_q_tendencies(team,             // input
+                                          ptend_q,          // output
+                                          scavt, mm, nlev); // inputs
             }
             if (lphase == 1) {
-              aerdepwetis[mm] =
-                  aero_model::calc_sfc_flux(team, scavt, pdel, nlev);
+              aerdepwetis[mm] = aero_model::calc_sfc_flux(team,        // input
+                                                          scavt,       // output
+                                                          pdel, nlev); // inputs
             } else // if (lphase == 2)
             {
-              aerdepwetcw[mm] =
-                  aero_model::calc_sfc_flux(team, scavt, pdel, nlev);
+              aerdepwetcw[mm] = aero_model::calc_sfc_flux(team,        // input
+                                                          scavt,       // output
+                                                          pdel, nlev); // inputs
             }
 #if 0
             // Note: Commenting it out because it produces unused variable warnings.
