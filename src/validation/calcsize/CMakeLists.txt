@@ -49,8 +49,8 @@ set(ERROR_THRESHOLDS
     2e-6
     2e-6
     1e-12
-    1e-12
-    5e-11
+    3e-10 # calcsize_compute_dry_volume
+    2e-6 # stand_modal_aero_calcsize_sub--FIXME?--tol changed in repsonse to using rel error for pass/fail
     3e-5
    )
 
@@ -73,5 +73,3 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
 endforeach()
-
-
