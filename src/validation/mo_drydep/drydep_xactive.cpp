@@ -19,7 +19,7 @@ void drydep_xactive(const seq_drydep::Data &data, Ensemble *ensemble) {
 
     const auto fraction_landuse = input.get_array("fraction_landuse");
     const int ncdate = int(input.get_array("ncdate")[0]);
-    const auto col_index_season = input.get_array("col_index_season");
+    // const auto col_index_season = input.get_array("col_index_season");
     const Real sfc_temp = input.get_array("sfc_temp")[0];
     const Real air_temp = input.get_array("air_temp")[0];
     const Real tv = input.get_array("tv")[0];
@@ -36,11 +36,15 @@ void drydep_xactive(const seq_drydep::Data &data, Ensemble *ensemble) {
     View1D fraction_landuse_d("fraction_landuse", n_land_type);
     Kokkos::deep_copy(fraction_landuse_d, fraction_landuse_h);
 
-    ViewInt1DHost col_index_season_h("col_index_season", 12);
-    for (int i = 0; i < 12; ++i) {
-      col_index_season_h(i) = int(col_index_season[i]);
+    // FIXME:
+    // NOTE: the input yaml has index_season_lai that only contains
+    // arrays with a zillion 1's in them, so rather than reading that monster,
+    // into memory, just doing this for now
+    ViewInt1DHost col_index_season_h("col_index_season", n_land_type);
+    for (int i = 0; i < n_land_type; ++i) {
+      col_index_season_h(i) = 1;
     }
-    ViewInt1D col_index_season_d("col_index_season", 12);
+    ViewInt1D col_index_season_d("col_index_season", n_land_type);
     Kokkos::deep_copy(col_index_season_d, col_index_season_h);
 
     View1DHost mmr_h((Real *)mmr.data(), gas_pcnst);
