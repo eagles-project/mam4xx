@@ -226,8 +226,8 @@ void calculate_resistance_rgsx_and_rsmx(
     const Real crs,           // multiplier to calculate rs
     Real &cts,                // correction to rlu rcl and rgs for frost
     Real rgsx[gas_pcnst][n_land_type], // ground resistance [s/m]
-    Real rsmx[gas_pcnst]
-             [n_land_type]) // vegetative resistance (plant mesophyll) [s/m]
+    // vegetative resistance (plant mesophyll) [s/m]
+    Real rsmx[gas_pcnst][n_land_type])
 {
   const auto ri = drydep_data.ri;
   const auto rgso = drydep_data.rgso;
@@ -270,15 +270,6 @@ void calculate_resistance_rgsx_and_rsmx(
               dewm = 1.0;
             }
             rsmx[ispec][lt] = (dewm * rs * drat(idx_drydep) + rmx);
-            // // if (rsmx[ispec][lt] == 0.0)  {
-            //   std::cout << "***in function***" << "\n";
-            //   std::cout  << "ispec, lt = [" << ispec << ", " << lt << "]" << "\n";
-            //   std::cout << "^^^^rsmx[ispec][lt] = " << rsmx[ispec][lt] << "\n";
-            //   std::cout << "dewm = " << dewm << "\n";
-            //   std::cout << "rs = " << rs << "\n";
-            //   std::cout << "drat(idx_drydep) = " << drat(idx_drydep) << "\n";
-            //   std::cout << "rmx = " << rmx << "\n";
-            // // }
           }
         }
       }
@@ -315,9 +306,6 @@ void calculate_resistance_rclx(
             rclx[ispec][lt] =
                 cts + 1.0 / ((heff[idx_drydep] / (1e5 * rcls(sndx, lt))) +
                              foxd(idx_drydep) / rclo(sndx, lt));
-            // std::cout << "***loop 1***"
-            //           << "\n";
-            // std::cout << "rclx[ispec][lt] = " << rclx[ispec][lt] << "\n";
           }
         }
       }
@@ -330,9 +318,6 @@ void calculate_resistance_rclx(
         if (lt != lt_for_water) {
           if (fr_lnduse[lt]) {
             rclx[ispec][lt] = cts + rcls(index_season[lt], lt);
-            // std::cout << "***loop 2***"
-            //           << "\n";
-            // std::cout << "rclx[ispec][lt] = " << rclx[ispec][lt] << "\n";
           }
         }
       }
@@ -468,8 +453,6 @@ void calculate_gas_drydep_vlc_and_flux(
 
   constexpr Real m_to_cm_per_s = 100.0;
   const auto rac = drydep_data.rac;
-  std::cout << "================================================" << "\n";
-  std::cout << "================================================" << "\n";
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     if (drydep_data.has_dvel(ispec)) {
@@ -482,20 +465,6 @@ void calculate_gas_drydep_vlc_and_flux(
                         1.0 / (rac(index_season[lt], lt) + rgsx[ispec][lt]));
           resc = haero::max(10.0, resc);
           lnd_frc = lcl_frc_landuse[lt];
-
-          std::cout << "================================================" << "\n";
-          std::cout << "ispec, lt = " << ispec << ", " << lt << "\n";
-          std::cout << "fr_lnduse[lt] = " << fr_lnduse[lt] << "\n";
-          std::cout << "resc = " << resc << "\n";
-          std::cout << "rsmx[ispec][lt] = " << rsmx[ispec][lt] << "\n";
-          std::cout << "rlux[ispec][lt] = " << rlux[ispec][lt] << "\n";
-          std::cout << "rdc = " << rdc << "\n";
-          std::cout << "rclx[ispec][lt] = " << rclx[ispec][lt] << "\n";
-          std::cout << "rac(index_season[lt], lt) = " << rac(index_season[lt], lt) << "\n";
-          std::cout << "index_season[lt] = " << index_season[lt] << "\n";
-          std::cout << "rgsx[ispec][lt] = " << rgsx[ispec][lt] << "\n";
-          std::cout << "lnd_frc = " << lnd_frc << "\n";
-          std::cout << "================================================" << "\n";
         }
 
         //-------------------------------------------------------------------------------------
@@ -506,41 +475,23 @@ void calculate_gas_drydep_vlc_and_flux(
             if (fr_lnduse[lt]) {
               // assume no surface resistance for SO2 over water
               wrk += lnd_frc / (dep_ra[lt] + dep_rb[lt]);
-              std::cout << "dep_ra[lt] = " << dep_ra[lt] << "\n";
-              std::cout << "dep_rb[lt] = " << dep_rb[lt] << "\n";
             }
           } else {
             if (fr_lnduse[lt]) {
               wrk += lnd_frc / (dep_ra[lt] + dep_rb[lt] + resc);
-              std::cout << "dep_ra[lt] = " << dep_ra[lt] << "\n";
-              std::cout << "dep_rb[lt] = " << dep_rb[lt] << "\n";
             }
           }
         } else {
           if (fr_lnduse[lt]) {
             wrk += lnd_frc / (dep_ra[lt] + dep_rb[lt] + resc);
-            std::cout << "dep_ra[lt] = " << dep_ra[lt] << "\n";
-            std::cout << "dep_rb[lt] = " << dep_rb[lt] << "\n";
           }
         }
-        std::cout << "================================================" << "\n";
-        std::cout << "lt_for_water = " << lt_for_water << "\n";
-        std::cout << "================================================" << "\n";
       }
-
-      std::cout << "================================================" << "\n";
-      std::cout << "mmr[ispec] = " << mmr[ispec] << "\n";
-      std::cout << "================================================" << "\n";
 
       dvel[ispec] = wrk * m_to_cm_per_s;
       dflx[ispec] = term * dvel[ispec] * mmr[ispec];
-      std::cout << "dvel[ispec] = " << dvel[ispec] << "\n";
-      std::cout << "dflx[ispec] = " << dflx[ispec] << "\n";
-      std::cout << "================================================" << "\n";
     }
   }
-  std::cout << "================================================" << "\n";
-  std::cout << "================================================" << "\n";
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -590,7 +541,7 @@ void drydep_xactive(
     Real dvel[gas_pcnst],      // deposition velocity [1/cm/s]
     Real dflx[gas_pcnst]) {    // deposition flux [1/cm^2/s]
 
-  // BAD_CONSTANTS
+  // FIXME: BAD_CONSTANTS
   constexpr Real rain_threshold = 1e-7;   // of the order of 1cm/day [m/s]
   constexpr Real temp_highbound = 313.15; // [K]
   constexpr Real ric = 0.2;               // ???
@@ -608,8 +559,6 @@ void drydep_xactive(
 
   //-------------------------------------------------------------------------------------
   // 	... set month
-  // FIXME: What is going on here?? this leads to month \in [0, 99.99]
-  // which is truncated to store in an int
   //-------------------------------------------------------------------------------------
   int month = (ncdate % 10000) / 100;
 
@@ -685,7 +634,8 @@ void drydep_xactive(
   //-------------------------------------------------------------------------------------
   Real tc = sfc_temp - tmelt;
   Real crs;
-  if ((sfc_temp > tmelt) && (sfc_temp < temp_highbound)) { // BAD_CONSTANTS
+  if ((sfc_temp > tmelt) && (sfc_temp < temp_highbound)) {
+    // FIXME: BAD_CONSTANTS
     crs = (1.0 + haero::square(200.0 / (solar_flux + 0.1))) *
           (400.0 / (tc * (40.0 - tc)));
   } else {
@@ -695,7 +645,8 @@ void drydep_xactive(
   //-------------------------------------------------------------------------------------
   // rdc (lower canopy res)
   //-------------------------------------------------------------------------------------
-  Real rdc = 100.0 * (1.0 + 1000.0 / (solar_flux + 10.0)); // BAD_CONSTANTS
+  // FIXME: BAD_CONSTANTS
+  Real rdc = 100.0 * (1.0 + 1000.0 / (solar_flux + 10.0));
 
   //-------------------------------------------------------------------------------------
   // 	... form working arrays
