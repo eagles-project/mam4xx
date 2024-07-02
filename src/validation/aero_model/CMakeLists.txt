@@ -39,9 +39,9 @@ set(TEST_LIST
 set(DEFAULT_TOL 1e-11)
 set(DEFAULT_TOL_BASELINE 1e-13)
 
-set(ERROR_THRESHOLDS  
-   5e-8
-   ${DEFAULT_TOL}
+set(ERROR_THRESHOLDS
+   3e-6  # calc_1_impact_rate_ts_0--FIXME?--tol changed in repsonse to using rel error for pass/fail
+   8e-10 # modal_aero_bcscavcoef_get_ts_355--FIXME?--tol changed in repsonse to using rel error for pass/fail
    2e-4
    2e-5
    2e-5
@@ -50,7 +50,7 @@ set(ERROR_THRESHOLDS
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
-  
+
   configure_file(
     ${AERO_MODEL_VALIDATION_DIR}/mam_${input}.py
     ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.py

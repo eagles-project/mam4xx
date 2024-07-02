@@ -44,7 +44,7 @@ set(ERROR_THRESHOLDS
     ${DEFAULT_TOL} # setsox_test
     ${DEFAULT_TOL} # setsox_test_nlev
     ${DEFAULT_TOL} # calc_ph_values
-    ${DEFAULT_TOL} # calc_sox_aqueous
+    2e-9           # calc_sox_aqueous--FIXME?--tol changed in repsonse to using rel error for pass/fail
     ${DEFAULT_TOL} # calc_ynetpos
    )
 

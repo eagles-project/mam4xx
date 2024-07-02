@@ -40,13 +40,13 @@ set(TEST_LIST
 
 set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
-    6e-11
-    ${DEFAULT_TOL}
-    6e-13
-    2e-9
-    6e-9
-    9e-7
-   )
+    1e-10 # lin_strat_chem_solve_ts_1415--FIXME?--tol changed in repsonse to using rel error for pass/fail
+    3e-9  # lin_strat_sfcsink_ts_1415_multicol--FIXME?--tol changed in repsonse to using rel error for pass/fail
+    5e-8  # lin_strat_sfcsinkmulticol_merged--FIXME?--tol changed in repsonse to using rel error for pass/fail
+    2e-9  # lin_strat_chem_solve_merged
+    6e-9  # lin_strat_chem_solve_ts_1415_multicol
+    9e-7  # lin_strat_chem_solvemulticol_merged
+    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
 
