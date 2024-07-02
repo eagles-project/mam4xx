@@ -9,7 +9,6 @@ using namespace mam4::mo_drydep;
 using namespace haero;
 void calculate_resistance_rclx(const seq_drydep::Data &data,
                                Ensemble *ensemble) {
-std::cout<<__FILE__<<":"<<__LINE__<<" calculate_resistance_rclx "<<std::endl;
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
     using View1D = typename DeviceType::view_1d<Real>;
@@ -29,7 +28,7 @@ std::cout<<__FILE__<<":"<<__LINE__<<" calculate_resistance_rclx "<<std::endl;
 
     ViewInt1DHost index_season_h("index_season", n_land_type);
     for (int lt = 0; lt < n_land_type; ++lt) {
-      index_season_h(lt) = int(index_season[lt])-1;
+      index_season_h(lt) = int(index_season[lt]) - 1;
     }
     ViewInt1D index_season_d("index_season", n_land_type);
     Kokkos::deep_copy(index_season_d, index_season_h);
@@ -60,10 +59,6 @@ std::cout<<__FILE__<<":"<<__LINE__<<" calculate_resistance_rclx "<<std::endl;
           for (int i = 0; i < gas_pcnst; ++i) {
             for (int lt = 0; lt < n_land_type; ++lt, ++l) {
               rclx_d(l) = rclx[i][lt];
-              // std::cout << "rclx_d(l) = " << rclx_d(l) << "\n";
-              std::cout << "i, lt, l = " << i << ", " << lt << ", " << l
-                        << "\n";
-              std::cout << "rclx[i][lt] = " << rclx[i][lt] << "\n";
             }
           }
         });

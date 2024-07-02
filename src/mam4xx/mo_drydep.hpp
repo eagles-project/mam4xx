@@ -92,9 +92,12 @@ void calculate_ustar(
   //-------------------------------------------------------------------------------------
   // calculate the friction velocity for each land type u_i=uustar/u*_i
   //-------------------------------------------------------------------------------------
-  for (int lt=0; lt<n_land_type; ++lt) ustar[lt] = 0;
-  for (int lt=0; lt<n_land_type; ++lt) cvar[lt] = 0;
-  for (int lt=0; lt<n_land_type; ++lt) bycp[lt] = 0;
+  for (int lt = 0; lt < n_land_type; ++lt)
+    ustar[lt] = 0;
+  for (int lt = 0; lt < n_land_type; ++lt)
+    cvar[lt] = 0;
+  for (int lt = 0; lt < n_land_type; ++lt)
+    bycp[lt] = 0;
 
   for (int lt = beglt; lt <= endlt; ++lt) {
     if (fr_lnduse[lt]) { // BAD_CONSTANTS
@@ -163,7 +166,8 @@ void calculate_obukhov_length(
     const Real ribn,               // richardson number [unitless]
     Real obklen[n_land_type]) {    // monin-obukhov length [m]
 
-  for (int lt=0; lt<n_land_type; ++lt) obklen[lt] = 0;
+  for (int lt = 0; lt < n_land_type; ++lt)
+    obklen[lt] = 0;
   for (int lt = beglt; lt <= endlt; ++lt) {
     if (fr_lnduse[lt]) {
       // BAD_CONSTANTS
@@ -188,9 +192,11 @@ void calculate_aerodynamic_and_quasilaminar_resistance(
     const Real cvar[n_land_type],   // height parameter
     Real dep_ra[n_land_type],       // aerodynamic resistance [s/m]
     Real dep_rb[n_land_type]) {     // sublayer resistance [s/m]
-				    //
-  for (int lt=0; lt<n_land_type; ++lt) dep_ra[lt] = 0;
-  for (int lt=0; lt<n_land_type; ++lt) dep_rb[lt] = 0;
+
+  for (int lt = 0; lt < n_land_type; ++lt)
+    dep_ra[lt] = 0;
+  for (int lt = 0; lt < n_land_type; ++lt)
+    dep_rb[lt] = 0;
   for (int lt = beglt; lt <= endlt; ++lt) {
     if (fr_lnduse[lt]) {
       Real psih; // stability correction factor [-]
@@ -227,8 +233,7 @@ void calculate_resistance_rgsx_and_rsmx(
     Real &cts,                // correction to rlu rcl and rgs for frost
     Real rgsx[gas_pcnst][n_land_type], // ground resistance [s/m]
     // vegetative resistance (plant mesophyll) [s/m]
-    Real rsmx[gas_pcnst][n_land_type])
-{
+    Real rsmx[gas_pcnst][n_land_type]) {
   const auto ri = drydep_data.ri;
   const auto rgso = drydep_data.rgso;
   const auto rgss = drydep_data.rgss;
@@ -236,10 +241,10 @@ void calculate_resistance_rgsx_and_rsmx(
   const auto drat = drydep_data.drat;
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec)
-    for (int lt=0; lt<n_land_type; ++lt)
+    for (int lt = 0; lt < n_land_type; ++lt)
       rgsx[ispec][lt] = 0;
   for (int ispec = 0; ispec < gas_pcnst; ++ispec)
-    for (int lt=0; lt<n_land_type; ++lt)
+    for (int lt = 0; lt < n_land_type; ++lt)
       rsmx[ispec][lt] = 0;
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
@@ -525,17 +530,18 @@ void drydep_xactive(
     const Real fraction_landuse[n_land_type], // fraction of land use for column
                                               // by land type
     const int ncdate,                         // date [YYMMDD]
-    const int col_index_season[n_land_type], // column-specific mapping of month indices
-                                    // to seasonal land-type indices [-]
-    const Real sfc_temp,            // surface temperature [K]
-    const Real air_temp,            // surface air temperature [K]
-    const Real tv,                  // potential temperature [K]
-    const Real pressure_sfc,        // surface pressure [Pa]
-    const Real pressure_10m,        // 10-meter pressure [Pa]
-    const Real spec_hum,            // specific humidity [kg/kg]
-    const Real wind_speed,          // 10-meter wind spped [m/s]
-    const Real rain,                // rain content [??]
-    const Real snow,                // snow height [m]
+    const int col_index_season[n_land_type], // column-specific mapping of month
+                                             // indices to seasonal land-type
+                                             // indices [-]
+    const Real sfc_temp,                     // surface temperature [K]
+    const Real air_temp,                     // surface air temperature [K]
+    const Real tv,                           // potential temperature [K]
+    const Real pressure_sfc,                 // surface pressure [Pa]
+    const Real pressure_10m,                 // 10-meter pressure [Pa]
+    const Real spec_hum,                     // specific humidity [kg/kg]
+    const Real wind_speed,                   // 10-meter wind spped [m/s]
+    const Real rain,                         // rain content [??]
+    const Real snow,                         // snow height [m]
     const Real solar_flux,     // direct shortwave surface radiation [W/m^2]
     const Real mmr[gas_pcnst], // constituent MMRs [kg/kg]
     Real dvel[gas_pcnst],      // deposition velocity [1/cm/s]
