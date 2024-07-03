@@ -1368,7 +1368,7 @@ void compute_q_tendencies(
     const View1D &f_act_conv_coarse_dust, const View1D &f_act_conv_coarse_nacl,
     const View1D &scavcoefnum, const View1D &scavcoefvol, const View1D &totcond,
     const View1D &cmfdqr, const View1D &conicw, const View1D &evapc,
-    const ConstView1D &evapr, const View1D &prain, const View1D &dlf,
+    const ConstView1D &evapr, const View1D &prain, const ConstView1D &dlf,
     const ConstView1D &cldt, const View1D &cldcu, const View1D &cldst,
     const View1D &cldvst, const View1D &cldvcu, const View1D &sol_facti,
     const View1D &sol_factic, const View1D &sol_factb, const View1D &scavt,
@@ -1523,7 +1523,7 @@ void aero_model_wetdep(
     const haero::ConstColumnView &sh_frac,
     const haero::ConstColumnView &icwmrdp,
     const haero::ConstColumnView &icwmrsh, const haero::ConstColumnView &evapr,
-    const ColumnView &dlf, const ColumnView &prain,
+    const haero::ConstColumnView &dlf, const ColumnView &prain,
     // in/out calcsize and water_uptake
     const View2D &wet_geometric_mean_diameter_i,
     const View2D &dry_geometric_mean_diameter_i, const View2D &qaerwat,
