@@ -551,7 +551,7 @@ void modal_aero_bcscavcoef_init(
     const Real dgnum_amode[AeroConfig::num_modes()],
     const Real sigmag_amode[AeroConfig::num_modes()],
     const Real aerosol_dry_density[AeroConfig::num_modes()],
-    //outputs
+    // outputs
     Real scavimptblnum[nimptblgrow_total][AeroConfig::num_modes()],
     Real scavimptblvol[nimptblgrow_total][AeroConfig::num_modes()]) {
   // -----------------------------------------------------------------------
