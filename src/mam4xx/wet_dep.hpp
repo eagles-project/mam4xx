@@ -46,10 +46,9 @@ namespace wetdep {
  */
 
 using ConstView1D = DeviceType::view_1d<const Real>;
-
-using View1D = DeviceType::view_1d<Real>;
-using Bool1D = DeviceType::view_1d<bool>;
-using View2D = DeviceType::view_2d<Real>;
+using View1D      = DeviceType::view_1d<Real>;
+using Bool1D      = DeviceType::view_1d<bool>;
+using View2D      = DeviceType::view_2d<Real>;
 KOKKOS_INLINE_FUNCTION
 Real local_precip_production(const Real pdel, const Real source_term,
                              const Real sink_term) {
@@ -1793,7 +1792,7 @@ void aero_model_wetdep(
       int ait_spec_in_acc[AeroConfig::num_aerosol_ids()] = {};
       int acc_spec_in_ait[AeroConfig::num_aerosol_ids()] = {};
 
-      // Initialize all contast variables needed for calcsize
+      // Initialize all contant variables needed for calcsize
       //(all arguments in the following call are output variables)
       modal_aero_calcsize::init_calcsize(
           inv_density, num2vol_ratio_min, num2vol_ratio_max,
@@ -1816,7 +1815,8 @@ void aero_model_wetdep(
           n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
           // Outputs
           dgnumdry_m_kk, dgncur_c_kk, ptend_q_kk.data(), dqqcwdt_kk);
-      // NOTE: dgnumdry_m_kk and dgncur_c_kk are exactly the same
+      // NOTE: dgnumdry_m_kk is interstitial dry diameter size and
+      // dgncur_c_kk is cloud borne dry diameter size
 
       // update could aerosol.
       if (update_mmr) {
