@@ -46,9 +46,9 @@ namespace wetdep {
  */
 
 using ConstView1D = DeviceType::view_1d<const Real>;
-using View1D      = DeviceType::view_1d<Real>;
-using Bool1D      = DeviceType::view_1d<bool>;
-using View2D      = DeviceType::view_2d<Real>;
+using View1D = DeviceType::view_1d<Real>;
+using Bool1D = DeviceType::view_1d<bool>;
+using View2D = DeviceType::view_2d<Real>;
 KOKKOS_INLINE_FUNCTION
 Real local_precip_production(const Real pdel, const Real source_term,
                              const Real sink_term) {
