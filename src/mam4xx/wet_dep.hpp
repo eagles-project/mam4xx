@@ -2114,7 +2114,7 @@ public:
 
   const char *name() const { return "MAM4 Wet Deposition"; }
 
-  KOKKOS_INLINE_FUNCTION
+  inline
   void init(const AeroConfig &aero_config,
             const Config &wed_dep_config = Config());
 
