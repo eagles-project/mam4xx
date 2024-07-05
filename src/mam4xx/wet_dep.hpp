@@ -2114,9 +2114,8 @@ public:
 
   const char *name() const { return "MAM4 Wet Deposition"; }
 
-  inline
-  void init(const AeroConfig &aero_config,
-            const Config &wed_dep_config = Config());
+  inline void init(const AeroConfig &aero_config,
+                   const Config &wed_dep_config = Config());
 
   // compute_tendencies -- computes tendencies and updates diagnostics
   // NOTE: that both diags and tends are const below--this means their views
