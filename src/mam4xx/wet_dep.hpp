@@ -2114,64 +2114,64 @@ public:
 
   const char *name() const { return "MAM4 Wet Deposition"; }
 
-  /*void init(const AeroConfig &aero_config,
-            const Config &wed_dep_config = Config());*/
+  KOKKOS_INLINE_FUNCTION
+  void init(const AeroConfig &aero_config,
+            const Config &wed_dep_config = Config());
 
   // compute_tendencies -- computes tendencies and updates diagnostics
   // NOTE: that both diags and tends are const below--this means their views
   // NOTE: are fixed, but the data in those views is allowed to vary.
-  /*KOKKOS_INLINE_FUNCTION
+  KOKKOS_INLINE_FUNCTION
   void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
                           Real t, Real dt, const Atmosphere &atm,
                           const Surface &sfc, const Prognostics &progs,
                           const Diagnostics &diags,
                           const Tendencies &tends) const;
 
-  Kokkos::View<Real *[2]> qsrflx_mzaer2cnvpr;*/
+  Kokkos::View<Real *[2]> qsrflx_mzaer2cnvpr;
 
-  /*private:
-    Config config_;
-    Kokkos::View<Real *> cldv;
-    Kokkos::View<Real *> cldvcu;
-    Kokkos::View<Real *> cldvst;
-    Kokkos::View<Real *> rain;
-    Kokkos::View<Real *> cldcu;
-    Kokkos::View<Real *> cldt;
-    Kokkos::View<Real *> evapc;
-    Kokkos::View<Real *> cmfdqr;
-    Kokkos::View<Real *> prain;
-    Kokkos::View<Real *> conicw;
-    Kokkos::View<Real *> totcond;
+private:
+  Config config_;
+  Kokkos::View<Real *> cldv;
+  Kokkos::View<Real *> cldvcu;
+  Kokkos::View<Real *> cldvst;
+  Kokkos::View<Real *> rain;
+  Kokkos::View<Real *> cldcu;
+  Kokkos::View<Real *> cldt;
+  Kokkos::View<Real *> evapc;
+  Kokkos::View<Real *> cmfdqr;
+  Kokkos::View<Real *> prain;
+  Kokkos::View<Real *> conicw;
+  Kokkos::View<Real *> totcond;
 
-    Kokkos::View<bool *> isprx;
-    Kokkos::View<Real *> f_act_conv_coarse;
-    Kokkos::View<Real *> f_act_conv_coarse_dust;
-    Kokkos::View<Real *> f_act_conv_coarse_nacl;
+  Kokkos::View<bool *> isprx;
+  Kokkos::View<Real *> f_act_conv_coarse;
+  Kokkos::View<Real *> f_act_conv_coarse_dust;
+  Kokkos::View<Real *> f_act_conv_coarse_nacl;
 
-    Kokkos::View<Real *> scavcoefnum;
-    Kokkos::View<Real *> scavcoefvol;
+  Kokkos::View<Real *> scavcoefnum;
+  Kokkos::View<Real *> scavcoefvol;
 
-    Kokkos::View<Real *> sol_facti;
-    Kokkos::View<Real *> sol_factic;
-    Kokkos::View<Real *> sol_factb;
-    Kokkos::View<Real *> f_act_conv;
+  Kokkos::View<Real *> sol_facti;
+  Kokkos::View<Real *> sol_factic;
+  Kokkos::View<Real *> sol_factb;
+  Kokkos::View<Real *> f_act_conv;
 
-    Kokkos::View<Real *> scavt;   // scavenging tend [kg/kg/s]
-    Kokkos::View<Real *> bcscavt; // below cloud, convective [kg/kg/s]
-    Kokkos::View<Real *> rcscavt; // resuspension, convective [kg/kg/s]
+  Kokkos::View<Real *> scavt;   // scavenging tend [kg/kg/s]
+  Kokkos::View<Real *> bcscavt; // below cloud, convective [kg/kg/s]
+  Kokkos::View<Real *> rcscavt; // resuspension, convective [kg/kg/s]
 
-    Kokkos::View<Real *> rtscavt_sv;
+  Kokkos::View<Real *> rtscavt_sv;
 
-    Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
-        qqcw_sav;
+  Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
+      qqcw_sav;
 
-    Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()];
-    Real
-    scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()];*/
+  Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()];
+  Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()];
 };
 
-/* void WetDeposition::init(const AeroConfig &aero_config,
-                                const Config &wed_dep_config) {
+void WetDeposition::init(const AeroConfig &aero_config,
+                         const Config &wed_dep_config) {
   config_ = wed_dep_config;
   const int nlev = config_.nlev;
   Kokkos::resize(cldv, nlev);
@@ -2223,8 +2223,8 @@ public:
   aero_model::modal_aero_bcscavcoef_init(dgnum_amode, sigmag_amode,
                                          aerosol_dry_density, scavimptblnum,
                                          scavimptblvol);
-}*/
-/*
+}
+
 // compute_tendencies -- computes tendencies and updates diagnostics
 // NOTE: that both diags and tends are const below--this means their views
 // NOTE: are fixed, but the data in those views is allowed to vary.
@@ -2416,7 +2416,7 @@ void WetDeposition::compute_tendencies(
     }
   }
   team.team_barrier();
-}*/
+}
 } // namespace mam4
 
 #endif
