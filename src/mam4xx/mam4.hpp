@@ -41,6 +41,8 @@
 #include <mam4xx/water_uptake.hpp>
 #include <mam4xx/wet_dep.hpp>
 #include <mam4xx/mo_srf_emissions.hpp>
+#include <mam4xx/aero_model_emissions.hpp>
+
 namespace mam4 {
 
 using NucleationProcess = haero::AeroProcess<AeroConfig, Nucleation>;

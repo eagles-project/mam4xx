@@ -16,6 +16,8 @@ namespace mam4::mo_srf_emissions {
 static constexpr int gas_pcnst = aero_model::pcnst;
 const int n_emissions_species = 40;
 
+constexpr int n_srf_emiss = 9;
+
 // use mo_tracname,  only : solsym
 // use ioFileMod,    only : getfil
 // use ppgrid,       only : pcols, begchunk, endchunk
