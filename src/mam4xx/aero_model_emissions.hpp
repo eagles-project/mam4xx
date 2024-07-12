@@ -7,8 +7,10 @@
 #include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/mam4_types.hpp>
 
-namespace mam4 {
-namespace aero_model_emissions {
+namespace mam4::aero_model_emissions {
+
+constexpr int n_online_emiss = 9;
+
 // // number of invariants
 // constexpr int nfs = mam4::gas_chemistry::nfs;
 // static const int num_tracer_cnst = 4;
@@ -147,6 +149,5 @@ namespace aero_model_emissions {
 //         }
 //       }); // end kokkos::parfor(k)
 // } // end setinv_nlev()
-} // namespace aero_model_emissions
-} // namespace mam4
+} // namespace mam4::aero_model_emissions
 #endif
