@@ -920,7 +920,7 @@ void aero_model_drydep(
     vlc_dry(nlev)     : dep velocity, sum of vlc_grv and vlc_trb [m/s]
   */  
   // clang-format on 
- /* const int nlev = mam4::nlev;
+  const int nlev = mam4::nlev;
   // Calculate rho:
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int kk) {
@@ -1117,7 +1117,7 @@ void aero_model_drydep(
           for (int i = 0; i < nlev; ++i)
             ptend_q(i,icnst) = dqdt_tmp[kk][i];
         }
-      });*/
+      }); 
 }
 // compute_tendencies -- computes tendencies and updates diagnostics
 // NOTE: that both diags and tends are const below--this means their views
