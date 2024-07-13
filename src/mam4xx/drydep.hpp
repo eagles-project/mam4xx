@@ -865,17 +865,20 @@ void aero_model_drydep(
     // inputs
     const ThreadTeam &team,
     const Real fraction_landuse[DryDeposition::n_land_type],
-    const haero::ConstColumnView tair, const haero::ConstColumnView pmid,
-    const haero::ConstColumnView pint, const haero::ConstColumnView pdel,
+    const ConstColumnView tair, const ConstColumnView pmid,
+    const ConstColumnView pint, const ConstColumnView pdel,
     const Diagnostics::ColumnTracerView state_q,
     const ConstColumnView dgncur_awet[AeroConfig::num_modes()],
-    const ColumnView wetdens[AeroConfig::num_modes()],
-    const ColumnView qqcw[aero_model::pcnst], const Real obklen,
+    const ConstColumnView wetdens[AeroConfig::num_modes()], const Real obklen,
     const Real ustar, const Real landfrac, const Real icefrac,
-    const Real ocnfrac, const Real fricvelin, const Real ram1in,
+    const Real ocnfrac, const Real fricvelin, const Real ram1in, const Real dt,
+    // Input-outputs
+    const ColumnView qqcw[aero_model::pcnst],
+    // outputs
     const Diagnostics::ColumnTracerView ptend_q,
-    bool ptend_lq[aero_model::pcnst], const Real dt,
-    const ColumnView aerdepdrycw, const ColumnView aerdepdryis,
+    bool ptend_lq[aero_model::pcnst], const ColumnView aerdepdrycw,
+    const ColumnView aerdepdryis,
+    // work arrays
     const ColumnView rho,
     const ColumnView vlc_dry[AeroConfig::num_modes()]
                             [DryDeposition::aerosol_categories],
