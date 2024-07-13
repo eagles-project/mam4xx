@@ -862,12 +862,13 @@ void modal_aero_depvel_part(
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
 void aero_model_drydep(
+    // inputs
     const ThreadTeam &team,
     const Real fraction_landuse[DryDeposition::n_land_type],
     const haero::ConstColumnView tair, const haero::ConstColumnView pmid,
     const haero::ConstColumnView pint, const haero::ConstColumnView pdel,
     const Diagnostics::ColumnTracerView state_q,
-    const ColumnView dgncur_awet[AeroConfig::num_modes()],
+    const ConstColumnView dgncur_awet[AeroConfig::num_modes()],
     const ColumnView wetdens[AeroConfig::num_modes()],
     const ColumnView qqcw[aero_model::pcnst], const Real obklen,
     const Real ustar, const Real landfrac, const Real icefrac,
