@@ -869,21 +869,23 @@ void aero_model_drydep(
     const Diagnostics::ColumnTracerView state_q,
     const ColumnView dgncur_awet[AeroConfig::num_modes()],
     const ColumnView wetdens[AeroConfig::num_modes()],
-    const Kokkos::View<Real *> qqcw[aero_model::pcnst], const Real obklen,
+    // const Kokkos::View<Real *> qqcw[aero_model::pcnst], const Real obklen,
+    const ColumnView qqcw[aero_model::pcnst], const Real obklen,
     const Real ustar, const Real landfrac, const Real icefrac,
     const Real ocnfrac, const Real fricvelin, const Real ram1in,
     const Diagnostics::ColumnTracerView ptend_q,
     bool ptend_lq[aero_model::pcnst], const Real dt,
-    const ColumnView aerdepdrycw, const ColumnView aerdepdryis,
+    const ColumnView aerdepdrycw, const ColumnView aerdepdryis) /*,
 
-    const ColumnView rho,
-    const Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()]
-                                      [DryDeposition::aerosol_categories],
-    const Kokkos::View<Real *> vlc_trb[AeroConfig::num_modes()]
-                                      [DryDeposition::aerosol_categories],
-    const Kokkos::View<Real *> vlc_grv[AeroConfig::num_modes()]
-                                      [DryDeposition::aerosol_categories],
-    const Kokkos::View<Real *> dqdt_tmp[aero_model::pcnst]) {
+     const ColumnView rho,
+     const Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()]
+                                       [DryDeposition::aerosol_categories],
+     const Kokkos::View<Real *> vlc_trb[AeroConfig::num_modes()]
+                                       [DryDeposition::aerosol_categories],
+     const Kokkos::View<Real *> vlc_grv[AeroConfig::num_modes()]
+                                       [DryDeposition::aerosol_categories],
+     const Kokkos::View<Real *> dqdt_tmp[aero_model::pcnst]) */
+{
   // clang-format off
   /*   
     // Arguments
@@ -920,7 +922,7 @@ void aero_model_drydep(
     vlc_dry(nlev)     : dep velocity, sum of vlc_grv and vlc_trb [m/s]
   */  
   // clang-format on 
-  const int nlev = mam4::nlev;
+ /* const int nlev = mam4::nlev;
   // Calculate rho:
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int kk) {
@@ -1117,7 +1119,7 @@ void aero_model_drydep(
           for (int i = 0; i < nlev; ++i)
             ptend_q(i,icnst) = dqdt_tmp[kk][i];
         }
-      });
+      });*/
 }
 // compute_tendencies -- computes tendencies and updates diagnostics
 // NOTE: that both diags and tends are const below--this means their views
@@ -1166,7 +1168,7 @@ void DryDeposition::compute_tendencies(const AeroConfig &config, const ThreadTea
   auto vlc_grv = this->vlc_grv;
   auto dqdt_tmp= this->dqdt_tmp;
 
-  mam4::aero_model_drydep(
+  /*mam4::aero_model_drydep(
      team, fraction_landuse, tair, pmid, pint, pdel, state_q,
      dgncur_awet, wetdens, qqcw_tends, obklen, ustar, landfrac, icefrac,
      ocnfrac, fricvelin, ram1in, ptend_q, ptend_lq, dt, aerdepdrycw,
@@ -1181,7 +1183,7 @@ void DryDeposition::compute_tendencies(const AeroConfig &config, const ThreadTea
         if (-1 < ConvProc::lmassptrcw_amode(a,m))
           tends.q_aero_c[m][a][kk] = qqcw_tends[ConvProc::lmassptrcw_amode(a,m)][kk] /dt;
     }
-  });
+  });*/
 }
 } // namespace mam4
 
