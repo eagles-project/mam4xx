@@ -875,17 +875,15 @@ void aero_model_drydep(
     const Real ocnfrac, const Real fricvelin, const Real ram1in,
     const Diagnostics::ColumnTracerView ptend_q,
     bool ptend_lq[aero_model::pcnst], const Real dt,
-    const ColumnView aerdepdrycw, const ColumnView aerdepdryis) /*,
-
-     const ColumnView rho,
-     const Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()]
-                                       [DryDeposition::aerosol_categories],
-     const Kokkos::View<Real *> vlc_trb[AeroConfig::num_modes()]
-                                       [DryDeposition::aerosol_categories],
-     const Kokkos::View<Real *> vlc_grv[AeroConfig::num_modes()]
-                                       [DryDeposition::aerosol_categories],
-     const Kokkos::View<Real *> dqdt_tmp[aero_model::pcnst]) */
-{
+    const ColumnView aerdepdrycw, const ColumnView aerdepdryis,
+    const ColumnView rho,
+    const Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()]
+                                      [DryDeposition::aerosol_categories],
+    const Kokkos::View<Real *> vlc_trb[AeroConfig::num_modes()]
+                                      [DryDeposition::aerosol_categories],
+    const Kokkos::View<Real *> vlc_grv[AeroConfig::num_modes()]
+                                      [DryDeposition::aerosol_categories],
+    const Kokkos::View<Real *> dqdt_tmp[aero_model::pcnst]) {
   // clang-format off
   /*   
     // Arguments
