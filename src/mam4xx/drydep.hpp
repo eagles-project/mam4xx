@@ -54,7 +54,7 @@ private:
   Kokkos::View<Real *> rho;
 
   Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()][aerosol_categories];
-  Kokkos::View<Real *> vlc_trb[AeroConfig::num_modes()][aerosol_categories];
+  Real vlc_trb[AeroConfig::num_modes()][aerosol_categories];
   Kokkos::View<Real *> vlc_grv[AeroConfig::num_modes()][aerosol_categories];
   Kokkos::View<Real *> dqdt_tmp[aero_model::pcnst];
 
@@ -77,11 +77,10 @@ public:
     for (int j = 0; j < AeroConfig::num_modes(); ++j) {
       for (int i = 0; i < aerosol_categories; ++i) {
         Kokkos::resize(vlc_dry[j][i], nlev);
-        Kokkos::resize(vlc_trb[j][i], nlev);
         Kokkos::resize(vlc_grv[j][i], nlev);
         Kokkos::deep_copy(vlc_dry[j][i], 0);
-        Kokkos::deep_copy(vlc_trb[j][i], 0);
         Kokkos::deep_copy(vlc_grv[j][i], 0);
+        vlc_trb[j][i] = 0;
       }
     }
     for (int j = 0; j < aero_model::pcnst; ++j) {
@@ -882,8 +881,7 @@ void aero_model_drydep(
     const ColumnView rho,
     const ColumnView vlc_dry[AeroConfig::num_modes()]
                             [DryDeposition::aerosol_categories],
-    const ColumnView vlc_trb[AeroConfig::num_modes()]
-                            [DryDeposition::aerosol_categories],
+    Real vlc_trb[AeroConfig::num_modes()][DryDeposition::aerosol_categories],
     const ColumnView vlc_grv[AeroConfig::num_modes()]
                             [DryDeposition::aerosol_categories],
     const ColumnView dqdt_tmp[aero_model::pcnst]) {
@@ -919,7 +917,7 @@ void aero_model_drydep(
         2 - cloud-borne aerosol,  0th moment (i.e., number)
         3 - cloud-borne aerosol,  3rd moment (i.e., volume/mass)
     vlc_grv(nlev)     : dep velocity of gravitational settling [m/s]
-    vlc_trb(nlev)     : dep velocity of turbulent dry deposition [m/s]
+    vlc_trb     : dep velocity of turbulent dry deposition [m/s]
     vlc_dry(nlev)     : dep velocity, sum of vlc_grv and vlc_trb [m/s]
   */  
   // clang-format on 
@@ -993,7 +991,7 @@ void aero_model_drydep(
                                        rad_drop, dens_drop, sg_drop,
                                        imnt,              // in
                                        vlc_dry[0][jvlc][kk],  // out
-                                       vlc_trb[0][jvlc][kk],  // out
+                                       vlc_trb[0][jvlc],  // out
                                        vlc_grv[0][jvlc][kk]); // out
 
         // moment of the aerosol size distribution. 0 = number; 3 = volume
@@ -1007,7 +1005,7 @@ void aero_model_drydep(
                                        rad_drop, dens_drop, sg_drop,
                                        imnt,                // in
                                        vlc_dry[0][jvlc][kk],  // out
-                                       vlc_trb[0][jvlc][kk],  // out
+                                       vlc_trb[0][jvlc],  // out
                                        vlc_grv[0][jvlc][kk]); // out
       });
   team.team_barrier();
@@ -1080,7 +1078,7 @@ void aero_model_drydep(
 	      fraction_landuse, tair[kk], pmid[kk], ram1, fricvel, // in
               rad_aer, dens_aer, sigmag_amode, imnt,             // in
               vlc_dry[imode][jvlc][kk],                                  // out
-              vlc_trb[imode][jvlc][kk],                                  // out
+              vlc_trb[imode][jvlc],                                  // out
               vlc_grv[imode][jvlc][kk]);                                 // out
           imnt = 3; // interstitial aerosol volume/mass
           jvlc = 1;
@@ -1088,7 +1086,7 @@ void aero_model_drydep(
 	      fraction_landuse, tair[kk], pmid[kk], ram1, fricvel, // in
               rad_aer, dens_aer, sigmag_amode, imnt,             // in
               vlc_dry[imode][jvlc][kk],                                // out
-              vlc_trb[imode][jvlc][kk],                                // out
+              vlc_trb[imode][jvlc],                                // out
               vlc_grv[imode][jvlc][kk]);                               // out
         }
       });
