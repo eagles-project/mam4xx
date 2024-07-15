@@ -1146,12 +1146,12 @@ template <typename VIEWTYPE>
 KOKKOS_INLINE_FUNCTION void sum_values(const ThreadTeam &team,
                                        const View1D &sum, VIEWTYPE x,
                                        VIEWTYPE y, const int nlev) {
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev),
                        [&](int k) { sum[k] = x[k] + y[k]; });
 }
 KOKKOS_INLINE_FUNCTION
 void zero_values(const ThreadTeam &team, const View1D &vec, const int nlev) {
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev),
                        [&](int k) { vec[k] = 0; });
 }
 
@@ -1163,7 +1163,7 @@ void sum_deep_and_shallow(const ThreadTeam &team, const View1D &conicw,
                           const ConstView1D &sh_frac, const int nlev) {
   // BAD CONSTANT
   const Real small_value_2 = 1.e-2;
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     // sum deep and shallow convection contributions
     conicw[k] = (icwmrdp[k] * dp_frac[k] + icwmrsh[k] * sh_frac[k]) /
                 haero::max(small_value_2, sh_frac[k] + dp_frac[k]);
@@ -1182,7 +1182,7 @@ void cloud_diagnostics(const ThreadTeam &team,
                        const View1D &cldv, const View1D &cldvcu,
                        const View1D &cldvst, const View1D &rain,
                        const int nlev) {
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 1), [&](int k) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1), [&](int k) {
     wetdep::clddiag(nlev, temperature.data(), pmid.data(), pdel.data(),
                     cmfdqr.data(), evapc.data(), cldt.data(), cldcu.data(),
                     cldst.data(), evapr.data(), prain.data(),
@@ -1201,7 +1201,7 @@ void set_f_act(const ThreadTeam &team, Kokkos::View<bool *> isprx,
                const View2D &state_q, const View2D &ptend_q, const Real dt,
                const int nlev) {
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     isprx[k] = aero_model::examine_prec_exist(k, pdel.data(), prain.data(),
                                               cmfdqr.data(), evapr.data());
 
@@ -1222,7 +1222,7 @@ void modal_aero_bcscavcoef_get(
                             [AeroConfig::num_modes()],
     const View1D &scavcoefnum, const View1D &scavcoefvol, const int imode,
     const int nlev) {
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     const Real dgnum_amode_imode = modes(imode).nom_diameter;
     ColumnView dgn_awet_imode = diags.wet_geometric_mean_diameter_i[imode];
     const Real dgn_awet_imode_k = dgn_awet_imode[k];
@@ -1243,7 +1243,7 @@ void modal_aero_bcscavcoef_get(
                             [AeroConfig::num_modes()],
     const View1D &scavcoefnum, const View1D &scavcoefvol, const int imode,
     const int nlev) {
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     const Real dgnum_amode_imode = modes(imode).nom_diameter;
     const Real dgn_awet_imode_k = wet_geometric_mean_diameter_i(imode, k);
     aero_model::modal_aero_bcscavcoef_get(
@@ -1258,7 +1258,7 @@ void define_act_frac(const ThreadTeam &team, const View1D &sol_facti,
                      const View1D &sol_factic, const View1D &sol_factb,
                      const View1D &f_act_conv, const int lphase,
                      const int imode, const int nlev) {
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     aero_model::define_act_frac(lphase, imode, sol_facti[k], sol_factic[k],
                                 sol_factb[k], f_act_conv[k]);
   });
@@ -1399,7 +1399,7 @@ void compute_q_tendencies(
   Real precnumc_base = 0;
   // NOTE: The following k loop cannot be converted to parallel_for
   // because precabs requires values from the previous elevation (k-1).
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 1), [&](int idummy) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1), [&](int idummy) {
     for (int k = 0; k < nlev; ++k) {
       const auto rtscavt_sv_k = ekat::subview(rtscavt_sv, k);
       // mam_prevap_resusp_optcc values control the prevap_resusp
@@ -1486,7 +1486,7 @@ void compute_q_tendencies(
 KOKKOS_INLINE_FUNCTION
 void update_q_tendencies(const ThreadTeam &team, const View2D &ptend_q,
                          const View1D &scavt, const int mm, const int nlev) {
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     Kokkos::atomic_add(&ptend_q(k, mm), scavt[k]);
   });
 }
@@ -1712,7 +1712,7 @@ void aero_model_wetdep(
   haero::ConstColumnView q_liq = atm.liquid_mixing_ratio;
   haero::ConstColumnView q_ice = atm.ice_mixing_ratio;
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int kk) {
     // copy data from prog to stateq
     const auto state_q_kk = ekat::subview(state_q, kk);
     const auto qqcw_kk = ekat::subview(qqcw, kk);
@@ -1734,7 +1734,7 @@ void aero_model_wetdep(
   // accumulation modes is done in conjunction with the dry radius calculation
   // compute calcsize and
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0, nlev), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, nlev), [&](int kk) {
     const auto state_q_kk = ekat::subview(state_q, kk);
     const auto qqcw_kk = ekat::subview(qqcw, kk);
     const auto ptend_q_kk = ekat::subview(ptend_q, kk);
@@ -1866,7 +1866,7 @@ void aero_model_wetdep(
     // Stratiform cloud fraction cldst  = cldt - cldcu  Stratiform cloud
     // fraction
     team.team_barrier();
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev),
                          [&](int k) { cldst[k] = cldt[k] - cldcu[k]; });
 
     // FIXME: where does eq come from?
@@ -2077,7 +2077,7 @@ void aero_model_wetdep(
   }
   // make sure that ptend is updated in tendencies
   team.team_barrier();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0, nlev), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, nlev), [&](int kk) {
     const auto ptend_q_kk = ekat::subview(ptend_q, kk);
     const auto state_q_kk = ekat::subview(state_q, kk);
     const auto qqcw_kk = ekat::subview(qqcw, kk);
@@ -2264,7 +2264,7 @@ void WetDeposition::compute_tendencies(
   Diagnostics::ColumnTracerView state_q = diags.tracer_mixing_ratio;
   Diagnostics::ColumnTracerView ptend_q = diags.d_tracer_mixing_ratio_dt;
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int kk) {
     // copy data from prog to stateq
     const auto state_q_kk = ekat::subview(state_q, kk);
     utils::extract_stateq_from_prognostics(progs, atm, state_q_kk.data(), kk);
@@ -2276,16 +2276,16 @@ void WetDeposition::compute_tendencies(
 
   Real rprdshsum = 0, rprddpsum = 0, evapcdpsum = 0, evapcshsum = 0;
   Kokkos::parallel_reduce(
-      Kokkos::TeamThreadRange(team, nlev),
+      Kokkos::TeamVectorRange(team, nlev),
       [&](int kk, Real &suma) { suma += rprdsh[kk]; }, rprdshsum);
   Kokkos::parallel_reduce(
-      Kokkos::TeamThreadRange(team, nlev),
+      Kokkos::TeamVectorRange(team, nlev),
       [&](int kk, Real &suma) { suma += rprddp[kk]; }, rprddpsum);
   Kokkos::parallel_reduce(
-      Kokkos::TeamThreadRange(team, nlev),
+      Kokkos::TeamVectorRange(team, nlev),
       [&](int kk, Real &suma) { suma += evapcdp[kk]; }, evapcdpsum);
   Kokkos::parallel_reduce(
-      Kokkos::TeamThreadRange(team, nlev),
+      Kokkos::TeamVectorRange(team, nlev),
       [&](int kk, Real &suma) { suma += evapcsh[kk]; }, evapcshsum);
 
   // cumulus cloud fraction =  dp_frac + sh_frac

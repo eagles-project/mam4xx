@@ -1211,7 +1211,7 @@ void Coagulation::compute_tendencies(const AeroConfig &config,
 
   const int nk = atm.num_levels();
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
+      Kokkos::TeamVectorRange(team, nk), [&](int k) {
         coagulation::coagulation_rates_1box(k, config, dt, atm, progs, diags,
                                             tends, config_);
       });

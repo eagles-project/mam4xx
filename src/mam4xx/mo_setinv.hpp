@@ -100,7 +100,7 @@ void setinv(const ThreadTeam &team, const ColumnView invariants[nfs],
   constexpr int nk = mam4::nlev;
 
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nk), KOKKOS_LAMBDA(int k) {
+      Kokkos::TeamVectorRange(team, nk), [&](int k) {
         const Real tfld_k = tfld(k);
         const Real h2ovmr_k = h2ovmr(k);
         const Real pmid_k = pmid(k);
@@ -131,7 +131,7 @@ void setinv(const ThreadTeam &team, const ColumnView invariants[nfs],
   constexpr int nk = mam4::nlev;
 
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nk), KOKKOS_LAMBDA(int k) {
+      Kokkos::TeamVectorRange(team, nk), [&](int k) {
         const Real tfld_k = tfld(k);
         const Real h2ovmr_k = h2ovmr(k);
         const Real pmid_k = pmid(k);

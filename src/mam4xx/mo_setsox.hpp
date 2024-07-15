@@ -1320,7 +1320,7 @@ void setsox(const ThreadTeam &team, const int loffset, const Real dt,
   // NOTE: pdel and mbar seem to be entirely unused and only used in mam4 to
   // calculate a quantity that is written out and otherwise unused
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nk), KOKKOS_LAMBDA(int k) {
+      Kokkos::TeamVectorRange(team, nk), [&](int k) {
         // auto press = mam4::Atmosphere.pressure;
         const Real press_k = press(k);
         const Real pdel_k = pdel(k);

@@ -121,7 +121,7 @@ void gas_washout(
   //       ... calculate the saturation concentration eqca
   //-----------------------------------------------------------------
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, plev, pver), KOKKOS_LAMBDA(int k) {
+      Kokkos::TeamVectorRange(team, plev, pver), [&](int k) {
         // cal washout below cloud
         xeqca(k) = xgas(k) /
                    (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
