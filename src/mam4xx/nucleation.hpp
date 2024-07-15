@@ -697,7 +697,7 @@ public:
     static constexpr Real r_universal = boltzmann * avogadro; // BAD_CONSTANT
     const int nk = atm.num_levels();
     Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
+        Kokkos::TeamVectorRange(team, nk), [&](int k) {
           // extract atmospheric state
           Real temp = atm.temperature(k);
           Real pmid = atm.pressure(k);

@@ -122,7 +122,7 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
           const int top_lev = 0; // 1( in fortran )
 
           Kokkos::parallel_for(
-              Kokkos::TeamThreadRange(team, top_lev, pver), [&](int kk) {
+              Kokkos::TeamVectorRange(team, top_lev, pver), [&](int kk) {
                 const auto state_q_k =
                     Kokkos::subview(state_q, kk, Kokkos::ALL());
                 const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());

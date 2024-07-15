@@ -999,7 +999,7 @@ public:
     const auto noxf_acc2ait = _noxf_acc2ait;
 
     Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
+        Kokkos::TeamVectorRange(team, nk), [&](int k) {
           Real dryvol_i = 0;
           Real dryvol_c = 0;
 

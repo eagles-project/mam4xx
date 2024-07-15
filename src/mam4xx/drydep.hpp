@@ -924,7 +924,7 @@ void aero_model_drydep(
   const int nlev = mam4::nlev;
   // Calculate rho:
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int kk) {
+      Kokkos::TeamVectorRange(team, nlev), [&](int kk) {
         const Real rair = Constants::r_gas_dry_air;
         rho[kk] = pmid[kk] / (rair * tair[kk]);
       });
@@ -949,7 +949,7 @@ void aero_model_drydep(
                   fricvel            //  out: bulk friction velocity of a grid cell
   );
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int kk) {
+      Kokkos::TeamVectorRange(team, nlev), [&](int kk) {
         // imnt  : moment of the aerosol size distribution. 0 = number; 3 = volume
         int imnt = -1; 
         // jvlc  : index for last dimension of vlc_xxx arrays
@@ -1046,7 +1046,7 @@ void aero_model_drydep(
   //  interstial aerosols
   // =====================
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int kk) {
+      Kokkos::TeamVectorRange(team, nlev), [&](int kk) {
         // imnt  : moment of the aerosol size distribution. 0 = number; 3 = volume
         int imnt = -1; 
         // jvlc  : index for last dimension of vlc_xxx arrays
@@ -1094,8 +1094,8 @@ void aero_model_drydep(
       });
   team.team_barrier();
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, ntot_amode * (1 + max_species)),
-      KOKKOS_LAMBDA(int kk) {
+      Kokkos::TeamVectorRange(team, ntot_amode * (1 + max_species)),
+      [&](int kk) {
         // -----------------------------------------------------------
         //  Loop over number + mass species of the mode.
         //  Calculate drydep-induced tendencies
@@ -1148,7 +1148,7 @@ void DryDeposition::compute_tendencies(const AeroConfig &config, const ThreadTea
   const int num_aerosol = AeroConfig::num_aerosol_ids();
   // Extract Prognostics
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int kk) {
+      Kokkos::TeamVectorRange(team, nlev), [&](int kk) {
     for (int m=0; m<ntot_amode; ++m) {
       this->qqcw_tends[ConvProc::numptrcw_amode(m)][kk] = progs.n_mode_c[m][kk];
       for (int a=0; a<num_aerosol; ++a) 
@@ -1197,7 +1197,7 @@ void DryDeposition::compute_tendencies(const AeroConfig &config, const ThreadTea
 
   // Update Tendencies
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int kk) {
+      Kokkos::TeamVectorRange(team, nlev), [&](int kk) {
     for (int m=0; m<ntot_amode; ++m) {
       tends.n_mode_c[m][kk] = qqcw_tends[ConvProc::numptrcw_amode(m)][kk]/dt; 
       for (int a=0; a<num_aerosol; ++a) 

@@ -662,7 +662,7 @@ public:
     // =======================================================================
 
     Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int kk) {
+        Kokkos::TeamVectorRange(team, nk), [&](int kk) {
           Real qnum_i_cur[AeroConfig::num_modes()];
           Real qmol_i_cur[AeroConfig::num_modes()]
                          [AeroConfig::num_aerosol_ids()];

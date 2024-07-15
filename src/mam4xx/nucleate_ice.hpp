@@ -360,7 +360,7 @@ public:
     const Real alnsg_amode_aitken = _alnsg_amode_aitken;
 
     Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int kk) {
+        Kokkos::TeamVectorRange(team, nk), [&](int kk) {
           const Real temp = atmosphere.temperature(kk);
           if (temp < tmelt_m_five) {
 

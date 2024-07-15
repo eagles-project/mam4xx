@@ -145,8 +145,8 @@ public:
     const int nk = num_levels();
     int violations = 0;
     Kokkos::parallel_reduce(
-        Kokkos::TeamThreadRange(team, nk),
-        KOKKOS_CLASS_LAMBDA(int k, int &violation) {
+        Kokkos::TeamVectorRange(team, nk),
+        [&](int k, int &violation) {
           for (int mode = 0; mode < AeroConfig::num_modes();
                ++mode) { // check mode mmrs
             if ((n_mode_i[mode](k) < 0) || (n_mode_c[mode](k) < 0)) {

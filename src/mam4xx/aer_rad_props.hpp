@@ -83,7 +83,7 @@ void volcanic_cmip_sw2(const ThreadTeam &team, const ConstColumnView &zi,
 
   constexpr Real half = 0.5;
   const Real lyr_thk = zi(ilev_tropp) - zi(ilev_tropp + 1);
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nswbands), [&](int i) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nswbands), [&](int i) {
     // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,pver)
     const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(i, ilev_tropp);
     const Real asym_unitless = af_cmip6_sw(ilev_tropp, i);
@@ -267,7 +267,7 @@ void compute_odap_volcanic_at_troplayer_lw2(const ThreadTeam &team,
   constexpr Real half = 0.5;
   // update taus with 50% contributuions from the volcanic input file
   // and 50% from the existing model computed values at the tropopause layer
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlwbands), [&](int i) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlwbands), [&](int i) {
     odap_aer(i, ilev_tropp) =
         half * (odap_aer(i, ilev_tropp) +
                 (lyr_thk * ext_cmip6_lw_inv_m(ilev_tropp, i)));

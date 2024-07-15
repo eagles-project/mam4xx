@@ -115,7 +115,7 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
           auto progs_in = progs;
           // we need to inject validation values to progs.
           Kokkos::parallel_for(
-              Kokkos::TeamThreadRange(team, nlev), [&](int kk) {
+              Kokkos::TeamVectorRange(team, nlev), [&](int kk) {
                 // copy data from prog to stateq
                 const auto &state_q_kk = ekat::subview(state_q, kk);
                 const auto qqcw_kk = ekat::subview(qqcw, kk);
@@ -126,7 +126,7 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
           team.team_barrier();
           // 2. Let's extract state_q and qqcw from prog.
           Kokkos::parallel_for(
-              Kokkos::TeamThreadRange(team, pver), [&](int kk) {
+              Kokkos::TeamVectorRange(team, pver), [&](int kk) {
                 const auto state_q_output_kk =
                     Kokkos::subview(state_q_output, kk, Kokkos::ALL());
                 const auto qqcw_output_k =

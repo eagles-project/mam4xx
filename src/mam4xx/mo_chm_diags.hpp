@@ -50,7 +50,7 @@ void het_diags(
 
   sox_wk[0] = 0;
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, gas_pcnst), KOKKOS_LAMBDA(int mm) {
+      Kokkos::TeamVectorRange(team, gas_pcnst), [&](int mm) {
         //
         // compute vertical integral
         //

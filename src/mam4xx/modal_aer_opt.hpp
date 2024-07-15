@@ -807,7 +807,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
 
   constexpr Real zero = 0;
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nswbands), [&](int i) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nswbands), [&](int i) {
     // BAD CONSTANT
     tauxar(0, i) = zero; // BAD CONSTANT
     wa(0, i) = 0.925;    // BAD CONSTANT
@@ -815,7 +815,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
     fa(0, i) = 0.7225;   // BAD CONSTANT
   });
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 1, pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver), [&](int kk) {
     for (int i = 0; i < nswbands; ++i) {
       tauxar(kk, i) = zero;
       wa(kk, i) = zero;
@@ -827,7 +827,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
   team.team_barrier();
 
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, top_lev, pver), [&](int kk) {
+      Kokkos::TeamVectorRange(team, top_lev, pver), [&](int kk) {
         const auto state_q_kk = Kokkos::subview(state_q, kk, Kokkos::ALL());
         const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
         Real cldn_kk = cldn(kk);
@@ -912,7 +912,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
 
   constexpr Real zero = 0;
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nswbands), [&](int i) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nswbands), [&](int i) {
     // BAD CONSTANT
     tauxar(i, 0) = zero; // BAD CONSTANT
     wa(i, 0) = 0.925;    // BAD CONSTANT
@@ -920,7 +920,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
     fa(i, 0) = 0.7225;   // BAD CONSTANT
   });
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 1, pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver), [&](int kk) {
     for (int i = 0; i < nswbands; ++i) {
       tauxar(i, kk) = zero;
       wa(i, kk) = zero;
@@ -932,7 +932,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
   team.team_barrier();
 
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, top_lev, pver), [&](int kk) {
+      Kokkos::TeamVectorRange(team, top_lev, pver), [&](int kk) {
         Real state_q[pcnst] = {};
         Real qqcw[pcnst] = {};
 
@@ -995,7 +995,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
   // compute aerosol_optical depth
   aodvis = zero;
   Kokkos::parallel_reduce(
-      Kokkos::TeamThreadRange(team, top_lev, pver),
+      Kokkos::TeamVectorRange(team, top_lev, pver),
       [&](int kk, Real &suma) {
         for (int imode = 0; imode < ntot_amode; ++imode) {
           //  aerosol species loop
@@ -1148,7 +1148,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt, const View2D &state_q,
   // tauxar(pcols,pver,nlwbands)  layer absorption optical depth
   constexpr Real zero = 0.0;
   // dry mass in each cell
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver), [&](int kk) {
     // initialize output variables
     for (int i = 0; i < nlwbands; ++i) {
       tauxar(kk, i) = zero;
@@ -1157,7 +1157,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt, const View2D &state_q,
   team.team_barrier();
   // inputs
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, top_lev, pver), [&](int kk) {
+      Kokkos::TeamVectorRange(team, top_lev, pver), [&](int kk) {
         Real cldn_kk = cldn(kk);
         const auto state_q_kk = Kokkos::subview(state_q, kk, Kokkos::ALL());
         const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
@@ -1196,7 +1196,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
 
   constexpr Real zero = 0.0;
   // dry mass in each cell
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver), [&](int kk) {
     // initialize output variables
     for (int i = 0; i < nlwbands; ++i) {
       tauxar(i, kk) = zero;
@@ -1207,7 +1207,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
   // inputs
 
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, top_lev, pver), [&](int kk) {
+      Kokkos::TeamVectorRange(team, top_lev, pver), [&](int kk) {
         Real cldn_kk = cldn(kk);
 
         Real state_q[pcnst] = {};

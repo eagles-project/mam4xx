@@ -240,7 +240,7 @@ void lin_strat_chem_solve(
     const ColumnView &o3clim_linoz_diag, const ColumnView &sza_degrees) {
 
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, ltrop), KOKKOS_LAMBDA(int kk) {
+      Kokkos::TeamVectorRange(team, ltrop), [&](int kk) {
         lin_strat_chem_solve_kk(
             o3col(kk), temperature(kk), sza, pmid(kk), delta_t, rlats,
             // ltrop, & !in
