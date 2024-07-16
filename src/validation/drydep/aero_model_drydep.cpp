@@ -105,7 +105,7 @@ void aero_model_drydep(Ensemble *ensemble) {
         qqcw[i] = to_dev(input.get_array(name));
     }
     ColumnView qqcw_tends[aero_model::pcnst];
-    for (int i=0; i<aero_model::pcnst; ++i)
+    for (int i = 0; i < aero_model::pcnst; ++i)
       qqcw_tends[i] = qqcw[i];
 
     ConstColumnView dgncur_awet[AeroConfig::num_modes()];
@@ -163,16 +163,16 @@ void aero_model_drydep(Ensemble *ensemble) {
     }
     ColumnView dry[AeroConfig::num_modes()][aerosol_categories];
     ColumnView grv[AeroConfig::num_modes()][aerosol_categories];
-    for (int i=0; i<AeroConfig::num_modes(); ++i)
-      for (int j=0; j<aerosol_categories; ++j) {
-	dry[i][j] = vlc_dry[i][j];
-	grv[i][j] = vlc_grv[i][j];
+    for (int i = 0; i < AeroConfig::num_modes(); ++i)
+      for (int j = 0; j < aerosol_categories; ++j) {
+        dry[i][j] = vlc_dry[i][j];
+        grv[i][j] = vlc_grv[i][j];
       }
     Kokkos::View<Real *> dqdt_tmp[aero_model::pcnst];
     for (int i = 0; i < aero_model::pcnst; ++i)
       Kokkos::resize(dqdt_tmp[i], nlev);
     ColumnView dqdt[aero_model::pcnst];
-    for (int i=0; i<aero_model::pcnst; ++i)
+    for (int i = 0; i < aero_model::pcnst; ++i)
       dqdt[i] = dqdt_tmp[i];
 
     auto team_policy = haero::ThreadTeamPolicy(1u, 1u);
@@ -182,8 +182,8 @@ void aero_model_drydep(Ensemble *ensemble) {
           bool ptend_lq[aero_model::pcnst];
           mam4::aero_model_drydep(
               team, fraction_landuse, tair, pmid, pint, pdel, state_q,
-              dgncur_awet, wetdens, obklen, ustar, landfrac, icefrac,
-              ocnfrac, fricvelin, ram1in, dt, qqcw_tends, ptend_q, ptend_lq, aerdepdrycw,
+              dgncur_awet, wetdens, obklen, ustar, landfrac, icefrac, ocnfrac,
+              fricvelin, ram1in, dt, qqcw_tends, ptend_q, ptend_lq, aerdepdrycw,
               aerdepdryis, rho, dry, vlc_trb, grv, dqdt);
         });
     Kokkos::fence();
