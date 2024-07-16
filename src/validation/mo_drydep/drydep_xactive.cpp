@@ -42,7 +42,7 @@ void drydep_xactive(const seq_drydep::Data &data, Ensemble *ensemble) {
     // into memory, just doing this for now
     ViewInt1DHost col_index_season_h("col_index_season", n_land_type);
     for (int i = 0; i < n_land_type; ++i) {
-      col_index_season_h(i) = 1;
+      col_index_season_h(i) = 0;
     }
     ViewInt1D col_index_season_d("col_index_season", n_land_type);
     Kokkos::deep_copy(col_index_season_d, col_index_season_h);

@@ -249,7 +249,7 @@ void calculate_resistance_rgsx_and_rsmx(
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     if (drydep_data.has_dvel[ispec]) {
-      int idx_drydep = drydep_data.map_dvel(ispec);
+      const int idx_drydep = drydep_data.map_dvel(ispec);
       for (int lt = beglt; lt <= endlt; ++lt) {
         if (fr_lnduse[lt]) {
           Real rmx;
@@ -300,7 +300,7 @@ void calculate_resistance_rclx(
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     if (drydep_data.has_dvel(ispec)) {
-      int idx_drydep = drydep_data.map_dvel(ispec);
+      const int idx_drydep = drydep_data.map_dvel(ispec);
       for (int lt = beglt; lt <= endlt; ++lt) {
         if (fr_lnduse[lt]) {
           if (lt == lt_for_water) {
@@ -356,7 +356,7 @@ void calculate_resistance_rlux(
   Real rlux_o3[n_land_type] = {}; // vegetative resistance (upper canopy) [s/m]
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     if (drydep_data.has_dvel(ispec)) {
-      int idx_drydep = drydep_data.map_dvel(ispec);
+      const int idx_drydep = drydep_data.map_dvel(ispec);
       for (int lt = beglt; lt <= endlt; ++lt) {
         if (fr_lnduse[lt]) {
           if (lt == lt_for_water) {
@@ -393,8 +393,8 @@ void calculate_resistance_rlux(
   }
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
-    int idx_drydep = drydep_data.map_dvel(ispec);
     if (drydep_data.has_dvel(ispec) && (ispec != drydep_data.so2_ndx)) {
+      const int idx_drydep = drydep_data.map_dvel(ispec);
       for (int lt = beglt; lt <= endlt; ++lt) {
         if (lt != lt_for_water) {
           if (fr_lnduse[lt] && (sfc_temp > tmelt) && has_dew) {
@@ -465,7 +465,8 @@ void calculate_gas_drydep_vlc_and_flux(
       Real resc, lnd_frc;
       for (int lt = beglt; lt <= endlt; ++lt) {
         if (fr_lnduse[lt]) {
-          resc = 1.0 / (1.0 / rsmx[ispec][lt] + 1.0 / rlux[ispec][lt] +
+          resc = 1.0 / (1.0 / rsmx[ispec][lt] + 
+	                1.0 / rlux[ispec][lt] +
                         1.0 / (rdc + rclx[ispec][lt]) +
                         1.0 / (rac(index_season[lt], lt) + rgsx[ispec][lt]));
           resc = haero::max(10.0, resc);
@@ -566,7 +567,7 @@ void drydep_xactive(
   //-------------------------------------------------------------------------------------
   // 	... set month
   //-------------------------------------------------------------------------------------
-  int month = (ncdate % 10000) / 100;
+  const int month = (ncdate % 10000) / 100;
 
   //-------------------------------------------------------------------------------------
   // define which season (relative to Northern hemisphere climate)
@@ -578,7 +579,7 @@ void drydep_xactive(
 
   int index_season[n_land_type];
   for (int lt = 0; lt < n_land_type; ++lt) {
-    index_season[lt] = col_index_season[month];
+    index_season[lt] = col_index_season[month-1];
   }
 
   //-------------------------------------------------------------------------------------
@@ -586,7 +587,7 @@ void drydep_xactive(
   //-------------------------------------------------------------------------------------
   if (snow > 0.01) { // BAD_CONSTANT
     for (int lt = 0; lt < n_land_type; ++lt) {
-      index_season[lt] = 4;
+      index_season[lt] = 3;
     }
   }
 

@@ -12,18 +12,19 @@ KOKKOS_INLINE_FUNCTION void setHCoeff(Real sfc_temp, Real heff[maxspc]) {
     heff[1] = 210402677778.856;
     heff[2] = 3334.148860680581;
   } else if (ensemble == 1) {
-    heff[0] = 31138.432794480996;
-    heff[1] = 42992261164.98709;
-    heff[2] = 874.5427866732105;
-  } else if (ensemble == 2) {
-    heff[0] = 1724166.2082613558;
-    heff[1] = 1163173586735.6272;
-    heff[2] = 14108.669620617442;
-  } else {
     heff[0] = 63920.21390215724;
     heff[1] = 77625658959.18587;
     heff[2] = 1438.7290493476496;
+  } else if (ensemble == 2) {
+    heff[0] = 31138.432794480996;
+    heff[1] = 42992261164.98709;
+    heff[2] = 874.5427866732105;
+  } else {
+    heff[0] = 1724166.2082613558;
+    heff[1] = 1163173586735.6272;
+    heff[2] = 14108.669620617442;
   }
+std::cout<<__FILE__<<":"<<__LINE__<<" ensemble:"<<ensemble <<" heff[0] = "<<heff[0]<<std::endl;
   ++ensemble;
 }
 } // namespace mam4::seq_drydep
