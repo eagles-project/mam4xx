@@ -922,7 +922,7 @@ void aero_model_drydep(
   */  
   // clang-format on 
   auto printb = [](const std::string &name, const double &val) {
-    std::cout<<name<<":"<<std::setprecision (15)<<val<<std::endl;
+    //std::cout<<name<<":"<<std::setprecision (15)<<val<<std::endl;
   };
   const int nlev = mam4::nlev;
   // Calculate rho:
