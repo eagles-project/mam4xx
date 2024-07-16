@@ -2024,6 +2024,13 @@ void aero_model_wetdep(
               aerdepwetcw[mm] = aero_model::calc_sfc_flux(team,        // input
                                                           scavt,       // output
                                                           pdel, nlev); // inputs
+              team.team_barrier();
+              Kokkos::parallel_for(
+                Kokkos::TeamVectorRange(team, nlev),
+                [&](int kk) {
+              qqcw(kk, mm) += scavt(kk) * dt;    
+              });
+
             }
 #if 0
             // Note: Commenting it out because it produces unused variable warnings.
