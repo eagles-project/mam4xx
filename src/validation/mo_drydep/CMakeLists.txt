@@ -43,10 +43,8 @@ set(TEST_LIST
     calculate_ustar_over_water
     calculate_ustar
     calculate_uustar
-    # FIXME: drydep_xactive needs work, but depends on
-    # calculate_gas_drydep_vlc_and_flux(), so that needs to be addressed first
     drydep_xactive
-    # calculate_gas_drydep_vlc_and_flux # comparing against standalone
+    calculate_gas_drydep_vlc_and_flux 
     )
 
 set(DEFAULT_TOL 1e-10)
@@ -61,10 +59,8 @@ set(ERROR_THRESHOLDS
     3e-9           # calculate_ustar_over_water
     3e-9           # calculate_ustar
     ${DEFAULT_TOL} # calculate_uustar
-    # FIXME: drydep_xactive needs work, but depends on
-    # calculate_gas_drydep_vlc_and_flux(), so that needs to be addressed first
-    1.0 # drydep_xactive
-    # 1e-10 # calculate_gas_drydep_vlc_and_flux
+    1e-9           # drydep_xactive
+    ${DEFAULT_TOL} # calculate_gas_drydep_vlc_and_flux
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
