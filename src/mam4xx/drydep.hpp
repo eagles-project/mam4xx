@@ -921,9 +921,6 @@ void aero_model_drydep(
     vlc_dry(nlev)     : dep velocity, sum of vlc_grv and vlc_trb [m/s]
   */  
   // clang-format on 
-  auto printb = [](const std::string &name, const double &val) {
-    //std::cout<<name<<":"<<std::setprecision (15)<<val<<std::endl;
-  };
   const int nlev = mam4::nlev;
   // Calculate rho:
   Kokkos::parallel_for(
@@ -931,8 +928,6 @@ void aero_model_drydep(
         const Real rair = Constants::r_gas_dry_air;
         rho[kk] = pmid[kk] / (rair * tair[kk]);
       });
-  static constexpr int kprnt=63;
-  printb("RHO",rho[kprnt]);
   // --------------------------------------------------------------------------------
   //  For turbulent dry deposition: calculate ram and fricvel over ocean and sea
   //  ice; copy values over land
@@ -953,9 +948,6 @@ void aero_model_drydep(
                   ram1,              //  out: aerodynamical resistance (s/m)
                   fricvel            //  out: bulk friction velocity of a grid cell
   );
-
-    printb("ram1",ram1);
-  printb("fricvel",fricvel);
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int kk) {
         // imnt  : moment of the aerosol size distribution. 0 = number; 3 = volume
@@ -1017,12 +1009,6 @@ void aero_model_drydep(
                                        vlc_grv[0][jvlc][kk]); // out
       });
   team.team_barrier();
-  printb("vlc_trb[0][2]:", vlc_trb[0][2]);
-  printb("vlc_trb[0][3]:", vlc_trb[0][3]);
-  printb("vlc_grv[0][2][kk]:", vlc_grv[0][2][kprnt]);
-  printb("vlc_grv[0][3][kk]:", vlc_grv[0][3][kprnt]);
-  printb("vlc_dry[0][2][kk]:", vlc_dry[0][2][kprnt]);
-  printb("vlc_dry[0][3][kk]:", vlc_dry[0][3][kprnt]);
   // ----------------------------------------------------------------------------------
   //  Loop over all modes and all aerosol tracers (number + mass species).
   //  Calculate the drydep-induced tendencies, then update the mixing ratios.
@@ -1042,7 +1028,6 @@ void aero_model_drydep(
         if (-1 < icnst) {
           // qq : mixing ratio of a single tracer [kg/kg] or [1/kg]
           auto qq = qqcw[icnst];
-          printb("qq_bef:",qq[kprnt]);
           // sflx : surface deposition flux of a single species [kg/m2/s] or [1/m2/s]
           const Real sflx = drydep::sedimentation_solver_for_1_tracer(
               dt, vlc_dry[0][jvlc], qq, rho, tair, pint, pmid, pdel, //input
@@ -1053,9 +1038,6 @@ void aero_model_drydep(
           // aerosols are stored in pbuf, not as part of the state variable
           for (int klev = 0; klev < nlev; ++klev)
             qq[klev] += dqdt_tmp[ic][klev] * dt;
-        printb("aerdepdrycw:",aerdepdrycw[icnst]);
-        printb("qq:",qq[kprnt]);
-        printb("dqtmp:",dqdt_tmp[ic][kprnt]);
         }
       }); //parallel_for for ic (constituents)
 
@@ -1100,16 +1082,6 @@ void aero_model_drydep(
               vlc_dry[imode][jvlc][kk],                      // out
               vlc_trb[imode][jvlc],                          // out
               vlc_grv[imode][jvlc][kk]);                     // out
-        if(kk==71){
-          printb("tair:",tair[kk]);
-          printb("pmid:",pmid[kk]);
-          printb("ram1:",ram1);
-          printb("fricvel:", fricvel);
-          printb("rad_aer:",rad_aer);
-           printb("dens_aer:",dens_aer);
-           printb("sigmag_amode:",sigmag_amode);
-          printb("---->vlc_trb[0][0]:", vlc_trb[imode][0]);
-        }
           imnt = 3; // interstitial aerosol volume/mass
           jvlc = 1;
           drydep::modal_aero_depvel_part(lowest_model_layer,
@@ -1121,12 +1093,6 @@ void aero_model_drydep(
         }
       });
   team.team_barrier();
-  printb("->vlc_trb[0][0]:", vlc_trb[0][0]);
-  printb("->vlc_trb[0][1]:", vlc_trb[0][1]);
-  printb("->vlc_grv[0][0][kk]:", vlc_grv[0][0][kprnt]);
-  printb("->vlc_grv[0][1][kk]:", vlc_grv[0][1][kprnt]);
-  printb("->vlc_dry[0][0][kk]:", vlc_dry[0][0][kprnt]);
-  printb("->vlc_dry[0][1][kk]:", vlc_dry[0][1][kprnt]);
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, ntot_amode * (1 + max_species)),
       KOKKOS_LAMBDA(int kk) {
@@ -1153,12 +1119,8 @@ void aero_model_drydep(
           ptend_lq[icnst] = true;
           for (int i = 0; i < nlev; ++i)
             ptend_q(i,icnst) = dqdt_tmp[kk][i];
-        printb("aerdepdryis:",aerdepdryis[icnst]);
-        printb("ptend_q:",ptend_q(kprnt,icnst));
-        printb("dqtmp:",dqdt_tmp[kk][kprnt]);
-
         }
-      }); 
+      });
 }
 // compute_tendencies -- computes tendencies and updates diagnostics
 // NOTE: that both diags and tends are const below--this means their views
