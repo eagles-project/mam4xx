@@ -1138,20 +1138,27 @@ void DryDeposition::compute_tendencies(const AeroConfig &config, const ThreadTea
   auto pint = atm.interface_pressure;
   auto pdel = atm.hydrostatic_dp;
   auto state_q = diags.tracer_mixing_ratio; 
-  auto dgncur_awet = diags.wet_geometric_mean_diameter_i;
-  auto wetdens = diags.wet_density;
+  ConstColumnView dgncur_awet[AeroConfig::num_modes()];
+  for (int i=0; i<AeroConfig::num_modes(); ++i)
+    dgncur_awet[i] = diags.wet_geometric_mean_diameter_i[i];
+  ConstColumnView wetdens[AeroConfig::num_modes()];
+  for (int i=0; i<AeroConfig::num_modes(); ++i)
+    wetdens[i] = diags.wet_density[i];
   static constexpr int ntot_amode = AeroConfig::num_modes();
   const int num_aerosol = AeroConfig::num_aerosol_ids();
   // Extract Prognostics
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int kk) {
     for (int m=0; m<ntot_amode; ++m) {
-      qqcw_tends[ConvProc::numptrcw_amode(m)][kk] = progs.n_mode_c[m][kk];
+      this->qqcw_tends[ConvProc::numptrcw_amode(m)][kk] = progs.n_mode_c[m][kk];
       for (int a=0; a<num_aerosol; ++a) 
         if (-1 < ConvProc::lmassptrcw_amode(a,m))
-          qqcw_tends[ConvProc::lmassptrcw_amode(a,m)][kk] = progs.q_aero_c[m][a][kk];
+          this->qqcw_tends[ConvProc::lmassptrcw_amode(a,m)][kk] = progs.q_aero_c[m][a][kk];
     }
   });
+  ColumnView qqcw_tends[aero_model::pcnst];
+  for (int i=0; i<aero_model::pcnst; ++i)
+    qqcw_tends[i] = this->qqcw_tends[i];
   const Real obklen = diags.Obukhov_length;
   const Real ustar = diags.surface_friction_velocty;
   const Real landfrac = diags.land_fraction;
@@ -1164,15 +1171,28 @@ void DryDeposition::compute_tendencies(const AeroConfig &config, const ThreadTea
   auto aerdepdrycw = diags.deposition_flux_of_cloud_borne_aerosols;
   auto aerdepdryis = diags.deposition_flux_of_interstitial_aerosols;
   auto rho     = this->rho;
-  auto vlc_dry = this->vlc_dry;
-  auto vlc_trb = this->vlc_trb;
-  auto vlc_grv = this->vlc_grv;
-  auto dqdt_tmp= this->dqdt_tmp;
+  ColumnView vlc_dry[AeroConfig::num_modes()][aerosol_categories];
+  Real vlc_trb[AeroConfig::num_modes()][aerosol_categories];
+  ColumnView vlc_grv[AeroConfig::num_modes()][aerosol_categories];
+  ColumnView dqdt_tmp[aero_model::pcnst];
 
-  /*mam4::aero_model_drydep(
+  for (int i=0; i<AeroConfig::num_modes(); ++i)
+    for (int j=0; j<aerosol_categories; ++j)
+      vlc_dry[i][j] = this->vlc_dry[i][j];
+  for (int i=0; i<AeroConfig::num_modes(); ++i)
+    for (int j=0; j<aerosol_categories; ++j)
+      vlc_trb[i][j] = this->vlc_trb[i][j];
+  for (int i=0; i<AeroConfig::num_modes(); ++i)
+    for (int j=0; j<aerosol_categories; ++j)
+      vlc_grv[i][j] = this->vlc_grv[i][j];
+  for (int i=0; i<aero_model::pcnst; ++i)
+    dqdt_tmp[i] = this->dqdt_tmp[i];
+
+  mam4::aero_model_drydep(
      team, fraction_landuse, tair, pmid, pint, pdel, state_q,
-     dgncur_awet, wetdens, qqcw_tends, obklen, ustar, landfrac, icefrac,
-     ocnfrac, fricvelin, ram1in, ptend_q, ptend_lq, dt, aerdepdrycw,
+     dgncur_awet, wetdens, obklen, ustar, landfrac, icefrac,
+     ocnfrac, fricvelin, ram1in, dt, qqcw_tends, ptend_q, ptend_lq, 
+     aerdepdrycw,
      aerdepdryis, rho, vlc_dry, vlc_trb, vlc_grv, dqdt_tmp);
 
   // Update Tendencies
@@ -1184,7 +1204,7 @@ void DryDeposition::compute_tendencies(const AeroConfig &config, const ThreadTea
         if (-1 < ConvProc::lmassptrcw_amode(a,m))
           tends.q_aero_c[m][a][kk] = qqcw_tends[ConvProc::lmassptrcw_amode(a,m)][kk] /dt;
     }
-  });*/
+  });
 }
 } // namespace mam4
 
