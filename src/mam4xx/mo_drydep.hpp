@@ -465,8 +465,7 @@ void calculate_gas_drydep_vlc_and_flux(
       Real resc, lnd_frc;
       for (int lt = beglt; lt <= endlt; ++lt) {
         if (fr_lnduse[lt]) {
-          resc = 1.0 / (1.0 / rsmx[ispec][lt] + 
-	                1.0 / rlux[ispec][lt] +
+          resc = 1.0 / (1.0 / rsmx[ispec][lt] + 1.0 / rlux[ispec][lt] +
                         1.0 / (rdc + rclx[ispec][lt]) +
                         1.0 / (rac(index_season[lt], lt) + rgsx[ispec][lt]));
           resc = haero::max(10.0, resc);
@@ -579,7 +578,7 @@ void drydep_xactive(
 
   int index_season[n_land_type];
   for (int lt = 0; lt < n_land_type; ++lt) {
-    index_season[lt] = col_index_season[month-1];
+    index_season[lt] = col_index_season[month - 1];
   }
 
   //-------------------------------------------------------------------------------------

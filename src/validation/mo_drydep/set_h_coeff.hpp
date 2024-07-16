@@ -24,7 +24,6 @@ KOKKOS_INLINE_FUNCTION void setHCoeff(Real sfc_temp, Real heff[maxspc]) {
     heff[1] = 1163173586735.6272;
     heff[2] = 14108.669620617442;
   }
-std::cout<<__FILE__<<":"<<__LINE__<<" ensemble:"<<ensemble <<" heff[0] = "<<heff[0]<<std::endl;
   ++ensemble;
 }
 } // namespace mam4::seq_drydep
