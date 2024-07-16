@@ -25,10 +25,13 @@ endif()
 option(ENABLE_COVERAGE  "Enable code coverage instrumentation" OFF)
 option(ENABLE_SKYWALKER "Enable Skywalker cross validation" ON)
 option(ENABLE_TESTS     "Enable unit tests" ON)
-set(NUM_VERTICAL_LEVELS 72 CACHE STRING "the number of vertical levels per column")
 
-if (NUM_VERTICAL_LEVELS LESS 72)
-  message(FATAL_ERROR "NUM_VERTICAL_LEVELS must be at least 72")
+if( NOT DEFINED SCREAM_NUM_VERTICAL_LEV)
+  # Set the default number of level
+  set(NUM_VERTICAL_LEVELS 72 CACHE STRING "the number of vertical levels per column")
+else()
+  # Use the same number of levels as EAMxx if MAM4xx is run under EAMxx (or SCREAM)
+  set(NUM_VERTICAL_LEVELS ${SCREAM_NUM_VERTICAL_LEV} CACHE STRING "the number of vertical levels per column equals scream num levels")
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -65,9 +68,6 @@ message(STATUS "Configuring MAM4xx v${MAM4XX_VERSION}")
 
 # Precision of floating point numbers.
 message(STATUS "Using ${HAERO_PRECISION} precision floating point numbers")
-
-# We build static libraries only.
-set(BUILD_SHARED_LIBS OFF)
 
 # Report the installation prefix.
 message(STATUS "Installation prefix is ${CMAKE_INSTALL_PREFIX}")

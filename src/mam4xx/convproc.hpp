@@ -3026,8 +3026,8 @@ void ma_convproc_intr(
   auto qnew = Diagnostics::ColumnTracerView(
       scratch1Dviews[ConvProc::Col1DViewInd::qnew].data(), nlev,
       aero_model::pcnst);
-  EKAT_KERNEL_ASSERT(state_q.extent(0) == nlev);
-  EKAT_KERNEL_ASSERT(state_q.extent(1) <= aero_model::pcnst);
+  EKAT_KERNEL_ASSERT(state_q.extent_int(0) == nlev);
+  EKAT_KERNEL_ASSERT(state_q.extent_int(1) <= aero_model::pcnst);
   for (int i = 0; i < nlev; ++i)
     for (int j = 0; j < aero_model::pcnst; ++j)
       qnew(i, j) = state_q(i, j);

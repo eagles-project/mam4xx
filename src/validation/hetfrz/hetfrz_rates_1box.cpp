@@ -388,244 +388,225 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
     mam4::Diagnostics diags = validation::create_diagnostics(nlev);
     mam4::Tendencies tends = validation::create_tendencies(nlev);
 
-    auto host_column = Kokkos::create_mirror_view(
-        progs.n_mode_i[int(ModeIndex::Accumulation)]);
+    const int acc = static_cast<int>(ModeIndex::Accumulation);
+    const int crs = static_cast<int>(ModeIndex::Coarse);
+    const int pc = static_cast<int>(ModeIndex::PrimaryCarbon);
+
+    const int acc_so4 =
+        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::SO4);
+    const int acc_pom =
+        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::POM);
+    const int acc_soa =
+        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::SOA);
+    const int acc_bc =
+        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::BC);
+    const int acc_dst =
+        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::DST);
+    const int acc_nacl =
+        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::NaCl);
+    const int acc_mom =
+        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::MOM);
+
+    const int crs_dst = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::DST);
+    const int crs_nacl =
+        aerosol_index_for_mode(ModeIndex::Coarse, AeroId::NaCl);
+    const int crs_so4 = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::SO4);
+    const int crs_bc = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::BC);
+    const int crs_pom = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::POM);
+    const int crs_mom = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::MOM);
+
+    const int pc_pom =
+        aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::POM);
+    const int pc_bc =
+        aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::BC);
+    const int pc_mom =
+        aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::MOM);
+
+    auto host_column = Kokkos::create_mirror_view(progs.n_mode_i[acc]);
 
     // Copy data from input arrays to Kokkos views for aerosol number
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_num_accum[k];
     }
-    Kokkos::deep_copy(progs.n_mode_i[int(ModeIndex::Accumulation)],
-                      host_column);
+    Kokkos::deep_copy(progs.n_mode_i[acc], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_num_coarse[k];
     }
-    Kokkos::deep_copy(progs.n_mode_i[int(ModeIndex::Coarse)], host_column);
+    Kokkos::deep_copy(progs.n_mode_i[crs], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_num_pcarbon[k];
     }
-    Kokkos::deep_copy(progs.n_mode_i[int(ModeIndex::PrimaryCarbon)],
-                      host_column);
+    Kokkos::deep_copy(progs.n_mode_i[pc], host_column);
 
     // Copy data from input arrays to Kokkos views for aerosol mass
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_bc_accum[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_i[int(ModeIndex::Accumulation)][int(AeroId::BC)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_i[acc][acc_bc], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_pom_accum[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_i[int(ModeIndex::Accumulation)][int(AeroId::POM)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_i[acc][acc_pom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_soa_accum[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_i[int(ModeIndex::Accumulation)][int(AeroId::SOA)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_i[acc][acc_soa], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_dust_accum[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_i[int(ModeIndex::Accumulation)][int(AeroId::DST)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_i[acc][acc_dst], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_nacl_accum[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_i[int(ModeIndex::Accumulation)][int(AeroId::NaCl)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_i[acc][acc_nacl], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_mom_accum[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_i[int(ModeIndex::Accumulation)][int(AeroId::MOM)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_i[acc][acc_mom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_bc_coarse[k];
     }
-    Kokkos::deep_copy(progs.q_aero_i[int(ModeIndex::Coarse)][int(AeroId::BC)],
-                      host_column);
+    Kokkos::deep_copy(progs.q_aero_i[crs][crs_bc], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_pom_coarse[k];
     }
-    Kokkos::deep_copy(progs.q_aero_i[int(ModeIndex::Coarse)][int(AeroId::POM)],
-                      host_column);
+    Kokkos::deep_copy(progs.q_aero_i[crs][crs_pom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_so4_coarse[k];
     }
-    Kokkos::deep_copy(progs.q_aero_i[int(ModeIndex::Coarse)][int(AeroId::SO4)],
-                      host_column);
+    Kokkos::deep_copy(progs.q_aero_i[crs][crs_so4], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_dust_coarse[k];
     }
-    Kokkos::deep_copy(progs.q_aero_i[int(ModeIndex::Coarse)][int(AeroId::DST)],
-                      host_column);
+    Kokkos::deep_copy(progs.q_aero_i[crs][crs_dst], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_nacl_coarse[k];
     }
-    Kokkos::deep_copy(progs.q_aero_i[int(ModeIndex::Coarse)][int(AeroId::NaCl)],
-                      host_column);
+    Kokkos::deep_copy(progs.q_aero_i[crs][crs_nacl], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_mom_coarse[k];
     }
-    Kokkos::deep_copy(progs.q_aero_i[int(ModeIndex::Coarse)][int(AeroId::MOM)],
-                      host_column);
+    Kokkos::deep_copy(progs.q_aero_i[crs][crs_mom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_bc_pcarbon[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_i[int(ModeIndex::PrimaryCarbon)][int(AeroId::BC)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_i[pc][pc_bc], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_pom_pcarbon[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_i[int(ModeIndex::PrimaryCarbon)][int(AeroId::POM)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_i[pc][pc_pom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = state_q_mom_pcarbon[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_i[int(ModeIndex::PrimaryCarbon)][int(AeroId::MOM)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_i[pc][pc_mom], host_column);
 
     // Copy cloudborne aerosol numbers into host_column and copy to Kokkos view
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_num_accum[k];
     }
-    Kokkos::deep_copy(progs.n_mode_c[int(ModeIndex::Accumulation)],
-                      host_column);
+    Kokkos::deep_copy(progs.n_mode_c[acc], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_num_coarse[k];
     }
-    Kokkos::deep_copy(progs.n_mode_c[int(ModeIndex::Coarse)], host_column);
+    Kokkos::deep_copy(progs.n_mode_c[crs], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_num_pcarbon[k];
     }
-    Kokkos::deep_copy(progs.n_mode_c[int(ModeIndex::PrimaryCarbon)],
-                      host_column);
+    Kokkos::deep_copy(progs.n_mode_c[pc], host_column);
 
     // Copy cloudborne aerosol mass into host_column and copy to Kokkos view
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_so4_accum[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_c[int(ModeIndex::Accumulation)][int(AeroId::SO4)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_c[acc][acc_so4], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_dst_accum[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_c[int(ModeIndex::Accumulation)][int(AeroId::DST)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_c[acc][acc_dst], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_ncl_accum[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_c[int(ModeIndex::Accumulation)][int(AeroId::NaCl)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_c[acc][acc_nacl], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_bc_accum[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_c[int(ModeIndex::Accumulation)][int(AeroId::BC)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_c[acc][acc_bc], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_pom_accum[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_c[int(ModeIndex::Accumulation)][int(AeroId::POM)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_c[acc][acc_pom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_mom_accum[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_c[int(ModeIndex::Accumulation)][int(AeroId::MOM)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_c[acc][acc_mom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_so4_coarse[k];
     }
-    Kokkos::deep_copy(progs.q_aero_c[int(ModeIndex::Coarse)][int(AeroId::SO4)],
-                      host_column);
+    Kokkos::deep_copy(progs.q_aero_c[crs][crs_so4], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_dst_coarse[k];
     }
-    Kokkos::deep_copy(progs.q_aero_c[int(ModeIndex::Coarse)][int(AeroId::DST)],
-                      host_column);
+    Kokkos::deep_copy(progs.q_aero_c[crs][crs_dst], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_ncl_coarse[k];
     }
-    Kokkos::deep_copy(progs.q_aero_c[int(ModeIndex::Coarse)][int(AeroId::NaCl)],
-                      host_column);
+    Kokkos::deep_copy(progs.q_aero_c[crs][crs_nacl], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_bc_coarse[k];
     }
-    Kokkos::deep_copy(progs.q_aero_c[int(ModeIndex::Coarse)][int(AeroId::BC)],
-                      host_column);
+    Kokkos::deep_copy(progs.q_aero_c[crs][crs_bc], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_pom_coarse[k];
     }
-    Kokkos::deep_copy(progs.q_aero_c[int(ModeIndex::Coarse)][int(AeroId::POM)],
-                      host_column);
+    Kokkos::deep_copy(progs.q_aero_c[crs][crs_pom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_mom_coarse[k];
     }
-    Kokkos::deep_copy(progs.q_aero_c[int(ModeIndex::Coarse)][int(AeroId::MOM)],
-                      host_column);
+    Kokkos::deep_copy(progs.q_aero_c[crs][crs_mom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_bc_pcarbon[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_c[int(ModeIndex::PrimaryCarbon)][int(AeroId::BC)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_c[pc][pc_bc], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_pom_pcarbon[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_c[int(ModeIndex::PrimaryCarbon)][int(AeroId::POM)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_c[pc][pc_pom], host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = aer_cb_mom_pcarbon[k];
     }
-    Kokkos::deep_copy(
-        progs.q_aero_c[int(ModeIndex::PrimaryCarbon)][int(AeroId::MOM)],
-        host_column);
+    Kokkos::deep_copy(progs.q_aero_c[pc][pc_mom], host_column);
 
     // Copy data from input arrays to Kokkos views for temperature, pressure,
     // mixing-ratios

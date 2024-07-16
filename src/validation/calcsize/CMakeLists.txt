@@ -39,6 +39,7 @@ set(TEST_LIST
     calcsize_compute_dry_volume
     stand_modal_aero_calcsize_sub
     stand_modal_aero_calcsize_sub_update_ptend
+    stand_calcsize_aero_model_wetdep_ts_379
     )
 # # matching the tests and errors, just for convenience
 
@@ -52,6 +53,7 @@ set(ERROR_THRESHOLDS
     1e-12
     5e-11
     3e-5
+    1.5e-3
    )
 
 
@@ -73,5 +75,3 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
 endforeach()
-
-
