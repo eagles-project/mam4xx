@@ -461,8 +461,7 @@ void calculate_gas_drydep_vlc_and_flux(
 
   for (int ispec = 0; ispec < gas_pcnst; ++ispec) {
     if (drydep_data.has_dvel(ispec)) {
-      Real wrk = 0.0;
-      Real resc, lnd_frc;
+      Real wrk = 0, resc = 0, lnd_frc = 0;
       for (int lt = beglt; lt <= endlt; ++lt) {
         if (fr_lnduse[lt]) {
           resc = 1.0 / (1.0 / rsmx[ispec][lt] + 1.0 / rlux[ispec][lt] +

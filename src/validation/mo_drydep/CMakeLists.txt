@@ -105,11 +105,3 @@ set_tests_properties(run_${m4stand_compare} PROPERTIES LABELS "${TestLabels};com
 set_tests_properties(validate_${m4stand_compare} PROPERTIES LABELS "${TestLabels};compared2standalone")
 
 
-set(FailTests
-    drydep_xactive
-    )
-set(TestLabels "${TestLabels};failing")
-foreach(input ${FailTests})
-  set_tests_properties(run_${input} PROPERTIES LABELS "${TestLabels}")
-  set_tests_properties(validate_${input} PROPERTIES LABELS "${TestLabels}")
-endforeach()
