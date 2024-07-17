@@ -120,18 +120,17 @@ void gas_washout(
   //-----------------------------------------------------------------
   //       ... calculate the saturation concentration eqca
   //-----------------------------------------------------------------
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, plev, pver), [&](int k) {
-        // cal washout below cloud
-        xeqca(k) = xgas(k) /
-                   (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
-                   xliq_ik * avo2;
-        //-----------------------------------------------------------------
-        //       ... calculate ca; inside cloud concentration in  #/cm3(air)
-        //-----------------------------------------------------------------
-        xca(k) = geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik *
-                 cm3_2_m3;
-      });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, plev, pver), [&](int k) {
+    // cal washout below cloud
+    xeqca(k) = xgas(k) /
+               (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
+               xliq_ik * avo2;
+    //-----------------------------------------------------------------
+    //       ... calculate ca; inside cloud concentration in  #/cm3(air)
+    //-----------------------------------------------------------------
+    xca(k) =
+        geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik * cm3_2_m3;
+  });
 
   //-----------------------------------------------------------------
   //       ... if is not saturated (take hno3 as an example)

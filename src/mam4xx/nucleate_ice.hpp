@@ -359,87 +359,84 @@ public:
     const Real mincld = _mincld;
     const Real alnsg_amode_aitken = _alnsg_amode_aitken;
 
-    Kokkos::parallel_for(
-        Kokkos::TeamVectorRange(team, nk), [&](int kk) {
-          const Real temp = atmosphere.temperature(kk);
-          if (temp < tmelt_m_five) {
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int kk) {
+      const Real temp = atmosphere.temperature(kk);
+      if (temp < tmelt_m_five) {
 
-            const Real zero = 0;
-            const Real half = 0.5;
-            const Real sqrt_two = haero::sqrt(2.0);
+        const Real zero = 0;
+        const Real half = 0.5;
+        const Real sqrt_two = haero::sqrt(2.0);
 
-            const Real pmid = atmosphere.pressure(kk);
-            const Real air_density =
-                conversions::density_of_ideal_gas(temp, pmid);
+        const Real pmid = atmosphere.pressure(kk);
+        const Real air_density = conversions::density_of_ideal_gas(temp, pmid);
 
-            // CHECK if this part of code is consistent with original code.
-            // relative humidity [unitless]
-            Real qv = atmosphere.vapor_mixing_ratio(kk);
-            // very low temperature produces inf relhum
-            Real es = zero;
-            Real qs = zero;
+        // CHECK if this part of code is consistent with original code.
+        // relative humidity [unitless]
+        Real qv = atmosphere.vapor_mixing_ratio(kk);
+        // very low temperature produces inf relhum
+        Real es = zero;
+        Real qs = zero;
 
-            wv_sat_methods::wv_sat_qsat_water(temp, pmid, es, qs);
-            const Real relhum = qv / qs;
-            const Real icldm = haero::max(ast(kk), mincld);
+        wv_sat_methods::wv_sat_qsat_water(temp, pmid, es, qs);
+        const Real relhum = qv / qs;
+        const Real icldm = haero::max(ast(kk), mincld);
 
-            // compute aerosol number for so4, soot, and dust with units #/cm^3
-            // remove soot number, because it is set to zero
-            Real so4_num = zero;
-            Real dst3_num = zero;
+        // compute aerosol number for so4, soot, and dust with units #/cm^3
+        // remove soot number, because it is set to zero
+        Real so4_num = zero;
+        Real dst3_num = zero;
 
-            /* For modal aerosols, assume for the upper troposphere:
-            soot = accumulation mode
-            sulfate = aitken mode
-            dust = coarse mode
-            since modal has internal mixtures. */
-            Real dmc = coarse_dust(kk) * air_density;
-            Real ssmc = coarse_nacl(kk) * air_density;
-            Real so4mc = coarse_so4(kk) * air_density;
+        /* For modal aerosols, assume for the upper troposphere:
+        soot = accumulation mode
+        sulfate = aitken mode
+        dust = coarse mode
+        since modal has internal mixtures. */
+        Real dmc = coarse_dust(kk) * air_density;
+        Real ssmc = coarse_nacl(kk) * air_density;
+        Real so4mc = coarse_so4(kk) * air_density;
 
-            Real mommc = coarse_mom(kk) * air_density;
-            Real bcmc = coarse_bc(kk) * air_density;
-            Real pommc = coarse_pom(kk) * air_density;
-            Real soamc = coarse_soa(kk) * air_density;
+        Real mommc = coarse_mom(kk) * air_density;
+        Real bcmc = coarse_bc(kk) * air_density;
+        Real pommc = coarse_pom(kk) * air_density;
+        Real soamc = coarse_soa(kk) * air_density;
 
-            if (dmc > zero) {
-              const Real wght =
-                  dmc / (ssmc + dmc + so4mc + bcmc + pommc + soamc + mommc);
-              dst3_num = wght * num_coarse(kk) * air_density * num_m3_to_cm3;
-            } // end dmc
+        if (dmc > zero) {
+          const Real wght =
+              dmc / (ssmc + dmc + so4mc + bcmc + pommc + soamc + mommc);
+          dst3_num = wght * num_coarse(kk) * air_density * num_m3_to_cm3;
+        } // end dmc
 
-            if (dgnum_aitken(kk) > zero) {
-              // only allow so4 with D > 0.1 um in ice nucleation
-              so4_num =
-                  num_aitken(kk) * air_density * num_m3_to_cm3 *
-                  (half - half * haero::erf(haero::log(so4_sz_thresh_icenuc /
-                                                       dgnum_aitken(kk)) /
-                                            (sqrt_two * alnsg_amode_aitken)));
-            } // end dgnum_aitken
+        if (dgnum_aitken(kk) > zero) {
+          // only allow so4 with D > 0.1 um in ice nucleation
+          so4_num = num_aitken(kk) * air_density * num_m3_to_cm3 *
+                    (half - half * haero::erf(haero::log(so4_sz_thresh_icenuc /
+                                                         dgnum_aitken(kk)) /
+                                              (sqrt_two * alnsg_amode_aitken)));
+        } // end dgnum_aitken
 
-            so4_num = haero::max(zero, so4_num);
+        so4_num = haero::max(zero, so4_num);
 
-            // Real naai = zero;
+        // Real naai = zero;
 
-            nucleati(wsubi(kk), temp, pmid, relhum, icldm, air_density, so4_num,
-                     dst3_num, subgrid,
-                     // outputs
-                     naai(kk), nihf(kk), niimm(kk), nidep(kk), nimey(kk));
+        nucleati(wsubi(kk), temp, pmid, relhum, icldm, air_density, so4_num,
+                 dst3_num, subgrid,
+                 // outputs
+                 naai(kk), nihf(kk), niimm(kk), nidep(kk), nimey(kk));
 
-            // QUESTION why nihf instead of naai
-            naai_hom(kk) = nihf(kk);
-            // is naai not saved?
+        // QUESTION why nihf instead of naai
+        naai_hom(kk) = nihf(kk);
+        // is naai not saved?
 
-            // output activated ice (convert from #/kg -> #/m3)
-            // QUESTION: note that these variables are divided by rho in
-            // nucleati
-            nihf(kk) *= air_density;
-            niimm(kk) *= air_density;
-            nidep(kk) *= air_density;
-            nimey(kk) *= air_density;
+        // output activated ice (convert from #/kg -> #/m3)
+        // QUESTION: note that these variables are divided by rho in
+        // nucleati
+        nihf(kk) *= air_density;
+        niimm(kk) *= air_density;
+        nidep(kk) *= air_density;
+        nimey(kk) *= air_density;
 
-          } // end temp
-        }); // kokkos::parfor(k)
+      } // end temp
+    }); // kokkos::parfor(k)
   }
 
 public:

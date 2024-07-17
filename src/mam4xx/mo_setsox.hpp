@@ -1319,28 +1319,27 @@ void setsox(const ThreadTeam &team, const int loffset, const Real dt,
 
   // NOTE: pdel and mbar seem to be entirely unused and only used in mam4 to
   // calculate a quantity that is written out and otherwise unused
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, nk), [&](int k) {
-        // auto press = mam4::Atmosphere.pressure;
-        const Real press_k = press(k);
-        const Real pdel_k = pdel(k);
-        const Real tfld_k = tfld(k);
-        const Real mbar_k = mbar(k);
-        const Real lwc_k = lwc(k);
-        const Real cldfrc_k = cldfrc(k);
-        const Real cldnum_k = cldnum(k);
-        const Real xhnm_k = xhnm(k);
-        const int nspec = AeroConfig::num_gas_phase_species();
-        Real qcw_k[nspec];
-        Real qin_k[nspec];
-        for (int i = 0; i < nspec; ++i) {
-          qcw_k[i] = qcw[i](k);
-          qin_k[i] = qin[i](k);
-        }
-        setsox_single_level(loffset, dt, press_k, pdel_k, tfld_k, mbar_k, lwc_k,
-                            cldfrc_k, cldnum_k, xhnm_k, setsox_config_, qcw_k,
-                            qin_k);
-      }); // end kokkos::parfor(k)
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
+    // auto press = mam4::Atmosphere.pressure;
+    const Real press_k = press(k);
+    const Real pdel_k = pdel(k);
+    const Real tfld_k = tfld(k);
+    const Real mbar_k = mbar(k);
+    const Real lwc_k = lwc(k);
+    const Real cldfrc_k = cldfrc(k);
+    const Real cldnum_k = cldnum(k);
+    const Real xhnm_k = xhnm(k);
+    const int nspec = AeroConfig::num_gas_phase_species();
+    Real qcw_k[nspec];
+    Real qin_k[nspec];
+    for (int i = 0; i < nspec; ++i) {
+      qcw_k[i] = qcw[i](k);
+      qin_k[i] = qin[i](k);
+    }
+    setsox_single_level(loffset, dt, press_k, pdel_k, tfld_k, mbar_k, lwc_k,
+                        cldfrc_k, cldnum_k, xhnm_k, setsox_config_, qcw_k,
+                        qin_k);
+  }); // end kokkos::parfor(k)
 } // end setsox()
 
 } // namespace mo_setsox

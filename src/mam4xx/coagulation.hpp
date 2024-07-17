@@ -1210,11 +1210,10 @@ void Coagulation::compute_tendencies(const AeroConfig &config,
                                      const Tendencies &tends) const {
 
   const int nk = atm.num_levels();
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, nk), [&](int k) {
-        coagulation::coagulation_rates_1box(k, config, dt, atm, progs, diags,
-                                            tends, config_);
-      });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
+    coagulation::coagulation_rates_1box(k, config, dt, atm, progs, diags, tends,
+                                        config_);
+  });
 }
 } // namespace mam4
 

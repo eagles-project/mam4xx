@@ -856,13 +856,12 @@ void GasAerExch::compute_tendencies(const AeroConfig &config,
   for (int k = 0; k < num_gas; ++k)
     uptk_rate[k] = GasAerExch::uptk_rate_factor(k);
 
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, nk), [&](int k) {
-        gasaerexch::gas_aerosol_uptake_rates_1box(
-            k, config, dt, atm, progs, diags, tends, config_,
-            l_gas_condense_to_mode, eqn_and_numerics_category, uptk_rate,
-            alnsg_aer);
-      });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
+    gasaerexch::gas_aerosol_uptake_rates_1box(
+        k, config, dt, atm, progs, diags, tends, config_,
+        l_gas_condense_to_mode, eqn_and_numerics_category, uptk_rate,
+        alnsg_aer);
+  });
 }
 } // namespace mam4
 

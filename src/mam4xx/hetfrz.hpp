@@ -1529,10 +1529,9 @@ void Hetfrz::compute_tendencies(const AeroConfig &config,
   // to the relevant cloud-microphysical parameterization.
 
   const int nk = atm.num_levels();
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, nk), [&](int k) {
-        hetfrz::hetfrz_rates_1box(k, dt, atm, progs, diags, tends, config_);
-      });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
+    hetfrz::hetfrz_rates_1box(k, dt, atm, progs, diags, tends, config_);
+  });
 }
 
 } // namespace mam4
