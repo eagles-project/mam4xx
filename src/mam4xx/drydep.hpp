@@ -1017,8 +1017,8 @@ void aero_model_drydep(
   // The number of species is currently 7:
   const int max_species = static_cast<int>(AeroId::None);
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, ntot_amode * (1 + max_species)),
-      KOKKOS_LAMBDA(int ic) {
+      Kokkos::TeamVectorRange(team, ntot_amode * (1 + max_species)),
+      [&](int ic) {
         const int imode = ic / (1 + max_species);
         const int lspec = ic % (1 + max_species) - 1;
         const int icnst = (lspec == -1)
