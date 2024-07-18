@@ -99,27 +99,26 @@ void setinv(const ThreadTeam &team, const ColumnView invariants[nfs],
   Config setinv_config_;
   constexpr int nk = mam4::nlev;
 
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nk), KOKKOS_LAMBDA(int k) {
-        const Real tfld_k = tfld(k);
-        const Real h2ovmr_k = h2ovmr(k);
-        const Real pmid_k = pmid(k);
-        Real invariants_k[nfs];
-        const int nspec = AeroConfig::num_gas_phase_species();
-        Real vmr_k[nspec];
-        for (int i = 0; i < nspec; ++i) {
-          vmr_k[i] = vmr[i](k);
-        }
-        Real cnst_offline_k[num_tracer_cnst];
-        for (int i = 0; i < num_tracer_cnst; ++i) {
-          cnst_offline_k[i] = cnst_offline[i](k);
-        }
-        setinv_single_level(invariants_k, tfld_k, h2ovmr_k, vmr_k, pmid_k,
-                            cnst_offline_k, setinv_config_);
-        for (int i = 0; i < nfs; ++i) {
-          invariants[i](k) = invariants_k[i];
-        }
-      }); // end kokkos::parfor(k)
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
+    const Real tfld_k = tfld(k);
+    const Real h2ovmr_k = h2ovmr(k);
+    const Real pmid_k = pmid(k);
+    Real invariants_k[nfs];
+    const int nspec = AeroConfig::num_gas_phase_species();
+    Real vmr_k[nspec];
+    for (int i = 0; i < nspec; ++i) {
+      vmr_k[i] = vmr[i](k);
+    }
+    Real cnst_offline_k[num_tracer_cnst];
+    for (int i = 0; i < num_tracer_cnst; ++i) {
+      cnst_offline_k[i] = cnst_offline[i](k);
+    }
+    setinv_single_level(invariants_k, tfld_k, h2ovmr_k, vmr_k, pmid_k,
+                        cnst_offline_k, setinv_config_);
+    for (int i = 0; i < nfs; ++i) {
+      invariants[i](k) = invariants_k[i];
+    }
+  }); // end kokkos::parfor(k)
 } // end setinv_nlev()
 
 KOKKOS_INLINE_FUNCTION
@@ -130,22 +129,21 @@ void setinv(const ThreadTeam &team, const ColumnView invariants[nfs],
   Config setinv_config_;
   constexpr int nk = mam4::nlev;
 
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nk), KOKKOS_LAMBDA(int k) {
-        const Real tfld_k = tfld(k);
-        const Real h2ovmr_k = h2ovmr(k);
-        const Real pmid_k = pmid(k);
-        Real invariants_k[nfs];
-        View1D vmr_k = Kokkos::subview(vmr, k, Kokkos::ALL());
-        View1D cnst_offline_k = Kokkos::subview(cnst_offline, k, Kokkos::ALL());
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
+    const Real tfld_k = tfld(k);
+    const Real h2ovmr_k = h2ovmr(k);
+    const Real pmid_k = pmid(k);
+    Real invariants_k[nfs];
+    View1D vmr_k = Kokkos::subview(vmr, k, Kokkos::ALL());
+    View1D cnst_offline_k = Kokkos::subview(cnst_offline, k, Kokkos::ALL());
 
-        setinv_single_level(invariants_k, tfld_k, h2ovmr_k, vmr_k.data(),
-                            pmid_k, cnst_offline_k.data(), setinv_config_);
+    setinv_single_level(invariants_k, tfld_k, h2ovmr_k, vmr_k.data(), pmid_k,
+                        cnst_offline_k.data(), setinv_config_);
 
-        for (int i = 0; i < nfs; ++i) {
-          invariants[i](k) = invariants_k[i];
-        }
-      }); // end kokkos::parfor(k)
+    for (int i = 0; i < nfs; ++i) {
+      invariants[i](k) = invariants_k[i];
+    }
+  }); // end kokkos::parfor(k)
 } // end setinv_nlev()
 } // namespace mo_setinv
 } // namespace mam4

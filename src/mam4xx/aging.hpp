@@ -431,11 +431,10 @@ void Aging::compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
 
   const int nk = atm.num_levels();
 
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
-        aging::aerosol_aging_rates_1box(k, config, dt, atm, progs, diags, tends,
-                                        config_);
-      });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
+    aging::aerosol_aging_rates_1box(k, config, dt, atm, progs, diags, tends,
+                                    config_);
+  });
 }
 
 } // namespace mam4

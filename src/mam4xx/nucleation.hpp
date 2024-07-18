@@ -696,49 +696,47 @@ public:
         6.02214e26; // BAD_CONSTANT (Avogadro's number ~ molecules/kmole)
     static constexpr Real r_universal = boltzmann * avogadro; // BAD_CONSTANT
     const int nk = atm.num_levels();
-    Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
-          // extract atmospheric state
-          Real temp = atm.temperature(k);
-          Real pmid = atm.pressure(k);
-          Real aircon = pmid / (r_universal * temp);
-          Real zmid = atm.height(k);
-          Real pblh = atm.planetary_boundary_layer_height;
-          Real qv = atm.vapor_mixing_ratio(k);
-          Real relhum = conversions::relative_humidity_from_vapor_mixing_ratio(
-              qv, temp, pmid);
-          Real uptkrate_so4 = 0;
-          Real del_h2so4_gasprod = 0;
-          Real del_h2so4_aeruptk = 0;
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
+      // extract atmospheric state
+      Real temp = atm.temperature(k);
+      Real pmid = atm.pressure(k);
+      Real aircon = pmid / (r_universal * temp);
+      Real zmid = atm.height(k);
+      Real pblh = atm.planetary_boundary_layer_height;
+      Real qv = atm.vapor_mixing_ratio(k);
+      Real relhum = conversions::relative_humidity_from_vapor_mixing_ratio(
+          qv, temp, pmid);
+      Real uptkrate_so4 = 0;
+      Real del_h2so4_gasprod = 0;
+      Real del_h2so4_aeruptk = 0;
 
-          // extract relevant gas mixing ratios (H2SO4 only for now)
-          Real qgas_cur[num_gases], qgas_avg[num_gases];
-          qgas_cur[igas_h2so4] = progs.q_gas[igas_h2so4](k);
-          qgas_avg[igas_h2so4] =
-              progs.q_gas[igas_h2so4](k); // is this good enough?
+      // extract relevant gas mixing ratios (H2SO4 only for now)
+      Real qgas_cur[num_gases], qgas_avg[num_gases];
+      qgas_cur[igas_h2so4] = progs.q_gas[igas_h2so4](k);
+      qgas_avg[igas_h2so4] = progs.q_gas[igas_h2so4](k); // is this good enough?
 
-          // extract relevant aerosol mixing ratios (SO4 in aitken mode only for
-          // now)
-          Real qnum_cur[num_modes], qaer_cur[num_modes][max_num_mode_species];
-          qnum_cur[nait] = progs.n_mode_i[nait](k);
-          qaer_cur[nait][iaer_so4] = progs.q_aero_i[nait][iaer_so4](k);
+      // extract relevant aerosol mixing ratios (SO4 in aitken mode only for
+      // now)
+      Real qnum_cur[num_modes], qaer_cur[num_modes][max_num_mode_species];
+      qnum_cur[nait] = progs.n_mode_i[nait](k);
+      qaer_cur[nait][iaer_so4] = progs.q_aero_i[nait][iaer_so4](k);
 
-          Real qwtr_cur[num_modes] = {}; // water vapor mmr
-          qwtr_cur[nait] = qv;
+      Real qwtr_cur[num_modes] = {}; // water vapor mmr
+      qwtr_cur[nait] = qv;
 
-          // compute tendencies at this level
-          Real dndt_ait, dmdt_ait, dso4dt_ait, dnh4dt_ait, dnclusterdt;
-          compute_tendencies_(dt, temp, pmid, aircon, zmid, pblh, relhum,
-                              uptkrate_so4, del_h2so4_gasprod,
-                              del_h2so4_aeruptk, qgas_cur, qgas_avg, qnum_cur,
-                              qaer_cur, qwtr_cur, dndt_ait, dmdt_ait,
-                              dso4dt_ait, dnh4dt_ait, dnclusterdt);
+      // compute tendencies at this level
+      Real dndt_ait, dmdt_ait, dso4dt_ait, dnh4dt_ait, dnclusterdt;
+      compute_tendencies_(dt, temp, pmid, aircon, zmid, pblh, relhum,
+                          uptkrate_so4, del_h2so4_gasprod, del_h2so4_aeruptk,
+                          qgas_cur, qgas_avg, qnum_cur, qaer_cur, qwtr_cur,
+                          dndt_ait, dmdt_ait, dso4dt_ait, dnh4dt_ait,
+                          dnclusterdt);
 
-          // Store the computed tendencies.
-          tends.n_mode_i[nait](k) = dndt_ait;
-          tends.q_aero_i[nait][iaer_so4](k) = dso4dt_ait;
-          tends.q_gas[igas_h2so4](k) = -dso4dt_ait;
-        });
+      // Store the computed tendencies.
+      tends.n_mode_i[nait](k) = dndt_ait;
+      tends.q_aero_i[nait][iaer_so4](k) = dso4dt_ait;
+      tends.q_gas[igas_h2so4](k) = -dso4dt_ait;
+    });
   }
 
   // This function computes relevant tendencies at a single vertical level. It

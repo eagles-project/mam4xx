@@ -148,8 +148,8 @@ public:
     const int nk = atm.num_levels();
     int violations = 0;
     Kokkos::parallel_reduce(
-        Kokkos::TeamThreadRange(team, nk),
-        KOKKOS_LAMBDA(int k, int &violation) {
+        Kokkos::TeamVectorRange(team, nk),
+        [&](int k, int &violation) {
           if ((atm.temperature(k) < 0) || (atm.pressure(k) < 0) ||
               (atm.vapor_mixing_ratio(k) < 0)) {
             violation = 1;
@@ -856,13 +856,12 @@ void GasAerExch::compute_tendencies(const AeroConfig &config,
   for (int k = 0; k < num_gas; ++k)
     uptk_rate[k] = GasAerExch::uptk_rate_factor(k);
 
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
-        gasaerexch::gas_aerosol_uptake_rates_1box(
-            k, config, dt, atm, progs, diags, tends, config_,
-            l_gas_condense_to_mode, eqn_and_numerics_category, uptk_rate,
-            alnsg_aer);
-      });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
+    gasaerexch::gas_aerosol_uptake_rates_1box(
+        k, config, dt, atm, progs, diags, tends, config_,
+        l_gas_condense_to_mode, eqn_and_numerics_category, uptk_rate,
+        alnsg_aer);
+  });
 }
 } // namespace mam4
 

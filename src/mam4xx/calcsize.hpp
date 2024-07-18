@@ -998,226 +998,225 @@ public:
     const auto n_common_species_ait_accum = _n_common_species_ait_accum;
     const auto noxf_acc2ait = _noxf_acc2ait;
 
-    Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, nk), KOKKOS_CLASS_LAMBDA(int k) {
-          Real dryvol_i = 0;
-          Real dryvol_c = 0;
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
+      Real dryvol_i = 0;
+      Real dryvol_c = 0;
 
-          //  initialize these variables that are used at the bottom of the
-          //  imode loop and are needed outside the loop scope
-          Real dryvol_i_aitsv = 0;
-          Real num_i_k_aitsv = 0;
-          Real dryvol_c_aitsv = 0;
-          Real num_c_k_aitsv = 0;
-          Real dryvol_i_accsv = 0;
-          Real num_i_k_accsv = 0;
-          Real dryvol_c_accsv = 0;
-          Real num_c_k_accsv = 0;
-          // NOTE: these were work arrays and may not be necessary
-          // Real drv_i_sv[nmodes];
-          // Real num_i_sv[nmodes];
-          // Real drv_c_sv[nmodes];
-          // Real num_c_sv[nmodes];
+      //  initialize these variables that are used at the bottom of the
+      //  imode loop and are needed outside the loop scope
+      Real dryvol_i_aitsv = 0;
+      Real num_i_k_aitsv = 0;
+      Real dryvol_c_aitsv = 0;
+      Real num_c_k_aitsv = 0;
+      Real dryvol_i_accsv = 0;
+      Real num_i_k_accsv = 0;
+      Real dryvol_c_accsv = 0;
+      Real num_c_k_accsv = 0;
+      // NOTE: these were work arrays and may not be necessary
+      // Real drv_i_sv[nmodes];
+      // Real num_i_sv[nmodes];
+      // Real drv_c_sv[nmodes];
+      // Real num_c_sv[nmodes];
 
-          // time scale for number adjustment
-          const Real adj_tscale = max(seconds_in_a_day, dt);
+      // time scale for number adjustment
+      const Real adj_tscale = max(seconds_in_a_day, dt);
 
-          // inverse of the adjustment time scale
-          const Real adj_tscale_inv =
-              FloatingPoint<Real>::safe_denominator(adj_tscale);
+      // inverse of the adjustment time scale
+      const Real adj_tscale_inv =
+          FloatingPoint<Real>::safe_denominator(adj_tscale);
 
-          for (int imode = 0; imode < nmodes; imode++) {
+      for (int imode = 0; imode < nmodes; imode++) {
 
-            // ----------------------------------------------------------------------
-            // Algorithm to compute dry aerosol diameter:
-            // calculate aerosol diameter volume, volume is computed from mass
-            // and density
-            // ----------------------------------------------------------------------
+        // ----------------------------------------------------------------------
+        // Algorithm to compute dry aerosol diameter:
+        // calculate aerosol diameter volume, volume is computed from mass
+        // and density
+        // ----------------------------------------------------------------------
 
-            // FIXME: get rid of these unused bits and related comments?
-            // find start and end index of species in this mode in the
-            // "population" array The indices are same for interstitial and
-            // cloudborne species s_spec_ind = population_offsets(imode) start
-            // index e_spec_ind = population_offsets(imode+1) - 1 end index of
-            // species for all (modes expect the last mode)
+        // FIXME: get rid of these unused bits and related comments?
+        // find start and end index of species in this mode in the
+        // "population" array The indices are same for interstitial and
+        // cloudborne species s_spec_ind = population_offsets(imode) start
+        // index e_spec_ind = population_offsets(imode+1) - 1 end index of
+        // species for all (modes expect the last mode)
 
-            // if(imode.eq.nmodes) then  for last mode
-            //    e_spec_ind = num_populations if imode==nmodes, end index is
-            //    the total number of species
-            // endif
+        // if(imode.eq.nmodes) then  for last mode
+        //    e_spec_ind = num_populations if imode==nmodes, end index is
+        //    the total number of species
+        // endif
 
-            // nspec = num_mode_species(imode) total number of species in mode
-            // "imode"
+        // nspec = num_mode_species(imode) total number of species in mode
+        // "imode"
 
-            // capture densities for each species in this mode
-            // density(1:max_nspec) = huge(density) initialize the whole array
-            // to a huge value [FIXME: NaN would be better than huge]
-            // density(1:nspec) = spec_density(imode, 1:nspec) assign density
-            // till nspec (as nspec can be different for each mode)
+        // capture densities for each species in this mode
+        // density(1:max_nspec) = huge(density) initialize the whole array
+        // to a huge value [FIXME: NaN would be better than huge]
+        // density(1:nspec) = spec_density(imode, 1:nspec) assign density
+        // till nspec (as nspec can be different for each mode)
 
-            // Initialize diameter(dgnum), volume to number
-            // ratios(num2vol_ratio_cur) and dry volume (dryvol) for both
-            // interstitial and cloudborne aerosols we did not implement
-            // set_initial_sz_and_volumes
-            dgncur_i[imode](k) = dgnnom_nmodes[imode]; // diameter [m]
-            Real num2vol_ratio_cur_i =
-                num2vol_ratio_nom_nmodes[imode]; // volume to number
+        // Initialize diameter(dgnum), volume to number
+        // ratios(num2vol_ratio_cur) and dry volume (dryvol) for both
+        // interstitial and cloudborne aerosols we did not implement
+        // set_initial_sz_and_volumes
+        dgncur_i[imode](k) = dgnnom_nmodes[imode]; // diameter [m]
+        Real num2vol_ratio_cur_i =
+            num2vol_ratio_nom_nmodes[imode]; // volume to number
 
-            dgncur_c[imode](k) = dgnnom_nmodes[imode]; // diameter [m]
-            Real num2vol_ratio_cur_c =
-                num2vol_ratio_nom_nmodes[imode]; // volume to number
+        dgncur_c[imode](k) = dgnnom_nmodes[imode]; // diameter [m]
+        Real num2vol_ratio_cur_c =
+            num2vol_ratio_nom_nmodes[imode]; // volume to number
 
-            // dry volume is set to zero inside compute_dry_volume_k
-            //----------------------------------------------------------------------
-            // Compute dry volume mixratios (aerosol diameter)
-            // Current default: number mmr is prognosed
-            //       Algorithm:calculate aerosol diameter from mass, number, and
-            //       fixed sigmag
-            //
-            // sigmag ("sigma g") is "geometric standard deviation for aerosol
-            // mode"
-            //
-            // Volume = sum_over_components{ component_mass mixratio / density }
-            //----------------------------------------------------------------------
-            // dryvol_i, dryvol_c are set to zero inside compute_dry_volume_k
-            calcsize::compute_dry_volume_k(k, imode, inv_density, prognostics,
-                                           dryvol_i, dryvol_c);
+        // dry volume is set to zero inside compute_dry_volume_k
+        //----------------------------------------------------------------------
+        // Compute dry volume mixratios (aerosol diameter)
+        // Current default: number mmr is prognosed
+        //       Algorithm:calculate aerosol diameter from mass, number, and
+        //       fixed sigmag
+        //
+        // sigmag ("sigma g") is "geometric standard deviation for aerosol
+        // mode"
+        //
+        // Volume = sum_over_components{ component_mass mixratio / density }
+        //----------------------------------------------------------------------
+        // dryvol_i, dryvol_c are set to zero inside compute_dry_volume_k
+        calcsize::compute_dry_volume_k(k, imode, inv_density, prognostics,
+                                       dryvol_i, dryvol_c);
 
-            const auto dgnmin = dgnmin_nmodes[imode];
-            const auto dgnmax = dgnmax_nmodes[imode];
-            const auto mean_std_dev = mean_std_dev_nmodes[imode];
+        const auto dgnmin = dgnmin_nmodes[imode];
+        const auto dgnmax = dgnmax_nmodes[imode];
+        const auto mean_std_dev = mean_std_dev_nmodes[imode];
 
-            // initial value of num interstitial for this Real and mode
-            auto init_num_i = n_i[imode](k);
+        // initial value of num interstitial for this Real and mode
+        auto init_num_i = n_i[imode](k);
 
-            // `adjust_num_sizes` will use the initial value, but other
-            // calculations require this to be nonzero.
-            // Make it non-negative
-            auto num_i_k = init_num_i < 0 ? zero : init_num_i;
+        // `adjust_num_sizes` will use the initial value, but other
+        // calculations require this to be nonzero.
+        // Make it non-negative
+        auto num_i_k = init_num_i < 0 ? zero : init_num_i;
 
-            auto init_num_c = n_c[imode](k);
-            // Make it non-negative
-            auto num_c_k = init_num_c < 0 ? zero : init_num_c;
+        auto init_num_c = n_c[imode](k);
+        // Make it non-negative
+        auto num_c_k = init_num_c < 0 ? zero : init_num_c;
 
-            const auto is_aitken_or_accumulation =
-                imode == accumulation_idx || imode == aitken_idx;
-            const auto do_adjust_aitken_or_accum =
-                is_aitken_or_accumulation && do_aitacc_transfer;
-            if (do_adjust) {
-              /*------------------------------------------------------------------
-               *  Do number adjustment for interstitial and activated particles
-               *------------------------------------------------------------------
-               * Adjustments that are applied over time-scale deltat
-               * (model time step in seconds):
-               *
-               *   1. make numbers non-negative or
-               *   2. make numbers zero when volume is zero
-               *
-               *
-               * Adjustments that are applied over time-scale of a day (in
-               *seconds)
-               *   3. bring numbers to within specified bounds
-               *
-               * (Adjustment details are explained in the process)
-               *------------------------------------------------------------------*/
+        const auto is_aitken_or_accumulation =
+            imode == accumulation_idx || imode == aitken_idx;
+        const auto do_adjust_aitken_or_accum =
+            is_aitken_or_accumulation && do_aitacc_transfer;
+        if (do_adjust) {
+          /*------------------------------------------------------------------
+           *  Do number adjustment for interstitial and activated particles
+           *------------------------------------------------------------------
+           * Adjustments that are applied over time-scale deltat
+           * (model time step in seconds):
+           *
+           *   1. make numbers non-negative or
+           *   2. make numbers zero when volume is zero
+           *
+           *
+           * Adjustments that are applied over time-scale of a day (in
+           *seconds)
+           *   3. bring numbers to within specified bounds
+           *
+           * (Adjustment details are explained in the process)
+           *------------------------------------------------------------------*/
 
-              // number tendencies to be updated by adjust_num_sizes subroutine
+          // number tendencies to be updated by adjust_num_sizes subroutine
 
-              auto &interstitial_tend = dnidt[imode](k);
-              auto &cloudborne_tend = dncdt[imode](k);
+          auto &interstitial_tend = dnidt[imode](k);
+          auto &cloudborne_tend = dncdt[imode](k);
 
-              /*NOTE: Only number tendencies (NOT mass mixing ratios) are
-               updated in adjust_num_sizes Effect of these adjustment will be
-               reflected in the particle diameters (via
-               "update_diameter_and_vol2num" subroutine call below) */
-              // Thus, when we are NOT doing the diameter/vol adjustments below,
-              // then we DO the num adjustment here
-              if (!do_adjust_aitken_or_accum) {
-                calcsize::adjust_num_sizes(
-                    dryvol_i, dryvol_c, init_num_i, init_num_c, dt, // in
-                    num2vol_ratio_min[imode], num2vol_ratio_max[imode],
-                    adj_tscale_inv,                      // in
-                    num_i_k, num_c_k,                    // out
-                    interstitial_tend, cloudborne_tend); // out
-              }
-            }
+          /*NOTE: Only number tendencies (NOT mass mixing ratios) are
+           updated in adjust_num_sizes Effect of these adjustment will be
+           reflected in the particle diameters (via
+           "update_diameter_and_vol2num" subroutine call below) */
+          // Thus, when we are NOT doing the diameter/vol adjustments below,
+          // then we DO the num adjustment here
+          if (!do_adjust_aitken_or_accum) {
+            calcsize::adjust_num_sizes(
+                dryvol_i, dryvol_c, init_num_i, init_num_c, dt, // in
+                num2vol_ratio_min[imode], num2vol_ratio_max[imode],
+                adj_tscale_inv,                      // in
+                num_i_k, num_c_k,                    // out
+                interstitial_tend, cloudborne_tend); // out
+          }
+        }
 
-            // update diameters and volume to num ratios for interstitial
-            // aerosols
+        // update diameters and volume to num ratios for interstitial
+        // aerosols
 
-            calcsize::update_diameter_and_vol2num(
-                dryvol_i, num_i_k, num2vol_ratio_min[imode],
-                num2vol_ratio_max[imode], dgnmin, dgnmax, mean_std_dev,
-                dgncur_i[imode](k), num2vol_ratio_cur_i);
+        calcsize::update_diameter_and_vol2num(
+            dryvol_i, num_i_k, num2vol_ratio_min[imode],
+            num2vol_ratio_max[imode], dgnmin, dgnmax, mean_std_dev,
+            dgncur_i[imode](k), num2vol_ratio_cur_i);
 
-            // update diameters and volume to num ratios for cloudborne aerosols
-            calcsize::update_diameter_and_vol2num(
-                dryvol_c, num_c_k, num2vol_ratio_min[imode],
-                num2vol_ratio_max[imode], dgnmin, dgnmax, mean_std_dev,
-                dgncur_c[imode](k), num2vol_ratio_cur_c);
+        // update diameters and volume to num ratios for cloudborne aerosols
+        calcsize::update_diameter_and_vol2num(
+            dryvol_c, num_c_k, num2vol_ratio_min[imode],
+            num2vol_ratio_max[imode], dgnmin, dgnmax, mean_std_dev,
+            dgncur_c[imode](k), num2vol_ratio_cur_c);
 
-            // save number concentrations and dry volumes for explicit
-            // aitken <--> accum mode transfer, which is the next step in
-            // the calcSize process
-            if (do_aitacc_transfer) {
-              if (imode == aitken_idx) {
-                // TODO: determine if we need to save these--i.e., is drv_i ever
-                // changed before the max() calculation in
-                // aitken_accum_exchange() if yes, maybe better to skip the
-                // logic and do it, regardless?
-                dryvol_i_aitsv = dryvol_i;
-                num_i_k_aitsv = num_i_k;
-                dryvol_c_aitsv = dryvol_c;
-                num_c_k_aitsv = num_c_k;
-              } else if (imode == accumulation_idx) {
-                dryvol_i_accsv = dryvol_i;
-                num_i_k_accsv = num_i_k;
-                dryvol_c_accsv = dryvol_c;
-                num_c_k_accsv = num_c_k;
-              }
-            }
-            // these were work variables that seem to not be used
-            // drv_i_sv[imode] = dryvol_i;
-            // num_i_sv[imode] = num_i_k;
-            // drv_c_sv[imode] = dryvol_c;
-            // num_c_sv[imode] = num_c_k;
-          } // for(imode)
+        // save number concentrations and dry volumes for explicit
+        // aitken <--> accum mode transfer, which is the next step in
+        // the calcSize process
+        if (do_aitacc_transfer) {
+          if (imode == aitken_idx) {
+            // TODO: determine if we need to save these--i.e., is drv_i ever
+            // changed before the max() calculation in
+            // aitken_accum_exchange() if yes, maybe better to skip the
+            // logic and do it, regardless?
+            dryvol_i_aitsv = dryvol_i;
+            num_i_k_aitsv = num_i_k;
+            dryvol_c_aitsv = dryvol_c;
+            num_c_k_aitsv = num_c_k;
+          } else if (imode == accumulation_idx) {
+            dryvol_i_accsv = dryvol_i;
+            num_i_k_accsv = num_i_k;
+            dryvol_c_accsv = dryvol_c;
+            num_c_k_accsv = num_c_k;
+          }
+        }
+        // these were work variables that seem to not be used
+        // drv_i_sv[imode] = dryvol_i;
+        // num_i_sv[imode] = num_i_k;
+        // drv_c_sv[imode] = dryvol_c;
+        // num_c_sv[imode] = num_c_k;
+      } // for(imode)
 
-          // ------------------------------------------------------------------
-          //  Overall logic for aitken<-->accumulation transfer:
-          //  ------------------------------------------------
-          //  when the aitken mode mean size is too big, the largest
-          //     aitken particles are transferred into the accum mode
-          //     to reduce the aitken mode mean size
-          //  when the accum mode mean size is too small, the smallest
-          //     accum particles are transferred into the aitken mode
-          //     to increase the accum mode mean size
-          // ------------------------------------------------------------------
-          if (do_aitacc_transfer) {
+      // ------------------------------------------------------------------
+      //  Overall logic for aitken<-->accumulation transfer:
+      //  ------------------------------------------------
+      //  when the aitken mode mean size is too big, the largest
+      //     aitken particles are transferred into the accum mode
+      //     to reduce the aitken mode mean size
+      //  when the accum mode mean size is too small, the smallest
+      //     accum particles are transferred into the aitken mode
+      //     to increase the accum mode mean size
+      // ------------------------------------------------------------------
+      if (do_aitacc_transfer) {
 
-            Real &dgncur_i_aitken =
-                diagnostics.dry_geometric_mean_diameter_i[aitken_idx](k);
-            Real &dgncur_i_accum =
-                diagnostics.dry_geometric_mean_diameter_i[accumulation_idx](k);
+        Real &dgncur_i_aitken =
+            diagnostics.dry_geometric_mean_diameter_i[aitken_idx](k);
+        Real &dgncur_i_accum =
+            diagnostics.dry_geometric_mean_diameter_i[accumulation_idx](k);
 
-            Real &dgncur_c_aitken =
-                diagnostics.dry_geometric_mean_diameter_c[aitken_idx](k);
-            Real &dgncur_c_accum =
-                diagnostics.dry_geometric_mean_diameter_c[accumulation_idx](k);
+        Real &dgncur_c_aitken =
+            diagnostics.dry_geometric_mean_diameter_c[aitken_idx](k);
+        Real &dgncur_c_accum =
+            diagnostics.dry_geometric_mean_diameter_c[accumulation_idx](k);
 
-            calcsize::aitken_accum_exchange(
-                k, aitken_idx, accumulation_idx, noxf_acc2ait,
-                n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
-                num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
-                num2vol_ratio_nom_nmodes, dgnmax_nmodes, dgnmin_nmodes,
-                dgnnom_nmodes, mean_std_dev_nmodes, inv_density, adj_tscale_inv,
-                dt, prognostics, dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv,
-                num_c_k_aitsv, dryvol_i_accsv, num_i_k_accsv, dryvol_c_accsv,
-                num_c_k_accsv, dgncur_i_aitken, dgncur_i_accum, dgncur_c_aitken,
-                dgncur_c_accum, tendencies);
+        calcsize::aitken_accum_exchange(
+            k, aitken_idx, accumulation_idx, noxf_acc2ait,
+            n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
+            num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
+            num2vol_ratio_nom_nmodes, dgnmax_nmodes, dgnmin_nmodes,
+            dgnnom_nmodes, mean_std_dev_nmodes, inv_density, adj_tscale_inv, dt,
+            prognostics, dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv,
+            num_c_k_aitsv, dryvol_i_accsv, num_i_k_accsv, dryvol_c_accsv,
+            num_c_k_accsv, dgncur_i_aitken, dgncur_i_accum, dgncur_c_aitken,
+            dgncur_c_accum, tendencies);
 
-          } // end do_aitacc_transfer
-        }); // kokkos::parfor(k)
+      } // end do_aitacc_transfer
+    }); // kokkos::parfor(k)
   }
 };
 

@@ -936,10 +936,10 @@ Real calc_sfc_flux(const ThreadTeam &team, Kokkos::View<Real *> layer_tend,
   // clang-format on
   Real scratch = 0;
   Kokkos::parallel_reduce(
-      Kokkos::TeamThreadRange(team, nlev),
-      KOKKOS_LAMBDA(int k, Real &scratch) {
+      Kokkos::TeamVectorRange(team, nlev),
+      [&](int k, Real &lsum) {
         const Real gravit = Constants::gravity;
-        scratch += layer_tend[k] * pdel[k] / gravit;
+        lsum += layer_tend[k] * pdel[k] / gravit;
       },
       scratch);
   return scratch;

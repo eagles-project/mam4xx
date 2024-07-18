@@ -150,7 +150,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
 
           // we need to inject validation values to progs.
           Kokkos::parallel_for(
-              Kokkos::TeamThreadRange(team, nlev), [&](int kk) {
+              Kokkos::TeamVectorRange(team, nlev), [&](int kk) {
                 // copy data from prog to stateq
                 const auto state_q_kk = ekat::subview(state_q, kk);
                 const auto qqcw_kk = ekat::subview(qqcw, kk);
@@ -173,7 +173,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
 
           team.team_barrier();
           Kokkos::parallel_for(
-              Kokkos::TeamThreadRange(team, 0, nlev), [&](int kk) {
+              Kokkos::TeamVectorRange(team, 0, nlev), [&](int kk) {
                 const auto ptend_q_kk = ekat::subview(ptend_q, kk);
                 utils::extract_ptend_from_tendencies(tends_in,
                                                      ptend_q_kk.data(), kk);

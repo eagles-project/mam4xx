@@ -1218,7 +1218,7 @@ void update_from_explmix(
   // cldn will be columnviews of length pver,
   // overlaps also to columnview pass as parameter so it is allocated elsewhere
   Kokkos::parallel_reduce(
-      Kokkos::TeamThreadRange(team, pver - top_lev + 1),
+      Kokkos::TeamVectorRange(team, pver - top_lev + 1),
       [&](int kk, Real &min_val) {
         const int k = top_lev - 1 + kk;
         const int kp1 = haero::min(k + 1, pver - 1);
@@ -1286,13 +1286,12 @@ void update_from_explmix(
   //  nnew stores index of most recent updated values (either 1 or 2).
 
   for (int isub = 0; isub < nsubmix; isub++) {
-    Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, pver - top_lev + 1),
-        KOKKOS_LAMBDA(int k) {
-          const int kk = top_lev - 1 + k;
-          qncld(kk) = qcld(kk);
-          srcn(kk) = zero;
-        });
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver - top_lev + 1),
+                         [&](int k) {
+                           const int kk = top_lev - 1 + k;
+                           qncld(kk) = qcld(kk);
+                           srcn(kk) = zero;
+                         });
     // after first pass, switch nsav, nnew so that nsav is the
     // recently updated aerosol
     team.team_barrier();
@@ -1309,12 +1308,12 @@ void update_from_explmix(
 
       // rce-comment- activation source in layer k involves particles from k+1
       //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
-      Kokkos::parallel_for(
-          Kokkos::TeamThreadRange(team, pver - top_lev), KOKKOS_LAMBDA(int kk) {
-            const int k = top_lev - 1 + kk;
-            const int kp1 = haero::min(k + 1, pver - 1);
-            srcn(k) += nact(k, imode) * raercol[kp1][nsav](mm);
-          });
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver - top_lev),
+                           [&](int kk) {
+                             const int k = top_lev - 1 + kk;
+                             const int kp1 = haero::min(k + 1, pver - 1);
+                             srcn(k) += nact(k, imode) * raercol[kp1][nsav](mm);
+                           });
 
       // rce-comment- new formulation for k=pver
       // srcn(  pver  )=srcn(  pver  )+nact(  pver  ,m)*(raercol(pver,mm,nsav))
@@ -1327,16 +1326,15 @@ void update_from_explmix(
     // qncld == qnew
 
     team.team_barrier();
-    Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, pver - top_lev + 1),
-        KOKKOS_LAMBDA(int kk) {
-          const int k = top_lev - 1 + kk;
-          const int kp1 = haero::min(k + 1, pver - 1);
-          const int km1 = haero::max(k - 1, top_lev - 1);
-          explmix(qncld(km1), qncld(k), qncld(kp1), qcld(k), srcn(k),
-                  eddy_diff_kp(k), eddy_diff_km(k), overlapp(k), overlapm(k),
-                  dtmix);
-        });
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver - top_lev + 1),
+                         [&](int kk) {
+                           const int k = top_lev - 1 + kk;
+                           const int kp1 = haero::min(k + 1, pver - 1);
+                           const int km1 = haero::max(k - 1, top_lev - 1);
+                           explmix(qncld(km1), qncld(k), qncld(kp1), qcld(k),
+                                   srcn(k), eddy_diff_kp(k), eddy_diff_km(k),
+                                   overlapp(k), overlapm(k), dtmix);
+                         });
 
     team.team_barrier();
     // update aerosol number
@@ -1352,8 +1350,7 @@ void update_from_explmix(
       // rce-comment - activation source in layer k involves particles from k+1
       // source(:)= nact(:,m)*(raercol(:,mm,nsav))
       Kokkos::parallel_for(
-          Kokkos::TeamThreadRange(team, pver - top_lev + 1),
-          KOKKOS_LAMBDA(int kk) {
+          Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
             const int k = top_lev - 1 + kk;
             const int kp1 = haero::min(k + 1, pver - 1);
             source(k) = nact(k, imode) * raercol[kp1][nsav](mm);
@@ -1364,8 +1361,7 @@ void update_from_explmix(
       source(pver - 1) = haero::max(zero, tmpa);
 
       Kokkos::parallel_for(
-          Kokkos::TeamThreadRange(team, pver - top_lev + 1),
-          KOKKOS_LAMBDA(int kk) {
+          Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
             const int k = top_lev - 1 + kk;
             const int kp1 = haero::min(k + 1, pver - 1);
             const int km1 = haero::max(k - 1, top_lev - 1);
@@ -1390,8 +1386,7 @@ void update_from_explmix(
         // rce-comment: activation source in layer k involves particles from k+1
         // source(:)= mact(:,m)*(raercol(:,mm,nsav))
         Kokkos::parallel_for(
-            Kokkos::TeamThreadRange(team, pver - top_lev + 1),
-            KOKKOS_LAMBDA(int kk) {
+            Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
               const int k = top_lev - 1 + kk;
               const int kp1 = haero::min(k + 1, pver - 1);
               source(k) = mact(k, imode) * raercol[kp1][nsav](mm);
@@ -1400,8 +1395,7 @@ void update_from_explmix(
                raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
         source(pver - 1) = haero::max(zero, tmpa);
         Kokkos::parallel_for(
-            Kokkos::TeamThreadRange(team, pver - top_lev + 1),
-            KOKKOS_LAMBDA(int kk) {
+            Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
               const int k = top_lev - 1 + kk;
               const int kp1 = haero::min(k + 1, pver - 1);
               const int km1 = haero::max(k - 1, top_lev - 1);
@@ -1425,7 +1419,7 @@ void update_from_explmix(
 
   // evaporate particles again if no cloud
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, pver - top_lev + 1), KOKKOS_LAMBDA(int kk) {
+      Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
         const int k = top_lev - 1 + kk;
         if (cldn(k) == zero) {
           // no cloud
@@ -1554,7 +1548,7 @@ void dropmixnuc(
   // Initialize 1D (in space) versions of interstitial and cloud borne aerosol
   int nsav = 0;
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, pver - top_lev + 1), KOKKOS_LAMBDA(int kk) {
+      Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
         const int k = kk + top_lev - 1;
 
         wtke(k) = haero::max(wsub(k), wmixmin);
@@ -1606,15 +1600,16 @@ void dropmixnuc(
         for (int imode = 0; imode < ntot_amode; ++imode)
           factnum(imode, k) = factnum_k[imode];
       }); // end k
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, 1, pver), KOKKOS_LAMBDA(int k) {
-        EKAT_KERNEL_ASSERT_MSG(0 < zm(k - 1) - zm(k),
-                               "Error: Geopotential height at level should be "
-                               "monotonically decreasing.\n");
-      });
+  static constexpr int pver_loc = pver;
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver_loc), [&](int k) {
+    EKAT_KERNEL_ASSERT_MSG(0 < zm(k - 1) - zm(k),
+                           "Error: Geopotential height at level should be "
+                           "monotonically decreasing.\n");
+  });
   team.team_barrier();
+  static constexpr int top_lev_loc = top_lev;
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, top_lev, pver), KOKKOS_LAMBDA(int k) {
+      Kokkos::TeamVectorRange(team, top_lev_loc, pver_loc), [&](int k) {
         zn(k) = gravity * rpdel[k];
         if (k < pver - 1) {
           csbot(k) = two * pint(k + 1) / (rair * (temp(k) + temp(k + 1)));
@@ -1637,7 +1632,7 @@ void dropmixnuc(
 
   // NOTE: update_from_cldn_profile loops from 7 to 71 in fortran code.
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, pver - top_lev), KOKKOS_LAMBDA(int kk) {
+      Kokkos::TeamVectorRange(team, pver - top_lev), [&](int kk) {
         const int k = kk + top_lev - 1;
         const int kp1 = haero::min(k + 1, pver - 1);
 
@@ -1685,15 +1680,14 @@ void dropmixnuc(
 
   team.team_barrier();
 
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, top_lev - 1), KOKKOS_LAMBDA(int kk) {
-        for (int i = 0; i < ncnst_tot; ++i) {
-          qqcw_fld[i](kk) = zero;
-        }
-      });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev - 1), [&](int kk) {
+    for (int i = 0; i < ncnst_tot; ++i) {
+      qqcw_fld[i](kk) = zero;
+    }
+  });
   team.team_barrier();
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, pver - top_lev + 1), KOKKOS_LAMBDA(int kk) {
+      Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
         const int k = kk + top_lev - 1;
         // droplet number mixing ratio tendency due to mixing [#/kg/s]
         ndropmix(k) = (qcld(k) - ncldwtr(k)) * dtinv - nsource(k);

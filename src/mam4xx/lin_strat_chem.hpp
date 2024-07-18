@@ -239,23 +239,22 @@ void lin_strat_chem_solve(
     const ColumnView &ss_o3, const ColumnView &o3col_du_diag,
     const ColumnView &o3clim_linoz_diag, const ColumnView &sza_degrees) {
 
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, ltrop), KOKKOS_LAMBDA(int kk) {
-        lin_strat_chem_solve_kk(
-            o3col(kk), temperature(kk), sza, pmid(kk), delta_t, rlats,
-            // ltrop, & !in
-            linoz_o3_clim(kk), linoz_t_clim(kk), linoz_o3col_clim(kk),
-            linoz_PmL_clim(kk), linoz_dPmL_dO3(kk),
-            linoz_dPmL_dT(kk), // in
-            linoz_dPmL_dO3col(kk),
-            linoz_cariolle_psc(kk), // in
-            chlorine_loading,
-            psc_T, // PSC ozone loss T (K) threshold
-            o3_vmr(kk),
-            // diagnostic variables outputs
-            do3_linoz(kk), do3_linoz_psc(kk), ss_o3(kk), o3col_du_diag(kk),
-            o3clim_linoz_diag(kk), sza_degrees(kk));
-      });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ltrop), [&](int kk) {
+    lin_strat_chem_solve_kk(
+        o3col(kk), temperature(kk), sza, pmid(kk), delta_t, rlats,
+        // ltrop, & !in
+        linoz_o3_clim(kk), linoz_t_clim(kk), linoz_o3col_clim(kk),
+        linoz_PmL_clim(kk), linoz_dPmL_dO3(kk),
+        linoz_dPmL_dT(kk), // in
+        linoz_dPmL_dO3col(kk),
+        linoz_cariolle_psc(kk), // in
+        chlorine_loading,
+        psc_T, // PSC ozone loss T (K) threshold
+        o3_vmr(kk),
+        // diagnostic variables outputs
+        do3_linoz(kk), do3_linoz_psc(kk), ss_o3(kk), o3col_du_diag(kk),
+        o3clim_linoz_diag(kk), sza_degrees(kk));
+  });
 
 } // lin_strat_chem_solve
 
