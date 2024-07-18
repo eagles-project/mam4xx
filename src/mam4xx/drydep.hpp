@@ -54,7 +54,7 @@ private:
   Kokkos::View<Real *> rho;
 
   Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()][aerosol_categories];
-  Kokkos::View<Real *> vlc_trb[AeroConfig::num_modes()][aerosol_categories];
+  Real vlc_trb[AeroConfig::num_modes()][aerosol_categories];
   Kokkos::View<Real *> vlc_grv[AeroConfig::num_modes()][aerosol_categories];
   Kokkos::View<Real *> dqdt_tmp[aero_model::pcnst];
 
@@ -77,11 +77,10 @@ public:
     for (int j = 0; j < AeroConfig::num_modes(); ++j) {
       for (int i = 0; i < aerosol_categories; ++i) {
         Kokkos::resize(vlc_dry[j][i], nlev);
-        Kokkos::resize(vlc_trb[j][i], nlev);
         Kokkos::resize(vlc_grv[j][i], nlev);
         Kokkos::deep_copy(vlc_dry[j][i], 0);
-        Kokkos::deep_copy(vlc_trb[j][i], 0);
         Kokkos::deep_copy(vlc_grv[j][i], 0);
+        vlc_trb[j][i] = 0;
       }
     }
     for (int j = 0; j < aero_model::pcnst; ++j) {
@@ -862,28 +861,30 @@ void modal_aero_depvel_part(
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
 void aero_model_drydep(
+    // inputs
     const ThreadTeam &team,
     const Real fraction_landuse[DryDeposition::n_land_type],
-    const haero::ConstColumnView tair, const haero::ConstColumnView pmid,
-    const haero::ConstColumnView pint, const haero::ConstColumnView pdel,
+    const ConstColumnView tair, const ConstColumnView pmid,
+    const ConstColumnView pint, const ConstColumnView pdel,
     const Diagnostics::ColumnTracerView state_q,
-    const ColumnView dgncur_awet[AeroConfig::num_modes()],
-    const ColumnView wetdens[AeroConfig::num_modes()],
-    const Kokkos::View<Real *> qqcw[aero_model::pcnst], const Real obklen,
+    const ConstColumnView dgncur_awet[AeroConfig::num_modes()],
+    const ConstColumnView wetdens[AeroConfig::num_modes()], const Real obklen,
     const Real ustar, const Real landfrac, const Real icefrac,
-    const Real ocnfrac, const Real fricvelin, const Real ram1in,
+    const Real ocnfrac, const Real fricvelin, const Real ram1in, const Real dt,
+    // Input-outputs
+    const ColumnView qqcw[aero_model::pcnst],
+    // outputs
     const Diagnostics::ColumnTracerView ptend_q,
-    bool ptend_lq[aero_model::pcnst], const Real dt,
-    const ColumnView aerdepdrycw, const ColumnView aerdepdryis,
-
+    bool ptend_lq[aero_model::pcnst], const ColumnView aerdepdrycw,
+    const ColumnView aerdepdryis,
+    // work arrays
     const ColumnView rho,
-    const Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()]
-                                      [DryDeposition::aerosol_categories],
-    const Kokkos::View<Real *> vlc_trb[AeroConfig::num_modes()]
-                                      [DryDeposition::aerosol_categories],
-    const Kokkos::View<Real *> vlc_grv[AeroConfig::num_modes()]
-                                      [DryDeposition::aerosol_categories],
-    const Kokkos::View<Real *> dqdt_tmp[aero_model::pcnst]) {
+    const ColumnView vlc_dry[AeroConfig::num_modes()]
+                            [DryDeposition::aerosol_categories],
+    Real vlc_trb[AeroConfig::num_modes()][DryDeposition::aerosol_categories],
+    const ColumnView vlc_grv[AeroConfig::num_modes()]
+                            [DryDeposition::aerosol_categories],
+    const ColumnView dqdt_tmp[aero_model::pcnst]) {
   // clang-format off
   /*   
     // Arguments
@@ -916,7 +917,7 @@ void aero_model_drydep(
         2 - cloud-borne aerosol,  0th moment (i.e., number)
         3 - cloud-borne aerosol,  3rd moment (i.e., volume/mass)
     vlc_grv(nlev)     : dep velocity of gravitational settling [m/s]
-    vlc_trb(nlev)     : dep velocity of turbulent dry deposition [m/s]
+    vlc_trb     : dep velocity of turbulent dry deposition [m/s]
     vlc_dry(nlev)     : dep velocity, sum of vlc_grv and vlc_trb [m/s]
   */  
   // clang-format on 
@@ -990,7 +991,7 @@ void aero_model_drydep(
                                        rad_drop, dens_drop, sg_drop,
                                        imnt,              // in
                                        vlc_dry[0][jvlc][kk],  // out
-                                       vlc_trb[0][jvlc][kk],  // out
+                                       vlc_trb[0][jvlc],  // out
                                        vlc_grv[0][jvlc][kk]); // out
 
         // moment of the aerosol size distribution. 0 = number; 3 = volume
@@ -1004,7 +1005,7 @@ void aero_model_drydep(
                                        rad_drop, dens_drop, sg_drop,
                                        imnt,                // in
                                        vlc_dry[0][jvlc][kk],  // out
-                                       vlc_trb[0][jvlc][kk],  // out
+                                       vlc_trb[0][jvlc],  // out
                                        vlc_grv[0][jvlc][kk]); // out
       });
   team.team_barrier();
@@ -1016,10 +1017,10 @@ void aero_model_drydep(
   // The number of species is currently 7:
   const int max_species = static_cast<int>(AeroId::None);
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, ntot_amode * (1 + max_species)),
-      KOKKOS_LAMBDA(int kk) {
-        const int imode = kk / (1 + max_species);
-        const int lspec = kk % (1 + max_species) - 1;
+      Kokkos::TeamVectorRange(team, ntot_amode * (1 + max_species)),
+      [&](int ic) {
+        const int imode = ic / (1 + max_species);
+        const int lspec = ic % (1 + max_species) - 1;
         const int icnst = (lspec == -1)
                               ? ConvProc::numptrcw_amode(imode)
                               : ConvProc::lmassptrcw_amode(lspec, imode);
@@ -1029,16 +1030,18 @@ void aero_model_drydep(
           auto qq = qqcw[icnst];
           // sflx : surface deposition flux of a single species [kg/m2/s] or [1/m2/s]
           const Real sflx = drydep::sedimentation_solver_for_1_tracer(
-              dt, vlc_dry[0][jvlc], qq, rho, tair, pint, pmid, pdel,
-              dqdt_tmp[kk]);
+              dt, vlc_dry[0][jvlc], qq, rho, tair, pint, pmid, pdel, //input
+              dqdt_tmp[ic]); //output (Note:sflx is also an output)
           // aerdepdrycw  : surface deposition flux of cloud-borne  aerosols, [kg/m2/s] or [1/m2/s]
           aerdepdrycw[icnst] = sflx;
           // Update mixing ratios here. Recall that mixing ratios of cloud-borne
           // aerosols are stored in pbuf, not as part of the state variable
-          for (int i = 0; i < nlev; ++i)
-            qq[i] += dqdt_tmp[kk][i] * dt;
+          for (int klev = 0; klev < nlev; ++klev)
+            qq[klev] += dqdt_tmp[ic][klev] * dt;
         }
-      });
+      }); //parallel_for for ic (constituents)
+
+
   // =====================
   //  interstial aerosols
   // =====================
@@ -1075,18 +1078,18 @@ void aero_model_drydep(
           const bool lowest_model_layer = (kk == nlev-1);
           drydep::modal_aero_depvel_part( lowest_model_layer,
 	      fraction_landuse, tair[kk], pmid[kk], ram1, fricvel, // in
-              rad_aer, dens_aer, sigmag_amode, imnt,             // in
-              vlc_dry[imode][jvlc][kk],                                  // out
-              vlc_trb[imode][jvlc][kk],                                  // out
-              vlc_grv[imode][jvlc][kk]);                                 // out
+              rad_aer, dens_aer, sigmag_amode, imnt,         // in
+              vlc_dry[imode][jvlc][kk],                      // out
+              vlc_trb[imode][jvlc],                          // out
+              vlc_grv[imode][jvlc][kk]);                     // out
           imnt = 3; // interstitial aerosol volume/mass
           jvlc = 1;
           drydep::modal_aero_depvel_part(lowest_model_layer,
 	      fraction_landuse, tair[kk], pmid[kk], ram1, fricvel, // in
-              rad_aer, dens_aer, sigmag_amode, imnt,             // in
-              vlc_dry[imode][jvlc][kk],                                // out
-              vlc_trb[imode][jvlc][kk],                                // out
-              vlc_grv[imode][jvlc][kk]);                               // out
+              rad_aer, dens_aer, sigmag_amode, imnt,         // in
+              vlc_dry[imode][jvlc][kk],                      // out
+              vlc_trb[imode][jvlc],                          // out
+              vlc_grv[imode][jvlc][kk]);                     // out
         }
       });
   team.team_barrier();
@@ -1135,20 +1138,27 @@ void DryDeposition::compute_tendencies(const AeroConfig &config, const ThreadTea
   auto pint = atm.interface_pressure;
   auto pdel = atm.hydrostatic_dp;
   auto state_q = diags.tracer_mixing_ratio; 
-  auto dgncur_awet = diags.wet_geometric_mean_diameter_i;
-  auto wetdens = diags.wet_density;
+  ConstColumnView dgncur_awet[AeroConfig::num_modes()];
+  for (int i=0; i<AeroConfig::num_modes(); ++i)
+    dgncur_awet[i] = diags.wet_geometric_mean_diameter_i[i];
+  ConstColumnView wetdens[AeroConfig::num_modes()];
+  for (int i=0; i<AeroConfig::num_modes(); ++i)
+    wetdens[i] = diags.wet_density[i];
   static constexpr int ntot_amode = AeroConfig::num_modes();
   const int num_aerosol = AeroConfig::num_aerosol_ids();
   // Extract Prognostics
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, nlev), KOKKOS_LAMBDA(int kk) {
     for (int m=0; m<ntot_amode; ++m) {
-      qqcw_tends[ConvProc::numptrcw_amode(m)][kk] = progs.n_mode_c[m][kk];
+      this->qqcw_tends[ConvProc::numptrcw_amode(m)][kk] = progs.n_mode_c[m][kk];
       for (int a=0; a<num_aerosol; ++a) 
         if (-1 < ConvProc::lmassptrcw_amode(a,m))
-          qqcw_tends[ConvProc::lmassptrcw_amode(a,m)][kk] = progs.q_aero_c[m][a][kk];
+          this->qqcw_tends[ConvProc::lmassptrcw_amode(a,m)][kk] = progs.q_aero_c[m][a][kk];
     }
   });
+  ColumnView qqcw_tends[aero_model::pcnst];
+  for (int i=0; i<aero_model::pcnst; ++i)
+    qqcw_tends[i] = this->qqcw_tends[i];
   const Real obklen = diags.Obukhov_length;
   const Real ustar = diags.surface_friction_velocty;
   const Real landfrac = diags.land_fraction;
@@ -1161,15 +1171,28 @@ void DryDeposition::compute_tendencies(const AeroConfig &config, const ThreadTea
   auto aerdepdrycw = diags.deposition_flux_of_cloud_borne_aerosols;
   auto aerdepdryis = diags.deposition_flux_of_interstitial_aerosols;
   auto rho     = this->rho;
-  auto vlc_dry = this->vlc_dry;
-  auto vlc_trb = this->vlc_trb;
-  auto vlc_grv = this->vlc_grv;
-  auto dqdt_tmp= this->dqdt_tmp;
+  ColumnView vlc_dry[AeroConfig::num_modes()][aerosol_categories];
+  Real vlc_trb[AeroConfig::num_modes()][aerosol_categories];
+  ColumnView vlc_grv[AeroConfig::num_modes()][aerosol_categories];
+  ColumnView dqdt_tmp[aero_model::pcnst];
+
+  for (int i=0; i<AeroConfig::num_modes(); ++i)
+    for (int j=0; j<aerosol_categories; ++j)
+      vlc_dry[i][j] = this->vlc_dry[i][j];
+  for (int i=0; i<AeroConfig::num_modes(); ++i)
+    for (int j=0; j<aerosol_categories; ++j)
+      vlc_trb[i][j] = this->vlc_trb[i][j];
+  for (int i=0; i<AeroConfig::num_modes(); ++i)
+    for (int j=0; j<aerosol_categories; ++j)
+      vlc_grv[i][j] = this->vlc_grv[i][j];
+  for (int i=0; i<aero_model::pcnst; ++i)
+    dqdt_tmp[i] = this->dqdt_tmp[i];
 
   mam4::aero_model_drydep(
      team, fraction_landuse, tair, pmid, pint, pdel, state_q,
-     dgncur_awet, wetdens, qqcw_tends, obklen, ustar, landfrac, icefrac,
-     ocnfrac, fricvelin, ram1in, ptend_q, ptend_lq, dt, aerdepdrycw,
+     dgncur_awet, wetdens, obklen, ustar, landfrac, icefrac,
+     ocnfrac, fricvelin, ram1in, dt, qqcw_tends, ptend_q, ptend_lq, 
+     aerdepdrycw,
      aerdepdryis, rho, vlc_dry, vlc_trb, vlc_grv, dqdt_tmp);
 
   // Update Tendencies

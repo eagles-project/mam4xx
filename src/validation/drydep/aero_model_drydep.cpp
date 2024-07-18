@@ -104,8 +104,11 @@ void aero_model_drydep(Ensemble *ensemble) {
       else
         qqcw[i] = to_dev(input.get_array(name));
     }
+    ColumnView qqcw_tends[aero_model::pcnst];
+    for (int i = 0; i < aero_model::pcnst; ++i)
+      qqcw_tends[i] = qqcw[i];
 
-    ColumnView dgncur_awet[AeroConfig::num_modes()];
+    ConstColumnView dgncur_awet[AeroConfig::num_modes()];
     {
       std::vector<Real> dgncur_tot = input.get_array("dgncur_awet");
       for (int m = 0; m < AeroConfig::num_modes(); ++m) {
@@ -117,7 +120,7 @@ void aero_model_drydep(Ensemble *ensemble) {
       }
     }
 
-    ColumnView wetdens[AeroConfig::num_modes()];
+    ConstColumnView wetdens[AeroConfig::num_modes()];
     {
       std::vector<Real> wetdens_tot = input.get_array("wetdens");
       for (int m = 0; m < AeroConfig::num_modes(); ++m) {
@@ -151,28 +154,37 @@ void aero_model_drydep(Ensemble *ensemble) {
     ColumnView rho = mam4::validation::create_column_view(nlev);
     const int aerosol_categories = DryDeposition::aerosol_categories;
     Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()][aerosol_categories],
-        vlc_trb[AeroConfig::num_modes()][aerosol_categories],
         vlc_grv[AeroConfig::num_modes()][aerosol_categories];
     for (int j = 0; j < AeroConfig::num_modes(); ++j) {
       for (int i = 0; i < aerosol_categories; ++i) {
         Kokkos::resize(vlc_dry[j][i], nlev);
-        Kokkos::resize(vlc_trb[j][i], nlev);
         Kokkos::resize(vlc_grv[j][i], nlev);
       }
     }
+    ColumnView dry[AeroConfig::num_modes()][aerosol_categories];
+    ColumnView grv[AeroConfig::num_modes()][aerosol_categories];
+    for (int i = 0; i < AeroConfig::num_modes(); ++i)
+      for (int j = 0; j < aerosol_categories; ++j) {
+        dry[i][j] = vlc_dry[i][j];
+        grv[i][j] = vlc_grv[i][j];
+      }
     Kokkos::View<Real *> dqdt_tmp[aero_model::pcnst];
     for (int i = 0; i < aero_model::pcnst; ++i)
       Kokkos::resize(dqdt_tmp[i], nlev);
+    ColumnView dqdt[aero_model::pcnst];
+    for (int i = 0; i < aero_model::pcnst; ++i)
+      dqdt[i] = dqdt_tmp[i];
 
     auto team_policy = haero::ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          Real vlc_trb[AeroConfig::num_modes()][aerosol_categories] = {};
           bool ptend_lq[aero_model::pcnst];
           mam4::aero_model_drydep(
               team, fraction_landuse, tair, pmid, pint, pdel, state_q,
-              dgncur_awet, wetdens, qqcw, obklen, ustar, landfrac, icefrac,
-              ocnfrac, fricvelin, ram1in, ptend_q, ptend_lq, dt, aerdepdrycw,
-              aerdepdryis, rho, vlc_dry, vlc_trb, vlc_grv, dqdt_tmp);
+              dgncur_awet, wetdens, obklen, ustar, landfrac, icefrac, ocnfrac,
+              fricvelin, ram1in, dt, qqcw_tends, ptend_q, ptend_lq, aerdepdrycw,
+              aerdepdryis, rho, dry, vlc_trb, grv, dqdt);
         });
     Kokkos::fence();
     auto to_host = [](haero::ConstColumnView dev) {
