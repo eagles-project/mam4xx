@@ -1600,14 +1600,16 @@ void dropmixnuc(
         for (int imode = 0; imode < ntot_amode; ++imode)
           factnum(imode, k) = factnum_k[imode];
       }); // end k
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver), [&](int k) {
+  static constexpr int pver_loc = pver;
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver_loc), [&](int k) {
     EKAT_KERNEL_ASSERT_MSG(0 < zm(k - 1) - zm(k),
                            "Error: Geopotential height at level should be "
                            "monotonically decreasing.\n");
   });
   team.team_barrier();
+  static constexpr int top_lev_loc = top_lev;
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, top_lev, pver), [&](int k) {
+      Kokkos::TeamVectorRange(team, top_lev_loc, pver_loc), [&](int k) {
         zn(k) = gravity * rpdel[k];
         if (k < pver - 1) {
           csbot(k) = two * pint(k + 1) / (rair * (temp(k) + temp(k + 1)));

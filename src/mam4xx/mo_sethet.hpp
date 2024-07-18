@@ -117,20 +117,23 @@ void gas_washout(
   Real xrm = .189;    // mean diameter of rain drop [cm]
   Real xum = 748.0;   // mean rain drop terminal velocity [cm/s]
 
+  static constexpr int pver_loc = pver;
+
   //-----------------------------------------------------------------
   //       ... calculate the saturation concentration eqca
   //-----------------------------------------------------------------
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, plev, pver), [&](int k) {
-    // cal washout below cloud
-    xeqca(k) = xgas(k) /
-               (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
-               xliq_ik * avo2;
-    //-----------------------------------------------------------------
-    //       ... calculate ca; inside cloud concentration in  #/cm3(air)
-    //-----------------------------------------------------------------
-    xca(k) =
-        geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik * cm3_2_m3;
-  });
+  Kokkos::parallel_for(
+      Kokkos::TeamVectorRange(team, plev, pver_loc), [&](int k) {
+        // cal washout below cloud
+        xeqca(k) = xgas(k) /
+                   (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
+                   xliq_ik * avo2;
+        //-----------------------------------------------------------------
+        //       ... calculate ca; inside cloud concentration in  #/cm3(air)
+        //-----------------------------------------------------------------
+        xca(k) = geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik *
+                 cm3_2_m3;
+      });
 
   //-----------------------------------------------------------------
   //       ... if is not saturated (take hno3 as an example)

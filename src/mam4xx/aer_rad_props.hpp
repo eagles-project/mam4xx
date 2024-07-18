@@ -83,7 +83,8 @@ void volcanic_cmip_sw2(const ThreadTeam &team, const ConstColumnView &zi,
 
   constexpr Real half = 0.5;
   const Real lyr_thk = zi(ilev_tropp) - zi(ilev_tropp + 1);
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nswbands), [&](int i) {
+  static constexpr int nswbands_loc = nswbands;
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nswbands_loc), [&](int i) {
     // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,pver)
     const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(i, ilev_tropp);
     const Real asym_unitless = af_cmip6_sw(ilev_tropp, i);

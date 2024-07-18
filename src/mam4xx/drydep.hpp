@@ -1147,8 +1147,9 @@ void DryDeposition::compute_tendencies(const AeroConfig &config, const ThreadTea
   static constexpr int ntot_amode = AeroConfig::num_modes();
   const int num_aerosol = AeroConfig::num_aerosol_ids();
   // Extract Prognostics
+  static constexpr int nlev_loc = nlev;
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, nlev), [&](int kk) {
+      Kokkos::TeamVectorRange(team, nlev_loc), [&](int kk) {
     for (int m=0; m<ntot_amode; ++m) {
       this->qqcw_tends[ConvProc::numptrcw_amode(m)][kk] = progs.n_mode_c[m][kk];
       for (int a=0; a<num_aerosol; ++a) 
@@ -1197,7 +1198,7 @@ void DryDeposition::compute_tendencies(const AeroConfig &config, const ThreadTea
 
   // Update Tendencies
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, nlev), [&](int kk) {
+      Kokkos::TeamVectorRange(team, nlev_loc), [&](int kk) {
     for (int m=0; m<ntot_amode; ++m) {
       tends.n_mode_c[m][kk] = qqcw_tends[ConvProc::numptrcw_amode(m)][kk]/dt; 
       for (int a=0; a<num_aerosol; ++a) 
