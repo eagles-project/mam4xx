@@ -6,12 +6,21 @@
 #ifndef MAM4XX_MO_SRF_EMISSIONS_HPP
 #define MAM4XX_MO_SRF_EMISSIONS_HPP
 
+// #include <map>
+// #include <string>
+// #include <vector>
+
 #include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/utils.hpp>
 
 namespace mam4::mo_srf_emissions {
+
+using View1D = DeviceType::view_1d<Real>;
+using View2D = DeviceType::view_2d<Real>;
+
+using ConstColumnView = haero::ConstColumnView;
 
 static constexpr int gas_pcnst = aero_model::pcnst;
 const int n_emissions_species = 40;
@@ -35,8 +44,36 @@ enum class Units {
 };
 // ===========================================================================
 
+// struct containing the in/out variables
+// TODO: do we need both, or would overwriting be better?
+// (I suspect overwriting can be done)
 struct AerosolSurfaceEmissionsDeviceData {
-  Real a;
+  Real srf_emiss_in[n_srf_emiss];
+  Real srf_emiss_flux[n_srf_emiss];
+};
+
+std::map<std::string, std::vector<std::string>> const srf_emimssions_data_fields{
+  {"DMS", {"DMS"}},
+  {"SO2", {"AGR", "RCO", "SHP", "SLV", "TRA", "WST"}},
+  {"bc_a4", {"AGR", "ENE", "IND", "RCO", "SHP", "SLV", "TRA", "WST"}},
+  {"num_a1", {"num_a1_SO4_AGR", "num_a1_SO4_SHP", "num_a1_SO4_SLV", "num_a1_SO4_WST"}},
+  {"num_a2", {"num_a2_SO4_RCO", "num_a2_SO4_TRA"}},
+  {"num_a4", {"num_a1_BC_AGR", "num_a1_BC_ENE", "num_a1_BC_IND", "num_a1_BC_RCO", "num_a1_BC_SHP", "num_a1_BC_SLV", "num_a1_BC_TRA", "num_a1_BC_WST", "num_a1_POM_AGR", "num_a1_POM_ENE", "num_a1_POM_IND", "num_a1_POM_RCO", "num_a1_POM_SHP", "num_a1_POM_SLV", "num_a1_POM_TRA", "num_a1_POM_WST"}},
+  {"pom_a4", {"AGR", "ENE", "IND", "RCO", "SHP", "SLV", "TRA", "WST"}},
+  {"so4_a1", {"AGR", "SHP", "SLV", "WST"}},
+  {"so4_a2", {"RCO", "TRA"}}
+};
+
+struct SurfEmissionsDataFields {
+  std::vector<std::string> DMS_data_fields = {"DMS"};
+  std::vector<std::string> SO2_data_fields = {"AGR", "RCO", "SHP", "SLV", "TRA", "WST"};
+  std::vector<std::string> bc_a4_data_fields = {"AGR", "ENE", "IND", "RCO", "SHP", "SLV", "TRA", "WST"};
+  std::vector<std::string> num_a1_data_fields = {"num_a1_SO4_AGR", "num_a1_SO4_SHP", "num_a1_SO4_SLV", "num_a1_SO4_WST"};
+  std::vector<std::string> num_a2_data_fields = {"num_a2_SO4_RCO", "num_a2_SO4_TRA"};
+  std::vector<std::string> num_a4_data_fields = {"num_a1_BC_AGR", "num_a1_BC_ENE", "num_a1_BC_IND", "num_a1_BC_RCO", "num_a1_BC_SHP", "num_a1_BC_SLV", "num_a1_BC_TRA", "num_a1_BC_WST", "num_a1_POM_AGR", "num_a1_POM_ENE", "num_a1_POM_IND", "num_a1_POM_RCO", "num_a1_POM_SHP", "num_a1_POM_SLV", "num_a1_POM_TRA", "num_a1_POM_WST"};
+  std::vector<std::string> pom_a4_data_fields = {"AGR", "ENE", "IND", "RCO", "SHP", "SLV", "TRA", "WST"};
+  std::vector<std::string> so4_a1_data_fields = {"AGR", "SHP", "SLV", "WST"};
+  std::vector<std::string> so4_a2_data_fields = {"RCO", "TRA"};
 };
 
 // struct EmisField {

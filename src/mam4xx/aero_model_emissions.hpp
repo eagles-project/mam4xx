@@ -11,6 +11,19 @@ namespace mam4::aero_model_emissions {
 
 constexpr int n_online_emiss = 9;
 
+// FIXME?: does this make more sense as a map<string, vector<string>> ?
+struct OnlineEmissionsDataFields {
+  std::vector<std::string> SO2_data_fields = {"BB", "ENE_ELEV", "IND_ELEV", "contvolc"};
+  std::vector<std::string> SOAG_data_fields = {"SOAbb_src", "SOAbg_src", "SOAff_src"};
+  std::vector<std::string> bc_a4_data_fields = {"BB"};
+  std::vector<std::string> num_a1_data_fields = {"num_a1_SO4_ELEV_BB", "num_a1_SO4_ELEV_ENE", "num_a1_SO4_ELEV_IND", "num_a1_SO4_ELEV_contvolc"};
+  std::vector<std::string> num_a2_data_fields = {"num_a2_SO4_ELEV_contvolc"};
+  std::vector<std::string> num_a4_data_fields = {"num_a1_BC_ELEV_BB", "num_a1_POM_ELEV_BB"};
+  std::vector<std::string> pom_a4_data_fields = {"BB"};
+  std::vector<std::string> so4_a1_data_fields = {"BB", "ENE_ELEV", "IND_ELEV", "contvolc"};
+  std::vector<std::string> so4_a2_data_fields = {"contvolc"};
+};
+
 // // number of invariants
 // constexpr int nfs = mam4::gas_chemistry::nfs;
 // static const int num_tracer_cnst = 4;
