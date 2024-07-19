@@ -264,6 +264,8 @@ void compute_odap_volcanic_at_troplayer_lw2(const ThreadTeam &team,
    do icol = 1, ncol
    ilev_tropp = trop_level(icol) tropopause level */
 
+  // Need to have these defined outside kernels
+  // otherwise undefined errors on cuda dev
   auto _nlwbands = nlwbands;
 
   const Real lyr_thk =

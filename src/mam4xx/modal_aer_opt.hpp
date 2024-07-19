@@ -914,7 +914,8 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
 
   constexpr Real zero = 0;
 
-  // Need to have these defined outside kernels, otherwise undefined errors, etc. on cuda
+  // Need to have these defined outside kernels
+  // otherwise undefined errors on cuda dev
   auto _nswbands = nswbands;
   auto _pver = pver;
   auto _top_lev = top_lev;
@@ -1203,7 +1204,8 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
   // qqcw(:)                Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
   // tauxar(pcols,pver,nlwbands)  layer absorption optical depth
 
-  // Need to have these defined outside kernels, otherwise undefined errors, etc. on cuda
+  // Need to have these defined outside kernels
+  // otherwise undefined errors on cuda dev
   auto _pver = pver;
   auto _top_lev = top_lev;
 
