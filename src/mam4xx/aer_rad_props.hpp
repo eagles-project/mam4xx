@@ -263,12 +263,15 @@ void compute_odap_volcanic_at_troplayer_lw2(const ThreadTeam &team,
    real(r8) :: lyr_thk layer thickness [m]
    do icol = 1, ncol
    ilev_tropp = trop_level(icol) tropopause level */
+
+  auto _nlwbands = nlwbands;
+
   const Real lyr_thk =
       zi(ilev_tropp) - zi(ilev_tropp + 1); // compute layer thickness in meters
   constexpr Real half = 0.5;
   // update taus with 50% contributuions from the volcanic input file
   // and 50% from the existing model computed values at the tropopause layer
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlwbands), [&](int i) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, _nlwbands), [&](int i) {
     odap_aer(i, ilev_tropp) =
         half * (odap_aer(i, ilev_tropp) +
                 (lyr_thk * ext_cmip6_lw_inv_m(ilev_tropp, i)));
