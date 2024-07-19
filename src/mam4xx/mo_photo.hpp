@@ -71,8 +71,9 @@ inline PhotoTableData create_photo_table_data(int nw, int nt, int np_xs,
   table_data.np_xs = np_xs;
 
   // create views
-  table_data.rsf_tab = View5D("photo_table_data.rsf", table_data.numalb, table_data.numcolo3,
-                                                 table_data.numsza, table_data.nump, table_data.nw);
+  table_data.rsf_tab = View5D("photo_table_data.rsf", table_data.nw, table_data.nump,
+                                                      table_data.numsza, table_data.numcolo3,
+                                                       table_data.numalb);
 
   table_data.xsqy = View4D("photo_table_data.xsqy", table_data.numj,
                            table_data.nw, table_data.nt, table_data.np_xs);
@@ -91,8 +92,8 @@ inline PhotoTableData create_photo_table_data(int nw, int nt, int np_xs,
   table_data.etfphot = View1D("photo_table_data.etfphot", table_data.nw);
   table_data.prs = View1D("photo_table_data.prs", table_data.np_xs);
   table_data.dprs = View1D("photo_table_data.dprs", table_data.np_xs - 1);
-  // table_data.pht_alias_mult_1 = View1D("photo_table_data.pht_alias_mult_1", 2);
-  // table_data.lng_indexer = ViewInt1D("photo_table_data.lng_indexer", 1);
+  table_data.pht_alias_mult_1 = View1D("photo_table_data.pht_alias_mult_1", 2);
+  table_data.lng_indexer = ViewInt1D("photo_table_data.lng_indexer", 1);
 
   return table_data;
 }
@@ -385,6 +386,7 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
   const Real wght_1_1_1 = dels[0] * wrk1;
 
   for (int wn = 0; wn < nw; wn++) {
+
     psum[wn] = wght_0_0_0 * rsf_tab(wn, iz, is, iv, ial) +
                wght_0_0_1 * rsf_tab(wn, iz, is, iv, ialp1) +
                wght_0_1_0 * rsf_tab(wn, iz, is, ivp1, ial) +
@@ -788,7 +790,9 @@ void table_photo(const View2D &photo, // out
         } // end kk
       }   // end if
     }     // end mm
+
   }
+
   // } // end col_loop
 }
 
