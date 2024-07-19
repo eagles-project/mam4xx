@@ -71,9 +71,9 @@ inline PhotoTableData create_photo_table_data(int nw, int nt, int np_xs,
   table_data.np_xs = np_xs;
 
   // create views
-  table_data.rsf_tab =
-      View5D("photo_table_data.rsf_tab", table_data.nw, table_data.numalb,
-             table_data.numcolo3, table_data.numsza, table_data.nump);
+  table_data.rsf_tab = View5D("photo_table_data.rsf", table_data.numalb, table_data.numcolo3,
+                                                 table_data.numsza, table_data.nump, table_data.nw);
+
   table_data.xsqy = View4D("photo_table_data.xsqy", table_data.numj,
                            table_data.nw, table_data.nt, table_data.np_xs);
   table_data.sza = View1D("photo_table_data.sza", table_data.numsza);
@@ -91,8 +91,8 @@ inline PhotoTableData create_photo_table_data(int nw, int nt, int np_xs,
   table_data.etfphot = View1D("photo_table_data.etfphot", table_data.nw);
   table_data.prs = View1D("photo_table_data.prs", table_data.np_xs);
   table_data.dprs = View1D("photo_table_data.dprs", table_data.np_xs - 1);
-  table_data.pht_alias_mult_1 = View1D("photo_table_data.pht_alias_mult_1", 2);
-  table_data.lng_indexer = ViewInt1D("photo_table_data.lng_indexer", phtcnt);
+  // table_data.pht_alias_mult_1 = View1D("photo_table_data.pht_alias_mult_1", 2);
+  // table_data.lng_indexer = ViewInt1D("photo_table_data.lng_indexer", 1);
 
   return table_data;
 }
@@ -105,6 +105,32 @@ struct PhotoTableWorkArrays {
   View1D psum_l;
   View1D psum_u;
 };
+inline
+int get_photo_table_work_len(const PhotoTableData& photo_table_data)
+{
+  return pver * photo_table_data.numj + /*lng_prates*/
+         pver * photo_table_data.nw + /*rsf*/
+         photo_table_data.numj*photo_table_data.nw + /*xswk*/
+         2*photo_table_data.nw/*psum_l + psum_u*/;
+} // get_photo_table_work_len
+KOKKOS_INLINE_FUNCTION
+void set_photo_table_work_arrays(const PhotoTableData& photo_table_data,
+                                 const View1D& work,
+                                PhotoTableWorkArrays& photo_table_work)
+    {
+
+     auto work_ptr = (Real *)work.data();
+     photo_table_work.lng_prates = View2D(work_ptr, photo_table_data.numj, pver);
+     work_ptr += pver * photo_table_data.numj;
+     photo_table_work.rsf =View2D(work_ptr,photo_table_data.nw, pver);
+     work_ptr += pver * photo_table_data.nw;
+     photo_table_work.xswk = View2D(work_ptr, photo_table_data.numj, photo_table_data.nw);
+     work_ptr += photo_table_data.numj*photo_table_data.nw;
+     photo_table_work.psum_l = View1D(work_ptr, photo_table_data.nw);
+     work_ptr += photo_table_data.nw;
+     photo_table_work.psum_u = View1D(work_ptr, photo_table_data.nw);
+     work_ptr += photo_table_data.nw;
+}// set_photo_table_work_arrays
 
 KOKKOS_INLINE_FUNCTION
 void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
