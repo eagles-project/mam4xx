@@ -64,17 +64,18 @@ std::map<std::string, std::vector<std::string>> const srf_emimssions_data_fields
   {"so4_a2", {"RCO", "TRA"}}
 };
 
-struct SurfEmissionsDataFields {
-  std::vector<std::string> DMS_data_fields = {"DMS"};
-  std::vector<std::string> SO2_data_fields = {"AGR", "RCO", "SHP", "SLV", "TRA", "WST"};
-  std::vector<std::string> bc_a4_data_fields = {"AGR", "ENE", "IND", "RCO", "SHP", "SLV", "TRA", "WST"};
-  std::vector<std::string> num_a1_data_fields = {"num_a1_SO4_AGR", "num_a1_SO4_SHP", "num_a1_SO4_SLV", "num_a1_SO4_WST"};
-  std::vector<std::string> num_a2_data_fields = {"num_a2_SO4_RCO", "num_a2_SO4_TRA"};
-  std::vector<std::string> num_a4_data_fields = {"num_a1_BC_AGR", "num_a1_BC_ENE", "num_a1_BC_IND", "num_a1_BC_RCO", "num_a1_BC_SHP", "num_a1_BC_SLV", "num_a1_BC_TRA", "num_a1_BC_WST", "num_a1_POM_AGR", "num_a1_POM_ENE", "num_a1_POM_IND", "num_a1_POM_RCO", "num_a1_POM_SHP", "num_a1_POM_SLV", "num_a1_POM_TRA", "num_a1_POM_WST"};
-  std::vector<std::string> pom_a4_data_fields = {"AGR", "ENE", "IND", "RCO", "SHP", "SLV", "TRA", "WST"};
-  std::vector<std::string> so4_a1_data_fields = {"AGR", "SHP", "SLV", "WST"};
-  std::vector<std::string> so4_a2_data_fields = {"RCO", "TRA"};
-};
+// FIXME: keeping this here, just in case
+// struct SurfEmissionsDataFields {
+//   std::vector<std::string> DMS_data_fields = {"DMS"};
+//   std::vector<std::string> SO2_data_fields = {"AGR", "RCO", "SHP", "SLV", "TRA", "WST"};
+//   std::vector<std::string> bc_a4_data_fields = {"AGR", "ENE", "IND", "RCO", "SHP", "SLV", "TRA", "WST"};
+//   std::vector<std::string> num_a1_data_fields = {"num_a1_SO4_AGR", "num_a1_SO4_SHP", "num_a1_SO4_SLV", "num_a1_SO4_WST"};
+//   std::vector<std::string> num_a2_data_fields = {"num_a2_SO4_RCO", "num_a2_SO4_TRA"};
+//   std::vector<std::string> num_a4_data_fields = {"num_a1_BC_AGR", "num_a1_BC_ENE", "num_a1_BC_IND", "num_a1_BC_RCO", "num_a1_BC_SHP", "num_a1_BC_SLV", "num_a1_BC_TRA", "num_a1_BC_WST", "num_a1_POM_AGR", "num_a1_POM_ENE", "num_a1_POM_IND", "num_a1_POM_RCO", "num_a1_POM_SHP", "num_a1_POM_SLV", "num_a1_POM_TRA", "num_a1_POM_WST"};
+//   std::vector<std::string> pom_a4_data_fields = {"AGR", "ENE", "IND", "RCO", "SHP", "SLV", "TRA", "WST"};
+//   std::vector<std::string> so4_a1_data_fields = {"AGR", "SHP", "SLV", "WST"};
+//   std::vector<std::string> so4_a2_data_fields = {"RCO", "TRA"};
+// };
 
 // struct EmisField {
 //   // both of these are only accessed for a single entry and appear to be scalar
