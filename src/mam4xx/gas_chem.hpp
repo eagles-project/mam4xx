@@ -243,10 +243,10 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
 KOKKOS_INLINE_FUNCTION
 void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
              const Real reaction_rates[rxntot], const Real het_rates[gas_pcnst],
-             Real &delt,
-             const int permute_4[gas_pcnst], const int clsmap_4[gas_pcnst],
-             const bool factor[itermax], Real epsilon[clscnt4],
-             Real prod_out[clscnt4], Real loss_out[clscnt4]) {
+             Real &delt, const int permute_4[gas_pcnst],
+             const int clsmap_4[gas_pcnst], const bool factor[itermax],
+             Real epsilon[clscnt4], Real prod_out[clscnt4],
+             Real loss_out[clscnt4]) {
 
   // ---------------------------------------------------------------------------
   //  ... imp_sol advances the volumetric mixing ratio
@@ -257,7 +257,6 @@ void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
   // this source is meant for small l1 cache machines such as
   // the intel pentium and itanium cpus
   // ---------------------------------------------------------------------------
-
 
   const Real zero = 0;
   const Real half = 0.5;
@@ -279,8 +278,8 @@ void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
   // -----------------------------------------------------------------------
   // FIXME: BAD CONSTANT
   // what does this 4 represent, and would it ever be different?
-  indprd(4,                       // in
-         ind_prd,                 // inout
+  indprd(4,               // in
+         ind_prd,         // inout
          reaction_rates); // in
 
   Real solution[clscnt4] = {};
