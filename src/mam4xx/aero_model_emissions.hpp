@@ -11,17 +11,31 @@ namespace mam4::aero_model_emissions {
 
 constexpr int n_online_emiss = 9;
 
-// FIXME?: does this make more sense as a map<string, vector<string>> ?
-struct OnlineEmissionsDataFields {
-  std::vector<std::string> SO2_data_fields = {"BB", "ENE_ELEV", "IND_ELEV", "contvolc"};
-  std::vector<std::string> SOAG_data_fields = {"SOAbb_src", "SOAbg_src", "SOAff_src"};
-  std::vector<std::string> bc_a4_data_fields = {"BB"};
-  std::vector<std::string> num_a1_data_fields = {"num_a1_SO4_ELEV_BB", "num_a1_SO4_ELEV_ENE", "num_a1_SO4_ELEV_IND", "num_a1_SO4_ELEV_contvolc"};
-  std::vector<std::string> num_a2_data_fields = {"num_a2_SO4_ELEV_contvolc"};
-  std::vector<std::string> num_a4_data_fields = {"num_a1_BC_ELEV_BB", "num_a1_POM_ELEV_BB"};
-  std::vector<std::string> pom_a4_data_fields = {"BB"};
-  std::vector<std::string> so4_a1_data_fields = {"BB", "ENE_ELEV", "IND_ELEV", "contvolc"};
-  std::vector<std::string> so4_a2_data_fields = {"contvolc"};
+// FIXME: keeping this here, just in case
+// struct OnlineEmissionsDataFields {
+//   std::vector<std::string> SO2_data_fields = {"BB", "ENE_ELEV", "IND_ELEV", "contvolc"};
+//   std::vector<std::string> SOAG_data_fields = {"SOAbb_src", "SOAbg_src", "SOAff_src"};
+//   std::vector<std::string> bc_a4_data_fields = {"BB"};
+//   std::vector<std::string> num_a1_data_fields = {"num_a1_SO4_ELEV_BB", "num_a1_SO4_ELEV_ENE", "num_a1_SO4_ELEV_IND", "num_a1_SO4_ELEV_contvolc"};
+//   std::vector<std::string> num_a2_data_fields = {"num_a2_SO4_ELEV_contvolc"};
+//   std::vector<std::string> num_a4_data_fields = {"num_a1_BC_ELEV_BB", "num_a1_POM_ELEV_BB"};
+//   std::vector<std::string> pom_a4_data_fields = {"BB"};
+//   std::vector<std::string> so4_a1_data_fields = {"BB", "ENE_ELEV", "IND_ELEV", "contvolc"};
+//   std::vector<std::string> so4_a2_data_fields = {"contvolc"};
+
+//   OnlineEmissionsDataFields() = default;
+// };
+
+std::map<std::string, std::vector<std::string>> const online_emimssions_data_fields{
+  {"SO2", {"BB", "ENE_ELEV", "IND_ELEV", "contvolc"}},
+  {"SOAG", {"SOAbb_src", "SOAbg_src", "SOAff_src"}},
+  {"bc_a4", {"BB"}},
+  {"num_a1", {"num_a1_SO4_ELEV_BB", "num_a1_SO4_ELEV_ENE", "num_a1_SO4_ELEV_IND", "num_a1_SO4_ELEV_contvolc"}},
+  {"num_a2", {"num_a2_SO4_ELEV_contvolc"}},
+  {"num_a4", {"num_a1_BC_ELEV_BB", "num_a1_POM_ELEV_BB"}},
+  {"pom_a4", {"BB"}},
+  {"so4_a1", {"BB", "ENE_ELEV", "IND_ELEV", "contvolc"}},
+  {"so4_a2", {"contvolc"}}
 };
 
 // // number of invariants
