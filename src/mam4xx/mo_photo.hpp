@@ -706,7 +706,7 @@ void table_photo(const View2D &photo, // out
                  const ConstColumnView &pmid, const ConstColumnView &pdel,
                  const ConstColumnView &temper, // in
                  const ColumnView &colo3_in, const Real zen_angle,
-                 const Real srf_alb, const ColumnView &lwc,
+                 const Real srf_alb, const ConstColumnView &lwc,
                  const ConstColumnView &clouds, // in
                  const Real esfact, const PhotoTableData &table_data,
                  PhotoTableWorkArrays &work_arrays) {
