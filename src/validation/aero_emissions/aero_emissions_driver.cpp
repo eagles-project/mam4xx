@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
   try {
-    if (func_name == "aero_emissions_smoketest") {
+    if (func_name == "aero_model_emissions") {
       aero_emissions_smoketest(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name

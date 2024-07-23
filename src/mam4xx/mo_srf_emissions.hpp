@@ -22,7 +22,7 @@ using View2D = DeviceType::view_2d<Real>;
 
 using ConstColumnView = haero::ConstColumnView;
 
-static constexpr int gas_pcnst = aero_model::pcnst;
+static constexpr int gas_pcnst = mam4::pcnst;
 const int n_emissions_species = 40;
 
 constexpr int n_srf_emiss = 9;

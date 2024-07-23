@@ -3,7 +3,7 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <mam4xx/set_srf_emissions.hpp>
+#include <mam4xx/mo_srf_emissions.hpp>
 
 #include <iostream>
 #include <skywalker.hpp>
