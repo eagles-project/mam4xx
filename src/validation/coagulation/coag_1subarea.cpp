@@ -96,7 +96,6 @@ void coag_1subarea(Ensemble *ensemble) {
     n = 0;
     for (int imode = 0; imode < num_modes; ++imode) {
       for (int ispec = 0; ispec < max_agepair; ++ispec) {
-
         qaer_del_coag_out_f[n] = qaer_del_coag_out_c[ispec][imode];
         n += 1;
       }
