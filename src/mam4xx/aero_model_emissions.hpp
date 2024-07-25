@@ -6,14 +6,14 @@
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/mam4_types.hpp>
+#include <mam4xx/utils.hpp>
 
 namespace mam4::aero_model_emissions {
 
-constexpr int ntot_amode = AeroConfig::num_modes();
 constexpr int pcnst = mam4::pcnst;
 constexpr int n_online_emiss = 9;
 
-enum class FluxType { MassFlux, NumberFlux };
+enum class FluxType { Massurface_flux, NumberFlux };
 
 // FIXME: keeping this here, just in case
 // struct OnlineEmissionsDataFields {
@@ -46,6 +46,9 @@ const std::map<std::string, std::vector<std::string>>
         {"so4_a1", {"BB", "ENE_ELEV", "IND_ELEV", "contvolc"}},
         {"so4_a2", {"contvolc"}}};
 
+// =============================================================================
+//      Dust Parameters/Constants
+// =============================================================================
 // nbin corresponds to dst_a1, dst_a3
 const int dust_nbin = 2;
 // nnum corresponds to num_a1, num_a3
@@ -54,10 +57,25 @@ const int dust_nnum = 2;
 const int dust_nflux_in = 4;
 // Kok11: fractions of bin (0.1-1) and bin (1-10) in size 0.1-10
 const Real dust_emis_sclfctr[dust_nbin] = {0.011, 0.989};
+// tuning parameter for dust emissions
+// FIXME: this comes from the namelist file 'dst/dst_1.9x2.5_c090203.nc', and
+// thus, the scream/mam interface (shape is lat/lon)
 const Real dust_emis_fact = -1.0e36;
 // Aerosol density [kg m-3]
 const Real dust_density = 2.5e3;
-
+const Real dust_dmt_grd[dust_nbin + 1] = {1.0e-7, 1.0e-6, 1.0e-5};
+// const std::vector<std::string> dust_names[dust_nbin + dust_nnum] = {
+//     "dst_a1", "dst_a3", "num_a1", "num_a3"};
+// NOTE: see mo_setsox.hpp:25 to see where these indices come from
+const int dust_indices[dust_nbin + dust_nnum] = {10, 19, 13, 26};
+const Real dust_emis_scalefactor[dust_nbin] = {0.011, 0.989};
+// tuning parameter for dust emissions
+// perhaps unnecessary? it's not entirely clear to me what happens in
+// soil_erod_mod::soil_erod_init() where this is set
+const Real soil_erod_fact = dust_emis_fact;
+// =============================================================================
+//      Sea Salt Parameters/Constants
+// =============================================================================
 const int salt_nsection = 31;
 // TODO: Unnecessary indices?
 const int sec1_beg = 1;
@@ -71,40 +89,80 @@ const int sec4_end = salt_nsection;
 // FIXME: BAD CONSTANTS
 // only use up to ~20um
 const Real Dg[salt_nsection] = {
-    0.0020e-5, 0.0025e-5, 0.0032e-5, 0.0040e-5, 0.0051e-5, 0.0065e-5, 0.0082e-5,
-    0.0104e-5, 0.0132e-5, 0.0167e-5, 0.0211e-5, 0.0267e-5, 0.0338e-5, 0.0428e-5,
-    0.0541e-5, 0.0685e-5, 0.0867e-5, 0.1098e-5, 0.1389e-5, 0.1759e-5, 0.2226e-5,
-    0.2818e-5, 0.3571e-5, 0.4526e-5, 0.5735e-5, 0.7267e-5, 0.9208e-5, 1.1668e-5,
+    2.0e-8,    2.5e-8,    3.2e-8,   4.0e-8,   5.1e-8,   6.5e-8,   8.2e-8,
+    1.04e-7,   1.32e-7,   1.67e-7,  2.11e-7,  2.67e-7,  3.38e-7,  4.28e-7,
+    5.41e-7,   6.85e-7,   8.67e-7,  1.098e-6, 1.389e-6, 1.759e-6, 2.226e-6,
+    2.818e-6,  3.571e-6,  4.526e-6, 5.735e-6, 7.267e-6, 9.208e-6, 1.1668e-5,
     1.4786e-5, 1.8736e-5, 2.3742e-5};
 // Aerosol density [kg m-3]
 const Real seasalt_density = 2.2e3;
 
-const int nsalt = haero::max(3, ntot_amode - 3);
+// NOTE: nsalt is a model-fixed value for our purposes, so it seems like
+// needless pain to actually do the max calculation and not make this a
+// constexpr so we can use it and others as size arguments up here
+constexpr int nsalt = 3;
+// const int nsalt = haero::max(3, ntot_amode - 3);
 const int nnum = nsalt;
-const int nsalt_om = 3;
-const int nnum_om = 1;
-const int om_num_modes = 3;
+constexpr int nsalt_om = 3;
+constexpr int nnum_om = 1;
+constexpr int om_num_modes = 3;
 
-const int seasalt_nbin = nsalt + nsalt_om;
-const int seasalt_nnum = nnum + nnum_om;
+constexpr int seasalt_nbin = nsalt + nsalt_om;
+constexpr int seasalt_nnum = nnum + nnum_om;
 
-// character(len=6),parameter :: seasalt_names(nslt+nslt_om+nnum+nnum_om) = &
-//      (/ 'ncl_a1', 'ncl_a2', 'ncl_a3', &
-//      'mom_a1', 'mom_a2', 'mom_a4', &
-//      'num_a1', 'num_a2', 'num_a3', 'num_a4'/)
-// integer, dimension(om_num_modes), parameter :: om_num_ind =  (/ 1, 2, 4 /)
+// FIXME: should this be read from the namelist instead?
+const int seasalt_emis_scalefactor = 0.6;
+
+// entries correspond to:
+//        accum, aitken, coarse
+//        accum, aitken, POM accum
+// the indices here are meant to correspond to the seasalt "bins"
+const Real seasalt_size_range_lo[seasalt_nbin] = {8.0e-8, 2.0e-8, 1.0e-6,
+                                                  8.0e-8, 2.0e-8, 8.0e-8};
+const Real seasalt_size_range_hi[seasalt_nbin] = {1.0e-6, 8.0e-8, 1.0e-5,
+                                                  1.0e-6, 8.0e-8, 1.0e-6};
 
 // NOTE: see mo_setsox.hpp:25 to see where these indices come from
-const std::map<std::string, int> seasalt_name_idx_map{
-    {"ncl_a1", 11}, {"ncl_a2", 16}, {"ncl_a3", 20}, {"mom_a1", 12},
-    {"mom_a2", 17}, {"mom_a4", 29}, {"num_a1", 13}, {"num_a2", 18},
-    {"num_a3", 26}, {"num_a4", 30}};
-
+// const std::map<std::string, int> seasalt_name_idx_map{
+//     {"ncl_a1", 11}, {"ncl_a2", 16}, {"ncl_a3", 20}, {"mom_a1", 12},
+//     {"mom_a2", 17}, {"mom_a4", 29}, {"num_a1", 13}, {"num_a2", 18},
+//     {"num_a3", 26}, {"num_a4", 30}};
 const std::vector<std::string> seasalt_names{
     "ncl_a1", "ncl_a2", "ncl_a3", "mom_a1", "mom_a2",
     "mom_a4", "num_a1", "num_a2", "num_a3", "num_a4"};
-
-const std::vector<int> seasalt_indices{11, 16, 20, 12, 17, 29, 13, 18, 26, 30};
+const int seasalt_indices[seasalt_nbin + seasalt_nnum] = {11, 16, 20, 12, 17,
+                                                          29, 13, 18, 26, 30};
+// =============================================================================
+//      Marine Organic Matter Parameters/Constants
+// =============================================================================
+const int n_ocean_data = 4;
+const int n_organic_species = 3;
+// FIXME: probably don't need this?
+const int n_organic_species_max = 3;
+// is this different from n_organic_species? both appear in the fortran
+const int organic_num_modes = 3;
+// OM:OC mass ratios for input fields (mpoly, mprot, mlip)
+// Order: mpoly, mprot, mlip
+// FIXME: BAD CONSTANTS
+const Real OM_to_OC_in[n_organic_species] = {2.3, 2.2, 1.3};
+// Langmuir parameters (inverse C_1/2)  [m3 mol-1]
+const Real alpha_org[n_organic_species] = {90.58, 25175.0, 18205.0};
+// Molecular weights [g mol-1]
+const Real mw_org[n_organic_species] = {250000.0, 66463.0, 284.0};
+// mass per sq. m at saturation [Mw_org / a_org]
+const Real dens_srf_org[n_organic_species] = {0.1376, 0.00219, 0.002593};
+// Parameters for organic sea salt emissions
+// approx volume density of salt in seawater [g/m^3]
+const Real vol_density_NaCl_seawater = 35875.0;
+// Namelist variables for parameterization specification
+// Bubble film thickness [m]
+// NOTE: this is given as 0.1e-6 in the fortran
+const Real l_bub = 1.0e-7;
+// smallest ocean organic concentration allowed
+const Real small_oceanorg = 1.0e-30;
+const bool emit_this_mode[organic_num_modes] = {true, true, false};
+const int organic_num_idx[organic_num_modes] = {1, 2, 4};
+// =============================================================================
 
 namespace {
 // use Ekmam's ss
@@ -122,52 +180,131 @@ Real consta[salt_nsection], constb[salt_nsection];
 } // end anonymous namespace
 
 KOKKOS_INLINE_FUNCTION
-void seasalt_emis() {} // end seasalt_emis()
-// seasalt_emis(lchnk, ncol, fi, cam_in%ocnfrac, seasalt_emis_scale, &  // in
-KOKKOS_INLINE_FUNCTION
-void marine_organic_emis() {} // end marine_organic_emis()
-// marine_organic_emis(lchnk, ncol, fi, cam_in%ocnfrac, seasalt_emis_scale, & //
-// in
+void init_dust_dmt_vwr(int nbin, const Real (&dust_dmt_grd)[dust_nbin + 1],
+                       Real (&dust_dmt_vwr)[dust_nbin]) {
+
+  // FIXME: BAD CONSTANT
+  const int sz_nbr = 200;
+
+  // Introducing particle diameter. Needed by atm model and by dry dep model.
+  // Taken from Charlie Zender's subroutines dst_psd_ini, dst_sz_rsl,
+  // grd_mk (dstpsd.F90) and subroutine lgn_evl (psdlgn.F90)
+
+  // Charlie allows logarithmic or linear option for size distribution.
+  // however, he hardwires the distribution to logarithmic in his code.
+  // therefore, I take his logarithmic code only
+  // furthermore, if dst_nbr == 4, he overrides the automatic grid calculation
+  // he currently works with dst_nbr = 4, so I only take the relevant code
+  // if dust_number ever becomes different from 4,
+  // must add call grd_mk (dstpsd.F90) as done in subroutine dst_psd_ini
+  // note that here dust_number = dst_nbr
+
+  // Max diameter in bin [m]
+  Real dmt_min[nbin];
+  // Min diameter in bin [m]
+  Real dmt_max[nbin];
+
+  // Override automatic grid with preset grid if available
+  for (int n = 0; n < nbin; ++n) {
+    dmt_min[n] = dust_dmt_grd[n];
+    dmt_max[n] = dust_dmt_grd[n + 1];
+  }
+
+  // set dust_dmt_vwr ....
+
+  // Bin physical properties
+  // [frc] Geometric std dev PaG77 p. 2080 Table1
+  Real gsd_anl = 2.0;
+  Real ln_gsd = haero::log(gsd_anl);
+
+  // Set a fundamental statistic for each bin
+  // Mass median diameter analytic She84 p.75 Table 1 [m]
+  // FIXME: FIXME: this appears to be a bug--vma is set, and then re-set
+  //        maybe the second one should be dmt_nma?
+  Real dmt_vma = 2.524e-6;
+  dmt_vma = 3.5e-6;
+  // Compute analytic size statistics
+  // Convert mass median diameter to number median particle diameter [m]
+  Real dmt_nma = dmt_vma * haero::exp(-3.0 * haero::square(ln_gsd));
+
+  // [m] Size Bin minima
+  Real sz_min[sz_nbr];
+  // [m] Size Bin maxima
+  Real sz_max[sz_nbr];
+  // [m] Size Bin centers
+  Real sz_ctr[sz_nbr];
+  // [m] Size Bin widths
+  Real sz_dlt[sz_nbr];
+
+  // [m3 m-3] Volume concentration resolved
+  Real vlm_rsl[nbin] = {0.0};
+
+  // Compute resolved size statistics for each size distribution
+  // In C. Zender's code call dst_sz_rsl
+  // Factor for logarithmic grid
+  Real series_ratio;
+  for (int n = 0; n < nbin; ++n) {
+    series_ratio = haero::pow((dmt_max[n] / dmt_min[n]), (1.0 / sz_nbr));
+    sz_min[1] = dmt_min[n];
+    // NOTE: Loop starts at 1 (2 in fortran code)
+    for (int m = 1; m < sz_nbr; ++m) {
+      sz_min[m] = sz_min[m - 1] * series_ratio;
+    }
+    // Derived grid values
+    // NOTE: Loop ends at sz_nbr - 2 (fortran: sz_nbr - 1)
+    for (int m = 0; m < sz_nbr - 2; ++m) {
+      sz_max[m] = sz_min[m + 1];
+    }
+    sz_max[sz_nbr] = dmt_max[n];
+    // Final derived grid values
+    for (int m = 0; m < sz_nbr; ++m) {
+      sz_ctr[m] = 0.5 * (sz_min[m] + sz_max[m]);
+      sz_dlt[m] = sz_max[m] - sz_min[m];
+    }
+
+    constexpr Real pi = haero::Constants::pi;
+    // Lognormal distribution at sz_ctr
+    Real lgn_dst;
+    // Factor in lognormal distribution
+    // NOTE: original variable name in fortran: lngsdsqrttwopi_rcp
+    Real lnN_factor = 1.0 / (ln_gsd * haero::sqrt(2.0 * pi));
+
+    Real tmp;
+    for (int m = 0; m < sz_nbr; ++m) {
+      Real coeff = haero::pow(sz_ctr[m], 3) * lgn_dst * sz_dlt[m];
+      // Evaluate lognormal distribution for these sizes (call lgn_evl)
+      tmp = haero::log(sz_ctr[m] / dmt_nma) / ln_gsd;
+      lgn_dst = lnN_factor * haero::exp(-0.5 * haero::square(tmp)) / sz_ctr[m];
+      // Integrate moments of size distribution
+      dust_dmt_vwr[n] += sz_ctr[m] * pi / 6.0 * coeff;
+      vlm_rsl[n] += pi / 6.0 * coeff;
+    }
+    // Mass weighted diameter resolved [m]
+    dust_dmt_vwr[n] /= vlm_rsl[n];
+  } // end for (n)
+} // end init_dust_dmt_vwr()
 
 KOKKOS_INLINE_FUNCTION
-void dust_emis(Real dust_density, Real *dust_dmt_vwr, Real soil_erodibility,
-               Real dust_flux_in[dust_nflux_in],
-               Real cflux[dust_nbin + dust_nnum]) {
-  //  Real dust_flux_in, Real cflux, Real soil_erod) {
-  // subroutine dust_emis( ncol, lchnk, dust_flux_in, &  // in
-  //                       cflux, &                       // inout
-  //                       soil_erod )                   // out
-  //   use soil_erod_mod, only : soil_erod_fact
-  //   use soil_erod_mod, only : soil_erodibility
-  //   use mo_constants,  only : dust_density
-  //   use physconst,     only : pi
+void dust_emis(const Real dust_density,
+               const Real (&dust_flux_in)[dust_nflux_in],
+               //  out
+               Real soil_erodibility,
+               //  inout
+               Real (&cflux)[dust_nbin + dust_nnum]) {
+  // dust_flux_in: dust emission fluxes in
+  // cflux: emission fluxes in MAM modes [{kg,#}/m^2/s]
+  // soil_erod: soil erodibility factor [unitless]
 
-  // args
-  //   integer,  intent(in)    :: ncol, lchnk
-  //   real(r8), intent(in)    :: dust_flux_in(:,:) // dust emission fluxes in
-  //   four bins from land [kg/m^2/s] real(r8), intent(inout) :: cflux(:,:) //
-  //   emission fluxes in MAM modes [kg/m^2/s or #/m^2/s] real(r8), intent(out)
-  //   :: soil_erod(:)      // soil erodibility factor [unitless]
-
-  // local vars
-  //   integer :: icol, ibin, idx_dst, inum
-  //   real(r8) :: dst_mass_to_num(dust_nbin)
+  Real dust_dmt_vwr[dust_nbin];
+  init_dust_dmt_vwr(dust_nbin, dust_dmt_grd, dust_dmt_vwr);
 
   // FIXME: BAD CONSTANT
   Real soil_erod_threshold = 0.1;
-  // HACK: made this up
-  int dust_indices[dust_nbin] = {3};
 
   // dust_density[dust_nbin] -- Mass weighted diameter resolved [m]
-  // HACK: made this up
-  Real dust_mass_to_num[dust_nbin] = {0.0};
-  // HACK: made this up
-  Real dust_emis_scalefactor[dust_nbin] = {1.1};
-  // HACK: made this up
-  Real soil_erod_fact = 0.42;
+  Real dust_mass_to_num[dust_nbin];
 
   for (int ibin = 0; ibin < dust_nbin; ++ibin) {
-    // FIXME: BAD CONSTANT
     dust_mass_to_num[ibin] = 6.0 / (haero::Constants::pi * dust_density *
                                     haero::pow(dust_dmt_vwr[ibin], 3));
   }
@@ -176,13 +313,12 @@ void dust_emis(Real dust_density, Real *dust_dmt_vwr, Real soil_erodibility,
   Real soil_erod =
       soil_erodibility < soil_erod_threshold ? soil_erodibility : 0.0;
 
+  // in fortran, done inside loop as: sum( -dust_flux_in(:) )
   Real dust_flux_neg_sum;
   for (int ibin = 0; ibin < dust_nflux_in; ++ibin) {
     dust_flux_neg_sum -= dust_flux_in[ibin];
   }
-
   // rebin and adjust dust emissions..
-
   // Correct the dust input flux calculated by CLM, which uses size distribution
   // in Zender03 to calculate fraction of bin (0.1-10um) in range (0.1-20um) =
   // 0.87 based on Kok11, that fraction is 0.73
@@ -201,17 +337,16 @@ void dust_emis(Real dust_density, Real *dust_dmt_vwr, Real soil_erodibility,
 
 KOKKOS_INLINE_FUNCTION
 void init_seasalt_sections() {
-  // use Ekman's ss
+  // use Ekman's ssd
   // multiply rm with 1.814 because it should be RH=80% and not dry particles
   // for the parameterization
-
   for (int i = 0; i < salt_nsection; ++i) {
     rdry[i] = Dg[i] / 2.0;
     rm[i] = 1.814 * rdry[i] * 1.0e6;
     bm[i] = (0.380 - haero::log10(rm[i])) / 0.65;
   }
 
-  // FIXME: BAD CONSTANTS BAD CONSTANTS
+  // FIXME: BAD CONSTANTS
   // calculate constants form emission polynomials
   // NOTE: I simplified some very ugly math here, so if things go wonky,
   // check that first
@@ -255,39 +390,6 @@ void init_seasalt_sections() {
   }
 } // end init_seasalt_sections
 
-// int get_constituent_index(name, index) {
-//     character(len=*),  intent(in)  :: name  ! constituent name
-//     integer,           intent(out) :: ind   ! global constituent index (in q
-//     array) logical, optional, intent(in)  :: abrtf ! optional flag
-//     controlling abort
-
-// !---------------------------Local workspace-----------------------------
-//     integer :: m                                   ! tracer index
-//     logical :: abort_on_error
-// !-----------------------------------------------------------------------
-
-// ! Find tracer name in list
-//     do m = 1, pcnst
-//        if (name == cnst_name(m)) then
-//           ind  = m
-//           return
-//        end if
-//     end do
-
-// ! Unrecognized name
-//     abort_on_error = .true.
-//     if ( present(abrtf) ) abort_on_error = abrtf
-
-//     if ( abort_on_error ) then
-//        write(iulog,*) 'CNST_GET_IND, name:', name,  ' not found in list:',
-//        cnst_name(:) call endrun('CNST_GET_IND: name not found')
-//     end if
-
-// ! error return
-//     ind = -1
-
-// } // end subroutine get_constituent_index
-
 // NOTE: this function is kind of pointless because our model is hard-coded.
 // as such, I've matched up seasalt names/indices above in a hardcoded array
 KOKKOS_INLINE_FUNCTION
@@ -304,8 +406,7 @@ void init_seasalt() {
 
 KOKKOS_INLINE_FUNCTION
 void calc_seasalt_fluxes(Real surface_temp, Real u10cubed,
-                         Real fluxes[salt_nsection]) {
-  //  TODO: does this get updated?
+                         Real (&fluxes)[salt_nsection]) {
   // Calculations of source strength and size distribution
   // NB the 0.1 is the dlogDp we have to multiply with to get the flux, but the
   // value depends of course on what dlogDp you have.
@@ -316,7 +417,7 @@ void calc_seasalt_fluxes(Real surface_temp, Real u10cubed,
   // FIXME: BAD CONSTANTS
   const Real wc_area = 3.84e-6 * u10cubed * 0.1;
 
-  // calculate number flux fluxes (# / m2 / s)
+  // calculate number flux fluxes (#/m2/s)
   for (int isec = sec1_beg; isec < sec1_end; ++isec) {
     fluxes[isec] = wc_area * (surface_temp * consta[isec] + constb[isec]);
   }
@@ -332,12 +433,14 @@ void calc_seasalt_fluxes(Real surface_temp, Real u10cubed,
 } // end calc_seasalt_fluxes()
 
 KOKKOS_INLINE_FUNCTION
-void calculate_seasalt_numflux_in_bins(Real surface_temp, Real u_bottom,
-                                       Real v_bottom, Real z_bottom,
-                                       Real salt_numflux[salt_nsection]) {
+void calculate_seasalt_numflux_in_bins(const Real surface_temp,
+                                       const Real u_bottom, const Real v_bottom,
+                                       const Real z_bottom,
+                                       //  out
+                                       Real (&fi)[salt_nsection]) {
 
   // surface_temp: sea surface temperature [K]
-  // fi[nsections]: sea salt number fluxes in each size bin [# / m2 / s]
+  // fi: sea salt number fluxes in each size bin [#/m2/s]
 
   // m roughness length over oceans--from ocean model
   // FIXME: BAD CONSTANT
@@ -357,40 +460,32 @@ void calculate_seasalt_numflux_in_bins(Real surface_temp, Real u_bottom,
   // FIXME: BAD CONSTANT
   u10cubed = haero::pow(u10cubed, 3.41);
 
-  calc_seasalt_fluxes(surface_temp, u10cubed, salt_numflux);
+  calc_seasalt_fluxes(surface_temp, u10cubed, fi);
 } // end calculate_seasalt_numflux_in_bins()
 
 KOKKOS_INLINE_FUNCTION
-void seasalt_emisflux_calc(Real fi[salt_nsection], Real ocean_frac,
-                           Real emis_scalefactor, FluxType flux_type,
-                           Real cflux[dust_nbin + dust_nnum]) {
+void seasalt_emisurface_flux_calc(Real (&fi)[salt_nsection], Real ocean_frac,
+                                  Real emis_scalefactor, FluxType flux_type,
+                                  Real (&cflux)[dust_nbin + dust_nnum]) {
 
   // input
-  // fi[nsections]: sea salt number fluxes in each size bin [# / m2 / s]
+  // fi: sea salt number fluxes in each size bin [#/m2/s]
   // ocean_frac: ocean fraction [unitless]
   // emis_scalefactor: sea salt emission tuning factor [unitless]
   // flux_type: flux to be calculated--number flux == 0 or mass flux == 1
+  //            NOTE: changed to an enum class for clarity
 
   // output
-  // cflux[dust_nbin + dust_nnum]:
-  //              mass and number emission fluxes for aerosols [{kg,#} / m2 / s]
+  // cflux:mass and number emission fluxes for aerosols [{kg,#}/m2/s]
 
-  // entries correspond to:
-  //        accum, aitken, coarse
-  //        accum, aitken, POM accum
-  const Real seasalt_size_range_lo[seasalt_nbin] = {0.08e-6, 0.02e-6, 1.0e-6,
-                                                    0.08e-6, 0.02e-6, 0.08e-6};
-  const Real seasalt_size_range_hi[seasalt_nbin] = {1.0e-6, 0.08e-6, 10.0e-6,
-                                                    1.0e-6, 0.08e-6, 1.0e-6};
-
-  // cflux_tmp: temp variable for calculating emission fluxes
   const int num_idx_append =
       (flux_type == FluxType::NumberFlux) ? nsalt + nsalt_om : 0;
 
   for (int ispec = 0; ispec < nsalt; ++ispec) {
     int mode_idx = seasalt_indices[num_idx_append + ispec];
     if (mode_idx > 0) {
-      if (flux_type == FluxType::MassFlux) {
+      if (flux_type == FluxType::Massurface_flux) {
+        // FIXME:
         // If computing number flux, zero out the array
         // Note for C++ port, ideally initialization of clfx should be done
         // for both number and mass modes. We only zero-out number, because
@@ -404,110 +499,386 @@ void seasalt_emisflux_calc(Real fi[salt_nsection], Real ocean_frac,
           cflux_tmp = fi[ibin] * ocean_frac * emis_scalefactor;
 
           // For mass fluxes, multiply by the diameter
-          // Note for C++ port, 4._r8/3._r8*pi*rdry(ibin)**3*seasalt_density
+          // Note for C++ port, 4.0/3.0*pi*rdry[ibin]**3*seasalt_density
           // can be factored out in a function, but it is not done here
           // as the results might not stay BFB
-          if (flux_type == FluxType::MassFlux) {
-            cflux_tmp = cflux_tmp * 4.0 / 3.0 * haero::Constants::pi *
-                        haero::pow(rdry[ibin], 3) * seasalt_density;
+          if (flux_type == FluxType::Massurface_flux) {
+            cflux_tmp *= 4.0 / 3.0 * haero::Constants::pi *
+                         haero::pow(rdry[ibin], 3) * seasalt_density;
           }
           // Mixing state 3: internal mixture, add OM to mass and number
-          cflux[mode_idx] = cflux[mode_idx] + cflux_tmp;
+          cflux[mode_idx] += cflux_tmp;
         } // end if (Dg[ibin])
       }   // end for (ibin)
     }     // end if (mode_idx)
   }       // end for (ispec)
-} // end seasalt_emisflux_calc()
+} // end seasalt_emisurface_flux_calc()
 
 KOKKOS_INLINE_FUNCTION
-void seasalt_emis(Real fi[salt_nsection], Real ocean_frac,
-                  Real emis_scalefactor, Real cflux[dust_nbin + dust_nnum]) {
+void seasalt_emis(Real (&fi)[salt_nsection], Real ocean_frac,
+                  Real emis_scalefactor, Real (&cflux)[dust_nbin + dust_nnum]) {
   // calculate seasalt number emission fluxes
-  seasalt_emisflux_calc(fi, ocean_frac, emis_scalefactor, FluxType::NumberFlux,
-                        cflux);
-
+  seasalt_emisurface_flux_calc(fi, ocean_frac, emis_scalefactor,
+                               FluxType::NumberFlux, cflux);
   // calculate seasalt mass emission fluxes
-  seasalt_emisflux_calc(fi, ocean_frac, emis_scalefactor, FluxType::MassFlux,
-                        cflux);
+  seasalt_emisurface_flux_calc(fi, ocean_frac, emis_scalefactor,
+                               FluxType::Massurface_flux, cflux);
 } // end seasalt_emis()
 
 KOKKOS_INLINE_FUNCTION
-void aero_model_emissions() {
-                               // ( state, & // in
-//       cam_in ) // inout
-//   use seasalt_model, only: seasalt_emis, marine_organic_emis, seasalt_names,
-//   seasalt_indices, seasalt_active,seasalt_nbin, &
-//                            nsalt_om
-//   use ssalt_sections, only: nsections
-//   use dust_model,    only: dust_emis, dust_names, dust_indices,
-//   dust_active,dust_nbin, dust_nnum
+void om_fraction_accum_aitken(Real om_ssa_in, Real (&om_ssa)[salt_nsection]) {
+  // -----------------------------------------------------------------------
+  //  Purpose:
+  //  Put OM fraction directly into aitken and accumulation modes and don't
+  //  exceed om_ssa_max.
 
-//   // Arguments:
+  // om_ssa_in: mass fraction [unitless]
+  // om_ssa: mass fraction for each size bin [unitless]
+  // -----------------------------------------------------------------------
 
-//   type(physics_state),    intent(in)    :: state   // Physics state variables
-//   type(cam_in_t),         intent(inout) :: cam_in  // import state
+  const Real om_ssa_max = 1.0;
 
-//   // local vars
+  // Initialize array and set to zero for "fine sea salt" and "coarse sea salt"
+  // modes
+  for (int ibin = 0; ibin < salt_nsection; ++ibin) {
+    om_ssa[ibin] = 0.0;
+  }
 
-//   real(r8) :: soil_erod_tmp
-//   real(r8) :: sflux   // accumulate over all bins for output
-//   real(r8) :: srf_temp   // sea surface temperature [K]
-//   real(r8) :: fi(nsections)        // sea salt number fluxes in each
-//   size bin [#/m2/s]
+  // distribute OM fraction!
+  for (int ibin = 0; ibin < salt_nsection; ++ibin) {
+    // update only in Aitken and accumulation modes
+    om_ssa[ibin] = (Dg[ibin] >= seasalt_size_range_lo[1]) &&
+                           (Dg[ibin] < seasalt_size_range_hi[0])
+                       ? om_ssa_in
+                       : om_ssa[ibin];
+  }
 
-//   srf_temp = cam_in%sst
+  // For safety, force fraction to be within bounds [0, 1]
+  for (int ibin = 0; ibin < salt_nsection; ++ibin) {
+    om_ssa[ibin] = mam4::utils::min_max_bound(0.0, om_ssa_max, om_ssa[ibin]);
+  }
+} // end subroutine org_matter_fraction_accum_aitken()
 
-//   call dust_emis( ncol, lchnk, cam_in%dstflux, & // in
-//                   cam_in%cflux, &                // inout
-//                   soil_erod_tmp )               // out
+KOKKOS_INLINE_FUNCTION
+void calc_org_matter_ssa(
+    Real mpoly_in, Real mprot_in, Real mlip_in,
+    Real (&mass_frac_bub_section)[n_organic_species_max][salt_nsection],
+    Real (&om_ssa)[salt_nsection]) {
+  // Input variables:
+  // for Burrows et al. (2014) organic mass fraction
+  // mpoly_in
+  // mprot_in
+  // mlip_in
 
-//   // some dust emis diagnostics ...
-//   sflux(:)=0.
-//   do ispec = 1, dust_nbin+dust_nnum
-//      spec_idx = dust_indices(ispec)
-//      if (ispec<=dust_nbin)
-//      sflux(:ncol)=sflux(:ncol)+cam_in%cflux(:ncol,spec_idx) call
-//      outfld(trim(dust_names(ispec))//'SF',cam_in%cflux(:,spec_idx),pcols,
-//      lchnk)
-//   enddo
-//   call outfld('DSTSFMBL',sflux(:),pcols,lchnk)
-//   call outfld('LND_MBL',soil_erod_tmp(:),lchnk )
+  // Output variables
+  // mass_frac_bub_section: mass fraction per organic class per size bin
+  // om_ssa: mass fraction per size bin [unitless]
 
-//   call calculate_seasalt_numflux_in_bins(ncol, cam_in%sst,
-//   state%u(:ncol,pver), state%v(:ncol,pver),  state%zm(:ncol,pver), & // in
-//                                          fi) // out
+  // OMF maximum and minimum values -- max from Rinaldi et al. (2013)
+  Real omfrac_max = 0.78;
+  Real liter_to_m3 = 1.0e-3;
 
-//   sflux(:)=0.
+  // units are [kg/mol] coming from haero -> convert to [g/mol]
+  constexpr Real mw_carbon = 1.0e3 * haero::Constants::molec_weight_c;
 
-//   call seasalt_emis(lchnk, ncol, fi, cam_in%ocnfrac, seasalt_emis_scale, & //
-//   in
-//                     cam_in%cflux) // inout
+  // fractional surface coverage [unitless]
+  Real theta[n_organic_species] = {0.0};
+  Real theta_help[n_organic_species] = {0.0};
+  // this is not initilized in fortran, but should(?) be ok?
+  Real alpha_help = 0.0;
+  Real mass_frac_bub_tot = 0.0;
+  Real mass_frac_bub[n_organic_species] = {0.0};
+  Real mass_frac_bub_help[n_organic_species] = {0.0};
+  // mole concentration of organic [mol/m^3]
+  Real om_conc[n_organic_species] = {0.0};
 
-//   call marine_organic_emis(lchnk, ncol, fi, cam_in%ocnfrac,
-//   seasalt_emis_scale, & // in
-//                            cam_in%cflux) // inout
+  // Convert input fields from [(mol C) L-1] to [(g OM) m-3] and store in single
+  // array
+  om_conc[0] = mpoly_in * liter_to_m3 * OM_to_OC_in[0] * mw_carbon;
+  om_conc[1] = mprot_in * liter_to_m3 * OM_to_OC_in[1] * mw_carbon;
+  om_conc[2] = mlip_in * liter_to_m3 * OM_to_OC_in[2] * mw_carbon;
 
-//   // Write out salt mass fluxes to history files
-//   do ispec = 1, seasalt_nbin-nsalt_om
-//      spec_idx = seasalt_indices(ispec)
-//      sflux(:ncol)=sflux(:ncol)+cam_in%cflux(:ncol,spec_idx)
-//      call
-//      outfld(trim(seasalt_names(ispec))//'SF',cam_in%cflux(:,spec_idx),pcols,lchnk)
-//   enddo
-//   // accumulated flux
-//   call outfld('SSTSFMBL',sflux(:),pcols,lchnk)
+  // Calculate the surface coverage by class
+  for (int iorg = 0; iorg < n_organic_species; ++iorg) {
+    // Bulk mass concentration [mol m-3] = [g m-3] / [g mol-1]
+    om_conc[iorg] = om_conc[iorg] / mw_org[iorg];
+    // use theta_help as work array -- theta_help = alpha(i) * x(i)
+    theta_help[iorg] = alpha_org[iorg] * om_conc[iorg];
+  }
+  // FIXME: this looks like it could be a bug since both are initialized to 0
+  // above, and the fortran has:
+  // alpha_help(:) = sum(theta, dim=2)
+  // I suspect it should be: alpha_help = sum(alpha_org)
+  for (int i = 0; i < n_organic_species; ++i) {
+    alpha_help += theta[i];
+  }
 
-//   // Write out marine organic mass fluxes to history files
-//   sflux(:)=0.
-//   do ispec = seasalt_nbin-nsalt_om+1, seasalt_nbin
-//      spec_idx = seasalt_indices(ispec)
-//      sflux(:ncol)=sflux(:ncol)+cam_in%cflux(:ncol,spec_idx)
-//      call
-//      outfld(trim(seasalt_names(ispec))//'SF',cam_in%cflux(:,spec_idx),pcols,lchnk)
-//   enddo
+  for (int iorg = 0; iorg < n_organic_species; ++iorg) {
+    // complete calculation: theta = alpha(i) * x(i)
+    //                               / (1 + sum(alpha(i) * x(i)))
+    theta[iorg] = theta_help[iorg] / (1.0 + alpha_help);
+    // Calculate the organic mass per area (by class) [g m-2]
+    // (use mass_frac_bub_help as local work array--
+    // organic mass per area in g per m2)
+    mass_frac_bub_help[iorg] = theta[iorg] * dens_srf_org[iorg];
+  }
 
-//   // accumulated flux
-//   call outfld('SSTSFMBL_OM',sflux(:),pcols,lchnk)
+  // Calculate g NaCl per m2
+  // (Redundant, but allows for easier adjustment to l_bub)
+  Real dens_srf_NaCl_in_bubsrf = vol_density_NaCl_seawater * l_bub;
+  Real sum_mass_frac_bub_help = 0.0;
+  for (int iorg = 0; iorg < n_organic_species; ++iorg) {
+    sum_mass_frac_bub_help += mass_frac_bub_help[iorg];
+  }
+
+  // mass_frac_bub = 2 * [g OM m-2] / (2 * [g OM m-2] * [g NaCl m-2])
+  // Factor 2 for bubble bilayer (coated on both surfaces of film)
+  for (int iorg = 0; iorg < n_organic_species; ++iorg) {
+    mass_frac_bub[iorg] =
+        2.0 * mass_frac_bub_help[iorg] /
+        (2.0 * sum_mass_frac_bub_help + dens_srf_NaCl_in_bubsrf);
+  }
+  for (int iorg = 0; iorg < n_organic_species; ++iorg) {
+    mass_frac_bub_tot += mass_frac_bub[iorg];
+  }
+  for (int iorg = 0; iorg < n_organic_species; ++iorg) {
+    mass_frac_bub[iorg] =
+        mass_frac_bub_tot > omfrac_max
+            ? mass_frac_bub[iorg] / mass_frac_bub_tot * omfrac_max
+            : mass_frac_bub[iorg];
+    // Must exceed threshold value small_oceanorg
+    mass_frac_bub[iorg] =
+        mass_frac_bub[iorg] < small_oceanorg ? 0.0 : mass_frac_bub[iorg];
+  }
+  for (int iorg = 0; iorg < n_organic_species; ++iorg) {
+    mass_frac_bub_tot += mass_frac_bub[iorg];
+  }
+
+  // Distribute mass fraction evenly into Aitken and accumulation modes
+  om_fraction_accum_aitken(mass_frac_bub_tot, om_ssa);
+
+  for (int iorg = 0; iorg < n_organic_species; ++iorg) {
+    // NOTE: slicing along iorg makes mass_frac_bub a scalar
+    // and mass_frac_bub_section an array with extent salt_nsection
+    om_fraction_accum_aitken(mass_frac_bub[iorg], mass_frac_bub_section[iorg]);
+  }
+} // end calc_om_ssa()
+
+KOKKOS_INLINE_FUNCTION
+void calc_marine_organic_numflux(
+    const Real (&fi)[salt_nsection], const Real ocean_frac,
+    const Real emis_scalefactor, const Real (&om_ssa)[salt_nsection],
+    const bool (&emit_this_mode)[organic_num_modes],
+    //  out
+    Real (&cflux)[dust_nbin + dust_nnum]) {
+  // ocean_frac: ocean fraction [unitless]
+  // emis_scalefactor: sea salt emission tuning factor
+  // om_ssa: marine organic aerosol fraction per size bin [unitless]
+  // emit_this_mode: logical flags turn on/off marine organic emission in
+  //                 aerosol modes
+
+  // output
+  // cflux: mass and number emission fluxes for aerosols [kg/m2/s or #/m2/s]
+
+  // this is hardcoded for the model, so I don't think we need this check
+  // if (size(organic_num_idx) .eq. 1) then
+  //   call endrun( "Error: organic_num_idx is a scalar, but attempting to
+  //   calculate MOM. Something bad happenedWe should never get here!")
+  // endif
+
+  // Loop over OM modes
+  for (int ispec = 0; ispec < organic_num_modes; ++ispec) {
+    // modes in which to emit OM
+    int om_num_idx = organic_num_idx[ispec];
+    int num_mode_idx = seasalt_indices[nsalt + nsalt_om + om_num_idx];
+    // add number tracers for organics-only modes
+    if (emit_this_mode[ispec]) {
+      for (int ibin = 0; ibin < salt_nsection; ++ibin) {
+        Real cflux_tmp = 0.0;
+        if ((Dg[ibin] >= seasalt_size_range_lo[nsalt + ispec]) &&
+            (Dg[ibin] < seasalt_size_range_hi[nsalt + ispec])) {
+          cflux_tmp = fi[ibin] * ocean_frac * emis_scalefactor;
+          // Mixing state 3: internal mixture, add OM to mass and number
+          cflux[num_mode_idx] += cflux_tmp * (1.0 / (1.0 - om_ssa[ibin]) - 1.0);
+        } // end if (Dg)
+      }   // end for (ibin)
+    }     // end if (mode_idx)
+  }       // end for (ispec)
+} // end seasalt_emisurface_flux_calc()
+
+KOKKOS_INLINE_FUNCTION
+void calc_marine_organic_massurface_flux(
+    const Real (&fi)[salt_nsection], const Real ocean_frac,
+    const Real emis_scalefactor, const Real (&om_ssa)[salt_nsection],
+    const Real (&mass_frac_bub_section)[n_organic_species_max][salt_nsection],
+    const bool (&emit_this_mode)[organic_num_modes],
+    // out
+    Real (&cflux)[dust_nbin + dust_nnum]) {
+
+  // ocean_frac: ocean fraction [unitless]
+  // emis_scalefactor: sea salt emission tuning factor
+  // om_ssa: marine organic aerosol fraction per size bin [unitless]
+  // mass_frac_bub_section: marine organic aerosol fraction per organic species
+  //                        per size bin [unitless]
+  // emit_this_mode: logical flags turn on/off marine organic emission in
+  //                 aerosol modes
+
+  // output
+  // cflux: mass and number emission fluxes for aerosols [kg/m2/s or #/m2/s]
+
+  int mass_mode_idx;
+  Real cflux_tmp;
+  for (int ispec = 0; ispec < nsalt_om; ++ispec) {
+    mass_mode_idx = seasalt_indices[nsalt + ispec];
+    cflux[mass_mode_idx] = 0.0;
+    if (emit_this_mode[ispec]) {
+      for (int iorg = 0; iorg < n_organic_species; ++iorg) {
+        for (int ibin = 0; ibin < salt_nsection; ++ibin) {
+          if ((Dg[ibin] >= seasalt_size_range_lo[nsalt + ispec]) &&
+              (Dg[ibin] < seasalt_size_range_hi[nsalt + ispec])) {
+            cflux_tmp = fi[ibin] * ocean_frac * emis_scalefactor;
+            // Mixing state 3: internal mixture, add OM to mass and number
+            // and avoid division by zero
+            if (om_ssa[ibin] > 0.0) {
+              cflux[mass_mode_idx] +=
+                  cflux_tmp * mass_frac_bub_section[iorg][ibin] / om_ssa[ibin] *
+                  (1.0 / (1.0 - om_ssa[ibin]) - 1.0);
+            } // if (om_ssa)
+          }   // if (Dg)
+        }     // for (ibin)
+      }       // for (iorg)
+    }         // if (emit_this_mode)
+  }           // end for (ispec)
+} // end subroutine calc_marine_organic_massurface_flux
+
+KOKKOS_INLINE_FUNCTION
+void marine_organic_emissions(const Real (&fi)[salt_nsection],
+                              const Real ocean_frac,
+                              const Real emis_scalefactor, const Real mpoly,
+                              const Real mprot, const Real mlip,
+                              Real (&cflux)[dust_nbin + dust_nnum]) {
+  // input
+  // fi: sea salt number fluxes in each size bin [#/m2/s]
+  // ocean_frac: ocean fraction [unitless]
+  // emis_scalefactor: sea salt emission tuning factor [unitless]
+  // output
+  // cflux: mass and number emission fluxes for aerosols [kg/m2/s or #/m2/s]
+
+  // for Burrows et al. (2014) organic mass fraction
+  // NOTE: the mapping between these variables and those listed in the netCDF
+  //       input are:
+  //       'chla:CHL1','mpoly:TRUEPOLYC','mprot:TRUEPROTC','mlip:TRUELIPC',
+  //       and it appears that 'chla' is unused
+
+  // NOTE: this seems like an inefficient way to handle this
+  // instead, we'll just pass the scalar variables into the function
+  // as arguments, but I'll keep this here for now, just in case
+  // for (int ifield = 0; ifield < n_ocean_data; ++ifield) {
+  //   switch (field_name) {
+  //   case mpoly:
+  //     break;
+  //   case mprot:
+  //     break;
+  //   case mlip:
+  //     break;
+  //   default:
+  //     // FIXME: this should likely be handled in a smarter way than this.
+  //     //        In the fortran code, it prints to the log,
+  //     // 'Unknown field name ' fieldname' in ocean_data fields ...'
+  //     break;
+  //   }
+  // } // end for (ifield)
+
+  Real mass_frac_bub_section[n_organic_species_max][salt_nsection] = {0.0};
+  Real om_ssa[salt_nsection] = {0.0};
+
+  // Calculate marine organic aerosol mass fraction based on
+  // Burrows et al., ACP (2013)
+  calc_org_matter_ssa(mpoly, mprot, mlip, mass_frac_bub_section, om_ssa);
+
+  // Calculate emission of MOM mass.
+
+  // Determine which modes to emit MOM in depending on mixing state assumption
+  // OM modes (m in this loop)
+  // m = 1 => accu       (internal w/ SS)
+  // m = 2 => Aitken     (internal w/ SS)
+  // m = 3 => accu MOM   (external)
+  // m = 4 => Aitken MOM (external)
+  // Total external mixture: emit only in modes 4, 5
+  calc_marine_organic_numflux(fi, ocean_frac, emis_scalefactor, om_ssa,
+                              emit_this_mode, cflux);
+  calc_marine_organic_massurface_flux(fi, ocean_frac, emis_scalefactor, om_ssa,
+                                      mass_frac_bub_section, emit_this_mode,
+                                      cflux);
+} // end marine_organic_emissions()
+
+KOKKOS_INLINE_FUNCTION
+void aero_model_emissions(
+    const ThreadTeam &team, mam4::Prognostics &progs,
+    const haero::Atmosphere &atm, const Real (&dust_flux_in)[dust_nflux_in],
+    // get these from the atmosphere? prognostics?
+    // is this just the temp in the bottom cell?
+    const Real surface_temp, const ColumnView &u_vel, const ColumnView &v_vel,
+    const ColumnView &altitude, const Real ocean_frac,
+    // this is read from a namelist file, but given as 0.6 in the
+    // namelist on confluence
+    // const Real seasalt_emis_scalefactor,
+    // inout
+    Real (&cflux)[dust_nbin + dust_nnum],
+    // these next three are MOM that live in cam_in and are used in MOM emiss.
+    Real mpoly, Real mprot, Real mlip,
+    // out
+    Real &surface_flux) {
+  // surface_flux: accumulate over all bins for output
+  // srf_temp: sea surface temperature [K]
+  // sea salt number fluxes in each size bin [#/m2/s]
+
+  const int n_levels = atm.num_levels();
+
+  Real fi[salt_nsection];
+
+  Real u_bottom = u_vel[n_levels];
+  Real v_bottom = v_vel[n_levels];
+  Real z_bottom = altitude[n_levels];
+  Real soil_erodibility;
+  dust_emis(dust_density, dust_flux_in, soil_erodibility, cflux);
+
+  // some dust emis diagnostics ...
+  surface_flux = 0.0;
+  int spec_idx;
+  // FIXME: keep this and the loops below?
+  //        It does appear that surface_flux is updated since it's referenced
+  //        through "cam_in%sflx", but it could also just be a container for
+  //        holding those fluxes as they're written to file
+  for (int ispec = 0; ispec < dust_nbin + dust_nnum; ++ispec) {
+    spec_idx = dust_indices[ispec];
+    if (ispec <= dust_nbin) {
+      surface_flux += cflux[spec_idx];
+    }
+  }
+
+  calculate_seasalt_numflux_in_bins(surface_temp, u_bottom, v_bottom, z_bottom,
+                                    fi);
+
+  surface_flux = 0.0;
+
+  seasalt_emis(fi, ocean_frac, seasalt_emis_scalefactor, cflux);
+
+  marine_organic_emissions(fi, ocean_frac, seasalt_emis_scalefactor, mpoly,
+                           mprot, mlip, cflux);
+
+  // FIXME: keep this?
+  for (int ispec = 0; ispec < seasalt_nbin - nsalt_om; ++ispec) {
+    spec_idx = seasalt_indices[ispec];
+    surface_flux += cflux[spec_idx];
+  }
+
+  surface_flux = 0.0;
+  // FIXME: keep this?
+  for (int ispec = 0; ispec < seasalt_nbin - nsalt_om + 1; ++ispec) {
+    spec_idx = seasalt_indices[ispec];
+    surface_flux += cflux[spec_idx];
+  }
 
 } // end aero_model_emissions()
 

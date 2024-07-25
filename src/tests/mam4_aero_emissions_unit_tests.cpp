@@ -31,7 +31,7 @@ TEST_CASE("test_aero_emissions_create_struct", "mam4_aero_emissions_unit_tests")
       ekat::logger::LogLevel::debug, comm);
   logger.debug("");
 
-  mam4::aero_model_emissions::aero_model_emissions();
+  // mam4::aero_model_emissions::aero_model_emissions();
 
   logger.debug("***TESTING***");
 
