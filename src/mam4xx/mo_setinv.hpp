@@ -41,13 +41,9 @@ struct Config {
   Config &operator=(const Config &) = default;
 };
 
-// NOTE: vmr isn't actually used in the fortran code, but I've kept it here to
-// keep the function signature the same
 KOKKOS_INLINE_FUNCTION
 void setinv_single_level(Real invariants[nfs], const Real tfld,
-                         const Real h2ovmr,
-                         const Real vmr[AeroConfig::num_gas_phase_species()],
-                         const Real pmid,
+                         const Real h2ovmr, const Real pmid,
                          const Real cnst_offline[num_tracer_cnst],
                          const Config config_) {
   // -----------------------------------------------------------------
@@ -90,58 +86,36 @@ void setinv_single_level(Real invariants[nfs], const Real tfld,
 } // end setinv_single_level()
 
 KOKKOS_INLINE_FUNCTION
-void setinv(const ThreadTeam &team, const ColumnView invariants[nfs],
-            const ColumnView &tfld, const ColumnView &h2ovmr,
-            const ColumnView vmr[AeroConfig::num_gas_phase_species()],
-            const ColumnView cnst_offline[num_tracer_cnst],
-            const ColumnView &pmid) {
+void setinv(const ThreadTeam &team, const View2D &invariants,
+            const ConstColumnView &tfld, const ConstColumnView &qv,
+            const View2D &cnst_offline, const ConstColumnView &pmid) {
 
   Config setinv_config_;
   constexpr int nk = mam4::nlev;
+  constexpr Real mwh2o = haero::Constants::molec_weight_h2o;
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
     const Real tfld_k = tfld(k);
-    const Real h2ovmr_k = h2ovmr(k);
+    const Real qv_k = qv(k);
     const Real pmid_k = pmid(k);
+
     Real invariants_k[nfs];
-    const int nspec = AeroConfig::num_gas_phase_species();
-    Real vmr_k[nspec];
-    for (int i = 0; i < nspec; ++i) {
-      vmr_k[i] = vmr[i](k);
+    for (int i = 0; i < nfs; ++i) {
+      invariants_k[i] = invariants(k, i);
     }
+
     Real cnst_offline_k[num_tracer_cnst];
     for (int i = 0; i < num_tracer_cnst; ++i) {
-      cnst_offline_k[i] = cnst_offline[i](k);
+      cnst_offline_k[i] = cnst_offline(k, i);
     }
-    setinv_single_level(invariants_k, tfld_k, h2ovmr_k, vmr_k, pmid_k,
-                        cnst_offline_k, setinv_config_);
-    for (int i = 0; i < nfs; ++i) {
-      invariants[i](k) = invariants_k[i];
-    }
-  }); // end kokkos::parfor(k)
-} // end setinv_nlev()
 
-KOKKOS_INLINE_FUNCTION
-void setinv(const ThreadTeam &team, const ColumnView invariants[nfs],
-            const ColumnView &tfld, const ColumnView &h2ovmr, const View2D &vmr,
-            const View2D &cnst_offline, const ColumnView &pmid) {
+    Real h2ovmr_k = mam4::conversions::vmr_from_mmr(qv_k, mwh2o);
 
-  Config setinv_config_;
-  constexpr int nk = mam4::nlev;
-
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
-    const Real tfld_k = tfld(k);
-    const Real h2ovmr_k = h2ovmr(k);
-    const Real pmid_k = pmid(k);
-    Real invariants_k[nfs];
-    View1D vmr_k = Kokkos::subview(vmr, k, Kokkos::ALL());
-    View1D cnst_offline_k = Kokkos::subview(cnst_offline, k, Kokkos::ALL());
-
-    setinv_single_level(invariants_k, tfld_k, h2ovmr_k, vmr_k.data(), pmid_k,
-                        cnst_offline_k.data(), setinv_config_);
+    setinv_single_level(invariants_k, tfld_k, h2ovmr_k, pmid_k, cnst_offline_k,
+                        setinv_config_);
 
     for (int i = 0; i < nfs; ++i) {
-      invariants[i](k) = invariants_k[i];
+      invariants(k, i) = invariants_k[i];
     }
   }); // end kokkos::parfor(k)
 } // end setinv_nlev()
