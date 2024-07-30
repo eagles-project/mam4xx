@@ -88,7 +88,7 @@ void setinv_single_level(Real invariants[nfs], const Real tfld,
 KOKKOS_INLINE_FUNCTION
 void setinv(const ThreadTeam &team, const View2D &invariants,
             const ConstColumnView &tfld, const ConstColumnView &qv,
-            const View2D &cnst_offline, const ConstColumnView &pmid) {
+            View1D cnst_offline[num_tracer_cnst], const ConstColumnView &pmid) {
 
   Config setinv_config_;
   constexpr int nk = mam4::nlev;
@@ -106,7 +106,7 @@ void setinv(const ThreadTeam &team, const View2D &invariants,
 
     Real cnst_offline_k[num_tracer_cnst];
     for (int i = 0; i < num_tracer_cnst; ++i) {
-      cnst_offline_k[i] = cnst_offline(k, i);
+      cnst_offline_k[i] = cnst_offline[i](k);
     }
 
     Real h2ovmr_k = mam4::conversions::vmr_from_mmr(qv_k, mwh2o);
