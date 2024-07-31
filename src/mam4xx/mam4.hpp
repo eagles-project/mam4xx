@@ -12,6 +12,7 @@
 #include <mam4xx/aer_rad_props.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/aero_model.hpp>
+#include <mam4xx/aero_model_emissions.hpp>
 #include <mam4xx/aging.hpp>
 #include <mam4xx/calcsize.hpp>
 #include <mam4xx/coagulation.hpp>
@@ -30,6 +31,7 @@
 #include <mam4xx/mo_sethet.hpp>
 #include <mam4xx/mo_setinv.hpp>
 #include <mam4xx/mo_setsox.hpp>
+#include <mam4xx/mo_srf_emissions.hpp>
 #include <mam4xx/modal_aer_opt.hpp>
 #include <mam4xx/modal_aero_calcsize.hpp>
 #include <mam4xx/ndrop.hpp>
@@ -40,8 +42,6 @@
 #include <mam4xx/tropopause.hpp>
 #include <mam4xx/water_uptake.hpp>
 #include <mam4xx/wet_dep.hpp>
-#include <mam4xx/mo_srf_emissions.hpp>
-#include <mam4xx/aero_model_emissions.hpp>
 
 namespace mam4 {
 

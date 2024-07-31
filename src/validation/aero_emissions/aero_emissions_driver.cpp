@@ -23,6 +23,14 @@ using namespace mam4;
 
 // Parameterizations used by the set_aero_emissions() process.
 void aero_emissions_smoketest(Ensemble *ensemble);
+void calc_om_seasalt(Ensemble *ensemble);
+void calculate_seasalt_numflux_in_bins(Ensemble *ensemble);
+void marine_organic_emis(Ensemble *ensemble);
+void marine_organic_massflx_calc(Ensemble *ensemble);
+void marine_organic_numflx_calc(Ensemble *ensemble);
+void seasalt_emisflx_calc_massflx(Ensemble *ensemble);
+void seasalt_emisflx_calc_numflx(Ensemble *ensemble);
+void seasalt_emis(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -46,8 +54,24 @@ int main(int argc, char **argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
   try {
-    if (func_name == "aero_model_emissions") {
+    if (func_name == "aero_emissions_smoketest") {
       aero_emissions_smoketest(ensemble);
+    } else if (func_name == "calc_om_seasalt") {
+      calc_om_seasalt(ensemble);
+    } else if (func_name == "calculate_seasalt_numflux_in_bins") {
+      calculate_seasalt_numflux_in_bins(ensemble);
+    } else if (func_name == "marine_organic_emis") {
+      marine_organic_emis(ensemble);
+    } else if (func_name == "marine_organic_massflx_calc") {
+      marine_organic_massflx_calc(ensemble);
+    } else if (func_name == "marine_organic_numflx_calc") {
+      marine_organic_numflx_calc(ensemble);
+    } else if (func_name == "seasalt_emisflx_calc") {
+      seasalt_emisflx_calc_massflx(ensemble);
+    } else if (func_name == "seasalt_emisflx_calc") {
+      seasalt_emisflx_calc_numflx(ensemble);
+    } else if (func_name == "seasalt_emis") {
+      seasalt_emis(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
