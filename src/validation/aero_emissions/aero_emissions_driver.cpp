@@ -10,9 +10,10 @@
 #include <validation.hpp>
 
 void usage() {
-  std::cerr << "set_aero_emissions_driver: a Skywalker driver for validating the "
-               "MAM4 set_aero_emissions parameterizations."
-            << std::endl;
+  std::cerr
+      << "set_aero_emissions_driver: a Skywalker driver for validating the "
+         "MAM4 set_aero_emissions parameterizations."
+      << std::endl;
   std::cerr << "set_aero_emissions_driver: usage:" << std::endl;
   std::cerr << "set_aero_emissions_driver <input.yaml>" << std::endl;
   exit(0);

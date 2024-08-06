@@ -24,15 +24,13 @@ using namespace mam4;
 // const int loffset = 9;
 // const mam4::mo_setsox::Config setsox_config_;
 
-TEST_CASE("test_aero_emissions_create_struct", "mam4_aero_emissions_unit_tests") {
+TEST_CASE("test_aero_emissions_create_struct",
+          "mam4_aero_emissions_unit_tests") {
   ekat::Comm comm;
   ekat::logger::Logger<> logger(
       "mo_aero_emissions unit tests: test_aero_emissions_create_struct",
       ekat::logger::LogLevel::debug, comm);
   logger.debug("");
 
-  // mam4::aero_model_emissions::aero_model_emissions();
-
-  logger.debug("***TESTING***");
-
+  logger.debug("***TODO***");
 }
