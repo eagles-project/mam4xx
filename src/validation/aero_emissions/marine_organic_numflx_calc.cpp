@@ -16,42 +16,70 @@ void marine_organic_numflx_calc(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters
     // Declare array of strings for input names
-    // std::string input_arrays[] = {
-    //     "tfld",      "h2ovmr",  "vmr",       "pmid",
-    //     "ncol",      "lchnk",   "pcols",     "pver",
-    //     "gas_pcnst", "nfs",     "boltz_cgs", "num_tracer_cnst",
-    //     "has_n2",    "m_ndx",   "n2_ndx",    "has_o2",
-    //     "o2_ndx",    "has_h2o", "h2o_ndx",   "cnst_offline_yaml"};
+    std::string input_arrays[] = {"ncol",
+                                  "fi",
+                                  "ocnfrc",
+                                  "emis_scale",
+                                  "om_ssa",
+                                  "emit_this_mode",
+                                  "nsections",
+                                  "Dg",
+                                  "om_num_ind",
+                                  "om_num_modes",
+                                  "seasalt_indices",
+                                  "sst_sz_range_lo",
+                                  "sst_sz_range_hi"};
 
-    // // Iterate over input_arrays and error if not in input
-    // for (std::string name : input_arrays) {
-    //   if (!input.has_array(name.c_str())) {
-    //     std::cerr << "Required name for array: " << name << std::endl;
-    //     exit(1);
-    //   }
-    // }
+    // Iterate over input_arrays and error if not in input
+    for (std::string name : input_arrays) {
+      if (!input.has_array(name.c_str())) {
+        std::cerr << "Required name for array: " << name << std::endl;
+        exit(1);
+      }
+    }
 
-    // const Real tfld = input.get_array("tfld")[0];
-    // const Real h2ovmr = input.get_array("h2ovmr")[0];
-    // // NOTE: vmr turns out to be unused, but still in the fxn signature for now
-    // auto vmr = input.get_array("vmr");
-    // const Real pmid = input.get_array("pmid")[0];
-    // const int nfs = input.get_array("nfs")[0];
-    // auto cnst_offline = input.get_array("cnst_offline_yaml");
+    const int salt_nsection = mam4::aero_model_emissions::salt_nsection;
+    const int organic_num_modes = mam4::aero_model_emissions::organic_num_modes;
 
-    // const mam4::mo_aero_emissions::Config aero_emissions_config_;
+    const auto fi_ = input.get_array("fi");
+    const Real ocean_frac = input.get_array("ocnfrc")[0];
+    const Real emis_scalefactor = input.get_array("emis_scale")[0];
+    const auto om_seasalt_ = input.get_array("om_ssa");
+    const auto emit_this_mode_ = input.get_array("emit_this_mode");
 
-    // Real invariants[nfs];
+    // TODO: need the input values for this
+    Real cflux[salt_nsection];
 
-    // mam4::mo_aero_emissions::aero_emissions_single_level(invariants, tfld, h2ovmr, vmr.data(),
-    //                                      pmid, cnst_offline.data(),
-    //                                      aero_emissions_config_);
+    Real fi[salt_nsection];
+    Real om_seasalt[salt_nsection];
+    bool emit_this_mode[organic_num_modes];
 
-    // std::vector<Real> inv_out;
-    // for (int i = 0; i < nfs; ++i) {
-    //   inv_out.push_back(invariants[i]);
-    // }
+    for (int i = 0; i < salt_nsection; ++i) {
+      fi[i] = fi_[i];
+      om_seasalt[i] = om_seasalt_[i];
+    }
 
-    // output.set("invariants", inv_out);
+    for (int i = 0; i < organic_num_modes; ++i) {
+      emit_this_mode[i] = emit_this_mode_[i];
+    }
+
+    mam4::aero_model_emissions::calc_marine_organic_numflux(
+        fi, ocean_frac, emis_scalefactor, om_seasalt, emit_this_mode, cflux);
+
+    std::vector<Real> cflux_out;
+
+    // NOTE: the only entries that are changed are (c++ indexing): 13, 18
+    // i.e.,
+    // cflux[num_mode_idx];
+    //    Where:
+    //      num_mode_idx = seasalt_indices[nsalt + nsalt_om + om_num_idx],
+    //      om_num_idx = organic_num_idx[{0, 1}] == {0, 1}
+    //      om_num_idx = organic_num_idx[3 + 3 + {0, 1}]
+    //      == cflux[seasalt_indices[{6, 7}]]
+    //      == cflux[13, 18]
+    cflux_out.push_back(cflux[13]);
+    cflux_out.push_back(cflux[18]);
+
+    output.set("cflx", cflux_out);
   });
 }

@@ -31,8 +31,8 @@ void marine_organic_emis(Ensemble *ensemble) {
     const int salt_nsection = mam4::aero_model_emissions::salt_nsection;
 
     std::vector<Real> fi{input.get_array("fi")};
-    const auto ocean_frac = input.get_array("ocean_frac")[0];
-    const auto emis_scalefactor = input.get_array("emis_scalefactor")[0];
+    const auto ocean_frac = input.get_array("ocnfrc")[0];
+    const auto emis_scalefactor = input.get_array("emis_scale")[0];
     const auto mpoly = input.get_array("mpoly")[0];
     const auto mprot = input.get_array("mprot")[0];
     const auto mlip = input.get_array("mlip")[0];

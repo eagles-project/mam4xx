@@ -43,14 +43,6 @@ void marine_organic_massflx_calc(Ensemble *ensemble) {
     const int n_organic_species_max =
         mam4::aero_model_emissions::n_organic_species_max;
     const int organic_num_modes = mam4::aero_model_emissions::organic_num_modes;
-    const int seasalt_nbin = mam4::aero_model_emissions::seasalt_nbin;
-    const int seasalt_nnum = mam4::aero_model_emissions::seasalt_nnum;
-
-    std::cout << "salt_nsection = " << salt_nsection << "\n";
-    std::cout << "n_organic_species_max = " << n_organic_species_max << "\n";
-    std::cout << "organic_num_modes = " << organic_num_modes << "\n";
-    std::cout << "seasalt_nbin = " << seasalt_nbin << "\n";
-    std::cout << "seasalt_nnum = " << seasalt_nnum << "\n";
 
     const auto fi_ = input.get_array("fi");
     const Real ocean_frac = input.get_array("ocnfrc")[0];
@@ -67,10 +59,13 @@ void marine_organic_massflx_calc(Ensemble *ensemble) {
     Real mass_frac_bub_section[n_organic_species_max][salt_nsection];
     bool emit_this_mode[organic_num_modes];
 
-    int ll = 0;
     for (int i = 0; i < salt_nsection; ++i) {
       fi[i] = fi_[i];
       om_seasalt[i] = om_seasalt_[i];
+    }
+
+    int ll = 0;
+    for (int i = 0; i < salt_nsection; ++i) {
       for (int j = 0; j < n_organic_species_max; ++j, ++ll) {
         mass_frac_bub_section[j][i] = mass_frac_bub_section_[ll];
       }
@@ -82,32 +77,21 @@ void marine_organic_massflx_calc(Ensemble *ensemble) {
 
     mam4::aero_model_emissions::SeasaltSectionData data;
     mam4::aero_model_emissions::init_seasalt(data);
-    mam4::aero_model_emissions::calc_marine_organic_mass_flux(
+    mam4::aero_model_emissions::calc_marine_organic_massflux(
         fi, ocean_frac, emis_scalefactor, om_seasalt, mass_frac_bub_section,
         emit_this_mode, data.rdry, cflux);
 
     std::vector<Real> cflux_out;
-    // for (int i = 0; i < salt_nsection; ++i) {
-    //   cflux_out.push_back(cflux[i]);
-    // }
 
     // NOTE: the only entries that are changed are (c++ indexing): 12, 17, 29
+    // i.e.,
+    // cflux[seasalt_indices[nsalt + ispec]]
+    //      == cflux[seasalt_indices[3 + {0, 1, 2}]]
+    //      == cflux[12, 17, 29]
     cflux_out.push_back(cflux[12]);
     cflux_out.push_back(cflux[17]);
     cflux_out.push_back(cflux[29]);
 
-    // std::vector<Real> mfb_out;
-    // for (int i = 0; i < salt_nsection; ++i) {
-    //   for (int j = 0; j < n_organic_species_max; ++j) {
-    //     mfb_out.push_back(mass_frac_bub_section[j][i]);
-    //   }
-    // }
-
-    for (int i = 0; i < salt_nsection; ++i) {
-      std::cout << "cflux[i] = " << cflux[i] << "\n";
-    }
-
     output.set("cflx", cflux_out);
-    // output.set("mass_frac_bub_section", mfb_out);
   });
 }

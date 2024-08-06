@@ -66,9 +66,9 @@ int main(int argc, char **argv) {
       marine_organic_massflx_calc(ensemble);
     } else if (func_name == "marine_organic_numflx_calc") {
       marine_organic_numflx_calc(ensemble);
-    } else if (func_name == "seasalt_emisflx_calc") {
+    } else if (func_name == "seasalt_emisflx_calc_massflux") {
       seasalt_emisflx_calc_massflx(ensemble);
-    } else if (func_name == "seasalt_emisflx_calc") {
+    } else if (func_name == "seasalt_emisflx_calc_numflux") {
       seasalt_emisflx_calc_numflx(ensemble);
     } else if (func_name == "seasalt_emis") {
       seasalt_emis(ensemble);
