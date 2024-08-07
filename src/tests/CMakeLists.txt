@@ -57,8 +57,6 @@ EkatCreateUnitTest(mam4_spitfire_transport_unit_tests mam4_spitfire_transport_un
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_mo_setsox_unit_tests mam4_mo_setsox_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
-EkatCreateUnitTest(mam4_srf_emissions_unit_tests mam4_srf_emissions_unit_tests.cpp
-  LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 EkatCreateUnitTest(mam4_aero_emissions_unit_tests mam4_aero_emissions_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
 
@@ -76,7 +74,6 @@ if (NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel") #The Intel compiler always em
   target_compile_options(mam4_nucleate_ice_unit_tests PRIVATE)
   target_compile_options(mam4_spitfire_transport_unit_tests PRIVATE)
   target_compile_options(mam4_mo_setsox_unit_tests PRIVATE)
-  target_compile_options(mam4_srf_emissions_unit_tests PRIVATE)
   target_compile_options(mam4_aero_emissions_unit_tests PRIVATE)
 endif ()
 

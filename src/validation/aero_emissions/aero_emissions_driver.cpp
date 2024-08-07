@@ -23,7 +23,6 @@ using namespace skywalker;
 using namespace mam4;
 
 // Parameterizations used by the set_aero_emissions() process.
-void aero_emissions_smoketest(Ensemble *ensemble);
 void calc_om_seasalt(Ensemble *ensemble);
 void calculate_seasalt_numflux_in_bins(Ensemble *ensemble);
 void marine_organic_emis(Ensemble *ensemble);
@@ -55,9 +54,7 @@ int main(int argc, char **argv) {
   // Dispatch to the requested function.
   auto func_name = settings.get("function");
   try {
-    if (func_name == "aero_emissions_smoketest") {
-      aero_emissions_smoketest(ensemble);
-    } else if (func_name == "calc_om_seasalt") {
+    if (func_name == "calc_om_seasalt") {
       calc_om_seasalt(ensemble);
     } else if (func_name == "calculate_seasalt_numflux_in_bins") {
       calculate_seasalt_numflux_in_bins(ensemble);
