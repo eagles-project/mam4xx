@@ -41,10 +41,10 @@ void seasalt_emis(Ensemble *ensemble) {
       fi[i] = fi_[i];
     }
 
-    mam4::aero_model_emissions::SeasaltSectionData data;
+    mam4::aero_model_emissions::SeasaltEmissionsData data;
     mam4::aero_model_emissions::init_seasalt(data);
     mam4::aero_model_emissions::seasalt_emis(fi, ocean_frac, emis_scalefactor,
-                                             data.rdry, cflux);
+                                             data, cflux);
 
     std::vector<Real> cflux_out;
     // NOTE: the only entries that are changed are (c++ indexing):

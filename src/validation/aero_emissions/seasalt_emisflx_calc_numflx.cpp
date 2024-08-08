@@ -56,10 +56,10 @@ void seasalt_emisflx_calc_numflx(Ensemble *ensemble) {
     const mam4::aero_model_emissions::FluxType flux_type =
         mam4::aero_model_emissions::FluxType::NumberFlux;
 
-    mam4::aero_model_emissions::SeasaltSectionData data;
+    mam4::aero_model_emissions::SeasaltEmissionsData data;
     mam4::aero_model_emissions::init_seasalt(data);
     mam4::aero_model_emissions::seasalt_emis_flux_calc(
-        fi, ocean_frac, emis_scalefactor, flux_type, data.rdry, cflux);
+        fi, ocean_frac, emis_scalefactor, flux_type, data, cflux);
 
     std::vector<Real> cflux_out;
     // NOTE: the only entries that are changed are (c++ indexing): 13, 18, 26

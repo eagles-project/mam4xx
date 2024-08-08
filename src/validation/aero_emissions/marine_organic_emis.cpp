@@ -29,25 +29,32 @@ void marine_organic_emis(Ensemble *ensemble) {
     }
 
     const int salt_nsection = mam4::aero_model_emissions::salt_nsection;
+    const int organic_num_modes = mam4::aero_model_emissions::organic_num_modes;
 
-    std::vector<Real> fi{input.get_array("fi")};
+    const auto fi_ = input.get_array("fi");
     const auto ocean_frac = input.get_array("ocnfrc")[0];
     const auto emis_scalefactor = input.get_array("emis_scale")[0];
     const auto mpoly = input.get_array("mpoly")[0];
     const auto mprot = input.get_array("mprot")[0];
     const auto mlip = input.get_array("mlip")[0];
+    const auto emit_this_mode_ = input.get_array("emit_this_mode");
+
     Real cflux[salt_nsection] = {0.0};
 
-    Real fi_in[salt_nsection];
+    Real fi[salt_nsection];
     for (int i = 0; i < salt_nsection; ++i) {
-      fi_in[i] = fi[i];
+      fi[i] = fi_[i];
+    }
+    bool emit_this_mode[organic_num_modes];
+    for (int i = 0; i < organic_num_modes; ++i) {
+      emit_this_mode[i] = emit_this_mode_[i];
     }
 
-    mam4::aero_model_emissions::SeasaltSectionData data;
+    mam4::aero_model_emissions::SeasaltEmissionsData data;
     mam4::aero_model_emissions::init_seasalt(data);
     mam4::aero_model_emissions::marine_organic_emissions(
-        fi_in, ocean_frac, emis_scalefactor, mpoly, mprot, mlip, data.rdry,
-        cflux);
+        fi, ocean_frac, emis_scalefactor, mpoly, mprot, mlip, data,
+        emit_this_mode, cflux);
 
     std::vector<Real> cflux_out;
     for (int i = 0; i < salt_nsection; ++i) {

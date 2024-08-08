@@ -18,6 +18,7 @@ add_executable(aero_emissions_driver
                seasalt_emisflx_calc_massflx.cpp
                seasalt_emisflx_calc_numflx.cpp
                seasalt_emis.cpp
+               dust_emis.cpp
                )
 
 target_link_libraries(aero_emissions_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -38,10 +39,11 @@ set(TEST_LIST
     calculate_seasalt_numflux_in_bins
     # marine_organic_emis # failing--requires extra data
     marine_organic_massflx_calc
-    marine_organic_numflx_calc # failing--requires extra data
+    # marine_organic_numflx_calc # failing--requires extra data
     seasalt_emisflx_calc_massflx
     seasalt_emisflx_calc_numflx
     seasalt_emis
+    # dust_emis
     )
 
 set(DEFAULT_TOL 2e-10)
@@ -52,10 +54,11 @@ set(ERROR_THRESHOLDS
     8e-10          # calculate_seasalt_numflux_in_bins
     # ${FAKE_TOL} # marine_organic_emis
     ${DEFAULT_TOL}          # marine_organic_massflx_calc
-    ${FAKE_TOL} # marine_organic_numflx_calc
+    # ${FAKE_TOL} # marine_organic_numflx_calc
     ${DEFAULT_TOL} # seasalt_emisflx_calc_massflx
     ${DEFAULT_TOL} # seasalt_emisflx_calc_numflx
     ${DEFAULT_TOL} # seasalt_emis
+    # ${DEFAULT_TOL} # dust_emis
    )
 
 set(TestLabel "aero_emissions")

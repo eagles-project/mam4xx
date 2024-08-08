@@ -36,7 +36,7 @@ void calculate_seasalt_numflux_in_bins(Ensemble *ensemble) {
 
     Real fi[salt_nsection] = {0.0};
 
-    mam4::aero_model_emissions::SeasaltSectionData data;
+    mam4::aero_model_emissions::SeasaltEmissionsData data;
     mam4::aero_model_emissions::init_seasalt(data);
 
     mam4::aero_model_emissions::calculate_seasalt_numflux_in_bins(
