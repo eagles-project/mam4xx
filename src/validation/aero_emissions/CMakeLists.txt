@@ -18,7 +18,7 @@ add_executable(aero_emissions_driver
                seasalt_emisflx_calc_massflx.cpp
                seasalt_emisflx_calc_numflx.cpp
                seasalt_emis.cpp
-               dust_emis.cpp
+              #  dust_emis.cpp
                )
 
 target_link_libraries(aero_emissions_driver skywalker;validation;${HAERO_LIBRARIES})

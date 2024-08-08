@@ -685,7 +685,8 @@ void calc_org_matter_seasalt(
   for (int iorg = 0; iorg < n_organic_species; ++iorg) {
     // NOTE: slicing along iorg makes mass_frac_bub a scalar
     // and mass_frac_bub_section an array with extent salt_nsection
-    om_fraction_accum_aitken(mass_frac_bub[iorg], data, mass_frac_bub_section[iorg]);
+    om_fraction_accum_aitken(mass_frac_bub[iorg], data,
+                             mass_frac_bub_section[iorg]);
   }
 } // end calc_org_matter_seasalt()
 
