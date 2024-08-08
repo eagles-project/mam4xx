@@ -56,9 +56,8 @@ void dust_emis(Ensemble *ensemble) {
       data.dust_dmt_vwr[i] = dust_dmt_vwr_[i];
     }
 
-    mam4::aero_model_emissions::dust_emis(dust_density, dust_flux_in,
-                                          data, soil_erodibility,
-                                          cflux);
+    mam4::aero_model_emissions::dust_emis(dust_density, dust_flux_in, data,
+                                          soil_erodibility, cflux);
 
     std::vector<Real> cflux_out;
     // NOTE: the only entries that are changed are (c++ indexing):

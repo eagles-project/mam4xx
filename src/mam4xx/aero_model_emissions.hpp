@@ -212,7 +212,8 @@ struct SeasaltEmissionsData {
 //   // Charlie allows logarithmic or linear option for size distribution.
 //   // however, he hardwires the distribution to logarithmic in his code.
 //   // therefore, I take his logarithmic code only
-//   // furthermore, if dst_nbr == 4, he overrides the automatic grid calculation
+//   // furthermore, if dst_nbr == 4, he overrides the automatic grid
+//   calculation
 //   // he currently works with dst_nbr = 4, so I only take the relevant code
 //   // if dust_number ever becomes different from 4,
 //   // must add call grd_mk (dstpsd.F90) as done in subroutine dst_psd_ini
@@ -265,8 +266,8 @@ struct SeasaltEmissionsData {
 //   // In C. Zender's code call dst_sz_rsl
 //   for (int n = 0; n < dust_nbin; ++n) {
 //     // Factor for logarithmic grid
-//     Real series_ratio = haero::pow((dmt_max[n] / dmt_min[n]), (1.0 / sz_nbr));
-//     sz_min[0] = dmt_min[n];
+//     Real series_ratio = haero::pow((dmt_max[n] / dmt_min[n]), (1.0 /
+//     sz_nbr)); sz_min[0] = dmt_min[n];
 //     // NOTE: Loop starts at 1 (2 in fortran code)
 //     for (int m = 1; m < sz_nbr; ++m) {
 //       sz_min[m] = sz_min[m - 1] * series_ratio;
@@ -292,8 +293,9 @@ struct SeasaltEmissionsData {
 //     for (int m = 0; m < sz_nbr; ++m) {
 //       // Evaluate lognormal distribution for these sizes (call lgn_evl)
 //       Real tmp = haero::log(sz_ctr[m] / dmt_nma) / ln_gsd;
-//       Real lgn_dst = lnN_factor * haero::exp(-0.5 * haero::square(tmp)) / sz_ctr[m];
-//       Real coeff = pi / 6.0 * haero::pow(sz_ctr[m], 3) * lgn_dst * sz_dlt[m];
+//       Real lgn_dst = lnN_factor * haero::exp(-0.5 * haero::square(tmp)) /
+//       sz_ctr[m]; Real coeff = pi / 6.0 * haero::pow(sz_ctr[m], 3) * lgn_dst *
+//       sz_dlt[m];
 //       // Integrate moments of size distribution
 //       dust_dmt_vwr[n] += sz_ctr[m] * coeff;
 //       vlm_rsl[n] += coeff;
@@ -886,8 +888,7 @@ void aero_model_emissions(
   Real soil_erodibility;
 
   DustEmissionsData dust_data;
-  dust_emis(dust_density, dust_flux_in, dust_data,
-            soil_erodibility, cflux);
+  dust_emis(dust_density, dust_flux_in, dust_data, soil_erodibility, cflux);
 
   // some dust emis diagnostics ...
   surface_flux = 0.0;
