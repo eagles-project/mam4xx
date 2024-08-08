@@ -327,7 +327,7 @@ void dust_emis(const Real dust_density,
       soil_erodibility < soil_erod_threshold ? soil_erodibility : 0.0;
 
   // in fortran, done inside loop as: sum( -dust_flux_in(:) )
-  Real dust_flux_neg_sum;
+  Real dust_flux_neg_sum = 0;
   for (int ibin = 0; ibin < dust_nflux_in; ++ibin) {
     dust_flux_neg_sum -= dust_flux_in[ibin];
   }
@@ -824,7 +824,7 @@ void marine_organic_emissions(const Real (&fi)[salt_nsection],
   //   }
   // } // end for (ifield)
 
-  Real mass_frac_bub_section[n_organic_species_max][salt_nsection] = {0.0};
+  Real mass_frac_bub_section[n_organic_species_max][salt_nsection] = {{0.0}};
   Real om_seasalt[salt_nsection] = {0.0};
 
   // Calculate marine organic aerosol mass fraction based on
