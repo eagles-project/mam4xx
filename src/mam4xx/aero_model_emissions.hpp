@@ -63,15 +63,18 @@ const Real dust_emis_scalefactor[dust_nbin] = {0.011, 0.989};
 const Real dust_emis_fact = -1.0e36;
 // Aerosol density [kg m-3]
 const Real dust_density = 2.5e3;
-const Real dust_dmt_grd[dust_nbin + 1] = {1.0e-7, 1.0e-6, 1.0e-5};
 // const std::vector<std::string> dust_names[dust_nbin + dust_nnum] = {
 //     "dst_a1", "dst_a3", "num_a1", "num_a3"};
 // NOTE: see mo_setsox.hpp:25 to see where these indices come from
 const int dust_indices[dust_nbin + dust_nnum] = {10, 19, 13, 26};
-// tuning parameter for dust emissions
-// perhaps unnecessary? it's not entirely clear to me what happens in
-// soil_erod_mod::soil_erod_init() where this is set
-const Real soil_erod_fact = dust_emis_fact;
+
+struct DustEmissionsData {
+  // tuning parameter for dust emissions
+  // perhaps unnecessary? it's not entirely clear to me what happens in
+  // soil_erod_mod::soil_erod_init() where this is set
+  const Real soil_erosion_factor = 1.5;
+  Real dust_dmt_vwr[dust_nbin];
+};
 // =============================================================================
 //      Sea Salt Parameters/Constants
 // =============================================================================
@@ -187,119 +190,123 @@ struct SeasaltEmissionsData {
   const int seasalt_indices[seasalt_nbin + seasalt_nnum] = {11, 16, 20, 12, 17,
                                                             29, 13, 18, 26, 30};
   const int organic_num_idx[organic_num_modes] = {0, 1, 3};
-  // const bool emit_this_mode[organic_num_modes] = {true, true, false};
 };
 // =============================================================================
 
-// TODO: ***this needs a test***
-KOKKOS_INLINE_FUNCTION
-void init_dust_dmt_vwr(const Real (&dust_dmt_grd)[dust_nbin + 1],
-                       Real (&dust_dmt_vwr)[dust_nbin]) {
+// // FIXME(?): Not sure if this is necessary--i.e., whether this value will be
+// // provided or if it should be calculated here. For now, it's provided in the
+// // validation input data, but we'll keep the function around just in case.
+// // FIXME: I also cannot recreate the values given by the validation data,
+// // so if we do end up needing this, it'll require a closer look
+// KOKKOS_INLINE_FUNCTION
+// void init_dust_dmt_vwr(const Real (&dust_dmt_grd)[dust_nbin + 1],
+//                        Real (&dust_dmt_vwr)[dust_nbin]) {
 
-  // FIXME: BAD CONSTANT
-  const int sz_nbr = 200;
+//   // FIXME: BAD CONSTANT
+//   const int sz_nbr = 200;
 
-  // Introducing particle diameter. Needed by atm model and by dry dep model.
-  // Taken from Charlie Zender's subroutines dst_psd_ini, dst_sz_rsl,
-  // grd_mk (dstpsd.F90) and subroutine lgn_evl (psdlgn.F90)
+//   // Introducing particle diameter. Needed by atm model and by dry dep model.
+//   // Taken from Charlie Zender's subroutines dst_psd_ini, dst_sz_rsl,
+//   // grd_mk (dstpsd.F90) and subroutine lgn_evl (psdlgn.F90)
 
-  // Charlie allows logarithmic or linear option for size distribution.
-  // however, he hardwires the distribution to logarithmic in his code.
-  // therefore, I take his logarithmic code only
-  // furthermore, if dst_nbr == 4, he overrides the automatic grid calculation
-  // he currently works with dst_nbr = 4, so I only take the relevant code
-  // if dust_number ever becomes different from 4,
-  // must add call grd_mk (dstpsd.F90) as done in subroutine dst_psd_ini
-  // note that here dust_number = dst_nbr
+//   // Charlie allows logarithmic or linear option for size distribution.
+//   // however, he hardwires the distribution to logarithmic in his code.
+//   // therefore, I take his logarithmic code only
+//   // furthermore, if dst_nbr == 4, he overrides the automatic grid calculation
+//   // he currently works with dst_nbr = 4, so I only take the relevant code
+//   // if dust_number ever becomes different from 4,
+//   // must add call grd_mk (dstpsd.F90) as done in subroutine dst_psd_ini
+//   // note that here dust_number = dst_nbr
 
-  // Max diameter in bin [m]
-  Real dmt_min[dust_nbin];
-  // Min diameter in bin [m]
-  Real dmt_max[dust_nbin];
+//   // Max diameter in bin [m]
+//   Real dmt_min[dust_nbin];
+//   // Min diameter in bin [m]
+//   Real dmt_max[dust_nbin];
 
-  // Override automatic grid with preset grid if available
-  for (int n = 0; n < dust_nbin; ++n) {
-    dmt_min[n] = dust_dmt_grd[n];
-    dmt_max[n] = dust_dmt_grd[n + 1];
-  }
+//   // Override automatic grid with preset grid if available
+//   for (int n = 0; n < dust_nbin; ++n) {
+//     dmt_min[n] = dust_dmt_grd[n];
+//     dmt_max[n] = dust_dmt_grd[n + 1];
+//   }
 
-  // set dust_dmt_vwr ....
+//   // set dust_dmt_vwr ....
+//   for (int i = 0; i < dust_nbin; ++i) {
+//     dust_dmt_vwr[i] = 0.0;
+//   }
 
-  // Bin physical properties
-  // [frc] Geometric std dev PaG77 p. 2080 Table1
-  Real gsd_anl = 2.0;
-  Real ln_gsd = haero::log(gsd_anl);
+//   // Bin physical properties
+//   // [frc] Geometric std dev PaG77 p. 2080 Table1
+//   Real gsd_anl = 2.0;
+//   Real ln_gsd = haero::log(gsd_anl);
 
-  // Set a fundamental statistic for each bin
-  // Mass median diameter analytic She84 p.75 Table 1 [m]
-  // FIXME: FIXME: this appears to be a bug--vma is set, and then re-set
-  //        maybe the second one should be dmt_nma?
-  Real dmt_vma = 2.524e-6;
-  dmt_vma = 3.5e-6;
-  // Compute analytic size statistics
-  // Convert mass median diameter to number median particle diameter [m]
-  Real dmt_nma = dmt_vma * haero::exp(-3.0 * haero::square(ln_gsd));
+//   // Set a fundamental statistic for each bin
+//   // Mass median diameter analytic She84 p.75 Table 1 [m]
+//   // FIXME: FIXME: this appears to be a bug--vma is set, and then re-set
+//   //        maybe the second one should be dmt_nma?
+//   Real dmt_vma = 2.524e-6;
+//   dmt_vma = 3.5e-6;
+//   // Compute analytic size statistics
+//   // Convert mass median diameter to number median particle diameter [m]
+//   Real dmt_nma = dmt_vma * haero::exp(-3.0 * haero::square(ln_gsd));
 
-  // [m] Size Bin minima
-  Real sz_min[sz_nbr];
-  // [m] Size Bin maxima
-  Real sz_max[sz_nbr];
-  // [m] Size Bin centers
-  Real sz_ctr[sz_nbr];
-  // [m] Size Bin widths
-  Real sz_dlt[sz_nbr];
+//   // [m] Size Bin minima
+//   Real sz_min[sz_nbr];
+//   // [m] Size Bin maxima
+//   Real sz_max[sz_nbr];
+//   // [m] Size Bin centers
+//   Real sz_ctr[sz_nbr];
+//   // [m] Size Bin widths
+//   Real sz_dlt[sz_nbr];
 
-  // [m3 m-3] Volume concentration resolved
-  Real vlm_rsl[dust_nbin] = {0.0};
+//   // [m3 m-3] Volume concentration resolved
+//   Real vlm_rsl[dust_nbin] = {0.0};
 
-  // Compute resolved size statistics for each size distribution
-  // In C. Zender's code call dst_sz_rsl
-  // Factor for logarithmic grid
-  Real series_ratio;
-  for (int n = 0; n < dust_nbin; ++n) {
-    series_ratio = haero::pow((dmt_max[n] / dmt_min[n]), (1.0 / sz_nbr));
-    sz_min[0] = dmt_min[n];
-    // NOTE: Loop starts at 1 (2 in fortran code)
-    for (int m = 1; m < sz_nbr; ++m) {
-      sz_min[m] = sz_min[m - 1] * series_ratio;
-    }
-    // Derived grid values
-    // NOTE: Loop ends at sz_nbr - 2 (fortran: sz_nbr - 1)
-    for (int m = 0; m < sz_nbr - 2; ++m) {
-      sz_max[m] = sz_min[m + 1];
-    }
-    sz_max[sz_nbr - 1] = dmt_max[n];
-    // Final derived grid values
-    for (int m = 0; m < sz_nbr; ++m) {
-      sz_ctr[m] = 0.5 * (sz_min[m] + sz_max[m]);
-      sz_dlt[m] = sz_max[m] - sz_min[m];
-    }
+//   // Compute resolved size statistics for each size distribution
+//   // In C. Zender's code call dst_sz_rsl
+//   for (int n = 0; n < dust_nbin; ++n) {
+//     // Factor for logarithmic grid
+//     Real series_ratio = haero::pow((dmt_max[n] / dmt_min[n]), (1.0 / sz_nbr));
+//     sz_min[0] = dmt_min[n];
+//     // NOTE: Loop starts at 1 (2 in fortran code)
+//     for (int m = 1; m < sz_nbr; ++m) {
+//       sz_min[m] = sz_min[m - 1] * series_ratio;
+//     }
+//     // Derived grid values
+//     // NOTE: Loop ends at sz_nbr - 2 (fortran: sz_nbr - 1)
+//     for (int m = 0; m < sz_nbr - 2; ++m) {
+//       sz_max[m] = sz_min[m + 1];
+//     }
+//     sz_max[sz_nbr - 1] = dmt_max[n];
+//     // Final derived grid values
+//     for (int m = 0; m < sz_nbr; ++m) {
+//       sz_ctr[m] = 0.5 * (sz_min[m] + sz_max[m]);
+//       sz_dlt[m] = sz_max[m] - sz_min[m];
+//     }
 
-    constexpr Real pi = haero::Constants::pi;
-    // Lognormal distribution at sz_ctr
-    Real lgn_dst;
-    // Factor in lognormal distribution
-    // NOTE: original variable name in fortran: lngsdsqrttwopi_rcp
-    Real lnN_factor = 1.0 / (ln_gsd * haero::sqrt(2.0 * pi));
+//     constexpr Real pi = haero::Constants::pi;
+//     // Lognormal distribution at sz_ctr
+//     // Factor in lognormal distribution
+//     // NOTE: original variable name in fortran: lngsdsqrttwopi_rcp
+//     Real lnN_factor = 1.0 / (ln_gsd * haero::sqrt(2.0 * pi));
 
-    Real tmp;
-    for (int m = 0; m < sz_nbr; ++m) {
-      Real coeff = haero::pow(sz_ctr[m], 3) * lgn_dst * sz_dlt[m];
-      // Evaluate lognormal distribution for these sizes (call lgn_evl)
-      tmp = haero::log(sz_ctr[m] / dmt_nma) / ln_gsd;
-      lgn_dst = lnN_factor * haero::exp(-0.5 * haero::square(tmp)) / sz_ctr[m];
-      // Integrate moments of size distribution
-      dust_dmt_vwr[n] += sz_ctr[m] * pi / 6.0 * coeff;
-      vlm_rsl[n] += pi / 6.0 * coeff;
-    }
-    // Mass weighted diameter resolved [m]
-    dust_dmt_vwr[n] /= vlm_rsl[n];
-  } // end for (n)
-} // end init_dust_dmt_vwr()
+//     for (int m = 0; m < sz_nbr; ++m) {
+//       // Evaluate lognormal distribution for these sizes (call lgn_evl)
+//       Real tmp = haero::log(sz_ctr[m] / dmt_nma) / ln_gsd;
+//       Real lgn_dst = lnN_factor * haero::exp(-0.5 * haero::square(tmp)) / sz_ctr[m];
+//       Real coeff = pi / 6.0 * haero::pow(sz_ctr[m], 3) * lgn_dst * sz_dlt[m];
+//       // Integrate moments of size distribution
+//       dust_dmt_vwr[n] += sz_ctr[m] * coeff;
+//       vlm_rsl[n] += coeff;
+//     } // end for (m)
+//     // Mass weighted diameter resolved [m]
+//     dust_dmt_vwr[n] /= vlm_rsl[n];
+//   } // end for (dust_nbin)
+// } // end init_dust_dmt_vwr()
 
 KOKKOS_INLINE_FUNCTION
 void dust_emis(const Real dust_density,
                const Real (&dust_flux_in)[dust_nflux_in],
+               const DustEmissionsData data,
                //  out
                Real &soil_erodibility,
                //  inout
@@ -307,9 +314,6 @@ void dust_emis(const Real dust_density,
   // dust_flux_in: dust emission fluxes in
   // cflux: emission fluxes in MAM modes [{kg,#}/m^2/s]
   // soil_erod: soil erodibility factor [unitless]
-
-  Real dust_dmt_vwr[dust_nbin];
-  init_dust_dmt_vwr(dust_dmt_grd, dust_dmt_vwr);
 
   // FIXME: BAD CONSTANT
   Real soil_erod_threshold = 0.1;
@@ -319,15 +323,17 @@ void dust_emis(const Real dust_density,
 
   for (int ibin = 0; ibin < dust_nbin; ++ibin) {
     dust_mass_to_num[ibin] = 6.0 / (haero::Constants::pi * dust_density *
-                                    haero::pow(dust_dmt_vwr[ibin], 3));
+                                    haero::pow(data.dust_dmt_vwr[ibin], 3));
   }
 
-  // local version (necessary?) that's zero if less than the threshold
+  // local version (unnecessary?) that's zero if less than the threshold
+  // NOTE: if this ends up true, then it results in
+  //       soil_erod = 0 and cflux[:] = 0, making all of the below pointless
   Real soil_erod =
-      soil_erodibility < soil_erod_threshold ? soil_erodibility : 0.0;
+      soil_erodibility < soil_erod_threshold ? 0.0 : soil_erodibility;
 
   // in fortran, done inside loop as: sum( -dust_flux_in(:) )
-  Real dust_flux_neg_sum = 0;
+  Real dust_flux_neg_sum = 0.0;
   for (int ibin = 0; ibin < dust_nflux_in; ++ibin) {
     dust_flux_neg_sum -= dust_flux_in[ibin];
   }
@@ -341,8 +347,8 @@ void dust_emis(const Real dust_density,
     int idx_dust = dust_indices[ibin];
     // FIXME: BAD CONSTANT
     cflux[idx_dust] = dust_flux_neg_sum * frac_ratio *
-                      dust_emis_scalefactor[ibin] * soil_erod / soil_erod_fact *
-                      1.15;
+                      dust_emis_scalefactor[ibin] * soil_erod /
+                      data.soil_erosion_factor * 1.15;
     int inum = dust_indices[ibin + dust_nbin];
     cflux[inum] = cflux[idx_dust] * dust_mass_to_num[ibin];
   }
@@ -878,7 +884,10 @@ void aero_model_emissions(
   Real v_bottom = v_vel[n_levels];
   Real z_bottom = altitude[n_levels];
   Real soil_erodibility;
-  dust_emis(dust_density, dust_flux_in, soil_erodibility, cflux);
+
+  DustEmissionsData dust_data;
+  dust_emis(dust_density, dust_flux_in, dust_data,
+            soil_erodibility, cflux);
 
   // some dust emis diagnostics ...
   surface_flux = 0.0;
@@ -896,7 +905,6 @@ void aero_model_emissions(
 
   SeasaltEmissionsData seasalt_data;
   init_seasalt(seasalt_data);
-
   calculate_seasalt_numflux_in_bins(surface_temp, u_bottom, v_bottom, z_bottom,
                                     seasalt_data.consta, seasalt_data.consta,
                                     fi);

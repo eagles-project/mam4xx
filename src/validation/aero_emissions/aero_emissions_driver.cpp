@@ -31,6 +31,7 @@ void marine_organic_numflx_calc(Ensemble *ensemble);
 void seasalt_emisflx_calc_massflx(Ensemble *ensemble);
 void seasalt_emisflx_calc_numflx(Ensemble *ensemble);
 void seasalt_emis(Ensemble *ensemble);
+void dust_emis(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -70,6 +71,8 @@ int main(int argc, char **argv) {
       seasalt_emisflx_calc_numflx(ensemble);
     } else if (func_name == "seasalt_emis") {
       seasalt_emis(ensemble);
+    } else if (func_name == "dust_emis") {
+      dust_emis(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
