@@ -106,8 +106,6 @@ void gas_washout(
     const ColumnView &xhen_i, // henry's law constant
     const ColumnView &tfld_i, // temperature [K]
     const ColumnView &delz_i, // layer depth about interfaces [cm]  // in
-    const ColumnView &xeqca,  // internal variable
-    const ColumnView &xca,    // internal variable
     const ColumnView &xgas) { // gas concentration // inout
   //------------------------------------------------------------------------
   // calculate gas washout by cloud if not saturated
@@ -119,36 +117,34 @@ void gas_washout(
   Real xrm = .189;    // mean diameter of rain drop [cm]
   Real xum = 748.0;   // mean rain drop terminal velocity [cm/s]
 
-  static constexpr int pver_loc = pver;
+  Real xeqca_r = 0.0;
+  Real xca_r = 0.0;
 
-  //-----------------------------------------------------------------
+  // -----------------------------------------------------------------
   //       ... calculate the saturation concentration eqca
-  //-----------------------------------------------------------------
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, plev, pver_loc), [&](int k) {
-        // cal washout below cloud
-        xeqca(k) = xgas(k) /
-                   (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
+  // -----------------------------------------------------------------
+  for (int k = plev; k < pver; k++) {
+    xeqca_r = xgas(k) /
+                  (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
                    xliq_ik * avo2;
-        //-----------------------------------------------------------------
-        //       ... calculate ca; inside cloud concentration in  #/cm3(air)
-        //-----------------------------------------------------------------
-        xca(k) = geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik *
-                 cm3_2_m3;
-      });
+    //-----------------------------------------------------------------
+    //       ... calculate ca; inside cloud concentration in  #/cm3(air)
+    //-----------------------------------------------------------------
+    xca_r = geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik * cm3_2_m3; 
 
-  //-----------------------------------------------------------------
-  //       ... if is not saturated (take hno3 as an example)
-  //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
-  //           otherwise
-  //               hno3(gas)_new = hno3(gas)_old
-  //-----------------------------------------------------------------
-  for (int kk = plev; kk < pver; kk++) {
-    allca += xca(kk);
-    if (allca < xeqca(kk)) {
-      xgas(kk) = haero::max(xgas(kk) - xca(kk), 0.0);
+
+    // -----------------------------------------------------------------
+    //       ... if is not saturated (take hno3 as an example)
+    //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
+    //           otherwise
+    //               hno3(gas)_new = hno3(gas)_old
+    // -----------------------------------------------------------------
+    allca += xca_r;
+    if (allca < xeqca_r) {
+      xgas(k) = haero::max(xgas(k) - xca_r, 0.0);
     }
   }
+
 } // end subroutine gas_washout
 
 //=================================================================================
@@ -196,8 +192,6 @@ void sethet(
     const ColumnView &xhnm,   // total atms density [cm^-3] //in
     const ColumnView qin[gas_pcnst], // xported species [vmr]  //in
     // working variables
-    const ColumnView &xeqca, // var for gas_washout
-    const ColumnView &xca,   // var for gas_washout
     const ColumnView
         &xgas2, // gas phase species for h2o2 (2) and so2 (3) [molecules/cm^3]
     const ColumnView
@@ -381,11 +375,9 @@ void sethet(
       // calculate gas washout by cloud
       gas_washout(team, kk, xkgm, xliq(kk), // in
                   xhen_h2o2, tfld, delz,    // in
-                  xeqca, xca,
                   xgas2);                   // inout
       gas_washout(team, kk, xkgm, xliq(kk), // in
                   xhen_so2, tfld, delz,     // in
-                  xeqca, xca,
                   xgas3); // inout
     }
     //-----------------------------------------------------------------
