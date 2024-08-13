@@ -1,15 +1,13 @@
 #ifndef MAM4XX_MO_CHM_DIAGS_HPP
 #define MAM4XX_MO_CHM_DIAGS_HPP
 
-#include <haero/atmosphere.hpp>
 #include <haero/math.hpp>
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/aero_model.hpp>
 #include <mam4xx/gas_chem.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
 namespace mam4 {
+
 namespace mo_chm_diags {
 
 using Real = haero::Real;
@@ -26,10 +24,11 @@ constexpr Real rearth = 6.37122e6;
 constexpr Real rgrav =
     1.0 / 9.80616; // reciprocal of acceleration of gravity ~ m/s^2
 constexpr Real avogadro = haero::Constants::avogadro;
-constexpr int gas_pcnst = gas_chemistry::gas_pcnst;
-constexpr int pcnst = aero_model::pcnst;
+constexpr const int gas_pcnst = gas_chemistry::gas_pcnst;
+constexpr const int pcnst = 80; // FIXME, 80 is the only value I found for this
+                                // in the fortran, but using 41 in the test
 // number of vertical levels
-constexpr int pver = mam4::nlev;
+constexpr const int pver = mam4::nlev;
 
 KOKKOS_INLINE_FUNCTION
 void het_diags(
