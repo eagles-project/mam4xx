@@ -120,8 +120,8 @@ void gas_washout(
   // -----------------------------------------------------------------
   for (int k = plev; k < pver; k++) {
     xeqca = xgas(k) /
-              (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
-              xliq_ik * avo2;
+            (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
+            xliq_ik * avo2;
     //-----------------------------------------------------------------
     //       ... calculate ca; inside cloud concentration in  #/cm3(air)
     //-----------------------------------------------------------------
