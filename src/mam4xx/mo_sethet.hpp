@@ -112,21 +112,20 @@ void gas_washout(
   Real geo_fac = 6.0; // geometry factor (surf area/volume = geo_fac/diameter)
   Real xrm = .189;    // mean diameter of rain drop [cm]
   Real xum = 748.0;   // mean rain drop terminal velocity [cm/s]
-
-  Real xeqca_r = 0.0;
-  Real xca_r = 0.0;
+  Real xeqca = 0.0;
+  Real xca = 0.0;
 
   // -----------------------------------------------------------------
   //       ... calculate the saturation concentration eqca
   // -----------------------------------------------------------------
   for (int k = plev; k < pver; k++) {
-    xeqca_r = xgas(k) /
+    xeqca = xgas(k) /
               (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
               xliq_ik * avo2;
     //-----------------------------------------------------------------
     //       ... calculate ca; inside cloud concentration in  #/cm3(air)
     //-----------------------------------------------------------------
-    xca_r =
+    xca =
         geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik * cm3_2_m3;
 
     // -----------------------------------------------------------------
@@ -135,9 +134,9 @@ void gas_washout(
     //           otherwise
     //               hno3(gas)_new = hno3(gas)_old
     // -----------------------------------------------------------------
-    allca += xca_r;
-    if (allca < xeqca_r) {
-      xgas(k) = haero::max(xgas(k) - xca_r, 0.0);
+    allca += xca;
+    if (allca < xeqca) {
+      xgas(k) = haero::max(xgas(k) - xca, 0.0);
     }
   }
 
