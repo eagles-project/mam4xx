@@ -11,12 +11,8 @@ namespace mam4 {
 
 namespace mo_sethet {
 
-// const int ktop = ConvProc::Config::ktop;
 constexpr Real avo = haero::Constants::avogadro;
 const Real pi = haero::Constants::pi;
-// constexpr Real rgrav =
-//   mo_chm_diags::rgrav; // reciprocal of acceleration of gravity ~ m/s^2
-//  reciprocal of gravity
 constexpr Real rga = 1.0 / haero::Constants::gravity;
 constexpr int gas_pcnst = gas_chemistry::gas_pcnst;
 const Real boltz_cgs = haero::Constants::boltzmann * 1.e7; // erg/K
@@ -125,13 +121,13 @@ void gas_washout(
   // -----------------------------------------------------------------
   for (int k = plev; k < pver; k++) {
     xeqca_r = xgas(k) /
-                  (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
-                   xliq_ik * avo2;
+              (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
+              xliq_ik * avo2;
     //-----------------------------------------------------------------
     //       ... calculate ca; inside cloud concentration in  #/cm3(air)
     //-----------------------------------------------------------------
-    xca_r = geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik * cm3_2_m3; 
-
+    xca_r =
+        geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik * cm3_2_m3;
 
     // -----------------------------------------------------------------
     //       ... if is not saturated (take hno3 as an example)
@@ -233,11 +229,7 @@ void sethet(
   Real m3_2_cm3 = 1.0e6;            // convert m^3 to cm^3
   Real MISSING = -999999.0;
   Real large_value_lifetime = 1.0e29; // a large lifetime value if no washout
-  // Real gas_wetdep_cnt = mam4::modal_aer_opt::gas_pcnst;
 
-  // character(len=3) :: hetratestrg
-  // int icol, kk, kk2  // indicies
-  // int mm, mm2        // indicies
   int ktop;  // tropopause level, 100mb for lat < 60 and 300mb for lat > 60
   Real xkgm; // mass flux on rain drop
   Real stay; // fraction of layer traversed by falling drop in timestep delt
@@ -300,7 +292,6 @@ void sethet(
   //	... Find the level index that only calculate het_rates below
   //-----------------------------------------------------------------
   find_ktop(rlat, press, ktop); // populate ktop
-  // ktop_all = minval( ktop(:) )
 
   // this is added to rescale the variable precip (which can only be positive)
   // to the actual vertical integral of positive and negative values.  This
@@ -378,7 +369,7 @@ void sethet(
                   xgas2);                   // inout
       gas_washout(team, kk, xkgm, xliq(kk), // in
                   xhen_so2, tfld, delz,     // in
-                  xgas3); // inout
+                  xgas3);                   // inout
     }
     //-----------------------------------------------------------------
     //       ... calculate the lifetime of washout (second)
