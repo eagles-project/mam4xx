@@ -356,6 +356,7 @@ void sethet(
         xgas2(kk) = xh2o2(kk); // different levels wash
         xgas3(kk) = xso2(kk);
       });
+  team.team_barrier();
 
   for (int kk = ktop; kk < pver; kk++) {
     stay = 1.0;
