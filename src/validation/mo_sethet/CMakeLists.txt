@@ -45,7 +45,7 @@ set(ERROR_THRESHOLDS
     ${DEFAULT_TOL} # calc_precip_rescale
     ${DEFAULT_TOL} # find_ktop, output is an int
     9e-8 # gas_washout
-    9e-6 # sethet
+    9e-8 # sethet
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
