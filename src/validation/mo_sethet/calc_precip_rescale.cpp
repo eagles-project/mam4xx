@@ -42,9 +42,10 @@ void calc_precip_rescale(Ensemble *ensemble) {
     Kokkos::deep_copy(precip, precip_host);
     // std::vector<Real> precip(pver, zero);
     DeviceType::view_1d<Real> trp_out_val("Return from Device", 1);
+    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        "calc_precip_rescale", 1, KOKKOS_LAMBDA(int i) {
-          calc_precip_rescale(cmfdqr, nrain, nevapr, precip);
+        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          calc_precip_rescale(team, cmfdqr, nrain, nevapr, precip);
         });
 
     Kokkos::deep_copy(precip_host, precip);
