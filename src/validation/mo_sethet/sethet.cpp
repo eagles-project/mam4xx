@@ -67,7 +67,6 @@ void sethet(Ensemble *ensemble) {
     nrain = haero::testing::create_column_view(pver);
     nevapr = haero::testing::create_column_view(pver);
     xhnm = haero::testing::create_column_view(pver);
-    
 
     Kokkos::deep_copy(press, press_host);
     Kokkos::deep_copy(zmid, zmid_host);
@@ -76,7 +75,6 @@ void sethet(Ensemble *ensemble) {
     Kokkos::deep_copy(nrain, nrain_host);
     Kokkos::deep_copy(nevapr, nevapr_host);
     Kokkos::deep_copy(xhnm, xhnm_host);
-
 
     // working var inputs
     ColumnView xgas2, xgas3, delz, xh2o2, xso2, xliq, rain, precip, xhen_h2o2,
@@ -99,7 +97,6 @@ void sethet(Ensemble *ensemble) {
     auto xk0_hno3_host = View1DHost(vector0.data(), pver);
     auto xk0_so2_host = View1DHost(vector0.data(), pver);
     auto so2_diss_host = View1DHost(vector0.data(), pver);
-    
 
     xgas2 = haero::testing::create_column_view(pver);
     xgas3 = haero::testing::create_column_view(pver);
@@ -170,13 +167,12 @@ void sethet(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          mo_sethet::sethet(team, het_rates, rlat, press, zmid, phis, tfld,
-                            cmfdqr, nrain, nevapr, delt, xhnm, qin, t_factor,
-                            xk0_hno3, xk0_so2, so2_diss, xgas2,
-                            xgas3, delz, xh2o2, xso2, xliq, rain, precip,
-                            xhen_h2o2, xhen_hno3, xhen_so2, tmp_hetrates,
-                            spc_h2o2_ndx, spc_so2_ndx, h2o2_ndx, so2_ndx,
-                            h2so4_ndx, gas_wetdep_cnt, wetdep_map);
+          mo_sethet::sethet(
+              team, het_rates, rlat, press, zmid, phis, tfld, cmfdqr, nrain,
+              nevapr, delt, xhnm, qin, t_factor, xk0_hno3, xk0_so2, so2_diss,
+              xgas2, xgas3, delz, xh2o2, xso2, xliq, rain, precip, xhen_h2o2,
+              xhen_hno3, xhen_so2, tmp_hetrates, spc_h2o2_ndx, spc_so2_ndx,
+              h2o2_ndx, so2_ndx, h2so4_ndx, gas_wetdep_cnt, wetdep_map);
         });
 
     // transfer data to GPU.
