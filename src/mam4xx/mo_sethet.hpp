@@ -56,6 +56,7 @@ void calc_het_rates(const Real satf, // saturation fraction in cloud //in
 //=================================================================================
 KOKKOS_INLINE_FUNCTION
 void calc_precip_rescale(
+    const ThreadTeam &team,
     const ColumnView &cmfdqr,   // dq/dt for convection [kg/kg/s] //in
     const ColumnView &nrain,    // stratoform precip [kg/kg/s] //in
     const ColumnView &nevapr,   // evaporation [kg/kg/s] // in
@@ -72,8 +73,12 @@ void calc_precip_rescale(
 
   total_rain = 0.0;
   total_pos = 0.0;
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
+        precip(kk) = cmfdqr(kk) + nrain(kk) - nevapr(kk);
+      });
+
   for (int kk = 0; kk < pver; kk++) {
-    precip(kk) = cmfdqr(kk) + nrain(kk) - nevapr(kk);
     total_rain = total_rain + precip(kk);
     if (precip(kk) < 0.0)
       precip(kk) = 0.0;
@@ -81,13 +86,15 @@ void calc_precip_rescale(
   }
 
   if (total_rain <= 0.0) {
-    for (int kk = 0; kk < pver; kk++) {
-      precip(kk) = 0.0; // set all levels to zero
-    }
+    Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
+        precip(kk) = 0.0; // set all levels to zero
+    });
   } else {
-    for (int kk = 0; kk < pver; kk++) {
-      precip(kk) = precip(kk) * total_rain / total_pos;
-    }
+     Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
+        precip(kk) = precip(kk) * total_rain / total_pos;
+    });
   }
 
 } // end subroutine calc_precip_rescale
@@ -187,6 +194,10 @@ void sethet(
     const ColumnView &xhnm,   // total atms density [cm^-3] //in
     const ColumnView qin[gas_pcnst], // xported species [vmr]  //in
     // working variables
+    const ColumnView &t_factor, // temperature factor to calculate henry's law parameters
+    const ColumnView &xk0_hno3,
+    const ColumnView &xk0_so2,
+    const ColumnView &so2_diss, // so2 dissociation constant
     const ColumnView
         &xgas2, // gas phase species for h2o2 (2) and so2 (3) [molecules/cm^3]
     const ColumnView
@@ -236,10 +247,7 @@ void sethet(
   Real xxx2, xxx3;   // working variables for h2o2 (2) and so2 (3)
   Real yso2, yh2o2;  // washout lifetime [s]
   Real work1, work2; // working variables
-  Real t_factor;     // temperature factor to calculate henry's law parameters
-  Real xk0;          // working variable
   Real zsurf;        // surface height [km]
-  Real so2_diss;     // so2 dissociation constant
 
   //-----------------------------------------------------------------
   //        note: the press array is in pascals and must be
@@ -263,10 +271,11 @@ void sethet(
   // FORTRAN refactor note: current MAM4 only have three species in default:
   // 'H2O2','H2SO4','SO2'.  Options for other species are then removed
   //-----------------------------------------------------------------
-
+    
   for (int mm = 0; mm < gas_pcnst; mm++) {
     for (int kk = 0; kk < pver; kk++) {
       het_rates[mm](kk) = 0.0;
+      tmp_hetrates[mm](kk) = 0.0; // initiate temporary array
     }
   }
 
@@ -295,7 +304,7 @@ void sethet(
   // this is added to rescale the variable precip (which can only be positive)
   // to the actual vertical integral of positive and negative values.  This
   // removes point storms
-  calc_precip_rescale(cmfdqr, nrain, nevapr, precip); // populate precip
+  calc_precip_rescale(team, cmfdqr, nrain, nevapr, precip); // populate precip
 
   Kokkos::parallel_for(
       Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
@@ -326,27 +335,23 @@ void sethet(
   //             heff = h for h2o2 (no dissociation)
   //             heff = h * (1 + k/[h+]) (in general)
   //-----------------------------------------------------------------
-  for (int kk = ktop; kk < pver; kk++) {
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, ktop, pver), KOKKOS_LAMBDA(int kk) {
     //-----------------------------------------------------------------
     // 	... effective henry''s law constants:
     //	hno3, h2o2  (brasseur et al., 1999)
     //-----------------------------------------------------------------
     // temperature factor
-    t_factor = (t0 - tfld(kk)) / (t0 * tfld(kk));
-    xhen_h2o2(kk) = 7.45e4 * haero::exp(6620.0 * t_factor);
+    t_factor(kk) = (t0 - tfld(kk)) / (t0 * tfld(kk));
+    xhen_h2o2(kk) = 7.45e4 * haero::exp(6620.0 * t_factor(kk));
     // HNO3, for calculation of H2SO4 het rate use
-    xk0 = 2.1e5 * haero::exp(8700.0 * t_factor);
-    xhen_hno3(kk) = xk0 * (1.0 + hno3_diss / xph0);
+    xk0_hno3(kk) = 2.1e5 * haero::exp(8700.0 * t_factor(kk));
+    xhen_hno3(kk) = xk0_hno3(kk) * (1.0 + hno3_diss / xph0);
     // SO2
-    xk0 = 1.23 * haero::exp(3120.0 * t_factor);
-    so2_diss = 1.23e-2 * haero::exp(1960.0 * t_factor);
-    xhen_so2(kk) = xk0 * (1.0 + so2_diss / xph0);
-
-    // initiate temporary array
-    for (int mm = 0; mm < gas_pcnst; mm++) {
-      tmp_hetrates[mm](kk) = 0.0;
-    }
-  }
+    xk0_so2(kk) = 1.23 * haero::exp(3120.0 * t_factor(kk));
+    so2_diss(kk) = 1.23e-2 * haero::exp(1960.0 * t_factor(kk));
+    xhen_so2(kk) = xk0_so2(kk) * (1.0 + so2_diss(kk) / xph0);
+  });
 
   //-----------------------------------------------------------------
   //       ... part 1, solve for high henry constant ( hno3, h2o2)
@@ -454,9 +459,9 @@ void sethet(
     }
     for (int kk = 0; kk < pver; kk++) {
       if (het_rates[mm2](kk) == MISSING) {
-        return; // maybe?
         Kokkos::abort(
             "sethet: het_rates (wet dep) not set for het reaction number");
+        return; 
       }
     }
     // Didn't port
