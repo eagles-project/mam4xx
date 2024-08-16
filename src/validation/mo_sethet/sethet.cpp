@@ -67,6 +67,7 @@ void sethet(Ensemble *ensemble) {
     nrain = haero::testing::create_column_view(pver);
     nevapr = haero::testing::create_column_view(pver);
     xhnm = haero::testing::create_column_view(pver);
+    
 
     Kokkos::deep_copy(press, press_host);
     Kokkos::deep_copy(zmid, zmid_host);
@@ -76,9 +77,10 @@ void sethet(Ensemble *ensemble) {
     Kokkos::deep_copy(nevapr, nevapr_host);
     Kokkos::deep_copy(xhnm, xhnm_host);
 
+
     // working var inputs
     ColumnView xgas2, xgas3, delz, xh2o2, xso2, xliq, rain, precip, xhen_h2o2,
-        xhen_hno3, xhen_so2;
+        xhen_hno3, xhen_so2, t_factor, xk0_hno3, xk0_so2, so2_diss;
 
     // initialize internal veriables
     std::vector<Real> vector0(pver, 0);
@@ -93,6 +95,11 @@ void sethet(Ensemble *ensemble) {
     auto xhen_h2o2_host = View1DHost(vector0.data(), pver);
     auto xhen_hno3_host = View1DHost(vector0.data(), pver);
     auto xhen_so2_host = View1DHost(vector0.data(), pver);
+    auto t_factor_host = View1DHost(vector0.data(), pver);
+    auto xk0_hno3_host = View1DHost(vector0.data(), pver);
+    auto xk0_so2_host = View1DHost(vector0.data(), pver);
+    auto so2_diss_host = View1DHost(vector0.data(), pver);
+    
 
     xgas2 = haero::testing::create_column_view(pver);
     xgas3 = haero::testing::create_column_view(pver);
@@ -105,6 +112,10 @@ void sethet(Ensemble *ensemble) {
     xhen_h2o2 = haero::testing::create_column_view(pver);
     xhen_hno3 = haero::testing::create_column_view(pver);
     xhen_so2 = haero::testing::create_column_view(pver);
+    t_factor = haero::testing::create_column_view(pver);
+    xk0_hno3 = haero::testing::create_column_view(pver);
+    xk0_so2 = haero::testing::create_column_view(pver);
+    so2_diss = haero::testing::create_column_view(pver);
 
     Kokkos::deep_copy(xgas2, xgas2_host);
     Kokkos::deep_copy(xgas3, xgas3_host);
@@ -117,6 +128,10 @@ void sethet(Ensemble *ensemble) {
     Kokkos::deep_copy(xhen_h2o2, xhen_h2o2_host);
     Kokkos::deep_copy(xhen_hno3, xhen_hno3_host);
     Kokkos::deep_copy(xhen_so2, xhen_so2_host);
+    Kokkos::deep_copy(t_factor, t_factor_host);
+    Kokkos::deep_copy(xk0_hno3, xk0_hno3_host);
+    Kokkos::deep_copy(xk0_so2, xk0_so2_host);
+    Kokkos::deep_copy(so2_diss, so2_diss_host);
 
     ColumnView het_rates[gas_pcnst];
     ColumnView tmp_hetrates[gas_pcnst];
@@ -156,7 +171,8 @@ void sethet(Ensemble *ensemble) {
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           mo_sethet::sethet(team, het_rates, rlat, press, zmid, phis, tfld,
-                            cmfdqr, nrain, nevapr, delt, xhnm, qin, xgas2,
+                            cmfdqr, nrain, nevapr, delt, xhnm, qin, t_factor,
+                            xk0_hno3, xk0_so2, so2_diss, xgas2,
                             xgas3, delz, xh2o2, xso2, xliq, rain, precip,
                             xhen_h2o2, xhen_hno3, xhen_so2, tmp_hetrates,
                             spc_h2o2_ndx, spc_so2_ndx, h2o2_ndx, so2_ndx,
