@@ -17,8 +17,8 @@ void marine_organic_emis(Ensemble *ensemble) {
     // Ensemble parameters
     // Declare array of strings for input names
     std::string input_arrays[] = {
-        "lchnk",          "ncol",  "fi",    "ocnfrc", "emis_scale", "nsections",
-        "emit_this_mode", "mpoly", "mprot", "mlip",   "cflx"};
+        "lchnk",     "ncol",           "fi",    "ocnfrc", "emis_scale",
+        "nsections", "emit_this_mode", "mpoly", "mprot",  "mlip", "cflx"};
 
     // Iterate over input_arrays and error if not in input
     for (std::string name : input_arrays) {
@@ -40,11 +40,15 @@ void marine_organic_emis(Ensemble *ensemble) {
     const auto emit_this_mode_ = input.get_array("emit_this_mode");
     const auto cflux_ = input.get_array("cflx");
 
+    // this test depends on the initial value of the entries that get calculated
+    // thus, we have to pick out the initial values from the fortran data
+    Real cflux[salt_nsection] = {0.0};
+    cflux[13] = cflux_[22];
+    cflux[18] = cflux_[27];
+
     Real fi[salt_nsection];
-    Real cflux[salt_nsection];
     for (int i = 0; i < salt_nsection; ++i) {
       fi[i] = fi_[i];
-      cflux[i] = cflux_[i];
     }
     bool emit_this_mode[organic_num_modes];
     for (int i = 0; i < organic_num_modes; ++i) {
@@ -60,8 +64,8 @@ void marine_organic_emis(Ensemble *ensemble) {
     std::vector<Real> cflux_out;
 
     // NOTE: the only entries that are changed are done in
-    // calc_marine_organic_numflux
-    // calc_marine_organic_numflux() and calc_marine_organic_massflux()\
+    // calc_marine_organic_numflux() {cflux[13, 18]} and
+    // calc_marine_organic_massflux() {cflux[12, 17, 29]}
     // the indices are (c++ indexing): 12, 13, 17, 18, 29
     // see marine_organic_massflx_calc.cpp and marine_organic_numflx_calc.cpp
     // for more information

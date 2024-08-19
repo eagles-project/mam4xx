@@ -37,9 +37,9 @@ endforeach()
 set(TEST_LIST
     calc_om_seasalt
     calculate_seasalt_numflux_in_bins
-    marine_organic_emis # failing--requires extra data
+    marine_organic_emis
     marine_organic_massflx_calc
-    marine_organic_numflx_calc # failing--requires extra data
+    marine_organic_numflx_calc
     seasalt_emisflx_calc_massflx
     seasalt_emisflx_calc_numflx
     seasalt_emis
@@ -47,14 +47,13 @@ set(TEST_LIST
     )
 
 set(DEFAULT_TOL 2e-10)
-set(FAKE_TOL 1e12)
 
 set(ERROR_THRESHOLDS
     3e-9           # calc_om_seasalt
     8e-10          # calculate_seasalt_numflux_in_bins
-    ${FAKE_TOL} # marine_organic_emis
-    ${DEFAULT_TOL}          # marine_organic_massflx_calc
-    ${FAKE_TOL} # marine_organic_numflx_calc
+    2.2e-10        # marine_organic_emis
+    ${DEFAULT_TOL} # marine_organic_massflx_calc
+    2.2e-10        # marine_organic_numflx_calc
     ${DEFAULT_TOL} # seasalt_emisflx_calc_massflx
     ${DEFAULT_TOL} # seasalt_emisflx_calc_numflx
     ${DEFAULT_TOL} # seasalt_emis
@@ -65,7 +64,6 @@ set(TestLabel "aero_emissions")
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
-
   configure_file(
     ${AERO_EMISSIONS_VALIDATION_DIR}/mam_${input}.py
     ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.py
@@ -83,8 +81,3 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
   set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
 endforeach()
-
-set_tests_properties(run_marine_organic_emis PROPERTIES LABELS "failing")
-set_tests_properties(validate_marine_organic_emis PROPERTIES LABELS "failing")
-set_tests_properties(run_marine_organic_numflx_calc PROPERTIES LABELS "failing")
-set_tests_properties(validate_marine_organic_numflx_calc PROPERTIES LABELS "failing")

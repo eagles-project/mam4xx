@@ -52,12 +52,16 @@ void marine_organic_numflx_calc(Ensemble *ensemble) {
     Real fi[salt_nsection];
     Real om_seasalt[salt_nsection];
     bool emit_this_mode[organic_num_modes];
-    Real cflux[salt_nsection];
+
+    // this test depends on the initial value of the entries that get calculated
+    // thus, we have to pick out the initial values from the fortran data
+    Real cflux[salt_nsection] = {0.0};
+    cflux[13] = cflux_[22];
+    cflux[18] = cflux_[27];
 
     for (int i = 0; i < salt_nsection; ++i) {
       fi[i] = fi_[i];
       om_seasalt[i] = om_seasalt_[i];
-      cflux[i] = cflux_[i];
     }
 
     for (int i = 0; i < organic_num_modes; ++i) {
