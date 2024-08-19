@@ -16,9 +16,9 @@ void marine_organic_emis(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters
     // Declare array of strings for input names
-    std::string input_arrays[] = {"lchnk",         "ncol",       "fi",
-                                  "ocnfrc",        "emis_scale", "nsections",
-                                  "emit_this_mode"};
+    std::string input_arrays[] = {
+        "lchnk",          "ncol",  "fi",    "ocnfrc", "emis_scale", "nsections",
+        "emit_this_mode", "mpoly", "mprot", "mlip",   "cflx"};
 
     // Iterate over input_arrays and error if not in input
     for (std::string name : input_arrays) {
@@ -38,12 +38,13 @@ void marine_organic_emis(Ensemble *ensemble) {
     const auto mprot = input.get_array("mprot")[0];
     const auto mlip = input.get_array("mlip")[0];
     const auto emit_this_mode_ = input.get_array("emit_this_mode");
-
-    Real cflux[salt_nsection] = {0.0};
+    const auto cflux_ = input.get_array("cflx");
 
     Real fi[salt_nsection];
+    Real cflux[salt_nsection];
     for (int i = 0; i < salt_nsection; ++i) {
       fi[i] = fi_[i];
+      cflux[i] = cflux_[i];
     }
     bool emit_this_mode[organic_num_modes];
     for (int i = 0; i < organic_num_modes; ++i) {
@@ -57,9 +58,18 @@ void marine_organic_emis(Ensemble *ensemble) {
         emit_this_mode, cflux);
 
     std::vector<Real> cflux_out;
-    for (int i = 0; i < salt_nsection; ++i) {
-      cflux_out.push_back(cflux[i]);
-    }
+
+    // NOTE: the only entries that are changed are done in
+    // calc_marine_organic_numflux
+    // calc_marine_organic_numflux() and calc_marine_organic_massflux()\
+    // the indices are (c++ indexing): 12, 13, 17, 18, 29
+    // see marine_organic_massflx_calc.cpp and marine_organic_numflx_calc.cpp
+    // for more information
+    cflux_out.push_back(cflux[12]);
+    cflux_out.push_back(cflux[13]);
+    cflux_out.push_back(cflux[17]);
+    cflux_out.push_back(cflux[18]);
+    cflux_out.push_back(cflux[29]);
 
     output.set("cflx", cflux_out);
   });

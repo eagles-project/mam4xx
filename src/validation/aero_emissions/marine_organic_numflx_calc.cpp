@@ -28,7 +28,8 @@ void marine_organic_numflx_calc(Ensemble *ensemble) {
                                   "om_num_modes",
                                   "seasalt_indices",
                                   "sst_sz_range_lo",
-                                  "sst_sz_range_hi"};
+                                  "sst_sz_range_hi",
+                                  "cflx"};
 
     // Iterate over input_arrays and error if not in input
     for (std::string name : input_arrays) {
@@ -46,17 +47,17 @@ void marine_organic_numflx_calc(Ensemble *ensemble) {
     const Real emis_scalefactor = input.get_array("emis_scale")[0];
     const auto om_seasalt_ = input.get_array("om_ssa");
     const auto emit_this_mode_ = input.get_array("emit_this_mode");
-
-    // TODO: need the input values for this
-    Real cflux[salt_nsection];
+    const auto cflux_ = input.get_array("cflx");
 
     Real fi[salt_nsection];
     Real om_seasalt[salt_nsection];
     bool emit_this_mode[organic_num_modes];
+    Real cflux[salt_nsection];
 
     for (int i = 0; i < salt_nsection; ++i) {
       fi[i] = fi_[i];
       om_seasalt[i] = om_seasalt_[i];
+      cflux[i] = cflux_[i];
     }
 
     for (int i = 0; i < organic_num_modes; ++i) {
