@@ -17,8 +17,8 @@ void marine_organic_emis(Ensemble *ensemble) {
     // Ensemble parameters
     // Declare array of strings for input names
     std::string input_arrays[] = {
-        "lchnk",     "ncol",           "fi",    "ocnfrc", "emis_scale",
-        "nsections", "emit_this_mode", "mpoly", "mprot",  "mlip", "cflx"};
+        "lchnk",          "ncol",  "fi",    "ocnfrc", "emis_scale", "nsections",
+        "emit_this_mode", "mpoly", "mprot", "mlip",   "cflx"};
 
     // Iterate over input_arrays and error if not in input
     for (std::string name : input_arrays) {
