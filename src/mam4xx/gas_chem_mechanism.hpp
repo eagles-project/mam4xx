@@ -138,7 +138,9 @@ void imp_prod_loss(Real prod[clscnt4], Real loss[clscnt4], Real y[gas_pcnst],
 } // imp_prod_loss
 
 KOKKOS_INLINE_FUNCTION
-void indprd(const int class_id, Real prod[clscnt4], const Real rxt[rxntot]) {
+void indprd(const int class_id, Real prod[clscnt4], const Real rxt[rxntot],
+            const Real extfrc[extcnt]) {
+  // extfrc := external in-situ forcing [1/cm^3/s]
   // thus, prod must have units [1/cm^3/s]
   const Real zero = 0;
   // this is hard-coded to 4 outside of this function
@@ -147,22 +149,22 @@ void indprd(const int class_id, Real prod[clscnt4], const Real rxt[rxntot]) {
   } else if (class_id == 4) {
     prod[0] = +rxt[1];
     prod[1] = zero;
-    prod[2] = zero;
+    prod[2] = +extfrc[0];
     prod[3] = zero;
-    prod[4] = zero;
-    prod[5] = zero;
+    prod[4] = +extfrc[8];
+    prod[5] = +extfrc[1];
     prod[6] = zero;
     prod[7] = zero;
     prod[8] = zero;
     prod[9] = zero;
     prod[10] = zero;
     prod[11] = zero;
-    prod[12] = zero;
-    prod[13] = zero;
+    prod[12] = +extfrc[5];
+    prod[13] = +extfrc[2];
     prod[14] = zero;
     prod[15] = zero;
     prod[16] = zero;
-    prod[17] = zero;
+    prod[17] = +extfrc[6];
     prod[18] = zero;
     prod[19] = zero;
     prod[20] = zero;
@@ -171,10 +173,10 @@ void indprd(const int class_id, Real prod[clscnt4], const Real rxt[rxntot]) {
     prod[23] = zero;
     prod[24] = zero;
     prod[25] = zero;
-    prod[26] = zero;
-    prod[27] = zero;
+    prod[26] = +extfrc[3];
+    prod[27] = +extfrc[4];
     prod[28] = zero;
-    prod[29] = zero;
+    prod[29] = +extfrc[7];
   } // indprd
 }
 
