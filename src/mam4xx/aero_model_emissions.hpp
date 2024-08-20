@@ -193,120 +193,122 @@ struct SeasaltEmissionsData {
 };
 // =============================================================================
 
-// // FIXME(?): Not sure if this is necessary--i.e., whether this value will be
-// // provided or if it should be calculated here. For now, it's provided in the
-// // validation input data, but we'll keep the function around just in case.
-// // FIXME: I also cannot recreate the values given by the validation data,
-// // so if we do end up needing this, it'll require a closer look
-// KOKKOS_INLINE_FUNCTION
-// void init_dust_dmt_vwr(const Real (&dust_dmt_grd)[dust_nbin + 1],
-//                        Real (&dust_dmt_vwr)[dust_nbin]) {
+// FIXME(?): Not sure if this is necessary--i.e., whether this value will be
+// provided or if it should be calculated here. For now, it's provided in the
+// validation input data, but we'll keep the function around just in case.
+// FIXME: I also cannot recreate the values given by the validation data,
+// so if we do end up needing this, it'll require a closer look
+KOKKOS_INLINE_FUNCTION
+void init_dust_dmt_vwr(const Real (&dust_dmt_grd)[dust_nbin + 1],
+                       Real (&dust_dmt_vwr)[dust_nbin]) {
 
-//   // FIXME: BAD CONSTANT
-//   const int sz_nbr = 200;
+  // FIXME: BAD CONSTANT
+  const int sz_nbr = 200;
 
-//   // Introducing particle diameter. Needed by atm model and by dry dep model.
-//   // Taken from Charlie Zender's subroutines dst_psd_ini, dst_sz_rsl,
-//   // grd_mk (dstpsd.F90) and subroutine lgn_evl (psdlgn.F90)
+  // Introducing particle diameter. Needed by atm model and by dry dep model.
+  // Taken from Charlie Zender's subroutines dst_psd_ini, dst_sz_rsl,
+  // grd_mk (dstpsd.F90) and subroutine lgn_evl (psdlgn.F90)
 
-//   // Charlie allows logarithmic or linear option for size distribution.
-//   // however, he hardwires the distribution to logarithmic in his code.
-//   // therefore, I take his logarithmic code only
-//   // furthermore, if dst_nbr == 4, he overrides the automatic grid
-//   calculation
-//   // he currently works with dst_nbr = 4, so I only take the relevant code
-//   // if dust_number ever becomes different from 4,
-//   // must add call grd_mk (dstpsd.F90) as done in subroutine dst_psd_ini
-//   // note that here dust_number = dst_nbr
+  // Charlie allows logarithmic or linear option for size distribution.
+  // however, he hardwires the distribution to logarithmic in his code.
+  // therefore, I take his logarithmic code only
+  // furthermore, if dst_nbr == 4, he overrides the automatic grid
+  // calculation
+  // he currently works with dst_nbr = 4, so I only take the relevant code
+  // if dust_number ever becomes different from 4,
+  // must add call grd_mk (dstpsd.F90) as done in subroutine dst_psd_ini
+  // note that here dust_number = dst_nbr
 
-//   // Max diameter in bin [m]
-//   Real dmt_min[dust_nbin];
-//   // Min diameter in bin [m]
-//   Real dmt_max[dust_nbin];
+  // Max diameter in bin [m]
+  Real dmt_min[dust_nbin];
+  // Min diameter in bin [m]
+  Real dmt_max[dust_nbin];
 
-//   // Override automatic grid with preset grid if available
-//   for (int n = 0; n < dust_nbin; ++n) {
-//     dmt_min[n] = dust_dmt_grd[n];
-//     dmt_max[n] = dust_dmt_grd[n + 1];
-//   }
+  // Override automatic grid with preset grid if available
+  for (int n = 0; n < dust_nbin; ++n) {
+    dmt_min[n] = dust_dmt_grd[n];
+    dmt_max[n] = dust_dmt_grd[n + 1];
+  }
 
-//   // set dust_dmt_vwr ....
-//   for (int i = 0; i < dust_nbin; ++i) {
-//     dust_dmt_vwr[i] = 0.0;
-//   }
+  // set dust_dmt_vwr ....
+  for (int i = 0; i < dust_nbin; ++i) {
+    dust_dmt_vwr[i] = 0.0;
+  }
 
-//   // Bin physical properties
-//   // [frc] Geometric std dev PaG77 p. 2080 Table1
-//   Real gsd_anl = 2.0;
-//   Real ln_gsd = haero::log(gsd_anl);
+  // Bin physical properties
+  // [frc] Geometric std dev PaG77 p. 2080 Table1
+  Real gsd_anl = 2.0;
+  Real ln_gsd = haero::log(gsd_anl);
 
-//   // Set a fundamental statistic for each bin
-//   // Mass median diameter analytic She84 p.75 Table 1 [m]
-//   // FIXME: FIXME: this appears to be a bug--vma is set, and then re-set
-//   //        maybe the second one should be dmt_nma?
-//   Real dmt_vma = 2.524e-6;
-//   dmt_vma = 3.5e-6;
-//   // Compute analytic size statistics
-//   // Convert mass median diameter to number median particle diameter [m]
-//   Real dmt_nma = dmt_vma * haero::exp(-3.0 * haero::square(ln_gsd));
+  // Set a fundamental statistic for each bin
+  // Mass median diameter analytic She84 p.75 Table 1 [m]
+  // FIXME: FIXME: this appears to be a bug--vma is set, and then re-set
+  //        maybe the second one should be dmt_nma?
+  Real dmt_vma = 2.524e-6;
+  dmt_vma = 3.5e-6;
+  // Compute analytic size statistics
+  // Convert mass median diameter to number median particle diameter [m]
+  Real dmt_nma = dmt_vma * haero::exp(-3.0 * haero::square(ln_gsd));
 
-//   // [m] Size Bin minima
-//   Real sz_min[sz_nbr];
-//   // [m] Size Bin maxima
-//   Real sz_max[sz_nbr];
-//   // [m] Size Bin centers
-//   Real sz_ctr[sz_nbr];
-//   // [m] Size Bin widths
-//   Real sz_dlt[sz_nbr];
+  // [m] Size Bin minima
+  Real sz_min[sz_nbr];
+  // [m] Size Bin maxima
+  Real sz_max[sz_nbr];
+  // [m] Size Bin centers
+  Real sz_ctr[sz_nbr];
+  // [m] Size Bin widths
+  Real sz_dlt[sz_nbr];
 
-//   // [m3 m-3] Volume concentration resolved
-//   Real vlm_rsl[dust_nbin] = {0.0};
+  // [m3 m-3] Volume concentration resolved
+  Real vlm_rsl[dust_nbin] = {0.0};
 
-//   // Compute resolved size statistics for each size distribution
-//   // In C. Zender's code call dst_sz_rsl
-//   for (int n = 0; n < dust_nbin; ++n) {
-//     // Factor for logarithmic grid
-//     Real series_ratio = haero::pow((dmt_max[n] / dmt_min[n]), (1.0 /
-//     sz_nbr)); sz_min[0] = dmt_min[n];
-//     // NOTE: Loop starts at 1 (2 in fortran code)
-//     for (int m = 1; m < sz_nbr; ++m) {
-//       sz_min[m] = sz_min[m - 1] * series_ratio;
-//     }
-//     // Derived grid values
-//     // NOTE: Loop ends at sz_nbr - 2 (fortran: sz_nbr - 1)
-//     for (int m = 0; m < sz_nbr - 2; ++m) {
-//       sz_max[m] = sz_min[m + 1];
-//     }
-//     sz_max[sz_nbr - 1] = dmt_max[n];
-//     // Final derived grid values
-//     for (int m = 0; m < sz_nbr; ++m) {
-//       sz_ctr[m] = 0.5 * (sz_min[m] + sz_max[m]);
-//       sz_dlt[m] = sz_max[m] - sz_min[m];
-//     }
+  // Compute resolved size statistics for each size distribution
+  // In C. Zender's code call dst_sz_rsl
+  for (int n = 0; n < dust_nbin; ++n) {
+    // Factor for logarithmic grid
+    Real series_ratio = haero::pow((dmt_max[n] / dmt_min[n]), (1.0 / sz_nbr));
+    sz_min[0] = dmt_min[n];
+    // NOTE: Loop starts at 1 (2 in fortran code)
+    for (int m = 1; m < sz_nbr; ++m) {
+      sz_min[m] = sz_min[m - 1] * series_ratio;
+    }
+    // Derived grid values
+    // NOTE: Loop ends at sz_nbr - 2 (fortran: sz_nbr - 1)
+    for (int m = 0; m < sz_nbr - 1; ++m) {
+      sz_max[m] = sz_min[m + 1];
+    }
+    // set the final entry
+    sz_max[sz_nbr - 1] = dmt_max[n];
+    // Final derived grid values
+    for (int m = 0; m < sz_nbr; ++m) {
+      sz_ctr[m] = 0.5 * (sz_min[m] + sz_max[m]);
+      sz_dlt[m] = sz_max[m] - sz_min[m];
+    }
 
-//     constexpr Real pi = haero::Constants::pi;
-//     // Lognormal distribution at sz_ctr
-//     // Factor in lognormal distribution
-//     // NOTE: original variable name in fortran: lngsdsqrttwopi_rcp
-//     Real lnN_factor = 1.0 / (ln_gsd * haero::sqrt(2.0 * pi));
+    constexpr Real pi = haero::Constants::pi;
+    // Lognormal distribution at sz_ctr
+    // Factor in lognormal distribution
+    // NOTE: original variable name in fortran: lngsdsqrttwopi_rcp
+    Real lnN_factor = 1.0 / (ln_gsd * haero::sqrt(2.0 * pi));
 
-//     for (int m = 0; m < sz_nbr; ++m) {
-//       // Evaluate lognormal distribution for these sizes (call lgn_evl)
-//       Real tmp = haero::log(sz_ctr[m] / dmt_nma) / ln_gsd;
-//       Real lgn_dst = lnN_factor * haero::exp(-0.5 * haero::square(tmp)) /
-//       sz_ctr[m]; Real coeff = pi / 6.0 * haero::pow(sz_ctr[m], 3) * lgn_dst *
-//       sz_dlt[m];
-//       // Integrate moments of size distribution
-//       dust_dmt_vwr[n] += sz_ctr[m] * coeff;
-//       vlm_rsl[n] += coeff;
-//     } // end for (m)
-//     // Mass weighted diameter resolved [m]
-//     dust_dmt_vwr[n] /= vlm_rsl[n];
-//   } // end for (dust_nbin)
-// } // end init_dust_dmt_vwr()
+    for (int m = 0; m < sz_nbr; ++m) {
+      // Evaluate lognormal distribution for these sizes (call lgn_evl)
+      Real tmp = haero::log(sz_ctr[m] / dmt_nma) / ln_gsd;
+      Real lgn_dst =
+          lnN_factor * haero::exp(-0.5 * haero::square(tmp)) / sz_ctr[m];
+      Real coeff = pi / 6.0 * haero::pow(sz_ctr[m], 3) * lgn_dst * sz_dlt[m];
+      // Integrate moments of size distribution
+      dust_dmt_vwr[n] += sz_ctr[m] * coeff;
+      vlm_rsl[n] += coeff;
+    } // end for (m)
+    // Mass weighted diameter resolved [m]
+    dust_dmt_vwr[n] /= vlm_rsl[n];
+  } // end for (dust_nbin)
+} // end init_dust_dmt_vwr()
 
 KOKKOS_INLINE_FUNCTION
-void dust_emis(const Real dust_density,
+void dust_emis(const int dust_indices[dust_nbin + dust_nnum],
+               const Real dust_density,
                const Real (&dust_flux_in)[dust_nflux_in],
                const DustEmissionsData data,
                //  out
@@ -496,7 +498,7 @@ void seasalt_emis_flux_calc(const Real (&fi)[salt_nsection],
   //            NOTE: changed to an enum class for clarity
 
   // output
-  // cflux:mass and number emission fluxes for aerosols [{kg,#}/m2/s]
+  // cflux: mass and number emission fluxes for aerosols [{kg,#}/m2/s]
 
   const int num_idx_append =
       (flux_type == FluxType::NumberFlux) ? nsalt + nsalt_om : 0;
@@ -561,8 +563,8 @@ void om_fraction_accum_aitken(Real om_seasalt_in,
 
   const Real om_seasalt_max = 1.0;
 
-  // Initialize array and set to zero for "fine sea salt" and "coarse sea salt"
-  // modes
+  // Initialize array and set to zero for "fine sea salt" and
+  // "coarse sea salt" modes
   for (int ibin = 0; ibin < salt_nsection; ++ibin) {
     om_seasalt[ibin] = 0.0;
   }
@@ -718,7 +720,7 @@ void calc_marine_organic_numflux(
   // this is hardcoded for the model, so I don't think we need this check
   // if (size(organic_num_idx) .eq. 1) then
   //   call endrun( "Error: organic_num_idx is a scalar, but attempting to
-  //   calculate MOM. Something bad happenedWe should never get here!")
+  //   calculate MOM. Something bad happened. We should never get here!")
   // endif
 
   // Loop over OM modes
@@ -888,7 +890,8 @@ void aero_model_emissions(
   Real soil_erodibility;
 
   DustEmissionsData dust_data;
-  dust_emis(dust_density, dust_flux_in, dust_data, soil_erodibility, cflux);
+  dust_emis(dust_indices, dust_density, dust_flux_in, dust_data,
+            soil_erodibility, cflux);
 
   // some dust emis diagnostics ...
   surface_flux = 0.0;
