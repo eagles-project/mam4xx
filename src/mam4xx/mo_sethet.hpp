@@ -114,13 +114,14 @@ void gas_washout(
   // calculate gas washout by cloud if not saturated
   //------------------------------------------------------------------------
   // FIXME: BAD CONSTANTS
-  Real allca = 0.0; // total of ca between level plev and kk [#/cm3]
-  Real const0 = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
-  Real geo_fac = 6.0; // geometry factor (surf area/volume = geo_fac/diameter)
-  Real xrm = .189;    // mean diameter of rain drop [cm]
-  Real xum = 748.0;   // mean rain drop terminal velocity [cm/s]
-  Real xeqca = 0.0;
-  Real xca = 0.0;
+  constexpr Real allca = 0.0; // total of ca between level plev and kk [#/cm3]
+  constexpr Real const0 = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
+  constexpr Real geo_fac =
+      6.0; // geometry factor (surf area/volume = geo_fac/diameter)
+  constexpr Real xrm = .189;  // mean diameter of rain drop [cm]
+  constexpr Real xum = 748.0; // mean rain drop terminal velocity [cm/s]
+  constexpr Real xeqca = 0.0;
+  constexpr Real xca = 0.0;
 
   // -----------------------------------------------------------------
   //       ... calculate the saturation concentration eqca
@@ -222,23 +223,24 @@ void sethet(
   //-----------------------------------------------------------------------
   //       ... local variables       //FIXME: BAD CONSTANT
   //-----------------------------------------------------------------------
-  Real xrm = .189;                  // mean diameter of rain drop [cm]
-  Real xum = 748.0;                 // mean rain drop terminal velocity [cm/s]
-  Real xvv = 6.18e-2;               // kinetic viscosity [cm^2/s]
-  Real xdg = .112;                  // mass transport coefficient [cm/s]
-  Real t0 = 298.0;                  // reference temperature [K]
-  Real xph0 = 1.0e-5;               // cloud [h+]
-  Real satf_hno3 = .016;            // saturation factor for hno3 in clouds
-  Real satf_h2o2 = .016;            // saturation factor for h2o2 in clouds
-  Real satf_so2 = .016;             // saturation factor for so2 in clouds
-  Real const0 = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
-  Real hno3_diss = 15.4;            // hno3 dissociation constant
-  Real mass_air = 29.0;             // mass of background atmosphere [amu]
-  Real km2cm = 1.0e5;               // convert km to cm
-  Real m2km = 1.0e-3;               // convert m to km
-  Real m3_2_cm3 = 1.0e6;            // convert m^3 to cm^3
-  Real MISSING = -999999.0;
-  Real large_value_lifetime = 1.0e29; // a large lifetime value if no washout
+  constexpr Real xrm = .189;       // mean diameter of rain drop [cm]
+  constexpr Real xum = 748.0;      // mean rain drop terminal velocity [cm/s]
+  constexpr Real xvv = 6.18e-2;    // kinetic viscosity [cm^2/s]
+  constexpr Real xdg = .112;       // mass transport coefficient [cm/s]
+  constexpr Real t0 = 298.0;       // reference temperature [K]
+  constexpr Real xph0 = 1.0e-5;    // cloud [h+]
+  constexpr Real satf_hno3 = .016; // saturation factor for hno3 in clouds
+  constexpr Real satf_h2o2 = .016; // saturation factor for h2o2 in clouds
+  constexpr Real satf_so2 = .016;  // saturation factor for so2 in clouds
+  constexpr Real const0 = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
+  constexpr Real hno3_diss = 15.4;            // hno3 dissociation constant
+  constexpr Real mass_air = 29.0;  // mass of background atmosphere [amu]
+  constexpr Real km2cm = 1.0e5;    // convert km to cm
+  constexpr Real m2km = 1.0e-3;    // convert m to km
+  constexpr Real m3_2_cm3 = 1.0e6; // convert m^3 to cm^3
+  constexpr Real MISSING = -999999.0;
+  constexpr Real large_value_lifetime =
+      1.0e29; // a large lifetime value if no washout
 
   int ktop;  // tropopause level, 100mb for lat < 60 and 300mb for lat > 60
   Real xkgm; // mass flux on rain drop
@@ -278,8 +280,6 @@ void sethet(
       tmp_hetrates[mm](kk) = 0.0; // initiate temporary array
     }
   }
-
-  // if ( .not. do_wetdep) return
 
   for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
     int mm2 = wetdep_map[mm];
@@ -464,12 +464,6 @@ void sethet(
         return;
       }
     }
-    // Didn't port
-    //  if ( any( het_rates(:ncol,:,mm2) == MISSING) ) then
-    //     write(hetratestrg,'(I3)') mm2
-    //     call endrun('sethet: het_rates (wet dep) not set for het reaction
-    //     number : '//hetratestrg)
-    //  endif
   }
 } // end subroutine sethet
 
