@@ -10,6 +10,10 @@
 
 namespace mam4::aero_model_emissions {
 
+// essentially everything in this namespace falls in the BAD CONSTANT category
+// ... thus, the name
+namespace BAD_CONSTANTS {
+
 constexpr int pcnst = mam4::pcnst;
 constexpr int n_online_emiss = 9;
 
@@ -160,13 +164,13 @@ struct SeasaltEmissionsData {
                                                             29, 13, 18, 26, 30};
   const int organic_num_idx[organic_num_modes] = {0, 1, 3};
 };
+
+} // end BAD_CONSTANTS namespace
+
+using namespace BAD_CONSTANTS;
+
 // =============================================================================
 
-// FIXME(?): Not sure if this is necessary--i.e., whether this value will be
-// provided or if it should be calculated here. For now, it's provided in the
-// validation input data, but we'll keep the function around just in case.
-// FIXME: I also cannot recreate the values given by the validation data,
-// so if we do end up needing this, it'll require a closer look
 KOKKOS_INLINE_FUNCTION
 void init_dust_dmt_vwr(
     // in
@@ -216,6 +220,7 @@ void init_dust_dmt_vwr(
   // Mass median diameter analytic She84 p.75 Table 1 [m]
   // FIXME: FIXME: this appears to be a bug--vma is set, and then re-set
   //        maybe the second one should be dmt_nma?
+  // // FIXME: BAD CONSTANTS
   Real dmt_vma = 2.524e-6;
   dmt_vma = 3.5e-6;
   // Compute analytic size statistics
@@ -343,6 +348,7 @@ void init_seasalt_sections(SeasaltEmissionsData &data /* inout */) {
   // use Ekman's ssd
   // multiply rm with 1.814 because it should be RH=80% and not dry particles
   // for the parameterization
+  // FIXME: BAD CONSTANTS
   for (int i = 0; i < salt_nsection; ++i) {
     data.rdry[i] = Dg[i] / 2.0;
     data.rm[i] = 1.814 * data.rdry[i] * 1.0e6;
@@ -558,6 +564,7 @@ void om_fraction_accum_aitken(
   // om_seasalt: mass fraction for each size bin [unitless]
   // -----------------------------------------------------------------------
 
+  // FIXME: BAD CONSTANT
   const Real om_seasalt_max = 1.0;
 
   // Initialize array and set to zero for "fine sea salt" and
@@ -608,6 +615,7 @@ void calc_org_matter_seasalt(
   // om_seasalt: mass fraction per size bin [unitless]
 
   // OMF maximum and minimum values -- max from Rinaldi et al. (2013)
+  // FIXME: BAD CONSTANT
   Real omfrac_max = 0.78;
   Real liter_to_m3 = 1.0e-3;
 
