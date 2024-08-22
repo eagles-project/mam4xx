@@ -24,8 +24,6 @@ const int dust_nbin = 2;
 const int dust_nnum = 2;
 // number of entries in the dust flux input array
 const int dust_nflux_in = 4;
-// Kok11: fractions of bin (0.1-1) and bin (1-10) in size 0.1-10
-const Real dust_emis_scalefactor[dust_nbin] = {0.011, 0.989};
 // tuning parameter for dust emissions
 // FIXME: this comes from the namelist file 'dst/dst_1.9x2.5_c090203.nc', and
 // thus, the scream/mam interface (shape is lat/lon)
@@ -38,6 +36,8 @@ const Real dust_density = 2.5e3;
 const int dust_indices[dust_nbin + dust_nnum] = {10, 19, 13, 26};
 
 struct DustEmissionsData {
+  // Kok11: fractions of bin (0.1-1) and bin (1-10) in size 0.1-10
+  const Real dust_emis_scalefactor[dust_nbin] = {0.011, 0.989};
   // tuning parameter for dust emissions
   // perhaps unnecessary? it's not entirely clear to me what happens in
   // soil_erod_mod::soil_erod_init() where this is set
@@ -318,7 +318,7 @@ void dust_emis(
       int idx_dust = dust_indices[ibin];
       // FIXME: BAD CONSTANT
       cflux[idx_dust] = dust_flux_neg_sum * frac_ratio *
-                        dust_emis_scalefactor[ibin] * soil_erodibility /
+                        data.dust_emis_scalefactor[ibin] * soil_erodibility /
                         data.soil_erosion_factor * 1.15;
       int inum = dust_indices[ibin + dust_nbin];
       cflux[inum] = cflux[idx_dust] * dust_mass_to_num[ibin];
