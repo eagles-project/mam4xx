@@ -17,9 +17,11 @@ constexpr int extfrc_cnt = 9;
 constexpr int extcnt = 9; //, & ! number of species with external forcing
 
 struct Forcing {
+  // This index is in Fortran format. i.e. starts in 1
   int frc_ndx;
   bool file_alt_data;
-  View2D fields_data;
+  // FIXME 4 is hard-coded.
+  View1D fields_data[4];
   int nsectors;
 };
 
@@ -58,12 +60,12 @@ void extfrc_set(const Forcing *forcings, const View2D &frcing) {
         for (int kk = 0; kk < pver; ++kk) {
           // frcing(:ncol,:,nn) = frcing(:ncol,:,nn) + &
           // forcings(mm)%fields(isec)%data(:ncol,pver:1:-1,lchnk)
-          frcing(kk, nn) += forcing_mm.fields_data(isec, pver - 1 - kk);
+          frcing(kk, nn) += forcing_mm.fields_data[isec](pver - 1 - kk);
         } // kk
       } else {
         // // forcings(mm)%fields(isec)%data(:ncol,:,lchnk)
         for (int kk = 0; kk < pver; ++kk) {
-          frcing(kk, nn) += forcing_mm.fields_data(isec, kk);
+          frcing(kk, nn) += forcing_mm.fields_data[isec](kk);
         }
       }
     } // isec
