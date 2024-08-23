@@ -165,7 +165,7 @@ struct SeasaltEmissionsData {
   const int organic_num_idx[organic_num_modes] = {0, 1, 3};
 };
 
-} // end BAD_CONSTANTS namespace
+} // namespace BAD_CONSTANTS
 
 using namespace BAD_CONSTANTS;
 
