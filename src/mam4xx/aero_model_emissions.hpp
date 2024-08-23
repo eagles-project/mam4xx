@@ -15,7 +15,6 @@ namespace mam4::aero_model_emissions {
 namespace BAD_CONSTANTS {
 
 constexpr int pcnst = mam4::pcnst;
-constexpr int n_online_emiss = 9;
 
 enum class FluxType { MassFlux, NumberFlux };
 
