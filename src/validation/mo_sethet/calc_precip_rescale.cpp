@@ -40,12 +40,27 @@ void calc_precip_rescale(Ensemble *ensemble) {
     auto precip_host = View1DHost(vector0.data(), pver);
     precip = haero::testing::create_column_view(pver);
     Kokkos::deep_copy(precip, precip_host);
-    // std::vector<Real> precip(pver, zero);
-    DeviceType::view_1d<Real> trp_out_val("Return from Device", 1);
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+
+    //Real total_rain = 0.0;
+    //Real total_pos = 0.0;
+    std::vector<Real> vector01(1, 0);
+    auto total_rain_host = View1DHost(vector01.data(), 1);
+    auto total_pos_host = View1DHost(vector01.data(), 1);
+    ColumnView total_rain = haero::testing::create_column_view(1);
+    ColumnView total_pos = haero::testing::create_column_view(1);
+    Kokkos::deep_copy(total_rain, total_rain_host);
+    Kokkos::deep_copy(total_pos, total_pos_host);
+
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          calc_precip_rescale(team, cmfdqr, nrain, nevapr, precip);
+        "calc_precip_rescale", pver, KOKKOS_LAMBDA(int kk) {
+      total_rain[0] +=precip(kk);
+      total_pos[0] += haero::max(precip(kk), 0.0);
+    });
+
+    Kokkos::parallel_for(
+        "calc_precip_rescale", pver, KOKKOS_LAMBDA(int kk) {
+          calc_precip_rescale(cmfdqr(kk), nrain(kk), nevapr(kk), total_rain[0], total_pos[0], precip(kk));
         });
 
     Kokkos::deep_copy(precip_host, precip);

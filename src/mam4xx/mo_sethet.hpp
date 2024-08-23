@@ -16,6 +16,7 @@ const Real pi = haero::Constants::pi;
 constexpr Real rga = 1.0 / haero::Constants::gravity;
 constexpr int gas_pcnst = gas_chemistry::gas_pcnst;
 const Real boltz_cgs = haero::Constants::boltzmann * 1.e7; // erg/K
+const Real const0 = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
 // number of vertical levels
 constexpr int pver = mam4::nlev;
 
@@ -56,11 +57,12 @@ void calc_het_rates(const Real satf, // saturation fraction in cloud //in
 //=================================================================================
 KOKKOS_INLINE_FUNCTION
 void calc_precip_rescale(
-    const ThreadTeam &team,
-    const ColumnView &cmfdqr,   // dq/dt for convection [kg/kg/s] //in
-    const ColumnView &nrain,    // stratoform precip [kg/kg/s] //in
-    const ColumnView &nevapr,   // evaporation [kg/kg/s] // in
-    const ColumnView &precip) { // precipitation [kg/kg/s] // out
+    const Real cmfdqr,   // dq/dt for convection [kg/kg/s] //in
+    const Real nrain,    // stratoform precip [kg/kg/s] //in
+    const Real nevapr,   // evaporation [kg/kg/s] // in
+    const Real total_rain, // total rain rate (both pos and neg) in the column
+    const Real total_pos, // total positive rain rate in the column
+    Real &precip) { // precipitation [kg/kg/s] // out
   // -----------------------------------------------------------------------
   // calculate precipitation rate at each grid
   // this is added to rescale the variable precip (which can only be positive)
@@ -68,33 +70,16 @@ void calc_precip_rescale(
   // This removes point storms
   // -----------------------------------------------------------------------
 
-  Real total_rain; // total rain rate (both pos and neg) in the column
-  Real total_pos;  // total positive rain rate in the column
+  precip = cmfdqr + nrain - nevapr;
 
-  total_rain = 0.0;
-  total_pos = 0.0;
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
-        precip(kk) = cmfdqr(kk) + nrain(kk) - nevapr(kk);
-      });
-
-  for (int kk = 0; kk < pver; kk++) {
-    total_rain = total_rain + precip(kk);
-    if (precip(kk) < 0.0)
-      precip(kk) = 0.0;
-    total_pos = total_pos + precip(kk);
+  if(precip < 0.0) {
+    precip = 0.0;
   }
 
-  if (total_rain <= 0.0) {
-    Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
-          precip(kk) = 0.0; // set all levels to zero
-        });
+  if(total_rain <= 0.0) {
+    precip = 0.0;
   } else {
-    Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
-          precip(kk) = precip(kk) * total_rain / total_pos;
-        });
+    precip = precip * total_rain / total_pos;
   }
 
 } // end subroutine calc_precip_rescale
@@ -102,50 +87,46 @@ void calc_precip_rescale(
 //=================================================================================
 KOKKOS_INLINE_FUNCTION
 void gas_washout(
-    const ThreadTeam &team,
-    const int plev,           // calculate from this level below //in
     const Real xkgm,          // mass flux on rain drop //in
     const Real xliq_ik,       // liquid rain water content [gm/m^3] // in
-    const ColumnView &xhen_i, // henry's law constant
-    const ColumnView &tfld_i, // temperature [K]
-    const ColumnView &delz_i, // layer depth about interfaces [cm]  // in
-    const ColumnView &xgas) { // gas concentration // inout
+    const Real xhen_i, // henry's law constant
+    const Real tfld_i, // temperature [K]
+    const Real delz_i, // layer depth about interfaces [cm]  // in
+    Real &xgas) { // gas concentration // inout
   //------------------------------------------------------------------------
   // calculate gas washout by cloud if not saturated
   //------------------------------------------------------------------------
   // FIXME: BAD CONSTANTS
-  constexpr Real allca = 0.0; // total of ca between level plev and kk [#/cm3]
-  constexpr Real const0 = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
+  Real allca = 0.0; // total of ca between level plev and kk [#/cm3]
+  Real xeqca = 0.0;
+  Real xca = 0.0;
+
+  //Real const0 = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
   constexpr Real geo_fac =
       6.0; // geometry factor (surf area/volume = geo_fac/diameter)
   constexpr Real xrm = .189;  // mean diameter of rain drop [cm]
   constexpr Real xum = 748.0; // mean rain drop terminal velocity [cm/s]
-  constexpr Real xeqca = 0.0;
-  constexpr Real xca = 0.0;
+
 
   // -----------------------------------------------------------------
   //       ... calculate the saturation concentration eqca
   // -----------------------------------------------------------------
-  for (int k = plev; k < pver; k++) {
-    xeqca = xgas(k) /
-            (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
+  xeqca = xgas / (xliq_ik * avo2 + 1.0 / (xhen_i * const0 * tfld_i)) *
             xliq_ik * avo2;
-    //-----------------------------------------------------------------
-    //       ... calculate ca; inside cloud concentration in  #/cm3(air)
-    //-----------------------------------------------------------------
-    xca =
-        geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik * cm3_2_m3;
+  //-----------------------------------------------------------------
+  //       ... calculate ca; inside cloud concentration in  #/cm3(air)
+  //-----------------------------------------------------------------
+  xca = geo_fac * xkgm * xgas / (xrm * xum) * delz_i * xliq_ik * cm3_2_m3;
 
-    // -----------------------------------------------------------------
-    //       ... if is not saturated (take hno3 as an example)
-    //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
-    //           otherwise
-    //               hno3(gas)_new = hno3(gas)_old
-    // -----------------------------------------------------------------
-    allca += xca;
-    if (allca < xeqca) {
-      xgas(k) = haero::max(xgas(k) - xca, 0.0);
-    }
+  // -----------------------------------------------------------------
+  //       ... if is not saturated (take hno3 as an example)
+  //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
+  //           otherwise
+  //               hno3(gas)_new = hno3(gas)_old
+  // -----------------------------------------------------------------
+  allca += xca;
+  if (allca < xeqca) {
+    xgas = haero::max(xgas - xca, 0.0);
   }
 
 } // end subroutine gas_washout
@@ -181,40 +162,45 @@ void find_ktop(
 KOKKOS_INLINE_FUNCTION
 void sethet(
     const ThreadTeam &team,
-    const ColumnView
+    Real
         het_rates[gas_pcnst], //[pver][gas_pcnst], rainout rates [1/s] //out
     const Real rlat,          // latitude in radians for columns
-    const ColumnView &press,  // pressure [pascals] //in
-    const ColumnView &zmid,   // midpoint geopot [km]  //in
+    const Real press,  // pressure [pascals] //in
+    const Real zmid_k,   // midpoint geopot [km]  //in
+    const Real zmid_kp1,   // midpoint geopot [km]  //in
     const Real phis,          // surf geopotential //in
-    const ColumnView &tfld,   // temperature [K]  //in
-    const ColumnView &cmfdqr, // dq/dt for convection [kg/kg/s] //in
-    const ColumnView &nrain,  // stratoform precip [kg/kg/s] //in
-    const ColumnView &nevapr, // evaporation [kg/kg/s] //in
+    const Real tfld,   // temperature [K]  //in
+    const Real cmfdqr, // dq/dt for convection [kg/kg/s] //in
+    const Real nrain,  // stratoform precip [kg/kg/s] //in
+    const Real nevapr, // evaporation [kg/kg/s] //in
     const Real delt,          // time step [s] //in
-    const ColumnView &xhnm,   // total atms density [cm^-3] //in
-    const ColumnView qin[gas_pcnst], // xported species [vmr]  //in
+    const Real xhnm,   // total atms density [cm^-3] //in
+    const Real qin[gas_pcnst], // xported species [vmr]  //in
     // working variables
-    const ColumnView
-        &t_factor, // temperature factor to calculate henry's law parameters
-    const ColumnView &xk0_hno3, const ColumnView &xk0_so2,
-    const ColumnView &so2_diss, // so2 dissociation constant
-    const ColumnView
+    Real
+        t_factor, // temperature factor to calculate henry's law parameters
+    Real xk0_hno3, Real xk0_so2,
+    Real so2_diss, // so2 dissociation constant
+    Real
         &xgas2, // gas phase species for h2o2 (2) and so2 (3) [molecules/cm^3]
-    const ColumnView
+    Real
         &xgas3, // gas phase species for h2o2 (2) and so2 (3) [molecules/cm^3]
-    const ColumnView &delz,  // layer depth about interfaces [cm]
-    const ColumnView &xh2o2, // h2o2 concentration [molecules/cm^3]
-    const ColumnView &xso2,  // so2 concentration [molecules/cm^3]
-    const ColumnView &xliq, // liquid rain water content in a grid cell [gm/m^3]
-    const ColumnView &rain, // precipitation (rain) rate [molecules/cm^3/s]
-    const ColumnView &precip,    // precipitation rate [kg/kg/s]
-    const ColumnView &xhen_h2o2, // henry law constants
-    const ColumnView &xhen_hno3, // henry law constants
-    const ColumnView &xhen_so2,  // henry law constants
-    const ColumnView tmp_hetrates[gas_pcnst], const int spc_h2o2_ndx,
+    Real delz,  // layer depth about interfaces [cm]
+    Real xh2o2, // h2o2 concentration [molecules/cm^3]
+    Real xso2,  // so2 concentration [molecules/cm^3]
+    Real xliq, // liquid rain water content in a grid cell [gm/m^3]
+    Real rain, // precipitation (rain) rate [molecules/cm^3/s]
+    Real &precip,    // precipitation rate [kg/kg/s]
+    Real xhen_h2o2, // henry law constants
+    Real xhen_hno3, // henry law constants
+    Real xhen_so2,  // henry law constants
+    Real tmp_hetrates[gas_pcnst], const int spc_h2o2_ndx,
     const int spc_so2_ndx, const int h2o2_ndx, const int so2_ndx,
-    const int h2so4_ndx, const int gas_wetdep_cnt, const int wetdep_map[3]) {
+    const int h2so4_ndx, const int gas_wetdep_cnt, const int wetdep_map[3], 
+    const Real total_rain,
+    const Real total_pos,
+    int ktop // tropopause level, 100mb for lat < 60 and 300mb for lat > 60
+    ) {
 
   //-----------------------------------------------------------------------
   //       ... compute rainout loss rates (1/s)
@@ -232,7 +218,7 @@ void sethet(
   constexpr Real satf_hno3 = .016; // saturation factor for hno3 in clouds
   constexpr Real satf_h2o2 = .016; // saturation factor for h2o2 in clouds
   constexpr Real satf_so2 = .016;  // saturation factor for so2 in clouds
-  constexpr Real const0 = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
+  // = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
   constexpr Real hno3_diss = 15.4;            // hno3 dissociation constant
   constexpr Real mass_air = 29.0;  // mass of background atmosphere [amu]
   constexpr Real km2cm = 1.0e5;    // convert km to cm
@@ -242,7 +228,7 @@ void sethet(
   constexpr Real large_value_lifetime =
       1.0e29; // a large lifetime value if no washout
 
-  int ktop;  // tropopause level, 100mb for lat < 60 and 300mb for lat > 60
+  //int ktop;  // tropopause level, 100mb for lat < 60 and 300mb for lat > 60
   Real xkgm; // mass flux on rain drop
   Real stay; // fraction of layer traversed by falling drop in timestep delt
   Real xdtm; // the traveling time in each dz [s]
@@ -275,18 +261,14 @@ void sethet(
   //-----------------------------------------------------------------
 
   for (int mm = 0; mm < gas_pcnst; mm++) {
-    for (int kk = 0; kk < pver; kk++) {
-      het_rates[mm](kk) = 0.0;
-      tmp_hetrates[mm](kk) = 0.0; // initiate temporary array
-    }
+      het_rates[mm] = 0.0;
+      tmp_hetrates[mm] = 0.0; // initiate temporary array
   }
 
   for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
     int mm2 = wetdep_map[mm];
     if (mm2 > 0) {
-      for (int kk = 0; kk < pver; kk++) {
-        het_rates[mm2](kk) = MISSING;
-      }
+      het_rates[mm2] = MISSING;
     }
   }
 
@@ -299,28 +281,22 @@ void sethet(
   //-----------------------------------------------------------------
   //	... Find the level index that only calculate het_rates below
   //-----------------------------------------------------------------
-  find_ktop(rlat, press, ktop); // populate ktop
+  //find_ktop(rlat, press, ktop); // populate ktop
 
   // this is added to rescale the variable precip (which can only be positive)
   // to the actual vertical integral of positive and negative values.  This
   // removes point storms
-  calc_precip_rescale(team, cmfdqr, nrain, nevapr, precip); // populate precip
+  calc_precip_rescale(cmfdqr, nrain, nevapr, total_rain, total_pos, precip); // populate precip
 
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
-        rain(kk) = mass_air * precip(kk) * xhnm(kk) / mass_h2o;
-        xliq(kk) = precip(kk) * delt * xhnm(kk) / avo * mass_air * m3_2_cm3;
-        xh2o2(kk) = qin[spc_h2o2_ndx](kk) * xhnm(kk);
-        xso2(kk) = qin[spc_so2_ndx](kk) * xhnm(kk);
-      });
+  rain = mass_air * precip * xhnm / mass_h2o;
+  xliq = precip * delt * xhnm / avo * mass_air * m3_2_cm3;
+  xh2o2 = qin[spc_h2o2_ndx] * xhnm;
+  xso2 = qin[spc_so2_ndx] * xhnm;
 
   zsurf = m2km * phis * rga;
 
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, ktop, pver - 1), KOKKOS_LAMBDA(int kk) {
-        delz(kk) = haero::abs((zmid(kk) - zmid(kk + 1)) * km2cm);
-      });
-  delz(pver - 1) = haero::abs((zmid(pver - 1) - zsurf) * km2cm);
+  // if k=pver-1, then zmid_kp1 is zsurf
+  delz = haero::abs((zmid_k - zmid_kp1) * km2cm);
 
   //-----------------------------------------------------------------
   //       ... part 0b,  for temperature dependent of henrys
@@ -335,116 +311,105 @@ void sethet(
   //             heff = h for h2o2 (no dissociation)
   //             heff = h * (1 + k/[h+]) (in general)
   //-----------------------------------------------------------------
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, ktop, pver), KOKKOS_LAMBDA(int kk) {
-        //-----------------------------------------------------------------
-        // 	... effective henry''s law constants:
-        //	hno3, h2o2  (brasseur et al., 1999)
-        //-----------------------------------------------------------------
-        // temperature factor
-        t_factor(kk) = (t0 - tfld(kk)) / (t0 * tfld(kk));
-        xhen_h2o2(kk) = 7.45e4 * haero::exp(6620.0 * t_factor(kk));
-        // HNO3, for calculation of H2SO4 het rate use
-        xk0_hno3(kk) = 2.1e5 * haero::exp(8700.0 * t_factor(kk));
-        xhen_hno3(kk) = xk0_hno3(kk) * (1.0 + hno3_diss / xph0);
-        // SO2
-        xk0_so2(kk) = 1.23 * haero::exp(3120.0 * t_factor(kk));
-        so2_diss(kk) = 1.23e-2 * haero::exp(1960.0 * t_factor(kk));
-        xhen_so2(kk) = xk0_so2(kk) * (1.0 + so2_diss(kk) / xph0);
-      });
+  //-----------------------------------------------------------------
+  // 	... effective henry''s law constants:
+  //	hno3, h2o2  (brasseur et al., 1999)
+  //-----------------------------------------------------------------
+  // temperature factor
+  t_factor = (t0 - tfld) / (t0 * tfld);
+  xhen_h2o2 = 7.45e4 * haero::exp(6620.0 * t_factor);
+  // HNO3, for calculation of H2SO4 het rate use
+  xk0_hno3 = 2.1e5 * haero::exp(8700.0 * t_factor);
+  xhen_hno3 = xk0_hno3 * (1.0 + hno3_diss / xph0);
+  // SO2
+  xk0_so2 = 1.23 * haero::exp(3120.0 * t_factor);
+  so2_diss = 1.23e-2 * haero::exp(1960.0 * t_factor);
+  xhen_so2 = xk0_so2 * (1.0 + so2_diss / xph0);
 
   //-----------------------------------------------------------------
   //       ... part 1, solve for high henry constant ( hno3, h2o2)
   //-----------------------------------------------------------------
-  Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
-        xgas2(kk) = xh2o2(kk); // different levels wash
-        xgas3(kk) = xso2(kk);
-      });
-  team.team_barrier();
+  xgas2 = xh2o2; // different levels wash
+  xgas3 = xso2;
+  //team.team_barrier();
 
-  for (int kk = ktop; kk < pver; kk++) {
-    stay = 1.0;
-    if (rain(kk) != 0.0) { // finding rain cloud
-      stay = ((zmid(kk) - zsurf) * km2cm) / (xum * delt);
-      stay = haero::min(stay, 1.0);
-      // calculate gas washout by cloud
-      gas_washout(team, kk, xkgm, xliq(kk), // in
-                  xhen_h2o2, tfld, delz,    // in
-                  xgas2);                   // inout
-      gas_washout(team, kk, xkgm, xliq(kk), // in
-                  xhen_so2, tfld, delz,     // in
-                  xgas3);                   // inout
-    }
-    //-----------------------------------------------------------------
-    //       ... calculate the lifetime of washout (second)
-    //             after all layers washout
-    //             the concentration of hno3 is reduced
-    //             then the lifetime xtt is calculated by
-    //
-    //                  xtt = (xhno3(ini) - xgas1(new))/(dt*xhno3(ini))
-    //                  where dt = passing time (s) in vertical
-    //                             path below the cloud
-    //                        dt = dz(cm)/um(cm/s)
-    //-----------------------------------------------------------------
-    xdtm = delz(kk) / xum; // the traveling time in each dz
-
-    xxx2 = (xh2o2(kk) - xgas2(kk));
-    if (xxx2 != 0.0) { // if no washout lifetime = 1.e29
-      yh2o2 = xh2o2(kk) / xxx2 * xdtm;
-    } else {
-      yh2o2 = large_value_lifetime;
-    }
-    tmp_hetrates[1](kk) =
-        haero::max(1.0 / yh2o2, 0.0) * stay; // FIXME: bad constant index
-
-    xxx3 = (xso2(kk) - xgas3(kk));
-    if (xxx3 != 0.0) { // if no washout lifetime = 1.e29
-      yso2 = xso2(kk) / xxx3 * xdtm;
-    } else {
-      yso2 = large_value_lifetime;
-    }
-    tmp_hetrates[2](kk) =
-        haero::max(1.0 / yso2, 0.0) * stay; // FIXME: bad constant index
+  stay = 1.0;
+  if (rain != 0.0) { // finding rain cloud
+    stay = ((zmid_k - zsurf) * km2cm) / (xum * delt);
+    stay = haero::min(stay, 1.0);
+    // calculate gas washout by cloud
+    gas_washout(xkgm, xliq,     // in
+                xhen_h2o2, tfld, delz,    // in
+                xgas2);                   // inout
+    gas_washout(xkgm, xliq,     // in
+                xhen_so2, tfld, delz,     // in
+                xgas3);                   // inout
   }
+  //-----------------------------------------------------------------
+  //       ... calculate the lifetime of washout (second)
+  //             after all layers washout
+  //             the concentration of hno3 is reduced
+  //             then the lifetime xtt is calculated by
+  //
+  //                  xtt = (xhno3(ini) - xgas1(new))/(dt*xhno3(ini))
+  //                  where dt = passing time (s) in vertical
+  //                             path below the cloud
+  //                        dt = dz(cm)/um(cm/s)
+  //-----------------------------------------------------------------
+  xdtm = delz / xum; // the traveling time in each dz
+
+  xxx2 = (xh2o2 - xgas2);
+  if (xxx2 != 0.0) { // if no washout lifetime = 1.e29
+    yh2o2 = xh2o2 / xxx2 * xdtm;
+  } else {
+    yh2o2 = large_value_lifetime;
+  }
+  tmp_hetrates[1] =
+      haero::max(1.0 / yh2o2, 0.0) * stay; // FIXME: bad constant index
+
+  xxx3 = (xso2 - xgas3);
+  if (xxx3 != 0.0) { // if no washout lifetime = 1.e29
+    yso2 = xso2 / xxx3 * xdtm;
+  } else {
+    yso2 = large_value_lifetime;
+  }
+  tmp_hetrates[2] =
+      haero::max(1.0 / yso2, 0.0) * stay; // FIXME: bad constant index
 
   //-----------------------------------------------------------------
   //       ... part 2, in-cloud solve for low henry constant
   //                   hno3 and h2o2 have both in and under cloud
   //-----------------------------------------------------------------
-  for (int kk = ktop; kk < pver; kk++) {
-    bool skip = false;
-    for (int mm = 0; mm < gas_pcnst; mm++) {
-      if (rain(kk) <= 0.0) {
-        het_rates[mm](kk) = 0.0;
-        skip = true;
-      }
+  bool skip = false;
+  for (int mm = 0; mm < gas_pcnst; mm++) {
+    if (rain <= 0.0) {
+      het_rates[mm] = 0.0;
+      skip = true;
     }
-    if (skip)
-      continue;
-
-    work1 = avo2 * xliq(kk);
-    work2 = const0 * tfld(kk);
+  }
+  if (!skip) {
+    work1 = avo2 * xliq;
+    work2 = const0 * tfld;
 
     if (h2o2_ndx >= 0) {
-      calc_het_rates(satf_h2o2, rain(kk), xhen_h2o2(kk), // in
-                     tmp_hetrates[1](kk), work1, work2,  // in
-                     het_rates[h2o2_ndx](kk));           // out
+      calc_het_rates(satf_h2o2, rain, xhen_h2o2, // in
+                    tmp_hetrates[1], work1, work2,  // in
+                    het_rates[h2o2_ndx]);           // out
     }
 
     // if ( prog_modal_aero .and.
     if (so2_ndx >= 0 && h2o2_ndx >= 0) {
-      het_rates[so2_ndx](kk) = het_rates[h2o2_ndx](kk);
+      het_rates[so2_ndx] = het_rates[h2o2_ndx];
     } else if (so2_ndx >= 0) {
-      calc_het_rates(satf_so2, rain(kk), xhen_so2(kk),  // in
-                     tmp_hetrates[2](kk), work1, work2, // in
-                     het_rates[so2_ndx](kk));           // out
+      calc_het_rates(satf_so2, rain, xhen_so2,  // in
+                    tmp_hetrates[2], work1, work2, // in
+                    het_rates[so2_ndx]);           // out
     }
 
     if (h2so4_ndx >= 0) {
-      calc_het_rates(satf_hno3, rain(kk), xhen_hno3(kk), // in
-                     tmp_hetrates[0](kk), work1, work2,  // in
-                     het_rates[h2so4_ndx](kk));          // out
+      calc_het_rates(satf_hno3, rain, xhen_hno3, // in
+                    tmp_hetrates[0], work1, work2,  // in
+                    het_rates[h2so4_ndx]);          // out
     }
   }
 
@@ -454,15 +419,11 @@ void sethet(
 
   for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
     int mm2 = wetdep_map[mm];
-    for (int kk = 0; kk < ktop; kk++) {
-      het_rates[mm2](kk) = 0.0;
-    }
-    for (int kk = 0; kk < pver; kk++) {
-      if (het_rates[mm2](kk) == MISSING) {
-        Kokkos::abort(
-            "sethet: het_rates (wet dep) not set for het reaction number");
-        return;
-      }
+    het_rates[mm2] = 0.0;
+    if (het_rates[mm2] == MISSING) {
+      Kokkos::abort(
+          "sethet: het_rates (wet dep) not set for het reaction number");
+      return;
     }
   }
 } // end subroutine sethet
