@@ -12,6 +12,7 @@
 #include <mam4xx/aer_rad_props.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/aero_model.hpp>
+#include <mam4xx/aero_model_emissions.hpp>
 #include <mam4xx/aging.hpp>
 #include <mam4xx/calcsize.hpp>
 #include <mam4xx/coagulation.hpp>
@@ -40,6 +41,7 @@
 #include <mam4xx/tropopause.hpp>
 #include <mam4xx/water_uptake.hpp>
 #include <mam4xx/wet_dep.hpp>
+
 namespace mam4 {
 
 using NucleationProcess = haero::AeroProcess<AeroConfig, Nucleation>;
