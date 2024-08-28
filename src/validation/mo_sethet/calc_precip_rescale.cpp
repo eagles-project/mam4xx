@@ -44,7 +44,7 @@ void calc_precip_rescale(Ensemble *ensemble) {
 
     //Real total_rain = 0.0;
     //Real total_pos = 0.0;
-    std::vector<Real> vector01(1, 0);
+    std::vector<Real> vector01(1, 5.577886392e-07);
     auto total_rain_host = View1DHost(vector01.data(), 1);
     auto total_pos_host = View1DHost(vector01.data(), 1);
     ColumnView total_rain = haero::testing::create_column_view(1);

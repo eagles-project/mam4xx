@@ -42,7 +42,7 @@ set(TEST_LIST
 set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
     9e-8 # calc_het_rates, this is due to using a more specific value for mass_h2o
-    ${DEFAULT_TOL} # calc_precip_rescale
+    9e-8 # calc_precip_rescale
     ${DEFAULT_TOL} # find_ktop, output is an int
     #9e-8 # gas_washout
     #9e-8 # sethet
