@@ -25,7 +25,7 @@ using namespace mam4;
 void calc_het_rates(Ensemble *ensemble);
 void calc_precip_rescale(Ensemble *ensemble);
 void find_ktop(Ensemble *ensemble);
-//void gas_washout(Ensemble *ensemble);
+void gas_washout(Ensemble *ensemble);
 //void sethet(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
     } else if (func_name == "find_ktop") {
       find_ktop(ensemble);
     } else if (func_name == "gas_washout") {
-      //gas_washout(ensemble);
+      gas_washout(ensemble);
     } else if (func_name == "sethet") {
       //sethet(ensemble);
     } else {

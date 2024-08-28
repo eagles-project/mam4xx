@@ -20,7 +20,7 @@ void gas_washout(Ensemble *ensemble) {
     using ColumnView = haero::ColumnView;
     constexpr int pver = mam4::nlev;
 
-    const int plev = input.get_array("plev")[0];
+    const int plev = input.get_array("plev")[0] - 1;
     const Real xkgm = input.get_array("xkgm")[0];
     const Real xliq_ik = input.get_array("xliq_ik")[0];
     const auto xhen_i_in = input.get_array("xhen_i");
@@ -45,8 +45,10 @@ void gas_washout(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          gas_washout(team, plev - 1, xkgm, xliq_ik, xhen_i, tfld_i, delz_i,
-                      xgas);
+          Kokkos::parallel_for(
+            Kokkos::TeamVectorRange(team, plev, pver), [&](int kk) {
+                gas_washout(xkgm, xliq_ik, xhen_i(kk), tfld_i(kk), delz_i(kk), xgas(kk));
+              });
         });
 
     Kokkos::deep_copy(xgas_host, xgas);
