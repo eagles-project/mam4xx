@@ -319,6 +319,97 @@ Real fuchs_sutugin(const Real &D_p, const Real &gasfreepath,
   return fuchs_sutugin;
 }
 
+
+KOKKOS_INLINE_FUNCTION
+void gas_aer_uptkrates_1box1gas_OD(
+    const Real accom,
+    const Real gasdiffus, 
+    const Real gasfreepath, 
+    const Real beta_inp,
+    const Real dgncur_awet[GasAerExch::num_mode],
+    const Real lnsg[GasAerExch::num_mode],
+    Real uptkaer[GasAerExch::num_mode]    
+     ) {
+/*
+!                         /
+!   computes   uptkrate = | dx  dN/dx  gas_conden_rate(Dp(x))
+!                         /
+!   using Gauss-Hermite quadrature of order nghq=2
+!
+!       Dp = particle diameter (cm)
+!       x = ln(Dp)
+!       dN/dx = log-normal particle number density distribution
+!       gas_conden_rate(Dp) = 2 * pi * gasdiffus * Dp * F(Kn,ac)
+!           F(Kn,ac) = Fuchs-Sutugin correction factor
+!           Kn = Knudsen number
+!           ac = accomodation coefficient */
+
+  const Real tworootpi = 2 * haero::sqrt(pi);
+  const Real root2 = haero::sqrt(2.0);
+  const Real one = 1.0;
+  const Real two = 2.0;
+
+  // Dick's old version
+  // integer, parameter :: nghq = 2
+  // real(wp), save :: xghq(nghq), wghq(nghq) ! quadrature abscissae and
+  // weights data xghq / 0.70710678, -0.70710678 / data wghq / 0.88622693,
+  // 0.88622693 /
+
+  // NOTE: it looks like the refractored code is still using Dick's old version. 
+
+  //-----------------------------------------------------------------------
+
+  constexpr int nghq = 2; 
+  const Real xghq[nghq]= {0.70710678, -0.70710678 };
+  const Real wghq[nghq]= {0.88622693, 0.88622693 };
+
+  const Real accomxp283 = accom * 0.283;
+  const Real accomxp75 = accom * 0.75;
+
+  // outermost loop over all modes
+  for (int n = 0; n < GasAerExch::num_mode; ++n) {
+    const Real lndpgn = haero::log(dgncur_awet[n]); // (m)
+
+    // beta = dln(uptake_rate)/dln(D_p)
+    //      = 2.0 in free molecular regime, 1.0 in continuum regime
+    // if uptake_rate ~= a * (D_p**beta), then the 2 point quadrature
+    // is very accurate
+    Real beta = 0;
+    if (std::abs(beta_inp - 1.5) > 0.5) {
+      // D_p = dgncur_awet(n) * haero::exp( 1.5*(lnsg[n]**2) )
+      const Real D_p = dgncur_awet[n];
+      const Real knudsen = two * gasfreepath / D_p;
+
+      // tmpa = dln(fuchs_sutugin)/d(knudsen)
+      const Real tmpa =
+          one / (one + knudsen) -
+          (two * knudsen + one + accomxp283) /
+              (knudsen * (knudsen + one + accomxp283) + accomxp75);
+      beta = one - knudsen * tmpa;
+      beta = haero::max(one, haero::min(two, beta));
+    } else {
+      beta = beta_inp;
+    }
+    const Real constant =
+        tworootpi *
+        haero::exp(beta * lndpgn + 0.5 * haero::pow(beta * lnsg[n], 2.0));
+
+    // sum over gauss-hermite quadrature points
+    Real sumghq = 0.0;
+    for (int iq = 0; iq < nghq; ++iq) {
+      const Real lndp =
+          lndpgn + beta * lnsg[n] * lnsg[n] + root2 * lnsg[n] * xghq[iq];
+      const Real D_p = haero::exp(lndp);
+
+      const Real hh = fuchs_sutugin(D_p, gasfreepath, accomxp283, accomxp75);
+      sumghq += wghq[iq] * D_p * hh / haero::pow(D_p, beta);
+    }
+    // gas-to-aerosol mass transfer rates
+    uptkaer[n] = constant * gasdiffus * sumghq;
+  }
+} // gas_aer_uptkrates_1box1gas_OD
+
+
 KOKKOS_INLINE_FUNCTION
 void gas_aer_uptkrates_1box1gas(
     const bool l_condense_to_mode[GasAerExch::num_mode], const Real temp,
@@ -362,6 +453,8 @@ void gas_aer_uptkrates_1box1gas(
   // real(wp), save :: xghq(nghq), wghq(nghq) ! quadrature abscissae and
   // weights data xghq / 0.70710678, -0.70710678 / data wghq / 0.88622693,
   // 0.88622693 /
+
+  // NOTE: it looks like the refractored code is still using Dick's old version. 
 
   // choose
   // nghq-----------------------------------------------------------------
@@ -424,11 +517,13 @@ void gas_aer_uptkrates_1box1gas(
   // pressure (atmospheres)
   const Real p_in_atm = pmid / pstd;
   // gas diffusivity (m2/s)
+  // FIXME: gas diffusivity is an input in fortran code. 
   const Real gasdiffus = gas_diffusivity(temp, p_in_atm, mw_gas, mw_air_gmol,
                                          vol_molar_gas, vol_molar_air);
   // gas mean free path (m)
   const Real molecular_speed =
       mean_molecular_speed(temp, mw_gas, r_universal_mJ, pi);
+  // FIXME: gasfreepath is an input in fortran code. 
   const Real gasfreepath = 3.0 * gasdiffus / molecular_speed;
   const Real accomxp283 = accom * 0.283;
   const Real accomxp75 = accom * 0.75;
@@ -472,13 +567,7 @@ void gas_aer_uptkrates_1box1gas(
       sumghq += wghq[iq] * D_p * hh / haero::pow(D_p, beta);
     }
     // gas-to-aerosol mass transfer rates
-    // (1/s) for number concentration = 1 #/m3
-    const Real uptkrate = constant * gasdiffus * sumghq;
-
-    // --------------------------------------------------------------------
-    // Unit of uptkrate is for number = 1 #/m3.
-    // --------------------------------------------------------------------
-    uptkaer[n] = l_condense_to_mode[n] ? uptkrate : 0.0; // zero means no uptake
+    uptkaer[n] = constant * gasdiffus * sumghq;
   }
 }
 
