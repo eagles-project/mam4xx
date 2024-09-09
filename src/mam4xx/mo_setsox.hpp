@@ -60,8 +60,8 @@ struct Config {
   Real small_value_lwc = 1.0e-8;
   // Real small_value_cf = 1.0e-5;
   Real p0 = 101300.0;
-  bool cloud_borne = false;
-  bool modal_aerosols = false;
+  bool cloud_borne = true;
+  bool modal_aerosols = true;
   // universal gas constant (sort of)
   // FIXME: TERRIBLE CONSTANT
   Real Ra = 8314.0 / 101325.0;
@@ -92,7 +92,7 @@ struct Cloudconc {
 };
 
 KOKKOS_INLINE_FUNCTION
-Cloudconc sox_cldaero_create_obj(
+Cloudconc sox_cldaero_create_obj( int k,
     const Real cldfrc, const Real qcw[AeroConfig::num_gas_phase_species()],
     const Real lwc, const Real cfact, const int loffset, const Config config_) {
   /*
@@ -124,6 +124,7 @@ Cloudconc sox_cldaero_create_obj(
   int id_so4_2a = config_.lptr_so4_cw_amode[1] - loffset;
   int id_so4_3a = config_.lptr_so4_cw_amode[2] - loffset;
   so4c = qcw[id_so4_1a] + qcw[id_so4_2a] + qcw[id_so4_3a];
+  if(k==48)printf("so4C:%0.15e,%0.15e,%0.15e,%0.15e,%i,%i,%i,%i\n",so4c,qcw[id_so4_1a] ,qcw[id_so4_2a] , qcw[id_so4_3a], id_so4_1a, id_so4_2a, id_so4_3a,loffset);
 
   // with 3-mode, assume so4 is nh4hso4, and so half-neutralized
   // FIXME: BAD CONSTANT
@@ -419,7 +420,7 @@ void calc_ph_values(const Real temperature, const Real patm, const Real xlwc,
 
 //===========================================================================
 KOKKOS_INLINE_FUNCTION
-void calc_sox_aqueous(const bool modal_aerosols, const Real rah2o2,
+void calc_sox_aqueous(int k, const bool modal_aerosols, const Real rah2o2, //FIXME: remove k
                       const Real h2o2g, const Real so2g, const Real o3g,
                       const Real rao3, const Real patm, const Real dt,
                       const Real t_factor, const Real xlwc, const Real const0,
@@ -486,6 +487,7 @@ void calc_sox_aqueous(const bool modal_aerosols, const Real rah2o2,
   Real delta_s = haero::max(pso4 * dt, small_value_30);
 
   xso4_init = xso4;
+  if (k==48)printf("xso4_init:%0.15e\n",xso4_init);
 
   if ((delta_s <= xso2) && (delta_s <= xh2o2)) {
     xso4 = xso4 + delta_s;
@@ -503,6 +505,10 @@ void calc_sox_aqueous(const bool modal_aerosols, const Real rah2o2,
 
   if (modal_aerosols) {
     xdelso4hp = xso4 - xso4_init;
+    if (k==48)printf("xdelso4hp:%0.15e,%0.15e,%0.15e\n",xdelso4hp, xso4, xso4_init);
+  }
+  else{
+    if (k==48)printf("modal is false!");
   }
   //...........................
   //       S(IV) + O3 = S(VI)
@@ -736,7 +742,7 @@ void update_tmr_nonzero(Real &tmr, const int idx) {
 
 //=================================================================================
 KOKKOS_INLINE_FUNCTION
-void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
+void sox_cldaero_update(int k, const int loffset, const Real dt, const Real mbar,
                         const Real pdel, const Real press, const Real tfld,
                         const Real cldnum, const Real cldfrc, const Real cfact,
                         const Real xlwc, const Real delso4_hprxn,
@@ -915,6 +921,7 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
     dqdt_wr = 0.0;
     dqdt_aq = -dso4dt_hprxn * cldfrc;
     update_tmr(qin[config_.id_h2o2], dqdt_aq + dqdt_wr, dt);
+    if(k==48) printf("sox_cldaero_update:%0.15e,%0.15e,%0.15e,%0.15e,%0.15e,%0.15e\n",qin[config_.id_h2o2], dqdt_aq, dqdt_wr, dt, -dso4dt_hprxn , cldfrc);
 
     /*
     for SO4 from H2O2/O3 budgets
@@ -970,7 +977,7 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
 //-----------------------------------------------------------------------
 //-----------------------------------------------------------------------
 KOKKOS_INLINE_FUNCTION
-void setsox_single_level(const int loffset, const Real dt, const Real press,
+void setsox_single_level(const int k, const int loffset, const Real dt, const Real press, //remove k
                          const Real pdel, const Real tfld, const Real mbar,
                          const Real lwc, const Real cldfrc, const Real cldnum,
                          const Real xhnm, Config setsox_config_,
@@ -1104,7 +1111,7 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
   Cloudconc cldconc;
   // this name doesn't make sense after porting
   cldconc =
-      sox_cldaero_create_obj(cldfrc, qcw, lwc, cfact, loffset, setsox_config_);
+      sox_cldaero_create_obj(k, cldfrc, qcw, lwc, cfact, loffset, setsox_config_);
 
   /*
   if ( inv_so2 .or. id_hno3>0 .or. inv_h2o2 .or. id_nh3>0 .or. inv_o3 &
@@ -1146,7 +1153,9 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
 
     if ((setsox_config_.cloud_borne > zero) && (cldfrc > zero)) {
       xso4 = xso4c / cldfrc;
+      if(k==48)printf("cldbrn_calc_sox_aqueous:%0.15e\n",xso4);
     }
+    else{if (k==48)printf("WHY HERE CLDBRN");}
     bool converged = false;
     calc_ph_values(tfld, patm, xlwc, t_factor, xso2, xso4, xhnm,
                    cldconc.so4_fact, setsox_config_.Ra, setsox_config_.xkw,
@@ -1267,7 +1276,8 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
   // exist in the MAM4 fortran code
   // WHEN CLOUD IS PRESENTED (present?)
   if (xlwc >= setsox_config_.small_value_lwc) {
-    calc_sox_aqueous(setsox_config_.modal_aerosols, rah2o2, h2o2g, so2g, o3g,
+    if(k==48)printf("bef_calc_sox_aqueous:%0.15e,%0.15e\n",xso4, xso4_init);
+    calc_sox_aqueous(k,setsox_config_.modal_aerosols, rah2o2, h2o2g, so2g, o3g,
                      rao3, patm, dt, t_factor, xlwc, setsox_config_.const0,
                      xhnm, heo3, heso2,
                      // inout
@@ -1280,7 +1290,7 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
   }
 
   // mean wet atmospheric mass [amu or g/mol]
-  sox_cldaero_update(loffset, dt, mbar, pdel, press, tfld, cldnum, cldfrc,
+  sox_cldaero_update(k, loffset, dt, mbar, pdel, press, tfld, cldnum, cldfrc,
                      cfact, cldconc.xlwc, xdelso4hp, xh2so4, xso4, xso4_init,
                      setsox_config_,
                      // inout
@@ -1336,7 +1346,7 @@ void setsox(const ThreadTeam &team, const int loffset, const Real dt,
       qcw_k[i] = qcw[i](k);
       qin_k[i] = qin[i](k);
     }
-    setsox_single_level(loffset, dt, press_k, pdel_k, tfld_k, mbar_k, lwc_k,
+    setsox_single_level(1,loffset, dt, press_k, pdel_k, tfld_k, mbar_k, lwc_k,
                         cldfrc_k, cldnum_k, xhnm_k, setsox_config_, qcw_k,
                         qin_k);
   }); // end kokkos::parfor(k)

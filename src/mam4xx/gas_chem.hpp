@@ -43,6 +43,7 @@ void usrrxt(Real rxt[rxntot], // inout
     const Real fc = one + 1.4e-21 * invariants[inv_h2o_ndx] *
                               haero::exp(2200. / temperature);
     rxt[usr_HO2_HO2_ndx] = (ko + kinf) * fc;
+    //printf("rxt:%0.15e,%0.15e,%0.15e,%0.15e,%0.15e,%0.15e\n:",rxt[usr_HO2_HO2_ndx],ko,kinf, fc, 1./temperature, temperature);
   }
 
   /*-----------------------------------------------------------------
@@ -117,7 +118,9 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
   // -----------------------------------------------------
   //  the newton-raphson iteration for f(y) = 0
   // -----------------------------------------------------
-
+  for (int mm = 0; mm < clscnt4; ++mm) {
+//printf("Solution_2:%0.15e,%i\n",solution[mm],mm);
+  }
   Real sys_jac[nzcnt] = {};
   Real forcing[clscnt4] = {};
   // BAD CONSTANT
@@ -143,6 +146,9 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
     // -----------------------------------------------------------------------
     //  ... form f(y)
     // -----------------------------------------------------------------------
+    for (int mm = 0; mm < clscnt4; ++mm) {
+      //printf("Solution_2b:%0.15e,%0.15e,%i\n",lsol[mm], lhet[mm],mm);
+  }
     imp_prod_loss(prod, loss,        // out
                   lsol, lrxt, lhet); // in
 
@@ -152,6 +158,7 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
     for (int mm = 0; mm < clscnt4; ++mm) {
       forcing[mm] =
           solution[mm] * dti - (iter_invariant[mm] + prod[mm] - loss[mm]);
+      //printf("Solution_2a:%0.15e,%0.15e,%0.15e,%0.15e,%0.15e,%0.15e,%i\n",solution[mm],forcing[mm],iter_invariant[mm],prod[mm],loss[mm],dti,mm);
     } // mm
 
     // -----------------------------------------------------------------------
@@ -160,6 +167,7 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
     lu_slv(sys_jac, forcing);
     for (int mm = 0; mm < clscnt4; ++mm) {
       solution[mm] += forcing[mm];
+      //printf("Solution_3:%0.15e,%0.15e,%i\n",solution[mm],forcing[mm],mm);
     } // mm
 
     // -----------------------------------------------------------------------
@@ -187,6 +195,7 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
     //  ... limit iterate
     // -----------------------------------------------------------------------
     for (int kk = 0; kk < clscnt4; ++kk) {
+      //printf("Solution:%0.15e,%i\n",solution[kk],kk);
       if (solution[kk] < zero) {
         solution[kk] = zero;
       }
@@ -305,6 +314,7 @@ void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
     //  ... transfer from base to local work arrays
     // -----------------------------------------------------------------------
     auto &lsol = base_sol;
+    //printf("base_sol:%0.15e, %i\n",base_sol[1],i);
     // -----------------------------------------------------------------------
     //  ... transfer from base to class array
     // -----------------------------------------------------------------------
@@ -313,6 +323,7 @@ void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
       int jj = clsmap_4[kk];
       int mm = permute_4[kk];
       solution[mm] = lsol[jj];
+      //printf("Solution-1:%0.15e,%i\n",solution[mm],mm);
     } // kk
 
     // -----------------------------------------------------------------------
