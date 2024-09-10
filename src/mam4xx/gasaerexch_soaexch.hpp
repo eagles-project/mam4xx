@@ -64,254 +64,271 @@ void soa_equilib_mixing_ratio_no_solute(const Real &T_in_K,     // in
 // NOTE: This is different from box model.
 // max_gas = nsoa + 1
 // FIXME: are these defined somewhere else?
-constexpr int npoa  = 1;//   number of differently tagged primary-organic   aerosol species
-constexpr int nsoa  = 1; //number of differently tagged secondary-organic aerosol species
+constexpr int npoa =
+    1; //   number of differently tagged primary-organic   aerosol species
+constexpr int nsoa =
+    1; // number of differently tagged secondary-organic aerosol species
 // from: modal_aero_amicphys_control
-constexpr int max_mode = AeroConfig::num_modes() +1 ;
+constexpr int max_mode = AeroConfig::num_modes() + 1;
 constexpr int max_gas = nsoa + 1;
 //  the +4 in max_aer are dst, ncl, so4, mom
-constexpr int nbc   = 1;// number of differently tagged black-carbon      aerosol species
-constexpr int  max_aer = nsoa + npoa + nbc + 4;
+constexpr int nbc =
+    1; // number of differently tagged black-carbon      aerosol species
+constexpr int max_aer = nsoa + npoa + nbc + 4;
 // FIXME: check this value
-constexpr int nufi=-999888777;
+constexpr int nufi = -999888777;
 constexpr int naer = nsoa + 1;
-constexpr int iaer_pom = naer + 1 -1;// -1 for fotran to c++ indexing conversion. 
+constexpr int iaer_pom =
+    naer + 1 - 1; // -1 for fotran to c++ indexing conversion.
 
 KOKKOS_INLINE_FUNCTION
-void mam_soaexch_1subarea(
-    int nstep, int lchnk, int i, int k, int jsub,
-    int latndx, int lonndx, int lund, Real dtsubstep,
-    Real temp, Real pmid, Real aircon, int n_mode,
-    Real qgas_cur[], Real qgas_avg[],
-    Real qaer_cur[][max_mode],
-    Real qnum_cur[], Real qwtr_cur[],
-    const Real uptkaer[][max_mode]) {
+void mam_soaexch_1subarea(int nstep, int lchnk, int i, int k, int jsub,
+                          int latndx, int lonndx, int lund, Real dtsubstep,
+                          Real temp, Real pmid, Real aircon, int n_mode,
+                          Real qgas_cur[], Real qgas_avg[],
+                          Real qaer_cur[][max_mode], Real qnum_cur[],
+                          Real qwtr_cur[], const Real uptkaer[][max_mode]) {
 
-    // Local variables
-    int ntot_poaspec = npoa;
-    int ntot_soaspec = nsoa;
-    int ntot_soamode = 0;
-    int niter_max = 1000;
-    int niter = 0;
-    Real dtfull = dtsubstep;
-    Real tcur = 0.0;
-    Real dtcur = 0.0;
-    Real dtsum_qgas_avg = 0.0;
-    bool skip_soamode[max_mode] = {true};
-    Real qgas_prv[max_gas] = {0.0};
-    Real qaer_prv[max_aer][max_mode] = {{0.0}};
-    Real uptkaer_soag_tmp[nsoa][max_mode] = {{0.0}};
-    Real a_ooa_sum_tmp[max_mode] = {0.0};
-    Real a_opoa[max_mode] = {0.0};
-    Real a_soa[ntot_soaspec][max_mode] = {{0.0}};
-    Real a_soa_tmp[ntot_soaspec][max_mode] = {{0.0}};
-    Real beta[ntot_soaspec][max_mode] = {{0.0}};
-    Real delh_vap_soa[ntot_soaspec] = {156.0e3};
-    Real del_g_soa_tmp[ntot_soaspec] = {0.0};
-    Real g0_soa[ntot_soaspec] = {0.0};
-    Real g_soa[ntot_soaspec] = {0.0};
-    Real g_star[ntot_soaspec][max_mode] = {{0.0}};
-    //Real mw_poa[ntot_poaspec] = {0.0};
-    //Real mw_soa[ntot_soaspec] = {0.0};
-    Real opoa_frac[ntot_poaspec][max_mode] = {{0.1}};
-    Real phi[ntot_soaspec][max_mode] = {{0.0}};
-    Real p0_soa[ntot_soaspec] = {1.0e-10};
-    Real p0_soa_298[ntot_soaspec] = {1.0e-10};
-    Real sat[ntot_soaspec][max_mode] = {{0.0}};
-    Real tmpa, tmpb, tmpc;
-    const Real alpha_astem = 0.05; // Parameter used in calc of time step
-    const Real dtsub_fixed = -1.0; // Fixed sub-step for time integration (s)
+  // Local variables
+  int ntot_poaspec = npoa;
+  int ntot_soaspec = nsoa;
+  int ntot_soamode = 0;
+  int niter_max = 1000;
+  int niter = 0;
+  Real dtfull = dtsubstep;
+  Real tcur = 0.0;
+  Real dtcur = 0.0;
+  Real dtsum_qgas_avg = 0.0;
+  bool skip_soamode[max_mode] = {true};
+  Real qgas_prv[max_gas] = {0.0};
+  Real qaer_prv[max_aer][max_mode] = {{0.0}};
+  Real uptkaer_soag_tmp[nsoa][max_mode] = {{0.0}};
+  Real a_ooa_sum_tmp[max_mode] = {0.0};
+  Real a_opoa[max_mode] = {0.0};
+  Real a_soa[ntot_soaspec][max_mode] = {{0.0}};
+  Real a_soa_tmp[ntot_soaspec][max_mode] = {{0.0}};
+  Real beta[ntot_soaspec][max_mode] = {{0.0}};
+  Real delh_vap_soa[ntot_soaspec] = {156.0e3};
+  Real del_g_soa_tmp[ntot_soaspec] = {0.0};
+  Real g0_soa[ntot_soaspec] = {0.0};
+  Real g_soa[ntot_soaspec] = {0.0};
+  Real g_star[ntot_soaspec][max_mode] = {{0.0}};
+  // Real mw_poa[ntot_poaspec] = {0.0};
+  // Real mw_soa[ntot_soaspec] = {0.0};
+  Real opoa_frac[ntot_poaspec][max_mode] = {{0.1}};
+  Real phi[ntot_soaspec][max_mode] = {{0.0}};
+  Real p0_soa[ntot_soaspec] = {1.0e-10};
+  Real p0_soa_298[ntot_soaspec] = {1.0e-10};
+  Real sat[ntot_soaspec][max_mode] = {{0.0}};
+  Real tmpa, tmpb, tmpc;
+  const Real alpha_astem = 0.05; // Parameter used in calc of time step
+  const Real dtsub_fixed = -1.0; // Fixed sub-step for time integration (s)
+  // BAD CONSTANT
+  const Real rgas = 8.3144; // gas constant in J/K/mol
+  const Real a_min1 = 1.0e-20;
+  const Real g_min1 = 1.0e-20;
+  constexpr int ntot_amode = AeroConfig::num_modes();
+  // FIXME: set values
+  int mode_aging_optaa[max_mode] = {};
+  int lptr2_soa_a_amode[ntot_amode][nsoa] = {{}};
+  Real tot_soa[ntot_soaspec] = {}; // g_soa + sum( a_soa(:) )
+
+  // Calculate ntot_soamode = "last" mode on which soa is allowed to condense
+  for (int n = 0; n < ntot_amode; ++n) {
+    if (n == nufi)
+      continue;
+    if (mode_aging_optaa[n] > 0)
+      ntot_soamode = n;
+    if (lptr2_soa_a_amode[n][0] > 0)
+      ntot_soamode = n;
+  }
+
+  // Calculate ambient equilibrium soa gas
+  for (int ll = 0; ll < ntot_soaspec; ++ll) {
     // BAD CONSTANT
-    const Real rgas = 8.3144; // gas constant in J/K/mol
-    const Real a_min1 = 1.0e-20; 
-    const Real g_min1 = 1.0e-20; 
-    constexpr int ntot_amode = AeroConfig::num_modes();
-    //FIXME: set values
-    int mode_aging_optaa[max_mode]={};
-    int lptr2_soa_a_amode[ntot_amode][nsoa]={{}};
-    Real tot_soa[ntot_soaspec]={}; // g_soa + sum( a_soa(:) )
+    p0_soa[ll] = p0_soa_298[ll] * haero::exp(-(delh_vap_soa[ll] / rgas) *
+                                             ((1.0 / temp) - (1.0 / 298.0)));
+    // BAD CONSTANT
+    g0_soa[ll] = 1.01325e5 * p0_soa[ll] / pmid;
+  }
 
-    // Calculate ntot_soamode = "last" mode on which soa is allowed to condense
-    for (int n = 0; n < ntot_amode; ++n) {
-        if (n == nufi) continue;
-        if (mode_aging_optaa[n] > 0) ntot_soamode = n;
-        if (lptr2_soa_a_amode[n][0] > 0) ntot_soamode = n;
-    }
+  // Main integration loop -- does multiple substeps to reach dtfull
+  for (int igas = 0; igas < nsoa; ++igas) {
+    qgas_avg[igas] = 0.0;
+  }
+  dtsum_qgas_avg = 0.0;
+  // BAD CONSTANT
+  while (tcur < dtfull - 1.0e-3) {
+    niter++;
+    if (niter > niter_max)
+      break;
 
-    // Calculate ambient equilibrium soa gas
-    for (int ll = 0; ll < ntot_soaspec; ++ll) {
-        // BAD CONSTANT
-        p0_soa[ll] = p0_soa_298[ll] * haero::exp(-(delh_vap_soa[ll] / rgas) * ((1.0 / temp) - (1.0 / 298.0)));
-        // BAD CONSTANT
-        g0_soa[ll] = 1.01325e5 * p0_soa[ll] / pmid;
-    }
-
-    // Main integration loop -- does multiple substeps to reach dtfull
+    // Set qxxx_prv to be current value
     for (int igas = 0; igas < nsoa; ++igas) {
-        qgas_avg[igas] = 0.0;
+      qgas_prv[igas] = qgas_cur[igas];
     }
-    dtsum_qgas_avg = 0.0;
-    //BAD CONSTANT
-    while (tcur < dtfull - 1.0e-3) {
-        niter++;
-        if (niter > niter_max) break;
+    for (int iaer = 0; iaer < max_aer; ++iaer) {
+      for (int n = 0; n < AeroConfig::num_modes(); ++n) {
+        qaer_prv[iaer][n] = qaer_cur[iaer][n];
+      }
+    }
 
-        // Set qxxx_prv to be current value
-        for (int igas = 0; igas < nsoa; ++igas) {
-            qgas_prv[igas] = qgas_cur[igas];
-        }
-        for (int iaer = 0; iaer < max_aer; ++iaer) {
-            for (int n = 0; n < AeroConfig::num_modes(); ++n) {
-                qaer_prv[iaer][n] = qaer_cur[iaer][n];
-            }
-        }
-
-        // Determine which modes have non-zero transfer rates
-        // and are involved in the soa gas-aerosol transfer
-        // for diameter = 1 nm and number = 1 #/cm3, xferrate ~= 1e-9 s-1
-        for (int n = 0; n < ntot_soamode; ++n) {
-            skip_soamode[n] = true;
-            for (int ll = 0; ll < ntot_soaspec; ++ll) {
-                if (uptkaer[ll][n] > 1.0e-15) {
-                    uptkaer_soag_tmp[ll][n] = uptkaer[ll][n];
-                    skip_soamode[n] = false;
-                } else {
-                    uptkaer_soag_tmp[ll][n] = 0.0;
-                }
-            }
-        }
-
-        // Load incoming soag and soaa into temporary arrays
-        // force things to be non-negative
-        // calc tot_soa(ll)
-        // calc a_opoa (always slightly >0)
-        //
-        // *** questions ***
-        // > why not use qgas and qaer instead of g_soa and a_soa
-        // > why not calc the following on every substep because
-        //      nuc and coag may change things:
-        //      skip_soamode, uptkaer_soag_tmp, tot_soa, a_opoa
-        // > include gasprod for soa ??
-        // > create qxxx_bgn = qxxx_cur at the very beginning (is it needed)
-        //
-        for (int ll = 0; ll < ntot_soaspec; ++ll) {
-            g_soa[ll] = haero::max(qgas_prv[ll], 0.0);
-            tot_soa[ll] = g_soa[ll];
-            for (int n = 0; n < ntot_soamode; ++n) {
-                if (skip_soamode[n]) continue;
-                a_soa[ll][n] = haero::max(qaer_prv[ll][n], 0.0);
-                tot_soa[ll] += a_soa[ll][n];
-            }
-        }
-
-        for (int n = 0; n < ntot_soamode; ++n) {
-            if (skip_soamode[n]) continue;
-            a_opoa[n] = 0.0;
-            for (int ll = 0; ll < ntot_poaspec; ++ll) {
-                a_opoa[n] += opoa_frac[ll][n] * haero::max(qaer_prv[iaer_pom + ll - 1][n], 0.0);
-            }
-        }
-
-        // Determine time step
-        tmpa = 0.0;  // time integration parameter for all soa species
-        for (int n = 0; n < ntot_soamode; ++n) {
-            if (skip_soamode[n]) continue;
-            a_ooa_sum_tmp[n] = a_opoa[n];
-            for (int ll = 0; ll < ntot_soaspec; ++ll) {
-                a_ooa_sum_tmp[n] += a_soa[ll][n];
-            }
-        }
-        for (int ll = 0; ll < ntot_soaspec; ++ll) {
-            tmpb = 0.0;  // time integration parameter for a single soa species
-            for (int n = 0; n < ntot_soamode; ++n) {
-                if (skip_soamode[n]) continue;
-                sat[ll][n] = g0_soa[ll] / haero::max(a_ooa_sum_tmp[n], a_min1);
-                g_star[ll][n] = sat[ll][n] * a_soa[ll][n];
-                phi[ll][n] = (g_soa[ll] - g_star[ll][n]) / haero::max(g_soa[ll], haero::max(g_star[ll][n], g_min1));
-                tmpb += uptkaer_soag_tmp[ll][n] * haero::abs(phi[ll][n]);
-            }
-            tmpa = haero::max(tmpa, tmpb);
-        }
-
-        if (dtsub_fixed > 0.0) {
-            dtcur = dtsub_fixed;
-            tcur += dtcur;
+    // Determine which modes have non-zero transfer rates
+    // and are involved in the soa gas-aerosol transfer
+    // for diameter = 1 nm and number = 1 #/cm3, xferrate ~= 1e-9 s-1
+    for (int n = 0; n < ntot_soamode; ++n) {
+      skip_soamode[n] = true;
+      for (int ll = 0; ll < ntot_soaspec; ++ll) {
+        if (uptkaer[ll][n] > 1.0e-15) {
+          uptkaer_soag_tmp[ll][n] = uptkaer[ll][n];
+          skip_soamode[n] = false;
         } else {
-            Real dtmax = dtfull - tcur;
-            if (dtmax * tmpa <= alpha_astem) {
-                dtcur = dtmax;
-                tcur = dtfull;
-            } else {
-                dtcur = alpha_astem / tmpa;
-                tcur += dtcur;
-            }
+          uptkaer_soag_tmp[ll][n] = 0.0;
         }
-
-        // Step 1 - for modes where soa is condensing, estimate "new" a_soa(ll,n)
-        // using an explicit calculation with "old" g_soa
-        // and g_star(ll,n) calculated using "old" a_soa(ll,n)
-        // do this to get better estimate of "new" a_soa(ll,n) and sat(ll,n)
-        for (int n = 0; n < ntot_soamode; ++n) {
-            if (skip_soamode[n]) continue;
-            for (int ll = 0; ll < ntot_soaspec; ++ll) {
-                a_soa_tmp[ll][n] = a_soa[ll][n];
-                beta[ll][n] = dtcur * uptkaer_soag_tmp[ll][n];
-                del_g_soa_tmp[ll] = g_soa[ll] - g_star[ll][n];
-                if (del_g_soa_tmp[ll] > 0.0) {
-                    a_soa_tmp[ll][n] += beta[ll][n] * del_g_soa_tmp[ll];
-                }
-            }
-            a_ooa_sum_tmp[n] = a_opoa[n];
-            for (int ll = 0; ll < ntot_soaspec; ++ll) {
-                a_ooa_sum_tmp[n] += a_soa_tmp[ll][n];
-            }
-            for (int ll = 0; ll < ntot_soaspec; ++ll) {
-                if (del_g_soa_tmp[ll] > 0.0) {
-                    sat[ll][n] = g0_soa[ll] / haero::max(a_ooa_sum_tmp[n], a_min1);
-                    g_star[ll][n] = sat[ll][n] * a_soa_tmp[ll][n];  // this just needed for diagnostics
-                }
-            }
-        }
-
-        // Step 2 - implicit in g_soa and semi-implicit in a_soa,
-        // with g_star(ll,n) calculated semi-implicitly
-        for (int ll = 0; ll < ntot_soaspec; ++ll) {
-            tmpa = 0.0;
-            tmpb = 0.0;
-            for (int n = 0; n < ntot_soamode; ++n) {
-                if (skip_soamode[n]) continue;
-                tmpa += a_soa[ll][n] / (1.0 + beta[ll][n] * sat[ll][n]);
-                tmpb += beta[ll][n] / (1.0 + beta[ll][n] * sat[ll][n]);
-            }
-
-            g_soa[ll] = (tot_soa[ll] - tmpa) / (1.0 + tmpb);
-            g_soa[ll] = haero::max(0.0, g_soa[ll]);
-            for (int n = 0; n < ntot_soamode; ++n) {
-                if (skip_soamode[n]) continue;
-                a_soa[ll][n] = (a_soa[ll][n] + beta[ll][n] * g_soa[ll]) / (1.0 + beta[ll][n] * sat[ll][n]);
-            }
-        }
-
-        // Update mix ratios for soa species
-        for (int igas = 0; igas < nsoa; ++igas) {
-            int iaer = igas;
-            qgas_cur[igas] = g_soa[igas];
-            tmpc = qgas_cur[igas] - qgas_prv[igas];
-            qgas_avg[igas] += dtcur * (qgas_prv[igas] + 0.5 * tmpc);
-            for (int n = 0; n < ntot_soamode; ++n) {
-                qaer_cur[iaer][n] = a_soa[iaer][n];
-                tmpc = qaer_cur[iaer][n] - qaer_prv[iaer][n];
-            }
-        }
-
-        dtsum_qgas_avg += dtcur;
+      }
     }
 
-    // Convert qgas_avg from sum_over[ qgas*dt_cut ] to an average
+    // Load incoming soag and soaa into temporary arrays
+    // force things to be non-negative
+    // calc tot_soa(ll)
+    // calc a_opoa (always slightly >0)
+    //
+    // *** questions ***
+    // > why not use qgas and qaer instead of g_soa and a_soa
+    // > why not calc the following on every substep because
+    //      nuc and coag may change things:
+    //      skip_soamode, uptkaer_soag_tmp, tot_soa, a_opoa
+    // > include gasprod for soa ??
+    // > create qxxx_bgn = qxxx_cur at the very beginning (is it needed)
+    //
+    for (int ll = 0; ll < ntot_soaspec; ++ll) {
+      g_soa[ll] = haero::max(qgas_prv[ll], 0.0);
+      tot_soa[ll] = g_soa[ll];
+      for (int n = 0; n < ntot_soamode; ++n) {
+        if (skip_soamode[n])
+          continue;
+        a_soa[ll][n] = haero::max(qaer_prv[ll][n], 0.0);
+        tot_soa[ll] += a_soa[ll][n];
+      }
+    }
+
+    for (int n = 0; n < ntot_soamode; ++n) {
+      if (skip_soamode[n])
+        continue;
+      a_opoa[n] = 0.0;
+      for (int ll = 0; ll < ntot_poaspec; ++ll) {
+        a_opoa[n] +=
+            opoa_frac[ll][n] * haero::max(qaer_prv[iaer_pom + ll - 1][n], 0.0);
+      }
+    }
+
+    // Determine time step
+    tmpa = 0.0; // time integration parameter for all soa species
+    for (int n = 0; n < ntot_soamode; ++n) {
+      if (skip_soamode[n])
+        continue;
+      a_ooa_sum_tmp[n] = a_opoa[n];
+      for (int ll = 0; ll < ntot_soaspec; ++ll) {
+        a_ooa_sum_tmp[n] += a_soa[ll][n];
+      }
+    }
+    for (int ll = 0; ll < ntot_soaspec; ++ll) {
+      tmpb = 0.0; // time integration parameter for a single soa species
+      for (int n = 0; n < ntot_soamode; ++n) {
+        if (skip_soamode[n])
+          continue;
+        sat[ll][n] = g0_soa[ll] / haero::max(a_ooa_sum_tmp[n], a_min1);
+        g_star[ll][n] = sat[ll][n] * a_soa[ll][n];
+        phi[ll][n] = (g_soa[ll] - g_star[ll][n]) /
+                     haero::max(g_soa[ll], haero::max(g_star[ll][n], g_min1));
+        tmpb += uptkaer_soag_tmp[ll][n] * haero::abs(phi[ll][n]);
+      }
+      tmpa = haero::max(tmpa, tmpb);
+    }
+
+    if (dtsub_fixed > 0.0) {
+      dtcur = dtsub_fixed;
+      tcur += dtcur;
+    } else {
+      Real dtmax = dtfull - tcur;
+      if (dtmax * tmpa <= alpha_astem) {
+        dtcur = dtmax;
+        tcur = dtfull;
+      } else {
+        dtcur = alpha_astem / tmpa;
+        tcur += dtcur;
+      }
+    }
+
+    // Step 1 - for modes where soa is condensing, estimate "new" a_soa(ll,n)
+    // using an explicit calculation with "old" g_soa
+    // and g_star(ll,n) calculated using "old" a_soa(ll,n)
+    // do this to get better estimate of "new" a_soa(ll,n) and sat(ll,n)
+    for (int n = 0; n < ntot_soamode; ++n) {
+      if (skip_soamode[n])
+        continue;
+      for (int ll = 0; ll < ntot_soaspec; ++ll) {
+        a_soa_tmp[ll][n] = a_soa[ll][n];
+        beta[ll][n] = dtcur * uptkaer_soag_tmp[ll][n];
+        del_g_soa_tmp[ll] = g_soa[ll] - g_star[ll][n];
+        if (del_g_soa_tmp[ll] > 0.0) {
+          a_soa_tmp[ll][n] += beta[ll][n] * del_g_soa_tmp[ll];
+        }
+      }
+      a_ooa_sum_tmp[n] = a_opoa[n];
+      for (int ll = 0; ll < ntot_soaspec; ++ll) {
+        a_ooa_sum_tmp[n] += a_soa_tmp[ll][n];
+      }
+      for (int ll = 0; ll < ntot_soaspec; ++ll) {
+        if (del_g_soa_tmp[ll] > 0.0) {
+          sat[ll][n] = g0_soa[ll] / haero::max(a_ooa_sum_tmp[n], a_min1);
+          g_star[ll][n] =
+              sat[ll][n] * a_soa_tmp[ll][n]; // this just needed for diagnostics
+        }
+      }
+    }
+
+    // Step 2 - implicit in g_soa and semi-implicit in a_soa,
+    // with g_star(ll,n) calculated semi-implicitly
+    for (int ll = 0; ll < ntot_soaspec; ++ll) {
+      tmpa = 0.0;
+      tmpb = 0.0;
+      for (int n = 0; n < ntot_soamode; ++n) {
+        if (skip_soamode[n])
+          continue;
+        tmpa += a_soa[ll][n] / (1.0 + beta[ll][n] * sat[ll][n]);
+        tmpb += beta[ll][n] / (1.0 + beta[ll][n] * sat[ll][n]);
+      }
+
+      g_soa[ll] = (tot_soa[ll] - tmpa) / (1.0 + tmpb);
+      g_soa[ll] = haero::max(0.0, g_soa[ll]);
+      for (int n = 0; n < ntot_soamode; ++n) {
+        if (skip_soamode[n])
+          continue;
+        a_soa[ll][n] = (a_soa[ll][n] + beta[ll][n] * g_soa[ll]) /
+                       (1.0 + beta[ll][n] * sat[ll][n]);
+      }
+    }
+
+    // Update mix ratios for soa species
     for (int igas = 0; igas < nsoa; ++igas) {
-        qgas_avg[igas] = haero::max(0.0, qgas_avg[igas] / dtsum_qgas_avg);
+      int iaer = igas;
+      qgas_cur[igas] = g_soa[igas];
+      tmpc = qgas_cur[igas] - qgas_prv[igas];
+      qgas_avg[igas] += dtcur * (qgas_prv[igas] + 0.5 * tmpc);
+      for (int n = 0; n < ntot_soamode; ++n) {
+        qaer_cur[iaer][n] = a_soa[iaer][n];
+        tmpc = qaer_cur[iaer][n] - qaer_prv[iaer][n];
+      }
     }
 
+    dtsum_qgas_avg += dtcur;
+  }
+
+  // Convert qgas_avg from sum_over[ qgas*dt_cut ] to an average
+  for (int igas = 0; igas < nsoa; ++igas) {
+    qgas_avg[igas] = haero::max(0.0, qgas_avg[igas] / dtsum_qgas_avg);
+  }
 }
 //================================================================================
 // Determine adaptive time-step size for SOA condensation/evaporation
