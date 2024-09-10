@@ -81,19 +81,17 @@ constexpr int naer = nsoa + 1;
 constexpr int iaer_pom =
     naer + 1 - 1; // -1 for fotran to c++ indexing conversion.
 // FIXME: set values
-constexpr int mode_aging_optaa[max_mode] = {0,0,0,1,0};
+constexpr int mode_aging_optaa[max_mode] = {0, 0, 0, 1, 0};
 // int lptr2_soa_a_amode[ntot_amode][nsoa] = {{18,25,34,-999888777}};
-constexpr int ntot_soamode=4;
+constexpr int ntot_soamode = 4;
 
 KOKKOS_INLINE_FUNCTION
 void mam_soaexch_1subarea(
-                          // int nstep,
-                          int i, int k, int jsub,
-                          int latndx, int lonndx, int lund, Real dtsubstep,
-                          Real temp, Real pmid, Real aircon, int n_mode,
-                          Real qgas_cur[], Real qgas_avg[],
-                          Real qaer_cur[][max_mode], Real qnum_cur[],
-                          Real qwtr_cur[], const Real uptkaer[][max_mode]) {
+    // int nstep,
+    int i, int k, int jsub, int latndx, int lonndx, int lund, Real dtsubstep,
+    Real temp, Real pmid, Real aircon, int n_mode, Real qgas_cur[],
+    Real qgas_avg[], Real qaer_cur[][max_mode], Real qnum_cur[],
+    Real qwtr_cur[], const Real uptkaer[][max_mode]) {
 
   // Local variables
   int ntot_poaspec = npoa;
