@@ -81,9 +81,9 @@ constexpr int naer = nsoa + 1;
 constexpr int iaer_pom =
     naer + 1 - 1; // -1 for fotran to c++ indexing conversion.
 // FIXME: set values
-// int mode_aging_optaa[max_mode] = {0,0,0,1,0};
-// int lptr2_soa_a_amode[ntot_amode][nsoa] = {{18,25,34,-999888777}};  
-constexpr int ntot_soamode=4;  
+constexpr int mode_aging_optaa[max_mode] = {0,0,0,1,0};
+// int lptr2_soa_a_amode[ntot_amode][nsoa] = {{18,25,34,-999888777}};
+constexpr int ntot_soamode=4;
 
 KOKKOS_INLINE_FUNCTION
 void mam_soaexch_1subarea(
@@ -133,7 +133,8 @@ void mam_soaexch_1subarea(
   const Real rgas = 8.3144; // gas constant in J/K/mol
   const Real a_min1 = 1.0e-20;
   const Real g_min1 = 1.0e-20;
-  constexpr int ntot_amode = AeroConfig::num_modes();
+
+  // constexpr int ntot_amode = AeroConfig::num_modes();
 
   Real tot_soa[ntot_soaspec] = {}; // g_soa + sum( a_soa(:) )
 
