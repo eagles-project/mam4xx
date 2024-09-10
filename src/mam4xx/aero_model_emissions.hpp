@@ -8,6 +8,8 @@
 
 namespace mam4::aero_model_emissions {
 
+using View1D = DeviceType::view_1d<Real>;
+
 // essentially everything in this namespace falls in the BAD CONSTANT category
 // ... thus, the name
 namespace BAD_CONSTANTS {
@@ -39,6 +41,8 @@ const int dust_indices[dust_nbin + dust_nnum] = {19, 28, 22, 35};
 struct DustEmissionsData {
   // Kok11: fractions of bin (0.1-1) and bin (1-10) in size 0.1-10
   const Real dust_emis_scalefactor[dust_nbin] = {0.011, 0.989};
+  // FIXME: got this value from fortran mam4::dust_model.F90:26
+  const Real dust_dmt_grd[dust_nbin + 1] = {1.0e-7, 1.0e-6, 1.0e-5};
   // tuning parameter for dust emissions
   // perhaps unnecessary? it's not entirely clear to me what happens in
   // soil_erod_mod::soil_erod_init() where this is set
@@ -927,6 +931,8 @@ void aero_model_emissions(
   Real fi[salt_nsection];
   Real soil_erodibility;
 
+  init_dust_dmt_vwr(dust_data.dust_dmt_grd, dust_data.dust_dmt_vwr);
+
   dust_emis(
       // in
       dust_indices, dust_density, dust_flux_in, dust_data, soil_erodibility,
@@ -979,6 +985,135 @@ void aero_model_emissions(
     spec_idx = seasalt_data.seasalt_indices[ispec];
     surface_flux += cflux[spec_idx];
   }
+
+} // end aero_model_emissions()
+
+KOKKOS_INLINE_FUNCTION
+void aero_model_emissions(
+    // in
+    OnlineEmissionsData online_emiss_data,
+    SeasaltEmissionsData seasalt_data,
+    DustEmissionsData dust_data,
+    // inout
+    // NOTE: fortran: cam_in%cflx
+    Real (&cflux)[pcnst]) {
+  // srf_temp: sea surface temperature [K]
+  // sea salt number fluxes in each size bin [#/m2/s]
+
+  // NOTE: fortran: cam_in%dstflx
+  Real dust_flux_in[dust_nflux_in];
+  for (int i = 0; i < dust_nflux_in; ++i) {
+    dust_flux_in[i] = online_emiss_data.dust_flux_in[i];
+  }
+  // NOTE: fortran: cam_in%sst
+  const Real surface_temp = online_emiss_data.surface_temp;
+  // NOTE: fortran: state%u(:ncol,pver), state%v(:ncol,pver),
+  // state%zm(:ncol,pver)
+  // => u_bottom, v_bottom, z_bottom
+  const Real u_bottom = online_emiss_data.u_bottom;
+  const Real v_bottom = online_emiss_data.v_bottom;
+  // FIXME: get this from haero::atmosphere?
+  const Real z_bottom = online_emiss_data.z_bottom;
+  // NOTE: fortran: cam_in%ocnfrac
+  const Real ocean_frac = online_emiss_data.ocean_frac;
+
+  Real fi[salt_nsection];
+  Real soil_erodibility;
+
+  init_dust_dmt_vwr(dust_data.dust_dmt_grd, dust_data.dust_dmt_vwr);
+
+  dust_emis(
+      // in
+      dust_indices, dust_density, dust_flux_in, dust_data, soil_erodibility,
+      // inout
+      cflux);
+
+  // some dust emis diagnostics ...
+  Real surface_flux = 0.0;
+  int spec_idx;
+  // FIXME: maybe get rid of this, and below? in mam4, surface_flux is a
+  // local variable that appears to only be written out via outfld()
+  for (int ispec = 0; ispec < dust_nbin + dust_nnum; ++ispec) {
+    spec_idx = dust_indices[ispec];
+    if (ispec <= dust_nbin) {
+      surface_flux += cflux[spec_idx];
+    }
+  }
+
+  init_seasalt(seasalt_data);
+  calculate_seasalt_numflux_in_bins(
+      // in
+      surface_temp, u_bottom, v_bottom, z_bottom, seasalt_data.consta,
+      seasalt_data.constb,
+      // out
+      fi);
+
+  surface_flux = 0.0;
+
+  seasalt_emis(
+      // in
+      fi, ocean_frac, seasalt_emis_scalefactor, seasalt_data,
+      //  inout
+      cflux);
+
+  marine_organic_emissions(
+      // in
+      fi, ocean_frac, seasalt_emis_scalefactor, seasalt_data, emit_this_mode,
+      // inout
+      cflux);
+
+  // FIXME: maybe get rid of this? in mam4, surface_flux is a local variable
+  for (int ispec = 0; ispec < seasalt_nbin - nsalt_om; ++ispec) {
+    spec_idx = seasalt_data.seasalt_indices[ispec];
+    surface_flux += cflux[spec_idx];
+  }
+
+  surface_flux = 0.0;
+  // FIXME: maybe get rid of this? in mam4, surface_flux is a local variable
+  for (int ispec = 0; ispec < seasalt_nbin - nsalt_om + 1; ++ispec) {
+    spec_idx = seasalt_data.seasalt_indices[ispec];
+    surface_flux += cflux[spec_idx];
+  }
+
+} // end aero_model_emissions()
+
+KOKKOS_INLINE_FUNCTION
+void aero_model_emissions(
+    // in
+    const ThreadTeam &team,
+    // inout
+    View1D &cflux_) {
+
+  OnlineEmissionsData online_emiss_data;
+  SeasaltEmissionsData seasalt_data;
+  DustEmissionsData dust_data;
+
+  Real cflux[pcnst];
+
+  for (int i = 0; i < pcnst; ++i) {
+    cflux[i] = cflux_(i);
+  }
+
+  aero_model_emissions(team, online_emiss_data, seasalt_data, dust_data, cflux);
+
+} // end aero_model_emissions()
+
+KOKKOS_INLINE_FUNCTION
+void aero_model_emissions(
+    // inout
+    View1D &cflux_) {
+
+  OnlineEmissionsData online_emiss_data;
+  SeasaltEmissionsData seasalt_data;
+  DustEmissionsData dust_data;
+
+  Real cflux[pcnst];
+
+  for (int i = 0; i < pcnst; ++i) {
+    cflux[i] = cflux_(i);
+  }
+
+  aero_model_emissions(online_emiss_data, seasalt_data, dust_data, cflux);
 
 } // end aero_model_emissions()
 
