@@ -344,7 +344,7 @@ void gas_aer_uptkrates_1box1gas_OD(
 !           Kn = Knudsen number
 !           ac = accomodation coefficient */
 
-  const Real tworootpi = 2 * haero::sqrt(pi);
+  const Real tworootpi = 2 * haero::sqrt(haero::Constants::pi);
   const Real root2 = haero::sqrt(2.0);
   const Real one = 1.0;
   const Real two = 2.0;
