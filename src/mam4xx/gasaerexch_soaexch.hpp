@@ -76,10 +76,14 @@ constexpr int nbc =
     1; // number of differently tagged black-carbon      aerosol species
 constexpr int max_aer = nsoa + npoa + nbc + 4;
 // FIXME: check this value
-constexpr int nufi = -999888777;
+// constexpr int nufi = -999888777;
 constexpr int naer = nsoa + 1;
 constexpr int iaer_pom =
     naer + 1 - 1; // -1 for fotran to c++ indexing conversion.
+// FIXME: set values
+// int mode_aging_optaa[max_mode] = {0,0,0,1,0};
+// int lptr2_soa_a_amode[ntot_amode][nsoa] = {{18,25,34,-999888777}};  
+constexpr int ntot_soamode=4;  
 
 KOKKOS_INLINE_FUNCTION
 void mam_soaexch_1subarea(int nstep, int lchnk, int i, int k, int jsub,
@@ -128,20 +132,18 @@ void mam_soaexch_1subarea(int nstep, int lchnk, int i, int k, int jsub,
   const Real a_min1 = 1.0e-20;
   const Real g_min1 = 1.0e-20;
   constexpr int ntot_amode = AeroConfig::num_modes();
-  // FIXME: set values
-  int mode_aging_optaa[max_mode] = {};
-  int lptr2_soa_a_amode[ntot_amode][nsoa] = {{}};
+
   Real tot_soa[ntot_soaspec] = {}; // g_soa + sum( a_soa(:) )
 
   // Calculate ntot_soamode = "last" mode on which soa is allowed to condense
-  for (int n = 0; n < ntot_amode; ++n) {
-    if (n == nufi)
-      continue;
-    if (mode_aging_optaa[n] > 0)
-      ntot_soamode = n;
-    if (lptr2_soa_a_amode[n][0] > 0)
-      ntot_soamode = n;
-  }
+  // for (int n = 0; n < ntot_amode; ++n) {
+  //   if (n == nufi)
+  //     continue;
+  //   if (mode_aging_optaa[n] > 0)
+  //     ntot_soamode = n;
+  //   if (lptr2_soa_a_amode[n][0] > 0)
+  //     ntot_soamode = n;
+  // }
 
   // Calculate ambient equilibrium soa gas
   for (int ll = 0; ll < ntot_soaspec; ++ll) {
