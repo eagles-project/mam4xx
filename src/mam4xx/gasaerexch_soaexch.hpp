@@ -71,7 +71,11 @@ constexpr int max_mode = AeroConfig::num_modes() +1 ;
 constexpr int max_gas = nsoa + 1;
 //  the +4 in max_aer are dst, ncl, so4, mom
 constexpr int nbc   = 1;// number of differently tagged black-carbon      aerosol species
-constexpr int  max_aer = nsoa + npoa + nbc + 4
+constexpr int  max_aer = nsoa + npoa + nbc + 4;
+// FIXME: check this value
+constexpr int nufi=-999888777;
+constexpr int naer = nsoa + 1;
+constexpr int iaer_pom = naer + 1 -1;// -1 for fotran to c++ indexing conversion. 
 
 KOKKOS_INLINE_FUNCTION
 void mam_soaexch_1subarea(
@@ -107,15 +111,14 @@ void mam_soaexch_1subarea(
     Real g0_soa[ntot_soaspec] = {0.0};
     Real g_soa[ntot_soaspec] = {0.0};
     Real g_star[ntot_soaspec][max_mode] = {{0.0}};
-    Real mw_poa[ntot_poaspec] = {0.0};
-    Real mw_soa[ntot_soaspec] = {0.0};
+    //Real mw_poa[ntot_poaspec] = {0.0};
+    //Real mw_soa[ntot_soaspec] = {0.0};
     Real opoa_frac[ntot_poaspec][max_mode] = {{0.1}};
     Real phi[ntot_soaspec][max_mode] = {{0.0}};
     Real p0_soa[ntot_soaspec] = {1.0e-10};
     Real p0_soa_298[ntot_soaspec] = {1.0e-10};
     Real sat[ntot_soaspec][max_mode] = {{0.0}};
     Real tmpa, tmpb, tmpc;
-
     const Real alpha_astem = 0.05; // Parameter used in calc of time step
     const Real dtsub_fixed = -1.0; // Fixed sub-step for time integration (s)
     // BAD CONSTANT
@@ -123,7 +126,10 @@ void mam_soaexch_1subarea(
     const Real a_min1 = 1.0e-20; 
     const Real g_min1 = 1.0e-20; 
     constexpr int ntot_amode = AeroConfig::num_modes();
-
+    //FIXME: set values
+    int mode_aging_optaa[max_mode]={};
+    int lptr2_soa_a_amode[ntot_amode][nsoa]={{}};
+    Real tot_soa[ntot_soaspec]={}; // g_soa + sum( a_soa(:) )
 
     // Calculate ntot_soamode = "last" mode on which soa is allowed to condense
     for (int n = 0; n < ntot_amode; ++n) {
@@ -190,11 +196,11 @@ void mam_soaexch_1subarea(
         //
         for (int ll = 0; ll < ntot_soaspec; ++ll) {
             g_soa[ll] = haero::max(qgas_prv[ll], 0.0);
-            Real tot_soa = g_soa[ll];
+            tot_soa[ll] = g_soa[ll];
             for (int n = 0; n < ntot_soamode; ++n) {
                 if (skip_soamode[n]) continue;
                 a_soa[ll][n] = haero::max(qaer_prv[ll][n], 0.0);
-                tot_soa += a_soa[ll][n];
+                tot_soa[ll] += a_soa[ll][n];
             }
         }
 
