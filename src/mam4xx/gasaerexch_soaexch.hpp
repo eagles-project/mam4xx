@@ -86,7 +86,9 @@ constexpr int iaer_pom =
 constexpr int ntot_soamode=4;  
 
 KOKKOS_INLINE_FUNCTION
-void mam_soaexch_1subarea(int nstep, int lchnk, int i, int k, int jsub,
+void mam_soaexch_1subarea(
+                          // int nstep,
+                          int i, int k, int jsub,
                           int latndx, int lonndx, int lund, Real dtsubstep,
                           Real temp, Real pmid, Real aircon, int n_mode,
                           Real qgas_cur[], Real qgas_avg[],
