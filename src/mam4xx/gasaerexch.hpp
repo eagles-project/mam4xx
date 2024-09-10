@@ -319,30 +319,25 @@ Real fuchs_sutugin(const Real &D_p, const Real &gasfreepath,
   return fuchs_sutugin;
 }
 
-
 KOKKOS_INLINE_FUNCTION
-void gas_aer_uptkrates_1box1gas_OD(
-    const Real accom,
-    const Real gasdiffus, 
-    const Real gasfreepath, 
-    const Real beta_inp,
-    const Real dgncur_awet[GasAerExch::num_mode],
-    const Real lnsg[GasAerExch::num_mode],
-    Real uptkaer[GasAerExch::num_mode]    
-     ) {
-/*
-!                         /
-!   computes   uptkrate = | dx  dN/dx  gas_conden_rate(Dp(x))
-!                         /
-!   using Gauss-Hermite quadrature of order nghq=2
-!
-!       Dp = particle diameter (cm)
-!       x = ln(Dp)
-!       dN/dx = log-normal particle number density distribution
-!       gas_conden_rate(Dp) = 2 * pi * gasdiffus * Dp * F(Kn,ac)
-!           F(Kn,ac) = Fuchs-Sutugin correction factor
-!           Kn = Knudsen number
-!           ac = accomodation coefficient */
+void gas_aer_uptkrates_1box1gas_OD(const Real accom, const Real gasdiffus,
+                                   const Real gasfreepath, const Real beta_inp,
+                                   const Real dgncur_awet[GasAerExch::num_mode],
+                                   const Real lnsg[GasAerExch::num_mode],
+                                   Real uptkaer[GasAerExch::num_mode]) {
+  /*
+  !                         /
+  !   computes   uptkrate = | dx  dN/dx  gas_conden_rate(Dp(x))
+  !                         /
+  !   using Gauss-Hermite quadrature of order nghq=2
+  !
+  !       Dp = particle diameter (cm)
+  !       x = ln(Dp)
+  !       dN/dx = log-normal particle number density distribution
+  !       gas_conden_rate(Dp) = 2 * pi * gasdiffus * Dp * F(Kn,ac)
+  !           F(Kn,ac) = Fuchs-Sutugin correction factor
+  !           Kn = Knudsen number
+  !           ac = accomodation coefficient */
 
   const Real tworootpi = 2 * haero::sqrt(haero::Constants::pi);
   const Real root2 = haero::sqrt(2.0);
@@ -355,13 +350,13 @@ void gas_aer_uptkrates_1box1gas_OD(
   // weights data xghq / 0.70710678, -0.70710678 / data wghq / 0.88622693,
   // 0.88622693 /
 
-  // NOTE: it looks like the refractored code is still using Dick's old version. 
+  // NOTE: it looks like the refractored code is still using Dick's old version.
 
   //-----------------------------------------------------------------------
 
-  constexpr int nghq = 2; 
-  const Real xghq[nghq]= {0.70710678, -0.70710678 };
-  const Real wghq[nghq]= {0.88622693, 0.88622693 };
+  constexpr int nghq = 2;
+  const Real xghq[nghq] = {0.70710678, -0.70710678};
+  const Real wghq[nghq] = {0.88622693, 0.88622693};
 
   const Real accomxp283 = accom * 0.283;
   const Real accomxp75 = accom * 0.75;
@@ -409,7 +404,6 @@ void gas_aer_uptkrates_1box1gas_OD(
   }
 } // gas_aer_uptkrates_1box1gas_OD
 
-
 KOKKOS_INLINE_FUNCTION
 void gas_aer_uptkrates_1box1gas(
     const bool l_condense_to_mode[GasAerExch::num_mode], const Real temp,
@@ -454,7 +448,7 @@ void gas_aer_uptkrates_1box1gas(
   // weights data xghq / 0.70710678, -0.70710678 / data wghq / 0.88622693,
   // 0.88622693 /
 
-  // NOTE: it looks like the refractored code is still using Dick's old version. 
+  // NOTE: it looks like the refractored code is still using Dick's old version.
 
   // choose
   // nghq-----------------------------------------------------------------
@@ -517,13 +511,13 @@ void gas_aer_uptkrates_1box1gas(
   // pressure (atmospheres)
   const Real p_in_atm = pmid / pstd;
   // gas diffusivity (m2/s)
-  // FIXME: gas diffusivity is an input in fortran code. 
+  // FIXME: gas diffusivity is an input in fortran code.
   const Real gasdiffus = gas_diffusivity(temp, p_in_atm, mw_gas, mw_air_gmol,
                                          vol_molar_gas, vol_molar_air);
   // gas mean free path (m)
   const Real molecular_speed =
       mean_molecular_speed(temp, mw_gas, r_universal_mJ, pi);
-  // FIXME: gasfreepath is an input in fortran code. 
+  // FIXME: gasfreepath is an input in fortran code.
   const Real gasfreepath = 3.0 * gasdiffus / molecular_speed;
   const Real accomxp283 = accom * 0.283;
   const Real accomxp75 = accom * 0.75;
