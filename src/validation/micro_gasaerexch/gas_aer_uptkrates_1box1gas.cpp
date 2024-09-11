@@ -35,7 +35,6 @@ void gas_aer_uptkrates_1box1gas(Ensemble *ensemble) {
       lnsg[mode] = lnsg_vec[mode];
     }
 
-    // Call the function
     gas_aer_uptkrates_1box1gas_OD(accom, gasdiffus, gasfreepath, beta_inp,
                                   dgncur_awet, lnsg, uptkaer);
 
@@ -46,6 +45,6 @@ void gas_aer_uptkrates_1box1gas(Ensemble *ensemble) {
     }
 
     // Set output values
-    output.set("uptkaer", uptkaer_vec);
+    output.set("uptkrate", uptkaer_vec);
   });
 }
