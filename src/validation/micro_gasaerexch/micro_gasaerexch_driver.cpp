@@ -24,6 +24,7 @@ using namespace mam4;
 // Parameterizations used by the mo_photo() process.
 void mam_soaexch_1subarea(Ensemble *ensemble);
 void gas_aer_uptkrates_1box1gas(Ensemble *ensemble);
+void mam_gasaerexch_1subarea(Ensemble *ensemble);
 int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
@@ -50,7 +51,9 @@ int main(int argc, char **argv) {
       mam_soaexch_1subarea(ensemble);
     } else if (func_name == "gas_aer_uptkrates_1box1gas") {
       gas_aer_uptkrates_1box1gas(ensemble);
-    } 
+    } else if (func_name == "mam_gasaerexch_1subarea") {
+      mam_gasaerexch_1subarea(ensemble);
+    }
     else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;

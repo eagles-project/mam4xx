@@ -14,7 +14,7 @@ using namespace mam4;
 using namespace haero;
 using namespace gasaerexch;
 
-void test_mam_gasaerexch_1subarea(Ensemble *ensemble) {
+void mam_gasaerexch_1subarea(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Extract scalar values from input arrays
     const int jtsubstep = input.get_array("jtsubstep")[0];

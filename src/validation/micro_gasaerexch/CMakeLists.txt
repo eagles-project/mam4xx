@@ -12,6 +12,7 @@ add_executable(micro_gasaerexch_driver
                micro_gasaerexch_driver.cpp
                mam_soaexch_1subarea.cpp
                gas_aer_uptkrates_1box1gas.cpp
+               mam_gasaerexch_1subarea.cpp
                )
 
 target_link_libraries(micro_gasaerexch_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -30,12 +31,14 @@ endforeach()
 set(TEST_LIST
     mam_soaexch_1subarea_ts_379
     gas_aer_uptkrates_1box1gas_ts_379
+    mam_gasaerexch_1subarea_ts_379
     )
 # # matching the tests and errors, just for convenience
 
 set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
     9e-9
+    ${DEFAULT_TOL}
     ${DEFAULT_TOL}
    )
 
