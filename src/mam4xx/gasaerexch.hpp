@@ -1065,9 +1065,10 @@ void mam_gasaerexch_1subarea(int nstep, int i, int k, int jsub, int jtsubstep,
 
   // Do SOA
   mam4::gasaerexch::mam_soaexch_1subarea(
-      // nstep,
-      i, k, jsub, latndx, lonndx, lund, dtsubstep, temp, pmid, aircon, n_mode,
-      qgas_cur, qgas_avg, qaer_cur, qnum_cur, qwtr_cur, uptkaer);
+      dtsubstep, temp, pmid,
+      qgas_cur, qgas_avg, 
+      qaer_cur, qnum_cur,
+      qwtr_cur, uptkaer);
 
   // Do other gases (that are assumed non-volatile) with no time sub-stepping
   for (int igas = nsoa; igas < max_gas; ++igas) {

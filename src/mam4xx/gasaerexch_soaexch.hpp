@@ -87,11 +87,16 @@ constexpr int ntot_soamode = 4;
 
 KOKKOS_INLINE_FUNCTION
 void mam_soaexch_1subarea(
-    // int nstep,
-    int i, int k, int jsub, int latndx, int lonndx, int lund, Real dtsubstep,
-    Real temp, Real pmid, Real aircon, int n_mode, Real qgas_cur[],
-    Real qgas_avg[], Real qaer_cur[][max_mode], Real qnum_cur[],
-    Real qwtr_cur[], const Real uptkaer[][max_mode]) {
+    const Real dtsubstep, // in
+    const Real temp, //in 
+    const Real pmid,//in
+    Real qgas_cur[max_gas], // in/out
+    Real qgas_avg[max_gas], // in/out
+    Real qaer_cur[max_aer][max_mode],// in/out
+    Real qnum_cur[max_mode],// in/out
+    Real qwtr_cur[max_mode], // in/out
+    const Real uptkaer[max_gas][max_mode] // in 
+    ) {
 
   // Local variables
   constexpr int ntot_poaspec = npoa;
@@ -99,7 +104,7 @@ void mam_soaexch_1subarea(
   int ntot_soamode = 0;
   int niter_max = 1000;
   int niter = 0;
-  Real dtfull = dtsubstep;
+  const Real dtfull = dtsubstep;
   Real tcur = 0.0;
   Real dtcur = 0.0;
   Real dtsum_qgas_avg = 0.0;
@@ -117,8 +122,6 @@ void mam_soaexch_1subarea(
   Real g0_soa[ntot_soaspec] = {0.0};
   Real g_soa[ntot_soaspec] = {0.0};
   Real g_star[ntot_soaspec][max_mode] = {{0.0}};
-  // Real mw_poa[ntot_poaspec] = {0.0};
-  // Real mw_soa[ntot_soaspec] = {0.0};
   Real opoa_frac[ntot_poaspec][max_mode] = {{0.1}};
   Real phi[ntot_soaspec][max_mode] = {{0.0}};
   Real p0_soa[ntot_soaspec] = {1.0e-10};
@@ -131,8 +134,6 @@ void mam_soaexch_1subarea(
   const Real rgas = 8.3144; // gas constant in J/K/mol
   const Real a_min1 = 1.0e-20;
   const Real g_min1 = 1.0e-20;
-
-  // constexpr int ntot_amode = AeroConfig::num_modes();
 
   Real tot_soa[ntot_soaspec] = {}; // g_soa + sum( a_soa(:) )
 
