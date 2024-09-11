@@ -94,8 +94,8 @@ void mam_soaexch_1subarea(
     Real qwtr_cur[], const Real uptkaer[][max_mode]) {
 
   // Local variables
-  int ntot_poaspec = npoa;
-  int ntot_soaspec = nsoa;
+  constexpr int ntot_poaspec = npoa;
+  constexpr int ntot_soaspec = nsoa;
   int ntot_soamode = 0;
   int niter_max = 1000;
   int niter = 0;
