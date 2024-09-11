@@ -38,7 +38,6 @@ void gas_aer_uptkrates_1box1gas(Ensemble *ensemble) {
     gas_aer_uptkrates_1box1gas_OD(accom, gasdiffus, gasfreepath, beta_inp,
                                   dgncur_awet, lnsg, uptkaer);
 
-    // Prepare output arrays
     std::vector<Real> uptkaer_vec(GasAerExch::num_mode);
     for (int mode = 0; mode < GasAerExch::num_mode; ++mode) {
       uptkaer_vec[mode] = uptkaer[mode];

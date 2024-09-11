@@ -948,15 +948,21 @@ void GasAerExch::compute_tendencies(const AeroConfig &config,
 }
 
 KOKKOS_INLINE_FUNCTION
-void mam_gasaerexch_1subarea(int nstep, int i, int k, int jsub, int jtsubstep,
-                             int ntsubstep, int latndx, int lonndx, int lund,
-                             Real dtsubstep, Real temp, Real pmid, Real aircon,
-                             int n_mode, Real qgas_cur[], Real qgas_avg[],
-                             const Real qgas_netprod_otrproc[],
-                             Real qaer_cur[][mam4::gasaerexch::max_mode],
-                             Real qnum_cur[], Real qwtr_cur[], Real dgn_a[],
-                             Real dgn_awet[], Real wetdens[],
-                             Real uptkaer[][mam4::gasaerexch::max_mode],
+void mam_gasaerexch_1subarea(
+                             const int jtsubstep,//in
+                             const Real dtsubstep,// in
+                             const Real temp,// in
+                             const Real pmid, // in
+                             const Real aircon,// in
+                             const int n_mode, // in
+                             Real qgas_cur[gasaerexch::max_gas], // in/out
+                             Real qgas_avg[gasaerexch::max_gas], // in/out
+                             const Real qgas_netprod_otrproc[gasaerexch::max_gas],
+                             Real qaer_cur[gasaerexch::max_aer][mam4::gasaerexch::max_mode],
+                             Real qnum_cur[gasaerexch::max_mode],
+                             Real qwtr_cur[gasaerexch::max_mode], Real dgn_a[gasaerexch::max_mode],
+                             Real dgn_awet[gasaerexch::max_mode], Real wetdens[gasaerexch::max_mode],
+                             Real uptkaer[gasaerexch::max_gas][mam4::gasaerexch::max_mode],
                              Real &uptkrate_h2so4) {
 
   // const bool flag_nh4_lt_2so4_each_step = false;
