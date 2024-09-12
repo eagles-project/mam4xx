@@ -52,7 +52,8 @@ void marine_organic_massflx_calc(Ensemble *ensemble) {
         input.get_array("mass_frac_bub_section");
     const auto emit_this_mode_ = input.get_array("emit_this_mode");
 
-    Real cflux[salt_nsection];
+    constexpr int pcnst = mam4::pcnst;
+    Real cflux[pcnst] = {0.0};
 
     Real fi[salt_nsection];
     Real om_seasalt[salt_nsection];
@@ -83,14 +84,14 @@ void marine_organic_massflx_calc(Ensemble *ensemble) {
 
     std::vector<Real> cflux_out;
 
-    // NOTE: the only entries that are changed are (c++ indexing): 12, 17, 29
+    // NOTE: the only entries that are changed are (c++ indexing): 21, 26, 38
     // i.e.,
     // cflux[seasalt_indices[nsalt + ispec]]
     //      == cflux[seasalt_indices[3 + {0, 1, 2}]]
-    //      == cflux[12, 17, 29]
-    cflux_out.push_back(cflux[12]);
-    cflux_out.push_back(cflux[17]);
-    cflux_out.push_back(cflux[29]);
+    //      == cflux[21, 26, 38]
+    cflux_out.push_back(cflux[21]);
+    cflux_out.push_back(cflux[26]);
+    cflux_out.push_back(cflux[38]);
 
     output.set("cflx", cflux_out);
   });

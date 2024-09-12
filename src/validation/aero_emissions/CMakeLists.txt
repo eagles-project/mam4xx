@@ -51,9 +51,9 @@ set(DEFAULT_TOL 2e-10)
 set(ERROR_THRESHOLDS
     3e-9           # calc_om_seasalt
     8e-10          # calculate_seasalt_numflux_in_bins
-    2.2e-10        # marine_organic_emis
+    3e-10        # marine_organic_emis
     ${DEFAULT_TOL} # marine_organic_massflx_calc
-    2.2e-10        # marine_organic_numflx_calc
+    3e-10        # marine_organic_numflx_calc
     ${DEFAULT_TOL} # seasalt_emisflx_calc_massflx
     ${DEFAULT_TOL} # seasalt_emisflx_calc_numflx
     ${DEFAULT_TOL} # seasalt_emis

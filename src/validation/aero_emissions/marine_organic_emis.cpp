@@ -34,17 +34,14 @@ void marine_organic_emis(Ensemble *ensemble) {
     const auto fi_ = input.get_array("fi");
     const auto ocean_frac = input.get_array("ocnfrc")[0];
     const auto emis_scalefactor = input.get_array("emis_scale")[0];
-    const auto mpoly = input.get_array("mpoly")[0];
-    const auto mprot = input.get_array("mprot")[0];
-    const auto mlip = input.get_array("mlip")[0];
     const auto emit_this_mode_ = input.get_array("emit_this_mode");
     const auto cflux_ = input.get_array("cflx");
 
-    // this test depends on the initial value of the entries that get calculated
-    // thus, we have to pick out the initial values from the fortran data
-    Real cflux[salt_nsection] = {0.0};
-    cflux[13] = cflux_[22];
-    cflux[18] = cflux_[27];
+    constexpr int pcnst = mam4::pcnst;
+    Real cflux[pcnst];
+    for (int i = 0; i < pcnst; ++i) {
+      cflux[i] = cflux_[i];
+    }
 
     Real fi[salt_nsection];
     for (int i = 0; i < salt_nsection; ++i) {
@@ -57,23 +54,17 @@ void marine_organic_emis(Ensemble *ensemble) {
 
     mam4::aero_model_emissions::SeasaltEmissionsData data;
     mam4::aero_model_emissions::init_seasalt(data);
+    data.mpoly = input.get_array("mpoly")[0];
+    data.mprot = input.get_array("mprot")[0];
+    data.mlip = input.get_array("mlip")[0];
+
     mam4::aero_model_emissions::marine_organic_emissions(
-        fi, ocean_frac, emis_scalefactor, mpoly, mprot, mlip, data,
-        emit_this_mode, cflux);
+        fi, ocean_frac, emis_scalefactor, data, emit_this_mode, cflux);
 
     std::vector<Real> cflux_out;
-
-    // NOTE: the only entries that are changed are done in
-    // calc_marine_organic_numflux() {cflux[13, 18]} and
-    // calc_marine_organic_massflux() {cflux[12, 17, 29]}
-    // the indices are (c++ indexing): 12, 13, 17, 18, 29
-    // see marine_organic_massflx_calc.cpp and marine_organic_numflx_calc.cpp
-    // for more information
-    cflux_out.push_back(cflux[12]);
-    cflux_out.push_back(cflux[13]);
-    cflux_out.push_back(cflux[17]);
-    cflux_out.push_back(cflux[18]);
-    cflux_out.push_back(cflux[29]);
+    for (int i = 0; i < pcnst; ++i) {
+      cflux_out.push_back(cflux[i]);
+    }
 
     output.set("cflx", cflux_out);
   });
