@@ -985,8 +985,34 @@ void mam_gasaerexch_1subarea(
   constexpr int ntot_amode = AeroConfig::num_modes();
 
   // FIXME: get this numbers.
-  Real alnsg_aer[max_mode] = {};
-  int lmap_aer[max_aer][max_mode] = {{}};
+  // BAD CONSTANT
+  Real alnsg_aer[max_mode] = {haero::log(1.8)};
+  // sigmag_amode : assumed geometric standard deviation of particle size distribution
+  
+  for (int imode = 0; imode < ntot_amode; ++imode)
+  {
+    const Real sigmag_amode = modes(imode).mean_std_dev;
+    alnsg_aer[imode] = haero::log(sigmag_amode);
+  }
+
+  //
+  // constexpr int lmap_aer2[max_mode*max_aer] =
+  //  {9,7,8,10,12,11,13,
+  //   16,15,0,0,17,0,18,
+  //   25,22,24,23,21,20,26,
+  //   0,0,28,29,0,0,30,
+  //   0,0,0,0,0,0,0};  
+
+  int lmap_aer[max_aer][max_mode] = {{ 8, 6, 7, 9, 11 },
+                                     { 10, 12, 15, 14, -1 },
+                                     { -1, 16, -1, 17, 24 },
+                                     { 21, 23, 22, 20, 19 },
+                                     { 25, -1, -1, 27, 28 },
+                                     { -1, -1, 29, -1, -1 },
+                                     { -1, -1, -1, -1, -1 }};
+
+    
+
 
   const Real pstd = Constants::pressure_stp;                       // [Pa]
   const Real mw_air_gmol = 1000 * Constants::molec_weight_dry_air; // [g/mol]
@@ -1050,7 +1076,7 @@ void mam_gasaerexch_1subarea(
 
     for (int igas = 0; igas < max_gas; ++igas) {
       // use cam5.1.00 uptake rates
-      if (igas <= nsoa) {
+      if (igas < nsoa) {
         // BAD CONSTANT
         for (int imode = 0; imode < ntot_amode; ++imode) {
           uptkaer[igas][imode] = uptkaer[igas_h2so4][imode] * 0.81;
@@ -1064,7 +1090,7 @@ void mam_gasaerexch_1subarea(
         } // imode
       }   // igas == igas_nh3
     }     // igas
-    uptkrate_h2so4 = 0;
+    // uptkrate_h2so4 = 0;
     for (int n = 0; n < ntot_amode; ++n)
       uptkrate_h2so4 += uptkaer[igas_h2so4][n];
   }
