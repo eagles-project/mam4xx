@@ -986,10 +986,10 @@ void mam_gasaerexch_1subarea(
   }
 
   // using c++ indexing (fortran index -1)
-  int lmap_aer[max_aer][max_mode] = {{8, 6, 7, 9, 11},     {10, 12, 15, 14, -1},
-                                     {-1, 16, -1, 17, 24}, {21, 23, 22, 20, 19},
-                                     {25, -1, -1, 27, 28}, {-1, -1, 29, -1, -1},
-                                     {-1, -1, -1, -1, -1}};
+  constexpr int lmap_aer[max_aer][max_mode] = {
+      {8, 6, 7, 9, 11},     {10, 12, 15, 14, -1}, {-1, 16, -1, 17, 24},
+      {21, 23, 22, 20, 19}, {25, -1, -1, 27, 28}, {-1, -1, 29, -1, -1},
+      {-1, -1, -1, -1, -1}};
 
   const Real pstd = Constants::pressure_stp;                       // [Pa]
   const Real mw_air_gmol = 1000 * Constants::molec_weight_dry_air; // [g/mol]
