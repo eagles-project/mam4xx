@@ -53,8 +53,7 @@ int main(int argc, char **argv) {
       gas_aer_uptkrates_1box1gas(ensemble);
     } else if (func_name == "mam_gasaerexch_1subarea") {
       mam_gasaerexch_1subarea(ensemble);
-    }
-    else {
+    } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
       exit(1);

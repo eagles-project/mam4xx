@@ -46,7 +46,7 @@ void mam_gasaerexch_1subarea(Ensemble *ensemble) {
     Real dgn_awet[max_mode];
     Real wetdens[max_mode];
     Real uptkaer[max_gas][max_mode];
-    Real uptkrate_h2so4=0;
+    Real uptkrate_h2so4 = 0;
 
     // Copy input vectors to local arrays
     for (int i = 0; i < max_gas; ++i) {
@@ -63,9 +63,8 @@ void mam_gasaerexch_1subarea(Ensemble *ensemble) {
       wetdens[i] = wetdens_vec[i];
     }
 
-    
     for (int j = 0; j < max_mode; ++j) {
-      for (int i = 0; i < max_aer; ++i) {  
+      for (int i = 0; i < max_aer; ++i) {
         qaer_cur[i][j] = qaer_cur_vec[j * max_aer + i];
       }
     }
@@ -79,8 +78,8 @@ void mam_gasaerexch_1subarea(Ensemble *ensemble) {
     // Call the function
     mam_gasaerexch_1subarea(jtsubstep, dtsubstep, temp, pmid, aircon, n_mode,
                             qgas_cur, qgas_avg, qgas_netprod_otrproc, qaer_cur,
-                            qnum_cur, qwtr_cur, dgn_a, dgn_awet, wetdens, uptkaer,
-                            uptkrate_h2so4);
+                            qnum_cur, qwtr_cur, dgn_a, dgn_awet, wetdens,
+                            uptkaer, uptkrate_h2so4);
 
     // Prepare output arrays
     std::vector<Real> qgas_cur_out(max_gas);

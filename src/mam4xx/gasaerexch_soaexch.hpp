@@ -86,17 +86,16 @@ constexpr int mode_aging_optaa[max_mode] = {0, 0, 0, 1, 0};
 constexpr int ntot_soamode = 4;
 
 KOKKOS_INLINE_FUNCTION
-void mam_soaexch_1subarea(
-    const Real dtsubstep, // in
-    const Real temp, //in 
-    const Real pmid,//in
-    Real qgas_cur[max_gas], // in/out
-    Real qgas_avg[max_gas], // in/out
-    Real qaer_cur[max_aer][max_mode],// in/out
-    Real qnum_cur[max_mode],// in/out
-    Real qwtr_cur[max_mode], // in/out
-    const Real uptkaer[max_gas][max_mode] // in 
-    ) {
+void mam_soaexch_1subarea(const Real dtsubstep,                 // in
+                          const Real temp,                      // in
+                          const Real pmid,                      // in
+                          Real qgas_cur[max_gas],               // in/out
+                          Real qgas_avg[max_gas],               // in/out
+                          Real qaer_cur[max_aer][max_mode],     // in/out
+                          Real qnum_cur[max_mode],              // in/out
+                          Real qwtr_cur[max_mode],              // in/out
+                          const Real uptkaer[max_gas][max_mode] // in
+) {
 
   // Local variables
   constexpr int ntot_poaspec = npoa;
