@@ -447,9 +447,6 @@ void gas_aer_uptkrates_1box1gas(
   // real(wp), save :: xghq(nghq), wghq(nghq) ! quadrature abscissae and
   // weights data xghq / 0.70710678, -0.70710678 / data wghq / 0.88622693,
   // 0.88622693 /
-
-  // NOTE: it looks like the refractored code is still using Dick's old version.
-
   // choose
   // nghq-----------------------------------------------------------------
   const Kokkos::Array<Real, 20> xghq_20 = {
@@ -511,13 +508,11 @@ void gas_aer_uptkrates_1box1gas(
   // pressure (atmospheres)
   const Real p_in_atm = pmid / pstd;
   // gas diffusivity (m2/s)
-  // FIXME: gas diffusivity is an input in fortran code.
   const Real gasdiffus = gas_diffusivity(temp, p_in_atm, mw_gas, mw_air_gmol,
                                          vol_molar_gas, vol_molar_air);
   // gas mean free path (m)
   const Real molecular_speed =
       mean_molecular_speed(temp, mw_gas, r_universal_mJ, pi);
-  // FIXME: gasfreepath is an input in fortran code.
   const Real gasfreepath = 3.0 * gasdiffus / molecular_speed;
   const Real accomxp283 = accom * 0.283;
   const Real accomxp75 = accom * 0.75;
@@ -561,7 +556,12 @@ void gas_aer_uptkrates_1box1gas(
       sumghq += wghq[iq] * D_p * hh / haero::pow(D_p, beta);
     }
     // gas-to-aerosol mass transfer rates
-    uptkaer[n] = constant * gasdiffus * sumghq;
+    // (1/s) for number concentration = 1 #/m3
+    const Real uptkrate = constant * gasdiffus * sumghq;
+    // --------------------------------------------------------------------
+    // Unit of uptkrate is for number = 1 #/m3.
+    // --------------------------------------------------------------------
+    uptkaer[n] = l_condense_to_mode[n] ? uptkrate : 0.0; // zero means no uptake
   }
 }
 
