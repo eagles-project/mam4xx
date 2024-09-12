@@ -265,6 +265,25 @@ void mer07_veh02_wang08_nuc_1box(int newnuc_method_user_choice,
   // if nitrate aerosol is considered in the aerosol population
   // and ammonia concentration is non-negligible
   //---------------------------------------------------------------
+  // FIXME: in modal_aero_newnuc.F90:283 we have:
+  //        if (so4vol_in >= 1.0e4_r8) then
+  // if ( (newnuc_method_flagaa /=  2) .and. &
+  //      (nh3ppt >= 0.1_r8) ) then
+  //     newnuc_method_flagaa2 = 1
+  // FIXME: this is the part that differs
+  // else
+  //     if (so4vol_in >= 1.0e4_r8) then
+  //        temp_bb = max( 230.15_r8, min( 305.15_r8, temp_in ) )
+  //        rh_bb = max( 1.0e-4_r8, min( 1.0_r8, rh_in ) )
+  //        so4vol_bb = max( 1.0e4_r8, min( 1.0e11_r8, so4vol_in ) )
+  //        call binary_nuc_vehk2002(   &
+  //           temp_bb, rh_bb, so4vol_bb,   &
+  //           ratenuclt, rateloge,   &
+  //           cnum_h2so4, cnum_tot, radius_cluster )
+  //     end if
+  //     cnum_nh3 = 0.0_r8
+  //     newnuc_method_flagaa2 = 2
+  // end if
   if ((newnuc_method_user_choice == 3) && (nh3ppt_in >= 0.1)) {
     if (so4vol_in >= 5.0e4) {
       temp_bb = max(235.0, min(295.0, temp_in));
@@ -317,6 +336,17 @@ void mer07_veh02_wang08_nuc_1box(int newnuc_method_user_choice,
     // ratenuclt is #/cm3/s; dnclusterdt is #/m3/s
     dnclusterdt = exp(rateloge) * 1.0e6;
   }
+  // NOTE: this is modal_aero_newnuc.F90:319
+  // FIXME: mer07_veh02_nuc_mosaic_1box() continues for ~200 more lines
+  //        (plus more for writing quantities out)
+  // Out variables that are changed after this point:
+    //  - isize_nuc (L342, 348)
+    //  - qnuma_del (L518)
+    //  - qso4a_del (L515)
+    //  - qnh4a_del (L516)
+    //  - qh2so4_del (L509, 511)
+    //  - qnh3_del (L510, 512)
+    //  - dens_nh4so4a (L394)
 }
 
 KOKKOS_INLINE_FUNCTION
