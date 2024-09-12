@@ -949,21 +949,21 @@ void GasAerExch::compute_tendencies(const AeroConfig &config,
 
 KOKKOS_INLINE_FUNCTION
 void mam_gasaerexch_1subarea(
-                             const int jtsubstep,//in
-                             const Real dtsubstep,// in
-                             const Real temp,// in
-                             const Real pmid, // in
-                             const Real aircon,// in
-                             const int n_mode, // in
-                             Real qgas_cur[gasaerexch::max_gas], // in/out
-                             Real qgas_avg[gasaerexch::max_gas], // in/out
-                             const Real qgas_netprod_otrproc[gasaerexch::max_gas],
-                             Real qaer_cur[gasaerexch::max_aer][mam4::gasaerexch::max_mode],
-                             Real qnum_cur[gasaerexch::max_mode],
-                             Real qwtr_cur[gasaerexch::max_mode], Real dgn_a[gasaerexch::max_mode],
-                             Real dgn_awet[gasaerexch::max_mode], Real wetdens[gasaerexch::max_mode],
-                             Real uptkaer[gasaerexch::max_gas][mam4::gasaerexch::max_mode],
-                             Real &uptkrate_h2so4) {
+    const int jtsubstep,                // in
+    const Real dtsubstep,               // in
+    const Real temp,                    // in
+    const Real pmid,                    // in
+    const Real aircon,                  // in
+    const int n_mode,                   // in
+    Real qgas_cur[gasaerexch::max_gas], // in/out
+    Real qgas_avg[gasaerexch::max_gas], // in/out
+    const Real qgas_netprod_otrproc[gasaerexch::max_gas],
+    Real qaer_cur[gasaerexch::max_aer][mam4::gasaerexch::max_mode],
+    Real qnum_cur[gasaerexch::max_mode], Real qwtr_cur[gasaerexch::max_mode],
+    Real dgn_a[gasaerexch::max_mode], Real dgn_awet[gasaerexch::max_mode],
+    Real wetdens[gasaerexch::max_mode],
+    Real uptkaer[gasaerexch::max_gas][mam4::gasaerexch::max_mode],
+    Real &uptkrate_h2so4) {
 
   // const bool flag_nh4_lt_2so4_each_step = false;
   using mam4::gasaerexch::max_aer;
@@ -987,10 +987,10 @@ void mam_gasaerexch_1subarea(
   // FIXME: get this numbers.
   // BAD CONSTANT
   Real alnsg_aer[max_mode] = {haero::log(1.8)};
-  // sigmag_amode : assumed geometric standard deviation of particle size distribution
-  
-  for (int imode = 0; imode < ntot_amode; ++imode)
-  {
+  // sigmag_amode : assumed geometric standard deviation of particle size
+  // distribution
+
+  for (int imode = 0; imode < ntot_amode; ++imode) {
     const Real sigmag_amode = modes(imode).mean_std_dev;
     alnsg_aer[imode] = haero::log(sigmag_amode);
   }
@@ -1001,18 +1001,12 @@ void mam_gasaerexch_1subarea(
   //   16,15,0,0,17,0,18,
   //   25,22,24,23,21,20,26,
   //   0,0,28,29,0,0,30,
-  //   0,0,0,0,0,0,0};  
+  //   0,0,0,0,0,0,0};
 
-  int lmap_aer[max_aer][max_mode] = {{ 8, 6, 7, 9, 11 },
-                                     { 10, 12, 15, 14, -1 },
-                                     { -1, 16, -1, 17, 24 },
-                                     { 21, 23, 22, 20, 19 },
-                                     { 25, -1, -1, 27, 28 },
-                                     { -1, -1, 29, -1, -1 },
-                                     { -1, -1, -1, -1, -1 }};
-
-    
-
+  int lmap_aer[max_aer][max_mode] = {{8, 6, 7, 9, 11},     {10, 12, 15, 14, -1},
+                                     {-1, 16, -1, 17, 24}, {21, 23, 22, 20, 19},
+                                     {25, -1, -1, 27, 28}, {-1, -1, 29, -1, -1},
+                                     {-1, -1, -1, -1, -1}};
 
   const Real pstd = Constants::pressure_stp;                       // [Pa]
   const Real mw_air_gmol = 1000 * Constants::molec_weight_dry_air; // [g/mol]
@@ -1096,11 +1090,9 @@ void mam_gasaerexch_1subarea(
   }
 
   // Do SOA
-  mam4::gasaerexch::mam_soaexch_1subarea(
-      dtsubstep, temp, pmid,
-      qgas_cur, qgas_avg, 
-      qaer_cur, qnum_cur,
-      qwtr_cur, uptkaer);
+  mam4::gasaerexch::mam_soaexch_1subarea(dtsubstep, temp, pmid, qgas_cur,
+                                         qgas_avg, qaer_cur, qnum_cur, qwtr_cur,
+                                         uptkaer);
 
   // Do other gases (that are assumed non-volatile) with no time sub-stepping
   for (int igas = nsoa; igas < max_gas; ++igas) {
