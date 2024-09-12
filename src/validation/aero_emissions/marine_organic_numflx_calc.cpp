@@ -53,11 +53,11 @@ void marine_organic_numflx_calc(Ensemble *ensemble) {
     Real om_seasalt[salt_nsection];
     bool emit_this_mode[organic_num_modes];
 
-    // this test depends on the initial value of the entries that get calculated
-    // thus, we have to pick out the initial values from the fortran data
-    Real cflux[salt_nsection] = {0.0};
-    cflux[13] = cflux_[22];
-    cflux[18] = cflux_[27];
+    constexpr int pcnst = mam4::pcnst;
+    Real cflux[pcnst];
+    for (int i = 0; i < pcnst; ++i) {
+      cflux[i] = cflux_[i];
+    }
 
     for (int i = 0; i < salt_nsection; ++i) {
       fi[i] = fi_[i];
@@ -75,18 +75,9 @@ void marine_organic_numflx_calc(Ensemble *ensemble) {
         cflux);
 
     std::vector<Real> cflux_out;
-
-    // NOTE: the only entries that are changed are (c++ indexing): 13, 18
-    // i.e.,
-    // cflux[num_mode_idx];
-    //    Where:
-    //      num_mode_idx = seasalt_indices[nsalt + nsalt_om + om_num_idx],
-    //      om_num_idx = organic_num_idx[{0, 1}] == {0, 1}
-    //      om_num_idx = organic_num_idx[3 + 3 + {0, 1}]
-    //      == cflux[seasalt_indices[{6, 7}]]
-    //      == cflux[13, 18]
-    cflux_out.push_back(cflux[13]);
-    cflux_out.push_back(cflux[18]);
+    for (int i = 0; i < pcnst; ++i) {
+      cflux_out.push_back(cflux[i]);
+    }
 
     output.set("cflx", cflux_out);
   });

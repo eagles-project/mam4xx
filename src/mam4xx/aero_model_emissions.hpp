@@ -1,14 +1,14 @@
 #ifndef MAM4XX_AERO_MODEL_EMISSIONS_HPP
 #define MAM4XX_AERO_MODEL_EMISSIONS_HPP
 
-#include <haero/atmosphere.hpp>
-
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
 namespace mam4::aero_model_emissions {
+
+using View1D = DeviceType::view_1d<Real>;
 
 // essentially everything in this namespace falls in the BAD CONSTANT category
 // ... thus, the name
@@ -36,11 +36,13 @@ const Real dust_density = 2.5e3;
 // const std::vector<std::string> dust_names[dust_nbin + dust_nnum] = {
 //     "dst_a1", "dst_a3", "num_a1", "num_a3"};
 // NOTE: see mo_setsox.hpp:25 to see where these indices come from
-const int dust_indices[dust_nbin + dust_nnum] = {10, 19, 13, 26};
+const int dust_indices[dust_nbin + dust_nnum] = {19, 28, 22, 35};
 
 struct DustEmissionsData {
   // Kok11: fractions of bin (0.1-1) and bin (1-10) in size 0.1-10
   const Real dust_emis_scalefactor[dust_nbin] = {0.011, 0.989};
+  // FIXME: got this value from fortran mam4::dust_model.F90:26
+  const Real dust_dmt_grd[dust_nbin + 1] = {1.0e-7, 1.0e-6, 1.0e-5};
   // tuning parameter for dust emissions
   // perhaps unnecessary? it's not entirely clear to me what happens in
   // soil_erod_mod::soil_erod_init() where this is set
@@ -94,9 +96,9 @@ const Real seasalt_emis_scalefactor = 0.6;
 // onto the beginning in order to correspond to what we have here
 // i.e., seasalt_indices_f90 = [ 21, 26, 30, 22, 27, 39, 23, 28, 36, 40]
 // and seasalt_indices_f90 - 9 - 1 (for f90 -> c++) = seasalt_indices
-const std::vector<std::string> seasalt_names{
-    "ncl_a1", "ncl_a2", "ncl_a3", "mom_a1", "mom_a2",
-    "mom_a4", "num_a1", "num_a2", "num_a3", "num_a4"};
+// const std::vector<std::string> seasalt_names{
+//     "ncl_a1", "ncl_a2", "ncl_a3", "mom_a1", "mom_a2",
+//     "mom_a4", "num_a1", "num_a2", "num_a3", "num_a4"};
 
 // =============================================================================
 //      Marine Organic Matter Parameters/Constants
@@ -116,6 +118,7 @@ const Real vol_density_NaCl_seawater = 35875.0;
 const Real l_bub = 1.0e-7;
 // smallest ocean organic concentration allowed
 const Real small_oceanorg = 1.0e-30;
+const bool emit_this_mode[om_num_modes] = {true, true, false};
 
 struct SeasaltEmissionsData {
   // use Ekmam's ss
@@ -159,14 +162,25 @@ struct SeasaltEmissionsData {
                                                     8.0e-8, 2.0e-8, 8.0e-8};
   const Real seasalt_size_range_hi[seasalt_nbin] = {1.0e-6, 8.0e-8, 1.0e-5,
                                                     1.0e-6, 8.0e-8, 1.0e-6};
-  const int seasalt_indices[seasalt_nbin + seasalt_nnum] = {11, 16, 20, 12, 17,
-                                                            29, 13, 18, 26, 30};
+  const int seasalt_indices[seasalt_nbin + seasalt_nnum] = {20, 25, 29, 21, 26,
+                                                            38, 22, 27, 35, 39};
   const int organic_num_idx[organic_num_modes] = {0, 1, 3};
+
+  Real mpoly, mprot, mlip;
 };
 
 } // namespace BAD_CONSTANTS
 
 using namespace BAD_CONSTANTS;
+
+struct OnlineEmissionsData {
+  Real dust_flux_in[dust_nflux_in];
+  Real surface_temp;
+  Real u_bottom;
+  Real v_bottom;
+  Real z_bottom;
+  Real ocean_frac;
+};
 
 // =============================================================================
 
@@ -290,7 +304,7 @@ void dust_emis(
     //  out
     Real &soil_erodibility,
     //  inout
-    Real (&cflux)[salt_nsection]) {
+    Real (&cflux)[pcnst]) {
   // dust_flux_in: dust emission fluxes in
   // cflux: emission fluxes in MAM modes [{kg,#}/m^2/s]
   // soil_erod: soil erodibility factor [unitless]
@@ -479,7 +493,7 @@ void seasalt_emis_flux_calc(
     const Real emis_scalefactor, const FluxType flux_type,
     const SeasaltEmissionsData data,
     // inout
-    Real (&cflux)[salt_nsection]) {
+    Real (&cflux)[pcnst]) {
 
   // input
   // fi: sea salt number fluxes in each size bin [#/m2/s]
@@ -533,7 +547,7 @@ void seasalt_emis(
     const Real (&fi)[salt_nsection], const Real ocean_frac,
     const Real emis_scalefactor, const SeasaltEmissionsData data,
     // inout
-    Real (&cflux)[salt_nsection]) {
+    Real (&cflux)[pcnst]) {
   // calculate seasalt number emission fluxes
   seasalt_emis_flux_calc(
       // in
@@ -598,16 +612,15 @@ void om_fraction_accum_aitken(
 KOKKOS_INLINE_FUNCTION
 void calc_org_matter_seasalt(
     // in
-    const Real mpoly_in, const Real mprot_in, const Real mlip_in,
     const SeasaltEmissionsData data,
     // out
     Real (&mass_frac_bub_section)[n_organic_species_max][salt_nsection],
     Real (&om_seasalt)[salt_nsection]) {
   // Input variables:
   // for Burrows et al. (2014) organic mass fraction
-  // mpoly_in
-  // mprot_in
-  // mlip_in
+  // data.mpoly
+  // data.mprot
+  // data.mlip
 
   // Output variables
   // mass_frac_bub_section: mass fraction per organic class per size bin
@@ -634,9 +647,9 @@ void calc_org_matter_seasalt(
 
   // Convert input fields from [(mol C) L-1] to [(g OM) m-3] and store in single
   // array
-  om_conc[0] = mpoly_in * liter_to_m3 * data.OM_to_OC_in[0] * mw_carbon;
-  om_conc[1] = mprot_in * liter_to_m3 * data.OM_to_OC_in[1] * mw_carbon;
-  om_conc[2] = mlip_in * liter_to_m3 * data.OM_to_OC_in[2] * mw_carbon;
+  om_conc[0] = data.mpoly * liter_to_m3 * data.OM_to_OC_in[0] * mw_carbon;
+  om_conc[1] = data.mprot * liter_to_m3 * data.OM_to_OC_in[1] * mw_carbon;
+  om_conc[2] = data.mlip * liter_to_m3 * data.OM_to_OC_in[2] * mw_carbon;
 
   // Calculate the surface coverage by class
   for (int iorg = 0; iorg < n_organic_species; ++iorg) {
@@ -721,7 +734,7 @@ void calc_marine_organic_numflux(
     const bool (&emit_this_mode)[organic_num_modes],
     const SeasaltEmissionsData data,
     //  inout
-    Real (&cflux)[salt_nsection]) {
+    Real (&cflux)[pcnst]) {
   // ocean_frac: ocean fraction [unitless]
   // emis_scalefactor: sea salt emission tuning factor
   // om_seasalt: marine organic aerosol fraction per size bin [unitless]
@@ -767,7 +780,7 @@ void calc_marine_organic_massflux(
     const bool (&emit_this_mode)[organic_num_modes],
     const SeasaltEmissionsData data,
     // out
-    Real (&cflux)[salt_nsection]) {
+    Real (&cflux)[pcnst]) {
 
   // ocean_frac: ocean fraction [unitless]
   // emis_scalefactor: sea salt emission tuning factor
@@ -813,17 +826,19 @@ KOKKOS_INLINE_FUNCTION
 void marine_organic_emissions(
     // in
     const Real (&fi)[salt_nsection], const Real ocean_frac,
-    const Real emis_scalefactor, const Real mpoly, const Real mprot,
-    const Real mlip, const SeasaltEmissionsData data,
+    const Real emis_scalefactor, const SeasaltEmissionsData data,
     const bool (&emit_this_mode)[organic_num_modes],
     // inout
-    Real (&cflux)[salt_nsection]) {
+    Real (&cflux)[pcnst]) {
   // input
   // fi: sea salt number fluxes in each size bin [#/m2/s]
   // ocean_frac: ocean fraction [unitless]
   // emis_scalefactor: sea salt emission tuning factor [unitless]
   // output
   // cflux: mass and number emission fluxes for aerosols [kg/m2/s or #/m2/s]
+
+  // NOTE: these are currently passed in via SeasaltEmissionsData
+  // directly to calc_org_matter_seasalt
 
   // for Burrows et al. (2014) organic mass fraction
   // NOTE: the mapping between these variables and those listed in the netCDF
@@ -857,7 +872,7 @@ void marine_organic_emissions(
   // Burrows et al., ACP (2013)
   calc_org_matter_seasalt(
       // in
-      mpoly, mprot, mlip, data,
+      data,
       // out
       mass_frac_bub_section, om_seasalt);
 
@@ -886,36 +901,38 @@ void marine_organic_emissions(
 KOKKOS_INLINE_FUNCTION
 void aero_model_emissions(
     // in
-    const ThreadTeam &team, mam4::Prognostics &progs,
-    const haero::Atmosphere &atm, const Real (&dust_flux_in)[dust_nflux_in],
-    // get these from the atmosphere? prognostics?
-    // is this just the temp in the bottom cell?
-    const Real surface_temp, const ColumnView &u_vel, const ColumnView &v_vel,
-    const ColumnView &altitude, const Real ocean_frac,
-    // this is read from a namelist file, but given as 0.6 in the
-    // namelist on confluence
-    // const Real seasalt_emis_scalefactor,
+    const ThreadTeam &team,
+    OnlineEmissionsData online_emiss_data,
+    SeasaltEmissionsData seasalt_data,
+    DustEmissionsData dust_data,
     // inout
-    Real (&cflux)[salt_nsection],
-    // these next three are MOM that live in cam_in and are used in MOM emiss.
-    Real mpoly, Real mprot, Real mlip,
-    const bool (&emit_this_mode)[organic_num_modes],
-    // out
-    Real &surface_flux) {
-  // surface_flux: accumulate over all bins for output
+    // NOTE: fortran: cam_in%cflx
+    Real (&cflux)[pcnst]) {
   // srf_temp: sea surface temperature [K]
   // sea salt number fluxes in each size bin [#/m2/s]
 
-  const int n_levels = atm.num_levels();
+  // NOTE: fortran: cam_in%dstflx
+  Real dust_flux_in[dust_nflux_in];
+  for (int i = 0; i < dust_nflux_in; ++i) {
+    dust_flux_in[i] = online_emiss_data.dust_flux_in[i];
+  }
+  // NOTE: fortran: cam_in%sst
+  const Real surface_temp = online_emiss_data.surface_temp;
+  // NOTE: fortran: state%u(:ncol,pver), state%v(:ncol,pver),
+  // state%zm(:ncol,pver)
+  // => u_bottom, v_bottom, z_bottom
+  const Real u_bottom = online_emiss_data.u_bottom;
+  const Real v_bottom = online_emiss_data.v_bottom;
+  // FIXME: get this from haero::atmosphere?
+  const Real z_bottom = online_emiss_data.z_bottom;
+  // NOTE: fortran: cam_in%ocnfrac
+  const Real ocean_frac = online_emiss_data.ocean_frac;
 
   Real fi[salt_nsection];
-
-  Real u_bottom = u_vel[n_levels];
-  Real v_bottom = v_vel[n_levels];
-  Real z_bottom = altitude[n_levels];
   Real soil_erodibility;
 
-  DustEmissionsData dust_data;
+  init_dust_dmt_vwr(dust_data.dust_dmt_grd, dust_data.dust_dmt_vwr);
+
   dust_emis(
       // in
       dust_indices, dust_density, dust_flux_in, dust_data, soil_erodibility,
@@ -923,12 +940,10 @@ void aero_model_emissions(
       cflux);
 
   // some dust emis diagnostics ...
-  surface_flux = 0.0;
+  Real surface_flux = 0.0;
   int spec_idx;
-  // FIXME: keep this and the loops below?
-  //        It does appear that surface_flux is updated since it's referenced
-  //        through "cam_in%sflx", but it could also just be a container for
-  //        holding those fluxes as they're written to file
+  // FIXME: maybe get rid of this, and below? in mam4, surface_flux is a
+  // local variable that appears to only be written out via outfld()
   for (int ispec = 0; ispec < dust_nbin + dust_nnum; ++ispec) {
     spec_idx = dust_indices[ispec];
     if (ispec <= dust_nbin) {
@@ -936,7 +951,6 @@ void aero_model_emissions(
     }
   }
 
-  SeasaltEmissionsData seasalt_data;
   init_seasalt(seasalt_data);
   calculate_seasalt_numflux_in_bins(
       // in
@@ -955,23 +969,151 @@ void aero_model_emissions(
 
   marine_organic_emissions(
       // in
-      fi, ocean_frac, seasalt_emis_scalefactor, mpoly, mprot, mlip,
-      seasalt_data, emit_this_mode,
+      fi, ocean_frac, seasalt_emis_scalefactor, seasalt_data, emit_this_mode,
       // inout
       cflux);
 
-  // FIXME: keep this?--my intuition says this is likely to be an updated var
+  // FIXME: maybe get rid of this? in mam4, surface_flux is a local variable
   for (int ispec = 0; ispec < seasalt_nbin - nsalt_om; ++ispec) {
     spec_idx = seasalt_data.seasalt_indices[ispec];
     surface_flux += cflux[spec_idx];
   }
 
   surface_flux = 0.0;
-  // FIXME: keep this?--my intuition says this is likely to be an updated var
+  // FIXME: maybe get rid of this? in mam4, surface_flux is a local variable
   for (int ispec = 0; ispec < seasalt_nbin - nsalt_om + 1; ++ispec) {
     spec_idx = seasalt_data.seasalt_indices[ispec];
     surface_flux += cflux[spec_idx];
   }
+
+} // end aero_model_emissions()
+
+KOKKOS_INLINE_FUNCTION
+void aero_model_emissions(
+    // in
+    OnlineEmissionsData online_emiss_data,
+    SeasaltEmissionsData seasalt_data,
+    DustEmissionsData dust_data,
+    // inout
+    // NOTE: fortran: cam_in%cflx
+    Real (&cflux)[pcnst]) {
+  // srf_temp: sea surface temperature [K]
+  // sea salt number fluxes in each size bin [#/m2/s]
+
+  // NOTE: fortran: cam_in%dstflx
+  Real dust_flux_in[dust_nflux_in];
+  for (int i = 0; i < dust_nflux_in; ++i) {
+    dust_flux_in[i] = online_emiss_data.dust_flux_in[i];
+  }
+  // NOTE: fortran: cam_in%sst
+  const Real surface_temp = online_emiss_data.surface_temp;
+  // NOTE: fortran: state%u(:ncol,pver), state%v(:ncol,pver),
+  // state%zm(:ncol,pver)
+  // => u_bottom, v_bottom, z_bottom
+  const Real u_bottom = online_emiss_data.u_bottom;
+  const Real v_bottom = online_emiss_data.v_bottom;
+  // FIXME: get this from haero::atmosphere?
+  const Real z_bottom = online_emiss_data.z_bottom;
+  // NOTE: fortran: cam_in%ocnfrac
+  const Real ocean_frac = online_emiss_data.ocean_frac;
+
+  Real fi[salt_nsection];
+  Real soil_erodibility;
+
+  init_dust_dmt_vwr(dust_data.dust_dmt_grd, dust_data.dust_dmt_vwr);
+
+  dust_emis(
+      // in
+      dust_indices, dust_density, dust_flux_in, dust_data, soil_erodibility,
+      // inout
+      cflux);
+
+  // some dust emis diagnostics ...
+  Real surface_flux = 0.0;
+  int spec_idx;
+  // FIXME: maybe get rid of this, and below? in mam4, surface_flux is a
+  // local variable that appears to only be written out via outfld()
+  for (int ispec = 0; ispec < dust_nbin + dust_nnum; ++ispec) {
+    spec_idx = dust_indices[ispec];
+    if (ispec <= dust_nbin) {
+      surface_flux += cflux[spec_idx];
+    }
+  }
+
+  init_seasalt(seasalt_data);
+  calculate_seasalt_numflux_in_bins(
+      // in
+      surface_temp, u_bottom, v_bottom, z_bottom, seasalt_data.consta,
+      seasalt_data.constb,
+      // out
+      fi);
+
+  surface_flux = 0.0;
+
+  seasalt_emis(
+      // in
+      fi, ocean_frac, seasalt_emis_scalefactor, seasalt_data,
+      //  inout
+      cflux);
+
+  marine_organic_emissions(
+      // in
+      fi, ocean_frac, seasalt_emis_scalefactor, seasalt_data, emit_this_mode,
+      // inout
+      cflux);
+
+  // FIXME: maybe get rid of this? in mam4, surface_flux is a local variable
+  for (int ispec = 0; ispec < seasalt_nbin - nsalt_om; ++ispec) {
+    spec_idx = seasalt_data.seasalt_indices[ispec];
+    surface_flux += cflux[spec_idx];
+  }
+
+  surface_flux = 0.0;
+  // FIXME: maybe get rid of this? in mam4, surface_flux is a local variable
+  for (int ispec = 0; ispec < seasalt_nbin - nsalt_om + 1; ++ispec) {
+    spec_idx = seasalt_data.seasalt_indices[ispec];
+    surface_flux += cflux[spec_idx];
+  }
+
+} // end aero_model_emissions()
+
+KOKKOS_INLINE_FUNCTION
+void aero_model_emissions(
+    // in
+    const ThreadTeam &team,
+    // inout
+    View1D &cflux_) {
+
+  OnlineEmissionsData online_emiss_data;
+  SeasaltEmissionsData seasalt_data;
+  DustEmissionsData dust_data;
+
+  Real cflux[pcnst];
+
+  for (int i = 0; i < pcnst; ++i) {
+    cflux[i] = cflux_(i);
+  }
+
+  aero_model_emissions(team, online_emiss_data, seasalt_data, dust_data, cflux);
+
+} // end aero_model_emissions()
+
+KOKKOS_INLINE_FUNCTION
+void aero_model_emissions(
+    // inout
+    View1D &cflux_) {
+
+  OnlineEmissionsData online_emiss_data;
+  SeasaltEmissionsData seasalt_data;
+  DustEmissionsData dust_data;
+
+  Real cflux[pcnst];
+
+  for (int i = 0; i < pcnst; ++i) {
+    cflux[i] = cflux_(i);
+  }
+
+  aero_model_emissions(online_emiss_data, seasalt_data, dust_data, cflux);
 
 } // end aero_model_emissions()
 

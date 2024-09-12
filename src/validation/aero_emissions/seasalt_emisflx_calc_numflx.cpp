@@ -46,7 +46,8 @@ void seasalt_emisflx_calc_numflx(Ensemble *ensemble) {
     const Real ocean_frac = input.get_array("ocnfrc")[0];
     const Real emis_scalefactor = input.get_array("emis_scale")[0];
 
-    Real cflux[salt_nsection] = {0.0};
+    constexpr int pcnst = mam4::pcnst;
+    Real cflux[pcnst] = {0.0};
 
     Real fi[salt_nsection];
     for (int i = 0; i < salt_nsection; ++i) {
@@ -62,14 +63,14 @@ void seasalt_emisflx_calc_numflx(Ensemble *ensemble) {
         fi, ocean_frac, emis_scalefactor, flux_type, data, cflux);
 
     std::vector<Real> cflux_out;
-    // NOTE: the only entries that are changed are (c++ indexing): 13, 18, 26
+    // NOTE: the only entries that are changed are (c++ indexing): 22, 27, 35
     // i.e.,
     // cflux[seasalt_indices[num_idx_append + ispec]]
     //      == cflux[seasalt_indices[6 + {0, 1, 2}]]
-    //      == cflux[13, 18, 26]
-    cflux_out.push_back(cflux[13]);
-    cflux_out.push_back(cflux[18]);
-    cflux_out.push_back(cflux[26]);
+    //      == cflux[22, 27, 35]
+    cflux_out.push_back(cflux[22]);
+    cflux_out.push_back(cflux[27]);
+    cflux_out.push_back(cflux[35]);
 
     output.set("cflx", cflux_out);
   });

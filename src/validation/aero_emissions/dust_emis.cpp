@@ -36,7 +36,6 @@ void dust_emis(Ensemble *ensemble) {
       }
     }
 
-    const int salt_nsection = mam4::aero_model_emissions::salt_nsection;
     const int dust_nflux_in = mam4::aero_model_emissions::dust_nflux_in;
     const int dust_nbin = mam4::aero_model_emissions::dust_nbin;
     int dust_indices[4];
@@ -51,7 +50,8 @@ void dust_emis(Ensemble *ensemble) {
     const auto dust_dmt_vwr_ = input.get_array("dust_dmt_vwr");
     Real soil_erodibility = input.get_array("soil_erodibility")[0];
 
-    Real cflux[salt_nsection] = {0.0};
+    constexpr int pcnst = mam4::pcnst;
+    Real cflux[pcnst] = {0.0};
 
     Real dust_flux_in[dust_nflux_in];
     for (int i = 0; i < dust_nflux_in; ++i) {
@@ -68,18 +68,18 @@ void dust_emis(Ensemble *ensemble) {
 
     std::vector<Real> cflux_out;
     // NOTE: the only entries that are changed are (c++ indexing):
-    //       10, 19, 13, 26
+    //       19, 28, 22, 35
     // i.e.,
     // cflux[dust_indices[{0, 1}]]
-    //      == cflux[10, 19]
+    //      == cflux[19, 28]
     // AND:
     // cflux[dust_indices[{0, 1} + dust_nbin]]
     //      == cflux[dust_indices[{0, 1} + 2]]
-    //      == cflux[13, 26]
-    cflux_out.push_back(cflux[10]);
+    //      == cflux[22, 35]
     cflux_out.push_back(cflux[19]);
-    cflux_out.push_back(cflux[13]);
-    cflux_out.push_back(cflux[26]);
+    cflux_out.push_back(cflux[28]);
+    cflux_out.push_back(cflux[22]);
+    cflux_out.push_back(cflux[35]);
 
     output.set("cflx", cflux_out);
     output.set("soil_erod", soil_erodibility);

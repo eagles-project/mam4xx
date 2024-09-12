@@ -46,16 +46,17 @@ void calc_om_seasalt(Ensemble *ensemble) {
         mam4::aero_model_emissions::n_organic_species_max;
     const int salt_nsection = mam4::aero_model_emissions::salt_nsection;
 
-    const auto mpoly_in = input.get_array("mpoly_in")[0];
-    const auto mprot_in = input.get_array("mprot_in")[0];
-    const auto mlip_in = input.get_array("mlip_in")[0];
     Real mass_frac_bub_section[n_organic_species_max][salt_nsection] = {0.0};
     Real om_ssa[salt_nsection] = {0.0};
 
     mam4::aero_model_emissions::SeasaltEmissionsData data;
     mam4::aero_model_emissions::init_seasalt(data);
+    data.mpoly = input.get_array("mpoly_in")[0];
+    data.mprot = input.get_array("mprot_in")[0];
+    data.mlip = input.get_array("mlip_in")[0];
+
     mam4::aero_model_emissions::calc_org_matter_seasalt(
-        mpoly_in, mprot_in, mlip_in, data, mass_frac_bub_section, om_ssa);
+        data, mass_frac_bub_section, om_ssa);
 
     std::vector<Real> mfb_out;
     for (int i = 0; i < salt_nsection; ++i) {
