@@ -98,7 +98,6 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
   Real tcur = 0.0;
   Real dtcur = 0.0;
   Real dtsum_qgas_avg = 0.0;
-  bool skip_soamode[max_mode] = {true};
   Real qgas_prv[max_gas] = {0.0};
   Real qaer_prv[max_aer][max_mode] = {{0.0}};
   Real uptkaer_soag_tmp[nsoa][max_mode] = {{0.0}};
@@ -107,16 +106,34 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
   Real a_soa[ntot_soaspec][max_mode] = {{0.0}};
   Real a_soa_tmp[ntot_soaspec][max_mode] = {{0.0}};
   Real beta[ntot_soaspec][max_mode] = {{0.0}};
-  Real delh_vap_soa[ntot_soaspec] = {156.0e3};
   Real del_g_soa_tmp[ntot_soaspec] = {0.0};
   Real g0_soa[ntot_soaspec] = {0.0};
   Real g_soa[ntot_soaspec] = {0.0};
   Real g_star[ntot_soaspec][max_mode] = {{0.0}};
-  Real opoa_frac[ntot_poaspec][max_mode] = {{0.1}};
   Real phi[ntot_soaspec][max_mode] = {{0.0}};
-  Real p0_soa[ntot_soaspec] = {1.0e-10};
-  Real p0_soa_298[ntot_soaspec] = {1.0e-10};
   Real sat[ntot_soaspec][max_mode] = {{0.0}};
+
+  // BAD CONSTANT
+  constexpr Real delh_vap_soa = 156.0e3;
+  constexpr Real p0_soa_298 = 1.0e-10;
+
+  Real p0_soa[ntot_soaspec];
+  for (int ll = 0; ll < ntot_soaspec; ++ll) {
+    p0_soa[ntot_soaspec] = 1.0e-10;
+  }
+
+  // BAD CONSTANT
+  Real opoa_frac[ntot_poaspec][max_mode];
+  for (int ll = 0; ll < ntot_poaspec; ++ll) {
+    for (int n = 0; n < max_mode; ++n) {
+      opoa_frac[ll][n] = 0.1;
+    }
+  }
+  bool skip_soamode[max_mode];
+  for (int n = 0; n < max_mode; ++n) {
+    skip_soamode[n] = true;
+  }
+
   Real tmpa, tmpb, tmpc;
   const Real alpha_astem = 0.05; // Parameter used in calc of time step
   const Real dtsub_fixed = -1.0; // Fixed sub-step for time integration (s)
@@ -130,8 +147,8 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
   // Calculate ambient equilibrium soa gas
   for (int ll = 0; ll < ntot_soaspec; ++ll) {
     // BAD CONSTANT
-    p0_soa[ll] = p0_soa_298[ll] * haero::exp(-(delh_vap_soa[ll] / rgas) *
-                                             ((1.0 / temp) - (1.0 / 298.0)));
+    p0_soa[ll] = p0_soa_298 * haero::exp(-(delh_vap_soa / rgas) *
+                                         ((1.0 / temp) - (1.0 / 298.0)));
     // BAD CONSTANT
     g0_soa[ll] = 1.01325e5 * p0_soa[ll] / pmid;
   }
