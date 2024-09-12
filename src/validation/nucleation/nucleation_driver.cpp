@@ -27,6 +27,9 @@ using namespace mam4;
 // Parameterizations used by the nucleation process.
 void mer07_veh02_wang08_nuc_1box(Ensemble *ensemble);
 void newnuc_cluster_growth(Ensemble *ensemble);
+void binary_nuc_vehk2002(Ensemble *ensemble);
+void pbl_nuc_wang2008(Ensemble *ensemble);
+void mer07_veh02_nuc_mosaic_1box(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -55,6 +58,12 @@ int main(int argc, char **argv) {
       mer07_veh02_wang08_nuc_1box(ensemble);
     } else if (func_name == "newnuc_cluster_growth") {
       newnuc_cluster_growth(ensemble);
+    } else if (func_name == "binary_nuc_vehk2002") {
+      binary_nuc_vehk2002(ensemble);
+    } else if (func_name == "pbl_nuc_wang2008") {
+      pbl_nuc_wang2008(ensemble);
+    } else if (func_name == "mer07_veh02_nuc_mosaic_1box") {
+      mer07_veh02_nuc_mosaic_1box(ensemble);
     }
   } catch (std::exception &e) {
     std::cerr << argv[0] << ": Error: " << e.what() << std::endl;
