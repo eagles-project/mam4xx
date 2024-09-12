@@ -46,7 +46,7 @@ void mam_gasaerexch_1subarea(Ensemble *ensemble) {
     Real dgn_awet[gasaerexch::max_mode];
     Real wetdens[gasaerexch::max_mode];
     Real uptkaer[gasaerexch::max_gas][mam4::gasaerexch::max_mode];
-    Real uptkrate_h2so4;
+    Real uptkrate_h2so4=0;
 
     // Copy input vectors to local arrays
     for (int i = 0; i < gasaerexch::max_gas; ++i) {
@@ -63,15 +63,16 @@ void mam_gasaerexch_1subarea(Ensemble *ensemble) {
       wetdens[i] = wetdens_vec[i];
     }
 
-    for (int i = 0; i < gasaerexch::max_aer; ++i) {
-      for (int j = 0; j < mam4::gasaerexch::max_mode; ++j) {
-        qaer_cur[i][j] = qaer_cur_vec[i * mam4::gasaerexch::max_mode + j];
+    
+    for (int j = 0; j < mam4::gasaerexch::max_mode; ++j) {
+      for (int i = 0; i < gasaerexch::max_aer; ++i) {  
+        qaer_cur[i][j] = qaer_cur_vec[j * mam4::gasaerexch::max_aer + i];
       }
     }
 
-    for (int i = 0; i < gasaerexch::max_gas; ++i) {
-      for (int j = 0; j < mam4::gasaerexch::max_mode; ++j) {
-        uptkaer[i][j] = uptkaer_vec[i * mam4::gasaerexch::max_mode + j];
+    for (int j = 0; j < mam4::gasaerexch::max_mode; ++j) {
+      for (int i = 0; i < gasaerexch::max_gas; ++i) {
+        uptkaer[i][j] = uptkaer_vec[j * mam4::gasaerexch::max_gas + i];
       }
     }
 
@@ -105,15 +106,15 @@ void mam_gasaerexch_1subarea(Ensemble *ensemble) {
       wetdens_out[i] = wetdens[i];
     }
 
-    for (int i = 0; i < gasaerexch::max_aer; ++i) {
-      for (int j = 0; j < mam4::gasaerexch::max_mode; ++j) {
-        qaer_cur_out[i * mam4::gasaerexch::max_mode + j] = qaer_cur[i][j];
+    for (int j = 0; j < mam4::gasaerexch::max_mode; ++j) {
+      for (int i = 0; i < gasaerexch::max_aer; ++i) {
+        qaer_cur_out[j * mam4::gasaerexch::max_aer + i] = qaer_cur[i][j];
       }
     }
 
-    for (int i = 0; i < gasaerexch::max_gas; ++i) {
-      for (int j = 0; j < mam4::gasaerexch::max_mode; ++j) {
-        uptkaer_out[i * mam4::gasaerexch::max_mode + j] = uptkaer[i][j];
+    for (int j = 0; j < mam4::gasaerexch::max_mode; ++j) {
+      for (int i = 0; i < gasaerexch::max_gas; ++i) {
+        uptkaer_out[j * mam4::gasaerexch::max_gas + i] = uptkaer[i][j];
       }
     }
 
