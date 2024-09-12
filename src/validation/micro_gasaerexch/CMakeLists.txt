@@ -1,7 +1,5 @@
 set(MICRO_GASAEREXCH_DIR ${MAM_X_VALIDATION_DIR}/modal_aero_amicphys)
 set(MICRO_GASAEREXCH_SCRIPTS_DIR ${MAM_X_VALIDATION_DIR}/scripts)
-
-
 # These subdirectories contain Skywalker drivers for MAM4 parameterizations.
 # Include directory for .mod files.
 
