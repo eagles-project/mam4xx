@@ -76,7 +76,6 @@ constexpr int max_aer = nsoa + npoa + nbc + 4;
 constexpr int naer = nsoa + 1;
 constexpr int iaer_pom =
     naer + 1 - 1; // -1 for fotran to c++ indexing conversion.
-constexpr int mode_aging_optaa[max_mode] = {0, 0, 0, 1, 0};
 constexpr int ntot_soamode = 4;
 
 KOKKOS_INLINE_FUNCTION
