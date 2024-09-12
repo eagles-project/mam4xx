@@ -901,10 +901,8 @@ void marine_organic_emissions(
 KOKKOS_INLINE_FUNCTION
 void aero_model_emissions(
     // in
-    const ThreadTeam &team,
-    OnlineEmissionsData online_emiss_data,
-    SeasaltEmissionsData seasalt_data,
-    DustEmissionsData dust_data,
+    const ThreadTeam &team, OnlineEmissionsData online_emiss_data,
+    SeasaltEmissionsData seasalt_data, DustEmissionsData dust_data,
     // inout
     // NOTE: fortran: cam_in%cflx
     Real (&cflux)[pcnst]) {
@@ -991,8 +989,7 @@ void aero_model_emissions(
 KOKKOS_INLINE_FUNCTION
 void aero_model_emissions(
     // in
-    OnlineEmissionsData online_emiss_data,
-    SeasaltEmissionsData seasalt_data,
+    OnlineEmissionsData online_emiss_data, SeasaltEmissionsData seasalt_data,
     DustEmissionsData dust_data,
     // inout
     // NOTE: fortran: cam_in%cflx
