@@ -62,8 +62,6 @@ void soa_equilib_mixing_ratio_no_solute(const Real &T_in_K,     // in
 }
 
 // NOTE: This is different from box model.
-// max_gas = nsoa + 1
-// FIXME: are these defined somewhere else?
 constexpr int npoa =
     1; //   number of differently tagged primary-organic   aerosol species
 constexpr int nsoa =
@@ -75,14 +73,10 @@ constexpr int max_gas = nsoa + 1;
 constexpr int nbc =
     1; // number of differently tagged black-carbon      aerosol species
 constexpr int max_aer = nsoa + npoa + nbc + 4;
-// FIXME: check this value
-// constexpr int nufi = -999888777;
 constexpr int naer = nsoa + 1;
 constexpr int iaer_pom =
     naer + 1 - 1; // -1 for fotran to c++ indexing conversion.
-// FIXME: set values
 constexpr int mode_aging_optaa[max_mode] = {0, 0, 0, 1, 0};
-// int lptr2_soa_a_amode[ntot_amode][nsoa] = {{18,25,34,-999888777}};
 constexpr int ntot_soamode = 4;
 
 KOKKOS_INLINE_FUNCTION
@@ -97,7 +91,6 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
                           const Real uptkaer[max_gas][max_mode] // in
 ) {
 
-  // Local variables
   constexpr int ntot_poaspec = npoa;
   constexpr int ntot_soaspec = nsoa;
   int ntot_soamode = 0;
@@ -135,16 +128,6 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
   const Real g_min1 = 1.0e-20;
 
   Real tot_soa[ntot_soaspec] = {}; // g_soa + sum( a_soa(:) )
-
-  // Calculate ntot_soamode = "last" mode on which soa is allowed to condense
-  // for (int n = 0; n < ntot_amode; ++n) {
-  //   if (n == nufi)
-  //     continue;
-  //   if (mode_aging_optaa[n] > 0)
-  //     ntot_soamode = n;
-  //   if (lptr2_soa_a_amode[n][0] > 0)
-  //     ntot_soamode = n;
-  // }
 
   // Calculate ambient equilibrium soa gas
   for (int ll = 0; ll < ntot_soaspec; ++ll) {

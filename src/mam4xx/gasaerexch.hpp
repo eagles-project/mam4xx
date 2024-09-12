@@ -965,44 +965,26 @@ void mam_gasaerexch_1subarea(
     Real uptkaer[gasaerexch::max_gas][mam4::gasaerexch::max_mode],
     Real &uptkrate_h2so4) {
 
-  // const bool flag_nh4_lt_2so4_each_step = false;
   using mam4::gasaerexch::max_aer;
   using mam4::gasaerexch::max_gas;
   using mam4::gasaerexch::max_mode;
   using mam4::gasaerexch::mode_aging_optaa;
   using mam4::gasaerexch::nsoa;
 
-  // Real gas_diffus[max_gas];
-  // Real gas_freepath[max_gas];
   Real qgas_prv[max_gas];
   Real qaer_prv[max_aer][max_mode];
-  // // Real tmpa, tmpb, tmpc;
-  // Real tmp_kxt, tmp_kxt2, tmp_pxt, tmp_pok;
-  // Real tmp_q1, tmp_q2, tmp_q3, tmp_q4, tmp_q5;
-  // Real tmp_qdel_cond;
   Real uptkrate[max_mode];
-
   constexpr int ntot_amode = AeroConfig::num_modes();
-
-  // FIXME: get this numbers.
   // BAD CONSTANT
   Real alnsg_aer[max_mode] = {haero::log(1.8)};
   // sigmag_amode : assumed geometric standard deviation of particle size
   // distribution
-
   for (int imode = 0; imode < ntot_amode; ++imode) {
     const Real sigmag_amode = modes(imode).mean_std_dev;
     alnsg_aer[imode] = haero::log(sigmag_amode);
   }
 
-  //
-  // constexpr int lmap_aer2[max_mode*max_aer] =
-  //  {9,7,8,10,12,11,13,
-  //   16,15,0,0,17,0,18,
-  //   25,22,24,23,21,20,26,
-  //   0,0,28,29,0,0,30,
-  //   0,0,0,0,0,0,0};
-
+  // using c++ indexing (fortran index -1)
   int lmap_aer[max_aer][max_mode] = {{8, 6, 7, 9, 11},     {10, 12, 15, 14, -1},
                                      {-1, 16, -1, 17, 24}, {21, 23, 22, 20, 19},
                                      {25, -1, -1, 27, 28}, {-1, -1, 29, -1, -1},
