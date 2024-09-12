@@ -968,8 +968,9 @@ void mam_gasaerexch_1subarea(
   using mam4::gasaerexch::max_aer;
   using mam4::gasaerexch::max_gas;
   using mam4::gasaerexch::max_mode;
-  using mam4::gasaerexch::mode_aging_optaa;
   using mam4::gasaerexch::nsoa;
+
+  constexpr int mode_aging_optaa[max_mode] = {0, 0, 0, 1, 0};
 
   Real qgas_prv[max_gas];
   Real qaer_prv[max_aer][max_mode];
