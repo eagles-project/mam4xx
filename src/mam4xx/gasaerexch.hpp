@@ -320,11 +320,11 @@ Real fuchs_sutugin(const Real &D_p, const Real &gasfreepath,
 }
 
 KOKKOS_INLINE_FUNCTION
-void gas_aer_uptkrates_1box1gas_OD(const Real accom, const Real gasdiffus,
-                                   const Real gasfreepath, const Real beta_inp,
-                                   const Real dgncur_awet[GasAerExch::num_mode],
-                                   const Real lnsg[GasAerExch::num_mode],
-                                   Real uptkaer[GasAerExch::num_mode]) {
+void gas_aer_uptkrates_1box1gas(const Real accom, const Real gasdiffus,
+                                const Real gasfreepath, const Real beta_inp,
+                                const Real dgncur_awet[GasAerExch::num_mode],
+                                const Real lnsg[GasAerExch::num_mode],
+                                Real uptkaer[GasAerExch::num_mode]) {
   /*
   !                         /
   !   computes   uptkrate = | dx  dN/dx  gas_conden_rate(Dp(x))
@@ -402,7 +402,7 @@ void gas_aer_uptkrates_1box1gas_OD(const Real accom, const Real gasdiffus,
     // gas-to-aerosol mass transfer rates
     uptkaer[n] = constant * gasdiffus * sumghq;
   }
-} // gas_aer_uptkrates_1box1gas_OD
+} // gas_aer_uptkrates_1box1gas
 
 KOKKOS_INLINE_FUNCTION
 void gas_aer_uptkrates_1box1gas(
@@ -1038,7 +1038,7 @@ void mam_gasaerexch_1subarea(
 
       const Real gas_freepath_igas = 3.0 * gas_diffus_igas / molecular_speed;
 
-      mam4::gasaerexch::gas_aer_uptkrates_1box1gas_OD(
+      mam4::gasaerexch::gas_aer_uptkrates_1box1gas(
           accom_coef_gas[igas], gas_diffus_igas, gas_freepath_igas, 0.0,
           dgn_awet, alnsg_aer, uptkrate);
       const int iaer = igas;
