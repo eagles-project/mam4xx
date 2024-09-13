@@ -320,6 +320,91 @@ Real fuchs_sutugin(const Real &D_p, const Real &gasfreepath,
 }
 
 KOKKOS_INLINE_FUNCTION
+void gas_aer_uptkrates_1box1gas(const Real accom, const Real gasdiffus,
+                                const Real gasfreepath, const Real beta_inp,
+                                const Real dgncur_awet[GasAerExch::num_mode],
+                                const Real lnsg[GasAerExch::num_mode],
+                                Real uptkaer[GasAerExch::num_mode]) {
+  /*
+  !                         /
+  !   computes   uptkrate = | dx  dN/dx  gas_conden_rate(Dp(x))
+  !                         /
+  !   using Gauss-Hermite quadrature of order nghq=2
+  !
+  !       Dp = particle diameter (cm)
+  !       x = ln(Dp)
+  !       dN/dx = log-normal particle number density distribution
+  !       gas_conden_rate(Dp) = 2 * pi * gasdiffus * Dp * F(Kn,ac)
+  !           F(Kn,ac) = Fuchs-Sutugin correction factor
+  !           Kn = Knudsen number
+  !           ac = accomodation coefficient */
+
+  const Real tworootpi = 2 * haero::sqrt(haero::Constants::pi);
+  const Real root2 = haero::sqrt(2.0);
+  const Real one = 1.0;
+  const Real two = 2.0;
+
+  // Dick's old version
+  // integer, parameter :: nghq = 2
+  // real(wp), save :: xghq(nghq), wghq(nghq) ! quadrature abscissae and
+  // weights data xghq / 0.70710678, -0.70710678 / data wghq / 0.88622693,
+  // 0.88622693 /
+
+  // NOTE: it looks like the refractored code is still using Dick's old version.
+
+  //-----------------------------------------------------------------------
+
+  constexpr int nghq = 2;
+  const Real xghq[nghq] = {0.70710678, -0.70710678};
+  const Real wghq[nghq] = {0.88622693, 0.88622693};
+
+  const Real accomxp283 = accom * 0.283;
+  const Real accomxp75 = accom * 0.75;
+
+  // outermost loop over all modes
+  for (int n = 0; n < GasAerExch::num_mode; ++n) {
+    const Real lndpgn = haero::log(dgncur_awet[n]); // (m)
+
+    // beta = dln(uptake_rate)/dln(D_p)
+    //      = 2.0 in free molecular regime, 1.0 in continuum regime
+    // if uptake_rate ~= a * (D_p**beta), then the 2 point quadrature
+    // is very accurate
+    Real beta = 0;
+    if (std::abs(beta_inp - 1.5) > 0.5) {
+      // D_p = dgncur_awet(n) * haero::exp( 1.5*(lnsg[n]**2) )
+      const Real D_p = dgncur_awet[n];
+      const Real knudsen = two * gasfreepath / D_p;
+
+      // tmpa = dln(fuchs_sutugin)/d(knudsen)
+      const Real tmpa =
+          one / (one + knudsen) -
+          (two * knudsen + one + accomxp283) /
+              (knudsen * (knudsen + one + accomxp283) + accomxp75);
+      beta = one - knudsen * tmpa;
+      beta = haero::max(one, haero::min(two, beta));
+    } else {
+      beta = beta_inp;
+    }
+    const Real constant =
+        tworootpi *
+        haero::exp(beta * lndpgn + 0.5 * haero::pow(beta * lnsg[n], 2.0));
+
+    // sum over gauss-hermite quadrature points
+    Real sumghq = 0.0;
+    for (int iq = 0; iq < nghq; ++iq) {
+      const Real lndp =
+          lndpgn + beta * lnsg[n] * lnsg[n] + root2 * lnsg[n] * xghq[iq];
+      const Real D_p = haero::exp(lndp);
+
+      const Real hh = fuchs_sutugin(D_p, gasfreepath, accomxp283, accomxp75);
+      sumghq += wghq[iq] * D_p * hh / haero::pow(D_p, beta);
+    }
+    // gas-to-aerosol mass transfer rates
+    uptkaer[n] = constant * gasdiffus * sumghq;
+  }
+} // gas_aer_uptkrates_1box1gas
+
+KOKKOS_INLINE_FUNCTION
 void gas_aer_uptkrates_1box1gas(
     const bool l_condense_to_mode[GasAerExch::num_mode], const Real temp,
     const Real pmid, const Real pstd, const Real mw_gas, const Real mw_air_gmol,
@@ -362,7 +447,6 @@ void gas_aer_uptkrates_1box1gas(
   // real(wp), save :: xghq(nghq), wghq(nghq) ! quadrature abscissae and
   // weights data xghq / 0.70710678, -0.70710678 / data wghq / 0.88622693,
   // 0.88622693 /
-
   // choose
   // nghq-----------------------------------------------------------------
   const Kokkos::Array<Real, 20> xghq_20 = {
@@ -474,7 +558,6 @@ void gas_aer_uptkrates_1box1gas(
     // gas-to-aerosol mass transfer rates
     // (1/s) for number concentration = 1 #/m3
     const Real uptkrate = constant * gasdiffus * sumghq;
-
     // --------------------------------------------------------------------
     // Unit of uptkrate is for number = 1 #/m3.
     // --------------------------------------------------------------------
@@ -863,6 +946,208 @@ void GasAerExch::compute_tendencies(const AeroConfig &config,
         alnsg_aer);
   });
 }
+
+KOKKOS_INLINE_FUNCTION
+void mam_gasaerexch_1subarea(
+    const int jtsubstep,                // in
+    const Real dtsubstep,               // in
+    const Real temp,                    // in
+    const Real pmid,                    // in
+    const Real aircon,                  // in
+    const int n_mode,                   // in
+    Real qgas_cur[gasaerexch::max_gas], // in/out
+    Real qgas_avg[gasaerexch::max_gas], // in/out
+    const Real qgas_netprod_otrproc[gasaerexch::max_gas],
+    Real qaer_cur[gasaerexch::max_aer][mam4::gasaerexch::max_mode],
+    Real qnum_cur[gasaerexch::max_mode], Real qwtr_cur[gasaerexch::max_mode],
+    Real dgn_a[gasaerexch::max_mode], Real dgn_awet[gasaerexch::max_mode],
+    Real wetdens[gasaerexch::max_mode],
+    Real uptkaer[gasaerexch::max_gas][mam4::gasaerexch::max_mode],
+    Real &uptkrate_h2so4) {
+
+  using mam4::gasaerexch::max_aer;
+  using mam4::gasaerexch::max_gas;
+  using mam4::gasaerexch::max_mode;
+  using mam4::gasaerexch::nsoa;
+
+  constexpr int mode_aging_optaa[max_mode] = {0, 0, 0, 1, 0};
+
+  Real qgas_prv[max_gas];
+  Real qaer_prv[max_aer][max_mode];
+  Real uptkrate[max_mode];
+  constexpr int ntot_amode = AeroConfig::num_modes();
+  // BAD CONSTANT
+  Real alnsg_aer[max_mode] = {haero::log(1.8)};
+  // sigmag_amode : assumed geometric standard deviation of particle size
+  // distribution
+  for (int imode = 0; imode < ntot_amode; ++imode) {
+    const Real sigmag_amode = modes(imode).mean_std_dev;
+    alnsg_aer[imode] = haero::log(sigmag_amode);
+  }
+
+  // using c++ indexing (fortran index -1)
+  constexpr int lmap_aer[max_aer][max_mode] = {
+      {8, 6, 7, 9, 11},     {10, 12, 15, 14, -1}, {-1, 16, -1, 17, 24},
+      {21, 23, 22, 20, 19}, {25, -1, -1, 27, 28}, {-1, -1, 29, -1, -1},
+      {-1, -1, -1, -1, -1}};
+
+  const Real pstd = Constants::pressure_stp;                       // [Pa]
+  const Real mw_air_gmol = 1000 * Constants::molec_weight_dry_air; // [g/mol]
+  const Real vol_molar_air = Constants::molec_diffusion_dry_air;   // [-]
+  const Real r_universal_mJ = 1000 * Constants::r_gas; // [mJ/(K mol)]
+  const Real r_pi = Constants::pi;
+  // BAD CONSTANT
+  // SOAG, H2SO4
+  const Real mw_gas[max_gas] = {150.0000, 98.0784};
+  const Real vol_molar_gas[max_gas] = {6.5633E+01, 4.2880E+01};
+  const Real accom_coef_gas[max_gas] = {6.5000E-01, 6.5000E-01};
+
+  // igas_h2so4,
+  constexpr int igas_nh3 = -1;
+  constexpr int igas_hno3 = -1;
+  constexpr int igas_hcl = -1;
+  // constexpr int igas_soa=0;
+  constexpr int igas_h2so4 = 1;
+
+  // constexpr int iaer_soa=0;
+  constexpr int iaer_so4 = 1;
+  constexpr int iaer_nh4 = -1;
+  // constexpr int iaer_no3=-1;
+  // constexpr int iaer_cl=-1;
+
+  // Initialize qgas_avg
+  for (int igas = 0; igas < max_gas; ++igas) {
+    qgas_avg[igas] = 0.0;
+  }
+
+  // Calculate gas uptake (mass transfer) rates
+  if (jtsubstep == 1) {
+    // pressure (atmospheres)
+    const Real p_in_atm = pmid / pstd;
+    for (int igas = 0; igas < max_gas; ++igas) {
+      // gas_diffus[igas] = gas_diffusivity(temp, tmpa, mw_gas[igas],
+      // vol_molar_gas[igas]);
+      const Real gas_diffus_igas = mam4::gasaerexch::gas_diffusivity(
+          temp, p_in_atm, mw_gas[igas], mw_air_gmol, vol_molar_gas[igas],
+          vol_molar_air);
+
+      // tmpb = mean_molecular_speed(temp, mw_gas[igas]);
+      // gas mean free path (m)
+      const Real molecular_speed = mam4::gasaerexch::mean_molecular_speed(
+          temp, mw_gas[igas], r_universal_mJ, r_pi);
+
+      const Real gas_freepath_igas = 3.0 * gas_diffus_igas / molecular_speed;
+
+      mam4::gasaerexch::gas_aer_uptkrates_1box1gas(
+          accom_coef_gas[igas], gas_diffus_igas, gas_freepath_igas, 0.0,
+          dgn_awet, alnsg_aer, uptkrate);
+      const int iaer = igas;
+      for (int n = 0; n < ntot_amode; ++n) {
+        if (lmap_aer[iaer][n] > 0 || mode_aging_optaa[n] > 0) {
+          uptkaer[igas][n] = uptkrate[n] * (qnum_cur[n] * aircon);
+        } else {
+          uptkaer[igas][n] = 0.0;
+        }
+      }
+    }
+
+    for (int igas = 0; igas < max_gas; ++igas) {
+      // use cam5.1.00 uptake rates
+      if (igas < nsoa) {
+        // BAD CONSTANT
+        for (int imode = 0; imode < ntot_amode; ++imode) {
+          uptkaer[igas][imode] = uptkaer[igas_h2so4][imode] * 0.81;
+        }
+        // imode
+      } // igas <= nso
+      if (igas == igas_nh3) {
+        // BAD CONSTANT
+        for (int imode = 0; imode < ntot_amode; ++imode) {
+          uptkaer[igas][imode] = uptkaer[igas_h2so4][imode] * 2.08;
+        } // imode
+      }   // igas == igas_nh3
+    }     // igas
+    // uptkrate_h2so4 = 0;
+    for (int n = 0; n < ntot_amode; ++n)
+      uptkrate_h2so4 += uptkaer[igas_h2so4][n];
+  }
+
+  // Do SOA
+  mam4::gasaerexch::mam_soaexch_1subarea(dtsubstep, temp, pmid, qgas_cur,
+                                         qgas_avg, qaer_cur, qnum_cur, qwtr_cur,
+                                         uptkaer);
+
+  // Do other gases (that are assumed non-volatile) with no time sub-stepping
+  for (int igas = nsoa; igas < max_gas; ++igas) {
+    const int iaer = igas;
+    qgas_prv[igas] = qgas_cur[igas];
+    for (int n = 0; n < n_mode; ++n) {
+      qaer_prv[iaer][n] = qaer_cur[iaer][n];
+    }
+  }
+
+  for (int igas = nsoa; igas < max_gas; ++igas) {
+    const int iaer = igas;
+    if (igas == igas_hno3 || igas == igas_hcl)
+      continue;
+
+    Real tmpa = 0.0;
+    for (int imode = 0; imode < n_mode; ++imode) {
+      tmpa += uptkaer[igas][imode];
+    } // imode
+
+    const Real tmp_kxt = tmpa * dtsubstep;
+    const Real tmp_pxt = qgas_netprod_otrproc[igas] * dtsubstep;
+    const Real tmp_q1 = qgas_prv[igas];
+
+    // BAD CONSTANT
+    if (tmp_kxt >= 1.0e-20) {
+      Real tmp_q3 = 0.0;
+      Real tmp_q4 = 0.0;
+      if (tmp_kxt > 0.001) {
+        const Real tmp_pok = tmp_pxt / tmp_kxt;
+        tmp_q3 = (tmp_q1 - tmp_pok) * haero::exp(-tmp_kxt) + tmp_pok;
+        tmp_q4 = (tmp_q1 - tmp_pok) * (1.0 - haero::exp(-tmp_kxt)) / tmp_kxt +
+                 tmp_pok;
+      } else {
+        const Real tmp_kxt2 = tmp_kxt * tmp_kxt;
+        tmp_q3 = tmp_q1 * (1.0 - tmp_kxt + tmp_kxt2 * 0.5) +
+                 tmp_pxt * (1.0 - tmp_kxt * 0.5 + tmp_kxt2 / 6.0);
+        tmp_q4 = tmp_q1 * (1.0 - tmp_kxt * 0.5 + tmp_kxt2 / 6.0) +
+                 tmp_pxt * (0.5 - tmp_kxt / 6.0 + tmp_kxt2 / 24.0);
+      }
+      qgas_cur[igas] = tmp_q3;
+      const Real tmp_qdel_cond = (tmp_q1 + tmp_pxt) - tmp_q3;
+      qgas_avg[igas] = tmp_q4;
+      for (int n = 0; n < n_mode; ++n) {
+        if (uptkaer[igas][n] <= 0.0)
+          continue;
+        const Real tmpc = tmp_qdel_cond * (uptkaer[igas][n] / tmpa);
+        qaer_cur[iaer][n] = qaer_prv[iaer][n] + tmpc;
+      }
+    } else {
+      qgas_cur[igas] = tmp_q1 + tmp_pxt;
+      qgas_avg[igas] = tmp_q1 + tmp_pxt * 0.5;
+    }
+  }
+
+  if (igas_nh3 > 0) {
+    // Do not allow nh4 to exceed 2*so4 (molar basis)
+    const int iaer = iaer_nh4;
+    const int igas = igas_nh3;
+    for (int n = 0; n < n_mode; ++n) {
+      if (uptkaer[igas][n] <= 0.0)
+        continue;
+      const Real tmpa = qaer_cur[iaer][n] - 2.0 * qaer_cur[iaer_so4][n];
+      if (tmpa > 0.0) {
+        qaer_cur[iaer][n] = qaer_cur[iaer][n] - tmpa;
+        qgas_cur[igas] = qgas_cur[igas] + tmpa;
+        qgas_avg[igas] = qgas_avg[igas] + tmpa * 0.5;
+      }
+    }
+  }
+}
+
 } // namespace mam4
 
 #endif
