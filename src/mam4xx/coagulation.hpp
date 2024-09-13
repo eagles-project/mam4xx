@@ -1042,8 +1042,8 @@ void mam_coag_num_update(Real ybetaij0[Coagulation::max_coagpair],
 KOKKOS_INLINE_FUNCTION
 void mam_coag_1subarea(
     const Real deltat, const Real temp, const Real pmid, const Real aircon,
-    Real dgn_a[AeroConfig::num_modes()], Real dgn_awet[AeroConfig::num_modes()],
-    Real wetdens[AeroConfig::num_modes()],
+    const Real dgn_a[AeroConfig::num_modes()], const Real dgn_awet[AeroConfig::num_modes()],
+    const Real wetdens[AeroConfig::num_modes()],
     Real qnum_cur[AeroConfig::num_modes()],
     Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
     Real qaer_del_coag_out[AeroConfig::num_aerosol_ids()]
