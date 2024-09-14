@@ -960,8 +960,8 @@ void mam_gasaerexch_1subarea(
     const Real qgas_netprod_otrproc[gasaerexch::max_gas],
     Real qaer_cur[gasaerexch::max_aer][mam4::gasaerexch::max_mode],
     Real qnum_cur[gasaerexch::max_mode], Real qwtr_cur[gasaerexch::max_mode],
-    Real dgn_a[gasaerexch::max_mode], Real dgn_awet[gasaerexch::max_mode],
-    Real wetdens[gasaerexch::max_mode],
+    const Real dgn_a[gasaerexch::max_mode], const Real dgn_awet[gasaerexch::max_mode],
+    const Real wetdens[gasaerexch::max_mode],
     Real uptkaer[gasaerexch::max_gas][mam4::gasaerexch::max_mode],
     Real &uptkrate_h2so4) {
 
