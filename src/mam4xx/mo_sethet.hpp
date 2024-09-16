@@ -27,6 +27,8 @@ constexpr Real cm3_2_m3 = 1.0e-6; // convert cm^3 to m^3
 constexpr Real liter_per_gram = 1.0e-3;
 constexpr Real avo2 =
     avo * liter_per_gram * cm3_2_m3; // [liter/gm/mol*(m/cm)^3]
+constexpr Real m2km = 1.0e-3;    // convert m to km
+constexpr Real km2cm = 1.0e5;    // convert km to cm
 
 using Real = haero::Real;
 using View1D = DeviceType::view_1d<Real>;
@@ -159,15 +161,26 @@ void find_ktop(
 
 } // end subroutine find_ktop
 
+
+KOKKOS_INLINE_FUNCTION
+void calc_delz(const ThreadTeam &team, int ktop, const ColumnView &delz, const ColumnView &zmid, Real zsurf) {
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, ktop, pver - 1), KOKKOS_LAMBDA(int kk) {
+        delz(kk) = haero::abs((zmid(kk) - zmid(kk + 1)) * km2cm);
+      });
+  delz(pver - 1) = haero::abs((zmid(pver - 1) - zsurf) * km2cm);
+}
+
+
 KOKKOS_INLINE_FUNCTION
 void sethet(
-    const ThreadTeam &team,
+    // const ThreadTeam &team,
     Real
-        het_rates[gas_pcnst], //[pver][gas_pcnst], rainout rates [1/s] //out
+        (&het_rates)[gas_pcnst], //[pver][gas_pcnst], rainout rates [1/s] //out
     const Real rlat,          // latitude in radians for columns
     const Real press,  // pressure [pascals] //in
     const Real zmid_k,   // midpoint geopot [km]  //in
-    const Real zmid_kp1,   // midpoint geopot [km]  //in
+    const Real zsurf,
     const Real phis,          // surf geopotential //in
     const Real tfld,   // temperature [K]  //in
     const Real cmfdqr, // dq/dt for convection [kg/kg/s] //in
@@ -181,10 +194,6 @@ void sethet(
         t_factor, // temperature factor to calculate henry's law parameters
     Real xk0_hno3, Real xk0_so2,
     Real so2_diss, // so2 dissociation constant
-    Real
-        &xgas2, // gas phase species for h2o2 (2) and so2 (3) [molecules/cm^3]
-    Real
-        &xgas3, // gas phase species for h2o2 (2) and so2 (3) [molecules/cm^3]
     Real delz,  // layer depth about interfaces [cm]
     Real xh2o2, // h2o2 concentration [molecules/cm^3]
     Real xso2,  // so2 concentration [molecules/cm^3]
@@ -194,7 +203,7 @@ void sethet(
     Real xhen_h2o2, // henry law constants
     Real xhen_hno3, // henry law constants
     Real xhen_so2,  // henry law constants
-    Real tmp_hetrates[gas_pcnst], const int spc_h2o2_ndx,
+    Real (&tmp_hetrates)[gas_pcnst], const int spc_h2o2_ndx,
     const int spc_so2_ndx, const int h2o2_ndx, const int so2_ndx,
     const int h2so4_ndx, const int gas_wetdep_cnt, const int wetdep_map[3], 
     const Real total_rain,
@@ -221,8 +230,7 @@ void sethet(
   // = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
   constexpr Real hno3_diss = 15.4;            // hno3 dissociation constant
   constexpr Real mass_air = 29.0;  // mass of background atmosphere [amu]
-  constexpr Real km2cm = 1.0e5;    // convert km to cm
-  constexpr Real m2km = 1.0e-3;    // convert m to km
+  
   constexpr Real m3_2_cm3 = 1.0e6; // convert m^3 to cm^3
   constexpr Real MISSING = -999999.0;
   constexpr Real large_value_lifetime =
@@ -235,7 +243,9 @@ void sethet(
   Real xxx2, xxx3;   // working variables for h2o2 (2) and so2 (3)
   Real yso2, yh2o2;  // washout lifetime [s]
   Real work1, work2; // working variables
-  Real zsurf;        // surface height [km]
+  Real xgas2; // gas phase species for h2o2 (2) and so2 (3) [molecules/cm^3]
+  Real xgas3; // gas phase species for h2o2 (2) and so2 (3) [molecules/cm^3]
+  //Real zsurf;        // surface height [km]
 
   //-----------------------------------------------------------------
   //        note: the press array is in pascals and must be
@@ -293,10 +303,11 @@ void sethet(
   xh2o2 = qin[spc_h2o2_ndx] * xhnm;
   xso2 = qin[spc_so2_ndx] * xhnm;
 
-  zsurf = m2km * phis * rga;
+  //zsurf = m2km * phis * rga;
 
   // if k=pver-1, then zmid_kp1 is zsurf
-  delz = haero::abs((zmid_k - zmid_kp1) * km2cm);
+  //calc_delz(team, delz, zmid, )
+  //delz = haero::abs((zmid_k - zmid_kp1) * km2cm);
 
   //-----------------------------------------------------------------
   //       ... part 0b,  for temperature dependent of henrys

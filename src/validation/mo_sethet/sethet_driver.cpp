@@ -26,7 +26,7 @@ void calc_het_rates(Ensemble *ensemble);
 void calc_precip_rescale(Ensemble *ensemble);
 void find_ktop(Ensemble *ensemble);
 void gas_washout(Ensemble *ensemble);
-//void sethet(Ensemble *ensemble);
+void sethet(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     } else if (func_name == "gas_washout") {
       gas_washout(ensemble);
     } else if (func_name == "sethet") {
-      //sethet(ensemble);
+      sethet(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
