@@ -74,52 +74,52 @@ foreach (input
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
 endforeach()
 
-# # additional tests added for integration
-# set(TestLabel "nuc_tests_new")
+# additional tests added for integration
+set(TestLabel "nuc_tests_new")
 
-# set(NUCLEATION_VALIDATION_SCRIPTS_DIR ${MAM_X_VALIDATION_DIR}/scripts)
+set(NUCLEATION_VALIDATION_SCRIPTS_DIR ${MAM_X_VALIDATION_DIR}/scripts)
 
-# # Copy some Python scripts from mam_x_validation to our binary directory.
-# foreach(script
-#         compare_mam4xx_mam4.py)
-#   configure_file(
-#     ${NUCLEATION_VALIDATION_SCRIPTS_DIR}/${script}
-#     ${CMAKE_CURRENT_BINARY_DIR}/${script}
-#     COPYONLY
-#   )
-# endforeach()
+# Copy some Python scripts from mam_x_validation to our binary directory.
+foreach(script
+        compare_mam4xx_mam4.py)
+  configure_file(
+    ${NUCLEATION_VALIDATION_SCRIPTS_DIR}/${script}
+    ${CMAKE_CURRENT_BINARY_DIR}/${script}
+    COPYONLY
+  )
+endforeach()
 
-# # Run the driver in several configurations to produce datasets.
-# set(TEST_LIST
-#     binary_nuc_vehk2002
-#     pbl_nuc_wang2008
-#     mer07_veh02_nuc_mosaic_1box
-#     )
+# Run the driver in several configurations to produce datasets.
+set(TEST_LIST
+    binary_nuc_vehk2002
+    pbl_nuc_wang2008
+    mer07_veh02_nuc_mosaic_1box
+    )
 
-# set(DEFAULT_TOL 2e-10)
+set(DEFAULT_TOL 2e-10)
 
-# set(ERROR_THRESHOLDS
-#     ${DEFAULT_TOL} # binary_nuc_vehk2002
-#     ${DEFAULT_TOL} # pbl_nuc_wang2008
-#     ${DEFAULT_TOL} # mer07_veh02_nuc_mosaic_1box
-#    )
+set(ERROR_THRESHOLDS
+    ${DEFAULT_TOL} # binary_nuc_vehk2002
+    ${DEFAULT_TOL} # pbl_nuc_wang2008
+    ${DEFAULT_TOL} # mer07_veh02_nuc_mosaic_1box
+   )
 
-# foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
-#   # copy the baseline file into place.
-#   configure_file(
-#     ${NUC_VALIDATION_DIR}/mam_${input}.py
-#     ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.py
-#     COPYONLY
-#   )
+foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
+  # copy the baseline file into place.
+  configure_file(
+    ${NUC_VALIDATION_DIR}/mam_${input}.py
+    ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.py
+    COPYONLY
+  )
 
-#   # add a test to run the skywalker driver
-#   add_test(run_${input} nucleation_driver ${NUC_VALIDATION_DIR}/${input}.yaml)
-#   set_tests_properties(run_${input} PROPERTIES LABELS "${TestLabel}")
+  # add a test to run the skywalker driver
+  add_test(run_${input} nucleation_driver ${NUC_VALIDATION_DIR}/${input}.yaml)
+  set_tests_properties(run_${input} PROPERTIES LABELS "${TestLabel}")
 
-#   # add a test to validate mam4xx's results against the baseline.
-#   # Select a threshold error slightly bigger than the largest relative error for the threshold error.
-#   # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error>
-#   add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
-#   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
-#   set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
-# endforeach()
+  # add a test to validate mam4xx's results against the baseline.
+  # Select a threshold error slightly bigger than the largest relative error for the threshold error.
+  # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error>
+  add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
+  set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
+  set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
+endforeach()
