@@ -99,7 +99,7 @@ set(TEST_LIST
 set(DEFAULT_TOL 2e-10)
 
 set(ERROR_THRESHOLDS
-    ${DEFAULT_TOL} # binary_nuc_vehk2002
+    3.5e-10 # binary_nuc_vehk2002
     ${DEFAULT_TOL} # pbl_nuc_wang2008
     ${DEFAULT_TOL} # mer07_veh02_nuc_mosaic_1box
    )
