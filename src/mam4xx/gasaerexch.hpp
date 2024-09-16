@@ -1118,8 +1118,8 @@ void mam_gasaerexch_1subarea(
     if (k == 48) {
       for (int igas = 0; igas < max_gas; ++igas) {
         for (int n = 0; n < ntot_amode; ++n) {
-          printf("uptkaer_BEF:%0.15E,%i,%i,%i,%i\n", uptkaer[igas][n], igas,
-                 igas_h2so4, igas_nh3, n);
+          printf("uptkaer_BEF:%0.15E,%0.15E,%i,%i,%i,%i,%i\n", uptkaer[igas][n],uptkaer[igas_h2so4][n],igas,
+                 igas_h2so4, igas_nh3, nsoa,n);
         }
       }
     }
