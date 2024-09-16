@@ -94,7 +94,7 @@ static constexpr Real mam4_coarse_mead_std_dev = 1.8;
 static constexpr Real mam4_primary_carbon_min_diameter_m = 1e-8;
 static constexpr Real mam4_primary_carbon_nom_diameter_m = 5e-8;
 static constexpr Real mam4_primary_carbon_max_diameter_m = 1e-7;
-static constexpr Real mam4_primary_carbon_mead_std_dev = 1.6;
+static constexpr Real mam4_primary_carbon_mead_std_dev = 1.60000002384186;
 
 /// A list of all modes within MAM4.
 /// NOTE: MAM4 uses the same constant crystallization and deliquescence
