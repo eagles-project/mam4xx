@@ -230,6 +230,8 @@ void ternary_nuc_merik2007(Real t, Real rh, Real c2, Real c3, Real &j_log,
 //   Aerosol indirect forcing in a global model with particle nucleation,
 //   Atmos. Chem. Phys. Discuss., 8, 13943-13998
 //   Atmos. Chem. Phys.  9, 239-260, 2009
+
+// NOTE: This is the version from the box model repo
 KOKKOS_INLINE_FUNCTION
 void mer07_veh02_wang08_nuc_1box(int newnuc_method_user_choice,
                                  int &newnuc_method_actual,        // in, out
@@ -336,18 +338,7 @@ void mer07_veh02_wang08_nuc_1box(int newnuc_method_user_choice,
     // ratenuclt is #/cm3/s; dnclusterdt is #/m3/s
     dnclusterdt = exp(rateloge) * 1.0e6;
   }
-  // NOTE: this is modal_aero_newnuc.F90:319
-  // FIXME: mer07_veh02_nuc_mosaic_1box() continues for ~200 more lines
-  //        (plus more for writing quantities out)
-  // Out variables that are changed after this point:
-  //  - isize_nuc (L342, 348)
-  //  - qnuma_del (L518)
-  //  - qso4a_del (L515)
-  //  - qnh4a_del (L516)
-  //  - qh2so4_del (L509, 511)
-  //  - qnh3_del (L510, 512)
-  //  - dens_nh4so4a (L394)
-}
+} // end mer07_veh02_wang08_nuc_1box()
 
 //-----------------------------------------------------------------------------
 // Calculates new particle production from homogeneous nucleation
@@ -372,24 +363,26 @@ void mer07_veh02_wang08_nuc_1box(int newnuc_method_user_choice,
 //   Aerosol indirect forcing in a global model with particle nucleation,
 //   Atmos. Chem. Phys. Discuss., 8, 13943-13998
 //   Atmos. Chem. Phys.  9, 239-260, 2009
+
+// This is the version from the E3SM mam refactor repo
 KOKKOS_INLINE_FUNCTION
 void mer07_veh02_wang08_nuc_1box(
     // in
-    int newnuc_method_flagaa, Real dtnuc, Real temp_in, Real rh_in,
-    Real press_in, Real zm_in, Real pblh_in, Real qh2so4_cur, Real qh2so4_avg,
-    Real qnh3_cur, Real h2so4_uptkrate, Real mw_so4a_host, int nsize,
-    int maxd_asize,
+    const int newnuc_method_flagaa, const Real dtnuc, const Real temp_in,
+    const Real rh_in, const Real press_in, const Real zm_in, const Real pblh_in,
+    const Real qh2so4_cur, const Real qh2so4_avg, const Real qnh3_cur,
+    const Real h2so4_uptkrate, const Real mw_so4a_host, const int nsize,
     // NOTE: in fortran dplom_sect is given/accessed as an array with extent
     //       maxd_asize defined as "dimension for dplom_sect, ..."
     //       however, as provided in validation data, it is a scalar
-    Real dplom_sect,
-    Real dphim_sect, int ldiagaa,
+    // const int maxd_asize,
+    const Real dplom_sect, const Real dphim_sect, const int ldiagaa,
     // in fortran provided by mo_constants
-    Real rgas, Real avogad,
+    const Real rgas, const Real avogad,
     // in fortran provided by physconst
-    Real mw_nh4a, Real mw_so4a,
+    const Real mw_nh4a, const Real mw_so4a,
     // in fortran provided by mo_constants
-    Real pi,
+    const Real pi,
     //  out
     int &isize_nuc, Real &qnuma_del, Real &qso4a_del, Real &qnh4a_del,
     Real &qh2so4_del, Real &qnh3_del, Real &dens_nh4so4a, Real &dnclusterdt) {
@@ -399,7 +392,7 @@ void mer07_veh02_wang08_nuc_1box(
   // kk2002 "cs_prime" parameter (1/m2)
   Real cs_prime_kk;
   // kk2002 "cs" parameter (1/s)
-  Real cs_kk;
+  // Real cs_kk;
   // "grown" single-particle dry density (kg/m3)
   Real dens_part;
   // kk2002 final/initial new particle wet diameter (nm)
@@ -408,14 +401,14 @@ void mer07_veh02_wang08_nuc_1box(
   Real dpdry_clus;
   // "grown" single-particle dry diameter (m)
   Real dpdry_part;
-  // Real tmpa
-  Real tmpb, tmpc, tmpe, tmpq;
-  Real tmpa1, tmpb1;
+  // Real tmpa, tmpc, tmpq
+  Real tmpb, tmpe;
+  // Real tmpb1;
   Real tmp_m1, tmp_m2, tmp_m3, tmp_n1, tmp_n2, tmp_n3;
   // h2so4 vapor molecular speed (m/s)
   Real tmp_spd;
   Real factor_kk;
-  Real fogas, foso4a, fonh4a, fonuma;
+  // Real fogas, foso4a, fonh4a, fonuma;
   // reduction factor applied to nucleation rate
   Real freduce;
   // due to limited availability of h2so4 & nh3 gases
@@ -432,7 +425,7 @@ void mer07_veh02_wang08_nuc_1box(
   Real molenh4a_per_moleso4a;
   // actual and bounded nh3 (ppt)
   // Real nh3ppt;
-  Real nh3ppt_bb;
+  // Real nh3ppt_bb;
   // kk2002 "nu" parameter (nm)
   Real nu_kk;
   // max production of aerosol nh4 over dtnuc (mol/mol-air)
@@ -471,10 +464,9 @@ void mer07_veh02_wang08_nuc_1box(
   Real adjust_factor_bin_tern_ratenucl = 1.0;
   Real adjust_factor_pbl_ratenucl = 1.0;
 
-
-  const int icase = 0;
-  const int icase_reldiffmax = 0;
-  int lun;
+  // const int icase = 0;
+  // const int icase_reldiffmax = 0;
+  // int lun;
   int newnuc_method_flagaa2;
 
   // FIXME: BAD CONSTANTS
@@ -501,7 +493,7 @@ void mer07_veh02_wang08_nuc_1box(
   Real mw_ammsulf = 132.0;
   Real mw_ammbisulf = 114.0;
   Real mw_sulfacid = 96.0;
-  Real reldiffmax = 0.0;
+  // Real reldiffmax = 0.0;
 
   isize_nuc = 1;
   qnuma_del = 0.0;
@@ -545,7 +537,8 @@ void mer07_veh02_wang08_nuc_1box(
   if ((newnuc_method_flagaa == 1) || (newnuc_method_flagaa == 2)) {
     if (zm_in <= max(pblh_in, 100.0)) {
       so4vol_bb = so4vol_in;
-      // void pbl_nuc_wang2008(Real so4vol, Real pi, int pbl_nuc_wang2008_user_choice,
+      // void pbl_nuc_wang2008(Real so4vol, Real pi, int
+      // pbl_nuc_wang2008_user_choice,
       //                 Real adjust_factor_pbl_ratenucl,
       //                 int &pbl_nuc_wang2008_actual, Real &ratenucl,
       //                 Real &rateloge, Real &cnum_tot, Real &cnum_h2so4,
@@ -639,7 +632,6 @@ void mer07_veh02_wang08_nuc_1box(
 
   tmp_m1 = tmp_n1 * mw_ammsulf;
   tmp_m2 = tmp_n2 * mw_ammbisulf;
-
   tmp_m3 = tmp_n3 * mw_sulfacid;
   dens_part = (tmp_m1 + tmp_m2 + tmp_m3) /
               ((tmp_m1 / dens_ammsulf) + (tmp_m2 / dens_ammbisulf) +
@@ -703,18 +695,18 @@ void mer07_veh02_wang08_nuc_1box(
     // tmpa = -d(ln(h2so4))/dt by conden to particles   (1/h units)
     // FIXME: BAD CONSTANT
     tmpa = h2so4_uptkrate * 3600.0;
-    tmpa1 = tmpa;
+    // Real tmpa1 = tmpa;
     tmpa = haero::max(tmpa, 0.0);
     // FIXME: BAD CONSTANT
     // tmpb = h2so4 gas diffusivity (m2/s, then m2/h)
     tmpb = 6.7037e-6 * haero::pow(temp_in, 0.75) / cair;
     // m2/s
-    tmpb1 = tmpb;
+    // Real tmpb1 = tmpb;
     // m2/h;
     // FIXME: BAD CONSTANT
     tmpb = tmpb * 3600.0;
     cs_prime_kk = tmpa / (4.0 * pi * tmpb * accom_coef_h2so4);
-    cs_kk = cs_prime_kk * 4.0 * pi * tmpb1;
+    // Real cs_kk = cs_prime_kk * 4.0 * pi * tmpb1;
 
     // "nu" parameter (nm) -- kk2002 eqn 11
     nu_kk = gamma_kk * cs_prime_kk / gr_kk;
@@ -787,7 +779,8 @@ void mer07_veh02_wang08_nuc_1box(
   tmpb = tmpa * freduce;
   // relative difference from qnuma_del
   // FIXME: BAD CONSTANT
-  tmpc = (tmpb - qnuma_del) / haero::max(tmpb, haero::max(qnuma_del, 1.0e-35));
+  // Real tmpc = (tmpb - qnuma_del) / haero::max(tmpb,
+  // haero::max(qnuma_del, 1.0e-35));
 
   // diagnostic output to fort.41
   // (this should be commented-out or deleted in the wrf-chem version)
@@ -798,7 +791,6 @@ void mer07_veh02_wang08_nuc_1box(
   //       icase = icase + 1 if (abs(tmpc).gt.abs(reldiffmax)) then reldiffmax =
   //                   tmpc icase_reldiffmax = icase end if
   //       //       do lun = 41, 51, 10
-  //       // FIXME:
   //       do lun = 6,
   //       6
   //           //          write(lun,'(/)')
@@ -895,7 +887,7 @@ void mer07_veh02_wang08_nuc_1box(
   // #include
   // "../yaml/modal_aero_newnuc/f90_yaml/mer07_veh02_nuc_mosaic_1box_end_yml.f90"
   //         return
-}
+} // end mer07_veh02_wang08_nuc_1box()
 
 KOKKOS_INLINE_FUNCTION
 void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,

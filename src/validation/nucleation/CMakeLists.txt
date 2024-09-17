@@ -96,12 +96,10 @@ set(TEST_LIST
     mer07_veh02_nuc_mosaic_1box
     )
 
-set(DEFAULT_TOL 2e-10)
-
 set(ERROR_THRESHOLDS
     3.5e-10 # binary_nuc_vehk2002
-    ${DEFAULT_TOL} # pbl_nuc_wang2008
-    ${DEFAULT_TOL} # mer07_veh02_nuc_mosaic_1box
+    2.0e-10 # pbl_nuc_wang2008
+    2.0e-11 # mer07_veh02_nuc_mosaic_1box
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
