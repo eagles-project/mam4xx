@@ -37,7 +37,7 @@ void binary_nuc_vehk2002(Ensemble *ensemble) {
     Real radius_cluster;
 
     nucleation::binary_nuc_vehk2002(temp, rh, so4vol, ratenucl, rateloge,
-                                       cnum_h2so4, cnum_tot, radius_cluster);
+                                    cnum_h2so4, cnum_tot, radius_cluster);
 
     output.set("ratenucl", ratenucl);
     output.set("rateloge", rateloge);

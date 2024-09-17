@@ -387,6 +387,10 @@ void mer07_veh02_wang08_nuc_1box(
     int &isize_nuc, Real &qnuma_del, Real &qso4a_del, Real &qnh4a_del,
     Real &qh2so4_del, Real &qnh3_del, Real &dens_nh4so4a, Real &dnclusterdt) {
 
+  // NOTE: there are a lot of variables that end up unused since we ignore all
+  //       the writing to file at the bottom. for now, I've preserved all of
+  //       the unused bits as comments *just in case*
+
   // dry-air molar density (mol/m3)
   // Real cair;
   // kk2002 "cs_prime" parameter (1/m2)
@@ -537,12 +541,6 @@ void mer07_veh02_wang08_nuc_1box(
   if ((newnuc_method_flagaa == 1) || (newnuc_method_flagaa == 2)) {
     if (zm_in <= max(pblh_in, 100.0)) {
       so4vol_bb = so4vol_in;
-      // void pbl_nuc_wang2008(Real so4vol, Real pi, int
-      // pbl_nuc_wang2008_user_choice,
-      //                 Real adjust_factor_pbl_ratenucl,
-      //                 int &pbl_nuc_wang2008_actual, Real &ratenucl,
-      //                 Real &rateloge, Real &cnum_tot, Real &cnum_h2so4,
-      //                 Real &cnum_nh3, Real &radius_cluster_nm)
       pbl_nuc_wang2008(so4vol_bb, pi, newnuc_method_flagaa,
                        adjust_factor_pbl_ratenucl,
                        //  out
