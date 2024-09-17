@@ -17,7 +17,13 @@ void mer07_veh02_nuc_mosaic_1box(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters
     // Declare array of strings for input names
-    std::string input_arrays[] = {"life"};
+    std::string input_arrays[] = {
+        "dtnuc",    "temp_in",        "rh_in",        "press_in",
+        "zm_in",    "pblh_in",        "qh2so4_cur",   "qh2so4_avg",
+        "qnh3_cur", "h2so4_uptkrate", "mw_so4a_host", "newnuc_method_flagaa",
+        "nsize",    "maxd_asize",     "dplom_sect",   "dphim_sect",
+        "ldiagaa",  "rgas",           "avogad",       "mw_so4a",
+        "mw_nh4a"};
 
     // Iterate over input_arrays and error if not in input
     for (std::string name : input_arrays) {
@@ -27,7 +33,28 @@ void mer07_veh02_nuc_mosaic_1box(Ensemble *ensemble) {
       }
     }
 
-    const Real life = input.get_array("life")[0];
-    output.set("ans", life);
+    // dtnuc
+    // temp_in
+    // rh_in
+    // press_in
+    // zm_in
+    // pblh_in
+    // qh2so4_cur
+    // qh2so4_avg
+    // qnh3_cur
+    // h2so4_uptkrate
+    // mw_so4a_host
+    // newnuc_method_flagaa
+    // nsize
+    // maxd_asize
+    // dplom_sect
+    // dphim_sect
+    // ldiagaa
+    // rgas
+    // avogad
+    // mw_so4a
+    // mw_nh4a
+
+
   });
 }

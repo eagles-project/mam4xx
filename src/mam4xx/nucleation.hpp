@@ -340,13 +340,561 @@ void mer07_veh02_wang08_nuc_1box(int newnuc_method_user_choice,
   // FIXME: mer07_veh02_nuc_mosaic_1box() continues for ~200 more lines
   //        (plus more for writing quantities out)
   // Out variables that are changed after this point:
-    //  - isize_nuc (L342, 348)
-    //  - qnuma_del (L518)
-    //  - qso4a_del (L515)
-    //  - qnh4a_del (L516)
-    //  - qh2so4_del (L509, 511)
-    //  - qnh3_del (L510, 512)
-    //  - dens_nh4so4a (L394)
+  //  - isize_nuc (L342, 348)
+  //  - qnuma_del (L518)
+  //  - qso4a_del (L515)
+  //  - qnh4a_del (L516)
+  //  - qh2so4_del (L509, 511)
+  //  - qnh3_del (L510, 512)
+  //  - dens_nh4so4a (L394)
+}
+
+//-----------------------------------------------------------------------------
+// Calculates new particle production from homogeneous nucleation
+// using nucleation rates from either
+// Merikanto et al. (2007) h2so4-nh3-h2o ternary parameterization
+// Vehkamaki et al. (2002) h2so4-h2o binary parameterization
+//
+// References:
+// * merikanto, j., i. napari, h. vehkamaki, t. anttila,
+//   and m. kulmala, 2007, new parameterization of
+//   sulfuric acid-ammonia-water ternary nucleation
+//   rates at tropospheric conditions,
+//   j. geophys. res., 112, d15207, doi:10.1029/2006jd0027977
+//
+// * vehkam\"aki, h., m. kulmala, i. napari, k.e.j. lehtinen,
+//   c. timmreck, m. noppel and a. laaksonen, 2002,
+//   an improved parameterization for sulfuric acid-water nucleation
+//   rates for tropospheric and stratospheric conditions,
+//   j. geophys. res., 107, 4622, doi:10.1029/2002jd002184
+//
+// * Wang, M. and J.E. Penner, 2008,
+//   Aerosol indirect forcing in a global model with particle nucleation,
+//   Atmos. Chem. Phys. Discuss., 8, 13943-13998
+//   Atmos. Chem. Phys.  9, 239-260, 2009
+KOKKOS_INLINE_FUNCTION
+void mer07_veh02_wang08_nuc_1box(
+    // in
+    int newnuc_method_flagaa, Real dtnuc, Real temp_in, Real rh_in,
+    Real press_in, Real zm_in, Real pblh_in, Real qh2so4_cur, Real qh2so4_avg,
+    Real qnh3_cur, Real h2so4_uptkrate, Real mw_so4a_host, int nsize,
+    int maxd_asize,
+    // NOTE: in fortran dplom_sect is given/accessed as an array with extent
+    //       maxd_asize defined as "dimension for dplom_sect, ..."
+    //       however, as provided in validation data, it is a scalar
+    Real dplom_sect,
+    Real dphim_sect, int ldiagaa,
+    // in fortran provided by mo_constants
+    Real rgas, Real avogad,
+    // in fortran provided by physconst
+    Real mw_nh4a, Real mw_so4a,
+    // in fortran provided by mo_constants
+    Real pi,
+    //  out
+    int &isize_nuc, Real &qnuma_del, Real &qso4a_del, Real &qnh4a_del,
+    Real &qh2so4_del, Real &qnh3_del, Real &dens_nh4so4a, Real &dnclusterdt) {
+
+  // dry-air molar density (mol/m3)
+  // Real cair;
+  // kk2002 "cs_prime" parameter (1/m2)
+  Real cs_prime_kk;
+  // kk2002 "cs" parameter (1/s)
+  Real cs_kk;
+  // "grown" single-particle dry density (kg/m3)
+  Real dens_part;
+  // kk2002 final/initial new particle wet diameter (nm)
+  Real dfin_kk, dnuc_kk;
+  // critical cluster diameter (m)
+  Real dpdry_clus;
+  // "grown" single-particle dry diameter (m)
+  Real dpdry_part;
+  // Real tmpa
+  Real tmpb, tmpc, tmpe, tmpq;
+  Real tmpa1, tmpb1;
+  Real tmp_m1, tmp_m2, tmp_m3, tmp_n1, tmp_n2, tmp_n3;
+  // h2so4 vapor molecular speed (m/s)
+  Real tmp_spd;
+  Real factor_kk;
+  Real fogas, foso4a, fonh4a, fonuma;
+  // reduction factor applied to nucleation rate
+  Real freduce;
+  // due to limited availability of h2so4 & nh3 gases
+  Real freducea, freduceb;
+  // kk2002 "gamma" parameter (nm2*m2/h)
+  Real gamma_kk;
+  // kk2002 "gr" parameter (nm/h)
+  Real gr_kk;
+  // (kg dry aerosol)/(mol aerosol so4)
+  Real kgaero_per_moleso4a;
+  // "grown" single-particle dry mass (kg)
+  Real mass_part;
+  // (mol aerosol nh4)/(mol aerosol so4)
+  Real molenh4a_per_moleso4a;
+  // actual and bounded nh3 (ppt)
+  // Real nh3ppt;
+  Real nh3ppt_bb;
+  // kk2002 "nu" parameter (nm)
+  Real nu_kk;
+  // max production of aerosol nh4 over dtnuc (mol/mol-air)
+  Real qmolnh4a_del_max;
+  // max production of aerosol so4 over dtnuc (mol/mol-air)
+  Real qmolso4a_del_max;
+  // nucleation rate (#/m3/s)
+  Real ratenuclt_bb;
+  // nucleation rate after kk2002 adjustment (#/m3/s)
+  Real ratenuclt_kk;
+  // bounded value of rh_in
+  Real rh_bb;
+  // concentration of h2so4 for nucl. calc., molecules cm-3
+  // Real so4vol_in;
+  // bounded value of so4vol_in
+  Real so4vol_bb;
+  // bounded value of temp_in
+  Real temp_bb;
+  // critical-cluster dry volume (m3)
+  Real voldry_clus;
+  // "grown" single-particle dry volume (m3)
+  Real voldry_part;
+  // grown particle (wet-volume)/(dry-volume)
+  Real wetvol_dryvol;
+  // grown particle (dry-volume-from-so4)/(wet-volume)
+  Real wet_volfrac_so4a;
+  // number of h2so4 molecules in the critical nucleus
+  Real cnum_h2so4;
+  // total number of molecules in the critical nucleus
+  Real cnum_tot;
+  // the radius of cluster (nm)
+  Real radius_cluster;
+  // number of nh3 molecules in the critical nucleus
+  Real cnum_nh3;
+  // applied to binary/ternary nucleation rate
+  Real adjust_factor_bin_tern_ratenucl = 1.0;
+  Real adjust_factor_pbl_ratenucl = 1.0;
+
+
+  const int icase = 0;
+  const int icase_reldiffmax = 0;
+  int lun;
+  int newnuc_method_flagaa2;
+
+  // FIXME: BAD CONSTANTS
+  Real onethird = 1.0 / 3.0;
+  // accomodation coef for h2so4 conden
+  // FIXME: BAD CONSTANT
+  Real accom_coef_h2so4 = 0.65;
+
+  // dry densities (kg/m3) molecular weights of aerosol
+  // ammsulf, ammbisulf, and sulfacid (from mosaic  dens_electrolyte values)
+  //       Real dens_ammsulf   = 1.769e3
+  //       Real dens_ammbisulf = 1.78e3
+  //       Real dens_sulfacid  = 1.841e3
+  // use following to match cam3 modal_aero densities
+  // FIXME: BAD CONSTANTS
+  Real dens_ammsulf = 1770.0;
+  Real dens_ammbisulf = 1770.0;
+  Real dens_sulfacid = 1770.0;
+
+  // molecular weights (g/mol) of aerosol ammsulf, ammbisulf, and sulfacid
+  //    for ammbisulf and sulfacid, use 114 & 96 here rather than 115 & 98
+  //    because we don't keep track of aerosol hion mass
+  // FIXME: BAD CONSTANTS
+  Real mw_ammsulf = 132.0;
+  Real mw_ammbisulf = 114.0;
+  Real mw_sulfacid = 96.0;
+  Real reldiffmax = 0.0;
+
+  isize_nuc = 1;
+  qnuma_del = 0.0;
+  qso4a_del = 0.0;
+  qnh4a_del = 0.0;
+  qh2so4_del = 0.0;
+  qnh3_del = 0.0;
+  dnclusterdt = 0.0;
+
+  if ((newnuc_method_flagaa != 1) && (newnuc_method_flagaa != 2))
+    return;
+
+  // make call to parameterization routine
+  // calc h2so4 in molecules/cm3 and nh3 in ppt
+  Real cair = press_in / (temp_in * rgas);
+  Real so4vol_in = qh2so4_avg * cair * avogad * 1.0e-6;
+  // FIXME: BAD CONSTANTS
+  Real nh3ppt = qnh3_cur * 1.0e12;
+  Real ratenuclt = 1.0e-38;
+  Real rateloge = haero::log(ratenuclt);
+
+  if ((newnuc_method_flagaa != 2) && (nh3ppt >= 0.1)) {
+    newnuc_method_flagaa2 = 1;
+  } else {
+    // make call to vehkamaki binary parameterization routine
+    if (so4vol_in >= 1.0e4) {
+      temp_bb = haero::max(230.15, haero::min(305.15, temp_in));
+      rh_bb = haero::max(1.0e-4, haero::min(1.0, rh_in));
+      so4vol_bb = haero::max(1.0e4, haero::min(1.0e11, so4vol_in));
+      binary_nuc_vehk2002(temp_bb, rh_bb, so4vol_bb, ratenuclt, rateloge,
+                          cnum_h2so4, cnum_tot, radius_cluster);
+    }
+    cnum_nh3 = 0.0;
+    newnuc_method_flagaa2 = 2;
+  }
+
+  rateloge = rateloge +
+             haero::log(haero::max(1.0e-38, adjust_factor_bin_tern_ratenucl));
+
+  // do boundary layer nuc
+  if ((newnuc_method_flagaa == 1) || (newnuc_method_flagaa == 2)) {
+    if (zm_in <= max(pblh_in, 100.0)) {
+      so4vol_bb = so4vol_in;
+      // void pbl_nuc_wang2008(Real so4vol, Real pi, int pbl_nuc_wang2008_user_choice,
+      //                 Real adjust_factor_pbl_ratenucl,
+      //                 int &pbl_nuc_wang2008_actual, Real &ratenucl,
+      //                 Real &rateloge, Real &cnum_tot, Real &cnum_h2so4,
+      //                 Real &cnum_nh3, Real &radius_cluster_nm)
+      pbl_nuc_wang2008(so4vol_bb, pi, newnuc_method_flagaa,
+                       adjust_factor_pbl_ratenucl,
+                       //  out
+                       newnuc_method_flagaa2, ratenuclt, rateloge, cnum_tot,
+                       cnum_h2so4, cnum_nh3, radius_cluster);
+    }
+  }
+
+  // if nucleation rate is less than 1e-6 #/cm3/s ~= 0.1 #/cm3/day,
+  // exit with new particle formation = 0
+  // FIXME: BAD CONSTANT
+  if (rateloge <= -13.82)
+    return;
+  // REFACTOR NOTE:  if exit above, no yaml / python data written out
+  //       if (ratenuclt .le. 1.0e-6) return
+
+  ratenuclt = haero::exp(rateloge);
+  // ratenuclt_bb is #/m3/s; ratenuclt is #/cm3/s;
+  ratenuclt_bb = ratenuclt * 1.0e6;
+  dnclusterdt = ratenuclt_bb;
+
+  // wet/dry volume ratio - use simple kohler approx for
+  // ammsulf/ammbisulf
+  // FIXME: BAD CONSTANTS
+  Real tmpa = haero::max(0.10, haero::min(0.95, rh_in));
+  wetvol_dryvol = 1.0 - 0.56 / haero::log(tmpa);
+
+  // determine size bin into which the new particles go
+  // (probably it will always be bin #1, but ...)
+  voldry_clus = (haero::max(cnum_h2so4, 1.0) * mw_so4a + cnum_nh3 * mw_nh4a) /
+                (1.0e3 * dens_sulfacid * avogad);
+  // correction when host code sulfate is really ammonium bisulfate/sulfate
+  voldry_clus = voldry_clus * (mw_so4a_host / mw_so4a);
+  dpdry_clus = haero::pow(voldry_clus * 6.0 / pi, onethird);
+
+  int igrow;
+  isize_nuc = 1;
+  dpdry_part = dplom_sect;
+  if (dpdry_clus <= dplom_sect) {
+    // need to clusters to larger size
+    igrow = 1;
+  } else if (dpdry_clus >= dphim_sect) {
+    igrow = 0;
+    isize_nuc = nsize;
+    dpdry_part = dphim_sect;
+  } else {
+    igrow = 0;
+    for (int i = 0; i < nsize; ++i) {
+      if (dpdry_clus < dphim_sect) {
+        isize_nuc = i;
+        dpdry_part = dpdry_clus;
+        dpdry_part = haero::min(dpdry_part, dphim_sect);
+        dpdry_part = haero::max(dpdry_part, dplom_sect);
+        return;
+      }
+    }
+  }
+  voldry_part = (pi / 6.0) * haero::pow(dpdry_part, 3);
+
+  // determine composition and density of the "grown particles"
+  // the grown particles are assumed to be liquid
+  //    (since critical clusters contain water)
+  //    so any (nh4/so4) molar ratio between 0 and 2 is allowed
+  // assume that the grown particles will have
+  //    (nh4/so4 molar ratio) = min( 2, (nh3/h2so4 gas molar ratio) )
+  //
+  if (igrow <= 0) {
+    // no "growing" so pure sulfuric acid
+    tmp_n1 = 0.0;
+    tmp_n2 = 0.0;
+    tmp_n3 = 1.0;
+  } else if (qnh3_cur >= qh2so4_cur) {
+    // combination of ammonium sulfate and ammonium bisulfate
+    // tmp_n1 & tmp_n2 = mole fractions of the ammsulf & ammbisulf
+    tmp_n1 = (qnh3_cur / qh2so4_cur) - 1.0;
+    tmp_n1 = haero::max(0.0, haero::min(1.0, tmp_n1));
+    tmp_n2 = 1.0 - tmp_n1;
+    tmp_n3 = 0.0;
+  } else {
+    // combination of ammonium bisulfate and sulfuric acid
+    // tmp_n2 & tmp_n3 = mole fractions of the ammbisulf & sulfacid
+    tmp_n1 = 0.0;
+    tmp_n2 = (qnh3_cur / qh2so4_cur);
+    tmp_n2 = haero::max(0.0, haero::min(1.0, tmp_n2));
+    tmp_n3 = 1.0 - tmp_n2;
+  }
+
+  tmp_m1 = tmp_n1 * mw_ammsulf;
+  tmp_m2 = tmp_n2 * mw_ammbisulf;
+
+  tmp_m3 = tmp_n3 * mw_sulfacid;
+  dens_part = (tmp_m1 + tmp_m2 + tmp_m3) /
+              ((tmp_m1 / dens_ammsulf) + (tmp_m2 / dens_ammbisulf) +
+               (tmp_m3 / dens_sulfacid));
+  dens_nh4so4a = dens_part;
+  mass_part = voldry_part * dens_part;
+  // (mol aerosol nh4)/(mol aerosol so4);
+  molenh4a_per_moleso4a = 2.0 * tmp_n1 + tmp_n2;
+  // (kg dry aerosol)/(mol aerosol so4);
+  // FIXME: BAD CONSTANT
+  kgaero_per_moleso4a = 1.0e-3 * (tmp_m1 + tmp_m2 + tmp_m3);
+  // correction when host code sulfate is really ammonium bisulfate/sulfate;
+  kgaero_per_moleso4a = kgaero_per_moleso4a * (mw_so4a_host / mw_so4a);
+
+  // fraction of wet volume due to so4a
+  // FIXME: BAD CONSTANTS
+  tmpb = 1.0 + molenh4a_per_moleso4a * 17.0 / 98.0;
+  wet_volfrac_so4a = 1.0 / (wetvol_dryvol * tmpb);
+
+  //
+  // calc kerminen & kulmala (2002) correction
+  //
+  if (igrow <= 0) {
+    factor_kk = 1.0;
+  } else {
+    // "gr" parameter (nm/h) = condensation growth rate of new particles
+    // use kk2002 eqn 21 for h2so4 uptake, and correct for nh3 & h2o uptake
+    // h2so4 molecular speed (m/s);
+    // FIXME: BAD CONSTANTS
+    tmp_spd = 14.7 * haero::sqrt(temp_in);
+    gr_kk = 3.0e-9 * tmp_spd * mw_sulfacid * so4vol_in /
+            (dens_part * wet_volfrac_so4a);
+
+    // "gamma" parameter (nm2/m2/h)
+    // use kk2002 eqn 22
+    //
+    // dfin_kk = wet diam (nm) of grown particle having dry dia = dpdry_part
+    // (m)
+    // FIXME: BAD CONSTANT
+    dfin_kk = 1.0e9 * dpdry_part * haero::pow(wetvol_dryvol, onethird);
+    // dnuc_kk = wet diam (nm) of cluster
+    dnuc_kk = 2.0 * radius_cluster;
+    dnuc_kk = haero::max(dnuc_kk, 1.0);
+    // neglect (dmean/150)**0.048 factor,
+    // which should be very close to 1.0 because of small exponent
+    // FIXME: BAD CONSTANTS
+    gamma_kk = 0.23 * haero::pow(dnuc_kk, 0.2) *
+               haero::pow(dfin_kk / 3.0, 0.075) *
+               haero::pow(dens_part * 1.0e-3, -0.33) *
+               haero::pow(temp_in / 293.0, -0.75);
+
+    // "cs_prime parameter" (1/m2)
+    // instead kk2002 eqn 3, use
+    //     cs_prime ~= tmpa / (4*pi*tmpb * h2so4_accom_coef)
+    // where
+    //     tmpa = -d(ln(h2so4))/dt by conden to particles   (1/h units)
+    //     tmpb = h2so4 vapor diffusivity (m2/h units)
+    // this approx is generally within a few percent of the cs_prime
+    //     calculated directly from eqn 2,
+    //     which is acceptable, given overall uncertainties
+    // tmpa = -d(ln(h2so4))/dt by conden to particles   (1/h units)
+    // FIXME: BAD CONSTANT
+    tmpa = h2so4_uptkrate * 3600.0;
+    tmpa1 = tmpa;
+    tmpa = haero::max(tmpa, 0.0);
+    // FIXME: BAD CONSTANT
+    // tmpb = h2so4 gas diffusivity (m2/s, then m2/h)
+    tmpb = 6.7037e-6 * haero::pow(temp_in, 0.75) / cair;
+    // m2/s
+    tmpb1 = tmpb;
+    // m2/h;
+    // FIXME: BAD CONSTANT
+    tmpb = tmpb * 3600.0;
+    cs_prime_kk = tmpa / (4.0 * pi * tmpb * accom_coef_h2so4);
+    cs_kk = cs_prime_kk * 4.0 * pi * tmpb1;
+
+    // "nu" parameter (nm) -- kk2002 eqn 11
+    nu_kk = gamma_kk * cs_prime_kk / gr_kk;
+    // nucleation rate adjustment factor (--) -- kk2002 eqn 13
+    factor_kk = haero::exp((nu_kk / dfin_kk) - (nu_kk / dnuc_kk));
+  }
+  ratenuclt_kk = ratenuclt_bb * factor_kk;
+
+  // max production of aerosol dry mass (kg-aero/m3-air)
+  tmpa = haero::max(0.0, (ratenuclt_kk * dtnuc * mass_part));
+  // max production of aerosol so4 (mol-so4a/mol-air)
+  tmpe = tmpa / (kgaero_per_moleso4a * cair);
+  // max production of aerosol so4 (mol/mol-air)
+  // based on ratenuclt_kk and mass_part
+  qmolso4a_del_max = tmpe;
+
+  // check if max production exceeds available h2so4 vapor
+  freducea = 1.0;
+  if (qmolso4a_del_max > qh2so4_cur) {
+    freducea = qh2so4_cur / qmolso4a_del_max;
+  }
+  // check if max production exceeds available nh3 vapor
+  freduceb = 1.0;
+  if (molenh4a_per_moleso4a >= 1.0e-10) {
+    // max production of aerosol nh4 (ppm) based on ratenuclt_kk and mass_part
+    qmolnh4a_del_max = qmolso4a_del_max * molenh4a_per_moleso4a;
+    if (qmolnh4a_del_max > qnh3_cur) {
+      freduceb = qnh3_cur / qmolnh4a_del_max;
+    }
+  }
+  freduce = haero::min(freducea, freduceb);
+
+  // if adjusted nucleation rate is less than 1e-12 #/m3/s ~= 0.1 #/cm3/day,
+  // exit with new particle formation = 0
+  // FIXME: BAD CONSTANT
+  if ((freduce * ratenuclt_kk) <= 1.0e-12)
+    return;
+  // REFACTOR NOTE:  if exit above, no yaml / python data written out
+
+  // note:  suppose that at this point, freduce < 1.0 (no gas-available
+  //    constraints) and molenh4a_per_moleso4a < 2.0
+  // if the gas-available constraints is do to h2so4 availability,
+  //    then it would be possible to condense "additional" nh3 and have
+  //    (nh3/h2so4 gas molar ratio) < (nh4/so4 aerosol molar ratio) <= 2
+  // one could do some additional calculations of
+  //    dens_part & molenh4a_per_moleso4a to realize this
+  // however, the particle "growing" is a crude approximate way to get
+  //    the new particles to the host code's minimum particle size,
+  // are such refinements worth the effort?
+
+  // changes to h2so4 & nh3 gas (in mol/mol-air), limited by amounts available
+  // FIXME: BAD CONSTANT
+  tmpa = 0.9999;
+  qh2so4_del = haero::min(tmpa * qh2so4_cur, freduce * qmolso4a_del_max);
+  qnh3_del = haero::min(tmpa * qnh3_cur, qh2so4_del * molenh4a_per_moleso4a);
+  qh2so4_del = -qh2so4_del;
+  qnh3_del = -qnh3_del;
+
+  // changes to so4 & nh4 aerosol (in mol/mol-air)
+  qso4a_del = -qh2so4_del;
+  qnh4a_del = -qnh3_del;
+  // change to aerosol number (in #/mol-air)
+  // FIXME: BAD CONSTANT
+  qnuma_del = 1.0e-3 * (qso4a_del * mw_so4a + qnh4a_del * mw_nh4a) / mass_part;
+
+  // do the following (tmpa, tmpb, tmpc) calculations as a check
+  // max production of aerosol number (#/mol-air)
+  tmpa = haero::max(0.0, ratenuclt_kk * dtnuc / cair);
+  // adjusted production of aerosol number (#/mol-air)
+  tmpb = tmpa * freduce;
+  // relative difference from qnuma_del
+  // FIXME: BAD CONSTANT
+  tmpc = (tmpb - qnuma_del) / haero::max(tmpb, haero::max(qnuma_del, 1.0e-35));
+
+  // diagnostic output to fort.41
+  // (this should be commented-out or deleted in the wrf-chem version)
+  //
+  // if (ldiagaa > 0)
+  //   // do following for diagnostic output if ldiagaa > 0
+
+  //       icase = icase + 1 if (abs(tmpc).gt.abs(reldiffmax)) then reldiffmax =
+  //                   tmpc icase_reldiffmax = icase end if
+  //       //       do lun = 41, 51, 10
+  //       // FIXME:
+  //       do lun = 6,
+  //       6
+  //           //          write(lun,'(/)')
+  //           write(lun, '(a,2i9,1p,e10.2)') &
+  //           'vehkam bin-nuc icase, icase_rdmax =',
+  //       &icase, icase_reldiffmax,
+  //       reldiffmax if (freduceb.lt.freducea)
+  //           then if (abs(freducea - freduceb).gt.&
+  //                    3.0e-7 * haero::max(freduceb, freducea))
+  //               write(lun, '(a,1p,2e15.7)') &;
+  // 'freducea, b =', freducea, freduceb end if end do
+
+  // // output factors so that output matches that of ternucl03
+  // //       fogas  = 1.0e6                     // convert mol/mol-air to ppm
+  // //       foso4a = 1.0e9*mw_so4a/mw_air      // convert mol-so4a/mol-air to
+  // ug/kg-air
+  // //       fonh4a = 1.0e9*mw_nh4a/mw_air      // convert mol-nh4a/mol-air to
+  // ug/kg-air
+  // //       fonuma = 1.0e3/mw_air              // convert #/mol-air to
+  // #/kg-air
+  //         fogas  = 1.0;
+  //         foso4a = 1.0;
+  //         fonh4a = 1.0;
+  //         fonuma = 1.0;
+
+  // //       do lun = 41, 51, 10
+  //         do lun = 6, 6
+
+  //         write(lun,'(a,2i5)') 'newnuc_method_flagaa/aa2',   &
+  //            newnuc_method_flagaa, newnuc_method_flagaa2
+
+  //         write(lun,9210)
+  //         write(lun,9201) temp_in, rh_in,   &
+  //            ratenuclt, 2.0*radius_cluster*1.0e-7, dpdry_part*1.0e2,   &;
+  //            voldry_part*1.0e6, float(igrow);
+  //         write(lun,9215)
+  //         write(lun,9201)   &
+  //            qh2so4_avg*fogas, 0.0,  &;
+  //            qh2so4_cur*fogas, qnh3_cur*fogas,  &
+  //            qh2so4_del*fogas, qnh3_del*fogas,  &
+  //            qso4a_del*foso4a, qnh4a_del*fonh4a
+
+  //         write(lun,9220)
+  //         write(lun,9201)   &
+  //            dtnuc, dens_nh4so4a*1.0e-3,   &;
+  //            (qnh3_cur/qh2so4_cur), molenh4a_per_moleso4a,   &
+  //            qnuma_del*fonuma, tmpb*fonuma, tmpc, freduce
+
+  //         end do
+
+  // //       lun = 51
+  //         lun = 6
+  //         write(lun,9230)
+  //         write(lun,9201)   &
+  //            press_in, cair*1.0e-6, so4vol_in,   &;
+  //            wet_volfrac_so4a, wetvol_dryvol, dens_part*1.0e-3;
+
+  //         if (igrow > 0) then
+  //         write(lun,9240)
+  //         write(lun,9201)   &
+  //            tmp_spd, gr_kk, dnuc_kk, dfin_kk,   &
+  //            gamma_kk, tmpa1, tmpb1, cs_kk
+
+  //         write(lun,9250)
+  //         write(lun,9201)   &
+  //            cs_prime_kk, nu_kk, factor_kk, ratenuclt,   &
+  //            ratenuclt_kk*1.0e-6;
+  //         end if
+
+  // 9201    format ( 1p, 40e10.2  )
+  // 9210    format (   &
+  //         '      temp        rh',   &
+  //         '   ratenuc  dia_clus ddry_part',   &
+  //         ' vdry_part     igrow' )
+  // 9215    format (   &
+  //         '  h2so4avg  h2so4pre',   &
+  //         '  h2so4cur   nh3_cur',   &
+  //         '  h2so4del   nh3_del',   &
+  //         '  so4a_del  nh4a_del' )
+  // 9220    format (    &
+  //         '     dtnuc    dens_a   nh/so g   nh/so a',   &
+  //         '  numa_del  numa_dl2   reldiff   freduce' )
+  // 9230    format (   &
+  //         '  press_in      cair so4_volin',   &
+  //         ' wet_volfr wetv_dryv dens_part' )
+  // 9240    format (   &
+  //         '   tmp_spd     gr_kk   dnuc_kk   dfin_kk',   &
+  //         '  gamma_kk     tmpa1     tmpb1     cs_kk' )
+  // 9250    format (   &
+  //         ' cs_pri_kk     nu_kk factor_kk ratenuclt',   &
+  //         ' ratenu_kk' )
+
+  //         endif    //  branch if diagnostic output if ldiagaa > 0
+  // #include
+  // "../yaml/modal_aero_newnuc/f90_yaml/mer07_veh02_nuc_mosaic_1box_end_yml.f90"
+  //         return
 }
 
 KOKKOS_INLINE_FUNCTION
