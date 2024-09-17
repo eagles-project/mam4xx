@@ -63,7 +63,6 @@ void pbl_nuc_wang2008(Ensemble *ensemble) {
         adjust_factor_pbl_ratenucl_, pbl_nuc_wang2008_actual_, ratenucl_,
         rateloge_, cnum_tot_, cnum_h2so4_, cnum_nh3_, radius_cluster_nm_);
 
-
     int pbl_nuc_wang2008_actual_out;
     if (pbl_nuc_wang2008_actual_ == 1) {
       pbl_nuc_wang2008_actual_out = 11;
