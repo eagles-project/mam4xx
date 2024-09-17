@@ -101,9 +101,9 @@ foreach (input
   elseif (${input} STREQUAL compute_updraft_mixing_ratio)
     set(TOL 2e-4)
   elseif (${input} STREQUAL ma_precpprod)
-    set(TOL 1.0) # FIXME--tol changed in repsonse to using rel error for pass/fail
+    set(TOL 1.0e-1) # FIXME--tol changed in repsonse to using rel error for pass/fail
   elseif (${input} STREQUAL compute_massflux_small)
-    set(TOL 7.0) # FIXME--tol changed in repsonse to using rel error for pass/fail
+    set(TOL 1.0) # FIXME--tol changed in repsonse to using rel error for pass/fail
   else ()
     set(TOL 2e-6)
   endif ()

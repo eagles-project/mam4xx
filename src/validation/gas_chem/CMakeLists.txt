@@ -55,7 +55,7 @@ set(ERROR_THRESHOLDS
    3e-10          # linmat_ts_355--FIXME?--tol changed in repsonse to using rel error for pass/fail
    4e-10          # nlnmat_ts_355--FIXME?--tol changed in repsonse to using rel error for pass/fail
    2e-10          # imp_prod_loss_ts_355--FIXME?--tol changed in repsonse to using rel error for pass/fail
-   3.0            # newton_raphson_iter_ts_355--FIXME--tol changed in repsonse to using rel error for pass/fail
+   1.0            # newton_raphson_iter_ts_355--FIXME--tol changed in repsonse to using rel error for pass/fail
    ${DEFAULT_TOL} # imp_sol_ts_355
    ${DEFAULT_TOL} # adjrxt_ts_1400
    ${DEFAULT_TOL} # setrxt_ts_1400

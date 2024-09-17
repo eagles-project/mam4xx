@@ -1,0 +1,231 @@
+Start testing: Sep 17 16:53 MDT
+----------------------------------------------------------
+512/593 Testing: run_chm_diags_ts_355
+512/593 Test: run_chm_diags_ts_355
+Command: "/home/mjschm/mam4xx/build/src/validation/mo_chm_diags/mo_chm_diags_driver" "/home/mjschm/mam4xx/src/validation/mam_x_validation/mo_chm_diags/chm_diags_ts_355.yaml"
+Directory: /home/mjschm/mam4xx/build/src/validation/mo_chm_diags
+"run_chm_diags_ts_355" start time: Sep 17 16:53 MDT
+Output:
+----------------------------------------------------------
+Kokkos::OpenMP::initialize WARNING: OMP_PROC_BIND environment variable not set
+  In general, for best performance with OpenMP 4.0 or better set OMP_PROC_BIND=spread and OMP_PLACES=threads
+  For best performance with OpenMP 3.1 set OMP_PROC_BIND=true
+  For unit testing set OMP_PROC_BIND=false
+/home/mjschm/mam4xx/build/src/validation/mo_chm_diags/mo_chm_diags_driver: reading /home/mjschm/mam4xx/src/validation/mam_x_validation/mo_chm_diags/chm_diags_ts_355.yaml
+/home/mjschm/mam4xx/build/src/validation/mo_chm_diags/mo_chm_diags_driver: writing mam4xx_chm_diags_ts_355.py
+<end of output>
+Test time =   0.08 sec
+----------------------------------------------------------
+Test Passed.
+"run_chm_diags_ts_355" end time: Sep 17 16:53 MDT
+"run_chm_diags_ts_355" time elapsed: 00:00:00
+----------------------------------------------------------
+
+513/593 Testing: validate_chm_diags_ts_355
+513/593 Test: validate_chm_diags_ts_355
+Command: "/usr/bin/python3" "compare_mam4xx_mam4.py" "mam4xx_chm_diags_ts_355.py" "mam_chm_diags_ts_355.py" "True" "1.0"
+Directory: /home/mjschm/mam4xx/build/src/validation/mo_chm_diags
+"validate_chm_diags_ts_355" start time: Sep 17 16:53 MDT
+Output:
+----------------------------------------------------------
+False
+Input Difference for variable:  depflx
+Input Difference for variable:  depvel
+Input Difference for variable:  fldcw_nn16
+Input Difference for variable:  fldcw_nn17
+Input Difference for variable:  fldcw_nn18
+Input Difference for variable:  fldcw_nn19
+Input Difference for variable:  fldcw_nn20
+Input Difference for variable:  fldcw_nn21
+Input Difference for variable:  fldcw_nn22
+Input Difference for variable:  fldcw_nn23
+Input Difference for variable:  fldcw_nn24
+Input Difference for variable:  fldcw_nn25
+Input Difference for variable:  fldcw_nn26
+Input Difference for variable:  fldcw_nn27
+Input Difference for variable:  fldcw_nn28
+Input Difference for variable:  fldcw_nn29
+Input Difference for variable:  fldcw_nn30
+Input Difference for variable:  fldcw_nn31
+Input Difference for variable:  fldcw_nn32
+Input Difference for variable:  fldcw_nn33
+Input Difference for variable:  fldcw_nn34
+Input Difference for variable:  fldcw_nn35
+Input Difference for variable:  fldcw_nn36
+Input Difference for variable:  mmr
+Input Difference for variable:  mmr_tend
+Input Difference for variable:  pdel
+Input Difference for variable:  pdeldry
+Input Difference for variable:  vmr
+area
+L1 23.34375
+L2 23.34375
+Linf 23.34375
+L1 rel_error 1.9687260253849736e-11
+L2 rel_error 1.9687260253849736e-11
+Linf rel_error 1.9687260253849736e-11
+df_nhx
+L1 0.0
+L2 0.0
+Linf 0.0
+df_noy
+L1 0.0
+L2 0.0
+Linf 0.0
+df_sox
+L1 2.368469801614992e-16
+L2 2.368469801614992e-16
+Linf 2.368469801614992e-16
+L1 rel_error 0.0008959211907217356
+L2 rel_error 0.0008959211907217356
+Linf rel_error 0.0008959211907217356
+drymass
+L1 1193437.249633789
+L2 195184.1433801109
+Linf 50895.28125
+L1 rel_error 2.557430299842482e-09
+L2 rel_error 4.1826232797934474e-10
+Linf rel_error 1.0906407892639132e-10
+mass
+L1 1167628.689453125
+L2 203499.9125602339
+Linf 62001.75
+L1 rel_error 2.4865882821834077e-09
+L2 rel_error 4.333744987326642e-10
+Linf rel_error 1.3203925735764e-10
+mass_bc
+L1 9.60847203014767e-10
+L2 1.620904641972315e-10
+Linf 4.939643042681813e-11
+L1 rel_error 19.45175379500919
+L2 rel_error 3.2814205965220906
+Linf rel_error 1.0
+mass_dst
+L1 5.645219727811883e-10
+L2 9.138351106323364e-11
+Linf 3.0207107116600906e-11
+L1 rel_error 18.688382525413836
+L2 rel_error 3.025232131977711
+Linf rel_error 1.0
+mass_mom
+L1 2.642731209640951e-10
+L2 4.48607474830284e-11
+Linf 1.131394327747087e-11
+L1 rel_error 23.358179768351373
+L2 rel_error 3.9650850621072427
+Linf rel_error 1.0
+mass_ncl
+L1 1.26390509960511e-08
+L2 2.1489251095492187e-09
+Linf 5.552468649288639e-10
+L1 rel_error 22.762939864001513
+L2 rel_error 3.8702156559218586
+Linf rel_error 1.0
+mass_pom
+L1 6.112871615165164e-09
+L2 9.78679018295419e-10
+Linf 2.7110255655831923e-10
+L1 rel_error 22.548188747346508
+L2 rel_error 3.609995533497991
+Linf rel_error 1.0
+mass_so4
+L1 2.722059208483874e-08
+L2 3.873118373798848e-09
+Linf 8.841201006732738e-10
+L1 rel_error 30.78834206360624
+L2 rel_error 4.38076045420684
+Linf rel_error 1.0
+mass_soa
+L1 4.294473015494709e-08
+L2 6.028376698333038e-09
+Linf 1.0898451258843572e-09
+L1 rel_error 39.404433836504516
+L2 rel_error 5.531406761526138
+Linf rel_error 1.0
+mmr_nhx
+L1 0.0
+L2 0.0
+Linf 0.0
+mmr_noy
+L1 0.0
+L2 0.0
+Linf 0.0
+mmr_sox
+L1 4.750372017431942e-10
+L2 1.7342953132530623e-10
+Linf 1.313759593261807e-10
+L1 rel_error 1.0959040129227606
+L2 rel_error 0.40009944198320824
+Linf rel_error 0.3030824543821141
+net_chem
+L1 25929497.632001333
+L2 7930326.032395101
+Linf 5166738.0
+L1 rel_error 1.7240308062681904e-09
+L2 rel_error 5.272808049596016e-10
+Linf rel_error 3.435321272450343e-10
+ozone_col
+L1 0.003172319911868726
+L2 0.003172319911868726
+Linf 0.003172319911868726
+L1 rel_error 1.2300613645076175e-05
+L2 rel_error 1.2300613645076175e-05
+Linf rel_error 1.2300613645076175e-05
+ozone_strat
+L1 0.0028701646647846246
+L2 0.0028701646647846246
+Linf 0.0028701646647846246
+L1 rel_error 1.2300288448806323e-05
+L2 rel_error 1.2300288448806323e-05
+Linf rel_error 1.2300288448806323e-05
+ozone_trop
+L1 0.00030207524705616606
+L2 0.00030207524705616606
+Linf 0.00030207524705616606
+L1 rel_error 1.2300445987773184e-05
+L2 rel_error 1.2300445987773184e-05
+Linf rel_error 1.2300445987773184e-05
+vmr_brox
+L1 0.0
+L2 0.0
+Linf 0.0
+vmr_broy
+L1 0.0
+L2 0.0
+Linf 0.0
+vmr_clox
+L1 0.0
+L2 0.0
+Linf 0.0
+vmr_cloy
+L1 0.0
+L2 0.0
+Linf 0.0
+vmr_nox
+L1 0.0
+L2 0.0
+Linf 0.0
+vmr_noy
+L1 0.0
+L2 0.0
+Linf 0.0
+vmr_tcly
+L1 0.0
+L2 0.0
+Linf 0.0
+final pass array = [ True  True  True  True  True  True False False False False False False
+ False  True  True False  True  True  True  True  True  True  True  True
+  True  True  True]
+Traceback (most recent call last):
+  File "/home/mjschm/mam4xx/build/src/validation/mo_chm_diags/compare_mam4xx_mam4.py", line 144, in <module>
+    assert(np.all(pass_all_tests))
+AssertionError
+<end of output>
+Test time =   0.17 sec
+----------------------------------------------------------
+Test Failed.
+"validate_chm_diags_ts_355" end time: Sep 17 16:53 MDT
+"validate_chm_diags_ts_355" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 17 16:53 MDT

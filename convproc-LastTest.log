@@ -1,0 +1,152 @@
+Start testing: Sep 17 16:59 MDT
+----------------------------------------------------------
+88/593 Testing: run_compute_massflux_small
+88/593 Test: run_compute_massflux_small
+Command: "/home/mjschm/mam4xx/build/src/validation/convproc/convproc_driver" "/home/mjschm/mam4xx/src/validation/mam_x_validation/convproc/compute_massflux_small.yaml"
+Directory: /home/mjschm/mam4xx/build/src/validation/convproc
+"run_compute_massflux_small" start time: Sep 17 16:59 MDT
+Output:
+----------------------------------------------------------
+Kokkos::OpenMP::initialize WARNING: OMP_PROC_BIND environment variable not set
+  In general, for best performance with OpenMP 4.0 or better set OMP_PROC_BIND=spread and OMP_PLACES=threads
+  For best performance with OpenMP 3.1 set OMP_PROC_BIND=true
+  For unit testing set OMP_PROC_BIND=false
+/home/mjschm/mam4xx/build/src/validation/convproc/convproc_driver: reading /home/mjschm/mam4xx/src/validation/mam_x_validation/convproc/compute_massflux_small.yaml
+/home/mjschm/mam4xx/build/src/validation/convproc/convproc_driver: writing mam4xx_compute_massflux_small.py
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"run_compute_massflux_small" end time: Sep 17 16:59 MDT
+"run_compute_massflux_small" time elapsed: 00:00:00
+----------------------------------------------------------
+
+89/593 Testing: validate_compute_massflux_small
+89/593 Test: validate_compute_massflux_small
+Command: "/usr/bin/python3" "compare_mam4xx_mam4.py" "mam4xx_compute_massflux_small.py" "mam_compute_massflux_small.py" "True" "1.0"
+Directory: /home/mjschm/mam4xx/build/src/validation/convproc
+"validate_compute_massflux_small" start time: Sep 17 16:59 MDT
+Output:
+----------------------------------------------------------
+False
+md_i
+L1 0.0
+L2 0.0
+Linf 0.0
+mu_i
+L1 5.6319742765e-14
+L2 1.6603384881227972e-14
+Linf 8.519885612e-15
+L1 rel_error 6.6103871964754255
+L2 rel_error 1.9487802580169162
+Linf rel_error 1.0
+xx_mfup_max
+L1 0.0
+L2 0.0
+Linf 0.0
+final pass array = [ True False  True]
+Traceback (most recent call last):
+  File "/home/mjschm/mam4xx/build/src/validation/convproc/compare_mam4xx_mam4.py", line 144, in <module>
+    assert(np.all(pass_all_tests))
+AssertionError
+<end of output>
+Test time =   0.14 sec
+----------------------------------------------------------
+Test Failed.
+"validate_compute_massflux_small" end time: Sep 17 16:59 MDT
+"validate_compute_massflux_small" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 17 16:59 MDT
+
+Start testing: Sep 17 17:01 MDT
+----------------------------------------------------------
+72/593 Testing: run_ma_precpprod
+72/593 Test: run_ma_precpprod
+Command: "/home/mjschm/mam4xx/build/src/validation/convproc/convproc_driver" "/home/mjschm/mam4xx/src/validation/mam_x_validation/convproc/ma_precpprod.yaml"
+Directory: /home/mjschm/mam4xx/build/src/validation/convproc
+"run_ma_precpprod" start time: Sep 17 17:01 MDT
+Output:
+----------------------------------------------------------
+Kokkos::OpenMP::initialize WARNING: OMP_PROC_BIND environment variable not set
+  In general, for best performance with OpenMP 4.0 or better set OMP_PROC_BIND=spread and OMP_PLACES=threads
+  For best performance with OpenMP 3.1 set OMP_PROC_BIND=true
+  For unit testing set OMP_PROC_BIND=false
+/home/mjschm/mam4xx/build/src/validation/convproc/convproc_driver: reading /home/mjschm/mam4xx/src/validation/mam_x_validation/convproc/ma_precpprod.yaml
+/home/mjschm/mam4xx/build/src/validation/convproc/convproc_driver: writing mam4xx_ma_precpprod.py
+<end of output>
+Test time =   0.07 sec
+----------------------------------------------------------
+Test Passed.
+"run_ma_precpprod" end time: Sep 17 17:01 MDT
+"run_ma_precpprod" time elapsed: 00:00:00
+----------------------------------------------------------
+
+73/593 Testing: validate_ma_precpprod
+73/593 Test: validate_ma_precpprod
+Command: "/usr/bin/python3" "compare_mam4xx_mam4.py" "mam4xx_ma_precpprod.py" "mam_ma_precpprod.py" "True" "1.0e-1"
+Directory: /home/mjschm/mam4xx/build/src/validation/convproc
+"validate_ma_precpprod" start time: Sep 17 17:01 MDT
+Output:
+----------------------------------------------------------
+False
+dcondt
+L1 1.1100000340940332e-25
+L2 1.0050373336072807e-25
+Linf 1.0000000195414814e-25
+L1 rel_error 2.1706194558199095e-30
+L2 rel_error 1.965363534365909e-30
+Linf rel_error 1.955513001410544e-30
+dcondt_prevap
+L1 2.1099996491902262e-26
+L2 1.4177797202776344e-26
+Linf 1.0000001428009978e-26
+L1 rel_error 3.841912190134813e-10
+L2 rel_error 2.58150999804716e-10
+Linf rel_error 1.8208120272617833e-10
+dcondt_prevap_hist
+L1 2.311009327235319e-26
+L2 1.4248156779987044e-26
+Linf 9.999998346522067e-27
+L1 rel_error 4.695270048934035e-10
+L2 rel_error 2.8947933265860665e-10
+Linf rel_error 2.0316963749334954e-10
+pr_flux
+L1 6.082075390000007e-07
+L2 6.082075390000007e-07
+Linf 6.082075390000007e-07
+L1 rel_error 0.08816729677920934
+L2 rel_error 0.08816729677920934
+Linf rel_error 0.08816729677920934
+pr_flux_base
+L1 8.66255505999999e-07
+L2 8.66255505999999e-07
+Linf 8.66255505999999e-07
+L1 rel_error 0.10599569453743893
+L2 rel_error 0.10599569453743893
+Linf rel_error 0.10599569453743893
+pr_flux_tmp
+L1 0.0
+L2 0.0
+Linf 0.0
+wd_flux
+L1 1.0000000827403822e-08
+L2 1.000000082740371e-08
+Linf 1.000000082740371e-08
+L1 rel_error 8.017267470114886e-14
+L2 rel_error 8.017267470114795e-14
+Linf rel_error 8.017267470114795e-14
+final pass array = [ True  True  True  True False  True  True]
+Traceback (most recent call last):
+  File "/home/mjschm/mam4xx/build/src/validation/convproc/compare_mam4xx_mam4.py", line 144, in <module>
+    assert(np.all(pass_all_tests))
+AssertionError
+<end of output>
+Test time =   0.21 sec
+----------------------------------------------------------
+Test Failed.
+"validate_ma_precpprod" end time: Sep 17 17:01 MDT
+"validate_ma_precpprod" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 17 17:01 MDT

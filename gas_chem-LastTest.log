@@ -1,0 +1,88 @@
+Start testing: Sep 17 16:55 MDT
+----------------------------------------------------------
+370/593 Testing: run_newton_raphson_iter_ts_355
+370/593 Test: run_newton_raphson_iter_ts_355
+Command: "/home/mjschm/mam4xx/build/src/validation/gas_chem/gas_chem_driver" "/home/mjschm/mam4xx/src/validation/mam_x_validation/gas_chem/newton_raphson_iter_ts_355.yaml"
+Directory: /home/mjschm/mam4xx/build/src/validation/gas_chem
+"run_newton_raphson_iter_ts_355" start time: Sep 17 16:55 MDT
+Output:
+----------------------------------------------------------
+Kokkos::OpenMP::initialize WARNING: OMP_PROC_BIND environment variable not set
+  In general, for best performance with OpenMP 4.0 or better set OMP_PROC_BIND=spread and OMP_PLACES=threads
+  For best performance with OpenMP 3.1 set OMP_PROC_BIND=true
+  For unit testing set OMP_PROC_BIND=false
+/home/mjschm/mam4xx/build/src/validation/gas_chem/gas_chem_driver: reading /home/mjschm/mam4xx/src/validation/mam_x_validation/gas_chem/newton_raphson_iter_ts_355.yaml
+/home/mjschm/mam4xx/build/src/validation/gas_chem/gas_chem_driver: writing mam4xx_newton_raphson_iter_ts_355.py
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"run_newton_raphson_iter_ts_355" end time: Sep 17 16:55 MDT
+"run_newton_raphson_iter_ts_355" time elapsed: 00:00:00
+----------------------------------------------------------
+
+371/593 Testing: validate_newton_raphson_iter_ts_355
+371/593 Test: validate_newton_raphson_iter_ts_355
+Command: "/usr/bin/python3" "compare_mam4xx_mam4.py" "mam4xx_newton_raphson_iter_ts_355.py" "mam_newton_raphson_iter_ts_355.py" "True" "1.0"
+Directory: /home/mjschm/mam4xx/build/src/validation/gas_chem
+"validate_newton_raphson_iter_ts_355" start time: Sep 17 16:55 MDT
+Output:
+----------------------------------------------------------
+False
+converged
+L1 0.0
+L2 0.0
+Linf 0.0
+convergence
+L1 0.0
+L2 0.0
+Linf 0.0
+loss
+L1 1.0100103106354052e-24
+L2 1.0000503141012665e-24
+Linf 1.0000003153643208e-24
+L1 rel_error 2.3290503819290024e-10
+L2 rel_error 2.3060829592328385e-10
+Linf rel_error 2.3059676637985712e-10
+lsol
+L1 1.0201000032247975
+L2 1.000199985068546
+Linf 1.0
+L1 rel_error 6.339039995657249e-11
+L2 rel_error 6.215378579513731e-11
+Linf rel_error 6.21413584513079e-11
+max_delta
+L1 2.8907438218184397e-12
+L2 1.7180151924765494e-12
+Linf 1.2548774966158001e-12
+L1 rel_error 2.3033701484595848
+L2 rel_error 1.3689296433266147
+Linf rel_error 0.9998974464158067
+prod
+L1 9.999998346522067e-28
+L2 9.999998346522067e-28
+Linf 9.999998346522067e-28
+L1 rel_error 1.64904468474443e-10
+L2 rel_error 1.64904468474443e-10
+Linf rel_error 1.64904468474443e-10
+solution
+L1 1.0201000032247975
+L2 1.000199985068546
+Linf 1.0
+L1 rel_error 6.339039995657249e-11
+L2 rel_error 6.215378579513731e-11
+Linf rel_error 6.21413584513079e-11
+final pass array = [ True  True  True  True False  True  True]
+Traceback (most recent call last):
+  File "/home/mjschm/mam4xx/build/src/validation/gas_chem/compare_mam4xx_mam4.py", line 144, in <module>
+    assert(np.all(pass_all_tests))
+AssertionError
+<end of output>
+Test time =   0.15 sec
+----------------------------------------------------------
+Test Failed.
+"validate_newton_raphson_iter_ts_355" end time: Sep 17 16:55 MDT
+"validate_newton_raphson_iter_ts_355" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 17 16:55 MDT
