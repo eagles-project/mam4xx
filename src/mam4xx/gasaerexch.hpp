@@ -1118,8 +1118,8 @@ void mam_gasaerexch_1subarea(
     if (k == 48) {
       for (int igas = 0; igas < max_gas; ++igas) {
         for (int n = 0; n < ntot_amode; ++n) {
-          printf("uptkaer_BEF:%0.15E,%0.15E,%i,%i,%i,%i,%i\n", uptkaer[igas][n],uptkaer[igas_h2so4][n],igas,
-                 igas_h2so4, igas_nh3, nsoa,n);
+          printf("uptkaer_BEF:%0.15E,%0.15E,%i,%i,%i,%i,%i\n", uptkaer[igas][n],
+                 uptkaer[igas_h2so4][n], igas, igas_h2so4, igas_nh3, nsoa, n);
         }
       }
     }
@@ -1155,9 +1155,16 @@ void mam_gasaerexch_1subarea(
   }
 
   // Do SOA
-  mam4::gasaerexch::mam_soaexch_1subarea(dtsubstep, temp, pmid, qgas_cur,
-                                         qgas_avg, qaer_cur, qnum_cur, qwtr_cur,
-                                         uptkaer);
+  mam4::gasaerexch::mam_soaexch_1subarea(k, dtsubstep, temp, pmid,     // in
+                                         qgas_cur, qgas_avg, qaer_cur, // inout
+                                         qnum_cur, qwtr_cur,           // inout
+                                         uptkaer);                     // in
+
+  if (k == 48) {
+    for (int igas = 0; igas < max_gas; ++igas) {
+      printf("After mam_soaexch_1subarea:%0.15E,%i\n", qgas_cur[igas], igas);
+    }
+  }
 
   // Do other gases (that are assumed non-volatile) with no time sub-stepping
   for (int igas = nsoa; igas < max_gas; ++igas) {
@@ -1199,6 +1206,9 @@ void mam_gasaerexch_1subarea(
                  tmp_pxt * (0.5 - tmp_kxt / 6.0 + tmp_kxt2 / 24.0);
       }
       qgas_cur[igas] = tmp_q3;
+      if (k == 48) {
+        printf("tmp_q3:%0.15E,%i\n", qgas_cur[igas], igas);
+      }
       const Real tmp_qdel_cond = (tmp_q1 + tmp_pxt) - tmp_q3;
       qgas_avg[igas] = tmp_q4;
       for (int n = 0; n < n_mode; ++n) {
@@ -1209,6 +1219,9 @@ void mam_gasaerexch_1subarea(
       }
     } else {
       qgas_cur[igas] = tmp_q1 + tmp_pxt;
+      if (k == 48) {
+        printf("tmp_q3_2:%0.15E,%i\n", qgas_cur[igas], igas);
+      }
       qgas_avg[igas] = tmp_q1 + tmp_pxt * 0.5;
     }
   }

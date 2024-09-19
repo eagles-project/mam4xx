@@ -79,7 +79,7 @@ constexpr int iaer_pom =
 constexpr int ntot_soamode = 4;
 
 KOKKOS_INLINE_FUNCTION
-void mam_soaexch_1subarea(const Real dtsubstep,                 // in
+void mam_soaexch_1subarea(const int k, const Real dtsubstep,    // in
                           const Real temp,                      // in
                           const Real pmid,                      // in
                           Real qgas_cur[max_gas],               // in/out
@@ -129,18 +129,28 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
       opoa_frac[ll][n] = 0.1;
     }
   }
+
+  // for primary carbon mode, set opoa_frac=0 for consistency with older code
+  // (this could be changed)
+  constexpr bool flag_pcarbon_opoa_frac_zero = true;
+  constexpr int npca = 3; // primary carbon mode number
+  if (flag_pcarbon_opoa_frac_zero && npca > 0) {
+    for (int ll = 0; ll < ntot_poaspec; ++ll)
+      opoa_frac[ll][npca] = 0;
+  }
+
   bool skip_soamode[max_mode];
   for (int n = 0; n < max_mode; ++n) {
     skip_soamode[n] = true;
   }
 
   Real tmpa, tmpb, tmpc;
-  const Real alpha_astem = 0.05; // Parameter used in calc of time step
-  const Real dtsub_fixed = -1.0; // Fixed sub-step for time integration (s)
+  constexpr Real alpha_astem = 0.05; // Parameter used in calc of time step
+  constexpr Real dtsub_fixed = -1.0; // Fixed sub-step for time integration (s)
   // BAD CONSTANT
-  const Real rgas = 8.3144; // gas constant in J/K/mol
-  const Real a_min1 = 1.0e-20;
-  const Real g_min1 = 1.0e-20;
+  constexpr Real rgas = 8.3144; // gas constant in J/K/mol
+  constexpr Real a_min1 = 1.0e-20;
+  constexpr Real g_min1 = 1.0e-20;
 
   Real tot_soa[ntot_soaspec] = {}; // g_soa + sum( a_soa(:) )
 
@@ -204,6 +214,10 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
     //
     for (int ll = 0; ll < ntot_soaspec; ++ll) {
       g_soa[ll] = haero::max(qgas_prv[ll], 0.0);
+      if (k == 48) {
+        printf("g_soa_1:%0.15E,%0.15E,%0.15E,%i,%i\n", g_soa[ll], qgas_prv[ll],
+               uptkaer_soag_tmp[ll][0], ntot_soamode, ll);
+      }
       tot_soa[ll] = g_soa[ll];
       for (int n = 0; n < ntot_soamode; ++n) {
         if (skip_soamode[n])
@@ -212,14 +226,32 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
         tot_soa[ll] += a_soa[ll][n];
       }
     }
-
+    // ntot_soamode = 4
+    // ntot_poaspec = 1
     for (int n = 0; n < ntot_soamode; ++n) {
+      if (k == 48)
+        printf("N:%i,%i,%i\n", n, ntot_soamode, ntot_poaspec);
       if (skip_soamode[n])
         continue;
       a_opoa[n] = 0.0;
       for (int ll = 0; ll < ntot_poaspec; ++ll) {
+        // if (k == 48)printf("N,L:%i,%i\n",n,ll);
         a_opoa[n] +=
-            opoa_frac[ll][n] * haero::max(qaer_prv[iaer_pom + ll - 1][n], 0.0);
+            opoa_frac[ll][n] * haero::max(qaer_prv[iaer_pom + ll][n], 0.0);
+        if (k == 48) {
+          printf("a_opoa:%0.15E,%0.15E,%0.15E,%i,%i,%i,%i\n", a_opoa[n],
+                 opoa_frac[ll][n], qaer_prv[iaer_pom + ll][n],
+                 iaer_pom + ll - 1, iaer_pom, ll, n);
+          // printf("Yes:%i, %i, %i, %i\n",iaer_pom+ll-1,  iaer_pom,  ll,   n);
+        }
+      }
+    }
+
+    for (int iaer = 0; iaer < max_aer; ++iaer) {
+      for (int n = 0; n < AeroConfig::num_modes(); ++n) {
+        if (k == 48) {
+          printf("qaer_prv:%0.15E,%i,%i\n", qaer_prv[iaer][n], iaer, n);
+        }
       }
     }
 
@@ -243,6 +275,13 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
         phi[ll][n] = (g_soa[ll] - g_star[ll][n]) /
                      haero::max(g_soa[ll], haero::max(g_star[ll][n], g_min1));
         tmpb += uptkaer_soag_tmp[ll][n] * haero::abs(phi[ll][n]);
+        if (k == 48) {
+          printf("tmpb:%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,"
+                 "%0.15E,%0.15E,%0.15E,%i,%i\n",
+                 tmpb, uptkaer_soag_tmp[ll][n], phi[ll][n], g_soa[ll],
+                 g_star[ll][n], g_min1, sat[ll][n], a_soa[ll][n], g0_soa[ll],
+                 a_ooa_sum_tmp[n], a_min1, ll + 1, n + 1);
+        }
       }
       tmpa = haero::max(tmpa, tmpb);
     }
@@ -255,9 +294,17 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
       if (dtmax * tmpa <= alpha_astem) {
         dtcur = dtmax;
         tcur = dtfull;
+        if (k == 48) {
+          printf("dtcur_1:%0.15E,%0.15E,%0.15E,%0.15E,%0.15E\n", dtcur, dtmax,
+                 tmpa, alpha_astem, tcur);
+        }
       } else {
         dtcur = alpha_astem / tmpa;
         tcur += dtcur;
+        if (k == 48) {
+          printf("dtcur_2:%0.15E,%0.15E,%0.15E,%0.15E\n", dtcur, tmpa,
+                 alpha_astem, tcur);
+        }
       }
     }
 
@@ -271,6 +318,10 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
       for (int ll = 0; ll < ntot_soaspec; ++ll) {
         a_soa_tmp[ll][n] = a_soa[ll][n];
         beta[ll][n] = dtcur * uptkaer_soag_tmp[ll][n];
+        if (k == 48) {
+          printf("beta:%0.15E,%0.15E,%0.15E,%i,%i\n", beta[ll][n], dtcur,
+                 uptkaer_soag_tmp[ll][n], ll + 1, n + 1);
+        }
         del_g_soa_tmp[ll] = g_soa[ll] - g_star[ll][n];
         if (del_g_soa_tmp[ll] > 0.0) {
           a_soa_tmp[ll][n] += beta[ll][n] * del_g_soa_tmp[ll];
@@ -303,6 +354,11 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
 
       g_soa[ll] = (tot_soa[ll] - tmpa) / (1.0 + tmpb);
       g_soa[ll] = haero::max(0.0, g_soa[ll]);
+      if (k == 48) {
+        printf("g_soa_2:%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%i\n",
+               g_soa[ll], tot_soa[ll], tmpa, tmpb, a_soa[ll][0], beta[ll][0],
+               sat[ll][0], ll - 1);
+      }
       for (int n = 0; n < ntot_soamode; ++n) {
         if (skip_soamode[n])
           continue;
