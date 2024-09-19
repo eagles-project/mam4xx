@@ -5,8 +5,6 @@
 
 #include <mam4xx/nucleation.hpp>
 
-// #include <haero/constants.hpp>
-// #include <mam4xx/mam4_types.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
 
