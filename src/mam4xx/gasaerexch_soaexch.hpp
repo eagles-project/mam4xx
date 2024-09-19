@@ -263,6 +263,9 @@ void mam_soaexch_1subarea(const int k, const Real dtsubstep,    // in
       a_ooa_sum_tmp[n] = a_opoa[n];
       for (int ll = 0; ll < ntot_soaspec; ++ll) {
         a_ooa_sum_tmp[n] += a_soa[ll][n];
+        if(k==48){
+               printf("a_ooa_sum_tmp::%0.15E,%0.15E,%0.15E,%i,%i",a_ooa_sum_tmp[n], a_opoa[n], a_soa[0][n],ntot_soaspec,n);
+      }
       }
     }
     for (int ll = 0; ll < ntot_soaspec; ++ll) {
