@@ -5,8 +5,6 @@
 
 #include <mam4xx/nucleation.hpp>
 
-// #include <haero/constants.hpp>
-// #include <mam4xx/mam4_types.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
 
@@ -55,16 +53,6 @@ void mer07_veh02_nuc_mosaic_1box(Ensemble *ensemble) {
     const Real mw_so4a_ = input.get_array("mw_so4a")[0];
     const Real pi = haero::Constants::pi;
 
-    int newnuc_method_flagaa;
-    if (newnuc_method_flagaa_ == 11) {
-      newnuc_method_flagaa = 1;
-    } else if (newnuc_method_flagaa_ == 12) {
-      newnuc_method_flagaa = 2;
-    } else {
-      std::cerr << "Undefined value for parameter: newnuc_method_flagaa"
-                << std::endl;
-    }
-
     int isize_nuc;
     Real qnuma_del;
     Real qso4a_del;
@@ -75,7 +63,7 @@ void mer07_veh02_nuc_mosaic_1box(Ensemble *ensemble) {
     Real dnclusterdt;
 
     nucleation::mer07_veh02_wang08_nuc_1box(
-        newnuc_method_flagaa, dtnuc_, temp_in_, rh_in_, press_in_, zm_in_,
+        newnuc_method_flagaa_, dtnuc_, temp_in_, rh_in_, press_in_, zm_in_,
         pblh_in_, qh2so4_cur_, qh2so4_avg_, qnh3_cur_, h2so4_uptkrate_,
         mw_so4a_host_, nsize_, dplom_sect_, dphim_sect_, ldiagaa_, rgas_,
         avogad_, mw_nh4a_, mw_so4a_, pi, isize_nuc, qnuma_del, qso4a_del,

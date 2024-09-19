@@ -75,9 +75,9 @@ void pbl_nuc_wang2008(Real so4vol, Real pi, int pbl_nuc_wang2008_user_choice,
   // Calculate nucleation rate using incoming so4 concentration.
   //-------------------------------------------------------------
   Real tmp_ratenucl;
-  if (pbl_nuc_wang2008_user_choice == 1) {
+  if (pbl_nuc_wang2008_user_choice == 11) {
     tmp_ratenucl = wang2008::first_order_pbl_nucleation_rate(so4vol);
-  } else if (pbl_nuc_wang2008_user_choice == 2) {
+  } else if (pbl_nuc_wang2008_user_choice == 12) {
     tmp_ratenucl = wang2008::second_order_pbl_nucleation_rate(so4vol);
   } else {
     return;
@@ -477,7 +477,8 @@ void mer07_veh02_wang08_nuc_1box(
   qnh3_del = 0.0;
   dnclusterdt = 0.0;
 
-  if ((newnuc_method_flagaa != 1) && (newnuc_method_flagaa != 2))
+  if ((newnuc_method_flagaa != 1) && (newnuc_method_flagaa != 2) &&
+      (newnuc_method_flagaa != 11) && (newnuc_method_flagaa != 12))
     return;
 
   // make call to parameterization routine
@@ -518,7 +519,7 @@ void mer07_veh02_wang08_nuc_1box(
              haero::log(haero::max(1.0e-38, adjust_factor_bin_tern_ratenucl));
 
   // do boundary layer nuc
-  if ((newnuc_method_flagaa == 1) || (newnuc_method_flagaa == 2)) {
+  if ((newnuc_method_flagaa == 11) || (newnuc_method_flagaa == 12)) {
     // FIXME: BAD CONSTANT
     if (zm_in <= max(pblh_in, 100.0)) {
       Real so4vol_bb = so4vol_in;
@@ -1046,6 +1047,9 @@ public:
     KOKKOS_INLINE_FUNCTION
     Config()
         : dens_so4a_host(mam4_density_so4), mw_nh4a_host(mw_nh4a),
+          // FIXME: newnuc_method_user_choice and pbl_nuc_wang2008_user_choice
+          //        should likely be 11 or 12, to correspond to the values used
+          //        in modal_aero_newnuc.F90 (mam_refactor)
           mw_so4a_host(mw_so4a), newnuc_method_user_choice(2),
           pbl_nuc_wang2008_user_choice(1), adjust_factor_bin_tern_ratenucl(1.0),
           adjust_factor_pbl_ratenucl(1.0), accom_coef_h2so4(1.0),
@@ -1118,6 +1122,8 @@ public:
            progs.quantities_nonnegative(team);
   }
 
+  // FIXME: the compute_tendencies_() that this calls corresponds to the box
+  //        model version of mer07_veh02_wang08_nuc_1box()
   // compute_tendencies -- computes tendencies and updates diagnostics
   // NOTE: that both diags and tends are const below--this means their views
   // NOTE: are fixed, but the data in those views is allowed to vary.
@@ -1177,6 +1183,7 @@ public:
     });
   }
 
+  // FIXME: this calls the box model version of mer07_veh02_wang08_nuc_1box()
   // This function computes relevant tendencies at a single vertical level. It
   // was ported directly from the compute_tendencies subroutine in the
   // modal_aero_newnuc module from the MAM4 box model.
@@ -1297,6 +1304,7 @@ public:
       // are used below in the calculation of cluster "growth". I chose to keep
       // these variable names the same as in the old subroutine
       // mer07_veh02_nuc_mosaic_1box to facilitate comparison.
+      // FIXME: this is the box model version
       nucleation::mer07_veh02_wang08_nuc_1box(
           newnuc_method_user_choice, newnuc_method_actual,       // in, out
           pbl_nuc_wang2008_user_choice, pbl_nuc_wang2008_actual, // in, out
