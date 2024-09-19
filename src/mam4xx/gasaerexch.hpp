@@ -1162,7 +1162,18 @@ void mam_gasaerexch_1subarea(
 
   if (k == 48) {
     for (int igas = 0; igas < max_gas; ++igas) {
-      printf("After mam_soaexch_1subarea:%0.15E,%i\n", qgas_cur[igas], igas);
+      printf("After mam_soaexch_1subarea:%0.15E,%0.15E,%i\n", qgas_cur[igas],
+             qgas_avg[igas], igas);
+    }
+    for (int igas = 0; igas < ntot_amode; ++igas) {
+      printf("After mam_soaexch_1subarea_n:%0.15E,%0.15E,%i\n", qnum_cur[igas],
+             qwtr_cur[igas], igas);
+    }
+    for (int im = 0; im < ntot_amode; ++im) {
+      for (int ia = 0; ia < max_aer; ++ia) {
+        printf("After mam_soaexch_1subarea_a:%0.15E,%i,%i\n", qaer_cur[ia][im],
+               ia, im);
+      }
     }
   }
 
