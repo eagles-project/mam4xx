@@ -237,8 +237,8 @@ void do_inter_mode_transfer() {}
 
 KOKKOS_INLINE_FUNCTION
 void do_inter_mode_transfer(
-    const int dest_mode_of_mode[AeroConfig::num_modes()], const bool &is_cloudy,
-    const Real &smallest_dryvol_value,
+    const int kk, const int dest_mode_of_mode[AeroConfig::num_modes()],
+    const bool &is_cloudy, const Real &smallest_dryvol_value,
     // volume to number relaxation limits [m^-3]
     const Real num2vol_ratiolorlx[AeroConfig::num_modes()],
     const Real num2vol_ratiohirlx[AeroConfig::num_modes()],
@@ -370,6 +370,14 @@ void do_inter_mode_transfer(
                           ln_diameter_tail_fac[src_mode],
                           after_growth_tail_fr_vol // out
     );
+
+    if (kk == 48) {
+      printf("bef_aft_num:%0.15E,%0.15E\n", b4_growth_tail_fr_qnum,
+             after_growth_tail_fr_num);
+      printf("bef_aft_dia_num:%0.15E,%0.15E,%0.15E,%0.15E\n",
+             b4_growth_diameter, aft_growth_diameter, ln_dia_cutoff[src_mode],
+             fmode_dist_tail_fac[src_mode]);
+    }
 
     // compute transfer fraction (volume and mass) - if less than zero,
     // cycle loop
@@ -697,7 +705,7 @@ public:
         }
       }
 
-      mam_rename_1subarea_(is_cloudy_cur, smallest_dryvol_value,
+      mam_rename_1subarea_(1, is_cloudy_cur, smallest_dryvol_value,
                            dest_mode_of_mode,                  // in
                            mean_std_dev,                       // in
                            fmode_dist_tail_fac,                // in
@@ -722,7 +730,7 @@ public:
   // Make mam_rename_1subarea public for testing proposes.
   KOKKOS_INLINE_FUNCTION
   void mam_rename_1subarea_(
-      const bool is_cloudy_cur, const Real &smallest_dryvol_value,
+      int kk, const bool is_cloudy_cur, const Real &smallest_dryvol_value,
       const int *dest_mode_of_mode,                             // in
       const Real mean_std_dev[AeroConfig::num_modes()],         // in
       const Real fmode_dist_tail_fac[AeroConfig::num_modes()],  // in
@@ -735,14 +743,17 @@ public:
       const Real diameter_threshold[AeroConfig::num_modes()],   // in
       const Real mass_2_vol[AeroConfig::num_aerosol_ids()],
       const Real dgnum_amode[AeroConfig::num_modes()], // in
-                                                       //
-      Real qnum_i_cur[AeroConfig::num_modes()],
-      Real qmol_i_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
-      Real qmol_i_del[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+      Real qnum_i_cur[AeroConfig::num_modes()],        // out
+      Real qmol_i_cur[AeroConfig::num_modes()]
+                     [AeroConfig::num_aerosol_ids()], // out
+      const Real qmol_i_del[AeroConfig::num_modes()]
+                           [AeroConfig::num_aerosol_ids()], // in
 
-      Real qnum_c_cur[AeroConfig::num_modes()],
-      Real qmol_c_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
-      Real qmol_c_del[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()])
+      Real qnum_c_cur[AeroConfig::num_modes()], // out
+      Real qmol_c_cur[AeroConfig::num_modes()]
+                     [AeroConfig::num_aerosol_ids()], // out
+      const Real qmol_c_del[AeroConfig::num_modes()]
+                           [AeroConfig::num_aerosol_ids()]) // in
 
       const {
     const Real zero = 0;
@@ -784,7 +795,7 @@ public:
     // Find fractions (mass and number) to transfer and complete the transfer
 
     rename::do_inter_mode_transfer(
-        dest_mode_of_mode, is_cloudy_cur, smallest_dryvol_value,
+        kk, dest_mode_of_mode, is_cloudy_cur, smallest_dryvol_value,
         // volume to number relaxation limits [m^-3]
         num2vol_ratio_lo_rlx, num2vol_ratio_hi_rlx, mean_std_dev,
         fmode_dist_tail_fac, ln_diameter_tail_fac, ln_dia_cutoff,
@@ -793,6 +804,14 @@ public:
         dryvol_i, dryvol_c, deldryvol_i, deldryvol_c, qmol_i_cur,
         // aerosol number mixing ratios [#/kmol-air]
         qnum_i_cur, qmol_c_cur, qnum_c_cur);
+
+    if (kk == 48) {
+      for (int im = 0; im < 4; ++im) {
+        // printf("mam_rename_1subarea_last:%0.15E,%0.15E,%0.15E,%0.15E,%i\n",
+        // qnum_i_cur[im],
+        //        qnum_c_cur[im], sz_factor[im], ln_diameter[im], im);
+      }
+    }
   } // end mam_rename_1subarea_()
 };  // end class Rename
 
