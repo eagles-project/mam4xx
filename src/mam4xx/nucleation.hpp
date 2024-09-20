@@ -345,19 +345,19 @@ void mer07_veh02_wang08_nuc_1box(int newnuc_method_user_choice,
 //   Atmos. Chem. Phys. Discuss., 8, 13943-13998
 //   Atmos. Chem. Phys.  9, 239-260, 2009
 
-// This is the version from the E3SM mam refactor repo
+// NOTE: This is the version from the E3SM mam refactor repo
 KOKKOS_INLINE_FUNCTION
-void mer07_veh02_wang08_nuc_1box(
+void mer07_veh02_nuc_mosaic_1box(
     // in
     const int newnuc_method_flagaa, const Real dtnuc, const Real temp_in,
     const Real rh_in, const Real press_in, const Real zm_in, const Real pblh_in,
     const Real qh2so4_cur, const Real qh2so4_avg, const Real qnh3_cur,
     const Real h2so4_uptkrate, const Real mw_so4a_host, const int nsize,
-    // NOTE: in fortran dplom_sect is given/accessed as an array with extent
-    //       maxd_asize defined as "dimension for dplom_sect, ..."
+    // NOTE: in fortran dp_lo_sect is given/accessed as an array with extent
+    //       maxd_asize defined as "dimension for dp_lo_sect, ..."
     //       however, as provided in validation data, it is a scalar
     // const int maxd_asize,
-    const Real dplom_sect, const Real dphim_sect, const int ldiagaa,
+    const Real dp_lo_sect, const Real dp_hi_sect,
     // in fortran provided by mo_constants
     const Real rgas, const Real avogad,
     // in fortran provided by physconst
@@ -367,6 +367,60 @@ void mer07_veh02_wang08_nuc_1box(
     //  out
     int &isize_nuc, Real &qnuma_del, Real &qso4a_del, Real &qnh4a_del,
     Real &qh2so4_del, Real &qnh3_del, Real &dens_nh4so4a, Real &dnclusterdt) {
+
+  //  ============
+  // || inputs: ||
+  // ============
+  // nucleation time step (s)
+  // dtnuc
+  // temperature, in k
+  // temp_in
+  // relative humidity, as fraction
+  // rh_in
+  // air pressure (pa)
+  // press_in
+  // layer midpoint height (m)
+  // zm_in
+  // pbl height (m)
+  // pblh_in
+  // gas h2so4 mixing ratios (mol/mol-air)
+  // qh2so4_cur, qh2so4_avg
+  // gas nh3 mixing ratios (mol/mol-air)
+  // qnh3_cur
+  // qxxx_cur = current value (after gas chem and condensation)
+  // qxxx_avg = estimated average value (for simultaneous source/sink calcs)
+  // h2so4 uptake rate to aerosol (1/s)
+  // h2so4_uptkrate
+  // mw of so4 aerosol in host code (g/mol)
+  // mw_so4a_host
+  // 1=merikanto et al (2007) ternary, 2=vehkamaki et al (2002) binary
+  // newnuc_method_flagaa
+  // number of aerosol size bins
+  // nsize
+  // dimension for dp_lo_sect, ...
+  // maxd_asize
+  // dry diameter at lower bnd of bin (m)
+  // dp_lo_sect(maxd_asize)
+  // dry diameter at upper bnd of bin (m)
+  // dp_hi_sect(maxd_asize)
+  // ldiagaa
+
+  //  =============
+  // || outputs: ||
+  // =============
+  // size bin into which new particles go
+  // isize_nuc
+  // change to aerosol number mixing ratio (#/mol-air)
+  // qnuma_del
+  // change to aerosol so4 mixing ratio (mol/mol-air)
+  // qso4a_del
+  // change to aerosol nh4 mixing ratio (mol/mol-air)
+  // qnh4a_del
+  // change to gas h2so4 mixing ratio (mol/mol-air)
+  // qh2so4_del
+  // change to gas nh3 mixing ratio (mol/mol-air), aerosol changes are > 0; gas
+  // changes are < 0 qnh3_del dry-density of the new nh4-so4 aerosol mass
+  // (kg/m3) dens_nh4so4a cluster nucleation rate (#/m3/s) dnclusterdt
 
   // NOTE: there are a lot of variables that end up unused since we ignore all
   //       the writing to file at the bottom. for now, I've preserved some of
@@ -560,22 +614,22 @@ void mer07_veh02_wang08_nuc_1box(
 
   int igrow;
   isize_nuc = 1;
-  Real dpdry_part = dplom_sect;
-  if (dpdry_clus <= dplom_sect) {
+  Real dpdry_part = dp_lo_sect;
+  if (dpdry_clus <= dp_lo_sect) {
     // need to clusters to larger size
     igrow = 1;
-  } else if (dpdry_clus >= dphim_sect) {
+  } else if (dpdry_clus >= dp_hi_sect) {
     igrow = 0;
     isize_nuc = nsize;
-    dpdry_part = dphim_sect;
+    dpdry_part = dp_hi_sect;
   } else {
     igrow = 0;
     for (int i = 0; i < nsize; ++i) {
-      if (dpdry_clus < dphim_sect) {
+      if (dpdry_clus < dp_hi_sect) {
         isize_nuc = i;
         dpdry_part = dpdry_clus;
-        dpdry_part = haero::min(dpdry_part, dphim_sect);
-        dpdry_part = haero::max(dpdry_part, dplom_sect);
+        dpdry_part = haero::min(dpdry_part, dp_hi_sect);
+        dpdry_part = haero::max(dpdry_part, dp_lo_sect);
         return;
       }
     }
@@ -756,12 +810,12 @@ void mer07_veh02_wang08_nuc_1box(
   tmpa = haero::max(0.0, ratenuclt_kk * dtnuc / cair);
   // adjusted production of aerosol number (#/mol-air)
   tmpb = tmpa * freduce;
-} // end mer07_veh02_wang08_nuc_1box()
+} // end mer07_veh02_nuc_mosaic_1box()
 
 KOKKOS_INLINE_FUNCTION
 void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
-                           Real radius_cluster, const Real *dplom_sect,
-                           const Real *dphim_sect, int nsize, Real dtnuc,
+                           Real radius_cluster, const Real *dp_lo_sect,
+                           const Real *dp_hi_sect, int nsize, Real dtnuc,
                            Real temp_in, Real rh_in, Real cair,
                            Real accom_coef_h2so4, Real mw_so4a,
                            Real mw_so4a_host, Real mw_nh4a, Real avogad,
@@ -835,21 +889,21 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
   dpdry_clus = pow(voldry_clus * 6.0 / pi, onethird);
 
   isize_nuc = 1;
-  dpdry_part = dplom_sect[0];
-  if (dpdry_clus <= dplom_sect[0]) {
+  dpdry_part = dp_lo_sect[0];
+  if (dpdry_clus <= dp_lo_sect[0]) {
     igrow = 1; // need to grow clusters to larger size
-  } else if (dpdry_clus >= dphim_sect[nsize - 1]) {
+  } else if (dpdry_clus >= dp_hi_sect[nsize - 1]) {
     igrow = 0;
     isize_nuc = nsize;
-    dpdry_part = dphim_sect[nsize - 1];
+    dpdry_part = dp_hi_sect[nsize - 1];
   } else {
     igrow = 0;
     for (int i = 0; i < nsize; ++i) {
-      if (dpdry_clus < dphim_sect[i]) {
+      if (dpdry_clus < dp_hi_sect[i]) {
         isize_nuc = i;
         dpdry_part = dpdry_clus;
-        dpdry_part = min(dpdry_part, dphim_sect[i]);
-        dpdry_part = max(dpdry_part, dplom_sect[i]);
+        dpdry_part = min(dpdry_part, dp_hi_sect[i]);
+        dpdry_part = max(dpdry_part, dp_lo_sect[i]);
         break;
       }
     }
@@ -1033,27 +1087,17 @@ public:
   // nucleation-specific configuration
   struct Config {
     // "host" parameters
-    Real dens_so4a_host, mw_nh4a_host, mw_so4a_host;
+    Real mw_nh4a_host, mw_so4a_host;
 
     // Nucleation parameters
-    int newnuc_method_user_choice;
-    int pbl_nuc_wang2008_user_choice;
-    Real adjust_factor_bin_tern_ratenucl;
-    Real adjust_factor_pbl_ratenucl;
-    Real accom_coef_h2so4;
+    int newnuc_method_flagaa;
     Real newnuc_adjust_factor_dnaitdt;
 
     // default constructor -- sets default values for parameters
     KOKKOS_INLINE_FUNCTION
     Config()
-        : dens_so4a_host(mam4_density_so4), mw_nh4a_host(mw_nh4a),
-          // FIXME: newnuc_method_user_choice and pbl_nuc_wang2008_user_choice
-          //        should likely be 11 or 12, to correspond to the values used
-          //        in modal_aero_newnuc.F90 (mam_refactor)
-          mw_so4a_host(mw_so4a), newnuc_method_user_choice(2),
-          pbl_nuc_wang2008_user_choice(1), adjust_factor_bin_tern_ratenucl(1.0),
-          adjust_factor_pbl_ratenucl(1.0), accom_coef_h2so4(1.0),
-          newnuc_adjust_factor_dnaitdt(1.0) {}
+        : mw_nh4a_host(mw_nh4a), mw_so4a_host(mw_so4a),
+          newnuc_method_flagaa(11) {}
 
     KOKKOS_INLINE_FUNCTION
     Config(const Config &) = default;
@@ -1077,13 +1121,20 @@ private:
   static constexpr Real mw_nh4a = 18.0;              // BAD_CONSTANT
   static constexpr Real pi = 3.14159265358979323846; // BAD_CONSTANT
 
+  Real dp_lo_mode, dp_hi_mode;
+
+  // these values are fixed near modal_aero_amicphys.F90:1461, and only
+  // considered for the aitken mode, so this function sets them to those values
+  KOKKOS_INLINE_FUNCTION
+  void set_mode_dp_lo_dp_hi() {
+    // dry-diameter limits for "grown" new particles
+    dp_lo_mode = haero::exp(0.67 * haero::log(modes(nait).min_diameter) +
+                            0.33 * haero::log(modes(nait).max_diameter));
+    dp_hi_mode = modes(nait).max_diameter;
+  }
+
   // Nucleation-specific configuration
   Config config_;
-
-  // Mode parameters
-  Real dgnum_aer[num_modes],  // mean geometric number diameter
-      dgnumhi_aer[num_modes], // max geometric number diameter
-      dgnumlo_aer[num_modes]; // min geometric number diameter
 
 public:
   // name -- unique name of the process implemented by this class
@@ -1096,20 +1147,16 @@ public:
             const Config &nucl_config = Config()) {
     // Set nucleation-specific config parameters.
     config_ = nucl_config;
-
-    // Set mode parameters.
-    for (int m = 0; m < num_modes; ++m) {
-      // FIXME: There is no mean geometric number diameter in a mode.
-      // FIXME: Assume "nominal" diameter for now?
-      // FIXME: There is a comment in modal_aero_newnuc.F90 that Dick Easter
-      // FIXME: thinks that dgnum_aer isn't used in MAM4, but it is actually
-      // FIXME: used in this nucleation parameterization. So we will have to
-      // FIXME: figure this out.
-      dgnum_aer[m] = modes(m).nom_diameter;
-      dgnumlo_aer[m] = modes(m).min_diameter;
-      dgnumhi_aer[m] = modes(m).max_diameter;
-    }
+    set_mode_dp_lo_dp_hi();
   }
+
+  // NOTE: Used only for testing
+  KOKKOS_INLINE_FUNCTION
+  Real get_dp_lo_mode() { return dp_lo_mode; }
+
+  // NOTE: Used only for testing
+  KOKKOS_INLINE_FUNCTION
+  Real get_dp_hi_mode() { return dp_hi_mode; }
 
   // validate -- validates the given atmospheric state and prognostics against
   // assumptions made by this implementation, returning true if the states are
@@ -1122,8 +1169,6 @@ public:
            progs.quantities_nonnegative(team);
   }
 
-  // FIXME: the compute_tendencies_() that this calls corresponds to the box
-  //        model version of mer07_veh02_wang08_nuc_1box()
   // compute_tendencies -- computes tendencies and updates diagnostics
   // NOTE: that both diags and tends are const below--this means their views
   // NOTE: are fixed, but the data in those views is allowed to vary.
@@ -1134,225 +1179,147 @@ public:
                           const Diagnostics &diags,
                           const Tendencies &tends) const {
     int iaer_so4 = aerosol_index_for_mode(ModeIndex::Aitken, AeroId::SO4);
-    static constexpr Real boltzmann =
-        1.38065e-23; // BAD_CONSTANT (Boltzmann's constant ~ J/K/molecule)
-    static constexpr Real avogadro =
-        6.02214e26; // BAD_CONSTANT (Avogadro's number ~ molecules/kmole)
-    static constexpr Real r_universal = boltzmann * avogadro; // BAD_CONSTANT
     const int nk = atm.num_levels();
+    const int dp_lo_m = dp_lo_mode;
+    const int dp_hi_m = dp_hi_mode;
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
       // extract atmospheric state
       Real temp = atm.temperature(k);
       Real pmid = atm.pressure(k);
-      Real aircon = pmid / (r_universal * temp);
       Real zmid = atm.height(k);
       Real pblh = atm.planetary_boundary_layer_height;
       Real qv = atm.vapor_mixing_ratio(k);
       Real relhum = conversions::relative_humidity_from_vapor_mixing_ratio(
           qv, temp, pmid);
       Real uptkrate_so4 = 0;
-      Real del_h2so4_gasprod = 0;
-      Real del_h2so4_aeruptk = 0;
 
       // extract relevant gas mixing ratios (H2SO4 only for now)
       Real qgas_cur[num_gases], qgas_avg[num_gases];
       qgas_cur[igas_h2so4] = progs.q_gas[igas_h2so4](k);
       qgas_avg[igas_h2so4] = progs.q_gas[igas_h2so4](k); // is this good enough?
 
-      // extract relevant aerosol mixing ratios (SO4 in aitken mode only for
-      // now)
-      Real qnum_cur[num_modes], qaer_cur[num_modes][max_num_mode_species];
-      qnum_cur[nait] = progs.n_mode_i[nait](k);
-      qaer_cur[nait][iaer_so4] = progs.q_aero_i[nait][iaer_so4](k);
-
-      Real qwtr_cur[num_modes] = {}; // water vapor mmr
-      qwtr_cur[nait] = qv;
+      constexpr int nsize = 1;
+      // NOTE: this is changed in mer07_veh02_nuc_mosaic_1box() and appears to
+      //       never be used again
+      int isize_nuc = 1;
 
       // compute tendencies at this level
-      Real dndt_ait, dmdt_ait, dso4dt_ait, dnh4dt_ait, dnclusterdt;
-      compute_tendencies_(dt, temp, pmid, aircon, zmid, pblh, relhum,
-                          uptkrate_so4, del_h2so4_gasprod, del_h2so4_aeruptk,
-                          qgas_cur, qgas_avg, qnum_cur, qaer_cur, qwtr_cur,
-                          dndt_ait, dmdt_ait, dso4dt_ait, dnh4dt_ait,
-                          dnclusterdt);
+      Real qnuma_del, qso4a_del, qnh4a_del, qh2so4_del, qnh3_del, dnclusterdt;
+      compute_tendencies_(dt, temp, pmid, zmid, pblh, relhum, uptkrate_so4,
+                          nsize, dp_lo_m, dp_hi_m, qgas_cur, qgas_avg,
+                          isize_nuc, qnuma_del, qso4a_del, qnh4a_del,
+                          qh2so4_del, qnh3_del, dnclusterdt);
 
       // Store the computed tendencies.
-      tends.n_mode_i[nait](k) = dndt_ait;
-      tends.q_aero_i[nait][iaer_so4](k) = dso4dt_ait;
-      tends.q_gas[igas_h2so4](k) = -dso4dt_ait;
+      tends.n_mode_i[nait](k) = qnuma_del;
+      tends.q_aero_i[nait][iaer_so4](k) = qso4a_del;
+      tends.q_gas[igas_h2so4](k) = -qso4a_del;
     });
   }
 
-  // FIXME: this calls the box model version of mer07_veh02_wang08_nuc_1box()
   // This function computes relevant tendencies at a single vertical level. It
   // was ported directly from the compute_tendencies subroutine in the
   // modal_aero_newnuc module from the MAM4 box model.
   KOKKOS_INLINE_FUNCTION
-  void compute_tendencies_(
-      Real deltat, Real temp, Real pmid, Real aircon, Real zmid, Real pblh,
-      Real relhum, Real uptkrate_h2so4, Real del_h2so4_gasprod,
-      Real del_h2so4_aeruptk, const Real qgas_cur[num_gases],
-      const Real qgas_avg[num_gases], const Real qnum_cur[num_modes],
-      const Real qaer_cur[num_modes][max_num_mode_species],
-      const Real qwtr_cur[num_modes], Real &dndt_ait, Real &dmdt_ait,
-      Real &dso4dt_ait, Real &dnh4dt_ait, Real &dnclusterdt) const {
-    static constexpr Real avogadro =
-        6.02214e23; // BAD_CONSTANT (Avogadro's number ~ molecules/mol)
-    static constexpr Real boltzmann =
-        1.38065e-23; // BAD_CONSTANT (Boltzmann's constant ~ J/K/molecule)
-    static constexpr Real rgas = boltzmann * avogadro; // [J/K/mol] BAD_CONSTANT
-    static constexpr Real ln_nuc_rate_cutoff = -13.82;
+  void compute_tendencies_(Real deltat, Real temp_in, Real press_in, Real zm_in,
+                           Real pblh_in, Real relhum, Real uptkrate_h2so4,
+                           const int nsize, const Real dp_lo_mode,
+                           const Real dp_hi_mode,
+                           const Real qgas_cur[num_gases],
+                           const Real qgas_avg[num_gases], int &isize_nuc,
+                           Real &qnuma_del, Real &qso4a_del, Real &qnh4a_del,
+                           Real &qh2so4_del, Real &qnh3_del,
+                           Real &dnclusterdt) const {
+    // BAD_CONSTANT (Avogadro's number ~ molecules/mol)
+    static constexpr Real avogadro = 6.02214e23;
+    // BAD_CONSTANT (Boltzmann's constant ~ J/K/molecule)
+    static constexpr Real boltzmann = 1.38065e-23;
+    // BAD_CONSTANT
+    // [J/K/mol]
+    static constexpr Real rgas = boltzmann * avogadro;
 
-    // min h2so4 vapor for nuc calcs = 4.0e-16 mol/mol-air ~= 1.0e4
-    // molecules/cm3
-    static constexpr Real qh2so4_cutoff = 4.0e-16;
+    // This is assumed for our purposes, but throw an error message if
+    // incorrect, for safety's sake
+    EKAT_ASSERT_MSG(
+        sizeof(dp_lo_mode) / sizeof(Real) == nsize &&
+            sizeof(dp_hi_mode) / sizeof(Real) == nsize && nsize == 1,
+        "ERROR: mam4xx::Nucleation is only configured for "
+            << "extent(dp_lo_mode) == extent(dp_lo_mode) == nsize == 1");
 
-    int newnuc_method_actual, pbl_nuc_wang2008_actual;
-
-    constexpr int nsize = 1;
-    Real dplom_mode[nsize], dphim_mode[nsize];
-    int isize_group;
-
-    Real cair; // air density
-    Real so4vol, nh3ppt;
-
-    Real radius_cluster = 0.0; // radius of newly formed cluster, in nm
-    Real rateloge = 0.0;       // ln(J)
-    Real cnum_h2so4 = 0.0;
-    Real cnum_nh3 = 0.0;
-
-    Real mass1p;
-    Real mass1p_aithi, mass1p_aitlo;
-    Real qh2so4_cur, qh2so4_avg, qh2so4_del;
-    Real qnh3_cur, qnh3_del, qnh4a_del;
-    Real qnuma_del;
-    Real qso4a_del;
-    Real relhumnn;
-    Real tmpa, tmpb;
-    Real tmp_frso4, tmp_uptkrate;
-    Real dens_nh4so4a;
+    Real rh_in;
 
     // process-specific configuration data
-    int newnuc_method_user_choice = config_.newnuc_method_user_choice;
-    int pbl_nuc_wang2008_user_choice = config_.pbl_nuc_wang2008_user_choice;
-    Real adjust_factor_bin_tern_ratenucl =
-        config_.adjust_factor_bin_tern_ratenucl;
-    Real adjust_factor_pbl_ratenucl = config_.adjust_factor_pbl_ratenucl;
-    Real accom_coef_h2so4 = config_.accom_coef_h2so4;
-    Real newnuc_adjust_factor_dnaitdt = config_.newnuc_adjust_factor_dnaitdt;
-    Real dens_so4a_host = config_.dens_so4a_host;
+    int newnuc_method_flagaa = config_.newnuc_method_flagaa;
     Real mw_so4a_host = config_.mw_so4a_host;
     Real mw_nh4a_host = config_.mw_nh4a_host;
 
-    dndt_ait = 0;
-    dmdt_ait = 0;
-    dnh4dt_ait = 0;
-    dso4dt_ait = 0;
-    dnclusterdt = 0;
+    Real dens_nh4so4a = 0.0;
+    qnuma_del = 0.0;
+    qso4a_del = 0.0;
+    qnh4a_del = 0.0;
+    qh2so4_del = 0.0;
+    qnh3_del = 0.0;
+    dnclusterdt = 0.0;
 
     //==================================
     // limit RH to between 0.1% and 99%
     //==================================
-    relhumnn = max(0.01, min(0.99, relhum));
+    rh_in = max(0.01, min(0.99, relhum));
 
     //=========================================================================
     // prepare h2so4 mixing ratio and condensation rate that will be passed to
     // the nucleation parameterization
     //=========================================================================
-    qh2so4_cur = qgas_cur[igas_h2so4];
+    Real qh2so4_cur = qgas_cur[igas_h2so4];
 
     // E3SM: use qh2so4_avg and first-order loss rate calculated in
     // mam_gasaerexch_1subarea
-    qh2so4_avg = qgas_avg[igas_h2so4];
-    tmp_uptkrate = uptkrate_h2so4;
+    Real qh2so4_avg = qgas_avg[igas_h2so4];
 
-    if (qh2so4_avg <= qh2so4_cutoff) {
-      // qh2so4_avg very low. assume no nucleation will happen
-      // (diagnose so4 and nn4 tendencies and exit)
-      tmp_frso4 = 1.0; // (uninitialized in original MAM code!)
-      dso4dt_ait = dmdt_ait * tmp_frso4 / mw_so4a_host;
-      dnh4dt_ait = dmdt_ait * (1.0 - tmp_frso4) / mw_nh4a_host;
-      return;
-    }
-
+    Real qnh3_cur;
     if (igas_nh3 > 0) {
       qnh3_cur = max(0.0, qgas_cur[igas_nh3]);
     } else {
       qnh3_cur = 0.0;
     }
 
-    // unit conversion for gas concentrations:
-    // calculate h2so4 in molecules/cm3 and nh3 in ppt
-    cair = pmid / (temp * rgas);
-    so4vol = qh2so4_avg * cair * avogadro * 1.0e-6;
-    nh3ppt = qnh3_cur * 1.0e12;
-
     //=======================================================================
     // call routine to get nucleation rate in terms of new cluster formation
     // rate (#/m3/s)
     //=======================================================================
-    if (newnuc_method_user_choice != 0) {
-      // Hui Wan's note from code refactoring in July 2021:
-      // Subroutine mer07_veh02_wang08_nuc_1box provides
-      //  - dnclusterdt (unit: #/m3/s): new cluster formation rate
-      //  - rateloge (unit: ln(#/cm3/s)): logarithm of new cluster formation
-      //  rate
-      //  - cnum_h2so4, cnum_nh3: number of of h2so4 or nh3 molecules per
-      //  cluster
-      //  - radius_cluster (unit: nm): radius of new cluster
-      // Output variables rateloge, cnum_h2so4, cnum_nh3, and radius_cluster
-      // are used below in the calculation of cluster "growth". I chose to keep
-      // these variable names the same as in the old subroutine
-      // mer07_veh02_nuc_mosaic_1box to facilitate comparison.
-      // FIXME: this is the box model version
-      nucleation::mer07_veh02_wang08_nuc_1box(
-          newnuc_method_user_choice, newnuc_method_actual,       // in, out
-          pbl_nuc_wang2008_user_choice, pbl_nuc_wang2008_actual, // in, out
-          ln_nuc_rate_cutoff,                                    // in
-          adjust_factor_bin_tern_ratenucl, adjust_factor_pbl_ratenucl,  // in
-          pi, so4vol, nh3ppt, temp, relhumnn, zmid, pblh,               // in
-          dnclusterdt, rateloge, cnum_h2so4, cnum_nh3, radius_cluster); // out
+    nucleation::mer07_veh02_nuc_mosaic_1box(
+        newnuc_method_flagaa, deltat, temp_in, rh_in, press_in, zm_in, pblh_in,
+        qh2so4_cur, qh2so4_avg, qnh3_cur, uptkrate_h2so4, mw_so4a_host, nsize,
+        dp_lo_mode, dp_hi_mode, rgas, avogadro, mw_nh4a_host, mw_so4a, pi,
+        isize_nuc, qnuma_del, qso4a_del, qnh4a_del, qh2so4_del, qnh3_del,
+        dens_nh4so4a, dnclusterdt);
+  }
 
-    } else {
-      rateloge = ln_nuc_rate_cutoff;
-      dnclusterdt = 0.;
-      newnuc_method_actual = 0;
-    }
+  // This function is the same as above, but contains some postprocessing that
+  // is found in modal_aero_amicphys.F90:1494, which corresponds to the way the
+  // unit tests in mam4_amicphys_1gridcell.cpp calls
+  // nucleation::compute_tendencies_()
+  KOKKOS_INLINE_FUNCTION
+  void unit_testing_compute_tendencies_(
+      Real deltat, Real temp_in, Real press_in, Real zm_in, Real pblh_in,
+      Real relhum, Real uptkrate_h2so4, const int nsize, const Real dp_lo_mode,
+      const Real dp_hi_mode, const Real qgas_cur[num_gases],
+      const Real qgas_avg[num_gases], const Real dens_so4a_host, int &isize_nuc,
+      Real &qnuma_del, Real &qso4a_del, Real &qnh4a_del, Real &qh2so4_del,
+      Real &qnh3_del, Real &dndt_ait, Real &dmdt_ait, Real &dso4dt_ait,
+      Real &dnh4dt_ait, Real &dnclusterdt) const {
 
-    //======================================================================
-    // "Grow" the newly formed clusters to size in the smallest bin/mode of
-    // the host model
-    //======================================================================
-    qnuma_del = 0.0;
-    qso4a_del = 0.0;
-    qnh4a_del = 0.0;
-    qh2so4_del = 0.0;
-    qnh3_del = 0.0;
+    Real mw_so4a_host = config_.mw_so4a_host;
+    Real mw_nh4a_host = config_.mw_nh4a_host;
 
-    // dry-diameter limits for "grown" new particles
-    dplom_mode[0] =
-        exp(0.67 * log(dgnumlo_aer[nait]) + 0.33 * log(dgnum_aer[nait]));
-    dphim_mode[0] = dgnumhi_aer[nait];
-
-    // mass1p_... = mass (kg) of so4 & nh4 in a single particle of diameter
-    // ... (assuming same dry density for so4 & nh4) mass1p_aitlo - dp =
-    // dplom_mode(1); mass1p_aithi - dp = dphim_mode(1);
-    tmpa = dens_so4a_host * pi / 6.0;
-    mass1p_aitlo = tmpa * cube(dplom_mode[0]);
-    mass1p_aithi = tmpa * cube(dphim_mode[0]);
-
-    //----------------------------------------------------------------
-    // Only do the cluster growth calculation when nucleation rate is
-    // appreciable
-    //----------------------------------------------------------------
-    if (rateloge > ln_nuc_rate_cutoff) {
-      nucleation::newnuc_cluster_growth(
-          dnclusterdt, cnum_h2so4, cnum_nh3, radius_cluster, dplom_mode,
-          dphim_mode, nsize, deltat, temp, relhumnn, cair, accom_coef_h2so4,
-          mw_so4a, mw_so4a_host, mw_nh4a, avogadro, pi, qnh3_cur, qh2so4_cur,
-          so4vol, tmp_uptkrate, isize_group, dens_nh4so4a, qh2so4_del, qnh3_del,
-          qso4a_del, qnh4a_del, qnuma_del);
-    } // nucleation rate is appreciable
+    compute_tendencies_(deltat, temp_in, press_in, zm_in, pblh_in, relhum,
+                        uptkrate_h2so4, nsize, dp_lo_mode, dp_hi_mode, qgas_cur,
+                        qgas_avg, isize_nuc, qnuma_del, qso4a_del, qnh4a_del,
+                        qh2so4_del, qnh3_del, dnclusterdt);
+    // NOTE: everything below was included in the box-model version of
+    //       compute_tendencies_(). in mam_refactor, all of this comes from
+    //       modal_aero_amicphys.F90:1494, and is performed following the
+    //       call to mer07_veh02_nuc_mosaic_1box()
 
     //=====================================
     // Deriving mass mixing ratio tendency
@@ -1365,7 +1332,8 @@ public:
     dndt_ait = qnuma_del / deltat;
 
     // fraction of mass nuc going to so4
-    tmpa = qso4a_del * mw_so4a_host;
+    Real tmpa = qso4a_del * mw_so4a_host;
+    Real tmpb, tmp_frso4;
     if (igas_nh3 > 0) {
       tmpb = tmpa + qnh4a_del * mw_nh4a_host;
       tmp_frso4 = max(tmpa, 1.0e-35) / max(tmpb, 1.0e-35);
@@ -1389,7 +1357,15 @@ public:
 
       // mirage2 code checked for complete h2so4 depletion here,
       // but this is now done in mer07_veh02_nuc_mosaic_1box
-      mass1p = dmdt_ait / dndt_ait;
+      Real mass1p = dmdt_ait / dndt_ait;
+
+      // mass1p_<z> = mass (kg) of so4 & nh4 in a single particle of diameter
+      //              (assuming same dry density for so4 & nh4)
+      //    mass1p_aitlo - dp = dplom_mode
+      //    mass1p_aithi - dp = dphim_mode
+      Real tmpa = dens_so4a_host * pi / 6.0;
+      Real mass1p_aitlo = tmpa * haero::cube(dp_lo_mode);
+      Real mass1p_aithi = tmpa * haero::cube(dp_hi_mode);
 
       // apply particle size constraints
       if (mass1p < mass1p_aitlo) {
@@ -1403,8 +1379,10 @@ public:
 
     // *** apply adjustment factor to avoid unrealistically high
     // aitken number concentrations in mid and upper troposphere
-    dndt_ait *= newnuc_adjust_factor_dnaitdt;
-    dmdt_ait *= newnuc_adjust_factor_dnaitdt;
+    // NOTE: commenting this because there's no reason for it
+    // constexpr Real newnuc_adjust_factor_dnaitdt = 1.0;
+    // dndt_ait *= newnuc_adjust_factor_dnaitdt;
+    // dmdt_ait *= newnuc_adjust_factor_dnaitdt;
 
     //=================================
     // Diagnose so4 and nh4 tendencies
@@ -1414,6 +1392,419 @@ public:
     dnh4dt_ait = dmdt_ait * (1.0 - tmp_frso4) / mw_nh4a_host;
   }
 };
+
+// /// @class Nucleation
+// /// This class implements MAM4's nucleation parameterization.
+// class Nucleation {
+// public:
+//   // nucleation-specific configuration
+//   struct Config {
+//     // "host" parameters
+//     Real dens_so4a_host, mw_nh4a_host, mw_so4a_host;
+
+//     // Nucleation parameters
+//     int newnuc_method_user_choice;
+//     int pbl_nuc_wang2008_user_choice;
+//     Real adjust_factor_bin_tern_ratenucl;
+//     Real adjust_factor_pbl_ratenucl;
+//     Real accom_coef_h2so4;
+//     Real newnuc_adjust_factor_dnaitdt;
+
+//     // default constructor -- sets default values for parameters
+//     KOKKOS_INLINE_FUNCTION
+//     Config()
+//         : dens_so4a_host(mam4_density_so4), mw_nh4a_host(mw_nh4a),
+//           // FIXME: newnuc_method_user_choice and
+//           pbl_nuc_wang2008_user_choice
+//           //        should likely be 11 or 12, to correspond to the values
+//           used
+//           //        in modal_aero_newnuc.F90 (mam_refactor)
+//           mw_so4a_host(mw_so4a), newnuc_method_user_choice(2),
+//           pbl_nuc_wang2008_user_choice(1),
+//           adjust_factor_bin_tern_ratenucl(1.0),
+//           adjust_factor_pbl_ratenucl(1.0), accom_coef_h2so4(1.0),
+//           newnuc_adjust_factor_dnaitdt(1.0) {}
+
+//     KOKKOS_INLINE_FUNCTION
+//     Config(const Config &) = default;
+//     KOKKOS_INLINE_FUNCTION
+//     ~Config() = default;
+//     KOKKOS_INLINE_FUNCTION
+//     Config &operator=(const Config &) = default;
+//   };
+
+// private:
+//   static constexpr int num_modes = AeroConfig::num_modes();
+//   static constexpr int num_gases = AeroConfig::num_gas_ids();
+//   static constexpr int max_num_mode_species =
+//   AeroConfig::num_aerosol_ids(); static const int nait =
+//   static_cast<int>(ModeIndex::Aitken); static const int igas_h2so4 =
+//   static_cast<int>(GasId::H2SO4);
+//   // Turn off NH3. Any negative number would turn it off, this is what is
+//   // used in the mam_refactor code.
+//   static const int igas_nh3 = -999888777; // static_cast<int>(GasId::NH3);
+
+//   static constexpr Real mw_so4a = 96.0;              // BAD_CONSTANT
+//   static constexpr Real mw_nh4a = 18.0;              // BAD_CONSTANT
+//   static constexpr Real pi = 3.14159265358979323846; // BAD_CONSTANT
+
+//   // Nucleation-specific configuration
+//   Config config_;
+
+//   // Mode parameters
+//   Real dgnum_aer[num_modes],  // mean geometric number diameter
+//       dgnumhi_aer[num_modes], // max geometric number diameter
+//       dgnumlo_aer[num_modes]; // min geometric number diameter
+
+// public:
+//   // name -- unique name of the process implemented by this class
+//   const char *name() const { return "MAM4 nucleation"; }
+
+//   // init -- initializes the implementation with MAM4's configuration and
+//   with
+//   // a process-specific configuration.
+//   KOKKOS_INLINE_FUNCTION
+//   void init(const AeroConfig &aero_config,
+//             const Config &nucl_config = Config()) {
+//     // Set nucleation-specific config parameters.
+//     config_ = nucl_config;
+
+//     // Set mode parameters.
+//     for (int m = 0; m < num_modes; ++m) {
+//       // FIXME: There is no mean geometric number diameter in a mode.
+//       // FIXME: Assume "nominal" diameter for now?
+//       // FIXME: There is a comment in modal_aero_newnuc.F90 that Dick
+//       Easter
+//       // FIXME: thinks that dgnum_aer isn't used in MAM4, but it is
+//       actually
+//       // FIXME: used in this nucleation parameterization. So we will have
+//       to
+//       // FIXME: figure this out.
+//       dgnum_aer[m] = modes(m).nom_diameter;
+//       dgnumlo_aer[m] = modes(m).min_diameter;
+//       dgnumhi_aer[m] = modes(m).max_diameter;
+//     }
+//   }
+
+//   // validate -- validates the given atmospheric state and prognostics
+//   against
+//   // assumptions made by this implementation, returning true if the states
+//   are
+//   // valid, false if not
+//   KOKKOS_INLINE_FUNCTION
+//   bool validate(const AeroConfig &config, const ThreadTeam &team,
+//                 const Atmosphere &atm, const Surface &sfc,
+//                 const Prognostics &progs) const {
+//     return atm.quantities_nonnegative(team) &&
+//            progs.quantities_nonnegative(team);
+//   }
+
+//   // FIXME: the compute_tendencies_() that this calls corresponds to the
+//   box
+//   //        model version of mer07_veh02_wang08_nuc_1box()
+//   // compute_tendencies -- computes tendencies and updates diagnostics
+//   // NOTE: that both diags and tends are const below--this means their
+//   views
+//   // NOTE: are fixed, but the data in those views is allowed to vary.
+//   KOKKOS_INLINE_FUNCTION
+//   void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
+//                           Real t, Real dt, const Atmosphere &atm,
+//                           const Surface &sfc, const Prognostics &progs,
+//                           const Diagnostics &diags,
+//                           const Tendencies &tends) const {
+//     int iaer_so4 = aerosol_index_for_mode(ModeIndex::Aitken, AeroId::SO4);
+//     static constexpr Real boltzmann =
+//         1.38065e-23; // BAD_CONSTANT (Boltzmann's constant ~ J/K/molecule)
+//     static constexpr Real avogadro =
+//         6.02214e26; // BAD_CONSTANT (Avogadro's number ~ molecules/kmole)
+//     static constexpr Real r_universal = boltzmann * avogadro; //
+//     BAD_CONSTANT const int nk = atm.num_levels();
+//     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
+//       // extract atmospheric state
+//       Real temp = atm.temperature(k);
+//       Real pmid = atm.pressure(k);
+//       Real aircon = pmid / (r_universal * temp);
+//       Real zmid = atm.height(k);
+//       Real pblh = atm.planetary_boundary_layer_height;
+//       Real qv = atm.vapor_mixing_ratio(k);
+//       Real relhum = conversions::relative_humidity_from_vapor_mixing_ratio(
+//           qv, temp, pmid);
+//       Real uptkrate_so4 = 0;
+//       Real del_h2so4_gasprod = 0;
+//       Real del_h2so4_aeruptk = 0;
+
+//       // extract relevant gas mixing ratios (H2SO4 only for now)
+//       Real qgas_cur[num_gases], qgas_avg[num_gases];
+//       qgas_cur[igas_h2so4] = progs.q_gas[igas_h2so4](k);
+//       qgas_avg[igas_h2so4] = progs.q_gas[igas_h2so4](k); // is this good
+//       enough?
+
+//       // extract relevant aerosol mixing ratios (SO4 in aitken mode only
+//       for
+//       // now)
+//       Real qnum_cur[num_modes], qaer_cur[num_modes][max_num_mode_species];
+//       qnum_cur[nait] = progs.n_mode_i[nait](k);
+//       qaer_cur[nait][iaer_so4] = progs.q_aero_i[nait][iaer_so4](k);
+
+//       Real qwtr_cur[num_modes] = {}; // water vapor mmr
+//       qwtr_cur[nait] = qv;
+
+//       // compute tendencies at this level
+//       Real dndt_ait, dmdt_ait, dso4dt_ait, dnh4dt_ait, dnclusterdt;
+//       compute_tendencies_(dt, temp, pmid, aircon, zmid, pblh, relhum,
+//                           uptkrate_so4, del_h2so4_gasprod,
+//                           del_h2so4_aeruptk, qgas_cur, qgas_avg, qnum_cur,
+//                           qaer_cur, qwtr_cur, dndt_ait, dmdt_ait,
+//                           dso4dt_ait, dnh4dt_ait, dnclusterdt);
+
+//       // Store the computed tendencies.
+//       tends.n_mode_i[nait](k) = dndt_ait;
+//       tends.q_aero_i[nait][iaer_so4](k) = dso4dt_ait;
+//       tends.q_gas[igas_h2so4](k) = -dso4dt_ait;
+//     });
+//   }
+
+//   // FIXME: this calls the box model version of
+//   mer07_veh02_wang08_nuc_1box()
+//   // This function computes relevant tendencies at a single vertical level.
+//   It
+//   // was ported directly from the compute_tendencies subroutine in the
+//   // modal_aero_newnuc module from the MAM4 box model.
+//   KOKKOS_INLINE_FUNCTION
+//   void compute_tendencies_(
+//       Real deltat, Real temp, Real pmid, Real aircon, Real zmid, Real pblh,
+//       Real relhum, Real uptkrate_h2so4, Real del_h2so4_gasprod,
+//       Real del_h2so4_aeruptk, const Real qgas_cur[num_gases],
+//       const Real qgas_avg[num_gases], const Real qnum_cur[num_modes],
+//       const Real qaer_cur[num_modes][max_num_mode_species],
+//       const Real qwtr_cur[num_modes], Real &dndt_ait, Real &dmdt_ait,
+//       Real &dso4dt_ait, Real &dnh4dt_ait, Real &dnclusterdt) const {
+//     static constexpr Real avogadro =
+//         6.02214e23; // BAD_CONSTANT (Avogadro's number ~ molecules/mol)
+//     static constexpr Real boltzmann =
+//         1.38065e-23; // BAD_CONSTANT (Boltzmann's constant ~ J/K/molecule)
+//     static constexpr Real rgas = boltzmann * avogadro; // [J/K/mol]
+//     BAD_CONSTANT static constexpr Real ln_nuc_rate_cutoff = -13.82;
+
+//     // min h2so4 vapor for nuc calcs = 4.0e-16 mol/mol-air ~= 1.0e4
+//     // molecules/cm3
+//     static constexpr Real qh2so4_cutoff = 4.0e-16;
+
+//     int newnuc_method_actual, pbl_nuc_wang2008_actual;
+
+//     constexpr int nsize = 1;
+//     Real dp_lo_mode[nsize], dp_hi_mode[nsize];
+//     int isize_group;
+
+//     Real cair; // air density
+//     Real so4vol, nh3ppt;
+
+//     Real radius_cluster = 0.0; // radius of newly formed cluster, in nm
+//     Real rateloge = 0.0;       // ln(J)
+//     Real cnum_h2so4 = 0.0;
+//     Real cnum_nh3 = 0.0;
+
+//     Real mass1p;
+//     Real mass1p_aithi, mass1p_aitlo;
+//     Real qh2so4_cur, qh2so4_avg, qh2so4_del;
+//     Real qnh3_cur, qnh3_del, qnh4a_del;
+//     Real qnuma_del;
+//     Real qso4a_del;
+//     Real relhumnn;
+//     Real tmpa, tmpb;
+//     Real tmp_frso4, tmp_uptkrate;
+//     Real dens_nh4so4a;
+
+//     // process-specific configuration data
+//     int newnuc_method_user_choice = config_.newnuc_method_user_choice;
+//     int pbl_nuc_wang2008_user_choice =
+//     config_.pbl_nuc_wang2008_user_choice; Real
+//     adjust_factor_bin_tern_ratenucl =
+//         config_.adjust_factor_bin_tern_ratenucl;
+//     Real adjust_factor_pbl_ratenucl = config_.adjust_factor_pbl_ratenucl;
+//     Real accom_coef_h2so4 = config_.accom_coef_h2so4;
+//     Real newnuc_adjust_factor_dnaitdt =
+//     config_.newnuc_adjust_factor_dnaitdt; Real dens_so4a_host =
+//     config_.dens_so4a_host; Real mw_so4a_host = config_.mw_so4a_host; Real
+//     mw_nh4a_host = config_.mw_nh4a_host;
+
+//     dndt_ait = 0;
+//     dmdt_ait = 0;
+//     dnh4dt_ait = 0;
+//     dso4dt_ait = 0;
+//     dnclusterdt = 0;
+
+//     //==================================
+//     // limit RH to between 0.1% and 99%
+//     //==================================
+//     relhumnn = max(0.01, min(0.99, relhum));
+
+//     //=========================================================================
+//     // prepare h2so4 mixing ratio and condensation rate that will be passed
+//     to
+//     // the nucleation parameterization
+//     //=========================================================================
+//     qh2so4_cur = qgas_cur[igas_h2so4];
+
+//     // E3SM: use qh2so4_avg and first-order loss rate calculated in
+//     // mam_gasaerexch_1subarea
+//     qh2so4_avg = qgas_avg[igas_h2so4];
+//     tmp_uptkrate = uptkrate_h2so4;
+
+//     if (qh2so4_avg <= qh2so4_cutoff) {
+//       // qh2so4_avg very low. assume no nucleation will happen
+//       // (diagnose so4 and nn4 tendencies and exit)
+//       tmp_frso4 = 1.0; // (uninitialized in original MAM code!)
+//       dso4dt_ait = dmdt_ait * tmp_frso4 / mw_so4a_host;
+//       dnh4dt_ait = dmdt_ait * (1.0 - tmp_frso4) / mw_nh4a_host;
+//       return;
+//     }
+
+//     if (igas_nh3 > 0) {
+//       qnh3_cur = max(0.0, qgas_cur[igas_nh3]);
+//     } else {
+//       qnh3_cur = 0.0;
+//     }
+
+//     // unit conversion for gas concentrations:
+//     // calculate h2so4 in molecules/cm3 and nh3 in ppt
+//     cair = pmid / (temp * rgas);
+//     so4vol = qh2so4_avg * cair * avogadro * 1.0e-6;
+//     nh3ppt = qnh3_cur * 1.0e12;
+
+//     //=======================================================================
+//     // call routine to get nucleation rate in terms of new cluster
+//     formation
+//     // rate (#/m3/s)
+//     //=======================================================================
+//     if (newnuc_method_user_choice != 0) {
+//       // Hui Wan's note from code refactoring in July 2021:
+//       // Subroutine mer07_veh02_wang08_nuc_1box provides
+//       //  - dnclusterdt (unit: #/m3/s): new cluster formation rate
+//       //  - rateloge (unit: ln(#/cm3/s)): logarithm of new cluster
+//       formation
+//       //  rate
+//       //  - cnum_h2so4, cnum_nh3: number of of h2so4 or nh3 molecules per
+//       //  cluster
+//       //  - radius_cluster (unit: nm): radius of new cluster
+//       // Output variables rateloge, cnum_h2so4, cnum_nh3, and
+//       radius_cluster
+//       // are used below in the calculation of cluster "growth". I chose to
+//       keep
+//       // these variable names the same as in the old subroutine
+//       // mer07_veh02_nuc_mosaic_1box to facilitate comparison.
+//       // FIXME: this is the box model version
+//       nucleation::mer07_veh02_wang08_nuc_1box(
+//           newnuc_method_user_choice, newnuc_method_actual,       // in, out
+//           pbl_nuc_wang2008_user_choice, pbl_nuc_wang2008_actual, // in, out
+//           ln_nuc_rate_cutoff,                                    // in
+//           adjust_factor_bin_tern_ratenucl, adjust_factor_pbl_ratenucl,  //
+//           in pi, so4vol, nh3ppt, temp, relhumnn, zmid, pblh, // in
+//           dnclusterdt, rateloge, cnum_h2so4, cnum_nh3, radius_cluster); //
+//           out
+
+//     } else {
+//       rateloge = ln_nuc_rate_cutoff;
+//       dnclusterdt = 0.;
+//       newnuc_method_actual = 0;
+//     }
+
+//     //======================================================================
+//     // "Grow" the newly formed clusters to size in the smallest bin/mode of
+//     // the host model
+//     //======================================================================
+//     qnuma_del = 0.0;
+//     qso4a_del = 0.0;
+//     qnh4a_del = 0.0;
+//     qh2so4_del = 0.0;
+//     qnh3_del = 0.0;
+
+//     // dry-diameter limits for "grown" new particles
+//     dp_lo_mode[0] =
+//         exp(0.67 * log(dgnumlo_aer[nait]) + 0.33 * log(dgnum_aer[nait]));
+//     dp_hi_mode[0] = dgnumhi_aer[nait];
+
+//     // mass1p_... = mass (kg) of so4 & nh4 in a single particle of diameter
+//     // ... (assuming same dry density for so4 & nh4) mass1p_aitlo - dp =
+//     // dp_lo_mode(1); mass1p_aithi - dp = dp_hi_mode(1);
+//     tmpa = dens_so4a_host * pi / 6.0;
+//     mass1p_aitlo = tmpa * cube(dp_lo_mode[0]);
+//     mass1p_aithi = tmpa * cube(dp_hi_mode[0]);
+
+//     //----------------------------------------------------------------
+//     // Only do the cluster growth calculation when nucleation rate is
+//     // appreciable
+//     //----------------------------------------------------------------
+//     if (rateloge > ln_nuc_rate_cutoff) {
+//       nucleation::newnuc_cluster_growth(
+//           dnclusterdt, cnum_h2so4, cnum_nh3, radius_cluster, dp_lo_mode,
+//           dp_hi_mode, nsize, deltat, temp, relhumnn, cair,
+//           accom_coef_h2so4, mw_so4a, mw_so4a_host, mw_nh4a, avogadro, pi,
+//           qnh3_cur, qh2so4_cur, so4vol, tmp_uptkrate, isize_group,
+//           dens_nh4so4a, qh2so4_del, qnh3_del, qso4a_del, qnh4a_del,
+//           qnuma_del);
+//     } // nucleation rate is appreciable
+
+// //=====================================
+// // Deriving mass mixing ratio tendency
+// //=====================================
+
+// // convert qnuma_del from (#/mol-air) to (#/kmol-air)
+// qnuma_del *= 1.0e3;
+
+// // number nuc rate (#/kmol-air/s) from number nuc amt
+// dndt_ait = qnuma_del / deltat;
+
+// // fraction of mass nuc going to so4
+// tmpa = qso4a_del * mw_so4a_host;
+// if (igas_nh3 > 0) {
+//   tmpb = tmpa + qnh4a_del * mw_nh4a_host;
+//   tmp_frso4 = max(tmpa, 1.0e-35) / max(tmpb, 1.0e-35);
+// } else {
+//   tmpb = tmpa;
+//   tmp_frso4 = 1.0;
+// }
+
+// // mass nuc rate (kg/kmol-air/s) from mass nuc amts
+// dmdt_ait = max(0.0, (tmpb / deltat));
+
+// //=====================================================
+// // Various adjustments to keep the solution reasonable
+// //=====================================================
+
+// // ignore newnuc if number rate < 100 #/kmol-air/s ~= 0.3 #/mg-air/d
+// if (dndt_ait < 1.0e2) {
+//   dndt_ait = 0.0;
+//   dmdt_ait = 0.0;
+// } else {
+
+//   // mirage2 code checked for complete h2so4 depletion here,
+//   // but this is now done in mer07_veh02_nuc_mosaic_1box
+//   mass1p = dmdt_ait / dndt_ait;
+
+//   // apply particle size constraints
+//   if (mass1p < mass1p_aitlo) {
+//     // reduce dndt to increase new particle size
+//     dndt_ait = dmdt_ait / mass1p_aitlo;
+//   } else if (mass1p > mass1p_aithi) {
+//     // reduce dmdt to decrease new particle size
+//     dmdt_ait = dndt_ait * mass1p_aithi;
+//   }
+// }
+
+// // *** apply adjustment factor to avoid unrealistically high
+// // aitken number concentrations in mid and upper troposphere
+// dndt_ait *= newnuc_adjust_factor_dnaitdt;
+// dmdt_ait *= newnuc_adjust_factor_dnaitdt;
+
+// //=================================
+// // Diagnose so4 and nh4 tendencies
+// //=================================
+// // dso4dt_ait, dnh4dt_ait are (kmol/kmol-air/s)
+// dso4dt_ait = dmdt_ait * tmp_frso4 / mw_so4a_host;
+// dnh4dt_ait = dmdt_ait * (1.0 - tmp_frso4) / mw_nh4a_host;
+//   }
+// };
 
 } // namespace mam4
 
