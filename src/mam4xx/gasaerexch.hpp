@@ -992,22 +992,21 @@ void GasAerExch::compute_tendencies(const AeroConfig &config,
 KOKKOS_INLINE_FUNCTION
 void mam_gasaerexch_1subarea(
     const int k,
-    const int jtsubstep,                // in
-    const Real dtsubstep,               // in
-    const Real temp,                    // in
-    const Real pmid,                    // in
-    const Real aircon,                  // in
-    const int n_mode,                   // in
-    Real qgas_cur[gasaerexch::max_gas], // in/out
-    Real qgas_avg[gasaerexch::max_gas], // in/out
-    const Real qgas_netprod_otrproc[gasaerexch::max_gas],
-    Real qaer_cur[gasaerexch::max_aer][mam4::gasaerexch::max_mode],
-    Real qnum_cur[gasaerexch::max_mode], Real qwtr_cur[gasaerexch::max_mode],
-    const Real dgn_a[gasaerexch::max_mode],
-    const Real dgn_awet[gasaerexch::max_mode],
-    const Real wetdens[gasaerexch::max_mode],
-    Real uptkaer[gasaerexch::max_gas][mam4::gasaerexch::max_mode],
-    Real &uptkrate_h2so4) {
+    const int jtsubstep,                                            // in
+    const Real dtsubstep,                                           // in
+    const Real temp,                                                // in
+    const Real pmid,                                                // in
+    const Real aircon,                                              // in
+    const int n_mode,                                               // in
+    Real qgas_cur[gasaerexch::max_gas],                             // inout
+    Real qgas_avg[gasaerexch::max_gas],                             // inout
+    const Real qgas_netprod_otrproc[gasaerexch::max_gas],           // in
+    Real qaer_cur[gasaerexch::max_aer][mam4::gasaerexch::max_mode], // inout
+    Real qnum_cur[gasaerexch::max_mode],                            // inout
+    Real qwtr_cur[gasaerexch::max_mode],                            // inout
+    const Real dgn_awet[gasaerexch::max_mode],                      // in
+    Real uptkaer[gasaerexch::max_gas][mam4::gasaerexch::max_mode],  // inout
+    Real &uptkrate_h2so4) {                                         // inout
 
   using mam4::gasaerexch::max_aer;
   using mam4::gasaerexch::max_gas;
@@ -1253,7 +1252,6 @@ void mam_gasaerexch_1subarea(
     }
   }
 }
-
 } // namespace mam4
 
 #endif
