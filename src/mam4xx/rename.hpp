@@ -212,13 +212,14 @@ void compute_xfer_fractions(const Real b4_growth_dryvol,
 
 KOKKOS_INLINE_FUNCTION
 void do_num_and_mass_transfer(
-    const int src_mode, const int dest_mode, const Real xfer_vol_frac,
+    const int kk, const int src_mode, const int dest_mode,
+    const Real xfer_vol_frac,
     const Real xfer_num_frac, // input
     // FIXME: will qmol be updated this way?--verify with unit test
     // aerosol molar mixing ratio [kmol/kmol-dry-air]
     Real qmol[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
     // aerosol number mixing ratios [#/kmol-air]
-    Real qnum[AeroConfig::num_modes()]) {
+    Real qnum[AeroConfig::num_modes()], int inn) {
   // compute changes to number and species masses
   const Real num_trans = qnum[src_mode] * xfer_num_frac;
   qnum[src_mode] -= num_trans;
@@ -226,8 +227,18 @@ void do_num_and_mass_transfer(
 
   for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
     const Real vol_trans = qmol[src_mode][ispec] * xfer_vol_frac;
+    if (kk == 48 && inn == 1) {
+      printf("do_inter_mode_transfer_end2:%0.15E,%0.15E%0.15E,%0.15E,%i,%i\n",
+             vol_trans, qmol[src_mode][ispec], qmol[dest_mode][ispec],
+             xfer_vol_frac, ispec, src_mode);
+    }
     qmol[src_mode][ispec] -= vol_trans;
     qmol[dest_mode][ispec] += vol_trans;
+    if (kk == 48 && inn == 1) {
+      printf("do_inter_mode_transfer_end3:%0.15E,%0.15E,%0.15E,%0.15E,%i,%i\n",
+             vol_trans, qmol[src_mode][ispec], qmol[dest_mode][ispec],
+             xfer_vol_frac, ispec, src_mode);
+    }
   }
 } // end do_num_and_mass_transfer
 
@@ -371,14 +382,6 @@ void do_inter_mode_transfer(
                           after_growth_tail_fr_vol // out
     );
 
-    if (kk == 48) {
-      printf("bef_aft_num:%0.15E,%0.15E\n", b4_growth_tail_fr_qnum,
-             after_growth_tail_fr_num);
-      printf("bef_aft_dia_num:%0.15E,%0.15E,%0.15E,%0.15E\n",
-             b4_growth_diameter, aft_growth_diameter, ln_dia_cutoff[src_mode],
-             fmode_dist_tail_fac[src_mode]);
-    }
-
     // compute transfer fraction (volume and mass) - if less than zero,
     // cycle loop
     bool is_xfer_frac_zero = false;
@@ -395,18 +398,38 @@ void do_inter_mode_transfer(
                            xfer_num_frac // out
     );
 
+    if (kk == 48) {
+      printf("bef_aft_num:%0.15E,%0.15E\n", b4_growth_tail_fr_qnum,
+             after_growth_tail_fr_num);
+      printf("bef_aft_dia_num:%0.15E,%0.15E,%0.15E,%0.15E\n",
+             b4_growth_diameter, aft_growth_diameter, ln_dia_cutoff[src_mode],
+             fmode_dist_tail_fac[src_mode]);
+    }
+
+    if (kk == 48) {
+      printf("bef_aft_vol:%0.15E,%0.15E,%0.15E,%0.15E,%0.15E\n",
+             b4_growth_tail_fr_vol, after_growth_tail_fr_vol,
+             ln_diameter_tail_fac[src_mode], b4_growth_dryvol,
+             after_growth_dryvol);
+    }
+
+    if (kk == 48) {
+      printf("compute_xfer_fractions:%0.15E,%0.15E\n", xfer_vol_frac,
+             xfer_num_frac);
+    }
+
     if (is_xfer_frac_zero) {
       continue;
     }
 
     // do the transfer for the interstitial species
-    do_num_and_mass_transfer(src_mode, dest_mode, xfer_vol_frac,
+    do_num_and_mass_transfer(kk, src_mode, dest_mode, xfer_vol_frac,
                              xfer_num_frac, // input
-                             qmol_i_cur, qnum_i_cur);
+                             qmol_i_cur, qnum_i_cur, 1);
     if (is_cloudy) {
-      do_num_and_mass_transfer(src_mode, dest_mode, xfer_vol_frac,
+      do_num_and_mass_transfer(kk, src_mode, dest_mode, xfer_vol_frac,
                                xfer_num_frac, // input
-                               qmol_c_cur, qnum_c_cur);
+                               qmol_c_cur, qnum_c_cur, 2);
     }
   } // end for(imode)
 } // end do_inter_mode_transfer()
