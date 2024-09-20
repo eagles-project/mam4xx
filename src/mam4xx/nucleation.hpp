@@ -1240,11 +1240,11 @@ public:
 
     // This is assumed for our purposes, but throw an error message if
     // incorrect, for safety's sake
-    EKAT_ASSERT_MSG(
+    EKAT_KERNEL_ASSERT_MSG(
         sizeof(dp_lo_mode) / sizeof(Real) == nsize &&
             sizeof(dp_hi_mode) / sizeof(Real) == nsize && nsize == 1,
         "ERROR: mam4xx::Nucleation is only configured for "
-            << "extent(dp_lo_mode) == extent(dp_lo_mode) == nsize == 1");
+        "extent(dp_lo_mode) == extent(dp_lo_mode) == nsize == 1\n");
 
     Real rh_in;
 
