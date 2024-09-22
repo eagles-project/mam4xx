@@ -387,6 +387,13 @@ void mam_amicphys_1subarea_clear(
           qaer_sv1[j][i] = qaer_cur[j][i];
           qaer_cur_tmp[i][j] = qaer_cur[j][i];
         }
+      int nsize = 1;
+      int isize_nuc = 1;
+      Real qnuma_del;
+      Real qso4a_del;
+      Real qnh4a_del;
+      Real qh2so4_del;
+      Real qnh3_del;
       Real dnclusterdt_substep = 0;
       Real dndt_ait = 0;
       Real dmdt_ait = 0;
@@ -394,22 +401,33 @@ void mam_amicphys_1subarea_clear(
       Real dnh4dt_ait = 0;
       Nucleation nucleation;
       Nucleation::Config config;
-      config.dens_so4a_host = 1770;
+      Real dens_so4a_host = 1770;
       config.mw_nh4a_host = 115;
       config.mw_so4a_host = 115;
-      config.accom_coef_h2so4 = 0.65;
+      // config.accom_coef_h2so4 = 0.65;
       AeroConfig aero_config;
       nucleation.init(aero_config, config);
-      nucleation.compute_tendencies_(
-          dtsubstep, temp, pmid, aircon, zmid, pblh, relhum, uptkrate_h2so4,
-          del_h2so4_gasprod, del_h2so4_aeruptk, qgas_cur, qgas_avg, qnum_cur,
-          qaer_cur_tmp, qwtr_cur, dndt_ait, dmdt_ait, dso4dt_ait, dnh4dt_ait,
-          dnclusterdt_substep);
+      Real dplom_mode = nucleation.get_dp_lo_mode();
+      Real dphim_mode = nucleation.get_dp_hi_mode();
+      // old call to box-model version
+      // nucleation.compute_tendencies_(
+      //     dtsubstep, temp, pmid, aircon, zmid, pblh, relhum, uptkrate_h2so4,
+      //     del_h2so4_gasprod, del_h2so4_aeruptk, qgas_cur, qgas_avg, qnum_cur,
+      //     qaer_cur_tmp, qwtr_cur, dndt_ait, dmdt_ait, dso4dt_ait, dnh4dt_ait,
+      //     dnclusterdt_substep);
+      nucleation.unit_testing_compute_tendencies_(
+          dtsubstep, temp, pmid, zmid, pblh, relhum, uptkrate_h2so4, nsize,
+          dplom_mode, dphim_mode, qgas_cur, qgas_avg, dens_so4a_host, isize_nuc,
+          qnuma_del, qh2so4_del, qnh4a_del, qso4a_del, qnh3_del, dndt_ait,
+          dmdt_ait, dso4dt_ait, dnh4dt_ait, dnclusterdt_substep);
       for (int j = 0; j < num_aerosol_ids; ++j)
         for (int i = 0; i < num_modes; ++i)
           qaer_cur[j][i] = qaer_cur_tmp[i][j];
 
-      //! Apply the tendencies to the prognostics.
+      std::cout << "qso4a_del = " << qso4a_del << "\n";
+      std::cout << "qh2so4_del = " << qh2so4_del << "\n";
+
+      // Apply the tendencies to the prognostics.
       const int nait = static_cast<int>(ModeIndex::Aitken);
       qnum_cur[nait] += dndt_ait * dtsubstep;
 
@@ -1954,12 +1972,16 @@ TEST_CASE("clear", "test_mam4_amicphys") {
   for (int i = 0; i < AeroConfig::num_gas_ids(); ++i) {
     const double epsilon = 0.0001;
     const double scale = std::abs(check_qgas4[i]);
-    if (!(qgas4[i] == Approx(check_qgas4[i]).scale(scale).epsilon(epsilon)))
+    if (!(qgas4[i] == Approx(check_qgas4[i]).scale(scale).epsilon(epsilon))) {
       std::cout << __FILE__ << ":" << __LINE__ << "qgas4[" << i
                 << "] != Approx(check_qgas4[" << i
                 << "])): " << std::setprecision(14) << qgas4[i]
                 << " != " << check_qgas4[i] << " with scale:" << scale
                 << " and epsilon:" << epsilon << std::endl;
+      // std::cout << "i = " << i << "\n";
+      // std::cout << "qgas4[i] = " << qgas4[i] << "\n";
+      // std::cout << "check_qgas4[i] = " << check_qgas4[i] << "\n";
+    }
     REQUIRE(qgas4[i] == Approx(check_qgas4[i]).scale(scale).epsilon(epsilon));
   }
   for (int i = 0; i < AeroConfig::num_gas_ids(); ++i) {
