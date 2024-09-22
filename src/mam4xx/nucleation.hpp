@@ -367,7 +367,7 @@ void mer07_veh02_nuc_mosaic_1box(
     //  out
     int &isize_nuc, Real &qnuma_del, Real &qso4a_del, Real &qnh4a_del,
     Real &qh2so4_del, Real &qnh3_del, Real &dens_nh4so4a, Real &dnclusterdt) {
-
+#if 0
   //  ============
   // || inputs: ||
   // ============
@@ -810,6 +810,7 @@ void mer07_veh02_nuc_mosaic_1box(
   tmpa = haero::max(0.0, ratenuclt_kk * dtnuc / cair);
   // adjusted production of aerosol number (#/mol-air)
   tmpb = tmpa * freduce;
+#endif
 } // end mer07_veh02_nuc_mosaic_1box()
 
 KOKKOS_INLINE_FUNCTION
