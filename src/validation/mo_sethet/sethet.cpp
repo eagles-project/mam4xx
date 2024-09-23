@@ -178,84 +178,86 @@ void sethet(Ensemble *ensemble) {
     Kokkos::deep_copy(ktop_out_host, ktop_out);
     int ktop = (int) ktop_out_host(0);
     
-    Real total_rain; // total rain rate (both pos and neg) in the column
-    Real total_pos;  // total positive rain rate in the column
+    Real total_rain = 0.0; // total rain rate (both pos and neg) in the column
+    Real total_pos = 0.0;  // total positive rain rate in the column
 
-    total_rain = 0.0;
-    total_pos = 0.0;
+    auto total_rain_out = haero::testing::create_column_view(1);
+    auto total_pos_out = haero::testing::create_column_view(1);
+    auto total_rain_host = View1DHost("total_rain_host", 1);
+    auto total_pos_host = View1DHost("total_pos_host", 1);
+    total_rain_host(0) = 0;
+    total_pos_host(0) = 0;
+
+    Kokkos::deep_copy(total_rain_out, total_rain_host);
+    Kokkos::deep_copy(total_pos_out, total_pos_host);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          Kokkos::parallel_for(
-            Kokkos::TeamVectorRange(team, pver), [&](int kk) {
-          precip(kk) = cmfdqr(kk) + nrain(kk) - nevapr(kk);
-        });
-    });
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        calc_precip_rescale(team, cmfdqr, nrain, nevapr, total_rain_out(0), total_pos_out(0), precip);
+      });
+    Kokkos::deep_copy(total_rain_host, total_rain_out);
+    Kokkos::deep_copy(total_pos_host, total_pos_out);
 
-    for (int kk = 0; kk < pver; kk++) {
-      total_rain = total_rain + precip(kk);
-      if (precip(kk) < 0.0)
-        precip(kk) = 0.0;
-      total_pos = total_pos + precip(kk);
-    }
+    total_rain = (Real) total_rain_host(0);
+    total_pos = (Real) total_pos_host(0);
 
-    if (total_rain <= 0.0) {
-      Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          Kokkos::parallel_for(
-            Kokkos::TeamVectorRange(team, pver), [&](int kk) {
-            precip(kk) = 0.0; // set all levels to zero
-          });
-        });
-    } else {
-      Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          Kokkos::parallel_for(
-            Kokkos::TeamVectorRange(team, pver), [&](int kk) {
-            precip(kk) = precip(kk) * total_rain / total_pos;
-          });
-        });
-    }
-
+    
 
     Real zsurf = m2km * phis * rga;
+    //move to 241 (with sethet call)
     Kokkos::parallel_for(
       team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           calc_delz(team, ktop, delz, zmid, zsurf);
+          team.team_barrier();
       });
 
-    View1D het_rates_d("het_rates", pver * gas_pcnst);
-    Kokkos::deep_copy(het_rates_d, 0.0);
+    // Kokkos::deep_copy(precip_host, precip);
+    // Kokkos::deep_copy(xhnm_host, xhnm);
+    for(int m = 0; m < gas_pcnst; m++) {
+      for(int k = 0; k < pver; k++) {
+      std::cout << "qin @ k " << k << " m " << m << " = " << qin[k][m] << std::endl;
+      }
+    }
+    //barrier TODO
+    
 
-    // View2D het_rates("het_rates", pver, gas_pcnst);
+    // View1D het_rates_d("het_rates", pver * gas_pcnst);
+    // Kokkos::deep_copy(het_rates_d, 0.0);
+
+    View2D het_rates("het_rates", pver, gas_pcnst); 
+    View2D tmp_hetrates("het_rates", pver, gas_pcnst); 
+    //View2D qin("het_rates", pver, gas_pcnst); 
+    //qin and tmp_hetrates TODO
+    
     // View2D tmp_hetrates("het_rates", pver, gas_pcnst);
-    // Kokkos::deep_copy(het_rates, 0.0);
-    // Kokkos::deep_copy(tmp_hetrates, 0.0);
-    std::cout << "hello " << std::endl;
+    Kokkos::deep_copy(het_rates, 0.0);
+    Kokkos::deep_copy(tmp_hetrates, 0.0);
 
-    // Kokkos::parallel_for(
-    //     team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          Real het_rates[pver][gas_pcnst];
-          Real tmp_hetrates[pver][gas_pcnst]; 
-          int kk = 1;
-          // Kokkos::parallel_for(
-          //   Kokkos::TeamVectorRange(team, pver), [&](int kk) {
+    Kokkos::parallel_for(
+        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          // Real het_rates[pver][gas_pcnst];
+          // Real tmp_hetrates[pver][gas_pcnst]; 
+          //int kk = 1;
+          for(int kk = 0; kk < pver; kk++) { 
+              auto het_rates_at_kk = ekat::subview(het_rates, kk);
+              auto tmp_hetrates_at_kk = ekat::subview(tmp_hetrates, kk);
               mo_sethet::sethet(
                   // team, 
-                  het_rates[kk], rlat, press(kk), zmid(kk), zsurf, phis, tfld(kk), cmfdqr(kk), nrain(kk),
+                  het_rates_at_kk.data(), rlat, press(kk), zmid(kk), zsurf, phis, tfld(kk), cmfdqr(kk), nrain(kk),
                   nevapr(kk), delt, xhnm(kk), qin[kk], t_factor(kk), xk0_hno3(kk), xk0_so2(kk), so2_diss(kk),
                   delz(kk), xh2o2(kk), xso2(kk), xliq(kk), rain(kk), precip(kk), xhen_h2o2(kk),
-                  xhen_hno3(kk), xhen_so2(kk), tmp_hetrates[kk], spc_h2o2_ndx, spc_so2_ndx,
+                  xhen_hno3(kk), xhen_so2(kk), tmp_hetrates_at_kk.data(), spc_h2o2_ndx, spc_so2_ndx,
                   h2o2_ndx, so2_ndx, h2so4_ndx, gas_wetdep_cnt, wetdep_map, total_rain, total_pos, ktop);
-      // });
-      int i = 0;
-      for (int mm = 0; mm < gas_pcnst; ++mm) {
-        for (int kk = 0; kk < pver; ++kk) {
-          het_rates_d(i) = het_rates[kk][mm];
-          i++;
-        }
-      } 
-    // });
-
+      }
+      
+      // int i = 0;
+      // for (int mm = 0; mm < gas_pcnst; ++mm) {
+      //   for (int kk = 0; kk < pver; ++kk) {
+      //     het_rates_d(i) = het_rates[kk][mm];
+      //     i++;
+      //   }
+      // } 
+    });
+    //team.team_barrier();
     // transfer data to GPU.
     // for (int kk = 0; kk < pver; kk++) {
     //   Kokkos::deep_copy(het_rates_host[kk], het_rates[kk]);
@@ -270,8 +272,10 @@ void sethet(Ensemble *ensemble) {
     // }
 
     std::vector<Real> het_rates_out(gas_pcnst * pver);
-    auto het_rates_host = View1DHost((Real *)het_rates_out.data(), gas_pcnst * pver);
-    Kokkos::deep_copy(het_rates_host, het_rates_d);
+    mam4::validation::convert_2d_view_device_to_1d_vector(het_rates,
+                                                          het_rates_out);
+    // auto het_rates_host = View1DHost((Real *)het_rates_out.data(), gas_pcnst * pver);
+    // Kokkos::deep_copy(het_rates_host, het_rates_d);
 
     output.set("het_rates", het_rates_out);
   });

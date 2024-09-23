@@ -59,6 +59,53 @@ void calc_het_rates(const Real satf, // saturation fraction in cloud //in
 //=================================================================================
 KOKKOS_INLINE_FUNCTION
 void calc_precip_rescale(
+    const ThreadTeam &team,
+    const ColumnView &cmfdqr,   // dq/dt for convection [kg/kg/s] //in
+    const ColumnView &nrain,    // stratoform precip [kg/kg/s] //in
+    const ColumnView &nevapr,   // evaporation [kg/kg/s] // in
+    Real &total_rain,
+    Real &total_pos,
+    const ColumnView &precip) { // precipitation [kg/kg/s] // out
+  // -----------------------------------------------------------------------
+  // calculate precipitation rate at each grid
+  // this is added to rescale the variable precip (which can only be positive)
+  // to the actual vertical integral of positive and negative values.
+  // This removes point storms
+  // -----------------------------------------------------------------------
+
+  // Real total_rain; // total rain rate (both pos and neg) in the column
+  // Real total_pos;  // total positive rain rate in the column
+
+  total_rain = 0.0;
+  total_pos = 0.0;
+  Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
+        precip(kk) = cmfdqr(kk) + nrain(kk) - nevapr(kk);
+      });
+
+  for (int kk = 0; kk < pver; kk++) {
+    total_rain += precip(kk);
+    if (precip(kk) < 0.0)
+      precip(kk) = 0.0;
+    total_pos += precip(kk);
+  }
+
+  if (total_rain <= 0.0) {
+    Kokkos::parallel_for(
+        Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
+          precip(kk) = 0.0; // set all levels to zero
+        });
+  } else {
+    Kokkos::parallel_for(
+        Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
+          precip(kk) = precip(kk) * total_rain / total_pos;
+        });
+  }
+}
+
+//=================================================================================
+KOKKOS_INLINE_FUNCTION
+void calc_precip_rescale_kk(
     const Real cmfdqr,   // dq/dt for convection [kg/kg/s] //in
     const Real nrain,    // stratoform precip [kg/kg/s] //in
     const Real nevapr,   // evaporation [kg/kg/s] // in
@@ -176,7 +223,7 @@ KOKKOS_INLINE_FUNCTION
 void sethet(
     // const ThreadTeam &team,
     Real
-        (&het_rates)[gas_pcnst], //[pver][gas_pcnst], rainout rates [1/s] //out
+        *het_rates, //[pver][gas_pcnst], rainout rates [1/s] //out
     const Real rlat,          // latitude in radians for columns
     const Real press,  // pressure [pascals] //in
     const Real zmid_k,   // midpoint geopot [km]  //in
@@ -188,7 +235,7 @@ void sethet(
     const Real nevapr, // evaporation [kg/kg/s] //in
     const Real delt,          // time step [s] //in
     const Real xhnm,   // total atms density [cm^-3] //in
-    const Real qin[gas_pcnst], // xported species [vmr]  //in
+    const Real (&qin)[gas_pcnst], // xported species [vmr]  //in
     // working variables
     Real
         t_factor, // temperature factor to calculate henry's law parameters
@@ -203,7 +250,7 @@ void sethet(
     Real xhen_h2o2, // henry law constants
     Real xhen_hno3, // henry law constants
     Real xhen_so2,  // henry law constants
-    Real (&tmp_hetrates)[gas_pcnst], const int spc_h2o2_ndx,
+    Real *tmp_hetrates, const int spc_h2o2_ndx,
     const int spc_so2_ndx, const int h2o2_ndx, const int so2_ndx,
     const int h2so4_ndx, const int gas_wetdep_cnt, const int wetdep_map[3], 
     const Real total_rain,
@@ -296,7 +343,7 @@ void sethet(
   // this is added to rescale the variable precip (which can only be positive)
   // to the actual vertical integral of positive and negative values.  This
   // removes point storms
-  calc_precip_rescale(cmfdqr, nrain, nevapr, total_rain, total_pos, precip); // populate precip
+  calc_precip_rescale_kk(cmfdqr, nrain, nevapr, total_rain, total_pos, precip); // populate precip
 
   rain = mass_air * precip * xhnm / mass_h2o;
   xliq = precip * delt * xhnm / avo * mass_air * m3_2_cm3;
@@ -394,7 +441,7 @@ void sethet(
   bool skip = false;
   for (int mm = 0; mm < gas_pcnst; mm++) {
     if (rain <= 0.0) {
-      het_rates[mm] = 0.0;
+      het_rates[mm] = -8.0;
       skip = true;
     }
   }
@@ -430,7 +477,7 @@ void sethet(
 
   for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
     int mm2 = wetdep_map[mm];
-    het_rates[mm2] = 0.0;
+    het_rates[mm2] = -9.0;
     if (het_rates[mm2] == MISSING) {
       Kokkos::abort(
           "sethet: het_rates (wet dep) not set for het reaction number");

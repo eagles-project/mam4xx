@@ -60,7 +60,7 @@ void calc_precip_rescale(Ensemble *ensemble) {
 
     Kokkos::parallel_for(
         "calc_precip_rescale", pver, KOKKOS_LAMBDA(int kk) {
-          calc_precip_rescale(cmfdqr(kk), nrain(kk), nevapr(kk), total_rain[0], total_pos[0], precip(kk));
+          calc_precip_rescale_kk(cmfdqr(kk), nrain(kk), nevapr(kk), total_rain[0], total_pos[0], precip(kk));
         });
 
     Kokkos::deep_copy(precip_host, precip);
