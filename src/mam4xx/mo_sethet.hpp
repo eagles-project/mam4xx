@@ -441,7 +441,7 @@ void sethet(
   bool skip = false;
   for (int mm = 0; mm < gas_pcnst; mm++) {
     if (rain <= 0.0) {
-      het_rates[mm] = -8.0;
+      het_rates[mm] = 0.0;
       skip = true;
     }
   }
@@ -477,7 +477,7 @@ void sethet(
 
   for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
     int mm2 = wetdep_map[mm];
-    het_rates[mm2] = -9.0;
+    het_rates[mm2] = 0.0;
     if (het_rates[mm2] == MISSING) {
       Kokkos::abort(
           "sethet: het_rates (wet dep) not set for het reaction number");
