@@ -119,7 +119,7 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
 
   Real p0_soa[ntot_soaspec];
   for (int ll = 0; ll < ntot_soaspec; ++ll) {
-    p0_soa[ntot_soaspec] = 1.0e-10;
+    p0_soa[ll] = 1.0e-10;
   }
 
   // BAD CONSTANT
