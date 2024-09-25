@@ -35,7 +35,7 @@ public:
 
   // In E3SM this is read in from an input file and would be 8
   // In mam_refactor it is defined in phys_control.F90 as 3.
-  static constexpr Real n_so4_monolayers_pcage = 3.0;
+  static constexpr Real n_so4_monolayers_pcage = 8.0;
   static constexpr Real dr_so4_monolayers_pcage =
       n_so4_monolayers_pcage * 4.76e-10;
 
@@ -64,7 +64,7 @@ namespace aging {
 // calculate fractions of aged pom/bc to be transferred to accum mode, aerosol
 // change due to condenstion and coagulation
 KOKKOS_INLINE_FUNCTION
-void mam_pcarbon_aging_frac(
+void mam_pcarbon_aging_frac(const int kk,
     const Real dgn_a[AeroConfig::num_modes()], // dry geometric mean diameter of
                                                // number distribution [m]
     const Real qaer_cur[AeroConfig::num_aerosol_ids()]
@@ -117,6 +117,10 @@ void mam_pcarbon_aging_frac(
   constexpr Real hygro_so4 = 0.50700000000000001;
   const Real fac_m2v_eqvhyg_aer = soa_vol * hygro_soa / hygro_so4;
 
+
+  // for default MAM4 only so4 and soa contribute to aging
+  const Real vol_shell = qaer_cur[iaer_so4][imom_pc] * so4_vol +
+                         qaer_cur[iaer_soa][imom_pc] * fac_m2v_eqvhyg_aer;
   Real qaer_del_cond_tmp =
       qaer_del_cond[iaer_so4][imom_pc] * so4_vol +
       qaer_del_cond[iaer_soa][imom_pc] * fac_m2v_eqvhyg_aer;
@@ -125,6 +129,10 @@ void mam_pcarbon_aging_frac(
       qaer_del_coag_in[iaer_so4][ipair] * so4_vol +
       qaer_del_coag_in[iaer_soa][ipair] * fac_m2v_eqvhyg_aer;
 
+      if (kk==48){
+         printf("mam_pcarbon_aging_frac_0:   %0.15E,   %0.15E,   %0.15E\n",vol_shell, qaer_del_cond_tmp, qaer_del_coag_tmp);
+      }
+
   qaer_del_cond_tmp = haero::max(qaer_del_cond_tmp, 1e-35);
 
   frac_cond = qaer_del_cond_tmp /
@@ -132,17 +140,38 @@ void mam_pcarbon_aging_frac(
 
   frac_coag = 1.0 - frac_cond;
 
-  // for default MAM4 only so4 and soa contribute to aging
-  const Real vol_shell = qaer_cur[iaer_so4][imom_pc] * so4_vol +
-                         qaer_cur[iaer_soa][imom_pc] * fac_m2v_eqvhyg_aer;
-
   const int spec_modes[3] = {iaer_bc, iaer_pom, iaer_mom};
   const Real core_volumes[3] = {bc_vol, pom_vol, mom_vol};
   Real vol_core = 0.0;
-  for (int mi = 0; mi < 3; ++mi) {
+  static constexpr int
+      lmap_aer_[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()] = {
+          {8, 15, 24, -1},  {6, 14, 21, -1},  {7, -1, 23, 27},  {9, -1, 22, 28},
+          {11, 16, 20, -1}, {10, -1, 19, -1}, {12, 17, 25, 29},
+      };
+  constexpr Real mass_2_vol[AeroConfig::num_aerosol_ids()] = {0.15,
+                                             6.4971751412429377e-002,
+                                             0.15,
+                                             7.0588235294117650e-003,
+                                             3.0789473684210526e-002,
+                                             5.1923076923076926e-002,
+                                             156.20986883198000};
+  for (int mi = 0; mi < AeroConfig::num_aerosol_ids(); ++mi) {
+    //const int ispec = spec_modes[mi];
+    if (lmap_aer_[mi][imom_pc] > 0){
+    vol_core += qaer_cur[mi][imom_pc] * mass_2_vol[mi];
+    if (kk==48) {
+         printf("mam_pcarbon_aging_frac_1b:   %0.15E,   %0.15E,   %0.15E, %i, %i\n",vol_core, qaer_cur[mi][imom_pc],mass_2_vol[mi],mi, imom_pc);
+      }
+    }
+  }
+
+  /*for (int mi = 0; mi < 3; ++mi) {
     const int ispec = spec_modes[mi];
     vol_core += qaer_cur[ispec][imom_pc] * core_volumes[mi];
-  }
+    if (kk==48) {
+         printf("mam_pcarbon_aging_frac_1b:   %0.15E,   %0.15E,   %0.15E, %i, %i, %i\n",vol_core, qaer_cur[ispec][imom_pc],core_volumes[mi],ispec, imom_pc, mi);
+      }
+  }*/
 
   const Real fac_volsfc = haero::exp(
       2.5 * haero::square(haero::log(mam4::modes(imom_pc).mean_std_dev)));
@@ -152,12 +181,18 @@ void mam_pcarbon_aging_frac(
   Real xferfrac_tmp1 = vol_shell * dgn_a[imom_pc] * fac_volsfc;
   Real xferfrac_tmp2 =
       haero::max(6.0 * Aging::dr_so4_monolayers_pcage * vol_core, 0.0);
-
+      if (kk==48) {
+         printf("mam_pcarbon_aging_frac_1:   %0.15E,   %0.15E,   %0.15E,   %0.15E\n",fac_volsfc, xferfrac_max, xferfrac_tmp1, xferfrac_tmp2);
+         printf("mam_pcarbon_aging_frac_1a:   %0.15E,   %0.15E,   %0.15E\n", xferfrac_tmp2, Aging::dr_so4_monolayers_pcage,vol_core);
+      }
   if (xferfrac_tmp1 >= xferfrac_tmp2) {
     xferfrac_pcage = xferfrac_max;
   } else {
     xferfrac_pcage = haero::min(xferfrac_tmp1 / xferfrac_tmp2, xferfrac_max);
   }
+  if (kk==48) {
+         printf("mam_pcarbon_aging_frac_2:   %0.15E\n",xferfrac_pcage);
+      }
 }
 
 //------------------------------------------------------------------------
@@ -226,7 +261,7 @@ void transfer_cond_coag_mass_to_accum(
 }
 
 KOKKOS_INLINE_FUNCTION
-void mam_pcarbon_aging_1subarea(
+void mam_pcarbon_aging_1subarea(const int kk,
     const Real dgn_a[AeroConfig::num_modes()], // dry geometric mean diameter of
                                                // number distribution [m]
     Real qnum_cur[AeroConfig::num_modes()],    // aerosol number mixing ratio
@@ -260,8 +295,11 @@ void mam_pcarbon_aging_1subarea(
   const int nsrc = static_cast<int>(ModeIndex::PrimaryCarbon);
   const int ndest = static_cast<int>(ModeIndex::Accumulation);
 
-  mam_pcarbon_aging_frac(dgn_a, qaer_cur, qaer_del_cond, qaer_del_coag_in,
+  mam_pcarbon_aging_frac(kk,dgn_a, qaer_cur, qaer_del_cond, qaer_del_coag_in,
                          xferfrac_pcage, frac_cond, frac_coag);
+  if (kk==48){
+    printf("mam_pcarbon_aging_frac_end:   %0.15E,   %0.15E,   %0.15E, %i\n",xferfrac_pcage,frac_cond, frac_coag, nsrc);
+  }
   // Note, there are probably optimizations to be done here, closely following
   // the Fortran code required extra unpacking of arrays.
 
@@ -381,7 +419,7 @@ void aerosol_aging_rates_1box(const int k, const AeroConfig &aero_config,
   }
 
   // primary carbon aging
-  mam_pcarbon_aging_1subarea(dgn_a, qnum_cur, qnum_del_cond, qnum_del_coag,
+  mam_pcarbon_aging_1subarea(1, dgn_a, qnum_cur, qnum_del_cond, qnum_del_coag,
                              qaer_cur, qaer_del_cond, qaer_del_coag,
                              qaer_del_coag_in);
 
