@@ -12,6 +12,7 @@
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/mam4_types.hpp>
+#include <mam4xx/physical_limits.hpp>
 #include <mam4xx/utils.hpp>
 #include <mam4xx/wv_sat_methods.hpp>
 
@@ -331,7 +332,7 @@ Real get_Aimm(const Real vwice, const Real rgimm, const Real temperature,
 KOKKOS_INLINE_FUNCTION
 void calculate_hetfrz_contact_nucleation(
     const Real deltat, const Real temperature,
-    Real uncoated_aer_num[Hetfrz::hetfrz_aer_nspec], const Real icnlx,
+    const Real uncoated_aer_num[Hetfrz::hetfrz_aer_nspec], const Real icnlx,
     const Real sigma_iv, const Real eswtr, const Real rgimm, const Real r_bc,
     const Real r_dust_a1, const Real r_dust_a3, const Real Kcoll_bc,
     const Real Kcoll_dust_a1, const Real Kcoll_dust_a3, const bool do_bc,
@@ -407,7 +408,7 @@ void calculate_hetfrz_contact_nucleation(
 KOKKOS_INLINE_FUNCTION
 void calculate_hetfrz_deposition_nucleation(
     const Real deltat, const Real temperature,
-    Real uncoated_aer_num[Hetfrz::hetfrz_aer_nspec], const Real sigma_iv,
+    const Real uncoated_aer_num[Hetfrz::hetfrz_aer_nspec], const Real sigma_iv,
     const Real eswtr, const Real vwice, const Real rgdep, const Real r_bc,
     const Real r_dust_a1, const Real r_dust_a3, const bool do_bc,
     const bool do_dst1, const bool do_dst3, Real &frzbcdep, Real &frzdudep) {
@@ -483,7 +484,7 @@ void calculate_hetfrz_deposition_nucleation(
 KOKKOS_INLINE_FUNCTION
 void calculate_hetfrz_immersion_nucleation(
     const Real deltat, const Real temperature,
-    Real uncoated_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real uncoated_aer_num[Hetfrz::hetfrz_aer_nspec],
     const Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
     const Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec],
     const Real sigma_iw, const Real eswtr, const Real vwice,
@@ -637,11 +638,11 @@ void calculate_rgimm_and_determine_spec_flag(
 
 KOKKOS_INLINE_FUNCTION
 void calculate_water_activity(
-    Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
-    Real awcam[Hetfrz::hetfrz_aer_nspec], Real awfacm[Hetfrz::hetfrz_aer_nspec],
-    const Real r3lx, Real aw[Hetfrz::hetfrz_aer_nspec]) {
+    const Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real awcam[Hetfrz::hetfrz_aer_nspec],
+    const Real awfacm[Hetfrz::hetfrz_aer_nspec], const Real r3lx,
+    Real aw[Hetfrz::hetfrz_aer_nspec]) {
 
-  Real molal[Hetfrz::hetfrz_aer_nspec];
   constexpr Real mw_so4 = Constants::molec_weight_so4 * 1000.0; /// BAD CONSTANT
   constexpr Real coeff_c1 = 2.9244948e-2;
   constexpr Real coeff_c2 = 2.3141243e-3;
@@ -650,14 +651,14 @@ void calculate_water_activity(
   for (int ispec = 0; ispec < Hetfrz::hetfrz_aer_nspec; ++ispec) {
     // calculate molality
     if (total_interstitial_aer_num[ispec] > 0.0) {
-      molal[ispec] = (1.e-6 * awcam[ispec] * (1.0 - awfacm[ispec]) /
-                      (mw_so4 * total_interstitial_aer_num[ispec] * 1.e6)) /
-                     (4.0 * Constants::pi / 3.0 * Constants::density_h2o *
-                      haero::cube(haero::max(r3lx, 4.0e-6)));
+      const Real molal = (1.e-6 * awcam[ispec] * (1.0 - awfacm[ispec]) /
+                          (mw_so4 * total_interstitial_aer_num[ispec] * 1.e6)) /
+                         (4.0 * Constants::pi / 3.0 * Constants::density_h2o *
+                          haero::cube(haero::max(r3lx, 4.0e-6)));
 
-      aw[ispec] = 1.0 / (1.0 + coeff_c1 * molal[ispec] +
-                         coeff_c2 * haero::square(molal[ispec]) +
-                         coeff_c3 * haero::cube(molal[ispec]));
+      aw[ispec] =
+          1.0 / (1.0 + coeff_c1 * molal + coeff_c2 * haero::square(molal) +
+                 coeff_c3 * haero::cube(molal));
     }
   }
 }
@@ -708,15 +709,16 @@ void hetfrz_classnuc_calc(
     const Real deltat, const Real temperature, const Real pressure,
     const Real supersatice, Real fn[Hetfrz::hetfrz_aer_nspec], const Real r3lx,
     const Real icnlx, Real hetraer[Hetfrz::hetfrz_aer_nspec],
-    Real awcam[Hetfrz::hetfrz_aer_nspec], Real awfacm[Hetfrz::hetfrz_aer_nspec],
-    Real dstcoat[Hetfrz::hetfrz_aer_nspec],
-    Real total_aer_num[Hetfrz::hetfrz_aer_nspec],
-    Real coated_aer_num[Hetfrz::hetfrz_aer_nspec],
-    Real uncoated_aer_num[Hetfrz::hetfrz_aer_nspec],
-    Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
-    Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec], Real &frzbcimm,
-    Real &frzduimm, Real &frzbccnt, Real &frzducnt, Real &frzbcdep,
-    Real &frzdudep) {
+    const Real awcam[Hetfrz::hetfrz_aer_nspec],
+    Real awfacm[Hetfrz::hetfrz_aer_nspec],
+    const Real dstcoat[Hetfrz::hetfrz_aer_nspec],
+    const Real total_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real coated_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real uncoated_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec],
+    Real &frzbcimm, Real &frzduimm, Real &frzbccnt, Real &frzducnt,
+    Real &frzbcdep, Real &frzdudep) {
 
   // *****************************************************************************
   //                 PDF theta model
@@ -857,6 +859,8 @@ void calculate_interstitial_aer_num(
         dmc / (ssmc + dmc + bcmc + pommc + soammc + mommc) * ncoarse *
         Hetfrz::num_m3_to_cm3;
   }
+  for (int i = 0; i < Hetfrz::hetfrz_aer_nspec; ++i)
+    check_valid_interstitial_aerosol_number(total_interstital_aer_num[i]);
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -905,7 +909,7 @@ Real get_aer_radius(const Real specdens, const Real aermc, const Real aernum) {
 KOKKOS_INLINE_FUNCTION
 void calculate_mass_mean_radius(
     const Real bcmac, const Real bcmpc, const Real dmac, const Real dmc,
-    Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
     Real hetraer[Hetfrz::hetfrz_aer_nspec]) {
 
   const Real aermc_min_threshold = 1.0e-30;
@@ -951,9 +955,9 @@ void calculate_coated_fraction(
     const Real mommac, const Real soamac, const Real dmac, const Real bcmac,
     const Real mommpc, const Real pommpc, const Real bcmpc, const Real so4mc,
     const Real pommc, const Real soamc, const Real mommc, const Real dmc,
-    Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
-    Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec],
-    Real hetraer[Hetfrz::hetfrz_aer_nspec],
+    const Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real hetraer[Hetfrz::hetfrz_aer_nspec],
     Real total_aer_num[Hetfrz::hetfrz_aer_nspec],
     Real coated_aer_num[Hetfrz::hetfrz_aer_nspec],
     Real uncoated_aer_num[Hetfrz::hetfrz_aer_nspec],
@@ -1079,7 +1083,7 @@ void calculate_vars_for_water_activity(
     const Real so4mac, const Real soamac, const Real bcmac, const Real mommac,
     const Real pommac, const Real num_accum, const Real so4mc, const Real mommc,
     const Real bcmc, const Real pommc, const Real soamc, const Real num_coarse,
-    Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
     Real awcam[Hetfrz::hetfrz_aer_nspec],
     Real awfacm[Hetfrz::hetfrz_aer_nspec]) {
 

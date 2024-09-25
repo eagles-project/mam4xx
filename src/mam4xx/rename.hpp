@@ -14,6 +14,7 @@
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/mam4_types.hpp>
+#include <mam4xx/physical_limits.hpp>
 #include <mam4xx/utils.hpp>
 
 namespace mam4 {
@@ -111,8 +112,8 @@ void compute_before_growth_dryvol_and_num(
     const Real &smallest_dryvol_value,
     const Real dryvol_i[AeroConfig::num_modes()],
     const Real dryvol_c[AeroConfig::num_modes()],
-    Real qnum_i_cur[AeroConfig::num_modes()],
-    Real qnum_c_cur[AeroConfig::num_modes()], const Real &num2vol_ratiolo,
+    const Real qnum_i_cur[AeroConfig::num_modes()],
+    const Real qnum_c_cur[AeroConfig::num_modes()], const Real &num2vol_ratiolo,
     const Real &num2vol_ratiohi,
     // out
     Real &b4_growth_dryvol, Real &b4_growth_dryvol_bounded,
@@ -397,6 +398,8 @@ void do_inter_mode_transfer(
                                qmol_c_cur, qnum_c_cur);
     }
   } // end for(imode)
+  for (int i = 0; i < AeroConfig::num_modes(); ++i)
+    check_valid_interstitial_aerosol_number(qnum_i_cur[i]);
 } // end do_inter_mode_transfer()
 
 KOKKOS_INLINE_FUNCTION
@@ -658,14 +661,18 @@ public:
     // =======================================================================
 
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int kk) {
-      Real qnum_i_cur[AeroConfig::num_modes()];
-      Real qmol_i_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
-      Real qmol_i_del[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
+      Real qnum_i_cur[AeroConfig::num_modes()] = {};
+      Real qmol_i_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()] =
+          {{}};
+      Real qmol_i_del[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()] =
+          {{}};
 
       //
-      Real qnum_c_cur[AeroConfig::num_modes()];
-      Real qmol_c_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
-      Real qmol_c_del[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()];
+      Real qnum_c_cur[AeroConfig::num_modes()] = {};
+      Real qmol_c_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()] =
+          {{}};
+      Real qmol_c_del[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()] =
+          {{}};
 
       const bool &is_cloudy_cur = is_cloudy(kk);
       int rename_idx = 0;
