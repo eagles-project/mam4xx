@@ -46,7 +46,7 @@ void calc_om_seasalt(Ensemble *ensemble) {
         mam4::aero_model_emissions::n_organic_species_max;
     const int salt_nsection = mam4::aero_model_emissions::salt_nsection;
 
-    Real mass_frac_bub_section[n_organic_species_max][salt_nsection] = {{0.0}};
+    Real mass_frac_bub_section[n_organic_species_max][salt_nsection] = {0.0};
     Real om_ssa[salt_nsection] = {0.0};
 
     mam4::aero_model_emissions::SeasaltEmissionsData data;

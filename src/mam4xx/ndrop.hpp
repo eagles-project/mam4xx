@@ -10,7 +10,6 @@
 #include <mam4xx/aero_model.hpp>
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/mam4_types.hpp>
-#include <mam4xx/physical_limits.hpp>
 #include <mam4xx/utils.hpp>
 #include <mam4xx/wv_sat_methods.hpp>
 
@@ -331,8 +330,6 @@ void loadaer(const Real state_q[aero_model::pcnst],
                 naerosol[imode]);
 
   } // end imode
-  for (int i = 0; i < AeroConfig::num_modes(); ++i)
-    check_valid_interstitial_aerosol_number(naerosol[i]);
 } // loadaer
 
 KOKKOS_INLINE_FUNCTION
