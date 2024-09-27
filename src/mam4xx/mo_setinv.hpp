@@ -6,7 +6,7 @@
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/mam4_types.hpp>
-
+#include <mam4xx/conversions.hpp>
 namespace mam4 {
 namespace mo_setinv {
 // number of invariants
@@ -88,7 +88,7 @@ void setinv_single_level(Real invariants[nfs], const Real tfld,
 KOKKOS_INLINE_FUNCTION
 void setinv(const ThreadTeam &team, const View2D &invariants,
             const ConstColumnView &tfld, const ConstColumnView &qv,
-            View1D cnst_offline[num_tracer_cnst], const ConstColumnView &pmid) {
+            const View1D cnst_offline[num_tracer_cnst], const ConstColumnView &pmid) {
 
   Config setinv_config_;
   constexpr int nk = mam4::nlev;
@@ -109,7 +109,7 @@ void setinv(const ThreadTeam &team, const View2D &invariants,
       cnst_offline_k[i] = cnst_offline[i](k);
     }
 
-    Real h2ovmr_k = mam4::conversions::vmr_from_mmr(qv_k, mwh2o);
+    Real h2ovmr_k = conversions::vmr_from_mmr(qv_k, mwh2o);
 
     setinv_single_level(invariants_k, tfld_k, h2ovmr_k, pmid_k, cnst_offline_k,
                         setinv_config_);
