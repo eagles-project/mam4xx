@@ -1020,14 +1020,18 @@ void calculate_coated_fraction(
 
   const Real n_so4_monolayers_dust = 1.0;
   const Real dr_so4_monolayers_dust = n_so4_monolayers_dust * 4.76e-10;
+  // NOTE: To prevent division by zero, we use the routine safe_denominator
+  // that returns a factor (1/value). In this case, value is coat_ratio2.
   Real coat_ratio2 =
       haero::max(6.0 * dr_so4_monolayers_dust * vol_core[0], 0.0);
-  dstcoat[0] = coat_ratio1 / coat_ratio2;
+  Real mult_coat_ratio2 = FloatingPoint<Real>::safe_denominator(coat_ratio2);
+  dstcoat[0] = coat_ratio1 * mult_coat_ratio2;
 
   // dust_a1
   coat_ratio1 = vol_shell[1] * (r_dust_a1 * 2.0) * fac_volsfc_dust_a1;
   coat_ratio2 = haero::max(6.0 * dr_so4_monolayers_dust * vol_core[1], 0.0);
-  dstcoat[1] = coat_ratio1 / coat_ratio2;
+  mult_coat_ratio2 = FloatingPoint<Real>::safe_denominator(coat_ratio2);
+  dstcoat[1] = coat_ratio1 * mult_coat_ratio2;
 
   // dust_a3
   vol_shell[2] = so4mc / (specdens_so4 * air_density) +
@@ -1038,7 +1042,8 @@ void calculate_coated_fraction(
   vol_core[2] = dmc / (specdens_dst * air_density);
   coat_ratio1 = vol_shell[2] * (r_dust_a3 * 2.0) * fac_volsfc_dust_a3;
   coat_ratio2 = haero::max(6.0 * dr_so4_monolayers_dust * vol_core[2], 0.0);
-  dstcoat[2] = coat_ratio1 / coat_ratio2;
+  mult_coat_ratio2 = FloatingPoint<Real>::safe_denominator(coat_ratio2);
+  dstcoat[2] = coat_ratio1 * mult_coat_ratio2;
 
   for (int ispec = 0; ispec < Hetfrz::hetfrz_aer_nspec; ++ispec) {
     dstcoat[ispec] = utils::min_max_bound(0.001, 1.0, dstcoat[ispec]);
