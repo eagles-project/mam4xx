@@ -14,7 +14,6 @@ using namespace mam4;
 using namespace haero;
 void setinv_test_nlev(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-
     using View1D = DeviceType::view_1d<Real>;
     using View2D = DeviceType::view_2d<Real>;
     using View2DHost = typename HostType::view_2d<Real>;
@@ -52,13 +51,13 @@ void setinv_test_nlev(Ensemble *ensemble) {
     ColumnView pmid = haero::testing::create_column_view(nlev);
     auto pmid_h = Kokkos::create_mirror_view(pmid);
 
-    View2D invariants("invariants",nlev,nfs);
-    View1DHost invariants_h("invariants_h",nlev);
+    View2D invariants("invariants", nlev, nfs);
+    View1DHost invariants_h("invariants_h", nlev);
 
     View1D c_off[num_tracer_cnst];
     for (int i = 0; i < num_tracer_cnst; ++i) {
-     c_off[i] = View1D("c_off",nlev);
-    }//
+      c_off[i] = View1D("c_off", nlev);
+    } //
 
     View2DHost c_off_h("c_off_h", nlev, num_tracer_cnst);
 
@@ -75,7 +74,7 @@ void setinv_test_nlev(Ensemble *ensemble) {
     Kokkos::deep_copy(h2ovmr, h2ovmr_h);
     Kokkos::deep_copy(pmid, pmid_h);
     for (int i = 0; i < num_tracer_cnst; ++i) {
-      const auto c_off_h_at_i = ekat::subview(c_off_h,i);
+      const auto c_off_h_at_i = ekat::subview(c_off_h, i);
       Kokkos::deep_copy(c_off[i], c_off_h_at_i);
     }
 
@@ -83,8 +82,7 @@ void setinv_test_nlev(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          mam4::mo_setinv::setinv(team, invariants, tfld, h2ovmr, c_off,
-                                  pmid);
+          mam4::mo_setinv::setinv(team, invariants, tfld, h2ovmr, c_off, pmid);
         });
 
     std::vector<Real> invariants_out(nfs);

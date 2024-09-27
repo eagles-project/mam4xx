@@ -4,9 +4,9 @@
 #include <haero/atmosphere.hpp>
 
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/conversions.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/mam4_types.hpp>
-#include <mam4xx/conversions.hpp>
 namespace mam4 {
 namespace mo_setinv {
 // number of invariants
@@ -88,7 +88,8 @@ void setinv_single_level(Real invariants[nfs], const Real tfld,
 KOKKOS_INLINE_FUNCTION
 void setinv(const ThreadTeam &team, const View2D &invariants,
             const ConstColumnView &tfld, const ConstColumnView &qv,
-            const View1D cnst_offline[num_tracer_cnst], const ConstColumnView &pmid) {
+            const View1D cnst_offline[num_tracer_cnst],
+            const ConstColumnView &pmid) {
 
   Config setinv_config_;
   constexpr int nk = mam4::nlev;
