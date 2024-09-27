@@ -15,7 +15,6 @@
 #include <mam4xx/utils.hpp>
 
 #include <mam4xx/ndrop.hpp>
-#include <mam4xx/physical_limits.hpp>
 #include <mam4xx/wv_sat_methods.hpp>
 
 #include <iomanip>
@@ -1446,8 +1445,6 @@ aer_vol_num_hygro(const SubView conu, const Real rhoair,
     const Real n_max = vaerosol[imode] * ConvProc::voltonumblo_amode(imode);
     naerosol[imode] = utils::min_max_bound(n_min, n_max, tmp_num * rhoair);
   }
-  for (int i = 0; i < AeroConfig::num_modes(); ++i)
-    check_valid_interstitial_aerosol_number(naerosol[i]);
 }
 // ======================================================================================
 // Note: compute_wup sets wup[kk] only so can be called in parallel over the

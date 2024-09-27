@@ -5,19 +5,26 @@
 
 #ifndef PHYSICAL_LIMITS_HPP
 #define PHYSICAL_LIMITS_HPP
+#include <string>
+#include <map>
 
 namespace mam4 {
-KOKKOS_INLINE_FUNCTION
-constexpr Real interstitial_aerosol_number_min() { return 0; }
-KOKKOS_INLINE_FUNCTION
-constexpr Real interstitial_aerosol_number_max() { return 1e13; }
-KOKKOS_INLINE_FUNCTION
-void check_valid_interstitial_aerosol_number(const Real aero_num) {
-  EKAT_KERNEL_REQUIRE_MSG(interstitial_aerosol_number_min() <= aero_num &&
-                              aero_num < interstitial_aerosol_number_max(),
-                          "Computed total interstitial aerosol number outside "
-                          "of the resonable baounds of 0 to 1e13.");
-}
+
+  inline Real physical_min_max(const std::string &field_name) {
+    const std::map<std::string, std::pair<Real,Real>> 
+      limits = {
+        {"T_min", {100,500} }
+      };
+    auto iter = limits.find(field_name);
+    EKAT_REQUIRE_MSG(iter != limits.end(),
+      std::string("Bounds not defined for field name:"+field_name);
+
+    return iter->first;
+  }
+
+  inline Real physical_min(const std::string &field_name) {
+    return physical_min_max(field_name).second;
+  }
 } // namespace mam4
 
 #endif
