@@ -74,7 +74,7 @@ void setinv_test_nlev(Ensemble *ensemble) {
     Kokkos::deep_copy(h2ovmr, h2ovmr_h);
     Kokkos::deep_copy(pmid, pmid_h);
     for (int i = 0; i < num_tracer_cnst; ++i) {
-      const auto c_off_h_at_i = ekat::subview(c_off_h, i);
+      const auto c_off_h_at_i = Kokkos::subview(c_off_h, Kokkos::ALL, i);
       Kokkos::deep_copy(c_off[i], c_off_h_at_i);
     }
 
