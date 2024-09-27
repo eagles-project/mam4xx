@@ -29,7 +29,8 @@ void extfrc_set(Ensemble *ensemble) {
       forcing_mm.file_alt_data = int(input.get_array(
           "forcings" + std::to_string(i) + "_file_alt_data")[0]);
 
-      forcing_mm.fields_data = View2D("data", forcing_mm.nsectors, pver);
+      //FIXME: forcing_mm.nsectors,  add an assert
+      forcing_mm.fields_data[4] = View1D("data", pver);
 
       for (int isec = 1; isec <= forcing_mm.nsectors; ++isec) {
 
@@ -40,9 +41,11 @@ void extfrc_set(Ensemble *ensemble) {
         View1DHost forcings_fields_data_host =
             View1DHost((Real *)data1.data(), data1.size());
 
-        const View1D data_isec =
-            Kokkos::subview(forcing_mm.fields_data, isec - 1, Kokkos::ALL());
+        const auto data_isec = forcing_mm.fields_data[isec - 1];
+            // Kokkos::subview(forcing_mm.fields_data, isec - 1, Kokkos::ALL());
+        //
         Kokkos::deep_copy(data_isec, forcings_fields_data_host);
+
       } // isec
 
       forcings[i - 1] = forcing_mm;
