@@ -41,9 +41,8 @@ void setinv_test_single_level(Ensemble *ensemble) {
 
     Real invariants[nfs];
 
-    mam4::mo_setinv::setinv_single_level(invariants, tfld, h2ovmr,
-                                         pmid, cnst_offline.data(),
-                                         setinv_config_);
+    mam4::mo_setinv::setinv_single_level(invariants, tfld, h2ovmr, pmid,
+                                         cnst_offline.data(), setinv_config_);
 
     std::vector<Real> inv_out;
     for (int i = 0; i < nfs; ++i) {
