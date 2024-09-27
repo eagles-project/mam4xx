@@ -114,14 +114,15 @@ void gas_washout(
   // calculate gas washout by cloud if not saturated
   //------------------------------------------------------------------------
   // FIXME: BAD CONSTANTS
-  constexpr Real allca = 0.0; // total of ca between level plev and kk [#/cm3]
-  constexpr Real const0 = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
+  const Real const0 = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
   constexpr Real geo_fac =
       6.0; // geometry factor (surf area/volume = geo_fac/diameter)
   constexpr Real xrm = .189;  // mean diameter of rain drop [cm]
   constexpr Real xum = 748.0; // mean rain drop terminal velocity [cm/s]
-  constexpr Real xeqca = 0.0;
-  constexpr Real xca = 0.0;
+  Real xeqca = 0.0;
+  Real xca = 0.0;
+  Real allca = 0.0; // total of ca between level plev and kk [#/cm3]
+
 
   // -----------------------------------------------------------------
   //       ... calculate the saturation concentration eqca
@@ -232,7 +233,7 @@ void sethet(
   constexpr Real satf_hno3 = .016; // saturation factor for hno3 in clouds
   constexpr Real satf_h2o2 = .016; // saturation factor for h2o2 in clouds
   constexpr Real satf_so2 = .016;  // saturation factor for so2 in clouds
-  constexpr Real const0 = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
+  const Real const0 = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
   constexpr Real hno3_diss = 15.4;            // hno3 dissociation constant
   constexpr Real mass_air = 29.0;  // mass of background atmosphere [amu]
   constexpr Real km2cm = 1.0e5;    // convert km to cm
