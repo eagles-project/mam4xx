@@ -36,7 +36,7 @@ set(DEFAULT_TOL 1e-8)
 
 set(ERROR_THRESHOLDS
     ${DEFAULT_TOL}
-    4e-5 # FIXME
+    ${DEFAULT_TOL}
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
