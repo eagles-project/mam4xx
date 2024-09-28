@@ -30,7 +30,8 @@ using haero::square;
 namespace rename {
 
 KOKKOS_INLINE_FUNCTION
-void compute_dryvol_change_in_src_mode( const int kk,
+void compute_dryvol_change_in_src_mode(
+    const int kk,
     const int nmode,              // in
     const int nspec,              // in
     const int *dest_mode_of_mode, // in
@@ -68,8 +69,10 @@ void compute_dryvol_change_in_src_mode( const int kk,
         // q_mmr [kmol-species/kmol-air] to volume units [m3/kmol-air]
         tmp_dryvol += q_mmr[m][ispec] * mass_2_vol[ispec];
         if (kk == 48) {
-         printf("compute_dryvolume_change_0:   %0.15E,   %0.15E,   %0.15E, %i, %i\n", tmp_dryvol, q_mmr[m][ispec],mass_2_vol[ispec] , ispec, m);
-       }
+          printf("compute_dryvolume_change_0:   %0.15E,   %0.15E,   %0.15E, "
+                 "%i, %i\n",
+                 tmp_dryvol, q_mmr[m][ispec], mass_2_vol[ispec], ispec, m);
+        }
         // accumulate the "growth" in volume units as well
         tmp_del_dryvol += q_del_growth[m][ispec] * mass_2_vol[ispec];
       }
@@ -299,7 +302,11 @@ void do_inter_mode_transfer(
         // out
         b4_growth_dryvol, b4_growth_dryvol_bounded, b4_growth_qnum_bounded);
     if (kk == 48) {
-      printf("befgrwth_dia:  %0.15E,  %0.15E,  %0.15E,  %0.15E,  %0.15E,  %0.15E,  %0.15E\n", smallest_dryvol_value, dryvol_i[src_mode], dryvol_c[src_mode],qnum_i_cur[src_mode], qnum_c_cur[src_mode],num2vol_ratiolorlx[src_mode],num2vol_ratiohirlx[src_mode]);
+      printf("befgrwth_dia:  %0.15E,  %0.15E,  %0.15E,  %0.15E,  %0.15E,  "
+             "%0.15E,  %0.15E\n",
+             smallest_dryvol_value, dryvol_i[src_mode], dryvol_c[src_mode],
+             qnum_i_cur[src_mode], qnum_c_cur[src_mode],
+             num2vol_ratiolorlx[src_mode], num2vol_ratiohirlx[src_mode]);
     }
 
     // change (delta) in dryvol
@@ -322,7 +329,9 @@ void do_inter_mode_transfer(
     Real b4_growth_diameter = conversions::mean_particle_diameter_from_volume(
         b4_growth_mode_mean_particle_volume, mean_std_dev[src_mode]);
     if (kk == 48) {
-      printf("befgrwth_dia:  %0.15E,  %0.15E,  %0.15E, %i\n", b4_growth_diameter, b4_growth_dryvol_bounded, b4_growth_qnum_bounded, src_mode);
+      printf("befgrwth_dia:  %0.15E,  %0.15E,  %0.15E, %i\n",
+             b4_growth_diameter, b4_growth_dryvol_bounded,
+             b4_growth_qnum_bounded, src_mode);
     }
 
     // if the before growth diameter is more than the threshold
@@ -795,7 +804,8 @@ public:
     // Interstitial aerosols: Compute initial (before growth) aerosol dry
     // volume and also the growth in dry volume of the "src" mode
 
-    rename::compute_dryvol_change_in_src_mode(kk,
+    rename::compute_dryvol_change_in_src_mode(
+        kk,
         mam4::AeroConfig::num_modes(),       // in
         mam4::AeroConfig::num_aerosol_ids(), // in
         dest_mode_of_mode,                   // in
@@ -811,7 +821,8 @@ public:
 
     if (is_cloudy_cur) {
 
-      rename::compute_dryvol_change_in_src_mode(kk,
+      rename::compute_dryvol_change_in_src_mode(
+          kk,
           AeroConfig::num_modes(),       // in
           AeroConfig::num_aerosol_ids(), // in
           dest_mode_of_mode,             // in
