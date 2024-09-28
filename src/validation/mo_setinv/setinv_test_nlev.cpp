@@ -45,11 +45,8 @@ void setinv_test_nlev(Ensemble *ensemble) {
     const int num_tracer_cnst = mam4::mo_setinv::num_tracer_cnst;
 
     ColumnView tfld = haero::testing::create_column_view(nlev);
-    auto tfld_h = Kokkos::create_mirror_view(tfld);
-    ColumnView h2ovmr = haero::testing::create_column_view(nlev);
-    auto h2ovmr_h = Kokkos::create_mirror_view(h2ovmr);
+    ColumnView qv = haero::testing::create_column_view(nlev);
     ColumnView pmid = haero::testing::create_column_view(nlev);
-    auto pmid_h = Kokkos::create_mirror_view(pmid);
 
     View2D invariants("invariants", nlev, nfs);
     View1DHost invariants_h("invariants_h", nlev);
@@ -61,18 +58,18 @@ void setinv_test_nlev(Ensemble *ensemble) {
 
     View2DHost c_off_h("c_off_h", nlev, num_tracer_cnst);
 
+    constexpr Real mwh2o = Constants::molec_weight_h2o;
+    Real qv_k_in = conversions::mmr_from_vmr(h2ovmr_in, mwh2o);
+
     for (int k = 0; k < nlev; ++k) {
-      tfld_h(k) = tfld_in;
-      h2ovmr_h(k) = h2ovmr_in;
-      pmid_h(k) = pmid_in;
       for (int i = 0; i < num_tracer_cnst; ++i) {
         c_off_h(k, i) = c_off_in[i];
       }
     }
 
-    Kokkos::deep_copy(tfld, tfld_h);
-    Kokkos::deep_copy(h2ovmr, h2ovmr_h);
-    Kokkos::deep_copy(pmid, pmid_h);
+    Kokkos::deep_copy(tfld, tfld_in);
+    Kokkos::deep_copy(qv, qv_k_in);
+    Kokkos::deep_copy(pmid, pmid_in);
     for (int i = 0; i < num_tracer_cnst; ++i) {
       const auto c_off_h_at_i = Kokkos::subview(c_off_h, Kokkos::ALL, i);
       Kokkos::deep_copy(c_off[i], c_off_h_at_i);
@@ -82,7 +79,7 @@ void setinv_test_nlev(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          mam4::mo_setinv::setinv(team, invariants, tfld, h2ovmr, c_off, pmid);
+          mam4::mo_setinv::setinv(team, invariants, tfld, qv, c_off, pmid);
         });
 
     std::vector<Real> invariants_out(nfs);
