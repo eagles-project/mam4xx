@@ -28,8 +28,8 @@ namespace mam4 {
       {0, 0.1e11},        // nc 
       {0, 0.1e10},        // nr 
       {0, 0.1e10},        // ni 
-      {100, 1e13},      // nmr 
-      {100, 1e-4}       // mmr
+      {0, 1e13},          // nmr 
+      {-1e-20, 1e-2}           // mmr
     };
     return field_min_max[ind];
   }
@@ -63,7 +63,7 @@ physical_min_max(const std::string &field_name) {
   static const std::map<std::string, std::pair<Real, Real>> limits = {
       {"T_mid", {100, 500}}, {"qv", {1e-13, 0.2}}, {"qc", {0, 0.1}},
       {"qi", {0, 0.1}},      {"nc", {0, 0.1e11}},  {"nr", {0, 0.1e10}},
-      {"ni", {0, 0.1e10}},   {"nmr", {0, 1e13}},   {"mmr", {0, 1e-4}}};
+      {"ni", {0, 0.1e10}},   {"nmr", {0, 1e13}},   {"mmr", {-1e-20, 1e-2}}};
   return limits.at(field_name);
 }
 inline Real physical_min(const std::string &field_name) {
