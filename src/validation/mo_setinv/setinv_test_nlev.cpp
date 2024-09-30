@@ -49,7 +49,7 @@ void setinv_test_nlev(Ensemble *ensemble) {
     ColumnView pmid = haero::testing::create_column_view(nlev);
 
     View2D invariants("invariants", nlev, nfs);
-    View1DHost invariants_h("invariants_h", nlev);
+    auto invariants_h = Kokkos::create_mirror_view(invariants);
 
     View1D c_off[num_tracer_cnst];
     for (int i = 0; i < num_tracer_cnst; ++i) {
@@ -84,12 +84,11 @@ void setinv_test_nlev(Ensemble *ensemble) {
 
     std::vector<Real> invariants_out(nfs);
     for (int i = 0; i < nfs; ++i) {
-      const auto invariants_at_i = Kokkos::subview(invariants, Kokkos::ALL, i);
-      Kokkos::deep_copy(invariants_h, invariants_at_i);
-      invariants_out[i] = invariants_h[i];
+      Kokkos::deep_copy(invariants_h, invariants);
+      invariants_out[i] = invariants_h(0,i);
       for (int k = 0; k < nlev; ++k) {
         // make sure every level got the same answer
-        EKAT_ASSERT(invariants_h(0) == invariants_h(k));
+        EKAT_ASSERT(invariants_h(0,i) == invariants_h(k,i));
       }
     }
 
