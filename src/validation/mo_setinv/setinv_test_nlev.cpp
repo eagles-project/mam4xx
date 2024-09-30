@@ -85,10 +85,10 @@ void setinv_test_nlev(Ensemble *ensemble) {
     std::vector<Real> invariants_out(nfs);
     for (int i = 0; i < nfs; ++i) {
       Kokkos::deep_copy(invariants_h, invariants);
-      invariants_out[i] = invariants_h(0,i);
+      invariants_out[i] = invariants_h(0, i);
       for (int k = 0; k < nlev; ++k) {
         // make sure every level got the same answer
-        EKAT_ASSERT(invariants_h(0,i) == invariants_h(k,i));
+        EKAT_ASSERT(invariants_h(0, i) == invariants_h(k, i));
       }
     }
 
