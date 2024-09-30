@@ -56,14 +56,14 @@ void setinv_test_nlev(Ensemble *ensemble) {
       c_off[i] = View1D("c_off", nlev);
     } //
 
-    View2DHost c_off_h("c_off_h", nlev, num_tracer_cnst);
+    View2DHost c_off_h("c_off_h", num_tracer_cnst, nlev);
 
     constexpr Real mwh2o = Constants::molec_weight_h2o;
     Real qv_k_in = conversions::mmr_from_vmr(h2ovmr_in, mwh2o);
 
     for (int k = 0; k < nlev; ++k) {
       for (int i = 0; i < num_tracer_cnst; ++i) {
-        c_off_h(k, i) = c_off_in[i];
+        c_off_h(i, k) = c_off_in[i];
       }
     }
 
@@ -71,7 +71,7 @@ void setinv_test_nlev(Ensemble *ensemble) {
     Kokkos::deep_copy(qv, qv_k_in);
     Kokkos::deep_copy(pmid, pmid_in);
     for (int i = 0; i < num_tracer_cnst; ++i) {
-      const auto c_off_h_at_i = Kokkos::subview(c_off_h, Kokkos::ALL, i);
+      const auto c_off_h_at_i = ekat::subview(c_off_h, i);
       Kokkos::deep_copy(c_off[i], c_off_h_at_i);
     }
 
