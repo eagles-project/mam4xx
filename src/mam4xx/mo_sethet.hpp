@@ -74,7 +74,7 @@ void calc_precip_rescale(
   total_rain = 0.0;
   total_pos = 0.0;
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
+      Kokkos::ThreadVectorRange(team, pver), KOKKOS_LAMBDA(int kk) {
         precip(kk) = cmfdqr(kk) + nrain(kk) - nevapr(kk);
       });
 
@@ -87,12 +87,12 @@ void calc_precip_rescale(
 
   if (total_rain <= 0.0) {
     Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
+        Kokkos::ThreadVectorRange(team, pver), KOKKOS_LAMBDA(int kk) {
           precip(kk) = 0.0; // set all levels to zero
         });
   } else {
     Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
+        Kokkos::ThreadVectorRange(team, pver), KOKKOS_LAMBDA(int kk) {
           precip(kk) = precip(kk) * total_rain / total_pos;
         });
   }
@@ -308,7 +308,7 @@ void sethet(
   calc_precip_rescale(team, cmfdqr, nrain, nevapr, precip); // populate precip
 
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
+      Kokkos::ThreadVectorRange(team, pver), KOKKOS_LAMBDA(int kk) {
         rain(kk) = mass_air * precip(kk) * xhnm(kk) / mass_h2o;
         xliq(kk) = precip(kk) * delt * xhnm(kk) / avo * mass_air * m3_2_cm3;
         xh2o2(kk) = qin[spc_h2o2_ndx](kk) * xhnm(kk);
@@ -318,7 +318,7 @@ void sethet(
   zsurf = m2km * phis * rga;
 
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, ktop, pver - 1), KOKKOS_LAMBDA(int kk) {
+      Kokkos::ThreadVectorRange(team, ktop, pver - 1), KOKKOS_LAMBDA(int kk) {
         delz(kk) = haero::abs((zmid(kk) - zmid(kk + 1)) * km2cm);
       });
   delz(pver - 1) = haero::abs((zmid(pver - 1) - zsurf) * km2cm);
@@ -337,7 +337,7 @@ void sethet(
   //             heff = h * (1 + k/[h+]) (in general)
   //-----------------------------------------------------------------
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, ktop, pver), KOKKOS_LAMBDA(int kk) {
+      Kokkos::ThreadVectorRange(team, ktop, pver), KOKKOS_LAMBDA(int kk) {
         //-----------------------------------------------------------------
         // 	... effective henry''s law constants:
         //	hno3, h2o2  (brasseur et al., 1999)
@@ -358,7 +358,7 @@ void sethet(
   //       ... part 1, solve for high henry constant ( hno3, h2o2)
   //-----------------------------------------------------------------
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, pver), KOKKOS_LAMBDA(int kk) {
+      Kokkos::ThreadVectorRange(team, pver), KOKKOS_LAMBDA(int kk) {
         xgas2(kk) = xh2o2(kk); // different levels wash
         xgas3(kk) = xso2(kk);
       });
