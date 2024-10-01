@@ -15,11 +15,14 @@ using View3D = DeviceType::view_3d<Real>;
 constexpr int pver = mam4::nlev;
 constexpr int extfrc_cnt = 9;
 constexpr int extcnt = 9; //, & ! number of species with external forcing
-
+// MAX_NUM_SECTIONS: Maximum number of sections in forcing data. Increase this
+// number if needed.
+constexpr int MAX_NUM_SECTIONS = 4;
 struct Forcing {
+  // This index is in Fortran format. i.e. starts in 1
   int frc_ndx;
   bool file_alt_data;
-  View2D fields_data;
+  View1D fields_data[MAX_NUM_SECTIONS];
   int nsectors;
 };
 
@@ -58,12 +61,12 @@ void extfrc_set(const Forcing *forcings, const View2D &frcing) {
         for (int kk = 0; kk < pver; ++kk) {
           // frcing(:ncol,:,nn) = frcing(:ncol,:,nn) + &
           // forcings(mm)%fields(isec)%data(:ncol,pver:1:-1,lchnk)
-          frcing(kk, nn) += forcing_mm.fields_data(isec, pver - 1 - kk);
+          frcing(kk, nn) += forcing_mm.fields_data[isec](pver - 1 - kk);
         } // kk
       } else {
         // // forcings(mm)%fields(isec)%data(:ncol,:,lchnk)
         for (int kk = 0; kk < pver; ++kk) {
-          frcing(kk, nn) += forcing_mm.fields_data(isec, kk);
+          frcing(kk, nn) += forcing_mm.fields_data[isec](kk);
         }
       }
     } // isec

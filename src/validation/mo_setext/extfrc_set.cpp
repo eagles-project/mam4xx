@@ -29,10 +29,11 @@ void extfrc_set(Ensemble *ensemble) {
       forcing_mm.file_alt_data = int(input.get_array(
           "forcings" + std::to_string(i) + "_file_alt_data")[0]);
 
-      forcing_mm.fields_data = View2D("data", forcing_mm.nsectors, pver);
+      EKAT_ASSERT_MSG(
+          MAX_NUM_SECTIONS >= int(forcing_mm.nsectors),
+          "Error! The number of sections is greater than MAX_NUM_SECTIONS..\n");
 
       for (int isec = 1; isec <= forcing_mm.nsectors; ++isec) {
-
         auto label = "forcings" + std::to_string(i) + "_fields" +
                      std::to_string(isec) + "_data";
         const auto data1 = input.get_array(label);
@@ -40,9 +41,10 @@ void extfrc_set(Ensemble *ensemble) {
         View1DHost forcings_fields_data_host =
             View1DHost((Real *)data1.data(), data1.size());
 
-        const View1D data_isec =
-            Kokkos::subview(forcing_mm.fields_data, isec - 1, Kokkos::ALL());
+        View1D data_isec("data", pver);
         Kokkos::deep_copy(data_isec, forcings_fields_data_host);
+        forcing_mm.fields_data[isec - 1] = data_isec;
+
       } // isec
 
       forcings[i - 1] = forcing_mm;

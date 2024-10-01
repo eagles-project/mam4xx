@@ -33,8 +33,6 @@ void setinv_test_single_level(Ensemble *ensemble) {
 
     const Real tfld = input.get_array("tfld")[0];
     const Real h2ovmr = input.get_array("h2ovmr")[0];
-    // NOTE: vmr turns out to be unused, but still in the fxn signature for now
-    auto vmr = input.get_array("vmr");
     const Real pmid = input.get_array("pmid")[0];
     const int nfs = input.get_array("nfs")[0];
     auto cnst_offline = input.get_array("cnst_offline_yaml");
@@ -43,9 +41,8 @@ void setinv_test_single_level(Ensemble *ensemble) {
 
     Real invariants[nfs];
 
-    mam4::mo_setinv::setinv_single_level(invariants, tfld, h2ovmr, vmr.data(),
-                                         pmid, cnst_offline.data(),
-                                         setinv_config_);
+    mam4::mo_setinv::setinv_single_level(invariants, tfld, h2ovmr, pmid,
+                                         cnst_offline.data(), setinv_config_);
 
     std::vector<Real> inv_out;
     for (int i = 0; i < nfs; ++i) {
