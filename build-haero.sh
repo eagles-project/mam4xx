@@ -75,6 +75,7 @@ fi
 echo "Cloning Haero repository into $(pwd)/.haero..."
 git clone git@github.com:eagles-project/haero.git .haero || exit
 cd .haero || exit
+git switch oscar/CUDA_HALF
 git submodule update --init --recursive || exit
 
 # Are we on a special machine?
