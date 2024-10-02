@@ -78,15 +78,15 @@ void set_hcoeff_scalar(const Real sfc_temp, Real heff[]) {
   // H2O2, H2SO4, SO2.
   // The original table can be found in the seq_drydep_mod.F90 module.
   // BAD CONSTANT
-
-  // NOTE:
   const GasDrydepSpecies drydep_list[n_drydep] = {
       GasDrydepSpecies::H2O2, GasDrydepSpecies::H2SO4, GasDrydepSpecies::SO2};
+  // --- data for effective Henry's Law coefficient ---
   constexpr Real dheff[n_drydep * 6] = {
       8.70e+04, 7320., 2.2e-12,  -3730., 0.,      0.,   // H2O2
       1.e+11,   6014., 0.,       0.,     0.,      0.,   // H2SO4
       1.36e+00, 3100., 1.30e-02, 1960.,  6.6e-08, 1500. // SO2
   };
+  // NOTE: we are using fortran indexing.
   constexpr int mapping[n_drydep] = {1, 2, 3};
   // BAD CONSTANT
   constexpr Real ph = 1.e-5; // measure of the acidity (dimensionless)
