@@ -1,5 +1,3 @@
-#include "set_h_coeff.hpp" // <-- implementation of seq_drydep::setHCoeff
-
 #include <mam4xx/mam4.hpp>
 
 #include <skywalker.hpp>
