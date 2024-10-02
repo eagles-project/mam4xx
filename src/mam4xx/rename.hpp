@@ -70,7 +70,7 @@ void compute_dryvol_change_in_src_mode(
         tmp_dryvol += q_mmr[m][ispec] * mass_2_vol[ispec];
         if (kk == 48) {
           printf("compute_dryvolume_change_0:   %0.15E,   %0.15E,   %0.15E, "
-                 "%i, %i\n",
+                 "%i  %i\n",
                  tmp_dryvol, q_mmr[m][ispec], mass_2_vol[ispec], ispec, m);
         }
         // accumulate the "growth" in volume units as well
@@ -234,14 +234,16 @@ void do_num_and_mass_transfer(
   for (int ispec = 0; ispec < AeroConfig::num_aerosol_ids(); ++ispec) {
     const Real vol_trans = qmol[src_mode][ispec] * xfer_vol_frac;
     if (kk == 48 && inn == 1) {
-      printf("do_inter_mode_transfer_end2:%0.15E,%0.15E%0.15E,%0.15E,%i,%i\n",
+      printf("do_inter_mode_transfer_end2:   %0.15E,   %0.15E,   %0.15E,   "
+             "%0.15E, %i %i\n",
              vol_trans, qmol[src_mode][ispec], qmol[dest_mode][ispec],
              xfer_vol_frac, ispec, src_mode);
     }
     qmol[src_mode][ispec] -= vol_trans;
     qmol[dest_mode][ispec] += vol_trans;
     if (kk == 48 && inn == 1) {
-      printf("do_inter_mode_transfer_end3:%0.15E,%0.15E,%0.15E,%0.15E,%i,%i\n",
+      printf("do_inter_mode_transfer_end3:   %0.15E,   %0.15E,   %0.15E,   "
+             "%0.15E, %i %i\n",
              vol_trans, qmol[src_mode][ispec], qmol[dest_mode][ispec],
              xfer_vol_frac, ispec, src_mode);
     }
@@ -302,11 +304,11 @@ void do_inter_mode_transfer(
         // out
         b4_growth_dryvol, b4_growth_dryvol_bounded, b4_growth_qnum_bounded);
     if (kk == 48) {
-      printf("befgrwth_dia:  %0.15E,  %0.15E,  %0.15E,  %0.15E,  %0.15E,  "
+      printf("befgrwth_dia_1:  %0.15E,  %0.15E,  %0.15E,  %0.15E,  "
              "%0.15E,  %0.15E\n",
-             smallest_dryvol_value, dryvol_i[src_mode], dryvol_c[src_mode],
-             qnum_i_cur[src_mode], qnum_c_cur[src_mode],
-             num2vol_ratiolorlx[src_mode], num2vol_ratiohirlx[src_mode]);
+             dryvol_i[src_mode], dryvol_c[src_mode], qnum_i_cur[src_mode],
+             qnum_c_cur[src_mode], num2vol_ratiolorlx[src_mode],
+             num2vol_ratiohirlx[src_mode]);
     }
 
     // change (delta) in dryvol
@@ -329,7 +331,7 @@ void do_inter_mode_transfer(
     Real b4_growth_diameter = conversions::mean_particle_diameter_from_volume(
         b4_growth_mode_mean_particle_volume, mean_std_dev[src_mode]);
     if (kk == 48) {
-      printf("befgrwth_dia:  %0.15E,  %0.15E,  %0.15E, %i\n",
+      printf("befgrwth_dia_2:  %0.15E,  %0.15E,  %0.15E, %i\n",
              b4_growth_diameter, b4_growth_dryvol_bounded,
              b4_growth_qnum_bounded, src_mode);
     }
@@ -417,22 +419,22 @@ void do_inter_mode_transfer(
     );
 
     if (kk == 48) {
-      printf("bef_aft_num:%0.15E,%0.15E\n", b4_growth_tail_fr_qnum,
+      printf("bef_aft_num:   %0.15E,   %0.15E\n", b4_growth_tail_fr_qnum,
              after_growth_tail_fr_num);
-      printf("bef_aft_dia_num:%0.15E,%0.15E,%0.15E,%0.15E\n",
+      printf("bef_aft_dia_num:   %0.15E,   %0.15E,   %0.15E,   %0.15E\n",
              b4_growth_diameter, aft_growth_diameter, ln_dia_cutoff[src_mode],
              fmode_dist_tail_fac[src_mode]);
     }
 
     if (kk == 48) {
-      printf("bef_aft_vol:%0.15E,%0.15E,%0.15E,%0.15E,%0.15E\n",
+      printf("bef_aft_vol:   %0.15E,   %0.15E,   %0.15E,   %0.15E,   %0.15E\n",
              b4_growth_tail_fr_vol, after_growth_tail_fr_vol,
              ln_diameter_tail_fac[src_mode], b4_growth_dryvol,
              after_growth_dryvol);
     }
 
     if (kk == 48) {
-      printf("compute_xfer_fractions:%0.15E,%0.15E\n", xfer_vol_frac,
+      printf("compute_xfer_fractions:   %0.15E,   %0.15E\n", xfer_vol_frac,
              xfer_num_frac);
     }
 
@@ -847,14 +849,6 @@ public:
         dryvol_i, dryvol_c, deldryvol_i, deldryvol_c, qmol_i_cur,
         // aerosol number mixing ratios [#/kmol-air]
         qnum_i_cur, qmol_c_cur, qnum_c_cur);
-
-    if (kk == 48) {
-      for (int im = 0; im < 4; ++im) {
-        // printf("mam_rename_1subarea_last:%0.15E,%0.15E,%0.15E,%0.15E,%i\n",
-        // qnum_i_cur[im],
-        //        qnum_c_cur[im], sz_factor[im], ln_diameter[im], im);
-      }
-    }
   } // end mam_rename_1subarea_()
 };  // end class Rename
 

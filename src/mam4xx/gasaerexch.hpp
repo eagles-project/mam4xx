@@ -412,7 +412,8 @@ void gas_aer_uptkrates_1box1gas(const int k, const Real accom,
       beta = one - knudsen * tmpa;
       beta = haero::max(one, haero::min(two, beta));
       if (k == 48)
-        printf("beta:%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0.15E, %i\n",
+        printf("beta:   %0.15E,   %0.15E,   %0.15E,   %0.15E,   %0.15E,   "
+               "%0.15E,   %0.15E, %i\n",
                beta, knudsen, tmpa, accomxp283, accomxp75, gasfreepath, D_p,
                n + 1);
     } else {
@@ -429,15 +430,16 @@ void gas_aer_uptkrates_1box1gas(const int k, const Real accom,
           lndpgn + beta * lnsg[n] * lnsg[n] + root2 * lnsg[n] * xghq[iq];
       const Real D_p = haero::exp(lndp);
       if (k == 48)
-        printf("dp:%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%i,%i\n",
+        printf("dp:   %0.15E,   %0.15E,   %0.15E,   %0.15E,   %0.15E,   "
+               "%0.15E,   %0.15E, %i %i\n",
                D_p, lndp, lndpgn, beta, lnsg[n], root2, xghq[iq], iq + 1,
                n + 1);
 
       const Real hh = fuchs_sutugin(D_p, gasfreepath, accomxp283, accomxp75);
       sumghq += wghq[iq] * D_p * hh / haero::pow(D_p, beta);
       if (k == 48)
-        printf("sumghq:%0.15E,%0.15E,%0.15E,%0.15E,%0.15E, %i\n", sumghq,
-               wghq[iq], D_p, hh, beta, n + 1);
+        printf("sumghq:   %0.15E,   %0.15E,   %0.15E,   %0.15E,   %0.15E, %i\n",
+               sumghq, wghq[iq], D_p, hh, beta, n + 1);
     }
     // gas-to-aerosol mass transfer rates
     uptkaer[n] = constant * gasdiffus * sumghq;
@@ -1026,9 +1028,10 @@ void mam_gasaerexch_1subarea(
   for (int imode = 0; imode < ntot_amode; ++imode) {
     const Real sigmag_amode = modes(imode).mean_std_dev;
     alnsg_aer[imode] = haero::log(sigmag_amode);
-    if (k == 48)
-      printf("alnsg_aer:%0.15E,%0.15E,%i\n", alnsg_aer[imode], sigmag_amode,
-             imode);
+    // if (k == 48)
+    // printf("alnsg_aer:   %0.15E,   %0.15E, %i\n", alnsg_aer[imode],
+    // sigmag_amode,
+    //        imode);
   }
 
   // using c++ indexing (fortran index -1)
@@ -1088,25 +1091,25 @@ void mam_gasaerexch_1subarea(
 
       const Real gas_freepath_igas = 3.0 * gas_diffus_igas / molecular_speed;
       if (k == 48)
-        printf("gas_freepath_igas:%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0."
-               "15E,%0.15E,%0.15E,%0.15E,%0.15E,%i\n",
-               gas_diffus_igas, molecular_speed, temp, mw_gas[igas],
-               r_universal_mJ, r_pi, pstd, temp, p_in_atm, mw_gas[igas],
-               vol_molar_gas[igas], igas);
+        printf("gas_freepath_igas:   %0.15E,   %0.15E,   %0.15E,   %0.15E,   "
+               "%0.15E,   %0.15E,   %0.15E,   %0.15E, %i\n",
+               gas_diffus_igas, molecular_speed, temp, mw_gas[igas], temp,
+               p_in_atm, mw_gas[igas], vol_molar_gas[igas], igas);
 
       mam4::gasaerexch::gas_aer_uptkrates_1box1gas(
           k, accom_coef_gas[igas], gas_diffus_igas, gas_freepath_igas, 0.0,
           dgn_awet, alnsg_aer, uptkrate);
       if (k == 48)
-        printf("gas_aer_uptkrates_1box1gas:%0.15E,%0.15E,%0.15E,%i,%i\n",
-               accom_coef_gas[igas], gas_diffus_igas, gas_freepath_igas, igas,
-               ntot_amode);
+        printf(
+            "gas_aer_uptkrates_1box1gas:   %0.15E,   %0.15E,   %0.15E, %i %i\n",
+            accom_coef_gas[igas], gas_diffus_igas, gas_freepath_igas, igas,
+            ntot_amode);
       const int iaer = igas;
       for (int n = 0; n < ntot_amode; ++n) {
         if (lmap_aer[iaer][n] > 0 || mode_aging_optaa[n] > 0) {
           uptkaer[igas][n] = uptkrate[n] * (qnum_cur[n] * aircon);
           if (k == 48)
-            printf("uptkaer:%0.15E,%0.15E,%0.15E,%0.15E,%i,%i\n",
+            printf("uptkaer:   %0.15E,   %0.15E,   %0.15E,   %0.15E, %i %i\n",
                    uptkaer[igas][n], uptkrate[n], qnum_cur[n], aircon, igas, n);
         } else {
           uptkaer[igas][n] = 0.0;
@@ -1117,8 +1120,9 @@ void mam_gasaerexch_1subarea(
     if (k == 48) {
       for (int igas = 0; igas < max_gas; ++igas) {
         for (int n = 0; n < ntot_amode; ++n) {
-          printf("uptkaer_BEF:%0.15E,%0.15E,%i,%i,%i,%i,%i\n", uptkaer[igas][n],
-                 uptkaer[igas_h2so4][n], igas, igas_h2so4, igas_nh3, nsoa, n);
+          printf("uptkaer_BEF:   %0.15E,   %0.15E, %i %i %i %i %i\n",
+                 uptkaer[igas][n], uptkaer[igas_h2so4][n], igas, igas_h2so4,
+                 igas_nh3, nsoa, n);
         }
       }
     }
@@ -1142,7 +1146,7 @@ void mam_gasaerexch_1subarea(
     if (k == 48) {
       for (int igas = 0; igas < max_gas; ++igas) {
         for (int n = 0; n < ntot_amode; ++n) {
-          printf("uptkaer_AFT:%0.15E,%i,%i,%i\n", uptkaer[igas][n], igas,
+          printf("uptkaer_AFT:   %0.15E, %i %i %i\n", uptkaer[igas][n], igas,
                  igas_h2so4, n);
         }
       }
@@ -1161,17 +1165,17 @@ void mam_gasaerexch_1subarea(
 
   if (k == 48) {
     for (int igas = 0; igas < max_gas; ++igas) {
-      printf("After mam_soaexch_1subarea:%0.15E,%0.15E,%i\n", qgas_cur[igas],
-             qgas_avg[igas], igas);
+      printf("After mam_soaexch_1subarea:   %0.15E,   %0.15E, %i\n",
+             qgas_cur[igas], qgas_avg[igas], igas);
     }
     for (int igas = 0; igas < ntot_amode; ++igas) {
-      printf("After mam_soaexch_1subarea_n:%0.15E,%0.15E,%i\n", qnum_cur[igas],
-             qwtr_cur[igas], igas);
+      printf("After mam_soaexch_1subarea_n:   %0.15E,   %0.15E, %i\n",
+             qnum_cur[igas], qwtr_cur[igas], igas);
     }
     for (int im = 0; im < ntot_amode; ++im) {
       for (int ia = 0; ia < max_aer; ++ia) {
-        printf("After mam_soaexch_1subarea_a:%0.15E,%i,%i\n", qaer_cur[ia][im],
-               ia, im);
+        printf("After mam_soaexch_1subarea_a:   %0.15E, %i %i\n",
+               qaer_cur[ia][im], ia, im);
       }
     }
   }
@@ -1217,7 +1221,7 @@ void mam_gasaerexch_1subarea(
       }
       qgas_cur[igas] = tmp_q3;
       if (k == 48) {
-        printf("tmp_q3:%0.15E,%i\n", qgas_cur[igas], igas);
+        printf("tmp_q3:   %0.15E, %i\n", qgas_cur[igas], igas);
       }
       const Real tmp_qdel_cond = (tmp_q1 + tmp_pxt) - tmp_q3;
       qgas_avg[igas] = tmp_q4;
@@ -1230,7 +1234,7 @@ void mam_gasaerexch_1subarea(
     } else {
       qgas_cur[igas] = tmp_q1 + tmp_pxt;
       if (k == 48) {
-        printf("tmp_q3_2:%0.15E,%i\n", qgas_cur[igas], igas);
+        printf("tmp_q3_2:   %0.15E, %i\n", qgas_cur[igas], igas);
       }
       qgas_avg[igas] = tmp_q1 + tmp_pxt * 0.5;
     }

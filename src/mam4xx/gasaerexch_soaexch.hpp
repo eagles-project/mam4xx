@@ -215,8 +215,8 @@ void mam_soaexch_1subarea(const int k, const Real dtsubstep,    // in
     for (int ll = 0; ll < ntot_soaspec; ++ll) {
       g_soa[ll] = haero::max(qgas_prv[ll], 0.0);
       if (k == 48) {
-        printf("g_soa_1:%0.15E,%0.15E,%0.15E,%i,%i\n", g_soa[ll], qgas_prv[ll],
-               uptkaer_soag_tmp[ll][0], ntot_soamode, ll);
+        printf("g_soa_1:   %0.15E,   %0.15E,   %0.15E, %i %i\n", g_soa[ll],
+               qgas_prv[ll], uptkaer_soag_tmp[ll][0], ntot_soamode, ll + 1);
       }
       tot_soa[ll] = g_soa[ll];
       for (int n = 0; n < ntot_soamode; ++n) {
@@ -230,19 +230,19 @@ void mam_soaexch_1subarea(const int k, const Real dtsubstep,    // in
     // ntot_poaspec = 1
     for (int n = 0; n < ntot_soamode; ++n) {
       if (k == 48)
-        printf("N:%i,%i,%i\n", n, ntot_soamode, ntot_poaspec);
+        printf("N %i %i %i\n", n + 1, ntot_soamode, ntot_poaspec);
       if (skip_soamode[n])
         continue;
       a_opoa[n] = 0.0;
       for (int ll = 0; ll < ntot_poaspec; ++ll) {
-        // if (k == 48)printf("N,L:%i,%i\n",n,ll);
+        // if (k == 48)printf("N,L %i %i\n",n,ll);
         a_opoa[n] +=
             opoa_frac[ll][n] * haero::max(qaer_prv[iaer_pom + ll][n], 0.0);
         if (k == 48) {
-          printf("a_opoa:%0.15E,%0.15E,%0.15E,%i,%i,%i,%i\n", a_opoa[n],
-                 opoa_frac[ll][n], qaer_prv[iaer_pom + ll][n],
+          printf("a_opoa:   %0.15E,   %0.15E,   %0.15E, %i %i %i %i\n",
+                 a_opoa[n], opoa_frac[ll][n], qaer_prv[iaer_pom + ll][n],
                  iaer_pom + ll - 1, iaer_pom, ll, n);
-          // printf("Yes:%i, %i, %i, %i\n",iaer_pom+ll-1,  iaer_pom,  ll,   n);
+          // printf("Yes %i, %i, %i, %i\n",iaer_pom+ll-1,  iaer_pom,  ll,   n);
         }
       }
     }
@@ -250,7 +250,7 @@ void mam_soaexch_1subarea(const int k, const Real dtsubstep,    // in
     for (int iaer = 0; iaer < max_aer; ++iaer) {
       for (int n = 0; n < AeroConfig::num_modes(); ++n) {
         if (k == 48) {
-          printf("qaer_prv:%0.15E,%i,%i\n", qaer_prv[iaer][n], iaer, n);
+          printf("qaer_prv:   %0.15E, %i %i\n", qaer_prv[iaer][n], iaer, n);
         }
       }
     }
@@ -264,8 +264,8 @@ void mam_soaexch_1subarea(const int k, const Real dtsubstep,    // in
       for (int ll = 0; ll < ntot_soaspec; ++ll) {
         a_ooa_sum_tmp[n] += a_soa[ll][n];
         if (k == 48) {
-          printf("a_ooa_sum_tmp::%0.15E,%0.15E,%0.15E,%i,%i", a_ooa_sum_tmp[n],
-                 a_opoa[n], a_soa[0][n], ntot_soaspec, n);
+          printf("a_ooa_sum_tmp::   %0.15E,   %0.15E,   %0.15E, %i %i\n",
+                 a_ooa_sum_tmp[n], a_opoa[n], a_soa[0][n], ntot_soaspec, n);
         }
       }
     }
@@ -280,8 +280,9 @@ void mam_soaexch_1subarea(const int k, const Real dtsubstep,    // in
                      haero::max(g_soa[ll], haero::max(g_star[ll][n], g_min1));
         tmpb += uptkaer_soag_tmp[ll][n] * haero::abs(phi[ll][n]);
         if (k == 48) {
-          printf("tmpb:%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,"
-                 "%0.15E,%0.15E,%0.15E,%i,%i\n",
+          printf("tmpb:   %0.15E,   %0.15E,   %0.15E,   %0.15E,   %0.15E,   "
+                 "%0.15E,   %0.15E,   %0.15E,"
+                 "%0.15E,   %0.15E,   %0.15E, %i %i\n",
                  tmpb, uptkaer_soag_tmp[ll][n], phi[ll][n], g_soa[ll],
                  g_star[ll][n], g_min1, sat[ll][n], a_soa[ll][n], g0_soa[ll],
                  a_ooa_sum_tmp[n], a_min1, ll + 1, n + 1);
@@ -299,15 +300,15 @@ void mam_soaexch_1subarea(const int k, const Real dtsubstep,    // in
         dtcur = dtmax;
         tcur = dtfull;
         if (k == 48) {
-          printf("dtcur_1:%0.15E,%0.15E,%0.15E,%0.15E,%0.15E\n", dtcur, dtmax,
-                 tmpa, alpha_astem, tcur);
+          printf("dtcur_1:   %0.15E,   %0.15E,   %0.15E,   %0.15E,   %0.15E\n",
+                 dtcur, dtmax, tmpa, alpha_astem, tcur);
         }
       } else {
         dtcur = alpha_astem / tmpa;
         tcur += dtcur;
         if (k == 48) {
-          printf("dtcur_2:%0.15E,%0.15E,%0.15E,%0.15E\n", dtcur, tmpa,
-                 alpha_astem, tcur);
+          printf("dtcur_2:   %0.15E,   %0.15E,   %0.15E,   %0.15E\n", dtcur,
+                 tmpa, alpha_astem, tcur);
         }
       }
     }
@@ -323,8 +324,8 @@ void mam_soaexch_1subarea(const int k, const Real dtsubstep,    // in
         a_soa_tmp[ll][n] = a_soa[ll][n];
         beta[ll][n] = dtcur * uptkaer_soag_tmp[ll][n];
         if (k == 48) {
-          printf("beta:%0.15E,%0.15E,%0.15E,%i,%i\n", beta[ll][n], dtcur,
-                 uptkaer_soag_tmp[ll][n], ll + 1, n + 1);
+          printf("beta:   %0.15E,   %0.15E,   %0.15E, %i %i\n", beta[ll][n],
+                 dtcur, uptkaer_soag_tmp[ll][n], ll + 1, n + 1);
         }
         del_g_soa_tmp[ll] = g_soa[ll] - g_star[ll][n];
         if (del_g_soa_tmp[ll] > 0.0) {
@@ -359,7 +360,8 @@ void mam_soaexch_1subarea(const int k, const Real dtsubstep,    // in
       g_soa[ll] = (tot_soa[ll] - tmpa) / (1.0 + tmpb);
       g_soa[ll] = haero::max(0.0, g_soa[ll]);
       if (k == 48) {
-        printf("g_soa_2:%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%0.15E,%i\n",
+        printf("g_soa_2:   %0.15E,   %0.15E,   %0.15E,   %0.15E,   %0.15E,   "
+               "%0.15E,   %0.15E, %i\n",
                g_soa[ll], tot_soa[ll], tmpa, tmpb, a_soa[ll][0], beta[ll][0],
                sat[ll][0], ll - 1);
       }

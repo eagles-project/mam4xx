@@ -544,7 +544,7 @@ void mer07_veh02_nuc_mosaic_1box(const int kk,
   Real nh3ppt = qnh3_cur * 1.0e12;
   Real ratenuclt = 1.0e-38;
   Real rateloge = haero::log(ratenuclt);
-if (kk == 48) printf("nuc1:%0.15E  %0.15E  %0.15E  %0.15E  %0.15E\n", cair, so4vol_in, nh3ppt, ratenuclt, rateloge);
+if (kk == 48) printf("nuc1:   %0.15E,  %0.15E,  %0.15E,  %0.15E,  %0.15E,\n", cair, so4vol_in, nh3ppt, ratenuclt, rateloge);
   Real cnum_h2so4 = 0.0;
   Real cnum_tot = 0.0;
   Real radius_cluster = 0.0;
