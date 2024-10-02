@@ -91,7 +91,7 @@ void set_hcoeff_scalar(const Real sfc_temp, Real heff[]) {
   // BAD CONSTANT
   constexpr Real ph = 1.e-5; // measure of the acidity (dimensionless)
 
-  const Real t0 = 298.0;        // Standard Temperature
+  constexpr Real t0 = 298.0;    // Standard Temperature
   const Real ph_inv = 1.0 / ph; // Inverse of PH
 
   const Real wrk = (t0 - sfc_temp) / (t0 * sfc_temp);
