@@ -26,10 +26,8 @@ constexpr Real grav = 9.81;
 constexpr Real karman = 0.4;   // from shr_const_mod.F90
 constexpr Real tmelt = 273.15; // from shr_const_mod.F90 via physconst.F90
 
-// nddvels is used only to determine array sizes, and is not involved in
-// logic below. Because we rely on its constancy for C++ array sizes, we
-// must use its maximum value, which is maxspc above
-constexpr int nddvels = mam4::seq_drydep::maxspc;
+// nddvels is equal to number of species in dry deposition list for gases.
+constexpr int nddvels = mam4::seq_drydep::n_drydep;
 
 KOKKOS_INLINE_FUNCTION
 void calculate_uustar(
@@ -560,7 +558,7 @@ void drydep_xactive(
   // define species-dependent parameters (temperature dependent)
   //-------------------------------------------------------------------------------------
   Real heff[nddvels];
-  mam4::seq_drydep::setHCoeff(sfc_temp, heff);
+  mam4::seq_drydep::set_hcoeff_scalar(sfc_temp, heff);
 
   //-------------------------------------------------------------------------------------
   // 	... set month
