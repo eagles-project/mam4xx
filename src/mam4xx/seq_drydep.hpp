@@ -59,14 +59,6 @@ struct Data {
   int so2_ndx;
 };
 
-// This function computes the H coefficients corresponding to the given surface
-// temperature. It must be implemented by the client application as an on-device
-// Kokkos function, and must be defined IN THE TRANSLATION UNIT IN WHICH IT'S
-// CALLED because we don't use relocatable device code. The function can be
-// implemented in the atmospheric host model or in a testing environment, for
-// example.
-KOKKOS_FUNCTION void setHCoeff(Real sfc_temp, Real heff[maxspc]);
-
 // Define the Species enum for dry deposition species identification
 // BAD CONSTANT
 enum class GasDrydepSpecies { H2O2, H2SO4, SO2, CO2, NH3 };
