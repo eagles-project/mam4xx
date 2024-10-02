@@ -130,8 +130,7 @@ void set_hcoeff_scalar(const Real sfc_temp, Real heff[]) {
         } else if (species == GasDrydepSpecies::NH3) {
           heff[m] *= (1.0 + dk1 * ph / dk2);
         } else {
-          EKAT_ERROR_MSG("ERROR: Bad species encountered.\n");
-          return; // Exit the function on error
+          EKAT_KERNEL_ERROR_MSG("ERROR: Bad species encountered.\n");
         }
       }
     }
