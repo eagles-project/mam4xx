@@ -124,7 +124,7 @@ Cloudconc sox_cldaero_create_obj( int k,
   int id_so4_2a = config_.lptr_so4_cw_amode[1] - loffset;
   int id_so4_3a = config_.lptr_so4_cw_amode[2] - loffset;
   so4c = qcw[id_so4_1a] + qcw[id_so4_2a] + qcw[id_so4_3a];
-  if(k==48)printf("so4C:%0.15e,%0.15e,%0.15e,%0.15e,%i,%i,%i,%i\n",so4c,qcw[id_so4_1a] ,qcw[id_so4_2a] , qcw[id_so4_3a], id_so4_1a, id_so4_2a, id_so4_3a,loffset);
+  //if(k==48)printf("so4C:%0.15e,%0.15e,%0.15e,%0.15e,%i,%i,%i,%i\n",so4c,qcw[id_so4_1a] ,qcw[id_so4_2a] , qcw[id_so4_3a], id_so4_1a, id_so4_2a, id_so4_3a,loffset);
 
   // with 3-mode, assume so4 is nh4hso4, and so half-neutralized
   // FIXME: BAD CONSTANT
@@ -487,7 +487,7 @@ void calc_sox_aqueous(int k, const bool modal_aerosols, const Real rah2o2, //FIX
   Real delta_s = haero::max(pso4 * dt, small_value_30);
 
   xso4_init = xso4;
-  if (k==48)printf("xso4_init:%0.15e\n",xso4_init);
+  //if (k==48)printf("xso4_init:%0.15e\n",xso4_init);
 
   if ((delta_s <= xso2) && (delta_s <= xh2o2)) {
     xso4 = xso4 + delta_s;
@@ -505,10 +505,10 @@ void calc_sox_aqueous(int k, const bool modal_aerosols, const Real rah2o2, //FIX
 
   if (modal_aerosols) {
     xdelso4hp = xso4 - xso4_init;
-    if (k==48)printf("xdelso4hp:%0.15e,%0.15e,%0.15e\n",xdelso4hp, xso4, xso4_init);
+    //if (k==48)printf("xdelso4hp:%0.15e,%0.15e,%0.15e\n",xdelso4hp, xso4, xso4_init);
   }
   else{
-    if (k==48)printf("modal is false!");
+    //if (k==48)printf("modal is false!");
   }
   //...........................
   //       S(IV) + O3 = S(VI)
@@ -921,7 +921,7 @@ void sox_cldaero_update(int k, const int loffset, const Real dt, const Real mbar
     dqdt_wr = 0.0;
     dqdt_aq = -dso4dt_hprxn * cldfrc;
     update_tmr(qin[config_.id_h2o2], dqdt_aq + dqdt_wr, dt);
-    if(k==48) printf("sox_cldaero_update:%0.15e,%0.15e,%0.15e,%0.15e,%0.15e,%0.15e\n",qin[config_.id_h2o2], dqdt_aq, dqdt_wr, dt, -dso4dt_hprxn , cldfrc);
+    //if(k==48) printf("sox_cldaero_update:%0.15e,%0.15e,%0.15e,%0.15e,%0.15e,%0.15e\n",qin[config_.id_h2o2], dqdt_aq, dqdt_wr, dt, -dso4dt_hprxn , cldfrc);
 
     /*
     for SO4 from H2O2/O3 budgets
@@ -1153,7 +1153,7 @@ void setsox_single_level(const int k, const int loffset, const Real dt, const Re
 
     if ((setsox_config_.cloud_borne > zero) && (cldfrc > zero)) {
       xso4 = xso4c / cldfrc;
-      if(k==48)printf("cldbrn_calc_sox_aqueous:%0.15e\n",xso4);
+      //if(k==48)printf("cldbrn_calc_sox_aqueous:%0.15e\n",xso4);
     }
     else{if (k==48)printf("WHY HERE CLDBRN");}
     bool converged = false;
@@ -1276,7 +1276,7 @@ void setsox_single_level(const int k, const int loffset, const Real dt, const Re
   // exist in the MAM4 fortran code
   // WHEN CLOUD IS PRESENTED (present?)
   if (xlwc >= setsox_config_.small_value_lwc) {
-    if(k==48)printf("bef_calc_sox_aqueous:%0.15e,%0.15e\n",xso4, xso4_init);
+    //if(k==48)printf("bef_calc_sox_aqueous:%0.15e,%0.15e\n",xso4, xso4_init);
     calc_sox_aqueous(k,setsox_config_.modal_aerosols, rah2o2, h2o2g, so2g, o3g,
                      rao3, patm, dt, t_factor, xlwc, setsox_config_.const0,
                      xhnm, heo3, heso2,
