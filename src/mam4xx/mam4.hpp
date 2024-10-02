@@ -39,9 +39,9 @@
 #include <mam4xx/rename.hpp>
 #include <mam4xx/spitfire_transport.hpp>
 #include <mam4xx/tropopause.hpp>
+#include <mam4xx/vertical_interpolation.hpp>
 #include <mam4xx/water_uptake.hpp>
 #include <mam4xx/wet_dep.hpp>
-#include <mam4xx/vertical_interpolation.hpp>
 
 namespace mam4 {
 
