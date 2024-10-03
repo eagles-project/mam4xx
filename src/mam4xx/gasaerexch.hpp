@@ -27,19 +27,7 @@ namespace mam4 {
 /// ../aero_process.hpp.
 class GasAerExch {
 public:
-  static constexpr int num_gas_to_aer = 2;
   static constexpr int num_mode = AeroConfig::num_modes();
-  static constexpr int num_gas = AeroConfig::num_gas_ids();
-  static constexpr int num_aer = AeroConfig::num_aerosol_ids();
-  static constexpr int nait = static_cast<int>(ModeIndex::Aitken);
-  static constexpr int npca = static_cast<int>(ModeIndex::PrimaryCarbon);
-  static constexpr int igas_h2so4 = 1;
-  ;
-  static constexpr int igas_soag = static_cast<int>(GasId::SOAG);
-  static constexpr int iaer_so4 = static_cast<int>(AeroId::SO4);
-  static constexpr int iaer_pom = static_cast<int>(AeroId::POM);
-  static constexpr int iaer_soag_bgn = static_cast<int>(AeroId::SOA);
-  static constexpr int iaer_soag_end = static_cast<int>(AeroId::SOA);
 
   KOKKOS_INLINE_FUNCTION
   static const ModeIndex (&Modes())[num_mode] {
@@ -48,16 +36,6 @@ public:
         ModeIndex::PrimaryCarbon};
     return modes;
   }
-  KOKKOS_INLINE_FUNCTION
-  static const GasId (&Gases())[num_gas] {
-    // see mam4xx/aero_modes.hpp
-    static const GasId gases[num_gas] = {GasId::O3,  GasId::H2O2, GasId::H2SO4,
-                                         GasId::SO2, GasId::DMS,  GasId::SOAG};
-    return gases;
-  }
-  // NH3 -> NH4 condensation is a future enhancement
-  static constexpr int iaer_nh4 = -1;
-  static constexpr int igas_nh3 = -1;
 
   // In MAM4, there are only two gases that condense to aerosols:
   // 1. H2SO4 -> SO4
@@ -70,19 +48,6 @@ public:
     else if (GasId::SOAG == gas)
       air = AeroId::SOA;
     return air;
-  }
-  //------------------------------------------------------------------
-  // MAM4xx currently assumes that the uptake rate of other gases
-  // are proportional to the uptake rate of sulfuric acid gas (H2SO4).
-  // Here the array uptk_rate_factor contains the uptake rate ratio
-  // w.r.t. that of H2SO4.
-  //------------------------------------------------------------------
-  //  Indices correspond to those in the gases array above
-  KOKKOS_INLINE_FUNCTION
-  static constexpr Real uptk_rate_factor(const int i) {
-    const Real uptk_rate[num_gas] = {
-        0.0, 0.0, 1.0, 0.0, 0.0, Constants::soag_h2so4_uptake_coeff_ratio};
-    return uptk_rate[i];
   }
 
   // -----------------------------------------------------------------
@@ -121,14 +86,6 @@ public:
 
     // Do we have NH3? Not something supported at this time.
     static constexpr bool igas_nh3 = false;
-
-    // qgas_netprod_otrproc = gas net production rate from other processes
-    // such as gas-phase chemistry and emissions (mol/mol/s)
-    // this allows the condensation (gasaerexch) routine to apply production and
-    // condensation loss together, which is more accurate numerically
-    // NOTE - must be >= zero, as numerical method can fail when it is negative
-    // NOTE - currently only the value for h2so4 should be non-zero
-    Real qgas_netprod_otrproc[num_gas] = {0, 0, 5.0e-016, 0, 0, 0};
   };
 
   // name -- unique name of the process implemented by this class
@@ -180,9 +137,6 @@ public:
 private:
   // Gas-Aerosol-Exchange-specific configuration
   Config config_;
-
-  bool l_gas_condense_to_mode[num_gas][num_mode] = {};
-  int eqn_and_numerics_category[num_gas] = {};
   Real modes_mean_std_dev[num_mode] = {};
 };
 
@@ -402,55 +356,6 @@ void gas_aer_uptkrates_1box1gas(const Real accom, const Real gasdiffus,
 
 } // namespace gasaerexch
 
-// init -- initializes the implementation with MAM4's configuration
-inline void GasAerExch::init(const AeroConfig &aero_config,
-                             const Config &process_config) {
-
-  config_ = process_config;
-
-  for (int imode = 0; imode < num_mode; ++imode)
-    modes_mean_std_dev[imode] = modes(imode).mean_std_dev;
-
-  //-------------------------------------------------------------------
-  // MAM currently uses a splitting method to deal with gas-aerosol
-  // mass exchange. A quasi-analytical solution assuming timestep-wise
-  // constant uptake rate is applied to nonvolatile species, while
-  // an implicit time stepping method with adaptive step size
-  // is applied to gas-phase SOA species which are assumed semi-volatile.
-  // There are two different subroutines in this modules to deal
-  // with the two categories of cases. The array
-  // which category.
-  //-------------------------------------------------------------------
-  for (int k = 0; k < num_gas; ++k)
-    eqn_and_numerics_category[k] = NA;
-  eqn_and_numerics_category[igas_soag] = IMPL;
-  eqn_and_numerics_category[igas_h2so4] = ANAL;
-
-  //-------------------------------------------------------------------
-  // Determine whether specific gases will condense to specific modes
-  //-------------------------------------------------------------------
-  for (int igas = 0; igas < num_gas; ++igas)
-    for (int imode = 0; imode < num_mode; ++imode)
-      l_gas_condense_to_mode[igas][imode] = false;
-  // loop through all registered gas species
-  for (GasId gas : GasAerExch::Gases()) {
-    const AeroId aero_id = GasAerExch::gas_to_aer(gas);
-    // can this gas species condense?
-    if (aero_id != AeroId::None) {
-      const int igas = static_cast<int>(gas);
-      if (eqn_and_numerics_category[igas] != NA) {
-        // what aerosol species does the gas become when condensing?
-        for (ModeIndex mode_index : GasAerExch::Modes()) {
-          const bool mode_contains_species =
-              mam4::mode_contains_species(mode_index, aero_id);
-          const int imode = static_cast<int>(mode_index);
-          l_gas_condense_to_mode[igas][imode] =
-              mode_contains_species || config_.l_mode_can_age[imode];
-        }
-      }
-    }
-  }
-}
 KOKKOS_INLINE_FUNCTION
 void mam_gasaerexch_1subarea(
     const int jtsubstep,                                            // in
