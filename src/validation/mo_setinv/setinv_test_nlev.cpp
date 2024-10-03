@@ -17,7 +17,6 @@ void setinv_test_nlev(Ensemble *ensemble) {
     using View1D = DeviceType::view_1d<Real>;
     using View2D = DeviceType::view_2d<Real>;
     using View2DHost = typename HostType::view_2d<Real>;
-    using View1DHost = typename HostType::view_1d<Real>;
     // Ensemble parameters
     // Declare array of strings for input names
     std::string input_arrays[] = {
