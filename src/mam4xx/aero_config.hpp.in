@@ -21,7 +21,7 @@ using Tendencies = Prognostics; // fwd decl
 
 // Number of vertical levels per column (must match the number in the
 // host model)
-constexpr int nlev = @NUM_VERTICAL_LEVELS @;
+constexpr int nlev = @NUM_VERTICAL_LEVELS@;
 constexpr int pcnst = 40;
 /// @struct MAM4::AeroConfig: for use with all MAM4 process implementations
 class AeroConfig final {
