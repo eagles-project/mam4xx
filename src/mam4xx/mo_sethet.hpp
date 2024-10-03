@@ -123,7 +123,6 @@ void gas_washout(
   Real xca = 0.0;
   Real allca = 0.0; // total of ca between level plev and kk [#/cm3]
 
-
   // -----------------------------------------------------------------
   //       ... calculate the saturation concentration eqca
   // -----------------------------------------------------------------
@@ -234,11 +233,11 @@ void sethet(
   constexpr Real satf_h2o2 = .016; // saturation factor for h2o2 in clouds
   constexpr Real satf_so2 = .016;  // saturation factor for so2 in clouds
   const Real const0 = boltz_cgs * 1.0e-6; // [atmospheres/deg k/cm^3]
-  constexpr Real hno3_diss = 15.4;            // hno3 dissociation constant
-  constexpr Real mass_air = 29.0;  // mass of background atmosphere [amu]
-  constexpr Real km2cm = 1.0e5;    // convert km to cm
-  constexpr Real m2km = 1.0e-3;    // convert m to km
-  constexpr Real m3_2_cm3 = 1.0e6; // convert m^3 to cm^3
+  constexpr Real hno3_diss = 15.4;        // hno3 dissociation constant
+  constexpr Real mass_air = 29.0;         // mass of background atmosphere [amu]
+  constexpr Real km2cm = 1.0e5;           // convert km to cm
+  constexpr Real m2km = 1.0e-3;           // convert m to km
+  constexpr Real m3_2_cm3 = 1.0e6;        // convert m^3 to cm^3
   constexpr Real MISSING = -999999.0;
   constexpr Real large_value_lifetime =
       1.0e29; // a large lifetime value if no washout
