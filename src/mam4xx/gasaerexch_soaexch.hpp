@@ -79,7 +79,7 @@ constexpr int iaer_pom =
 constexpr int ntot_soamode = 4;
 
 KOKKOS_INLINE_FUNCTION
-void mam_soaexch_1subarea(const Real dtsubstep,    // in
+void mam_soaexch_1subarea(const Real dtsubstep,                 // in
                           const Real temp,                      // in
                           const Real pmid,                      // in
                           Real qgas_cur[max_gas],               // in/out
