@@ -1159,8 +1159,8 @@ void coagulation_rates_1box(const int k, const AeroConfig &aero_config,
   Real qaer_del_coag_out[AeroConfig::num_aerosol_ids()]
                         [AeroConfig::max_agepair()];
 
-  mam_coag_1subarea(dt, temp, pmid, aircon, dgn_awet, wet_density,
-                    qnum_cur, qaer_cur, qaer_del_coag_out);
+  mam_coag_1subarea(dt, temp, pmid, aircon, dgn_awet, wet_density, qnum_cur,
+                    qaer_cur, qaer_del_coag_out);
 
   // compute the tendencies
   for (int imode = 0; imode < num_mode; ++imode) {

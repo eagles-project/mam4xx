@@ -117,7 +117,6 @@ void mam_pcarbon_aging_frac(
   constexpr Real hygro_so4 = 0.50700000000000001;
   const Real fac_m2v_eqvhyg_aer = soa_vol * hygro_soa / hygro_so4;
 
-
   // for default MAM4 only so4 and soa contribute to aging
   const Real vol_shell = qaer_cur[iaer_so4][imom_pc] * so4_vol +
                          qaer_cur[iaer_soa][imom_pc] * fac_m2v_eqvhyg_aer;
@@ -144,16 +143,17 @@ void mam_pcarbon_aging_frac(
           {8, 15, 24, -1},  {6, 14, 21, -1},  {7, -1, 23, 27},  {9, -1, 22, 28},
           {11, 16, 20, -1}, {10, -1, 19, -1}, {12, 17, 25, 29},
       };
-  constexpr Real mass_2_vol[AeroConfig::num_aerosol_ids()] = {0.15,
-                                             6.4971751412429377e-002,
-                                             0.15,
-                                             7.0588235294117650e-003,
-                                             3.0789473684210526e-002,
-                                             5.1923076923076926e-002,
-                                             156.20986883198000};
+  constexpr Real mass_2_vol[AeroConfig::num_aerosol_ids()] = {
+      0.15,
+      6.4971751412429377e-002,
+      0.15,
+      7.0588235294117650e-003,
+      3.0789473684210526e-002,
+      5.1923076923076926e-002,
+      156.20986883198000};
   for (int mi = 0; mi < AeroConfig::num_aerosol_ids(); ++mi) {
-    if (lmap_aer_[mi][imom_pc] > 0){
-    vol_core += qaer_cur[mi][imom_pc] * mass_2_vol[mi];
+    if (lmap_aer_[mi][imom_pc] > 0) {
+      vol_core += qaer_cur[mi][imom_pc] * mass_2_vol[mi];
     }
   }
 
