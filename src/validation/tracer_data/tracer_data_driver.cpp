@@ -26,6 +26,7 @@ using namespace mam4;
 
 // Parameterizations used by the tracer_data_driver process.
 void vert_interp(Ensemble *ensemble);
+void rebin(Ensemble *ensemble);
 
 int main(int argc, char **argv) {
   if (argc == 1) {
@@ -51,6 +52,8 @@ int main(int argc, char **argv) {
   try {
     if (func_name == "vert_interp") {
       vert_interp(ensemble);
+    } else if (func_name == "rebin") {
+      rebin(ensemble);
     } else {
       std::cerr << "Error: Function name '" << func_name
                 << "' does not have an implemented test!" << std::endl;
