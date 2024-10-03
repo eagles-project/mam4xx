@@ -9,6 +9,7 @@
 
 using namespace skywalker;
 using namespace mam4;
+using namespace haero;
 
 void vert_interp(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -36,9 +37,13 @@ void vert_interp(Ensemble *ensemble) {
     mam4::validation::convert_1d_vector_to_2d_view_device(pmid_db, pmid);
     mam4::validation::convert_1d_vector_to_2d_view_device(datain_db, datain);
 
-    // Perform the vertical interpolation
-    mam4::vertical_interpolation::vert_interp(ncol, levsiz, pver, pin, pmid,
-                                              datain, dataout, kupper);
+    auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
+    Kokkos::parallel_for(
+        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          // Perform the vertical interpolation
+          mam4::vertical_interpolation::vert_interp(
+              ncol, levsiz, pver, pin, pmid, datain, dataout, kupper);
+        });
 
     // Convert the output data from Kokkos view to a format suitable for the
     // ensemble
