@@ -347,7 +347,7 @@ void mer07_veh02_wang08_nuc_1box(int newnuc_method_user_choice,
 
 // NOTE: This is the version from the E3SM mam refactor repo
 KOKKOS_INLINE_FUNCTION
-void mer07_veh02_nuc_mosaic_1box(const int kk, 
+void mer07_veh02_nuc_mosaic_1box(
     // in
     const int newnuc_method_flagaa, const Real dtnuc, const Real temp_in,
     const Real rh_in, const Real press_in, const Real zm_in, const Real pblh_in,
@@ -539,12 +539,11 @@ void mer07_veh02_nuc_mosaic_1box(const int kk,
   // calc h2so4 in molecules/cm3 and nh3 in ppt
   Real cair = press_in / (temp_in * rgas);
   Real so4vol_in = qh2so4_avg * cair * avogad * 1.0e-6;
-  if (kk == 48) printf("nuc0:   %0.15E,  %0.15E,  %0.15E,  %0.15E,  %0.15E,  %0.15E,  %0.15E\n", so4vol_in, qh2so4_avg, cair, avogad, press_in, temp_in, rgas);
   // FIXME: BAD CONSTANTS
   Real nh3ppt = qnh3_cur * 1.0e12;
   Real ratenuclt = 1.0e-38;
   Real rateloge = haero::log(ratenuclt);
-if (kk == 48) printf("nuc1:   %0.15E,  %0.15E,  %0.15E,  %0.15E,  %0.15E,\n", cair, so4vol_in, nh3ppt, ratenuclt, rateloge);
+
   Real cnum_h2so4 = 0.0;
   Real cnum_tot = 0.0;
   Real radius_cluster = 0.0;
@@ -1288,7 +1287,7 @@ public:
     // call routine to get nucleation rate in terms of new cluster formation
     // rate (#/m3/s)
     //=======================================================================
-    nucleation::mer07_veh02_nuc_mosaic_1box(1,
+    nucleation::mer07_veh02_nuc_mosaic_1box(
         newnuc_method_flagaa, deltat, temp_in, rh_in, press_in, zm_in, pblh_in,
         qh2so4_cur, qh2so4_avg, qnh3_cur, uptkrate_h2so4, mw_so4a_host, nsize,
         dp_lo_mode, dp_hi_mode, rgas, avogadro, mw_nh4a_host, mw_so4a, pi,
