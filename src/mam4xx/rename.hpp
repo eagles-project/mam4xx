@@ -212,8 +212,7 @@ void compute_xfer_fractions(const Real b4_growth_dryvol,
 
 KOKKOS_INLINE_FUNCTION
 void do_num_and_mass_transfer(
-     const int src_mode, const int dest_mode,
-    const Real xfer_vol_frac,
+    const int src_mode, const int dest_mode, const Real xfer_vol_frac,
     const Real xfer_num_frac, // input
     // FIXME: will qmol be updated this way?--verify with unit test
     // aerosol molar mixing ratio [kmol/kmol-dry-air]
@@ -232,11 +231,10 @@ void do_num_and_mass_transfer(
   }
 } // end do_num_and_mass_transfer
 
-
 KOKKOS_INLINE_FUNCTION
 void do_inter_mode_transfer(
-     const int dest_mode_of_mode[AeroConfig::num_modes()],
-    const bool &is_cloudy, const Real &smallest_dryvol_value,
+    const int dest_mode_of_mode[AeroConfig::num_modes()], const bool &is_cloudy,
+    const Real &smallest_dryvol_value,
     // volume to number relaxation limits [m^-3]
     const Real num2vol_ratiolorlx[AeroConfig::num_modes()],
     const Real num2vol_ratiohirlx[AeroConfig::num_modes()],

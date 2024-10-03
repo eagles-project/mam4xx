@@ -33,7 +33,8 @@ public:
   static constexpr int num_aer = AeroConfig::num_aerosol_ids();
   static constexpr int nait = static_cast<int>(ModeIndex::Aitken);
   static constexpr int npca = static_cast<int>(ModeIndex::PrimaryCarbon);
-  static constexpr int igas_h2so4 = 1;;
+  static constexpr int igas_h2so4 = 1;
+  ;
   static constexpr int igas_soag = static_cast<int>(GasId::SOAG);
   static constexpr int iaer_so4 = static_cast<int>(AeroId::SO4);
   static constexpr int iaer_pom = static_cast<int>(AeroId::POM);
@@ -293,7 +294,7 @@ Real mean_molecular_speed(
     const Real rmw,            // molec. weight (g/mol)
     const Real r_universal_mJ, // universal gas constant (mJ/K mol)
     const Real pi) {
-//BAD CONSTANTS
+  // BAD CONSTANTS
   const Real mean_molecular_speed = 145.5 * haero::sqrt(temp / rmw);
 
   return mean_molecular_speed;
@@ -316,9 +317,8 @@ Real fuchs_sutugin(const Real &D_p, const Real &gasfreepath,
 }
 
 KOKKOS_INLINE_FUNCTION
-void gas_aer_uptkrates_1box1gas(const Real accom,
-                                const Real gasdiffus, const Real gasfreepath,
-                                const Real beta_inp,
+void gas_aer_uptkrates_1box1gas(const Real accom, const Real gasdiffus,
+                                const Real gasfreepath, const Real beta_inp,
                                 const Real dgncur_awet[GasAerExch::num_mode],
                                 const Real lnsg[GasAerExch::num_mode],
                                 Real uptkaer[GasAerExch::num_mode]) {
@@ -544,7 +544,7 @@ void mam_gasaerexch_1subarea(
       const Real gas_freepath_igas = 3.0 * gas_diffus_igas / molecular_speed;
 
       mam4::gasaerexch::gas_aer_uptkrates_1box1gas(
-         accom_coef_gas[igas], gas_diffus_igas, gas_freepath_igas, 0.0,
+          accom_coef_gas[igas], gas_diffus_igas, gas_freepath_igas, 0.0,
           dgn_awet, alnsg_aer, uptkrate);
       const int iaer = igas;
       for (int n = 0; n < ntot_amode; ++n) {
@@ -578,7 +578,7 @@ void mam_gasaerexch_1subarea(
   }
 
   // Do SOA
-  mam4::gasaerexch::mam_soaexch_1subarea(dtsubstep, temp, pmid,     // in
+  mam4::gasaerexch::mam_soaexch_1subarea(dtsubstep, temp, pmid,        // in
                                          qgas_cur, qgas_avg, qaer_cur, // inout
                                          qnum_cur, qwtr_cur,           // inout
                                          uptkaer);                     // in
