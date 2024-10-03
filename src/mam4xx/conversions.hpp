@@ -68,9 +68,8 @@ KOKKOS_INLINE_FUNCTION Real mmr_from_vmr(Real vmr, Real molecular_wt) {
 /// [kg/kmol]
 KOKKOS_INLINE_FUNCTION Real vmr_from_mmr(Real mmr, Real molecular_wt) {
   const auto mw_dry_air = Constants::molec_weight_dry_air;
-  EKAT_KERNEL_ASSERT_MSG(molecular_wt > 0,
-                         "Error! : vmr_from_mmr,"
-                         " molecular_wt should be > 0 \n");
+  EKAT_KERNEL_ASSERT_MSG(molecular_wt > 0, "Error! : vmr_from_mmr,"
+                                           " molecular_wt should be > 0 \n");
   return mmr * mw_dry_air / molecular_wt;
 }
 
