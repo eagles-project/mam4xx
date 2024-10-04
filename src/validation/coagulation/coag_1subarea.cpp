@@ -80,9 +80,8 @@ void coag_1subarea(Ensemble *ensemble) {
 
     Real qaer_del_coag_out_c[num_aero][max_agepair] = {{0}};
     coagulation::mam_coag_1subarea(
-        deltat_f[0], temp_f[0], pmid_f[0], aircon_f[0], dgn_a_f.data(),
-        dgn_awet_f.data(), wetdens_f.data(), qnum_cur_f.data(), qaer_cur_c,
-        qaer_del_coag_out_c);
+        deltat_f[0], temp_f[0], pmid_f[0], aircon_f[0], dgn_awet_f.data(),
+        wetdens_f.data(), qnum_cur_f.data(), qaer_cur_c, qaer_del_coag_out_c);
 
     n = 0;
     for (int imode = 0; imode < num_modes; ++imode) {
