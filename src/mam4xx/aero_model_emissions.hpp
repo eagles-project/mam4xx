@@ -938,16 +938,15 @@ void aero_model_emissions(
       cflux);
 
   // some dust emis diagnostics ...
-  Real surface_flux = 0.0;
-  int spec_idx;
-  // FIXME: maybe get rid of this, and below? in mam4, surface_flux is a
+  // FIXME: maybe add this, and below? in mam4, surface_flux is a
   // local variable that appears to only be written out via outfld()
-  for (int ispec = 0; ispec < dust_nbin + dust_nnum; ++ispec) {
-    spec_idx = dust_indices[ispec];
-    if (ispec <= dust_nbin) {
-      surface_flux += cflux[spec_idx];
-    }
-  }
+  // Real surface_flux = 0.0;
+  // for (int ispec = 0; ispec < dust_nbin + dust_nnum; ++ispec) {
+  //   const int spec_idx = dust_indices[ispec];
+  //   if (ispec <= dust_nbin) {
+  //     surface_flux += cflux[spec_idx];
+  //   }
+  // }
 
   init_seasalt(seasalt_data);
   calculate_seasalt_numflux_in_bins(
@@ -956,8 +955,6 @@ void aero_model_emissions(
       seasalt_data.constb,
       // out
       fi);
-
-  surface_flux = 0.0;
 
   seasalt_emis(
       // in
@@ -971,18 +968,19 @@ void aero_model_emissions(
       // inout
       cflux);
 
-  // FIXME: maybe get rid of this? in mam4, surface_flux is a local variable
-  for (int ispec = 0; ispec < seasalt_nbin - nsalt_om; ++ispec) {
-    spec_idx = seasalt_data.seasalt_indices[ispec];
-    surface_flux += cflux[spec_idx];
-  }
+  // FIXME: maybe add of this? in mam4, surface_flux is a local variable
+  // surface_flux = 0.0;
+  // for (int ispec = 0; ispec < seasalt_nbin - nsalt_om; ++ispec) {
+  //   const int spec_idx = seasalt_data.seasalt_indices[ispec];
+  //   surface_flux += cflux[spec_idx];
+  // }
 
-  surface_flux = 0.0;
-  // FIXME: maybe get rid of this? in mam4, surface_flux is a local variable
-  for (int ispec = 0; ispec < seasalt_nbin - nsalt_om + 1; ++ispec) {
-    spec_idx = seasalt_data.seasalt_indices[ispec];
-    surface_flux += cflux[spec_idx];
-  }
+  // surface_flux = 0.0;
+  // FIXME: maybe add of this? in mam4, surface_flux is a local variable
+  // for (int ispec = 0; ispec < seasalt_nbin - nsalt_om + 1; ++ispec) {
+  //   spec_idx = seasalt_data.seasalt_indices[ispec];
+  //   surface_flux += cflux[spec_idx];
+  // }
 
 } // end aero_model_emissions()
 
@@ -1026,16 +1024,15 @@ void aero_model_emissions(
       cflux);
 
   // some dust emis diagnostics ...
-  Real surface_flux = 0.0;
-  int spec_idx;
-  // FIXME: maybe get rid of this, and below? in mam4, surface_flux is a
+  // FIXME: maybe add this, and below? in mam4, surface_flux is a
   // local variable that appears to only be written out via outfld()
-  for (int ispec = 0; ispec < dust_nbin + dust_nnum; ++ispec) {
-    spec_idx = dust_indices[ispec];
-    if (ispec <= dust_nbin) {
-      surface_flux += cflux[spec_idx];
-    }
-  }
+  // Real surface_flux = 0.0;
+  // for (int ispec = 0; ispec < dust_nbin + dust_nnum; ++ispec) {
+  //   const int spec_idx = dust_indices[ispec];
+  //   if (ispec <= dust_nbin) {
+  //     surface_flux += cflux[spec_idx];
+  //   }
+  // }
 
   init_seasalt(seasalt_data);
   calculate_seasalt_numflux_in_bins(
@@ -1044,8 +1041,6 @@ void aero_model_emissions(
       seasalt_data.constb,
       // out
       fi);
-
-  surface_flux = 0.0;
 
   seasalt_emis(
       // in
@@ -1059,18 +1054,19 @@ void aero_model_emissions(
       // inout
       cflux);
 
-  // FIXME: maybe get rid of this? in mam4, surface_flux is a local variable
-  for (int ispec = 0; ispec < seasalt_nbin - nsalt_om; ++ispec) {
-    spec_idx = seasalt_data.seasalt_indices[ispec];
-    surface_flux += cflux[spec_idx];
-  }
+  // FIXME: maybe add this? in mam4, surface_flux is a local variable
+  // surface_flux = 0.0;
+  // for (int ispec = 0; ispec < seasalt_nbin - nsalt_om; ++ispec) {
+  //  const int spec_idx = seasalt_data.seasalt_indices[ispec];
+  //  surface_flux += cflux[spec_idx];
+  //}
 
-  surface_flux = 0.0;
   // FIXME: maybe get rid of this? in mam4, surface_flux is a local variable
-  for (int ispec = 0; ispec < seasalt_nbin - nsalt_om + 1; ++ispec) {
-    spec_idx = seasalt_data.seasalt_indices[ispec];
-    surface_flux += cflux[spec_idx];
-  }
+  // surface_flux = 0.0;
+  // for (int ispec = 0; ispec < seasalt_nbin - nsalt_om + 1; ++ispec) {
+  //  const int spec_idx = seasalt_data.seasalt_indices[ispec];
+  //  surface_flux += cflux[spec_idx];
+  //}
 
 } // end aero_model_emissions()
 

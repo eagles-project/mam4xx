@@ -93,7 +93,7 @@ public:
 
   // init -- initializes the implementation with MAM4's configuration
   void init(const AeroConfig &aero_config,
-            const Config &process_config = Config());
+            const Config &process_config = Config()) {}
 
   // validate -- validates the given atmospheric state and prognostics against
   // assumptions made by this implementation, returning true if the states are
@@ -132,12 +132,11 @@ public:
                           Real t, Real dt, const Atmosphere &atm,
                           const Surface &sfc, const Prognostics &progs,
                           const Diagnostics &diags,
-                          const Tendencies &tends) const;
+                          const Tendencies &tends) const {}
 
 private:
   // Gas-Aerosol-Exchange-specific configuration
   Config config_;
-  Real modes_mean_std_dev[num_mode] = {};
 };
 
 namespace gasaerexch {
@@ -386,7 +385,7 @@ void mam_gasaerexch_1subarea(
   Real uptkrate[max_mode];
   constexpr int ntot_amode = AeroConfig::num_modes();
   // BAD CONSTANT
-  Real alnsg_aer[max_mode] = {haero::log(1.8)};
+  Real alnsg_aer[max_mode] = {Real(haero::log(1.8))};
   // sigmag_amode : assumed geometric standard deviation of particle size
   // distribution
   for (int imode = 0; imode < ntot_amode; ++imode) {
@@ -400,9 +399,6 @@ void mam_gasaerexch_1subarea(
       {11, 16, 20, -1}, {10, -1, 19, -1}, {12, 17, 25, 29},
   };
 
-  const Real pstd = Constants::pressure_stp;                       // [Pa]
-  const Real mw_air_gmol = 1000 * Constants::molec_weight_dry_air; // [g/mol]
-  const Real vol_molar_air = Constants::molec_diffusion_dry_air;   // [-]
   const Real r_universal_mJ = 1000 * Constants::r_gas; // [mJ/(K mol)]
   const Real r_pi = Constants::pi;
   // BAD CONSTANT

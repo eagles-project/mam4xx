@@ -31,9 +31,7 @@ void mam_gasaerexch_1subarea(Ensemble *ensemble) {
     auto qaer_cur_vec = input.get_array("qaer_cur");
     auto qnum_cur_vec = input.get_array("qnum_cur");
     auto qwtr_cur_vec = input.get_array("qwtr_cur");
-    auto dgn_a_vec = input.get_array("dgn_a");
     auto dgn_awet_vec = input.get_array("dgn_awet");
-    auto wetdens_vec = input.get_array("wetdens");
     auto uptkaer_vec = input.get_array("uptkaer");
 
     Real qgas_cur[max_gas];
@@ -42,9 +40,7 @@ void mam_gasaerexch_1subarea(Ensemble *ensemble) {
     Real qaer_cur[max_aer][max_mode];
     Real qnum_cur[max_mode];
     Real qwtr_cur[max_mode];
-    Real dgn_a[max_mode];
     Real dgn_awet[max_mode];
-    Real wetdens[max_mode];
     Real uptkaer[max_gas][max_mode];
     Real uptkrate_h2so4 = 0;
 
@@ -58,9 +54,7 @@ void mam_gasaerexch_1subarea(Ensemble *ensemble) {
     for (int i = 0; i < max_mode; ++i) {
       qnum_cur[i] = qnum_cur_vec[i];
       qwtr_cur[i] = qwtr_cur_vec[i];
-      dgn_a[i] = dgn_a_vec[i];
       dgn_awet[i] = dgn_awet_vec[i];
-      wetdens[i] = wetdens_vec[i];
     }
 
     for (int j = 0; j < max_mode; ++j) {
@@ -78,8 +72,8 @@ void mam_gasaerexch_1subarea(Ensemble *ensemble) {
     // Call the function
     mam_gasaerexch_1subarea(jtsubstep, dtsubstep, temp, pmid, aircon, n_mode,
                             qgas_cur, qgas_avg, qgas_netprod_otrproc, qaer_cur,
-                            qnum_cur, qwtr_cur, dgn_a, dgn_awet, wetdens,
-                            uptkaer, uptkrate_h2so4);
+                            qnum_cur, qwtr_cur, dgn_awet, uptkaer,
+                            uptkrate_h2so4);
 
     // Prepare output arrays
     std::vector<Real> qgas_cur_out(max_gas);
@@ -87,9 +81,9 @@ void mam_gasaerexch_1subarea(Ensemble *ensemble) {
     std::vector<Real> qaer_cur_out(max_aer * max_mode);
     std::vector<Real> qnum_cur_out(max_mode);
     std::vector<Real> qwtr_cur_out(max_mode);
-    std::vector<Real> dgn_a_out(max_mode);
+    std::vector<Real> dgn_a_out(max_mode, 0);
     std::vector<Real> dgn_awet_out(max_mode);
-    std::vector<Real> wetdens_out(max_mode);
+    std::vector<Real> wetdens_out(max_mode, 0);
     std::vector<Real> uptkaer_out(max_gas * max_mode);
 
     for (int i = 0; i < max_gas; ++i) {
@@ -100,9 +94,7 @@ void mam_gasaerexch_1subarea(Ensemble *ensemble) {
     for (int i = 0; i < max_mode; ++i) {
       qnum_cur_out[i] = qnum_cur[i];
       qwtr_cur_out[i] = qwtr_cur[i];
-      dgn_a_out[i] = dgn_a[i];
       dgn_awet_out[i] = dgn_awet[i];
-      wetdens_out[i] = wetdens[i];
     }
 
     for (int j = 0; j < max_mode; ++j) {

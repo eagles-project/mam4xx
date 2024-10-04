@@ -35,6 +35,7 @@ public:
 
   // In E3SM this is read in from an input file and would be 8
   // In mam_refactor it is defined in phys_control.F90 as 3.
+
   static constexpr Real n_so4_monolayers_pcage = 8.0;
   static constexpr Real dr_so4_monolayers_pcage =
       n_so4_monolayers_pcage * 4.76e-10;
@@ -89,28 +90,18 @@ void mam_pcarbon_aging_frac(
   const int ipair = 0;
   const int iaer_so4 = static_cast<int>(AeroId::SO4);
   const int iaer_soa = static_cast<int>(AeroId::SOA);
-  const int iaer_bc = static_cast<int>(AeroId::BC);
-  const int iaer_pom = static_cast<int>(AeroId::POM);
-  const int iaer_mom = static_cast<int>(AeroId::MOM);
 
   const int imom_pc = static_cast<int>(ModeIndex::PrimaryCarbon);
 
   const Real _molecular_weight_soa = 150 / 1000.0;
   // FIXME. MW for SO4 is not a standard MW. (BAD CONSTANT)
   const Real _molecular_weight_so4 = 115 / 1000.0;
-  const Real _molecular_weight_pom = 150 / 1000.0;
 
   // Compute the aerosol volume per mole
   const Real so4_vol =
       _molecular_weight_so4 * 1000.0 / aero_species(iaer_so4).density;
   const Real soa_vol =
       _molecular_weight_soa * 1000.0 / aero_species(iaer_soa).density;
-  const Real bc_vol = aero_species(iaer_bc).molecular_weight * 1000.0 /
-                      aero_species(iaer_bc).density;
-  const Real pom_vol =
-      _molecular_weight_pom * 1000.0 / aero_species(iaer_pom).density;
-  const Real mom_vol = aero_species(iaer_mom).molecular_weight * 1000.0 /
-                       aero_species(iaer_mom).density;
 
   // (Bad Constants) for hygroscopicitiy
   constexpr Real hygro_soa = 0.14000000000000001;
@@ -135,8 +126,6 @@ void mam_pcarbon_aging_frac(
 
   frac_coag = 1.0 - frac_cond;
 
-  const int spec_modes[3] = {iaer_bc, iaer_pom, iaer_mom};
-  const Real core_volumes[3] = {bc_vol, pom_vol, mom_vol};
   Real vol_core = 0.0;
   static constexpr int
       lmap_aer_[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()] = {
