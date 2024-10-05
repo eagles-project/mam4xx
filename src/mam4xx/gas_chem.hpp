@@ -243,7 +243,7 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
 KOKKOS_INLINE_FUNCTION
 void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
              const Real reaction_rates[rxntot], const Real het_rates[gas_pcnst],
-             const Real extfrc[extcnt], Real &delt,
+             const Real extfrc[extcnt], const Real &delt,
              const int permute_4[gas_pcnst], const int clsmap_4[gas_pcnst],
              const bool factor[itermax], Real epsilon[clscnt4],
              Real prod_out[clscnt4], Real loss_out[clscnt4]) {
