@@ -28,12 +28,14 @@ endforeach()
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     vert_interp_ts_300
+    vert_interp_col_ts_300
     rebin_ts_300
     )
 set(DEFAULT_TOL 1e-12)
 
 
 set(ERROR_THRESHOLDS
+   ${DEFAULT_TOL}
    ${DEFAULT_TOL}
    2e-9
    )
