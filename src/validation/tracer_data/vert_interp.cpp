@@ -39,8 +39,14 @@ void vert_interp(Ensemble *ensemble) {
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           // Perform the vertical interpolation
           const int icol     = team.league_rank();  // column index
+          const auto pin_at_icol = ekat::subview(pin, icol);
+          const auto pmid_at_icol = ekat::subview(pmid, icol);
+          const auto datain_at_icol = ekat::subview(datain, icol);
+          const auto dataout_at_icol = ekat::subview(dataout, icol);
+
           mam4::vertical_interpolation::vert_interp(
-              icol, levsiz, pver, pin, pmid, datain, dataout
+              levsiz, pver, pin_at_icol, pmid_at_icol,
+               datain_at_icol, dataout_at_icol
               );
         });
 
