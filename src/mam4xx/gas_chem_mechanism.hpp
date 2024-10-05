@@ -54,7 +54,7 @@ void set_rates(Real rxt_rates[rxntot], Real sol[gas_pcnst]) {
 } // set_rates
 
 KOKKOS_INLINE_FUNCTION
-void adjrxt(Real rate[rxntot], Real inv[nfs], Real m) {
+void adjrxt(Real rate[rxntot], const Real inv[nfs], const Real m) {
   rate[2] *= inv[4];
   rate[3] *= inv[4];
   rate[4] *= inv[4];
