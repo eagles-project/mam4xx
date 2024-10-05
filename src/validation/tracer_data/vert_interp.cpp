@@ -38,16 +38,15 @@ void vert_interp(Ensemble *ensemble) {
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           // Perform the vertical interpolation
-          const int icol     = team.league_rank();  // column index
+          const int icol = team.league_rank(); // column index
           const auto pin_at_icol = ekat::subview(pin, icol);
           const auto pmid_at_icol = ekat::subview(pmid, icol);
           const auto datain_at_icol = ekat::subview(datain, icol);
           const auto dataout_at_icol = ekat::subview(dataout, icol);
 
           mam4::vertical_interpolation::vert_interp(
-              levsiz, pver, pin_at_icol, pmid_at_icol,
-               datain_at_icol, dataout_at_icol
-              );
+              team, levsiz, pver, pin_at_icol, pmid_at_icol, datain_at_icol,
+              dataout_at_icol);
         });
 
     // Convert the output data from Kokkos view to a format suitable for the
