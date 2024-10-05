@@ -36,12 +36,13 @@ void vert_interp(Ensemble *ensemble) {
     mam4::validation::convert_1d_vector_to_2d_view_device(pmid_db, pmid);
     mam4::validation::convert_1d_vector_to_2d_view_device(datain_db, datain);
 
-    auto team_policy = ThreadTeamPolicy(1, Kokkos::AUTO);
+    auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           // Perform the vertical interpolation
+          const int icol     = team.league_rank();  // column index
           mam4::vertical_interpolation::vert_interp(
-              ncol, levsiz, pver, pin, pmid, datain, dataout, kupper);
+              icol, levsiz, pver, pin, pmid, datain, dataout, kupper);
         });
 
     // Convert the output data from Kokkos view to a format suitable for the
