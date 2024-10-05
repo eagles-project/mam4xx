@@ -13,48 +13,38 @@ using View1DInt = DeviceType::view_1d<int>;
 // Direct port of components/eam/src/chemistry/utils/tracer_data.F90/vert_interp
 // FIXME: I need to convert for loops to Kokkos loops.
 KOKKOS_INLINE_FUNCTION
-void vert_interp(int ncol, int levsiz, int pver, const View2D &pin,
+void vert_interp(const int icol, int levsiz, int pver, const View2D &pin,
                  const ConstView2D &pmid, const View2D &datain,
                  const View2D &dataout,
                  // work array
-                 const View1DInt &kupper) {
+                 const View1DInt &kupper
+                 ) {
   const int zero = 0;
-  // Initialize index array
-  for (int i = 0; i < ncol; ++i) {
-    kupper(i) = zero;
-  } // ncol
-
+  kupper(icol) = zero;
   for (int k = 0; k < pver; ++k) {
     // Top level we need to start looking is the top level for the previous k
     // for all column points
     int kkstart = levsiz - 1;
-    for (int i = 0; i < ncol; ++i) {
-      kkstart = haero::min(kkstart, kupper(i));
-    }
-
-    // Store level indices for interpolation
+    kkstart = haero::min(kkstart, kupper(icol));
+    // // Store level indices for interpolation
     for (int kk = kkstart; kk < levsiz - 1; ++kk) {
-      for (int i = 0; i < ncol; ++i) {
-        if (pin(i, kk) < pmid(i, k) && pmid(i, k) <= pin(i, kk + 1)) {
-          kupper(i) = kk;
+        if (pin(icol, kk) < pmid(icol, k) && pmid(icol, k) <= pin(icol, kk + 1)) {
+          kupper(icol) = kk;
         } // end if
       }   // end for
-    }     // end kk
-    // Interpolate or extrapolate...
-    for (int i = 0; i < ncol; ++i) {
-      if (pmid(i, k) < pin(i, 0)) {
-        dataout(i, k) = datain(i, 0) * pmid(i, k) / pin(i, 0);
-      } else if (pmid(i, k) > pin(i, levsiz - 1)) {
-        dataout(i, k) = datain(i, levsiz - 1);
+
+      if (pmid(icol, k) < pin(icol, 0)) {
+        dataout(icol, k) = datain(icol, 0) * pmid(icol, k) / pin(icol, 0);
+      } else if (pmid(icol, k) > pin(icol, levsiz - 1)) {
+        dataout(icol, k) = datain(icol, levsiz - 1);
       } else {
-        Real dpu = pmid(i, k) - pin(i, kupper(i));
-        Real dpl = pin(i, kupper(i) + 1) - pmid(i, k);
-        dataout(i, k) =
-            (datain(i, kupper(i)) * dpl + datain(i, kupper(i) + 1) * dpu) /
+        Real dpu = pmid(icol, k) - pin(icol, kupper(icol));
+        Real dpl = pin(icol, kupper(icol) + 1) - pmid(icol, k);
+        dataout(icol, k) =
+            (datain(icol, kupper(icol)) * dpl + datain(icol, kupper(icol) + 1) * dpu) /
             (dpl + dpu);
       } // end if
-    }   // end col
-  }     // end k
+    }   // end k
 
 } // vert_interp
 // rebin is a port from:
