@@ -16,12 +16,12 @@ void vert_interp(int levsiz, int pver, const View1D &pin,
                  const View1D &dataout
                  ) {
   const int zero = 0;
-  int kupper = zero;
+
   for (int k = 0; k < pver; ++k) {
     // Top level we need to start looking is the top level for the previous k
     // for all column points
-    int kkstart = levsiz - 1;
-    kkstart = haero::min(kkstart, kupper);
+    int kupper = zero;
+    int kkstart = zero;
     // // Store level indices for interpolation
     for (int kk = kkstart; kk < levsiz - 1; ++kk) {
         if (pin(kk) < pmid(k) && pmid(k) <= pin(kk + 1)) {
