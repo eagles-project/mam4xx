@@ -8,39 +8,39 @@ using View1D = DeviceType::view_1d<Real>;
 using ConstView1D = DeviceType::view_1d<const Real>;
 using View1DInt = DeviceType::view_1d<int>;
 
-// Direct port of components/eam/src/chemistry/utils/tracer_data.F90/vert_interp
-// FIXME: I need to convert for loops to Kokkos loops.
+// Port of components/eam/src/chemistry/utils/tracer_data.F90/vert_interp
+// The original routine was serial for columns and levs;
+// this version uses parallel_for for columns and levels.
+
 KOKKOS_INLINE_FUNCTION
-void vert_interp(int levsiz, int pver, const View1D &pin,
-                 const ConstView1D &pmid, const View1D &datain,
-                 const View1D &dataout
-                 ) {
+void vert_interp(const ThreadTeam &team, int levsiz, int pver,
+                 const View1D &pin, const ConstView1D &pmid,
+                 const View1D &datain, const View1D &dataout) {
   const int zero = 0;
 
-  for (int k = 0; k < pver; ++k) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver), [&](int k) {
     // Top level we need to start looking is the top level for the previous k
     // for all column points
     int kupper = zero;
     int kkstart = zero;
     // // Store level indices for interpolation
     for (int kk = kkstart; kk < levsiz - 1; ++kk) {
-        if (pin(kk) < pmid(k) && pmid(k) <= pin(kk + 1)) {
-          kupper = kk;
-        } // end if
-      }   // end for
-
-      if (pmid(k) < pin(0)) {
-        dataout(k) = datain(0) * pmid(k) / pin(0);
-      } else if (pmid(k) > pin(levsiz - 1)) {
-        dataout(k) = datain(levsiz - 1);
-      } else {
-        Real dpu = pmid(k) - pin(kupper);
-        Real dpl = pin(kupper + 1) - pmid(k);
-        dataout(k) =
-            (datain(kupper) * dpl + datain(kupper + 1) * dpu) /
-            (dpl + dpu);
+      if (pin(kk) < pmid(k) && pmid(k) <= pin(kk + 1)) {
+        kupper = kk;
       } // end if
-    }   // end k
+    }   // end for
+
+    if (pmid(k) < pin(0)) {
+      dataout(k) = datain(0) * pmid(k) / pin(0);
+    } else if (pmid(k) > pin(levsiz - 1)) {
+      dataout(k) = datain(levsiz - 1);
+    } else {
+      Real dpu = pmid(k) - pin(kupper);
+      Real dpl = pin(kupper + 1) - pmid(k);
+      dataout(k) =
+          (datain(kupper) * dpl + datain(kupper + 1) * dpu) / (dpl + dpu);
+    } // end if
+  }); // end k
 
 } // vert_interp
 // rebin is a port from:
