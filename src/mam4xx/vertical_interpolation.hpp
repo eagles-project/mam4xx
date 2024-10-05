@@ -15,21 +15,19 @@ using View1DInt = DeviceType::view_1d<int>;
 KOKKOS_INLINE_FUNCTION
 void vert_interp(const int icol, int levsiz, int pver, const View2D &pin,
                  const ConstView2D &pmid, const View2D &datain,
-                 const View2D &dataout,
-                 // work array
-                 const View1DInt &kupper
+                 const View2D &dataout
                  ) {
   const int zero = 0;
-  kupper(icol) = zero;
+  int kupper = zero;
   for (int k = 0; k < pver; ++k) {
     // Top level we need to start looking is the top level for the previous k
     // for all column points
     int kkstart = levsiz - 1;
-    kkstart = haero::min(kkstart, kupper(icol));
+    kkstart = haero::min(kkstart, kupper);
     // // Store level indices for interpolation
     for (int kk = kkstart; kk < levsiz - 1; ++kk) {
         if (pin(icol, kk) < pmid(icol, k) && pmid(icol, k) <= pin(icol, kk + 1)) {
-          kupper(icol) = kk;
+          kupper = kk;
         } // end if
       }   // end for
 
@@ -38,10 +36,10 @@ void vert_interp(const int icol, int levsiz, int pver, const View2D &pin,
       } else if (pmid(icol, k) > pin(icol, levsiz - 1)) {
         dataout(icol, k) = datain(icol, levsiz - 1);
       } else {
-        Real dpu = pmid(icol, k) - pin(icol, kupper(icol));
-        Real dpl = pin(icol, kupper(icol) + 1) - pmid(icol, k);
+        Real dpu = pmid(icol, k) - pin(icol, kupper);
+        Real dpl = pin(icol, kupper + 1) - pmid(icol, k);
         dataout(icol, k) =
-            (datain(icol, kupper(icol)) * dpl + datain(icol, kupper(icol) + 1) * dpu) /
+            (datain(icol, kupper) * dpl + datain(icol, kupper + 1) * dpu) /
             (dpl + dpu);
       } // end if
     }   // end k
