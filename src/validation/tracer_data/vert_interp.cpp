@@ -23,13 +23,11 @@ void vert_interp(Ensemble *ensemble) {
 
     // Define the Kokkos views based on the input data
     using View2D = typename DeviceType::view_2d<Real>;
-    using View1DInt = typename DeviceType::view_1d<int>;
 
     View2D pin("pin", ncol, levsiz);
     View2D pmid("pmid", ncol, pver);
     View2D datain("datain", ncol, levsiz);
     View2D dataout("dataout", ncol, pver); // Output array
-    View1DInt kupper("kupper", ncol);      // Work array
 
     // Convert input data from std::vector or similar structure to Kokkos views
     mam4::validation::convert_1d_vector_to_2d_view_device(pin_db, pin);
@@ -42,7 +40,8 @@ void vert_interp(Ensemble *ensemble) {
           // Perform the vertical interpolation
           const int icol     = team.league_rank();  // column index
           mam4::vertical_interpolation::vert_interp(
-              icol, levsiz, pver, pin, pmid, datain, dataout, kupper);
+              icol, levsiz, pver, pin, pmid, datain, dataout
+              );
         });
 
     // Convert the output data from Kokkos view to a format suitable for the
