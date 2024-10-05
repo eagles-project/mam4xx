@@ -19,9 +19,8 @@ void vert_interp(Ensemble *ensemble) {
     const auto datain_db = input.get_array("datain");
     const auto levsiz = static_cast<int>(input.get_array("levsiz")[0]);
     const auto pver = static_cast<int>(input.get_array("pver")[0]);
+    const auto ncol = static_cast<int>(input.get_array("ncol")[0]);
 
-    // Data was written for only one column.
-    const int ncol = 1; // Number of columns, example value
     // Define the Kokkos views based on the input data
     using View2D = typename DeviceType::view_2d<Real>;
     using View1DInt = typename DeviceType::view_1d<int>;
@@ -37,7 +36,7 @@ void vert_interp(Ensemble *ensemble) {
     mam4::validation::convert_1d_vector_to_2d_view_device(pmid_db, pmid);
     mam4::validation::convert_1d_vector_to_2d_view_device(datain_db, datain);
 
-    auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
+    auto team_policy = ThreadTeamPolicy(1, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           // Perform the vertical interpolation
