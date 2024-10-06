@@ -274,21 +274,27 @@ void sethet(
   // 'H2O2','H2SO4','SO2'.  Options for other species are then removed
   //-----------------------------------------------------------------
 
-  for (int mm = 0; mm < gas_pcnst; mm++) {
-    for (int kk = 0; kk < pver; kk++) {
-      het_rates[mm](kk) = 0.0;
-      tmp_hetrates[mm](kk) = 0.0; // initiate temporary array
-    }
-  }
+  Kokkos::parallel_for(
+        Kokkos::TeamThreadRange(team, pver), [&](int kk) {
+          Kokkos::parallel_for(
+              Kokkos::ThreadVectorRange(team, gas_pcnst),
+              [&](int mm) {
+                het_rates[mm](kk) = 0.0;
+                tmp_hetrates[mm](kk) = 0.0; // initiate temporary array
+              });
+        });
+
 
   for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
     int mm2 = wetdep_map[mm];
-    if (mm2 > 0) {
-      for (int kk = 0; kk < pver; kk++) {
-        het_rates[mm2](kk) = MISSING;
-      }
-    }
-  }
+          if (mm2 < 0) {
+            Kokkos::parallel_for(
+                Kokkos::ThreadVectorRange(team, pver),
+                [&](int kk) {
+                  het_rates[mm2](kk) = MISSING;
+                });
+          }
+        }
 
   //-----------------------------------------------------------------
   //	... the 2 and .6 multipliers are from a formula by frossling (1938)
@@ -412,14 +418,28 @@ void sethet(
   //       ... part 2, in-cloud solve for low henry constant
   //                   hno3 and h2o2 have both in and under cloud
   //-----------------------------------------------------------------
-  for (int kk = ktop; kk < pver; kk++) {
+  
+  // bool skip = false;
+  // Kokkos::parallel_for(
+  //       Kokkos::TeamThreadRange(team, ktop, pver), [&](int kk) {
+  //         Kokkos::parallel_for(
+  //             Kokkos::ThreadVectorRange(team, gas_pcnst),
+  //             [&](int mm) {
+  //               if(rain(kk) <= 0.0) {
+  //                 het_rates[mm](kk) = 0.0;
+  //                 skip = true;
+  //               }
+  //             });
+  
+  for (int kk = ktop; kk < pver; kk++) { 
     bool skip = false;
-    for (int mm = 0; mm < gas_pcnst; mm++) {
-      if (rain(kk) <= 0.0) {
-        het_rates[mm](kk) = 0.0;
-        skip = true;
-      }
-    }
+     Kokkos::ThreadVectorRange(team, gas_pcnst),
+          [&](int mm) {
+            if(rain(kk) <= 0.0) {
+              het_rates[mm](kk) = 0.0;
+              skip = true;
+            }
+          };
     if (skip)
       continue;
 
@@ -452,19 +472,28 @@ void sethet(
   //	... Set rates above tropopause = 0.
   //-----------------------------------------------------------------
 
+  bool abort = false;
   for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
     int mm2 = wetdep_map[mm];
-    for (int kk = 0; kk < ktop; kk++) {
-      het_rates[mm2](kk) = 0.0;
-    }
-    for (int kk = 0; kk < pver; kk++) {
-      if (het_rates[mm2](kk) == MISSING) {
-        Kokkos::abort(
-            "sethet: het_rates (wet dep) not set for het reaction number");
-        return;
-      }
-    }
+          Kokkos::parallel_for(
+              Kokkos::ThreadVectorRange(team, ktop),
+              [&](int kk) {
+                het_rates[mm2](kk) = 0.0;
+              });
+          Kokkos::parallel_for(
+              Kokkos::ThreadVectorRange(team, pver),
+              [&](int kk) {
+                if(het_rates[mm2](kk) == MISSING)
+                  abort = true;
+              });
+          }
+        
+  if(abort) {
+      Kokkos::abort(
+      "sethet: het_rates (wet dep) not set for het reaction number");
+      return;
   }
+
 } // end subroutine sethet
 
 } // namespace mo_sethet
