@@ -43,7 +43,7 @@ void rebin(Ensemble *ensemble) {
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           // Call rebin function
-          vertical_interpolation::rebin(nsrc, ntrg, src_x, trg_x.data(), src,
+          vertical_interpolation::rebin(team, nsrc, ntrg, src_x, trg_x.data(), src,
                                         trg);
         });
 
