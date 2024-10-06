@@ -46,10 +46,10 @@ void vert_interp(const ThreadTeam &team, int levsiz, int pver,
 // rebin is a port from:
 // https://github.com/eagles-project/e3sm_mam4_refactor/blob/ee556e13762e41a82cb70a240c54dc1b1e313621/components/eam/src/chemistry/utils/mo_util.F90#L12
 KOKKOS_INLINE_FUNCTION
-void rebin(const ThreadTeam &team, int nsrc, int ntrg, const ConstView1D &src_x, const Real trg_x[],
-           const View1D &src, const View1D &trg) {
+void rebin(const ThreadTeam &team, int nsrc, int ntrg, const ConstView1D &src_x,
+           const Real trg_x[], const View1D &src, const View1D &trg) {
 
-   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ntrg), [&](int i) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ntrg), [&](int i) {
     Real tl = trg_x[i];
     if (tl < src_x(nsrc)) {
       int sil = 0;
