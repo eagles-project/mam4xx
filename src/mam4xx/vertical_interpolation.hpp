@@ -31,12 +31,18 @@ void vert_interp(const ThreadTeam &team, int levsiz, int pver,
     }   // end for
 
     if (pmid(k) < pin(0)) {
+      EKAT_KERNEL_ASSERT_MSG(
+          pin(0) != 0.0,
+          "Error: Division by zero. The value of pin(0) is zero.\n");
       dataout(k) = datain(0) * pmid(k) / pin(0);
     } else if (pmid(k) > pin(levsiz - 1)) {
       dataout(k) = datain(levsiz - 1);
     } else {
       Real dpu = pmid(k) - pin(kupper);
       Real dpl = pin(kupper + 1) - pmid(k);
+      EKAT_KERNEL_ASSERT_MSG(
+          dpl + dpu != 0.0,
+          "Error: Division by zero. The value of dpl + dpu is zero.\n");
       dataout(k) =
           (datain(kupper) * dpl + datain(kupper + 1) * dpu) / (dpl + dpu);
     } // end if
