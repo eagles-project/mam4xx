@@ -80,6 +80,9 @@ void rebin(const ThreadTeam &team, int nsrc, int ntrg, const ConstView1D &src_x,
         Real su = haero::min(tu, src_x(si));
         y += (su - sl) * src(si1);
       }
+      EKAT_KERNEL_ASSERT_MSG(trg_x[i + 1] - trg_x[i] != 0.0,
+                             "Error: Division by zero. The value of trg_x[i + "
+                             "1] - trg_x[i] is zero.\n");
       trg(i) = y / (trg_x[i + 1] - trg_x[i]);
     } else {
       trg(i) = 0.0;
