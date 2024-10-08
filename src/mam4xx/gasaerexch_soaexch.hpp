@@ -119,7 +119,7 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
 
   Real p0_soa[ntot_soaspec];
   for (int ll = 0; ll < ntot_soaspec; ++ll) {
-    p0_soa[ntot_soaspec] = 1.0e-10;
+    p0_soa[ll] = 1.0e-10;
   }
 
   // BAD CONSTANT
@@ -129,18 +129,28 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
       opoa_frac[ll][n] = 0.1;
     }
   }
+
+  // for primary carbon mode, set opoa_frac=0 for consistency with older code
+  // (this could be changed)
+  constexpr bool flag_pcarbon_opoa_frac_zero = true;
+  constexpr int npca = 3; // primary carbon mode number
+  if (flag_pcarbon_opoa_frac_zero && npca > 0) {
+    for (int ll = 0; ll < ntot_poaspec; ++ll)
+      opoa_frac[ll][npca] = 0;
+  }
+
   bool skip_soamode[max_mode];
   for (int n = 0; n < max_mode; ++n) {
     skip_soamode[n] = true;
   }
 
   Real tmpa, tmpb, tmpc;
-  const Real alpha_astem = 0.05; // Parameter used in calc of time step
-  const Real dtsub_fixed = -1.0; // Fixed sub-step for time integration (s)
+  constexpr Real alpha_astem = 0.05; // Parameter used in calc of time step
+  constexpr Real dtsub_fixed = -1.0; // Fixed sub-step for time integration (s)
   // BAD CONSTANT
-  const Real rgas = 8.3144; // gas constant in J/K/mol
-  const Real a_min1 = 1.0e-20;
-  const Real g_min1 = 1.0e-20;
+  constexpr Real rgas = 8.3144; // gas constant in J/K/mol
+  constexpr Real a_min1 = 1.0e-20;
+  constexpr Real g_min1 = 1.0e-20;
 
   Real tot_soa[ntot_soaspec] = {}; // g_soa + sum( a_soa(:) )
 
@@ -219,7 +229,7 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
       a_opoa[n] = 0.0;
       for (int ll = 0; ll < ntot_poaspec; ++ll) {
         a_opoa[n] +=
-            opoa_frac[ll][n] * haero::max(qaer_prv[iaer_pom + ll - 1][n], 0.0);
+            opoa_frac[ll][n] * haero::max(qaer_prv[iaer_pom + ll][n], 0.0);
       }
     }
 

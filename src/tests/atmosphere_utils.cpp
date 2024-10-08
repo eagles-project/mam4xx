@@ -72,8 +72,8 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
     h_intp(k) = 0;
 
   // Assert equality based on relative values, rather than absolute tolerance
-  EKAT_ASSERT(FloatingPoint<Real>::rel(psum, p0,
-                                       std::numeric_limits<float>::epsilon()));
+  EKAT_REQUIRE(FloatingPoint<Real>::rel(psum, p0,
+                                        std::numeric_limits<float>::epsilon()));
 
   Kokkos::deep_copy(d_temperature, h_temperature);
   Kokkos::deep_copy(d_pressure, h_pressure);

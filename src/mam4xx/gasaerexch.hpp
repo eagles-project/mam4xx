@@ -27,18 +27,7 @@ namespace mam4 {
 /// ../aero_process.hpp.
 class GasAerExch {
 public:
-  static constexpr int num_gas_to_aer = 2;
   static constexpr int num_mode = AeroConfig::num_modes();
-  static constexpr int num_gas = AeroConfig::num_gas_ids();
-  static constexpr int num_aer = AeroConfig::num_aerosol_ids();
-  static constexpr int nait = static_cast<int>(ModeIndex::Aitken);
-  static constexpr int npca = static_cast<int>(ModeIndex::PrimaryCarbon);
-  static constexpr int igas_h2so4 = static_cast<int>(GasId::H2SO4);
-  static constexpr int igas_soag = static_cast<int>(GasId::SOAG);
-  static constexpr int iaer_so4 = static_cast<int>(AeroId::SO4);
-  static constexpr int iaer_pom = static_cast<int>(AeroId::POM);
-  static constexpr int iaer_soag_bgn = static_cast<int>(AeroId::SOA);
-  static constexpr int iaer_soag_end = static_cast<int>(AeroId::SOA);
 
   KOKKOS_INLINE_FUNCTION
   static const ModeIndex (&Modes())[num_mode] {
@@ -47,16 +36,6 @@ public:
         ModeIndex::PrimaryCarbon};
     return modes;
   }
-  KOKKOS_INLINE_FUNCTION
-  static const GasId (&Gases())[num_gas] {
-    // see mam4xx/aero_modes.hpp
-    static const GasId gases[num_gas] = {GasId::O3,  GasId::H2O2, GasId::H2SO4,
-                                         GasId::SO2, GasId::DMS,  GasId::SOAG};
-    return gases;
-  }
-  // NH3 -> NH4 condensation is a future enhancement
-  static constexpr int iaer_nh4 = -1;
-  static constexpr int igas_nh3 = -1;
 
   // In MAM4, there are only two gases that condense to aerosols:
   // 1. H2SO4 -> SO4
@@ -69,19 +48,6 @@ public:
     else if (GasId::SOAG == gas)
       air = AeroId::SOA;
     return air;
-  }
-  //------------------------------------------------------------------
-  // MAM4xx currently assumes that the uptake rate of other gases
-  // are proportional to the uptake rate of sulfuric acid gas (H2SO4).
-  // Here the array uptk_rate_factor contains the uptake rate ratio
-  // w.r.t. that of H2SO4.
-  //------------------------------------------------------------------
-  //  Indices correspond to those in the gases array above
-  KOKKOS_INLINE_FUNCTION
-  static constexpr Real uptk_rate_factor(const int i) {
-    const Real uptk_rate[num_gas] = {
-        0.0, 0.0, 1.0, 0.0, 0.0, Constants::soag_h2so4_uptake_coeff_ratio};
-    return uptk_rate[i];
   }
 
   // -----------------------------------------------------------------
@@ -120,14 +86,6 @@ public:
 
     // Do we have NH3? Not something supported at this time.
     static constexpr bool igas_nh3 = false;
-
-    // qgas_netprod_otrproc = gas net production rate from other processes
-    // such as gas-phase chemistry and emissions (mol/mol/s)
-    // this allows the condensation (gasaerexch) routine to apply production and
-    // condensation loss together, which is more accurate numerically
-    // NOTE - must be >= zero, as numerical method can fail when it is negative
-    // NOTE - currently only the value for h2so4 should be non-zero
-    Real qgas_netprod_otrproc[num_gas] = {0, 0, 5.0e-016, 0, 0, 0};
   };
 
   // name -- unique name of the process implemented by this class
@@ -135,7 +93,7 @@ public:
 
   // init -- initializes the implementation with MAM4's configuration
   void init(const AeroConfig &aero_config,
-            const Config &process_config = Config());
+            const Config &process_config = Config()) {}
 
   // validate -- validates the given atmospheric state and prognostics against
   // assumptions made by this implementation, returning true if the states are
@@ -174,15 +132,11 @@ public:
                           Real t, Real dt, const Atmosphere &atm,
                           const Surface &sfc, const Prognostics &progs,
                           const Diagnostics &diags,
-                          const Tendencies &tends) const;
+                          const Tendencies &tends) const {}
 
 private:
   // Gas-Aerosol-Exchange-specific configuration
   Config config_;
-
-  bool l_gas_condense_to_mode[num_gas][num_mode] = {};
-  int eqn_and_numerics_category[num_gas] = {};
-  Real modes_mean_std_dev[num_mode] = {};
 };
 
 namespace gasaerexch {
@@ -270,21 +224,17 @@ void mam_gasaerexch_1subarea_1gas_nonvolatile(
 // gas_diffusivity       ! (m2/s)
 KOKKOS_INLINE_FUNCTION
 Real gas_diffusivity(
-    const Real &T_in_K,     // temperature (K)
-    const Real &p_in_atm,   // pressure (atmospheres)
-    const Real mw_gas,      // molec. weight of the condensing gas (g/mol)
-    const Real mw_air_gmol, // molec. weight of air (g/mol)
-    const Real vd_gas,      // molec. diffusion volume of the condensing gas
-    const Real vd_air) {    // molec. diffusion volume of air
+    const Real &T_in_K,   // temperature (K)
+    const Real &p_in_atm, // pressure (atmospheres)
+    const Real mw_gas,    // molec. weight of the condensing gas (g/mol)
+    const Real vd_gas)    // molec. diffusion volume of the condensing gas
+{
 
-  const Real onethird = 1.0 / 3.0;
-
-  const Real gas_diffusivity =
-      (1.0e-7 * haero::pow(T_in_K, 1.75) *
-       haero::sqrt(1.0 / mw_gas + 1.0 / mw_air_gmol)) /
-      (p_in_atm *
-       haero::pow(haero::pow(vd_gas, onethird) + haero::pow(vd_air, onethird),
-                  2.0));
+  constexpr Real onethird = 1.0 / 3.0;
+  const Real dgas =
+      (1.0e-3 * haero::pow(T_in_K, 1.75) * haero::sqrt(1. / mw_gas + 0.035)) /
+      (p_in_atm * haero::pow((haero::pow(vd_gas, onethird) + 2.7189), 2.0));
+  const Real gas_diffusivity = dgas * 1.0e-4;
 
   return gas_diffusivity;
 }
@@ -297,8 +247,8 @@ Real mean_molecular_speed(
     const Real rmw,            // molec. weight (g/mol)
     const Real r_universal_mJ, // universal gas constant (mJ/K mol)
     const Real pi) {
-  const Real mean_molecular_speed =
-      haero::sqrt(8.0 * r_universal_mJ * temp / (pi * rmw));
+  // BAD CONSTANTS
+  const Real mean_molecular_speed = 145.5 * haero::sqrt(temp / rmw);
 
   return mean_molecular_speed;
 }
@@ -325,19 +275,18 @@ void gas_aer_uptkrates_1box1gas(const Real accom, const Real gasdiffus,
                                 const Real dgncur_awet[GasAerExch::num_mode],
                                 const Real lnsg[GasAerExch::num_mode],
                                 Real uptkaer[GasAerExch::num_mode]) {
-  /*
-  !                         /
-  !   computes   uptkrate = | dx  dN/dx  gas_conden_rate(Dp(x))
-  !                         /
-  !   using Gauss-Hermite quadrature of order nghq=2
-  !
-  !       Dp = particle diameter (cm)
-  !       x = ln(Dp)
-  !       dN/dx = log-normal particle number density distribution
-  !       gas_conden_rate(Dp) = 2 * pi * gasdiffus * Dp * F(Kn,ac)
-  !           F(Kn,ac) = Fuchs-Sutugin correction factor
-  !           Kn = Knudsen number
-  !           ac = accomodation coefficient */
+  //!                         /
+  //!   computes   uptkrate = | dx  dN/dx  gas_conden_rate(Dp(x))
+  //!                         /
+  //!   using Gauss-Hermite quadrature of order nghq=2
+  //!
+  //!       Dp = particle diameter (cm)
+  //!       x = ln(Dp)
+  //!       dN/dx = log-normal particle number density distribution
+  //!       gas_conden_rate(Dp) = 2 * pi * gasdiffus * Dp * F(Kn,ac)
+  //!           F(Kn,ac) = Fuchs-Sutugin correction factor
+  //!           Kn = Knudsen number
+  //!           ac = accomodation coefficient
 
   const Real tworootpi = 2 * haero::sqrt(haero::Constants::pi);
   const Real root2 = haero::sqrt(2.0);
@@ -355,8 +304,8 @@ void gas_aer_uptkrates_1box1gas(const Real accom, const Real gasdiffus,
   //-----------------------------------------------------------------------
 
   constexpr int nghq = 2;
-  const Real xghq[nghq] = {0.70710678, -0.70710678};
-  const Real wghq[nghq] = {0.88622693, 0.88622693};
+  const Real xghq[nghq] = {7.071067690849304E-01, -7.071067690849304E-01};
+  const Real wghq[nghq] = {8.862269520759583E-01, 8.862269520759583E-01};
 
   const Real accomxp283 = accom * 0.283;
   const Real accomxp75 = accom * 0.75;
@@ -404,566 +353,25 @@ void gas_aer_uptkrates_1box1gas(const Real accom, const Real gasdiffus,
   }
 } // gas_aer_uptkrates_1box1gas
 
-KOKKOS_INLINE_FUNCTION
-void gas_aer_uptkrates_1box1gas(
-    const bool l_condense_to_mode[GasAerExch::num_mode], const Real temp,
-    const Real pmid, const Real pstd, const Real mw_gas, const Real mw_air_gmol,
-    const Real vol_molar_gas, const Real vol_molar_air, const Real accom,
-    const Real r_universal_mJ, const Real pi, const Real beta_inp,
-    const int nghq, const Real dgncur_awet[GasAerExch::num_mode],
-    const Real lnsg[GasAerExch::num_mode], Real uptkaer[GasAerExch::num_mode]) {
-  //----------------------------------------------------------------------
-  //  Computes   uptake rate parameter uptkaer[0:num_mode] =
-  //  uptkrate[0:num_mode]
-  //
-  //                           /
-  //  where      uptkrate(i) = | gas_conden_rate(Dp) n_i(lnDp) dlnDp
-  //                           /
-  //
-  //  is the uptake rate for aerosol mode i with size distribution n_i(lnDp)
-  //  and number concentration of = 1 #/m3; aernum(i) is the actual number
-  //  mixing ratio of mode i in the unit of  #/kmol-air, and aircon is
-  //  the air concentration in the unit of kmol/m3.
-  //
-  //  gas_conden_rate(D_p) = 2 * pi * gasdiffus * D_p * F(Kn,ac), with
-  //          gasdiffus = gas diffusivity
-  //          F(Kn,ac) = Fuchs-Sutugin correction factor
-  //          Kn = Knudsen number (which is a function of Dp)
-  //          ac = accomodation coefficient (constant for each gas species)
-  //----------------------------------------------------------------------
-  //  using Gauss-Hermite quadrature of order nghq=2
-  //
-  //      D_p = particle diameter (cm)
-  //      x = ln(D_p)
-  //      dN/dx = log-normal particle number density distribution
-  //----------------------------------------------------------------------
-  const Real tworootpi = 2 * haero::sqrt(pi);
-  const Real root2 = haero::sqrt(2.0);
-  const Real one = 1.0;
-  const Real two = 2.0;
-
-  // Dick's old version
-  // integer, parameter :: nghq = 2
-  // real(wp), save :: xghq(nghq), wghq(nghq) ! quadrature abscissae and
-  // weights data xghq / 0.70710678, -0.70710678 / data wghq / 0.88622693,
-  // 0.88622693 /
-  // choose
-  // nghq-----------------------------------------------------------------
-  const Kokkos::Array<Real, 20> xghq_20 = {
-      -5.3874808900112,  -4.6036824495507, -3.9447640401156, -3.3478545673832,
-      -2.7888060584281,  -2.2549740020893, -1.7385377121166, -1.2340762153953,
-      -0.73747372854539, -0.2453407083009, 0.2453407083009,  0.73747372854539,
-      1.2340762153953,   1.7385377121166,  2.2549740020893,  2.7888060584281,
-      3.3478545673832,   3.9447640401156,  4.6036824495507,  5.3874808900112};
-  const Kokkos::Array<Real, 20> wghq_20 = {
-      2.229393645534e-13, 4.399340992273e-10, 1.086069370769e-7,
-      7.80255647853e-6,   2.283386360164e-4,  0.003243773342238,
-      0.024810520887464,  0.10901720602002,   0.28667550536283,
-      0.46224366960061,   0.46224366960061,   0.28667550536283,
-      0.10901720602002,   0.024810520887464,  0.003243773342238,
-      2.283386360164e-4,  7.80255647853e-6,   1.086069370769e-7,
-      4.399340992273e-10, 2.229393645534e-13};
-  const Kokkos::Array<Real, 10> xghq_10 = {
-      -3.436159118837737603327,  -2.532731674232789796409,
-      -1.756683649299881773451,  -1.036610829789513654178,
-      -0.3429013272237046087892, 0.3429013272237046087892,
-      1.036610829789513654178,   1.756683649299881773451,
-      2.532731674232789796409,   3.436159118837737603327};
-  const Kokkos::Array<Real, 10> wghq_10 = {
-      7.64043285523262062916e-6,  0.001343645746781232692202,
-      0.0338743944554810631362,   0.2401386110823146864165,
-      0.6108626337353257987836,   0.6108626337353257987836,
-      0.2401386110823146864165,   0.03387439445548106313616,
-      0.001343645746781232692202, 7.64043285523262062916E-6};
-  const Kokkos::Array<Real, 4> xghq_4 = {-1.6506801238858, -0.52464762327529,
-                                         0.52464762327529, 1.6506801238858};
-  const Kokkos::Array<Real, 4> wghq_4 = {0.081312835447245, 0.8049140900055,
-                                         0.8049140900055, 0.081312835447245};
-  const Kokkos::Array<Real, 2> xghq_2 = {-7.0710678118654746e-01,
-                                         7.0710678118654746e-01};
-  const Kokkos::Array<Real, 2> wghq_2 = {8.8622692545275794e-01,
-                                         8.8622692545275794e-01};
-  Real const *xghq = nullptr;
-  Real const *wghq = nullptr;
-  if (20 == nghq) {
-    xghq = xghq_20.data();
-    wghq = wghq_20.data();
-  } else if (10 == nghq) {
-    xghq = xghq_10.data();
-    wghq = wghq_10.data();
-  } else if (4 == nghq) {
-    xghq = xghq_4.data();
-    wghq = wghq_4.data();
-  } else if (2 == nghq) {
-    xghq = xghq_2.data();
-    wghq = wghq_2.data();
-  } else {
-    printf("nghq integration option is not available: %d, "
-           "valid are 20, 10, 4, and 2\n",
-           nghq);
-    Kokkos::abort("Invalid integration order requested.");
-  }
-  //-----------------------------------------------------------------------
-
-  // pressure (atmospheres)
-  const Real p_in_atm = pmid / pstd;
-  // gas diffusivity (m2/s)
-  const Real gasdiffus = gas_diffusivity(temp, p_in_atm, mw_gas, mw_air_gmol,
-                                         vol_molar_gas, vol_molar_air);
-  // gas mean free path (m)
-  const Real molecular_speed =
-      mean_molecular_speed(temp, mw_gas, r_universal_mJ, pi);
-  const Real gasfreepath = 3.0 * gasdiffus / molecular_speed;
-  const Real accomxp283 = accom * 0.283;
-  const Real accomxp75 = accom * 0.75;
-
-  // outermost loop over all modes
-  for (int n = 0; n < GasAerExch::num_mode; ++n) {
-    const Real lndpgn = haero::log(dgncur_awet[n]); // (m)
-
-    // beta = dln(uptake_rate)/dln(D_p)
-    //      = 2.0 in free molecular regime, 1.0 in continuum regime
-    // if uptake_rate ~= a * (D_p**beta), then the 2 point quadrature
-    // is very accurate
-    Real beta = 0;
-    if (std::abs(beta_inp - 1.5) > 0.5) {
-      // D_p = dgncur_awet(n) * haero::exp( 1.5*(lnsg[n]**2) )
-      const Real D_p = dgncur_awet[n];
-      const Real knudsen = two * gasfreepath / D_p;
-
-      // tmpa = dln(fuchs_sutugin)/d(knudsen)
-      const Real tmpa =
-          one / (one + knudsen) -
-          (two * knudsen + one + accomxp283) /
-              (knudsen * (knudsen + one + accomxp283) + accomxp75);
-      beta = one - knudsen * tmpa;
-      beta = haero::max(one, haero::min(two, beta));
-    } else {
-      beta = beta_inp;
-    }
-    const Real constant =
-        tworootpi *
-        haero::exp(beta * lndpgn + 0.5 * haero::pow(beta * lnsg[n], 2.0));
-
-    // sum over gauss-hermite quadrature points
-    Real sumghq = 0.0;
-    for (int iq = 0; iq < nghq; ++iq) {
-      const Real lndp =
-          lndpgn + beta * lnsg[n] * lnsg[n] + root2 * lnsg[n] * xghq[iq];
-      const Real D_p = haero::exp(lndp);
-
-      const Real hh = fuchs_sutugin(D_p, gasfreepath, accomxp283, accomxp75);
-      sumghq += wghq[iq] * D_p * hh / haero::pow(D_p, beta);
-    }
-    // gas-to-aerosol mass transfer rates
-    // (1/s) for number concentration = 1 #/m3
-    const Real uptkrate = constant * gasdiffus * sumghq;
-    // --------------------------------------------------------------------
-    // Unit of uptkrate is for number = 1 #/m3.
-    // --------------------------------------------------------------------
-    uptkaer[n] = l_condense_to_mode[n] ? uptkrate : 0.0; // zero means no uptake
-  }
-}
-
-KOKKOS_INLINE_FUNCTION
-void mam_gasaerexch_1subarea(
-    const int nghq,                               // in
-    const int igas_h2so4,                         // in
-    const bool igas_nh3,                          // in
-    const int ntot_soamode,                       // in
-    const AeroId gas_to_aer[GasAerExch::num_gas], // in
-    const int iaer_so4,                           // in
-    const int iaer_pom,                           // in
-    const bool l_calc_gas_uptake_coeff,           // in
-    const bool l_gas_condense_to_mode[GasAerExch::num_gas]
-                                     [GasAerExch::num_mode],  // in
-    const int eqn_and_numerics_category[GasAerExch::num_gas], // in
-    const Real dt,                                            // in
-    const Real dtsub_soa_fixed,                               // in
-    const Real temp,                                          // in
-    const Real pmid,                                          // in
-    const Real aircon,                                        // in
-    const int ngas, Real qgas_cur[GasAerExch::num_gas],       // in
-    Real qgas_avg[GasAerExch::num_gas],                       // in/out
-    const Real qgas_netprod_otrproc[GasAerExch::num_gas],     // in
-    Real qaer_cur[AeroConfig::num_aerosol_ids()]
-                 [GasAerExch::num_mode],                     // in/out
-    Real qnum_cur[GasAerExch::num_mode],                     // in/out
-    const Real dgn_awet[GasAerExch::num_mode],               // in
-    const Real alnsg_aer[GasAerExch::num_mode],              // in
-    const Real uptk_rate_factor[GasAerExch::num_gas],        // in
-    Real uptkaer[GasAerExch::num_gas][GasAerExch::num_mode], // inout
-    Real &uptkrate_h2so4,                                    // out
-    int &niter_out,                                          // out
-    Real &g0_soa_out) {                                      // out
-  const int num_mode = GasAerExch::num_mode;
-  const int num_gas = GasAerExch::num_gas;
-
-  const Real pstd = Constants::pressure_stp;                       // [Pa]
-  const Real mw_h2so4_gmol = 1000 * Constants::molec_weight_h2so4; // [g/mol]
-  const Real mw_air_gmol = 1000 * Constants::molec_weight_dry_air; // [g/mol]
-  const Real vol_molar_h2so4 = Constants::molec_diffusion_h2so4;   // [-]
-  const Real vol_molar_air = Constants::molec_diffusion_dry_air;   // [-]
-  const Real accom_coef_h2so4 = Constants::accom_coef_h2so4;       // [-]
-  const Real r_universal_mJ = 1000 * Constants::r_gas; // [mJ/(K mol)]
-  const Real r_pi = Constants::pi;
-
-  const Real beta_inp = 0; // quadrature parameter (--)
-  //===============================================================
-  // Calculate the reference uptake coefficient for all
-  // aerosol modes using properties of the H2SO4 gas
-  //===============================================================
-  if (l_calc_gas_uptake_coeff) {
-    // do calcullation for ALL modes
-    const bool l_condense_to_mode[num_mode] = {true, true, true, true};
-    // initialize with zero (-> no uptake)
-    Real uptkaer_ref[num_mode] = {0, 0, 0, 0};
-    gasaerexch::gas_aer_uptkrates_1box1gas(
-        l_condense_to_mode, temp, pmid, pstd, mw_h2so4_gmol, mw_air_gmol,
-        vol_molar_h2so4, vol_molar_air, accom_coef_h2so4, r_universal_mJ, r_pi,
-        beta_inp, nghq, dgn_awet, alnsg_aer, uptkaer_ref);
-
-    // -------------------------------------------------------------
-    // Unit conversion: uptkrate is for number = 1 #/m3, so mult. by
-    // number conc. (#/m3)
-    //--------------------------------------------------------------
-    for (int imode = 0; imode < num_mode; ++imode) {
-      if (l_condense_to_mode[imode]) {
-        uptkaer_ref[imode] *= qnum_cur[imode] * aircon;
-      }
-    }
-    //===============================================================
-    // Assign uptake rate to each gas species and each mode using the
-    // ref. value uptkaer_ref calculated above and the uptake rate
-    // factor specified as constants at the beginning of the module
-    //===============================================================
-    // gas to aerosol mass transfer rate (1/s)
-    for (int igas = 0; igas < num_gas; ++igas)
-      for (int imode = 0; imode < num_mode; ++imode)
-        uptkaer[igas][imode] = 0.0; // default is no uptake
-
-    for (int igas = 0; igas < num_gas; ++igas) {
-      for (int imode = 0; imode < num_mode; ++imode)
-        if (l_gas_condense_to_mode[igas][imode])
-          uptkaer[igas][imode] = uptkaer_ref[imode] * uptk_rate_factor[igas];
-    }
-
-    // total uptake rate (sum of all aerosol modes) for h2so4.
-    // Diagnosd for calling routine. Not used in this subroutne.
-    uptkrate_h2so4 = 0;
-    for (int n = 0; n < num_mode; ++n)
-      uptkrate_h2so4 += uptkaer[igas_h2so4][n];
-  }
-  // =============================================================
-  //  Solve condensation equation for non-volatile species
-  // =============================================================
-  //  Using quasi-analytical solution (with no time sub-stepping)
-  // -------------------------------------------------------------
-  for (GasId gas : GasAerExch::Gases()) {
-    const int igas = static_cast<int>(gas);
-    const AeroId aer = gas_to_aer[igas];
-    if (aer != AeroId::None &&
-        eqn_and_numerics_category[igas] == GasAerExch::ANAL) {
-      const int iaer = static_cast<int>(aer);
-      const Real netprod = qgas_netprod_otrproc[igas];
-      Real uptkaer_igas[num_mode] = {};
-      Real qaer[num_mode] = {};
-      for (ModeIndex mode : GasAerExch::Modes()) {
-        const int n = static_cast<int>(mode);
-        uptkaer_igas[n] = uptkaer[igas][n];
-        if (mode_contains_species(mode, aer))
-          qaer[n] = qaer_cur[iaer][n];
-      }
-      gasaerexch::mam_gasaerexch_1subarea_1gas_nonvolatile(
-          dt, netprod, uptkaer_igas, qgas_cur[igas], qgas_avg[igas], qaer);
-
-      for (ModeIndex mode : GasAerExch::Modes()) {
-        const int n = static_cast<int>(mode);
-        // Commit a small crime there.  There is a case where
-        // mode_contains_species(mode, aer) is false and yet
-        // a value is stored in qaer_cur at that point.
-        // The e3sm_mam4 code also did this as a place to
-        // store a temperary value.
-        qaer_cur[iaer][n] = qaer[n];
-      }
-    }
-  }
-  //---------------------------------------------------------------n
-  // Clip condensation rate when nh3 is on the list of non-volatile gases:
-  // limit the condensation of nh3 so that nh4 does not exceed
-  // aer_nh4_so4_molar_ratio_max * so4 (molar basis).
-  // (Hui Wan's comment from Dec. 2020: chose to leave the following block here
-  // instead of moving it to the subroutine
-  // mam_gasaerexch_1subarea_nonvolatile_quasi_analytical, to make it a bit
-  // easier to see the assumed relationship between species.)
-  //---------------------------------------------------------------------
-  if (igas_nh3) {
-    const int igas = GasAerExch::igas_nh3;
-    const AeroId aer = gas_to_aer[igas];
-    if (aer != AeroId::None) {
-      for (ModeIndex mode : GasAerExch::Modes()) {
-        const int n = static_cast<int>(mode);
-        const Real aer_nh4_so4_molar_ratio_max = 2;
-        if (0 < uptkaer[igas][n]) {
-          const int iaer = static_cast<int>(aer);
-          const int iaer_so4 = static_cast<int>(AeroId::SO4);
-          if (mode_contains_species(mode, aer) &&
-              mode_contains_species(mode, AeroId::SO4)) {
-            // if nh4 exceeds aer_nh4_so4_molar_ratio_max*so4 (molar basis),
-            // put the excessive amount back to gas phase (nh3)
-            const Real mass_excess =
-                qaer_cur[iaer][n] -
-                aer_nh4_so4_molar_ratio_max * qaer_cur[iaer_so4][n];
-            if (0 < mass_excess) {
-              qaer_cur[iaer][n] -= mass_excess;
-              qgas_cur[igas] += mass_excess;
-              qgas_avg[igas] += mass_excess * 0.5;
-            }
-          }
-        }
-      }
-    }
-  }
-  //============================================
-  // Solve condensation equations for SOA
-  //============================================
-  // starting index of POA on the species list
-  // ending index of POA on the species list
-  // For now we are only going to do a single volitle species.
-  const int npoa = 1;
-  Real qaer_poa[npoa][num_mode] = {};
-  for (ModeIndex mode : GasAerExch::Modes()) {
-    const int idxs = static_cast<int>(AeroId::POM);
-    const int n = static_cast<int>(mode);
-    qaer_poa[0][n] = haero::max(qaer_cur[idxs][n], 0);
-  }
-  Real soa_out = 0;
-  int niter = 0;
-
-  const int ntot_soaspec = 1;
-  const GasId soaspec[ntot_soaspec] = {GasId::SOAG};
-  mam_soaexch_1subarea(GasAerExch::npca, ntot_soamode, ntot_soaspec, soaspec,
-                       gas_to_aer, dt, dtsub_soa_fixed, pstd, r_universal_mJ,
-                       temp, pmid, uptkaer, qaer_poa, qgas_cur, qgas_avg,
-                       qaer_cur, niter, soa_out);
-  niter_out = niter;
-  g0_soa_out = soa_out;
-}
-
-KOKKOS_INLINE_FUNCTION
-void gas_aerosol_uptake_rates_1box(
-    const int k, const AeroConfig &aero_config, const Real dt,
-    const Atmosphere &atm, const Prognostics &progs, const Diagnostics &diags,
-    const Tendencies &tends, const GasAerExch::Config &config,
-    const bool l_gas_condense_to_mode[GasAerExch::num_gas]
-                                     [GasAerExch::num_mode],
-    const int eqn_and_numerics_category[GasAerExch::num_gas],
-    const Real uptk_rate_factor[GasAerExch::num_gas],
-    const Real alnsg_aer[GasAerExch::num_mode]) {
-
-  const Real r_universal = Constants::r_gas; // [J/(K mol)]
-  const int num_gas = GasAerExch::num_gas;
-  const int num_aer = AeroConfig::num_aerosol_ids();
-  const int num_mode = GasAerExch::num_mode;
-  const int igas_h2so4 = static_cast<int>(GasId::H2SO4);
-
-  const bool igas_nh3 = config.igas_nh3;
-  AeroId gas_to_aer[num_gas] = {};
-  for (GasId gas : GasAerExch::Gases())
-    gas_to_aer[static_cast<int>(gas)] = GasAerExch::gas_to_aer(gas);
-
-  Real qgas_netprod_otrproc[num_gas];
-  for (int i = 0; i < num_gas; ++i)
-    qgas_netprod_otrproc[i] = config.qgas_netprod_otrproc[i];
-
-  const int iaer_so4 = GasAerExch::iaer_so4;
-  const int iaer_pom = GasAerExch::iaer_pom;
-  const bool l_calc_gas_uptake_coeff = config.calculate_gas_uptake_coefficient;
-  const Real dtsub_soa_fixed = config.dtsub_soa_fixed;
-  const Real &temp = atm.temperature(k);
-  const Real &pmid = atm.pressure(k);
-  const Real aircon_kmol = pmid / (1000 * r_universal * temp);
-  const int ngas = GasAerExch::num_gas_to_aer;
-
-  // set number of ghq points for direct ghq
-  const int nghq = 2; // aero_config.number_gauss_points_for_integration;
-
-  // extract gas mixing ratios
-  Real qgas_cur[num_gas], qgas_avg[num_gas], qaer_cur[num_aer][num_mode];
-  for (int g = 0; g < num_gas; ++g) {
-    qgas_cur[g] = progs.q_gas[g](k);
-    qgas_avg[g] = 0;
-  }
-  for (int n = 0; n < num_mode; ++n)
-    for (int g = 0; g < num_aer; ++g)
-      qaer_cur[g][n] = progs.q_aero_i[n][g](k);
-
-  Real qnum_cur[num_mode];
-  for (int i = 0; i < num_mode; ++i) {
-    qnum_cur[i] = progs.n_mode_i[i](k);
-  }
-
-  Real qgas_sv1[num_gas], qnum_sv1[num_mode], qaer_sv1[num_aer][num_mode];
-  for (int i = 0; i < num_gas; ++i) {
-    qgas_sv1[i] = qgas_cur[i];
-  }
-  for (int i = 0; i < num_mode; ++i) {
-    qnum_sv1[i] = qnum_cur[i];
-  }
-  for (int i = 0; i < num_aer; ++i) {
-    for (int j = 0; j < num_mode; ++j) {
-      qaer_sv1[i][j] = qaer_cur[i][j];
-    }
-  }
-
-  Real dgn_awet[num_mode] = {};
-  for (int i = 0; i < num_mode; ++i)
-    dgn_awet[i] = diags.wet_geometric_mean_diameter_i[i](k);
-
-  // gas to aerosol mass transfer rate (1/s)
-  Real uptkaer[num_gas][num_mode];
-  for (int igas = 0; igas < num_gas; ++igas)
-    for (int imode = 0; imode < num_mode; ++imode)
-      uptkaer[igas][imode] = progs.uptkaer[igas][imode](k);
-
-  Real uptkrate_h2so4 = diags.uptkrate_h2so4(k);
-  int niter_out = 0;
-  Real g0_soa_out = 0;
-  const int ntot_soamode = config.ntot_soamode;
-
-  mam_gasaerexch_1subarea(nghq, igas_h2so4, igas_nh3, ntot_soamode, gas_to_aer,
-                          iaer_so4, iaer_pom, l_calc_gas_uptake_coeff,
-                          l_gas_condense_to_mode, eqn_and_numerics_category, dt,
-                          dtsub_soa_fixed, temp, pmid, aircon_kmol, ngas,
-                          qgas_cur, qgas_avg, qgas_netprod_otrproc, qaer_cur,
-                          qnum_cur, dgn_awet, alnsg_aer, uptk_rate_factor,
-                          uptkaer, uptkrate_h2so4, niter_out, g0_soa_out);
-
-  for (int i = 0; i < num_mode; ++i)
-    tends.n_mode_i[i](k) = (qnum_cur[i] - qnum_sv1[i]) / dt;
-
-  for (int n = 0; n < num_mode; ++n)
-    for (int g = 0; g < num_aer; ++g)
-      tends.q_aero_i[n][g](k) = (qaer_cur[g][n] - qaer_sv1[g][n]) / dt;
-
-  for (int g = 0; g < num_gas; ++g)
-    tends.q_gas[g](k) +=
-        (qgas_cur[g] - (qgas_sv1[g] + qgas_netprod_otrproc[g] * dt)) / dt;
-
-  for (int g = 0; g < num_gas; ++g) {
-    progs.q_gas[g](k) = qgas_cur[g];
-    progs.q_gas_avg[g](k) = qgas_avg[g];
-  }
-  for (int n = 0; n < num_mode; ++n)
-    for (int g = 0; g < num_aer; ++g)
-      progs.q_aero_i[n][g](k) = qaer_cur[g][n];
-
-  for (int igas = 0; igas < num_gas; ++igas)
-    for (int imode = 0; imode < num_mode; ++imode)
-      progs.uptkaer[igas][imode](k) = uptkaer[igas][imode];
-
-  diags.g0_soa_out(k) = g0_soa_out;
-  diags.uptkrate_h2so4(k) = uptkrate_h2so4;
-  diags.num_substeps(k) = niter_out;
-}
-
 } // namespace gasaerexch
 
-// init -- initializes the implementation with MAM4's configuration
-inline void GasAerExch::init(const AeroConfig &aero_config,
-                             const Config &process_config) {
-
-  config_ = process_config;
-
-  for (int imode = 0; imode < num_mode; ++imode)
-    modes_mean_std_dev[imode] = modes(imode).mean_std_dev;
-
-  //-------------------------------------------------------------------
-  // MAM currently uses a splitting method to deal with gas-aerosol
-  // mass exchange. A quasi-analytical solution assuming timestep-wise
-  // constant uptake rate is applied to nonvolatile species, while
-  // an implicit time stepping method with adaptive step size
-  // is applied to gas-phase SOA species which are assumed semi-volatile.
-  // There are two different subroutines in this modules to deal
-  // with the two categories of cases. The array
-  // which category.
-  //-------------------------------------------------------------------
-  for (int k = 0; k < num_gas; ++k)
-    eqn_and_numerics_category[k] = NA;
-  eqn_and_numerics_category[igas_soag] = IMPL;
-  eqn_and_numerics_category[igas_h2so4] = ANAL;
-
-  //-------------------------------------------------------------------
-  // Determine whether specific gases will condense to specific modes
-  //-------------------------------------------------------------------
-  for (int igas = 0; igas < num_gas; ++igas)
-    for (int imode = 0; imode < num_mode; ++imode)
-      l_gas_condense_to_mode[igas][imode] = false;
-  // loop through all registered gas species
-  for (GasId gas : GasAerExch::Gases()) {
-    const AeroId aero_id = GasAerExch::gas_to_aer(gas);
-    // can this gas species condense?
-    if (aero_id != AeroId::None) {
-      const int igas = static_cast<int>(gas);
-      if (eqn_and_numerics_category[igas] != NA) {
-        // what aerosol species does the gas become when condensing?
-        for (ModeIndex mode_index : GasAerExch::Modes()) {
-          const bool mode_contains_species =
-              mam4::mode_contains_species(mode_index, aero_id);
-          const int imode = static_cast<int>(mode_index);
-          l_gas_condense_to_mode[igas][imode] =
-              mode_contains_species || config_.l_mode_can_age[imode];
-        }
-      }
-    }
-  }
-}
-
-// compute_tendencies -- computes tendencies and updates diagnostics
-// NOTE: that both diags and tends are const below--this means their views
-// NOTE: are fixed, but the data in those views is allowed to vary.
-KOKKOS_INLINE_FUNCTION
-void GasAerExch::compute_tendencies(const AeroConfig &config,
-                                    const ThreadTeam &team, Real t, Real dt,
-                                    const Atmosphere &atm, const Surface &sfc,
-                                    const Prognostics &progs,
-                                    const Diagnostics &diags,
-                                    const Tendencies &tends) const {
-  // const int nghq = 2;  // set number of ghq points for direct ghq
-  const int nk = atm.num_levels();
-  Real alnsg_aer[num_mode];
-  for (int k = 0; k < num_mode; ++k)
-    alnsg_aer[k] = std::log(modes_mean_std_dev[k]);
-
-  Real uptk_rate[num_gas];
-  for (int k = 0; k < num_gas; ++k)
-    uptk_rate[k] = GasAerExch::uptk_rate_factor(k);
-
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
-    gasaerexch::gas_aerosol_uptake_rates_1box(
-        k, config, dt, atm, progs, diags, tends, config_,
-        l_gas_condense_to_mode, eqn_and_numerics_category, uptk_rate,
-        alnsg_aer);
-  });
-}
-
 KOKKOS_INLINE_FUNCTION
 void mam_gasaerexch_1subarea(
-    const int jtsubstep,                // in
-    const Real dtsubstep,               // in
-    const Real temp,                    // in
-    const Real pmid,                    // in
-    const Real aircon,                  // in
-    const int n_mode,                   // in
-    Real qgas_cur[gasaerexch::max_gas], // in/out
-    Real qgas_avg[gasaerexch::max_gas], // in/out
-    const Real qgas_netprod_otrproc[gasaerexch::max_gas],
-    Real qaer_cur[gasaerexch::max_aer][mam4::gasaerexch::max_mode],
-    Real qnum_cur[gasaerexch::max_mode], Real qwtr_cur[gasaerexch::max_mode],
-    Real dgn_a[gasaerexch::max_mode], Real dgn_awet[gasaerexch::max_mode],
-    Real wetdens[gasaerexch::max_mode],
-    Real uptkaer[gasaerexch::max_gas][mam4::gasaerexch::max_mode],
-    Real &uptkrate_h2so4) {
+    const int jtsubstep,                                            // in
+    const Real dtsubstep,                                           // in
+    const Real temp,                                                // in
+    const Real pmid,                                                // in
+    const Real aircon,                                              // in
+    const int n_mode,                                               // in
+    Real qgas_cur[gasaerexch::max_gas],                             // inout
+    Real qgas_avg[gasaerexch::max_gas],                             // inout
+    const Real qgas_netprod_otrproc[gasaerexch::max_gas],           // in
+    Real qaer_cur[gasaerexch::max_aer][mam4::gasaerexch::max_mode], // inout
+    Real qnum_cur[gasaerexch::max_mode],                            // inout
+    Real qwtr_cur[gasaerexch::max_mode],                            // inout
+    const Real dgn_awet[gasaerexch::max_mode],                      // in
+    Real uptkaer[gasaerexch::max_gas][mam4::gasaerexch::max_mode],  // inout
+    Real &uptkrate_h2so4) {                                         // inout
 
   using mam4::gasaerexch::max_aer;
   using mam4::gasaerexch::max_gas;
@@ -977,7 +385,7 @@ void mam_gasaerexch_1subarea(
   Real uptkrate[max_mode];
   constexpr int ntot_amode = AeroConfig::num_modes();
   // BAD CONSTANT
-  Real alnsg_aer[max_mode] = {haero::log(1.8)};
+  Real alnsg_aer[max_mode] = {Real(haero::log(1.8))};
   // sigmag_amode : assumed geometric standard deviation of particle size
   // distribution
   for (int imode = 0; imode < ntot_amode; ++imode) {
@@ -987,19 +395,17 @@ void mam_gasaerexch_1subarea(
 
   // using c++ indexing (fortran index -1)
   constexpr int lmap_aer[max_aer][max_mode] = {
-      {8, 6, 7, 9, 11},     {10, 12, 15, 14, -1}, {-1, 16, -1, 17, 24},
-      {21, 23, 22, 20, 19}, {25, -1, -1, 27, 28}, {-1, -1, 29, -1, -1},
-      {-1, -1, -1, -1, -1}};
+      {8, 15, 24, -1},  {6, 14, 21, -1},  {7, -1, 23, 27},  {9, -1, 22, 28},
+      {11, 16, 20, -1}, {10, -1, 19, -1}, {12, 17, 25, 29},
+  };
 
-  const Real pstd = Constants::pressure_stp;                       // [Pa]
-  const Real mw_air_gmol = 1000 * Constants::molec_weight_dry_air; // [g/mol]
-  const Real vol_molar_air = Constants::molec_diffusion_dry_air;   // [-]
   const Real r_universal_mJ = 1000 * Constants::r_gas; // [mJ/(K mol)]
   const Real r_pi = Constants::pi;
   // BAD CONSTANT
   // SOAG, H2SO4
-  const Real mw_gas[max_gas] = {150.0000, 98.0784};
-  const Real vol_molar_gas[max_gas] = {6.5633E+01, 4.2880E+01};
+  const Real mw_gas[max_gas] = {1.500000000000000E+02, 9.807840000000000E+01};
+  const Real vol_molar_gas[max_gas] = {6.563265306122449E+01,
+                                       4.288000000000000E+01};
   const Real accom_coef_gas[max_gas] = {6.5000E-01, 6.5000E-01};
 
   // igas_h2so4,
@@ -1021,15 +427,15 @@ void mam_gasaerexch_1subarea(
   }
 
   // Calculate gas uptake (mass transfer) rates
-  if (jtsubstep == 1) {
+  if (jtsubstep == 0) {
     // pressure (atmospheres)
-    const Real p_in_atm = pmid / pstd;
+    // BAD CONSTANT
+    const Real p_in_atm = pmid / 1.013e5;
     for (int igas = 0; igas < max_gas; ++igas) {
       // gas_diffus[igas] = gas_diffusivity(temp, tmpa, mw_gas[igas],
       // vol_molar_gas[igas]);
       const Real gas_diffus_igas = mam4::gasaerexch::gas_diffusivity(
-          temp, p_in_atm, mw_gas[igas], mw_air_gmol, vol_molar_gas[igas],
-          vol_molar_air);
+          temp, p_in_atm, mw_gas[igas], vol_molar_gas[igas]);
 
       // tmpb = mean_molecular_speed(temp, mw_gas[igas]);
       // gas mean free path (m)
@@ -1073,9 +479,10 @@ void mam_gasaerexch_1subarea(
   }
 
   // Do SOA
-  mam4::gasaerexch::mam_soaexch_1subarea(dtsubstep, temp, pmid, qgas_cur,
-                                         qgas_avg, qaer_cur, qnum_cur, qwtr_cur,
-                                         uptkaer);
+  mam4::gasaerexch::mam_soaexch_1subarea(dtsubstep, temp, pmid,        // in
+                                         qgas_cur, qgas_avg, qaer_cur, // inout
+                                         qnum_cur, qwtr_cur,           // inout
+                                         uptkaer);                     // in
 
   // Do other gases (that are assumed non-volatile) with no time sub-stepping
   for (int igas = nsoa; igas < max_gas; ++igas) {

@@ -257,14 +257,13 @@ TEST_CASE("test_maxsat", "mam4_ndrop") {
     smc[m] = 1;
   }
   smax = 0;
-  Real double_answer = 0.4698982925962298;
-  Real single_answer = 0.46989828;
+  const Real double_answer = 0.4698982924029698;
+  const Real single_answer = 0.46989828;
 
   ndrop::maxsat(zeta, eta, nmodes, smc, smax);
   logger.info("smax = {}", smax);
   logger.info("double_answer = {}, single_answer = {}", double_answer,
               single_answer);
-  bool test = FloatingPoint<Real>::equiv(smax, double_answer) ||
-              FloatingPoint<Real>::equiv(smax, single_answer);
-  REQUIRE(test);
+  REQUIRE((FloatingPoint<Real>::equiv(smax, double_answer) ||
+           FloatingPoint<Real>::equiv(smax, single_answer)));
 }

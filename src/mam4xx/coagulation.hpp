@@ -1042,8 +1042,8 @@ void mam_coag_num_update(Real ybetaij0[Coagulation::max_coagpair],
 KOKKOS_INLINE_FUNCTION
 void mam_coag_1subarea(
     const Real deltat, const Real temp, const Real pmid, const Real aircon,
-    Real dgn_a[AeroConfig::num_modes()], Real dgn_awet[AeroConfig::num_modes()],
-    Real wetdens[AeroConfig::num_modes()],
+    const Real dgn_awet[AeroConfig::num_modes()],
+    const Real wetdens[AeroConfig::num_modes()],
     Real qnum_cur[AeroConfig::num_modes()],
     Real qaer_cur[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
     Real qaer_del_coag_out[AeroConfig::num_aerosol_ids()]
@@ -1137,11 +1137,9 @@ void coagulation_rates_1box(const int k, const AeroConfig &aero_config,
   const Real aircon = pmid / (mam4::Constants::r_gas * temp);
 
   Real wet_density[num_mode];
-  Real dgn_a[num_mode];
   Real dgn_awet[num_mode];
   for (int imode = 0; imode < num_mode; ++imode) {
     wet_density[imode] = diags.wet_density[imode](k);
-    dgn_a[imode] = diags.dry_geometric_mean_diameter_i[imode](k);
     dgn_awet[imode] = diags.wet_geometric_mean_diameter_i[imode](k);
   }
 
@@ -1161,8 +1159,8 @@ void coagulation_rates_1box(const int k, const AeroConfig &aero_config,
   Real qaer_del_coag_out[AeroConfig::num_aerosol_ids()]
                         [AeroConfig::max_agepair()];
 
-  mam_coag_1subarea(dt, temp, pmid, aircon, dgn_a, dgn_awet, wet_density,
-                    qnum_cur, qaer_cur, qaer_del_coag_out);
+  mam_coag_1subarea(dt, temp, pmid, aircon, dgn_awet, wet_density, qnum_cur,
+                    qaer_cur, qaer_del_coag_out);
 
   // compute the tendencies
   for (int imode = 0; imode < num_mode; ++imode) {

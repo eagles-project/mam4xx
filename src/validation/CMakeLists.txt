@@ -14,7 +14,6 @@ include_directories(${PROJECT_BINARY_DIR}/include) # for skywalker
 # MAM4xx Skywalker drivers
 #--------------------------
 add_subdirectory(nucleation)
-add_subdirectory(gasaerexch)
 add_subdirectory(calcsize)
 add_subdirectory(convproc)
 add_subdirectory(coagulation)

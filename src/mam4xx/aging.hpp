@@ -35,7 +35,8 @@ public:
 
   // In E3SM this is read in from an input file and would be 8
   // In mam_refactor it is defined in phys_control.F90 as 3.
-  static constexpr Real n_so4_monolayers_pcage = 3.0;
+
+  static constexpr Real n_so4_monolayers_pcage = 8.0;
   static constexpr Real dr_so4_monolayers_pcage =
       n_so4_monolayers_pcage * 4.76e-10;
 
@@ -89,34 +90,27 @@ void mam_pcarbon_aging_frac(
   const int ipair = 0;
   const int iaer_so4 = static_cast<int>(AeroId::SO4);
   const int iaer_soa = static_cast<int>(AeroId::SOA);
-  const int iaer_bc = static_cast<int>(AeroId::BC);
-  const int iaer_pom = static_cast<int>(AeroId::POM);
-  const int iaer_mom = static_cast<int>(AeroId::MOM);
 
   const int imom_pc = static_cast<int>(ModeIndex::PrimaryCarbon);
 
   const Real _molecular_weight_soa = 150 / 1000.0;
   // FIXME. MW for SO4 is not a standard MW. (BAD CONSTANT)
   const Real _molecular_weight_so4 = 115 / 1000.0;
-  const Real _molecular_weight_pom = 150 / 1000.0;
 
   // Compute the aerosol volume per mole
   const Real so4_vol =
       _molecular_weight_so4 * 1000.0 / aero_species(iaer_so4).density;
   const Real soa_vol =
       _molecular_weight_soa * 1000.0 / aero_species(iaer_soa).density;
-  const Real bc_vol = aero_species(iaer_bc).molecular_weight * 1000.0 /
-                      aero_species(iaer_bc).density;
-  const Real pom_vol =
-      _molecular_weight_pom * 1000.0 / aero_species(iaer_pom).density;
-  const Real mom_vol = aero_species(iaer_mom).molecular_weight * 1000.0 /
-                       aero_species(iaer_mom).density;
 
   // (Bad Constants) for hygroscopicitiy
   constexpr Real hygro_soa = 0.14000000000000001;
   constexpr Real hygro_so4 = 0.50700000000000001;
   const Real fac_m2v_eqvhyg_aer = soa_vol * hygro_soa / hygro_so4;
 
+  // for default MAM4 only so4 and soa contribute to aging
+  const Real vol_shell = qaer_cur[iaer_so4][imom_pc] * so4_vol +
+                         qaer_cur[iaer_soa][imom_pc] * fac_m2v_eqvhyg_aer;
   Real qaer_del_cond_tmp =
       qaer_del_cond[iaer_so4][imom_pc] * so4_vol +
       qaer_del_cond[iaer_soa][imom_pc] * fac_m2v_eqvhyg_aer;
@@ -132,16 +126,24 @@ void mam_pcarbon_aging_frac(
 
   frac_coag = 1.0 - frac_cond;
 
-  // for default MAM4 only so4 and soa contribute to aging
-  const Real vol_shell = qaer_cur[iaer_so4][imom_pc] * so4_vol +
-                         qaer_cur[iaer_soa][imom_pc] * fac_m2v_eqvhyg_aer;
-
-  const int spec_modes[3] = {iaer_bc, iaer_pom, iaer_mom};
-  const Real core_volumes[3] = {bc_vol, pom_vol, mom_vol};
   Real vol_core = 0.0;
-  for (int mi = 0; mi < 3; ++mi) {
-    const int ispec = spec_modes[mi];
-    vol_core += qaer_cur[ispec][imom_pc] * core_volumes[mi];
+  static constexpr int
+      lmap_aer_[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()] = {
+          {8, 15, 24, -1},  {6, 14, 21, -1},  {7, -1, 23, 27},  {9, -1, 22, 28},
+          {11, 16, 20, -1}, {10, -1, 19, -1}, {12, 17, 25, 29},
+      };
+  constexpr Real mass_2_vol[AeroConfig::num_aerosol_ids()] = {
+      0.15,
+      6.4971751412429377e-002,
+      0.15,
+      7.0588235294117650e-003,
+      3.0789473684210526e-002,
+      5.1923076923076926e-002,
+      156.20986883198000};
+  for (int mi = 0; mi < AeroConfig::num_aerosol_ids(); ++mi) {
+    if (lmap_aer_[mi][imom_pc] > 0) {
+      vol_core += qaer_cur[mi][imom_pc] * mass_2_vol[mi];
+    }
   }
 
   const Real fac_volsfc = haero::exp(

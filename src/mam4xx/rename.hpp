@@ -231,10 +231,6 @@ void do_num_and_mass_transfer(
   }
 } // end do_num_and_mass_transfer
 
-// TODO: this is a placeholder until we create a proper unit test
-KOKKOS_INLINE_FUNCTION
-void do_inter_mode_transfer() {}
-
 KOKKOS_INLINE_FUNCTION
 void do_inter_mode_transfer(
     const int dest_mode_of_mode[AeroConfig::num_modes()], const bool &is_cloudy,
@@ -735,14 +731,17 @@ public:
       const Real diameter_threshold[AeroConfig::num_modes()],   // in
       const Real mass_2_vol[AeroConfig::num_aerosol_ids()],
       const Real dgnum_amode[AeroConfig::num_modes()], // in
-                                                       //
-      Real qnum_i_cur[AeroConfig::num_modes()],
-      Real qmol_i_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
-      Real qmol_i_del[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
+      Real qnum_i_cur[AeroConfig::num_modes()],        // out
+      Real qmol_i_cur[AeroConfig::num_modes()]
+                     [AeroConfig::num_aerosol_ids()], // out
+      const Real qmol_i_del[AeroConfig::num_modes()]
+                           [AeroConfig::num_aerosol_ids()], // in
 
-      Real qnum_c_cur[AeroConfig::num_modes()],
-      Real qmol_c_cur[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
-      Real qmol_c_del[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()])
+      Real qnum_c_cur[AeroConfig::num_modes()], // out
+      Real qmol_c_cur[AeroConfig::num_modes()]
+                     [AeroConfig::num_aerosol_ids()], // out
+      const Real qmol_c_del[AeroConfig::num_modes()]
+                           [AeroConfig::num_aerosol_ids()]) // in
 
       const {
     const Real zero = 0;

@@ -60,8 +60,8 @@ struct Config {
   Real small_value_lwc = 1.0e-8;
   // Real small_value_cf = 1.0e-5;
   Real p0 = 101300.0;
-  bool cloud_borne = false;
-  bool modal_aerosols = false;
+  bool cloud_borne = true;
+  bool modal_aerosols = true;
   // universal gas constant (sort of)
   // FIXME: TERRIBLE CONSTANT
   Real Ra = 8314.0 / 101325.0;
