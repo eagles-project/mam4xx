@@ -260,7 +260,7 @@ void lin_strat_chem_solve(
 
 KOKKOS_INLINE_FUNCTION
 Real lin_strat_sfcsink_kk(const Real delta_t, const Real pdel, // in
-                          Real &o3l_vmr_in, const Real o3_sfc,
+                          const Real o3l_vmr_in, const Real o3_sfc,
                           const Real o3_tau, Real &do3mass) {
   constexpr Real one = 1.0;
   // BAD CONSTANT
