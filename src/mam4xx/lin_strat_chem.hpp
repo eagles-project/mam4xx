@@ -260,7 +260,7 @@ void lin_strat_chem_solve(
 
 KOKKOS_INLINE_FUNCTION
 Real lin_strat_sfcsink_kk(const Real delta_t, const Real pdel, // in
-                          Real &o3l_vmr, const Real o3_sfc, const Real o3_tau,
+                          Real &o3l_vmr_in, const Real o3_sfc, const Real o3_tau,
                           Real &do3mass) {
   constexpr Real one = 1.0;
   // BAD CONSTANT
@@ -273,9 +273,9 @@ Real lin_strat_sfcsink_kk(const Real delta_t, const Real pdel, // in
       (one - haero::exp(-delta_t / o3_tau));     // !compute time scale factor
                                                  //
   const Real mass = pdel * rgrav;                //   air mass in kg/m2
-  const Real o3l_old = o3l_vmr;                  // vmr
+  const Real o3l_old = o3l_vmr_in;                  // vmr
   const Real do3 = (o3_sfc - o3l_old) * efactor; // vmr
-  o3l_vmr = o3l_old + do3;
+  const Real o3l_vmr = o3l_old + do3;
   do3mass += do3 * mass * mwo3 / mwdry; // loss in kg/m2 summed over boundary
                                         // layers within one time step
   return o3l_vmr;
