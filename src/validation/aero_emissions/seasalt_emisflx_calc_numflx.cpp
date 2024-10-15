@@ -67,6 +67,7 @@ void seasalt_emisflx_calc_numflx(Ensemble *ensemble) {
     // i.e.,
     // cflux[seasalt_indices[num_idx_append + ispec]]
     //      == cflux[seasalt_indices[6 + {0, 1, 2}]]
+    //      == cflux[seasalt_indices[{6, 7, 8}]]
     //      == cflux[22, 27, 35]
     cflux_out.push_back(cflux[22]);
     cflux_out.push_back(cflux[27]);

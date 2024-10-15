@@ -63,13 +63,13 @@ void seasalt_emisflx_calc_massflx(Ensemble *ensemble) {
         fi, ocean_frac, emis_scalefactor, flux_type, data, cflux);
 
     std::vector<Real> cflux_out;
-    // NOTE: the only entries that are changed are (c++ indexing): 20, 27, 29
+    // NOTE: the only entries that are changed are (c++ indexing): 20, 25, 29
     // i.e.,
     // cflux[seasalt_indices[num_idx_append + ispec]]
     //      == cflux[seasalt_indices[0 + {0, 1, 2}]]
-    //      == cflux[20, 27, 29]
+    //      == cflux[20, 25, 29]
     cflux_out.push_back(cflux[20]);
-    cflux_out.push_back(cflux[27]);
+    cflux_out.push_back(cflux[25]);
     cflux_out.push_back(cflux[29]);
 
     output.set("cflx", cflux_out);

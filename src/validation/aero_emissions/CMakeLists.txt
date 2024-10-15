@@ -19,7 +19,7 @@ add_executable(aero_emissions_driver
                seasalt_emisflx_calc_numflx.cpp
                seasalt_emis.cpp
                dust_emis.cpp
-               )
+               aero_model_emissions_test.cpp)
 
 target_link_libraries(aero_emissions_driver skywalker;validation;${HAERO_LIBRARIES})
 
@@ -44,6 +44,7 @@ set(TEST_LIST
     seasalt_emisflx_calc_numflx
     seasalt_emis
     dust_emis
+    aero_model_emissions
     )
 
 set(DEFAULT_TOL 2e-10)
@@ -58,6 +59,7 @@ set(ERROR_THRESHOLDS
     ${DEFAULT_TOL} # seasalt_emisflx_calc_numflx
     ${DEFAULT_TOL} # seasalt_emis
     ${DEFAULT_TOL} # dust_emis
+    ${DEFAULT_TOL} # aero_model_emissions
    )
 
 set(TestLabel "aero_emissions")

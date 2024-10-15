@@ -16,7 +16,7 @@ using namespace mam4;
 TEST_CASE("test_init_dust_dmt_vwr", "mam4_aero_emissions_unit_tests") {
   ekat::Comm comm;
   ekat::logger::Logger<> logger(
-      "mo_aero_emissions unit tests: test_init_dust_dmt_vwr",
+      "aero_model_emissions unit tests: test_init_dust_dmt_vwr",
       ekat::logger::LogLevel::debug, comm);
 
   const int dust_nbin = aero_model_emissions::dust_nbin;
