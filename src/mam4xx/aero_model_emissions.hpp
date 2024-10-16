@@ -42,6 +42,8 @@ struct DustEmissionsData {
   // perhaps unnecessary? it's not entirely clear to me what happens in
   // the fortran call soil_erod_mod::soil_erod_init() where this is set
   const Real soil_erosion_factor = 1.5;
+  // this is set by init_dust_dmt_vwr() which takes in a constant value for
+  // dust_dmt_grd (above)
   Real dust_dmt_vwr[dust_nbin];
 };
 // =============================================================================
@@ -167,6 +169,8 @@ struct OnlineEmissionsData {
 
 // =============================================================================
 
+// NOTE: this corresponds to dust_common.F90::dust_set_params(), which
+// calculates another variable and employs a lot of "bad constants"
 KOKKOS_INLINE_FUNCTION
 void init_dust_dmt_vwr(
     // in
