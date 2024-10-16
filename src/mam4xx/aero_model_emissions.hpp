@@ -933,8 +933,6 @@ void aero_model_emissions(
       cflux);
 } // end aero_model_emissions()
 
-
-
 KOKKOS_INLINE_FUNCTION
 void aero_model_emissions(
     // in
