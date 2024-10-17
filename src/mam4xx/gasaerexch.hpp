@@ -353,8 +353,6 @@ void gas_aer_uptkrates_1box1gas(const Real accom, const Real gasdiffus,
   }
 } // gas_aer_uptkrates_1box1gas
 
-} // namespace gasaerexch
-
 KOKKOS_INLINE_FUNCTION
 void mam_gasaerexch_1subarea(
     const int jtsubstep,                                            // in
@@ -554,6 +552,8 @@ void mam_gasaerexch_1subarea(
     }
   }
 }
+
+} // namespace gasaerexch
 
 } // namespace mam4
 
