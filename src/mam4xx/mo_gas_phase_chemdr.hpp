@@ -1,5 +1,10 @@
-#ifndef MAM4XX_MICROPHYSICS_HPP
-#define MAM4XX_MICROPHYSICS_HPP
+#ifndef MAM4XX_MICROPHYSICS_GAS_PHASE_CHEM_DR_HPP
+#define MAM4XX_MICROPHYSICS_GAS_PHASE_CHEM_DR_HPP
+
+#include <mam4xx/mo_photo.hpp>
+#include <mam4xx/mo_setext.hpp>
+#include <mam4xx/mo_setinv.hpp>
+#include <mam4xx/mo_setsox.hpp>
 
 namespace mam4 {
 
@@ -33,18 +38,34 @@ namespace microphysics {
  * @param dry_diameter_icol, wet_diameter_icol, wetdens_icol Views for aerosol
  * properties.
  */
+
+// number of species with external forcing
+using mam4::gas_chemistry::extcnt;
+using mam4::mo_photo::PhotoTableData;
+using mam4::mo_setext::Forcing;
+using mam4::mo_setinv::num_tracer_cnst;
+
+using View2D = DeviceType::view_2d<Real>;
+using View1D = DeviceType::view_1d<Real>;
 KOKKOS_INLINE_FUNCTION
 void perform_atmospheric_chemistry_and_microphysics(
-    const ThreadTeam &team, const Real dt,
-    const Real rlats const view_1d
-        cnst_offline_icol[mam4::mo_setinv::num_tracer_cnst],
-    const mam4::mo_setext::Forcing forcings_in[extcnt],
-    const haero::Atmosphere &atm mam4::Prognostics &progs,
-    const Real adv_mass_kg_per_moles[gas_pcnst],
+    const ThreadTeam &team, const Real dt, const Real rlats,
+    const View1D cnst_offline_icol[num_tracer_cnst], const Forcing *forcings_in,
+    const haero::Atmosphere &atm, mam4::Prognostics &progs,
     const PhotoTableData &photo_table, const Real chlorine_loading,
-    const Config &config, const View1D &o3_col_dens_i,
-    const View1D &photo_rates_icol, const View2D &extfrc_icol,
+    const mam4::mo_setsox::Config &config_setsox,
+    const mam4::microphysics::AmicPhysConfig &config_amicphys,
+    const Real linoz_psc_T, const Real zenith_angle_icol,
+    const Real d_sfc_alb_dir_vis_icol, const View1D &o3_col_dens_i,
+    const View2D &photo_rates_icol, const View2D &extfrc_icol,
     const View2D &invariants_icol, const View1D &work_photo_table_icol,
+    const View1D &linoz_o3_clim_icol, const View1D &linoz_t_clim_icol,
+    const View1D &linoz_o3col_clim_icol, const View1D &linoz_PmL_clim_icol,
+    const View1D &linoz_dPmL_dO3_icol, const View1D &linoz_dPmL_dT_icol,
+    const View1D &linoz_dPmL_dO3col_icol,
+    const View1D &linoz_cariolle_pscs_icol, const Real eccf,
+    const Real adv_mass_kg_per_moles[gas_pcnst],
+    const int (&clsmap_4)[gas_pcnst], const int (&permute_4)[gas_pcnst],
     const int offset_aerosol, const Real o3_sfc, const Real o3_tau,
     const int o3_lbl, const View2D &dry_diameter_icol,
     const View2D &wet_diameter_icol, const View2D &wetdens_icol) {
@@ -70,10 +91,10 @@ void perform_atmospheric_chemistry_and_microphysics(
                                               work_photo_table_icol,   // in
                                               photo_work_arrays_icol); // out
 
-  mam4::mo_photo::table_photo(photo_rates_icol,                 // out
-                              atm.pressure, atm.hydrostatic_dp, // in
-                              atm.temperature, o3_col_dens_i,   // in
-                              zenith_angle(icol), d_sfc_alb_dir_vis(icol), // in
+  mam4::mo_photo::table_photo(photo_rates_icol,                          // out
+                              atm.pressure, atm.hydrostatic_dp,          // in
+                              atm.temperature, o3_col_dens_i,            // in
+                              zenith_angle_icol, d_sfc_alb_dir_vis_icol, // in
                               atm.liquid_mixing_ratio, atm.cloud_fraction, // in
                               eccf, photo_table,                           // in
                               photo_work_arrays_icol); // out
@@ -113,9 +134,9 @@ void perform_atmospheric_chemistry_and_microphysics(
     // equivalent to tracer mixing ratios (TMR))
     Real vmr[gas_pcnst], vmrcw[gas_pcnst];
     // output (vmr)
-    mam_coupling::mmr2vmr(qq, adv_mass_kg_per_moles, vmr);
+    mam4::microphysics::mmr2vmr(qq, adv_mass_kg_per_moles, vmr);
     // output (vmrcw)
-    mam_coupling::mmr2vmr(qqcw, adv_mass_kg_per_moles, vmrcw);
+    mam4::microphysics::mmr2vmr(qqcw, adv_mass_kg_per_moles, vmrcw);
 
     //---------------------
     // Gas Phase Chemistry
@@ -128,7 +149,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     // vmr0 stores mixing ratios before chemistry changes the mixing
     // ratios
     Real vmr0[gas_pcnst] = {};
-    impl::gas_phase_chemistry(
+    mam4::microphysics::gas_phase_chemistry(
         // in
         temp, dt, photo_rates_k.data(), extfrc_k.data(), invariants_k.data(),
         clsmap_4, permute_4,
@@ -156,7 +177,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     mam4::mo_setsox::setsox_single_level(
         // in
         offset_aerosol, dt, pmid, pdel, temp, mbar, lwc, cldfrac, cldnum,
-        invariants_k[indexm], config.setsox,
+        invariants_k[indexm], config_setsox,
         // out
         vmrcw, vmr);
 
@@ -176,15 +197,15 @@ void perform_atmospheric_chemistry_and_microphysics(
     }
     // do aerosol microphysics (gas-aerosol exchange, nucleation,
     // coagulation)
-    impl::modal_aero_amicphys_intr(
+    mam4::microphysics::modal_aero_amicphys_intr(
         // in
-        config.amicphys, dt, temp, pmid, pdel, zm, pblh, qv, cldfrac,
+        config_amicphys, dt, temp, pmid, pdel, zm, pblh, qv, cldfrac,
         // out
         vmr, vmrcw,
         // in
         vmr0, vmr_pregas, vmr_precld, dgncur_a_kk, dgncur_awet_kk, wetdens_kk);
 
-    mam_coupling::vmr2mmr(vmrcw, adv_mass_kg_per_moles, qqcw);
+    mam4::microphysics::vmr2mmr(vmrcw, adv_mass_kg_per_moles, qqcw);
 
     //-----------------
     // LINOZ chemistry
@@ -199,12 +220,12 @@ void perform_atmospheric_chemistry_and_microphysics(
     constexpr int o3_ndx = static_cast<int>(mam4::GasId::O3);
     mam4::lin_strat_chem::lin_strat_chem_solve_kk(
         // in
-        o3_col_dens_i(kk), temp, zenith_angle(icol), pmid, dt, rlats,
-        linoz_o3_clim(icol, kk), linoz_t_clim(icol, kk),
-        linoz_o3col_clim(icol, kk), linoz_PmL_clim(icol, kk),
-        linoz_dPmL_dO3(icol, kk), linoz_dPmL_dT(icol, kk),
-        linoz_dPmL_dO3col(icol, kk), linoz_cariolle_pscs(icol, kk),
-        chlorine_loading, config.linoz.psc_T,
+        o3_col_dens_i(kk), temp, zenith_angle_icol, pmid, dt, rlats,
+        linoz_o3_clim_icol(kk), linoz_t_clim_icol(kk),
+        linoz_o3col_clim_icol(kk), linoz_PmL_clim_icol(kk),
+        linoz_dPmL_dO3_icol(kk), linoz_dPmL_dT_icol(kk),
+        linoz_dPmL_dO3col_icol(kk), linoz_cariolle_pscs_icol(kk),
+        chlorine_loading, linoz_psc_T,
         // out
         vmr[o3_ndx],
         // outputs that are not used
@@ -238,7 +259,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     // FIXME: drydep integration in progress!
     // mam4::drydep::drydep_xactive(...);
 
-    mam_coupling::vmr2mmr(vmr, adv_mass_kg_per_moles, qq);
+    mam4::microphysics::vmr2mmr(vmr, adv_mass_kg_per_moles, qq);
 
     for (int i = offset_aerosol; i < pcnst; ++i) {
       state_q[i] = qq[i - offset_aerosol];
