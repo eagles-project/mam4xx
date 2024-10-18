@@ -25,6 +25,7 @@
 #include <mam4xx/gasaerexch.hpp>
 #include <mam4xx/hetfrz.hpp>
 #include <mam4xx/lin_strat_chem.hpp>
+#include <mam4xx/mam4_amicphys.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/mo_chm_diags.hpp>
 #include <mam4xx/mo_drydep.hpp>
@@ -44,7 +45,6 @@
 #include <mam4xx/vertical_interpolation.hpp>
 #include <mam4xx/water_uptake.hpp>
 #include <mam4xx/wet_dep.hpp>
-#include <mam4xx/mam4_amicphys.hpp>
 
 namespace mam4 {
 
