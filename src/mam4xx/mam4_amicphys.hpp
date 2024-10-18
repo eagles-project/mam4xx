@@ -1248,6 +1248,7 @@ void mam_amicphys_1subarea(
   //---------------------------------------------------------------------------------------
   // BAD CONSTANT
   // Universal gas constant (J/K/kmol)
+  constexpr Real zero = 0.0;
   constexpr Real r_universal = 8314.46759100000;
   const Real aircon = pmid / (r_universal * temp);
 
@@ -1281,8 +1282,8 @@ void mam_amicphys_1subarea(
   // Diagnose net production rate of H2SO4 gas production
   // cause by other processes (e.g., gas chemistry and cloud chemistry)
   //---------------------------------------------------------------------
-  Real qgas_netprod_otrproc[max_gas()] = {0};
-  assign_1d_array(max_gas(), 0.0,        // in
+  Real qgas_netprod_otrproc[max_gas()] = {zero};
+  assign_1d_array(max_gas(), zero,       // in
                   qgas_netprod_otrproc); // out
 
   // If gaexch_h2so4_uptake_optaa == 2, then
@@ -1437,7 +1438,7 @@ void mam_amicphys_1subarea(
       assign_2d_array(nspecies, nmodes, 0,      // in
                       &qaer_delsub_cond[0][0]); // out
 
-      assign_1d_array(nmodes, 0.0,       // in
+      assign_1d_array(nmodes, zero,      // in
                       qnum_delsub_cond); // out
       del_h2so4_aeruptk = 0;
 
@@ -1656,7 +1657,7 @@ void mam_amicphys_1subarea(
                       &qaer_delsub_coag_in[0][0]); // out
       assign_2d_array(nspecies, nmodes, 0.0,       // in
                       &qaer_delsub_coag[0][0]);    // out
-      assign_1d_array(nmodes, 0.0,                 // in
+      assign_1d_array(nmodes, zero,                // in
                       qnum_delsub_coag);           // out
 
     } // do_coag_sub
@@ -1740,6 +1741,7 @@ void mam_amicphys_1gridcell(
   //    renaming, coagulation, and nucleation
 
   constexpr int mdo_gaexch_cldy_subarea = 0;
+  constexpr Real zero = 0.0;
   // the qq--4 values will be equal to qq--3 values unless they get changed
   for (int i = 0; i < num_gas_ids; ++i) {
     for (int j = 1; j < maxsubarea(); ++j) {
@@ -1788,14 +1790,14 @@ void mam_amicphys_1gridcell(
     Real qgas2[max_gas()] = {0};
     Real qgas3[max_gas()] = {0};
     Real qgas4[max_gas()] = {0};
-    assign_1d_array(max_gas(), 0.0, // in
-                    qgas1);         // out
-    assign_1d_array(max_gas(), 0.0, // in
-                    qgas2);         // out
-    assign_1d_array(max_gas(), 0.0, // in
-                    qgas3);         // out
-    assign_1d_array(max_gas(), 0.0, // in
-                    qgas4);         // out
+    assign_1d_array(max_gas(), zero, // in
+                    qgas1);          // out
+    assign_1d_array(max_gas(), zero, // in
+                    qgas2);          // out
+    assign_1d_array(max_gas(), zero, // in
+                    qgas3);          // out
+    assign_1d_array(max_gas(), zero, // in
+                    qgas4);          // out
 
     if (do_map_gas_sub) {
       // for cldy subarea, only do gases if doing gaexch
@@ -1824,16 +1826,16 @@ void mam_amicphys_1gridcell(
     assign_2d_array(num_aerosol_ids, num_modes, 0.0, // in
                     &qaer4[0][0]);                   // out
 
-    assign_1d_array(num_modes, 0.0, // in
-                    qnum2);         // out
-    assign_1d_array(num_modes, 0.0, // in
-                    qnum3);         // out
-    assign_1d_array(num_modes, 0.0, // in
-                    qnum4);         // out
-    assign_1d_array(num_modes, 0.0, // in
-                    qwtr3);         // out
-    assign_1d_array(num_modes, 0.0, // in
-                    qwtr4);         // out
+    assign_1d_array(num_modes, zero, // in
+                    qnum2);          // out
+    assign_1d_array(num_modes, zero, // in
+                    qnum3);          // out
+    assign_1d_array(num_modes, zero, // in
+                    qnum4);          // out
+    assign_1d_array(num_modes, zero, // in
+                    qwtr3);          // out
+    assign_1d_array(num_modes, zero, // in
+                    qwtr4);          // out
 
     for (int imode = 0; imode < num_modes; ++imode) {
       const int ln = lmap_num(imode);
@@ -1866,12 +1868,12 @@ void mam_amicphys_1gridcell(
     assign_2d_array(num_aerosol_ids, num_modes, 0.0, // in
                     &qaercw4[0][0]);                 // out
 
-    assign_1d_array(num_modes, 0.0, // in
-                    qnumcw2);       // out
-    assign_1d_array(num_modes, 0.0, // in
-                    qnumcw3);       // out
-    assign_1d_array(num_modes, 0.0, // in
-                    qnumcw4);       // out
+    assign_1d_array(num_modes, zero, // in
+                    qnumcw2);        // out
+    assign_1d_array(num_modes, zero, // in
+                    qnumcw3);        // out
+    assign_1d_array(num_modes, zero, // in
+                    qnumcw4);        // out
 
     if (iscldy_subarea[jsub]) {
       for (int imode = 0; imode < num_modes; ++imode) {
@@ -2029,8 +2031,9 @@ void form_gcm_of_gases_and_aerosols_from_subareas(
   // qqcwgcm(ncnst): cloud-borne aerosol mixing ratios in subareas
 
   // Gases and interstitial aerosols
-  assign_1d_array(gas_pcnst, 0.0, // in
-                  qgcm);          // out
+  constexpr Real zero = 0.0;
+  assign_1d_array(gas_pcnst, zero, // in
+                  qgcm);           // out
 
   EKAT_KERNEL_ASSERT_MSG(nsubarea < maxsubarea(),
                          "Error! form_gcm_of_gases_and_aerosols_from_subareas: "
@@ -2052,8 +2055,8 @@ void form_gcm_of_gases_and_aerosols_from_subareas(
       qqcwgcm[icnst] = qqcwgcm_old[icnst];
     }
   } else {
-    assign_1d_array(gas_pcnst, 0.0, // in
-                    qqcwgcm);       // out
+    assign_1d_array(gas_pcnst, zero, // in
+                    qqcwgcm);        // out
     for (int jsub = 1; jsub <= nsubarea; ++jsub) {
       for (int icnst = 0; icnst < gas_pcnst; ++icnst) {
         qqcwgcm[icnst] += qqcwsub[icnst][jsub] * afracsub[jsub];
@@ -2217,6 +2220,9 @@ void modal_aero_amicphys_intr(
   // cloudy and clear fractions of the grid cell
   Real fcldy, fclea;
 
+  constexpr Real one_thousand = 1000.0;
+  constexpr Real zero = 0.0;
+
   setup_subareas(cld,                                     // in
                  nsubarea, ncldy_subarea, jclea, jcldy,   // out
                  iscldy_subarea, afracsub, fclea, fcldy); // out
@@ -2283,17 +2289,17 @@ void modal_aero_amicphys_intr(
   Real dgn_a[num_modes] = {};
   Real dgn_awet[num_modes] = {};
   Real wetdens[num_modes] = {};
-  assign_1d_array(num_modes, 0.0,    // in
-                  dgn_a);            // out
-  assign_1d_array(num_modes, 0.0,    // in
-                  dgn_awet);         // out
-  assign_1d_array(num_modes, 1000.0, // in
-                  wetdens);          // out
+  assign_1d_array(num_modes, zero,         // in
+                  dgn_a);                  // out
+  assign_1d_array(num_modes, zero,         // in
+                  dgn_awet);               // out
+  assign_1d_array(num_modes, one_thousand, // in
+                  wetdens);                // out
 
   for (int imode = 0; imode < num_modes; ++imode) {
     dgn_a[imode] = dgncur_a[imode];
     dgn_awet[imode] = dgncur_awet[imode];
-    wetdens[imode] = haero::max(1000.0, wetdens_host[imode]);
+    wetdens[imode] = haero::max(one_thousand, wetdens_host[imode]);
   }
 
   Real qsub_tendaa[gas_pcnst][nqtendaa()][maxsubarea()] = {};
