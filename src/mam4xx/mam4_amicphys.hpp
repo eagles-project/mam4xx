@@ -6,6 +6,7 @@
 #include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/gasaerexch.hpp>
 #include <mam4xx/nucleation.hpp>
+#include <mam4xx/rename.hpp>
 
 namespace mam4 {
 
