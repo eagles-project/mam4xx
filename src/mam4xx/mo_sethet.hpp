@@ -78,12 +78,24 @@ void calc_precip_rescale(
         precip(kk) = cmfdqr(kk) + nrain(kk) - nevapr(kk);
       });
 
-  for (int kk = 0; kk < pver; kk++) {
-    total_rain = total_rain + precip(kk);
-    if (precip(kk) < 0.0)
-      precip(kk) = 0.0;
-    total_pos = total_pos + precip(kk);
-  }
+  Kokkos::parallel_reduce(
+    Kokkos::ThreadVectorRange(team, pver),
+    [&](int kk, Real &total_rain) {
+      total_rain += precip(kk);
+    },
+    total_rain);
+
+  Kokkos::parallel_reduce(
+    Kokkos::ThreadVectorRange(team, pver),
+    [&](int kk, Real &total_pos) {
+      if(precip(kk) < 0.0) {
+        precip(kk) = 0.0;
+      }
+      total_pos += precip(kk);
+    },
+    total_pos);
+
+  team.team_barrier();
 
   if (total_rain <= 0.0) {
     Kokkos::parallel_for(
