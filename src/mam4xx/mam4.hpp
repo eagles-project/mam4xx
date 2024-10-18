@@ -42,6 +42,7 @@
 #include <mam4xx/vertical_interpolation.hpp>
 #include <mam4xx/water_uptake.hpp>
 #include <mam4xx/wet_dep.hpp>
+#include <mam4xx/compute_o3_column_density.hpp>
 
 namespace mam4 {
 
