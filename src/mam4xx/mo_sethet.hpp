@@ -121,6 +121,8 @@ void gas_washout(
     const ColumnView &xhen_i, // henry's law constant
     const ColumnView &tfld_i, // temperature [K]
     const ColumnView &delz_i, // layer depth about interfaces [cm]  // in
+    const ColumnView &xeqca,  // internal variable
+    const ColumnView &xca,    // internal variable
     const ColumnView &xgas) { // gas concentration // inout
   //------------------------------------------------------------------------
   // calculate gas washout by cloud if not saturated
@@ -131,34 +133,47 @@ void gas_washout(
       6.0; // geometry factor (surf area/volume = geo_fac/diameter)
   constexpr Real xrm = .189;  // mean diameter of rain drop [cm]
   constexpr Real xum = 748.0; // mean rain drop terminal velocity [cm/s]
-  Real xeqca = 0.0;
-  Real xca = 0.0;
   Real allca = 0.0; // total of ca between level plev and kk [#/cm3]
+  static constexpr int pver_loc = pver;
 
-  // -----------------------------------------------------------------
+  //-----------------------------------------------------------------
   //       ... calculate the saturation concentration eqca
-  // -----------------------------------------------------------------
-  for (int k = plev; k < pver; k++) {
-    xeqca = xgas(k) /
-            (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
-            xliq_ik * avo2;
-    //-----------------------------------------------------------------
-    //       ... calculate ca; inside cloud concentration in  #/cm3(air)
-    //-----------------------------------------------------------------
-    xca =
-        geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik * cm3_2_m3;
+  //-----------------------------------------------------------------
+  Kokkos::parallel_for(
+      Kokkos::TeamVectorRange(team, plev, pver_loc), [&](int k) {
+        // cal washout below cloud
+        xeqca(k) = xgas(k) /
+                   (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
+                   xliq_ik * avo2;
+        //-----------------------------------------------------------------
+        //       ... calculate ca; inside cloud concentration in  #/cm3(air)
+        //-----------------------------------------------------------------
+        xca(k) = geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik *
+                 cm3_2_m3;
+      });
+  team.team_barrier();
 
-    // -----------------------------------------------------------------
-    //       ... if is not saturated (take hno3 as an example)
-    //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
-    //           otherwise
-    //               hno3(gas)_new = hno3(gas)_old
-    // -----------------------------------------------------------------
-    allca += xca;
-    if (allca < xeqca) {
-      xgas(k) = haero::max(xgas(k) - xca, 0.0);
-    }
-  }
+  Kokkos::parallel_reduce(
+    Kokkos::ThreadVectorRange(team, plev, pver_loc),
+    [&](int kk, Real &allca) {
+      allca += xca(kk);
+    },
+    allca);
+    team.team_barrier();
+
+  //-----------------------------------------------------------------
+  //       ... if is not saturated (take hno3 as an example)
+  //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
+  //           otherwise
+  //               hno3(gas)_new = hno3(gas)_old
+  //-----------------------------------------------------------------
+  Kokkos::parallel_for(
+        Kokkos::ThreadVectorRange(team, plev, pver_loc), KOKKOS_LAMBDA(int kk) {
+          if (allca < xeqca(kk)) {
+            xgas(kk) = haero::max(xgas(kk) - xca(kk), 0.0);
+          }
+    });
+    team.team_barrier();
 
 } // end subroutine gas_washout
 
@@ -381,12 +396,12 @@ void sethet(
       stay = ((zmid(kk) - zsurf) * km2cm) / (xum * delt);
       stay = haero::min(stay, 1.0);
       // calculate gas washout by cloud
-      gas_washout(team, kk, xkgm, xliq(kk), // in
-                  xhen_h2o2, tfld, delz,    // in
-                  xgas2);                   // inout
-      gas_washout(team, kk, xkgm, xliq(kk), // in
-                  xhen_so2, tfld, delz,     // in
-                  xgas3);                   // inout
+      // gas_washout(team, kk, xkgm, xliq(kk), // in
+      //             xhen_h2o2, tfld, delz,    // in
+      //             xgas2);                   // inout
+      // gas_washout(team, kk, xkgm, xliq(kk), // in
+      //             xhen_so2, tfld, delz,     // in
+      //             xgas3);                   // inout
     }
     //-----------------------------------------------------------------
     //       ... calculate the lifetime of washout (second)
