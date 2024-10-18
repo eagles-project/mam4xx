@@ -42,21 +42,11 @@ void gas_washout(Ensemble *ensemble) {
     Kokkos::deep_copy(delz_i, delz_i_host);
     Kokkos::deep_copy(xgas, xgas_host);
 
-    // initialize internal veriables
-    ColumnView xeqca, xca;
-    std::vector<Real> vector0(pver, 0);
-    auto xeqca_host = View1DHost(vector0.data(), pver);
-    auto xca_host = View1DHost(vector0.data(), pver);
-    xeqca = haero::testing::create_column_view(pver);
-    xca = haero::testing::create_column_view(pver);
-    Kokkos::deep_copy(xeqca, xeqca_host);
-    Kokkos::deep_copy(xca, xca_host);
-
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           gas_washout(team, plev - 1, xkgm, xliq_ik, xhen_i, tfld_i, delz_i,
-                      xeqca, xca, xgas);
+                      xgas);
         });
 
     Kokkos::deep_copy(xgas_host, xgas);
