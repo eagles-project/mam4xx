@@ -48,9 +48,10 @@ using View2DInt = DeviceType::view_2d<int>;
 using View3DInt = DeviceType::view_3d<int>;
 
 KOKKOS_INLINE_FUNCTION
-void find_season_index(const int plon, const View1D &clat, const View1D &lat_lai,
-                     const int nlat_lai, const View3DInt &wk_lai,
-                     const View2DInt &index_season_lai) {
+void find_season_index(const int plon, const View1D &clat,
+                       const View1D &lat_lai, const int nlat_lai,
+                       const View3DInt &wk_lai,
+                       const View2DInt &index_season_lai) {
 
   // Comment from Fortran code.
   /*For unstructured grids plon is the 1d horizontal grid size and plat=1
@@ -98,7 +99,7 @@ void find_season_index(const int plon, const View1D &clat, const View1D &lat_lai
         }
       }
 
-      index_season_lai(j, m) = k_max; // Using operator() for setting values
+      index_season_lai(j, m) = k_max; //
     }                                 // m
   }                                   // j
 } // findSeasonIndex
