@@ -1,6 +1,8 @@
 #ifndef MAM4XX_MICROPHYSICS_HPP
 #define MAM4XX_MICROPHYSICS_HPP
 
+#include <mam4xx/mo_photo.hpp>
+
 namespace mam4 {
 
 namespace microphysics {

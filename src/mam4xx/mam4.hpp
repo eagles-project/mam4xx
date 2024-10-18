@@ -44,6 +44,7 @@
 #include <mam4xx/vertical_interpolation.hpp>
 #include <mam4xx/water_uptake.hpp>
 #include <mam4xx/wet_dep.hpp>
+#include <mam4xx/mam4_amicphys.hpp>
 
 namespace mam4 {
 
