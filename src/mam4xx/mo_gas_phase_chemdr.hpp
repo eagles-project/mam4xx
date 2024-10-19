@@ -41,10 +41,10 @@ namespace microphysics {
 
 // number of species with external forcing
 using mam4::gas_chemistry::extcnt;
+using mam4::microphysics::AmicPhysConfig;
 using mam4::mo_photo::PhotoTableData;
 using mam4::mo_setext::Forcing;
 using mam4::mo_setinv::num_tracer_cnst;
-using mam4::microphysics::AmicPhysConfig;
 
 using View2D = DeviceType::view_2d<Real>;
 using ConstView2D = DeviceType::view_2d<const Real>;
@@ -56,15 +56,14 @@ void perform_atmospheric_chemistry_and_microphysics(
     const haero::Atmosphere &atm, mam4::Prognostics &progs,
     const PhotoTableData &photo_table, const Real chlorine_loading,
     const mam4::mo_setsox::Config &config_setsox,
-    const AmicPhysConfig &config_amicphys,
-    const Real linoz_psc_T, const Real zenith_angle_icol,
-    const Real d_sfc_alb_dir_vis_icol, const View1D &o3_col_dens_i,
-    const View2D &photo_rates_icol, const View2D &extfrc_icol,
-    const View2D &invariants_icol, const View1D &work_photo_table_icol,
-    const View1D &linoz_o3_clim_icol, const View1D &linoz_t_clim_icol,
-    const View1D &linoz_o3col_clim_icol, const View1D &linoz_PmL_clim_icol,
-    const View1D &linoz_dPmL_dO3_icol, const View1D &linoz_dPmL_dT_icol,
-    const View1D &linoz_dPmL_dO3col_icol,
+    const AmicPhysConfig &config_amicphys, const Real linoz_psc_T,
+    const Real zenith_angle_icol, const Real d_sfc_alb_dir_vis_icol,
+    const View1D &o3_col_dens_i, const View2D &photo_rates_icol,
+    const View2D &extfrc_icol, const View2D &invariants_icol,
+    const View1D &work_photo_table_icol, const View1D &linoz_o3_clim_icol,
+    const View1D &linoz_t_clim_icol, const View1D &linoz_o3col_clim_icol,
+    const View1D &linoz_PmL_clim_icol, const View1D &linoz_dPmL_dO3_icol,
+    const View1D &linoz_dPmL_dT_icol, const View1D &linoz_dPmL_dO3col_icol,
     const View1D &linoz_cariolle_pscs_icol, const Real eccf,
     const Real adv_mass_kg_per_moles[gas_pcnst],
     const int (&clsmap_4)[gas_pcnst], const int (&permute_4)[gas_pcnst],
