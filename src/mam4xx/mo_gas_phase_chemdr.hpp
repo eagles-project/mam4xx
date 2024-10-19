@@ -44,8 +44,10 @@ using mam4::gas_chemistry::extcnt;
 using mam4::mo_photo::PhotoTableData;
 using mam4::mo_setext::Forcing;
 using mam4::mo_setinv::num_tracer_cnst;
+using mam4::microphysics::AmicPhysConfig;
 
 using View2D = DeviceType::view_2d<Real>;
+using ConstView2D = DeviceType::view_2d<const Real>;
 using View1D = DeviceType::view_1d<Real>;
 KOKKOS_INLINE_FUNCTION
 void perform_atmospheric_chemistry_and_microphysics(
@@ -54,7 +56,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     const haero::Atmosphere &atm, mam4::Prognostics &progs,
     const PhotoTableData &photo_table, const Real chlorine_loading,
     const mam4::mo_setsox::Config &config_setsox,
-    const mam4::microphysics::AmicPhysConfig &config_amicphys,
+    const AmicPhysConfig &config_amicphys,
     const Real linoz_psc_T, const Real zenith_angle_icol,
     const Real d_sfc_alb_dir_vis_icol, const View1D &o3_col_dens_i,
     const View2D &photo_rates_icol, const View2D &extfrc_icol,
@@ -67,8 +69,8 @@ void perform_atmospheric_chemistry_and_microphysics(
     const Real adv_mass_kg_per_moles[gas_pcnst],
     const int (&clsmap_4)[gas_pcnst], const int (&permute_4)[gas_pcnst],
     const int offset_aerosol, const Real o3_sfc, const Real o3_tau,
-    const int o3_lbl, const View2D &dry_diameter_icol,
-    const View2D &wet_diameter_icol, const View2D &wetdens_icol) {
+    const int o3_lbl, const ConstView2D dry_diameter_icol,
+    const ConstView2D wet_diameter_icol, const ConstView2D wetdens_icol) {
 
   mam4::mo_setext::extfrc_set(forcings_in, extfrc_icol);
 
