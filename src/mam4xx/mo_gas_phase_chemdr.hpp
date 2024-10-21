@@ -16,7 +16,7 @@ namespace microphysics {
  * computing ozone column density, setting up photolysis work arrays, and
  * performing aerosol microphysics calculations among other steps.
  *
-/**
+ *
  * @param [in] team Kokkos team type for the Kokkos::TeamThreadRange
  * @param [in] dt Time step
  * @param [in] rlats Column latitudes
@@ -55,7 +55,7 @@ namespace microphysics {
  * @param [in] dry_diameter_icol
  * @param [in] wet_diameter_icol
  * @param [in] wetdens_icol
- */
+ **/
 
 // number of species with external forcing
 using mam4::gas_chemistry::extcnt;
