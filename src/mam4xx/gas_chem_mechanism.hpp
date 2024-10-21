@@ -31,6 +31,20 @@ constexpr Real adv_mass[gas_pcnst] = {
     1.007400};
 
 KOKKOS_INLINE_FUNCTION
+const Real* get_adv_mass() {
+    static constexpr Real adv_mass[gas_pcnst] = {
+        47.998200,     34.013600,  98.078400,     64.064800, 62.132400,
+        12.011000,     115.107340, 12.011000,     12.011000, 12.011000,
+        135.064039,    58.442468,  250092.672000, 1.007400,  115.107340,
+        12.011000,     58.442468,  250092.672000, 1.007400,  135.064039,
+        58.442468,     115.107340, 12.011000,     12.011000, 12.011000,
+        250092.672000, 1.007400,   12.011000,     12.011000, 250092.672000,
+        1.007400
+    };
+    return adv_mass;
+}
+
+KOKKOS_INLINE_FUNCTION
 void setrxt(Real rates[rxntot], const Real temp) {
   rates[2] = 2.9000000000e-12 * haero::exp(-160.000000 / temp);
   rates[4] = 9.6000000000e-12 * haero::exp(-234.000000 / temp);
