@@ -16,27 +16,45 @@ namespace microphysics {
  * computing ozone column density, setting up photolysis work arrays, and
  * performing aerosol microphysics calculations among other steps.
  *
- * @param cnst_offline_icol View into tracer constants.
- * @param forcings_in External forcings input array.
- * @param atm Atmospheric state.
- * @param progs Prognostic variables involved in the calculations.
- * @param adv_mass_kg_per_moles Conversion factor or relevant constant for mass
- * to moles conversion.
- * @param photo_table Photolysis rate tables or related data.
- * @param dt Time step for the simulation.
- * @param rlats Real latitude value, possibly for regional calculations.
- * @param chlorine_loading Chlorine loading parameter for chemistry
- * calculations.
- * @param config Configuration parameters.
- * @param o3_col_dens_i Output view for ozone column density.
- * @param photo_rates Photolysis rates for the column.
- * @param extfrc_icol External forcings for the column.
- * @param invariants_icol Invariant atmospheric parameters.
- * @param work_photo_table_icol Work arrays for photolysis calculations.
- * @param offset_aerosol Offset index for aerosol constituents.
- * @param o3_sfc, o3_tau, o3_lbl Parameters for ozone surface chemistry.
- * @param dry_diameter_icol, wet_diameter_icol, wetdens_icol Views for aerosol
- * properties.
+/**
+ * @param [in] team Kokkos team type for the Kokkos::TeamThreadRange
+ * @param [in] dt Time step
+ * @param [in] rlats Column latitudes
+ * @param [in] cnst_offline_icol Invariant tracer
+ * @param [in] forcings_in Struct for external forcing or vertical emissions
+ * @param [in] atm  Atmosphere state variables
+ * @param [in] [out] prognostics A collection of aerosol prognostic variables
+ * @param [in] photo_table  photolysis table data
+ * @param [in] chlorine_loading
+ * @param [in] config_setsox conf struc for setsox
+ * @param [in] config_amicphys conf struc for amicphys
+ * @param [in] linoz_psc_T PSC ozone loss T (K) threshold
+ * @param [in] zenith_angle_icol
+ * @param [in] d_sfc_alb_dir_vis_icol
+ * @param [in] o3_col_dens_i
+ * @param [in] photo_rates_icol
+ * @param [in] extfrc_icol
+ * @param [in] invariants_icol
+ * @param [in] work_photo_table_icol
+ * @param [in] linoz_o3_clim_icol
+ * @param [in] linoz_t_clim_icol
+ * @param [in] linoz_o3col_clim_icol
+ * @param [in] linoz_PmL_clim_icol
+ * @param [in] linoz_dPmL_dO3_icol
+ * @param [in] linoz_dPmL_dT_icol
+ * @param [in] linoz_dPmL_dO3col_icol
+ * @param [in] linoz_cariolle_pscs_icol
+ * @param [in] eccf
+ * @param [in] adv_mass_kg_per_moles
+ * @param [in] clsmap_4
+ * @param [in] permute_4
+ * @param [in] offset_aerosol
+ * @param [in] o3_sfc
+ * @param [in] o3_tau
+ * @param [in] o3_lbl
+ * @param [in] dry_diameter_icol
+ * @param [in] wet_diameter_icol
+ * @param [in] wetdens_icol
  */
 
 // number of species with external forcing
