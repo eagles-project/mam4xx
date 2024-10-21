@@ -124,14 +124,6 @@ KOKKOS_INLINE_FUNCTION int lmap_aercw(const int iaer, const int mode) {
   return lmap_aer(iaer, mode);
 }
 
-constexpr Real mass_2_vol[num_aerosol_ids] = {0.15,
-                                              6.4971751412429377e-002,
-                                              0.15,
-                                              7.0588235294117650e-003,
-                                              3.0789473684210526e-002,
-                                              5.1923076923076926e-002,
-                                              156.20986883198000};
-
 // conversion factor for aerosols
 // NOTE: The following array has a special order to match amicphys
 KOKKOS_INLINE_FUNCTION Real fcvt_aer(const int iaer) {
@@ -149,7 +141,8 @@ KOKKOS_INLINE_FUNCTION Real fcvt_gas(const int gas_id) {
   // BAD CONSTANTS
   constexpr Real mwuse_soa = 150;
   // molecular weight of the gas
-  Real mw_gas = mam4::gas_chemistry::adv_mass[lmap_gas(gas_id)];
+  const auto adv_mass = mam4::gas_chemistry::get_adv_mass();
+  Real mw_gas = adv_mass[lmap_gas(gas_id)];
   // denominator
   Real denom = mw_gas;
   // special case for soa
@@ -1523,6 +1516,15 @@ void mam_amicphys_1subarea(
           qaercw_delsub_grow4rnam_tmp[im][is] = qaercw_delsub_grow4rnam[is][im];
         }
       }
+      // BAD CONSTANT
+      constexpr Real mass_2_vol[num_aerosol_ids] = {0.15,
+                                              6.4971751412429377e-002,
+                                              0.15,
+                                              7.0588235294117650e-003,
+                                              3.0789473684210526e-002,
+                                              5.1923076923076926e-002,
+                                              156.20986883198000};
+
       Rename rename;
       rename.mam_rename_1subarea_(
           iscldy_subarea, smallest_dryvol_value, dest_mode_of_mode,   // in
