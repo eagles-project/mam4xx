@@ -4,7 +4,6 @@
 #include <mam4xx/aging.hpp>
 #include <mam4xx/coagulation.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>
-#include <mam4xx/gasaerexch.hpp>
 #include <mam4xx/nucleation.hpp>
 #include <mam4xx/rename.hpp>
 
@@ -1015,7 +1014,6 @@ void mam_newnuc_1subarea(
   Real qnuma_del, qso4a_del, qnh4a_del, qh2so4_del, qnh3_del, dens_nh4so4a;
 
   //   call ... routine to get nucleation rates
-  // FIXME: I GOT ALL ZEROS...THIS IS NOT VALIDATED YET!!!!
   mam4::nucleation::mer07_veh02_nuc_mosaic_1box(
       newnuc_method_flagaa, deltat, temp, relhumnn, pmid, zmid, pblh,  // in
       qh2so4_cur, qh2so4_avg, qnh3_cur, tmp_uptkrate, mw_so4a_host, 1, // in
@@ -2350,20 +2348,6 @@ void modal_aero_amicphys_intr(
       nsubarea, ncldy_subarea, afracsub, qsub_tendaa, qqcwsub_tendaa,
       // out
       qgcm_tendaa, qqcwgcm_tendaa);
-
-#if 0
-  //This code is for diagnostics only
-  // Get gravity
-  using C                      = physics::Constants<Real>;
-  static constexpr auto gravit = C::gravit;  // Gravity [m/s2]
-
-accumulate_column_tend_integrals( pdel, gravit,                         // in
-                                        qgcm_tendaa,         qqcwgcm_tendaa,         // in
-                                        q_coltendaa(ii,:,:), qqcw_coltendaa(ii,:,:)  )// inout
-
-ncluster_3dtend_nnuc(ii,kk) = misc_vars_aa%ncluster_tend_nnuc_1grid
-
-#endif
 } // modal_aero_amicphys_intr
 } // namespace microphysics
 
