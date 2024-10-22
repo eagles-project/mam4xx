@@ -16,16 +16,20 @@
 #include <mam4xx/aging.hpp>
 #include <mam4xx/calcsize.hpp>
 #include <mam4xx/coagulation.hpp>
+#include <mam4xx/compute_o3_column_density.hpp>
 #include <mam4xx/convproc.hpp>
 #include <mam4xx/drydep.hpp>
 #include <mam4xx/gas_chem.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>
+#include <mam4xx/gas_phase_chemistry.hpp>
 #include <mam4xx/gasaerexch.hpp>
 #include <mam4xx/hetfrz.hpp>
 #include <mam4xx/lin_strat_chem.hpp>
+#include <mam4xx/mam4_amicphys.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/mo_chm_diags.hpp>
 #include <mam4xx/mo_drydep.hpp>
+#include <mam4xx/mo_gas_phase_chemdr.hpp>
 #include <mam4xx/mo_photo.hpp>
 #include <mam4xx/mo_setext.hpp>
 #include <mam4xx/mo_sethet.hpp>
@@ -42,7 +46,6 @@
 #include <mam4xx/vertical_interpolation.hpp>
 #include <mam4xx/water_uptake.hpp>
 #include <mam4xx/wet_dep.hpp>
-
 namespace mam4 {
 
 using NucleationProcess = haero::AeroProcess<AeroConfig, Nucleation>;
