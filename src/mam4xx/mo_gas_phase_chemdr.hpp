@@ -207,7 +207,6 @@ void perform_atmospheric_chemistry_and_microphysics(
     Real dgncur_a_kk[num_modes] = {};
     Real dgncur_awet_kk[num_modes] = {};
     Real wetdens_kk[num_modes] = {};
-    Real qaerwat_kk[num_modes] = {};
 
     for (int imode = 0; imode < num_modes; imode++) {
       dgncur_awet_kk[imode] = wet_diameter_icol(imode, kk);
