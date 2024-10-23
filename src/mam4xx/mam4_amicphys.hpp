@@ -1075,14 +1075,10 @@ void mam_newnuc_1subarea(
 
   //   dso4dt_ait, dnh4dt_ait are (kmol/kmol-air/s)
 
-  constexpr Real mw_nh4a_host = mw_so4a_host;
   EKAT_KERNEL_ASSERT_MSG(mw_so4a_host != 0,
                          "Error! mam_newnuc_1subarea: "
                          " mw_so4a_host should not be equal to 0\n");
   Real dso4dt_ait = dmdt_ait * tmp_frso4 / mw_so4a_host;
-  EKAT_KERNEL_ASSERT_MSG(mw_nh4a_host != 0,
-                         "Error! mam_newnuc_1subarea: "
-                         " mw_nh4a_host should not be equal to 0\n");
   constexpr int iaer_so4 = 1;
   if (dso4dt_ait > 0.0) {
     tmp_q_del = dso4dt_ait * deltat;
