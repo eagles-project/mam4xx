@@ -979,7 +979,6 @@ void mam_newnuc_1subarea(
   if (qh2so4_avg <= qh2so4_cutoff)
     return;
 
-  static constexpr int igas_nh3 = -999888777; // Same as mam_refactor
   Real qnh3_cur = 0;
 
   //   dry-diameter limits for "grown" new particles
@@ -1038,18 +1037,12 @@ void mam_newnuc_1subarea(
                                       " deltat should not be equal to 0\n");
   Real dmdt_ait = haero::max(0.0, (tmpb / deltat));
 
-  Real dndt_aitsv2 = 0.0;
-  Real dmdt_aitsv2 = 0.0;
-  Real dndt_aitsv3 = 0.0;
-  Real dmdt_aitsv3 = 0.0;
   // BAD CONSTANTS
   if (dndt_ait < 1.0e2) {
     //   ignore newnuc if number rate < 100 #/kmol-air/s ~= 0.3 #/mg-air/d
     dndt_ait = 0.0;
     dmdt_ait = 0.0;
   } else {
-    dndt_aitsv2 = dndt_ait;
-    dmdt_aitsv2 = dmdt_ait;
 
     //   mirage2 code checked for complete h2so4 depletion here,
     //   but this is now done in mer07_veh02_nuc_mosaic_1box
@@ -1057,8 +1050,6 @@ void mam_newnuc_1subarea(
                            "Error! mam_newnuc_1subarea: "
                            " dndt_ait should not be equal to 0\n");
     Real mass1p = dmdt_ait / dndt_ait;
-    dndt_aitsv3 = dndt_ait;
-    dmdt_aitsv3 = dmdt_ait;
 
     EKAT_KERNEL_ASSERT_MSG(mass1p_aitlo != 0,
                            "Error! mam_newnuc_1subarea: "
@@ -1084,15 +1075,10 @@ void mam_newnuc_1subarea(
 
   //   dso4dt_ait, dnh4dt_ait are (kmol/kmol-air/s)
 
-  constexpr Real mw_nh4a_host = mw_so4a_host;
   EKAT_KERNEL_ASSERT_MSG(mw_so4a_host != 0,
                          "Error! mam_newnuc_1subarea: "
                          " mw_so4a_host should not be equal to 0\n");
   Real dso4dt_ait = dmdt_ait * tmp_frso4 / mw_so4a_host;
-  EKAT_KERNEL_ASSERT_MSG(mw_nh4a_host != 0,
-                         "Error! mam_newnuc_1subarea: "
-                         " mw_nh4a_host should not be equal to 0\n");
-  Real dnh4dt_ait = dmdt_ait * (1.0 - tmp_frso4) / mw_nh4a_host;
   constexpr int iaer_so4 = 1;
   if (dso4dt_ait > 0.0) {
     tmp_q_del = dso4dt_ait * deltat;
@@ -1314,7 +1300,8 @@ void mam_amicphys_1subarea(
   assign_3d_array(nspecies, nmodes, nqqcwtendaa(), 0, // in
                   &qaercw_delaa[0][0][0]);            // out
 
-  Real ncluster_tend_nnuc_1grid = 0;
+  // FIXME: Enable this functionality
+  // Real ncluster_tend_nnuc_1grid = 0;
 
   //***********************************
   // loop over multiple time sub-steps
@@ -1589,7 +1576,7 @@ void mam_amicphys_1subarea(
       copy_2d_array(nspecies, nmodes, &qaer_cur[0][0], // in
                     &qaer_sv1[0][0]);                  // out
 
-      Real dnclusterdt_substep;
+      Real dnclusterdt_substep = 0;
       mam_newnuc_1subarea(igas_h2so4, gaexch_h2so4_uptake_optaa,
                           newnuc_h2so4_conc_optaa, jsubarea, dtsubstep, // in
                           temp,                                         // in
@@ -1614,7 +1601,8 @@ void mam_amicphys_1subarea(
       EKAT_KERNEL_ASSERT_MSG(deltat != 0,
                              "Error! mam_amicphys_1subarea: "
                              "deltat should not be equal to zero \n");
-      ncluster_tend_nnuc_1grid += dnclusterdt_substep * (dtsubstep / deltat);
+      // FIXME: Enable this functionality
+      // ncluster_tend_nnuc_1grid += dnclusterdt_substep * (dtsubstep / deltat);
 
     } // do_newnuc_sub
 
@@ -1810,11 +1798,11 @@ void mam_amicphys_1gridcell(
       }
     }
 
-    Real qaer2[num_aerosol_ids][num_modes] = {0};
+    Real qaer2[num_aerosol_ids][num_modes] = {{0}};
     Real qnum2[num_modes] = {0};
-    Real qaer3[num_aerosol_ids][num_modes] = {0};
+    Real qaer3[num_aerosol_ids][num_modes] = {{0}};
     Real qnum3[num_modes] = {0};
-    Real qaer4[num_aerosol_ids][num_modes] = {0};
+    Real qaer4[num_aerosol_ids][num_modes] = {{0}};
     Real qnum4[num_modes] = {0};
     Real qwtr3[num_modes] = {0};
     Real qwtr4[num_modes] = {0};
@@ -1854,11 +1842,11 @@ void mam_amicphys_1gridcell(
       qwtr4[imode] = qwtr3[imode];
     } // for imode
 
-    Real qaercw2[num_aerosol_ids][num_modes] = {0};
+    Real qaercw2[num_aerosol_ids][num_modes] = {{0}};
     Real qnumcw2[num_modes] = {0};
-    Real qaercw3[num_aerosol_ids][num_modes] = {0};
+    Real qaercw3[num_aerosol_ids][num_modes] = {{0}};
     Real qnumcw3[num_modes] = {0};
-    Real qaercw4[num_aerosol_ids][num_modes] = {0};
+    Real qaercw4[num_aerosol_ids][num_modes] = {{0}};
     Real qnumcw4[num_modes] = {0};
 
     assign_2d_array(num_aerosol_ids, num_modes, 0.0, // in
@@ -2267,7 +2255,6 @@ void modal_aero_amicphys_intr(
   Real qsub1[gas_pcnst][maxsubarea()];
   Real qsub2[gas_pcnst][maxsubarea()];
   Real qsub3[gas_pcnst][maxsubarea()];
-  Real qqcwsub1[gas_pcnst][maxsubarea()];
   Real qqcwsub2[gas_pcnst][maxsubarea()];
   Real qqcwsub3[gas_pcnst][maxsubarea()];
 

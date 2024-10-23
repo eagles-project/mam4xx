@@ -158,13 +158,13 @@ struct SeasaltEmissionsData {
 using namespace BAD_CONSTANTS;
 
 struct OnlineEmissionsData {
-  Real dust_flux_in[dust_nflux_in];
-  Real surface_temp;
-  Real u_bottom;
-  Real v_bottom;
-  Real z_bottom;
-  Real ocean_frac;
-  Real soil_erodibility;
+  Real dust_flux_in[dust_nflux_in] = {};
+  Real surface_temp = 0;
+  Real u_bottom = 0;
+  Real v_bottom = 0;
+  Real z_bottom = 0;
+  Real ocean_frac = 0;
+  Real soil_erodibility = 0;
 };
 
 // =============================================================================
