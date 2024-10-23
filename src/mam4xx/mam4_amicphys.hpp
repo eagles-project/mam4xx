@@ -1305,7 +1305,7 @@ void mam_amicphys_1subarea(
                   &qaercw_delaa[0][0][0]);            // out
 
   // FIXME: Enable this functionality
-  //Real ncluster_tend_nnuc_1grid = 0;
+  // Real ncluster_tend_nnuc_1grid = 0;
 
   //***********************************
   // loop over multiple time sub-steps
@@ -1605,8 +1605,8 @@ void mam_amicphys_1subarea(
       EKAT_KERNEL_ASSERT_MSG(deltat != 0,
                              "Error! mam_amicphys_1subarea: "
                              "deltat should not be equal to zero \n");
-    // FIXME: Enable this functionality
-    // ncluster_tend_nnuc_1grid += dnclusterdt_substep * (dtsubstep / deltat);
+      // FIXME: Enable this functionality
+      // ncluster_tend_nnuc_1grid += dnclusterdt_substep * (dtsubstep / deltat);
 
     } // do_newnuc_sub
 
