@@ -59,7 +59,6 @@ namespace microphysics {
 
 // number of species with external forcing
 using mam4::gas_chemistry::extcnt;
-using mam4::microphysics::AmicPhysConfig;
 using mam4::mo_photo::PhotoTableData;
 using mam4::mo_setext::Forcing;
 using mam4::mo_setinv::num_tracer_cnst;
@@ -207,7 +206,6 @@ void perform_atmospheric_chemistry_and_microphysics(
     Real dgncur_a_kk[num_modes] = {};
     Real dgncur_awet_kk[num_modes] = {};
     Real wetdens_kk[num_modes] = {};
-    Real qaerwat_kk[num_modes] = {};
 
     for (int imode = 0; imode < num_modes; imode++) {
       dgncur_awet_kk[imode] = wet_diameter_icol(imode, kk);
