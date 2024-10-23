@@ -59,7 +59,6 @@ namespace microphysics {
 
 // number of species with external forcing
 using mam4::gas_chemistry::extcnt;
-using mam4::microphysics::AmicPhysConfig;
 using mam4::mo_photo::PhotoTableData;
 using mam4::mo_setext::Forcing;
 using mam4::mo_setinv::num_tracer_cnst;
