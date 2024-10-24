@@ -857,7 +857,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
   for (int isw = 0; isw < nswbands; ++isw) {
 
     Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, top_lev_loc, pver_loc), [&](int kk) {
+        Kokkos::TeamVectorRange(team, top_lev_loc, pver_loc), [&](int kk) {
           Kokkos::parallel_reduce(
               Kokkos::ThreadVectorRange(team, ntot_amode),
               [&](int imode, Real &suma) {
@@ -974,7 +974,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
   for (int isw = 0; isw < nswbands; ++isw) {
 
     Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, pver), [&](const int kk) {
+        Kokkos::TeamVectorRange(team, pver), [&](const int kk) {
           Kokkos::parallel_reduce(
               Kokkos::ThreadVectorRange(team, ntot_amode),
               [&](int imode, Real &suma) {

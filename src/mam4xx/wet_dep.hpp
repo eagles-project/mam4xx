@@ -1654,7 +1654,8 @@ void aero_model_wetdep(
 
   View2D rtscavt_sv(work_ptr, mam4::nlev, pcnst);
   work_ptr += pcnst * mam4::nlev;
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, mam4::nlev), [&](int i) {
+  static constexpr int nlev_loc = mam4::nlev;
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev_loc), [&](int i) {
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pcnst),
                          [&](int j) { rtscavt_sv(i, j) = zero; });
   });

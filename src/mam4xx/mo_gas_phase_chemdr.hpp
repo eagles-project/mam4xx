@@ -17,7 +17,7 @@ namespace microphysics {
  * performing aerosol microphysics calculations among other steps.
  *
  *
- * @param [in] team Kokkos team type for the Kokkos::TeamThreadRange
+ * @param [in] team Kokkos team type for the Kokkos::TeamVectorRange
  * @param [in] dt Time step
  * @param [in] rlats Column latitudes
  * @param [in] cnst_offline_icol Invariant tracer
@@ -119,7 +119,7 @@ void perform_atmospheric_chemistry_and_microphysics(
 
   // compute aerosol microphysics on each vertical level within this
   // column
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](const int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
     // extract atm state variables (input)
     Real temp = atm.temperature(kk);
     Real pmid = atm.pressure(kk);
