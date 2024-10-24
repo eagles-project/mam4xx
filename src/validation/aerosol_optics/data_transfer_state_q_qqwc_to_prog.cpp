@@ -141,7 +141,7 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
           // 3. Let's compute the difference between the original state_q (or
           // qqcw) with the one obtained after extracting the data from prog.
           Kokkos::parallel_for(
-              Kokkos::TeamThreadRange(team, pver), [&](int kk) {
+              Kokkos::TeamVectorRange(team, pver), [&](int kk) {
                 Kokkos::parallel_for(
                     Kokkos::ThreadVectorRange(team, pcnst), [&](int isp) {
                       diff_state_q(isp, kk) =

@@ -99,7 +99,7 @@ void volcanic_cmip_sw2(const ThreadTeam &team, const ConstColumnView &zi,
         half * (tau_w_f(i, ilev_tropp + 1) + ext_ssa_asym * asym_unitless);
   });
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, ilev_tropp), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ilev_tropp), [&](int kk) {
     const Real lyr_thk = zi(kk) - zi(kk + 1);
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, nswbands), [&](int i) {
       // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,pver)
@@ -355,7 +355,7 @@ void compute_odap_volcanic_above_troplayer_lw2(const ThreadTeam &team,
    As it will be more efficient for FORTRAN to loop over levels and then
    columns, the following loops are nested keeping that in mind*/
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, ilev_tropp), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ilev_tropp), [&](int kk) {
     const Real lyr_thk =
         zi(kk) - zi(kk + 1); //  compute layer thickness in meters
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, nlwbands), [&](int i) {
