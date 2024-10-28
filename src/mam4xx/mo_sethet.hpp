@@ -150,16 +150,13 @@ void gas_washout(
         //-----------------------------------------------------------------
         xca(k) = geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik *
                  cm3_2_m3;
+        // Kokkos::printf("xeqca[%d] : %f", k, xeqca(k));
+        // Kokkos::printf("xca[%d] : %f", k, xca(k));
+        Kokkos::printf("hello\n");
       });
   team.team_barrier();
 
-  Kokkos::parallel_reduce(
-    Kokkos::ThreadVectorRange(team, plev, pver_loc),
-    [&](int kk, Real &allca) {
-      allca += xca(kk);
-    },
-    allca);
-    team.team_barrier();
+  // printf("hello\n");
 
   //-----------------------------------------------------------------
   //       ... if is not saturated (take hno3 as an example)
@@ -167,13 +164,12 @@ void gas_washout(
   //           otherwise
   //               hno3(gas)_new = hno3(gas)_old
   //-----------------------------------------------------------------
-  Kokkos::parallel_for(
-        Kokkos::ThreadVectorRange(team, plev, pver_loc), KOKKOS_LAMBDA(int kk) {
-          if (allca < xeqca(kk)) {
+  for(int kk = plev; kk < pver_loc; kk++) {
+      allca += xca(kk);
+      if (allca < xeqca(kk)) {
             xgas(kk) = haero::max(xgas(kk) - xca(kk), 0.0);
-          }
-    });
-    team.team_barrier();
+      }
+  }
 
 } // end subroutine gas_washout
 
