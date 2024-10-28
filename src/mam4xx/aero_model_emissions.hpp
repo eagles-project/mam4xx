@@ -8,7 +8,11 @@
 
 namespace mam4::aero_model_emissions {
 
-using View1D = DeviceType::view_1d<Real>;
+using const_view_2d = DeviceType::view_2d<const Real>;
+
+using view_1d = DeviceType::view_1d<Real>;
+
+
 
 // essentially everything in this namespace falls in the BAD CONSTANT category
 // ... thus, the name
@@ -882,6 +886,7 @@ void marine_organic_emissions(
       cflux);
 } // end marine_organic_emissions()
 
+// BALLI: we are calling this
 KOKKOS_INLINE_FUNCTION
 void aero_model_emissions(
     // in
@@ -911,7 +916,7 @@ void aero_model_emissions(
 
   Real fi[salt_nsection];
   Real soil_erodibility = online_emiss_data.soil_erodibility;
-
+#if 0
   init_dust_dmt_vwr(dust_data.dust_dmt_grd, dust_data.dust_dmt_vwr);
   dust_emis(
       // in
@@ -919,6 +924,7 @@ void aero_model_emissions(
       // inout
       cflux);
   init_seasalt(seasalt_data);
+
   calculate_seasalt_numflux_in_bins(
       // in
       surface_temp, u_bottom, v_bottom, z_bottom, seasalt_data.consta,
@@ -935,8 +941,9 @@ void aero_model_emissions(
       fi, ocean_frac, seasalt_emis_scalefactor, seasalt_data, emit_this_mode,
       // inout
       cflux);
+#endif
 } // end aero_model_emissions()
-
+#if 0
 KOKKOS_INLINE_FUNCTION
 void aero_model_emissions(
     // in
@@ -944,7 +951,7 @@ void aero_model_emissions(
     DustEmissionsData dust_data,
     // inout
     // NOTE: fortran: cam_in%cflx
-    View1D &cflux_) {
+    view_1d &cflux_) {
 
   Real cflux[pcnst];
   for (int i = 0; i < pcnst; ++i) {
@@ -952,11 +959,13 @@ void aero_model_emissions(
   }
   aero_model_emissions(online_emiss_data, seasalt_data, dust_data, cflux);
 } // end aero_model_emissions()
+#endif
 
 KOKKOS_INLINE_FUNCTION
 void aero_model_emissions(
+    const const_view_2d &dstflx,
     // inout
-    View1D &cflux_) {
+    view_1d &cflux_) {
 
   OnlineEmissionsData online_emiss_data;
   SeasaltEmissionsData seasalt_data;
@@ -965,6 +974,7 @@ void aero_model_emissions(
   for (int i = 0; i < pcnst; ++i) {
     cflux[i] = cflux_(i);
   }
+  // BALLI: we are calling this one
   aero_model_emissions(online_emiss_data, seasalt_data, dust_data, cflux);
 } // end aero_model_emissions()
 } // namespace mam4::aero_model_emissions
