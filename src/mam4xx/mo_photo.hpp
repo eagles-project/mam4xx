@@ -633,8 +633,11 @@ void jlong( const ThreadTeam &team,const Real sza_in, const Real *alb_in, const 
    150 to 350 degrees K.  Make sure the index is a value
    between 1 and 201.
   ------------------------------------------------------------------------------*/
-
-  for (int kk = 0; kk < pver; kk++) {
+  // To avoid the 'pver is undefined' error during CUDA code compilation.
+  constexpr int pver_local = pver;
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                         [&](int kk) {
     /*----------------------------------------------------------------------
       ... get index into xsqy
      ----------------------------------------------------------------------*/
@@ -695,7 +698,7 @@ void jlong( const ThreadTeam &team,const Real sza_in, const Real *alb_in, const 
       } // wn
       j_long(i, kk) = suma;
     } // i
-  }   // end kk
+  });   // end kk
 
 } // jlong
 
