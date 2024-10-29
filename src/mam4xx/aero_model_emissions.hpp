@@ -890,7 +890,8 @@ KOKKOS_INLINE_FUNCTION
 void aero_model_emissions(
     // in
     OnlineEmissionsData online_emiss_data, SeasaltEmissionsData seasalt_data,
-    DustEmissionsData dust_data,
+    DustEmissionsData dust_data, const const_view_2d &dstflx,
+    const const_view_1d &soil_erodibility,
     // inout
     // NOTE: fortran: cam_in%cflx
     Real (&cflux)[pcnst]) {
@@ -914,9 +915,12 @@ void aero_model_emissions(
   const Real ocean_frac = online_emiss_data.ocean_frac;
 
   Real fi[salt_nsection];
-  Real soil_erodibility = online_emiss_data.soil_erodibility;
-#if 0
+  // Real soil_erodibility = online_emiss_data.soil_erodibility;
+
   init_dust_dmt_vwr(dust_data.dust_dmt_grd, dust_data.dust_dmt_vwr);
+  printf("dust_dmt_vwr:%0.15E,%i\n,", dust_data.dust_dmt_vwr[0], 1);
+  printf("dust_dmt_vwr:%0.15E,%i\n,", dust_data.dust_dmt_vwr[1], 2);
+#if 0
   dust_emis(
       // in
       dust_indices, dust_density, dust_flux_in, dust_data, soil_erodibility,
@@ -974,7 +978,9 @@ void aero_model_emissions(const const_view_2d &dstflx,
     cflux[i] = cflux_(i);
   }
   // BALLI: we are calling this one
-  aero_model_emissions(online_emiss_data, seasalt_data, dust_data, cflux);
+  aero_model_emissions(online_emiss_data, seasalt_data, dust_data, dstflx,
+                       soil_erodibility, // in
+                       cflux);           // out
 } // end aero_model_emissions()
 } // namespace mam4::aero_model_emissions
 #endif
