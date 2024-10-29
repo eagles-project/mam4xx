@@ -109,7 +109,7 @@ void perform_atmospheric_chemistry_and_microphysics(
                                               work_photo_table_icol,   // in
                                               photo_work_arrays_icol); // out
 
-  mam4::mo_photo::table_photo(photo_rates_icol,                          // out
+  mam4::mo_photo::table_photo(team, photo_rates_icol,                          // out
                               atm.pressure, atm.hydrostatic_dp,          // in
                               atm.temperature, o3_col_dens_i,            // in
                               zenith_angle_icol, d_sfc_alb_dir_vis_icol, // in

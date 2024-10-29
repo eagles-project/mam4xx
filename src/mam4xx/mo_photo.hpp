@@ -397,7 +397,7 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
 } // calc_sum_wght
 
 KOKKOS_INLINE_FUNCTION
-void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
+void interpolate_rsf(const ThreadTeam &team, const Real *alb_in, const Real sza_in, const Real *p_in,
                      const Real *colo3_in,
                      const int kbot, //  in
                      const Real *sza, const Real *del_sza, const Real *alb,
@@ -542,7 +542,9 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
        ... --> convert to photons/cm^2/s
      ------------------------------------------------------------------------------*/
     for (int wn = 0; wn < nw; wn++) {
-      rsf(wn, kk) *= etfphot[wn];
+    Kokkos::single(Kokkos::PerTeam(team),
+                       [&]() { rsf(wn, kk) *= etfphot[wn]; });
+
     } // end for wn
 
   } // end Level_loop
@@ -551,7 +553,7 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
 
 //======================================================================================
 KOKKOS_INLINE_FUNCTION
-void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
+void jlong( const ThreadTeam &team,const Real sza_in, const Real *alb_in, const Real *p_in,
            const Real *t_in, const Real *colo3_in, const View4D &xsqy,
            const Real *sza, const Real *del_sza, const Real *alb,
            const Real *press, const Real *del_p, const Real *colo3,
@@ -615,7 +617,7 @@ void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
     ... interpolate table rsf to model variables
 ----------------------------------------------------------------------*/
   const Real zero = 0;
-  interpolate_rsf(alb_in, sza_in, p_in, colo3_in, pver, sza, del_sza, alb,
+  interpolate_rsf(team, alb_in, sza_in, p_in, colo3_in, pver, sza, del_sza, alb,
                   press, del_p, colo3, o3rat, del_alb, del_o3rat, etfphot,
                   rsf_tab, //  in
                   nw, nump, numsza, numcolo3, numalb, rsf, psum_l,
@@ -700,7 +702,7 @@ void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
 // FIXME: note the use of ConstColumnView for views we get from the
 // FIXME: haero::Atmosphere type
 KOKKOS_INLINE_FUNCTION
-void table_photo(const View2D &photo, // out
+void table_photo(const ThreadTeam &team, const View2D &photo, // out
                  const ConstColumnView &pmid, const ConstColumnView &pdel,
                  const ConstColumnView &temper, // in
                  const ColumnView &colo3_in, const Real zen_angle,
@@ -762,7 +764,7 @@ void table_photo(const View2D &photo, // out
      ... long wave length component
     -----------------------------------------------------------------*/
 
-    jlong(sza_in, eff_alb, parg, temper.data(), colo3_in.data(),
+    jlong(team, sza_in, eff_alb, parg, temper.data(), colo3_in.data(),
           table_data.xsqy, table_data.sza.data(), table_data.del_sza.data(),
           table_data.alb.data(), table_data.press.data(),
           table_data.del_p.data(), table_data.colo3.data(),
