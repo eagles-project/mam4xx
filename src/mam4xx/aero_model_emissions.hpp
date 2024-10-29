@@ -8,11 +8,10 @@
 
 namespace mam4::aero_model_emissions {
 
+using const_view_1d = DeviceType::view_1d<const Real>;
 using const_view_2d = DeviceType::view_2d<const Real>;
 
 using view_1d = DeviceType::view_1d<Real>;
-
-
 
 // essentially everything in this namespace falls in the BAD CONSTANT category
 // ... thus, the name
@@ -962,10 +961,10 @@ void aero_model_emissions(
 #endif
 
 KOKKOS_INLINE_FUNCTION
-void aero_model_emissions(
-    const const_view_2d &dstflx,
-    // inout
-    view_1d &cflux_) {
+void aero_model_emissions(const const_view_2d &dstflx,
+                          const const_view_1d &soil_erodibility,
+                          // inout
+                          view_1d &cflux_) {
 
   OnlineEmissionsData online_emiss_data;
   SeasaltEmissionsData seasalt_data;
