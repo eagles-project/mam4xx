@@ -149,7 +149,7 @@ void table_photo(Ensemble *ensemble) {
     Kokkos::deep_copy(srf_alb, srf_alb_host);
     Kokkos::deep_copy(zen_angle, zen_angle_host);
 
-    auto team_policy = ThreadTeamPolicy(ncol, 1u);
+    auto team_policy = ThreadTeamPolicy(ncol, 7 );
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           const int i = team.league_rank();
@@ -173,7 +173,7 @@ void table_photo(Ensemble *ensemble) {
           work_arrays.psum_l = Kokkos::subview(psum_l, i, Kokkos::ALL());
           work_arrays.psum_u = Kokkos::subview(psum_u, i, Kokkos::ALL());
 
-          table_photo(photo_icol, // out
+          table_photo(team, photo_icol, // out
                       pmid_icol, pdel_icol,
                       temper_icol, // in
                       colo3_in_icol, zen_angle(i), srf_alb(i), lwc_icol,

@@ -141,7 +141,7 @@ void jlong(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          jlong(sza_in, alb_in.data(), p_in.data(), t_in.data(),
+          jlong(team, sza_in, alb_in.data(), p_in.data(), t_in.data(),
                 colo3_in.data(), xsqy, sza.data(), del_sza.data(), alb.data(),
                 press.data(), del_p.data(), colo3.data(), o3rat.data(),
                 del_alb.data(), del_o3rat.data(), etfphot.data(),

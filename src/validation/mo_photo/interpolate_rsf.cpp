@@ -108,10 +108,10 @@ void interpolate_rsf(Ensemble *ensemble) {
     auto psum_u = View1D("psum_u", nw);
 
     View2D rsf("rsf", nw, pver);
-    auto team_policy = ThreadTeamPolicy(1u, 1u);
+    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          interpolate_rsf(alb_in.data(), sza_in, p_in.data(), colo3_in.data(),
+          interpolate_rsf(team, alb_in.data(), sza_in, p_in.data(), colo3_in.data(),
                           pver, //  in
                           sza.data(), del_sza.data(), alb.data(), press.data(),
                           del_p.data(), colo3.data(), o3rat.data(),
