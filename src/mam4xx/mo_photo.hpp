@@ -132,7 +132,8 @@ void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
 } // set_photo_table_work_arrays
 
 KOKKOS_INLINE_FUNCTION
-void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
+void cloud_mod(const ThreadTeam &team,
+               const Real zen_angle, const Real *clouds, const Real *lwc,
                const Real *delp,
                const Real srf_alb, //  in
                Real *eff_alb, Real *cld_mult) {
@@ -152,10 +153,12 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
         ... modify lwc for cloud fraction and form
             liquid water path and tau for each layer
   ---------------------------------------------------------*/
-  const Real zero = 0.0;
-  const Real thousand = 1000.0;
-  const Real one = 1;
-  const Real half = 0.5;
+  constexpr Real zero = 0.0;
+  constexpr Real thousand = 1000.0;
+  constexpr Real one = 1;
+  constexpr Real half = 0.5;
+  constexpr int pver_local=pver;
+  constexpr int pverm_local = pverm;
 
   // cloud optical depth in each layer
   Real del_tau[pver] = {};
@@ -170,7 +173,8 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
       .155; // factor converting LWP to tau [unknown source and unit]
   const Real tau_min = 5.0; // tau threshold below which assign cloud as zero
 
-  for (int kk = 0; kk < pver; kk++) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                           [&](int kk) {
     if (clouds[kk] != zero) {
       // liquid water path in each layer [g/m2]
       const Real del_lwp = rgrav * lwc[kk] * delp[kk] * thousand /
@@ -179,7 +183,8 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
     } else {
       del_tau[kk] = zero;
     } // end if
-  }   // end kk
+  });   // end kk
+
   /*---------------------------------------------------------
               ... form integrated tau and cloud cover from top down
   --------------------------------------------------------- */
@@ -188,11 +193,13 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
   // cloud cover above this layer
   Real above_cld[pver] = {zero};
 
+  team.team_barrier();
   for (int kk = 0; kk < pverm; kk++) {
     above_tau[kk + 1] = del_tau[kk] + above_tau[kk];
     above_cld[kk + 1] = clouds[kk] * del_tau[kk] + above_cld[kk];
 
-  } // end kk
+  }; // end kk
+  team.team_barrier();
 
   for (int kk = 1; kk < pver; kk++) {
     if (above_tau[kk] != zero) {
@@ -200,7 +207,8 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
     } else {
       above_cld[kk] = above_cld[kk - 1];
     }
-  } // end kk
+  }; // end kk
+
 
   /*---------------------------------------------------------
               ... form integrated tau and cloud cover from bottom up
@@ -208,11 +216,20 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
 
   below_tau[pver - 1] = zero;
   below_cld[pver - 1] = zero;
+  team.team_barrier();
 
+  Kokkos::single(Kokkos::PerTeam(team),
+                       [&]() {
   for (int kk = pverm - 1; kk > -1; kk--) {
     below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
     below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
   } // end kk
+  });
+  team.team_barrier();
+
+
+  Kokkos::single(Kokkos::PerTeam(team),
+                       [&]() {
 
   for (int kk = pverm - 1; kk > -1; kk--) {
     if (below_tau[kk] != zero) {
@@ -222,10 +239,14 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
     } // end if
 
   } // end kk
+                       });
+  team.team_barrier();
 
   /*---------------------------------------------------------
       ... modify above_tau and below_tau via jfm
   ---------------------------------------------------------*/
+  Kokkos::single(Kokkos::PerTeam(team),
+                       [&]() {
   for (int kk = 1; kk < pver; kk++) {
     if (above_cld[kk] != zero) {
       above_tau[kk] /= above_cld[kk];
@@ -237,6 +258,11 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
 
   } // end kk
 
+                       });
+team.team_barrier();
+  Kokkos::single(Kokkos::PerTeam(team),
+                       [&]() {
+
   for (int kk = 0; kk < pverm; kk++) {
     if (below_cld[kk] != zero) {
       below_tau[kk] /= below_cld[kk];
@@ -246,6 +272,7 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
     } // end if
 
   } // end kk
+                       });
 
   /*---------------------------------------------------------
       ... form transmission factors
@@ -257,8 +284,10 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
 
   // cos (solar zenith angle)
   const Real coschi = haero::max(haero::cos(zen_angle), half);
-
-  for (int kk = 0; kk < pver; kk++) {
+   team.team_barrier();
+  // for (int kk = 0; kk < pver; kk++) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                           [&](int kk) {
 
     /*---------------------------------------------------------
       ... form effective albedo
@@ -287,7 +316,7 @@ void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
     // BAD CONSTANT
     cld_mult[kk] =
         haero::max(.05, one + fac1 * clouds[kk] + fac2 * above_cld[kk]);
-  } // end kk
+  }); // end kk
 
 } // end cloud_mod
 
@@ -740,6 +769,7 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
   constexpr Real r2d = 180.0 / haero::Constants::pi; // degrees to radians
   // BAD CONSTANT
   constexpr Real max_zen_angle = 88.85; //  degrees
+  constexpr int pver_local = pver;
 
   // vertical pressure array [hPa]
   Real parg[pver] = {};
@@ -755,14 +785,15 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
     /*-----------------------------------------------------------------
          ... compute eff_alb and cld_mult -- needs to be before jlong
     -----------------------------------------------------------------*/
-    cloud_mod(zen_angle, clouds.data(), lwc.data(), pdel.data(),
+    cloud_mod(team, zen_angle, clouds.data(), lwc.data(), pdel.data(),
               srf_alb, //  in
               eff_alb, cld_mult);
 
-    for (int kk = 0; kk < pver; ++kk) {
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                         [&](int kk) {
       parg[kk] = pmid(kk) * Pa2mb;
       cld_mult[kk] *= esfact;
-    } // kk
+    }); // kk
     /*-----------------------------------------------------------------
      ... long wave length component
     -----------------------------------------------------------------*/
@@ -782,17 +813,19 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
           work_arrays.rsf, work_arrays.xswk, work_arrays.psum_l.data(),
           work_arrays.psum_u.data());
 
-    for (int mm = 0; mm < phtcnt; ++mm) {
+    team.team_barrier();
+    Kokkos::parallel_for(
+      Kokkos::TeamThreadRange(team, phtcnt), [&](int mm) {
       if (table_data.lng_indexer(mm) > -1) {
-        for (int kk = 0; kk < pver; ++kk) {
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
           photo(kk, mm) =
               cld_mult[kk] *
               (photo(kk, mm) +
                table_data.pht_alias_mult_1(mm) *
                    work_arrays.lng_prates(table_data.lng_indexer(mm), kk));
-        } // end kk
+        }); // end kk
       }   // end if
-    }     // end mm
+    });     // end mm
   }
 
   // } // end col_loop
