@@ -929,7 +929,7 @@ void aero_model_emissions(
   for (int ic = 0; ic < pcnst; ++ic) {
     printf("cflux:   %0.15E, %i\n", cflux[ic], ic + 1);
   }
-#if 0
+
   init_seasalt(seasalt_data);
 
   calculate_seasalt_numflux_in_bins(
@@ -938,6 +938,10 @@ void aero_model_emissions(
       seasalt_data.constb,
       // out
       fi);
+  for (int ic = 0; ic < salt_nsection; ++ic) {
+    printf("fi:   %0.15E, %i\n", fi[ic], ic + 1);
+  }
+#if 0
   seasalt_emis(
       // in
       fi, ocean_frac, seasalt_emis_scalefactor, seasalt_data,
@@ -971,7 +975,7 @@ void aero_model_emissions(
 KOKKOS_INLINE_FUNCTION
 void aero_model_emissions(const Real sst, const Real ocnfrac,
                           const Real u_bottom, const Real v_bottom,
-                          const const_view_1d &dstflx,
+                          const Real z_bottom, const const_view_1d &dstflx,
                           const Real &soil_erodibility,
                           // inout
                           view_1d &cflux_) {
@@ -986,11 +990,13 @@ void aero_model_emissions(const Real sst, const Real ocnfrac,
   online_emiss_data.surface_temp = sst;
   online_emiss_data.u_bottom = u_bottom;
   online_emiss_data.v_bottom = v_bottom;
-  // online_emiss_data.z_bottom     = z_bottom;
   online_emiss_data.ocean_frac = ocnfrac;
-  // FXME: HARDWIRED- remove it!!!!
+  // FIXME: HARDWIRED- remove it!!!!
+  online_emiss_data.z_bottom = 0.11657090621946011E+002; // z_bottom;
   online_emiss_data.soil_erodibility =
       4.863882353680667E-01; // soil_erodibility;
+                             // FIXME remove ^^
+
   printf("Others:   %0.15E,   %0.15E,   %0.15E,   %0.15E,   %0.15E\n ",
          online_emiss_data.surface_temp, online_emiss_data.u_bottom,
          online_emiss_data.v_bottom, online_emiss_data.ocean_frac,
