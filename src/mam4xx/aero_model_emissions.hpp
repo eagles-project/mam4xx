@@ -941,17 +941,25 @@ void aero_model_emissions(
   for (int ic = 0; ic < salt_nsection; ++ic) {
     printf("fi:   %0.15E, %i\n", fi[ic], ic + 1);
   }
-#if 0
+
   seasalt_emis(
       // in
       fi, ocean_frac, seasalt_emis_scalefactor, seasalt_data,
       //  inout
       cflux);
+  for (int ic = 0; ic < 40; ++ic) {
+    printf("cam_in-cflx-se:   %0.15E, %i\n", cflux[ic], ic + 1);
+  }
+
   marine_organic_emissions(
       // in
       fi, ocean_frac, seasalt_emis_scalefactor, seasalt_data, emit_this_mode,
       // inout
       cflux);
+  for (int ic = 0; ic < 40; ++ic) {
+    printf("cam_in-cflx-mo:   %0.15E, %i\n", cflux[ic], ic + 1);
+  }
+#if 0
 #endif
 } // end aero_model_emissions()
 #if 0
@@ -992,9 +1000,9 @@ void aero_model_emissions(const Real sst, const Real ocnfrac,
   online_emiss_data.v_bottom = v_bottom;
   online_emiss_data.ocean_frac = ocnfrac;
   // FIXME: HARDWIRED- remove it!!!!
-  online_emiss_data.z_bottom = 0.11657090621946011E+002; // z_bottom;
+  online_emiss_data.z_bottom = 0.13319090943608003E+002; // z_bottom;
   online_emiss_data.soil_erodibility =
-      4.863882353680667E-01; // soil_erodibility;
+      0.000000000000000E+00; // soil_erodibility;
                              // FIXME remove ^^
 
   printf("Others:   %0.15E,   %0.15E,   %0.15E,   %0.15E,   %0.15E\n ",
