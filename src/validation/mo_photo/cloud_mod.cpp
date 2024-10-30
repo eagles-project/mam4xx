@@ -15,7 +15,6 @@ using namespace haero;
 using namespace mo_photo;
 void cloud_mod(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-
     using View1DHost = typename HostType::view_1d<Real>;
     using View1D = typename DeviceType::view_1d<Real>;
 
@@ -46,12 +45,10 @@ void cloud_mod(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-    cloud_mod(
-       zen_angle, clouds, lwc, delp,
-              srf_alb, //  in
-              eff_alb.data(), cld_mult.data());
-
-    });
+          cloud_mod(zen_angle, clouds, lwc, delp,
+                    srf_alb, //  in
+                    eff_alb.data(), cld_mult.data());
+        });
     std::vector<Real> eff_alb_db(pver, zero);
     std::vector<Real> cld_mult_db(pver, zero);
 
@@ -59,7 +56,6 @@ void cloud_mod(Ensemble *ensemble) {
     auto cld_mult_host = View1DHost((Real *)cld_mult_db.data(), pver);
     Kokkos::deep_copy(eff_alb_host, eff_alb);
     Kokkos::deep_copy(cld_mult_host, cld_mult);
-
 
     output.set("eff_alb", eff_alb_db);
     output.set("cld_mult", cld_mult_db);

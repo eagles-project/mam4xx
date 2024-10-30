@@ -133,13 +133,10 @@ void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
 } // set_photo_table_work_arrays
 
 KOKKOS_INLINE_FUNCTION
-void cloud_mod(
-               const Real zen_angle,
-               const ConstView1D& clouds,
-               const ConstView1D& lwc,
-               const ConstView1D& delp,
+void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
+               const ConstView1D &lwc, const ConstView1D &delp,
                const Real srf_alb, //  in
-               Real* eff_alb, Real* cld_mult) {
+               Real *eff_alb, Real *cld_mult) {
   /*-----------------------------------------------------------------------
         ... cloud alteration factors for photorates and albedo
   -----------------------------------------------------------------------*/
@@ -401,8 +398,8 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
 } // calc_sum_wght
 
 KOKKOS_INLINE_FUNCTION
-void interpolate_rsf(const ThreadTeam &team, const Real *alb_in, const Real sza_in, const Real *p_in,
-                     const Real *colo3_in,
+void interpolate_rsf(const ThreadTeam &team, const Real *alb_in,
+                     const Real sza_in, const Real *p_in, const Real *colo3_in,
                      const int kbot, //  in
                      const Real *sza, const Real *del_sza, const Real *alb,
                      const Real *press, const Real *del_p, const Real *colo3,
@@ -546,8 +543,8 @@ void interpolate_rsf(const ThreadTeam &team, const Real *alb_in, const Real sza_
        ... --> convert to photons/cm^2/s
      ------------------------------------------------------------------------------*/
     for (int wn = 0; wn < nw; wn++) {
-    Kokkos::single(Kokkos::PerTeam(team),
-                       [&]() { rsf(wn, kk) *= etfphot[wn]; });
+      Kokkos::single(Kokkos::PerTeam(team),
+                     [&]() { rsf(wn, kk) *= etfphot[wn]; });
 
     } // end for wn
 
@@ -557,15 +554,15 @@ void interpolate_rsf(const ThreadTeam &team, const Real *alb_in, const Real sza_
 
 //======================================================================================
 KOKKOS_INLINE_FUNCTION
-void jlong( const ThreadTeam &team,const Real sza_in, const Real *alb_in, const Real *p_in,
-           const Real *t_in, const Real *colo3_in, const View4D &xsqy,
-           const Real *sza, const Real *del_sza, const Real *alb,
-           const Real *press, const Real *del_p, const Real *colo3,
-           const Real *o3rat, const Real *del_alb, const Real *del_o3rat,
-           const Real *etfphot, const View5D &rsf_tab, const Real *prs,
-           const Real *dprs, const int nw, const int nump, const int numsza,
-           const int numcolo3, const int numalb, const int np_xs,
-           const int numj,
+void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
+           const Real *p_in, const Real *t_in, const Real *colo3_in,
+           const View4D &xsqy, const Real *sza, const Real *del_sza,
+           const Real *alb, const Real *press, const Real *del_p,
+           const Real *colo3, const Real *o3rat, const Real *del_alb,
+           const Real *del_o3rat, const Real *etfphot, const View5D &rsf_tab,
+           const Real *prs, const Real *dprs, const int nw, const int nump,
+           const int numsza, const int numcolo3, const int numalb,
+           const int np_xs, const int numj,
            const View2D &j_long, // output
            // work arrays
            const View2D &rsf, const View2D &xswk, Real *psum_l,
@@ -640,8 +637,7 @@ void jlong( const ThreadTeam &team,const Real sza_in, const Real *alb_in, const 
   // To avoid the 'pver is undefined' error during CUDA code compilation.
   constexpr int pver_local = pver;
   team.team_barrier();
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
-                         [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local), [&](int kk) {
     /*----------------------------------------------------------------------
       ... get index into xsqy
      ----------------------------------------------------------------------*/
@@ -702,7 +698,7 @@ void jlong( const ThreadTeam &team,const Real sza_in, const Real *alb_in, const 
       } // wn
       j_long(i, kk) = suma;
     } // i
-  });   // end kk
+  }); // end kk
 
 } // jlong
 
@@ -759,12 +755,12 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
     /*-----------------------------------------------------------------
          ... compute eff_alb and cld_mult -- needs to be before jlong
     -----------------------------------------------------------------*/
-    cloud_mod( zen_angle, clouds, lwc, pdel,
+    cloud_mod(zen_angle, clouds, lwc, pdel,
               srf_alb, //  in
               eff_alb, cld_mult);
-for (int kk = 0; kk < pver; kk++) {
-    // Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
-    //                      [&](int kk) {
+    for (int kk = 0; kk < pver; kk++) {
+      // Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+      //                      [&](int kk) {
       parg[kk] = pmid(kk) * Pa2mb;
       cld_mult[kk] *= esfact;
     }
@@ -789,18 +785,18 @@ for (int kk = 0; kk < pver; kk++) {
           work_arrays.psum_u.data());
 
     team.team_barrier();
-    Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, phtcnt), [&](int mm) {
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, phtcnt), [&](int mm) {
       if (table_data.lng_indexer(mm) > -1) {
-      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
-          photo(kk, mm) =
-              cld_mult[kk] *
-              (photo(kk, mm) +
-               table_data.pht_alias_mult_1(mm) *
-                   work_arrays.lng_prates(table_data.lng_indexer(mm), kk));
-        }); // end kk
-      }   // end if
-    });     // end mm
+        Kokkos::parallel_for(
+            Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
+              photo(kk, mm) =
+                  cld_mult[kk] *
+                  (photo(kk, mm) +
+                   table_data.pht_alias_mult_1(mm) *
+                       work_arrays.lng_prates(table_data.lng_indexer(mm), kk));
+            }); // end kk
+      }         // end if
+    });         // end mm
   }
 
   // } // end col_loop
