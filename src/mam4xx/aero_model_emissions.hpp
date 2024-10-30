@@ -25,26 +25,26 @@ enum class FluxType { MassFlux, NumberFlux };
 //      Dust Parameters/Constants
 // =============================================================================
 // nbin corresponds to dst_a1, dst_a3
-const int dust_nbin = 2;
+constexpr int dust_nbin = 2;
 // nnum corresponds to num_a1, num_a3
-const int dust_nnum = 2;
+constexpr int dust_nnum = 2;
 // number of entries in the dust flux input array
-const int dust_nflux_in = 4;
+constexpr int dust_nflux_in = 4;
 // tuning parameter for dust emissions
-const Real dust_emis_fact = -1.0e36;
+constexpr Real dust_emis_fact = -1.0e36;
 // Aerosol density [kg m-3]
-const Real dust_density = 2.5e3;
-const int dust_indices[dust_nbin + dust_nnum] = {19, 28, 22, 35};
+constexpr Real dust_density = 2.5e3;
+constexpr int dust_indices[dust_nbin + dust_nnum] = {19, 28, 22, 35};
 
 struct DustEmissionsData {
   // Kok11: fractions of bin (0.1-1) and bin (1-10) in size 0.1-10
-  const Real dust_emis_scalefactor[dust_nbin] = {0.011, 0.989};
+  static constexpr Real dust_emis_scalefactor[dust_nbin] = {0.011, 0.989};
   // got this value from fortran mam4::dust_model.F90:26
-  const Real dust_dmt_grd[dust_nbin + 1] = {1.0e-7, 1.0e-6, 1.0e-5};
+  static constexpr Real dust_dmt_grd[dust_nbin + 1] = {1.0e-7, 1.0e-6, 1.0e-5};
   // tuning parameter for dust emissions
   // perhaps unnecessary? it's not entirely clear to me what happens in
   // the fortran call soil_erod_mod::soil_erod_init() where this is set
-  const Real soil_erosion_factor = 1.5;
+  static constexpr Real soil_erosion_factor = 1.5;
   // this is set by init_dust_dmt_vwr() which takes in a constant value for
   // dust_dmt_grd (above)
   Real dust_dmt_vwr[dust_nbin];
@@ -52,21 +52,21 @@ struct DustEmissionsData {
 // =============================================================================
 //      Sea Salt Parameters/Constants
 // =============================================================================
-const int salt_nsection = 31;
+constexpr int salt_nsection = 31;
 // TODO: Unnecessary indices?
 // NOTE: to keep with standard c++ looping convention
 //       e.g., for i in [beg, end), we subtract 1 from the fortran begin
 //       indices, but not the end
-const int sec1_beg = 1 - 1;
-const int sec1_end = 9;
-const int sec2_beg = 10 - 1;
-const int sec2_end = 13;
-const int sec3_beg = 14 - 1;
-const int sec3_end = 21;
-const int sec4_beg = 22 - 1;
-const int sec4_end = salt_nsection;
+constexpr int sec1_beg = 1 - 1;
+constexpr int sec1_end = 9;
+constexpr int sec2_beg = 10 - 1;
+constexpr int sec2_end = 13;
+constexpr int sec3_beg = 14 - 1;
+constexpr int sec3_end = 21;
+constexpr int sec4_beg = 22 - 1;
+constexpr int sec4_end = salt_nsection;
 // Aerosol density [kg m-3]
-const Real seasalt_density = 2.2e3;
+constexpr Real seasalt_density = 2.2e3;
 
 // NOTE: nsalt is a model-fixed value for our purposes
 // (mam4 => ntot_amode = 4 => ntot_amode = 3), so it seems like
@@ -77,7 +77,7 @@ const Real seasalt_density = 2.2e3;
 // using as an index
 // const int nsalt = haero::max(3, ntot_amode - 3);
 constexpr int nsalt = 3;
-const int nnum = nsalt;
+constexpr int nnum = nsalt;
 constexpr int nsalt_om = 3;
 constexpr int nnum_om = 1;
 constexpr int om_num_modes = 3;
@@ -86,26 +86,26 @@ constexpr int seasalt_nbin = nsalt + nsalt_om;
 constexpr int seasalt_nnum = nnum + nnum_om;
 
 // FIXME: should this be read from the namelist instead?
-const Real seasalt_emis_scalefactor = 0.6;
+constexpr Real seasalt_emis_scalefactor = 0.6;
 // =============================================================================
 //      Marine Organic Matter Parameters/Constants
 // =============================================================================
-const int n_ocean_data = 4;
-const int n_organic_species = 3;
+constexpr int n_ocean_data = 4;
+constexpr int n_organic_species = 3;
 // FIXME: probably don't need this?
-const int n_organic_species_max = 3;
+constexpr int n_organic_species_max = 3;
 // is this different from n_organic_species? both appear in the fortran
-const int organic_num_modes = 3;
+constexpr int organic_num_modes = 3;
 // Parameters for organic sea salt emissions
 // approx volume density of salt in seawater [g/m^3]
-const Real vol_density_NaCl_seawater = 35875.0;
+constexpr Real vol_density_NaCl_seawater = 35875.0;
 // Namelist variables for parameterization specification
 // Bubble film thickness [m]
 // NOTE: this is given as 0.1e-6 in the fortran
-const Real l_bub = 1.0e-7;
+constexpr Real l_bub = 1.0e-7;
 // smallest ocean organic concentration allowed
-const Real small_oceanorg = 1.0e-30;
-const bool emit_this_mode[om_num_modes] = {true, true, false};
+constexpr Real small_oceanorg = 1.0e-30;
+constexpr bool emit_this_mode[om_num_modes] = {true, true, false};
 
 struct SeasaltEmissionsData {
   // use Ekmam's ss
@@ -123,7 +123,7 @@ struct SeasaltEmissionsData {
 
   // FIXME: BAD CONSTANTS
   // only use up to ~20um
-  const Real Dg[salt_nsection] = {
+  static constexpr Real Dg[salt_nsection] = {
       2.0e-8,    2.5e-8,    3.2e-8,   4.0e-8,   5.1e-8,   6.5e-8,   8.2e-8,
       1.04e-7,   1.32e-7,   1.67e-7,  2.11e-7,  2.67e-7,  3.38e-7,  4.28e-7,
       5.41e-7,   6.85e-7,   8.67e-7,  1.098e-6, 1.389e-6, 1.759e-6, 2.226e-6,
@@ -133,25 +133,27 @@ struct SeasaltEmissionsData {
   // OM:OC mass ratios for input fields (mpoly, mprot, mlip)
   // Order: mpoly, mprot, mlip
   // FIXME: BAD CONSTANTS
-  const Real OM_to_OC_in[n_organic_species] = {2.3, 2.2, 1.3};
+  static constexpr Real OM_to_OC_in[n_organic_species] = {2.3, 2.2, 1.3};
   // Langmuir parameters (inverse C_1/2)  [m3 mol-1]
-  const Real alpha_org[n_organic_species] = {90.58, 25175.0, 18205.0};
+  static constexpr Real alpha_org[n_organic_species] = {90.58, 25175.0,
+                                                        18205.0};
   // Molecular weights [g mol-1]
-  const Real mw_org[n_organic_species] = {250000.0, 66463.0, 284.0};
+  static constexpr Real mw_org[n_organic_species] = {250000.0, 66463.0, 284.0};
   // mass per sq. m at saturation [Mw_org / a_org]
-  const Real dens_srf_org[n_organic_species] = {0.1376, 0.00219, 0.002593};
+  static constexpr Real dens_srf_org[n_organic_species] = {0.1376, 0.00219,
+                                                           0.002593};
 
   // entries correspond to:
   //        accum, aitken, coarse
   //        accum, aitken, POM accum
   // the indices here are meant to correspond to the seasalt "bins"
-  const Real seasalt_size_range_lo[seasalt_nbin] = {8.0e-8, 2.0e-8, 1.0e-6,
-                                                    8.0e-8, 2.0e-8, 8.0e-8};
-  const Real seasalt_size_range_hi[seasalt_nbin] = {1.0e-6, 8.0e-8, 1.0e-5,
-                                                    1.0e-6, 8.0e-8, 1.0e-6};
-  const int seasalt_indices[seasalt_nbin + seasalt_nnum] = {20, 25, 29, 21, 26,
-                                                            38, 22, 27, 35, 39};
-  const int organic_num_idx[organic_num_modes] = {0, 1, 3};
+  static constexpr Real seasalt_size_range_lo[seasalt_nbin] = {
+      8.0e-8, 2.0e-8, 1.0e-6, 8.0e-8, 2.0e-8, 8.0e-8};
+  static constexpr Real seasalt_size_range_hi[seasalt_nbin] = {
+      1.0e-6, 8.0e-8, 1.0e-5, 1.0e-6, 8.0e-8, 1.0e-6};
+  static constexpr int seasalt_indices[seasalt_nbin + seasalt_nnum] = {
+      20, 25, 29, 21, 26, 38, 22, 27, 35, 39};
+  static constexpr int organic_num_idx[organic_num_modes] = {0, 1, 3};
 
   Real mpoly, mprot, mlip;
 };
@@ -291,8 +293,7 @@ void dust_emis(
     // in
     const int dust_indices[dust_nbin + dust_nnum], const Real dust_density,
     const Real (&dust_flux_in)[dust_nflux_in], const DustEmissionsData data,
-    //  out
-    Real &soil_erodibility,
+    const Real &soil_erodibility,
     //  inout
     Real (&cflux)[pcnst]) {
   // dust_flux_in: dust emission fluxes in
@@ -300,7 +301,7 @@ void dust_emis(
   // soil_erod: soil erodibility factor [unitless]
 
   // FIXME: BAD CONSTANT
-  Real soil_erod_threshold = 0.1;
+  constexpr Real soil_erod_threshold = 0.1;
 
   // dust_density[dust_nbin] -- Mass weighted diameter resolved [m]
   Real dust_mass_to_num[dust_nbin];
@@ -323,12 +324,12 @@ void dust_emis(
     // FIXME: BAD CONSTANTS
     Real frac_ratio = 0.73 / 0.87;
     for (int ibin = 0; ibin < dust_nbin; ++ibin) {
-      int idx_dust = dust_indices[ibin];
+      const int idx_dust = dust_indices[ibin];
       // FIXME: BAD CONSTANT
       cflux[idx_dust] = dust_flux_neg_sum * frac_ratio *
                         data.dust_emis_scalefactor[ibin] * soil_erodibility /
                         data.soil_erosion_factor * 1.15;
-      int inum = dust_indices[ibin + dust_nbin];
+      const int inum = dust_indices[ibin + dust_nbin];
       cflux[inum] = cflux[idx_dust] * dust_mass_to_num[ibin];
     }
   } else {
@@ -890,8 +891,7 @@ KOKKOS_INLINE_FUNCTION
 void aero_model_emissions(
     // in
     OnlineEmissionsData online_emiss_data, SeasaltEmissionsData seasalt_data,
-    DustEmissionsData dust_data, const const_view_2d &dstflx,
-    const const_view_1d &soil_erodibility,
+    DustEmissionsData dust_data,
     // inout
     // NOTE: fortran: cam_in%cflx
     Real (&cflux)[pcnst]) {
@@ -915,17 +915,21 @@ void aero_model_emissions(
   const Real ocean_frac = online_emiss_data.ocean_frac;
 
   Real fi[salt_nsection];
-  // Real soil_erodibility = online_emiss_data.soil_erodibility;
+  const Real soil_erodibility = online_emiss_data.soil_erodibility;
 
   init_dust_dmt_vwr(dust_data.dust_dmt_grd, dust_data.dust_dmt_vwr);
-  printf("dust_dmt_vwr:%0.15E,%i\n,", dust_data.dust_dmt_vwr[0], 1);
-  printf("dust_dmt_vwr:%0.15E,%i\n,", dust_data.dust_dmt_vwr[1], 2);
-#if 0
+  printf("dust_dmt_vwr:   %0.15E, %i\n", dust_data.dust_dmt_vwr[0], 1);
+  printf("dust_dmt_vwr:   %0.15E, %i\n", dust_data.dust_dmt_vwr[1], 2);
+
   dust_emis(
       // in
       dust_indices, dust_density, dust_flux_in, dust_data, soil_erodibility,
       // inout
       cflux);
+  for (int ic = 0; ic < pcnst; ++ic) {
+    printf("cflux:   %0.15E, %i\n", cflux[ic], ic + 1);
+  }
+#if 0
   init_seasalt(seasalt_data);
 
   calculate_seasalt_numflux_in_bins(
@@ -965,12 +969,33 @@ void aero_model_emissions(
 #endif
 
 KOKKOS_INLINE_FUNCTION
-void aero_model_emissions(const const_view_2d &dstflx,
-                          const const_view_1d &soil_erodibility,
+void aero_model_emissions(const Real sst, const Real ocnfrac,
+                          const Real u_bottom, const Real v_bottom,
+                          const const_view_1d &dstflx,
+                          const Real &soil_erodibility,
                           // inout
                           view_1d &cflux_) {
 
+  // Populate online emission data structure with inputs
   OnlineEmissionsData online_emiss_data;
+  for (int idst = 0; idst < dust_nflux_in; ++idst) {
+    online_emiss_data.dust_flux_in[idst] = dstflx(idst);
+    printf("dstflx:   %0.15E, %i\n", online_emiss_data.dust_flux_in[idst],
+           idst);
+  }
+  online_emiss_data.surface_temp = sst;
+  online_emiss_data.u_bottom = u_bottom;
+  online_emiss_data.v_bottom = v_bottom;
+  // online_emiss_data.z_bottom     = z_bottom;
+  online_emiss_data.ocean_frac = ocnfrac;
+  // FXME: HARDWIRED- remove it!!!!
+  online_emiss_data.soil_erodibility =
+      4.863882353680667E-01; // soil_erodibility;
+  printf("Others:   %0.15E,   %0.15E,   %0.15E,   %0.15E,   %0.15E\n ",
+         online_emiss_data.surface_temp, online_emiss_data.u_bottom,
+         online_emiss_data.v_bottom, online_emiss_data.ocean_frac,
+         online_emiss_data.soil_erodibility);
+
   SeasaltEmissionsData seasalt_data;
   DustEmissionsData dust_data;
   Real cflux[pcnst];
@@ -978,9 +1003,8 @@ void aero_model_emissions(const const_view_2d &dstflx,
     cflux[i] = cflux_(i);
   }
   // BALLI: we are calling this one
-  aero_model_emissions(online_emiss_data, seasalt_data, dust_data, dstflx,
-                       soil_erodibility, // in
-                       cflux);           // out
+  aero_model_emissions(online_emiss_data, seasalt_data, dust_data,
+                       cflux); // out
 } // end aero_model_emissions()
 } // namespace mam4::aero_model_emissions
 #endif
