@@ -635,6 +635,7 @@ void calc_org_matter_seasalt(
 
   // Convert input fields from [(mol C) L-1] to [(g OM) m-3] and store in single
   // array
+  printf("data.mpoly:%0.15E\n", data.mpoly);
   om_conc[0] = data.mpoly * liter_to_m3 * data.OM_to_OC_in[0] * mw_carbon;
   om_conc[1] = data.mprot * liter_to_m3 * data.OM_to_OC_in[1] * mw_carbon;
   om_conc[2] = data.mlip * liter_to_m3 * data.OM_to_OC_in[2] * mw_carbon;
@@ -1010,7 +1011,12 @@ void aero_model_emissions(const Real sst, const Real ocnfrac,
          online_emiss_data.v_bottom, online_emiss_data.ocean_frac,
          online_emiss_data.soil_erodibility);
 
+  // Populate Seasalt emissions data structure with inputs
   SeasaltEmissionsData seasalt_data;
+  seasalt_data.mpoly = 3.909365073000987E+01;
+  seasalt_data.mprot = 1.172809521900296E+01;
+  seasalt_data.mlip = 1.829681307266457E-02;
+
   DustEmissionsData dust_data;
   Real cflux[pcnst];
   for (int i = 0; i < pcnst; ++i) {
