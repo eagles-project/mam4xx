@@ -149,7 +149,7 @@ void table_photo(Ensemble *ensemble) {
     Kokkos::deep_copy(srf_alb, srf_alb_host);
     Kokkos::deep_copy(zen_angle, zen_angle_host);
 
-    auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO );
+    auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           const int i = team.league_rank();
