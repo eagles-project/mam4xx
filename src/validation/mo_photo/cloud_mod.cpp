@@ -28,32 +28,30 @@ void cloud_mod(Ensemble *ensemble) {
     const auto srf_alb = input.get_array("srf_alb")[0];
     // const auto  = input.get_array("");
     constexpr Real zero = 0;
-    std::cout << "clouds_db.size() " << clouds_db.size()<< "\n";
-
-    auto clouds_host = View1DHost((Real *)clouds_db.data(), clouds_db.size());
-    View1D clouds("clouds", clouds_db.size());
+    auto clouds_host = View1DHost((Real *)clouds_db.data(), pver);
+    View1D clouds("clouds", pver);
     Kokkos::deep_copy(clouds, clouds_host);
 
-    auto lwc_host = View1DHost((Real *)lwc_db.data(), lwc_db.size());
-    const auto lwc = View1D("lwc", lwc_db.size());
+    auto lwc_host = View1DHost((Real *)lwc_db.data(), pver);
+    const auto lwc = View1D("lwc", pver);
     Kokkos::deep_copy(lwc, lwc_host);
 
-    auto delp_host = View1DHost((Real *)delp_db.data(), delp_db.size());
-    const auto delp = View1D("delp", delp_db.size());
+    auto delp_host = View1DHost((Real *)delp_db.data(), pver);
+    const auto delp = View1D("delp", pver);
     Kokkos::deep_copy(delp, delp_host);
 
     View1D eff_alb("eff_alb", pver);
     View1D cld_mult("cld_mult", pver);
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
-#if 1
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-    cloud_mod(team, zen_angle, clouds.data(), lwc.data(), delp.data(),
+    cloud_mod(
+       zen_angle, clouds, lwc, delp,
               srf_alb, //  in
               eff_alb.data(), cld_mult.data());
+
     });
-#endif
     std::vector<Real> eff_alb_db(pver, zero);
     std::vector<Real> cld_mult_db(pver, zero);
 
