@@ -982,10 +982,11 @@ void aero_model_emissions(
 #endif
 
 KOKKOS_INLINE_FUNCTION
-void aero_model_emissions(const Real sst, const Real ocnfrac,
-                          const Real u_bottom, const Real v_bottom,
-                          const Real z_bottom, const const_view_1d &dstflx,
-                          const Real &soil_erodibility,
+void aero_model_emissions(const Real &sst, const Real &ocnfrac,
+                          const Real &u_bottom, const Real &v_bottom,
+                          const Real &z_bottom, const const_view_1d &dstflx,
+                          const Real &soil_erodibility, const Real &mpoly,
+                          const Real &mprot, const Real &mlip,
                           // inout
                           view_1d &cflux_) {
 
@@ -1006,16 +1007,11 @@ void aero_model_emissions(const Real sst, const Real ocnfrac,
       0.000000000000000E+00; // soil_erodibility;
                              // FIXME remove ^^
 
-  printf("Others:   %0.15E,   %0.15E,   %0.15E,   %0.15E,   %0.15E\n ",
-         online_emiss_data.surface_temp, online_emiss_data.u_bottom,
-         online_emiss_data.v_bottom, online_emiss_data.ocean_frac,
-         online_emiss_data.soil_erodibility);
-
   // Populate Seasalt emissions data structure with inputs
   SeasaltEmissionsData seasalt_data;
-  seasalt_data.mpoly = 3.909365073000987E+01;
-  seasalt_data.mprot = 1.172809521900296E+01;
-  seasalt_data.mlip = 1.829681307266457E-02;
+  seasalt_data.mpoly = mpoly;
+  seasalt_data.mprot = mprot;
+  seasalt_data.mlip = mlip;
 
   DustEmissionsData dust_data;
   Real cflux[pcnst];
