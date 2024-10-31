@@ -22,6 +22,7 @@ using View5D = DeviceType::view_ND<Real, 5>;
 using View4D = DeviceType::view_ND<Real, 4>;
 using View2D = DeviceType::view_2d<Real>;
 using View1D = DeviceType::view_1d<Real>;
+using ConstView1D = DeviceType::view_1d<const Real>;
 using ViewInt1D = DeviceType::view_1d<int>;
 
 // photolysis table data (common to all columns)
@@ -132,8 +133,8 @@ void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
 } // set_photo_table_work_arrays
 
 KOKKOS_INLINE_FUNCTION
-void cloud_mod(const Real zen_angle, const Real *clouds, const Real *lwc,
-               const Real *delp,
+void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
+               const ConstView1D &lwc, const ConstView1D &delp,
                const Real srf_alb, //  in
                Real *eff_alb, Real *cld_mult) {
   /*-----------------------------------------------------------------------
@@ -397,8 +398,8 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
 } // calc_sum_wght
 
 KOKKOS_INLINE_FUNCTION
-void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
-                     const Real *colo3_in,
+void interpolate_rsf(const ThreadTeam &team, const Real *alb_in,
+                     const Real sza_in, const Real *p_in, const Real *colo3_in,
                      const int kbot, //  in
                      const Real *sza, const Real *del_sza, const Real *alb,
                      const Real *press, const Real *del_p, const Real *colo3,
@@ -541,8 +542,11 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
      -- nm)
        ... --> convert to photons/cm^2/s
      ------------------------------------------------------------------------------*/
+    team.team_barrier();
     for (int wn = 0; wn < nw; wn++) {
-      rsf(wn, kk) *= etfphot[wn];
+      Kokkos::single(Kokkos::PerTeam(team),
+                     [=]() { rsf(wn, kk) *= etfphot[wn]; });
+
     } // end for wn
 
   } // end Level_loop
@@ -551,15 +555,15 @@ void interpolate_rsf(const Real *alb_in, const Real sza_in, const Real *p_in,
 
 //======================================================================================
 KOKKOS_INLINE_FUNCTION
-void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
-           const Real *t_in, const Real *colo3_in, const View4D &xsqy,
-           const Real *sza, const Real *del_sza, const Real *alb,
-           const Real *press, const Real *del_p, const Real *colo3,
-           const Real *o3rat, const Real *del_alb, const Real *del_o3rat,
-           const Real *etfphot, const View5D &rsf_tab, const Real *prs,
-           const Real *dprs, const int nw, const int nump, const int numsza,
-           const int numcolo3, const int numalb, const int np_xs,
-           const int numj,
+void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
+           const Real *p_in, const Real *t_in, const Real *colo3_in,
+           const View4D &xsqy, const Real *sza, const Real *del_sza,
+           const Real *alb, const Real *press, const Real *del_p,
+           const Real *colo3, const Real *o3rat, const Real *del_alb,
+           const Real *del_o3rat, const Real *etfphot, const View5D &rsf_tab,
+           const Real *prs, const Real *dprs, const int nw, const int nump,
+           const int numsza, const int numcolo3, const int numalb,
+           const int np_xs, const int numj,
            const View2D &j_long, // output
            // work arrays
            const View2D &rsf, const View2D &xswk, Real *psum_l,
@@ -615,7 +619,7 @@ void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
     ... interpolate table rsf to model variables
 ----------------------------------------------------------------------*/
   const Real zero = 0;
-  interpolate_rsf(alb_in, sza_in, p_in, colo3_in, pver, sza, del_sza, alb,
+  interpolate_rsf(team, alb_in, sza_in, p_in, colo3_in, pver, sza, del_sza, alb,
                   press, del_p, colo3, o3rat, del_alb, del_o3rat, etfphot,
                   rsf_tab, //  in
                   nw, nump, numsza, numcolo3, numalb, rsf, psum_l,
@@ -631,8 +635,10 @@ void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
    150 to 350 degrees K.  Make sure the index is a value
    between 1 and 201.
   ------------------------------------------------------------------------------*/
-
-  for (int kk = 0; kk < pver; kk++) {
+  // To avoid the 'pver is undefined' error during CUDA code compilation.
+  constexpr int pver_local = pver;
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local), [&](int kk) {
     /*----------------------------------------------------------------------
       ... get index into xsqy
      ----------------------------------------------------------------------*/
@@ -693,14 +699,14 @@ void jlong(const Real sza_in, const Real *alb_in, const Real *p_in,
       } // wn
       j_long(i, kk) = suma;
     } // i
-  }   // end kk
+  }); // end kk
 
 } // jlong
 
 // FIXME: note the use of ConstColumnView for views we get from the
 // FIXME: haero::Atmosphere type
 KOKKOS_INLINE_FUNCTION
-void table_photo(const View2D &photo, // out
+void table_photo(const ThreadTeam &team, const View2D &photo, // out
                  const ConstColumnView &pmid, const ConstColumnView &pdel,
                  const ConstColumnView &temper, // in
                  const ColumnView &colo3_in, const Real zen_angle,
@@ -750,19 +756,18 @@ void table_photo(const View2D &photo, // out
     /*-----------------------------------------------------------------
          ... compute eff_alb and cld_mult -- needs to be before jlong
     -----------------------------------------------------------------*/
-    cloud_mod(zen_angle, clouds.data(), lwc.data(), pdel.data(),
+    cloud_mod(zen_angle, clouds, lwc, pdel,
               srf_alb, //  in
               eff_alb, cld_mult);
-
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < pver; kk++) {
       parg[kk] = pmid(kk) * Pa2mb;
       cld_mult[kk] *= esfact;
-    } // kk
+    }
     /*-----------------------------------------------------------------
      ... long wave length component
     -----------------------------------------------------------------*/
 
-    jlong(sza_in, eff_alb, parg, temper.data(), colo3_in.data(),
+    jlong(team, sza_in, eff_alb, parg, temper.data(), colo3_in.data(),
           table_data.xsqy, table_data.sza.data(), table_data.del_sza.data(),
           table_data.alb.data(), table_data.press.data(),
           table_data.del_p.data(), table_data.colo3.data(),
@@ -777,17 +782,19 @@ void table_photo(const View2D &photo, // out
           work_arrays.rsf, work_arrays.xswk, work_arrays.psum_l.data(),
           work_arrays.psum_u.data());
 
-    for (int mm = 0; mm < phtcnt; ++mm) {
+    team.team_barrier();
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, phtcnt), [&](int mm) {
       if (table_data.lng_indexer(mm) > -1) {
-        for (int kk = 0; kk < pver; ++kk) {
-          photo(kk, mm) =
-              cld_mult[kk] *
-              (photo(kk, mm) +
-               table_data.pht_alias_mult_1(mm) *
-                   work_arrays.lng_prates(table_data.lng_indexer(mm), kk));
-        } // end kk
-      }   // end if
-    }     // end mm
+        Kokkos::parallel_for(
+            Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
+              photo(kk, mm) =
+                  cld_mult[kk] *
+                  (photo(kk, mm) +
+                   table_data.pht_alias_mult_1(mm) *
+                       work_arrays.lng_prates(table_data.lng_indexer(mm), kk));
+            }); // end kk
+      }         // end if
+    });         // end mm
   }
 
   // } // end col_loop
