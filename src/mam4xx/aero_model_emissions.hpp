@@ -635,7 +635,6 @@ void calc_org_matter_seasalt(
 
   // Convert input fields from [(mol C) L-1] to [(g OM) m-3] and store in single
   // array
-  printf("data.mpoly:%0.15E\n", data.mpoly);
   om_conc[0] = data.mpoly * liter_to_m3 * data.OM_to_OC_in[0] * mw_carbon;
   om_conc[1] = data.mprot * liter_to_m3 * data.OM_to_OC_in[1] * mw_carbon;
   om_conc[2] = data.mlip * liter_to_m3 * data.OM_to_OC_in[2] * mw_carbon;
@@ -887,7 +886,6 @@ void marine_organic_emissions(
       cflux);
 } // end marine_organic_emissions()
 
-// BALLI: we are calling this
 KOKKOS_INLINE_FUNCTION
 void aero_model_emissions(
     // in
@@ -919,17 +917,12 @@ void aero_model_emissions(
   const Real soil_erodibility = online_emiss_data.soil_erodibility;
 
   init_dust_dmt_vwr(dust_data.dust_dmt_grd, dust_data.dust_dmt_vwr);
-  printf("dust_dmt_vwr:   %0.15E, %i\n", dust_data.dust_dmt_vwr[0], 1);
-  printf("dust_dmt_vwr:   %0.15E, %i\n", dust_data.dust_dmt_vwr[1], 2);
 
   dust_emis(
       // in
       dust_indices, dust_density, dust_flux_in, dust_data, soil_erodibility,
       // inout
       cflux);
-  for (int ic = 0; ic < pcnst; ++ic) {
-    printf("cflux:   %0.15E, %i\n", cflux[ic], ic + 1);
-  }
 
   init_seasalt(seasalt_data);
 
@@ -939,47 +932,20 @@ void aero_model_emissions(
       seasalt_data.constb,
       // out
       fi);
-  for (int ic = 0; ic < salt_nsection; ++ic) {
-    printf("fi:   %0.15E, %i\n", fi[ic], ic + 1);
-  }
 
   seasalt_emis(
       // in
       fi, ocean_frac, seasalt_emis_scalefactor, seasalt_data,
       //  inout
       cflux);
-  for (int ic = 0; ic < 40; ++ic) {
-    printf("cam_in-cflx-se:   %0.15E, %i\n", cflux[ic], ic + 1);
-  }
 
   marine_organic_emissions(
       // in
       fi, ocean_frac, seasalt_emis_scalefactor, seasalt_data, emit_this_mode,
       // inout
       cflux);
-  for (int ic = 0; ic < 40; ++ic) {
-    printf("cam_in-cflx-mo:   %0.15E, %i\n", cflux[ic], ic + 1);
-  }
-#if 0
-#endif
-} // end aero_model_emissions()
-#if 0
-KOKKOS_INLINE_FUNCTION
-void aero_model_emissions(
-    // in
-    OnlineEmissionsData online_emiss_data, SeasaltEmissionsData seasalt_data,
-    DustEmissionsData dust_data,
-    // inout
-    // NOTE: fortran: cam_in%cflx
-    view_1d &cflux_) {
 
-  Real cflux[pcnst];
-  for (int i = 0; i < pcnst; ++i) {
-    cflux[i] = cflux_(i);
-  }
-  aero_model_emissions(online_emiss_data, seasalt_data, dust_data, cflux);
 } // end aero_model_emissions()
-#endif
 
 KOKKOS_INLINE_FUNCTION
 void aero_model_emissions(const Real &sst, const Real &ocnfrac,
@@ -994,18 +960,14 @@ void aero_model_emissions(const Real &sst, const Real &ocnfrac,
   OnlineEmissionsData online_emiss_data;
   for (int idst = 0; idst < dust_nflux_in; ++idst) {
     online_emiss_data.dust_flux_in[idst] = dstflx(idst);
-    printf("dstflx:   %0.15E, %i\n", online_emiss_data.dust_flux_in[idst],
-           idst);
   }
   online_emiss_data.surface_temp = sst;
   online_emiss_data.u_bottom = u_bottom;
   online_emiss_data.v_bottom = v_bottom;
   online_emiss_data.ocean_frac = ocnfrac;
   // FIXME: HARDWIRED- remove it!!!!
-  online_emiss_data.z_bottom = 0.13319090943608003E+002; // z_bottom;
-  online_emiss_data.soil_erodibility =
-      0.000000000000000E+00; // soil_erodibility;
-                             // FIXME remove ^^
+  online_emiss_data.z_bottom = z_bottom;
+  online_emiss_data.soil_erodibility = soil_erodibility;
 
   // Populate Seasalt emissions data structure with inputs
   SeasaltEmissionsData seasalt_data;
@@ -1018,7 +980,6 @@ void aero_model_emissions(const Real &sst, const Real &ocnfrac,
   for (int i = 0; i < pcnst; ++i) {
     cflux[i] = cflux_(i);
   }
-  // BALLI: we are calling this one
   aero_model_emissions(online_emiss_data, seasalt_data, dust_data,
                        cflux); // out
 } // end aero_model_emissions()
