@@ -542,9 +542,10 @@ void interpolate_rsf(const ThreadTeam &team, const Real *alb_in,
      -- nm)
        ... --> convert to photons/cm^2/s
      ------------------------------------------------------------------------------*/
+    team.team_barrier();
     for (int wn = 0; wn < nw; wn++) {
       Kokkos::single(Kokkos::PerTeam(team),
-                     [&]() { rsf(wn, kk) *= etfphot[wn]; });
+                     [=]() { rsf(wn, kk) *= etfphot[wn]; });
 
     } // end for wn
 
