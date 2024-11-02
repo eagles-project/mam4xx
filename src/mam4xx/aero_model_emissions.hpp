@@ -965,7 +965,6 @@ void aero_model_emissions(const Real &sst, const Real &ocnfrac,
   online_emiss_data.u_bottom = u_bottom;
   online_emiss_data.v_bottom = v_bottom;
   online_emiss_data.ocean_frac = ocnfrac;
-  // FIXME: HARDWIRED- remove it!!!!
   online_emiss_data.z_bottom = z_bottom;
   online_emiss_data.soil_erodibility = soil_erodibility;
 
