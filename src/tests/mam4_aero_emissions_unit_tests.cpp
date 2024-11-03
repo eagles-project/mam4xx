@@ -26,7 +26,7 @@ TEST_CASE("test_init_dust_dmt_vwr", "mam4_aero_emissions_unit_tests") {
                                       0.38983341139985417e-5};
 
   aero_model_emissions::DustEmissionsData dust_data;
-  //aero_model_emissions::init_dust_dmt_vwr(dust_dmt_grd, dust_dmt_vwr);
+  // aero_model_emissions::init_dust_dmt_vwr(dust_dmt_grd, dust_dmt_vwr);
   aero_model_emissions::init_dust_dmt_vwr(dust_data);
 
   for (int i = 0; i < dust_nbin; ++i) {
