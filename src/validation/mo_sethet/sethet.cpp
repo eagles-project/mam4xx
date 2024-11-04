@@ -164,12 +164,25 @@ void sethet(Ensemble *ensemble) {
       Kokkos::deep_copy(qin[mm], qin_host[mm]);
     }
 
+    // initialize internal veriables
+    ColumnView xeqca, xca, allca;
+    auto xeqca_host = View1DHost(vector0.data(), pver);
+    auto xca_host = View1DHost(vector0.data(), pver);
+    auto allca_host = View1DHost("allca_host", 1);
+    xeqca = haero::testing::create_column_view(pver);
+    xca = haero::testing::create_column_view(pver);
+    allca = haero::testing::create_column_view(1);
+    Kokkos::deep_copy(xeqca, xeqca_host);
+    Kokkos::deep_copy(xca, xca_host);
+    Kokkos::deep_copy(allca, allca_host);
+
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           mo_sethet::sethet(
               team, het_rates, rlat, press, zmid, phis, tfld, cmfdqr, nrain,
-              nevapr, delt, xhnm, qin, t_factor, xk0_hno3, xk0_so2, so2_diss,
+              nevapr, delt, xhnm, qin, xeqca, xca, allca, t_factor, xk0_hno3, 
+              xk0_so2, so2_diss,
               xgas2, xgas3, delz, xh2o2, xso2, xliq, rain, precip, xhen_h2o2,
               xhen_hno3, xhen_so2, tmp_hetrates, spc_h2o2_ndx, spc_so2_ndx,
               h2o2_ndx, so2_ndx, h2so4_ndx, gas_wetdep_cnt, wetdep_map);

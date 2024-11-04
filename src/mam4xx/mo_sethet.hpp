@@ -123,6 +123,7 @@ void gas_washout(
     const ColumnView &delz_i, // layer depth about interfaces [cm]  // in
     const ColumnView &xeqca,  // internal variable
     const ColumnView &xca,    // internal variable
+    const ColumnView &allca,  //internal variable, total of ca between level plev and kk [#/cm3]
     const ColumnView &xgas) { // gas concentration // inout
   //------------------------------------------------------------------------
   // calculate gas washout by cloud if not saturated
@@ -133,7 +134,6 @@ void gas_washout(
       6.0; // geometry factor (surf area/volume = geo_fac/diameter)
   constexpr Real xrm = .189;  // mean diameter of rain drop [cm]
   constexpr Real xum = 748.0; // mean rain drop terminal velocity [cm/s]
-  Real allca = 0.0; // total of ca between level plev and kk [#/cm3]
   static constexpr int pver_loc = pver;
 
   //-----------------------------------------------------------------
@@ -150,13 +150,8 @@ void gas_washout(
         //-----------------------------------------------------------------
         xca(k) = geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik *
                  cm3_2_m3;
-        // Kokkos::printf("xeqca[%d] : %f", k, xeqca(k));
-        // Kokkos::printf("xca[%d] : %f", k, xca(k));
-        Kokkos::printf("hello\n");
       });
   team.team_barrier();
-
-  // printf("hello\n");
 
   //-----------------------------------------------------------------
   //       ... if is not saturated (take hno3 as an example)
@@ -164,13 +159,17 @@ void gas_washout(
   //           otherwise
   //               hno3(gas)_new = hno3(gas)_old
   //-----------------------------------------------------------------
-  for(int kk = plev; kk < pver_loc; kk++) {
-      allca += xca(kk);
-      if (allca < xeqca(kk)) {
-            xgas(kk) = haero::max(xgas(kk) - xca(kk), 0.0);
-      }
-  }
-
+  allca(0) = 0.0;
+ for (int kk = plev; kk < pver; kk++) {
+      Kokkos::single(Kokkos::PerTeam(team),
+                     [=]() { 
+            allca(0) += xca(kk);
+            if (allca(0) < xeqca(kk)) {
+                  xgas(kk) = haero::max(xgas(kk) - xca(kk), 0.0);
+            }
+    });
+ } 
+            
 } // end subroutine gas_washout
 
 //=================================================================================
@@ -218,6 +217,9 @@ void sethet(
     const ColumnView &xhnm,   // total atms density [cm^-3] //in
     const ColumnView qin[gas_pcnst], // xported species [vmr]  //in
     // working variables
+    const ColumnView &xeqca,
+    const ColumnView &xca,   
+    const ColumnView &allca,  //total of ca between level plev and kk [#/cm3]
     const ColumnView
         &t_factor, // temperature factor to calculate henry's law parameters
     const ColumnView &xk0_hno3, const ColumnView &xk0_so2,
@@ -392,12 +394,14 @@ void sethet(
       stay = ((zmid(kk) - zsurf) * km2cm) / (xum * delt);
       stay = haero::min(stay, 1.0);
       // calculate gas washout by cloud
-      // gas_washout(team, kk, xkgm, xliq(kk), // in
-      //             xhen_h2o2, tfld, delz,    // in
-      //             xgas2);                   // inout
-      // gas_washout(team, kk, xkgm, xliq(kk), // in
-      //             xhen_so2, tfld, delz,     // in
-      //             xgas3);                   // inout
+      gas_washout(team, kk, xkgm, xliq(kk), // in
+                  xhen_h2o2, tfld, delz,    // in
+                  xeqca, xca, allca,        // in
+                  xgas2);                   // inout
+      gas_washout(team, kk, xkgm, xliq(kk), // in
+                  xhen_so2, tfld, delz,     // in
+                  xeqca, xca, allca,        // in
+                  xgas3);                   // inout
     }
     //-----------------------------------------------------------------
     //       ... calculate the lifetime of washout (second)
