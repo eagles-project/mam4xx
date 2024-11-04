@@ -217,7 +217,7 @@ KOKKOS_INLINE_FUNCTION
 void init_dust_dmt_vwr(DustEmissionsData &data) {
 
   // FIXME: BAD CONSTANT
-  const int sz_nbr = 200;
+  constexpr int sz_nbr = 200;
 
   // Introducing particle diameter. Needed by atm model and by dry dep model.
   // Taken from Charlie Zender's subroutines dst_psd_ini, dst_sz_rsl,
@@ -251,8 +251,8 @@ void init_dust_dmt_vwr(DustEmissionsData &data) {
 
   // Bin physical properties
   // [frc] Geometric std dev PaG77 p. 2080 Table1
-  Real gsd_anl = 2.0;
-  Real ln_gsd = haero::log(gsd_anl);
+  constexpr Real gsd_anl = 2.0;
+  const Real ln_gsd = haero::log(gsd_anl);
 
   // Set a fundamental statistic for each bin
   // Mass median diameter analytic She84 p.75 Table 1 [m]
@@ -304,7 +304,7 @@ void init_dust_dmt_vwr(DustEmissionsData &data) {
     // Lognormal distribution at sz_ctr
     // Factor in lognormal distribution
     // NOTE: original variable name in fortran: lngsdsqrttwopi_rcp
-    Real lnN_factor = 1.0 / (ln_gsd * haero::sqrt(2.0 * pi));
+    const Real lnN_factor = 1.0 / (ln_gsd * haero::sqrt(2.0 * pi));
 
     for (int m = 0; m < sz_nbr; ++m) {
       // Evaluate lognormal distribution for these sizes (call lgn_evl)
@@ -356,7 +356,7 @@ void dust_emis(
     // distribution in Zender03 to calculate fraction of bin (0.1-10um) in range
     // (0.1-20um) = 0.87 based on Kok11, that fraction is 0.73
     // FIXME: BAD CONSTANTS
-    Real frac_ratio = 0.73 / 0.87;
+    constexpr Real frac_ratio = 0.73 / 0.87;
     for (int ibin = 0; ibin < dust_nbin; ++ibin) {
       const int idx_dust = dust_indices[ibin];
       // FIXME: BAD CONSTANT
@@ -487,7 +487,7 @@ void calculate_seasalt_numflux_in_bins(
 
   // m roughness length over oceans--from ocean model
   // FIXME: BAD CONSTANT
-  const Real z0 = 0.0001;
+  constexpr Real z0 = 0.0001;
 
   // Needed in Gantt et al. calculation of organic mass fraction
   Real u10 = haero::sqrt(haero::square(u_bottom) + haero::square(v_bottom));
@@ -602,7 +602,7 @@ void om_fraction_accum_aitken(
   // -----------------------------------------------------------------------
 
   // FIXME: BAD CONSTANT
-  const Real om_seasalt_max = 1.0;
+  constexpr Real om_seasalt_max = 1.0;
 
   // Initialize array and set to zero for "fine sea salt" and
   // "coarse sea salt" modes
@@ -1013,13 +1013,18 @@ void aero_model_emissions(const Real &sst, const Real &ocnfrac,
   // initialize dust_dmt_vwr data
   init_dust_dmt_vwr(dust_data);
 
-  // FIXME: why not send it as an input as a view????
+  // Copy 1d view to an array
   Real cflux[pcnst];
   for (int i = 0; i < pcnst; ++i) {
     cflux[i] = cflux_(i);
   }
+  // Compute online emissions from dust and sea salt
   aero_model_emissions(online_emiss_data, seasalt_data, dust_data,
                        cflux); // out
+  // Update cflux_ 1d view with the updated cflux
+  for (int i = 0; i < pcnst; ++i) {
+    cflux_(i) = cflux[i];
+  }
 } // end aero_model_emissions()
 } // namespace mam4::aero_model_emissions
 #endif
