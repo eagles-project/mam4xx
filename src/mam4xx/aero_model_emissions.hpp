@@ -949,9 +949,12 @@ void aero_model_emissions(
   Real fi[salt_nsection];
   const Real soil_erodibility = online_emiss_data.soil_erodibility;
 
+  const Real dust_density_ = dust_density;
+  const Real seasalt_emis_scalefactor_ = seasalt_emis_scalefactor;
+
   dust_emis(
       // in
-      dust_density, dust_flux_in, dust_data, soil_erodibility,
+      dust_density_, dust_flux_in, dust_data, soil_erodibility,
       // inout
       cflux);
 
@@ -966,7 +969,7 @@ void aero_model_emissions(
 
   seasalt_emis(
       // in
-      fi, ocean_frac, seasalt_emis_scalefactor, seasalt_data,
+      fi, ocean_frac, seasalt_emis_scalefactor_, seasalt_data,
       //  inout
       cflux);
 
@@ -975,7 +978,7 @@ void aero_model_emissions(
 
   marine_organic_emissions(
       // in
-      fi, ocean_frac, seasalt_emis_scalefactor, seasalt_data, emit_this_mode,
+      fi, ocean_frac, seasalt_emis_scalefactor_, seasalt_data, emit_this_mode,
       // inout
       cflux);
 
