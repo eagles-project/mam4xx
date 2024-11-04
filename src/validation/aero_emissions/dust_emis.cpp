@@ -16,17 +16,11 @@ void dust_emis(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters
     // Declare array of strings for input names
-    std::string input_arrays[] = {"ncol",
-                                  "lchnk",
-                                  "dust_flux_in",
-                                  "soil_erod_fact",
-                                  "soil_erodibility",
-                                  "dust_density",
-                                  "pi",
-                                  "soil_erod_threshold",
-                                  "dust_dmt_vwr",
-                                  "dust_indices",
-                                  "dust_emis_sclfctr"};
+    std::string input_arrays[] = {
+        "ncol", "lchnk", "dust_flux_in", "soil_erod_fact", "soil_erodibility",
+        "dust_density", "pi", "soil_erod_threshold", "dust_dmt_vwr",
+        //                                  "dust_indices",
+        "dust_emis_sclfctr"};
 
     // Iterate over input_arrays and error if not in input
     for (std::string name : input_arrays) {
@@ -38,12 +32,12 @@ void dust_emis(Ensemble *ensemble) {
 
     const int dust_nflux_in = mam4::aero_model_emissions::dust_nflux_in;
     const int dust_nbin = mam4::aero_model_emissions::dust_nbin;
-    int dust_indices[4];
-    auto dust_idx_ = mam4::aero_model_emissions::dust_indices;
+    // int dust_indices[4];
+    // auto dust_idx_ = mam4::aero_model_emissions::dust_indices;
 
-    for (int i = 0; i < 4; ++i) {
-      dust_indices[i] = dust_idx_[i];
-    }
+    // for (int i = 0; i < 4; ++i) {
+    //   dust_indices[i] = dust_idx_[i];
+    // }
 
     const Real dust_density = input.get_array("dust_density")[0];
     const auto dust_flux_in_ = input.get_array("dust_flux_in");
@@ -62,9 +56,8 @@ void dust_emis(Ensemble *ensemble) {
       data.dust_dmt_vwr[i] = dust_dmt_vwr_[i];
     }
 
-    mam4::aero_model_emissions::dust_emis(dust_indices, dust_density,
-                                          dust_flux_in, data, soil_erodibility,
-                                          cflux);
+    mam4::aero_model_emissions::dust_emis(dust_density, dust_flux_in, data,
+                                          soil_erodibility, cflux);
 
     std::vector<Real> cflux_out;
     // NOTE: the only entries that are changed are (c++ indexing):
