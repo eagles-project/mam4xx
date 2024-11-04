@@ -1021,6 +1021,7 @@ void aero_model_emissions(const Real &sst, const Real &ocnfrac,
   // Compute online emissions from dust and sea salt
   aero_model_emissions(online_emiss_data, seasalt_data, dust_data,
                        cflux); // out
+
   // Update cflux_ 1d view with the updated cflux
   for (int i = 0; i < pcnst; ++i) {
     cflux_(i) = cflux[i];
