@@ -76,7 +76,7 @@ void calc_precip_rescale(
   total_pos = 0.0;
   // Kokkos::parallel_for(
   //     Kokkos::ThreadVectorRange(team, pver), KOKKOS_LAMBDA(int kk) { //team vector range
-        
+
   //     });
 
   Kokkos::parallel_reduce(
@@ -144,7 +144,7 @@ void gas_washout(
   //       ... calculate the saturation concentration eqca
   //-----------------------------------------------------------------
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, plev, pver_loc), [&](int k) { 
+      Kokkos::TeamVectorRange(team, plev, pver_loc), [&](int k) {
         // cal washout below cloud
         xeqca(k) = xgas(k) /
                    (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
@@ -166,14 +166,14 @@ void gas_washout(
   allca(0) = 0.0;
  for (int kk = plev; kk < pver; kk++) {
       Kokkos::single(Kokkos::PerTeam(team),
-                     [=]() { 
+                     [=]() {
             allca(0) += xca(kk);
             if (allca(0) < xeqca(kk)) {
                   xgas(kk) = haero::max(xgas(kk) - xca(kk), 0.0);
             }
     });
- } 
-            
+ }
+
 } // end subroutine gas_washout
 
 //=================================================================================
@@ -222,7 +222,7 @@ void sethet(
     const ColumnView qin[gas_pcnst], // xported species [vmr]  //in
     // working variables
     const ColumnView &xeqca,
-    const ColumnView &xca,   
+    const ColumnView &xca,
     const ColumnView &allca,  //total of ca between level plev and kk [#/cm3]
     const ColumnView
         &t_factor, // temperature factor to calculate henry's law parameters
@@ -314,7 +314,7 @@ void sethet(
   });
 
   //thread ranges are within a team range
-  //team range 
+  //team range
 
   for (int mm = 0; mm < gas_wetdep_cnt; mm++) {  // for w/ teamthreadrange
     int mm2 = wetdep_map[mm];
@@ -465,7 +465,7 @@ void sethet(
 
   for (int kk = ktop; kk < pver; kk++) {
     bool skip = false;
-    Kokkos::printf("kk = %d", kk);
+    // Kokkos::printf("kk = %d", kk);
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, gas_pcnst_loc),
                          [&](int mm) {
                            if (rain(kk) <= 0.0) {
@@ -474,7 +474,7 @@ void sethet(
                            }
                          });
     if (skip) {
-      Kokkos::printf("skipping");
+      // Kokkos::printf("skipping");
       continue;
     }
 
