@@ -74,19 +74,13 @@ void calc_precip_rescale(
   total_rain = 0.0;
   total_pos = 0.0;
   constexpr int local_pver=pver;
-   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, local_pver),
-       [&](int kk) {
-        precip(kk) = cmfdqr(kk) + nrain(kk) - nevapr(kk);
-      });
-  team.team_barrier();
-
-  Kokkos::parallel_reduce(
+   Kokkos::parallel_reduce(
       Kokkos::TeamVectorRange(team, local_pver),
        [&](int kk, Real &total_rain) {
+        precip(kk) = cmfdqr(kk) + nrain(kk) - nevapr(kk);
         total_rain += precip(kk);
       },total_rain);
-  team.team_barrier();
+
   Kokkos::parallel_reduce(
     Kokkos::TeamVectorRange(team, local_pver),
     [&](int kk, Real &total_pos) {
@@ -96,8 +90,6 @@ void calc_precip_rescale(
       total_pos += precip(kk);
     },
     total_pos);
-
-  team.team_barrier();
 
   if (total_rain <= 0.0) {
     Kokkos::parallel_for(
@@ -307,7 +299,6 @@ void sethet(
                            [&](int kk) { het_rates[mm2](kk) = MISSING; });
     }
   }
-  team.team_barrier();
 
   //-----------------------------------------------------------------
   //	... the 2 and .6 multipliers are from a formula by frossling (1938)
@@ -339,7 +330,6 @@ void sethet(
         delz(kk) = haero::abs((zmid(kk) - zmid(kk + 1)) * km2cm);
       });
   delz(pver - 1) = haero::abs((zmid(pver - 1) - zsurf) * km2cm);
-  team.team_barrier();
   //-----------------------------------------------------------------
   //       ... part 0b,  for temperature dependent of henrys
   //                     xxhe1 = henry con for hno3
