@@ -45,7 +45,7 @@ void gas_washout(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          gas_washout(plev - 1, xkgm, xliq_ik, xhen_i, tfld_i, delz_i,
+          gas_washout(team, plev - 1, xkgm, xliq_ik, xhen_i, tfld_i, delz_i,
                       xgas);
         });
 
