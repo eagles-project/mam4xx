@@ -35,6 +35,7 @@ void calculate_ustar_over_water(Ensemble *ensemble);
 void calculate_ustar(const DryDepData &data, Ensemble *ensemble);
 void calculate_uustar(const DryDepData &data, Ensemble *ensemble);
 void drydep_xactive(const DryDepData &data, Ensemble *ensemble);
+void find_season_index(Ensemble *ensemble);
 
 namespace {
 
@@ -272,6 +273,8 @@ int main(int argc, char **argv) {
         calculate_uustar(data, ensemble);
       } else if (func_name == "drydep_xactive") {
         drydep_xactive(data, ensemble);
+      } else if (func_name == "find_season_index") {
+        find_season_index(ensemble);
       } else {
         std::cerr << "Error: Function name '" << func_name
                   << "' does not have an implemented test!" << std::endl;

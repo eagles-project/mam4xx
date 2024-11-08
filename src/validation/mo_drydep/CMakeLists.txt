@@ -19,6 +19,7 @@ add_executable(mo_drydep_driver
                calculate_uustar.cpp
                drydep_xactive.cpp
                calculate_gas_drydep_vlc_and_flux.cpp
+               find_season_index.cpp
                )
 
 target_link_libraries(mo_drydep_driver skywalker;validation;${HAERO_LIBRARIES})
@@ -44,7 +45,8 @@ set(TEST_LIST
     calculate_ustar
     calculate_uustar
     drydep_xactive
-    calculate_gas_drydep_vlc_and_flux 
+    calculate_gas_drydep_vlc_and_flux
+    drydep_inti_xactive_ts_0
     )
 
 set(DEFAULT_TOL 1e-10)
@@ -61,6 +63,7 @@ set(ERROR_THRESHOLDS
     ${DEFAULT_TOL} # calculate_uustar
     1e-9           # drydep_xactive
     ${DEFAULT_TOL} # calculate_gas_drydep_vlc_and_flux
+    ${DEFAULT_TOL} # drydep_inti_xactive_ts_0
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
@@ -104,5 +107,3 @@ set_tests_properties(run_${m4stand_compare} PROPERTIES LABELS ${TestLabels})
 add_test(validate_${m4stand_compare} python3 compare_mam4xx_mam4.py mam4xx_${m4stand_compare}.py m4stand_${m4stand_compare}.py True ${DEFAULT_TOL})
 set_tests_properties(run_${m4stand_compare} PROPERTIES LABELS "${TestLabels};compared2standalone")
 set_tests_properties(validate_${m4stand_compare} PROPERTIES LABELS "${TestLabels};compared2standalone")
-
-
