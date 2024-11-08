@@ -290,7 +290,7 @@ void sethet(
 
   for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
     int mm2 = wetdep_map[mm];
-    if (mm2 < 0) {
+    if (mm2 > 0) {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver),
                            [&](int kk) { het_rates[mm2](kk) = MISSING; });
     }
@@ -460,19 +460,20 @@ void sethet(
   //	... Set rates above tropopause = 0.
   //-----------------------------------------------------------------
   team.team_barrier();
-  bool abort = false;
+  int abort = 0;
   for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
     int mm2 = wetdep_map[mm];
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ktop),
                          [&](int kk) { het_rates[mm2](kk) = 0.0; });
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver),
-                         [&](int kk) {
-                           if (het_rates[mm2](kk) == MISSING)
-                             abort = true;
-                         });
+    Kokkos::parallel_reduce(
+        Kokkos::TeamVectorRange(team, local_pver),
+        [&](int kk, int &abort) {
+          if (het_rates[mm2](kk) == MISSING)
+            abort += 1;
+        },
+        abort);
   }
-
-  if (abort) {
+  if (abort != 0) {
     Kokkos::abort(
         "sethet: het_rates (wet dep) not set for het reaction number");
     return;
