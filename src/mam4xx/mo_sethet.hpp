@@ -12,7 +12,7 @@ namespace mam4 {
 namespace mo_sethet {
 
 constexpr Real avo = haero::Constants::avogadro;
-const Real pi = haero::Constants::pi;
+constexpr Real pi = haero::Constants::pi;
 constexpr Real rga = 1.0 / haero::Constants::gravity;
 constexpr int gas_pcnst = gas_chemistry::gas_pcnst;
 const Real boltz_cgs = haero::Constants::boltzmann * 1.e7; // erg/K
