@@ -73,36 +73,34 @@ void calc_precip_rescale(
 
   total_rain = 0.0;
   total_pos = 0.0;
-  constexpr int local_pver=pver;
-   Kokkos::parallel_reduce(
+  constexpr int local_pver = pver;
+  Kokkos::parallel_reduce(
       Kokkos::TeamVectorRange(team, local_pver),
-       [&](int kk, Real &total_rain) {
+      [&](int kk, Real &total_rain) {
         precip(kk) = cmfdqr(kk) + nrain(kk) - nevapr(kk);
         total_rain += precip(kk);
-      },total_rain);
+      },
+      total_rain);
 
   Kokkos::parallel_reduce(
-    Kokkos::TeamVectorRange(team, local_pver),
-    [&](int kk, Real &total_pos) {
-      if(precip(kk) < 0.0) {
-        precip(kk) = 0.0;
-      }
-      total_pos += precip(kk);
-    },
-    total_pos);
+      Kokkos::TeamVectorRange(team, local_pver),
+      [&](int kk, Real &total_pos) {
+        if (precip(kk) < 0.0) {
+          precip(kk) = 0.0;
+        }
+        total_pos += precip(kk);
+      },
+      total_pos);
 
   if (total_rain <= 0.0) {
-    Kokkos::parallel_for(
-        Kokkos::TeamVectorRange(team, local_pver),
-         [&](int kk) {
-          precip(kk) = 0.0; // set all levels to zero
-        });
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver),
+                         [&](int kk) {
+                           precip(kk) = 0.0; // set all levels to zero
+                         });
   } else {
     Kokkos::parallel_for(
         Kokkos::TeamVectorRange(team, local_pver),
-         [&](int kk) {
-          precip(kk) = precip(kk) * total_rain / total_pos;
-        });
+        [&](int kk) { precip(kk) = precip(kk) * total_rain / total_pos; });
   }
 
 } // end subroutine calc_precip_rescale
@@ -111,9 +109,9 @@ void calc_precip_rescale(
 KOKKOS_INLINE_FUNCTION
 void gas_washout(
     const ThreadTeam &team,
-    const int plev,           // calculate from this level below //in
-    const Real xkgm,          // mass flux on rain drop //in
-    const Real xliq_ik,       // liquid rain water content [gm/m^3] // in
+    const int plev,          // calculate from this level below //in
+    const Real xkgm,         // mass flux on rain drop //in
+    const Real xliq_ik,      // liquid rain water content [gm/m^3] // in
     const ColumnView xhen_i, // henry's law constant
     const ColumnView tfld_i, // temperature [K]
     const ColumnView delz_i, // layer depth about interfaces [cm]  // in
@@ -128,35 +126,33 @@ void gas_washout(
   constexpr Real xrm = .189;  // mean diameter of rain drop [cm]
   constexpr Real xum = 748.0; // mean rain drop terminal velocity [cm/s]
 
-
   // -----------------------------------------------------------------
   //       ... calculate the saturation concentration eqca
   // -----------------------------------------------------------------
-  Kokkos::single(Kokkos::PerTeam(team),
-                     [=]() {
-  Real allca = 0.0; // total of ca between level plev and kk [#/cm3]
-  for (int k = plev; k < pver; k++) {
-    const Real xeqca = xgas(k) /
-            (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
-            xliq_ik * avo2;
-    //-----------------------------------------------------------------
-    //       ... calculate ca; inside cloud concentration in  #/cm3(air)
-    //-----------------------------------------------------------------
-    const Real xca =
-        geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik * cm3_2_m3;
+  Kokkos::single(Kokkos::PerTeam(team), [=]() {
+    Real allca = 0.0; // total of ca between level plev and kk [#/cm3]
+    for (int k = plev; k < pver; k++) {
+      const Real xeqca =
+          xgas(k) / (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
+          xliq_ik * avo2;
+      //-----------------------------------------------------------------
+      //       ... calculate ca; inside cloud concentration in  #/cm3(air)
+      //-----------------------------------------------------------------
+      const Real xca = geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) *
+                       xliq_ik * cm3_2_m3;
 
-    // -----------------------------------------------------------------
-    //       ... if is not saturated (take hno3 as an example)
-    //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
-    //           otherwise
-    //               hno3(gas)_new = hno3(gas)_old
-    // -----------------------------------------------------------------
-    allca += xca;
-    if (allca < xeqca) {
-      xgas(k) = haero::max(xgas(k) - xca, 0.0);
+      // -----------------------------------------------------------------
+      //       ... if is not saturated (take hno3 as an example)
+      //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
+      //           otherwise
+      //               hno3(gas)_new = hno3(gas)_old
+      // -----------------------------------------------------------------
+      allca += xca;
+      if (allca < xeqca) {
+        xgas(k) = haero::max(xgas(k) - xca, 0.0);
+      }
     }
-  }
-                     });
+  });
 
 } // end subroutine gas_washout
 
@@ -316,13 +312,12 @@ void sethet(
   // removes point storms
   calc_precip_rescale(team, cmfdqr, nrain, nevapr, precip); // populate precip
 
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
-        rain(kk) = mass_air * precip(kk) * xhnm(kk) / mass_h2o;
-        xliq(kk) = precip(kk) * delt * xhnm(kk) / avo * mass_air * m3_2_cm3;
-        xh2o2(kk) = qin[spc_h2o2_ndx](kk) * xhnm(kk);
-        xso2(kk) = qin[spc_so2_ndx](kk) * xhnm(kk);
-      });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
+    rain(kk) = mass_air * precip(kk) * xhnm(kk) / mass_h2o;
+    xliq(kk) = precip(kk) * delt * xhnm(kk) / avo * mass_air * m3_2_cm3;
+    xh2o2(kk) = qin[spc_h2o2_ndx](kk) * xhnm(kk);
+    xso2(kk) = qin[spc_so2_ndx](kk) * xhnm(kk);
+  });
   zsurf = m2km * phis * rga;
 
   Kokkos::parallel_for(
@@ -365,11 +360,10 @@ void sethet(
   //-----------------------------------------------------------------
   //       ... part 1, solve for high henry constant ( hno3, h2o2)
   //-----------------------------------------------------------------
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
-        xgas2(kk) = xh2o2(kk); // different levels wash
-        xgas3(kk) = xso2(kk);
-      });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
+    xgas2(kk) = xh2o2(kk); // different levels wash
+    xgas3(kk) = xso2(kk);
+  });
   team.team_barrier();
 
   for (int kk = ktop; kk < pver; kk++) {
@@ -381,8 +375,8 @@ void sethet(
       gas_washout(team, kk, xkgm, xliq(kk), // in
                   xhen_h2o2, tfld, delz,    // in
                   xgas2);                   // inout
-    team.team_barrier();
-      gas_washout(team,kk, xkgm, xliq(kk), // in
+      team.team_barrier();
+      gas_washout(team, kk, xkgm, xliq(kk), // in
                   xhen_so2, tfld, delz,     // in
                   xgas3);                   // inout
     }
@@ -427,14 +421,13 @@ void sethet(
   constexpr int local_gas_pcnst = gas_pcnst;
   for (int kk = ktop; kk < pver; kk++) {
     bool skip = false;
-for (int mm = 0; mm < local_gas_pcnst; ++mm)
-{
+    for (int mm = 0; mm < local_gas_pcnst; ++mm) {
 
-                           if (rain(kk) <= 0.0) {
-                             het_rates[mm](kk) = 0.0;
-                             skip = true;
-                           }
-}
+      if (rain(kk) <= 0.0) {
+        het_rates[mm](kk) = 0.0;
+        skip = true;
+      }
+    }
     if (skip)
       continue;
 
@@ -472,10 +465,11 @@ for (int mm = 0; mm < local_gas_pcnst; ++mm)
     int mm2 = wetdep_map[mm];
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ktop),
                          [&](int kk) { het_rates[mm2](kk) = 0.0; });
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
-      if (het_rates[mm2](kk) == MISSING)
-        abort = true;
-    });
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver),
+                         [&](int kk) {
+                           if (het_rates[mm2](kk) == MISSING)
+                             abort = true;
+                         });
   }
 
   if (abort) {
