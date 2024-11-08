@@ -299,7 +299,6 @@ void sethet(
           tmp_hetrates[mm](kk) = 0.0; // initiate temporary array
         });
   });
-  team.team_barrier();
 
   for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
     int mm2 = wetdep_map[mm];
@@ -438,13 +437,14 @@ void sethet(
   constexpr int local_gas_pcnst = gas_pcnst;
   for (int kk = ktop; kk < pver; kk++) {
     bool skip = false;
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_gas_pcnst),
-                         [&](int mm) {
+for (int mm = 0; mm < local_gas_pcnst; ++mm)
+{
+
                            if (rain(kk) <= 0.0) {
                              het_rates[mm](kk) = 0.0;
                              skip = true;
                            }
-                         });
+}
     if (skip)
       continue;
 
