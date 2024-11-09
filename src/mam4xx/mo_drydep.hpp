@@ -44,26 +44,25 @@ constexpr int nddvels = mam4::seq_drydep::n_drydep;
  */
 
 using View1D = DeviceType::view_1d<Real>;
+using View1DInt = DeviceType::view_1d<int>;
 using View2DInt = DeviceType::view_2d<int>;
 using View3DInt = DeviceType::view_3d<int>;
 
 KOKKOS_INLINE_FUNCTION
-void find_season_index(const int plon, const View1D &clat,
+void find_season_index(const Real clat_j,
                        const View1D &lat_lai, const int nlat_lai,
                        const View3DInt &wk_lai,
-                       const View2DInt &index_season_lai) {
+                       const View1DInt &index_season_lai) {
 
   // Comment from Fortran code.
   /*For unstructured grids plon is the 1d horizontal grid size and plat=1
   ! So this code averages at the latitude of each grid point - not an ideal
   solution*/
-
-  for (int j = 0; j < plon; ++j) {
     // BAD CONSTANT
     Real diff_min = 10.0;
     int pos_min = -99;
     const Real target_lat =
-        clat(j) * r2d; // Using operator() for element access
+        clat_j * r2d; // Using operator() for element access
 
     for (int i = 0; i < nlat_lai; ++i) {
       Real current_diff = haero::abs(
@@ -99,9 +98,8 @@ void find_season_index(const int plon, const View1D &clat,
         }
       }
 
-      index_season_lai(j, m) = k_max; //
+      index_season_lai(m) = k_max; //
     }                                 // m
-  }                                   // j
 } // findSeasonIndex
 
 KOKKOS_INLINE_FUNCTION
