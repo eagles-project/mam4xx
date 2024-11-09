@@ -74,7 +74,7 @@ void find_season_index(const int plon, const View1D &clat,
       }
     } // i
 
-    EKAT_KERNEL_ASSERT_MSG(pos_min < 0,
+    EKAT_KERNEL_ASSERT_MSG(pos_min > 0,
                            "Error: dvel_inti: cannot find index.\n");
     /* specify the season as the most frequent in the 11 vegetation classes
    ! this was done to remove a banding problem in dvel (JFL Oct 04)*/
