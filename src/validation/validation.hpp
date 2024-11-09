@@ -95,7 +95,7 @@ void convert_2d_view_device_to_1d_vector(const View2D &var_device,
                                          std::vector<Real> &var_std);
 
 void convert_2d_view_int_device_to_1d_vector(const View2DInt &var_device,
-                                         std::vector<Real> &var_std);
+                                             std::vector<Real> &var_std);
 // Convert 2D view_device to 1D std::vector
 // create a mirror view of 2d_view_device. Then, it copies data from mirror view
 // to 1D std::vector using column-major order
@@ -115,7 +115,7 @@ void convert_3d_view_device_to_1d_vector(const View3D &var_device,
                                          std::vector<Real> &var_std);
 
 void convert_1d_vector_to_3d_view_int_device(const std::vector<Real> &var_std,
-                                         const View3DInt &var_device);
+                                             const View3DInt &var_device);
 
 // Given an input from skywalker and its name, return a ColumnView with data
 // from yaml file.
