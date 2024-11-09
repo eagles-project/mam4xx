@@ -49,57 +49,54 @@ using View2DInt = DeviceType::view_2d<int>;
 using View3DInt = DeviceType::view_3d<int>;
 
 KOKKOS_INLINE_FUNCTION
-void find_season_index(const Real clat_j,
-                       const View1D &lat_lai, const int nlat_lai,
-                       const View3DInt &wk_lai,
+void find_season_index(const Real clat_j, const View1D &lat_lai,
+                       const int nlat_lai, const View3DInt &wk_lai,
                        const View1DInt &index_season_lai) {
 
   // Comment from Fortran code.
   /*For unstructured grids plon is the 1d horizontal grid size and plat=1
   ! So this code averages at the latitude of each grid point - not an ideal
   solution*/
-    // BAD CONSTANT
-    Real diff_min = 10.0;
-    int pos_min = -99;
-    const Real target_lat =
-        clat_j * r2d; // Using operator() for element access
+  // BAD CONSTANT
+  Real diff_min = 10.0;
+  int pos_min = -99;
+  const Real target_lat = clat_j * r2d; // Using operator() for element access
 
-    for (int i = 0; i < nlat_lai; ++i) {
-      Real current_diff = haero::abs(
-          lat_lai(i) - target_lat); // Using operator() for element access
-      if (current_diff < diff_min) {
-        diff_min = current_diff;
-        pos_min = i;
-      }
-    } // i
+  for (int i = 0; i < nlat_lai; ++i) {
+    Real current_diff = haero::abs(
+        lat_lai(i) - target_lat); // Using operator() for element access
+    if (current_diff < diff_min) {
+      diff_min = current_diff;
+      pos_min = i;
+    }
+  } // i
 
-    EKAT_KERNEL_ASSERT_MSG(pos_min > 0,
-                           "Error: dvel_inti: cannot find index.\n");
-    /* specify the season as the most frequent in the 11 vegetation classes
-   ! this was done to remove a banding problem in dvel (JFL Oct 04)*/
-    // BAD CONSTANT
-    for (int m = 0; m < 12; ++m) {
-      int num_seas[5] = {0, 0, 0, 0, 0};
-      for (int l = 0; l < 11; ++l) {
-        for (int k = 0; k < 5; ++k) {
-          if (wk_lai(pos_min, l, m) == k + 1) {
-            num_seas[k]++;
-            break; // Exit the innermost loop
-          }
-        }
-      }
-
-      int num_max = -1;
-      int k_max = 0;
+  EKAT_KERNEL_ASSERT_MSG(pos_min > 0, "Error: dvel_inti: cannot find index.\n");
+  /* specify the season as the most frequent in the 11 vegetation classes
+ ! this was done to remove a banding problem in dvel (JFL Oct 04)*/
+  // BAD CONSTANT
+  for (int m = 0; m < 12; ++m) {
+    int num_seas[5] = {0, 0, 0, 0, 0};
+    for (int l = 0; l < 11; ++l) {
       for (int k = 0; k < 5; ++k) {
-        if (num_seas[k] > num_max) {
-          num_max = num_seas[k];
-          k_max = k; //
+        if (wk_lai(pos_min, l, m) == k + 1) {
+          num_seas[k]++;
+          break; // Exit the innermost loop
         }
       }
+    }
 
-      index_season_lai(m) = k_max; //
-    }                                 // m
+    int num_max = -1;
+    int k_max = 0;
+    for (int k = 0; k < 5; ++k) {
+      if (num_seas[k] > num_max) {
+        num_max = num_seas[k];
+        k_max = k; //
+      }
+    }
+
+    index_season_lai(m) = k_max; //
+  }                              // m
 } // findSeasonIndex
 
 KOKKOS_INLINE_FUNCTION
