@@ -26,7 +26,7 @@ constexpr Real rair = 287.04;
 constexpr Real grav = 9.81;
 constexpr Real karman = 0.4;   // from shr_const_mod.F90
 constexpr Real tmelt = 273.15; // from shr_const_mod.F90 via physconst.F90
-constexpr Real r2d = 180.0 / haero::Constants::pi; // degrees to radians
+constexpr Real r2d = 180.0 / haero::Constants::pi; // radians to degrees
 // nddvels is equal to number of species in dry deposition list for gases.
 constexpr int nddvels = mam4::seq_drydep::n_drydep;
 
