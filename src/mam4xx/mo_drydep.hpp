@@ -28,30 +28,28 @@ constexpr Real tmelt = 273.15; // from shr_const_mod.F90 via physconst.F90
 constexpr Real r2d = 180.0 / haero::Constants::pi; // degrees to radians
 // nddvels is equal to number of species in dry deposition list for gases.
 constexpr int nddvels = mam4::seq_drydep::n_drydep;
+
 /**
  * Finds the season index for each longitude point based on the most frequent
  * season in the 11 vegetation classes to mitigate banding issues in dvel.
+ * @brief Finds the season index based on the given latitude.
  *
- * @param plon The total number of longitude points.
- * @param clat A View1D containing latitude values in radians.
- * @param lat_lai A View1D containing latitude values for LAI in radians.
- * @param nlat_lai The total number of latitude points for LAI.
- * @param wk_lai A View2D  containing LAI data, assumed to be a 3D structure for
- * access.
- * @param index_season_lai A View2D  where the function will store the season
- * index results.
- *
+ * @param[in] clat_j Latitude in radians from the host model.
+ * @param[in] lat_lai Latitude values from the NC file.
+ * @param[in] nlat_lai Size of lat_lai.
+ * @param[in] wk_lai Season_wes from the NC file.
+ * @param[out] index_season_lai Outputs the season indices.
  */
 
-using View1D = DeviceType::view_1d<Real>;
-using View1DInt = DeviceType::view_1d<int>;
-using View2DInt = DeviceType::view_2d<int>;
-using View3DInt = DeviceType::view_3d<int>;
+// find_season_index only needs to be executed one time and is small.
+// Thus, execute it only on the host.
 
-KOKKOS_INLINE_FUNCTION
-void find_season_index(const Real clat_j, const View1D &lat_lai,
-                       const int nlat_lai, const View3DInt &wk_lai,
-                       const View1DInt &index_season_lai) {
+using View1DHost = DeviceType::view_1d<Real>::HostMirror;
+using View1DIntHost = DeviceType::view_1d<int>::HostMirror;
+using View3DIntHost = DeviceType::view_3d<int>::HostMirror;
+inline void find_season_index(const Real clat_j, const View1DHost &lat_lai,
+                              const int nlat_lai, const View3DIntHost &wk_lai,
+                              const View1DIntHost &index_season_lai) {
 
   // Comment from Fortran code.
   /*For unstructured grids plon is the 1d horizontal grid size and plat=1
@@ -60,18 +58,21 @@ void find_season_index(const Real clat_j, const View1D &lat_lai,
   // BAD CONSTANT
   Real diff_min = 10.0;
   int pos_min = -99;
-  const Real target_lat = clat_j * r2d; // Using operator() for element access
+
+  // NOTE: EAM uses degrees for clat_j, but EAMxx uses radians.
+  // Because we will use this function in EAMxx, we will not perform this unit
+  // conversion. const Real target_lat = clat_j * r2d;
+  const Real target_lat = clat_j;
 
   for (int i = 0; i < nlat_lai; ++i) {
-    Real current_diff = haero::abs(
-        lat_lai(i) - target_lat); // Using operator() for element access
+    Real current_diff = haero::abs(lat_lai(i) - target_lat);
     if (current_diff < diff_min) {
       diff_min = current_diff;
       pos_min = i;
     }
   } // i
-
-  EKAT_KERNEL_ASSERT_MSG(pos_min > 0, "Error: dvel_inti: cannot find index.\n");
+  EKAT_KERNEL_ASSERT_MSG(pos_min > -1,
+                         "Error: dvel_inti: cannot find index.\n");
   /* specify the season as the most frequent in the 11 vegetation classes
  ! this was done to remove a banding problem in dvel (JFL Oct 04)*/
   // BAD CONSTANT
