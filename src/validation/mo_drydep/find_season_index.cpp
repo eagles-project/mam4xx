@@ -44,11 +44,11 @@ void find_season_index(Ensemble *ensemble) {
       }
     }
 
-    constexpr Real r2d = 180.0 / Constants::pi; // degrees to radians
+    constexpr Real r2d = 180.0 / Constants::pi; // radians to degrees
 
     View2DIntHost index_season_lai("index_season_lai", plon, 12);
 
-    // convert to radians
+    // convert to degrees
     for (int j = 0; j < plon; ++j) {
       clat(j) *= r2d;
     }

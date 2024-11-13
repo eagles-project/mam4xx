@@ -35,14 +35,14 @@ constexpr int nddvels = mam4::seq_drydep::n_drydep;
  * season in the 11 vegetation classes to mitigate banding issues in dvel.
  * @brief Finds the season index based on the given latitude.
  *
- * @param[in] clat_j Latitude in radians from the host model.
+ * @param[in] clat_j Latitude in degrees from the host model.
  * @param[in] lat_lai Latitude values from the NC file.
  * @param[in] nlat_lai Size of lat_lai.
  * @param[in] wk_lai Season_wes from the NC file.
  * @param[out] index_season_lai Outputs the season indices.
  */
 
-// find_season_index only needs to be executed one time and is small.
+// find_season_index_at_clat only needs to be executed one time and is small.
 // Thus, execute it only on the host.
 using View1DHost = DeviceType::view_1d<Real>::HostMirror;
 using ConstView1DHost = DeviceType::view_1d<const Real>::HostMirror;
@@ -52,9 +52,11 @@ using View3DIntHost = DeviceType::view_3d<int>::HostMirror;
 
 using KTH = ekat::KokkosTypes<ekat::HostDevice>;
 
-inline void find_season_index(const Real clat_j, const View1DHost &lat_lai,
-                              const int nlat_lai, const View3DIntHost &wk_lai,
-                              const View1DIntHost &index_season_lai) {
+inline void find_season_index_at_lat(const Real clat_j,
+                                     const View1DHost &lat_lai,
+                                     const int nlat_lai,
+                                     const View3DIntHost &wk_lai,
+                                     const View1DIntHost &index_season_lai) {
 
   // Comment from Fortran code.
   /*For unstructured grids plon is the 1d horizontal grid size and plat=1
@@ -105,6 +107,17 @@ inline void find_season_index(const Real clat_j, const View1DHost &lat_lai,
   }                              // m
 } // findSeasonIndex
 
+/**
+ * Finds the season index for each longitude point based on the most frequent
+ * season in the 11 vegetation classes to mitigate banding issues in dvel.
+ * @brief Finds the season index based on all latitudes.
+ *
+ * @param[in] clat Latitude in degrees from the host model.
+ * @param[in] lat_lai Latitude in degrees values from the NC file.
+ * @param[in] nlat_lai Size of lat_lai.
+ * @param[in] wk_lai Season_wes from the NC file.
+ * @param[out] index_season_lai Outputs the season indices.
+ */
 inline void find_season_index(const ConstView1DHost clat,
                               const View1DHost &lat_lai, const int nlat_lai,
                               const View3DIntHost &wk_lai,
@@ -113,8 +126,8 @@ inline void find_season_index(const ConstView1DHost clat,
   auto policy = KTH::RangePolicy(0, plon);
   Kokkos::parallel_for(policy, [&](const int &j) {
     const auto index_season_lai_at_j = ekat::subview(index_season_lai, j);
-    mo_drydep::find_season_index(clat(j), lat_lai, nlat_lai, wk_lai,
-                                 index_season_lai_at_j);
+    find_season_index_at_lat(clat(j), lat_lai, nlat_lai, wk_lai,
+                             index_season_lai_at_j);
   });
 }
 
