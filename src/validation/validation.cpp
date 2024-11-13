@@ -158,6 +158,19 @@ void convert_2d_view_device_to_1d_vector(const View2D &var_device,
   }
 }
 
+void convert_2d_view_int_device_to_1d_vector(const View2DInt &var_device,
+                                             std::vector<Real> &var_std) {
+  auto host = Kokkos::create_mirror_view(var_device);
+  Kokkos::deep_copy(host, var_device);
+  int count = 0;
+  for (int d2 = 0; d2 < var_device.extent(1); ++d2) {
+    for (int d1 = 0; d1 < var_device.extent(0); ++d1) {
+      var_std[count] = host(d1, d2);
+      count++;
+    }
+  }
+}
+
 void convert_transpose_2d_view_device_to_1d_vector(const View2D &var_device,
                                                    std::vector<Real> &var_std) {
   auto host = Kokkos::create_mirror_view(var_device);
@@ -179,6 +192,22 @@ void convert_1d_vector_to_3d_view_device(const std::vector<Real> &var_std,
     for (int d2 = 0; d2 < var_device.extent(1); ++d2) {
       for (int d1 = 0; d1 < var_device.extent(0); ++d1) {
         host(d1, d2, d3) = var_std[count];
+        count++;
+      }
+    }
+  }
+  Kokkos::deep_copy(var_device, host);
+}
+
+void convert_1d_vector_to_3d_view_int_device(const std::vector<Real> &var_std,
+                                             const View3DInt &var_device) {
+  auto host = Kokkos::create_mirror_view(var_device);
+  int count = 0;
+  for (int d3 = 0; d3 < var_device.extent(2); ++d3) {
+    for (int d2 = 0; d2 < var_device.extent(1); ++d2) {
+      for (int d1 = 0; d1 < var_device.extent(0); ++d1) {
+        // make sure that we are using int.
+        host(d1, d2, d3) = static_cast<int>(var_std[count]);
         count++;
       }
     }

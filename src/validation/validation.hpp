@@ -28,6 +28,8 @@ Tendencies create_tendencies(int num_levels);
 
 namespace validation {
 
+using View3DInt = typename DeviceType::view_3d<int>;
+using View2DInt = typename DeviceType::view_2d<int>;
 using View2D = typename DeviceType::view_2d<Real>;
 using View3D = typename DeviceType::view_3d<Real>;
 
@@ -92,6 +94,8 @@ void convert_1d_vector_to_transpose_2d_view_device(
 void convert_2d_view_device_to_1d_vector(const View2D &var_device,
                                          std::vector<Real> &var_std);
 
+void convert_2d_view_int_device_to_1d_vector(const View2DInt &var_device,
+                                             std::vector<Real> &var_std);
 // Convert 2D view_device to 1D std::vector
 // create a mirror view of 2d_view_device. Then, it copies data from mirror view
 // to 1D std::vector using column-major order
@@ -109,6 +113,9 @@ void convert_1d_vector_to_3d_view_device(const std::vector<Real> &pmid_db,
 // to 1D std::vector
 void convert_3d_view_device_to_1d_vector(const View3D &var_device,
                                          std::vector<Real> &var_std);
+
+void convert_1d_vector_to_3d_view_int_device(const std::vector<Real> &var_std,
+                                             const View3DInt &var_device);
 
 // Given an input from skywalker and its name, return a ColumnView with data
 // from yaml file.
