@@ -48,13 +48,17 @@ void find_season_index(Ensemble *ensemble) {
 
     View2DIntHost index_season_lai("index_season_lai", plon, 12);
 
+    // convert to radians
+    for (int j = 0; j < plon; ++j) {
+      clat(j) *= r2d;
+    }
+
+    mo_drydep::find_season_index(clat, lat_lai, nlat_lai, wk_lai,
+                                 index_season_lai);
+
     auto policy = KTH::RangePolicy(0, plon);
     Kokkos::parallel_for(policy, [&](const int &j) {
       const auto index_season_lai_at_j = ekat::subview(index_season_lai, j);
-      // convert to radians
-      const Real clat_rads = clat(j) * r2d;
-      mo_drydep::find_season_index(clat_rads, lat_lai, nlat_lai, wk_lai,
-                                   index_season_lai_at_j);
       // c++ to Fortran; only for validation.
       for (int i = 0; i < 12; ++i) {
         index_season_lai_at_j(i) = index_season_lai_at_j(i) + 1;
