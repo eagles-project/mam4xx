@@ -51,7 +51,7 @@ variables:
   variables:
   # We can hard code the SLURM_Q, or have a perl script find any idle partition at runtime.
   # This is a magic string that matches a conditional in the job script
-    SLURM_Q: "dl_gpu"
+    SLURM_Q: "a100_gpu"
     SLURM_ARGS: "-N 1 --ntasks=8 --gres=gpu:1"
     SCRIPT_NAME: ci.sh
 
@@ -124,13 +124,14 @@ variables:
       export SYSTEM_NAME=$SYSTEM_NAME
 
       # Use perl script if MY_CLUSTER is something specific
-      if [[ $SLURM_Q = "dl_gpu" ]]; then
-        # This is any idle DL node.
+      if [[ $SLURM_Q = "a100_gpu" ]]; then
+        # This is any idle a100 node.
         # Results in the following possible GPU archs:
+        #   - A100 (cuda_arch 80) (a100/a100_80 _shared)
         #   - P100 (cuda_arch 60) (dl/dl_shared)
         #   - V100 (cuda_arch 70) (dlv/dlv_shared)
         #   - RTX 2080 Ti (cuda_arch 75) (dlt/dlt_shared)
-        export SLURM_Q=`perl ./.github/pnnl-ci/findIdleDLNodes.pl`
+        export SLURM_Q=`perl ./.github/pnnl-ci/findIdleA100Nodes.pl`
       fi
 
       # jobid used in pnnl_after_script_template to cancel job if cancelled or
