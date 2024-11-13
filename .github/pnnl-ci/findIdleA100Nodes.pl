@@ -1,12 +1,12 @@
-# DL partitions
-my @partitions = grep /^dl/, `sinfo`;
+# a100 partitions
+my @partitions = grep /^a100/, `sinfo`;
 
 # Idle nodes
 my @idle_parts = grep /idle/, @partitions;
 
-# Set to dl_shared for now
+# Set to a100_shared for now
 # Change here for desired partition
-print "dl_shared,fat_shared,dl,fat";
+print "a100_shared,a100_80_shared,a100,a100_80";
 
 # Logic for selecting dl(v)(t) partitions with idle nodes
 #if ( scalar @idle_parts eq 0 ) {

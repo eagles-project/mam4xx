@@ -40,12 +40,7 @@ echo $BUILD_TYPE "detected for BUILD_TYPE"
 echo $HAERO_INSTALL "detected for HAERO install location"
 echo $PRECISION "detected for PRECISION"
 
-. /etc/profile.d/modules.sh
-module purge
-module load cmake/3.21.4
-module load gcc/10.2.0
-module load cuda/11.4
-module load python/3.7.0
+. $HAERO_INSTALL/../deception_modules.sh
 
 # Need to set env variables to get compiler set correctly
 export CC=$(which gcc) CXX=$(which g++) FC=$(which gfortran)
