@@ -6,6 +6,7 @@
 #ifndef MAM4XX_MO_DRYDEP_HPP
 #define MAM4XX_MO_DRYDEP_HPP
 
+#include <ekat/kokkos/ekat_subview_utils.hpp>
 #include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>
@@ -43,10 +44,14 @@ constexpr int nddvels = mam4::seq_drydep::n_drydep;
 
 // find_season_index only needs to be executed one time and is small.
 // Thus, execute it only on the host.
-
 using View1DHost = DeviceType::view_1d<Real>::HostMirror;
+using ConstView1DHost = DeviceType::view_1d<const Real>::HostMirror;
 using View1DIntHost = DeviceType::view_1d<int>::HostMirror;
+using View2DIntHost = DeviceType::view_2d<int>::HostMirror;
 using View3DIntHost = DeviceType::view_3d<int>::HostMirror;
+
+using KTH = ekat::KokkosTypes<ekat::HostDevice>;
+
 inline void find_season_index(const Real clat_j, const View1DHost &lat_lai,
                               const int nlat_lai, const View3DIntHost &wk_lai,
                               const View1DIntHost &index_season_lai) {
@@ -99,6 +104,19 @@ inline void find_season_index(const Real clat_j, const View1DHost &lat_lai,
     index_season_lai(m) = k_max; //
   }                              // m
 } // findSeasonIndex
+
+inline void find_season_index(const ConstView1DHost clat,
+                              const View1DHost &lat_lai, const int nlat_lai,
+                              const View3DIntHost &wk_lai,
+                              const View2DIntHost &index_season_lai) {
+  const int plon = clat.extent(0);
+  auto policy = KTH::RangePolicy(0, plon);
+  Kokkos::parallel_for(policy, [&](const int &j) {
+    const auto index_season_lai_at_j = ekat::subview(index_season_lai, j);
+    mo_drydep::find_season_index(clat(j), lat_lai, nlat_lai, wk_lai,
+                                 index_season_lai_at_j);
+  });
+}
 
 KOKKOS_INLINE_FUNCTION
 void calculate_uustar(
