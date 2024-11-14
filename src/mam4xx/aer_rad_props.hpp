@@ -35,7 +35,7 @@ constexpr Real cnst_faktor =
 constexpr Real cnst_ka1 = cnst_kap - 1.0;
 
 // Similar to volcanic_cmip_sw,
-// But, tau, tau_w, tau_w_g, tau_w_f have layout (nswbands, pver)
+// But, tau, tau_w, tau_w_g, tau_w_f have layout (nswbands, nlev)
 KOKKOS_INLINE_FUNCTION
 void volcanic_cmip_sw2(const ThreadTeam &team, const ConstColumnView &zi,
                        const int ilev_tropp, const View2D &ext_cmip6_sw_inv_m,
@@ -46,20 +46,20 @@ void volcanic_cmip_sw2(const ThreadTeam &team, const ConstColumnView &zi,
   /*
     zi(:,:)     Height above surface at interfaces [m]
     trop_level(pcols)   tropopause level index
-    ext_cmip6_sw_inv_m(pcols,pver,nswbands)   short wave extinction [m^{-1}]
+    ext_cmip6_sw_inv_m(pcols,nlev,nswbands)   short wave extinction [m^{-1}]
     ssa_cmip6_sw(:,:,:),af_cmip6_sw(:,:,:)
 
    Intent-inout
    Note: we are using emaxx layouts
-    tau    (pcols,nswbands,0:pver)  aerosol extinction optical depth
-    tau_w  (pcols,nswbands,0:pver)  aerosol single scattering albedo * tau
-    tau_w_g(pcols,nswbands,0:pver)  aerosol assymetry parameter * tau * w
-    tau_w_f(pcols,nswbands,0:pver)  aerosol forward scattered fraction * tau
+    tau    (pcols,nswbands,0:nlev)  aerosol extinction optical depth
+    tau_w  (pcols,nswbands,0:nlev)  aerosol single scattering albedo * tau
+    tau_w_g(pcols,nswbands,0:nlev)  aerosol assymetry parameter * tau * w
+    tau_w_f(pcols,nswbands,0:nlev)  aerosol forward scattered fraction * tau
     *
     w
 
    Local variables
-   icol, ipver, ilev_tropp
+   icol, inlev, ilev_tropp
    lyr_thk  thickness between level interfaces [m]
    ext_unitless(nswbands), asym_unitless(nswbands)
    ext_ssa(nswbands),ext_ssa_asym(nswbands)
@@ -85,7 +85,7 @@ void volcanic_cmip_sw2(const ThreadTeam &team, const ConstColumnView &zi,
   const Real lyr_thk = zi(ilev_tropp) - zi(ilev_tropp + 1);
   static constexpr int nswbands_loc = nswbands;
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nswbands_loc), [&](int i) {
-    // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,pver)
+    // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,nlev)
     const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(i, ilev_tropp);
     const Real asym_unitless = af_cmip6_sw(ilev_tropp, i);
     const Real ext_ssa = ext_unitless * ssa_cmip6_sw(ilev_tropp, i);
@@ -102,7 +102,7 @@ void volcanic_cmip_sw2(const ThreadTeam &team, const ConstColumnView &zi,
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, ilev_tropp), [&](int kk) {
     const Real lyr_thk = zi(kk) - zi(kk + 1);
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, nswbands), [&](int i) {
-      // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,pver)
+      // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,nlev)
       const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(i, kk);
       const Real asym_unitless = af_cmip6_sw(kk, i);
       const Real ext_ssa = ext_unitless * ssa_cmip6_sw(kk, i);
@@ -117,7 +117,7 @@ void volcanic_cmip_sw2(const ThreadTeam &team, const ConstColumnView &zi,
 
 } // volcanic_cmip_sw
 
-// tau, tau_w, tau_w_g, tau_w_f have layout (pver, nswbands)
+// tau, tau_w, tau_w_g, tau_w_f have layout (nlev, nswbands)
 KOKKOS_INLINE_FUNCTION
 void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
                       const View2D &ext_cmip6_sw_inv_m,
@@ -129,19 +129,19 @@ void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
     ncol        Number of columns
     zi(:,:)     Height above surface at interfaces [m]
     trop_level(pcols)   tropopause level index
-    ext_cmip6_sw_inv_m(pcols,pver,nswbands)   short wave extinction [m^{-1}]
+    ext_cmip6_sw_inv_m(pcols,nlev,nswbands)   short wave extinction [m^{-1}]
     ssa_cmip6_sw(:,:,:),af_cmip6_sw(:,:,:)
 
    Intent-inout
-    tau    (pcols,0:pver,nswbands)  aerosol extinction optical depth
-    tau_w  (pcols,0:pver,nswbands)  aerosol single scattering albedo * tau
-    tau_w_g(pcols,0:pver,nswbands)  aerosol assymetry parameter * tau * w
-    tau_w_f(pcols,0:pver,nswbands)  aerosol forward scattered fraction * tau
+    tau    (pcols,0:nlev,nswbands)  aerosol extinction optical depth
+    tau_w  (pcols,0:nlev,nswbands)  aerosol single scattering albedo * tau
+    tau_w_g(pcols,0:nlev,nswbands)  aerosol assymetry parameter * tau * w
+    tau_w_f(pcols,0:nlev,nswbands)  aerosol forward scattered fraction * tau
     *
     w
 
    Local variables
-   icol, ipver, ilev_tropp
+   icol, inlev, ilev_tropp
    lyr_thk  thickness between level interfaces [m]
    ext_unitless(nswbands), asym_unitless(nswbands)
    ext_ssa(nswbands),ext_ssa_asym(nswbands)
@@ -164,7 +164,7 @@ void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
   constexpr Real half = 0.5;
   const Real lyr_thk = zi(ilev_tropp) - zi(ilev_tropp + 1);
   for (int i = 0; i < nswbands; ++i) {
-    // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,pver)
+    // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,nlev)
     const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(i, ilev_tropp);
     const Real asym_unitless = af_cmip6_sw(ilev_tropp, i);
     const Real ext_ssa = ext_unitless * ssa_cmip6_sw(ilev_tropp, i);
@@ -183,7 +183,7 @@ void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
 
     const Real lyr_thk = zi(kk) - zi(kk + 1);
     for (int i = 0; i < nswbands; ++i) {
-      // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,pver)
+      // NOTE: shape of ext_cmip6_sw_inv_m (nswbands,nlev)
       const Real ext_unitless = lyr_thk * ext_cmip6_sw_inv_m(i, kk);
       const Real asym_unitless = af_cmip6_sw(kk, i);
       const Real ext_ssa = ext_unitless * ssa_cmip6_sw(kk, i);
@@ -200,7 +200,7 @@ void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
 } // volcanic_cmip_sw
 
 // aer_rad_props
-// odap_aer has layout (pver, nlwbands)
+// odap_aer has layout (nlev, nlwbands)
 KOKKOS_INLINE_FUNCTION
 void compute_odap_volcanic_at_troplayer_lw(const int ilev_tropp,
                                            const ConstColumnView &zi,
@@ -238,7 +238,7 @@ void compute_odap_volcanic_at_troplayer_lw(const int ilev_tropp,
 } // compute_odap_volcanic_at_troplayer_lw
 
 // similar to compute_odap_volcanic_at_troplayer_lw
-// but odap_aer has layout (nlwbands, pver)
+// but odap_aer has layout (nlwbands, nlev)
 KOKKOS_INLINE_FUNCTION
 void compute_odap_volcanic_at_troplayer_lw2(const ThreadTeam &team,
                                             const int ilev_tropp,
@@ -293,7 +293,7 @@ void compute_odap_volcanic_above_troplayer_lw(const int ilev_tropp,
    tropopause and populate it exclusively from the read in values.
 
    intent-ins
-   integer, intent(in) :: pver, ncol
+   integer, intent(in) :: nlev, ncol
    integer, intent(in) :: trop_level(:)
 
    real(r8), intent(in) :: zi(:,:) geopotential height above surface at
@@ -305,7 +305,7 @@ void compute_odap_volcanic_above_troplayer_lw(const int ilev_tropp,
    depth, per layer [unitless]
 
    local
-   integer :: ipver, icol, ilev_tropp
+   integer :: inlev, icol, ilev_tropp
    real(r8) :: lyr_thk layer thickness [m]
 
    As it will be more efficient for FORTRAN to loop over levels and then
@@ -323,7 +323,7 @@ void compute_odap_volcanic_above_troplayer_lw(const int ilev_tropp,
 } // compute_odap_volcanic_above_troplayer_lw
 
 // similar to compute_odap_volcanic_above_troplayer_lw
-// but odap_aer has layout (nlwbands, pver)
+// but odap_aer has layout (nlwbands, nlev)
 KOKKOS_INLINE_FUNCTION
 void compute_odap_volcanic_above_troplayer_lw2(const ThreadTeam &team,
                                                const int ilev_tropp,
@@ -337,7 +337,7 @@ void compute_odap_volcanic_above_troplayer_lw2(const ThreadTeam &team,
    tropopause and populate it exclusively from the read in values.
 
    intent-ins
-   integer, intent(in) :: pver, ncol
+   integer, intent(in) :: nlev, ncol
    integer, intent(in) :: trop_level(:)
 
    real(r8), intent(in) :: zi(:,:) geopotential height above surface at
@@ -349,7 +349,7 @@ void compute_odap_volcanic_above_troplayer_lw2(const ThreadTeam &team,
    depth, per layer [unitless]
 
    local
-   integer :: ipver, icol, ilev_tropp
+   integer :: inlev, icol, ilev_tropp
    real(r8) :: lyr_thk layer thickness [m]
 
    As it will be more efficient for FORTRAN to loop over levels and then
@@ -446,7 +446,7 @@ void aer_rad_props_lw(
     qqcw(:)    Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
 
    intent-outs
-    odap_aer(pcols,pver,nlwbands)  [fraction] absorption optical depth, per
+    odap_aer(pcols,nlev,nlwbands)  [fraction] absorption optical depth, per
     layer [unitless]
    Compute contributions from the modal aerosols. */
   modal_aero_lw(team, dt, state_q, qqcw, temperature, pmid, pdel, pdeldry, cldn,
@@ -506,7 +506,7 @@ void aer_rad_props_sw(
    pdeldry(:,:)
    cldn(:,:)
    NOTE: ext_cmip6_sw move unit conversion from km to m outside of this
-   function NOTE: ext_cmip6_sw (nswbands, pver) ext_cmip6_sw(:,:,:) [1/m]
+   function NOTE: ext_cmip6_sw (nswbands, nlev) ext_cmip6_sw(:,:,:) [1/m]
    ssa_cmip6_sw(:,:,:)
    af_cmip6_sw(:,:,:)
 
@@ -517,10 +517,10 @@ void aer_rad_props_sw(
    dt                    time step (s)
 
    qqcw(:)                Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
-   tau    (pcols,0:pver,nswbands)  aerosol extinction optical depth
-   tau_w  (pcols,0:pver,nswbands)  aerosol single scattering albedo * tau
-   tau_w_g(pcols,0:pver,nswbands)  aerosol assymetry parameter * tau * w
-   tau_w_f(pcols,0:pver,nswbands)  aerosol forward scattered fraction * tau *
+   tau    (pcols,0:nlev,nswbands)  aerosol extinction optical depth
+   tau_w  (pcols,0:nlev,nswbands)  aerosol single scattering albedo * tau
+   tau_w_g(pcols,0:nlev,nswbands)  aerosol assymetry parameter * tau * w
+   tau_w_f(pcols,0:nlev,nswbands)  aerosol forward scattered fraction * tau *
    w
 
    FORTRAN REFACTOR: This is done to fill invalid values in columns where
@@ -594,7 +594,7 @@ void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
    pdeldry(:,:)
    cldn(:,:)
    NOTE: ext_cmip6_sw move unit conversion from km to m outside of this
-   function NOTE: ext_cmip6_sw (nswbands, pver) ext_cmip6_sw(:,:,:) [1/m]
+   function NOTE: ext_cmip6_sw (nswbands, nlev) ext_cmip6_sw(:,:,:) [1/m]
    ssa_cmip6_sw(:,:,:)
    af_cmip6_sw(:,:,:)
 
@@ -605,10 +605,10 @@ void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
    dt                    time step (s)
 
    qqcw(:)                Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
-   tau    (pcols,0:pver,nswbands)  aerosol extinction optical depth
-   tau_w  (pcols,0:pver,nswbands)  aerosol single scattering albedo * tau
-   tau_w_g(pcols,0:pver,nswbands)  aerosol assymetry parameter * tau * w
-   tau_w_f(pcols,0:pver,nswbands)  aerosol forward scattered fraction * tau *
+   tau    (pcols,0:nlev,nswbands)  aerosol extinction optical depth
+   tau_w  (pcols,0:nlev,nswbands)  aerosol single scattering albedo * tau
+   tau_w_g(pcols,0:nlev,nswbands)  aerosol assymetry parameter * tau * w
+   tau_w_f(pcols,0:nlev,nswbands)  aerosol forward scattered fraction * tau *
    w
 
    FORTRAN REFACTOR: This is done to fill invalid values in columns where
@@ -688,7 +688,7 @@ void aer_rad_props_lw(
 
    intent-outs
    Note: using emaxx layout
-    odap_aer(pcols,nlwbands, pver)  [fraction] absorption optical depth, per
+    odap_aer(pcols,nlwbands, nlev)  [fraction] absorption optical depth, per
     layer [unitless]
    Compute contributions from the modal aerosols.*/
   modal_aero_lw(team, dt, progs, atm, pdel, pdeldry, aersol_optics_data,

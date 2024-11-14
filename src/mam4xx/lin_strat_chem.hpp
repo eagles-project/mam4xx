@@ -25,7 +25,7 @@ namespace lin_strat_chem {
 
 constexpr Real radians_to_degrees = 180. / haero::Constants::pi;
 // number of vertical levels
-constexpr int pver = mam4::nlev;
+constexpr int nlev = mam4::nlev;
 
 KOKKOS_INLINE_FUNCTION
 void psc_activation(const Real lats, const Real temp, const Real pmid,
@@ -287,14 +287,14 @@ void lin_strat_sfcsink(const Real delta_t, const ColumnView &pdel, // in
                        const int o3_lbl, const Real o3_tau, Real &o3l_sfcsink) {
 
   // @param[in] delta_t              timestep size [secs]
-  // @param[in] pdel(ncol,pver)      pressure delta about midpoints [Pa]
+  // @param[in] pdel(ncol,nlev)      pressure delta about midpoints [Pa]
 
   // !inten in-outs
-  // @param[inout]:: o3l_vmr(ncol ,pver)             ! ozone volume mixing ratio
+  // @param[inout]:: o3l_vmr(ncol ,nlev)             ! ozone volume mixing ratio
   // [vmr]
 
   Real do3mass_icol = 0;
-  for (int kk = pver - 1; kk > pver - o3_lbl - 1; --kk) {
+  for (int kk = nlev - 1; kk > nlev - o3_lbl - 1; --kk) {
     o3l_vmr(kk) = lin_strat_sfcsink_kk(delta_t, pdel(kk), o3l_vmr(kk), o3_sfc,
                                        o3_tau, do3mass_icol);
   }

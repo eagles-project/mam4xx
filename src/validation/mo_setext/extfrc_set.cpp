@@ -14,6 +14,7 @@ using namespace mam4;
 using namespace haero;
 using namespace mo_setext;
 void extfrc_set(Ensemble *ensemble) {
+  using mam4::nlev;
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
     const int pver = mam4::nlev;

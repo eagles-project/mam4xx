@@ -12,8 +12,8 @@ namespace mam4 {
 namespace mo_photo {
 
 // number of vertical levels
-constexpr int pver = mam4::nlev;
-constexpr int pverm = pver - 1;
+constexpr int nlev = mam4::nlev;
+constexpr int nlevm = nlev - 1;
 
 // number of photolysis reactions
 constexpr int phtcnt = 1;
@@ -108,8 +108,8 @@ struct PhotoTableWorkArrays {
   View1D psum_u;
 };
 inline int get_photo_table_work_len(const PhotoTableData &photo_table_data) {
-  return pver * photo_table_data.numj +                /*lng_prates*/
-         pver * photo_table_data.nw +                  /*rsf*/
+  return nlev * photo_table_data.numj +                /*lng_prates*/
+         nlev * photo_table_data.nw +                  /*rsf*/
          photo_table_data.numj * photo_table_data.nw + /*xswk*/
          2 * photo_table_data.nw /*psum_l + psum_u*/;
 } // get_photo_table_work_len
@@ -119,10 +119,10 @@ void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
                                  PhotoTableWorkArrays &photo_table_work) {
 
   auto work_ptr = (Real *)work.data();
-  photo_table_work.lng_prates = View2D(work_ptr, photo_table_data.numj, pver);
-  work_ptr += pver * photo_table_data.numj;
-  photo_table_work.rsf = View2D(work_ptr, photo_table_data.nw, pver);
-  work_ptr += pver * photo_table_data.nw;
+  photo_table_work.lng_prates = View2D(work_ptr, photo_table_data.numj, nlev);
+  work_ptr += nlev * photo_table_data.numj;
+  photo_table_work.rsf = View2D(work_ptr, photo_table_data.nw, nlev);
+  work_ptr += nlev * photo_table_data.nw;
   photo_table_work.xswk =
       View2D(work_ptr, photo_table_data.numj, photo_table_data.nw);
   work_ptr += photo_table_data.numj * photo_table_data.nw;
@@ -142,12 +142,12 @@ void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
   -----------------------------------------------------------------------*/
 
   // @param[in]   zen_angle         zenith angle [deg]
-  // @param[in]   clouds(pver)      cloud fraction [fraction]
-  // @param[in]   lwc(pver)         liquid water content [kg/kg]
+  // @param[in]   clouds(nlev)      cloud fraction [fraction]
+  // @param[in]   lwc(nlev)         liquid water content [kg/kg]
   // @param[in]   srf_alb           surface albedo [fraction]
-  // @param[in]   delp(pver)        del press about midpoint [Pa]
-  // @param[out]  eff_alb(pver)    effective albedo [fraction]
-  // @param[out]  cld_mult(pver) photolysis mult factor
+  // @param[in]   delp(nlev)        del press about midpoint [Pa]
+  // @param[out]  eff_alb(nlev)    effective albedo [fraction]
+  // @param[out]  cld_mult(nlev) photolysis mult factor
 
   /*---------------------------------------------------------
         ... modify lwc for cloud fraction and form
@@ -159,11 +159,11 @@ void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
   const Real half = 0.5;
 
   // cloud optical depth in each layer
-  Real del_tau[pver] = {};
+  Real del_tau[nlev] = {};
   // cloud optical depth below this layer
-  Real below_tau[pver] = {};
+  Real below_tau[nlev] = {};
   // cloud cover below this layer
-  Real below_cld[pver] = {};
+  Real below_cld[nlev] = {};
 
   // BAD CONSTANT
   const Real rgrav = one / 9.80616; //  1/g [s^2/m]
@@ -171,7 +171,7 @@ void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
       .155; // factor converting LWP to tau [unknown source and unit]
   const Real tau_min = 5.0; // tau threshold below which assign cloud as zero
 
-  for (int kk = 0; kk < pver; kk++) {
+  for (int kk = 0; kk < nlev; kk++) {
     if (clouds[kk] != zero) {
       // liquid water path in each layer [g/m2]
       const Real del_lwp = rgrav * lwc[kk] * delp[kk] * thousand /
@@ -185,17 +185,17 @@ void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
               ... form integrated tau and cloud cover from top down
   --------------------------------------------------------- */
   // cloud optical depth above this layer
-  Real above_tau[pver] = {zero};
+  Real above_tau[nlev] = {zero};
   // cloud cover above this layer
-  Real above_cld[pver] = {zero};
+  Real above_cld[nlev] = {zero};
 
-  for (int kk = 0; kk < pverm; kk++) {
+  for (int kk = 0; kk < nlevm; kk++) {
     above_tau[kk + 1] = del_tau[kk] + above_tau[kk];
     above_cld[kk + 1] = clouds[kk] * del_tau[kk] + above_cld[kk];
 
   } // end kk
 
-  for (int kk = 1; kk < pver; kk++) {
+  for (int kk = 1; kk < nlev; kk++) {
     if (above_tau[kk] != zero) {
       above_cld[kk] /= above_tau[kk];
     } else {
@@ -207,15 +207,15 @@ void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
               ... form integrated tau and cloud cover from bottom up
   ---------------------------------------------------------*/
 
-  below_tau[pver - 1] = zero;
-  below_cld[pver - 1] = zero;
+  below_tau[nlev - 1] = zero;
+  below_cld[nlev - 1] = zero;
 
-  for (int kk = pverm - 1; kk > -1; kk--) {
+  for (int kk = nlevm - 1; kk > -1; kk--) {
     below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
     below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
   } // end kk
 
-  for (int kk = pverm - 1; kk > -1; kk--) {
+  for (int kk = nlevm - 1; kk > -1; kk--) {
     if (below_tau[kk] != zero) {
       below_cld[kk] /= below_tau[kk];
     } else {
@@ -227,7 +227,7 @@ void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
   /*---------------------------------------------------------
       ... modify above_tau and below_tau via jfm
   ---------------------------------------------------------*/
-  for (int kk = 1; kk < pver; kk++) {
+  for (int kk = 1; kk < nlev; kk++) {
     if (above_cld[kk] != zero) {
       above_tau[kk] /= above_cld[kk];
     } // end if
@@ -238,7 +238,7 @@ void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
 
   } // end kk
 
-  for (int kk = 0; kk < pverm; kk++) {
+  for (int kk = 0; kk < nlevm; kk++) {
     if (below_cld[kk] != zero) {
       below_tau[kk] /= below_cld[kk];
     } // end if
@@ -259,7 +259,7 @@ void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
   // cos (solar zenith angle)
   const Real coschi = haero::max(haero::cos(zen_angle), half);
 
-  for (int kk = 0; kk < pver; kk++) {
+  for (int kk = 0; kk < nlev; kk++) {
 
     /*---------------------------------------------------------
       ... form effective albedo
@@ -584,10 +584,10 @@ void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
   ==============================================================================*/
 
   // @param[in] sza_in             ! solar zenith angle [degrees]
-  // @param[in] alb_in(pver)       ! albedo
-  // @param[in]  p_in(pver)         ! midpoint pressure [hPa]
-  // @param[in]  t_in(pver)         ! Temperature profile [K]
-  // @param[in]  colo3_in(pver)     ! o3 column density [molecules/cm^3]
+  // @param[in] alb_in(nlev)       ! albedo
+  // @param[in]  p_in(nlev)         ! midpoint pressure [hPa]
+  // @param[in]  t_in(nlev)         ! Temperature profile [K]
+  // @param[in]  colo3_in(nlev)     ! o3 column density [molecules/cm^3]
   // @param[in]  xsqy
   // @param[in]  sza
   // @param[in]  del_sza
@@ -615,7 +615,7 @@ void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
     ... interpolate table rsf to model variables
 ----------------------------------------------------------------------*/
   const Real zero = 0;
-  interpolate_rsf(team, alb_in, sza_in, p_in, colo3_in, pver, sza, del_sza, alb,
+  interpolate_rsf(team, alb_in, sza_in, p_in, colo3_in, nlev, sza, del_sza, alb,
                   press, del_p, colo3, o3rat, del_alb, del_o3rat, etfphot,
                   rsf_tab, //  in
                   nw, nump, numsza, numcolo3, numalb, rsf, psum_l,
@@ -631,10 +631,10 @@ void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
    150 to 350 degrees K.  Make sure the index is a value
    between 1 and 201.
   ------------------------------------------------------------------------------*/
-  // To avoid the 'pver is undefined' error during CUDA code compilation.
-  constexpr int pver_local = pver;
+  // To avoid the 'nlev is undefined' error during CUDA code compilation.
+  constexpr int nlev_local = nlev;
   Kokkos::parallel_for(
-      Kokkos::ThreadVectorRange(team, pver_local), [&](int kk) {
+      Kokkos::ThreadVectorRange(team, nlev_local), [&](int kk) {
         /*----------------------------------------------------------------------
           ... get index into xsqy
          ----------------------------------------------------------------------*/
@@ -715,15 +715,15 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
       ... table photorates for wavelengths > 200nm
  -----------------------------------------------------------------*/
 
-  //@param[out] photo(pver,phtcnt)  column photodissociation rates [1/s]
-  //@param[in]  pmid(pver)          midpoint pressure [Pa]
-  //@param[in]  pdel(pver)          pressure delta about midpoint [Pa]
-  //@param[in]  temper(pver)        midpoint temperature [K]
-  //@param[in]  colo3_in(pver)      column densities [molecules/cm^2]
+  //@param[out] photo(nlev,phtcnt)  column photodissociation rates [1/s]
+  //@param[in]  pmid(nlev)          midpoint pressure [Pa]
+  //@param[in]  pdel(nlev)          pressure delta about midpoint [Pa]
+  //@param[in]  temper(nlev)        midpoint temperature [K]
+  //@param[in]  colo3_in(nlev)      column densities [molecules/cm^2]
   //@param[in]  zen_angle(icol)     solar zenith angle [radians]
   //@param[in]  srf_alb(icols)      surface albedo
-  //@param[in]  lwc(icol,pver)      liquid water content [kg/kg]
-  //@param[in]  clouds(icol,pver)   cloud fraction
+  //@param[in]  lwc(icol,nlev)      liquid water content [kg/kg]
+  //@param[in]  clouds(icol,nlev)   cloud fraction
   //@param[in]  esfact              earth sun distance factor
   //@param[in]  table_data          column-independent photolysis table data
   //@param[out] work_arrays         column-specific photolysis work arrays
@@ -740,9 +740,9 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
   constexpr Real max_zen_angle = 88.85; //  degrees
 
   // vertical pressure array [hPa]
-  Real parg[pver] = {};
-  Real eff_alb[pver] = {};
-  Real cld_mult[pver] = {};
+  Real parg[nlev] = {};
+  Real eff_alb[nlev] = {};
+  Real cld_mult[nlev] = {};
 
   /*-----------------------------------------------------------------
     ... zero all photorates
@@ -756,7 +756,7 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
     cloud_mod(zen_angle, clouds, lwc, pdel,
               srf_alb, //  in
               eff_alb, cld_mult);
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, nlev), [&](int kk) {
       parg[kk] = pmid(kk) * Pa2mb;
       cld_mult[kk] *= esfact;
     });
@@ -783,7 +783,7 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
       for (int mm = 0; mm < phtcnt; ++mm) {
         const int ind = table_data.lng_indexer(mm);
         if (ind > -1) {
-          for (int kk = 0; kk < pver; ++kk) {
+          for (int kk = 0; kk < nlev; ++kk) {
             photo(kk, mm) =
                 cld_mult[kk] *
                 (photo(kk, mm) + table_data.pht_alias_mult_1(mm) *

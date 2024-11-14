@@ -34,7 +34,7 @@ namespace wetdep {
  * @param[out] lprec Local production rate of precipitation [kg/m2/s].
  *
  * @pre pdel, source_term, sink_term and lprec are all an array
- *      of size pver == atm.num_levels().
+ *      of size nlev == atm.num_levels().
  *
  * @pre In F90, ncol == 1 as we only operate over one column at a time
  *      as outer loops will iterate over columns, so we drop ncol as input.

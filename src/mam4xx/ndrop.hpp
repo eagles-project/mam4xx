@@ -22,7 +22,7 @@ using View2D = DeviceType::view_2d<Real>;
 using ConstView2D = DeviceType::view_2d<const Real>;
 
 // number of vertical levels
-constexpr int pver = mam4::nlev;
+constexpr int nlev = mam4::nlev;
 // Top level for troposphere cloud physics
 constexpr int top_lev = 7;
 constexpr int psat = 6; //  number of supersaturations to calc ccn concentration
@@ -360,10 +360,10 @@ void ccncalc(const Real state_q[aero_model::pcnst], const Real tair,
   // @param [in] tair(:,:)     air temperature [K]
   // @param [in] qcldbrn(:,:,:,:), qcldbrn_num(:,:,:) cloud-borne aerosol mass
   // / number  mixing ratios [kg/kg or #/kg]
-  // @param [in] air_density(pcols,pver)       air density [kg/m3]
+  // @param [in] air_density(pcols,nlev)       air density [kg/m3]
 
   // output arguments
-  // ccn(pcols,pver,psat) number conc of aerosols activated at supersat [#/m3]
+  // ccn(pcols,nlev,psat) number conc of aerosols activated at supersat [#/m3]
   // qcldbrn  1) icol 2) ispec 3) kk 4)imode
   // state_q 1) icol 2) kk 3) imode and ispec
   const Real zero = 0;
@@ -794,14 +794,14 @@ void update_from_cldn_profile(
   // clang-format off
   // input arguments
   // cldn_col_in(:)       cloud fraction [fraction] at kk
-  // cldn_col_in_kp1(:)   cloud fraction [fraction] at min0(kk+1, pver);
+  // cldn_col_in_kp1(:)   cloud fraction [fraction] at min0(kk+1, nlev);
   // dtinv                inverse time step for microphysics [s^{-1}]
   // wtke_col_in(:)       subgrid vertical velocity [m/s] at kk
   // zs(:)                inverse of distance between levels [m^-1]
   // dz(:)                geometric thickness of layers [m]
   // temp_col_in(:)       temperature [K]
   // air_density(:)       air density [kg/m^3] at kk
-  // air_density_kp1      air density [kg/m^3] at min0(kk+1, pver);
+  // air_density_kp1      air density [kg/m^3] at min0(kk+1, nlev);
   // csbot_cscen(:)       inverse normalized air density csbot(i)/cs(i,k)
   //                                       [dimensionless] [dimensionless] 
   // state_q_col_in(:,:)    aerosol mmrs/ [kg/kg]
@@ -829,7 +829,7 @@ void update_from_cldn_profile(
   // to k+1,       so they are incorrectly depleted with no replacement
   // BAD CONSTANT
   const Real cld_thresh = 0.01; //    threshold cloud fraction [fraction]
-  // kp1 = min0(kk+1, pver);
+  // kp1 = min0(kk+1, nlev);
   constexpr int ntot_amode = AeroConfig::num_modes();
   const Real zero = 0;
 
@@ -888,12 +888,12 @@ void update_from_cldn_profile(
       const Real crdz = csbot_cscen / dz;
 
       // rce-comment 2
-      // code for k=pver was changed to use the following conceptual model
-      // in k=pver, there can be no cloud-base activation unless one
+      // code for k=nlev was changed to use the following conceptual model
+      // in k=nlev, there can be no cloud-base activation unless one
       // considers a scenario such as the layer being partially cloudy,
       // with clear air at bottom and cloudy air at top
       // assume this scenario, and that the clear/cloudy portions mix with
-      // a timescale taumix_internal = dz(i,pver)/wtke_cen(i,pver)
+      // a timescale taumix_internal = dz(i,nlev)/wtke_cen(i,nlev)
       // in the absence of other sources/sinks, qact (the activated
       // particle mixratio) attains a steady state value given by
       // qact_ss = fcloud*fact*qtot where fcloud is cloud fraction, fact
@@ -907,11 +907,11 @@ void update_from_cldn_profile(
 
       // steve --
       // you will likely want to change this. i did not really understand
-      // what was previously being done in k=pver
-      // in the cam3_5_3 code, wtke(i,pver) appears to be equal to the
+      // what was previously being done in k=nlev
+      // in the cam3_5_3 code, wtke(i,nlev) appears to be equal to the
       // droplet deposition velocity which is quite small
       // in the cam3_5_37 version, wtke is done differently and is much
-      // larger in k=pver, so the activation is stronger there
+      // larger in k=nlev, so the activation is stronger there
 
       for (int imode = 0; imode < ntot_amode; ++imode) {
         // local array index for MAM number, species
@@ -928,7 +928,7 @@ void update_from_cldn_profile(
     } // end cldn_col_in(kk) - cldn_col_in(kp1) > cld_thresh
   } else {
 
-    // if cldn < 0.01_r8 at any level except kk=pver, deplete qcld,
+    // if cldn < 0.01_r8 at any level except kk=nlev, deplete qcld,
     // turn all raercol_cw to raercol, put appropriate tendency in nsource
     // Note that if cldn(kk) >= 0.01_r8 but cldn(kk) - cldn(kp1) <= 0.01,
     // nothing is done.
@@ -1180,9 +1180,9 @@ void update_from_explmix(
     const View2D &mact,          // fractional aero. mass activation rate [/s]
     const ColumnView &qcld,      // cloud droplet number mixing ratio [#/kg]
     // single column of saved aerosol mass, number mixing ratios [#/kg or kg/kg]
-    const View1D raercol[pver][2],
+    const View1D raercol[nlev][2],
     // same as raercol but for cloud-borne phase [#/kg or kg/kg]
-    const View1D raercol_cw[pver][2],
+    const View1D raercol_cw[nlev][2],
     int &nsav, // indices for old, new time levels in substepping
     int &nnew, // indices for old, new time levels in substepping
     const int nspec_amode[AeroConfig::num_modes()],
@@ -1211,18 +1211,18 @@ void update_from_explmix(
   Real dtmin = dtmicro;
   // rce-comment -- eddy_diff(k) is eddy-diffusivity at k/k+1 interface
   // want eddy_diff_k(k) = eddy_diff(k) * (density at k/k+1 interface)
-  // so use pint(i,k+1) as pint is 1:pverp
+  // so use pint(i,k+1) as pint is 1:nlevp
   // eddy_diff_k(k)=eddy_diff(k)*2.*pint(i,k)/(rair*(temp(i,k)+temp(i,k+1)))
   // eddy_diff_k(k)=eddy_diff(k)*2.*pint(i,k+1)/(rair*(temp(i,k)+temp(i,k+1)))
 
-  // start k for loop here. for k = top_lev to pver
-  // cldn will be columnviews of length pver,
+  // start k for loop here. for k = top_lev to nlev
+  // cldn will be columnviews of length nlev,
   // overlaps also to columnview pass as parameter so it is allocated elsewhere
   Kokkos::parallel_reduce(
-      Kokkos::TeamVectorRange(team, pver - top_lev + 1),
+      Kokkos::TeamVectorRange(team, nlev - top_lev + 1),
       [&](int kk, Real &min_val) {
         const int k = top_lev - 1 + kk;
-        const int kp1 = haero::min(k + 1, pver - 1);
+        const int kp1 = haero::min(k + 1, nlev - 1);
         const int km1 = haero::max(k - 1, top_lev - 1);
         // maximum overlap assumption
         if (cldn(kp1) > overlap_cld_thresh) {
@@ -1258,7 +1258,7 @@ void update_from_explmix(
         // for the layer.  for most layers, the activation loss rate
         // (for interstitial particles) is accounted for by the loss by
         // turb-transfer to the layer above.
-        // k=pver is special, and the loss rate for activation within
+        // k=nlev is special, and the loss rate for activation within
         // the layer must be added to tinv.  if not, the time step
         // can be too big, and explmix can produce negative values.
         // the negative values are reset to zero, resulting in an
@@ -1287,7 +1287,7 @@ void update_from_explmix(
   //  nnew stores index of most recent updated values (either 1 or 2).
 
   for (int isub = 0; isub < nsubmix; isub++) {
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver - top_lev + 1),
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev - top_lev + 1),
                          [&](int k) {
                            const int kk = top_lev - 1 + k;
                            qncld(kk) = qcld(kk);
@@ -1309,18 +1309,18 @@ void update_from_explmix(
 
       // rce-comment- activation source in layer k involves particles from k+1
       //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver - top_lev),
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev - top_lev),
                            [&](int kk) {
                              const int k = top_lev - 1 + kk;
-                             const int kp1 = haero::min(k + 1, pver - 1);
+                             const int kp1 = haero::min(k + 1, nlev - 1);
                              srcn(k) += nact(k, imode) * raercol[kp1][nsav](mm);
                            });
 
-      // rce-comment- new formulation for k=pver
-      // srcn(  pver  )=srcn(  pver  )+nact(  pver  ,m)*(raercol(pver,mm,nsav))
-      tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
-             raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
-      srcn(pver - 1) += haero::max(zero, tmpa);
+      // rce-comment- new formulation for k=nlev
+      // srcn(  nlev  )=srcn(  nlev  )+nact(  nlev  ,m)*(raercol(nlev,mm,nsav))
+      tmpa = raercol[nlev - 1][nsav](mm) * nact(nlev - 1, imode) +
+             raercol_cw[nlev - 1][nsav](mm) * nact(nlev - 1, imode);
+      srcn(nlev - 1) += haero::max(zero, tmpa);
     } // end imode
 
     // qcld == qold
@@ -1328,10 +1328,10 @@ void update_from_explmix(
 
     if (enable_aero_vertical_mix) {
       team.team_barrier();
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver - top_lev + 1),
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev - top_lev + 1),
                            [&](int kk) {
                              const int k = top_lev - 1 + kk;
-                             const int kp1 = haero::min(k + 1, pver - 1);
+                             const int kp1 = haero::min(k + 1, nlev - 1);
                              const int km1 = haero::max(k - 1, top_lev - 1);
                              explmix(qncld(km1), qncld(k), qncld(kp1), qcld(k),
                                      srcn(k), eddy_diff_kp(k), eddy_diff_km(k),
@@ -1353,20 +1353,20 @@ void update_from_explmix(
       // rce-comment - activation source in layer k involves particles from k+1
       // source(:)= nact(:,m)*(raercol(:,mm,nsav))
       Kokkos::parallel_for(
-          Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
+          Kokkos::TeamVectorRange(team, nlev - top_lev + 1), [&](int kk) {
             const int k = top_lev - 1 + kk;
-            const int kp1 = haero::min(k + 1, pver - 1);
+            const int kp1 = haero::min(k + 1, nlev - 1);
             source(k) = nact(k, imode) * raercol[kp1][nsav](mm);
           }); // end k
 
-      tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
-             raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
-      source(pver - 1) = haero::max(zero, tmpa);
+      tmpa = raercol[nlev - 1][nsav](mm) * nact(nlev - 1, imode) +
+             raercol_cw[nlev - 1][nsav](mm) * nact(nlev - 1, imode);
+      source(nlev - 1) = haero::max(zero, tmpa);
 
       Kokkos::parallel_for(
-          Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
+          Kokkos::TeamVectorRange(team, nlev - top_lev + 1), [&](int kk) {
             const int k = top_lev - 1 + kk;
-            const int kp1 = haero::min(k + 1, pver - 1);
+            const int kp1 = haero::min(k + 1, nlev - 1);
             const int km1 = haero::max(k - 1, top_lev - 1);
 
             explmix(raercol_cw[km1][nsav](mm), raercol_cw[k][nsav](mm),
@@ -1390,18 +1390,18 @@ void update_from_explmix(
         // rce-comment: activation source in layer k involves particles from k+1
         // source(:)= mact(:,m)*(raercol(:,mm,nsav))
         Kokkos::parallel_for(
-            Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
+            Kokkos::TeamVectorRange(team, nlev - top_lev + 1), [&](int kk) {
               const int k = top_lev - 1 + kk;
-              const int kp1 = haero::min(k + 1, pver - 1);
+              const int kp1 = haero::min(k + 1, nlev - 1);
               source(k) = mact(k, imode) * raercol[kp1][nsav](mm);
             }); // end k
-        tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
-               raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
-        source(pver - 1) = haero::max(zero, tmpa);
+        tmpa = raercol[nlev - 1][nsav](mm) * nact(nlev - 1, imode) +
+               raercol_cw[nlev - 1][nsav](mm) * nact(nlev - 1, imode);
+        source(nlev - 1) = haero::max(zero, tmpa);
         Kokkos::parallel_for(
-            Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
+            Kokkos::TeamVectorRange(team, nlev - top_lev + 1), [&](int kk) {
               const int k = top_lev - 1 + kk;
-              const int kp1 = haero::min(k + 1, pver - 1);
+              const int kp1 = haero::min(k + 1, nlev - 1);
               const int km1 = haero::max(k - 1, top_lev - 1);
               explmix(raercol_cw[km1][nsav](mm), raercol_cw[k][nsav](mm),
                       raercol_cw[kp1][nsav](mm),
@@ -1426,7 +1426,7 @@ void update_from_explmix(
 
   // evaporate particles again if no cloud
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
+      Kokkos::TeamVectorRange(team, nlev - top_lev + 1), [&](int kk) {
         const int k = top_lev - 1 + kk;
         if (cldn(k) == zero) {
           // no cloud
@@ -1479,7 +1479,7 @@ void dropmixnuc(
     const ColumnView &wtke, const View2D &ccn,
     const ColumnView coltend[ncnst_tot], const ColumnView coltend_cw[ncnst_tot],
     // work arrays
-    const View1D raercol_cw[pver][2], const View1D raercol[pver][2],
+    const View1D raercol_cw[nlev][2], const View1D raercol[nlev][2],
     const View2D &nact, const View2D &mact, const ColumnView &eddy_diff,
     const ColumnView &zn, const ColumnView &csbot, const ColumnView &zs,
     const ColumnView &overlapp, const ColumnView &overlapm,
@@ -1506,16 +1506,16 @@ void dropmixnuc(
   // state_q(:,:,:) aerosol mmrs [kg/kg]
   // ncldwtr(:,:) initial droplet number mixing ratio [#/kg]
   // v_diffusivity(:,:)     vertical diffusivity [m^2/s]
-  // wsub(pcols,pver)    subgrid vertical velocity [m/s]
-  // cldn(pcols,pver)    cloud fraction [fraction]
-  // cldo(pcols,pver)    cloud fraction on previous time step [fraction]
+  // wsub(pcols,nlev)    subgrid vertical velocity [m/s]
+  // cldn(pcols,nlev)    cloud fraction [fraction]
+  // cldo(pcols,nlev)    cloud fraction on previous time step [fraction]
 
   // inout arguments
   //  qqcw(:)     cloud-borne aerosol mass, number mixing ratios [#/kg or kg/kg]
 
   // output arguments
   // ptend_q[aero_model::pcnst]
-  // tendnd(pcols,pver) tendency in droplet number mixing ratio [#/kg/s]
+  // tendnd(pcols,nlev) tendency in droplet number mixing ratio [#/kg/s]
   // factnum(:,:,:)     activation fraction for aerosol number [fraction]
   // nsource            droplet number mixing ratio source tendency [#/kg/s]
   // ndropmix           droplet number mixing ratio tendency due to mixing [#/kg/s]
@@ -1556,7 +1556,7 @@ void dropmixnuc(
   // Initialize 1D (in space) versions of interstitial and cloud borne aerosol
   int nsav = 0;
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
+      Kokkos::TeamVectorRange(team, nlev - top_lev + 1), [&](int kk) {
         const int k = kk + top_lev - 1;
 
         wtke(k) = haero::max(wsub(k), wmixmin);
@@ -1608,8 +1608,8 @@ void dropmixnuc(
         for (int imode = 0; imode < ntot_amode; ++imode)
           factnum(imode, k) = factnum_k[imode];
       }); // end k
-  static constexpr int pver_loc = pver;
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver_loc), [&](int k) {
+  static constexpr int nlev_loc = nlev;
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, nlev_loc), [&](int k) {
     EKAT_KERNEL_ASSERT_MSG(0 < zm(k - 1) - zm(k),
                            "Error: Geopotential height at level should be "
                            "monotonically decreasing.\n");
@@ -1617,9 +1617,9 @@ void dropmixnuc(
   team.team_barrier();
   static constexpr int top_lev_loc = top_lev;
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, top_lev_loc, pver_loc), [&](int k) {
+      Kokkos::TeamVectorRange(team, top_lev_loc, nlev_loc), [&](int k) {
         zn(k) = gravity * rpdel[k];
-        if (k < pver - 1) {
+        if (k < nlev - 1) {
           csbot(k) = two * pint(k + 1) / (rair * (temp(k) + temp(k + 1)));
           csbot_cscen(k) =
               csbot(k) / conversions::density_of_ideal_gas(temp(k), pmid(k));
@@ -1640,9 +1640,9 @@ void dropmixnuc(
 
   // NOTE: update_from_cldn_profile loops from 7 to 71 in fortran code.
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, pver - top_lev), [&](int kk) {
+      Kokkos::TeamVectorRange(team, nlev - top_lev), [&](int kk) {
         const int k = kk + top_lev - 1;
-        const int kp1 = haero::min(k + 1, pver - 1);
+        const int kp1 = haero::min(k + 1, nlev - 1);
 
         // PART II: changes in aerosol and cloud water from vertical profile of
         // new cloud fraction
@@ -1695,7 +1695,7 @@ void dropmixnuc(
   });
   team.team_barrier();
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
+      Kokkos::TeamVectorRange(team, nlev - top_lev + 1), [&](int kk) {
         const int k = kk + top_lev - 1;
         // droplet number mixing ratio tendency due to mixing [#/kg/s]
         ndropmix(k) = (qcld(k) - ncldwtr(k)) * dtinv - nsource(k);

@@ -939,8 +939,8 @@ void aero_model_emissions(
   }
   // NOTE: fortran: cam_in%sst
   const Real surface_temp = online_emiss_data.surface_temp;
-  // NOTE: fortran: state%u(:ncol,pver), state%v(:ncol,pver),
-  // state%zm(:ncol,pver)
+  // NOTE: fortran: state%u(:ncol,nlev), state%v(:ncol,nlev),
+  // state%zm(:ncol,nlev)
   // => u_bottom, v_bottom, z_bottom
   const Real u_bottom = online_emiss_data.u_bottom;
   const Real v_bottom = online_emiss_data.v_bottom;

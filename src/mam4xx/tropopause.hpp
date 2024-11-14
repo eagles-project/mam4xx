@@ -12,7 +12,7 @@ using ConstColumnView = haero::ConstColumnView;
 // FIXME: Get these values from modal_aer_opt.
 constexpr int nswbands = 14;
 constexpr int nlwbands = 16;
-constexpr int pver = mam4::nlev;
+constexpr int nlev = mam4::nlev;
 
 constexpr Real shr_const_rgas =
     haero::Constants::r_gas * 1e3; // Universal gas constant ~ J/K/kmole
@@ -111,14 +111,14 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
   trp = -99.0; // negative means not valid
 
   // initialize start level
-  pmk = half * (haero::pow(pmid1d(pver - 2), cnst_kap) +
-                haero::pow(pmid1d(pver - 1), cnst_kap));
+  pmk = half * (haero::pow(pmid1d(nlev - 2), cnst_kap) +
+                haero::pow(pmid1d(nlev - 1), cnst_kap));
   pm = haero::pow(pmk, (one / cnst_kap));
 
-  get_dtdz(pm, pmk, pmid1d(pver - 2), pmid1d(pver - 1), temp1d(pver - 2),
-           temp1d(pver - 1), dtdz, tm);
+  get_dtdz(pm, pmk, pmid1d(nlev - 2), pmid1d(nlev - 1), temp1d(nlev - 2),
+           temp1d(nlev - 1), dtdz, tm);
 
-  for (int kk = pver - 2; kk >= 1; --kk) { // main_loop
+  for (int kk = nlev - 2; kk >= 1; --kk) { // main_loop
     pmk0 = pmk;
     dtdz0 = dtdz;
     pmk = half * (haero::pow(pmid1d(kk - 1), cnst_kap) +
@@ -222,7 +222,7 @@ void tropopause_twmo(const ConstColumnView &pmid, const ConstColumnView &pint,
   // if successful, store of the results and find the level and temperature.
   if (tP > 0) {
     // Find the associated level.
-    for (int kk = pver - 1; kk > 1; --kk) {
+    for (int kk = nlev - 1; kk > 1; --kk) {
       if (tP >= pint(kk)) {
         tropLev = kk;
         break;

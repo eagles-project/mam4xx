@@ -2499,7 +2499,7 @@ ma_convproc_tend(const Kokkos::View<Real *>
   Kokkos::View<Real *> eudp = scratch1Dviews[ConvProc::Col1DViewInd::eudp];
   Kokkos::View<Real *> dddp = scratch1Dviews[ConvProc::Col1DViewInd::dddp];
   Kokkos::View<Real *> dudp = scratch1Dviews[ConvProc::Col1DViewInd::dudp];
-  //  rhoair(pver)       ! air density at [kg/m3]
+  //  rhoair(nlev)       ! air density at [kg/m3]
   Kokkos::View<Real *> rhoair = scratch1Dviews[ConvProc::Col1DViewInd::rhoair];
   // zmagl(nlev)         ! working height above surface [m]
   Kokkos::View<Real *> zmagl = scratch1Dviews[ConvProc::Col1DViewInd::zmagl];
@@ -2888,22 +2888,22 @@ ma_convproc_sh_intr(const int nlev, const Real temperature[/* nlev */],
 
   //  Arguments
   /*   
-  in    :: dpdry[pver]           ! layer delta-p-dry [mb]
-  in    :: pdel[pver]            ! layer delta-p [mb]
-  in    :: temperature[pver]     ! Temperature [K]
-  in    :: pmid[pver]            ! Pressure at model levels [Pa]
+  in    :: dpdry[nlev]           ! layer delta-p-dry [mb]
+  in    :: pdel[nlev]            ! layer delta-p [mb]
+  in    :: temperature[nlev]     ! Temperature [K]
+  in    :: pmid[nlev]            ! Pressure at model levels [Pa]
 
   in    :: dt                    ! delta t (model time increment) [s]
-  in    :: qnew[pver][pcnst]      ! tracer mixing ratio (TMR) including water vapor [kg/kg]
+  in    :: qnew[nlev][pcnst]      ! tracer mixing ratio (TMR) including water vapor [kg/kg]
 
-  in    :: sh_frac[pver]         ! Shallow conv cloud frac [0-1]
-  in    :: icwmrsh[pver]         ! Shallow conv cloud condensate (in cloud) [kg/kg]
-  in    :: rprddp[pver]          ! Shallow conv precip production (grid avg) [kg/kg/s]
-  in    :: evapcdp[pver]         ! Shallow conv precip evaporation (grid avg) [kg/kg/s]
+  in    :: sh_frac[nlev]         ! Shallow conv cloud frac [0-1]
+  in    :: icwmrsh[nlev]         ! Shallow conv cloud condensate (in cloud) [kg/kg]
+  in    :: rprddp[nlev]          ! Shallow conv precip production (grid avg) [kg/kg/s]
+  in    :: evapcdp[nlev]         ! Shallow conv precip evaporation (grid avg) [kg/kg/s]
   in    :: species_class[:]      ! species index
 
   out   :: dotend[pcnst]         ! flag if do tendency
-  inout :: dqdt[pver][pcnst]     ! time tendency of TMR [kg/kg/s]
+  inout :: dqdt[nlev][pcnst]     ! time tendency of TMR [kg/kg/s]
   inout :: qsrflx[pcnst][nsrflx] ! process-specific column tracer tendencies  (see ma_convproc_intr for more information) [kg/m2/s] 
   */
   // clang-format on

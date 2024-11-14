@@ -20,7 +20,7 @@ namespace mo_setsox {
 struct Config {
 
   // number of vertical levels
-  int pver = mam4::nlev;
+  int nlev = mam4::nlev;
   int modeptr_accum = int(ModeIndex::Accumulation);
   /*
   these are the entries/indices in the gas-phase species array
@@ -800,13 +800,13 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
   dqdt due to wet removal, currently set as zero [mol/mol/s]
   real(r8) :: dqdt_wr
   dqdt due to so4 aqueous chemistry [mol/mol/s]
-  real(r8) :: dqdt_aqso4(ncol,pver,gas_pcnst)
+  real(r8) :: dqdt_aqso4(ncol,nlev,gas_pcnst)
   dqdt due to h2so4 uptake [mol/mol/s]
-  real(r8) :: dqdt_aqh2so4(ncol,pver,gas_pcnst)
+  real(r8) :: dqdt_aqh2so4(ncol,nlev,gas_pcnst)
   dqdt due to H2O2 chemistry [mol/mol/s]
-  real(r8) :: dqdt_aqhprxn(ncol,pver)
+  real(r8) :: dqdt_aqhprxn(ncol,nlev)
   dqdt due to O3 chemistry [mol/mol/s]
-  real(r8) :: dqdt_aqo3rxn(ncol,pver)
+  real(r8) :: dqdt_aqo3rxn(ncol,nlev)
   integrated surface fluxes [kg/m2/s]
   real(r8) :: sflx(ncol)
   factor of TMR among modes [fraction]
@@ -1001,7 +1001,7 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
             (d) PREDICTION
   -----------------------------------------------------------------------
 
-      use ppgrid,          only : pver
+      use ppgrid,          only : nlev
       use cam_history,     only : outfld
       use sox_cldaero_mod, only : sox_cldaero_update,
       sox_cldaero_create_obj, sox_cldaero_destroy_obj use cldaero_mod, only
@@ -1055,7 +1055,7 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
       integer  :: icol,kk
       logical  :: converged
       real(r8) :: t_factor       // working variables to convert
-      temperature real(r8) :: cfact(ncol,pver)        // total atms density
+      temperature real(r8) :: cfact(ncol,nlev)        // total atms density
       [kg/L] real(r8) :: xk, xe, x2     // output parameters in Henry's law
       real(r8) :: tz      // temperature at (i,k) [K]
       real(r8) :: xlwc    // in-cloud LWC at (i,k) [kg/L]
@@ -1063,20 +1063,20 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
       real(r8) :: patm    // pressure [atm]
 
   the concentration values can vary in different forms
-      real(r8) :: xph0,  xph(ncol,pver)   // pH value in H+ concentration
+      real(r8) :: xph0,  xph(ncol,nlev)   // pH value in H+ concentration
       [mol/L, or kg/L, or kg/kg(w)] real(r8) :: so2g, h2o2g, o3g        //
       concentration in gas phase [mol/mol] real(r8) :: rah2o2, rao3 //
       reaction rate
   mass concentration for species
-      real(r8), dimension(ncol,pver) :: xso2, xso4, xso4_init, xh2so4, xo3,
+      real(r8), dimension(ncol,nlev) :: xso2, xso4, xso4_init, xh2so4, xo3,
       xh2o2
                                         // species concentrations [mol/mol]
       real(r8), pointer :: xso4c(:,:)
-      real(r8) :: xdelso4hp(ncol,pver)    // change of so4 [mol/mol]
-      real(r8) :: xphlwc(ncol,pver)       // pH value multiplied by lwc
+      real(r8) :: xdelso4hp(ncol,nlev)    // change of so4 [mol/mol]
+      real(r8) :: xphlwc(ncol,nlev)       // pH value multiplied by lwc
       [kg/kg]
 
-      real(r8), dimension(ncol,pver) :: heh2o2,heso2,heo3 // henry law
+      real(r8), dimension(ncol,nlev) :: heh2o2,heso2,heo3 // henry law
       const for species type(cldaero_conc_t), pointer :: cldconc
   #include "../yaml/mo_setsox/f90_yaml/setsox_beg_yml.f90"
 
@@ -1131,7 +1131,7 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
   -----------------------------------------------------------------
         ... Temperature dependent Henry constants
   -----------------------------------------------------------------
-      ver_loop0: do kk = 1,pver          //// pver loop for STEP 0
+      ver_loop0: do kk = 1,nlev          //// nlev loop for STEP 0
          col_loop0: do icol = 1,ncol
   */
   // there doesn't appear to be any reason for doing this
@@ -1290,7 +1290,7 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
   FIXME: same question here as at the end of sox_cldaero_update()--necessary?
   diagnose variable
   xphlwc(:,:) = 0.0
-  do kk = 1, pver
+  do kk = 1, nlev
      do icol = 1, ncol
         if (cldfrc>=small_value_cf .and. lwc>=small_value_lwc) then
            xphlwc = -one*log10(xph) * lwc

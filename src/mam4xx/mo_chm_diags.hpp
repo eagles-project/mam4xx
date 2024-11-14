@@ -28,14 +28,14 @@ constexpr const int gas_pcnst = gas_chemistry::gas_pcnst;
 constexpr const int pcnst = 80; // FIXME, 80 is the only value I found for this
                                 // in the fortran, but using 41 in the test
 // number of vertical levels
-constexpr const int pver = mam4::nlev;
+constexpr const int nlev = mam4::nlev;
 
 KOKKOS_INLINE_FUNCTION
 void het_diags(
     const ThreadTeam &team,
-    const ColumnView het_rates[gas_pcnst], //[pver][gas_pcnst], //in
-    const ColumnView mmr[gas_pcnst],       //[pver][gas_pcnst],
-    const ColumnView &pdel,                //[pver],
+    const ColumnView het_rates[gas_pcnst], //[nlev][gas_pcnst], //in
+    const ColumnView mmr[gas_pcnst],       //[nlev][gas_pcnst],
+    const ColumnView &pdel,                //[nlev],
     const Real &wght,
     View1D wrk_wd, //[gas_pcnst], //output
     // Real noy_wk, //output //this isn't actually used in this function?
@@ -57,7 +57,7 @@ void het_diags(
         //
         wrk_wd(mm) = 0;
 
-        for (int kk = 0; kk < pver; kk++) {
+        for (int kk = 0; kk < nlev; kk++) {
           wrk_wd(mm) += het_rates[mm](kk) * mmr[mm](kk) *
                         pdel(kk); // parallel_reduce in the future?
         }
@@ -105,48 +105,48 @@ bool name_matches(const char *name, const char *pattern) {
 KOKKOS_INLINE_FUNCTION
 void chm_diags(
     const ThreadTeam &team, int lchnk, int ncol, int id_o3,
-    const ColumnView vmr[gas_pcnst],      //[pver][gas_pcnst],
-    const ColumnView mmr[gas_pcnst],      //[pver][gas_pcnst],
+    const ColumnView vmr[gas_pcnst],      //[nlev][gas_pcnst],
+    const ColumnView mmr[gas_pcnst],      //[nlev][gas_pcnst],
     const ColumnView &depvel,             //[gas_pcnst],
     const ColumnView &depflx,             //[gas_pcnst],
-    const ColumnView mmr_tend[gas_pcnst], //[pver][gas_pcnst],
-    const ColumnView &pdel,               //[pver],
-    const ColumnView &pdeldry,            //[pver]
-    const ColumnView fldcw[pcnst],        //[pver][pcnst],
+    const ColumnView mmr_tend[gas_pcnst], //[nlev][gas_pcnst],
+    const ColumnView &pdel,               //[nlev],
+    const ColumnView &pdeldry,            //[nlev]
+    const ColumnView fldcw[pcnst],        //[nlev][pcnst],
     const int ltrop,        // index of the lowest stratospheric level
     const ColumnView &area, // [1], input and output
     const Real sox_species[3], const Real aer_species[gas_pcnst],
     const Real adv_mass[gas_pcnst], // constant from elsewhere
     const char solsym[gas_pcnst][17],
     // output fields
-    const ColumnView &mass,        //[pver],
-    const ColumnView &drymass,     //[pver],
-    const ColumnView &ozone_layer, //[pver], ozone concentration [DU]
+    const ColumnView &mass,        //[nlev],
+    const ColumnView &drymass,     //[nlev],
+    const ColumnView &ozone_layer, //[nlev], ozone concentration [DU]
     const ColumnView &ozone_col,   // [1], vertical integration of ozone
     const ColumnView
         &ozone_trop, // [1], vertical integration of ozone in troposphere [DU]
     const ColumnView
         &ozone_strat, // [1], vertical integration of ozone instratosphere [DU]
-    const ColumnView &vmr_nox,  //[pver],
-    const ColumnView &vmr_noy,  //[pver],
-    const ColumnView &vmr_clox, //[pver],
-    const ColumnView &vmr_cloy, //[pver],
-    const ColumnView &vmr_brox, //[pver],
-    const ColumnView &vmr_broy, //[pver],
-    const ColumnView &mmr_noy,  //[pver],
-    const ColumnView &mmr_sox,  //[pver],
-    const ColumnView &mmr_nhx,  //[pver],
-    const ColumnView &net_chem, //[pver],
+    const ColumnView &vmr_nox,  //[nlev],
+    const ColumnView &vmr_noy,  //[nlev],
+    const ColumnView &vmr_clox, //[nlev],
+    const ColumnView &vmr_cloy, //[nlev],
+    const ColumnView &vmr_brox, //[nlev],
+    const ColumnView &vmr_broy, //[nlev],
+    const ColumnView &mmr_noy,  //[nlev],
+    const ColumnView &mmr_sox,  //[nlev],
+    const ColumnView &mmr_nhx,  //[nlev],
+    const ColumnView &net_chem, //[nlev],
     const ColumnView &df_noy,   //[1],
     const ColumnView &df_sox,   //[1],
     const ColumnView &df_nhx,   //[1],
-    const ColumnView &mass_bc,  //[pver],
-    const ColumnView &mass_dst, //[pver],
-    const ColumnView &mass_mom, //[pver],
-    const ColumnView &mass_ncl, //[pver],
-    const ColumnView &mass_pom, //[pver],
-    const ColumnView &mass_so4, //[pver],
-    const ColumnView &mass_soa  //[pver],
+    const ColumnView &mass_bc,  //[nlev],
+    const ColumnView &mass_dst, //[nlev],
+    const ColumnView &mass_mom, //[nlev],
+    const ColumnView &mass_ncl, //[nlev],
+    const ColumnView &mass_pom, //[nlev],
+    const ColumnView &mass_so4, //[nlev],
+    const ColumnView &mass_soa  //[nlev],
 ) {
 
   //--------------------------------------------------------------------
@@ -170,7 +170,7 @@ void chm_diags(
   //--------------------------------------------------------------------
   //	... "diagnostic" groups
   //--------------------------------------------------------------------
-  for (int kk = 0; kk < pver; kk++) {
+  for (int kk = 0; kk < nlev; kk++) {
     vmr_nox(kk) = 0;
     vmr_noy(kk) = 0;
     vmr_clox(kk) = 0;
@@ -199,7 +199,7 @@ void chm_diags(
   // initialize the mass arrays
   // if (history_aerosol .and. .not. history_verbose) then // what was this used
   // for?
-  for (int kk = 0; kk < pver; kk++) {
+  for (int kk = 0; kk < nlev; kk++) {
     mass_bc(kk) = 0;
     mass_dst(kk) = 0;
     mass_mom(kk) = 0;
@@ -211,13 +211,13 @@ void chm_diags(
 
   area(0) *= haero::square(rearth);
 
-  for (int kk = 0; kk < pver; kk++) {
+  for (int kk = 0; kk < nlev; kk++) {
     mass(kk) = pdel(kk) * area(0) * rgrav;
     drymass(kk) = pdeldry(kk) * area(0) * rgrav;
   }
 
   // convert ozone from mol/mol (w.r.t. dry air mass) to DU
-  for (int kk = 0; kk < pver; kk++) {
+  for (int kk = 0; kk < nlev; kk++) {
     ozone_layer(kk) =
         pdeldry(kk) * vmr[id_o3](kk) * avogadro * rgrav / mwdry / DUfac * 1e3;
   }
@@ -226,7 +226,7 @@ void chm_diags(
   ozone_trop(0) = 0;
   ozone_strat(0) = 0;
 
-  for (int kk = 0; kk < pver; kk++) {
+  for (int kk = 0; kk < nlev; kk++) {
     ozone_col(0) += ozone_layer(kk);
     if (kk <= ltrop) {
       // stratospheric column ozone
@@ -243,7 +243,7 @@ void chm_diags(
 
     for (int i = 0; i < 3; i++) { // FIXME: bad constant (len of sox species)
       if (sox_species[i] == mm) {
-        for (int kk = 0; kk < pver; kk++) {
+        for (int kk = 0; kk < nlev; kk++) {
           mmr_sox(kk) = mmr_sox(kk) + wgt * mmr[mm](kk);
         }
       }
@@ -252,31 +252,31 @@ void chm_diags(
     if (aer_species[mm] == mm) {
       const char *symbol = solsym[mm];
       if (name_matches(symbol, "bc_a")) {
-        for (int kk = 0; kk < pver; kk++) {
+        for (int kk = 0; kk < nlev; kk++) {
           mass_bc(kk) += mmr[mm](kk);
         }
       } else if (name_matches(symbol, "dst_a")) {
-        for (int kk = 0; kk < pver; kk++) {
+        for (int kk = 0; kk < nlev; kk++) {
           mass_dst(kk) += mmr[mm](kk);
         }
       } else if (name_matches(symbol, "mom_a")) {
-        for (int kk = 0; kk < pver; kk++) {
+        for (int kk = 0; kk < nlev; kk++) {
           mass_mom(kk) += mmr[mm](kk);
         }
       } else if (name_matches(symbol, "ncl_a")) {
-        for (int kk = 0; kk < pver; kk++) {
+        for (int kk = 0; kk < nlev; kk++) {
           mass_ncl(kk) += mmr[mm](kk);
         }
       } else if (name_matches(symbol, "pom_a")) {
-        for (int kk = 0; kk < pver; kk++) {
+        for (int kk = 0; kk < nlev; kk++) {
           mass_pom(kk) += mmr[mm](kk);
         }
       } else if (name_matches(symbol, "so4_a")) {
-        for (int kk = 0; kk < pver; kk++) {
+        for (int kk = 0; kk < nlev; kk++) {
           mass_so4(kk) += mmr[mm](kk);
         }
       } else if (name_matches(symbol, "soa_a")) {
-        for (int kk = 0; kk < pver; kk++) {
+        for (int kk = 0; kk < nlev; kk++) {
           mass_soa(kk) += mmr[mm](kk);
         }
       }
@@ -288,7 +288,7 @@ void chm_diags(
       }
     }
 
-    for (int kk = 0; kk < pver; kk++) {
+    for (int kk = 0; kk < nlev; kk++) {
       net_chem(kk) = mmr_tend[mm](kk) * mass(kk);
     }
   }
@@ -320,31 +320,31 @@ void chm_diags(
       }
     }
     if (name_matches(symbol_cw, "bc_c")) {
-      for (int kk = 0; kk < pver; kk++) {
+      for (int kk = 0; kk < nlev; kk++) {
         mass_bc(kk) += fldcw[nn](kk);
       }
     } else if (name_matches(symbol_cw, "dst_c")) {
-      for (int kk = 0; kk < pver; kk++) {
+      for (int kk = 0; kk < nlev; kk++) {
         mass_dst(kk) += fldcw[nn](kk);
       }
     } else if (name_matches(symbol_cw, "mom_c")) {
-      for (int kk = 0; kk < pver; kk++) {
+      for (int kk = 0; kk < nlev; kk++) {
         mass_mom(kk) += fldcw[nn](kk);
       }
     } else if (name_matches(symbol_cw, "ncl_c")) {
-      for (int kk = 0; kk < pver; kk++) {
+      for (int kk = 0; kk < nlev; kk++) {
         mass_ncl(kk) += fldcw[nn](kk);
       }
     } else if (name_matches(symbol_cw, "pom_c")) {
-      for (int kk = 0; kk < pver; kk++) {
+      for (int kk = 0; kk < nlev; kk++) {
         mass_pom(kk) += fldcw[nn](kk);
       }
     } else if (name_matches(symbol_cw, "so4_c")) {
-      for (int kk = 0; kk < pver; kk++) {
+      for (int kk = 0; kk < nlev; kk++) {
         mass_so4(kk) += fldcw[nn](kk);
       }
     } else if (name_matches(symbol_cw, "soa_c")) {
-      for (int kk = 0; kk < pver; kk++) {
+      for (int kk = 0; kk < nlev; kk++) {
         mass_soa(kk) += fldcw[nn](kk);
       }
     }

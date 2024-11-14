@@ -21,7 +21,7 @@ using View0D = Kokkos::View<Real>;
 
 using ConstColumnView = haero::ConstColumnView;
 
-constexpr int pver = mam4::nlev;
+constexpr int nlev = mam4::nlev;
 constexpr int ntot_amode = mam4::AeroConfig::num_modes();
 // FIXME:  is top_lev equal to 1 in aerosol optics ?
 constexpr int top_lev = 0;
@@ -211,7 +211,7 @@ void modal_size_parameters(const Real sigma_logr_aer,
 
   const Real alnsg_amode = haero::log(sigma_logr_aer);
   const Real explnsigma = haero::exp(two * alnsg_amode * alnsg_amode);
-  // do kk = top_lev, pver
+  // do kk = top_lev, nlev
   // do icol = 1, ncol
   //  convert from number mode diameter to surface area
   radsurf = half * dgnumwet * explnsigma;
@@ -281,8 +281,8 @@ void calc_volc_ext(const int trop_level, const ConstColumnView &state_zm,
   /* calculate contributions from volcanic aerosol extinction
   trop_level(pcols)tropopause level for each column
   state_zm(:,:)  state%zm [m]
-  ext_cmip6_sw(pcols,pver)  aerosol shortwave extinction [1/m]
-  extinct(pcols,pver)  aerosol extinction [1/m]
+  ext_cmip6_sw(pcols,nlev)  aerosol shortwave extinction [1/m]
+  extinct(pcols,nlev)  aerosol extinction [1/m]
   tropopause_m(pcols)  tropopause height [m]
   kk_tropp = trop_level(icol) */
   constexpr Real half = 0.5;
@@ -611,14 +611,14 @@ void modal_aero_sw_wo_diagnostics_k(
   //  nnite           number of night columns
   //  idxnite(nnite)  local column indices of night columns
   //  trop_level(pcols)tropopause level for each column
-  //  ext_cmip6_sw(pcols,pver)  aerosol shortwave extinction [1/m]
+  //  ext_cmip6_sw(pcols,nlev)  aerosol shortwave extinction [1/m]
   //  is_cmip6_volc
 
   //  qqcw(:)                Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
-  //  tauxar(pcols,0:pver,nswbands)  layer extinction optical depth [1]
-  //  wa(pcols,0:pver,nswbands)      layer single-scatter albedo [1]
-  //  ga(pcols,0:pver,nswbands)      asymmetry factor [1]
-  //  fa(pcols,0:pver,nswbands)      forward scattered fraction [1]
+  //  tauxar(pcols,0:nlev,nswbands)  layer extinction optical depth [1]
+  //  wa(pcols,0:nlev,nswbands)      layer single-scatter albedo [1]
+  //  ga(pcols,0:nlev,nswbands)      asymmetry factor [1]
+  //  fa(pcols,0:nlev,nswbands)      forward scattered fraction [1]
 
   //  Local variables
   // real(r8),    pointer :: specmmr(:,:)         species mass mixing ratio
@@ -626,9 +626,9 @@ void modal_aero_sw_wo_diagnostics_k(
   // hygroscopicity [1]
 
   // sigma_logr_aer          geometric standard deviation of number
-  // distribution radsurf(pcols,pver)     aerosol surface mode radius
-  // logradsurf(pcols,pver)  log(aerosol surface mode radius)
-  // cheb(ncoef,pcols,pver)  chebychev polynomial parameters
+  // distribution radsurf(pcols,nlev)     aerosol surface mode radius
+  // logradsurf(pcols,nlev)  log(aerosol surface mode radius)
+  // cheb(ncoef,pcols,nlev)  chebychev polynomial parameters
 
   // specvol(:,:)         volume concentration of aerosol specie [m3/kg]
   // specdens(:)          species density for all species [kg/m3]
@@ -779,7 +779,7 @@ void modal_aero_sw_wo_diagnostics_k(
 inline int get_work_len_aerosol_optics() {
   // tauxar, wa, ga, fa
   // Note:
-  return 4 * pver * ntot_amode * nswbands;
+  return 4 * nlev * ntot_amode * nswbands;
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -795,16 +795,16 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
                    const View1D &work)
 
 {
-  static constexpr int pver_loc = pver;
+  static constexpr int nlev_loc = nlev;
   auto work_ptr = (Real *)work.data();
-  const auto tauxar_work = View3D(work_ptr, pver, ntot_amode, nswbands);
-  work_ptr += pver * ntot_amode * nswbands;
-  const auto wa_work = View3D(work_ptr, pver, ntot_amode, nswbands);
-  work_ptr += pver * ntot_amode * nswbands;
-  const auto ga_work = View3D(work_ptr, pver, ntot_amode, nswbands);
-  work_ptr += pver * ntot_amode * nswbands;
-  const auto fa_work = View3D(work_ptr, pver, ntot_amode, nswbands);
-  work_ptr += pver * ntot_amode * nswbands;
+  const auto tauxar_work = View3D(work_ptr, nlev, ntot_amode, nswbands);
+  work_ptr += nlev * ntot_amode * nswbands;
+  const auto wa_work = View3D(work_ptr, nlev, ntot_amode, nswbands);
+  work_ptr += nlev * ntot_amode * nswbands;
+  const auto ga_work = View3D(work_ptr, nlev, ntot_amode, nswbands);
+  work_ptr += nlev * ntot_amode * nswbands;
+  const auto fa_work = View3D(work_ptr, nlev, ntot_amode, nswbands);
+  work_ptr += nlev * ntot_amode * nswbands;
 
   constexpr Real zero = 0;
   int nswbands_loc = nswbands;
@@ -816,7 +816,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
     fa(0, i) = 0.7225;   // BAD CONSTANT
   });
 
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver_loc), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, nlev_loc), [&](int kk) {
     for (int i = 0; i < nswbands; ++i) {
       tauxar(kk, i) = zero;
       wa(kk, i) = zero;
@@ -829,7 +829,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
 
   static constexpr int top_lev_loc = top_lev;
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, top_lev_loc, pver_loc), [&](int kk) {
+      Kokkos::TeamVectorRange(team, top_lev_loc, nlev_loc), [&](int kk) {
         const auto state_q_kk = Kokkos::subview(state_q, kk, Kokkos::ALL());
         const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
         Real cldn_kk = cldn(kk);
@@ -857,7 +857,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt, const View2D &state_q,
   for (int isw = 0; isw < nswbands; ++isw) {
 
     Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, top_lev_loc, pver_loc), [&](int kk) {
+        Kokkos::TeamThreadRange(team, top_lev_loc, nlev_loc), [&](int kk) {
           Kokkos::parallel_reduce(
               Kokkos::ThreadVectorRange(team, ntot_amode),
               [&](int imode, Real &suma) {
@@ -903,21 +903,21 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
   const ConstColumnView cldn = atm.cloud_fraction;
 
   auto work_ptr = (Real *)work.data();
-  const auto tauxar_work = View3D(work_ptr, pver, ntot_amode, nswbands);
-  work_ptr += pver * ntot_amode * nswbands;
-  const auto wa_work = View3D(work_ptr, pver, ntot_amode, nswbands);
-  work_ptr += pver * ntot_amode * nswbands;
-  const auto ga_work = View3D(work_ptr, pver, ntot_amode, nswbands);
-  work_ptr += pver * ntot_amode * nswbands;
-  const auto fa_work = View3D(work_ptr, pver, ntot_amode, nswbands);
-  work_ptr += pver * ntot_amode * nswbands;
+  const auto tauxar_work = View3D(work_ptr, nlev, ntot_amode, nswbands);
+  work_ptr += nlev * ntot_amode * nswbands;
+  const auto wa_work = View3D(work_ptr, nlev, ntot_amode, nswbands);
+  work_ptr += nlev * ntot_amode * nswbands;
+  const auto ga_work = View3D(work_ptr, nlev, ntot_amode, nswbands);
+  work_ptr += nlev * ntot_amode * nswbands;
+  const auto fa_work = View3D(work_ptr, nlev, ntot_amode, nswbands);
+  work_ptr += nlev * ntot_amode * nswbands;
 
   constexpr Real zero = 0;
 
   // Need to have these defined outside kernels
   // otherwise undefined errors on cuda dev
   auto _nswbands = nswbands;
-  auto _pver = pver;
+  auto _nlev = nlev;
   auto _top_lev = top_lev;
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, _nswbands), [&](int i) {
@@ -928,7 +928,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
     fa(i, 0) = 0.7225;   // BAD CONSTANT
   });
 
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, _pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, _nlev), [&](int kk) {
     for (int i = 0; i < nswbands; ++i) {
       tauxar(i, kk) = zero;
       wa(i, kk) = zero;
@@ -940,7 +940,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
   team.team_barrier();
 
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, _top_lev, _pver), [&](int kk) {
+      Kokkos::TeamVectorRange(team, _top_lev, _nlev), [&](int kk) {
         Real state_q[pcnst] = {};
         Real qqcw[pcnst] = {};
 
@@ -974,7 +974,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
   for (int isw = 0; isw < nswbands; ++isw) {
 
     Kokkos::parallel_for(
-        Kokkos::TeamThreadRange(team, pver), [&](const int kk) {
+        Kokkos::TeamThreadRange(team, nlev), [&](const int kk) {
           Kokkos::parallel_reduce(
               Kokkos::ThreadVectorRange(team, ntot_amode),
               [&](int imode, Real &suma) {
@@ -1003,7 +1003,7 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
   // compute aerosol_optical depth
   aodvis = zero;
   Kokkos::parallel_reduce(
-      Kokkos::TeamVectorRange(team, _top_lev, _pver),
+      Kokkos::TeamVectorRange(team, _top_lev, _nlev),
       [&](int kk, Real &suma) {
         for (int imode = 0; imode < ntot_amode; ++imode) {
           //  aerosol species loop
@@ -1153,11 +1153,11 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt, const View2D &state_q,
   // cldn(:,:)         layer cloud fraction [fraction]
 
   // qqcw(:)                Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
-  // tauxar(pcols,pver,nlwbands)  layer absorption optical depth
+  // tauxar(pcols,nlev,nlwbands)  layer absorption optical depth
   constexpr Real zero = 0.0;
   // dry mass in each cell
-  static constexpr int pver_loc = pver;
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_loc), [&](int kk) {
+  static constexpr int nlev_loc = nlev;
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev_loc), [&](int kk) {
     // initialize output variables
     for (int i = 0; i < nlwbands; ++i) {
       tauxar(kk, i) = zero;
@@ -1167,7 +1167,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt, const View2D &state_q,
   // inputs
   static constexpr int top_lev_loc = top_lev;
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, top_lev_loc, pver_loc), [&](int kk) {
+      Kokkos::TeamVectorRange(team, top_lev_loc, nlev_loc), [&](int kk) {
         Real cldn_kk = cldn(kk);
         const auto state_q_kk = Kokkos::subview(state_q, kk, Kokkos::ALL());
         const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
@@ -1202,16 +1202,16 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
   // pdeldry(:,:)      dry mass pressure interval [Pa]
   // cldn(:,:)         layer cloud fraction [fraction]
   // qqcw(:)                Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
-  // tauxar(pcols,pver,nlwbands)  layer absorption optical depth
+  // tauxar(pcols,nlev,nlwbands)  layer absorption optical depth
 
   // Need to have these defined outside kernels
   // otherwise undefined errors on cuda dev
-  auto _pver = pver;
+  auto _nlev = nlev;
   auto _top_lev = top_lev;
 
   constexpr Real zero = 0.0;
   // dry mass in each cell
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, _pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, _nlev), [&](int kk) {
     // initialize output variables
     for (int i = 0; i < nlwbands; ++i) {
       tauxar(i, kk) = zero;
@@ -1222,7 +1222,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
   // inputs
 
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, _top_lev, _pver), [&](int kk) {
+      Kokkos::TeamVectorRange(team, _top_lev, _nlev), [&](int kk) {
         Real cldn_kk = cldn(kk);
 
         Real state_q[pcnst] = {};

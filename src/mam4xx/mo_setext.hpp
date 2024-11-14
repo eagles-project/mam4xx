@@ -12,6 +12,7 @@ namespace mo_setext {
 using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;
 using View3D = DeviceType::view_3d<Real>;
+constexpr int nlev = mam4::nlev;
 constexpr int extfrc_cnt = 9;
 constexpr int extcnt = 9; //, & ! number of species with external forcing
 // MAX_NUM_SECTIONS: Maximum number of sections in forcing data. Increase this
@@ -34,7 +35,7 @@ void extfrc_set(const ThreadTeam &team, const Forcing *forcings,
    ... form the external forcing
   --------------------------------------------------------*/
   // param[in] forcings(extcnt) array with a list of Forcing object.
-  // @param[out] frcing(ncol,pver,extcnt)   insitu forcings [molec/cm^3/s]
+  // @param[out] frcing(ncol,nlev,extcnt)   insitu forcings [molec/cm^3/s]
   // Note: we do not need zint to compute frcing
   // const ColumnView &zint
 
@@ -49,7 +50,7 @@ void extfrc_set(const ThreadTeam &team, const Forcing *forcings,
   ! ... set non-zero forcings
   !--------------------------------------------------------*/
 
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, nlev), [&](int kk) {
     for (int mm = 0; mm < extfrc_cnt; ++mm) {
       // Fortran to C++ indexing
       auto forcing_mm = forcings[mm];
@@ -58,7 +59,7 @@ void extfrc_set(const ThreadTeam &team, const Forcing *forcings,
 
       for (int isec = 0; isec < forcing_mm.nsectors; ++isec) {
         if (forcing_mm.file_alt_data) {
-          frcing(kk, nn) += forcing_mm.fields_data[isec](pver - 1 - kk);
+          frcing(kk, nn) += forcing_mm.fields_data[isec](nlev - 1 - kk);
         } else {
           // forcings(mm)%fields(isec)%data(:ncol,:,lchnk)
           frcing(kk, nn) += forcing_mm.fields_data[isec](kk);
@@ -84,13 +85,13 @@ void setext(const ThreadTeam &team, const Forcing *forcings,
   --------------------------------------------------------*/
 
   // param[in] forcings(extcnt) array with a list of Forcing object.
-  // @param[out]  extfrc(ncol,pver,extcnt)    ! the "extraneous" forcing
+  // @param[out]  extfrc(ncol,nlev,extcnt)    ! the "extraneous" forcing
 
   /*--------------------------------------------------------
     !     ... local variables
     !--------------------------------------------------------
     ! variables for output. in current MAM4 they are not calculated and are
-    assigned zero real(r8), dimension(ncol,pver) :: no_lgt, no_air, co_air */
+    assigned zero real(r8), dimension(ncol,nlev) :: no_lgt, no_air, co_air */
 
   /*--------------------------------------------------------
   !     ... set frcing from datasets
