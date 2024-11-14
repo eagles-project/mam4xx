@@ -20,7 +20,6 @@ TEST_CASE("test_init_dust_dmt_vwr", "mam4_aero_emissions_unit_tests") {
       ekat::logger::LogLevel::debug, comm);
 
   const int dust_nbin = aero_model_emissions::dust_nbin;
-<<<<<<< HEAD
   // const Real dust_dmt_grd[dust_nbin + 1] = {1.0e-7, 1.0e-6, 1.0e-5};
   //  Real dust_dmt_vwr[dust_nbin];
   Real dust_dmt_vwr_ref[dust_nbin] = {0.78056703442146215e-6,
