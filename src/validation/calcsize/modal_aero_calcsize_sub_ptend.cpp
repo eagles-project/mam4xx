@@ -16,7 +16,7 @@ using namespace haero;
 void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     constexpr int pcnst = aero_model::pcnst;
-    constexpr int pver = ndrop::pver;
+    constexpr int nlev = mam4::nlev;
     constexpr int ntot_amode = AeroConfig::num_modes();
     constexpr int nspec_max = ndrop::nspec_max;
     constexpr int maxd_aspectype = ndrop::maxd_aspectype;
@@ -27,28 +27,28 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
     auto qqcw_db = input.get_array("qqcw");
     const auto dt = input.get_array("dt")[0];
 
-    View2D state_q("state_q", pver, pcnst);
+    View2D state_q("state_q", nlev, pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
-    View2D qqcw("qqcw", pver, pcnst);
+    View2D qqcw("qqcw", nlev, pcnst);
     auto qqcw_host = create_mirror_view(qqcw);
 
     int count = 0;
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       for (int i = 0; i < pcnst; ++i) {
         qqcw_host(kk, i) = qqcw_db[count];
         count++;
       }
     }
     Kokkos::deep_copy(qqcw, qqcw_host);
-    View2D dgnumdry_m("dgnumdry_m", pver, ntot_amode);
+    View2D dgnumdry_m("dgnumdry_m", nlev, ntot_amode);
     if (input.has("dgncur_a")) {
       auto dgncur_a_db = input.get_array("dgncur_a");
       mam4::validation::convert_1d_vector_to_2d_view_device(dgncur_a_db,
                                                             dgnumdry_m);
     }
 
-    View2D ptend_q("ptend_q", pver, pcnst);
-    View2D dqqcwdt("dqqcwdt", pver, pcnst);
+    View2D ptend_q("ptend_q", nlev, pcnst);
+    View2D dqqcwdt("dqqcwdt", nlev, pcnst);
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
@@ -99,7 +99,7 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
           // FIXME: top_lev is set to 1 in calcsize ?
           const int top_lev = 0; // 1( in fortran )
 
-          for (int kk = top_lev; kk < pver; ++kk) {
+          for (int kk = top_lev; kk < nlev; ++kk) {
             const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
 
             const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
@@ -125,16 +125,16 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
         });
 
     constexpr Real zero = 0;
-    std::vector<Real> dgnumdry_m_out(pver * ntot_amode, zero);
+    std::vector<Real> dgnumdry_m_out(nlev * ntot_amode, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(dgnumdry_m,
                                                           dgnumdry_m_out);
 
-    std::vector<Real> ptend_q_out(pver * pcnst, zero);
+    std::vector<Real> ptend_q_out(nlev * pcnst, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(ptend_q, ptend_q_out);
 
     Kokkos::deep_copy(qqcw_host, qqcw);
     count = 0;
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       for (int i = 0; i < pcnst; ++i) {
         qqcw_db[count] = qqcw_host(kk, i);
         count++;

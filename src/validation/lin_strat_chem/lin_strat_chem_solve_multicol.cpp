@@ -23,11 +23,11 @@ void lin_strat_chem_solve_multicol(Ensemble *ensemble) {
     using View1DHost = typename HostType::view_1d<Real>;
 
     constexpr int ncol = 4;
-    constexpr int pver = mam4::nlev;
+    constexpr int nlev = mam4::nlev;
 
-    View2D o3col("o3col", ncol, pver);
-    View2D temperature("temperature", ncol, pver);
-    View2D pmid("pmid", ncol, pver);
+    View2D o3col("o3col", ncol, nlev);
+    View2D temperature("temperature", ncol, nlev);
+    View2D pmid("pmid", ncol, nlev);
     mam4::validation::convert_1d_vector_to_2d_view_device(o3col_db, o3col);
     mam4::validation::convert_1d_vector_to_2d_view_device(temperature_db,
                                                           temperature);
@@ -43,15 +43,15 @@ void lin_strat_chem_solve_multicol(Ensemble *ensemble) {
     const auto linoz_dPmL_dT_db = input.get_array("linoz_dPmL_dT");
     const auto o3_vmr_db = input.get_array("o3_vmr");
 
-    View2D linoz_o3_clim("linoz_o3_clim", ncol, pver);
-    View2D linoz_t_clim("linoz_t_clim", ncol, pver);
-    View2D linoz_o3col_clim("linoz_o3col_clim", ncol, pver);
-    View2D linoz_PmL_clim("inoz_PmL_clim", ncol, pver);
-    View2D linoz_dPmL_dO3("linoz_dPmL_dO3", ncol, pver);
-    View2D linoz_dPmL_dO3col("linoz_dPmL_dO3col", ncol, pver);
-    View2D linoz_cariolle_psc("linoz_cariolle_psc", ncol, pver);
-    View2D linoz_dPmL_dT("linoz_dPmL_dT", ncol, pver);
-    View2D o3_vmr("o3_vmr", ncol, pver);
+    View2D linoz_o3_clim("linoz_o3_clim", ncol, nlev);
+    View2D linoz_t_clim("linoz_t_clim", ncol, nlev);
+    View2D linoz_o3col_clim("linoz_o3col_clim", ncol, nlev);
+    View2D linoz_PmL_clim("inoz_PmL_clim", ncol, nlev);
+    View2D linoz_dPmL_dO3("linoz_dPmL_dO3", ncol, nlev);
+    View2D linoz_dPmL_dO3col("linoz_dPmL_dO3col", ncol, nlev);
+    View2D linoz_cariolle_psc("linoz_cariolle_psc", ncol, nlev);
+    View2D linoz_dPmL_dT("linoz_dPmL_dT", ncol, nlev);
+    View2D o3_vmr("o3_vmr", ncol, nlev);
 
     mam4::validation::convert_1d_vector_to_2d_view_device(linoz_o3_clim_db,
                                                           linoz_o3_clim);
@@ -81,12 +81,12 @@ void lin_strat_chem_solve_multicol(Ensemble *ensemble) {
     const Real chlorine_loading = input.get_array("chlorine_loading")[0];
     const Real psc_T = input.get_array("psc_T")[0];
 
-    View2D do3_linoz("do3_linoz", ncol, pver);
-    View2D do3_linoz_psc("do3_linoz_psc", ncol, pver);
-    View2D ss_o3("ss_o3", ncol, pver);
-    View2D o3col_du_diag("o3col_du_diag", ncol, pver);
-    View2D o3clim_linoz_diag("o3clim_linoz_diag", ncol, pver);
-    View2D sza_degrees("sza_degrees", ncol, pver);
+    View2D do3_linoz("do3_linoz", ncol, nlev);
+    View2D do3_linoz_psc("do3_linoz_psc", ncol, nlev);
+    View2D ss_o3("ss_o3", ncol, nlev);
+    View2D o3col_du_diag("o3col_du_diag", ncol, nlev);
+    View2D o3clim_linoz_diag("o3clim_linoz_diag", ncol, nlev);
+    View2D sza_degrees("sza_degrees", ncol, nlev);
 
     const auto ltrop_db = input.get_array("ltrop");
 
@@ -152,20 +152,20 @@ void lin_strat_chem_solve_multicol(Ensemble *ensemble) {
         });
 
     constexpr Real zero = 0;
-    std::vector<Real> o3_vmr_out(pver * ncol, zero);
+    std::vector<Real> o3_vmr_out(nlev * ncol, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(o3_vmr, o3_vmr_out);
-    std::vector<Real> do3_linoz_out(pver * ncol, zero);
+    std::vector<Real> do3_linoz_out(nlev * ncol, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(do3_linoz,
                                                           do3_linoz_out);
-    std::vector<Real> do3_linoz_psc_out(pver * ncol, zero);
+    std::vector<Real> do3_linoz_psc_out(nlev * ncol, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(do3_linoz_psc,
                                                           do3_linoz_psc_out);
-    std::vector<Real> ss_o3_out(pver * ncol, zero);
+    std::vector<Real> ss_o3_out(nlev * ncol, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(ss_o3, ss_o3_out);
-    std::vector<Real> o3col_du_diag_out(pver * ncol, zero);
+    std::vector<Real> o3col_du_diag_out(nlev * ncol, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(o3col_du_diag,
                                                           o3col_du_diag_out);
-    std::vector<Real> o3clim_linoz_diag_out(pver * ncol, zero);
+    std::vector<Real> o3clim_linoz_diag_out(nlev * ncol, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(
         o3clim_linoz_diag, o3clim_linoz_diag_out);
     output.set("o3_vmr", o3_vmr_out);

@@ -46,8 +46,8 @@ void compute_tendencies(Ensemble *ensemble) {
     const Real cloud_fraction = input.get_array("ast")[0];
 
     auto state_q = input.get_array("state_q");
-    // qn(pcols,pver)           ! water vapor mixing ratio [kg/kg]
-    // qn(:ncol,:pver) = state_q(:ncol,:pver,1)
+    // qn(pcols,nlev)           ! water vapor mixing ratio [kg/kg]
+    // qn(:ncol,:nlev) = state_q(:ncol,:nlev,1)
     const Real vapor_mixing_ratio = state_q[0];
 
     auto d_temp = validation::create_column_view(nlev);
