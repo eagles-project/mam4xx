@@ -16,7 +16,7 @@ using namespace haero;
 void tropopause_twmo(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
-    constexpr int pver = mam4::nlev;
+    constexpr int nlev = mam4::nlev;
 
     const auto pmid_in = input.get_array("pmid");
     const auto pint_in = input.get_array("pint");
@@ -26,16 +26,16 @@ void tropopause_twmo(Ensemble *ensemble) {
 
     ColumnView pmid, pint, temp, zm, zi;
 
-    auto pmid_host = View1DHost((Real *)pmid_in.data(), pver);
-    auto pint_host = View1DHost((Real *)pint_in.data(), pver);
-    auto temp_host = View1DHost((Real *)temp_in.data(), pver);
-    auto zm_host = View1DHost((Real *)zm_in.data(), pver);
-    auto zi_host = View1DHost((Real *)zi_in.data(), pver);
-    pmid = haero::testing::create_column_view(pver);
-    pint = haero::testing::create_column_view(pver);
-    temp = haero::testing::create_column_view(pver);
-    zm = haero::testing::create_column_view(pver);
-    zi = haero::testing::create_column_view(pver);
+    auto pmid_host = View1DHost((Real *)pmid_in.data(), nlev);
+    auto pint_host = View1DHost((Real *)pint_in.data(), nlev);
+    auto temp_host = View1DHost((Real *)temp_in.data(), nlev);
+    auto zm_host = View1DHost((Real *)zm_in.data(), nlev);
+    auto zi_host = View1DHost((Real *)zi_in.data(), nlev);
+    pmid = haero::testing::create_column_view(nlev);
+    pint = haero::testing::create_column_view(nlev);
+    temp = haero::testing::create_column_view(nlev);
+    zm = haero::testing::create_column_view(nlev);
+    zi = haero::testing::create_column_view(nlev);
     Kokkos::deep_copy(pmid, pmid_host);
     Kokkos::deep_copy(pint, pint_host);
     Kokkos::deep_copy(temp, temp_host);

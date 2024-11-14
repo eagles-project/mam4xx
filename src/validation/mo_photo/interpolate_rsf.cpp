@@ -23,13 +23,13 @@ void interpolate_rsf(Ensemble *ensemble) {
     const auto p_in_db = input.get_array("p_in");
     const auto colo3_in_db = input.get_array("colo3_in");
 
-    auto alb_in_host = View1DHost((Real *)alb_in_db.data(), pver);
-    auto p_in_host = View1DHost((Real *)p_in_db.data(), pver);
-    auto colo3_in_host = View1DHost((Real *)colo3_in_db.data(), pver);
+    auto alb_in_host = View1DHost((Real *)alb_in_db.data(), nlev);
+    auto p_in_host = View1DHost((Real *)p_in_db.data(), nlev);
+    auto colo3_in_host = View1DHost((Real *)colo3_in_db.data(), nlev);
 
-    const auto alb_in = View1D("alb_in", pver);
-    const auto p_in = View1D("p_in", pver);
-    const auto colo3_in = View1D("colo3_in", pver);
+    const auto alb_in = View1D("alb_in", nlev);
+    const auto p_in = View1D("p_in", nlev);
+    const auto colo3_in = View1D("colo3_in", nlev);
 
     Kokkos::deep_copy(alb_in, alb_in_host);
     Kokkos::deep_copy(p_in, p_in_host);
@@ -107,13 +107,13 @@ void interpolate_rsf(Ensemble *ensemble) {
     auto psum_l = View1D("psum_l", nw);
     auto psum_u = View1D("psum_u", nw);
 
-    View2D rsf("rsf", nw, pver);
+    View2D rsf("rsf", nw, nlev);
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           interpolate_rsf(team, alb_in.data(), sza_in, p_in.data(),
                           colo3_in.data(),
-                          pver, //  in
+                          nlev, //  in
                           sza.data(), del_sza.data(), alb.data(), press.data(),
                           del_p.data(), colo3.data(), o3rat.data(),
                           del_alb.data(), del_o3rat.data(), etfphot.data(),
@@ -124,12 +124,12 @@ void interpolate_rsf(Ensemble *ensemble) {
         });
 
     const Real zero = 0;
-    std::vector<Real> rsf_out(nw * pver, zero);
+    std::vector<Real> rsf_out(nw * nlev, zero);
     auto rsf_host = Kokkos::create_mirror_view(rsf);
     Kokkos::deep_copy(rsf_host, rsf);
 
     int count = 0;
-    for (int j = 0; j < pver; ++j) {
+    for (int j = 0; j < nlev; ++j) {
       for (int i = 0; i < nw; ++i) {
         rsf_out[count] = rsf_host(i, j);
         count += 1;

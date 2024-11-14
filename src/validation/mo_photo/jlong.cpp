@@ -24,15 +24,15 @@ void jlong(Ensemble *ensemble) {
     const auto colo3_in_db = input.get_array("colo3_in");
     const auto t_in_db = input.get_array("t_in");
 
-    auto alb_in_host = View1DHost((Real *)alb_in_db.data(), pver);
-    auto p_in_host = View1DHost((Real *)p_in_db.data(), pver);
-    auto colo3_in_host = View1DHost((Real *)colo3_in_db.data(), pver);
-    auto t_in_host = View1DHost((Real *)t_in_db.data(), pver);
+    auto alb_in_host = View1DHost((Real *)alb_in_db.data(), nlev);
+    auto p_in_host = View1DHost((Real *)p_in_db.data(), nlev);
+    auto colo3_in_host = View1DHost((Real *)colo3_in_db.data(), nlev);
+    auto t_in_host = View1DHost((Real *)t_in_db.data(), nlev);
 
-    const auto alb_in = View1D("alb_in", pver);
-    const auto p_in = View1D("p_in", pver);
-    const auto colo3_in = View1D("colo3_in", pver);
-    const auto t_in = View1D("t_in", pver);
+    const auto alb_in = View1D("alb_in", nlev);
+    const auto p_in = View1D("p_in", nlev);
+    const auto colo3_in = View1D("colo3_in", nlev);
+    const auto t_in = View1D("t_in", nlev);
 
     Kokkos::deep_copy(alb_in, alb_in_host);
     Kokkos::deep_copy(p_in, p_in_host);
@@ -126,14 +126,14 @@ void jlong(Ensemble *ensemble) {
     const auto dprs = View1D("dprs", np_xs - 1);
     Kokkos::deep_copy(dprs, dprs_host);
 
-    View2D rsf("rsf", nw, pver);
+    View2D rsf("rsf", nw, nlev);
     View4D xsqy("xsqy", numj, nw, nt, np_xs);
     View2D xswk("xswk", numj, nw);
 
     const Real values_xsqy = synthetic_values_xsqy[0];
     Kokkos::deep_copy(xsqy, values_xsqy);
 
-    View2D j_long("j_long", numj, pver);
+    View2D j_long("j_long", numj, nlev);
 
     auto psum_l = View1D("psum_l", nw);
     auto psum_u = View1D("psum_u", nw);
@@ -154,13 +154,13 @@ void jlong(Ensemble *ensemble) {
         });
 
     const Real zero = 0;
-    std::vector<Real> jlong_out(pver * numj, zero);
+    std::vector<Real> jlong_out(nlev * numj, zero);
 
     auto j_long_host = Kokkos::create_mirror_view(j_long);
     Kokkos::deep_copy(j_long_host, j_long);
 
     int count = 0;
-    for (int j = 0; j < pver; ++j) {
+    for (int j = 0; j < nlev; ++j) {
       for (int i = 0; i < numj; ++i) {
         jlong_out[count] = j_long_host(i, j);
         count += 1;

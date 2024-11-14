@@ -22,13 +22,13 @@ void modal_size_parameters(Ensemble *ensemble) {
     const auto dgnumwet = input.get_array("dgnumwet");
     const int ismethod2 = int(input.get_array("ismethod2")[0]);
 
-    std::vector<Real> radsurf(pver, zero);
-    std::vector<Real> logradsurf(pver, zero);
+    std::vector<Real> radsurf(nlev, zero);
+    std::vector<Real> logradsurf(nlev, zero);
 
-    std::vector<std::vector<Real>> cheb_db(pver,
+    std::vector<std::vector<Real>> cheb_db(nlev,
                                            std::vector<Real>(ncoef, zero));
 
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       auto &cheb = cheb_db[kk];
       modal_size_parameters(sigma_logr_aer,
                             dgnumwet[kk], // in
@@ -39,7 +39,7 @@ void modal_size_parameters(Ensemble *ensemble) {
     output.set("logradsurf", logradsurf);
 
     std::vector<Real> cheb_1d;
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       for (int i = 0; i < ncoef; ++i) {
         cheb_1d.push_back(cheb_db[kk][i]);
       }
