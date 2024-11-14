@@ -12,7 +12,7 @@ namespace mo_setext {
 using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;
 using View3D = DeviceType::view_3d<Real>;
-constexpr int pver = mam4::nlev;
+constexpr int nlev = mam4::nlev;
 constexpr int extfrc_cnt = 9;
 constexpr int extcnt = 9; //, & ! number of species with external forcing
 // MAX_NUM_SECTIONS: Maximum number of sections in forcing data. Increase this
@@ -33,7 +33,7 @@ void extfrc_set(const Forcing *forcings, const View2D &frcing) {
    ... form the external forcing
   --------------------------------------------------------*/
   // param[in] forcings(extcnt) array with a list of Forcing object.
-  // @param[out] frcing(ncol,pver,extcnt)   insitu forcings [molec/cm^3/s]
+  // @param[out] frcing(ncol,nlev,extcnt)   insitu forcings [molec/cm^3/s]
   // Note: we do not need zint to compute frcing
   // const ColumnView &zint
 
@@ -52,20 +52,20 @@ void extfrc_set(const Forcing *forcings, const View2D &frcing) {
     // Fortran to C++ indexing
     auto forcing_mm = forcings[mm];
     const int nn = forcing_mm.frc_ndx - 1;
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       frcing(kk, nn) = zero;
     } // k
 
     for (int isec = 0; isec < forcing_mm.nsectors; ++isec) {
       if (forcing_mm.file_alt_data) {
-        for (int kk = 0; kk < pver; ++kk) {
+        for (int kk = 0; kk < nlev; ++kk) {
           // frcing(:ncol,:,nn) = frcing(:ncol,:,nn) + &
-          // forcings(mm)%fields(isec)%data(:ncol,pver:1:-1,lchnk)
-          frcing(kk, nn) += forcing_mm.fields_data[isec](pver - 1 - kk);
+          // forcings(mm)%fields(isec)%data(:ncol,nlev:1:-1,lchnk)
+          frcing(kk, nn) += forcing_mm.fields_data[isec](nlev - 1 - kk);
         } // kk
       } else {
         // // forcings(mm)%fields(isec)%data(:ncol,:,lchnk)
-        for (int kk = 0; kk < pver; ++kk) {
+        for (int kk = 0; kk < nlev; ++kk) {
           frcing(kk, nn) += forcing_mm.fields_data[isec](kk);
         }
       }
@@ -77,7 +77,7 @@ void extfrc_set(const Forcing *forcings, const View2D &frcing) {
     // call outfld( xfcname, frcing(:ncol,:,nn), ncol, lchnk )
 
     // frcing_col(:ncol) = 0._r8
-    // do kk = 1,pver
+    // do kk = 1,nlev
     //    frcing_col(:ncol) = frcing_col(:ncol) + &
     //                  frcing(:ncol,kk,nn)*(zint(:ncol,kk)-zint(:ncol,kk+1))*km_to_cm
     // enddo
@@ -104,13 +104,13 @@ void setext(const Forcing *forcings,
   --------------------------------------------------------*/
 
   // param[in] forcings(extcnt) array with a list of Forcing object.
-  // @param[out]  extfrc(ncol,pver,extcnt)    ! the "extraneous" forcing
+  // @param[out]  extfrc(ncol,nlev,extcnt)    ! the "extraneous" forcing
 
   /*--------------------------------------------------------
     !     ... local variables
     !--------------------------------------------------------
     ! variables for output. in current MAM4 they are not calculated and are
-    assigned zero real(r8), dimension(ncol,pver) :: no_lgt, no_air, co_air */
+    assigned zero real(r8), dimension(ncol,nlev) :: no_lgt, no_air, co_air */
 
   /*--------------------------------------------------------
   !     ... set frcing from datasets

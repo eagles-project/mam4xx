@@ -15,6 +15,7 @@ using namespace haero;
 using namespace modal_aer_opt;
 
 void modal_size_parameters(Ensemble *ensemble) {
+  using mam4::nlev;
   ensemble->process([=](const Input &input, Output &output) {
     constexpr Real zero = 0;
 

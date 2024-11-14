@@ -13,6 +13,7 @@ using namespace haero;
 using namespace mo_photo;
 
 void table_photo(Ensemble *ensemble) {
+  using mam4::nlev;
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
     using View1D = typename DeviceType::view_1d<Real>;

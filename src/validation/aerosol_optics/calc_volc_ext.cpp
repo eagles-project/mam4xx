@@ -15,6 +15,7 @@ using namespace haero;
 using namespace modal_aer_opt;
 
 void calc_volc_ext(Ensemble *ensemble) {
+  using mam4::nlev;
   ensemble->process([=](const Input &input, Output &output) {
     using View1D = DeviceType::view_1d<Real>;
     using View1DHost = typename HostType::view_1d<Real>;
