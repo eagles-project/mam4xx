@@ -94,13 +94,13 @@ void table_photo(Ensemble *ensemble) {
     auto dprs_host = View1DHost((Real *)dprs_db.data(), table_data.np_xs - 1);
     Kokkos::deep_copy(table_data.dprs, dprs_host);
 
-    View3D rsf("rsf", ncol, table_data.nw, pver);
+    View3D rsf("rsf", ncol, table_data.nw, nlev);
     View3D xswk("xswk", ncol, table_data.numj, table_data.nw);
 
     const Real values_xsqy = synthetic_values_xsqy[0];
     Kokkos::deep_copy(table_data.xsqy, values_xsqy);
 
-    View3D j_long("j_long", ncol, table_data.numj, pver);
+    View3D j_long("j_long", ncol, table_data.numj, nlev);
 
     auto psum_l = View2D("psum_l", ncol, table_data.nw);
     auto psum_u = View2D("psum_u", ncol, table_data.nw);
@@ -113,7 +113,7 @@ void table_photo(Ensemble *ensemble) {
     auto lng_indexer_db = input.get_array("lng_indexer");
     Kokkos::deep_copy(table_data.lng_indexer, lng_indexer_db[0] - 1);
 
-    View3D photo("photo", ncol, pver, 1);
+    View3D photo("photo", ncol, nlev, 1);
 
     const auto pmid_db = input.get_array("pmid");
     const auto pdel_db = input.get_array("pdel");
@@ -125,12 +125,12 @@ void table_photo(Ensemble *ensemble) {
     const Real esfact = input.get_array("esfact")[0];
     const auto zen_angle_db = input.get_array("zen_angle");
 
-    View2D pmid("pmid", ncol, pver);
-    View2D pdel("pdel", ncol, pver);
-    View2D temper("temper", ncol, pver);
-    View2D colo3_in("colo3_in", ncol, pver);
-    View2D lwc("lwc", ncol, pver);
-    View2D clouds("clouds", ncol, pver);
+    View2D pmid("pmid", ncol, nlev);
+    View2D pdel("pdel", ncol, nlev);
+    View2D temper("temper", ncol, nlev);
+    View2D colo3_in("colo3_in", ncol, nlev);
+    View2D lwc("lwc", ncol, nlev);
+    View2D clouds("clouds", ncol, nlev);
 
     mam4::validation::convert_1d_vector_to_2d_view_device(pmid_db, pmid);
     mam4::validation::convert_1d_vector_to_2d_view_device(pdel_db, pdel);
@@ -183,7 +183,7 @@ void table_photo(Ensemble *ensemble) {
     auto photo_out_device =
         Kokkos::subview(photo, Kokkos::ALL(), Kokkos::ALL(), 0);
     const Real zero = 0;
-    std::vector<Real> photo_out(pver * ncol, zero);
+    std::vector<Real> photo_out(nlev * ncol, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(photo_out_device,
                                                           photo_out);
     output.set("photo", photo_out);

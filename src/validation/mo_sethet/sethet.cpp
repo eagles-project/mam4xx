@@ -18,7 +18,7 @@ void sethet(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
     using ColumnView = haero::ColumnView;
-    constexpr int pver = mam4::nlev;
+    constexpr int nlev = mam4::nlev;
     constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
     constexpr int nfs = mam4::gas_chemistry::nfs;
     // index of total atm density in invariant array
@@ -54,21 +54,21 @@ void sethet(Ensemble *ensemble) {
     // ColumnView input values
     ColumnView press, zmid, tfld, cmfdqr, nrain, nevapr, xhnm;
 
-    auto press_host = View1DHost((Real *)press_in.data(), pver);
-    auto zmid_host = View1DHost((Real *)zmid_in.data(), pver);
-    auto tfld_host = View1DHost((Real *)tfld_in.data(), pver);
-    auto cmfdqr_host = View1DHost((Real *)cmfdqr_in.data(), pver);
-    auto nrain_host = View1DHost((Real *)nrain_in.data(), pver);
-    auto nevapr_host = View1DHost((Real *)nevapr_in.data(), pver);
-    auto xhnm_host = View1DHost((Real *)xhnm_in.data(), pver);
+    auto press_host = View1DHost((Real *)press_in.data(), nlev);
+    auto zmid_host = View1DHost((Real *)zmid_in.data(), nlev);
+    auto tfld_host = View1DHost((Real *)tfld_in.data(), nlev);
+    auto cmfdqr_host = View1DHost((Real *)cmfdqr_in.data(), nlev);
+    auto nrain_host = View1DHost((Real *)nrain_in.data(), nlev);
+    auto nevapr_host = View1DHost((Real *)nevapr_in.data(), nlev);
+    auto xhnm_host = View1DHost((Real *)xhnm_in.data(), nlev);
 
-    press = haero::testing::create_column_view(pver);
-    zmid = haero::testing::create_column_view(pver);
-    tfld = haero::testing::create_column_view(pver);
-    cmfdqr = haero::testing::create_column_view(pver);
-    nrain = haero::testing::create_column_view(pver);
-    nevapr = haero::testing::create_column_view(pver);
-    xhnm = haero::testing::create_column_view(pver);
+    press = haero::testing::create_column_view(nlev);
+    zmid = haero::testing::create_column_view(nlev);
+    tfld = haero::testing::create_column_view(nlev);
+    cmfdqr = haero::testing::create_column_view(nlev);
+    nrain = haero::testing::create_column_view(nlev);
+    nevapr = haero::testing::create_column_view(nlev);
+    xhnm = haero::testing::create_column_view(nlev);
 
     Kokkos::deep_copy(press, press_host);
     Kokkos::deep_copy(zmid, zmid_host);
@@ -84,21 +84,21 @@ void sethet(Ensemble *ensemble) {
     ColumnView xgas2, xgas3, delz, xh2o2, xso2, xliq, rain, precip, xhen_h2o2,
         xhen_hno3, xhen_so2, t_factor, xk0_hno3, xk0_so2, so2_diss;
 
-    xgas2 = haero::testing::create_column_view(pver);
-    xgas3 = haero::testing::create_column_view(pver);
-    delz = haero::testing::create_column_view(pver);
-    xh2o2 = haero::testing::create_column_view(pver);
-    xso2 = haero::testing::create_column_view(pver);
-    xliq = haero::testing::create_column_view(pver);
-    rain = haero::testing::create_column_view(pver);
-    precip = haero::testing::create_column_view(pver);
-    xhen_h2o2 = haero::testing::create_column_view(pver);
-    xhen_hno3 = haero::testing::create_column_view(pver);
-    xhen_so2 = haero::testing::create_column_view(pver);
-    t_factor = haero::testing::create_column_view(pver);
-    xk0_hno3 = haero::testing::create_column_view(pver);
-    xk0_so2 = haero::testing::create_column_view(pver);
-    so2_diss = haero::testing::create_column_view(pver);
+    xgas2 = haero::testing::create_column_view(nlev);
+    xgas3 = haero::testing::create_column_view(nlev);
+    delz = haero::testing::create_column_view(nlev);
+    xh2o2 = haero::testing::create_column_view(nlev);
+    xso2 = haero::testing::create_column_view(nlev);
+    xliq = haero::testing::create_column_view(nlev);
+    rain = haero::testing::create_column_view(nlev);
+    precip = haero::testing::create_column_view(nlev);
+    xhen_h2o2 = haero::testing::create_column_view(nlev);
+    xhen_hno3 = haero::testing::create_column_view(nlev);
+    xhen_so2 = haero::testing::create_column_view(nlev);
+    t_factor = haero::testing::create_column_view(nlev);
+    xk0_hno3 = haero::testing::create_column_view(nlev);
+    xk0_so2 = haero::testing::create_column_view(nlev);
+    so2_diss = haero::testing::create_column_view(nlev);
 
     ColumnView tmp_hetrates[gas_pcnst];
     ColumnView qin[gas_pcnst];
@@ -110,15 +110,15 @@ void sethet(Ensemble *ensemble) {
 
     for (int mm = 0; mm < gas_pcnst; ++mm) {
 
-      tmp_hetrates[mm] = haero::testing::create_column_view(pver);
-      qin[mm] = haero::testing::create_column_view(pver);
-      tmp_hetrates_host[mm] = View1DHost("tmp_hetrates_host", pver);
-      qin_host[mm] = View1DHost("qin_host", pver);
+      tmp_hetrates[mm] = haero::testing::create_column_view(nlev);
+      qin[mm] = haero::testing::create_column_view(nlev);
+      tmp_hetrates_host[mm] = View1DHost("tmp_hetrates_host", nlev);
+      qin_host[mm] = View1DHost("qin_host", nlev);
     }
 
     int count = 0;
     for (int mm = 0; mm < gas_pcnst; ++mm) {
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < nlev; ++kk) {
         qin_host[mm](kk) = qin_in[count];
         count++;
       }
@@ -149,10 +149,10 @@ void sethet(Ensemble *ensemble) {
     // transfer data to GPU.
     Kokkos::deep_copy(het_rates_host, het_rates);
 
-    std::vector<Real> het_rates_out(pver * gas_pcnst);
+    std::vector<Real> het_rates_out(nlev * gas_pcnst);
     count = 0;
     for (int mm = 0; mm < gas_pcnst; ++mm) {
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < nlev; ++kk) {
         het_rates_out[count] = het_rates_host(kk, mm);
         count++;
       }

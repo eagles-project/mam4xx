@@ -16,7 +16,7 @@ void set_ub_col(Ensemble *ensemble) {
     using View1D = typename DeviceType::view_1d<Real>;
     using View2D = typename DeviceType::view_2d<Real>;
 
-    constexpr int pver = mam4::nlev;
+    constexpr int nlev = mam4::nlev;
     constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
     constexpr int nfs = mam4::gas_chemistry::nfs;
 
@@ -25,21 +25,21 @@ void set_ub_col(Ensemble *ensemble) {
     const auto invariants_in = input.get_array("invariants");
     const auto pdel_in = input.get_array("pdel");
 
-    View2D vmr("vmr", pver, gas_pcnst);
-    View2D invariants("invariants", pver, nfs);
-    View1D pdel("pdel", pver);
+    View2D vmr("vmr", nlev, gas_pcnst);
+    View2D invariants("invariants", nlev, nfs);
+    View1D pdel("pdel", nlev);
 
     mam4::validation::convert_1d_vector_to_2d_view_device(vmr_in, vmr);
     mam4::validation::convert_1d_vector_to_2d_view_device(invariants_in,
                                                           invariants);
     auto pdel_host = Kokkos::create_mirror_view(pdel);
-    std::copy(pdel_in.data(), pdel_in.data() + pver, pdel_host.data());
+    std::copy(pdel_in.data(), pdel_in.data() + nlev, pdel_host.data());
     Kokkos::deep_copy(pdel, pdel_host);
 
-    View1D col_delta("col_delta", pver + 1);
+    View1D col_delta("col_delta", nlev + 1);
     Kokkos::deep_copy(col_delta, spc_exo_col); // sets col_delta(0)
     Kokkos::parallel_for(
-        pver, KOKKOS_LAMBDA(const int k) {
+        nlev, KOKKOS_LAMBDA(const int k) {
           Real vmr_ik[gas_pcnst];
           for (int l = 0; l < gas_pcnst; ++l) {
             vmr_ik[l] = vmr(k, l);
@@ -54,7 +54,7 @@ void set_ub_col(Ensemble *ensemble) {
     auto col_delta_host = Kokkos::create_mirror_view(col_delta);
     Kokkos::deep_copy(col_delta_host, col_delta);
     std::vector<Real> col_delta_out(col_delta_host.data(),
-                                    col_delta_host.data() + pver + 1);
+                                    col_delta_host.data() + nlev + 1);
     output.set("col_delta", col_delta_out);
   });
 }

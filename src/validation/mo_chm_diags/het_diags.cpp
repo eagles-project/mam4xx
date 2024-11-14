@@ -35,16 +35,16 @@ void het_diags(Ensemble *ensemble) {
     View1DHost mmr_host[gas_pcnst];
 
     for (int mm = 0; mm < gas_pcnst; ++mm) {
-      het_rates[mm] = haero::testing::create_column_view(pver);
-      mmr[mm] = haero::testing::create_column_view(pver);
+      het_rates[mm] = haero::testing::create_column_view(nlev);
+      mmr[mm] = haero::testing::create_column_view(nlev);
 
-      het_rates_host[mm] = View1DHost("het_rates_host", pver);
-      mmr_host[mm] = View1DHost("mmr_host", pver);
+      het_rates_host[mm] = View1DHost("het_rates_host", nlev);
+      mmr_host[mm] = View1DHost("mmr_host", nlev);
     }
 
     int count = 0;
     for (int mm = 0; mm < gas_pcnst; ++mm) {
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < nlev; ++kk) {
         het_rates_host[mm](kk) = het_rates_in[count];
         mmr_host[mm](kk) = mmr_in[count];
         count++;
@@ -59,8 +59,8 @@ void het_diags(Ensemble *ensemble) {
 
     ColumnView pdel;
     auto pdel_host =
-        View1DHost((Real *)pdel_in.data(), pver); // puts data into host
-    pdel = haero::testing::create_column_view(pver);
+        View1DHost((Real *)pdel_in.data(), nlev); // puts data into host
+    pdel = haero::testing::create_column_view(nlev);
     Kokkos::deep_copy(pdel, pdel_host);
 
     std::vector<Real> vector0(gas_pcnst, 0);

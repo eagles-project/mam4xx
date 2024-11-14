@@ -18,7 +18,7 @@ using namespace validation;
 
 void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    constexpr int pver = mam4::nlev;
+    constexpr int nlev = mam4::nlev;
     constexpr int pcnst = aero_model::pcnst;
     using View2D = DeviceType::view_2d<Real>;
 
@@ -27,14 +27,14 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
     Real pblh = 1000;
 
     // Using skywalker to get state_q and qqcw.
-    View2D state_q("state_q", pver, pcnst);
+    View2D state_q("state_q", nlev, pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
-    View2D qqcw("qqcw", pver, pcnst);
+    View2D qqcw("qqcw", nlev, pcnst);
     auto qqcw_host = Kokkos::create_mirror_view(qqcw);
 
     int count = 0;
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       for (int i = 0; i < pcnst; ++i) {
         qqcw_host(kk, i) = qqcw_db[count];
         count++;
@@ -81,11 +81,11 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
                           height, hydrostatic_dp, interface_pressure,
                           cloud_fraction, updraft_vel_ice_nucleation, pblh);
 
-    View2D state_q_output("state_q_output", pver, pcnst);
-    View2D qqcw_output("qqcw_output", pver, pcnst);
+    View2D state_q_output("state_q_output", nlev, pcnst);
+    View2D qqcw_output("qqcw_output", nlev, pcnst);
 
-    View2D diff_state_q("diff_state_q", pver, pcnst);
-    View2D diff_qqcw("diff_qqcw", pver, pcnst);
+    View2D diff_state_q("diff_state_q", nlev, pcnst);
+    View2D diff_qqcw("diff_qqcw", nlev, pcnst);
 
     using range_type = Kokkos::pair<int, int>;
     // inject_stateq_to_prognostics does not set values for index lower than
@@ -126,7 +126,7 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
           team.team_barrier();
           // 2. Let's extract state_q and qqcw from prog.
           Kokkos::parallel_for(
-              Kokkos::TeamVectorRange(team, pver), [&](int kk) {
+              Kokkos::TeamVectorRange(team, nlev), [&](int kk) {
                 const auto state_q_output_kk =
                     Kokkos::subview(state_q_output, kk, Kokkos::ALL());
                 const auto qqcw_output_k =
@@ -141,7 +141,7 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
           // 3. Let's compute the difference between the original state_q (or
           // qqcw) with the one obtained after extracting the data from prog.
           Kokkos::parallel_for(
-              Kokkos::TeamThreadRange(team, pver), [&](int kk) {
+              Kokkos::TeamThreadRange(team, nlev), [&](int kk) {
                 Kokkos::parallel_for(
                     Kokkos::ThreadVectorRange(team, pcnst), [&](int isp) {
                       diff_state_q(isp, kk) =
@@ -152,12 +152,12 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
         });
 
     constexpr int zero = 0.0;
-    std::vector<Real> diff_state_q_out(pver * pcnst, zero);
+    std::vector<Real> diff_state_q_out(nlev * pcnst, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(diff_state_q,
                                                           diff_state_q_out);
     output.set("diff_state_q", diff_state_q_out);
 
-    std::vector<Real> diff_diff_qqcw_out(pver * pcnst, zero);
+    std::vector<Real> diff_diff_qqcw_out(nlev * pcnst, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(diff_qqcw,
                                                           diff_diff_qqcw_out);
     output.set("diff_qqcw", diff_diff_qqcw_out);

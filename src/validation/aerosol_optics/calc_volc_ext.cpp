@@ -24,14 +24,14 @@ void calc_volc_ext(Ensemble *ensemble) {
     const auto ext_cmip6_sw_db = input.get_array("ext_cmip6_sw");
     const auto extinct_db = input.get_array("extinct");
 
-    auto state_zm_host = View1DHost((Real *)state_zm_db.data(), pver);
-    auto ext_cmip6_sw_host = View1DHost((Real *)ext_cmip6_sw_db.data(), pver);
-    auto extinct_host = View1DHost((Real *)extinct_db.data(), pver);
+    auto state_zm_host = View1DHost((Real *)state_zm_db.data(), nlev);
+    auto ext_cmip6_sw_host = View1DHost((Real *)ext_cmip6_sw_db.data(), nlev);
+    auto extinct_host = View1DHost((Real *)extinct_db.data(), nlev);
 
     ColumnView state_zm, ext_cmip6_sw, extinct;
-    state_zm = haero::testing::create_column_view(pver);
-    ext_cmip6_sw = haero::testing::create_column_view(pver);
-    extinct = haero::testing::create_column_view(pver);
+    state_zm = haero::testing::create_column_view(nlev);
+    ext_cmip6_sw = haero::testing::create_column_view(nlev);
+    extinct = haero::testing::create_column_view(nlev);
     Kokkos::deep_copy(state_zm, state_zm_host);
     Kokkos::deep_copy(ext_cmip6_sw, ext_cmip6_sw_host);
     Kokkos::deep_copy(extinct, extinct_host);
@@ -50,7 +50,7 @@ void calc_volc_ext(Ensemble *ensemble) {
     Kokkos::deep_copy(extinct_host, extinct);
 
     std::vector<Real> extinct_out(extinct_host.data(),
-                                  extinct_host.data() + pver);
+                                  extinct_host.data() + nlev);
     output.set("tropopause_m", std::vector<Real>(1, tropopause_m_host(0)));
     output.set("extinct", extinct_out);
   });

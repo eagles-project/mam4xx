@@ -21,7 +21,7 @@ void setinv_test_nlev(Ensemble *ensemble) {
     // Declare array of strings for input names
     std::string input_arrays[] = {
         "tfld",      "h2ovmr",  "vmr",       "pmid",
-        "ncol",      "lchnk",   "pcols",     "pver",
+        "ncol",      "lchnk",   "pcols",  
         "gas_pcnst", "nfs",     "boltz_cgs", "num_tracer_cnst",
         "has_n2",    "m_ndx",   "n2_ndx",    "has_o2",
         "o2_ndx",    "has_h2o", "h2o_ndx",   "cnst_offline_yaml"};

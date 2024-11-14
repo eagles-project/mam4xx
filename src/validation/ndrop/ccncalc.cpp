@@ -22,7 +22,7 @@ void ccncalc(Ensemble *ensemble) {
     const int pcnst = aero_model::pcnst;
     const int psat = ndrop::psat;
 
-    const int pver = ndrop::pver;
+    const int nlev = mam4::nlev;
     const auto state_q_db = input.get_array("state_q");
 
     const auto tair_db = input.get_array("temp");
@@ -35,13 +35,13 @@ void ccncalc(Ensemble *ensemble) {
     using View2D = ndrop::View2D;
     using View1DHost = typename HostType::view_1d<Real>;
 
-    View2D state_q("state_q", pver, pcnst);
+    View2D state_q("state_q", nlev, pcnst);
     auto state_host = Kokkos::create_mirror_view(state_q);
 
     int count = 0;
     for (int i = 0; i < pcnst; ++i) {
       // input data is store on the cpu.
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < nlev; ++kk) {
         state_host(kk, i) = state_q_db[count];
         count++;
       }
@@ -51,19 +51,19 @@ void ccncalc(Ensemble *ensemble) {
 
     ColumnView tair;
     ColumnView pmid;
-    tair = haero::testing::create_column_view(pver);
-    pmid = haero::testing::create_column_view(pver);
+    tair = haero::testing::create_column_view(nlev);
+    pmid = haero::testing::create_column_view(nlev);
 
-    auto tair_host = View1DHost((Real *)tair_db.data(), pver);
-    auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
+    auto tair_host = View1DHost((Real *)tair_db.data(), nlev);
+    auto pmid_host = View1DHost((Real *)pmid_db.data(), nlev);
 
     Kokkos::deep_copy(tair, tair_host);
     Kokkos::deep_copy(pmid, pmid_host);
 
-    View2D ccn("ccn", pver, psat);
+    View2D ccn("ccn", nlev, psat);
 
     Kokkos::parallel_for(
-        "ccncalc", pver - top_lev, KOKKOS_LAMBDA(int k) {
+        "ccncalc", nlev - top_lev, KOKKOS_LAMBDA(int k) {
           Real qcldbrn[maxd_aspectype][ntot_amode] = {{zero}};
           Real qcldbrn_num[ntot_amode] = {zero};
 
@@ -107,8 +107,8 @@ void ccncalc(Ensemble *ensemble) {
     auto ccn_host = Kokkos::create_mirror_view(ccn);
     Kokkos::deep_copy(ccn_host, ccn);
     for (int i = 0; i < psat; ++i) {
-      std::vector<Real> ccn_v(pver);
-      for (int kk = 0; kk < pver; ++kk) {
+      std::vector<Real> ccn_v(nlev);
+      for (int kk = 0; kk < nlev; ++kk) {
         ccn_v[kk] = ccn_host(kk, i);
       }
       output.set("ccn_" + std::to_string(i + 1), ccn_v);

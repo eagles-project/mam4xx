@@ -21,7 +21,7 @@ void get_activate_frac(Ensemble *ensemble) {
     const int pcnst = aero_model::pcnst;
     const int nspec_max = ndrop::nspec_max;
 
-    const int pver = ndrop::pver;
+    const int nlev = mam4::nlev;
     const auto state_q_db = input.get_array("state_q");
 
     const auto tair_db = input.get_array("temp");
@@ -32,12 +32,12 @@ void get_activate_frac(Ensemble *ensemble) {
     using View1DHost = typename HostType::view_1d<Real>;
 
     int count = 0;
-    View2D state_q("state_q", pver, pcnst);
+    View2D state_q("state_q", nlev, pcnst);
     auto state_host = Kokkos::create_mirror_view(state_q);
 
     for (int i = 0; i < pcnst; ++i) {
       // input data is store on the cpu.
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < nlev; ++kk) {
         state_host(kk, i) = state_q_db[count];
         count++;
       }
@@ -48,26 +48,26 @@ void get_activate_frac(Ensemble *ensemble) {
     ColumnView tair;
     ColumnView pmid;
     ColumnView wsub;
-    tair = haero::testing::create_column_view(pver);
-    pmid = haero::testing::create_column_view(pver);
-    wsub = haero::testing::create_column_view(pver);
+    tair = haero::testing::create_column_view(nlev);
+    pmid = haero::testing::create_column_view(nlev);
+    wsub = haero::testing::create_column_view(nlev);
 
-    auto tair_host = View1DHost((Real *)tair_db.data(), pver);
-    auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
-    auto wsub_host = View1DHost((Real *)wsub_db.data(), pver);
+    auto tair_host = View1DHost((Real *)tair_db.data(), nlev);
+    auto pmid_host = View1DHost((Real *)pmid_db.data(), nlev);
+    auto wsub_host = View1DHost((Real *)wsub_db.data(), nlev);
 
     Kokkos::deep_copy(tair, tair_host);
     Kokkos::deep_copy(pmid, pmid_host);
     Kokkos::deep_copy(wsub, wsub_host);
 
-    View2D fn("fn", pver, ntot_amode);
-    View2D fm("fm", pver, ntot_amode);
-    View2D fluxn("fluxn", pver, ntot_amode);
-    View2D fluxm("fluxm", pver, ntot_amode);
-    ColumnView flux_fullact = haero::testing::create_column_view(pver);
+    View2D fn("fn", nlev, ntot_amode);
+    View2D fm("fm", nlev, ntot_amode);
+    View2D fluxn("fluxn", nlev, ntot_amode);
+    View2D fluxm("fluxm", nlev, ntot_amode);
+    ColumnView flux_fullact = haero::testing::create_column_view(nlev);
 
     Kokkos::parallel_for(
-        "get_activate_frac", pver, KOKKOS_LAMBDA(int kk) {
+        "get_activate_frac", nlev, KOKKOS_LAMBDA(int kk) {
           const Real air_density =
               conversions::density_of_ideal_gas(tair(kk), pmid(kk));
           // Note: Boltzmann’s constant and Avogadro’s number in
@@ -128,29 +128,29 @@ void get_activate_frac(Ensemble *ensemble) {
     auto fluxm_host = Kokkos::create_mirror_view(fluxm);
     Kokkos::deep_copy(fluxm_host, fluxm);
 
-    std::vector<Real> host_v(pver);
+    std::vector<Real> host_v(nlev);
 
     for (int i = 0; i < ntot_amode; ++i) {
 
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < nlev; ++kk) {
         host_v[kk] = fn_host(kk, i);
       } // k
 
       output.set("fn_" + std::to_string(i + 1), host_v);
 
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < nlev; ++kk) {
         host_v[kk] = fm_host(kk, i);
       } // k
 
       output.set("fm_" + std::to_string(i + 1), host_v);
 
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < nlev; ++kk) {
         host_v[kk] = fluxn_host(kk, i);
       } // k
 
       output.set("fluxn_" + std::to_string(i + 1), host_v);
 
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < nlev; ++kk) {
         host_v[kk] = fluxm_host(kk, i);
       }
       output.set("fluxm_" + std::to_string(i + 1), host_v);
@@ -159,7 +159,7 @@ void get_activate_frac(Ensemble *ensemble) {
     auto host = Kokkos::create_mirror_view(flux_fullact);
 
     Kokkos::deep_copy(host, flux_fullact);
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       host_v[kk] = host(kk);
     }
 

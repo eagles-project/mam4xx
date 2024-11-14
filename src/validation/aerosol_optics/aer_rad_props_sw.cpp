@@ -22,14 +22,14 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     constexpr Real zero = 0;
 
     constexpr int maxd_aspectype = ndrop::maxd_aspectype;
-    constexpr int pver = mam4::nlev;
+    constexpr int nlev = mam4::nlev;
 
     const auto dt = input.get_array("dt")[0];
     const auto state_q_db = input.get_array("state_q");
 
     int count = 0;
 
-    View2D state_q("state_q", pver, pcnst);
+    View2D state_q("state_q", nlev, pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
     const auto zm_db = input.get_array("zm");
@@ -42,8 +42,8 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     const auto pint_db = input.get_array("pint");
 
     ColumnView zm;
-    zm = haero::testing::create_column_view(pver);
-    auto zm_host = View1DHost((Real *)zm_db.data(), pver);
+    zm = haero::testing::create_column_view(nlev);
+    auto zm_host = View1DHost((Real *)zm_db.data(), nlev);
     Kokkos::deep_copy(zm, zm_host);
 
     ColumnView temperature;
@@ -54,40 +54,40 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     ColumnView zi;
     ColumnView pint;
 
-    temperature = haero::testing::create_column_view(pver);
-    auto temperature_host = View1DHost((Real *)temperature_db.data(), pver);
+    temperature = haero::testing::create_column_view(nlev);
+    auto temperature_host = View1DHost((Real *)temperature_db.data(), nlev);
     Kokkos::deep_copy(temperature, temperature_host);
 
-    pmid = haero::testing::create_column_view(pver);
-    auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
+    pmid = haero::testing::create_column_view(nlev);
+    auto pmid_host = View1DHost((Real *)pmid_db.data(), nlev);
     Kokkos::deep_copy(pmid, pmid_host);
 
-    pdeldry = haero::testing::create_column_view(pver);
-    auto pdeldry_host = View1DHost((Real *)pdeldry_db.data(), pver);
+    pdeldry = haero::testing::create_column_view(nlev);
+    auto pdeldry_host = View1DHost((Real *)pdeldry_db.data(), nlev);
     Kokkos::deep_copy(pdeldry, pdeldry_host);
 
-    pdel = haero::testing::create_column_view(pver);
-    auto pdel_host = View1DHost((Real *)pdel_db.data(), pver);
+    pdel = haero::testing::create_column_view(nlev);
+    auto pdel_host = View1DHost((Real *)pdel_db.data(), nlev);
     Kokkos::deep_copy(pdel, pdel_host);
 
-    cldn = haero::testing::create_column_view(pver);
-    auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
+    cldn = haero::testing::create_column_view(nlev);
+    auto cldn_host = View1DHost((Real *)cldn_db.data(), nlev);
     Kokkos::deep_copy(cldn, cldn_host);
 
-    zi = haero::testing::create_column_view(pver);
-    auto zi_host = View1DHost((Real *)zi_db.data(), pver);
+    zi = haero::testing::create_column_view(nlev);
+    auto zi_host = View1DHost((Real *)zi_db.data(), nlev);
     Kokkos::deep_copy(zi, zi_host);
 
-    pint = haero::testing::create_column_view(pver);
-    auto pint_host = View1DHost((Real *)pint_db.data(), pver);
+    pint = haero::testing::create_column_view(nlev);
+    auto pint_host = View1DHost((Real *)pint_db.data(), nlev);
     Kokkos::deep_copy(pint, pint_host);
 
     auto qqcw_db = input.get_array("qqcw"); // 2d
 
-    View2D qqcw("qqcw", pver, pcnst);
+    View2D qqcw("qqcw", nlev, pcnst);
     auto qqcw_host = Kokkos::create_mirror_view(qqcw);
     count = 0;
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       for (int i = 0; i < pcnst; ++i) {
         qqcw_host(kk, i) = qqcw_db[count];
         count++;
@@ -97,12 +97,12 @@ void aer_rad_props_sw(Ensemble *ensemble) {
 
     const auto ext_cmip6_sw_db = input.get_array("ext_cmip6_sw");
     // We need to reshape ext_cmip6_sw
-    View2D ext_cmip6_sw("ext_cmip6_sw", nswbands, pver);
+    View2D ext_cmip6_sw("ext_cmip6_sw", nswbands, nlev);
     auto ext_cmip6_sw_host = Kokkos::create_mirror_view(ext_cmip6_sw);
     count = 0;
     for (int d1 = 0; d1 < nswbands; ++d1) {
-      for (int d2 = 0; d2 < pver; ++d2) {
-        // reshape  (nswbands,pver) -> (pver,nswbands)
+      for (int d2 = 0; d2 < nlev; ++d2) {
+        // reshape  (nswbands,nlev) -> (nlev,nswbands)
         // unit conversion from km to m
         ext_cmip6_sw_host(d1, d2) = ext_cmip6_sw_db[count] * 1e-3;
         count++;
@@ -113,12 +113,12 @@ void aer_rad_props_sw(Ensemble *ensemble) {
 
     const auto ssa_cmip6_sw_db = input.get_array("ssa_cmip6_sw");
 
-    View2D ssa_cmip6_sw("ssa_cmip6_sw", pver, nswbands);
+    View2D ssa_cmip6_sw("ssa_cmip6_sw", nlev, nswbands);
     mam4::validation::convert_1d_vector_to_2d_view_device(ssa_cmip6_sw_db,
                                                           ssa_cmip6_sw);
 
     const auto af_cmip6_sw_db = input.get_array("af_cmip6_sw");
-    View2D af_cmip6_sw("af_cmip6_sw", pver, nswbands);
+    View2D af_cmip6_sw("af_cmip6_sw", nlev, nswbands);
     mam4::validation::convert_1d_vector_to_2d_view_device(af_cmip6_sw_db,
                                                           af_cmip6_sw);
 
@@ -271,17 +271,17 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     // output
     View2D tau, tau_w, tau_w_g, tau_w_f;
 
-    tau = View2D("tau", pver + 1,
+    tau = View2D("tau", nlev + 1,
                  nswbands); // layer extinction optical depth [1]
     tau_w =
-        View2D("tau_w", pver + 1, nswbands); // layer single-scatter albedo [1]
-    tau_w_g = View2D("tau_w_g", pver + 1, nswbands); // asymmetry factor [1]
+        View2D("tau_w", nlev + 1, nswbands); // layer single-scatter albedo [1]
+    tau_w_g = View2D("tau_w_g", nlev + 1, nswbands); // asymmetry factor [1]
     tau_w_f =
-        View2D("tau_w_f", pver + 1, nswbands); // forward scattered fraction [1]
+        View2D("tau_w_f", nlev + 1, nswbands); // forward scattered fraction [1]
     View1D output_diagnostics("output_diagnostics", 21);
     View2D output_diagnostics_amode("output_diagnostics_amode", 3, ntot_amode);
 
-    View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
+    View2D qaerwat_m("qaerwat_m", nlev, ntot_amode);
 
     const int work_len = modal_aer_opt::get_work_len_aerosol_optics();
     View1D work("work", work_len);
@@ -300,7 +300,7 @@ void aer_rad_props_sw(Ensemble *ensemble) {
 
     Kokkos::deep_copy(qqcw_host, qqcw);
     count = 0;
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       for (int i = 0; i < pcnst; ++i) {
         qqcw_db[count] = qqcw_host(kk, i);
         count++;
@@ -308,20 +308,20 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     }
 
     output.set("qqcw", qqcw_db);
-    const int pver_po = pver + 1;
-    std::vector<Real> tau_out(pver_po * nswbands, zero);
+    const int nlev_po = nlev + 1;
+    std::vector<Real> tau_out(nlev_po * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(tau, tau_out);
     output.set("tau", tau_out);
 
-    std::vector<Real> tau_w_out(pver_po * nswbands, zero);
+    std::vector<Real> tau_w_out(nlev_po * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(tau_w, tau_w_out);
     output.set("tau_w", tau_w_out);
 
-    std::vector<Real> tau_w_g_out(pver_po * nswbands, zero);
+    std::vector<Real> tau_w_g_out(nlev_po * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(tau_w_g, tau_w_g_out);
     output.set("tau_w_g", tau_w_g_out);
 
-    std::vector<Real> tau_w_f_out(pver_po * nswbands, zero);
+    std::vector<Real> tau_w_f_out(nlev_po * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(tau_w_f, tau_w_f_out);
     output.set("tau_w_f", tau_w_f_out);
   });

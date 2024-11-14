@@ -79,7 +79,7 @@ void chm_diags(Ensemble *ensemble) {
 
     //=========init views==========
 
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
     }
 
     ColumnView mmr[gas_pcnst];
@@ -97,18 +97,18 @@ void chm_diags(Ensemble *ensemble) {
     }
 
     for (int mm = 0; mm < gas_pcnst; ++mm) {
-      mmr[mm] = haero::testing::create_column_view(pver);
-      vmr[mm] = haero::testing::create_column_view(pver);
-      mmr_tend[mm] = haero::testing::create_column_view(pver);
+      mmr[mm] = haero::testing::create_column_view(nlev);
+      vmr[mm] = haero::testing::create_column_view(nlev);
+      mmr_tend[mm] = haero::testing::create_column_view(nlev);
 
-      mmr_host[mm] = View1DHost("mmr_host", pver);
-      vmr_host[mm] = View1DHost("vmr_host", pver);
-      mmr_tend_host[mm] = View1DHost("mmr_tend_host", pver);
+      mmr_host[mm] = View1DHost("mmr_host", nlev);
+      vmr_host[mm] = View1DHost("vmr_host", nlev);
+      mmr_tend_host[mm] = View1DHost("mmr_tend_host", nlev);
     }
 
     int count = 0;
     for (int mm = 0; mm < gas_pcnst; ++mm) {
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < nlev; ++kk) {
         mmr_host[mm](kk) = mmr_in[count];
         vmr_host[mm](kk) = vmr_in[count];
         mmr_tend_host[mm](kk) = mmr_tend_in[count];
@@ -126,64 +126,64 @@ void chm_diags(Ensemble *ensemble) {
     ColumnView pdel;
     ColumnView pdeldry;
     auto pdel_host =
-        View1DHost((Real *)pdel_in.data(), pver); // puts data into host
+        View1DHost((Real *)pdel_in.data(), nlev); // puts data into host
     auto pdeldry_host =
-        View1DHost((Real *)pdeldry_in.data(), pver); // puts data into host
-    pdel = haero::testing::create_column_view(pver);
-    pdeldry = haero::testing::create_column_view(pver);
+        View1DHost((Real *)pdeldry_in.data(), nlev); // puts data into host
+    pdel = haero::testing::create_column_view(nlev);
+    pdeldry = haero::testing::create_column_view(nlev);
     Kokkos::deep_copy(pdel, pdel_host);
     Kokkos::deep_copy(pdeldry, pdeldry_host);
 
     std::vector<Real> vector0_gas_pcnst(gas_pcnst, 0);
-    std::vector<Real> vector0_pver(pver, 0);
+    std::vector<Real> vector0_nlev(nlev, 0);
     std::vector<Real> vector0_single(1, 0);
 
     View1D depvel("depvel", gas_pcnst);
     View1D depflx("depflx", gas_pcnst);
 
-    auto vmr_nox = haero::testing::create_column_view(pver);
-    auto vmr_noy = haero::testing::create_column_view(pver);
-    auto vmr_clox = haero::testing::create_column_view(pver);
-    auto vmr_cloy = haero::testing::create_column_view(pver);
-    auto vmr_brox = haero::testing::create_column_view(pver);
-    auto vmr_broy = haero::testing::create_column_view(pver);
+    auto vmr_nox = haero::testing::create_column_view(nlev);
+    auto vmr_noy = haero::testing::create_column_view(nlev);
+    auto vmr_clox = haero::testing::create_column_view(nlev);
+    auto vmr_cloy = haero::testing::create_column_view(nlev);
+    auto vmr_brox = haero::testing::create_column_view(nlev);
+    auto vmr_broy = haero::testing::create_column_view(nlev);
 
-    auto mmr_noy = haero::testing::create_column_view(pver);
-    auto mmr_sox = haero::testing::create_column_view(pver);
-    auto mmr_nhx = haero::testing::create_column_view(pver);
-    auto net_chem = haero::testing::create_column_view(pver);
+    auto mmr_noy = haero::testing::create_column_view(nlev);
+    auto mmr_sox = haero::testing::create_column_view(nlev);
+    auto mmr_nhx = haero::testing::create_column_view(nlev);
+    auto net_chem = haero::testing::create_column_view(nlev);
 
-    auto mass_bc = haero::testing::create_column_view(pver);
-    auto mass_dst = haero::testing::create_column_view(pver);
-    auto mass_mom = haero::testing::create_column_view(pver);
-    auto mass_ncl = haero::testing::create_column_view(pver);
+    auto mass_bc = haero::testing::create_column_view(nlev);
+    auto mass_dst = haero::testing::create_column_view(nlev);
+    auto mass_mom = haero::testing::create_column_view(nlev);
+    auto mass_ncl = haero::testing::create_column_view(nlev);
 
-    auto mass_pom = haero::testing::create_column_view(pver);
-    auto mass_so4 = haero::testing::create_column_view(pver);
-    auto mass_soa = haero::testing::create_column_view(pver);
+    auto mass_pom = haero::testing::create_column_view(nlev);
+    auto mass_so4 = haero::testing::create_column_view(nlev);
+    auto mass_soa = haero::testing::create_column_view(nlev);
 
     auto area = haero::testing::create_column_view(1);
-    auto mass = haero::testing::create_column_view(pver);
-    auto drymass = haero::testing::create_column_view(pver);
-    auto ozone_layer = haero::testing::create_column_view(pver);
+    auto mass = haero::testing::create_column_view(nlev);
+    auto drymass = haero::testing::create_column_view(nlev);
+    auto ozone_layer = haero::testing::create_column_view(nlev);
 
-    auto vmr_nox_host = View1DHost("vmr_nox_host", pver);
-    auto vmr_noy_host = View1DHost("vmr_noy_host", pver);
-    auto vmr_clox_host = View1DHost("vmr_clox_host", pver);
-    auto vmr_cloy_host = View1DHost("vmr_cloy_host", pver);
-    auto vmr_brox_host = View1DHost("vmr_brox_host", pver);
-    auto vmr_broy_host = View1DHost("vmr_broy_host", pver);
-    auto mmr_noy_host = View1DHost("mmr_noy_host", pver);
-    auto mmr_sox_host = View1DHost("mmr_sox_host", pver);
-    auto mmr_nhx_host = View1DHost("mmr_nhx_host", pver);
-    auto net_chem_host = View1DHost("net_chem_host", pver);
-    auto mass_bc_host = View1DHost("mass_bc_host", pver);
-    auto mass_dst_host = View1DHost("mass_dst_host", pver);
-    auto mass_mom_host = View1DHost("mass_mom_host", pver);
-    auto mass_ncl_host = View1DHost("mass_ncl_host", pver);
-    auto mass_pom_host = View1DHost("mass_pom_host", pver);
-    auto mass_so4_host = View1DHost("mass_so4_host", pver);
-    auto mass_soa_host = View1DHost("mass_soa_host", pver);
+    auto vmr_nox_host = View1DHost("vmr_nox_host", nlev);
+    auto vmr_noy_host = View1DHost("vmr_noy_host", nlev);
+    auto vmr_clox_host = View1DHost("vmr_clox_host", nlev);
+    auto vmr_cloy_host = View1DHost("vmr_cloy_host", nlev);
+    auto vmr_brox_host = View1DHost("vmr_brox_host", nlev);
+    auto vmr_broy_host = View1DHost("vmr_broy_host", nlev);
+    auto mmr_noy_host = View1DHost("mmr_noy_host", nlev);
+    auto mmr_sox_host = View1DHost("mmr_sox_host", nlev);
+    auto mmr_nhx_host = View1DHost("mmr_nhx_host", nlev);
+    auto net_chem_host = View1DHost("net_chem_host", nlev);
+    auto mass_bc_host = View1DHost("mass_bc_host", nlev);
+    auto mass_dst_host = View1DHost("mass_dst_host", nlev);
+    auto mass_mom_host = View1DHost("mass_mom_host", nlev);
+    auto mass_ncl_host = View1DHost("mass_ncl_host", nlev);
+    auto mass_pom_host = View1DHost("mass_pom_host", nlev);
+    auto mass_so4_host = View1DHost("mass_so4_host", nlev);
+    auto mass_soa_host = View1DHost("mass_soa_host", nlev);
 
     Kokkos::deep_copy(depvel, depvel_host);
     Kokkos::deep_copy(depflx, depflx_host);
@@ -212,19 +212,19 @@ void chm_diags(Ensemble *ensemble) {
     ColumnView fldcw[pcnst];
     View1DHost fldcw_host[pcnst];
     for (int nn = 0; nn < pcnst; ++nn) {
-      fldcw[nn] = haero::testing::create_column_view(pver);
-      fldcw_host[nn] = View1DHost("fldcw_host", pver);
+      fldcw[nn] = haero::testing::create_column_view(nlev);
+      fldcw_host[nn] = View1DHost("fldcw_host", nlev);
     }
 
     count = 0;
     for (int nn = 0; nn < lchnk; ++nn) {
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < nlev; ++kk) {
         fldcw_host[nn](kk) = 0;
       }
     }
 
     count = 0;
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       fldcw_host[16](kk) = fldcw_nn16_in[count];
       fldcw_host[17](kk) = fldcw_nn17_in[count];
       fldcw_host[18](kk) = fldcw_nn18_in[count];
@@ -311,8 +311,8 @@ void chm_diags(Ensemble *ensemble) {
     Kokkos::deep_copy(mass_soa_host, mass_soa);
 
     auto area_host = View1DHost("area_host", 1);
-    auto mass_host = View1DHost("mass_host", pver);
-    auto drymass_host = View1DHost("drymass_host", pver);
+    auto mass_host = View1DHost("mass_host", nlev);
+    auto drymass_host = View1DHost("drymass_host", nlev);
     auto ozone_col_host = View1DHost("ozone_col_host", 1);
     auto ozone_trop_host = View1DHost("ozone_trop_host", 1);
     auto ozone_strat_host = View1DHost("ozone_strat_host", 1);
@@ -329,27 +329,27 @@ void chm_diags(Ensemble *ensemble) {
     Kokkos::deep_copy(df_noy_host, df_noy);
     Kokkos::deep_copy(df_sox_host, df_sox);
 
-    std::vector<Real> vmr_nox_out(pver);
-    std::vector<Real> vmr_noy_out(pver);
-    std::vector<Real> vmr_clox_out(pver);
-    std::vector<Real> vmr_cloy_out(pver);
-    std::vector<Real> vmr_brox_out(pver);
-    std::vector<Real> vmr_broy_out(pver);
-    std::vector<Real> mmr_noy_out(pver);
-    std::vector<Real> mmr_sox_out(pver);
-    std::vector<Real> mmr_nhx_out(pver);
-    std::vector<Real> net_chem_out(pver);
-    std::vector<Real> mass_bc_out(pver);
-    std::vector<Real> mass_dst_out(pver);
-    std::vector<Real> mass_mom_out(pver);
-    std::vector<Real> mass_ncl_out(pver);
-    std::vector<Real> mass_pom_out(pver);
-    std::vector<Real> mass_so4_out(pver);
-    std::vector<Real> mass_soa_out(pver);
-    std::vector<Real> mass_out(pver);
-    std::vector<Real> drymass_out(pver);
+    std::vector<Real> vmr_nox_out(nlev);
+    std::vector<Real> vmr_noy_out(nlev);
+    std::vector<Real> vmr_clox_out(nlev);
+    std::vector<Real> vmr_cloy_out(nlev);
+    std::vector<Real> vmr_brox_out(nlev);
+    std::vector<Real> vmr_broy_out(nlev);
+    std::vector<Real> mmr_noy_out(nlev);
+    std::vector<Real> mmr_sox_out(nlev);
+    std::vector<Real> mmr_nhx_out(nlev);
+    std::vector<Real> net_chem_out(nlev);
+    std::vector<Real> mass_bc_out(nlev);
+    std::vector<Real> mass_dst_out(nlev);
+    std::vector<Real> mass_mom_out(nlev);
+    std::vector<Real> mass_ncl_out(nlev);
+    std::vector<Real> mass_pom_out(nlev);
+    std::vector<Real> mass_so4_out(nlev);
+    std::vector<Real> mass_soa_out(nlev);
+    std::vector<Real> mass_out(nlev);
+    std::vector<Real> drymass_out(nlev);
 
-    for (int kk = 0; kk < pver; kk++) {
+    for (int kk = 0; kk < nlev; kk++) {
       vmr_nox_out[kk] = vmr_nox_host(kk);
       vmr_noy_out[kk] = vmr_noy_host(kk);
       vmr_clox_out[kk] = vmr_clox_host(kk);
@@ -402,7 +402,7 @@ void chm_diags(Ensemble *ensemble) {
 
     // toth and tcly not used, but tcly is in reference output and is all zeros,
     // so we replicate it here.
-    std::vector<Real> vmr_tcly(pver, 0.0);
+    std::vector<Real> vmr_tcly(nlev, 0.0);
     output.set("vmr_tcly", vmr_tcly);
   });
 }

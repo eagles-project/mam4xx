@@ -18,14 +18,14 @@ void find_ktop(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
     using ColumnView = haero::ColumnView;
-    constexpr int pver = mam4::nlev;
+    constexpr int nlev = mam4::nlev;
 
     const Real rlat = input.get_array("rlat")[0];
     const auto press_in = input.get_array("press");
 
     ColumnView press;
-    auto press_host = View1DHost((Real *)press_in.data(), pver);
-    press = haero::testing::create_column_view(pver);
+    auto press_host = View1DHost((Real *)press_in.data(), nlev);
+    press = haero::testing::create_column_view(nlev);
     Kokkos::deep_copy(press, press_host);
 
     auto ktop_out = haero::testing::create_column_view(1);

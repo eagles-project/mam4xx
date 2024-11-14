@@ -27,20 +27,20 @@ void cloud_mod(Ensemble *ensemble) {
     const auto srf_alb = input.get_array("srf_alb")[0];
     // const auto  = input.get_array("");
     constexpr Real zero = 0;
-    auto clouds_host = View1DHost((Real *)clouds_db.data(), pver);
-    View1D clouds("clouds", pver);
+    auto clouds_host = View1DHost((Real *)clouds_db.data(), nlev);
+    View1D clouds("clouds", nlev);
     Kokkos::deep_copy(clouds, clouds_host);
 
-    auto lwc_host = View1DHost((Real *)lwc_db.data(), pver);
-    const auto lwc = View1D("lwc", pver);
+    auto lwc_host = View1DHost((Real *)lwc_db.data(), nlev);
+    const auto lwc = View1D("lwc", nlev);
     Kokkos::deep_copy(lwc, lwc_host);
 
-    auto delp_host = View1DHost((Real *)delp_db.data(), pver);
-    const auto delp = View1D("delp", pver);
+    auto delp_host = View1DHost((Real *)delp_db.data(), nlev);
+    const auto delp = View1D("delp", nlev);
     Kokkos::deep_copy(delp, delp_host);
 
-    View1D eff_alb("eff_alb", pver);
-    View1D cld_mult("cld_mult", pver);
+    View1D eff_alb("eff_alb", nlev);
+    View1D cld_mult("cld_mult", nlev);
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
@@ -49,11 +49,11 @@ void cloud_mod(Ensemble *ensemble) {
                     srf_alb, //  in
                     eff_alb.data(), cld_mult.data());
         });
-    std::vector<Real> eff_alb_db(pver, zero);
-    std::vector<Real> cld_mult_db(pver, zero);
+    std::vector<Real> eff_alb_db(nlev, zero);
+    std::vector<Real> cld_mult_db(nlev, zero);
 
-    auto eff_alb_host = View1DHost((Real *)eff_alb_db.data(), pver);
-    auto cld_mult_host = View1DHost((Real *)cld_mult_db.data(), pver);
+    auto eff_alb_host = View1DHost((Real *)eff_alb_db.data(), nlev);
+    auto cld_mult_host = View1DHost((Real *)cld_mult_db.data(), nlev);
     Kokkos::deep_copy(eff_alb_host, eff_alb);
     Kokkos::deep_copy(cld_mult_host, cld_mult);
 

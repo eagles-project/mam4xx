@@ -18,7 +18,7 @@ void gas_washout(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
     using ColumnView = haero::ColumnView;
-    constexpr int pver = mam4::nlev;
+    constexpr int nlev = mam4::nlev;
 
     const int plev = input.get_array("plev")[0];
     const Real xkgm = input.get_array("xkgm")[0];
@@ -29,14 +29,14 @@ void gas_washout(Ensemble *ensemble) {
     const auto xgas_in = input.get_array("xgas");
 
     ColumnView xhen_i, tfld_i, delz_i, xgas;
-    auto xhen_i_host = View1DHost((Real *)xhen_i_in.data(), pver);
-    auto tfld_i_host = View1DHost((Real *)tfld_i_in.data(), pver);
-    auto delz_i_host = View1DHost((Real *)delz_i_in.data(), pver);
-    auto xgas_host = View1DHost((Real *)xgas_in.data(), pver);
-    xhen_i = haero::testing::create_column_view(pver);
-    tfld_i = haero::testing::create_column_view(pver);
-    delz_i = haero::testing::create_column_view(pver);
-    xgas = haero::testing::create_column_view(pver);
+    auto xhen_i_host = View1DHost((Real *)xhen_i_in.data(), nlev);
+    auto tfld_i_host = View1DHost((Real *)tfld_i_in.data(), nlev);
+    auto delz_i_host = View1DHost((Real *)delz_i_in.data(), nlev);
+    auto xgas_host = View1DHost((Real *)xgas_in.data(), nlev);
+    xhen_i = haero::testing::create_column_view(nlev);
+    tfld_i = haero::testing::create_column_view(nlev);
+    delz_i = haero::testing::create_column_view(nlev);
+    xgas = haero::testing::create_column_view(nlev);
     Kokkos::deep_copy(xhen_i, xhen_i_host);
     Kokkos::deep_copy(tfld_i, tfld_i_host);
     Kokkos::deep_copy(delz_i, delz_i_host);
@@ -50,8 +50,8 @@ void gas_washout(Ensemble *ensemble) {
         });
 
     Kokkos::deep_copy(xgas_host, xgas);
-    std::vector<Real> xgas_out(pver);
-    for (int k = 0; k < pver; k++)
+    std::vector<Real> xgas_out(nlev);
+    for (int k = 0; k < nlev; k++)
       xgas_out[k] = xgas_host(k);
 
     output.set("xgas", xgas_out);

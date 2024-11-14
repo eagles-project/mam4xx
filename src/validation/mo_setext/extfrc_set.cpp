@@ -41,7 +41,7 @@ void extfrc_set(Ensemble *ensemble) {
         View1DHost forcings_fields_data_host =
             View1DHost((Real *)data1.data(), data1.size());
 
-        View1D data_isec("data", pver);
+        View1D data_isec("data", nlev);
         Kokkos::deep_copy(data_isec, forcings_fields_data_host);
         forcing_mm.fields_data[isec - 1] = data_isec;
 
@@ -50,7 +50,7 @@ void extfrc_set(Ensemble *ensemble) {
       forcings[i - 1] = forcing_mm;
     }
 
-    View2D frcing("frcing", pver, extcnt);
+    View2D frcing("frcing", nlev, extcnt);
     const int ncol = 1;
     auto team_policy = ThreadTeamPolicy(ncol, 1u);
 
@@ -58,7 +58,7 @@ void extfrc_set(Ensemble *ensemble) {
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           extfrc_set(team, forcings, frcing);
         });
-    std::vector<Real> frcing_out(pver * extcnt, 0.0);
+    std::vector<Real> frcing_out(nlev * extcnt, 0.0);
     mam4::validation::convert_2d_view_device_to_1d_vector(frcing, frcing_out);
 
     output.set("frcing", frcing_out);

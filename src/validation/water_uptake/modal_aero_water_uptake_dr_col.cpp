@@ -40,31 +40,31 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
     using View1DHost = typename HostType::view_1d<Real>;
 
     constexpr int pcnst = aero_model::pcnst;
-    constexpr int pver = ndrop::pver;
+    constexpr int nlev = mam4::nlev;
     constexpr int ntot_amode = AeroConfig::num_modes();
 
-    View2D state_q("state_q", pver, pcnst);
+    View2D state_q("state_q", nlev, pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
     ColumnView temperature;
-    temperature = haero::testing::create_column_view(pver);
-    auto temperature_host = View1DHost((Real *)temperature_db.data(), pver);
+    temperature = haero::testing::create_column_view(nlev);
+    auto temperature_host = View1DHost((Real *)temperature_db.data(), nlev);
 
     ColumnView pmid;
-    pmid = haero::testing::create_column_view(pver);
-    auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
+    pmid = haero::testing::create_column_view(nlev);
+    auto pmid_host = View1DHost((Real *)pmid_db.data(), nlev);
 
     ColumnView cldn;
-    cldn = haero::testing::create_column_view(pver);
-    auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
+    cldn = haero::testing::create_column_view(nlev);
+    auto cldn_host = View1DHost((Real *)cldn_db.data(), nlev);
 
     Kokkos::deep_copy(temperature, temperature_host);
     Kokkos::deep_copy(pmid, pmid_host);
     Kokkos::deep_copy(cldn, cldn_host);
 
-    View2D dgncur_a("dgncur_a_db", pver, ntot_amode);
-    View2D dgncur_awet("dgncur_awet", pver, ntot_amode);
-    View2D qaerwat("qaerwat", pver, ntot_amode);
+    View2D dgncur_a("dgncur_a_db", nlev, ntot_amode);
+    View2D dgncur_awet("dgncur_awet", nlev, ntot_amode);
+    View2D qaerwat("qaerwat", nlev, ntot_amode);
     mam4::validation::convert_1d_vector_to_2d_view_device(dgncur_a_db,
                                                           dgncur_a);
 
@@ -79,7 +79,7 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
       auto team_policy = ThreadTeamPolicy(1, 1u);
       Kokkos::parallel_for(
           team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-            for (int kk = top_lev; kk < pver; ++kk) {
+            for (int kk = top_lev; kk < nlev; ++kk) {
 
               int nspec_amode[AeroConfig::num_modes()];
               int lspectype_amode[water_uptake::maxd_aspectype]
@@ -109,11 +109,11 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
     } // modal_aero_wateruptake_dr
 
     constexpr Real zero = 0;
-    std::vector<Real> dgncur_awet_out(pver * ntot_amode, zero);
+    std::vector<Real> dgncur_awet_out(nlev * ntot_amode, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(dgncur_awet,
                                                           dgncur_awet_out);
 
-    std::vector<Real> qaerwat_out(pver * ntot_amode, zero);
+    std::vector<Real> qaerwat_out(nlev * ntot_amode, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(qaerwat, qaerwat_out);
 
     output.set("dgncur_awet", dgncur_awet_out);
