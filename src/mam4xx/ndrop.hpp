@@ -1329,10 +1329,10 @@ void update_from_explmix(
 
     if (enable_aero_vertical_mix) {
       team.team_barrier();
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver - top_lev + 1),
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev - top_lev + 1),
                            [&](int kk) {
                              const int k = top_lev - 1 + kk;
-                             const int kp1 = haero::min(k + 1, pver - 1);
+                             const int kp1 = haero::min(k + 1, nlev - 1);
                              const int km1 = haero::max(k - 1, top_lev - 1);
                              explmix(qncld(km1), qncld(k), qncld(kp1), qcld(k),
                                      srcn(k), eddy_diff_kp(k), eddy_diff_km(k),

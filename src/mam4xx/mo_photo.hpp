@@ -631,10 +631,10 @@ void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
    150 to 350 degrees K.  Make sure the index is a value
    between 1 and 201.
   ------------------------------------------------------------------------------*/
-  // To avoid the 'pver is undefined' error during CUDA code compilation.
-  constexpr int pver_local = pver;
+  // To avoid the 'nlev is undefined' error during CUDA code compilation.
+  constexpr int nlev_local = nlev;
   Kokkos::parallel_for(
-      Kokkos::ThreadVectorRange(team, pver_local), [&](int kk) {
+      Kokkos::ThreadVectorRange(team, nlev_local), [&](int kk) {
         /*----------------------------------------------------------------------
           ... get index into xsqy
          ----------------------------------------------------------------------*/
@@ -756,7 +756,7 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
     cloud_mod(zen_angle, clouds, lwc, pdel,
               srf_alb, //  in
               eff_alb, cld_mult);
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, nlev), [&](int kk) {
       parg[kk] = pmid(kk) * Pa2mb;
       cld_mult[kk] *= esfact;
     });
@@ -783,7 +783,7 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
       for (int mm = 0; mm < phtcnt; ++mm) {
         const int ind = table_data.lng_indexer(mm);
         if (ind > -1) {
-          for (int kk = 0; kk < pver; ++kk) {
+          for (int kk = 0; kk < nlev; ++kk) {
             photo(kk, mm) =
                 cld_mult[kk] *
                 (photo(kk, mm) + table_data.pht_alias_mult_1(mm) *

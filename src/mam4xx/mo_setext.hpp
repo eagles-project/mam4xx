@@ -29,8 +29,6 @@ struct Forcing {
 KOKKOS_INLINE_FUNCTION
 void extfrc_set(const ThreadTeam &team, const Forcing *forcings,
                 const View2D &frcing) {
-  const int pver = mam4::nlev;
-
   /*--------------------------------------------------------
    ... form the external forcing
   --------------------------------------------------------*/
@@ -50,7 +48,7 @@ void extfrc_set(const ThreadTeam &team, const Forcing *forcings,
   ! ... set non-zero forcings
   !--------------------------------------------------------*/
 
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, nlev), [&](int kk) {
     for (int mm = 0; mm < extfrc_cnt; ++mm) {
       // Fortran to C++ indexing
       auto forcing_mm = forcings[mm];
@@ -58,7 +56,7 @@ void extfrc_set(const ThreadTeam &team, const Forcing *forcings,
       frcing(kk, nn) = zero;
       for (int isec = 0; isec < forcing_mm.nsectors; ++isec) {
         if (forcing_mm.file_alt_data) {
-          frcing(kk, nn) += forcing_mm.fields_data[isec](pver - 1 - kk);
+          frcing(kk, nn) += forcing_mm.fields_data[isec](nlev - 1 - kk);
         } else {
           // forcings(mm)%fields(isec)%data(:ncol,:,lchnk)
           frcing(kk, nn) += forcing_mm.fields_data[isec](kk);

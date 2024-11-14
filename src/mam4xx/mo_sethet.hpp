@@ -73,7 +73,7 @@ void calc_precip_rescale(
   Real total_pos = 0;  // total positive rain rate in the column
   constexpr int local_nlev = nlev;
   Kokkos::parallel_reduce(
-      Kokkos::ThreadVectorRange(team, local_pver),
+      Kokkos::ThreadVectorRange(team, local_nlev),
       [&](int kk, Real &total_rain) {
         precip(kk) = cmfdqr(kk) + nrain(kk) - nevapr(kk);
         total_rain += precip(kk);
@@ -81,7 +81,7 @@ void calc_precip_rescale(
       total_rain);
 
   Kokkos::parallel_reduce(
-      Kokkos::ThreadVectorRange(team, local_pver),
+      Kokkos::ThreadVectorRange(team, local_nlev),
       [&](int kk, Real &total_pos) {
         if (precip(kk) < 0.0) {
           precip(kk) = 0.0;
@@ -91,13 +91,13 @@ void calc_precip_rescale(
       total_pos);
 
   if (total_rain <= 0.0) {
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, local_pver),
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, local_nlev),
                          [&](int kk) {
                            precip(kk) = 0.0; // set all levels to zero
                          });
   } else {
     Kokkos::parallel_for(
-        Kokkos::ThreadVectorRange(team, local_pver),
+        Kokkos::ThreadVectorRange(team, local_nlev),
         [&](int kk) { precip(kk) = precip(kk) * total_rain / total_pos; });
   }
 
@@ -296,14 +296,14 @@ void sethet_detail(
   //-----------------------------------------------------------------
 
   Kokkos::parallel_for(
-      Kokkos::ThreadVectorRange(team, local_pver), [&](int kk) {
+      Kokkos::ThreadVectorRange(team, local_nlev), [&](int kk) {
         for (int mm = 0; mm < gas_pcnst; ++mm) {
           het_rates(kk, mm) = 0.0;
           tmp_hetrates[mm](kk) = 0.0; // initiate temporary array
         }
       });
 
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, local_pver),
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, local_nlev),
                        [&](int kk) {
                          for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
                            const int mm2 = wetdep_map[mm];
@@ -329,7 +329,7 @@ void sethet_detail(
   calc_precip_rescale(team, cmfdqr, nrain, nevapr, precip); // populate precip
 
   Kokkos::parallel_for(
-      Kokkos::ThreadVectorRange(team, local_pver), [&](int kk) {
+      Kokkos::ThreadVectorRange(team, local_nlev), [&](int kk) {
         rain(kk) = mass_air * precip(kk) * invariants(kk, indexm) / mass_h2o;
         xliq(kk) = precip(kk) * delt * invariants(kk, indexm) / avo * mass_air *
                    m3_2_cm3;
@@ -339,7 +339,7 @@ void sethet_detail(
   zsurf = m2km * phis * rga;
 
   Kokkos::parallel_for(
-      Kokkos::ThreadVectorRange(team, ktop, local_pver - 1), [&](int kk) {
+      Kokkos::ThreadVectorRange(team, ktop, local_nlev - 1), [&](int kk) {
         delz(kk) = haero::abs((zmid(kk) - zmid(kk + 1)) * km2cm);
       });
   delz(nlev - 1) = haero::abs((zmid(nlev - 1) - zsurf) * km2cm);
@@ -357,7 +357,7 @@ void sethet_detail(
   //             heff = h * (1 + k/[h+]) (in general)
   //-----------------------------------------------------------------
   Kokkos::parallel_for(
-      Kokkos::ThreadVectorRange(team, ktop, local_pver), [&](int kk) {
+      Kokkos::ThreadVectorRange(team, ktop, local_nlev), [&](int kk) {
         //-----------------------------------------------------------------
         // 	... effective henry''s law constants:
         //	hno3, h2o2  (brasseur et al., 1999)
@@ -377,13 +377,13 @@ void sethet_detail(
   //-----------------------------------------------------------------
   //       ... part 1, solve for high henry constant ( hno3, h2o2)
   //-----------------------------------------------------------------
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, local_pver),
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, local_nlev),
                        [&](int kk) {
                          xgas2(kk) = xh2o2(kk); // different levels wash
                          xgas3(kk) = xso2(kk);
                        });
   team.team_barrier();
-  for (int kk = ktop; kk < pver; kk++) {
+  for (int kk = ktop; kk < nlev; kk++) {
     stay = 1.0;
     if (rain(kk) != 0.0) { // finding rain cloud
       stay = ((zmid(kk) - zsurf) * km2cm) / (xum * delt);
@@ -484,7 +484,7 @@ void sethet_detail(
   team.team_barrier();
   int abort = 0;
   for (int mm = 0; mm < gas_wetdep_cnt; mm++)
-    for (int kk = 0; kk < local_pver; ++kk)
+    for (int kk = 0; kk < local_nlev; ++kk)
       if (het_rates(kk, wetdep_map[mm]) == MISSING)
         ++abort;
   if (0 < abort)
