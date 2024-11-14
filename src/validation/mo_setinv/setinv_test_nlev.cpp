@@ -19,12 +19,25 @@ void setinv_test_nlev(Ensemble *ensemble) {
     using View2DHost = typename HostType::view_2d<Real>;
     // Ensemble parameters
     // Declare array of strings for input names
-    std::string input_arrays[] = {
-        "tfld",      "h2ovmr",  "vmr",       "pmid",
-        "ncol",      "lchnk",   "pcols",  
-        "gas_pcnst", "nfs",     "boltz_cgs", "num_tracer_cnst",
-        "has_n2",    "m_ndx",   "n2_ndx",    "has_o2",
-        "o2_ndx",    "has_h2o", "h2o_ndx",   "cnst_offline_yaml"};
+    std::string input_arrays[] = {"tfld",
+                                  "h2ovmr",
+                                  "vmr",
+                                  "pmid",
+                                  "ncol",
+                                  "lchnk",
+                                  "pcols",
+                                  "gas_pcnst",
+                                  "nfs",
+                                  "boltz_cgs",
+                                  "num_tracer_cnst",
+                                  "has_n2",
+                                  "m_ndx",
+                                  "n2_ndx",
+                                  "has_o2",
+                                  "o2_ndx",
+                                  "has_h2o",
+                                  "h2o_ndx",
+                                  "cnst_offline_yaml"};
 
     // Iterate over input_arrays and error if not in input
     for (std::string name : input_arrays) {
