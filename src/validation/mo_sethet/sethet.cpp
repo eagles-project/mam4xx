@@ -110,10 +110,10 @@ void sethet(Ensemble *ensemble) {
 
     for (int mm = 0; mm < gas_pcnst; ++mm) {
 
-      tmp_hetrates[mm] = haero::testing::create_column_view(nlev);
-      qin[mm] = haero::testing::create_column_view(nlev);
-      tmp_hetrates_host[mm] = View1DHost("tmp_hetrates_host", nlev);
-      qin_host[mm] = View1DHost("qin_host", nlev);
+      tmp_hetrates[mm] = haero::testing::create_column_view(pver);
+      qin[mm] = haero::testing::create_column_view(pver);
+      tmp_hetrates_host[mm] = View1DHost("tmp_hetrates_host", pver);
+      qin_host[mm] = View1DHost("qin_host", pver);
     }
 
     int count = 0;
@@ -149,10 +149,10 @@ void sethet(Ensemble *ensemble) {
     // transfer data to GPU.
     Kokkos::deep_copy(het_rates_host, het_rates);
 
-    std::vector<Real> het_rates_out(nlev * gas_pcnst);
+    std::vector<Real> het_rates_out(pver * gas_pcnst);
     count = 0;
     for (int mm = 0; mm < gas_pcnst; ++mm) {
-      for (int kk = 0; kk < nlev; ++kk) {
+      for (int kk = 0; kk < pver; ++kk) {
         het_rates_out[count] = het_rates_host(kk, mm);
         count++;
       }
