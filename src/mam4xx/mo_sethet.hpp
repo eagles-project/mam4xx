@@ -583,15 +583,9 @@ void sethet(
                            xgas2,    //
                            xgas3,    //
                            delz, xh2o2, xso2, xliq, rain, precip, xhen_h2o2,
-                           xhen_hno3, xhen_so2, tmp_hetrates,
-                           spc_h2o2_ndx,
-                           spc_so2_ndx,
-                           h2o2_ndx,
-                           so2_ndx,
-                           h2so4_ndx,
-                           gas_wetdep_cnt,
-                           wetdep_map
-  );
+                           xhen_hno3, xhen_so2, tmp_hetrates, spc_h2o2_ndx,
+                           spc_so2_ndx, h2o2_ndx, so2_ndx, h2so4_ndx,
+                           gas_wetdep_cnt, wetdep_map);
 }
 } // namespace mo_sethet
 } // namespace mam4
