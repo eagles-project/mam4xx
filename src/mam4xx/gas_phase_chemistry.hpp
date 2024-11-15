@@ -39,7 +39,7 @@ void gas_phase_chemistry(
     const Real temp, const Real dt,
     const Real photo_rates[mam4::mo_photo::phtcnt], const Real extfrc[extcnt],
     const Real invariants[nfs], const int (&clsmap_4)[gas_pcnst],
-    const int (&permute_4)[gas_pcnst],
+    const int (&permute_4)[gas_pcnst], const Real het_rates[gas_pcnst],
     // out
     Real (&qq)[gas_pcnst], Real (&vmr0)[gas_pcnst]) {
   //=====================================================================
@@ -71,10 +71,6 @@ void gas_phase_chemistry(
     }
   }
 
-  // ... Form the washout rates
-  // FIXME: het_rates will be provided by sethet routine to be called before
-  // the vertical level parallel_for in the interface
-  Real het_rates[gas_pcnst] = {0};
   // save h2so4 before gas phase chem (for later new particle nucleation)
   Real del_h2so4_gasprod = qq[ndx_h2so4];
 

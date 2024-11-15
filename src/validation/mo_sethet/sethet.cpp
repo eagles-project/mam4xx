@@ -95,19 +95,18 @@ void sethet(Ensemble *ensemble) {
     xk0_so2 = haero::testing::create_column_view(pver);
     so2_diss = haero::testing::create_column_view(pver);
 
-    ColumnView het_rates[gas_pcnst];
     ColumnView tmp_hetrates[gas_pcnst];
     ColumnView qin[gas_pcnst];
-    View1DHost het_rates_host[gas_pcnst];
     View1DHost tmp_hetrates_host[gas_pcnst];
     View1DHost qin_host[gas_pcnst];
 
+    View2D het_rates("het_rates", pver, gas_pcnst);
+    auto het_rates_host = Kokkos::create_mirror_view(het_rates);
+
     for (int mm = 0; mm < gas_pcnst; ++mm) {
-      het_rates[mm] = haero::testing::create_column_view(pver);
+
       tmp_hetrates[mm] = haero::testing::create_column_view(pver);
       qin[mm] = haero::testing::create_column_view(pver);
-
-      het_rates_host[mm] = View1DHost("het_rates_host", pver);
       tmp_hetrates_host[mm] = View1DHost("tmp_hetrates_host", pver);
       qin_host[mm] = View1DHost("qin_host", pver);
     }
@@ -122,7 +121,6 @@ void sethet(Ensemble *ensemble) {
 
     // transfer data to GPU.
     for (int mm = 0; mm < gas_pcnst; ++mm) {
-      Kokkos::deep_copy(het_rates[mm], 0.0);
       Kokkos::deep_copy(tmp_hetrates[mm], 0.0);
       Kokkos::deep_copy(qin[mm], qin_host[mm]);
     }
@@ -130,7 +128,7 @@ void sethet(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          mo_sethet::sethet(
+          mo_sethet::sethet_detail(
               team, het_rates, rlat, press, zmid, phis, tfld, cmfdqr, nrain,
               nevapr, delt, xhnm, qin, t_factor, xk0_hno3, xk0_so2, so2_diss,
               xgas2, xgas3, delz, xh2o2, xso2, xliq, rain, precip, xhen_h2o2,
@@ -139,14 +137,13 @@ void sethet(Ensemble *ensemble) {
         });
 
     // transfer data to GPU.
-    for (int mm = 0; mm < gas_pcnst; ++mm) {
-      Kokkos::deep_copy(het_rates_host[mm], het_rates[mm]);
-    }
+    Kokkos::deep_copy(het_rates_host, het_rates);
+
     std::vector<Real> het_rates_out(pver * gas_pcnst);
     count = 0;
     for (int mm = 0; mm < gas_pcnst; ++mm) {
       for (int kk = 0; kk < pver; ++kk) {
-        het_rates_out[count] = het_rates_host[mm](kk);
+        het_rates_out[count] = het_rates_host(kk, mm);
         count++;
       }
     }
