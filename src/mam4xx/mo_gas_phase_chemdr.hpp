@@ -19,6 +19,7 @@ using mam4::mo_setinv::num_tracer_cnst;
 using View2D = DeviceType::view_2d<Real>;
 using ConstView2D = DeviceType::view_2d<const Real>;
 using View1D = DeviceType::view_1d<Real>;
+using ConstView1D = DeviceType::view_1d<const Real>;
 
 KOKKOS_INLINE_FUNCTION
 void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
@@ -114,8 +115,9 @@ void perform_atmospheric_chemistry_and_microphysics(
     const Real phis,      // surf geopotential //in
     const View1D &cmfdqr, // dq/dt for convection [kg/kg/s] //in ndx_cmfdqr =
                           // pbuf_get_index('RPRDTOT') // from convect shallow
-    const View1D &prain,  // stratoform precip [kg/kg/s] //in precip_total_tend
-    const View1D &nevapr, // nevapr evaporation [kg/kg/s] //in
+    const ConstView1D
+        &prain, // stratoform precip [kg/kg/s] //in precip_total_tend
+    const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
     const View1D &work_set_het) {
 
   auto work_set_het_ptr = (Real *)work_set_het.data();

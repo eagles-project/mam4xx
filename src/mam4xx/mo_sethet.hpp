@@ -58,10 +58,10 @@ void calc_het_rates(const Real satf, // saturation fraction in cloud //in
 KOKKOS_INLINE_FUNCTION
 void calc_precip_rescale(
     const ThreadTeam &team,
-    const ColumnView &cmfdqr,   // dq/dt for convection [kg/kg/s] //in
-    const ColumnView &nrain,    // stratoform precip [kg/kg/s] //in
-    const ColumnView &nevapr,   // evaporation [kg/kg/s] // in
-    const ColumnView &precip) { // precipitation [kg/kg/s] // out
+    const ColumnView &cmfdqr,      // dq/dt for convection [kg/kg/s] //in
+    const ConstColumnView &nrain,  // stratoform precip [kg/kg/s] //in
+    const ConstColumnView &nevapr, // evaporation [kg/kg/s] // in
+    const ColumnView &precip) {    // precipitation [kg/kg/s] // out
   // -----------------------------------------------------------------------
   // calculate precipitation rate at each grid
   // this is added to rescale the variable precip (which can only be positive)
@@ -214,8 +214,8 @@ void sethet_detail(
     const Real phis,                 // surf geopotential //in
     const ConstColumnView &tfld,     // temperature [K]  //in
     const ColumnView &cmfdqr,        // dq/dt for convection [kg/kg/s] //in
-    const ColumnView &nrain,         // stratoform precip [kg/kg/s] //in
-    const ColumnView &nevapr,        // evaporation [kg/kg/s] //in
+    const ConstColumnView &nrain,    // stratoform precip [kg/kg/s] //in
+    const ConstColumnView &nevapr,   // evaporation [kg/kg/s] //in
     const Real delt,                 // time step [s] //in
     const ColumnView &xhnm,          // total atms density [cm^-3] //in
     const ColumnView qin[gas_pcnst], // xported species [vmr]  //in
@@ -503,14 +503,14 @@ void sethet_detail(
 KOKKOS_INLINE_FUNCTION
 void sethet(
     const ThreadTeam &team, const haero::Atmosphere &atm,
-    const View2D &het_rates,  //[pver][gas_pcnst], rainout rates [1/s] //out
-    const Real rlat,          // latitude in radians for columns
-    const Real phis,          // surf geopotential //in
-    const ColumnView &cmfdqr, // dq/dt for convection [kg/kg/s] //in
-    const ColumnView &prain,  // stratoform precip [kg/kg/s] //in
-    const ColumnView &nevapr, // evaporation [kg/kg/s] //in
-    const Real dt,            // time step [s] //in
-    const View2D &invariants, //
+    const View2D &het_rates,      //[pver][gas_pcnst], rainout rates [1/s] //out
+    const Real rlat,              // latitude in radians for columns
+    const Real phis,              // surf geopotential //in
+    const ColumnView &cmfdqr,     // dq/dt for convection [kg/kg/s] //in
+    const ConstColumnView &prain, // stratoform precip [kg/kg/s] //in
+    const ConstColumnView &nevapr,   // evaporation [kg/kg/s] //in
+    const Real dt,                   // time step [s] //in
+    const View2D &invariants,        //
     const ColumnView vmr[gas_pcnst], // xported species [vmr]  //in
     // working variables
     const View1D &work) {
