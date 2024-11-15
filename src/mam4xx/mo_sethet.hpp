@@ -29,6 +29,7 @@ constexpr Real avo2 =
 
 using Real = haero::Real;
 using View1D = DeviceType::view_1d<Real>;
+using View2D = DeviceType::view_2d<Real>;
 
 //=================================================================================
 KOKKOS_INLINE_FUNCTION
@@ -109,13 +110,13 @@ void calc_precip_rescale(
 KOKKOS_INLINE_FUNCTION
 void gas_washout(
     const ThreadTeam &team,
-    const int plev,          // calculate from this level below //in
-    const Real xkgm,         // mass flux on rain drop //in
-    const Real xliq_ik,      // liquid rain water content [gm/m^3] // in
-    const ColumnView xhen_i, // henry's law constant
-    const ColumnView tfld_i, // temperature [K]
-    const ColumnView delz_i, // layer depth about interfaces [cm]  // in
-    const ColumnView xgas) { // gas concentration // inout
+    const int plev,               // calculate from this level below //in
+    const Real xkgm,              // mass flux on rain drop //in
+    const Real xliq_ik,           // liquid rain water content [gm/m^3] // in
+    const ColumnView xhen_i,      // henry's law constant
+    const ConstColumnView tfld_i, // temperature [K]
+    const ColumnView delz_i,      // layer depth about interfaces [cm]  // in
+    const ColumnView xgas) {      // gas concentration // inout
   //------------------------------------------------------------------------
   // calculate gas washout by cloud if not saturated
   //------------------------------------------------------------------------
@@ -159,8 +160,8 @@ void gas_washout(
 //=================================================================================
 KOKKOS_INLINE_FUNCTION
 void find_ktop(
-    Real rlat,               // latitude in radians for columns
-    const ColumnView &press, // pressure [Pa] // in
+    Real rlat,                    // latitude in radians for columns
+    const ConstColumnView &press, // pressure [Pa] // in
     int &ktop) { // index that only calculate het_rates above this level //out
   //---------------------------------------------------------------------------
   // -------- find the top level that het_rates are set as 0 above it ---------
@@ -185,20 +186,38 @@ void find_ktop(
 } // end subroutine find_ktop
 
 KOKKOS_INLINE_FUNCTION
-void sethet(
+int get_work_len_sethet() {
+  // work_len these variables:
+  // t_factor, xk0_hno3, xk0_so2, so2_diss, xgas2, xgas3,
+  // delz, xh2o2, xso2, xliq, rain, precip,
+  // xhen_h2o2, xhen_hno3, xhen_so2, tmp_hetrates
+  return 15 * nlev + gas_pcnst * nlev;
+}
+
+KOKKOS_INLINE_FUNCTION
+int get_total_work_len_sethet() {
+  // work_len these variables:
+  // including het_rates, and vmr_col
+  const int sether_work_len = get_work_len_sethet();
+  return sether_work_len + nlev * gas_pcnst + gas_pcnst * nlev;
+}
+
+KOKKOS_INLINE_FUNCTION
+void sethet_detail(
     const ThreadTeam &team,
-    const ColumnView
-        het_rates[gas_pcnst], //[pver][gas_pcnst], rainout rates [1/s] //out
-    const Real rlat,          // latitude in radians for columns
-    const ColumnView &press,  // pressure [pascals] //in
-    const ColumnView &zmid,   // midpoint geopot [km]  //in
-    const Real phis,          // surf geopotential //in
-    const ColumnView &tfld,   // temperature [K]  //in
-    const ColumnView &cmfdqr, // dq/dt for convection [kg/kg/s] //in
-    const ColumnView &nrain,  // stratoform precip [kg/kg/s] //in
-    const ColumnView &nevapr, // evaporation [kg/kg/s] //in
-    const Real delt,          // time step [s] //in
-    const ColumnView &xhnm,   // total atms density [cm^-3] //in
+    // const ColumnView
+    // het_rates[gas_pcnst], //[pver][gas_pcnst], rainout rates [1/s] //out
+    const View2D &het_rates,         // rainout rates [1/s] //out
+    const Real rlat,                 // latitude in radians for columns
+    const ConstColumnView &press,    // pressure [pascals] //in
+    const ConstColumnView &zmid,     // midpoint geopot [km]  //in
+    const Real phis,                 // surf geopotential //in
+    const ConstColumnView &tfld,     // temperature [K]  //in
+    const ColumnView &cmfdqr,        // dq/dt for convection [kg/kg/s] //in
+    const ColumnView &nrain,         // stratoform precip [kg/kg/s] //in
+    const ColumnView &nevapr,        // evaporation [kg/kg/s] //in
+    const Real delt,                 // time step [s] //in
+    const ColumnView &xhnm,          // total atms density [cm^-3] //in
     const ColumnView qin[gas_pcnst], // xported species [vmr]  //in
     // working variables
     const ColumnView
@@ -283,7 +302,7 @@ void sethet(
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, local_pver), [&](int kk) {
     Kokkos::parallel_for(
         Kokkos::ThreadVectorRange(team, gas_pcnst), [&](int mm) {
-          het_rates[mm](kk) = 0.0;
+          het_rates(kk, mm) = 0.0;
           tmp_hetrates[mm](kk) = 0.0; // initiate temporary array
         });
   });
@@ -292,7 +311,7 @@ void sethet(
     int mm2 = wetdep_map[mm];
     if (mm2 > 0) {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver),
-                           [&](int kk) { het_rates[mm2](kk) = MISSING; });
+                           [&](int kk) { het_rates(kk, mm2) = MISSING; });
     }
   }
 
@@ -424,7 +443,7 @@ void sethet(
     for (int mm = 0; mm < local_gas_pcnst; ++mm) {
 
       if (rain(kk) <= 0.0) {
-        het_rates[mm](kk) = 0.0;
+        het_rates(kk, mm) = 0.0;
         skip = true;
       }
     }
@@ -437,22 +456,22 @@ void sethet(
     if (h2o2_ndx >= 0) {
       calc_het_rates(satf_h2o2, rain(kk), xhen_h2o2(kk), // in
                      tmp_hetrates[1](kk), work1, work2,  // in
-                     het_rates[h2o2_ndx](kk));           // out
+                     het_rates(kk, h2o2_ndx));           // out
     }
 
     // if ( prog_modal_aero .and.
     if (so2_ndx >= 0 && h2o2_ndx >= 0) {
-      het_rates[so2_ndx](kk) = het_rates[h2o2_ndx](kk);
+      het_rates(kk, so2_ndx) = het_rates(kk, h2o2_ndx);
     } else if (so2_ndx >= 0) {
       calc_het_rates(satf_so2, rain(kk), xhen_so2(kk),  // in
                      tmp_hetrates[2](kk), work1, work2, // in
-                     het_rates[so2_ndx](kk));           // out
+                     het_rates(kk, so2_ndx));           // out
     }
 
     if (h2so4_ndx >= 0) {
       calc_het_rates(satf_hno3, rain(kk), xhen_hno3(kk), // in
                      tmp_hetrates[0](kk), work1, work2,  // in
-                     het_rates[h2so4_ndx](kk));          // out
+                     het_rates(kk, h2so4_ndx));          // out
     }
   }
 
@@ -464,11 +483,11 @@ void sethet(
   for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
     int mm2 = wetdep_map[mm];
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ktop),
-                         [&](int kk) { het_rates[mm2](kk) = 0.0; });
+                         [&](int kk) { het_rates(kk, mm2) = 0.0; });
     Kokkos::parallel_reduce(
         Kokkos::TeamVectorRange(team, local_pver),
         [&](int kk, int &abort) {
-          if (het_rates[mm2](kk) == MISSING)
+          if (het_rates(kk, mm2) == MISSING)
             abort += 1;
         },
         abort);
@@ -481,6 +500,99 @@ void sethet(
 
 } // end subroutine sethet
 
+KOKKOS_INLINE_FUNCTION
+void sethet(
+    const ThreadTeam &team, const haero::Atmosphere &atm,
+    const View2D &het_rates,  //[pver][gas_pcnst], rainout rates [1/s] //out
+    const Real rlat,          // latitude in radians for columns
+    const Real phis,          // surf geopotential //in
+    const ColumnView &cmfdqr, // dq/dt for convection [kg/kg/s] //in
+    const ColumnView &prain,  // stratoform precip [kg/kg/s] //in
+    const ColumnView &nevapr, // evaporation [kg/kg/s] //in
+    const Real dt,            // time step [s] //in
+    const View2D &invariants, //
+    const ColumnView vmr[gas_pcnst], // xported species [vmr]  //in
+    // working variables
+    const View1D &work) {
+
+  auto work_ptr = (Real *)work.data();
+  const auto t_factor = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  const auto xk0_hno3 = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  const auto xk0_so2 = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  const auto so2_diss = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  const auto xgas2 = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  const auto xgas3 = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  const auto delz = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  const auto xh2o2 = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  const auto xso2 = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  const auto xliq = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  const auto rain = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  const auto precip = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  const auto xhen_h2o2 = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  const auto xhen_hno3 = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  const auto xhen_so2 = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+
+  ColumnView tmp_hetrates[gas_pcnst];
+  for (int i = 0; i < gas_pcnst; ++i) {
+    tmp_hetrates[i] = ColumnView(work_ptr, nlev);
+    work_ptr += nlev;
+  }
+
+  // BAD CONSTANT
+  // FIXME: should we move these indices and map to a config file?
+  constexpr int spc_h2o2_ndx = 1;   // spc_h2o2_ndx = get_spc_ndx( 'H2O2' )
+  constexpr int spc_so2_ndx = 3;    // spc_so2_ndx  = get_spc_ndx( 'SO2' )
+  constexpr int h2o2_ndx = 1;       // h2o2_ndx   = get_het_ndx( 'H2O2' )
+  constexpr int so2_ndx = 3;        // so2_ndx     = get_het_ndx( 'SO2' )
+  constexpr int h2so4_ndx = 2;      // h2so4_ndx   = get_het_ndx( 'H2SO4' )
+  constexpr int gas_wetdep_cnt = 3; // integer
+  constexpr int wetdep_map[3] = {1, 2, 3};
+
+  // index of total atm density in invariant array
+  constexpr int indexm = 0;
+  const auto xhnm = Kokkos::subview(invariants, Kokkos::ALL, indexm);
+
+  mo_sethet::sethet_detail(team, het_rates, rlat, atm.pressure,
+                           atm.height, // zmid,
+                           phis, atm.temperature,
+                           cmfdqr,   //
+                           prain,    //
+                           nevapr,   //
+                           dt,       //
+                           xhnm,     //
+                           vmr,      //
+                           t_factor, //
+                           xk0_hno3, //
+                           xk0_so2,  //
+                           so2_diss, //
+                           xgas2,    //
+                           xgas3,    //
+                           delz, xh2o2, xso2, xliq, rain, precip, xhen_h2o2,
+                           xhen_hno3, xhen_so2, tmp_hetrates,
+                           spc_h2o2_ndx,
+                           spc_so2_ndx,
+                           h2o2_ndx,
+                           so2_ndx,
+                           h2so4_ndx,
+                           gas_wetdep_cnt,
+                           wetdep_map
+  );
+}
 } // namespace mo_sethet
 } // namespace mam4
 #endif
