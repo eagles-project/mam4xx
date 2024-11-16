@@ -328,14 +328,13 @@ void sethet_detail(
   // removes point storms
   calc_precip_rescale(team, cmfdqr, nrain, nevapr, precip); // populate precip
 
-  Kokkos::parallel_for(
-      Kokkos::ThreadVectorRange(team, local_nlev), [&](int kk) {
-        rain(kk) = mass_air * precip(kk) * invariants(kk, indexm) / mass_h2o;
-        xliq(kk) = precip(kk) * delt * invariants(kk, indexm) / avo * mass_air *
-                   m3_2_cm3;
-        xh2o2(kk) = qin[spc_h2o2_ndx](kk) * invariants(kk, indexm);
-        xso2(kk) = qin[spc_so2_ndx](kk) * invariants(kk, indexm);
-      });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
+    rain(kk) = mass_air * precip(kk) * invariants(kk, indexm) / mass_h2o;
+    xliq(kk) =
+        precip(kk) * delt * invariants(kk, indexm) / avo * mass_air * m3_2_cm3;
+    xh2o2(kk) = qin[spc_h2o2_ndx](kk) * invariants(kk, indexm);
+    xso2(kk) = qin[spc_so2_ndx](kk) * invariants(kk, indexm);
+  });
   zsurf = m2km * phis * rga;
 
   Kokkos::parallel_for(
