@@ -125,7 +125,7 @@ void perform_atmospheric_chemistry_and_microphysics(
   work_set_het_ptr += nlev * gas_pcnst;
   ColumnView vmr_col[gas_pcnst];
   for (int i = 0; i < gas_pcnst; ++i) {
-    vmr_col[gas_pcnst] = ColumnView(work_set_het_ptr, nlev);
+    vmr_col[i] = ColumnView(work_set_het_ptr, nlev);
     work_set_het_ptr += nlev;
   }
   const int sethet_work_len = mam4::mo_sethet::get_work_len_sethet();

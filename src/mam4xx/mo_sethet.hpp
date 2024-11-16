@@ -69,11 +69,8 @@ void calc_precip_rescale(
   // This removes point storms
   // -----------------------------------------------------------------------
 
-  Real total_rain; // total rain rate (both pos and neg) in the column
-  Real total_pos;  // total positive rain rate in the column
-
-  total_rain = 0.0;
-  total_pos = 0.0;
+  Real total_rain = 0; // total rain rate (both pos and neg) in the column
+  Real total_pos = 0;  // total positive rain rate in the column
   constexpr int local_pver = pver;
   Kokkos::parallel_reduce(
       Kokkos::TeamVectorRange(team, local_pver),
@@ -205,8 +202,6 @@ int get_total_work_len_sethet() {
 KOKKOS_INLINE_FUNCTION
 void sethet_detail(
     const ThreadTeam &team,
-    // const ColumnView
-    // het_rates[gas_pcnst], //[pver][gas_pcnst], rainout rates [1/s] //out
     const View2D &het_rates,         // rainout rates [1/s] //out
     const Real rlat,                 // latitude in radians for columns
     const ConstColumnView &press,    // pressure [pascals] //in
@@ -217,7 +212,7 @@ void sethet_detail(
     const ConstColumnView &nrain,    // stratoform precip [kg/kg/s] //in
     const ConstColumnView &nevapr,   // evaporation [kg/kg/s] //in
     const Real delt,                 // time step [s] //in
-    const ColumnView &xhnm,          // total atms density [cm^-3] //in
+    const View2D &invariants,        // total atms density [cm^-3] //in
     const ColumnView qin[gas_pcnst], // xported species [vmr]  //in
     // working variables
     const ColumnView
@@ -239,7 +234,8 @@ void sethet_detail(
     const ColumnView &xhen_so2,  // henry law constants
     const ColumnView tmp_hetrates[gas_pcnst], const int spc_h2o2_ndx,
     const int spc_so2_ndx, const int h2o2_ndx, const int so2_ndx,
-    const int h2so4_ndx, const int gas_wetdep_cnt, const int wetdep_map[3]) {
+    const int h2so4_ndx, const int gas_wetdep_cnt, const int wetdep_map[3],
+    const int indexm) {
 
   //-----------------------------------------------------------------------
   //       ... compute rainout loss rates (1/s)
@@ -332,10 +328,11 @@ void sethet_detail(
   calc_precip_rescale(team, cmfdqr, nrain, nevapr, precip); // populate precip
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
-    rain(kk) = mass_air * precip(kk) * xhnm(kk) / mass_h2o;
-    xliq(kk) = precip(kk) * delt * xhnm(kk) / avo * mass_air * m3_2_cm3;
-    xh2o2(kk) = qin[spc_h2o2_ndx](kk) * xhnm(kk);
-    xso2(kk) = qin[spc_so2_ndx](kk) * xhnm(kk);
+    rain(kk) = mass_air * precip(kk) * invariants(kk, indexm) / mass_h2o;
+    xliq(kk) =
+        precip(kk) * delt * invariants(kk, indexm) / avo * mass_air * m3_2_cm3;
+    xh2o2(kk) = qin[spc_h2o2_ndx](kk) * invariants(kk, indexm);
+    xso2(kk) = qin[spc_so2_ndx](kk) * invariants(kk, indexm);
   });
   zsurf = m2km * phis * rga;
 
@@ -564,28 +561,27 @@ void sethet(
   constexpr int wetdep_map[3] = {1, 2, 3};
 
   // index of total atm density in invariant array
-  constexpr int indexm = 0;
-  const auto xhnm = Kokkos::subview(invariants, Kokkos::ALL, indexm);
+  constexpr int indexm = mam4::gas_chemistry::indexm;
 
   mo_sethet::sethet_detail(team, het_rates, rlat, atm.pressure,
                            atm.height, // zmid,
                            phis, atm.temperature,
-                           cmfdqr,   //
-                           prain,    //
-                           nevapr,   //
-                           dt,       //
-                           xhnm,     //
-                           vmr,      //
-                           t_factor, //
-                           xk0_hno3, //
-                           xk0_so2,  //
-                           so2_diss, //
-                           xgas2,    //
-                           xgas3,    //
+                           cmfdqr,     //
+                           prain,      //
+                           nevapr,     //
+                           dt,         //
+                           invariants, //
+                           vmr,        //
+                           t_factor,   //
+                           xk0_hno3,   //
+                           xk0_so2,    //
+                           so2_diss,   //
+                           xgas2,      //
+                           xgas3,      //
                            delz, xh2o2, xso2, xliq, rain, precip, xhen_h2o2,
                            xhen_hno3, xhen_so2, tmp_hetrates, spc_h2o2_ndx,
                            spc_so2_ndx, h2o2_ndx, so2_ndx, h2so4_ndx,
-                           gas_wetdep_cnt, wetdep_map);
+                           gas_wetdep_cnt, wetdep_map, indexm);
 }
 } // namespace mo_sethet
 } // namespace mam4
