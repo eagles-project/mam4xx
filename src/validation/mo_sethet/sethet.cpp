@@ -20,6 +20,9 @@ void sethet(Ensemble *ensemble) {
     using ColumnView = haero::ColumnView;
     constexpr int pver = mam4::nlev;
     constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
+    constexpr int nfs = mam4::gas_chemistry::nfs;
+    // index of total atm density in invariant array
+    constexpr int indexm = mam4::gas_chemistry::indexm;
 
     // non-ColumnView input values
     const Real rlat = input.get_array("rlat")[0]; // need
@@ -75,6 +78,8 @@ void sethet(Ensemble *ensemble) {
     Kokkos::deep_copy(nevapr, nevapr_host);
     Kokkos::deep_copy(xhnm, xhnm_host);
 
+    View2D invariants("invariants", pver, nfs);
+
     // working var inputs
     ColumnView xgas2, xgas3, delz, xh2o2, xso2, xliq, rain, precip, xhen_h2o2,
         xhen_hno3, xhen_so2, t_factor, xk0_hno3, xk0_so2, so2_diss;
@@ -128,12 +133,17 @@ void sethet(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          Kokkos::parallel_for(
+              Kokkos::TeamVectorRange(team, pver),
+              [&](int kk) { invariants(kk, indexm) = xhnm(kk); });
+          team.team_barrier();
           mo_sethet::sethet_detail(
               team, het_rates, rlat, press, zmid, phis, tfld, cmfdqr, nrain,
-              nevapr, delt, xhnm, qin, t_factor, xk0_hno3, xk0_so2, so2_diss,
-              xgas2, xgas3, delz, xh2o2, xso2, xliq, rain, precip, xhen_h2o2,
-              xhen_hno3, xhen_so2, tmp_hetrates, spc_h2o2_ndx, spc_so2_ndx,
-              h2o2_ndx, so2_ndx, h2so4_ndx, gas_wetdep_cnt, wetdep_map);
+              nevapr, delt, invariants, qin, t_factor, xk0_hno3, xk0_so2,
+              so2_diss, xgas2, xgas3, delz, xh2o2, xso2, xliq, rain, precip,
+              xhen_h2o2, xhen_hno3, xhen_so2, tmp_hetrates, spc_h2o2_ndx,
+              spc_so2_ndx, h2o2_ndx, so2_ndx, h2so4_ndx, gas_wetdep_cnt,
+              wetdep_map, indexm);
         });
 
     // transfer data to GPU.
