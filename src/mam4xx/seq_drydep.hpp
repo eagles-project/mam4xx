@@ -137,6 +137,168 @@ void set_hcoeff_scalar(const Real sfc_temp, Real heff[]) {
   }
 }
 
+inline Data set_gas_drydep_data() {
+  using View1D = typename DeviceType::view_1d<Real>;
+  using View2D = typename DeviceType::view_2d<Real>;
+  using View1DHost = typename HostType::view_1d<Real>;
+
+  using ViewBool1D = typename DeviceType::view_1d<bool>;
+  using ViewInt1D = typename DeviceType::view_1d<int>;
+  using ViewBool1DHost = typename HostType::view_1d<bool>;
+  using ViewInt1DHost = typename HostType::view_1d<int>;
+
+  // allocate the views
+  constexpr int n_drydep = 3;
+  constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
+  Data data{
+      View1D("drat", n_drydep),
+      View1D("foxd", n_drydep),
+      View2D("rac", NSeas, NLUse),
+      View2D("rclo", NSeas, NLUse),
+      View2D("rcls", NSeas, NLUse),
+      View2D("rgso", NSeas, NLUse),
+      View2D("rgss", NSeas, NLUse),
+      View2D("ri", NSeas, NLUse),
+      View2D("rlu", NSeas, NLUse),
+      View2D("z0", NSeas, NLUse),
+      ViewBool1D("has_dvel", gas_pcnst),
+      ViewInt1D("map_dvel", gas_pcnst),
+      -1, // FIXME: so2_ndx
+  };
+
+  // populate the views with data taken from mam4 validation test data
+  Real drat_a[n_drydep] = {1.3740328303634228, 2.3332297194282963,
+                           1.8857345177418792};
+  View1DHost drat_h(drat_a, n_drydep);
+  Kokkos::deep_copy(data.drat, drat_h);
+
+  Real foxd_a[n_drydep] = {1.0, 1e-36, 1e-36};
+  View1DHost foxd_h(foxd_a, n_drydep);
+  Kokkos::deep_copy(data.foxd, foxd_h);
+
+  // clang-format off
+  Real rac_a[NSeas][NLUse] = { 
+     { 100.0, 200.0, 100.0,2000.0,2000.0,2000.0,   0.0,   0.0, 300.0, 150.0, 200.0}, 
+     { 100.0, 150.0, 100.0,1500.0,2000.0,1700.0,   0.0,   0.0, 200.0, 120.0, 140.0},
+     { 100.0,  10.0, 100.0,1000.0,2000.0,1500.0,   0.0,   0.0, 100.0,  50.0, 120.0}, 
+     { 100.0,  10.0,  10.0,1000.0,2000.0,1500.0,   0.0,   0.0,  50.0,  10.0,  50.0}, 
+     { 100.0,  50.0,  80.0,1200.0,2000.0,1500.0,   0.0,   0.0, 200.0,  60.0, 120.0} };
+  for (int i = 0; i < NSeas; ++i) {
+    for (int j = 0; j < NLUse; ++j) {
+        data.rac(i, j) = rac_a[i][j];
+    }
+  }  
+
+  Real rclo_a[NSeas][NLUse] = {
+     { 1e+36,1000.0,1000.0,1000.0,1000.0,1000.0, 1e+36, 1e+36,1000.0,1000.0,1000.0}, 
+     { 1e+36, 400.0, 400.0, 400.0,1000.0, 600.0, 1e+36, 1e+36, 400.0, 400.0, 400.0}, 
+     { 1e+36,1000.0, 400.0, 400.0,1000.0, 600.0, 1e+36, 1e+36, 800.0, 600.0, 600.0},
+     { 1e+36,1000.0,1000.0, 400.0,1500.0, 600.0, 1e+36, 1e+36, 800.0,1000.0, 800.0},
+     { 1e+36,1000.0, 500.0, 500.0,1500.0, 700.0, 1e+36, 1e+36, 600.0, 800.0, 800.0} };
+  for (int i = 0; i < NSeas; ++i) {
+    for (int j = 0; j < NLUse; ++j) {
+        data.rclo(i, j) = rclo_a[i][j];
+    }
+  }
+  
+  Real rcls_a[NSeas][NLUse] = {
+     { 1e+36,2000.0,2000.0,2000.0,2000.0,2000.0, 1e+36, 1e+36,2500.0,2000.0,4000.0}, 
+     { 1e+36,9000.0,9000.0,9000.0,2000.0,4000.0, 1e+36, 1e+36,9000.0,9000.0,9000.0},
+     { 1e+36, 1e+36,9000.0,9000.0,3000.0,6000.0, 1e+36, 1e+36,9000.0,9000.0,9000.0},
+     { 1e+36, 1e+36, 1e+36,9000.0, 200.0, 400.0, 1e+36, 1e+36,9000.0, 1e+36,9000.0}, 
+     { 1e+36,4000.0,4000.0,4000.0,2000.0,3000.0, 1e+36, 1e+36,4000.0,4000.0,8000.0} };
+  for (int i = 0; i < NSeas; ++i) {
+    for (int j = 0; j < NLUse; ++j) {
+        data.rcls(i, j) = rcls_a[i][j];
+    }
+  }
+
+  Real rgso_a[NSeas][NLUse] = {
+     { 300.0, 150.0, 200.0, 200.0, 200.0, 300.0,2000.0, 400.0,1000.0, 180.0, 200.0},
+     { 300.0, 150.0, 200.0, 200.0, 200.0, 300.0,2000.0, 400.0, 800.0, 180.0, 200.0}, 
+     { 300.0, 150.0, 200.0, 200.0, 200.0, 300.0,2000.0, 400.0,1000.0, 180.0, 200.0}, 
+     { 600.0,3500.0,3500.0,3500.0,3500.0,3500.0,2000.0, 400.0,3500.0,3500.0,3500.0},
+     { 300.0, 150.0, 200.0, 200.0, 200.0, 300.0,2000.0, 400.0,1000.0, 180.0, 200.0} };
+  for (int i = 0; i < NSeas; ++i) {
+    for (int j = 0; j < NLUse; ++j) {
+        data.rgso(i, j) = rgso_a[i][j];
+    }
+  }
+
+  Real rgss_a[NSeas][NLUse] = {
+     { 400.0, 150.0, 350.0, 500.0, 500.0, 100.0,   0.0,1000.0,   0.0, 220.0, 400.0}, 
+     { 400.0, 200.0, 350.0, 500.0, 500.0, 100.0,   0.0,1000.0,   0.0, 300.0, 400.0},
+     { 400.0, 150.0, 350.0, 500.0, 500.0, 200.0,   0.0,1000.0,   0.0, 200.0, 400.0}, 
+     { 100.0, 100.0, 100.0, 100.0, 100.0, 100.0,   0.0,1000.0, 100.0, 100.0,  50.0},
+     { 500.0, 150.0, 350.0, 500.0, 500.0, 200.0,   0.0,1000.0,   0.0, 250.0, 400.0} };
+  for (int i = 0; i < NSeas; ++i) {
+    for (int j = 0; j < NLUse; ++j) {
+        data.rgss(i, j) = rgss_a[i][j];
+    }
+  }
+
+  Real ri_a[NSeas][NLUse] = {
+     { 1e+36,  60.0, 120.0,  70.0, 130.0, 100.0, 1e+36, 1e+36,  80.0, 100.0, 150.0}, 
+     { 1e+36, 1e+36, 1e+36, 1e+36, 250.0, 500.0, 1e+36, 1e+36, 1e+36, 1e+36, 1e+36}, 
+     { 1e+36, 1e+36, 1e+36, 1e+36, 250.0, 500.0, 1e+36, 1e+36, 1e+36, 1e+36, 1e+36},
+     { 1e+36, 1e+36, 1e+36, 1e+36, 400.0, 800.0, 1e+36, 1e+36, 1e+36, 1e+36, 1e+36},
+     { 1e+36, 120.0, 240.0, 140.0, 250.0, 190.0, 1e+36, 1e+36, 160.0, 200.0, 300.0} };
+  for (int i = 0; i < NSeas; ++i) {
+    for (int j = 0; j < NLUse; ++j) {
+        data.ri(i, j) = ri_a[i][j];
+    }
+  }
+
+  Real rlu_a[NSeas][NLUse] = {
+     { 1e+36,2000.0,2000.0,2000.0,2000.0,2000.0, 1e+36, 1e+36,2500.0,2000.0,4000.0}, 
+     { 1e+36,9000.0,9000.0,9000.0,4000.0,8000.0, 1e+36, 1e+36,9000.0,9000.0,9000.0}, 
+     { 1e+36, 1e+36,9000.0,9000.0,4000.0,8000.0, 1e+36, 1e+36,9000.0,9000.0,9000.0}, 
+     { 1e+36, 1e+36, 1e+36, 1e+36,6000.0,9000.0, 1e+36, 1e+36,9000.0,9000.0,9000.0}, 
+     { 1e+36,4000.0,4000.0,4000.0,2000.0,3000.0, 1e+36, 1e+36,4000.0,4000.0,8000.0} };
+  for (int i = 0; i < NSeas; ++i) {
+    for (int j = 0; j < NLUse; ++j) {
+        data.rlu(i, j) = rlu_a[i][j];
+    }
+  }
+
+  Real z0_a[NSeas][NLUse] = {
+     { 1.000, 0.250, 0.050, 1.000, 1.000, 1.000,0.0006, 0.002, 0.150, 0.100, 0.100}, 
+     { 1.000, 0.100, 0.050, 1.000, 1.000, 1.000,0.0006, 0.002, 0.100, 0.080, 0.080}, 
+     { 1.000, 0.005, 0.050, 1.000, 1.000, 1.000,0.0006, 0.002, 0.100, 0.020, 0.060}, 
+     { 1.000, 0.001, 0.001, 1.000, 1.000, 1.000,0.0006, 0.002, 0.001, 0.001, 0.040},
+     { 1.000, 0.030, 0.020, 1.000, 1.000, 1.000,0.0006, 0.002, 0.010, 0.030, 0.060} };
+  for (int i = 0; i < NSeas; ++i) {
+    for (int j = 0; j < NLUse; ++j) {
+        data.z0(i, j) = z0_a[i][j];
+    }
+  }
+
+  // has_dvel maps species in solsym to true iff they appear in drydep_list
+  bool has_dvel_a[gas_pcnst] = {}; // all false by default
+  has_dvel_a[1] = true;            // H2O2
+  has_dvel_a[2] = true;            // H2SO4
+  has_dvel_a[3] = true;            // SO2
+  ViewBool1DHost has_dvel_h(has_dvel_a, gas_pcnst);
+  Kokkos::deep_copy(data.has_dvel, has_dvel_h);
+
+  // map_dvel maps indices of species in solsym to those in drydep_list
+  int map_dvel_a[gas_pcnst] = {};
+  for (int i = 0; i < gas_pcnst; ++i) {
+    map_dvel_a[i] = -1; // most indices unmapped
+  }
+  map_dvel_a[1] = 0; // H2O2
+  map_dvel_a[2] = 1; // H2SO4
+  map_dvel_a[3] = 2; // SO2
+  ViewInt1DHost map_dvel_h(map_dvel_a, gas_pcnst);
+  Kokkos::deep_copy(data.map_dvel, map_dvel_h);
+
+  // index of "SO2" within solsym above
+  data.so2_ndx = 3;
+
+  return data;
+}
+
+
 } // namespace mam4::seq_drydep
 
 #endif
