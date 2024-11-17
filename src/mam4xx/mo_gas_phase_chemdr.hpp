@@ -109,6 +109,7 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
  * @param [in] dry_diameter_icol
  * @param [in] wet_diameter_icol
  * @param [in] wetdens_icol
+ * @param [in] seq_drydep::Data drydep_data = seq_drydep::set_gas_drydep_data()
  * @param [out] dvel[gas_pcnst] -- deposition velocity [1/cm/s]
  * @param [out] dflx[gas_pcnst] -- deposition flux [1/cm^2/s]
  * @param [out] progs           -- prognostics: stateq, qqcw updated
