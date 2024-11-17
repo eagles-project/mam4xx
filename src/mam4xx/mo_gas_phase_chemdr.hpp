@@ -72,6 +72,7 @@ namespace microphysics {
  * @param [in] dry_diameter_icol
  * @param [in] wet_diameter_icol
  * @param [in] wetdens_icol
+ * @param [in] seq_drydep::Data drydep_data = seq_drydep::set_gas_drydep_data()
  * @param [out] dvel[gas_pcnst] -- deposition velocity [1/cm/s]
  * @param [out] dflx[gas_pcnst] -- deposition flux [1/cm^2/s]
  * @param [out] progs           -- prognostics: stateq, qqcw updated
@@ -112,7 +113,8 @@ void perform_atmospheric_chemistry_and_microphysics(
     const int offset_aerosol, const Real o3_sfc, const Real o3_tau,
     const int o3_lbl, const ConstView2D dry_diameter_icol,
     const ConstView2D wet_diameter_icol, const ConstView2D wetdens_icol,
-    Real dvel[gas_pcnst], Real dflx[gas_pcnst], mam4::Prognostics &progs) {
+    const seq_drydep::Data &drydep_data, Real dvel[gas_pcnst],
+    Real dflx[gas_pcnst], mam4::Prognostics &progs) {
 
   mam4::mo_setext::extfrc_set(forcings_in, extfrc_icol);
 
@@ -142,9 +144,6 @@ void perform_atmospheric_chemistry_and_microphysics(
                               atm.liquid_mixing_ratio, atm.cloud_fraction, // in
                               eccf, photo_table,                           // in
                               photo_work_arrays_icol); // out
-
-  const seq_drydep::Data drydep_data = seq_drydep::set_gas_drydep_data();
-  ;
 
   // compute aerosol microphysics on each vertical level within this
   // column
