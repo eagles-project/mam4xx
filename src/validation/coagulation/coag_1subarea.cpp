@@ -70,11 +70,9 @@ void coag_1subarea(Ensemble *ensemble) {
     const int num_aero = AeroConfig::num_aerosol_ids();
     const int max_agepair = AeroConfig::max_agepair();
     Real qaer_cur_c[num_aero][num_modes];
-    int n = 0;
-    for (int imode = 0; imode < num_modes; ++imode) {
-      for (int ispec = 0; ispec < num_aero; ++ispec) {
+    for (int imode = 0, n = 0; imode < num_modes; ++imode) {
+      for (int ispec = 0; ispec < num_aero; ++ispec, ++n) {
         qaer_cur_c[ispec][imode] = qaer_cur_f[n];
-        n += 1;
       }
     }
 
@@ -83,20 +81,16 @@ void coag_1subarea(Ensemble *ensemble) {
         deltat_f[0], temp_f[0], pmid_f[0], aircon_f[0], dgn_awet_f.data(),
         wetdens_f.data(), qnum_cur_f.data(), qaer_cur_c, qaer_del_coag_out_c);
 
-    n = 0;
-    for (int imode = 0; imode < num_modes; ++imode) {
-      for (int ispec = 0; ispec < num_aero; ++ispec) {
+    for (int imode = 0, n = 0; imode < num_modes; ++imode) {
+      for (int ispec = 0; ispec < num_aero; ++ispec, ++n) {
         qaer_cur_f[n] = qaer_cur_c[ispec][imode];
-        n += 1;
       }
     }
 
     std::vector<Real> qaer_del_coag_out_f(num_aero * max_agepair);
-    n = 0;
-    for (int imode = 0; imode < num_modes; ++imode) {
-      for (int ispec = 0; ispec < max_agepair; ++ispec) {
+    for (int imode = 0, n = 0; imode < num_aero; ++imode) {
+      for (int ispec = 0; ispec < max_agepair; ++ispec, ++n) {
         qaer_del_coag_out_f[n] = qaer_del_coag_out_c[ispec][imode];
-        n += 1;
       }
     }
 
