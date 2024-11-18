@@ -3,13 +3,47 @@
 
 #include <mam4xx/mo_photo.hpp>
 #include <mam4xx/mo_setext.hpp>
+#include <mam4xx/mo_sethet.hpp>
 #include <mam4xx/mo_setinv.hpp>
 #include <mam4xx/mo_setsox.hpp>
 
 namespace mam4 {
 
 namespace microphysics {
+// number of species with external forcing
+using mam4::gas_chemistry::extcnt;
+using mam4::mo_photo::PhotoTableData;
+using mam4::mo_setext::Forcing;
+using mam4::mo_setinv::num_tracer_cnst;
 
+using View2D = DeviceType::view_2d<Real>;
+using ConstView2D = DeviceType::view_2d<const Real>;
+using View1D = DeviceType::view_1d<Real>;
+using ConstView1D = DeviceType::view_1d<const Real>;
+
+KOKKOS_INLINE_FUNCTION
+void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
+                 const mam4::Prognostics &progs,
+                 const Real adv_mass_kg_per_moles[gas_pcnst],
+                 const int offset_aerosol,
+                 const ColumnView vmr_col[gas_pcnst]) {
+
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
+    Real state_q[pcnst] = {};
+    mam4::utils::extract_stateq_from_prognostics(progs, atm, state_q, kk);
+    Real qq[gas_pcnst] = {};
+    for (int i = offset_aerosol; i < pcnst; ++i) {
+      qq[i - offset_aerosol] = state_q[i];
+    }
+    Real vmr[gas_pcnst];
+    // output (vmr)
+    mam4::microphysics::mmr2vmr(qq, adv_mass_kg_per_moles, vmr);
+
+    for (int i = 0; i < gas_pcnst; ++i) {
+      vmr_col[i](kk) = vmr[i];
+    }
+  });
+}
 /**
  * Performs a series of atmospheric chemistry and microphysics calculations
  * for a given atmospheric column. This includes setting external forcings,
@@ -57,15 +91,6 @@ namespace microphysics {
  * @param [in] wetdens_icol
  **/
 
-// number of species with external forcing
-using mam4::gas_chemistry::extcnt;
-using mam4::mo_photo::PhotoTableData;
-using mam4::mo_setext::Forcing;
-using mam4::mo_setinv::num_tracer_cnst;
-
-using View2D = DeviceType::view_2d<Real>;
-using ConstView2D = DeviceType::view_2d<const Real>;
-using View1D = DeviceType::view_1d<Real>;
 KOKKOS_INLINE_FUNCTION
 void perform_atmospheric_chemistry_and_microphysics(
     const ThreadTeam &team, const Real dt, const Real rlats,
@@ -86,7 +111,26 @@ void perform_atmospheric_chemistry_and_microphysics(
     const int (&clsmap_4)[gas_pcnst], const int (&permute_4)[gas_pcnst],
     const int offset_aerosol, const Real o3_sfc, const Real o3_tau,
     const int o3_lbl, const ConstView2D dry_diameter_icol,
-    const ConstView2D wet_diameter_icol, const ConstView2D wetdens_icol) {
+    const ConstView2D wet_diameter_icol, const ConstView2D wetdens_icol,
+    const Real phis,      // surf geopotential //in
+    const View1D &cmfdqr, // dq/dt for convection [kg/kg/s] //in ndx_cmfdqr =
+                          // pbuf_get_index('RPRDTOT') // from convect shallow
+    const ConstView1D
+        &prain, // stratoform precip [kg/kg/s] //in precip_total_tend
+    const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
+    const View1D &work_set_het) {
+
+  auto work_set_het_ptr = (Real *)work_set_het.data();
+  const auto het_rates = View2D(work_set_het_ptr, nlev, gas_pcnst);
+  work_set_het_ptr += nlev * gas_pcnst;
+  ColumnView vmr_col[gas_pcnst];
+  for (int i = 0; i < gas_pcnst; ++i) {
+    vmr_col[i] = ColumnView(work_set_het_ptr, nlev);
+    work_set_het_ptr += nlev;
+  }
+  const int sethet_work_len = mam4::mo_sethet::get_work_len_sethet();
+  const auto work_sethet_call = View1D(work_set_het_ptr, sethet_work_len);
+  work_set_het_ptr += sethet_work_len;
 
   mam4::mo_setext::extfrc_set(forcings_in, extfrc_icol);
 
@@ -116,6 +160,16 @@ void perform_atmospheric_chemistry_and_microphysics(
                               atm.liquid_mixing_ratio, atm.cloud_fraction, // in
                               eccf, photo_table,                           // in
                               photo_work_arrays_icol); // out
+
+  // work array.
+  // het_rates_icol work array.
+  mmr2vmr_col(team, atm, progs, adv_mass_kg_per_moles, offset_aerosol, vmr_col);
+
+  team.team_barrier();
+
+  mam4::mo_sethet::sethet(team, atm, het_rates, rlats, phis, cmfdqr, prain,
+                          nevapr, dt, invariants_icol, vmr_col,
+                          work_sethet_call);
 
   // compute aerosol microphysics on each vertical level within this
   // column
@@ -163,6 +217,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     const auto &extfrc_k = ekat::subview(extfrc_icol, kk);
     const auto &invariants_k = ekat::subview(invariants_icol, kk);
     const auto &photo_rates_k = ekat::subview(photo_rates_icol, kk);
+    const auto &het_rates_k = ekat::subview(het_rates, kk);
 
     // vmr0 stores mixing ratios before chemistry changes the mixing
     // ratios
@@ -170,7 +225,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     mam4::microphysics::gas_phase_chemistry(
         // in
         temp, dt, photo_rates_k.data(), extfrc_k.data(), invariants_k.data(),
-        clsmap_4, permute_4,
+        clsmap_4, permute_4, het_rates_k.data(),
         // out
         vmr, vmr0);
 
