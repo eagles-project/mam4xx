@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.17.0)
 
 message(STATUS "Configuring with build type: ${CMAKE_BUILD_TYPE}")
-
 # We rely on Haero for basic data structures and third-party libraries.
 if (NOT TARGET haero)
   if (NOT MAM4XX_HAERO_DIR)
