@@ -27,22 +27,25 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
                  const Real adv_mass_kg_per_moles[gas_pcnst],
                  const int offset_aerosol,
                  const ColumnView vmr_col[gas_pcnst]) {
+  // Make a local copy of nlev to avoid the identifier "mam4::nlev" being
+  // undefined in device code.
+  constexpr int nlev_local = nlev;
+  Kokkos::parallel_for(
+      Kokkos::TeamVectorRange(team, nlev_local), [&](const int kk) {
+        Real state_q[pcnst] = {};
+        mam4::utils::extract_stateq_from_prognostics(progs, atm, state_q, kk);
+        Real qq[gas_pcnst] = {};
+        for (int i = offset_aerosol; i < pcnst; ++i) {
+          qq[i - offset_aerosol] = state_q[i];
+        }
+        Real vmr[gas_pcnst];
+        // output (vmr)
+        mam4::microphysics::mmr2vmr(qq, adv_mass_kg_per_moles, vmr);
 
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
-    Real state_q[pcnst] = {};
-    mam4::utils::extract_stateq_from_prognostics(progs, atm, state_q, kk);
-    Real qq[gas_pcnst] = {};
-    for (int i = offset_aerosol; i < pcnst; ++i) {
-      qq[i - offset_aerosol] = state_q[i];
-    }
-    Real vmr[gas_pcnst];
-    // output (vmr)
-    mam4::microphysics::mmr2vmr(qq, adv_mass_kg_per_moles, vmr);
-
-    for (int i = 0; i < gas_pcnst; ++i) {
-      vmr_col[i](kk) = vmr[i];
-    }
-  });
+        for (int i = 0; i < gas_pcnst; ++i) {
+          vmr_col[i](kk) = vmr[i];
+        }
+      });
 }
 /**
  * Performs a series of atmospheric chemistry and microphysics calculations
