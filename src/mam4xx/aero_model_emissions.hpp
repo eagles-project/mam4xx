@@ -367,9 +367,11 @@ void dust_emis(
       cflux[inum] = cflux[idx_dust] * dust_mass_to_num[ibin];
     }
   } else {
-    for (int i = 0; i < dust_nbin; ++i) {
-      cflux[dust_indices[i]] = 0.0;
-      cflux[i] = 0.0;
+    for (int ibin = 0; ibin < dust_nbin; ++ibin) {
+      const int idx_dust = dust_indices[ibin];
+      const int inum = dust_indices[ibin + dust_nbin];
+      cflux[idx_dust] = 0.0;
+      cflux[inum] = 0.0;
     }
   }
   // // local version (unnecessary?) that's zero if less than the threshold
