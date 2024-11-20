@@ -183,11 +183,13 @@ inline Data set_gas_drydep_data() {
      { 100.0,  10.0, 100.0,1000.0,2000.0,1500.0,   0.0,   0.0, 100.0,  50.0, 120.0}, 
      { 100.0,  10.0,  10.0,1000.0,2000.0,1500.0,   0.0,   0.0,  50.0,  10.0,  50.0}, 
      { 100.0,  50.0,  80.0,1200.0,2000.0,1500.0,   0.0,   0.0, 200.0,  60.0, 120.0} };
+  auto rac_h = Kokkos::create_mirror_view(data.rac);
   for (int i = 0; i < NSeas; ++i) {
     for (int j = 0; j < NLUse; ++j) {
-        data.rac(i, j) = rac_a[i][j];
+        rac_h(i, j) = rac_a[i][j];
     }
   }  
+  Kokkos::deep_copy(data.rac, rac_h);
 
   Real rclo_a[NSeas][NLUse] = {
      { 1e+36,1000.0,1000.0,1000.0,1000.0,1000.0, 1e+36, 1e+36,1000.0,1000.0,1000.0}, 
@@ -195,11 +197,13 @@ inline Data set_gas_drydep_data() {
      { 1e+36,1000.0, 400.0, 400.0,1000.0, 600.0, 1e+36, 1e+36, 800.0, 600.0, 600.0},
      { 1e+36,1000.0,1000.0, 400.0,1500.0, 600.0, 1e+36, 1e+36, 800.0,1000.0, 800.0},
      { 1e+36,1000.0, 500.0, 500.0,1500.0, 700.0, 1e+36, 1e+36, 600.0, 800.0, 800.0} };
+  auto rclo_h = Kokkos::create_mirror_view(data.rclo);
   for (int i = 0; i < NSeas; ++i) {
     for (int j = 0; j < NLUse; ++j) {
-        data.rclo(i, j) = rclo_a[i][j];
+        rclo_h(i, j) = rclo_a[i][j];
     }
   }
+  Kokkos::deep_copy(data.rclo, rclo_h);
   
   Real rcls_a[NSeas][NLUse] = {
      { 1e+36,2000.0,2000.0,2000.0,2000.0,2000.0, 1e+36, 1e+36,2500.0,2000.0,4000.0}, 
@@ -207,11 +211,13 @@ inline Data set_gas_drydep_data() {
      { 1e+36, 1e+36,9000.0,9000.0,3000.0,6000.0, 1e+36, 1e+36,9000.0,9000.0,9000.0},
      { 1e+36, 1e+36, 1e+36,9000.0, 200.0, 400.0, 1e+36, 1e+36,9000.0, 1e+36,9000.0}, 
      { 1e+36,4000.0,4000.0,4000.0,2000.0,3000.0, 1e+36, 1e+36,4000.0,4000.0,8000.0} };
+  auto rcls_h = Kokkos::create_mirror_view(data.rcls);
   for (int i = 0; i < NSeas; ++i) {
     for (int j = 0; j < NLUse; ++j) {
-        data.rcls(i, j) = rcls_a[i][j];
+        rcls_h(i, j) = rcls_a[i][j];
     }
   }
+  Kokkos::deep_copy(data.rcls, rcls_h);
 
   Real rgso_a[NSeas][NLUse] = {
      { 300.0, 150.0, 200.0, 200.0, 200.0, 300.0,2000.0, 400.0,1000.0, 180.0, 200.0},
@@ -219,11 +225,13 @@ inline Data set_gas_drydep_data() {
      { 300.0, 150.0, 200.0, 200.0, 200.0, 300.0,2000.0, 400.0,1000.0, 180.0, 200.0}, 
      { 600.0,3500.0,3500.0,3500.0,3500.0,3500.0,2000.0, 400.0,3500.0,3500.0,3500.0},
      { 300.0, 150.0, 200.0, 200.0, 200.0, 300.0,2000.0, 400.0,1000.0, 180.0, 200.0} };
+  auto rgso_h = Kokkos::create_mirror_view(data.rgso);
   for (int i = 0; i < NSeas; ++i) {
     for (int j = 0; j < NLUse; ++j) {
-        data.rgso(i, j) = rgso_a[i][j];
+        rgso_h(i, j) = rgso_a[i][j];
     }
   }
+  Kokkos::deep_copy(data.rgso, rgso_h);
 
   Real rgss_a[NSeas][NLUse] = {
      { 400.0, 150.0, 350.0, 500.0, 500.0, 100.0,   0.0,1000.0,   0.0, 220.0, 400.0}, 
@@ -231,11 +239,13 @@ inline Data set_gas_drydep_data() {
      { 400.0, 150.0, 350.0, 500.0, 500.0, 200.0,   0.0,1000.0,   0.0, 200.0, 400.0}, 
      { 100.0, 100.0, 100.0, 100.0, 100.0, 100.0,   0.0,1000.0, 100.0, 100.0,  50.0},
      { 500.0, 150.0, 350.0, 500.0, 500.0, 200.0,   0.0,1000.0,   0.0, 250.0, 400.0} };
+  auto rgss_h = Kokkos::create_mirror_view(data.rgss);
   for (int i = 0; i < NSeas; ++i) {
     for (int j = 0; j < NLUse; ++j) {
-        data.rgss(i, j) = rgss_a[i][j];
+        rgss_h(i, j) = rgss_a[i][j];
     }
   }
+  Kokkos::deep_copy(data.rgss, rgss_h);
 
   Real ri_a[NSeas][NLUse] = {
      { 1e+36,  60.0, 120.0,  70.0, 130.0, 100.0, 1e+36, 1e+36,  80.0, 100.0, 150.0}, 
@@ -243,11 +253,13 @@ inline Data set_gas_drydep_data() {
      { 1e+36, 1e+36, 1e+36, 1e+36, 250.0, 500.0, 1e+36, 1e+36, 1e+36, 1e+36, 1e+36},
      { 1e+36, 1e+36, 1e+36, 1e+36, 400.0, 800.0, 1e+36, 1e+36, 1e+36, 1e+36, 1e+36},
      { 1e+36, 120.0, 240.0, 140.0, 250.0, 190.0, 1e+36, 1e+36, 160.0, 200.0, 300.0} };
+  auto ri_h = Kokkos::create_mirror_view(data.ri);
   for (int i = 0; i < NSeas; ++i) {
     for (int j = 0; j < NLUse; ++j) {
-        data.ri(i, j) = ri_a[i][j];
+        ri_h(i, j) = ri_a[i][j];
     }
   }
+  Kokkos::deep_copy(data.ri, ri_h);
 
   Real rlu_a[NSeas][NLUse] = {
      { 1e+36,2000.0,2000.0,2000.0,2000.0,2000.0, 1e+36, 1e+36,2500.0,2000.0,4000.0}, 
@@ -255,11 +267,13 @@ inline Data set_gas_drydep_data() {
      { 1e+36, 1e+36,9000.0,9000.0,4000.0,8000.0, 1e+36, 1e+36,9000.0,9000.0,9000.0}, 
      { 1e+36, 1e+36, 1e+36, 1e+36,6000.0,9000.0, 1e+36, 1e+36,9000.0,9000.0,9000.0}, 
      { 1e+36,4000.0,4000.0,4000.0,2000.0,3000.0, 1e+36, 1e+36,4000.0,4000.0,8000.0} };
+  auto rlu_h = Kokkos::create_mirror_view(data.rlu);
   for (int i = 0; i < NSeas; ++i) {
     for (int j = 0; j < NLUse; ++j) {
-        data.rlu(i, j) = rlu_a[i][j];
+        rlu_h(i, j) = rlu_a[i][j];
     }
   }
+  Kokkos::deep_copy(data.rlu, rlu_h);
 
   Real z0_a[NSeas][NLUse] = {
      { 1.000, 0.250, 0.050, 1.000, 1.000, 1.000,0.0006, 0.002, 0.150, 0.100, 0.100}, 
@@ -267,11 +281,13 @@ inline Data set_gas_drydep_data() {
      { 1.000, 0.005, 0.050, 1.000, 1.000, 1.000,0.0006, 0.002, 0.100, 0.020, 0.060}, 
      { 1.000, 0.001, 0.001, 1.000, 1.000, 1.000,0.0006, 0.002, 0.001, 0.001, 0.040},
      { 1.000, 0.030, 0.020, 1.000, 1.000, 1.000,0.0006, 0.002, 0.010, 0.030, 0.060} };
+  auto z0_h = Kokkos::create_mirror_view(data.z0);
   for (int i = 0; i < NSeas; ++i) {
     for (int j = 0; j < NLUse; ++j) {
-        data.z0(i, j) = z0_a[i][j];
+        z0_h(i, j) = z0_a[i][j];
     }
   }
+  Kokkos::deep_copy(data.z0, z0_h);
 
   // has_dvel maps species in solsym to true iff they appear in drydep_list
   bool has_dvel_a[gas_pcnst] = {}; // all false by default
