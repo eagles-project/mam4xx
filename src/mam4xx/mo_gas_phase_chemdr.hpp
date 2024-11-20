@@ -122,6 +122,9 @@ void perform_atmospheric_chemistry_and_microphysics(
                               eccf, photo_table,                           // in
                               photo_work_arrays_icol); // out
 
+  const mam4::seq_drydep::Data gas_drydep_data = 
+        mam4::seq_drydep::set_gas_drydep_data();
+
   // compute aerosol microphysics on each vertical level within this
   // column
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](const int kk) {
@@ -295,11 +298,11 @@ void perform_atmospheric_chemistry_and_microphysics(
 
       int curr_month = 1;
  
-      /*mam4::mo_drydep::drydep_xactive(gas_drydep_data,
+      mam4::mo_drydep::drydep_xactive(gas_drydep_data,
           fraction_landuse, curr_month, col_index_season,
           surf_radiative_T_icol, temp, tv, atm.interface_pressure(nlev+1),
           pmid, qv, wind_speed, rain, snow_depth_land_icol,
-        d_sfc_flux_dir_vis_icol, vmr, dvel, dflx);*/
+        d_sfc_flux_dir_vis_icol, vmr, dvel, dflx);
 
       for (int i = offset_aerosol; i < pcnst; ++i) {
         constituent_fluxes_icol(i) = constituent_fluxes_icol(i) -
