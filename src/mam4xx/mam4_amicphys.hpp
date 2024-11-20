@@ -3,6 +3,7 @@
 
 #include <mam4xx/aging.hpp>
 #include <mam4xx/coagulation.hpp>
+#include <mam4xx/gasaerexch.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/nucleation.hpp>
 #include <mam4xx/rename.hpp>
@@ -687,6 +688,9 @@ void set_subarea_gases_and_aerosols(
     Real (&qsub3)[gas_pcnst][maxsubarea()],                         // out
     Real (&qqcwsub3)[gas_pcnst][maxsubarea()])                      // out
 {
+  // FIXME: This is a mess (see below). Refactor to use booleans as flags,
+  //        rather than the current dual-purpose indices/flags (jclea, jcldy)
+
   //------------------------------------------------------------------------------------------------
   // Purpose: Partition grid cell mean mixing ratios to clear/cloudy subareas.
   //------------------------------------------------------------------------------------------------
@@ -740,12 +744,12 @@ void set_subarea_gases_and_aerosols(
       ((jclea == 1) && (jcldy == 0) && (nsubarea == 1));
   const bool grid_cell_has_only_cldy_area =
       ((jclea == 0) && (jcldy == 1) && (nsubarea == 1));
-  const bool gird_cell_is_partly_cldy =
+  const bool grid_cell_is_partly_cldy =
       (jclea > 0) && (jcldy > 0) && (jclea + jcldy == 3) && (nsubarea == 2);
 
   // Sanity check
   if ((!grid_cell_has_only_clea_area) && (!grid_cell_has_only_cldy_area) &&
-      (!gird_cell_is_partly_cldy)) {
+      (!grid_cell_is_partly_cldy)) {
     EKAT_KERNEL_ASSERT_MSG(true,
                            "Error! modal_aero_amicphys - bad jclea, jcldy, "
                            "nsubarea, jclea, jcldy, nsubarea\n");
@@ -780,7 +784,7 @@ void set_subarea_gases_and_aerosols(
   // in the cloudy sub-area than in the clear sub-area, as much of the
   // aerosol is activated in the cloudy sub-area.
   //*************************************************************************************************
-  else if (gird_cell_is_partly_cldy) {
+  else if (grid_cell_is_partly_cldy) {
     //===================================
     // Set gas mixing ratios in subareas
     //===================================
