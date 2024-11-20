@@ -66,6 +66,7 @@ using mam4::mo_setinv::num_tracer_cnst;
 using View2D = DeviceType::view_2d<Real>;
 using ConstView2D = DeviceType::view_2d<const Real>;
 using View1D = DeviceType::view_1d<Real>;
+using ConstView1D = DeviceType::view_1d<const Real>;
 KOKKOS_INLINE_FUNCTION
 void perform_atmospheric_chemistry_and_microphysics(
     const ThreadTeam &team, const Real dt, const Real rlats,
@@ -75,6 +76,10 @@ void perform_atmospheric_chemistry_and_microphysics(
     const mam4::mo_setsox::Config &config_setsox,
     const AmicPhysConfig &config_amicphys, const Real linoz_psc_T,
     const Real zenith_angle_icol, const Real d_sfc_alb_dir_vis_icol,
+    const Real d_sfc_flux_dir_vis_icol, const Real snow_depth_land_icol,
+    const Real surf_radiative_T_icol, const ConstView1D &horiz_winds_u_icol,
+    const ConstView1D &horiz_winds_v_icol,
+    const View1D &constituent_fluxes_icol,
     const View1D &o3_col_dens_i, const View2D &photo_rates_icol,
     const View2D &extfrc_icol, const View2D &invariants_icol,
     const View1D &work_photo_table_icol, const View1D &linoz_o3_clim_icol,
@@ -272,9 +277,35 @@ void perform_atmospheric_chemistry_and_microphysics(
     //----------------------
     // Dry deposition (gas)
     //----------------------
+    if (kk == nlev) {
+      // FIXME need to get values from read in file
+      Real fraction_landuse[mam4::seq_drydep::NLUse] = { 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                        0.0, 1.0, 0.0, 0.0, 0.0, 0.0};
+      int col_index_season[mam4::seq_drydep::NLUse] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+ 
+      Real dvel[gas_pcnst] = {0.0};
+      Real dflx[gas_pcnst] = {0.0};
 
-    // FIXME: drydep integration in progress!
-    // mam4::drydep::drydep_xactive(...);
+      Real tv = temp*(1.0+qv);
+
+      Real rain = 0.0;
+
+      Real wind_speed = haero::sqrt(horiz_winds_u_icol(kk)*horiz_winds_u_icol(kk) +
+                                   horiz_winds_v_icol(kk)*horiz_winds_v_icol(kk));
+
+      int curr_month = 1;
+ 
+      /*mam4::mo_drydep::drydep_xactive(gas_drydep_data,
+          fraction_landuse, curr_month, col_index_season,
+          surf_radiative_T_icol, temp, tv, atm.interface_pressure(nlev+1),
+          pmid, qv, wind_speed, rain, snow_depth_land_icol,
+        d_sfc_flux_dir_vis_icol, vmr, dvel, dflx);*/
+
+      for (int i = offset_aerosol; i < pcnst; ++i) {
+        constituent_fluxes_icol(i) = constituent_fluxes_icol(i) -
+                                     dflx[i-offset_aerosol];
+      } 
+    }
 
     mam4::microphysics::vmr2mmr(vmr, adv_mass_kg_per_moles, qq);
 
