@@ -124,11 +124,12 @@ inline void find_season_index(const ConstView1DHost clat,
                               const View2DIntHost &index_season_lai) {
   const int plon = clat.extent(0);
   auto policy = KTH::RangePolicy(0, plon);
-  Kokkos::parallel_for(policy, [&](const int &j) {
-    const auto index_season_lai_at_j = ekat::subview(index_season_lai, j);
-    find_season_index_at_lat(clat(j), lat_lai, nlat_lai, wk_lai,
-                             index_season_lai_at_j);
-  });
+  Kokkos::parallel_for(
+      "mam4::mo_drydep::find_season_index", policy, [&](const int &j) {
+        const auto index_season_lai_at_j = ekat::subview(index_season_lai, j);
+        find_season_index_at_lat(clat(j), lat_lai, nlat_lai, wk_lai,
+                                 index_season_lai_at_j);
+      });
 }
 
 KOKKOS_INLINE_FUNCTION
