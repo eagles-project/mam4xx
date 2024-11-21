@@ -47,12 +47,39 @@ namespace wetdep {
 
 using ConstView1D = DeviceType::view_1d<const Real>;
 using View1D = DeviceType::view_1d<Real>;
-using Bool1D = DeviceType::view_1d<bool>;
+using Int1D = DeviceType::view_1d<int>;
 using View2D = DeviceType::view_2d<Real>;
 KOKKOS_INLINE_FUNCTION
 Real local_precip_production(const Real pdel, const Real source_term,
                              const Real sink_term) {
   return (pdel / Constants::gravity) * (source_term - sink_term);
+}
+
+// Function to call to initialize the arrays passe to the 
+// aero_model_wetdep function. This data is constant so should
+// be allocaed on host and copied to device.
+inline void init_scavimptbl(
+  Real scavimptblvol[aero_model::nimptblgrow_total]
+                    [AeroConfig::num_modes()],
+  Real scavimptblnum[aero_model::nimptblgrow_total]
+                    [AeroConfig::num_modes()]) {
+  const int num_modes = AeroConfig::num_modes();
+  Real dgnum_amode[num_modes];
+  Real sigmag_amode[num_modes];
+  Real aerosol_dry_density[num_modes];
+  for (int i = 0; i < num_modes; ++i) {
+    dgnum_amode[i] = modes(i).nom_diameter;
+    sigmag_amode[i] = modes(i).mean_std_dev;
+  }
+  // Note: Original code uses the following aerosol densities.
+  // sulfate, sulfate, dust, p-organic
+  aerosol_dry_density[0] = mam4::mam4_density_so4;
+  aerosol_dry_density[1] = mam4::mam4_density_so4;
+  aerosol_dry_density[2] = mam4::mam4_density_dst;
+  aerosol_dry_density[3] = mam4::mam4_density_pom;
+  aero_model::modal_aero_bcscavcoef_init(dgnum_amode, sigmag_amode,
+                                         aerosol_dry_density, scavimptblnum,
+                                         scavimptblvol);
 }
 
 // clang-format off
@@ -1192,7 +1219,7 @@ void cloud_diagnostics(const ThreadTeam &team,
 }
 
 KOKKOS_INLINE_FUNCTION
-void set_f_act(const ThreadTeam &team, Kokkos::View<bool *> isprx,
+void set_f_act(const ThreadTeam &team, const Kokkos::View<int *> &isprx,
                const View1D &f_act_conv_coarse,
                const View1D &f_act_conv_coarse_dust,
                const View1D &f_act_conv_coarse_nacl,
@@ -1215,7 +1242,7 @@ void set_f_act(const ThreadTeam &team, Kokkos::View<bool *> isprx,
 KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(
     const ThreadTeam &team, const Diagnostics &diags,
-    Kokkos::View<bool *> isprx,
+    const Kokkos::View<int *> &isprx,
     const Real scavimptblvol[aero_model::nimptblgrow_total]
                             [AeroConfig::num_modes()],
     const Real scavimptblnum[aero_model::nimptblgrow_total]
@@ -1223,12 +1250,16 @@ void modal_aero_bcscavcoef_get(
     const View1D &scavcoefnum, const View1D &scavcoefvol, const int imode,
     const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
-    const Real dgnum_amode_imode = modes(imode).nom_diameter;
-    ColumnView dgn_awet_imode = diags.wet_geometric_mean_diameter_i[imode];
-    const Real dgn_awet_imode_k = dgn_awet_imode[k];
-    aero_model::modal_aero_bcscavcoef_get(
-        imode, isprx[k], dgn_awet_imode_k, dgnum_amode_imode, scavimptblvol,
-        scavimptblnum, scavcoefnum[k], scavcoefvol[k]);
+    scavcoefnum[k] = scavcoefvol[k] = 0;
+    const bool let_it_rain = (isprx[k] == 1);
+    if (let_it_rain) {
+      const Real dgnum_amode_imode = modes(imode).nom_diameter;
+      ColumnView dgn_awet_imode = diags.wet_geometric_mean_diameter_i[imode];
+      const Real dgn_awet_imode_k = dgn_awet_imode[k];
+      aero_model::modal_aero_bcscavcoef_get(
+          imode, dgn_awet_imode_k, dgnum_amode_imode, scavimptblvol,
+          scavimptblnum, scavcoefnum[k], scavcoefvol[k]);
+    }
   });
 }
 
@@ -1236,7 +1267,7 @@ void modal_aero_bcscavcoef_get(
 KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(
     const ThreadTeam &team, const View2D &wet_geometric_mean_diameter_i,
-    Kokkos::View<bool *> isprx,
+    const Kokkos::View<int *> &isprx,
     const Real scavimptblvol[aero_model::nimptblgrow_total]
                             [AeroConfig::num_modes()],
     const Real scavimptblnum[aero_model::nimptblgrow_total]
@@ -1244,11 +1275,15 @@ void modal_aero_bcscavcoef_get(
     const View1D &scavcoefnum, const View1D &scavcoefvol, const int imode,
     const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
-    const Real dgnum_amode_imode = modes(imode).nom_diameter;
-    const Real dgn_awet_imode_k = wet_geometric_mean_diameter_i(imode, k);
-    aero_model::modal_aero_bcscavcoef_get(
-        imode, isprx[k], dgn_awet_imode_k, dgnum_amode_imode, scavimptblvol,
-        scavimptblnum, scavcoefnum[k], scavcoefvol[k]);
+    scavcoefnum[k] = scavcoefvol[k] = 0;
+    const bool let_it_rain = (isprx[k] == 1);
+    if (let_it_rain) {
+      const Real dgnum_amode_imode = modes(imode).nom_diameter;
+      const Real dgn_awet_imode_k = wet_geometric_mean_diameter_i(imode, k);
+      aero_model::modal_aero_bcscavcoef_get(
+          imode, dgn_awet_imode_k, dgnum_amode_imode, scavimptblvol,
+          scavimptblnum, scavcoefnum[k], scavcoefvol[k]);
+    }
   });
 }
 
@@ -1523,6 +1558,9 @@ void aero_model_wetdep(
     const haero::ConstColumnView &icwmrdp,
     const haero::ConstColumnView &icwmrsh, const haero::ConstColumnView &evapr,
     const haero::ConstColumnView &dlf, const haero::ConstColumnView &prain,
+    const Int1D &isprx,
+    const Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()],
+    const Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()],
     // in/out calcsize and water_uptake
     const View2D &wet_geometric_mean_diameter_i,
     const View2D &dry_geometric_mean_diameter_i, const View2D &qaerwat,
@@ -1595,10 +1633,8 @@ void aero_model_wetdep(
 
   View1D conicw(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
-  // inputs
-  Bool1D isprx((bool *)work_ptr, mam4::nlev);
-  work_ptr += mam4::nlev;
 
+  // inputs
   View1D f_act_conv_coarse(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
 
@@ -1916,31 +1952,6 @@ void aero_model_wetdep(
         pdel, prain, cmfdqr, evapr, state_q, ptend_q, dt, nlev);
     team.team_barrier();
 
-    Real scavimptblnum[aero_model::nimptblgrow_total][ntot_amode];
-    Real scavimptblvol[aero_model::nimptblgrow_total][ntot_amode];
-    {
-
-      // const int num_modes = AeroConfig::num_modes();
-      Real dgnum_amode[ntot_amode];
-      Real sigmag_amode[ntot_amode];
-      Real aerosol_dry_density[ntot_amode];
-      for (int i = 0; i < ntot_amode; ++i) {
-        dgnum_amode[i] = modes(i).nom_diameter;
-        sigmag_amode[i] = modes(i).mean_std_dev;
-      }
-      // Note: Original code uses the following aerosol densities.
-      // sulfate, sulfate, dust, p-organic
-      aerosol_dry_density[0] = mam4::mam4_density_so4;
-      // CHECK: why do 0 and 1 use same density?
-      aerosol_dry_density[1] = mam4::mam4_density_so4;
-      aerosol_dry_density[2] = mam4::mam4_density_dst;
-      aerosol_dry_density[3] = mam4::mam4_density_pom;
-      aero_model::modal_aero_bcscavcoef_init(
-          dgnum_amode, sigmag_amode,     // inputs
-          aerosol_dry_density,           // inputs
-          scavimptblnum, scavimptblvol); // outputs
-    }
-
     // main loop over aerosol modes
     for (int mtmp = 0; mtmp < AeroConfig::num_modes(); ++mtmp) {
       // for mam4, do accum, aitken, pcarbon, then coarse
@@ -1959,7 +1970,6 @@ void aero_model_wetdep(
 
       // do cloudborne (2) first then interstitial (1)
       for (int lphase = 2; 1 <= lphase; --lphase) {
-
         if (lphase == 1) { // interstial aerosol
           // Computes lookup table for aerosol impaction/interception scavenging
           // rates
@@ -2135,6 +2145,9 @@ public:
 
 private:
   Config config_;
+  
+  Kokkos::View<int *> isprx;
+
   Kokkos::View<Real *> cldv;
   Kokkos::View<Real *> cldvcu;
   Kokkos::View<Real *> cldvst;
@@ -2147,7 +2160,6 @@ private:
   Kokkos::View<Real *> conicw;
   Kokkos::View<Real *> totcond;
 
-  Kokkos::View<bool *> isprx;
   Kokkos::View<Real *> f_act_conv_coarse;
   Kokkos::View<Real *> f_act_conv_coarse_dust;
   Kokkos::View<Real *> f_act_conv_coarse_nacl;
@@ -2177,6 +2189,7 @@ void WetDeposition::init(const AeroConfig &aero_config,
                          const Config &wed_dep_config) {
   config_ = wed_dep_config;
   const int nlev = config_.nlev;
+  Kokkos::resize(isprx, nlev);
   Kokkos::resize(cldv, nlev);
   Kokkos::resize(cldvcu, nlev);
   Kokkos::resize(cldvst, nlev);
@@ -2188,7 +2201,6 @@ void WetDeposition::init(const AeroConfig &aero_config,
   Kokkos::resize(prain, nlev);
   Kokkos::resize(conicw, nlev);
   Kokkos::resize(totcond, nlev);
-  Kokkos::resize(isprx, nlev);
   Kokkos::resize(f_act_conv_coarse, nlev);
   Kokkos::resize(f_act_conv_coarse_dust, nlev);
   Kokkos::resize(f_act_conv_coarse_nacl, nlev);
