@@ -65,7 +65,7 @@ TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
           lprec(i) = 0.0;
         }
       });
-  
+
   Real gravity = Constants::gravity;
   Kokkos::parallel_for(
       "test_local_precip_production", 1, KOKKOS_LAMBDA(const int) {
@@ -75,7 +75,8 @@ TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
         Real *lprec_device = lprec.data();
         for (int i = 0; i < nlev; i++)
           mam4::wetdep::local_precip_production(
-              pdel_device[i], source_term_device[i], sink_term_device[i], gravity, lprec_device[i]);
+              pdel_device[i], source_term_device[i], sink_term_device[i],
+              gravity, lprec_device[i]);
       });
 
   auto pdel_view = Kokkos::create_mirror_view(pdel);

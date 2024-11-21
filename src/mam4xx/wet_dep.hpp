@@ -50,8 +50,8 @@ using View1D = DeviceType::view_1d<Real>;
 using Int1D = DeviceType::view_1d<int>;
 using View2D = DeviceType::view_2d<Real>;
 KOKKOS_INLINE_FUNCTION
-void local_precip_production(Real pdel, Real source_term,
-                             Real sink_term, Real gravity, Real &result) {
+void local_precip_production(Real pdel, Real source_term, Real sink_term,
+                             Real gravity, Real &result) {
   Real r = (pdel / gravity) * (source_term - sink_term);
   result = r;
 }
@@ -1157,7 +1157,7 @@ void clddiag(const int nlev, const Real *temperature, const Real *pmid,
     const Real source_term = prain[i] + cmfdqr[i];
     Real lprec = 0;
     local_precip_production(pdel[i], source_term, evapr[i], g, lprec);
-    return lprec; 
+    return lprec;
   };
   calculate_cloudy_volume(nlev, cldt, prec, true, cldv);
 
@@ -1165,7 +1165,7 @@ void clddiag(const int nlev, const Real *temperature, const Real *pmid,
   auto prec_cu = [&](int i) -> Real {
     Real lprec = 0;
     local_precip_production(pdel[i], cmfdqr[i], evapc[i], g, lprec);
-    return lprec; 
+    return lprec;
   };
   calculate_cloudy_volume(nlev, cldcu, prec_cu, false, cldvcu);
 
