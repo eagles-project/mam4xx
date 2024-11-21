@@ -143,7 +143,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     const View1D &linoz_PmL_clim_icol, const View1D &linoz_dPmL_dO3_icol,
     const View1D &linoz_dPmL_dT_icol, const View1D &linoz_dPmL_dO3col_icol,
     const View1D &linoz_cariolle_pscs_icol, const Real eccf,
-    const Real adv_mass_kg_per_moles[gas_pcnst], const Real mmr[gas_pcnst],
+    const Real adv_mass_kg_per_moles[gas_pcnst],
     const Real fraction_landuse[mam4::mo_drydep::n_land_type],
     const int col_index_season[mam4::mo_drydep::n_land_type],
     const int (&clsmap_4)[gas_pcnst], const int (&permute_4)[gas_pcnst],
@@ -384,7 +384,7 @@ void perform_atmospheric_chemistry_and_microphysics(
         rain,             // rain content [??]
         snow,             // snow height [m]
         solar_flux,       // direct shortwave surface radiation [W/m^2]
-        mmr,              // constituent MMRs [kg/kg]
+        qq,               // constituent MMRs [kg/kg]
         dvel,             // deposition velocity [1/cm/s]
         dflx              // deposition flux [1/cm^2/s]
     );

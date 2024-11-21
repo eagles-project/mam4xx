@@ -79,7 +79,7 @@ inline void find_season_index_at_lat(const Real clat_j,
     }
   } // i
   EKAT_KERNEL_ASSERT_MSG(pos_min > -1,
-                         "Error: dvel_inti: cannot find index.\n");
+                         "Error in mo_drydep: dvel_inti: cannot find index.\n");
   /* specify the season as the most frequent in the 11 vegetation classes
  ! this was done to remove a banding problem in dvel (JFL Oct 04)*/
   // BAD CONSTANT
@@ -159,6 +159,8 @@ void calculate_uustar(
   // find the constant velocity uu*=(u_i)(u*_i)
   //-------------------------------------------------------------------------------------
   z0b = haero::exp(z0b);
+  EKAT_KERNEL_ASSERT_MSG(
+      zl > 0, "Error in mo_drydep: cvarb: zl must be a positive number\n");
   Real cvarb = karman / log(zl / z0b);
 
   //-------------------------------------------------------------------------------------
@@ -361,6 +363,13 @@ void calculate_resistance_rgsx_and_rsmx(
             rmx = 1.0 / (heff[idx_drydep] / 3000.0 + 100.0 * foxd(idx_drydep));
           }
           cts = 1000.0 * haero::exp(-tc - 4.0); // correction for frost
+
+          EKAT_KERNEL_ASSERT_MSG(
+              rgss(sndx, lt) != 0,
+              "Error in mo_drydep: rgss should be non-zero\n");
+          EKAT_KERNEL_ASSERT_MSG(
+              rgso(sndx, lt) != 0,
+              "Error in mo_drydep: rgso should be non-zero\n");
           rgsx[ispec][lt] =
               cts + 1.0 / ((heff[idx_drydep] / (1e5 * rgss(sndx, lt))) +
                            (foxd[idx_drydep] / rgso(sndx, lt)));
@@ -699,9 +708,15 @@ void drydep_xactive(
   //-------------------------------------------------------------------------------------
   // height of 1st level
   //-------------------------------------------------------------------------------------
+
+  EKAT_KERNEL_ASSERT_MSG(pressure_sfc > pressure_10m,
+                         "Error in mo_drydep: Surface pressure (pressure_sfc) "
+                         "should be > pressure_10m\n");
   // BAD_CONSTANTS
   Real zl = -rair / grav * air_temp * (1. + 0.61 * spec_hum) *
             log(pressure_10m / pressure_sfc);
+  EKAT_KERNEL_ASSERT_MSG(zl > 0,
+                         "Error in mo_drydep: zl must be a positive number\n");
 
   //-------------------------------------------------------------------------------------
   // wind speed
