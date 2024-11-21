@@ -800,8 +800,8 @@ void index_ordering(const int lspec, const int imode, const int lphase, int &mm,
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
 int examine_prec_exist(const int level_for_precipitation, const Real pdel[],
-                        const Real prain[], const Real cmfdqr[],
-                        const Real evapr[]) {
+                       const Real prain[], const Real cmfdqr[],
+                       const Real evapr[]) {
   // clang-format off
   // ----------------------------------------------------------------------
   // examine if level level_for_precipitation has precipitation.
