@@ -55,14 +55,13 @@ Real local_precip_production(const Real pdel, const Real source_term,
   return (pdel / Constants::gravity) * (source_term - sink_term);
 }
 
-// Function to call to initialize the arrays passe to the 
+// Function to call to initialize the arrays passe to the
 // aero_model_wetdep function. This data is constant so should
 // be allocaed on host and copied to device.
 inline void init_scavimptbl(
-  Real scavimptblvol[aero_model::nimptblgrow_total]
-                    [AeroConfig::num_modes()],
-  Real scavimptblnum[aero_model::nimptblgrow_total]
-                    [AeroConfig::num_modes()]) {
+    Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()],
+    Real scavimptblnum[aero_model::nimptblgrow_total]
+                      [AeroConfig::num_modes()]) {
   const int num_modes = AeroConfig::num_modes();
   Real dgnum_amode[num_modes];
   Real sigmag_amode[num_modes];
@@ -1559,8 +1558,10 @@ void aero_model_wetdep(
     const haero::ConstColumnView &icwmrsh, const haero::ConstColumnView &evapr,
     const haero::ConstColumnView &dlf, const haero::ConstColumnView &prain,
     const Int1D &isprx,
-    const Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()],
-    const Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()],
+    const Real scavimptblnum[aero_model::nimptblgrow_total]
+                            [AeroConfig::num_modes()],
+    const Real scavimptblvol[aero_model::nimptblgrow_total]
+                            [AeroConfig::num_modes()],
     // in/out calcsize and water_uptake
     const View2D &wet_geometric_mean_diameter_i,
     const View2D &dry_geometric_mean_diameter_i, const View2D &qaerwat,
@@ -2145,7 +2146,7 @@ public:
 
 private:
   Config config_;
-  
+
   Kokkos::View<int *> isprx;
 
   Kokkos::View<Real *> cldv;
