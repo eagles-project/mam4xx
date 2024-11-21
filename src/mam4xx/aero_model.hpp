@@ -31,7 +31,7 @@ constexpr int pcnst = mam4::pcnst;
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(
-    const int imode, const bool isprx_kk, const Real dgn_awet_imode_kk, //& ! in
+    const int imode, const Real dgn_awet_imode_kk, //& ! in
     const Real dgnum_amode_imode,
     const Real scavimptblvol[nimptblgrow_total][AeroConfig::num_modes()],
     const Real scavimptblnum[nimptblgrow_total][AeroConfig::num_modes()],
@@ -42,7 +42,6 @@ void modal_aero_bcscavcoef_get(
   // !-----------------------------------------------------------------------
 
   // @param [in]  imode mode index
-  // @param [in]  isprx_kk if there is precip
   // @param [in]  dgn_awet_imode_kk ! wet aerosol diameter of mode imode at
   // elevation kk [m]
   // @param [out] scavcoefnum scavenging removal for aerosol number [1/h]
@@ -56,58 +55,52 @@ void modal_aero_bcscavcoef_get(
   const Real one = 1;
   // BAD CONSTANT
   const Real dlndg_nimptblgrow = haero::log(1.25);
-  if (isprx_kk) {
-    // With precipitation
-    // interpolate table values using log of
-    // (actual-wet-size)/(base-dry-size) ratio of wet and dry aerosol diameter
-    // [fraction]
-    const Real wetdiaratio = dgn_awet_imode_kk / dgnum_amode_imode;
-    // Note: indexing in scavimptblnum and scavimptblvol
-    // Fortran : [-7,12]
-    // C++ :  [0,19]
-    // Therefore, -7 (Fortran) => 0 (C++), or jgrow => jgrow - nimptblgrow_mind;
-    // Here, we are assuming that nimptblgrow_mind is negative
-    Real scavimpvol, scavimpnum = zero;
-    // BAD CONSTANT
-    if (wetdiaratio >= 0.99 && wetdiaratio <= 1.01) {
-      // 8th position: Fortran (0) C++(7 or -nimptblgrow_mind)
-      scavimpvol = scavimptblvol[-nimptblgrow_mind][imode];
-      scavimpnum = scavimptblnum[-nimptblgrow_mind][imode];
-    } else {
-      Real xgrow = haero::log(wetdiaratio) / dlndg_nimptblgrow;
-      int jgrow = int(xgrow); // get index jgrow
-      if (xgrow < zero) { // // adjust jgrow appropriately if xgrow is negative
-        jgrow = jgrow - 1;
-      }
-      // bound jgrow within max and min values
-      if (jgrow < nimptblgrow_mind) {
-        jgrow = nimptblgrow_mind;
-        xgrow = jgrow;
-      } else {
-        jgrow = haero::min(jgrow, nimptblgrow_maxd - 1);
-      }
-      // compute factors for interpolating impaction scavenging removal amounts
-      const Real dumfhi = xgrow - jgrow;
-      const Real dumflo = one - dumfhi;
-      // Fortran to C++ index conversion
-      // Note: nimptblgrow_mind is negative (-7)
-      int jgrow_pp = jgrow - nimptblgrow_mind;
-      scavimpvol = dumflo * scavimptblvol[jgrow_pp][imode] +
-                   dumfhi * scavimptblvol[jgrow_pp + 1][imode];
-      scavimpnum = dumflo * scavimptblnum[jgrow_pp][imode] +
-                   dumfhi * scavimptblnum[jgrow_pp + 1][imode];
-
-    } // wetdiaratio
-
-    // impaction scavenging removal amount for volume
-    scavcoefvol_kk = haero::exp(scavimpvol);
-    // impaction scavenging removal amount to number
-    scavcoefnum_kk = haero::exp(scavimpnum);
+  // With precipitation
+  // interpolate table values using log of
+  // (actual-wet-size)/(base-dry-size) ratio of wet and dry aerosol diameter
+  // [fraction]
+  const Real wetdiaratio = dgn_awet_imode_kk / dgnum_amode_imode;
+  // Note: indexing in scavimptblnum and scavimptblvol
+  // Fortran : [-7,12]
+  // C++ :  [0,19]
+  // Therefore, -7 (Fortran) => 0 (C++), or jgrow => jgrow - nimptblgrow_mind;
+  // Here, we are assuming that nimptblgrow_mind is negative
+  Real scavimpvol, scavimpnum = zero;
+  // BAD CONSTANT
+  if (wetdiaratio >= 0.99 && wetdiaratio <= 1.01) {
+    // 8th position: Fortran (0) C++(7 or -nimptblgrow_mind)
+    scavimpvol = scavimptblvol[-nimptblgrow_mind][imode];
+    scavimpnum = scavimptblnum[-nimptblgrow_mind][imode];
   } else {
-    // Without precipitation
-    scavcoefvol_kk = zero;
-    scavcoefnum_kk = zero;
-  } // isprx_kk
+    Real xgrow = haero::log(wetdiaratio) / dlndg_nimptblgrow;
+    int jgrow = int(xgrow); // get index jgrow
+    if (xgrow < zero) { // // adjust jgrow appropriately if xgrow is negative
+      jgrow = jgrow - 1;
+    }
+    // bound jgrow within max and min values
+    if (jgrow < nimptblgrow_mind) {
+      jgrow = nimptblgrow_mind;
+      xgrow = jgrow;
+    } else {
+      jgrow = haero::min(jgrow, nimptblgrow_maxd - 1);
+    }
+    // compute factors for interpolating impaction scavenging removal amounts
+    const Real dumfhi = xgrow - jgrow;
+    const Real dumflo = one - dumfhi;
+    // Fortran to C++ index conversion
+    // Note: nimptblgrow_mind is negative (-7)
+    int jgrow_pp = jgrow - nimptblgrow_mind;
+    scavimpvol = dumflo * scavimptblvol[jgrow_pp][imode] +
+                 dumfhi * scavimptblvol[jgrow_pp + 1][imode];
+    scavimpnum = dumflo * scavimptblnum[jgrow_pp][imode] +
+                 dumfhi * scavimptblnum[jgrow_pp + 1][imode];
+
+  } // wetdiaratio
+
+  // impaction scavenging removal amount for volume
+  scavcoefvol_kk = haero::exp(scavimpvol);
+  // impaction scavenging removal amount to number
+  scavcoefnum_kk = haero::exp(scavimpnum);
 
 } // modal_aero_bcscavcoef_get
 
@@ -806,7 +799,7 @@ void index_ordering(const int lspec, const int imode, const int lphase, int &mm,
 
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
-bool examine_prec_exist(const int level_for_precipitation, const Real pdel[],
+int examine_prec_exist(const int level_for_precipitation, const Real pdel[],
                         const Real prain[], const Real cmfdqr[],
                         const Real evapr[]) {
   // clang-format off
@@ -833,7 +826,7 @@ bool examine_prec_exist(const int level_for_precipitation, const Real pdel[],
     // update precipitation to the level below k
     prec += (prain[k] + cmfdqr[k] - evapr[k]) * pdel[k] / gravit;
   }
-  const bool isprx = prec >= small_value_7;
+  const int isprx = (prec >= small_value_7) ? 1 : 0;
   return isprx;
 }
 
