@@ -481,13 +481,6 @@ void sethet_detail(
     int mm2 = wetdep_map[mm];
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ktop),
                          [&](int kk) { het_rates(kk, mm2) = 0.0; });
-    Kokkos::parallel_reduce(
-        Kokkos::TeamVectorRange(team, local_pver),
-        [&](int kk, int &abort) {
-          if (het_rates(kk, mm2) == MISSING)
-            abort += 1;
-        },
-        abort);
   }
   Kokkos::fence();
   for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
