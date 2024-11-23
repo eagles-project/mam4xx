@@ -150,14 +150,14 @@ void perform_atmospheric_chemistry_and_microphysics(
     const int offset_aerosol, const Real o3_sfc, const Real o3_tau,
     const int o3_lbl, const ConstView2D dry_diameter_icol,
     const ConstView2D wet_diameter_icol, const ConstView2D wetdens_icol,
-     const Real phis,      // surf geopotential //in
+    const Real phis,      // surf geopotential //in
     const View1D &cmfdqr, // dq/dt for convection [kg/kg/s] //in ndx_cmfdqr =
                           // pbuf_get_index('RPRDTOT') // from convect shallow
     const ConstView1D
         &prain, // stratoform precip [kg/kg/s] //in precip_total_tend
     const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
-    const View1D &work_set_het
-    Real dvel[gas_pcnst], Real dflx[gas_pcnst], mam4::Prognostics &progs) {
+    const View1D &work_set_het Real dvel[gas_pcnst], Real dflx[gas_pcnst],
+    mam4::Prognostics &progs) {
   auto work_set_het_ptr = (Real *)work_set_het.data();
   const auto het_rates = View2D(work_set_het_ptr, nlev, gas_pcnst);
   work_set_het_ptr += nlev * gas_pcnst;
