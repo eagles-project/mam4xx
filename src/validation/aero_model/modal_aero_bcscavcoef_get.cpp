@@ -59,9 +59,11 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
     scavcoefvol = std::vector(ncol, zero);
 
     for (int icol = 0; icol < ncol; ++icol) {
-      aero_model::modal_aero_bcscavcoef_get(
-          imode, isprx_vector[icol], dgn_awet[imode][icol], dgnum_amode[imode],
-          scavimptblvol, scavimptblnum, scavcoefnum[icol], scavcoefvol[icol]);
+      if (isprx_vector[icol]) {
+        aero_model::modal_aero_bcscavcoef_get(
+            imode, dgn_awet[imode][icol], dgnum_amode[imode], scavimptblvol,
+            scavimptblnum, scavcoefnum[icol], scavcoefvol[icol]);
+      }
     }
 
     output.set("scavcoefnum", scavcoefnum);

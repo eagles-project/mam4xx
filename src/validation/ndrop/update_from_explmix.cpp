@@ -21,8 +21,8 @@ void update_from_explmix(Ensemble *ensemble) {
     const auto mam_idx_db = input.get_array("mam_idx");
     const auto nspec_amode_db = input.get_array("nspec_amode");
 
-    /* int nnew_in = */ input.get_array("nnew")[0];
-    /* int nsav_in = */ input.get_array("nsav")[0];
+    static_cast<void>(input.get_array("nnew")[0]);
+    static_cast<void>(input.get_array("nsav")[0]);
 
     const auto raercol_1 = input.get_array("raercol_1");
     const auto raercol_cw_1 = input.get_array("raercol_cw_1");
