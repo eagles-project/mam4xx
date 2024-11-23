@@ -489,6 +489,17 @@ void sethet_detail(
         },
         abort);
   }
+  Kokkos::fence();
+  for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
+    int mm2 = wetdep_map[mm];
+    Kokkos::parallel_reduce(
+        Kokkos::TeamVectorRange(team, local_pver),
+        [&](int kk, int &abort) {
+          if (het_rates(kk, mm2) == MISSING)
+            abort += 1;
+        },
+        abort);
+  }
   if (abort != 0) {
     Kokkos::abort(
         "sethet: het_rates (wet dep) not set for het reaction number");

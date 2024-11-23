@@ -115,15 +115,6 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
  * @param [out] progs           -- prognostics: stateq, qqcw updated
  **/
 
-// number of species with external forcing
-using mam4::gas_chemistry::extcnt;
-using mam4::mo_photo::PhotoTableData;
-using mam4::mo_setext::Forcing;
-using mam4::mo_setinv::num_tracer_cnst;
-
-using View2D = DeviceType::view_2d<Real>;
-using ConstView2D = DeviceType::view_2d<const Real>;
-using View1D = DeviceType::view_1d<Real>;
 KOKKOS_INLINE_FUNCTION
 void perform_atmospheric_chemistry_and_microphysics(
     const ThreadTeam &team, const Real dt, const Real rlats, const int month,
@@ -156,8 +147,9 @@ void perform_atmospheric_chemistry_and_microphysics(
     const ConstView1D
         &prain, // stratoform precip [kg/kg/s] //in precip_total_tend
     const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
-    const View1D &work_set_het, Real dvel[gas_pcnst], Real dflx[gas_pcnst],
-    mam4::Prognostics &progs) {
+    const View1D &work_set_het, const seq_drydep::Data &drydep_data,
+    Real dvel[gas_pcnst], Real dflx[gas_pcnst], mam4::Prognostics &progs) {
+
   auto work_set_het_ptr = (Real *)work_set_het.data();
   const auto het_rates = View2D(work_set_het_ptr, nlev, gas_pcnst);
   work_set_het_ptr += nlev * gas_pcnst;
@@ -199,8 +191,6 @@ void perform_atmospheric_chemistry_and_microphysics(
                               eccf, photo_table,                           // in
                               photo_work_arrays_icol); // out
 
-  const seq_drydep::Data drydep_data = seq_drydep::set_gas_drydep_data();
-  ;
   // work array.
   // het_rates_icol work array.
   mmr2vmr_col(team, atm, progs, adv_mass_kg_per_moles, offset_aerosol, vmr_col);
