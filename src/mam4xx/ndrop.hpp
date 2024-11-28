@@ -1187,6 +1187,7 @@ void update_from_explmix(
     int &nnew, // indices for old, new time levels in substepping
     const int nspec_amode[AeroConfig::num_modes()],
     const int mam_idx[AeroConfig::num_modes()][nspec_max],
+    const bool &enable_aero_vertical_mix,
     // work vars
     const ColumnView &overlapp, // cloud overlap involving level kk+1 [fraction]
     const ColumnView &overlapm, // cloud overlap involving level kk-1 [fraction]
@@ -1325,16 +1326,18 @@ void update_from_explmix(
     // qcld == qold
     // qncld == qnew
 
-    team.team_barrier();
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver - top_lev + 1),
-                         [&](int kk) {
-                           const int k = top_lev - 1 + kk;
-                           const int kp1 = haero::min(k + 1, pver - 1);
-                           const int km1 = haero::max(k - 1, top_lev - 1);
-                           explmix(qncld(km1), qncld(k), qncld(kp1), qcld(k),
-                                   srcn(k), eddy_diff_kp(k), eddy_diff_km(k),
-                                   overlapp(k), overlapm(k), dtmix);
-                         });
+    if (enable_aero_vertical_mix) {
+      team.team_barrier();
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver - top_lev + 1),
+                           [&](int kk) {
+                             const int k = top_lev - 1 + kk;
+                             const int kp1 = haero::min(k + 1, pver - 1);
+                             const int km1 = haero::max(k - 1, top_lev - 1);
+                             explmix(qncld(km1), qncld(k), qncld(kp1), qcld(k),
+                                     srcn(k), eddy_diff_kp(k), eddy_diff_km(k),
+                                     overlapp(k), overlapm(k), dtmix);
+                           });
+    }
 
     team.team_barrier();
     // update aerosol number
@@ -1371,14 +1374,15 @@ void update_from_explmix(
                     raercol_cw[k][nnew](mm), //
                     source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
                     overlapm(k), dtmix);
-
-            explmix(raercol[km1][nsav](mm), raercol[k][nsav](mm),
-                    raercol[kp1][nsav](mm),
-                    raercol[k][nnew](mm), // output
-                    source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
-                    overlapm(k), dtmix, raercol_cw[km1][nsav](mm),
-                    raercol_cw[kp1][nsav](mm)); // optional in
-          });                                   // end kk
+            if (enable_aero_vertical_mix) {
+              explmix(raercol[km1][nsav](mm), raercol[k][nsav](mm),
+                      raercol[kp1][nsav](mm),
+                      raercol[k][nnew](mm), // output
+                      source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
+                      overlapm(k), dtmix, raercol_cw[km1][nsav](mm),
+                      raercol_cw[kp1][nsav](mm)); // optional in
+            }
+          }); // end kk
 
       // update aerosol species mass
       for (int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
@@ -1404,13 +1408,16 @@ void update_from_explmix(
                       raercol_cw[k][nnew](mm), // output
                       source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
                       overlapm(k), dtmix);
-              explmix(raercol[km1][nsav](mm), raercol[k][nsav](mm),
-                      raercol[kp1][nsav](mm),
-                      raercol[k][nnew](mm), // output
-                      source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
-                      overlapm(k), dtmix, raercol_cw[km1][nsav](mm),
-                      raercol_cw[kp1][nsav](mm)); // optional in
-            });                                   // end kk
+              if (enable_aero_vertical_mix) {
+                explmix(raercol[km1][nsav](mm), raercol[k][nsav](mm),
+                        raercol[kp1][nsav](mm),
+                        raercol[k][nnew](mm), // output
+                        source(k), eddy_diff_kp(k), eddy_diff_km(k),
+                        overlapp(k), overlapm(k), dtmix,
+                        raercol_cw[km1][nsav](mm),
+                        raercol_cw[kp1][nsav](mm)); // optional in
+              }
+            }); // end kk
 
         team.team_barrier();
       } // lspec loop
@@ -1462,7 +1469,8 @@ void dropmixnuc(
     const Real alogsig[AeroConfig::num_modes()], const Real aten,
     const int mam_idx[AeroConfig::num_modes()][nspec_max],
     const int mam_cnst_idx[AeroConfig::num_modes()][nspec_max],
-    const ColumnView &qcld, const ColumnView &wsub,
+    const bool &enable_aero_vertical_mix, const ColumnView &qcld,
+    const ColumnView &wsub,
     const ColumnView &cldo,               // in
     const ColumnView qqcw_fld[ncnst_tot], // inout
     const ColumnView ptend_q[aero_model::pcnst], const ColumnView &tendnd,
@@ -1672,7 +1680,7 @@ void dropmixnuc(
 
   update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, eddy_diff, nact, mact,
                       qcld, raercol, raercol_cw, nsav, nnew, nspec_amode,
-                      mam_idx,
+                      mam_idx, enable_aero_vertical_mix,
                       // work vars
                       overlapp, overlapm, eddy_diff_kp, eddy_diff_km, qncld,
                       srcn, // droplet source rate [/s]
