@@ -1557,7 +1557,7 @@ void aero_model_wetdep(
     const haero::ConstColumnView &icwmrdp,
     const haero::ConstColumnView &icwmrsh, const haero::ConstColumnView &evapr,
     const haero::ConstColumnView &dlf, const haero::ConstColumnView &prain,
-    const Int1D &isprx,
+    // const Int1D &isprx,
     const Real scavimptblnum[aero_model::nimptblgrow_total]
                             [AeroConfig::num_modes()],
     const Real scavimptblvol[aero_model::nimptblgrow_total]
@@ -1941,6 +1941,7 @@ void aero_model_wetdep(
 
     team.team_barrier(); // for cldcu
 
+    Int1D isprx;
     // calculate the mass-weighted sol_factic for coarse mode species
     // set the mass-weighted sol_factic for coarse mode species.
     wetdep::set_f_act(
