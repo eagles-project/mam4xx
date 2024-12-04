@@ -73,7 +73,7 @@ void calc_precip_rescale(
   Real total_pos = 0;  // total positive rain rate in the column
   constexpr int local_pver = pver;
   Kokkos::parallel_reduce(
-      Kokkos::TeamVectorRange(team, local_pver),
+      Kokkos::ThreadVectorRange(team, local_pver),
       [&](int kk, Real &total_rain) {
         precip(kk) = cmfdqr(kk) + nrain(kk) - nevapr(kk);
         total_rain += precip(kk);
@@ -81,7 +81,7 @@ void calc_precip_rescale(
       total_rain);
 
   Kokkos::parallel_reduce(
-      Kokkos::TeamVectorRange(team, local_pver),
+      Kokkos::ThreadVectorRange(team, local_pver),
       [&](int kk, Real &total_pos) {
         if (precip(kk) < 0.0) {
           precip(kk) = 0.0;
@@ -91,13 +91,13 @@ void calc_precip_rescale(
       total_pos);
 
   if (total_rain <= 0.0) {
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver),
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, local_pver),
                          [&](int kk) {
                            precip(kk) = 0.0; // set all levels to zero
                          });
   } else {
     Kokkos::parallel_for(
-        Kokkos::TeamVectorRange(team, local_pver),
+        Kokkos::ThreadVectorRange(team, local_pver),
         [&](int kk) { precip(kk) = precip(kk) * total_rain / total_pos; });
   }
 
@@ -263,14 +263,14 @@ void sethet_detail(
   constexpr Real large_value_lifetime =
       1.0e29; // a large lifetime value if no washout
 
-  int ktop;  // tropopause level, 100mb for lat < 60 and 300mb for lat > 60
-  Real xkgm; // mass flux on rain drop
-  Real stay; // fraction of layer traversed by falling drop in timestep delt
-  Real xdtm; // the traveling time in each dz [s]
-  Real xxx2, xxx3;   // working variables for h2o2 (2) and so2 (3)
-  Real yso2, yh2o2;  // washout lifetime [s]
-  Real work1, work2; // working variables
-  Real zsurf;        // surface height [km]
+  int ktop=0;  // tropopause level, 100mb for lat < 60 and 300mb for lat > 60
+  Real xkgm=0; // mass flux on rain drop
+  Real stay=0; // fraction of layer traversed by falling drop in timestep delt
+  Real xdtm=0; // the traveling time in each dz [s]
+  Real xxx2=0, xxx3=0;   // working variables for h2o2 (2) and so2 (3)
+  Real yso2=0, yh2o2=0;  // washout lifetime [s]
+  Real work1=0, work2=0; // working variables
+  Real zsurf=0;        // surface height [km]
 
   //-----------------------------------------------------------------
   //        note: the press array is in pascals and must be
@@ -295,21 +295,19 @@ void sethet_detail(
   // 'H2O2','H2SO4','SO2'.  Options for other species are then removed
   //-----------------------------------------------------------------
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, local_pver), [&](int kk) {
-    Kokkos::parallel_for(
-        Kokkos::ThreadVectorRange(team, gas_pcnst), [&](int mm) {
-          het_rates(kk, mm) = 0.0;
-          tmp_hetrates[mm](kk) = 0.0; // initiate temporary array
-        });
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, local_pver), [&](int kk) {
+    for (int mm=0; mm < gas_pcnst; ++mm) {
+      het_rates(kk, mm) = 0.0;
+      tmp_hetrates[mm](kk) = 0.0; // initiate temporary array
+    }
   });
 
-  for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
-    int mm2 = wetdep_map[mm];
-    if (mm2 > 0) {
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver),
-                           [&](int kk) { het_rates(kk, mm2) = MISSING; });
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, local_pver), [&](int kk) { 
+    for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
+      const int mm2 = wetdep_map[mm];
+      if (mm2 > 0) het_rates(kk, mm2) = MISSING; 
     }
-  }
+  });
 
   //-----------------------------------------------------------------
   //	... the 2 and .6 multipliers are from a formula by frossling (1938)
@@ -327,7 +325,7 @@ void sethet_detail(
   // removes point storms
   calc_precip_rescale(team, cmfdqr, nrain, nevapr, precip); // populate precip
 
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, local_pver), [&](int kk) {
     rain(kk) = mass_air * precip(kk) * invariants(kk, indexm) / mass_h2o;
     xliq(kk) =
         precip(kk) * delt * invariants(kk, indexm) / avo * mass_air * m3_2_cm3;
@@ -337,7 +335,7 @@ void sethet_detail(
   zsurf = m2km * phis * rga;
 
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, ktop, local_pver - 1), [&](int kk) {
+      Kokkos::ThreadVectorRange(team, ktop, local_pver - 1), [&](int kk) {
         delz(kk) = haero::abs((zmid(kk) - zmid(kk + 1)) * km2cm);
       });
   delz(pver - 1) = haero::abs((zmid(pver - 1) - zsurf) * km2cm);
@@ -355,7 +353,7 @@ void sethet_detail(
   //             heff = h * (1 + k/[h+]) (in general)
   //-----------------------------------------------------------------
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, ktop, local_pver), [&](int kk) {
+      Kokkos::ThreadVectorRange(team, ktop, local_pver), [&](int kk) {
         //-----------------------------------------------------------------
         // 	... effective henry''s law constants:
         //	hno3, h2o2  (brasseur et al., 1999)
@@ -372,16 +370,14 @@ void sethet_detail(
         xhen_so2(kk) = xk0_so2(kk) * (1.0 + so2_diss(kk) / xph0);
       });
   team.team_barrier();
-
   //-----------------------------------------------------------------
   //       ... part 1, solve for high henry constant ( hno3, h2o2)
   //-----------------------------------------------------------------
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, local_pver), [&](int kk) {
     xgas2(kk) = xh2o2(kk); // different levels wash
     xgas3(kk) = xso2(kk);
   });
   team.team_barrier();
-
   for (int kk = ktop; kk < pver; kk++) {
     stay = 1.0;
     if (rain(kk) != 0.0) { // finding rain cloud
@@ -476,28 +472,18 @@ void sethet_detail(
   //	... Set rates above tropopause = 0.
   //-----------------------------------------------------------------
   team.team_barrier();
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, ktop), [&](int kk) { 
+    for (int mm = 0; mm < gas_wetdep_cnt; mm++) 
+      het_rates(kk, wetdep_map[mm]) = 0.0; 
+  });
+  team.team_barrier();
   int abort = 0;
-  for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
-    int mm2 = wetdep_map[mm];
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ktop),
-                         [&](int kk) { het_rates(kk, mm2) = 0.0; });
-  }
-  Kokkos::fence();
-  for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
-    int mm2 = wetdep_map[mm];
-    Kokkos::parallel_reduce(
-        Kokkos::TeamVectorRange(team, local_pver),
-        [&](int kk, int &abort) {
-          if (het_rates(kk, mm2) == MISSING)
-            abort += 1;
-        },
-        abort);
-  }
-  if (abort != 0) {
+  for (int mm = 0; mm < gas_wetdep_cnt; mm++) 
+    for (int kk=0; kk<local_pver; ++kk) 
+      if (het_rates(kk, wetdep_map[mm]) == MISSING) ++abort;
+  if (0 < abort) 
     Kokkos::abort(
         "sethet: het_rates (wet dep) not set for het reaction number");
-    return;
-  }
 
 } // end subroutine sethet
 
