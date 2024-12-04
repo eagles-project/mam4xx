@@ -46,7 +46,7 @@ void compute_o3_column_density(
       {}; // o3 column density above model [1/cm^2]
   // NOTE: if we need o2 column densities, set_ub_col and setcol must be changed
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, mam4::nlev), [&](const int k) {
+      Kokkos::ThreadVectorRange(team, mam4::nlev), [&](const int k) {
         const Real pdel = atm.hydrostatic_dp(k);
         // extract aerosol state variables into "working arrays" (mass
         // mixing ratios) (in EAM, this is done in the gas_phase_chemdr

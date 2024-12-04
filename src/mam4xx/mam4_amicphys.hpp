@@ -1320,12 +1320,12 @@ void mam_amicphys_1subarea(
 
   // Mixing ratio increments of sub-timesteps used for process coupling
 
-  Real qnum_delsub_cond[nmodes];                  // [   #/kmol]
-  Real qnum_delsub_coag[nmodes];                  // [   #/kmol]
-  Real qaer_delsub_cond[nspecies][nmodes];        // [   #/kmol]
-  Real qaer_delsub_coag[nspecies][nmodes];        // [kmol/kmol]
-  Real qaer_delsub_grow4rnam[nspecies][nmodes];   // [kmol/kmol]
-  Real qaercw_delsub_grow4rnam[nspecies][nmodes]; // [kmol/kmol]
+  Real qnum_delsub_cond[nmodes]={};                  // [   #/kmol]
+  Real qnum_delsub_coag[nmodes]={};                  // [   #/kmol]
+  Real qaer_delsub_cond[nspecies][nmodes]={};        // [   #/kmol]
+  Real qaer_delsub_coag[nspecies][nmodes]={};        // [kmol/kmol]
+  Real qaer_delsub_grow4rnam[nspecies][nmodes]={};   // [kmol/kmol]
+  Real qaercw_delsub_grow4rnam[nspecies][nmodes]={}; // [kmol/kmol]
 
   constexpr int max_agepair = AeroConfig::max_agepair();
   Real qaer_delsub_coag_in[nspecies][max_agepair]; // [kmol/kmol]
@@ -2114,7 +2114,7 @@ void modal_aero_amicphys_intr(
     const AmicPhysConfig &config, const Real deltat, const Real temp,
     const Real pmid, const Real pdel, const Real zm, const Real pblh,
     const Real qv, const Real cld,
-    // out
+    // in/out
     Real qq[gas_pcnst], Real qqcw[gas_pcnst],
     // in
     const Real (&q_pregaschem)[gas_pcnst],

@@ -533,9 +533,8 @@ void interpolate_rsf(const ThreadTeam &team, const Real *alb_in,
                   rsf_tab, nw,
                   psum_u); //  inout
 
-    for (int wn = 0; wn < nw; wn++) {
+    for (int wn = 0; wn < nw; wn++) 
       rsf(wn, kk) = psum_l[wn] + wght1 * (psum_u[wn] - psum_l[wn]);
-    }
 
     /*------------------------------------------------------------------------------
         etfphot comes in as photons/cm^2/sec/nm  (rsf includes the wlintv factor
@@ -543,14 +542,11 @@ void interpolate_rsf(const ThreadTeam &team, const Real *alb_in,
        ... --> convert to photons/cm^2/s
      ------------------------------------------------------------------------------*/
     team.team_barrier();
-    for (int wn = 0; wn < nw; wn++) {
-      Kokkos::single(Kokkos::PerTeam(team),
-                     [=]() { rsf(wn, kk) *= etfphot[wn]; });
-
-    } // end for wn
-
+    Kokkos::single(Kokkos::PerTeam(team), [=]() {
+      for (int wn = 0; wn < nw; wn++) 
+        rsf(wn, kk) *= etfphot[wn]; 
+    });
   } // end Level_loop
-
 } // interpolate_rsf
 
 //======================================================================================
@@ -637,8 +633,7 @@ void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
   ------------------------------------------------------------------------------*/
   // To avoid the 'pver is undefined' error during CUDA code compilation.
   constexpr int pver_local = pver;
-  team.team_barrier();
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver_local), [&](int kk) {
     /*----------------------------------------------------------------------
       ... get index into xsqy
      ----------------------------------------------------------------------*/
@@ -690,17 +685,17 @@ void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
         } // end for i
       }   // end for wn
     }     // end if
-
-    // j_long(:,kk) = matmul( xswk(:,:),rsf(:,kk) )
-    for (int i = 0; i < numj; ++i) {
-      Real suma = zero;
-      for (int wn = 0; wn < nw; wn++) {
-        suma += xswk(i, wn) * rsf(wn, kk);
-      } // wn
-      j_long(i, kk) = suma;
-    } // i
+    team.team_barrier();
+    Kokkos::single(Kokkos::PerTeam(team), [=]() {
+      for (int i = 0; i < numj; ++i) {
+        Real suma = zero;
+        for (int wn = 0; wn < nw; wn++) {
+          suma += xswk(i, wn) * rsf(wn, kk);
+        }
+        j_long(i, kk) = suma;
+      } // i
+    });
   }); // end kk
-
 } // jlong
 
 // FIXME: note the use of ConstColumnView for views we get from the
@@ -759,14 +754,14 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
     cloud_mod(zen_angle, clouds, lwc, pdel,
               srf_alb, //  in
               eff_alb, cld_mult);
-    for (int kk = 0; kk < pver; kk++) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
       parg[kk] = pmid(kk) * Pa2mb;
       cld_mult[kk] *= esfact;
-    }
+    });
     /*-----------------------------------------------------------------
      ... long wave length component
     -----------------------------------------------------------------*/
-
+    team.team_barrier();
     jlong(team, sza_in, eff_alb, parg, temper.data(), colo3_in.data(),
           table_data.xsqy, table_data.sza.data(), table_data.del_sza.data(),
           table_data.alb.data(), table_data.press.data(),
@@ -781,23 +776,19 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
           // work arrays
           work_arrays.rsf, work_arrays.xswk, work_arrays.psum_l.data(),
           work_arrays.psum_u.data());
-
     team.team_barrier();
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, phtcnt), [&](int mm) {
-      if (table_data.lng_indexer(mm) > -1) {
-        Kokkos::parallel_for(
-            Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
-              photo(kk, mm) =
-                  cld_mult[kk] *
-                  (photo(kk, mm) +
-                   table_data.pht_alias_mult_1(mm) *
-                       work_arrays.lng_prates(table_data.lng_indexer(mm), kk));
-            }); // end kk
-      }         // end if
-    });         // end mm
+    Kokkos::single(Kokkos::PerTeam(team), [=]() {
+      for (int mm=0; mm<phtcnt; ++mm) {
+        const int ind = table_data.lng_indexer(mm); 
+        if (ind > -1) {
+          for (int kk=0; kk<pver; ++kk) {
+            photo(kk, mm) = cld_mult[kk] * (photo(kk, mm) + table_data.pht_alias_mult_1(mm) * work_arrays.lng_prates(ind, kk));
+          }
+        } 
+      }  
+    });
   }
-
-  // } // end col_loop
+  team.team_barrier();
 }
 
 } // namespace mo_photo

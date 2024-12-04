@@ -31,7 +31,7 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
   // undefined in device code.
   constexpr int nlev_local = nlev;
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, nlev_local), [&](const int kk) {
+      Kokkos::ThreadVectorRange(team, nlev_local), [&](const int kk) {
         Real state_q[pcnst] = {};
         mam4::utils::extract_stateq_from_prognostics(progs, atm, state_q, kk);
         Real qq[gas_pcnst] = {};
@@ -123,6 +123,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
     const View1D &work_set_het) {
 
+    // vmr0 stores mixing ratios before chemistry changes the mixing
   auto work_set_het_ptr = (Real *)work_set_het.data();
   const auto het_rates = View2D(work_set_het_ptr, nlev, gas_pcnst);
   work_set_het_ptr += nlev * gas_pcnst;
@@ -135,7 +136,7 @@ void perform_atmospheric_chemistry_and_microphysics(
   const auto work_sethet_call = View1D(work_set_het_ptr, sethet_work_len);
   work_set_het_ptr += sethet_work_len;
 
-  mam4::mo_setext::extfrc_set(forcings_in, extfrc_icol);
+  mam4::mo_setext::extfrc_set(team, forcings_in, extfrc_icol);
 
   mam4::mo_setinv::setinv(team,                                    // in
                           invariants_icol,                         // out
@@ -173,7 +174,6 @@ void perform_atmospheric_chemistry_and_microphysics(
   mam4::mo_sethet::sethet(team, atm, het_rates, rlats, phis, cmfdqr, prain,
                           nevapr, dt, invariants_icol, vmr_col,
                           work_sethet_call);
-
   // compute aerosol microphysics on each vertical level within this
   // column
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](const int kk) {
