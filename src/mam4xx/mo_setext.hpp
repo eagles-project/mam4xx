@@ -26,7 +26,8 @@ struct Forcing {
 };
 
 KOKKOS_INLINE_FUNCTION
-void extfrc_set(const ThreadTeam &team, const Forcing *forcings, const View2D &frcing) {
+void extfrc_set(const ThreadTeam &team, const Forcing *forcings,
+                const View2D &frcing) {
   const int pver = mam4::nlev;
 
   /*--------------------------------------------------------
@@ -63,7 +64,7 @@ void extfrc_set(const ThreadTeam &team, const Forcing *forcings, const View2D &f
           frcing(kk, nn) += forcing_mm.fields_data[isec](kk);
         }
       } // isec
-    } // end mm
+    }   // end mm
   });
 } // extfrc_set
 

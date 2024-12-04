@@ -123,7 +123,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
     const View1D &work_set_het) {
 
-    // vmr0 stores mixing ratios before chemistry changes the mixing
+  // vmr0 stores mixing ratios before chemistry changes the mixing
   auto work_set_het_ptr = (Real *)work_set_het.data();
   const auto het_rates = View2D(work_set_het_ptr, nlev, gas_pcnst);
   work_set_het_ptr += nlev * gas_pcnst;
