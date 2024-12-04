@@ -150,7 +150,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     const View1D &work_set_het, const seq_drydep::Data &drydep_data,
     Real dvel[gas_pcnst], Real dflx[gas_pcnst], mam4::Prognostics &progs) {
 
-    // vmr0 stores mixing ratios before chemistry changes the mixing
+  // vmr0 stores mixing ratios before chemistry changes the mixing
   auto work_set_het_ptr = (Real *)work_set_het.data();
   const auto het_rates = View2D(work_set_het_ptr, nlev, gas_pcnst);
   work_set_het_ptr += nlev * gas_pcnst;

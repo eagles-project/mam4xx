@@ -801,7 +801,8 @@ void drydep_xactive(
   //
   // compute rsmx = 1/(rs+rm) : multiply by 3 if surface is wet
   //-------------------------------------------------------------------------------------
-  Real cts=0, rgsx[gas_pcnst][n_land_type]={}, rsmx[gas_pcnst][n_land_type]={};
+  Real cts = 0, rgsx[gas_pcnst][n_land_type] = {},
+       rsmx[gas_pcnst][n_land_type] = {};
   calculate_resistance_rgsx_and_rsmx(drydep_data, 0, n_land_type - 1,
                                      index_season, fr_lnduse, has_rain, has_dew,
                                      tc, heff, crs, cts, rgsx, rsmx);

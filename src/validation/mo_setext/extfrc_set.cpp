@@ -16,7 +16,7 @@ using namespace mo_setext;
 void extfrc_set(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
-
+    const int pver = mam4::nlev;
     Forcing forcings[extfrc_cnt];
     for (int i = 1; i <= extfrc_cnt; ++i) {
 
@@ -56,7 +56,7 @@ void extfrc_set(Ensemble *ensemble) {
 
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          extfrc_set(forcings, frcing);
+          extfrc_set(team, forcings, frcing);
         });
     std::vector<Real> frcing_out(pver * extcnt, 0.0);
     mam4::validation::convert_2d_view_device_to_1d_vector(frcing, frcing_out);
