@@ -12,7 +12,6 @@ namespace mo_setext {
 using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;
 using View3D = DeviceType::view_3d<Real>;
-constexpr int pver = mam4::nlev;
 constexpr int extfrc_cnt = 9;
 constexpr int extcnt = 9; //, & ! number of species with external forcing
 // MAX_NUM_SECTIONS: Maximum number of sections in forcing data. Increase this
@@ -27,7 +26,9 @@ struct Forcing {
 };
 
 KOKKOS_INLINE_FUNCTION
-void extfrc_set(const Forcing *forcings, const View2D &frcing) {
+void extfrc_set(const ThreadTeam &team, const Forcing *forcings,
+                const View2D &frcing) {
+  const int pver = mam4::nlev;
 
   /*--------------------------------------------------------
    ... form the external forcing
@@ -48,48 +49,27 @@ void extfrc_set(const Forcing *forcings, const View2D &frcing) {
   ! ... set non-zero forcings
   !--------------------------------------------------------*/
 
-  for (int mm = 0; mm < extfrc_cnt; ++mm) {
-    // Fortran to C++ indexing
-    auto forcing_mm = forcings[mm];
-    const int nn = forcing_mm.frc_ndx - 1;
-    for (int kk = 0; kk < pver; ++kk) {
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
+    for (int mm = 0; mm < extfrc_cnt; ++mm) {
+      // Fortran to C++ indexing
+      auto forcing_mm = forcings[mm];
+      const int nn = forcing_mm.frc_ndx - 1;
       frcing(kk, nn) = zero;
-    } // k
 
-    for (int isec = 0; isec < forcing_mm.nsectors; ++isec) {
-      if (forcing_mm.file_alt_data) {
-        for (int kk = 0; kk < pver; ++kk) {
-          // frcing(:ncol,:,nn) = frcing(:ncol,:,nn) + &
-          // forcings(mm)%fields(isec)%data(:ncol,pver:1:-1,lchnk)
+      for (int isec = 0; isec < forcing_mm.nsectors; ++isec) {
+        if (forcing_mm.file_alt_data) {
           frcing(kk, nn) += forcing_mm.fields_data[isec](pver - 1 - kk);
-        } // kk
-      } else {
-        // // forcings(mm)%fields(isec)%data(:ncol,:,lchnk)
-        for (int kk = 0; kk < pver; ++kk) {
+        } else {
+          // forcings(mm)%fields(isec)%data(:ncol,:,lchnk)
           frcing(kk, nn) += forcing_mm.fields_data[isec](kk);
         }
-      }
-    } // isec
-
-    // I did not include variables that are involved in the outfld.
-    //
-    //  xfcname = trim(forcings(mm)%species)//'_XFRC'
-    // call outfld( xfcname, frcing(:ncol,:,nn), ncol, lchnk )
-
-    // frcing_col(:ncol) = 0._r8
-    // do kk = 1,pver
-    //    frcing_col(:ncol) = frcing_col(:ncol) + &
-    //                  frcing(:ncol,kk,nn)*(zint(:ncol,kk)-zint(:ncol,kk+1))*km_to_cm
-    // enddo
-    // xfcname = trim(forcings(mm)%species)//'_CLXF'
-    // call outfld( xfcname, frcing_col(:ncol), ncol, lchnk )
-
-  } // end mm
-
+      } // isec
+    }   // end mm
+  });
 } // extfrc_set
 
 KOKKOS_INLINE_FUNCTION
-void setext(const Forcing *forcings,
+void setext(const ThreadTeam &team, const Forcing *forcings,
             const View2D &extfrc) // ! out
 {
   // Note: we do not need setext.
@@ -115,7 +95,7 @@ void setext(const Forcing *forcings,
   /*--------------------------------------------------------
   !     ... set frcing from datasets
   !--------------------------------------------------------*/
-  extfrc_set(forcings,
+  extfrc_set(team, forcings,
              extfrc); // out
 
   /*--------------------------------------------------------

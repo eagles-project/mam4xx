@@ -95,7 +95,7 @@ void setinv(const ThreadTeam &team, const View2D &invariants,
   constexpr int nk = mam4::nlev;
   constexpr Real mwh2o = haero::Constants::molec_weight_h2o;
 
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, nk), [&](int k) {
     const Real tfld_k = tfld(k);
     const Real qv_k = qv(k);
     const Real pmid_k = pmid(k);
