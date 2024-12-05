@@ -307,7 +307,7 @@ void sethet_detail(
                        [&](int kk) {
                          for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
                            const int mm2 = wetdep_map[mm];
-                           if (mm2 > 0)
+                           if (mm2 >= 0)
                              het_rates(kk, mm2) = MISSING;
                          }
                        });
