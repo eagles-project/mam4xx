@@ -169,10 +169,10 @@ void update_from_explmix(Ensemble *ensemble) {
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           int nnew = 1;
           int nsav = 0;
-          ndrop::update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, ekd,
-                                     nact, mact, qcld, raercol, raercol_cw,
-                                     nsav, nnew, nspec_amode, mam_idx, true, overlapp,
-                                     overlapm, ekkp, ekkm, qncld, srcn, source);
+          ndrop::update_from_explmix(
+              team, dtmicro, csbot, cldn, zn, zs, ekd, nact, mact, qcld,
+              raercol, raercol_cw, nsav, nnew, nspec_amode, mam_idx, true,
+              overlapp, overlapm, ekkp, ekkm, qncld, srcn, source);
           indexes(0) = nnew;
           indexes(1) = nsav;
         });
