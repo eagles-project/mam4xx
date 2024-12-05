@@ -227,7 +227,6 @@ void dropmixnuc(Ensemble *ensemble) {
           ndrop::ndrop_init(exp45logsig, alogsig, aten,
                             num2vol_ratio_min_nmodes,  // voltonumbhi_amode
                             num2vol_ratio_max_nmodes); // voltonumblo_amode
-
           ndrop::dropmixnuc(
               team, dtmicro, tair, pmid, pint, pdel, rpdel,
               zm, //  ! in zm[kk] - zm[kk+1], for pver zm[kk-1] - zm[kk]
@@ -236,6 +235,7 @@ void dropmixnuc(Ensemble *ensemble) {
               cldn, lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
               num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode,
               nspec_amode, exp45logsig, alogsig, aten, mam_idx, mam_cnst_idx,
+              true,
               qcld, //
               wsub,
               cldo, // in

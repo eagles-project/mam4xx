@@ -21,8 +21,8 @@ void update_from_explmix(Ensemble *ensemble) {
     const auto mam_idx_db = input.get_array("mam_idx");
     const auto nspec_amode_db = input.get_array("nspec_amode");
 
-    /* int nnew_in = */ input.get_array("nnew")[0];
-    /* int nsav_in = */ input.get_array("nsav")[0];
+    static_cast<void>(input.get_array("nnew")[0]);
+    static_cast<void>(input.get_array("nsav")[0]);
 
     const auto raercol_1 = input.get_array("raercol_1");
     const auto raercol_cw_1 = input.get_array("raercol_cw_1");
@@ -169,10 +169,10 @@ void update_from_explmix(Ensemble *ensemble) {
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           int nnew = 1;
           int nsav = 0;
-          ndrop::update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, ekd,
-                                     nact, mact, qcld, raercol, raercol_cw,
-                                     nsav, nnew, nspec_amode, mam_idx, overlapp,
-                                     overlapm, ekkp, ekkm, qncld, srcn, source);
+          ndrop::update_from_explmix(
+              team, dtmicro, csbot, cldn, zn, zs, ekd, nact, mact, qcld,
+              raercol, raercol_cw, nsav, nnew, nspec_amode, mam_idx, true,
+              overlapp, overlapm, ekkp, ekkm, qncld, srcn, source);
           indexes(0) = nnew;
           indexes(1) = nsav;
         });

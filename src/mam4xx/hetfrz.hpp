@@ -1021,7 +1021,7 @@ void calculate_coated_fraction(
   const Real n_so4_monolayers_dust = 1.0;
   const Real dr_so4_monolayers_dust = n_so4_monolayers_dust * 4.76e-10;
   Real coat_ratio2 =
-      haero::max(6.0 * dr_so4_monolayers_dust * vol_core[0], 0.0);
+      haero::max(6.0 * dr_so4_monolayers_dust * vol_core[0], 1.0e-36);
   dstcoat[0] = coat_ratio1 / coat_ratio2;
 
   // dust_a1

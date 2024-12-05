@@ -151,8 +151,8 @@ void mam_pcarbon_aging_frac(
 
   const Real xferfrac_max = 1.0 - 10.0 * haero::epsilon(); //  1-eps
 
-  Real xferfrac_tmp1 = vol_shell * dgn_a[imom_pc] * fac_volsfc;
-  Real xferfrac_tmp2 =
+  const Real xferfrac_tmp1 = vol_shell * dgn_a[imom_pc] * fac_volsfc;
+  const Real xferfrac_tmp2 =
       haero::max(6.0 * Aging::dr_so4_monolayers_pcage * vol_core, 0.0);
 
   if (xferfrac_tmp1 >= xferfrac_tmp2) {
