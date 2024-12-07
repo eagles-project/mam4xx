@@ -31,11 +31,11 @@ endforeach()
 
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
-    calc_het_rates_ts_355
-    calc_precip_rescale_ts_355
-    find_ktop_ts_355
-    gas_washout_ts_355
-    sethet_ts_355
+    calc_het_rates_merged
+    calc_precip_rescale_merged
+    find_ktop_merged
+    gas_washout_merged
+    sethet_merged
     )
 # # matching the tests and errors, just for convenience
 
