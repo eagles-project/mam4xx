@@ -28,7 +28,7 @@ void vmr2mmr(const Real vmr[mam4::gas_chemistry::gas_pcnst], // in
   for (int i = 0; i < mam4::gas_chemistry::gas_pcnst; ++i) {
     q[i] = mam4::conversions::mmr_from_vmr(vmr[i], mw[i]);
   }
-} // mmr2vmr
+} // vmr2mmr
 
 using View2D = DeviceType::view_2d<Real>;
 KOKKOS_INLINE_FUNCTION
