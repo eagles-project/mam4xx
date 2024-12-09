@@ -112,6 +112,14 @@ void aero_model_wetdep(Ensemble *ensemble) {
     wetdep::View1D aerdepwetis("aerdepwetis", aero_model::pcnst);
     const int num_modes = AeroConfig::num_modes();
 
+    Kokkos::View<int *> isprx("isprx", nlev);
+
+    Real scavimptblnum[mam4::aero_model::nimptblgrow_total]
+                      [mam4::AeroConfig::num_modes()];
+    Real scavimptblvol[mam4::aero_model::nimptblgrow_total]
+                      [mam4::AeroConfig::num_modes()];
+    mam4::wetdep::init_scavimptbl(scavimptblvol, scavimptblnum);
+
     wetdep::View2D wet_geometric_mean_diameter_i(
         "wet_geometric_mean_diameter_i", num_modes, nlev);
     const auto dgnumwet_db = input.get_array("dgnumwet");
@@ -160,16 +168,17 @@ void aero_model_wetdep(Ensemble *ensemble) {
               });
           team.team_barrier();
 
-          wetdep::aero_model_wetdep(team, atm, progs_in, tends_in, dt,
-                                    // inputs
-                                    cldt, rprdsh, rprddp, evapcdp, evapcsh,
-                                    dp_frac, sh_frac, icwmrdp, icwmrsh, evapr,
-                                    // outputs
-                                    dlf, prain, wet_geometric_mean_diameter_i,
-                                    dry_geometric_mean_diameter_i, qaerwat,
-                                    wetdens,
-                                    // output
-                                    aerdepwetis, aerdepwetcw, work);
+          wetdep::aero_model_wetdep(
+              team, atm, progs_in, tends_in, dt,
+              // inputs
+              cldt, rprdsh, rprddp, evapcdp, evapcsh, dp_frac, sh_frac, icwmrdp,
+              icwmrsh, evapr,
+              // outputs
+              dlf, prain, isprx, scavimptblnum, scavimptblvol,
+              wet_geometric_mean_diameter_i, dry_geometric_mean_diameter_i,
+              qaerwat, wetdens,
+              // output
+              aerdepwetis, aerdepwetcw, work);
 
           team.team_barrier();
           Kokkos::parallel_for(

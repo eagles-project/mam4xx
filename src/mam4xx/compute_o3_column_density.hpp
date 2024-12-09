@@ -28,7 +28,7 @@ void vmr2mmr(const Real vmr[mam4::gas_chemistry::gas_pcnst], // in
   for (int i = 0; i < mam4::gas_chemistry::gas_pcnst; ++i) {
     q[i] = mam4::conversions::mmr_from_vmr(vmr[i], mw[i]);
   }
-} // mmr2vmr
+} // vmr2mmr
 
 using View2D = DeviceType::view_2d<Real>;
 KOKKOS_INLINE_FUNCTION
@@ -46,7 +46,7 @@ void compute_o3_column_density(
       {}; // o3 column density above model [1/cm^2]
   // NOTE: if we need o2 column densities, set_ub_col and setcol must be changed
   Kokkos::parallel_for(
-      Kokkos::TeamThreadRange(team, mam4::nlev), [&](const int k) {
+      Kokkos::ThreadVectorRange(team, mam4::nlev), [&](const int k) {
         const Real pdel = atm.hydrostatic_dp(k);
         // extract aerosol state variables into "working arrays" (mass
         // mixing ratios) (in EAM, this is done in the gas_phase_chemdr

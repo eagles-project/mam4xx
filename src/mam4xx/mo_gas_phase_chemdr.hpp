@@ -1,11 +1,13 @@
 #ifndef MAM4XX_MICROPHYSICS_GAS_PHASE_CHEM_DR_HPP
 #define MAM4XX_MICROPHYSICS_GAS_PHASE_CHEM_DR_HPP
 
+#include <mam4xx/mo_drydep.hpp>
 #include <mam4xx/mo_photo.hpp>
 #include <mam4xx/mo_setext.hpp>
 #include <mam4xx/mo_sethet.hpp>
 #include <mam4xx/mo_setinv.hpp>
 #include <mam4xx/mo_setsox.hpp>
+#include <mam4xx/seq_drydep.hpp>
 
 namespace mam4 {
 
@@ -31,7 +33,7 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
   // undefined in device code.
   constexpr int nlev_local = nlev;
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, nlev_local), [&](const int kk) {
+      Kokkos::ThreadVectorRange(team, nlev_local), [&](const int kk) {
         Real state_q[pcnst] = {};
         mam4::utils::extract_stateq_from_prognostics(progs, atm, state_q, kk);
         Real qq[gas_pcnst] = {};
@@ -57,6 +59,18 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
  * @param [in] team Kokkos team type for the Kokkos::TeamThreadRange
  * @param [in] dt Time step
  * @param [in] rlats Column latitudes
+ * @param [in] month
+ * @param [in] sfc_temp      -- surface temperature [K]
+ * @param [in] air_temp      -- surface air temperature [K]
+ * @param [in] tv            -- potential temperature [K]
+ *                            (temp*(1+vapor_mixing_ratio))
+ * @param [in] pressure_sfc  -- surface pressure [Pa]
+ * @param [in] pressure_10m  -- 10-meter pressure [Pa]
+ * @param [in] spec_hum      -- specific humidity [kg/kg]
+ * @param [in] wind_speed    -- 10-meter wind spped [m/s]
+ * @param [in] rain          -- rain content [kg/m2/s]
+ * @param [in] snow          -- snow height [m]
+ * @param [in] solar_flux    -- direct shortwave surface radiation [W/m^2]
  * @param [in] cnst_offline_icol Invariant tracer
  * @param [in] forcings_in Struct for external forcing or vertical emissions
  * @param [in] atm  Atmosphere state variables
@@ -83,6 +97,9 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
  * @param [in] linoz_cariolle_pscs_icol
  * @param [in] eccf
  * @param [in] adv_mass_kg_per_moles
+ * @param [in] mmr[gas_pcnst]  -- constituent MMRs [kg/kg]
+ * @param [in] fraction_landuse
+ * @param [in] col_index_season
  * @param [in] clsmap_4
  * @param [in] permute_4
  * @param [in] offset_aerosol
@@ -92,13 +109,20 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
  * @param [in] dry_diameter_icol
  * @param [in] wet_diameter_icol
  * @param [in] wetdens_icol
+ * @param [in] seq_drydep::Data drydep_data = seq_drydep::set_gas_drydep_data()
+ * @param [out] dvel[gas_pcnst] -- deposition velocity [1/cm/s]
+ * @param [out] dflx[gas_pcnst] -- deposition flux [1/cm^2/s]
+ * @param [out] progs           -- prognostics: stateq, qqcw updated
  **/
 
 KOKKOS_INLINE_FUNCTION
 void perform_atmospheric_chemistry_and_microphysics(
-    const ThreadTeam &team, const Real dt, const Real rlats,
-    const View1D cnst_offline_icol[num_tracer_cnst], const Forcing *forcings_in,
-    const haero::Atmosphere &atm, mam4::Prognostics &progs,
+    const ThreadTeam &team, const Real dt, const Real rlats, const int month,
+    const Real sfc_temp, const Real air_temp, const Real tv,
+    const Real pressure_sfc, const Real pressure_10m, const Real spec_hum,
+    const Real wind_speed, const Real rain, const Real snow,
+    const Real solar_flux, const View1D cnst_offline_icol[num_tracer_cnst],
+    const Forcing *forcings_in, const haero::Atmosphere &atm,
     const PhotoTableData &photo_table, const Real chlorine_loading,
     const mam4::mo_setsox::Config &config_setsox,
     const AmicPhysConfig &config_amicphys, const Real linoz_psc_T,
@@ -111,6 +135,8 @@ void perform_atmospheric_chemistry_and_microphysics(
     const View1D &linoz_dPmL_dT_icol, const View1D &linoz_dPmL_dO3col_icol,
     const View1D &linoz_cariolle_pscs_icol, const Real eccf,
     const Real adv_mass_kg_per_moles[gas_pcnst],
+    const Real fraction_landuse[mam4::mo_drydep::n_land_type],
+    const int col_index_season[mam4::mo_drydep::n_land_type],
     const int (&clsmap_4)[gas_pcnst], const int (&permute_4)[gas_pcnst],
     const int offset_aerosol, const Real o3_sfc, const Real o3_tau,
     const int o3_lbl, const ConstView2D dry_diameter_icol,
@@ -121,8 +147,10 @@ void perform_atmospheric_chemistry_and_microphysics(
     const ConstView1D
         &prain, // stratoform precip [kg/kg/s] //in precip_total_tend
     const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
-    const View1D &work_set_het) {
+    const View1D &work_set_het, const seq_drydep::Data &drydep_data,
+    Real dvel[gas_pcnst], Real dflx[gas_pcnst], mam4::Prognostics &progs) {
 
+  // vmr0 stores mixing ratios before chemistry changes the mixing
   auto work_set_het_ptr = (Real *)work_set_het.data();
   const auto het_rates = View2D(work_set_het_ptr, nlev, gas_pcnst);
   work_set_het_ptr += nlev * gas_pcnst;
@@ -135,7 +163,7 @@ void perform_atmospheric_chemistry_and_microphysics(
   const auto work_sethet_call = View1D(work_set_het_ptr, sethet_work_len);
   work_set_het_ptr += sethet_work_len;
 
-  mam4::mo_setext::extfrc_set(forcings_in, extfrc_icol);
+  mam4::mo_setext::extfrc_set(team, forcings_in, extfrc_icol);
 
   mam4::mo_setinv::setinv(team,                                    // in
                           invariants_icol,                         // out
@@ -174,6 +202,36 @@ void perform_atmospheric_chemistry_and_microphysics(
                           nevapr, dt, invariants_icol, vmr_col,
                           work_sethet_call);
 
+  {
+    //----------------------
+    // Dry deposition (gas)
+    //----------------------
+    Real state_q[pcnst] = {};
+    mam4::utils::extract_stateq_from_prognostics(progs, atm, state_q, nlev - 1);
+    Real qq[gas_pcnst] = {};
+    for (int i = offset_aerosol; i < pcnst; ++i)
+      qq[i - offset_aerosol] = state_q[i];
+    mam4::mo_drydep::drydep_xactive(
+        drydep_data,
+        fraction_landuse, // fraction of land use for column by land type
+        month,            // month
+        col_index_season, // column-specific mapping of month indices to
+                          // seasonal land-type indices [-]
+        sfc_temp,         // surface temperature [K]
+        air_temp,         // surface air temperature [K]
+        tv,               // potential temperature [K]
+        pressure_sfc,     // surface pressure [Pa]
+        pressure_10m,     // 10-meter pressure [Pa]
+        spec_hum,         // specific humidity [kg/kg]
+        wind_speed,       // 10-meter wind spped [m/s]
+        rain,             // rain content [??]
+        snow,             // snow height [m]
+        solar_flux,       // direct shortwave surface radiation [W/m^2]
+        qq,               // constituent MMRs [kg/kg]
+        dvel,             // deposition velocity [1/cm/s]
+        dflx              // deposition flux [1/cm^2/s]
+    );
+  }
   // compute aerosol microphysics on each vertical level within this
   // column
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](const int kk) {
@@ -206,7 +264,7 @@ void perform_atmospheric_chemistry_and_microphysics(
       qqcw[i - offset_aerosol] = qqcw_pcnst[i];
     }
     // convert mass mixing ratios to volume mixing ratios (VMR),
-    // equivalent to tracer mixing ratios (TMR))
+    // equivalent to tracer mixing ratios (TMR)
     Real vmr[gas_pcnst], vmrcw[gas_pcnst];
     // output (vmr)
     mam4::microphysics::mmr2vmr(qq, adv_mass_kg_per_moles, vmr);
@@ -326,13 +384,6 @@ void perform_atmospheric_chemistry_and_microphysics(
       if (vmr[i] < 0.0)
         vmr[i] = 0.0;
     }
-
-    //----------------------
-    // Dry deposition (gas)
-    //----------------------
-
-    // FIXME: drydep integration in progress!
-    // mam4::drydep::drydep_xactive(...);
 
     mam4::microphysics::vmr2mmr(vmr, adv_mass_kg_per_moles, qq);
 
