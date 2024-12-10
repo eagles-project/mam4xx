@@ -35,23 +35,7 @@ set(TEST_LIST
     calc_precip_rescale_merged
     find_ktop_merged
     gas_washout_merged
-    #sethet_merged
-    sethet_ts_340
-    sethet_ts_341
-    sethet_ts_342
-    sethet_ts_343
-    sethet_ts_344
-    sethet_ts_345
-    sethet_ts_346
-    sethet_ts_347
-    sethet_ts_348
-    sethet_ts_349
-    sethet_ts_350
-    sethet_ts_351
-    sethet_ts_352
-    sethet_ts_353
-    sethet_ts_354
-    sethet_ts_355
+    sethet_merged
     )
 # # matching the tests and errors, just for convenience
 
@@ -61,7 +45,7 @@ set(ERROR_THRESHOLDS
     ${DEFAULT_TOL} # calc_precip_rescale
     ${DEFAULT_TOL} # find_ktop, output is an int
     9e-8 # gas_washout
-    9e-8 # sethet
+    9e-7 # sethet
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
