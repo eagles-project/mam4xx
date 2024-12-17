@@ -17,6 +17,8 @@ void drydep_xactive(const seq_drydep::Data &data, Ensemble *ensemble) {
 
     const auto fraction_landuse = input.get_array("fraction_landuse");
     const int ncdate = int(input.get_array("ncdate")[0]);
+    // ncdate is MMDDYY format so extract the month:
+    const int month = ncdate / 10000;
     // const auto col_index_season = input.get_array("col_index_season");
     const Real sfc_temp = input.get_array("sfc_temp")[0];
     const Real air_temp = input.get_array("air_temp")[0];
@@ -55,7 +57,7 @@ void drydep_xactive(const seq_drydep::Data &data, Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          drydep_xactive(data, fraction_landuse_d.data(), ncdate,
+          drydep_xactive(data, fraction_landuse_d.data(), month,
                          col_index_season_d.data(), sfc_temp, air_temp, tv,
                          pressure_sfc, pressure_10m, spec_hum, wind_speed, rain,
                          snow, solar_flux, mmr_d.data(), dvel_d.data(),
