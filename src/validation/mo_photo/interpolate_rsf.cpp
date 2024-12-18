@@ -49,11 +49,11 @@ void interpolate_rsf(Ensemble *ensemble) {
     auto shape_rsf_tab = input.get_array("shape_rsf_tab");
     auto synthetic_values = input.get_array("synthetic_values_rsf_tab");
 
-    const int nw = int(shape_rsf_tab[0]);
-    const int nump = int(shape_rsf_tab[1]);
-    const int numsza = int(shape_rsf_tab[2]);
-    const int numcolo3 = int(shape_rsf_tab[3]);
-    const int numalb = int(shape_rsf_tab[4]);
+    const int nw = std::min(int(etfphot_db.size()), int(shape_rsf_tab[0]));
+    const int nump = std::min(int(press_db.size()), int(shape_rsf_tab[1]));
+    const int numsza = std::min(int(sza_db.size()), int(shape_rsf_tab[2]));
+    const int numcolo3 = std::min(int(o3rat_db.size()), int(shape_rsf_tab[3]));
+    const int numalb = std::min(int(alb_db.size()), int(shape_rsf_tab[4]));
 
     View5D rsf_tab;
 
