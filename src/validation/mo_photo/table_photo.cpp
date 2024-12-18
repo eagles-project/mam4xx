@@ -31,19 +31,21 @@ void table_photo(Ensemble *ensemble) {
     const auto del_alb_db = input.get_array("del_alb");
     const auto del_o3rat_db = input.get_array("del_o3rat");
     const auto etfphot_db = input.get_array("etfphot");
+    const auto prs_db = input.get_array("prs");
+    const auto dprs_db = input.get_array("dprs");
 
     auto shape_rsf_tab = input.get_array("shape_rsf_tab");
     auto synthetic_values = input.get_array("synthetic_values_rsf_tab");
     auto shape_xsqy = input.get_array("shape_xsqy");
 
-    int nw = int(shape_rsf_tab[0]);
+    int nw = std::min(int(etfphot_db.size()), int(shape_rsf_tab[0]));
     int nt = int(shape_xsqy[2]);
-    int np_xs = int(shape_xsqy[3]);
+    int np_xs = std::min(int(prs_db.size()), int(shape_xsqy[3]));
     int numj = int(shape_xsqy[0]);
-    int nump = int(shape_rsf_tab[1]);
-    int numsza = int(shape_rsf_tab[2]);
-    int numcolo3 = int(shape_rsf_tab[3]);
-    int numalb = int(shape_rsf_tab[4]);
+    int nump = std::min(int(press_db.size()), int(shape_rsf_tab[1]));
+    int numsza = std::min(int(sza_db.size()), int(shape_rsf_tab[2]));
+    int numcolo3 = std::min(int(o3rat_db.size()), int(shape_rsf_tab[3]));
+    int numalb = std::min(int(alb_db.size()), int(shape_rsf_tab[4]));
 
     PhotoTableData table_data = create_photo_table_data(
         nw, nt, np_xs, numj, nump, numsza, numcolo3, numalb);
@@ -85,9 +87,6 @@ void table_photo(Ensemble *ensemble) {
 
     auto etfphot_host = View1DHost((Real *)etfphot_db.data(), table_data.nw);
     Kokkos::deep_copy(table_data.etfphot, etfphot_host);
-
-    const auto prs_db = input.get_array("prs");
-    const auto dprs_db = input.get_array("dprs");
 
     auto prs_host = View1DHost((Real *)prs_db.data(), table_data.np_xs);
     Kokkos::deep_copy(table_data.prs, prs_host);
