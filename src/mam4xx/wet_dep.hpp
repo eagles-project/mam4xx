@@ -1218,7 +1218,7 @@ void cloud_diagnostics(const ThreadTeam &team,
 }
 
 KOKKOS_INLINE_FUNCTION
-void set_f_act(const ThreadTeam &team, const Kokkos::View<int *> &isprx,
+void set_f_act(const ThreadTeam &team, int *isprx,
                const View1D &f_act_conv_coarse,
                const View1D &f_act_conv_coarse_dust,
                const View1D &f_act_conv_coarse_nacl,
@@ -1241,7 +1241,7 @@ void set_f_act(const ThreadTeam &team, const Kokkos::View<int *> &isprx,
 KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(
     const ThreadTeam &team, const Diagnostics &diags,
-    const Kokkos::View<int *> &isprx,
+    const int *isprx,
     const Real scavimptblvol[aero_model::nimptblgrow_total]
                             [AeroConfig::num_modes()],
     const Real scavimptblnum[aero_model::nimptblgrow_total]
@@ -1266,7 +1266,7 @@ void modal_aero_bcscavcoef_get(
 KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(
     const ThreadTeam &team, const View2D &wet_geometric_mean_diameter_i,
-    const Kokkos::View<int *> &isprx,
+    const int *isprx,
     const Real scavimptblvol[aero_model::nimptblgrow_total]
                             [AeroConfig::num_modes()],
     const Real scavimptblnum[aero_model::nimptblgrow_total]
@@ -1528,18 +1528,20 @@ void update_q_tendencies(const ThreadTeam &team, const View2D &ptend_q,
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
 int get_aero_model_wetdep_work_len() {
-  // wet_geometric_mean_diameter_i + state_q + qqcw
   int work_len =
-      // mam4::nlev * AeroConfig::num_modes() * mam4::nlev + //
-      2 * mam4::nlev * pcnst + // state_q + qqcw
-      25 * mam4::nlev +        // cldcu, cldt, evapc, cmfdqr,
-                        // prain, totcond, conicw, isprx, f_act_conv_coarse,
-      // f_act_conv_coarse_dust, f_act_conv_coarse_nacl
-      // rain, ptend_q, cldv, cldvcu, cldvst, scavcoefnum, scavcoefvol
-      // sol_facti, sol_factic, sol_factb, f_act_conv, scavt, rcscavt, bcscavt
-      3 * pcnst +             //  qsrflx_mzaer2cnvpr, rtscavt_sv
-      2 * mam4::nlev * pcnst; // ptend_q, rtscavt_sv
-                              // dry_geometric_mean_diameter_i, qaerwat, wetdens
+      2 * mam4::nlev * pcnst +
+        // state_q, qqcw
+      25 * mam4::nlev +
+        // cldcu, cldst, evapc, cmfdqr, totcond, conicw,
+        // f_act_conv_coarse, f_act_conv_coarse_dust, f_act_conv_coarse_nacl,
+        // rain, cldv, cldvcu, cldvst,
+        // scavcoefnum, scavcoefvol
+        // sol_facti, sol_factic, sol_factb, f_act_conv,
+        // scavt, bcscavt, rcscavt,
+      2 * mam4::nlev * pcnst +
+        // ptend_q, rtscavt_sv
+      2 * pcnst;
+        //  qsrflx_mzaer2cnvpr
   return work_len;
 }
 // =============================================================================
@@ -1557,7 +1559,6 @@ void aero_model_wetdep(
     const haero::ConstColumnView &icwmrdp,
     const haero::ConstColumnView &icwmrsh, const haero::ConstColumnView &evapr,
     const haero::ConstColumnView &dlf, const haero::ConstColumnView &prain,
-    const Int1D &isprx,
     const Real scavimptblnum[aero_model::nimptblgrow_total]
                             [AeroConfig::num_modes()],
     const Real scavimptblvol[aero_model::nimptblgrow_total]
@@ -1718,6 +1719,7 @@ void aero_model_wetdep(
   // cldt // layer cloud fraction [fraction] from pbuf_get_field
   // FIXME:
   constexpr int nwetdep = 1; // number of elements in wetdep_list
+  int isprx[mam4::nlev] = {-1};
 
   // inputs
   // Compute variables needed for convproc unified convective transport
@@ -2147,8 +2149,6 @@ public:
 private:
   Config config_;
 
-  Kokkos::View<int *> isprx;
-
   Kokkos::View<Real *> cldv;
   Kokkos::View<Real *> cldvcu;
   Kokkos::View<Real *> cldvst;
@@ -2190,7 +2190,6 @@ void WetDeposition::init(const AeroConfig &aero_config,
                          const Config &wed_dep_config) {
   config_ = wed_dep_config;
   const int nlev = config_.nlev;
-  Kokkos::resize(isprx, nlev);
   Kokkos::resize(cldv, nlev);
   Kokkos::resize(cldvcu, nlev);
   Kokkos::resize(cldvst, nlev);
@@ -2332,6 +2331,8 @@ void WetDeposition::compute_tendencies(
 
   wetdep::zero_values(team, aerdepwetis, pcnst);
   wetdep::zero_values(team, aerdepwetcw, pcnst);
+
+  int isprx[mam4::nlev] = {-1};
 
   // set the mass-weighted sol_factic for coarse mode species.
   wetdep::set_f_act(team, isprx, f_act_conv_coarse, f_act_conv_coarse_dust,
