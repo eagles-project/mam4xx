@@ -1649,11 +1649,6 @@ void aero_model_wetdep(
   View1D rain(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
 
-  // FIXME: I need to get this variables from calcsize
-  // need to connect ptend_q to tends
-  View2D ptend_q(work_ptr, mam4::nlev, pcnst);
-  work_ptr += mam4::nlev * pcnst;
-
   // CHECK; is work array ?
   View1D cldv(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
@@ -1687,8 +1682,16 @@ void aero_model_wetdep(
   View1D scavt(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
 
+  View1D bcscavt(work_ptr, mam4::nlev);
+  work_ptr += mam4::nlev;
+
   View1D rcscavt(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
+
+  // FIXME: I need to get this variables from calcsize
+  // need to connect ptend_q to tends
+  View2D ptend_q(work_ptr, mam4::nlev, pcnst);
+  work_ptr += mam4::nlev * pcnst;
 
   View2D rtscavt_sv(work_ptr, mam4::nlev, pcnst);
   work_ptr += pcnst * mam4::nlev;
@@ -1697,8 +1700,6 @@ void aero_model_wetdep(
                          [&](int j) { rtscavt_sv(i, j) = zero; });
   });
 
-  View1D bcscavt(work_ptr, mam4::nlev);
-  work_ptr += mam4::nlev;
 
   wetdep::zero_values(team, aerdepwetis, pcnst);
   wetdep::zero_values(team, aerdepwetcw, pcnst);
