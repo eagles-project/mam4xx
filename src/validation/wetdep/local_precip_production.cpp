@@ -18,7 +18,6 @@ void test_local_precip_production_process(const Input &input, Output &output) {
   // Declare array of strings for input names
   std::string input_variables[] = {"dt", "ncol", "pdel", "source_term",
                                    "sink_term"};
-  printf("starting !!\n");
   // Iterate over input_variables and error if not in input
   for (std::string name : input_variables) {
     if (!input.has(name.c_str())) {
@@ -37,8 +36,6 @@ void test_local_precip_production_process(const Input &input, Output &output) {
   EKAT_ASSERT(0 < (source_term - sink_term));
   Real gravity = Constants::gravity;
 
-  // Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver_loc), [&](int
-  // kk)
   ColumnView return_vals = mam4::validation::create_column_view(1);
   Kokkos::parallel_for(
       "wetdep::local_precip_production", 1, KOKKOS_LAMBDA(const int kk) {
