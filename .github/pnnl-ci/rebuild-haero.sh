@@ -98,7 +98,6 @@ echo "Cloning Haero repository into $(pwd)/.haero..."
 # Need to clone HAERO using HTTPS instead of SSH
 git clone https://github.com/eagles-project/haero.git .haero || exit
 cd .haero || exit
-git checkout jaelynlitz/deception-upgrade || exit
 
 # Need to modify .gitmodules file before cloning
 perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules || exit
