@@ -40,7 +40,7 @@ echo $BUILD_TYPE "detected for BUILD_TYPE"
 echo $HAERO_INSTALL "detected for HAERO install location"
 echo $PRECISION "detected for PRECISION"
 
-. $HAERO_INSTALL/../deception_modules.sh
+. $HAERO_INSTALL/deception_modules.sh
 
 # Need to set env variables to get compiler set correctly
 export CC=$(which gcc) CXX=$(which g++) FC=$(which gfortran)
