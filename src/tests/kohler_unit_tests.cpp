@@ -151,8 +151,8 @@ TEST_CASE("kohler_verificiation", "") {
           static constexpr int device_N3 = device_N * device_N * device_N; 
           Kokkos::parallel_for(Kokkos::TeamVectorRange(team, device_N3),[&](int i) { 
                 const Real mam4_default_temperature = Constants::triple_pt_h2o;
-                // const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
-                //                                     mam4_default_temperature);
+                const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
+                                                    mam4_default_temperature);
                 // k_of_zero(i) = kpoly(0);
                 // k_of_rdry(i) = kpoly(rdry(i));
                 // k_of_25rdry(i) = kpoly(25 * rdry(i));
