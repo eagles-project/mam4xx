@@ -192,7 +192,7 @@ SVC Account Cleanup:
 #     PRECISION: single
 
 Deception Debug Double Precision:
-  needs: ['Deception Debug Single Precision']
+#  needs: ['Deception Debug Single Precision']
   extends:
     - .pnnl_hpc_job_template
     - .debug
@@ -201,7 +201,7 @@ Deception Debug Double Precision:
     PRECISION: double
 
 Deception Release Double Precision:
-  needs: ['Deception Release Single Precision']
+#  needs: ['Deception Release Single Precision']
   extends:
     - .pnnl_hpc_job_template
     - .release
