@@ -154,7 +154,7 @@ TEST_CASE("kohler_verificiation", "") {
                 const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
                                                     mam4_default_temperature);
                 k_of_zero(i) = 0;
-                //kpoly(0);
+                kpoly(0) = 0;
                 // k_of_rdry(i) = kpoly(rdry(i));
                 // k_of_25rdry(i) = kpoly(25 * rdry(i));
                });
