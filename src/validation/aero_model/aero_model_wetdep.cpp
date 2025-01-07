@@ -174,7 +174,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
               cldt, rprdsh, rprddp, evapcdp, evapcsh, dp_frac, sh_frac, icwmrdp,
               icwmrsh, evapr,
               // outputs
-              dlf, prain, isprx, scavimptblnum, scavimptblvol,
+              dlf, prain, scavimptblnum, scavimptblvol,
               wet_geometric_mean_diameter_i, dry_geometric_mean_diameter_i,
               qaerwat, wetdens,
               // output
