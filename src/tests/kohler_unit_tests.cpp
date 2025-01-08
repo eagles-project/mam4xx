@@ -155,7 +155,7 @@ TEST_CASE("kohler_verificiation", "") {
                                                     mam4_default_temperature);
                 k_of_zero(i) = 0;
                 Kokkos:printf("%g\n", kpoly(0));
-                k_of_zero(i) = kpoly(0);
+                //k_of_zero(i) = kpoly(0);
                 // k_of_rdry(i) = kpoly(rdry(i));
                 // k_of_25rdry(i) = kpoly(25 * rdry(i));
                });
