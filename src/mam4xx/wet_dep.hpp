@@ -1240,8 +1240,7 @@ void set_f_act(const ThreadTeam &team, int *isprx,
 // Computes lookup table for aerosol impaction/interception scavenging rates
 KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(
-    const ThreadTeam &team, const Diagnostics &diags,
-    const int *isprx,
+    const ThreadTeam &team, const Diagnostics &diags, const int *isprx,
     const Real scavimptblvol[aero_model::nimptblgrow_total]
                             [AeroConfig::num_modes()],
     const Real scavimptblnum[aero_model::nimptblgrow_total]
@@ -1528,20 +1527,19 @@ void update_q_tendencies(const ThreadTeam &team, const View2D &ptend_q,
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
 int get_aero_model_wetdep_work_len() {
-  int work_len =
-      2 * mam4::nlev * pcnst +
-        // state_q, qqcw
-      25 * mam4::nlev +
-        // cldcu, cldst, evapc, cmfdqr, totcond, conicw,
-        // f_act_conv_coarse, f_act_conv_coarse_dust, f_act_conv_coarse_nacl,
-        // rain, cldv, cldvcu, cldvst,
-        // scavcoefnum, scavcoefvol
-        // sol_facti, sol_factic, sol_factb, f_act_conv,
-        // scavt, bcscavt, rcscavt,
-      2 * mam4::nlev * pcnst +
-        // ptend_q, rtscavt_sv
-      2 * pcnst;
-        //  qsrflx_mzaer2cnvpr
+  int work_len = 2 * mam4::nlev * pcnst +
+                 // state_q, qqcw
+                 25 * mam4::nlev +
+                 // cldcu, cldst, evapc, cmfdqr, totcond, conicw,
+                 // f_act_conv_coarse, f_act_conv_coarse_dust,
+                 // f_act_conv_coarse_nacl, rain, cldv, cldvcu, cldvst,
+                 // scavcoefnum, scavcoefvol
+                 // sol_facti, sol_factic, sol_factb, f_act_conv,
+                 // scavt, bcscavt, rcscavt,
+                 2 * mam4::nlev * pcnst +
+                 // ptend_q, rtscavt_sv
+                 2 * pcnst;
+  //  qsrflx_mzaer2cnvpr
   return work_len;
 }
 // =============================================================================
@@ -1699,7 +1697,6 @@ void aero_model_wetdep(
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pcnst),
                          [&](int j) { rtscavt_sv(i, j) = zero; });
   });
-
 
   wetdep::zero_values(team, aerdepwetis, pcnst);
   wetdep::zero_values(team, aerdepwetcw, pcnst);
