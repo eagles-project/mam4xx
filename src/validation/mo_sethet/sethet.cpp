@@ -78,7 +78,7 @@ void sethet(Ensemble *ensemble) {
     Kokkos::deep_copy(nevapr, nevapr_host);
     Kokkos::deep_copy(xhnm, xhnm_host);
 
-    View2D invariants("invariants", pver, nfs);
+    View2D invariants("invariants", nlev, nfs);
 
     // working var inputs
     ColumnView xgas2, xgas3, delz, xh2o2, xso2, xliq, rain, precip, xhen_h2o2,
@@ -105,7 +105,7 @@ void sethet(Ensemble *ensemble) {
     View1DHost tmp_hetrates_host[gas_pcnst];
     View1DHost qin_host[gas_pcnst];
 
-    View2D het_rates("het_rates", pver, gas_pcnst);
+    View2D het_rates("het_rates", nlev, gas_pcnst);
     auto het_rates_host = Kokkos::create_mirror_view(het_rates);
 
     for (int mm = 0; mm < gas_pcnst; ++mm) {
@@ -134,7 +134,7 @@ void sethet(Ensemble *ensemble) {
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           Kokkos::parallel_for(
-              Kokkos::TeamVectorRange(team, pver),
+              Kokkos::TeamVectorRange(team, nlev),
               [&](int kk) { invariants(kk, indexm) = xhnm(kk); });
           team.team_barrier();
           mo_sethet::sethet_detail(
