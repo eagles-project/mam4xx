@@ -168,17 +168,17 @@ void aero_model_wetdep(Ensemble *ensemble) {
               });
           team.team_barrier();
 
-          wetdep::aero_model_wetdep(
-              team, atm, progs_in, tends_in, dt,
-              // inputs
-              cldt, rprdsh, rprddp, evapcdp, evapcsh, dp_frac, sh_frac, icwmrdp,
-              icwmrsh, evapr,
-              // outputs
-              dlf, prain, isprx, scavimptblnum, scavimptblvol,
-              wet_geometric_mean_diameter_i, dry_geometric_mean_diameter_i,
-              qaerwat, wetdens,
-              // output
-              aerdepwetis, aerdepwetcw, work);
+          wetdep::aero_model_wetdep(team, atm, progs_in, tends_in, dt,
+                                    // inputs
+                                    cldt, rprdsh, rprddp, evapcdp, evapcsh,
+                                    dp_frac, sh_frac, icwmrdp, icwmrsh, evapr,
+                                    // outputs
+                                    dlf, prain, scavimptblnum, scavimptblvol,
+                                    wet_geometric_mean_diameter_i,
+                                    dry_geometric_mean_diameter_i, qaerwat,
+                                    wetdens,
+                                    // output
+                                    aerdepwetis, aerdepwetcw, work);
 
           team.team_barrier();
           Kokkos::parallel_for(
