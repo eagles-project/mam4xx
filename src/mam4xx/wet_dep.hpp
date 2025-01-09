@@ -1720,7 +1720,7 @@ void aero_model_wetdep(
   // cldt // layer cloud fraction [fraction] from pbuf_get_field
   // FIXME:
   constexpr int nwetdep = 1; // number of elements in wetdep_list
-  int isprx[mam4::nlev] = {-1};
+  int isprx[mam4::nlev] = {};
 
   // inputs
   // Compute variables needed for convproc unified convective transport
@@ -2333,7 +2333,7 @@ void WetDeposition::compute_tendencies(
   wetdep::zero_values(team, aerdepwetis, pcnst);
   wetdep::zero_values(team, aerdepwetcw, pcnst);
 
-  int isprx[mam4::nlev] = {-1};
+  int isprx[mam4::nlev] = {};
 
   // set the mass-weighted sol_factic for coarse mode species.
   wetdep::set_f_act(team, isprx, f_act_conv_coarse, f_act_conv_coarse_dust,
