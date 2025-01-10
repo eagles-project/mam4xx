@@ -40,17 +40,17 @@ TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
   ekat::Comm comm;
   ekat::logger::Logger<> logger("wet deposition local precip production test",
                                 ekat::logger::LogLevel::debug, comm);
-  int nlev = 72;
+  int atm_nlev = 72;
   Real pblh = 1000;
-  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  Atmosphere atm = mam4::testing::create_atmosphere(atm_nlev, pblh);
 
   // TODO - Pass this to subroutine instead of whole atmosphere
-  const int pver = atm.num_levels();
+  const int nlev = atm.num_levels();
 
-  ColumnView pdel = mam4::testing::create_column_view(pver);
-  ColumnView source_term = mam4::testing::create_column_view(pver);
-  ColumnView sink_term = mam4::testing::create_column_view(pver);
-  ColumnView lprec = mam4::testing::create_column_view(pver);
+  ColumnView pdel = mam4::testing::create_column_view(nlev);
+  ColumnView source_term = mam4::testing::create_column_view(nlev);
+  ColumnView sink_term = mam4::testing::create_column_view(nlev);
+  ColumnView lprec = mam4::testing::create_column_view(nlev);
 
   // Need to use Kokkos to initialize values
   // These arrays only have a single value in them...
@@ -58,7 +58,7 @@ TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
   // e3sm_mam4_refactor/components/eam/src/chemistry/yaml/wetdep/local_precip_production_output_ts_355.py
   Kokkos::parallel_for(
       "intialize_values_local_precip", 1, KOKKOS_LAMBDA(const int) {
-        for (int i = 0; i < pver; i++) {
+        for (int i = 0; i < nlev; i++) {
           pdel(i) = 0.3395589227E+04;
           source_term(i) = 0.4201774770E-07;
           sink_term(i) = 0.7626064109E-09;
@@ -86,7 +86,7 @@ TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
   auto lprec_view = Kokkos::create_mirror_view(lprec);
   Kokkos::deep_copy(lprec_view, lprec);
 
-  for (int i = 0; i < pver; i++) {
+  for (int i = 0; i < nlev; i++) {
     REQUIRE(pdel_view(i) == Approx(0.3395589227E+04));
     REQUIRE(source_term_view(i) == Approx(0.4201774770E-07));
     REQUIRE(sink_term_view(i) == Approx(0.7626064109E-09));
@@ -98,19 +98,19 @@ TEST_CASE("test_calculate_cloudy_volume", "mam4_wet_deposition_process") {
   ekat::Comm comm;
   ekat::logger::Logger<> logger("wet deposition calculate cloudy volume test",
                                 ekat::logger::LogLevel::debug, comm);
-  int nlev = 72;
+  int atm_nlev = 72;
   Real pblh = 1000;
-  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  Atmosphere atm = mam4::testing::create_atmosphere(atm_nlev, pblh);
 
-  const int pver = atm.num_levels();
+  const int nlev = atm.num_levels();
 
   // Input vectors
-  ColumnView cld = mam4::testing::create_column_view(pver);
-  ColumnView lprec = mam4::testing::create_column_view(pver);
+  ColumnView cld = mam4::testing::create_column_view(nlev);
+  ColumnView lprec = mam4::testing::create_column_view(nlev);
 
   // Output vectors
-  ColumnView cldv = mam4::testing::create_column_view(pver);
-  ColumnView sumppr_all = mam4::testing::create_column_view(pver);
+  ColumnView cldv = mam4::testing::create_column_view(nlev);
+  ColumnView sumppr_all = mam4::testing::create_column_view(nlev);
 
   // Reference input from
   // e3sm_mam4_refactor/components/eam/src/chemistry/yaml/wetdep/calculate_cloudy_volume_output_ts_355.py
@@ -203,7 +203,7 @@ TEST_CASE("test_calculate_cloudy_volume", "mam4_wet_deposition_process") {
   // Need to use Kokkos to initialize values
   Kokkos::parallel_for(
       "intialize_values_local_precip", 1, KOKKOS_LAMBDA(const int) {
-        for (int i = 0; i < pver; i++) {
+        for (int i = 0; i < nlev; i++) {
           cld(i) = cld_input[i];
           lprec(i) = lprec_input[i];
         }
@@ -233,7 +233,7 @@ TEST_CASE("test_calculate_cloudy_volume", "mam4_wet_deposition_process") {
   auto sumppr_all_view = Kokkos::create_mirror_view(sumppr_all);
   Kokkos::deep_copy(sumppr_all_view, sumppr_all);
 
-  for (int i = 0; i < pver; i++) {
+  for (int i = 0; i < nlev; i++) {
     REQUIRE(cld_view(i) == Approx(cld_input[i]));
     REQUIRE(lprec_view(i) == Approx(lprec_input[i]));
     REQUIRE(cldv_view(i) == Approx(cldv_ref[i]));
@@ -246,26 +246,26 @@ TEST_CASE("test_rain_mix_ratio", "mam4_wet_deposition_process") {
   ekat::Comm comm;
   ekat::logger::Logger<> logger("rain mixing ratio test",
                                 ekat::logger::LogLevel::debug, comm);
-  int nlev = 72;
+  int atm_nlev = 72;
   Real pblh = 1000;
-  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  Atmosphere atm = mam4::testing::create_atmosphere(atm_nlev, pblh);
 
-  const int pver = atm.num_levels();
+  const int nlev = atm.num_levels();
 
   // Input Vectors
-  ColumnView temperature = mam4::testing::create_column_view(pver);
-  ColumnView pmid = mam4::testing::create_column_view(pver);
-  ColumnView sumppr = mam4::testing::create_column_view(pver);
+  ColumnView temperature = mam4::testing::create_column_view(nlev);
+  ColumnView pmid = mam4::testing::create_column_view(nlev);
+  ColumnView sumppr = mam4::testing::create_column_view(nlev);
 
   // Output Vectors
-  ColumnView rain = mam4::testing::create_column_view(pver);
+  ColumnView rain = mam4::testing::create_column_view(nlev);
 
   // Need to use Kokkos to initialize values
   // Validation data from
   // e3sm_mam4_refactor/components/eam/src/chemistry/yaml/wetdep/rain_mix_ratio_output_ts_355.py
   Kokkos::parallel_for(
       "intialize_values_local_precip", 1, KOKKOS_LAMBDA(const int) {
-        for (int i = 0; i < pver; i++) {
+        for (int i = 0; i < nlev; i++) {
           temperature(i) = 0.2804261386E+03;
           pmid(i) = 0.6753476429E+05;
           sumppr(i) = 0.8324652534E-04;
@@ -292,7 +292,7 @@ TEST_CASE("test_rain_mix_ratio", "mam4_wet_deposition_process") {
   auto rain_view = Kokkos::create_mirror_view(rain);
   Kokkos::deep_copy(rain_view, rain);
 
-  for (int i = 0; i < pver; i++) {
+  for (int i = 0; i < nlev; i++) {
     REQUIRE(temperature_view(i) == Approx(0.2804261386E+03));
     REQUIRE(pmid_view(i) == Approx(0.6753476429E+05));
     REQUIRE(sumppr_view(i) == Approx(0.8324652534E-04));

@@ -13,12 +13,12 @@ using View1DInt = DeviceType::view_1d<int>;
 // this version uses parallel_for for columns and levels.
 
 KOKKOS_INLINE_FUNCTION
-void vert_interp(const ThreadTeam &team, int levsiz, int pver,
+void vert_interp(const ThreadTeam &team, int levsiz, int nlev,
                  const View1D &pin, const ConstView1D &pmid,
                  const View1D &datain, const View1D &dataout) {
   const int zero = 0;
 
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver), [&](int k) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     // Top level we need to start looking is the top level for the previous k
     // for all column points
     int kupper = zero;

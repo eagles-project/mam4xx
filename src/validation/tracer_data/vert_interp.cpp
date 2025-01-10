@@ -18,16 +18,16 @@ void vert_interp(Ensemble *ensemble) {
     const auto pmid_db = input.get_array("pmid");
     const auto datain_db = input.get_array("datain");
     const auto levsiz = static_cast<int>(input.get_array("levsiz")[0]);
-    const auto pver = static_cast<int>(input.get_array("pver")[0]);
+    const auto nlev = static_cast<int>(input.get_array("pver")[0]);
     const auto ncol = static_cast<int>(input.get_array("ncol")[0]);
 
     // Define the Kokkos views based on the input data
     using View2D = typename DeviceType::view_2d<Real>;
 
     View2D pin("pin", ncol, levsiz);
-    View2D pmid("pmid", ncol, pver);
+    View2D pmid("pmid", ncol, nlev);
     View2D datain("datain", ncol, levsiz);
-    View2D dataout("dataout", ncol, pver); // Output array
+    View2D dataout("dataout", ncol, nlev); // Output array
 
     // Convert input data from std::vector or similar structure to Kokkos views
     mam4::validation::convert_1d_vector_to_2d_view_device(pin_db, pin);
@@ -45,13 +45,13 @@ void vert_interp(Ensemble *ensemble) {
           const auto dataout_at_icol = ekat::subview(dataout, icol);
 
           mam4::vertical_interpolation::vert_interp(
-              team, levsiz, pver, pin_at_icol, pmid_at_icol, datain_at_icol,
+              team, levsiz, nlev, pin_at_icol, pmid_at_icol, datain_at_icol,
               dataout_at_icol);
         });
 
     // Convert the output data from Kokkos view to a format suitable for the
     // ensemble
-    std::vector<Real> dataout_db(pver * ncol);
+    std::vector<Real> dataout_db(nlev * ncol);
     mam4::validation::convert_2d_view_device_to_1d_vector(dataout, dataout_db);
 
     // Set the output data in the ensemble

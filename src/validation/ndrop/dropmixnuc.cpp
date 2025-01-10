@@ -22,7 +22,7 @@ void dropmixnuc(Ensemble *ensemble) {
     const int ncnst_tot = ndrop::ncnst_tot;
     const int nspec_max = mam4::ndrop::nspec_max;
 
-    const int pver = ndrop::pver;
+    const int nlev = mam4::nlev;
     const auto state_q_db = input.get_array("state_q");
 
     const auto tair_db = input.get_array("temp");
@@ -46,12 +46,12 @@ void dropmixnuc(Ensemble *ensemble) {
 
     int count = 0;
 
-    View2D state_q("state_q", pver, pcnst);
+    View2D state_q("state_q", nlev, pcnst);
     auto state_host = Kokkos::create_mirror_view(state_q);
 
     for (int i = 0; i < pcnst; ++i) {
       // input data is store on the cpu.
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < nlev; ++kk) {
         state_host(kk, i) = state_q_db[count];
         count++;
       }
@@ -64,11 +64,11 @@ void dropmixnuc(Ensemble *ensemble) {
 
     count = 0;
     for (int i = 0; i < ncnst_tot; ++i) {
-      qqcw[i] = haero::testing::create_column_view(pver);
-      qqcw_host[i] = View1DHost("qqcw_host", pver);
+      qqcw[i] = haero::testing::create_column_view(nlev);
+      qqcw_host[i] = View1DHost("qqcw_host", nlev);
     }
 
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       for (int i = 0; i < ncnst_tot; ++i) {
         qqcw_host[i](kk) = qqcw_db[count];
         count++;
@@ -91,29 +91,29 @@ void dropmixnuc(Ensemble *ensemble) {
     ColumnView cldn;
     ColumnView wsub;
     ColumnView cldo;
-    tair = haero::testing::create_column_view(pver);
-    pmid = haero::testing::create_column_view(pver);
-    pint = haero::testing::create_column_view(pver);
-    pdel = haero::testing::create_column_view(pver);
-    rpdel = haero::testing::create_column_view(pver);
-    zm = haero::testing::create_column_view(pver);
-    ncldwtr = haero::testing::create_column_view(pver);
-    kvh = haero::testing::create_column_view(pver);
-    cldn = haero::testing::create_column_view(pver);
-    wsub = haero::testing::create_column_view(pver);
-    cldo = haero::testing::create_column_view(pver);
+    tair = haero::testing::create_column_view(nlev);
+    pmid = haero::testing::create_column_view(nlev);
+    pint = haero::testing::create_column_view(nlev);
+    pdel = haero::testing::create_column_view(nlev);
+    rpdel = haero::testing::create_column_view(nlev);
+    zm = haero::testing::create_column_view(nlev);
+    ncldwtr = haero::testing::create_column_view(nlev);
+    kvh = haero::testing::create_column_view(nlev);
+    cldn = haero::testing::create_column_view(nlev);
+    wsub = haero::testing::create_column_view(nlev);
+    cldo = haero::testing::create_column_view(nlev);
 
-    auto tair_host = View1DHost((Real *)tair_db.data(), pver);
-    auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
-    auto pint_host = View1DHost((Real *)pint_db.data(), pver);
-    auto pdel_host = View1DHost((Real *)pdel_db.data(), pver);
-    auto rpdel_host = View1DHost((Real *)rpdel_db.data(), pver);
-    auto zm_host = View1DHost((Real *)zm_db.data(), pver);
-    auto ncldwtr_host = View1DHost((Real *)ncldwtr_db.data(), pver);
-    auto kvh_host = View1DHost((Real *)kvh_db.data(), pver);
-    auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
-    auto wsub_host = View1DHost((Real *)wsub_db.data(), pver);
-    auto cldo_host = View1DHost((Real *)cldo_db.data(), pver);
+    auto tair_host = View1DHost((Real *)tair_db.data(), nlev);
+    auto pmid_host = View1DHost((Real *)pmid_db.data(), nlev);
+    auto pint_host = View1DHost((Real *)pint_db.data(), nlev);
+    auto pdel_host = View1DHost((Real *)pdel_db.data(), nlev);
+    auto rpdel_host = View1DHost((Real *)rpdel_db.data(), nlev);
+    auto zm_host = View1DHost((Real *)zm_db.data(), nlev);
+    auto ncldwtr_host = View1DHost((Real *)ncldwtr_db.data(), nlev);
+    auto kvh_host = View1DHost((Real *)kvh_db.data(), nlev);
+    auto cldn_host = View1DHost((Real *)cldn_db.data(), nlev);
+    auto wsub_host = View1DHost((Real *)wsub_db.data(), nlev);
+    auto cldo_host = View1DHost((Real *)cldo_db.data(), nlev);
 
     Kokkos::deep_copy(tair, tair_host);
     Kokkos::deep_copy(pmid, pmid_host);
@@ -137,69 +137,69 @@ void dropmixnuc(Ensemble *ensemble) {
     ColumnView ndropmix;
     ColumnView nsource;
     ColumnView wtke;
-    qcld = haero::testing::create_column_view(pver);
-    tendnd = haero::testing::create_column_view(pver);
-    ndropcol = haero::testing::create_column_view(pver);
-    ndropmix = haero::testing::create_column_view(pver);
-    nsource = haero::testing::create_column_view(pver);
-    wtke = haero::testing::create_column_view(pver);
+    qcld = haero::testing::create_column_view(nlev);
+    tendnd = haero::testing::create_column_view(nlev);
+    ndropcol = haero::testing::create_column_view(nlev);
+    ndropmix = haero::testing::create_column_view(nlev);
+    nsource = haero::testing::create_column_view(nlev);
+    wtke = haero::testing::create_column_view(nlev);
 
     ColumnView ptend_q[pcnst];
 
     count = 0;
     for (int i = 0; i < pcnst; ++i) {
-      ptend_q[i] = haero::testing::create_column_view(pver);
+      ptend_q[i] = haero::testing::create_column_view(nlev);
     }
 
-    View2D factnum("factnum", ntot_amode, pver);
+    View2D factnum("factnum", ntot_amode, nlev);
 
     ColumnView coltend[ncnst_tot];
     ColumnView coltend_cw[ncnst_tot];
 
     for (int i = 0; i < ncnst_tot; ++i) {
-      coltend[i] = haero::testing::create_column_view(pver);
-      coltend_cw[i] = haero::testing::create_column_view(pver);
+      coltend[i] = haero::testing::create_column_view(nlev);
+      coltend_cw[i] = haero::testing::create_column_view(nlev);
     }
 
-    View2D ccn("ccn", pver, psat);
+    View2D ccn("ccn", nlev, psat);
 
-    View1D raercol_cw[pver][2];
-    View1D raercol[pver][2];
-    for (int i = 0; i < pver; ++i) {
+    View1D raercol_cw[nlev][2];
+    View1D raercol[nlev][2];
+    for (int i = 0; i < nlev; ++i) {
       raercol[i][0] = View1D("raercol_0", ncnst_tot);
       raercol[i][1] = View1D("raercol_1", ncnst_tot);
       raercol_cw[i][0] = View1D("raercol_cw_0", ncnst_tot);
       raercol_cw[i][1] = View1D("raercol_cw_0", ncnst_tot);
     }
 
-    View2D nact("nact", pver, ntot_amode);
-    View2D mact("mact", pver, ntot_amode);
+    View2D nact("nact", nlev, ntot_amode);
+    View2D mact("mact", nlev, ntot_amode);
 
     ColumnView ekd;
-    ekd = haero::testing::create_column_view(pver);
+    ekd = haero::testing::create_column_view(nlev);
 
     ColumnView zn, csbot, zs, overlapp, overlapm, ekkp, ekkm, qncld, srcn,
         source;
 
-    zn = haero::testing::create_column_view(pver);
-    csbot = haero::testing::create_column_view(pver);
-    zs = haero::testing::create_column_view(pver);
-    overlapp = haero::testing::create_column_view(pver);
-    overlapm = haero::testing::create_column_view(pver);
-    ekkp = haero::testing::create_column_view(pver);
-    ekkm = haero::testing::create_column_view(pver);
-    qncld = haero::testing::create_column_view(pver);
-    srcn = haero::testing::create_column_view(pver);
-    source = haero::testing::create_column_view(pver);
+    zn = haero::testing::create_column_view(nlev);
+    csbot = haero::testing::create_column_view(nlev);
+    zs = haero::testing::create_column_view(nlev);
+    overlapp = haero::testing::create_column_view(nlev);
+    overlapm = haero::testing::create_column_view(nlev);
+    ekkp = haero::testing::create_column_view(nlev);
+    ekkm = haero::testing::create_column_view(nlev);
+    qncld = haero::testing::create_column_view(nlev);
+    srcn = haero::testing::create_column_view(nlev);
+    source = haero::testing::create_column_view(nlev);
 
     ColumnView dz, csbot_cscen;
-    dz = haero::testing::create_column_view(pver);
-    csbot_cscen = haero::testing::create_column_view(pver);
+    dz = haero::testing::create_column_view(nlev);
+    csbot_cscen = haero::testing::create_column_view(nlev);
 
     ColumnView raertend, qqcwtend;
 
-    raertend = haero::testing::create_column_view(pver);
-    qqcwtend = haero::testing::create_column_view(pver);
+    raertend = haero::testing::create_column_view(nlev);
+    qqcwtend = haero::testing::create_column_view(nlev);
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
@@ -229,7 +229,7 @@ void dropmixnuc(Ensemble *ensemble) {
                             num2vol_ratio_max_nmodes); // voltonumblo_amode
           ndrop::dropmixnuc(
               team, dtmicro, tair, pmid, pint, pdel, rpdel,
-              zm, //  ! in zm[kk] - zm[kk+1], for pver zm[kk-1] - zm[kk]
+              zm, //  ! in zm[kk] - zm[kk+1], for nlev zm[kk-1] - zm[kk]
               state_q, ncldwtr,
               kvh, // kvh[kk+1]
               cldn, lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
@@ -249,8 +249,8 @@ void dropmixnuc(Ensemble *ensemble) {
 
     auto host = Kokkos::create_mirror_view(tendnd);
     Kokkos::deep_copy(host, tendnd);
-    std::vector<Real> v_host(pver);
-    for (int kk = 0; kk < pver; ++kk) {
+    std::vector<Real> v_host(nlev);
+    for (int kk = 0; kk < nlev; ++kk) {
       v_host[kk] = host(kk);
     }
 
@@ -263,7 +263,7 @@ void dropmixnuc(Ensemble *ensemble) {
       Kokkos::deep_copy(qqcw_host[i], qqcw[i]);
     }
 
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       for (int i = 0; i < ncnst_tot; ++i) {
         output_qqcw.push_back(qqcw_host[i](kk));
       }
@@ -275,7 +275,7 @@ void dropmixnuc(Ensemble *ensemble) {
     std::vector<Real> output_ptend_q;
     for (int i = 0; i < pcnst; ++i) {
       Kokkos::deep_copy(ptend_q_host, ptend_q[i]);
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < nlev; ++kk) {
         output_ptend_q.push_back(ptend_q_host(kk));
       }
     }
@@ -286,7 +286,7 @@ void dropmixnuc(Ensemble *ensemble) {
 
     std::vector<Real> output_factnum;
     for (int i = 0; i < ntot_amode; ++i) {
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < nlev; ++kk) {
         output_factnum.push_back(factnum_host(i, kk));
       }
     }

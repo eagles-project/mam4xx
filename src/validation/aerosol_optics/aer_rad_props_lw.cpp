@@ -17,7 +17,7 @@ using namespace ndrop;
 
 void aer_rad_props_lw(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    constexpr int pver = mam4::nlev;
+    constexpr int nlev = mam4::nlev;
     constexpr int maxd_aspectype = ndrop::maxd_aspectype;
     using View1DHost = typename HostType::view_1d<Real>;
     using View3DHost = typename HostType::view_3d<Real>;
@@ -28,14 +28,14 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     const auto state_q_db = input.get_array("state_q");
     auto qqcw_db = input.get_array("qqcw"); // 2d
 
-    View2D state_q("state_q", pver, pcnst);
+    View2D state_q("state_q", nlev, pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
-    View2D qqcw("qqcw", pver, pcnst);
+    View2D qqcw("qqcw", nlev, pcnst);
     auto qqcw_host = Kokkos::create_mirror_view(qqcw);
 
     int count = 0;
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       for (int i = 0; i < pcnst; ++i) {
         qqcw_host(kk, i) = qqcw_db[count];
         count++;
@@ -48,7 +48,7 @@ void aer_rad_props_lw(Ensemble *ensemble) {
       ext_cmip6_lw_db[i] *= 1e-3;
     }
 
-    View2D ext_cmip6_lw("ext_cmip6_lw", pver, nlwbands);
+    View2D ext_cmip6_lw("ext_cmip6_lw", nlev, nlwbands);
     mam4::validation::convert_1d_vector_to_2d_view_device(ext_cmip6_lw_db,
                                                           ext_cmip6_lw);
 
@@ -71,36 +71,36 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     ColumnView zm;
     ColumnView zi;
 
-    temperature = haero::testing::create_column_view(pver);
-    auto temperature_host = View1DHost((Real *)temperature_db.data(), pver);
+    temperature = haero::testing::create_column_view(nlev);
+    auto temperature_host = View1DHost((Real *)temperature_db.data(), nlev);
     Kokkos::deep_copy(temperature, temperature_host);
 
-    pmid = haero::testing::create_column_view(pver);
-    auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
+    pmid = haero::testing::create_column_view(nlev);
+    auto pmid_host = View1DHost((Real *)pmid_db.data(), nlev);
     Kokkos::deep_copy(pmid, pmid_host);
 
-    pdeldry = haero::testing::create_column_view(pver);
-    auto pdeldry_host = View1DHost((Real *)pdeldry_db.data(), pver);
+    pdeldry = haero::testing::create_column_view(nlev);
+    auto pdeldry_host = View1DHost((Real *)pdeldry_db.data(), nlev);
     Kokkos::deep_copy(pdeldry, pdeldry_host);
 
-    pdel = haero::testing::create_column_view(pver);
-    auto pdel_host = View1DHost((Real *)pdel_db.data(), pver);
+    pdel = haero::testing::create_column_view(nlev);
+    auto pdel_host = View1DHost((Real *)pdel_db.data(), nlev);
     Kokkos::deep_copy(pdel, pdel_host);
 
-    cldn = haero::testing::create_column_view(pver);
-    auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
+    cldn = haero::testing::create_column_view(nlev);
+    auto cldn_host = View1DHost((Real *)cldn_db.data(), nlev);
     Kokkos::deep_copy(cldn, cldn_host);
 
-    pint = haero::testing::create_column_view(pver);
-    auto pint_host = View1DHost((Real *)pint_db.data(), pver);
+    pint = haero::testing::create_column_view(nlev);
+    auto pint_host = View1DHost((Real *)pint_db.data(), nlev);
     Kokkos::deep_copy(pint, pint_host);
 
-    zm = haero::testing::create_column_view(pver);
-    auto zm_host = View1DHost((Real *)zm_db.data(), pver);
+    zm = haero::testing::create_column_view(nlev);
+    auto zm_host = View1DHost((Real *)zm_db.data(), nlev);
     Kokkos::deep_copy(zm, zm_host);
 
-    zi = haero::testing::create_column_view(pver);
-    auto zi_host = View1DHost((Real *)zi_db.data(), pver);
+    zi = haero::testing::create_column_view(nlev);
+    auto zi_host = View1DHost((Real *)zi_db.data(), nlev);
     Kokkos::deep_copy(zi, zi_host);
 
     const auto specrefndxlw_real_db = input.get_array("specrefndxlw_real");
@@ -234,7 +234,7 @@ void aer_rad_props_lw(Ensemble *ensemble) {
                           refitablw_host[d1][d3]);
       } // d3
 
-    View2D odap_aer("odap_aer", pver, nlwbands);
+    View2D odap_aer("odap_aer", nlev, nlwbands);
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -247,7 +247,7 @@ void aer_rad_props_lw(Ensemble *ensemble) {
 
     Kokkos::deep_copy(qqcw_host, qqcw);
     count = 0;
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       for (int i = 0; i < pcnst; ++i) {
         qqcw_db[count] = qqcw_host(kk, i);
         count++;
@@ -256,7 +256,7 @@ void aer_rad_props_lw(Ensemble *ensemble) {
 
     output.set("qqcw", qqcw_db);
 
-    std::vector<Real> odap_aer_out(pver * nlwbands, zero);
+    std::vector<Real> odap_aer_out(nlev * nlwbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(odap_aer,
                                                           odap_aer_out);
     output.set("odap_aer", odap_aer_out);

@@ -2123,32 +2123,32 @@ void modal_aero_amicphys_intr(
     const Real (&dgncur_awet)[num_modes],
     const Real (&wetdens_host)[num_modes]) {
   // deltat: time step
-  // qq(ncol,pver,pcnst): current tracer mixing ratios (TMRs)
+  // qq(ncol,nlev,pcnst): current tracer mixing ratios (TMRs)
   //                           these values are updated (so out /= in)
   //                        *** MUST BE  #/kmol-air for number
   //                        *** MUST BE mol/mol-air for mass
   //                        *** NOTE ncol dimension
-  // qqcw(ncol,pver,pcnst):
+  // qqcw(ncol,nlev,pcnst):
   //                          like qq but for cloud-borner tracers
   //                         these values are updated
-  // q_pregaschem(ncol,pver,pcnst): qq TMRs    before gas-phase
+  // q_pregaschem(ncol,nlev,pcnst): qq TMRs    before gas-phase
   // chemistry
   //
-  // q_precldchem(ncol,pver,pcnstxx): qq TMRs    before cloud
+  // q_precldchem(ncol,nlev,pcnstxx): qq TMRs    before cloud
   // chemistry
-  // qqcw_precldchem(ncol,pver,pcnstxx): qqcw TMRs before cloud
+  // qqcw_precldchem(ncol,nlev,pcnstxx): qqcw TMRs before cloud
   // chemistry
-  // t(pcols,pver): temperature at model levels (K)
-  // pmid(pcols,pver):pressure at model level centers (Pa)
-  // pdel(pcols,pver):pressure thickness of levels (Pa)
-  // zm(pcols,pver)  :altitude (above ground) at level centers (m)
+  // t(pcols,nlev): temperature at model levels (K)
+  // pmid(pcols,nlev):pressure at model level centers (Pa)
+  // pdel(pcols,nlev):pressure thickness of levels (Pa)
+  // zm(pcols,nlev)  :altitude (above ground) at level centers (m)
   // pblh(pcols)     :planetary boundary layer depth (m)
-  // qv(pcols,pver)  :specific humidity (kg/kg)
-  // cld(ncol,pver)  :cloud fraction (-) *** NOTE ncol dimension
-  // dgncur_a(pcols,pver,ntot_amode)
-  // dgncur_awet(pcols,pver,ntot_amode)
+  // qv(pcols,nlev)  :specific humidity (kg/kg)
+  // cld(ncol,nlev)  :cloud fraction (-) *** NOTE ncol dimension
+  // dgncur_a(pcols,nlev,ntot_amode)
+  // dgncur_awet(pcols,nlev,ntot_amode)
   //                                :dry & wet geo. mean dia. (m) of
-  // number distrib. wetdens_host(pcols,pver,ntot_amode): interstitial
+  // number distrib. wetdens_host(pcols,nlev,ntot_amode): interstitial
   // aerosol wet density (kg/m3)
 
   // DESCRIPTION:

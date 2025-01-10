@@ -22,14 +22,14 @@ void modal_aero_sw(Ensemble *ensemble) {
     constexpr Real zero = 0;
 
     constexpr int maxd_aspectype = ndrop::maxd_aspectype;
-    constexpr int pver = mam4::nlev;
+    constexpr int nlev = mam4::nlev;
 
     const auto dt = input.get_array("dt")[0];
     const auto state_q_db = input.get_array("state_q");
 
     int count = 0;
 
-    View2D state_q("state_q", pver, pcnst);
+    View2D state_q("state_q", nlev, pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
     const auto state_zm_db = input.get_array("state_zm");
@@ -40,8 +40,8 @@ void modal_aero_sw(Ensemble *ensemble) {
     const auto cldn_db = input.get_array("cldn");
 
     ColumnView state_zm;
-    state_zm = haero::testing::create_column_view(pver);
-    auto state_zm_host = View1DHost((Real *)state_zm_db.data(), pver);
+    state_zm = haero::testing::create_column_view(nlev);
+    auto state_zm_host = View1DHost((Real *)state_zm_db.data(), nlev);
     Kokkos::deep_copy(state_zm, state_zm_host);
 
     ColumnView temperature;
@@ -50,32 +50,32 @@ void modal_aero_sw(Ensemble *ensemble) {
     ColumnView pdel;
     ColumnView cldn;
 
-    temperature = haero::testing::create_column_view(pver);
-    auto temperature_host = View1DHost((Real *)temperature_db.data(), pver);
+    temperature = haero::testing::create_column_view(nlev);
+    auto temperature_host = View1DHost((Real *)temperature_db.data(), nlev);
     Kokkos::deep_copy(temperature, temperature_host);
 
-    pmid = haero::testing::create_column_view(pver);
-    auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
+    pmid = haero::testing::create_column_view(nlev);
+    auto pmid_host = View1DHost((Real *)pmid_db.data(), nlev);
     Kokkos::deep_copy(pmid, pmid_host);
 
-    pdeldry = haero::testing::create_column_view(pver);
-    auto pdeldry_host = View1DHost((Real *)pdeldry_db.data(), pver);
+    pdeldry = haero::testing::create_column_view(nlev);
+    auto pdeldry_host = View1DHost((Real *)pdeldry_db.data(), nlev);
     Kokkos::deep_copy(pdeldry, pdeldry_host);
 
-    pdel = haero::testing::create_column_view(pver);
-    auto pdel_host = View1DHost((Real *)pdel_db.data(), pver);
+    pdel = haero::testing::create_column_view(nlev);
+    auto pdel_host = View1DHost((Real *)pdel_db.data(), nlev);
     Kokkos::deep_copy(pdel, pdel_host);
 
-    cldn = haero::testing::create_column_view(pver);
-    auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
+    cldn = haero::testing::create_column_view(nlev);
+    auto cldn_host = View1DHost((Real *)cldn_db.data(), nlev);
     Kokkos::deep_copy(cldn, cldn_host);
 
     auto qqcw_db = input.get_array("qqcw"); // 2d
 
-    View2D qqcw("qqcw", pver, pcnst);
+    View2D qqcw("qqcw", nlev, pcnst);
     auto qqcw_host = Kokkos::create_mirror_view(qqcw);
     count = 0;
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       for (int i = 0; i < pcnst; ++i) {
         qqcw_host(kk, i) = qqcw_db[count];
         count++;
@@ -232,15 +232,15 @@ void modal_aero_sw(Ensemble *ensemble) {
     // output
     View2D tauxar, wa, ga, fa;
 
-    tauxar = View2D("tauxar", pver + 1,
+    tauxar = View2D("tauxar", nlev + 1,
                     nswbands);             // layer extinction optical depth [1]
-    wa = View2D("wa", pver + 1, nswbands); // layer single-scatter albedo [1]
-    ga = View2D("ga", pver + 1, nswbands); // asymmetry factor [1]
-    fa = View2D("fa", pver + 1, nswbands); // forward scattered fraction [1]
+    wa = View2D("wa", nlev + 1, nswbands); // layer single-scatter albedo [1]
+    ga = View2D("ga", nlev + 1, nswbands); // asymmetry factor [1]
+    fa = View2D("fa", nlev + 1, nswbands); // forward scattered fraction [1]
     View1D output_diagnostics("output_diagnostics", 21);
     View2D output_diagnostics_amode("output_diagnostics_amode", 3, ntot_amode);
 
-    View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
+    View2D qaerwat_m("qaerwat_m", nlev, ntot_amode);
     const int work_len = modal_aer_opt::get_work_len_aerosol_optics();
     View1D work("work", work_len);
 
@@ -257,7 +257,7 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     Kokkos::deep_copy(qqcw_host, qqcw);
     count = 0;
-    for (int kk = 0; kk < pver; ++kk) {
+    for (int kk = 0; kk < nlev; ++kk) {
       for (int i = 0; i < pcnst; ++i) {
         qqcw_db[count] = qqcw_host(kk, i);
         count++;
@@ -265,20 +265,20 @@ void modal_aero_sw(Ensemble *ensemble) {
     }
 
     output.set("qqcw", qqcw_db);
-    const int pver_po = pver + 1;
-    std::vector<Real> tauxar_out(pver_po * nswbands, zero);
+    const int nlev_po = nlev + 1;
+    std::vector<Real> tauxar_out(nlev_po * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(tauxar, tauxar_out);
     output.set("tauxar", tauxar_out);
 
-    std::vector<Real> wa_out(pver_po * nswbands, zero);
+    std::vector<Real> wa_out(nlev_po * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(wa, wa_out);
     output.set("wa", wa_out);
 
-    std::vector<Real> ga_out(pver_po * nswbands, zero);
+    std::vector<Real> ga_out(nlev_po * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(ga, ga_out);
     output.set("ga", ga_out);
 
-    std::vector<Real> fa_out(pver_po * nswbands, zero);
+    std::vector<Real> fa_out(nlev_po * nswbands, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(fa, fa_out);
     output.set("fa", fa_out);
   });

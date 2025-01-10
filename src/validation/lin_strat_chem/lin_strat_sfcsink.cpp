@@ -20,15 +20,15 @@ void lin_strat_sfcsink(Ensemble *ensemble) {
     constexpr Real zero = 0;
 
     constexpr int ncol = 4;
-    constexpr int pver = mam4::nlev;
+    constexpr int nlev = mam4::nlev;
     const Real delta_t = input.get_array("delta_t")[0];
     const auto pdel_db = input.get_array("pdel");
 
-    View2D pdel("o3col", ncol, pver);
+    View2D pdel("o3col", ncol, nlev);
     mam4::validation::convert_1d_vector_to_2d_view_device(pdel_db, pdel);
 
     const auto o3l_vmr_db = input.get_array("o3l_vmr");
-    View2D o3l_vmr("o3l_vmr", ncol, pver);
+    View2D o3l_vmr("o3l_vmr", ncol, nlev);
     mam4::validation::convert_1d_vector_to_2d_view_device(o3l_vmr_db, o3l_vmr);
     const Real o3_sfc = input.get_array("o3_sfc")[0];
     const int o3_lbl = int(input.get_array("o3_lbl")[0]);
@@ -48,7 +48,7 @@ void lin_strat_sfcsink(Ensemble *ensemble) {
                             o3l_sfcsink(icol));
         });
 
-    std::vector<Real> o3l_vmr_out(pver * ncol, zero);
+    std::vector<Real> o3l_vmr_out(nlev * ncol, zero);
     mam4::validation::convert_2d_view_device_to_1d_vector(o3l_vmr, o3l_vmr_out);
 
     auto o3l_sfcsink_host = Kokkos::create_mirror_view(o3l_sfcsink);
