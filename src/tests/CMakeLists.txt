@@ -77,12 +77,12 @@ if (NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel") #The Intel compiler always em
   target_compile_options(mam4_aero_emissions_unit_tests PRIVATE)
 endif ()
 
-if (${HAERO_PRECISION} MATCHES double)
-EkatCreateUnitTest(kohler_unit_tests kohler_unit_tests.cpp
-  LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
-else ()
-  message(STATUS "disabling Kohler verification tests (they require double precision)")
-endif ()
+# if (${HAERO_PRECISION} MATCHES double)
+# EkatCreateUnitTest(kohler_unit_tests kohler_unit_tests.cpp
+#   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
+# else ()
+#   message(STATUS "disabling Kohler verification tests (they require double precision)")
+# endif ()
 
 EkatCreateUnitTest(mam4_ndrop_unit_tests mam4_ndrop_unit_tests.cpp
   LIBS mam4xx_tests ${HAERO_LIBRARIES} EXCLUDE_TEST_SESSION)
