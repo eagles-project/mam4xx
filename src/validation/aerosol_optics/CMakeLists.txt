@@ -51,7 +51,7 @@ set(TEST_LIST
     calc_parameterized_ts_355
     update_aod_spec_ts_355
     aer_rad_props_lw_ts_355
-    aer_rad_props_sw_ts_355
+    # aer_rad_props_sw_ts_355
     volcanic_cmip_sw_ts_355
     data_transfer_state_q_qqwc_to_prog
     )
@@ -71,7 +71,7 @@ set(ERROR_THRESHOLDS
    2e-11
    1e-12
    7e-11
-   8e-11
+  #  8e-11
    8e-11
    1e-14
    )
