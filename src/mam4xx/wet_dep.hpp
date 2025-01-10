@@ -58,7 +58,8 @@ Real local_precip_production(const Real pdel, const Real source_term,
 // Function to call to initialize the arrays passe to the
 // aero_model_wetdep function. This data is constant so should
 // be allocaed on host and copied to device.
-inline void init_scavimptbl(
+KOKKOS_INLINE_FUNCTION
+void init_scavimptbl(
     Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()],
     Real scavimptblnum[aero_model::nimptblgrow_total]
                       [AeroConfig::num_modes()]) {
