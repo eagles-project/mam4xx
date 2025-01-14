@@ -1530,7 +1530,7 @@ KOKKOS_INLINE_FUNCTION
 int get_aero_model_wetdep_work_len() {
   int work_len = 2 * mam4::nlev * pcnst +
                  // state_q, qqcw
-                 25 * mam4::nlev +
+                 22 * mam4::nlev +
                  // cldcu, cldst, evapc, cmfdqr, totcond, conicw,
                  // f_act_conv_coarse, f_act_conv_coarse_dust,
                  // f_act_conv_coarse_nacl, rain, cldv, cldvcu, cldvst,
