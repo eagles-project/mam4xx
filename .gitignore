@@ -3,3 +3,4 @@
 build/
 haero/
 src/tests/mam4_test_config.hpp
+*.out

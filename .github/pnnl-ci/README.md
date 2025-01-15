@@ -14,6 +14,7 @@ The possible  GPU architectures are:
 
 | GPU Type | Cuda Architecture | SLURM partition |
 |-|-|-|
+| A100 | 80 | a100/a100_80 _shared |
 | P100 | 60 | dl/dl_shared |
 | V100 | 70 | dlv/dlv_shared |
 | RTX 2080 Ti | 75 | dlt/dlt_shared |

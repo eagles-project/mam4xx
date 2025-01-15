@@ -18,7 +18,6 @@ void test_local_precip_production_process(const Input &input, Output &output) {
   // Declare array of strings for input names
   std::string input_variables[] = {"dt", "ncol", "pdel", "source_term",
                                    "sink_term"};
-
   // Iterate over input_variables and error if not in input
   for (std::string name : input_variables) {
     if (!input.has(name.c_str())) {
@@ -34,12 +33,19 @@ void test_local_precip_production_process(const Input &input, Output &output) {
   const Real pdel = input.get("pdel");
   const Real source_term = input.get("source_term");
   const Real sink_term = input.get("sink_term");
+  EKAT_ASSERT(0 < (source_term - sink_term));
+  Real gravity = Constants::gravity;
 
   ColumnView return_vals = mam4::validation::create_column_view(1);
   Kokkos::parallel_for(
-      "wetdep::local_precip_production", 1, KOKKOS_LAMBDA(const int) {
-        return_vals[0] =
-            mam4::wetdep::local_precip_production(pdel, source_term, sink_term);
+      "wetdep::local_precip_production", 1, KOKKOS_LAMBDA(const int kk) {
+        Real pdel_temp = pdel;
+        Real source_term_temp = source_term;
+        Real sink_term_temp = sink_term;
+        Real result = 1;
+        mam4::wetdep::local_precip_production(pdel_temp, source_term_temp,
+                                              sink_term_temp, gravity, result);
+        return_vals(0) = result;
       });
 
   // Create mirror views for output arrays
