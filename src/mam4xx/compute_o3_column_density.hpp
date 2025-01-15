@@ -45,8 +45,9 @@ void compute_o3_column_density(
   Real o3_col_deltas[mam4::nlev + 1] =
       {}; // o3 column density above model [1/cm^2]
   // NOTE: if we need o2 column densities, set_ub_col and setcol must be changed
+  const int nlev = mam4::nlev;
   Kokkos::parallel_for(
-      Kokkos::ThreadVectorRange(team, mam4::nlev), [&](const int k) {
+      Kokkos::TeamVectorRange(team, nlev), [&](const int k) {
         const Real pdel = atm.hydrostatic_dp(k);
         // extract aerosol state variables into "working arrays" (mass
         // mixing ratios) (in EAM, this is done in the gas_phase_chemdr
@@ -73,8 +74,9 @@ void compute_o3_column_density(
         mam4::mo_photo::set_ub_col(o3_col_deltas[k + 1],     // out
                                    vmr, invariants_k, pdel); // out
       });
+  team.team_barrier();
   // sum the o3 column deltas to densities
-  mam4::mo_photo::setcol(o3_col_deltas, // in
+  mam4::mo_photo::setcol(team, o3_col_deltas, // in
                          o3_col_dens);  // out
 }
 } // namespace microphysics

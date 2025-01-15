@@ -55,7 +55,7 @@ KOKKOS_INLINE_FUNCTION Real number_conc_from_mmr(Real mmr, Real molecular_wt,
 /// air]
 /// @param [in] molecular_wt The molecular weight of the species/mixture
 /// [kg/kmol]
-KOKKOS_INLINE_FUNCTION Real mmr_from_vmr(Real vmr, Real molecular_wt) {
+KOKKOS_INLINE_FUNCTION Real mmr_from_vmr(const Real vmr, const Real molecular_wt) {
   const auto mw_dry_air = Constants::molec_weight_dry_air;
   return vmr * molecular_wt / mw_dry_air;
 }
@@ -66,7 +66,7 @@ KOKKOS_INLINE_FUNCTION Real mmr_from_vmr(Real vmr, Real molecular_wt) {
 /// @param [in] mmr The mass mixing ratio of the species/mixture [kg/kg dry air]
 /// @param [in] molecular_wt The molecular weight of the species/mixture
 /// [kg/kmol]
-KOKKOS_INLINE_FUNCTION Real vmr_from_mmr(Real mmr, Real molecular_wt) {
+KOKKOS_INLINE_FUNCTION Real vmr_from_mmr(const Real mmr, const Real molecular_wt) {
   const auto mw_dry_air = Constants::molec_weight_dry_air;
   EKAT_KERNEL_ASSERT_MSG(molecular_wt > 0, "Error! : vmr_from_mmr,"
                                            " molecular_wt should be > 0 \n");
