@@ -133,9 +133,9 @@ void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
 } // set_photo_table_work_arrays
 
 KOKKOS_INLINE_FUNCTION
-void cloud_mod(const ThreadTeam &team,
-               const Real zen_angle, const ConstView1D &clouds,
-               const ConstView1D &lwc, const ConstView1D &delp,
+void cloud_mod(const ThreadTeam &team, const Real zen_angle,
+               const ConstView1D &clouds, const ConstView1D &lwc,
+               const ConstView1D &delp,
                const Real srf_alb, //  in
                Real *eff_alb, Real *cld_mult) {
   /*-----------------------------------------------------------------------
@@ -181,7 +181,7 @@ void cloud_mod(const ThreadTeam &team,
     } else {
       del_tau[kk] = zero;
     } // end if
-  });   // end kk
+  }); // end kk
   team.team_barrier();
   /*---------------------------------------------------------
               ... form integrated tau and cloud cover from top down
@@ -320,7 +320,8 @@ void set_ub_col(Real &o3_col_delta,
 }
 
 KOKKOS_INLINE_FUNCTION
-void setcol(const ThreadTeam &team, const Real o3_col_deltas[mam4::nlev + 1], ColumnView &o3_col_dens) {
+void setcol(const ThreadTeam &team, const Real o3_col_deltas[mam4::nlev + 1],
+            ColumnView &o3_col_dens) {
   // we can probably accelerate this with a parallel_scan, but let's just do
   // a simple loop for now
   constexpr int nlev = mam4::nlev;
@@ -461,97 +462,98 @@ void interpolate_rsf(const ThreadTeam &team, const Real *alb_in,
     const Real wrk0 = one - dels[0];
     int izl = 2; //   may change in the level_loop
     for (int kk = kbot - 1; kk > -1; kk--) {
-    /*----------------------------------------------------------------------
-       ... find albedo indicies
-     ----------------------------------------------------------------------*/
-    int albind = 0;
-    find_index(alb, numalb, alb_in[kk], //  & ! in
-               albind);                 // ! out
-    /*----------------------------------------------------------------------
-         ... find pressure level indicies
-    ----------------------------------------------------------------------*/
-    int pind = 0;
-    Real wght1 = 0;
-    if (p_in[kk] > press[0]) {
-      pind = 1;
-      wght1 = one;
+      /*----------------------------------------------------------------------
+         ... find albedo indicies
+       ----------------------------------------------------------------------*/
+      int albind = 0;
+      find_index(alb, numalb, alb_in[kk], //  & ! in
+                 albind);                 // ! out
+      /*----------------------------------------------------------------------
+           ... find pressure level indicies
+      ----------------------------------------------------------------------*/
+      int pind = 0;
+      Real wght1 = 0;
+      if (p_in[kk] > press[0]) {
+        pind = 1;
+        wght1 = one;
 
-      // Fortran to C++ indexing
-    } else if (p_in[kk] <= press[nump - 1]) {
-      // Fortran to C++ indexing
-      pind = nump - 1;
-      wght1 = zero;
-    } else {
-      int iz = 0;
-      // Fortran to C++ indexing
-      for (iz = izl - 1; iz < nump; iz++) {
-        if (press[iz] < p_in[kk]) {
-          izl = iz;
-          break;
-        } // end if
-      }   // end for iz
-      // Fortran to C++ indexing
-      pind = haero::max(haero::min(iz, nump - 1), 1);
-      wght1 = utils::min_max_bound(zero, one,
-                                   (p_in[kk] - press[pind]) * del_p[pind - 1]);
-    } // end if
+        // Fortran to C++ indexing
+      } else if (p_in[kk] <= press[nump - 1]) {
+        // Fortran to C++ indexing
+        pind = nump - 1;
+        wght1 = zero;
+      } else {
+        int iz = 0;
+        // Fortran to C++ indexing
+        for (iz = izl - 1; iz < nump; iz++) {
+          if (press[iz] < p_in[kk]) {
+            izl = iz;
+            break;
+          } // end if
+        }   // end for iz
+        // Fortran to C++ indexing
+        pind = haero::max(haero::min(iz, nump - 1), 1);
+        wght1 = utils::min_max_bound(
+            zero, one, (p_in[kk] - press[pind]) * del_p[pind - 1]);
+      } // end if
 
-    /*----------------------------------------------------------------------
-         ... find "o3 ratios"
-    ----------------------------------------------------------------------*/
+      /*----------------------------------------------------------------------
+           ... find "o3 ratios"
+      ----------------------------------------------------------------------*/
 
-    const Real v3ratu = colo3_in[kk] / colo3[pind - 1];
-    int ratindu = 0;
-    find_index(o3rat, numcolo3, v3ratu, //  in
-               ratindu);                // out
+      const Real v3ratu = colo3_in[kk] / colo3[pind - 1];
+      int ratindu = 0;
+      find_index(o3rat, numcolo3, v3ratu, //  in
+                 ratindu);                // out
 
-    Real v3ratl = zero;
-    int ratindl = 0;
-    if (colo3[pind] != zero) {
-      v3ratl = colo3_in[kk] / colo3[pind];
-      find_index(o3rat, numcolo3, v3ratl, // in
-                 ratindl);                // ! out
-    } else {
-      ratindl = ratindu;
-      v3ratl = o3rat[ratindu];
-    } // end if colo3[pind] != zero
+      Real v3ratl = zero;
+      int ratindl = 0;
+      if (colo3[pind] != zero) {
+        v3ratl = colo3_in[kk] / colo3[pind];
+        find_index(o3rat, numcolo3, v3ratl, // in
+                   ratindl);                // ! out
+      } else {
+        ratindl = ratindu;
+        v3ratl = o3rat[ratindu];
+      } // end if colo3[pind] != zero
 
-    /*----------------------------------------------------------------------
-            ... compute the weigths
-    ----------------------------------------------------------------------*/
+      /*----------------------------------------------------------------------
+              ... compute the weigths
+      ----------------------------------------------------------------------*/
 
-    int ial = albind;
+      int ial = albind;
 
-    dels[2] =
-        utils::min_max_bound(zero, one, (alb_in[kk] - alb[ial]) * del_alb[ial]);
+      dels[2] = utils::min_max_bound(zero, one,
+                                     (alb_in[kk] - alb[ial]) * del_alb[ial]);
 
-    int iv = ratindl;
-    dels[1] =
-        utils::min_max_bound(zero, one, (v3ratl - o3rat[iv]) * del_o3rat[iv]);
-    calc_sum_wght(dels, wrk0,        // in
-                  pind, is, iv, ial, // in
-                  rsf_tab, nw,
-                  psum_l); // out
+      int iv = ratindl;
+      dels[1] =
+          utils::min_max_bound(zero, one, (v3ratl - o3rat[iv]) * del_o3rat[iv]);
+      calc_sum_wght(dels, wrk0,        // in
+                    pind, is, iv, ial, // in
+                    rsf_tab, nw,
+                    psum_l); // out
 
-    iv = ratindu;
-    dels[1] =
-        utils::min_max_bound(zero, one, (v3ratu - o3rat[iv]) * del_o3rat[iv]);
-    calc_sum_wght(dels, wrk0,            // in
-                  pind - 1, is, iv, ial, // in
-                  rsf_tab, nw,
-                  psum_u); //  inout
+      iv = ratindu;
+      dels[1] =
+          utils::min_max_bound(zero, one, (v3ratu - o3rat[iv]) * del_o3rat[iv]);
+      calc_sum_wght(dels, wrk0,            // in
+                    pind - 1, is, iv, ial, // in
+                    rsf_tab, nw,
+                    psum_u); //  inout
 
-    for (int wn = 0; wn < nw; wn++)
-      rsf(wn, kk) = psum_l[wn] + wght1 * (psum_u[wn] - psum_l[wn]);
+      for (int wn = 0; wn < nw; wn++)
+        rsf(wn, kk) = psum_l[wn] + wght1 * (psum_u[wn] - psum_l[wn]);
 
-    /*------------------------------------------------------------------------------
-        etfphot comes in as photons/cm^2/sec/nm  (rsf includes the wlintv factor
-     -- nm)
-       ... --> convert to photons/cm^2/s
-     ------------------------------------------------------------------------------*/
-    for (int wn = 0; wn < nw; wn++)
-      rsf(wn, kk) *= etfphot[wn];
-    } 
+      /*------------------------------------------------------------------------------
+          etfphot comes in as photons/cm^2/sec/nm  (rsf includes the wlintv
+       factor
+       -- nm)
+         ... --> convert to photons/cm^2/s
+       ------------------------------------------------------------------------------*/
+      for (int wn = 0; wn < nw; wn++)
+        rsf(wn, kk) *= etfphot[wn];
+    }
   });
 } // interpolate_rsf
 

@@ -349,8 +349,8 @@ void perform_atmospheric_chemistry_and_microphysics(
 
     // the following things are diagnostics, which we're not
     // including in the first rev
-    Real do3_linoz=0, do3_linoz_psc=0, ss_o3=0, o3col_du_diag=0, o3clim_linoz_diag=0,
-        zenith_angle_degrees=0;
+    Real do3_linoz = 0, do3_linoz_psc = 0, ss_o3 = 0, o3col_du_diag = 0,
+         o3clim_linoz_diag = 0, zenith_angle_degrees = 0;
 
     // index of "O3" in solsym array (in EAM)
     mam4::lin_strat_chem::lin_strat_chem_solve_kk(
@@ -369,14 +369,14 @@ void perform_atmospheric_chemistry_and_microphysics(
 
     // Update source terms above the ozone decay threshold
     if (kk >= nlev - o3_lbl) {
-      const Real o3l_vmr_old = vmr[o3_ndx]; 
+      const Real o3l_vmr_old = vmr[o3_ndx];
       Real do3mass = 0;
-      const Real o3l_vmr_new = mam4::lin_strat_chem::lin_strat_sfcsink_kk(
-        dt, pdel, // in
-        o3l_vmr_old,  // in 
-        o3_sfc,   // in
-        o3_tau,   // in
-        do3mass); // out
+      const Real o3l_vmr_new =
+          mam4::lin_strat_chem::lin_strat_sfcsink_kk(dt, pdel,    // in
+                                                     o3l_vmr_old, // in
+                                                     o3_sfc,      // in
+                                                     o3_tau,      // in
+                                                     do3mass);    // out
       // Update the mixing ratio (vmr) for O3
       vmr[o3_ndx] = o3l_vmr_new;
     }

@@ -295,22 +295,20 @@ void sethet_detail(
   // 'H2O2','H2SO4','SO2'.  Options for other species are then removed
   //-----------------------------------------------------------------
 
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
-        for (int mm = 0; mm < gas_pcnst; ++mm) {
-          het_rates(kk, mm) = 0.0;
-          tmp_hetrates[mm](kk) = 0.0; // initiate temporary array
-        }
-      });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
+    for (int mm = 0; mm < gas_pcnst; ++mm) {
+      het_rates(kk, mm) = 0.0;
+      tmp_hetrates[mm](kk) = 0.0; // initiate temporary array
+    }
+  });
   team.team_barrier();
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver),
-                       [&](int kk) {
-                         for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
-                           const int mm2 = wetdep_map[mm];
-                           if (mm2 >= 0)
-                             het_rates(kk, mm2) = MISSING;
-                         }
-                       });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
+    for (int mm = 0; mm < gas_wetdep_cnt; mm++) {
+      const int mm2 = wetdep_map[mm];
+      if (mm2 >= 0)
+        het_rates(kk, mm2) = MISSING;
+    }
+  });
   team.team_barrier();
   //-----------------------------------------------------------------
   //	... the 2 and .6 multipliers are from a formula by frossling (1938)
@@ -329,14 +327,13 @@ void sethet_detail(
   calc_precip_rescale(team, cmfdqr, nrain, nevapr, precip); // populate precip
   team.team_barrier();
 
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
-        rain(kk) = mass_air * precip(kk) * invariants(kk, indexm) / mass_h2o;
-        xliq(kk) = precip(kk) * delt * invariants(kk, indexm) / avo * mass_air *
-                   m3_2_cm3;
-        xh2o2(kk) = qin[spc_h2o2_ndx](kk) * invariants(kk, indexm);
-        xso2(kk) = qin[spc_so2_ndx](kk) * invariants(kk, indexm);
-      });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
+    rain(kk) = mass_air * precip(kk) * invariants(kk, indexm) / mass_h2o;
+    xliq(kk) =
+        precip(kk) * delt * invariants(kk, indexm) / avo * mass_air * m3_2_cm3;
+    xh2o2(kk) = qin[spc_h2o2_ndx](kk) * invariants(kk, indexm);
+    xso2(kk) = qin[spc_so2_ndx](kk) * invariants(kk, indexm);
+  });
   zsurf = m2km * phis * rga;
 
   Kokkos::parallel_for(
@@ -377,14 +374,12 @@ void sethet_detail(
   //-----------------------------------------------------------------
   //       ... part 1, solve for high henry constant ( hno3, h2o2)
   //-----------------------------------------------------------------
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver),
-                       [&](int kk) {
-                         xgas2(kk) = xh2o2(kk); // different levels wash
-                         xgas3(kk) = xso2(kk);
-                       });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
+    xgas2(kk) = xh2o2(kk); // different levels wash
+    xgas3(kk) = xso2(kk);
+  });
   team.team_barrier();
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, ktop, pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ktop, pver), [&](int kk) {
     stay = 1.0;
     if (rain(kk) != 0.0) { // finding rain cloud
       stay = ((zmid(kk) - zsurf) * km2cm) / (xum * delt);
@@ -434,8 +429,7 @@ void sethet_detail(
   //                   hno3 and h2o2 have both in and under cloud
   //-----------------------------------------------------------------
   constexpr int local_gas_pcnst = gas_pcnst;
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, ktop, pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ktop, pver), [&](int kk) {
     bool skip = false;
     for (int mm = 0; mm < local_gas_pcnst; ++mm) {
       if (rain(kk) <= 0.0) {

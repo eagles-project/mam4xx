@@ -46,38 +46,37 @@ void compute_o3_column_density(
       {}; // o3 column density above model [1/cm^2]
   // NOTE: if we need o2 column densities, set_ub_col and setcol must be changed
   const int nlev = mam4::nlev;
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, nlev), [&](const int k) {
-        const Real pdel = atm.hydrostatic_dp(k);
-        // extract aerosol state variables into "working arrays" (mass
-        // mixing ratios) (in EAM, this is done in the gas_phase_chemdr
-        // subroutine defined within
-        //  mozart/mo_gas_phase_chemdr.F90)
-        Real q[gas_pcnst] = {};
-        Real state_q[pcnst] = {};
-        mam4::utils::extract_stateq_from_prognostics(progs, atm, state_q, k);
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](const int k) {
+    const Real pdel = atm.hydrostatic_dp(k);
+    // extract aerosol state variables into "working arrays" (mass
+    // mixing ratios) (in EAM, this is done in the gas_phase_chemdr
+    // subroutine defined within
+    //  mozart/mo_gas_phase_chemdr.F90)
+    Real q[gas_pcnst] = {};
+    Real state_q[pcnst] = {};
+    mam4::utils::extract_stateq_from_prognostics(progs, atm, state_q, k);
 
-        for (int i = offset_aerosol; i < pcnst; ++i) {
-          q[i - offset_aerosol] = state_q[i];
-        }
+    for (int i = offset_aerosol; i < pcnst; ++i) {
+      q[i - offset_aerosol] = state_q[i];
+    }
 
-        // convert mass mixing ratios to volume mixing ratios (VMR),
-        // equivalent to tracer mixing ratios (TMR))
-        Real vmr[gas_pcnst];
-        mmr2vmr(q, adv_mass_kg_per_moles, vmr);
-        // ... compute invariants for this level
-        Real invariants_k[nfs];
-        for (int i = 0; i < nfs; ++i) {
-          invariants_k[i] = invariants(k, i);
-        }
-        // compute the change in o3 density for this column above its neighbor
-        mam4::mo_photo::set_ub_col(o3_col_deltas[k + 1],     // out
-                                   vmr, invariants_k, pdel); // out
-      });
+    // convert mass mixing ratios to volume mixing ratios (VMR),
+    // equivalent to tracer mixing ratios (TMR))
+    Real vmr[gas_pcnst];
+    mmr2vmr(q, adv_mass_kg_per_moles, vmr);
+    // ... compute invariants for this level
+    Real invariants_k[nfs];
+    for (int i = 0; i < nfs; ++i) {
+      invariants_k[i] = invariants(k, i);
+    }
+    // compute the change in o3 density for this column above its neighbor
+    mam4::mo_photo::set_ub_col(o3_col_deltas[k + 1],     // out
+                               vmr, invariants_k, pdel); // out
+  });
   team.team_barrier();
   // sum the o3 column deltas to densities
   mam4::mo_photo::setcol(team, o3_col_deltas, // in
-                         o3_col_dens);  // out
+                         o3_col_dens);        // out
 }
 } // namespace microphysics
 } // namespace mam4

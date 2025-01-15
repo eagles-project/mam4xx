@@ -295,8 +295,8 @@ void lin_strat_sfcsink(const Real delta_t, const ColumnView &pdel, // in
   Real do3mass_icol = 0;
   for (int kk = pver - 1; kk > pver - o3_lbl - 1; --kk) {
     const Real o3l_vmr_old = o3l_vmr(kk);
-    const Real o3l_vmr_new = 
-      lin_strat_sfcsink_kk(delta_t, pdel(kk), o3l_vmr_old, o3_sfc, o3_tau, do3mass_icol);
+    const Real o3l_vmr_new = lin_strat_sfcsink_kk(
+        delta_t, pdel(kk), o3l_vmr_old, o3_sfc, o3_tau, do3mass_icol);
     o3l_vmr(kk) = o3l_vmr_new;
   }
 
