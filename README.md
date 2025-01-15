@@ -1,4 +1,4 @@
-# MAM4xx
+# MAM4xx {trivial change}
 
 [![Build Status](https://github.com/eagles-project/mam4xx/workflows/auto_test/badge.svg)](https://github.com/eagles-project/mam4xx/actions)
 [![Code Coverage](https://codecov.io/gh/eagles-project/mam4xx/branch/main/graph/badge.svg?token=OI33WNBS7N)](https://codecov.io/gh/eagles-project/mam4xx)
