@@ -45,7 +45,7 @@ void cloud_mod(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          cloud_mod(zen_angle, clouds, lwc, delp,
+          cloud_mod(team, zen_angle, clouds, lwc, delp,
                     srf_alb, //  in
                     eff_alb.data(), cld_mult.data());
         });

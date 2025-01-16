@@ -133,8 +133,9 @@ void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
 } // set_photo_table_work_arrays
 
 KOKKOS_INLINE_FUNCTION
-void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
-               const ConstView1D &lwc, const ConstView1D &delp,
+void cloud_mod(const ThreadTeam &team, const Real zen_angle,
+               const ConstView1D &clouds, const ConstView1D &lwc,
+               const ConstView1D &delp,
                const Real srf_alb, //  in
                Real *eff_alb, Real *cld_mult) {
   /*-----------------------------------------------------------------------
@@ -171,7 +172,7 @@ void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
       .155; // factor converting LWP to tau [unknown source and unit]
   const Real tau_min = 5.0; // tau threshold below which assign cloud as zero
 
-  for (int kk = 0; kk < pver; kk++) {
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
     if (clouds[kk] != zero) {
       // liquid water path in each layer [g/m2]
       const Real del_lwp = rgrav * lwc[kk] * delp[kk] * thousand /
@@ -180,54 +181,57 @@ void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
     } else {
       del_tau[kk] = zero;
     } // end if
-  }   // end kk
+  }); // end kk
+  team.team_barrier();
   /*---------------------------------------------------------
               ... form integrated tau and cloud cover from top down
   --------------------------------------------------------- */
   // cloud optical depth above this layer
-  Real above_tau[pver] = {zero};
+  Real above_tau[pver] = {};
   // cloud cover above this layer
-  Real above_cld[pver] = {zero};
+  Real above_cld[pver] = {};
 
-  for (int kk = 0; kk < pverm; kk++) {
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pverm), [&](int kk) {
     above_tau[kk + 1] = del_tau[kk] + above_tau[kk];
     above_cld[kk + 1] = clouds[kk] * del_tau[kk] + above_cld[kk];
+  }); // end kk
+  team.team_barrier();
 
-  } // end kk
-
-  for (int kk = 1; kk < pver; kk++) {
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, 1, pver), [&](int kk) {
     if (above_tau[kk] != zero) {
       above_cld[kk] /= above_tau[kk];
     } else {
       above_cld[kk] = above_cld[kk - 1];
     }
-  } // end kk
-
+  }); // end kk
   /*---------------------------------------------------------
               ... form integrated tau and cloud cover from bottom up
   ---------------------------------------------------------*/
-
   below_tau[pver - 1] = zero;
   below_cld[pver - 1] = zero;
+  team.team_barrier();
 
-  for (int kk = pverm - 1; kk > -1; kk--) {
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, 1, pver), [&](int i) {
+    const int kk = pverm - i;
     below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
     below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
-  } // end kk
+  }); // end kk
+  team.team_barrier();
 
-  for (int kk = pverm - 1; kk > -1; kk--) {
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, 1, pver), [&](int i) {
+    const int kk = pverm - i;
     if (below_tau[kk] != zero) {
       below_cld[kk] /= below_tau[kk];
     } else {
       below_cld[kk] = below_cld[kk + 1];
     } // end if
-
-  } // end kk
+  }); // end kk
+  team.team_barrier();
 
   /*---------------------------------------------------------
       ... modify above_tau and below_tau via jfm
   ---------------------------------------------------------*/
-  for (int kk = 1; kk < pver; kk++) {
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, 1, pver), [&](int kk) {
     if (above_cld[kk] != zero) {
       above_tau[kk] /= above_cld[kk];
     } // end if
@@ -235,18 +239,18 @@ void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
     if (above_tau[kk] < tau_min) {
       above_cld[kk] = zero;
     } // end if
+  }); // end kk
+  team.team_barrier();
 
-  } // end kk
-
-  for (int kk = 0; kk < pverm; kk++) {
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pverm), [&](int kk) {
     if (below_cld[kk] != zero) {
       below_tau[kk] /= below_cld[kk];
     } // end if
     if (below_tau[kk] < tau_min) {
       below_cld[kk] = zero;
     } // end if
-
-  } // end kk
+  }); // end kk
+  team.team_barrier();
 
   /*---------------------------------------------------------
       ... form transmission factors
@@ -259,8 +263,7 @@ void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
   // cos (solar zenith angle)
   const Real coschi = haero::max(haero::cos(zen_angle), half);
 
-  for (int kk = 0; kk < pver; kk++) {
-
+  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
     /*---------------------------------------------------------
       ... form effective albedo
       ---------------------------------------------------------*/
@@ -288,7 +291,8 @@ void cloud_mod(const Real zen_angle, const ConstView1D &clouds,
     // BAD CONSTANT
     cld_mult[kk] =
         haero::max(.05, one + fac1 * clouds[kk] + fac2 * above_cld[kk]);
-  } // end kk
+  }); // end kk
+  team.team_barrier();
 
 } // end cloud_mod
 
@@ -316,15 +320,18 @@ void set_ub_col(Real &o3_col_delta,
 }
 
 KOKKOS_INLINE_FUNCTION
-void setcol(const Real o3_col_deltas[mam4::nlev + 1], ColumnView &o3_col_dens) {
+void setcol(const ThreadTeam &team, const Real o3_col_deltas[mam4::nlev + 1],
+            ColumnView &o3_col_dens) {
   // we can probably accelerate this with a parallel_scan, but let's just do
   // a simple loop for now
   constexpr int nlev = mam4::nlev;
   o3_col_dens(0) = 0.5 * (o3_col_deltas[0] + o3_col_deltas[1]);
-  for (int k = 1; k < nlev; ++k) {
-    o3_col_dens(k) =
-        o3_col_dens(k - 1) + 0.5 * (o3_col_deltas[k] + o3_col_deltas[k + 1]);
-  }
+  Kokkos::single(Kokkos::PerTeam(team), [=]() {
+    for (int k = 1; k < nlev; ++k) {
+      o3_col_dens(k) =
+          o3_col_dens(k - 1) + 0.5 * (o3_col_deltas[k] + o3_col_deltas[k + 1]);
+    }
+  });
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -444,109 +451,110 @@ void interpolate_rsf(const ThreadTeam &team, const Real *alb_in,
   const Real one = 1;
   const Real zero = 0;
 
-  int is = 0;
-  find_index(sza, numsza, sza_in, // in
-             is);                 // ! out
+  team.team_barrier();
+  Kokkos::single(Kokkos::PerTeam(team), [=]() {
+    int is = 0;
+    find_index(sza, numsza, sza_in, // in
+               is);                 // ! out
 
-  Real dels[3] = {};
-  dels[0] = utils::min_max_bound(zero, one, (sza_in - sza[is]) * del_sza[is]);
-  const Real wrk0 = one - dels[0];
-  int izl = 2; //   may change in the level_loop
-  for (int kk = kbot - 1; kk > -1; kk--) {
-    /*----------------------------------------------------------------------
-       ... find albedo indicies
-     ----------------------------------------------------------------------*/
-    int albind = 0;
-    find_index(alb, numalb, alb_in[kk], //  & ! in
-               albind);                 // ! out
-    /*----------------------------------------------------------------------
-         ... find pressure level indicies
-    ----------------------------------------------------------------------*/
-    int pind = 0;
-    Real wght1 = 0;
-    if (p_in[kk] > press[0]) {
-      pind = 1;
-      wght1 = one;
+    Real dels[3] = {};
+    dels[0] = utils::min_max_bound(zero, one, (sza_in - sza[is]) * del_sza[is]);
+    const Real wrk0 = one - dels[0];
+    int izl = 2; //   may change in the level_loop
+    for (int kk = kbot - 1; kk > -1; kk--) {
+      /*----------------------------------------------------------------------
+         ... find albedo indicies
+       ----------------------------------------------------------------------*/
+      int albind = 0;
+      find_index(alb, numalb, alb_in[kk], //  & ! in
+                 albind);                 // ! out
+      /*----------------------------------------------------------------------
+           ... find pressure level indicies
+      ----------------------------------------------------------------------*/
+      int pind = 0;
+      Real wght1 = 0;
+      if (p_in[kk] > press[0]) {
+        pind = 1;
+        wght1 = one;
 
-      // Fortran to C++ indexing
-    } else if (p_in[kk] <= press[nump - 1]) {
-      // Fortran to C++ indexing
-      pind = nump - 1;
-      wght1 = zero;
-    } else {
-      int iz = 0;
-      // Fortran to C++ indexing
-      for (iz = izl - 1; iz < nump; iz++) {
-        if (press[iz] < p_in[kk]) {
-          izl = iz;
-          break;
-        } // end if
-      }   // end for iz
-      // Fortran to C++ indexing
-      pind = haero::max(haero::min(iz, nump - 1), 1);
-      wght1 = utils::min_max_bound(zero, one,
-                                   (p_in[kk] - press[pind]) * del_p[pind - 1]);
-    } // end if
+        // Fortran to C++ indexing
+      } else if (p_in[kk] <= press[nump - 1]) {
+        // Fortran to C++ indexing
+        pind = nump - 1;
+        wght1 = zero;
+      } else {
+        int iz = 0;
+        // Fortran to C++ indexing
+        for (iz = izl - 1; iz < nump; iz++) {
+          if (press[iz] < p_in[kk]) {
+            izl = iz;
+            break;
+          } // end if
+        }   // end for iz
+        // Fortran to C++ indexing
+        pind = haero::max(haero::min(iz, nump - 1), 1);
+        wght1 = utils::min_max_bound(
+            zero, one, (p_in[kk] - press[pind]) * del_p[pind - 1]);
+      } // end if
 
-    /*----------------------------------------------------------------------
-         ... find "o3 ratios"
-    ----------------------------------------------------------------------*/
+      /*----------------------------------------------------------------------
+           ... find "o3 ratios"
+      ----------------------------------------------------------------------*/
 
-    const Real v3ratu = colo3_in[kk] / colo3[pind - 1];
-    int ratindu = 0;
-    find_index(o3rat, numcolo3, v3ratu, //  in
-               ratindu);                // out
+      const Real v3ratu = colo3_in[kk] / colo3[pind - 1];
+      int ratindu = 0;
+      find_index(o3rat, numcolo3, v3ratu, //  in
+                 ratindu);                // out
 
-    Real v3ratl = zero;
-    int ratindl = 0;
-    if (colo3[pind] != zero) {
-      v3ratl = colo3_in[kk] / colo3[pind];
-      find_index(o3rat, numcolo3, v3ratl, // in
-                 ratindl);                // ! out
-    } else {
-      ratindl = ratindu;
-      v3ratl = o3rat[ratindu];
-    } // end if colo3[pind] != zero
+      Real v3ratl = zero;
+      int ratindl = 0;
+      if (colo3[pind] != zero) {
+        v3ratl = colo3_in[kk] / colo3[pind];
+        find_index(o3rat, numcolo3, v3ratl, // in
+                   ratindl);                // ! out
+      } else {
+        ratindl = ratindu;
+        v3ratl = o3rat[ratindu];
+      } // end if colo3[pind] != zero
 
-    /*----------------------------------------------------------------------
-            ... compute the weigths
-    ----------------------------------------------------------------------*/
+      /*----------------------------------------------------------------------
+              ... compute the weigths
+      ----------------------------------------------------------------------*/
 
-    int ial = albind;
+      int ial = albind;
 
-    dels[2] =
-        utils::min_max_bound(zero, one, (alb_in[kk] - alb[ial]) * del_alb[ial]);
+      dels[2] = utils::min_max_bound(zero, one,
+                                     (alb_in[kk] - alb[ial]) * del_alb[ial]);
 
-    int iv = ratindl;
-    dels[1] =
-        utils::min_max_bound(zero, one, (v3ratl - o3rat[iv]) * del_o3rat[iv]);
-    calc_sum_wght(dels, wrk0,        // in
-                  pind, is, iv, ial, // in
-                  rsf_tab, nw,
-                  psum_l); // out
+      int iv = ratindl;
+      dels[1] =
+          utils::min_max_bound(zero, one, (v3ratl - o3rat[iv]) * del_o3rat[iv]);
+      calc_sum_wght(dels, wrk0,        // in
+                    pind, is, iv, ial, // in
+                    rsf_tab, nw,
+                    psum_l); // out
 
-    iv = ratindu;
-    dels[1] =
-        utils::min_max_bound(zero, one, (v3ratu - o3rat[iv]) * del_o3rat[iv]);
-    calc_sum_wght(dels, wrk0,            // in
-                  pind - 1, is, iv, ial, // in
-                  rsf_tab, nw,
-                  psum_u); //  inout
+      iv = ratindu;
+      dels[1] =
+          utils::min_max_bound(zero, one, (v3ratu - o3rat[iv]) * del_o3rat[iv]);
+      calc_sum_wght(dels, wrk0,            // in
+                    pind - 1, is, iv, ial, // in
+                    rsf_tab, nw,
+                    psum_u); //  inout
 
-    for (int wn = 0; wn < nw; wn++)
-      rsf(wn, kk) = psum_l[wn] + wght1 * (psum_u[wn] - psum_l[wn]);
+      for (int wn = 0; wn < nw; wn++)
+        rsf(wn, kk) = psum_l[wn] + wght1 * (psum_u[wn] - psum_l[wn]);
 
-    /*------------------------------------------------------------------------------
-        etfphot comes in as photons/cm^2/sec/nm  (rsf includes the wlintv factor
-     -- nm)
-       ... --> convert to photons/cm^2/s
-     ------------------------------------------------------------------------------*/
-    team.team_barrier();
-    Kokkos::single(Kokkos::PerTeam(team), [=]() {
+      /*------------------------------------------------------------------------------
+          etfphot comes in as photons/cm^2/sec/nm  (rsf includes the wlintv
+       factor
+       -- nm)
+         ... --> convert to photons/cm^2/s
+       ------------------------------------------------------------------------------*/
       for (int wn = 0; wn < nw; wn++)
         rsf(wn, kk) *= etfphot[wn];
-    });
-  } // end Level_loop
+    }
+  });
 } // interpolate_rsf
 
 //======================================================================================
@@ -687,16 +695,13 @@ void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
             } // end for i
           }   // end for wn
         }     // end if
-        team.team_barrier();
-        Kokkos::single(Kokkos::PerTeam(team), [=]() {
-          for (int i = 0; i < numj; ++i) {
-            Real suma = zero;
-            for (int wn = 0; wn < nw; wn++) {
-              suma += xswk(i, wn) * rsf(wn, kk);
-            }
-            j_long(i, kk) = suma;
-          } // i
-        });
+        for (int i = 0; i < numj; ++i) {
+          Real suma = zero;
+          for (int wn = 0; wn < nw; wn++) {
+            suma += xswk(i, wn) * rsf(wn, kk);
+          }
+          j_long(i, kk) = suma;
+        } // i
       }); // end kk
 } // jlong
 
@@ -753,13 +758,14 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
     /*-----------------------------------------------------------------
          ... compute eff_alb and cld_mult -- needs to be before jlong
     -----------------------------------------------------------------*/
-    cloud_mod(zen_angle, clouds, lwc, pdel,
+    cloud_mod(team, zen_angle, clouds, lwc, pdel,
               srf_alb, //  in
               eff_alb, cld_mult);
     Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
       parg[kk] = pmid(kk) * Pa2mb;
       cld_mult[kk] *= esfact;
     });
+    team.team_barrier();
     /*-----------------------------------------------------------------
      ... long wave length component
     -----------------------------------------------------------------*/

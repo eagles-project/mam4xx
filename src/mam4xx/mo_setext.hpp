@@ -48,8 +48,7 @@ void extfrc_set(const ThreadTeam &team, const Forcing *forcings,
   /*--------------------------------------------------------
   ! ... set non-zero forcings
   !--------------------------------------------------------*/
-
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver), [&](int kk) {
     for (int mm = 0; mm < extfrc_cnt; ++mm) {
       // Fortran to C++ indexing
       auto forcing_mm = forcings[mm];

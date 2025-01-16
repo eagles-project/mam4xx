@@ -33,7 +33,7 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
   // undefined in device code.
   constexpr int nlev_local = nlev;
   Kokkos::parallel_for(
-      Kokkos::ThreadVectorRange(team, nlev_local), [&](const int kk) {
+      Kokkos::TeamVectorRange(team, nlev_local), [&](const int kk) {
         Real state_q[pcnst] = {};
         mam4::utils::extract_stateq_from_prognostics(progs, atm, state_q, kk);
         Real qq[gas_pcnst] = {};
@@ -43,7 +43,6 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
         Real vmr[gas_pcnst];
         // output (vmr)
         mam4::microphysics::mmr2vmr(qq, adv_mass_kg_per_moles, vmr);
-
         for (int i = 0; i < gas_pcnst; ++i) {
           vmr_col[i](kk) = vmr[i];
         }
@@ -150,9 +149,11 @@ void perform_atmospheric_chemistry_and_microphysics(
     const View1D &work_set_het, const seq_drydep::Data &drydep_data,
     Real dvel[gas_pcnst], Real dflx[gas_pcnst], mam4::Prognostics &progs) {
 
+  const int nlev = mam4::nlev;
   // vmr0 stores mixing ratios before chemistry changes the mixing
   auto work_set_het_ptr = (Real *)work_set_het.data();
   const auto het_rates = View2D(work_set_het_ptr, nlev, gas_pcnst);
+
   work_set_het_ptr += nlev * gas_pcnst;
   ColumnView vmr_col[gas_pcnst];
   for (int i = 0; i < gas_pcnst; ++i) {
@@ -169,7 +170,7 @@ void perform_atmospheric_chemistry_and_microphysics(
                           invariants_icol,                         // out
                           atm.temperature, atm.vapor_mixing_ratio, // in
                           cnst_offline_icol, atm.pressure);        // in
-
+  team.team_barrier();
   mam4::microphysics::compute_o3_column_density(team, atm, progs,      // in
                                                 invariants_icol,       // in
                                                 adv_mass_kg_per_moles, // in
@@ -184,6 +185,7 @@ void perform_atmospheric_chemistry_and_microphysics(
                                               work_photo_table_icol,   // in
                                               photo_work_arrays_icol); // out
 
+  team.team_barrier();
   mam4::mo_photo::table_photo(team, photo_rates_icol,                    // out
                               atm.pressure, atm.hydrostatic_dp,          // in
                               atm.temperature, o3_col_dens_i,            // in
@@ -191,17 +193,16 @@ void perform_atmospheric_chemistry_and_microphysics(
                               atm.liquid_mixing_ratio, atm.cloud_fraction, // in
                               eccf, photo_table,                           // in
                               photo_work_arrays_icol); // out
-
+  team.team_barrier();
   // work array.
   // het_rates_icol work array.
   mmr2vmr_col(team, atm, progs, adv_mass_kg_per_moles, offset_aerosol, vmr_col);
-
   team.team_barrier();
 
   mam4::mo_sethet::sethet(team, atm, het_rates, rlats, phis, cmfdqr, prain,
                           nevapr, dt, invariants_icol, vmr_col,
                           work_sethet_call);
-
+  team.team_barrier();
   {
     //----------------------
     // Dry deposition (gas)
@@ -211,6 +212,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     Real qq[gas_pcnst] = {};
     for (int i = offset_aerosol; i < pcnst; ++i)
       qq[i - offset_aerosol] = state_q[i];
+    team.team_barrier();
     mam4::mo_drydep::drydep_xactive(
         drydep_data,
         fraction_landuse, // fraction of land use for column by land type
@@ -232,8 +234,10 @@ void perform_atmospheric_chemistry_and_microphysics(
         dflx              // deposition flux [1/cm^2/s]
     );
   }
+  team.team_barrier();
   // compute aerosol microphysics on each vertical level within this
   // column
+  const int o3_ndx = static_cast<int>(mam4::GasId::O3);
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](const int kk) {
     // extract atm state variables (input)
     Real temp = atm.temperature(kk);
@@ -256,7 +260,6 @@ void perform_atmospheric_chemistry_and_microphysics(
     mam4::utils::extract_stateq_from_prognostics(progs, atm, state_q, kk);
     // output (qqcw_pcnst)
     mam4::utils::extract_qqcw_from_prognostics(progs, qqcw_pcnst, kk);
-
     Real qq[gas_pcnst] = {};
     Real qqcw[gas_pcnst] = {};
     for (int i = offset_aerosol; i < pcnst; ++i) {
@@ -265,7 +268,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     }
     // convert mass mixing ratios to volume mixing ratios (VMR),
     // equivalent to tracer mixing ratios (TMR)
-    Real vmr[gas_pcnst], vmrcw[gas_pcnst];
+    Real vmr[gas_pcnst] = {}, vmrcw[gas_pcnst] = {};
     // output (vmr)
     mam4::microphysics::mmr2vmr(qq, adv_mass_kg_per_moles, vmr);
     // output (vmrcw)
@@ -346,11 +349,10 @@ void perform_atmospheric_chemistry_and_microphysics(
 
     // the following things are diagnostics, which we're not
     // including in the first rev
-    Real do3_linoz, do3_linoz_psc, ss_o3, o3col_du_diag, o3clim_linoz_diag,
-        zenith_angle_degrees;
+    Real do3_linoz = 0, do3_linoz_psc = 0, ss_o3 = 0, o3col_du_diag = 0,
+         o3clim_linoz_diag = 0, zenith_angle_degrees = 0;
 
     // index of "O3" in solsym array (in EAM)
-    constexpr int o3_ndx = static_cast<int>(mam4::GasId::O3);
     mam4::lin_strat_chem::lin_strat_chem_solve_kk(
         // in
         o3_col_dens_i(kk), temp, zenith_angle_icol, pmid, dt, rlats,
@@ -367,17 +369,16 @@ void perform_atmospheric_chemistry_and_microphysics(
 
     // Update source terms above the ozone decay threshold
     if (kk >= nlev - o3_lbl) {
-      Real o3l_vmr, do3mass;
-      // initial O3 vmr
-      o3l_vmr = vmr[o3_ndx];
-      // get new value of O3 vmr
-      o3l_vmr = mam4::lin_strat_chem::lin_strat_sfcsink_kk(dt, pdel, // in
-                                                           o3l_vmr,  // out
-                                                           o3_sfc,   // in
-                                                           o3_tau,   // in
-                                                           do3mass); // out
+      const Real o3l_vmr_old = vmr[o3_ndx];
+      Real do3mass = 0;
+      const Real o3l_vmr_new =
+          mam4::lin_strat_chem::lin_strat_sfcsink_kk(dt, pdel,    // in
+                                                     o3l_vmr_old, // in
+                                                     o3_sfc,      // in
+                                                     o3_tau,      // in
+                                                     do3mass);    // out
       // Update the mixing ratio (vmr) for O3
-      vmr[o3_ndx] = o3l_vmr;
+      vmr[o3_ndx] = o3l_vmr_new;
     }
     // Check for negative values and reset to zero
     for (int i = 0; i < gas_pcnst; ++i) {
