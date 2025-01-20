@@ -61,6 +61,17 @@ inline PhotoTableData create_photo_table_data(int nw, int nt, int np_xs,
                                               int numcolo3, int numalb) {
   PhotoTableData table_data{};
 
+std::cout<<__FILE__<<":"<<__LINE__
+<<" nw:"<<nw
+<<" nt:"<<nt
+<<" np_xs:"<<np_xs
+<<" numj:"<<numj
+<<" nump:"<<nump
+<<" numsza:"<<numsza
+<<" numcolo3:"<<numcolo3
+<<" numalb:"<<numalb
+<<std::endl;
+
   // set dimensions
   table_data.nw = nw;
   table_data.nump = nump;
@@ -172,7 +183,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
       .155; // factor converting LWP to tau [unknown source and unit]
   const Real tau_min = 5.0; // tau threshold below which assign cloud as zero
 
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver), [&](int kk) {
     if (clouds[kk] != zero) {
       // liquid water path in each layer [g/m2]
       const Real del_lwp = rgrav * lwc[kk] * delp[kk] * thousand /
@@ -191,13 +202,13 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   // cloud cover above this layer
   Real above_cld[pver] = {};
 
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pverm), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pverm), [&](int kk) {
     above_tau[kk + 1] = del_tau[kk] + above_tau[kk];
     above_cld[kk + 1] = clouds[kk] * del_tau[kk] + above_cld[kk];
   }); // end kk
   team.team_barrier();
 
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, 1, pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver), [&](int kk) {
     if (above_tau[kk] != zero) {
       above_cld[kk] /= above_tau[kk];
     } else {
@@ -211,14 +222,14 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   below_cld[pver - 1] = zero;
   team.team_barrier();
 
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, 1, pver), [&](int i) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver), [&](int i) {
     const int kk = pverm - i;
     below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
     below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
   }); // end kk
   team.team_barrier();
 
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, 1, pver), [&](int i) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver), [&](int i) {
     const int kk = pverm - i;
     if (below_tau[kk] != zero) {
       below_cld[kk] /= below_tau[kk];
@@ -231,7 +242,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   /*---------------------------------------------------------
       ... modify above_tau and below_tau via jfm
   ---------------------------------------------------------*/
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, 1, pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver), [&](int kk) {
     if (above_cld[kk] != zero) {
       above_tau[kk] /= above_cld[kk];
     } // end if
@@ -242,7 +253,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   }); // end kk
   team.team_barrier();
 
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pverm), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pverm), [&](int kk) {
     if (below_cld[kk] != zero) {
       below_tau[kk] /= below_cld[kk];
     } // end if
@@ -263,7 +274,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   // cos (solar zenith angle)
   const Real coschi = haero::max(haero::cos(zen_angle), half);
 
-  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver), [&](int kk) {
     /*---------------------------------------------------------
       ... form effective albedo
       ---------------------------------------------------------*/
@@ -272,13 +283,13 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
     eff_alb[kk] = srf_alb + below_cld[kk] * (one - below_tra) * (one - srf_alb);
 
     // factor to calculate cld_mult
-    Real fac1 = zero;
     Real del_lwp = zero;
     if (clouds[kk] != zero) {
       // liquid water path in each layer [g/m2]
       del_lwp = rgrav * lwc[kk] * delp[kk] * thousand /
                 clouds[kk]; // the unit is (likely) g/m^2
     }
+    Real fac1 = zero;
     if (del_lwp * f_lwp2tau >= tau_min) {
       // BAD CONSTANT
       fac1 = 1.4 * coschi - one;
@@ -451,6 +462,8 @@ void interpolate_rsf(const ThreadTeam &team, const Real *alb_in,
   const Real one = 1;
   const Real zero = 0;
 
+  // NOTE: psum_l and psum_u are not dimentioned by number of levels, kk,
+  // so can not parallelize over kk.
   team.team_barrier();
   Kokkos::single(Kokkos::PerTeam(team), [=]() {
     int is = 0;
@@ -553,8 +566,8 @@ void interpolate_rsf(const ThreadTeam &team, const Real *alb_in,
        ------------------------------------------------------------------------------*/
       for (int wn = 0; wn < nw; wn++)
         rsf(wn, kk) *= etfphot[wn];
-    }
-  });
+    } // loop over kk
+  }); // Kokkos::single
 } // interpolate_rsf
 
 //======================================================================================
@@ -628,7 +641,7 @@ void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
                   rsf_tab, //  in
                   nw, nump, numsza, numcolo3, numalb, rsf, psum_l,
                   psum_u); // out
-
+  team.team_barrier();
   /*------------------------------------------------------------------------------
   ... calculate total Jlong for wavelengths >200nm
   ------------------------------------------------------------------------------
@@ -641,8 +654,9 @@ void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
   ------------------------------------------------------------------------------*/
   // To avoid the 'pver is undefined' error during CUDA code compilation.
   constexpr int pver_local = pver;
-  Kokkos::parallel_for(
-      Kokkos::ThreadVectorRange(team, pver_local), [&](int kk) {
+  // xswk is not dimentioned by number of levels so can not parallelize over levels.
+  Kokkos::single(Kokkos::PerTeam(team), [=]() {
+      for (int kk = 0; kk < pver_local; ++kk) {
         /*----------------------------------------------------------------------
           ... get index into xsqy
          ----------------------------------------------------------------------*/
@@ -684,7 +698,6 @@ void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
               delp = (prs[pndx] - ptarget) * dprs[pndx];
               break;
             } // end if
-
           } // end for km
           for (int wn = 0; wn < nw; wn++) {
             for (int i = 0; i < numj; i++) {
@@ -702,7 +715,8 @@ void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
           }
           j_long(i, kk) = suma;
         } // i
-      }); // end kk
+      }; // end kk
+    }); // end single
 } // jlong
 
 // FIXME: note the use of ConstColumnView for views we get from the
@@ -761,7 +775,7 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
     cloud_mod(team, zen_angle, clouds, lwc, pdel,
               srf_alb, //  in
               eff_alb, cld_mult);
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pver), [&](int kk) {
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver), [&](int kk) {
       parg[kk] = pmid(kk) * Pa2mb;
       cld_mult[kk] *= esfact;
     });
