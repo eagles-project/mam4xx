@@ -172,7 +172,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
       .155; // factor converting LWP to tau [unknown source and unit]
   const Real tau_min = 5.0; // tau threshold below which assign cloud as zero
 
-  for (int kk=0; kk<pver; ++kk) {
+  for (int kk = 0; kk < pver; ++kk) {
     if (clouds[kk] != zero) {
       // liquid water path in each layer [g/m2]
       const Real del_lwp = rgrav * lwc[kk] * delp[kk] * thousand /
@@ -181,7 +181,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
     } else {
       del_tau[kk] = zero;
     } // end if
-  }; // end kk
+  };  // end kk
   /*---------------------------------------------------------
               ... form integrated tau and cloud cover from top down
   --------------------------------------------------------- */
@@ -190,12 +190,12 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   // cloud cover above this layer
   Real above_cld[pver] = {};
 
-  for (int kk=0; kk<pverm; ++kk) {
+  for (int kk = 0; kk < pverm; ++kk) {
     above_tau[kk + 1] = del_tau[kk] + above_tau[kk];
     above_cld[kk + 1] = clouds[kk] * del_tau[kk] + above_cld[kk];
   }; // end kk
 
-  for (int kk=1; kk<pver; ++kk) {
+  for (int kk = 1; kk < pver; ++kk) {
     if (above_tau[kk] != zero) {
       above_cld[kk] /= above_tau[kk];
     } else {
@@ -209,25 +209,25 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   below_cld[pver - 1] = zero;
   team.team_barrier();
 
-  for (int i=1; i<pver; ++i) {
+  for (int i = 1; i < pver; ++i) {
     const int kk = pverm - i;
     below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
     below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
   }; // end kk
 
-  for (int i=1; i<pver; ++i) {
+  for (int i = 1; i < pver; ++i) {
     const int kk = pverm - i;
     if (below_tau[kk] != zero) {
       below_cld[kk] /= below_tau[kk];
     } else {
       below_cld[kk] = below_cld[kk + 1];
     } // end if
-  }; // end kk
+  };  // end kk
 
   /*---------------------------------------------------------
       ... modify above_tau and below_tau via jfm
   ---------------------------------------------------------*/
-  for (int kk=1; kk<pver; ++kk) {
+  for (int kk = 1; kk < pver; ++kk) {
     if (above_cld[kk] != zero) {
       above_tau[kk] /= above_cld[kk];
     } // end if
@@ -235,16 +235,16 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
     if (above_tau[kk] < tau_min) {
       above_cld[kk] = zero;
     } // end if
-  }; // end kk
+  };  // end kk
 
-  for (int kk=0; kk<pverm; ++kk) {
+  for (int kk = 0; kk < pverm; ++kk) {
     if (below_cld[kk] != zero) {
       below_tau[kk] /= below_cld[kk];
     } // end if
     if (below_tau[kk] < tau_min) {
       below_cld[kk] = zero;
     } // end if
-  }; // end kk
+  };  // end kk
 
   /*---------------------------------------------------------
       ... form transmission factors
@@ -257,7 +257,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   // cos (solar zenith angle)
   const Real coschi = haero::max(haero::cos(zen_angle), half);
 
-  for (int kk=0; kk<pver; ++kk) {
+  for (int kk = 0; kk < pver; ++kk) {
     /*---------------------------------------------------------
       ... form effective albedo
       ---------------------------------------------------------*/
@@ -340,8 +340,8 @@ void find_index(const Real *var_in, const int var_len,
   // @param[in]  var_len   length of the input variable
   // @param[in]  var_min   variable threshold
   // @param[out]  idx_out   index
-  auto min = [] (int i, int j) {return (i<j) ? i : j;};
-  auto max = [] (int i, int j) {return (i<j) ? j : i;};
+  auto min = [](int i, int j) { return (i < j) ? i : j; };
+  auto max = [](int i, int j) { return (i < j) ? j : i; };
   for (int ii = 0; ii < var_len; ii++) {
     if (var_in[ii] > var_min) {
       // Fortran to C++ indexing
@@ -487,8 +487,8 @@ void interpolate_rsf(const ThreadTeam &team, const Real *alb_in,
           } // end if
         }   // end for iz
         // Fortran to C++ indexing
-        auto min = [] (int i, int j) {return (i<j) ? i : j;};
-        auto max = [] (int i, int j) {return (i<j) ? j : i;};
+        auto min = [](int i, int j) { return (i < j) ? i : j; };
+        auto max = [](int i, int j) { return (i < j) ? j : i; };
         pind = max(min(iz, nump - 1), 1);
         wght1 = utils::min_max_bound(
             zero, one, (p_in[kk] - press[pind]) * del_p[pind - 1]);
@@ -638,69 +638,69 @@ void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
   ------------------------------------------------------------------------------*/
   // To avoid the 'pver is undefined' error during CUDA code compilation.
   constexpr int pver_local = pver;
-  // xswk is not dimentioned by number of levels so can not parallelize over levels.
+  // xswk is not dimentioned by number of levels so can not parallelize over
+  // levels.
   Kokkos::single(Kokkos::PerTeam(team), [=]() {
-      for (int kk = 0; kk < pver_local; ++kk) {
-        /*----------------------------------------------------------------------
-          ... get index into xsqy
-         ----------------------------------------------------------------------*/
+    for (int kk = 0; kk < pver_local; ++kk) {
+      /*----------------------------------------------------------------------
+        ... get index into xsqy
+       ----------------------------------------------------------------------*/
 
-        // Fortran indexing to C++ indexing
-        // number of temperatures in xsection table
-        // BAD CONSTANT for 201 and 148.5
-        const int t_index =
-            haero::min(201, haero::max(t_in[kk] - 148.5, 0)) - 1;
+      // Fortran indexing to C++ indexing
+      // number of temperatures in xsection table
+      // BAD CONSTANT for 201 and 148.5
+      const int t_index = haero::min(201, haero::max(t_in[kk] - 148.5, 0)) - 1;
 
-        /*----------------------------------------------------------------------
-                   ... find pressure level
-         ----------------------------------------------------------------------*/
-        const Real ptarget = p_in[kk];
-        if (ptarget >= prs[0]) {
-          for (int wn = 0; wn < nw; wn++) {
-            for (int i = 0; i < numj; i++) {
-              xswk(i, wn) = xsqy(i, wn, t_index, 0);
-            } // end for i
-          }   // end for wn
-          // Fortran to C++ indexing conversion
-        } else if (ptarget <= prs[np_xs - 1]) {
-          for (int wn = 0; wn < nw; wn++) {
-            for (int i = 0; i < numj; i++) {
-              // Fortran to C++ indexing conversion
-              xswk(i, wn) = xsqy(i, wn, t_index, np_xs - 1);
-            } // end for i
-          }   // end for wn
+      /*----------------------------------------------------------------------
+                 ... find pressure level
+       ----------------------------------------------------------------------*/
+      const Real ptarget = p_in[kk];
+      if (ptarget >= prs[0]) {
+        for (int wn = 0; wn < nw; wn++) {
+          for (int i = 0; i < numj; i++) {
+            xswk(i, wn) = xsqy(i, wn, t_index, 0);
+          } // end for i
+        }   // end for wn
+        // Fortran to C++ indexing conversion
+      } else if (ptarget <= prs[np_xs - 1]) {
+        for (int wn = 0; wn < nw; wn++) {
+          for (int i = 0; i < numj; i++) {
+            // Fortran to C++ indexing conversion
+            xswk(i, wn) = xsqy(i, wn, t_index, np_xs - 1);
+          } // end for i
+        }   // end for wn
 
-        } else {
-          Real delp = zero;
-          int pndx = 0;
-          // Question: delp is not initialized in fortran code. What if the
-          // following code does not satify this if condition: ptarget >=
-          // prs[km] Conversion indexing from Fortran to C++
-          for (int km = 1; km < np_xs; km++) {
-            if (ptarget >= prs[km]) {
-              pndx = km - 1;
-              delp = (prs[pndx] - ptarget) * dprs[pndx];
-              break;
-            } // end if
-          } // end for km
-          for (int wn = 0; wn < nw; wn++) {
-            for (int i = 0; i < numj; i++) {
-              xswk(i, wn) = xsqy(i, wn, t_index, pndx) +
-                            delp * (xsqy(i, wn, t_index, pndx + 1) -
-                                    xsqy(i, wn, t_index, pndx));
+      } else {
+        Real delp = zero;
+        int pndx = 0;
+        // Question: delp is not initialized in fortran code. What if the
+        // following code does not satify this if condition: ptarget >=
+        // prs[km] Conversion indexing from Fortran to C++
+        for (int km = 1; km < np_xs; km++) {
+          if (ptarget >= prs[km]) {
+            pndx = km - 1;
+            delp = (prs[pndx] - ptarget) * dprs[pndx];
+            break;
+          } // end if
+        }   // end for km
+        for (int wn = 0; wn < nw; wn++) {
+          for (int i = 0; i < numj; i++) {
+            xswk(i, wn) = xsqy(i, wn, t_index, pndx) +
+                          delp * (xsqy(i, wn, t_index, pndx + 1) -
+                                  xsqy(i, wn, t_index, pndx));
 
-            } // end for i
-          }   // end for wn
-        }     // end if
-        for (int i = 0; i < numj; ++i) {
-          Real suma = zero;
-          for (int wn = 0; wn < nw; wn++) {
-            suma += xswk(i, wn) * rsf(wn, kk);
-          }
-          j_long(i, kk) = suma;
-        } // i
-      }; // end kk
-    }); // end single
+          } // end for i
+        }   // end for wn
+      }     // end if
+      for (int i = 0; i < numj; ++i) {
+        Real suma = zero;
+        for (int wn = 0; wn < nw; wn++) {
+          suma += xswk(i, wn) * rsf(wn, kk);
+        }
+        j_long(i, kk) = suma;
+      } // i
+    };  // end kk
+  });   // end single
 } // jlong
 
 // FIXME: note the use of ConstColumnView for views we get from the
