@@ -81,7 +81,7 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
  * @param [in] linoz_psc_T PSC ozone loss T (K) threshold
  * @param [in] zenith_angle_icol
  * @param [in] d_sfc_alb_dir_vis_icol
- * @param [in] o3_col_dens_i
+ * @param [out] o3_col_dens_i
  * @param [in] photo_rates_icol
  * @param [in] extfrc_icol
  * @param [in] invariants_icol

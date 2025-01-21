@@ -62,7 +62,7 @@ void compute_o3_column_density(
 
     // convert mass mixing ratios to volume mixing ratios (VMR),
     // equivalent to tracer mixing ratios (TMR))
-    Real vmr[gas_pcnst];
+    Real vmr[gas_pcnst] = {};
     mmr2vmr(q, adv_mass_kg_per_moles, vmr);
     // ... compute invariants for this level
     Real invariants_k[nfs];
