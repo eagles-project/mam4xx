@@ -60,12 +60,7 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
  * @param [in] rlats Column latitudes
  * @param [in] month
  * @param [in] sfc_temp      -- surface temperature [K]
- * @param [in] air_temp      -- surface air temperature [K]
- * @param [in] tv            -- potential temperature [K]
- *                            (temp*(1+vapor_mixing_ratio))
  * @param [in] pressure_sfc  -- surface pressure [Pa]
- * @param [in] pressure_10m  -- 10-meter pressure [Pa]
- * @param [in] spec_hum      -- specific humidity [kg/kg]
  * @param [in] wind_speed    -- 10-meter wind spped [m/s]
  * @param [in] rain          -- rain content [kg/m2/s]
  * @param [in] snow          -- snow height [m]
@@ -117,8 +112,8 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
 KOKKOS_INLINE_FUNCTION
 void perform_atmospheric_chemistry_and_microphysics(
     const ThreadTeam &team, const Real dt, const Real rlats, const int month,
-    const Real sfc_temp, const Real air_temp, const Real tv,
-    const Real pressure_sfc, const Real pressure_10m, const Real spec_hum,
+    const Real sfc_temp,
+    const Real pressure_sfc,
     const Real wind_speed, const Real rain, const Real snow,
     const Real solar_flux, const View1D cnst_offline_icol[num_tracer_cnst],
     const Forcing *forcings_in, const haero::Atmosphere &atm,
@@ -163,6 +158,21 @@ void perform_atmospheric_chemistry_and_microphysics(
   const int sethet_work_len = mam4::mo_sethet::get_work_len_sethet();
   const auto work_sethet_call = View1D(work_set_het_ptr, sethet_work_len);
   work_set_het_ptr += sethet_work_len;
+
+  //
+  const int surface_lev = nlev - 1;                 // Surface level
+  // specific humidity [kg/kg]
+  const Real spec_hum = atm.vapor_mixing_ratio(surface_lev);
+  // surface air temperature [K]
+  const Real air_temp = atm.temperature(surface_lev);
+  // potential temperature [K] *(temp*(1+vapor_mixing_ratio))
+  //(FIXME: We followed Fortran, compare it with MAM4xx's potential temp
+  // func)
+  const Real tv = air_temp * (1.0 + spec_hum);
+  // 10-meter pressure [Pa]
+  // Surface pressure at 10m (Followed the fortran code)
+  const Real pressure_10m = atm.pressure(surface_lev);
+
 
   mam4::mo_setext::extfrc_set(team, forcings_in, extfrc_icol);
 
