@@ -103,14 +103,12 @@ inline PhotoTableData create_photo_table_data(int nw, int nt, int np_xs,
 struct PhotoTableWorkArrays {
   View2D lng_prates;
   View2D rsf;
-  View2D xswk;
   View1D psum_l;
   View1D psum_u;
 };
 inline int get_photo_table_work_len(const PhotoTableData &photo_table_data) {
   return pver * photo_table_data.numj +                /*lng_prates*/
          pver * photo_table_data.nw +                  /*rsf*/
-         photo_table_data.numj * photo_table_data.nw + /*xswk*/
          2 * photo_table_data.nw /*psum_l + psum_u*/;
 } // get_photo_table_work_len
 KOKKOS_INLINE_FUNCTION
@@ -123,8 +121,6 @@ void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
   work_ptr += pver * photo_table_data.numj;
   photo_table_work.rsf = View2D(work_ptr, photo_table_data.nw, pver);
   work_ptr += pver * photo_table_data.nw;
-  photo_table_work.xswk =
-      View2D(work_ptr, photo_table_data.numj, photo_table_data.nw);
   work_ptr += photo_table_data.numj * photo_table_data.nw;
   photo_table_work.psum_l = View1D(work_ptr, photo_table_data.nw);
   work_ptr += photo_table_data.nw;
@@ -207,7 +203,6 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   ---------------------------------------------------------*/
   below_tau[pver - 1] = zero;
   below_cld[pver - 1] = zero;
-  team.team_barrier();
 
   for (int i = 1; i < pver; ++i) {
     const int kk = pverm - i;
@@ -567,7 +562,7 @@ void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
            const int np_xs, const int numj,
            const View2D &j_long, // output
            // work arrays
-           const View2D &rsf, const View2D &xswk, Real *psum_l,
+           const View2D &rsf, Real *psum_l,
            Real *psum_u) // out
 {
   /*==============================================================================
@@ -638,69 +633,49 @@ void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
   ------------------------------------------------------------------------------*/
   // To avoid the 'pver is undefined' error during CUDA code compilation.
   constexpr int pver_local = pver;
-  // xswk is not dimentioned by number of levels so can not parallelize over
-  // levels.
-  Kokkos::single(Kokkos::PerTeam(team), [=]() {
-    for (int kk = 0; kk < pver_local; ++kk) {
-      /*----------------------------------------------------------------------
-        ... get index into xsqy
-       ----------------------------------------------------------------------*/
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local), [&](int kk) {
+    /*----------------------------------------------------------------------
+               ... find pressure level
+     ----------------------------------------------------------------------*/
+    const Real ptarget = p_in[kk];
+    Real delp = zero;
+    int pndx = 0;
+    if (ptarget >= prs[0]) {
+      delp = zero;
+      pndx = 0;
+    } else if (ptarget <= prs[np_xs - 1]) {
+      delp = zero;
+      pndx = np_xs - 1;
+    } else {
+      for (int km = 1; km < np_xs; km++) {
+        if (ptarget >= prs[km]) {
+          pndx = km - 1;
+          delp = (prs[pndx] - ptarget) * dprs[pndx];
+          break;
+        } // end if
+      }   // end for km
+    }
 
-      // Fortran indexing to C++ indexing
-      // number of temperatures in xsection table
-      // BAD CONSTANT for 201 and 148.5
-      const int t_index = haero::min(201, haero::max(t_in[kk] - 148.5, 0)) - 1;
+    // Fortran indexing to C++ indexing
+    // number of temperatures in xsection table
+    // BAD CONSTANT for 201 and 148.5
+    /*----------------------------------------------------------------------
+      ... get index into xsqy
+     ----------------------------------------------------------------------*/
+    const int t_index = haero::min(201, haero::max(t_in[kk] - 148.5, 0)) - 1;
 
-      /*----------------------------------------------------------------------
-                 ... find pressure level
-       ----------------------------------------------------------------------*/
-      const Real ptarget = p_in[kk];
-      if (ptarget >= prs[0]) {
-        for (int wn = 0; wn < nw; wn++) {
-          for (int i = 0; i < numj; i++) {
-            xswk(i, wn) = xsqy(i, wn, t_index, 0);
-          } // end for i
-        }   // end for wn
-        // Fortran to C++ indexing conversion
-      } else if (ptarget <= prs[np_xs - 1]) {
-        for (int wn = 0; wn < nw; wn++) {
-          for (int i = 0; i < numj; i++) {
-            // Fortran to C++ indexing conversion
-            xswk(i, wn) = xsqy(i, wn, t_index, np_xs - 1);
-          } // end for i
-        }   // end for wn
-
-      } else {
-        Real delp = zero;
-        int pndx = 0;
-        // Question: delp is not initialized in fortran code. What if the
-        // following code does not satify this if condition: ptarget >=
-        // prs[km] Conversion indexing from Fortran to C++
-        for (int km = 1; km < np_xs; km++) {
-          if (ptarget >= prs[km]) {
-            pndx = km - 1;
-            delp = (prs[pndx] - ptarget) * dprs[pndx];
-            break;
-          } // end if
-        }   // end for km
-        for (int wn = 0; wn < nw; wn++) {
-          for (int i = 0; i < numj; i++) {
-            xswk(i, wn) = xsqy(i, wn, t_index, pndx) +
-                          delp * (xsqy(i, wn, t_index, pndx + 1) -
-                                  xsqy(i, wn, t_index, pndx));
-
-          } // end for i
-        }   // end for wn
-      }     // end if
-      for (int i = 0; i < numj; ++i) {
-        Real suma = zero;
-        for (int wn = 0; wn < nw; wn++) {
-          suma += xswk(i, wn) * rsf(wn, kk);
-        }
-        j_long(i, kk) = suma;
-      } // i
-    };  // end kk
-  });   // end single
+    for (int i = 0; i < numj; i++)
+      j_long(i, kk) = 0;
+    for (int wn = 0; wn < nw; wn++) {
+      for (int i = 0; i < numj; i++) {
+        Real xswk = xsqy(i, wn, t_index, pndx);
+        if (delp)
+          xswk += delp *
+                  (xsqy(i, wn, t_index, pndx + 1) - xsqy(i, wn, t_index, pndx));
+        j_long(i, kk) += xswk * rsf(wn, kk);
+      }
+    }
+  }); // end kk
 } // jlong
 
 // FIXME: note the use of ConstColumnView for views we get from the
@@ -781,7 +756,7 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
           table_data.numalb, table_data.np_xs, table_data.numj,
           work_arrays.lng_prates, // output
           // work arrays
-          work_arrays.rsf, work_arrays.xswk, work_arrays.psum_l.data(),
+          work_arrays.rsf, work_arrays.psum_l.data(),
           work_arrays.psum_u.data());
     team.team_barrier();
     Kokkos::single(Kokkos::PerTeam(team), [=]() {

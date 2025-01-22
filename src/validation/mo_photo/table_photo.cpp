@@ -95,7 +95,6 @@ void table_photo(Ensemble *ensemble) {
     Kokkos::deep_copy(table_data.dprs, dprs_host);
 
     View3D rsf("rsf", ncol, table_data.nw, pver);
-    View3D xswk("xswk", ncol, table_data.numj, table_data.nw);
 
     const Real values_xsqy = synthetic_values_xsqy[0];
     Kokkos::deep_copy(table_data.xsqy, values_xsqy);
@@ -167,8 +166,6 @@ void table_photo(Ensemble *ensemble) {
               Kokkos::subview(j_long, i, Kokkos::ALL(), Kokkos::ALL());
           work_arrays.rsf =
               Kokkos::subview(rsf, i, Kokkos::ALL(), Kokkos::ALL());
-          work_arrays.xswk =
-              Kokkos::subview(xswk, i, Kokkos::ALL(), Kokkos::ALL());
           work_arrays.psum_l = Kokkos::subview(psum_l, i, Kokkos::ALL());
           work_arrays.psum_u = Kokkos::subview(psum_u, i, Kokkos::ALL());
 
