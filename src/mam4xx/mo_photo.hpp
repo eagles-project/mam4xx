@@ -760,7 +760,8 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
               srf_alb, //  in
               eff_alb, cld_mult);
     team.team_barrier();
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver), [&](int kk) {
+    const int local_pver = pver;
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
       parg[kk] = pmid(kk) * Pa2mb;
       cld_mult[kk] *= esfact;
     });
