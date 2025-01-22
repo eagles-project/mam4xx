@@ -18,6 +18,11 @@
 #include <cmath>
 #include <iostream>
 
+
+#include <mam4xx/mam4.hpp>
+#include <mam4xx/aero_config.hpp>
+using namespace haero;
+
 using namespace mam4;
 
 struct KohlerSolveTestFtor {
@@ -129,24 +134,27 @@ TEST_CASE("kohler_verificiation", "") {
   static constexpr int N = 20;
   static constexpr int N3 = N * N * N;
   KohlerVerification verification(N);
-
+  logger.info("set N & N3 to {} and {}", N, N3);
   SECTION("polynomial_properties") {
     DeviceType::view_1d<Real> k_of_zero("kohler_poly_zero_input", N3);
     DeviceType::view_1d<Real> k_of_rdry("kohler_poly_rdry_input", N3);
     DeviceType::view_1d<Real> k_of_25rdry("kohler_poly_25rdry_input", N3);
-
+    logger.info("initialied 1d views");
     const auto rh = verification.relative_humidity;
     const auto hyg = verification.hygroscopicity;
     const auto rdry = verification.dry_radius;
+    logger.info("initialied verifications");
     Kokkos::parallel_for(
         "KohlerVerification::test_properties", N3, KOKKOS_LAMBDA(const int i) {
           const Real mam4_default_temperature = Constants::triple_pt_h2o;
           const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
                                               mam4_default_temperature);
-          k_of_zero(i) = kpoly(0);
+          //k_of_zero(i) = kpoly(0);
+          Kokkos::printf("loop %d\n", i);
           k_of_rdry(i) = kpoly(rdry(i));
           k_of_25rdry(i) = kpoly(25 * rdry(i));
         });
+    logger.info("finished kokkos for");
     auto h_k0 = Kokkos::create_mirror_view(k_of_zero);
     auto h_krdry = Kokkos::create_mirror_view(k_of_rdry);
     auto h_k25 = Kokkos::create_mirror_view(k_of_25rdry);
@@ -159,12 +167,13 @@ TEST_CASE("kohler_verificiation", "") {
     Kokkos::deep_copy(h_rh, rh);
     Kokkos::deep_copy(h_hyg, hyg);
     Kokkos::deep_copy(h_rdry, rdry);
-
+    logger.info("copied views");
     const Real mam4_kelvin_a = kelvin_coefficient() * 1e6;
 
     for (int i = 0; i < N3; ++i) {
+      logger.info("checking {}", i);
       REQUIRE(
-          FloatingPoint<Real>::equiv(h_k0(i), mam4_kelvin_a * cube(h_rdry(i))));
+          haero::FloatingPoint<Real>::equiv(h_k0(i), mam4_kelvin_a * cube(h_rdry(i))));
       REQUIRE(h_krdry(i) > 0);
       REQUIRE(h_k25(i) < 0);
     }
