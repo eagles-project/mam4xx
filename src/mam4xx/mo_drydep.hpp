@@ -638,8 +638,7 @@ void drydep_xactive(
     const seq_drydep::Data &drydep_data,
     const Real fraction_landuse[n_land_type], // fraction of land use for column
                                               // by land type
-    const int month,                          // month
-    const int col_index_season[n_land_type], // column-specific mapping of month
+    const int index_season[n_land_type], // column-specific mapping of month
                                              // indices to seasonal land-type
                                              // indices [-]
     const Real sfc_temp,                     // surface temperature [K]
@@ -650,7 +649,6 @@ void drydep_xactive(
     const Real spec_hum,                     // specific humidity [kg/kg]
     const Real wind_speed,                   // 10-meter wind spped [m/s]
     const Real rain,                         // rain content [??]
-    const Real snow,                         // snow height [m]
     const Real solar_flux,     // direct shortwave surface radiation [W/m^2]
     const Real mmr[gas_pcnst], // constituent MMRs [kg/kg]
     Real dvel[gas_pcnst],      // deposition velocity [1/cm/s]
@@ -672,27 +670,7 @@ void drydep_xactive(
   Real heff[nddvels];
   mam4::seq_drydep::set_hcoeff_scalar(sfc_temp, heff);
 
-  //-------------------------------------------------------------------------------------
-  // define which season (relative to Northern hemisphere climate)
-  //-------------------------------------------------------------------------------------
 
-  //-------------------------------------------------------------------------------------
-  // define season index based on fixed LAI
-  //-------------------------------------------------------------------------------------
-
-  int index_season[n_land_type];
-  for (int lt = 0; lt < n_land_type; ++lt) {
-    index_season[lt] = col_index_season[month - 1];
-  }
-
-  //-------------------------------------------------------------------------------------
-  // special case for snow covered terrain
-  //-------------------------------------------------------------------------------------
-  if (snow > 0.01) { // BAD_CONSTANT
-    for (int lt = 0; lt < n_land_type; ++lt) {
-      index_season[lt] = 3;
-    }
-  }
 
   //-------------------------------------------------------------------------------------
   // scale rain and define logical arrays

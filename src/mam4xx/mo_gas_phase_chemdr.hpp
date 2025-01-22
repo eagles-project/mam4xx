@@ -63,7 +63,6 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
  * @param [in] pressure_sfc  -- surface pressure [Pa]
  * @param [in] wind_speed    -- 10-meter wind spped [m/s]
  * @param [in] rain          -- rain content [kg/m2/s]
- * @param [in] snow          -- snow height [m]
  * @param [in] solar_flux    -- direct shortwave surface radiation [W/m^2]
  * @param [in] cnst_offline_icol Invariant tracer
  * @param [in] forcings_in Struct for external forcing or vertical emissions
@@ -111,10 +110,10 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
 
 KOKKOS_INLINE_FUNCTION
 void perform_atmospheric_chemistry_and_microphysics(
-    const ThreadTeam &team, const Real dt, const Real rlats, const int month,
+    const ThreadTeam &team, const Real dt, const Real rlats,
     const Real sfc_temp,
     const Real pressure_sfc,
-    const Real wind_speed, const Real rain, const Real snow,
+    const Real wind_speed, const Real rain,
     const Real solar_flux, const View1D cnst_offline_icol[num_tracer_cnst],
     const Forcing *forcings_in, const haero::Atmosphere &atm,
     const PhotoTableData &photo_table, const Real chlorine_loading,
@@ -130,7 +129,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     const View1D &linoz_cariolle_pscs_icol, const Real eccf,
     const Real adv_mass_kg_per_moles[gas_pcnst],
     const Real fraction_landuse[mam4::mo_drydep::n_land_type],
-    const int col_index_season[mam4::mo_drydep::n_land_type],
+    const int index_season[mam4::mo_drydep::n_land_type],
     const int (&clsmap_4)[gas_pcnst], const int (&permute_4)[gas_pcnst],
     const int offset_aerosol, const Real o3_sfc, const Real o3_tau,
     const int o3_lbl, const ConstView2D dry_diameter_icol,
@@ -222,12 +221,12 @@ void perform_atmospheric_chemistry_and_microphysics(
     Real qq[gas_pcnst] = {};
     for (int i = offset_aerosol; i < pcnst; ++i)
       qq[i - offset_aerosol] = state_q[i];
+
     team.team_barrier();
     mam4::mo_drydep::drydep_xactive(
         drydep_data,
         fraction_landuse, // fraction of land use for column by land type
-        month,            // month
-        col_index_season, // column-specific mapping of month indices to
+        index_season, // column-specific mapping of month indices to
                           // seasonal land-type indices [-]
         sfc_temp,         // surface temperature [K]
         air_temp,         // surface air temperature [K]
@@ -237,7 +236,6 @@ void perform_atmospheric_chemistry_and_microphysics(
         spec_hum,         // specific humidity [kg/kg]
         wind_speed,       // 10-meter wind spped [m/s]
         rain,             // rain content [??]
-        snow,             // snow height [m]
         solar_flux,       // direct shortwave surface radiation [W/m^2]
         qq,               // constituent MMRs [kg/kg]
         dvel,             // deposition velocity [1/cm/s]
