@@ -639,16 +639,16 @@ void drydep_xactive(
     const Real fraction_landuse[n_land_type], // fraction of land use for column
                                               // by land type
     const int index_season[n_land_type], // column-specific mapping of month
-                                             // indices to seasonal land-type
-                                             // indices [-]
-    const Real sfc_temp,                     // surface temperature [K]
-    const Real air_temp,                     // surface air temperature [K]
-    const Real tv,                           // potential temperature [K]
-    const Real pressure_sfc,                 // surface pressure [Pa]
-    const Real pressure_10m,                 // 10-meter pressure [Pa]
-    const Real spec_hum,                     // specific humidity [kg/kg]
-    const Real wind_speed,                   // 10-meter wind spped [m/s]
-    const Real rain,                         // rain content [??]
+                                         // indices to seasonal land-type
+                                         // indices [-]
+    const Real sfc_temp,                 // surface temperature [K]
+    const Real air_temp,                 // surface air temperature [K]
+    const Real tv,                       // potential temperature [K]
+    const Real pressure_sfc,             // surface pressure [Pa]
+    const Real pressure_10m,             // 10-meter pressure [Pa]
+    const Real spec_hum,                 // specific humidity [kg/kg]
+    const Real wind_speed,               // 10-meter wind spped [m/s]
+    const Real rain,                     // rain content [??]
     const Real solar_flux,     // direct shortwave surface radiation [W/m^2]
     const Real mmr[gas_pcnst], // constituent MMRs [kg/kg]
     Real dvel[gas_pcnst],      // deposition velocity [1/cm/s]
@@ -669,8 +669,6 @@ void drydep_xactive(
   //-------------------------------------------------------------------------------------
   Real heff[nddvels];
   mam4::seq_drydep::set_hcoeff_scalar(sfc_temp, heff);
-
-
 
   //-------------------------------------------------------------------------------------
   // scale rain and define logical arrays

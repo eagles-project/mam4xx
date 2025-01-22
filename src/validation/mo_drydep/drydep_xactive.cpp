@@ -54,14 +54,23 @@ void drydep_xactive(const seq_drydep::Data &data, Ensemble *ensemble) {
     View1D dvel_d("dvel", gas_pcnst);
     View1D dflx_d("dflx", gas_pcnst);
 
-    auto team_policy = ThreadTeamPolicy(1u, 1u);
+    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO());
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          drydep_xactive(data, fraction_landuse_d.data(), month,
-                         col_index_season_d.data(), sfc_temp, air_temp, tv,
-                         pressure_sfc, pressure_10m, spec_hum, wind_speed, rain,
-                         snow, solar_flux, mmr_d.data(), dvel_d.data(),
-                         dflx_d.data());
+          int index_season[n_land_type] = {};
+          for (int lt = 0; lt < mam4::mo_drydep::n_land_type; ++lt) {
+            index_season[lt] = col_index_season_d(month - 1);
+          }
+          if (snow > 0.01) { // BAD_CONSTANT
+            for (int lt = 0; lt < mam4::mo_drydep::n_land_type; ++lt) {
+              index_season[lt] = 3;
+            }
+          }
+
+          drydep_xactive(data, fraction_landuse_d.data(), index_season,
+                         sfc_temp, air_temp, tv, pressure_sfc, pressure_10m,
+                         spec_hum, wind_speed, rain, solar_flux, mmr_d.data(),
+                         dvel_d.data(), dflx_d.data());
         });
 
     std::vector<Real> dvel(gas_pcnst), dflx(gas_pcnst);

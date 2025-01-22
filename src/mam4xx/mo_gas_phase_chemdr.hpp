@@ -111,13 +111,11 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
 KOKKOS_INLINE_FUNCTION
 void perform_atmospheric_chemistry_and_microphysics(
     const ThreadTeam &team, const Real dt, const Real rlats,
-    const Real sfc_temp,
-    const Real pressure_sfc,
-    const Real wind_speed, const Real rain,
-    const Real solar_flux, const View1D cnst_offline_icol[num_tracer_cnst],
-    const Forcing *forcings_in, const haero::Atmosphere &atm,
-    const PhotoTableData &photo_table, const Real chlorine_loading,
-    const mam4::mo_setsox::Config &config_setsox,
+    const Real sfc_temp, const Real pressure_sfc, const Real wind_speed,
+    const Real rain, const Real solar_flux,
+    const View1D cnst_offline_icol[num_tracer_cnst], const Forcing *forcings_in,
+    const haero::Atmosphere &atm, const PhotoTableData &photo_table,
+    const Real chlorine_loading, const mam4::mo_setsox::Config &config_setsox,
     const AmicPhysConfig &config_amicphys, const Real linoz_psc_T,
     const Real zenith_angle_icol, const Real d_sfc_alb_dir_vis_icol,
     const View1D &o3_col_dens_i, const View2D &photo_rates_icol,
@@ -159,7 +157,7 @@ void perform_atmospheric_chemistry_and_microphysics(
   work_set_het_ptr += sethet_work_len;
 
   //
-  const int surface_lev = nlev - 1;                 // Surface level
+  const int surface_lev = nlev - 1; // Surface level
   // specific humidity [kg/kg]
   const Real spec_hum = atm.vapor_mixing_ratio(surface_lev);
   // surface air temperature [K]
@@ -171,7 +169,6 @@ void perform_atmospheric_chemistry_and_microphysics(
   // 10-meter pressure [Pa]
   // Surface pressure at 10m (Followed the fortran code)
   const Real pressure_10m = atm.pressure(surface_lev);
-
 
   mam4::mo_setext::extfrc_set(team, forcings_in, extfrc_icol);
 
@@ -226,7 +223,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     mam4::mo_drydep::drydep_xactive(
         drydep_data,
         fraction_landuse, // fraction of land use for column by land type
-        index_season, // column-specific mapping of month indices to
+        index_season,     // column-specific mapping of month indices to
                           // seasonal land-type indices [-]
         sfc_temp,         // surface temperature [K]
         air_temp,         // surface air temperature [K]
