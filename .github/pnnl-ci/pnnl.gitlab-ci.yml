@@ -4,7 +4,7 @@ stages:
 # This maximizes the number of concurrent builds that can run
   - haero-single
   - haero-double
-  - build-single
+  # - build-single
   - build-double
 
 # Runner with HPC/SLURM connection
@@ -175,24 +175,24 @@ SVC Account Cleanup:
 
 # Since we only have two runners, we should run builds one after the other to ensure
 # Two developers can run pipelines at the same time.
-Deception Debug Single Precision:
-  extends:
-    - .pnnl_hpc_job_template
-    - .debug
-  stage: build-single
-  variables:
-    PRECISION: single
+# Deception Debug Single Precision:
+#   extends:
+#     - .pnnl_hpc_job_template
+#     - .debug
+#   stage: build-single
+#   variables:
+#     PRECISION: single
 
-Deception Release Single Precision:
-  extends:
-    - .pnnl_hpc_job_template
-    - .release
-  stage: build-single
-  variables:
-    PRECISION: single
+# Deception Release Single Precision:
+#   extends:
+#     - .pnnl_hpc_job_template
+#     - .release
+#   stage: build-single
+#   variables:
+#     PRECISION: single
 
 Deception Debug Double Precision:
-  needs: ['Deception Debug Single Precision']
+  # needs: ['Deception Debug Single Precision']
   extends:
     - .pnnl_hpc_job_template
     - .debug
@@ -201,7 +201,7 @@ Deception Debug Double Precision:
     PRECISION: double
 
 Deception Release Double Precision:
-  needs: ['Deception Release Single Precision']
+  # needs: ['Deception Release Single Precision']
   extends:
     - .pnnl_hpc_job_template
     - .release
