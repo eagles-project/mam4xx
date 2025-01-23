@@ -150,7 +150,6 @@ void gas_washout(
       }
     }
   });
-  team.team_barrier();
 } // end subroutine gas_washout
 
 //=================================================================================
