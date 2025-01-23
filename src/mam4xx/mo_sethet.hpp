@@ -126,8 +126,13 @@ void gas_washout(
   // -----------------------------------------------------------------
   //       ... calculate the saturation concentration eqca
   // -----------------------------------------------------------------
-  // Kokkos::single(Kokkos::PerTeam(team), [=]() {
-  Real allca = 0.0; // total of ca between level plev and kk [#/cm3]
+  // total of ca between level plev and kk [#/cm3]
+  Real allca = 0.0;
+
+  // This loop causes problems because plev is the only level this
+  // function should be changing but it changes values in other levels
+  // which prevents gas_washout from running in parallel over all the
+  // levels in a column.
   for (int k = plev; k < pver; k++) {
     const Real xeqca =
         xgas(k) / (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
@@ -149,7 +154,6 @@ void gas_washout(
       xgas(k) = haero::max(xgas(k) - xca, 0.0);
     }
   }
-  //});
 } // end subroutine gas_washout
 
 //=================================================================================
@@ -376,8 +380,8 @@ void sethet_detail(
   team.team_barrier();
   Kokkos::single(Kokkos::PerTeam(team), [=]() {
     // gas_washout is odd in that it modifies all of xgas2 and xgas3
-    // from level kk to level pver
-    // so calling it in parallel is a race condition for xgas2.
+    // from level kk to level pver so calling it in parallel is a
+    // race condition for xgas2.  Hence the Kokkos::single.
     for (int kk = ktop; kk < pver; ++kk) {
       Real stay =
           1.0; // fraction of layer traversed by falling drop in timestep delt
