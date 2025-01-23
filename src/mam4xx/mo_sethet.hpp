@@ -382,11 +382,7 @@ void sethet_detail(
     // from level kk to level pver so calling it in parallel is a
     // race condition for xgas2.  Hence the Kokkos::single.
     for (int kk = ktop; kk < pver; ++kk) {
-      Real stay =
-          1.0; // fraction of layer traversed by falling drop in timestep delt
       if (rain(kk) != 0.0) { // finding rain cloud
-        stay = ((zmid(kk) - zsurf) * km2cm) / (xum * delt);
-        stay = haero::min(stay, 1.0);
         // calculate gas washout by cloud
         gas_washout(team, kk, xkgm, xliq(kk), // in
                     xhen_h2o2, tfld, delz,    // in
@@ -395,40 +391,49 @@ void sethet_detail(
                     xhen_so2, tfld, delz,     // in
                     xgas3);                   // inout
       }
-      //-----------------------------------------------------------------
-      //       ... calculate the lifetime of washout (second)
-      //             after all layers washout
-      //             the concentration of hno3 is reduced
-      //             then the lifetime xtt is calculated by
-      //
-      //                  xtt = (xhno3(ini) - xgas1(new))/(dt*xhno3(ini))
-      //                  where dt = passing time (s) in vertical
-      //                             path below the cloud
-      //                        dt = dz(cm)/um(cm/s)
-      //-----------------------------------------------------------------
-      const Real xdtm = delz(kk) / xum; // the traveling time in each dz
-
-      const Real xxx2 = (xh2o2(kk) - xgas2(kk));
-      Real yh2o2 = 0;    // washout lifetime [s]
-      if (xxx2 != 0.0) { // if no washout lifetime = 1.e29
-        yh2o2 = xh2o2(kk) / xxx2 * xdtm;
-      } else {
-        yh2o2 = large_value_lifetime;
-      }
-      tmp_hetrates[1](kk) =
-          haero::max(1.0 / yh2o2, 0.0) * stay; // FIXME: bad constant index
-
-      Real yso2 = 0;
-      const Real xxx3 =
-          (xso2(kk) - xgas3(kk)); // working variables for h2o2 (2) and so2 (3)
-      if (xxx3 != 0.0) {          // if no washout lifetime = 1.e29
-        yso2 = xso2(kk) / xxx3 * xdtm;
-      } else {
-        yso2 = large_value_lifetime;
-      }
-      tmp_hetrates[2](kk) =
-          haero::max(1.0 / yso2, 0.0) * stay; // FIXME: bad constant index
     }
+  });
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ktop, pver), [&](int kk) {
+    // fraction of layer traversed by falling drop in timestep delt
+    Real stay = 1.0;
+    if (rain(kk) != 0.0) { // finding rain cloud
+      stay = ((zmid(kk) - zsurf) * km2cm) / (xum * delt);
+      stay = haero::min(stay, 1.0);
+    }
+    //-----------------------------------------------------------------
+    //       ... calculate the lifetime of washout (second)
+    //             after all layers washout
+    //             the concentration of hno3 is reduced
+    //             then the lifetime xtt is calculated by
+    //
+    //                  xtt = (xhno3(ini) - xgas1(new))/(dt*xhno3(ini))
+    //                  where dt = passing time (s) in vertical
+    //                             path below the cloud
+    //                        dt = dz(cm)/um(cm/s)
+    //-----------------------------------------------------------------
+    const Real xdtm = delz(kk) / xum; // the traveling time in each dz
+
+    const Real xxx2 = (xh2o2(kk) - xgas2(kk));
+    Real yh2o2 = 0;    // washout lifetime [s]
+    if (xxx2 != 0.0) { // if no washout lifetime = 1.e29
+      yh2o2 = xh2o2(kk) / xxx2 * xdtm;
+    } else {
+      yh2o2 = large_value_lifetime;
+    }
+    tmp_hetrates[1](kk) =
+        haero::max(1.0 / yh2o2, 0.0) * stay; // FIXME: bad constant index
+
+    Real yso2 = 0;
+    const Real xxx3 =
+        (xso2(kk) - xgas3(kk)); // working variables for h2o2 (2) and so2 (3)
+    if (xxx3 != 0.0) {          // if no washout lifetime = 1.e29
+      yso2 = xso2(kk) / xxx3 * xdtm;
+    } else {
+      yso2 = large_value_lifetime;
+    }
+    tmp_hetrates[2](kk) =
+        haero::max(1.0 / yso2, 0.0) * stay; // FIXME: bad constant index
   });
   team.team_barrier();
   //-----------------------------------------------------------------
