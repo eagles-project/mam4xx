@@ -126,30 +126,30 @@ void gas_washout(
   // -----------------------------------------------------------------
   //       ... calculate the saturation concentration eqca
   // -----------------------------------------------------------------
-//Kokkos::single(Kokkos::PerTeam(team), [=]() {
-    Real allca = 0.0; // total of ca between level plev and kk [#/cm3]
-    for (int k = plev; k < pver; k++) {
-      const Real xeqca =
-          xgas(k) / (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
-          xliq_ik * avo2;
-      //-----------------------------------------------------------------
-      //       ... calculate ca; inside cloud concentration in  #/cm3(air)
-      //-----------------------------------------------------------------
-      const Real xca = geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) *
-                       xliq_ik * cm3_2_m3;
+  // Kokkos::single(Kokkos::PerTeam(team), [=]() {
+  Real allca = 0.0; // total of ca between level plev and kk [#/cm3]
+  for (int k = plev; k < pver; k++) {
+    const Real xeqca =
+        xgas(k) / (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
+        xliq_ik * avo2;
+    //-----------------------------------------------------------------
+    //       ... calculate ca; inside cloud concentration in  #/cm3(air)
+    //-----------------------------------------------------------------
+    const Real xca =
+        geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik * cm3_2_m3;
 
-      // -----------------------------------------------------------------
-      //       ... if is not saturated (take hno3 as an example)
-      //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
-      //           otherwise
-      //               hno3(gas)_new = hno3(gas)_old
-      // -----------------------------------------------------------------
-      allca += xca;
-      if (allca < xeqca) {
-        xgas(k) = haero::max(xgas(k) - xca, 0.0);
-      }
+    // -----------------------------------------------------------------
+    //       ... if is not saturated (take hno3 as an example)
+    //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
+    //           otherwise
+    //               hno3(gas)_new = hno3(gas)_old
+    // -----------------------------------------------------------------
+    allca += xca;
+    if (allca < xeqca) {
+      xgas(k) = haero::max(xgas(k) - xca, 0.0);
     }
-//});
+  }
+  //});
 } // end subroutine gas_washout
 
 //=================================================================================
@@ -375,11 +375,12 @@ void sethet_detail(
   });
   team.team_barrier();
   Kokkos::single(Kokkos::PerTeam(team), [=]() {
-    // gas_washout is odd in that it modifies all of xgas2 and xgas3 
+    // gas_washout is odd in that it modifies all of xgas2 and xgas3
     // from level kk to level pver
     // so calling it in parallel is a race condition for xgas2.
-    for (int kk=ktop; kk<pver; ++kk) {
-      Real stay = 1.0; // fraction of layer traversed by falling drop in timestep delt
+    for (int kk = ktop; kk < pver; ++kk) {
+      Real stay =
+          1.0; // fraction of layer traversed by falling drop in timestep delt
       if (rain(kk) != 0.0) { // finding rain cloud
         stay = ((zmid(kk) - zsurf) * km2cm) / (xum * delt);
         stay = haero::min(stay, 1.0);
@@ -405,7 +406,7 @@ void sethet_detail(
       const Real xdtm = delz(kk) / xum; // the traveling time in each dz
 
       const Real xxx2 = (xh2o2(kk) - xgas2(kk));
-      Real yh2o2 = 0;  // washout lifetime [s]
+      Real yh2o2 = 0;    // washout lifetime [s]
       if (xxx2 != 0.0) { // if no washout lifetime = 1.e29
         yh2o2 = xh2o2(kk) / xxx2 * xdtm;
       } else {
@@ -415,8 +416,9 @@ void sethet_detail(
           haero::max(1.0 / yh2o2, 0.0) * stay; // FIXME: bad constant index
 
       Real yso2 = 0;
-      const Real xxx3 = (xso2(kk) - xgas3(kk));  // working variables for h2o2 (2) and so2 (3)
-      if (xxx3 != 0.0) { // if no washout lifetime = 1.e29
+      const Real xxx3 =
+          (xso2(kk) - xgas3(kk)); // working variables for h2o2 (2) and so2 (3)
+      if (xxx3 != 0.0) {          // if no washout lifetime = 1.e29
         yso2 = xso2(kk) / xxx3 * xdtm;
       } else {
         yso2 = large_value_lifetime;
