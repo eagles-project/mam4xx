@@ -103,6 +103,14 @@ void table_photo(Ensemble *ensemble) {
 
     auto psum_l = View2D("psum_l", ncol, table_data.nw);
     auto psum_u = View2D("psum_u", ncol, table_data.nw);
+    auto parg = View2D("parg", ncol, pver);
+    auto eff_alb = View2D("eff_alb", ncol, pver);
+    auto cld_mult = View2D("cld_mult", ncol, pver);
+    auto del_tau = View2D("del_tau", ncol, pver);
+    auto below_tau = View2D("below_tau", ncol, pver);
+    auto below_cld = View2D("below_cld", ncol, pver);
+    auto above_tau = View2D("above_tau", ncol, pver);
+    auto above_cld = View2D("above_cld", ncol, pver);
 
     auto pht_alias_mult_1_db = input.get_array("pht_alias_mult");
     auto pht_alias_mult_1_host =
@@ -168,6 +176,14 @@ void table_photo(Ensemble *ensemble) {
               Kokkos::subview(rsf, i, Kokkos::ALL(), Kokkos::ALL());
           work_arrays.psum_l = Kokkos::subview(psum_l, i, Kokkos::ALL());
           work_arrays.psum_u = Kokkos::subview(psum_u, i, Kokkos::ALL());
+          work_arrays.parg = Kokkos::subview(parg, i, Kokkos::ALL());
+          work_arrays.eff_alb = Kokkos::subview(eff_alb, i, Kokkos::ALL());
+          work_arrays.cld_mult = Kokkos::subview(cld_mult, i, Kokkos::ALL());
+          work_arrays.del_tau = Kokkos::subview(del_tau, i, Kokkos::ALL());
+          work_arrays.below_tau = Kokkos::subview(below_tau, i, Kokkos::ALL());
+          work_arrays.below_cld = Kokkos::subview(below_cld, i, Kokkos::ALL());
+          work_arrays.above_tau = Kokkos::subview(above_tau, i, Kokkos::ALL());
+          work_arrays.above_cld = Kokkos::subview(above_cld, i, Kokkos::ALL());
 
           table_photo(team, photo_icol, // out
                       pmid_icol, pdel_icol,

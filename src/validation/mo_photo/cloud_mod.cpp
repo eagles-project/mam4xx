@@ -41,12 +41,21 @@ void cloud_mod(Ensemble *ensemble) {
 
     View1D eff_alb("eff_alb", pver);
     View1D cld_mult("cld_mult", pver);
+    PhotoTableWorkArrays work_arrays{};
+    work_arrays.parg = View1D("parg", pver);
+    work_arrays.eff_alb = View1D("eff_alb", pver);
+    work_arrays.cld_mult = View1D("cld_mult", pver);
+    work_arrays.del_tau = View1D("del_tau", pver);
+    work_arrays.below_tau = View1D("below_tau", pver);
+    work_arrays.below_cld = View1D("below_cld", pver);
+    work_arrays.above_tau = View1D("above_tau", pver);
+    work_arrays.above_cld = View1D("avove_cle", pver);
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          cloud_mod(team, zen_angle, clouds, lwc, delp,
-                    srf_alb, //  in
+          cloud_mod(team, zen_angle, clouds, lwc, delp, srf_alb,
+                    work_arrays, //  in
                     eff_alb.data(), cld_mult.data());
         });
     std::vector<Real> eff_alb_db(pver, zero);
