@@ -108,14 +108,13 @@ void atm_chem_N_microphysics(Ensemble *ensemble) {
     // const Real rlats;
     // const View1D cnst_offline_icol[num_tracer_cnst];
     // const Forcing *forcings_in;
-      // struct Forcing {
-      //   // This index is in Fortran format. i.e. starts in 1
-      //   int frc_ndx;
-      //   bool file_alt_data;
-      //   View1D fields_data[MAX_NUM_SECTIONS];
-      //   int nsectors;
-      // };
-
+    // struct Forcing {
+    //   // This index is in Fortran format. i.e. starts in 1
+    //   int frc_ndx;
+    //   bool file_alt_data;
+    //   View1D fields_data[MAX_NUM_SECTIONS];
+    //   int nsectors;
+    // };
 
     // maybe correct--variables look similar or correspond to similar in fortran
     // =====================================
@@ -126,8 +125,10 @@ void atm_chem_N_microphysics(Ensemble *ensemble) {
     const auto linoz_PmL_clim_icol_ = input.get_array("linoz_PmL_clim")[0];
     const auto linoz_dPmL_dO3_icol_ = input.get_array("linoz_dPmL_dO3")[0];
     const auto linoz_dPmL_dT_icol_ = input.get_array("linoz_dPmL_dT")[0];
-    const auto linoz_dPmL_dO3col_icol_ = input.get_array("linoz_dPmL_dO3col")[0];
-    const auto linoz_cariolle_pscs_icol_ = input.get_array("linoz_cariolle_psc")[0];
+    const auto linoz_dPmL_dO3col_icol_ =
+        input.get_array("linoz_dPmL_dO3col")[0];
+    const auto linoz_cariolle_pscs_icol_ =
+        input.get_array("linoz_cariolle_psc")[0];
     // from gas_phase_chemdr.F90:428
     const Real eccf = 1.0;
     const Real pblh = input.get_array("pblh")[0];
@@ -148,13 +149,14 @@ void atm_chem_N_microphysics(Ensemble *ensemble) {
     //  "dgnumwet", "drydepflx", "eccen", "extcnt", "fieldname_len", "fsds",
     //  "gas_pcnst", "imozart", "indexm", "inv_ndx_cnst_o3", "lambm0", "lchnk",
     //  "linoz_PmL_clim", "linoz_cariolle_psc", "linoz_dPmL_dO3",
-    //  "linoz_dPmL_dO3col", "linoz_dPmL_dT", "linoz_o3_clim", "linoz_o3col_clim",
-    //  "linoz_t_clim", "map2chm", "mvelpp", "nabscol", "ncldwtr", "ncol",
-    //  "ndx_h2so4", "nevapr", "nfs", "o3_ndx", "obliqr", "pblh", "pcnst", "pcols",
-    //  "pdel", "pdeldry", "phis", "phtcnt", "pi", "pint", "pmid", "prain",
-    //  "precc", "precl", "ps", "pver", "qqcw", "qtend", "rga", "rxntot",
-    //  "rxt_tag_cnt", "rxt_tag_map", "snowhland", "state_q", "synoz_ndx", "tfld",
-    //  "troplev", "ts", "ufld", "vfld", "wetdens", "zi", "zm"}
+    //  "linoz_dPmL_dO3col", "linoz_dPmL_dT", "linoz_o3_clim",
+    //  "linoz_o3col_clim", "linoz_t_clim", "map2chm", "mvelpp", "nabscol",
+    //  "ncldwtr", "ncol", "ndx_h2so4", "nevapr", "nfs", "o3_ndx", "obliqr",
+    //  "pblh", "pcnst", "pcols", "pdel", "pdeldry", "phis", "phtcnt", "pi",
+    //  "pint", "pmid", "prain", "precc", "precl", "ps", "pver", "qqcw",
+    //  "qtend", "rga", "rxntot", "rxt_tag_cnt", "rxt_tag_map", "snowhland",
+    //  "state_q", "synoz_ndx", "tfld", "troplev", "ts", "ufld", "vfld",
+    //  "wetdens", "zi", "zm"}
 
     // Missing:
     // =====================================
@@ -193,7 +195,6 @@ void atm_chem_N_microphysics(Ensemble *ensemble) {
     // =======================================
     // const Real chlorine_loading;
 
-
     const View1D linoz_o3_clim_icol;
     const View1D linoz_t_clim_icol;
     const View1D linoz_o3col_clim_icol;
@@ -207,23 +208,27 @@ void atm_chem_N_microphysics(Ensemble *ensemble) {
     const ConstView2D wet_diameter_icol;
     const ConstView2D wetdens_icol;
 
-
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          // mam4::perform_atmospheric_chemistry_and_microphysics(
-          //     team, dt, rlats, cnst_offline_icol, forcings_in, atm, progs,
-          //     photo_table, chlorine_loading, config_setsox, config_amicphys,
-          //     linoz_psc_T, zenith_angle_icol, d_sfc_alb_dir_vis_icol,
-          //     o3_col_dens_i, photo_rates_icol, extfrc_icol, invariants_icol,
-          //     work_photo_table_icol, linoz_o3_clim_icol, linoz_t_clim_icol,
-          //     linoz_o3col_clim_icol, linoz_PmL_clim_icol, linoz_dPmL_dO3_icol,
-          //     linoz_dPmL_dT_icol, linoz_dPmL_dO3col_icol, linoz_cariolle_pscs_icol,
-          //     eccf, adv_mass_kg_per_moles, clsmap_4, permute_4, offset_aerosol,
-          //     o3_sfc, o3_tau, o3_lbl, dry_diameter_icol, wet_diameter_icol,
-          //     wetdens_icol);
+        team_policy,
+        KOKKOS_LAMBDA(const ThreadTeam &team){
+            // mam4::perform_atmospheric_chemistry_and_microphysics(
+            //     team, dt, rlats, cnst_offline_icol, forcings_in, atm, progs,
+            //     photo_table, chlorine_loading, config_setsox,
+            //     config_amicphys,
+            //     linoz_psc_T, zenith_angle_icol, d_sfc_alb_dir_vis_icol,
+            //     o3_col_dens_i, photo_rates_icol, extfrc_icol,
+            //     invariants_icol,
+            //     work_photo_table_icol, linoz_o3_clim_icol, linoz_t_clim_icol,
+            //     linoz_o3col_clim_icol, linoz_PmL_clim_icol,
+            //     linoz_dPmL_dO3_icol,
+            //     linoz_dPmL_dT_icol, linoz_dPmL_dO3col_icol,
+            //     linoz_cariolle_pscs_icol,
+            //     eccf, adv_mass_kg_per_moles, clsmap_4, permute_4,
+            //     offset_aerosol,
+            //     o3_sfc, o3_tau, o3_lbl, dry_diameter_icol, wet_diameter_icol,
+            //     wetdens_icol);
         });
-
 
     std::vector<Real> cflx_out;
     // 2D view
