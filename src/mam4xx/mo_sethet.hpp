@@ -128,7 +128,6 @@ void gas_washout(
   // -----------------------------------------------------------------
   // total of ca between level plev and kk [#/cm3]
   Real allca = 0.0;
-
   // This loop causes problems because plev is the only level this
   // function should be changing but it changes values in other levels
   // which prevents gas_washout from running in parallel over all the
