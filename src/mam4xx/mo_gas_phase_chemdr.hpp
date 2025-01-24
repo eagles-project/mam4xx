@@ -60,15 +60,9 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
  * @param [in] rlats Column latitudes
  * @param [in] month
  * @param [in] sfc_temp      -- surface temperature [K]
- * @param [in] air_temp      -- surface air temperature [K]
- * @param [in] tv            -- potential temperature [K]
- *                            (temp*(1+vapor_mixing_ratio))
  * @param [in] pressure_sfc  -- surface pressure [Pa]
- * @param [in] pressure_10m  -- 10-meter pressure [Pa]
- * @param [in] spec_hum      -- specific humidity [kg/kg]
  * @param [in] wind_speed    -- 10-meter wind spped [m/s]
  * @param [in] rain          -- rain content [kg/m2/s]
- * @param [in] snow          -- snow height [m]
  * @param [in] solar_flux    -- direct shortwave surface radiation [W/m^2]
  * @param [in] cnst_offline_icol Invariant tracer
  * @param [in] forcings_in Struct for external forcing or vertical emissions
@@ -116,14 +110,12 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
 
 KOKKOS_INLINE_FUNCTION
 void perform_atmospheric_chemistry_and_microphysics(
-    const ThreadTeam &team, const Real dt, const Real rlats, const int month,
-    const Real sfc_temp, const Real air_temp, const Real tv,
-    const Real pressure_sfc, const Real pressure_10m, const Real spec_hum,
-    const Real wind_speed, const Real rain, const Real snow,
-    const Real solar_flux, const View1D cnst_offline_icol[num_tracer_cnst],
-    const Forcing *forcings_in, const haero::Atmosphere &atm,
-    const PhotoTableData &photo_table, const Real chlorine_loading,
-    const mam4::mo_setsox::Config &config_setsox,
+    const ThreadTeam &team, const Real dt, const Real rlats,
+    const Real sfc_temp, const Real pressure_sfc, const Real wind_speed,
+    const Real rain, const Real solar_flux,
+    const View1D cnst_offline_icol[num_tracer_cnst], const Forcing *forcings_in,
+    const haero::Atmosphere &atm, const PhotoTableData &photo_table,
+    const Real chlorine_loading, const mam4::mo_setsox::Config &config_setsox,
     const AmicPhysConfig &config_amicphys, const Real linoz_psc_T,
     const Real zenith_angle_icol, const Real d_sfc_alb_dir_vis_icol,
     const View1D &o3_col_dens_i, const View2D &photo_rates_icol,
@@ -135,7 +127,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     const View1D &linoz_cariolle_pscs_icol, const Real eccf,
     const Real adv_mass_kg_per_moles[gas_pcnst],
     const Real fraction_landuse[mam4::mo_drydep::n_land_type],
-    const int col_index_season[mam4::mo_drydep::n_land_type],
+    const int index_season[mam4::mo_drydep::n_land_type],
     const int (&clsmap_4)[gas_pcnst], const int (&permute_4)[gas_pcnst],
     const int offset_aerosol, const Real o3_sfc, const Real o3_tau,
     const int o3_lbl, const ConstView2D dry_diameter_icol,
@@ -163,6 +155,20 @@ void perform_atmospheric_chemistry_and_microphysics(
   const int sethet_work_len = mam4::mo_sethet::get_work_len_sethet();
   const auto work_sethet_call = View1D(work_set_het_ptr, sethet_work_len);
   work_set_het_ptr += sethet_work_len;
+
+  //
+  const int surface_lev = nlev - 1; // Surface level
+  // specific humidity [kg/kg]
+  const Real spec_hum = atm.vapor_mixing_ratio(surface_lev);
+  // surface air temperature [K]
+  const Real air_temp = atm.temperature(surface_lev);
+  // potential temperature [K] *(temp*(1+vapor_mixing_ratio))
+  //(FIXME: We followed Fortran, compare it with MAM4xx's potential temp
+  // func)
+  const Real tv = air_temp * (1.0 + spec_hum);
+  // 10-meter pressure [Pa]
+  // Surface pressure at 10m (Followed the fortran code)
+  const Real pressure_10m = atm.pressure(surface_lev);
 
   mam4::mo_setext::extfrc_set(team, forcings_in, extfrc_icol);
 
@@ -212,12 +218,12 @@ void perform_atmospheric_chemistry_and_microphysics(
     Real qq[gas_pcnst] = {};
     for (int i = offset_aerosol; i < pcnst; ++i)
       qq[i - offset_aerosol] = state_q[i];
+
     team.team_barrier();
     mam4::mo_drydep::drydep_xactive(
         drydep_data,
         fraction_landuse, // fraction of land use for column by land type
-        month,            // month
-        col_index_season, // column-specific mapping of month indices to
+        index_season,     // column-specific mapping of month indices to
                           // seasonal land-type indices [-]
         sfc_temp,         // surface temperature [K]
         air_temp,         // surface air temperature [K]
@@ -227,7 +233,6 @@ void perform_atmospheric_chemistry_and_microphysics(
         spec_hum,         // specific humidity [kg/kg]
         wind_speed,       // 10-meter wind spped [m/s]
         rain,             // rain content [??]
-        snow,             // snow height [m]
         solar_flux,       // direct shortwave surface radiation [W/m^2]
         qq,               // constituent MMRs [kg/kg]
         dvel,             // deposition velocity [1/cm/s]
