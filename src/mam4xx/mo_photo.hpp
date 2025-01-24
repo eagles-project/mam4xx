@@ -760,12 +760,10 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
               srf_alb, //  in
               eff_alb, cld_mult);
     team.team_barrier();
-    const int local_pver = pver;
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver),
-                         [&](int kk) {
-                           parg[kk] = pmid(kk) * Pa2mb;
-                           cld_mult[kk] *= esfact;
-                         });
+    for (int kk = 0; kk < pver; ++kk) {
+      parg[kk] = pmid(kk) * Pa2mb;
+      cld_mult[kk] *= esfact;
+    }
     team.team_barrier();
     /*-----------------------------------------------------------------
      ... long wave length component
