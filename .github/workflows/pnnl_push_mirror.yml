@@ -6,8 +6,8 @@ jobs:
   to_gitlab:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v1
-      - uses: spyoungtech/mirror-action@master
+      - uses: actions/checkout@v3
+      - uses: yesolutions/mirror-action@master
         with:
           REMOTE: ${{ secrets.GITLAB_REPO_URL }}
           GIT_USERNAME: ${{ secrets.GITLAB_USER }}
