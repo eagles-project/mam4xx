@@ -85,8 +85,7 @@ There is a way to orchestrate this pipeline posting through non-premium GitLab a
 
 A Personal Access Token is needed to enable GitHub/GitLab integration.
 
-@jaelynlitz currently holds the PAT, set to expire Feb 2025. Followed instructions [here](https://docs.gitlab.com/ee/ci/ci_cd_for_external_repos/github_integration.html) under "Connect manually".
-
+@jaelynlitz currently holds the PAT, set to expire Jan 2026. Followed instructions [here](https://docs.gitlab.com/ee/ci/ci_cd_for_external_repos/github_integration.html) under "Connect manually".
 In Summary:
 1. in [GitHub](https://github.com/settings/tokens/new), generate a Personal Access Token (classic) with permissions `repo` and `admin:repo_hook`
 2. have Owner permissions in GitLab

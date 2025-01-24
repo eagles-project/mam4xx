@@ -1,4 +1,5 @@
 name: PNNL Push Mirror
+#test
 
 on: [pull_request]
 
@@ -6,13 +7,16 @@ jobs:
   to_gitlab:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          # ref: ${{ github.head_ref }}
+          fetch-depth: 0
       - uses: yesolutions/mirror-action@master
         with:
           REMOTE: ${{ secrets.GITLAB_REPO_URL }}
           GIT_USERNAME: ${{ secrets.GITLAB_USER }}
           GIT_PASSWORD: ${{ secrets.GITLAB_ACCESS_TOKEN }}
-          GIT_PUSH_ARGS: --push-option=ci.skip --tags --force --prune
+          GIT_PUSH_ARGS: --push-option=ci.skip --tags --force --prune --verbose
           PUSH_ALL_REFS: "true"
           DEBUG: "true"
       - name: Trigger Pipeline
