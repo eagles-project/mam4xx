@@ -17,7 +17,8 @@ jobs:
           GIT_USERNAME: ${{ secrets.GITLAB_USER }}
           GIT_PASSWORD: ${{ secrets.GITLAB_ACCESS_TOKEN }}
           GIT_PUSH_ARGS: --push-option=ci.skip --tags --force --prune --verbose
-          PUSH_ALL_REFS: "true"
+          PUSH_ALL_REFS: "false"
+          GIT_REF: "refs/remotes/origin/*:refs/heads/* ^refs/heads/HEAD"
           DEBUG: "true"
       - name: Trigger Pipeline
         # Need {{ github.head_ref }} for running within pull requests
