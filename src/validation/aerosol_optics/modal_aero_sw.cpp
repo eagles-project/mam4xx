@@ -310,12 +310,12 @@ void modal_aero_sw(Ensemble *ensemble) {
           // 2. Let's extract state_q and qqcw from prog.
           Kokkos::parallel_for(
               Kokkos::TeamVectorRange(team, pver), [&](int kk) {
-                const auto state_q_kk =
-                    Kokkos::subview(state_q, kk, Kokkos::ALL());
-                const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
+                const auto state_q_kk = ekat::subview(state_q, kk);
+                const auto qqcw_kk = ekat::subview(qqcw, kk);
                 utils::extract_stateq_from_prognostics(progs_in, atm,
                                                        state_q_kk.data(), kk);
-                utils::extract_qqcw_from_prognostics(progs_in, qqcw.data(), kk);
+                utils::extract_qqcw_from_prognostics(progs_in, qqcw_kk.data(),
+                                                     kk);
               });
         });
 

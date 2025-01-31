@@ -344,6 +344,7 @@ void aer_rad_props_sw(Ensemble *ensemble) {
               });
           team.team_barrier();
           Real aodvis = 0.0;
+
           aer_rad_props::aer_rad_props_sw(
               team, dt, progs_in, atm, zi, pint, pdel, pdeldry, ssa_cmip6_sw,
               af_cmip6_sw, ext_cmip6_sw, tau, tau_w, tau_w_g, tau_w_f,
@@ -353,13 +354,14 @@ void aer_rad_props_sw(Ensemble *ensemble) {
           team.team_barrier();
           // 2. Let's extract state_q and qqcw from prog.
           Kokkos::parallel_for(
-              Kokkos::TeamVectorRange(team, pver), [&](int kk) {
-                const auto state_q_kk =
-                    Kokkos::subview(state_q, kk, Kokkos::ALL());
-                const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
+              Kokkos::TeamVectorRange(team, nlev_loc), [&](int kk) {
+                const auto state_q_kk = ekat::subview(state_q, kk);
+                const auto qqcw_kk = ekat::subview(qqcw, kk);
                 utils::extract_stateq_from_prognostics(progs_in, atm,
                                                        state_q_kk.data(), kk);
-                utils::extract_qqcw_from_prognostics(progs_in, qqcw.data(), kk);
+
+                utils::extract_qqcw_from_prognostics(progs_in, qqcw_kk.data(),
+                                                     kk);
               });
         });
 

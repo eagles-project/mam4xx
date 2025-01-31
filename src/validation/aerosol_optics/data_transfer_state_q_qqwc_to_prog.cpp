@@ -117,7 +117,7 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
           Kokkos::parallel_for(
               Kokkos::TeamVectorRange(team, nlev_loc), [&](int kk) {
                 // copy data from prog to stateq
-                const auto &state_q_kk = ekat::subview(state_q, kk);
+                const auto state_q_kk = ekat::subview(state_q, kk);
                 const auto qqcw_kk = ekat::subview(qqcw, kk);
                 utils::inject_qqcw_to_prognostics(qqcw_kk.data(), progs_in, kk);
                 utils::inject_stateq_to_prognostics(state_q_kk.data(), progs_in,
@@ -128,13 +128,12 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
           Kokkos::parallel_for(
               Kokkos::TeamVectorRange(team, pver), [&](int kk) {
                 const auto state_q_output_kk =
-                    Kokkos::subview(state_q_output, kk, Kokkos::ALL());
-                const auto qqcw_output_k =
-                    Kokkos::subview(qqcw_output, kk, Kokkos::ALL());
+                    ekat::subview(state_q_output, kk);
+                const auto qqcw_output_kk = ekat::subview(qqcw_output, kk);
                 utils::extract_stateq_from_prognostics(
                     progs, atm, state_q_output_kk.data(), kk);
                 utils::extract_qqcw_from_prognostics(progs,
-                                                     qqcw_output_k.data(), kk);
+                                                     qqcw_output_kk.data(), kk);
               });
 
           team.team_barrier();
