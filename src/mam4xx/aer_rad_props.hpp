@@ -251,9 +251,7 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
                       mam4::Prognostics &progs, const haero::Atmosphere &atm,
-                      const ConstColumnView &zi, const ConstColumnView &pint,
-                      const ConstColumnView &pdel,
-                      const ConstColumnView &pdeldry,
+                      const ConstColumnView &zi, const ConstColumnView &pdel,
                       const View2D &ssa_cmip6_sw, const View2D &af_cmip6_sw,
                       const View2D &ext_cmip6_sw_m, const View2D &tau,
                       const View2D &tau_w, const View2D &tau_w_g,
@@ -266,6 +264,8 @@ void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
   const ConstColumnView pmid = atm.pressure;
   const ConstColumnView zm = atm.height;
   const ConstColumnView cldn = atm.cloud_fraction;
+  const ConstColumnView pint = atm.interface_pressure;
+  const ConstColumnView pdeldry = atm.hydrostatic_dp;
 
   /* call outfld('extinct_sw_inp',ext_cmip6_sw(:,:,idx_sw_diag), pcols, lchnk)
 
@@ -340,9 +340,8 @@ KOKKOS_INLINE_FUNCTION
 void aer_rad_props_lw(
     // inputs
     const ThreadTeam &team, const Real dt, mam4::Prognostics &progs,
-    const haero::Atmosphere &atm, const ConstColumnView &pint,
-    const ConstColumnView &zi, const ConstColumnView &pdel,
-    const ConstColumnView &pdeldry, const View2D &ext_cmip6_lw_m,
+    const haero::Atmosphere &atm, const ConstColumnView &zi,
+    const ConstColumnView &pdel, const View2D &ext_cmip6_lw_m,
     const AerosolOpticsDeviceData &aersol_optics_data,
     // output
     const View2D &odap_aer
@@ -353,6 +352,8 @@ void aer_rad_props_lw(
   const ConstColumnView pmid = atm.pressure;
   const ConstColumnView zm = atm.height;
   const ConstColumnView cldn = atm.cloud_fraction;
+  const ConstColumnView pint = atm.interface_pressure;
+  const ConstColumnView pdeldry = atm.hydrostatic_dp;
 
   /*Purpose: Compute aerosol transmissions needed in absorptivity
    emissivity calculations

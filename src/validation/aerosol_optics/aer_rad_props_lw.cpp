@@ -236,7 +236,6 @@ void aer_rad_props_lw(Ensemble *ensemble) {
 
     View2D odap_aer("odap_aer", nlwbands, pver);
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
-    ColumnView hydrostatic_dp = create_column_view(nlev);
 
     auto vapor_mixing_ratio = create_column_view(nlev);
     auto liquid_mixing_ratio = create_column_view(nlev); //
@@ -263,8 +262,10 @@ void aer_rad_props_lw(Ensemble *ensemble) {
                       Kokkos::subview(state_q, Kokkos::ALL(), 4));
 
     auto &height = zm;
-    auto interface_pressure = create_column_view(nlev + 1);
+    auto &interface_pressure = pint;
+    auto &hydrostatic_dp = pdeldry;
     auto &cloud_fraction = cldn;
+
     auto updraft_vel_ice_nucleation = create_column_view(nlev);
 
     auto atm = Atmosphere(nlev, temperature, pmid, vapor_mixing_ratio,
@@ -290,9 +291,8 @@ void aer_rad_props_lw(Ensemble *ensemble) {
                                                     kk);
               });
           team.team_barrier();
-          aer_rad_props::aer_rad_props_lw(team, dt, progs_in, atm, pint, zi,
-                                          pdel, pdeldry, ext_cmip6_lw,
-                                          aersol_optics_data,
+          aer_rad_props::aer_rad_props_lw(team, dt, progs_in, atm, zi, pdel,
+                                          ext_cmip6_lw, aersol_optics_data,
                                           // output
                                           odap_aer);
           team.team_barrier();

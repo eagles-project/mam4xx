@@ -288,8 +288,6 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     const int work_len = modal_aer_opt::get_work_len_aerosol_optics();
     View1D work("work", work_len);
 
-    ColumnView hydrostatic_dp = create_column_view(nlev);
-
     auto vapor_mixing_ratio = create_column_view(nlev);
     auto liquid_mixing_ratio = create_column_view(nlev); //
     auto ice_mixing_ratio = create_column_view(nlev);    //
@@ -315,8 +313,9 @@ void aer_rad_props_sw(Ensemble *ensemble) {
                       Kokkos::subview(state_q, Kokkos::ALL(), 4));
 
     auto &height = zm;
-    auto interface_pressure = create_column_view(nlev + 1);
     auto &cloud_fraction = cldn;
+    auto &interface_pressure = pint;
+    auto &hydrostatic_dp = pdeldry;
     auto updraft_vel_ice_nucleation = create_column_view(nlev);
 
     auto atm = Atmosphere(nlev, temperature, pmid, vapor_mixing_ratio,
@@ -346,8 +345,8 @@ void aer_rad_props_sw(Ensemble *ensemble) {
           Real aodvis = 0.0;
 
           aer_rad_props::aer_rad_props_sw(
-              team, dt, progs_in, atm, zi, pint, pdel, pdeldry, ssa_cmip6_sw,
-              af_cmip6_sw, ext_cmip6_sw, tau, tau_w, tau_w_g, tau_w_f,
+              team, dt, progs_in, atm, zi, pdel, ssa_cmip6_sw, af_cmip6_sw,
+              ext_cmip6_sw, tau, tau_w, tau_w_g, tau_w_f,
               // FIXME
               aersol_optics_data, aodvis, work);
 
