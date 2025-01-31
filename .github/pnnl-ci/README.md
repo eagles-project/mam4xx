@@ -105,6 +105,8 @@ This is a Project Access Token generated in GitLab [here](https://code.pnnl.gov/
 
 It needs to have the Developer role and `write_repository` permissions.
 
+This also creates a bot user that can run the jobs. You can set the variable `GITLAB_USER` to be the name of the token. Currently `githubsync`. 
+
 Once you have generated this in GitLab, paste the token as a secret in the GitHub variable `GITLAB_ACCESS_TOKEN` [here](https://github.com/eagles-project/mam4xx/settings/secrets/actions).
 
 #### GITLAB_PIPELINE_TRIGGER_TOKEN
