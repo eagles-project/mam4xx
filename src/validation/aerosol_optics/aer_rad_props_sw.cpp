@@ -14,12 +14,14 @@ using namespace mam4;
 using namespace haero;
 using namespace modal_aer_opt;
 using namespace ndrop;
+using namespace validation;
 
 void aer_rad_props_sw(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
     using View3DHost = typename HostType::view_3d<Real>;
     constexpr Real zero = 0;
+    Real pblh = 1000;
 
     constexpr int maxd_aspectype = ndrop::maxd_aspectype;
     constexpr int pver = mam4::nlev;
@@ -271,13 +273,13 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     // output
     View2D tau, tau_w, tau_w_g, tau_w_f;
 
-    tau = View2D("tau", pver + 1,
-                 nswbands); // layer extinction optical depth [1]
+    tau =
+        View2D("tau", nswbands, pver + 1); // layer extinction optical depth [1]
     tau_w =
-        View2D("tau_w", pver + 1, nswbands); // layer single-scatter albedo [1]
-    tau_w_g = View2D("tau_w_g", pver + 1, nswbands); // asymmetry factor [1]
+        View2D("tau_w", nswbands, pver + 1); // layer single-scatter albedo [1]
+    tau_w_g = View2D("tau_w_g", nswbands, pver + 1); // asymmetry factor [1]
     tau_w_f =
-        View2D("tau_w_f", pver + 1, nswbands); // forward scattered fraction [1]
+        View2D("tau_w_f", nswbands, pver + 1); // forward scattered fraction [1]
     View1D output_diagnostics("output_diagnostics", 21);
     View2D output_diagnostics_amode("output_diagnostics_amode", 3, ntot_amode);
 
@@ -286,16 +288,79 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     const int work_len = modal_aer_opt::get_work_len_aerosol_optics();
     View1D work("work", work_len);
 
+    ColumnView hydrostatic_dp = create_column_view(nlev);
+
+    auto vapor_mixing_ratio = create_column_view(nlev);
+    auto liquid_mixing_ratio = create_column_view(nlev); //
+    auto ice_mixing_ratio = create_column_view(nlev);    //
+    auto cloud_liquid_number_mixing_ratio = create_column_view(nlev);
+    auto cloud_ice_number_mixing_ratio = create_column_view(nlev);
+
+    // Some variables of state_q are part of atm.
+    // We need deep_copy because of executation error due to different layout
+    // q[0] = atm.vapor_mixing_ratio(klev);               // qv
+    Kokkos::deep_copy(vapor_mixing_ratio,
+                      Kokkos::subview(state_q, Kokkos::ALL(), 0));
+    // q[1] = atm.liquid_mixing_ratio(klev);              // qc
+    Kokkos::deep_copy(liquid_mixing_ratio,
+                      Kokkos::subview(state_q, Kokkos::ALL(), 1));
+    // q[2] = atm.ice_mixing_ratio(klev);                 // qi
+    Kokkos::deep_copy(ice_mixing_ratio,
+                      Kokkos::subview(state_q, Kokkos::ALL(), 2));
+    // q[3] = atm.cloud_liquid_number_mixing_ratio(klev); //  nc
+    Kokkos::deep_copy(cloud_liquid_number_mixing_ratio,
+                      Kokkos::subview(state_q, Kokkos::ALL(), 3));
+    // q[4] = atm.cloud_ice_number_mixing_ratio(klev);    // ni
+    Kokkos::deep_copy(cloud_ice_number_mixing_ratio,
+                      Kokkos::subview(state_q, Kokkos::ALL(), 4));
+
+    auto &height = zm;
+    auto interface_pressure = create_column_view(nlev + 1);
+    auto &cloud_fraction = cldn;
+    auto updraft_vel_ice_nucleation = create_column_view(nlev);
+
+    auto atm = Atmosphere(nlev, temperature, pmid, vapor_mixing_ratio,
+                          liquid_mixing_ratio, cloud_liquid_number_mixing_ratio,
+                          ice_mixing_ratio, cloud_ice_number_mixing_ratio,
+                          height, hydrostatic_dp, interface_pressure,
+                          cloud_fraction, updraft_vel_ice_nucleation, pblh);
+
+    mam4::Prognostics progs = validation::create_prognostics(nlev);
+
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          // new vars: ssa_cmip6_sw, af_cmip6_sw
+          static constexpr int nlev_loc = nlev;
+          // we need to inject validation values to progs.
+          auto progs_in = progs;
+          Kokkos::parallel_for(
+              Kokkos::TeamVectorRange(team, nlev_loc), [&](int kk) {
+                // copy data from prog to stateq
+                const auto &state_q_kk = ekat::subview(state_q, kk);
+                const auto &qqcw_kk = ekat::subview(qqcw, kk);
+                utils::inject_qqcw_to_prognostics(qqcw_kk.data(), progs_in, kk);
+                utils::inject_stateq_to_prognostics(state_q_kk.data(), progs_in,
+                                                    kk);
+              });
+          team.team_barrier();
+          Real aodvis = 0.0;
           aer_rad_props::aer_rad_props_sw(
-              team, dt, zi, pmid, pint, temperature, zm, state_q, qqcw, pdel,
-              pdeldry, cldn, ssa_cmip6_sw, af_cmip6_sw, ext_cmip6_sw, tau,
-              tau_w, tau_w_g, tau_w_f,
+              team, dt, progs_in, atm, zi, pint, pdel, pdeldry, ssa_cmip6_sw,
+              af_cmip6_sw, ext_cmip6_sw, tau, tau_w, tau_w_g, tau_w_f,
               // FIXME
-              aersol_optics_data, work);
+              aersol_optics_data, aodvis, work);
+
+          team.team_barrier();
+          // 2. Let's extract state_q and qqcw from prog.
+          Kokkos::parallel_for(
+              Kokkos::TeamVectorRange(team, pver), [&](int kk) {
+                const auto state_q_kk =
+                    Kokkos::subview(state_q, kk, Kokkos::ALL());
+                const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
+                utils::extract_stateq_from_prognostics(progs_in, atm,
+                                                       state_q_kk.data(), kk);
+                utils::extract_qqcw_from_prognostics(progs_in, qqcw.data(), kk);
+              });
         });
 
     Kokkos::deep_copy(qqcw_host, qqcw);
@@ -310,19 +375,23 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     output.set("qqcw", qqcw_db);
     const int pver_po = pver + 1;
     std::vector<Real> tau_out(pver_po * nswbands, zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(tau, tau_out);
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(tau,
+                                                                    tau_out);
     output.set("tau", tau_out);
 
     std::vector<Real> tau_w_out(pver_po * nswbands, zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(tau_w, tau_w_out);
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(tau_w,
+                                                                    tau_w_out);
     output.set("tau_w", tau_w_out);
 
     std::vector<Real> tau_w_g_out(pver_po * nswbands, zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(tau_w_g, tau_w_g_out);
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(
+        tau_w_g, tau_w_g_out);
     output.set("tau_w_g", tau_w_g_out);
 
     std::vector<Real> tau_w_f_out(pver_po * nswbands, zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(tau_w_f, tau_w_f_out);
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(
+        tau_w_f, tau_w_f_out);
     output.set("tau_w_f", tau_w_f_out);
   });
 }
