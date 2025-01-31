@@ -199,52 +199,14 @@ void volcanic_cmip_sw(const ConstColumnView &zi, const int ilev_tropp,
 
 } // volcanic_cmip_sw
 
-// aer_rad_props
-// odap_aer has layout (pver, nlwbands)
-KOKKOS_INLINE_FUNCTION
-void compute_odap_volcanic_at_troplayer_lw(const int ilev_tropp,
-                                           const ConstColumnView &zi,
-                                           const View2D &ext_cmip6_lw_inv_m,
-                                           const View2D &odap_aer) {
-  /* Update odap_aer with a combination read in volcanic aerosol extinction
-   [1/m] (50%) and module computed values (50%).
-
-   intent-ins
-    ncol
-   trop_level(:)
-   zi(:,:) geopotential height above surface at interfaces [m]
-   ext_cmip6_lw_inv_m(:,:,:) long wave extinction in the units of [1/m]
-
-   intent-inouts
-    odap_aer(:,:,:)   [fraction] absorption optical depth, per layer
-    [unitless]
-
-   local
-   integer :: icol, ilev_tropp
-   real(r8) :: lyr_thk layer thickness [m]
-   do icol = 1, ncol
-   ilev_tropp = trop_level(icol) tropopause level */
-  const Real lyr_thk =
-      zi(ilev_tropp) - zi(ilev_tropp + 1); // compute layer thickness in meters
-  constexpr Real half = 0.5;
-  // update taus with 50% contributuions from the volcanic input file
-  // and 50% from the existing model computed values at the tropopause layer
-  for (int i = 0; i < nlwbands; ++i) {
-    odap_aer(ilev_tropp, i) =
-        half * (odap_aer(ilev_tropp, i) +
-                (lyr_thk * ext_cmip6_lw_inv_m(ilev_tropp, i)));
-  }
-
-} // compute_odap_volcanic_at_troplayer_lw
-
 // similar to compute_odap_volcanic_at_troplayer_lw
 // but odap_aer has layout (nlwbands, pver)
 KOKKOS_INLINE_FUNCTION
-void compute_odap_volcanic_at_troplayer_lw2(const ThreadTeam &team,
-                                            const int ilev_tropp,
-                                            const ConstColumnView &zi,
-                                            const View2D &ext_cmip6_lw_inv_m,
-                                            const View2D &odap_aer) {
+void compute_odap_volcanic_at_troplayer_lw(const ThreadTeam &team,
+                                           const int ilev_tropp,
+                                           const ConstColumnView &zi,
+                                           const View2D &ext_cmip6_lw_inv_m,
+                                           const View2D &odap_aer) {
   /* Update odap_aer with a combination read in volcanic aerosol extinction
    [1/m] (50%) and module computed values (50%).
 
@@ -281,55 +243,14 @@ void compute_odap_volcanic_at_troplayer_lw2(const ThreadTeam &team,
 
 } // compute_odap_volcanic_at_troplayer_lw
 
-KOKKOS_INLINE_FUNCTION
-void compute_odap_volcanic_above_troplayer_lw(const int ilev_tropp,
-                                              const ConstColumnView &zi,
-                                              const View2D &ext_cmip6_lw_inv_m,
-                                              const View2D &odap_aer) {
-
-  /*     Above the tropopause, the read in values from the file include both
-       the stratospheric
-   and volcanic aerosols. Therefore, we need to zero out odap_aer above the
-   tropopause and populate it exclusively from the read in values.
-
-   intent-ins
-   integer, intent(in) :: pver, ncol
-   integer, intent(in) :: trop_level(:)
-
-   real(r8), intent(in) :: zi(:,:) geopotential height above surface at
-   interfaces [m] real(r8), intent(in) :: ext_cmip6_lw_inv_m(:,:,:) long wave
-   extinction in the units of [1/m]
-
-   intent-inouts
-   real(r8), intent(inout) :: odap_aer(:,:,:)  [fraction] absorption optical
-   depth, per layer [unitless]
-
-   local
-   integer :: ipver, icol, ilev_tropp
-   real(r8) :: lyr_thk layer thickness [m]
-
-   As it will be more efficient for FORTRAN to loop over levels and then
-   columns, the following loops are nested keeping that in mind*/
-
-  for (int kk = 0; kk < ilev_tropp; ++kk) {
-    const Real lyr_thk =
-        zi(kk) - zi(kk + 1); //  compute layer thickness in meters
-    for (int i = 0; i < nlwbands; ++i) {
-      odap_aer(kk, i) = lyr_thk * ext_cmip6_lw_inv_m(kk, i);
-    } // end i
-
-  } // end kk
-
-} // compute_odap_volcanic_above_troplayer_lw
-
 // similar to compute_odap_volcanic_above_troplayer_lw
 // but odap_aer has layout (nlwbands, pver)
 KOKKOS_INLINE_FUNCTION
-void compute_odap_volcanic_above_troplayer_lw2(const ThreadTeam &team,
-                                               const int ilev_tropp,
-                                               const ConstColumnView &zi,
-                                               const View2D &ext_cmip6_lw_inv_m,
-                                               const View2D &odap_aer) {
+void compute_odap_volcanic_above_troplayer_lw(const ThreadTeam &team,
+                                              const int ilev_tropp,
+                                              const ConstColumnView &zi,
+                                              const View2D &ext_cmip6_lw_inv_m,
+                                              const View2D &odap_aer) {
 
   /*     Above the tropopause, the read in values from the file include both
        the stratospheric
@@ -408,75 +329,6 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
 
   return trop_level;
 } // tropopause_or_quit
-
-//
-KOKKOS_INLINE_FUNCTION
-void aer_rad_props_lw(
-    // inputs
-    const ThreadTeam &team, const Real dt, const ConstColumnView &pmid,
-    const ConstColumnView &pint, const ConstColumnView &temperature,
-    const ConstColumnView &zm, const ConstColumnView &zi, const View2D &state_q,
-    const View2D &qqcw, const ConstColumnView &pdel,
-    const ConstColumnView &pdeldry, const ConstColumnView &cldn,
-    const View2D &ext_cmip6_lw_m,
-    const AerosolOpticsDeviceData &aersol_optics_data,
-    // output
-    const View2D &odap_aer
-
-) {
-
-  /* Purpose: Compute aerosol transmissions needed in absorptivity/
-   emissivity calculations
-
-   Intent-ins
-    is_cmip6_volc     flag for using cmip6 style volc emissions
-    dt                time step[s]
-    lchnk             number of chunks
-    ncol              number of columns
-    pmid(:,:)         midpoint pressure [Pa]
-    pint(:,:)         interface pressure [Pa]
-    temperature(:,:)  temperature [K]
-    zm(:,:)           geopotential height above surface at midpoints [m]
-    zi(:,:)           geopotential height above surface at interfaces [m]
-    state_q(:,:,:)
-    pdel(:,:)
-    pdeldry(:,:)
-    cldn(:,:)
-    ext_cmip6_lw_m(:,:,:) long wave extinction in the units of [1/m]
-    qqcw(:)    Cloud borne aerosols mixing ratios [kg/kg or 1/kg]
-
-   intent-outs
-    odap_aer(pcols,pver,nlwbands)  [fraction] absorption optical depth, per
-    layer [unitless]
-   Compute contributions from the modal aerosols. */
-  modal_aero_lw(team, dt, state_q, qqcw, temperature, pmid, pdel, pdeldry, cldn,
-                aersol_optics_data,
-                // outputs
-                odap_aer);
-
-  /* FIXME: port tropopause_or_quit
-   Find tropopause or quit simulation if not found
-   trop_level(1:pcols) = tropopause_or_quit(lchnk, ncol, pmid, pint,
-   temperature, zm, zi) */
-  const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
-  team.team_barrier();
-
-  /* We are here because tropopause is found, update taus with 50%
-   contributuions from the volcanic input file and 50% from the existing model
-   computed values at the tropopause layer */
-
-  compute_odap_volcanic_at_troplayer_lw(ilev_tropp, zi, ext_cmip6_lw_m,
-                                        odap_aer);
-
-  /* Above the tropopause, the read in values from the file include both the
-   stratospheric
-    and volcanic aerosols. Therefore, we need to zero out odap_aer above the
-    tropopause and populate it exclusively from the read in values.*/
-  compute_odap_volcanic_above_troplayer_lw(ilev_tropp, zi, ext_cmip6_lw_m,
-                                           odap_aer);
-  // call outfld('extinct_lw_bnd7',odap_aer(:,:,idx_lw_diag), pcols, lchnk)
-
-} // aer_rad_props_lw
 
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_sw(
@@ -705,14 +557,14 @@ void aer_rad_props_lw(
   // /*We are here because tropopause is found, update taus with 50%
   // contributuions from the volcanic input file and 50% from the existing model
   // computed values at the tropopause layer
-  compute_odap_volcanic_at_troplayer_lw2(team, ilev_tropp, zi, ext_cmip6_lw_m,
-                                         odap_aer);
+  compute_odap_volcanic_at_troplayer_lw(team, ilev_tropp, zi, ext_cmip6_lw_m,
+                                        odap_aer);
   // /* Above the tropopause, the read in values from the file include both the
   //  stratospheric
   //   and volcanic aerosols. Therefore, we need to zero out odap_aer above the
   //   tropopause and populate it exclusively from the read in values.
-  compute_odap_volcanic_above_troplayer_lw2(team, ilev_tropp, zi,
-                                            ext_cmip6_lw_m, odap_aer);
+  compute_odap_volcanic_above_troplayer_lw(team, ilev_tropp, zi, ext_cmip6_lw_m,
+                                           odap_aer);
   // call outfld('extinct_lw_bnd7',odap_aer(:,:,idx_lw_diag), pcols, lchnk)
 
 } // aer_rad_props_lw
