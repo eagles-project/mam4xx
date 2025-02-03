@@ -85,8 +85,7 @@ There is a way to orchestrate this pipeline posting through non-premium GitLab a
 
 A Personal Access Token is needed to enable GitHub/GitLab integration.
 
-@jaelynlitz currently holds the PAT, set to expire Feb 2025. Followed instructions [here](https://docs.gitlab.com/ee/ci/ci_cd_for_external_repos/github_integration.html) under "Connect manually".
-
+@jaelynlitz currently holds the PAT, set to expire Jan 2026. Followed instructions [here](https://docs.gitlab.com/ee/ci/ci_cd_for_external_repos/github_integration.html) under "Connect manually".
 In Summary:
 1. in [GitHub](https://github.com/settings/tokens/new), generate a Personal Access Token (classic) with permissions `repo` and `admin:repo_hook`
 2. have Owner permissions in GitLab
@@ -105,6 +104,8 @@ The GitHub action in `/.github/workflows/pnnl_push_mirror.yml` relies on the fol
 This is a Project Access Token generated in GitLab [here](https://code.pnnl.gov/e3sm/eagles/mam4xx/-/settings/access_tokens). 
 
 It needs to have the Developer role and `write_repository` permissions.
+
+This also creates a bot user that can run the jobs. You can set the variable `GITLAB_USER` to be the name of the token. Currently `githubsync`. 
 
 Once you have generated this in GitLab, paste the token as a secret in the GitHub variable `GITLAB_ACCESS_TOKEN` [here](https://github.com/eagles-project/mam4xx/settings/secrets/actions).
 

@@ -6,14 +6,18 @@ jobs:
   to_gitlab:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v1
-      - uses: spyoungtech/mirror-action@master
+      - uses: actions/checkout@v4
+        with:
+          # ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - uses: yesolutions/mirror-action@master
         with:
           REMOTE: ${{ secrets.GITLAB_REPO_URL }}
           GIT_USERNAME: ${{ secrets.GITLAB_USER }}
           GIT_PASSWORD: ${{ secrets.GITLAB_ACCESS_TOKEN }}
-          GIT_PUSH_ARGS: --push-option=ci.skip --tags --force --prune
-          PUSH_ALL_REFS: "true"
+          GIT_PUSH_ARGS: --push-option=ci.skip --tags --force --prune --verbose
+          PUSH_ALL_REFS: "false"
+          GIT_REF: "refs/remotes/origin/*:refs/heads/* ^refs/heads/HEAD"
           DEBUG: "true"
       - name: Trigger Pipeline
         # Need {{ github.head_ref }} for running within pull requests
