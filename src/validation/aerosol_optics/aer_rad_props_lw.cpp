@@ -14,6 +14,7 @@ using namespace mam4;
 using namespace haero;
 using namespace modal_aer_opt;
 using namespace ndrop;
+using namespace validation;
 
 void aer_rad_props_lw(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -22,6 +23,7 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     using View1DHost = typename HostType::view_1d<Real>;
     using View3DHost = typename HostType::view_3d<Real>;
     constexpr Real zero = 0;
+    Real pblh = 1000;
 
     const auto dt = input.get_array("dt")[0];
     // const Real t = zero;
@@ -149,8 +151,6 @@ void aer_rad_props_lw(Ensemble *ensemble) {
 
     const auto absplw_db = input.get_array("absplw");
 
-    printf("ntot_amode %d nlwbands %d  ", ntot_amode, nlwbands);
-
     View3DHost absplw3_host[ntot_amode][nlwbands];
     for (int d1 = 0; d1 < ntot_amode; ++d1)
       for (int d5 = 0; d5 < nlwbands; ++d5) {
@@ -234,15 +234,78 @@ void aer_rad_props_lw(Ensemble *ensemble) {
                           refitablw_host[d1][d3]);
       } // d3
 
-    View2D odap_aer("odap_aer", pver, nlwbands);
+    View2D odap_aer("odap_aer", nlwbands, pver);
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+
+    auto vapor_mixing_ratio = create_column_view(nlev);
+    auto liquid_mixing_ratio = create_column_view(nlev); //
+    auto ice_mixing_ratio = create_column_view(nlev);    //
+    auto cloud_liquid_number_mixing_ratio = create_column_view(nlev);
+    auto cloud_ice_number_mixing_ratio = create_column_view(nlev);
+
+    // Some variables of state_q are part of atm.
+    // We need deep_copy because of executation error due to different layout
+    // q[0] = atm.vapor_mixing_ratio(klev);               // qv
+    Kokkos::deep_copy(vapor_mixing_ratio,
+                      Kokkos::subview(state_q, Kokkos::ALL(), 0));
+    // q[1] = atm.liquid_mixing_ratio(klev);              // qc
+    Kokkos::deep_copy(liquid_mixing_ratio,
+                      Kokkos::subview(state_q, Kokkos::ALL(), 1));
+    // q[2] = atm.ice_mixing_ratio(klev);                 // qi
+    Kokkos::deep_copy(ice_mixing_ratio,
+                      Kokkos::subview(state_q, Kokkos::ALL(), 2));
+    // q[3] = atm.cloud_liquid_number_mixing_ratio(klev); //  nc
+    Kokkos::deep_copy(cloud_liquid_number_mixing_ratio,
+                      Kokkos::subview(state_q, Kokkos::ALL(), 3));
+    // q[4] = atm.cloud_ice_number_mixing_ratio(klev);    // ni
+    Kokkos::deep_copy(cloud_ice_number_mixing_ratio,
+                      Kokkos::subview(state_q, Kokkos::ALL(), 4));
+
+    auto &height = zm;
+    auto &interface_pressure = pint;
+    auto &hydrostatic_dp = pdeldry;
+    auto &cloud_fraction = cldn;
+
+    auto updraft_vel_ice_nucleation = create_column_view(nlev);
+
+    auto atm = Atmosphere(nlev, temperature, pmid, vapor_mixing_ratio,
+                          liquid_mixing_ratio, cloud_liquid_number_mixing_ratio,
+                          ice_mixing_ratio, cloud_ice_number_mixing_ratio,
+                          height, hydrostatic_dp, interface_pressure,
+                          cloud_fraction, updraft_vel_ice_nucleation, pblh);
+
+    mam4::Prognostics progs = validation::create_prognostics(nlev);
+
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          aer_rad_props::aer_rad_props_lw(
-              team, dt, pmid, pint, temperature, zm, zi, state_q, qqcw, pdel,
-              pdeldry, cldn, ext_cmip6_lw, aersol_optics_data,
-              // output
-              odap_aer);
+          static constexpr int nlev_loc = nlev;
+          // we need to inject validation values to progs.
+          auto progs_in = progs;
+          Kokkos::parallel_for(
+              Kokkos::TeamVectorRange(team, nlev_loc), [&](int kk) {
+                // copy data from prog to stateq
+                const auto &state_q_kk = ekat::subview(state_q, kk);
+                const auto &qqcw_kk = ekat::subview(qqcw, kk);
+                utils::inject_qqcw_to_prognostics(qqcw_kk.data(), progs_in, kk);
+                utils::inject_stateq_to_prognostics(state_q_kk.data(), progs_in,
+                                                    kk);
+              });
+          team.team_barrier();
+          aer_rad_props::aer_rad_props_lw(team, dt, progs_in, atm, zi, pdel,
+                                          ext_cmip6_lw, aersol_optics_data,
+                                          // output
+                                          odap_aer);
+          team.team_barrier();
+          // 2. Let's extract state_q and qqcw from prog.
+          Kokkos::parallel_for(
+              Kokkos::TeamVectorRange(team, pver), [&](int kk) {
+                const auto state_q_kk = ekat::subview(state_q, kk);
+                const auto qqcw_kk = ekat::subview(qqcw, kk);
+                utils::extract_stateq_from_prognostics(progs_in, atm,
+                                                       state_q_kk.data(), kk);
+                utils::extract_qqcw_from_prognostics(progs_in, qqcw_kk.data(),
+                                                     kk);
+              });
         });
 
     Kokkos::deep_copy(qqcw_host, qqcw);
@@ -257,8 +320,8 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     output.set("qqcw", qqcw_db);
 
     std::vector<Real> odap_aer_out(pver * nlwbands, zero);
-    mam4::validation::convert_2d_view_device_to_1d_vector(odap_aer,
-                                                          odap_aer_out);
+    mam4::validation::convert_transpose_2d_view_device_to_1d_vector(
+        odap_aer, odap_aer_out);
     output.set("odap_aer", odap_aer_out);
   });
 }
