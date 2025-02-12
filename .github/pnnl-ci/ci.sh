@@ -60,7 +60,7 @@ cmake \
   -G "Unix Makefiles" && \
 
 cmake --build build -- -j 16 && \
-cd build && ctest -VV -R "kohler"
+cd build && ctest -VV -R "kohler_unit"
 
 EXIT_CODE=$?
 
