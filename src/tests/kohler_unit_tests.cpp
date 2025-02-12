@@ -149,8 +149,8 @@ TEST_CASE("kohler_verificiation", "") {
           const Real mam4_default_temperature = Constants::triple_pt_h2o;
           const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
                                               mam4_default_temperature);
-          Kokkos::printf("loop %di, rdry(i) = %f\n", i, rdry(i));
           //Kokkos::printf("loop %di, rdry(i) = %f\n", i, rdry(i));
+          Kokkos::printf("loop %di, k_of_zero(i) = %f\n", i, k_of_zero(i));
           //Kokkos::printf("loop %di, k_of_rdry(i) = %f\n", i, k_of_rdry(i));
           //Kokkos::printf("loop %di, k_of_25rdry(i) = %f\n", i, k_of_25rdry(i));
           //Kokkos::printf("loop %di, kpoly(0) = %f\n", i, kpoly(0));
