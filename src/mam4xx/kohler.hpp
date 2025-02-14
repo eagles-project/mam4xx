@@ -164,14 +164,14 @@ struct KohlerPolynomial {
   ///     1e-6 m]
   ///     @return Polynomial value, wet_radius in microns [ 1e-6 m]
   template <typename U>
-  KOKKOS_INLINE_FUNCTION double operator()(const U &wet_radius) const {
-    const double rwet = Real(wet_radius);
+  KOKKOS_INLINE_FUNCTION Real operator()(const U &wet_radius) const {
+    const Real rwet = Real(wet_radius);
     Kokkos::printf("rwet %f\n", rwet);
     Kokkos::printf("log_rel_humidity %f\n", log_rel_humidity);
     Kokkos::printf("kelvin_a %f\n", kelvin_a);
     Kokkos::printf("hygroscopicity %f\n", hygroscopicity);
     Kokkos::printf("dry_radius_cubed %f\n", dry_radius_cubed);
-    const double result =
+    const Real result =
         (log_rel_humidity * rwet - kelvin_a) * haero::cube(rwet) +
         ((hygroscopicity - log_rel_humidity) * rwet + kelvin_a) *
             dry_radius_cubed;

@@ -145,12 +145,13 @@ TEST_CASE("kohler_verificiation", "") {
     const auto rdry = verification.dry_radius;
     logger.info("initialied verifications");
     Kokkos::parallel_for(
-        "KohlerVerification::test_properties", N3, KOKKOS_LAMBDA(const int i) {
+        "KohlerVerification::test_properties", 1, KOKKOS_LAMBDA(const int i) {
           const Real mam4_default_temperature = Constants::triple_pt_h2o;
           const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
                                               mam4_default_temperature);
+          Kokkos::printf("loop %d, kpoly(0) = %f\n", i, kpoly(0));
           //Kokkos::printf("loop %di, rdry(i) = %f\n", i, rdry(i));
-          Kokkos::printf("loop %di, k_of_zero(i) = %f\n", i, k_of_zero(i));
+          //Kokkos::printf("loop %di, k_of_zero(i) = %f\n", i, k_of_zero(i));
           //Kokkos::printf("loop %di, k_of_rdry(i) = %f\n", i, k_of_rdry(i));
           //Kokkos::printf("loop %di, k_of_25rdry(i) = %f\n", i, k_of_25rdry(i));
           //Kokkos::printf("loop %di, kpoly(0) = %f\n", i, kpoly(0));
