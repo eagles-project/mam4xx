@@ -149,7 +149,9 @@ TEST_CASE("kohler_verificiation", "") {
           const Real mam4_default_temperature = Constants::triple_pt_h2o;
           const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
                                               mam4_default_temperature);
-          Kokkos::printf("loop %d, kpoly.hygroscopicity = %f\n", i, kpoly.hygroscopicity);
+          auto output = 0.0;
+          kpoly.get_kpoly(0,  output);
+          Kokkos::printf("loop %d, output = %f\n", i, output);
           //Kokkos::printf("loop %di, rdry(i) = %f\n", i, rdry(i));
           //Kokkos::printf("loop %di, k_of_zero(i) = %f\n", i, k_of_zero(i));
           //Kokkos::printf("loop %di, k_of_rdry(i) = %f\n", i, k_of_rdry(i));
@@ -163,6 +165,7 @@ TEST_CASE("kohler_verificiation", "") {
 
         });
     logger.info("finished kokkos for");
+    exit(0);
     auto h_k0 = Kokkos::create_mirror_view(k_of_zero);
     auto h_krdry = Kokkos::create_mirror_view(k_of_rdry);
     auto h_k25 = Kokkos::create_mirror_view(k_of_25rdry);

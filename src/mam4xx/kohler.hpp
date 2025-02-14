@@ -166,16 +166,29 @@ struct KohlerPolynomial {
   template <typename U>
   KOKKOS_INLINE_FUNCTION Real operator()(const U &wet_radius) const {
     const Real rwet = Real(wet_radius);
-    Kokkos::printf("rwet %f\n", rwet);
-    Kokkos::printf("log_rel_humidity %f\n", log_rel_humidity);
-    Kokkos::printf("kelvin_a %f\n", kelvin_a);
-    Kokkos::printf("hygroscopicity %f\n", hygroscopicity);
-    Kokkos::printf("dry_radius_cubed %f\n", dry_radius_cubed);
+    Kokkos::printf("() rwet %f\n", rwet);
+    Kokkos::printf("() log_rel_humidity %f\n", log_rel_humidity);
+    Kokkos::printf("() kelvin_a %f\n", kelvin_a);
+    Kokkos::printf("() hygroscopicity %f\n", hygroscopicity);
+    Kokkos::printf("() dry_radius_cubed %f\n", dry_radius_cubed);
     const Real result =
         (log_rel_humidity * rwet - kelvin_a) * haero::cube(rwet) +
         ((hygroscopicity - log_rel_humidity) * rwet + kelvin_a) *
             dry_radius_cubed;
     return result;
+  }
+
+  KOKKOS_INLINE_FUNCTION void get_kpoly(Real wet_radius, Real output) const {
+    const Real rwet = Real(wet_radius);
+    Kokkos::printf("get rwet %f\n", rwet);
+    Kokkos::printf("get log_rel_humidity %f\n", log_rel_humidity);
+    Kokkos::printf("get kelvin_a %f\n", kelvin_a);
+    Kokkos::printf("get hygroscopicity %f\n", hygroscopicity);
+    Kokkos::printf("get dry_radius_cubed %f\n", dry_radius_cubed);
+    output =
+        (log_rel_humidity * rwet - kelvin_a) * haero::cube(rwet) +
+        ((hygroscopicity - log_rel_humidity) * rwet + kelvin_a) *
+            dry_radius_cubed;
   }
 
   ///   Evaluates the derivative of the Kohler polynomial with respect to
