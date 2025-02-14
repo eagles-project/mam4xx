@@ -172,7 +172,8 @@ inline Data set_gas_drydep_data() {
   View1DHost drat_h(drat_a, n_drydep);
   Kokkos::deep_copy(data.drat, drat_h);
 
-  Real foxd_a[n_drydep] = {1.0, 1e-36, 1e-36};
+  Real small_value = 1e-36;
+  Real foxd_a[n_drydep] = {1.0, small_value, small_value};
   View1DHost foxd_h(foxd_a, n_drydep);
   Kokkos::deep_copy(data.foxd, foxd_h);
 
@@ -186,6 +187,7 @@ inline Data set_gas_drydep_data() {
   auto rac_h = Kokkos::create_mirror_view(data.rac);
   for (int i = 0; i < NSeas; ++i) {
     for (int j = 0; j < NLUse; ++j) {
+        if(rac_a[i][j]< small_value) rac_a[i][j] = small_value;
         rac_h(i, j) = rac_a[i][j];
     }
   }  
@@ -242,6 +244,7 @@ inline Data set_gas_drydep_data() {
   auto rgss_h = Kokkos::create_mirror_view(data.rgss);
   for (int i = 0; i < NSeas; ++i) {
     for (int j = 0; j < NLUse; ++j) {
+        if (rgss_a[i][j]< 1.0) rgss_a[i][j] = 1.0;
         rgss_h(i, j) = rgss_a[i][j];
     }
   }
