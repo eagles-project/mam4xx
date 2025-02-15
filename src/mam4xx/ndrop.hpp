@@ -1242,7 +1242,6 @@ void update_for_implmix(
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver),
                        [&](int kk) { qcld(kk) += dtmix * srcn(kk); });
-  team.team_barrier(); // FIXME: may be not needed??
 
   for (int imode = 0; imode < ntot_amode; imode++) {
     const int mm = mam_idx[imode][0] - 1;
@@ -1258,6 +1257,8 @@ void update_for_implmix(
     tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
            raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
     source(pver - 1) = haero::max(0.0, tmpa);
+    
+    team.team_barrier(); // wait for source to be computed
 
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver),
                          [&](int kk) {
@@ -1268,7 +1269,7 @@ void update_for_implmix(
                            raercol_cw[kk][nnew][mm] += dtmix * source(kk);
                            raercol[kk][nnew][mm] -= dtmix * source(kk);
                          }); // end kk
-
+    team.team_barrier(); // wait for the raercol update
     // update aerosol species mass
     for (int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
       const int mm = mam_idx[imode][lspec] - 1;
@@ -1283,6 +1284,8 @@ void update_for_implmix(
       tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
              raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
       source(pver - 1) = haero::max(0.0, tmpa);
+      team.team_barrier(); // wait for source to be computed
+      
       Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver),
                            [&](int kk) {
                              raercol_cw[kk][nnew][mm] += dtmix * source(kk);
@@ -1315,89 +1318,7 @@ void update_for_implmix(
           }   // imode
         }     // if cldn(k) == 0
       });     // kk
-
-
-#if 0
-       do imode = 1, ntot_amode
-          mm = mam_idx(imode,0)
-
-          ! update droplet source
-
-          ! rce-comment- activation source in layer k involves particles from k+1
-          !            srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
-          srcn(top_lev:pver-1) = srcn(top_lev:pver-1) + nact(top_lev:pver-1,imode)*(raercol(top_lev+1:pver,mm,nsav))
-
-          ! rce-comment- new formulation for k=pver
-          !              srcn(  pver  )=srcn(  pver  )+nact(  pver  ,m)*(raercol(  pver,mm,nsav))
-          tmpa = raercol(pver,mm,nsav)*nact(pver,imode) &
-               + raercol_cw(pver,mm,nsav)*nact(pver,imode)
-          srcn(pver) = srcn(pver) + max(0.0_r8,tmpa)
-       enddo
-
-       do kk = top_lev, pver
-           qcld(kk) = qcld(kk) + dtmix * srcn(kk)
-       enddo
-
-       do imode = 1, ntot_amode
-          mm = mam_idx(imode,0)
-          ! rce-comment -   activation source in layer k involves particles from k+1
-          !                   source(:)= nact(:,m)*(raercol(:,mm,nsav))
-          source(top_lev:pver-1) = nact(top_lev:pver-1,imode)*(raercol(top_lev+1:pver,mm,nsav))
-          ! rce-comment - new formulation for k=pver
-          !               source(  pver  )= nact(  pver,  m)*(raercol(  pver,mm,nsav))
-          tmpa = raercol(pver,mm,nsav)*nact(pver,imode) &
-               + raercol_cw(pver,mm,nsav)*nact(pver,imode)
-          source(pver) = max(0.0_r8, tmpa)
-
-          do kk = top_lev, pver
-            raercol_cw(kk,mm,nnew) = raercol_cw(kk,mm,nnew) + dtmix * source(kk)
-            raercol   (kk,mm,nnew) = raercol   (kk,mm,nnew) - dtmix * source(kk)          
-          end do
-
-          ! update aerosol species mass
-
-          do lspec = 1, nspec_amode(imode)
-             mm = mam_idx(imode,lspec)
-             ! rce-comment -   activation source in layer k involves particles from k+1
-             !            source(:)= mact(:,m)*(raercol(:,mm,nsav))
-             source(top_lev:pver-1) = mact(top_lev:pver-1,imode)*(raercol(top_lev+1:pver,mm,nsav))
-             ! rce-comment- new formulation for k=pver
-             !                 source(  pver  )= mact(  pver  ,m)*(raercol(  pver,mm,nsav))
-             tmpa = raercol(pver,mm,nsav)*mact(pver,imode) &
-                  + raercol_cw(pver,mm,nsav)*mact(pver,imode)
-             source(pver) = max(0.0_r8, tmpa)
-
-             do kk = top_lev, pver
-               raercol_cw(kk,mm,nnew) = raercol_cw(kk,mm,nnew) + dtmix * source(kk)
-               raercol   (kk,mm,nnew) = raercol   (kk,mm,nnew) - dtmix * source(kk)
-             end do
-
-          enddo  ! lspec loop
-       enddo  !  imode loop
-    ! evaporate particles again if no cloud
--------
-    do kk = top_lev, pver
-       if (cldn_col(kk) == 0._r8) then
-          ! no cloud
-          qcld(kk)=0._r8
-
-          ! convert activated aerosol to interstitial in decaying cloud
-          do imode = 1, ntot_amode
-             mm = mam_idx(imode,0)
-             raercol(kk,mm,nnew)    = raercol(kk,mm,nnew) + raercol_cw(kk,mm,nnew)
-             raercol_cw(kk,mm,nnew) = 0._r8
-
-             do lspec = 1, nspec_amode(imode)
-                mm = mam_idx(imode,lspec)
-                raercol(kk,mm,nnew)    = raercol(kk,mm,nnew) + raercol_cw(kk,mm,nnew)
-                raercol_cw(kk,mm,nnew) = 0._r8
-             enddo
-          enddo
-       endif
-    enddo
-  end subroutine update_for_implmix
-#endif
-}
+} // end update_for_implmix
 
 KOKKOS_INLINE_FUNCTION
 void update_from_explmix(
