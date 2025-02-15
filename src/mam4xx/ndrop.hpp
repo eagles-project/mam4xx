@@ -42,6 +42,10 @@ constexpr int ncnst_tot = 25;
 // max number of species in a mode
 constexpr int nspec_max = 8;
 
+// Turn the following flag ture if SHOC is mixing all aerosols and droplet
+// number
+constexpr bool SHOC_MIX_AEROSOLS = true;
+
 KOKKOS_INLINE_FUNCTION
 void get_e3sm_parameters(
     int nspec_amode[AeroConfig::num_modes()],
@@ -1170,45 +1174,21 @@ void explmix(
 KOKKOS_INLINE_FUNCTION
 void update_for_implmix(
     const ThreadTeam &team,
-    const Real dtmicro,                 // time step for microphysics [s]
+    const Real &dtmicro,                // time step for microphysics [s]
     const haero::ConstColumnView &cldn, // cloud fraction [fraction]
     const int mam_idx[AeroConfig::num_modes()][nspec_max],
     const int nspec_amode[AeroConfig::num_modes()],
     // in-outs
-    const ColumnView &srcn, const ColumnView &source,
-    View2D &nact,     // fractional aero. number activation rate [/s]
-    View2D &mact,     // fractional aero. mass activation rate [/s]
-    ColumnView &qcld, // cloud droplet number mixing ratio [#/kg]
+    const ColumnView &srcn, const ColumnView &source, // work arrays
+    const View2D &nact,     // fractional aero. number activation rate [/s]
+    const View2D &mact,     // fractional aero. mass activation rate [/s]
+    const ColumnView &qcld, // cloud droplet number mixing ratio [#/kg]
     // single column of saved aerosol mass, number mixing ratios [#/kg or kg/kg]
-    View1D raercol[pver][2],
+    const View1D raercol[pver][2],
     // same as raercol but for cloud-borne phase [#/kg or kg/kg]
-    View1D raercol_cw[pver][2],
+    const View1D raercol_cw[pver][2],
     // indices for old, new time levels in substepping
     int &nsav, int &nnew) {
-
-  /*
-    ! input arguments
-    real(r8), intent(in) :: dtmicro     ! time step for microphysics [s]
-    real(r8), intent(in) :: cldn_col(:)   ! cloud fraction [fraction]
-
-    ! in/out arguments
-    real(r8), intent(inout) :: nact(:,:)  ! fractional aero. number  activation
-   rate [/s] real(r8), intent(inout) :: mact(:,:)  ! fractional aero. mass
-   activation rate [/s] real(r8), intent(inout) :: qcld(:)  ! cloud droplet
-   number mixing ratio [#/kg] real(r8), intent(inout) :: raercol(:,:,:)    !
-   single column of saved aerosol mass, number mixing ratios [#/kg or kg/kg]
-    real(r8), intent(inout) :: raercol_cw(:,:,:) ! same as raercol but for
-   cloud-borne phase [#/kg or kg/kg] integer, intent(inout) :: nnew, nsav   !
-   indices for old, new time levels in substepping ! local arguments integer ::
-   kk           ! vertical level index integer  :: imode       ! mode counter
-   variable integer  :: mm          ! local array index for MAM number, species
-    integer  :: lspec       ! species counter variable
-
-    real(r8) :: source(pver)  !  source rate for activated number or species
-   mass [/s] real(r8) :: dtmix    ! timescale for subloop [s] real(r8) :: tmpa
-   !  temporary aerosol tendency variable [/s] real(r8) :: srcn(pver)       !
-   droplet source rate [/s]
-*/
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver),
                        [&](int k) { srcn(k) = 0; });
@@ -1257,7 +1237,7 @@ void update_for_implmix(
     tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
            raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
     source(pver - 1) = haero::max(0.0, tmpa);
-    
+
     team.team_barrier(); // wait for source to be computed
 
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver),
@@ -1269,7 +1249,7 @@ void update_for_implmix(
                            raercol_cw[kk][nnew][mm] += dtmix * source(kk);
                            raercol[kk][nnew][mm] -= dtmix * source(kk);
                          }); // end kk
-    team.team_barrier(); // wait for the raercol update
+    team.team_barrier();     // wait for the raercol update
     // update aerosol species mass
     for (int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
       const int mm = mam_idx[imode][lspec] - 1;
@@ -1285,7 +1265,7 @@ void update_for_implmix(
              raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
       source(pver - 1) = haero::max(0.0, tmpa);
       team.team_barrier(); // wait for source to be computed
-      
+
       Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver),
                            [&](int kk) {
                              raercol_cw[kk][nnew][mm] += dtmix * source(kk);
@@ -1833,15 +1813,21 @@ void dropmixnuc(
   // substepping
 
   int nnew = 1;
-
-  update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, eddy_diff, nact, mact,
-                      qcld, raercol, raercol_cw, nsav, nnew, nspec_amode,
-                      mam_idx, enable_aero_vertical_mix,
-                      // work vars
-                      overlapp, overlapm, eddy_diff_kp, eddy_diff_km, qncld,
-                      srcn, // droplet source rate [/s]
-                      source);
-
+  if (SHOC_MIX_AEROSOLS) {
+    update_for_implmix(team, dtmicro, cldn, mam_idx, nspec_amode, // in
+                                                                  // in-outs
+                       srcn, source, // work arrays
+                       nact, mact, qcld, raercol, raercol_cw, nsav,
+                       nnew); // out
+  } else {
+    update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, eddy_diff, nact,
+                        mact, qcld, raercol, raercol_cw, nsav, nnew,
+                        nspec_amode, mam_idx, enable_aero_vertical_mix,
+                        // work vars
+                        overlapp, overlapm, eddy_diff_kp, eddy_diff_km, qncld,
+                        srcn, // droplet source rate [/s]
+                        source);
+  }
   team.team_barrier();
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev - 1), [&](int kk) {
