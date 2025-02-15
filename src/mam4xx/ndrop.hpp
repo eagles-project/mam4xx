@@ -41,6 +41,10 @@ constexpr int ncnst_tot = 25;
 // max number of species in a mode
 constexpr int nspec_max = 8;
 
+// Turn the following flag ture if SHOC is mixing all aerosols and droplet
+// number
+constexpr bool SHOC_MIX_AEROSOLS = true;
+
 KOKKOS_INLINE_FUNCTION
 void get_e3sm_parameters(
     int nspec_amode[AeroConfig::num_modes()],
@@ -1162,6 +1166,135 @@ void explmix(
   // force to non-negative
   qnew = haero::max(qnew, 0);
 } // end explmix
+KOKKOS_INLINE_FUNCTION
+void update_for_implmix(
+    const ThreadTeam &team,
+    const Real &dtmicro,                // time step for microphysics [s]
+    const haero::ConstColumnView &cldn, // cloud fraction [fraction]
+    const int mam_idx[AeroConfig::num_modes()][nspec_max],
+    const int nspec_amode[AeroConfig::num_modes()],
+    const int top_lev,
+    // in-outs
+    const ColumnView &srcn, const ColumnView &source, // work arrays
+    const View2D &nact,     // fractional aero. number activation rate [/s]
+    const View2D &mact,     // fractional aero. mass activation rate [/s]
+    const ColumnView &qcld, // cloud droplet number mixing ratio [#/kg]
+    // single column of saved aerosol mass, number mixing ratios [#/kg or kg/kg]
+    const View1D raercol[pver][2],
+    // same as raercol but for cloud-borne phase [#/kg or kg/kg]
+    const View1D raercol_cw[pver][2],
+    // indices for old, new time levels in substepping
+    int &nsav, int &nnew) {
+
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver),
+                       [&](int k) { srcn(k) = 0; });
+
+  Real dtmix = dtmicro;
+  Real tmpa = 0; //  temporary aerosol tendency variable [/s]
+  constexpr int ntot_amode = AeroConfig::num_modes();
+
+  for (int imode = 0; imode < ntot_amode; imode++) {
+    const int mm = mam_idx[imode][0] - 1;
+
+    // update droplet source
+
+    // rce-comment- activation source in layer k involves particles from k+1
+    //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver - top_lev),
+                         [&](int kk) {
+                           const int k = top_lev - 1 + kk;
+                           const int kp1 = haero::min(k + 1, pver - 1);
+                           srcn(k) += nact(k, imode) * raercol[kp1][nsav](mm);
+                         });
+
+    // rce-comment- new formulation for k=pver
+    // srcn(  pver  )=srcn(  pver  )+nact(  pver  ,m)*(raercol(pver,mm,nsav))
+    tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
+           raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
+    srcn(pver - 1) += haero::max(0, tmpa);
+  } // end imode
+
+  team.team_barrier(); // wait for srcn to be computed
+
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver),
+                       [&](int kk) { qcld(kk) += dtmix * srcn(kk); });
+
+  for (int imode = 0; imode < ntot_amode; imode++) {
+    const int mm = mam_idx[imode][0] - 1;
+    // rce-comment - activation source in layer k involves particles from k+1
+    // source(:)= nact(:,m)*(raercol(:,mm,nsav))
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver - top_lev + 1),
+                         [&](int kk) {
+                           const int k = top_lev - 1 + kk;
+                           const int kp1 = haero::min(k + 1, pver - 1);
+                           source(k) = nact(k, imode) * raercol[kp1][nsav](mm);
+                         }); // end k
+
+    tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
+           raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
+    source(pver - 1) = haero::max(0.0, tmpa);
+
+    team.team_barrier(); // wait for source to be computed
+
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver),
+                         [&](int kk) {
+                           const int k = top_lev - 1 + kk;
+                           const int kp1 = haero::min(k + 1, pver - 1);
+                           const int km1 = haero::max(k - 1, top_lev - 1);
+
+                           raercol_cw[kk][nnew][mm] += dtmix * source(kk);
+                           raercol[kk][nnew][mm] -= dtmix * source(kk);
+                         }); // end kk
+    team.team_barrier();     // wait for the raercol update
+    // update aerosol species mass
+    for (int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
+      const int mm = mam_idx[imode][lspec] - 1;
+      // rce-comment: activation source in layer k involves particles from k+1
+      // source(:)= mact(:,m)*(raercol(:,mm,nsav))
+      Kokkos::parallel_for(
+          Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
+            const int k = top_lev - 1 + kk;
+            const int kp1 = haero::min(k + 1, pver - 1);
+            source(k) = mact(k, imode) * raercol[kp1][nsav](mm);
+          }); // end k
+      tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
+             raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
+      source(pver - 1) = haero::max(0.0, tmpa);
+      team.team_barrier(); // wait for source to be computed
+
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver),
+                           [&](int kk) {
+                             raercol_cw[kk][nnew][mm] += dtmix * source(kk);
+                             raercol[kk][nnew][mm] -= dtmix * source(kk);
+                           }); // end kk
+
+      team.team_barrier();
+    } // lspec loop
+  }   //  imode loop
+
+  // evaporate particles again if no cloud
+  Kokkos::parallel_for(
+      Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
+        const int k = top_lev - 1 + kk;
+        if (cldn(k) == 0.0) {
+          // no cloud
+          qcld(k) = 0.0;
+
+          // convert activated aerosol to interstitial in decaying cloud
+          for (int imode = 0; imode < ntot_amode; imode++) {
+            const int mm = mam_idx[imode][0] - 1;
+            raercol[k][nnew](mm) += raercol_cw[k][nnew](mm);
+            raercol_cw[k][nnew](mm) = 0.0;
+
+            for (int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
+              const int mm = mam_idx[imode][lspec] - 1;
+              raercol[k][nnew](mm) += raercol_cw[k][nnew](mm);
+              raercol_cw[k][nnew](mm) = 0.0;
+            } // lspec
+          }   // imode
+        }     // if cldn(k) == 0
+      });     // kk
+} // end update_for_implmix
 
 KOKKOS_INLINE_FUNCTION
 void update_from_explmix(
@@ -1672,14 +1805,21 @@ void dropmixnuc(
   // substepping
 
   int nnew = 1;
-  update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, eddy_diff, nact, mact,
+  if (SHOC_MIX_AEROSOLS) {
+    update_for_implmix(team, dtmicro, cldn, mam_idx, nspec_amode, top_lev, // in
+                                                                  // in-outs
+                       srcn, source, // work arrays
+                       nact, mact, qcld, raercol, raercol_cw, nsav,
+                       nnew); // out
+  } else {
+    update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, eddy_diff, nact, mact,
                       qcld, raercol, raercol_cw, nsav, nnew, nspec_amode,
                       mam_idx, enable_aero_vertical_mix, top_lev,
                       // work vars
                       overlapp, overlapm, eddy_diff_kp, eddy_diff_km, qncld,
                       srcn, // droplet source rate [/s]
                       source);
-
+  }
   team.team_barrier();
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev), [&](int kk) {
