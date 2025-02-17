@@ -145,15 +145,16 @@ TEST_CASE("kohler_verificiation", "") {
     const auto rdry = verification.dry_radius;
     logger.info("initialied verifications");
     Kokkos::parallel_for(
-        "KohlerVerification::test_properties", 1, KOKKOS_LAMBDA(const int i) {
+        "KohlerVerification::test_properties", 2, KOKKOS_LAMBDA(const int i) {
           const Real mam4_default_temperature = Constants::triple_pt_h2o;
           const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
                                               mam4_default_temperature);
           auto output = 0.0;
           // kpoly.get_kpoly(0,  output);
+          Kokkos::printf("in loop\n");
           Kokkos::printf("loop %d, kpoly.log_rel_humidity = %f\n", i, kpoly.log_rel_humidity);
           //Kokkos::printf("loop %d, kpoly.kelvin_a = %f\n", i, kpoly.kelvin_a);
-          // Kokkos::printf("loop %d, kpoly.hygroscopicity = %f\n", i, kpoly.hygroscopicity);
+          Kokkos::printf("loop %d, kpoly.hygroscopicity = %f\n", i, kpoly.hygroscopicity);
           Kokkos::printf("loop %d, kpoly.dry_radius_cubed = %f\n", i, kpoly.dry_radius_cubed);
           //Kokkos::printf("loop %d, haero::cube(i) = %f\n", i, haero::cube(i));
           // Kokkos::printf("loop %d, (kpoly.log_rel_humidity * rwet - kpoly.kelvin_a) = %f\n", i, (kpoly.log_rel_humidity * i - kpoly.kelvin_a));
@@ -171,7 +172,6 @@ TEST_CASE("kohler_verificiation", "") {
 
         });
     logger.info("finished kokkos for");
-    exit(0);
     auto h_k0 = Kokkos::create_mirror_view(k_of_zero);
     auto h_krdry = Kokkos::create_mirror_view(k_of_rdry);
     auto h_k25 = Kokkos::create_mirror_view(k_of_25rdry);
@@ -289,5 +289,7 @@ TEST_CASE("kohler_verificiation", "") {
     REQUIRE(newton_max_err < 1.5 * conv_tol);
     REQUIRE(bisection_max_err < 5 * conv_tol);
     REQUIRE(bracket_max_err < 1.5 * conv_tol);
+    exit(0);
+
   }
 }
