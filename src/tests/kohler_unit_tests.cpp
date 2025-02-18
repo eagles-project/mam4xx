@@ -153,7 +153,7 @@ TEST_CASE("kohler_verificiation", "") {
           // kpoly.get_kpoly(0,  output);
           Kokkos::printf("in loop\n");
           Kokkos::printf("loop %d, kpoly.log_rel_humidity = %f\n", i, kpoly.log_rel_humidity);
-          //Kokkos::printf("loop %d, kpoly.kelvin_a = %f\n", i, kpoly.kelvin_a);
+          Kokkos::printf("loop %d, kpoly.kelvin_a = %f\n", i, kpoly.kelvin_a);
           Kokkos::printf("loop %d, kpoly.hygroscopicity = %f\n", i, kpoly.hygroscopicity);
           Kokkos::printf("loop %d, kpoly.dry_radius_cubed = %f\n", i, kpoly.dry_radius_cubed);
           //Kokkos::printf("loop %d, haero::cube(i) = %f\n", i, haero::cube(i));
