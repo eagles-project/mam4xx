@@ -87,7 +87,6 @@ TEST_CASE("kohler_physics_functions", "") {
 
   const Real mam4_surften = haero::Constants::surface_tension_h2o_air_273k;
   const Real mam4_kelvin_a = kelvin_coefficient();
-  exit(0);
 
   // minimum temperature for liquid water to -25 C
   const Real min_temp = 248.16;
