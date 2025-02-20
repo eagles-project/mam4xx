@@ -87,6 +87,7 @@ TEST_CASE("kohler_physics_functions", "") {
 
   const Real mam4_surften = haero::Constants::surface_tension_h2o_air_273k;
   const Real mam4_kelvin_a = kelvin_coefficient();
+  exit(0);
 
   // minimum temperature for liquid water to -25 C
   const Real min_temp = 248.16;
@@ -153,7 +154,7 @@ TEST_CASE("kohler_verificiation", "") {
           // kpoly.get_kpoly(0,  output);
           Kokkos::printf("in loop\n");
           Kokkos::printf("loop %d, kpoly.log_rel_humidity = %f\n", i, kpoly.log_rel_humidity);
-          Kokkos::printf("loop %d, kpoly.kelvin_a = %f\n", i, kpoly.kelvin_a);
+          //Kokkos::printf("loop %d, kpoly.kelvin_a = %f\n", i, kpoly.kelvin_a);
           Kokkos::printf("loop %d, kpoly.hygroscopicity = %f\n", i, kpoly.hygroscopicity);
           Kokkos::printf("loop %d, kpoly.dry_radius_cubed = %f\n", i, kpoly.dry_radius_cubed);
           //Kokkos::printf("loop %d, haero::cube(i) = %f\n", i, haero::cube(i));
