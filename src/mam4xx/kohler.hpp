@@ -140,7 +140,7 @@ struct KohlerPolynomial {
   /// Coefficient in the Kohler polynomial
   double dry_radius_cubed;
   /// Coefficient in the Kohler polynomial
-  double kelvin_a;
+  double kelvin_a = 0.001200;
 
   /** Constructor. Creates 1 instance of a KohlerPolynomial.
 
