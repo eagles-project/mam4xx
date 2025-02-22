@@ -44,12 +44,12 @@ surface_tension_water_air(double T = Constants::triple_pt_h2o) {
   constexpr double b = -0.625;
   constexpr double mu = 1.256;
   const auto tau = 1 - T / Tc;
-  Kokkos::printf("Tc = %f\n", Tc);
-  Kokkos::printf("stwa T = %f\n", T);
-  Kokkos::printf("B = %f\n", B);
-  Kokkos::printf("b = %f\n", b);
-  Kokkos::printf("mu = %f\n", mu);
-  Kokkos::printf("tau = %f\n", tau);
+  // Kokkos::printf("Tc = %f\n", Tc);
+  // Kokkos::printf("stwa T = %f\n", T);
+  // Kokkos::printf("B = %f\n", B);
+  // Kokkos::printf("b = %f\n", b);
+  // Kokkos::printf("mu = %f\n", mu);
+  // Kokkos::printf("tau = %f\n", tau);
   EKAT_KERNEL_ASSERT(haero::FloatingPoint<double>::in_bounds(
       T, Constants::triple_pt_h2o - 25, Tc,
       std::numeric_limits<float>::epsilon()));
@@ -74,9 +74,9 @@ KOKKOS_INLINE_FUNCTION double
 kelvin_coefficient(double T = Constants::triple_pt_h2o) {
   const double density_h2o = Constants::density_h2o;
   const double r_gas_h2o_vapor = Constants::r_gas_h2o_vapor;
-  Kokkos::printf("density_h2o = %f\n", density_h2o);
-  Kokkos::printf("r_gas_h2o_vapor = %f\n", r_gas_h2o_vapor);
-  Kokkos::printf("T = %f\n", T);
+  // Kokkos::printf("density_h2o = %f\n", density_h2o);
+  // Kokkos::printf("r_gas_h2o_vapor = %f\n", r_gas_h2o_vapor);
+  // Kokkos::printf("T = %f\n", T);
   return 2 * surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o);
 }
 
@@ -158,6 +158,7 @@ struct KohlerPolynomial {
         kelvin_a(kelvin_coefficient(temperature)) {
 
     kelvin_a *= 1e6; /* convert from N to mN and m to micron */
+    Kokkos::printf("kelvin_a = %f\n", kelvin_a);
     EKAT_KERNEL_ASSERT(valid_inputs(rel_h, hygro, dry_rad_microns));
   }
 
