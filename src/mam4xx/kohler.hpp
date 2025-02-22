@@ -157,8 +157,8 @@ struct KohlerPolynomial {
         dry_radius_cubed(haero::cube(dry_rad_microns)),
         kelvin_a(kelvin_coefficient(temperature)) {
 
-    kelvin_a *= 1e6; /* convert from N to mN and m to micron */
     Kokkos::printf("kelvin_a = %f\n", kelvin_a);
+    kelvin_a *= 1e6; /* convert from N to mN and m to micron */
     EKAT_KERNEL_ASSERT(valid_inputs(rel_h, hygro, dry_rad_microns));
   }
 
