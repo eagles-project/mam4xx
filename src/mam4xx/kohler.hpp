@@ -154,9 +154,8 @@ struct KohlerPolynomial {
                    Real temperature = Constants::triple_pt_h2o)
       : log_rel_humidity(log(rel_h)), hygroscopicity(hygro),
         dry_radius(dry_rad_microns),
-        dry_radius_cubed(haero::cube(dry_rad_microns)),
-        kelvin_a(kelvin_coefficient(temperature)) {
-
+        dry_radius_cubed(haero::cube(dry_rad_microns)) {
+    kelvin_a = kelvin_coefficient(temperature);
     Kokkos::printf("kelvin_a = %f\n", kelvin_a);
     kelvin_a *= 1e6; /* convert from N to mN and m to micron */
     EKAT_KERNEL_ASSERT(valid_inputs(rel_h, hygro, dry_rad_microns));
