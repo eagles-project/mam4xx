@@ -81,7 +81,8 @@ kelvin_coefficient(double T = Constants::triple_pt_h2o) {
   Kokkos::printf("numerator: %f\n", 2 * surface_tension_water_air(T));
   Kokkos::printf("denominator: %f\n", (r_gas_h2o_vapor * T * density_h2o));
   // Kokkos::printf("fraction: %f\n", (surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o)));
-  const double result = 2 * surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o);
+  const double result = -1.0;
+  result = 2 * surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o);
   Kokkos::printf("result: %f\n", result);
   return result;
 }
