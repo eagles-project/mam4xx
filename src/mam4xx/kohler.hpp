@@ -78,7 +78,9 @@ kelvin_coefficient(double T = Constants::triple_pt_h2o) {
   // Kokkos::printf("r_gas_h2o_vapor = %f\n", r_gas_h2o_vapor);
   // Kokkos::printf("T = %f\n", T);
   // return 2 * surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o);
-  return 2 * surface_tension_water_air(T);
+  Kokkos::printf("numerator: %f\n", 2 * surface_tension_water_air(T));
+  Kokkos::printf("denominator: %f\n", (r_gas_h2o_vapor * T * density_h2o));
+  return (r_gas_h2o_vapor * T * density_h2o);
 }
 
 /// Struct that represents the Kohler polynomial.
