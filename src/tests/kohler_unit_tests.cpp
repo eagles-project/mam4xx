@@ -18,6 +18,11 @@
 #include <cmath>
 #include <iostream>
 
+
+#include <mam4xx/mam4.hpp>
+#include <mam4xx/aero_config.hpp>
+using namespace haero;
+
 using namespace mam4;
 
 struct KohlerSolveTestFtor {
@@ -129,24 +134,44 @@ TEST_CASE("kohler_verificiation", "") {
   static constexpr int N = 20;
   static constexpr int N3 = N * N * N;
   KohlerVerification verification(N);
-
+  logger.info("set N & N3 to {} and {}", N, N3);
   SECTION("polynomial_properties") {
     DeviceType::view_1d<Real> k_of_zero("kohler_poly_zero_input", N3);
     DeviceType::view_1d<Real> k_of_rdry("kohler_poly_rdry_input", N3);
     DeviceType::view_1d<Real> k_of_25rdry("kohler_poly_25rdry_input", N3);
-
+    logger.info("initialied 1d views");
     const auto rh = verification.relative_humidity;
     const auto hyg = verification.hygroscopicity;
     const auto rdry = verification.dry_radius;
+    logger.info("initialied verifications");
     Kokkos::parallel_for(
-        "KohlerVerification::test_properties", N3, KOKKOS_LAMBDA(const int i) {
+        "KohlerVerification::test_properties", 2, KOKKOS_LAMBDA(const int i) {
           const Real mam4_default_temperature = Constants::triple_pt_h2o;
           const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
                                               mam4_default_temperature);
-          k_of_zero(i) = kpoly(0);
-          k_of_rdry(i) = kpoly(rdry(i));
-          k_of_25rdry(i) = kpoly(25 * rdry(i));
+          auto output = 0.0;
+          // kpoly.get_kpoly(0,  output);
+          Kokkos::printf("in loop\n");
+          Kokkos::printf("loop %d, kpoly.log_rel_humidity = %f\n", i, kpoly.log_rel_humidity);
+          //Kokkos::printf("loop %d, kpoly.kelvin_a = %f\n", i, kpoly.kelvin_a);
+          Kokkos::printf("loop %d, kpoly.hygroscopicity = %f\n", i, kpoly.hygroscopicity);
+          Kokkos::printf("loop %d, kpoly.dry_radius_cubed = %f\n", i, kpoly.dry_radius_cubed);
+          //Kokkos::printf("loop %d, haero::cube(i) = %f\n", i, haero::cube(i));
+          // Kokkos::printf("loop %d, (kpoly.log_rel_humidity * rwet - kpoly.kelvin_a) = %f\n", i, (kpoly.log_rel_humidity * i - kpoly.kelvin_a));
+          // Kokkos::printf("loop %d, ((hygroscopicity - log_rel_humidity) * rwet + kelvin_a) = %f\n", i, ((kpoly.hygroscopicity - kpoly.log_rel_humidity) * i + kpoly.kelvin_a));
+          //Kokkos::printf("loop %di, rdry(i) = %f\n", i, rdry(i));
+          //Kokkos::printf("loop %di, k_of_zero(i) = %f\n", i, k_of_zero(i));
+          //Kokkos::printf("loop %di, k_of_rdry(i) = %f\n", i, k_of_rdry(i));
+          //Kokkos::printf("loop %di, k_of_25rdry(i) = %f\n", i, k_of_25rdry(i));
+          //Kokkos::printf("loop %di, kpoly(0) = %f\n", i, kpoly(0));
+          //Kokkos::printf("loop %di, kpoly(rdry(i)) = %f\n", i, kpoly(rdry(i)));
+          //Kokkos::printf("loop %di, kpoly(25*rdry(i)) = %f\n", i, kpoly(25*rdry(i)));
+          // k_of_zero(i) = kpoly(0);
+          // k_of_rdry(i) = kpoly(rdry(i));
+          // k_of_25rdry(i) = kpoly(25 * rdry(i));
+
         });
+    logger.info("finished kokkos for");
     auto h_k0 = Kokkos::create_mirror_view(k_of_zero);
     auto h_krdry = Kokkos::create_mirror_view(k_of_rdry);
     auto h_k25 = Kokkos::create_mirror_view(k_of_25rdry);
@@ -159,12 +184,13 @@ TEST_CASE("kohler_verificiation", "") {
     Kokkos::deep_copy(h_rh, rh);
     Kokkos::deep_copy(h_hyg, hyg);
     Kokkos::deep_copy(h_rdry, rdry);
-
+    logger.info("copied views");
     const Real mam4_kelvin_a = kelvin_coefficient() * 1e6;
 
     for (int i = 0; i < N3; ++i) {
+      logger.info("checking {}", i);
       REQUIRE(
-          FloatingPoint<Real>::equiv(h_k0(i), mam4_kelvin_a * cube(h_rdry(i))));
+          haero::FloatingPoint<Real>::equiv(h_k0(i), mam4_kelvin_a * cube(h_rdry(i))));
       REQUIRE(h_krdry(i) > 0);
       REQUIRE(h_k25(i) < 0);
     }
@@ -263,5 +289,7 @@ TEST_CASE("kohler_verificiation", "") {
     REQUIRE(newton_max_err < 1.5 * conv_tol);
     REQUIRE(bisection_max_err < 5 * conv_tol);
     REQUIRE(bracket_max_err < 1.5 * conv_tol);
+    exit(0);
+
   }
 }

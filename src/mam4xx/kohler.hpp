@@ -44,6 +44,12 @@ surface_tension_water_air(double T = Constants::triple_pt_h2o) {
   constexpr double b = -0.625;
   constexpr double mu = 1.256;
   const auto tau = 1 - T / Tc;
+  // Kokkos::printf("Tc = %f\n", Tc);
+  // Kokkos::printf("stwa T = %f\n", T);
+  // Kokkos::printf("B = %f\n", B);
+  // Kokkos::printf("b = %f\n", b);
+  // Kokkos::printf("mu = %f\n", mu);
+  // Kokkos::printf("tau = %f\n", tau);
   EKAT_KERNEL_ASSERT(haero::FloatingPoint<double>::in_bounds(
       T, Constants::triple_pt_h2o - 25, Tc,
       std::numeric_limits<float>::epsilon()));
@@ -68,7 +74,17 @@ KOKKOS_INLINE_FUNCTION double
 kelvin_coefficient(double T = Constants::triple_pt_h2o) {
   const double density_h2o = Constants::density_h2o;
   const double r_gas_h2o_vapor = Constants::r_gas_h2o_vapor;
-  return 2 * surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o);
+  // Kokkos::printf("density_h2o = %f\n", density_h2o);
+  // Kokkos::printf("r_gas_h2o_vapor = %f\n", r_gas_h2o_vapor);
+  // Kokkos::printf("T = %f\n", T);
+  // return 2 * surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o);
+  Kokkos::printf("numerator: %f\n", 2 * surface_tension_water_air(T));
+  Kokkos::printf("denominator: %f\n", (r_gas_h2o_vapor * T * density_h2o));
+  // Kokkos::printf("fraction: %f\n", (surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o)));
+  const double result = -1.0;
+  result = 2 * surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o);
+  Kokkos::printf("result: %f\n", result);
+  return result;
 }
 
 /// Struct that represents the Kohler polynomial.
@@ -131,7 +147,7 @@ struct KohlerPolynomial {
   /// Coefficient in the Kohler polynomial
   double dry_radius_cubed;
   /// Coefficient in the Kohler polynomial
-  double kelvin_a;
+  double kelvin_a = 0.001200;
 
   /** Constructor. Creates 1 instance of a KohlerPolynomial.
 
@@ -145,9 +161,9 @@ struct KohlerPolynomial {
                    Real temperature = Constants::triple_pt_h2o)
       : log_rel_humidity(log(rel_h)), hygroscopicity(hygro),
         dry_radius(dry_rad_microns),
-        dry_radius_cubed(haero::cube(dry_rad_microns)),
-        kelvin_a(kelvin_coefficient(temperature)) {
-
+        dry_radius_cubed(haero::cube(dry_rad_microns)) {
+    kelvin_a = kelvin_coefficient(temperature);
+    Kokkos::printf("kelvin_a = %f\n", kelvin_a);
     kelvin_a *= 1e6; /* convert from N to mN and m to micron */
     EKAT_KERNEL_ASSERT(valid_inputs(rel_h, hygro, dry_rad_microns));
   }
@@ -164,14 +180,32 @@ struct KohlerPolynomial {
   ///     1e-6 m]
   ///     @return Polynomial value, wet_radius in microns [ 1e-6 m]
   template <typename U>
-  KOKKOS_INLINE_FUNCTION double operator()(const U &wet_radius) const {
-    const double rwet = Real(wet_radius);
-    const double result =
+  KOKKOS_INLINE_FUNCTION Real operator()(const U &wet_radius) const {
+    const Real rwet = Real(wet_radius);
+    // Kokkos::printf("() rwet %f\n", rwet);
+    // Kokkos::printf("() log_rel_humidity %f\n", log_rel_humidity);
+    // Kokkos::printf("() kelvin_a %f\n", kelvin_a);
+    // Kokkos::printf("() hygroscopicity %f\n", hygroscopicity);
+    // Kokkos::printf("() dry_radius_cubed %f\n", dry_radius_cubed);
+    const Real result =
         (log_rel_humidity * rwet - kelvin_a) * haero::cube(rwet) +
         ((hygroscopicity - log_rel_humidity) * rwet + kelvin_a) *
             dry_radius_cubed;
     return result;
   }
+
+  // KOKKOS_INLINE_FUNCTION void get_kpoly(Real wet_radius, Real output) const {
+  //   const Real rwet = Real(wet_radius);
+  //   Kokkos::printf("get rwet %f\n", rwet);
+  //   Kokkos::printf("get log_rel_humidity %f\n", log_rel_humidity);
+  //   Kokkos::printf("get kelvin_a %f\n", kelvin_a);
+  //   Kokkos::printf("get hygroscopicity %f\n", hygroscopicity);
+  //   Kokkos::printf("get dry_radius_cubed %f\n", dry_radius_cubed);
+  //   output =
+  //       (log_rel_humidity * rwet - kelvin_a) * haero::cube(rwet) +
+  //       ((hygroscopicity - log_rel_humidity) * rwet + kelvin_a) *
+  //           dry_radius_cubed;
+  // }
 
   ///   Evaluates the derivative of the Kohler polynomial with respect to
   ///     wet radius
