@@ -1384,7 +1384,6 @@ void update_from_explmix(
         // source(:)= mact(:,m)*(raercol(:,mm,nsav))
         Kokkos::parallel_for(
             Kokkos::TeamVectorRange(team, top_lev - 1, pver_loc), [&](int k) {
-              // const int k = top_lev - 1 + kk;
               const int kp1 = haero::min(k + 1, pver - 1);
               source(k) = mact(k, imode) * raercol[kp1][nsav](mm);
             }); // end k
@@ -1393,7 +1392,6 @@ void update_from_explmix(
         source(pver - 1) = haero::max(zero, tmpa);
         Kokkos::parallel_for(
             Kokkos::TeamVectorRange(team, top_lev - 1, pver_loc), [&](int k) {
-              // const int k = top_lev - 1 + kk;
               const int kp1 = haero::min(k + 1, pver - 1);
               const int km1 = haero::max(k - 1, top_lev - 1);
               explmix(raercol_cw[km1][nsav](mm), raercol_cw[k][nsav](mm),
@@ -1567,6 +1565,7 @@ void dropmixnuc(
     // cloud droplet number mixing ratio [#/kg]
     // load number nucleated into qcld on cloud boundaries
     qcld(k) = ncldwtr(k);
+    EKAT_KERNEL_ASSERT_MSG(dz(k) != 0.0, "Error: dz is equal to zero.\n");
   });
 
   Kokkos::parallel_for(
@@ -1578,11 +1577,15 @@ void dropmixnuc(
         csbot_cscen(k) = csbot(k) / cs;
       });
 
-  zs(pver_loc - 1) = one / (zm(pver_loc - 2) - zm(pver_loc - 1));
-  eddy_diff(pver_loc - 1) = zero;
-  csbot(pver_loc - 1) =
-      conversions::density_of_ideal_gas(temp(pver_loc - 1), pmid(pver_loc - 1));
-  csbot_cscen(pver_loc - 1) = one;
+  constexpr int surface_cell = pver_loc - 1;
+  EKAT_KERNEL_ASSERT_MSG(
+      zm(surface_cell - 1) - zm(surface_cell) != 0.0,
+      "Error: zm(surface_cell - 1) - zm(surface_cell) is equal to zero.\n");
+  zs(surface_cell) = one / (zm(surface_cell - 1) - zm(surface_cell));
+  eddy_diff(surface_cell) = zero;
+  csbot(surface_cell) =
+      conversions::density_of_ideal_gas(temp(surface_cell), pmid(surface_cell));
+  csbot_cscen(surface_cell) = one;
   // Initialize 1D (in space) versions of interstitial and cloud borne aerosol
   int nsav = 0;
 
