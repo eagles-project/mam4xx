@@ -82,21 +82,21 @@ set(TEST_LIST
 # # matching the tests and errors, just for convenience
 
 set(DEFAULT_TOL 1e-11)
-set(DEFAULT_TOL_DROPMIXNUC 6.9e-4)
+set(DEFAULT_TOL_DROPMIXNUC 6.8e-4)
 
 set(ERROR_THRESHOLDS
-    4e-8  #    loadaertype1_merged 
-    4e-8  #    loadaertype2_merged 
+    4e-8  #    loadaertype1_merged
+    4e-8  #    loadaertype2_merged
     6e-8  #    loadaertype3_merged
-    7e-5  #    activate_modal_ts_1400_type1 
+    7e-5  #    activate_modal_ts_1400_type1
     2e-10 #    explmix1417_actmm_merged
     1e-9  #    explmix1417_mm_merged
     5e-5  #    stand_get_activate_frac_ts_1417
-    1e-5  #    activate_modal_ts_1417_type2 
+    1e-5  #    activate_modal_ts_1417_type2
     5e-6  #    stand_activate_modal_ts_1417_type2
     2e-3  #    activate_modal_merged
     2e-3  #    ccncalc_merged
-    1e-3  #    ccncalc_loop_ts_1417 
+    1e-3  #    ccncalc_loop_ts_1417
     5e-5  #    ccncalc_ts_1400
     ${DEFAULT_TOL} #    maxsattype1_merged
     ${DEFAULT_TOL} #    maxsattype2_merged
