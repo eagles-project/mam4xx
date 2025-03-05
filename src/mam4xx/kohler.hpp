@@ -163,10 +163,10 @@ struct KohlerPolynomial {
       : log_rel_humidity(haero::log(rel_h)), hygroscopicity(hygro),
         dry_radius(dry_rad_microns),
         dry_radius_cubed(haero::cube(dry_rad_microns)) {
-    // kelvin_coefficient(kelvin_a, temperature);
-    // Kokkos::printf("kelvin_a = %e\n", kelvin_a);
-    // kelvin_a *= 1e6; /* convert from N to mN and m to micron */
-    kelvin_a = -7;
+    kelvin_coefficient(kelvin_a, temperature);
+    kelvin_a *= 1e6; /* convert from N to mN and m to micron */
+    Kokkos::printf("kelvin_a = %e\n", kelvin_a);
+    // kelvin_a = -7;
     EKAT_KERNEL_ASSERT(valid_inputs(rel_h, hygro, dry_rad_microns));
   }
 
