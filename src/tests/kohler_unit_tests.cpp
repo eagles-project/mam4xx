@@ -167,8 +167,8 @@ TEST_CASE("kohler_verificiation", "") {
               [&](int i) {
                 const Real mam4_default_temperature = Constants::triple_pt_h2o;
                 team.team_barrier();
-                const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
-                                                 mam4_default_temperature);
+                // const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
+                                                //  mam4_default_temperature);
                 team.team_barrier();
                 Kokkos::printf("hello\n");
                 });
@@ -323,7 +323,7 @@ TEST_CASE("kohler_verificiation", "") {
     REQUIRE(newton_max_err < 1.5 * conv_tol);
     REQUIRE(bisection_max_err < 5 * conv_tol);
     REQUIRE(bracket_max_err < 1.5 * conv_tol);
-    exit(0);
+    // exit(0);
 
   }
 }
