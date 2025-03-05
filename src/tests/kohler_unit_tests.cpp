@@ -86,7 +86,9 @@ TEST_CASE("kohler_physics_functions", "") {
                                 ekat::logger::LogLevel::debug, comm);
 
   const Real mam4_surften = haero::Constants::surface_tension_h2o_air_273k;
-  const Real mam4_kelvin_a = kelvin_coefficient();
+  // const Real mam4_kelvin_a = kelvin_coefficient();
+  Real mam4_kelvin_a = -1;
+  kelvin_coefficient(mam4_kelvin_a);
 
   // minimum temperature for liquid water to -25 C
   const Real min_temp = 248.16;
@@ -100,7 +102,8 @@ TEST_CASE("kohler_physics_functions", "") {
   for (int i = 0; i <= nn; ++i) {
     const Real T = min_temp + i * dT;
     const Real sigma = surface_tension_water_air(T);
-    const Real k_a = kelvin_coefficient(T);
+    Real k_a = -1;
+    kelvin_coefficient(k_a, T);
     const Real rel_diff_sigma = std::abs(sigma - mam4_surften) / mam4_surften;
     const Real rel_diff_kelvin_a =
         std::abs(k_a - mam4_kelvin_a) / mam4_kelvin_a;
@@ -119,7 +122,9 @@ TEST_CASE("kohler_physics_functions", "") {
               "difference in Kelvin droplet coefficient.",
               max_rel_diff_kelvin_a);
 
-  REQUIRE(kelvin_coefficient() * 1e6 ==
+  Real kc = -1;
+  kelvin_coefficient(kc);
+  REQUIRE(kc * 1e6 ==
           Approx(0.00120746723156361711).epsilon(7e-3));
   REQUIRE(surface_tension_water_air() == Approx(mam4_surften).epsilon(8.5e-5));
 }
@@ -185,7 +190,9 @@ TEST_CASE("kohler_verificiation", "") {
     Kokkos::deep_copy(h_hyg, hyg);
     Kokkos::deep_copy(h_rdry, rdry);
     logger.info("copied views");
-    const Real mam4_kelvin_a = kelvin_coefficient() * 1e6;
+    Real mam4_kelvin_a = -1;
+    kelvin_coefficient(mam4_kelvin_a);
+    mam4_kelvin_a *= 1e6;
 
     for (int i = 0; i < N3; ++i) {
       logger.info("checking {}", i);

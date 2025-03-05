@@ -70,8 +70,8 @@ surface_tension_water_air(double T = Constants::triple_pt_h2o) {
 ///
 ///   @param [in] T temperature [K]
 ///   @return Kelvin droplet coefficient [m]
-KOKKOS_INLINE_FUNCTION double
-kelvin_coefficient(double T = Constants::triple_pt_h2o) {
+KOKKOS_INLINE_FUNCTION void
+kelvin_coefficient(Real &kelvin_coeff, double T = Constants::triple_pt_h2o) {
   const double density_h2o = Constants::density_h2o;
   const double r_gas_h2o_vapor = Constants::r_gas_h2o_vapor;
   // Kokkos::printf("density_h2o = %f\n", density_h2o);
@@ -81,10 +81,10 @@ kelvin_coefficient(double T = Constants::triple_pt_h2o) {
   Kokkos::printf("numerator: %f\n", 2 * surface_tension_water_air(T));
   Kokkos::printf("denominator: %f\n", (r_gas_h2o_vapor * T * density_h2o));
   // Kokkos::printf("fraction: %f\n", (surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o)));
-  const double result = -1.0;
-  result = 2 * surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o);
-  Kokkos::printf("result: %f\n", result);
-  return result;
+  // const double result = -1.0;
+  kelvin_coeff = 2 * surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o);
+  Kokkos::printf("result: %e\n", kelvin_coeff);
+  // return result;
 }
 
 /// Struct that represents the Kohler polynomial.
@@ -147,7 +147,7 @@ struct KohlerPolynomial {
   /// Coefficient in the Kohler polynomial
   double dry_radius_cubed;
   /// Coefficient in the Kohler polynomial
-  double kelvin_a = 0.001200;
+  double kelvin_a; //= 0.001200;
 
   /** Constructor. Creates 1 instance of a KohlerPolynomial.
 
@@ -162,8 +162,8 @@ struct KohlerPolynomial {
       : log_rel_humidity(log(rel_h)), hygroscopicity(hygro),
         dry_radius(dry_rad_microns),
         dry_radius_cubed(haero::cube(dry_rad_microns)) {
-    kelvin_a = kelvin_coefficient(temperature);
-    Kokkos::printf("kelvin_a = %f\n", kelvin_a);
+    kelvin_coefficient(kelvin_a, temperature);
+    Kokkos::printf("kelvin_a = %e\n", kelvin_a);
     kelvin_a *= 1e6; /* convert from N to mN and m to micron */
     EKAT_KERNEL_ASSERT(valid_inputs(rel_h, hygro, dry_rad_microns));
   }
