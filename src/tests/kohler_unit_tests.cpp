@@ -166,15 +166,16 @@ TEST_CASE("kohler_verificiation", "") {
               Kokkos::TeamVectorRange(team, 2),
               [&](int i) {
                 const Real mam4_default_temperature = Constants::triple_pt_h2o;
+                team.team_barrier();
                 const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
                                                  mam4_default_temperature);
                 team.team_barrier();
                 Kokkos::printf("kpoly(i) = %e", kpoly(i));
                 });
-          
+                team.team_barrier();
         });
 
-
+        team.team_barrier();
     // Kokkos::parallel_for(
     //     "KohlerVerification::test_properties", 2, KOKKOS_LAMBDA(const int i) {
     //       const Real mam4_default_temperature = Constants::triple_pt_h2o;
