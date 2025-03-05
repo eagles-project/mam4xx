@@ -170,7 +170,7 @@ TEST_CASE("kohler_verificiation", "") {
                 const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
                                                  mam4_default_temperature);
                 team.team_barrier();
-                Kokkos::printf("kpoly(i) = %e", kpoly(i));
+                Kokkos::printf("hello\n");
                 });
                 team.team_barrier();
         });
