@@ -44,12 +44,12 @@ surface_tension_water_air(double T = Constants::triple_pt_h2o) {
   constexpr double b = -0.625;
   constexpr double mu = 1.256;
   const auto tau = 1 - T / Tc;
-  // Kokkos::printf("Tc = %f\n", Tc);
-  // Kokkos::printf("stwa T = %f\n", T);
-  // Kokkos::printf("B = %f\n", B);
-  // Kokkos::printf("b = %f\n", b);
-  // Kokkos::printf("mu = %f\n", mu);
-  // Kokkos::printf("tau = %f\n", tau);
+  Kokkos::printf("Tc = %e\n", Tc);
+  Kokkos::printf("stwa T = %e\n", T);
+  Kokkos::printf("B = %e\n", B);
+  Kokkos::printf("b = %e\n", b);
+  Kokkos::printf("mu = %e\n", mu);
+  Kokkos::printf("tau = %e\n", tau);
   EKAT_KERNEL_ASSERT(haero::FloatingPoint<double>::in_bounds(
       T, Constants::triple_pt_h2o - 25, Tc,
       std::numeric_limits<float>::epsilon()));
@@ -74,16 +74,16 @@ KOKKOS_INLINE_FUNCTION void
 kelvin_coefficient(Real &kelvin_coeff, double T = Constants::triple_pt_h2o) {
   const double density_h2o = Constants::density_h2o;
   const double r_gas_h2o_vapor = Constants::r_gas_h2o_vapor;
-  Kokkos::printf("density_h2o = %f\n", density_h2o);
-  Kokkos::printf("r_gas_h2o_vapor = %f\n", r_gas_h2o_vapor);
-  Kokkos::printf("T = %f\n", T);
-  Kokkos::printf("surface_tension_water_air(T) = %f\n", surface_tension_water_air(T));
+  Kokkos::printf("density_h2o = %e\n", density_h2o);
+  Kokkos::printf("r_gas_h2o_vapor = %e\n", r_gas_h2o_vapor);
+  Kokkos::printf("T = %e\n", T);
+  Kokkos::printf("surface_tension_water_air(T) = %e\n", surface_tension_water_air(T));
   // return 2 * surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o);
-  Kokkos::printf("numerator: %f\n", 2 * surface_tension_water_air(T));
-  Kokkos::printf("denominator: %f\n", (r_gas_h2o_vapor * T * density_h2o));
+  Kokkos::printf("numerator: %e\n", 2 * surface_tension_water_air(T));
+  Kokkos::printf("denominator: %e\n", (r_gas_h2o_vapor * T * density_h2o));
   // Kokkos::printf("fraction: %f\n", (surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o)));
   // const double result = -1.0;
-  kelvin_coeff = 2 * surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o);
+  kelvin_coeff = 2 * (surface_tension_water_air(T) * 1.01) / ((r_gas_h2o_vapor * 1.01) * (T * 1.01) * (density_h2o * 1.01));
   Kokkos::printf("result: %e\n", kelvin_coeff);
   // return result;
 }
