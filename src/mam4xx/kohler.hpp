@@ -74,9 +74,10 @@ KOKKOS_INLINE_FUNCTION void
 kelvin_coefficient(Real &kelvin_coeff, double T = Constants::triple_pt_h2o) {
   const double density_h2o = Constants::density_h2o;
   const double r_gas_h2o_vapor = Constants::r_gas_h2o_vapor;
-  // Kokkos::printf("density_h2o = %f\n", density_h2o);
-  // Kokkos::printf("r_gas_h2o_vapor = %f\n", r_gas_h2o_vapor);
-  // Kokkos::printf("T = %f\n", T);
+  Kokkos::printf("density_h2o = %f\n", density_h2o);
+  Kokkos::printf("r_gas_h2o_vapor = %f\n", r_gas_h2o_vapor);
+  Kokkos::printf("T = %f\n", T);
+  Kokkos::printf("surface_tension_water_air(T) = %f\n", surface_tension_water_air(T));
   // return 2 * surface_tension_water_air(T) / (r_gas_h2o_vapor * T * density_h2o);
   Kokkos::printf("numerator: %f\n", 2 * surface_tension_water_air(T));
   Kokkos::printf("denominator: %f\n", (r_gas_h2o_vapor * T * density_h2o));
