@@ -175,7 +175,6 @@ TEST_CASE("kohler_verificiation", "") {
                 team.team_barrier();
         });
 
-        team.team_barrier();
     // Kokkos::parallel_for(
     //     "KohlerVerification::test_properties", 2, KOKKOS_LAMBDA(const int i) {
     //       const Real mam4_default_temperature = Constants::triple_pt_h2o;
