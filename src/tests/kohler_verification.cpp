@@ -15,10 +15,12 @@ namespace mam4 {
 
 std::string KohlerVerification::mathematica_verification_program() const {
   std::ostringstream ss;
+  Real kc = -1;
+  kelvin_coefficient(kc);
   /* mathematica doesn't like exponential notation, so we use setprecision
    * instead.*/
   ss << "kelvinCoeff = " << std::fixed << std::setprecision(16)
-     << kelvin_coefficient() * 1e6 << ";\n";
+     << kc * 1e6 << ";\n";
   ss << "rhMin = " << rhmin << ";\n";
   ss << "rhMax = " << KohlerPolynomial::rel_humidity_max << ";\n";
   ss << "hygMin = " << hmin << ";\n";
@@ -43,10 +45,12 @@ std::string KohlerVerification::mathematica_verification_program() const {
 
 std::string KohlerVerification::matlab_verification_program() const {
   std::ostringstream ss;
+  Real kc = -1;
+  kelvin_coefficient(kc);
   ss << "clear; format long;\n";
   ss << "%% parameter bounds\n";
   ss << "kelvinCoeff = " << std::fixed << std::setprecision(16)
-     << kelvin_coefficient() * 1e6 << ";\n";
+     << kc * 1e6 << ";\n";
   ss << "rhMin = " << rhmin << ";\n";
   ss << "rhMax = " << KohlerPolynomial::rel_humidity_max << ";\n";
   ss << "hygMin = " << hmin << ";\n";
