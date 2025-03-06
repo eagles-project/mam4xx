@@ -159,6 +159,7 @@ TEST_CASE("kohler_verificiation", "") {
     //     });
 
     // auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    const ThreadTeam team;
     auto team_policy = Kokkos::TeamVectorRange(team, N3);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
