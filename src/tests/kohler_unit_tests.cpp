@@ -167,10 +167,11 @@ TEST_CASE("kohler_verificiation", "") {
               [&](int i) {
                 const Real mam4_default_temperature = Constants::triple_pt_h2o;
                 team.team_barrier();
-                // const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
-                                                //  mam4_default_temperature);
+                const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
+                                                 mam4_default_temperature);
                 team.team_barrier();
                 Kokkos::printf("hello\n");
+                k_of_zero(i) = kpoly(0);
                 });
                 team.team_barrier();
         });
@@ -224,7 +225,7 @@ TEST_CASE("kohler_verificiation", "") {
     for (int i = 0; i < N3; ++i) {
       logger.info("checking {}", i);
       REQUIRE(
-          haero::FloatingPoint<Real>::equiv(h_k0(i), mam4_kelvin_a * cube(h_rdry(i))));
+          haero::FloatingPoint<Real>::equiv(h_k0(i), mam4_kelvin_a * haero::cube(h_rdry(i))));
       REQUIRE(h_krdry(i) > 0);
       REQUIRE(h_k25(i) < 0);
     }
