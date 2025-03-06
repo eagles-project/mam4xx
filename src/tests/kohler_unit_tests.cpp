@@ -172,6 +172,8 @@ TEST_CASE("kohler_verificiation", "") {
                 team.team_barrier();
                 Kokkos::printf("hello\n");
                 k_of_zero(i) = kpoly(0);
+                k_of_rdry(i) = kpoly(rdry(i));
+                k_of_25rdry(i) = kpoly(25 * rdry(i));
                 });
                 team.team_barrier();
         });
