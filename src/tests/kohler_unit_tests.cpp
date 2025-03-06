@@ -153,31 +153,23 @@ TEST_CASE("kohler_verificiation", "") {
     // auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     // Kokkos::parallel_for(
     //     team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-        
-        
-        
+
     //     });
 
     // auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
-    const ThreadTeam team;
-    auto team_policy = Kokkos::TeamVectorRange(team, N3);
+    // const ThreadTeam team;
+    // auto team_policy = Kokkos::TeamVectorRange(team, N3);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-
-          Kokkos::parallel_for(
-              team_policy,
-              [&](int i) {
-                const Real mam4_default_temperature = Constants::triple_pt_h2o;
-                team.team_barrier();
-                const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
-                                                 mam4_default_temperature);
-                team.team_barrier();
-                Kokkos::printf("hello\n");
-                k_of_zero(i) = kpoly(0);
-                k_of_rdry(i) = kpoly(rdry(i));
-                k_of_25rdry(i) = kpoly(25 * rdry(i));
-                });
-                team.team_barrier();
+        team_policy, Kokkos::TeamVectorRange(team, N3), [&](int i) {
+          const Real mam4_default_temperature = Constants::triple_pt_h2o;
+          // team.team_barrier();
+          const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
+                                              mam4_default_temperature);
+          // team.team_barrier();
+          Kokkos::printf("hello\n");
+          k_of_zero(i) = kpoly(0);
+          k_of_rdry(i) = kpoly(rdry(i));
+          k_of_25rdry(i) = kpoly(25 * rdry(i));
         });
 
     // Kokkos::parallel_for(
