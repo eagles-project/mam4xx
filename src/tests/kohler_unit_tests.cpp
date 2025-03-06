@@ -158,12 +158,13 @@ TEST_CASE("kohler_verificiation", "") {
         
     //     });
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    // auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = Kokkos::TeamVectorRange(team, N3);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
 
           Kokkos::parallel_for(
-              Kokkos::TeamVectorRange(team, N3),
+              team_policy,
               [&](int i) {
                 const Real mam4_default_temperature = Constants::triple_pt_h2o;
                 team.team_barrier();
