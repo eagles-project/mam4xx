@@ -144,23 +144,15 @@ TEST_CASE("kohler_verificiation", "") {
     DeviceType::view_1d<Real> k_of_zero("kohler_poly_zero_input", N3);
     DeviceType::view_1d<Real> k_of_rdry("kohler_poly_rdry_input", N3);
     DeviceType::view_1d<Real> k_of_25rdry("kohler_poly_25rdry_input", N3);
-    logger.info("initialied 1d views");
+    logger.info("initialized 1d views");
     const auto rh = verification.relative_humidity;
     const auto hyg = verification.hygroscopicity;
     const auto rdry = verification.dry_radius;
-    logger.info("initialied verifications");
+    logger.info("initialized verifications");
 
     // auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
-    // Kokkos::parallel_for(
-    //     team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-
-    //     });
-
-    // auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
-    // const ThreadTeam team;
-    // auto team_policy = Kokkos::TeamVectorRange(team, N3);
     Kokkos::parallel_for(
-        team_policy, Kokkos::TeamVectorRange(team, N3), [&](int i) {
+        Kokkos::TeamVectorRange(1u, N3), [&](int i) {
           const Real mam4_default_temperature = Constants::triple_pt_h2o;
           // team.team_barrier();
           const auto kpoly = KohlerPolynomial(rh(i), hyg(i), rdry(i),
