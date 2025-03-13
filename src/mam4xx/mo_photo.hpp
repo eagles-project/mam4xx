@@ -740,11 +740,10 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
   //-----------------------------------------------------------------
   //	... zero all photorates
   //-----------------------------------------------------------------
-  for (int mm = 0; mm < phtcnt; ++mm) {
-    for (int kk = 0; kk < pver; ++kk) {
-      photo(kk, mm) = zero;
-    }
-  }
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, pver), [&](const int kk) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, phtcnt),
+                         [&](const int mm) { photo(kk, mm) = zero; });
+  });
 
   constexpr Real Pa2mb = 1.e-2;                      // pascals to mb
   constexpr Real r2d = 180.0 / haero::Constants::pi; // degrees to radians
