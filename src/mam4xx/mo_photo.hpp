@@ -737,6 +737,14 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
 
   constexpr Real zero = 0;
 
+  //-----------------------------------------------------------------
+  //	... zero all photorates
+  //-----------------------------------------------------------------
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, pver), [&](const int kk) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, phtcnt),
+                         [&](const int mm) { photo(kk, mm) = zero; });
+  });
+
   constexpr Real Pa2mb = 1.e-2;                      // pascals to mb
   constexpr Real r2d = 180.0 / haero::Constants::pi; // degrees to radians
   // BAD CONSTANT
