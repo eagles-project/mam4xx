@@ -737,6 +737,15 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
 
   constexpr Real zero = 0;
 
+  //-----------------------------------------------------------------
+  //	... zero all photorates
+  //-----------------------------------------------------------------
+  for (int mm = 0; mm < phtcnt; ++mm) {
+    for (int kk = 0; kk < pver; ++kk) {
+      photo(kk, mm) = zero;
+    }
+  }
+
   constexpr Real Pa2mb = 1.e-2;                      // pascals to mb
   constexpr Real r2d = 180.0 / haero::Constants::pi; // degrees to radians
   // BAD CONSTANT
