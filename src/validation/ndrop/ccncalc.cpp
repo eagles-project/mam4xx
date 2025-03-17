@@ -28,7 +28,7 @@ void ccncalc(Ensemble *ensemble) {
     const auto tair_db = input.get_array("temp");
     const auto pmid_db = input.get_array("pmid");
 
-    const int top_lev = ndrop::top_lev;
+    const int top_lev = 6;
 
     const int nspec_max = ndrop::nspec_max;
 

@@ -18,6 +18,7 @@ void update_from_explmix(Ensemble *ensemble) {
     // number of vertical points.
     const int ntot_amode = AeroConfig::num_modes();
     const int pver = ndrop::pver;
+    const int top_lev = 6;
     const auto mam_idx_db = input.get_array("mam_idx");
     const auto nspec_amode_db = input.get_array("nspec_amode");
 
@@ -172,7 +173,7 @@ void update_from_explmix(Ensemble *ensemble) {
           ndrop::update_from_explmix(
               team, dtmicro, csbot, cldn, zn, zs, ekd, nact, mact, qcld,
               raercol, raercol_cw, nsav, nnew, nspec_amode, mam_idx, true,
-              overlapp, overlapm, ekkp, ekkm, qncld, srcn, source);
+              top_lev, overlapp, overlapm, ekkp, ekkm, qncld, srcn, source);
           indexes(0) = nnew;
           indexes(1) = nsav;
         });
