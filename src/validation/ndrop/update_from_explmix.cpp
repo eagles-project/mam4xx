@@ -18,7 +18,7 @@ void update_from_explmix(Ensemble *ensemble) {
     // number of vertical points.
     const int ntot_amode = AeroConfig::num_modes();
     const int pver = ndrop::pver;
-    const int top_lev=7;
+    const int top_lev=6;
     const auto mam_idx_db = input.get_array("mam_idx");
     const auto nspec_amode_db = input.get_array("nspec_amode");
 

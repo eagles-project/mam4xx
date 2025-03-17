@@ -25,7 +25,8 @@ void dropmixnuc(Ensemble *ensemble) {
     const int pver = ndrop::pver;
 
     const auto state_q_db = input.get_array("state_q");
-    const int top_lev = static_cast<int>(input.get_array("top_lev")[0]);
+    // Conversion from Fortran to C++ indexing.
+    const int top_lev = static_cast<int>(input.get_array("top_lev")[0])-1;
 
     const auto tair_db = input.get_array("temp");
     const auto pmid_db = input.get_array("pmid");
