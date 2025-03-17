@@ -26,7 +26,7 @@ void dropmixnuc(Ensemble *ensemble) {
 
     const auto state_q_db = input.get_array("state_q");
     // Conversion from Fortran to C++ indexing.
-    const int top_lev = static_cast<int>(input.get_array("top_lev")[0])-1;
+    const int top_lev = static_cast<int>(input.get_array("top_lev")[0]) - 1;
 
     const auto tair_db = input.get_array("temp");
     const auto pmid_db = input.get_array("pmid");
@@ -244,9 +244,8 @@ void dropmixnuc(Ensemble *ensemble) {
               cldo, // in
               qqcw, // inout
               ptend_q, tendnd, factnum, ndropcol, ndropmix, nsource, wtke, ccn,
-              coltend, coltend_cw,
-              top_lev,
-              raercol_cw, raercol, nact, mact, ekd,
+              coltend, coltend_cw, top_lev, raercol_cw, raercol, nact, mact,
+              ekd,
               // work arrays
               zn, csbot, zs, overlapp, overlapm, ekkp, ekkm, qncld, srcn,
               source, dz, csbot_cscen, raertend, qqcwtend);

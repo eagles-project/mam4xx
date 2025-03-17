@@ -1184,8 +1184,7 @@ void update_from_explmix(
     int &nnew, // indices for old, new time levels in substepping
     const int nspec_amode[AeroConfig::num_modes()],
     const int mam_idx[AeroConfig::num_modes()][nspec_max],
-    const bool &enable_aero_vertical_mix,
-    const int top_lev,
+    const bool &enable_aero_vertical_mix, const int top_lev,
     // work vars
     const ColumnView &overlapp, // cloud overlap involving level kk+1 [fraction]
     const ColumnView &overlapm, // cloud overlap involving level kk-1 [fraction]
@@ -1347,8 +1346,7 @@ void update_from_explmix(
       // rce-comment - activation source in layer k involves particles from k+1
       // source(:)= nact(:,m)*(raercol(:,mm,nsav))
       Kokkos::parallel_for(
-          Kokkos::TeamVectorRange(team, top_lev, pver_loc - 1),
-          [&](int k) {
+          Kokkos::TeamVectorRange(team, top_lev, pver_loc - 1), [&](int k) {
             source(k) = nact(k, imode) * raercol[k + 1][nsav](mm);
           }); // end k
 
@@ -1676,8 +1674,7 @@ void dropmixnuc(
   int nnew = 1;
   update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, eddy_diff, nact, mact,
                       qcld, raercol, raercol_cw, nsav, nnew, nspec_amode,
-                      mam_idx, enable_aero_vertical_mix,
-                      top_lev,
+                      mam_idx, enable_aero_vertical_mix, top_lev,
                       // work vars
                       overlapp, overlapm, eddy_diff_kp, eddy_diff_km, qncld,
                       srcn, // droplet source rate [/s]
@@ -1685,12 +1682,11 @@ void dropmixnuc(
 
   team.team_barrier();
 
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev),
-                       [&](int kk) {
-                         for (int i = 0; i < ncnst_tot; ++i) {
-                           qqcw_fld[i](kk) = zero;
-                         }
-                       });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev), [&](int kk) {
+    for (int i = 0; i < ncnst_tot; ++i) {
+      qqcw_fld[i](kk) = zero;
+    }
+  });
   team.team_barrier();
 
   Kokkos::parallel_for(
