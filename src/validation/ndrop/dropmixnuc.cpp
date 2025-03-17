@@ -23,7 +23,9 @@ void dropmixnuc(Ensemble *ensemble) {
     const int nspec_max = mam4::ndrop::nspec_max;
 
     const int pver = ndrop::pver;
+
     const auto state_q_db = input.get_array("state_q");
+    const int top_lev = static_cast<int>(input.get_array("top_lev")[0]);
 
     const auto tair_db = input.get_array("temp");
     const auto pmid_db = input.get_array("pmid");
@@ -241,7 +243,9 @@ void dropmixnuc(Ensemble *ensemble) {
               cldo, // in
               qqcw, // inout
               ptend_q, tendnd, factnum, ndropcol, ndropmix, nsource, wtke, ccn,
-              coltend, coltend_cw, raercol_cw, raercol, nact, mact, ekd,
+              coltend, coltend_cw,
+              top_lev,
+              raercol_cw, raercol, nact, mact, ekd,
               // work arrays
               zn, csbot, zs, overlapp, overlapm, ekkp, ekkm, qncld, srcn,
               source, dz, csbot_cscen, raertend, qqcwtend);

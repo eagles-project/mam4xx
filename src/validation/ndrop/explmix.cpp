@@ -15,7 +15,7 @@ using namespace mam4;
 void explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
-    const int top_lev = ndrop::top_lev - 1;
+    const int top_lev = 7 - 1;
     const int pver = ndrop::pver;
     const Real dtmix = input.get_array("dtmix")[0];
     const Real is_unact = input.get_array("is_unact")[0];
