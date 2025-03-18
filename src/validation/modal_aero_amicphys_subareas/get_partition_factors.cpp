@@ -50,7 +50,8 @@ void get_partition_factors(Ensemble *ensemble) {
           Real factor_clea_in = 0.0;
           Real factor_cldy_in = 0.0;
           mam4::microphysics::get_partition_factors(
-              qgcm_intrst, qgcm_cldbrn, fcldy, fclea, factor_clea_in, factor_cldy_in);
+              qgcm_intrst, qgcm_cldbrn, fcldy, fclea, factor_clea_in,
+              factor_cldy_in);
           factor_clea_d(0) = factor_clea_in;
           factor_cldy_d(0) = factor_cldy_in;
         });
@@ -59,7 +60,6 @@ void get_partition_factors(Ensemble *ensemble) {
     Kokkos::deep_copy(factor_cldy_h, factor_cldy_d);
     const Real factor_clea_out = factor_clea_h(0);
     const Real factor_cldy_out = factor_cldy_h(0);
-
 
     output.set("factor_clea", factor_clea_out);
     output.set("factor_cldy", factor_cldy_out);
