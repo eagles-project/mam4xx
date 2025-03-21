@@ -248,6 +248,8 @@ void modal_aero_lw(Ensemble *ensemble) {
                           cloud_fraction, updraft_vel_ice_nucleation, pblh);
 
     mam4::Prognostics progs = validation::create_prognostics(nlev);
+    mam4::modal_aer_opt::CalcsizeData cal_data;
+    cal_data.initialize();
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
@@ -267,7 +269,7 @@ void modal_aero_lw(Ensemble *ensemble) {
           team.team_barrier();
 
           modal_aero_lw(team, dt, progs_in, atm, pdel, pdeldry,
-                        aersol_optics_data,
+                        aersol_optics_data, cal_data,
                         // outputs
                         tauxar);
           team.team_barrier();
