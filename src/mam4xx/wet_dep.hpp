@@ -44,7 +44,7 @@ namespace wetdep {
  *
  * @pre atm is initialized correctly and has the correct number of levels.
  */
-
+using CalcsizeData = modal_aero_calcsize::CalcsizeData;
 using ConstView1D = DeviceType::view_1d<const Real>;
 using View1D = DeviceType::view_1d<Real>;
 using Int1D = DeviceType::view_1d<int>;
@@ -1581,6 +1581,7 @@ void aero_model_wetdep(
                             [AeroConfig::num_modes()],
     const Real scavimptblvol[aero_model::nimptblgrow_total]
                             [AeroConfig::num_modes()],
+    const CalcsizeData &calcsizedata,
     // in/out calcsize and water_uptake
     const View2D &wet_geometric_mean_diameter_i,
     const View2D &dry_geometric_mean_diameter_i, const View2D &qaerwat,
@@ -1600,7 +1601,6 @@ void aero_model_wetdep(
 
   constexpr int ntot_amode = AeroConfig::num_modes();
   constexpr int nlev = mam4::nlev;
-  constexpr int maxd_aspectype = mam4::aero_model::maxd_aspectype;
   constexpr int zero = 0.0;
 
   auto work_ptr = (Real *)work.data();
@@ -1816,73 +1816,20 @@ void aero_model_wetdep(
     }
 
     {
-
-      const bool do_adjust = true;
-      const bool do_aitacc_transfer = true;
-      const bool update_mmr = true;
-
-      int numptr_amode[ntot_amode];
-      int mam_idx[ntot_amode][ndrop::nspec_max];
-      int mam_cnst_idx[ntot_amode][ndrop::nspec_max];
-      int nspec_amode[ntot_amode];
-      int lspectype_amode[maxd_aspectype][ntot_amode];
-      int lmassptr_amode[maxd_aspectype][ntot_amode];
-      Real specdens_amode[maxd_aspectype];
-      Real spechygro[maxd_aspectype];
-
-      // Get MAM4 parameters (all arguments in the following call are output
-      // variables)
-      ndrop::get_e3sm_parameters(
-          nspec_amode, lspectype_amode, lmassptr_amode, // output
-          numptr_amode, specdens_amode, spechygro,      // output
-          mam_idx, mam_cnst_idx);                       // output
-
-      Real inv_density[ntot_amode][AeroConfig::num_aerosol_ids()] = {};
-      Real num2vol_ratio_min[ntot_amode] = {};
-      Real num2vol_ratio_max[ntot_amode] = {};
-      Real num2vol_ratio_max_nmodes[ntot_amode] = {};
-      Real num2vol_ratio_min_nmodes[ntot_amode] = {};
-      Real num2vol_ratio_nom_nmodes[ntot_amode] = {};
-      Real dgnmin_nmodes[ntot_amode] = {};
-      Real dgnmax_nmodes[ntot_amode] = {};
-      Real dgnnom_nmodes[ntot_amode] = {};
-      //
-      Real mean_std_dev_nmodes[ntot_amode] = {};
-
-      // outputs
-      bool noxf_acc2ait[AeroConfig::num_aerosol_ids()] = {};
-      int n_common_species_ait_accum = {};
-      int ait_spec_in_acc[AeroConfig::num_aerosol_ids()] = {};
-      int acc_spec_in_ait[AeroConfig::num_aerosol_ids()] = {};
-
-      // Initialize all contant variables needed for calcsize
-      //(all arguments in the following call are output variables)
-      modal_aero_calcsize::init_calcsize(
-          inv_density, num2vol_ratio_min, num2vol_ratio_max,
-          num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
-          num2vol_ratio_nom_nmodes, dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
-          mean_std_dev_nmodes, noxf_acc2ait, n_common_species_ait_accum,
-          ait_spec_in_acc, acc_spec_in_ait);
-
       Real dgncur_c_kk[ntot_amode] = {};
       Real dqqcwdt_kk[pcnst] = {};
       //  Calculate aerosol size distribution parameters and aerosol water
       //  uptake for prognostic aerosols
       modal_aero_calcsize::modal_aero_calcsize_sub(
           // Inputs
-          state_q_kk.data(), qqcw_kk.data(), dt, do_adjust, do_aitacc_transfer,
-          update_mmr, lmassptr_amode, numptr_amode, inv_density,
-          num2vol_ratio_min, num2vol_ratio_max, num2vol_ratio_max_nmodes,
-          num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes, dgnmin_nmodes,
-          dgnmax_nmodes, dgnnom_nmodes, mean_std_dev_nmodes, noxf_acc2ait,
-          n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
+          state_q_kk.data(), qqcw_kk.data(), dt, calcsizedata,
           // Outputs
           dgnumdry_m_kk, dgncur_c_kk, ptend_q_kk.data(), dqqcwdt_kk);
       // NOTE: dgnumdry_m_kk is interstitial dry diameter size and
       // dgncur_c_kk is cloud borne dry diameter size
 
       // update could aerosol.
-      if (update_mmr) {
+      if (calcsizedata.update_mmr) {
         // Note: it only needs to update aerosol variables.
         for (int i = utils::aero_start_ind(); i < pcnst; ++i) {
           qqcw(kk, i) = haero::max(zero, qqcw(kk, i) + dqqcwdt_kk[i] * dt);
@@ -1891,7 +1838,8 @@ void aero_model_wetdep(
 
       mam4::water_uptake::modal_aero_water_uptake_dr(
           // inputs
-          nspec_amode, specdens_amode, spechygro, lspectype_amode,
+          calcsizedata.nspec_amode, calcsizedata.specdens_amode,
+          calcsizedata.spechygro, calcsizedata.lspectype_amode,
           state_q_kk.data(), temperature(kk), pmid(kk), cldt(kk), dgnumdry_m_kk,
           // outputs
           dgnumwet_m_kk, qaerwat_m_kk, wetdens_kk);

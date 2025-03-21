@@ -147,8 +147,14 @@ void aero_model_wetdep(Ensemble *ensemble) {
     // work arrays
     const int work_len = wetdep::get_aero_model_wetdep_work_len();
     wetdep::View1D work("work", work_len);
-    std::cout << "aero_model_wetdep : "
-              << "\n";
+
+    mam4::modal_aero_calcsize::CalcsizeData cal_data;
+    cal_data.initialize();
+    const bool update_mmr = true;
+    cal_data.set_update_mmr(update_mmr);
+    // std::cout << "aero_model_wetdep : "
+    //           << "\n";
+
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -173,7 +179,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
                                     dp_frac, sh_frac, icwmrdp, icwmrsh, evapr,
                                     // outputs
                                     dlf, prain, scavimptblnum, scavimptblvol,
-                                    wet_geometric_mean_diameter_i,
+                                    cal_data, wet_geometric_mean_diameter_i,
                                     dry_geometric_mean_diameter_i, qaerwat,
                                     wetdens,
                                     // output
@@ -187,11 +193,6 @@ void aero_model_wetdep(Ensemble *ensemble) {
                                                      ptend_q_kk.data(), kk);
               });
         });
-
-    // std::vector<Real> dlf_output(nlev, 0);
-    // auto dlf_host = View1DHost((Real *)dlf_output.data(), nlev);
-    // Kokkos::deep_copy(dlf, dlf_host);
-    // output.set("dlf", dlf_output);
 
     std::vector<Real> output_pcnst(aero_model::pcnst, 0);
     auto aerdepwetcw_host =
