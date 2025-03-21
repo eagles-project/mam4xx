@@ -285,6 +285,9 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     mam4::Prognostics progs = validation::create_prognostics(nlev);
 
+    mam4::modal_aer_opt::CalcsizeData cal_data;
+    cal_data.initialize();
+
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -304,7 +307,7 @@ void modal_aero_sw(Ensemble *ensemble) {
 
           Real aodvis = 0.0;
           modal_aero_sw(team, dt, progs_in, atm, pdel, pdeldry, tauxar, wa, ga,
-                        fa, aersol_optics_data, aodvis, work);
+                        fa, aersol_optics_data, cal_data, aodvis, work);
 
           team.team_barrier();
           // 2. Let's extract state_q and qqcw from prog.

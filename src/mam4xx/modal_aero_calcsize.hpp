@@ -114,6 +114,56 @@ void init_calcsize(
 
 } // init_calcsize
 
+struct CalcsizeData {
+
+  int nspec_amode[AeroConfig::num_modes()];
+  int lspectype_amode[ndrop::maxd_aspectype][AeroConfig::num_modes()];
+  Real specdens_amode[ndrop::maxd_aspectype];
+  int lmassptr_amode[ndrop::maxd_aspectype][AeroConfig::num_modes()];
+  Real spechygro[ndrop::maxd_aspectype];
+  Real mean_std_dev_nmodes[AeroConfig::num_modes()];
+
+  int numptr_amode[AeroConfig::num_modes()];
+  int mam_idx[AeroConfig::num_modes()][ndrop::nspec_max];
+  int mam_cnst_idx[AeroConfig::num_modes()][ndrop::nspec_max];
+
+  // FIXME: inv_density: we have different order of species in mam4xx.
+  Real inv_density[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()] = {};
+  Real num2vol_ratio_min[AeroConfig::num_modes()] = {};
+  Real num2vol_ratio_max[AeroConfig::num_modes()] = {};
+  Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
+  Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()] = {};
+  Real num2vol_ratio_nom_nmodes[AeroConfig::num_modes()] = {};
+  Real dgnmin_nmodes[AeroConfig::num_modes()] = {};
+  Real dgnmax_nmodes[AeroConfig::num_modes()] = {};
+  Real dgnnom_nmodes[AeroConfig::num_modes()] = {};
+  bool noxf_acc2ait[AeroConfig::num_aerosol_ids()] = {};
+  int n_common_species_ait_accum = {};
+  int ait_spec_in_acc[AeroConfig::num_aerosol_ids()] = {};
+  int acc_spec_in_ait[AeroConfig::num_aerosol_ids()] = {};
+
+  const bool do_adjust = true;
+  const bool do_aitacc_transfer = true;
+  bool update_mmr = false;
+
+  void initialize() {
+
+    ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
+                               numptr_amode, specdens_amode, spechygro, mam_idx,
+                               mam_cnst_idx);
+
+    init_calcsize(inv_density, num2vol_ratio_min, num2vol_ratio_max,
+                  num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
+                  num2vol_ratio_nom_nmodes, dgnmin_nmodes, dgnmax_nmodes,
+                  dgnnom_nmodes, mean_std_dev_nmodes,
+                  // outputs
+                  noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
+                  acc_spec_in_ait);
+  }
+
+  void set_update_mmr(const bool update_mmr_in) { update_mmr = update_mmr_in; }
+};
+
 // NOTE: this version uses state_q and qqcw variables using format from e3sm
 KOKKOS_INLINE_FUNCTION
 void compute_coef_acc_ait_transfer(
@@ -458,20 +508,7 @@ void update_tends_flx(const int jmode,         // in
 KOKKOS_INLINE_FUNCTION
 void aitken_accum_exchange(
     const Real *state_q, const Real *qqcw, const int &aitken_idx,
-    const int &accum_idx,
-    const bool noxf_acc2ait[AeroConfig::num_aerosol_ids()],
-    const int n_common_species_ait_accum, const int *ait_spec_in_acc,
-    const int *acc_spec_in_ait,
-    const Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()],
-    const Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
-    const Real num2vol_ratio_nom_nmodes[AeroConfig::num_modes()],
-    const Real dgnmax_nmodes[AeroConfig::num_modes()],
-    const Real dgnmin_nmodes[AeroConfig::num_modes()],
-    const Real dgnnom_nmodes[AeroConfig::num_modes()],
-    const Real mean_std_dev_nmodes[AeroConfig::num_modes()],
-    const Real inv_density[AeroConfig::num_modes()]
-                          [AeroConfig::num_aerosol_ids()],
-    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
+    const int &accum_idx, const CalcsizeData &calcsizedata,
     const Real &adj_tscale_inv, const Real &dt, const Real &drv_i_aitsv,
     const Real &num_i_aitsv, const Real &drv_c_aitsv, const Real &num_c_aitsv,
     const Real &drv_i_accsv, const Real &num_i_accsv, const Real &drv_c_accsv,
@@ -500,10 +537,11 @@ void aitken_accum_exchange(
   Real num2vol_ratio_cur_i_aitken = zero;
 
   const Real voltonum_ait =
-      num2vol_ratio_nom_nmodes[aitken_idx]; // volume to number for aitken mode
+      calcsizedata.num2vol_ratio_nom_nmodes[aitken_idx]; // volume to number for
+                                                         // aitken mode
   const Real voltonum_acc =
-      num2vol_ratio_nom_nmodes[accum_idx]; // volume to number for accumulation
-                                           // mode
+      calcsizedata.num2vol_ratio_nom_nmodes[accum_idx]; // volume to number for
+                                                        // accumulation mode
   int ait2acc_index = 0,
       acc2_ait_index = 0; // indices for transfer between modes
   Real xfertend_num[2][2] = {{0, 0}, {0, 0}}; // tendency for number transfer
@@ -551,8 +589,9 @@ void aitken_accum_exchange(
 
   compute_coef_acc_ait_transfer(
       accum_idx, num2vol_ratio_geomean, adj_tscale_inv, state_q, qqcw,
-      drv_i_accsv, drv_c_accsv, num_i_accsv, num_c_accsv, noxf_acc2ait,
-      voltonum_ait, inv_density, num2vol_ratio_max_nmodes, lmassptr_amode,
+      drv_i_accsv, drv_c_accsv, num_i_accsv, num_c_accsv,
+      calcsizedata.noxf_acc2ait, voltonum_ait, calcsizedata.inv_density,
+      calcsizedata.num2vol_ratio_max_nmodes, calcsizedata.lmassptr_amode,
       drv_i_noxf, drv_c_noxf, acc2_ait_index, xfercoef_num_acc2ait,
       xfercoef_vol_acc2ait, xfertend_num);
 
@@ -599,58 +638,76 @@ void aitken_accum_exchange(
     // NOTE: CHECK original function does not have num2vol_ratio_max and dgnmax
     // as inputs. interstitial species (aitken mode)
     calcsize::compute_new_sz_after_transfer(
-        drv_i,                                // in
-        num_i,                                // in
-        num2vol_ratio_min_nmodes[aitken_idx], // corresponds to num2vol_ratio_hi
-                                              // because it is computed with
-                                              // dgnumhi
-        num2vol_ratio_max_nmodes[aitken_idx], // corresponds to num2vol_ratio_lo
-                                              // because it is computed with
-                                              // dgnumlo
-        num2vol_ratio_nom_nmodes[aitken_idx], dgnmax_nmodes[aitken_idx],
-        dgnmin_nmodes[aitken_idx], dgnnom_nmodes[aitken_idx],
-        mean_std_dev_nmodes[aitken_idx], dgncur_i_aitken,
+        drv_i, // in
+        num_i, // in
+        calcsizedata
+            .num2vol_ratio_min_nmodes[aitken_idx], // corresponds to
+                                                   // num2vol_ratio_hi because
+                                                   // it is computed with
+                                                   // dgnumhi
+        calcsizedata
+            .num2vol_ratio_max_nmodes[aitken_idx], // corresponds to
+                                                   // num2vol_ratio_lo because
+                                                   // it is computed with
+                                                   // dgnumlo
+        calcsizedata.num2vol_ratio_nom_nmodes[aitken_idx],
+        calcsizedata.dgnmax_nmodes[aitken_idx],
+        calcsizedata.dgnmin_nmodes[aitken_idx],
+        calcsizedata.dgnnom_nmodes[aitken_idx],
+        calcsizedata.mean_std_dev_nmodes[aitken_idx], dgncur_i_aitken,
         num2vol_ratio_cur_i_aitken);
 
     // cloud borne species (aitken mode)
     calcsize::compute_new_sz_after_transfer(
-        drv_c,                                // in
-        num_c,                                // in
-        num2vol_ratio_min_nmodes[aitken_idx], // corresponds to num2vol_ratio_hi
-        num2vol_ratio_max_nmodes[aitken_idx], // corresponds to num2vol_ratio_lo
-        num2vol_ratio_nom_nmodes[aitken_idx], dgnmax_nmodes[aitken_idx],
-        dgnmin_nmodes[aitken_idx], dgnnom_nmodes[aitken_idx],
-        mean_std_dev_nmodes[aitken_idx], dgncur_c_aitken,
+        drv_c,                                             // in
+        num_c,                                             // in
+        calcsizedata.num2vol_ratio_min_nmodes[aitken_idx], // corresponds to
+                                                           // num2vol_ratio_hi
+        calcsizedata.num2vol_ratio_max_nmodes[aitken_idx], // corresponds to
+                                                           // num2vol_ratio_lo
+        calcsizedata.num2vol_ratio_nom_nmodes[aitken_idx],
+        calcsizedata.dgnmax_nmodes[aitken_idx],
+        calcsizedata.dgnmin_nmodes[aitken_idx],
+        calcsizedata.dgnnom_nmodes[aitken_idx],
+        calcsizedata.mean_std_dev_nmodes[aitken_idx], dgncur_c_aitken,
         num2vol_ratio_cur_c_aitken);
 
     // interstitial species (accumulation mode)
     calcsize::compute_new_sz_after_transfer(
-        drv_i_acc,                           // in
-        num_i_acc,                           // in
-        num2vol_ratio_min_nmodes[accum_idx], // corresponds to num2vol_ratio_hi
-                                             // because it is computed with
-                                             // dgnumhi
-        num2vol_ratio_max_nmodes[accum_idx], // corresponds to num2vol_ratio_lo
-                                             // because it is computed with
-                                             // dgnumlo
-        num2vol_ratio_nom_nmodes[accum_idx], dgnmax_nmodes[accum_idx],
-        dgnmin_nmodes[accum_idx], dgnnom_nmodes[accum_idx],
-        mean_std_dev_nmodes[accum_idx], dgncur_i_accum,
+        drv_i_acc, // in
+        num_i_acc, // in
+        calcsizedata
+            .num2vol_ratio_min_nmodes[accum_idx], // corresponds to
+                                                  // num2vol_ratio_hi because it
+                                                  // is computed with dgnumhi
+        calcsizedata
+            .num2vol_ratio_max_nmodes[accum_idx], // corresponds to
+                                                  // num2vol_ratio_lo because it
+                                                  // is computed with dgnumlo
+        calcsizedata.num2vol_ratio_nom_nmodes[accum_idx],
+        calcsizedata.dgnmax_nmodes[accum_idx],
+        calcsizedata.dgnmin_nmodes[accum_idx],
+        calcsizedata.dgnnom_nmodes[accum_idx],
+        calcsizedata.mean_std_dev_nmodes[accum_idx], dgncur_i_accum,
         num2vol_ratio_cur_i_accum);
 
     // cloud borne species (accumulation mode)
     calcsize::compute_new_sz_after_transfer(
-        drv_c_acc,                           // in
-        num_c_acc,                           // in
-        num2vol_ratio_min_nmodes[accum_idx], // corresponds to num2vol_ratio_hi
-                                             // because it is computed with
-                                             // dgnumlo
-        num2vol_ratio_max_nmodes[accum_idx], // corresponds to num2vol_ratio_lo
-                                             // because it is computed with
-                                             // dgnumhi
-        num2vol_ratio_nom_nmodes[accum_idx], dgnmax_nmodes[accum_idx],
-        dgnmin_nmodes[accum_idx], dgnnom_nmodes[accum_idx],
-        mean_std_dev_nmodes[accum_idx], dgncur_c_accum,
+        drv_c_acc, // in
+        num_c_acc, // in
+        calcsizedata
+            .num2vol_ratio_min_nmodes[accum_idx], // corresponds to
+                                                  // num2vol_ratio_hi because it
+                                                  // is computed with dgnumlo
+        calcsizedata
+            .num2vol_ratio_max_nmodes[accum_idx], // corresponds to
+                                                  // num2vol_ratio_lo because it
+                                                  // is computed with dgnumhi
+        calcsizedata.num2vol_ratio_nom_nmodes[accum_idx],
+        calcsizedata.dgnmax_nmodes[accum_idx],
+        calcsizedata.dgnmin_nmodes[accum_idx],
+        calcsizedata.dgnnom_nmodes[accum_idx],
+        calcsizedata.mean_std_dev_nmodes[accum_idx], dgncur_c_accum,
         num2vol_ratio_cur_c_accum);
 
     //------------------------------------------------------------------
@@ -668,9 +725,10 @@ void aitken_accum_exchange(
           jmode,        // in
           aitken_idx_q, // in src => aitken
           accum_idx_q,  // in dest => accumulation
-          n_common_species_ait_accum,
-          ait_spec_in_acc, // defined in aero_modes - src => aitken
-          acc_spec_in_ait, // defined in aero_modes - src => accumulation
+          calcsizedata.n_common_species_ait_accum,
+          calcsizedata.ait_spec_in_acc, // defined in aero_modes - src => aitken
+          calcsizedata
+              .acc_spec_in_ait, // defined in aero_modes - src => accumulation
           xfertend_num, xfercoef_vol_ait2acc, state_q, qqcw, ptend, dqqcwdt);
     } // end if (ait2acc_index)
 
@@ -686,9 +744,10 @@ void aitken_accum_exchange(
           jmode,        // in
           accum_idx_q,  // in src=> accumulation
           aitken_idx_q, // in dest => aitken
-          n_common_species_ait_accum,
-          acc_spec_in_ait, // defined in aero_modes - src => accumulation
-          ait_spec_in_acc, // defined in aero_modes - src => aitken
+          calcsizedata.n_common_species_ait_accum,
+          calcsizedata
+              .acc_spec_in_ait, // defined in aero_modes - src => accumulation
+          calcsizedata.ait_spec_in_acc, // defined in aero_modes - src => aitken
           xfertend_num, xfercoef_vol_acc2ait, state_q, qqcw, ptend, dqqcwdt);
     } // end if (acc2_ait_index)
   }   // end if (ait2acc_index+acc2_ait_index > 0)
@@ -696,34 +755,12 @@ void aitken_accum_exchange(
 } // aitken_accum_exchange
 
 KOKKOS_INLINE_FUNCTION
-void modal_aero_calcsize_sub(
-    const Real *state_q, // in
-    const Real *qqcw,    // in
-    const Real dt, const bool do_adjust, const bool do_aitacc_transfer,
-    const bool update_mmr,
-    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
-    const int numptr_amode[AeroConfig::num_modes()],
-    const Real inv_density[AeroConfig::num_modes()]
-                          [AeroConfig::num_aerosol_ids()], // in
-    const Real num2vol_ratio_min[AeroConfig::num_modes()],
-    const Real num2vol_ratio_max[AeroConfig::num_modes()],
-    const Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()],
-    const Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
-    const Real num2vol_ratio_nom_nmodes[AeroConfig::num_modes()],
-    const Real dgnmin_nmodes[AeroConfig::num_modes()],
-    const Real dgnmax_nmodes[AeroConfig::num_modes()],
-    const Real dgnnom_nmodes[AeroConfig::num_modes()],
-    const Real mean_std_dev_nmodes[AeroConfig::num_modes()],
-    // outputs
-    const bool noxf_acc2ait[AeroConfig::num_aerosol_ids()],
-    const int n_common_species_ait_accum, const int *ait_spec_in_acc,
-    const int *acc_spec_in_ait,
-
-    Real dgncur_i[AeroConfig::num_modes()],
-    Real dgncur_c[AeroConfig::num_modes()],
-    // ncol, lchnk, state_q, pdel, deltat, qqcw, ptend, do_adjust_in, &
-    // do_aitacc_transfer_in, list_idx_in, update_mmr_in, dgnumdry_m
-    Real *ptend, Real *dqqcwdt) {
+void modal_aero_calcsize_sub(const Real *state_q, // in
+                             const Real *qqcw,    // in
+                             const Real dt, const CalcsizeData &calcsizedata,
+                             Real dgncur_i[AeroConfig::num_modes()],
+                             Real dgncur_c[AeroConfig::num_modes()],
+                             Real *ptend, Real *dqqcwdt) {
 
   const Real zero = 0.0;
   const int aitken_idx = int(ModeIndex::Aitken);
@@ -817,13 +854,13 @@ void modal_aero_calcsize_sub(
     // interstitial and cloudborne aerosols we did not implement
     // set_initial_sz_and_volumes
     // interstitial
-    dgncur_i[imode] = dgnnom_nmodes[imode]; // diameter [m]
+    dgncur_i[imode] = calcsizedata.dgnnom_nmodes[imode]; // diameter [m]
     Real num2vol_ratio_cur_i =
-        num2vol_ratio_nom_nmodes[imode]; // volume to number
+        calcsizedata.num2vol_ratio_nom_nmodes[imode]; // volume to number
     // cloud borne
-    dgncur_c[imode] = dgnnom_nmodes[imode]; // diameter [m]
+    dgncur_c[imode] = calcsizedata.dgnnom_nmodes[imode]; // diameter [m]
     Real num2vol_ratio_cur_c =
-        num2vol_ratio_nom_nmodes[imode]; // volume to number
+        calcsizedata.num2vol_ratio_nom_nmodes[imode]; // volume to number
 
     // dry volume is set to zero inside compute_dry_volume_k
     //----------------------------------------------------------------------
@@ -838,11 +875,11 @@ void modal_aero_calcsize_sub(
     // Volume = sum_over_components{ component_mass mixratio / density }
     //----------------------------------------------------------------------
     // dryvol_i, dryvol_c are set to zero inside compute_dry_volume_k
-    compute_dry_volume(imode,       // in
-                       state_q,     // in
-                       qqcw,        // in
-                       inv_density, // in
-                       lmassptr_amode,
+    compute_dry_volume(imode,                    // in
+                       state_q,                  // in
+                       qqcw,                     // in
+                       calcsizedata.inv_density, // in
+                       calcsizedata.lmassptr_amode,
                        dryvol_i, // out
                        dryvol_c);
 
@@ -853,30 +890,31 @@ void modal_aero_calcsize_sub(
     // Both num_mode_idx and num_cldbrn_mode_idx should be exactly same and
     // should be same for both prognostic and diagnostic radiation lists
     // Fortran to C++ indexing
-    const int num_mode_idx = numptr_amode[imode] - 1;
+    const int num_mode_idx = calcsizedata.numptr_amode[imode] - 1;
     // Fortran to C++ indexing
     const int num_cldbrn_mode_idx =
-        numptr_amode[imode] - 1;                      // numptrcw_amode[imode];
+        calcsizedata.numptr_amode[imode] - 1;         // numptrcw_amode[imode];
     const Real n_i_imode = state_q[num_mode_idx];     // from state_q
     const Real n_c_imode = qqcw[num_cldbrn_mode_idx]; // from qqcw
     // const bool update_mmr
 
-    size_adjustment(imode, dryvol_i, n_i_imode, dryvol_c,
-                    // pdel
-                    do_adjust, update_mmr, do_aitacc_transfer, adj_tscale_inv,
-                    dt, n_c_imode,
-                    // additional parameters
-                    num2vol_ratio_min[imode], num2vol_ratio_max[imode],
-                    dgnmin_nmodes[imode], dgnmax_nmodes[imode],
-                    mean_std_dev_nmodes[imode], accumulation_idx, aitken_idx,
-                    // outputs
-                    dgncur_i[imode], dgncur_c[imode], num2vol_ratio_cur_i,
-                    num2vol_ratio_cur_c, dryvol_i_accsv, dryvol_c_accsv,
-                    dryvol_i_aitsv, dryvol_c_aitsv, drv_i_sv[imode],
-                    drv_c_sv[imode], num_i_k_accsv, num_c_k_accsv,
-                    num_i_k_aitsv, num_c_k_aitsv, num_i_sv[imode],
-                    num_c_sv[imode], ptend[num_idx_state_q[imode]],
-                    dqqcwdt[num_idx_state_q[imode]]);
+    size_adjustment(
+        imode, dryvol_i, n_i_imode, dryvol_c,
+        // pdel
+        calcsizedata.do_adjust, calcsizedata.update_mmr,
+        calcsizedata.do_aitacc_transfer, adj_tscale_inv, dt, n_c_imode,
+        // additional parameters
+        calcsizedata.num2vol_ratio_min[imode],
+        calcsizedata.num2vol_ratio_max[imode],
+        calcsizedata.dgnmin_nmodes[imode], calcsizedata.dgnmax_nmodes[imode],
+        calcsizedata.mean_std_dev_nmodes[imode], accumulation_idx, aitken_idx,
+        // outputs
+        dgncur_i[imode], dgncur_c[imode], num2vol_ratio_cur_i,
+        num2vol_ratio_cur_c, dryvol_i_accsv, dryvol_c_accsv, dryvol_i_aitsv,
+        dryvol_c_aitsv, drv_i_sv[imode], drv_c_sv[imode], num_i_k_accsv,
+        num_c_k_accsv, num_i_k_aitsv, num_c_k_aitsv, num_i_sv[imode],
+        num_c_sv[imode], ptend[num_idx_state_q[imode]],
+        dqqcwdt[num_idx_state_q[imode]]);
   } // imode
 
   /*------------------------------------------------------------------------------
@@ -888,17 +926,13 @@ void modal_aero_calcsize_sub(
   !    to increase the accum mode mean size
   !------------------------------------------------------------------------------*/
 
-  if (do_aitacc_transfer) {
+  if (calcsizedata.do_aitacc_transfer) {
     aitken_accum_exchange(
-        state_q, qqcw, aitken_idx, accumulation_idx, noxf_acc2ait,
-        n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
-        num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
-        num2vol_ratio_nom_nmodes, dgnmax_nmodes, dgnmin_nmodes, dgnnom_nmodes,
-        mean_std_dev_nmodes, inv_density, lmassptr_amode, adj_tscale_inv, dt,
-        dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv, num_c_k_aitsv,
-        dryvol_i_accsv, num_i_k_accsv, dryvol_c_accsv, num_c_k_accsv,
-        dgncur_i[aitken_idx], dgncur_i[accumulation_idx], dgncur_c[aitken_idx],
-        dgncur_c[accumulation_idx], ptend, dqqcwdt);
+        state_q, qqcw, aitken_idx, accumulation_idx, calcsizedata,
+        adj_tscale_inv, dt, dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv,
+        num_c_k_aitsv, dryvol_i_accsv, num_i_k_accsv, dryvol_c_accsv,
+        num_c_k_accsv, dgncur_i[aitken_idx], dgncur_i[accumulation_idx],
+        dgncur_c[aitken_idx], dgncur_c[accumulation_idx], ptend, dqqcwdt);
   }
 } // modal_aero_calcsize_sub
 
