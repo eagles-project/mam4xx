@@ -258,7 +258,8 @@ void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
                       const View2D &tau_w_f,
                       // FIXME
                       const AerosolOpticsDeviceData &aersol_optics_data,
-                      Real &aodvis, const View1D &work) {
+                      const CalcsizeData &calcsizedata, Real &aodvis,
+                      const View1D &work) {
 
   const ConstColumnView temperature = atm.temperature;
   const ConstColumnView pmid = atm.pressure;
@@ -319,7 +320,7 @@ void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
   const int ilev_tropp = tropopause_or_quit(pmid, pint, temperature, zm, zi);
   // std::cout << ilev_tropp << " ilev_tropp \n";
   modal_aero_sw(team, dt, progs, atm, pdel, pdeldry, tau, tau_w, tau_w_g,
-                tau_w_f, aersol_optics_data, aodvis, work);
+                tau_w_f, aersol_optics_data, calcsizedata, aodvis, work);
 
   team.team_barrier();
 
@@ -343,6 +344,7 @@ void aer_rad_props_lw(
     const haero::Atmosphere &atm, const ConstColumnView &zi,
     const ConstColumnView &pdel, const View2D &ext_cmip6_lw_m,
     const AerosolOpticsDeviceData &aersol_optics_data,
+    const CalcsizeData &calcsizedata,
     // output
     const View2D &odap_aer
 
@@ -381,6 +383,7 @@ void aer_rad_props_lw(
     layer [unitless]
    Compute contributions from the modal aerosols.*/
   modal_aero_lw(team, dt, progs, atm, pdel, pdeldry, aersol_optics_data,
+                calcsizedata,
                 // outputs
                 odap_aer);
 

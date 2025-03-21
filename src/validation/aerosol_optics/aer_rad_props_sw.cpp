@@ -326,6 +326,9 @@ void aer_rad_props_sw(Ensemble *ensemble) {
 
     mam4::Prognostics progs = validation::create_prognostics(nlev);
 
+    mam4::modal_aer_opt::CalcsizeData cal_data;
+    cal_data.initialize();
+
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -348,7 +351,7 @@ void aer_rad_props_sw(Ensemble *ensemble) {
               team, dt, progs_in, atm, zi, pdel, ssa_cmip6_sw, af_cmip6_sw,
               ext_cmip6_sw, tau, tau_w, tau_w_g, tau_w_f,
               // FIXME
-              aersol_optics_data, aodvis, work);
+              aersol_optics_data, cal_data, aodvis, work);
 
           team.team_barrier();
           // 2. Let's extract state_q and qqcw from prog.
