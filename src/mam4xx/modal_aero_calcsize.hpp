@@ -114,6 +114,56 @@ void init_calcsize(
 
 } // init_calcsize
 
+struct CalcsizeData {
+
+  int nspec_amode[AeroConfig::num_modes()];
+  int lspectype_amode[ndrop::maxd_aspectype][AeroConfig::num_modes()];
+  Real specdens_amode[ndrop::maxd_aspectype];
+  int lmassptr_amode[ndrop::maxd_aspectype][AeroConfig::num_modes()];
+  Real spechygro[ndrop::maxd_aspectype];
+  Real mean_std_dev_nmodes[AeroConfig::num_modes()];
+
+  int numptr_amode[AeroConfig::num_modes()];
+  int mam_idx[AeroConfig::num_modes()][ndrop::nspec_max];
+  int mam_cnst_idx[AeroConfig::num_modes()][ndrop::nspec_max];
+
+  // FIXME: inv_density: we have different order of species in mam4xx.
+  Real inv_density[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()] = {};
+  Real num2vol_ratio_min[AeroConfig::num_modes()] = {};
+  Real num2vol_ratio_max[AeroConfig::num_modes()] = {};
+  Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
+  Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()] = {};
+  Real num2vol_ratio_nom_nmodes[AeroConfig::num_modes()] = {};
+  Real dgnmin_nmodes[AeroConfig::num_modes()] = {};
+  Real dgnmax_nmodes[AeroConfig::num_modes()] = {};
+  Real dgnnom_nmodes[AeroConfig::num_modes()] = {};
+  bool noxf_acc2ait[AeroConfig::num_aerosol_ids()] = {};
+  int n_common_species_ait_accum = {};
+  int ait_spec_in_acc[AeroConfig::num_aerosol_ids()] = {};
+  int acc_spec_in_ait[AeroConfig::num_aerosol_ids()] = {};
+
+  const bool do_adjust = true;
+  const bool do_aitacc_transfer = true;
+  bool update_mmr = false;
+
+  void initialize() {
+
+    ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
+                               numptr_amode, specdens_amode, spechygro, mam_idx,
+                               mam_cnst_idx);
+
+    init_calcsize(inv_density, num2vol_ratio_min, num2vol_ratio_max,
+                  num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
+                  num2vol_ratio_nom_nmodes, dgnmin_nmodes, dgnmax_nmodes,
+                  dgnnom_nmodes, mean_std_dev_nmodes,
+                  // outputs
+                  noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
+                  acc_spec_in_ait);
+  }
+
+  void set_update_mmr(const bool update_mmr_in) { update_mmr = update_mmr_in; }
+};
+
 // NOTE: this version uses state_q and qqcw variables using format from e3sm
 KOKKOS_INLINE_FUNCTION
 void compute_coef_acc_ait_transfer(
@@ -696,34 +746,12 @@ void aitken_accum_exchange(
 } // aitken_accum_exchange
 
 KOKKOS_INLINE_FUNCTION
-void modal_aero_calcsize_sub(
-    const Real *state_q, // in
-    const Real *qqcw,    // in
-    const Real dt, const bool do_adjust, const bool do_aitacc_transfer,
-    const bool update_mmr,
-    const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
-    const int numptr_amode[AeroConfig::num_modes()],
-    const Real inv_density[AeroConfig::num_modes()]
-                          [AeroConfig::num_aerosol_ids()], // in
-    const Real num2vol_ratio_min[AeroConfig::num_modes()],
-    const Real num2vol_ratio_max[AeroConfig::num_modes()],
-    const Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()],
-    const Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
-    const Real num2vol_ratio_nom_nmodes[AeroConfig::num_modes()],
-    const Real dgnmin_nmodes[AeroConfig::num_modes()],
-    const Real dgnmax_nmodes[AeroConfig::num_modes()],
-    const Real dgnnom_nmodes[AeroConfig::num_modes()],
-    const Real mean_std_dev_nmodes[AeroConfig::num_modes()],
-    // outputs
-    const bool noxf_acc2ait[AeroConfig::num_aerosol_ids()],
-    const int n_common_species_ait_accum, const int *ait_spec_in_acc,
-    const int *acc_spec_in_ait,
-
-    Real dgncur_i[AeroConfig::num_modes()],
-    Real dgncur_c[AeroConfig::num_modes()],
-    // ncol, lchnk, state_q, pdel, deltat, qqcw, ptend, do_adjust_in, &
-    // do_aitacc_transfer_in, list_idx_in, update_mmr_in, dgnumdry_m
-    Real *ptend, Real *dqqcwdt) {
+void modal_aero_calcsize_sub(const Real *state_q, // in
+                             const Real *qqcw,    // in
+                             const Real dt, const CalcsizeData &calcsizedata,
+                             Real dgncur_i[AeroConfig::num_modes()],
+                             Real dgncur_c[AeroConfig::num_modes()],
+                             Real *ptend, Real *dqqcwdt) {
 
   const Real zero = 0.0;
   const int aitken_idx = int(ModeIndex::Aitken);
@@ -817,13 +845,13 @@ void modal_aero_calcsize_sub(
     // interstitial and cloudborne aerosols we did not implement
     // set_initial_sz_and_volumes
     // interstitial
-    dgncur_i[imode] = dgnnom_nmodes[imode]; // diameter [m]
+    dgncur_i[imode] = calcsizedata.dgnnom_nmodes[imode]; // diameter [m]
     Real num2vol_ratio_cur_i =
-        num2vol_ratio_nom_nmodes[imode]; // volume to number
+        calcsizedata.num2vol_ratio_nom_nmodes[imode]; // volume to number
     // cloud borne
-    dgncur_c[imode] = dgnnom_nmodes[imode]; // diameter [m]
+    dgncur_c[imode] = calcsizedata.dgnnom_nmodes[imode]; // diameter [m]
     Real num2vol_ratio_cur_c =
-        num2vol_ratio_nom_nmodes[imode]; // volume to number
+        calcsizedata.num2vol_ratio_nom_nmodes[imode]; // volume to number
 
     // dry volume is set to zero inside compute_dry_volume_k
     //----------------------------------------------------------------------
@@ -838,11 +866,11 @@ void modal_aero_calcsize_sub(
     // Volume = sum_over_components{ component_mass mixratio / density }
     //----------------------------------------------------------------------
     // dryvol_i, dryvol_c are set to zero inside compute_dry_volume_k
-    compute_dry_volume(imode,       // in
-                       state_q,     // in
-                       qqcw,        // in
-                       inv_density, // in
-                       lmassptr_amode,
+    compute_dry_volume(imode,                    // in
+                       state_q,                  // in
+                       qqcw,                     // in
+                       calcsizedata.inv_density, // in
+                       calcsizedata.lmassptr_amode,
                        dryvol_i, // out
                        dryvol_c);
 
@@ -853,30 +881,31 @@ void modal_aero_calcsize_sub(
     // Both num_mode_idx and num_cldbrn_mode_idx should be exactly same and
     // should be same for both prognostic and diagnostic radiation lists
     // Fortran to C++ indexing
-    const int num_mode_idx = numptr_amode[imode] - 1;
+    const int num_mode_idx = calcsizedata.numptr_amode[imode] - 1;
     // Fortran to C++ indexing
     const int num_cldbrn_mode_idx =
-        numptr_amode[imode] - 1;                      // numptrcw_amode[imode];
+        calcsizedata.numptr_amode[imode] - 1;         // numptrcw_amode[imode];
     const Real n_i_imode = state_q[num_mode_idx];     // from state_q
     const Real n_c_imode = qqcw[num_cldbrn_mode_idx]; // from qqcw
     // const bool update_mmr
 
-    size_adjustment(imode, dryvol_i, n_i_imode, dryvol_c,
-                    // pdel
-                    do_adjust, update_mmr, do_aitacc_transfer, adj_tscale_inv,
-                    dt, n_c_imode,
-                    // additional parameters
-                    num2vol_ratio_min[imode], num2vol_ratio_max[imode],
-                    dgnmin_nmodes[imode], dgnmax_nmodes[imode],
-                    mean_std_dev_nmodes[imode], accumulation_idx, aitken_idx,
-                    // outputs
-                    dgncur_i[imode], dgncur_c[imode], num2vol_ratio_cur_i,
-                    num2vol_ratio_cur_c, dryvol_i_accsv, dryvol_c_accsv,
-                    dryvol_i_aitsv, dryvol_c_aitsv, drv_i_sv[imode],
-                    drv_c_sv[imode], num_i_k_accsv, num_c_k_accsv,
-                    num_i_k_aitsv, num_c_k_aitsv, num_i_sv[imode],
-                    num_c_sv[imode], ptend[num_idx_state_q[imode]],
-                    dqqcwdt[num_idx_state_q[imode]]);
+    size_adjustment(
+        imode, dryvol_i, n_i_imode, dryvol_c,
+        // pdel
+        calcsizedata.do_adjust, calcsizedata.update_mmr,
+        calcsizedata.do_aitacc_transfer, adj_tscale_inv, dt, n_c_imode,
+        // additional parameters
+        calcsizedata.num2vol_ratio_min[imode],
+        calcsizedata.num2vol_ratio_max[imode],
+        calcsizedata.dgnmin_nmodes[imode], calcsizedata.dgnmax_nmodes[imode],
+        calcsizedata.mean_std_dev_nmodes[imode], accumulation_idx, aitken_idx,
+        // outputs
+        dgncur_i[imode], dgncur_c[imode], num2vol_ratio_cur_i,
+        num2vol_ratio_cur_c, dryvol_i_accsv, dryvol_c_accsv, dryvol_i_aitsv,
+        dryvol_c_aitsv, drv_i_sv[imode], drv_c_sv[imode], num_i_k_accsv,
+        num_c_k_accsv, num_i_k_aitsv, num_c_k_aitsv, num_i_sv[imode],
+        num_c_sv[imode], ptend[num_idx_state_q[imode]],
+        dqqcwdt[num_idx_state_q[imode]]);
   } // imode
 
   /*------------------------------------------------------------------------------
@@ -888,16 +917,19 @@ void modal_aero_calcsize_sub(
   !    to increase the accum mode mean size
   !------------------------------------------------------------------------------*/
 
-  if (do_aitacc_transfer) {
+  if (calcsizedata.do_aitacc_transfer) {
     aitken_accum_exchange(
-        state_q, qqcw, aitken_idx, accumulation_idx, noxf_acc2ait,
-        n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
-        num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
-        num2vol_ratio_nom_nmodes, dgnmax_nmodes, dgnmin_nmodes, dgnnom_nmodes,
-        mean_std_dev_nmodes, inv_density, lmassptr_amode, adj_tscale_inv, dt,
-        dryvol_i_aitsv, num_i_k_aitsv, dryvol_c_aitsv, num_c_k_aitsv,
-        dryvol_i_accsv, num_i_k_accsv, dryvol_c_accsv, num_c_k_accsv,
-        dgncur_i[aitken_idx], dgncur_i[accumulation_idx], dgncur_c[aitken_idx],
+        state_q, qqcw, aitken_idx, accumulation_idx, calcsizedata.noxf_acc2ait,
+        calcsizedata.n_common_species_ait_accum, calcsizedata.ait_spec_in_acc,
+        calcsizedata.acc_spec_in_ait, calcsizedata.num2vol_ratio_max_nmodes,
+        calcsizedata.num2vol_ratio_min_nmodes,
+        calcsizedata.num2vol_ratio_nom_nmodes, calcsizedata.dgnmax_nmodes,
+        calcsizedata.dgnmin_nmodes, calcsizedata.dgnnom_nmodes,
+        calcsizedata.mean_std_dev_nmodes, calcsizedata.inv_density,
+        calcsizedata.lmassptr_amode, adj_tscale_inv, dt, dryvol_i_aitsv,
+        num_i_k_aitsv, dryvol_c_aitsv, num_c_k_aitsv, dryvol_i_accsv,
+        num_i_k_accsv, dryvol_c_accsv, num_c_k_accsv, dgncur_i[aitken_idx],
+        dgncur_i[accumulation_idx], dgncur_c[aitken_idx],
         dgncur_c[accumulation_idx], ptend, dqqcwdt);
   }
 } // modal_aero_calcsize_sub

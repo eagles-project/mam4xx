@@ -20,7 +20,7 @@ using View5D = Kokkos::View<Real *****>;
 using View0D = Kokkos::View<Real>;
 
 using ConstColumnView = haero::ConstColumnView;
-
+using CalcsizeData = modal_aero_calcsize::CalcsizeData;
 constexpr int pver = mam4::nlev;
 constexpr int ntot_amode = mam4::AeroConfig::num_modes();
 // FIXME:  is top_lev equal to 1 in aerosol optics ?
@@ -85,54 +85,6 @@ struct AerosolOpticsDeviceData {
   ComplexView1D crefwsw;
   ComplexView2D specrefindex_sw[ntot_amode];
   ComplexView2D specrefindex_lw[ntot_amode];
-};
-
-struct CalcsizeData {
-  int nspec_amode[ntot_amode];
-  int lspectype_amode[ndrop::maxd_aspectype][ntot_amode];
-  Real specdens_amode[ndrop::maxd_aspectype];
-  int lmassptr_amode[ndrop::maxd_aspectype][ntot_amode];
-  Real spechygro[ndrop::maxd_aspectype];
-  Real mean_std_dev_nmodes[ntot_amode];
-
-  int numptr_amode[ntot_amode];
-  int mam_idx[ntot_amode][ndrop::nspec_max];
-  int mam_cnst_idx[ntot_amode][ndrop::nspec_max];
-
-  // FIXME: inv_density: we have different order of species in mam4xx.
-  Real inv_density[ntot_amode][AeroConfig::num_aerosol_ids()] = {};
-  Real num2vol_ratio_min[ntot_amode] = {};
-  Real num2vol_ratio_max[ntot_amode] = {};
-  Real num2vol_ratio_max_nmodes[ntot_amode] = {};
-  Real num2vol_ratio_min_nmodes[ntot_amode] = {};
-  Real num2vol_ratio_nom_nmodes[ntot_amode] = {};
-  Real dgnmin_nmodes[ntot_amode] = {};
-  Real dgnmax_nmodes[ntot_amode] = {};
-  Real dgnnom_nmodes[ntot_amode] = {};
-  bool noxf_acc2ait[AeroConfig::num_aerosol_ids()] = {};
-  int n_common_species_ait_accum = {};
-  int ait_spec_in_acc[AeroConfig::num_aerosol_ids()] = {};
-  int acc_spec_in_ait[AeroConfig::num_aerosol_ids()] = {};
-
-  const bool do_adjust = true;
-  const bool do_aitacc_transfer = true;
-  const bool update_mmr = false;
-
-  void initialize() {
-
-    ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
-                               numptr_amode, specdens_amode, spechygro, mam_idx,
-                               mam_cnst_idx);
-
-    modal_aero_calcsize::init_calcsize(
-        inv_density, num2vol_ratio_min, num2vol_ratio_max,
-        num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
-        num2vol_ratio_nom_nmodes, dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
-        mean_std_dev_nmodes,
-        // outputs
-        noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
-        acc_spec_in_ait);
-  }
 };
 
 inline void set_aerosol_optics_data_for_modal_aero_sw_views(
@@ -573,23 +525,10 @@ void compute_calcsize_and_water_uptake_dr(const Real &pmid,
   Real dqqcwdt[pcnst] = {};
   //  Calculate aerosol size distribution parameters and aerosol water uptake
   // For prognostic aerosols
-  modal_aero_calcsize::modal_aero_calcsize_sub(
-      state_q_kk, // in
-      qqcw_k,     // in/out
-      dt, calcsizedata.do_adjust, calcsizedata.do_aitacc_transfer,
-      calcsizedata.update_mmr, calcsizedata.lmassptr_amode,
-      calcsizedata.numptr_amode,
-      calcsizedata.inv_density, // in
-      calcsizedata.num2vol_ratio_min, calcsizedata.num2vol_ratio_max,
-      calcsizedata.num2vol_ratio_max_nmodes,
-      calcsizedata.num2vol_ratio_min_nmodes,
-      calcsizedata.num2vol_ratio_nom_nmodes, calcsizedata.dgnmin_nmodes,
-      calcsizedata.dgnmax_nmodes, calcsizedata.dgnnom_nmodes,
-      calcsizedata.mean_std_dev_nmodes,
-      // outputs
-      calcsizedata.noxf_acc2ait, calcsizedata.n_common_species_ait_accum,
-      calcsizedata.ait_spec_in_acc, calcsizedata.acc_spec_in_ait, dgnumdry_m_kk,
-      dgncur_c_kk, ptend, dqqcwdt);
+  modal_aero_calcsize::modal_aero_calcsize_sub(state_q_kk, // in
+                                               qqcw_k,     // in/out
+                                               dt, calcsizedata, dgnumdry_m_kk,
+                                               dgncur_c_kk, ptend, dqqcwdt);
 
   mam4::water_uptake::modal_aero_water_uptake_dr(
       calcsizedata.nspec_amode, calcsizedata.specdens_amode,
@@ -1086,7 +1025,6 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
         utils::extract_qqcw_from_prognostics(progs, qqcw, kk);
 
         Real tauxar_kkp[nlwbands] = {};
-#if 1
         modal_aero_lw_k(pdeldry(kk), pmid(kk), temperature(kk), cldn_kk,
                         state_q, // in
                         qqcw,    // in
@@ -1097,7 +1035,6 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
         for (int ilw = 0; ilw < nlwbands; ++ilw) {
           tauxar(ilw, kk) = tauxar_kkp[ilw];
         }
-#endif
         utils::inject_qqcw_to_prognostics(qqcw, progs, kk);
         utils::inject_stateq_to_prognostics(state_q, progs, kk);
       });
