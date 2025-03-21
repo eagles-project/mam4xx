@@ -152,8 +152,6 @@ void aero_model_wetdep(Ensemble *ensemble) {
     cal_data.initialize();
     const bool update_mmr = true;
     cal_data.set_update_mmr(update_mmr);
-    // std::cout << "aero_model_wetdep : "
-    //           << "\n";
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
