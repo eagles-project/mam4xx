@@ -931,8 +931,15 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   const Real small_value_12 = 1.e-12;
   const Real small_value_36 = 1.e-36;
 
-  fracis = scavt = iscavt = icscavt = isscavt = bcscavt = bsscavt = rcscavt =
-      rsscavt = 0;
+  fracis = 0;
+  scavt = 0;
+  iscavt = 0;
+  icscavt = 0;
+  isscavt = 0;
+  bcscavt = 0;
+  bsscavt = 0;
+  rcscavt = 0;
+  rsscavt = 0;
 
   // omsm = (1 - small number) used to prevent roundoff errors below zero
   // in Fortran EPSILON(X) returns the smallest number E of the same kind
@@ -1219,7 +1226,9 @@ void cloud_diagnostics(const ThreadTeam &team,
                        const View1D &cldv, const View1D &cldvcu,
                        const View1D &cldvst, const View1D &rain,
                        const int nlev) {
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1), [&](int k) {
+  // NOTE: The k loop inside clddiag cannot be converted to parallel_for
+  // because precabs requires values from the previous elevation (k-1).
+  Kokkos::single(Kokkos::PerTeam(team), [=]() {
     wetdep::clddiag(nlev, temperature.data(), pmid.data(), pdel.data(),
                     cmfdqr.data(), evapc.data(), cldt.data(), cldcu.data(),
                     cldst.data(), evapr.data(), prain.data(),
@@ -1423,27 +1432,28 @@ void compute_q_tendencies(
     const int jnv, const int mm, const int lphase, const int imode,
     const int lspec) {
 
-  // clang-format off
-  //   0 = no resuspension
-  // 130 = non-linear resuspension of aerosol mass based on scavenged aerosol mass
-  // 230 = non-linear resuspension of aerosol number based on raindrop number
-  // the 130 thru 230 all use the new prevap_resusp code block in subr wetdepa_v2
-  // clang-format on
-  const int mam_prevap_resusp_no = 0;
-  const int mam_prevap_resusp_mass = 130;
-  const int mam_prevap_resusp_num = 230;
-  const int jaeronumb = 0, jaeromass = 1;
-  Real precabs = 0;
-  Real precabc = 0;
-  Real scavabs = 0;
-  Real scavabc = 0;
-  Real precabs_base = 0;
-  Real precabc_base = 0;
-  Real precnums_base = 0;
-  Real precnumc_base = 0;
+  team.team_barrier();
   // NOTE: The following k loop cannot be converted to parallel_for
   // because precabs requires values from the previous elevation (k-1).
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1), [&](int idummy) {
+  Kokkos::single(Kokkos::PerTeam(team), [=]() {
+    // clang-format off
+    //   0 = no resuspension
+    // 130 = non-linear resuspension of aerosol mass based on scavenged aerosol mass
+    // 230 = non-linear resuspension of aerosol number based on raindrop number
+    // the 130 thru 230 all use the new prevap_resusp code block in subr wetdepa_v2
+    // clang-format on
+    const int mam_prevap_resusp_no = 0;
+    const int mam_prevap_resusp_mass = 130;
+    const int mam_prevap_resusp_num = 230;
+    const int jaeronumb = 0, jaeromass = 1;
+    Real precabs = 0;
+    Real precabc = 0;
+    Real scavabs = 0;
+    Real scavabc = 0;
+    Real precabs_base = 0;
+    Real precabc_base = 0;
+    Real precnums_base = 0;
+    Real precnumc_base = 0;
     for (int k = 0; k < nlev; ++k) {
       const auto rtscavt_sv_k = ekat::subview(rtscavt_sv, k);
       // mam_prevap_resusp_optcc values control the prevap_resusp
@@ -1554,7 +1564,6 @@ int get_aero_model_wetdep_work_len() {
   return work_len;
 }
 // =============================================================================
-
 KOKKOS_INLINE_FUNCTION
 void aero_model_wetdep(
     const ThreadTeam &team, const Atmosphere &atm, Prognostics &progs,
@@ -1577,7 +1586,8 @@ void aero_model_wetdep(
     const View2D &dry_geometric_mean_diameter_i, const View2D &qaerwat,
     const View2D &wetdens,
     // output
-    const View1D &aerdepwetis, const View1D &aerdepwetcw, const View1D &work) {
+    const View1D &aerdepwetis, const View1D &aerdepwetcw, const View1D &work,
+    const Int1D &isprx) {
   // cldn layer cloud fraction [fraction]; CLD
 
   // FIXME: do we need to set the variables inside of set_srf_wetdep ?
@@ -1672,9 +1682,13 @@ void aero_model_wetdep(
 
   View1D scavcoefnum(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, mam4::nlev),
+                       [&](int i) { scavcoefnum[i] = 0; });
 
   View1D scavcoefvol(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, mam4::nlev),
+                       [&](int i) { scavcoefvol[i] = 0; });
 
   View1D sol_facti(work_ptr, mam4::nlev);
   work_ptr += mam4::nlev;
@@ -1728,8 +1742,9 @@ void aero_model_wetdep(
   // cldt // layer cloud fraction [fraction] from pbuf_get_field
   // FIXME:
   constexpr int nwetdep = 1; // number of elements in wetdep_list
-  int isprx[mam4::nlev] = {};
 
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, mam4::nlev),
+                       [&](int kk) { isprx[kk] = 0; });
   // inputs
   // Compute variables needed for convproc unified convective transport
   // rprdsh // pbuf_get_field rain production, shallow convection [kg/kg/s]
@@ -1941,7 +1956,7 @@ void aero_model_wetdep(
                                  conicw,                             // output
                                  icwmrdp, dp_frac, icwmrsh, sh_frac, // inputs
                                  nlev);                              // inputs
-
+    team.team_barrier(); // for cldst
     // Estimate the cloudy volume which is occupied by rain or cloud water
     wetdep::cloud_diagnostics(team, temperature, pmid, pdel, cmfdqr, evapc,
                               cldt, cldcu, cldst, evapr, prain,
@@ -1958,12 +1973,10 @@ void aero_model_wetdep(
         // input
         team,
         // outputs
-        isprx, f_act_conv_coarse, f_act_conv_coarse_dust,
+        isprx.data(), f_act_conv_coarse, f_act_conv_coarse_dust,
         f_act_conv_coarse_nacl,
         // inputs
         pdel, prain, cmfdqr, evapr, state_q, ptend_q, dt, nlev);
-    team.team_barrier();
-
     // main loop over aerosol modes
     for (int mtmp = 0; mtmp < AeroConfig::num_modes(); ++mtmp) {
       // for mam4, do accum, aitken, pcarbon, then coarse
@@ -1982,17 +1995,19 @@ void aero_model_wetdep(
 
       // do cloudborne (2) first then interstitial (1)
       for (int lphase = 2; 1 <= lphase; --lphase) {
+        team.team_barrier();
         if (lphase == 1) { // interstial aerosol
           // Computes lookup table for aerosol impaction/interception scavenging
           // rates
           wetdep::modal_aero_bcscavcoef_get(
               // inputs
-              team, wet_geometric_mean_diameter_i, isprx, scavimptblvol,
+              team, wet_geometric_mean_diameter_i, isprx.data(), scavimptblvol,
               scavimptblnum,
               // outputs
               scavcoefnum, scavcoefvol,
               // inputs
               imode, nlev);
+          team.team_barrier();
         }
         // define sol_factb and sol_facti values, and f_act_conv
         wetdep::define_act_frac(
@@ -2002,19 +2017,21 @@ void aero_model_wetdep(
             sol_facti, sol_factic, sol_factb, f_act_conv,
             // inputs
             lphase, imode, nlev);
-        team.team_barrier();
 
         // REASTER 08/12/2015 - changed ordering (mass then number) for
         // prevap resuspend to coarse loop over number + chem constituents +
         // water index for aerosol number / chem-mass / water-mass
 
+        team.team_barrier();
         for (int lspec = 0; lspec < num_species_mode(imode) + 2; ++lspec) {
-          int mm, jnv, jnummaswtr;
+          int mm = 0, jnv = 0, jnummaswtr = 0;
           aero_model::index_ordering(lspec, imode, lphase, mm, jnv, jnummaswtr);
           // bypass wet aerosols
           if (0 <= mm && jnummaswtr != jaerowater) {
             // The following call mimics wetdepa_v2 subroutine call in
             // aero_model.F90
+            //
+            team.team_barrier();
             wetdep::compute_q_tendencies( // tendencies are in scavt
                 team, f_act_conv, f_act_conv_coarse, f_act_conv_coarse_dust,
                 f_act_conv_coarse_nacl, scavcoefnum, scavcoefvol, totcond,
@@ -2034,23 +2051,24 @@ void aero_model_wetdep(
             if (lphase == 1) {
               // Update ptend_q from the tendency, scavt
               wetdep::update_q_tendencies(team,             // input
-                                          ptend_q,          // output
+                                          ptend_q,          // input
                                           scavt, mm, nlev); // inputs
             }
             if (lphase == 1) {
               aerdepwetis[mm] = aero_model::calc_sfc_flux(team,        // input
-                                                          scavt,       // output
+                                                          scavt,       // input
                                                           pdel, nlev); // inputs
             } else // if (lphase == 2)
             {
               aerdepwetcw[mm] = aero_model::calc_sfc_flux(team,        // input
-                                                          scavt,       // output
+                                                          scavt,       // input
                                                           pdel, nlev); // inputs
               team.team_barrier();
               Kokkos::parallel_for(
                   Kokkos::TeamVectorRange(team, nlev),
                   [&](int kk) { qqcw(kk, mm) += scavt(kk) * dt; });
             }
+            team.team_barrier();
 #if 0
             // Note: Commenting it out because it produces unused variable warnings.
             Real rprdshsum = aero_model::calc_sfc_flux(team, rprdsh, pdel, nlev);
@@ -2367,13 +2385,13 @@ void WetDeposition::compute_tendencies(
 
     // do cloudborne (2) first then interstitial (1)
     for (int lphase = 2; 1 <= lphase; --lphase) {
-
       if (lphase == 1) { // interstial aerosol
         // Computes lookup table for aerosol impaction/interception scavenging
         // rates
         wetdep::modal_aero_bcscavcoef_get(team, diags, isprx, scavimptblvol,
                                           scavimptblnum, scavcoefnum,
                                           scavcoefvol, imode, nlev);
+        team.team_barrier();
       }
       // define sol_factb and sol_facti values, and f_act_conv
       wetdep::define_act_frac(team, sol_facti, sol_factic, sol_factb,
@@ -2436,12 +2454,11 @@ void WetDeposition::compute_tendencies(
           // NOTE: ma_convproc_intr no longer uses these
           qsrflx_mzaer2cnvpr(mm, 0) = sflxec;
           qsrflx_mzaer2cnvpr(mm, 1) = sflxecdp;
+          team.team_barrier();
         }
       }
-      team.team_barrier();
     }
   }
-  team.team_barrier();
 }
 } // namespace mam4
 

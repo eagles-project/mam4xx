@@ -149,7 +149,6 @@ void aero_model_wetdep(Ensemble *ensemble) {
     wetdep::View1D work("work", work_len);
     std::cout << "aero_model_wetdep : "
               << "\n";
-
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -178,7 +177,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
                                     dry_geometric_mean_diameter_i, qaerwat,
                                     wetdens,
                                     // output
-                                    aerdepwetis, aerdepwetcw, work);
+                                    aerdepwetis, aerdepwetcw, work, isprx);
 
           team.team_barrier();
           Kokkos::parallel_for(
