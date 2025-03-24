@@ -649,7 +649,7 @@ void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
       // Fortran indexing to C++ indexing
       // number of temperatures in xsection table
       // BAD CONSTANT for 201 and 148.5
-      const int t_index = haero::min(201, haero::max(t_in[kk] - 148.5, 0)) - 1;
+      const int t_index = haero::min(201, haero::max(t_in[kk] - 148.5, 1)) - 1;
 
       /*----------------------------------------------------------------------
                  ... find pressure level
