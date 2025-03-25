@@ -66,11 +66,10 @@ void drydep_xactive(const seq_drydep::Data &data, Ensemble *ensemble) {
               index_season[lt] = 3;
             }
           }
-
           drydep_xactive(data, fraction_landuse_d.data(), index_season,
                          sfc_temp, air_temp, tv, pressure_sfc, pressure_10m,
                          spec_hum, wind_speed, rain, solar_flux, mmr_d.data(),
-                         dvel_d.data(), dflx_d.data());
+                         dvel_d, dflx_d);
         });
 
     std::vector<Real> dvel(gas_pcnst), dflx(gas_pcnst);

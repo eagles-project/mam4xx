@@ -14,7 +14,7 @@
 #include <mam4xx/utils.hpp>
 
 namespace mam4::mo_drydep {
-
+using View1D = DeviceType::view_1d<Real>;
 constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
 constexpr int n_land_type = mam4::seq_drydep::NLUse;
 constexpr int lt_for_water = 6; // from eam/src/chemistry/mozart/mo_drydep.F90
@@ -562,9 +562,9 @@ void calculate_gas_drydep_vlc_and_flux(
                                              // canopy) [s/m]
     const Real rclx[gas_pcnst][n_land_type], // lower canopy resistance [s/m]
     const Real rgsx[gas_pcnst][n_land_type], // ground resistance [s/m]
-    const Real rdc,         // part of lower canopy resistance [s/m]
-    Real dvel[gas_pcnst],   // deposition velocity [cm/s]
-    Real dflx[gas_pcnst]) { // deposition flux [1/cm^2/s]
+    const Real rdc,       // part of lower canopy resistance [s/m]
+    const View1D &dvel,   // deposition velocity [cm/s]
+    const View1D &dflx) { // deposition flux [1/cm^2/s]
 
   constexpr Real m_to_cm_per_s = 100.0;
   const auto rac = drydep_data.rac;
@@ -651,8 +651,8 @@ void drydep_xactive(
     const Real rain,                     // rain content [??]
     const Real solar_flux,     // direct shortwave surface radiation [W/m^2]
     const Real mmr[gas_pcnst], // constituent MMRs [kg/kg]
-    Real dvel[gas_pcnst],      // deposition velocity [1/cm/s]
-    Real dflx[gas_pcnst]) {    // deposition flux [1/cm^2/s]
+    const View1D &dvel,        // deposition velocity [1/cm/s]
+    const View1D &dflx) {      // deposition flux [1/cm^2/s]
 
   // FIXME: BAD_CONSTANTS
   constexpr Real rain_threshold = 1e-7;   // of the order of 1cm/day [m/s]
