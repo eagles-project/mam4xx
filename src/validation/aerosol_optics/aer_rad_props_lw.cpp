@@ -275,6 +275,8 @@ void aer_rad_props_lw(Ensemble *ensemble) {
                           cloud_fraction, updraft_vel_ice_nucleation, pblh);
 
     mam4::Prognostics progs = validation::create_prognostics(nlev);
+    mam4::modal_aer_opt::CalcsizeData cal_data;
+    cal_data.initialize();
 
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -293,6 +295,7 @@ void aer_rad_props_lw(Ensemble *ensemble) {
           team.team_barrier();
           aer_rad_props::aer_rad_props_lw(team, dt, progs_in, atm, zi, pdel,
                                           ext_cmip6_lw, aersol_optics_data,
+                                          cal_data,
                                           // output
                                           odap_aer);
           team.team_barrier();
