@@ -735,7 +735,14 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
     return;
   }
 
+  //-----------------------------------------------------------------
+  //	... zero all photorates
+  //-----------------------------------------------------------------
   constexpr Real zero = 0;
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, pver), [&](const int kk) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, phtcnt),
+                         [&](const int mm) { photo(kk, mm) = zero; });
+  });
 
   //-----------------------------------------------------------------
   //	... zero all photorates

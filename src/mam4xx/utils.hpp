@@ -287,7 +287,7 @@ void extract_ptend_from_tendencies(const Tendencies &tends, Real *ptend,
     ptend[s_idx] = tends.n_mode_i[m](klev);
     s_idx++; // update index
   }
-} // extract_stateq_from_prognostics
+} // extract_ptend_from_tendencies
 
 KOKKOS_INLINE_FUNCTION
 void inject_stateq_to_prognostics(const Real *q, mam4::Prognostics &progs,
