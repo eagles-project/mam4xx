@@ -390,7 +390,7 @@ void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
     if (haero::abs(delt - interval_done) <= 0.0001) {
       if (fail_cnt > 0) {
         // FIXME: probably handle this more gracefully via error logging?
-        printf("ERROR: imp_sol failure @ (lchnk,lev,col) = \n");
+        EKAT_KERNEL_ERROR_MSG("ERROR: imp_sol failure @ (lchnk,lev,col) = \n");
       }
       break;
     } else {
