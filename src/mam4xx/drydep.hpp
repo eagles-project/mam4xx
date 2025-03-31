@@ -129,10 +129,8 @@ Real cfint2(const haero::ConstColumnView xw /*nlev+1*/,
       intz = kk;
     }
   }
-  if (intz < 0) {
-    printf(" mo_spitfire_transport: cfint2 -- interval was not found\n");
-    Kokkos::abort(" mo_spitfire_transport: cfint2 -- interval was not found");
-  }
+  EKAT_KERNEL_ASSERT_MSG(
+      0 <= intz, " mo_spitfire_transport: cfint2 -- interval was not found");
 
   // now interpolate
 
