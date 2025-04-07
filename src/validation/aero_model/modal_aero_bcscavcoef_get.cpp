@@ -15,58 +15,106 @@ using namespace mam4;
 void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const Real zero = 0;
+    using View2DHost = typename HostType::view_2d<Real>;
+    using View1DHost = typename HostType::view_1d<Real>;
+    using View1D = typename DeviceType::view_1d<Real>;
+    using View2D = typename DeviceType::view_2d<Real>;
 
     const int ncol = int(input.get_array("ncol")[0]);
 
     auto scavimptblvol_vector = input.get_array("scavimptblvol");
     auto scavimptblnum_vector = input.get_array("scavimptblnum");
-
-    Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()] =
-        {{}};
-    Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()] =
-        {{}};
+    Real scavimptblvol_host[aero_model::nimptblgrow_total]
+                           [AeroConfig::num_modes()] = {{}};
+    Real scavimptblnum_host[aero_model::nimptblgrow_total]
+                           [AeroConfig::num_modes()] = {{}};
 
     // Note:  scavimptblvol_vector and scavimptblnum_vector were written in
     // row-major order.
     int count = 0;
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
       for (int i = 0; i < aero_model::nimptblgrow_total; ++i) {
-        scavimptblvol[i][imode] = scavimptblvol_vector[count];
-        scavimptblnum[i][imode] = scavimptblnum_vector[count];
+        scavimptblvol_host[i][imode] = scavimptblvol_vector[count];
+        scavimptblnum_host[i][imode] = scavimptblnum_vector[count];
         count++;
       }
     }
+    // FIXME: If I use values for scavimptblvol and scavimptblnum from
+    // mam4::wetdep::init_scavimptbl,
+    //  I will need to decrease the error for this test to 1e-5
+#if 0
+    Real scavimptblnum_host[mam4::aero_model::nimptblgrow_total]
+                    [mam4::AeroConfig::num_modes()];
+    Real scavimptblvol_host[mam4::aero_model::nimptblgrow_total]
+                    [mam4::AeroConfig::num_modes()];
+
+    mam4::wetdep::init_scavimptbl(scavimptblvol_host, scavimptblnum_host);
+#endif
+
+    View2D scavimptblnum("scavimptblnum", mam4::aero_model::nimptblgrow_total,
+                         mam4::AeroConfig::num_modes());
+    View2D scavimptblvol("scavimptblvol", mam4::aero_model::nimptblgrow_total,
+                         mam4::AeroConfig::num_modes());
+
+    Kokkos::parallel_for(
+        "copying data to device",
+        Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
+            {0, 0}, {mam4::aero_model::nimptblgrow_total,
+                     mam4::AeroConfig::num_modes()}),
+        KOKKOS_LAMBDA(const int i, const int imode) {
+          scavimptblnum(i, imode) = scavimptblnum_host[i][imode];
+          scavimptblvol(i, imode) = scavimptblvol_host[i][imode];
+        });
 
     auto dgn_awet_vector = input.get_array("dgn_awet");
-    std::vector<std::vector<Real>> dgn_awet;
+    View2DHost dgn_awet_host("dgn_awet_host", ncol, AeroConfig::num_modes());
+    View2D dgn_awet("dgn_awet", ncol, AeroConfig::num_modes());
 
     count = 0;
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
-      std::vector<Real> tmp;
       for (int icol = 0; icol < ncol; ++icol) {
-        tmp.push_back(dgn_awet_vector[count]);
+        dgn_awet_host(icol, imode) = dgn_awet_vector[count];
         count++;
       }
-      dgn_awet.push_back(tmp);
     }
+    Kokkos::deep_copy(dgn_awet, dgn_awet_host);
 
     auto dgnum_amode = input.get_array("dgnum_amode");
-    auto imode = input.get_array("imode")[0] - 1;
+    const int imode = input.get_array("imode")[0] - 1;
     auto isprx_vector = input.get_array("isprx");
+    View1D isprx("isprx", isprx_vector.size());
+    auto isprx_host =
+        View1DHost((Real *)isprx_vector.data(), isprx_vector.size());
+    Kokkos::deep_copy(isprx, isprx_host);
 
-    std::vector<Real> scavcoefnum, scavcoefvol;
-    scavcoefnum = std::vector(ncol, zero);
-    scavcoefvol = std::vector(ncol, zero);
+    View1D scavcoefnum("scavcoefnum", ncol);
+    View1D scavcoefvol("scavcoefvol", ncol);
 
-    for (int icol = 0; icol < ncol; ++icol) {
-      if (isprx_vector[icol]) {
-        aero_model::modal_aero_bcscavcoef_get(
-            imode, dgn_awet[imode][icol], dgnum_amode[imode], scavimptblvol,
-            scavimptblnum, scavcoefnum[icol], scavcoefvol[icol]);
-      }
-    }
+    const Real dgnum_amode_imode = dgnum_amode[imode];
 
-    output.set("scavcoefnum", scavcoefnum);
-    output.set("scavcoefvol", scavcoefvol);
+    haero::ThreadTeamPolicy team_policy(ncol, Kokkos::AUTO);
+
+    Kokkos::parallel_for(
+        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          const int icol = team.league_rank();
+          if (isprx(icol)) {
+            aero_model::modal_aero_bcscavcoef_get(
+                imode, dgn_awet(icol, imode), dgnum_amode_imode, scavimptblvol,
+                scavimptblnum, scavcoefnum(icol), scavcoefvol(icol));
+          }
+        });
+
+    std::vector<Real> scavcoefnum_host_v, scavcoefvol_host_v;
+    scavcoefnum_host_v = std::vector(ncol, zero);
+    scavcoefvol_host_v = std::vector(ncol, zero);
+
+    auto scavcoefnum_host = View1DHost((Real *)scavcoefnum_host_v.data(), ncol);
+    auto scavcoefvol_host = View1DHost((Real *)scavcoefvol_host_v.data(), ncol);
+
+    Kokkos::deep_copy(scavcoefnum_host, scavcoefnum);
+    Kokkos::deep_copy(scavcoefvol_host, scavcoefvol);
+
+    output.set("scavcoefnum", scavcoefnum_host_v);
+    output.set("scavcoefvol", scavcoefvol_host_v);
   });
 }

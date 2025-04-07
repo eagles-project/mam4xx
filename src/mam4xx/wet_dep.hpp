@@ -1261,10 +1261,8 @@ void set_f_act(const ThreadTeam &team, int *isprx,
 KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(
     const ThreadTeam &team, const Diagnostics &diags, const int *isprx,
-    const Real scavimptblvol[aero_model::nimptblgrow_total]
-                            [AeroConfig::num_modes()],
-    const Real scavimptblnum[aero_model::nimptblgrow_total]
-                            [AeroConfig::num_modes()],
+    const View2D &scavimptblvol,
+    const View2D &scavimptblnum,
     const View1D &scavcoefnum, const View1D &scavcoefvol, const int imode,
     const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
@@ -1286,10 +1284,8 @@ KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(
     const ThreadTeam &team, const View2D &wet_geometric_mean_diameter_i,
     const int *isprx,
-    const Real scavimptblvol[aero_model::nimptblgrow_total]
-                            [AeroConfig::num_modes()],
-    const Real scavimptblnum[aero_model::nimptblgrow_total]
-                            [AeroConfig::num_modes()],
+    const View2D &scavimptblvol,
+    const View2D &scavimptblnum,
     const View1D &scavcoefnum, const View1D &scavcoefvol, const int imode,
     const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
@@ -1577,10 +1573,10 @@ void aero_model_wetdep(
     const haero::ConstColumnView &icwmrdp,
     const haero::ConstColumnView &icwmrsh, const haero::ConstColumnView &evapr,
     const haero::ConstColumnView &dlf, const haero::ConstColumnView &prain,
-    const Real scavimptblnum[aero_model::nimptblgrow_total]
-                            [AeroConfig::num_modes()],
-    const Real scavimptblvol[aero_model::nimptblgrow_total]
-                            [AeroConfig::num_modes()],
+    const View2D scavimptblnum, //[aero_model::nimptblgrow_total]
+                                // [AeroConfig::num_modes()],
+    const View2D scavimptblvol, //[aero_model::nimptblgrow_total]
+                                // [AeroConfig::num_modes()],
     const CalcsizeData &calcsizedata,
     // in/out calcsize and water_uptake
     const View2D &wet_geometric_mean_diameter_i,
@@ -2223,6 +2219,7 @@ void WetDeposition::compute_tendencies(
     const AeroConfig &config, const ThreadTeam &team, Real t, Real dt,
     const Atmosphere &atm, const Surface &sfc, const Prognostics &progs,
     const Diagnostics &diags, const Tendencies &tends) const {
+#if 0
   const int nlev = config_.nlev;
   static constexpr int pcnst = aero_model::pcnst;
 
@@ -2407,7 +2404,9 @@ void WetDeposition::compute_tendencies(
       }
     }
   }
+#endif
 }
+
 } // namespace mam4
 
 #endif

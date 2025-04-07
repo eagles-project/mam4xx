@@ -114,11 +114,27 @@ void aero_model_wetdep(Ensemble *ensemble) {
 
     Kokkos::View<int *> isprx("isprx", nlev);
 
-    Real scavimptblnum[mam4::aero_model::nimptblgrow_total]
-                      [mam4::AeroConfig::num_modes()];
-    Real scavimptblvol[mam4::aero_model::nimptblgrow_total]
-                      [mam4::AeroConfig::num_modes()];
-    mam4::wetdep::init_scavimptbl(scavimptblvol, scavimptblnum);
+    Real scavimptblnum_host[mam4::aero_model::nimptblgrow_total]
+                           [mam4::AeroConfig::num_modes()];
+    Real scavimptblvol_host[mam4::aero_model::nimptblgrow_total]
+                           [mam4::AeroConfig::num_modes()];
+
+    mam4::wetdep::init_scavimptbl(scavimptblvol_host, scavimptblnum_host);
+
+    View2D scavimptblnum("scavimptblnum", mam4::aero_model::nimptblgrow_total,
+                         mam4::AeroConfig::num_modes());
+    View2D scavimptblvol("scavimptblvol", mam4::aero_model::nimptblgrow_total,
+                         mam4::AeroConfig::num_modes());
+
+    Kokkos::parallel_for(
+        "copying data to device",
+        Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
+            {0, 0}, {mam4::aero_model::nimptblgrow_total,
+                     mam4::AeroConfig::num_modes()}),
+        KOKKOS_LAMBDA(const int i, const int imode) {
+          scavimptblnum(i, imode) = scavimptblnum_host[i][imode];
+          scavimptblvol(i, imode) = scavimptblvol_host[i][imode];
+        });
 
     wetdep::View2D wet_geometric_mean_diameter_i(
         "wet_geometric_mean_diameter_i", num_modes, nlev);

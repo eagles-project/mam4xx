@@ -28,13 +28,14 @@ const int naerosvmax = 51; //  maximum bin number for aerosol
 const int maxd_aspectype = 14;
 
 constexpr int pcnst = mam4::pcnst;
+using View2D = DeviceType::view_2d<Real>;
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(
     const int imode, const Real dgn_awet_imode_kk, //& ! in
     const Real dgnum_amode_imode,
-    const Real scavimptblvol[nimptblgrow_total][AeroConfig::num_modes()],
-    const Real scavimptblnum[nimptblgrow_total][AeroConfig::num_modes()],
+    const View2D &scavimptblvol,
+    const View2D &scavimptblnum,
     Real &scavcoefnum_kk, Real &scavcoefvol_kk) {
 
   // !-----------------------------------------------------------------------
@@ -69,8 +70,8 @@ void modal_aero_bcscavcoef_get(
   // BAD CONSTANT
   if (wetdiaratio >= 0.99 && wetdiaratio <= 1.01) {
     // 8th position: Fortran (0) C++(7 or -nimptblgrow_mind)
-    scavimpvol = scavimptblvol[-nimptblgrow_mind][imode];
-    scavimpnum = scavimptblnum[-nimptblgrow_mind][imode];
+    scavimpvol = scavimptblvol(-nimptblgrow_mind, imode);
+    scavimpnum = scavimptblnum(-nimptblgrow_mind, imode);
   } else {
     Real xgrow = haero::log(wetdiaratio) / dlndg_nimptblgrow;
     int jgrow = int(xgrow); // get index jgrow
@@ -90,10 +91,10 @@ void modal_aero_bcscavcoef_get(
     // Fortran to C++ index conversion
     // Note: nimptblgrow_mind is negative (-7)
     int jgrow_pp = jgrow - nimptblgrow_mind;
-    scavimpvol = dumflo * scavimptblvol[jgrow_pp][imode] +
-                 dumfhi * scavimptblvol[jgrow_pp + 1][imode];
-    scavimpnum = dumflo * scavimptblnum[jgrow_pp][imode] +
-                 dumfhi * scavimptblnum[jgrow_pp + 1][imode];
+    scavimpvol = dumflo * scavimptblvol(jgrow_pp, imode) +
+                 dumfhi * scavimptblvol(jgrow_pp + 1, imode);
+    scavimpnum = dumflo * scavimptblnum(jgrow_pp, imode) +
+                 dumfhi * scavimptblnum(jgrow_pp + 1, imode);
 
   } // wetdiaratio
 
