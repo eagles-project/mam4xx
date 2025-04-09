@@ -17,8 +17,12 @@ void modal_aero_bcscavcoef_init(Ensemble *ensemble) {
     auto dgnum_amode = input.get_array("dgnum_amode");
     auto sigmag_amode = input.get_array("sigmag_amode");
     using View2DHost = typename HostType::view_2d<Real>;
-    View2DHost scavimptblvol_host("scavimptblvol_host", aero_model::nimptblgrow_total, AeroConfig::num_modes());
-    View2DHost scavimptblnum_host("scavimptblnum_host", aero_model::nimptblgrow_total, AeroConfig::num_modes());
+    View2DHost scavimptblvol_host("scavimptblvol_host",
+                                  aero_model::nimptblgrow_total,
+                                  AeroConfig::num_modes());
+    View2DHost scavimptblnum_host("scavimptblnum_host",
+                                  aero_model::nimptblgrow_total,
+                                  AeroConfig::num_modes());
 
     Real aerosol_dry_density[AeroConfig::num_modes()] = {};
     // Note: Original code uses the following aerosol densities.
@@ -36,8 +40,8 @@ void modal_aero_bcscavcoef_init(Ensemble *ensemble) {
     std::vector<Real> values_scavimptblnum;
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
       for (int m = 0; m < aero_model::nimptblgrow_total; ++m) {
-        values_scavimptblnum.push_back(scavimptblnum_host(m,imode));
-        values_scavimptblvol.push_back(scavimptblvol_host(m,imode));
+        values_scavimptblnum.push_back(scavimptblnum_host(m, imode));
+        values_scavimptblvol.push_back(scavimptblvol_host(m, imode));
       }
     }
 

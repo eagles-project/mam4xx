@@ -24,16 +24,20 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
 
     auto scavimptblvol_vector = input.get_array("scavimptblvol");
     auto scavimptblnum_vector = input.get_array("scavimptblnum");
-    View2DHost scavimptblvol_host("scavimptblvol_host", aero_model::nimptblgrow_total, AeroConfig::num_modes());
-    View2DHost scavimptblnum_host("scavimptblnum_host", aero_model::nimptblgrow_total, AeroConfig::num_modes());
+    View2DHost scavimptblvol_host("scavimptblvol_host",
+                                  aero_model::nimptblgrow_total,
+                                  AeroConfig::num_modes());
+    View2DHost scavimptblnum_host("scavimptblnum_host",
+                                  aero_model::nimptblgrow_total,
+                                  AeroConfig::num_modes());
 
     // Note:  scavimptblvol_vector and scavimptblnum_vector were written in
     // row-major order.
     int count = 0;
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
       for (int i = 0; i < aero_model::nimptblgrow_total; ++i) {
-        scavimptblvol_host(i,imode) = scavimptblvol_vector[count];
-        scavimptblnum_host(i,imode) = scavimptblnum_vector[count];
+        scavimptblvol_host(i, imode) = scavimptblvol_vector[count];
+        scavimptblnum_host(i, imode) = scavimptblnum_vector[count];
         count++;
       }
     }

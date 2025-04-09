@@ -32,12 +32,12 @@ using View2D = DeviceType::view_2d<Real>;
 using View2DHost = typename HostType::view_2d<Real>;
 
 KOKKOS_INLINE_FUNCTION
-void modal_aero_bcscavcoef_get(
-    const int imode, const Real dgn_awet_imode_kk, //& ! in
-    const Real dgnum_amode_imode,
-    const View2D &scavimptblvol,
-    const View2D &scavimptblnum,
-    Real &scavcoefnum_kk, Real &scavcoefvol_kk) {
+void modal_aero_bcscavcoef_get(const int imode,
+                               const Real dgn_awet_imode_kk, //& ! in
+                               const Real dgnum_amode_imode,
+                               const View2D &scavimptblvol,
+                               const View2D &scavimptblnum,
+                               Real &scavcoefnum_kk, Real &scavcoefvol_kk) {
 
   // !-----------------------------------------------------------------------
   // ! compute impaction scavenging removal amount for aerosol volume and number
@@ -541,14 +541,12 @@ void calc_1_impact_rate(const Real dg0,     //  in
 
 } // end calc_1_impact_rate
 
-inline
-void modal_aero_bcscavcoef_init(
+inline void modal_aero_bcscavcoef_init(
     const Real dgnum_amode[AeroConfig::num_modes()],
     const Real sigmag_amode[AeroConfig::num_modes()],
     const Real aerosol_dry_density[AeroConfig::num_modes()],
     // outputs
-    View2DHost scavimptblnum,
-    View2DHost scavimptblvol) {
+    View2DHost scavimptblnum, View2DHost scavimptblvol) {
   // -----------------------------------------------------------------------
   //
   //  Purpose:
@@ -617,8 +615,8 @@ void modal_aero_bcscavcoef_init(
       calc_1_impact_rate(dg0_cgs, sigmag, rhowetaero_cgs, temp_0C, press_750hPa,
                          scavratenum, scavratevol);
 
-      scavimptblnum(jgrow - nimptblgrow_mind,imode) = haero::log(scavratenum);
-      scavimptblvol(jgrow - nimptblgrow_mind,imode) = haero::log(scavratevol);
+      scavimptblnum(jgrow - nimptblgrow_mind, imode) = haero::log(scavratenum);
+      scavimptblvol(jgrow - nimptblgrow_mind, imode) = haero::log(scavratevol);
 
     } // jgrow
 

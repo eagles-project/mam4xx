@@ -55,8 +55,7 @@ int main(int argc, char **argv) {
       name != "wetdep_resusp_noprecip" && name != "wetdep_scavenging" &&
       name != "compute_evap_frac" && name != "rain_mix_ratio" &&
       name != "calculate_cloudy_volume" && name != "local_precip_production" &&
-      name != "wetdep_resusp" && name != "wetdepa_v2"
-      ) {
+      name != "wetdep_resusp" && name != "wetdepa_v2") {
     std::cerr << "Invalid name: " << name << std::endl;
     std::cerr << "Currently the only valid name are: "
               << "wetdep_clddiag, update_scavenging, wetdep_prevap, "

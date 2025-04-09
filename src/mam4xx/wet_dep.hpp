@@ -59,11 +59,10 @@ void local_precip_production(Real pdel, Real source_term, Real sink_term,
 
 // Function to call to initialize the arrays passe to the
 // aero_model_wetdep function.
-// this is host function, scavimptblvol and  scavimptblnum need to be sycn to device.
-inline
-void init_scavimptbl(
-    View2DHost scavimptblvol,
-    View2DHost scavimptblnum) {
+// this is host function, scavimptblvol and  scavimptblnum need to be sycn to
+// device.
+inline void init_scavimptbl(View2DHost scavimptblvol,
+                            View2DHost scavimptblnum) {
   const int num_modes = AeroConfig::num_modes();
   Real dgnum_amode[num_modes];
   Real sigmag_amode[num_modes];
@@ -1259,12 +1258,12 @@ void set_f_act(const ThreadTeam &team, int *isprx,
 
 // Computes lookup table for aerosol impaction/interception scavenging rates
 KOKKOS_INLINE_FUNCTION
-void modal_aero_bcscavcoef_get(
-    const ThreadTeam &team, const Diagnostics &diags, const int *isprx,
-    const View2D &scavimptblvol,
-    const View2D &scavimptblnum,
-    const View1D &scavcoefnum, const View1D &scavcoefvol, const int imode,
-    const int nlev) {
+void modal_aero_bcscavcoef_get(const ThreadTeam &team, const Diagnostics &diags,
+                               const int *isprx, const View2D &scavimptblvol,
+                               const View2D &scavimptblnum,
+                               const View1D &scavcoefnum,
+                               const View1D &scavcoefvol, const int imode,
+                               const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     scavcoefnum[k] = scavcoefvol[k] = 0;
     const bool let_it_rain = (isprx[k] == 1);
@@ -1281,13 +1280,13 @@ void modal_aero_bcscavcoef_get(
 
 // Computes lookup table for aerosol impaction/interception scavenging rates
 KOKKOS_INLINE_FUNCTION
-void modal_aero_bcscavcoef_get(
-    const ThreadTeam &team, const View2D &wet_geometric_mean_diameter_i,
-    const int *isprx,
-    const View2D &scavimptblvol,
-    const View2D &scavimptblnum,
-    const View1D &scavcoefnum, const View1D &scavcoefvol, const int imode,
-    const int nlev) {
+void modal_aero_bcscavcoef_get(const ThreadTeam &team,
+                               const View2D &wet_geometric_mean_diameter_i,
+                               const int *isprx, const View2D &scavimptblvol,
+                               const View2D &scavimptblnum,
+                               const View1D &scavcoefnum,
+                               const View1D &scavcoefvol, const int imode,
+                               const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     scavcoefnum[k] = scavcoefvol[k] = 0;
     const bool let_it_rain = (isprx[k] == 1);
@@ -1573,8 +1572,7 @@ void aero_model_wetdep(
     const haero::ConstColumnView &icwmrdp,
     const haero::ConstColumnView &icwmrsh, const haero::ConstColumnView &evapr,
     const haero::ConstColumnView &dlf, const haero::ConstColumnView &prain,
-    const View2D scavimptblnum,
-    const View2D scavimptblvol,
+    const View2D scavimptblnum, const View2D scavimptblvol,
     const CalcsizeData &calcsizedata,
     // in/out calcsize and water_uptake
     const View2D &wet_geometric_mean_diameter_i,

@@ -115,8 +115,12 @@ void aero_model_wetdep(Ensemble *ensemble) {
 
     Kokkos::View<int *> isprx("isprx", nlev);
 
-    View2DHost scavimptblvol_host("scavimptblvol_host", aero_model::nimptblgrow_total, AeroConfig::num_modes());
-    View2DHost scavimptblnum_host("scavimptblnum_host", aero_model::nimptblgrow_total, AeroConfig::num_modes());
+    View2DHost scavimptblvol_host("scavimptblvol_host",
+                                  aero_model::nimptblgrow_total,
+                                  AeroConfig::num_modes());
+    View2DHost scavimptblnum_host("scavimptblnum_host",
+                                  aero_model::nimptblgrow_total,
+                                  AeroConfig::num_modes());
 
     mam4::wetdep::init_scavimptbl(scavimptblvol_host, scavimptblnum_host);
 
