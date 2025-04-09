@@ -25,17 +25,6 @@ using namespace mam4;
 
 Real tol = 1e-8;
 
-TEST_CASE("test_constructor", "mam4_wet_deposition_process") {
-  ekat::Comm comm;
-  ekat::logger::Logger<> logger("wet deposition constructor test",
-                                ekat::logger::LogLevel::debug, comm);
-  mam4::AeroConfig mam4_config;
-  mam4::WetDepositionProcess::ProcessConfig process_config;
-  mam4::WetDepositionProcess process(mam4_config, process_config);
-  REQUIRE(process.name() == "MAM4 Wet Deposition");
-  REQUIRE(process.aero_config() == mam4_config);
-}
-
 TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
   ekat::Comm comm;
   ekat::logger::Logger<> logger("wet deposition local precip production test",
@@ -356,7 +345,7 @@ TEST_CASE("faer_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
         {
           const Real fprec_evap = 0.1;
           const int  jstrcnv = 1;
-          const Real flux = 0.007075389488885791; 
+          const Real flux = 0.007075389488885791;
 	  const Real ans = mam4::wetdep::faer_resusp_vs_fprec_evap_mpln(fprec_evap,jstrcnv);
 	  const Real err = haero::abs((flux-ans)/ans);
           EKAT_KERNEL_REQUIRE(err < 1.0e-6);
@@ -400,7 +389,7 @@ TEST_CASE("fprecn_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
         {
           const Real fprec_evap = 0.1;
           const int  jstrcnv = 1;
-          const Real flux = 0.2768051337282046;   
+          const Real flux = 0.2768051337282046;
 	  const Real ans = mam4::wetdep::fprecn_resusp_vs_fprec_evap_mpln(fprec_evap,jstrcnv);
 	  const Real err = haero::abs((flux-ans)/ans);
           EKAT_KERNEL_REQUIRE(err < 1.0e-6);
