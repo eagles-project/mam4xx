@@ -24,18 +24,16 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
 
     auto scavimptblvol_vector = input.get_array("scavimptblvol");
     auto scavimptblnum_vector = input.get_array("scavimptblnum");
-    Real scavimptblvol_host[aero_model::nimptblgrow_total]
-                           [AeroConfig::num_modes()] = {{}};
-    Real scavimptblnum_host[aero_model::nimptblgrow_total]
-                           [AeroConfig::num_modes()] = {{}};
+    View2DHost scavimptblvol_host("scavimptblvol_host", aero_model::nimptblgrow_total, AeroConfig::num_modes());
+    View2DHost scavimptblnum_host("scavimptblnum_host", aero_model::nimptblgrow_total, AeroConfig::num_modes());
 
     // Note:  scavimptblvol_vector and scavimptblnum_vector were written in
     // row-major order.
     int count = 0;
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
       for (int i = 0; i < aero_model::nimptblgrow_total; ++i) {
-        scavimptblvol_host[i][imode] = scavimptblvol_vector[count];
-        scavimptblnum_host[i][imode] = scavimptblnum_vector[count];
+        scavimptblvol_host(i,imode) = scavimptblvol_vector[count];
+        scavimptblnum_host(i,imode) = scavimptblnum_vector[count];
         count++;
       }
     }
@@ -43,11 +41,8 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
     // mam4::wetdep::init_scavimptbl,
     //  I will need to decrease the error for this test to 1e-5
 #if 0
-    Real scavimptblnum_host[mam4::aero_model::nimptblgrow_total]
-                    [mam4::AeroConfig::num_modes()];
-    Real scavimptblvol_host[mam4::aero_model::nimptblgrow_total]
-                    [mam4::AeroConfig::num_modes()];
-
+    View2DHost scavimptblvol_host("scavimptblvol_host", aero_model::nimptblgrow_total, AeroConfig::num_modes());
+    View2DHost scavimptblnum_host("scavimptblnum_host", aero_model::nimptblgrow_total, AeroConfig::num_modes());
     mam4::wetdep::init_scavimptbl(scavimptblvol_host, scavimptblnum_host);
 #endif
 
@@ -56,15 +51,8 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
     View2D scavimptblvol("scavimptblvol", mam4::aero_model::nimptblgrow_total,
                          mam4::AeroConfig::num_modes());
 
-    Kokkos::parallel_for(
-        "copying data to device",
-        Kokkos::MDRangePolicy<Kokkos::Rank<2>>(
-            {0, 0}, {mam4::aero_model::nimptblgrow_total,
-                     mam4::AeroConfig::num_modes()}),
-        KOKKOS_LAMBDA(const int i, const int imode) {
-          scavimptblnum(i, imode) = scavimptblnum_host[i][imode];
-          scavimptblvol(i, imode) = scavimptblvol_host[i][imode];
-        });
+    Kokkos::deep_copy(scavimptblnum, scavimptblnum_host);
+    Kokkos::deep_copy(scavimptblvol, scavimptblvol_host);
 
     auto dgn_awet_vector = input.get_array("dgn_awet");
     View2DHost dgn_awet_host("dgn_awet_host", ncol, AeroConfig::num_modes());

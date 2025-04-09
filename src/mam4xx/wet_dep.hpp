@@ -49,6 +49,7 @@ using ConstView1D = DeviceType::view_1d<const Real>;
 using View1D = DeviceType::view_1d<Real>;
 using Int1D = DeviceType::view_1d<int>;
 using View2D = DeviceType::view_2d<Real>;
+using View2DHost = typename HostType::view_2d<Real>;
 KOKKOS_INLINE_FUNCTION
 void local_precip_production(Real pdel, Real source_term, Real sink_term,
                              Real gravity, Real &result) {
@@ -57,13 +58,12 @@ void local_precip_production(Real pdel, Real source_term, Real sink_term,
 }
 
 // Function to call to initialize the arrays passe to the
-// aero_model_wetdep function. This data is constant so should
-// be allocaed on host and copied to device.
-KOKKOS_INLINE_FUNCTION
+// aero_model_wetdep function.
+// this is host function, scavimptblvol and  scavimptblnum need to be sycn to device.
+inline
 void init_scavimptbl(
-    Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()],
-    Real scavimptblnum[aero_model::nimptblgrow_total]
-                      [AeroConfig::num_modes()]) {
+    View2DHost scavimptblvol,
+    View2DHost scavimptblnum) {
   const int num_modes = AeroConfig::num_modes();
   Real dgnum_amode[num_modes];
   Real sigmag_amode[num_modes];
