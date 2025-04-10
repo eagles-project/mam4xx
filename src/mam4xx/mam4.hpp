@@ -57,7 +57,6 @@ using AgingProcess = haero::AeroProcess<AeroConfig, Aging>;
 using RenameProcess = haero::AeroProcess<AeroConfig, Rename>;
 using HetfrzProcess = haero::AeroProcess<AeroConfig, Hetfrz>;
 using NucleateIceProcess = haero::AeroProcess<AeroConfig, NucleateIce>;
-using WetDepositionProcess = haero::AeroProcess<AeroConfig, WetDeposition>;
 using DryDepositionProcess = haero::AeroProcess<AeroConfig, DryDeposition>;
 using WaterUptakeProcess = haero::AeroProcess<AeroConfig, Water_Uptake>;
 

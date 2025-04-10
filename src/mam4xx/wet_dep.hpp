@@ -49,6 +49,7 @@ using ConstView1D = DeviceType::view_1d<const Real>;
 using View1D = DeviceType::view_1d<Real>;
 using Int1D = DeviceType::view_1d<int>;
 using View2D = DeviceType::view_2d<Real>;
+using View2DHost = typename HostType::view_2d<Real>;
 KOKKOS_INLINE_FUNCTION
 void local_precip_production(Real pdel, Real source_term, Real sink_term,
                              Real gravity, Real &result) {
@@ -57,13 +58,11 @@ void local_precip_production(Real pdel, Real source_term, Real sink_term,
 }
 
 // Function to call to initialize the arrays passe to the
-// aero_model_wetdep function. This data is constant so should
-// be allocaed on host and copied to device.
-KOKKOS_INLINE_FUNCTION
-void init_scavimptbl(
-    Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()],
-    Real scavimptblnum[aero_model::nimptblgrow_total]
-                      [AeroConfig::num_modes()]) {
+// aero_model_wetdep function.
+// this is host function, scavimptblvol and  scavimptblnum need to be sycn to
+// device.
+inline void init_scavimptbl(View2DHost scavimptblvol,
+                            View2DHost scavimptblnum) {
   const int num_modes = AeroConfig::num_modes();
   Real dgnum_amode[num_modes];
   Real sigmag_amode[num_modes];
@@ -1259,14 +1258,12 @@ void set_f_act(const ThreadTeam &team, int *isprx,
 
 // Computes lookup table for aerosol impaction/interception scavenging rates
 KOKKOS_INLINE_FUNCTION
-void modal_aero_bcscavcoef_get(
-    const ThreadTeam &team, const Diagnostics &diags, const int *isprx,
-    const Real scavimptblvol[aero_model::nimptblgrow_total]
-                            [AeroConfig::num_modes()],
-    const Real scavimptblnum[aero_model::nimptblgrow_total]
-                            [AeroConfig::num_modes()],
-    const View1D &scavcoefnum, const View1D &scavcoefvol, const int imode,
-    const int nlev) {
+void modal_aero_bcscavcoef_get(const ThreadTeam &team, const Diagnostics &diags,
+                               const int *isprx, const View2D &scavimptblvol,
+                               const View2D &scavimptblnum,
+                               const View1D &scavcoefnum,
+                               const View1D &scavcoefvol, const int imode,
+                               const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     scavcoefnum[k] = scavcoefvol[k] = 0;
     const bool let_it_rain = (isprx[k] == 1);
@@ -1283,15 +1280,13 @@ void modal_aero_bcscavcoef_get(
 
 // Computes lookup table for aerosol impaction/interception scavenging rates
 KOKKOS_INLINE_FUNCTION
-void modal_aero_bcscavcoef_get(
-    const ThreadTeam &team, const View2D &wet_geometric_mean_diameter_i,
-    const int *isprx,
-    const Real scavimptblvol[aero_model::nimptblgrow_total]
-                            [AeroConfig::num_modes()],
-    const Real scavimptblnum[aero_model::nimptblgrow_total]
-                            [AeroConfig::num_modes()],
-    const View1D &scavcoefnum, const View1D &scavcoefvol, const int imode,
-    const int nlev) {
+void modal_aero_bcscavcoef_get(const ThreadTeam &team,
+                               const View2D &wet_geometric_mean_diameter_i,
+                               const int *isprx, const View2D &scavimptblvol,
+                               const View2D &scavimptblnum,
+                               const View1D &scavcoefnum,
+                               const View1D &scavcoefvol, const int imode,
+                               const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     scavcoefnum[k] = scavcoefvol[k] = 0;
     const bool let_it_rain = (isprx[k] == 1);
@@ -1577,10 +1572,7 @@ void aero_model_wetdep(
     const haero::ConstColumnView &icwmrdp,
     const haero::ConstColumnView &icwmrsh, const haero::ConstColumnView &evapr,
     const haero::ConstColumnView &dlf, const haero::ConstColumnView &prain,
-    const Real scavimptblnum[aero_model::nimptblgrow_total]
-                            [AeroConfig::num_modes()],
-    const Real scavimptblvol[aero_model::nimptblgrow_total]
-                            [AeroConfig::num_modes()],
+    const View2D scavimptblnum, const View2D scavimptblvol,
     const CalcsizeData &calcsizedata,
     // in/out calcsize and water_uptake
     const View2D &wet_geometric_mean_diameter_i,
@@ -2083,331 +2075,6 @@ void aero_model_wetdep(
 
 } // namespace wetdep
 
-/// @class WedDeposition
-/// Wet Deposition process for MAM4 aerosol model.
-class WetDeposition {
-public:
-  struct Config {
-    Config(){};
-    Config(const Config &) = default;
-    ~Config() = default;
-    Config &operator=(const Config &) = default;
-    int nlev = mam4::nlev;
-
-    // mam_prevap_resusp_optcc values control the prevap_resusp calculations in
-    // wetdepa_v2:
-    //     0 = no resuspension
-    //   130 = non-linear resuspension of aerosol mass   based on scavenged
-    //   aerosol mass 230 = non-linear resuspension of aerosol number based on
-    //   raindrop number the 130 thru 230 all use the new prevap_resusp code
-    //   block in subr wetdepa_v2
-    int mam_prevap_resusp_optcc = 0;
-  };
-
-  const char *name() const { return "MAM4 Wet Deposition"; }
-
-  inline void init(const AeroConfig &aero_config,
-                   const Config &wed_dep_config = Config());
-
-  // compute_tendencies -- computes tendencies and updates diagnostics
-  // NOTE: that both diags and tends are const below--this means their views
-  // NOTE: are fixed, but the data in those views is allowed to vary.
-  KOKKOS_INLINE_FUNCTION
-  void compute_tendencies(const AeroConfig &config, const ThreadTeam &team,
-                          Real t, Real dt, const Atmosphere &atm,
-                          const Surface &sfc, const Prognostics &progs,
-                          const Diagnostics &diags,
-                          const Tendencies &tends) const;
-
-  Kokkos::View<Real *[2]> qsrflx_mzaer2cnvpr;
-
-private:
-  Config config_;
-
-  Kokkos::View<Real *> cldv;
-  Kokkos::View<Real *> cldvcu;
-  Kokkos::View<Real *> cldvst;
-  Kokkos::View<Real *> rain;
-  Kokkos::View<Real *> cldcu;
-  Kokkos::View<Real *> cldt;
-  Kokkos::View<Real *> evapc;
-  Kokkos::View<Real *> cmfdqr;
-  Kokkos::View<Real *> prain;
-  Kokkos::View<Real *> conicw;
-  Kokkos::View<Real *> totcond;
-
-  Kokkos::View<Real *> f_act_conv_coarse;
-  Kokkos::View<Real *> f_act_conv_coarse_dust;
-  Kokkos::View<Real *> f_act_conv_coarse_nacl;
-
-  Kokkos::View<Real *> scavcoefnum;
-  Kokkos::View<Real *> scavcoefvol;
-
-  Kokkos::View<Real *> sol_facti;
-  Kokkos::View<Real *> sol_factic;
-  Kokkos::View<Real *> sol_factb;
-  Kokkos::View<Real *> f_act_conv;
-
-  Kokkos::View<Real *> scavt;   // scavenging tend [kg/kg/s]
-  Kokkos::View<Real *> bcscavt; // below cloud, convective [kg/kg/s]
-  Kokkos::View<Real *> rcscavt; // resuspension, convective [kg/kg/s]
-
-  Kokkos::View<Real *> rtscavt_sv;
-
-  Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
-      qqcw_sav;
-
-  Real scavimptblnum[aero_model::nimptblgrow_total][AeroConfig::num_modes()];
-  Real scavimptblvol[aero_model::nimptblgrow_total][AeroConfig::num_modes()];
-};
-
-void WetDeposition::init(const AeroConfig &aero_config,
-                         const Config &wed_dep_config) {
-  config_ = wed_dep_config;
-  const int nlev = config_.nlev;
-  Kokkos::resize(cldv, nlev);
-  Kokkos::resize(cldvcu, nlev);
-  Kokkos::resize(cldvst, nlev);
-  Kokkos::resize(rain, nlev);
-  Kokkos::resize(cldcu, nlev);
-  Kokkos::resize(cldt, nlev);
-  Kokkos::resize(evapc, nlev);
-  Kokkos::resize(cmfdqr, nlev);
-  Kokkos::resize(prain, nlev);
-  Kokkos::resize(conicw, nlev);
-  Kokkos::resize(totcond, nlev);
-  Kokkos::resize(f_act_conv_coarse, nlev);
-  Kokkos::resize(f_act_conv_coarse_dust, nlev);
-  Kokkos::resize(f_act_conv_coarse_nacl, nlev);
-  Kokkos::resize(scavcoefnum, nlev);
-  Kokkos::resize(scavcoefvol, nlev);
-  Kokkos::resize(sol_facti, nlev);
-  Kokkos::resize(sol_factic, nlev);
-  Kokkos::resize(sol_factb, nlev);
-  Kokkos::resize(f_act_conv, nlev);
-  Kokkos::resize(qsrflx_mzaer2cnvpr, aero_model::pcnst, 2);
-  Kokkos::resize(qqcw_sav, nlev, aero_model::maxd_aspectype + 2,
-                 aero_model::pcnst);
-
-  Kokkos::resize(scavt, nlev);
-  Kokkos::resize(bcscavt, nlev);
-  Kokkos::resize(rcscavt, nlev);
-
-  Kokkos::resize(rtscavt_sv, aero_model::pcnst);
-  Kokkos::deep_copy(rtscavt_sv, 0.0);
-
-  const int num_modes = AeroConfig::num_modes();
-  Real dgnum_amode[num_modes];
-  Real sigmag_amode[num_modes];
-  Real aerosol_dry_density[num_modes];
-  for (int i = 0; i < num_modes; ++i) {
-    dgnum_amode[i] = modes(i).nom_diameter;
-    sigmag_amode[i] = modes(i).mean_std_dev;
-  }
-  // Note: Original code uses the following aerosol densities.
-  // sulfate, sulfate, dust, p-organic
-  aerosol_dry_density[0] = mam4::mam4_density_so4;
-  aerosol_dry_density[1] = mam4::mam4_density_so4;
-  aerosol_dry_density[2] = mam4::mam4_density_dst;
-  aerosol_dry_density[3] = mam4::mam4_density_pom;
-  aero_model::modal_aero_bcscavcoef_init(dgnum_amode, sigmag_amode,
-                                         aerosol_dry_density, scavimptblnum,
-                                         scavimptblvol);
-}
-
-// compute_tendencies -- computes tendencies and updates diagnostics
-// NOTE: that both diags and tends are const below--this means their views
-// NOTE: are fixed, but the data in those views is allowed to vary.
-KOKKOS_INLINE_FUNCTION
-void WetDeposition::compute_tendencies(
-    const AeroConfig &config, const ThreadTeam &team, Real t, Real dt,
-    const Atmosphere &atm, const Surface &sfc, const Prognostics &progs,
-    const Diagnostics &diags, const Tendencies &tends) const {
-  const int nlev = config_.nlev;
-  static constexpr int pcnst = aero_model::pcnst;
-
-  // change mode order as mmode_loop_aa loops in a different order
-  static constexpr int mode_order_change[4] = {0, 1, 3, 2};
-
-  const int jaerowater = 2;
-
-  haero::ConstColumnView temperature = atm.temperature;
-  haero::ConstColumnView pmid = atm.pressure;
-  haero::ConstColumnView pdel = atm.hydrostatic_dp;
-  haero::ConstColumnView q_liq = atm.liquid_mixing_ratio;
-  haero::ConstColumnView q_ice = atm.ice_mixing_ratio;
-
-  // calculate some variables needed in wetdepa_v2
-  ColumnView dp_frac = diags.deep_convective_cloud_fraction;
-  ColumnView sh_frac = diags.shallow_convective_cloud_fraction;
-  ColumnView dp_ccf = diags.deep_convective_cloud_fraction;
-  ColumnView sh_ccf = diags.shallow_convective_cloud_fraction;
-  ColumnView evapcdp = diags.deep_convective_precipitation_evaporation;
-  ColumnView evapcsh = diags.shallow_convective_precipitation_evaporation;
-  ColumnView cldst = diags.stratiform_cloud_fraction;
-  ColumnView evapr = diags.evaporation_of_falling_precipitation;
-  ColumnView rprddp = diags.deep_convective_precipitation_production;
-  ColumnView rprdsh = diags.shallow_convective_precipitation_production;
-  ColumnView icwmrdp = diags.deep_convective_cloud_condensate;
-  ColumnView icwmrsh = diags.shallow_convective_cloud_condensate;
-
-  // FIXME: move values from prog to state_q
-  Diagnostics::ColumnTracerView state_q = diags.tracer_mixing_ratio;
-  Diagnostics::ColumnTracerView ptend_q = diags.d_tracer_mixing_ratio_dt;
-
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int kk) {
-    // copy data from prog to stateq
-    const auto state_q_kk = ekat::subview(state_q, kk);
-    utils::extract_stateq_from_prognostics(progs, atm, state_q_kk.data(), kk);
-  });
-  team.team_barrier();
-
-  ColumnView aerdepwetis = diags.aerosol_wet_deposition_interstitial;
-  ColumnView aerdepwetcw = diags.aerosol_wet_deposition_cloud_water;
-
-  Real rprdshsum = 0, rprddpsum = 0, evapcdpsum = 0, evapcshsum = 0;
-  Kokkos::parallel_reduce(
-      Kokkos::TeamVectorRange(team, nlev),
-      [&](int kk, Real &suma) { suma += rprdsh[kk]; }, rprdshsum);
-  Kokkos::parallel_reduce(
-      Kokkos::TeamVectorRange(team, nlev),
-      [&](int kk, Real &suma) { suma += rprddp[kk]; }, rprddpsum);
-  Kokkos::parallel_reduce(
-      Kokkos::TeamVectorRange(team, nlev),
-      [&](int kk, Real &suma) { suma += evapcdp[kk]; }, evapcdpsum);
-  Kokkos::parallel_reduce(
-      Kokkos::TeamVectorRange(team, nlev),
-      [&](int kk, Real &suma) { suma += evapcsh[kk]; }, evapcshsum);
-
-  // cumulus cloud fraction =  dp_frac + sh_frac
-  wetdep::sum_values(team, cldcu, dp_frac, sh_frac, nlev);
-  // total cloud fraction [fraction] = dp_ccf + sh_ccf
-  wetdep::sum_values(team, cldt, dp_ccf, sh_ccf, nlev);
-  // evaporation from convection (deep + shallow)
-  wetdep::sum_values(team, evapc, evapcsh, evapcdp, nlev);
-  // dq/dt due to convective cmfdqr =  rprddp + rprdsh
-  wetdep::sum_values(team, cmfdqr, rprddp, rprdsh, nlev);
-  // rate of conversion of condensate to precipitation [kg/kg/s].
-  wetdep::sum_values(team, prain, icwmrdp, icwmrsh, nlev);
-  // total condensate (ice+liq) [kg/kg] = q_liq + q_ice
-  wetdep::sum_values(team, totcond, q_liq, q_ice, nlev);
-  // sum deep and shallow convection contributions
-  wetdep::sum_deep_and_shallow(team, conicw, icwmrdp, dp_frac, icwmrsh, sh_frac,
-                               nlev);
-
-  team.team_barrier(); // for cldcu
-
-  // Estimate the cloudy volume which is occupied by rain or cloud water
-  wetdep::cloud_diagnostics(team, temperature, pmid, pdel, cmfdqr, evapc, cldt,
-                            cldcu, cldst, evapr, prain, cldv, cldvcu, cldvst,
-                            rain, nlev);
-  team.team_barrier();
-  ColumnView dlf = diags.total_convective_detrainment;
-
-  wetdep::zero_values(team, aerdepwetis, pcnst);
-  wetdep::zero_values(team, aerdepwetcw, pcnst);
-
-  int isprx[mam4::nlev] = {};
-
-  // set the mass-weighted sol_factic for coarse mode species.
-  wetdep::set_f_act(team, isprx, f_act_conv_coarse, f_act_conv_coarse_dust,
-                    f_act_conv_coarse_nacl, pdel, prain, cmfdqr, evapr, state_q,
-                    ptend_q, dt, nlev);
-  team.team_barrier();
-
-  // main loop over aerosol modes
-  for (int mtmp = 0; mtmp < AeroConfig::num_modes(); ++mtmp) {
-    // for mam4, do accum, aitken, pcarbon, then coarse
-    // so change the order of 2 and 3 here
-    // for mam4:
-    // do   accum = 0,
-    // then aitken = 1,
-    // then pcarbon - 3,
-    // then coarse = 2
-    const int imode = mode_order_change[mtmp];
-
-    // loop over interstitial (1) and cloud-borne (2) forms
-    // BSINGH (09/12/2014):Do cloudborne first for unified convection
-    // scheme so that the resuspension of cloudborne can be saved then
-    // applied to interstitial (RCE)
-
-    // do cloudborne (2) first then interstitial (1)
-    for (int lphase = 2; 1 <= lphase; --lphase) {
-      if (lphase == 1) { // interstial aerosol
-        // Computes lookup table for aerosol impaction/interception scavenging
-        // rates
-        wetdep::modal_aero_bcscavcoef_get(team, diags, isprx, scavimptblvol,
-                                          scavimptblnum, scavcoefnum,
-                                          scavcoefvol, imode, nlev);
-        team.team_barrier();
-      }
-      // define sol_factb and sol_facti values, and f_act_conv
-      wetdep::define_act_frac(team, sol_facti, sol_factic, sol_factb,
-                              f_act_conv, lphase, imode, nlev);
-      team.team_barrier();
-
-      // REASTER 08/12/2015 - changed ordering (mass then number) for
-      // prevap resuspend to coarse loop over number + chem constituents +
-      // water index for aerosol number / chem-mass / water-mass
-      for (int lspec = 0; lspec < num_species_mode(imode) + 2; ++lspec) {
-
-        int mm, jnv, jnummaswtr;
-        aero_model::index_ordering(lspec, imode, lphase, mm, jnv, jnummaswtr);
-        // bypass wet aerosols
-        if (0 <= mm && jnummaswtr != jaerowater) {
-
-#if 0
-          wetdep::compute_q_tendencies( // tendencies are in scavt
-              team, f_act_conv, f_act_conv_coarse, f_act_conv_coarse_dust,
-              f_act_conv_coarse_nacl, scavcoefnum, scavcoefvol, totcond, cmfdqr,
-              conicw, evapc, evapr, prain, dlf, cldt, cldcu, cldst, cldvst,
-              cldvcu, sol_facti, sol_factic, sol_factb, scavt, bcscavt, rcscavt,
-              rtscavt_sv, state_q, ptend_q, qqcw_sav, pdel, dt, jnummaswtr, jnv,
-              mm, lphase, imode, lspec);
-          team.team_barrier();
-
-#endif
-          // Update ptend_q from the tendency, scavt
-          wetdep::update_q_tendencies(team, ptend_q, scavt, mm, nlev);
-
-          if (lphase == 1)
-            aerdepwetis[mm] =
-                aero_model::calc_sfc_flux(team, scavt, pdel, nlev);
-          else // if (lphase == 2)
-            aerdepwetcw[mm] =
-                aero_model::calc_sfc_flux(team, scavt, pdel, nlev);
-          const Real sflxbc =
-              aero_model::calc_sfc_flux(team, bcscavt, pdel, nlev);
-          const Real sflxec =
-              aero_model::calc_sfc_flux(team, rcscavt, pdel, nlev);
-
-          // apportion convective surface fluxes to deep and shallow
-          // conv this could be done more accurately in subr wetdepa
-          // since deep and shallow rarely occur simultaneously, and
-          // these fields are just diagnostics, this approximate method
-          // is adequate only do this for interstitial aerosol, because
-          // conv clouds to not affect the stratiform-cloudborne
-          // aerosol.
-          Real sflxbcdp, sflxecdp;
-          aero_model::apportion_sfc_flux_deep(rprddpsum, rprdshsum, evapcdpsum,
-                                              evapcshsum, sflxbc, sflxec,
-                                              sflxbcdp, sflxecdp);
-
-          // when ma_convproc_intr is used, convective in-cloud wet
-          // removal is done there the convective (total and deep)
-          // precip-evap-resuspension includes in- and below-cloud
-          // contributions, so pass the below-cloud contribution to
-          // ma_convproc_intr
-          //
-          // NOTE: ma_convproc_intr no longer uses these
-          qsrflx_mzaer2cnvpr(mm, 0) = sflxec;
-          qsrflx_mzaer2cnvpr(mm, 1) = sflxecdp;
-          team.team_barrier();
-        }
-      }
-    }
-  }
-}
 } // namespace mam4
 
 #endif

@@ -17,6 +17,7 @@ using namespace haero::testing;
 void aero_model_wetdep(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
+    using View2DHost = typename HostType::view_2d<Real>;
     using View2D = DeviceType::view_2d<Real>;
 
     mam4::Prognostics progs = validation::create_prognostics(nlev);
@@ -114,11 +115,21 @@ void aero_model_wetdep(Ensemble *ensemble) {
 
     Kokkos::View<int *> isprx("isprx", nlev);
 
-    Real scavimptblnum[mam4::aero_model::nimptblgrow_total]
-                      [mam4::AeroConfig::num_modes()];
-    Real scavimptblvol[mam4::aero_model::nimptblgrow_total]
-                      [mam4::AeroConfig::num_modes()];
-    mam4::wetdep::init_scavimptbl(scavimptblvol, scavimptblnum);
+    View2DHost scavimptblvol_host("scavimptblvol_host",
+                                  aero_model::nimptblgrow_total,
+                                  AeroConfig::num_modes());
+    View2DHost scavimptblnum_host("scavimptblnum_host",
+                                  aero_model::nimptblgrow_total,
+                                  AeroConfig::num_modes());
+
+    mam4::wetdep::init_scavimptbl(scavimptblvol_host, scavimptblnum_host);
+
+    View2D scavimptblnum("scavimptblnum", mam4::aero_model::nimptblgrow_total,
+                         mam4::AeroConfig::num_modes());
+    View2D scavimptblvol("scavimptblvol", mam4::aero_model::nimptblgrow_total,
+                         mam4::AeroConfig::num_modes());
+    Kokkos::deep_copy(scavimptblnum, scavimptblnum_host);
+    Kokkos::deep_copy(scavimptblvol, scavimptblvol_host);
 
     wetdep::View2D wet_geometric_mean_diameter_i(
         "wet_geometric_mean_diameter_i", num_modes, nlev);
