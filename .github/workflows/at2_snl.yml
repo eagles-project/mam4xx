@@ -2,9 +2,9 @@ name: AT2 Prototype
 
 # comment
 on:
-  push:
-    branches:
-      - mjs/at2-noodling
+  # push:
+  #   branches:
+  #     - mjs/at2-noodling
   # Runs on PRs against main
   pull_request:
     branches: [ main ]
