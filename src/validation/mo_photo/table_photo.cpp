@@ -148,6 +148,13 @@ void table_photo(Ensemble *ensemble) {
     Kokkos::deep_copy(srf_alb, srf_alb_host);
     Kokkos::deep_copy(zen_angle, zen_angle_host);
 
+    View2D parg("parg", ncol, pver);
+    View2D eff_alb("eff_alb", ncol, pver);
+    View2D cld_mult("cld_mult", ncol, pver);
+
+    View2D work_cloud_mod("work_cloud_mod", ncol, 5*pver);
+
+
     auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -171,6 +178,13 @@ void table_photo(Ensemble *ensemble) {
               Kokkos::subview(xswk, i, Kokkos::ALL(), Kokkos::ALL());
           work_arrays.psum_l = Kokkos::subview(psum_l, i, Kokkos::ALL());
           work_arrays.psum_u = Kokkos::subview(psum_u, i, Kokkos::ALL());
+
+          work_arrays.parg = Kokkos::subview(parg, i, Kokkos::ALL());
+          work_arrays.eff_alb = Kokkos::subview(eff_alb, i, Kokkos::ALL());
+          work_arrays.cld_mult = Kokkos::subview(cld_mult, i, Kokkos::ALL());
+          work_arrays.work_cloud_mod = Kokkos::subview(work_cloud_mod, i, Kokkos::ALL());
+
+
 
           table_photo(team, photo_icol, // out
                       pmid_icol, pdel_icol,
