@@ -562,7 +562,7 @@ void calculate_gas_drydep_vlc_and_flux(
                                              // canopy) [s/m]
     const Real rclx[gas_pcnst][n_land_type], // lower canopy resistance [s/m]
     const Real rgsx[gas_pcnst][n_land_type], // ground resistance [s/m]
-    const Real rdc,       // part of lower canopy resistance [s/m]
+    const Real rdc,         // part of lower canopy resistance [s/m]
     Real dvel[gas_pcnst],   // deposition velocity [cm/s]
     Real dflx[gas_pcnst]) { // deposition flux [1/cm^2/s]
 
@@ -651,8 +651,8 @@ void drydep_xactive(
     const Real rain,                     // rain content [??]
     const Real solar_flux,     // direct shortwave surface radiation [W/m^2]
     const Real mmr[gas_pcnst], // constituent MMRs [kg/kg]
-    Real dvel[gas_pcnst],   // deposition velocity [cm/s]
-    Real dflx[gas_pcnst]) { // deposition flux [1/cm^2/s]
+    Real dvel[gas_pcnst],      // deposition velocity [cm/s]
+    Real dflx[gas_pcnst]) {    // deposition flux [1/cm^2/s]
 
   // FIXME: BAD_CONSTANTS
   constexpr Real rain_threshold = 1e-7;   // of the order of 1cm/day [m/s]

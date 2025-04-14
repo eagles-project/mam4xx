@@ -125,8 +125,8 @@ void calculate_gas_drydep_vlc_and_flux(const seq_drydep::Data &data,
           calculate_gas_drydep_vlc_and_flux(
               data, beglt, endlt, index_season_d.data(), fr_lnduse_d.data(),
               lcl_frc_landuse_d.data(), mmr_d.data(), dep_ra_d.data(),
-              dep_rb_d.data(), term, rsmx, rlux, rclx, rgsx, rdc, dvel_d,
-              dflx_d);
+              dep_rb_d.data(), term, rsmx, rlux, rclx, rgsx, rdc, dvel_d.data(),
+              dflx_d.data());
         });
 
     View1DHost dvel_h("dvel_h", gas_pcnst);
