@@ -1,10 +1,6 @@
 name: AT2 Prototype
 
-# comment
 on:
-  # push:
-  #   branches:
-  #     - mjs/at2-noodling
   # Runs on PRs against main
   pull_request:
     branches: [ main ]
@@ -108,8 +104,7 @@ jobs:
              -DCMAKE_C_COMPILER=gcc \
              -DCMAKE_CXX_COMPILER=g++ \
              -DHAERO_ENABLE_MPI=OFF \
-             -DHAERO_ENABLE_GPU=OFF \
-             -DKokkos_ARCH_AMDAVX:BOOL=ON \
+             -DHAERO_ENABLE_GPU=ON \
              -DHAERO_PRECISION=${{ matrix.fp-precision }}
           cd haero_build
           make -j
@@ -121,7 +116,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
             -DMAM4XX_HAERO_DIR=`pwd`/haero_install \
             -DNUM_VERTICAL_LEVELS=72 \
-            -DENABLE_COVERAGE=ON \
+            -DENABLE_COVERAGE=OFF \
             -G "Unix Makefiles"
       - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |
