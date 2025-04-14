@@ -5,9 +5,9 @@ on:
   push:
     branches:
       - mjs/at2-noodling
-  # Runs on PRs against master
+  # Runs on PRs against main
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
     types: [opened, synchronize, ready_for_review, reopened]
     paths:
       # first, yes to these
