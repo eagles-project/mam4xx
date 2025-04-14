@@ -44,11 +44,6 @@ concurrency:
 
 jobs:
   gcc-cuda:
-    if: |
-      ${{
-        github.event.inputs.job_to_run == 'gcc-cuda' ||
-        github.event.inputs.job_to_run == 'all'
-      }}
     runs-on:  [self-hosted, ghci-snl-cuda, cuda, gcc]
     # will run other tests in the matrix even if one fails
     # NOTE: prioritizes extra info over speed, so consider whether this makes sense
