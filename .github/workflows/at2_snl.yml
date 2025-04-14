@@ -117,6 +117,7 @@ jobs:
             -DMAM4XX_HAERO_DIR=`pwd`/haero_install \
             -DNUM_VERTICAL_LEVELS=72 \
             -DENABLE_COVERAGE=OFF \
+            -DCMAKE_CUDA_ARCHITECTURES=90 \
             -G "Unix Makefiles"
       - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |
