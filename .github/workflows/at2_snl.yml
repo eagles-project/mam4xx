@@ -44,7 +44,7 @@ concurrency:
 
 jobs:
   gcc-cuda:
-    runs-on:  [self-hosted, ghci-snl-cuda, cuda, gcc]
+    runs-on:  [self-hosted, m4xci-snl-cuda, cuda, gcc]
     # will run other tests in the matrix even if one fails
     # NOTE: prioritizes extra info over speed, so consider whether this makes sense
     continue-on-error: true
