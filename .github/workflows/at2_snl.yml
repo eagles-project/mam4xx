@@ -112,13 +112,14 @@ jobs:
       - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |
           cmake -S . -B build \
-            -DCMAKE_CXX_COMPILER=`pwd`/haero_install/bin/nvcc_wrapper \
+            -DCMAKE_CXX_COMPILER=/root/m4x-configs/nvcc_wrapper \
             -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_INSTALL_PREFIX=`pwd`/install \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
             -DMAM4XX_HAERO_DIR=`pwd`/haero_install \
             -DNUM_VERTICAL_LEVELS=72 \
             -DENABLE_COVERAGE=OFF \
+            -DENABLE_SKYWALKER=ON \
             -DCMAKE_CUDA_ARCHITECTURES=90 \
             -G "Unix Makefiles"
       - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
