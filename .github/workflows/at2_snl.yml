@@ -112,7 +112,7 @@ jobs:
       - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |
           cmake -S . -B build \
-            -DCMAKE_CXX_COMPILER=/root/m4x-configs/nvcc_wrapper \
+            -DCMAKE_CXX_COMPILER=/home/runner/m4x-configs/nvcc_wrapper \
             -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_INSTALL_PREFIX=`pwd`/install \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
