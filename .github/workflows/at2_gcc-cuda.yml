@@ -1,0 +1,104 @@
+name: gcc-cuda
+
+on:
+  workflow_call
+
+jobs:
+  gcc-cuda:
+    runs-on:  [self-hosted, m4xci-snl-cuda, cuda, gcc]
+    # will run other tests in the matrix even if one fails
+    # NOTE: prioritizes extra info over speed, so consider whether this makes sense
+    continue-on-error: false
+    strategy:
+      fail-fast: true
+      matrix:
+        build-type: [Debug, Release]
+        fp-precision: [single, double]
+    name: gcc-cuda / ${{ matrix.build-type }} - ${{ matrix.fp-precision }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          show-progress: false
+          submodules: recursive
+      - name: Cloning Haero
+        uses: actions/checkout@v3
+        with:
+          repository: eagles-project/haero
+          submodules: recursive
+          path: haero_src
+      - name: Show action trigger
+        uses: ./.github/actions/show-workflow-trigger
+      - name: Get CUDA Arch
+        # NOTE: for now, only running on an H100 machine, but keep anyway
+        run: |
+          # Ensure nvidia-smi is available
+          if ! command -v nvidia-smi &> /dev/null; then
+              echo "nvidia-smi could not be found. Please ensure you have Nvidia drivers installed."
+              exit 1
+          fi
+
+          # Get the GPU model from nvidia-smi, and set env for next step
+          gpu_model=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -n 1)
+          case "$gpu_model" in
+              *"H100"*)
+                  echo "H100 detected--setting Hopper90 architecture"
+                  echo "Hopper=ON" >> $GITHUB_ENV
+                  echo "CUDA_ARCH=90" >> $GITHUB_ENV
+                  ARCH=90
+                  ;;
+              *"A100"*)
+                  echo "A100 detected--setting Ampere80 architecture"
+                  echo "Ampere=ON" >> $GITHUB_ENV
+                  echo "CUDA_ARCH=80" >> $GITHUB_ENV
+                  ;;
+              *"V100"*)
+                  echo "V100 detected--setting Volta70 architecture"
+                  echo "Volta=ON" >> $GITHUB_ENV
+                  echo "CUDA_ARCH=70" >> $GITHUB_ENV
+                  ;;
+              *)
+                  echo "Unsupported GPU model: $gpu_model"
+                  exit 1
+                  ;;
+          esac
+      - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+        run: |
+          cmake -S haero_src -B haero_build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+            -DCMAKE_INSTALL_PREFIX="haero_install" \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DHAERO_ENABLE_MPI=OFF \
+            -DHAERO_ENABLE_GPU=ON \
+            -DHAERO_PRECISION=${{ matrix.fp-precision }}
+          cd haero_build
+          make -j
+          make install
+      - name: Set nvcc_wrapper Arch
+        run: |
+          sed -i s/default_arch=\"sm_70\"/default_arch=\"sm_90\"/g `pwd`/haero_install/bin/nvcc_wrapper
+          echo "===================================="
+          grep -i "default_arch=" `pwd`/haero_install/bin/nvcc_wrapper
+      - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_CXX_COMPILER=`pwd`/haero_install/bin/nvcc_wrapper \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_INSTALL_PREFIX=`pwd`/install \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+            -DMAM4XX_HAERO_DIR=`pwd`/haero_install \
+            -DNUM_VERTICAL_LEVELS=72 \
+            -DENABLE_COVERAGE=OFF \
+            -DENABLE_SKYWALKER=ON \
+            -DCMAKE_CUDA_ARCHITECTURES=90 \
+            -G "Unix Makefiles"
+      - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+        run: |
+          cd build
+          make
+      - name: Running tests (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+        run: |
+          cd build
+          ctest -V --output-on-failure
