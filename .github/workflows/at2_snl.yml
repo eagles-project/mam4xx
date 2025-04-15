@@ -112,6 +112,10 @@ jobs:
           cd haero_build
           make -j
           make install
+      - name: Set nvcc_wrapper Arch
+        run: |
+          sed -i "s/default_arch="sm_70"/default_arch="sm_90"/g" `pwd`/haero_install/bin/nvcc_wrapper
+          grep -i "default_arch" `pwd`/haero_install/bin/nvcc_wrapper
       - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |
           cmake -S . -B build \
