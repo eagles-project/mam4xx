@@ -79,15 +79,18 @@ jobs:
           gpu_model=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -n 1)
           case "$gpu_model" in
               *"H100"*)
+                  echo "H100 detected--setting Hopper90 architecture"
                   echo "Hopper=ON" >> $GITHUB_ENV
                   echo "CUDA_ARCH=90" >> $GITHUB_ENV
                   ARCH=90
                   ;;
               *"A100"*)
+                  echo "A100 detected--setting Ampere80 architecture"
                   echo "Ampere=ON" >> $GITHUB_ENV
                   echo "CUDA_ARCH=80" >> $GITHUB_ENV
                   ;;
               *"V100"*)
+                  echo "V100 detected--setting Volta70 architecture"
                   echo "Volta=ON" >> $GITHUB_ENV
                   echo "CUDA_ARCH=70" >> $GITHUB_ENV
                   ;;
@@ -112,7 +115,7 @@ jobs:
       - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |
           cmake -S . -B build \
-            -DCMAKE_CXX_COMPILER=/home/runner/m4x-configs/nvcc_wrapper \
+            -DCMAKE_CXX_COMPILER=`pwd`/haero_install/bin/nvcc_wrapper \
             -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_INSTALL_PREFIX=`pwd`/install \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
