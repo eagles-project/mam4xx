@@ -1,4 +1,4 @@
-name: gcc-cuda
+name: gcc_12-3_cuda_12-1
 
 on:
   workflow_call
@@ -23,7 +23,7 @@ jobs:
           show-progress: false
           submodules: recursive
       - name: Cloning Haero
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: eagles-project/haero
           submodules: recursive
@@ -78,7 +78,7 @@ jobs:
           make install
       - name: Set nvcc_wrapper Arch
         run: |
-          sed -i s/default_arch=\"sm_70\"/default_arch=\"sm_90\"/g `pwd`/haero_install/bin/nvcc_wrapper
+          sed -i s/default_arch=\"sm_70\"/default_arch=\"sm_"$CUDA_ARCH"\"/g `pwd`/haero_install/bin/nvcc_wrapper
           echo "===================================="
           grep -i "default_arch=" `pwd`/haero_install/bin/nvcc_wrapper
       - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
@@ -92,7 +92,7 @@ jobs:
             -DNUM_VERTICAL_LEVELS=72 \
             -DENABLE_COVERAGE=OFF \
             -DENABLE_SKYWALKER=ON \
-            -DCMAKE_CUDA_ARCHITECTURES=90 \
+            -DCMAKE_CUDA_ARCHITECTURES=$CUDA_ARCH \
             -G "Unix Makefiles"
       - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |
