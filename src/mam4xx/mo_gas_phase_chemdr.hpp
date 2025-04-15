@@ -139,7 +139,8 @@ void perform_atmospheric_chemistry_and_microphysics(
         &prain, // stratoform precip [kg/kg/s] //in precip_total_tend
     const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
     const View1D &work_set_het, const seq_drydep::Data &drydep_data,
-    View1D &dvel, View1D &dflx, mam4::Prognostics &progs) {
+    Real dvel[gas_pcnst], // deposition velocity [cm/s]
+    Real dflx[gas_pcnst], mam4::Prognostics &progs) {
 
   const int nlev = mam4::nlev;
   // vmr0 stores mixing ratios before chemistry changes the mixing
