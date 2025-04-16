@@ -22,6 +22,8 @@ runs:
           } else if (eventName === 'schedule') {
             eventAction = 'scheduled trigger';
           }
+          gh_ref = github.ref || 'N/A';
           console.log(`The job was triggered by a ${eventName} event.`);
           console.log(`  - Event action: ${eventAction}`);
           console.log(`  - Triggered by: ${actor}`);
+          console.log(`  - GH ref is:    ${gh_ref}`);
