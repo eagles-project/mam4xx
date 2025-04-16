@@ -7,11 +7,12 @@ on:
     types: [opened, synchronize, ready_for_review, reopened]
     paths:
       # first, yes to these
-      - '.github/workflows/at2_snl.yml'
-      - 'src/mam4xx'
-      - 'src/tests'
+      - '.github/workflows/*'
+      - 'src/mam4xx/*'
+      - 'src/tests/*'
       - 'src/validation/**'
       # second, no to these
+      # don't test when it's only validation data changing
       - '!src/tests/data/**'
       # not sure whether this should be disabled--keep for now
       # - '!src/validation/mam_x_validation/**'
