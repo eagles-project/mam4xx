@@ -83,8 +83,8 @@ instructional Confluence page (on the Sandia network :confused:--reach out if
 you need access).
 However, some non-obvious choices and configurations are listed here.
 
-- To provide some relevant info, we employ a custom action, cribbed from
-  E3SM/EAMxx, that prints out the workflow's trigger.
+- To add some info to the testing output, we employ a custom action, cribbed
+  from E3SM/EAMxx, that prints out the workflow's trigger.
 
 ### Hacks
 
