@@ -1,13 +1,14 @@
-name: auto_test
+name: GitHub CPU Auto-test Ubuntu 22.04
 
 # This action is triggered:
 # 1. when someone creates a pull request for a merge to the main branch
 # 2. when changes are merged into the main branch (via a pull request)
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_call
+  # push:
+  #   branches: [ main ]
+  # pull_request:
+  #   branches: [ main ]
 
 # Below are jobs, each of which runs sequentially.
 jobs:

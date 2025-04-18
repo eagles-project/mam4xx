@@ -35,3 +35,9 @@ jobs:
   gcc-cuda:
     uses:
       ./.github/workflows/at2_gcc-cuda.yml
+  gh_auto_test:
+    uses:
+      ./.github/workflows/gh_auto_test.yml
+  clang-format_check:
+    uses:
+      ./.github/workflows/clang-format-check.yml
