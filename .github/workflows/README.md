@@ -1,3 +1,4 @@
+
 # Autotester2 (AT2) SNL Workflow for MAM4xx
 
 This document contains a brief description of how AT2 is used to automate
@@ -47,13 +48,17 @@ also by a handful of actions on such a PR that is already open, including:
 The workflow may also be run manually by members of the `snl-testing`
 team--that is, via
 
-> **Actions** -> `<SNL-AT2 Workflow Run/Job>` -> **Re-run `[all,this]` job(s)**.
+> **Actions** -> **SNL-AT2 Workflow** -> **Run Workflow** -> *Choose Branch from Dropdown Menu*.
+
+or
+
+> **Actions** -> `<Previously-run SNL-AT2 Workflow/Job>` -> **Re-run `[all,this]` job(s)**.
 
 The AT2 configuration on `blake` currently attempts to keep 3 runners available
 to accept jobs at all times.
 This workflow is configured to allow concurrent testing, so up to 3 test-matrix
 configurations can run at once.
-The concurrencty setting is also configured to kill any active job if another
+The concurrency setting is also configured to kill any active job if another
 instance of this workflow is started for the same PR ref.
 
 ##### Other Types of Job Control
@@ -74,7 +79,6 @@ instance of this workflow is started for the same PR ref.
 The above is according to Mike's current understanding of AT2 and may contain
 minor inaccuracies.
 This will be updated accordingly upon confirmation.
-
 
 ## Development Details
 
