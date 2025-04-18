@@ -114,7 +114,7 @@ However, some non-obvious choices and configurations are listed here.
 
 ## TODO
 
-- [ ] Update job control section of README after the behavior is made clear.
+- [x] Update job control section of README after the behavior is made clear.
   - @mjschmdt271
 - [ ] Include a script to generate plots from within testing container?
   - @jaelynlitz?
