@@ -905,19 +905,19 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
       work_arrays.psum_u);
 
     team.team_barrier();
-    Kokkos::single(Kokkos::PerTeam(team), [=]() {
+
       for (int mm = 0; mm < phtcnt; ++mm) {
         const int ind = table_data.lng_indexer(mm);
         if (ind > -1) {
-          for (int kk = 0; kk < pver; ++kk) {
+             Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                         [&](const int kk) {
             photo(kk, mm) =
-                cld_mult[kk] *
+                cld_mult(kk) *
                 (photo(kk, mm) + table_data.pht_alias_mult_1(mm) *
                                      work_arrays.lng_prates(ind, kk));
-          }
+          });
         }
       }
-    });
   }
   team.team_barrier();
 }
