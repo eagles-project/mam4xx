@@ -758,8 +758,8 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
   constexpr int pver_local = pver;
   // xswk is not dimentioned by number of levels so can not parallelize over
   // levels.
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, pver_local), [&](const int kk) {
+  Kokkos::single(Kokkos::PerTeam(team), [=]() {
+    for (int kk = 0; kk < pver_local; ++kk) {
         /*----------------------------------------------------------------------
           ... get index into xsqy
          ----------------------------------------------------------------------*/
@@ -818,7 +818,8 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
           }
           j_long(i, kk) = suma;
         } // i
-      }); //  end kk
+    } // kk
+      }); //  end single
 } // jlong
 
 // FIXME: note the use of ConstColumnView for views we get from the
@@ -884,7 +885,6 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
                          [&](const int kk) {
                            parg(kk) = pmid(kk) * Pa2mb;
-                           cld_mult(kk) *= esfact;
                          });
     team.team_barrier();
     /*-----------------------------------------------------------------
@@ -906,20 +906,20 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
 
     team.team_barrier();
 
-    for (int mm = 0; mm < phtcnt; ++mm) {
-      const int ind = table_data.lng_indexer(mm);
-      if (ind > -1) {
-        Kokkos::parallel_for(
-            Kokkos::TeamVectorRange(team, pver_local), [&](const int kk) {
-              photo(kk, mm) =
-                  cld_mult(kk) *
-                  (photo(kk, mm) + table_data.pht_alias_mult_1(mm) *
-                                       work_arrays.lng_prates(ind, kk));
-            });
-      }
-    }
+   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                         [&](const int kk) {
+      for (int mm = 0; mm < phtcnt; ++mm) {
+        const int ind = table_data.lng_indexer(mm);
+        if (ind > -1) {
+            photo(kk, mm) =
+                cld_mult(kk)*esfact *
+                (photo(kk, mm) + table_data.pht_alias_mult_1(mm) *
+                                     work_arrays.lng_prates(ind, kk));
+          }
+        }
+    });
   }
-  team.team_barrier();
+  // team.team_barrier();
 }
 
 } // namespace mo_photo
