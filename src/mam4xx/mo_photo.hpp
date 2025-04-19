@@ -756,8 +756,8 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
   constexpr int pver_local = pver;
   // xswk is not dimentioned by number of levels so can not parallelize over
   // levels.
-  Kokkos::single(Kokkos::PerTeam(team), [=]() {
-    for (int kk = 0; kk < pver_local; ++kk) {
+  Kokkos::parallel_for(
+      Kokkos::TeamVectorRange(team, pver_local), [&](const int kk) {
       /*----------------------------------------------------------------------
         ... get index into xsqy
        ----------------------------------------------------------------------*/
@@ -815,8 +815,7 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
         }
         j_long(i, kk) = suma;
       } // i
-    };  // end kk
-  });   // end single
+  });   //  end kk
 } // jlong
 
 // FIXME: note the use of ConstColumnView for views we get from the

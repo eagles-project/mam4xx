@@ -45,7 +45,7 @@ void calc_sum_wght(Ensemble *ensemble) {
 
     const auto psum = View1D("psum", nw);
 
-    auto team_policy = ThreadTeamPolicy(1u, 1u);
+    auto team_policy = ThreadTeamPolicy(1u,Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           calc_sum_wght(dels.data(), wrk0, // in
