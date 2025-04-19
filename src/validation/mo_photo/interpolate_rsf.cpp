@@ -111,15 +111,16 @@ void interpolate_rsf(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          interpolate_rsf(team, alb_in, sza_in, p_in, colo3_in.data(),
-                          pver, //  in
-                          sza.data(), del_sza.data(), alb.data(), press.data(),
-                          del_p.data(), colo3.data(), o3rat.data(),
-                          del_alb.data(), del_o3rat.data(), etfphot.data(),
-                          rsf_tab, nw, nump, numsza, numcolo3, numalb,
-                          rsf, // out
-                          // work array
-                          psum_l.data(), psum_u.data());
+          interpolate_rsf(team, alb_in, sza_in, p_in, colo3_in,
+                pver, // in
+                sza, del_sza, alb, press,
+                del_p, colo3, o3rat,
+                del_alb, del_o3rat, etfphot,
+                rsf_tab, nw, nump, numsza, numcolo3, numalb,
+                rsf, // out
+                // work array
+                psum_l, psum_u);
+
         });
 
     const Real zero = 0;

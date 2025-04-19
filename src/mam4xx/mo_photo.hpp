@@ -441,7 +441,7 @@ void setcol(const ThreadTeam &team, const Real o3_col_deltas[mam4::nlev + 1],
 }
 
 KOKKOS_INLINE_FUNCTION
-void find_index(const Real *var_in, const int var_len,
+void find_index(const View1D& var_in, const int var_len,
                 const Real var_min, //  in
                 int &idx_out)       // out
 {
@@ -457,7 +457,7 @@ void find_index(const Real *var_in, const int var_len,
   auto min = [](int i, int j) { return (i < j) ? i : j; };
   auto max = [](int i, int j) { return (i < j) ? j : i; };
   for (int ii = 0; ii < var_len; ii++) {
-    if (var_in[ii] > var_min) {
+    if (var_in(ii) > var_min) {
       // Fortran to C++ indexing
       idx_out = max(min(ii, var_len - 1) - 1, 0);
       break;
@@ -472,7 +472,7 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
                    const int ial,         // in
                    const View5D &rsf_tab, // in
                    const int nw,
-                   Real *psum) // out
+                   const View1D &psum) // out
 {
 
   // @param[in]   dels(3)
@@ -514,18 +514,19 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
 KOKKOS_INLINE_FUNCTION
 void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
                      const Real sza_in, const View1D &p_in,
-                     const Real *colo3_in,
-                     const int kbot, //  in
-                     const Real *sza, const Real *del_sza, const Real *alb,
-                     const Real *press, const Real *del_p, const Real *colo3,
-                     const Real *o3rat, const Real *del_alb,
-                     const Real *del_o3rat, const Real *etfphot,
+                     const View1D &colo3_in,
+                     const int kbot, // in
+                     const View1D &sza, const View1D &del_sza, const View1D &alb,
+                     const View1D &press, const View1D &del_p, const View1D &colo3,
+                     const View1D &o3rat, const View1D &del_alb,
+                     const View1D &del_o3rat, const View1D &etfphot,
                      const View5D &rsf_tab, // in
                      const int nw, const int nump, const int numsza,
                      const int numcolo3, const int numalb,
                      const View2D &rsf, // out
                      // work array
-                     Real *psum_l, Real *psum_u) {
+                     const View1D &psum_l, const View1D &psum_u)
+ {
   /*----------------------------------------------------------------------
           ... interpolate table rsf to model variables
   ----------------------------------------------------------------------*/
@@ -559,9 +560,7 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
   const Real one = 1;
   const Real zero = 0;
 
-  // NOTE: psum_l and psum_u are not dimentioned by number of levels, kk,
-  // so can not parallelize over kk.
-  team.team_barrier();
+  // NOTE: psum_l and psum_u are not dimensioned by the number of levels, kk, so they cannot be parallelized over kk
   Kokkos::single(Kokkos::PerTeam(team), [=]() {
     int is = 0;
     find_index(sza, numsza, sza_in, // in
@@ -672,18 +671,19 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
 //======================================================================================
 KOKKOS_INLINE_FUNCTION
 void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
-           const View1D &p_in, const Real *t_in, const Real *colo3_in,
-           const View4D &xsqy, const Real *sza, const Real *del_sza,
-           const Real *alb, const Real *press, const Real *del_p,
-           const Real *colo3, const Real *o3rat, const Real *del_alb,
-           const Real *del_o3rat, const Real *etfphot, const View5D &rsf_tab,
-           const Real *prs, const Real *dprs, const int nw, const int nump,
-           const int numsza, const int numcolo3, const int numalb,
-           const int np_xs, const int numj,
-           const View2D &j_long, // output
-           // work arrays
-           const View2D &rsf, const View2D &xswk, Real *psum_l,
-           Real *psum_u) // out
+      const View1D &p_in, const ConstColumnView &t_in, const View1D &colo3_in,
+      const View4D &xsqy, const View1D &sza, const View1D &del_sza,
+      const View1D &alb, const View1D &press, const View1D &del_p,
+      const View1D &colo3, const View1D &o3rat, const View1D &del_alb,
+      const View1D &del_o3rat, const View1D &etfphot, const View5D &rsf_tab,
+      const View1D &prs, const View1D &dprs, const int nw, const int nump,
+      const int numsza, const int numcolo3, const int numalb,
+      const int np_xs, const int numj,
+      const View2D &j_long, // output
+      // work arrays
+      const View2D &rsf, const View2D &xswk, const View1D &psum_l,
+      const View1D &psum_u)
+ // out
 {
 
   /*==============================================================================
@@ -889,20 +889,21 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
      ... long wave length component
     -----------------------------------------------------------------*/
     team.team_barrier();
-    jlong(team, sza_in, eff_alb, parg, temper.data(), colo3_in.data(),
-          table_data.xsqy, table_data.sza.data(), table_data.del_sza.data(),
-          table_data.alb.data(), table_data.press.data(),
-          table_data.del_p.data(), table_data.colo3.data(),
-          table_data.o3rat.data(), table_data.del_alb.data(),
-          table_data.del_o3rat.data(), table_data.etfphot.data(),
-          table_data.rsf_tab, // in
-          table_data.prs.data(), table_data.dprs.data(), table_data.nw,
-          table_data.nump, table_data.numsza, table_data.numcolo3,
-          table_data.numalb, table_data.np_xs, table_data.numj,
-          work_arrays.lng_prates, // output
-          // work arrays
-          work_arrays.rsf, work_arrays.xswk, work_arrays.psum_l.data(),
-          work_arrays.psum_u.data());
+    jlong(team, sza_in, eff_alb, parg, temper, colo3_in,
+      table_data.xsqy, table_data.sza, table_data.del_sza,
+      table_data.alb, table_data.press,
+      table_data.del_p, table_data.colo3,
+      table_data.o3rat, table_data.del_alb,
+      table_data.del_o3rat, table_data.etfphot,
+      table_data.rsf_tab, // in
+      table_data.prs, table_data.dprs, table_data.nw,
+      table_data.nump, table_data.numsza, table_data.numcolo3,
+      table_data.numalb, table_data.np_xs, table_data.numj,
+      work_arrays.lng_prates, // output
+      // work arrays
+      work_arrays.rsf, work_arrays.xswk, work_arrays.psum_l,
+      work_arrays.psum_u);
+
     team.team_barrier();
     Kokkos::single(Kokkos::PerTeam(team), [=]() {
       for (int mm = 0; mm < phtcnt; ++mm) {

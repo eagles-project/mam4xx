@@ -52,7 +52,7 @@ void calc_sum_wght(Ensemble *ensemble) {
                         iz, is, iv, ial,   // in
                         rsf_tab,           // in
                         nw,                //
-                        psum.data());
+                        psum);
         });
     const Real zero = 0;
     std::vector<Real> psum_db(nw, zero);

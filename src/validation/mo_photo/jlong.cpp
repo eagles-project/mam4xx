@@ -141,16 +141,17 @@ void jlong(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          jlong(team, sza_in, alb_in, p_in, t_in.data(), colo3_in.data(), xsqy,
-                sza.data(), del_sza.data(), alb.data(), press.data(),
-                del_p.data(), colo3.data(), o3rat.data(), del_alb.data(),
-                del_o3rat.data(), etfphot.data(),
-                rsf_tab, // in
-                prs.data(), dprs.data(), nw, nump, numsza, numcolo3, numalb,
-                np_xs, numj,
-                j_long, // output
-                // work arrays
-                rsf, xswk, psum_l.data(), psum_u.data());
+          jlong(team, sza_in, alb_in, p_in, t_in, colo3_in, xsqy,
+      sza, del_sza, alb, press,
+      del_p, colo3, o3rat, del_alb,
+      del_o3rat, etfphot,
+      rsf_tab, // in
+      prs, dprs, nw, nump, numsza, numcolo3, numalb,
+      np_xs, numj,
+      j_long, // output
+      // work arrays
+      rsf, xswk, psum_l, psum_u);
+
         });
 
     const Real zero = 0;
