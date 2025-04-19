@@ -277,10 +277,10 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   team.team_barrier();
 
   // for (int i = 1; i < pver; ++i) {
-    // const int kk = pverm - i;
-    // printf(" i: %d kk %d \n", i, kk);
-    // below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
-    // below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
+  // const int kk = pverm - i;
+  // printf(" i: %d kk %d \n", i, kk);
+  // below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
+  // below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
   // }; // end kk
 
   Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, 0, pverm),
@@ -290,7 +290,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
                           accumulator += del_tau(kk);
                           if (last) {
                             // printf(" i: %d kk %d \n", i, kk);
-                            below_tau(kk-1) = accumulator;
+                            below_tau(kk - 1) = accumulator;
                           }
                         });
   team.team_barrier();
@@ -299,7 +299,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
                           const int kk = pverm - i;
                           accumulator += clouds(kk) * del_tau(kk);
                           if (last) {
-                            below_cld(kk-1) = accumulator;
+                            below_cld(kk - 1) = accumulator;
                           }
                         });
   team.team_barrier();
@@ -758,64 +758,65 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
   // levels.
   Kokkos::parallel_for(
       Kokkos::TeamVectorRange(team, pver_local), [&](const int kk) {
-      /*----------------------------------------------------------------------
-        ... get index into xsqy
-       ----------------------------------------------------------------------*/
+        /*----------------------------------------------------------------------
+          ... get index into xsqy
+         ----------------------------------------------------------------------*/
 
-      // Fortran indexing to C++ indexing
-      // number of temperatures in xsection table
-      // BAD CONSTANT for 201 and 148.5
-      const int t_index = haero::min(201, haero::max(t_in[kk] - 148.5, 1)) - 1;
+        // Fortran indexing to C++ indexing
+        // number of temperatures in xsection table
+        // BAD CONSTANT for 201 and 148.5
+        const int t_index =
+            haero::min(201, haero::max(t_in[kk] - 148.5, 1)) - 1;
 
-      /*----------------------------------------------------------------------
-                 ... find pressure level
-       ----------------------------------------------------------------------*/
-      const Real ptarget = p_in[kk];
-      if (ptarget >= prs[0]) {
-        for (int wn = 0; wn < nw; wn++) {
-          for (int i = 0; i < numj; i++) {
-            xswk(i, wn) = xsqy(i, wn, t_index, 0);
-          } // end for i
-        }   // end for wn
-        // Fortran to C++ indexing conversion
-      } else if (ptarget <= prs[np_xs - 1]) {
-        for (int wn = 0; wn < nw; wn++) {
-          for (int i = 0; i < numj; i++) {
-            // Fortran to C++ indexing conversion
-            xswk(i, wn) = xsqy(i, wn, t_index, np_xs - 1);
-          } // end for i
-        }   // end for wn
+        /*----------------------------------------------------------------------
+                   ... find pressure level
+         ----------------------------------------------------------------------*/
+        const Real ptarget = p_in[kk];
+        if (ptarget >= prs[0]) {
+          for (int wn = 0; wn < nw; wn++) {
+            for (int i = 0; i < numj; i++) {
+              xswk(i, wn) = xsqy(i, wn, t_index, 0);
+            } // end for i
+          }   // end for wn
+          // Fortran to C++ indexing conversion
+        } else if (ptarget <= prs[np_xs - 1]) {
+          for (int wn = 0; wn < nw; wn++) {
+            for (int i = 0; i < numj; i++) {
+              // Fortran to C++ indexing conversion
+              xswk(i, wn) = xsqy(i, wn, t_index, np_xs - 1);
+            } // end for i
+          }   // end for wn
 
-      } else {
-        Real delp = zero;
-        int pndx = 0;
-        // Question: delp is not initialized in fortran code. What if the
-        // following code does not satify this if condition: ptarget >=
-        // prs[km] Conversion indexing from Fortran to C++
-        for (int km = 1; km < np_xs; km++) {
-          if (ptarget >= prs[km]) {
-            pndx = km - 1;
-            delp = (prs[pndx] - ptarget) * dprs[pndx];
-            break;
-          } // end if
-        }   // end for km
-        for (int wn = 0; wn < nw; wn++) {
-          for (int i = 0; i < numj; i++) {
-            xswk(i, wn) = xsqy(i, wn, t_index, pndx) +
-                          delp * (xsqy(i, wn, t_index, pndx + 1) -
-                                  xsqy(i, wn, t_index, pndx));
+        } else {
+          Real delp = zero;
+          int pndx = 0;
+          // Question: delp is not initialized in fortran code. What if the
+          // following code does not satify this if condition: ptarget >=
+          // prs[km] Conversion indexing from Fortran to C++
+          for (int km = 1; km < np_xs; km++) {
+            if (ptarget >= prs[km]) {
+              pndx = km - 1;
+              delp = (prs[pndx] - ptarget) * dprs[pndx];
+              break;
+            } // end if
+          }   // end for km
+          for (int wn = 0; wn < nw; wn++) {
+            for (int i = 0; i < numj; i++) {
+              xswk(i, wn) = xsqy(i, wn, t_index, pndx) +
+                            delp * (xsqy(i, wn, t_index, pndx + 1) -
+                                    xsqy(i, wn, t_index, pndx));
 
-          } // end for i
-        }   // end for wn
-      }     // end if
-      for (int i = 0; i < numj; ++i) {
-        Real suma = zero;
-        for (int wn = 0; wn < nw; wn++) {
-          suma += xswk(i, wn) * rsf(wn, kk);
-        }
-        j_long(i, kk) = suma;
-      } // i
-  });   //  end kk
+            } // end for i
+          }   // end for wn
+        }     // end if
+        for (int i = 0; i < numj; ++i) {
+          Real suma = zero;
+          for (int wn = 0; wn < nw; wn++) {
+            suma += xswk(i, wn) * rsf(wn, kk);
+          }
+          j_long(i, kk) = suma;
+        } // i
+      }); //  end kk
 } // jlong
 
 // FIXME: note the use of ConstColumnView for views we get from the
