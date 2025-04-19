@@ -41,13 +41,14 @@ void cloud_mod(Ensemble *ensemble) {
 
     View1D eff_alb("eff_alb", pver);
     View1D cld_mult("cld_mult", pver);
+    View1D work("work", 5 * pver);
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           cloud_mod(team, zen_angle, clouds, lwc, delp,
                     srf_alb, //  in
-                    eff_alb.data(), cld_mult.data());
+                    eff_alb, cld_mult, work);
         });
     std::vector<Real> eff_alb_db(pver, zero);
     std::vector<Real> cld_mult_db(pver, zero);
