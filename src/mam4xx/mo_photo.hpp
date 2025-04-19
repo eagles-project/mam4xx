@@ -221,6 +221,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   /*---------------------------------------------------------
               ... form integrated tau and cloud cover from top down
   --------------------------------------------------------- */
+
   // Note: Replacing
   // for (int kk = 0; kk < pverm; ++kk) {
   //   // above_tau[kk + 1] = del_tau[kk] + above_tau[kk];
@@ -276,35 +277,32 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   team.team_barrier();
 
   // for (int i = 1; i < pver; ++i) {
-  //   const int kk = pverm - i;
-  //   printf(" kk %d \n ", kk);
-  //   // below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
-  //   below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
+    // const int kk = pverm - i;
+    // printf(" i: %d kk %d \n", i, kk);
+    // below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
+    // below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
   // }; // end kk
 
-  // printf(" ----------\n ");
-
-  Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, 1, pver_local),
+  Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, 0, pverm),
                         [&](const int i, Real &accumulator, const bool last) {
                           const int kk = pverm - i;
-                          accumulator = del_tau(kk + 1) + below_tau(kk + 1);
+                          // printf(" i: %d kk %d \n", i, kk);
+                          accumulator += del_tau(kk);
                           if (last) {
-                            below_tau(kk) = accumulator;
-                          }
-                        });
-  // team.team_barrier();
-
-  Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, 1, pver_local),
-                        [&](const int i, Real &accumulator, const bool last) {
-                          const int kk = pverm - i;
-                          accumulator = clouds[kk + 1] * del_tau[kk + 1] +
-                                        below_cld[kk + 1];
-                          if (last) {
-                            below_cld(kk) = accumulator;
+                            // printf(" i: %d kk %d \n", i, kk);
+                            below_tau(kk-1) = accumulator;
                           }
                         });
   team.team_barrier();
-
+  Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, 0, pverm),
+                        [&](const int i, Real &accumulator, const bool last) {
+                          const int kk = pverm - i;
+                          accumulator += clouds(kk) * del_tau(kk);
+                          if (last) {
+                            below_cld(kk-1) = accumulator;
+                          }
+                        });
+  team.team_barrier();
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver_local),
                        [&](const int i) {
                          const int kk = pverm - i;
