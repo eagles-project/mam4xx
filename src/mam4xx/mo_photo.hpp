@@ -441,7 +441,7 @@ void setcol(const ThreadTeam &team, const Real o3_col_deltas[mam4::nlev + 1],
 }
 
 KOKKOS_INLINE_FUNCTION
-void find_index(const View1D& var_in, const int var_len,
+void find_index(const View1D &var_in, const int var_len,
                 const Real var_min, //  in
                 int &idx_out)       // out
 {
@@ -516,8 +516,9 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
                      const Real sza_in, const View1D &p_in,
                      const View1D &colo3_in,
                      const int kbot, // in
-                     const View1D &sza, const View1D &del_sza, const View1D &alb,
-                     const View1D &press, const View1D &del_p, const View1D &colo3,
+                     const View1D &sza, const View1D &del_sza,
+                     const View1D &alb, const View1D &press,
+                     const View1D &del_p, const View1D &colo3,
                      const View1D &o3rat, const View1D &del_alb,
                      const View1D &del_o3rat, const View1D &etfphot,
                      const View5D &rsf_tab, // in
@@ -525,8 +526,7 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
                      const int numcolo3, const int numalb,
                      const View2D &rsf, // out
                      // work array
-                     const View1D &psum_l, const View1D &psum_u)
- {
+                     const View1D &psum_l, const View1D &psum_u) {
   /*----------------------------------------------------------------------
           ... interpolate table rsf to model variables
   ----------------------------------------------------------------------*/
@@ -560,7 +560,8 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
   const Real one = 1;
   const Real zero = 0;
 
-  // NOTE: psum_l and psum_u are not dimensioned by the number of levels, kk, so they cannot be parallelized over kk
+  // NOTE: psum_l and psum_u are not dimensioned by the number of levels, kk, so
+  // they cannot be parallelized over kk
   Kokkos::single(Kokkos::PerTeam(team), [=]() {
     int is = 0;
     find_index(sza, numsza, sza_in, // in
@@ -671,19 +672,20 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
 //======================================================================================
 KOKKOS_INLINE_FUNCTION
 void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
-      const View1D &p_in, const ConstColumnView &t_in, const View1D &colo3_in,
-      const View4D &xsqy, const View1D &sza, const View1D &del_sza,
-      const View1D &alb, const View1D &press, const View1D &del_p,
-      const View1D &colo3, const View1D &o3rat, const View1D &del_alb,
-      const View1D &del_o3rat, const View1D &etfphot, const View5D &rsf_tab,
-      const View1D &prs, const View1D &dprs, const int nw, const int nump,
-      const int numsza, const int numcolo3, const int numalb,
-      const int np_xs, const int numj,
-      const View2D &j_long, // output
-      // work arrays
-      const View2D &rsf, const View2D &xswk, const View1D &psum_l,
-      const View1D &psum_u)
- // out
+           const View1D &p_in, const ConstColumnView &t_in,
+           const View1D &colo3_in, const View4D &xsqy, const View1D &sza,
+           const View1D &del_sza, const View1D &alb, const View1D &press,
+           const View1D &del_p, const View1D &colo3, const View1D &o3rat,
+           const View1D &del_alb, const View1D &del_o3rat,
+           const View1D &etfphot, const View5D &rsf_tab, const View1D &prs,
+           const View1D &dprs, const int nw, const int nump, const int numsza,
+           const int numcolo3, const int numalb, const int np_xs,
+           const int numj,
+           const View2D &j_long, // output
+           // work arrays
+           const View2D &rsf, const View2D &xswk, const View1D &psum_l,
+           const View1D &psum_u)
+// out
 {
 
   /*==============================================================================
@@ -889,35 +891,33 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
      ... long wave length component
     -----------------------------------------------------------------*/
     team.team_barrier();
-    jlong(team, sza_in, eff_alb, parg, temper, colo3_in,
-      table_data.xsqy, table_data.sza, table_data.del_sza,
-      table_data.alb, table_data.press,
-      table_data.del_p, table_data.colo3,
-      table_data.o3rat, table_data.del_alb,
-      table_data.del_o3rat, table_data.etfphot,
-      table_data.rsf_tab, // in
-      table_data.prs, table_data.dprs, table_data.nw,
-      table_data.nump, table_data.numsza, table_data.numcolo3,
-      table_data.numalb, table_data.np_xs, table_data.numj,
-      work_arrays.lng_prates, // output
-      // work arrays
-      work_arrays.rsf, work_arrays.xswk, work_arrays.psum_l,
-      work_arrays.psum_u);
+    jlong(team, sza_in, eff_alb, parg, temper, colo3_in, table_data.xsqy,
+          table_data.sza, table_data.del_sza, table_data.alb, table_data.press,
+          table_data.del_p, table_data.colo3, table_data.o3rat,
+          table_data.del_alb, table_data.del_o3rat, table_data.etfphot,
+          table_data.rsf_tab, // in
+          table_data.prs, table_data.dprs, table_data.nw, table_data.nump,
+          table_data.numsza, table_data.numcolo3, table_data.numalb,
+          table_data.np_xs, table_data.numj,
+          work_arrays.lng_prates, // output
+          // work arrays
+          work_arrays.rsf, work_arrays.xswk, work_arrays.psum_l,
+          work_arrays.psum_u);
 
     team.team_barrier();
 
-      for (int mm = 0; mm < phtcnt; ++mm) {
-        const int ind = table_data.lng_indexer(mm);
-        if (ind > -1) {
-             Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
-                         [&](const int kk) {
-            photo(kk, mm) =
-                cld_mult(kk) *
-                (photo(kk, mm) + table_data.pht_alias_mult_1(mm) *
-                                     work_arrays.lng_prates(ind, kk));
-          });
-        }
+    for (int mm = 0; mm < phtcnt; ++mm) {
+      const int ind = table_data.lng_indexer(mm);
+      if (ind > -1) {
+        Kokkos::parallel_for(
+            Kokkos::TeamVectorRange(team, pver_local), [&](const int kk) {
+              photo(kk, mm) =
+                  cld_mult(kk) *
+                  (photo(kk, mm) + table_data.pht_alias_mult_1(mm) *
+                                       work_arrays.lng_prates(ind, kk));
+            });
       }
+    }
   }
   team.team_barrier();
 }

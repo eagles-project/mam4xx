@@ -28,14 +28,14 @@ void find_index(Ensemble *ensemble) {
     View1D var_in("var_in", var_in_db.size());
     Kokkos::deep_copy(var_in, var_in_host);
 
-    ViewInt1D idx_out("idx_out",1);
+    ViewInt1D idx_out("idx_out", 1);
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-       team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-    find_index(var_in, var_len,
-               var_min, //  in
-               idx_out(0));
-       });
+        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          find_index(var_in, var_len,
+                     var_min, //  in
+                     idx_out(0));
+        });
     // C++ indexing to fortran indexing
     auto idx_out_host = Kokkos::create_mirror_view(idx_out);
     Kokkos::deep_copy(idx_out_host, idx_out);
