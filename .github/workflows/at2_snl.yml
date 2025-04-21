@@ -49,7 +49,7 @@ jobs:
     uses:
       ./.github/workflows/gh_auto_test.yml
   clang-format_check:
-    if: ${{ github.event.pull_request || github.event.schedule }}
+    if: ${{ github.event.pull_request }}
     uses:
       ./.github/workflows/clang-format-check.yml
   manual-gpu_cuda:

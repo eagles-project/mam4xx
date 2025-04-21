@@ -24,10 +24,10 @@ runs:
           }
           gh_ref = context.ref || 'N/A';
           console.log(`The job was triggered by a ${eventName} event.`);
-          console.log(`  - Event action: ${eventAction}`);
-          console.log(`  - Triggered by: ${actor}`);
-          console.log(`  - GH ref is:    ${gh_ref}`);
-          console.log(`  - GH actor is:  ${context.actor}`);
-          console.log(`  - GH triggering actor is:    ${context.triggering_actor}`);
-          console.log(`  - GH event is:    ${context.event}`);
-          console.log(`  - GH workflow is:    ${context.workflow}`);
+          console.log(`  - Event action:           ${eventAction}`);
+          console.log(`  - Triggered by:           ${actor}`);
+          console.log(`  - GH ref is:              ${gh_ref}`);
+          console.log(`  - GH actor is:            ${context.actor}`);
+          console.log(`  - GH triggering actor is: ${context.triggering_actor}`);
+          console.log(`  - GH event is:            ${context.event}`);
+          console.log(`  - GH workflow is:         ${context.workflow}`);
