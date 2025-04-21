@@ -1,4 +1,4 @@
-name: "SNL-AT2"
+name: "MAM4xx Autotester"
 
 on:
   # Runs on PRs against main
@@ -27,6 +27,7 @@ on:
         options:
           - GPU-NVIDIA_H100
           - CPU-Ubuntu_22-04
+          - ALL
 
   # Add schedule trigger for nightly runs at midnight MT (Standard Time)
   schedule:
@@ -36,7 +37,7 @@ concurrency:
   # Two runs are in the same group if they are testing the same git ref
   #  - if trigger=pull_request, the ref is refs/pull/<PR_NUMBER>/merge
   #  - for other triggers, the ref is the branch tested
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.inputs.architecture }}
   cancel-in-progress: true
 
 jobs:
@@ -49,18 +50,16 @@ jobs:
     uses:
       ./.github/workflows/gh_auto_test.yml
   clang-format_check:
-    if: ${{ github.event.pull_request || github.event.schedule }}
+    if: ${{ github.event.pull_request }}
     uses:
       ./.github/workflows/clang-format-check.yml
   manual-gpu_cuda:
-    if: |
-      ${{ ((github.event_name == 'workflow_dispatch') &&
-           (contains(github.event.inputs.architecture, 'GPU-NVIDIA_H100'))) }}
+    if: ${{ contains(github.event.inputs.architecture, 'GPU-NVIDIA_H100') ||
+            contains(github.event.inputs.architecture, 'ALL') }}
     uses:
       "./.github/workflows/at2_gcc-cuda.yml"
   manual-cpu_gh:
-    if: |
-      ${{ ((github.event_name == 'workflow_dispatch') &&
-           (contains(github.event.inputs.architecture, 'CPU-Ubuntu_22-04'))) }}
+    if: ${{ contains(github.event.inputs.architecture, 'CPU-Ubuntu_22-04') ||
+            contains(github.event.inputs.architecture, 'ALL') }}
     uses:
       ./.github/workflows/gh_auto_test.yml

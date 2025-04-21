@@ -5,18 +5,11 @@ name: "GitHub CPU Auto-test Ubuntu 22.04"
 # 2. when changes are merged into the main branch (via a pull request)
 on:
   workflow_call
-  # push:
-  #   branches: [ main ]
-  # pull_request:
-  #   branches: [ main ]
 
 # Below are jobs, each of which runs sequentially.
 jobs:
   # This job builds the box model and runs our test suite.
-  build:
-    if: |
-      ${{ (github.event_name == 'workflow_dispatch' &&
-          contains(github.event.inputs.architecture, 'CPU-Ubuntu_22-04')) }}
+  build_test_coverage:
     # A build matrix storing all desired configurations.
     strategy:
       matrix:
@@ -32,38 +25,6 @@ jobs:
 
     # Steps for building and running tests.
     steps:
-      - name: eval-if
-        run: |
-          echo "is workflow eval = " ${{ github.event_name == 'workflow_dispatch' }}
-          echo "arch. eval = " ${{ contains(github.event.inputs.architecture, 'CPU-Ubuntu_22-04') }}
-          echo "arch. equiv. eval = " ${{ github.event.inputs.architecture == 'CPU-Ubuntu_22-04' }}
-          echo "combined eval = " ${{ (github.event_name == 'workflow_dispatch' &&
-                                       contains(github.event.inputs.architecture, 'CPU-Ubuntu_22-04'))  }}
-      # - name: Dump GitHub context
-      #   env:
-      #     GITHUB_CONTEXT: ${{ toJson(github) }}
-      #   run: echo "$GITHUB_CONTEXT"
-      # - name: Dump job context
-      #   env:
-      #     JOB_CONTEXT: ${{ toJson(job) }}
-      #   run: echo "$JOB_CONTEXT"
-      # - name: Dump steps context
-      #   env:
-      #     STEPS_CONTEXT: ${{ toJson(steps) }}
-      #   run: echo "$STEPS_CONTEXT"
-      # - name: Dump runner context
-      #   env:
-      #     RUNNER_CONTEXT: ${{ toJson(runner) }}
-      #   run: echo "$RUNNER_CONTEXT"
-      # - name: Dump strategy context
-      #   env:
-      #     STRATEGY_CONTEXT: ${{ toJson(strategy) }}
-      #   run: echo "$STRATEGY_CONTEXT"
-      # - name: Dump matrix context
-      #   env:
-      #     MATRIX_CONTEXT: ${{ toJson(matrix) }}
-      #   run: echo "$MATRIX_CONTEXT"
-
       - name: Installing dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y --no-install-recommends \
