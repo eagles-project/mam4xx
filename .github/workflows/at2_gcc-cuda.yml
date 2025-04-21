@@ -6,8 +6,8 @@ on:
 jobs:
   gcc-cuda:
     if: |
-      ${{ github.event_name == 'workflow_dispatch' &&
-          contains(github.event.inputs.architecture, 'GPU - NVIDIA H100') }}
+      ${{ (github.event_name == 'workflow_dispatch' &&
+          contains(github.event.inputs.architecture, 'GPU - NVIDIA H100')) }}
     runs-on:  [self-hosted, m4xci-snl-cuda, cuda, gcc]
     # will run other tests in the matrix even if one fails
     # NOTE: prioritizes extra info over speed, so consider whether this makes sense

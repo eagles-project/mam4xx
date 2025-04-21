@@ -15,8 +15,8 @@ jobs:
   # This job builds the box model and runs our test suite.
   build:
     if: |
-      ${{ github.event_name == 'workflow_dispatch' &&
-          contains(github.event.inputs.architecture, 'CPU - Ubuntu 22.04') }}
+      ${{ (github.event_name == 'workflow_dispatch' &&
+          contains(github.event.inputs.architecture, 'CPU - Ubuntu 22.04')) }}
     # A build matrix storing all desired configurations.
     strategy:
       matrix:
