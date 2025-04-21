@@ -19,6 +19,13 @@ jobs:
         fp-precision: [single, double]
     name: gcc-cuda / ${{ matrix.build-type }} - ${{ matrix.fp-precision }}
     steps:
+      - name: eval-if
+        run: |
+          echo "is workflow eval = " ${{ github.event_name == 'workflow_dispatch' }}
+          echo "arch. eval = " ${{ contains(github.event.inputs.architecture, 'GPU - NVIDIA H100') }}
+          echo "arch. equiv. eval = " ${{ github.event.inputs.architecture == 'GPU - NVIDIA H100' }}
+          echo "combined eval = " ${{ (github.event_name == 'workflow_dispatch' &&
+                                       contains(github.event.inputs.architecture, 'GPU - NVIDIA H100'))  }}
       - name: Dump GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
