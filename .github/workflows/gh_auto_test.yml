@@ -16,7 +16,7 @@ jobs:
   build:
     if: |
       ${{ (github.event_name == 'workflow_dispatch' &&
-          contains(github.event.inputs.architecture, 'CPU-Ubuntu_22.04')) }}
+          contains(github.event.inputs.architecture, 'CPU-Ubuntu_22-04')) }}
     # A build matrix storing all desired configurations.
     strategy:
       matrix:
@@ -35,10 +35,10 @@ jobs:
       - name: eval-if
         run: |
           echo "is workflow eval = " ${{ github.event_name == 'workflow_dispatch' }}
-          echo "arch. eval = " ${{ contains(github.event.inputs.architecture, 'CPU-Ubuntu_22.04') }}
-          echo "arch. equiv. eval = " ${{ github.event.inputs.architecture == 'CPU-Ubuntu_22.04' }}
+          echo "arch. eval = " ${{ contains(github.event.inputs.architecture, 'CPU-Ubuntu_22-04') }}
+          echo "arch. equiv. eval = " ${{ github.event.inputs.architecture == 'CPU-Ubuntu_22-04' }}
           echo "combined eval = " ${{ (github.event_name == 'workflow_dispatch' &&
-                                       contains(github.event.inputs.architecture, 'CPU-Ubuntu_22.04'))  }}
+                                       contains(github.event.inputs.architecture, 'CPU-Ubuntu_22-04'))  }}
       # - name: Dump GitHub context
       #   env:
       #     GITHUB_CONTEXT: ${{ toJson(github) }}

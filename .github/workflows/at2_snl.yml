@@ -26,7 +26,7 @@ on:
         type: choice
         options:
           - GPU-NVIDIA_H100
-          - CPU-Ubuntu_22.04
+          - CPU-Ubuntu_22-04
 
   # Add schedule trigger for nightly runs at midnight MT (Standard Time)
   schedule:
@@ -61,6 +61,6 @@ jobs:
   manual-cpu_gh:
     if: |
       ${{ ((github.event_name == 'workflow_dispatch') &&
-           (contains(github.event.inputs.architecture, 'CPU-Ubuntu_22.04'))) }}
+           (contains(github.event.inputs.architecture, 'CPU-Ubuntu_22-04'))) }}
     uses:
       ./.github/workflows/gh_auto_test.yml
