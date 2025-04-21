@@ -1,4 +1,4 @@
-name: SNL-AT2
+name: "SNL-AT2"
 
 on:
   # Runs on PRs against main
@@ -19,6 +19,14 @@ on:
 
   # Manual run
   workflow_dispatch:
+    inputs:
+      architecture:
+        description: 'Test Machine Architecture'
+        required: true
+        type: choice
+        options:
+          - GPU-NVIDIA_H100
+          - CPU-Ubuntu_22-04
 
   # Add schedule trigger for nightly runs at midnight MT (Standard Time)
   schedule:
@@ -33,5 +41,26 @@ concurrency:
 
 jobs:
   gcc-cuda:
+    if: ${{ github.event.pull_request || github.event.schedule }}
     uses:
       ./.github/workflows/at2_gcc-cuda.yml
+  gh_auto_test:
+    if: ${{ github.event.pull_request || github.event.schedule }}
+    uses:
+      ./.github/workflows/gh_auto_test.yml
+  clang-format_check:
+    if: ${{ github.event.pull_request || github.event.schedule }}
+    uses:
+      ./.github/workflows/clang-format-check.yml
+  manual-gpu_cuda:
+    if: |
+      ${{ ((github.event_name == 'workflow_dispatch') &&
+           (contains(github.event.inputs.architecture, 'GPU-NVIDIA_H100'))) }}
+    uses:
+      "./.github/workflows/at2_gcc-cuda.yml"
+  manual-cpu_gh:
+    if: |
+      ${{ ((github.event_name == 'workflow_dispatch') &&
+           (contains(github.event.inputs.architecture, 'CPU-Ubuntu_22-04'))) }}
+    uses:
+      ./.github/workflows/gh_auto_test.yml
