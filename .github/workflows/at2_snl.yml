@@ -53,14 +53,8 @@ jobs:
     uses:
       ./.github/workflows/clang-format-check.yml
   manual-gpu_cuda:
-    if: |
-      ${{ github.event_name == 'workflow_dispatch' &&
-        contains(github.event.inputs.architecture, 'GPU - NVIDIA H100') }}
     uses:
       "./.github/workflows/at2_gcc-cuda.yml"
   manual-cpu_gh:
-    if: |
-      ${{ github.event_name == 'workflow_dispatch' &&
-        contains(github.event.inputs.architecture, 'CPU - Ubuntu 22.04') }}
     uses:
       ./.github/workflows/gh_auto_test.yml
