@@ -19,6 +19,14 @@ on:
 
   # Manual run
   workflow_dispatch:
+    inputs:
+      architecture:
+        description: 'Test Machine Architecture'
+        required: true
+        type: choice
+        options:
+          - "GPU - NVIDIA H100"
+          - "CPU - Ubuntu 22.04"
 
   # Add schedule trigger for nightly runs at midnight MT (Standard Time)
   schedule:
@@ -33,11 +41,22 @@ concurrency:
 
 jobs:
   gcc-cuda:
+    if: ${{ github.event.pull_request || github.event.schedule }}
     uses:
       ./.github/workflows/at2_gcc-cuda.yml
   gh_auto_test:
+    if: ${{ github.event.pull_request || github.event.schedule }}
     uses:
       ./.github/workflows/gh_auto_test.yml
   clang-format_check:
+    if: ${{ github.event.pull_request || github.event.schedule }}
     uses:
       ./.github/workflows/clang-format-check.yml
+  manual-gpu_cuda:
+    if: ${{ inputs.architecture }} == 'GPU - NVIDIA H100'
+    uses:
+      ./.github/workflows/at2_gcc-cuda.yml
+  manual-cpu_gh:
+    if: ${{ inputs.architecture }} == 'CPU - Ubuntu 22.04'
+    uses:
+      ./.github/workflows/gh_auto_test.yml
