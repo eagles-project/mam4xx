@@ -37,7 +37,7 @@ concurrency:
   # Two runs are in the same group if they are testing the same git ref
   #  - if trigger=pull_request, the ref is refs/pull/<PR_NUMBER>/merge
   #  - for other triggers, the ref is the branch tested
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.architecture }}
+  group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.inputs.architecture }}
   cancel-in-progress: true
 
 jobs:
