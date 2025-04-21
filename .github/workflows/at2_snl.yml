@@ -1,4 +1,4 @@
-name: SNL-AT2
+name: "SNL-AT2"
 
 on:
   # Runs on PRs against main
