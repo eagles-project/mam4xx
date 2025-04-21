@@ -1,4 +1,4 @@
-name: GPU Auto-test gcc 12.3 cuda 12.1
+name: "GPU Auto-test gcc 12.3 cuda 12.1"
 
 on:
   workflow_call
