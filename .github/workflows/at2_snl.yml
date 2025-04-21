@@ -55,7 +55,7 @@ jobs:
   manual-gpu_cuda:
     if: ${{ inputs.architecture }} == 'GPU - NVIDIA H100'
     uses:
-      ./.github/workflows/at2_gcc-cuda.yml
+      "./.github/workflows/at2_gcc-cuda.yml"
   manual-cpu_gh:
     if: ${{ inputs.architecture }} == 'CPU - Ubuntu 22.04'
     uses:

@@ -29,7 +29,6 @@ jobs:
 
     # Steps for building and running tests.
     steps:
-
       - name: Dump GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
@@ -55,94 +54,94 @@ jobs:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
         run: echo "$MATRIX_CONTEXT"
 
-    - name: Installing dependencies
-      run: |
-        sudo apt-get update && sudo apt-get install -y --no-install-recommends \
-        autoconf \
-        clang-format \
-        cmake \
-        gcc \
-        g++ \
-        git \
-        lcov \
-        make \
-        pkg-config \
-        ca-certificates
+      - name: Installing dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+          autoconf \
+          clang-format \
+          cmake \
+          gcc \
+          g++ \
+          git \
+          lcov \
+          make \
+          pkg-config \
+          ca-certificates
 
-    - name: Checking out repository
-      uses: actions/checkout@v2
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        submodules: recursive
+      - name: Checking out repository
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          submodules: recursive
 
-    - name: Cloning Haero
-      uses: actions/checkout@v3
-      with:
-        repository: eagles-project/haero
-        submodules: recursive
-        path: haero_src
+      - name: Cloning Haero
+        uses: actions/checkout@v3
+        with:
+          repository: eagles-project/haero
+          submodules: recursive
+          path: haero_src
 
-    - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
-      run: |
-        cmake -S haero_src -B haero_build \
-           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-           -DCMAKE_INSTALL_PREFIX="haero_install" \
-           -DCMAKE_C_COMPILER=gcc \
-           -DCMAKE_CXX_COMPILER=g++ \
-           -DHAERO_ENABLE_MPI=OFF \
-           -DHAERO_ENABLE_GPU=OFF \
-           -DKokkos_ARCH_AMDAVX:BOOL=ON \
-           -DHAERO_PRECISION=${{ matrix.fp-precision }}
-        cd haero_build
-        make -j
-        make install
+      - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+        run: |
+          cmake -S haero_src -B haero_build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+            -DCMAKE_INSTALL_PREFIX="haero_install" \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DHAERO_ENABLE_MPI=OFF \
+            -DHAERO_ENABLE_GPU=OFF \
+            -DKokkos_ARCH_AMDAVX:BOOL=ON \
+            -DHAERO_PRECISION=${{ matrix.fp-precision }}
+          cd haero_build
+          make -j
+          make install
 
-    - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
-      run: |
-        cmake -S . -B build \
-          -DCMAKE_INSTALL_PREFIX=`pwd`/install \
-          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-          -DMAM4XX_HAERO_DIR=`pwd`/haero_install \
-          -DNUM_VERTICAL_LEVELS=72 \
-          -DENABLE_COVERAGE=ON \
-          -G "Unix Makefiles"
+      - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_INSTALL_PREFIX=`pwd`/install \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+            -DMAM4XX_HAERO_DIR=`pwd`/haero_install \
+            -DNUM_VERTICAL_LEVELS=72 \
+            -DENABLE_COVERAGE=ON \
+            -G "Unix Makefiles"
 
-    - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
-      run: |
-        cd build
-        make
+      - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+        run: |
+          cd build
+          make
 
-    - name: Installing Python 3
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3'
+      - name: Installing Python 3
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3'
 
-    - name: Installing Numpy
-      run: |
-        python3 -m pip install --upgrade pip
-        pip install numpy
+      - name: Installing Numpy
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install numpy
 
-    - name: Running tests (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
-      run: |
-        cd build
-        ctest -V --output-on-failure
+      - name: Running tests (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+        run: |
+          cd build
+          ctest -V --output-on-failure
 
-    - name: Installing MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
-      run: |
-        cd build
-        make install
+      - name: Installing MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+        run: |
+          cd build
+          make install
 
-    - name: Evaluating code coverage
-      run: |
-        cd build
-        make coverage
+      - name: Evaluating code coverage
+        run: |
+          cd build
+          make coverage
 
-    - name: Uploading coverage report to codecov.io
-      if: ${{ (contains(matrix.os, 'ubuntu')) && (matrix.build-type == 'Debug') && (matrix.fp-precision == 'double') }}
-      uses: codecov/codecov-action@v3
-      with:
-        fail_ci_if_error: true
-        files: build/coverage.info
-        name: mam4xx
-        token: ${{ secrets.CODECOV_TOKEN }}
-        verbose: true
+      - name: Uploading coverage report to codecov.io
+        if: ${{ (contains(matrix.os, 'ubuntu')) && (matrix.build-type == 'Debug') && (matrix.fp-precision == 'double') }}
+        uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: true
+          files: build/coverage.info
+          name: mam4xx
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
