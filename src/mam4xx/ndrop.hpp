@@ -1167,7 +1167,7 @@ void explmix(
   qnew = haero::max(qnew, 0);
 } // end explmix
 KOKKOS_INLINE_FUNCTION
-void update_for_implmix(
+void update_for_implmix( const int lid, const int icol, const int kb, 
     const ThreadTeam &team,
     const Real &dtmicro,                // time step for microphysics [s]
     const haero::ConstColumnView &cldn, // cloud fraction [fraction]
@@ -1200,9 +1200,8 @@ void update_for_implmix(
 
     // rce-comment- activation source in layer k involves particles from k+1
     //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver - top_lev),
-                         [&](int kk) {
-                           const int k = top_lev - 1 + kk;
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver),
+                           [&](int k) {
                            const int kp1 = haero::min(k + 1, pver - 1);
                            srcn(k) += nact(k, imode) * raercol[kp1][nsav](mm);
                          });
@@ -1223,12 +1222,14 @@ void update_for_implmix(
     const int mm = mam_idx[imode][0] - 1;
     // rce-comment - activation source in layer k involves particles from k+1
     // source(:)= nact(:,m)*(raercol(:,mm,nsav))
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver - top_lev + 1),
-                         [&](int kk) {
-                           const int k = top_lev - 1 + kk;
-                           const int kp1 = haero::min(k + 1, pver - 1);
-                           source(k) = nact(k, imode) * raercol[kp1][nsav](mm);
-                         }); // end k
+    Kokkos::parallel_for(
+          Kokkos::TeamVectorRange(team, top_lev, pver - 1), [&](int k) {
+            source(k) = nact(k, imode) * raercol[k + 1][nsav](mm);
+            if(lid ==icol && k==kb && mm==0) {
+              Kokkos::printf("in-implmix-1 lid %d, imode %d, nsav %d, nact %e, raercol[k] %e,  raercol[k+1] %e, source(kk) %e \n", 
+              lid, imode, nsav, nact(k, imode), raercol[k][nsav](mm), raercol[k + 1][nsav](mm),source(k) );
+            }
+          }); // end k
 
     tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
            raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
@@ -1237,14 +1238,14 @@ void update_for_implmix(
     team.team_barrier(); // wait for source to be computed
 
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver),
-                         [&](int kk) {
-                           const int k = top_lev - 1 + kk;
-                           const int kp1 = haero::min(k + 1, pver - 1);
-                           const int km1 = haero::max(k - 1, top_lev - 1);
+                           [&](int kk) {
+                             raercol_cw[kk][nnew][mm] += dtmix * source(kk);
+                             raercol[kk][nnew][mm] -= dtmix * source(kk);
+                             if(lid ==icol && kk==kb && mm==0) {
+                                 Kokkos::printf("in-implmix lid %d, nnew %d, raercol %e, dtmix %e, source(kk) %e \n", lid, nnew, raercol[kk][nnew](mm), dtmix,source(kk) );
+                             }
+                           }); // end kk
 
-                           raercol_cw[kk][nnew][mm] += dtmix * source(kk);
-                           raercol[kk][nnew][mm] -= dtmix * source(kk);
-                         }); // end kk
     team.team_barrier();     // wait for the raercol update
     // update aerosol species mass
     for (int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
@@ -1252,11 +1253,13 @@ void update_for_implmix(
       // rce-comment: activation source in layer k involves particles from k+1
       // source(:)= mact(:,m)*(raercol(:,mm,nsav))
       Kokkos::parallel_for(
-          Kokkos::TeamVectorRange(team, pver - top_lev + 1), [&](int kk) {
-            const int k = top_lev - 1 + kk;
-            const int kp1 = haero::min(k + 1, pver - 1);
-            source(k) = mact(k, imode) * raercol[kp1][nsav](mm);
-          }); // end k
+            Kokkos::TeamVectorRange(team, top_lev, pver), [&](int k) {
+              const int kp1 = haero::min(k + 1, pver - 1);
+              source(k) = mact(k, imode) * raercol[kp1][nsav](mm);
+      }); // end k
+
+
+
       tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
              raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
       source(pver - 1) = haero::max(0.0, tmpa);
@@ -1569,7 +1572,7 @@ void update_from_explmix(
 } // end update_from_explmix
 
 KOKKOS_INLINE_FUNCTION
-void dropmixnuc(
+void dropmixnuc( const int lid, const int icol, const int kb, const int num_a1_idx,
     const ThreadTeam &team, const Real dtmicro,
     const haero::ConstColumnView &temp, const haero::ConstColumnView &pmid,
     const haero::ConstColumnView &pint, const haero::ConstColumnView &pdel,
@@ -1649,6 +1652,9 @@ void dropmixnuc(
   // clang-format on
 
   // BAD CONSTANT
+  /*if (lid == icol) {
+    Kokkos::printf("BALLI-Call dropmix-3\n");
+}*/
   const Real zkmin = 0.01;
   const Real zkmax = 100;   // min, max vertical diffusivity [m^2/s]
   const Real wmixmin = 0.1; // minimum turbulence vertical velocity [m/s]
@@ -1695,7 +1701,7 @@ void dropmixnuc(
     // cloud droplet number mixing ratio [#/kg]
     // load number nucleated into qcld on cloud boundaries
     qcld(k) = ncldwtr(k);
-    EKAT_KERNEL_ASSERT_MSG(dz(k) != 0.0, "Error: dz is equal to zero.\n");
+    EKAT_KERNEL_REQUIRE_MSG(dz(k) != 0.0, "Error: dz is equal to zero.\n");
   });
 
   Kokkos::parallel_for(
@@ -1708,7 +1714,7 @@ void dropmixnuc(
       });
 
   constexpr int surface_cell = pver_loc - 1;
-  EKAT_KERNEL_ASSERT_MSG(
+  EKAT_KERNEL_REQUIRE_MSG(
       zm(surface_cell - 1) - zm(surface_cell) != 0.0,
       "Error: zm(surface_cell - 1) - zm(surface_cell) is equal to zero.\n");
   zs(surface_cell) = one / (zm(surface_cell - 1) - zm(surface_cell));
@@ -1728,6 +1734,9 @@ void dropmixnuc(
           // Fortran indexing to C++ indexing
           const int num_idx = numptr_amode[imode] - 1;
           raercol[k][nsav][mm] = state_q(k, num_idx);
+          if(lid ==icol && k==kb && mm==0) {
+              Kokkos::printf("raercol-assign-sav lid %d, nsav %d, num_idx %d ,state_q %e, raercol %e \n", lid, nsav, num_idx, state_q(k, num_idx), raercol[k][nsav][mm] );
+            }
           for (int lspec = 1; lspec < nspec_amode[imode] + 1; ++lspec) {
             // Fortran indexing to C++ indexing
             const int mm = mam_idx[imode][lspec] - 1;
@@ -1762,6 +1771,9 @@ void dropmixnuc(
                            raercol[k][nsav].data(),    // inout
                            raercol_cw[k][nsav].data(), // inout
                            nsource(k), factnum_k);     // inout
+            if(lid ==icol && k==kb) {
+              Kokkos::printf("raercol-update-newcld sav lid %d, nsav %d, raercol %e \n", lid, nsav, raercol[k][nsav][0] );
+            }
 
         for (int imode = 0; imode < ntot_amode; ++imode)
           factnum(imode, k) = factnum_k[imode];
@@ -1796,6 +1808,9 @@ void dropmixnuc(
             qcld(k), factnum_k,
             eddy_diff(k), // out
             nact_k.data(), mact_k.data());
+            if(lid ==icol && k==kb) {
+              Kokkos::printf("raercol-cldn profile-sav lid %d, nsav %d, raercol %e \n", lid, nsav, raercol[k][nsav][0] );
+            }
         for (int imode = 0; imode < ntot_amode; ++imode)
           factnum(imode, k) = factnum_k[imode];
       });
@@ -1806,11 +1821,14 @@ void dropmixnuc(
 
   int nnew = 1;
   if (SHOC_MIX_AEROSOLS) {
-    update_for_implmix(team, dtmicro, cldn, mam_idx, nspec_amode, top_lev, // in
+    update_for_implmix(lid, icol, kb,  team, dtmicro, cldn, mam_idx, nspec_amode, top_lev, // in
                                                                   // in-outs
                        srcn, source, // work arrays
                        nact, mact, qcld, raercol, raercol_cw, nsav,
                        nnew); // out
+    if(lid ==icol) {
+      //Kokkos::printf("implmix lid %d, nnew %d, raercol[k][nnew](mm) %e \n", lid, nnew, raercol[kb][nnew](0));
+    }
   } else {
     update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, eddy_diff, nact, mact,
                       qcld, raercol, raercol_cw, nsav, nnew, nspec_amode,
@@ -1828,7 +1846,9 @@ void dropmixnuc(
     }
   });
   team.team_barrier();
-
+ /*if (lid == icol) {
+    Kokkos::printf("BALLI-Call dropmix-4\n");
+}*/
   Kokkos::parallel_for(
       Kokkos::TeamVectorRange(team, top_lev, pver_loc), [&](int k) {
         // droplet number mixing ratio tendency due to mixing [#/kg/s]
@@ -1866,6 +1886,9 @@ void dropmixnuc(
               const int num_idx = numptr_amode[imode] - 1;
               raertend(k) =
                   (raercol[k][nnew](mm) - state_q(k, num_idx)) * dtinv;
+              if(lid ==icol && k == kb && lptr == num_a1_idx) {
+               Kokkos::printf("raercol lid %d, k %d, imode %d, num_idx %d, mm %d, nnew %d, raercol[k][nnew](mm) %e, state %e, raertend %e \n", lid, k, imode, num_idx, mm, nnew, raercol[k][nnew](mm), state_q(k, num_idx), raertend(k));
+              }
               qcldbrn_num[imode] = qqcw_fld[mm](k);
             } else {
               // Fortran indexing to C++ indexing
@@ -1881,6 +1904,9 @@ void dropmixnuc(
             coltend_cw[mm](k) = pdel(k) * qqcwtend(k) / gravity;
             // set tendencies for interstitial aerosol
             ptend_q[lptr](k) = raertend(k);
+            if(lid ==icol && k == kb && lptr == num_a1_idx) {
+             Kokkos::printf("lid %d, k %d, imode %d, lspec %d lptr %d raertend %e \n", lid, k, imode, lspec, lptr, raertend(k));
+            }
 
           } // lspec
         }   // imode
