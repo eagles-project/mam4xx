@@ -100,12 +100,19 @@ inline PhotoTableData create_photo_table_data(int nw, int nt, int np_xs,
 }
 
 // column-specific photolysis work arrays
+// column-specific photolysis work arrays
 struct PhotoTableWorkArrays {
   View2D lng_prates;
   View2D rsf;
   View2D xswk;
   View1D psum_l;
   View1D psum_u;
+
+  View1D parg;
+  View1D eff_alb;
+  View1D cld_mult;
+  //
+  View1D work_cloud_mod;
 };
 inline int get_photo_table_work_len(const PhotoTableData &photo_table_data) {
   return pver * photo_table_data.numj +                /*lng_prates*/
@@ -130,6 +137,14 @@ void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
   work_ptr += photo_table_data.nw;
   photo_table_work.psum_u = View1D(work_ptr, photo_table_data.nw);
   work_ptr += photo_table_data.nw;
+    photo_table_work.parg = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  photo_table_work.eff_alb = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  photo_table_work.cld_mult = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  photo_table_work.work_cloud_mod = View1D(work_ptr, 5 * nlev);
+  work_ptr += 5 * nlev;
 } // set_photo_table_work_arrays
 
 KOKKOS_INLINE_FUNCTION
@@ -745,9 +760,14 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
   constexpr Real max_zen_angle = 88.85; //  degrees
 
   // vertical pressure array [hPa]
-  Real parg[pver] = {};
-  Real eff_alb[pver] = {};
-  Real cld_mult[pver] = {};
+  // Real parg[pver] = {};
+  // Real eff_alb[pver] = {};
+  // Real cld_mult[pver] = {};
+  const auto &parg = work_arrays.parg;
+  const auto &eff_alb = work_arrays.eff_alb;
+  const auto &cld_mult = work_arrays.cld_mult;
+  // const auto &work_cloud_mod = work_arrays.work_cloud_mod;
+
 
   /*-----------------------------------------------------------------
     ... zero all photorates
@@ -760,18 +780,18 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
     -----------------------------------------------------------------*/
     cloud_mod(team, zen_angle, clouds, lwc, pdel,
               srf_alb, //  in
-              eff_alb, cld_mult);
+              eff_alb.data(), cld_mult.data());
     team.team_barrier();
     for (int kk = 0; kk < pver; ++kk) {
       parg[kk] = pmid(kk) * Pa2mb;
-      cld_mult[kk] *= esfact;
+      // cld_mult[kk] *= esfact;
     }
     team.team_barrier();
     /*-----------------------------------------------------------------
      ... long wave length component
     -----------------------------------------------------------------*/
     team.team_barrier();
-    jlong(team, sza_in, eff_alb, parg, temper.data(), colo3_in.data(),
+    jlong(team, sza_in, eff_alb.data(), parg.data(), temper.data(), colo3_in.data(),
           table_data.xsqy, table_data.sza.data(), table_data.del_sza.data(),
           table_data.alb.data(), table_data.press.data(),
           table_data.del_p.data(), table_data.colo3.data(),
@@ -792,7 +812,7 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
         if (ind > -1) {
           for (int kk = 0; kk < pver; ++kk) {
             photo(kk, mm) =
-                cld_mult[kk] *
+                cld_mult[kk] * esfact *
                 (photo(kk, mm) + table_data.pht_alias_mult_1(mm) *
                                      work_arrays.lng_prates(ind, kk));
           }
