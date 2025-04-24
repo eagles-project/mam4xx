@@ -754,6 +754,15 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   // cloud cover below this layer
   Real below_cld[pver] = {};
 
+  // cloud optical depth above this layer
+  // Real above_tau[pver] = {};
+  const auto above_tau = View1D(work_ptr, pver);
+  work_ptr += pver;
+  // cloud cover above this layer
+  // const auto above_cld = View1D(work_ptr, pver);
+  // work_ptr += pver;
+  Real above_cld[pver] = {};
+
   // BAD CONSTANT
   const Real rgrav = one / 9.80616; //  1/g [s^2/m]
   const Real f_lwp2tau =
@@ -773,19 +782,36 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
           del_tau(kk) = zero;
         } // end if
       }); // end kk
+  above_tau(0)=zero;
   team.team_barrier();
   /*---------------------------------------------------------
               ... form integrated tau and cloud cover from top down
   --------------------------------------------------------- */
-  // cloud optical depth above this layer
-  Real above_tau[pver] = {};
-  // cloud cover above this layer
-  Real above_cld[pver] = {};
+  // Note: Replacing
+  // for (int kk = 0; kk < pverm; ++kk) {
+  //   above_tau[kk + 1] = del_tau[kk] + above_tau[kk];
+  // }
+  Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, pverm),
+                        [&](const int kk, Real &accumulator, const bool last) {
+                          accumulator += del_tau(kk);
+                          if (last) {
+                            above_tau(kk + 1) = accumulator;
+                          }
+                        });
+  team.team_barrier();
 
-  for (int kk = 0; kk < pverm; ++kk) {
-    above_tau[kk + 1] = del_tau[kk] + above_tau[kk];
-    above_cld[kk + 1] = clouds[kk] * del_tau[kk] + above_cld[kk];
-  }; // end kk
+  // Note: Replacing
+  // for (int kk = 0; kk < pverm; ++kk) {
+  //   above_cld[kk + 1] = clouds[kk] * del_tau[kk] + above_cld[kk];
+  // }
+  // Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, pverm),
+  //                       [&](const int kk, Real &accumulator, const bool last) {
+  //                         accumulator += clouds(kk) * del_tau(kk);
+  //                         if (last) {
+  //                           above_cld(kk + 1) = accumulator;
+  //                         }
+  //                       });
+  team.team_barrier();
 
   for (int kk = 1; kk < pver; ++kk) {
     if (above_tau[kk] != zero) {
