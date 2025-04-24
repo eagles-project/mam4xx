@@ -834,11 +834,33 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   below_cld[pver - 1] = zero;
   team.team_barrier();
 
-  for (int i = 1; i < pver; ++i) {
-    const int kk = pverm - i;
-    below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
-    below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
-  }; // end kk
+  // for (int i = 1; i < pver; ++i) {
+  //   const int kk = pverm - i;
+  //   below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
+  //   below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
+  // }; // end kk
+
+  Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, 0, pverm),
+                        [&](const int i, Real &accumulator, const bool last) {
+                          const int kk = pverm - i;
+                          // printf(" i: %d kk %d \n", i, kk);
+                          accumulator += del_tau(kk);
+                          if (last) {
+                            // printf(" i: %d kk %d \n", i, kk);
+                            below_tau[kk - 1] = accumulator;
+                          }
+                        });
+  team.team_barrier();
+  Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, 0, pverm),
+                        [&](const int i, Real &accumulator, const bool last) {
+                          const int kk = pverm - i;
+                          accumulator += clouds(kk) * del_tau(kk);
+                          if (last) {
+                            below_cld[kk - 1] = accumulator;
+                          }
+                        });
+  team.team_barrier();
+
 
   for (int i = 1; i < pver; ++i) {
     const int kk = pverm - i;
