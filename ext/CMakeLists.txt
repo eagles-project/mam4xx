@@ -2,9 +2,12 @@ if (ENABLE_SKYWALKER)
   include(ExternalProject)
   include(GNUInstallDirs)
   include_directories(${PROJECT_BINARY_DIR}/include)
+  # required for the external project steps used below that prevent a
+  # build/install race condition
+  cmake_policy(SET CMP0114 NEW)
 
   # Create canonical top-level directories in the build directory.
-  foreach(dir include;lib;bin;share)
+  foreach(dir include;${CMAKE_INSTALL_LIBDIR};bin;share)
     set(top_level_dir ${PROJECT_BINARY_DIR}/${dir})
     if (NOT EXISTS ${top_level_dir})
       execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${top_level_dir})
@@ -31,10 +34,11 @@ if (ENABLE_SKYWALKER)
                         INSTALL_DIR ${PROJECT_BINARY_DIR}
                         CMAKE_ARGS ${SW_CMAKE_OPTS}
                         LOG_CONFIGURE TRUE
-                        BUILD_COMMAND make -j
                         LOG_BUILD TRUE
-                        INSTALL_COMMAND make install
-                        LOG_INSTALL TRUE)
-    add_dependencies(skywalker skywalker_proj)
+                        LOG_INSTALL TRUE
+                        STEP_TARGETS configure build install)
+    ExternalProject_Add_StepDependencies(skywalker_proj build skywalker_proj-configure)
+    ExternalProject_Add_StepDependencies(skywalker_proj install skywalker_proj-build)
+    add_dependencies(skywalker skywalker_proj-install)
   endif()
 endif()
