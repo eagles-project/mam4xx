@@ -759,9 +759,9 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   const auto above_tau = View1D(work_ptr, pver);
   work_ptr += pver;
   // cloud cover above this layer
-  // const auto above_cld = View1D(work_ptr, pver);
-  // work_ptr += pver;
-  Real above_cld[pver] = {};
+  const auto above_cld = View1D(work_ptr, pver);
+  work_ptr += pver;
+  // Real above_cld[pver] = {};
 
   // BAD CONSTANT
   const Real rgrav = one / 9.80616; //  1/g [s^2/m]
@@ -783,6 +783,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
         } // end if
       }); // end kk
   above_tau(0)=zero;
+  above_cld(0)=zero;
   team.team_barrier();
   /*---------------------------------------------------------
               ... form integrated tau and cloud cover from top down
@@ -804,13 +805,13 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   // for (int kk = 0; kk < pverm; ++kk) {
   //   above_cld[kk + 1] = clouds[kk] * del_tau[kk] + above_cld[kk];
   // }
-  // Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, pverm),
-  //                       [&](const int kk, Real &accumulator, const bool last) {
-  //                         accumulator += clouds(kk) * del_tau(kk);
-  //                         if (last) {
-  //                           above_cld(kk + 1) = accumulator;
-  //                         }
-  //                       });
+  Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, pverm),
+                        [&](const int kk, Real &accumulator, const bool last) {
+                          accumulator += clouds(kk) * del_tau(kk);
+                          if (last) {
+                            above_cld(kk + 1) = accumulator;
+                          }
+                        });
   team.team_barrier();
 
   for (int kk = 1; kk < pver; ++kk) {
