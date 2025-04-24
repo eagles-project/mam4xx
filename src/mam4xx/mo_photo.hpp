@@ -814,13 +814,19 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
                         });
   team.team_barrier();
 
-  for (int kk = 1; kk < pver; ++kk) {
-    if (above_tau[kk] != zero) {
-      above_cld[kk] /= above_tau[kk];
-    } else {
-      above_cld[kk] = above_cld[kk - 1];
-    }
-  }; // end kk
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver_local),
+                       [&](const int kk) {
+                         if (above_tau(kk) != zero) {
+                           above_cld(kk) /= above_tau(kk);
+                         }
+                       });
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver_local),
+                       [&](const int kk) {
+                         if (above_tau(kk) == zero) {
+                           above_cld(kk) = above_cld(kk - 1);
+                         }
+                       });
   /*---------------------------------------------------------
               ... form integrated tau and cloud cover from bottom up
   ---------------------------------------------------------*/
