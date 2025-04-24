@@ -847,9 +847,21 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
                           const int kk = pverm - i;
                           accumulator += del_tau(kk);
                           if (last) {
-                            below_tau[kk - 1] = accumulator;
+                            below_tau(kk - 1) = accumulator;
                           }
                         });
+#if 0
+Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 1, pver_local),
+                        [&](const int j) {
+                          Real suma=zero;
+                          Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team, j),
+                          [&](const int i, Real &accumulator) {
+                          accumulator += del_tau(pverm-i);
+                        },suma);
+                        below_tau(pverm-j) = suma + below_tau(pver - 1) ;
+                        });
+#endif
+
   team.team_barrier();
   Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, 0, pverm),
                         [&](const int i, Real &accumulator, const bool last) {
