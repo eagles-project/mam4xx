@@ -48,9 +48,8 @@ set(CMAKE_C_STANDARD ${HAERO_C_STANDARD})
 set(CMAKE_C_COMPILER ${HAERO_C_COMPILER})
 set(CMAKE_C_FLAGS    ${HAERO_C_FLAGS})
 
+project(mam4xx)
 enable_language(CXX)
-
-project (mam4xx)
 
 set(CMAKE_EXE_LINKER_FLAGS ${HAERO_EXE_LINKER_FLAGS})
 
@@ -81,7 +80,7 @@ include_directories("${MAM4XX_HAERO_DIR}/include")
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_BINARY_DIR}/src)
 
-link_directories("${MAM4XX_HAERO_DIR}/lib")
+link_directories("${MAM4XX_HAERO_DIR}/${CMAKE_INSTALL_LIBDIR}")
 
 # Code coverage
 if (ENABLE_COVERAGE)
