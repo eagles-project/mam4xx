@@ -758,6 +758,7 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
   constexpr Real r2d = 180.0 / haero::Constants::pi; // degrees to radians
   // BAD CONSTANT
   constexpr Real max_zen_angle = 88.85; //  degrees
+  constexpr int pver_local = pver;
 
   // vertical pressure array [hPa]
   // Real parg[pver] = {};
@@ -784,7 +785,6 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
     team.team_barrier();
     for (int kk = 0; kk < pver; ++kk) {
       parg[kk] = pmid(kk) * Pa2mb;
-      // cld_mult[kk] *= esfact;
     }
     team.team_barrier();
     /*-----------------------------------------------------------------
@@ -806,18 +806,17 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
           work_arrays.rsf, work_arrays.xswk, work_arrays.psum_l.data(),
           work_arrays.psum_u.data());
     team.team_barrier();
-    Kokkos::single(Kokkos::PerTeam(team), [=]() {
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                         [&](const int kk) {
       for (int mm = 0; mm < phtcnt; ++mm) {
         const int ind = table_data.lng_indexer(mm);
         if (ind > -1) {
-          for (int kk = 0; kk < pver; ++kk) {
             photo(kk, mm) =
-                cld_mult[kk] * esfact *
+                cld_mult(kk)*esfact *
                 (photo(kk, mm) + table_data.pht_alias_mult_1(mm) *
                                      work_arrays.lng_prates(ind, kk));
           }
         }
-      }
     });
   }
   team.team_barrier();
