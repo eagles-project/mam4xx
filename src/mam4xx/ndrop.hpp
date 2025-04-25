@@ -1169,8 +1169,11 @@ void explmix(
 KOKKOS_INLINE_FUNCTION
 void update_for_implmix(const int lid, const int kb, const int num_a1_idx, const int icol,
     const ThreadTeam &team,
-    const Real &dtmicro,                // time step for microphysics [s]
+    const Real &dtmicro, const ColumnView &csbot,
     const haero::ConstColumnView &cldn, // cloud fraction [fraction]
+    const ColumnView &zn,               // g/pdel for layer [m^2/kg]
+    const ColumnView &zs,        // inverse of distance between levels [m^-1]
+    const ColumnView &eddy_diff, // diffusivity for droplets [m^2/s]
     const int mam_idx[AeroConfig::num_modes()][nspec_max],
     const int nspec_amode[AeroConfig::num_modes()],
     const int top_lev,
@@ -1188,10 +1191,30 @@ void update_for_implmix(const int lid, const int kb, const int num_a1_idx, const
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver),
                        [&](int k) { srcn(k) = 0; });
-
   Real dtmix = dtmicro;
   Real tmpa = 0; //  temporary aerosol tendency variable [/s]
   constexpr int ntot_amode = AeroConfig::num_modes();
+
+  Real ekk[pver] = {}; // eddy diffusivity for droplets [m^2/s]
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver-1),
+                       [&](int k) { ekk[k] = eddy_diff(k)*csbot(k); });
+
+  team.team_barrier(); // wait for ekk to be computed
+
+  Real ekkp[pver] = {}; // eddy diffusivity for droplets [m^2/s]
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver),
+                       [&](int k) { ekkp[k] = zn(k)*ekk[k]*zs(k); });
+  team.team_barrier(); // wait for ekkp to be computed
+
+
+  for (int imode = 0; imode < ntot_amode; imode++) {
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver - 1),
+                         [&](int kk) {
+          nact(kk,imode) = haero::min( nact(kk,imode), ekkp[kk] );
+          mact(kk,imode) = haero::min( mact(kk,imode), ekkp[kk] );
+    });
+  }
+  
 
   for (int imode = 0; imode < ntot_amode; imode++) {
     const int mm = mam_idx[imode][0] - 1;
@@ -1242,17 +1265,18 @@ void update_for_implmix(const int lid, const int kb, const int num_a1_idx, const
 
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver),
                          [&](int kk) {
-                           const int k = top_lev - 1 + kk;
-                           const int kp1 = haero::min(k + 1, pver - 1);
-                           const int km1 = haero::max(k - 1, top_lev - 1);
-
                            raercol_cw[kk][nnew][mm] += dtmix * source(kk);
+                         }); // end kk
+    team.team_barrier();     // wait for the raercol update
+
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev+1, pver),
+                         [&](int kk) {
                            raercol[kk][nnew][mm] -= dtmix * source(kk);
                            if(lid ==icol && kk==kb && mm==0) {
                                  Kokkos::printf("  NDROP:implmix-2 lid %d, nnew %d, raercol %e, dtmix %e, source(kk) %e \n", lid, nnew, raercol[kk][nnew](mm), dtmix,source(kk) );
                              }
                          }); // end kk
-    team.team_barrier();     // wait for the raercol update
+    team.team_barrier();     // wait for the raercol update                          
     // update aerosol species mass
     for (int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
       const int mm = mam_idx[imode][lspec] - 1;
@@ -1272,8 +1296,12 @@ void update_for_implmix(const int lid, const int kb, const int num_a1_idx, const
       Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver),
                            [&](int kk) {
                              raercol_cw[kk][nnew][mm] += dtmix * source(kk);
-                             raercol[kk][nnew][mm] -= dtmix * source(kk);
                            }); // end kk
+      team.team_barrier(); // wait for the raercol update
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev+1, pver),
+                           [&](int kk) {
+                             raercol[kk][nnew][mm] -= dtmix * source(kk);
+                           }); // end kk                            
 
       team.team_barrier();
     } // lspec loop
@@ -1773,7 +1801,7 @@ void dropmixnuc(const int lid, const int kb, const int num_a1_idx, const int ico
                            raercol_cw[k][nsav].data(), // inout
                            nsource(k), factnum_k);     // inout
             if(lid ==icol && k==kb) {
-              Kokkos::printf("  NDROP:raercol-update_from_newcld lid %d, nsav %d, raercol[nsav] %e \n", lid, nsav, raercol[k][nsav][0] );
+              Kokkos::printf("  NDROP:raercol-update_from_newcld lid %d, nsav %d, raercol[nsav] %e factnum %e\n", lid, nsav, raercol[k][nsav][0], factnum_k[0] );
             }
 
         for (int imode = 0; imode < ntot_amode; ++imode)
@@ -1810,7 +1838,7 @@ void dropmixnuc(const int lid, const int kb, const int num_a1_idx, const int ico
             eddy_diff(k), // out
             nact_k.data(), mact_k.data());
             if(lid ==icol && k==kb) {
-              Kokkos::printf("  NDROP:raercol-update_from_cldn_profile lid %d, nsav %d, raercol[nsav] %e \n", lid, nsav, raercol[k][nsav][0] );
+              Kokkos::printf("  NDROP:raercol-update_from_cldn_profile lid %d, nsav %d, raercol[nsav] %e factnum %e \n", lid, nsav, raercol[k][nsav][0], factnum_k[0] );
             }
         for (int imode = 0; imode < ntot_amode; ++imode)
           factnum(imode, k) = factnum_k[imode];
@@ -1822,7 +1850,7 @@ void dropmixnuc(const int lid, const int kb, const int num_a1_idx, const int ico
 
   int nnew = 1;
   if (SHOC_MIX_AEROSOLS) {
-    update_for_implmix(lid,kb, num_a1_idx, icol,team, dtmicro, cldn, mam_idx, nspec_amode, top_lev, // in
+    update_for_implmix(lid,kb, num_a1_idx, icol,team, dtmicro, csbot, cldn, zn, zs, eddy_diff, mam_idx, nspec_amode, top_lev, // in
                                                                   // in-outs
                        srcn, source, // work arrays
                        nact, mact, qcld, raercol, raercol_cw, nsav,
