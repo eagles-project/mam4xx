@@ -1252,7 +1252,7 @@ void update_for_implmix(const int lid, const int kb, const int num_a1_idx, const
                            const int kp1 = haero::min(k + 1, pver - 1);
                            source(k) = nact(k, imode) * raercol[kp1][nsav](mm);
                            if(lid ==icol && k==kb && mm==0) {
-                               Kokkos::printf("  NDROP:implmix source lid %d, imode %d, nsav %d, nact %e, raercol[k] %e,  raercol[kp1] %e, source(kk) %e \n", 
+                               Kokkos::printf("  NDROP:implmix source lid=%d, imode=%d, nsav=%d, nact=%e, raercol[k]=%e,  raercol[kp1]=%e, source(kk)=%e \n", 
                               lid, imode, nsav, nact(k, imode), raercol[k][nsav](mm), raercol[kp1][nsav](mm),source(k) );
                             }
                          }); // end k
@@ -1271,9 +1271,9 @@ void update_for_implmix(const int lid, const int kb, const int num_a1_idx, const
 
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev+1, pver),
                          [&](int kk) {
-                           raercol[kk][nnew][mm] -= dtmix * source(kk);
+                           raercol[kk][nnew][mm] -= dtmix * source(kk-1);
                            if(lid ==icol && kk==kb && mm==0) {
-                                 Kokkos::printf("  NDROP:implmix-2 lid %d, nnew %d, raercol %e, dtmix %e, source(kk) %e \n", lid, nnew, raercol[kk][nnew](mm), dtmix,source(kk) );
+                                 Kokkos::printf("  NDROP:raercol update: lid=%d, nnew=%d, raercol=%e, dtmix=%e, source(kk)=%e \n", lid, nnew, raercol[kk][nnew](mm), dtmix,source(kk-1) );
                              }
                          }); // end kk
     team.team_barrier();     // wait for the raercol update                          
@@ -1300,7 +1300,7 @@ void update_for_implmix(const int lid, const int kb, const int num_a1_idx, const
       team.team_barrier(); // wait for the raercol update
       Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev+1, pver),
                            [&](int kk) {
-                             raercol[kk][nnew][mm] -= dtmix * source(kk);
+                             raercol[kk][nnew][mm] -= dtmix * source(kk-1);
                            }); // end kk                            
 
       team.team_barrier();
@@ -1764,7 +1764,7 @@ void dropmixnuc(const int lid, const int kb, const int num_a1_idx, const int ico
           const int num_idx = numptr_amode[imode] - 1;
           raercol[k][nsav][mm] = state_q(k, num_idx);
           if(lid ==icol && k==kb && mm==0) {
-              Kokkos::printf("  NDROP:raercol-assign-sav lid %d, nsav %d, num_idx %d ,state_q %e, raercol[nsav] %e \n", lid, nsav, num_idx, state_q(k, num_idx), raercol[k][nsav][mm] );
+              Kokkos::printf("  NDROP:raercol-assign-sav lid=%d, nsav=%d, num_idx=%d ,state_q=%e, raercol[nsav]=%e \n", lid, nsav, num_idx, state_q(k, num_idx), raercol[k][nsav][mm] );
             }
           for (int lspec = 1; lspec < nspec_amode[imode] + 1; ++lspec) {
             // Fortran indexing to C++ indexing
@@ -1801,7 +1801,7 @@ void dropmixnuc(const int lid, const int kb, const int num_a1_idx, const int ico
                            raercol_cw[k][nsav].data(), // inout
                            nsource(k), factnum_k);     // inout
             if(lid ==icol && k==kb) {
-              Kokkos::printf("  NDROP:raercol-update_from_newcld lid %d, nsav %d, raercol[nsav] %e factnum %e\n", lid, nsav, raercol[k][nsav][0], factnum_k[0] );
+              Kokkos::printf("  NDROP:raercol-update_from_newcld lid=%d, nsav=%d, raercol[nsav]=%e factnum=%e\n", lid, nsav, raercol[k][nsav][0], factnum_k[0] );
             }
 
         for (int imode = 0; imode < ntot_amode; ++imode)
@@ -1838,7 +1838,7 @@ void dropmixnuc(const int lid, const int kb, const int num_a1_idx, const int ico
             eddy_diff(k), // out
             nact_k.data(), mact_k.data());
             if(lid ==icol && k==kb) {
-              Kokkos::printf("  NDROP:raercol-update_from_cldn_profile lid %d, nsav %d, raercol[nsav] %e factnum %e \n", lid, nsav, raercol[k][nsav][0], factnum_k[0] );
+              Kokkos::printf("  NDROP:raercol-update_from_cldn_profile lid=%d, nsav=%d, raercol[nsav]=%e factnum=%e \n", lid, nsav, raercol[k][nsav][0], factnum_k[0] );
             }
         for (int imode = 0; imode < ntot_amode; ++imode)
           factnum(imode, k) = factnum_k[imode];
@@ -1911,7 +1911,7 @@ void dropmixnuc(const int lid, const int kb, const int num_a1_idx, const int ico
               raertend(k) =
                   (raercol[k][nnew](mm) - state_q(k, num_idx)) * dtinv;
               if(lid ==icol && k == kb && lptr == num_a1_idx) {
-               Kokkos::printf("  NDROP:raertend lid %d, k %d, imode %d, num_idx %d, mm %d, nnew %d, raercol[k][nnew](mm) %e, state %e, raertend %e \n", lid, k,
+               Kokkos::printf("  NDROP:raertend lid=%d, k=%d, imode=%d, num_idx=%d, mm=%d, nnew=%d, raercol[k][nnew](mm)=%e, state=%e, raertend=%e \n", lid, k,
                 imode, num_idx, mm, nnew, raercol[k][nnew](mm), state_q(k, num_idx), raertend(k));
               }
               qcldbrn_num[imode] = qqcw_fld[mm](k);
@@ -1930,7 +1930,7 @@ void dropmixnuc(const int lid, const int kb, const int num_a1_idx, const int ico
             // set tendencies for interstitial aerosol
             ptend_q[lptr](k) = raertend(k);
             if(lid ==icol && k == kb && lptr == num_a1_idx) {
-             Kokkos::printf("  NDROP:PTEND dropmix: lid %d, k %d, imode %d, lspec %d lptr %d raertend %e \n", lid, k, imode, lspec, lptr, raertend(k));
+             Kokkos::printf("  NDROP:PTEND dropmix: lid=%d, k=%d, imode=%d, lspec=%d lptr=%d raertend=%e \n", lid, k, imode, lspec, lptr, raertend(k));
             }
 
           } // lspec
