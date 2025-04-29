@@ -158,7 +158,7 @@ for relevant pull requests.
 
 ## Continuous Integration
 
-See [the SNL CI REAMDE](.github/workflows/README.md) for more detailed information.
+See [the SNL CI README](.github/workflows/README.md) for more detailed information.
 
 ## Generating Documentation
 
