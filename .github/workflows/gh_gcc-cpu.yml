@@ -65,6 +65,7 @@ jobs:
           esac
   # This job builds the box model and runs our test suite.
   build_test_coverage:
+    continue-on-error: false
     needs: define_matrix
     # A build matrix storing all desired configurations.
     strategy:

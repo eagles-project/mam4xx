@@ -1,43 +1,74 @@
+# MAM4xx Automated Testing
 
-# Autotester2 (AT2) SNL Workflow for MAM4xx
-
-This document contains a brief description of how AT2 is used to automate
-testing on SNL hardware.
+This document contains a brief description of how autotesting is conducted for MAM4xx.
 Additionally, any helpful notes and TODOs may be kept here to assist developers.
 
 ## Overview
 
-AT2 is a Sandia-developed project for automating testing via GitHub Actions to
-be run on self-hosted runners on the SNL network.
-Part of what AT2 does is control access using information about the repository,
-organization, user, etc. obtained via the GitHub API.
-This is done for security/policy reasons and ensures that only those with
-approved SNL computing accounts can run the CI code on SNL hardware.
+We use [GitHub Actions](https://docs.github.com/en/actions) to drive our testing.[^gh-actions-ref]
+To do this, testing is initialized via the top-level workflow, `MAM4xx Autotester`, which is triggered by either a pull request (PR), events related to that PR, nightly, or manually from the repository's [**Actions**](https://github.com/eagles-project/mam4xx/actions) page (see the section on [triggers](#triggering-the-testing-workflow), below, for more details).
 
 ### Test Hardware and Compiler Configurations
 
-| Test Name | GPU Brand | GPU Type | Micoarchitecture | Compute Capability | Machine | Compilers |
-|-|-|-|-|-|-|-|
-| gcc_12-3-0_cuda_12-1 | NVIDIA | H100 | Hopper | 9.0 | blake | `gcc` 12.3.0/`nvcc` 12.1.105 |
+#### GPU-based Testing
+
+| Test Name                         | GPU Brand | GPU Type | Micoarchitecture | Compute Capability | Machine | Compilers                    |
+| --------------------------------- | --------- | -------- | ---------------- | ------------------ | ------- | ---------------------------- |
+| GPU AT2 gcc 12.3 cuda 12.1        | NVIDIA    | H100     | Hopper           | 9.0                | blake   | `gcc` 12.3.0/`nvcc` 12.1.105 |
+
+#### CPU-based Testing
+
+**Note:** These are the current specs for GitHub's Ubuntu 22.04 runner and are subject to change.
+
+| Test Name                                    | OS                   | Machine        | Compiler   |
+| -------------------------------------------- | -------------------- | -------------- | ---------- |
+| GitHub CPU Auto-test Ubuntu 22.04[^gh-ubu2204] | Linux - Ubuntu 22.04 | GitHub Runners | `gcc` 12.3 |
 
 ### The Flow of the CI Workflow
 
-AT2 runs on the target SNL machine and makes a handful of self-hosted runners
-available to the MAM4xx repo.
-This is all controlled by the **MAM4xx** SNL entity account that is linked to the
-**mam4xxSNL** github account.
-Each runner stays in a "holding pattern" until it is assigned a job via
-GitHub Actions.
-The holding pattern pulls the testing image from the AT2 Gitlab
-repo (if necessary), runs the related container for 3 minutes, and then tears down and
-starts over.
-As of now, the image is of a UBI 8 system, with Spack-installed compilers and
-all of the requisite TPLs to clone/build/run MAM4xx.
+Upon a trigger occurring, the top-level `MAM4xx Autotester` workflow is called.
+This workflow handles concurrency, tagging jobs according to the combination of
+
+- ***Workflow***
+  - E.g., `GitHub CPU Auto-test Ubuntu 22.04` vs. `GPU AT2 gcc 12.3 cuda 12.1`
+- ***GitHub Ref***
+  - In the case of a PR trigger, this is essentially the number of the PR.
+  - When running manually, this is the name of the branch being tested.
+- ***Architecture***
+  - E.g., GPU vs. CPU
+
+Based on the trigger and/or inputs, `MAM4xx Autotester` dispatches sub-workflows, of which the possible choices are:
+
+#### GPU AT2 `gcc` 12.3 `cuda` 12.1
+
+- The full version of this test runs a "matrix-strategy" test running all combinations of
+    - **Precision:** `[single, double]`
+    - **Build Type:** `[Debug, Release]`
+- The unit/validation tests that are run are determined by the MAM4xx CMake/CTest configuration.
+- ***Note:*** AT2 = "Autotester 2," the second generation of a Sandia-developed GitHub-based testing product.
+- See the [AT2 README](./AT2-README.md) for details about the implementation of the AT2 product.
+
+#### GitHub CPU Auto-test Ubuntu 22.04
+
+- The full version of this test runs a "matrix-strategy" test running all combinations of
+    - **Precision:** `[single, double]`
+    - **Build Type:** `[Debug, Release]`
+- The unit/validation tests that are run are determined by the MAM4xx CMake/CTest configuration.
+- The `[double, Debug]` test configuration also includes a code coverage check, followed by uploading the report to [codecov.io](https://app.codecov.io/gh/eagles-project/mam4xx).
+    - If triggered by a PR, a comment is added to the PR Conversation that summarizes the Codecov report.
+    - See this [PR comment](https://github.com/eagles-project/mam4xx/pull/437#issuecomment-2842974905) for an example.
+
+#### `clang-format` Check
+
+- Runs `clang-format` (v14) to verify whether all MAM4xx code in `src/` is in compliance with the style guidelines provided by the `.clang-format` file in the projects root directory.
+- Currently, the style specification is merely "based on the [LLVM style](https://llvm.org/docs/CodingStandards.html)."
+
+---
 
 #### Triggering the Testing Workflow
 
 This autotesting workflow is triggered by opening a pull request to `main` and
-also by a handful of actions on such a PR that is already open, including:
+also by a handful of actions related to such a PR that is already open, including:
 
 - `reopened`
 - `ready_for_review`
@@ -45,72 +76,55 @@ also by a handful of actions on such a PR that is already open, including:
 - `synchronize`
   - E.g., pushing a new commit or force pushing after rebase
 
-The workflow may also be run manually by members of the `snl-testing`
-team--that is, via
+The workflow may also be run manually by members of the `snl-testing` team--that is, via
 
-> **Actions** -> **SNL-AT2 Workflow** -> **Run Workflow** -> *Choose Branch from Dropdown Menu*.
+> **Actions** -> **MAM4xx Autotester** -> **Run Workflow** -> *Choose Options from Dropdown Menu*
 
-or
+The current options when manually triggering a workflow are:
+
+- Branch
+- Test Machine Architecture
+  - Current Options:
+    - `GPU-NVIDIA_H100`
+    - `CPU-Ubuntu_22-04`
+    - `ALL`
+- Floating-point Precision
+  - Current Options:
+    - `single`
+    - `double`
+    - `ALL`
+- Build Type
+  - Current Options:
+    - `Debug`
+    - `Release`
+    - `ALL`
+
+The other way to manually trigger a workflow is via
 
 > **Actions** -> `<Previously-run SNL-AT2 Workflow/Job>` -> **Re-run `[all,this]` job(s)**.
 
-The AT2 configuration on `blake` currently attempts to keep 3 runners available
-to accept jobs at all times.
-This workflow is configured to allow concurrent testing, so up to 3 test-matrix
-configurations can run at once.
-The concurrency setting is also configured to kill any active job if another
-instance of this workflow is started for the same PR ref.
+##### Notes on Triggering AT2 Jobs
 
-##### Other Types of Job Control
+###### `tl;dr`
 
-- If a PR contains changes to the `.github` directory, a member of the
-  `snl-testing-admins` team must add the `CI-AT2_special_approval` tag to the
-  PR in order to kick off the autotesting.
-- For changes unrelated to the `.github` directory, any PR that is submitted
-  by a member of the `snl-testing` team, and *only contains commits* from
-  members of that team will automatically trigger this autotesting.
-- In the case that the PR is submitted by someone who is not a member of the
-  `snl-testing` team or contains commits from someone outside of that team,
-  an approving review by someone on the `snl-testing` team is required to
-  trigger autotesting.
+SNL prohibits individuals from running code on their machines unless the individual running the code has a valid user account on the machine. This restricts whether AT2-based testing is automatically triggered by a PR or whether a user can manually trigger AT2 testing.
 
-###### Disclaimer
+###### Details
 
-The above is according to Mike's current understanding of AT2 and may contain
-minor inaccuracies.
-This will be updated accordingly upon confirmation.
+To satisfy the above restrictions, there are 2 GitHub Teams that are a part of the `eagles-project` GitHub Project.
 
-## Development Details
+- `snl-testing`
+  - These are developers that have valid SNL user accounts on the target machines.
+- `snl-testing-admins`
+  - This is a subset of the `snl-testing` team that have permission to trigger AT2-based autotesting on PRs that modify the the autotesting behavior.
+  - That is to say, PRs that modify files in the `.github` directory
 
-Most of the required configuration is provided by the AT2 docs and
-instructional Confluence page (on the Sandia network :confused:--reach out if
-you need access).
-However, some non-obvious choices and configurations are listed here.
-
-- To add some info to the testing output, we employ a custom action, cribbed
-  from E3SM/EAMxx, that prints out the workflow's trigger.
-
-### Hacks
-
-- For whatever reason, Skywalker does not like building in the
-  `gcc_12-3-0_cuda_12-1` container for the H100 GPU.
-  - This appears to be an issue of the (Haero?) build not auto-detecting the
-    correct Compute Capability (CC 9.0 => `sm_90`).
-  - To overcome this, we first obtain the CC flag via `nvidia-smi` within the
-    testing container.
-  - Then, we employ `sed` to manually change the `default_arch="sm_<xyz>"` of
-    the Haero-provided `nvcc_wrapper` (`haero_install/bin/nvcc_wrapper`).
-  - We follow up with a quick `grep` to confirm this.
+Refer to the section on [Other Types of Job Control](./AT2-README.md#other-types-of-job-control) in the AT2 README for more details.
 
 ### Tokens
 
-- AT2 requires 2 fine-grained tokens for the **mam4xxSNL** account from the
-  `eagles-project` GitHub Organization in order to access information related
-  to the `mam4xx` repo.
-  - One token used to fetch and read/write runner information.
-    - **Expires 11 April 2026**
-  - One token used fetch and read repository information via the API.
-    - **Expires 2 May 2025**
+- Uploading the [code coverage report](#github-cpu-auto-test-ubuntu-2204) to Codecov requires a token that is stored in the repository as an Actions Secret.
+  - The secrets variable is named `CODECOV_TOKEN`, and it appears that the token does not expire.
 
 ## TODO
 
@@ -118,10 +132,15 @@ However, some non-obvious choices and configurations are listed here.
   - @mjschmdt271
 - [ ] Include a script to generate plots from within testing container?
   - @jaelynlitz?
-- [ ] Unify all CI into a single top-level yaml file that calls the sub-cases.
+- [x] Unify all CI into a single top-level yaml file that calls the sub-cases.
   - This should provide finer control over what runs and when.
+  - @mjschmidt271
 - [ ] Add testing for AMD GPUs on `caraway`.
+  - @jaelynlitz - WIP
 
 ### Low-priority
 
 - [ ] Add CPU testing on `mappy` because "heck, why not?"
+
+[^gh-actions-ref]: While GitHub Actions can be a bit tricky at first, the docs are pretty decent and have lots of examples. Of particular use are the [**Quickstart**](https://docs.github.com/en/actions/writing-workflows/quickstart) and the **Write Workflows** section and its subsections titled ***Choose {when,where,what} workflows…*** Finally, an internet search typically reveals a handful of answers from stackoverflow and others.
+[^gh-ubu2204]: Current specs for [hardware](https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories) and [software](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md) according to GitHub.
