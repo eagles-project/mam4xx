@@ -118,7 +118,8 @@ inline int get_photo_table_work_len(const PhotoTableData &photo_table_data) {
   return pver * photo_table_data.numj +                /*lng_prates*/
          pver * photo_table_data.nw +                  /*rsf*/
          photo_table_data.numj * photo_table_data.nw + /*xswk*/
-         2 * photo_table_data.nw /*psum_l + psum_u*/;
+         2 * photo_table_data.nw /*psum_l + psum_u*/ +
+         8 * nlev /*parg + eff_alb + cld_mult + work_cloud_mod*/;
 } // get_photo_table_work_len
 KOKKOS_INLINE_FUNCTION
 void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
