@@ -100,7 +100,6 @@ inline PhotoTableData create_photo_table_data(int nw, int nt, int np_xs,
 }
 
 // column-specific photolysis work arrays
-// column-specific photolysis work arrays
 struct PhotoTableWorkArrays {
   View2D lng_prates;
   View2D rsf;
@@ -147,162 +146,6 @@ void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
   photo_table_work.work_cloud_mod = View1D(work_ptr, 5 * nlev);
   work_ptr += 5 * nlev;
 } // set_photo_table_work_arrays
-
-KOKKOS_INLINE_FUNCTION
-void cloud_mod(const ThreadTeam &team, const Real zen_angle,
-               const ConstView1D &clouds, const ConstView1D &lwc,
-               const ConstView1D &delp,
-               const Real srf_alb, //  in
-               Real *eff_alb, Real *cld_mult) {
-  /*-----------------------------------------------------------------------
-        ... cloud alteration factors for photorates and albedo
-  -----------------------------------------------------------------------*/
-
-  // @param[in]   zen_angle         zenith angle [deg]
-  // @param[in]   clouds(pver)      cloud fraction [fraction]
-  // @param[in]   lwc(pver)         liquid water content [kg/kg]
-  // @param[in]   srf_alb           surface albedo [fraction]
-  // @param[in]   delp(pver)        del press about midpoint [Pa]
-  // @param[out]  eff_alb(pver)    effective albedo [fraction]
-  // @param[out]  cld_mult(pver) photolysis mult factor
-
-  /*---------------------------------------------------------
-        ... modify lwc for cloud fraction and form
-            liquid water path and tau for each layer
-  ---------------------------------------------------------*/
-  const Real zero = 0.0;
-  const Real thousand = 1000.0;
-  const Real one = 1;
-  const Real half = 0.5;
-
-  // cloud optical depth in each layer
-  Real del_tau[pver] = {};
-  // cloud optical depth below this layer
-  Real below_tau[pver] = {};
-  // cloud cover below this layer
-  Real below_cld[pver] = {};
-
-  // BAD CONSTANT
-  const Real rgrav = one / 9.80616; //  1/g [s^2/m]
-  const Real f_lwp2tau =
-      .155; // factor converting LWP to tau [unknown source and unit]
-  const Real tau_min = 5.0; // tau threshold below which assign cloud as zero
-
-  for (int kk = 0; kk < pver; ++kk) {
-    if (clouds[kk] != zero) {
-      // liquid water path in each layer [g/m2]
-      const Real del_lwp = rgrav * lwc[kk] * delp[kk] * thousand /
-                           clouds[kk]; // the unit is (likely) g/m^2
-      del_tau[kk] = del_lwp * f_lwp2tau * haero::pow(clouds[kk], 1.5);
-    } else {
-      del_tau[kk] = zero;
-    } // end if
-  };  // end kk
-  /*---------------------------------------------------------
-              ... form integrated tau and cloud cover from top down
-  --------------------------------------------------------- */
-  // cloud optical depth above this layer
-  Real above_tau[pver] = {};
-  // cloud cover above this layer
-  Real above_cld[pver] = {};
-
-  for (int kk = 0; kk < pverm; ++kk) {
-    above_tau[kk + 1] = del_tau[kk] + above_tau[kk];
-    above_cld[kk + 1] = clouds[kk] * del_tau[kk] + above_cld[kk];
-  }; // end kk
-
-  for (int kk = 1; kk < pver; ++kk) {
-    if (above_tau[kk] != zero) {
-      above_cld[kk] /= above_tau[kk];
-    } else {
-      above_cld[kk] = above_cld[kk - 1];
-    }
-  }; // end kk
-  /*---------------------------------------------------------
-              ... form integrated tau and cloud cover from bottom up
-  ---------------------------------------------------------*/
-  below_tau[pver - 1] = zero;
-  below_cld[pver - 1] = zero;
-  team.team_barrier();
-
-  for (int i = 1; i < pver; ++i) {
-    const int kk = pverm - i;
-    below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
-    below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
-  }; // end kk
-
-  for (int i = 1; i < pver; ++i) {
-    const int kk = pverm - i;
-    if (below_tau[kk] != zero) {
-      below_cld[kk] /= below_tau[kk];
-    } else {
-      below_cld[kk] = below_cld[kk + 1];
-    } // end if
-  };  // end kk
-
-  /*---------------------------------------------------------
-      ... modify above_tau and below_tau via jfm
-  ---------------------------------------------------------*/
-  for (int kk = 1; kk < pver; ++kk) {
-    if (above_cld[kk] != zero) {
-      above_tau[kk] /= above_cld[kk];
-    } // end if
-
-    if (above_tau[kk] < tau_min) {
-      above_cld[kk] = zero;
-    } // end if
-  };  // end kk
-
-  for (int kk = 0; kk < pverm; ++kk) {
-    if (below_cld[kk] != zero) {
-      below_tau[kk] /= below_cld[kk];
-    } // end if
-    if (below_tau[kk] < tau_min) {
-      below_cld[kk] = zero;
-    } // end if
-  };  // end kk
-
-  /*---------------------------------------------------------
-      ... form transmission factors
-  ---------------------------------------------------------*/
-
-  // BAD CONSTANT
-  const Real C1 = 11.905;
-  const Real C2 = 9.524;
-
-  // cos (solar zenith angle)
-  const Real coschi = haero::max(haero::cos(zen_angle), half);
-
-  for (int kk = 0; kk < pver; ++kk) {
-    /*---------------------------------------------------------
-      ... form effective albedo
-      ---------------------------------------------------------*/
-    // transmission factor below this layer
-    const Real below_tra = C1 / (C2 + below_tau[kk]);
-    eff_alb[kk] = srf_alb + below_cld[kk] * (one - below_tra) * (one - srf_alb);
-
-    // factor to calculate cld_mult
-    Real del_lwp = zero;
-    if (clouds[kk] != zero) {
-      // liquid water path in each layer [g/m2]
-      del_lwp = rgrav * lwc[kk] * delp[kk] * thousand /
-                clouds[kk]; // the unit is (likely) g/m^2
-    }
-    Real fac1 = zero;
-    if (del_lwp * f_lwp2tau >= tau_min) {
-      // BAD CONSTANT
-      fac1 = 1.4 * coschi - one;
-    } // end if
-    // transmission factor above this layer
-    const Real above_tra = C1 / (C2 + above_tau[kk]);
-    // factor to calculate cld_mult
-    // BAD CONSTANT
-    Real fac2 = haero::min(zero, 1.6 * coschi * above_tra - one);
-    // BAD CONSTANT
-    cld_mult[kk] =
-        haero::max(.05, one + fac1 * clouds[kk] + fac2 * above_cld[kk]);
-  }
-} // end cloud_mod
 
 // NOTE: set_ub_col and setcol compute only the density of o3 in the atmosphere
 // NOTE: (o2 is not computed--if we want to add it back to the calculation,
@@ -461,11 +304,13 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   below_cld(pver - 1) = zero;
   team.team_barrier();
 
-  // for (int i = 1; i < pver; ++i) {
-  //   const int kk = pverm - i;
-  //   below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
-  //   below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
-  // }; // end kk
+  // NOTE: I replaced the following serial loop with the two subsequent
+  // parallel_scan operations.
+  //  for (int i = 1; i < pver; ++i) {
+  //    const int kk = pverm - i;
+  //    below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
+  //    below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
+  //  }; // end kk
 
   Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, 0, pverm),
                         [&](const int i, Real &accumulator, const bool last) {
@@ -475,8 +320,10 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
                             below_tau(kk - 1) = accumulator;
                           }
                         });
+  // NOTE: The following code is equivalent to parallel_scan.
+  //   I have left this block of code for reference.
 #if 0
-Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 1, pver_local),
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 1, pver_local),
                         [&](const int j) {
                           Real suma=zero;
                           Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team, j),
