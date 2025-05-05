@@ -24,9 +24,28 @@ on:
         description: 'Test Machine Architecture'
         required: true
         type: choice
+        default: 'GPU-NVIDIA_H100'
         options:
           - GPU-NVIDIA_H100
           - CPU-Ubuntu_22-04
+          - ALL
+      precision:
+        description: 'Floating-point Precision'
+        required: true
+        type: choice
+        default: 'double'
+        options:
+          - double
+          - single
+          - ALL
+      build_type:
+        description: 'Build Type'
+        required: true
+        type: choice
+        default: 'Debug'
+        options:
+          - Debug
+          - Release
           - ALL
 
   # Add schedule trigger for nightly runs at midnight MT (Standard Time)
@@ -37,6 +56,9 @@ concurrency:
   # Two runs are in the same group if they are testing the same git ref
   #  - if trigger=pull_request, the ref is refs/pull/<PR_NUMBER>/merge
   #  - for other triggers, the ref is the branch tested
+  # TODO: There's probably a less ugly way to create this group name, but
+  # currently unsure how to add a literal '-', contingent upon existence of
+  # github.event.inputs.architecture
   group: ${{ github.workflow }}-${{ github.ref }}${{ github.event.inputs.architecture }}
   cancel-in-progress: true
 
@@ -45,10 +67,12 @@ jobs:
     if: ${{ github.event.pull_request || github.event.schedule }}
     uses:
       ./.github/workflows/at2_gcc-cuda.yml
-  gh_auto_test:
+  gcc-cpu_gh:
     if: ${{ github.event.pull_request || github.event.schedule }}
+    secrets:
+      cc_token: ${{ secrets.CODECOV_TOKEN }}
     uses:
-      ./.github/workflows/gh_auto_test.yml
+      ./.github/workflows/gh_gcc-cpu.yml
   clang-format_check:
     if: ${{ github.event.pull_request }}
     uses:
@@ -56,10 +80,18 @@ jobs:
   manual-gpu_cuda:
     if: ${{ contains(github.event.inputs.architecture, 'GPU-NVIDIA_H100') ||
             contains(github.event.inputs.architecture, 'ALL') }}
+    with:
+      precision: ${{ github.event.inputs.precision }}
+      build_type: ${{ github.event.inputs.build_type }}
     uses:
       "./.github/workflows/at2_gcc-cuda.yml"
   manual-cpu_gh:
     if: ${{ contains(github.event.inputs.architecture, 'CPU-Ubuntu_22-04') ||
             contains(github.event.inputs.architecture, 'ALL') }}
+    with:
+      precision: ${{ github.event.inputs.precision }}
+      build_type: ${{ github.event.inputs.build_type }}
+    secrets:
+      cc_token: ${{ secrets.CODECOV_TOKEN }}
     uses:
-      ./.github/workflows/gh_auto_test.yml
+      ./.github/workflows/gh_gcc-cpu.yml

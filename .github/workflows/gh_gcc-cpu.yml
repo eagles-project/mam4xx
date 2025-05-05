@@ -4,18 +4,77 @@ name: "GitHub CPU Auto-test Ubuntu 22.04"
 # 1. when someone creates a pull request for a merge to the main branch
 # 2. when changes are merged into the main branch (via a pull request)
 on:
-  workflow_call
+  workflow_call:
+    inputs:
+      precision:
+        required: false
+        type: string
+      build_type:
+        required: false
+        type: string
+    # this is required because secrets are not passed to reusable
+    # workflows by default
+    secrets:
+      cc_token:
+        required: true
 
 # Below are jobs, each of which runs sequentially.
 jobs:
+  # this is more work than I'd expect, but this is how you pass info after
+  # operating on it in a job/step
+  # TODO: factor this out into an action?
+  # parse the inputs from the workflow call that'll be used by strategy.matrix
+  define_matrix:
+    runs-on: ubuntu-22.04
+    # define the outputs that will come from the steps below
+    outputs:
+      build_type: ${{ steps.build_type.outputs.build_type }}
+      precision: ${{ steps.precision.outputs.precision }}
+    steps:
+      - name: Define build_type
+        id: build_type
+        env:
+          # if empty (i.e., triggered by PR) make ALL default
+          btype: ${{ inputs.build_type || 'ALL' }}
+        # this is a little over-cautious, since the 'else' should never happen
+        run: |
+          case ${{ env.btype }} in
+            "Debug")
+              echo 'build_type=["Debug"]' >> "$GITHUB_OUTPUT" ;;
+            "Release")
+              echo 'build_type=["Release"]' >> "$GITHUB_OUTPUT" ;;
+            "ALL")
+              echo 'build_type=["Debug", "Release"]' >> "$GITHUB_OUTPUT" ;;
+            *)
+              echo 'build_type=["Debug", "Release"]' >> "$GITHUB_OUTPUT" ;;
+          esac
+      - name: Define precision
+        id: precision
+        env:
+          prec: ${{ inputs.precision || 'ALL' }}
+        run: |
+          case ${{ env.prec }} in
+            "Debug")
+              echo 'precision=["single"]' >> "$GITHUB_OUTPUT" ;;
+            "Release")
+              echo 'precision=["double"]' >> "$GITHUB_OUTPUT" ;;
+            "ALL")
+              echo 'precision=["single", "double"]' >> "$GITHUB_OUTPUT" ;;
+            *)
+              echo 'precision=["single", "double"]' >> "$GITHUB_OUTPUT" ;;
+          esac
   # This job builds the box model and runs our test suite.
   build_test_coverage:
+    continue-on-error: false
+    needs: define_matrix
     # A build matrix storing all desired configurations.
     strategy:
+      fail-fast: true
       matrix:
         os: [ubuntu-22.04] #, macos-latest]
-        build-type: [Debug, Release]
-        fp-precision: [single, double]
+        # to get the array instead of a string, need the fromJSON()
+        build-type: ${{ fromJSON(needs.define_matrix.outputs.build_type) }}
+        fp-precision: ${{ fromJSON(needs.define_matrix.outputs.precision) }}
 
     runs-on: ${{ matrix.os }}
 
@@ -109,10 +168,10 @@ jobs:
 
       - name: Uploading coverage report to codecov.io
         if: ${{ (contains(matrix.os, 'ubuntu')) && (matrix.build-type == 'Debug') && (matrix.fp-precision == 'double') }}
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
           files: build/coverage.info
           name: mam4xx
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.cc_token }}
           verbose: true
