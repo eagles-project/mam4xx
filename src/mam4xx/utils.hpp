@@ -219,9 +219,10 @@ void get_num_idx_in_state_q(int idxs[AeroConfig::num_modes()]) {
 // This object can be provided to mam4xx for the column.
 
 // MUST FIXME: address James comments about making the code better.
+template<typename VectorType>
 KOKKOS_INLINE_FUNCTION
 void extract_stateq_from_prognostics(const mam4::Prognostics &progs,
-                                     const haero::Atmosphere &atm, Real *q,
+                                     const haero::Atmosphere &atm, VectorType&q,
                                      const int klev) {
 
   int s_idx = ekat::ScalarTraits<int>::invalid();
@@ -257,8 +258,9 @@ void extract_stateq_from_prognostics(const mam4::Prognostics &progs,
   }
 } // extract_stateq_from_prognostics
 
+template<typename VectorType>
 KOKKOS_INLINE_FUNCTION
-void extract_ptend_from_tendencies(const Tendencies &tends, Real *ptend,
+void extract_ptend_from_tendencies(const Tendencies &tends, VectorType&ptend,
                                    const int klev) {
 
   int s_idx = ekat::ScalarTraits<int>::invalid();
@@ -288,9 +290,9 @@ void extract_ptend_from_tendencies(const Tendencies &tends, Real *ptend,
     s_idx++; // update index
   }
 } // extract_ptend_from_tendencies
-
+template<typename VectorType>
 KOKKOS_INLINE_FUNCTION
-void inject_stateq_to_prognostics(const Real *q, mam4::Prognostics &progs,
+void inject_stateq_to_prognostics(const VectorType&q, mam4::Prognostics &progs,
                                   const int klev) {
 
   int s_idx = ekat::ScalarTraits<int>::invalid();
@@ -322,9 +324,9 @@ void inject_stateq_to_prognostics(const Real *q, mam4::Prognostics &progs,
     s_idx++; // update index
   }          // m
 }
-
+template<typename VectorType>
 KOKKOS_INLINE_FUNCTION
-void inject_ptend_to_tendencies(const Real *ptend, const Tendencies &tends,
+void inject_ptend_to_tendencies(const VectorType&ptend, const Tendencies &tends,
                                 const int klev) {
 
   int s_idx = ekat::ScalarTraits<int>::invalid();
@@ -360,8 +362,9 @@ void inject_ptend_to_tendencies(const Real *ptend, const Tendencies &tends,
 // Given an AerosolState with views for dry aerosol quantities, creates a
 // cloudborne aerosol mmr 1D view for the column with the given index.
 // This object can be provided to mam4xx for the column.
+template<typename VectorType>
 KOKKOS_INLINE_FUNCTION
-void extract_qqcw_from_prognostics(const mam4::Prognostics &progs, Real *qqcw,
+void extract_qqcw_from_prognostics(const mam4::Prognostics &progs, VectorType&qqcw,
                                    const int klev) {
 
   // NOTE: qqcw view has the same dimension and indexing as state_q array.
@@ -389,8 +392,9 @@ void extract_qqcw_from_prognostics(const mam4::Prognostics &progs, Real *qqcw,
 // Given an AerosolState with views for dry aerosol quantities, creates a
 // cloudborne aerosol mmr 1D view for the column with the given index.
 // This object can be provided to mam4xx for the column.
+template<typename VectorType>
 KOKKOS_INLINE_FUNCTION
-void inject_qqcw_to_prognostics(const Real *qqcw, mam4::Prognostics &progs,
+void inject_qqcw_to_prognostics(const VectorType&qqcw, mam4::Prognostics &progs,
                                 const int klev) {
 
   // NOTE: qqcw view has the same dimension and indexing as state_q array.

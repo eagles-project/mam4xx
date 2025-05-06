@@ -1776,9 +1776,9 @@ void aero_model_wetdep(
     const auto state_q_kk = ekat::subview(state_q, kk);
     const auto qqcw_kk = ekat::subview(qqcw, kk);
     const auto ptend_q_kk = ekat::subview(ptend_q, kk);
-    utils::extract_stateq_from_prognostics(progs, atm, state_q_kk.data(), kk);
-    utils::extract_qqcw_from_prognostics(progs, qqcw_kk.data(), kk);
-    utils::extract_ptend_from_tendencies(tends, ptend_q_kk.data(), kk);
+    utils::extract_stateq_from_prognostics(progs, atm, state_q_kk, kk);
+    utils::extract_qqcw_from_prognostics(progs, qqcw_kk, kk);
+    utils::extract_ptend_from_tendencies(tends, ptend_q_kk, kk);
   });
   team.team_barrier();
 
