@@ -266,7 +266,7 @@ void compute_coef_acc_ait_transfer(
   }
 
 } // end compute_coef_acc_ait_transfer
-
+template<typename VectorType>
 KOKKOS_INLINE_FUNCTION void size_adjustment(
     const int imode, const Real dryvol_i, const Real n_i_imode,
     const Real dryvol_c,
@@ -283,7 +283,7 @@ KOKKOS_INLINE_FUNCTION void size_adjustment(
     Real &num2vol_ratio_cur_c, Real &dryvol_i_accsv, Real &dryvol_c_accsv,
     Real &dryvol_i_aitsv, Real &dryvol_c_aitsv, Real &drv_i_sv, Real &drv_c_sv,
     Real &num_i_k_accsv, Real &num_c_k_accsv, Real &num_i_k_aitsv,
-    Real &num_c_k_aitsv, Real &num_i_sv, Real &num_c_sv, Real &dnidt_imode,
+    Real &num_c_k_aitsv, Real &num_i_sv, Real &num_c_sv,  VectorType &dnidt_imode,
     Real &dncdt_imode) {
 
   constexpr Real zero = 0;
@@ -353,9 +353,6 @@ KOKKOS_INLINE_FUNCTION void size_adjustment(
 
     // number tendencies to be updated by adjust_num_sizes subroutine
 
-    auto &interstitial_tend = dnidt_imode;
-    auto &cloudborne_tend = dncdt_imode;
-
     /*NOTE: Only number tendencies (NOT mass mixing ratios) are
      updated in adjust_num_sizes Effect of these adjustment will be
      reflected in the particle diameters (via
@@ -368,7 +365,7 @@ KOKKOS_INLINE_FUNCTION void size_adjustment(
           num2vol_ratio_min_imode, num2vol_ratio_max_imode,
           adj_tscale_inv,                      // in
           num_i_k, num_c_k,                    // out
-          interstitial_tend, cloudborne_tend); // out
+          dnidt_imode, dncdt_imode); // out
     }
   }
 
@@ -463,7 +460,7 @@ void update_tends_flx(const int jmode,         // in
                       const int *src_species_idx, //
                       const int *dest_species_idx,
                       const Real xfertend_num[2][2], const Real xfercoef,
-                      const VectorType& state_q, const VectorType& qqcw, Real *ptend,
+                      const VectorType& state_q, const VectorType& qqcw, VectorType& ptend,
                       Real *dqqcwdt) {
 
   // NOTES on arrays and indices:
@@ -509,13 +506,13 @@ void update_tends_flx(const int jmode,         // in
 template<typename VectorType>
 KOKKOS_INLINE_FUNCTION
 void aitken_accum_exchange(
-  const VectorType&state_q, const VectorType&qqcw, const int &aitken_idx,
+    const VectorType& state_q, const VectorType& qqcw, const int &aitken_idx,
     const int &accum_idx, const CalcsizeData &calcsizedata,
     const Real &adj_tscale_inv, const Real &dt, const Real &drv_i_aitsv,
     const Real &num_i_aitsv, const Real &drv_c_aitsv, const Real &num_c_aitsv,
     const Real &drv_i_accsv, const Real &num_i_accsv, const Real &drv_c_accsv,
     const Real &num_c_accsv, Real &dgncur_i_aitken, Real &dgncur_i_accum,
-    Real &dgncur_c_aitken, Real &dgncur_c_accum, Real *ptend, Real *dqqcwdt) {
+    Real &dgncur_c_aitken, Real &dgncur_c_accum,  VectorType& ptend, Real *dqqcwdt) {
 
   // FIXME: This version of does not include 	update_mmr=true, i.e tendencies
   // are not updated.
@@ -763,7 +760,7 @@ void modal_aero_calcsize_sub(const VectorType& state_q, // in
                              const Real dt, const CalcsizeData &calcsizedata,
                              Real dgncur_i[AeroConfig::num_modes()],
                              Real dgncur_c[AeroConfig::num_modes()],
-                             Real *ptend, Real *dqqcwdt) {
+                             VectorType& ptend, Real *dqqcwdt) {
 
   const Real zero = 0.0;
   const int aitken_idx = int(ModeIndex::Aitken);

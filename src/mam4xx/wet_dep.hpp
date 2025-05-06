@@ -1792,7 +1792,7 @@ void aero_model_wetdep(
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, nlev), [&](int kk) {
     const auto state_q_kk = ekat::subview(state_q, kk);
     const auto qqcw_kk = ekat::subview(qqcw, kk);
-    const auto ptend_q_kk = ekat::subview(ptend_q, kk);
+    auto ptend_q_kk = ekat::subview(ptend_q, kk);
     Real dgnumwet_m_kk[ntot_amode] = {};
     // wetdens and qaerwat are input/ouput to water_uptake
     Real qaerwat_m_kk[ntot_amode] = {};
@@ -1816,7 +1816,7 @@ void aero_model_wetdep(
           // Inputs
           state_q_kk, qqcw_kk, dt, calcsizedata,
           // Outputs
-          dgnumdry_m_kk, dgncur_c_kk, ptend_q_kk.data(), dqqcwdt_kk);
+          dgnumdry_m_kk, dgncur_c_kk, ptend_q_kk, dqqcwdt_kk);
       // NOTE: dgnumdry_m_kk is interstitial dry diameter size and
       // dgncur_c_kk is cloud borne dry diameter size
 
