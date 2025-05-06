@@ -66,13 +66,13 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
                 Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
             Real dgncur_c[ntot_amode] = {};
             auto ptend_q_k = Kokkos::subview(ptend_q, kk, Kokkos::ALL());
-            const auto dqqcwdt_k = Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
+            auto dqqcwdt_k = Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
             modal_aero_calcsize::modal_aero_calcsize_sub(
                 state_q_k, // in
                 qqcw_k,    // in/out
                 dt, cal_data,
                 // outputs
-                dgncur_i.data(), dgncur_c, ptend_q_k, dqqcwdt_k.data());
+                dgncur_i.data(), dgncur_c, ptend_q_k, dqqcwdt_k);
               } // k
         });
 

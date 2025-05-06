@@ -1554,7 +1554,9 @@ int get_aero_model_wetdep_work_len() {
                  // scavt, bcscavt, rcscavt,
                  2 * mam4::nlev * pcnst +
                  // ptend_q, rtscavt_sv
-                 2 * pcnst;
+                 2 * pcnst+
+                 //dqqcwdt
+                 aero_model::pcnst*mam4::nlev;
   //  qsrflx_mzaer2cnvpr
   return work_len;
 }
@@ -1720,6 +1722,8 @@ void aero_model_wetdep(
 
   View2D qsrflx_mzaer2cnvpr(work_ptr, aero_model::pcnst, 2);
   work_ptr += aero_model::pcnst * 2;
+  View2D dqqcwdt(work_ptr, mam4::nlev, aero_model::pcnst);
+  work_ptr += aero_model::pcnst*mam4::nlev;
 
   /// error check
   const int workspace_used(work_ptr - work.data()),
@@ -1809,7 +1813,8 @@ void aero_model_wetdep(
 
     {
       Real dgncur_c_kk[ntot_amode] = {};
-      Real dqqcwdt_kk[pcnst] = {};
+      // Real dqqcwdt_kk[pcnst] = {};
+      auto dqqcwdt_kk = ekat::subview(dqqcwdt, kk);
       //  Calculate aerosol size distribution parameters and aerosol water
       //  uptake for prognostic aerosols
       modal_aero_calcsize::modal_aero_calcsize_sub(
