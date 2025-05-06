@@ -461,7 +461,7 @@ void update_tends_flx(const int jmode,         // in
                       const int *dest_species_idx,
                       const Real xfertend_num[2][2], const Real xfercoef,
                       const VectorType& state_q, const VectorType& qqcw, VectorType& ptend,
-                      Real *dqqcwdt) {
+                      VectorType& dqqcwdt) {
 
   // NOTES on arrays and indices:
   // jmode==0 is aitken->accumulation transfer;
@@ -512,7 +512,7 @@ void aitken_accum_exchange(
     const Real &num_i_aitsv, const Real &drv_c_aitsv, const Real &num_c_aitsv,
     const Real &drv_i_accsv, const Real &num_i_accsv, const Real &drv_c_accsv,
     const Real &num_c_accsv, Real &dgncur_i_aitken, Real &dgncur_i_accum,
-    Real &dgncur_c_aitken, Real &dgncur_c_accum,  VectorType& ptend, Real *dqqcwdt) {
+    Real &dgncur_c_aitken, Real &dgncur_c_accum,  VectorType& ptend, VectorType& dqqcwdt) {
 
   // FIXME: This version of does not include 	update_mmr=true, i.e tendencies
   // are not updated.
@@ -753,14 +753,14 @@ void aitken_accum_exchange(
 
 } // aitken_accum_exchange
 
-template<typename VectorType>
+template<typename VectorType, typename VectorTypeModes>
 KOKKOS_INLINE_FUNCTION
 void modal_aero_calcsize_sub(const VectorType& state_q, // in
                              const VectorType& qqcw,    // in
                              const Real dt, const CalcsizeData &calcsizedata,
-                             Real dgncur_i[AeroConfig::num_modes()],
-                             Real dgncur_c[AeroConfig::num_modes()],
-                             VectorType& ptend, Real *dqqcwdt) {
+                             VectorTypeModes& dgncur_i,
+                             VectorTypeModes& dgncur_c,
+                             VectorType& ptend, VectorType& dqqcwdt) {
 
   const Real zero = 0.0;
   const int aitken_idx = int(ModeIndex::Aitken);
