@@ -1814,7 +1814,7 @@ void aero_model_wetdep(
       //  uptake for prognostic aerosols
       modal_aero_calcsize::modal_aero_calcsize_sub(
           // Inputs
-          state_q_kk.data(), qqcw_kk.data(), dt, calcsizedata,
+          state_q_kk, qqcw_kk, dt, calcsizedata,
           // Outputs
           dgnumdry_m_kk, dgncur_c_kk, ptend_q_kk.data(), dqqcwdt_kk);
       // NOTE: dgnumdry_m_kk is interstitial dry diameter size and

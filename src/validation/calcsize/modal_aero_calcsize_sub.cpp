@@ -57,8 +57,8 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
             Real ptend[pcnst] = {};
             Real dqqcwdt[pcnst] = {};
             modal_aero_calcsize::modal_aero_calcsize_sub(
-                state_q_k.data(), // in
-                qqcw_k.data(),    // in/out
+                state_q_k, // in
+                qqcw_k,    // in/out
                 dt, cal_data, dgncur_i.data(), dgncur_c, ptend, dqqcwdt);
           } // k
         });

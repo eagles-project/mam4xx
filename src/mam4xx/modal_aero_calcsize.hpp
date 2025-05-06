@@ -165,10 +165,11 @@ struct CalcsizeData {
 };
 
 // NOTE: this version uses state_q and qqcw variables using format from e3sm
+template<typename VectorType>
 KOKKOS_INLINE_FUNCTION
 void compute_coef_acc_ait_transfer(
     int iacc, const Real num2vol_ratio_geomean, const Real adj_tscale_inv,
-    const Real *state_q, const Real *qqcw, const Real drv_i_accsv,
+    const VectorType&state_q, const VectorType&qqcw, const Real drv_i_accsv,
     const Real drv_c_accsv, const Real num_i_accsv, const Real num_c_accsv,
     const bool noxf_acc2ait[AeroConfig::num_aerosol_ids()],
     const Real voltonum_ait,
@@ -426,12 +427,12 @@ KOKKOS_INLINE_FUNCTION void size_adjustment(
   num_c_sv = num_c_k;
 
 } /// size_adjustment
-
+template<typename VectorType>
 KOKKOS_INLINE_FUNCTION
 void compute_dry_volume(
     int imode,           // in
-    const Real *state_q, // in
-    const Real *qqcw,    // in
+    const VectorType& state_q, // in
+    const VectorType& qqcw,    // in
     const Real inv_density[AeroConfig::num_modes()]
                           [AeroConfig::num_aerosol_ids()], // in
     const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
@@ -453,6 +454,7 @@ void compute_dry_volume(
 } // end
 
 //------------------------------------------------------------------------------------------------
+template<typename VectorType>
 KOKKOS_INLINE_FUNCTION
 void update_tends_flx(const int jmode,         // in
                       const int src_mode_ixd,  // in
@@ -461,7 +463,7 @@ void update_tends_flx(const int jmode,         // in
                       const int *src_species_idx, //
                       const int *dest_species_idx,
                       const Real xfertend_num[2][2], const Real xfercoef,
-                      const Real *state_q, const Real *qqcw, Real *ptend,
+                      const VectorType& state_q, const VectorType& qqcw, Real *ptend,
                       Real *dqqcwdt) {
 
   // NOTES on arrays and indices:
@@ -504,10 +506,10 @@ void update_tends_flx(const int jmode,         // in
   }
 
 } // end update_tends_flx
-
+template<typename VectorType>
 KOKKOS_INLINE_FUNCTION
 void aitken_accum_exchange(
-    const Real *state_q, const Real *qqcw, const int &aitken_idx,
+  const VectorType&state_q, const VectorType&qqcw, const int &aitken_idx,
     const int &accum_idx, const CalcsizeData &calcsizedata,
     const Real &adj_tscale_inv, const Real &dt, const Real &drv_i_aitsv,
     const Real &num_i_aitsv, const Real &drv_c_aitsv, const Real &num_c_aitsv,
@@ -754,9 +756,10 @@ void aitken_accum_exchange(
 
 } // aitken_accum_exchange
 
+template<typename VectorType>
 KOKKOS_INLINE_FUNCTION
-void modal_aero_calcsize_sub(const Real *state_q, // in
-                             const Real *qqcw,    // in
+void modal_aero_calcsize_sub(const VectorType& state_q, // in
+                             const VectorType& qqcw,    // in
                              const Real dt, const CalcsizeData &calcsizedata,
                              Real dgncur_i[AeroConfig::num_modes()],
                              Real dgncur_c[AeroConfig::num_modes()],

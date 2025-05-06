@@ -92,8 +92,8 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
                 const auto dqqcwdt_k =
                     Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
                 modal_aero_calcsize::modal_aero_calcsize_sub(
-                    state_q_k.data(), // in
-                    qqcw_k.data(),    // in/out
+                    state_q_k, // in
+                    qqcw_k,    // in/out
                     dt, cal_data,
                     // outputs
                     dgncur_i.data(), dgncur_c, ptend_q_k.data(),
@@ -111,7 +111,7 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
                 mam4::water_uptake::modal_aero_water_uptake_dr(
                     cal_data.nspec_amode, cal_data.specdens_amode,
                     cal_data.spechygro, cal_data.lspectype_amode,
-                    state_q_k.data(), temperature(kk), pmid(kk), cldn(kk),
+                    state_q_k, temperature(kk), pmid(kk), cldn(kk),
                     dgncur_i.data(), dgnumwet_kk.data(), qaerwat_kk.data(),
                     wetdens_kk.data());
 

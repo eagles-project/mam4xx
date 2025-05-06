@@ -68,8 +68,8 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
             const auto ptend_q_k = Kokkos::subview(ptend_q, kk, Kokkos::ALL());
             const auto dqqcwdt_k = Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
             modal_aero_calcsize::modal_aero_calcsize_sub(
-                state_q_k.data(), // in
-                qqcw_k.data(),    // in/out
+                state_q_k, // in
+                qqcw_k,    // in/out
                 dt, cal_data,
                 // outputs
                 dgncur_i.data(), dgncur_c, ptend_q_k.data(), dqqcwdt_k.data());
