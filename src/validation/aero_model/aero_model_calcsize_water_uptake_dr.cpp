@@ -45,6 +45,7 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
       mam4::validation::convert_1d_vector_to_2d_view_device(dgncur_a_db,
                                                             dgnumdry_m);
     }
+    View2D dgncur_c("dgncur_c", pver, ntot_amode);
 
     View2D ptend_q("ptend_q", pver, pcnst);
     View2D dqqcwdt("dqqcwdt", pver, pcnst);
@@ -84,20 +85,17 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
                 const auto state_q_k =
                     Kokkos::subview(state_q, kk, Kokkos::ALL());
                 const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
-                const auto dgncur_i =
-                    Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
-                Real dgncur_c[ntot_amode] = {};
-                const auto ptend_q_k =
-                    Kokkos::subview(ptend_q, kk, Kokkos::ALL());
-                const auto dqqcwdt_k =
-                    Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
+                auto dgncur_i = Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
+                // Real dgncur_c[ntot_amode] = {};
+                auto dgncur_c_k = Kokkos::subview(dgncur_c, kk, Kokkos::ALL());
+                auto ptend_q_k = Kokkos::subview(ptend_q, kk, Kokkos::ALL());
+                auto dqqcwdt_k = Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
                 modal_aero_calcsize::modal_aero_calcsize_sub(
                     state_q_k, // in
                     qqcw_k,    // in/out
                     dt, cal_data,
                     // outputs
-                    dgncur_i.data(), dgncur_c, ptend_q_k.data(),
-                    dqqcwdt_k.data());
+                    dgncur_i, dgncur_c_k, ptend_q_k, dqqcwdt_k);
 
                 const auto dgnumwet_kk =
                     Kokkos::subview(dgnumwet, kk, Kokkos::ALL());
@@ -110,10 +108,9 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
 
                 mam4::water_uptake::modal_aero_water_uptake_dr(
                     cal_data.nspec_amode, cal_data.specdens_amode,
-                    cal_data.spechygro, cal_data.lspectype_amode,
-                    state_q_k, temperature(kk), pmid(kk), cldn(kk),
-                    dgncur_i.data(), dgnumwet_kk.data(), qaerwat_kk.data(),
-                    wetdens_kk.data());
+                    cal_data.spechygro, cal_data.lspectype_amode, state_q_k,
+                    temperature(kk), pmid(kk), cldn(kk), dgncur_i.data(),
+                    dgnumwet_kk.data(), qaerwat_kk.data(), wetdens_kk.data());
 
                 if (update_mmr) {
                   // Note: it only needs to update aerosol variables.

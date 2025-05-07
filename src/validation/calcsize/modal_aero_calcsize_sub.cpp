@@ -66,7 +66,7 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
                 state_q_k, // in
                 qqcw_k,    // in/out
                 dt, cal_data, dgncur_i, dgncur_c_k, ptend_k, dqqcwdt_k);
-              } // k
+          } // k
         });
 
     constexpr Real zero = 0;

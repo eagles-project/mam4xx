@@ -1554,9 +1554,9 @@ int get_aero_model_wetdep_work_len() {
                  // scavt, bcscavt, rcscavt,
                  2 * mam4::nlev * pcnst +
                  // ptend_q, rtscavt_sv
-                 2 * pcnst+
-                 //dqqcwdt
-                 aero_model::pcnst*mam4::nlev;
+                 2 * pcnst +
+                 // dqqcwdt
+                 aero_model::pcnst * mam4::nlev;
   //  qsrflx_mzaer2cnvpr
   return work_len;
 }
@@ -1723,7 +1723,7 @@ void aero_model_wetdep(
   View2D qsrflx_mzaer2cnvpr(work_ptr, aero_model::pcnst, 2);
   work_ptr += aero_model::pcnst * 2;
   View2D dqqcwdt(work_ptr, mam4::nlev, aero_model::pcnst);
-  work_ptr += aero_model::pcnst*mam4::nlev;
+  work_ptr += aero_model::pcnst * mam4::nlev;
 
   /// error check
   const int workspace_used(work_ptr - work.data()),

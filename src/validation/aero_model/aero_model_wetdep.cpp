@@ -176,9 +176,8 @@ void aero_model_wetdep(Ensemble *ensemble) {
                 // copy data from prog to stateq
                 const auto state_q_kk = ekat::subview(state_q, kk);
                 const auto qqcw_kk = ekat::subview(qqcw, kk);
-                utils::inject_qqcw_to_prognostics(qqcw_kk.data(), progs_in, kk);
-                utils::inject_stateq_to_prognostics(state_q_kk.data(), progs_in,
-                                                    kk);
+                utils::inject_qqcw_to_prognostics(qqcw_kk, progs_in, kk);
+                utils::inject_stateq_to_prognostics(state_q_kk, progs_in, kk);
               });
           team.team_barrier();
 
@@ -198,8 +197,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
           Kokkos::parallel_for(
               Kokkos::TeamVectorRange(team, 0, nlev), [&](int kk) {
                 const auto ptend_q_kk = ekat::subview(ptend_q, kk);
-                utils::extract_ptend_from_tendencies(tends_in,
-                                                     ptend_q_kk.data(), kk);
+                utils::extract_ptend_from_tendencies(tends_in, ptend_q_kk, kk);
               });
         });
 

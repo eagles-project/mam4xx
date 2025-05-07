@@ -354,14 +354,13 @@ void get_e3sm_parameters(
   }
 }
 
-template<typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void modal_aero_water_uptake_dryaer(
+template <typename VectorType>
+KOKKOS_INLINE_FUNCTION void modal_aero_water_uptake_dryaer(
     const int nspec_amode[AeroConfig::num_modes()],
     const Real specdens_amode[maxd_aspectype],
     const Real spechygro[maxd_aspectype],
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-    const VectorType& state_q, Real dgncur_a[AeroConfig::num_modes()],
+    const VectorType &state_q, Real dgncur_a[AeroConfig::num_modes()],
     Real hygro[AeroConfig::num_modes()], Real naer[AeroConfig::num_modes()],
     Real dryrad[AeroConfig::num_modes()], Real dryvol[AeroConfig::num_modes()],
     Real drymass[AeroConfig::num_modes()],
@@ -433,14 +432,13 @@ void modal_aero_water_uptake_dryaer(
     dryrad[imode] = haero::cbrt(dryvol[imode] / (Constants::pi * 4.0 / 3.0));
   }
 }
-template<typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void modal_aero_water_uptake_dr_b4_wetdens(
+template <typename VectorType>
+KOKKOS_INLINE_FUNCTION void modal_aero_water_uptake_dr_b4_wetdens(
     const int nspec_amode[AeroConfig::num_modes()],
     const Real specdens_amode[maxd_aspectype],
     const Real spechygro[maxd_aspectype],
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-    const VectorType& state_q, Real temperature, Real pmid, Real cldn,
+    const VectorType &state_q, Real temperature, Real pmid, Real cldn,
     Real dgncur_a[AeroConfig::num_modes()],
     Real dgncur_awet[AeroConfig::num_modes()],
     Real qaerwat[AeroConfig::num_modes()], Real wetvol[AeroConfig::num_modes()],
@@ -476,14 +474,13 @@ void modal_aero_water_uptake_dr_b4_wetdens(
                                  rh, naer, dryvol, wetrad, wetvol, wtrvol,
                                  dgncur_awet, qaerwat);
 }
-template<typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void modal_aero_water_uptake_dr(
+template <typename VectorType>
+KOKKOS_INLINE_FUNCTION void modal_aero_water_uptake_dr(
     const int nspec_amode[AeroConfig::num_modes()],
     const Real specdens_amode[maxd_aspectype],
     const Real spechygro[maxd_aspectype],
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-    const VectorType& state_q, Real temperature, Real pmid, Real cldn,
+    const VectorType &state_q, Real temperature, Real pmid, Real cldn,
     Real dgncur_a[AeroConfig::num_modes()],
     Real dgncur_awet[AeroConfig::num_modes()],
     Real qaerwat[AeroConfig::num_modes()],
@@ -505,14 +502,13 @@ void modal_aero_water_uptake_dr(
   // compute wet aerosol density
   modal_aero_water_uptake_wetdens(wetvol, wtrvol, drymass, specdens_1, wetdens);
 }
-template<typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void modal_aero_water_uptake_dr(
+template <typename VectorType>
+KOKKOS_INLINE_FUNCTION void modal_aero_water_uptake_dr(
     const int nspec_amode[AeroConfig::num_modes()],
     const Real specdens_amode[maxd_aspectype],
     const Real spechygro[maxd_aspectype],
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
-    const VectorType& state_q, Real temperature, Real pmid, Real cldn,
+    const VectorType &state_q, Real temperature, Real pmid, Real cldn,
     Real dgncur_a[AeroConfig::num_modes()],
     Real dgncur_awet[AeroConfig::num_modes()],
     Real qaerwat[AeroConfig::num_modes()]) {

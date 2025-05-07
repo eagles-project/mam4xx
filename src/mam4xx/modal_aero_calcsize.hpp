@@ -165,11 +165,10 @@ struct CalcsizeData {
 };
 
 // NOTE: this version uses state_q and qqcw variables using format from e3sm
-template<typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void compute_coef_acc_ait_transfer(
+template <typename VectorType>
+KOKKOS_INLINE_FUNCTION void compute_coef_acc_ait_transfer(
     int iacc, const Real num2vol_ratio_geomean, const Real adj_tscale_inv,
-    const VectorType&state_q, const VectorType&qqcw, const Real drv_i_accsv,
+    const VectorType &state_q, const VectorType &qqcw, const Real drv_i_accsv,
     const Real drv_c_accsv, const Real num_i_accsv, const Real num_c_accsv,
     const bool noxf_acc2ait[AeroConfig::num_aerosol_ids()],
     const Real voltonum_ait,
@@ -266,7 +265,7 @@ void compute_coef_acc_ait_transfer(
   }
 
 } // end compute_coef_acc_ait_transfer
-template<typename VectorType>
+template <typename VectorType>
 KOKKOS_INLINE_FUNCTION void size_adjustment(
     const int imode, const Real dryvol_i, const Real n_i_imode,
     const Real dryvol_c,
@@ -283,8 +282,8 @@ KOKKOS_INLINE_FUNCTION void size_adjustment(
     Real &num2vol_ratio_cur_c, Real &dryvol_i_accsv, Real &dryvol_c_accsv,
     Real &dryvol_i_aitsv, Real &dryvol_c_aitsv, Real &drv_i_sv, Real &drv_c_sv,
     Real &num_i_k_accsv, Real &num_c_k_accsv, Real &num_i_k_aitsv,
-    Real &num_c_k_aitsv, Real &num_i_sv, Real &num_c_sv,  VectorType &dnidt_imode,
-    Real &dncdt_imode) {
+    Real &num_c_k_aitsv, Real &num_i_sv, Real &num_c_sv,
+    VectorType &dnidt_imode, Real &dncdt_imode) {
 
   constexpr Real zero = 0;
 
@@ -363,8 +362,8 @@ KOKKOS_INLINE_FUNCTION void size_adjustment(
       calcsize::adjust_num_sizes(
           dryvol_i, dryvol_c, init_num_i, init_num_c, dt, // in
           num2vol_ratio_min_imode, num2vol_ratio_max_imode,
-          adj_tscale_inv,                      // in
-          num_i_k, num_c_k,                    // out
+          adj_tscale_inv,            // in
+          num_i_k, num_c_k,          // out
           dnidt_imode, dncdt_imode); // out
     }
   }
@@ -424,12 +423,11 @@ KOKKOS_INLINE_FUNCTION void size_adjustment(
   num_c_sv = num_c_k;
 
 } /// size_adjustment
-template<typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void compute_dry_volume(
-    int imode,           // in
-    const VectorType& state_q, // in
-    const VectorType& qqcw,    // in
+template <typename VectorType>
+KOKKOS_INLINE_FUNCTION void compute_dry_volume(
+    int imode,                 // in
+    const VectorType &state_q, // in
+    const VectorType &qqcw,    // in
     const Real inv_density[AeroConfig::num_modes()]
                           [AeroConfig::num_aerosol_ids()], // in
     const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
@@ -451,17 +449,17 @@ void compute_dry_volume(
 } // end
 
 //------------------------------------------------------------------------------------------------
-template<typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void update_tends_flx(const int jmode,         // in
-                      const int src_mode_ixd,  // in
-                      const int dest_mode_ixd, // in
-                      const int n_common_species_ait_accum,
-                      const int *src_species_idx, //
-                      const int *dest_species_idx,
-                      const Real xfertend_num[2][2], const Real xfercoef,
-                      const VectorType& state_q, const VectorType& qqcw, VectorType& ptend,
-                      VectorType& dqqcwdt) {
+template <typename VectorType>
+KOKKOS_INLINE_FUNCTION void
+update_tends_flx(const int jmode,         // in
+                 const int src_mode_ixd,  // in
+                 const int dest_mode_ixd, // in
+                 const int n_common_species_ait_accum,
+                 const int *src_species_idx, //
+                 const int *dest_species_idx, const Real xfertend_num[2][2],
+                 const Real xfercoef, const VectorType &state_q,
+                 const VectorType &qqcw, VectorType &ptend,
+                 VectorType &dqqcwdt) {
 
   // NOTES on arrays and indices:
   // jmode==0 is aitken->accumulation transfer;
@@ -503,16 +501,16 @@ void update_tends_flx(const int jmode,         // in
   }
 
 } // end update_tends_flx
-template<typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void aitken_accum_exchange(
-    const VectorType& state_q, const VectorType& qqcw, const int &aitken_idx,
+template <typename VectorType>
+KOKKOS_INLINE_FUNCTION void aitken_accum_exchange(
+    const VectorType &state_q, const VectorType &qqcw, const int &aitken_idx,
     const int &accum_idx, const CalcsizeData &calcsizedata,
     const Real &adj_tscale_inv, const Real &dt, const Real &drv_i_aitsv,
     const Real &num_i_aitsv, const Real &drv_c_aitsv, const Real &num_c_aitsv,
     const Real &drv_i_accsv, const Real &num_i_accsv, const Real &drv_c_accsv,
     const Real &num_c_accsv, Real &dgncur_i_aitken, Real &dgncur_i_accum,
-    Real &dgncur_c_aitken, Real &dgncur_c_accum,  VectorType& ptend, VectorType& dqqcwdt) {
+    Real &dgncur_c_aitken, Real &dgncur_c_accum, VectorType &ptend,
+    VectorType &dqqcwdt) {
 
   // FIXME: This version of does not include 	update_mmr=true, i.e tendencies
   // are not updated.
@@ -753,14 +751,13 @@ void aitken_accum_exchange(
 
 } // aitken_accum_exchange
 
-template<typename VectorType, typename VectorTypeModes>
-KOKKOS_INLINE_FUNCTION
-void modal_aero_calcsize_sub(const VectorType& state_q, // in
-                             const VectorType& qqcw,    // in
-                             const Real dt, const CalcsizeData &calcsizedata,
-                             VectorTypeModes& dgncur_i,
-                             VectorTypeModes& dgncur_c,
-                             VectorType& ptend, VectorType& dqqcwdt) {
+template <typename VectorType, typename VectorTypeModes>
+KOKKOS_INLINE_FUNCTION void
+modal_aero_calcsize_sub(const VectorType &state_q, // in
+                        const VectorType &qqcw,    // in
+                        const Real dt, const CalcsizeData &calcsizedata,
+                        VectorTypeModes &dgncur_i, VectorTypeModes &dgncur_c,
+                        VectorType &ptend, VectorType &dqqcwdt) {
 
   const Real zero = 0.0;
   const int aitken_idx = int(ModeIndex::Aitken);
