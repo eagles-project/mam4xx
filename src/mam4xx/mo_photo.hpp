@@ -106,12 +106,19 @@ struct PhotoTableWorkArrays {
   View2D xswk;
   View1D psum_l;
   View1D psum_u;
+
+  View1D parg;
+  View1D eff_alb;
+  View1D cld_mult;
+  //
+  View1D work_cloud_mod;
 };
 inline int get_photo_table_work_len(const PhotoTableData &photo_table_data) {
   return pver * photo_table_data.numj +                /*lng_prates*/
          pver * photo_table_data.nw +                  /*rsf*/
          photo_table_data.numj * photo_table_data.nw + /*xswk*/
-         2 * photo_table_data.nw /*psum_l + psum_u*/;
+         2 * photo_table_data.nw /*psum_l + psum_u*/ +
+         8 * nlev /*parg + eff_alb + cld_mult + work_cloud_mod*/;
 } // get_photo_table_work_len
 KOKKOS_INLINE_FUNCTION
 void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
@@ -130,163 +137,15 @@ void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
   work_ptr += photo_table_data.nw;
   photo_table_work.psum_u = View1D(work_ptr, photo_table_data.nw);
   work_ptr += photo_table_data.nw;
+  photo_table_work.parg = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  photo_table_work.eff_alb = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  photo_table_work.cld_mult = View1D(work_ptr, nlev);
+  work_ptr += nlev;
+  photo_table_work.work_cloud_mod = View1D(work_ptr, 5 * nlev);
+  work_ptr += 5 * nlev;
 } // set_photo_table_work_arrays
-
-KOKKOS_INLINE_FUNCTION
-void cloud_mod(const ThreadTeam &team, const Real zen_angle,
-               const ConstView1D &clouds, const ConstView1D &lwc,
-               const ConstView1D &delp,
-               const Real srf_alb, //  in
-               Real *eff_alb, Real *cld_mult) {
-  /*-----------------------------------------------------------------------
-        ... cloud alteration factors for photorates and albedo
-  -----------------------------------------------------------------------*/
-
-  // @param[in]   zen_angle         zenith angle [deg]
-  // @param[in]   clouds(pver)      cloud fraction [fraction]
-  // @param[in]   lwc(pver)         liquid water content [kg/kg]
-  // @param[in]   srf_alb           surface albedo [fraction]
-  // @param[in]   delp(pver)        del press about midpoint [Pa]
-  // @param[out]  eff_alb(pver)    effective albedo [fraction]
-  // @param[out]  cld_mult(pver) photolysis mult factor
-
-  /*---------------------------------------------------------
-        ... modify lwc for cloud fraction and form
-            liquid water path and tau for each layer
-  ---------------------------------------------------------*/
-  const Real zero = 0.0;
-  const Real thousand = 1000.0;
-  const Real one = 1;
-  const Real half = 0.5;
-
-  // cloud optical depth in each layer
-  Real del_tau[pver] = {};
-  // cloud optical depth below this layer
-  Real below_tau[pver] = {};
-  // cloud cover below this layer
-  Real below_cld[pver] = {};
-
-  // BAD CONSTANT
-  const Real rgrav = one / 9.80616; //  1/g [s^2/m]
-  const Real f_lwp2tau =
-      .155; // factor converting LWP to tau [unknown source and unit]
-  const Real tau_min = 5.0; // tau threshold below which assign cloud as zero
-
-  for (int kk = 0; kk < pver; ++kk) {
-    if (clouds[kk] != zero) {
-      // liquid water path in each layer [g/m2]
-      const Real del_lwp = rgrav * lwc[kk] * delp[kk] * thousand /
-                           clouds[kk]; // the unit is (likely) g/m^2
-      del_tau[kk] = del_lwp * f_lwp2tau * haero::pow(clouds[kk], 1.5);
-    } else {
-      del_tau[kk] = zero;
-    } // end if
-  };  // end kk
-  /*---------------------------------------------------------
-              ... form integrated tau and cloud cover from top down
-  --------------------------------------------------------- */
-  // cloud optical depth above this layer
-  Real above_tau[pver] = {};
-  // cloud cover above this layer
-  Real above_cld[pver] = {};
-
-  for (int kk = 0; kk < pverm; ++kk) {
-    above_tau[kk + 1] = del_tau[kk] + above_tau[kk];
-    above_cld[kk + 1] = clouds[kk] * del_tau[kk] + above_cld[kk];
-  }; // end kk
-
-  for (int kk = 1; kk < pver; ++kk) {
-    if (above_tau[kk] != zero) {
-      above_cld[kk] /= above_tau[kk];
-    } else {
-      above_cld[kk] = above_cld[kk - 1];
-    }
-  }; // end kk
-  /*---------------------------------------------------------
-              ... form integrated tau and cloud cover from bottom up
-  ---------------------------------------------------------*/
-  below_tau[pver - 1] = zero;
-  below_cld[pver - 1] = zero;
-  team.team_barrier();
-
-  for (int i = 1; i < pver; ++i) {
-    const int kk = pverm - i;
-    below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
-    below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
-  }; // end kk
-
-  for (int i = 1; i < pver; ++i) {
-    const int kk = pverm - i;
-    if (below_tau[kk] != zero) {
-      below_cld[kk] /= below_tau[kk];
-    } else {
-      below_cld[kk] = below_cld[kk + 1];
-    } // end if
-  };  // end kk
-
-  /*---------------------------------------------------------
-      ... modify above_tau and below_tau via jfm
-  ---------------------------------------------------------*/
-  for (int kk = 1; kk < pver; ++kk) {
-    if (above_cld[kk] != zero) {
-      above_tau[kk] /= above_cld[kk];
-    } // end if
-
-    if (above_tau[kk] < tau_min) {
-      above_cld[kk] = zero;
-    } // end if
-  };  // end kk
-
-  for (int kk = 0; kk < pverm; ++kk) {
-    if (below_cld[kk] != zero) {
-      below_tau[kk] /= below_cld[kk];
-    } // end if
-    if (below_tau[kk] < tau_min) {
-      below_cld[kk] = zero;
-    } // end if
-  };  // end kk
-
-  /*---------------------------------------------------------
-      ... form transmission factors
-  ---------------------------------------------------------*/
-
-  // BAD CONSTANT
-  const Real C1 = 11.905;
-  const Real C2 = 9.524;
-
-  // cos (solar zenith angle)
-  const Real coschi = haero::max(haero::cos(zen_angle), half);
-
-  for (int kk = 0; kk < pver; ++kk) {
-    /*---------------------------------------------------------
-      ... form effective albedo
-      ---------------------------------------------------------*/
-    // transmission factor below this layer
-    const Real below_tra = C1 / (C2 + below_tau[kk]);
-    eff_alb[kk] = srf_alb + below_cld[kk] * (one - below_tra) * (one - srf_alb);
-
-    // factor to calculate cld_mult
-    Real del_lwp = zero;
-    if (clouds[kk] != zero) {
-      // liquid water path in each layer [g/m2]
-      del_lwp = rgrav * lwc[kk] * delp[kk] * thousand /
-                clouds[kk]; // the unit is (likely) g/m^2
-    }
-    Real fac1 = zero;
-    if (del_lwp * f_lwp2tau >= tau_min) {
-      // BAD CONSTANT
-      fac1 = 1.4 * coschi - one;
-    } // end if
-    // transmission factor above this layer
-    const Real above_tra = C1 / (C2 + above_tau[kk]);
-    // factor to calculate cld_mult
-    // BAD CONSTANT
-    Real fac2 = haero::min(zero, 1.6 * coschi * above_tra - one);
-    // BAD CONSTANT
-    cld_mult[kk] =
-        haero::max(.05, one + fac1 * clouds[kk] + fac2 * above_cld[kk]);
-  }
-} // end cloud_mod
 
 // NOTE: set_ub_col and setcol compute only the density of o3 in the atmosphere
 // NOTE: (o2 is not computed--if we want to add it back to the calculation,
@@ -327,7 +186,266 @@ void setcol(const ThreadTeam &team, const Real o3_col_deltas[mam4::nlev + 1],
 }
 
 KOKKOS_INLINE_FUNCTION
-void find_index(const Real *var_in, const int var_len,
+void cloud_mod(const ThreadTeam &team, const Real zen_angle,
+               const ConstView1D &clouds, const ConstView1D &lwc,
+               const ConstView1D &delp,
+               const Real srf_alb, //  in
+               const View1D &eff_alb, const View1D &cld_mult,
+               const View1D &work) {
+  /*-----------------------------------------------------------------------
+        ... cloud alteration factors for photorates and albedo
+  -----------------------------------------------------------------------*/
+
+  // @param[in]   zen_angle         zenith angle [deg]
+  // @param[in]   clouds(pver)      cloud fraction [fraction]
+  // @param[in]   lwc(pver)         liquid water content [kg/kg]
+  // @param[in]   srf_alb           surface albedo [fraction]
+  // @param[in]   delp(pver)        del press about midpoint [Pa]
+  // @param[out]  eff_alb(pver)    effective albedo [fraction]
+  // @param[out]  cld_mult(pver) photolysis mult factor
+
+  /*---------------------------------------------------------
+        ... modify lwc for cloud fraction and form
+            liquid water path and tau for each layer
+  ---------------------------------------------------------*/
+  const Real zero = 0.0;
+  const Real thousand = 1000.0;
+  const Real one = 1;
+  const Real half = 0.5;
+
+  auto work_ptr = (Real *)work.data();
+  // cloud optical depth in each layer
+  const auto del_tau = View1D(work_ptr, pver);
+  work_ptr += pver;
+  // cloud optical depth below this layer
+  const auto below_tau = View1D(work_ptr, pver);
+  work_ptr += pver;
+  // cloud cover below this layer
+  const auto below_cld = View1D(work_ptr, pver);
+  work_ptr += pver;
+
+  // cloud optical depth above this layer
+  // Real above_tau[pver] = {};
+  const auto above_tau = View1D(work_ptr, pver);
+  work_ptr += pver;
+  // cloud cover above this layer
+  const auto above_cld = View1D(work_ptr, pver);
+  work_ptr += pver;
+  // Real above_cld[pver] = {};
+
+  // BAD CONSTANT
+  const Real rgrav = one / 9.80616; //  1/g [s^2/m]
+  const Real f_lwp2tau =
+      .155; // factor converting LWP to tau [unknown source and unit]
+  const Real tau_min = 5.0; // tau threshold below which assign cloud as zero
+  constexpr int pver_local = pver;
+  constexpr int pverm_local = pverm;
+
+  Kokkos::parallel_for(
+      Kokkos::TeamVectorRange(team, pver_local), [&](const int kk) {
+        if (clouds(kk) != zero) {
+          // liquid water path in each layer [g/m2]
+          const Real del_lwp = rgrav * lwc(kk) * delp(kk) * thousand /
+                               clouds(kk); // the unit is (likely) g/m^2
+          del_tau(kk) = del_lwp * f_lwp2tau * haero::pow(clouds(kk), 1.5);
+        } else {
+          del_tau(kk) = zero;
+        } // end if
+      }); // end kk
+  above_tau(0) = zero;
+  above_cld(0) = zero;
+  team.team_barrier();
+  /*---------------------------------------------------------
+              ... form integrated tau and cloud cover from top down
+  --------------------------------------------------------- */
+  // Note: Replacing
+  // for (int kk = 0; kk < pverm; ++kk) {
+  //   above_tau[kk + 1] = del_tau[kk] + above_tau[kk];
+  // }
+  Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, pverm),
+                        [&](const int kk, Real &accumulator, const bool last) {
+                          accumulator += del_tau(kk);
+                          if (last) {
+                            above_tau(kk + 1) = accumulator;
+                          }
+                        });
+  team.team_barrier();
+
+  // Note: Replacing
+  // for (int kk = 0; kk < pverm; ++kk) {
+  //   above_cld[kk + 1] = clouds[kk] * del_tau[kk] + above_cld[kk];
+  // }
+  Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, pverm),
+                        [&](const int kk, Real &accumulator, const bool last) {
+                          accumulator += clouds(kk) * del_tau(kk);
+                          if (last) {
+                            above_cld(kk + 1) = accumulator;
+                          }
+                        });
+  team.team_barrier();
+
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver_local),
+                       [&](const int kk) {
+                         if (above_tau(kk) != zero) {
+                           above_cld(kk) /= above_tau(kk);
+                         }
+                       });
+  team.team_barrier();
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver_local),
+                       [&](const int kk) {
+                         if (above_tau(kk) == zero) {
+                           above_cld(kk) = above_cld(kk - 1);
+                         }
+                       });
+  /*---------------------------------------------------------
+              ... form integrated tau and cloud cover from bottom up
+  ---------------------------------------------------------*/
+  below_tau(pver - 1) = zero;
+  below_cld(pver - 1) = zero;
+  team.team_barrier();
+
+  // NOTE: I replaced the following serial loop with the two subsequent
+  // parallel_scan operations.
+  //  for (int i = 1; i < pver; ++i) {
+  //    const int kk = pverm - i;
+  //    below_tau[kk] = del_tau[kk + 1] + below_tau[kk + 1];
+  //    below_cld[kk] = clouds[kk + 1] * del_tau[kk + 1] + below_cld[kk + 1];
+  //  }; // end kk
+
+  Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, 0, pverm),
+                        [&](const int i, Real &accumulator, const bool last) {
+                          const int kk = pverm - i;
+                          accumulator += del_tau(kk);
+                          if (last) {
+                            below_tau(kk - 1) = accumulator;
+                          }
+                        });
+  // NOTE: The following code is equivalent to parallel_scan.
+  //   I have left this block of code for reference.
+#if 0
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 1, pver_local),
+                        [&](const int j) {
+                          Real suma=zero;
+                          Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(team, j),
+                          [&](const int i, Real &accumulator) {
+                          accumulator += del_tau(pverm-i);
+                        },suma);
+                        below_tau(pverm-j) = suma + below_tau(pver - 1) ;
+                        });
+#endif
+
+  team.team_barrier();
+  Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, 0, pverm),
+                        [&](const int i, Real &accumulator, const bool last) {
+                          const int kk = pverm - i;
+                          accumulator += clouds(kk) * del_tau(kk);
+                          if (last) {
+                            below_cld[kk - 1] = accumulator;
+                          }
+                        });
+  team.team_barrier();
+
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver_local),
+                       [&](const int i) {
+                         const int kk = pverm - i;
+                         if (below_tau[kk] != zero) {
+                           below_cld[kk] /= below_tau[kk];
+                         }
+                       });
+
+  team.team_barrier();
+
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver_local),
+                       [&](const int i) {
+                         const int kk = pverm - i;
+                         if (below_tau[kk] == zero) {
+                           below_cld[kk] = below_cld[kk + 1];
+                         }
+                       });
+  team.team_barrier();
+
+  /*---------------------------------------------------------
+      ... modify above_tau and below_tau via jfm
+  ---------------------------------------------------------*/
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver_local),
+                       [&](const int kk) {
+                         if (above_cld[kk] != zero) {
+                           above_tau[kk] /= above_cld[kk];
+                         } // end if
+                       });
+
+  team.team_barrier();
+
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 1, pver_local),
+                       [&](const int kk) {
+                         if (above_tau[kk] < tau_min) {
+                           above_cld[kk] = zero;
+                         } // end if
+                       });
+  team.team_barrier();
+
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pverm_local),
+                       [&](const int kk) {
+                         if (below_cld[kk] != zero) {
+                           below_tau[kk] /= below_cld[kk];
+                         } // end if
+                       });
+
+  team.team_barrier();
+
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pverm_local),
+                       [&](const int kk) {
+                         if (below_tau[kk] < tau_min) {
+                           below_cld[kk] = zero;
+                         } // end if
+                       });
+  team.team_barrier();
+  /*---------------------------------------------------------
+      ... form transmission factors
+  ---------------------------------------------------------*/
+
+  // BAD CONSTANT
+  const Real C1 = 11.905;
+  const Real C2 = 9.524;
+
+  // cos (solar zenith angle)
+  const Real coschi = haero::max(haero::cos(zen_angle), half);
+
+  Kokkos::parallel_for(
+      Kokkos::TeamVectorRange(team, pver_local), [&](const int kk) {
+        /*---------------------------------------------------------
+          ... form effective albedo
+          ---------------------------------------------------------*/
+        // transmission factor below this layer
+        const Real below_tra = C1 / (C2 + below_tau[kk]);
+        eff_alb[kk] =
+            srf_alb + below_cld[kk] * (one - below_tra) * (one - srf_alb);
+
+        // factor to calculate cld_mult
+        Real del_lwp = zero;
+        if (clouds[kk] != zero) {
+          // liquid water path in each layer [g/m2]
+          del_lwp = rgrav * lwc[kk] * delp[kk] * thousand /
+                    clouds[kk]; // the unit is (likely) g/m^2
+        }
+        Real fac1 = zero;
+        if (del_lwp * f_lwp2tau >= tau_min) {
+          // BAD CONSTANT
+          fac1 = 1.4 * coschi - one;
+        } // end if
+        // transmission factor above this layer
+        const Real above_tra = C1 / (C2 + above_tau[kk]);
+        // factor to calculate cld_mult
+        // BAD CONSTANT
+        Real fac2 = haero::min(zero, 1.6 * coschi * above_tra - one);
+        // BAD CONSTANT
+        cld_mult[kk] =
+            haero::max(.05, one + fac1 * clouds[kk] + fac2 * above_cld[kk]);
+      });
+
+} // end cloud_mod
+KOKKOS_INLINE_FUNCTION
+void find_index(const View1D &var_in, const int var_len,
                 const Real var_min, //  in
                 int &idx_out)       // out
 {
@@ -343,7 +461,7 @@ void find_index(const Real *var_in, const int var_len,
   auto min = [](int i, int j) { return (i < j) ? i : j; };
   auto max = [](int i, int j) { return (i < j) ? j : i; };
   for (int ii = 0; ii < var_len; ii++) {
-    if (var_in[ii] > var_min) {
+    if (var_in(ii) > var_min) {
       // Fortran to C++ indexing
       idx_out = max(min(ii, var_len - 1) - 1, 0);
       break;
@@ -358,7 +476,7 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
                    const int ial,         // in
                    const View5D &rsf_tab, // in
                    const int nw,
-                   Real *psum) // out
+                   const View1D &psum) // out
 {
 
   // @param[in]   dels(3)
@@ -398,19 +516,21 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
 } // calc_sum_wght
 
 KOKKOS_INLINE_FUNCTION
-void interpolate_rsf(const ThreadTeam &team, const Real *alb_in,
-                     const Real sza_in, const Real *p_in, const Real *colo3_in,
-                     const int kbot, //  in
-                     const Real *sza, const Real *del_sza, const Real *alb,
-                     const Real *press, const Real *del_p, const Real *colo3,
-                     const Real *o3rat, const Real *del_alb,
-                     const Real *del_o3rat, const Real *etfphot,
+void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
+                     const Real sza_in, const View1D &p_in,
+                     const View1D &colo3_in,
+                     const int kbot, // in
+                     const View1D &sza, const View1D &del_sza,
+                     const View1D &alb, const View1D &press,
+                     const View1D &del_p, const View1D &colo3,
+                     const View1D &o3rat, const View1D &del_alb,
+                     const View1D &del_o3rat, const View1D &etfphot,
                      const View5D &rsf_tab, // in
                      const int nw, const int nump, const int numsza,
                      const int numcolo3, const int numalb,
                      const View2D &rsf, // out
                      // work array
-                     Real *psum_l, Real *psum_u) {
+                     const View1D &psum_l, const View1D &psum_u) {
   /*----------------------------------------------------------------------
           ... interpolate table rsf to model variables
   ----------------------------------------------------------------------*/
@@ -444,9 +564,8 @@ void interpolate_rsf(const ThreadTeam &team, const Real *alb_in,
   const Real one = 1;
   const Real zero = 0;
 
-  // NOTE: psum_l and psum_u are not dimentioned by number of levels, kk,
-  // so can not parallelize over kk.
-  team.team_barrier();
+  // NOTE: psum_l and psum_u are not dimensioned by the number of levels, kk, so
+  // they cannot be parallelized over kk
   Kokkos::single(Kokkos::PerTeam(team), [=]() {
     int is = 0;
     find_index(sza, numsza, sza_in, // in
@@ -553,23 +672,25 @@ void interpolate_rsf(const ThreadTeam &team, const Real *alb_in,
     } // loop over kk
   }); // Kokkos::single
 } // interpolate_rsf
-
 //======================================================================================
 KOKKOS_INLINE_FUNCTION
-void jlong(const ThreadTeam &team, const Real sza_in, const Real *alb_in,
-           const Real *p_in, const Real *t_in, const Real *colo3_in,
-           const View4D &xsqy, const Real *sza, const Real *del_sza,
-           const Real *alb, const Real *press, const Real *del_p,
-           const Real *colo3, const Real *o3rat, const Real *del_alb,
-           const Real *del_o3rat, const Real *etfphot, const View5D &rsf_tab,
-           const Real *prs, const Real *dprs, const int nw, const int nump,
-           const int numsza, const int numcolo3, const int numalb,
-           const int np_xs, const int numj,
+void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
+           const View1D &p_in, const ConstColumnView &t_in,
+           const View1D &colo3_in, const View4D &xsqy, const View1D &sza,
+           const View1D &del_sza, const View1D &alb, const View1D &press,
+           const View1D &del_p, const View1D &colo3, const View1D &o3rat,
+           const View1D &del_alb, const View1D &del_o3rat,
+           const View1D &etfphot, const View5D &rsf_tab, const View1D &prs,
+           const View1D &dprs, const int nw, const int nump, const int numsza,
+           const int numcolo3, const int numalb, const int np_xs,
+           const int numj,
            const View2D &j_long, // output
            // work arrays
-           const View2D &rsf, const View2D &xswk, Real *psum_l,
-           Real *psum_u) // out
+           const View2D &rsf, const View2D &xswk, const View1D &psum_l,
+           const View1D &psum_u)
+// out
 {
+
   /*==============================================================================
      Purpose:
        To calculate the total J for selective species longward of 200nm.
@@ -743,11 +864,13 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
   constexpr Real r2d = 180.0 / haero::Constants::pi; // degrees to radians
   // BAD CONSTANT
   constexpr Real max_zen_angle = 88.85; //  degrees
+  constexpr int pver_local = pver;
 
   // vertical pressure array [hPa]
-  Real parg[pver] = {};
-  Real eff_alb[pver] = {};
-  Real cld_mult[pver] = {};
+  const auto &parg = work_arrays.parg;
+  const auto &eff_alb = work_arrays.eff_alb;
+  const auto &cld_mult = work_arrays.cld_mult;
+  const auto &work_cloud_mod = work_arrays.work_cloud_mod;
 
   /*-----------------------------------------------------------------
     ... zero all photorates
@@ -760,45 +883,40 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
     -----------------------------------------------------------------*/
     cloud_mod(team, zen_angle, clouds, lwc, pdel,
               srf_alb, //  in
-              eff_alb, cld_mult);
+              eff_alb, cld_mult, work_cloud_mod);
     team.team_barrier();
-    for (int kk = 0; kk < pver; ++kk) {
-      parg[kk] = pmid(kk) * Pa2mb;
-      cld_mult[kk] *= esfact;
-    }
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                         [&](const int kk) { parg(kk) = pmid(kk) * Pa2mb; });
     team.team_barrier();
     /*-----------------------------------------------------------------
      ... long wave length component
     -----------------------------------------------------------------*/
     team.team_barrier();
-    jlong(team, sza_in, eff_alb, parg, temper.data(), colo3_in.data(),
-          table_data.xsqy, table_data.sza.data(), table_data.del_sza.data(),
-          table_data.alb.data(), table_data.press.data(),
-          table_data.del_p.data(), table_data.colo3.data(),
-          table_data.o3rat.data(), table_data.del_alb.data(),
-          table_data.del_o3rat.data(), table_data.etfphot.data(),
+    jlong(team, sza_in, eff_alb, parg, temper, colo3_in, table_data.xsqy,
+          table_data.sza, table_data.del_sza, table_data.alb, table_data.press,
+          table_data.del_p, table_data.colo3, table_data.o3rat,
+          table_data.del_alb, table_data.del_o3rat, table_data.etfphot,
           table_data.rsf_tab, // in
-          table_data.prs.data(), table_data.dprs.data(), table_data.nw,
-          table_data.nump, table_data.numsza, table_data.numcolo3,
-          table_data.numalb, table_data.np_xs, table_data.numj,
+          table_data.prs, table_data.dprs, table_data.nw, table_data.nump,
+          table_data.numsza, table_data.numcolo3, table_data.numalb,
+          table_data.np_xs, table_data.numj,
           work_arrays.lng_prates, // output
           // work arrays
-          work_arrays.rsf, work_arrays.xswk, work_arrays.psum_l.data(),
-          work_arrays.psum_u.data());
+          work_arrays.rsf, work_arrays.xswk, work_arrays.psum_l,
+          work_arrays.psum_u);
     team.team_barrier();
-    Kokkos::single(Kokkos::PerTeam(team), [=]() {
-      for (int mm = 0; mm < phtcnt; ++mm) {
-        const int ind = table_data.lng_indexer(mm);
-        if (ind > -1) {
-          for (int kk = 0; kk < pver; ++kk) {
-            photo(kk, mm) =
-                cld_mult[kk] *
-                (photo(kk, mm) + table_data.pht_alias_mult_1(mm) *
-                                     work_arrays.lng_prates(ind, kk));
+    Kokkos::parallel_for(
+        Kokkos::TeamVectorRange(team, pver_local), [&](const int kk) {
+          for (int mm = 0; mm < phtcnt; ++mm) {
+            const int ind = table_data.lng_indexer(mm);
+            if (ind > -1) {
+              photo(kk, mm) =
+                  cld_mult(kk) * esfact *
+                  (photo(kk, mm) + table_data.pht_alias_mult_1(mm) *
+                                       work_arrays.lng_prates(ind, kk));
+            }
           }
-        }
-      }
-    });
+        });
   }
   team.team_barrier();
 }
