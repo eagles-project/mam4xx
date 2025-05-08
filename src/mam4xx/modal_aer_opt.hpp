@@ -507,17 +507,14 @@ void binterp(const View3D &table, const Real ref_real, const Real ref_img,
   } // icoef
 
 } // binterp
-
-KOKKOS_INLINE_FUNCTION
-void compute_calcsize_and_water_uptake_dr(const Real &pmid,
-                                          const Real &temperature, Real &cldn,
-                                          Real *state_q_kk,   // in
-                                          const Real *qqcw_k, // in
-                                          const Real &dt,
-                                          const CalcsizeData &calcsizedata,
-                                          // outputs
-                                          Real dgnumwet_m_kk[ntot_amode],
-                                          Real qaerwat_m_kk[ntot_amode]) {
+template <typename VectorType>
+KOKKOS_INLINE_FUNCTION void compute_calcsize_and_water_uptake_dr(
+    const Real &pmid, const Real &temperature, Real &cldn,
+    const VectorType &state_q_kk, // in
+    const VectorType &qqcw_k,     // in
+    const Real &dt, const CalcsizeData &calcsizedata,
+    // outputs
+    Real dgnumwet_m_kk[ntot_amode], Real qaerwat_m_kk[ntot_amode]) {
 
   Real dgncur_c_kk[ntot_amode] = {};
   Real dgnumdry_m_kk[ntot_amode] = {};
@@ -536,11 +533,11 @@ void compute_calcsize_and_water_uptake_dr(const Real &pmid,
       temperature, pmid, cldn, dgnumdry_m_kk, dgnumwet_m_kk, qaerwat_m_kk);
 } // compute_calcsize_water_uptake_dr
 
-KOKKOS_INLINE_FUNCTION
-void modal_aero_sw_wo_diagnostics_k(
+template <typename VectorType>
+KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
     const Real &pdeldry, const Real &pmid, const Real &temperature, Real &cldn,
-    Real *state_q_kk,   // in
-    const Real *qqcw_k, // in
+    const VectorType &state_q_kk, // in
+    const VectorType &qqcw_k,     // in
     const Real &dt, const AerosolOpticsDeviceData &aersol_optics_data,
     const CalcsizeData &calcsizedata,
     // outputs
@@ -860,17 +857,15 @@ void modal_aero_sw(const ThreadTeam &team, const Real dt,
       aodvis);
 
 } //
-
-KOKKOS_INLINE_FUNCTION
-void modal_aero_lw_k(const Real &pdeldry, const Real &pmid,
-                     const Real &temperature, Real &cldn,
-                     Real *state_q_kk,   // in
-                     const Real *qqcw_k, // in
-                     const Real &dt,
-                     const AerosolOpticsDeviceData &aersol_optics_data,
-                     const CalcsizeData &calcsizedata,
-                     // outputs
-                     Real *tauxar) {
+template <typename VectorType>
+KOKKOS_INLINE_FUNCTION void modal_aero_lw_k(
+    const Real &pdeldry, const Real &pmid, const Real &temperature, Real &cldn,
+    const VectorType &state_q_kk, // in
+    const VectorType &qqcw_k,     // in
+    const Real &dt, const AerosolOpticsDeviceData &aersol_optics_data,
+    const CalcsizeData &calcsizedata,
+    // outputs
+    Real *tauxar) {
 
   // FORTRAN refactoring: For prognostic aerosols only, other options are
   // removed

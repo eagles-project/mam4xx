@@ -279,9 +279,8 @@ void modal_aero_lw(Ensemble *ensemble) {
                 const auto state_q_kk = ekat::subview(state_q, kk);
                 const auto qqcw_kk = ekat::subview(qqcw, kk);
                 utils::extract_stateq_from_prognostics(progs_in, atm,
-                                                       state_q_kk.data(), kk);
-                utils::extract_qqcw_from_prognostics(progs_in, qqcw_kk.data(),
-                                                     kk);
+                                                       state_q_kk, kk);
+                utils::extract_qqcw_from_prognostics(progs_in, qqcw_kk, kk);
               });
         });
 

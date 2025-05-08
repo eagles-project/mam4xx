@@ -26,6 +26,8 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
     const auto dt = input.get_array("dt")[0];
 
     View2D state_q("state_q", pver, pcnst);
+    View2D ptend("ptend", pver, pcnst);
+    View2D dqqcwdt("dqqcwdt", pver, pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
     View2D qqcw("qqcw", pver, pcnst);
     auto qqcw_host = create_mirror_view(qqcw);
@@ -39,6 +41,7 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
     }
     Kokkos::deep_copy(qqcw, qqcw_host);
     View2D dgnumdry_m("dgnumdry_m", pver, ntot_amode);
+    View2D dgncur_c("dgncur_c", pver, ntot_amode);
     mam4::modal_aer_opt::CalcsizeData cal_data;
     cal_data.initialize();
 
@@ -50,16 +53,19 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
 
           for (int kk = top_lev; kk < pver; ++kk) {
             const auto state_q_k = Kokkos::subview(state_q, kk, Kokkos::ALL());
+            auto ptend_k = Kokkos::subview(ptend, kk, Kokkos::ALL());
             const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
             const auto dgncur_i =
                 Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
-            Real dgncur_c[ntot_amode] = {};
-            Real ptend[pcnst] = {};
-            Real dqqcwdt[pcnst] = {};
+            // Real dgncur_c[ntot_amode] = {};
+            const auto dgncur_c_k =
+                Kokkos::subview(dgncur_c, kk, Kokkos::ALL());
+            // Real dqqcwdt[pcnst] = {};
+            auto dqqcwdt_k = Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
             modal_aero_calcsize::modal_aero_calcsize_sub(
-                state_q_k.data(), // in
-                qqcw_k.data(),    // in/out
-                dt, cal_data, dgncur_i.data(), dgncur_c, ptend, dqqcwdt);
+                state_q_k, // in
+                qqcw_k,    // in/out
+                dt, cal_data, dgncur_i, dgncur_c_k, ptend_k, dqqcwdt_k);
           } // k
         });
 

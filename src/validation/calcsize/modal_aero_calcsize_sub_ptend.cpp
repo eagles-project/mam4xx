@@ -38,6 +38,8 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
     }
     Kokkos::deep_copy(qqcw, qqcw_host);
     View2D dgnumdry_m("dgnumdry_m", pver, ntot_amode);
+    View2D dgncur_c("dgncur_c", pver, ntot_amode);
+
     if (input.has("dgncur_a")) {
       auto dgncur_a_db = input.get_array("dgncur_a");
       mam4::validation::convert_1d_vector_to_2d_view_device(dgncur_a_db,
@@ -64,15 +66,17 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
             const auto qqcw_k = Kokkos::subview(qqcw, kk, Kokkos::ALL());
             const auto dgncur_i =
                 Kokkos::subview(dgnumdry_m, kk, Kokkos::ALL());
-            Real dgncur_c[ntot_amode] = {};
-            const auto ptend_q_k = Kokkos::subview(ptend_q, kk, Kokkos::ALL());
-            const auto dqqcwdt_k = Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
-            modal_aero_calcsize::modal_aero_calcsize_sub(
-                state_q_k.data(), // in
-                qqcw_k.data(),    // in/out
-                dt, cal_data,
-                // outputs
-                dgncur_i.data(), dgncur_c, ptend_q_k.data(), dqqcwdt_k.data());
+            const auto dgncur_c_k =
+                Kokkos::subview(dgncur_c, kk, Kokkos::ALL());
+            // Real dgncur_c[ntot_amode] = {};
+            auto ptend_q_k = Kokkos::subview(ptend_q, kk, Kokkos::ALL());
+            auto dqqcwdt_k = Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
+            modal_aero_calcsize::modal_aero_calcsize_sub(state_q_k, // in
+                                                         qqcw_k,    // in/out
+                                                         dt, cal_data,
+                                                         // outputs
+                                                         dgncur_i, dgncur_c_k,
+                                                         ptend_q_k, dqqcwdt_k);
           } // k
         });
 
