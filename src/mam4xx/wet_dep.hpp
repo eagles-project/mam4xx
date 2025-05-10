@@ -1712,9 +1712,13 @@ void aero_model_wetdep(
 
   View2D rtscavt_sv(work_ptr, mam4::nlev, pcnst);
   work_ptr += pcnst * mam4::nlev;
+  View2D dqqcwdt(work_ptr, mam4::nlev, aero_model::pcnst);
+  work_ptr += aero_model::pcnst * mam4::nlev;
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, mam4::nlev), [&](int i) {
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pcnst),
-                         [&](int j) { rtscavt_sv(i, j) = zero; });
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team, pcnst), [&](int j) {
+      rtscavt_sv(i, j) = zero;
+      dqqcwdt(i, j) = zero;
+    });
   });
 
   wetdep::zero_values(team, aerdepwetis, pcnst);
@@ -1722,8 +1726,6 @@ void aero_model_wetdep(
 
   View2D qsrflx_mzaer2cnvpr(work_ptr, aero_model::pcnst, 2);
   work_ptr += aero_model::pcnst * 2;
-  View2D dqqcwdt(work_ptr, mam4::nlev, aero_model::pcnst);
-  work_ptr += aero_model::pcnst * mam4::nlev;
 
   /// error check
   const int workspace_used(work_ptr - work.data()),
