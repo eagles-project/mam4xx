@@ -883,10 +883,11 @@ void set_f_act_coarse(const int kk,
 }
 
 // =============================================================================
+template <typename VectorType>
 KOKKOS_INLINE_FUNCTION
 void calc_resusp_to_coarse(const int mm, const bool update_dqdt,
                            const Real rcscavt, const Real rsscavt,
-                           Real &dqdt_tmp, Real rtscavt_sv[]) {
+                           Real &dqdt_tmp, const VectorType& rtscavt_sv) {
   // clang-format off
   //-----------------------------------------------------------------------
   // resuspension goes to coarse mode

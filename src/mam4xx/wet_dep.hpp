@@ -1321,10 +1321,10 @@ void define_act_frac(const ThreadTeam &team, const View1D &sol_facti,
                                 sol_factic[k], sol_factb[k], f_act_conv[k]);
   });
 }
-
+template <typename VectorType>
 KOKKOS_INLINE_FUNCTION
 void compute_q_tendencies_phase_1(
-    Real &scavt, Real &bcscavt, Real &rcscavt, Real rtscavt_sv[],
+    Real &scavt, Real &bcscavt, Real &rcscavt, const VectorType& rtscavt_sv,
     const Real f_act_conv, const Real scavcoefnum, const Real scavcoefvol,
     const Real totcond, const Real cmfdqr, const Real conicw, const Real evapc,
     const Real evapr, const Real prain, const Real dlf, const Real cldt,
@@ -1364,10 +1364,10 @@ void compute_q_tendencies_phase_1(
   aero_model::calc_resusp_to_coarse(mm, update_dqdt, rcscavt, rsscavt, scavt,
                                     rtscavt_sv);
 }
-
+template <typename VectorType>
 KOKKOS_INLINE_FUNCTION
 void compute_q_tendencies_phase_2(
-    Real &scavt, Real &bcscavt, Real &rcscavt, Real rtscavt_sv[],
+    Real &scavt, Real &bcscavt, Real &rcscavt, const VectorType& rtscavt_sv,
     const Real qqcw_tmp, const Real tracer,
 
     // const Prognostics &progs,
@@ -1504,7 +1504,7 @@ void compute_q_tendencies(
         // "most current" q
         compute_q_tendencies_phase_1(
             // These are the output values
-            scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv_k.data(),
+            scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv_k,
             // The rest of the values are input only.
             f_act_conv[k], scavcoefnum[k], scavcoefvol[k], totcond[k],
             cmfdqr[k], conicw[k], evapc[k], evapr[k], prain[k], dlf[k], cldt[k],
@@ -1527,7 +1527,7 @@ void compute_q_tendencies(
         const Real qqcw_tmp = 0.0;
         compute_q_tendencies_phase_2(
             // These are the output values
-            scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv_k.data(), qqcw_tmp,
+            scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv_k, qqcw_tmp,
             qqcw(k, mm),
             // The rest of the values are input only.
             // progs,
