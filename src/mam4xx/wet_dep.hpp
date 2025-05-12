@@ -113,10 +113,10 @@ inline void init_scavimptbl(View2DHost scavimptblvol,
  *
  */
 // clang-format on
-template <typename FUNC>
+template <typename FUNC, typename VectorType>
 KOKKOS_INLINE_FUNCTION void
-calculate_cloudy_volume(const int nlev, const Real cld[/*nlev*/], FUNC lprec,
-                        const bool is_tot_cld, Real cldv[/*nlev*/]) {
+calculate_cloudy_volume(const int nlev, const VectorType& cld, FUNC lprec,
+                        const bool is_tot_cld, const View1D& cldv) {
   // BAD CONSTANT
   const Real small_value_30 = 1.e-30;
   const Real small_value_36 = 1.e-36;
@@ -1134,12 +1134,15 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
  *
  * @pre atm is initialized correctly and has the correct number of levels.
  */
+
 KOKKOS_INLINE_FUNCTION
-void clddiag(const int nlev, const Real *temperature, const Real *pmid,
-             const Real *pdel, const Real *cmfdqr, const Real *evapc,
-             const Real *cldt, const Real *cldcu, const Real *cldst,
-             const Real *evapr, const Real *prain, Real *cldv, Real *cldvcu,
-             Real *cldvst, Real *rain) {
+void clddiag(const int nlev, haero::ConstColumnView temperature, haero::ConstColumnView pmid,
+             haero::ConstColumnView pdel, const View1D &cmfdqr, const View1D &evapc,
+             const haero::ConstColumnView &cldt, const View1D &cldcu,
+             const View1D &cldst,
+             const haero::ConstColumnView &evapr, const haero::ConstColumnView & prain,
+              const View1D &cldv, const View1D &cldvcu,
+             const View1D &cldvst, const View1D &rain) {
   // Calculate local precipitation production rate
   // In src/chemistry/aerosol/wetdep.F90, (prain + cmfdqr) is used for
   // source_term
@@ -1228,11 +1231,11 @@ void cloud_diagnostics(const ThreadTeam &team,
   // NOTE: The k loop inside clddiag cannot be converted to parallel_for
   // because precabs requires values from the previous elevation (k-1).
   Kokkos::single(Kokkos::PerTeam(team), [=]() {
-    wetdep::clddiag(nlev, temperature.data(), pmid.data(), pdel.data(),
-                    cmfdqr.data(), evapc.data(), cldt.data(), cldcu.data(),
-                    cldst.data(), evapr.data(), prain.data(),
+    wetdep::clddiag(nlev, temperature, pmid, pdel,
+                    cmfdqr, evapc, cldt, cldcu,
+                    cldst, evapr, prain,
                     // outputs
-                    cldv.data(), cldvcu.data(), cldvst.data(), rain.data());
+                    cldv, cldvcu, cldvst, rain);
   });
 }
 template <typename VectorIntType>
