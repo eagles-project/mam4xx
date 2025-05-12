@@ -1260,9 +1260,10 @@ void set_f_act(const ThreadTeam &team, VectorIntType& isprx,
 }
 
 // Computes lookup table for aerosol impaction/interception scavenging rates
+template <typename VectorIntType>
 KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(const ThreadTeam &team, const Diagnostics &diags,
-                               const int *isprx, const View2D &scavimptblvol,
+                               const VectorIntType& isprx, const View2D &scavimptblvol,
                                const View2D &scavimptblnum,
                                const View1D &scavcoefnum,
                                const View1D &scavcoefvol, const int imode,
@@ -1282,10 +1283,11 @@ void modal_aero_bcscavcoef_get(const ThreadTeam &team, const Diagnostics &diags,
 }
 
 // Computes lookup table for aerosol impaction/interception scavenging rates
+template <typename VectorIntType>
 KOKKOS_INLINE_FUNCTION
 void modal_aero_bcscavcoef_get(const ThreadTeam &team,
                                const View2D &wet_geometric_mean_diameter_i,
-                               const int *isprx, const View2D &scavimptblvol,
+                               const VectorIntType & isprx, const View2D &scavimptblvol,
                                const View2D &scavimptblnum,
                                const View1D &scavcoefnum,
                                const View1D &scavcoefvol, const int imode,
@@ -1961,7 +1963,7 @@ void aero_model_wetdep(
           // rates
           wetdep::modal_aero_bcscavcoef_get(
               // inputs
-              team, wet_geometric_mean_diameter_i, isprx.data(), scavimptblvol,
+              team, wet_geometric_mean_diameter_i, isprx, scavimptblvol,
               scavimptblnum,
               // outputs
               scavcoefnum, scavcoefvol,
@@ -2087,9 +2089,9 @@ void aero_model_wetdep(
     const auto ptend_q_kk = ekat::subview(ptend_q, kk);
     const auto state_q_kk = ekat::subview(state_q, kk);
     const auto qqcw_kk = ekat::subview(qqcw, kk);
-    utils::inject_qqcw_to_prognostics(qqcw_kk.data(), progs, kk);
-    utils::inject_stateq_to_prognostics(state_q_kk.data(), progs, kk);
-    utils::inject_ptend_to_tendencies(ptend_q_kk.data(), tends, kk);
+    utils::inject_qqcw_to_prognostics(qqcw_kk, progs, kk);
+    utils::inject_stateq_to_prognostics(state_q_kk, progs, kk);
+    utils::inject_ptend_to_tendencies(ptend_q_kk, tends, kk);
   });
   team.team_barrier();
 
