@@ -1247,8 +1247,8 @@ void set_f_act(const ThreadTeam &team, VectorIntType& isprx,
                const int nlev) {
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
-    isprx[k] = aero_model::examine_prec_exist(k, pdel.data(), prain.data(),
-                                              cmfdqr.data(), evapr.data());
+    isprx[k] = aero_model::examine_prec_exist(k, pdel, prain,
+                                              cmfdqr, evapr);
 
     aero_model::set_f_act_coarse(k, state_q, ptend_q, dt, f_act_conv_coarse[k],
                                  f_act_conv_coarse_dust[k],
