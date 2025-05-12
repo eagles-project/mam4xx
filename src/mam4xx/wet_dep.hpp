@@ -1235,9 +1235,9 @@ void cloud_diagnostics(const ThreadTeam &team,
                     cldv.data(), cldvcu.data(), cldvst.data(), rain.data());
   });
 }
-
+template <typename VectorIntType>
 KOKKOS_INLINE_FUNCTION
-void set_f_act(const ThreadTeam &team, int *isprx,
+void set_f_act(const ThreadTeam &team, VectorIntType& isprx,
                const View1D &f_act_conv_coarse,
                const View1D &f_act_conv_coarse_dust,
                const View1D &f_act_conv_coarse_nacl,
@@ -1930,7 +1930,7 @@ void aero_model_wetdep(
         // input
         team,
         // outputs
-        isprx.data(), f_act_conv_coarse, f_act_conv_coarse_dust,
+        isprx, f_act_conv_coarse, f_act_conv_coarse_dust,
         f_act_conv_coarse_nacl,
         // inputs
         pdel, prain, cmfdqr, evapr, state_q, ptend_q, dt, nlev);
