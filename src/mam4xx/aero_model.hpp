@@ -29,6 +29,8 @@ const int naerosvmax = 51; //  maximum bin number for aerosol
 const int maxd_aspectype = 14;
 
 constexpr int pcnst = mam4::pcnst;
+using View1D = DeviceType::view_1d<Real>;
+using ConstView1D = DeviceType::view_1d<const Real>;
 using View2D = DeviceType::view_2d<Real>;
 using View2DHost = typename HostType::view_2d<Real>;
 
@@ -804,9 +806,9 @@ void index_ordering(const int lspec, const int imode, const int lphase, int &mm,
 
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
-int examine_prec_exist(const int level_for_precipitation, const Real pdel[],
-                       const Real prain[], const Real cmfdqr[],
-                       const Real evapr[]) {
+int examine_prec_exist(const int level_for_precipitation, haero::ConstColumnView pdel,
+                       haero::ConstColumnView prain, const View1D & cmfdqr,
+                       const ConstView1D & evapr) {
   // clang-format off
   // ----------------------------------------------------------------------
   // examine if level level_for_precipitation has precipitation.
