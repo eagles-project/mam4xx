@@ -1849,7 +1849,7 @@ void aero_model_wetdep(
           // inputs
           calcsizedata.nspec_amode, calcsizedata.specdens_amode,
           calcsizedata.spechygro, calcsizedata.lspectype_amode,
-          state_q_kk.data(), temperature(kk), pmid(kk), cldt(kk), dgnumdry_m_kk,
+          state_q_kk, temperature(kk), pmid(kk), cldt(kk), dgnumdry_m_kk,
           // outputs
           dgnumwet_m_kk, qaerwat_m_kk, wetdens_kk);
     }
