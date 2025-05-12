@@ -1554,9 +1554,7 @@ int get_aero_model_wetdep_work_len() {
                  // scavt, bcscavt, rcscavt,
                  2 * mam4::nlev * pcnst +
                  // ptend_q, rtscavt_sv
-                 2 * pcnst +
-                 // dqqcwdt
-                 aero_model::pcnst * mam4::nlev;
+                 2 * pcnst;
   //  qsrflx_mzaer2cnvpr
   return work_len;
 }
@@ -1722,8 +1720,6 @@ void aero_model_wetdep(
 
   View2D qsrflx_mzaer2cnvpr(work_ptr, aero_model::pcnst, 2);
   work_ptr += aero_model::pcnst * 2;
-  View2D dqqcwdt(work_ptr, mam4::nlev, aero_model::pcnst);
-  work_ptr += aero_model::pcnst * mam4::nlev;
 
   /// error check
   const int workspace_used(work_ptr - work.data()),
@@ -1776,9 +1772,9 @@ void aero_model_wetdep(
     const auto state_q_kk = ekat::subview(state_q, kk);
     const auto qqcw_kk = ekat::subview(qqcw, kk);
     const auto ptend_q_kk = ekat::subview(ptend_q, kk);
-    utils::extract_stateq_from_prognostics(progs, atm, state_q_kk, kk);
-    utils::extract_qqcw_from_prognostics(progs, qqcw_kk, kk);
-    utils::extract_ptend_from_tendencies(tends, ptend_q_kk, kk);
+    utils::extract_stateq_from_prognostics(progs, atm, state_q_kk.data(), kk);
+    utils::extract_qqcw_from_prognostics(progs, qqcw_kk.data(), kk);
+    utils::extract_ptend_from_tendencies(tends, ptend_q_kk.data(), kk);
   });
   team.team_barrier();
 
@@ -1796,7 +1792,7 @@ void aero_model_wetdep(
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, nlev), [&](int kk) {
     const auto state_q_kk = ekat::subview(state_q, kk);
     const auto qqcw_kk = ekat::subview(qqcw, kk);
-    auto ptend_q_kk = ekat::subview(ptend_q, kk);
+    const auto ptend_q_kk = ekat::subview(ptend_q, kk);
     Real dgnumwet_m_kk[ntot_amode] = {};
     // wetdens and qaerwat are input/ouput to water_uptake
     Real qaerwat_m_kk[ntot_amode] = {};
@@ -1813,15 +1809,14 @@ void aero_model_wetdep(
 
     {
       Real dgncur_c_kk[ntot_amode] = {};
-      // Real dqqcwdt_kk[pcnst] = {};
-      auto dqqcwdt_kk = ekat::subview(dqqcwdt, kk);
+      Real dqqcwdt_kk[pcnst] = {};
       //  Calculate aerosol size distribution parameters and aerosol water
       //  uptake for prognostic aerosols
       modal_aero_calcsize::modal_aero_calcsize_sub(
           // Inputs
-          state_q_kk, qqcw_kk, dt, calcsizedata,
+          state_q_kk.data(), qqcw_kk.data(), dt, calcsizedata,
           // Outputs
-          dgnumdry_m_kk, dgncur_c_kk, ptend_q_kk, dqqcwdt_kk);
+          dgnumdry_m_kk, dgncur_c_kk, ptend_q_kk.data(), dqqcwdt_kk);
       // NOTE: dgnumdry_m_kk is interstitial dry diameter size and
       // dgncur_c_kk is cloud borne dry diameter size
 

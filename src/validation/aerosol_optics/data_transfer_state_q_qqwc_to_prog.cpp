@@ -130,9 +130,10 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
                 const auto state_q_output_kk =
                     ekat::subview(state_q_output, kk);
                 const auto qqcw_output_kk = ekat::subview(qqcw_output, kk);
-                utils::extract_stateq_from_prognostics(progs, atm,
-                                                       state_q_output_kk, kk);
-                utils::extract_qqcw_from_prognostics(progs, qqcw_output_kk, kk);
+                utils::extract_stateq_from_prognostics(
+                    progs, atm, state_q_output_kk.data(), kk);
+                utils::extract_qqcw_from_prognostics(progs,
+                                                     qqcw_output_kk.data(), kk);
               });
 
           team.team_barrier();
