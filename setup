@@ -99,7 +99,6 @@ cmake \
  -DMAM4XX_HAERO_DIR=\$HAERO_DIR \
  -DNUM_VERTICAL_LEVELS=\$NUM_VERTICAL_LEVELS \
  -DENABLE_SKYWALKER=ON \
- -DCMAKE_CUDA_ARCHITECTURES=80 \
  \$OPTIONS \
  -G "\$GENERATOR" \
  \$SOURCE_DIR
@@ -120,4 +119,3 @@ echo "  1. cd $1"
 echo "  2. Edit config.sh"
 echo "  3. ./config.sh"
 echo "  4. Build using 'make -j'."
-
