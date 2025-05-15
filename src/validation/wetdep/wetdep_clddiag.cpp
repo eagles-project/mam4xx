@@ -72,56 +72,55 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
   using View1DHost = typename HostType::view_1d<Real>;
   using View1D = typename DeviceType::view_1d<Real>;
 
-// For temperature
-View1DHost temperature_host((Real *)temperature.data(), pver);
-View1D temperature_arr("temperature", pver);
-Kokkos::deep_copy(temperature_arr, temperature_host);
+  // For temperature
+  View1DHost temperature_host((Real *)temperature.data(), pver);
+  View1D temperature_arr("temperature", pver);
+  Kokkos::deep_copy(temperature_arr, temperature_host);
 
-// For pmid
-View1DHost pmid_host((Real *)pmid.data(), pver);
-View1D pmid_arr("pmid", pver);
-Kokkos::deep_copy(pmid_arr, pmid_host);
+  // For pmid
+  View1DHost pmid_host((Real *)pmid.data(), pver);
+  View1D pmid_arr("pmid", pver);
+  Kokkos::deep_copy(pmid_arr, pmid_host);
 
-// For pdel
-View1DHost pdel_host((Real *)pdel.data(), pver);
-View1D pdel_arr("pdel", pver);
-Kokkos::deep_copy(pdel_arr, pdel_host);
+  // For pdel
+  View1DHost pdel_host((Real *)pdel.data(), pver);
+  View1D pdel_arr("pdel", pver);
+  Kokkos::deep_copy(pdel_arr, pdel_host);
 
-// For cmfdqr
-View1DHost cmfdqr_host((Real *)cmfdqr.data(), pver);
-View1D cmfdqr_arr("cmfdqr", pver);
-Kokkos::deep_copy(cmfdqr_arr, cmfdqr_host);
+  // For cmfdqr
+  View1DHost cmfdqr_host((Real *)cmfdqr.data(), pver);
+  View1D cmfdqr_arr("cmfdqr", pver);
+  Kokkos::deep_copy(cmfdqr_arr, cmfdqr_host);
 
-// For evapc
-View1DHost evapc_host((Real *)evapc.data(), pver);
-View1D evapc_arr("evapc", pver);
-Kokkos::deep_copy(evapc_arr, evapc_host);
+  // For evapc
+  View1DHost evapc_host((Real *)evapc.data(), pver);
+  View1D evapc_arr("evapc", pver);
+  Kokkos::deep_copy(evapc_arr, evapc_host);
 
-// For cldt
-View1DHost cldt_host((Real *)cldt.data(), pver);
-View1D cldt_arr("cldt", pver);
-Kokkos::deep_copy(cldt_arr, cldt_host);
+  // For cldt
+  View1DHost cldt_host((Real *)cldt.data(), pver);
+  View1D cldt_arr("cldt", pver);
+  Kokkos::deep_copy(cldt_arr, cldt_host);
 
-// For cldcu
-View1DHost cldcu_host((Real *)cldcu.data(), pver);
-View1D cldcu_arr("cldcu", pver);
-Kokkos::deep_copy(cldcu_arr, cldcu_host);
+  // For cldcu
+  View1DHost cldcu_host((Real *)cldcu.data(), pver);
+  View1D cldcu_arr("cldcu", pver);
+  Kokkos::deep_copy(cldcu_arr, cldcu_host);
 
-// For cldst
-View1DHost cldst_host((Real *)cldst.data(), pver);
-View1D cldst_arr("cldst", pver);
-Kokkos::deep_copy(cldst_arr, cldst_host);
+  // For cldst
+  View1DHost cldst_host((Real *)cldst.data(), pver);
+  View1D cldst_arr("cldst", pver);
+  Kokkos::deep_copy(cldst_arr, cldst_host);
 
-// For evapr
-View1DHost evapr_host((Real *)evapr.data(), pver);
-View1D evapr_arr("evapr", pver);
-Kokkos::deep_copy(evapr_arr, evapr_host);
+  // For evapr
+  View1DHost evapr_host((Real *)evapr.data(), pver);
+  View1D evapr_arr("evapr", pver);
+  Kokkos::deep_copy(evapr_arr, evapr_host);
 
-// For prain
-View1DHost prain_host((Real *)prain.data(), pver);
-View1D prain_arr("prain", pver);
-Kokkos::deep_copy(prain_arr, prain_host);
-
+  // For prain
+  View1DHost prain_host((Real *)prain.data(), pver);
+  View1D prain_arr("prain", pver);
+  Kokkos::deep_copy(prain_arr, prain_host);
 
   // Prepare device views for output arrays
   ColumnView cldv_dev = mam4::validation::create_column_view(pver);
@@ -129,14 +128,13 @@ Kokkos::deep_copy(prain_arr, prain_host);
   ColumnView cldvst_dev = mam4::validation::create_column_view(pver);
   ColumnView rain_dev = mam4::validation::create_column_view(pver);
 
-  //TODO: let's use team policy
+  // TODO: let's use team policy
   Kokkos::parallel_for(
       "wetdep::clddiag", 1, KOKKOS_LAMBDA(const int) {
-
         mam4::wetdep::clddiag(pver, temperature_arr, pmid_arr, pdel_arr,
                               cmfdqr_arr, evapc_arr, cldt_arr, cldcu_arr,
-                              cldst_arr, evapr_arr, prain_arr, cldv_dev, cldvcu_dev,
-                              cldvst_dev, rain_dev);
+                              cldst_arr, evapr_arr, prain_arr, cldv_dev,
+                              cldvcu_dev, cldvst_dev, rain_dev);
       });
 
   // Create mirror views for output arrays

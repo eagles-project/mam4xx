@@ -806,9 +806,10 @@ void index_ordering(const int lspec, const int imode, const int lphase, int &mm,
 
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
-int examine_prec_exist(const int level_for_precipitation, haero::ConstColumnView pdel,
-                       haero::ConstColumnView prain, const View1D & cmfdqr,
-                       const ConstView1D & evapr) {
+int examine_prec_exist(const int level_for_precipitation,
+                       haero::ConstColumnView pdel,
+                       haero::ConstColumnView prain, const View1D &cmfdqr,
+                       const ConstView1D &evapr) {
   // clang-format off
   // ----------------------------------------------------------------------
   // examine if level level_for_precipitation has precipitation.
@@ -884,10 +885,10 @@ void set_f_act_coarse(const int kk,
 
 // =============================================================================
 template <typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void calc_resusp_to_coarse(const int mm, const bool update_dqdt,
-                           const Real rcscavt, const Real rsscavt,
-                           Real &dqdt_tmp, const VectorType& rtscavt_sv) {
+KOKKOS_INLINE_FUNCTION void
+calc_resusp_to_coarse(const int mm, const bool update_dqdt, const Real rcscavt,
+                      const Real rsscavt, Real &dqdt_tmp,
+                      const VectorType &rtscavt_sv) {
   // clang-format off
   //-----------------------------------------------------------------------
   // resuspension goes to coarse mode

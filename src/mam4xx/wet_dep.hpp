@@ -115,8 +115,8 @@ inline void init_scavimptbl(View2DHost scavimptblvol,
 // clang-format on
 template <typename FUNC, typename VectorType>
 KOKKOS_INLINE_FUNCTION void
-calculate_cloudy_volume(const int nlev, const VectorType& cld, FUNC lprec,
-                        const bool is_tot_cld, const View1D& cldv) {
+calculate_cloudy_volume(const int nlev, const VectorType &cld, FUNC lprec,
+                        const bool is_tot_cld, const View1D &cldv) {
   // BAD CONSTANT
   const Real small_value_30 = 1.e-30;
   const Real small_value_36 = 1.e-36;
@@ -1136,13 +1136,13 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
  */
 
 KOKKOS_INLINE_FUNCTION
-void clddiag(const int nlev, haero::ConstColumnView temperature, haero::ConstColumnView pmid,
-             haero::ConstColumnView pdel, const View1D &cmfdqr, const View1D &evapc,
+void clddiag(const int nlev, haero::ConstColumnView temperature,
+             haero::ConstColumnView pmid, haero::ConstColumnView pdel,
+             const View1D &cmfdqr, const View1D &evapc,
              const haero::ConstColumnView &cldt, const View1D &cldcu,
-             const View1D &cldst,
-             const haero::ConstColumnView &evapr, const haero::ConstColumnView & prain,
-              const View1D &cldv, const View1D &cldvcu,
-             const View1D &cldvst, const View1D &rain) {
+             const View1D &cldst, const haero::ConstColumnView &evapr,
+             const haero::ConstColumnView &prain, const View1D &cldv,
+             const View1D &cldvcu, const View1D &cldvst, const View1D &rain) {
   // Calculate local precipitation production rate
   // In src/chemistry/aerosol/wetdep.F90, (prain + cmfdqr) is used for
   // source_term
@@ -1231,27 +1231,23 @@ void cloud_diagnostics(const ThreadTeam &team,
   // NOTE: The k loop inside clddiag cannot be converted to parallel_for
   // because precabs requires values from the previous elevation (k-1).
   Kokkos::single(Kokkos::PerTeam(team), [=]() {
-    wetdep::clddiag(nlev, temperature, pmid, pdel,
-                    cmfdqr, evapc, cldt, cldcu,
+    wetdep::clddiag(nlev, temperature, pmid, pdel, cmfdqr, evapc, cldt, cldcu,
                     cldst, evapr, prain,
                     // outputs
                     cldv, cldvcu, cldvst, rain);
   });
 }
 template <typename VectorIntType>
-KOKKOS_INLINE_FUNCTION
-void set_f_act(const ThreadTeam &team, VectorIntType& isprx,
-               const View1D &f_act_conv_coarse,
-               const View1D &f_act_conv_coarse_dust,
-               const View1D &f_act_conv_coarse_nacl,
-               haero::ConstColumnView pdel, haero::ConstColumnView prain,
-               const View1D &cmfdqr, const ConstView1D &evapr,
-               const View2D &state_q, const View2D &ptend_q, const Real dt,
-               const int nlev) {
+KOKKOS_INLINE_FUNCTION void
+set_f_act(const ThreadTeam &team, VectorIntType &isprx,
+          const View1D &f_act_conv_coarse, const View1D &f_act_conv_coarse_dust,
+          const View1D &f_act_conv_coarse_nacl, haero::ConstColumnView pdel,
+          haero::ConstColumnView prain, const View1D &cmfdqr,
+          const ConstView1D &evapr, const View2D &state_q,
+          const View2D &ptend_q, const Real dt, const int nlev) {
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
-    isprx[k] = aero_model::examine_prec_exist(k, pdel, prain,
-                                              cmfdqr, evapr);
+    isprx[k] = aero_model::examine_prec_exist(k, pdel, prain, cmfdqr, evapr);
 
     aero_model::set_f_act_coarse(k, state_q, ptend_q, dt, f_act_conv_coarse[k],
                                  f_act_conv_coarse_dust[k],
@@ -1261,13 +1257,11 @@ void set_f_act(const ThreadTeam &team, VectorIntType& isprx,
 
 // Computes lookup table for aerosol impaction/interception scavenging rates
 template <typename VectorIntType>
-KOKKOS_INLINE_FUNCTION
-void modal_aero_bcscavcoef_get(const ThreadTeam &team, const Diagnostics &diags,
-                               const VectorIntType& isprx, const View2D &scavimptblvol,
-                               const View2D &scavimptblnum,
-                               const View1D &scavcoefnum,
-                               const View1D &scavcoefvol, const int imode,
-                               const int nlev) {
+KOKKOS_INLINE_FUNCTION void modal_aero_bcscavcoef_get(
+    const ThreadTeam &team, const Diagnostics &diags,
+    const VectorIntType &isprx, const View2D &scavimptblvol,
+    const View2D &scavimptblnum, const View1D &scavcoefnum,
+    const View1D &scavcoefvol, const int imode, const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     scavcoefnum[k] = scavcoefvol[k] = 0;
     const bool let_it_rain = (isprx[k] == 1);
@@ -1284,14 +1278,11 @@ void modal_aero_bcscavcoef_get(const ThreadTeam &team, const Diagnostics &diags,
 
 // Computes lookup table for aerosol impaction/interception scavenging rates
 template <typename VectorIntType>
-KOKKOS_INLINE_FUNCTION
-void modal_aero_bcscavcoef_get(const ThreadTeam &team,
-                               const View2D &wet_geometric_mean_diameter_i,
-                               const VectorIntType & isprx, const View2D &scavimptblvol,
-                               const View2D &scavimptblnum,
-                               const View1D &scavcoefnum,
-                               const View1D &scavcoefvol, const int imode,
-                               const int nlev) {
+KOKKOS_INLINE_FUNCTION void modal_aero_bcscavcoef_get(
+    const ThreadTeam &team, const View2D &wet_geometric_mean_diameter_i,
+    const VectorIntType &isprx, const View2D &scavimptblvol,
+    const View2D &scavimptblnum, const View1D &scavcoefnum,
+    const View1D &scavcoefvol, const int imode, const int nlev) {
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     scavcoefnum[k] = scavcoefvol[k] = 0;
     const bool let_it_rain = (isprx[k] == 1);
@@ -1324,9 +1315,8 @@ void define_act_frac(const ThreadTeam &team, const View1D &sol_facti,
   });
 }
 template <typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void compute_q_tendencies_phase_1(
-    Real &scavt, Real &bcscavt, Real &rcscavt, const VectorType& rtscavt_sv,
+KOKKOS_INLINE_FUNCTION void compute_q_tendencies_phase_1(
+    Real &scavt, Real &bcscavt, Real &rcscavt, const VectorType &rtscavt_sv,
     const Real f_act_conv, const Real scavcoefnum, const Real scavcoefvol,
     const Real totcond, const Real cmfdqr, const Real conicw, const Real evapc,
     const Real evapr, const Real prain, const Real dlf, const Real cldt,
@@ -1367,9 +1357,8 @@ void compute_q_tendencies_phase_1(
                                     rtscavt_sv);
 }
 template <typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void compute_q_tendencies_phase_2(
-    Real &scavt, Real &bcscavt, Real &rcscavt, const VectorType& rtscavt_sv,
+KOKKOS_INLINE_FUNCTION void compute_q_tendencies_phase_2(
+    Real &scavt, Real &bcscavt, Real &rcscavt, const VectorType &rtscavt_sv,
     const Real qqcw_tmp, const Real tracer,
 
     // const Prognostics &progs,
@@ -1853,8 +1842,8 @@ void aero_model_wetdep(
       mam4::water_uptake::modal_aero_water_uptake_dr(
           // inputs
           calcsizedata.nspec_amode, calcsizedata.specdens_amode,
-          calcsizedata.spechygro, calcsizedata.lspectype_amode,
-          state_q_kk, temperature(kk), pmid(kk), cldt(kk), dgnumdry_m_kk,
+          calcsizedata.spechygro, calcsizedata.lspectype_amode, state_q_kk,
+          temperature(kk), pmid(kk), cldt(kk), dgnumdry_m_kk,
           // outputs
           dgnumwet_m_kk, qaerwat_m_kk, wetdens_kk);
     }
