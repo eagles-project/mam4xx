@@ -373,7 +373,7 @@ also output wetvol and watervol
   watervol = qaerwat_kk / rhoh2o;
   wetvol = watervol + dryvol;
   // printf("wetvol %e watervol %e dryvol %e \n ", wetvol, watervol,dryvol);
-  if (watervol < zero && lwsw == 0) // lwsw=='lw'
+  if (watervol < zero) // lwsw=='lw'
   {
     // BAD CONSTANT
     // FIXME
@@ -405,7 +405,7 @@ also output wetvol and watervol
   } // lwsw=='lw'
   // FIXME
   refr = crefin.real();
-  refi = crefin.imag();
+  refi = haero::abs(crefin.imag());
 
 } // calc_refin_complex
 
@@ -646,6 +646,17 @@ void modal_aero_sw_wo_diagnostics_k(
 
       // lw =0 and sw =1
       Real dryvol, wetvol, watervol = {};
+      //Compute dryvol
+      for (int i = 0; i < nspec; ++i) {
+          dryvol += specvol[i];
+      }
+      if (dryvol < zero) {
+        tauxar(mm, isw) = zero;
+        wa(mm, isw) = zero;
+        ga(mm, isw) = zero;
+        fa(mm, isw) = zero;
+        continue;
+      }
       Kokkos::complex<Real> crefin = {};
       Real refr, refi = {};
 
@@ -719,6 +730,17 @@ void modal_aero_sw_wo_diagnostics_k(
       wa(mm, isw) = dopaer * palb;
       ga(mm, isw) = dopaer * palb * pasm;
       fa(mm, isw) = dopaer * palb * pasm * pasm;
+
+      //Compute dryvol
+      /*for (int i = 0; i < nspec; ++i) {
+          dryvol += specvol[i];
+      }
+      if (dryvol < zero) {
+      tauxar(mm, isw) = zero;
+      wa(mm, isw) = zero;
+      ga(mm, isw) = zero;
+      fa(mm, isw) = zero;
+      }*/
 
     } // isw
   }   // k
