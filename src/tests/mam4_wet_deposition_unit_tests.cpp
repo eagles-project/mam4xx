@@ -202,8 +202,7 @@ TEST_CASE("test_calculate_cloudy_volume", "mam4_wet_deposition_process") {
 
   Kokkos::parallel_for(
       "test_calculate_cloudy_volume_true", 1, KOKKOS_LAMBDA(const int) {
-        mam4::wetdep::calculate_cloudy_volume(nlev, cld, lprec, true,
-                                              cldv);
+        mam4::wetdep::calculate_cloudy_volume(nlev, cld, lprec, true, cldv);
         sumppr_all[0] = lprec[0];
         for (int i = 1; i < nlev; i++)
           sumppr_all[i] = sumppr_all[i - 1] + lprec[i];
