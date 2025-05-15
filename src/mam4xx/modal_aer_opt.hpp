@@ -408,9 +408,9 @@ also output wetvol and watervol
 
 } // calc_refin_complex
 template <typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void compute_factors(const int prefri, const Real ref_ind,
-                     const VectorType& ref_table, int &ix, Real &tt) {
+KOKKOS_INLINE_FUNCTION void
+compute_factors(const int prefri, const Real ref_ind,
+                const VectorType &ref_table, int &ix, Real &tt) {
   // Compute factors for the real or imaginary parts
 
   // prefri, ncol
@@ -458,11 +458,11 @@ void compute_factors(const int prefri, const Real ref_ind,
 } // compute_factors
 
 template <typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void binterp(const View3D &table, const Real ref_real, const Real ref_img,
-             const VectorType& ref_real_tab, const VectorType& ref_img_tab,
-             int &itab, int &jtab, Real &ttab, Real &utab, Real coef[ncoef],
-             const int itab_1) {
+KOKKOS_INLINE_FUNCTION void
+binterp(const View3D &table, const Real ref_real, const Real ref_img,
+        const VectorType &ref_real_tab, const VectorType &ref_img_tab,
+        int &itab, int &jtab, Real &ttab, Real &utab, Real coef[ncoef],
+        const int itab_1) {
   /*------------------------------------------------------------------------------
    Bilinear interpolation along the refractive index dimensions
    of the table to estimate Chebyshev coefficients at an
@@ -686,18 +686,18 @@ KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
           casm[ncoef] = {}; //   coefficient for extinction, absoption, and
                             //  asymmetry [unitless]
 
-      binterp(sub_extpsw, refr, refi, ref_real_tab, ref_img_tab,
-              itab, jtab, ttab, utab, cext, itab_1);
+      binterp(sub_extpsw, refr, refi, ref_real_tab, ref_img_tab, itab, jtab,
+              ttab, utab, cext, itab_1);
 
       const auto sub_abspsw = aersol_optics_data.abspsw[mm][isw];
 
-      binterp(sub_abspsw, refr, refi, ref_real_tab, ref_img_tab,
-              itab, jtab, ttab, utab, cabs, itab_1);
+      binterp(sub_abspsw, refr, refi, ref_real_tab, ref_img_tab, itab, jtab,
+              ttab, utab, cabs, itab_1);
 
       const auto sub_asmpsw = aersol_optics_data.asmpsw[mm][isw];
 
-      binterp(sub_asmpsw, refr, refi, ref_real_tab, ref_img_tab,
-              itab, jtab, ttab, utab, casm, itab_1);
+      binterp(sub_asmpsw, refr, refi, ref_real_tab, ref_img_tab, itab, jtab,
+              ttab, utab, casm, itab_1);
 
       // parameterized optical properties
       Real pext = zero; //    parameterized specific extinction [m2/kg]
@@ -957,9 +957,8 @@ KOKKOS_INLINE_FUNCTION void modal_aero_lw_k(
       int jtab = zero;
       Real ttab, utab = {};
       Real cabs[ncoef] = {};
-      binterp(aersol_optics_data.absplw[mm][ilw], refr, refi,
-              ref_real_tab, ref_img_tab, itab, jtab, ttab, utab,
-              cabs, itab_1);
+      binterp(aersol_optics_data.absplw[mm][ilw], refr, refi, ref_real_tab,
+              ref_img_tab, itab, jtab, ttab, utab, cabs, itab_1);
 
       // parameterized optical properties
       Real pabs = zero; //    parameterized specific extinction [m2/kg]
