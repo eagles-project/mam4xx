@@ -196,9 +196,9 @@ constexpr int get_work_len_sethet() {
 KOKKOS_INLINE_FUNCTION
 int get_total_work_len_sethet() {
   // work_len these variables:
-  // including het_rates, and vmr_col
+  // including het_rates, dqdt_aqso4, dqdt_aqh2so4 and vmr_col
   const int sether_work_len = get_work_len_sethet();
-  return sether_work_len + (nlev * gas_pcnst) + (gas_pcnst * nlev);
+  return sether_work_len + 3 * (nlev * gas_pcnst) + (gas_pcnst * nlev);
 }
 
 KOKKOS_INLINE_FUNCTION

@@ -15,23 +15,14 @@ using namespace mam4;
 void maxsat(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const Real zeta = input.get_array("zeta")[0];
-    const int nmode = input.get_array("nmode")[0];
+    int nmode = input.get_array("nmode")[0];
 
-    Real eta[nmode];
-    Real smc[nmode];
-    std::vector<Real> eta_vec(nmode);
-    std::vector<Real> smc_vec(nmode);
-    eta_vec = input.get_array("eta");
-    smc_vec = input.get_array("smc");
-    for (int n = 0; n < nmode; ++n) {
-      eta[n] = eta_vec[n];
-      smc[n] = smc_vec[n];
-    }
-
+    std::vector<Real> smc(nmode);
+    std::vector<Real> eta(nmode);
+    eta = input.get_array("eta");
+    smc = input.get_array("smc");
     Real smax = 0;
-
-    ndrop::maxsat(zeta, eta, nmode, smc, smax);
-
+    ndrop::maxsat(zeta, eta.data(), nmode, smc.data(), smax);
     output.set("smax", smax);
   });
 }

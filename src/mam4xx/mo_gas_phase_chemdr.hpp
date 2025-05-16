@@ -1,6 +1,11 @@
 #ifndef MAM4XX_MICROPHYSICS_GAS_PHASE_CHEM_DR_HPP
 #define MAM4XX_MICROPHYSICS_GAS_PHASE_CHEM_DR_HPP
 
+#include <mam4xx/aero_model.hpp>
+#include <mam4xx/compute_o3_column_density.hpp>
+#include <mam4xx/gas_phase_chemistry.hpp>
+#include <mam4xx/lin_strat_chem.hpp>
+#include <mam4xx/mam4_amicphys.hpp>
 #include <mam4xx/mo_drydep.hpp>
 #include <mam4xx/mo_photo.hpp>
 #include <mam4xx/mo_setext.hpp>
@@ -139,15 +144,20 @@ void perform_atmospheric_chemistry_and_microphysics(
         &prain, // stratoform precip [kg/kg/s] //in precip_total_tend
     const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
     const View1D &work_set_het, const seq_drydep::Data &drydep_data,
+    Real aqso4_flx[num_modes], Real aqh2so4_flx[num_modes],
     Real dvel[gas_pcnst], // deposition velocity [cm/s]
     Real dflx[gas_pcnst], mam4::Prognostics &progs) {
 
   const int nlev = mam4::nlev;
-  // vmr0 stores mixing ratios before chemistry changes the mixing
   auto work_set_het_ptr = (Real *)work_set_het.data();
   const auto het_rates = View2D(work_set_het_ptr, nlev, gas_pcnst);
-
   work_set_het_ptr += nlev * gas_pcnst;
+  const auto dqdt_aqso4 = View2D(work_set_het_ptr, gas_pcnst, nlev);
+  work_set_het_ptr += nlev * gas_pcnst;
+  const auto dqdt_aqh2so4 = View2D(work_set_het_ptr, gas_pcnst, nlev);
+  work_set_het_ptr += nlev * gas_pcnst;
+
+  // vmr0 stores mixing ratios before chemistry changes the mixing
   ColumnView vmr_col[gas_pcnst];
   for (int i = 0; i < gas_pcnst; ++i) {
     vmr_col[i] = ColumnView(work_set_het_ptr, nlev);
@@ -156,7 +166,10 @@ void perform_atmospheric_chemistry_and_microphysics(
   const int sethet_work_len = mam4::mo_sethet::get_work_len_sethet();
   const auto work_sethet_call = View1D(work_set_het_ptr, sethet_work_len);
   work_set_het_ptr += sethet_work_len;
-
+  EKAT_KERNEL_ASSERT_MSG(
+      mam4::mo_sethet::get_total_work_len_sethet() ==
+          work_set_het_ptr - work_set_het.data(),
+      "Error: Work buffer memory allocation exceeds expected value.");
   //
   const int surface_lev = nlev - 1; // Surface level
   // specific humidity [kg/kg]
@@ -317,13 +330,18 @@ void perform_atmospheric_chemistry_and_microphysics(
     // aqueous chemistry ...
     const Real mbar = haero::Constants::molec_weight_dry_air;
     constexpr int indexm = mam4::gas_chemistry::indexm;
+    Real dqdt_aqso4_t[gas_pcnst] = {};
+    Real dqdt_aqh2so4_t[gas_pcnst] = {};
     mam4::mo_setsox::setsox_single_level(
         // in
         offset_aerosol, dt, pmid, pdel, temp, mbar, lwc, cldfrac, cldnum,
         invariants_k[indexm], config_setsox,
         // out
-        vmrcw, vmr);
-
+        dqdt_aqso4_t, dqdt_aqh2so4_t, vmrcw, vmr);
+    for (int i = 0; i < gas_pcnst; ++i) {
+      dqdt_aqso4(i, kk) = dqdt_aqso4_t[i];
+      dqdt_aqh2so4(i, kk) = dqdt_aqh2so4_t[i];
+    }
     // calculate aerosol water content using water uptake treatment
     // * dry and wet diameters [m]
     // * wet densities [kg/m3]
@@ -401,6 +419,44 @@ void perform_atmospheric_chemistry_and_microphysics(
     mam4::utils::inject_stateq_to_prognostics(state_q, progs, kk);
     mam4::utils::inject_qqcw_to_prognostics(qqcw_pcnst, progs, kk);
   }); // parallel_for for vertical levels
+  team.team_barrier();
+  // diagnostics
+  haero::ConstColumnView pdel = atm.hydrostatic_dp; // layer thickness (Pa)
+  for (int m = 0; m < num_modes; ++m) {
+    const int ll = config_setsox.lptr_so4_cw_amode[m] - offset_aerosol;
+    if (0 <= ll) {
+      const auto aqso4 = ekat::subview(dqdt_aqso4, ll);
+      const auto aqh2so4 = ekat::subview(dqdt_aqh2so4, ll);
+      aqso4_flx[m] = aero_model::calc_sfc_flux(team, aqso4, pdel, nlev);
+      aqh2so4_flx[m] = aero_model::calc_sfc_flux(team, aqh2so4, pdel, nlev);
+      // outfld( trim(cnst_name_cw(mm))//'AQSO4', sflx(:ncol), ncol, lchnk)
+      // outfld( trim(cnst_name_cw(mm))//'AQH2SO4', sflx(:ncol), ncol, lchnk)
+    }
+  }
+#if 0
+
+  call calc_sfc_flux( dqdt_aqhprxn*specmw_so4_amode/mbar, pdel, sflx)
+  call outfld( 'AQSO4_H2O2', sflx(:ncol), ncol, lchnk)
+
+  call calc_sfc_flux( dqdt_aqo3rxn*specmw_so4_amode/mbar, pdel, sflx)
+  call outfld( 'AQSO4_O3', sflx(:ncol), ncol, lchnk)
+  
+  /*
+  FIXME: same question here as at the end of sox_cldaero_update()--necessary?
+  diagnose variable
+  xphlwc(:,:) = 0.0
+  do kk = 1, pver
+     do icol = 1, ncol
+        if (cldfrc>=small_value_cf .and. lwc>=small_value_lwc) then
+           xphlwc = -one*log10(xph) * lwc
+        endif
+     enddo
+  enddo
+  call outfld( 'XPH_LWC', xphlwc(:ncol,:), ncol , lchnk )
+
+  call sox_cldaero_destroy_obj(cldconc)
+  */
+#endif
 }
 
 } // namespace microphysics

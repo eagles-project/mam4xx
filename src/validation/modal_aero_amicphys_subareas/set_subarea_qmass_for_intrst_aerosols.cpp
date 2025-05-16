@@ -37,9 +37,7 @@ void set_subarea_qmass_for_intrst_aerosols(Ensemble *ensemble) {
     using mam4::gas_chemistry::gas_pcnst;
     constexpr int subarea_max = microphysics::maxsubarea();
 
-    const auto ncnst_ = input.get_array("ncnst")[0];
-    const int ncnst = ncnst_;
-    EKAT_ASSERT(ncnst == gas_pcnst);
+    EKAT_ASSERT(int(input.get_array("ncnst")[0]) == gas_pcnst);
 
     const auto jclea_ = input.get_array("jclea")[0];
     const auto jcldy_ = input.get_array("jcldy")[0];

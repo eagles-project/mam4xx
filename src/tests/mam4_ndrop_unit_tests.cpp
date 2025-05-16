@@ -225,7 +225,7 @@ TEST_CASE("test_maxsat", "mam4_ndrop") {
                                 ekat::logger::LogLevel::debug, comm);
 
   logger.info("start of maxsat test");
-  int nmodes = AeroConfig::num_modes();
+  static constexpr int nmodes = AeroConfig::num_modes();
   logger.info("nmodes = {}", nmodes);
 
   Real zeta = 0;
