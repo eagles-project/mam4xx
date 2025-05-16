@@ -23,8 +23,24 @@ PREFIX=$1
 DEVICE=$2
 PRECISION=$3
 BUILD_TYPE=$4
-# Turn off search for yaml libraries. EKAT will build yaml-cpp from submodules. 
+DEVICE_ARCH=$5
+# Turn off search for yaml libraries. EKAT will build yaml-cpp from submodules.
 SKIP_FIND_YAML_CPP=ON
+
+# these are (at least close to) the standard choices for gpu builds
+# to use one, uncomment or replace in the if [] blocks below
+
+# NVIDIA GPU + gcc
+# CXX=[PATH]/nvcc_wrapper
+# CC=gcc
+
+# AMD GPU
+# CXX=hipcc
+# CC=amdclang
+
+# Intel GPU
+# CXX=icpx
+# CC=icx
 
 # Default compilers (can be overridden by environment variables)
 if [[ -z $CC ]]; then
@@ -75,6 +91,7 @@ fi
 echo "Cloning Haero repository into $(pwd)/.haero..."
 git clone git@github.com:eagles-project/haero.git .haero || exit
 cd .haero || exit
+git checkout main
 git submodule update --init --recursive || exit
 
 # Are we on a special machine?
@@ -84,7 +101,7 @@ for MACHINE_FILE in $(ls)
 do
   MACHINE=${MACHINE_FILE/\.sh/}
   echo $MACHINE
-  echo `hostname` | grep -q "$MACHINE" 
+  echo `hostname` | grep -q "$MACHINE"
   host_match=$?
   echo $SYSTEM_NAME | grep -q "$MACHINE"
   sys_match=$?
@@ -113,6 +130,8 @@ cmake -S ./.haero -B ./.haero/build \
   -DHAERO_ENABLE_MPI=OFF \
   -DHAERO_ENABLE_GPU=$ENABLE_GPU \
   -DHAERO_PRECISION=$PRECISION \
+  -DKokkos_ARCH_$DEVICE_ARCH:BOOL=ON \
+  -DHAERO_DEVICE_ARCH=$DEVICE_ARCH \
   || exit
 
 echo "Building and installing Haero in $PREFIX..."
