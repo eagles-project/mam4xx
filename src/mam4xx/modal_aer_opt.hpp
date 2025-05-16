@@ -644,21 +644,21 @@ KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
       Real dryvol, wetvol, watervol = {};
       // NOTE: The following logic exists only in MAM4xx,
       // it doesn't exists in Fortan MAM4. This logic is added
-      // to deal with very small (essentially zero) 
+      // to deal with very small (essentially zero)
       // negative values for dryvol
       dryvol = zero;
       for (int ispec = 0; ispec < nspec; ++ispec) {
-          dryvol += specvol[ispec];
+        dryvol += specvol[ispec];
       }
       if (dryvol < zero && dryvol > neg_small_value_16) {
-        // if dryvol is negative and a very small number, 
-        //set all optical properties to zero
+        // if dryvol is negative and a very small number,
+        // set all optical properties to zero
         // and continue to next iteration
         tauxar(mm, isw) = zero;
         wa(mm, isw) = zero;
         ga(mm, isw) = zero;
         fa(mm, isw) = zero;
-        continue; //continue to next isw
+        continue; // continue to next isw
       }
 
       Kokkos::complex<Real> crefin = {};
