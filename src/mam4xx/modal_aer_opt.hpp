@@ -7,7 +7,6 @@
 #include <mam4xx/modal_aero_calcsize.hpp>
 #include <mam4xx/ndrop.hpp>
 #include <mam4xx/water_uptake.hpp>
-#include <ekat/util/ekat_math_utils.hpp>
 
 namespace mam4 {
 namespace modal_aer_opt {
