@@ -39,8 +39,8 @@ SKIP_FIND_YAML_CPP=ON
 # CC=amdclang
 
 # Intel GPU
-CXX=icpx
-CC=icx
+# CXX=icpx
+# CC=icx
 
 # Default compilers (can be overridden by environment variables)
 if [[ -z $CC ]]; then
@@ -55,14 +55,6 @@ if [[ "$PREFIX" == "" ]]; then
   echo "Usage: $0 <prefix> <device> <precision> <build_type>"
   exit
 fi
-
-# Set the device architecture if needed.
-if [ ! "$DEVICE_ARCH" = "" ]; then
-  OPTIONS="-DKokkos_ARCH_${DEVICE_ARCH}:BOOL=ON"
-  OPTIONS="${OPTIONS} -DHAERO_DEVICE_ARCH=${DEVICE_ARCH}"
-fi
-
-echo "** options = ${OPTIONS}**"
 
 # Set defaults.
 if [[ "$DEVICE" == "" ]]; then
@@ -99,7 +91,7 @@ fi
 echo "Cloning Haero repository into $(pwd)/.haero..."
 git clone git@github.com:eagles-project/haero.git .haero || exit
 cd .haero || exit
-git checkout mjs/intel-sycl-build
+git checkout main
 git submodule update --init --recursive || exit
 
 # Are we on a special machine?
