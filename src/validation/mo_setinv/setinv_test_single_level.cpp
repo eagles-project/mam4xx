@@ -8,6 +8,7 @@
 #include <mam4xx/aero_config.hpp>
 #include <skywalker.hpp>
 #include <validation.hpp>
+#include <vector>
 
 using namespace skywalker;
 using namespace mam4;
@@ -39,9 +40,9 @@ void setinv_test_single_level(Ensemble *ensemble) {
 
     const mam4::mo_setinv::Config setinv_config_;
 
-    Real invariants[nfs];
+    std::vector<Real> invariants(nfs);
 
-    mam4::mo_setinv::setinv_single_level(invariants, tfld, h2ovmr, pmid,
+    mam4::mo_setinv::setinv_single_level(invariants.data(), tfld, h2ovmr, pmid,
                                          cnst_offline.data(), setinv_config_);
 
     std::vector<Real> inv_out;

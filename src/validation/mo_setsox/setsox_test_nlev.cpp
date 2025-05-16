@@ -124,8 +124,11 @@ void setsox_test_nlev(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          Real dqdt_aqso4[nspec] = {};
+          Real dqdt_aqh2so4[nspec] = {};
           mam4::mo_setsox::setsox(team, loffset, dt, press, pdel, tfld, mbar,
-                                  lwc, cldfrc, cldnum, xhnm, qcw, qin);
+                                  lwc, cldfrc, cldnum, xhnm, dqdt_aqso4,
+                                  dqdt_aqh2so4, qcw, qin);
         });
 
     std::vector<Real> qcw_out(nspec);

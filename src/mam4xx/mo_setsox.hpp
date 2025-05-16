@@ -743,6 +743,8 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
                         const Real xh2so4, const Real xso4,
                         const Real xso4_init, const Config config_,
                         // inout
+                        Real dqdt_aqso4[AeroConfig::num_gas_phase_species()],
+                        Real dqdt_aqh2so4[AeroConfig::num_gas_phase_species()],
                         Real *qcw, Real *qin) {
   /*
   sox_cldaero_update(loffset, dt, mbar, pdel, press, tfld, cldnum,
@@ -827,7 +829,6 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
   const int nspec_gas = AeroConfig::num_gas_phase_species();
 
   // make sure dqdt is zero initially, for budgets
-  Real dqdt_aqso4[nspec_gas], dqdt_aqh2so4[nspec_gas];
   for (int i = 0; i < nspec_gas; ++i) {
     dqdt_aqso4[i] = zero;
     dqdt_aqh2so4[i] = zero;
@@ -933,38 +934,14 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
   for (int m = 0; m < nmodes; ++m) {
     int tmp_idx = config_.lptr_so4_cw_amode[m] - loffset;
     // this is ugly, but better than passing the whole array--FIXME?
-    update_tmr_nonzero(qcw[tmp_idx], tmp_idx);
+    if (0 <= tmp_idx)
+      update_tmr_nonzero(qcw[tmp_idx], tmp_idx);
     // FIXME: I believe this is spurious.
     // as far as I can gather, lptr_nh4_cw_amode = [0, 0, 0, 0],
     // meaning that this results in a no-op
     // update_tmr_nonzero(qcw, (lptr_nh4_cw_amode[m] - loffset));
   }
   update_tmr_nonzero(qin[config_.id_so2], config_.id_so2);
-
-  /*
-  FIXME: sflx is a local variable that is calculated and then passed to
-  outfld() here. Does this need to happen?
-  diagnostics
-  do imode = 1, ntot_amode
-     mm = lptr_so4_cw_amode(imode)
-     ll = mm - loffset
-     if (ll > 0) then
-        call calc_sfc_flux( dqdt_aqso4(:,:,ll)*adv_mass(ll)/mbar, pdel, sflx)
-        call outfld( trim(cnst_name_cw(mm))//'AQSO4', sflx(:ncol), ncol,
-        lchnk)
-
-        call calc_sfc_flux( dqdt_aqh2so4(:,:,ll)*adv_mass(ll)/mbar, pdel,
-        sflx) call outfld( trim(cnst_name_cw(mm))//'AQH2SO4', sflx(:ncol),
-        ncol, lchnk)
-     endif
-  enddo
-
-  call calc_sfc_flux( dqdt_aqhprxn*specmw_so4_amode/mbar, pdel, sflx)
-  call outfld( 'AQSO4_H2O2', sflx(:ncol), ncol, lchnk)
-
-  call calc_sfc_flux( dqdt_aqo3rxn*specmw_so4_amode/mbar, pdel, sflx)
-  call outfld( 'AQSO4_O3', sflx(:ncol), ncol, lchnk)
-  */
 } // end sox_cldaero_update
 
 //-----------------------------------------------------------------------
@@ -975,6 +952,8 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
                          const Real lwc, const Real cldfrc, const Real cldnum,
                          const Real xhnm, Config setsox_config_,
                          // inout
+                         Real dqdt_aqso4[AeroConfig::num_gas_phase_species()],
+                         Real dqdt_aqh2so4[AeroConfig::num_gas_phase_species()],
                          Real qcw[AeroConfig::num_gas_phase_species()],
                          Real qin[AeroConfig::num_gas_phase_species()]) {
 
@@ -1284,24 +1263,7 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
                      cfact, cldconc.xlwc, xdelso4hp, xh2so4, xso4, xso4_init,
                      setsox_config_,
                      // inout
-                     qcw, qin);
-
-  /*
-  FIXME: same question here as at the end of sox_cldaero_update()--necessary?
-  diagnose variable
-  xphlwc(:,:) = 0.0
-  do kk = 1, pver
-     do icol = 1, ncol
-        if (cldfrc>=small_value_cf .and. lwc>=small_value_lwc) then
-           xphlwc = -one*log10(xph) * lwc
-        endif
-     enddo
-  enddo
-  call outfld( 'XPH_LWC', xphlwc(:ncol,:), ncol , lchnk )
-
-  call sox_cldaero_destroy_obj(cldconc)
-  */
-
+                     dqdt_aqso4, dqdt_aqh2so4, qcw, qin);
 } //   end setsox_single_level
 
 KOKKOS_INLINE_FUNCTION
@@ -1311,6 +1273,8 @@ void setsox(const ThreadTeam &team, const int loffset, const Real dt,
             const ColumnView &lwc, const ColumnView &cldfrc,
             const ColumnView &cldnum, const ColumnView &xhnm,
             // inout
+            Real dqdt_aqso4[AeroConfig::num_gas_phase_species()],
+            Real dqdt_aqh2so4[AeroConfig::num_gas_phase_species()],
             const ColumnView qcw[AeroConfig::num_gas_phase_species()],
             const ColumnView qin[AeroConfig::num_gas_phase_species()]) {
 
@@ -1337,9 +1301,10 @@ void setsox(const ThreadTeam &team, const int loffset, const Real dt,
       qin_k[i] = qin[i](k);
     }
     setsox_single_level(loffset, dt, press_k, pdel_k, tfld_k, mbar_k, lwc_k,
-                        cldfrc_k, cldnum_k, xhnm_k, setsox_config_, qcw_k,
-                        qin_k);
+                        cldfrc_k, cldnum_k, xhnm_k, setsox_config_, dqdt_aqso4,
+                        dqdt_aqh2so4, qcw_k, qin_k);
   }); // end kokkos::parfor(k)
+
 } // end setsox()
 
 } // namespace mo_setsox
