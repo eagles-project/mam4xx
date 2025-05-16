@@ -254,7 +254,7 @@ void chm_diags(
 
   for (int mm = 0; mm < gas_pcnst; mm++) {
     // other options of species are not used, only use weight=1
-    const Real wgt = 1;
+    constexpr Real wgt = 1;
 
     for (int i = 0; i < 3; i++) { // FIXME: bad constant (len of sox species)
       if (sox_species[i] == mm) {
@@ -300,7 +300,7 @@ void chm_diags(
       Kokkos::TeamVectorRange(team, gas_pcnst_local),
       [&](int mm, Real &update) {
         // other options of species are not used, only use weight=1
-        const Real wgt = 1;
+        constexpr Real wgt = 1;
         for (int i = 0; i < 3;
              i++) { // FIXME: bad constant (len of sox species)
           if (sox_species[i] == mm) {
