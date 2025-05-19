@@ -269,8 +269,9 @@ KOKKOS_INLINE_FUNCTION Real saturation_mixing_ratio_hardy(Real T, Real P) {
 /// @param [in] p total pressure [Pa]
 /// @param [in] T temperature [K]
 /// @return relative humidity [1]
-KOKKOS_INLINE_FUNCTION Real relative_humidity_from_vapor_mixing_ratio(
-    Real w, Real T, Real p) {
+KOKKOS_INLINE_FUNCTION Real relative_humidity_from_vapor_mixing_ratio(Real w,
+                                                                      Real T,
+                                                                      Real p) {
   const auto ws = saturation_mixing_ratio_hardy(T, p);
   return w / ws;
 }
