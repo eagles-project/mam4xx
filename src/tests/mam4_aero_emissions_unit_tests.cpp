@@ -5,8 +5,8 @@
 #include <haero/haero.hpp>
 
 #include <catch2/catch.hpp>
-#include <ekat/logging/ekat_logger.hpp>
-#include <ekat/mpi/ekat_comm.hpp>
+#include <ekat_logger.hpp>
+#include <ekat_comm.hpp>
 
 #include <mam4xx/aero_model_emissions.hpp>
 #include <mam4xx/mam4.hpp>

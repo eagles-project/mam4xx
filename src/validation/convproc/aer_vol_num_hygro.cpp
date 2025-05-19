@@ -3,7 +3,7 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <ekat/ekat_assert.hpp>
+#include <ekat_assert.hpp>
 #include <iomanip>
 #include <iostream>
 

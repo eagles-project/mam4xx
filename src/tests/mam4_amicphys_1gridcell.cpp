@@ -10,9 +10,9 @@
 #include <mam4xx/nucleation.hpp>
 
 #include <catch2/catch.hpp>
-#include <ekat/ekat_pack_kokkos.hpp>
-#include <ekat/logging/ekat_logger.hpp>
-#include <ekat/mpi/ekat_comm.hpp>
+#include <ekat_pack_kokkos.hpp>
+#include <ekat_logger.hpp>
+#include <ekat_comm.hpp>
 
 #include <type_traits>
 
