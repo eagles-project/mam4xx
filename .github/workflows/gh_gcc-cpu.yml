@@ -108,7 +108,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: eagles-project/haero
-          ref: 017fea932381777f48b2585f86d6ab48fe4b8d09
           submodules: recursive
           path: haero_src
 
@@ -130,9 +129,9 @@ jobs:
       - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |
           cmake -S . -B build \
-            -DCMAKE_INSTALL_PREFIX=`pwd`/install \
+            -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-            -DMAM4XX_HAERO_DIR=`pwd`/haero_install \
+            -DMAM4XX_HAERO_DIR=$(pwd)/haero_install \
             -DNUM_VERTICAL_LEVELS=72 \
             -DENABLE_COVERAGE=ON \
             -G "Unix Makefiles"
