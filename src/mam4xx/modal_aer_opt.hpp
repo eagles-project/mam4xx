@@ -42,6 +42,7 @@ constexpr int prefi = 10;
 
 // BAD CONSTANT
 constexpr Real small_value_40 = 1.e-40;
+constexpr Real neg_small_value_16 = -1.e-16;
 
 // Density of liquid water (STP)
 constexpr Real rhoh2o = haero::Constants::density_h2o;
@@ -373,7 +374,7 @@ also output wetvol and watervol
   watervol = qaerwat_kk / rhoh2o;
   wetvol = watervol + dryvol;
   // printf("wetvol %e watervol %e dryvol %e \n ", wetvol, watervol,dryvol);
-  if (watervol < zero && lwsw == 0) // lwsw=='lw'
+  if (watervol < zero) // lwsw=='lw'
   {
     // BAD CONSTANT
     // FIXME
@@ -405,7 +406,7 @@ also output wetvol and watervol
   } // lwsw=='lw'
   // FIXME
   refr = crefin.real();
-  refi = crefin.imag();
+  refi = haero::abs(crefin.imag());
 
 } // calc_refin_complex
 
@@ -646,6 +647,24 @@ void modal_aero_sw_wo_diagnostics_k(
 
       // lw =0 and sw =1
       Real dryvol, wetvol, watervol = {};
+      // NOTE: The following logic exists only in MAM4xx,
+      // it doesn't exists in Fortan MAM4. This logic is added
+      // to deal with very small (essentially zero)
+      // negative values for dryvol
+      dryvol = zero;
+      for (int ispec = 0; ispec < nspec; ++ispec) {
+        dryvol += specvol[ispec];
+      }
+      if (dryvol < zero && dryvol > neg_small_value_16) {
+        // if dryvol is negative and a very small number,
+        // set all optical properties to zero
+        // and continue to next iteration
+        tauxar(mm, isw) = zero;
+        wa(mm, isw) = zero;
+        ga(mm, isw) = zero;
+        fa(mm, isw) = zero;
+        continue; // continue to next isw
+      }
       Kokkos::complex<Real> crefin = {};
       Real refr, refi = {};
 
