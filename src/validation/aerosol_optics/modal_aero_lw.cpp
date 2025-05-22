@@ -161,9 +161,9 @@ void modal_aero_lw(Ensemble *ensemble) {
     const auto refrtablw_db = input.get_array("refrtablw");
     const auto refitablw_db = input.get_array("refitablw");
 
-    int N1 = ntot_amode;
+    constexpr int N1 = ntot_amode;
     int N2 = refindex_real;
-    int N3 = nlwbands;
+    constexpr int N3 = nlwbands;
     View1DHost refrtablw_host[N1][N3];
 
     for (int d1 = 0; d1 < N1; ++d1)
@@ -185,9 +185,7 @@ void modal_aero_lw(Ensemble *ensemble) {
                           refrtablw_host[d1][d3]);
       } // d3
 
-    N1 = ntot_amode;
     N2 = refindex_im;
-    N3 = nlwbands;
     View1DHost refitablw_host[ntot_amode][nlwbands];
 
     for (int d1 = 0; d1 < N1; ++d1)
