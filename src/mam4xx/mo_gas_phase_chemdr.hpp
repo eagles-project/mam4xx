@@ -433,30 +433,6 @@ void perform_atmospheric_chemistry_and_microphysics(
       // outfld( trim(cnst_name_cw(mm))//'AQH2SO4', sflx(:ncol), ncol, lchnk)
     }
   }
-#if 0
-
-  call calc_sfc_flux( dqdt_aqhprxn*specmw_so4_amode/mbar, pdel, sflx)
-  call outfld( 'AQSO4_H2O2', sflx(:ncol), ncol, lchnk)
-
-  call calc_sfc_flux( dqdt_aqo3rxn*specmw_so4_amode/mbar, pdel, sflx)
-  call outfld( 'AQSO4_O3', sflx(:ncol), ncol, lchnk)
-  
-  /*
-  FIXME: same question here as at the end of sox_cldaero_update()--necessary?
-  diagnose variable
-  xphlwc(:,:) = 0.0
-  do kk = 1, pver
-     do icol = 1, ncol
-        if (cldfrc>=small_value_cf .and. lwc>=small_value_lwc) then
-           xphlwc = -one*log10(xph) * lwc
-        endif
-     enddo
-  enddo
-  call outfld( 'XPH_LWC', xphlwc(:ncol,:), ncol , lchnk )
-
-  call sox_cldaero_destroy_obj(cldconc)
-  */
-#endif
 }
 
 } // namespace microphysics
