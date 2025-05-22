@@ -251,10 +251,28 @@ KOKKOS_INLINE_FUNCTION Real saturation_mixing_ratio_hardy(Real T, Real P) {
 ///                 the temperature. If not supplied,
 ///                 @ref saturation_mixing_ratio_hardy is used.
 /// @return relative humidity [1]
-KOKKOS_INLINE_FUNCTION Real relative_humidity_from_vapor_mixing_ratio(
-    Real w, Real T, Real p,
-    Real (*wsat)(Real, Real) = saturation_mixing_ratio_hardy) {
-  const auto ws = wsat(T, p);
+// KOKKOS_INLINE_FUNCTION Real relative_humidity_from_vapor_mixing_ratio(
+//     Real w, Real T, Real p,
+//     Real (*wsat)(Real, Real) = saturation_mixing_ratio_hardy) {
+//   const auto ws = wsat(T, p);
+//   return w / ws;
+// }
+
+/// Computes the relative humidity from the water vapor mixing ratio and the
+/// pressure and temperature, given the relationship between temperature and
+/// the water vapor saturation pressure.
+///
+/// Use this formula with parameterizations that are defined with respect to
+/// air air (and note that mixing ratio is defined with respect to dry air).
+///
+/// @param [in] w water vapor mixing ratio [kg vapor / kg dry air]
+/// @param [in] p total pressure [Pa]
+/// @param [in] T temperature [K]
+/// @return relative humidity [1]
+KOKKOS_INLINE_FUNCTION Real relative_humidity_from_vapor_mixing_ratio(Real w,
+                                                                      Real T,
+                                                                      Real p) {
+  const auto ws = saturation_mixing_ratio_hardy(T, p);
   return w / ws;
 }
 
