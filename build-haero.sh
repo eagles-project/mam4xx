@@ -3,7 +3,7 @@
 # This script builds the Haero high-performance aerosool toolkit with specific
 # settings so mam4xx can be linked against it. Run it like this:
 #
-# `./build-haero.sh <prefix> <device> <precision> <build_type>
+# `./build-haero.sh <prefix> <device> <precision> <build_type> [gpu_type] [gpu_arch]
 #
 # where
 # * <prefix> is the installation prefix (e.g. /usr/local) in which you
@@ -14,6 +14,13 @@
 #   floating point numbers used in Haero. Default: double
 # * <build_type> (either `Debug` or `Release`) determines whether Haero is built
 #   optimized or for debugging. Default: Debug
+# OPTIONAL Args (REQUIRED for GPU builds)
+# * [gpu_type] (`nvidia`, `amd`, `intel`) this is the "brand" of GPU
+# * [gpu_arch] (e.g., HOPPER90, AMD_GFX90A, INTEL_PVC) this is the "model" of
+#              GPU, indicating the generation, compute capability, etc.
+#   * A list of many options is found in $HAERO_ROOT/setup
+#   * The full list of options may be found on the kokkos docs site:
+# https://kokkos.org/kokkos-core-wiki/get-started/configuration-guide.html#architectures
 #
 # NOTE: This script disables MPI, since the mam4xx team is focused on single-
 # NOTE: node parallelism. If you need an MPI-enabled build of Haero, please
@@ -23,20 +30,14 @@ PREFIX=$1
 DEVICE=$2
 PRECISION=$3
 BUILD_TYPE=$4
-# Turn off search for yaml libraries. EKAT will build yaml-cpp from submodules. 
+GPU_TYPE=$5
+DEVICE_ARCH=$6
+# Turn off search for yaml libraries. EKAT will build yaml-cpp from submodules.
 SKIP_FIND_YAML_CPP=ON
-
-# Default compilers (can be overridden by environment variables)
-if [[ -z $CC ]]; then
-  CC=cc
-fi
-if [[ -z $CXX ]]; then
-  CXX=c++
-fi
 
 if [[ "$PREFIX" == "" ]]; then
   echo "Haero installation prefix was not specified!"
-  echo "Usage: $0 <prefix> <device> <precision> <build_type>"
+  echo "Usage: $0 <prefix> <device> <precision> <build_type> [gpu_type] [gpu_arch]"
   exit
 fi
 
@@ -64,7 +65,8 @@ if [[ "$PRECISION" != "single" && "$PRECISION" != "double" ]]; then
   exit
 fi
 if [[ "$BUILD_TYPE" != "Debug" && "$BUILD_TYPE" != "Release" ]]; then
-  echo "Invalid optimization specified: $BUILD_TYPE (must be Debug or Release)"
+  echo "Invalid optimization specified: $BUILD_TYPE"
+  echo "Must be Debug or Release (case-sensitive)"
   exit
 fi
 
@@ -77,31 +79,102 @@ git clone git@github.com:eagles-project/haero.git .haero || exit
 cd .haero || exit
 git submodule update --init --recursive || exit
 
-# Are we on a special machine?
-cd machines
-echo $(pwd)
-for MACHINE_FILE in $(ls)
-do
-  MACHINE=${MACHINE_FILE/\.sh/}
-  echo $MACHINE
-  echo `hostname` | grep -q "$MACHINE" 
-  host_match=$?
-  echo $SYSTEM_NAME | grep -q "$MACHINE"
-  sys_match=$?
-  if  [ $host_match -eq 0 ] || [ $sys_match -eq 0 ]; then
-    echo "Found machine file $MACHINE_FILE. Setting up environment for $MACHINE..."
-    source ./$MACHINE.sh
-  fi
-done
+cd ..
 
-cd ../..
-
-# Configure Haero with the given selections.
+# ==============================================================================
+# below are the default compiler choices for gpu builds and are set based on
+# the command line args.
+# ==============================================================================
 if [[ "$DEVICE" == "gpu" ]]; then
   ENABLE_GPU=ON
+  if [[ "$GPU_TYPE" == "" ]]; then
+    echo "ERROR: GPU_TYPE not provided for GPU build."
+    echo "Must be nvidia, amd, or intel (case-sensitive)"
+    exit
+  elif [[ "$GPU_TYPE" != "nvidia" && "$GPU_TYPE" != "amd" && "$GPU_TYPE" != "intel" ]]; then
+    echo "Device provided as 'gpu', but invalid GPU_TYPE specified: ${GPU_TYPE}."
+    echo "Must be nvidia, amd, or intel (case-sensitive)"
+    exit
+  fi
+  if [[ "$DEVICE_ARCH" == "" ]]; then
+    echo "ERROR: DEVICE_ARCH not provided for GPU build."
+    exit
+  fi
+  # ==============================================================================
+  # NVIDIA GPU + gcc
+  # NOTE: if CXX is set to nvcc_wrapper, then this must be the same path used
+  # in the `sed` command below
+  # This happens by default via the $nvcw variable and should typically work
+  # unless your environment differs from the default
+  # ==============================================================================
+  if [[ "$GPU_TYPE" == "nvidia" ]]; then
+    echo "GPU_TYPE given as nvidia (${DEVICE_ARCH})--setting default compilers."
+    echo "and modifying nvcc_wrapper with correct architecture flag."
+    CXX="$(pwd)/.haero/ext/ekat/extern/kokkos/bin/nvcc_wrapper"
+    nvcw=$CXX
+    CC=gcc
+    echo "C++ compiler: ${CXX}"
+    echo "C compiler: ${CC}"
+    # ==========================================================================
+    if [[ -x "$nvcw" ]]; then
+      # FIXME: this will not work for compute capbility 10.0
+      CUDA_GEN=${DEVICE_ARCH:(-2)}
+      # FIXME: this assumes a default value in nvcc_wrapper
+      sed -i s/default_arch=\"sm_70\"/default_arch=\"sm_"$CUDA_GEN"\"/g "${nvcw}"
+      echo "===================================================================="
+      echo "nvcc_wrapper modified--verify that default_arch=sm_${CUDA_GEN}"
+      echo "===================================================================="
+      grep -i "default_arch=" "${nvcw}"
+      echo "===================================================================="
+    else
+      echo "ERROR: nvcc_wrapper not found at expected location for nvidia gpu build."
+      exit
+    fi
+# ==============================================================================
+# AMD GPU + HIP and clang
+# ==============================================================================
+  elif [[ "$GPU_TYPE" == "amd" ]]; then
+    echo "GPU_TYPE given as amd--setting default compilers."
+    CXX=hipcc
+    CC=amdclang
+    echo "C++ compiler: ${CXX}"
+    echo "C compiler: ${CC}"
+# ==============================================================================
+# Intel GPU + intel compilers
+# ==============================================================================
+  elif [[ "$GPU_TYPE" == "intel" ]]; then
+    echo "GPU_TYPE given as intel--setting default compilers."
+    CXX=icpx
+    CC=icx
+    echo "C++ compiler: ${CXX}"
+    echo "C compiler: ${CC}"
+# ==============================================================================
+  else
+    echo "Device provided as 'gpu', but invalid GPU_TYPE specified: ${GPU_TYPE}."
+    echo "Must be nvidia, amd, or intel (case-sensitive)"
+    echo "More importantly... how did we get here?"
+    exit
+  fi
 else
   ENABLE_GPU=OFF
 fi
+
+if [[ "$DEVICE" == "cpu" ]]; then
+  # Default cpu compilers (can be overridden by environment variables)
+  echo "Setting compilers for CPU device."
+  if [[ -z $CC ]]; then
+    echo "'CC' environment variable not found--setting to default (gcc)"
+    CC=gcc
+  fi
+  if [[ -z $CXX ]]; then
+    echo "'CXX' environment variable not found--setting to default (g++)"
+    CXX=g++
+  fi
+fi
+
+# ==============================================================================
+#     DON'T CHANGE ANYTHING BELOW HERE UNLESS YOU KNOW WHAT YOU'RE DOING
+# ==============================================================================
 
 echo "Configuring Haero with the given selections (WITHOUT MPI)..."
 cmake -S ./.haero -B ./.haero/build \
@@ -113,11 +186,13 @@ cmake -S ./.haero -B ./.haero/build \
   -DHAERO_ENABLE_MPI=OFF \
   -DHAERO_ENABLE_GPU=$ENABLE_GPU \
   -DHAERO_PRECISION=$PRECISION \
+  -DKokkos_ARCH_$DEVICE_ARCH:BOOL=ON \
+  -DHAERO_DEVICE_ARCH=$DEVICE_ARCH \
   || exit
 
 echo "Building and installing Haero in $PREFIX..."
 cd .haero/build || exit
-make -j8 install
+make -j8 install || exit
 
 cd ../../
 echo "Haero has been installed in $PREFIX. Set HAERO_DIR to this directory in"

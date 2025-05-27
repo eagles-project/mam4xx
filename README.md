@@ -43,19 +43,38 @@ of parameters. Check out the comments at the top of `build-haero.sh`.
 
 You can build a CPU-capable version of HAERO with some defaults set by typing
 
-```
-./build-haero.sh <path>
+```shell
+./build-haero.sh <install-path>
 ```
 
-where `<path>` is a directory to which HAERO will be installed. If you'd rather
-install HAERO yourself, you can follow the instructions in the
+The extended syntax to fully configure other types of build is
+
+```shell
+./build-haero.sh <install-path> <device> <precision> <build-type> [device-arch]
+```
+
+in which the options are:
+
+```shell
+device: {cpu, gpu}
+precision: {single, double}
+build-type: {Debug, Release}
+```
+
+and the semi-optional `device-arch` argument must correspond to
+[those accepted by Kokkos](https://kokkos.org/kokkos-core-wiki/get-started/configuration-guide.html#architectures)
+and is likely required for a properly-configured GPU build.
+That is to say, the `device-arch` option **should** be set for GPU builds, and
+building for GPU without that argument is unsupported.
+
+If you'd rather install HAERO yourself, you can follow the instructions in the
 [HAERO repository](https://github.com/eagles-project/haero). Make sure you run
 all the steps, including `make install`.
 
 If you're on a machine that requires modules to get access to compilers, etc,
 use
 ```
-source build-haero.sh <path>
+source build-haero.sh <path> [...]
 ```
 to make sure your environment is updated.
 
