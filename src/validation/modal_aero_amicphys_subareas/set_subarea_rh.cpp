@@ -56,7 +56,7 @@ void set_subarea_rh(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          Real relhumsub[subarea_max] = {{0.0}};
+          Real relhumsub[subarea_max] = {};
           mam4::microphysics::set_subarea_rh(ncldy_subarea, jclea, jcldy,
                                              afracsub, relhumgcm, relhumsub);
           for (int i = 0; i < subarea_max; ++i) {
