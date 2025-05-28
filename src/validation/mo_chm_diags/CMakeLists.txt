@@ -36,7 +36,7 @@ set(TEST_LIST
 set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
    9e-2
-   9e-2
+   1.3e-5
    )
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.

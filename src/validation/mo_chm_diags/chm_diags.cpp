@@ -78,10 +78,6 @@ void chm_diags(Ensemble *ensemble) {
         "bc_a4",  "mom_a4", "num_a4"};
 
     //=========init views==========
-
-    for (int kk = 0; kk < pver; ++kk) {
-    }
-
     ColumnView mmr[gas_pcnst];
     ColumnView vmr[gas_pcnst];
     ColumnView mmr_tend[gas_pcnst];

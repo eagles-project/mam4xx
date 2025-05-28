@@ -153,7 +153,6 @@ void chm_diags(
   //	... local variables
   //--------------------------------------------------------------------
 
-  Real wgt;
   // Real pointer :: fldcw(:,:)  //working pointer to extract data from pbuf for
   // sum of mass for aerosol classes
 
@@ -170,7 +169,8 @@ void chm_diags(
   //--------------------------------------------------------------------
   //	... "diagnostic" groups
   //--------------------------------------------------------------------
-  for (int kk = 0; kk < pver; kk++) {
+  constexpr int pver_local = pver;
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local), [&](int kk) {
     vmr_nox(kk) = 0;
     vmr_noy(kk) = 0;
     vmr_clox(kk) = 0;
@@ -180,7 +180,7 @@ void chm_diags(
     mmr_noy(kk) = 0;
     mmr_sox(kk) = 0;
     mmr_nhx(kk) = 0;
-  }
+  });
   df_noy(0) = 0;
   df_sox(0) = 0;
   df_nhx(0) = 0;
@@ -199,7 +199,7 @@ void chm_diags(
   // initialize the mass arrays
   // if (history_aerosol .and. .not. history_verbose) then // what was this used
   // for?
-  for (int kk = 0; kk < pver; kk++) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local), [&](int kk) {
     mass_bc(kk) = 0;
     mass_dst(kk) = 0;
     mass_mom(kk) = 0;
@@ -207,91 +207,108 @@ void chm_diags(
     mass_pom(kk) = 0;
     mass_so4(kk) = 0;
     mass_soa(kk) = 0;
-  }
+  });
 
-  area(0) *= haero::square(rearth);
+  Kokkos::single(Kokkos::PerTeam(team),
+                 [=]() { area(0) *= haero::square(rearth); });
 
-  for (int kk = 0; kk < pver; kk++) {
+  team.team_barrier();
+
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local), [&](int kk) {
     mass(kk) = pdel(kk) * area(0) * rgrav;
     drymass(kk) = pdeldry(kk) * area(0) * rgrav;
-  }
+  });
 
   // convert ozone from mol/mol (w.r.t. dry air mass) to DU
-  for (int kk = 0; kk < pver; kk++) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local), [&](int kk) {
     ozone_layer(kk) =
         pdeldry(kk) * vmr[id_o3](kk) * avogadro * rgrav / mwdry / DUfac * 1e3;
-  }
+  });
   // total column ozone
   ozone_col(0) = 0;
   ozone_trop(0) = 0;
   ozone_strat(0) = 0;
+  team.team_barrier();
 
-  for (int kk = 0; kk < pver; kk++) {
-    ozone_col(0) += ozone_layer(kk);
-    if (kk <= ltrop) {
-      // stratospheric column ozone
-      ozone_strat(0) += ozone_layer(kk);
-    } else {
-      // tropospheric column ozone
-      ozone_trop(0) += ozone_layer(kk);
-    }
-  }
+  Kokkos::parallel_reduce(
+      Kokkos::TeamVectorRange(team, pver_local),
+      [&](int kk, Real &update) { update += ozone_layer(kk); }, ozone_col(0));
+
+  // stratospheric column ozone
+  Kokkos::parallel_reduce(
+      Kokkos::TeamVectorRange(team, pver_local),
+      [&](int kk, Real &update) {
+        if (kk <= ltrop)
+          update += ozone_layer(kk);
+      },
+      ozone_strat(0));
+
+  // tropospheric column ozone
+  Kokkos::parallel_reduce(
+      Kokkos::TeamVectorRange(team, pver_local),
+      [&](int kk, Real &update) {
+        if (kk > ltrop)
+          update += ozone_layer(kk);
+      },
+      ozone_trop(0));
 
   for (int mm = 0; mm < gas_pcnst; mm++) {
     // other options of species are not used, only use weight=1
-    wgt = 1;
+    constexpr Real wgt = 1;
 
     for (int i = 0; i < 3; i++) { // FIXME: bad constant (len of sox species)
       if (sox_species[i] == mm) {
-        for (int kk = 0; kk < pver; kk++) {
-          mmr_sox(kk) = mmr_sox(kk) + wgt * mmr[mm](kk);
-        }
+
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                             [&](int kk) { mmr_sox(kk) += wgt * mmr[mm](kk); });
       }
     }
 
     if (aer_species[mm] == mm) {
       const char *symbol = solsym[mm];
       if (name_matches(symbol, "bc_a")) {
-        for (int kk = 0; kk < pver; kk++) {
-          mass_bc(kk) += mmr[mm](kk);
-        }
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                             [&](int kk) { mass_bc(kk) += mmr[mm](kk); });
+
       } else if (name_matches(symbol, "dst_a")) {
-        for (int kk = 0; kk < pver; kk++) {
-          mass_dst(kk) += mmr[mm](kk);
-        }
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                             [&](int kk) { mass_dst(kk) += mmr[mm](kk); });
       } else if (name_matches(symbol, "mom_a")) {
-        for (int kk = 0; kk < pver; kk++) {
-          mass_mom(kk) += mmr[mm](kk);
-        }
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                             [&](int kk) { mass_mom(kk) += mmr[mm](kk); });
+
       } else if (name_matches(symbol, "ncl_a")) {
-        for (int kk = 0; kk < pver; kk++) {
-          mass_ncl(kk) += mmr[mm](kk);
-        }
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                             [&](int kk) { mass_ncl(kk) += mmr[mm](kk); });
       } else if (name_matches(symbol, "pom_a")) {
-        for (int kk = 0; kk < pver; kk++) {
-          mass_pom(kk) += mmr[mm](kk);
-        }
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                             [&](int kk) { mass_pom(kk) += mmr[mm](kk); });
       } else if (name_matches(symbol, "so4_a")) {
-        for (int kk = 0; kk < pver; kk++) {
-          mass_so4(kk) += mmr[mm](kk);
-        }
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                             [&](int kk) { mass_so4(kk) += mmr[mm](kk); });
       } else if (name_matches(symbol, "soa_a")) {
-        for (int kk = 0; kk < pver; kk++) {
-          mass_soa(kk) += mmr[mm](kk);
-        }
+        Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                             [&](int kk) { mass_soa(kk) += mmr[mm](kk); });
       }
     }
-
-    for (int i = 0; i < 3; i++) { // FIXME: bad constant (len of sox species)
-      if (sox_species[i] == mm) {
-        df_sox(0) += wgt * depflx[mm] * S_molwgt / adv_mass[mm];
-      }
-    }
-
-    for (int kk = 0; kk < pver; kk++) {
-      net_chem(kk) = mmr_tend[mm](kk) * mass(kk);
-    }
+    Kokkos::parallel_for(
+        Kokkos::TeamVectorRange(team, pver_local),
+        [&](int kk) { net_chem(kk) = mmr_tend[mm](kk) * mass(kk); });
   }
+  constexpr int gas_pcnst_local = gas_pcnst;
+  Kokkos::parallel_reduce(
+      Kokkos::TeamVectorRange(team, gas_pcnst_local),
+      [&](int mm, Real &update) {
+        // other options of species are not used, only use weight=1
+        constexpr Real wgt = 1;
+        for (int i = 0; i < 3;
+             i++) { // FIXME: bad constant (len of sox species)
+          if (sox_species[i] == mm) {
+            update += wgt * depflx[mm] * S_molwgt / adv_mass[mm];
+          }
+        }
+      },
+      df_sox(0));
 
   // diagnostics for cloud-borne aerosols, then add to corresponding mass
   // accumulators
@@ -320,33 +337,26 @@ void chm_diags(
       }
     }
     if (name_matches(symbol_cw, "bc_c")) {
-      for (int kk = 0; kk < pver; kk++) {
-        mass_bc(kk) += fldcw[nn](kk);
-      }
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                           [&](int kk) { mass_bc(kk) += fldcw[nn](kk); });
     } else if (name_matches(symbol_cw, "dst_c")) {
-      for (int kk = 0; kk < pver; kk++) {
-        mass_dst(kk) += fldcw[nn](kk);
-      }
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                           [&](int kk) { mass_dst(kk) += fldcw[nn](kk); });
     } else if (name_matches(symbol_cw, "mom_c")) {
-      for (int kk = 0; kk < pver; kk++) {
-        mass_mom(kk) += fldcw[nn](kk);
-      }
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                           [&](int kk) { mass_mom(kk) += fldcw[nn](kk); });
     } else if (name_matches(symbol_cw, "ncl_c")) {
-      for (int kk = 0; kk < pver; kk++) {
-        mass_ncl(kk) += fldcw[nn](kk);
-      }
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                           [&](int kk) { mass_ncl(kk) += fldcw[nn](kk); });
     } else if (name_matches(symbol_cw, "pom_c")) {
-      for (int kk = 0; kk < pver; kk++) {
-        mass_pom(kk) += fldcw[nn](kk);
-      }
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                           [&](int kk) { mass_pom(kk) += fldcw[nn](kk); });
     } else if (name_matches(symbol_cw, "so4_c")) {
-      for (int kk = 0; kk < pver; kk++) {
-        mass_so4(kk) += fldcw[nn](kk);
-      }
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                           [&](int kk) { mass_so4(kk) += fldcw[nn](kk); });
     } else if (name_matches(symbol_cw, "soa_c")) {
-      for (int kk = 0; kk < pver; kk++) {
-        mass_soa(kk) += fldcw[nn](kk);
-      }
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver_local),
+                           [&](int kk) { mass_soa(kk) += fldcw[nn](kk); });
     }
   }
 } // chm_diags
