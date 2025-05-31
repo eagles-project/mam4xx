@@ -425,12 +425,12 @@ void perform_atmospheric_chemistry_and_microphysics(
   for (int m = 0; m < num_modes; ++m) {
     const int ll = config_setsox.lptr_so4_cw_amode[m] - offset_aerosol;
     if (0 <= ll) {
-      const auto aqso4 = ekat::subview(dqdt_aqso4, ll);
+      const auto aqso4   = ekat::subview(dqdt_aqso4, ll);
       const auto aqh2so4 = ekat::subview(dqdt_aqh2so4, ll);
-      aqso4_flx[m] = aero_model::calc_sfc_flux(team, aqso4, pdel, nlev);
-      aqh2so4_flx[m] = aero_model::calc_sfc_flux(team, aqh2so4, pdel, nlev);
-      // outfld( trim(cnst_name_cw(mm))//'AQSO4', sflx(:ncol), ncol, lchnk)
-      // outfld( trim(cnst_name_cw(mm))//'AQH2SO4', sflx(:ncol), ncol, lchnk)
+      const Real vmr_so4 = aero_model::calc_sfc_flux(team, aqso4, pdel, nlev);
+      const Real vmr_h2s = aero_model::calc_sfc_flux(team, aqh2so4, pdel, nlev);
+      aqso4_flx[m]       = mmr_from_vmr(vmr_so4, adv_mass_kg_per_moles(ll));
+      aqh2so4_flx[m]     = mmr_from_vmr(vmr_h2s, adv_mass_kg_per_moles(ll)); 
     }
   }
 }
