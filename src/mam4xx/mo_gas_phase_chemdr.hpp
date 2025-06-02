@@ -108,6 +108,8 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
  * @param [in] wet_diameter_icol
  * @param [in] wetdens_icol
  * @param [in] seq_drydep::Data drydep_data = seq_drydep::set_gas_drydep_data()
+ * @param [out] aqso4_flx[num_modes] So4 flux in kg/m2/s
+ * @param [out] qh2so4_flx[num_modes] H2So4 flux in kg/m2/s
  * @param [out] dvel[gas_pcnst] -- deposition velocity [1/cm/s]
  * @param [out] dflx[gas_pcnst] -- deposition flux [1/cm^2/s]
  * @param [out] progs           -- prognostics: stateq, qqcw updated
@@ -420,17 +422,20 @@ void perform_atmospheric_chemistry_and_microphysics(
     mam4::utils::inject_qqcw_to_prognostics(qqcw_pcnst, progs, kk);
   }); // parallel_for for vertical levels
   team.team_barrier();
-  // diagnostics
+  // Diagnose the column-integrated flux (kg/m2/s) using
+  // volume mixing ratios ( // kmol/kmol(air) )
   haero::ConstColumnView pdel = atm.hydrostatic_dp; // layer thickness (Pa)
   for (int m = 0; m < num_modes; ++m) {
     const int ll = config_setsox.lptr_so4_cw_amode[m] - offset_aerosol;
     if (0 <= ll) {
       const auto aqso4 = ekat::subview(dqdt_aqso4, ll);
       const auto aqh2so4 = ekat::subview(dqdt_aqh2so4, ll);
-      aqso4_flx[m] = aero_model::calc_sfc_flux(team, aqso4, pdel, nlev);
-      aqh2so4_flx[m] = aero_model::calc_sfc_flux(team, aqh2so4, pdel, nlev);
-      // outfld( trim(cnst_name_cw(mm))//'AQSO4', sflx(:ncol), ncol, lchnk)
-      // outfld( trim(cnst_name_cw(mm))//'AQH2SO4', sflx(:ncol), ncol, lchnk)
+      const Real vmr_so4 = aero_model::calc_sfc_flux(team, aqso4, pdel, nlev);
+      const Real vmr_h2s = aero_model::calc_sfc_flux(team, aqh2so4, pdel, nlev);
+      aqso4_flx[m] =
+          conversions::mmr_from_vmr(vmr_so4, adv_mass_kg_per_moles[ll]);
+      aqh2so4_flx[m] =
+          conversions::mmr_from_vmr(vmr_h2s, adv_mass_kg_per_moles[ll]);
     }
   }
 }
