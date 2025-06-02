@@ -422,7 +422,8 @@ void perform_atmospheric_chemistry_and_microphysics(
     mam4::utils::inject_qqcw_to_prognostics(qqcw_pcnst, progs, kk);
   }); // parallel_for for vertical levels
   team.team_barrier();
-  // diagnostics
+  // Diagnose the column-integrated flux (kg/m2/s) using
+  // volume mixing ratios ( // kmol/kmol(air) )
   haero::ConstColumnView pdel = atm.hydrostatic_dp; // layer thickness (Pa)
   for (int m = 0; m < num_modes; ++m) {
     const int ll = config_setsox.lptr_so4_cw_amode[m] - offset_aerosol;
@@ -431,7 +432,6 @@ void perform_atmospheric_chemistry_and_microphysics(
       const auto aqh2so4 = ekat::subview(dqdt_aqh2so4, ll);
       const Real vmr_so4 = aero_model::calc_sfc_flux(team, aqso4, pdel, nlev);
       const Real vmr_h2s = aero_model::calc_sfc_flux(team, aqh2so4, pdel, nlev);
-      // Convert from kg/kg/s to kg/m2/s
       aqso4_flx[m] =
           conversions::mmr_from_vmr(vmr_so4, adv_mass_kg_per_moles[ll]);
       aqh2so4_flx[m] =
