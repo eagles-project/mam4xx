@@ -118,11 +118,12 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
 KOKKOS_INLINE_FUNCTION
 void perform_atmospheric_chemistry_and_microphysics(
     const ThreadTeam &team, const Real dt, const Real rlats,
-    const Real sfc_temp, const Real pressure_sfc, const Real wind_speed,
-    const Real rain, const Real solar_flux,
-    const View1D cnst_offline_icol[num_tracer_cnst], const Forcing *forcings_in,
-    const haero::Atmosphere &atm, const PhotoTableData &photo_table,
-    const Real chlorine_loading, const mam4::mo_setsox::Config &config_setsox,
+    const Real n_so4_monolayers_pcage, const Real sfc_temp,
+    const Real pressure_sfc, const Real wind_speed, const Real rain,
+    const Real solar_flux, const View1D cnst_offline_icol[num_tracer_cnst],
+    const Forcing *forcings_in, const haero::Atmosphere &atm,
+    const PhotoTableData &photo_table, const Real chlorine_loading,
+    const mam4::mo_setsox::Config &config_setsox,
     const AmicPhysConfig &config_amicphys, const Real linoz_psc_T,
     const Real zenith_angle_icol, const Real d_sfc_alb_dir_vis_icol,
     const View1D &o3_col_dens_i, const View2D &photo_rates_icol,
@@ -361,7 +362,8 @@ void perform_atmospheric_chemistry_and_microphysics(
     // coagulation)
     mam4::microphysics::modal_aero_amicphys_intr(
         // in
-        config_amicphys, dt, temp, pmid, pdel, zm, pblh, qv, cldfrac,
+        config_amicphys, dt, n_so4_monolayers_pcage, temp, pmid, pdel, zm, pblh,
+        qv, cldfrac,
         // out
         vmr, vmrcw,
         // in
