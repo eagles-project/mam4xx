@@ -89,11 +89,11 @@ void mam_pcarbon_aging_1subarea(Ensemble *ensemble) {
         n += 1;
       }
     }
-
+    const Real n_so4_monolayers_pcage = 8;
     aging::mam_pcarbon_aging_1subarea(
-        dgn_a_f.data(), qnum_cur_f.data(), qnum_del_cond_f.data(),
-        qnum_del_coag_f.data(), qaer_cur_c, qaer_del_cond_c, qaer_del_coag_c,
-        qaer_del_coag_in_c);
+        n_so4_monolayers_pcage, dgn_a_f.data(), qnum_cur_f.data(),
+        qnum_del_cond_f.data(), qnum_del_coag_f.data(), qaer_cur_c,
+        qaer_del_cond_c, qaer_del_coag_c, qaer_del_coag_in_c);
 
     n = 0;
     for (int imode = 0; imode < AeroConfig::max_agepair(); ++imode) {

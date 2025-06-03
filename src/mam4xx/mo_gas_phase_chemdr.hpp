@@ -154,7 +154,7 @@ struct LinozConf {
 KOKKOS_INLINE_FUNCTION
 void perform_atmospheric_chemistry_and_microphysics(
     const ThreadTeam &team, const Real dt, const Real rlats,
-    const Real sfc_temp, const Real pressure_sfc, const Real wind_speed,
+    const Real n_so4_monolayers_pcage, const Real sfc_temp, const Real pressure_sfc, const Real wind_speed,
     const Real rain, const Real solar_flux,
     const View1D cnst_offline_icol[num_tracer_cnst], const Forcing *forcings_in,
     const haero::Atmosphere &atm, const PhotoTableData &photo_table,
@@ -431,7 +431,8 @@ void perform_atmospheric_chemistry_and_microphysics(
     // coagulation)
     mam4::microphysics::modal_aero_amicphys_intr(
         // in
-        config_amicphys, dt, temp, pmid, pdel, zm, pblh, qv, cldfrac,
+        config_amicphys, dt, n_so4_monolayers_pcage, temp, pmid, pdel, zm, pblh,
+        qv, cldfrac,
         // out
         vmr, vmrcw,
         // diagnostics (out)
