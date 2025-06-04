@@ -146,7 +146,8 @@ void perform_atmospheric_chemistry_and_microphysics(
         &prain, // stratoform precip [kg/kg/s] //in precip_total_tend
     const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
     const View1D &work_set_het, const seq_drydep::Data &drydep_data,
-    Real aqso4_flx[num_modes], Real aqh2so4_flx[num_modes],
+    Real aqso4_flx[num_modes], Real aqh2so4_flx[num_modes], View2D aqso4_lev,
+    View2D aqh2so4_lev,
     Real dvel[gas_pcnst], // deposition velocity [cm/s]
     Real dflx[gas_pcnst], mam4::Prognostics &progs) {
 
@@ -436,8 +437,27 @@ void perform_atmospheric_chemistry_and_microphysics(
           conversions::mmr_from_vmr(vmr_so4, adv_mass_kg_per_moles[ll]);
       aqh2so4_flx[m] =
           conversions::mmr_from_vmr(vmr_h2s, adv_mass_kg_per_moles[ll]);
+      if (aqso4_lev.size()) {
+        Kokkos::parallel_for(
+            Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
+              const Real aqso4 = dqdt_aqso4(ll, kk);
+              const Real vmr_so4 = aero_model::calc_sfc_flux(aqso4, pdel(kk));
+              aqso4_lev(m, kk) =
+                  conversions::mmr_from_vmr(vmr_so4, adv_mass_kg_per_moles[ll]);
+            });
+      }
+      if (aqh2so4_lev.size()) {
+        Kokkos::parallel_for(
+            Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
+              const Real aqh2so4 = dqdt_aqh2so4(ll, kk);
+              const Real vmr_h2s = aero_model::calc_sfc_flux(aqh2so4, pdel(kk));
+              aqh2so4_lev(m, kk) =
+                  conversions::mmr_from_vmr(vmr_h2s, adv_mass_kg_per_moles[ll]);
+            });
+      }
     }
   }
+  team.team_barrier();
 }
 
 } // namespace microphysics
