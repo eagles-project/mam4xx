@@ -340,6 +340,7 @@ void perform_atmospheric_chemistry_and_microphysics(
         invariants_k[indexm], config_setsox,
         // out
         dqdt_aqso4_t, dqdt_aqh2so4_t, vmrcw, vmr);
+    team.team_barrier();
     for (int i = 0; i < gas_pcnst; ++i) {
       dqdt_aqso4(i, kk) = dqdt_aqso4_t[i];
       dqdt_aqh2so4(i, kk) = dqdt_aqh2so4_t[i];
@@ -421,6 +422,9 @@ void perform_atmospheric_chemistry_and_microphysics(
     mam4::utils::inject_stateq_to_prognostics(state_q, progs, kk);
     mam4::utils::inject_qqcw_to_prognostics(qqcw_pcnst, progs, kk);
   }); // parallel_for for vertical levels
+  // FIXME: The calc_sfc_flux routine or another routine is producing a 'Bad
+  // file descriptor' error in Frontier.
+#if 0
   team.team_barrier();
   // Diagnose the column-integrated flux (kg/m2/s) using
   // volume mixing ratios ( // kmol/kmol(air) )
@@ -432,12 +436,13 @@ void perform_atmospheric_chemistry_and_microphysics(
       const auto aqh2so4 = ekat::subview(dqdt_aqh2so4, ll);
       const Real vmr_so4 = aero_model::calc_sfc_flux(team, aqso4, pdel, nlev);
       const Real vmr_h2s = aero_model::calc_sfc_flux(team, aqh2so4, pdel, nlev);
-      aqso4_flx[m] =
+      aqso4_flx[m] = 
           conversions::mmr_from_vmr(vmr_so4, adv_mass_kg_per_moles[ll]);
       aqh2so4_flx[m] =
           conversions::mmr_from_vmr(vmr_h2s, adv_mass_kg_per_moles[ll]);
     }
   }
+#endif
 }
 
 } // namespace microphysics

@@ -914,8 +914,9 @@ void calc_resusp_to_coarse(const int mm, const bool update_dqdt,
     dqdt_tmp += rtscavt_sv[mm];
 }
 // =============================================================================
+using View1D = DeviceType::view_1d<Real>;
 KOKKOS_INLINE_FUNCTION
-Real calc_sfc_flux(const ThreadTeam &team, Kokkos::View<Real *> layer_tend,
+Real calc_sfc_flux(const ThreadTeam &team, const View1D &layer_tend,
                    haero::ConstColumnView pdel, const int nlev) {
   // clang-format off
   // -----------------------------------------------------------------------
@@ -928,12 +929,10 @@ Real calc_sfc_flux(const ThreadTeam &team, Kokkos::View<Real *> layer_tend,
   */
   // clang-format on
   Real scratch = 0;
+  const Real gravit = Constants::gravity;
   Kokkos::parallel_reduce(
       Kokkos::TeamVectorRange(team, nlev),
-      [&](int k, Real &lsum) {
-        const Real gravit = Constants::gravity;
-        lsum += layer_tend[k] * pdel[k] / gravit;
-      },
+      [&](int k, Real &lsum) { lsum += layer_tend[k] * pdel[k] / gravit; },
       scratch);
   return scratch;
 }
