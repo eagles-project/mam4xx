@@ -146,7 +146,7 @@ void perform_atmospheric_chemistry_and_microphysics(
         &prain, // stratoform precip [kg/kg/s] //in precip_total_tend
     const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
     const View1D &work_set_het, const seq_drydep::Data &drydep_data,
-    Real aqso4_flx[num_modes], Real aqh2so4_flx[num_modes],
+    const View1D & aqso4_flx, const View1D &aqh2so4_flx,
     Real dvel[gas_pcnst], // deposition velocity [cm/s]
     Real dflx[gas_pcnst], mam4::Prognostics &progs) {
 
@@ -422,9 +422,6 @@ void perform_atmospheric_chemistry_and_microphysics(
     mam4::utils::inject_stateq_to_prognostics(state_q, progs, kk);
     mam4::utils::inject_qqcw_to_prognostics(qqcw_pcnst, progs, kk);
   }); // parallel_for for vertical levels
-  // FIXME: The calc_sfc_flux routine or another routine is producing a 'Bad
-  // file descriptor' error in Frontier.
-#if 0
   team.team_barrier();
   // Diagnose the column-integrated flux (kg/m2/s) using
   // volume mixing ratios ( // kmol/kmol(air) )
@@ -442,7 +439,6 @@ void perform_atmospheric_chemistry_and_microphysics(
           conversions::mmr_from_vmr(vmr_h2s, adv_mass_kg_per_moles[ll]);
     }
   }
-#endif
 }
 
 } // namespace microphysics
