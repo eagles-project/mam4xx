@@ -22,7 +22,7 @@ set -euo pipefail
 # - Intended for single-use test runs; temporary directories are timestamped
 #
 # Usage:
-#   $ bash submit_single_test_run.sh
+#   $ bash quick_ne4pg2_cime_test_frontier.sh
 #===============================================================================
 
 #---------------------------------------------------------------
