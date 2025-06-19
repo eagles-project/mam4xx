@@ -12,6 +12,8 @@ namespace mam4 {
 
 namespace microphysics {
 
+using View2D = DeviceType::view_2d<Real>;
+
 // number of constituents in gas chemistry "work arrays"
 using mam4::gas_chemistry::gas_pcnst;
 
@@ -2069,15 +2071,11 @@ void get_gcm_tend_diags_from_subareas(
     const Real (&qsub_tendaa)[gas_pcnst][nqtendaa()][maxsubarea()],
     const Real (&qqcwsub_tendaa)[gas_pcnst][nqqcwtendaa()][maxsubarea()],
     // out
-    Real (&qgcm_tendaa)[gas_pcnst][nqtendaa()],
-    Real (&qqcwgcm_tendaa)[gas_pcnst][nqqcwtendaa()]) {
+    const View2D &qgcm_tendaa,
+    const View2D &qqcwgcm_tendaa) {
   // nsubarea: # of active subareas
   // ncldy_subarea: # of cloudy subareas
   // afracsub(maxsubarea): area fraction of subareas [unitless]
-
-  // Gases and interstitial aerosols
-  assign_2d_array(gas_pcnst, nqtendaa(), 0.0, // in
-                  &qgcm_tendaa[0][0]);        // out
 
   EKAT_KERNEL_ASSERT_MSG(nsubarea < maxsubarea(),
                          "Error! get_gcm_tend_diags_from_subareas: "
@@ -2086,20 +2084,16 @@ void get_gcm_tend_diags_from_subareas(
   for (int jsub = 1; jsub <= nsubarea; ++jsub) {
     for (int iq = 0; iq < nqtendaa(); ++iq) {
       for (int icnst = 0; icnst < gas_pcnst; ++icnst) {
-        qgcm_tendaa[icnst][iq] += qsub_tendaa[icnst][iq][jsub] * afracsub[jsub];
+        qgcm_tendaa(icnst, iq) += qsub_tendaa[icnst][iq][jsub] * afracsub[jsub];
       }
     }
   }
 
-  // Cloud-borne aerosols
-
-  assign_2d_array(gas_pcnst, nqqcwtendaa(), 0.0, // in
-                  &qqcwgcm_tendaa[0][0]);        // out
   if (ncldy_subarea > 0) {
     for (int jsub = 1; jsub <= nsubarea; ++jsub) {
       for (int iq = 0; iq < nqqcwtendaa(); ++iq) {
         for (int icnst = 0; icnst < gas_pcnst; ++icnst) {
-          qqcwgcm_tendaa[icnst][iq] +=
+          qqcwgcm_tendaa(icnst, iq) +=
               qqcwsub_tendaa[icnst][iq][jsub] * afracsub[jsub];
         }
       }
@@ -2125,7 +2119,10 @@ void modal_aero_amicphys_intr(
     const Real (&q_precldchem)[gas_pcnst],
     const Real (&qqcw_precldchem)[gas_pcnst], const Real (&dgncur_a)[num_modes],
     const Real (&dgncur_awet)[num_modes],
-    const Real (&wetdens_host)[num_modes]) {
+    const Real (&wetdens_host)[num_modes],
+    // out
+    const View2D &qgcm_tendaa,
+    const View2D &qqcwgcm_tendaa) {
   // deltat: time step
   // qq(ncol,pver,pcnst): current tracer mixing ratios (TMRs)
   //                           these values are updated (so out /= in)
@@ -2332,8 +2329,6 @@ void modal_aero_amicphys_intr(
   //================================================================
   // Process diagnostics of the current grid cell
   //================================================================
-  Real qgcm_tendaa[gas_pcnst][nqtendaa()];
-  Real qqcwgcm_tendaa[gas_pcnst][nqqcwtendaa()];
   get_gcm_tend_diags_from_subareas(
       // in
       nsubarea, ncldy_subarea, afracsub, qsub_tendaa, qqcwsub_tendaa,
