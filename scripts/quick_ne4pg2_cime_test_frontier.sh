@@ -2,7 +2,7 @@
 set -euo pipefail
 
 #===============================================================================
-# Script: submit_single_test_run.sh
+# Script: quick_ne4pg2_cime_test_frontier.sh
 #
 # Summary:
 # This script sets up and launches a test run of the E3SM model
