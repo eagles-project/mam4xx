@@ -121,7 +121,7 @@ main() {
     newline && time_elapsed_min
 
     echo "================================================================================="
-    echo "Results can be viewed by issuing:$SCRATCH_DIR/$temp_dir/cs.status.${temp_dir}_mam4xx"
+    echo "Results can be viewed by issuing: $SCRATCH_DIR/$temp_dir/cs.status.${temp_dir}_mam4xx"
     newline
     echo "Here are the results:"
     $SCRATCH_DIR/$temp_dir/cs.status.${temp_dir}_mam4xx
