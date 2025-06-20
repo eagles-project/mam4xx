@@ -27,6 +27,7 @@ using View2D = DeviceType::view_2d<Real>;
 using ConstView2D = DeviceType::view_2d<const Real>;
 using View1D = DeviceType::view_1d<Real>;
 using ConstView1D = DeviceType::view_1d<const Real>;
+using View3D = DeviceType::view_3d<Real>;
 
 KOKKOS_INLINE_FUNCTION
 void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
@@ -148,7 +149,9 @@ void perform_atmospheric_chemistry_and_microphysics(
     const View1D &work_set_het, const seq_drydep::Data &drydep_data,
     const View1D &aqso4_flx, const View1D &aqh2so4_flx,
     Real dvel[gas_pcnst], // deposition velocity [cm/s]
-    Real dflx[gas_pcnst], mam4::Prognostics &progs) {
+    Real dflx[gas_pcnst],
+    // out
+    View3D &qgcm_tendaa, View3D &qqcwgcm_tendaa, mam4::Prognostics &progs) {
 
   const int nlev = mam4::nlev;
   auto work_set_het_ptr = (Real *)work_set_het.data();
@@ -271,6 +274,12 @@ void perform_atmospheric_chemistry_and_microphysics(
     Real lwc = atm.liquid_mixing_ratio(kk);
     Real cldnum = atm.cloud_liquid_number_mixing_ratio(kk);
 
+    // these subviews are calculated within modal_aero_amicphys_intr() and
+    // ultimately, the 3d views are returned by
+    // perform_atmospheric_chemistry_and_microphysics()
+    auto qgcm_tendaa_kk = ekat::subview(qgcm_tendaa, kk);
+    auto qqcwgcm_tendaa_kk = ekat::subview(qqcwgcm_tendaa, kk);
+
     // extract aerosol state variables into "working arrays" (mass
     // mixing ratios) (in EAM, this is done in the gas_phase_chemdr
     // subroutine defined within
@@ -366,7 +375,9 @@ void perform_atmospheric_chemistry_and_microphysics(
         // out
         vmr, vmrcw,
         // in
-        vmr0, vmr_pregas, vmr_precld, dgncur_a_kk, dgncur_awet_kk, wetdens_kk);
+        vmr0, vmr_pregas, vmr_precld, dgncur_a_kk, dgncur_awet_kk, wetdens_kk,
+        // out
+        qgcm_tendaa_kk, qqcwgcm_tendaa_kk);
 
     mam4::microphysics::vmr2mmr(vmrcw, adv_mass_kg_per_moles, qqcw);
 
