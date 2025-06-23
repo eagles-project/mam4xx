@@ -14,8 +14,9 @@ using View1DInt = DeviceType::view_1d<int>;
 
 KOKKOS_INLINE_FUNCTION
 void vert_interp(const ThreadTeam &team, int levsiz, int pver,
-                 const View1D &pin, const ConstView1D &pmid,
-                 const View1D &datain, const View1D &dataout) {
+                 const ConstView1D &pin, const ConstView1D &pmid,
+                 const View1D &datain, const View1D &dataout,
+                 const int unit_factor_pin=1) {
   const int zero = 0;
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver), [&](int k) {
@@ -25,21 +26,21 @@ void vert_interp(const ThreadTeam &team, int levsiz, int pver,
     int kkstart = zero;
     // // Store level indices for interpolation
     for (int kk = kkstart; kk < levsiz - 1; ++kk) {
-      if (pin(kk) < pmid(k) && pmid(k) <= pin(kk + 1)) {
+      if (pin(kk)*unit_factor_pin < pmid(k) && pmid(k) <= pin(kk + 1)*unit_factor_pin) {
         kupper = kk;
       } // end if
     }   // end for
 
-    if (pmid(k) < pin(0)) {
+    if (pmid(k) < pin(0)*unit_factor_pin) {
       EKAT_KERNEL_ASSERT_MSG(
           pin(0) != 0.0,
           "Error: Division by zero. The value of pin(0) is zero.\n");
-      dataout(k) = datain(0) * pmid(k) / pin(0);
-    } else if (pmid(k) > pin(levsiz - 1)) {
+      dataout(k) = datain(0) * pmid(k) / pin(0)/unit_factor_pin;
+    } else if (pmid(k) > pin(levsiz - 1)*unit_factor_pin) {
       dataout(k) = datain(levsiz - 1);
     } else {
-      Real dpu = pmid(k) - pin(kupper);
-      Real dpl = pin(kupper + 1) - pmid(k);
+      Real dpu = pmid(k) - pin(kupper)*unit_factor_pin;
+      Real dpl = pin(kupper + 1)*unit_factor_pin - pmid(k);
       EKAT_KERNEL_ASSERT_MSG(
           dpl + dpu != 0.0,
           "Error: Division by zero. The value of dpl + dpu is zero.\n");
