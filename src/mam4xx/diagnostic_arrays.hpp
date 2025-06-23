@@ -4,6 +4,7 @@
 namespace mam4 {
 struct MicrophysDiagnosticArrays {
   using View2D = DeviceType::view_2d<Real>;
+
   // each of these views, if non-empty, will be filled by
   // mam4::microphysics::perform_atmospheric_chemistry_and_microphysics
   // dimension number of levels  x  gas_pcnst
