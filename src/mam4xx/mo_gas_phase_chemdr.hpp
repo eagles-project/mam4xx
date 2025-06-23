@@ -3,6 +3,7 @@
 
 #include <mam4xx/aero_model.hpp>
 #include <mam4xx/compute_o3_column_density.hpp>
+#include <mam4xx/diagnostic_arrays.hpp>
 #include <mam4xx/gas_phase_chemistry.hpp>
 #include <mam4xx/lin_strat_chem.hpp>
 #include <mam4xx/mam4_amicphys.hpp>
@@ -147,6 +148,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
     const View1D &work_set_het, const seq_drydep::Data &drydep_data,
     const View1D &aqso4_flx, const View1D &aqh2so4_flx,
+    const MicrophysDiagnosticArrays &diag_arrays,
     Real dvel[gas_pcnst], // deposition velocity [cm/s]
     Real dflx[gas_pcnst], mam4::Prognostics &progs) {
 
@@ -304,15 +306,27 @@ void perform_atmospheric_chemistry_and_microphysics(
     const auto &photo_rates_k = ekat::subview(photo_rates_icol, kk);
     const auto &het_rates_k = ekat::subview(het_rates, kk);
 
-    // vmr0 stores mixing ratios before chemistry changes the mixing
-    // ratios
+    // Store mixing ratios before gas chemistry changes the mixing ratios
     Real vmr0[gas_pcnst] = {};
+    for (int i = 0; i < gas_pcnst; ++i)
+      vmr0[i] = vmr[i];
+
     mam4::microphysics::gas_phase_chemistry(
         // in
         temp, dt, photo_rates_k.data(), extfrc_k.data(), invariants_k.data(),
         clsmap_4, permute_4, het_rates_k.data(),
         // out
-        vmr, vmr0);
+        vmr);
+
+    // calculate tendency due to gas phase chemistry
+    if (diag_arrays.gs_dvmrdt.size()) {
+      const auto &dvmrdt = ekat::subview(diag_arrays.gs_dvmrdt, kk);
+      const Real mbar = haero::Constants::molec_weight_dry_air;
+      const Real gravit = Constants::gravity;
+      const Real x = 1.0 / mbar * pdel / gravit;
+      for (int m = 0; m < gas_pcnst; ++m)
+        dvmrdt[m] = x * adv_mass_kg_per_moles[m] * (vmr[m] - vmr0[m]) / dt;
+    }
 
     // create work array copies to retain "pre-chemistry (aqueous)"
     // values
@@ -329,6 +343,10 @@ void perform_atmospheric_chemistry_and_microphysics(
     // the logic below is taken from the aero_model_gasaerexch
     // subroutine in eam/src/chemistry/modal_aero/aero_model.F90
 
+    // Store mixing ratios before aqueous chemistry changes the mixing ratios
+    Real vmr_bef_aq_chem[gas_pcnst] = {};
+    for (int i = 0; i < gas_pcnst; ++i)
+      vmr_bef_aq_chem[i] = vmr[i];
     // aqueous chemistry ...
     const Real mbar = haero::Constants::molec_weight_dry_air;
     constexpr int indexm = mam4::gas_chemistry::indexm;
@@ -344,6 +362,17 @@ void perform_atmospheric_chemistry_and_microphysics(
     for (int i = 0; i < gas_pcnst; ++i) {
       dqdt_aqso4(i, kk) = dqdt_aqso4_t[i];
       dqdt_aqh2so4(i, kk) = dqdt_aqh2so4_t[i];
+    }
+
+    // calculate tendency due to gas phase chemistry
+    if (diag_arrays.aq_dvmrdt.size()) {
+      const auto &dvmrdt = ekat::subview(diag_arrays.aq_dvmrdt, kk);
+      const Real mbar = haero::Constants::molec_weight_dry_air;
+      const Real gravit = Constants::gravity;
+      const Real x = 1.0 / mbar * pdel / gravit;
+      for (int m = 0; m < gas_pcnst; ++m)
+        dvmrdt[m] =
+            x * adv_mass_kg_per_moles[m] * (vmr[m] - vmr_bef_aq_chem[m]) / dt;
     }
     // calculate aerosol water content using water uptake treatment
     // * dry and wet diameters [m]
