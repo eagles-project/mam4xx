@@ -14,7 +14,7 @@ using View1DInt = DeviceType::view_1d<int>;
 
 KOKKOS_INLINE_FUNCTION
 void vert_interp(const ThreadTeam &team, int levsiz, int pver,
-                 const View1D &pin, const ConstView1D &pmid,
+                 const ConstView1D &pin, const ConstView1D &pmid,
                  const View1D &datain, const View1D &dataout) {
   const int zero = 0;
 
