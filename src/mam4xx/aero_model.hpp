@@ -627,7 +627,11 @@ inline void modal_aero_bcscavcoef_init(
 
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
-void define_act_frac(const int lphase, const int imode, Real &sol_facti,
+void define_act_frac(const int lphase, const int imode,
+                     const Real sol_facti_cloud_borne,
+                     const Real sol_factic_cloud_borne,
+                     const Real sol_factb_below_cloud,
+                     const Real f_act_conv_below_cloud, Real &sol_facti,
                      Real &sol_factic, Real &sol_factb, Real &f_act_conv) {
   // clang-format off
   // -----------------------------------------------------------------------
@@ -668,7 +672,6 @@ void define_act_frac(const int lphase, const int imode, Real &sol_facti,
   */
   // clang-format on
   const int modeptr_pcarbon = static_cast<int>(mam4::ModeIndex::PrimaryCarbon);
-  const Real sol_facti_cloud_borne = 1.0;
   if (lphase == 1) { // interstial aerosol
     sol_facti = 0.0; // strat in-cloud scav totally OFF for institial
     // if modal aero convproc is turned on for aerosols, then
@@ -677,13 +680,13 @@ void define_act_frac(const int lphase, const int imode, Real &sol_facti,
     // and turn off the outfld SFWET, SFSIC, SFSID, SFSEC, and SFSED calls
     // for (stratiform)-cloudborne aerosols, convective wet removal
     // (all forms) is zero, so no action is needed
-    sol_factic = 0.0;
+    sol_factic = sol_factic_cloud_borne;
     // all below-cloud scav ON (0.1 "tuning factor")
-    sol_factb = 0.03;
+    sol_factb = sol_factb_below_cloud;
     if (imode == modeptr_pcarbon)
       f_act_conv = 0.0;
     else
-      f_act_conv = 0.4;
+      f_act_conv = f_act_conv_below_cloud;
 
   } else {
     // cloud-borne aerosol (borne by stratiform cloud drops)

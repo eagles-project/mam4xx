@@ -1305,10 +1305,16 @@ KOKKOS_INLINE_FUNCTION
 void define_act_frac(const ThreadTeam &team, const View1D &sol_facti,
                      const View1D &sol_factic, const View1D &sol_factb,
                      const View1D &f_act_conv, const int lphase,
-                     const int imode, const int nlev) {
+                     const int imode, const int nlev,
+                     const Real sol_facti_cloud_borne,
+                     const Real sol_factic_cloud_borne,
+                     const Real sol_factb_below_cloud,
+                     const Real f_act_conv_below_cloud) {
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
-    aero_model::define_act_frac(lphase, imode, sol_facti[k], sol_factic[k],
-                                sol_factb[k], f_act_conv[k]);
+    aero_model::define_act_frac(lphase, imode, sol_facti_cloud_borne,
+                                sol_factic_cloud_borne, sol_factb_below_cloud,
+                                f_act_conv_below_cloud, sol_facti[k],
+                                sol_factic[k], sol_factb[k], f_act_conv[k]);
   });
 }
 
@@ -1564,7 +1570,9 @@ int get_aero_model_wetdep_work_len() {
 KOKKOS_INLINE_FUNCTION
 void aero_model_wetdep(
     const ThreadTeam &team, const Atmosphere &atm, Prognostics &progs,
-    Tendencies &tends, const Real dt,
+    Tendencies &tends, const Real dt, const Real sol_facti_cloud_borne,
+    const Real sol_factic_cloud_borne, const Real sol_factb_below_cloud,
+    const Real f_act_conv_below_cloud,
     // inputs
     const haero::ConstColumnView &cldt, const haero::ConstColumnView &rprdsh,
     const haero::ConstColumnView &rprddp, const haero::ConstColumnView &evapcdp,
@@ -1963,7 +1971,8 @@ void aero_model_wetdep(
             // outputs
             sol_facti, sol_factic, sol_factb, f_act_conv,
             // inputs
-            lphase, imode, nlev);
+            lphase, imode, nlev, sol_facti_cloud_borne, sol_factic_cloud_borne,
+            sol_factb_below_cloud, f_act_conv_below_cloud);
 
         // REASTER 08/12/2015 - changed ordering (mass then number) for
         // prevap resuspend to coarse loop over number + chem constituents +

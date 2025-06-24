@@ -181,17 +181,23 @@ void aero_model_wetdep(Ensemble *ensemble) {
               });
           team.team_barrier();
 
-          wetdep::aero_model_wetdep(team, atm, progs_in, tends_in, dt,
-                                    // inputs
-                                    cldt, rprdsh, rprddp, evapcdp, evapcsh,
-                                    dp_frac, sh_frac, icwmrdp, icwmrsh, evapr,
-                                    // outputs
-                                    dlf, prain, scavimptblnum, scavimptblvol,
-                                    cal_data, wet_geometric_mean_diameter_i,
-                                    dry_geometric_mean_diameter_i, qaerwat,
-                                    wetdens,
-                                    // output
-                                    aerdepwetis, aerdepwetcw, work, isprx);
+          const Real sol_facti_cloud_borne = 1.00;
+          const Real sol_factic_cloud_borne = 0.00;
+          const Real sol_factb_below_cloud = 0.03;
+          const Real f_act_conv_below_cloud = 0.40;
+          wetdep::aero_model_wetdep(
+              team, atm, progs_in, tends_in, dt, sol_facti_cloud_borne,
+              sol_factic_cloud_borne, sol_factb_below_cloud,
+              f_act_conv_below_cloud,
+              // inputs
+              cldt, rprdsh, rprddp, evapcdp, evapcsh, dp_frac, sh_frac, icwmrdp,
+              icwmrsh, evapr,
+              // outputs
+              dlf, prain, scavimptblnum, scavimptblvol, cal_data,
+              wet_geometric_mean_diameter_i, dry_geometric_mean_diameter_i,
+              qaerwat, wetdens,
+              // output
+              aerdepwetis, aerdepwetcw, work, isprx);
 
           team.team_barrier();
           Kokkos::parallel_for(
