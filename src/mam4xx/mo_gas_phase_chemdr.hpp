@@ -143,16 +143,16 @@ void perform_atmospheric_chemistry_and_microphysics(
     const Real phis,      // surf geopotential //in
     const View1D &cmfdqr, // dq/dt for convection [kg/kg/s] //in ndx_cmfdqr =
                           // pbuf_get_index('RPRDTOT') // from convect shallow
-    const ConstView1D
-        &prain, // stratoform precip [kg/kg/s] //in precip_total_tend
+    // stratoform precip [kg/kg/s]
+    const ConstView1D &prain,
     const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
     const View1D &work_set_het, const seq_drydep::Data &drydep_data,
     const View1D &aqso4_flx, const View1D &aqh2so4_flx,
     Real dvel[gas_pcnst], // deposition velocity [cm/s]
     Real dflx[gas_pcnst],
     // out
-    View3D &qgcm_tendaa,
-    View3D &qqcwgcm_tendaa,
+    const View3D &qgcm_tendaa,
+    const View3D &qqcwgcm_tendaa,
     mam4::Prognostics &progs) {
 
   const int nlev = mam4::nlev;
