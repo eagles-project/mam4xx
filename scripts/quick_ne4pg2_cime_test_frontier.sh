@@ -28,8 +28,8 @@ set -euo pipefail
 #---------------------------------------------------------------
 # Config / User Inputs
 #---------------------------------------------------------------
-readonly E3SM_BRANCH="overfelt/eamxx/so4_h2so4_diagnostics"
-readonly MAM4XX_BRANCH="main"
+readonly E3SM_BRANCH="overfelt/eamxx/diagnostics_AQ_and_GS"
+readonly MAM4XX_BRANCH="overfelt/diagnostics_AQ_and_GS"
 
 #Less common user inputs:
 readonly PROJID="cli115"
@@ -46,6 +46,12 @@ ulimit -c unlimited
 # Load environment modules
 source /opt/cray/pe/lmod/lmod/init/bash
 
+#color coding
+readonly RED='\e[1;31m'
+readonly GREEN='\e[1;32m'
+readonly BLUE='\e[1;34m'
+readonly NC='\e[0m' # No Color
+
 #---------------------
 # Main
 #---------------------
@@ -59,23 +65,26 @@ main() {
     newline && time_elapsed_min
     
     readonly SRC_NAME="E3SM"
-    if [[ -d "$SRC_NAME" ]]; then
-        echo "Error: Directory '$SCRATCH_DIR/$SRC_NAME' already exists. Please remove "$SRC_NAME" directory it to proceed."
+    if [[ ! -d "$SRC_NAME" ]]; then
+        echo "Cloning E3SM repository..."
+        git clone git@github.com:E3SM-Project/E3SM.git > /dev/null 2>&1
+        newline && time_elapsed_min
+    else
+        echo -e "${GREEN}**WARNING** ${NC}Using existing E3SM repo in: ${BLUE}$SCRATCH_DIR/$SRC_NAME ${NC}"
         newline
-        exit 1
     fi
-
-    echo "Cloning E3SM repository..."
-    git clone git@github.com:E3SM-Project/E3SM.git > /dev/null 2>&1
-    newline && time_elapsed_min
-
     require_dir_exists "$SRC_NAME"
     readonly CODE_ROOT="$SCRATCH_DIR/$SRC_NAME"
     cd "$CODE_ROOT"
 
-    echo "Checking out E3SM branch: $E3SM_BRANCH"
+    echo "Fetching latest changes and checking out branch $E3SM_BRANCH"
+    git fetch origin > /dev/null 2>&1
     git checkout "$E3SM_BRANCH" > /dev/null 2>&1
 
+    echo -e "${GREEN}**HARD resetting** ${NC} E3SM repository in: ${BLUE}$SCRATCH_DIR/$SRC_NAME ${NC} to branch ${BLUE}$E3SM_BRANCH${NC}"
+    newline
+    git reset --hard origin/"$E3SM_BRANCH" > /dev/null 2>&1
+    
     echo "Initializing submodules..."
     git submodule deinit -f . > /dev/null 2>&1
     git submodule update --init --recursive > /dev/null 2>&1
@@ -84,8 +93,13 @@ main() {
     echo "Switching MAM4xx to branch: $MAM4XX_BRANCH"
     require_dir_exists "externals/mam4xx"
     cd externals/mam4xx
+    git fetch origin > /dev/null 2>&1
     git checkout "$MAM4XX_BRANCH" > /dev/null 2>&1
     newline && time_elapsed_min
+
+    echo -e "${GREEN}**HARD resetting**${NC} MAM4xx repository in: ${BLUE}$(pwd) ${NC} to branch ${BLUE}$MAM4XX_BRANCH${NC}"
+    newline
+    git reset --hard origin/"$MAM4XX_BRANCH" > /dev/null 2>&1
 
     local temp_dir="test_$(date +'%m-%d-%Y__%H_%M_%S')"
     readonly temp_dir
@@ -144,7 +158,7 @@ time_elapsed_min() {
 exit_if_dir_exists() {
     local path="$1"
     if [[ -d "$path" ]]; then
-        echo "Error: Directory '$path' already exists. Please remove it or choose a different location."
+        echo -e "${RED}Error: Directory '$path' already exists. Please remove it or choose a different location.${NC}"
         newline
         exit 1
     fi
@@ -154,7 +168,7 @@ exit_if_dir_exists() {
 require_dir_exists() {
     local path="$1"
     if [[ ! -d "$path" ]]; then
-        echo "Error: Required directory '$path' does not exist."
+        echo -e "${RED}Error: Required directory '$path' does not exist.${NC}"
         newline
         exit 1
     fi
