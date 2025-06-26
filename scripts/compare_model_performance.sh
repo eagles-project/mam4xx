@@ -163,7 +163,7 @@ fetch_code() {
         mkdir -p $path 
         pushd $path 
         git clone git@github.com:$username/E3SM.git .     
-        if [ '$branch' != 'master' ]; then
+        if [ "$branch" != "master" ]; then
             git checkout $branch
         fi
         git submodule update --init --recursive     
