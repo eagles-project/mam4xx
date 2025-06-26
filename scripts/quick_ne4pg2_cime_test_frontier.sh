@@ -97,7 +97,7 @@ main() {
     git checkout "$MAM4XX_BRANCH" > /dev/null 2>&1
     newline && time_elapsed_min
 
-    echo -e "${GREEN}**HARD resetting**${NC} MAM4xx repository in: ${BLUE}`pwd` ${NC} to branch ${BLUE}$MAM4XX_BRANCH${NC}"
+    echo -e "${GREEN}**HARD resetting**${NC} MAM4xx repository in: ${BLUE}$(pwd) ${NC} to branch ${BLUE}$MAM4XX_BRANCH${NC}"
     newline
     git reset --hard origin/"$MAM4XX_BRANCH" > /dev/null 2>&1
 
