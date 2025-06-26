@@ -158,7 +158,7 @@ time_elapsed_min() {
 exit_if_dir_exists() {
     local path="$1"
     if [[ -d "$path" ]]; then
-        echo -e "${RED}Error: Directory '$path' already exists. Please remove it or choose a different location."
+        echo -e "${RED}Error: Directory '$path' already exists. Please remove it or choose a different location.${NC}"
         newline
         exit 1
     fi
