@@ -77,7 +77,7 @@ main() {
     readonly CODE_ROOT="$SCRATCH_DIR/$SRC_NAME"
     cd "$CODE_ROOT"
 
-    echo "Fetch latest from the repo and Check out the E3SM branch: $E3SM_BRANCH"
+    echo "Fetching latest changes and checking out branch $E3SM_BRANCH"
     git fetch origin > /dev/null 2>&1
     git checkout "$E3SM_BRANCH" > /dev/null 2>&1
 
