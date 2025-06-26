@@ -241,8 +241,9 @@ for v, img in zip(png_names, png_files):
     img = f'{html}/{os.path.basename(img)}'
     html_content += f'<h2>{v}</h2>\n'
     html_content += f'<img src="{img}" style="max-width: 1000px;"><br><br>\n'
-    html_content += "</body></html>"
 
+# Add the closing HTML tags after the loop
+html_content += "</body></html>"
 # Write the HTML content to a file
 html_file_path = outdir  
 with open(f'{html_file_path}/compare_{casename1}_vs_{casename2}_{now_str}.html', "w") as html_file:
