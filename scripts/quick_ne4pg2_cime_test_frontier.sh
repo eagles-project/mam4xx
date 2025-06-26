@@ -168,7 +168,7 @@ exit_if_dir_exists() {
 require_dir_exists() {
     local path="$1"
     if [[ ! -d "$path" ]]; then
-        echo "${RED}Error: Required directory '$path' does not exist."
+        echo -e "${RED}Error: Required directory '$path' does not exist.${NC}"
         newline
         exit 1
     fi
