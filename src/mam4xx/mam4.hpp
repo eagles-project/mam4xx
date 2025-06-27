@@ -18,6 +18,7 @@
 #include <mam4xx/coagulation.hpp>
 #include <mam4xx/compute_o3_column_density.hpp>
 #include <mam4xx/convproc.hpp>
+#include <mam4xx/diagnostic_arrays.hpp>
 #include <mam4xx/drydep.hpp>
 #include <mam4xx/gas_chem.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>

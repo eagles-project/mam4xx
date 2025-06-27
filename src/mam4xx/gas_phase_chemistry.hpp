@@ -41,7 +41,7 @@ void gas_phase_chemistry(
     const Real invariants[nfs], const int (&clsmap_4)[gas_pcnst],
     const int (&permute_4)[gas_pcnst], const Real het_rates[gas_pcnst],
     // out
-    Real (&qq)[gas_pcnst], Real (&vmr0)[gas_pcnst]) {
+    Real (&qq)[gas_pcnst]) {
   //=====================================================================
   // ... set rates for "tabular" and user specified reactions
   //=====================================================================
@@ -95,11 +95,6 @@ void gas_phase_chemistry(
   using mam4::gas_chemistry::clscnt4;
   Real epsilon[clscnt4];
   mam4::gas_chemistry::imp_slv_inti(epsilon);
-
-  // Mixing ratios before chemistry changes
-  for (int i = 0; i < gas_pcnst; ++i) {
-    vmr0[i] = qq[i];
-  }
 
   // solve chemical system implicitly
   Real prod_out[clscnt4], loss_out[clscnt4];
