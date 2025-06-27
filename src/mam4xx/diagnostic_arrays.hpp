@@ -8,12 +8,12 @@ struct MicrophysDiagnosticArrays {
   // if non-empty will be filled by
   // mam4::microphysics::perform_atmospheric_chemistry_and_microphysics
   // dimension number of levels  x  gas_pcnst
-  View2D gs_dvmrdt;
+  View2D gas_phase_chemistry_dvmrdt;
   // Tendency due to aqueous (qq_) chemistry [kg/kg/s]
   // if non-empty will be filled by
   // mam4::microphysics::perform_atmospheric_chemistry_and_microphysics
   // dimension number of levels  x  gas_pcnst
-  View2D aq_dvmrdt;
+  View2D aqueous_chemistry_dvmrdt;
 };
 } // namespace mam4
 #endif

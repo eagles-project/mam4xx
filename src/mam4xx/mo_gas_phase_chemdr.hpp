@@ -319,13 +319,13 @@ void perform_atmospheric_chemistry_and_microphysics(
         vmr);
 
     // calculate tendency due to gas phase chemistry
-    if (diag_arrays.gs_dvmrdt.size()) {
-      const auto &dvmrdt = ekat::subview(diag_arrays.gs_dvmrdt, kk);
+    if (diag_arrays.gas_phase_chemistry_dvmrdt.size()) {
       const Real mbar = haero::Constants::molec_weight_dry_air;
       const Real gravit = Constants::gravity;
       const Real x = 1.0 / mbar * pdel / gravit;
       for (int m = 0; m < gas_pcnst; ++m)
-        dvmrdt[m] = x * adv_mass_kg_per_moles[m] * (vmr[m] - vmr0[m]) / dt;
+        diag_arrays.gas_phase_chemistry_dvmrdt(m, kk) =
+            x * adv_mass_kg_per_moles[m] * (vmr[m] - vmr0[m]) / dt;
     }
 
     // create work array copies to retain "pre-chemistry (aqueous)"
@@ -365,13 +365,12 @@ void perform_atmospheric_chemistry_and_microphysics(
     }
 
     // calculate tendency due to gas phase chemistry
-    if (diag_arrays.aq_dvmrdt.size()) {
-      const auto &dvmrdt = ekat::subview(diag_arrays.aq_dvmrdt, kk);
+    if (diag_arrays.aqueous_chemistry_dvmrdt.size()) {
       const Real mbar = haero::Constants::molec_weight_dry_air;
       const Real gravit = Constants::gravity;
       const Real x = 1.0 / mbar * pdel / gravit;
       for (int m = 0; m < gas_pcnst; ++m)
-        dvmrdt[m] =
+        diag_arrays.aqueous_chemistry_dvmrdt(m, kk) =
             x * adv_mass_kg_per_moles[m] * (vmr[m] - vmr_bef_aq_chem[m]) / dt;
     }
     // calculate aerosol water content using water uptake treatment
