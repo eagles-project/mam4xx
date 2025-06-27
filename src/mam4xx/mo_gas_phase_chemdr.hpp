@@ -153,8 +153,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     Real dvel[gas_pcnst], // deposition velocity [cm/s]
     Real dflx[gas_pcnst],
     // out
-    const View3D &qgcm_tendaa,
-    const View3D &qqcwgcm_tendaa,
+    const View3D &qgcm_tendaa, const View3D &qqcwgcm_tendaa,
     mam4::Prognostics &progs) {
 
   const int nlev = mam4::nlev;
