@@ -2071,8 +2071,7 @@ void get_gcm_tend_diags_from_subareas(
     const Real (&qsub_tendaa)[gas_pcnst][nqtendaa()][maxsubarea()],
     const Real (&qqcwsub_tendaa)[gas_pcnst][nqqcwtendaa()][maxsubarea()],
     // out
-    const View2D &qgcm_tendaa,
-    const View2D &qqcwgcm_tendaa) {
+    const View2D &qgcm_tendaa, const View2D &qqcwgcm_tendaa) {
   // nsubarea: # of active subareas
   // ncldy_subarea: # of cloudy subareas
   // afracsub(maxsubarea): area fraction of subareas [unitless]
@@ -2118,11 +2117,9 @@ void modal_aero_amicphys_intr(
     const Real (&q_pregaschem)[gas_pcnst],
     const Real (&q_precldchem)[gas_pcnst],
     const Real (&qqcw_precldchem)[gas_pcnst], const Real (&dgncur_a)[num_modes],
-    const Real (&dgncur_awet)[num_modes],
-    const Real (&wetdens_host)[num_modes],
+    const Real (&dgncur_awet)[num_modes], const Real (&wetdens_host)[num_modes],
     // out
-    const View2D &qgcm_tendaa,
-    const View2D &qqcwgcm_tendaa) {
+    const View2D &qgcm_tendaa, const View2D &qqcwgcm_tendaa) {
   // deltat: time step
   // qq(ncol,pver,pcnst): current tracer mixing ratios (TMRs)
   //                           these values are updated (so out /= in)
