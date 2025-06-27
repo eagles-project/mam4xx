@@ -147,10 +147,14 @@ void perform_atmospheric_chemistry_and_microphysics(
         &prain, // stratoform precip [kg/kg/s] //in precip_total_tend
     const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
     const View1D &work_set_het, const seq_drydep::Data &drydep_data,
-    const View1D &aqso4_flx, const View1D &aqh2so4_flx,
     const MicrophysDiagnosticArrays &diag_arrays,
     Real dvel[gas_pcnst], // deposition velocity [cm/s]
     Real dflx[gas_pcnst], mam4::Prognostics &progs) {
+
+  const View1D &aqso4_flx = diag_arrays.aqso4_column_integrated_flux;
+  const View1D &aqh2so4_flx = diag_arrays.aqh2so4_column_integrated_flux;
+  const View2D &gpc_dvmrdt = diag_arrays.gas_phase_chemistry_dvmrdt;
+  const View2D &aqu_dvmrdt = diag_arrays.aqueous_chemistry_dvmrdt;
 
   const int nlev = mam4::nlev;
   auto work_set_het_ptr = (Real *)work_set_het.data();
@@ -317,14 +321,13 @@ void perform_atmospheric_chemistry_and_microphysics(
         clsmap_4, permute_4, het_rates_k.data(),
         // out
         vmr);
-
     // calculate tendency due to gas phase chemistry
-    if (diag_arrays.gas_phase_chemistry_dvmrdt.size()) {
+    if (gpc_dvmrdt.size()) {
       const Real mbar = haero::Constants::molec_weight_dry_air;
       const Real gravit = Constants::gravity;
       const Real x = 1.0 / mbar * pdel / gravit;
       for (int m = 0; m < gas_pcnst; ++m)
-        diag_arrays.gas_phase_chemistry_dvmrdt(m, kk) =
+        gpc_dvmrdt(m, kk) =
             x * adv_mass_kg_per_moles[m] * (vmr[m] - vmr0[m]) / dt;
     }
 
@@ -365,12 +368,12 @@ void perform_atmospheric_chemistry_and_microphysics(
     }
 
     // calculate tendency due to gas phase chemistry
-    if (diag_arrays.aqueous_chemistry_dvmrdt.size()) {
+    if (aqu_dvmrdt.size()) {
       const Real mbar = haero::Constants::molec_weight_dry_air;
       const Real gravit = Constants::gravity;
       const Real x = 1.0 / mbar * pdel / gravit;
       for (int m = 0; m < gas_pcnst; ++m)
-        diag_arrays.aqueous_chemistry_dvmrdt(m, kk) =
+        aqu_dvmrdt(m, kk) =
             x * adv_mass_kg_per_moles[m] * (vmr[m] - vmr_bef_aq_chem[m]) / dt;
     }
     // calculate aerosol water content using water uptake treatment
@@ -453,18 +456,26 @@ void perform_atmospheric_chemistry_and_microphysics(
   team.team_barrier();
   // Diagnose the column-integrated flux (kg/m2/s) using
   // volume mixing ratios ( // kmol/kmol(air) )
-  haero::ConstColumnView pdel = atm.hydrostatic_dp; // layer thickness (Pa)
-  for (int m = 0; m < num_modes; ++m) {
-    const int ll = config_setsox.lptr_so4_cw_amode[m] - offset_aerosol;
-    if (0 <= ll) {
-      const auto aqso4 = ekat::subview(dqdt_aqso4, ll);
-      const auto aqh2so4 = ekat::subview(dqdt_aqh2so4, ll);
-      const Real vmr_so4 = aero_model::calc_sfc_flux(team, aqso4, pdel, nlev);
-      const Real vmr_h2s = aero_model::calc_sfc_flux(team, aqh2so4, pdel, nlev);
-      aqso4_flx[m] =
-          conversions::mmr_from_vmr(vmr_so4, adv_mass_kg_per_moles[ll]);
-      aqh2so4_flx[m] =
-          conversions::mmr_from_vmr(vmr_h2s, adv_mass_kg_per_moles[ll]);
+  if (aqso4_flx.size() || aqh2so4_flx.size()) {
+    haero::ConstColumnView pdel = atm.hydrostatic_dp; // layer thickness (Pa)
+    for (int m = 0; m < num_modes; ++m) {
+      const int ll = config_setsox.lptr_so4_cw_amode[m] - offset_aerosol;
+      if (0 <= ll) {
+        if (aqso4_flx.size()) {
+          const auto aqso4 = ekat::subview(dqdt_aqso4, ll);
+          const Real vmr_so4 =
+              aero_model::calc_sfc_flux(team, aqso4, pdel, nlev);
+          aqso4_flx[m] =
+              conversions::mmr_from_vmr(vmr_so4, adv_mass_kg_per_moles[ll]);
+        }
+        if (aqh2so4_flx.size()) {
+          const auto aqh2so4 = ekat::subview(dqdt_aqh2so4, ll);
+          const Real vmr_h2s =
+              aero_model::calc_sfc_flux(team, aqh2so4, pdel, nlev);
+          aqh2so4_flx[m] =
+              conversions::mmr_from_vmr(vmr_h2s, adv_mass_kg_per_moles[ll]);
+        }
+      }
     }
   }
 }
