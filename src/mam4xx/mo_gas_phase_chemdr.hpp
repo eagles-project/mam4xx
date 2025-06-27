@@ -279,8 +279,8 @@ void perform_atmospheric_chemistry_and_microphysics(
     // these subviews are calculated within modal_aero_amicphys_intr() and
     // ultimately, the 3d views are returned by
     // perform_atmospheric_chemistry_and_microphysics()
-    auto qgcm_tendaa_kk = ekat::subview(qgcm_tendaa, kk);
-    auto qqcwgcm_tendaa_kk = ekat::subview(qqcwgcm_tendaa, kk);
+    const auto &qgcm_tendaa_kk = ekat::subview(qgcm_tendaa, kk);
+    const auto &qqcwgcm_tendaa_kk = ekat::subview(qqcwgcm_tendaa, kk);
 
     // extract aerosol state variables into "working arrays" (mass
     // mixing ratios) (in EAM, this is done in the gas_phase_chemdr
