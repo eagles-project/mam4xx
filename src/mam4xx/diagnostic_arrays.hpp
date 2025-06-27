@@ -5,7 +5,7 @@ namespace mam4 {
 struct MicrophysDiagnosticArrays {
   using View2D = DeviceType::view_2d<Real>;
   using View1D = DeviceType::view_1d<Real>;
-  // Tendency due to gas phase (gs_) chemistry [mole/mole/s]
+  // Tendency due to gas phase (gs_) chemistry [kg/kg/s]
   // if non-empty will be filled by
   // mam4::microphysics::perform_atmospheric_chemistry_and_microphysics
   // dimension number of levels  x  gas_pcnst
