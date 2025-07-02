@@ -8,6 +8,8 @@
 
 #include <haero/math.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>
+
+#include <ekat_math_utils.hpp>
 // This file contains utility-type functions that are available for use by
 // various processes, tests, etc.
 
@@ -183,8 +185,7 @@ void transfer_tendencies_num_to_tendecines(const Real n_mode_i[],
                                            // ,
                                            // Real qqcw[gas_pcnst()],
 ) {
-  int s_idx = ekat::ScalarTraits<int>::invalid();
-  s_idx = gasses_start_ind() +
+  int s_idx = gasses_start_ind() +
           AeroConfig::num_gas_ids(); // gases start at index 9 (index 10 in
                                      // Fortran version)
 
@@ -225,7 +226,7 @@ extract_stateq_from_prognostics(const mam4::Prognostics &progs,
                                 const haero::Atmosphere &atm, VectorType &q,
                                 const int klev) {
 
-  int s_idx = ekat::ScalarTraits<int>::invalid();
+  int s_idx = ekat::invalid<int>();
   q[0] = atm.vapor_mixing_ratio(klev);               // qv
   q[1] = atm.liquid_mixing_ratio(klev);              // qc
   q[2] = atm.ice_mixing_ratio(klev);                 // qi
@@ -263,7 +264,7 @@ KOKKOS_INLINE_FUNCTION void
 extract_ptend_from_tendencies(const Tendencies &tends, VectorType &ptend,
                               const int klev) {
 
-  int s_idx = ekat::ScalarTraits<int>::invalid();
+  int s_idx = ekat::invalid<int>();
   // FIXME: tendencies for first five item (qv, qc, qi, nc, ni) should no be
   // modified by mam4xx is this correct ?
   if (tends.q_gas[0].data()) { // if gases are defined in dry_aero aerosol state
@@ -295,7 +296,7 @@ KOKKOS_INLINE_FUNCTION void
 inject_stateq_to_prognostics(const VectorType &q, mam4::Prognostics &progs,
                              const int klev) {
 
-  int s_idx = ekat::ScalarTraits<int>::invalid();
+  int s_idx = ekat::invalid<int>();
 
   if (progs.q_gas[0].data()) { // if gases are defined in dry_aero aerosol state
     s_idx = gasses_start_ind(); // gases start at index 9 (index 10 in Fortran
@@ -329,7 +330,7 @@ KOKKOS_INLINE_FUNCTION void inject_ptend_to_tendencies(const VectorType &ptend,
                                                        const Tendencies &tends,
                                                        const int klev) {
 
-  int s_idx = ekat::ScalarTraits<int>::invalid();
+  int s_idx = ekat::invalid<int>();
 
   if (tends.q_gas[0].data()) { // if gases are defined in dry_aero aerosol state
     s_idx = gasses_start_ind(); // gases start at index 9 (index 10 in Fortran
