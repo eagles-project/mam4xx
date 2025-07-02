@@ -78,7 +78,6 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
  * @param [in] chlorine_loading
  * @param [in] config_setsox conf struc for setsox
  * @param [in] config_amicphys conf struc for amicphys
- * @param [in] linoz_psc_T PSC ozone loss T (K) threshold
  * @param [in] zenith_angle_icol
  * @param [in] d_sfc_alb_dir_vis_icol
  * @param [out] o3_col_dens_i
@@ -115,6 +114,24 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
  * @param [out] dflx[gas_pcnst] -- deposition flux [1/cm^2/s]
  * @param [out] progs           -- prognostics: stateq, qqcw updated
  **/
+struct LinozData{
+  View1D linoz_o3_clim_icol;
+  View1D linoz_t_clim_icol;
+  View1D linoz_o3col_clim_icol;
+  View1D linoz_PmL_clim_icol; 
+  View1D linoz_dPmL_dO3_icol;
+  View1D linoz_dPmL_dT_icol;
+  View1D linoz_dPmL_dO3col_icol;
+  View1D linoz_cariolle_pscs_icol;
+};
+
+struct LinozConf{
+  Real chlorine_loading;
+  Real linoz_psc_T; // PSC ozone loss T (K) threshold
+  bool compute_linoz;
+  int o3_lbl;
+};
+
 
 KOKKOS_INLINE_FUNCTION
 void perform_atmospheric_chemistry_and_microphysics(
@@ -123,22 +140,22 @@ void perform_atmospheric_chemistry_and_microphysics(
     const Real rain, const Real solar_flux,
     const View1D cnst_offline_icol[num_tracer_cnst], const Forcing *forcings_in,
     const haero::Atmosphere &atm, const PhotoTableData &photo_table,
-    const Real chlorine_loading, const mam4::mo_setsox::Config &config_setsox,
-    const AmicPhysConfig &config_amicphys, const Real linoz_psc_T,
+    // const Real chlorine_loading,
+    const mam4::mo_setsox::Config &config_setsox,
+    const AmicPhysConfig &config_amicphys, 
+    // const Real linoz_psc_T,
     const Real zenith_angle_icol, const Real d_sfc_alb_dir_vis_icol,
     const View1D &o3_col_dens_i, const View2D &photo_rates_icol,
     const View2D &extfrc_icol, const View2D &invariants_icol,
-    const View1D &work_photo_table_icol, const View1D &linoz_o3_clim_icol,
-    const View1D &linoz_t_clim_icol, const View1D &linoz_o3col_clim_icol,
-    const View1D &linoz_PmL_clim_icol, const View1D &linoz_dPmL_dO3_icol,
-    const View1D &linoz_dPmL_dT_icol, const View1D &linoz_dPmL_dO3col_icol,
-    const View1D &linoz_cariolle_pscs_icol, const Real eccf,
+    const View1D &work_photo_table_icol, const LinozConf& linoz_conf, const LinozData& linoz_data, 
+    const Real eccf,
     const Real adv_mass_kg_per_moles[gas_pcnst],
     const Real fraction_landuse[mam4::mo_drydep::n_land_type],
     const int index_season[mam4::mo_drydep::n_land_type],
     const int (&clsmap_4)[gas_pcnst], const int (&permute_4)[gas_pcnst],
     const int offset_aerosol, const Real o3_sfc, const Real o3_tau,
-    const int o3_lbl, const ConstView2D dry_diameter_icol,
+    // const int o3_lbl,
+     const ConstView2D dry_diameter_icol,
     const ConstView2D wet_diameter_icol, const ConstView2D wetdens_icol,
     const Real phis,      // surf geopotential //in
     const View1D &cmfdqr, // dq/dt for convection [kg/kg/s] //in ndx_cmfdqr =
@@ -406,7 +423,9 @@ void perform_atmospheric_chemistry_and_microphysics(
 
     mam4::microphysics::vmr2mmr(vmrcw, adv_mass_kg_per_moles, qqcw);
 
-    //-----------------
+    if (linoz_conf.compute_linoz)
+    {
+          //-----------------
     // LINOZ chemistry
     //-----------------
 
@@ -419,11 +438,11 @@ void perform_atmospheric_chemistry_and_microphysics(
     mam4::lin_strat_chem::lin_strat_chem_solve_kk(
         // in
         o3_col_dens_i(kk), temp, zenith_angle_icol, pmid, dt, rlats,
-        linoz_o3_clim_icol(kk), linoz_t_clim_icol(kk),
-        linoz_o3col_clim_icol(kk), linoz_PmL_clim_icol(kk),
-        linoz_dPmL_dO3_icol(kk), linoz_dPmL_dT_icol(kk),
-        linoz_dPmL_dO3col_icol(kk), linoz_cariolle_pscs_icol(kk),
-        chlorine_loading, linoz_psc_T,
+        linoz_data.linoz_o3_clim_icol(kk), linoz_data.llinoz_t_clim_icol(kk),
+        linoz_data.linoz_o3col_clim_icol(kk), llinoz_data.inoz_PmL_clim_icol(kk),
+        linoz_data.linoz_dPmL_dO3_icol(kk), linoz_data.linoz_dPmL_dT_icol(kk),
+        linoz_data.linoz_dPmL_dO3col_icol(kk), linoz_data.linoz_cariolle_pscs_icol(kk),
+        linoz_conf.chlorine_loading, linoz_conf.linoz_psc_T,
         // out
         vmr[o3_ndx],
         // outputs that are not used
@@ -431,7 +450,7 @@ void perform_atmospheric_chemistry_and_microphysics(
         zenith_angle_degrees);
 
     // Update source terms above the ozone decay threshold
-    if (kk >= nlev - o3_lbl) {
+    if (kk >= nlev - linoz_conf.o3_lbl) {
       const Real o3l_vmr_old = vmr[o3_ndx];
       Real do3mass = 0;
       const Real o3l_vmr_new =
@@ -443,6 +462,9 @@ void perform_atmospheric_chemistry_and_microphysics(
       // Update the mixing ratio (vmr) for O3
       vmr[o3_ndx] = o3l_vmr_new;
     }
+    }
+
+
     // Check for negative values and reset to zero
     for (int i = 0; i < gas_pcnst; ++i) {
       if (vmr[i] < 0.0)
@@ -458,10 +480,11 @@ void perform_atmospheric_chemistry_and_microphysics(
     mam4::utils::inject_stateq_to_prognostics(state_q, progs, kk);
     mam4::utils::inject_qqcw_to_prognostics(qqcw_pcnst, progs, kk);
   }); // parallel_for for vertical levels
+
   team.team_barrier();
   // Diagnose the column-integrated flux (kg/m2/s) using
   // volume mixing ratios ( // kmol/kmol(air) )
-  haero::ConstColumnView pdel = atm.hydrostatic_dp; // layer thickness (Pa)
+  const auto& pdel = atm.hydrostatic_dp; // layer thickness (Pa)
   for (int m = 0; m < num_modes; ++m) {
     const int ll = config_setsox.lptr_so4_cw_amode[m] - offset_aerosol;
     if (0 <= ll) {
