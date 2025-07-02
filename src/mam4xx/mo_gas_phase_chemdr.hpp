@@ -465,7 +465,7 @@ void perform_atmospheric_chemistry_and_microphysics(
           conversions::mmr_from_vmr(vmr_so4, adv_mass_kg_per_moles[ll]);
       aqh2so4_flx[m] =
           conversions::mmr_from_vmr(vmr_h2s, adv_mass_kg_per_moles[ll]);
-      if (aqso4_lev.size()) {
+      /*if (aqso4_lev.size()) {
         Kokkos::parallel_for(
             Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
               const Real aqso4 = dqdt_aqso4(ll, kk);
@@ -480,7 +480,7 @@ void perform_atmospheric_chemistry_and_microphysics(
               aqh2so4_lev(m, kk) =
                   conversions::mmr_from_vmr(aqh2so4, adv_mass_kg_per_moles[ll]);
             });
-      }
+	    }*/
     }
   }
   team.team_barrier();
