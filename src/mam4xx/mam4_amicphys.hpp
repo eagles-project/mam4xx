@@ -2344,9 +2344,8 @@ void modal_aero_amicphys_intr(
       qgcm_tendaa, qqcwgcm_tendaa);
 
   //copy tendencies to diagnostics
-  const Real pdel_fac = pdel/Constants::gravity;
   for (int icnst = 0; icnst < gas_pcnst; ++icnst) {
-    gas_aero_exchange_condensation[icnst] = qgcm_tendaa[icnst][0] * pdel_fac; // condensation
+    gas_aero_exchange_condensation[icnst] = qgcm_tendaa[icnst][0]; // condensation
   }
       
       
