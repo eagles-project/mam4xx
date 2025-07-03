@@ -388,13 +388,25 @@ void perform_atmospheric_chemistry_and_microphysics(
     }
     // do aerosol microphysics (gas-aerosol exchange, nucleation,
     // coagulation)
+    Real gas_aero_exchange_condensation[gas_pcnst] = {};
     mam4::microphysics::modal_aero_amicphys_intr(
         // in
         config_amicphys, dt, temp, pmid, pdel, zm, pblh, qv, cldfrac,
         // out
         vmr, vmrcw,
+        //diagnostics (out)
+        gas_aero_exchange_condensation,
         // in
         vmr0, vmr_pregas, vmr_precld, dgncur_a_kk, dgncur_awet_kk, wetdens_kk);
+
+    if(diag_arrays.gas_aero_exchange_condensation.size()) {
+      // Fill the diagnostic array with gas-aero exchange condensation values
+      // for each gas species
+      for (int i = 0; i < gas_pcnst; ++i) {
+        diag_arrays.gas_aero_exchange_condensation(i, kk) = gas_aero_exchange_condensation[i];
+      }
+    }
+    
 
     mam4::microphysics::vmr2mmr(vmrcw, adv_mass_kg_per_moles, qqcw);
 

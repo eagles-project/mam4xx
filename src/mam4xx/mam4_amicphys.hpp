@@ -7,6 +7,7 @@
 #include <mam4xx/gasaerexch.hpp>
 #include <mam4xx/nucleation.hpp>
 #include <mam4xx/rename.hpp>
+#include <mam4xx/diagnostic_arrays.hpp>
 
 namespace mam4 {
 
@@ -2120,6 +2121,8 @@ void modal_aero_amicphys_intr(
     const Real qv, const Real cld,
     // in/out
     Real qq[gas_pcnst], Real qqcw[gas_pcnst],
+    //Diagnostics (out)
+    Real gas_aero_exchange_condensation[gas_pcnst],
     // in
     const Real (&q_pregaschem)[gas_pcnst],
     const Real (&q_precldchem)[gas_pcnst],
@@ -2339,6 +2342,14 @@ void modal_aero_amicphys_intr(
       nsubarea, ncldy_subarea, afracsub, qsub_tendaa, qqcwsub_tendaa,
       // out
       qgcm_tendaa, qqcwgcm_tendaa);
+
+  //copy tendencies to diagnostics
+  const Real pdel_fac = pdel/Constants::gravity;
+  for (int icnst = 0; icnst < gas_pcnst; ++icnst) {
+    gas_aero_exchange_condensation[icnst] = qgcm_tendaa[icnst][0] * pdel_fac; // condensation
+  }
+      
+      
 } // modal_aero_amicphys_intr
 } // namespace microphysics
 
