@@ -113,25 +113,44 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
  * @param [out] dflx[gas_pcnst] -- deposition flux [1/cm^2/s]
  * @param [out] progs           -- prognostics: stateq, qqcw updated
  **/
+// climatology data for linear stratospheric chemistry
+// Per-column data is read from an NC file and then horizontally and vertically
+// interpolated to the simulation grid.
 struct LinozData {
+  // ozone (climatology) [vmr]
   View1D linoz_o3_clim_icol;
+  // temperature (climatology) [K]
   View1D linoz_t_clim_icol;
+  // column o3 above box (climatology) [Dobson Units (DU)]
   View1D linoz_o3col_clim_icol;
+  // P minus L (climatology) [vmr/s]
   View1D linoz_PmL_clim_icol;
+  // sensitivity of P minus L to O3 [1/s]
   View1D linoz_dPmL_dO3_icol;
+  // sensitivity of P minus L to T3 [K]
   View1D linoz_dPmL_dT_icol;
+  // sensitivity of P minus L to overhead O3 column [vmr/DU]
   View1D linoz_dPmL_dO3col_icol;
+  // Cariolle parameter for PSC loss of ozone [1/s]
   View1D linoz_cariolle_pscs_icol;
 };
 
+// configuration parameters from linoz.
+// These parameters are from the namelist, except for chlorine_loading, which is
+// read from an NC file.
 struct LinozConf {
   Real chlorine_loading;
-  Real psc_T; // PSC ozone loss T (K) threshold  // set from namelist input
-              // linoz_psc_T
+  // turn on/off linoz computation.
   bool compute;
-  int o3_lbl;  // number of layers with ozone decay from the surface
-  Real o3_sfc; // set from namelist input linoz_sfc
-  Real o3_tau; // set from namelist input linoz_tau
+  // PSC ozone loss T (K) threshold  // set from namelist input
+  // linoz_psc_T
+  Real psc_T;
+  // number of layers with ozone decay from the surface
+  int o3_lbl;
+  // set from namelist input linoz_sfc
+  Real o3_sfc;
+  // set from namelist input linoz_tau
+  Real o3_tau;
 };
 
 KOKKOS_INLINE_FUNCTION
