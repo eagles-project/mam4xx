@@ -4,6 +4,9 @@
 namespace mam4 {
 struct MicrophysDiagnosticArrays {
   using View2D = DeviceType::view_2d<Real>;
+  //Gas aerosol exchange from the condensation process
+  View2D gas_aero_exchange_condensation;
+
   // Tendency due to gas phase (gs_) chemistry [kg/kg/s]
   // if non-empty will be filled by
   // mam4::microphysics::perform_atmospheric_chemistry_and_microphysics
