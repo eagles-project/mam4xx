@@ -480,7 +480,7 @@ void perform_atmospheric_chemistry_and_microphysics(
               diag_arrays.aqh2so4_incloud_mmr_tendency(m, kk) =
                   conversions::mmr_from_vmr(aqh2so4, adv_mass_kg_per_moles[ll]);
             });
-	    }
+      }
     }
   }
   team.team_barrier();
