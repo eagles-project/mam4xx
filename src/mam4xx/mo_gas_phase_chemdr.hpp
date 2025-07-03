@@ -465,8 +465,25 @@ void perform_atmospheric_chemistry_and_microphysics(
           conversions::mmr_from_vmr(vmr_so4, adv_mass_kg_per_moles[ll]);
       aqh2so4_flx[m] =
           conversions::mmr_from_vmr(vmr_h2s, adv_mass_kg_per_moles[ll]);
+      if (diag_arrays.aqso4_incloud_mmr_tendency.size()) {
+        Kokkos::parallel_for(
+            Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
+              const Real aqso4 = dqdt_aqso4(ll, kk);
+              diag_arrays.aqso4_incloud_mmr_tendency(m, kk) =
+                  conversions::mmr_from_vmr(aqso4, adv_mass_kg_per_moles[ll]);
+            });
+      }
+      if (diag_arrays.aqh2so4_incloud_mmr_tendency.size()) {
+        Kokkos::parallel_for(
+            Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
+              const Real aqh2so4 = dqdt_aqh2so4(ll, kk);
+              diag_arrays.aqh2so4_incloud_mmr_tendency(m, kk) =
+                  conversions::mmr_from_vmr(aqh2so4, adv_mass_kg_per_moles[ll]);
+            });
+      }
     }
   }
+  team.team_barrier();
 }
 
 } // namespace microphysics

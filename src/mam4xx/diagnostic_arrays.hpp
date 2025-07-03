@@ -14,6 +14,12 @@ struct MicrophysDiagnosticArrays {
   // mam4::microphysics::perform_atmospheric_chemistry_and_microphysics
   // dimension number of levels  x  gas_pcnst
   View2D aqueous_chemistry_dvmrdt;
+
+  // In-cloud chemistry production/sink of SO4
+  View2D aqso4_incloud_mmr_tendency;
+
+  // In-cloud chemistry production/sink of H2SO4
+  View2D aqh2so4_incloud_mmr_tendency;
 };
 } // namespace mam4
 #endif
