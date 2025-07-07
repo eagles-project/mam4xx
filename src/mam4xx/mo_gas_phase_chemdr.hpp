@@ -398,36 +398,41 @@ void perform_atmospheric_chemistry_and_microphysics(
         config_amicphys, dt, temp, pmid, pdel, zm, pblh, qv, cldfrac,
         // out
         vmr, vmrcw,
-        //diagnostics (out)
+        // diagnostics (out)
         gas_aero_exchange_condensation, gas_aero_exchange_renaming,
         gas_aero_exchange_nucleation, gas_aero_exchange_coagulation,
         gas_aero_exchange_renaming_cw,
         // in
         vmr0, vmr_pregas, vmr_precld, dgncur_a_kk, dgncur_awet_kk, wetdens_kk);
 
-    if(diag_arrays.gas_aero_exchange_condensation.size()) {
+    if (diag_arrays.gas_aero_exchange_condensation.size()) {
       for (int i = 0; i < gas_pcnst; ++i) {
-        diag_arrays.gas_aero_exchange_condensation(i, kk) = gas_aero_exchange_condensation[i];
+        diag_arrays.gas_aero_exchange_condensation(i, kk) =
+            gas_aero_exchange_condensation[i];
       }
     }
-    if(diag_arrays.gas_aero_exchange_renaming.size()) {
+    if (diag_arrays.gas_aero_exchange_renaming.size()) {
       for (int i = 0; i < gas_pcnst; ++i) {
-        diag_arrays.gas_aero_exchange_renaming(i, kk) = gas_aero_exchange_renaming[i];
+        diag_arrays.gas_aero_exchange_renaming(i, kk) =
+            gas_aero_exchange_renaming[i];
       }
     }
-    if(diag_arrays.gas_aero_exchange_nucleation.size()) {
+    if (diag_arrays.gas_aero_exchange_nucleation.size()) {
       for (int i = 0; i < gas_pcnst; ++i) {
-        diag_arrays.gas_aero_exchange_nucleation(i, kk) = gas_aero_exchange_nucleation[i];
+        diag_arrays.gas_aero_exchange_nucleation(i, kk) =
+            gas_aero_exchange_nucleation[i];
       }
     }
-    if(diag_arrays.gas_aero_exchange_coagulation.size()) {
+    if (diag_arrays.gas_aero_exchange_coagulation.size()) {
       for (int i = 0; i < gas_pcnst; ++i) {
-        diag_arrays.gas_aero_exchange_coagulation(i, kk) = gas_aero_exchange_coagulation[i];
+        diag_arrays.gas_aero_exchange_coagulation(i, kk) =
+            gas_aero_exchange_coagulation[i];
       }
     }
-    if(diag_arrays.gas_aero_exchange_renaming_cw.size()) {
+    if (diag_arrays.gas_aero_exchange_renaming_cw.size()) {
       for (int i = 0; i < gas_pcnst; ++i) {
-        diag_arrays.gas_aero_exchange_renaming_cw(i, kk) = gas_aero_exchange_renaming_cw[i];
+        diag_arrays.gas_aero_exchange_renaming_cw(i, kk) =
+            gas_aero_exchange_renaming_cw[i];
       }
     }
 

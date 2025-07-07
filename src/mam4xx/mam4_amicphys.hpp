@@ -3,11 +3,11 @@
 
 #include <mam4xx/aging.hpp>
 #include <mam4xx/coagulation.hpp>
+#include <mam4xx/diagnostic_arrays.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/gasaerexch.hpp>
 #include <mam4xx/nucleation.hpp>
 #include <mam4xx/rename.hpp>
-#include <mam4xx/diagnostic_arrays.hpp>
 
 namespace mam4 {
 
@@ -2121,7 +2121,7 @@ void modal_aero_amicphys_intr(
     const Real qv, const Real cld,
     // in/out
     Real (&qq)[gas_pcnst], Real (&qqcw)[gas_pcnst],
-    //Diagnostics (out)
+    // Diagnostics (out)
     Real (&gas_aero_exchange_condensation)[gas_pcnst],
     Real (&gas_aero_exchange_renaming)[gas_pcnst],
     Real (&gas_aero_exchange_nucleation)[gas_pcnst],
@@ -2347,15 +2347,15 @@ void modal_aero_amicphys_intr(
       // out
       qgcm_tendaa, qqcwgcm_tendaa);
 
-  //copy tendencies to diagnostics
+  // copy tendencies to diagnostics
   for (int icnst = 0; icnst < gas_pcnst; ++icnst) {
-    gas_aero_exchange_condensation[icnst] = qgcm_tendaa[icnst][0]; // condensation
-    gas_aero_exchange_renaming[icnst] = qgcm_tendaa[icnst][1]; // renaming
+    gas_aero_exchange_condensation[icnst] =
+        qgcm_tendaa[icnst][0];                                   // condensation
+    gas_aero_exchange_renaming[icnst] = qgcm_tendaa[icnst][1];   // renaming
     gas_aero_exchange_nucleation[icnst] = qgcm_tendaa[icnst][2]; // nucleation
     gas_aero_exchange_coagulation[icnst] = qgcm_tendaa[icnst][3]; // coagulation
     gas_aero_exchange_renaming_cw[icnst] = qqcwgcm_tendaa[icnst][0]; // renaming
   }
-
 
 } // modal_aero_amicphys_intr
 } // namespace microphysics
