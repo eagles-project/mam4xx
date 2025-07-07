@@ -2120,9 +2120,13 @@ void modal_aero_amicphys_intr(
     const Real pmid, const Real pdel, const Real zm, const Real pblh,
     const Real qv, const Real cld,
     // in/out
-    Real qq[gas_pcnst], Real qqcw[gas_pcnst],
+    Real (&qq)[gas_pcnst], Real (&qqcw)[gas_pcnst],
     //Diagnostics (out)
-    Real gas_aero_exchange_condensation[gas_pcnst],
+    Real (&gas_aero_exchange_condensation)[gas_pcnst],
+    Real (&gas_aero_exchange_renaming)[gas_pcnst],
+    Real (&gas_aero_exchange_nucleation)[gas_pcnst],
+    Real (&gas_aero_exchange_coagulation)[gas_pcnst],
+    Real (&gas_aero_exchange_renaming_cw)[gas_pcnst],
     // in
     const Real (&q_pregaschem)[gas_pcnst],
     const Real (&q_precldchem)[gas_pcnst],
@@ -2346,9 +2350,13 @@ void modal_aero_amicphys_intr(
   //copy tendencies to diagnostics
   for (int icnst = 0; icnst < gas_pcnst; ++icnst) {
     gas_aero_exchange_condensation[icnst] = qgcm_tendaa[icnst][0]; // condensation
+    gas_aero_exchange_renaming[icnst] = qgcm_tendaa[icnst][1]; // renaming
+    gas_aero_exchange_nucleation[icnst] = qgcm_tendaa[icnst][2]; // nucleation
+    gas_aero_exchange_coagulation[icnst] = qgcm_tendaa[icnst][3]; // coagulation
+    gas_aero_exchange_renaming_cw[icnst] = qqcwgcm_tendaa[icnst][0]; // renaming
   }
-      
-      
+
+
 } // modal_aero_amicphys_intr
 } // namespace microphysics
 
