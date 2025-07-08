@@ -13,7 +13,7 @@ struct MicrophysDiagnosticArrays {
   View2D gas_aero_exchange_nucleation;
   View2D gas_aero_exchange_coagulation;
   // this one is for the cloudwater species
-  View2D gas_aero_exchange_renaming_cw;
+  View2D gas_aero_exchange_renaming_cloud_borne;
   // Tendency due to gas phase (gs_) chemistry [kg/kg/s]
   View2D gas_phase_chemistry_dvmrdt;
   // Tendency due to aqueous (qq_) chemistry [kg/kg/s]

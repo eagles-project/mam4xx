@@ -392,7 +392,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     Real gas_aero_exchange_renaming[gas_pcnst] = {};
     Real gas_aero_exchange_nucleation[gas_pcnst] = {};
     Real gas_aero_exchange_coagulation[gas_pcnst] = {};
-    Real gas_aero_exchange_renaming_cw[gas_pcnst] = {};
+    Real gas_aero_exchange_renaming_cloud_borne[gas_pcnst] = {};
     mam4::microphysics::modal_aero_amicphys_intr(
         // in
         config_amicphys, dt, temp, pmid, pdel, zm, pblh, qv, cldfrac,
@@ -401,7 +401,7 @@ void perform_atmospheric_chemistry_and_microphysics(
         // diagnostics (out)
         gas_aero_exchange_condensation, gas_aero_exchange_renaming,
         gas_aero_exchange_nucleation, gas_aero_exchange_coagulation,
-        gas_aero_exchange_renaming_cw,
+        gas_aero_exchange_renaming_cloud_borne,
         // in
         vmr0, vmr_pregas, vmr_precld, dgncur_a_kk, dgncur_awet_kk, wetdens_kk);
 
@@ -429,10 +429,10 @@ void perform_atmospheric_chemistry_and_microphysics(
             gas_aero_exchange_coagulation[i];
       }
     }
-    if (diag_arrays.gas_aero_exchange_renaming_cw.size()) {
+    if (diag_arrays.gas_aero_exchange_renaming_cloud_borne.size()) {
       for (int i = 0; i < gas_pcnst; ++i) {
-        diag_arrays.gas_aero_exchange_renaming_cw(i, kk) =
-            gas_aero_exchange_renaming_cw[i];
+        diag_arrays.gas_aero_exchange_renaming_cloud_borne(i, kk) =
+            gas_aero_exchange_renaming_cloud_borne[i];
       }
     }
 

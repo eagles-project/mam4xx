@@ -2126,7 +2126,7 @@ void modal_aero_amicphys_intr(
     Real (&gas_aero_exchange_renaming)[gas_pcnst],
     Real (&gas_aero_exchange_nucleation)[gas_pcnst],
     Real (&gas_aero_exchange_coagulation)[gas_pcnst],
-    Real (&gas_aero_exchange_renaming_cw)[gas_pcnst],
+    Real (&gas_aero_exchange_renaming_cloud_borne)[gas_pcnst],
     // in
     const Real (&q_pregaschem)[gas_pcnst],
     const Real (&q_precldchem)[gas_pcnst],
@@ -2354,7 +2354,7 @@ void modal_aero_amicphys_intr(
     gas_aero_exchange_renaming[icnst] = qgcm_tendaa[icnst][1];   // renaming
     gas_aero_exchange_nucleation[icnst] = qgcm_tendaa[icnst][2]; // nucleation
     gas_aero_exchange_coagulation[icnst] = qgcm_tendaa[icnst][3]; // coagulation
-    gas_aero_exchange_renaming_cw[icnst] = qqcwgcm_tendaa[icnst][0]; // renaming
+    gas_aero_exchange_renaming_cloud_borne[icnst] = qqcwgcm_tendaa[icnst][0]; // renaming
   }
 
 } // modal_aero_amicphys_intr
