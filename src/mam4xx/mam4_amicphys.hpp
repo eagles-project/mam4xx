@@ -13,7 +13,7 @@ namespace mam4 {
 
 namespace microphysics {
 
-  using View1D = DeviceType::view_1d<Real>;
+using View1D = DeviceType::view_1d<Real>;
 
 // number of constituents in gas chemistry "work arrays"
 using mam4::gas_chemistry::gas_pcnst;
@@ -182,6 +182,14 @@ template <typename DT>
 KOKKOS_INLINE_FUNCTION void assign_1d_array(const int arr_len,
                                             const DT num,  // in
                                             DT *arr_out) { // out
+  for (int ii = 0; ii < arr_len; ++ii) {
+    arr_out[ii] = num;
+  }
+}
+
+KOKKOS_INLINE_FUNCTION void assign_1d_array(const int arr_len,
+                                            const Real num,   // in
+                                            View1D arr_out) { // out
   for (int ii = 0; ii < arr_len; ++ii) {
     arr_out[ii] = num;
   }
@@ -1715,8 +1723,12 @@ void mam_amicphys_1gridcell(
     Real (&qsub4)[gas_pcnst][maxsubarea()],
     Real (&qqcwsub4)[gas_pcnst][maxsubarea()],
     Real (&qaerwatsub4)[num_modes][maxsubarea()],
-    Real (&qsub_tendaa)[gas_pcnst][nqtendaa()][maxsubarea()],
-    Real (&qqcwsub_tendaa)[gas_pcnst][nqqcwtendaa()][maxsubarea()]) {
+    // Diagnostics (out)
+    const View1D &gas_aero_exchange_condensation,
+    const View1D &gas_aero_exchange_renaming,
+    const View1D &gas_aero_exchange_nucleation,
+    const View1D &gas_aero_exchange_coagulation,
+    const View1D &gas_aero_exchange_renaming_cloud_borne) {
   //
   // calculates changes to gas and aerosol sub-area TMRs (tracer mixing
   // ratios) qsub3 and qqcwsub3 are the incoming current TMRs qsub4 and
@@ -1730,8 +1742,6 @@ void mam_amicphys_1gridcell(
   //    N=2 - before cloud chemistry
   //    N=3 - incoming values (before gas-aerosol exchange, newnuc, coag)
   //    N=4 - outgoing values (after  gas-aerosol exchange, newnuc, coag)
-  // qsub_tendaa and qqcwsub_tendaa are TMR tendencies
-  //    for different processes, which are used to produce history output
   // the processes are condensation/evaporation (and associated aging),
   //    renaming, coagulation, and nucleation
 
@@ -1751,11 +1761,16 @@ void mam_amicphys_1gridcell(
     }
   }
 
-  assign_3d_array(num_gas_ids, nqtendaa(), maxsubarea(), 0.0, // in
-                  &qsub_tendaa[0][0][0]);                     // out
-
-  assign_3d_array(num_gas_ids, nqqcwtendaa(), maxsubarea(), 0.0, // in
-                  &qqcwsub_tendaa[0][0][0]);                     // out
+  if (gas_aero_exchange_condensation.data() != nullptr)
+    assign_1d_array(gas_pcnst, zero, gas_aero_exchange_condensation);
+  if (gas_aero_exchange_renaming.data() != nullptr)
+    assign_1d_array(gas_pcnst, zero, gas_aero_exchange_renaming);
+  if (gas_aero_exchange_nucleation.data() != nullptr)
+    assign_1d_array(gas_pcnst, zero, gas_aero_exchange_nucleation);
+  if (gas_aero_exchange_coagulation.data() != nullptr)
+    assign_1d_array(gas_pcnst, zero, gas_aero_exchange_coagulation);
+  if (gas_aero_exchange_renaming_cloud_borne.data() != nullptr)
+    assign_1d_array(gas_pcnst, zero, gas_aero_exchange_renaming_cloud_borne);
 
   EKAT_KERNEL_ASSERT_MSG(nsubarea < maxsubarea(),
                          "Error! mam_amicphys_1gridcell: "
@@ -1939,53 +1954,75 @@ void mam_amicphys_1gridcell(
       for (int igas = 0; igas < max_gas(); ++igas) {
         int ll = lmap_gas(igas);
         qsub4[ll][jsub] = qgas4[igas] / fcvt_gas(igas);
-        for (int jj = 0; jj < nqtendaa(); ++jj) {
-          qsub_tendaa[ll][jj][jsub] =
-              qgas_delaa[igas][jj] / (fcvt_gas(igas) * deltat);
-        }
       } // igas
     }   // do_map_gas_sub
 
     for (int imode = 0; imode < num_modes; ++imode) {
       int ll = lmap_num(imode);
       qsub4[ll][jsub] = qnum4[imode] / (fcvt_num());
-      for (int jj = 0; jj < nqtendaa(); ++jj) {
-        qsub_tendaa[ll][jj][jsub] =
-            qnum_delaa[imode][jj] / (fcvt_num() * deltat);
-      }
       for (int iaer = 0; iaer < num_aerosol_ids; ++iaer) {
         int la = lmap_aer(iaer, imode);
-        if (la > 0) {
+        if (la > 0)
           qsub4[la][jsub] = qaer4[iaer][imode] / fcvt_aer(iaer);
-          for (int jj = 0; jj < nqtendaa(); ++jj) {
-            qsub_tendaa[la][jj][jsub] =
-                qaer_delaa[iaer][imode][jj] / (fcvt_aer(iaer) * deltat);
-          } // jj
-        }   // la
-      }     // iaer
+      } // iaer
       qaerwatsub4[imode][jsub] = qwtr4[imode] / fcvt_wtr();
 
       if (iscldy_subarea[jsub]) {
         int lc = lmap_numcw(imode);
         qqcwsub4[lc][jsub] = qnumcw4[imode] / fcvt_num();
-        for (int jj = 0; jj < nqqcwtendaa(); ++jj) {
-          qqcwsub_tendaa[lc][jj][jsub] =
-              qnumcw_delaa[imode][jj] / (fcvt_num() * deltat);
-        } // jj
         for (int iaer = 0; iaer < num_aerosol_ids; ++iaer) {
           int lca = lmap_aercw(iaer, imode);
-          if (lca > 0) {
+          if (lca > 0)
             qqcwsub4[lca][jsub] = qaercw4[iaer][imode] / fcvt_aer(iaer);
-            for (int jj = 0; jj < nqqcwtendaa(); ++jj) {
-              qqcwsub_tendaa[lca][jj][jsub] =
-                  qaercw_delaa[iaer][imode][jj] / (fcvt_aer(iaer) * deltat);
-            } // jj
-          }   // lca
-        }     // iaer
-      }       // iscldy_subarea
-    }         // imode
-  }           // main_jsub_loop
+        } // iaer
+      }   // iscldy_subarea
+    }     // imode
 
+    // Lambda to copy tendencies into a 1D view of all gas and aerosol species,
+    // if allocated
+    auto assign_if_allocated = [&](const auto &view, const int idx) {
+      if (view.data() != nullptr) {
+        for (int imode = 0; imode < num_modes; ++imode) {
+          int ll = lmap_num(imode);
+          view(ll) +=
+              qnum_delaa[imode][idx] * afracsub[jsub] / (fcvt_num() * deltat);
+
+          for (int iaer = 0; iaer < num_aerosol_ids; ++iaer) {
+            int la = lmap_aer(iaer, imode);
+            if (la > 0)
+              view(la) += qaer_delaa[iaer][imode][idx] * afracsub[jsub] /
+                          (fcvt_aer(iaer) * deltat);
+          }
+        }
+      }
+    };
+    //--------------------------------------------------------------------------------
+    // Purpose: Get grid cell mean tendencies by calculating area-weighted
+    // averages
+    //          of the values in different subareas.
+    //--------------------------------------------------------------------------------
+    assign_if_allocated(gas_aero_exchange_condensation, 0);
+    assign_if_allocated(gas_aero_exchange_renaming, 1);
+    assign_if_allocated(gas_aero_exchange_nucleation, 2);
+    assign_if_allocated(gas_aero_exchange_coagulation, 3);
+
+    if (gas_aero_exchange_renaming_cloud_borne.data() != nullptr) {
+      if (iscldy_subarea[jsub]) {
+        for (int imode = 0; imode < num_modes; ++imode) {
+          int lc = lmap_numcw(imode);
+          gas_aero_exchange_renaming_cloud_borne(lc) +=
+              qnumcw_delaa[imode][0] * afracsub[jsub] / (fcvt_num() * deltat);
+          for (int iaer = 0; iaer < num_aerosol_ids; ++iaer) {
+            int lca = lmap_aercw(iaer, imode);
+            if (lca > 0)
+              gas_aero_exchange_renaming_cloud_borne(lca) +=
+                  qaercw_delaa[iaer][imode][0] * afracsub[jsub] /
+                  (fcvt_aer(iaer) * deltat);
+          }
+        }
+      }
+    }
+  } // main_jsub_loop
 } // mam_amicphys_1gridcell
 
 //--------------------------------------------------------------------------------
@@ -2059,57 +2096,6 @@ void form_gcm_of_gases_and_aerosols_from_subareas(
     }
   } // if ncldy_subarea
 } // form_gcm_of_gases_and_aerosols_from_subareas
-
-//--------------------------------------------------------------------------------
-// Purpose: Get grid cell mean tendencies by calculating area-weighted averages
-//          of the values in different subareas.
-//--------------------------------------------------------------------------------
-KOKKOS_INLINE_FUNCTION
-void get_gcm_tend_diags_from_subareas(
-    // in
-    const int nsubarea, const int ncldy_subarea,
-    const Real (&afracsub)[maxsubarea()],
-    const Real (&qsub_tendaa)[gas_pcnst][nqtendaa()][maxsubarea()],
-    const Real (&qqcwsub_tendaa)[gas_pcnst][nqqcwtendaa()][maxsubarea()],
-    // out
-    Real (&qgcm_tendaa)[gas_pcnst][nqtendaa()],
-    Real (&qqcwgcm_tendaa)[gas_pcnst][nqqcwtendaa()]) {
-  // nsubarea: # of active subareas
-  // ncldy_subarea: # of cloudy subareas
-  // afracsub(maxsubarea): area fraction of subareas [unitless]
-
-  // Gases and interstitial aerosols
-  assign_2d_array(gas_pcnst, nqtendaa(), 0.0, // in
-                  &qgcm_tendaa[0][0]);        // out
-
-  EKAT_KERNEL_ASSERT_MSG(nsubarea < maxsubarea(),
-                         "Error! get_gcm_tend_diags_from_subareas: "
-                         "nsubarea should be < maxsubarea() \n");
-
-  for (int jsub = 1; jsub <= nsubarea; ++jsub) {
-    for (int iq = 0; iq < nqtendaa(); ++iq) {
-      for (int icnst = 0; icnst < gas_pcnst; ++icnst) {
-        qgcm_tendaa[icnst][iq] += qsub_tendaa[icnst][iq][jsub] * afracsub[jsub];
-      }
-    }
-  }
-
-  // Cloud-borne aerosols
-
-  assign_2d_array(gas_pcnst, nqqcwtendaa(), 0.0, // in
-                  &qqcwgcm_tendaa[0][0]);        // out
-  if (ncldy_subarea > 0) {
-    for (int jsub = 1; jsub <= nsubarea; ++jsub) {
-      for (int iq = 0; iq < nqqcwtendaa(); ++iq) {
-        for (int icnst = 0; icnst < gas_pcnst; ++icnst) {
-          qqcwgcm_tendaa[icnst][iq] +=
-              qqcwsub_tendaa[icnst][iq][jsub] * afracsub[jsub];
-        }
-      }
-    }
-  } // if (ncldy_subarea
-} // get_gcm_tend_diags_from_subareas
-
 } // anonymous namespace
 
 //--------------------------------------------------------------------------------
@@ -2302,15 +2288,17 @@ void modal_aero_amicphys_intr(
     wetdens[imode] = haero::max(one_thousand, wetdens_host[imode]);
   }
 
-  Real qsub_tendaa[gas_pcnst][nqtendaa()][maxsubarea()] = {};
-  Real qqcwsub_tendaa[gas_pcnst][nqqcwtendaa()][maxsubarea()] = {};
   mam_amicphys_1gridcell(
       // in
       config, deltat, nsubarea, ncldy_subarea, iscldy_subarea, afracsub, temp,
       pmid, pdel, zm, pblh, relhumsub, dgn_a, dgn_awet, wetdens, qsub1, qsub2,
       qqcwsub2, qsub3, qqcwsub3,
       // inout
-      qaerwatsub3, qsub4, qqcwsub4, qaerwatsub4, qsub_tendaa, qqcwsub_tendaa);
+      qaerwatsub3, qsub4, qqcwsub4, qaerwatsub4,
+      // Diagnostics (out)
+      gas_aero_exchange_condensation, gas_aero_exchange_renaming,
+      gas_aero_exchange_nucleation, gas_aero_exchange_coagulation,
+      gas_aero_exchange_renaming_cloud_borne);
 
   //=================================================================================================
   // Aerosol microphysics calculations done for all subareas. Form new grid cell
@@ -2337,33 +2325,6 @@ void modal_aero_amicphys_intr(
       qqcw[icnst] = qqcwgcm4[icnst];
     }
   }
-
-  //================================================================
-  // Process diagnostics of the current grid cell
-  //================================================================
-  Real qgcm_tendaa[gas_pcnst][nqtendaa()];
-  Real qqcwgcm_tendaa[gas_pcnst][nqqcwtendaa()];
-  get_gcm_tend_diags_from_subareas(
-      // in
-      nsubarea, ncldy_subarea, afracsub, qsub_tendaa, qqcwsub_tendaa,
-      // out
-      qgcm_tendaa, qqcwgcm_tendaa);
-
-  // Lambda to copy tendencies into a 1D view of all gas and aerosol species, if allocated
-  auto assign_if_allocated = [&]( const auto& view, const auto& tend, const int idx, const int extent) {
-    if (view.data() != nullptr) {
-      for (int i = 0; i < extent; ++i) {
-        view(i) = tend[i][idx];
-      }
-    }
-  };
-  // Copy tendencies to diagnostics
-  assign_if_allocated(gas_aero_exchange_condensation, qgcm_tendaa, 0, gas_pcnst);
-  assign_if_allocated(gas_aero_exchange_renaming, qgcm_tendaa, 1, gas_pcnst);
-  assign_if_allocated(gas_aero_exchange_nucleation, qgcm_tendaa, 2, gas_pcnst);
-  assign_if_allocated(gas_aero_exchange_coagulation, qgcm_tendaa, 3, gas_pcnst);
-  assign_if_allocated(gas_aero_exchange_renaming_cloud_borne, qqcwgcm_tendaa, 0, gas_pcnst);
-
 } // modal_aero_amicphys_intr
 } // namespace microphysics
 
