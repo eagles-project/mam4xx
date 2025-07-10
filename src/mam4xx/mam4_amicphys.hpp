@@ -13,6 +13,8 @@ namespace mam4 {
 
 namespace microphysics {
 
+  using View1D = DeviceType::view_1d<Real>;
+
 // number of constituents in gas chemistry "work arrays"
 using mam4::gas_chemistry::gas_pcnst;
 
@@ -2122,11 +2124,11 @@ void modal_aero_amicphys_intr(
     // in/out
     Real (&qq)[gas_pcnst], Real (&qqcw)[gas_pcnst],
     // Diagnostics (out)
-    Real (&gas_aero_exchange_condensation)[gas_pcnst],
-    Real (&gas_aero_exchange_renaming)[gas_pcnst],
-    Real (&gas_aero_exchange_nucleation)[gas_pcnst],
-    Real (&gas_aero_exchange_coagulation)[gas_pcnst],
-    Real (&gas_aero_exchange_renaming_cloud_borne)[gas_pcnst],
+    const View1D &gas_aero_exchange_condensation,
+    const View1D &gas_aero_exchange_renaming,
+    const View1D &gas_aero_exchange_nucleation,
+    const View1D &gas_aero_exchange_coagulation,
+    const View1D &gas_aero_exchange_renaming_cloud_borne,
     // in
     const Real (&q_pregaschem)[gas_pcnst],
     const Real (&q_precldchem)[gas_pcnst],
@@ -2347,16 +2349,20 @@ void modal_aero_amicphys_intr(
       // out
       qgcm_tendaa, qqcwgcm_tendaa);
 
-  // copy tendencies to diagnostics
-  for (int icnst = 0; icnst < gas_pcnst; ++icnst) {
-    gas_aero_exchange_condensation[icnst] =
-        qgcm_tendaa[icnst][0];                                   // condensation
-    gas_aero_exchange_renaming[icnst] = qgcm_tendaa[icnst][1];   // renaming
-    gas_aero_exchange_nucleation[icnst] = qgcm_tendaa[icnst][2]; // nucleation
-    gas_aero_exchange_coagulation[icnst] = qgcm_tendaa[icnst][3]; // coagulation
-    gas_aero_exchange_renaming_cloud_borne[icnst] =
-        qqcwgcm_tendaa[icnst][0]; // renaming
-  }
+  // Lambda to copy tendencies into a 1D view of all gas and aerosol species, if allocated
+  auto assign_if_allocated = [&]( const auto& view, const auto& tend, const int idx, const int extent) {
+    if (view.data() != nullptr) {
+      for (int i = 0; i < extent; ++i) {
+        view(i) = tend[i][idx];
+      }
+    }
+  };
+  // Copy tendencies to diagnostics
+  assign_if_allocated(gas_aero_exchange_condensation, qgcm_tendaa, 0, gas_pcnst);
+  assign_if_allocated(gas_aero_exchange_renaming, qgcm_tendaa, 1, gas_pcnst);
+  assign_if_allocated(gas_aero_exchange_nucleation, qgcm_tendaa, 2, gas_pcnst);
+  assign_if_allocated(gas_aero_exchange_coagulation, qgcm_tendaa, 3, gas_pcnst);
+  assign_if_allocated(gas_aero_exchange_renaming_cloud_borne, qqcwgcm_tendaa, 0, gas_pcnst);
 
 } // modal_aero_amicphys_intr
 } // namespace microphysics

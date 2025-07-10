@@ -386,13 +386,23 @@ void perform_atmospheric_chemistry_and_microphysics(
       dgncur_a_kk[imode] = dry_diameter_icol(imode, kk);
       wetdens_kk[imode] = wetdens_icol(imode, kk);
     }
-    // do aerosol microphysics (gas-aerosol exchange, nucleation,
+
+    //Lambda function to safely create subviews of diagnostics arrays
+    auto safe_subview = [&](const auto& view2d) {
+      return (view2d.data() != nullptr)
+        ? ekat::subview(view2d, kk)
+        : decltype(ekat::subview(view2d, kk))();
+    };
+
+    // Create subviews of diagnostics arrays for the current vertical level only if allocated
+    auto gas_aero_exchange_condensation = safe_subview(diag_arrays.gas_aero_exchange_condensation);
+    auto gas_aero_exchange_renaming = safe_subview(diag_arrays.gas_aero_exchange_renaming);
+    auto gas_aero_exchange_nucleation = safe_subview(diag_arrays.gas_aero_exchange_nucleation);
+    auto gas_aero_exchange_coagulation = safe_subview(diag_arrays.gas_aero_exchange_coagulation);
+    auto gas_aero_exchange_renaming_cloud_borne = safe_subview(diag_arrays.gas_aero_exchange_renaming_cloud_borne);
+
+    // Perform aerosol microphysics (gas-aerosol exchange, nucleation,
     // coagulation)
-    Real gas_aero_exchange_condensation[gas_pcnst] = {};
-    Real gas_aero_exchange_renaming[gas_pcnst] = {};
-    Real gas_aero_exchange_nucleation[gas_pcnst] = {};
-    Real gas_aero_exchange_coagulation[gas_pcnst] = {};
-    Real gas_aero_exchange_renaming_cloud_borne[gas_pcnst] = {};
     mam4::microphysics::modal_aero_amicphys_intr(
         // in
         config_amicphys, dt, temp, pmid, pdel, zm, pblh, qv, cldfrac,
@@ -404,37 +414,6 @@ void perform_atmospheric_chemistry_and_microphysics(
         gas_aero_exchange_renaming_cloud_borne,
         // in
         vmr0, vmr_pregas, vmr_precld, dgncur_a_kk, dgncur_awet_kk, wetdens_kk);
-
-    if (diag_arrays.gas_aero_exchange_condensation.size()) {
-      for (int i = 0; i < gas_pcnst; ++i) {
-        diag_arrays.gas_aero_exchange_condensation(i, kk) =
-            gas_aero_exchange_condensation[i];
-      }
-    }
-    if (diag_arrays.gas_aero_exchange_renaming.size()) {
-      for (int i = 0; i < gas_pcnst; ++i) {
-        diag_arrays.gas_aero_exchange_renaming(i, kk) =
-            gas_aero_exchange_renaming[i];
-      }
-    }
-    if (diag_arrays.gas_aero_exchange_nucleation.size()) {
-      for (int i = 0; i < gas_pcnst; ++i) {
-        diag_arrays.gas_aero_exchange_nucleation(i, kk) =
-            gas_aero_exchange_nucleation[i];
-      }
-    }
-    if (diag_arrays.gas_aero_exchange_coagulation.size()) {
-      for (int i = 0; i < gas_pcnst; ++i) {
-        diag_arrays.gas_aero_exchange_coagulation(i, kk) =
-            gas_aero_exchange_coagulation[i];
-      }
-    }
-    if (diag_arrays.gas_aero_exchange_renaming_cloud_borne.size()) {
-      for (int i = 0; i < gas_pcnst; ++i) {
-        diag_arrays.gas_aero_exchange_renaming_cloud_borne(i, kk) =
-            gas_aero_exchange_renaming_cloud_borne[i];
-      }
-    }
 
     mam4::microphysics::vmr2mmr(vmrcw, adv_mass_kg_per_moles, qqcw);
 
