@@ -1,4 +1,4 @@
-name: "GitHub CPU Auto-test Ubuntu 22.04"
+name: "CPU GH-runner Ubuntu 22.04"
 
 # This action is triggered:
 # 1. when someone creates a pull request for a merge to the main branch
