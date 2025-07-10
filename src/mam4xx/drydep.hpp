@@ -21,7 +21,8 @@ public:
   // BAD CONSTANT
   static constexpr int n_land_type = 11;
 
-  struct Config {
+  struct Config
+  {
     Config(){};
 
     Config(const Config &) = default;
