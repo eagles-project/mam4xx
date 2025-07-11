@@ -387,23 +387,29 @@ void perform_atmospheric_chemistry_and_microphysics(
       wetdens_kk[imode] = wetdens_icol(imode, kk);
     }
 
-    //Lambda function to safely create subviews of diagnostics arrays
-    auto safe_subview = [&](const auto& view2d) {
-      return (view2d.data() != nullptr)
-        ? ekat::subview(view2d, kk)
-        : decltype(ekat::subview(view2d, kk))();
+    // Lambda function to safely create subviews of diagnostics arrays
+    auto safe_subview = [&](const auto &view2d) {
+      return (view2d.data() != nullptr) ? ekat::subview(view2d, kk)
+                                        : decltype(ekat::subview(view2d, kk))();
     };
 
-    // Create subviews of diagnostics arrays for the current vertical level only if allocated
-    auto gas_aero_exchange_condensation = safe_subview(diag_arrays.gas_aero_exchange_condensation);
-    auto gas_aero_exchange_renaming = safe_subview(diag_arrays.gas_aero_exchange_renaming);
-    auto gas_aero_exchange_nucleation = safe_subview(diag_arrays.gas_aero_exchange_nucleation);
-    auto gas_aero_exchange_coagulation = safe_subview(diag_arrays.gas_aero_exchange_coagulation);
-    auto gas_aero_exchange_renaming_cloud_borne = safe_subview(diag_arrays.gas_aero_exchange_renaming_cloud_borne);
+    // Create subviews of diagnostics arrays for the current vertical level only
+    // if allocated
+    auto gas_aero_exchange_condensation =
+        safe_subview(diag_arrays.gas_aero_exchange_condensation);
+    auto gas_aero_exchange_renaming =
+        safe_subview(diag_arrays.gas_aero_exchange_renaming);
+    auto gas_aero_exchange_nucleation =
+        safe_subview(diag_arrays.gas_aero_exchange_nucleation);
+    auto gas_aero_exchange_coagulation =
+        safe_subview(diag_arrays.gas_aero_exchange_coagulation);
+    auto gas_aero_exchange_renaming_cloud_borne =
+        safe_subview(diag_arrays.gas_aero_exchange_renaming_cloud_borne);
 
     // Perform aerosol microphysics (gas-aerosol exchange, nucleation,
     // coagulation)
     mam4::microphysics::modal_aero_amicphys_intr(
+        team,
         // in
         config_amicphys, dt, temp, pmid, pdel, zm, pblh, qv, cldfrac,
         // out
