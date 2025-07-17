@@ -387,38 +387,6 @@ void perform_atmospheric_chemistry_and_microphysics(
       wetdens_kk[imode] = wetdens_icol(imode, kk);
     }
 
-    // Lambda function to safely create subviews of diagnostics arrays
-    auto safe_subview = [&](const auto &view2d) {
-      return (view2d.data() != nullptr) ? ekat::subview(view2d, kk)
-                                        : decltype(ekat::subview(view2d, kk))();
-      /*return (view2d.data() != nullptr) ? Kokkos::subview(view2d, Kokkos::ALL(), kk)
-                                        : decltype(Kokkos::subview(view2d, Kokkos::ALL(), kk))();*/
-    };
-
-    // Create subviews of diagnostics arrays for the current vertical level only
-    // if allocated
-    View1D gas_aero_exchange_condensation;
-    //print_layout("0:",gas_aero_exchange_condensation);
-
-    //auto gas_aero_exchange_condensation2 = ; 
-
-    //auto gas_aero_exchange_condensation1 =
-    //    safe_subview(diag_arrays.gas_aero_exchange_condensation);
-    //print_layout("1:",gas_aero_exchange_condensation1);
-    
-    /*printf("extent of gas_aero_exchange_condensation1: %d %d %d\n",
-           gas_aero_exchange_condensation1.extent(0),
-           gas_aero_exchange_condensation1.extent(1),
-           gas_aero_exchange_condensation1.extent(2));*/
-    auto gas_aero_exchange_renaming =
-        safe_subview(diag_arrays.gas_aero_exchange_renaming);
-    auto gas_aero_exchange_nucleation =
-        safe_subview(diag_arrays.gas_aero_exchange_nucleation);
-    auto gas_aero_exchange_coagulation =
-        safe_subview(diag_arrays.gas_aero_exchange_coagulation);
-    auto gas_aero_exchange_renaming_cloud_borne =
-        safe_subview(diag_arrays.gas_aero_exchange_renaming_cloud_borne);
-
     // Perform aerosol microphysics (gas-aerosol exchange, nucleation,
     // coagulation)
     mam4::microphysics::modal_aero_amicphys_intr(
@@ -429,9 +397,9 @@ void perform_atmospheric_chemistry_and_microphysics(
         vmr, vmrcw,
         // diagnostics (out)
         kk,
-        diag_arrays.gas_aero_exchange_condensation, gas_aero_exchange_renaming,
-        gas_aero_exchange_nucleation, gas_aero_exchange_coagulation,
-        gas_aero_exchange_renaming_cloud_borne,
+        diag_arrays.gas_aero_exchange_condensation, diag_arrays.gas_aero_exchange_renaming,
+        diag_arrays.gas_aero_exchange_nucleation, diag_arrays.gas_aero_exchange_coagulation,
+        diag_arrays.gas_aero_exchange_renaming_cloud_borne,
         // in
         vmr0, vmr_pregas, vmr_precld, dgncur_a_kk, dgncur_awet_kk, wetdens_kk);
 
