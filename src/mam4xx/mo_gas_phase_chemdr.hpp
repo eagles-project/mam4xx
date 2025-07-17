@@ -391,12 +391,25 @@ void perform_atmospheric_chemistry_and_microphysics(
     auto safe_subview = [&](const auto &view2d) {
       return (view2d.data() != nullptr) ? ekat::subview(view2d, kk)
                                         : decltype(ekat::subview(view2d, kk))();
+      /*return (view2d.data() != nullptr) ? Kokkos::subview(view2d, Kokkos::ALL(), kk)
+                                        : decltype(Kokkos::subview(view2d, Kokkos::ALL(), kk))();*/
     };
 
     // Create subviews of diagnostics arrays for the current vertical level only
     // if allocated
-    auto gas_aero_exchange_condensation =
-        safe_subview(diag_arrays.gas_aero_exchange_condensation);
+    View1D gas_aero_exchange_condensation;
+    //print_layout("0:",gas_aero_exchange_condensation);
+
+    //auto gas_aero_exchange_condensation2 = ; 
+
+    //auto gas_aero_exchange_condensation1 =
+    //    safe_subview(diag_arrays.gas_aero_exchange_condensation);
+    //print_layout("1:",gas_aero_exchange_condensation1);
+    
+    /*printf("extent of gas_aero_exchange_condensation1: %d %d %d\n",
+           gas_aero_exchange_condensation1.extent(0),
+           gas_aero_exchange_condensation1.extent(1),
+           gas_aero_exchange_condensation1.extent(2));*/
     auto gas_aero_exchange_renaming =
         safe_subview(diag_arrays.gas_aero_exchange_renaming);
     auto gas_aero_exchange_nucleation =
@@ -415,7 +428,8 @@ void perform_atmospheric_chemistry_and_microphysics(
         // out
         vmr, vmrcw,
         // diagnostics (out)
-        gas_aero_exchange_condensation, gas_aero_exchange_renaming,
+        kk,
+        diag_arrays.gas_aero_exchange_condensation, gas_aero_exchange_renaming,
         gas_aero_exchange_nucleation, gas_aero_exchange_coagulation,
         gas_aero_exchange_renaming_cloud_borne,
         // in
@@ -510,7 +524,6 @@ void perform_atmospheric_chemistry_and_microphysics(
   }
   team.team_barrier();
 }
-
 } // namespace microphysics
 } // namespace mam4
 #endif

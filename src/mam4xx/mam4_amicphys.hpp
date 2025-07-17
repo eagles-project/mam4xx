@@ -2125,7 +2125,8 @@ void modal_aero_amicphys_intr(
     // in/out
     Real (&qq)[gas_pcnst], Real (&qqcw)[gas_pcnst],
     // Diagnostics (out)
-    const View1D &gas_aero_exchange_condensation,
+    const int kk,
+    const View2D &gas_aero_exchange_condensation,
     const View1D &gas_aero_exchange_renaming,
     const View1D &gas_aero_exchange_nucleation,
     const View1D &gas_aero_exchange_coagulation,
@@ -2352,21 +2353,28 @@ void modal_aero_amicphys_intr(
 
   // Lambda to copy tendencies into a 1D view of all gas and aerosol species, if
   // allocated
-  auto assign_if_allocated = [&](const auto &view, const auto &tend,
+  auto assign_if_allocated = [&](const auto &view, const auto &tend, const int klev,
                                  const int idx, const int extent) {
     if (view.data() != nullptr) {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(team, extent),
-                           [&](const int i) { view(i) = tend[i][idx]; });
+                           [&](const int i) { view(i,klev) = tend[i][0]; });
     }
   };
   // Copy tendencies to diagnostics
-  assign_if_allocated(gas_aero_exchange_condensation, qgcm_tendaa, 0,
+  //if (gas_aero_exchange_condensation.data() != nullptr) {
+    //Kokkos::parallel_for(Kokkos::TeamVectorRange(team, gas_pcnst),
+    //                       [&](const int i) { gas_aero_exchange_condensation(i,kk) = qgcm_tendaa[i][0]; });
+    /*for (int i = 0; i < gas_pcnst; ++i) {
+        gas_aero_exchange_condensation(i,kk) = 1.0;
+    }*/
+  //}
+  assign_if_allocated(gas_aero_exchange_condensation, qgcm_tendaa, kk, 0,
                       gas_pcnst);
-  assign_if_allocated(gas_aero_exchange_renaming, qgcm_tendaa, 1, gas_pcnst);
+/*  assign_if_allocated(gas_aero_exchange_renaming, qgcm_tendaa, 1, gas_pcnst);
   assign_if_allocated(gas_aero_exchange_nucleation, qgcm_tendaa, 2, gas_pcnst);
   assign_if_allocated(gas_aero_exchange_coagulation, qgcm_tendaa, 3, gas_pcnst);
   assign_if_allocated(gas_aero_exchange_renaming_cloud_borne, qqcwgcm_tendaa, 0,
-                      gas_pcnst);
+                      gas_pcnst);*/
 
 } // modal_aero_amicphys_intr
 } // namespace microphysics
