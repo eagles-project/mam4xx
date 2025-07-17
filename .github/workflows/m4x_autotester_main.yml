@@ -11,8 +11,12 @@ on:
       - 'src/mam4xx/*'
       - 'src/tests/*'
       - 'src/validation/**'
+      - 'ext/**'
+      # make sure it still builds when the top-level cml.txt changes
+      - 'CMakeLists.txt'
+      - 'cmake/*'
       # second, no to these
-      # don't test when it's only validation data changing
+      # don't test when it's only unit test data changing
       - '!src/tests/data/**'
       # not sure whether this should be disabled--keep for now
       # - '!src/validation/mam_x_validation/**'
