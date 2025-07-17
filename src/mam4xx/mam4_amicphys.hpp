@@ -483,8 +483,8 @@ void set_subarea_qmass_for_cldbrn_aerosols(
                       "zero\n");
       qqcwsub[icnst][jcldy] = qqcwgcm[icnst] / fcldy;
     } // ispec - species loop
-  } // imode - mode loop
-    //----------------------------------------------------------------
+  }   // imode - mode loop
+      //----------------------------------------------------------------
 } // set_subarea_qmass_for_cldbrn_aerosols
 
 //--------------------------------------------------------------------------------
@@ -669,7 +669,7 @@ void set_subarea_qmass_for_intrst_aerosols(
       qsubx[icnst][jclea] = qgcmx[icnst] * factor_clea;
       qsubx[icnst][jcldy] = qgcmx[icnst] * factor_cldy;
     } // ispec
-  } // imode
+  }   // imode
 
 } // set_subarea_qmass_for_intrst_aerosols
 
@@ -1260,7 +1260,7 @@ void mam_amicphys_1subarea(
                   qnumcw_cur);                      // out
     copy_2d_array(nspecies, nmodes, &qaercw3[0][0], // in
                   &qaercw_cur[0][0]);               // out
-  } // iscldy_subarea
+  }                                                 // iscldy_subarea
 
   //---------------------------------------------------------------------
   // Diagnose net production rate of H2SO4 gas production
@@ -1282,8 +1282,8 @@ void mam_amicphys_1subarea(
         qgas_netprod_otrproc[igas] = (qgas3[igas] - qgas1[igas]) / deltat;
         qgas_cur[igas] = (qgas_netprod_otrproc[igas] >= 0) ? qgas1[igas] : 0;
       } // h2so4, igas_nh3
-    } // igas
-  } // do_cond_sub,gaexch_h2so4_uptake_optaa
+    }   // igas
+  }     // do_cond_sub,gaexch_h2so4_uptake_optaa
 
   constexpr int ntsubstep = 1;
   const Real del_h2so4_gasprod =
@@ -1670,7 +1670,7 @@ void mam_amicphys_1subarea(
           qnum_cur, qnum_delsub_cond, qnum_delsub_coag, // in-outs
           qaer_cur, qaer_delsub_cond, qaer_delsub_coag, // in-outs
           qaer_delsub_coag_in);                         // in-outs
-    } // do_aging_in_subarea
+    }                                                   // do_aging_in_subarea
 
     // The following block has to be placed here (after both condensation and
     // aging) as both can change the values of qnum_delsub_cond and
@@ -1882,7 +1882,7 @@ void mam_amicphys_1gridcell(
           qaercw3[iaer][imode] = 0;
           qaercw4[iaer][imode] = 0;
         } // imode
-      } // iaer
+      }   // iaer
       // only do cloud-borne for cloudy
       for (int imode = 0; imode < num_modes; ++imode) {
         int ln = lmap_numcw(imode);
@@ -1898,9 +1898,9 @@ void mam_amicphys_1gridcell(
             qaercw3[iaer][imode] = qqcwsub3[la][jsub] * fcvt_aer(iaer);
             qaercw4[iaer][imode] = qaercw3[iaer][imode];
           } // la
-        } // imode
-      } // iaer
-    } // iscldy_subarea
+        }   // imode
+      }     // iaer
+    }       // iscldy_subarea
 
     Real qgas_delaa[max_gas()][nqtendaa()] = {};
     Real qnum_delaa[num_modes][nqtendaa()] = {};
@@ -1944,7 +1944,7 @@ void mam_amicphys_1gridcell(
               qgas_delaa[igas][jj] / (fcvt_gas(igas) * deltat);
         }
       } // igas
-    } // do_map_gas_sub
+    }   // do_map_gas_sub
 
     for (int imode = 0; imode < num_modes; ++imode) {
       int ll = lmap_num(imode);
@@ -1961,8 +1961,8 @@ void mam_amicphys_1gridcell(
             qsub_tendaa[la][jj][jsub] =
                 qaer_delaa[iaer][imode][jj] / (fcvt_aer(iaer) * deltat);
           } // jj
-        } // la
-      } // iaer
+        }   // la
+      }     // iaer
       qaerwatsub4[imode][jsub] = qwtr4[imode] / fcvt_wtr();
 
       if (iscldy_subarea[jsub]) {
@@ -1980,11 +1980,11 @@ void mam_amicphys_1gridcell(
               qqcwsub_tendaa[lca][jj][jsub] =
                   qaercw_delaa[iaer][imode][jj] / (fcvt_aer(iaer) * deltat);
             } // jj
-          } // lca
-        } // iaer
-      } // iscldy_subarea
-    } // imode
-  } // main_jsub_loop
+          }   // lca
+        }     // iaer
+      }       // iscldy_subarea
+    }         // imode
+  }           // main_jsub_loop
 
 } // mam_amicphys_1gridcell
 
@@ -2353,19 +2353,25 @@ void modal_aero_amicphys_intr(
 
   // Lambda to copy tendencies into a 1D view of all gas and aerosol species, if
   // allocated
-  auto assign_if_allocated = [&](const auto &view, const auto &tend, const int klev,
-                                 const int idx, const int extent) {
+  auto assign_if_allocated = [&](const auto &view, const auto &tend,
+                                 const int klev, const int idx,
+                                 const int extent) {
     if (view.data() != nullptr) {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(team, extent),
-                           [&](const int i) { view(i,klev) = tend[i][idx]; });
+                           [&](const int i) { view(i, klev) = tend[i][idx]; });
     }
   };
   // Copy tendencies to diagnostics
-  assign_if_allocated(gas_aero_exchange_condensation, qgcm_tendaa, kk, 0, gas_pcnst);
-  assign_if_allocated(gas_aero_exchange_renaming, qgcm_tendaa, kk, 1, gas_pcnst);
-  assign_if_allocated(gas_aero_exchange_nucleation, qgcm_tendaa, kk, 2, gas_pcnst);
-  assign_if_allocated(gas_aero_exchange_coagulation, qgcm_tendaa, kk, 3, gas_pcnst);
-  assign_if_allocated(gas_aero_exchange_renaming_cloud_borne, qqcwgcm_tendaa, kk, 0, gas_pcnst);
+  assign_if_allocated(gas_aero_exchange_condensation, qgcm_tendaa, kk, 0,
+                      gas_pcnst);
+  assign_if_allocated(gas_aero_exchange_renaming, qgcm_tendaa, kk, 1,
+                      gas_pcnst);
+  assign_if_allocated(gas_aero_exchange_nucleation, qgcm_tendaa, kk, 2,
+                      gas_pcnst);
+  assign_if_allocated(gas_aero_exchange_coagulation, qgcm_tendaa, kk, 3,
+                      gas_pcnst);
+  assign_if_allocated(gas_aero_exchange_renaming_cloud_borne, qqcwgcm_tendaa,
+                      kk, 0, gas_pcnst);
 
 } // modal_aero_amicphys_intr
 } // namespace microphysics

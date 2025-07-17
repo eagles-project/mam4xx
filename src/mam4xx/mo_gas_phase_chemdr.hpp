@@ -396,9 +396,10 @@ void perform_atmospheric_chemistry_and_microphysics(
         // out
         vmr, vmrcw,
         // diagnostics (out)
-        kk,
-        diag_arrays.gas_aero_exchange_condensation, diag_arrays.gas_aero_exchange_renaming,
-        diag_arrays.gas_aero_exchange_nucleation, diag_arrays.gas_aero_exchange_coagulation,
+        kk, diag_arrays.gas_aero_exchange_condensation,
+        diag_arrays.gas_aero_exchange_renaming,
+        diag_arrays.gas_aero_exchange_nucleation,
+        diag_arrays.gas_aero_exchange_coagulation,
         diag_arrays.gas_aero_exchange_renaming_cloud_borne,
         // in
         vmr0, vmr_pregas, vmr_precld, dgncur_a_kk, dgncur_awet_kk, wetdens_kk);
