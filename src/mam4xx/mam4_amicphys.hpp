@@ -3,7 +3,6 @@
 
 #include <mam4xx/aging.hpp>
 #include <mam4xx/coagulation.hpp>
-#include <mam4xx/diagnostic_arrays.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/gasaerexch.hpp>
 #include <mam4xx/nucleation.hpp>
@@ -13,7 +12,7 @@ namespace mam4 {
 
 namespace microphysics {
 
-using View1D = DeviceType::view_1d<Real>;
+using View2D = DeviceType::view_2d<Real>;
 
 // number of constituents in gas chemistry "work arrays"
 using mam4::gas_chemistry::gas_pcnst;
