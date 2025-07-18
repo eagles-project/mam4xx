@@ -107,8 +107,6 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
  * @param [in] wet_diameter_icol
  * @param [in] wetdens_icol
  * @param [in] seq_drydep::Data drydep_data = seq_drydep::set_gas_drydep_data()
- * @param [out] aqso4_flx[num_modes] So4 flux in kg/m2/s
- * @param [out] qh2so4_flx[num_modes] H2So4 flux in kg/m2/s
  * @param [out] dvel[gas_pcnst] -- deposition velocity [1/cm/s]
  * @param [out] dflx[gas_pcnst] -- deposition flux [1/cm^2/s]
  * @param [out] progs           -- prognostics: stateq, qqcw updated
@@ -183,10 +181,15 @@ void perform_atmospheric_chemistry_and_microphysics(
     Real dvel[gas_pcnst], // deposition velocity [cm/s]
     Real dflx[gas_pcnst], mam4::Prognostics &progs) {
 
-  const View1D &aqso4_flx = diag_arrays.aqso4_column_integrated_flux;
-  const View1D &aqh2so4_flx = diag_arrays.aqh2so4_column_integrated_flux;
-  const View2D &gpc_dvmrdt = diag_arrays.gas_phase_chemistry_dvmrdt;
-  const View2D &aqu_dvmrdt = diag_arrays.aqueous_chemistry_dvmrdt;
+  // aqso4_incloud_mmr_tendency[num_modes] So4 flux in kg/m2/s
+  // aqh2so4_incloud_mmr_tendency[num_modes] H2So4 flux in kg/m2/s
+  const View1D &aqso4_incloud_mmr_tendency =
+      diag_arrays.aqso4_incloud_mmr_tendency;
+  const View1D &aqh2so4_incloud_mmr_tendency =
+      diag_arrays.aqh2so4_incloud_mmr_tendency;
+  const View2D &gas_phase_chemistry_dvmrdt =
+      diag_arrays.gas_phase_chemistry_dvmrdt;
+  const View2D &aqueous_chemistry_dvmrdt = diag_arrays.aqueous_chemistry_dvmrdt;
 
   const int nlev = mam4::nlev;
   auto work_set_het_ptr = (Real *)work_set_het.data();
@@ -354,12 +357,12 @@ void perform_atmospheric_chemistry_and_microphysics(
         // out
         vmr);
     // calculate tendency due to gas phase chemistry
-    if (gpc_dvmrdt.size()) {
+    if (gas_phase_chemistry_dvmrdt.size()) {
       const Real mbar = haero::Constants::molec_weight_dry_air;
       const Real gravit = Constants::gravity;
       const Real x = 1.0 / mbar * pdel / gravit;
       for (int m = 0; m < gas_pcnst; ++m)
-        gpc_dvmrdt(m, kk) =
+        gas_phase_chemistry_dvmrdt(m, kk) =
             x * adv_mass_kg_per_moles[m] * (vmr[m] - vmr0[m]) / dt;
     }
 
@@ -400,12 +403,12 @@ void perform_atmospheric_chemistry_and_microphysics(
     }
 
     // calculate tendency due to gas phase chemistry
-    if (aqu_dvmrdt.size()) {
+    if (aqueous_chemistry_dvmrdt.size()) {
       const Real mbar = haero::Constants::molec_weight_dry_air;
       const Real gravit = Constants::gravity;
       const Real x = 1.0 / mbar * pdel / gravit;
       for (int m = 0; m < gas_pcnst; ++m)
-        aqu_dvmrdt(m, kk) =
+        aqueous_chemistry_dvmrdt(m, kk) =
             x * adv_mass_kg_per_moles[m] * (vmr[m] - vmr_bef_aq_chem[m]) / dt;
     }
     // calculate aerosol water content using water uptake treatment
@@ -510,23 +513,23 @@ void perform_atmospheric_chemistry_and_microphysics(
       const auto aqh2so4 = ekat::subview(dqdt_aqh2so4, ll);
       const Real vmr_so4 = aero_model::calc_sfc_flux(team, aqso4, pdel, nlev);
       const Real vmr_h2s = aero_model::calc_sfc_flux(team, aqh2so4, pdel, nlev);
-      aqso4_flx[m] =
+      aqso4_incloud_mmr_tendency[m] =
           conversions::mmr_from_vmr(vmr_so4, adv_mass_kg_per_moles[ll]);
-      aqh2so4_flx[m] =
+      aqh2so4_incloud_mmr_tendency[m] =
           conversions::mmr_from_vmr(vmr_h2s, adv_mass_kg_per_moles[ll]);
-      if (diag_arrays.aqso4_incloud_mmr_tendency.size()) {
+      if (aqso4_incloud_mmr_tendency.size()) {
         Kokkos::parallel_for(
             Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
               const Real aqso4 = dqdt_aqso4(ll, kk);
-              diag_arrays.aqso4_incloud_mmr_tendency(m, kk) =
+              aqso4_incloud_mmr_tendency[m] =
                   conversions::mmr_from_vmr(aqso4, adv_mass_kg_per_moles[ll]);
             });
       }
-      if (diag_arrays.aqh2so4_incloud_mmr_tendency.size()) {
+      if (aqh2so4_incloud_mmr_tendency.size()) {
         Kokkos::parallel_for(
             Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
               const Real aqh2so4 = dqdt_aqh2so4(ll, kk);
-              diag_arrays.aqh2so4_incloud_mmr_tendency(m, kk) =
+              aqh2so4_incloud_mmr_tendency[m] =
                   conversions::mmr_from_vmr(aqh2so4, adv_mass_kg_per_moles[ll]);
             });
       }

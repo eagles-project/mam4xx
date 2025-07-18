@@ -4,6 +4,7 @@
 namespace mam4 {
 struct MicrophysDiagnosticArrays {
   using View2D = DeviceType::view_2d<Real>;
+  using View1D = DeviceType::view_1d<Real>;
 
   // each of these views, if non-empty, will be filled by
   // mam4::microphysics::perform_atmospheric_chemistry_and_microphysics
@@ -21,10 +22,10 @@ struct MicrophysDiagnosticArrays {
   View2D aqueous_chemistry_dvmrdt;
 
   // In-cloud chemistry production/sink of SO4
-  View2D aqso4_incloud_mmr_tendency;
+  View1D aqso4_incloud_mmr_tendency;
 
   // In-cloud chemistry production/sink of H2SO4
-  View2D aqh2so4_incloud_mmr_tendency;
+  View1D aqh2so4_incloud_mmr_tendency;
 };
 } // namespace mam4
 #endif
