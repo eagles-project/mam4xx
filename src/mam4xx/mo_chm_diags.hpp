@@ -314,7 +314,7 @@ void chm_diags(
   // accumulators
   // if (history_aerosol.and..not .history_verbose) then
 
-  for (int nn = lchnk; nn < pcnst; nn++) {
+  for (int nn = lchnk; nn < gas_pcnst; nn++) {
     // fldcw = > qqcw_get_field(pbuf, nn, lchnk, errorhandle =.true.)
     // if(associated(fldcw)) then
     // NOTE: The "cloud-water" constituent name are the same as their "aerosol"
