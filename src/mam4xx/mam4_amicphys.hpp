@@ -12,6 +12,8 @@ namespace mam4 {
 
 namespace microphysics {
 
+using View2D = DeviceType::view_2d<Real>;
+
 // number of constituents in gas chemistry "work arrays"
 using mam4::gas_chemistry::gas_pcnst;
 
@@ -2114,12 +2116,20 @@ void get_gcm_tend_diags_from_subareas(
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_amicphys_intr(
+    const ThreadTeam &team,
     // in
     const AmicPhysConfig &config, const Real deltat, const Real temp,
     const Real pmid, const Real pdel, const Real zm, const Real pblh,
     const Real qv, const Real cld,
     // in/out
-    Real qq[gas_pcnst], Real qqcw[gas_pcnst],
+    Real (&qq)[gas_pcnst], Real (&qqcw)[gas_pcnst],
+    // Diagnostics (out)
+    const int kk, // level info needed for diagnistics output
+    const View2D &gas_aero_exchange_condensation,
+    const View2D &gas_aero_exchange_renaming,
+    const View2D &gas_aero_exchange_nucleation,
+    const View2D &gas_aero_exchange_coagulation,
+    const View2D &gas_aero_exchange_renaming_cloud_borne,
     // in
     const Real (&q_pregaschem)[gas_pcnst],
     const Real (&q_precldchem)[gas_pcnst],
@@ -2339,6 +2349,29 @@ void modal_aero_amicphys_intr(
       nsubarea, ncldy_subarea, afracsub, qsub_tendaa, qqcwsub_tendaa,
       // out
       qgcm_tendaa, qqcwgcm_tendaa);
+
+  // Lambda to copy tendencies into a 1D view of all gas and aerosol species, if
+  // allocated
+  auto assign_if_allocated = [&](const auto &view, const auto &tend,
+                                 const int klev, const int idx,
+                                 const int extent) {
+    if (view.data() != nullptr) {
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, extent),
+                           [&](const int i) { view(i, klev) = tend[i][idx]; });
+    }
+  };
+  // Copy tendencies to diagnostics
+  assign_if_allocated(gas_aero_exchange_condensation, qgcm_tendaa, kk, 0,
+                      gas_pcnst);
+  assign_if_allocated(gas_aero_exchange_renaming, qgcm_tendaa, kk, 1,
+                      gas_pcnst);
+  assign_if_allocated(gas_aero_exchange_nucleation, qgcm_tendaa, kk, 2,
+                      gas_pcnst);
+  assign_if_allocated(gas_aero_exchange_coagulation, qgcm_tendaa, kk, 3,
+                      gas_pcnst);
+  assign_if_allocated(gas_aero_exchange_renaming_cloud_borne, qqcwgcm_tendaa,
+                      kk, 0, gas_pcnst);
+
 } // modal_aero_amicphys_intr
 } // namespace microphysics
 

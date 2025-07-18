@@ -386,13 +386,21 @@ void perform_atmospheric_chemistry_and_microphysics(
       dgncur_a_kk[imode] = dry_diameter_icol(imode, kk);
       wetdens_kk[imode] = wetdens_icol(imode, kk);
     }
-    // do aerosol microphysics (gas-aerosol exchange, nucleation,
+
+    // Perform aerosol microphysics (gas-aerosol exchange, nucleation,
     // coagulation)
     mam4::microphysics::modal_aero_amicphys_intr(
+        team,
         // in
         config_amicphys, dt, temp, pmid, pdel, zm, pblh, qv, cldfrac,
         // out
         vmr, vmrcw,
+        // diagnostics (out)
+        kk, diag_arrays.gas_aero_exchange_condensation,
+        diag_arrays.gas_aero_exchange_renaming,
+        diag_arrays.gas_aero_exchange_nucleation,
+        diag_arrays.gas_aero_exchange_coagulation,
+        diag_arrays.gas_aero_exchange_renaming_cloud_borne,
         // in
         vmr0, vmr_pregas, vmr_precld, dgncur_a_kk, dgncur_awet_kk, wetdens_kk);
 
@@ -485,7 +493,6 @@ void perform_atmospheric_chemistry_and_microphysics(
   }
   team.team_barrier();
 }
-
 } // namespace microphysics
 } // namespace mam4
 #endif
