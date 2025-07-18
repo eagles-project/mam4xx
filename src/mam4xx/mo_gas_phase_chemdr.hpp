@@ -183,9 +183,12 @@ void perform_atmospheric_chemistry_and_microphysics(
 
   // aqso4_incloud_mmr_tendency[num_modes] So4 flux in kg/m2/s
   // aqh2so4_incloud_mmr_tendency[num_modes] H2So4 flux in kg/m2/s
-  const View1D &aqso4_incloud_mmr_tendency =
+  const View1D &dqdt_so4_aqueous_chemistry =
+      diag_arrays.dqdt_so4_aqueous_chemistry;
+  const View1D &dqdt_h2so4_uptake = diag_arrays.dqdt_h2so4_uptake;
+  const View2D &aqso4_incloud_mmr_tendency =
       diag_arrays.aqso4_incloud_mmr_tendency;
-  const View1D &aqh2so4_incloud_mmr_tendency =
+  const View2D &aqh2so4_incloud_mmr_tendency =
       diag_arrays.aqh2so4_incloud_mmr_tendency;
   const View2D &gas_phase_chemistry_dvmrdt =
       diag_arrays.gas_phase_chemistry_dvmrdt;
@@ -513,15 +516,15 @@ void perform_atmospheric_chemistry_and_microphysics(
       const auto aqh2so4 = ekat::subview(dqdt_aqh2so4, ll);
       const Real vmr_so4 = aero_model::calc_sfc_flux(team, aqso4, pdel, nlev);
       const Real vmr_h2s = aero_model::calc_sfc_flux(team, aqh2so4, pdel, nlev);
-      aqso4_incloud_mmr_tendency[m] =
+      dqdt_so4_aqueous_chemistry[m] =
           conversions::mmr_from_vmr(vmr_so4, adv_mass_kg_per_moles[ll]);
-      aqh2so4_incloud_mmr_tendency[m] =
+      dqdt_h2so4_uptake[m] =
           conversions::mmr_from_vmr(vmr_h2s, adv_mass_kg_per_moles[ll]);
       if (aqso4_incloud_mmr_tendency.size()) {
         Kokkos::parallel_for(
             Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
               const Real aqso4 = dqdt_aqso4(ll, kk);
-              aqso4_incloud_mmr_tendency[m] =
+              aqso4_incloud_mmr_tendency(m, kk) =
                   conversions::mmr_from_vmr(aqso4, adv_mass_kg_per_moles[ll]);
             });
       }
@@ -529,7 +532,7 @@ void perform_atmospheric_chemistry_and_microphysics(
         Kokkos::parallel_for(
             Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
               const Real aqh2so4 = dqdt_aqh2so4(ll, kk);
-              aqh2so4_incloud_mmr_tendency[m] =
+              aqh2so4_incloud_mmr_tendency(m, kk) =
                   conversions::mmr_from_vmr(aqh2so4, adv_mass_kg_per_moles[ll]);
             });
       }

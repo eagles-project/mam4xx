@@ -21,11 +21,16 @@ struct MicrophysDiagnosticArrays {
   // Tendency due to aqueous (qq_) chemistry [kg/kg/s]
   View2D aqueous_chemistry_dvmrdt;
 
+  // dqdt_so4_aqueous_chemistry[num_modes] So4 flux in kg/m2/s
+  // dqdt_h2so4_uptake[num_modes] H2So4 flux in kg/m2/s
+  View1D dqdt_so4_aqueous_chemistry;
+  View1D dqdt_h2so4_uptake;
+
   // In-cloud chemistry production/sink of SO4
-  View1D aqso4_incloud_mmr_tendency;
+  View2D aqso4_incloud_mmr_tendency;
 
   // In-cloud chemistry production/sink of H2SO4
-  View1D aqh2so4_incloud_mmr_tendency;
+  View2D aqh2so4_incloud_mmr_tendency;
 };
 } // namespace mam4
 #endif
