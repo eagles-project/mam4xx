@@ -567,8 +567,8 @@ public:
     // Set nucleation-specific config parameters.
     config_ = convproc_config;
     Kokkos::resize(scratch1Dviews[q], config_.nlev * aero_model::pcnst);
-    Kokkos::resize(scratch1Dviews[mu], config_.nlev);
-    Kokkos::resize(scratch1Dviews[md], config_.nlev);
+    Kokkos::resize(scratch1Dviews[mu], config_.nlev + 1);
+    Kokkos::resize(scratch1Dviews[md], config_.nlev + 1);
     Kokkos::resize(scratch1Dviews[eudp], config_.nlev);
     Kokkos::resize(scratch1Dviews[dudp], config_.nlev);
     Kokkos::resize(scratch1Dviews[eddp], config_.nlev);
