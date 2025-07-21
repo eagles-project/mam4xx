@@ -514,28 +514,26 @@ void perform_atmospheric_chemistry_and_microphysics(
     if (0 <= ll) {
       const auto aqso4 = ekat::subview(dqdt_aqso4, ll);
       const auto aqh2so4 = ekat::subview(dqdt_aqh2so4, ll);
+      const auto adv_mass = adv_mass_kg_per_moles[ll];
       const Real vmr_so4 = aero_model::calc_sfc_flux(team, aqso4, pdel, nlev);
       const Real vmr_h2s = aero_model::calc_sfc_flux(team, aqh2so4, pdel, nlev);
       if (dqdt_so4_aqueous_chemistry.size())
         dqdt_so4_aqueous_chemistry[m] =
-            conversions::mmr_from_vmr(vmr_so4, adv_mass_kg_per_moles[ll]);
+            conversions::mmr_from_vmr(vmr_so4, adv_mass);
       if (dqdt_h2so4_uptake.size())
-        dqdt_h2so4_uptake[m] =
-            conversions::mmr_from_vmr(vmr_h2s, adv_mass_kg_per_moles[ll]);
+        dqdt_h2so4_uptake[m] = conversions::mmr_from_vmr(vmr_h2s, adv_mass);
       if (aqso4_incloud_mmr_tendency.size()) {
         Kokkos::parallel_for(
             Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
-              const Real aqso4 = dqdt_aqso4(ll, kk);
               aqso4_incloud_mmr_tendency(m, kk) =
-                  conversions::mmr_from_vmr(aqso4, adv_mass_kg_per_moles[ll]);
+                  conversions::mmr_from_vmr(aqso4(kk), adv_mass);
             });
       }
       if (aqh2so4_incloud_mmr_tendency.size()) {
         Kokkos::parallel_for(
             Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
-              const Real aqh2so4 = dqdt_aqh2so4(ll, kk);
               aqh2so4_incloud_mmr_tendency(m, kk) =
-                  conversions::mmr_from_vmr(aqh2so4, adv_mass_kg_per_moles[ll]);
+                  conversions::mmr_from_vmr(aqh2so4(kk), adv_mass);
             });
       }
     }
