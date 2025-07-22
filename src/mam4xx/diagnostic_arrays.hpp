@@ -4,6 +4,8 @@
 namespace mam4 {
 struct MicrophysDiagnosticArrays {
   using View2D = DeviceType::view_2d<Real>;
+  using View1D = DeviceType::view_1d<Real>;
+
   // each of these views, if non-empty, will be filled by
   // mam4::microphysics::perform_atmospheric_chemistry_and_microphysics
   // dimension number of levels  x  gas_pcnst
@@ -19,10 +21,15 @@ struct MicrophysDiagnosticArrays {
   // Tendency due to aqueous (qq_) chemistry [kg/kg/s]
   View2D aqueous_chemistry_dvmrdt;
 
+  // dqdt_so4_aqueous_chemistry[num_modes] So4 flux in kg/m2/s
+  // dqdt_h2so4_uptake[num_modes] H2So4 flux in kg/m2/s
+  View1D dqdt_so4_aqueous_chemistry;
+  View1D dqdt_h2so4_uptake;
+
   // In-cloud chemistry production/sink of SO4
   View2D aqso4_incloud_mmr_tendency;
 
-  // In-cloud chemistry production/sink of H2SO4
+  // In-cloud chemistry production/sink of h2so4
   View2D aqh2so4_incloud_mmr_tendency;
 };
 } // namespace mam4
