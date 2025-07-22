@@ -29,7 +29,7 @@ struct MicrophysDiagnosticArrays {
   // In-cloud chemistry production/sink of SO4
   View2D aqso4_incloud_mmr_tendency;
 
-  // In-cloud chemistry production/sink of H2SO4
+  // In-cloud chemistry production/sink of h2so4
   View2D aqh2so4_incloud_mmr_tendency;
 };
 } // namespace mam4

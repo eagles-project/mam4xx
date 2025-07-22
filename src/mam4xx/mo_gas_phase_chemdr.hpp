@@ -182,7 +182,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     Real dflx[gas_pcnst], mam4::Prognostics &progs) {
 
   // aqso4_incloud_mmr_tendency[num_modes] So4 flux in kg/m2/s
-  // aqh2so4_incloud_mmr_tendency[num_modes] H2So4 flux in kg/m2/s
+  // aqh2so4_incloud_mmr_tendency[num_modes] h2so4 flux in kg/m2/s
   const View1D &dqdt_so4_aqueous_chemistry =
       diag_arrays.dqdt_so4_aqueous_chemistry;
   const View1D &dqdt_h2so4_uptake = diag_arrays.dqdt_h2so4_uptake;
