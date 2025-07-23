@@ -303,7 +303,7 @@ void perform_atmospheric_chemistry_and_microphysics(
   // compute aerosol microphysics on each vertical level within this
   // column
   const int o3_ndx = static_cast<int>(mam4::GasId::O3);
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](const int kk) {
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
     // extract atm state variables (input)
     Real temp = atm.temperature(kk);
     Real pmid = atm.pressure(kk);
@@ -430,7 +430,6 @@ void perform_atmospheric_chemistry_and_microphysics(
     // Perform aerosol microphysics (gas-aerosol exchange, nucleation,
     // coagulation)
     mam4::microphysics::modal_aero_amicphys_intr(
-        team,
         // in
         config_amicphys, dt, temp, pmid, pdel, zm, pblh, qv, cldfrac,
         // out
@@ -522,18 +521,16 @@ void perform_atmospheric_chemistry_and_microphysics(
       if (dqdt_h2so4_uptake.size())
         dqdt_h2so4_uptake[m] = conversions::mmr_from_vmr(vmr_h2s, adv_mass);
       if (aqso4_incloud_mmr_tendency.size()) {
-        Kokkos::parallel_for(
-            Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
-              aqso4_incloud_mmr_tendency(m, kk) =
-                  conversions::mmr_from_vmr(aqso4(kk), adv_mass);
-            });
+        for (int kk = 0; kk < nlev; ++kk) {
+          aqso4_incloud_mmr_tendency(m, kk) =
+              conversions::mmr_from_vmr(aqso4(kk), adv_mass);
+        }
       }
       if (aqh2so4_incloud_mmr_tendency.size()) {
-        Kokkos::parallel_for(
-            Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
-              aqh2so4_incloud_mmr_tendency(m, kk) =
-                  conversions::mmr_from_vmr(aqh2so4(kk), adv_mass);
-            });
+        for (int kk = 0; kk < nlev; ++kk) {
+          aqh2so4_incloud_mmr_tendency(m, kk) =
+              conversions::mmr_from_vmr(aqh2so4(kk), adv_mass);
+        }
       }
     }
   }
