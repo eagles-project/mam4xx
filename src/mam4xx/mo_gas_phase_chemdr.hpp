@@ -521,16 +521,18 @@ void perform_atmospheric_chemistry_and_microphysics(
       if (dqdt_h2so4_uptake.size())
         dqdt_h2so4_uptake[m] = conversions::mmr_from_vmr(vmr_h2s, adv_mass);
       if (aqso4_incloud_mmr_tendency.size()) {
-        for (int kk = 0; kk < nlev; ++kk) {
-          aqso4_incloud_mmr_tendency(m, kk) =
-              conversions::mmr_from_vmr(aqso4(kk), adv_mass);
-        }
+        Kokkos::parallel_for(
+            Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
+              aqso4_incloud_mmr_tendency(m, kk) =
+                  conversions::mmr_from_vmr(aqso4(kk), adv_mass);
+            });
       }
       if (aqh2so4_incloud_mmr_tendency.size()) {
-        for (int kk = 0; kk < nlev; ++kk) {
-          aqh2so4_incloud_mmr_tendency(m, kk) =
-              conversions::mmr_from_vmr(aqh2so4(kk), adv_mass);
-        }
+        Kokkos::parallel_for(
+            Kokkos::TeamVectorRange(team, nlev), [&](const int kk) {
+              aqh2so4_incloud_mmr_tendency(m, kk) =
+                  conversions::mmr_from_vmr(aqh2so4(kk), adv_mass);
+            });
       }
     }
   }
