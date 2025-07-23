@@ -399,7 +399,6 @@ void perform_atmospheric_chemistry_and_microphysics(
         invariants_k[indexm], config_setsox,
         // out
         dqdt_aqso4_t, dqdt_aqh2so4_t, vmrcw, vmr);
-    team.team_barrier();
     for (int i = 0; i < gas_pcnst; ++i) {
       dqdt_aqso4(i, kk) = dqdt_aqso4_t[i];
       dqdt_aqh2so4(i, kk) = dqdt_aqh2so4_t[i];
