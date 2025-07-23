@@ -534,10 +534,10 @@ void perform_atmospheric_chemistry_and_microphysics(
                   conversions::mmr_from_vmr(aqh2so4(kk), adv_mass);
             });
       }
-    }
-  }
+    } // (if 0 <= ll)
+  } // for loop over num_modes
   team.team_barrier();
-}
+} // perform_atmospheric_chemistry_and_microphysics
 } // namespace microphysics
 } // namespace mam4
 #endif
