@@ -2116,7 +2116,6 @@ void get_gcm_tend_diags_from_subareas(
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_amicphys_intr(
-    const ThreadTeam &team,
     // in
     const AmicPhysConfig &config, const Real deltat, const Real temp,
     const Real pmid, const Real pdel, const Real zm, const Real pblh,
@@ -2356,8 +2355,9 @@ void modal_aero_amicphys_intr(
                                  const int klev, const int idx,
                                  const int extent) {
     if (view.data() != nullptr) {
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, extent),
-                           [&](const int i) { view(i, klev) = tend[i][idx]; });
+      for (int i = 0; i < extent; ++i) {
+        view(i, klev) = tend[i][idx];
+      }
     }
   };
   // Copy tendencies to diagnostics
