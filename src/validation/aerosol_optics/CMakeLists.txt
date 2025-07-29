@@ -26,7 +26,7 @@ add_executable(aerosol_optics_driver
                data_transfer_state_q_qqwc_to_prog.cpp
                )
 
-target_link_libraries(aerosol_optics_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(aerosol_optics_driver skywalker;validation;haero)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

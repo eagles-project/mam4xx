@@ -32,7 +32,7 @@ add_executable(convproc_driver convproc_driver.cpp
                ma_convproc_dp_intr.cpp
                compute_tendencies.cpp
                ma_resuspend_convproc.cpp)
-target_link_libraries(convproc_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(convproc_driver skywalker;validation;haero)
 
 
 # Copy some Python scripts from mam_x_validation to our binary directory.

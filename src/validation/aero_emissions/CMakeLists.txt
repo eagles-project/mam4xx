@@ -20,7 +20,7 @@ add_executable(aero_emissions_driver
                seasalt_emis.cpp
                dust_emis.cpp)
 
-target_link_libraries(aero_emissions_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(aero_emissions_driver skywalker;validation;haero)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

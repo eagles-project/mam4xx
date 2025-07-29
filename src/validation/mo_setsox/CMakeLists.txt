@@ -17,7 +17,7 @@ add_executable(mo_setsox_driver
                calc_ynetpos.cpp
                )
 
-target_link_libraries(mo_setsox_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(mo_setsox_driver skywalker;validation;haero)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

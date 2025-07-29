@@ -14,7 +14,7 @@ add_executable(mo_setinv_driver
                setinv_test_nlev.cpp
                )
 
-target_link_libraries(mo_setinv_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(mo_setinv_driver skywalker;validation;haero)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

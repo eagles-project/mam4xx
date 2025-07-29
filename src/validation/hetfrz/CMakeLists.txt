@@ -32,7 +32,7 @@ add_executable(hetfrz_driver
                hetfrz_calculate_vars_for_water_activity.cpp
                hetfrz_rates_1box.cpp
                hetfrz_classnuc_calc.cpp)
-target_link_libraries(hetfrz_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(hetfrz_driver skywalker;validation;haero)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
  configure_file(

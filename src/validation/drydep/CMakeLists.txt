@@ -22,7 +22,7 @@ add_executable(drydep_driver
                modal_aero_gravit_settling_velocity.cpp
                calcram.cpp
                )
-target_link_libraries(drydep_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(drydep_driver skywalker;validation;haero)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
  configure_file(

@@ -6,9 +6,8 @@ set(MAM_X_VALIDATION_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mam_x_validation)
 # directory tree, including the functions in testing.cpp for creating column
 # views, atmospheric state, prognostics, and diagnostics used by unit tests.
 add_library(validation validation.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../tests/testing.cpp)
-target_link_libraries(validation skywalker)
+target_link_libraries(validation PUBLIC haero skywalker)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${PROJECT_BINARY_DIR}/include) # for skywalker
 
 #--------------------------
 # MAM4xx Skywalker drivers

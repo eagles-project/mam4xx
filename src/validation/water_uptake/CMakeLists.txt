@@ -21,7 +21,7 @@ add_executable(water_uptake_driver
                modal_aero_water_uptake_dr_col.cpp
                water_uptake_wetdens.cpp
                )
-target_link_libraries(water_uptake_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(water_uptake_driver skywalker;validation;haero)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
  configure_file(

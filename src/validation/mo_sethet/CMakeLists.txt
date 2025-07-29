@@ -17,7 +17,7 @@ add_executable(sethet_driver
                sethet.cpp
                )
 
-target_link_libraries(sethet_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(sethet_driver skywalker;validation;haero)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

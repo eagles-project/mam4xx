@@ -14,7 +14,7 @@ add_executable(aero_model_driver  aero_model_driver.cpp
               modal_aero_bcscavcoef_get.cpp
               aero_model_wetdep.cpp
               aero_model_calcsize_water_uptake_dr.cpp)
-target_link_libraries(aero_model_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(aero_model_driver skywalker;validation;haero)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script
