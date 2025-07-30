@@ -186,8 +186,8 @@ void transfer_tendencies_num_to_tendecines(const Real n_mode_i[],
                                            // Real qqcw[gas_pcnst()],
 ) {
   int s_idx = gasses_start_ind() +
-          AeroConfig::num_gas_ids(); // gases start at index 9 (index 10 in
-                                     // Fortran version)
+              AeroConfig::num_gas_ids(); // gases start at index 9 (index 10 in
+                                         // Fortran version)
 
   // Now start adding aerosols mmr into the state_q
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {

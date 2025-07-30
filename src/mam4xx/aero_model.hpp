@@ -14,8 +14,8 @@
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
-#include <ekat_subview_utils.hpp>
 #include <ekat_math_utils.hpp>
+#include <ekat_subview_utils.hpp>
 
 namespace mam4 {
 

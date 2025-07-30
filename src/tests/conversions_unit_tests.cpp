@@ -18,8 +18,8 @@
 #include "atmosphere_utils.hpp"
 #include "mam4xx/conversions.hpp"
 
-#include <ekat_logger.hpp>
 #include <ekat_comm.hpp>
+#include <ekat_logger.hpp>
 
 #include <cmath>
 #include <sstream>

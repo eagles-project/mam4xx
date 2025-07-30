@@ -535,7 +535,7 @@ void perform_atmospheric_chemistry_and_microphysics(
             });
       }
     } // (if 0 <= ll)
-  } // for loop over num_modes
+  }   // for loop over num_modes
   team.team_barrier();
 } // perform_atmospheric_chemistry_and_microphysics
 } // namespace microphysics
