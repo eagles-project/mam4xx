@@ -16,7 +16,7 @@ add_executable(calcsize_driver calcsize_driver.cpp
                modal_aero_calcsize_sub.cpp
                modal_aero_calcsize_sub_ptend.cpp
                aitken_accum_exchange.cpp)
-target_link_libraries(calcsize_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(calcsize_driver skywalker;validation;haero)
 
 
 # Copy some Python scripts from mam_x_validation to our binary directory.

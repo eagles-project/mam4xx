@@ -20,7 +20,7 @@ add_executable(gas_chem_driver
                setrxt.cpp
                usrrxt.cpp
                )
-target_link_libraries(gas_chem_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(gas_chem_driver skywalker;validation;haero)
 
 
 # Copy some Python scripts from mam_x_validation to our binary directory.

@@ -9,7 +9,7 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 add_executable(aging_driver aging_driver.cpp
                mam_pcarbon_aging_frac.cpp
                mam_pcarbon_aging_1subarea.cpp)
-target_link_libraries(aging_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(aging_driver skywalker;validation;haero)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

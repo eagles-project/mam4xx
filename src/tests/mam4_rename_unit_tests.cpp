@@ -7,9 +7,9 @@
 #include <mam4xx/utils.hpp>
 
 #include <catch2/catch.hpp>
-#include <ekat/ekat_pack_kokkos.hpp>
-#include <ekat/logging/ekat_logger.hpp>
-#include <ekat/mpi/ekat_comm.hpp>
+#include <ekat_comm.hpp>
+#include <ekat_logger.hpp>
+#include <ekat_pack_kokkos.hpp>
 
 // if you need something from the data/ directory
 // std::string data_file = MAM4_TEST_DATA_DIR;

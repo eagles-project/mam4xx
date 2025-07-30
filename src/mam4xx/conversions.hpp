@@ -9,6 +9,8 @@
 #include <haero/constants.hpp>
 #include <haero/math.hpp>
 
+#include <ekat_kernel_assert.hpp>
+
 /// This file contains functions for converting between various representations
 /// of physical quantities in aerosol parameterizations.
 

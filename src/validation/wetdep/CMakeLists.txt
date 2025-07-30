@@ -19,7 +19,7 @@ add_executable(wetdep_driver
                wetdep_resusp.cpp
                wetdepa_v2.cpp
               )
-target_link_libraries(wetdep_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(wetdep_driver skywalker;validation;haero)
 
 foreach (TEST_NAME
          clddiag

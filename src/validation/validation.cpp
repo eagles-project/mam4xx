@@ -5,6 +5,8 @@
 
 #include "validation.hpp"
 
+#include <ekat_fpe.hpp>
+
 namespace mam4 {
 namespace validation {
 

@@ -6,7 +6,7 @@
 #include "atmosphere_utils.hpp"
 #include <mam4xx/conversions.hpp>
 
-#include <ekat/ekat_assert.hpp>
+#include <ekat_assert.hpp>
 #include <haero/testing.hpp>
 
 namespace mam4 {

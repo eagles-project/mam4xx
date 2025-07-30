@@ -5,7 +5,7 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <ekat/kokkos/ekat_subview_utils.hpp>
+#include <ekat_subview_utils.hpp>
 #include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <skywalker.hpp>

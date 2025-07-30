@@ -1,8 +1,6 @@
 #ifndef MAM4XX_NDROP_HPP
 #define MAM4XX_NDROP_HPP
 
-#include <ekat/util/ekat_math_utils.hpp>
-
 #include <haero/atmosphere.hpp>
 #include <haero/math.hpp>
 
@@ -12,6 +10,8 @@
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 #include <mam4xx/wv_sat_methods.hpp>
+
+#include <ekat_math_utils.hpp>
 
 namespace mam4 {
 

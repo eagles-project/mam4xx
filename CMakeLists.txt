@@ -2,22 +2,6 @@ cmake_minimum_required(VERSION 3.17.0)
 
 message(STATUS "Configuring with build type: ${CMAKE_BUILD_TYPE}")
 
-# We rely on Haero for basic data structures and third-party libraries.
-if (NOT TARGET haero)
-  if (NOT MAM4XX_HAERO_DIR)
-    message(FATAL_ERROR "MAM4XX_HAERO_DIR is not specified! Please provide a path to Haero.")
-  elseif (NOT EXISTS ${MAM4XX_HAERO_DIR}/share)
-    message(FATAL_ERROR "Invalid MAM4XX_HAERO_DIR. Please provide a valid path to Haero.")
-  endif()
-  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${MAM4XX_HAERO_DIR}/share/")
-  include(haero)
-  if(HAERO_ENABLE_GPU)
-    message(STATUS "Building for GPU")
-  else() #CPU
-    message(STATUS "Building for CPU")
-  endif()
-endif()
-
 #----------------------
 # Configurable options
 #----------------------
@@ -39,19 +23,37 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 # Blessed version of clang-format.
 set(CLANG_FORMAT_VERSION 14)
 
-# Set compilers, linkers, and flags from Haero.
-set(CMAKE_CXX_STANDARD ${HAERO_CXX_STANDARD})
-set(CMAKE_CXX_COMPILER ${HAERO_CXX_COMPILER})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${HAERO_CXX_FLAGS}")
-
-set(CMAKE_C_STANDARD ${HAERO_C_STANDARD})
-set(CMAKE_C_COMPILER ${HAERO_C_COMPILER})
-set(CMAKE_C_FLAGS    ${HAERO_C_FLAGS})
-
 project(mam4xx)
 enable_language(CXX)
 
-set(CMAKE_EXE_LINKER_FLAGS ${HAERO_EXE_LINKER_FLAGS})
+# We rely on Haero for basic data structures and third-party libraries.
+if (NOT TARGET haero)
+  if (NOT MAM4XX_HAERO_DIR)
+    message(FATAL_ERROR "MAM4XX_HAERO_DIR is not specified! Please provide a path to Haero.")
+  endif()
+  find_package(haero REQUIRED HINTS ${MAM4XX_HAERO_DIR})
+  set (required_ekat_pkgs Logging Pack KokkosUtils)
+  set (missing_ekat_pkgs)
+  foreach (pkg IN ITEMS ${required_ekat_pkgs})
+    if (NOT TARGET ekat::${pkg})
+      list(APPEND missing_ekat_pkgs ${pkg})
+    endif()
+  endforeach()
+  if (missing_ekat_pkgs)
+    string(CONCAT msg
+      "Error! Haero is linking against a non-sufficient version of ekat\n"
+      " Required Ekat pacakges: KokkosUtils, Pack, Logging\n"
+      " Missing packages: ${missing_ekat_pkgs}")
+    message ("${msg}")
+    message (FATAL_ERROR "Aborting...")
+  endif()
+
+  if(HAERO_ENABLE_GPU)
+    message(STATUS "Building for GPU")
+  else() #CPU
+    message(STATUS "Building for CPU")
+  endif()
+endif()
 
 message(STATUS "Generating project files in build directory: ${PROJECT_BINARY_DIR}")
 message(STATUS "C++ compiler is ${CMAKE_CXX_COMPILER} (${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION})")
@@ -71,12 +73,8 @@ message(STATUS "Using ${HAERO_PRECISION} precision floating point numbers")
 # Report the installation prefix.
 message(STATUS "Installation prefix is ${CMAKE_INSTALL_PREFIX}")
 
-set(MAM4XX_LIBRARIES ${HAERO_LIBRARIES})
-
 # We look for headers in these directories.
-include_directories(${HAERO_INCLUDE_DIRS})
 include_directories("${PROJECT_BINARY_DIR}")
-include_directories("${MAM4XX_HAERO_DIR}/include")
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_BINARY_DIR}/src)
 

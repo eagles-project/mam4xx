@@ -15,7 +15,7 @@ add_executable(tropopause_driver
                tropopause_twmo.cpp
                )
 
-target_link_libraries(tropopause_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(tropopause_driver skywalker;validation;haero)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

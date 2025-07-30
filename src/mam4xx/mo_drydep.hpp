@@ -6,12 +6,13 @@
 #ifndef MAM4XX_MO_DRYDEP_HPP
 #define MAM4XX_MO_DRYDEP_HPP
 
-#include <ekat/kokkos/ekat_subview_utils.hpp>
 #include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>
 #include <mam4xx/seq_drydep.hpp>
 #include <mam4xx/utils.hpp>
+
+#include <ekat_subview_utils.hpp>
 
 namespace mam4::mo_drydep {
 using View1D = DeviceType::view_1d<Real>;

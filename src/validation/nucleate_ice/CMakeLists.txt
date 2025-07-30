@@ -10,7 +10,7 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 # We use a single driver for all nucleate_ice-related parameterizations.
 add_executable(nucleate_ice_driver  nucleate_ice_driver.cpp hf.cpp
                compute_tendencies.cpp nucleate_ice.cpp hetero.cpp)
-target_link_libraries(nucleate_ice_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(nucleate_ice_driver skywalker;validation;haero)
 
 
 # Copy some Python scripts from mam_x_validation to our binary directory.

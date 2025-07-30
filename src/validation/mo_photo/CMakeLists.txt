@@ -19,7 +19,7 @@ add_executable(mo_photo_driver
                table_photo.cpp
                )
 
-target_link_libraries(mo_photo_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(mo_photo_driver skywalker;validation;haero)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

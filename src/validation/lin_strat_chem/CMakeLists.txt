@@ -15,7 +15,7 @@ add_executable(lin_strat_chem_driver
                lin_strat_sfcsink.cpp
                )
 
-target_link_libraries(lin_strat_chem_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(lin_strat_chem_driver skywalker;validation;haero)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

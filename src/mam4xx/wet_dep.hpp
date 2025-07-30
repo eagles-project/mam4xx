@@ -6,7 +6,7 @@
 #ifndef MAM4XX_WET_DEPOSITION_HPP
 #define MAM4XX_WET_DEPOSITION_HPP
 
-#include <ekat/kokkos/ekat_subview_utils.hpp>
+#include <ekat_subview_utils.hpp>
 #include <haero/atmosphere.hpp>
 #include <haero/constants.hpp>
 #include <haero/math.hpp>

@@ -8,8 +8,8 @@
 
 #include "mam4xx/mam4_types.hpp"
 
-#include <ekat/ekat_pack.hpp>
-#include <ekat/ekat_pack_math.hpp>
+#include <ekat_pack.hpp>
+#include <ekat_pack_math.hpp>
 #include <haero/atmosphere.hpp>
 #include <haero/constants.hpp>
 #include <haero/floating_point.hpp>

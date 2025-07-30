@@ -14,7 +14,7 @@ add_executable(coagulation_driver
                getcoags_wrapper_f.cpp
                coag_aer_update.cpp 
                coag_num_update.cpp )
-target_link_libraries(coagulation_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(coagulation_driver skywalker;validation;haero)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

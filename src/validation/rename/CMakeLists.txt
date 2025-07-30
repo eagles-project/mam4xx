@@ -12,7 +12,7 @@ add_executable(rename_driver  rename_driver.cpp
                mam_rename_1subarea.cpp
                find_renaming_pairs.cpp
                compute_dryvol_change_in_src_mode.cpp)
-target_link_libraries(rename_driver skywalker;validation;${HAERO_LIBRARIES})
+target_link_libraries(rename_driver skywalker;validation;haero)
 
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
