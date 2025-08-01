@@ -215,7 +215,7 @@ void sethet_detail(
     const ConstColumnView &nevapr,   // evaporation [kg/kg/s] //in
     const Real delt,                 // time step [s] //in
     const View2D &invariants,        // total atms density [cm^-3] //in
-    const ColumnView qin[gas_pcnst], // xported species [vmr]  //in
+    const View2D qin, // xported species [vmr]  //in
     // working variables
     const ColumnView
         &t_factor, // temperature factor to calculate henry's law parameters
@@ -330,8 +330,8 @@ void sethet_detail(
     rain(kk) = mass_air * precip(kk) * invariants(kk, indexm) / mass_h2o;
     xliq(kk) =
         precip(kk) * delt * invariants(kk, indexm) / avo * mass_air * m3_2_cm3;
-    xh2o2(kk) = qin[spc_h2o2_ndx](kk) * invariants(kk, indexm);
-    xso2(kk) = qin[spc_so2_ndx](kk) * invariants(kk, indexm);
+    xh2o2(kk) = qin(kk,spc_h2o2_ndx) * invariants(kk, indexm);
+    xso2(kk) = qin(kk,spc_so2_ndx) * invariants(kk, indexm);
   });
   zsurf = m2km * phis * rga;
 
@@ -501,7 +501,7 @@ void sethet(
     const ConstColumnView &nevapr,   // evaporation [kg/kg/s] //in
     const Real dt,                   // time step [s] //in
     const View2D &invariants,        //
-    const ColumnView vmr[gas_pcnst], // xported species [vmr]  //in
+    const View2D& vmr, // xported species [vmr]  //in
     // working variables
     const View1D &work) {
 

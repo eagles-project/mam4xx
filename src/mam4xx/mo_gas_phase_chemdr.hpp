@@ -34,7 +34,7 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
                  const mam4::Prognostics &progs,
                  const Real adv_mass_kg_per_moles[gas_pcnst],
                  const int offset_aerosol,
-                 const ColumnView vmr_col[gas_pcnst]) {
+                 const View2D vmr_col) {
   // Make a local copy of nlev to avoid the identifier "mam4::nlev" being
   // undefined in device code.
   constexpr int nlev_local = nlev;
@@ -50,7 +50,7 @@ void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
         // output (vmr)
         mam4::microphysics::mmr2vmr(qq, adv_mass_kg_per_moles, vmr);
         for (int i = 0; i < gas_pcnst; ++i) {
-          vmr_col[i](kk) = vmr[i];
+          vmr_col(kk,i) = vmr[i];
         }
       });
 }
@@ -205,11 +205,7 @@ void perform_atmospheric_chemistry_and_microphysics(
   work_set_het_ptr += nlev * gas_pcnst;
 
   // vmr0 stores mixing ratios before chemistry changes the mixing
-  ColumnView vmr_col[gas_pcnst];
-  for (int i = 0; i < gas_pcnst; ++i) {
-    vmr_col[i] = ColumnView(work_set_het_ptr, nlev);
-    work_set_het_ptr += nlev;
-  }
+  const auto vmr_col = View2D(work_set_het_ptr, nlev, gas_pcnst);
   const int sethet_work_len = mam4::mo_sethet::get_work_len_sethet();
   const auto work_sethet_call = View1D(work_set_het_ptr, sethet_work_len);
   work_set_het_ptr += sethet_work_len;
