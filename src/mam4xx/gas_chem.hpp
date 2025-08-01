@@ -77,7 +77,7 @@ void imp_slv_inti(Real epsilon[clscnt4]) {
     epsilon[i] = rel_err;
   }
 }
-
+template <typename VectorType>
 KOKKOS_INLINE_FUNCTION
 void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
                          const Real lrxt[rxntot],
@@ -85,7 +85,7 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
                          const Real iter_invariant[clscnt4], // in
                          const bool factor[itermax],
                          const int permute_4[gas_pcnst],
-                         const int clsmap_4[gas_pcnst], Real lsol[gas_pcnst],
+                         const int clsmap_4[gas_pcnst], VectorType& lsol,
                          Real solution[clscnt4],                     // inout
                          bool converged[clscnt4], bool &convergence, // out
                          Real prod[clscnt4], Real loss[clscnt4],
@@ -239,9 +239,9 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
     } // end if (nr_iter > 0)
   }   // end nr_iter loop
 } // newton_raphson_iter() function
-
+template <typename VectorType>
 KOKKOS_INLINE_FUNCTION
-void imp_sol(Real base_sol[gas_pcnst], // inout - species mixing ratios [vmr]
+void imp_sol(VectorType& base_sol, // inout - species mixing ratios [vmr]
              const Real reaction_rates[rxntot], const Real het_rates[gas_pcnst],
              const Real extfrc[extcnt], const Real &delt,
              const int permute_4[gas_pcnst], const int clsmap_4[gas_pcnst],
