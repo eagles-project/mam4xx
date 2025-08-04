@@ -2113,7 +2113,7 @@ void get_gcm_tend_diags_from_subareas(
 
 //--------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------
-template<typename VectorType>
+template<typename VectorType, typename VectorTypeModes>
 KOKKOS_INLINE_FUNCTION
 void modal_aero_amicphys_intr(
     // in
@@ -2133,9 +2133,9 @@ void modal_aero_amicphys_intr(
     const VectorType& q_pregaschem,
     const VectorType& q_precldchem,
     const VectorType& qqcw_precldchem,
-    const Real (&dgncur_a)[num_modes],
-    const Real (&dgncur_awet)[num_modes],
-    const Real (&wetdens_host)[num_modes]) {
+    const VectorTypeModes& dgncur_a,
+    const VectorTypeModes& dgncur_awet,
+    const VectorTypeModes& wetdens_host) {
   // deltat: time step
   // qq(ncol,pver,pcnst): current tracer mixing ratios (TMRs)
   //                           these values are updated (so out /= in)
