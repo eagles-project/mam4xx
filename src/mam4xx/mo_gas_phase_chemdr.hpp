@@ -179,7 +179,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     const View1D &work_set_het, const seq_drydep::Data &drydep_data,
     const MicrophysDiagnosticArrays &diag_arrays,
     Real dvel[gas_pcnst], // deposition velocity [cm/s]
-    Real dflx[gas_pcnst], mam4::Prognostics &progs) {
+    Real dflx[gas_pcnst], mam4::Prognostics &progs, const int timestep, const int icol) {
 
   // aqso4_incloud_mmr_tendency[num_modes] So4 flux in kg/m2/s
   // aqh2so4_incloud_mmr_tendency[num_modes] h2so4 flux in kg/m2/s
@@ -252,6 +252,7 @@ void perform_atmospheric_chemistry_and_microphysics(
                                               photo_work_arrays_icol); // out
 
   team.team_barrier();
+//#if 0
   mam4::mo_photo::table_photo(team, photo_rates_icol,                    // out
                               atm.pressure, atm.hydrostatic_dp,          // in
                               atm.temperature, o3_col_dens_i,            // in
@@ -259,6 +260,7 @@ void perform_atmospheric_chemistry_and_microphysics(
                               atm.liquid_mixing_ratio, atm.cloud_fraction, // in
                               eccf, photo_table,                           // in
                               photo_work_arrays_icol); // out
+//#endif
   team.team_barrier();
   // work array.
   // het_rates_icol work array.
@@ -280,6 +282,7 @@ void perform_atmospheric_chemistry_and_microphysics(
       qq[i - offset_aerosol] = state_q[i];
 
     team.team_barrier();
+//#if 0
     mam4::mo_drydep::drydep_xactive(
         drydep_data,
         fraction_landuse, // fraction of land use for column by land type
@@ -298,6 +301,7 @@ void perform_atmospheric_chemistry_and_microphysics(
         dvel,             // deposition velocity [1/cm/s]
         dflx              // deposition flux [1/cm^2/s]
     );
+//#endif
   }
   team.team_barrier();
   // compute aerosol microphysics on each vertical level within this
@@ -338,6 +342,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     mam4::microphysics::mmr2vmr(qq, adv_mass_kg_per_moles, vmr);
     // output (vmrcw)
     mam4::microphysics::mmr2vmr(qqcw, adv_mass_kg_per_moles, vmrcw);
+    //if(timestep==912 && kk == 62 && icol ==10 && vmrcw[21] > 0)std::cout<<"aft_mmrvmr:timestep:"<<timestep<<" kk:"<<kk<<" icol:"<<icol<<" vmrcw[21]:"<<vmrcw[21]<<" qqcw[21]:"<<qqcw[21]<<std::endl;
 
     //---------------------
     // Gas Phase Chemistry
@@ -346,6 +351,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     const auto &extfrc_k = ekat::subview(extfrc_icol, kk);
     const auto &invariants_k = ekat::subview(invariants_icol, kk);
     const auto &photo_rates_k = ekat::subview(photo_rates_icol, kk);
+    //if(timestep>760 && timestep < 772 && kk == 62 && icol ==10)std::cout<<"timestep:bef_gas_chm:"<<timestep<<" kk:"<<kk<<" icol:"<<icol<<" photo:"<<photo_rates_k(1)<<" extfrc_k:"<<extfrc_k(1)<<std::endl;
     const auto &het_rates_k = ekat::subview(het_rates, kk);
 
     // Store mixing ratios before gas chemistry changes the mixing ratios
@@ -359,6 +365,7 @@ void perform_atmospheric_chemistry_and_microphysics(
         clsmap_4, permute_4, het_rates_k.data(),
         // out
         vmr);
+//#if 0
     // calculate tendency due to gas phase chemistry
     if (gas_phase_chemistry_dvmrdt.size()) {
       const Real mbar = haero::Constants::molec_weight_dry_air;
@@ -393,17 +400,21 @@ void perform_atmospheric_chemistry_and_microphysics(
     constexpr int indexm = mam4::gas_chemistry::indexm;
     Real dqdt_aqso4_t[gas_pcnst] = {};
     Real dqdt_aqh2so4_t[gas_pcnst] = {};
+//#endif
+
+#if 0 //BFB
     mam4::mo_setsox::setsox_single_level(
         // in
         offset_aerosol, dt, pmid, pdel, temp, mbar, lwc, cldfrac, cldnum,
         invariants_k[indexm], config_setsox,
         // out
-        dqdt_aqso4_t, dqdt_aqh2so4_t, vmrcw, vmr);
+        dqdt_aqso4_t, dqdt_aqh2so4_t, vmrcw, vmr, timestep, kk,icol);
+//#if 0 //DIFF
     for (int i = 0; i < gas_pcnst; ++i) {
       dqdt_aqso4(i, kk) = dqdt_aqso4_t[i];
       dqdt_aqh2so4(i, kk) = dqdt_aqh2so4_t[i];
     }
-
+//#if 0 definately diff
     // calculate tendency due to gas phase chemistry
     if (aqueous_chemistry_dvmrdt.size()) {
       const Real mbar = haero::Constants::molec_weight_dry_air;
@@ -426,9 +437,10 @@ void perform_atmospheric_chemistry_and_microphysics(
       dgncur_a_kk[imode] = dry_diameter_icol(imode, kk);
       wetdens_kk[imode] = wetdens_icol(imode, kk);
     }
-
+#endif
     // Perform aerosol microphysics (gas-aerosol exchange, nucleation,
     // coagulation)
+#if 0
     mam4::microphysics::modal_aero_amicphys_intr(
         // in
         config_amicphys, dt, temp, pmid, pdel, zm, pblh, qv, cldfrac,
@@ -442,9 +454,9 @@ void perform_atmospheric_chemistry_and_microphysics(
         diag_arrays.gas_aero_exchange_renaming_cloud_borne,
         // in
         vmr0, vmr_pregas, vmr_precld, dgncur_a_kk, dgncur_awet_kk, wetdens_kk);
-
+#endif
     mam4::microphysics::vmr2mmr(vmrcw, adv_mass_kg_per_moles, qqcw);
-
+#if 0
     if (linoz_conf.compute) {
       //-----------------
       // LINOZ chemistry
@@ -486,7 +498,7 @@ void perform_atmospheric_chemistry_and_microphysics(
         vmr[o3_ndx] = o3l_vmr_new;
       }
     }
-
+#endif
     // Check for negative values and reset to zero
     for (int i = 0; i < gas_pcnst; ++i) {
       if (vmr[i] < 0.0)
@@ -504,6 +516,7 @@ void perform_atmospheric_chemistry_and_microphysics(
   }); // parallel_for for vertical levels
 
   team.team_barrier();
+#if 0
   // Diagnose the column-integrated flux (kg/m2/s) using
   // volume mixing ratios ( // kmol/kmol(air) )
   const auto &pdel = atm.hydrostatic_dp; // layer thickness (Pa)
@@ -536,6 +549,7 @@ void perform_atmospheric_chemistry_and_microphysics(
       }
     } // (if 0 <= ll)
   } // for loop over num_modes
+#endif
   team.team_barrier();
 } // perform_atmospheric_chemistry_and_microphysics
 } // namespace microphysics

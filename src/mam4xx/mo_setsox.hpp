@@ -110,9 +110,14 @@ Cloudconc sox_cldaero_create_obj(
   // xlwc is in-cloud LWC with the unit of [kg/L]
   if (cldfrc > 0.0) {
     // cloud water L(water)/L(air)
-    xlwc = lwc * cfact;
+    /*BBxlwc = lwc * cfact;
     // liquid water in the cloudy fraction of cell
-    xlwc = xlwc / cldfrc;
+    xlwc = xlwc / cldfrc;BB*/
+    
+    //temp code eballi
+    //xlwc = lwc / cldfrc; //BFB
+    //xlwc = lwc * cfact; //BFB
+    xlwc = lwc * cfact/ cldfrc; //NBFB
   } else {
     xlwc = 0.0;
   }
@@ -745,7 +750,7 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
                         // inout
                         Real dqdt_aqso4[AeroConfig::num_gas_phase_species()],
                         Real dqdt_aqh2so4[AeroConfig::num_gas_phase_species()],
-                        Real *qcw, Real *qin) {
+                        Real *qcw, Real *qin, const int timestep, const int kk, const int icol) {
   /*
   sox_cldaero_update(loffset, dt, mbar, pdel, press, tfld, cldnum,
                      cldfrc, cfact, cldconc.xlwc, xdelso4hp, xh2so4, xso4,
@@ -836,8 +841,24 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
   // FIXME: these appear to never be used
   // Real dqdt_aqhprxn;
   // Real dqdt_aqo3rxn;
+  //if ((cldfrc >= small_value_5)){ //BFB
+  //if(xlwc >= small_value_8){ //BFB
+  if((cldfrc >= small_value_5) && (xlwc >= small_value_8)) {
+    int ll[3] = {6,14, 21};
+    for (int m = 0; m < 3; ++m) {
+        //if(timestep==912 && ll[m] ==21 && kk == 62 && icol ==10)std::cout<<"bef:timestep:"<<timestep<<" l:"<<ll[m]<<" kk:"<<kk<<" icol:"<<icol<<" qcw[l]:"<<qcw[ll[m]]<<std::endl;
+        qcw[ll[m]] += 1.28564e-10; 
+        //if(timestep==912 && ll[m] ==21 && kk == 62 && icol ==10)std::cout<<"aft:timestep:"<<timestep<<" l:"<<ll[m]<<" kk:"<<kk<<" icol:"<<icol<<" qcw[l]:"<<qcw[ll[m]]<<std::endl;
+    }
+  }
 
+#if 0  
   if ((cldfrc >= small_value_5) && (xlwc >= small_value_8)) {
+    int ll[3] = {6,14, 21};
+    for (int m = 0; m < 3; ++m) {
+        qcw[ll[m]] += 1.28564e-10; 
+    }
+//#if 0    
     /*
     -------------------------------------------------------------------------
     compute factors for partitioning aerosol mass gains among modes
@@ -856,41 +877,23 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
         cldaero_uptakerate(xlwc, cldnum, cfact, cldfrc, tfld, press);
     //   // average uptake rate over dt
     uptkrate = (one - haero::exp(-one * haero::min(100.0, dt * uptkrate))) / dt;
-    //   // dso4dt_gasuptk = so4_c tendency from h2so4 gas uptake (mol/mol/s)
-    Real dso4dt_gasuptk = xh2so4 * uptkrate;
-
-    Real delso4_o3rxn = xso4 - xso4_init;
-    Real dso4dt_aqrxn = (delso4_o3rxn + delso4_hprxn) / dt;
-    Real dso4dt_hprxn = delso4_hprxn / dt;
-
-    /*
-    -----------------------------------------------------------------------
-    now compute TMR tendencies
-    this includes the above aqueous so2 chemistry AND
-    the uptake of highly soluble aerosol precursor gases (h2so4, ...)
-    The wetremoval of dissolved, unreacted so2 and h2o2 are assumed as zero
-    */
-
-    // dqdt due to aqueous chemistry [mol/mol/s]
-    Real dqdt_aq;
-    // dqdt due to wet removal, currently set as zero [mol/mol/s]
-    // FIXME: this could probably be removed altogether, since it remains zero
-    // throughout this function
-    Real dqdt_wr = 0.0;
-    // compute TMR tendencies for so4 aerosol-in-cloud-water
-    // FIXME: there's a better way to do this
+//#if 0 //BFB
     for (int m = 0; m < nmodes; ++m) {
       int l = config_.lptr_so4_cw_amode[m] - loffset;
       if (l > 0) {
-        dqdt_aqso4[l] = faqgain_so4[m] * dso4dt_aqrxn * cldfrc;
-        dqdt_aqh2so4[l] = faqgain_so4[m] * dso4dt_gasuptk * cldfrc;
-        dqdt_aq = dqdt_aqso4[l] + dqdt_aqh2so4[l];
-        // don't have wet removal here
-        // FIXME: maybe seems pointless for this to be a function?
-        update_tmr(qcw[l], dqdt_aq + dqdt_wr, dt);
+        //update_tmr(qcw[l], 1.28564e-10/dt, dt); //<---BALLI this is the line causing NBFB
+        //qcw[l] = qcw[l] + 1.28564e-10; //NBFB
+        //std::cout<<"l:"<<l<<" m:"<<m<<std::endl;
+        //qcw[l] = 1.28564e-10;
+
       }
     }
-
+    int ll[3] = {6,14, 21};
+    for (int m = 0; m < 3; ++m) {
+        qcw[ll[m]] += 1.28564e-10; 
+    }
+//#endif
+//#if 0 //NBFB
     /*
     For gas species, tendency includes reactive uptake to cloud water
     that essentially transforms the gas to a different species.
@@ -923,8 +926,10 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
     dqdt_aqhprxn = dso4dt_hprxn * cldfrc;
     dqdt_aqo3rxn = (dso4dt_aqrxn - dso4dt_hprxn) * cldfrc;
     */
+//#endif
   } // end if ((cldfrc >= small_value_5) && (xlwc >= small_value_8))
-
+#endif
+#if 0 // NBFB
   //==============================================================
   // ... Update the mixing ratios
   //==============================================================
@@ -942,6 +947,7 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
     // update_tmr_nonzero(qcw, (lptr_nh4_cw_amode[m] - loffset));
   }
   update_tmr_nonzero(qin[config_.id_so2], config_.id_so2);
+#endif
 } // end sox_cldaero_update
 
 //-----------------------------------------------------------------------
@@ -955,7 +961,8 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
                          Real dqdt_aqso4[AeroConfig::num_gas_phase_species()],
                          Real dqdt_aqh2so4[AeroConfig::num_gas_phase_species()],
                          Real qcw[AeroConfig::num_gas_phase_species()],
-                         Real qin[AeroConfig::num_gas_phase_species()]) {
+                         Real qin[AeroConfig::num_gas_phase_species()], const int timestep, const int kk, const int icol) {
+//if(timestep==912 && kk == 62 && icol ==10)std::cout<<"start_setsox_single_level:timestep:"<<timestep<<" kk:"<<kk<<" icol:"<<icol<<" qcw[21]:"<<qcw[21]<<std::endl;
 
   // setsox_single_level(loffset, dt, press_k, pdel, tfld_k, mbar, lwc_k,
   //                           cldfrc_k, cldnum_k, xhnm_k, setsox_config_,
@@ -1133,7 +1140,7 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
                    setsox_config_.itermax,
                    // out
                    converged, xph);
-
+//#if 0 //BFB
     /*
     FIXME: better error handling
     if (!converged) {
@@ -1141,10 +1148,12 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
     ').'
     }
     */
+//#endif //BFB
   } else {
     // FIXME: BAD CONSTANT
     xph = 1.0e-7;
   } // end if (xlwc >= small_value_xlwc)
+//#if 0 //BFB
   //==============================================================
   //          ... Now use the actual pH
   //==============================================================
@@ -1245,6 +1254,7 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
   // currently handling this by making it zero in the `else` case that does not
   // exist in the MAM4 fortran code
   // WHEN CLOUD IS PRESENTED (present?)
+//#if 0 //BFB
   if (xlwc >= setsox_config_.small_value_lwc) {
     calc_sox_aqueous(setsox_config_.modal_aerosols, rah2o2, h2o2g, so2g, o3g,
                      rao3, patm, dt, t_factor, xlwc, setsox_config_.const0,
@@ -1257,13 +1267,20 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
     xdelso4hp = 0.0;
     xso4_init = 0.0;
   }
-
+//if(timestep==912 && kk == 62 && icol ==10)std::cout<<"b_sox_cldaero_update:timestep:"<<timestep<<" kk:"<<kk<<" icol:"<<icol<<" qcw[21]:"<<qcw[21]<<std::endl;
+/*int ll[3] = {6,14, 21};
+    for (int m = 0; m < 3; ++m) {
+        qcw[ll[m]] += 1.28564e-10; 
+    } */ //BFB
+//#if 0 //BFB
+// THis is the ISSUE-->
   // mean wet atmospheric mass [amu or g/mol]
   sox_cldaero_update(loffset, dt, mbar, pdel, press, tfld, cldnum, cldfrc,
                      cfact, cldconc.xlwc, xdelso4hp, xh2so4, xso4, xso4_init,
                      setsox_config_,
                      // inout
-                     dqdt_aqso4, dqdt_aqh2so4, qcw, qin);
+                     dqdt_aqso4, dqdt_aqh2so4, qcw, qin,timestep, kk, icol);
+//#endif //BFB
 } //   end setsox_single_level
 
 KOKKOS_INLINE_FUNCTION
@@ -1300,9 +1317,10 @@ void setsox(const ThreadTeam &team, const int loffset, const Real dt,
       qcw_k[i] = qcw[i](k);
       qin_k[i] = qin[i](k);
     }
+    int timestep=0, kk=0,icol=0;
     setsox_single_level(loffset, dt, press_k, pdel_k, tfld_k, mbar_k, lwc_k,
                         cldfrc_k, cldnum_k, xhnm_k, setsox_config_, dqdt_aqso4,
-                        dqdt_aqh2so4, qcw_k, qin_k);
+                        dqdt_aqh2so4, qcw_k, qin_k,timestep, kk, icol);
   }); // end kokkos::parfor(k)
 
 } // end setsox()

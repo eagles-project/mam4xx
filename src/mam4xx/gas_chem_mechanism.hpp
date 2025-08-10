@@ -160,24 +160,26 @@ void indprd(const int class_id, Real prod[clscnt4], const Real rxt[rxntot],
   if (class_id == 1) {
     prod[0] = zero;
   } else if (class_id == 4) {
-    prod[0] = +rxt[1];
+    prod[0] =+rxt[1];
     prod[1] = zero;
-    prod[2] = +extfrc[0];
+    prod[2] = 0;//+extfrc[0];
     prod[3] = zero;
-    prod[4] = +extfrc[8];
-    prod[5] = +extfrc[1];
+    //BALLIeverything thing is fine above (except rxt[1])
+    prod[4] = 0;//+extfrc[8];//testing if this is the cause as well
+    prod[5] = +extfrc[1];//--< This seems to be one of the cause, verifying
+    //BALLI- issue in somewhere above.
     prod[6] = zero;
     prod[7] = zero;
     prod[8] = zero;
     prod[9] = zero;
     prod[10] = zero;
     prod[11] = zero;
-    prod[12] = +extfrc[5];
-    prod[13] = +extfrc[2];
+    prod[12] = zero;//+extfrc[5];
+    prod[13] = zero;//+extfrc[2];
     prod[14] = zero;
     prod[15] = zero;
     prod[16] = zero;
-    prod[17] = +extfrc[6];
+    prod[17] = zero;//+extfrc[6];
     prod[18] = zero;
     prod[19] = zero;
     prod[20] = zero;
@@ -186,10 +188,10 @@ void indprd(const int class_id, Real prod[clscnt4], const Real rxt[rxntot],
     prod[23] = zero;
     prod[24] = zero;
     prod[25] = zero;
-    prod[26] = +extfrc[3];
-    prod[27] = +extfrc[4];
+    prod[26] = zero;//+extfrc[3];
+    prod[27] = zero;//+extfrc[4];
     prod[28] = zero;
-    prod[29] = +extfrc[7];
+    prod[29] = zero;//+extfrc[7];
   } // indprd
 }
 

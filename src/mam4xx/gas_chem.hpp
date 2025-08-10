@@ -144,14 +144,14 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
     //  ... form f(y)
     // -----------------------------------------------------------------------
     imp_prod_loss(prod, loss,        // out
-                  lsol, lrxt, lhet); // in
-
+                  lsol, lrxt, lhet); // in                  
     // the units are internally consistent here, providing that
     // iter_invariant, prod, loss all have units [1/s] to match up with
     // solution (vmr) [-] and dti [1/s]. however, there could be other answers
     for (int mm = 0; mm < clscnt4; ++mm) {
       forcing[mm] =
           solution[mm] * dti - (iter_invariant[mm] + prod[mm] - loss[mm]);
+          //solution[mm] * dti - ( prod[mm] - loss[mm]);
     } // mm
 
     // -----------------------------------------------------------------------

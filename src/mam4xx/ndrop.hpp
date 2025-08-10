@@ -1,6 +1,7 @@
 #ifndef MAM4XX_NDROP_HPP
 #define MAM4XX_NDROP_HPP
 
+#include<iomanip>
 #include <ekat/util/ekat_math_utils.hpp>
 
 #include <haero/atmosphere.hpp>
@@ -121,7 +122,7 @@ void get_aer_mmr_sum(
     const Real specdens_amode[maxd_aspectype],
     const Real spechygro[maxd_aspectype],
     const int lmassptr_amode[maxd_aspectype][AeroConfig::num_modes()],
-    Real &vaerosolsum_icol, Real &hygrosum_icol) {
+    Real &vaerosolsum_icol, Real &hygrosum_icol,const int timestep=0, const int gid=0, const int icol=0, const int k=0) {
 
   // @param[in] imode  mode index
   // @param[in] nspec  total # of species in mode imode
@@ -150,6 +151,9 @@ void get_aer_mmr_sum(
     const Real vol = haero::max(state_q[spc_idx] + qcldbrn1d[lspec], zero) /
                      density_sp; // volume = mmr/density
     vaerosolsum_icol += vol;
+    //if(timestep == 2 && gid == 28 && icol ==4 && (k==63 || k==64) && imode == 0)std::cout  << std::setprecision(20)
+    //        << "get_aer_mmr_sum-1 = " << k << " : "<<imode<<", hygrosum_icol = " <<vol<<" : "<<state_q[spc_idx]<<" : "<<qcldbrn1d[lspec]<<" : "<<spc_idx<<" : "<<lspec<<" : "<<density_sp<<" : "<<hygro_sp<<std::endl;
+
     hygrosum_icol += vol * hygro_sp; // bulk hygroscopicity
   }                                  // end
 } // end get_aer_mmr_sum
@@ -257,7 +261,7 @@ void loadaer(const Real state_q[aero_model::pcnst],
              const Real qcldbrn1d_num[AeroConfig::num_modes()],
              Real naerosol[AeroConfig::num_modes()],
              Real vaerosol[AeroConfig::num_modes()],
-             Real hygro[AeroConfig::num_modes()]) {
+             Real hygro[AeroConfig::num_modes()],const int timestep=0, const int gid=0, const int icol=0, const int k=0) {
 
   // return aerosol number, volume concentrations, and bulk hygroscopicity at
   // one specific column and level
@@ -309,7 +313,7 @@ void loadaer(const Real state_q[aero_model::pcnst],
 
     get_aer_mmr_sum(imode, nspec, state_q, qcldbrn1d_imode, lspectype_amode,
                     specdens_amode, spechygro, lmassptr_amode, vaerosolsum,
-                    hygrosum);
+                    hygrosum,timestep, gid, icol, k);
 
     //  Finalize computation of bulk hygroscopicity and volume conc
     // NOTE: maybe use safe_denominator()?
@@ -517,7 +521,8 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
                     const Real aten, Real fn[AeroConfig::num_modes()],
                     Real fm[AeroConfig::num_modes()],
                     Real fluxn[AeroConfig::num_modes()],
-                    Real fluxm[AeroConfig::num_modes()], Real &flux_fullact) {
+                    Real fluxm[AeroConfig::num_modes()], Real &flux_fullact,
+                    const int timestep, const int gid, const int icol, const int k) {
   //    ---------------------------------------------------------------------------------
   // Calculates number, surface, and mass fraction of aerosols activated as CCN
   // calculates flux of cloud droplets, surface area, and aerosol mass into
@@ -658,6 +663,9 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
             two * aten *
             // only if variable size dist
             haero::sqrt(aten / (27.0 * hygro[imode] * amcube[imode]));
+        //if(timestep == 2 && gid == 28 && icol ==4 && (k==63 || k==64) && imode == 0)std::cout  << std::setprecision(20)
+        //    << "activate_model-2 = " << k << " : "<<imode<<", ssat_crit_imode = " <<ssat_crit_imode[imode]<<" : "<<aten<<" : "<<hygro[imode]<<" : "<<amcube[imode]<<std::endl;
+
       } else {
         // BAD CONSTANT
         ssat_crit_imode[imode] = 100.0;
@@ -685,6 +693,8 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
         twothird * (lnsm[imode] - lnsupersat) / (sq2 * alogsig[imode]);
 
     fn[imode] = half * (one - haero::erf(arg_erf_n)); // activated number
+    //if(timestep == 2 && gid == 28 && icol ==4 && (k==63 || k==64) && imode == 0)std::cout  << std::setprecision(20)
+    //        << "activate_model-1 = " << k << " : "<<imode<<", arg_erf_n = " <<arg_erf_n<<" : "<<lnsm[imode]<<" : "<<lnsupersat<<" : "<<alogsig[imode]<<" : "<<ssat_crit_imode[imode]<<" : "<<w_in<<std::endl;
 
     const Real arg_erf_m = arg_erf_n - 1.5 * sq2 * alogsig[imode];
     fm[imode] = half * (one - haero::erf(arg_erf_m)); // activated mass
@@ -714,7 +724,7 @@ void get_activate_frac(
     const Real alogsig[AeroConfig::num_modes()], const Real aten,
     Real fn[AeroConfig::num_modes()], Real fm[AeroConfig::num_modes()],
     Real fluxn[AeroConfig::num_modes()], Real fluxm[AeroConfig::num_modes()],
-    Real &flux_fullact) {
+    Real &flux_fullact,const int timestep, const int gid, const int icol, const int k) {
 
   // input arguments
   //  @param [in] state_q_kload(:)         aerosol mmrs at level from which to
@@ -754,14 +764,14 @@ void get_activate_frac(
   loadaer(state_q_kload, nspec_amode, air_density_kload, phase, lspectype_amode,
           specdens_amode, spechygro, lmassptr_amode, voltonumbhi_amode,
           voltonumblo_amode, numptr_amode, qcldbrn, qcldbrn_num, naermod,
-          vaerosol, hygro);
+          vaerosol, hygro,timestep, gid, icol, k);
 
   // BAD CONSTANT
   const Real wmax = 10.0;
   activate_modal(wtke, wmax, tair, air_density_kk, //   in
                  naermod, vaerosol, hygro,         //  in
                  exp45logsig, alogsig, aten, fn, fm, fluxn, fluxm,
-                 flux_fullact); // out
+                 flux_fullact,timestep, gid, icol, k); // out
 
 } // get_activate_frac
 
@@ -789,7 +799,8 @@ void update_from_cldn_profile(
     Real &nsource_col, // inout
     Real &qcld, Real factnum_col[AeroConfig::num_modes()],
     Real &eddy_diff, // out
-    Real nact[AeroConfig::num_modes()], Real mact[AeroConfig::num_modes()]) {
+    Real nact[AeroConfig::num_modes()], Real mact[AeroConfig::num_modes()],
+    const int timestep, const int gid, const int icol, const int k) {
   // clang-format off
   // input arguments
   // cldn_col_in(:)       cloud fraction [fraction] at kk
@@ -865,7 +876,7 @@ void update_from_cldn_profile(
           lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
           voltonumbhi_amode, voltonumblo_amode, numptr_amode, nspec_amode,
           exp45logsig, alogsig, aten, factnum_col, fm, fluxn, fluxm, // out
-          flux_fullact);
+          flux_fullact,timestep, gid, icol, k);
 
       //  store for output activation fraction of aerosol
       // factnum_col(kk,:) = fn
@@ -917,6 +928,9 @@ void update_from_cldn_profile(
         const int mm = mam_idx[imode][0] - 1;
         nact[imode] += fluxn[imode] * crdz * delz_cld;
         mact[imode] += fluxm[imode] * crdz * delz_cld;
+        /*if(timestep == 2 && gid == 28 && icol ==4 && (k==63 || k==64))std::cout  << std::setprecision(20)
+            << "update_from_cldn_profile-1 = " << k << " : "<<imode<<", mact = " << mact[imode]<<" : "<<fluxm[imode]<<" : "<<crdz<<" : "<<delz_cld
+            << ", nact = " << nact[imode]<<" : "<<fluxn[imode]<<std::endl;*/
         // note that kp1 is used here
         fluxntot +=
             fluxn[imode] * delz_cld * raercol_nsav_kp1[mm] * air_density;
@@ -972,7 +986,8 @@ void update_from_newcld(
     const int mam_idx[AeroConfig::num_modes()][nspec_max], Real &qcld,
     Real raercol_nsav[ncnst_tot],
     Real raercol_cw_nsav[ncnst_tot], // inout
-    Real &nsource_col_out, Real factnum_col_out[AeroConfig::num_modes()]) {
+    Real &nsource_col_out, Real factnum_col_out[AeroConfig::num_modes()],
+    const int timestep, const int gid, const int icol, const int k) {
 
   // // input arguments
   // real(r8), intent(in) :: cldn_col_in(:)   cloud fraction [fraction]
@@ -1019,6 +1034,9 @@ void update_from_newcld(
     // convert activated aerosol to interstitial in decaying cloud
     // fractional change in cloud fraction [fraction]
     const Real frac_delt_cld = (cldn_col_in - cldo_col_in) / cldo_col_in;
+    /*if(timestep == 2 && gid == 28 && icol ==4 && k==63)std::cout  << std::setprecision(20)
+    << "update_from_newcld_1a:"<< frac_delt_cld<<" : "<< cldn_col_in <<" : "<< cldo_col_in
+    <<std::endl;*/
 
     for (int imode = 0; imode < ntot_amode; ++imode) {
       // Fortran indexing to C++ indexing
@@ -1032,6 +1050,7 @@ void update_from_newcld(
         const int mm = mam_idx[imode][lspec] - 1;
         const Real dact = raercol_cw_nsav[mm] * frac_delt_cld;
         raercol_cw_nsav[mm] += dact; // cloud-borne aerosol
+        //if(mm == 0 && timestep == 2 && gid == 28 && icol ==4 && k==63)std::cout  << std::setprecision(20)<< "update_from_newcld_1-k = " << k << ", raercol_cw_nsav = " << raercol_cw_nsav[0]<<" : "<< dact<<" : "<< frac_delt_cld<<std::endl;
         raercol_nsav[mm] -= dact;
       } // lspec
     }   // imode
@@ -1057,7 +1076,7 @@ void update_from_newcld(
                       lmassptr_amode, voltonumbhi_amode, voltonumblo_amode,
                       numptr_amode, nspec_amode, exp45logsig, alogsig, aten,
                       factnum_col_out, fm, fluxn, fluxm, // out
-                      flux_fullact);
+                      flux_fullact, timestep, gid, icol, k);
 
     for (int imode = 0; imode < ntot_amode; ++imode) {
       // Fortran indexing to C++ indexing
@@ -1081,6 +1100,7 @@ void update_from_newcld(
         // interstitial only
         const Real dact = fm_delt_cld * state_q_col_in[spc_idx];
         raercol_cw_nsav[mm] += dact; //  cloud-borne aerosol
+        //if(mm == 0 && timestep == 2 && gid == 28 && icol ==4 && k==63)std::cout  << std::setprecision(20)<< "update_from_newcld_2-k = " << k << ", raercol_cw_nsav = " << raercol_cw_nsav[0]<<" : "<< dact<<" : "<< fm_delt_cld<<" : "<<state_q_col_in[spc_idx]<<std::endl;
         raercol_nsav[mm] -= dact;
 
       } // lspec
@@ -1109,11 +1129,15 @@ void explmix(
                          // [/s]; above layer k  (k,k+1 interface)
     const Real overlapp, // cloud overlap below [fraction]
     const Real overlapm, // cloud overlap above [fraction]
-    const Real dtmix     // time step [s]
+    const Real dtmix,     // time step [s]
+    const int timestep=0, const int gid=0, const int icol=0, const int k=0, const int mm =0
 ) {
 
   qnew = qold_k + dtmix * (src + eddy_diff_kp * (overlapp * qold_kp1 - qold_k) +
                            eddy_diff_km * (overlapm * qold_km1 - qold_k));
+/*if(mm==0 && timestep == 2 && gid == 28 && icol ==4)std::cout<< std::setprecision(20)<<"k:"<<k<<" explmix_1_not:"<<qnew
+<<" : "<< qold_km1<<" : "<< qold_k<<" : "<< qold_kp1<<" : "<< src<<" : "<< eddy_diff_kp<<" : "<< eddy_diff_km
+<<" : "<< overlapp<<" : "<< overlapm<<" : "<< dtmix<<std::endl;*/
 
   // force to non-negative
   qnew = haero::max(qnew, 0);
@@ -1144,7 +1168,8 @@ void explmix(
     // optional: number / mass mixing ratio of ACTIVATED species
     // from previous step at level k-1 *** this should only be present if
     // the current species is unactivated number/sfc/mass
-    const Real qactold_kp1
+    const Real qactold_kp1,
+    const int timestep=0, const int gid=0, const int icol=0, const int k=0, const int mm =0
     // optional: number / mass mixing ratio of ACTIVATED species
     // from previous step at level k+1 *** this should only be present if
     // the current species is unactivated number/sfc/mass
@@ -1158,6 +1183,10 @@ void explmix(
           (-src +
            eddy_diff_kp * (qold_kp1 - qold_k + qactold_kp1 * (one - overlapp)) +
            eddy_diff_km * (qold_km1 - qold_k + qactold_km1 * (one - overlapm)));
+/*if(mm==0 && timestep == 2 && gid == 28 && icol ==4 && k==63)std::cout  << std::setprecision(20)<< "explmix_1_all:"<<qnew
+<<" : "<< qold_km1<<" : "<< qold_k<<" : "<< qold_kp1<<" : "<< src<<" : "<< eddy_diff_kp<<" : "<< eddy_diff_km
+<<" : "<< overlapp<<" : "<< overlapm<<" : "<< dtmix<<" : "<< qactold_km1<<" : "<< qactold_kp1<<std::endl;*/
+
 
   // force to non-negative
   qnew = haero::max(qnew, 0);
@@ -1193,7 +1222,7 @@ void update_from_explmix(
     const ColumnView &qncld, // updated cloud droplet number mixing ratio [#/kg]
     const ColumnView &srcn,  // droplet source rate [/s]
     // source rate for activated number or species mass [/s]
-    const ColumnView &source) {
+    const ColumnView &source, const int timestep, const int gid, const int icol) {
 
   // threshold cloud fraction to compute overlap [fraction]
   // BAD CONSTANT
@@ -1222,15 +1251,18 @@ void update_from_explmix(
         const int kp1 = haero::min(k + 1, pver - 1);
         const int km1 = haero::max(k - 1, top_lev);
         // maximum overlap assumption
+//#if 0
         if (cldn(kp1) > overlap_cld_thresh) {
           overlapp(k) = haero::min(cldn(k) / cldn(kp1), one);
         } else {
+//#endif
           overlapp(k) = one;
         }
-
+//#if 0
         if (cldn(km1) > overlap_cld_thresh) {
           overlapm(k) = haero::min(cldn(k) / cldn(km1), one);
         } else {
+//#endif
           overlapm(k) = one;
         }
 
@@ -1249,6 +1281,9 @@ void update_from_explmix(
         for (int imode = 0; imode < ntot_amode; imode++) {
           nact(k, imode) = haero::min(nact(k, imode), eddy_diff_kp(k));
           mact(k, imode) = haero::min(mact(k, imode), eddy_diff_kp(k));
+/*if(timestep == 2 && gid == 28 && icol ==4 && imode ==2 && (k==63 || k==55))std::cout  << std::setprecision(20)<< "update_from_explmix_mact = " 
+<< mact(k, imode)<<" : "<<eddy_diff_kp(k)<<" : "<<zn(k)<<" : "<<eddy_diff(k)
+<<" : "<<csbot(k)<<" : "<<zs(k)<<" : "<<k<<" : "<<imode<<std::endl;*/
         }
 
         // rce-comment -- tinv is the sum of all first-order-loss-rates
@@ -1373,6 +1408,7 @@ void update_from_explmix(
                       raercol_cw[kp1][nsav](mm)); // optional in
             }
           }); // end kk
+//if(mm==0 && timestep == 2 && gid == 28 && icol ==4)std::cout  << std::setprecision(20)<< "update_from_explmix_1 raercol_cw[k][nsav] = " << raercol_cw[63][nsav](0)<<":"<<raercol_cw[63][nnew](0) << std::endl;
 
       // update aerosol species mass
       for (int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
@@ -1383,6 +1419,7 @@ void update_from_explmix(
             Kokkos::TeamVectorRange(team, top_lev, pver_loc), [&](int k) {
               const int kp1 = haero::min(k + 1, pver - 1);
               source(k) = mact(k, imode) * raercol[kp1][nsav](mm);
+              //if(mm==0 && timestep == 2 && gid == 28 && icol ==4)std::cout  << std::setprecision(20)<< "update_from_explmix_source = " << source(k)<<":"<<mact(k, imode)<<" : "<<raercol[kp1][nsav](mm)<<" : "<<k<<" : "<<imode<<" : "<<kp1<<" : "<<mm<<std::endl;
             }); // end k
         tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
                raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
@@ -1395,7 +1432,7 @@ void update_from_explmix(
                       raercol_cw[kp1][nsav](mm),
                       raercol_cw[k][nnew](mm), // output
                       source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
-                      overlapm(k), dtmix);
+                      overlapm(k), dtmix, timestep, gid, icol, k, mm);
               if (enable_aero_vertical_mix) {
                 explmix(raercol[km1][nsav](mm), raercol[k][nsav](mm),
                         raercol[kp1][nsav](mm),
@@ -1403,11 +1440,11 @@ void update_from_explmix(
                         source(k), eddy_diff_kp(k), eddy_diff_km(k),
                         overlapp(k), overlapm(k), dtmix,
                         raercol_cw[km1][nsav](mm),
-                        raercol_cw[kp1][nsav](mm)); // optional in
+                        raercol_cw[kp1][nsav](mm), timestep, gid, icol, k, mm); // optional in
               }
             }); // end kk
-
         team.team_barrier();
+//if(mm==0 && timestep == 2 && gid == 28 && icol ==4)std::cout  << std::setprecision(20)<< "update_from_explmix_2 raercol_cw[k][nsav] = " << raercol_cw[63][nsav](0)<<":"<<raercol_cw[63][nnew](0) << std::endl;
       } // lspec loop
     }   //  imode loop
   }     // old_cloud_nsubmix_loop
@@ -1474,7 +1511,7 @@ void dropmixnuc(
     const ColumnView &eddy_diff_kp, const ColumnView &eddy_diff_km,
     const ColumnView &qncld, const ColumnView &srcn, const ColumnView &source,
     const ColumnView &dz, const ColumnView &csbot_cscen,
-    const ColumnView &raertend, const ColumnView &qqcwtend) {
+    const ColumnView &raertend, const ColumnView &qqcwtend, const int timestep, const int icol, const int gid) {
   // vertical diffusion and nucleation of cloud droplets
   // assume cloud presence controlled by cloud fraction
   // doesn't distinguish between warm, cold clouds
@@ -1605,7 +1642,7 @@ void dropmixnuc(
             raercol[k][nsav][mm] = state_q(k, spc_idx);
           } // lspec
         }   // imode
-
+        if(timestep == 2 && gid == 28 && icol ==4 && k==63)std::cout  << std::setprecision(20)<< "ndrop_1-k = " << k << ", raercol_cw[k][nsav] = " << raercol_cw[k][nsav](0) <<" : "<<state_q(k, 15) <<std::endl;
         // PART I:  changes of aerosol and cloud water from temporal changes in
         // cloud fraction droplet nucleation/aerosol activation
         nsource(k) = zero;
@@ -1618,6 +1655,7 @@ void dropmixnuc(
         // FIXME: It is dangerous to call data() on a view and expect the
         // resulting vector to be continuous in memory. Depending on the
         // 2D layout, the memory could be strided.
+//#if 0
         update_from_newcld(cldn(k), cldo(k), dtinv, // in
                            wtke(k), temp(k),
                            conversions::density_of_ideal_gas(temp(k), pmid(k)),
@@ -1628,7 +1666,9 @@ void dropmixnuc(
                            aten, mam_idx, qcld(k),
                            raercol[k][nsav].data(),    // inout
                            raercol_cw[k][nsav].data(), // inout
-                           nsource(k), factnum_k);     // inout
+                           nsource(k), factnum_k, timestep, gid, icol, k);     // inout
+//#endif
+        //if(timestep == 2 && gid == 28 && icol ==4 && k==63)std::cout  << std::setprecision(20)<< "ndrop_2-k = " << k << ", raercol_cw[k][nsav] = " << raercol_cw[k][nsav](0) << std::endl;
 
         for (int imode = 0; imode < ntot_amode; ++imode)
           factnum(imode, k) = factnum_k[imode];
@@ -1662,7 +1702,11 @@ void dropmixnuc(
             nsource(k), // inout
             qcld(k), factnum_k,
             eddy_diff(k), // out
-            nact_k.data(), mact_k.data());
+            nact_k.data(), mact_k.data(), timestep, gid, icol, k); // inout
+/*            if(timestep == 2 && gid == 28 && icol ==4 && (k==63 || k==66))std::cout  << std::setprecision(20)
+            << "ndrop_3-k = " << k << ", raercol_cw[k][nsav] = " << raercol_cw[k][nsav](0) 
+            <<" mact:"<< mact_k(0)<<" : "<< mact_k(1) <<" : "<< mact_k(2) <<" : "<< mact_k(3) << " : "<<eddy_diff(k)<<" : "<< wtke(k)<<" : "<<zs(k)
+            <<" nact:"<< nact_k(0)<<" : "<< nact_k(1) <<" : "<< nact_k(2) <<" : "<< nact_k(3)<<std::endl;*/
         for (int imode = 0; imode < ntot_amode; ++imode)
           factnum(imode, k) = factnum_k[imode];
       });
@@ -1671,16 +1715,24 @@ void dropmixnuc(
   // PART III:  perform explicit integration of droplet/aerosol mixing using
   // substepping
 
+  /*if(timestep == 2 && gid == 28 && icol ==4){
+    for (int kb = 0; kb < pver; ++kb) {
+      std::cout  << std::setprecision(20)<< "ndrop_3a raercol_cw["<<kb<<"][nsav] = " << raercol_cw[kb][nsav](0) << std::endl;
+    }
+  }*/
   int nnew = 1;
+
   update_from_explmix(team, dtmicro, csbot, cldn, zn, zs, eddy_diff, nact, mact,
                       qcld, raercol, raercol_cw, nsav, nnew, nspec_amode,
                       mam_idx, enable_aero_vertical_mix, top_lev,
                       // work vars
                       overlapp, overlapm, eddy_diff_kp, eddy_diff_km, qncld,
                       srcn, // droplet source rate [/s]
-                      source);
+                      source, timestep, gid, icol);
+
 
   team.team_barrier();
+  //if(timestep == 2 && gid == 28 && icol ==4)std::cout  << std::setprecision(20)<< "ndrop_4 raercol_cw[k][nsav] = " << raercol_cw[63][nsav](0)<<":"<<raercol_cw[63][nnew](0) << std::endl;
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev), [&](int kk) {
     for (int i = 0; i < ncnst_tot; ++i) {
@@ -1718,6 +1770,7 @@ void dropmixnuc(
             // Fortran indexing to C++ indexing
             const int lptr = mam_cnst_idx[imode][lspec] - 1;
             qqcwtend(k) = (raercol_cw[k][nnew](mm) - qqcw_fld[mm](k)) * dtinv;
+            //if(mm ==0 && timestep == 2 && gid == 28 && icol ==4 && k==63)std::cout  << std::setprecision(20)<< "ndrop_5 raercol_cw[k][nsav] = " << raercol_cw[k][nnew](mm) << std::endl;
             qqcw_fld[mm](k) = haero::max(raercol_cw[k][nnew](mm),
                                          zero); // update cloud-borne aerosol
 
