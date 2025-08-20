@@ -31,6 +31,7 @@ on:
         default: 'GPU-NVIDIA_H100'
         options:
           - GPU-NVIDIA_H100
+          - GPU-AMD_MI200-series
           - CPU-Ubuntu_22-04
           - ALL
       precision:
@@ -71,6 +72,10 @@ jobs:
     if: ${{ github.event.pull_request || github.event.schedule }}
     uses:
       ./.github/workflows/at2_gcc-cuda.yml
+  gcc-hip:
+    if: ${{ github.event.pull_request || github.event.schedule }}
+    uses:
+      ./.github/workflows/at2_gcc-hip.yml
   gcc-cpu_gh:
     if: ${{ github.event.pull_request || github.event.schedule }}
     secrets:
@@ -89,6 +94,14 @@ jobs:
       build_type: ${{ github.event.inputs.build_type }}
     uses:
       "./.github/workflows/at2_gcc-cuda.yml"
+  manual-gpu_hip:
+    if: ${{ contains(github.event.inputs.architecture, 'GPU-AMD_MI200-series') ||
+            contains(github.event.inputs.architecture, 'ALL') }}
+    with:
+      precision: ${{ github.event.inputs.precision }}
+      build_type: ${{ github.event.inputs.build_type }}
+    uses:
+      "./.github/workflows/at2_gcc-hip.yml"
   manual-cpu_gh:
     if: ${{ contains(github.event.inputs.architecture, 'CPU-Ubuntu_22-04') ||
             contains(github.event.inputs.architecture, 'ALL') }}

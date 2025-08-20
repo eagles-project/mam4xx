@@ -1,0 +1,122 @@
+name: "GPU AT2 gcc 13.3 hip 6.2"
+
+on:
+  workflow_call:
+    inputs:
+      precision:
+        required: false
+        type: string
+      build_type:
+        required: false
+        type: string
+
+jobs:
+  # this is more work than I'd expect, but this is how you pass info after
+  # operating on it in a job/step
+  # TODO: factor this out into an action?
+  # parse the inputs from the workflow call that'll be used by strategy.matrix
+  define_matrix:
+    runs-on: ubuntu-22.04
+    # define the outputs that will come from the steps below
+    outputs:
+      build_type: ${{ steps.build_type.outputs.build_type }}
+      precision: ${{ steps.precision.outputs.precision }}
+    steps:
+      - name: Define build_type
+        id: build_type
+        env:
+          # if empty (i.e., triggered by PR) make ALL default
+          btype: ${{ inputs.build_type || 'ALL' }}
+        # this is a little over-cautious, since the 'else' should never happen
+        run: |
+          case ${{ env.btype }} in
+            "Debug")
+              echo 'build_type=["Debug"]' >> "$GITHUB_OUTPUT" ;;
+            "Release")
+              echo 'build_type=["Release"]' >> "$GITHUB_OUTPUT" ;;
+            "ALL")
+              echo 'build_type=["Debug", "Release"]' >> "$GITHUB_OUTPUT" ;;
+            *)
+              echo 'build_type=["Debug", "Release"]' >> "$GITHUB_OUTPUT" ;;
+          esac
+      - name: Define precision
+        id: precision
+        env:
+          prec: ${{ inputs.precision || 'ALL' }}
+        run: |
+          case ${{ env.prec }} in
+            "Debug")
+              echo 'precision=["single"]' >> "$GITHUB_OUTPUT" ;;
+            "Release")
+              echo 'precision=["double"]' >> "$GITHUB_OUTPUT" ;;
+            "ALL")
+              echo 'precision=["single", "double"]' >> "$GITHUB_OUTPUT" ;;
+            *)
+              echo 'precision=["single", "double"]' >> "$GITHUB_OUTPUT" ;;
+          esac
+  gcc-cuda:
+    runs-on:  [self-hosted, m4xci-snl-hip, hip, gcc]
+    # will run other tests in the matrix even if one fails
+    # NOTE: prioritizes extra info over speed, so consider whether this makes sense
+    continue-on-error: false
+    needs: define_matrix
+    # A build matrix storing all desired configurations.
+    strategy:
+      fail-fast: true
+      matrix:
+        # to get the array instead of a string, need the fromJSON()
+        build-type: ${{ fromJSON(needs.define_matrix.outputs.build_type) }}
+        fp-precision: ${{ fromJSON(needs.define_matrix.outputs.precision) }}
+    name: gcc-hip / ${{ matrix.build-type }} - ${{ matrix.fp-precision }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          show-progress: false
+          submodules: recursive
+      - name: Cloning Haero
+        uses: actions/checkout@v4
+        with:
+          repository: eagles-project/haero
+          submodules: recursive
+          path: haero_src
+      - name: Show action trigger
+        uses: ./.github/actions/show-workflow-trigger
+      - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+        run: |
+          cmake -S haero_src -B haero_build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+            -DCMAKE_INSTALL_PREFIX="haero_install" \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=hipcc \
+            -DHAERO_SKIP_FIND_YAML_CPP=ON \
+            -DHAERO_ENABLE_MPI=OFF \
+            -DHAERO_ENABLE_GPU=ON \
+            -DHAERO_PRECISION=${{ matrix.fp-precision }} \
+            -DKokkos_ARCH_AMD_GFX90A=ON \
+            -DHAERO_DEVICE_ARCH=AMD_GFX90A
+          cd haero_build
+          make -j
+          make install
+      - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_CXX_COMPILER=hipcc \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+            -DMAM4XX_HAERO_DIR=$(pwd)/haero_install \
+            -DNUM_VERTICAL_LEVELS=72 \
+            -DENABLE_COVERAGE=OFF \
+            -DENABLE_SKYWALKER=ON \
+            -DCMAKE_CUDA_ARCHITECTURES=AMD_GFX90A \
+            -G "Unix Makefiles"
+      - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+        run: |
+          cd build
+          make -j
+      - name: Running tests (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
+        run: |
+          cd build
+          ctest -V --output-on-failure

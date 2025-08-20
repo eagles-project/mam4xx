@@ -12,7 +12,7 @@ To do this, testing is initialized via the top-level workflow, `MAM4xx Autoteste
 
 #### GPU-based Testing
 
-| Test Name                         | GPU Brand | GPU Type | Micoarchitecture | Compute Capability | Machine | Compilers                    |
+| Test Name                         | GPU Brand | GPU Type | Microarchitecture | Compute Capability | Machine | Compilers                    |
 | --------------------------------- | --------- | -------- | ---------------- | ------------------ | ------- | ---------------------------- |
 | GPU AT2 gcc 12.3 cuda 12.1        | NVIDIA    | H100     | Hopper           | 9.0                | blake   | `gcc` 12.3.0/`nvcc` 12.1.105 |
 
