@@ -1,5 +1,6 @@
 # Autotester2 (AT2) Workflow for MAM4xx
- This document contains a brief description of how AT2 is used to automate testing on SNL hardware.
+
+This document contains a brief description of how AT2 is used to automate testing on SNL hardware.
 Additionally, any helpful notes and TODOs may be kept here to assist developers.
 
 ## Overview
@@ -10,9 +11,10 @@ This is done for security/policy reasons and ensures that only those with approv
 
 ### Test Hardware and Compiler Configurations
 
-| Test Name            | GPU Brand | GPU Type | Micoarchitecture | Compute Capability | Machine | Compilers                    |
-| -------------------- | --------- | -------- | ---------------- | ------------------ | ------- | ---------------------------- |
-| gcc_12-3-0_cuda_12-1 | NVIDIA    | H100     | Hopper           | 9.0                | blake   | `gcc` 12.3.0/`nvcc` 12.1.105 |
+| Test Name                         | GPU Brand | GPU Type    | Microarchitecture | Compute Capability | Machine | OS     | Compilers                        |
+| --------------------------------- | --------- | ------------| ----------------- | ------------------ | ------- | ------ | -------------------------------- |
+| GPU AT2 gcc 12.3 cuda 12.1        | NVIDIA    | H100        | Hopper            | 9.0                | blake   | RHEL8  | `gcc` 12.3.0/`nvcc` 12.1.105     |
+| GPU AT2 gcc 13.3 hip 6.2          | AMD       | MI250/MI210 | AMD_GFX90A        | N/A                | caraway | RHEL9  | `gcc` 13.3.0/`hipcc` 6.2.41133-0 |
 
 ### The Flow of the CI Workflow
 
@@ -24,7 +26,8 @@ As of now, the image is of a UBI 8 system, with Spack-installed compilers and al
 
 #### Triggering the Testing Workflow
 
-This autotesting workflow is triggered by opening a pull request to `main` and also by a handful of actions on such a PR that is already open, including:
+This autotesting workflow is triggered by opening a pull request to `main` and
+also by a handful of actions on such a PR that is already open, including:
 
 - `reopened`
 - `ready_for_review`
@@ -40,8 +43,8 @@ or
 
 > **Actions** -> `<Previously-run SNL-AT2 Workflow/Job>` -> **Re-run `[all,this]` job(s)**.
 
-The AT2 configuration on `blake` currently attempts to keep 3 runners available
-to accept jobs at all times.
+The AT2 configuration on `blake` and `caraway` currently attempts to keep 3
+runners per machine available to accept jobs at all times.
 This workflow is configured to allow concurrent testing, so up to 3 test-matrix
 configurations can run at once.
 The concurrency setting is also configured to kill any active job if another
@@ -58,12 +61,16 @@ instance of this workflow is started for the same PR ref.
 
 ## Development Details
 
-Most of the required configuration is provided by the AT2 docs and instructional Confluence page (on the Sandia network :confused:--reach out if you need access).
+Most of the required configuration is provided by the AT2 docs and instructional
+Confluence page (on the Sandia network :confused:--reach out if you need access).
 However, some non-obvious choices and configurations are listed here.
 
-- To add some info to the testing output, we employ a custom action, cribbed from E3SM/EAMxx, that prints out the workflow's trigger.
+- To add some info to the testing output, we employ a custom action, cribbed
+from E3SM/EAMxx, that prints out the workflow's trigger.
 
 ### Hacks
+
+- [ ] FIXME(@mjs): This should not be necessary any more, after the changes to the haero build. `build-haero.sh` should be functional for this build now.
 
 - For whatever reason, Skywalker does not like building in the `gcc_12-3-0_cuda_12-1` container for the H100 GPU.
   - This appears to be an issue of the (Haero?) build not auto-detecting the correct Compute Capability (CC 9.0 => `sm_90`).
@@ -77,4 +84,4 @@ However, some non-obvious choices and configurations are listed here.
   - One token used to fetch and read/write runner information.
   - **Expires 11 April 2026**
   - One token used fetch and read repository information via the API.
-  - **Expires 2 May 2025**
+  - **Expires 6 May 2026**
