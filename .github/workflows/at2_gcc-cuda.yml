@@ -45,9 +45,9 @@ jobs:
           prec: ${{ inputs.precision || 'ALL' }}
         run: |
           case ${{ env.prec }} in
-            "Debug")
+            "single")
               echo 'precision=["single"]' >> "$GITHUB_OUTPUT" ;;
-            "Release")
+            "double")
               echo 'precision=["double"]' >> "$GITHUB_OUTPUT" ;;
             "ALL")
               echo 'precision=["single", "double"]' >> "$GITHUB_OUTPUT" ;;
@@ -56,8 +56,7 @@ jobs:
           esac
   gcc-cuda:
     runs-on:  [self-hosted, m4xci-snl-cuda, cuda, gcc]
-    # will run other tests in the matrix even if one fails
-    # NOTE: prioritizes extra info over speed, so consider whether this makes sense
+    # will not run other tests in the matrix if one fails
     continue-on-error: false
     needs: define_matrix
     # A build matrix storing all desired configurations.
