@@ -45,11 +45,11 @@ constexpr int nddvels = mam4::seq_drydep::n_drydep;
 
 // find_season_index_at_clat only needs to be executed one time and is small.
 // Thus, execute it only on the host.
-using View1DHost = DeviceType::view_1d<Real>::HostMirror;
-using ConstView1DHost = DeviceType::view_1d<const Real>::HostMirror;
-using View1DIntHost = DeviceType::view_1d<int>::HostMirror;
-using View2DIntHost = DeviceType::view_2d<int>::HostMirror;
-using View3DIntHost = DeviceType::view_3d<int>::HostMirror;
+using View1DHost = DeviceType::view_1d<Real>::host_mirror_type;
+using ConstView1DHost = DeviceType::view_1d<const Real>::host_mirror_type;
+using View1DIntHost = DeviceType::view_1d<int>::host_mirror_type;
+using View2DIntHost = DeviceType::view_2d<int>::host_mirror_type;
+using View3DIntHost = DeviceType::view_3d<int>::host_mirror_type;
 
 using KTH = ekat::KokkosTypes<ekat::HostDevice>;
 
