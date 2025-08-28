@@ -95,7 +95,7 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     set_complex_views_modal_aero(aersol_optics_data);
 
-    auto specrefndxsw_host = ComplexView2D::HostMirror(
+    auto specrefndxsw_host = ComplexView2D::host_mirror_type(
         "specrefndxsw_host", nswbands, maxd_aspectype);
     count = 0;
     for (int j = 0; j < maxd_aspectype; ++j) {
