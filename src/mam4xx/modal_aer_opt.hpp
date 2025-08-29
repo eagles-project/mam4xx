@@ -138,10 +138,9 @@ set_complex_views_modal_aero(AerosolOpticsDeviceData &aersol_optics_data) {
 } // set_complex_views_modal_aero
 
 // reshape specrefindex and copy to device
-inline void
-set_device_specrefindex(const ComplexView2D specrefindex[ntot_amode],
-                        const std::string &wave_type,
-                        const ComplexView2D::host_mirror_type &specrefndx_host) {
+inline void set_device_specrefindex(
+    const ComplexView2D specrefindex[ntot_amode], const std::string &wave_type,
+    const ComplexView2D::host_mirror_type &specrefndx_host) {
 
   std::string view_name;
   int nbands = 0;
@@ -158,7 +157,8 @@ set_device_specrefindex(const ComplexView2D specrefindex[ntot_amode],
     exit(1);
   } // end wave_type
 
-  ComplexView2D::host_mirror_type specrefindex_host(view_name, max_nspec, nbands);
+  ComplexView2D::host_mirror_type specrefindex_host(view_name, max_nspec,
+                                                    nbands);
 
   int nspec_amode[ntot_amode];
   int lspectype_amode[ndrop::maxd_aspectype][ntot_amode];
