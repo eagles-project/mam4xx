@@ -73,15 +73,15 @@ if [[ "$BUILD_TYPE" != "Debug" && "$BUILD_TYPE" != "Release" ]]; then
 fi
 
 # Clone a fresh copy Haero in the current directory. Delete any existing copy.
-if [[ -d $(pwd)/.haero ]]; then
-  rm -rf $(pwd)/.haero
-fi
-echo "Cloning Haero repository into $(pwd)/.haero..."
-git clone git@github.com:eagles-project/haero.git .haero || exit
-cd .haero || exit
-git submodule update --init --recursive || exit
+# if [[ -d $(pwd)/.haero ]]; then
+#   rm -rf $(pwd)/.haero
+# fi
+# echo "Cloning Haero repository into $(pwd)/.haero..."
+# git clone git@github.com:eagles-project/haero.git .haero || exit
+# cd .haero || exit
+# git submodule update --init --recursive || exit
 
-cd ..
+# cd ..
 
 # ==============================================================================
 # below are the default compiler choices for gpu builds and are set based on
