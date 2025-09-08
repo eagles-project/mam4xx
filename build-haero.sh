@@ -110,28 +110,29 @@ if [[ "$DEVICE" == "gpu" ]]; then
   # unless your environment differs from the default
   # ==============================================================================
   if [[ "$GPU_TYPE" == "nvidia" ]]; then
-    echo "GPU_TYPE given as nvidia (${DEVICE_ARCH})--setting default compilers."
-    echo "and modifying nvcc_wrapper with correct architecture flag."
-    CXX="$(pwd)/.haero/ext/ekat/extern/kokkos/bin/nvcc_wrapper"
-    nvcw=$CXX
+    # echo "GPU_TYPE given as nvidia (${DEVICE_ARCH})--setting default compilers."
+    # echo "and modifying nvcc_wrapper with correct architecture flag."
+    # CXX="$(pwd)/.haero/ext/ekat/extern/kokkos/bin/nvcc_wrapper"
+    # nvcw=$CXX
+    nvcw=nvcc
     CC=gcc
     echo "C++ compiler: ${CXX}"
     echo "C compiler: ${CC}"
     # ==========================================================================
-    if [[ -x "$nvcw" ]]; then
-      # FIXME: this will not work for compute capbility 10.0
-      CUDA_GEN=${DEVICE_ARCH:(-2)}
-      # FIXME: this assumes a default value in nvcc_wrapper
-      sed -i s/default_arch=\"sm_70\"/default_arch=\"sm_"$CUDA_GEN"\"/g "${nvcw}"
-      echo "===================================================================="
-      echo "nvcc_wrapper modified--verify that default_arch=sm_${CUDA_GEN}"
-      echo "===================================================================="
-      grep -i "default_arch=" "${nvcw}"
-      echo "===================================================================="
-    else
-      echo "ERROR: nvcc_wrapper not found at expected location for nvidia gpu build."
-      exit
-    fi
+    # if [[ -x "$nvcw" ]]; then
+    #   # FIXME: this will not work for compute capbility 10.0
+    #   CUDA_GEN=${DEVICE_ARCH:(-2)}
+    #   # FIXME: this assumes a default value in nvcc_wrapper
+    #   sed -i s/default_arch=\"sm_70\"/default_arch=\"sm_"$CUDA_GEN"\"/g "${nvcw}"
+    #   echo "===================================================================="
+    #   echo "nvcc_wrapper modified--verify that default_arch=sm_${CUDA_GEN}"
+    #   echo "===================================================================="
+    #   grep -i "default_arch=" "${nvcw}"
+    #   echo "===================================================================="
+    # else
+    #   echo "ERROR: nvcc_wrapper not found at expected location for nvidia gpu build."
+    #   exit
+    # fi
 # ==============================================================================
 # AMD GPU + HIP and clang
 # ==============================================================================
