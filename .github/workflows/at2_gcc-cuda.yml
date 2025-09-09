@@ -79,27 +79,27 @@ jobs:
         with:
           repository: eagles-project/haero
           submodules: recursive
-          path: .haero
+          path: haero_src
       - name: Show action trigger
         uses: ./.github/actions/show-workflow-trigger
       - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
-        run: |
-          ./build-haero.sh ./haero_install gpu double debug nvidia HOPPER90
         # run: |
-        #   cmake -S haero_src -B haero_build \
-        #     -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-        #     -DCMAKE_INSTALL_PREFIX="haero_install" \
-        #     -DCMAKE_C_COMPILER=gcc \
-        #     -DCMAKE_CXX_COMPILER=nvcc \
-        #     -DHAERO_SKIP_FIND_YAML_CPP=ON \
-        #     -DHAERO_ENABLE_MPI=OFF \
-        #     -DHAERO_ENABLE_GPU=ON \
-        #     -DHAERO_PRECISION=${{ matrix.fp-precision }} \
-        #     -DKokkos_ARCH_HOPPER90=ON \
-        #     -DHAERO_DEVICE_ARCH=HOPPER90
-        #   cd haero_build
-        #   make -j
-        #   make install
+        #   ./build-haero.sh ./haero_install gpu double debug nvidia HOPPER90
+        run: |
+          cmake -S ./haero_src -B ./haero_build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+            -DCMAKE_INSTALL_PREFIX=haero_install \
+            -DCMAKE_C_COMPILER=gcc \
+            -DHAERO_SKIP_FIND_YAML_CPP=ON \
+            -DCMAKE_CXX_COMPILER=nvcc \
+            -DHAERO_ENABLE_MPI=OFF \
+            -DHAERO_ENABLE_GPU=ON \
+            -DHAERO_PRECISION=${{ matrix.fp-precision }} \
+            -DKokkos_ARCH_HOPPPER90:BOOL=ON \
+            -DHAERO_DEVICE_ARCH=HOPPPER90
+          cd haero_build
+          make -j
+          make install
       - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |
           cmake -S . -B build \
