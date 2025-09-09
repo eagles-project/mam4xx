@@ -80,6 +80,7 @@ jobs:
           repository: eagles-project/haero
           submodules: recursive
           path: haero_src
+          ref: 'mjs/compiler-flags-4cuda'
       - name: Show action trigger
         uses: ./.github/actions/show-workflow-trigger
       - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
