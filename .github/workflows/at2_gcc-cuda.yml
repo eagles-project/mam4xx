@@ -97,7 +97,8 @@ jobs:
             -DHAERO_ENABLE_GPU=ON \
             -DHAERO_PRECISION=${{ matrix.fp-precision }} \
             -DKokkos_ARCH_HOPPPER90:BOOL=ON \
-            -DHAERO_DEVICE_ARCH=HOPPPER90
+            -DHAERO_DEVICE_ARCH=HOPPPER90 \
+            -DKokkos_COMPILE_LANGUAGE=CUDA
           cd haero_build
           make -j
           make install
