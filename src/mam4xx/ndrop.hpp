@@ -1296,20 +1296,32 @@ void update_from_explmix(
         Kokkos::TeamVectorRange(team, top_lev, pver), [&](int k) {
           const int kp1 = haero::min(k + 1, pver - 1);
           const int km1 = haero::max(k - 1, top_lev);
+	  const View1D &raercol_km1_nsav    = raercol[km1][nsav];
+	  const View1D &raercol_k_nsav      = raercol[k][nsav];
+	  const View1D &raercol_kp1_nsav    = raercol[kp1][nsav];
+	  const View1D &raercol_k_nnew      = raercol[k][nnew];
+	  const View1D &raercol_cw_km1_nsav = raercol_cw[km1][nsav];
+	  const View1D &raercol_cw_k_nsav   = raercol_cw[k][nsav];
+	  const View1D &raercol_cw_kp1_nsav = raercol_cw[kp1][nsav];
+	  const View1D &raercol_cw_k_nnew   = raercol_cw[k][nnew];
           // update droplet source
           // rce-comment- activation source in layer k involves particles from k+1
           //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
           Real srcn = zero;
-          for (int imode = 0; imode < ntot_amode; imode++) {
-            const int mm = mam_idx[imode][0] - 1;
-	    if (k < pver - 1) {
-              srcn += nact(k, imode) * raercol[kp1][nsav](mm);
-	    } else {
-              const Real tmpa = raercol[k][nsav](mm) * nact(k, imode) +
-                     raercol_cw[k][nsav](mm) * nact(k, imode);
+	  if (k < pver - 1) {
+            for (int imode = 0; imode < ntot_amode; imode++) {
+              const int mm = mam_idx[imode][0] - 1;
+              srcn += nact(k, imode) * raercol_kp1_nsav(mm);
+            } // end imode
+	  } else {
+            for (int imode = 0; imode < ntot_amode; imode++) {
+              const int mm = mam_idx[imode][0] - 1;
+              const Real tmpa = 
+	        raercol_k_nsav(mm) * nact(k, imode) +
+                raercol_cw_k_nsav(mm) * nact(k, imode);
               srcn += haero::max(zero, tmpa);
-	    }
-          } // end imode
+            } // end imode
+	   }
 
           // update aerosol number
           // rce-comment
@@ -1332,26 +1344,26 @@ void update_from_explmix(
 	      Real source = 0;
 	      if (k < pver - 1) {
 		const Real act = lspec ? mact(k, imode) : nact(k, imode);
-                source = act * raercol[kp1][nsav](mm);
+                source = act * raercol_kp1_nsav(mm);
 	      } else {
-                const Real tmpa = raercol[k][nsav](mm) * nact(k, imode) +
-                       raercol_cw[k][nsav](mm) * nact(k, imode);
+                const Real tmpa = raercol_k_nsav(mm) * nact(k, imode) +
+                       raercol_cw_k_nsav(mm) * nact(k, imode);
                 source = haero::max(zero, tmpa);
 	      }
               // update aerosol species mass
-              explmix(raercol_cw[km1][nsav](mm), raercol_cw[k][nsav](mm),
-                      raercol_cw[kp1][nsav](mm),
-                      raercol_cw[k][nnew](mm), // output
+              explmix(raercol_cw_km1_nsav(mm), raercol_cw_k_nsav(mm),
+                      raercol_cw_kp1_nsav(mm),
+                      raercol_cw_k_nnew(mm), // output
                       source, eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
                       overlapm(k), dtmix);
               if (enable_aero_vertical_mix) {
-                explmix(raercol[km1][nsav](mm), raercol[k][nsav](mm),
-                        raercol[kp1][nsav](mm),
-                        raercol[k][nnew](mm), // output
+                explmix(raercol_km1_nsav(mm), raercol_k_nsav(mm),
+                        raercol_kp1_nsav(mm),
+                        raercol_k_nnew(mm), // output
                         source, eddy_diff_kp(k), eddy_diff_km(k),
                         overlapp(k), overlapm(k), dtmix,
-                        raercol_cw[km1][nsav](mm),
-                        raercol_cw[kp1][nsav](mm)); // optional in
+                        raercol_cw_km1_nsav(mm),
+                        raercol_cw_kp1_nsav(mm)); // optional in
               }
             } // lspec loop
           } // imode loop
