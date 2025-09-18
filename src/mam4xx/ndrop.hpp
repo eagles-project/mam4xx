@@ -1190,10 +1190,8 @@ void update_from_explmix(
     const ColumnView &overlapm, // cloud overlap involving level kk-1 [fraction]
     const ColumnView &eddy_diff_kp, // zn*zs*density*diffusivity [/s]
     const ColumnView &eddy_diff_km, // zn*zs*density*diffusivity   [/s]
-    const ColumnView &qncld, // updated cloud droplet number mixing ratio [#/kg]
-    const ColumnView &srcn, // droplet source rate [/s]
-    // source rate for activated number or species mass [/s]
-    const ColumnView &source) {
+    const ColumnView &qncld // updated cloud droplet number mixing ratio [#/kg]
+    ) {
 
   // threshold cloud fraction to compute overlap [fraction]
   // BAD CONSTANT
@@ -1301,15 +1299,15 @@ void update_from_explmix(
           // update droplet source
           // rce-comment- activation source in layer k involves particles from k+1
           //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
-          srcn(k) = zero;
+          Real srcn = zero;
           for (int imode = 0; imode < ntot_amode; imode++) {
             const int mm = mam_idx[imode][0] - 1;
 	    if (k < pver - 1) {
-              srcn(k) += nact(k, imode) * raercol[kp1][nsav](mm);
+              srcn += nact(k, imode) * raercol[kp1][nsav](mm);
 	    } else {
               const Real tmpa = raercol[k][nsav](mm) * nact(k, imode) +
                      raercol_cw[k][nsav](mm) * nact(k, imode);
-              srcn(k) += haero::max(zero, tmpa);
+              srcn += haero::max(zero, tmpa);
 	    }
           } // end imode
 
@@ -1325,31 +1323,32 @@ void update_from_explmix(
           // source(:)= mact(:,m)*(raercol(:,mm,nsav))
           if (enable_aero_vertical_mix) {
             explmix(qncld(km1), qncld(k), qncld(kp1), qcld(k),
-                    srcn(k), eddy_diff_kp(k), eddy_diff_km(k),
+                    srcn, eddy_diff_kp(k), eddy_diff_km(k),
                     overlapp(k), overlapm(k), dtmix);
           }
           for (int imode = 0; imode < ntot_amode; imode++) {
             for (int lspec = 0; lspec < nspec_amode[imode] + 1; lspec++) {
               const int mm = mam_idx[imode][lspec] - 1;
+	      Real source = 0;
 	      if (k < pver - 1) {
 		const Real act = lspec ? mact(k, imode) : nact(k, imode);
-                source(k) = act * raercol[kp1][nsav](mm);
+                source = act * raercol[kp1][nsav](mm);
 	      } else {
                 const Real tmpa = raercol[k][nsav](mm) * nact(k, imode) +
                        raercol_cw[k][nsav](mm) * nact(k, imode);
-                source(k) = haero::max(zero, tmpa);
+                source = haero::max(zero, tmpa);
 	      }
               // update aerosol species mass
               explmix(raercol_cw[km1][nsav](mm), raercol_cw[k][nsav](mm),
                       raercol_cw[kp1][nsav](mm),
                       raercol_cw[k][nnew](mm), // output
-                      source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
+                      source, eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
                       overlapm(k), dtmix);
               if (enable_aero_vertical_mix) {
                 explmix(raercol[km1][nsav](mm), raercol[k][nsav](mm),
                         raercol[kp1][nsav](mm),
                         raercol[k][nnew](mm), // output
-                        source(k), eddy_diff_kp(k), eddy_diff_km(k),
+                        source, eddy_diff_kp(k), eddy_diff_km(k),
                         overlapp(k), overlapm(k), dtmix,
                         raercol_cw[km1][nsav](mm),
                         raercol_cw[kp1][nsav](mm)); // optional in
@@ -1624,8 +1623,7 @@ void dropmixnuc(
                       qcld, raercol, raercol_cw, nsav, nnew, nspec_amode,
                       mam_idx, enable_aero_vertical_mix, top_lev,
                       // work vars
-                      overlapp, overlapm, eddy_diff_kp, eddy_diff_km, qncld,
-		      srcn, source);
+                      overlapp, overlapm, eddy_diff_kp, eddy_diff_km, qncld);
 
   team.team_barrier();
 
