@@ -1355,8 +1355,7 @@ void update_from_explmix(
                     explmix(raercol_km1_nsav(mm), raercol_k_nsav(mm),
                             raercol_kp1_nsav(mm), source, eddy_diff_kp(k),
                             eddy_diff_km(k), overlapp(k), overlapm(k), dtmix,
-                            raercol_cw_km1_nsav(mm),
-                            raercol_cw_kp1_nsav(mm)); // optional in
+                            raercol_cw_km1_nsav(mm), raercol_cw_kp1_nsav(mm));
               }
             } // lspec loop
           }   // imode loop
