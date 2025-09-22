@@ -181,14 +181,14 @@ void aero_model_wetdep(Ensemble *ensemble) {
               });
           team.team_barrier();
 
-          const Real sol_facti_cloud_borne = 1.00;
-          const Real sol_factic_cloud_borne = 0.00;
-          const Real sol_factb_below_cloud = 0.03;
-          const Real f_act_conv_below_cloud = 0.40;
+          const Real scav_fraction_in_cloud_strat = 1.00;
+          const Real scav_fraction_in_cloud_conv = 0.00;
+          const Real cav_fraction_below_cloud_strat = 0.03;
+          const Real activation_fraction_in_cloud_conv = 0.40;
           wetdep::aero_model_wetdep(
-              team, atm, progs_in, tends_in, dt, sol_facti_cloud_borne,
-              sol_factic_cloud_borne, sol_factb_below_cloud,
-              f_act_conv_below_cloud,
+              team, atm, progs_in, tends_in, dt, scav_fraction_in_cloud_strat,
+              scav_fraction_in_cloud_conv, cav_fraction_below_cloud_strat,
+              activation_fraction_in_cloud_conv,
               // inputs
               cldt, rprdsh, rprddp, evapcdp, evapcsh, dp_frac, sh_frac, icwmrdp,
               icwmrsh, evapr,

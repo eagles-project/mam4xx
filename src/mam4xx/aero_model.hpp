@@ -628,10 +628,10 @@ inline void modal_aero_bcscavcoef_init(
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
 void define_act_frac(const int lphase, const int imode,
-                     const Real sol_facti_cloud_borne,
-                     const Real sol_factic_cloud_borne,
-                     const Real sol_factb_below_cloud,
-                     const Real f_act_conv_below_cloud, Real &sol_facti,
+                     const Real scav_fraction_in_cloud_strat,
+                     const Real scav_fraction_in_cloud_conv,
+                     const Real scav_fraction_below_cloud_strat,
+                     const Real activation_fraction_in_cloud_conv, Real &sol_facti,
                      Real &sol_factic, Real &sol_factb, Real &f_act_conv) {
   // clang-format off
   // -----------------------------------------------------------------------
@@ -680,20 +680,20 @@ void define_act_frac(const int lphase, const int imode,
     // and turn off the outfld SFWET, SFSIC, SFSID, SFSEC, and SFSED calls
     // for (stratiform)-cloudborne aerosols, convective wet removal
     // (all forms) is zero, so no action is needed
-    sol_factic = sol_factic_cloud_borne;
+    sol_factic = scav_fraction_in_cloud_conv;
     // all below-cloud scav ON (0.1 "tuning factor")
-    sol_factb = sol_factb_below_cloud;
+    sol_factb = scav_fraction_below_cloud_strat;
     if (imode == modeptr_pcarbon)
       f_act_conv = 0.0;
     else
-      f_act_conv = f_act_conv_below_cloud;
+      f_act_conv = activation_fraction_in_cloud_conv;
 
   } else {
     // cloud-borne aerosol (borne by stratiform cloud drops)
     // all below-cloud scav OFF (anything cloud-borne is located "in-cloud")
     sol_factb = 0.0;
     // strat  in-cloud scav totally ON for cloud-borne
-    sol_facti = haero::min(0.6, sol_facti_cloud_borne);
+    sol_facti = haero::min(0.6, scav_fraction_in_cloud_strat);
     // conv   in-cloud scav OFF (having this on would mean
     // that conv precip collects strat droplets)
     sol_factic = 0.0;
