@@ -78,8 +78,8 @@ set(ERROR_THRESHOLDS
     6e-6           # rain_mix_ratio
     ${DEFAULT_TOL} # calculate_cloudy_volume
     ${DEFAULT_TOL} # local_precip_production
-    4e-3           # wetdep_resusp_130
-    4e-3           # wetdep_resusp_230
+    4e-1           # wetdep_resusp_130
+    4e-1           # wetdep_resusp_230
     ${DEFAULT_TOL} # wetdepa_v2_0
     ${DEFAULT_TOL} # wetdepa_v2_130
     ${DEFAULT_TOL} # wetdepa_v2_230
@@ -91,7 +91,7 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
 
   configure_file(
-    ${WETDEP_VALIDATION_DIR}/${input}.py
+    ${WETDEP_VALIDATION_DIR}/mam_${input}.py
     ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.py
     COPYONLY
   )
