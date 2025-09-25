@@ -91,8 +91,8 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
 
   configure_file(
-    ${WETDEP_VALIDATION_DIR}/${input}.py
-    ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.py
+    ${WETDEP_VALIDATION_DIR}/${input}_input_ts_355.yaml
+    ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.yaml
     COPYONLY
   )
 
