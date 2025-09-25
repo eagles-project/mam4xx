@@ -1,4 +1,4 @@
-name: "GPU AT2 gcc 12.3 cuda 12.1"
+name: "GPU AT2 gcc 13.3 hip 6.2"
 
 on:
   workflow_call:
@@ -55,7 +55,7 @@ jobs:
               echo 'precision=["single", "double"]' >> "$GITHUB_OUTPUT" ;;
           esac
   gcc-cuda:
-    runs-on:  [self-hosted, m4xci-snl-cuda, cuda, gcc]
+    runs-on:  [self-hosted, m4xci-snl-hip, hip, gcc]
     # will not run other tests in the matrix if one fails
     continue-on-error: false
     needs: define_matrix
@@ -66,10 +66,7 @@ jobs:
         # to get the array instead of a string, need the fromJSON()
         build-type: ${{ fromJSON(needs.define_matrix.outputs.build_type) }}
         fp-precision: ${{ fromJSON(needs.define_matrix.outputs.precision) }}
-    name: gcc-cuda / ${{ matrix.build-type }} - ${{ matrix.fp-precision }}
-    env:
-      # relative path to nvcc_wrapper from mam4xx root
-      haero_nvcw: "haero_src/ext/ekat/extern/kokkos/bin/nvcc_wrapper"
+    name: gcc-hip / ${{ matrix.build-type }} - ${{ matrix.fp-precision }}
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
@@ -85,68 +82,26 @@ jobs:
           path: haero_src
       - name: Show action trigger
         uses: ./.github/actions/show-workflow-trigger
-      - name: Get CUDA Arch
-        # NOTE: for now, only running on an H100 machine, but keep anyway
-        run: |
-          # Ensure nvidia-smi is available
-          if ! command -v nvidia-smi &> /dev/null; then
-              echo "nvidia-smi could not be found. Please ensure you have Nvidia drivers installed."
-              exit 1
-          fi
-
-          # Get the GPU model from nvidia-smi, and set env for next step
-          gpu_model=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -n 1)
-          case "$gpu_model" in
-              *"H100"*)
-                  echo "H100 detected--setting Hopper90 architecture"
-                  echo "Hopper=ON" >> $GITHUB_ENV
-                  echo "CUDA_ARCH=90" >> $GITHUB_ENV
-                  echo "CUDA_DEVICE=HOPPER90" >> $GITHUB_ENV
-                  ;;
-              *"A100"*)
-                  echo "A100 detected--setting Ampere80 architecture"
-                  echo "Ampere=ON" >> $GITHUB_ENV
-                  echo "CUDA_ARCH=80" >> $GITHUB_ENV
-                  echo "CUDA_DEVICE=AMPERE80" >> $GITHUB_ENV
-                  ;;
-              *"V100"*)
-                  echo "V100 detected--setting Volta70 architecture"
-                  echo "Volta=ON" >> $GITHUB_ENV
-                  echo "CUDA_ARCH=70" >> $GITHUB_ENV
-                  echo "CUDA_DEVICE=VOLTA70" >> $GITHUB_ENV
-                  ;;
-              *)
-                  echo "Unsupported GPU model: $gpu_model"
-                  exit 1
-                  ;;
-          esac
-      - name: Set nvcc_wrapper Arch
-        run: |
-          nvcw="$(pwd)/${haero_nvcw}"
-          sed -i s/default_arch=\"sm_70\"/default_arch=\"sm_"$CUDA_ARCH"\"/g "${nvcw}"
-          echo "===================================="
-          grep -i "default_arch=" "${nvcw}"
       - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |
-          nvcw="$(pwd)/${haero_nvcw}"
           cmake -S haero_src -B haero_build \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
             -DCMAKE_INSTALL_PREFIX="haero_install" \
             -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER="${nvcw}" \
+            -DCMAKE_CXX_COMPILER=hipcc \
+            -DHAERO_SKIP_FIND_YAML_CPP=ON \
             -DHAERO_ENABLE_MPI=OFF \
             -DHAERO_ENABLE_GPU=ON \
             -DHAERO_PRECISION=${{ matrix.fp-precision }} \
-            -DKokkos_ARCH_$CUDA_DEVICE=ON \
-            -DHAERO_DEVICE_ARCH=$CUDA_DEVICE
+            -DKokkos_ARCH_AMD_GFX90A=ON \
+            -DHAERO_DEVICE_ARCH=AMD_GFX90A
           cd haero_build
           make -j
           make install
       - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |
-          nvcw="$(pwd)/${haero_nvcw}"
           cmake -S . -B build \
-            -DCMAKE_CXX_COMPILER="${nvcw}" \
+            -DCMAKE_CXX_COMPILER=hipcc \
             -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
@@ -154,7 +109,7 @@ jobs:
             -DNUM_VERTICAL_LEVELS=72 \
             -DENABLE_COVERAGE=OFF \
             -DENABLE_SKYWALKER=ON \
-            -DCMAKE_CUDA_ARCHITECTURES=$CUDA_ARCH \
+            -DCMAKE_CUDA_ARCHITECTURES=AMD_GFX90A \
             -G "Unix Makefiles"
       - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |

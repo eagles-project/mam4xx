@@ -12,17 +12,18 @@ To do this, testing is initialized via the top-level workflow, `MAM4xx Autoteste
 
 #### GPU-based Testing
 
-| Test Name                         | GPU Brand | GPU Type | Micoarchitecture | Compute Capability | Machine | Compilers                    |
-| --------------------------------- | --------- | -------- | ---------------- | ------------------ | ------- | ---------------------------- |
-| GPU AT2 gcc 12.3 cuda 12.1        | NVIDIA    | H100     | Hopper           | 9.0                | blake   | `gcc` 12.3.0/`nvcc` 12.1.105 |
+| Test Name                         | GPU Brand | GPU Type    | Microarchitecture | Compute Capability | Machine | OS     | Compilers                        |
+| --------------------------------- | --------- | ------------| ----------------- | ------------------ | ------- | ------ | -------------------------------- |
+| GPU AT2 gcc 12.3 cuda 12.1        | NVIDIA    | H100        | Hopper            | 9.0                | blake   | RHEL8  | `gcc` 12.3.0/`nvcc` 12.1.105     |
+| GPU AT2 gcc 13.3 hip 6.2          | AMD       | MI250/MI210 | AMD_GFX90A        | N/A                | caraway | RHEL9  | `gcc` 13.3.0/`hipcc` 6.2.41133-0 |
 
 #### CPU-based Testing
 
-**Note:** These are the current specs for GitHub's Ubuntu 22.04 runner and are subject to change.
+**Note:** These are the *current* specs for GitHub's Ubuntu 22.04 runner and are subject to change.
 
-| Test Name                                    | OS                   | Machine        | Compiler   |
-| -------------------------------------------- | -------------------- | -------------- | ---------- |
-| GitHub CPU Auto-test Ubuntu 22.04[^gh-ubu2204] | Linux - Ubuntu 22.04 | GitHub Runners | `gcc` 12.3 |
+| Test Name                               | OS                   | Machine        | Compiler   |
+| --------------------------------------- | -------------------- | -------------- | ---------- |
+| CPU GH-runner Ubuntu 22.04[^gh-ubu2204] | Linux - Ubuntu 22.04 | GitHub Runners | `gcc` 12.3 |
 
 ### The Flow of the CI Workflow
 
@@ -47,6 +48,13 @@ Based on the trigger and/or inputs, `MAM4xx Autotester` dispatches sub-workflows
 - The unit/validation tests that are run are determined by the MAM4xx CMake/CTest configuration.
 - ***Note:*** AT2 = "Autotester 2," the second generation of a Sandia-developed GitHub-based testing product.
 - See the [AT2 README](./AT2-README.md) for details about the implementation of the AT2 product.
+
+#### GPU AT2 `gcc` 13.3 `hip` 6.2
+
+- This is largely identical to the above CUDA-based workflow, the salient difference being that we run on AMD hardware, using the `hipcc` C++ compiler.
+- The `caraway` machine has 2 different AMD_GFX90A-architecture MI200-series GPUs available, MI210 and MI250.
+- As of the time of writing, autotesting jobs are assigned one or the other based on availability, to speed up matters.
+  - ***Note:*** This could change based on future needs.
 
 #### GitHub CPU Auto-test Ubuntu 22.04
 
@@ -86,6 +94,7 @@ The current options when manually triggering a workflow are:
 - Test Machine Architecture
   - Current Options:
     - `GPU-NVIDIA_H100`
+    - `GPU-AMD_MI200-series`
     - `CPU-Ubuntu_22-04`
     - `ALL`
 - Floating-point Precision
@@ -135,7 +144,7 @@ Refer to the section on [Other Types of Job Control](./AT2-README.md#other-types
 - [x] Unify all CI into a single top-level yaml file that calls the sub-cases.
   - This should provide finer control over what runs and when.
   - @mjschmidt271
-- [ ] Add testing for AMD GPUs on `caraway`.
+- [x] Add testing for AMD GPUs on `caraway`.
   - @jaelynlitz - WIP
 
 ### Low-priority
