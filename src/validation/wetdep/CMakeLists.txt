@@ -91,13 +91,13 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
 
   configure_file(
-    ${WETDEP_VALIDATION_DIR}/${input}_input_ts_355.yaml
+    ${WETDEP_VALIDATION_DIR}/${input}.yaml
     ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.yaml
     COPYONLY
   )
 
   # add a test to run the skywalker driver
-  add_test(run_${input} wetdep_driver ${WETDEP_VALIDATION_DIR}/${input}_input_ts_355.yaml)
+  add_test(run_${input} wetdep_driver ${WETDEP_VALIDATION_DIR}/${input}.yaml)
   set_tests_properties(run_${input} PROPERTIES LABELS "${TestLabel}")
 
   # add a test to validate mam4xx's results against the baseline.
