@@ -631,8 +631,9 @@ void define_act_frac(const int lphase, const int imode,
                      const Real scav_fraction_in_cloud_strat,
                      const Real scav_fraction_in_cloud_conv,
                      const Real scav_fraction_below_cloud_strat,
-                     const Real activation_fraction_in_cloud_conv, Real &sol_facti,
-                     Real &sol_factic, Real &sol_factb, Real &f_act_conv) {
+                     const Real activation_fraction_in_cloud_conv,
+                     Real &sol_facti, Real &sol_factic, Real &sol_factb,
+                     Real &f_act_conv) {
   // clang-format off
   // -----------------------------------------------------------------------
   //  define sol_factb and sol_facti values, and f_act_conv

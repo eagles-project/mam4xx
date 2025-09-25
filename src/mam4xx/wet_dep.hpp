@@ -1312,7 +1312,8 @@ void define_act_frac(const ThreadTeam &team, const View1D &sol_facti,
                      const Real activation_fraction_in_cloud_conv) {
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     aero_model::define_act_frac(lphase, imode, scav_fraction_in_cloud_strat,
-                                scav_fraction_in_cloud_conv, scav_fraction_below_cloud_strat,
+                                scav_fraction_in_cloud_conv,
+                                scav_fraction_below_cloud_strat,
                                 activation_fraction_in_cloud_conv, sol_facti[k],
                                 sol_factic[k], sol_factb[k], f_act_conv[k]);
   });
@@ -1571,7 +1572,8 @@ KOKKOS_INLINE_FUNCTION
 void aero_model_wetdep(
     const ThreadTeam &team, const Atmosphere &atm, Prognostics &progs,
     Tendencies &tends, const Real dt, const Real scav_fraction_in_cloud_strat,
-    const Real scav_fraction_in_cloud_conv, const Real scav_fraction_below_cloud_strat,
+    const Real scav_fraction_in_cloud_conv,
+    const Real scav_fraction_below_cloud_strat,
     const Real activation_fraction_in_cloud_conv,
     // inputs
     const haero::ConstColumnView &cldt, const haero::ConstColumnView &rprdsh,
@@ -1971,8 +1973,9 @@ void aero_model_wetdep(
             // outputs
             sol_facti, sol_factic, sol_factb, f_act_conv,
             // inputs
-            lphase, imode, nlev, scav_fraction_in_cloud_strat, scav_fraction_in_cloud_conv,
-            scav_fraction_below_cloud_strat, activation_fraction_in_cloud_conv);
+            lphase, imode, nlev, scav_fraction_in_cloud_strat,
+            scav_fraction_in_cloud_conv, scav_fraction_below_cloud_strat,
+            activation_fraction_in_cloud_conv);
 
         // REASTER 08/12/2015 - changed ordering (mass then number) for
         // prevap resuspend to coarse loop over number + chem constituents +
