@@ -28,6 +28,8 @@ endforeach()
 
 # Run the driver in several configurations to produce datasets.
 
+set(TestLabel "coagulation")
+
 # Aging
 foreach (input
          coag_1subarea
@@ -46,9 +48,11 @@ foreach (input
 
   # add a test to run the skywalker driver
   add_test(run_${input} coagulation_driver ${COAGULATION_VALIDATION_DIR}/${input}.yaml)
+  set_tests_properties(run_${input} PROPERTIES LABELS "${TestLabel}")
   
   # add a test to validate mam4xx's results against the baseline.
   add_test(validate_${input} python3 compare_coag_validation.py mam4xx_${input}.py mam_${input}.py)
+  set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
   endforeach() 
 
 

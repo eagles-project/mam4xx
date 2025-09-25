@@ -63,7 +63,7 @@ set(ERROR_THRESHOLDS
     ${DEFAULT_TOL} # calculate_uustar
     1e-9           # drydep_xactive
     ${DEFAULT_TOL} # calculate_gas_drydep_vlc_and_flux
-    0 # find_season_index
+    0              # find_season_index
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)

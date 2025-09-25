@@ -31,6 +31,7 @@ target_link_libraries(drydep_driver skywalker;validation;haero)
      COPYONLY
    )
 
+set(TestLabel "drydep")
 # Run the driver in several configurations to produce datasets.
 function(add_drydep_test input_name)
   string(REPLACE "_input_" "_output_"  output_name ${input_name})
@@ -39,19 +40,21 @@ function(add_drydep_test input_name)
   configure_file(${DRYDEP_VALIDATION_DIR}/${output_name}.py ${CMAKE_CURRENT_BINARY_DIR}/${output_name}.py COPYONLY)
   # add a test to run the skywalker driver
   add_test(run_${test_name} drydep_driver ${DRYDEP_VALIDATION_DIR}/${input_name}.yaml)
+  set_tests_properties(run_${input} PROPERTIES LABELS "${TestLabel}")
   # add a test to validate mam4xx's results against the baseline.
   add_test(validate_${test_name} python3 compare_drydep.py mam4xx_${input_name}.py ${output_name}.py)
   set_tests_properties(validate_${test_name} PROPERTIES DEPENDS run_${test_name})
+  set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
 endfunction()
 
 foreach (input
-          gravit_settling_velocity
-          air_dynamic_viscosity
-          air_kinematic_viscosity
-          radius_for_moment
-          schmidt_number
-          slip_correction_factor
-          )
+         gravit_settling_velocity
+         air_dynamic_viscosity
+         air_kinematic_viscosity
+         radius_for_moment
+         schmidt_number
+         slip_correction_factor
+         )
   add_drydep_test(${input})
 endforeach() 
 
@@ -62,7 +65,7 @@ foreach (test_name
     depvel_part
     )
     foreach (ts
-	#1381 1382 1383 1384 1385 1386 1387 1388 1389 1390 1391 1392 
+	     #1381 1382 1383 1384 1385 1386 1387 1388 1389 1390 1391 1392
        1393 #1394 1395 1396 1397 1398 1399 1400 1401 1402 1403 1404 
        #1405 1406 1407 1408 1409 1410 1411 1412 1413 1414 1415 1416
         )

@@ -41,6 +41,8 @@ target_link_libraries(hetfrz_driver skywalker;validation;haero)
      COPYONLY
    )
 
+ set(TestLabel "hetfrz")
+
 # Run the driver in several configurations to produce datasets.
 
 foreach (input
@@ -78,10 +80,12 @@ foreach (input
 
   # add a test to run the skywalker driver
   add_test(run_${input} hetfrz_driver ${HETFRZ_VALIDATION_DIR}/${input}.yaml)
+  set_tests_properties(run_${input} PROPERTIES LABELS "${TestLabel}")
   
   # add a test to validate mam4xx's results against the baseline.
   add_test(validate_${input} python3 compare_hetfzr.py mam4xx_${input}.py ${input}.py)
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
+  set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
 endforeach() 
 
 
