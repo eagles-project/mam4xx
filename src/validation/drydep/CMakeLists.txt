@@ -40,11 +40,11 @@ function(add_drydep_test input_name)
   configure_file(${DRYDEP_VALIDATION_DIR}/${output_name}.py ${CMAKE_CURRENT_BINARY_DIR}/${output_name}.py COPYONLY)
   # add a test to run the skywalker driver
   add_test(run_${test_name} drydep_driver ${DRYDEP_VALIDATION_DIR}/${input_name}.yaml)
-  set_tests_properties(run_${input} PROPERTIES LABELS "${TestLabel}")
+  set_tests_properties(run_${test_name} PROPERTIES LABELS "${TestLabel}")
   # add a test to validate mam4xx's results against the baseline.
   add_test(validate_${test_name} python3 compare_drydep.py mam4xx_${input_name}.py ${output_name}.py)
   set_tests_properties(validate_${test_name} PROPERTIES DEPENDS run_${test_name})
-  set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
+  set_tests_properties(validate_${test_name} PROPERTIES LABELS ${TestLabel})
 endfunction()
 
 foreach (input
