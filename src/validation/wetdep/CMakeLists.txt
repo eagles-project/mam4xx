@@ -36,27 +36,27 @@ endforeach()
 
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
-       clddiag
-       update_scavenging_0
-       update_scavenging_130
-       update_scavenging_230
-       wetdep_prevap_130
-       wetdep_prevap_230
-       wetdep_resusp_nonlinear_130
-       wetdep_resusp_nonlinear_230
-       wetdep_resusp_noprecip_130
-       wetdep_resusp_noprecip_230
-       wetdep_scavenging_true
-       wetdep_scavenging_false
-       compute_evap_frac
-       rain_mix_ratio
-       calculate_cloudy_volume
-       local_precip_production
-       wetdep_resusp_130
-       wetdep_resusp_230
-       wetdepa_v2_0
-       wetdepa_v2_130
-       wetdepa_v2_230
+    clddiag
+    update_scavenging_0
+    update_scavenging_130
+    update_scavenging_230
+    wetdep_prevap_130
+    wetdep_prevap_230
+    wetdep_resusp_nonlinear_130
+    wetdep_resusp_nonlinear_230
+    wetdep_resusp_noprecip_130
+    wetdep_resusp_noprecip_230
+    wetdep_scavenging_true
+    wetdep_scavenging_false
+    compute_evap_frac
+    rain_mix_ratio
+    calculate_cloudy_volume
+    local_precip_production
+    wetdep_resusp_130
+    wetdep_resusp_230
+    wetdepa_v2_0
+    wetdepa_v2_130
+    wetdepa_v2_230
     )
 
 set(DEFAULT_TOL 1e-6)
@@ -91,8 +91,8 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
 
   configure_file(
-    ${WETDEP_VALIDATION_DIR}/${input}.yaml
-    ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.yaml
+    ${WETDEP_VALIDATION_DIR}/${input}.py
+    ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.py
     COPYONLY
   )
 
