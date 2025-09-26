@@ -32,6 +32,8 @@ target_link_libraries(water_uptake_driver skywalker;validation;haero)
 
 # Run the driver in several configurations to produce datasets.
 
+set(TestLabel "water_uptake")
+
 foreach (input
           find_real_solution
           makoh_quartic
@@ -54,7 +56,9 @@ foreach (input
 
   # add a test to run the skywalker driver
    add_test(run_${input} water_uptake_driver ${WATER_UPTAKE_VALIDATION_DIR}/${input}.yaml)
-  
+   set_tests_properties(run_${input} PROPERTIES LABELS ${TestLabel})
+
   # add a test to validate mam4xx's results against the baseline.
   add_test(validate_${input} python3 compare_water_uptake.py mam4xx_${input}.py ${input}.py)
-endforeach() 
+  set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
+endforeach()

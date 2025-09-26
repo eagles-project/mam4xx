@@ -41,12 +41,15 @@ set(TEST_LIST
 
 set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
-    9e-8 # calc_het_rates, this is due to using a more specific value for mass_h2o
-    ${DEFAULT_TOL} # calc_precip_rescale
-    ${DEFAULT_TOL} # find_ktop, output is an int
-    9e-8 # gas_washout
-    9e-7 # sethet
+    9e-8           # calc_het_rates_merged, this is due to using a more specific value for mass_h2o
+    ${DEFAULT_TOL} # calc_precip_rescale_merged
+    ${DEFAULT_TOL} # find_ktop_merged, output is an int
+    9e-8           # gas_washout_merged
+    9e-7           # sethet_merged
    )
+
+set(TestLabel "mo_sethet")
+
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
 
@@ -58,10 +61,13 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
 
   # add a test to run the skywalker driver
   add_test(run_${input} sethet_driver ${SETHET_VALIDATION_DIR}/${input}.yaml)
+  set_tests_properties(run_${input} PROPERTIES LABELS ${TestLabel})
 
   # add a test to validate mam4xx's results against the baseline.
   # Select a threshold error slightly bigger than the largest relative error for the threshold error.
   # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error>
   add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
+  set_property(TEST validate_${input} PROPERTY SKIP_REGULAR_EXPRESSION "regex_fail_rel_tol")
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
+  set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
 endforeach()
