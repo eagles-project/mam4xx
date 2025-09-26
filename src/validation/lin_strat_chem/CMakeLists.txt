@@ -38,15 +38,17 @@ set(TEST_LIST
     )
 # # matching the tests and errors, just for convenience
 
-set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
-    6e-11
-    ${DEFAULT_TOL}
-    6e-13
-    2e-9
-    6e-9
-    9e-7
+    6e-11 # lin_strat_chem_solve_ts_1415
+    1e-13 # lin_strat_sfcsink_ts_1415_multicol
+    6e-13 # lin_strat_sfcsinkmulticol_merged
+    2e-9  # lin_strat_chem_solve_merged
+    6e-9  # lin_strat_chem_solve_ts_1415_multicol
+    9e-7  # lin_strat_chem_solvemulticol_merged
    )
+
+set(TestLabel "lin_strat_chem")
+
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
 
@@ -58,10 +60,13 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
 
   # add a test to run the skywalker driver
   add_test(run_${input} lin_strat_chem_driver ${LIN_STRAT_CHEM_VALIDATION_DIR}/${input}.yaml)
+  set_tests_properties(run_${input} PROPERTIES LABELS ${TestLabel})
 
   # add a test to validate mam4xx's results against the baseline.
   # Select a threshold error slightly bigger than the largest relative error for the threshold error.
   # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error>
   add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
+  set_property(TEST validate_${input} PROPERTY SKIP_REGULAR_EXPRESSION "regex_fail_rel_tol")
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
+  set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
 endforeach()

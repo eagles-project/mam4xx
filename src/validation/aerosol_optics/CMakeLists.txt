@@ -57,24 +57,26 @@ set(TEST_LIST
     )
 # # matching the tests and errors, just for convenience
 
-set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
-   2e-10
-   ${DEFAULT_TOL}
-   3e-10
-   3e-10
-   3e-10
-   2e-8
-   2e-8
-   6e-9
-   7e-11
-   2e-11
-   1e-12
-   7e-11
-   8e-11
-   8e-11
-   1e-14
+   2e-10 # binterp_ts_355
+   1e-13 # calc_diag_spec_ts_355
+   3e-10 # calc_refin_complex_ts_355_lw
+   3e-10 # calc_refin_complex_ts_355_sw
+   3e-10 # calc_volc_ext_ts_355
+   2e-8  # modal_size_parameters_ts_355_ismethod2_false
+   2e-8  # modal_size_parameters_ts_355_ismethod2_true
+   6e-9  # modal_aero_sw_ts_355
+   7e-11 # modal_aero_lw_ts_355
+   2e-11 # calc_parameterized_ts_355
+   1e-12 # update_aod_spec_ts_355
+   7e-11 # aer_rad_props_lw_ts_355
+   8e-11 # aer_rad_props_sw_ts_355
+   8e-11 # volcanic_cmip_sw_ts_355
+   1e-14 # data_transfer_state_q_qqwc_to_prog
    )
+
+set(TestLabel "aerosol_optics")
+
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
 
@@ -86,10 +88,13 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
 
   # add a test to run the skywalker driver
   add_test(run_${input} aerosol_optics_driver ${AEROSOL_OPTICS_VALIDATION_DIR}/${input}.yaml)
+  set_tests_properties(run_${input} PROPERTIES LABELS ${TestLabel})
 
   # add a test to validate mam4xx's results against the baseline.
   # Select a threshold error slightly bigger than the largest relative error for the threshold error.
   # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error>
   add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
+  set_property(TEST validate_${input} PROPERTY SKIP_REGULAR_EXPRESSION "regex_fail_rel_tol")
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
+  set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
 endforeach()

@@ -12,7 +12,7 @@ add_executable(coagulation_driver
                coag_1subarea.cpp
                getcoags.cpp
                getcoags_wrapper_f.cpp
-               coag_aer_update.cpp 
+               coag_aer_update.cpp
                coag_num_update.cpp )
 target_link_libraries(coagulation_driver skywalker;validation;haero)
 
@@ -27,6 +27,8 @@ foreach(script
 endforeach()
 
 # Run the driver in several configurations to produce datasets.
+
+set(TestLabel "coagulation")
 
 # Aging
 foreach (input
@@ -46,9 +48,9 @@ foreach (input
 
   # add a test to run the skywalker driver
   add_test(run_${input} coagulation_driver ${COAGULATION_VALIDATION_DIR}/${input}.yaml)
-  
+  set_tests_properties(run_${input} PROPERTIES LABELS ${TestLabel})
+
   # add a test to validate mam4xx's results against the baseline.
   add_test(validate_${input} python3 compare_coag_validation.py mam4xx_${input}.py mam_${input}.py)
-  endforeach() 
-
-
+  set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
+  endforeach()
