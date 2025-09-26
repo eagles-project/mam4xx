@@ -75,7 +75,7 @@ jobs:
         # to get the array instead of a string, need the fromJSON()
         build-type: ${{ fromJSON(needs.define_matrix.outputs.build_type) }}
         fp-precision: ${{ fromJSON(needs.define_matrix.outputs.precision) }}
-
+    name: gcc-cpu / ${{ matrix.build-type }} - ${{ matrix.fp-precision }}
     runs-on: ${{ matrix.os }}
 
     # Environment variables
