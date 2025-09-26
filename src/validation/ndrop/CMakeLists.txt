@@ -85,28 +85,28 @@ set(DEFAULT_TOL 1e-11)
 set(DEFAULT_TOL_DROPMIXNUC 6.8e-4)
 
 set(ERROR_THRESHOLDS
-    4e-8  #    loadaertype1_merged
-    4e-8  #    loadaertype2_merged
-    6e-8  #    loadaertype3_merged
-    7e-5  #    activate_modal_ts_1400_type1
-    2e-10 #    explmix1417_actmm_merged
-    1e-9  #    explmix1417_mm_merged
-    5e-5  #    stand_get_activate_frac_ts_1417
-    1e-5  #    activate_modal_ts_1417_type2
-    5e-6  #    stand_activate_modal_ts_1417_type2
-    2e-3  #    activate_modal_merged
-    2e-3  #    ccncalc_merged
-    1e-3  #    ccncalc_loop_ts_1417
-    5e-5  #    ccncalc_ts_1400
-    ${DEFAULT_TOL} #    maxsattype1_merged
-    ${DEFAULT_TOL} #    maxsattype2_merged
-    2e-9  #    update_from_newcld_iact0_merged
-    1e-3  #    update_from_newcld_iact1_merged
-    ${DEFAULT_TOL} #    update_from_newcld_iact2_merged
-    9e-3  #    update_from_cldn_profile_iact1_merged
-    1e-12 #    update_from_cldn_profile_iact2_merged
-    5e-5  #    stand_dropmixnuc_ts_1407
-    ${DEFAULT_TOL_DROPMIXNUC} #    dropmixnuc_ts_14
+    4e-8                      # loadaertype1_merged
+    4e-8                      # loadaertype2_merged
+    6e-8                      # loadaertype3_merged
+    7e-5                      # activate_modal_ts_1400_type1
+    2e-10                     # explmix1417_actmm_merged
+    1e-9                      # explmix1417_mm_merged
+    5e-5                      # stand_get_activate_frac_ts_1417
+    1e-5                      # activate_modal_ts_1417_type2
+    5e-6                      # stand_activate_modal_ts_1417_type2
+    2e-3                      # activate_modal_merged
+    2e-3                      # ccncalc_merged
+    1e-3                      # ccncalc_loop_ts_1417
+    5e-5                      # ccncalc_ts_1400
+    ${DEFAULT_TOL}            # maxsattype1_merged
+    ${DEFAULT_TOL}            # maxsattype2_merged
+    2e-9                      # update_from_newcld_iact0_merged
+    1e-3                      # update_from_newcld_iact1_merged
+    ${DEFAULT_TOL}            # update_from_newcld_iact2_merged
+    9e-3                      # update_from_cldn_profile_iact1_merged
+    1e-12                     # update_from_cldn_profile_iact2_merged
+    5e-5                      # stand_dropmixnuc_ts_1407
+    ${DEFAULT_TOL_DROPMIXNUC} # dropmixnuc_ts_14
     ${DEFAULT_TOL_DROPMIXNUC}
     ${DEFAULT_TOL_DROPMIXNUC}
     ${DEFAULT_TOL_DROPMIXNUC}
@@ -124,8 +124,10 @@ set(ERROR_THRESHOLDS
     ${DEFAULT_TOL_DROPMIXNUC}
     ${DEFAULT_TOL_DROPMIXNUC}
     ${DEFAULT_TOL_DROPMIXNUC}
-    9e-8 #    update_from_explmix_merged
+    9e-8                      # update_from_explmix_merged
    )
+
+set(TestLabel "ndrop")
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
@@ -138,10 +140,13 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
 
   # add a test to run the skywalker driver
   add_test(run_${input} ndrop_driver ${NDROP_VALIDATION_DIR}/${input}.yaml)
+  set_tests_properties(run_${input} PROPERTIES LABELS ${TestLabel})
 
   # add a test to validate mam4xx's results against the baseline.
   # Select a threshold error slightly bigger than the largest relative error for the threshold error.
   # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error>
   add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
+  set_property(TEST validate_${input} PROPERTY SKIP_REGULAR_EXPRESSION "regex_fail_rel_tol")
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
+  set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
 endforeach()

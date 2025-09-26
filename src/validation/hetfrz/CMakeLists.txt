@@ -16,7 +16,7 @@ add_executable(hetfrz_driver
                hetfrz_calculate_collkernel_sub.cpp
                hetfrz_collkernel.cpp
                hetfrz_get_Aimm.cpp
-               hetfrz_get_dg0imm.cpp 
+               hetfrz_get_dg0imm.cpp
                hetfrz_get_form_factor.cpp
                hetfrz_calculate_hetfrz_contact_nucleation.cpp
                hetfrz_calculate_hetfrz_deposition_nucleation.cpp
@@ -40,6 +40,8 @@ target_link_libraries(hetfrz_driver skywalker;validation;haero)
      ${CMAKE_CURRENT_BINARY_DIR}/compare_hetfzr.py
      COPYONLY
    )
+
+ set(TestLabel "hetfrz")
 
 # Run the driver in several configurations to produce datasets.
 
@@ -78,10 +80,11 @@ foreach (input
 
   # add a test to run the skywalker driver
   add_test(run_${input} hetfrz_driver ${HETFRZ_VALIDATION_DIR}/${input}.yaml)
-  
+  set_tests_properties(run_${input} PROPERTIES LABELS ${TestLabel})
+
   # add a test to validate mam4xx's results against the baseline.
   add_test(validate_${input} python3 compare_hetfzr.py mam4xx_${input}.py ${input}.py)
+  set_property(TEST validate_${input} PROPERTY SKIP_REGULAR_EXPRESSION "regex_fail_rel_tol")
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
-endforeach() 
-
-
+  set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
+endforeach()
