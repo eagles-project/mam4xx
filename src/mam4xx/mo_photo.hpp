@@ -173,16 +173,17 @@ void set_ub_col(Real &o3_col_delta,
 KOKKOS_INLINE_FUNCTION
 void setcol(const ThreadTeam &team, const Real o3_col_deltas[mam4::nlev + 1],
             ColumnView &o3_col_dens) {
-  // we can probably accelerate this with a parallel_scan, but let's just do
-  // a simple loop for now
   constexpr int nlev = mam4::nlev;
-  Kokkos::single(Kokkos::PerTeam(team), [=]() {
-    o3_col_dens(0) = 0.5 * (o3_col_deltas[0] + o3_col_deltas[1]);
-    for (int k = 1; k < nlev; ++k) {
-      o3_col_dens(k) =
-          o3_col_dens(k - 1) + 0.5 * (o3_col_deltas[k] + o3_col_deltas[k + 1]);
-    }
-  });
+  Kokkos::parallel_for(
+    Kokkos::TeamThreadRange(team, nlev),
+    [&](int kk) {
+      Kokkos::parallel_reduce(
+          Kokkos::ThreadVectorRange(team, kk+1),
+          [&](int i, Real &lsum) {
+            lsum += 0.5 * (o3_col_deltas[i] + o3_col_deltas[i+1]);
+          },
+          o3_col_dens(kk));
+    });
 }
 
 KOKKOS_INLINE_FUNCTION
