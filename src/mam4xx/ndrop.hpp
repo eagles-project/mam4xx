@@ -1212,7 +1212,7 @@ void update_from_explmix(
   Kokkos::parallel_reduce(
       Kokkos::TeamVectorRange(team, top_lev, pver_loc),
       [&](int k, Real &min_val) {
-        const int kp1 = haero::min(k + 1, pver - 1);
+        const int kp1 = haero::min(k + 1, pver_loc - 1);
         const int km1 = haero::max(k - 1, top_lev);
         // maximum overlap assumption
         if (cldn(kp1) > overlap_cld_thresh) {
@@ -1285,11 +1285,11 @@ void update_from_explmix(
       nsav = nnew;
       nnew = ntemp;
     }
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver),
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver_loc),
                          [&](int k) { qncld(k) = qcld(k); });
     Kokkos::parallel_for(
-        Kokkos::TeamVectorRange(team, top_lev, pver), [&](int k) {
-          const int kp1 = haero::min(k + 1, pver - 1);
+        Kokkos::TeamVectorRange(team, top_lev, pver_loc), [&](int k) {
+          const int kp1 = haero::min(k + 1, pver_loc - 1);
           const int km1 = haero::max(k - 1, top_lev);
           const View1D &raercol_km1_nsav = raercol[km1][nsav];
           const View1D &raercol_k_nsav = raercol[k][nsav];
@@ -1304,7 +1304,7 @@ void update_from_explmix(
           // k+1
           //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
           Real srcn = zero;
-          if (k < pver - 1) {
+          if (k < pver_loc - 1) {
             for (int imode = 0; imode < ntot_amode; imode++) {
               const int mm = mam_idx[imode][0] - 1;
               srcn += nact(k, imode) * raercol_kp1_nsav(mm);
@@ -1337,7 +1337,7 @@ void update_from_explmix(
             for (int lspec = 0; lspec < nspec_amode[imode] + 1; lspec++) {
               const int mm = mam_idx[imode][lspec] - 1;
               Real source = 0;
-              if (k < pver - 1) {
+              if (k < pver_loc - 1) {
                 const Real act = lspec ? mact(k, imode) : nact(k, imode);
                 source = act * raercol_kp1_nsav(mm);
               } else {
