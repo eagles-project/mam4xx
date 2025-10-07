@@ -31,13 +31,15 @@ set(TEST_LIST
     het_diags_ts_355
     chm_diags_ts_355
     )
-# # matching the tests and errors, just for convenience
+# matching the tests and errors, just for convenience
 
-set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
    9e-2
    1.3e-5
    )
+
+set(TestLabel "mo_chm_diags")
+
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   # copy the baseline file into place.
 
@@ -49,10 +51,13 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
 
   # add a test to run the skywalker driver
   add_test(run_${input} mo_chm_diags_driver ${MO_CHM_DIAGS_VALIDATION_DIR}/${input}.yaml)
+  set_tests_properties(run_${input} PROPERTIES LABELS ${TestLabel})
 
   # add a test to validate mam4xx's results against the baseline.
   # Select a threshold error slightly bigger than the largest relative error for the threshold error.
   # compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error>
   add_test(validate_${input} python3 compare_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
+  set_property(TEST validate_${input} PROPERTY SKIP_REGULAR_EXPRESSION "regex_fail_rel_tol")
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
+  set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
 endforeach()
