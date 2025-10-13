@@ -173,7 +173,7 @@ void update_from_explmix(Ensemble *ensemble) {
           ndrop::update_from_explmix(
               team, dtmicro, csbot, cldn, zn, zs, ekd, nact, mact, qcld,
               raercol, raercol_cw, nsav, nnew, nspec_amode, mam_idx, true,
-              top_lev, overlapp, overlapm, ekkp, ekkm, qncld, srcn, source);
+              top_lev, overlapp, overlapm, ekkp, ekkm, qncld);
           indexes(0) = nnew;
           indexes(1) = nsav;
         });
