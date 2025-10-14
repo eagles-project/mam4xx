@@ -154,7 +154,7 @@ void update_scavenging(const int mam_prevap_resusp_optcc, const Real pdel_ik,
                        Real &scavt_ik, Real &iscavt_ik, Real &icscavt_ik,
                        Real &isscavt_ik, Real &bcscavt_ik, Real &bsscavt_ik,
                        Real &rcscavt_ik, Real &rsscavt_ik, Real &scavabs,
-                       Real &scavabc, Real &precabc, Real &precabs) {
+                       Real &scavabc) {
   // clang-format off
   // ------------------------------------------------------------------------------
   // update scavenging variables
@@ -189,8 +189,6 @@ void update_scavenging(const int mam_prevap_resusp_optcc, const Real pdel_ik,
   out :: rsscavt_ik  ! resuspension, stratiform [kg/kg/s]
   inout :: scavabs   ! stratiform scavenged tracer flux from above [kg/m2/s]
   inout :: scavabc   ! convective scavenged tracer flux from above [kg/m2/s]
-  inout :: precabc   ! conv precip from above [kg/m2/s]
-  inout :: precabs   ! strat precip from above [kg/m2/s]
   */
   // clang-format on
   const Real gravit = Constants::gravity;
@@ -224,8 +222,6 @@ void update_scavenging(const int mam_prevap_resusp_optcc, const Real pdel_ik,
   if (mam_prevap_resusp_optcc == 0) {
     scavabs = scavabs * (1 - fracev_st) + srcs * pdel_ik / gravit;
     scavabc = scavabc * (1 - fracev_cu) + srcc * pdel_ik / gravit;
-    precabs = precabs + (precs_ik - evaps_ik) * pdel_ik / gravit;
-    precabc = precabc + (cmfdqr_ik - evapc_ik) * pdel_ik / gravit;
   }
 }
 // ==============================================================================
@@ -413,11 +409,11 @@ Real fprecn_resusp_vs_fprec_evap_mpln(const Real fprec_evap,
 // ==============================================================================
 KOKKOS_INLINE_FUNCTION
 void wetdep_prevap(const int is_st_cu, const int mam_prevap_resusp_optcc,
-                   const Real pdel_ik, const Real pprdx, const Real srcx,
-                   const Real arainx, const Real precabx_old,
+                   const Real pdel_ik, const Real srcx,
+                   const Real arainx, 
                    const Real precabx_base_old, const Real scavabx_old,
-                   const Real precnumx_base_old, Real &precabx_new,
-                   Real &precabx_base_new, Real &scavabx_new,
+		   const Real precabx_base_new,
+                   Real &scavabx_new,
                    Real &precnumx_base_new) {
   // clang-format off
   // ------------------------------------------------------------------------------
@@ -431,15 +427,11 @@ void wetdep_prevap(const int is_st_cu, const int mam_prevap_resusp_optcc,
                       ! 2: assume log-normal distribution
   in :: mam_prevap_resusp_optcc       ! suspension options
   in :: pdel_ik       ! pressure thikness at current column and level [Pa]
-  in :: pprdx  ! precipitation generation rate [kg/kg/s]
   in :: srcx   ! scavenging tendency [kg/kg/s]
   in :: arainx ! precipitation and cloudy volume,at the top interface of current layer [fraction]
   in :: precabx_base_old ! input of precipitation at cloud base [kg/m2/s]
-  in :: precabx_old ! input of precipitation above this layer [kg/m2/s]
   in :: scavabx_old ! input scavenged tracer flux from above [kg/m2/s]
-  in :: precnumx_base_old ! input of rain number at cloud base [#/m2/s]
   out :: precabx_base_new ! output of precipitation at cloud base [kg/m2/s]
-  out :: precabx_new ! output of precipitation above this layer [kg/m2/s]
   out :: scavabx_new ! output scavenged tracer flux from above [kg/m2/s]
   out :: precnumx_base_new ! output of rain number at cloud base [#/m2/s]
   */
@@ -449,17 +441,11 @@ void wetdep_prevap(const int is_st_cu, const int mam_prevap_resusp_optcc,
   const Real gravit = Constants::gravity;
 
   // initiate *_new in case they are not calculated
-  // precabx_base_new and precabx_new are always calculated
   scavabx_new = scavabx_old;
-  precnumx_base_new = precnumx_base_old;
-
-  Real tmpa = haero::max(0.0, pprdx * pdel_ik / gravit);
-  precabx_base_new = haero::max(0.0, precabx_base_old + tmpa);
-  precabx_new = utils::min_max_bound(0.0, precabx_base_new, precabx_old + tmpa);
 
   if (mam_prevap_resusp_optcc <= 130) {
     // aerosol mass scavenging
-    tmpa = haero::max(0.0, srcx * pdel_ik / gravit);
+    Real tmpa = haero::max(0.0, srcx * pdel_ik / gravit);
     scavabx_new = haero::max(0.0, scavabx_old + tmpa);
   } else {
     // raindrop number increase
@@ -468,11 +454,9 @@ void wetdep_prevap(const int is_st_cu, const int mam_prevap_resusp_optcc,
     } else if (precabx_base_new > precabx_base_old) {
       // note - calc rainshaft number flux from rainshaft water flux,
       // then multiply by rainshaft area to get grid-average number flux
-      tmpa = arainx * flux_precnum_vs_flux_prec_mpln(precabx_base_new / arainx,
+      Real tmpa = arainx * flux_precnum_vs_flux_prec_mpln(precabx_base_new / arainx,
                                                      is_st_cu);
       precnumx_base_new = haero::max(0.0, tmpa);
-    } else {
-      precnumx_base_new = precnumx_base_old;
     }
   }
 }
@@ -561,8 +545,8 @@ void wetdep_resusp_noprecip(const int is_st_cu,
                             const int mam_prevap_resusp_optcc,
                             const Real precabx_old, const Real precabx_base_old,
                             const Real scavabx_old,
-                            const Real precnumx_base_old, Real &precabx_new,
-                            Real &precabx_base_new, Real &scavabx_new,
+                            const Real precnumx_base_old, 
+			    Real &scavabx_new,
                             Real &resusp_x) {
   // clang-format off
   // ------------------------------------------------------------------------------
@@ -593,7 +577,7 @@ void wetdep_resusp_noprecip(const int is_st_cu,
     scavabx_new = 0.0;
     // linear resuspension based on scavenged aerosol mass or number
     resusp_x = scavabx_old;
-  } else {
+  } else { // mam_prevap_resusp_optcc == 230
     if (precabx_base_old < small_value_30) {
       resusp_x = 0.0;
     } else {
@@ -607,10 +591,6 @@ void wetdep_resusp_noprecip(const int is_st_cu,
       resusp_x = haero::max(0.0, precnumx_base_old * (x_old - x_new));
     }
   }
-  // setting both these precip rates to zero causes the resuspension
-  // calculations to start fresh if there is any more precip production
-  precabx_new = 0.0;
-  precabx_base_new = 0.0;
 }
 // ==============================================================================
 // ==============================================================================
@@ -769,11 +749,10 @@ Real rain_mix_ratio(const Real temperature, const Real pmid,
 // ==============================================================================
 KOKKOS_INLINE_FUNCTION
 void wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
-                   const Real pdel_ik, const Real evapx, const Real precabx_old,
+                   const Real evapx, const Real precabx_old,
                    const Real precabx_base_old, const Real scavabx_old,
-                   const Real precnumx_base_old, Real &precabx_new,
-                   Real &precabx_base_new, Real &scavabx_new,
-                   Real &precnumx_base_new, Real &resusp_x) {
+                   const Real precnumx_base_old, const Real &precabx_new,
+                   Real &scavabx_new, Real &resusp_x) {
   // clang-format off
   // ------------------------------------------------------------------------------
   // do precip production, resuspension and scavenging
@@ -785,39 +764,26 @@ void wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
                       ! 1: assume marshall-palmer distribution
                       ! 2: assume log-normal distribution
   in :: mam_prevap_resusp_optcc       ! suspension options
-  in :: pdel_ik       ! pressure thikness at current column and level [Pa]
   in :: evapx         ! evaporation at current layer [kg/kg/s]
   in :: precabx_base_old ! input of precipitation at cloud base [kg/m2/s]
   in :: precabx_old ! input of precipitation above this layer [kg/m2/s]
   in :: scavabx_old ! input of scavenged tracer flux from above [kg/m2/s]
   in :: precnumx_base_old ! input of precipitation number at cloud base [#/m2/s]
-  out :: precabx_base_new ! output of precipitation at cloud base [kg/m2/s]
   out :: precabx_new ! output of precipitation above this layer [kg/m2/s]
   out :: scavabx_new ! output of scavenged tracer flux from above [kg/m2/s]
-  out :: precnumx_base_new ! output of precipitation number at cloud base [#/m2/s]
   out :: resusp_x    ! aerosol mass re-suspension in a particular layer [kg/m2/s]
   */
   // clang-format on
 
   // BAD CONSTANT
   const Real small_value_30 = 1.e-30;
-
-  const Real gravit = Constants::gravity;
-
   // initiate *_new in case they are not calculated
   scavabx_new = scavabx_old;
-  precnumx_base_new = precnumx_base_old;
-  precabx_base_new = precabx_base_old;
-
-  const Real tmpa = haero::max(0.0, evapx * pdel_ik / gravit);
-  precabx_new = utils::min_max_bound(0.0, precabx_base_new, precabx_old - tmpa);
-
   if (precabx_new < small_value_30) {
     // precip rate is essentially zero so do complete resuspension
     wetdep_resusp_noprecip(is_st_cu, mam_prevap_resusp_optcc, precabx_old,
                            precabx_base_old, scavabx_old, precnumx_base_old,
-                           precabx_new, precabx_base_new, scavabx_new,
-                           resusp_x);
+                           scavabx_new, resusp_x);
   } else if (evapx <= 0.0) {
     // no evap so no resuspension
     if (mam_prevap_resusp_optcc <= 130) {
@@ -845,10 +811,12 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
                 const int mam_prevap_resusp_optcc,
                 const bool is_strat_cloudborne, const Real scavcoef,
                 const Real f_act_conv, const Real tracer, const Real qqcw,
+		const Real precabs, const Real precabs_base, const Real precabs_base_k1, const Real precabs_tmp,
+		const Real precabc, const Real precabc_base, const Real precabc_base_k1, const Real precabc_tmp,
                 Real &fracis, Real &scavt, Real &iscavt, Real &icscavt,
                 Real &isscavt, Real &bcscavt, Real &bsscavt, Real &rcscavt,
-                Real &rsscavt, Real &precabs, Real &precabc, Real &scavabs,
-                Real &scavabc, Real &precabs_base, Real &precabc_base,
+                Real &rsscavt, Real &scavabs,
+                Real &scavabc, 
                 Real &precnums_base, Real &precnumc_base) {
   // clang-format off
   // -----------------------------------------------------------------------
@@ -929,6 +897,8 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   const Real small_value_2 = 1.e-2;
   const Real small_value_12 = 1.e-12;
   const Real small_value_36 = 1.e-36;
+  const Real gravit = Constants::gravity;
+  const Real small_value_30 = 1.e-30;
 
   fracis = 0;
   scavt = 0;
@@ -1032,39 +1002,40 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
 
   // ****************** Resuspension **************************
 
-  Real resusp_c; // aerosol mass re-suspension in a particular layer from
+  Real resusp_c = 0; // aerosol mass re-suspension in a particular layer from
                  // convective rain [kg/m2/s]
-  Real resusp_s; // aerosol mass re-suspension in a particular layer from
+  Real resusp_s = 0; // aerosol mass re-suspension in a particular layer from
                  // stratiform rain [kg/m2/s]
   // tend is all tracer removed by scavenging, plus all re-appearing from
   // evaporation above
   if (mam_prevap_resusp_optcc >= 100) {
-    // for stratiform clouds
-    // precipitation and cloudy volume,at the top interface of current layer
-    // [fraction]
-    Real arainx = haero::max(cldvst_lower_level, small_value_2); // non-zero
-    Real precabx_tmp = 0;       // temporary store precabc or precabs [kg/m2/s]
-    Real precabx_base_tmp = 0;  // temporarily store precab*_base [kg/m2/s]
-    Real precnumx_base_tmp = 0; // temporarily store precnum*_base [#/m2/s]
-    Real scavabx_tmp = 0;       // temporarily store scavab* [kg/m2/s]
-    // step 1 - do evaporation and resuspension
-    wetdep_resusp(1, mam_prevap_resusp_optcc, pdel, evaps, precabs,
-                  precabs_base, scavabs, precnums_base, precabx_tmp,
-                  precabx_base_tmp, scavabx_tmp, precnumx_base_tmp, resusp_s);
-    // step 2 - do precip production and scavenging
-    wetdep_prevap(1, mam_prevap_resusp_optcc, pdel, precs, srcs, arainx,
-                  precabx_tmp, precabx_base_tmp, scavabx_tmp, precnumx_base_tmp,
-                  precabs, precabs_base, scavabs, precnums_base);
-
-    // for convective clouds
-    arainx = haero::max(cldvcu_lower_level, small_value_2); // non-zero
-    wetdep_resusp(2, mam_prevap_resusp_optcc, pdel, evapc, precabc,
-                  precabc_base, scavabc, precnumc_base, precabx_tmp,
-                  precabx_base_tmp, scavabx_tmp, precnumx_base_tmp, resusp_c);
-    // step 2 - do precip production and scavenging
-    wetdep_prevap(2, mam_prevap_resusp_optcc, pdel, cmfdqr, srcc, arainx,
-                  precabx_tmp, precabx_base_tmp, scavabx_tmp, precnumx_base_tmp,
-                  precabc, precabc_base, scavabc, precnumc_base);
+    {
+      // for stratiform clouds
+      // precipitation and cloudy volume,at the top interface of current layer
+      // [fraction]
+      const Real arainx = haero::max(cldvst_lower_level, small_value_2); // non-zero
+      Real scavabx_tmp = 0;       // temporarily store scavab* [kg/m2/s]
+      // step 1 - do evaporation and resuspension
+      wetdep_resusp(1, mam_prevap_resusp_optcc, evaps, precabs,
+                    precabs_base, scavabs, precnums_base, precabs_tmp,
+                    scavabx_tmp, resusp_s);
+      // step 2 - do precip production and scavenging
+      wetdep_prevap(1, mam_prevap_resusp_optcc, pdel, srcs, arainx,
+                    precabs_base, scavabx_tmp, precabs_base_k1, 
+		    scavabs, precnums_base);
+    }
+    {
+      // for convective clouds
+      const Real arainx = haero::max(cldvcu_lower_level, small_value_2); // non-zero
+      Real scavabx_tmp = 0;       // temporarily store scavab* [kg/m2/s]
+      wetdep_resusp(2, mam_prevap_resusp_optcc, evapc, precabc,
+                    precabc_base, scavabc, precnumc_base, precabc_tmp,
+                    scavabx_tmp, resusp_c);
+      // step 2 - do precip production and scavenging
+      wetdep_prevap(2, mam_prevap_resusp_optcc, pdel, srcc, arainx,
+                    precabc_base, scavabx_tmp, precabc_base_k1, 
+		    scavabc, precnumc_base);
+    }
   } else { // mam_prevap_resusp_optcc = 0, no resuspension
     resusp_c = fracev_cu * scavabc;
     resusp_s = fracev_st * scavabs;
@@ -1087,7 +1058,7 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
                     finc, fracev_st, fracev_cu, resusp_c, resusp_s, precs,
                     evaps, cmfdqr, evapc, scavt_ik, iscavt_ik, icscavt_ik,
                     isscavt_ik, bcscavt_ik, bsscavt_ik, rcscavt_ik, rsscavt_ik,
-                    scavabs, scavabc, precabc, precabs);
+                    scavabs, scavabc);
 
   scavt = scavt_ik;
   iscavt = iscavt_ik;
@@ -1330,9 +1301,9 @@ void compute_q_tendencies_phase_1(
     const Real sol_factic, const Real sol_factb, const Real state_q,
     const Real ptend_q, const Real qqcw_sav, const Real pdel, const Real dt,
     const int mam_prevap_resusp_optcc, const int jnv, const int mm,
-    Real &precabs, Real &precabc, Real &scavabs, Real &scavabc,
-    Real &precabs_base, Real &precabc_base, Real &precnums_base,
-    Real &precnumc_base) {
+    const Real precabs, const Real precabs_base, const Real precabs_base_k1, const Real precabs_tmp,
+    const Real precabc, const Real precabc_base, const Real precabc_base_k1, const Real precabc_tmp,
+    Real &scavabs, Real &scavabc, Real &precnums_base, Real &precnumc_base) {
   // traces reflects changes from modal_aero_calcsize and is the
   // "most current" q
   const Real tracer = state_q + ptend_q * dt;
@@ -1353,9 +1324,12 @@ void compute_q_tendencies_phase_1(
       dt, pdel, cmfdqr, evapc, dlf, conicw, prain, evapr, totcond, cldt, cldcu,
       cldvcu_k, cldvcu_k_p1, cldvst_k, cldvst_k_p1, sol_factb, sol_facti,
       sol_factic, mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef,
-      f_act_conv, tracer, qqcw_sav, fracis, scavt, iscavt, icscavt, isscavt,
-      bcscavt, bsscavt, rcscavt, rsscavt, precabs, precabc, scavabs, scavabc,
-      precabs_base, precabc_base, precnums_base, precnumc_base);
+      f_act_conv, tracer, qqcw_sav, 
+      precabs, precabs_base, precabs_base_k1, precabs_tmp,
+      precabc, precabc_base, precabc_base_k1, precabc_tmp,
+      fracis, scavt, iscavt, icscavt, isscavt,
+      bcscavt, bsscavt, rcscavt, rsscavt, 
+      scavabs, scavabc, precnums_base, precnumc_base);
   // resuspension goes to coarse mode
   const bool update_dqdt = true;
   aero_model::calc_resusp_to_coarse(mm, update_dqdt, rcscavt, rsscavt, scavt,
@@ -1375,9 +1349,9 @@ void compute_q_tendencies_phase_2(
     const Real cldvcu_k, const Real cldvcu_k_p1, const Real sol_facti,
     const Real sol_factic, const Real sol_factb, const Real pdel, const Real dt,
     const int mam_prevap_resusp_optcc, const int jnv, const int mm, const int k,
-    Real &precabs, Real &precabc, Real &scavabs, Real &scavabc,
-    Real &precabs_base, Real &precabc_base, Real &precnums_base,
-    Real &precnumc_base) {
+    const Real precabs, const Real precabs_base, const Real precabs_base_k1, const Real precabs_tmp,
+    const Real precabc, const Real precabc_base, const Real precabc_base_k1, const Real precabc_tmp,
+    Real &scavabs, Real &scavabc, Real &precnums_base, Real &precnumc_base) {
 
   // static constexpr int pcnst = aero_model::pcnst;
   // There is no cloud-borne aerosol water in the model, so this
@@ -1400,9 +1374,13 @@ void compute_q_tendencies_phase_2(
       dt, pdel, cmfdqr, evapc, dlf, conicw, prain, evapr, totcond, cldt, cldcu,
       cldvcu_k, cldvcu_k_p1, cldvst_k, cldvst_k_p1, sol_factb, sol_facti,
       sol_factic, mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef,
-      f_act_conv, tracer, qqcw_tmp, fracis, scavt, iscavt, icscavt, isscavt,
-      bcscavt, bsscavt, rcscavt, rsscavt, precabs, precabc, scavabs, scavabc,
-      precabs_base, precabc_base, precnums_base, precnumc_base);
+      f_act_conv, tracer, qqcw_tmp, 
+      precabs, precabs_base, precabs_base_k1, precabs_tmp,
+      precabc, precabc_base, precabc_base_k1, precabc_tmp,
+      fracis, scavt, iscavt, icscavt, isscavt,
+      bcscavt, bsscavt, rcscavt, rsscavt, 
+      scavabs, scavabc,
+      precnums_base, precnumc_base);
 
   // resuspension goes to coarse mode
   const bool update_dqdt = false;
@@ -1448,31 +1426,72 @@ void compute_q_tendencies(
     const int mam_prevap_resusp_mass = 130;
     const int mam_prevap_resusp_num = 230;
     const int jaeronumb = 0, jaeromass = 1;
-    Real precabs = 0;
-    Real precabc = 0;
+
+    // mam_prevap_resusp_optcc values control the prevap_resusp
+    // calculations in wetdepa_v2:
+    //     0 = no resuspension
+    //   130 = non-linear resuspension of aerosol mass   based on
+    //   scavenged aerosol 
+    //   mass 230 = non-linear resuspension of
+    //   aerosol number based on raindrop number 
+    //   the 130 thru 230
+    //   all use the new prevap_resusp code block in subr wetdepa_v2
+    int mam_prevap_resusp_optcc = mam_prevap_resusp_no;
+    const int modeptr_coarse = static_cast<int>(ModeIndex::Coarse);
+    if (jnummaswtr == jaeromass) // dry mass
+      mam_prevap_resusp_optcc = mam_prevap_resusp_mass;
+    else if (jnummaswtr == jaeronumb && lphase == 1 &&
+             imode == modeptr_coarse) // number
+      mam_prevap_resusp_optcc = mam_prevap_resusp_num;
+
+
+
     Real scavabs = 0;
     Real scavabc = 0;
-    Real precabs_base = 0;
-    Real precabc_base = 0;
     Real precnums_base = 0;
     Real precnumc_base = 0;
+
+    Real precabs[mam4::nlev+1] = {};
+    Real precabs_base[mam4::nlev+1] = {};
+    Real precabs_tmp[mam4::nlev] = {};
+    Real precabc[mam4::nlev+1] = {};
+    Real precabc_base[mam4::nlev+1] = {};
+    Real precabc_tmp[mam4::nlev] = {};
+    const Real gravit = Constants::gravity;
+    if (mam_prevap_resusp_optcc >= 100) {
+      for (int k = 1; k < nlev+1; ++k) {
+        const Real tmp = haero::max(0.0, prain[k-1] * pdel[k-1] / gravit);
+        precabs_base[k] = precabs_base[k-1] + tmp;
+      }
+      for (int k = 1; k < nlev+1; ++k) {
+        const Real small_value_30 = 1.e-30;
+        const Real tmpa = haero::max(0.0, evapr[k-1] * pdel[k-1] / gravit);
+        const Real tmpb = haero::max(0.0, prain[k-1] * pdel[k-1] / gravit);
+        const Real tmpc = utils::min_max_bound(0.0, precabs_base[k-1], precabs[k-1] - tmpa); 
+        precabs_tmp[k-1] = tmpc < small_value_30 ? 0 : tmpc;
+        precabs[k] =  utils::min_max_bound(0.0, precabs_base[k], precabs_tmp[k-1] + tmpb);
+      }
+
+      for (int k = 1; k < nlev+1; ++k) {
+        const Real tmp = haero::max(0.0, prain[k-1] * pdel[k-1] / gravit);
+        precabc_base[k] = precabc_base[k-1] + tmp;
+      }
+      for (int k = 1; k < nlev+1; ++k) {
+        const Real small_value_30 = 1.e-30;
+        const Real tmpa = haero::max(0.0, evapc[k-1] * pdel[k-1] / gravit);
+        const Real tmpb = haero::max(0.0, cmfdqr[k-1] * pdel[k-1] / gravit);
+        const Real tmpc = utils::min_max_bound(0.0, precabc_base[k-1], precabc[k-1] - tmpa); 
+        precabc_tmp[k-1] = tmpc < small_value_30 ? 0 : tmpc;
+        precabc[k] =  utils::min_max_bound(0.0, precabc_base[k], precabc_tmp[k-1] + tmpb);
+      }
+    } else if (mam_prevap_resusp_optcc == 0) {
+      for (int k = 1; k < nlev+1; ++k) {
+        precabs[k] += (prain[k-1] - evapr[k-1]) * pdel[k-1] / gravit;
+        precabc[k] += (cmfdqr[k-1] - evapc[k-1]) * pdel[k-1] / gravit;
+      }
+    }
     for (int k = 0; k < nlev; ++k) {
       const auto rtscavt_sv_k = ekat::subview(rtscavt_sv, k);
-      // mam_prevap_resusp_optcc values control the prevap_resusp
-      // calculations in wetdepa_v2:
-      //     0 = no resuspension
-      //   130 = non-linear resuspension of aerosol mass   based on
-      //   scavenged aerosol mass 230 = non-linear resuspension of
-      //   aerosol number based on raindrop number the 130 thru 230
-      //   all use the new prevap_resusp code block in subr wetdepa_v2
-      int mam_prevap_resusp_optcc = mam_prevap_resusp_no;
-      const int modeptr_coarse = static_cast<int>(ModeIndex::Coarse);
-      if (jnummaswtr == jaeromass) // dry mass
-        mam_prevap_resusp_optcc = mam_prevap_resusp_mass;
-      else if (jnummaswtr == jaeronumb && lphase == 1 &&
-               imode == modeptr_coarse) // number
-        mam_prevap_resusp_optcc = mam_prevap_resusp_num;
-
       // set f_act_conv for interstitial (lphase=1) coarse mode
       // species for the convective in-cloud, we conceptually treat
       // the coarse dust and seasalt as being externally mixed, and
@@ -1508,8 +1527,10 @@ void compute_q_tendencies(
             cldcu[k], cldvst[k], cldvst[k_p1], cldvcu[k], cldvcu[k_p1],
             sol_facti[k], sol_factic[k], sol_factb[k], state_q(k, mm),
             ptend_q(k, mm), qqcw(k, mm), pdel[k], dt, mam_prevap_resusp_optcc,
-            jnv, mm, precabs, precabc, scavabs, scavabc, precabs_base,
-            precabc_base, precnums_base, precnumc_base);
+            jnv, mm, 
+	    precabs[k], precabs_base[k], precabs_base[k+1], precabs_tmp[k], 
+	    precabc[k], precabc_base[k], precabc_base[k+1], precabc_tmp[k],
+	    scavabs, scavabc, precnums_base, precnumc_base);
 
       } else { // if (lphase == 2)
         // There is no cloud-borne aerosol water in the model, so this
@@ -1532,8 +1553,10 @@ void compute_q_tendencies(
             cmfdqr[k], conicw[k], evapc[k], evapr[k], prain[k], dlf[k], cldt[k],
             cldcu[k], cldvst[k], cldvst[k_p1], cldvcu[k], cldvcu[k_p1],
             sol_facti[k], sol_factic[k], sol_factb[k], pdel[k], dt,
-            mam_prevap_resusp_optcc, jnv, mm, k, precabs, precabc, scavabs,
-            scavabc, precabs_base, precabc_base, precnums_base, precnumc_base);
+            mam_prevap_resusp_optcc, jnv, mm, k, 
+	    precabs[k], precabs_base[k], precabs_base[k+1], precabs_tmp[k], 
+	    precabc[k], precabc_base[k], precabc_base[k+1], precabc_tmp[k],
+	    scavabs, scavabc, precnums_base, precnumc_base);
       }
     }
   });
