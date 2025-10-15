@@ -9,6 +9,9 @@
 #include <haero/atmosphere.hpp>
 #include <haero/math.hpp>
 
+#include <cmath>
+#include <limits>
+
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/mam4_types.hpp>
@@ -170,7 +173,7 @@ Real get_reynolds_num(const Real r3lx, const Real rho_air,
       vlc_drop_adjfunc;
 
   // Reynolds number
-  const Real Re = 2 * vlc_drop * r3lx * rho_air / viscos_air;
+  const Real Re = haero::max(2 * vlc_drop * r3lx * rho_air / viscos_air, 0.0);
 
   return Re;
 }
@@ -315,7 +318,7 @@ Real get_dg0imm(const Real sigma_iw, const Real rgimm) {
 
 KOKKOS_INLINE_FUNCTION
 Real get_Aimm(const Real vwice, const Real rgimm, const Real temperature,
-              const Real dg0imm) {
+              const Real dg0imm, const Real sigma_iw) {
   constexpr Real n1 = 1e19; // number of water molecules in contact with unit
                             // area of substrate [m-2] (BAD CONSTANT)
   constexpr Real hplanck = 6.63e-34; // Planck constant (BAD CONSTANT)
@@ -323,9 +326,13 @@ Real get_Aimm(const Real vwice, const Real rgimm, const Real temperature,
 
   constexpr Real bad_boltzmann = 1.38e-23; // (BAD CONSTANT)
 
-  return n1 * ((vwice * rhplanck) / haero::cube(rgimm) *
-               haero::sqrt(3.0 / Constants::pi * bad_boltzmann * temperature *
-                           dg0imm));
+  //return n1 * ((vwice * rhplanck) / haero::cube(rgimm) *
+  //             haero::sqrt(3.0 / Constants::pi * bad_boltzmann * temperature *
+  //                         dg0imm));
+  const Real inv_r2     = 1.0 / haero::square(rgimm);                 // ~1/rgimm^2
+  const Real sqrt_kT    = haero::sqrt(3.0 / Constants::pi * bad_boltzmann * temperature);
+  const Real sqrt_sigma = haero::sqrt((4.0 * Constants::pi / 3.0) * sigma_iw);
+  return n1 * (vwice * rhplanck) * (sqrt_kT * sqrt_sigma) * inv_r2;
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -380,27 +387,37 @@ void calculate_hetfrz_contact_nucleation(
                  (bad_boltzmann * temperature)) *
       Kcoll_dust_a3 * icnlx;
 
+  // ---- dt guards and small-dt finite-difference limits ----
+  constexpr Real eps_dt = 1e-12;
+  const bool small_dt = haero::abs(deltat) <= eps_dt;
+  const Real inv_dt   = small_dt ? std::numeric_limits<Real>::infinity()
+                                 : (1.0 / deltat);
+  // Contact: finite-difference rate [(1 - exp(-J*dt))/dt] with limit J as dt->0
+  const Real rate_over_dt_cnt_bc   = small_dt ? Jcnt_bc
+                                              : ((1.0 - haero::exp(-Jcnt_bc * deltat)) / deltat);
+  const Real rate_over_dt_cnt_du_a1 = small_dt ? Jcnt_dust_a1
+                                               : ((1.0 - haero::exp(-Jcnt_dust_a1 * deltat)) / deltat);
+  const Real rate_over_dt_cnt_du_a3 = small_dt ? Jcnt_dust_a3
+                                               : ((1.0 - haero::exp(-Jcnt_dust_a3 * deltat)) / deltat);
+
   // Limit to 1% of available potential IN (for BC), no limit for dust
   if (do_bc) {
     frzbccnt =
         frzbccnt +
-        haero::min(Hetfrz::limfacbc * uncoated_aer_num[Hetfrz::id_bc] / deltat,
-                   uncoated_aer_num[Hetfrz::id_bc] / deltat *
-                       (1.0 - haero::exp(-Jcnt_bc * deltat)));
+        std::fmin(Hetfrz::limfacbc * uncoated_aer_num[Hetfrz::id_bc] * inv_dt,
+                   uncoated_aer_num[Hetfrz::id_bc] * rate_over_dt_cnt_bc);
   }
 
   if (do_dst1) {
     frzducnt =
-        frzducnt + haero::min(uncoated_aer_num[Hetfrz::id_dst1] / deltat,
-                              uncoated_aer_num[Hetfrz::id_dst1] / deltat *
-                                  (1.0 - haero::exp(-Jcnt_dust_a1 * deltat)));
+        frzducnt + std::fmin(uncoated_aer_num[Hetfrz::id_dst1] * inv_dt,
+                              uncoated_aer_num[Hetfrz::id_dst1] * rate_over_dt_cnt_du_a1);
   }
 
   if (do_dst3) {
     frzducnt =
-        frzducnt + haero::min(uncoated_aer_num[Hetfrz::id_dst3] / deltat,
-                              uncoated_aer_num[Hetfrz::id_dst3] / deltat *
-                                  (1.0 - haero::exp(-Jcnt_dust_a3 * deltat)));
+        frzducnt + std::fmin(uncoated_aer_num[Hetfrz::id_dst3] * inv_dt,
+                              uncoated_aer_num[Hetfrz::id_dst3] * rate_over_dt_cnt_du_a3);
   }
 }
 
@@ -441,6 +458,12 @@ void calculate_hetfrz_deposition_nucleation(
   Real Jdep_bc = 0.0;
   Real Jdep_dust_a1 = 0.0;
   Real Jdep_dust_a3 = 0.0;
+
+  // ---- dt guards and small-dt finite-difference limits ----
+  constexpr Real eps_dt = 1e-12;
+  const bool small_dt = haero::abs(deltat) <= eps_dt;
+  const Real inv_dt   = small_dt ? std::numeric_limits<Real>::infinity()
+                                 : (1.0 / deltat);
   // nucleation rate per particle
   if (rgdep > 0) {
     Jdep_bc = Adep * haero::square(r_bc) / haero::sqrt(f_dep_bc) *
@@ -456,6 +479,14 @@ void calculate_hetfrz_deposition_nucleation(
                               (bad_boltzmann * temperature));
   }
 
+  // Deposition: finite-difference rates with limit J as dt->0
+  const Real rate_over_dt_dep_bc    = small_dt ? Jdep_bc
+                                               : ((1.0 - haero::exp(-Jdep_bc * deltat)) / deltat);
+  const Real rate_over_dt_dep_du_a1 = small_dt ? Jdep_dust_a1
+                                               : ((1.0 - haero::exp(-Jdep_dust_a1 * deltat)) / deltat);
+  const Real rate_over_dt_dep_du_a3 = small_dt ? Jdep_dust_a3
+                                               : ((1.0 - haero::exp(-Jdep_dust_a3 * deltat)) / deltat);
+
   // Limit to 1% of available potential IN (for BC), no limit for dust
   if (do_bc) {
     frzbcdep =
@@ -467,16 +498,14 @@ void calculate_hetfrz_deposition_nucleation(
 
   if (do_dst1) {
     frzdudep =
-        frzdudep + haero::min(uncoated_aer_num[Hetfrz::id_dst1] / deltat,
-                              uncoated_aer_num[Hetfrz::id_dst1] / deltat *
-                                  (1.0 - haero::exp(-Jdep_dust_a1 * deltat)));
+        frzdudep + std::fmin(uncoated_aer_num[Hetfrz::id_dst1] * inv_dt,
+                              uncoated_aer_num[Hetfrz::id_dst1] * rate_over_dt_dep_du_a1);
   }
 
   if (do_dst3) {
     frzdudep =
-        frzdudep + haero::min(uncoated_aer_num[Hetfrz::id_dst3] / deltat,
-                              uncoated_aer_num[Hetfrz::id_dst3] / deltat *
-                                  (1.0 - haero::exp(-Jdep_dust_a3 * deltat)));
+        frzdudep + std::fmin(uncoated_aer_num[Hetfrz::id_dst3] * inv_dt,
+                              uncoated_aer_num[Hetfrz::id_dst3] * rate_over_dt_dep_du_a3);
   }
 }
 
@@ -517,11 +546,16 @@ void calculate_hetfrz_immersion_nucleation(
   const Real dg0imm_dust_a3 = get_dg0imm(sigma_iw, rgimm_dust_a3);
 
   // prefactor
-  const Real Aimm_bc = get_Aimm(vwice, rgimm_bc, temperature, dg0imm_bc);
+  //const Real Aimm_bc = get_Aimm(vwice, rgimm_bc, temperature, dg0imm_bc);
+  //const Real Aimm_dust_a1 =
+  //    get_Aimm(vwice, rgimm_dust_a1, temperature, dg0imm_dust_a1);
+  //const Real Aimm_dust_a3 =
+  //    get_Aimm(vwice, rgimm_dust_a3, temperature, dg0imm_dust_a3);
+  const Real Aimm_bc = get_Aimm(vwice, rgimm_bc, temperature, dg0imm_bc, sigma_iw);
   const Real Aimm_dust_a1 =
-      get_Aimm(vwice, rgimm_dust_a1, temperature, dg0imm_dust_a1);
+      get_Aimm(vwice, rgimm_dust_a1, temperature, dg0imm_dust_a1, sigma_iw);
   const Real Aimm_dust_a3 =
-      get_Aimm(vwice, rgimm_dust_a3, temperature, dg0imm_dust_a3);
+      get_Aimm(vwice, rgimm_dust_a3, temperature, dg0imm_dust_a3, sigma_iw);
 
   // nucleation rate per particle
   constexpr Real bad_boltzmann = 1.38e-23; // (BAD CONSTANT)
@@ -582,30 +616,53 @@ void calculate_hetfrz_immersion_nucleation(
   if (sum_imm_dust_a3 > 0.99) {
     sum_imm_dust_a3 = 1.0;
   }
+  // ---- dt guards and small-dt finite-difference limits ----
+  constexpr Real eps_dt = 1e-12;
+  const bool small_dt = haero::abs(deltat) <= eps_dt;
+  const Real inv_dt   = small_dt ? std::numeric_limits<Real>::infinity()
+                                 : (1.0 / deltat);
+
+  // Immersion: finite-difference rate for BC
+  const Real rate_over_dt_imm_bc = small_dt ? Jimm_bc
+                                            : ((1.0 - haero::exp(-Jimm_bc * deltat)) / deltat);
+
+  // Compute small-dt limits for dust: J̄ = \int pdf(θ) J(θ) dθ  (trapezoid)
+  Real Jbar_imm_dust_a1 = 0.0;
+  Real Jbar_imm_dust_a3 = 0.0;
+  for (int ibin = Hetfrz::itheta_bin_beg; ibin <= Hetfrz::itheta_bin_end - 1; ++ibin) {
+    Jbar_imm_dust_a1 += 0.5 * (pdf_imm_theta[ibin]     * dim_Jimm_dust_a1[ibin]
+                             + pdf_imm_theta[ibin + 1] * dim_Jimm_dust_a1[ibin + 1])
+                        * Hetfrz::pdf_d_theta;
+    Jbar_imm_dust_a3 += 0.5 * (pdf_imm_theta[ibin]     * dim_Jimm_dust_a3[ibin]
+                             + pdf_imm_theta[ibin + 1] * dim_Jimm_dust_a3[ibin + 1])
+                        * Hetfrz::pdf_d_theta;
+  }
+  const Real rate_over_dt_du_a1 = small_dt ? Jbar_imm_dust_a1
+                                           : ((1.0 - sum_imm_dust_a1) / deltat);
+  const Real rate_over_dt_du_a3 = small_dt ? Jbar_imm_dust_a3
+                                           : ((1.0 - sum_imm_dust_a3) / deltat);
+
 
   if (do_bc) {
     // print do_bc
     const int id_bc = Hetfrz::id_bc;
     frzbcimm +=
-        haero::min(Hetfrz::limfacbc * total_cloudborne_aer_num[id_bc] / deltat,
-                   total_cloudborne_aer_num[id_bc] / deltat *
-                       (1.0 - haero::exp(-Jimm_bc * deltat)));
+        std::fmin(Hetfrz::limfacbc * total_cloudborne_aer_num[id_bc] * inv_dt,
+                   total_cloudborne_aer_num[id_bc] * rate_over_dt_imm_bc);
   }
 
   if (do_dst1) {
     // print do_dst1
     const int id_dst1 = Hetfrz::id_dst1;
-    frzduimm += haero::min(1.0 * total_cloudborne_aer_num[id_dst1] / deltat,
-                           total_cloudborne_aer_num[id_dst1] / deltat *
-                               (1.0 - sum_imm_dust_a1));
+    frzduimm += std::fmin(1.0 * total_cloudborne_aer_num[id_dst1] * inv_dt,
+                           total_cloudborne_aer_num[id_dst1] * rate_over_dt_du_a1);
   }
 
   if (do_dst3) {
     // print do_dist3
     const int id_dst3 = Hetfrz::id_dst3;
-    frzduimm += haero::min(1.0 * total_cloudborne_aer_num[id_dst3] / deltat,
-                           total_cloudborne_aer_num[id_dst3] / deltat *
-                               (1.0 - sum_imm_dust_a3));
+    frzduimm += std::fmin(1.0 * total_cloudborne_aer_num[id_dst3] * inv_dt,
+                           total_cloudborne_aer_num[id_dst3] * rate_over_dt_du_a3);
   }
 
   if (temperature > 263.15) {
@@ -784,8 +841,10 @@ void hetfrz_classnuc_calc(
 
   // critical germ size
   constexpr Real bad_boltzmann = 1.38e-23; // (BAD CONSTANT)
+  constexpr Real eps1 = 1e-12;
+  Real ss_clamped = haero::max(supersatice, 1.0 + eps1);
   const Real rgimm = 2.0 * vwice * sigma_iw /
-                     (bad_boltzmann * temperature * haero::log(supersatice));
+                     (bad_boltzmann * temperature * haero::log(ss_clamped));
 
   // take solute effect into account
   Real rgimm_bc = rgimm;
@@ -818,9 +877,12 @@ void hetfrz_classnuc_calc(
 
   // critical germ size
   // assume 98% RH in mixed-phase clouds (Korolev & Isaac, JAS 2006)
-  const Real rgdep = 2.0 * vwice * sigma_iv /
-                     (bad_boltzmann * temperature *
-                      haero::log(Hetfrz::rhwincloud * supersatice));
+  Real rhw_ss = Hetfrz::rhwincloud * supersatice;
+  Real rhw_ss_clamped = haero::max(rhw_ss, 1.0 + 1.0e-12);
+  Real denom = haero::max(bad_boltzmann * temperature * haero::log(rhw_ss_clamped),1.0e-30);
+  const Real rgdep = 2.0 * vwice * sigma_iv / denom;
+                     //(bad_boltzmann * temperature * haero::log(rhw_ss_clamped));
+                      //haero::log(Hetfrz::rhwincloud * supersatice));
 
   calculate_hetfrz_deposition_nucleation(
       deltat, temperature, uncoated_aer_num, sigma_iv, eswtr, vwice, rgdep,
@@ -1021,12 +1083,12 @@ void calculate_coated_fraction(
   const Real n_so4_monolayers_dust = 1.0;
   const Real dr_so4_monolayers_dust = n_so4_monolayers_dust * 4.76e-10;
   Real coat_ratio2 =
-      haero::max(6.0 * dr_so4_monolayers_dust * vol_core[0], 1.0e-36);
+      haero::max(6.0 * dr_so4_monolayers_dust * vol_core[0], 1.0e-30);
   dstcoat[0] = coat_ratio1 / coat_ratio2;
 
   // dust_a1
   coat_ratio1 = vol_shell[1] * (r_dust_a1 * 2.0) * fac_volsfc_dust_a1;
-  coat_ratio2 = haero::max(6.0 * dr_so4_monolayers_dust * vol_core[1], 0.0);
+  coat_ratio2 = haero::max(6.0 * dr_so4_monolayers_dust * vol_core[1], 1.0e-30);
   dstcoat[1] = coat_ratio1 / coat_ratio2;
 
   // dust_a3
@@ -1037,7 +1099,7 @@ void calculate_coated_fraction(
 
   vol_core[2] = dmc / (specdens_dst * air_density);
   coat_ratio1 = vol_shell[2] * (r_dust_a3 * 2.0) * fac_volsfc_dust_a3;
-  coat_ratio2 = haero::max(6.0 * dr_so4_monolayers_dust * vol_core[2], 0.0);
+  coat_ratio2 = haero::max(6.0 * dr_so4_monolayers_dust * vol_core[2], 1.0e-30);
   dstcoat[2] = coat_ratio1 / coat_ratio2;
 
   for (int ispec = 0; ispec < Hetfrz::hetfrz_aer_nspec; ++ispec) {
