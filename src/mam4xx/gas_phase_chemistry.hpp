@@ -34,8 +34,7 @@ using mam4::gas_chemistry::indexm;
 // performs gas phase chemistry calculations on a single level of a single
 // atmospheric column
 template <typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void gas_phase_chemistry(
+KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
     // in
     const Real temp, const Real dt,
     const Real photo_rates[mam4::mo_photo::phtcnt], const Real extfrc[extcnt],

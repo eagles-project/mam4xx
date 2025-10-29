@@ -204,18 +204,18 @@ int get_total_work_len_sethet() {
 KOKKOS_INLINE_FUNCTION
 void sethet_detail(
     const ThreadTeam &team,
-    const View2D &het_rates,         // rainout rates [1/s] //out
-    const Real rlat,                 // latitude in radians for columns
-    const ConstColumnView &press,    // pressure [pascals] //in
-    const ConstColumnView &zmid,     // midpoint geopot [km]  //in
-    const Real phis,                 // surf geopotential //in
-    const ConstColumnView &tfld,     // temperature [K]  //in
-    const ColumnView &cmfdqr,        // dq/dt for convection [kg/kg/s] //in
-    const ConstColumnView &nrain,    // stratoform precip [kg/kg/s] //in
-    const ConstColumnView &nevapr,   // evaporation [kg/kg/s] //in
-    const Real delt,                 // time step [s] //in
-    const View2D &invariants,        // total atms density [cm^-3] //in
-    const View2D qin, // xported species [vmr]  //in
+    const View2D &het_rates,       // rainout rates [1/s] //out
+    const Real rlat,               // latitude in radians for columns
+    const ConstColumnView &press,  // pressure [pascals] //in
+    const ConstColumnView &zmid,   // midpoint geopot [km]  //in
+    const Real phis,               // surf geopotential //in
+    const ConstColumnView &tfld,   // temperature [K]  //in
+    const ColumnView &cmfdqr,      // dq/dt for convection [kg/kg/s] //in
+    const ConstColumnView &nrain,  // stratoform precip [kg/kg/s] //in
+    const ConstColumnView &nevapr, // evaporation [kg/kg/s] //in
+    const Real delt,               // time step [s] //in
+    const View2D &invariants,      // total atms density [cm^-3] //in
+    const View2D qin,              // xported species [vmr]  //in
     // working variables
     const ColumnView
         &t_factor, // temperature factor to calculate henry's law parameters
@@ -330,8 +330,8 @@ void sethet_detail(
     rain(kk) = mass_air * precip(kk) * invariants(kk, indexm) / mass_h2o;
     xliq(kk) =
         precip(kk) * delt * invariants(kk, indexm) / avo * mass_air * m3_2_cm3;
-    xh2o2(kk) = qin(kk,spc_h2o2_ndx) * invariants(kk, indexm);
-    xso2(kk) = qin(kk,spc_so2_ndx) * invariants(kk, indexm);
+    xh2o2(kk) = qin(kk, spc_h2o2_ndx) * invariants(kk, indexm);
+    xso2(kk) = qin(kk, spc_so2_ndx) * invariants(kk, indexm);
   });
   zsurf = m2km * phis * rga;
 
@@ -498,10 +498,10 @@ void sethet(
     const Real phis,              // surf geopotential //in
     const ColumnView &cmfdqr,     // dq/dt for convection [kg/kg/s] //in
     const ConstColumnView &prain, // stratoform precip [kg/kg/s] //in
-    const ConstColumnView &nevapr,   // evaporation [kg/kg/s] //in
-    const Real dt,                   // time step [s] //in
-    const View2D &invariants,        //
-    const View2D& vmr, // xported species [vmr]  //in
+    const ConstColumnView &nevapr, // evaporation [kg/kg/s] //in
+    const Real dt,                 // time step [s] //in
+    const View2D &invariants,      //
+    const View2D &vmr,             // xported species [vmr]  //in
     // working variables
     const View1D &work) {
 
