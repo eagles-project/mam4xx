@@ -174,16 +174,14 @@ KOKKOS_INLINE_FUNCTION
 void setcol(const ThreadTeam &team, const Real o3_col_deltas[mam4::nlev + 1],
             ColumnView &o3_col_dens) {
   constexpr int nlev = mam4::nlev;
-  Kokkos::parallel_for(
-    Kokkos::TeamThreadRange(team, nlev),
-    [&](int kk) {
-      Kokkos::parallel_reduce(
-          Kokkos::ThreadVectorRange(team, kk+1),
-          [&](int i, Real &lsum) {
-            lsum += 0.5 * (o3_col_deltas[i] + o3_col_deltas[i+1]);
-          },
-          o3_col_dens(kk));
-    });
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int kk) {
+    Kokkos::parallel_reduce(
+        Kokkos::ThreadVectorRange(team, kk + 1),
+        [&](int i, Real &lsum) {
+          lsum += 0.5 * (o3_col_deltas[i] + o3_col_deltas[i + 1]);
+        },
+        o3_col_dens(kk));
+  });
 }
 
 KOKKOS_INLINE_FUNCTION
