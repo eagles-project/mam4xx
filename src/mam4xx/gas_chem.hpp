@@ -78,20 +78,17 @@ void imp_slv_inti(Real epsilon[clscnt4]) {
   }
 }
 template <typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
-                         const Real lrxt[rxntot],
-                         const Real lhet[gas_pcnst],         // in
-                         const Real iter_invariant[clscnt4], // in
-                         const bool factor[itermax],
-                         const int permute_4[gas_pcnst],
-                         const int clsmap_4[gas_pcnst], VectorType& lsol,
-                         Real solution[clscnt4],                     // inout
-                         bool converged[clscnt4], bool &convergence, // out
-                         Real prod[clscnt4], Real loss[clscnt4],
-                         Real max_delta[clscnt4],
-                         // work array
-                         Real epsilon[clscnt4]) {
+KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
+    const Real dti, const Real lin_jac[nzcnt], const Real lrxt[rxntot],
+    const Real lhet[gas_pcnst],         // in
+    const Real iter_invariant[clscnt4], // in
+    const bool factor[itermax], const int permute_4[gas_pcnst],
+    const int clsmap_4[gas_pcnst], VectorType &lsol,
+    Real solution[clscnt4],                     // inout
+    bool converged[clscnt4], bool &convergence, // out
+    Real prod[clscnt4], Real loss[clscnt4], Real max_delta[clscnt4],
+    // work array
+    Real epsilon[clscnt4]) {
 
   // dti := 1 / dt
   // lrxt := reaction rates in 1D array [1/cm^3/s]
@@ -240,13 +237,13 @@ void newton_raphson_iter(const Real dti, const Real lin_jac[nzcnt],
   }   // end nr_iter loop
 } // newton_raphson_iter() function
 template <typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void imp_sol(VectorType& base_sol, // inout - species mixing ratios [vmr]
-             const Real reaction_rates[rxntot], const Real het_rates[gas_pcnst],
-             const Real extfrc[extcnt], const Real &delt,
-             const int permute_4[gas_pcnst], const int clsmap_4[gas_pcnst],
-             const bool factor[itermax], Real epsilon[clscnt4],
-             Real prod_out[clscnt4], Real loss_out[clscnt4]) {
+KOKKOS_INLINE_FUNCTION void
+imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
+        const Real reaction_rates[rxntot], const Real het_rates[gas_pcnst],
+        const Real extfrc[extcnt], const Real &delt,
+        const int permute_4[gas_pcnst], const int clsmap_4[gas_pcnst],
+        const bool factor[itermax], Real epsilon[clscnt4],
+        Real prod_out[clscnt4], Real loss_out[clscnt4]) {
 
   // ---------------------------------------------------------------------------
   //  ... imp_sol advances the volumetric mixing ratio
