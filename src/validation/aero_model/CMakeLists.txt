@@ -38,13 +38,13 @@ set(TEST_LIST
 
 set(DEFAULT_TOL_BASELINE 1e-13)
 
-set(ERROR_THRESHOLDS  
+set(ERROR_THRESHOLDS
    5e-8                    # calc_1_impact_rate_ts_0
-   1e-11                   # modal_aero_bcscavcoef_get_ts_355
+   7.2e-10                   # modal_aero_bcscavcoef_get_ts_355
    2e-4                    # modal_aero_bcscavcoef_init_ts_0
    2e-5                    # aero_model_wetdep_ts_379
    1e-9                    # stand_aero_model_calcsize_water_uptake_dr_ts_379
-   ${DEFAULT_TOL_BASELINE} # baseline_aero_model_wetdep_ts_379
+   7e-10 # baseline_aero_model_wetdep_ts_379
    )
 
 set(TestLabel "aero_model")

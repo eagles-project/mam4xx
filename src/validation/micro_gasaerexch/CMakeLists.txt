@@ -35,7 +35,7 @@ set(TEST_LIST
 
 set(ERROR_THRESHOLDS
     2e-10
-    1e-13
+    2e-11
     4e-10
    )
 

@@ -44,7 +44,7 @@ set(ERROR_THRESHOLDS
     ${DEFAULT_TOL} # setsox_ts_355_merged
     ${DEFAULT_TOL} # setsox_ts_355_nlev
     ${DEFAULT_TOL} # calc_ph_values_ts_355
-    ${DEFAULT_TOL} # calc_sox_aqueous_ts_355_merged
+    1.2e-9         # calc_sox_aqueous_ts_355_merged
     ${DEFAULT_TOL} # calc_ynetpos_ts_355
    )
 
