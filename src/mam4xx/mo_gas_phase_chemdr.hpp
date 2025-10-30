@@ -205,6 +205,7 @@ void perform_atmospheric_chemistry_and_microphysics(
 
   // vmr0 stores mixing ratios before chemistry changes the mixing
   const auto vmr_col = View2D(work_set_het_ptr, nlev, gas_pcnst);
+  work_set_het_ptr += nlev * gas_pcnst;
   const int sethet_work_len = mam4::mo_sethet::get_work_len_sethet();
   const auto work_sethet_call = View1D(work_set_het_ptr, sethet_work_len);
   work_set_het_ptr += sethet_work_len;
