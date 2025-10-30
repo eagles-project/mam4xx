@@ -69,32 +69,58 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
   EKAT_ASSERT(evapr.size() == pver);
   EKAT_ASSERT(prain.size() == pver);
 
-  // Create Real arrays for inputs
-  // std::vectors can't be copied directly to device memory by Kokkos
-  // Maybe this should be a unique_ptr..
-  // Since pver is actually hard coded, maybe this isn't necessary
-  Real temperature_arr[pver];
-  Real pmid_arr[pver];
-  Real pdel_arr[pver];
-  Real cmfdqr_arr[pver];
-  Real evapc_arr[pver];
-  Real cldt_arr[pver];
-  Real cldcu_arr[pver];
-  Real cldst_arr[pver];
-  Real evapr_arr[pver];
-  Real prain_arr[pver];
+  using View1DHost = typename HostType::view_1d<Real>;
+  using View1D = typename DeviceType::view_1d<Real>;
 
-  // Use std::copy to copy input arrays to Real arrays
-  std::copy(temperature.begin(), temperature.end(), temperature_arr);
-  std::copy(pmid.begin(), pmid.end(), pmid_arr);
-  std::copy(pdel.begin(), pdel.end(), pdel_arr);
-  std::copy(cmfdqr.begin(), cmfdqr.end(), cmfdqr_arr);
-  std::copy(evapc.begin(), evapc.end(), evapc_arr);
-  std::copy(cldt.begin(), cldt.end(), cldt_arr);
-  std::copy(cldcu.begin(), cldcu.end(), cldcu_arr);
-  std::copy(cldst.begin(), cldst.end(), cldst_arr);
-  std::copy(evapr.begin(), evapr.end(), evapr_arr);
-  std::copy(prain.begin(), prain.end(), prain_arr);
+  // For temperature
+  View1DHost temperature_host((Real *)temperature.data(), pver);
+  View1D temperature_arr("temperature", pver);
+  Kokkos::deep_copy(temperature_arr, temperature_host);
+
+  // For pmid
+  View1DHost pmid_host((Real *)pmid.data(), pver);
+  View1D pmid_arr("pmid", pver);
+  Kokkos::deep_copy(pmid_arr, pmid_host);
+
+  // For pdel
+  View1DHost pdel_host((Real *)pdel.data(), pver);
+  View1D pdel_arr("pdel", pver);
+  Kokkos::deep_copy(pdel_arr, pdel_host);
+
+  // For cmfdqr
+  View1DHost cmfdqr_host((Real *)cmfdqr.data(), pver);
+  View1D cmfdqr_arr("cmfdqr", pver);
+  Kokkos::deep_copy(cmfdqr_arr, cmfdqr_host);
+
+  // For evapc
+  View1DHost evapc_host((Real *)evapc.data(), pver);
+  View1D evapc_arr("evapc", pver);
+  Kokkos::deep_copy(evapc_arr, evapc_host);
+
+  // For cldt
+  View1DHost cldt_host((Real *)cldt.data(), pver);
+  View1D cldt_arr("cldt", pver);
+  Kokkos::deep_copy(cldt_arr, cldt_host);
+
+  // For cldcu
+  View1DHost cldcu_host((Real *)cldcu.data(), pver);
+  View1D cldcu_arr("cldcu", pver);
+  Kokkos::deep_copy(cldcu_arr, cldcu_host);
+
+  // For cldst
+  View1DHost cldst_host((Real *)cldst.data(), pver);
+  View1D cldst_arr("cldst", pver);
+  Kokkos::deep_copy(cldst_arr, cldst_host);
+
+  // For evapr
+  View1DHost evapr_host((Real *)evapr.data(), pver);
+  View1D evapr_arr("evapr", pver);
+  Kokkos::deep_copy(evapr_arr, evapr_host);
+
+  // For prain
+  View1DHost prain_host((Real *)prain.data(), pver);
+  View1D prain_arr("prain", pver);
+  Kokkos::deep_copy(prain_arr, prain_host);
 
   // Prepare device views for output arrays
   ColumnView cldv_dev = mam4::validation::create_column_view(pver);
@@ -102,26 +128,13 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
   ColumnView cldvst_dev = mam4::validation::create_column_view(pver);
   ColumnView rain_dev = mam4::validation::create_column_view(pver);
 
+  // TODO: let's use team policy
   Kokkos::parallel_for(
       "wetdep::clddiag", 1, KOKKOS_LAMBDA(const int) {
-        // On device, create Real arrays for outputs
-        Real cldv[pver];
-        Real cldvcu[pver];
-        Real cldvst[pver];
-        Real rain[pver];
-
         mam4::wetdep::clddiag(pver, temperature_arr, pmid_arr, pdel_arr,
                               cmfdqr_arr, evapc_arr, cldt_arr, cldcu_arr,
-                              cldst_arr, evapr_arr, prain_arr, cldv, cldvcu,
-                              cldvst, rain);
-
-        // Copy values back to host
-        for (size_t i = 0; i < pver; ++i) {
-          cldv_dev(i) = cldv[i];
-          cldvcu_dev(i) = cldvcu[i];
-          cldvst_dev(i) = cldvst[i];
-          rain_dev(i) = rain[i];
-        }
+                              cldst_arr, evapr_arr, prain_arr, cldv_dev,
+                              cldvcu_dev, cldvst_dev, rain_dev);
       });
 
   // Create mirror views for output arrays
