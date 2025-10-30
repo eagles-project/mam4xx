@@ -89,66 +89,18 @@ KOKKOS_INLINE_FUNCTION void
 imp_prod_loss(Real prod[clscnt4], Real loss[clscnt4], VectorType &y,
               const Real rxt[rxntot], const Real het_rates[gas_pcnst]) {
   const Real zero = 0;
-  loss[0] = (+het_rates[1] + rxt[0] + rxt[2]) * (+y[1]);
+  loss[0] = (het_rates[1] + rxt[0] + rxt[2]) * y[1];
   prod[0] = zero;
-  loss[1] = (+het_rates[2]) * (+y[2]);
-  prod[1] = (+rxt[3]) * (+y[3]);
-  loss[2] = (+het_rates[3] + rxt[3]) * (+y[3]);
-  prod[2] = (+rxt[4] + 0.500000 * rxt[5] + rxt[6]) * (+y[4]);
-  loss[3] = (+het_rates[4] + rxt[4] + rxt[5] + rxt[6]) * (+y[4]);
+  loss[1] = het_rates[2] * y[2];
+  prod[1] = rxt[3] * y[3];
+  loss[2] = (het_rates[3] + rxt[3]) * y[3];
+  prod[2] = (rxt[4] + 0.500000 * rxt[5] + rxt[6]) * y[4];
+  loss[3] = (het_rates[4] + rxt[4] + rxt[5] + rxt[6]) * y[4];
   prod[3] = zero;
-  loss[4] = (+het_rates[5]) * (+y[5]);
-  prod[4] = zero;
-  loss[5] = (+het_rates[6]) * (+y[6]);
-  prod[5] = zero;
-  loss[6] = (+het_rates[7]) * (+y[7]);
-  prod[6] = zero;
-  loss[7] = (+het_rates[8]) * (+y[8]);
-  prod[7] = zero;
-  loss[8] = (+het_rates[9]) * (+y[9]);
-  prod[8] = zero;
-  loss[9] = (+het_rates[10]) * (+y[10]);
-  prod[9] = zero;
-  loss[10] = (+het_rates[11]) * (+y[11]);
-  prod[10] = zero;
-  loss[11] = (+het_rates[12]) * (+y[12]);
-  prod[11] = zero;
-  loss[12] = (+het_rates[13]) * (+y[13]);
-  prod[12] = zero;
-  loss[13] = (+het_rates[14]) * (+y[14]);
-  prod[13] = zero;
-  loss[14] = (+het_rates[15]) * (+y[15]);
-  prod[14] = zero;
-  loss[15] = (+het_rates[16]) * (+y[16]);
-  prod[15] = zero;
-  loss[16] = (+het_rates[17]) * (+y[17]);
-  prod[16] = zero;
-  loss[17] = (+het_rates[18]) * (+y[18]);
-  prod[17] = zero;
-  loss[18] = (+het_rates[19]) * (+y[19]);
-  prod[18] = zero;
-  loss[19] = (+het_rates[20]) * (+y[20]);
-  prod[19] = zero;
-  loss[20] = (+het_rates[21]) * (+y[21]);
-  prod[20] = zero;
-  loss[21] = (+het_rates[22]) * (+y[22]);
-  prod[21] = zero;
-  loss[22] = (+het_rates[23]) * (+y[23]);
-  prod[22] = zero;
-  loss[23] = (+het_rates[24]) * (+y[24]);
-  prod[23] = zero;
-  loss[24] = (+het_rates[25]) * (+y[25]);
-  prod[24] = zero;
-  loss[25] = (+het_rates[26]) * (+y[26]);
-  prod[25] = zero;
-  loss[26] = (+het_rates[27]) * (+y[27]);
-  prod[26] = zero;
-  loss[27] = (+het_rates[28]) * (+y[28]);
-  prod[27] = zero;
-  loss[28] = (+het_rates[29]) * (+y[29]);
-  prod[28] = zero;
-  loss[29] = (+het_rates[30]) * (+y[30]);
-  prod[29] = zero;
+  for (int i = 4; i < 31; ++i) {
+    loss[i] = het_rates[i + 1] * y[i + 1];
+    prod[i] = zero;
+  }
 } // imp_prod_loss
 
 KOKKOS_INLINE_FUNCTION
