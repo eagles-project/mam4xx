@@ -97,7 +97,7 @@ imp_prod_loss(Real prod[clscnt4], Real loss[clscnt4], VectorType &y,
   prod[2] = (rxt[4] + 0.500000 * rxt[5] + rxt[6]) * y[4];
   loss[3] = (het_rates[4] + rxt[4] + rxt[5] + rxt[6]) * y[4];
   prod[3] = zero;
-  for (int i = 4; i < 31; ++i) {
+  for (int i = 4; i < clscnt4; ++i) {
     loss[i] = het_rates[i + 1] * y[i + 1];
     prod[i] = zero;
   }
