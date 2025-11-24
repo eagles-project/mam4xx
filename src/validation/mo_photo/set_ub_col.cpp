@@ -22,33 +22,23 @@ void set_ub_col(Ensemble *ensemble) {
 
     const Real spc_exo_col = input.get_array("spc_exo_col")[0];
     const auto vmr_in = input.get_array("vmr");
-    const auto invariants_in = input.get_array("invariants");
     const auto pdel_in = input.get_array("pdel");
 
     View2D vmr("vmr", pver, gas_pcnst);
-    View2D invariants("invariants", pver, nfs);
     View1D pdel("pdel", pver);
 
     mam4::validation::convert_1d_vector_to_2d_view_device(vmr_in, vmr);
-    mam4::validation::convert_1d_vector_to_2d_view_device(invariants_in,
-                                                          invariants);
     auto pdel_host = Kokkos::create_mirror_view(pdel);
     std::copy(pdel_in.data(), pdel_in.data() + pver, pdel_host.data());
     Kokkos::deep_copy(pdel, pdel_host);
 
     View1D col_delta("col_delta", pver + 1);
+    const int o3_idx =0;
     Kokkos::deep_copy(col_delta, spc_exo_col); // sets col_delta(0)
     Kokkos::parallel_for(
         pver, KOKKOS_LAMBDA(const int k) {
-          Real vmr_ik[gas_pcnst];
-          for (int l = 0; l < gas_pcnst; ++l) {
-            vmr_ik[l] = vmr(k, l);
-          }
-          Real inv_ik[nfs];
-          for (int l = 0; l < nfs; ++l) {
-            inv_ik[l] = invariants(k, l);
-          }
-          mam4::mo_photo::set_ub_col(col_delta(k + 1), vmr_ik, inv_ik, pdel(k));
+          const Real vmr_o3=vmr(k, o3_idx);
+          mam4::mo_photo::set_ub_col(col_delta(k + 1), vmr_o3, pdel(k));
         });
 
     auto col_delta_host = Kokkos::create_mirror_view(col_delta);
