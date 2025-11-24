@@ -41,6 +41,8 @@ void compute_o3_column_density(
       mam4::gas_chemistry::gas_pcnst;           // number of gas phase species
   constexpr int nfs = mam4::gas_chemistry::nfs; // number of "fixed species"
   constexpr int offset_aerosol = mam4::utils::gasses_start_ind();
+  constexpr int o3_idx= mam4::gas_chemistry::o3_idx;
+
 
   Real o3_col_deltas[mam4::nlev + 1] =
       {}; // o3 column density above model [1/cm^2]
@@ -64,14 +66,10 @@ void compute_o3_column_density(
     // equivalent to tracer mixing ratios (TMR))
     Real vmr[gas_pcnst] = {};
     mmr2vmr(q, adv_mass_kg_per_moles, vmr);
-    // ... compute invariants for this level
-    Real invariants_k[nfs];
-    for (int i = 0; i < nfs; ++i) {
-      invariants_k[i] = invariants(k, i);
-    }
+
     // compute the change in o3 density for this column above its neighbor
     mam4::mo_photo::set_ub_col(o3_col_deltas[k + 1],     // out
-                               vmr, invariants_k, pdel); // out
+                               vmr[o3_idx],pdel); // out
   });
   team.team_barrier();
   // sum the o3 column deltas to densities
