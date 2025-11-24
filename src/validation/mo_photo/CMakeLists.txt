@@ -40,6 +40,7 @@ set(TEST_LIST
     stand_synthetic_interpolate_rsf_ts_355
     stand_synthetic_jlong_ts_355
     stand_synthetic_table_photo_ts_355
+    set_ub_col_ts_355
     )
 # # matching the tests and errors, just for convenience
 
@@ -52,6 +53,7 @@ set(ERROR_THRESHOLDS
     6e-6
     8e-6
     2e-6
+    ${DEFAULT_TOL}
    )
 
 set(TestLabel "mo_photo")
@@ -77,29 +79,3 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
   set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
 endforeach()
-
-# Test set_ub_col separately, since we're only computing O3 "densities" and not
-# O2 densities.
-set(input "set_ub_col_ts_355")
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/compare_set_ub_col_mam4xx_mam4.py
-  ${CMAKE_CURRENT_BINARY_DIR}/compare_set_ub_col_mam4xx_mam4.py
-  COPYONLY
-)
-configure_file(
-  ${MO_PHOTO_VALIDATION_DIR}/mam_${input}.py
-  ${CMAKE_CURRENT_BINARY_DIR}/mam_${input}.py
-  COPYONLY
-)
-
-# add a test to run the skywalker driver
-add_test(run_${input} mo_photo_driver ${MO_PHOTO_VALIDATION_DIR}/${input}.yaml)
-set_tests_properties(run_${input} PROPERTIES LABELS ${TestLabel})
-
-# add a test to validate mam4xx's results against the baseline.
-# Select a threshold error slightly bigger than the largest relative error for the threshold error.
-# compare_mam4xx_mam4.py <module1.py> <module2.py> <check_norms> <threshold error>
-add_test(validate_${input} python3 compare_set_ub_col_mam4xx_mam4.py mam4xx_${input}.py mam_${input}.py True ${tol})
-set_property(TEST validate_${input} PROPERTY SKIP_REGULAR_EXPRESSION "regex_fail_rel_tol")
-set_tests_properties(validate_${input} PROPERTIES DEPENDS run_${input})
-set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
