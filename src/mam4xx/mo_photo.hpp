@@ -152,8 +152,7 @@ void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
 // NOTE: we should properly reorganize the code before we do it)
 KOKKOS_INLINE_FUNCTION
 void set_ub_col(Real &o3_col_delta,
-                const Real vmr[mam4::gas_chemistry::gas_pcnst],
-                const Real invariants[mam4::gas_chemistry::nfs],
+                const Real vmr_o3,
                 const Real pdel) {
   // NOTE: chemical characteristics of our current mechanism are generated in
   // NOTE: eam/src/chemistry/pp_linoz_mam4_resus_mom_soag/mo_sim_dat.F90
@@ -166,8 +165,7 @@ void set_ub_col(Real &o3_col_delta,
   // the above conditions that o3_ndx == 0, o3_inv_ndx == -1, and O2 is not
   // a species or an invariant of interest
   constexpr Real xfactor = 2.8704e21 / (9.80616 * 1.38044); // BAD_CONSTANT!
-  constexpr int o3_ndx = 0;
-  o3_col_delta = xfactor * pdel * vmr[o3_ndx];
+  o3_col_delta = xfactor * pdel * vmr_o3;
 }
 
 template <typename VectorType>
