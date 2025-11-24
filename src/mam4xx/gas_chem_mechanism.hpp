@@ -13,6 +13,7 @@ constexpr int nzcnt = 32;     // number of non-zero matrix entries
 constexpr int clscnt4 = 30;   // number of species in implicit class
 constexpr int extcnt = 9;     // number of species with external forcing
 constexpr int nfs = 8;        // number of fixed species
+constexpr int o3_idx= 0;      // index of O3
 constexpr int indexm = 0;     // index of total atm density in invariant array
 constexpr int permute_4[gas_pcnst] = {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
                                       10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
