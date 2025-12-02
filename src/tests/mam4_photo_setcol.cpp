@@ -8,6 +8,16 @@
 #include <ekat_logger.hpp>
 #include <mam4xx/mam4.hpp>
 
+template <typename T> struct PrecisionTolerance;
+
+template <> struct PrecisionTolerance<float> {
+  static constexpr float tol = 1e-5f; // Single precision
+};
+
+template <> struct PrecisionTolerance<double> {
+  static constexpr double tol = 1e-12; // Double precision
+};
+
 using namespace mam4;
 using namespace haero;
 
@@ -24,7 +34,8 @@ TEST_CASE("setcol_serial_vs_parallel", "mo_photo") {
   std::ostringstream ss;
 
   // initialization
-  constexpr Real tol = 1e-12;
+  constexpr Real tol = PrecisionTolerance<Real>::tol;
+  ;
   constexpr int ncol = 3;
   constexpr int pver = mam4::nlev;
 
@@ -70,12 +81,12 @@ TEST_CASE("setcol_serial_vs_parallel", "mo_photo") {
   for (int i = 0; i < ncol; ++i) {
     for (int j = 0; j < pver; ++j) {
       const Real diff = std::abs(col_dens_host(i, j) - col_dens_host_ref(i, j));
-      if (diff > tol) {
-        ss << diff << " " << col_dens_host(i, j) << " "
-           << col_dens_host_ref(i, j) << "\n";
+      if (diff >= tol) {
+        std::cout << diff << " " << col_dens_host(i, j) << " "
+                  << col_dens_host_ref(i, j) << "\n";
         logger.debug(ss.str());
       }
-      REQUIRE(diff < tol);
+      REQUIRE(diff <= tol);
     }
   }
 }
