@@ -39,7 +39,6 @@ void compute_o3_column_density(
     ColumnView o3_col_dens) {
   constexpr int gas_pcnst =
       mam4::gas_chemistry::gas_pcnst; // number of gas phase species
-  // constexpr int nfs = mam4::gas_chemistry::nfs; // number of "fixed species"
   constexpr int offset_aerosol = mam4::utils::gasses_start_ind();
   constexpr int o3_idx = mam4::gas_chemistry::o3_idx;
 
