@@ -33,12 +33,13 @@ void set_ub_col(Ensemble *ensemble) {
     Kokkos::deep_copy(pdel, pdel_host);
 
     View1D col_delta("col_delta", pver + 1);
-    const int o3_idx =0;
-    auto col_delta_0= ekat::subview(col_delta,0);
+    const int o3_idx = 0;
+    auto col_delta_0 = ekat::subview(col_delta, 0);
     Kokkos::deep_copy(col_delta_0, spc_exo_col); // sets col_delta(0)
     Kokkos::parallel_for(
         pver, KOKKOS_LAMBDA(const int k) {
-          col_delta(k + 1)= mam4::mo_photo::set_ub_col(vmr(k, o3_idx), pdel(k));
+          col_delta(k + 1) =
+              mam4::mo_photo::set_ub_col(vmr(k, o3_idx), pdel(k));
         });
 
     auto col_delta_host = Kokkos::create_mirror_view(col_delta);
