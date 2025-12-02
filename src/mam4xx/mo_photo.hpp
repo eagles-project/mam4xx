@@ -151,8 +151,7 @@ void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
 // NOTE: (o2 is not computed--if we want to add it back to the calculation,
 // NOTE: we should properly reorganize the code before we do it)
 KOKKOS_INLINE_FUNCTION
-Real set_ub_col(const Real vmr_o3,
-                const Real pdel) {
+Real set_ub_col(const Real vmr_o3, const Real pdel) {
   // NOTE: chemical characteristics of our current mechanism are generated in
   // NOTE: eam/src/chemistry/pp_linoz_mam4_resus_mom_soag/mo_sim_dat.F90
 
@@ -164,23 +163,20 @@ Real set_ub_col(const Real vmr_o3,
   // the above conditions that o3_ndx == 0, o3_inv_ndx == -1, and O2 is not
   // a species or an invariant of interest
   constexpr Real xfactor = 2.8704e21 / (9.80616 * 1.38044); // BAD_CONSTANT!
-  return  xfactor * pdel * vmr_o3;
+  return xfactor * pdel * vmr_o3;
 }
 
 template <typename VectorType>
-KOKKOS_INLINE_FUNCTION
-void setcol(const ThreadTeam &team, const VectorType o3_col_deltas,
-            ColumnView &o3_col_dens) {
+KOKKOS_INLINE_FUNCTION void setcol(const ThreadTeam &team,
+                                   const VectorType o3_col_deltas,
+                                   ColumnView &o3_col_dens) {
   constexpr int nlev = mam4::nlev;
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int kk) {
-    Real suma=0.0;
+    Real suma = 0.0;
     Kokkos::parallel_reduce(
-        Kokkos::ThreadVectorRange(team, kk+1),
-        [&](int i, Real &lsum) {
-          lsum +=o3_col_deltas[i];
-        },
-        suma);
-       o3_col_dens(kk) = suma+ 0.5*o3_col_deltas[kk+1];
+        Kokkos::ThreadVectorRange(team, kk + 1),
+        [&](int i, Real &lsum) { lsum += o3_col_deltas[i]; }, suma);
+    o3_col_dens(kk) = suma + 0.5 * o3_col_deltas[kk + 1];
   });
 }
 
