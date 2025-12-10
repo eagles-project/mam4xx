@@ -7,6 +7,9 @@ namespace mam4 {
 
 namespace microphysics {
 
+  using View1D = DeviceType::view_1d<Real>;
+  using ConstView1D = DeviceType::view_1d<const Real>;
+
 // FIXME: check if we have ported these function in mam4xx. If no, let's move
 // them there.
 KOKKOS_INLINE_FUNCTION
@@ -34,7 +37,8 @@ using View2D = DeviceType::view_2d<Real>;
 KOKKOS_INLINE_FUNCTION
 void compute_o3_column_density(
     const ThreadTeam &team, const haero::Atmosphere &atm,
-    const mam4::Prognostics &progs, const View2D &invariants,
+    const mam4::Prognostics &progs,
+    // const View2D &invariants,
     const Real adv_mass_kg_per_moles[mam4::gas_chemistry::gas_pcnst],
     ColumnView o3_col_dens) {
   constexpr int gas_pcnst =
@@ -72,6 +76,28 @@ void compute_o3_column_density(
   // sum the o3 column deltas to densities
   mam4::mo_photo::setcol(team, o3_col_deltas, // in
                          o3_col_dens);        // out
+}
+KOKKOS_INLINE_FUNCTION
+void compute_o3_column_density(const ThreadTeam &team,
+                               const ConstView1D &pdel,
+                               const View1D &mmr_o3,
+                               const Real o3_col_deltas_0,
+                               const Real mw_o3,
+                               const View1D& o3_col_dens)
+{
+  constexpr Real xfactor = 2.8704e21 / (9.80616 * 1.38044); // BAD_CONSTANT!
+  constexpr int nlev = mam4::nlev;
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int kk) {
+    Real suma = 0.0;
+    Kokkos::parallel_reduce(
+        Kokkos::ThreadVectorRange(team, kk),
+        [&](int i, Real &lsum) {
+          const Real vmr_o3_i = mam4::conversions::vmr_from_mmr(mmr_o3(i), mw_o3);
+          lsum += xfactor * pdel(i) * vmr_o3_i;
+        }, suma);
+    const Real vmr_o3_kk = mam4::conversions::vmr_from_mmr(mmr_o3(kk), mw_o3);
+    o3_col_dens(kk) = o3_col_deltas_0 + suma + 0.5 * xfactor * pdel(kk) * vmr_o3_kk;
+  });
 }
 } // namespace microphysics
 } // namespace mam4
