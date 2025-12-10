@@ -7,6 +7,7 @@
 #include <catch2/catch.hpp>
 #include <ekat_logger.hpp>
 #include <mam4xx/mam4.hpp>
+#include "atmosphere_utils.hpp"
 
 template <typename T> struct PrecisionTolerance;
 
@@ -17,6 +18,32 @@ template <> struct PrecisionTolerance<float> {
 template <> struct PrecisionTolerance<double> {
   static constexpr double tol = 1e-12; // Double precision
 };
+
+template <typename ViewType1D>
+Real compute_l2_norm(const ViewType1D& x,
+                     const ViewType1D& y) {
+  // sanity check
+  const auto n = x.extent(0);
+  assert(n == y.extent(0) && "x and y must have the same length");
+
+  // accumulator for sum of squared diffs
+  Real sum_sq = 0.0;
+
+  // parallel reduction over i=0..n-1: sum_sq += (x(i)-y(i))^2
+  Kokkos::parallel_reduce(
+    "l2_norm_reduce",
+    Kokkos::RangePolicy<>(0, n),
+    KOKKOS_LAMBDA(const int i, Real& local_sum) {
+      Real d = x(i) - y(i);
+      local_sum += d * d;
+    },
+    sum_sq
+  );
+  Kokkos::fence();
+
+  // take square root on host
+  return std::sqrt(sum_sq);
+}
 
 using namespace mam4;
 using namespace haero;
@@ -35,7 +62,6 @@ TEST_CASE("setcol_serial_vs_parallel", "mo_photo") {
 
   // initialization
   constexpr Real tol = PrecisionTolerance<Real>::tol;
-  ;
   constexpr int ncol = 3;
   constexpr int pver = mam4::nlev;
 
@@ -89,4 +115,80 @@ TEST_CASE("setcol_serial_vs_parallel", "mo_photo") {
       REQUIRE(diff <= tol);
     }
   }
+}
+
+TEST_CASE("compute_o3_column_density", "mo_photo") {
+  using View1D = DeviceType::view_1d<Real>;
+  using View1DHost = typename HostType::view_1d<Real>;
+
+  auto team_policy = ThreadTeamPolicy(1, Kokkos::AUTO);
+  int nlev = 72;
+  Real pblh = 1000;
+  // these values correspond to a humid atmosphere with relative humidity
+  // values approximately between 32% and 98%
+  const Real Tv0 = 300;     // reference virtual temperature [K]
+  const Real Gammav = 0.01; // virtual temperature lapse rate [K/m]
+  const Real qv0 =
+      0.015; // specific humidity at surface [kg h2o / kg moist air]
+  const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
+  Atmosphere atm =
+      mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
+
+  constexpr int num_gas_aerosol_constituents = mam4::gas_chemistry::gas_pcnst;
+  View1D o3_col_dens_i("o3_col_dens_i", nlev);
+  mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
+  Real adv_mass_kg_per_moles[num_gas_aerosol_constituents];
+  for(int i = 0; i < num_gas_aerosol_constituents; ++i) {
+    adv_mass_kg_per_moles[i] = mam4::gas_chemistry::adv_mass[i] / 1e3;
+  }
+
+  const int o3_idx=0;
+  const auto& mmr_o3 = progs.q_gas[o3_idx];
+  std::default_random_engine generator(12345); // Seed for reproducibility
+  std::uniform_real_distribution<double> unif_dist(0.0, 1.0); // Uniform
+  View1DHost mmr_o3_host("mmr_o3_host", nlev);
+  for (int j = 0; j < nlev + 1; ++j) {
+      mmr_o3_host(j) = unif_dist(generator); // Generate random number
+  }
+  Kokkos::deep_copy(mmr_o3, mmr_o3_host);
+
+  Kokkos::parallel_for(
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+  mam4::microphysics::compute_o3_column_density(team, atm, progs,      // in
+                                                adv_mass_kg_per_moles, // in
+                                                o3_col_dens_i);        // out
+  });
+  Kokkos::fence();
+
+  const Real o3_col_deltas_0 = 0.0;  // example scaling
+  const Real mw_o3           = adv_mass_kg_per_moles[0];   // molecular weight of ozone
+  View1D o3_col_dens_i2("o3_col_dens_i2", nlev);
+  const auto pdel = atm.hydrostatic_dp;
+  std::cout << "adv_mass_kg_per_moles[0]"<<mw_o3  << "\n";
+
+  // one team, with enough threads to cover 'nlev' if needed
+  Kokkos::parallel_for(
+      "compute_o3_column", team_policy,
+      KOKKOS_LAMBDA(const ThreadTeam& team) {
+        mam4::microphysics::compute_o3_column_density(
+          team,
+          pdel,            // pressure-thickness array [nlev]
+          mmr_o3,          // ozone mass‐mixing ratio [nlev]
+          o3_col_deltas_0, // constant factor
+          mw_o3,           // ozone molecular weight
+          o3_col_dens_i2      // output column‐density [nlev]
+        );
+      }
+    );
+
+
+    const Real error = compute_l2_norm(o3_col_dens_i,o3_col_dens_i2);
+    constexpr Real tol = PrecisionTolerance<Real>::tol;
+    REQUIRE(error <= tol);
+
+
+
+
+
+
 }
