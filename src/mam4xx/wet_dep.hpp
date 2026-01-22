@@ -60,7 +60,6 @@ using ConstView1D = DeviceType::view_1d<const Real>;
 using View1D = DeviceType::view_1d<Real>;
 using Int1D = DeviceType::view_1d<int>;
 using AerosolIndicesView = DeviceType::view_1d<AerosolIndices>;
-using AerosolIndicesViewHost = HostType::view_1d<AerosolIndices>;
 using View2D = DeviceType::view_2d<Real>;
 using View2DHost = typename HostType::view_2d<Real>;
 KOKKOS_INLINE_FUNCTION
@@ -1563,6 +1562,7 @@ void update_q_tendencies(const ThreadTeam &team, const View2D &ptend_q,
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
 int get_aero_model_wetdep_work_len() {
+  int aero_index_len = sizeof(Real) / (2 * sizeof(int)); // size of an aerosol mode/specieѕ index pair
   int work_len = 2 * mam4::nlev * pcnst +
                  // state_q, qqcw
                  13 * mam4::nlev +
@@ -1577,7 +1577,9 @@ int get_aero_model_wetdep_work_len() {
                  // ptend_q, rtscavt_sv
                  2 * pcnst +
                  // dqqcwdt
-                 aero_model::pcnst * mam4::nlev;
+                 aero_model::pcnst * mam4::nlev + 
+                 // aerosol index structs view
+                 AeroConfig::num_modes() * AeroConfig::num_aerosol_ids() * aero_index_len;
   //  qsrflx_mzaer2cnvpr
   return work_len;
 }
@@ -1620,6 +1622,9 @@ void aero_model_wetdep(
   constexpr int ntot_amode = AeroConfig::num_modes();
   constexpr int nlev = mam4::nlev;
   constexpr int zero = 0.0;
+
+  // change mode order as mmode_loop_aa loops in a different order
+  const int mode_order_change[4] = {0, 1, 3, 2};
 
   auto work_ptr = (Real *)work.data();
   // FIXME: is an input/output wet_geometric_mean_diameter_i ?
@@ -1746,6 +1751,20 @@ void aero_model_wetdep(
       dqqcwdt(i, j) = zero;
     });
   });
+
+  // aerosol mode/species indices for parallel dispatch
+  AerosolIndices *aero_indices_work_ptr = reinterpret_cast<AerosolIndices*>(work_ptr);
+  AerosolIndicesView aero_indices(aero_indices_work_ptr, AeroConfig::num_modes() * AeroConfig::num_aerosol_ids());
+  {
+    int i = 0;
+    for (int mtmp = 0; mtmp < AeroConfig::num_modes(); ++mtmp) {
+      int imode = mode_order_change[mtmp];
+      for (int lspec = 0; lspec < num_species_mode(imode) + 2; ++lspec, ++i) {
+        aero_indices(i).imode = imode;
+        aero_indices(i).lspec = lspec;
+      }
+    }
+  }
 
   wetdep::zero_values(team, aerdepwetis, pcnst);
   wetdep::zero_values(team, aerdepwetcw, pcnst);
@@ -1888,9 +1907,6 @@ void aero_model_wetdep(
     return;
   {
 
-    // // change mode order as mmode_loop_aa loops in a different order
-    const int mode_order_change[4] = {0, 1, 3, 2};
-
     const int jaerowater = 2;
 
     // cumulus cloud fraction =  dp_frac + sh_frac
@@ -1951,28 +1967,11 @@ void aero_model_wetdep(
         // inputs
         pdel, prain, cmfdqr, evapr, state_q, ptend_q, dt, nlev);
 
-    // assemble aerosol mode/species indices for parallel dispatch
-    std::vector<AerosolIndices> aero_indices_vec;
-    for (int mtmp = 0; mtmp < AeroConfig::num_modes(); ++mtmp) {
-      AerosolIndices indices{};
-      indices.imode = mode_order_change[mtmp];
-      for (indices.lspec = 0; indices.lspec < num_species_mode(indices.imode) + 2; ++indices.lspec) {
-        aero_indices_vec.push_back(indices);
-      }
-    }
-    // copy the indices to a device-sensible view
-    AerosolIndicesViewHost aero_indices_h("aerosol indices (host)", aero_indices_vec.size());
-    AerosolIndicesView     aero_indices_d("aerosol indices", aero_indices_vec.size());
-    for (size_t i = 0; i < aero_indices_vec.size(); ++i) {
-      aero_indices_h(i) = aero_indices_vec[i];
-    }
-    Kokkos::deep_copy(aero_indices_d, aero_indices_h);
-
     // main loop over all aerosol modes/species,
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, aero_indices_d.size()), [&](int species_index) {
-      const auto aero_indices = aero_indices_d(species_index);
-      const int imode = aero_indices.imode;
-      const int lspec = aero_indices.lspec;
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, aero_indices.size()), [&](int species_index) {
+      const auto indices = aero_indices(species_index);
+      const int imode = indices.imode;
+      const int lspec = indices.lspec;
 
       // set up aerosol work subviews
       int pool_index = species_index % num_species_threads;
