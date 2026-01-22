@@ -180,6 +180,7 @@ fi
 
 echo "Configuring Haero with the given selections (WITHOUT MPI)..."
 cmake -S ./.haero -B ./.haero/build \
+  -G "Unix Makefiles" \
   -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
   -DCMAKE_INSTALL_PREFIX="$PREFIX" \
   -DCMAKE_C_COMPILER=$CC \
@@ -194,7 +195,7 @@ cmake -S ./.haero -B ./.haero/build \
 
 echo "Building and installing Haero in $PREFIX..."
 cd .haero/build || exit
-make -j8 install || exit
+make install || exit
 
 cd ../../
 echo "Haero has been installed in $PREFIX. Set HAERO_DIR to this directory in"
