@@ -153,8 +153,8 @@ void update_scavenging(const int mam_prevap_resusp_optcc, const Real pdel_ik,
                        const Real cmfdqr_ik, const Real evapc_ik,
                        Real &scavt_ik, Real &iscavt_ik, Real &icscavt_ik,
                        Real &isscavt_ik, Real &bcscavt_ik, Real &bsscavt_ik,
-                       Real &rcscavt_ik, Real &rsscavt_ik, Real &scavabs,
-                       Real &scavabc, Real &precabc, Real &precabs) {
+                       Real &rcscavt_ik, Real &rsscavt_ik, const Real scavabs,
+                       const Real scavabc) {
   // clang-format off
   // ------------------------------------------------------------------------------
   // update scavenging variables
@@ -218,14 +218,6 @@ void update_scavenging(const int mam_prevap_resusp_optcc, const Real pdel_ik,
     rcscavt_ik = resusp_c * gravit / pdel_ik;
     bsscavt_ik = -(srcs * (1 - fins)) * omsm;
     rsscavt_ik = resusp_s * gravit / pdel_ik;
-  }
-
-  // now keep track of scavenged mass and precip
-  if (mam_prevap_resusp_optcc == 0) {
-    scavabs = scavabs * (1 - fracev_st) + srcs * pdel_ik / gravit;
-    scavabc = scavabc * (1 - fracev_cu) + srcc * pdel_ik / gravit;
-    precabs = precabs + (precs_ik - evaps_ik) * pdel_ik / gravit;
-    precabc = precabc + (cmfdqr_ik - evapc_ik) * pdel_ik / gravit;
   }
 }
 // ==============================================================================
@@ -416,8 +408,8 @@ void wetdep_prevap(const int is_st_cu, const int mam_prevap_resusp_optcc,
                    const Real pdel_ik, const Real pprdx, const Real srcx,
                    const Real arainx, const Real precabx_old,
                    const Real precabx_base_old, const Real scavabx_old,
-                   const Real precnumx_base_old, Real &precabx_new,
-                   Real &precabx_base_new, Real &scavabx_new,
+                   const Real precnumx_base_old, const Real precabx_new,
+                   const Real precabx_base_new, Real &scavabx_new,
                    Real &precnumx_base_new) {
   // clang-format off
   // ------------------------------------------------------------------------------
@@ -453,13 +445,9 @@ void wetdep_prevap(const int is_st_cu, const int mam_prevap_resusp_optcc,
   scavabx_new = scavabx_old;
   precnumx_base_new = precnumx_base_old;
 
-  Real tmpa = haero::max(0.0, pprdx * pdel_ik / gravit);
-  precabx_base_new = haero::max(0.0, precabx_base_old + tmpa);
-  precabx_new = utils::min_max_bound(0.0, precabx_base_new, precabx_old + tmpa);
-
   if (mam_prevap_resusp_optcc <= 130) {
     // aerosol mass scavenging
-    tmpa = haero::max(0.0, srcx * pdel_ik / gravit);
+    const Real tmpa = haero::max(0.0, srcx * pdel_ik / gravit);
     scavabx_new = haero::max(0.0, scavabx_old + tmpa);
   } else {
     // raindrop number increase
@@ -468,7 +456,7 @@ void wetdep_prevap(const int is_st_cu, const int mam_prevap_resusp_optcc,
     } else if (precabx_base_new > precabx_base_old) {
       // note - calc rainshaft number flux from rainshaft water flux,
       // then multiply by rainshaft area to get grid-average number flux
-      tmpa = arainx * flux_precnum_vs_flux_prec_mpln(precabx_base_new / arainx,
+      const Real tmpa = arainx * flux_precnum_vs_flux_prec_mpln(precabx_base_new / arainx,
                                                      is_st_cu);
       precnumx_base_new = haero::max(0.0, tmpa);
     } else {
@@ -561,8 +549,8 @@ void wetdep_resusp_noprecip(const int is_st_cu,
                             const int mam_prevap_resusp_optcc,
                             const Real precabx_old, const Real precabx_base_old,
                             const Real scavabx_old,
-                            const Real precnumx_base_old, Real &precabx_new,
-                            Real &precabx_base_new, Real &scavabx_new,
+                            const Real precnumx_base_old, 
+                            Real &scavabx_new,
                             Real &resusp_x) {
   // clang-format off
   // ------------------------------------------------------------------------------
@@ -579,8 +567,6 @@ void wetdep_resusp_noprecip(const int is_st_cu,
   in :: precabx_old ! input of precipitation above this layer [kg/m2/s]
   in :: scavabx_old ! input of scavenged tracer flux from above [kg/m2/s]
   in :: precnumx_base_old ! precipitation number at cloud base [#/m2/s]
-  out :: precabx_base_new ! output of precipitation at cloud base [kg/m2/s]
-  out :: precabx_new ! output of precipitation above this layer [kg/m2/s]
   inout :: scavabx_new ! output of scavenged tracer flux from above [kg/m2/s]
   out :: resusp_x    ! aerosol mass re-suspension in a particular layer [kg/m2/s]
   */
@@ -607,10 +593,6 @@ void wetdep_resusp_noprecip(const int is_st_cu,
       resusp_x = haero::max(0.0, precnumx_base_old * (x_old - x_new));
     }
   }
-  // setting both these precip rates to zero causes the resuspension
-  // calculations to start fresh if there is any more precip production
-  precabx_new = 0.0;
-  precabx_base_new = 0.0;
 }
 // ==============================================================================
 // ==============================================================================
@@ -771,8 +753,8 @@ KOKKOS_INLINE_FUNCTION
 void wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
                    const Real pdel_ik, const Real evapx, const Real precabx_old,
                    const Real precabx_base_old, const Real scavabx_old,
-                   const Real precnumx_base_old, Real &precabx_new,
-                   Real &precabx_base_new, Real &scavabx_new,
+                   const Real precnumx_base_old, const Real precabx_new,
+                   Real &scavabx_new,
                    Real &precnumx_base_new, Real &resusp_x) {
   // clang-format off
   // ------------------------------------------------------------------------------
@@ -791,7 +773,6 @@ void wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
   in :: precabx_old ! input of precipitation above this layer [kg/m2/s]
   in :: scavabx_old ! input of scavenged tracer flux from above [kg/m2/s]
   in :: precnumx_base_old ! input of precipitation number at cloud base [#/m2/s]
-  out :: precabx_base_new ! output of precipitation at cloud base [kg/m2/s]
   out :: precabx_new ! output of precipitation above this layer [kg/m2/s]
   out :: scavabx_new ! output of scavenged tracer flux from above [kg/m2/s]
   out :: precnumx_base_new ! output of precipitation number at cloud base [#/m2/s]
@@ -802,22 +783,15 @@ void wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
   // BAD CONSTANT
   const Real small_value_30 = 1.e-30;
 
-  const Real gravit = Constants::gravity;
-
   // initiate *_new in case they are not calculated
   scavabx_new = scavabx_old;
   precnumx_base_new = precnumx_base_old;
-  precabx_base_new = precabx_base_old;
-
-  const Real tmpa = haero::max(0.0, evapx * pdel_ik / gravit);
-  precabx_new = utils::min_max_bound(0.0, precabx_base_new, precabx_old - tmpa);
 
   if (precabx_new < small_value_30) {
     // precip rate is essentially zero so do complete resuspension
     wetdep_resusp_noprecip(is_st_cu, mam_prevap_resusp_optcc, precabx_old,
                            precabx_base_old, scavabx_old, precnumx_base_old,
-                           precabx_new, precabx_base_new, scavabx_new,
-                           resusp_x);
+                           scavabx_new, resusp_x);
   } else if (evapx <= 0.0) {
     // no evap so no resuspension
     if (mam_prevap_resusp_optcc <= 130) {
@@ -1048,20 +1022,61 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
     Real precnumx_base_tmp = 0; // temporarily store precnum*_base [#/m2/s]
     Real scavabx_tmp = 0;       // temporarily store scavab* [kg/m2/s]
     // step 1 - do evaporation and resuspension
+    
+{
+const Real gravit = Constants::gravity;
+precabx_base_tmp = precabs_base;
+const Real tmps = haero::max(0.0, evaps * pdel / gravit);
+precabx_tmp = utils::min_max_bound(0.0, precabx_base_tmp, precabs - tmps);
+}
     wetdep_resusp(1, mam_prevap_resusp_optcc, pdel, evaps, precabs,
                   precabs_base, scavabs, precnums_base, precabx_tmp,
-                  precabx_base_tmp, scavabx_tmp, precnumx_base_tmp, resusp_s);
+                  scavabx_tmp, precnumx_base_tmp, resusp_s);
     // step 2 - do precip production and scavenging
+   
+const Real small_value_30 = 1.e-30;
+if (precabx_tmp < small_value_30) { 
+  // setting both these precip rates to zero causes the resuspension
+  // calculations to start fresh if there is any more precip production
+  precabx_tmp = 0;
+  precabx_base_tmp = 0;
+}
+{   
+const Real gravit = Constants::gravity;
+const Real tmps = haero::max(0.0, precs * pdel / gravit);
+precabs_base = haero::max(0.0, precabx_base_tmp + tmps);
+precabs = utils::min_max_bound(0.0, precabs_base, precabx_tmp + tmps);
+}
     wetdep_prevap(1, mam_prevap_resusp_optcc, pdel, precs, srcs, arainx,
                   precabx_tmp, precabx_base_tmp, scavabx_tmp, precnumx_base_tmp,
                   precabs, precabs_base, scavabs, precnums_base);
 
     // for convective clouds
+{
+const Real gravit = Constants::gravity;
+precabx_base_tmp = precabc_base;
+const Real tmps = haero::max(0.0, evapc * pdel / gravit);
+precabx_tmp = utils::min_max_bound(0.0, precabx_base_tmp, precabc - tmps);
+}
     arainx = haero::max(cldvcu_lower_level, small_value_2); // non-zero
     wetdep_resusp(2, mam_prevap_resusp_optcc, pdel, evapc, precabc,
                   precabc_base, scavabc, precnumc_base, precabx_tmp,
-                  precabx_base_tmp, scavabx_tmp, precnumx_base_tmp, resusp_c);
+                  scavabx_tmp, precnumx_base_tmp, resusp_c);
     // step 2 - do precip production and scavenging
+
+if (precabx_tmp < small_value_30) { 
+  // setting both these precip rates to zero causes the resuspension
+  // calculations to start fresh if there is any more precip production
+  precabx_tmp = 0;
+  precabx_base_tmp = 0;
+}
+{    
+const Real gravit = Constants::gravity;
+Real tmpc = haero::max(0.0, cmfdqr * pdel / gravit);
+precabc_base = haero::max(0.0, precabx_base_tmp + tmpc);
+precabc = utils::min_max_bound(0.0, precabc_base, precabx_tmp + tmpc);
+}
+
     wetdep_prevap(2, mam_prevap_resusp_optcc, pdel, cmfdqr, srcc, arainx,
                   precabx_tmp, precabx_base_tmp, scavabx_tmp, precnumx_base_tmp,
                   precabc, precabc_base, scavabc, precnumc_base);
@@ -1087,7 +1102,16 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
                     finc, fracev_st, fracev_cu, resusp_c, resusp_s, precs,
                     evaps, cmfdqr, evapc, scavt_ik, iscavt_ik, icscavt_ik,
                     isscavt_ik, bcscavt_ik, bsscavt_ik, rcscavt_ik, rsscavt_ik,
-                    scavabs, scavabc, precabc, precabs);
+                    scavabs, scavabc);
+
+  // now keep track of scavenged mass and precip
+if (mam_prevap_resusp_optcc == 0) {
+  const Real gravit = Constants::gravity;
+  scavabs = scavabs * (1 - fracev_st) + srcs * pdel / gravit;
+  scavabc = scavabc * (1 - fracev_cu) + srcc * pdel / gravit;
+  precabs = precabs + (precs - evaps) * pdel / gravit;
+  precabc = precabc + (cmfdqr - evapc) * pdel / gravit;
+}
 
   scavt = scavt_ik;
   iscavt = iscavt_ik;
@@ -1449,13 +1473,97 @@ void compute_q_tendencies(
     const int mam_prevap_resusp_num = 230;
     const int jaeronumb = 0, jaeromass = 1;
     Real precabs = 0;
+    Real precabs_vec[nlev] = {};
     Real precabc = 0;
+    Real precabc_vec[nlev] = {};
     Real scavabs = 0;
     Real scavabc = 0;
     Real precabs_base = 0;
+    Real precabs_base_vec[nlev] = {};
     Real precabc_base = 0;
+    Real precabc_base_vec[nlev] = {};
     Real precnums_base = 0;
     Real precnumc_base = 0;
+
+
+
+
+    Real tmpa[nlev] = {};
+    Real tmpb[nlev] = {};
+    Real tmpc[nlev] = {};
+    Real tmpd[nlev] = {};
+    Real tmpe[nlev] = {};
+    Real tmpf[nlev] = {};
+    for (int k = 0; k < nlev; ++k) {
+      const Real gravit = Constants::gravity;
+      tmpa[k] = haero::max(0.0, evapr[k] * pdel[k] / gravit);
+      tmpb[k] = haero::max(0.0, prain[k] * pdel[k] / gravit);
+      tmpc[k] = (prain[k] - evapr[k]) * pdel[k] / gravit;
+
+      tmpd[k] = haero::max(0.0, evapc[k] * pdel[k] / gravit);
+      tmpe[k] = haero::max(0.0, cmfdqr[k] * pdel[k] / gravit);
+      tmpf[k] = (cmfdqr[k] - evapc[k]) * pdel[k] / gravit;
+    }
+
+    int mam_prevap_resusp_optcc = mam_prevap_resusp_no;
+    const int modeptr_coarse = static_cast<int>(ModeIndex::Coarse);
+    if (jnummaswtr == jaeromass) // dry mass
+      mam_prevap_resusp_optcc = mam_prevap_resusp_mass;
+    else if (jnummaswtr == jaeronumb && lphase == 1 &&
+             imode == modeptr_coarse) // number
+      mam_prevap_resusp_optcc = mam_prevap_resusp_num;
+
+
+    if (mam_prevap_resusp_optcc >= 100) {
+      for (int k = 0; k < nlev-1; ++k) {
+        const Real gravit = Constants::gravity;
+        const Real small_value_30 = 1.e-30;
+        Real precabs_tmp = utils::min_max_bound(0.0, precabs_base_vec[k], precabs_vec[k] - tmpa[k]); 
+        Real precabs_base_tmp = precabs_base_vec[k];
+        if (precabs_tmp < small_value_30) {
+  	  // setting both these precip rates to zero causes the resuspension
+          // calculations to start fresh if there is any more precip production
+	  precabs_base_tmp = 0;
+	  precabs_tmp = 0;
+        }
+        precabs_base_vec[k+1] = haero::max(0.0, precabs_base_tmp + tmpb[k]);
+        precabs_vec[k+1] = utils::min_max_bound(0.0, precabs_base_vec[k+1], precabs_tmp + tmpb[k]);
+        if (mam_prevap_resusp_optcc == 0) 
+          precabs_vec[k+1] += tmpc[k];
+      }
+    } else {
+      for (int k = 0; k < nlev-1; ++k) {
+        if (mam_prevap_resusp_optcc == 0) 
+          precabs_vec[k+1] = precabs_vec[k] + tmpc[k];
+      }
+    }
+    if (mam_prevap_resusp_optcc >= 100) {
+      for (int k = 0; k < nlev-1; ++k) {
+        const Real gravit = Constants::gravity;
+        const Real small_value_30 = 1.e-30;
+        Real precabc_tmp = utils::min_max_bound(0.0, precabc_base_vec[k], precabc_vec[k] - tmpd[k]); 
+        Real precabc_base_tmp = precabc_base_vec[k];
+        if (precabc_tmp < small_value_30) {
+  	  // setting both these precip rates to zero causes the resuspension
+          // calculations to start fresh if there is any more precip production
+	  precabc_base_tmp = 0;
+	  precabc_tmp = 0;
+        }
+        precabc_base_vec[k+1] = haero::max(0.0, precabc_base_tmp + tmpe[k]);
+        precabc_vec[k+1] = utils::min_max_bound(0.0, precabc_base_vec[k+1], precabc_tmp + tmpe[k]);
+        if (mam_prevap_resusp_optcc == 0) 
+          precabc_vec[k+1] += tmpf[k];
+      }
+    } else {
+      for (int k = 0; k < nlev-1; ++k) {
+        if (mam_prevap_resusp_optcc == 0) 
+          precabc_vec[k+1] = precabc_vec[k] + tmpf[k];
+      }
+    }
+
+
+
+
     for (int k = 0; k < nlev; ++k) {
       const auto rtscavt_sv_k = ekat::subview(rtscavt_sv, k);
       // mam_prevap_resusp_optcc values control the prevap_resusp
@@ -1498,7 +1606,26 @@ void compute_q_tendencies(
       // and the qqcw_sav is set first in phase 2 the used in phase 1.
       if (lphase == 1) {
         // traces reflects changes from modal_aero_calcsize and is the
-        // "most current" q
+        // "most current"
+std::cout<<std::setprecision(12);
+//std::cout<<__FILE__<<":"<<__LINE__<<" "<<k<<" "<<precabs_vec[k] << " " <<precabs<<std::endl;
+//std::cout<<__FILE__<<":"<<__LINE__<<" "<<k<<" "<<precabs_base_vec[k] << " " <<precabs_base<<std::endl;
+if (precabs_vec[k] != precabs) {
+  std::cout<<__FILE__<<":"<<__LINE__<<" **** ERROR *** "<<k<<" "<<precabs_vec[k] << " " <<precabs<<std::endl;
+  Kokkos::abort("precabs_vec[k] != precabs");
+}
+if (precabs_base_vec[k] != precabs_base) {
+  std::cout<<__FILE__<<":"<<__LINE__<<" **** ERROR *** "<<k<<" "<<precabs_base_vec[k] << " " <<precabs_base<<std::endl;
+  Kokkos::abort("precabs_base_vec[k] != precabs_base");
+}
+if (precabc_vec[k] != precabc) {
+  std::cout<<__FILE__<<":"<<__LINE__<<" **** ERROR *** "<<k<<" "<<precabc_vec[k] << " " <<precabc<<std::endl;
+  Kokkos::abort("precabc_vec[k] != precabc");
+}
+if (precabc_base_vec[k] != precabc_base) {
+  std::cout<<__FILE__<<":"<<__LINE__<<" **** ERROR *** "<<k<<" "<<precabc_base_vec[k] << " " <<precabc_base<<std::endl;
+  Kokkos::abort("precabc_base_vec[k] != precabc_base");
+}
         compute_q_tendencies_phase_1(
             // These are the output values
             scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv_k.data(),
@@ -1521,6 +1648,24 @@ void compute_q_tendencies(
         // different from the previous call and qqcw_tmp is always
         // zero. May need further check.  - Shuaiqi Tang in
         // refactoring for MAM4xx
+//std::cout<<__FILE__<<":"<<__LINE__<<" "<<k<<" "<<precabs_vec[k] << " " <<precabs<<std::endl;
+//std::cout<<__FILE__<<":"<<__LINE__<<" "<<k<<" "<<precabs_base_vec[k] << " " <<precabs_base<<std::endl;
+if (precabs_vec[k] != precabs) {
+  std::cout<<__FILE__<<":"<<__LINE__<<" precabs **** ERROR *** "<<k<<" "<<precabs_vec[k] << " " <<precabs<<std::endl;
+  Kokkos::abort("precabs_vec[k] != precabs");
+}
+if (precabs_base_vec[k] != precabs_base) {
+  std::cout<<__FILE__<<":"<<__LINE__<<" **** ERROR *** "<<k<<" "<<precabs_base_vec[k] << " " <<precabs_base<<std::endl;
+  Kokkos::abort("precabs_base_vec[k] != precabs_base");
+}
+if (precabc_vec[k] != precabc) {
+  std::cout<<__FILE__<<":"<<__LINE__<<" precabc **** ERROR *** "<<k<<" "<<precabc_vec[k] << " " <<precabc<<std::endl;
+  Kokkos::abort("precabc_vec[k] != precabc");
+}
+if (precabc_base_vec[k] != precabc_base) {
+  std::cout<<__FILE__<<":"<<__LINE__<<" **** ERROR *** "<<k<<" "<<precabc_base_vec[k] << " " <<precabc_base<<std::endl;
+  Kokkos::abort("precabc_base_vec[k] != precabc_base");
+}
         const Real qqcw_tmp = 0.0;
         compute_q_tendencies_phase_2(
             // These are the output values

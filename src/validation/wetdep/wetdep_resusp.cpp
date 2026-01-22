@@ -46,10 +46,23 @@ void test_wetdep_resusp_process(const Input &input, Output &output) {
       "wetdep::wetdep_resusp", 1, KOKKOS_LAMBDA(const int) {
         Real precabx_new = 0, precabx_base_new = 0, scavabx_new = 0,
              precnumx_base_new = 0, resusp_x = 0;
+
+	const Real gravit = Constants::gravity;
+	precabx_base_new = precabx_old;
+	const Real tmps = haero::max(0.0, evapx * pdel_ik / gravit);
+	precabx_new = mam4::utils::min_max_bound(0.0, precabx_base_new, precabx_base_old - tmps);
         mam4::wetdep::wetdep_resusp(
             is_st_cu, mam_prevap_resusp_optcc, pdel_ik, evapx, precabx_base_old,
             precabx_old, scavabx_old, precnumx_base_old, precabx_new,
-            precabx_base_new, scavabx_new, precnumx_base_new, resusp_x);
+            scavabx_new, precnumx_base_new, resusp_x);
+
+	const Real small_value_30 = 1.e-30;
+        if (precabx_new < small_value_30) {
+        // setting both these precip rates to zero causes the resuspension
+        // calculations to start fresh if there is any more precip production
+           precabx_new = 0;
+           precabx_base_new = 0;
+         }
         return_vals[0] = precabx_new;
         return_vals[1] = precabx_base_new;
         return_vals[2] = scavabx_new;
