@@ -1562,6 +1562,7 @@ void update_q_tendencies(const ThreadTeam &team, const View2D &ptend_q,
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
 int get_aero_model_wetdep_work_len() {
+  int batch_size = num_species_threads;
   int aero_index_len = sizeof(Real) / (2 * sizeof(int)); // size of an aerosol mode/specieѕ index pair
   int work_len = 2 * mam4::nlev * pcnst +
                  // state_q, qqcw
@@ -1569,7 +1570,7 @@ int get_aero_model_wetdep_work_len() {
                  // cldcu, cldst, evapc, cmfdqr, totcond, conicw,
                  // f_act_conv_coarse, f_act_conv_coarse_dust,
                  // f_act_conv_coarse_nacl, rain, cldv, cldvcu, cldvst,
-                 9 * num_species_threads * mam4::nlev + 
+                 9 * batch_size * mam4::nlev + 
                  // scavcoefnum, scavcoefvol
                  // sol_facti, sol_factic, sol_factb, f_act_conv,
                  // scavt, bcscavt, rcscavt,
@@ -1708,35 +1709,35 @@ void aero_model_wetdep(
   // NOTE: The following views are work arrays for tracking wet deposition for aerosol modes/species
   // NOTE: in parallel. This allows us to keep the complicated serial loops in wet deposition intact
   // NOTE: for each species. -JNJ 2026/1/21
-  View2D scavcoefnum_pool(work_ptr, num_species_threads, mam4::nlev);
-  work_ptr += num_species_threads * mam4::nlev;
+  View2D scavcoefnum_pool(work_ptr, batch_size, mam4::nlev);
+  work_ptr += batch_size * mam4::nlev;
   //Kokkos::parallel_for(Kokkos::TeamThreadRange(team, mam4::nlev),
   //                     [&](int i) { scavcoefnum[i] = 0; });
-  View2D scavcoefvol_pool(work_ptr, num_species_threads, mam4::nlev);
-  work_ptr += num_species_threads * mam4::nlev;
+  View2D scavcoefvol_pool(work_ptr, batch_size, mam4::nlev);
+  work_ptr += batch_size * mam4::nlev;
   //Kokkos::parallel_for(Kokkos::TeamThreadRange(team, mam4::nlev),
   //                     [&](int i) { scavcoefvol[i] = 0; });
 
-  View2D sol_facti_pool(work_ptr, num_species_threads, mam4::nlev);
-  work_ptr += num_species_threads * mam4::nlev;
+  View2D sol_facti_pool(work_ptr, batch_size, mam4::nlev);
+  work_ptr += batch_size * mam4::nlev;
 
   View2D sol_factic_pool(work_ptr, mam4::nlev);
-  work_ptr += num_species_threads * mam4::nlev;
+  work_ptr += batch_size * mam4::nlev;
 
-  View2D sol_factb_pool(work_ptr, num_species_threads, mam4::nlev);
-  work_ptr += num_species_threads * mam4::nlev;
+  View2D sol_factb_pool(work_ptr, batch_size, mam4::nlev);
+  work_ptr += batch_size * mam4::nlev;
 
-  View2D f_act_conv_pool(work_ptr, num_species_threads, mam4::nlev);
-  work_ptr += num_species_threads * mam4::nlev;
+  View2D f_act_conv_pool(work_ptr, batch_size, mam4::nlev);
+  work_ptr += batch_size * mam4::nlev;
 
-  View2D scavt_pool(work_ptr, num_species_threads, mam4::nlev);
-  work_ptr += num_species_threads * mam4::nlev;
+  View2D scavt_pool(work_ptr, batch_size, mam4::nlev);
+  work_ptr += batch_size * mam4::nlev;
 
-  View2D bcscavt_pool(work_ptr, num_species_threads, mam4::nlev);
-  work_ptr += num_species_threads * mam4::nlev;
+  View2D bcscavt_pool(work_ptr, batch_size, mam4::nlev);
+  work_ptr += batch_size * mam4::nlev;
 
-  View2D rcscavt_pool(work_ptr, num_species_threads, mam4::nlev);
-  work_ptr += num_species_threads * mam4::nlev;
+  View2D rcscavt_pool(work_ptr, batch_size, mam4::nlev);
+  work_ptr += batch_size * mam4::nlev;
 
   // FIXME: I need to get this variables from calcsize
   // need to connect ptend_q to tends
@@ -1969,10 +1970,10 @@ void aero_model_wetdep(
         // inputs
         pdel, prain, cmfdqr, evapr, state_q, ptend_q, dt, nlev);
 
-    // main loop over all aerosol modes/species in parallel batches of num_species_threads
+    // main loop over all aerosol modes/species in parallel batches
     int num_batches = aero_indices.size() / batch_size;
     for (int batch_index = 0; batch_index < num_batches; ++batch_index) {
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, num_species_threads), [&](int member_index) {
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, batch_size), [&](int member_index) {
         const int species_index = batch_index * batch_size + member_index;
         if (species_index < aero_indices.size()) {
           const auto indices = aero_indices(species_index);
