@@ -50,7 +50,7 @@ void test_wetdep_resusp_noprecip_process(const Input &input, Output &output) {
         mam4::wetdep::wetdep_resusp_noprecip(
             is_st_cu, mam_prevap_resusp_optcc, precabx_old, precabx_base_old,
             scavabx_old, precnumx_base_old, 
-            scavabx_new, resusp_x);
+            resusp_x);
 
         return_vals[0] = precabx_base_new;
         return_vals[1] = precabx_new;

@@ -54,7 +54,7 @@ void test_wetdep_resusp_process(const Input &input, Output &output) {
         mam4::wetdep::wetdep_resusp(
             is_st_cu, mam_prevap_resusp_optcc, pdel_ik, evapx, precabx_base_old,
             precabx_old, scavabx_old, precnumx_base_old, precabx_new,
-            scavabx_new, precnumx_base_new, resusp_x);
+            scavabx_new, resusp_x);
 
 	const Real small_value_30 = 1.e-30;
         if (precabx_new < small_value_30) {

@@ -55,9 +55,18 @@ void test_wetdep_prevap_process(const Input &input, Output &output) {
       "wetdep::wetdep_prevap", 1, KOKKOS_LAMBDA(const int) {
         Real precabx_new, precabx_base_new, scavabx_new, precnumx_base_new;
         mam4::wetdep::wetdep_prevap(
-            is_st_cu, mam_prevap_resusp_optcc, pdel_ik, pprdx, srcx, arainx,
-            precabx_base_old, precabx_old, scavabx_old, precnumx_base_old,
-            precabx_new, precabx_base_new, scavabx_new, precnumx_base_new);
+            is_st_cu, mam_prevap_resusp_optcc, arainx,
+            precabx_base_old, precnumx_base_old,
+            precabx_base_new, precnumx_base_new);
+
+{
+scavabx_new = scavabx_old;
+if (mam_prevap_resusp_optcc <= 130) {
+  const Real gravit = Constants::gravity;
+  const Real tmpa = haero::max(0.0, srcx * pdel_ik / gravit);
+  scavabx_new = haero::max(0.0, scavabx_old + tmpa);
+}
+}
 
         return_vals[0] = precabx_new;
         return_vals[1] = precabx_base_new;
