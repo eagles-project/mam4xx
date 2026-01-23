@@ -1967,155 +1967,162 @@ void aero_model_wetdep(
         // inputs
         pdel, prain, cmfdqr, evapr, state_q, ptend_q, dt, nlev);
 
-    // main loop over all aerosol modes/species,
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, aero_indices.size()), [&](int species_index) {
-      const auto indices = aero_indices(species_index);
-      const int imode = indices.imode;
-      const int lspec = indices.lspec;
+    // main loop over all aerosol modes/species in parallel batches of num_species_threads
+    int batch_size = num_species_threads;
+    int num_batches = aero_indices.size() / batch_size;
+    for (int batch_index = 0; batch_index < num_batches; ++batch_index) {
+      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, num_species_threads), [&](int member_index) {
+        const int species_index = batch_index * batch_size + member_index;
+        if (species_index < aero_indices.size()) {
+          const auto indices = aero_indices(species_index);
+          const int imode = indices.imode;
+          const int lspec = indices.lspec;
 
-      // set up aerosol work subviews
-      int pool_index = species_index % num_species_threads;
-      auto scavcoefnum = ekat::subview(scavcoefnum_pool, pool_index);
-      auto scavcoefvol = ekat::subview(scavcoefvol_pool, pool_index);
-      auto sol_facti = ekat::subview(sol_facti_pool, pool_index);
-      auto sol_factic = ekat::subview(sol_factic_pool, pool_index);
-      auto sol_factb = ekat::subview(sol_factb_pool, pool_index);
-      auto f_act_conv = ekat::subview(f_act_conv_pool, pool_index);
-      auto scavt = ekat::subview(scavt_pool, pool_index);
-      auto bcscavt = ekat::subview(bcscavt_pool, pool_index);
-      auto rcscavt = ekat::subview(rcscavt_pool, pool_index);
+          // set up aerosol work subviews
+          int pool_index = species_index % batch_size;
+          auto scavcoefnum = ekat::subview(scavcoefnum_pool, pool_index);
+          auto scavcoefvol = ekat::subview(scavcoefvol_pool, pool_index);
+          auto sol_facti = ekat::subview(sol_facti_pool, pool_index);
+          auto sol_factic = ekat::subview(sol_factic_pool, pool_index);
+          auto sol_factb = ekat::subview(sol_factb_pool, pool_index);
+          auto f_act_conv = ekat::subview(f_act_conv_pool, pool_index);
+          auto scavt = ekat::subview(scavt_pool, pool_index);
+          auto bcscavt = ekat::subview(bcscavt_pool, pool_index);
+          auto rcscavt = ekat::subview(rcscavt_pool, pool_index);
 
-      // loop over interstitial (1) and cloud-borne (2) forms
-      // BSINGH (09/12/2014):Do cloudborne first for unified convection
-      // scheme so that the resuspension of cloudborne can be saved then
-      // applied to interstitial (RCE)
-      for (int lphase = 2; 1 <= lphase; --lphase) {
-        //team.team_barrier();
-
-        int mm = 0, jnv = 0, jnummaswtr = 0;
-        aero_model::index_ordering(lspec, imode, lphase, mm, jnv, jnummaswtr);
-
-        if (lphase == 1) { // interstitial aerosol
-          // Computes lookup table for aerosol impaction/interception scavenging
-          // rates
-          wetdep::modal_aero_bcscavcoef_get(
-              // inputs
-              team, wet_geometric_mean_diameter_i, isprx.data(), scavimptblvol,
-              scavimptblnum,
-              // outputs
-              scavcoefnum, scavcoefvol,
-              // inputs
-              imode, nlev);
-          //team.team_barrier();
-        }
-        // define sol_factb and sol_facti values, and f_act_conv
-        wetdep::define_act_frac(
-            // input
-            team,
-            // outputs
-            sol_facti, sol_factic, sol_factb, f_act_conv,
-            // inputs
-            lphase, imode, nlev, scav_fraction_in_cloud_strat,
-            scav_fraction_in_cloud_conv, scav_fraction_below_cloud_strat,
-            activation_fraction_in_cloud_conv);
-
-        // REASTER 08/12/2015 - changed ordering (mass then number) for
-        // prevap resuspend to coarse loop over number + chem constituents +
-        // water index for aerosol number / chem-mass / water-mass
-
-        //team.team_barrier();
-
-        // bypass wet aerosols
-        if (0 <= mm && jnummaswtr != jaerowater) {
-          // The following call mimics wetdepa_v2 subroutine call in
-          // aero_model.F90
-          //
-          //team.team_barrier();
-          wetdep::compute_q_tendencies( // tendencies are in scavt
-              team, f_act_conv, f_act_conv_coarse, f_act_conv_coarse_dust,
-              f_act_conv_coarse_nacl, scavcoefnum, scavcoefvol, totcond,
-              cmfdqr, conicw, evapc, evapr, prain, dlf, cldt, cldcu, cldst,
-              cldvst, cldvcu, sol_facti, sol_factic, sol_factb,
-              // outputs
-              scavt, bcscavt, rcscavt, rtscavt_sv,
-              // inputs
-              state_q, qqcw,
-              // outputs
-              ptend_q,
-              // inputs
-              pdel, dt, jnummaswtr, jnv, mm, lphase, imode, lspec);
-          //team.team_barrier();
-
-          // Note: update tendencies only in lphase == 1
-          if (lphase == 1) {
-            // Update ptend_q from the tendency, scavt
-            wetdep::update_q_tendencies(team,             // input
-                ptend_q,          // input
-                scavt, mm, nlev); // inputs
-          }
-          if (lphase == 1) {
-            aerdepwetis[mm] = aero_model::calc_sfc_flux(team,        // input
-                scavt,       // input
-                pdel, nlev); // inputs
-          } else // if (lphase == 2)
-          {
-            aerdepwetcw[mm] = aero_model::calc_sfc_flux(team,        // input
-                scavt,       // input
-                pdel, nlev); // inputs
+          // loop over interstitial (1) and cloud-borne (2) forms
+          // BSINGH (09/12/2014):Do cloudborne first for unified convection
+          // scheme so that the resuspension of cloudborne can be saved then
+          // applied to interstitial (RCE)
+          for (int lphase = 2; 1 <= lphase; --lphase) {
             //team.team_barrier();
-            Kokkos::parallel_for(
-                Kokkos::TeamVectorRange(team, nlev),
-                [&](int kk) { qqcw(kk, mm) += scavt(kk) * dt; });
-          }
-          //team.team_barrier();
+
+            int mm = 0, jnv = 0, jnummaswtr = 0;
+            aero_model::index_ordering(lspec, imode, lphase, mm, jnv, jnummaswtr);
+
+            if (lphase == 1) { // interstitial aerosol
+                               // Computes lookup table for aerosol impaction/interception scavenging
+                               // rates
+              wetdep::modal_aero_bcscavcoef_get(
+                  // inputs
+                  team, wet_geometric_mean_diameter_i, isprx.data(), scavimptblvol,
+                  scavimptblnum,
+                  // outputs
+                  scavcoefnum, scavcoefvol,
+                  // inputs
+                  imode, nlev);
+              //team.team_barrier();
+            }
+            // define sol_factb and sol_facti values, and f_act_conv
+            wetdep::define_act_frac(
+                // input
+                team,
+                // outputs
+                sol_facti, sol_factic, sol_factb, f_act_conv,
+                // inputs
+                lphase, imode, nlev, scav_fraction_in_cloud_strat,
+                scav_fraction_in_cloud_conv, scav_fraction_below_cloud_strat,
+                activation_fraction_in_cloud_conv);
+
+            // REASTER 08/12/2015 - changed ordering (mass then number) for
+            // prevap resuspend to coarse loop over number + chem constituents +
+            // water index for aerosol number / chem-mass / water-mass
+
+            //team.team_barrier();
+
+            // bypass wet aerosols
+            if (0 <= mm && jnummaswtr != jaerowater) {
+              // The following call mimics wetdepa_v2 subroutine call in
+              // aero_model.F90
+              //
+              //team.team_barrier();
+              wetdep::compute_q_tendencies( // tendencies are in scavt
+                  team, f_act_conv, f_act_conv_coarse, f_act_conv_coarse_dust,
+                  f_act_conv_coarse_nacl, scavcoefnum, scavcoefvol, totcond,
+                  cmfdqr, conicw, evapc, evapr, prain, dlf, cldt, cldcu, cldst,
+                  cldvst, cldvcu, sol_facti, sol_factic, sol_factb,
+                  // outputs
+                  scavt, bcscavt, rcscavt, rtscavt_sv,
+                  // inputs
+                  state_q, qqcw,
+                  // outputs
+                  ptend_q,
+                  // inputs
+                  pdel, dt, jnummaswtr, jnv, mm, lphase, imode, lspec);
+              //team.team_barrier();
+
+              // Note: update tendencies only in lphase == 1
+              if (lphase == 1) {
+                // Update ptend_q from the tendency, scavt
+                wetdep::update_q_tendencies(team,             // input
+                    ptend_q,          // input
+                    scavt, mm, nlev); // inputs
+              }
+              if (lphase == 1) {
+                aerdepwetis[mm] = aero_model::calc_sfc_flux(team,        // input
+                    scavt,       // input
+                    pdel, nlev); // inputs
+              } else // if (lphase == 2)
+              {
+                aerdepwetcw[mm] = aero_model::calc_sfc_flux(team,        // input
+                    scavt,       // input
+                    pdel, nlev); // inputs
+                                 //team.team_barrier();
+                Kokkos::parallel_for(
+                    Kokkos::TeamVectorRange(team, nlev),
+                    [&](int kk) { qqcw(kk, mm) += scavt(kk) * dt; });
+              }
+              //team.team_barrier();
 #if 0
-          // Note: Commenting it out because it produces unused variable warnings.
-          Real rprdshsum = aero_model::calc_sfc_flux(team, rprdsh, pdel, nlev);
-          Real rprddpsum = aero_model::calc_sfc_flux(team, rprddp, pdel, nlev);
-          Real evapcdpsum = aero_model::calc_sfc_flux(team, evapcdp, pdel, nlev);
-          Real evapcshsum = aero_model::calc_sfc_flux(team, evapcsh, pdel, nlev);
+              // Note: Commenting it out because it produces unused variable warnings.
+              Real rprdshsum = aero_model::calc_sfc_flux(team, rprdsh, pdel, nlev);
+              Real rprddpsum = aero_model::calc_sfc_flux(team, rprddp, pdel, nlev);
+              Real evapcdpsum = aero_model::calc_sfc_flux(team, evapcdp, pdel, nlev);
+              Real evapcshsum = aero_model::calc_sfc_flux(team, evapcsh, pdel, nlev);
 
-          // NOTE. Adding this team_barrier fixed one race condition.
-          team.team_barrier();
-          const Real sflxbc =
-            aero_model::calc_sfc_flux(team, bcscavt, pdel, nlev);
-          const Real sflxec =
-            aero_model::calc_sfc_flux(team, rcscavt, pdel, nlev);
+              // NOTE. Adding this team_barrier fixed one race condition.
+              team.team_barrier();
+              const Real sflxbc =
+                aero_model::calc_sfc_flux(team, bcscavt, pdel, nlev);
+              const Real sflxec =
+                aero_model::calc_sfc_flux(team, rcscavt, pdel, nlev);
 
-          // apportion convective surface fluxes to deep and shallow
-          // conv this could be done more accurately in subr wetdepa
-          // since deep and shallow rarely occur simultaneously, and
-          // these fields are just diagnostics, this approximate method
-          // is adequate only do this for interstitial aerosol, because
-          // conv clouds to not affect the stratiform-cloudborne
-          // aerosol.
-          // NOTE. Adding this team_barrier fixed one race condition.
-          team.team_barrier();
+              // apportion convective surface fluxes to deep and shallow
+              // conv this could be done more accurately in subr wetdepa
+              // since deep and shallow rarely occur simultaneously, and
+              // these fields are just diagnostics, this approximate method
+              // is adequate only do this for interstitial aerosol, because
+              // conv clouds to not affect the stratiform-cloudborne
+              // aerosol.
+              // NOTE. Adding this team_barrier fixed one race condition.
+              team.team_barrier();
 
-          // FIXME: The following code is causing race condition errors in the
-          // computer-sanitizer.
-          //  I commented it out because we do not need it in the emaxx-mam4xx
-          //  interface.
-          {
-            Real sflxbcdp, sflxecdp;
-            aero_model::apportion_sfc_flux_deep(rprddpsum, rprdshsum,
-                evapcdpsum, evapcshsum, sflxbc,
-                sflxec, sflxbcdp, sflxecdp);
+              // FIXME: The following code is causing race condition errors in the
+              // computer-sanitizer.
+              //  I commented it out because we do not need it in the emaxx-mam4xx
+              //  interface.
+              {
+                Real sflxbcdp, sflxecdp;
+                aero_model::apportion_sfc_flux_deep(rprddpsum, rprdshsum,
+                    evapcdpsum, evapcshsum, sflxbc,
+                    sflxec, sflxbcdp, sflxecdp);
 
-            // when ma_convproc_intr is used, convective in-cloud wet
-            // removal is done there the convective (total and deep)
-            // precip-evap-resuspension includes in- and below-cloud
-            // contributions, so pass the below-cloud contribution to
-            // ma_convproc_intr
-            //
-            // NOTE: ma_convproc_intr no longer uses these
-            qsrflx_mzaer2cnvpr(mm, 0) = sflxec;
-            qsrflx_mzaer2cnvpr(mm, 1) = sflxecdp;
-          }
+                // when ma_convproc_intr is used, convective in-cloud wet
+                // removal is done there the convective (total and deep)
+                // precip-evap-resuspension includes in- and below-cloud
+                // contributions, so pass the below-cloud contribution to
+                // ma_convproc_intr
+                //
+                // NOTE: ma_convproc_intr no longer uses these
+                qsrflx_mzaer2cnvpr(mm, 0) = sflxec;
+                qsrflx_mzaer2cnvpr(mm, 1) = sflxecdp;
+              }
 #endif
+            }
+          }
         }
-      }
-    });
+      });
+    }
   }
   // make sure that ptend is updated in tendencies
   team.team_barrier();
