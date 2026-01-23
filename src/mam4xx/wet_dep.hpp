@@ -1623,6 +1623,8 @@ void aero_model_wetdep(
   constexpr int nlev = mam4::nlev;
   constexpr int zero = 0.0;
 
+  constexpr int batch_size = num_species_threads;
+
   // change mode order as mmode_loop_aa loops in a different order
   const int mode_order_change[4] = {0, 1, 3, 2};
 
@@ -1968,7 +1970,6 @@ void aero_model_wetdep(
         pdel, prain, cmfdqr, evapr, state_q, ptend_q, dt, nlev);
 
     // main loop over all aerosol modes/species in parallel batches of num_species_threads
-    int batch_size = num_species_threads;
     int num_batches = aero_indices.size() / batch_size;
     for (int batch_index = 0; batch_index < num_batches; ++batch_index) {
       Kokkos::parallel_for(Kokkos::TeamVectorRange(team, 0, num_species_threads), [&](int member_index) {
