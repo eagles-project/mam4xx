@@ -972,8 +972,8 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   fracp = precs * deltat / haero::max(cwat + precs * deltat, small_value_12);
   fracp = utils::min_max_bound(0.0, 1.0, fracp);
 
-  Real srcs; // tendency for stratiform rain scavenging [kg/kg/s]
-  Real fins; // fraction of rem. rate by strat rain [fraction]
+  Real srcs=0; // tendency for stratiform rain scavenging [kg/kg/s]
+  Real fins=0; // fraction of rem. rate by strat rain [fraction]
   // 1 for stratiform:
   wetdep_scavenging(1, is_strat_cloudborne, deltat, fracp, precabs, cldvst,
                     scavcoef, sol_factb, sol_facti, tracer, tracer_mean, srcs,
@@ -1495,7 +1495,9 @@ void compute_q_tendencies(
     Real precabc_vec[nlev] = {};
 
     Real scavabs = 0;
+    Real scavabs_vec[nlev] = {};
     Real scavabc = 0;
+    Real scavabc_vec[nlev] = {};
 
     Real precabs_base = 0;
     Real precabs_base_vec[nlev] = {};
@@ -1507,6 +1509,7 @@ void compute_q_tendencies(
     Real precnumc_base_vec[nlev] = {};
 
     Real precabx_base_tmp[nlev] = {};
+    Real precabs_tmp_vec[nlev] = {};
 
 
     int mam_prevap_resusp_optcc = mam_prevap_resusp_no;
@@ -1517,6 +1520,27 @@ void compute_q_tendencies(
              imode == modeptr_coarse) // number
       mam_prevap_resusp_optcc = mam_prevap_resusp_num;
 
+    for (int k = 0; k < nlev; ++k) {
+      // set f_act_conv for interstitial (lphase=1) coarse mode
+      // species for the convective in-cloud, we conceptually treat
+      // the coarse dust and seasalt as being externally mixed, and
+      // apply f_act_conv = f_act_conv_coarse_dust/nacl to
+      // dust/seasalt number and sulfate are conceptually partitioned
+      // to the dust and seasalt on a mass basis, so the f_act_conv
+      // for number and sulfate are mass-weighted averages of the
+      // values used for dust/seasalt
+      if (lphase == 1 && imode == modeptr_coarse) {
+        f_act_conv[k] = f_act_conv_coarse[k];
+        if (jnummaswtr == jaeromass) {
+          if (aero_model::lmassptr_amode(lspec, imode) ==
+              aero_model::lptr_dust_a_amode(imode))
+            f_act_conv[k] = f_act_conv_coarse_dust[k];
+          else if (aero_model::lmassptr_amode(lspec, imode) ==
+                   aero_model::lptr_nacl_a_amode(imode))
+            f_act_conv[k] = f_act_conv_coarse_nacl[k];
+        }
+      }
+    }
 
 
     Real tmpa[nlev] = {};
@@ -1532,6 +1556,7 @@ void compute_q_tendencies(
       for (int k = 0; k < nlev-1; ++k) {
         const Real small_value_30 = 1.e-30;
         Real precabs_tmp = utils::min_max_bound(0.0, precabs_base_vec[k], precabs_vec[k] - tmpa[k]); 
+	precabs_tmp_vec[k] = precabs_tmp;
         precabx_base_tmp[k] = precabs_base_vec[k];
         if (precabs_tmp < small_value_30) {
   	  // setting both these precip rates to zero causes the resuspension
@@ -1567,6 +1592,280 @@ void compute_q_tendencies(
           precnums_base_vec[k+1] = precnums_base_vec[k];
         }
       }
+    }
+
+
+    Real srcc[nlev] = {};
+    const bool is_strat_cloudborne = lphase == 1 ? false : true;
+    for (int k = 0; k < nlev; ++k) {
+      const Real small_value_36 = 1.e-36;
+      const Real small_value_12 = 1.e-12;
+      const Real small_value_5 = 1.e-5; 
+      const Real small_value_2 = 1.e-2; 
+      const bool is_st_cu = 2;
+      Real scavcoef = 0;
+      if (jnv) 
+        scavcoef = (1 == jnv) ? scavcoefnum[k] : scavcoefvol[k];
+
+      const Real tqqcw = lphase == 1 ? qqcw(k, mm) : 0.0;
+      const Real tracer = lphase == 1 ? state_q(k,mm) + ptend_q(k,mm) * dt : qqcw(k, mm); 
+      Real fracp =
+          cmfdqr[k] * dt /
+          haero::max(small_value_12, cldcu[k] * conicw[k] + (cmfdqr[k] + dlf[k]) * dt);
+      fracp = utils::min_max_bound(0.0, 1.0, fracp) * cldcu[k];
+
+  
+      // temporary saved tracer value
+      const Real clddiff = cldt[k] - cldcu[k];
+      // temporarily calculation of tracer [kg/kg]
+      const Real tracer_tmp = haero::min(
+          tqqcw, tracer * (clddiff / haero::max(small_value_2, (1. - clddiff))));
+      // calculate in-cumulus and mean tracer values for wetdep_scavenging use
+      // in-cumulus tracer concentration [kg/kg]
+      const Real tracer_incu = f_act_conv[k] * (tracer + tracer_tmp);
+      // mean tracer concenration [kg/kg]
+      Real tracer_mean =
+          tracer * (1. - cldcu[k] * f_act_conv[k]) - cldcu[k] * f_act_conv[k] * tracer_tmp;
+      tracer_mean = haero::max(0., tracer_mean);
+
+      // calculate limitation of removal rate using Dana and Hales coefficient
+      // odds  : limit on removal rate (proportional to prec) [fraction]
+      Real odds = precabc_vec[k] / haero::max(cldvcu[k], small_value_5) * scavcoef * dt;
+      odds = utils::min_max_bound(0.0, 1.0, odds);
+
+      Real src1 = 0; // incloud scavenging tendency [kg/kg/s]
+      Real src2 = 0; // below-cloud scavenging tendency [kg/kg/s]
+      if (is_strat_cloudborne) {
+        if (is_st_cu == 2) {
+          // convective cloud does not affect strat-cloudborne aerosol
+          src1 = 0;
+        } else {
+          // strat in-cloud removal only affects strat-cloudborne aerosol
+          // in-cloud scavenging:
+          src1 = sol_factic[k] * fracp * tracer_incu / dt;
+        }
+       // no below-cloud scavenging for strat-cloudborne aerosol
+       src2 = 0;
+      } else {
+        if (is_st_cu == 2) { // convective
+          src1 = sol_factic[k] * fracp * tracer_incu / dt;
+        } else { // stratiform
+          // strat in-cloud removal only affects strat-cloudborne aerosol
+          src1 = 0;
+        }
+        src2 = sol_factb[k] * cldvcu[k] * odds * tracer_mean / dt;
+      }
+      srcc[k] = src1 + src2; // total stratiform or convective scavenging
+    }
+
+    Real srcs[nlev] = {};
+    for (int k = 0; k < nlev; ++k) {
+      const Real small_value_36 = 1.e-36;
+      const Real small_value_12 = 1.e-12;
+      const Real small_value_5 = 1.e-5; 
+      const Real small_value_2 = 1.e-2; 
+      const bool is_st_cu = 1;
+      Real scavcoef = 0;
+      if (jnv) 
+        scavcoef = (1 == jnv) ? scavcoefnum[k] : scavcoefvol[k];
+
+      const Real tqqcw = lphase == 1 ? qqcw(k, mm) : 0.0;
+      const Real tracer = lphase == 1 ? state_q(k,mm) + ptend_q(k,mm) * dt : qqcw(k, mm); 
+
+      Real fracp = prain[k] * dt / haero::max(totcond[k] + prain[k] * dt, small_value_12);
+      fracp = utils::min_max_bound(0.0, 1.0, fracp);
+
+  
+      // temporary saved tracer value
+      const Real clddiff = cldt[k] - cldcu[k];
+      // temporarily calculation of tracer [kg/kg]
+      const Real tracer_tmp = haero::min(
+          tqqcw, tracer * (clddiff / haero::max(small_value_2, (1. - clddiff))));
+
+      // mean tracer concenration [kg/kg]
+      Real tracer_mean =
+          tracer * (1. - cldcu[k] * f_act_conv[k]) - cldcu[k] * f_act_conv[k] * tracer_tmp;
+  
+       // calculate limitation of removal rate using Dana and Hales coefficient
+       // odds  : limit on removal rate (proportional to prec) [fraction]
+       Real odds = precabs_vec[k] / haero::max(cldvst[k], small_value_5) * scavcoef * dt;
+       odds = utils::min_max_bound(0.0, 1.0, odds);
+  
+      Real src1; // incloud scavenging tendency [kg/kg/s]
+      Real src2; // below-cloud scavenging tendency [kg/kg/s]
+      if (is_strat_cloudborne) {
+        if (is_st_cu == 2) {
+          // convective cloud does not affect strat-cloudborne aerosol
+          src1 = 0;
+        } else {
+          // strat in-cloud removal only affects strat-cloudborne aerosol
+          // in-cloud scavenging:
+          src1 = sol_facti[k] * fracp * tracer / dt;
+       }
+       // no below-cloud scavenging for strat-cloudborne aerosol
+       src2 = 0;
+      } else {
+        if (is_st_cu == 2) { // convective
+          src1 = sol_facti[k] * fracp * tracer / dt;
+        } else { // stratiform
+          // strat in-cloud removal only affects strat-cloudborne aerosol
+          src1 = 0;
+        }
+        src2 = sol_factb[k] * cldvst[k] * odds * tracer_mean / dt;
+      }
+      // total stratiform or convective scavenging
+      srcs[k] = src1 + src2; 
+    }
+    for (int k = 0; k < nlev; ++k) {
+      const Real small_value_36 = 1.e-36;
+      const Real tracer = lphase == 1 ? state_q(k,mm) + ptend_q(k,mm) * dt : qqcw(k, mm); 
+      const Real rat = tracer / haero::max(dt * (srcc[k] + srcs[k]), small_value_36);
+      if (rat < 1) {
+       srcs[k] = srcs[k] * rat;
+       srcc[k] = srcc[k] * rat;
+      }
+    }
+    
+    Real tmpd[nlev] = {};
+    for (int k = 0; k < nlev; ++k) {
+      const Real gravit = Constants::gravity;
+      tmpd[k] = haero::max(0.0, srcs[k] * pdel[k] / gravit);
+    }
+    for (int k = 0; k < nlev-1; ++k) {
+      const Real gravit = Constants::gravity;
+      const int is_st_cu = 1;
+      const Real small_value_30 = 1.e-30;
+      Real scavabs = scavabs_vec[k];
+      if (mam_prevap_resusp_optcc >= 100) {
+      scavabs = scavabs_vec[k];
+      if (precabs_tmp_vec[k] < small_value_30) {
+	if (mam_prevap_resusp_optcc <= 130) 
+	  scavabs = 0.0;
+      } else if (evapr[k] <= 0.0) {
+       // no evap so no resuspension
+       if (mam_prevap_resusp_optcc <= 130) 
+         scavabs = scavabs_vec[k];
+      } else {
+        // update aerosol resuspension
+        if (mam_prevap_resusp_optcc <= 130) {
+          // fraction of precabx and precabx_base
+          const Real u_old =
+              utils::min_max_bound(0.0, 1.0, precabs_vec[k] / precabs_base_vec[k]);
+          // fraction after calling function *_resusp_vs_fprec_evap_mpln
+          Real x_old = 0, x_new = 0;
+          if (mam_prevap_resusp_optcc <= 130) {
+            // non-linear resuspension of aerosol mass
+            x_old = 1.0 - faer_resusp_vs_fprec_evap_mpln(1.0 - u_old, is_st_cu);
+          } else {
+            // non-linear resuspension of aerosol number based on raindrop number
+            x_old = 1.0 - fprecn_resusp_vs_fprec_evap_mpln(1.0 - u_old, is_st_cu);
+          }
+          x_old = utils::min_max_bound(0.0, 1.0, x_old);
+   
+          Real x_ratio = 0; // fraction of x_tmp/x_old
+          if (x_old < small_value_30) {
+            x_new = 0.0;
+            x_ratio = 0.0;
+          } else {
+            // fraction of precabx and precabx_base
+            Real u_new = utils::min_max_bound(0.0, 1.0, precabs_tmp_vec[k] / precabs_base_vec[k]);
+            u_new = haero::min(u_new, u_old);
+            if (mam_prevap_resusp_optcc <= 130) {
+              // non-linear resuspension of aerosol mass
+              x_new = 1.0 - faer_resusp_vs_fprec_evap_mpln(1.0 - u_new, is_st_cu);
+            } else {
+              // non-linear resuspension of aerosol number based on raindrop number
+              x_new = 1.0 - fprecn_resusp_vs_fprec_evap_mpln(1.0 - u_new, is_st_cu);
+            }
+            x_new = utils::min_max_bound(0.0, 1.0, x_new);
+            x_new = haero::min(x_new, x_old);
+            x_ratio = utils::min_max_bound(0.0, 1.0, x_new / x_old);
+          }
+          // aerosol mass resuspension
+          scavabs = haero::max(0.0, scavabs * x_ratio);
+        } else {
+          // number resuspension
+          scavabs = 0;
+        }
+      }
+      if (mam_prevap_resusp_optcc <= 130) 
+        scavabs = haero::max(0.0, scavabs + tmpd[k]);
+      }
+      if (mam_prevap_resusp_optcc == 0) {
+        Real fracev_st = 0;
+        compute_evap_frac(mam_prevap_resusp_optcc, pdel[k], evapr[k], precabs_vec[k], fracev_st); 
+        scavabs = scavabs * (1 - fracev_st) + srcs[k] * pdel[k] / gravit;
+      }
+      scavabs_vec[k+1] = scavabs;
+    }
+
+
+    for (int k = 0; k < nlev-1; ++k) {
+      const Real gravit = Constants::gravity;
+      const int is_st_cu = 2;
+      const Real small_value_30 = 1.e-30;
+      Real scavabc = scavabc_vec[k];
+      if (mam_prevap_resusp_optcc >= 100) {
+        scavabc = scavabc_vec[k];
+      if (precabc_vec[k] < small_value_30) {
+	if (mam_prevap_resusp_optcc <= 130) 
+	  scavabc = 0.0;
+      } else if (evapr[k] <= 0.0) {
+       // no evap so no resuspension
+       if (mam_prevap_resusp_optcc <= 130) 
+         scavabc = scavabc_vec[k];
+      } else {
+        // update aerosol resuspension
+        if (mam_prevap_resusp_optcc <= 130) {
+          // fraction of precabx and precabx_base
+          const Real u_old =
+              utils::min_max_bound(0.0, 1.0, precabc_vec[k] / precabc_base_vec[k]);
+          // fraction after calling function *_resusp_vs_fprec_evap_mpln
+          Real x_old = 0, x_new = 0;
+          if (mam_prevap_resusp_optcc <= 130) {
+            // non-linear resuspension of aerosol mass
+            x_old = 1.0 - faer_resusp_vs_fprec_evap_mpln(1.0 - u_old, is_st_cu);
+          } else {
+            // non-linear resuspension of aerosol number based on raindrop number
+            x_old = 1.0 - fprecn_resusp_vs_fprec_evap_mpln(1.0 - u_old, is_st_cu);
+          }
+          x_old = utils::min_max_bound(0.0, 1.0, x_old);
+   
+          Real x_ratio = 0; // fraction of x_tmp/x_old
+          if (x_old < small_value_30) {
+            x_new = 0.0;
+            x_ratio = 0.0;
+          } else {
+            // fraction of precabx and precabx_base
+            Real u_new = utils::min_max_bound(0.0, 1.0, precabc_vec[k] / precabc_base_vec[k]);
+            u_new = haero::min(u_new, u_old);
+            if (mam_prevap_resusp_optcc <= 130) {
+              // non-linear resuspension of aerosol mass
+              x_new = 1.0 - faer_resusp_vs_fprec_evap_mpln(1.0 - u_new, is_st_cu);
+            } else {
+              // non-linear resuspension of aerosol number based on raindrop number
+              x_new = 1.0 - fprecn_resusp_vs_fprec_evap_mpln(1.0 - u_new, is_st_cu);
+            }
+            x_new = utils::min_max_bound(0.0, 1.0, x_new);
+            x_new = haero::min(x_new, x_old);
+            x_ratio = utils::min_max_bound(0.0, 1.0, x_new / x_old);
+          }
+          // aerosol mass resuspension
+          scavabc = haero::max(0.0, scavabc_vec[k] * x_ratio);
+        } else {
+          // number resuspension
+          scavabc = 0;
+        }
+      }
+      if (mam_prevap_resusp_optcc <= 130) 
+        scavabc = haero::max(0.0, scavabc + tmpd[k]);
+      }
+      if (mam_prevap_resusp_optcc == 0) {
+        Real fracev_cu = 0;
+        compute_evap_frac(mam_prevap_resusp_optcc, pdel[k], evapc[k], precabc_vec[k+1], fracev_cu); 
+        scavabc = scavabc * (1 - fracev_cu) + srcc[k] * pdel[k] / gravit;
+      }
+      scavabc_vec[k+1] = scavabc;
     }
 
 
@@ -1687,6 +1986,14 @@ if (precnumc_base_vec[k] != precnumc_base) {
   std::cout<<__FILE__<<":"<<__LINE__<<" **** ERROR *** "<<k<<" "<<precnumc_base_vec[k] << " " <<precnumc_base<<std::endl;
   Kokkos::abort("precnumc_base_vec[k] != cprecnumc_base");
 }
+if (scavabs_vec[k] != scavabs) {
+  std::cout<<__FILE__<<":"<<__LINE__<<" **** ERROR *** "<<k<<" "<<scavabs_vec[k] << " " <<scavabs<<std::endl;
+  Kokkos::abort("scavabs_vec[k] != scavabs");
+}
+if (scavabc_vec[k] != scavabc) {
+  std::cout<<__FILE__<<":"<<__LINE__<<" **** ERROR *** "<<k<<" "<<scavabc_vec[k] << " " <<scavabc<<std::endl;
+  Kokkos::abort("scavabc_vec[k] != scavabc");
+}
         compute_q_tendencies_phase_1(
             // These are the output values
             scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv_k.data(),
@@ -1709,7 +2016,6 @@ if (precnumc_base_vec[k] != precnumc_base) {
         // different from the previous call and qqcw_tmp is always
         // zero. May need further check.  - Shuaiqi Tang in
         // refactoring for MAM4xx
-//std::cout<<__FILE__<<":"<<__LINE__<<" "<<k<<" "<<precabs_vec[k] << " " <<precabs<<std::endl;
 //std::cout<<__FILE__<<":"<<__LINE__<<" "<<k<<" "<<precabs_base_vec[k] << " " <<precabs_base<<std::endl;
 if (precabs_vec[k] != precabs) {
   std::cout<<__FILE__<<":"<<__LINE__<<" precabs **** ERROR *** "<<k<<" "<<precabs_vec[k] << " " <<precabs<<std::endl;
@@ -1735,6 +2041,16 @@ if (precnums_base_vec[k] != precnums_base) {
 if (precnumc_base_vec[k] != precnumc_base) {
   std::cout<<__FILE__<<":"<<__LINE__<<" **** ERROR *** "<<k<<" "<<precnumc_base_vec[k] << " " <<precnumc_base<<std::endl;
   Kokkos::abort("precnumc_base_vec[k] != precnumc_base");
+}
+//std::cout<<__FILE__<<":"<<__LINE__<<" "<<k<<" "<<scavabs_vec[k] << " " <<scavabs<<std::endl;
+if (scavabs_vec[k] != scavabs) {
+  std::cout<<__FILE__<<":"<<__LINE__<<" **** ERROR *** scavabs "<<k<<" "<<scavabs_vec[k] << " " <<scavabs<<std::endl;
+  Kokkos::abort("scavabs_vec[k] != scavabs");
+}
+//std::cout<<__FILE__<<":"<<__LINE__<<" "<<k<<" "<<scavabc_vec[k] << " " <<scavabc<<std::endl;
+if (scavabc_vec[k] != scavabc) {
+  std::cout<<__FILE__<<":"<<__LINE__<<" **** ERROR *** scavabc "<<k<<" "<<scavabc_vec[k] << " " <<scavabc<<std::endl;
+  Kokkos::abort("scavabc_vec[k] != scavabc");
 }
         const Real qqcw_tmp = 0.0;
         compute_q_tendencies_phase_2(
