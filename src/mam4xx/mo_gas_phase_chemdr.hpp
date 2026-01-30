@@ -237,8 +237,9 @@ void perform_atmospheric_chemistry_and_microphysics(
                           atm.temperature, atm.vapor_mixing_ratio, // in
                           cnst_offline_icol, atm.pressure);        // in
   team.team_barrier();
-  mam4::microphysics::compute_o3_column_density(team, atm, progs,      // in
-                                                // invariants_icol,       // in
+  mam4::microphysics::compute_o3_column_density(team, atm,
+                                                progs, // in
+                                                       // invariants_icol, // in
                                                 adv_mass_kg_per_moles, // in
                                                 o3_col_dens_i);        // out
 
