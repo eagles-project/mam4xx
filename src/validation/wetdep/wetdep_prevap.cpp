@@ -54,10 +54,10 @@ void test_wetdep_prevap_process(const Input &input, Output &output) {
   Kokkos::parallel_for(
       "wetdep::wetdep_prevap", 1, KOKKOS_LAMBDA(const int) {
         Real precabx_new, precabx_base_new, scavabx_new, precnumx_base_new;
-        mam4::wetdep::wetdep_prevap(
+        std::tie(precabx_new, precabx_base_new) = mam4::wetdep::wetdep_prevap(
             is_st_cu, mam_prevap_resusp_optcc, pdel_ik, pprdx, srcx, arainx,
             precabx_base_old, precabx_old, scavabx_old, precnumx_base_old,
-            precabx_new, precabx_base_new, scavabx_new, precnumx_base_new);
+            scavabx_new, precnumx_base_new);
 
         return_vals[0] = precabx_new;
         return_vals[1] = precabx_base_new;
