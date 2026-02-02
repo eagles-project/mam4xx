@@ -72,7 +72,7 @@ void test_update_scavenging_process(const Input &input, Output &output) {
             finc, fracev_st, fracev_cu, resusp_c, resusp_s, precs_ik, evaps_ik,
             cmfdqr_ik, evapc_ik, scavt_ik, iscavt_ik, icscavt_ik, isscavt_ik,
             bcscavt_ik, bsscavt_ik, rcscavt_ik, rsscavt_ik, scavabs_d,
-            scavabc_d, precabc_d);
+            scavabc_d);
 
         return_vals[0] = scavt_ik;
         return_vals[1] = iscavt_ik;
