@@ -56,7 +56,7 @@ void test_wetdep_prevap_process(const Input &input, Output &output) {
         Real precabx_new, precabx_base_new, scavabx_new, precnumx_base_new;
         mam4::wetdep::wetdep_prevap(
             is_st_cu, mam_prevap_resusp_optcc, pdel_ik, pprdx, srcx, arainx,
-            precabx_base_old, precabx_old, scavabx_old, precnumx_base_old,
+            precabx_old, precabx_base_old, scavabx_old, precnumx_base_old,
             precabx_new, precabx_base_new, scavabx_new, precnumx_base_new);
 
         return_vals[0] = precabx_new;
