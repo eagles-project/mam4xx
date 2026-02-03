@@ -63,8 +63,8 @@ void test_wetdep_scavenging_process(const Input &input, Output &output) {
   Kokkos::deep_copy(vals_host, return_vals);
 
   // Set the output values
-  output.set("src", vals_host[1]);
-  output.set("fin", vals_host[2]);
+  output.set("src", vals_host[0]);
+  output.set("fin", vals_host[1]);
 }
 
 void test_wetdep_scavenging(std::unique_ptr<Ensemble> &ensemble) {
