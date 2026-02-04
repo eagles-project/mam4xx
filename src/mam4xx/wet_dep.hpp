@@ -153,7 +153,7 @@ void update_scavenging(const int mam_prevap_resusp_optcc, const Real pdel_ik,
                        const Real cmfdqr_ik, const Real evapc_ik,
                        Real &scavt_ik, Real &iscavt_ik, Real &icscavt_ik,
                        Real &isscavt_ik, Real &bcscavt_ik, Real &bsscavt_ik,
-                       Real &rcscavt_ik, Real &rsscavt_ik, Real &scavabs,
+                       Real &rcscavt_ik, Real &rsscavt_ik, const Real scavabs,
                        Real &scavabc) {
   // clang-format off
   // ------------------------------------------------------------------------------
@@ -187,7 +187,7 @@ void update_scavenging(const int mam_prevap_resusp_optcc, const Real pdel_ik,
   out :: bsscavt_ik  ! below cloud, stratiform [kg/kg/s]
   out :: rcscavt_ik  ! resuspension, convective [kg/kg/s]
   out :: rsscavt_ik  ! resuspension, stratiform [kg/kg/s]
-  inout :: scavabs   ! stratiform scavenged tracer flux from above [kg/m2/s]
+  in  :: scavabs   ! stratiform scavenged tracer flux from above [kg/m2/s]
   inout :: scavabc   ! convective scavenged tracer flux from above [kg/m2/s]
   */
   // clang-format on
@@ -220,7 +220,6 @@ void update_scavenging(const int mam_prevap_resusp_optcc, const Real pdel_ik,
 
   // now keep track of scavenged mass and precip
   if (mam_prevap_resusp_optcc == 0) {
-    scavabs = scavabs * (1 - fracev_st) + srcs * pdel_ik / gravit;
     scavabc = scavabc * (1 - fracev_cu) + srcc * pdel_ik / gravit;
   }
 }
@@ -666,8 +665,8 @@ void wetdep_scavenging(const int is_st_cu, const bool is_strat_cloudborne,
 // =============================================================================
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
-void compute_evap_frac(const int mam_prevap_resusp_optcc, const Real pdel_ik,
-                       const Real evap_ik, const Real precabx, Real &fracevx) {
+Real compute_evap_frac(const int mam_prevap_resusp_optcc, const Real pdel_ik,
+                       const Real evap_ik, const Real precabx) {
   // clang-format off
   //  ------------------------------------------------------------------------------
   //  calculate the fraction of strat precip from above
@@ -681,16 +680,16 @@ void compute_evap_frac(const int mam_prevap_resusp_optcc, const Real pdel_ik,
   out :: fracevx      ! fraction of evaporation [fraction]
   */
   // clang-format on
-  // BAD CONSTANT
-  const Real small_value_12 = 1.e-12;
-  const Real gravit = Constants::gravity;
-  if (mam_prevap_resusp_optcc == 0) {
-    fracevx = 0.0;
-  } else {
+  Real fracevx = 0;
+  if (mam_prevap_resusp_optcc != 0) {
+    // BAD CONSTANT
+    const Real small_value_12 = 1.e-12;
+    const Real gravit = Constants::gravity;
     fracevx = evap_ik * pdel_ik / gravit / haero::max(small_value_12, precabx);
     // trap to ensure reasonable ratio bounds
     fracevx = utils::min_max_bound(0., 1., fracevx);
   }
+  return fracevx;
 }
 // =============================================================================
 // =============================================================================
@@ -818,7 +817,7 @@ void wetdepa_v2(
     const bool is_strat_cloudborne, const Real scavcoef, const Real f_act_conv,
     const Real tracer, const Real qqcw, Real &fracis, Real &scavt, Real &iscavt,
     Real &icscavt, Real &isscavt, Real &bcscavt, Real &bsscavt, Real &rcscavt,
-    Real &rsscavt, const Real precabs, const Real precabc, Real &scavabs,
+    Real &rsscavt, const Real precabs, const Real precabc, const Real scavabs,
     Real &scavabc, const Real precabs_base, const Real precabc_base,
     const Real precnums_base, const Real precnumc_base) {
   // clang-format off
@@ -930,14 +929,14 @@ void wetdepa_v2(
   // precnumc_base: convective precip number flux at the bottom of a particular
   // layer [#/m2/s]
   // ****************** Evaporation **************************
-  // fraction of stratiform precip from above that is evaporating [fraction]
-  Real fracev_st;
-  // Fraction of convective precip from above that is evaporating [fraction]
-  Real fracev_cu;
   // stratiform
-  compute_evap_frac(mam_prevap_resusp_optcc, pdel, evaps, precabs, fracev_st);
+  // fraction of stratiform precip from above that is evaporating [fraction]
+  const Real fracev_st =
+      compute_evap_frac(mam_prevap_resusp_optcc, pdel, evaps, precabs);
   // convective
-  compute_evap_frac(mam_prevap_resusp_optcc, pdel, evapc, precabc, fracev_cu);
+  // Fraction of convective precip from above that is evaporating [fraction]
+  const Real fracev_cu =
+      compute_evap_frac(mam_prevap_resusp_optcc, pdel, evapc, precabc);
 
   // ****************** Scavenging **************************
 
@@ -1026,7 +1025,7 @@ void wetdepa_v2(
     Real dummy = 0;
     wetdep_prevap(1, mam_prevap_resusp_optcc, pdel, precs, srcs, arainx,
                   precabx_tmp, precabx_base_tmp, scavabx_tmp, precnumx_base_tmp,
-                  scavabs);
+                  dummy);
 
     // for convective clouds
     arainx = haero::max(cldvcu_lower_level, small_value_2); // non-zero
@@ -1302,7 +1301,7 @@ void compute_q_tendencies_phase_1(
     const Real sol_factic, const Real sol_factb, const Real state_q,
     const Real ptend_q, const Real qqcw_sav, const Real pdel, const Real dt,
     const int mam_prevap_resusp_optcc, const int jnv, const int mm,
-    const Real precabs, const Real precabc, Real &scavabs, Real &scavabc,
+    const Real precabs, const Real precabc, const Real scavabs, Real &scavabc,
     const Real precabs_base, const Real precabc_base, const Real precnums_base,
     const Real precnumc_base) {
   // traces reflects changes from modal_aero_calcsize and is the
@@ -1347,7 +1346,7 @@ void compute_q_tendencies_phase_2(
     const Real cldvcu_k, const Real cldvcu_k_p1, const Real sol_facti,
     const Real sol_factic, const Real sol_factb, const Real pdel, const Real dt,
     const int mam_prevap_resusp_optcc, const int jnv, const int mm, const int k,
-    const Real precabs, const Real precabc, Real &scavabs, Real &scavabc,
+    const Real precabs, const Real precabc, const Real scavabs, Real &scavabc,
     const Real precabs_base, const Real precabc_base, const Real precnums_base,
     const Real precnumc_base) {
 
@@ -1404,7 +1403,7 @@ void compute_q_tendencies(
     //     qqcw_sav,
     haero::ConstColumnView pdel, const Real dt, const int jnummaswtr,
     const int jnv, const int mm, const int lphase, const int imode,
-    const int lspec, View1D workspace[13]) {
+    const int lspec, View1D workspace[14]) {
   team.team_barrier();
 
   // clang-format off
@@ -1467,7 +1466,7 @@ void compute_q_tendencies(
     }
   }
 
-  // currently compute_q_tendencies_worksparce[13]
+  // currently compute_q_tendencies_worksparce[14]
   View1D evap = workspace[0];
   View1D rain = workspace[1];
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
@@ -1867,6 +1866,7 @@ void compute_q_tendencies(
           scavabs[k + 1] = 0;
         }
       });
+      team.team_barrier();
       Kokkos::single(Kokkos::PerTeam(team), [=]() {
         for (int k = 0; k < nlev - 1; ++k) {
           if (copy_from_prev[k + 1])
@@ -1875,26 +1875,107 @@ void compute_q_tendencies(
       });
     }
   } else if (mam_prevap_resusp_optcc == 0) {
-    View1D frac = workspace[1];
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
-      Real fracev_st = 0;
-      compute_evap_frac(mam_prevap_resusp_optcc, pdel[k], evapr[k], precabs[k],
-                        fracev_st);
-      frac[k] = 1 - fracev_st;
-    });
-    team.team_barrier();
-    //  Kokkos::single(Kokkos::PerTeam(team), [=]() {
-    //    for (int k = 0; k < nlev-1; ++k) {
-    //      scavabs[k+1] = scavabs[k] * frac[k] + srcs[k] * pdel[k] / gravit;;
-    //    }
-    //  });
     Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, nlev),
                           [&](const int k, Real &accumulator, const bool last) {
                             const Real gravit = Constants::gravity;
-                            accumulator = accumulator * frac[k] +
-                                          srcs[k] * pdel[k] / gravit;
+                            accumulator += srcs[k] * pdel[k] / gravit;
                             if (last)
                               scavabs[k + 1] = accumulator;
+                          });
+  }
+
+  View1D scavabc = workspace[13];
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
+                       [&](int k) { scavabc[k] = 0; });
+  team.team_barrier();
+  if (mam_prevap_resusp_optcc >= 100) {
+    if (mam_prevap_resusp_optcc <= 130) {
+      View1D x_ratio = workspace[1];
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
+                           [&](int k) { x_ratio[k] = 0; });
+      team.team_barrier();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
+        const Real small_value_30 = 1.e-30;
+        if (precabc[k] < small_value_30) {
+        } else if (evapr[k] <= 0.0) {
+        } else {
+          const int is_st_cu = 2;
+          // update aerosol resuspension
+          // fraction of precabx and precabx_base
+          const Real u_old =
+              utils::min_max_bound(0.0, 1.0, precabc[k] / precabc_base[k]);
+          // fraction after calling function *_resusp_vs_fprec_evap_mpln
+          // non-linear resuspension of aerosol mass
+          Real x_old =
+              1.0 - faer_resusp_vs_fprec_evap_mpln(1.0 - u_old, is_st_cu);
+          x_old = utils::min_max_bound(0.0, 1.0, x_old);
+          if (small_value_30 <= x_old) {
+            // fraction of precabx and precabx_base
+            Real u_new =
+                utils::min_max_bound(0.0, 1.0, precabc[k] / precabc_base[k]);
+            u_new = haero::min(u_new, u_old);
+            // non-linear resuspension of aerosol mass
+            Real x_new =
+                1.0 - faer_resusp_vs_fprec_evap_mpln(1.0 - u_new, is_st_cu);
+            x_new = utils::min_max_bound(0.0, 1.0, x_new);
+            x_new = haero::min(x_new, x_old);
+            x_ratio[k] = utils::min_max_bound(0.0, 1.0, x_new / x_old);
+          }
+        }
+      });
+      View1D tmpc = workspace[1];
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
+        const Real gravit = Constants::gravity;
+        tmpc[k] = haero::max(0.0, srcc[k] * pdel[k] / gravit);
+      });
+      team.team_barrier();
+      Kokkos::single(Kokkos::PerTeam(team), [=]() {
+        for (int k = 0; k < nlev - 1; ++k) {
+          const Real small_value_30 = 1.e-30;
+          Real scavabc_tmp = 0;
+          if (precabc[k] < small_value_30) {
+            scavabc_tmp = 0;
+          } else if (evapr[k] <= 0.0) {
+            // no evap so no resuspension
+            scavabc_tmp = scavabc[k];
+          } else {
+            // aerosol mass resuspension
+            scavabc_tmp = haero::max(0.0, scavabc[k] * x_ratio[k]);
+          }
+          scavabc_tmp = haero::max(0.0, scavabc_tmp + tmpc[k]);
+          scavabc[k + 1] = scavabc_tmp;
+        }
+      });
+    } else { // 130 < mam_prevap_resusp_optcc
+      View1D copy_from_prev = workspace[1];
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
+                           [&](int k) { copy_from_prev[k] = 0; });
+      team.team_barrier();
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev - 1), [&](int k) {
+        const Real small_value_30 = 1.e-30;
+        if (precabc[k] < small_value_30) {
+          copy_from_prev[k + 1] = 1;
+        } else if (evapr[k] <= 0.0) {
+          copy_from_prev[k + 1] = 1;
+        } else {
+          scavabc[k + 1] = 0;
+        }
+      });
+      team.team_barrier();
+      Kokkos::single(Kokkos::PerTeam(team), [=]() {
+        for (int k = 0; k < nlev - 1; ++k) {
+          if (copy_from_prev[k + 1])
+            scavabc[k + 1] = scavabc[k];
+        }
+      });
+    }
+  } else if (mam_prevap_resusp_optcc == 0) {
+    Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, nlev),
+                          [&](const int k, Real &accumulator, const bool last) {
+                            const Real gravit = Constants::gravity;
+                            accumulator += srcc[k] * pdel[k] / gravit;
+                            if (last)
+                              scavabc[k + 1] = accumulator;
                           });
   }
 
@@ -1902,7 +1983,6 @@ void compute_q_tendencies(
   // because precabs requires values from the previous elevation (k-1).
   team.team_barrier();
   Kokkos::single(Kokkos::PerTeam(team), [=]() {
-    Real scavabs = 0;
     Real scavabc = 0;
     for (int k = 0; k < nlev; ++k) {
       const auto rtscavt_sv_k = ekat::subview(rtscavt_sv, k);
@@ -1923,8 +2003,9 @@ void compute_q_tendencies(
             cldcu[k], cldvst[k], cldvst[k_p1], cldvcu[k], cldvcu[k_p1],
             sol_facti[k], sol_factic[k], sol_factb[k], state_q(k, mm),
             ptend_q(k, mm), qqcw(k, mm), pdel[k], dt, mam_prevap_resusp_optcc,
-            jnv, mm, precabs[k], precabc[k], scavabs, scavabc, precabs_base[k],
-            precabc_base[k], precnums_base[k], precnumc_base[k]);
+            jnv, mm, precabs[k], precabc[k], scavabs[k], scavabc,
+            precabs_base[k], precabc_base[k], precnums_base[k],
+            precnumc_base[k]);
 
       } else { // if (lphase == 2)
         // There is no cloud-borne aerosol water in the model, so this
@@ -1948,7 +2029,7 @@ void compute_q_tendencies(
             cldcu[k], cldvst[k], cldvst[k_p1], cldvcu[k], cldvcu[k_p1],
             sol_facti[k], sol_factic[k], sol_factb[k], pdel[k], dt,
             mam_prevap_resusp_optcc, jnv, mm, k, precabs[k], precabc[k],
-            scavabs, scavabc, precabs_base[k], precabc_base[k],
+            scavabs[k], scavabc, precabs_base[k], precabc_base[k],
             precnums_base[k], precnumc_base[k]);
       }
     }
@@ -1968,14 +2049,14 @@ KOKKOS_INLINE_FUNCTION
 int get_aero_model_wetdep_work_len() {
   int work_len = 2 * mam4::nlev * pcnst +
                  // state_q, qqcw
-                 35 * mam4::nlev +
+                 36 * mam4::nlev +
                  // cldcu, cldst, evapc, cmfdqr, totcond, conicw,
                  // f_act_conv_coarse, f_act_conv_coarse_dust,
                  // f_act_conv_coarse_nacl, rain, cldv, cldvcu, cldvst,
                  // scavcoefnum, scavcoefvol
                  // sol_facti, sol_factic, sol_factb, f_act_conv,
                  // scavt, bcscavt, rcscavt,
-                 // compute_q_tendencies_workspace[13]
+                 // compute_q_tendencies_workspace[14]
                  2 * mam4::nlev * pcnst +
                  // ptend_q, rtscavt_sv
                  2 * pcnst +
@@ -2154,7 +2235,7 @@ void aero_model_wetdep(
   View2D qsrflx_mzaer2cnvpr(work_ptr, aero_model::pcnst, 2);
   work_ptr += aero_model::pcnst * 2;
 
-  const int num_tendencies_workspaces = 13;
+  const int num_tendencies_workspaces = 14;
   View1D compute_q_tendencies_workspace[num_tendencies_workspaces];
   for (int i = 0; i < num_tendencies_workspaces; ++i) {
     compute_q_tendencies_workspace[i] = View1D(work_ptr, mam4::nlev);
