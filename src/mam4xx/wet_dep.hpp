@@ -154,7 +154,7 @@ void update_scavenging(const int mam_prevap_resusp_optcc, const Real pdel_ik,
                        Real &scavt_ik, Real &iscavt_ik, Real &icscavt_ik,
                        Real &isscavt_ik, Real &bcscavt_ik, Real &bsscavt_ik,
                        Real &rcscavt_ik, Real &rsscavt_ik, const Real scavabs,
-                       Real &scavabc) {
+                       const Real scavabc) {
   // clang-format off
   // ------------------------------------------------------------------------------
   // update scavenging variables
@@ -188,7 +188,7 @@ void update_scavenging(const int mam_prevap_resusp_optcc, const Real pdel_ik,
   out :: rcscavt_ik  ! resuspension, convective [kg/kg/s]
   out :: rsscavt_ik  ! resuspension, stratiform [kg/kg/s]
   in  :: scavabs   ! stratiform scavenged tracer flux from above [kg/m2/s]
-  inout :: scavabc   ! convective scavenged tracer flux from above [kg/m2/s]
+  in  :: scavabc   ! convective scavenged tracer flux from above [kg/m2/s]
   */
   // clang-format on
   const Real gravit = Constants::gravity;
@@ -216,11 +216,6 @@ void update_scavenging(const int mam_prevap_resusp_optcc, const Real pdel_ik,
     rcscavt_ik = resusp_c * gravit / pdel_ik;
     bsscavt_ik = -(srcs * (1 - fins)) * omsm;
     rsscavt_ik = resusp_s * gravit / pdel_ik;
-  }
-
-  // now keep track of scavenged mass and precip
-  if (mam_prevap_resusp_optcc == 0) {
-    scavabc = scavabc * (1 - fracev_cu) + srcc * pdel_ik / gravit;
   }
 }
 // ==============================================================================
@@ -815,10 +810,10 @@ void wetdepa_v2(
     const Real cldvst_lower_level, const Real sol_factb, const Real sol_facti,
     const Real sol_factic, const int mam_prevap_resusp_optcc,
     const bool is_strat_cloudborne, const Real scavcoef, const Real f_act_conv,
-    const Real tracer, const Real qqcw, Real &fracis, Real &scavt, Real &iscavt,
+    const Real tracer, const Real qqcw, Real &scavt, Real &iscavt,
     Real &icscavt, Real &isscavt, Real &bcscavt, Real &bsscavt, Real &rcscavt,
     Real &rsscavt, const Real precabs, const Real precabc, const Real scavabs,
-    Real &scavabc, const Real precabs_base, const Real precabc_base,
+    const Real scavabc, const Real precabs_base, const Real precabc_base,
     const Real precnums_base, const Real precnumc_base) {
   // clang-format off
   // -----------------------------------------------------------------------
@@ -878,7 +873,6 @@ void wetdepa_v2(
   in :: sol_facti   ! solubility factor (frac of aerosol scavenged in cloud) [fraction]
   in :: sol_factic  ! sol_facti for convective clouds [fraction]
 
-  out :: fracis  ! fraction of species not scavenged [fraction]
   out :: scavt   ! scavenging tend [kg/kg/s]
   out :: iscavt  ! incloud scavenging tends [kg/kg/s]
   out :: icscavt  ! incloud, convective [kg/kg/s]
@@ -900,7 +894,6 @@ void wetdepa_v2(
   const Real small_value_12 = 1.e-12;
   const Real small_value_36 = 1.e-36;
 
-  fracis = 0;
   scavt = 0;
   iscavt = 0;
   icscavt = 0;
@@ -998,7 +991,6 @@ void wetdepa_v2(
   // fraction that is not removed within the cloud
   // (assumed to be interstitial, and subject to convective transport)
   fracp = deltat * srct / haero::max(cldvst * tracer, small_value_36);
-  fracis = 1. - utils::min_max_bound(0.0, 1.0, fracp);
 
   // ****************** Resuspension **************************
 
@@ -1021,21 +1013,13 @@ void wetdepa_v2(
     wetdep_resusp(1, mam_prevap_resusp_optcc, pdel, evaps, precabs,
                   precabs_base, scavabs, precnums_base, precabx_tmp,
                   precabx_base_tmp, scavabx_tmp, precnumx_base_tmp, resusp_s);
-    // step 2 - do precip production and scavenging
-    Real dummy = 0;
-    wetdep_prevap(1, mam_prevap_resusp_optcc, pdel, precs, srcs, arainx,
-                  precabx_tmp, precabx_base_tmp, scavabx_tmp, precnumx_base_tmp,
-                  dummy);
 
     // for convective clouds
     arainx = haero::max(cldvcu_lower_level, small_value_2); // non-zero
     wetdep_resusp(2, mam_prevap_resusp_optcc, pdel, evapc, precabc,
                   precabc_base, scavabc, precnumc_base, precabx_tmp,
+
                   precabx_base_tmp, scavabx_tmp, precnumx_base_tmp, resusp_c);
-    // step 2 - do precip production and scavenging
-    wetdep_prevap(2, mam_prevap_resusp_optcc, pdel, cmfdqr, srcc, arainx,
-                  precabx_tmp, precabx_base_tmp, scavabx_tmp, precnumx_base_tmp,
-                  scavabc);
   } else { // mam_prevap_resusp_optcc = 0, no resuspension
     resusp_c = fracev_cu * scavabc;
     resusp_s = fracev_st * scavabs;
@@ -1301,7 +1285,7 @@ void compute_q_tendencies_phase_1(
     const Real sol_factic, const Real sol_factb, const Real state_q,
     const Real ptend_q, const Real qqcw_sav, const Real pdel, const Real dt,
     const int mam_prevap_resusp_optcc, const int jnv, const int mm,
-    const Real precabs, const Real precabc, const Real scavabs, Real &scavabc,
+    const Real precabs, const Real precabc, const Real scavabs, const Real scavabc,
     const Real precabs_base, const Real precabc_base, const Real precnums_base,
     const Real precnumc_base) {
   // traces reflects changes from modal_aero_calcsize and is the
@@ -1311,7 +1295,6 @@ void compute_q_tendencies_phase_1(
   if (jnv)
     scavcoef = (1 == jnv) ? scavcoefnum : scavcoefvol;
 
-  Real fracis = 0;  // fraction of transported species that are insoluble
   Real iscavt = 0;  // incloud scavenging tends [kg/kg/s]
   Real icscavt = 0; // incloud, convective [kg/kg/s]
   Real isscavt = 0; // incloud, stratiform [kg/kg/s]
@@ -1324,7 +1307,7 @@ void compute_q_tendencies_phase_1(
       dt, pdel, cmfdqr, evapc, dlf, conicw, prain, evapr, totcond, cldt, cldcu,
       cldvcu_k, cldvcu_k_p1, cldvst_k, cldvst_k_p1, sol_factb, sol_facti,
       sol_factic, mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef,
-      f_act_conv, tracer, qqcw_sav, fracis, scavt, iscavt, icscavt, isscavt,
+      f_act_conv, tracer, qqcw_sav, scavt, iscavt, icscavt, isscavt,
       bcscavt, bsscavt, rcscavt, rsscavt, precabs, precabc, scavabs, scavabc,
       precabs_base, precabc_base, precnums_base, precnumc_base);
   // resuspension goes to coarse mode
@@ -1346,7 +1329,7 @@ void compute_q_tendencies_phase_2(
     const Real cldvcu_k, const Real cldvcu_k_p1, const Real sol_facti,
     const Real sol_factic, const Real sol_factb, const Real pdel, const Real dt,
     const int mam_prevap_resusp_optcc, const int jnv, const int mm, const int k,
-    const Real precabs, const Real precabc, const Real scavabs, Real &scavabc,
+    const Real precabs, const Real precabc, const Real scavabs, const Real scavabc,
     const Real precabs_base, const Real precabc_base, const Real precnums_base,
     const Real precnumc_base) {
 
@@ -1357,7 +1340,6 @@ void compute_q_tendencies_phase_2(
   // worked because the "do lspec" loop cycles when lspec =
   // nspec_amode(m)+1, but that does not make the code correct.
   // qqcw_sav = tracer;
-  Real fracis = 0;  // fraction of species not scavenged [fraction]
   Real iscavt = 0;  // incloud scavenging tends [kg/kg/s]
   Real icscavt = 0; // incloud, convective [kg/kg/s]
   Real isscavt = 0; // incloud, stratiform [kg/kg/s]
@@ -1371,7 +1353,7 @@ void compute_q_tendencies_phase_2(
       dt, pdel, cmfdqr, evapc, dlf, conicw, prain, evapr, totcond, cldt, cldcu,
       cldvcu_k, cldvcu_k_p1, cldvst_k, cldvst_k_p1, sol_factb, sol_facti,
       sol_factic, mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef,
-      f_act_conv, tracer, qqcw_tmp, fracis, scavt, iscavt, icscavt, isscavt,
+      f_act_conv, tracer, qqcw_tmp, scavt, iscavt, icscavt, isscavt,
       bcscavt, bsscavt, rcscavt, rsscavt, precabs, precabc, scavabs, scavabc,
       precabs_base, precabc_base, precnums_base, precnumc_base);
 
@@ -1983,7 +1965,6 @@ void compute_q_tendencies(
   // because precabs requires values from the previous elevation (k-1).
   team.team_barrier();
   Kokkos::single(Kokkos::PerTeam(team), [=]() {
-    Real scavabc = 0;
     for (int k = 0; k < nlev; ++k) {
       const auto rtscavt_sv_k = ekat::subview(rtscavt_sv, k);
 
@@ -2003,7 +1984,7 @@ void compute_q_tendencies(
             cldcu[k], cldvst[k], cldvst[k_p1], cldvcu[k], cldvcu[k_p1],
             sol_facti[k], sol_factic[k], sol_factb[k], state_q(k, mm),
             ptend_q(k, mm), qqcw(k, mm), pdel[k], dt, mam_prevap_resusp_optcc,
-            jnv, mm, precabs[k], precabc[k], scavabs[k], scavabc,
+            jnv, mm, precabs[k], precabc[k], scavabs[k], scavabc[k],
             precabs_base[k], precabc_base[k], precnums_base[k],
             precnumc_base[k]);
 
@@ -2029,7 +2010,7 @@ void compute_q_tendencies(
             cldcu[k], cldvst[k], cldvst[k_p1], cldvcu[k], cldvcu[k_p1],
             sol_facti[k], sol_factic[k], sol_factb[k], pdel[k], dt,
             mam_prevap_resusp_optcc, jnv, mm, k, precabs[k], precabc[k],
-            scavabs[k], scavabc, precabs_base[k], precabc_base[k],
+            scavabs[k], scavabc[k], precabs_base[k], precabc_base[k],
             precnums_base[k], precnumc_base[k]);
       }
     }
