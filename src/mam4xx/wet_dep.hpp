@@ -418,16 +418,11 @@ void wetdep_prevap(const int is_st_cu, const int mam_prevap_resusp_optcc,
   */
   // clang-format on
   // BAD CONSTANT
-  const Real small_value_30 = 1.e-30;
-  const Real gravit = Constants::gravity;
-
   scavabx_new = scavabx_old;
-
-  Real tmpa = haero::max(0.0, pprdx * pdel_ik / gravit);
-
   if (mam_prevap_resusp_optcc <= 130) {
+    const Real gravit = Constants::gravity;
     // aerosol mass scavenging
-    tmpa = haero::max(0.0, srcx * pdel_ik / gravit);
+    Real tmpa = haero::max(0.0, srcx * pdel_ik / gravit);
     scavabx_new = haero::max(0.0, scavabx_old + tmpa);
   }
 }
