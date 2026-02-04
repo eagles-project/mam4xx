@@ -47,10 +47,9 @@ void test_wetdep_resusp_noprecip_process(const Input &input, Output &output) {
       "wetdep::wetdep_resusp_noprecip", 1, KOKKOS_LAMBDA(const int) {
         Real precabx_base_new = 0, precabx_new = 0, scavabx_new = 0,
              resusp_x = 0;
-        mam4::wetdep::wetdep_resusp_noprecip(
+        resusp_x = mam4::wetdep::wetdep_resusp_noprecip(
             is_st_cu, mam_prevap_resusp_optcc, precabx_old, precabx_base_old,
-            scavabx_old, precnumx_base_old, precabx_new, precabx_base_new,
-            scavabx_new, resusp_x);
+            scavabx_old, precnumx_base_old);
 
         return_vals[0] = precabx_base_new;
         return_vals[1] = precabx_new;

@@ -881,10 +881,11 @@ void set_f_act_coarse(const int kk,
 }
 
 // =============================================================================
+using View1D = DeviceType::view_1d<Real>;
 KOKKOS_INLINE_FUNCTION
 void calc_resusp_to_coarse(const int mm, const bool update_dqdt,
                            const Real rcscavt, const Real rsscavt,
-                           Real &dqdt_tmp, Real rtscavt_sv[]) {
+                           Real &dqdt_tmp, View1D rtscavt_sv) {
   // clang-format off
   //-----------------------------------------------------------------------
   // resuspension goes to coarse mode
@@ -919,7 +920,6 @@ void calc_resusp_to_coarse(const int mm, const bool update_dqdt,
     dqdt_tmp += rtscavt_sv[mm];
 }
 // =============================================================================
-using View1D = DeviceType::view_1d<Real>;
 KOKKOS_INLINE_FUNCTION
 Real calc_sfc_flux(const ThreadTeam &team, const View1D &layer_tend,
                    haero::ConstColumnView pdel, const int nlev) {

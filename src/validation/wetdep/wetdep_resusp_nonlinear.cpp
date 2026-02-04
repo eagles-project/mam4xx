@@ -47,10 +47,10 @@ void test_wetdep_resusp_nonlinear_process(const Input &input, Output &output) {
   ColumnView return_vals = mam4::validation::create_column_view(2);
   Kokkos::parallel_for(
       "wetdep::wetdep_resusp_nonlinear", 1, KOKKOS_LAMBDA(const int) {
-        Real scavabx_new, resusp_x;
-        mam4::wetdep::wetdep_resusp_nonlinear(
+        Real scavabx_new = 0, resusp_x = 0;
+        resusp_x = mam4::wetdep::wetdep_resusp_nonlinear(
             is_st_cu, mam_prevap_resusp_optcc, precabx_old, precabx_base_old,
-            scavabx_old, precnumx_base_old, precabx_new, scavabx_new, resusp_x);
+            scavabx_old, precnumx_base_old, precabx_new);
 
         return_vals[0] = scavabx_new;
         return_vals[1] = resusp_x;

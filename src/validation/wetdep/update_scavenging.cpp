@@ -63,24 +63,43 @@ void test_update_scavenging_process(const Input &input, Output &output) {
   ColumnView return_vals = mam4::validation::create_column_view(12);
   Kokkos::parallel_for(
       "wetdep::update_scavenging", 1, KOKKOS_LAMBDA(const int) {
-        Real scavt_ik = 0, iscavt_ik = 0, icscavt_ik = 0, isscavt_ik = 0,
-             bcscavt_ik = 0, bsscavt_ik = 0, rcscavt_ik = 0, rsscavt_ik = 0,
-             scavabs_d = scavabs, scavabc_d = scavabc, precabc_d = precabc,
-             precabs_d = precabs;
-        mam4::wetdep::update_scavenging(
-            mam_prevap_resusp_optcc, pdel_ik, omsm, srcc, srcs, srct, fins,
-            finc, fracev_st, fracev_cu, resusp_c, resusp_s, precs_ik, evaps_ik,
-            cmfdqr_ik, evapc_ik, scavt_ik, bcscavt_ik, rcscavt_ik, rsscavt_ik,
-            scavabs_d, scavabc_d);
+        Real scavt = 0, iscavt = 0, icscavt = 0, isscavt = 0, bcscavt = 0,
+             bsscavt = 0, rcscavt = 0, rsscavt = 0, scavabs_d = scavabs,
+             scavabc_d = scavabc, precabc_d = precabc, precabs_d = precabs;
 
-        return_vals[0] = scavt_ik;
-        return_vals[1] = iscavt_ik;
-        return_vals[2] = icscavt_ik;
-        return_vals[3] = isscavt_ik;
-        return_vals[4] = bcscavt_ik;
-        return_vals[5] = bsscavt_ik;
-        return_vals[6] = rcscavt_ik;
-        return_vals[7] = rsscavt_ik;
+        // mam4::wetdep::update_scavenging(
+        // mam_prevap_resusp_optcc, pdel, omsm, srcc, srcs, srct, fins,
+        // finc, fracev_st, fracev_cu, resusp_c, resusp_s, precs, evaps,
+        // cmfdqr, evapc, scavt, bcscavt, rcscavt, rsscavt,
+        // scavabs_d, scavabc_d);
+
+        const Real gravit = Constants::gravity;
+
+        if (mam_prevap_resusp_optcc == 0)
+          scavt = -srct + (fracev_st * scavabs + fracev_cu * scavabc) * gravit /
+                              pdel_ik;
+        else
+          scavt = -srct + (resusp_s + resusp_c) * gravit / pdel_ik;
+
+        if (mam_prevap_resusp_optcc == 0) {
+          bcscavt = -(srcc * (1 - finc)) * omsm +
+                    fracev_cu * scavabc * gravit / pdel_ik;
+          rcscavt = 0.0;
+          rsscavt = 0.0;
+        } else {
+          bcscavt = -(srcc * (1 - finc)) * omsm;
+          rcscavt = resusp_c * gravit / pdel_ik;
+          rsscavt = resusp_s * gravit / pdel_ik;
+        }
+
+        return_vals[0] = scavt;
+        return_vals[1] = iscavt;
+        return_vals[2] = icscavt;
+        return_vals[3] = isscavt;
+        return_vals[4] = bcscavt;
+        return_vals[5] = bsscavt;
+        return_vals[6] = rcscavt;
+        return_vals[7] = rsscavt;
         return_vals[8] = scavabs_d;
         return_vals[9] = scavabc_d;
         return_vals[10] = precabc_d;
