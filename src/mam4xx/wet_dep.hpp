@@ -1234,89 +1234,6 @@ void define_act_frac(const ThreadTeam &team, const View1D &sol_facti,
 }
 
 KOKKOS_INLINE_FUNCTION
-void compute_q_tendencies_phase_1(
-    Real &scavt, Real &bcscavt, Real &rcscavt, Real rtscavt_sv[],
-    const Real f_act_conv, const Real scavcoefnum, const Real scavcoefvol,
-    const Real totcond, const Real cmfdqr, const Real conicw, const Real evapc,
-    const Real evapr, const Real prain, const Real dlf, const Real cldt,
-    const Real cldcu, const Real cldvst_k, const Real cldvst_k_p1,
-    const Real cldvcu_k, const Real cldvcu_k_p1, const Real sol_facti,
-    const Real sol_factic, const Real sol_factb, const Real state_q,
-    const Real ptend_q, const Real qqcw_sav, const Real pdel, const Real dt,
-    const int mam_prevap_resusp_optcc, const int jnv, const int mm,
-    const Real precabs, const Real precabc, const Real scavabs,
-    const Real scavabc, const Real precabs_base, const Real precabc_base,
-    const Real precnums_base, const Real precnumc_base) {
-  // traces reflects changes from modal_aero_calcsize and is the
-  // "most current" q
-  const Real tracer = state_q + ptend_q * dt;
-  Real scavcoef = 0;
-  if (jnv)
-    scavcoef = (1 == jnv) ? scavcoefnum : scavcoefvol;
-
-  Real rsscavt = 0; // resuspension, stratiform [kg/kg/s]
-  // is_strat_cloudborne = true if tracer is
-  // stratiform-cloudborne aerosol; else false
-  const bool is_strat_cloudborne = false;
-  std::tie(scavt, bcscavt, rcscavt, rsscavt) = wetdep::wetdepa_v2(
-      dt, pdel, cmfdqr, evapc, dlf, conicw, prain, evapr, totcond, cldt, cldcu,
-      cldvcu_k, cldvcu_k_p1, cldvst_k, cldvst_k_p1, sol_factb, sol_facti,
-      sol_factic, mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef,
-      f_act_conv, tracer, qqcw_sav, precabs, precabc, scavabs, scavabc,
-      precabs_base, precabc_base, precnums_base, precnumc_base);
-  // resuspension goes to coarse mode
-  const bool update_dqdt = true;
-  aero_model::calc_resusp_to_coarse(mm, update_dqdt, rcscavt, rsscavt, scavt,
-                                    rtscavt_sv);
-}
-
-KOKKOS_INLINE_FUNCTION
-void compute_q_tendencies_phase_2(
-    Real &scavt, Real &bcscavt, Real &rcscavt, Real rtscavt_sv[],
-    const Real qqcw_tmp, const Real tracer,
-
-    // const Prognostics &progs,
-    const Real f_act_conv, const Real scavcoefnum, const Real scavcoefvol,
-    const Real totcond, const Real cmfdqr, const Real conicw, const Real evapc,
-    const Real evapr, const Real prain, const Real dlf, const Real cldt,
-    const Real cldcu, const Real cldvst_k, const Real cldvst_k_p1,
-    const Real cldvcu_k, const Real cldvcu_k_p1, const Real sol_facti,
-    const Real sol_factic, const Real sol_factb, const Real pdel, const Real dt,
-    const int mam_prevap_resusp_optcc, const int jnv, const int mm, const int k,
-    const Real precabs, const Real precabc, const Real scavabs,
-    const Real scavabc, const Real precabs_base, const Real precabc_base,
-    const Real precnums_base, const Real precnumc_base) {
-
-  // static constexpr int pcnst = aero_model::pcnst;
-  // There is no cloud-borne aerosol water in the model, so this
-  // code block should NEVER execute for lspec =
-  // nspec_amode(m)+1 (i.e., jnummaswtr = 2). The code only
-  // worked because the "do lspec" loop cycles when lspec =
-  // nspec_amode(m)+1, but that does not make the code correct.
-  // qqcw_sav = tracer;
-  Real rsscavt = 0; // resuspension, stratiform [kg/kg/s]
-  Real scavcoef = 0;
-  if (jnv)
-    scavcoef = (1 == jnv) ? scavcoefnum : scavcoefvol;
-  const bool is_strat_cloudborne = true;
-  std::tie(scavt, bcscavt, rcscavt, rsscavt) = wetdep::wetdepa_v2(
-      dt, pdel, cmfdqr, evapc, dlf, conicw, prain, evapr, totcond, cldt, cldcu,
-      cldvcu_k, cldvcu_k_p1, cldvst_k, cldvst_k_p1, sol_factb, sol_facti,
-      sol_factic, mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef,
-      f_act_conv, tracer, qqcw_tmp, precabs, precabc, scavabs, scavabc,
-      precabs_base, precabc_base, precnums_base, precnumc_base);
-
-  // resuspension goes to coarse mode
-  const bool update_dqdt = false;
-  aero_model::calc_resusp_to_coarse(mm, update_dqdt, rcscavt, rsscavt, scavt,
-                                    rtscavt_sv);
-
-  // Setting ptend_q is the same as the Fortran version:
-  // qqcw_all[mm] += scavt[k] * dt;
-  // utils::inject_qqcw_to_prognostics(qqcw_all, progs, k);
-}
-
-KOKKOS_INLINE_FUNCTION
 void compute_q_tendencies(
     const ThreadTeam &team, const int nlev,
     // const Prognostics &progs,
@@ -1956,18 +1873,23 @@ void compute_q_tendencies(
       // zero. May need further check.  - Shuaiqi Tang in
       // refactoring for MAM4xx
       const Real qqcw_tmp = 0.0;
-      compute_q_tendencies_phase_2(
-          // These are the output values
-          scavt[k], bcscavt[k], rcscavt[k], rtscavt_sv_k.data(), qqcw_tmp,
-          qqcw(k, mm),
-          // The rest of the values are input only.
-          // progs,
-          f_act_conv[k], scavcoefnum[k], scavcoefvol[k], totcond[k], cmfdqr[k],
-          conicw[k], evapc[k], evapr[k], prain[k], dlf[k], cldt[k], cldcu[k],
-          cldvst[k], cldvst[k_p1], cldvcu[k], cldvcu[k_p1], sol_facti[k],
-          sol_factic[k], sol_factb[k], pdel[k], dt, mam_prevap_resusp_optcc,
-          jnv, mm, k, precabs[k], precabc[k], scavabs[k], scavabc[k],
+      Real rsscavt = 0; // resuspension, stratiform [kg/kg/s]
+      Real scavcoef = 0;
+      if (jnv)
+        scavcoef = (1 == jnv) ? scavcoefnum[k] : scavcoefvol[k];
+      const bool is_strat_cloudborne = true;
+      std::tie(scavt[k], bcscavt[k], rcscavt[k], rsscavt) = wetdep::wetdepa_v2(
+          dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k], prain[k],
+          evapr[k], totcond[k], cldt[k], cldcu[k], cldvcu[k], cldvcu[k_p1],
+          cldvst[k], cldvst[k_p1], sol_factb[k], sol_facti[k], sol_factic[k],
+          mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef, f_act_conv[k],
+          qqcw(k, mm), qqcw_tmp, precabs[k], precabc[k], scavabs[k], scavabc[k],
           precabs_base[k], precabc_base[k], precnums_base[k], precnumc_base[k]);
+
+      // resuspension goes to coarse mode
+      const bool update_dqdt = false;
+      aero_model::calc_resusp_to_coarse(mm, update_dqdt, rcscavt[k], rsscavt,
+                                        scavt[k], rtscavt_sv_k.data());
     }
   });
 }
