@@ -63,16 +63,15 @@ void test_update_scavenging_process(const Input &input, Output &output) {
   ColumnView return_vals = mam4::validation::create_column_view(12);
   Kokkos::parallel_for(
       "wetdep::update_scavenging", 1, KOKKOS_LAMBDA(const int) {
-        Real scavt_ik, iscavt_ik, icscavt_ik, isscavt_ik, bcscavt_ik,
-            bsscavt_ik, rcscavt_ik, rsscavt_ik,
-            scavabs_d = scavabs, scavabc_d = scavabc, precabc_d = precabc,
-            precabs_d = precabs;
+        Real scavt_ik = 0, iscavt_ik = 0, icscavt_ik = 0, isscavt_ik = 0,
+             bcscavt_ik = 0, bsscavt_ik = 0, rcscavt_ik = 0, rsscavt_ik = 0,
+             scavabs_d = scavabs, scavabc_d = scavabc, precabc_d = precabc,
+             precabs_d = precabs;
         mam4::wetdep::update_scavenging(
             mam_prevap_resusp_optcc, pdel_ik, omsm, srcc, srcs, srct, fins,
             finc, fracev_st, fracev_cu, resusp_c, resusp_s, precs_ik, evaps_ik,
-            cmfdqr_ik, evapc_ik, scavt_ik, iscavt_ik, icscavt_ik, isscavt_ik,
-            bcscavt_ik, bsscavt_ik, rcscavt_ik, rsscavt_ik, scavabs_d,
-            scavabc_d);
+            cmfdqr_ik, evapc_ik, scavt_ik, bcscavt_ik, rcscavt_ik, rsscavt_ik,
+            scavabs_d, scavabc_d);
 
         return_vals[0] = scavt_ik;
         return_vals[1] = iscavt_ik;
