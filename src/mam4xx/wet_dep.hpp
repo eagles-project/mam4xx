@@ -790,19 +790,18 @@ void wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
 // ==============================================================================
 // ==============================================================================
 KOKKOS_INLINE_FUNCTION
-std::tuple<Real, Real, Real, Real>
-wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
-           const Real evapc, const Real dlf, const Real conicw,
-           const Real precs, const Real evaps, const Real cwat, const Real cldt,
-           const Real cldc, const Real cldvcu, const Real cldvcu_lower_level,
-           const Real cldvst, const Real cldvst_lower_level,
-           const Real sol_factb, const Real sol_facti, const Real sol_factic,
-           const int mam_prevap_resusp_optcc, const bool is_strat_cloudborne,
-           const Real scavcoef, const Real f_act_conv, const Real tracer,
-           const Real qqcw, const Real precabs, const Real precabc,
-           const Real scavabs, const Real scavabc, const Real precabs_base,
-           const Real precabc_base, const Real precnums_base,
-           const Real precnumc_base) {
+void wetdepa_v2(
+    const Real deltat, const Real pdel, const Real cmfdqr, const Real evapc,
+    const Real dlf, const Real conicw, const Real precs, const Real evaps,
+    const Real cwat, const Real cldt, const Real cldc, const Real cldvcu,
+    const Real cldvcu_lower_level, const Real cldvst,
+    const Real cldvst_lower_level, const Real sol_factb, const Real sol_facti,
+    const Real sol_factic, const int mam_prevap_resusp_optcc,
+    const bool is_strat_cloudborne, const Real scavcoef, const Real f_act_conv,
+    const Real tracer, const Real qqcw, const Real precabs, const Real precabc,
+    const Real scavabs, const Real scavabc, const Real precabs_base,
+    const Real precabc_base, const Real precnums_base, const Real precnumc_base,
+    Real &scavt, Real &bcscavt, Real &rcscavt, Real &rsscavt) {
   // clang-format off
   // -----------------------------------------------------------------------
   //  Purpose:
@@ -1000,17 +999,14 @@ wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   }
 
   // ****************** update scavengingfor output ***************
-  Real scavt = 0; // scavenging tend at current  [kg/kg/s]
-  Real bcscavt =
-      0; // below cloud, convective scavenging tends at current [kg/kg/s]
-  Real rcscavt = 0; // resuspension, convective tends at current  [kg/kg/s]
-  Real rsscavt = 0; // resuspension, stratiform tends at current  [kg/kg/s]
+  scavt = 0;   // scavenging tend at current  [kg/kg/s]
+  bcscavt = 0; // below cloud, convective scavenging tends at current [kg/kg/s]
+  rcscavt = 0; // resuspension, convective tends at current  [kg/kg/s]
+  rsscavt = 0; // resuspension, stratiform tends at current  [kg/kg/s]
   update_scavenging(mam_prevap_resusp_optcc, pdel, omsm, srcc, srcs, srct, fins,
                     finc, fracev_st, fracev_cu, resusp_c, resusp_s, precs,
                     evaps, cmfdqr, evapc, scavt, bcscavt, rcscavt, rsscavt,
                     scavabs, scavabc);
-
-  return std::make_tuple(scavt, bcscavt, rcscavt, rsscavt);
 }
 // ==============================================================================
 
@@ -1850,13 +1846,14 @@ void compute_q_tendencies(
       // is_strat_cloudborne = true if tracer is
       // stratiform-cloudborne aerosol; else false
       const bool is_strat_cloudborne = false;
-      std::tie(scavt[k], bcscavt[k], rcscavt[k], rsscavt) = wetdep::wetdepa_v2(
+      wetdep::wetdepa_v2(
           dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k], prain[k],
           evapr[k], totcond[k], cldt[k], cldcu[k], cldvcu[k], cldvcu[k_p1],
           cldvst[k], cldvst[k_p1], sol_factb[k], sol_facti[k], sol_factic[k],
           mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef, f_act_conv[k],
           tracer, qqcw(k, mm), precabs[k], precabc[k], scavabs[k], scavabc[k],
-          precabs_base[k], precabc_base[k], precnums_base[k], precnumc_base[k]);
+          precabs_base[k], precabc_base[k], precnums_base[k], precnumc_base[k],
+          scavt[k], bcscavt[k], rcscavt[k], rsscavt);
       // resuspension goes to coarse mode
       const bool update_dqdt = true;
       aero_model::calc_resusp_to_coarse(mm, update_dqdt, rcscavt[k], rsscavt,
@@ -1878,13 +1875,14 @@ void compute_q_tendencies(
       if (jnv)
         scavcoef = (1 == jnv) ? scavcoefnum[k] : scavcoefvol[k];
       const bool is_strat_cloudborne = true;
-      std::tie(scavt[k], bcscavt[k], rcscavt[k], rsscavt) = wetdep::wetdepa_v2(
+      wetdep::wetdepa_v2(
           dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k], prain[k],
           evapr[k], totcond[k], cldt[k], cldcu[k], cldvcu[k], cldvcu[k_p1],
           cldvst[k], cldvst[k_p1], sol_factb[k], sol_facti[k], sol_factic[k],
           mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef, f_act_conv[k],
           qqcw(k, mm), qqcw_tmp, precabs[k], precabc[k], scavabs[k], scavabc[k],
-          precabs_base[k], precabc_base[k], precnums_base[k], precnumc_base[k]);
+          precabs_base[k], precabc_base[k], precnums_base[k], precnumc_base[k],
+          scavt[k], bcscavt[k], rcscavt[k], rsscavt);
 
       // resuspension goes to coarse mode
       const bool update_dqdt = false;
