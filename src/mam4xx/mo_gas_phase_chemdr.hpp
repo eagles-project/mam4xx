@@ -177,8 +177,9 @@ void perform_atmospheric_chemistry_and_microphysics(
     const ConstView1D
         &prain, // stratoform precip [kg/kg/s] //in precip_total_tend
     const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
-    const View1D &work_set_het, const seq_drydep::Data &drydep_data,
-    const MicrophysDiagnosticArrays &diag_arrays, const Real o3_col_deltas_0,
+    const Real o3_col_deltas_0, const View1D &work_set_het,
+    const seq_drydep::Data &drydep_data,
+    const MicrophysDiagnosticArrays &diag_arrays,
     Real dvel[gas_pcnst], // deposition velocity [cm/s]
     Real dflx[gas_pcnst], mam4::Prognostics &progs) {
 
