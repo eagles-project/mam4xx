@@ -1633,7 +1633,7 @@ void compute_q_tendencies(
   team.team_barrier();
   if (mam_prevap_resusp_optcc >= 100) {
     if (mam_prevap_resusp_optcc <= 130) {
-      View1D x_ratio = workspace[1];
+      View1D x_ratio = workspace[9];
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                            [&](int k) { x_ratio[k] = 0; });
       team.team_barrier();
@@ -1729,7 +1729,7 @@ void compute_q_tendencies(
   team.team_barrier();
   if (mam_prevap_resusp_optcc >= 100) {
     if (mam_prevap_resusp_optcc <= 130) {
-      View1D x_ratio = workspace[1];
+      View1D x_ratio = workspace[9];
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                            [&](int k) { x_ratio[k] = 0; });
       team.team_barrier();
