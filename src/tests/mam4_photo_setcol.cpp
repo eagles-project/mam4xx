@@ -3,11 +3,11 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "atmosphere_utils.hpp"
 #include "testing.hpp"
 #include <catch2/catch.hpp>
 #include <ekat_logger.hpp>
 #include <mam4xx/mam4.hpp>
-#include "atmosphere_utils.hpp"
 
 template <typename T> struct PrecisionTolerance;
 
@@ -20,8 +20,7 @@ template <> struct PrecisionTolerance<double> {
 };
 
 template <typename ViewType1D>
-Real compute_l2_norm(const ViewType1D& x,
-                     const ViewType1D& y) {
+Real compute_l2_norm(const ViewType1D &x, const ViewType1D &y) {
   // sanity check
   const auto n = x.extent(0);
   assert(n == y.extent(0) && "x and y must have the same length");
@@ -31,14 +30,12 @@ Real compute_l2_norm(const ViewType1D& x,
 
   // parallel reduction over i=0..n-1: sum_sq += (x(i)-y(i))^2
   Kokkos::parallel_reduce(
-    "l2_norm_reduce",
-    Kokkos::RangePolicy<>(0, n),
-    KOKKOS_LAMBDA(const int i, Real& local_sum) {
-      Real d = x(i) - y(i);
-      local_sum += d * d;
-    },
-    sum_sq
-  );
+      "l2_norm_reduce", Kokkos::RangePolicy<>(0, n),
+      KOKKOS_LAMBDA(const int i, Real &local_sum) {
+        Real d = x(i) - y(i);
+        local_sum += d * d;
+      },
+      sum_sq);
   Kokkos::fence();
 
   // take square root on host
@@ -138,57 +135,49 @@ TEST_CASE("compute_o3_column_density", "mo_photo") {
   View1D o3_col_dens_i("o3_col_dens_i", nlev);
   mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
   Real adv_mass_kg_per_moles[num_gas_aerosol_constituents];
-  for(int i = 0; i < num_gas_aerosol_constituents; ++i) {
+  for (int i = 0; i < num_gas_aerosol_constituents; ++i) {
     adv_mass_kg_per_moles[i] = mam4::gas_chemistry::adv_mass[i] / 1e3;
   }
 
-  const int o3_idx=0;
-  const auto& mmr_o3 = progs.q_gas[o3_idx];
+  const int o3_idx = 0;
+  const auto &mmr_o3 = progs.q_gas[o3_idx];
   std::default_random_engine generator(12345); // Seed for reproducibility
   std::uniform_real_distribution<double> unif_dist(0.0, 1.0); // Uniform
   View1DHost mmr_o3_host("mmr_o3_host", nlev);
   for (int j = 0; j < nlev + 1; ++j) {
-      mmr_o3_host(j) = unif_dist(generator); // Generate random number
+    mmr_o3_host(j) = unif_dist(generator); // Generate random number
   }
   Kokkos::deep_copy(mmr_o3, mmr_o3_host);
 
   Kokkos::parallel_for(
       team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-  mam4::microphysics::compute_o3_column_density(team, atm, progs,      // in
-                                                adv_mass_kg_per_moles, // in
-                                                o3_col_dens_i);        // out
-  });
+        mam4::microphysics::compute_o3_column_density(
+            team, atm, progs,      // in
+            adv_mass_kg_per_moles, // in
+            o3_col_dens_i);        // out
+      });
   Kokkos::fence();
 
-  const Real o3_col_deltas_0 = 0.0;  // example scaling
-  const Real mw_o3           = adv_mass_kg_per_moles[0];   // molecular weight of ozone
+  const Real o3_col_deltas_0 = 0.0;            // example scaling
+  const Real mw_o3 = adv_mass_kg_per_moles[0]; // molecular weight of ozone
   View1D o3_col_dens_i2("o3_col_dens_i2", nlev);
   const auto pdel = atm.hydrostatic_dp;
-  std::cout << "adv_mass_kg_per_moles[0]"<<mw_o3  << "\n";
+  std::cout << "adv_mass_kg_per_moles[0]" << mw_o3 << "\n";
 
   // one team, with enough threads to cover 'nlev' if needed
   Kokkos::parallel_for(
-      "compute_o3_column", team_policy,
-      KOKKOS_LAMBDA(const ThreadTeam& team) {
+      "compute_o3_column", team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
         mam4::microphysics::compute_o3_column_density(
-          team,
-          pdel,            // pressure-thickness array [nlev]
-          mmr_o3,          // ozone mass‐mixing ratio [nlev]
-          o3_col_deltas_0, // constant factor
-          mw_o3,           // ozone molecular weight
-          o3_col_dens_i2      // output column‐density [nlev]
+            team,
+            pdel,            // pressure-thickness array [nlev]
+            mmr_o3,          // ozone mass‐mixing ratio [nlev]
+            o3_col_deltas_0, // constant factor
+            mw_o3,           // ozone molecular weight
+            o3_col_dens_i2   // output column‐density [nlev]
         );
-      }
-    );
+      });
 
-
-    const Real error = compute_l2_norm(o3_col_dens_i,o3_col_dens_i2);
-    constexpr Real tol = PrecisionTolerance<Real>::tol;
-    REQUIRE(error <= tol);
-
-
-
-
-
-
+  const Real error = compute_l2_norm(o3_col_dens_i, o3_col_dens_i2);
+  constexpr Real tol = PrecisionTolerance<Real>::tol;
+  REQUIRE(error <= tol);
 }

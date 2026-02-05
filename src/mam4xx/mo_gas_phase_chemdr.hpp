@@ -178,8 +178,7 @@ void perform_atmospheric_chemistry_and_microphysics(
         &prain, // stratoform precip [kg/kg/s] //in precip_total_tend
     const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
     const View1D &work_set_het, const seq_drydep::Data &drydep_data,
-    const MicrophysDiagnosticArrays &diag_arrays,
-    const Real o3_col_deltas_0,
+    const MicrophysDiagnosticArrays &diag_arrays, const Real o3_col_deltas_0,
     Real dvel[gas_pcnst], // deposition velocity [cm/s]
     Real dflx[gas_pcnst], mam4::Prognostics &progs) {
 
@@ -240,13 +239,11 @@ void perform_atmospheric_chemistry_and_microphysics(
                           cnst_offline_icol, atm.pressure);        // in
 
   const int O3indx = mam4::gas_chemistry::o3_idx;
-  const auto& mmr_o3 = progs.q_gas[O3indx];
-  mam4::microphysics::compute_o3_column_density(team,
-                               atm.hydrostatic_dp, // pdel
-                               mmr_o3,
-                               o3_col_deltas_0,
-                               adv_mass_kg_per_moles[O3indx],
-                               o3_col_dens_i);
+  const auto &mmr_o3 = progs.q_gas[O3indx];
+  mam4::microphysics::compute_o3_column_density(
+      team,
+      atm.hydrostatic_dp, // pdel
+      mmr_o3, o3_col_deltas_0, adv_mass_kg_per_moles[O3indx], o3_col_dens_i);
 
   // set up photolysis work arrays for this column.
   mam4::mo_photo::PhotoTableWorkArrays photo_work_arrays_icol;
