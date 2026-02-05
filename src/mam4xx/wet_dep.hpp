@@ -365,11 +365,10 @@ void wetdep_prevap(const int is_st_cu, const int mam_prevap_resusp_optcc,
 // ==============================================================================
 // ==============================================================================
 KOKKOS_INLINE_FUNCTION
-void wetdep_resusp_nonlinear(
+Real wetdep_resusp_nonlinear(
     const int is_st_cu, const int mam_prevap_resusp_optcc,
     const Real precabx_old, const Real precabx_base_old, const Real scavabx_old,
-    const Real precnumx_base_old, const Real precabx_new, Real &scavabx_new,
-    Real &resusp_x) {
+    const Real precnumx_base_old, const Real precabx_new) {
 
   // clang-format off
   //  ------------------------------------------------------------------------------
@@ -387,14 +386,13 @@ void wetdep_resusp_nonlinear(
    in :: scavabx_old  ! input scavenged tracer flux from above [kg/m2/s]
    in :: precnumx_base_old ! precipitation number at cloud base [#/m2/s]
    in :: precabx_new  ! output of precipitation above this layer [kg/m2/s]
-   out :: scavabx_new ! output scavenged tracer flux from above [kg/m2/s]
    out :: resusp_x    ! aerosol mass re-suspension in a particular layer [kg/m2/s]
   */
   // clang-format on
 
   // BAD CONSTANT
   const Real small_value_30 = 1.e-30;
-
+  Real resusp_x = 0;
   // fraction of precabx and precabx_base
   const Real u_old =
       utils::min_max_bound(0.0, 1.0, precabx_old / precabx_base_old);
@@ -432,23 +430,22 @@ void wetdep_resusp_nonlinear(
   // update aerosol resuspension
   if (mam_prevap_resusp_optcc <= 130) {
     // aerosol mass resuspension
-    scavabx_new = haero::max(0.0, scavabx_old * x_ratio);
+    const Real scavabx_new = haero::max(0.0, scavabx_old * x_ratio);
     resusp_x = haero::max(0.0, scavabx_old - scavabx_new);
   } else {
     // number resuspension
-    scavabx_new = 0;
     resusp_x = haero::max(0.0, precnumx_base_old * (x_old - x_new));
   }
+  return resusp_x;
 }
 // ==============================================================================
 // ==============================================================================
 KOKKOS_INLINE_FUNCTION
-void wetdep_resusp_noprecip(const int is_st_cu,
+Real wetdep_resusp_noprecip(const int is_st_cu,
                             const int mam_prevap_resusp_optcc,
                             const Real precabx_old, const Real precabx_base_old,
                             const Real scavabx_old,
-                            const Real precnumx_base_old, Real &scavabx_new,
-                            Real &resusp_x) {
+                            const Real precnumx_base_old) {
   // clang-format off
   // ------------------------------------------------------------------------------
   // do complete resuspension when precipitation rate is zero
@@ -464,16 +461,14 @@ void wetdep_resusp_noprecip(const int is_st_cu,
   in :: precabx_old ! input of precipitation above this layer [kg/m2/s]
   in :: scavabx_old ! input of scavenged tracer flux from above [kg/m2/s]
   in :: precnumx_base_old ! precipitation number at cloud base [#/m2/s]
-  inout :: scavabx_new ! output of scavenged tracer flux from above [kg/m2/s]
   out :: resusp_x    ! aerosol mass re-suspension in a particular layer [kg/m2/s]
   */
   // clang-format on
 
   // BAD CONSTANT
   const Real small_value_30 = 1.e-30;
-
+  Real resusp_x = 0;
   if (mam_prevap_resusp_optcc <= 130) {
-    scavabx_new = 0.0;
     // linear resuspension based on scavenged aerosol mass or number
     resusp_x = scavabx_old;
   } else {
@@ -490,6 +485,7 @@ void wetdep_resusp_noprecip(const int is_st_cu,
       resusp_x = haero::max(0.0, precnumx_base_old * (x_old - x_new));
     }
   }
+  return resusp_x;
 }
 // ==============================================================================
 // ==============================================================================
@@ -666,7 +662,6 @@ Real wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
   in :: precabx_base_old ! input of precipitation at cloud base [kg/m2/s]
   in :: precabx_old ! input of precipitation above this layer [kg/m2/s]
   in :: precnumx_base_old ! input of precipitation number at cloud base [#/m2/s]
-  out :: scavabx_new ! output of scavenged tracer flux from above [kg/m2/s]
   out :: resusp_x    ! aerosol mass re-suspension in a particular layer [kg/m2/s]
   */
   // clang-format on
@@ -676,28 +671,23 @@ Real wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
   const Real gravit = Constants::gravity;
 
   Real resusp_x = 0;
-  Real scavabx_new = scavabx_old;
-
   const Real tmpa = haero::max(0.0, evapx * pdel_ik / gravit);
   const Real precabx_new =
       utils::min_max_bound(0.0, precabx_base_old, precabx_old - tmpa);
 
   if (precabx_new < small_value_30) {
     // precip rate is essentially zero so do complete resuspension
-    wetdep_resusp_noprecip(is_st_cu, mam_prevap_resusp_optcc, precabx_old,
-                           precabx_base_old, scavabx_old, precnumx_base_old,
-                           scavabx_new, resusp_x);
+    resusp_x = wetdep_resusp_noprecip(is_st_cu, mam_prevap_resusp_optcc,
+                                      precabx_old, precabx_base_old,
+                                      scavabx_old, precnumx_base_old);
   } else if (evapx <= 0.0) {
     // no evap so no resuspension
-    if (mam_prevap_resusp_optcc <= 130) {
-      scavabx_new = scavabx_old;
-    }
     resusp_x = 0.0;
   } else {
     // regular non-linear resuspension
-    wetdep_resusp_nonlinear(is_st_cu, mam_prevap_resusp_optcc, precabx_old,
-                            precabx_base_old, scavabx_old, precnumx_base_old,
-                            precabx_new, scavabx_new, resusp_x);
+    resusp_x = wetdep_resusp_nonlinear(
+        is_st_cu, mam_prevap_resusp_optcc, precabx_old, precabx_base_old,
+        scavabx_old, precnumx_base_old, precabx_new);
   }
   return resusp_x;
 }
