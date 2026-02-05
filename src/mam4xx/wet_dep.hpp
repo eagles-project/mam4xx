@@ -567,8 +567,8 @@ void wetdep_scavenging(const int is_st_cu, const bool is_strat_cloudborne,
 // =============================================================================
 // =============================================================================
 KOKKOS_INLINE_FUNCTION
-Real compute_evap_frac(const int mam_prevap_resusp_optcc, const Real pdel_ik,
-                       const Real evap_ik, const Real precabx) {
+Real compute_evap_frac(const Real pdel_ik, const Real evap_ik,
+                       const Real precabx) {
   // clang-format off
   //  ------------------------------------------------------------------------------
   //  calculate the fraction of strat precip from above
@@ -582,15 +582,13 @@ Real compute_evap_frac(const int mam_prevap_resusp_optcc, const Real pdel_ik,
   out :: fracevx      ! fraction of evaporation [fraction]
   */
   // clang-format on
-  Real fracevx = 0;
-  if (mam_prevap_resusp_optcc != 0) {
-    // BAD CONSTANT
-    const Real small_value_12 = 1.e-12;
-    const Real gravit = Constants::gravity;
-    fracevx = evap_ik * pdel_ik / gravit / haero::max(small_value_12, precabx);
-    // trap to ensure reasonable ratio bounds
-    fracevx = utils::min_max_bound(0., 1., fracevx);
-  }
+  // BAD CONSTANT
+  const Real small_value_12 = 1.e-12;
+  const Real gravit = Constants::gravity;
+  Real fracevx =
+      evap_ik * pdel_ik / gravit / haero::max(small_value_12, precabx);
+  // trap to ensure reasonable ratio bounds
+  fracevx = utils::min_max_bound(0., 1., fracevx);
   return fracevx;
 }
 // =============================================================================
@@ -795,11 +793,11 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   // stratiform
   // fraction of stratiform precip from above that is evaporating [fraction]
   const Real fracev_st =
-      compute_evap_frac(mam_prevap_resusp_optcc, pdel, evaps, precabs);
+      mam_prevap_resusp_optcc ? compute_evap_frac(pdel, evaps, precabs) : 0;
   // convective
   // Fraction of convective precip from above that is evaporating [fraction]
   const Real fracev_cu =
-      compute_evap_frac(mam_prevap_resusp_optcc, pdel, evapc, precabc);
+      mam_prevap_resusp_optcc ? compute_evap_frac(pdel, evapc, precabc) : 0;
 
   // ****************** Scavenging **************************
 
@@ -1818,9 +1816,8 @@ void compute_q_tendencies(
 KOKKOS_INLINE_FUNCTION
 void update_q_tendencies(const ThreadTeam &team, const View2D &ptend_q,
                          const View1D &scavt, const int mm, const int nlev) {
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
-    Kokkos::atomic_add(&ptend_q(k, mm), scavt[k]);
-  });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev),
+                       [&](int k) { ptend_q(k, mm) += scavt[k]; });
 }
 
 // =============================================================================
