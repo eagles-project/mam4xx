@@ -1368,9 +1368,9 @@ void compute_q_tendencies(
     team.team_barrier();
     Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, nlev),
                           [&](const int k, Real &accumulator, const bool last) {
-                            accumulator += netc[k];
                             if (last)
-                              precabs[k + 1] = accumulator;
+                              precabs[k] = accumulator;
+                            accumulator += netc[k];
                           });
   }
 
@@ -1464,9 +1464,9 @@ void compute_q_tendencies(
     team.team_barrier();
     Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, nlev),
                           [&](const int k, Real &accumulator, const bool last) {
-                            accumulator += netc[k];
                             if (last)
-                              precabc[k + 1] = accumulator;
+                              precabc[k] = accumulator;
+                            accumulator += netc[k];
                           });
   }
 
@@ -1717,9 +1717,9 @@ void compute_q_tendencies(
     Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, nlev),
                           [&](const int k, Real &accumulator, const bool last) {
                             const Real gravit = Constants::gravity;
-                            accumulator += srcs[k] * pdel[k] / gravit;
                             if (last)
-                              scavabs[k + 1] = accumulator;
+                              scavabs[k] = accumulator;
+                            accumulator += srcs[k] * pdel[k] / gravit;
                           });
   }
 
@@ -1812,9 +1812,9 @@ void compute_q_tendencies(
     Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, nlev),
                           [&](const int k, Real &accumulator, const bool last) {
                             const Real gravit = Constants::gravity;
-                            accumulator += srcc[k] * pdel[k] / gravit;
                             if (last)
-                              scavabc[k + 1] = accumulator;
+                              scavabc[k] = accumulator;
+                            accumulator += srcc[k] * pdel[k] / gravit;
                           });
   }
 
