@@ -144,70 +144,6 @@ calculate_cloudy_volume(const int nlev, const Real cld[/*nlev*/], FUNC lprec,
 
 // ==============================================================================
 KOKKOS_INLINE_FUNCTION
-void update_scavenging(const int mam_prevap_resusp_optcc, const Real pdel_ik,
-                       const Real omsm, const Real srcc, const Real srcs,
-                       const Real srct, const Real fins, const Real finc,
-                       const Real fracev_st, const Real fracev_cu,
-                       const Real resusp_c, const Real resusp_s,
-                       const Real precs_ik, const Real evaps_ik,
-                       const Real cmfdqr_ik, const Real evapc_ik,
-                       Real &scavt_ik, Real &bcscavt_ik, Real &rcscavt_ik,
-                       Real &rsscavt_ik, const Real scavabs,
-                       const Real scavabc) {
-  // clang-format off
-  // ------------------------------------------------------------------------------
-  // update scavenging variables
-  // *_ik are variables at the grid (icol, kk)
-  // ------------------------------------------------------------------------------
-  /*
-  // input variables
-  in :: mam_prevap_resusp_optcc       ! suspension options
-  in :: pdel_ik       ! pressure thikness [Pa]
-  in :: omsm          ! 1 - (a small number), to prevent roundoff errors below zero
-  in :: srcc          ! tend for convective rain scavenging [kg/kg/s]
-  in :: srcs          ! tend for stratiform rain scavenging [kg/kg/s]
-  in :: srct          ! total scavenging tendency for conv+strat rain [kg/kg/s]
-  in :: fins          ! fraction of rem. rate by strat rain [fraction]
-  in :: finc          ! fraction of rem. rate by conv. rain [fraction]
-  in :: fracev_st     ! fraction of stratiform precip from above that is evaporating [fraction]
-  in :: fracev_cu     ! Fraction of convective precip from above that is evaporating [fraction]
-  in :: resusp_c      ! aerosol mass re-suspension in a particular layer from convective rain [kg/m2/s]
-  in :: resusp_s      ! aerosol mass re-suspension in a particular layer from stratiform rain [kg/m2/s]
-  in :: precs_ik      ! rate of production of stratiform precip [kg/kg/s]
-  in :: evaps_ik      ! rate of evaporation of precip [kg/kg/s]
-  in :: cmfdqr_ik     ! rate of production of convective precip [kg/kg/s]
-  in :: evapc_ik      ! Evaporation rate of convective precipitation [kg/kg/s]
-  // output variables
-  out :: scavt_ik    ! scavenging tend [kg/kg/s]
-  out :: bcscavt_ik  ! below cloud, convective [kg/kg/s]
-  out :: rcscavt_ik  ! resuspension, convective [kg/kg/s]
-  out :: rsscavt_ik  ! resuspension, stratiform [kg/kg/s]
-  in  :: scavabs   ! stratiform scavenged tracer flux from above [kg/m2/s]
-  in  :: scavabc   ! convective scavenged tracer flux from above [kg/m2/s]
-  */
-  // clang-format on
-  const Real gravit = Constants::gravity;
-
-  if (mam_prevap_resusp_optcc == 0)
-    scavt_ik =
-        -srct + (fracev_st * scavabs + fracev_cu * scavabc) * gravit / pdel_ik;
-  else
-    scavt_ik = -srct + (resusp_s + resusp_c) * gravit / pdel_ik;
-
-  if (mam_prevap_resusp_optcc == 0) {
-    bcscavt_ik =
-        -(srcc * (1 - finc)) * omsm + fracev_cu * scavabc * gravit / pdel_ik;
-    rcscavt_ik = 0.0;
-    rsscavt_ik = 0.0;
-  } else {
-    // here mam_prevap_resusp_optcc == 130, 210, 230
-    bcscavt_ik = -(srcc * (1 - finc)) * omsm;
-    rcscavt_ik = resusp_c * gravit / pdel_ik;
-    rsscavt_ik = resusp_s * gravit / pdel_ik;
-  }
-}
-// ==============================================================================
-KOKKOS_INLINE_FUNCTION
 Real flux_precnum_vs_flux_prec_mpln(const Real flux_prec, const int jstrcnv) {
   // clang-format off
   // --------------------------------------------------------------------------------
@@ -511,8 +447,7 @@ void wetdep_resusp_noprecip(const int is_st_cu,
                             const int mam_prevap_resusp_optcc,
                             const Real precabx_old, const Real precabx_base_old,
                             const Real scavabx_old,
-                            const Real precnumx_base_old, Real &precabx_new,
-                            Real &precabx_base_new, Real &scavabx_new,
+                            const Real precnumx_base_old, Real &scavabx_new,
                             Real &resusp_x) {
   // clang-format off
   // ------------------------------------------------------------------------------
@@ -529,8 +464,6 @@ void wetdep_resusp_noprecip(const int is_st_cu,
   in :: precabx_old ! input of precipitation above this layer [kg/m2/s]
   in :: scavabx_old ! input of scavenged tracer flux from above [kg/m2/s]
   in :: precnumx_base_old ! precipitation number at cloud base [#/m2/s]
-  out :: precabx_base_new ! output of precipitation at cloud base [kg/m2/s]
-  out :: precabx_new ! output of precipitation above this layer [kg/m2/s]
   inout :: scavabx_new ! output of scavenged tracer flux from above [kg/m2/s]
   out :: resusp_x    ! aerosol mass re-suspension in a particular layer [kg/m2/s]
   */
@@ -557,10 +490,6 @@ void wetdep_resusp_noprecip(const int is_st_cu,
       resusp_x = haero::max(0.0, precnumx_base_old * (x_old - x_new));
     }
   }
-  // setting both these precip rates to zero causes the resuspension
-  // calculations to start fresh if there is any more precip production
-  precabx_new = 0.0;
-  precabx_base_new = 0.0;
 }
 // ==============================================================================
 // ==============================================================================
@@ -636,7 +565,6 @@ void wetdep_scavenging(const int is_st_cu, const bool is_strat_cloudborne,
     }
     src2 = sol_factb * cldv_ik * odds * tracer_2 / deltat;
   }
-
   src = src1 + src2; // total stratiform or convective scavenging
   fin = src1 / (src + small_value_36); // fraction taken by incloud processes
 }
@@ -718,12 +646,10 @@ Real rain_mix_ratio(const Real temperature, const Real pmid,
 // ==============================================================================
 // ==============================================================================
 KOKKOS_INLINE_FUNCTION
-void wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
+Real wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
                    const Real pdel_ik, const Real evapx, const Real precabx_old,
                    const Real precabx_base_old, const Real scavabx_old,
-                   const Real precnumx_base_old, Real &precabx_new,
-                   Real &precabx_base_new, Real &scavabx_new,
-                   Real &precnumx_base_new, Real &resusp_x) {
+                   const Real precnumx_base_old) {
   // clang-format off
   // ------------------------------------------------------------------------------
   // do precip production, resuspension and scavenging
@@ -739,35 +665,28 @@ void wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
   in :: evapx         ! evaporation at current layer [kg/kg/s]
   in :: precabx_base_old ! input of precipitation at cloud base [kg/m2/s]
   in :: precabx_old ! input of precipitation above this layer [kg/m2/s]
-  in :: scavabx_old ! input of scavenged tracer flux from above [kg/m2/s]
   in :: precnumx_base_old ! input of precipitation number at cloud base [#/m2/s]
-  out :: precabx_base_new ! output of precipitation at cloud base [kg/m2/s]
-  out :: precabx_new ! output of precipitation above this layer [kg/m2/s]
   out :: scavabx_new ! output of scavenged tracer flux from above [kg/m2/s]
-  out :: precnumx_base_new ! output of precipitation number at cloud base [#/m2/s]
   out :: resusp_x    ! aerosol mass re-suspension in a particular layer [kg/m2/s]
   */
   // clang-format on
 
   // BAD CONSTANT
   const Real small_value_30 = 1.e-30;
-
   const Real gravit = Constants::gravity;
 
-  // initiate *_new in case they are not calculated
-  scavabx_new = scavabx_old;
-  precnumx_base_new = precnumx_base_old;
-  precabx_base_new = precabx_base_old;
+  Real resusp_x = 0;
+  Real scavabx_new = scavabx_old;
 
   const Real tmpa = haero::max(0.0, evapx * pdel_ik / gravit);
-  precabx_new = utils::min_max_bound(0.0, precabx_base_new, precabx_old - tmpa);
+  const Real precabx_new =
+      utils::min_max_bound(0.0, precabx_base_old, precabx_old - tmpa);
 
   if (precabx_new < small_value_30) {
     // precip rate is essentially zero so do complete resuspension
     wetdep_resusp_noprecip(is_st_cu, mam_prevap_resusp_optcc, precabx_old,
                            precabx_base_old, scavabx_old, precnumx_base_old,
-                           precabx_new, precabx_base_new, scavabx_new,
-                           resusp_x);
+                           scavabx_new, resusp_x);
   } else if (evapx <= 0.0) {
     // no evap so no resuspension
     if (mam_prevap_resusp_optcc <= 130) {
@@ -780,23 +699,25 @@ void wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
                             precabx_base_old, scavabx_old, precnumx_base_old,
                             precabx_new, scavabx_new, resusp_x);
   }
+  return resusp_x;
 }
 
 // ==============================================================================
 // ==============================================================================
 KOKKOS_INLINE_FUNCTION
-void wetdepa_v2(
-    const Real deltat, const Real pdel, const Real cmfdqr, const Real evapc,
-    const Real dlf, const Real conicw, const Real precs, const Real evaps,
-    const Real cwat, const Real cldt, const Real cldc, const Real cldvcu,
-    const Real cldvcu_lower_level, const Real cldvst,
-    const Real cldvst_lower_level, const Real sol_factb, const Real sol_facti,
-    const Real sol_factic, const int mam_prevap_resusp_optcc,
-    const bool is_strat_cloudborne, const Real scavcoef, const Real f_act_conv,
-    const Real tracer, const Real qqcw, const Real precabs, const Real precabc,
-    const Real scavabs, const Real scavabc, const Real precabs_base,
-    const Real precabc_base, const Real precnums_base, const Real precnumc_base,
-    Real &scavt, Real &bcscavt, Real &rcscavt, Real &rsscavt) {
+void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
+                const Real evapc, const Real dlf, const Real conicw,
+                const Real precs, const Real evaps, const Real cwat,
+                const Real cldt, const Real cldc, const Real cldvcu,
+                const Real cldvst, const Real sol_factb, const Real sol_facti,
+                const Real sol_factic, const int mam_prevap_resusp_optcc,
+                const bool is_strat_cloudborne, const Real scavcoef,
+                const Real f_act_conv, const Real tracer, const Real qqcw,
+                const Real precabs, const Real precabc, const Real scavabs,
+                const Real scavabc, const Real precabs_base,
+                const Real precabc_base, const Real precnums_base,
+                const Real precnumc_base, Real &scavt, Real &bcscavt,
+                Real &rcscavt, Real &rsscavt) {
   // clang-format off
   // -----------------------------------------------------------------------
   //  Purpose:
@@ -828,11 +749,7 @@ void wetdepa_v2(
          cldt,     ! total cloud fraction [fraction]
          cldc,     ! convective cloud fraction [fraction]
          cldvcu,   ! Convective precipitation area at the top interface of each layer [fraction]
-         cldvcu_lower_level  Convective precipitation at the next lower level, (kk+1 relative to cldvcu[kk]
-	                     or at cldvcu[nlev-1] if kk==nlev) area at the top interface of each layer [fraction]
          cldvst,   ! Stratiform precipitation area at the top interface of each layer [fraction]
-         cldvst_lower_level, Stratiform precipitation at the next lower level, (kk+1 relative to cldvst[kk]
-                             or at cldvst[nlev-1] if kk==nlev)area at the top interface of each layer [fraction]
          tracer    ! trace species [kg/kg]
 
   in :: mam_prevap_resusp_optcc ! suspension options.
@@ -861,12 +778,6 @@ void wetdepa_v2(
   out :: rsscavt  ! resuspension, stratiform [kg/kg/s]
   */
   // clang-format on
-#if 0
-      ! local variables
-      integer  :: icol          ! column index
-      integer  :: kk            ! z index
-
-#endif
   // BAD CONSTANT
   const Real small_value_2 = 1.e-2;
   const Real small_value_12 = 1.e-12;
@@ -936,7 +847,7 @@ void wetdepa_v2(
   // now do the stratiform scavenging
 
   // fracp: fraction of convective cloud water converted to rain
-  fracp = precs * deltat / haero::max(cwat + precs * deltat, small_value_12);
+  fracp = precs * deltat / haero::max(small_value_12, cwat + precs * deltat);
   fracp = utils::min_max_bound(0.0, 1.0, fracp);
 
   Real srcs; // tendency for stratiform rain scavenging [kg/kg/s]
@@ -957,37 +868,24 @@ void wetdepa_v2(
   // total scavenging tendency [kg/kg/s]
   const Real srct = (srcc + srcs) * omsm;
 
-  // fraction that is not removed within the cloud
-  // (assumed to be interstitial, and subject to convective transport)
-  fracp = deltat * srct / haero::max(cldvst * tracer, small_value_36);
-
   // ****************** Resuspension **************************
 
-  Real resusp_c; // aerosol mass re-suspension in a particular layer from
-                 // convective rain [kg/m2/s]
-  Real resusp_s; // aerosol mass re-suspension in a particular layer from
-                 // stratiform rain [kg/m2/s]
+  // aerosol mass re-suspension in a particular layer from convective rain
+  // [kg/m2/s]
+  Real resusp_c = 0;
+  // aerosol mass re-suspension in a particular layer from stratiform rain
+  // [kg/m2/s]
+  Real resusp_s = 0;
   // tend is all tracer removed by scavenging, plus all re-appearing from
   // evaporation above
   if (mam_prevap_resusp_optcc >= 100) {
-    // for stratiform clouds
-    // precipitation and cloudy volume,at the top interface of current layer
-    // [fraction]
-    Real arainx = haero::max(cldvst_lower_level, small_value_2); // non-zero
-    Real precabx_tmp = 0;       // temporary store precabc or precabs [kg/m2/s]
-    Real precabx_base_tmp = 0;  // temporarily store precab*_base [kg/m2/s]
-    Real precnumx_base_tmp = 0; // temporarily store precnum*_base [#/m2/s]
-    Real scavabx_tmp = 0;       // temporarily store scavab* [kg/m2/s]
     // step 1 - do evaporation and resuspension
-    wetdep_resusp(1, mam_prevap_resusp_optcc, pdel, evaps, precabs,
-                  precabs_base, scavabs, precnums_base, precabx_tmp,
-                  precabx_base_tmp, scavabx_tmp, precnumx_base_tmp, resusp_s);
+    resusp_s = wetdep_resusp(1, mam_prevap_resusp_optcc, pdel, evaps, precabs,
+                             precabs_base, scavabs, precnums_base);
 
     // for convective clouds
-    arainx = haero::max(cldvcu_lower_level, small_value_2); // non-zero
-    wetdep_resusp(2, mam_prevap_resusp_optcc, pdel, evapc, precabc,
-                  precabc_base, scavabc, precnumc_base, precabx_tmp,
-                  precabx_base_tmp, scavabx_tmp, precnumx_base_tmp, resusp_c);
+    resusp_c = wetdep_resusp(2, mam_prevap_resusp_optcc, pdel, evapc, precabc,
+                             precabc_base, scavabc, precnumc_base);
   } else { // mam_prevap_resusp_optcc = 0, no resuspension
     resusp_c = fracev_cu * scavabc;
     resusp_s = fracev_st * scavabs;
@@ -998,10 +896,23 @@ void wetdepa_v2(
   bcscavt = 0; // below cloud, convective scavenging tends at current [kg/kg/s]
   rcscavt = 0; // resuspension, convective tends at current  [kg/kg/s]
   rsscavt = 0; // resuspension, stratiform tends at current  [kg/kg/s]
-  update_scavenging(mam_prevap_resusp_optcc, pdel, omsm, srcc, srcs, srct, fins,
-                    finc, fracev_st, fracev_cu, resusp_c, resusp_s, precs,
-                    evaps, cmfdqr, evapc, scavt, bcscavt, rcscavt, rsscavt,
-                    scavabs, scavabc);
+
+  const Real gravit = Constants::gravity;
+
+  if (mam_prevap_resusp_optcc == 0)
+    scavt = -srct + (fracev_st * scavabs + fracev_cu * scavabc) * gravit / pdel;
+  else
+    scavt = -srct + (resusp_s + resusp_c) * gravit / pdel;
+
+  if (mam_prevap_resusp_optcc == 0) {
+    bcscavt = -(srcc * (1 - finc)) * omsm + fracev_cu * scavabc * gravit / pdel;
+    rcscavt = 0.0;
+    rsscavt = 0.0;
+  } else {
+    bcscavt = -(srcc * (1 - finc)) * omsm;
+    rcscavt = resusp_c * gravit / pdel;
+    rsscavt = resusp_s * gravit / pdel;
+  }
 }
 // ==============================================================================
 
@@ -1824,7 +1735,6 @@ void compute_q_tendencies(
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     const auto rtscavt_sv_k = ekat::subview(rtscavt_sv, k);
 
-    const int k_p1 = static_cast<int>(haero::min(k + 1, nlev - 1));
     // OK, this is from the old mam4: Phase 2 is before Phase 1.
     // Note that the phase loops goes from 2 to 1 in reverse order
     // and the qqcw_sav is set first in phase 2 the used in phase 1.
@@ -1833,22 +1743,35 @@ void compute_q_tendencies(
       // "most current" q
 
       const Real tracer = state_q(k, mm) + ptend_q(k, mm) * dt;
+      const Real qqcw_tmp = qqcw(k, mm);
       Real scavcoef = 0;
       if (jnv)
         scavcoef = (1 == jnv) ? scavcoefnum[k] : scavcoefvol[k];
 
-      Real rsscavt = 0; // resuspension, stratiform [kg/kg/s]
+      // resuspension, stratiform [kg/kg/s]
+      Real rsscavt = 0;
       // is_strat_cloudborne = true if tracer is
       // stratiform-cloudborne aerosol; else false
       const bool is_strat_cloudborne = false;
-      wetdep::wetdepa_v2(
-          dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k], prain[k],
-          evapr[k], totcond[k], cldt[k], cldcu[k], cldvcu[k], cldvcu[k_p1],
-          cldvst[k], cldvst[k_p1], sol_factb[k], sol_facti[k], sol_factic[k],
-          mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef, f_act_conv[k],
-          tracer, qqcw(k, mm), precabs[k], precabc[k], scavabs[k], scavabc[k],
-          precabs_base[k], precabc_base[k], precnums_base[k], precnumc_base[k],
-          scavt[k], bcscavt[k], rcscavt[k], rsscavt);
+      if (0 == mam_prevap_resusp_optcc)
+        // wetdepa_v2 is almost a no-opt if 0==mam_prevap_resusp_optcc
+        wetdep::wetdepa_v2(dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k],
+                           prain[k], evapr[k], totcond[k], cldt[k], cldcu[k],
+                           cldvcu[k], cldvst[k], sol_factb[k], sol_facti[k],
+                           sol_factic[k], 0, is_strat_cloudborne, scavcoef,
+                           f_act_conv[k], tracer, qqcw_tmp, precabs[k],
+                           precabc[k], scavabs[k], scavabc[k], precabs_base[k],
+                           precabc_base[k], precnums_base[k], precnumc_base[k],
+                           scavt[k], bcscavt[k], rcscavt[k], rsscavt);
+      else
+        wetdep::wetdepa_v2(
+            dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k], prain[k],
+            evapr[k], totcond[k], cldt[k], cldcu[k], cldvcu[k], cldvst[k],
+            sol_factb[k], sol_facti[k], sol_factic[k], mam_prevap_resusp_optcc,
+            is_strat_cloudborne, scavcoef, f_act_conv[k], tracer, qqcw_tmp,
+            precabs[k], precabc[k], scavabs[k], scavabc[k], precabs_base[k],
+            precabc_base[k], precnums_base[k], precnumc_base[k], scavt[k],
+            bcscavt[k], rcscavt[k], rsscavt);
       // resuspension goes to coarse mode
       const bool update_dqdt = true;
       aero_model::calc_resusp_to_coarse(mm, update_dqdt, rcscavt[k], rsscavt,
@@ -1864,20 +1787,35 @@ void compute_q_tendencies(
       // different from the previous call and qqcw_tmp is always
       // zero. May need further check.  - Shuaiqi Tang in
       // refactoring for MAM4xx
+      const Real tracer = qqcw(k, mm);
       const Real qqcw_tmp = 0.0;
-      Real rsscavt = 0; // resuspension, stratiform [kg/kg/s]
+
+      // resuspension, stratiform [kg/kg/s]
+      Real rsscavt = 0;
       Real scavcoef = 0;
       if (jnv)
         scavcoef = (1 == jnv) ? scavcoefnum[k] : scavcoefvol[k];
+
       const bool is_strat_cloudborne = true;
-      wetdep::wetdepa_v2(
-          dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k], prain[k],
-          evapr[k], totcond[k], cldt[k], cldcu[k], cldvcu[k], cldvcu[k_p1],
-          cldvst[k], cldvst[k_p1], sol_factb[k], sol_facti[k], sol_factic[k],
-          mam_prevap_resusp_optcc, is_strat_cloudborne, scavcoef, f_act_conv[k],
-          qqcw(k, mm), qqcw_tmp, precabs[k], precabc[k], scavabs[k], scavabc[k],
-          precabs_base[k], precabc_base[k], precnums_base[k], precnumc_base[k],
-          scavt[k], bcscavt[k], rcscavt[k], rsscavt);
+      if (0 == mam_prevap_resusp_optcc)
+        // wetdepa_v2 is almost a no-opt if 0==mam_prevap_resusp_optcc
+        wetdep::wetdepa_v2(dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k],
+                           prain[k], evapr[k], totcond[k], cldt[k], cldcu[k],
+                           cldvcu[k], cldvst[k], sol_factb[k], sol_facti[k],
+                           sol_factic[k], 0, is_strat_cloudborne, scavcoef,
+                           f_act_conv[k], tracer, qqcw_tmp, precabs[k],
+                           precabc[k], scavabs[k], scavabc[k], precabs_base[k],
+                           precabc_base[k], precnums_base[k], precnumc_base[k],
+                           scavt[k], bcscavt[k], rcscavt[k], rsscavt);
+      else
+        wetdep::wetdepa_v2(
+            dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k], prain[k],
+            evapr[k], totcond[k], cldt[k], cldcu[k], cldvcu[k], cldvst[k],
+            sol_factb[k], sol_facti[k], sol_factic[k], mam_prevap_resusp_optcc,
+            is_strat_cloudborne, scavcoef, f_act_conv[k], tracer, qqcw_tmp,
+            precabs[k], precabc[k], scavabs[k], scavabc[k], precabs_base[k],
+            precabc_base[k], precnums_base[k], precnumc_base[k], scavt[k],
+            bcscavt[k], rcscavt[k], rsscavt);
 
       // resuspension goes to coarse mode
       const bool update_dqdt = false;
