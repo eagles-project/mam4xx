@@ -31,7 +31,7 @@ set(TEST_LIST
     calc_1_impact_rate_ts_0
     modal_aero_bcscavcoef_get_ts_355
     modal_aero_bcscavcoef_init_ts_0
-    #aero_model_wetdep_ts_379  <-- we're refactoring this, so skip the cross validation test
+    aero_model_wetdep_ts_379
     stand_aero_model_calcsize_water_uptake_dr_ts_379
     baseline_aero_model_wetdep_ts_379
     )
@@ -42,7 +42,7 @@ set(ERROR_THRESHOLDS
    5e-8                    # calc_1_impact_rate_ts_0
    1e-11                   # modal_aero_bcscavcoef_get_ts_355
    2e-4                    # modal_aero_bcscavcoef_init_ts_0
-   #2e-5                    # aero_model_wetdep_ts_379 <-- refactoring, so skip
+   2e-5                    # aero_model_wetdep_ts_379
    1e-9                    # stand_aero_model_calcsize_water_uptake_dr_ts_379
    ${DEFAULT_TOL_BASELINE} # baseline_aero_model_wetdep_ts_379
    )
@@ -71,13 +71,3 @@ foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)
   set_tests_properties(validate_${input} PROPERTIES LABELS ${TestLabel})
 
 endforeach()
-
-# This is a bit-for-bit test for refactoring the C++ wet_dep parameterizations.
-# Run exactly these tests with `ctest -L cxx_refactor`
-add_test(run_refactored_wetdep aero_model_driver ${AERO_MODEL_VALIDATION_DIR}/aero_model_wetdep_ts_379.yaml)
-set_tests_properties(run_refactored_wetdep PROPERTIES LABELS cxx_refactor)
-
-add_test(validate_refactored_wetdep diff mam4xx_aero_model_wetdep_ts_379.py ${CMAKE_CURRENT_SOURCE_DIR}/mam4xx_aero_model_wetdep_ts_cxx_baseline.py)
-#set_property(TEST validate_refactored_wetdep PROPERTY SKIP_REGULAR_EXPRESSION "regex_fail_rel_tol")
-set_tests_properties(validate_refactored_wetdep PROPERTIES DEPENDS run_refactored_wetdep)
-set_tests_properties(validate_refactored_wetdep PROPERTIES LABELS cxx_refactor)
