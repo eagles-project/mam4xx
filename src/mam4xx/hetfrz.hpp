@@ -1026,7 +1026,7 @@ void calculate_coated_fraction(
 
   // dust_a1
   coat_ratio1 = vol_shell[1] * (r_dust_a1 * 2.0) * fac_volsfc_dust_a1;
-  coat_ratio2 = haero::max(6.0 * dr_so4_monolayers_dust * vol_core[1], 0.0);
+  coat_ratio2 = haero::max(6.0 * dr_so4_monolayers_dust * vol_core[1], 1.0e-36);
   dstcoat[1] = coat_ratio1 / coat_ratio2;
 
   // dust_a3
@@ -1037,7 +1037,7 @@ void calculate_coated_fraction(
 
   vol_core[2] = dmc / (specdens_dst * air_density);
   coat_ratio1 = vol_shell[2] * (r_dust_a3 * 2.0) * fac_volsfc_dust_a3;
-  coat_ratio2 = haero::max(6.0 * dr_so4_monolayers_dust * vol_core[2], 0.0);
+  coat_ratio2 = haero::max(6.0 * dr_so4_monolayers_dust * vol_core[2], 1.0e-36);
   dstcoat[2] = coat_ratio1 / coat_ratio2;
 
   for (int ispec = 0; ispec < Hetfrz::hetfrz_aer_nspec; ++ispec) {
