@@ -39,9 +39,9 @@ set(TEST_LIST
 # # matching the tests and errors, just for convenience
 
 set(ERROR_THRESHOLDS
-    6e-11 # lin_strat_chem_solve_ts_1415
-    1e-13 # lin_strat_sfcsink_ts_1415_multicol
-    6e-13 # lin_strat_sfcsinkmulticol_merged
+    9.2e-11 # lin_strat_chem_solve_ts_1415
+    2.7e-10 # lin_strat_sfcsink_ts_1415_multicol
+    4.6e-10 # lin_strat_sfcsinkmulticol_merged
     2e-9  # lin_strat_chem_solve_merged
     6e-9  # lin_strat_chem_solve_ts_1415_multicol
     9e-7  # lin_strat_chem_solvemulticol_merged

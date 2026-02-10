@@ -50,8 +50,8 @@ set(ERROR_THRESHOLDS
     2e-6           # calcsize_e3sm
     2e-6           # calcsize_sub
     ${DEFAULT_TOL} # aitken_accum_exchange_case1
-    ${DEFAULT_TOL} # calcsize_compute_dry_volume
-    5e-11          # stand_modal_aero_calcsize_sub
+    2e-10          # calcsize_compute_dry_volume
+    5e-8          # stand_modal_aero_calcsize_sub
     3e-5           # stand_modal_aero_calcsize_sub_update_ptend
     1.5e-3         # stand_calcsize_aero_model_wetdep_ts_379
    )

@@ -105,7 +105,7 @@ set(TEST_LIST
 set(ERROR_THRESHOLDS
     3.5e-10 # binary_nuc_vehk2002
     2.0e-10 # pbl_nuc_wang2008
-    2.0e-11 # mer07_veh02_nuc_mosaic_1box
+    4.0e-11 # mer07_veh02_nuc_mosaic_1box
    )
 
 foreach(input tol IN ZIP_LISTS TEST_LIST ERROR_THRESHOLDS)

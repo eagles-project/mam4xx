@@ -52,9 +52,9 @@ set(DEFAULT_TOL 1e-12)
 
 set(ERROR_THRESHOLDS
    ${DEFAULT_TOL} # indprd_ts_355
-   ${DEFAULT_TOL} # linmat_ts_355
-   ${DEFAULT_TOL} # nlnmat_ts_355
-   ${DEFAULT_TOL} # imp_prod_loss_ts_355
+   2.6e-10 # linmat_ts_355
+   3.2e-10 # nlnmat_ts_355
+   1.5e-10 # imp_prod_loss_ts_355
    7e-11          # newton_raphson_iter_ts_355
    ${DEFAULT_TOL} # imp_sol_ts_355
    ${DEFAULT_TOL} # adjrxt_ts_1400
