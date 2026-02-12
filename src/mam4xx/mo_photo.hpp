@@ -169,7 +169,7 @@ Real set_ub_col(const Real vmr_o3, const Real pdel) {
 template <typename VectorType>
 KOKKOS_INLINE_FUNCTION void setcol(const ThreadTeam &team,
                                    const VectorType o3_col_deltas,
-                                   ColumnView &o3_col_dens) {
+                                   const View1D &o3_col_dens) {
   constexpr int nlev = mam4::nlev;
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int kk) {
     Real suma = 0.0;
