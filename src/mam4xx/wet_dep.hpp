@@ -838,8 +838,8 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   fracp = precs * deltat / haero::max(small_value_12, cwat + precs * deltat);
   fracp = utils::min_max_bound(0.0, 1.0, fracp);
 
-  Real srcs=0; // tendency for stratiform rain scavenging [kg/kg/s]
-  Real fins=0; // fraction of rem. rate by strat rain [fraction]
+  Real srcs = 0; // tendency for stratiform rain scavenging [kg/kg/s]
+  Real fins = 0; // fraction of rem. rate by strat rain [fraction]
   // 1 for stratiform:
   wetdep_scavenging(1, is_strat_cloudborne, deltat, fracp, precabs, cldvst,
                     scavcoef, sol_factb, sol_facti, tracer, tracer_mean, srcs,
@@ -879,8 +879,9 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   }
 
   // ****************** update scavengingfor output ***************
-  scavt = 0.0;   // scavenging tend at current  [kg/kg/s]
-  bcscavt = 0.0; // below cloud, convective scavenging tends at current [kg/kg/s]
+  scavt = 0.0; // scavenging tend at current  [kg/kg/s]
+  bcscavt =
+      0.0; // below cloud, convective scavenging tends at current [kg/kg/s]
   rcscavt = 0.0; // resuspension, convective tends at current  [kg/kg/s]
   rsscavt = 0.0; // resuspension, stratiform tends at current  [kg/kg/s]
 
@@ -2277,7 +2278,7 @@ void aero_model_wetdep(
             // aero_model.F90
             //
             team.team_barrier();
-            wetdep::compute_q_tendencies(// tendencies are in scavt
+            wetdep::compute_q_tendencies( // tendencies are in scavt
                 team, nlev, f_act_conv, f_act_conv_coarse,
                 f_act_conv_coarse_dust, f_act_conv_coarse_nacl, scavcoefnum,
                 scavcoefvol, totcond, cmfdqr, conicw, evapc, evapr, prain, dlf,
