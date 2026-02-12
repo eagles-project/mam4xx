@@ -144,7 +144,7 @@ TEST_CASE("compute_o3_column_density", "mo_photo") {
   std::default_random_engine generator(12345); // Seed for reproducibility
   std::uniform_real_distribution<double> unif_dist(0.0, 1.0); // Uniform
   View1DHost mmr_o3_host("mmr_o3_host", nlev);
-  for (int j = 0; j < nlev + 1; ++j) {
+  for (int j = 0; j < nlev; ++j) {
     mmr_o3_host(j) = unif_dist(generator); // Generate random number
   }
   Kokkos::deep_copy(mmr_o3, mmr_o3_host);
