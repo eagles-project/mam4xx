@@ -1311,11 +1311,11 @@ void compute_q_tendencies(
   }
 
   View1D cmfd = workspace[1];
-  for (int k = 0; k < nlev; ++k) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     const Real gravit = Constants::gravity;
     evap[k] = haero::max(0.0, evapc[k] * pdel[k] / gravit);
     cmfd[k] = haero::max(0.0, cmfdqr[k] * pdel[k] / gravit);
-  }
+  });
 
   View1D precabc = workspace[8];
   View1D precabc_base = workspace[10];
@@ -1747,17 +1747,18 @@ void compute_q_tendencies(
       // is_strat_cloudborne = true if tracer is
       // stratiform-cloudborne aerosol; else false
       const bool is_strat_cloudborne = false;
-      if (0 == mam_prevap_resusp_optcc)
+      if (0 == mam_prevap_resusp_optcc) {
         // wetdepa_v2 is almost a no-opt if 0==mam_prevap_resusp_optcc
-        wetdep::wetdepa_v2(dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k],
-                           prain[k], evapr[k], totcond[k], cldt[k], cldcu[k],
-                           cldvcu[k], cldvst[k], sol_factb[k], sol_facti[k],
-                           sol_factic[k], 0, is_strat_cloudborne, scavcoef,
-                           f_act_conv[k], tracer, qqcw_tmp, precabs[k],
-                           precabc[k], scavabs[k], scavabc[k], precabs_base[k],
-                           precabc_base[k], precnums_base[k], precnumc_base[k],
-                           scavt[k], bcscavt[k], rcscavt[k], rsscavt);
-      else
+        const int prevap_resusp_optcc = 0;
+        wetdep::wetdepa_v2(
+            dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k], prain[k],
+            evapr[k], totcond[k], cldt[k], cldcu[k], cldvcu[k], cldvst[k],
+            sol_factb[k], sol_facti[k], sol_factic[k], prevap_resusp_optcc,
+            is_strat_cloudborne, scavcoef, f_act_conv[k], tracer, qqcw_tmp,
+            precabs[k], precabc[k], scavabs[k], scavabc[k], precabs_base[k],
+            precabc_base[k], precnums_base[k], precnumc_base[k], scavt[k],
+            bcscavt[k], rcscavt[k], rsscavt);
+      } else {
         wetdep::wetdepa_v2(
             dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k], prain[k],
             evapr[k], totcond[k], cldt[k], cldcu[k], cldvcu[k], cldvst[k],
@@ -1766,6 +1767,7 @@ void compute_q_tendencies(
             precabs[k], precabc[k], scavabs[k], scavabc[k], precabs_base[k],
             precabc_base[k], precnums_base[k], precnumc_base[k], scavt[k],
             bcscavt[k], rcscavt[k], rsscavt);
+      }
       // resuspension goes to coarse mode
       const bool update_dqdt = true;
       aero_model::calc_resusp_to_coarse(mm, update_dqdt, rcscavt[k], rsscavt,
@@ -1791,17 +1793,18 @@ void compute_q_tendencies(
         scavcoef = (1 == jnv) ? scavcoefnum[k] : scavcoefvol[k];
 
       const bool is_strat_cloudborne = true;
-      if (0 == mam_prevap_resusp_optcc)
+      if (0 == mam_prevap_resusp_optcc) {
         // wetdepa_v2 is almost a no-opt if 0==mam_prevap_resusp_optcc
-        wetdep::wetdepa_v2(dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k],
-                           prain[k], evapr[k], totcond[k], cldt[k], cldcu[k],
-                           cldvcu[k], cldvst[k], sol_factb[k], sol_facti[k],
-                           sol_factic[k], 0, is_strat_cloudborne, scavcoef,
-                           f_act_conv[k], tracer, qqcw_tmp, precabs[k],
-                           precabc[k], scavabs[k], scavabc[k], precabs_base[k],
-                           precabc_base[k], precnums_base[k], precnumc_base[k],
-                           scavt[k], bcscavt[k], rcscavt[k], rsscavt);
-      else
+        const int prevap_resusp_optcc = 0;
+        wetdep::wetdepa_v2(
+            dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k], prain[k],
+            evapr[k], totcond[k], cldt[k], cldcu[k], cldvcu[k], cldvst[k],
+            sol_factb[k], sol_facti[k], sol_factic[k], prevap_resusp_optcc,
+            is_strat_cloudborne, scavcoef, f_act_conv[k], tracer, qqcw_tmp,
+            precabs[k], precabc[k], scavabs[k], scavabc[k], precabs_base[k],
+            precabc_base[k], precnums_base[k], precnumc_base[k], scavt[k],
+            bcscavt[k], rcscavt[k], rsscavt);
+      } else {
         wetdep::wetdepa_v2(
             dt, pdel[k], cmfdqr[k], evapc[k], dlf[k], conicw[k], prain[k],
             evapr[k], totcond[k], cldt[k], cldcu[k], cldvcu[k], cldvst[k],
@@ -1810,7 +1813,7 @@ void compute_q_tendencies(
             precabs[k], precabc[k], scavabs[k], scavabc[k], precabs_base[k],
             precabc_base[k], precnums_base[k], precnumc_base[k], scavt[k],
             bcscavt[k], rcscavt[k], rsscavt);
-
+      }
       // resuspension goes to coarse mode
       const bool update_dqdt = false;
       aero_model::calc_resusp_to_coarse(mm, update_dqdt, rcscavt[k], rsscavt,
