@@ -13,7 +13,6 @@ using namespace mam4;
 using namespace skywalker;
 
 void test_wetdep_clddiag(std::unique_ptr<Ensemble> &ensemble);
-void test_wetdep_prevap(std::unique_ptr<Ensemble> &ensemble);
 void test_wetdep_resusp_nonlinear(std::unique_ptr<Ensemble> &ensemble);
 void test_wetdep_resusp_noprecip(std::unique_ptr<Ensemble> &ensemble);
 void test_wetdep_scavenging(std::unique_ptr<Ensemble> &ensemble);
@@ -69,8 +68,6 @@ int main(int argc, char **argv) {
   try {
     if (name == "wetdep_clddiag") {
       test_wetdep_clddiag(ensemble);
-    } else if (name == "wetdep_prevap") {
-      test_wetdep_prevap(ensemble);
     } else if (name == "wetdep_resusp_nonlinear") {
       test_wetdep_resusp_nonlinear(ensemble);
     } else if (name == "wetdep_resusp_noprecip") {

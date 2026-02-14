@@ -326,45 +326,6 @@ Real fprecn_resusp_vs_fprec_evap_mpln(const Real fprec_evap,
 }
 // ==============================================================================
 KOKKOS_INLINE_FUNCTION
-void wetdep_prevap(const int is_st_cu, const int mam_prevap_resusp_optcc,
-                   const Real pdel_ik, const Real pprdx, const Real srcx,
-                   const Real arainx, const Real precabx_old,
-                   const Real precabx_base_old, const Real scavabx_old,
-                   const Real precnumx_base_old, Real &scavabx_new) {
-  // clang-format off
-  // ------------------------------------------------------------------------------
-  // do precip production and scavenging
-  // ------------------------------------------------------------------------------
-  /*
-  in :: is_st_cu      ! options for stratiform (1) or convective (2) clouds
-                      ! raindrop size distribution is
-                      ! different for different cloud:
-                      ! 1: assume marshall-palmer distribution
-                      ! 2: assume log-normal distribution
-  in :: mam_prevap_resusp_optcc       ! suspension options
-  in :: pdel_ik       ! pressure thikness at current column and level [Pa]
-  in :: pprdx  ! precipitation generation rate [kg/kg/s]
-  in :: srcx   ! scavenging tendency [kg/kg/s]
-  in :: arainx ! precipitation and cloudy volume,at the top interface of current layer [fraction]
-  in :: precabx_base_old ! input of precipitation at cloud base [kg/m2/s]
-  in :: precabx_old ! input of precipitation above this layer [kg/m2/s]
-  in :: scavabx_old ! input scavenged tracer flux from above [kg/m2/s]
-  in :: precnumx_base_old ! input of rain number at cloud base [#/m2/s]
-  out :: scavabx_new ! output scavenged tracer flux from above [kg/m2/s]
-  */
-  // clang-format on
-  // BAD CONSTANT
-  scavabx_new = scavabx_old;
-  if (mam_prevap_resusp_optcc <= 130) {
-    const Real gravit = Constants::gravity;
-    // aerosol mass scavenging
-    Real tmpa = haero::max(0.0, srcx * pdel_ik / gravit);
-    scavabx_new = haero::max(0.0, scavabx_old + tmpa);
-  }
-}
-// ==============================================================================
-// ==============================================================================
-KOKKOS_INLINE_FUNCTION
 Real wetdep_resusp_nonlinear(
     const int is_st_cu, const int mam_prevap_resusp_optcc,
     const Real precabx_old, const Real precabx_base_old, const Real scavabx_old,
