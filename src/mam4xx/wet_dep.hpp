@@ -1311,11 +1311,11 @@ void compute_q_tendencies(
   }
 
   View1D cmfd = workspace[1];
-  for (int k = 0; k < nlev; ++k) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     const Real gravit = Constants::gravity;
     evap[k] = haero::max(0.0, evapc[k] * pdel[k] / gravit);
     cmfd[k] = haero::max(0.0, cmfdqr[k] * pdel[k] / gravit);
-  }
+  });
 
   View1D precabc = workspace[8];
   View1D precabc_base = workspace[10];
