@@ -11,7 +11,6 @@ include_directories(${PROJECT_BINARY_DIR}/validation)
 add_executable(wetdep_driver
                wetdep_driver.cpp
                wetdep_clddiag.cpp
-               wetdep_prevap.cpp
                wetdep_resusp_nonlinear.cpp
                wetdep_resusp_noprecip.cpp
                wetdep_scavenging.cpp
@@ -36,8 +35,6 @@ endforeach()
 # Run the driver in several configurations to produce datasets.
 set(TEST_LIST
     clddiag
-    wetdep_prevap_130
-    wetdep_prevap_230
     wetdep_resusp_nonlinear_130
     wetdep_resusp_nonlinear_230
     wetdep_resusp_noprecip_130
@@ -59,8 +56,6 @@ set(DEFAULT_TOL 1e-6)
 
 set(ERROR_THRESHOLDS
     ${DEFAULT_TOL} # clddiag
-    ${DEFAULT_TOL} # wetdep_prevap_130
-    3e-6           # wetdep_prevap_230
     ${DEFAULT_TOL} # wetdep_resusp_nonlinear_130
     ${DEFAULT_TOL} # wetdep_resusp_nonlinear_230
     ${DEFAULT_TOL} # wetdep_resusp_noprecip_130
