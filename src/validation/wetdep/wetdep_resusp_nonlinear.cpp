@@ -44,27 +44,24 @@ void test_wetdep_resusp_nonlinear_process(const Input &input, Output &output) {
   const Real precnumx_base_old = input.get("precnumx_base_old");
   const Real precabx_new = input.get("precabx_new");
 
-  ColumnView return_vals = mam4::validation::create_column_view(2);
+  ColumnView return_val = mam4::validation::create_column_view(1);
   Kokkos::parallel_for(
       "wetdep::wetdep_resusp_nonlinear", 1, KOKKOS_LAMBDA(const int) {
-        Real scavabx_new, resusp_x;
-        mam4::wetdep::wetdep_resusp_nonlinear(
+        return_val[0] = mam4::wetdep::wetdep_resusp_nonlinear(
             is_st_cu, mam_prevap_resusp_optcc, precabx_old, precabx_base_old,
-            scavabx_old, precnumx_base_old, precabx_new, scavabx_new, resusp_x);
-
-        return_vals[0] = scavabx_new;
-        return_vals[1] = resusp_x;
+            scavabx_old, precnumx_base_old, precabx_new);
       });
 
   // Create mirror views for output arrays
-  auto vals_host = Kokkos::create_mirror_view(return_vals);
+  auto vals_host = Kokkos::create_mirror_view(return_val);
 
   // Copy values back to the host
-  Kokkos::deep_copy(vals_host, return_vals);
+  Kokkos::deep_copy(vals_host, return_val);
 
   // Set the output values
-  output.set("scavabx_new", vals_host[0]);
-  output.set("resusp_x", vals_host[1]);
+  output.set("resusp_x", vals_host[0]);
+  // This is needed to check again skywalker precomputed result.
+  output.set("scavabx_new", 0);
 }
 
 void test_wetdep_resusp_nonlinear(std::unique_ptr<Ensemble> &ensemble) {

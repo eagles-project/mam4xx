@@ -38,11 +38,10 @@ void test_compute_evap_frac_process(const Input &input, Output &output) {
   ColumnView return_vals = mam4::validation::create_column_view(1);
   Kokkos::parallel_for(
       "wetdep::compute_evap_frac", 1, KOKKOS_LAMBDA(const int) {
-        Real fracevx = 0;
-        mam4::wetdep::compute_evap_frac(mam_prevap_resusp_optcc, pdel_ik,
-                                        evap_ik, precabx, fracevx);
-
-        return_vals[0] = fracevx;
+        return_vals[0] =
+            mam_prevap_resusp_optcc
+                ? mam4::wetdep::compute_evap_frac(pdel_ik, evap_ik, precabx)
+                : 0;
       });
 
   // Create mirror views for output arrays
