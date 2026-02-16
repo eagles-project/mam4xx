@@ -118,8 +118,8 @@ KOKKOS_INLINE_FUNCTION void
 calculate_cloudy_volume(const int nlev, const Real cld[/*nlev*/], FUNC lprec,
                         const bool is_tot_cld, Real cldv[/*nlev*/]) {
   // BAD CONSTANT
-  const Real small_value_30 = 1.e-30;
-  const Real small_value_36 = 1.e-36;
+  constexpr Real small_value_30 = 1.e-30;
+  constexpr Real small_value_36 = 1.e-36;
   Real sumppr = 0.0; // Precipitation rate [kg/m2/s]
   Real cldv1 = 0.0;  // Precip weighted cloud fraction from above [kg/m2/s]
   Real sumpppr = small_value_36; // Sum of positive precips from above
@@ -158,7 +158,7 @@ Real flux_precnum_vs_flux_prec_mpln(const Real flux_prec, const int jstrcnv) {
   // clang-format on
 
   // BAD CONSTANT
-  const Real small_value_36 = 1.e-36;
+  constexpr Real small_value_36 = 1.e-36;
 
   // current only two options: 1 for marshall-palmer distribution, 2 for
   // log-normal distribution
@@ -352,7 +352,7 @@ Real wetdep_resusp_nonlinear(
   // clang-format on
 
   // BAD CONSTANT
-  const Real small_value_30 = 1.e-30;
+  constexpr Real small_value_30 = 1.e-30;
   Real resusp_x = 0;
   // fraction of precabx and precabx_base
   const Real u_old =
@@ -427,7 +427,7 @@ Real wetdep_resusp_noprecip(const int is_st_cu,
   // clang-format on
 
   // BAD CONSTANT
-  const Real small_value_30 = 1.e-30;
+  constexpr Real small_value_30 = 1.e-30;
   Real resusp_x = 0;
   if (mam_prevap_resusp_optcc <= 130) {
     // linear resuspension based on scavenged aerosol mass or number
@@ -491,8 +491,8 @@ void wetdep_scavenging(const int is_st_cu, const bool is_strat_cloudborne,
   */
   // clang-format on
   // BAD CONSTANT
-  const Real small_value_36 = 1.e-36;
-  const Real small_value_5 = 1.e-5; // for cloud fraction
+  constexpr Real small_value_36 = 1.e-36;
+  constexpr Real small_value_5 = 1.e-5; // for cloud fraction
 
   // calculate limitation of removal rate using Dana and Hales coefficient
   // odds  : limit on removal rate (proportional to prec) [fraction]
@@ -544,7 +544,7 @@ Real compute_evap_frac(const Real pdel_ik, const Real evap_ik,
   */
   // clang-format on
   // BAD CONSTANT
-  const Real small_value_12 = 1.e-12;
+  constexpr Real small_value_12 = 1.e-12;
   const Real gravit = Constants::gravity;
   Real fracevx =
       evap_ik * pdel_ik / gravit / haero::max(small_value_12, precabx);
@@ -574,7 +574,7 @@ Real rain_mix_ratio(const Real temperature, const Real pmid,
   // clang-format on
 
   // BAD CONSTANT
-  const Real small_value_14 = 1.e-14;
+  constexpr Real small_value_14 = 1.e-14;
   const Real gravit = Constants::gravity;
   const Real rhoh2o = Constants::density_h2o;
   const Real tmelt = Constants::freezing_pt_h2o;
@@ -626,7 +626,7 @@ Real wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
   // clang-format on
 
   // BAD CONSTANT
-  const Real small_value_30 = 1.e-30;
+  constexpr Real small_value_30 = 1.e-30;
   const Real gravit = Constants::gravity;
 
   Real resusp_x = 0;
@@ -728,9 +728,9 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   */
   // clang-format on
   // BAD CONSTANT
-  const Real small_value_2 = 1.e-2;
-  const Real small_value_12 = 1.e-12;
-  const Real small_value_36 = 1.e-36;
+  constexpr Real small_value_2 = 1.e-2;
+  constexpr Real small_value_12 = 1.e-12;
+  constexpr Real small_value_36 = 1.e-36;
 
   // omsm = (1 - small number) used to prevent roundoff errors below zero
   // in Fortran EPSILON(X) returns the smallest number E of the same kind
@@ -971,7 +971,7 @@ void sum_deep_and_shallow(const ThreadTeam &team, const View1D &conicw,
                           const ConstView1D &icwmrsh,
                           const ConstView1D &sh_frac, const int nlev) {
   // BAD CONSTANT
-  const Real small_value_2 = 1.e-2;
+  constexpr Real small_value_2 = 1.e-2;
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     // sum deep and shallow convection contributions
     conicw[k] = (icwmrdp[k] * dp_frac[k] + icwmrsh[k] * sh_frac[k]) /
@@ -1192,7 +1192,7 @@ void compute_q_tendencies(
     Kokkos::single(Kokkos::PerTeam(team), [=]() {
       // Because of these two values, the loop can not be parallel_for
       Real prec = 0.0, prec_base = 0.0;
-      const Real small_value_30 = 1.e-30;
+      constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
       for (int k = 0; k < nlev - 1; ++k) {
         bndd[k] = utils::min_max_bound(0.0, prec_base, prec - evap[k]);
         precabs_base_tmp[k] = prec_base;
@@ -1240,8 +1240,8 @@ void compute_q_tendencies(
                        [&](int k) { precnums_base[k] = 0.0; });
   // Yes, it is redundant but keys off of the old code.
   if (mam_prevap_resusp_optcc >= 100 && mam_prevap_resusp_optcc > 130) {
-    const Real small_value_2 = 1.e-2;
-    const Real small_value_30 = 1.e-30;
+    constexpr Real small_value_2 = 1.e-2;   // BAD CONSTANT
+    constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
     View1D copy_from_prev = workspace[2];
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                          [&](int k) { copy_from_prev[k] = 0.0; });
@@ -1293,7 +1293,7 @@ void compute_q_tendencies(
     View1D bndd = workspace[2];
     Kokkos::single(Kokkos::PerTeam(team), [=]() {
       Real prec = 0, prec_base = 0.0;
-      const Real small_value_30 = 1.e-30;
+      constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
       for (int k = 0; k < nlev - 1; ++k) {
         bndd[k] = utils::min_max_bound(0.0, prec_base, prec - evap[k]);
         precabc_base_tmp[k] = prec_base;
@@ -1335,8 +1335,8 @@ void compute_q_tendencies(
   if (mam_prevap_resusp_optcc >= 100 && mam_prevap_resusp_optcc > 130) {
     // This can be done as three parallel loops, push the loop into the
     // conditional
-    const Real small_value_2 = 1.e-2;
-    const Real small_value_30 = 1.e-30;
+    constexpr Real small_value_2 = 1.e-2;   // BAD CONSTANT
+    constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
     View1D copy_from_prev = workspace[2];
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                          [&](int k) { copy_from_prev[k] = 0.0; });
@@ -1386,9 +1386,9 @@ void compute_q_tendencies(
     });
   } else {
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
-      const Real small_value_12 = 1.e-12;
-      const Real small_value_5 = 1.e-5;
-      const Real small_value_2 = 1.e-2;
+      constexpr Real small_value_12 = 1.e-12; // BAD CONSTANT
+      constexpr Real small_value_5 = 1.e-5;   // BAD CONSTANT
+      constexpr Real small_value_2 = 1.e-2;   // BAD CONSTANT
       const Real tqqcw = qqcw(k, mm);
       const Real tracer = state_q(k, mm) + ptend_q(k, mm) * dt;
 
@@ -1431,7 +1431,7 @@ void compute_q_tendencies(
 
   if (is_strat_cloudborne) {
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
-      const Real small_value_12 = 1.e-12;
+      constexpr Real small_value_12 = 1.e-12; // BAD CONSTANT
       const Real tracer = qqcw(k, mm);
       // strat in-cloud removal only affects strat-cloudborne aerosol
       Real fracp = prain[k] * dt /
@@ -1446,8 +1446,8 @@ void compute_q_tendencies(
     });
   } else {
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
-      const Real small_value_5 = 1.e-5;
-      const Real small_value_2 = 1.e-2;
+      constexpr Real small_value_5 = 1.e-5; // BAD CONSTANT
+      constexpr Real small_value_2 = 1.e-2; // BAD CONSTANT
       const Real tracer = state_q(k, mm) + ptend_q(k, mm) * dt;
       const Real tqqcw = qqcw(k, mm);
       Real scavcoef = 0.0;
@@ -1476,7 +1476,7 @@ void compute_q_tendencies(
 
   team.team_barrier();
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
-    const Real small_value_36 = 1.e-36;
+    constexpr Real small_value_36 = 1.e-36; // BAD CONSTANT
     const Real tracer =
         lphase == 1 ? state_q(k, mm) + ptend_q(k, mm) * dt : qqcw(k, mm);
     const Real rat =
@@ -1488,11 +1488,6 @@ void compute_q_tendencies(
   });
 
   team.team_barrier();
-  // View1D rain = workspace[1];
-  // Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
-  //   const Real gravit = Constants::gravity;
-  //   rain[k] = haero::max(0.0, prain[k] * pdel[k] / gravit);
-  // });
   View1D scavabs = workspace[12];
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                        [&](int k) { scavabs[k] = 0.0; });
@@ -1504,7 +1499,7 @@ void compute_q_tendencies(
                            [&](int k) { x_ratio[k] = 0.0; });
       team.team_barrier();
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
-        const Real small_value_30 = 1.e-30;
+        constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
         // update aerosol resuspension
         // fraction of precabx and precabx_base
         if (precabs_tmp[k] < small_value_30) {
@@ -1540,7 +1535,7 @@ void compute_q_tendencies(
       team.team_barrier();
       Kokkos::single(Kokkos::PerTeam(team), [=]() {
         for (int k = 0; k < nlev - 1; ++k) {
-          const Real small_value_30 = 1.e-30;
+          constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
           Real scavabs_tmp = 0.0;
           if (precabs_tmp[k] < small_value_30) {
             scavabs_tmp = 0.0;
@@ -1561,7 +1556,7 @@ void compute_q_tendencies(
                            [&](int k) { copy_from_prev[k] = 0.0; });
       team.team_barrier();
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev - 1), [&](int k) {
-        const Real small_value_30 = 1.e-30;
+        constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
         if (precabs_tmp[k] < small_value_30) {
           copy_from_prev[k + 1] = 1;
         } else if (evapr[k] <= 0.0) {
@@ -1600,7 +1595,7 @@ void compute_q_tendencies(
                            [&](int k) { x_ratio[k] = 0.0; });
       team.team_barrier();
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
-        const Real small_value_30 = 1.e-30;
+        constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
         if (precabc[k] < small_value_30) {
         } else if (evapr[k] <= 0.0) {
         } else {
@@ -1636,7 +1631,7 @@ void compute_q_tendencies(
       team.team_barrier();
       Kokkos::single(Kokkos::PerTeam(team), [=]() {
         for (int k = 0; k < nlev - 1; ++k) {
-          const Real small_value_30 = 1.e-30;
+          constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
           Real scavabc_tmp = 0.0;
           if (precabc[k] < small_value_30) {
             scavabc_tmp = 0.0;
@@ -1657,7 +1652,7 @@ void compute_q_tendencies(
                            [&](int k) { copy_from_prev[k] = 0.0; });
       team.team_barrier();
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev - 1), [&](int k) {
-        const Real small_value_30 = 1.e-30;
+        constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
         if (precabc[k] < small_value_30) {
           copy_from_prev[k + 1] = 1;
         } else if (evapr[k] <= 0.0) {
@@ -1684,8 +1679,6 @@ void compute_q_tendencies(
                           });
   }
 
-  // NOTE: The following k loop cannot be converted to parallel_for
-  // because precabs requires values from the previous elevation (k-1).
   team.team_barrier();
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     const auto rtscavt_sv_k = ekat::subview(rtscavt_sv, k);

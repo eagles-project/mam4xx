@@ -133,7 +133,7 @@ void test_wetdepa_v2_process(const Input &input, Output &output) {
   ColumnView rsscavt_dev = mam4::validation::create_column_view(nlev);
 
   Kokkos::parallel_for(
-      "wetdep::wetdepa_v2", 1, KOKKOS_LAMBDA(const int i) {
+      "wetdep::wetdepa_v2", nlev, KOKKOS_LAMBDA(const int kk) {
         Real precabs = 0;
         Real precabc = 0;
         Real scavabs = 0;
@@ -142,17 +142,15 @@ void test_wetdepa_v2_process(const Input &input, Output &output) {
         Real precabc_base = 0;
         Real precnums_base = 0;
         Real precnumc_base = 0;
-        for (int kk = 0; kk < nlev; ++kk) {
-          mam4::wetdep::wetdepa_v2(
-              deltat, pdel_dev[kk], cmfdqr_dev[kk], evapc_dev[kk], dlf_dev[kk],
-              conicw_dev[kk], precs_dev[kk], evaps_dev[kk], cwat_dev[kk],
-              cldt_dev[kk], cldc_dev[kk], cldvcu_dev[kk], cldvst_dev[kk],
-              sol_factb, sol_facti, sol_factic_dev[kk], mam_prevap_resusp_optcc,
-              is_strat_cloudborne, scavcoef_dev[kk], f_act_conv_dev[kk],
-              tracer_dev[kk], qqcw_dev[kk], precabs, precabc, scavabs, scavabc,
-              precabs_base, precabc_base, precnums_base, precnumc_base,
-              scavt_dev[kk], bcscavt_dev[kk], rcscavt_dev[kk], rsscavt_dev[kk]);
-        }
+        mam4::wetdep::wetdepa_v2(
+            deltat, pdel_dev[kk], cmfdqr_dev[kk], evapc_dev[kk], dlf_dev[kk],
+            conicw_dev[kk], precs_dev[kk], evaps_dev[kk], cwat_dev[kk],
+            cldt_dev[kk], cldc_dev[kk], cldvcu_dev[kk], cldvst_dev[kk],
+            sol_factb, sol_facti, sol_factic_dev[kk], mam_prevap_resusp_optcc,
+            is_strat_cloudborne, scavcoef_dev[kk], f_act_conv_dev[kk],
+            tracer_dev[kk], qqcw_dev[kk], precabs, precabc, scavabs, scavabc,
+            precabs_base, precabc_base, precnums_base, precnumc_base,
+            scavt_dev[kk], bcscavt_dev[kk], rcscavt_dev[kk], rsscavt_dev[kk]);
       });
 
   auto copy_to_host = [&](std::string name, ColumnView dev) {
