@@ -190,6 +190,7 @@ cmake -S ./.haero -B ./.haero/build \
   -DHAERO_PRECISION=$PRECISION \
   -DKokkos_ARCH_$DEVICE_ARCH:BOOL=ON \
   -DHAERO_DEVICE_ARCH=$DEVICE_ARCH \
+  -G "Unix Makefiles" \
   || exit
 
 echo "Building and installing Haero in $PREFIX..."

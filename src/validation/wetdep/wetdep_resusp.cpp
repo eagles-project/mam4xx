@@ -47,8 +47,8 @@ void test_wetdep_resusp_process(const Input &input, Output &output) {
         Real precabx_new = 0, precabx_base_new = 0, scavabx_new = 0,
              precnumx_base_new = 0, resusp_x = 0;
         mam4::wetdep::wetdep_resusp(
-            is_st_cu, mam_prevap_resusp_optcc, pdel_ik, evapx, precabx_base_old,
-            precabx_old, scavabx_old, precnumx_base_old, precabx_new,
+            is_st_cu, mam_prevap_resusp_optcc, pdel_ik, evapx, precabx_old,
+            precabx_base_old, scavabx_old, precnumx_base_old, precabx_new,
             precabx_base_new, scavabx_new, precnumx_base_new, resusp_x);
         return_vals[0] = precabx_new;
         return_vals[1] = precabx_base_new;
