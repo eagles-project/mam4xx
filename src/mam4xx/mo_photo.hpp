@@ -166,20 +166,6 @@ Real set_ub_col(const Real vmr_o3, const Real pdel) {
   return xfactor * pdel * vmr_o3;
 }
 
-template <typename VectorType>
-KOKKOS_INLINE_FUNCTION void setcol(const ThreadTeam &team,
-                                   const VectorType o3_col_deltas,
-                                   const View1D &o3_col_dens) {
-  constexpr int nlev = mam4::nlev;
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int kk) {
-    Real suma = 0.0;
-    Kokkos::parallel_reduce(
-        Kokkos::ThreadVectorRange(team, kk + 1),
-        [&](int i, Real &lsum) { lsum += o3_col_deltas[i]; }, suma);
-    o3_col_dens(kk) = suma + 0.5 * o3_col_deltas[kk + 1];
-  });
-}
-
 KOKKOS_INLINE_FUNCTION
 void cloud_mod(const ThreadTeam &team, const Real zen_angle,
                const ConstView1D &clouds, const ConstView1D &lwc,
