@@ -18,7 +18,6 @@ void set_ub_col(Ensemble *ensemble) {
 
     constexpr int pver = mam4::nlev;
     constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
-    // constexpr int nfs = mam4::gas_chemistry::nfs;
 
     const Real spc_exo_col = input.get_array("spc_exo_col")[0];
     const auto vmr_in = input.get_array("vmr");

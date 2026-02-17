@@ -39,20 +39,22 @@ void compute_o3_column_density(const ThreadTeam &team, const ConstView1D &pdel,
                                const Real mw_o3, const View1D &o3_col_dens) {
   constexpr Real xfactor = 2.8704e21 / (9.80616 * 1.38044); // BAD_CONSTANT!
   constexpr int nlev = mam4::nlev;
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int kk) {
-    Real suma = 0.0;
-    Kokkos::parallel_reduce(
-        Kokkos::ThreadVectorRange(team, kk),
-        [&](int i, Real &lsum) {
-          const Real vmr_o3_i =
-              mam4::conversions::vmr_from_mmr(mmr_o3(i), mw_o3);
-          lsum += xfactor * pdel(i) * vmr_o3_i;
-        },
-        suma);
-    const Real vmr_o3_kk = mam4::conversions::vmr_from_mmr(mmr_o3(kk), mw_o3);
-    o3_col_dens(kk) =
-        o3_col_deltas_0 + suma + 0.5 * xfactor * pdel(kk) * vmr_o3_kk;
-  });
+  Kokkos::parallel_scan(
+      Kokkos::TeamThreadRange(team, nlev),
+      [&](int kk, Real &partial_sum, bool is_final) {
+        // Compute this level's contribution before touching partial_sum
+        const Real vmr_o3_kk =
+            mam4::conversions::vmr_from_mmr(mmr_o3(kk), mw_o3);
+        const Real delta_kk = xfactor * pdel(kk) * vmr_o3_kk;
+
+        if (is_final) {
+          // partial_sum is the EXCLUSIVE prefix: sum of delta_i for i in [0,
+          // kk)
+          o3_col_dens(kk) = o3_col_deltas_0 + partial_sum + 0.5 * delta_kk;
+        }
+        // Accumulate for subsequent levels
+        partial_sum += delta_kk;
+      });
 }
 } // namespace microphysics
 } // namespace mam4
