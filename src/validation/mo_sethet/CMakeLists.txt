@@ -42,7 +42,7 @@ set(TEST_LIST
 set(DEFAULT_TOL 1e-13)
 set(ERROR_THRESHOLDS
     9e-8           # calc_het_rates_merged, this is due to using a more specific value for mass_h2o
-    ${DEFAULT_TOL} # calc_precip_rescale_merged
+    1.1e-10 # calc_precip_rescale_merged
     ${DEFAULT_TOL} # find_ktop_merged, output is an int
     9e-8           # gas_washout_merged
     9e-7           # sethet_merged

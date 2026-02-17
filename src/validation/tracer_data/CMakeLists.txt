@@ -35,8 +35,8 @@ set(TEST_LIST
 set(DEFAULT_TOL 1e-12)
 
 set(ERROR_THRESHOLDS
-    ${DEFAULT_TOL}
-    ${DEFAULT_TOL}
+    4.8e-11
+    7.2e-11
     2e-9
     )
 

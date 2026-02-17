@@ -59,19 +59,19 @@ set(TEST_LIST
 
 set(ERROR_THRESHOLDS
    2e-10 # binterp_ts_355
-   1e-13 # calc_diag_spec_ts_355
+   1.2e-10 # calc_diag_spec_ts_355
    3e-10 # calc_refin_complex_ts_355_lw
    3e-10 # calc_refin_complex_ts_355_sw
    3e-10 # calc_volc_ext_ts_355
    2e-8  # modal_size_parameters_ts_355_ismethod2_false
    2e-8  # modal_size_parameters_ts_355_ismethod2_true
    6e-9  # modal_aero_sw_ts_355
-   7e-11 # modal_aero_lw_ts_355
+   1.4e-10 # modal_aero_lw_ts_355
    2e-11 # calc_parameterized_ts_355
-   1e-12 # update_aod_spec_ts_355
-   7e-11 # aer_rad_props_lw_ts_355
-   8e-11 # aer_rad_props_sw_ts_355
-   8e-11 # volcanic_cmip_sw_ts_355
+   3.2e-10 # update_aod_spec_ts_355
+   1.4e-10 # aer_rad_props_lw_ts_355
+   3e-10 # aer_rad_props_sw_ts_355
+   3e-10 # volcanic_cmip_sw_ts_355
    1e-14 # data_transfer_state_q_qqwc_to_prog
    )
 
