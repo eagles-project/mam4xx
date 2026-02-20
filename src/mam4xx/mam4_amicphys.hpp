@@ -1129,11 +1129,12 @@ void mam_amicphys_1subarea(
     const int newnuc_h2so4_conc_optaa, const int gaexch_h2so4_uptake_optaa,
     const bool do_cond_sub, const bool do_rename_sub, const bool do_newnuc_sub,
     const bool do_coag_sub, const Real deltat, const int jsubarea,
-    const bool iscldy_subarea, const Real afracsub, const Real temp,
-    const Real pmid, const Real pdel, const Real zmid, const Real pblh,
-    const Real relhumsub, const Real (&dgn_a)[num_modes],
-    const Real (&dgn_awet)[num_modes], const Real (&wetdens)[num_modes],
-    const Real (&qgas1)[max_gas()], const Real (&qgas3)[max_gas()],
+    const bool iscldy_subarea, const Real n_so4_monolayers_pcage,
+    const Real afracsub, const Real temp, const Real pmid, const Real pdel,
+    const Real zmid, const Real pblh, const Real relhumsub,
+    const Real (&dgn_a)[num_modes], const Real (&dgn_awet)[num_modes],
+    const Real (&wetdens)[num_modes], const Real (&qgas1)[max_gas()],
+    const Real (&qgas3)[max_gas()],
     // inout
     Real (&qgas_cur)[max_gas()], Real (&qgas_delaa)[max_gas()][nqtendaa()],
     // in
@@ -1665,7 +1666,7 @@ void mam_amicphys_1subarea(
 
     if (do_aging_in_subarea) {
       mam4::aging::mam_pcarbon_aging_1subarea(
-          dgn_a,                                        // input
+          n_so4_monolayers_pcage, dgn_a,                // input
           qnum_cur, qnum_delsub_cond, qnum_delsub_coag, // in-outs
           qaer_cur, qaer_delsub_cond, qaer_delsub_coag, // in-outs
           qaer_delsub_coag_in);                         // in-outs
@@ -1700,10 +1701,11 @@ void mam_amicphys_1gridcell(
     // in
     const AmicPhysConfig &config, const Real deltat, const int nsubarea,
     const int ncldy_subarea, const bool (&iscldy_subarea)[maxsubarea()],
-    const Real (&afracsub)[maxsubarea()], const Real temp, const Real pmid,
-    const Real pdel, const Real zmid, const Real pblh,
-    const Real (&relhumsub)[maxsubarea()], const Real (&dgn_a)[num_modes],
-    const Real (&dgn_awet)[num_modes], const Real (&wetdens)[num_modes],
+    const Real (&afracsub)[maxsubarea()], const Real n_so4_monolayers_pcage,
+    const Real temp, const Real pmid, const Real pdel, const Real zmid,
+    const Real pblh, const Real (&relhumsub)[maxsubarea()],
+    const Real (&dgn_a)[num_modes], const Real (&dgn_awet)[num_modes],
+    const Real (&wetdens)[num_modes],
     const Real (&qsub1)[gas_pcnst][maxsubarea()],
     const Real (&qsub2)[gas_pcnst][maxsubarea()],
     const Real (&qqcwsub2)[gas_pcnst][maxsubarea()],
@@ -1911,8 +1913,9 @@ void mam_amicphys_1gridcell(
         // in
         config.gaexch_h2so4_uptake_optaa, config.newnuc_h2so4_conc_optaa,
         do_cond, do_rename, do_newnuc, do_coag, deltat, jsub,
-        iscldy_subarea[jsub], afracsub[jsub], temp, pmid, pdel, zmid, pblh,
-        relhumsub[jsub], dgn_a, dgn_awet, wetdens, qgas1, qgas3, qgas4,
+        iscldy_subarea[jsub], n_so4_monolayers_pcage, afracsub[jsub], temp,
+        pmid, pdel, zmid, pblh, relhumsub[jsub], dgn_a, dgn_awet, wetdens,
+        qgas1, qgas3, qgas4,
         qgas_delaa,             // out
         qnum3,                  // in
         qnum4, qnum_delaa,      // out
@@ -2117,9 +2120,10 @@ void get_gcm_tend_diags_from_subareas(
 KOKKOS_INLINE_FUNCTION
 void modal_aero_amicphys_intr(
     // in
-    const AmicPhysConfig &config, const Real deltat, const Real temp,
-    const Real pmid, const Real pdel, const Real zm, const Real pblh,
-    const Real qv, const Real cld,
+    const AmicPhysConfig &config, const Real deltat,
+    const Real n_so4_monolayers_pcage, const Real temp, const Real pmid,
+    const Real pdel, const Real zm, const Real pblh, const Real qv,
+    const Real cld,
     // in/out
     Real (&qq)[gas_pcnst], Real (&qqcw)[gas_pcnst],
     // Diagnostics (out)
@@ -2306,9 +2310,9 @@ void modal_aero_amicphys_intr(
   Real qqcwsub_tendaa[gas_pcnst][nqqcwtendaa()][maxsubarea()] = {};
   mam_amicphys_1gridcell(
       // in
-      config, deltat, nsubarea, ncldy_subarea, iscldy_subarea, afracsub, temp,
-      pmid, pdel, zm, pblh, relhumsub, dgn_a, dgn_awet, wetdens, qsub1, qsub2,
-      qqcwsub2, qsub3, qqcwsub3,
+      config, deltat, nsubarea, ncldy_subarea, iscldy_subarea, afracsub,
+      n_so4_monolayers_pcage, temp, pmid, pdel, zm, pblh, relhumsub, dgn_a,
+      dgn_awet, wetdens, qsub1, qsub2, qqcwsub2, qsub3, qqcwsub3,
       // inout
       qaerwatsub3, qsub4, qqcwsub4, qaerwatsub4, qsub_tendaa, qqcwsub_tendaa);
 
