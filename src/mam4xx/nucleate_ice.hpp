@@ -307,20 +307,20 @@ public:
     const int aitken_idx = int(ModeIndex::Aitken);
 
     auto &coarse_dust = prognostics.q_aero_i[coarse_idx][aerosol_index_for_mode(
-        ModeIndex::Coarse, AeroId::DST)];
+        coarse_idx, AeroId::DST)];
     auto &coarse_nacl = prognostics.q_aero_i[coarse_idx][aerosol_index_for_mode(
-        ModeIndex::Coarse, AeroId::NaCl)];
+        coarse_idx, AeroId::NaCl)];
     auto &coarse_so4 = prognostics.q_aero_i[coarse_idx][aerosol_index_for_mode(
-        ModeIndex::Coarse, AeroId::SO4)];
+        coarse_idx, AeroId::SO4)];
 
     auto &coarse_mom = prognostics.q_aero_i[coarse_idx][aerosol_index_for_mode(
-        ModeIndex::Coarse, AeroId::MOM)];
+        coarse_idx, AeroId::MOM)];
     auto &coarse_bc = prognostics.q_aero_i[coarse_idx][aerosol_index_for_mode(
-        ModeIndex::Coarse, AeroId::BC)];
+        coarse_idx, AeroId::BC)];
     auto &coarse_pom = prognostics.q_aero_i[coarse_idx][aerosol_index_for_mode(
-        ModeIndex::Coarse, AeroId::POM)];
+        coarse_idx, AeroId::POM)];
     auto &coarse_soa = prognostics.q_aero_i[coarse_idx][aerosol_index_for_mode(
-        ModeIndex::Coarse, AeroId::SOA)];
+        coarse_idx, AeroId::SOA)];
 
     auto &num_coarse = prognostics.n_mode_i[coarse_idx];
     auto &num_aitken = prognostics.n_mode_i[aitken_idx];
