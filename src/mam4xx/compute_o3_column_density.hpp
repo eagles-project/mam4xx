@@ -56,7 +56,7 @@ void compute_o3_column_density(const ThreadTeam &team, const ConstView1D &pdel,
         partial_sum += delta_kk;
       });
 }
-
+// vmr_o3 is an input instead of mmr_o3
 KOKKOS_INLINE_FUNCTION
 void compute_o3_column_density(const ThreadTeam &team, const ConstView1D &pdel,
                                const View1D &vmr_o3, const Real o3_col_deltas_0,
