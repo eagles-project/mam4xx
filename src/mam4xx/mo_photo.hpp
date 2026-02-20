@@ -151,10 +151,7 @@ void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
 // NOTE: (o2 is not computed--if we want to add it back to the calculation,
 // NOTE: we should properly reorganize the code before we do it)
 KOKKOS_INLINE_FUNCTION
-void set_ub_col(Real &o3_col_delta,
-                const Real vmr[mam4::gas_chemistry::gas_pcnst],
-                const Real invariants[mam4::gas_chemistry::nfs],
-                const Real pdel) {
+Real set_ub_col(const Real vmr_o3, const Real pdel) {
   // NOTE: chemical characteristics of our current mechanism are generated in
   // NOTE: eam/src/chemistry/pp_linoz_mam4_resus_mom_soag/mo_sim_dat.F90
 
@@ -166,23 +163,7 @@ void set_ub_col(Real &o3_col_delta,
   // the above conditions that o3_ndx == 0, o3_inv_ndx == -1, and O2 is not
   // a species or an invariant of interest
   constexpr Real xfactor = 2.8704e21 / (9.80616 * 1.38044); // BAD_CONSTANT!
-  constexpr int o3_ndx = 0;
-  o3_col_delta = xfactor * pdel * vmr[o3_ndx];
-}
-
-KOKKOS_INLINE_FUNCTION
-void setcol(const ThreadTeam &team, const Real o3_col_deltas[mam4::nlev + 1],
-            ColumnView &o3_col_dens) {
-  // we can probably accelerate this with a parallel_scan, but let's just do
-  // a simple loop for now
-  constexpr int nlev = mam4::nlev;
-  Kokkos::single(Kokkos::PerTeam(team), [=]() {
-    o3_col_dens(0) = 0.5 * (o3_col_deltas[0] + o3_col_deltas[1]);
-    for (int k = 1; k < nlev; ++k) {
-      o3_col_dens(k) =
-          o3_col_dens(k - 1) + 0.5 * (o3_col_deltas[k] + o3_col_deltas[k + 1]);
-    }
-  });
+  return xfactor * pdel * vmr_o3;
 }
 
 KOKKOS_INLINE_FUNCTION
