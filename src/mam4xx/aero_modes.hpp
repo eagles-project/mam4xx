@@ -249,14 +249,17 @@ KOKKOS_INLINE_FUNCTION int num_species_mode(const int i) {
 /// Returns the index of the given aerosol species within the given mode, or
 /// -1 if the species is not found within the mode.
 KOKKOS_INLINE_FUNCTION
-int aerosol_index_for_mode(ModeIndex mode, AeroId aero_id) {
-  int mode_index = static_cast<int>(mode);
+int aerosol_index_for_mode(int mode_index, AeroId aero_id) {
   for (int s = 0; s < 7; ++s) {
     if (aero_id == mode_aero_species(mode_index, s)) {
       return s;
     }
   }
   return -1;
+}
+KOKKOS_INLINE_FUNCTION
+int aerosol_index_for_mode(ModeIndex mode, AeroId aero_id) {
+  return aerosol_index_for_mode(static_cast<int>(mode), aero_id);
 }
 /// Convenient function that returns bool indicating if species is
 /// within mode.
