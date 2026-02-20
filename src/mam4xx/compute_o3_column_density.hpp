@@ -56,6 +56,28 @@ void compute_o3_column_density(const ThreadTeam &team, const ConstView1D &pdel,
         partial_sum += delta_kk;
       });
 }
+
+KOKKOS_INLINE_FUNCTION
+void compute_o3_column_density(const ThreadTeam &team, const ConstView1D &pdel,
+                               const View1D &vmr_o3, const Real o3_col_deltas_0,
+                               const View1D &o3_col_dens) {
+  constexpr Real xfactor = 2.8704e21 / (9.80616 * 1.38044); // BAD_CONSTANT!
+  constexpr int nlev = mam4::nlev;
+  Kokkos::parallel_scan(
+      Kokkos::TeamThreadRange(team, nlev),
+      [&](int kk, Real &partial_sum, bool is_final) {
+        // Compute this level's contribution before touching partial_sum
+        const Real delta_kk = xfactor * pdel(kk) * vmr_o3(kk);
+
+        if (is_final) {
+          // partial_sum is the EXCLUSIVE prefix: sum of delta_i for i in [0,
+          // kk)
+          o3_col_dens(kk) = o3_col_deltas_0 + partial_sum + 0.5 * delta_kk;
+        }
+        // Accumulate for subsequent levels
+        partial_sum += delta_kk;
+      });
+}
 } // namespace microphysics
 } // namespace mam4
 #endif
