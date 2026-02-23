@@ -847,21 +847,20 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   rsscavt = 0.0; // resuspension, stratiform tends at current  [kg/kg/s]
 
   const Real gravit = Constants::gravity;
-  const Real gravit_pdel = gravit / pdel;
 
   if (mam_prevap_resusp_optcc == 0)
-    scavt = -srct + (fracev_st * scavabs + fracev_cu * scavabc) * gravit_pdel;
+    scavt = -srct + (fracev_st * scavabs + fracev_cu * scavabc) * gravit / pdel;
   else
-    scavt = -srct + (resusp_s + resusp_c) * gravit_pdel;
+    scavt = -srct + (resusp_s + resusp_c) * gravit / pdel;
 
   if (mam_prevap_resusp_optcc == 0) {
-    bcscavt = -(srcc * (1 - finc)) * omsm + fracev_cu * scavabc * gravit_pdel;
+    bcscavt = -(srcc * (1 - finc)) * omsm + fracev_cu * scavabc * gravit / pdel;
     rcscavt = 0.0;
     rsscavt = 0.0;
   } else {
     bcscavt = -(srcc * (1 - finc)) * omsm;
-    rcscavt = resusp_c * gravit_pdel;
-    rsscavt = resusp_s * gravit_pdel;
+    rcscavt = resusp_c * gravit / pdel;
+    rsscavt = resusp_s * gravit / pdel;
   }
 }
 // ==============================================================================
