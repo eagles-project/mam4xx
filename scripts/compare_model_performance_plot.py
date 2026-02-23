@@ -52,7 +52,15 @@ def grab_timing(case):
         dfeam = df3[~np.array(aer_proc)] 
         dftmp = pd.DataFrame({'name': 'a:EAMxx::aerosols::run', 'walltotal': dfaer['walltotal'].sum()}, index=[99])
         dfeam = pd.concat([dfeam, dftmp]).reset_index(drop=True) 
-        return dfeam, dfaer 
+        
+        # SYPD
+        sypdlog = glob(f'{case}/timing/e3sm_timing.*')[0]  
+        lines_to_read = range(34, 40)  # 1-based
+        with open(sypdlog) as f:
+            all_lines = f.readlines()
+        result = [all_lines[i-1].rstrip() for i in lines_to_read]
+        
+        return dfeam, dfaer, result  
     else:
         print(f'Run {case} not completed')
         return None
@@ -162,8 +170,8 @@ def plot_eam_process(dfeam, ax):
     ax.set_title('EAMxx', fontsize='large')
 
 
-t1, taer1 = grab_timing(case1)
-t2, taer2 = grab_timing(case2) 
+t1, taer1, result1 = grab_timing(case1)
+t2, taer2, result2 = grab_timing(case2) 
 
 expname = '.'.join(os.path.basename(case1).split('.')[1:4]) 
 now_str = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -177,8 +185,8 @@ if t1 is not None and t2 is not None:
 
     run_time = {}
     eamprocess = [p for p in t1['name'].str.split('::').str[1]]  
-    run_time[casename1] = t1['walltotal']
-    run_time[casename2] = t2['walltotal']     
+    run_time[casename1 + f" ({result1[1].split()[2]} SYPD)"] = t1['walltotal']
+    run_time[casename2 + f" ({result2[1].split()[2]} SYPD)"] = t2['walltotal']  
 
     x = np.arange(len(eamprocess))
     width = 0.4
@@ -241,9 +249,8 @@ for v, img in zip(png_names, png_files):
     img = f'{html}/{os.path.basename(img)}'
     html_content += f'<h2>{v}</h2>\n'
     html_content += f'<img src="{img}" style="max-width: 1000px;"><br><br>\n'
+    html_content += "</body></html>"
 
-# Add the closing HTML tags after the loop
-html_content += "</body></html>"
 # Write the HTML content to a file
 html_file_path = outdir  
 with open(f'{html_file_path}/compare_{casename1}_vs_{casename2}_{now_str}.html', "w") as html_file:
