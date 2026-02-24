@@ -24,7 +24,7 @@ public:
     // Number of so4(+nh4) monolayers needed to "age" a carbon particle.
     // In E3SM this is read in from an input file and would be 8.
     // In mam_refactor it is defined in phys_control.F90 as 3.
-    Real n_so4_monolayers_pcage = 8.0;
+    unsigned n_so4_monolayers_pcage = 8;
   };
 
 private:
@@ -64,7 +64,7 @@ namespace aging {
 // change due to condenstion and coagulation
 KOKKOS_INLINE_FUNCTION
 void mam_pcarbon_aging_frac(
-    const Real n_so4_monolayers_pcage,
+    const unsigned n_so4_monolayers_pcage,
     const Real dgn_a[AeroConfig::num_modes()], // dry geometric mean diameter of
                                                // number distribution [m]
     const Real qaer_cur[AeroConfig::num_aerosol_ids()]
@@ -153,6 +153,7 @@ void mam_pcarbon_aging_frac(
   const Real xferfrac_tmp1 = vol_shell * dgn_a[imom_pc] * fac_volsfc;
 
   // use 1 mol (bi-)sulfate = 65 cm^3 --> 1 molecule = (4.76e-10 m)^3
+  // BAD CONSTANT, BAAAD CONSTANT
   const Real dr_so4_monolayers_pcage = n_so4_monolayers_pcage * 4.76e-10;
   const Real xferfrac_tmp2 =
       haero::max(6.0 * dr_so4_monolayers_pcage * vol_core, 0.0);
@@ -231,7 +232,7 @@ void transfer_cond_coag_mass_to_accum(
 
 KOKKOS_INLINE_FUNCTION
 void mam_pcarbon_aging_1subarea(
-    const Real n_so4_monolayers_pcage,
+    const unsigned n_so4_monolayers_pcage,
     const Real dgn_a[AeroConfig::num_modes()], // dry geometric mean diameter of
                                                // number distribution [m]
     Real qnum_cur[AeroConfig::num_modes()],    // aerosol number mixing ratio

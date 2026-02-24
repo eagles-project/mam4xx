@@ -1129,7 +1129,7 @@ void mam_amicphys_1subarea(
     const int newnuc_h2so4_conc_optaa, const int gaexch_h2so4_uptake_optaa,
     const bool do_cond_sub, const bool do_rename_sub, const bool do_newnuc_sub,
     const bool do_coag_sub, const Real deltat, const int jsubarea,
-    const bool iscldy_subarea, const Real n_so4_monolayers_pcage,
+    const bool iscldy_subarea, const unsigned n_so4_monolayers_pcage,
     const Real afracsub, const Real temp, const Real pmid, const Real pdel,
     const Real zmid, const Real pblh, const Real relhumsub,
     const Real (&dgn_a)[num_modes], const Real (&dgn_awet)[num_modes],
@@ -1701,7 +1701,7 @@ void mam_amicphys_1gridcell(
     // in
     const AmicPhysConfig &config, const Real deltat, const int nsubarea,
     const int ncldy_subarea, const bool (&iscldy_subarea)[maxsubarea()],
-    const Real (&afracsub)[maxsubarea()], const Real n_so4_monolayers_pcage,
+    const Real (&afracsub)[maxsubarea()], const unsigned n_so4_monolayers_pcage,
     const Real temp, const Real pmid, const Real pdel, const Real zmid,
     const Real pblh, const Real (&relhumsub)[maxsubarea()],
     const Real (&dgn_a)[num_modes], const Real (&dgn_awet)[num_modes],
@@ -2121,7 +2121,7 @@ KOKKOS_INLINE_FUNCTION
 void modal_aero_amicphys_intr(
     // in
     const AmicPhysConfig &config, const Real deltat,
-    const Real n_so4_monolayers_pcage, const Real temp, const Real pmid,
+    const unsigned n_so4_monolayers_pcage, const Real temp, const Real pmid,
     const Real pdel, const Real zm, const Real pblh, const Real qv,
     const Real cld,
     // in/out

@@ -259,7 +259,7 @@ TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
       qaer_del_coag_in[ispec][imode] = 0.0;
     }
   }
-  const Real n_so4_monolayers_pcage = 8;
+  const unsigned n_so4_monolayers_pcage = 8;
   aging::mam_pcarbon_aging_1subarea(
       n_so4_monolayers_pcage, dgn_a, qnum_cur, qnum_del_cond, qnum_del_coag,
       qaer_cur, qaer_del_cond, qaer_del_coag, qaer_del_coag_in);

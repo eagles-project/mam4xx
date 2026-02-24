@@ -89,7 +89,7 @@ void mam_pcarbon_aging_1subarea(Ensemble *ensemble) {
         n += 1;
       }
     }
-    const Real n_so4_monolayers_pcage = 8;
+    const unsigned n_so4_monolayers_pcage = 8;
     aging::mam_pcarbon_aging_1subarea(
         n_so4_monolayers_pcage, dgn_a_f.data(), qnum_cur_f.data(),
         qnum_del_cond_f.data(), qnum_del_coag_f.data(), qaer_cur_c,
