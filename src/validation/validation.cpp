@@ -7,6 +7,79 @@
 
 #include <ekat_fpe.hpp>
 
+#include <ctime>
+#include <sstream>
+
+// BFB hash for a skywalker::Ensemble (logic derived from EAMxx's atmosphere_process_hash.cpp)
+
+namespace {
+
+using namespace skywalker;
+using mam4::bfbhash::HashType;
+
+void hash(const std::vector<Real> &array, HashType &accum) {
+  for (Real value: array) {
+    hash(value, accum);
+  }
+}
+
+template <typename InputOrOutput>
+void hash(const InputOrOutput &inputOrOutput, HashType &accum) {
+  // hash scalar inputs, then arrays
+  Real scalar;
+  for (inputOrOutput.next_scalar(scalar)) {
+    hash(scalar, accum);
+  }
+  std::vector<Real> array;
+  for (inputOrOutput.next_array(array)) {
+    hash(array, accum);
+  }
+}
+
+// prints a single BFB hash for all 
+void print_bfbhash(Ensemble *e) {
+  std::vector<std::string> hash_names;
+  std::vector<HashType> accum;
+
+  ensemble->process([&hash_names, &accum](const Input &input, Output &output) {
+
+    // generate a single hash for input and another for output
+    accum.emplace_back();
+    hash(input, accum.back());
+    hash_names.push_back("input");
+
+    accum.emplace_back();
+    hash(output, accum.back());
+    hash_names.push_back("output");
+
+    // pretty print the hashes
+
+    int name_len = 0;
+    for (const auto &name: hash_names) {
+      name_len = std::max(name_len, static_cast<int>(name_len.size()) + 1);
+    }
+
+    std::tm *t = std::gmtime(nullptr);
+    int tod = 3600 * t->tm_hour + 60 * t->tm_min + t->tm_sec;
+
+    std::stringstream ss;
+    ss << "mam4xx hash> date="
+       << std::setw(4) << std::setfill('0') << t->tm_year << "-" // year
+       << std::setw(2) << std::setfill('0') << t->tm_mon  << "-" // month
+       << std::setw(2) << std::setfill('0') << t->tm_mday << "-" // day
+       << std::setw(5) << std::setfill('0') << tod;              // time of day (seconds)
+    std::cout << ss << std::endl;
+
+    for (int i = 0; i < accum.size(); ++i) {
+      ss.str(""); // clear content
+      ss.clear(); // clear error flags
+      ss << std::setw(slen) << std::setfill(' ') << hash_names[i] << ": "
+         << std::hex << std::setfill('0') << std::setw(16) << gaccum[i];
+      std::cout << ss << std::endl;
+    }
+  });
+}
+
 namespace mam4 {
 namespace validation {
 
@@ -17,7 +90,8 @@ void initialize(int argc, char **argv, int fpes_) {
   ekat::enable_fpes(fpes_);
 }
 
-void finalize() {
+void finalize(Ensemble *ensemble) {
+  print_bfbhash(ensemble);
   testing::finalize();
   Kokkos::finalize();
 }

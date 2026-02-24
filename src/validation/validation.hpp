@@ -43,8 +43,8 @@ void initialize(int argc, char **argv);
 constexpr int default_fpes = FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW;
 void initialize(int argc, char **argv, const int fpes_);
 
-/// Call this function to finalize a validation driver.
-void finalize();
+/// Call this function with a Skywalker ensemble to finalize a validation driver.
+void finalize(skywalker::Ensemble *ensemble);
 
 /// Given the name of a Skywalker input YAML file, determine the name of the
 /// corresponding output Python module file.
