@@ -1089,6 +1089,8 @@ void update_from_newcld(
 
 } // update_from_newcld
 
+// explmix output: updated number or mass mixing ratio [# or kg / kg] depending
+// on inputs
 KOKKOS_INLINE_FUNCTION
 Real explmix(const Real qold_km1, // number / mass mixing ratio from previous
                                   // time step at level k-1 [# or kg / kg]
@@ -1113,10 +1115,12 @@ Real explmix(const Real qold_km1, // number / mass mixing ratio from previous
                         eddy_diff_km * (overlapm * qold_km1 - qold_k));
   // force to non-negative
   qnew = haero::max(qnew, 0);
-  // OUTPUT, number / mass mixing ratio to be updated [# or kg / kg]
+  // output: updated number or mass mixing ratio [# or kg / kg]
   return qnew;
 } // end explmix
 
+// explmix output: updated number or mass mixing ratio [# or kg / kg] depending
+// on inputs
 KOKKOS_INLINE_FUNCTION
 Real explmix(const Real qold_km1, // number / mass mixing ratio from previous
                                   // time step at level k-1 [# or kg / kg]
@@ -1156,7 +1160,7 @@ Real explmix(const Real qold_km1, // number / mass mixing ratio from previous
 
   // force to non-negative
   qnew = haero::max(qnew, 0);
-  // OUTPUT, number / mass mixing ratio to be updated [# or kg / kg]
+  // output: updated number or mass mixing ratio [# or kg / kg]
   return qnew;
 } // end explmix
 
