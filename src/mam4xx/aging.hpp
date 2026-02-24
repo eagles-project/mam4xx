@@ -20,6 +20,11 @@ public:
     Config(const Config &) = default;
     ~Config() = default;
     Config &operator=(const Config &) = default;
+
+    // Number of so4(+nh4) monolayers needed to "age" a carbon particle.
+    // In E3SM this is read in from an input file and would be 8.
+    // In mam_refactor it is defined in phys_control.F90 as 3.
+    unsigned n_so4_monolayers_pcage = 8;
   };
 
 private:
@@ -32,13 +37,6 @@ public:
   // init -- initializes the implementation with MAM4's configuration
   void init(const AeroConfig &aero_config,
             const Config &process_config = Config());
-
-  // In E3SM this is read in from an input file and would be 8
-  // In mam_refactor it is defined in phys_control.F90 as 3.
-
-  static constexpr Real n_so4_monolayers_pcage = 8.0;
-  static constexpr Real dr_so4_monolayers_pcage =
-      n_so4_monolayers_pcage * 4.76e-10;
 
   // validate -- validates the given atmospheric state and prognostics against
   // assumptions made by this implementation, returning true if the states are
@@ -66,6 +64,7 @@ namespace aging {
 // change due to condenstion and coagulation
 KOKKOS_INLINE_FUNCTION
 void mam_pcarbon_aging_frac(
+    const unsigned n_so4_monolayers_pcage,
     const Real dgn_a[AeroConfig::num_modes()], // dry geometric mean diameter of
                                                // number distribution [m]
     const Real qaer_cur[AeroConfig::num_aerosol_ids()]
@@ -152,8 +151,12 @@ void mam_pcarbon_aging_frac(
   const Real xferfrac_max = 1.0 - 10.0 * haero::epsilon(); //  1-eps
 
   const Real xferfrac_tmp1 = vol_shell * dgn_a[imom_pc] * fac_volsfc;
+
+  // use 1 mol (bi-)sulfate = 65 cm^3 --> 1 molecule = (4.76e-10 m)^3
+  // BAD CONSTANT, BAAAD CONSTANT
+  const Real dr_so4_monolayers_pcage = n_so4_monolayers_pcage * 4.76e-10;
   const Real xferfrac_tmp2 =
-      haero::max(6.0 * Aging::dr_so4_monolayers_pcage * vol_core, 0.0);
+      haero::max(6.0 * dr_so4_monolayers_pcage * vol_core, 0.0);
 
   if (xferfrac_tmp1 >= xferfrac_tmp2) {
     xferfrac_pcage = xferfrac_max;
@@ -229,6 +232,7 @@ void transfer_cond_coag_mass_to_accum(
 
 KOKKOS_INLINE_FUNCTION
 void mam_pcarbon_aging_1subarea(
+    const unsigned n_so4_monolayers_pcage,
     const Real dgn_a[AeroConfig::num_modes()], // dry geometric mean diameter of
                                                // number distribution [m]
     Real qnum_cur[AeroConfig::num_modes()],    // aerosol number mixing ratio
@@ -262,8 +266,9 @@ void mam_pcarbon_aging_1subarea(
   const int nsrc = static_cast<int>(ModeIndex::PrimaryCarbon);
   const int ndest = static_cast<int>(ModeIndex::Accumulation);
 
-  mam_pcarbon_aging_frac(dgn_a, qaer_cur, qaer_del_cond, qaer_del_coag_in,
-                         xferfrac_pcage, frac_cond, frac_coag);
+  mam_pcarbon_aging_frac(n_so4_monolayers_pcage, dgn_a, qaer_cur, qaer_del_cond,
+                         qaer_del_coag_in, xferfrac_pcage, frac_cond,
+                         frac_coag);
   // Note, there are probably optimizations to be done here, closely following
   // the Fortran code required extra unpacking of arrays.
 
@@ -383,9 +388,9 @@ void aerosol_aging_rates_1box(const int k, const AeroConfig &aero_config,
   }
 
   // primary carbon aging
-  mam_pcarbon_aging_1subarea(dgn_a, qnum_cur, qnum_del_cond, qnum_del_coag,
-                             qaer_cur, qaer_del_cond, qaer_del_coag,
-                             qaer_del_coag_in);
+  mam_pcarbon_aging_1subarea(config.n_so4_monolayers_pcage, dgn_a, qnum_cur,
+                             qnum_del_cond, qnum_del_coag, qaer_cur,
+                             qaer_del_cond, qaer_del_coag, qaer_del_coag_in);
 
   // compute the tendencies
   for (int imode = 0; imode < num_mode; ++imode) {

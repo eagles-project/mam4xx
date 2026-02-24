@@ -67,10 +67,10 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
     Real xferfrac_pcage;
     Real frac_cond;
     Real frac_coag;
-
-    aging::mam_pcarbon_aging_frac(dgn_a_f.data(), qaer_cur_c, qaer_del_cond_c,
-                                  qaer_del_coag_in_c, xferfrac_pcage, frac_cond,
-                                  frac_coag);
+    const unsigned n_so4_monolayers_pcage = 8;
+    aging::mam_pcarbon_aging_frac(
+        n_so4_monolayers_pcage, dgn_a_f.data(), qaer_cur_c, qaer_del_cond_c,
+        qaer_del_coag_in_c, xferfrac_pcage, frac_cond, frac_coag);
 
     n = 0;
     for (int imode = 0; imode < num_modes; ++imode) {
