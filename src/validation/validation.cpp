@@ -18,6 +18,7 @@
 namespace {
 
 std::string exe_name_;
+std::string input_file_;
 
 using namespace skywalker;
 using mam4::bfbhash::HashType;
@@ -85,8 +86,9 @@ void print_bfbhash(Ensemble *e) {
   int tod = 3600 * t->tm_hour + 60 * t->tm_min + t->tm_sec;
 
   std::stringstream ss;
-  ss << "mam4xx hash> exe=" << exe_name_ << " date=" << std::setw(4)
-     << std::setfill('0') << t->tm_year + 1900 << "-"          // year
+  ss << "mam4xx hash> exe=" << exe_name_ << " input=" << input_file_
+     << " date=" << std::setw(4) << std::setfill('0') << t->tm_year + 1900
+     << "-"                                                    // year
      << std::setw(2) << std::setfill('0') << t->tm_mon << "-"  // month
      << std::setw(2) << std::setfill('0') << t->tm_mday << "-" // day
      << std::setw(5) << std::setfill('0') << tod; // time of day (seconds)
@@ -101,7 +103,7 @@ void print_bfbhash(Ensemble *e) {
   }
 }
 
-std::string determine_exe_name(const std::string argv0) {
+std::string determine_filename(const std::string argv0) {
   size_t last_slash = argv0.find_last_of("/");
   if (last_slash != std::string::npos) {
     return argv0.substr(last_slash + 1);
@@ -115,12 +117,22 @@ namespace mam4 {
 namespace validation {
 
 void initialize(int argc, char **argv) {
-  exe_name_ = determine_exe_name(argv[0]);
+  exe_name_ = determine_filename(argv[0]);
+  if (argc < 2) {
+    std::cerr << "Can't initialize: no input file given!" << std::endl;
+    exit(1);
+  }
+  input_file_ = determine_filename(argv[1]);
   Kokkos::initialize(argc, argv);
 }
 
 void initialize(int argc, char **argv, int fpes_) {
-  exe_name_ = determine_exe_name(argv[0]);
+  exe_name_ = determine_filename(argv[0]);
+  if (argc < 2) {
+    std::cerr << "Can't initialize: no input file given!" << std::endl;
+    exit(1);
+  }
+  input_file_ = determine_filename(argv[1]);
   Kokkos::initialize(argc, argv);
   ekat::enable_fpes(fpes_);
 }
