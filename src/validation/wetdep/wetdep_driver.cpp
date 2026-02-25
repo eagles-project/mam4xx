@@ -90,8 +90,8 @@ int main(int argc, char **argv) {
     // Write out a Python module.
     std::cout << argv[0] << ": writing " << output_file << std::endl;
     ensemble->write(output_file);
+    validation::finalize(ensemble);
   } catch (Exception &e) {
     std::cerr << ": Error: " << e.what() << std::endl;
   }
-  validation::finalize();
 }

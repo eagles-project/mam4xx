@@ -74,6 +74,5 @@ int main(int argc, char **argv) {
   ensemble->write(output_file);
 
   // Clean up.
-  delete ensemble;
-  validation::finalize();
+  validation::finalize(ensemble);
 }

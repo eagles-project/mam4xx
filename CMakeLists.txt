@@ -80,6 +80,9 @@ include_directories(${PROJECT_BINARY_DIR}/src)
 
 link_directories("${MAM4XX_HAERO_DIR}/${CMAKE_INSTALL_LIBDIR}")
 
+# emit compile_commands.json for use with clangd
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Code coverage
 if (ENABLE_COVERAGE)
   message(STATUS "Enabling code coverage instrumentation")
