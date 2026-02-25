@@ -3,10 +3,8 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <fenv.h>
 #include <mam4xx/aero_model.hpp>
 
-#include <cfenv>
 #include <iostream>
 #include <skywalker.hpp>
 #include <validation.hpp>
@@ -41,9 +39,6 @@ int main(int argc, char **argv) {
   std::string input_file = argv[1];
   std::string output_file = validation::output_name(input_file);
   std::cout << argv[0] << ": reading " << input_file << std::endl;
-
-  feclearexcept(FE_ALL_EXCEPT);
-  fedisableexcept(FE_ALL_EXCEPT);
 
   // Load the ensemble. Any error encountered is fatal.
   Ensemble *ensemble = skywalker::load_ensemble(input_file, "mam4xx");
