@@ -50,6 +50,21 @@ using View1D = DeviceType::view_1d<Real>;
 using Int1D = DeviceType::view_1d<int>;
 using View2D = DeviceType::view_2d<Real>;
 using View2DHost = typename HostType::view_2d<Real>;
+
+// State struct used by parallel_scan to track running precipitation total
+// (prec) and base (prec_base) in compute_q_tendencies.
+// Note: TeamThreadRange parallel_scan is thread-serial on current GPU
+// backends, so operator+= is never invoked by Kokkos for merging partial
+// results.  It is provided here only to satisfy the scan value-type concept.
+struct PrecState {
+  Real prec, prec_base;
+  KOKKOS_INLINE_FUNCTION PrecState() : prec(0.0), prec_base(0.0) {}
+  KOKKOS_INLINE_FUNCTION PrecState &operator+=(const PrecState &rhs) {
+    prec += rhs.prec;
+    prec_base += rhs.prec_base;
+    return *this;
+  }
+};
 KOKKOS_INLINE_FUNCTION
 void local_precip_production(Real pdel, Real source_term, Real sink_term,
                              Real gravity, Real &result) {
@@ -1187,33 +1202,34 @@ void compute_q_tendencies(
 
   team.team_barrier();
   if (mam_prevap_resusp_optcc >= 100) {
-    View1D bndd = workspace[2];
-    Kokkos::single(Kokkos::PerTeam(team), [=]() {
-      // Because of these two values, the loop can not be parallel_for
-      Real prec = 0.0, prec_base = 0.0;
-      constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
-      for (int k = 0; k < nlev - 1; ++k) {
-        bndd[k] = utils::min_max_bound(0.0, prec_base, prec - evap[k]);
-        precabs_base_tmp[k] = prec_base;
-        if (bndd[k] < small_value_30) {
-          // setting both these precip rates to zero causes the resuspension
-          // calculations to start fresh if there is any more precip production
-          precabs_base_tmp[k] = 0.0;
-          bndd[k] = 0.0;
-        }
-        prec_base = haero::max(0.0, precabs_base_tmp[k] + rain[k]);
-        prec = utils::min_max_bound(0.0, prec_base, bndd[k] + rain[k]);
-      }
-    });
-    team.team_barrier();
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev - 1), [&](int k) {
-      precabs_base[k + 1] = haero::max(0.0, precabs_base_tmp[k] + rain[k]);
-    });
-    team.team_barrier();
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev - 1), [&](int k) {
-      precabs[k + 1] =
-          utils::min_max_bound(0.0, precabs_base[k + 1], bndd[k] + rain[k]);
-    });
+    // Use parallel_scan to compute the running precipitation state.
+    // TeamThreadRange parallel_scan is thread-serial on current GPU backends,
+    // so sequential state updates (acc.prec / acc.prec_base) are safe.
+    Kokkos::parallel_scan(
+        Kokkos::TeamThreadRange(team, nlev - 1),
+        [&](const int k, PrecState &acc, const bool last) {
+          constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
+          Real bndd =
+              utils::min_max_bound(0.0, acc.prec_base, acc.prec - evap[k]);
+          Real pb_tmp = acc.prec_base;
+          if (bndd < small_value_30) {
+            // setting both these precip rates to zero causes the resuspension
+            // calculations to start fresh if there is any more precip
+            // production
+            pb_tmp = 0.0;
+            bndd = 0.0;
+          }
+          const Real new_prec_base = haero::max(0.0, pb_tmp + rain[k]);
+          const Real new_prec = bndd + rain[k];
+          if (last) {
+            precabs_base[k + 1] = new_prec_base;
+            precabs[k + 1] = new_prec;
+            // precabs_base_tmp[k] stores the pre-update base for later use
+            precabs_base_tmp[k] = pb_tmp;
+          }
+          acc.prec_base = new_prec_base;
+          acc.prec = new_prec;
+        });
     team.team_barrier();
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
       precabs_tmp[k] =
@@ -1261,11 +1277,17 @@ void compute_q_tendencies(
       }
     });
     team.team_barrier();
-    // The last else above statement can not be done in parallel
-    Kokkos::single(Kokkos::PerTeam(team), [=]() {
-      for (int k = 0; k < nlev - 1; ++k) {
-        if (copy_from_prev[k + 1])
-          precnums_base[k + 1] = precnums_base[k];
+    // Propagate "copy from previous" values in parallel using backward search.
+    // Each flagged element independently searches for its last unflagged
+    // predecessor, so reads and writes never conflict.
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
+      if (copy_from_prev[k] > 0.5) {
+        for (int j = k - 1; j >= 0; --j) {
+          if (copy_from_prev[j] <= 0.5) {
+            precnums_base[k] = precnums_base[j];
+            break;
+          }
+        }
       }
     });
   }
@@ -1289,32 +1311,34 @@ void compute_q_tendencies(
   });
 
   if (mam_prevap_resusp_optcc >= 100) {
-    View1D bndd = workspace[2];
-    Kokkos::single(Kokkos::PerTeam(team), [=]() {
-      Real prec = 0, prec_base = 0.0;
-      constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
-      for (int k = 0; k < nlev - 1; ++k) {
-        bndd[k] = utils::min_max_bound(0.0, prec_base, prec - evap[k]);
-        precabc_base_tmp[k] = prec_base;
-        if (bndd[k] < small_value_30) {
-          // setting both these precip rates to zero causes the resuspension
-          // calculations to start fresh if there is any more precip production
-          precabc_base_tmp[k] = 0.0;
-          bndd[k] = 0.0;
-        }
-        prec_base = haero::max(0.0, precabc_base_tmp[k] + cmfd[k]);
-        prec = utils::min_max_bound(0.0, prec_base, bndd[k] + cmfd[k]);
-      }
-    });
+    // Use parallel_scan to compute the running convective precipitation state.
+    // TeamThreadRange parallel_scan is thread-serial on current GPU backends.
+    Kokkos::parallel_scan(
+        Kokkos::TeamThreadRange(team, nlev - 1),
+        [&](const int k, PrecState &acc, const bool last) {
+          constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
+          Real bndd =
+              utils::min_max_bound(0.0, acc.prec_base, acc.prec - evap[k]);
+          Real pb_tmp = acc.prec_base;
+          if (bndd < small_value_30) {
+            // setting both these precip rates to zero causes the resuspension
+            // calculations to start fresh if there is any more precip
+            // production
+            pb_tmp = 0.0;
+            bndd = 0.0;
+          }
+          const Real new_prec_base = haero::max(0.0, pb_tmp + cmfd[k]);
+          const Real new_prec = bndd + cmfd[k];
+          if (last) {
+            precabc_base[k + 1] = new_prec_base;
+            precabc[k + 1] = new_prec;
+            // precabc_base_tmp[k] stores the pre-update base for later use
+            precabc_base_tmp[k] = pb_tmp;
+          }
+          acc.prec_base = new_prec_base;
+          acc.prec = new_prec;
+        });
     team.team_barrier();
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev - 1), [&](int k) {
-      precabc_base[k + 1] = haero::max(0.0, precabc_base_tmp[k] + cmfd[k]);
-    });
-    team.team_barrier();
-    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev - 1), [&](int k) {
-      precabc[k + 1] =
-          utils::min_max_bound(0.0, precabc_base[k + 1], bndd[k] + cmfd[k]);
-    });
   } else if (mam_prevap_resusp_optcc == 0) {
     View1D netc = workspace[2];
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
@@ -1356,11 +1380,15 @@ void compute_q_tendencies(
       }
     });
     team.team_barrier();
-    // The last else above statement can not be done in parallel
-    Kokkos::single(Kokkos::PerTeam(team), [=]() {
-      for (int k = 0; k < nlev - 1; ++k) {
-        if (copy_from_prev[k + 1])
-          precnumc_base[k + 1] = precnumc_base[k];
+    // Propagate "copy from previous" values in parallel using backward search.
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
+      if (copy_from_prev[k] > 0.5) {
+        for (int j = k - 1; j >= 0; --j) {
+          if (copy_from_prev[j] <= 0.5) {
+            precnumc_base[k] = precnumc_base[j];
+            break;
+          }
+        }
       }
     });
   }
@@ -1532,23 +1560,28 @@ void compute_q_tendencies(
         tmpa[k] = haero::max(0.0, srcs[k] * pdel[k] / gravit);
       });
       team.team_barrier();
-      Kokkos::single(Kokkos::PerTeam(team), [=]() {
-        for (int k = 0; k < nlev - 1; ++k) {
-          constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
-          Real scavabs_tmp = 0.0;
-          if (precabs_tmp[k] < small_value_30) {
-            scavabs_tmp = 0.0;
-          } else if (evapr[k] <= 0.0) {
-            // no evap so no resuspension
-            scavabs_tmp = scavabs[k];
-          } else {
-            // aerosol mass resuspension
-            scavabs_tmp = haero::max(0.0, scavabs[k] * x_ratio[k]);
-          }
-          scavabs_tmp = haero::max(0.0, scavabs_tmp + tmpa[k]);
-          scavabs[k + 1] = scavabs_tmp;
-        }
-      });
+      // Use parallel_scan to accumulate scavenged aerosol mass.
+      // The recurrence is scavabs[k+1] = alpha[k]*scavabs[k] + tmpa[k].
+      // TeamThreadRange parallel_scan is thread-serial on current GPU backends.
+      Kokkos::parallel_scan(
+          Kokkos::TeamThreadRange(team, nlev - 1),
+          [&](const int k, Real &acc, const bool last) {
+            constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
+            Real scavabs_tmp = 0.0;
+            if (precabs_tmp[k] < small_value_30) {
+              scavabs_tmp = 0.0;
+            } else if (evapr[k] <= 0.0) {
+              // no evap so no resuspension
+              scavabs_tmp = acc;
+            } else {
+              // aerosol mass resuspension
+              scavabs_tmp = haero::max(0.0, acc * x_ratio[k]);
+            }
+            scavabs_tmp = haero::max(0.0, scavabs_tmp + tmpa[k]);
+            if (last)
+              scavabs[k + 1] = scavabs_tmp;
+            acc = scavabs_tmp;
+          });
     } else {
       View1D copy_from_prev = workspace[1];
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
@@ -1566,10 +1599,15 @@ void compute_q_tendencies(
         }
       });
       team.team_barrier();
-      Kokkos::single(Kokkos::PerTeam(team), [=]() {
-        for (int k = 0; k < nlev - 1; ++k) {
-          if (copy_from_prev[k + 1])
-            scavabs[k + 1] = scavabs[k];
+      // Propagate "copy from previous" values in parallel using backward search.
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
+        if (copy_from_prev[k] > 0.5) {
+          for (int j = k - 1; j >= 0; --j) {
+            if (copy_from_prev[j] <= 0.5) {
+              scavabs[k] = scavabs[j];
+              break;
+            }
+          }
         }
       });
     }
@@ -1628,23 +1666,28 @@ void compute_q_tendencies(
         tmpc[k] = haero::max(0.0, srcc[k] * pdel[k] / gravit);
       });
       team.team_barrier();
-      Kokkos::single(Kokkos::PerTeam(team), [=]() {
-        for (int k = 0; k < nlev - 1; ++k) {
-          constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
-          Real scavabc_tmp = 0.0;
-          if (precabc[k] < small_value_30) {
-            scavabc_tmp = 0.0;
-          } else if (evapr[k] <= 0.0) {
-            // no evap so no resuspension
-            scavabc_tmp = scavabc[k];
-          } else {
-            // aerosol mass resuspension
-            scavabc_tmp = haero::max(0.0, scavabc[k] * x_ratio[k]);
-          }
-          scavabc_tmp = haero::max(0.0, scavabc_tmp + tmpc[k]);
-          scavabc[k + 1] = scavabc_tmp;
-        }
-      });
+      // Use parallel_scan to accumulate scavenged convective aerosol mass.
+      // The recurrence is scavabc[k+1] = alpha[k]*scavabc[k] + tmpc[k].
+      // TeamThreadRange parallel_scan is thread-serial on current GPU backends.
+      Kokkos::parallel_scan(
+          Kokkos::TeamThreadRange(team, nlev - 1),
+          [&](const int k, Real &acc, const bool last) {
+            constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
+            Real scavabc_tmp = 0.0;
+            if (precabc[k] < small_value_30) {
+              scavabc_tmp = 0.0;
+            } else if (evapr[k] <= 0.0) {
+              // no evap so no resuspension
+              scavabc_tmp = acc;
+            } else {
+              // aerosol mass resuspension
+              scavabc_tmp = haero::max(0.0, acc * x_ratio[k]);
+            }
+            scavabc_tmp = haero::max(0.0, scavabc_tmp + tmpc[k]);
+            if (last)
+              scavabc[k + 1] = scavabc_tmp;
+            acc = scavabc_tmp;
+          });
     } else { // 130 < mam_prevap_resusp_optcc
       View1D copy_from_prev = workspace[1];
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
@@ -1661,10 +1704,15 @@ void compute_q_tendencies(
         }
       });
       team.team_barrier();
-      Kokkos::single(Kokkos::PerTeam(team), [=]() {
-        for (int k = 0; k < nlev - 1; ++k) {
-          if (copy_from_prev[k + 1])
-            scavabc[k + 1] = scavabc[k];
+      // Propagate "copy from previous" values in parallel using backward search.
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
+        if (copy_from_prev[k] > 0.5) {
+          for (int j = k - 1; j >= 0; --j) {
+            if (copy_from_prev[j] <= 0.5) {
+              scavabc[k] = scavabc[j];
+              break;
+            }
+          }
         }
       });
     }
