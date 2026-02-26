@@ -1089,70 +1089,69 @@ void update_from_newcld(
 
 } // update_from_newcld
 
+// explmix output: updated number or mass mixing ratio [# or kg / kg] depending
+// on inputs
 KOKKOS_INLINE_FUNCTION
-void explmix(
-    const Real qold_km1, // number / mass mixing ratio from previous time step
-                         // at level k-1 [# or kg / kg]
-    const Real qold_k, // number / mass mixing ratio from previous time step at
-                       // level k [# or kg / kg]
-    const Real qold_kp1, // number / mass mixing ratio from previous time step
-                         // at level k+1 [# or kg / kg]
-    Real &
-        qnew, // OUTPUT, number / mass mixing ratio to be updated [# or kg / kg]
-    const Real src, // source due to activation/nucleation at level k [# or kg /
-                    // (kg-s)]
-    const Real
-        eddy_diff_kp, // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
-                      // [/s]; below layer k  (k,k+1 interface)
-    const Real
-        eddy_diff_km,    // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
-                         // [/s]; above layer k  (k,k+1 interface)
-    const Real overlapp, // cloud overlap below [fraction]
-    const Real overlapm, // cloud overlap above [fraction]
-    const Real dtmix     // time step [s]
+Real explmix(const Real qold_km1, // number / mass mixing ratio from previous
+                                  // time step at level k-1 [# or kg / kg]
+             const Real qold_k, // number / mass mixing ratio from previous time
+                                // step at level k [# or kg / kg]
+             const Real qold_kp1, // number / mass mixing ratio from previous
+                                  // time step at level k+1 [# or kg / kg]
+             const Real src, // source due to activation/nucleation at level k
+                             // [# or kg / (kg-s)]
+             const Real eddy_diff_kp, // zn*zs*density*diffusivity (kg/m3 m2/s)
+                                      // at interface
+                                      // [/s]; below layer k  (k,k+1 interface)
+             const Real eddy_diff_km, // zn*zs*density*diffusivity (kg/m3 m2/s)
+                                      // at interface
+                                      // [/s]; above layer k  (k,k+1 interface)
+             const Real overlapp,     // cloud overlap below [fraction]
+             const Real overlapm,     // cloud overlap above [fraction]
+             const Real dtmix         // time step [s]
 ) {
-
-  qnew = qold_k + dtmix * (src + eddy_diff_kp * (overlapp * qold_kp1 - qold_k) +
-                           eddy_diff_km * (overlapm * qold_km1 - qold_k));
-
+  Real qnew =
+      qold_k + dtmix * (src + eddy_diff_kp * (overlapp * qold_kp1 - qold_k) +
+                        eddy_diff_km * (overlapm * qold_km1 - qold_k));
   // force to non-negative
   qnew = haero::max(qnew, 0);
+  // output: updated number or mass mixing ratio [# or kg / kg]
+  return qnew;
 } // end explmix
 
+// explmix output: updated number or mass mixing ratio [# or kg / kg] depending
+// on inputs
 KOKKOS_INLINE_FUNCTION
-void explmix(
-    const Real qold_km1, // number / mass mixing ratio from previous time step
-                         // at level k-1 [# or kg / kg]
-    const Real qold_k, // number / mass mixing ratio from previous time step at
-                       // level k [# or kg / kg]
-    const Real qold_kp1, // number / mass mixing ratio from previous time step
-                         // at level k+1 [# or kg / kg]
-    Real &
-        qnew, // OUTPUT, number / mass mixing ratio to be updated [# or kg / kg]
-    const Real src, // source due to activation/nucleation at level k [# or kg /
-                    // (kg-s)]
-    const Real
-        eddy_diff_kp, // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
-                      // [/s]; below layer k  (k,k+1 interface)
-    const Real
-        eddy_diff_km,    // zn*zs*density*diffusivity (kg/m3 m2/s) at interface
-                         // [/s]; above layer k  (k,k+1 interface)
-    const Real overlapp, // cloud overlap below [fraction]
-    const Real overlapm, // cloud overlap above [fraction]
-    const Real dtmix,    // time step [s]
-    const Real qactold_km1,
-    // optional: number / mass mixing ratio of ACTIVATED species
-    // from previous step at level k-1 *** this should only be present if
-    // the current species is unactivated number/sfc/mass
-    const Real qactold_kp1
-    // optional: number / mass mixing ratio of ACTIVATED species
-    // from previous step at level k+1 *** this should only be present if
-    // the current species is unactivated number/sfc/mass
+Real explmix(const Real qold_km1, // number / mass mixing ratio from previous
+                                  // time step at level k-1 [# or kg / kg]
+             const Real qold_k, // number / mass mixing ratio from previous time
+                                // step at level k [# or kg / kg]
+             const Real qold_kp1, // number / mass mixing ratio from previous
+                                  // time step at level k+1 [# or kg / kg]
+             const Real src, // source due to activation/nucleation at level k
+                             // [# or kg / (kg-s)]
+             const Real eddy_diff_kp, // zn*zs*density*diffusivity (kg/m3 m2/s)
+                                      // at interface
+                                      // [/s]; below layer k  (k,k+1 interface)
+             const Real eddy_diff_km, // zn*zs*density*diffusivity (kg/m3 m2/s)
+                                      // at interface
+                                      // [/s]; above layer k  (k,k+1 interface)
+             const Real overlapp,     // cloud overlap below [fraction]
+             const Real overlapm,     // cloud overlap above [fraction]
+             const Real dtmix,        // time step [s]
+             const Real qactold_km1,
+             // optional: number / mass mixing ratio of ACTIVATED species
+             // from previous step at level k-1 *** this should only be present
+             // if the current species is unactivated number/sfc/mass
+             const Real qactold_kp1
+             // optional: number / mass mixing ratio of ACTIVATED species
+             // from previous step at level k+1 *** this should only be present
+             // if the current species is unactivated number/sfc/mass
 ) {
 
   // the qactold*(1-overlap) terms are resuspension of activated material
   const Real one = 1.0;
-  qnew =
+  Real qnew =
       qold_k +
       dtmix *
           (-src +
@@ -1161,6 +1160,8 @@ void explmix(
 
   // force to non-negative
   qnew = haero::max(qnew, 0);
+  // output: updated number or mass mixing ratio [# or kg / kg]
+  return qnew;
 } // end explmix
 
 KOKKOS_INLINE_FUNCTION
@@ -1190,18 +1191,14 @@ void update_from_explmix(
     const ColumnView &overlapm, // cloud overlap involving level kk-1 [fraction]
     const ColumnView &eddy_diff_kp, // zn*zs*density*diffusivity [/s]
     const ColumnView &eddy_diff_km, // zn*zs*density*diffusivity   [/s]
-    const ColumnView &qncld, // updated cloud droplet number mixing ratio [#/kg]
-    const ColumnView &srcn,  // droplet source rate [/s]
-    // source rate for activated number or species mass [/s]
-    const ColumnView &source) {
+    const ColumnView &qncld // updated cloud droplet number mixing ratio [#/kg]
+) {
 
   // threshold cloud fraction to compute overlap [fraction]
   // BAD CONSTANT
   const Real overlap_cld_thresh = 1e-10;
   const Real zero = 0.0;
   const Real one = 1.0;
-
-  Real tmpa = zero; //  temporary aerosol tendency variable [/s]
 
   constexpr int ntot_amode = AeroConfig::num_modes();
   // load new droplets in layers above, below clouds
@@ -1219,7 +1216,7 @@ void update_from_explmix(
   Kokkos::parallel_reduce(
       Kokkos::TeamVectorRange(team, top_lev, pver_loc),
       [&](int k, Real &min_val) {
-        const int kp1 = haero::min(k + 1, pver - 1);
+        const int kp1 = haero::min(k + 1, pver_loc - 1);
         const int km1 = haero::max(k - 1, top_lev);
         // maximum overlap assumption
         if (cldn(kp1) > overlap_cld_thresh) {
@@ -1283,134 +1280,92 @@ void update_from_explmix(
   //  values of nsav and nnew rather than a physical copying. At end of loop
   //  nnew stores index of most recent updated values (either 1 or 2).
 
+  team.team_barrier();
   for (int isub = 0; isub < nsubmix; isub++) {
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver_loc),
-                         [&](int kk) {
-                           qncld(kk) = qcld(kk);
-                           srcn(kk) = zero;
-                         });
-    // after first pass, switch nsav, nnew so that nsav is the
-    // recently updated aerosol
-    team.team_barrier();
-    if (isub > 0) {
+    if (0 < isub) {
+      // after first pass, switch nsav, nnew so that nsav is the
+      // recently updated aerosol
       const int ntemp = nsav;
       nsav = nnew;
       nnew = ntemp;
-    } // end if
-
-    for (int imode = 0; imode < ntot_amode; imode++) {
-      const int mm = mam_idx[imode][0] - 1;
-
-      // update droplet source
-
-      // rce-comment- activation source in layer k involves particles from k+1
-      //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver_loc),
-                           [&](int k) {
-                             const int kp1 = haero::min(k + 1, pver - 1);
-                             srcn(k) += nact(k, imode) * raercol[kp1][nsav](mm);
-                           });
-
-      // rce-comment- new formulation for k=pver
-      // srcn(  pver  )=srcn(  pver  )+nact(  pver  ,m)*(raercol(pver,mm,nsav))
-      tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
-             raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
-      srcn(pver - 1) += haero::max(zero, tmpa);
-    } // end imode
-
-    // qcld == qold
-    // qncld == qnew
-    if (enable_aero_vertical_mix) {
-      team.team_barrier();
-      Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver_loc),
-                           [&](int k) {
-                             const int kp1 = haero::min(k + 1, pver - 1);
-                             const int km1 = haero::max(k - 1, top_lev);
-                             explmix(qncld(km1), qncld(k), qncld(kp1), qcld(k),
-                                     srcn(k), eddy_diff_kp(k), eddy_diff_km(k),
-                                     overlapp(k), overlapm(k), dtmix);
-                           });
     }
-
-    team.team_barrier();
-    // update aerosol number
-    // rce-comment
-    //    the interstitial particle mixratio is different in clear/cloudy
-    //    portions of a layer, and generally higher in the clear portion. (we
-    //    have/had a method for diagnosing the the clear/cloudy mixratios.) the
-    //    activation source terms involve clear air (from below) moving into
-    //    cloudy air (above). in theory, the clear-portion mixratio should be
-    //    used when calculating source terms
-    for (int imode = 0; imode < ntot_amode; imode++) {
-      const int mm = mam_idx[imode][0] - 1;
-      // rce-comment - activation source in layer k involves particles from k+1
-      // source(:)= nact(:,m)*(raercol(:,mm,nsav))
-      Kokkos::parallel_for(
-          Kokkos::TeamVectorRange(team, top_lev, pver_loc - 1), [&](int k) {
-            source(k) = nact(k, imode) * raercol[k + 1][nsav](mm);
-          }); // end k
-
-      tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
-             raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
-      source(pver - 1) = haero::max(zero, tmpa);
-
-      Kokkos::parallel_for(
-          Kokkos::TeamVectorRange(team, top_lev, pver_loc), [&](int k) {
-            const int kp1 = haero::min(k + 1, pver - 1);
-            const int km1 = haero::max(k - 1, top_lev);
-
-            explmix(raercol_cw[km1][nsav](mm), raercol_cw[k][nsav](mm),
-                    raercol_cw[kp1][nsav](mm),
-                    raercol_cw[k][nnew](mm), //
-                    source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
-                    overlapm(k), dtmix);
-            if (enable_aero_vertical_mix) {
-              explmix(raercol[km1][nsav](mm), raercol[k][nsav](mm),
-                      raercol[kp1][nsav](mm),
-                      raercol[k][nnew](mm), // output
-                      source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
-                      overlapm(k), dtmix, raercol_cw[km1][nsav](mm),
-                      raercol_cw[kp1][nsav](mm)); // optional in
-            }
-          }); // end kk
-
-      // update aerosol species mass
-      for (int lspec = 1; lspec < nspec_amode[imode] + 1; lspec++) {
-        const int mm = mam_idx[imode][lspec] - 1;
-        // rce-comment: activation source in layer k involves particles from k+1
-        // source(:)= mact(:,m)*(raercol(:,mm,nsav))
-        Kokkos::parallel_for(
-            Kokkos::TeamVectorRange(team, top_lev, pver_loc), [&](int k) {
-              const int kp1 = haero::min(k + 1, pver - 1);
-              source(k) = mact(k, imode) * raercol[kp1][nsav](mm);
-            }); // end k
-        tmpa = raercol[pver - 1][nsav](mm) * nact(pver - 1, imode) +
-               raercol_cw[pver - 1][nsav](mm) * nact(pver - 1, imode);
-        source(pver - 1) = haero::max(zero, tmpa);
-        Kokkos::parallel_for(
-            Kokkos::TeamVectorRange(team, top_lev, pver_loc), [&](int k) {
-              const int kp1 = haero::min(k + 1, pver - 1);
-              const int km1 = haero::max(k - 1, top_lev);
-              explmix(raercol_cw[km1][nsav](mm), raercol_cw[k][nsav](mm),
-                      raercol_cw[kp1][nsav](mm),
-                      raercol_cw[k][nnew](mm), // output
-                      source(k), eddy_diff_kp(k), eddy_diff_km(k), overlapp(k),
-                      overlapm(k), dtmix);
-              if (enable_aero_vertical_mix) {
-                explmix(raercol[km1][nsav](mm), raercol[k][nsav](mm),
-                        raercol[kp1][nsav](mm),
-                        raercol[k][nnew](mm), // output
-                        source(k), eddy_diff_kp(k), eddy_diff_km(k),
-                        overlapp(k), overlapm(k), dtmix,
-                        raercol_cw[km1][nsav](mm),
-                        raercol_cw[kp1][nsav](mm)); // optional in
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, top_lev, pver_loc),
+                         [&](int k) { qncld(k) = qcld(k); });
+    Kokkos::parallel_for(
+        Kokkos::TeamVectorRange(team, top_lev, pver_loc), [&](int k) {
+          const int kp1 = haero::min(k + 1, pver_loc - 1);
+          const int km1 = haero::max(k - 1, top_lev);
+          const View1D &raercol_km1_nsav = raercol[km1][nsav];
+          const View1D &raercol_k_nsav = raercol[k][nsav];
+          const View1D &raercol_kp1_nsav = raercol[kp1][nsav];
+          const View1D &raercol_k_nnew = raercol[k][nnew];
+          const View1D &raercol_cw_km1_nsav = raercol_cw[km1][nsav];
+          const View1D &raercol_cw_k_nsav = raercol_cw[k][nsav];
+          const View1D &raercol_cw_kp1_nsav = raercol_cw[kp1][nsav];
+          const View1D &raercol_cw_k_nnew = raercol_cw[k][nnew];
+          // update droplet source
+          // rce-comment- activation source in layer k involves particles from
+          // k+1
+          //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
+          Real srcn = zero;
+          if (k < pver_loc - 1) {
+            for (int imode = 0; imode < ntot_amode; imode++) {
+              const int mm = mam_idx[imode][0] - 1;
+              srcn += nact(k, imode) * raercol_kp1_nsav(mm);
+            } // end imode
+          } else {
+            for (int imode = 0; imode < ntot_amode; imode++) {
+              const int mm = mam_idx[imode][0] - 1;
+              const Real tmpa = raercol_k_nsav(mm) * nact(k, imode) +
+                                raercol_cw_k_nsav(mm) * nact(k, imode);
+              srcn += haero::max(zero, tmpa);
+            } // end imode
+          }
+          // update aerosol number
+          // rce-comment
+          //    the interstitial particle mixratio is different in clear/cloudy
+          //    portions of a layer, and generally higher in the clear portion.
+          //    (we have/had a method for diagnosing the the clear/cloudy
+          //    mixratios.) the activation source terms involve clear air (from
+          //    below) moving into cloudy air (above). in theory, the
+          //    clear-portion mixratio should be used when calculating source
+          //    terms
+          // rce-comment: activation source in layer k involves particles from
+          // k+1 source(:)= mact(:,m)*(raercol(:,mm,nsav))
+          if (enable_aero_vertical_mix) {
+            qcld(k) =
+                explmix(qncld(km1), qncld(k), qncld(kp1), srcn, eddy_diff_kp(k),
+                        eddy_diff_km(k), overlapp(k), overlapm(k), dtmix);
+          }
+          for (int imode = 0; imode < ntot_amode; imode++) {
+            for (int lspec = 0; lspec < nspec_amode[imode] + 1; lspec++) {
+              const int mm = mam_idx[imode][lspec] - 1;
+              Real source = 0;
+              if (k < pver_loc - 1) {
+                const Real act = lspec ? mact(k, imode) : nact(k, imode);
+                source = act * raercol_kp1_nsav(mm);
+              } else {
+                const Real tmpa = raercol_k_nsav(mm) * nact(k, imode) +
+                                  raercol_cw_k_nsav(mm) * nact(k, imode);
+                source = haero::max(zero, tmpa);
               }
-            }); // end kk
-
-        team.team_barrier();
-      } // lspec loop
-    }   //  imode loop
-  }     // old_cloud_nsubmix_loop
+              // update aerosol species mass
+              raercol_cw_k_nnew(mm) =
+                  explmix(raercol_cw_km1_nsav(mm), raercol_cw_k_nsav(mm),
+                          raercol_cw_kp1_nsav(mm), source, eddy_diff_kp(k),
+                          eddy_diff_km(k), overlapp(k), overlapm(k), dtmix);
+              if (enable_aero_vertical_mix) {
+                raercol_k_nnew(mm) =
+                    explmix(raercol_km1_nsav(mm), raercol_k_nsav(mm),
+                            raercol_kp1_nsav(mm), source, eddy_diff_kp(k),
+                            eddy_diff_km(k), overlapp(k), overlapm(k), dtmix,
+                            raercol_cw_km1_nsav(mm), raercol_cw_kp1_nsav(mm));
+              }
+            } // lspec loop
+          }   // imode loop
+        });   // k loop
+    team.team_barrier();
+  } // old_cloud_nsubmix_loop
 
   // evaporate particles again if no cloud
   Kokkos::parallel_for(
@@ -1585,7 +1540,6 @@ void dropmixnuc(
   csbot_cscen(surface_cell) = one;
   // Initialize 1D (in space) versions of interstitial and cloud borne aerosol
   int nsav = 0;
-
   Kokkos::parallel_for(
       Kokkos::TeamVectorRange(team, top_lev, pver_loc), [&](int k) {
         for (int imode = 0; imode < ntot_amode; ++imode) {
@@ -1676,9 +1630,7 @@ void dropmixnuc(
                       qcld, raercol, raercol_cw, nsav, nnew, nspec_amode,
                       mam_idx, enable_aero_vertical_mix, top_lev,
                       // work vars
-                      overlapp, overlapm, eddy_diff_kp, eddy_diff_km, qncld,
-                      srcn, // droplet source rate [/s]
-                      source);
+                      overlapp, overlapm, eddy_diff_kp, eddy_diff_km, qncld);
 
   team.team_barrier();
 
