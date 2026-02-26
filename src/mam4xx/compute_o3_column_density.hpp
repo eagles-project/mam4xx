@@ -7,6 +7,9 @@ namespace mam4 {
 
 namespace microphysics {
 
+using View1D = DeviceType::view_1d<Real>;
+using ConstView1D = DeviceType::view_1d<const Real>;
+
 // FIXME: check if we have ported these function in mam4xx. If no, let's move
 // them there.
 KOKKOS_INLINE_FUNCTION
@@ -30,53 +33,50 @@ void vmr2mmr(const Real vmr[mam4::gas_chemistry::gas_pcnst], // in
   }
 } // vmr2mmr
 
-using View2D = DeviceType::view_2d<Real>;
 KOKKOS_INLINE_FUNCTION
-void compute_o3_column_density(
-    const ThreadTeam &team, const haero::Atmosphere &atm,
-    const mam4::Prognostics &progs, const View2D &invariants,
-    const Real adv_mass_kg_per_moles[mam4::gas_chemistry::gas_pcnst],
-    ColumnView o3_col_dens) {
-  constexpr int gas_pcnst =
-      mam4::gas_chemistry::gas_pcnst;           // number of gas phase species
-  constexpr int nfs = mam4::gas_chemistry::nfs; // number of "fixed species"
-  constexpr int offset_aerosol = mam4::utils::gasses_start_ind();
+void compute_o3_column_density(const ThreadTeam &team, const ConstView1D &pdel,
+                               const View1D &mmr_o3, const Real o3_col_deltas_0,
+                               const Real mw_o3, const View1D &o3_col_dens) {
+  constexpr Real xfactor = 2.8704e21 / (9.80616 * 1.38044); // BAD_CONSTANT!
+  constexpr int nlev = mam4::nlev;
+  Kokkos::parallel_scan(
+      Kokkos::TeamThreadRange(team, nlev),
+      [&](int kk, Real &partial_sum, bool is_final) {
+        // Compute this level's contribution before touching partial_sum
+        const Real vmr_o3_kk =
+            mam4::conversions::vmr_from_mmr(mmr_o3(kk), mw_o3);
+        const Real delta_kk = xfactor * pdel(kk) * vmr_o3_kk;
 
-  Real o3_col_deltas[mam4::nlev + 1] =
-      {}; // o3 column density above model [1/cm^2]
-  // NOTE: if we need o2 column densities, set_ub_col and setcol must be changed
-  const int nlev = mam4::nlev;
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](const int k) {
-    const Real pdel = atm.hydrostatic_dp(k);
-    // extract aerosol state variables into "working arrays" (mass
-    // mixing ratios) (in EAM, this is done in the gas_phase_chemdr
-    // subroutine defined within
-    //  mozart/mo_gas_phase_chemdr.F90)
-    Real q[gas_pcnst] = {};
-    Real state_q[pcnst] = {};
-    mam4::utils::extract_stateq_from_prognostics(progs, atm, state_q, k);
+        if (is_final) {
+          // partial_sum is the EXCLUSIVE prefix: sum of delta_i for i in [0,
+          // kk)
+          o3_col_dens(kk) = o3_col_deltas_0 + partial_sum + 0.5 * delta_kk;
+        }
+        // Accumulate for subsequent levels
+        partial_sum += delta_kk;
+      });
+}
+// vmr_o3 is an input instead of mmr_o3
+KOKKOS_INLINE_FUNCTION
+void compute_o3_column_density(const ThreadTeam &team, const ConstView1D &pdel,
+                               const View1D &vmr_o3, const Real o3_col_deltas_0,
+                               const View1D &o3_col_dens) {
+  constexpr Real xfactor = 2.8704e21 / (9.80616 * 1.38044); // BAD_CONSTANT!
+  constexpr int nlev = mam4::nlev;
+  Kokkos::parallel_scan(
+      Kokkos::TeamThreadRange(team, nlev),
+      [&](int kk, Real &partial_sum, bool is_final) {
+        // Compute this level's contribution before touching partial_sum
+        const Real delta_kk = xfactor * pdel(kk) * vmr_o3(kk);
 
-    for (int i = offset_aerosol; i < pcnst; ++i) {
-      q[i - offset_aerosol] = state_q[i];
-    }
-
-    // convert mass mixing ratios to volume mixing ratios (VMR),
-    // equivalent to tracer mixing ratios (TMR))
-    Real vmr[gas_pcnst] = {};
-    mmr2vmr(q, adv_mass_kg_per_moles, vmr);
-    // ... compute invariants for this level
-    Real invariants_k[nfs];
-    for (int i = 0; i < nfs; ++i) {
-      invariants_k[i] = invariants(k, i);
-    }
-    // compute the change in o3 density for this column above its neighbor
-    mam4::mo_photo::set_ub_col(o3_col_deltas[k + 1],     // out
-                               vmr, invariants_k, pdel); // out
-  });
-  team.team_barrier();
-  // sum the o3 column deltas to densities
-  mam4::mo_photo::setcol(team, o3_col_deltas, // in
-                         o3_col_dens);        // out
+        if (is_final) {
+          // partial_sum is the EXCLUSIVE prefix: sum of delta_i for i in [0,
+          // kk)
+          o3_col_dens(kk) = o3_col_deltas_0 + partial_sum + 0.5 * delta_kk;
+        }
+        // Accumulate for subsequent levels
+        partial_sum += delta_kk;
+      });
 }
 } // namespace microphysics
 } // namespace mam4
