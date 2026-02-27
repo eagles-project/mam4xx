@@ -33,15 +33,15 @@ using mam4::gas_chemistry::indexm;
 
 // performs gas phase chemistry calculations on a single level of a single
 // atmospheric column
-KOKKOS_INLINE_FUNCTION
-void gas_phase_chemistry(
+template <typename VectorType>
+KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
     // in
     const Real temp, const Real dt,
     const Real photo_rates[mam4::mo_photo::phtcnt], const Real extfrc[extcnt],
     const Real invariants[nfs], const int (&clsmap_4)[gas_pcnst],
     const int (&permute_4)[gas_pcnst], const Real het_rates[gas_pcnst],
     // out
-    Real (&qq)[gas_pcnst]) {
+    VectorType &qq) {
   //=====================================================================
   // ... set rates for "tabular" and user specified reactions
   //=====================================================================

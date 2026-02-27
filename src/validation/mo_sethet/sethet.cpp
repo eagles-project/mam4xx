@@ -17,6 +17,7 @@ using namespace mo_sethet;
 void sethet(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
+    using View2DHost = typename HostType::view_2d<Real>;
     using ColumnView = haero::ColumnView;
     constexpr int pver = mam4::nlev;
     constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
@@ -101,25 +102,23 @@ void sethet(Ensemble *ensemble) {
     so2_diss = haero::testing::create_column_view(pver);
 
     ColumnView tmp_hetrates[gas_pcnst];
-    ColumnView qin[gas_pcnst];
     View1DHost tmp_hetrates_host[gas_pcnst];
-    View1DHost qin_host[gas_pcnst];
+    View2DHost qin_host("qin_host", pver, gas_pcnst);
 
     View2D het_rates("het_rates", pver, gas_pcnst);
+    View2D qin("qin", pver, gas_pcnst);
     auto het_rates_host = Kokkos::create_mirror_view(het_rates);
 
     for (int mm = 0; mm < gas_pcnst; ++mm) {
 
       tmp_hetrates[mm] = haero::testing::create_column_view(pver);
-      qin[mm] = haero::testing::create_column_view(pver);
       tmp_hetrates_host[mm] = View1DHost("tmp_hetrates_host", pver);
-      qin_host[mm] = View1DHost("qin_host", pver);
     }
 
     int count = 0;
     for (int mm = 0; mm < gas_pcnst; ++mm) {
       for (int kk = 0; kk < pver; ++kk) {
-        qin_host[mm](kk) = qin_in[count];
+        qin_host(kk, mm) = qin_in[count];
         count++;
       }
     }
@@ -127,8 +126,8 @@ void sethet(Ensemble *ensemble) {
     // transfer data to GPU.
     for (int mm = 0; mm < gas_pcnst; ++mm) {
       Kokkos::deep_copy(tmp_hetrates[mm], 0.0);
-      Kokkos::deep_copy(qin[mm], qin_host[mm]);
     }
+    Kokkos::deep_copy(qin, qin_host);
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
