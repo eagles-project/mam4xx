@@ -88,17 +88,11 @@ void print_bfbhash(Ensemble *e) {
           std::string name;
           Real scalar;
           while (output.next_scalar(name, scalar)) {
-            if (accum_by_field.find(name) == accum_by_field.end()) {
-              accum_by_field[name] = HashType();
-            }
             mam4::bfbhash::hash(scalar, accum_by_field[name]);
           }
 
           std::vector<Real> array;
           while (output.next_array(name, array)) {
-            if (accum_by_field.find(name) == accum_by_field.end()) {
-              accum_by_field[name] = HashType();
-            }
             hash(array, accum_by_field[name]);
           }
         });
