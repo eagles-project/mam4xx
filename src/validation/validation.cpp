@@ -10,6 +10,7 @@
 
 #include <ctime>
 #include <iomanip>
+#include <map>
 #include <sstream>
 
 // BFB hash for a skywalker::Ensemble (logic derived from EAMxx's
@@ -19,6 +20,17 @@ namespace {
 
 std::string exe_name_;
 std::string input_file_;
+
+// set to true to get one hash per output field
+bool field_specific_hashing = false;
+
+void set_flags(int argc, char **argv) {
+  for (int a = 2; a < argc; ++a) {
+    if (!strcmp(argv[a], "-f")) {
+      field_specific_hashing = true;
+    }
+  }
+}
 
 using namespace skywalker;
 using mam4::bfbhash::HashType;
@@ -68,11 +80,39 @@ void print_bfbhash(Ensemble *e) {
     hash(input, accum.back());
   });
 
-  hash_names.push_back("output");
-  accum.emplace_back();
-  e->process([&accum](const Input &input, Output &output) {
-    hash(output, accum.back());
-  });
+  if (field_specific_hashing) {
+    std::map<std::string, HashType> accum_by_field;
+    e->process(
+        [&hash_names, &accum_by_field](const Input &input, Output &output) {
+          // hash scalar inputs, then arrays
+          std::string name;
+          Real scalar;
+          while (output.next_scalar(name, scalar)) {
+            if (accum_by_field.find(name) == accum_by_field.end()) {
+              accum_by_field[name] = HashType();
+            }
+            mam4::bfbhash::hash(scalar, accum_by_field[name]);
+          }
+
+          std::vector<Real> array;
+          while (output.next_array(name, array)) {
+            if (accum_by_field.find(name) == accum_by_field.end()) {
+              accum_by_field[name] = HashType();
+            }
+            hash(array, accum_by_field[name]);
+          }
+        });
+    for (const auto &[name, value] : accum_by_field) {
+      hash_names.push_back(name);
+      accum.push_back(value);
+    }
+  } else {
+    hash_names.push_back("output");
+    accum.emplace_back();
+    e->process([&accum](const Input &input, Output &output) {
+      hash(output, accum.back());
+    });
+  }
 
   // pretty print the hashes
 
@@ -123,6 +163,7 @@ void initialize(int argc, char **argv) {
     exit(1);
   }
   input_file_ = determine_filename(argv[1]);
+  set_flags(argc, argv);
   Kokkos::initialize(argc, argv);
 }
 
@@ -133,6 +174,7 @@ void initialize(int argc, char **argv, int fpes_) {
     exit(1);
   }
   input_file_ = determine_filename(argv[1]);
+  set_flags(argc, argv);
   Kokkos::initialize(argc, argv);
   ekat::enable_fpes(fpes_);
 }
