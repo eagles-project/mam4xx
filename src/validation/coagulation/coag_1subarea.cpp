@@ -90,7 +90,7 @@ void coag_1subarea(Ensemble *ensemble) {
     std::vector<Real> qaer_del_coag_out_f(num_aero * max_agepair);
     for (int imode = 0, n = 0; imode < num_aero; ++imode) {
       for (int ispec = 0; ispec < max_agepair; ++ispec, ++n) {
-        qaer_del_coag_out_f[n] = qaer_del_coag_out_c[ispec][imode];
+        qaer_del_coag_out_f[n] = qaer_del_coag_out_c[imode][ispec];
       }
     }
 
