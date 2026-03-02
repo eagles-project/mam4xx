@@ -37,9 +37,13 @@ using View3D = typename DeviceType::view_3d<Real>;
 using namespace mam4::testing;
 
 /// Call this function to initialize a validation driver.
+/// Supported flags (placed after input filename):
+/// -f enable output-field-specific bit-for-bit hashing
 void initialize(int argc, char **argv);
 
 /// initialize with FPEs enabled, provided via argument
+/// Supported flags (placed after input filename):
+/// -f enable output-field-specific bit-for-bit hashing
 constexpr int default_fpes = FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW;
 void initialize(int argc, char **argv, const int fpes_);
 
