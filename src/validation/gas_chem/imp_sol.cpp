@@ -35,7 +35,7 @@ void imp_sol(Ensemble *ensemble) {
       factor[i] = true;
     }
 
-    imp_sol(base_sol.data(), //    ! species mixing ratios [vmr] & !
+    imp_sol(base_sol, //    ! species mixing ratios [vmr] & !
             reaction_rates.data(), het_rates.data(), extfrc.data(), delt,
             permute_4, clsmap_4, factor, epsilon, prod_out.data(),
             loss_out.data());
