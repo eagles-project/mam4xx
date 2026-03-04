@@ -177,6 +177,8 @@ void perform_atmospheric_chemistry_and_microphysics(
     const ConstView1D
         &prain, // stratoform precip [kg/kg/s] //in precip_total_tend
     const ConstView1D &nevapr, // nevapr evaporation [kg/kg/s] //in
+    const Real o3_col_deltas_0,
+    const ConstColumnView &zi, // in
     const View1D &work_set_het, const seq_drydep::Data &drydep_data,
     const MicrophysDiagnosticArrays &diag_arrays,
     Real dvel[gas_pcnst], // deposition velocity [cm/s]
@@ -237,11 +239,13 @@ void perform_atmospheric_chemistry_and_microphysics(
                           invariants_icol,                         // out
                           atm.temperature, atm.vapor_mixing_ratio, // in
                           cnst_offline_icol, atm.pressure);        // in
-  team.team_barrier();
-  mam4::microphysics::compute_o3_column_density(team, atm, progs,      // in
-                                                invariants_icol,       // in
-                                                adv_mass_kg_per_moles, // in
-                                                o3_col_dens_i);        // out
+
+  const int O3indx = mam4::gas_chemistry::o3_idx;
+  const auto &mmr_o3 = progs.q_gas[O3indx];
+  mam4::microphysics::compute_o3_column_density(
+      team,
+      atm.hydrostatic_dp, // pdel
+      mmr_o3, o3_col_deltas_0, adv_mass_kg_per_moles[O3indx], o3_col_dens_i);
 
   // set up photolysis work arrays for this column.
   mam4::mo_photo::PhotoTableWorkArrays photo_work_arrays_icol;
@@ -299,6 +303,15 @@ void perform_atmospheric_chemistry_and_microphysics(
         dvel,             // deposition velocity [1/cm/s]
         dflx              // deposition flux [1/cm^2/s]
     );
+  }
+  // Find tropopause (or quit simulation if not found) as extinction should be
+  //  applied only above tropopause */
+  // CHECK: in optics we use pseudo_density_dry to compute zm and zi, but in
+  // microphysics we use pseudo_density.
+  int ilev_tropp = 0;
+  if (linoz_conf.compute) {
+    ilev_tropp = mam4::aer_rad_props::tropopause_or_quit(
+        atm.pressure, atm.interface_pressure, atm.temperature, atm.height, zi);
   }
   team.team_barrier();
   // compute aerosol microphysics on each vertical level within this
@@ -454,26 +467,28 @@ void perform_atmospheric_chemistry_and_microphysics(
 
       // the following things are diagnostics, which we're not
       // including in the first rev
-      Real do3_linoz = 0, do3_linoz_psc = 0, ss_o3 = 0, o3col_du_diag = 0,
-           o3clim_linoz_diag = 0, zenith_angle_degrees = 0;
+      if (kk < ilev_tropp) {
+        Real do3_linoz = 0, do3_linoz_psc = 0, ss_o3 = 0, o3col_du_diag = 0,
+             o3clim_linoz_diag = 0, zenith_angle_degrees = 0;
 
-      // index of "O3" in solsym array (in EAM)
-      mam4::lin_strat_chem::lin_strat_chem_solve_kk(
-          // in
-          o3_col_dens_i(kk), temp, zenith_angle_icol, pmid, dt, rlats,
-          linoz_data.linoz_o3_clim_icol(kk), linoz_data.linoz_t_clim_icol(kk),
-          linoz_data.linoz_o3col_clim_icol(kk),
-          linoz_data.linoz_PmL_clim_icol(kk),
-          linoz_data.linoz_dPmL_dO3_icol(kk), linoz_data.linoz_dPmL_dT_icol(kk),
-          linoz_data.linoz_dPmL_dO3col_icol(kk),
-          linoz_data.linoz_cariolle_pscs_icol(kk), linoz_conf.chlorine_loading,
-          linoz_conf.psc_T,
-          // out
-          vmr[o3_ndx],
-          // outputs that are not used
-          do3_linoz, do3_linoz_psc, ss_o3, o3col_du_diag, o3clim_linoz_diag,
-          zenith_angle_degrees);
-
+        // index of "O3" in solsym array (in EAM)
+        mam4::lin_strat_chem::lin_strat_chem_solve_kk(
+            // in
+            o3_col_dens_i(kk), temp, zenith_angle_icol, pmid, dt, rlats,
+            linoz_data.linoz_o3_clim_icol(kk), linoz_data.linoz_t_clim_icol(kk),
+            linoz_data.linoz_o3col_clim_icol(kk),
+            linoz_data.linoz_PmL_clim_icol(kk),
+            linoz_data.linoz_dPmL_dO3_icol(kk),
+            linoz_data.linoz_dPmL_dT_icol(kk),
+            linoz_data.linoz_dPmL_dO3col_icol(kk),
+            linoz_data.linoz_cariolle_pscs_icol(kk),
+            linoz_conf.chlorine_loading, linoz_conf.psc_T,
+            // out
+            vmr[o3_ndx],
+            // outputs that are not used
+            do3_linoz, do3_linoz_psc, ss_o3, o3col_du_diag, o3clim_linoz_diag,
+            zenith_angle_degrees);
+      }
       // Update source terms above the ozone decay threshold
       if (kk >= nlev - linoz_conf.o3_lbl) {
         const Real o3l_vmr_old = vmr[o3_ndx];
