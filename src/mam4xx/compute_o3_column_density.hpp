@@ -69,7 +69,7 @@ void compute_o3_column_density(const ThreadTeam &team, const ConstView1D &pdel,
                         [&](int kk, Real &partial_sum, bool is_final) {
                           // Compute this level's contribution before touching
                           // partial_sum
-                          const Real delta_kk = xfactor * pdel(kk) * vmr_o3(kk);
+                          const Real delta_kk = xfactor * pdel(kk) * vmr(kk,o3_indx);
                           if (is_final) {
                             // partial_sum is the EXCLUSIVE prefix: sum of
                             // delta_i for i in [0, kk)
