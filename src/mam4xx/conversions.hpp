@@ -6,8 +6,7 @@
 #ifndef MAM4_CONVERSIONS_HPP
 #define MAM4_CONVERSIONS_HPP
 
-#include <haero/constants.hpp>
-#include <haero/math.hpp>
+#include <mam4xx/constants.hpp>
 
 #include <ekat_kernel_assert.hpp>
 
@@ -15,11 +14,6 @@
 /// of physical quantities in aerosol parameterizations.
 
 namespace mam4::conversions {
-
-using Real = haero::Real;
-using Constants = haero::Constants;
-using haero::cube;
-using haero::square;
 
 /// Given a number concentration for a species or mixture [m-3], computes and
 /// returns a mass mixing ratio [kg species/kg dry air] based on its molecular
@@ -343,7 +337,7 @@ mean_particle_volume_from_diameter(Real geom_diam, Real mean_std_dev) {
 /// Compute the density of an ideal gas given its temperature and pressure.
 ///
 /// Example usage (default assumes gas is air):
-///    atm = haero::Atmosphere;
+///    atm = Atmosphere;
 ///    k = level idx;
 ///
 ///    rho = density_of_ideal_gas(atm.temperature(k), atm.pressure(k));

@@ -97,8 +97,8 @@ KOKKOS_INLINE_FUNCTION Real fcvt_num() { return 1; }
 
 // factor for converting aerosol water mix-ratios from (kg/kg) to (mol/mol)
 KOKKOS_INLINE_FUNCTION Real fcvt_wtr() {
-  return haero::Constants::molec_weight_dry_air /
-         haero::Constants::molec_weight_h2o;
+  return Constants::molec_weight_dry_air /
+         Constants::molec_weight_h2o;
 }
 
 // Returns index of aerosol numbers in gas_pcnst array
@@ -521,7 +521,7 @@ void get_partition_factors(const Real &qgcm_intrst,              // in
 
   // interstitial, cloudy subarea
   const Real tmp_q_intrst_cldy =
-      haero::max(0, ((qgcm_intrst + qgcm_cldbrn) - tmp_q_cldbrn_cldy));
+      max(0, ((qgcm_intrst + qgcm_cldbrn) - tmp_q_cldbrn_cldy));
 
   EKAT_KERNEL_ASSERT_MSG(fclea != 0, "Error! get_partition_factors - fclea is "
                                      "zero\n");
@@ -538,8 +538,8 @@ void get_partition_factors(const Real &qgcm_intrst,              // in
 
   constexpr Real eps = 1.e-35; // BAD CONSTANT
   Real clea2gcm_ratio =
-      haero::max(eps, tmp_q_intrst_clea * fclea) / haero::max(eps, qgcm_intrst);
-  clea2gcm_ratio = haero::max(0, haero::min(1, clea2gcm_ratio));
+      max(eps, tmp_q_intrst_clea * fclea) / max(eps, qgcm_intrst);
+  clea2gcm_ratio = max(0, min(1, clea2gcm_ratio));
 
   factor_clea = clea2gcm_ratio / fclea;
   factor_cldy = (1 - clea2gcm_ratio) / fcldy;
@@ -989,8 +989,8 @@ void mam_newnuc_1subarea(
 
   //   dry-diameter limits for "grown" new particles
   constexpr int nait = static_cast<int>(ModeIndex::Aitken);
-  Real dplom_mode = haero::exp(0.67 * haero::log(modes(nait).min_diameter) +
-                               0.33 * haero::log(modes(nait).nom_diameter));
+  Real dplom_mode = exp(0.67 * log(modes(nait).min_diameter) +
+                               0.33 * log(modes(nait).nom_diameter));
   Real dphim_mode = modes(nait).max_diameter;
 
   //   mass1p_... = mass (kg) of so4 & nh4 in a single particle of diameter ...
@@ -998,20 +998,19 @@ void mam_newnuc_1subarea(
   //      mass1p_aitlo - dp = dplom_mode
   //      mass1p_aithi - dp = dphim_mode
   constexpr Real dens_so4a_host = 1770;
-  tmpa = dens_so4a_host * haero::Constants::pi / 6.0;
-  Real mass1p_aitlo = tmpa * (haero::pow(dplom_mode, 3.0));
-  Real mass1p_aithi = tmpa * (haero::pow(dphim_mode, 3.0));
+  tmpa = dens_so4a_host * Constants::pi / 6.0;
+  Real mass1p_aitlo = tmpa * (pow(dplom_mode, 3.0));
+  Real mass1p_aithi = tmpa * (pow(dphim_mode, 3.0));
 
   //   limit RH to between 0.1% and 99%
-  Real relhumnn = haero::max(0.01, haero::min(0.99, relhum));
+  Real relhumnn = max(0.01, min(0.99, relhum));
 
   // BAD CONSTANTS (These should come from chemistry mechanism
   // but it is fixed here for stay BFB)
   constexpr Real mw_so4a_host = 115;
   constexpr Real mwnh4 = 18;
   constexpr Real mwso4 = 96;
-  // BAD CONSTANTS (These should come from Haero constants
-  // but it is fixed here for stay BFB)
+  // BAD CONSTANTS (These should come from Constants but it is fixed here to stay BFB)
   constexpr Real rgas = 8.31446759100000;
   constexpr Real avogadro = 6.022140000000000E+023;
 
@@ -1023,7 +1022,7 @@ void mam_newnuc_1subarea(
       newnuc_method_flagaa, deltat, temp, relhumnn, pmid, zmid, pblh,  // in
       qh2so4_cur, qh2so4_avg, qnh3_cur, tmp_uptkrate, mw_so4a_host, 1, // in
       dplom_mode, dphim_mode, rgas, avogadro, mwnh4, mwso4,            // in
-      haero::Constants::pi,                                            // in
+      Constants::pi,                                            // in
       itmp, qnuma_del, qso4a_del, qnh4a_del, qh2so4_del,               // out
       qnh3_del, dens_nh4so4a, dnclusterdt);                            // out
 
@@ -1041,7 +1040,7 @@ void mam_newnuc_1subarea(
   //   mass nuc rate (kg/kmol-air/s) from mass nuc amts
   EKAT_KERNEL_ASSERT_MSG(deltat != 0, "Error! mam_newnuc_1subarea: "
                                       " deltat should not be equal to 0\n");
-  Real dmdt_ait = haero::max(0.0, (tmpb / deltat));
+  Real dmdt_ait = max(0.0, (tmpb / deltat));
 
   // BAD CONSTANTS
   if (dndt_ait < 1.0e2) {
@@ -1089,7 +1088,7 @@ void mam_newnuc_1subarea(
   if (dso4dt_ait > 0.0) {
     tmp_q_del = dso4dt_ait * deltat;
     qaer_cur[iaer_so4][nait] = qaer_cur[iaer_so4][nait] + tmp_q_del;
-    tmp_q_del = haero::min(tmp_q_del, qgas_cur[igas_h2so4]);
+    tmp_q_del = min(tmp_q_del, qgas_cur[igas_h2so4]);
     qgas_cur[igas_h2so4] = qgas_cur[igas_h2so4] - tmp_q_del;
   }
 } // end mam_newnuc_1subarea
@@ -1287,7 +1286,7 @@ void mam_amicphys_1subarea(
 
   constexpr int ntsubstep = 1;
   const Real del_h2so4_gasprod =
-      haero::max(qgas3[igas_h2so4] - qgas1[igas_h2so4], 0) / ntsubstep;
+      max(qgas3[igas_h2so4] - qgas1[igas_h2so4], 0) / ntsubstep;
   //-----------------------------------
   // Initialize increment diagnostics
   //-----------------------------------
@@ -2043,7 +2042,7 @@ void form_gcm_of_gases_and_aerosols_from_subareas(
   }
 
   for (int icnst = 0; icnst < gas_pcnst; ++icnst) {
-    qgcm[icnst] = haero::max(0, qgcm[icnst]);
+    qgcm[icnst] = max(0, qgcm[icnst]);
   }
 
   // Cloud-borne aerosols
@@ -2199,7 +2198,7 @@ void modal_aero_amicphys_intr(
   //    the N=1:4 have same meanings as for qgcmN
 
   // Compute saturation vapor pressure
-  const Real epsqs = haero::Constants::weight_ratio_h2o_air;
+  const Real epsqs = Constants::weight_ratio_h2o_air;
 
   // Saturation vapor pressure
   const Real ev_sat = conversions::vapor_saturation_pressure_magnus(temp, pmid);
@@ -2235,7 +2234,7 @@ void modal_aero_amicphys_intr(
                          "Error! modal_aero_amicphys_intr: "
                          "nsubarea should be < maxsubarea() \n");
 
-  const Real relhumgcm = haero::max(0.0, haero::min(1.0, qv / qv_sat));
+  const Real relhumgcm = max(0.0, min(1.0, qv / qv_sat));
 
   Real relhumsub[maxsubarea()];
   set_subarea_rh(ncldy_subarea, jclea, jcldy, afracsub, relhumgcm, // in
@@ -2260,13 +2259,13 @@ void modal_aero_amicphys_intr(
   Real qqcwgcm2[gas_pcnst], qqcwgcm3[gas_pcnst]; // cld borne aerosols
   for (int icnst = 0; icnst < gas_pcnst; ++icnst) {
     // Gases and interstitial aerosols
-    qgcm1[icnst] = haero::max(0, q_pregaschem[icnst]);
-    qgcm2[icnst] = haero::max(0, q_precldchem[icnst]);
-    qgcm3[icnst] = haero::max(0, qq[icnst]);
+    qgcm1[icnst] = max(0, q_pregaschem[icnst]);
+    qgcm2[icnst] = max(0, q_precldchem[icnst]);
+    qgcm3[icnst] = max(0, qq[icnst]);
 
     // Cloud-borne aerosols
-    qqcwgcm2[icnst] = haero::max(0, qqcw_precldchem[icnst]);
-    qqcwgcm3[icnst] = haero::max(0, qqcw[icnst]);
+    qqcwgcm2[icnst] = max(0, qqcw_precldchem[icnst]);
+    qqcwgcm3[icnst] = max(0, qqcw[icnst]);
   }
   // Partition grid cell mean to subareas
   Real qsub1[gas_pcnst][maxsubarea()];
@@ -2303,7 +2302,7 @@ void modal_aero_amicphys_intr(
   for (int imode = 0; imode < num_modes; ++imode) {
     dgn_a[imode] = dgncur_a[imode];
     dgn_awet[imode] = dgncur_awet[imode];
-    wetdens[imode] = haero::max(one_thousand, wetdens_host[imode]);
+    wetdens[imode] = max(one_thousand, wetdens_host[imode]);
   }
 
   Real qsub_tendaa[gas_pcnst][nqtendaa()][maxsubarea()] = {};

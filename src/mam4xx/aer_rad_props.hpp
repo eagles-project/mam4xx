@@ -1,7 +1,6 @@
 #ifndef MAM4XX_AER_RAD_PROPS_HPP
 #define MAM4XX_AER_RAD_PROPS_HPP
 
-#include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
 
 #include <mam4xx/modal_aer_opt.hpp>
@@ -10,7 +9,6 @@ namespace mam4 {
 
 namespace aer_rad_props {
 
-using ConstColumnView = haero::ConstColumnView;
 // From radconstants
 constexpr int nswbands = modal_aer_opt::nswbands;
 constexpr int nlwbands = modal_aer_opt::nlwbands;
@@ -19,18 +17,18 @@ using namespace mam4::modal_aer_opt;
 constexpr Real km_inv_to_m_inv = 0.001; // 1/km to 1/m
 
 constexpr Real shr_const_rgas =
-    haero::Constants::r_gas * 1e3; // Universal gas constant ~ J/K/kmole
-constexpr Real shr_const_mwdair = haero::Constants::molec_weight_dry_air *
+    Constants::r_gas * 1e3; // Universal gas constant ~ J/K/kmole
+constexpr Real shr_const_mwdair = Constants::molec_weight_dry_air *
                                   1e3; // molecular weight dry air ~ kg/kmole
 constexpr Real shr_const_cpdair =
-    haero::Constants::cp_dry_air; // specific heat of dry air   ~ J/kg/K
+    Constants::cp_dry_air; // specific heat of dry air   ~ J/kg/K
 
 constexpr Real cnst_kap =
     (shr_const_rgas / shr_const_mwdair) / shr_const_cpdair; //   R/Cp
 
 constexpr Real cnst_faktor =
-    -haero::Constants::gravity /
-    haero::Constants::r_gas_dry_air; // acceleration of gravity ~ m/s^2/Dry air
+    -Constants::gravity /
+    Constants::r_gas_dry_air; // acceleration of gravity ~ m/s^2/Dry air
                                      // gas constant     ~ J/K/kg
 constexpr Real cnst_ka1 = cnst_kap - 1.0;
 
@@ -250,7 +248,7 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
 
 KOKKOS_INLINE_FUNCTION
 void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
-                      mam4::Prognostics &progs, const haero::Atmosphere &atm,
+                      mam4::Prognostics &progs, const Atmosphere &atm,
                       const ConstColumnView &zi, const ConstColumnView &pdel,
                       const View2D &ssa_cmip6_sw, const View2D &af_cmip6_sw,
                       const View2D &ext_cmip6_sw_m, const View2D &tau,
@@ -341,7 +339,7 @@ KOKKOS_INLINE_FUNCTION
 void aer_rad_props_lw(
     // inputs
     const ThreadTeam &team, const Real dt, mam4::Prognostics &progs,
-    const haero::Atmosphere &atm, const ConstColumnView &zi,
+    const Atmosphere &atm, const ConstColumnView &zi,
     const ConstColumnView &pdel, const View2D &ext_cmip6_lw_m,
     const AerosolOpticsDeviceData &aersol_optics_data,
     const CalcsizeData &calcsizedata,

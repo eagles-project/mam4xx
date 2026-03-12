@@ -1,7 +1,6 @@
 #ifndef MAM4XX_MO_SETHET_HPP
 #define MAM4XX_MO_SETHET_HPP
 
-#include <haero/math.hpp>
 #include <mam4xx/gas_chem.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/mo_chm_diags.hpp>
@@ -11,23 +10,23 @@ namespace mam4 {
 
 namespace mo_sethet {
 
-constexpr Real avo = haero::Constants::avogadro;
-constexpr Real pi = haero::Constants::pi;
-constexpr Real rga = 1.0 / haero::Constants::gravity;
+constexpr Real avo = Constants::avogadro;
+constexpr Real pi = Constants::pi;
+constexpr Real rga = 1.0 / Constants::gravity;
 constexpr int gas_pcnst = gas_chemistry::gas_pcnst;
-const Real boltz_cgs = haero::Constants::boltzmann * 1.e7; // erg/K
+const Real boltz_cgs = Constants::boltzmann * 1.e7; // erg/K
 // number of vertical levels
 constexpr int pver = mam4::nlev;
 
 // FIXME: BAD CONSTANT
 // mass of water vapor [amu] //convert to g/mol from kg/mol
-constexpr Real mass_h2o = haero::Constants::molec_weight_h2o * 1000;
+constexpr Real mass_h2o = Constants::molec_weight_h2o * 1000;
 constexpr Real cm3_2_m3 = 1.0e-6; // convert cm^3 to m^3
 constexpr Real liter_per_gram = 1.0e-3;
 constexpr Real avo2 =
     avo * liter_per_gram * cm3_2_m3; // [liter/gm/mol*(m/cm)^3]
 
-using Real = haero::Real;
+using Real = Real;
 using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;
 
@@ -48,7 +47,7 @@ void calc_het_rates(const Real satf, // saturation fraction in cloud //in
   Real h2o_mol = 1.0e3 / mass_h2o; // [gm/mol water]
 
   work3 =
-      satf * haero::max(rain / (h2o_mol * (work1 + 1.0 / (xhen * work2))), 0.0);
+      satf * max(rain / (h2o_mol * (work1 + 1.0 / (xhen * work2))), 0.0);
   het_rates = work3 + tmp_hetrates;
 
 } // end calc_het_rates
@@ -151,7 +150,7 @@ void gas_washout(
     // -----------------------------------------------------------------
     allca += xca;
     if (allca < xeqca) {
-      xgas(k) = haero::max(xgas(k) - xca, 0.0);
+      xgas(k) = max(xgas(k) - xca, 0.0);
     }
   }
 } // end subroutine gas_washout
@@ -169,7 +168,7 @@ void find_ktop(
   Real p_limit = 0;      // pressure limit [Pa]
   Real d2r = pi / 180.0; // degree to radian
 
-  if (haero::abs(rlat) > 60.0 * d2r) {
+  if (abs(rlat) > 60.0 * d2r) {
     p_limit = 300.0e2; // 300hPa for high latitudes
   } else {
     p_limit = 100.0e2; // 100hPa for low latitudes
@@ -312,8 +311,8 @@ void sethet_detail(
   //-----------------------------------------------------------------
   //	... the 2 and .6 multipliers are from a formula by frossling (1938)
   //-----------------------------------------------------------------
-  xkgm = xdg / xrm * 2.0 + xdg / xrm * .6 * haero::sqrt(xrm * xum / xvv) *
-                               haero::pow((xvv / xdg), (1.0 / 3.0));
+  xkgm = xdg / xrm * 2.0 + xdg / xrm * .6 * sqrt(xrm * xum / xvv) *
+                               pow((xvv / xdg), (1.0 / 3.0));
 
   //-----------------------------------------------------------------
   //	... Find the level index that only calculate het_rates below
@@ -337,9 +336,9 @@ void sethet_detail(
 
   Kokkos::parallel_for(
       Kokkos::TeamVectorRange(team, ktop, local_pver - 1), [&](int kk) {
-        delz(kk) = haero::abs((zmid(kk) - zmid(kk + 1)) * km2cm);
+        delz(kk) = abs((zmid(kk) - zmid(kk + 1)) * km2cm);
       });
-  delz(pver - 1) = haero::abs((zmid(pver - 1) - zsurf) * km2cm);
+  delz(pver - 1) = abs((zmid(pver - 1) - zsurf) * km2cm);
   //-----------------------------------------------------------------
   //       ... part 0b,  for temperature dependent of henrys
   //                     xxhe1 = henry con for hno3
@@ -361,13 +360,13 @@ void sethet_detail(
         //-----------------------------------------------------------------
         // temperature factor
         t_factor(kk) = (t0 - tfld(kk)) / (t0 * tfld(kk));
-        xhen_h2o2(kk) = 7.45e4 * haero::exp(6620.0 * t_factor(kk));
+        xhen_h2o2(kk) = 7.45e4 * exp(6620.0 * t_factor(kk));
         // HNO3, for calculation of H2SO4 het rate use
-        xk0_hno3(kk) = 2.1e5 * haero::exp(8700.0 * t_factor(kk));
+        xk0_hno3(kk) = 2.1e5 * exp(8700.0 * t_factor(kk));
         xhen_hno3(kk) = xk0_hno3(kk) * (1.0 + hno3_diss / xph0);
         // SO2
-        xk0_so2(kk) = 1.23 * haero::exp(3120.0 * t_factor(kk));
-        so2_diss(kk) = 1.23e-2 * haero::exp(1960.0 * t_factor(kk));
+        xk0_so2(kk) = 1.23 * exp(3120.0 * t_factor(kk));
+        so2_diss(kk) = 1.23e-2 * exp(1960.0 * t_factor(kk));
         xhen_so2(kk) = xk0_so2(kk) * (1.0 + so2_diss(kk) / xph0);
       });
   //-----------------------------------------------------------------
@@ -387,7 +386,7 @@ void sethet_detail(
           1.0; // fraction of layer traversed by falling drop in timestep delt
       if (rain(kk) != 0.0) { // finding rain cloud
         stay = ((zmid(kk) - zsurf) * km2cm) / (xum * delt);
-        stay = haero::min(stay, 1.0);
+        stay = min(stay, 1.0);
         // calculate gas washout by cloud
         gas_washout(team, kk, xkgm, xliq(kk), // in
                     xhen_h2o2, tfld, delz,    // in
@@ -417,7 +416,7 @@ void sethet_detail(
         yh2o2 = large_value_lifetime;
       }
       tmp_hetrates[1](kk) =
-          haero::max(1.0 / yh2o2, 0.0) * stay; // FIXME: bad constant index
+          max(1.0 / yh2o2, 0.0) * stay; // FIXME: bad constant index
 
       Real yso2 = 0;
       const Real xxx3 =
@@ -428,7 +427,7 @@ void sethet_detail(
         yso2 = large_value_lifetime;
       }
       tmp_hetrates[2](kk) =
-          haero::max(1.0 / yso2, 0.0) * stay; // FIXME: bad constant index
+          max(1.0 / yso2, 0.0) * stay; // FIXME: bad constant index
     }
   });
   team.team_barrier();
@@ -492,7 +491,7 @@ void sethet_detail(
 
 KOKKOS_INLINE_FUNCTION
 void sethet(
-    const ThreadTeam &team, const haero::Atmosphere &atm,
+    const ThreadTeam &team, const Atmosphere &atm,
     const View2D &het_rates,      //[pver][gas_pcnst], rainout rates [1/s] //out
     const Real rlat,              // latitude in radians for columns
     const Real phis,              // surf geopotential //in

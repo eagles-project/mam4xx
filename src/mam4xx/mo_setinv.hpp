@@ -1,7 +1,7 @@
 #ifndef MAM4XX_MO_SETINV_HPP
 #define MAM4XX_MO_SETINV_HPP
 
-#include <haero/atmosphere.hpp>
+#include <mam4xx/atmosphere.hpp>
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
@@ -93,7 +93,7 @@ void setinv(const ThreadTeam &team, const View2D &invariants,
 
   Config setinv_config_;
   constexpr int nk = mam4::nlev;
-  constexpr Real mwh2o = haero::Constants::molec_weight_h2o;
+  constexpr Real mwh2o = Constants::molec_weight_h2o;
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
     const Real tfld_k = tfld(k);

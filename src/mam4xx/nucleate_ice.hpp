@@ -6,10 +6,8 @@
 #ifndef MAM4XX_NUCLEATE_ICE_HPP
 #define MAM4XX_NUCLEATE_ICE_HPP
 
-#include <haero/atmosphere.hpp>
-#include <haero/surface.hpp>
-
-#include <haero/math.hpp>
+#include <mam4xx/atmosphere.hpp>
+#include <mam4xx/surface.hpp>
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
@@ -64,7 +62,7 @@ void calculate_regm_nucleati(const Real w_vlc, const Real Na, Real &regm) {
   // Na               aerosol number concentration [#/cm^3]
   // regm             threshold temperature [C]
 
-  const Real lnNa = haero::log(Na);
+  const Real lnNa = log(Na);
   // BAD CONSTANT
   const Real A_coef = -Real(1.4938) * lnNa + Real(12.884);
   const Real B_coef = -Real(10.41) * lnNa - Real(67.69);
@@ -112,10 +110,10 @@ void calculate_Ni_hf(const Real A1, const Real B1, const Real C1, const Real A2,
   // Na             aerosol number concentrations [#/cm^3]
   // Ni             ice number concentrations [#/cm^3]
 
-  const Real k1 = haero::exp(A2 + B2 * temperature + C2 * lnw);
+  const Real k1 = exp(A2 + B2 * temperature + C2 * lnw);
   const Real k2 = A1 + B1 * temperature + C1 * lnw;
 
-  Ni = haero::min(k1 * haero::pow(Na, k2), Na);
+  Ni = min(k1 * pow(Na, k2), Na);
 } // end calculate_Ni_hf
 
 KOKKOS_INLINE_FUNCTION
@@ -161,7 +159,7 @@ void hf(const Real temperature, const Real w_vlc, const Real RH, const Real Na,
   Real A2_fast, B2_fast, B4_slow = zero;
   Real lnw, RHw = zero;
 
-  lnw = haero::log(w_vlc);
+  lnw = log(w_vlc);
 
   Ni = zero;
 
@@ -223,17 +221,17 @@ void hetero(const Real temperature, const Real w_vlc, const Real Ns, Real &Nis,
   const Real B21 = -0.2667;
   const Real B22 = -1.4588;
 
-  const Real lnNs = haero::log(Ns);
-  const Real lnw = haero::log(w_vlc);
+  const Real lnNs = log(Ns);
+  const Real lnw = log(w_vlc);
 
   // ice from immersion nucleation (cm^-3)
 
   const Real B_coef = (A11 + B11 * lnNs) * lnw + (A12 + B12 * lnNs);
   const Real C_coef = A21 + B21 * lnNs;
 
-  Nis = haero::exp(A22) * haero::pow(Ns, B22) *
-        haero::exp(B_coef * temperature) * haero::pow(w_vlc, C_coef);
-  Nis = haero::min(Nis, Ns);
+  Nis = exp(A22) * pow(Ns, B22) *
+        exp(B_coef * temperature) * pow(w_vlc, C_coef);
+  Nis = min(Nis, Ns);
   // FIXME: Mention that this variables is set to zero in PR
   // don't include deposition nucleation for cirrus clouds when T < -37C
   Nid = Real(0.0);
@@ -289,7 +287,7 @@ public:
     _mincld = 0.0001;
 
     const int aitken_idx = int(ModeIndex::Aitken);
-    _alnsg_amode_aitken = haero::log(modes(aitken_idx).mean_std_dev);
+    _alnsg_amode_aitken = log(modes(aitken_idx).mean_std_dev);
 
   } // end(init)
 
@@ -302,7 +300,7 @@ public:
                           const Tendencies &tendencies) const {
 
     const int nk = atmosphere.num_levels();
-    const Real tmelt_m_five = haero::Constants::freezing_pt_h2o - 5;
+    const Real tmelt_m_five = Constants::freezing_pt_h2o - 5;
     const int coarse_idx = int(ModeIndex::Coarse);
     const int aitken_idx = int(ModeIndex::Aitken);
 
@@ -365,7 +363,7 @@ public:
 
         const Real zero = 0;
         const Real half = 0.5;
-        const Real sqrt_two = haero::sqrt(2.0);
+        const Real sqrt_two = sqrt(2.0);
 
         const Real pmid = atmosphere.pressure(kk);
         const Real air_density = conversions::density_of_ideal_gas(temp, pmid);
@@ -379,7 +377,7 @@ public:
 
         wv_sat_methods::wv_sat_qsat_water(temp, pmid, es, qs);
         const Real relhum = qv / qs;
-        const Real icldm = haero::max(ast(kk), mincld);
+        const Real icldm = max(ast(kk), mincld);
 
         // compute aerosol number for so4, soot, and dust with units #/cm^3
         // remove soot number, because it is set to zero
@@ -409,12 +407,12 @@ public:
         if (dgnum_aitken(kk) > zero) {
           // only allow so4 with D > 0.1 um in ice nucleation
           so4_num = num_aitken(kk) * air_density * num_m3_to_cm3 *
-                    (half - half * haero::erf(haero::log(so4_sz_thresh_icenuc /
+                    (half - half * erf(log(so4_sz_thresh_icenuc /
                                                          dgnum_aitken(kk)) /
                                               (sqrt_two * alnsg_amode_aitken)));
         } // end dgnum_aitken
 
-        so4_num = haero::max(zero, so4_num);
+        so4_num = max(zero, so4_num);
 
         // Real naai = zero;
 
@@ -556,7 +554,7 @@ public:
               n1 = nihf;
             } else {
               n1 = (niimm + nidep) *
-                   haero::pow((niimm + nidep) / nihf, (tc - regm) / Real(5.));
+                   pow((niimm + nidep) / nihf, (tc - regm) / Real(5.));
 
             } // end nihf <= (niimm + nidep)
 

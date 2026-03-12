@@ -1,0 +1,147 @@
+digraph {
+  label = "compute_q_tendencies";
+
+  "cldvcu[k]";
+  "cldvcu[k+1]";
+  "cldvst[k]";
+  "cldvst[k+1]";
+
+  "cldvcu[k]" -> cldvcu;
+  "cldvcu[k+1]" -> cldvcu_lower_level;
+  "cldvst[k]" -> cldvst;
+  "cldvst[k+1]" -> cldvst_lower_level;
+
+  precnums_base;
+  precnumc_base;
+
+  subgraph cluster_compute_q_tendencies_phases_1_and_2 {
+    label = "compute_q_tendencies_phase_{1,2}";
+
+    scavt;
+    rcscavt;
+    rsscavt;
+
+    subgraph cluster_wetdepa_v2 {
+      label = "wetdepa_v2";
+
+      cldvcu;
+      cldvcu_lower_level;
+      cldvst;
+      cldvst_lower_level;
+      arainx;
+      precnumx_base_tmp;
+      resusp_s;
+      resusp_c;
+
+      cldvcu_lower_level -> arainx;
+      cldvst_lower_level -> arainx;
+
+      subgraph cluster_wetdep_resusp_s {
+        label = "wetdep_resusp(s)";
+
+        precnumx_base_old;
+        precnumx_base_new;
+        resusp_x;
+
+        precnums_base -> precnumx_base_old;
+        precnumx_base_tmp -> precnumx_base_new;
+        resusp_s -> resusp_x;
+
+        arainx -> precnumx_base_new;
+
+        subgraph cluster_wetdep_resusp_noprecip_s {
+          label = "wetdep_resusp_noprecip(s)";
+          precnumx_base_new -> resusp_x;
+        }
+      
+      precnumx_base_new -> precnumx_base_tmp;
+      resusp_x -> resusp_s;
+
+      subgraph cluster_wetdep_prevap_s {
+        label = "wetdep_prevap(s)";
+
+        precnumx_base_old;
+        precnumx_base_new;
+
+        precnumx_base_old -> precnumx_base_new;
+        precnums_base_tmp -> precnumx_base_old;
+
+        precnums_base -> precnumx_base_new;
+        arainx -> precnumx_base_new;
+      }
+
+      precnumx_base_new -> precnumc_base;
+
+      subgraph cluster_wetdep_resusp_c {
+        label = "wetdep_resusp(c)";
+
+        precnumx_base_old;
+        precnumx_base_new;
+        resusp_x;
+
+        precnums_base -> precnumx_base_old;
+        precnumx_base_tmp -> precnumx_base_new;
+        resusp_c -> resusp_x;
+
+        arainx -> precnumx_base_new;
+
+        subgraph cluster_wetdep_resusp_noprecip_c {
+          label = "wetdep_resusp_noprecip(c)";
+          precnumx_base_new -> resusp_x;
+        }
+      }
+      
+      precnumx_base_new -> precnumx_base_tmp;
+      resusp_x -> resusp_c;
+
+      subgraph cluster_wetdep_prevap_s {
+        label = "wetdep_prevap(c)";
+
+        precnumx_base_old;
+        precnumx_base_new;
+
+        precnumx_base_old -> precnumx_base_new;
+        precnums_base_tmp -> precnumx_base_old;
+
+        precnums_base -> precnumx_base_new;
+        arainx -> precnumx_base_new;
+      }
+
+      precnumx_base_new -> precnumc_base;
+
+      scavt_ik;
+      rcscavt_ik;
+      rsscavt_ik;
+
+      subgraph cluster_update_scavenging {
+        label = "update_scavenging";
+
+        resusp_s -> scavt_ik;        
+        resusp_c -> scavt_ik;
+        resusp_c -> rcscavt_ik;
+        resusp_s -> rsscavt_ik;
+      }
+
+      scavt_ik -> scavt;
+      rcscavt_ik -> rcscavt;
+      rsscavt_ik-> rsscavt;
+    }
+
+    precnumx_base_new -> precnumc_base;
+
+    subgraph cluster_aero_model_calc_resusp_to_coarse {
+      label = "aero_model::calc_resusp_to_coarse";
+
+      dqdt_tmp;
+      scavt -> dqdt_tmp;
+      rcscavt -> dqdt_tmp;
+      rsscavt -> dqdt_tmp;
+      rcscavt -> rtscavt_sv;
+      rsscavt -> rtscavt_sv;
+      rtscavt_sv -> dqdt_tmp;
+    }
+
+    dqdt_tmp -> scavt;
+  }
+}
+

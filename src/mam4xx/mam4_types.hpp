@@ -6,29 +6,65 @@
 #ifndef MAM4_TYPES_HPP
 #define MAM4_TYPES_HPP
 
-// This header defines common Haero aliases for use in MAM4.
+#include <mam4xx/aero_species.hpp>
+#include <mam4xx/atmosphere.hpp>
+#include <mam4xx/constants.hpp>
+#include <mam4xx/floating_point.hpp>
+#include <mam4xx/gas_species.hpp>
+#include <mam4xx/surface.hpp>
 
-#include <haero/aero_species.hpp>
-#include <haero/atmosphere.hpp>
-#include <haero/constants.hpp>
-#include <haero/floating_point.hpp>
-#include <haero/gas_species.hpp>
-#include <haero/surface.hpp>
+// Cuda "C++" can't handle lambdas consisting of private/protected methods
+// This seems awful, but other solutions seem to involve dancing carefully
+// around various areas in code, or sacrificing encapsulation in CPU builds.
+#ifdef __CUDACC__
+#define protected public
+#define private public
+#endif
 
 namespace mam4 {
 
-using DeviceType = haero::DeviceType;
-using HostType = haero::HostType;
-using Constants = haero::Constants;
-using Real = haero::Real;
-using ColumnView = haero::ColumnView;
-using ConstColumnView = haero::ConstColumnView;
-template <typename ST> using FloatingPoint = haero::FloatingPoint<ST>;
-using Atmosphere = haero::Atmosphere;
-using Surface = haero::Surface;
-using AeroSpecies = haero::AeroSpecies;
-using GasSpecies = haero::GasSpecies;
-using ThreadTeam = haero::ThreadTeam;
+/// MemorySpace refers to the memory space on the device.
+#ifdef KOKKOS_ENABLE_CUDA
+typedef Kokkos::CudaSpace MemorySpace;
+#else
+typedef Kokkos::HostSpace MemorySpace;
+#endif
+
+/// Device and host types
+using DeviceType = ekat::KokkosTypes<ekat::DefaultDevice>;
+using HostType = ekat::KokkosTypes<ekat::HostDevice>;
+
+/// Execution space (based on DeviceType)
+using ExecutionSpace = typename DeviceType::ExeSpace;
+
+/// Kokkos team policy used to perform parallel dispatches of aerosol processes
+/// over several columns.
+using ThreadTeamPolicy = typename DeviceType::TeamPolicy;
+
+/// Kokkos team type for the Kokkos::TeamThreadRange parallel dispatch policy.
+/// This type is often called a TeamMember in other Kokkos codes, but it's
+/// actually not a member of a team--it's a member of a league: in other words,
+/// a team!
+using ThreadTeam = typename DeviceType::MemberType;
+
+/// A TracersView іs a rank 3 Kokkos View with the following indices:
+/// 1. A tracer index identifying an advected quantity
+/// 2. A column index identifying a unique atmospheric column
+/// 3. A level index identifying a unique vertical level in the column
+using TracersView = typename DeviceType::view_3d<Real>;
+
+/// A DiagnosticsView іs a rank 3 Kokkos View with the following indices:
+/// 1. A diagnostic index identifying a diagnostic quantity
+/// 2. A column index identifying a unique atmospheric column
+/// 3. A level index identifying a unique vertical level in the column
+using DiagnosticsView = typename DeviceType::view_3d<Real>;
+
+/// A ColumnView is a rank-1 Kokkos View whose single index identifies a
+/// unique vertical level. ColumnViews are unmanaged, meaning that they don't
+/// own their storage.
+using ColumnView = ekat::Unmanaged<typename DeviceType::view_1d<Real>>;
+using ConstColumnView =
+    ekat::Unmanaged<typename DeviceType::view_1d<const Real>>;
 
 } // namespace mam4
 

@@ -1,7 +1,6 @@
 #ifndef MAM4XX_MO_CHM_DIAGS_HPP
 #define MAM4XX_MO_CHM_DIAGS_HPP
 
-#include <haero/math.hpp>
 #include <mam4xx/gas_chem.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
@@ -10,12 +9,11 @@ namespace mam4 {
 
 namespace mo_chm_diags {
 
-using Real = haero::Real;
 using View1D = DeviceType::view_1d<Real>;
 
 // FIXME: bad constants
 constexpr Real S_molwgt = 32.066;
-constexpr Real mwdry = haero::Constants::molec_weight_dry_air *
+constexpr Real mwdry = Constants::molec_weight_dry_air *
                        1e3; //     ! molecular weight dry air ~ kg/kmole;//!
                             //     molecular weight dry air
 // constants for converting O3 mixing ratio to DU
@@ -23,7 +21,7 @@ constexpr Real DUfac = 2.687e20; // 1 DU in molecules per m^2
 constexpr Real rearth = 6.37122e6;
 constexpr Real rgrav =
     1.0 / 9.80616; // reciprocal of acceleration of gravity ~ m/s^2
-constexpr Real avogadro = haero::Constants::avogadro;
+constexpr Real avogadro = Constants::avogadro;
 constexpr const int gas_pcnst = gas_chemistry::gas_pcnst;
 constexpr const int pcnst = 80; // FIXME, 80 is the only value I found for this
                                 // in the fortran, but using 41 in the test
@@ -62,7 +60,7 @@ void het_diags(
                         pdel(kk); // parallel_reduce in the future?
         }
 
-        wrk_wd(mm) *= rgrav * wght * haero::square(rearth);
+        wrk_wd(mm) *= rgrav * wght * square(rearth);
       });
 
   for (int mm = 0; mm < gas_pcnst; mm++) {
@@ -209,8 +207,7 @@ void chm_diags(
     mass_soa(kk) = 0;
   });
 
-  Kokkos::single(Kokkos::PerTeam(team),
-                 [=]() { area(0) *= haero::square(rearth); });
+  Kokkos::single(Kokkos::PerTeam(team), [=]() { area(0) *= square(rearth); });
 
   team.team_barrier();
 

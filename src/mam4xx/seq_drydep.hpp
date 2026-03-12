@@ -1,7 +1,6 @@
 #ifndef MAM4XX_SEQ_DRYDEP_HPP
 #define MAM4XX_SEQ_DRYDEP_HPP
 
-#include <haero/math.hpp>
 #include <mam4xx/mam4_types.hpp>
 
 namespace mam4::seq_drydep { // C++ version of E3SM's seq_drydep_mod.F90
@@ -101,13 +100,13 @@ void set_hcoeff_scalar(const Real sfc_temp, Real heff[]) {
     const int id = 6 * l;
     Real e298 = dheff[id];    // Adjusted for 0-based indexing
     Real dhr = dheff[id + 1]; // Adjusted for 0-based indexing
-    heff[m] = haero::exp(dhr * wrk) * e298;
+    heff[m] = exp(dhr * wrk) * e298;
 
     // Calculate coefficients based on the drydep tables
     if (dheff[id + 2] != 0.0 && dheff[id + 4] == 0.0) {
       e298 = dheff[id + 2];
       dhr = dheff[id + 3];
-      Real dk1 = haero::exp(dhr * wrk) * e298;
+      Real dk1 = exp(dhr * wrk) * e298;
       heff[m] =
           (heff[m] != 0.0) ? heff[m] * (1.0 + dk1 * ph_inv) : dk1 * ph_inv;
     }
@@ -120,10 +119,10 @@ void set_hcoeff_scalar(const Real sfc_temp, Real heff[]) {
           species == GasDrydepSpecies::SO2) {
         e298 = dheff[id + 2];
         dhr = dheff[id + 3];
-        Real dk1 = haero::exp(dhr * wrk) * e298;
+        Real dk1 = exp(dhr * wrk) * e298;
         e298 = dheff[id + 4];
         dhr = dheff[id + 5];
-        Real dk2 = haero::exp(dhr * wrk) * e298;
+        Real dk2 = exp(dhr * wrk) * e298;
         if (species == GasDrydepSpecies::CO2 ||
             species == GasDrydepSpecies::SO2) {
           heff[m] *= (1.0 + dk1 * ph_inv * (1.0 + dk2 * ph_inv));

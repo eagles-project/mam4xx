@@ -6,11 +6,9 @@
 #ifndef MAM4XX_CONVPROC_HPP
 #define MAM4XX_CONVPROC_HPP
 
-#include <haero/atmosphere.hpp>
-#include <haero/math.hpp>
-
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/aero_model.hpp>
+#include <mam4xx/atmosphere.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
@@ -95,7 +93,7 @@ void qsat(const Real t, const Real p, Real &es, Real &qs) {
   es = wv_sat_methods::wv_sat_svp_trans(t);
   qs = wv_sat_methods::wv_sat_svp_to_qsat(es, p);
   // Ensures returned es is consistent with limiters on qs.
-  es = haero::min(es, p);
+  es = min(es, p);
 } // qsat
 
 KOKKOS_INLINE_FUNCTION
@@ -109,8 +107,8 @@ void ndrop_int(Real exp45logsig[AeroConfig::num_modes()],
   const Real two = 2;
   const Real one_thousand = 1e3;
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
-    alogsig[imode] = haero::log(modes(imode).mean_std_dev);
-    exp45logsig[imode] = haero::exp(4.5 * alogsig[imode] * alogsig[imode]);
+    alogsig[imode] = log(modes(imode).mean_std_dev);
+    exp45logsig[imode] = exp(4.5 * alogsig[imode] * alogsig[imode]);
 
     // voltonumbhi_amode
     num2vol_ratio_min_nmodes[imode] =
@@ -124,10 +122,9 @@ void ndrop_int(Real exp45logsig[AeroConfig::num_modes()],
   } // imode
 
   // SHR_CONST_RHOFW   = 1.000e3_R8      ! density of fresh water     ~ kg/m^3
-  const Real rhoh2o = haero::Constants::density_h2o;
-  const Real r_universal = haero::Constants::r_gas * one_thousand; //[J/K/kmole]
-  const Real mwh2o =
-      haero::Constants::molec_weight_h2o * one_thousand; // [kg/kmol]
+  const Real rhoh2o = Constants::density_h2o;
+  const Real r_universal = Constants::r_gas * one_thousand; //[J/K/kmole]
+  const Real mwh2o = Constants::molec_weight_h2o * one_thousand; // [kg/kmol]
   // BAD CONSTANT
   aten = two * mwh2o * surften / (r_universal * t0 * rhoh2o);
 
@@ -144,7 +141,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
                     Real fm[AeroConfig::num_modes()],
                     Real fluxn[AeroConfig::num_modes()],
                     Real fluxm[AeroConfig::num_modes()], Real &flux_fullact,
-                    const Real smax_prescribed = haero::max()) {
+                    const Real smax_prescribed = max()) {
   // 	  !---------------------------------------------------------------------------------
   // !Calculates number, surface, and mass fraction of aerosols activated as CCN
   // !calculates flux of cloud droplets, surface area, and aerosol mass into
@@ -188,7 +185,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // !---------------------------------------------------------------------------------
   const Real zero = 0;
   const Real one = 1;
-  const Real sq2 = haero::sqrt(2.);
+  const Real sq2 = sqrt(2.);
   const Real two = 2;
   const Real three_fourths = 3. / 4.;
   const Real twothird = 2. / 3.;
@@ -219,18 +216,14 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   //  weight water vapor const Real  rair = SHR_CONST_RGAS/SHR_CONST_MWDAIR;//
   //  ! Dry air gas constant     ~ J/K/kg
 
-  const Real rair = haero::Constants::r_gas_dry_air;
-  const Real rh2o = haero::Constants::r_gas_h2o_vapor;
-  const Real latvap =
-      haero::Constants::latent_heat_evap; //      ! latent heat of evaporation ~
-                                          //      J/kg
-  const Real cpair =
-      haero::Constants::cp_dry_air; //    ! specific heat of dry air   ~ J/kg/K
-  const Real gravit =
-      haero::Constants::gravity; //      ! acceleration of gravity ~ m/s^2
+  const Real rair = Constants::r_gas_dry_air;
+  const Real rh2o = Constants::r_gas_h2o_vapor;
+  const Real latvap = Constants::latent_heat_evap; // latent heat of evaporation ~ J/kg
+  const Real cpair = Constants::cp_dry_air; // specific heat of dry air ~ J/kg/K
+  const Real gravit = Constants::gravity; // acceleration of gravity ~ m/s^2
   // SHR_CONST_RHOFW   = 1.000e3_R8      ! density of fresh water     ~ kg/m^3
-  const Real rhoh2o = haero::Constants::density_h2o;
-  const Real pi = haero::Constants::pi;
+  const Real rhoh2o = Constants::density_h2o;
+  const Real pi = Constants::pi;
   const Real p0 = 1013.25e2; //  ! reference pressure [Pa]
 
   const Real pres = rair * rhoair * tair; // pressure [Pa]
@@ -251,10 +244,10 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // [s^(3/2)]
   // BAD CONSTANT
   const Real etafactor2max =
-      1.e10 / haero::pow((alpha * wmaxf),
+      1.e10 / pow((alpha * wmaxf),
                          1.5); // !this should make eta big if na is very small.
   // vapor diffusivity [m2/s]
-  const Real diff0 = 0.211e-4 * (p0 / pres) * haero::pow(tair / t0, 1.94);
+  const Real diff0 = 0.211e-4 * (p0 / pres) * pow(tair / t0, 1.94);
   // ! thermal conductivity [J / (m-s-K)]
   const Real conduct0 =
       (5.69 + 0.017 * (tair - t0)) * 4.186e2 * 1.e-5; // !convert to J/m/s/deg
@@ -268,9 +261,9 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // nucleation w, but = w_in if wdiab == 0 [m/s]
   const Real wnuc = w_in;
   const Real alw = alpha * wnuc;                  // [/s]
-  const Real etafactor1 = alw * haero::sqrt(alw); // [/ s^(3/2)]
+  const Real etafactor1 = alw * sqrt(alw); // [/ s^(3/2)]
   // [unitless]
-  const Real zeta = twothird * haero::sqrt(alw) * aten / haero::sqrt(gthermfac);
+  const Real zeta = twothird * sqrt(alw) * aten / sqrt(gthermfac);
 
   Real amcube[nmode] = {}; // ! cube of dry mode radius [m3]
 
@@ -294,12 +287,12 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
       // !should depend on mean radius of mode to account for gas kinetic
       // effects !see Fountoukis and Nenes, JGR2005 and Meskhidze et al.,
       // JGR2006 !for approriate size to use for effective diffusivity.
-      etafactor2[imode] = one / (na[imode] * beta * haero::sqrt(gthermfac));
+      etafactor2[imode] = one / (na[imode] * beta * sqrt(gthermfac));
       // BAD CONSTANT
       if (hygro[imode] > 1.e-10) {
         smc[imode] =
             two * aten *
-            haero::sqrt(aten / (27. * hygro[imode] *
+            sqrt(aten / (27. * hygro[imode] *
                                 amcube[imode])); // ! only if variable size dist
       } else {
         // BAD CONSTANT
@@ -310,18 +303,18 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
       etafactor2[imode] =
           etafactor2max; // ! this should make eta big if na is very small.
     }                    // volumne
-    lnsm[imode] = haero::log(smc[imode]); // ! only if variable size dist
+    lnsm[imode] = log(smc[imode]); // ! only if variable size dist
     eta[imode] = etafactor1 * etafactor2[imode];
   } // end imode
 
   // Find maximum supersaturation
   // Use smax_prescribed if it is present; otherwise get smax from subr maxsat
   Real smax = smax_prescribed;
-  if (smax_prescribed == haero::max())
+  if (smax_prescribed == max())
     ndrop::maxsat(zeta, eta, nmode, smc, smax);
 
   // FIXME [unitless] ? lnsmax maybe has units of log(unit of smax ([fraction]))
-  const Real lnsmax = haero::log(smax);
+  const Real lnsmax = log(smax);
 
   // !Use maximum supersaturation to calculate aerosol activation output
   for (int imode = 0; imode < nmode; ++imode) {
@@ -329,10 +322,10 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
     const Real arg_erf_n =
         twothird * (lnsm[imode] - lnsmax) / (sq2 * alogsig[imode]);
 
-    fn[imode] = half * (one - haero::erf(arg_erf_n)); //! activated number
+    fn[imode] = half * (one - erf(arg_erf_n)); //! activated number
 
     const Real arg_erf_m = arg_erf_n - 1.5 * sq2 * alogsig[imode];
-    fm[imode] = half * (one - haero::erf(arg_erf_m)); // !activated mass
+    fm[imode] = half * (one - erf(arg_erf_m)); // !activated mass
     fluxn[imode] = fn[imode] * w_in; // !activated aerosol number flux
     fluxm[imode] = fm[imode] * w_in; // !activated aerosol mass flux
   }
@@ -465,8 +458,8 @@ public:
     // clang-format off
     const Real specdens_amode[maxd_aspectype] = {
       mam4::mam4_density_so4,
-      haero::max(),
-      haero::max(),
+      max(),
+      max(),
       mam4::mam4_density_pom,
       mam4::mam4_density_soa,
       mam4::mam4_density_bc ,
@@ -485,8 +478,8 @@ public:
     // clang-format off
     const Real spechygro[maxd_aspectype] = {
        mam4::mam4_hyg_so4,
-       haero::max(),
-       haero::max(),
+       max(),
+       max(),
        mam4::mam4_hyg_pom,
        // (BAD CONSTANT) mam4::mam4_hyg_soa = 0.1
        0.1400000000e+00,
@@ -761,7 +754,7 @@ void update_tendency_final(
       dqdt[icnst] += dqdt_i * xinv_ntsub;
       // update the q_i for the next interation of the jtsub loop
       if (jtsub < ntsub) {
-        q_i[icnst] = haero::max((q_i[icnst] + dqdt_i * dtsub), 0.0);
+        q_i[icnst] = max((q_i[icnst] + dqdt_i * dtsub), 0.0);
       }
     }
   }
@@ -933,7 +926,7 @@ void ma_precpevap(const Real dpdry, const Real evapc, const Real pr_flux,
   const Real small_value = 1.0e-30;
 
   // adjust pr_flux due to local evaporation
-  const Real ev_flux_local = haero::max(0.0, evapc * dpdry);
+  const Real ev_flux_local = max(0.0, evapc * dpdry);
   pr_flux_tmp =
       utils::min_max_bound(0.0, pr_flux_base, pr_flux - ev_flux_local);
 
@@ -955,12 +948,12 @@ void ma_precpevap(const Real dpdry, const Real evapc, const Real pr_flux,
 
   Real pr_ratio_tmp =
       utils::min_max_bound(0.0, 1.0, pr_flux_tmp / pr_flux_base);
-  pr_ratio_tmp = haero::min(pr_ratio_tmp, pr_ratio_old);
+  pr_ratio_tmp = min(pr_ratio_tmp, pr_ratio_old);
   // 2: log-normal distribution
   Real frac_aer_resusp_tmp =
       1.0 - WetDepTemp::faer_resusp_vs_fprec_evap_mpln(1.0 - pr_ratio_tmp, 2);
   frac_aer_resusp_tmp = utils::min_max_bound(0.0, 1.0, frac_aer_resusp_tmp);
-  frac_aer_resusp_tmp = haero::min(frac_aer_resusp_tmp, frac_aer_resusp_old);
+  frac_aer_resusp_tmp = min(frac_aer_resusp_tmp, frac_aer_resusp_old);
 
   // compute x_ratio
   if (frac_aer_resusp_tmp > small_value) {
@@ -1016,8 +1009,8 @@ ma_precpprod(const Real rprd, const Real dpdry,
   */
   // clang-format on
   // local precip flux [(kg/kg/s)*mb]
-  const Real pr_flux_local = haero::max(0.0, rprd * dpdry);
-  pr_flux_base = haero::max(0.0, pr_flux_base + pr_flux_local);
+  const Real pr_flux_local = max(0.0, rprd * dpdry);
+  pr_flux_base = max(0.0, pr_flux_base + pr_flux_local);
   pr_flux =
       utils::min_max_bound(0.0, pr_flux_base, pr_flux_tmp + pr_flux_local);
 
@@ -1029,18 +1022,18 @@ ma_precpprod(const Real rprd, const Real dpdry,
       // wd_flux_tmp (updated) =
       //            (wd_flux coming into the layer) - (resuspension ! decrement)
       // wd_flux_tmp - updated wet deposition flux [(kg/kg/s)*mb]
-      const Real wd_flux_tmp = haero::max(0.0, wd_flux[icnst] * x_ratio);
+      const Real wd_flux_tmp = max(0.0, wd_flux[icnst] * x_ratio);
 
       // change to wet deposition flux from evaporation [(kg/kg/s)*mb]
       const Real del_wd_flux_evap =
-          haero::max(0.0, wd_flux[icnst] - wd_flux_tmp);
+          max(0.0, wd_flux[icnst] - wd_flux_tmp);
       // wet deposition flux from the aerosol scavenging
       // wd_flux (updated) = (wd_flux after resuspension) - (scavenging !
       // increment)
 
       // local wet deposition flux [(kg/kg/s)*mb]
-      const Real wd_flux_local = haero::max(0.0, -dcondt_wetdep[icnst] * dpdry);
-      wd_flux[icnst] = haero::max(0.0, wd_flux_tmp + wd_flux_local);
+      const Real wd_flux_local = max(0.0, -dcondt_wetdep[icnst] * dpdry);
+      wd_flux[icnst] = max(0.0, wd_flux_tmp + wd_flux_local);
 
       // dcondt due to wet deposition flux change [kg/kg/s]
       const Real dcondt_wdflux = del_wd_flux_evap / dpdry;
@@ -1256,8 +1249,8 @@ void initialize_dcondt(const bool doconvproc_extd[ConvProc::pcnst_extd],
   // loop from ktop to kbot
   for (int kk = ktop; kk < kbot; ++kk) {
     const int kp1 = kk + 1;
-    const int kp1x = haero::min(kp1, nlev - 1);
-    const int km1x = haero::max(kk - 1, 0);
+    const int kp1x = min(kp1, nlev - 1);
+    const int km1x = max(kk - 1, 0);
     const Real fa_u_dp = fa_u[kk] * dpdry[kk];
     // The indexing started at 2 for Fortran, so 1 for C++
     for (int icnst = 1; icnst < ConvProc::pcnst_extd; ++icnst) {
@@ -1270,13 +1263,13 @@ void initialize_dcondt(const bool doconvproc_extd[ConvProc::pcnst_extd],
         Real fluxin = 0, fluxout = 0;
         if (iflux_method != 2) {
           fluxin = mu[kp1] * conu(kp1, icnst) +
-                   mu[kk] * haero::min(chat(kk, icnst), gath(km1x, icnst)) -
+                   mu[kk] * min(chat(kk, icnst), gath(km1x, icnst)) -
                    (md[kk] * cond(kk, icnst) +
-                    md[kp1] * haero::min(chat(kp1, icnst), gath(kp1x, icnst)));
+                    md[kp1] * min(chat(kp1, icnst), gath(kp1x, icnst)));
           fluxout = mu[kk] * conu(kk, icnst) +
-                    mu[kp1] * haero::min(chat(kp1, icnst), gath(kk, icnst)) -
+                    mu[kp1] * min(chat(kp1, icnst), gath(kk, icnst)) -
                     (md[kp1] * cond(kp1, icnst) +
-                     md[kk] * haero::min(chat(kk, icnst), gath(kk, icnst)));
+                     md[kk] * min(chat(kk, icnst), gath(kk, icnst)));
         } else {
           // new method -- simple upstream method for the env subsidence
           // tmpa = net env mass flux (positive up) at top of layer k
@@ -1423,7 +1416,7 @@ aer_vol_num_hygro(const SubView conu, const Real rhoair,
     for (int ispec = 0; ispec < nspec_amode; ++ispec) {
       // mass divided by density
       const Real tmp_vol_spec =
-          haero::max(conu[ConvProc::lmassptr_amode(ispec, imode)], 0.0) /
+          max(conu[ConvProc::lmassptr_amode(ispec, imode)], 0.0) /
           ConvProc::specdens_amode(ConvProc::lspectype_amode(ispec, imode));
       // total aerosol volume
       tmp_vol += tmp_vol_spec;
@@ -1440,7 +1433,7 @@ aer_vol_num_hygro(const SubView conu, const Real rhoair,
     }
 
     // computer a (or a+cw) number and bound it
-    const Real tmp_num = haero::max(conu[ConvProc::numptr_amode(imode)], 0.0);
+    const Real tmp_num = max(conu[ConvProc::numptr_amode(imode)], 0.0);
     const Real n_min = vaerosol[imode] * ConvProc::voltonumbhi_amode(imode);
     const Real n_max = vaerosol[imode] * ConvProc::voltonumblo_amode(imode);
     naerosol[imode] = utils::min_max_bound(n_min, n_max, tmp_num * rhoair);
@@ -1483,7 +1476,7 @@ Real compute_wup(const int iconvtype, const Real mu_i_kk, const Real mu_i_kp1,
     // shallow - wup = (mup in kg/m2/s) / [rhoair * (updraft area)]
     wup_kk =
         (mu_i_kp1 + mu_i_kk) * 0.5 * hund_ovr_g / (rhoair_i * 0.5 * cldfrac_i);
-    wup_kk = haero::max(w_min, wup_kk);
+    wup_kk = max(w_min, wup_kk);
   } else {
     // deep - the above method overestimates updraft area and underestimate wup
     // the following is based Lemone and Zipser (J Atmos Sci, 1980, p. 2455)
@@ -1493,9 +1486,9 @@ Real compute_wup(const int iconvtype, const Real mu_i_kk, const Real mu_i_kp1,
     // height above surface [km]
     const Real zkm = zmagl * 1.0e-3;
     if (1.0 <= zkm) {
-      wup_kk = w_peak * haero::pow((zkm / w_peak), 0.21);
+      wup_kk = w_peak * pow((zkm / w_peak), 0.21);
     } else {
-      wup_kk = 2.9897 * haero::sqrt(zkm);
+      wup_kk = 2.9897 * sqrt(zkm);
     }
     wup_kk = utils::min_max_bound(w_min, w_peak, wup_kk);
   }
@@ -1544,7 +1537,7 @@ void compute_massflux(const int nlev, const int ktop, const int kbot,
   // (eu-du) = d(mu)/dp -- integrate upwards, multiplying by dpdry
   for (int kk = nlev - 1; 0 <= kk; --kk) {
     mu[kk] = mu[kk + 1] + (eu[kk] - du[kk]) * dpdry[kk];
-    xx_mfup_max = haero::max(xx_mfup_max, mu[kk]);
+    xx_mfup_max = max(xx_mfup_max, mu[kk]);
   }
   // (ed) = d(md)/dp -- integrate downwards, multiplying by dpdry
   for (int kk = 1; kk < nlev; ++kk)
@@ -1615,7 +1608,7 @@ void compute_ent_det_dp(const int nlev, const int ktop, const int kbot,
       if (du[kk] <= 0.0) {
         eudp[kk] = mu[kk] - mu[kk + 1];
       } else {
-        eudp[kk] = haero::max(eu[kk] * dpdry[kk], 0.0);
+        eudp[kk] = max(eu[kk] * dpdry[kk], 0.0);
         dudp[kk] = (mu[kk + 1] + eudp[kk]) - mu[kk];
         if (dudp[kk] < 1.0e-12 * eudp[kk]) {
           eudp[kk] = mu[kk] - mu[kk + 1];
@@ -1624,7 +1617,7 @@ void compute_ent_det_dp(const int nlev, const int ktop, const int kbot,
       }
     }
     if ((md[kk] < 0) || (md[kk + 1] < 0)) {
-      eddp[kk] = haero::max(ed[kk] * dpdry[kk], 0.0);
+      eddp[kk] = max(ed[kk] * dpdry[kk], 0.0);
       dddp[kk] = (md[kk + 1] + eddp[kk]) - md[kk];
       if (dddp[kk] < 1.0e-12 * eddp[kk]) {
         eddp[kk] = md[kk] - md[kk + 1];
@@ -1633,7 +1626,7 @@ void compute_ent_det_dp(const int nlev, const int ktop, const int kbot,
     }
     // get courantmax to calculate ntsub
     courantmax =
-        haero::max(courantmax, (mu[kk + 1] + eudp[kk] - md[kk] + eddp[kk]) *
+        max(courantmax, (mu[kk + 1] + eudp[kk] - md[kk] + eddp[kk]) *
                                    dt / dpdry[kk]);
   }
   // number of time substeps needed to maintain "courant number" <= 1
@@ -1739,19 +1732,19 @@ void initialize_tmr_array(
     if (doconvproc_extd[icnst]) {
       // Interpolate environment tracer values to interfaces
       for (int kk = 0; kk < nlev; ++kk) {
-        const int km1 = haero::max(0, kk - 1);
+        const int km1 = max(0, kk - 1);
         // get relative difference between the two levels
 
         // min gath concentration at level kk and kk-1 [kg/kg]
-        const Real min_con = haero::min(gath(km1, icnst), gath(kk, icnst));
+        const Real min_con = min(gath(km1, icnst), gath(kk, icnst));
         // max gath concentration at level kk and kk-1 [kg/kg]
-        const Real max_con = haero::max(gath(km1, icnst), gath(kk, icnst));
+        const Real max_con = max(gath(km1, icnst), gath(kk, icnst));
 
         // relative difference between level kk and kk-1 [unitless]
         const Real c_dif_rel =
             min_con < 0 ? 0
-                        : haero::abs(gath(kk, icnst) - gath(km1, icnst)) /
-                              haero::max(max_con, small_con);
+                        : abs(gath(kk, icnst) - gath(km1, icnst)) /
+                              max(max_con, small_con);
 
         // If the two layers differ significantly use a geometric averaging
         // procedure But only do that for deep convection.  For shallow, use the
@@ -1763,11 +1756,11 @@ void initialize_tmr_array(
           // deep convection using geometric averaging
 
           // gath at the above (kk-1 level) [kg/kg]
-          const Real c_above = haero::max(gath(km1, icnst), max_con * 1.e-12);
+          const Real c_above = max(gath(km1, icnst), max_con * 1.e-12);
 
           // gath at the below (kk level) [kg/kg]
-          const Real c_below = haero::max(gath(kk, icnst), max_con * 1.e-12);
-          chat(kk, icnst) = haero::log(c_above / c_below) /
+          const Real c_below = max(gath(kk, icnst), max_con * 1.e-12);
+          chat(kk, icnst) = log(c_above / c_below) /
                             (c_above - c_below) * c_above * c_below;
         } else {
           // Small diff, so just arithmetic mean
@@ -1858,7 +1851,7 @@ update_qnew_ptend(const bool dotend[aero_model::pcnst],
   // clang-format on 
   for (int ll = 0; ll < aero_model::pcnst; ++ll) {
     // calc new q (after ma_convproc_sh_intr)
-    if (dotend[ll]) qnew[ll] = haero::max(0.0, qnew[ll] + dt*dqdt[ll]);
+    if (dotend[ll]) qnew[ll] = max(0.0, qnew[ll] + dt*dqdt[ll]);
   }
   for (int ll = 0; ll < aero_model::pcnst; ++ll) {
     if (dotend[ll] && is_update_ptend) {
@@ -1939,7 +1932,7 @@ void compute_wetdep_tend(
     cdt = (half_cld * dp / mu_p_eudp) * rprd / (half_cld * icwmr + dt * rprd);
   }
   if (cdt > 0.0) {
-    const Real expcdtm1 = haero::exp(-cdt) - 1;
+    const Real expcdtm1 = exp(-cdt) - 1;
     // The indexing started at 2 for Fortran, so 1 for C++
     for (int icnst = 1; icnst < ConvProc::pcnst_extd; ++icnst) {
       if (doconvproc_extd[icnst]) {
@@ -2082,7 +2075,7 @@ ma_activate_convproc(SubView conu, SubView dconudt, const Real f_ent,
 
   // mean updraft velocity [m/s]
   // force wbar >= 0.5 m/s for now
-  const Real wbar = haero::max(wup, 0.5);
+  const Real wbar = max(wup, 0.5);
   // limit for integration over updraft spectrum [m/s]
   Real wmaxf = wbar;
 
@@ -2287,7 +2280,7 @@ void compute_updraft_mixing_ratio(
     // area, and may not useful for aqueous chem and wet removal calculations
     // adjust to remove zero clouds
     //  cldfrac = cldfrac at current icol (with adjustments) [fraction]
-    const Real cldfrac_i = haero::max(cldfrac[kk], cldfrac_cut);
+    const Real cldfrac_i = max(cldfrac[kk], cldfrac_cut);
 
     const int kp1 = kk + 1;
 
@@ -2333,7 +2326,7 @@ void compute_updraft_mixing_ratio(
       // found by Shuaiqi Tang, 2022
       // -------------------------------------------------------------------
       //  lagrangian transport time in the updraft [s]
-      const Real dt_u = haero::min(dz / wup_kk, dt);
+      const Real dt_u = min(dz / wup_kk, dt);
 
       //  Now apply transformation and removal changes
 
@@ -2484,7 +2477,7 @@ ma_convproc_tend(const Kokkos::View<Real *>
   const int iflux_method = convtype == ConvProc::Deep ? 1 : 2;
 
   const Real hund_ovr_g = 100.0 / Constants::gravity;
-  const Real rair = haero::Constants::r_gas_dry_air;
+  const Real rair = Constants::r_gas_dry_air;
 
   //  md, mu, are all "dry" mass fluxes
   //  mu(1+nlev)    ! Updraft mass flux (positive) [mb/s]
@@ -3058,7 +3051,7 @@ void ma_convproc_intr(
       for (int i = 0; i < aero_model::pcnst; ++i)
         dqdt(j, i) = 0;
     for (int j = 0; j < nlev; ++j)
-      dlfdp[j] = haero::max((dlf[j] - dlfsh[j]), 0.0);
+      dlfdp[j] = max((dlf[j] - dlfsh[j]), 0.0);
     ma_convproc_dp_intr(scratch1Dviews, nlev, temperature, pmid, dpdry, dt,
                         dp_frac, icwmrdp, rprddp, evapcdp, du, eu, ed, dp, ktop,
                         kbot, qnew, species_class, mmtoo_prevap_resusp, dqdt,

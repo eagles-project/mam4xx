@@ -30,7 +30,7 @@ using View1D = DeviceType::view_1d<Real>;
 using ConstView1D = DeviceType::view_1d<const Real>;
 
 KOKKOS_INLINE_FUNCTION
-void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
+void mmr2vmr_col(const ThreadTeam &team, const Atmosphere &atm,
                  const mam4::Prognostics &progs,
                  const Real adv_mass_kg_per_moles[gas_pcnst],
                  const int offset_aerosol,
@@ -157,7 +157,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     const unsigned n_so4_monolayers_pcage, const Real sfc_temp,
     const Real pressure_sfc, const Real wind_speed, const Real rain,
     const Real solar_flux, const View1D cnst_offline_icol[num_tracer_cnst],
-    const Forcing *forcings_in, const haero::Atmosphere &atm,
+    const Forcing *forcings_in, const Atmosphere &atm,
     const PhotoTableData &photo_table,
     const mam4::mo_setsox::Config &config_setsox,
     const AmicPhysConfig &config_amicphys, const Real zenith_angle_icol,
@@ -375,7 +375,7 @@ void perform_atmospheric_chemistry_and_microphysics(
         vmr);
     // calculate tendency due to gas phase chemistry
     if (gas_phase_chemistry_dvmrdt.size()) {
-      const Real mbar = haero::Constants::molec_weight_dry_air;
+      const Real mbar = Constants::molec_weight_dry_air;
       const Real gravit = Constants::gravity;
       const Real x = 1.0 / mbar * pdel / gravit;
       for (int m = 0; m < gas_pcnst; ++m)
@@ -403,7 +403,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     for (int i = 0; i < gas_pcnst; ++i)
       vmr_bef_aq_chem[i] = vmr[i];
     // aqueous chemistry ...
-    const Real mbar = haero::Constants::molec_weight_dry_air;
+    const Real mbar = Constants::molec_weight_dry_air;
     constexpr int indexm = mam4::gas_chemistry::indexm;
     Real dqdt_aqso4_t[gas_pcnst] = {};
     Real dqdt_aqh2so4_t[gas_pcnst] = {};
@@ -420,7 +420,7 @@ void perform_atmospheric_chemistry_and_microphysics(
 
     // calculate tendency due to gas phase chemistry
     if (aqueous_chemistry_dvmrdt.size()) {
-      const Real mbar = haero::Constants::molec_weight_dry_air;
+      const Real mbar = Constants::molec_weight_dry_air;
       const Real gravit = Constants::gravity;
       const Real x = 1.0 / mbar * pdel / gravit;
       for (int m = 0; m < gas_pcnst; ++m)
