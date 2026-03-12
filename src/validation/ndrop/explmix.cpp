@@ -57,11 +57,12 @@ void explmix(Ensemble *ensemble) {
       if (is_unact) {
         qactold_km1 = qactold[km1];
         qactold_kp1 = qactold[kp1];
-        ndrop::explmix(qold_km1, qold_k, qold_kp1, q[k], src, ekkp, ekkm,
-                       overlapp, overlapm, dtmix, qactold_km1, qactold_kp1);
+        q[k] =
+            ndrop::explmix(qold_km1, qold_k, qold_kp1, src, ekkp, ekkm,
+                           overlapp, overlapm, dtmix, qactold_km1, qactold_kp1);
       } else {
-        ndrop::explmix(qold_km1, qold_k, qold_kp1, q[k], src, ekkp, ekkm,
-                       overlapp, overlapm, dtmix);
+        q[k] = ndrop::explmix(qold_km1, qold_k, qold_kp1, src, ekkp, ekkm,
+                              overlapp, overlapm, dtmix);
       }
     }
 
