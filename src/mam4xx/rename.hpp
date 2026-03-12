@@ -6,8 +6,7 @@
 #ifndef MAM4XX_RENAME_HPP
 #define MAM4XX_RENAME_HPP
 
-#include <haero/atmosphere.hpp>
-#include <haero/math.hpp>
+#include <mam4xx/atmosphere.hpp>
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
@@ -17,15 +16,6 @@
 #include <ekat_math_utils.hpp>
 
 namespace mam4 {
-
-using haero::cube;
-using haero::erfc;
-using haero::log;
-using haero::max;
-using haero::min;
-using haero::sqrt;
-using Constants = haero::Constants;
-using haero::square;
 
 namespace rename {
 
@@ -127,8 +117,7 @@ void compute_before_growth_dryvol_and_num(
 
   // FIXME: is it feasible that pregrowth_dryvol would be smaller than 1e-25?
   // NOTE: we get rid of this and use safe_divide() in do_inter_mode_transfer()
-  b4_growth_dryvol_bounded =
-      haero::max(b4_growth_dryvol, smallest_dryvol_value);
+  b4_growth_dryvol_bounded = max(b4_growth_dryvol, smallest_dryvol_value);
 
   // Compute total before growth number [units: #/kmol-air]
   Real b4_growth_qnum = total_interstitial_and_cloudborne(
@@ -185,7 +174,7 @@ void compute_xfer_fractions(const Real b4_growth_dryvol,
   // BAD CONSTANT
   // 1-eps (this number is little less than 1, e.g. 0.99) // FIXME: this comment
   // is nonsense
-  constexpr Real xferfrac_max = Real(1.0) - 10.0 * haero::epsilon();
+  constexpr Real xferfrac_max = Real(1.0) - 10.0 * epsilon();
   // assume we have fractions to transfer, so we will not skip the rest of the
   // calculations
   is_xfer_frac_zero = false;
@@ -411,7 +400,7 @@ void find_renaming_pairs(
     Real diameter_cutoff[AeroConfig::num_modes()],      // out
     Real ln_dia_cutoff[AeroConfig::num_modes()],
     Real diameter_threshold[AeroConfig::num_modes()]) {
-  const Real sqrt_half = haero::sqrt(0.5);
+  const Real sqrt_half = sqrt(0.5);
   // (3^3): relaxing 3 * diameter, which makes it 3^3 for volume
   const Real frelax = 27.0;
   const Real zero = 0;

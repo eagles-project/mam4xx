@@ -7,8 +7,8 @@
 #define MAM4XX_WATER_UPTAKE_HPP
 
 #include <Kokkos_Complex.hpp>
-#include <haero/atmosphere.hpp>
-#include <haero/surface.hpp>
+#include <mam4xx/atmosphere.hpp>
+#include <mam4xx/surface.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/convproc.hpp>
 #include <mam4xx/utils.hpp>
@@ -101,7 +101,7 @@ void find_real_solution(const Real rdry, const Kokkos::complex<Real> cx[4],
   for (int nn = 0; nn < 4; ++nn) {
     Real xr = cx[nn].real();
     Real xi = cx[nn].imag();
-    if (haero::abs(xi) > haero::abs(xr) * Water_Uptake::eps) {
+    if (abs(xi) > abs(xr) * Water_Uptake::eps) {
       continue;
     }
     if (xr > rwet) {
@@ -110,7 +110,7 @@ void find_real_solution(const Real rdry, const Kokkos::complex<Real> cx[4],
     if (xr < rdry * (1.0 - Water_Uptake::eps)) {
       continue;
     }
-    if (haero::isnan(xr)) {
+    if (isnan(xr)) {
       continue;
     }
 
@@ -131,7 +131,7 @@ void makoh_quartic(Kokkos::complex<Real> cx[4], const Real p3, const Real p2,
   Kokkos::complex<Real> czero = {};
 
   Real qq = -p2 * p2 / 36.0 + (p3 * p1 - 4.0 * p0) / 12.0;
-  Real rr = -haero::cube(p2 / 6.0) + p2 * (p3 * p1 - 4.0 * p0) / 48.0 +
+  Real rr = -cube(p2 / 6.0) + p2 * (p3 * p1 - 4.0 * p0) / 48.0 +
             (4.0 * p0 * p2 - p0 * p3 * p3 - p1 * p1) / 16.0;
 
   // Note: Kokkos::sqrt<Real value> will return a Real and if input value is
@@ -144,7 +144,7 @@ void makoh_quartic(Kokkos::complex<Real> cx[4], const Real p3, const Real p2,
 
   if (cb == czero) {
     // insoluble particle
-    cx[0] = haero::cbrt(-p1);
+    cx[0] = cbrt(-p1);
     cx[1] = cx[0];
     cx[2] = cx[0];
     cx[3] = cx[0];
@@ -193,20 +193,20 @@ void modal_aero_kohler(const Real rdry_in, const Real hygro, const Real rh,
       2.0e4 * mw * surften / (ugascon * tair * rhow); // (BAD CONSTANT)
 
   const Real rdry = rdry_in * factor_m2um; // convert (m) to (microns)
-  const Real vol = haero::cube(rdry);      // vol is r**3, not volume
+  const Real vol = cube(rdry);      // vol is r**3, not volume
   const Real bb = vol * hygro;
 
   // quartic
   const Real ss =
       utils::min_max_bound(small_value_10, 1.0 - Water_Uptake::eps, rh);
 
-  const Real slog = haero::log(ss);
+  const Real slog = log(ss);
   const Real p43 = -aa / slog;
   const Real p42 = 0.0;
   const Real p41 = bb / slog - vol;
   const Real p40 = aa * vol / slog;
 
-  const Real pp = haero::abs(-bb / aa) / (rdry * rdry);
+  const Real pp = abs(-bb / aa) / (rdry * rdry);
   Real rwet = 0.0;
   int nsol = 0;
   Kokkos::complex<Real> cx4[4] = {};
@@ -219,7 +219,7 @@ void modal_aero_kohler(const Real rdry_in, const Real hygro, const Real rh,
   }
 
   // bound and convert from microns to m
-  rwet = haero::min(rwet, rmax); // upper bound based on 1 day lifetime
+  rwet = min(rwet, rmax); // upper bound based on 1 day lifetime
   rwet_out = rwet * factor_um2m;
 }
 
@@ -249,17 +249,17 @@ void modal_aero_water_uptake_wetaer(
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
 
     const Real hystfac =
-        1.0 / haero::max(1.0e-5, (rhdeliques[imode] -
+        1.0 / max(1.0e-5, (rhdeliques[imode] -
                                   rhcrystal[imode])); // (BAD CONSTANT)
 
     water_uptake::modal_aero_kohler(dryrad[imode], hygro[imode], rh,
                                     wetrad[imode]);
 
-    wetrad[imode] = haero::max(wetrad[imode], dryrad[imode]);
-    wetvol[imode] = (Constants::pi * 4.0 / 3.0) * haero::cube(wetrad[imode]);
-    wetvol[imode] = haero::max(wetvol[imode], dryvol[imode]);
+    wetrad[imode] = max(wetrad[imode], dryrad[imode]);
+    wetvol[imode] = (Constants::pi * 4.0 / 3.0) * cube(wetrad[imode]);
+    wetvol[imode] = max(wetvol[imode], dryvol[imode]);
     wtrvol[imode] = wetvol[imode] - dryvol[imode];
-    wtrvol[imode] = haero::max(wtrvol[imode], 0.0);
+    wtrvol[imode] = max(wtrvol[imode], 0.0);
 
     // apply simple treatment of deliquesence/crystallization hysteresis
     // for rhcrystal < rh < rhdeliques, aerosol water is a fraction of
@@ -270,9 +270,9 @@ void modal_aero_water_uptake_wetaer(
       wtrvol[imode] = 0.0;
     } else if (rh < rhdeliques[imode]) {
       wtrvol[imode] = wtrvol[imode] * hystfac * (rh - rhcrystal[imode]);
-      wtrvol[imode] = haero::max(wtrvol[imode], 0.0);
+      wtrvol[imode] = max(wtrvol[imode], 0.0);
       wetvol[imode] = dryvol[imode] + wtrvol[imode];
-      wetrad[imode] = haero::cbrt(wetvol[imode] / (4.0 / 3.0 * Constants::pi));
+      wetrad[imode] = cbrt(wetvol[imode] / (4.0 / 3.0 * Constants::pi));
     }
 
     // calculate wet aerosol diameter and aerosol water
@@ -306,7 +306,7 @@ void modal_aero_water_uptake_rh_clearair(const Real temperature,
   if (cldn < cldn_thresh) {
     rh = (rh - cldn) / (1.0 - cldn); // RH of clear portion
   }
-  rh = haero::max(rh, 0.0);
+  rh = max(rh, 0.0);
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -382,7 +382,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_water_uptake_dryaer(
     specdens_1[imode] = specdens_amode[type_idx];
     const Real spechygro_1 = spechygro[type_idx];
 
-    const Real alnsg = haero::log(sigmag);
+    const Real alnsg = log(sigmag);
 
     for (int ispec = 0; ispec < nspec; ++ispec) {
       type_idx = lspectype_amode[ispec][imode] - 1;
@@ -408,8 +408,8 @@ KOKKOS_INLINE_FUNCTION void modal_aero_water_uptake_dryaer(
     }
 
     const Real v2ncur_a =
-        1.0 / ((Constants::pi / 6.0) * haero::cube(dgncur_a[imode]) *
-               haero::exp(4.5 * haero::square(alnsg)));
+        1.0 / ((Constants::pi / 6.0) * cube(dgncur_a[imode]) *
+               exp(4.5 * square(alnsg)));
     // naer = aerosol number (#/kg)
     naer[imode] = dryvolmr * v2ncur_a;
 
@@ -429,7 +429,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_water_uptake_dryaer(
     // thus not in the subroutine output
     dryvol[imode] = 1.0 / v2ncur_a;
     drymass[imode] = drydens * dryvol[imode];
-    dryrad[imode] = haero::cbrt(dryvol[imode] / (Constants::pi * 4.0 / 3.0));
+    dryrad[imode] = cbrt(dryvol[imode] / (Constants::pi * 4.0 / 3.0));
   }
 }
 template <typename VectorType>

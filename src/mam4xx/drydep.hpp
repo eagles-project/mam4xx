@@ -6,8 +6,8 @@
 #ifndef MAM4XX_DRYDEP_HPP
 #define MAM4XX_DRYDEP_HPP
 
-#include <haero/atmosphere.hpp>
 #include <mam4xx/aero_config.hpp>
+#include <mam4xx/atmosphere.hpp>
 #include <mam4xx/spitfire_transport.hpp>
 
 #include <mam4xx/convproc.hpp>
@@ -116,7 +116,7 @@ namespace drydep {
 //  fdot, calculate the value of the polynomial (psistar) at xin.
 // ##############################################################################
 KOKKOS_INLINE_FUNCTION
-Real cfint2(const haero::ConstColumnView xw /*nlev+1*/,
+Real cfint2(const ConstColumnView xw /*nlev+1*/,
             const Real ff[mam4::nlev + 1], const Real fdot[mam4::nlev + 1],
             const Real xin) {
   const int nlev = mam4::nlev;
@@ -167,7 +167,7 @@ Real cfint2(const haero::ConstColumnView xw /*nlev+1*/,
 //  Multi column version.
 // ##############################################################################
 KOKKOS_INLINE_FUNCTION
-void cfdotmc_pro(const haero::ConstColumnView xw /*nlev+1*/,
+void cfdotmc_pro(const ConstColumnView xw /*nlev+1*/,
                  const Real ff[mam4::nlev + 1], Real fdot[mam4::nlev + 1]) {
   // clang-format off
   /*   
@@ -279,10 +279,8 @@ void cfdotmc_pro(const haero::ConstColumnView xw /*nlev+1*/,
     fdot[kk] = spitfire::median(fdot[kk], qpl, qpr);
 
     const Real ttlmt = spitfire::minmod(qpl, qpr);
-    const Real tmin =
-        haero::min(haero::min(0.0, 3 * ss[kk]), haero::min(1.5 * tt, ttlmt));
-    const Real tmax =
-        haero::max(haero::max(0.0, 3 * ss[kk]), haero::max(1.5 * tt, ttlmt));
+    const Real tmin = min(min(0.0, 3 * ss[kk]), min(1.5 * tt, ttlmt));
+    const Real tmax = max(max(0.0, 3 * ss[kk]), max(1.5 * tt, ttlmt));
 
     fdot[kk] = fdot[kk] + spitfire::minmod(tmin - fdot[kk], tmax - fdot[kk]);
   }
@@ -298,7 +296,7 @@ void cfdotmc_pro(const haero::ConstColumnView xw /*nlev+1*/,
 //===============================================================================
 template <typename VIEWTYPE>
 KOKKOS_INLINE_FUNCTION void
-getflx(const haero::ConstColumnView xw /*nlev+1*/, const VIEWTYPE phi /*nlev*/,
+getflx(const ConstColumnView xw /*nlev+1*/, const VIEWTYPE phi /*nlev*/,
        const Real vel[mam4::nlev + 1], const Real deltat,
        Real flux[mam4::nlev + 1]) {
   // clang-format off
@@ -368,10 +366,10 @@ template <typename VIEWTYPE>
 KOKKOS_INLINE_FUNCTION Real sedimentation_solver_for_1_tracer(
     const Real dt, const Kokkos::View<Real *> sed_vel /*nlev*/,
     const VIEWTYPE qq_in /*nlev*/, const ColumnView rho /*nlev*/,
-    const haero::ConstColumnView tair /*nlev*/,
-    const haero::ConstColumnView pint /*nlev+1*/,
-    const haero::ConstColumnView pmid /*nlev*/,
-    const haero::ConstColumnView pdel /*nlev*/, ColumnView dqdt_sed /*nlev*/) {
+    const ConstColumnView tair /*nlev*/,
+    const ConstColumnView pint /*nlev+1*/,
+    const ConstColumnView pmid /*nlev*/,
+    const ConstColumnView pdel /*nlev*/, ColumnView dqdt_sed /*nlev*/) {
   // clang-format off
   /*
   in :: dt
@@ -417,7 +415,7 @@ KOKKOS_INLINE_FUNCTION Real sedimentation_solver_for_1_tracer(
   // Filter out any negative fluxes from the getflx routine
 
   for (int kk = 1; kk < nlev; ++kk)
-    dtmassflux[kk] = haero::max(0.0, dtmassflux[kk]);
+    dtmassflux[kk] = max(0.0, dtmassflux[kk]);
 
   //  Set values for the upper and lower boundaries
   // no flux at model top
@@ -431,7 +429,7 @@ KOKKOS_INLINE_FUNCTION Real sedimentation_solver_for_1_tracer(
   //  thin surface layers?
   for (int kk = 0; kk < nlev; ++kk)
     dtmassflux[kk + 1] =
-        haero::min(dtmassflux[kk + 1], mxsedfac * qq_in[kk] * pdel[kk]);
+        min(dtmassflux[kk + 1], mxsedfac * qq_in[kk] * pdel[kk]);
 
   // -----------------------------------------------------------------------
   //  Calculate the mixing ratio tendencies resulting from flux divergence
@@ -451,9 +449,8 @@ KOKKOS_INLINE_FUNCTION Real sedimentation_solver_for_1_tracer(
 KOKKOS_INLINE_FUNCTION
 Real radius_for_moment(const int moment, const Real sig_part,
                        const Real radius_part, const Real radius_max) {
-  const Real lnsig = haero::log(sig_part);
-  return haero::min(radius_max, radius_part) *
-         haero::exp((moment - 1.5) * lnsig * lnsig);
+  const Real lnsig = log(sig_part);
+  return min(radius_max, radius_part) * exp((moment - 1.5) * lnsig * lnsig);
 }
 
 //==========================================================================
@@ -462,7 +459,7 @@ Real radius_for_moment(const int moment, const Real sig_part,
 KOKKOS_INLINE_FUNCTION
 Real air_dynamic_viscosity(const Real temp) {
   // (BAD CONSTANTS)
-  return 1.72e-5 * (haero::pow(temp / 273.0, 1.5)) * 393.0 / (temp + 120.0);
+  return 1.72e-5 * (pow(temp / 273.0, 1.5)) * 393.0 / (temp + 120.0);
 }
 
 //==========================================================================
@@ -487,13 +484,13 @@ Real slip_correction_factor(const Real dyn_visc, const Real pres,
   // [m]
   const Real mean_free_path =
       2.0 * dyn_visc /
-      (pres * haero::sqrt(8.0 / (Constants::pi * Constants::r_gas_dry_air *
+      (pres * sqrt(8.0 / (Constants::pi * Constants::r_gas_dry_air *
                                  temp))); // (BAD CONSTANTS)
 
   const Real slip_correction_factor =
       1.0 +
       mean_free_path *
-          (1.257 + 0.4 * haero::exp(-1.1 * particle_radius / mean_free_path)) /
+          (1.257 + 0.4 * exp(-1.1 * particle_radius / mean_free_path)) /
           particle_radius; // (BAD CONSTANTS)
 
   return slip_correction_factor;
@@ -540,8 +537,8 @@ Real gravit_settling_velocity(const Real particle_radius,
   // Account for size distribution (i.e., we are calculating the bulk velocity
   // for a particle population instead of a single particle).
 
-  const Real lnsig = haero::log(particle_sig);
-  const Real dispersion = haero::exp(2.0 * lnsig * lnsig);
+  const Real lnsig = log(particle_sig);
+  const Real dispersion = exp(2.0 * lnsig * lnsig);
 
   return gravit_settling_velocity * dispersion;
 }
@@ -613,7 +610,7 @@ void modal_aero_turb_drydep_velocity(
       //----------------------------------------------------------------------
       // Collection efficiency of deposition mechanism 1 - Brownian diffusion
       //----------------------------------------------------------------------
-      const Real brownian = haero::pow(shm_nbr, (-gamma(lt)));
+      const Real brownian = pow(shm_nbr, (-gamma(lt)));
 
       //----------------------------------------------------------------------
       // Collection efficiency of deposition mechanism 2 - interception
@@ -622,7 +619,7 @@ void modal_aero_turb_drydep_velocity(
       const Real rc = radius_collector(lt);
       if (rc > 0.0) {
         // vegetated surface
-        interception = 2.0 * haero::square(radius_moment / rc);
+        interception = 2.0 * square(radius_moment / rc);
       }
 
       //----------------------------------------------------------------------
@@ -642,7 +639,7 @@ void modal_aero_turb_drydep_velocity(
           2.0; // (BAD CONSTANT) empirical parameter $\beta$ in Eq. (7c) of
                // Zhang L. et al. (2001)
       const Real impaction =
-          haero::pow(stk_nbr / (alpha(lt) + stk_nbr),
+          pow(stk_nbr / (alpha(lt) + stk_nbr),
                      beta); // Eq. (7c) of Zhang L. et al.  (2001)
 
       //-----------------------------------------------------
@@ -653,7 +650,7 @@ void modal_aero_turb_drydep_velocity(
           1.0e-10; // (BAD CONSTANT) lower bound of stick fraction
       if (iwet(lt) < 0) {
         stickfrac =
-            haero::max(stickfrac_lowerbnd, haero::exp(-haero::sqrt(stk_nbr)));
+            max(stickfrac_lowerbnd, exp(-sqrt(stk_nbr)));
       }
 
       //----------------------------------------------------------------------------------
@@ -786,19 +783,19 @@ void calcram(const Real landfrac, const Real icefrac, const Real ocnfrac,
 
     // calculate aerodynamic resistence
     if (psi > 0.0) {
-      ram1_out = 1.0 / xkar / ustar * (haero::log(temp) + 4.7 * (psi - psi0));
+      ram1_out = 1.0 / xkar / ustar * (log(temp) + 4.7 * (psi - psi0));
     } else {
-      const Real nu = haero::pow(1.00 - 15.000 * psi, 0.25);
-      const Real nu0 = haero::pow(1.00 - 15.000 * psi0, 0.25);
+      const Real nu = pow(1.00 - 15.000 * psi, 0.25);
+      const Real nu0 = pow(1.00 - 15.000 * psi0, 0.25);
 
       if (ustar != 0.0) {
         ram1_out =
             1.0 / xkar / ustar *
-            (haero::log(temp) +
-             haero::log(
-                 ((haero::square(nu0) + 1.0) * haero::square(nu0 + 1.0)) /
-                 ((haero::square(nu) + 1.0) * haero::square(nu + 1.0))) +
-             2.0 * (haero::atan(nu) - haero::atan(nu0)));
+            (log(temp) +
+             log(
+                 ((square(nu0) + 1.0) * square(nu0 + 1.0)) /
+                 ((square(nu) + 1.0) * square(nu + 1.0))) +
+             2.0 * (atan(nu) - atan(nu0)));
       } else {
         ram1_out = 0.0;
       }
@@ -971,7 +968,7 @@ void aero_model_drydep(
         // rad_drop : cloud droplet radius [m]
         // BAD CONSTANT
         const Real rad_drop = 5.0e-6;
-        const Real rhoh2o = haero::Constants::density_h2o;
+        const Real rhoh2o = Constants::density_h2o;
         // dens_drop  : cloud droplet density [kg/m3]
         const Real dens_drop = rhoh2o;
         // sg_drop  : assumed geometric standard deviation of droplet size distribution
@@ -1064,10 +1061,10 @@ void aero_model_drydep(
           // sigmag_amode : assumed geometric standard deviation of particle size distribution
           const Real sigmag_amode = modes(imode).mean_std_dev;
 
-          const Real alnsg_amode = haero::log(sigmag_amode);
+          const Real alnsg_amode = log(sigmag_amode);
           // rad_aer  // volume mean wet radius of interstitial aerosols [m]
           const Real rad_aer = 0.5 * dgncur_awet[imode][kk] *
-                               haero::exp(1.5 * haero::square(alnsg_amode));
+                               exp(1.5 * square(alnsg_amode));
           // dens_aer : wet density of interstitial aerosols [kg/m3]
           const Real dens_aer = wetdens[imode][kk];
 

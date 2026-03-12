@@ -6,7 +6,6 @@
 #ifndef MAM4XX_UTILS_HPP
 #define MAM4XX_UTILS_HPP
 
-#include <haero/math.hpp>
 #include <mam4xx/gas_chem_mechanism.hpp>
 
 #include <ekat_math_utils.hpp>
@@ -14,10 +13,6 @@
 // various processes, tests, etc.
 
 namespace mam4::utils {
-
-using Real = haero::Real;
-using haero::max;
-using haero::min;
 
 // this function considers 'num' and returns either 'num' (already in bounds) or
 // 'high'/'low' if num is outside the bounds
@@ -223,7 +218,7 @@ void get_num_idx_in_state_q(int idxs[AeroConfig::num_modes()]) {
 template <typename VectorType>
 KOKKOS_INLINE_FUNCTION void
 extract_stateq_from_prognostics(const mam4::Prognostics &progs,
-                                const haero::Atmosphere &atm, VectorType &q,
+                                const Atmosphere &atm, VectorType &q,
                                 const int klev) {
 
   int s_idx = ekat::invalid<int>();

@@ -46,9 +46,9 @@ const Real *get_adv_mass() {
 
 KOKKOS_INLINE_FUNCTION
 void setrxt(Real rates[rxntot], const Real temp) {
-  rates[2] = 2.9000000000e-12 * haero::exp(-160.000000 / temp);
-  rates[4] = 9.6000000000e-12 * haero::exp(-234.000000 / temp);
-  rates[6] = 1.9000000000e-13 * haero::exp(520.000000 / temp);
+  rates[2] = 2.9000000000e-12 * exp(-160.000000 / temp);
+  rates[4] = 9.6000000000e-12 * exp(-234.000000 / temp);
+  rates[6] = 1.9000000000e-13 * exp(520.000000 / temp);
 } // setrxt
 
 KOKKOS_INLINE_FUNCTION

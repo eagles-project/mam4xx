@@ -6,9 +6,8 @@
 #ifndef MAM4XX_CALCSIZE_HPP
 #define MAM4XX_CALCSIZE_HPP
 
-#include <haero/atmosphere.hpp>
-#include <haero/math.hpp>
-#include <haero/surface.hpp>
+#include <mam4xx/atmosphere.hpp>
+#include <mam4xx/surface.hpp>
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/conversions.hpp>
@@ -16,10 +15,6 @@
 #include <mam4xx/utils.hpp>
 
 namespace mam4 {
-
-using haero::max;
-using haero::min;
-using haero::sqrt;
 
 namespace calcsize {
 
@@ -660,13 +655,11 @@ void aitken_accum_exchange(
 
   // num2vol_ratio_geomean is the geometric mean num2vol_ratio values
   // between the aitken and accum modes
-  // const auto num2vol_ratio_geomean =
-  // haero::sqrt(voltonum_ait*voltonum_acc);
+  // const auto num2vol_ratio_geomean = sqrt(voltonum_ait*voltonum_acc);
   // voltonum_ait and voltonum_acc are O(10^22) and O(10^20), respectively,
   // and their multiplication overflows single precision, and
   // the square root ends up NaN. Thus,we compute sqrt individually
-  const auto num2vol_ratio_geomean =
-      haero::sqrt(voltonum_ait) * haero::sqrt(voltonum_acc);
+  const auto num2vol_ratio_geomean = sqrt(voltonum_ait) * sqrt(voltonum_acc);
 
   compute_coef_ait_acc_transfer(
       accum_idx, num2vol_ratio_geomean, adj_tscale_inv, drv_i_aitsv,

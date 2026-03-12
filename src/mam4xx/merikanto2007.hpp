@@ -6,15 +6,7 @@
 #ifndef MAM4XX_MERIKANTO2007_HPP
 #define MAM4XX_MERIKANTO2007_HPP
 
-#include <haero/haero.hpp>
-#include <haero/math.hpp>
-
 namespace mam4::merikanto2007 {
-
-using Real = haero::Real;
-using haero::cube;
-using haero::log;
-using haero::square;
 
 /// The functions in this file implement parameterizations described in
 /// Merikanto et al, New parameterization of sulfuric acid-ammonia-water ternary

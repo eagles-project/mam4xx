@@ -8,7 +8,7 @@
 
 // This header makes all MAM4 processes available.
 
-#include <haero/aero_process.hpp>
+#include <mam4xx/aero_process.hpp>
 #include <mam4xx/aer_rad_props.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/aero_model.hpp>
@@ -47,19 +47,29 @@
 #include <mam4xx/vertical_interpolation.hpp>
 #include <mam4xx/water_uptake.hpp>
 #include <mam4xx/wet_dep.hpp>
+
 namespace mam4 {
 
-using NucleationProcess = haero::AeroProcess<AeroConfig, Nucleation>;
-using GasAerExchProcess = haero::AeroProcess<AeroConfig, GasAerExch>;
-using CoagulationProcess = haero::AeroProcess<AeroConfig, Coagulation>;
-using CalcSizeProcess = haero::AeroProcess<AeroConfig, CalcSize>;
-using ConvProcProcess = haero::AeroProcess<AeroConfig, ConvProc>;
-using AgingProcess = haero::AeroProcess<AeroConfig, Aging>;
-using RenameProcess = haero::AeroProcess<AeroConfig, Rename>;
-using HetfrzProcess = haero::AeroProcess<AeroConfig, Hetfrz>;
-using NucleateIceProcess = haero::AeroProcess<AeroConfig, NucleateIce>;
-using DryDepositionProcess = haero::AeroProcess<AeroConfig, DryDeposition>;
-using WaterUptakeProcess = haero::AeroProcess<AeroConfig, Water_Uptake>;
+// Returns mam4xx's version string.
+const char *version();
+
+// Returns mam4xx's git revision hash, or "unknown" if not found.
+const char *revision();
+
+// Returns true iff this build has changes that weren't committed to the git repo.
+bool has_uncommitted_changes();
+
+using NucleationProcess = AeroProcess<AeroConfig, Nucleation>;
+using GasAerExchProcess = AeroProcess<AeroConfig, GasAerExch>;
+using CoagulationProcess = AeroProcess<AeroConfig, Coagulation>;
+using CalcSizeProcess = AeroProcess<AeroConfig, CalcSize>;
+using ConvProcProcess = AeroProcess<AeroConfig, ConvProc>;
+using AgingProcess = AeroProcess<AeroConfig, Aging>;
+using RenameProcess = AeroProcess<AeroConfig, Rename>;
+using HetfrzProcess = AeroProcess<AeroConfig, Hetfrz>;
+using NucleateIceProcess = AeroProcess<AeroConfig, NucleateIce>;
+using DryDepositionProcess = AeroProcess<AeroConfig, DryDeposition>;
+using WaterUptakeProcess = AeroProcess<AeroConfig, Water_Uptake>;
 
 } // namespace mam4
 

@@ -6,11 +6,7 @@
 #ifndef MAM4XX_WANG2008_HPP
 #define MAM4XX_WANG2008_HPP
 
-#include <haero/haero.hpp>
-
 namespace mam4::wang2008 {
-
-using Real = haero::Real;
 
 /// The functions in this file implement parameterizations described in
 /// Wang and Penner, Aerosol indirect forcing in a global model with particle

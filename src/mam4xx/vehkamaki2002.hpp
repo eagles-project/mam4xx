@@ -6,16 +6,7 @@
 #ifndef MAM4XX_VEHKAMAKI2002_HPP
 #define MAM4XX_VEHKAMAKI2002_HPP
 
-#include <haero/haero.hpp>
-#include <haero/math.hpp>
-
 namespace mam4::vehkamaki2002 {
-
-using Real = haero::Real;
-using haero::cube;
-using haero::exp;
-using haero::log;
-using haero::square;
 
 /// The functions in this file implement parameterizations described in
 /// Vehkamaki et al, An improved parameterization for sulfuric acid-water /

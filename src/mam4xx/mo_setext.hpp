@@ -1,7 +1,6 @@
 #ifndef MAM4XX_MO_SETEXT_HPP
 #define MAM4XX_MO_SETEXT_HPP
 
-#include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>

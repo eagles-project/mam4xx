@@ -6,9 +6,8 @@
 #ifndef MAM4XX_MODAL_AERO_CALCSIZE_HPP
 #define MAM4XX_MODAL_AERO_CALCSIZE_HPP
 
-#include <haero/atmosphere.hpp>
-#include <haero/math.hpp>
-#include <haero/surface.hpp>
+#include <mam4xx/atmosphere.hpp>
+#include <mam4xx/surface.hpp>
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/calcsize.hpp>
@@ -19,9 +18,6 @@
 
 namespace mam4 {
 namespace modal_aero_calcsize {
-using haero::max;
-using haero::min;
-using haero::sqrt;
 
 constexpr int maxd_aspectype = ndrop::maxd_aspectype;
 
@@ -490,12 +486,12 @@ update_tends_flx(const int jmode,         // in
     const int ispec_src = src_species_idx[i];
     const int ispec_dest = dest_species_idx[i];
     // interstitial species
-    const Real xfertend_i = haero::max(zero, state_q[ispec_src]) * xfercoef;
+    const Real xfertend_i = max(zero, state_q[ispec_src]) * xfercoef;
     ptend[ispec_src] -= xfertend_i;
     ptend[ispec_dest] += xfertend_i;
 
     // cloud borne species
-    const Real xfertend_c = haero::max(zero, qqcw[ispec_src]) * xfercoef;
+    const Real xfertend_c = max(zero, qqcw[ispec_src]) * xfercoef;
     dqqcwdt[ispec_src] -= xfertend_c;
     dqqcwdt[ispec_dest] += xfertend_c;
   }
@@ -562,12 +558,11 @@ KOKKOS_INLINE_FUNCTION void aitken_accum_exchange(
   // num2vol_ratio_geomean is the geometric mean num2vol_ratio values
   // between the aitken and accum modes
   // const auto num2vol_ratio_geomean =
-  // haero::sqrt(voltonum_ait*voltonum_acc);
+  // sqrt(voltonum_ait*voltonum_acc);
   // voltonum_ait and voltonum_acc are O(10^22) and O(10^20), respectively,
   // and their multiplication overflows single precision, and
   // the square root ends up NaN. Thus,we compute sqrt individually
-  const auto num2vol_ratio_geomean =
-      haero::sqrt(voltonum_ait) * haero::sqrt(voltonum_acc);
+  const auto num2vol_ratio_geomean = sqrt(voltonum_ait) * sqrt(voltonum_acc);
 
   // Compute aitken -> accumulation transfer
   calcsize::compute_coef_ait_acc_transfer(

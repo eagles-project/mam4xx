@@ -2,7 +2,6 @@
 #define MAM4XX_MODAL_AER_OPT_HPP
 
 #include <Kokkos_Complex.hpp>
-#include <haero/math.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/modal_aero_calcsize.hpp>
 #include <mam4xx/ndrop.hpp>
@@ -19,7 +18,6 @@ using ComplexView1D = DeviceType::view_1d<Kokkos::complex<Real>>;
 using View5D = Kokkos::View<Real *****>;
 using View0D = Kokkos::View<Real>;
 
-using ConstColumnView = haero::ConstColumnView;
 using CalcsizeData = modal_aero_calcsize::CalcsizeData;
 constexpr int pver = mam4::nlev;
 constexpr int ntot_amode = mam4::AeroConfig::num_modes();
@@ -45,12 +43,12 @@ constexpr Real small_value_40 = 1.e-40;
 constexpr Real neg_small_value_16 = -1.e-16;
 
 // Density of liquid water (STP)
-constexpr Real rhoh2o = haero::Constants::density_h2o;
+constexpr Real rhoh2o = Constants::density_h2o;
 //  reciprocal of gravit
-constexpr Real rga = 1.0 / haero::Constants::gravity;
+constexpr Real rga = 1.0 / Constants::gravity;
 // FIXME: this values may cause differences because of number of digits in the
 // Boltzmann's constant and Avogadro's number
-constexpr Real rair = haero::Constants::r_gas_dry_air;
+constexpr Real rair = Constants::r_gas_dry_air;
 
 //  These are indices to the band for diagnostic output
 // Fortran to C++ indexing
@@ -207,11 +205,11 @@ void modal_size_parameters(const Real sigma_logr_aer,
   constexpr Real half = 0.5;
   constexpr Real one = 1.0;
   constexpr Real two = 2.0;
-  const Real xrmin = haero::log(rmmin);
-  const Real xrmax = haero::log(rmmax);
+  const Real xrmin = log(rmmin);
+  const Real xrmax = log(rmmax);
 
-  const Real alnsg_amode = haero::log(sigma_logr_aer);
-  const Real explnsigma = haero::exp(two * alnsg_amode * alnsg_amode);
+  const Real alnsg_amode = log(sigma_logr_aer);
+  const Real explnsigma = exp(two * alnsg_amode * alnsg_amode);
   // do kk = top_lev, pver
   // do icol = 1, ncol
   //  convert from number mode diameter to surface area
@@ -220,9 +218,9 @@ void modal_size_parameters(const Real sigma_logr_aer,
   //  here two calculations are used to ensure passing BFB test
   //  can be simplified (there is only round-off difference
   if (ismethod2) {
-    logradsurf = haero::log(half * dgnumwet) + two * alnsg_amode * alnsg_amode;
+    logradsurf = log(half * dgnumwet) + two * alnsg_amode * alnsg_amode;
   } else {
-    logradsurf = haero::log(radsurf);
+    logradsurf = log(radsurf);
 
   } // ismethod2
   //  --------------- FORTRAN refactoring -------------------
@@ -376,7 +374,7 @@ also output wetvol and watervol
   {
     // BAD CONSTANT
     // FIXME
-    // if (haero::abs(watervol > 1.e-1*wetvol))
+    // if (abs(watervol > 1.e-1*wetvol))
     // {
     // 	write(iulog,*) 'watervol,wetvol,dryvol=',watervol(icol), &
     //                  wetvol(icol),dryvol(icol)
@@ -399,12 +397,12 @@ also output wetvol and watervol
 
     crefin += watervol * crefwsw(ilwsw);
     // BAD CONTANT
-    crefin /= haero::max(wetvol, small_value_40);
+    crefin /= max(wetvol, small_value_40);
 
   } // lwsw=='lw'
   // FIXME
   refr = crefin.real();
-  refi = haero::abs(crefin.imag());
+  refi = abs(crefin.imag());
 
 } // calc_refin_complex
 
@@ -438,10 +436,10 @@ void compute_factors(const int prefri, const Real ref_ind,
       }
     } // ii
     // FIXME: check Fortran to C++ indexing conversion
-    ix = haero::max(ii - 1, 0);
-    const int ip1 = haero::min(ix + 1, prefri - 1);
+    ix = max(ii - 1, 0);
+    const int ip1 = min(ix + 1, prefri - 1);
     const Real dx = ref_table[ip1] - ref_table[ix];
-    if (haero::abs(dx) > threshold) {
+    if (abs(dx) > threshold) {
       tt = (ref_ind - ref_table[ix]) / dx;
       // FIXME: I did not port the following:
       // if (present(do_print) .and. do_print) then
@@ -497,8 +495,8 @@ void binterp(const View3D &table, const Real ref_real, const Real ref_img,
   const Real tuc = ttab - tu;
   const Real tcuc = one - tuc - utab;
   const Real tcu = utab - tu;
-  const int jp1 = haero::min(jtab + 1, prefi - 1);
-  const int ip1 = haero::min(itab + 1, prefr - 1);
+  const int jp1 = min(jtab + 1, prefi - 1);
+  const int ip1 = min(itab + 1, prefr - 1);
   for (int icoef = 0; icoef < ncoef; ++icoef) {
     coef[icoef] = tcuc * table(icoef, itab, jtab) +
                   tuc * table(icoef, ip1, jtab) + tu * table(icoef, ip1, jp1) +
@@ -543,7 +541,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
     const View2D &tauxar, const View2D &wa, const View2D &ga,
     const View2D &fa) {
 
-  const Real xrmax = haero::log(rmmax);
+  const Real xrmax = log(rmmax);
   //  calculates aerosol sw radiative properties
   // dt               timestep [s]
   // lchnk             chunk id
@@ -710,7 +708,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
       //  do icol=1,ncol
 
       if (logradsurf <= xrmax) {
-        pext = haero::exp(pext);
+        pext = exp(pext);
       } else {
         // BAD CONSTANT
         pext = 1.5 / (radsurf * rhoh2o); //  geometric optics
@@ -722,11 +720,8 @@ KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
       pext *= wetvol * rhoh2o;
       pabs *= wetvol * rhoh2o;
       pabs = mam4::utils::min_max_bound(zero, pext, pabs);
-      Real palb =
-          one -
-          pabs / haero::max(pext,
-                            small_value_40); // parameterized single
-                                             // scattering albedo [unitless]
+      Real palb = one - pabs / max(pext, small_value_40); // parameterized single
+                                                          // scattering albedo [unitless]
       const Real dopaer = pext * mass; // aerosol optical depth in layer [1]
 
       // end cols
@@ -747,7 +742,7 @@ inline int get_work_len_aerosol_optics() {
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_sw(const ThreadTeam &team, const Real dt,
-                   mam4::Prognostics &progs, const haero::Atmosphere &atm,
+                   mam4::Prognostics &progs, const Atmosphere &atm,
                    const ConstColumnView &pdel, const ConstColumnView &pdeldry,
                    // const ColumnView qqcw_fld[aero_model::pcnst],
                    const View2D &tauxar, const View2D &wa, const View2D &ga,
@@ -965,7 +960,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_lw_k(
       calc_parameterized(cabs, cheb_kk, pabs);
 
       pabs *= wetvol * rhoh2o;
-      pabs = haero::max(zero, pabs);
+      pabs = max(zero, pabs);
       Real dopaer = pabs * mass;
 
       // update absorption optical depth
@@ -989,7 +984,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_lw_k(
 
 KOKKOS_INLINE_FUNCTION
 void modal_aero_lw(const ThreadTeam &team, const Real dt,
-                   mam4::Prognostics &progs, const haero::Atmosphere &atm,
+                   mam4::Prognostics &progs, const Atmosphere &atm,
                    const ConstColumnView &pdel, const ConstColumnView &pdeldry,
                    // parameters
                    const AerosolOpticsDeviceData &aersol_optics_data,
