@@ -15,6 +15,13 @@ option(MAM4XX_ENABLE_TESTS     "Enable unit tests" ON)
 option(DISABLE_SUBMODULE_CHECKS "Skip checks for git submodules" OFF)
 mark_as_advanced(FORCE DISABLE_SUBMODULE_CHECKS)
 
+# Single or double precision?
+if (CMAKE_VERSION GREATER_EQUAL 4.2)
+  set(CACHE{MAM4XX_PRECISION} TYPE STRING HELP "Precision of Real numbers (single, [double])" VALUE double)
+else()
+  set(MAM4XX_PRECISION double CACHE STRING "Precision of Real numbers (single, [double])")
+endif()
+
 # Are we in standalone mode?
 if (NOT DEFINED EAMXX_VERSION_MAJOR)
   set(MAM4XX_STANDALONE ON)
@@ -34,6 +41,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 # Blessed version of clang-format.
 set(CLANG_FORMAT_VERSION 14)
+
+#--------------------------
+# End configurable options
+#--------------------------
 
 project(mam4xx)
 enable_language(CXX)
@@ -90,23 +101,20 @@ else() #CPU
 endif()
 
 # Precision of floating point numbers.
-message(STATUS "Using ${HAERO_PRECISION} precision floating point numbers")
+message(STATUS "Using ${MAM4XX_PRECISION} precision floating point numbers")
 
 # Report the installation prefix.
 message(STATUS "Installation prefix is ${CMAKE_INSTALL_PREFIX}")
 
-# We look for headers in these directories.
-include_directories("${PROJECT_BINARY_DIR}")
-include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_BINARY_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/src)
 
-link_directories("${MAM4XX_HAERO_DIR}/${CMAKE_INSTALL_LIBDIR}")
-
-# emit compile_commands.json for use with clangd
+# Emit compile_commands.json for use with clangd.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Code coverage
-if (ENABLE_COVERAGE)
+if (MAM4XX_ENABLE_COVERAGE)
   message(STATUS "Enabling code coverage instrumentation")
   find_program(LCOV_EXE lcov DOC "Lcov code coverage tool")
   if (LCOV_EXE MATCHES "NOTFOUND")
@@ -131,7 +139,7 @@ if (NOT TARGET memcheck)
 endif()
 
 # Testing
-if (ENABLE_TESTS OR ENABLE_SKYWALKER)
+if (MAM4XX_ENABLE_TESTS OR MAM4XX_ENABLE_SKYWALKER)
   include(CTest)
   enable_testing()
 endif()
