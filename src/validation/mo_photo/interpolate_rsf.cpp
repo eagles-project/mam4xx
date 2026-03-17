@@ -103,7 +103,6 @@ void interpolate_rsf(Ensemble *ensemble) {
     // auto _host = View1DHost((Real *).data(), );
     // const auto  = View1D("", );
     // Kokkos::deep_copy(, );
-`
     View2D rsf("rsf", nw, pver);
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
