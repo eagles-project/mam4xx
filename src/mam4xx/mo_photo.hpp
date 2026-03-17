@@ -104,8 +104,6 @@ struct PhotoTableWorkArrays {
   View2D lng_prates;
   View2D rsf;
   View2D xswk;
-  View1D psum_l;
-  View1D psum_u;
 
   View1D parg;
   View1D eff_alb;
@@ -117,7 +115,6 @@ inline int get_photo_table_work_len(const PhotoTableData &photo_table_data) {
   return pver * photo_table_data.numj +                /*lng_prates*/
          pver * photo_table_data.nw +                  /*rsf*/
          photo_table_data.numj * photo_table_data.nw + /*xswk*/
-         2 * photo_table_data.nw /*psum_l + psum_u*/ +
          8 * nlev /*parg + eff_alb + cld_mult + work_cloud_mod*/;
 } // get_photo_table_work_len
 KOKKOS_INLINE_FUNCTION
@@ -133,10 +130,6 @@ void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
   photo_table_work.xswk =
       View2D(work_ptr, photo_table_data.numj, photo_table_data.nw);
   work_ptr += photo_table_data.numj * photo_table_data.nw;
-  photo_table_work.psum_l = View1D(work_ptr, photo_table_data.nw);
-  work_ptr += photo_table_data.nw;
-  photo_table_work.psum_u = View1D(work_ptr, photo_table_data.nw);
-  work_ptr += photo_table_data.nw;
   photo_table_work.parg = View1D(work_ptr, nlev);
   work_ptr += nlev;
   photo_table_work.eff_alb = View1D(work_ptr, nlev);
@@ -451,6 +444,24 @@ void find_index(const View1D &var_in, const int var_len,
 
 } // find_index
 
+// Binary-search equivalent of find_index for sorted (ascending) arrays.
+// Returns the same result as find_index but in O(log n) instead of O(n).
+KOKKOS_INLINE_FUNCTION
+void find_index_binary(const View1D &var_in, const int var_len,
+                       const Real var_min, int &idx_out) {
+  int lo = 0, hi = var_len;
+  while (lo < hi) {
+    const int mid = lo + (hi - lo) / 2;
+    if (var_in(mid) <= var_min)
+      lo = mid + 1;
+    else
+      hi = mid;
+  }
+  auto min_i = [](int i, int j) { return (i < j) ? i : j; };
+  auto max_i = [](int i, int j) { return (i < j) ? j : i; };
+  idx_out = max_i(min_i(lo, var_len - 1) - 1, 0);
+} // find_index_binary
+
 KOKKOS_INLINE_FUNCTION
 void calc_sum_wght(const Real dels[3], const Real wrk0, // in
                    const int iz, const int is, const int iv,
@@ -496,6 +507,38 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
   } // end wn
 } // calc_sum_wght
 
+// Scalar version of calc_sum_wght: returns the interpolated value for a single
+// wavelength index wn.  Avoids the need for shared psum work arrays.
+KOKKOS_INLINE_FUNCTION
+Real calc_sum_wght_wn(const Real dels[3], const Real wrk0,
+                      const int iz, const int is, const int iv, const int ial,
+                      const View5D &rsf_tab, const int wn) {
+  const int isp1 = is + 1;
+  const int ivp1 = iv + 1;
+  const int ialp1 = ial + 1;
+  const Real one = 1;
+  Real wrk1 = (one - dels[1]) * (one - dels[2]);
+  const Real wght_0_0_0 = wrk0 * wrk1;
+  const Real wght_1_0_0 = dels[0] * wrk1;
+  wrk1 = (one - dels[1]) * dels[2];
+  const Real wght_0_0_1 = wrk0 * wrk1;
+  const Real wght_1_0_1 = dels[0] * wrk1;
+  wrk1 = dels[1] * (one - dels[2]);
+  const Real wght_0_1_0 = wrk0 * wrk1;
+  const Real wght_1_1_0 = dels[0] * wrk1;
+  wrk1 = dels[1] * dels[2];
+  const Real wght_0_1_1 = wrk0 * wrk1;
+  const Real wght_1_1_1 = dels[0] * wrk1;
+  return wght_0_0_0 * rsf_tab(wn, iz, is, iv, ial) +
+         wght_0_0_1 * rsf_tab(wn, iz, is, iv, ialp1) +
+         wght_0_1_0 * rsf_tab(wn, iz, is, ivp1, ial) +
+         wght_0_1_1 * rsf_tab(wn, iz, is, ivp1, ialp1) +
+         wght_1_0_0 * rsf_tab(wn, iz, isp1, iv, ial) +
+         wght_1_0_1 * rsf_tab(wn, iz, isp1, iv, ialp1) +
+         wght_1_1_0 * rsf_tab(wn, iz, isp1, ivp1, ial) +
+         wght_1_1_1 * rsf_tab(wn, iz, isp1, ivp1, ialp1);
+} // calc_sum_wght_wn
+
 KOKKOS_INLINE_FUNCTION
 void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
                      const Real sza_in, const View1D &p_in,
@@ -509,9 +552,7 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
                      const View5D &rsf_tab, // in
                      const int nw, const int nump, const int numsza,
                      const int numcolo3, const int numalb,
-                     const View2D &rsf, // out
-                     // work array
-                     const View1D &psum_l, const View1D &psum_u) {
+                     const View2D &rsf) { // out
   /*----------------------------------------------------------------------
           ... interpolate table rsf to model variables
   ----------------------------------------------------------------------*/
@@ -539,119 +580,89 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
   // @param[in]  numalb         number of albedos in rsf
   // @param[out] rsf(:,:)       Radiative Source Function [quanta cm-2 sec-1]
 
-  /*----------------------------------------------------------------------
-          ... find the zenith angle index ( same for all levels )
-  ----------------------------------------------------------------------*/
   const Real one = 1;
   const Real zero = 0;
 
-  // NOTE: psum_l and psum_u are not dimensioned by the number of levels, kk, so
-  // they cannot be parallelized over kk
-  Kokkos::single(Kokkos::PerTeam(team), [=]() {
-    int is = 0;
-    find_index(sza, numsza, sza_in, // in
-               is);                 // ! out
+  // Compute zenith angle index and dels[0]/wrk0 once per thread.
+  // These are identical for all levels; numsza is small (~19 values).
+  int is = 0;
+  find_index_binary(sza, numsza, sza_in, is);
+  const Real dels0 =
+      utils::min_max_bound(zero, one, (sza_in - sza[is]) * del_sza[is]);
+  const Real wrk0 = one - dels0;
 
-    Real dels[3] = {};
-    dels[0] = utils::min_max_bound(zero, one, (sza_in - sza[is]) * del_sza[is]);
-    const Real wrk0 = one - dels[0];
-    int izl = 2; //   may change in the level_loop
-    for (int kk = kbot - 1; kk > -1; kk--) {
-      /*----------------------------------------------------------------------
-         ... find albedo indicies
-       ----------------------------------------------------------------------*/
-      int albind = 0;
-      find_index(alb, numalb, alb_in[kk], //  & ! in
-                 albind);                 // ! out
-      /*----------------------------------------------------------------------
-           ... find pressure level indicies
-      ----------------------------------------------------------------------*/
-      int pind = 0;
-      Real wght1 = 0;
-      if (p_in[kk] > press[0]) {
-        pind = 1;
-        wght1 = one;
+  // Each level kk is now fully independent: no shared psum work arrays,
+  // no izl loop-carried dependency.
+  Kokkos::parallel_for(
+      Kokkos::TeamVectorRange(team, kbot), [&](const int kk) {
+        // --- albedo index ---
+        int ial = 0;
+        find_index_binary(alb, numalb, alb_in[kk], ial);
 
-        // Fortran to C++ indexing
-      } else if (p_in[kk] <= press[nump - 1]) {
-        // Fortran to C++ indexing
-        pind = nump - 1;
-        wght1 = zero;
-      } else {
-        int iz = 0;
-        // Fortran to C++ indexing
-        for (iz = izl - 1; iz < nump; iz++) {
-          if (press[iz] < p_in[kk]) {
-            izl = iz;
-            break;
-          } // end if
-        }   // end for iz
-        // Fortran to C++ indexing
-        auto min = [](int i, int j) { return (i < j) ? i : j; };
-        auto max = [](int i, int j) { return (i < j) ? j : i; };
-        pind = max(min(iz, nump - 1), 1);
-        wght1 = utils::min_max_bound(
-            zero, one, (p_in[kk] - press[pind]) * del_p[pind - 1]);
-      } // end if
+        // --- pressure level index (per-level binary search) ---
+        // press is descending: press[0] >= press[1] >= ... >= press[nump-1]
+        int pind = 0;
+        Real wght1 = zero;
+        if (p_in[kk] > press[0]) {
+          pind = 1;
+          wght1 = one;
+        } else if (p_in[kk] <= press[nump - 1]) {
+          pind = nump - 1;
+          wght1 = zero;
+        } else {
+          // binary search: find first iz where press[iz] < p_in[kk]
+          int lo = 0, hi = nump;
+          while (lo < hi) {
+            const int mid = lo + (hi - lo) / 2;
+            if (press(mid) >= p_in[kk])
+              lo = mid + 1;
+            else
+              hi = mid;
+          }
+          auto min_i = [](int i, int j) { return (i < j) ? i : j; };
+          auto max_i = [](int i, int j) { return (i < j) ? j : i; };
+          pind = max_i(min_i(lo, nump - 1), 1);
+          wght1 = utils::min_max_bound(
+              zero, one, (p_in[kk] - press[pind]) * del_p[pind - 1]);
+        } // end pressure index
 
-      /*----------------------------------------------------------------------
-           ... find "o3 ratios"
-      ----------------------------------------------------------------------*/
+        // --- o3 ratio indices ---
+        const Real v3ratu = colo3_in[kk] / colo3[pind - 1];
+        int ratindu = 0;
+        find_index_binary(o3rat, numcolo3, v3ratu, ratindu);
 
-      const Real v3ratu = colo3_in[kk] / colo3[pind - 1];
-      int ratindu = 0;
-      find_index(o3rat, numcolo3, v3ratu, //  in
-                 ratindu);                // out
+        Real v3ratl = zero;
+        int ratindl = 0;
+        if (colo3[pind] != zero) {
+          v3ratl = colo3_in[kk] / colo3[pind];
+          find_index_binary(o3rat, numcolo3, v3ratl, ratindl);
+        } else {
+          ratindl = ratindu;
+          v3ratl = o3rat[ratindu];
+        }
 
-      Real v3ratl = zero;
-      int ratindl = 0;
-      if (colo3[pind] != zero) {
-        v3ratl = colo3_in[kk] / colo3[pind];
-        find_index(o3rat, numcolo3, v3ratl, // in
-                   ratindl);                // ! out
-      } else {
-        ratindl = ratindu;
-        v3ratl = o3rat[ratindu];
-      } // end if colo3[pind] != zero
+        // --- interpolation weights (no shared dels[] mutation) ---
+        const Real dels2 = utils::min_max_bound(
+            zero, one, (alb_in[kk] - alb[ial]) * del_alb[ial]);
+        const int ivl = ratindl;
+        const Real dels1_l = utils::min_max_bound(
+            zero, one, (v3ratl - o3rat[ivl]) * del_o3rat[ivl]);
+        const int ivu = ratindu;
+        const Real dels1_u = utils::min_max_bound(
+            zero, one, (v3ratu - o3rat[ivu]) * del_o3rat[ivu]);
 
-      /*----------------------------------------------------------------------
-              ... compute the weigths
-      ----------------------------------------------------------------------*/
-
-      int ial = albind;
-
-      dels[2] = utils::min_max_bound(zero, one,
-                                     (alb_in[kk] - alb[ial]) * del_alb[ial]);
-
-      int iv = ratindl;
-      dels[1] =
-          utils::min_max_bound(zero, one, (v3ratl - o3rat[iv]) * del_o3rat[iv]);
-      calc_sum_wght(dels, wrk0,        // in
-                    pind, is, iv, ial, // in
-                    rsf_tab, nw,
-                    psum_l); // out
-
-      iv = ratindu;
-      dels[1] =
-          utils::min_max_bound(zero, one, (v3ratu - o3rat[iv]) * del_o3rat[iv]);
-      calc_sum_wght(dels, wrk0,            // in
-                    pind - 1, is, iv, ial, // in
-                    rsf_tab, nw,
-                    psum_u); //  inout
-
-      for (int wn = 0; wn < nw; wn++)
-        rsf(wn, kk) = psum_l[wn] + wght1 * (psum_u[wn] - psum_l[wn]);
-
-      /*------------------------------------------------------------------------------
-          etfphot comes in as photons/cm^2/sec/nm  (rsf includes the wlintv
-       factor
-       -- nm)
-         ... --> convert to photons/cm^2/s
-       ------------------------------------------------------------------------------*/
-      for (int wn = 0; wn < nw; wn++)
-        rsf(wn, kk) *= etfphot[wn];
-    } // loop over kk
-  }); // Kokkos::single
+        // --- accumulate rsf per wavelength using scalar helper ---
+        // etfphot scaling is folded in to avoid a second pass over wn.
+        const Real dels_l[3] = {dels0, dels1_l, dels2};
+        const Real dels_u[3] = {dels0, dels1_u, dels2};
+        for (int wn = 0; wn < nw; wn++) {
+          const Real vl =
+              calc_sum_wght_wn(dels_l, wrk0, pind, is, ivl, ial, rsf_tab, wn);
+          const Real vu = calc_sum_wght_wn(dels_u, wrk0, pind - 1, is, ivu,
+                                           ial, rsf_tab, wn);
+          rsf(wn, kk) = (vl + wght1 * (vu - vl)) * etfphot[wn];
+        }
+      }); // TeamVectorRange over kbot levels
 } // interpolate_rsf
 //======================================================================================
 KOKKOS_INLINE_FUNCTION
@@ -667,8 +678,7 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
            const int numj,
            const View2D &j_long, // output
            // work arrays
-           const View2D &rsf, const View2D &xswk, const View1D &psum_l,
-           const View1D &psum_u)
+           const View2D &rsf, const View2D &xswk)
 // out
 {
 
@@ -725,8 +735,7 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
   interpolate_rsf(team, alb_in, sza_in, p_in, colo3_in, pver, sza, del_sza, alb,
                   press, del_p, colo3, o3rat, del_alb, del_o3rat, etfphot,
                   rsf_tab, //  in
-                  nw, nump, numsza, numcolo3, numalb, rsf, psum_l,
-                  psum_u); // out
+                  nw, nump, numsza, numcolo3, numalb, rsf); // out
   team.team_barrier();
   /*------------------------------------------------------------------------------
   ... calculate total Jlong for wavelengths >200nm
@@ -883,8 +892,7 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
           table_data.np_xs, table_data.numj,
           work_arrays.lng_prates, // output
           // work arrays
-          work_arrays.rsf, work_arrays.xswk, work_arrays.psum_l,
-          work_arrays.psum_u);
+          work_arrays.rsf, work_arrays.xswk);
     team.team_barrier();
     Kokkos::parallel_for(
         Kokkos::TeamVectorRange(team, pver_local), [&](const int kk) {

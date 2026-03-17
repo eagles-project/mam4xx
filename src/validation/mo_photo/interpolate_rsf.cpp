@@ -103,10 +103,7 @@ void interpolate_rsf(Ensemble *ensemble) {
     // auto _host = View1DHost((Real *).data(), );
     // const auto  = View1D("", );
     // Kokkos::deep_copy(, );
-
-    auto psum_l = View1D("psum_l", nw);
-    auto psum_u = View1D("psum_u", nw);
-
+`
     View2D rsf("rsf", nw, pver);
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
@@ -116,9 +113,7 @@ void interpolate_rsf(Ensemble *ensemble) {
                           sza, del_sza, alb, press, del_p, colo3, o3rat,
                           del_alb, del_o3rat, etfphot, rsf_tab, nw, nump,
                           numsza, numcolo3, numalb,
-                          rsf, // out
-                          // work array
-                          psum_l, psum_u);
+                          rsf); // out
         });
 
     const Real zero = 0;

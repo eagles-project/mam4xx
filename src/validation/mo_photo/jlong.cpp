@@ -135,9 +135,6 @@ void jlong(Ensemble *ensemble) {
 
     View2D j_long("j_long", numj, pver);
 
-    auto psum_l = View1D("psum_l", nw);
-    auto psum_u = View1D("psum_u", nw);
-
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
@@ -147,7 +144,7 @@ void jlong(Ensemble *ensemble) {
                 prs, dprs, nw, nump, numsza, numcolo3, numalb, np_xs, numj,
                 j_long, // output
                 // work arrays
-                rsf, xswk, psum_l, psum_u);
+                rsf, xswk);
         });
 
     const Real zero = 0;

@@ -102,9 +102,6 @@ void table_photo(Ensemble *ensemble) {
 
     View3D j_long("j_long", ncol, table_data.numj, pver);
 
-    auto psum_l = View2D("psum_l", ncol, table_data.nw);
-    auto psum_u = View2D("psum_u", ncol, table_data.nw);
-
     auto pht_alias_mult_1_db = input.get_array("pht_alias_mult");
     auto pht_alias_mult_1_host =
         View1DHost((Real *)pht_alias_mult_1_db.data(), 2);
@@ -175,8 +172,6 @@ void table_photo(Ensemble *ensemble) {
               Kokkos::subview(rsf, i, Kokkos::ALL(), Kokkos::ALL());
           work_arrays.xswk =
               Kokkos::subview(xswk, i, Kokkos::ALL(), Kokkos::ALL());
-          work_arrays.psum_l = Kokkos::subview(psum_l, i, Kokkos::ALL());
-          work_arrays.psum_u = Kokkos::subview(psum_u, i, Kokkos::ALL());
 
           work_arrays.parg = Kokkos::subview(parg, i, Kokkos::ALL());
           work_arrays.eff_alb = Kokkos::subview(eff_alb, i, Kokkos::ALL());
