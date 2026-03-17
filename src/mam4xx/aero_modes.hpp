@@ -10,11 +10,7 @@
 #include "constants.hpp"
 #include "gas_species.hpp"
 
-#include "mam4_types.hpp"
-
-#include <iostream>
 #include <string>
-#include <vector>
 
 namespace mam4 {
 

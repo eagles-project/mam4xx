@@ -3,10 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef HAERO_VALIDATION_HPP
-#define HAERO_VALIDATION_HPP
+#ifndef MAM4XX_VALIDATION_HPP
+#define MAM4XX_VALIDATION_HPP
 #include <cfenv>
-#include <haero/testing.hpp>
+#include <testing.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/mo_photo.hpp>
 #include <skywalker.hpp>

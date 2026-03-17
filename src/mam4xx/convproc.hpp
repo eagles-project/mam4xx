@@ -8,14 +8,13 @@
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/aero_model.hpp>
+#include <mam4xx/aero_species.hpp>
 #include <mam4xx/atmosphere.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/utils.hpp>
 
 #include <mam4xx/ndrop.hpp>
 #include <mam4xx/wv_sat_methods.hpp>
-
-#include <iomanip>
 
 namespace mam4 {
 
@@ -141,7 +140,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
                     Real fm[AeroConfig::num_modes()],
                     Real fluxn[AeroConfig::num_modes()],
                     Real fluxm[AeroConfig::num_modes()], Real &flux_fullact,
-                    const Real smax_prescribed = max()) {
+                    const Real smax_prescribed = finite_max_v<Real>) {
   // 	  !---------------------------------------------------------------------------------
   // !Calculates number, surface, and mass fraction of aerosols activated as CCN
   // !calculates flux of cloud droplets, surface area, and aerosol mass into

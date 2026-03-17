@@ -25,6 +25,7 @@ endif()
 # Are we in standalone mode?
 if (NOT DEFINED EAMXX_VERSION_MAJOR)
   set(MAM4XX_STANDALONE ON)
+  set(CXX_STANDARD 17)
 else()
   set(MAM4XX_STANDALONE OFF)
 endif()
@@ -53,34 +54,11 @@ if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-## We rely on Haero for basic data structures and third-party libraries.
-#if (NOT TARGET haero)
-#  if (NOT MAM4XX_HAERO_DIR)
-#    message(FATAL_ERROR "MAM4XX_HAERO_DIR is not specified! Please provide a path to Haero.")
-#  endif()
-#  find_package(haero REQUIRED HINTS ${MAM4XX_HAERO_DIR})
-#  set (required_ekat_pkgs Logging Pack KokkosUtils)
-#  set (missing_ekat_pkgs)
-#  foreach (pkg IN ITEMS ${required_ekat_pkgs})
-#    if (NOT TARGET ekat::${pkg})
-#      list(APPEND missing_ekat_pkgs ${pkg})
-#    endif()
-#  endforeach()
-#  if (missing_ekat_pkgs)
-#    string(CONCAT msg
-#      "Error! Haero is linking against a non-sufficient version of ekat\n"
-#      " Required Ekat pacakges: KokkosUtils, Pack, Logging\n"
-#      " Missing packages: ${missing_ekat_pkgs}")
-#    message ("${msg}")
-#    message (FATAL_ERROR "Aborting...")
-#  endif()
-#
-#  if(HAERO_ENABLE_GPU)
-#    message(STATUS "Building for GPU")
-#  else() #CPU
-#    message(STATUS "Building for CPU")
-#  endif()
-#endif()
+if (MAM4XX_ENABLE_MPI)
+  find_package(MPI COMPONENTS C CXX REQUIRED)
+  include_directories(${MPI_INCLUDE_DIRS})
+  link_libraries(${MPI_LIBRARIES})
+endif()
 
 message(STATUS "Generating project files in build directory: ${PROJECT_BINARY_DIR}")
 message(STATUS "C++ compiler is ${CMAKE_CXX_COMPILER} (${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION})")
@@ -101,6 +79,15 @@ else() #CPU
 endif()
 
 # Precision of floating point numbers.
+if (MAM4XX_PRECISION STREQUAL "double")
+  set(MAM4XX_REAL_TYPE double)
+  set(MAM4XX_DOUBLE_PRECISION 1)
+elseif (MAM4XX_PRECISION STREQUAL "single")
+  set(MAM4XX_REAL_TYPE float)
+  set(MAM4XX_DOUBLE_PRECISION 0)
+else()
+  message(FATAL_ERROR "Invalid MAM4XX_PRECISION: ${MAM4XX_PRECISION} (must be single or double)")
+endif()
 message(STATUS "Using ${MAM4XX_PRECISION} precision floating point numbers")
 
 # Report the installation prefix.
@@ -112,6 +99,34 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 
 # Emit compile_commands.json for use with clangd.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Third-party libraries
+include(FetchContent)
+if (MAM4XX_STANDALONE)
+  set(EKAT_ENABLE_ALL_PACKAGES ON)
+  set(EKAT_ENABLE_MPI ${MAM4XX_ENABLE_MPI})
+  set(EKAT_ENABLE_TESTS OFF)
+  FetchContent_Declare(
+    EKAT
+    GIT_REPOSITORY https://github.com/E3SM-Project/EKAT.git
+    GIT_TAG        master
+  )
+  list(APPEND mam4xx_tpls EKAT)
+endif()
+FetchContent_Declare(
+  skywalker
+  GIT_REPOSITORY https://github.com/eagles-project/skywalker.git
+  GIT_TAG        main
+)
+list(APPEND mam4xx_tpls skywalker)
+FetchContent_MakeAvailable(${mam4xx_tpls})
+if (MAM4XX_STANDALONE)
+  set(EKAT_INCLUDE_DIRS
+    ${ekat_SOURCE_DIR}/src/kokkos
+    ${ekat_SOURCE_DIR}/extern/kokkos/core/src
+  )
+  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${ekat_SOURCE_DIR}/cmake/")
+endif()
 
 # Code coverage
 if (MAM4XX_ENABLE_COVERAGE)
@@ -143,23 +158,6 @@ if (MAM4XX_ENABLE_TESTS OR MAM4XX_ENABLE_SKYWALKER)
   include(CTest)
   enable_testing()
 endif()
-
-# Third-party libraries
-include(FetchContent)
-if (MAM4XX_STANDALONE)
-  FetchContent_Declare(
-    EKAT
-    GIT_REPOSITORY https://github.com/E3SM-Project/EKAT.git
-    GIT_TAG        master
-  )
-  FetchContent_MakeAvailable(EKAT)
-endif()
-FetchContent_Declare(
-  skywalker
-  GIT_REPOSITORY https://github.com/eagles-project/skywalker.git
-  GIT_TAG        main
-)
-FetchContent_MakeAvailable(skywalker)
 
 # Source directories.
 add_subdirectory(src)

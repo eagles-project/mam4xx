@@ -6,35 +6,17 @@
 #ifndef MAM4XX_AERO_CONFIG_HPP
 #define MAM4XX_AERO_CONFIG_HPP
 
-#include <mam4xx/aero_modes.hpp>
+#include <mam4xx/math.hpp>
 
-#include <algorithm>
 #include <ekat_kokkos_types.hpp>
-#include <map>
-#include <numeric>
 
 namespace mam4 {
-
-/// Real-valued numbers are of this type.
-typedef @MAM4XX_REAL_TYPE@ Real;
-
-#if @MAM4XX_DOUBLE_PRECISION@
-#define MAM4XX_DOUBLE_PRECISION 1
-#else
-#define MAM4XX_SINGLE_PRECISION 1
-#endif
-
-#cmakedefine MAM4XX_ENABLE_GPU
 
 class Prognostics; // fwd decl
 class Diagnostics; // fwd decl
 // Tendencies are identical in structure to prognostics.
 using Tendencies = Prognostics; // fwd decl
 
-// Number of vertical levels per column (must match the number in the
-// host model)
-constexpr int nlev = @NUM_VERTICAL_LEVELS@;
-constexpr int pcnst = 40;
 /// @struct MAM4::AeroConfig: for use with all MAM4 process implementations
 class AeroConfig final {
 public:

@@ -6,12 +6,9 @@
 #ifndef MAM4_TYPES_HPP
 #define MAM4_TYPES_HPP
 
-#include <mam4xx/aero_species.hpp>
-#include <mam4xx/atmosphere.hpp>
-#include <mam4xx/constants.hpp>
-#include <mam4xx/floating_point.hpp>
-#include <mam4xx/gas_species.hpp>
-#include <mam4xx/surface.hpp>
+#include <mam4xx/config.hpp>
+
+#include <ekat_kokkos_types.hpp>
 
 // Cuda "C++" can't handle lambdas consisting of private/protected methods
 // This seems awful, but other solutions seem to involve dancing carefully
