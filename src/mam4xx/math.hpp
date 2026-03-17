@@ -1,0 +1,23 @@
+#ifndef MAM4XX_MATH_HPP
+#define MAM4XX_MATH_HPP
+
+#include "mam4xx/config.hpp"
+
+#include <Kokkos_MathematicalFunctions.hpp>
+#include <Kokkos_MinMax.hpp>
+#include <Kokkos_NumericTraits.hpp>
+
+namespace mam4 {
+
+using namespace Kokkos; // bring in Kokkos math functions
+
+inline Real max() { return Kokkos::Experimental::finite_max_v<Real>; }
+inline Real min(const Real x, const Real y) { return (x < y) ? x : y; }
+inline Real max(const Real x, const Real y) { return (x > y) ? x : y; }
+
+inline Real square(const Real x) { return x * x; }
+inline Real cube(const Real x) { return x * x * x; }
+
+} // namespace mam4
+
+#endif

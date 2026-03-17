@@ -2,10 +2,11 @@
 #define MAM4XX_MODAL_AER_OPT_HPP
 
 #include <Kokkos_Complex.hpp>
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/modal_aero_calcsize.hpp>
-#include <mam4xx/ndrop.hpp>
-#include <mam4xx/water_uptake.hpp>
+
+#include "aero_config.hpp"
+#include "modal_aero_calcsize.hpp"
+#include "ndrop.hpp"
+#include "water_uptake.hpp"
 
 namespace mam4 {
 namespace modal_aer_opt {

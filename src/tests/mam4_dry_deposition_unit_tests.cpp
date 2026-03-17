@@ -3,11 +3,9 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "mam4xx/aero_modes.hpp"
 #include "testing.hpp"
-#include <mam4xx/mam4.hpp>
 
-#include <haero/constants.hpp>
+#include <mam4xx/mam4.hpp>
 
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
@@ -15,12 +13,7 @@
 
 #include <catch2/catch.hpp>
 #include <cmath>
-#include <iomanip>
-#include <iostream>
-#include <limits>
-#include <memory>
 
-using namespace haero;
 using namespace mam4;
 
 Real tol = 1e-8;

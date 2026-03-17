@@ -100,7 +100,9 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 # Emit compile_commands.json for use with clangd.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+#-----------------------
 # Third-party libraries
+#-----------------------
 include(FetchContent)
 if (MAM4XX_STANDALONE)
   set(EKAT_ENABLE_ALL_PACKAGES ON)
@@ -113,20 +115,28 @@ if (MAM4XX_STANDALONE)
   )
   list(APPEND mam4xx_tpls EKAT)
 endif()
+
 FetchContent_Declare(
   skywalker
   GIT_REPOSITORY https://github.com/eagles-project/skywalker.git
   GIT_TAG        main
 )
 list(APPEND mam4xx_tpls skywalker)
+
 FetchContent_MakeAvailable(${mam4xx_tpls})
+
 if (MAM4XX_STANDALONE)
   set(EKAT_INCLUDE_DIRS
     ${ekat_SOURCE_DIR}/src/kokkos
     ${ekat_SOURCE_DIR}/extern/kokkos/core/src
+    ${ekat_SOURCE_DIR}/extern/Catch2/include
   )
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${ekat_SOURCE_DIR}/cmake/")
 endif()
+
+#---------------------------
+# End third-party libraries
+#---------------------------
 
 # Code coverage
 if (MAM4XX_ENABLE_COVERAGE)

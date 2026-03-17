@@ -3,26 +3,22 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
+
+#include "atmosphere_utils.hpp"
 #include "testing.hpp"
 
 #include <mam4xx/aero_modes.hpp>
 #include <mam4xx/conversions.hpp>
+#include <mam4xx/atmosphere.hpp>
+#include <mam4xx/constants.hpp>
+#include <mam4xx/floating_point.hpp>
 
 #include <catch2/catch.hpp>
-
-#include <haero/atmosphere.hpp>
-#include <haero/constants.hpp>
-#include <haero/floating_point.hpp>
-#include <haero/haero.hpp>
-
-#include "atmosphere_utils.hpp"
-#include "mam4xx/conversions.hpp"
 
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
 
 #include <cmath>
-#include <sstream>
 
 using namespace mam4;
 using namespace mam4::conversions;
@@ -107,20 +103,20 @@ TEST_CASE("conversions", "") {
     auto const rho = density_of_ideal_gas(unit_temp, unit_pressure);
     auto const mmr = 1e-8;
     auto const num_conc =
-        number_conc_from_mmr(mmr, haero::Constants::molec_weight_nacl, rho);
+        number_conc_from_mmr(mmr, Constants::molec_weight_nacl, rho);
     auto const mmr0 = mmr_from_number_conc(
-        num_conc, haero::Constants::molec_weight_nacl, rho);
+        num_conc, Constants::molec_weight_nacl, rho);
 
     logger.info("unit_temp = {}, unit_pressure = {}, rho = {}", unit_temp,
                 unit_pressure, rho);
-    logger.info("molec_weight_nacl= {}", haero::Constants::molec_weight_nacl);
+    logger.info("molec_weight_nacl= {}", Constants::molec_weight_nacl);
     logger.info("mixing ratio = {}, num_conc = {}, mmr0 = {}", mmr, num_conc,
                 mmr0);
     REQUIRE(FloatingPoint<Real>::equiv(mmr, mmr0));
 
     // mass mixing ratio (mmr) <-> molar mixing ratio (vmr)
-    auto const vmr = vmr_from_mmr(mmr0, haero::Constants::molec_weight_nacl);
-    auto const mmr1 = mmr_from_vmr(vmr, haero::Constants::molec_weight_nacl);
+    auto const vmr = vmr_from_mmr(mmr0, Constants::molec_weight_nacl);
+    auto const mmr1 = mmr_from_vmr(vmr, Constants::molec_weight_nacl);
     logger.info("mmr0 = {}, vmr = {}, mmr1 = {}", mmr0, vmr, mmr1);
     REQUIRE(FloatingPoint<Real>::equiv(mmr1, mmr0));
   }
@@ -274,24 +270,24 @@ TEST_CASE("conversions", "") {
       logger.debug(
           "level {}: T = {} P = {} w = {} q = {} relative humidity = {}", k,
           h_T(k), h_P(k), h_w(k), h_q(k), h_rh_q(k));
-      if (!haero::FloatingPoint<Real>::in_bounds(h_rh_q(k), 0, 1)) {
+      if (!FloatingPoint<Real>::in_bounds(h_rh_q(k), 0, 1)) {
         logger.error("\tlevel {}: w = {} wsat = {}", k,
                      vapor_mixing_ratio_from_specific_humidity(h_q(k)),
                      saturation_mixing_ratio_hardy(h_T(k), h_P(k)));
       }
       // check that relative humidities are in bounds
-      CHECK(haero::FloatingPoint<Real>::in_bounds(h_rh_q(k), 0, 1));
-      CHECK(haero::FloatingPoint<Real>::in_bounds(h_rh_w(k), 0, 1));
+      CHECK(FloatingPoint<Real>::in_bounds(h_rh_q(k), 0, 1));
+      CHECK(FloatingPoint<Real>::in_bounds(h_rh_w(k), 0, 1));
 
       // both relative humidities should match
       const Real tol = 2 * std::numeric_limits<float>::epsilon();
-      if (!haero::FloatingPoint<Real>::rel(h_rh_q(k), h_rh_w(k), tol)) {
+      if (!FloatingPoint<Real>::rel(h_rh_q(k), h_rh_w(k), tol)) {
         logger.error("rel diff found at level {}: rh_q = {} rh_w = {} rel_diff "
                      "= {} tol = {}",
                      k, h_rh_q(k), h_rh_w(k),
                      abs(h_rh_q(k) - h_rh_w(k)) / h_rh_q(k), tol);
       }
-      REQUIRE(haero::FloatingPoint<Real>::rel(h_rh_q(k), h_rh_w(k), tol));
+      REQUIRE(FloatingPoint<Real>::rel(h_rh_q(k), h_rh_w(k), tol));
     }
   }
 }

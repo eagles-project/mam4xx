@@ -3,20 +3,17 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "kohler_verification.hpp"
 #include <mam4_test_config.hpp>
+#include <mam4xx/mam4_types.hpp>
+#include <mam4xx/constants.hpp>
 #include <mam4xx/kohler.hpp>
+#include <mam4xx/floating_point.hpp>
 
 #include <catch2/catch.hpp>
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
-#include <haero/constants.hpp>
-#include <haero/floating_point.hpp>
-#include <haero/haero.hpp>
-#include <haero/math.hpp>
 
 #include <cmath>
-#include <iostream>
 
 using namespace mam4;
 
@@ -52,12 +49,12 @@ struct KohlerSolveTestFtor {
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const int i) const {
-    KohlerSolver<haero::math::NewtonSolver<KohlerPolynomial>> newton_solver(
+    KohlerSolver<math::NewtonSolver<KohlerPolynomial>> newton_solver(
         relative_humidity(i), hygroscopicity(i), dry_radius(i), tol);
-    KohlerSolver<haero::math::BisectionSolver<KohlerPolynomial>>
+    KohlerSolver<math::BisectionSolver<KohlerPolynomial>>
         bisection_solver(relative_humidity(i), hygroscopicity(i), dry_radius(i),
                          tol);
-    KohlerSolver<haero::math::BracketedNewtonSolver<KohlerPolynomial>>
+    KohlerSolver<math::BracketedNewtonSolver<KohlerPolynomial>>
         bracket_solver(relative_humidity(i), hygroscopicity(i), dry_radius(i),
                        tol);
 
@@ -80,7 +77,7 @@ TEST_CASE("kohler_physics_functions", "") {
   ekat::logger::Logger<> logger("kohler functions",
                                 ekat::logger::LogLevel::debug, comm);
 
-  const Real mam4_surften = haero::Constants::surface_tension_h2o_air_273k;
+  const Real mam4_surften = Constants::surface_tension_h2o_air_273k;
   const Real mam4_kelvin_a = kelvin_coefficient();
 
   // minimum temperature for liquid water to -25 C

@@ -5,7 +5,7 @@
 #ifndef MAM4XX_ATMOSPHERE_HPP
 #define MAM4XX_ATMOSPHERE_HPP
 
-#include <mam4xx/aero_config.hpp>
+#include "aero_config.hpp"
 
 #include <ekat_kernel_assert.hpp>
 

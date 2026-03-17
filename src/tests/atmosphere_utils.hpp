@@ -6,14 +6,11 @@
 #ifndef MAM4XX_ATMOSPHERE_INIT_HPP
 #define MAM4XX_ATMOSPHERE_INIT_HPP
 
-#include "mam4xx/mam4_types.hpp"
-
 #include <ekat_pack.hpp>
 #include <ekat_pack_math.hpp>
-#include <haero/atmosphere.hpp>
-#include <haero/constants.hpp>
-#include <haero/floating_point.hpp>
-#include <haero/haero.hpp>
+#include <mam4xx/atmosphere.hpp>
+#include <mam4xx/constants.hpp>
+#include <mam4xx/floating_point.hpp>
 
 namespace mam4 {
 

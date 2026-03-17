@@ -1,10 +1,11 @@
 #ifndef MAM4XX_AER_RAD_PROPS_HPP
 #define MAM4XX_AER_RAD_PROPS_HPP
 
-#include <mam4xx/aero_config.hpp>
+#include "aero_config.hpp"
 
-#include <mam4xx/modal_aer_opt.hpp>
-#include <mam4xx/tropopause.hpp>
+#include "modal_aer_opt.hpp"
+#include "tropopause.hpp"
+
 namespace mam4 {
 
 namespace aer_rad_props {

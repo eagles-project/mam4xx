@@ -1,24 +1,16 @@
 #include "atmosphere_utils.hpp"
 #include "testing.hpp"
 
-// #include "mam4xx/aero_modes.hpp"
-// #include "mam4xx/conversions.hpp"
-// #include <mam4xx/mode_dry_particle_size.hpp>
-// #include <mam4xx/aero_config.hpp>
-
-// #include <haero/constants.hpp>
-#include <haero/floating_point.hpp>
-#include <haero/haero.hpp>
-
-// #include "mam4xx/conversions.hpp"
+#include <mam4xx/floating_point.hpp>
+#include <mam4xx/mam4.hpp>
+#include <mam4xx/math.hpp>
 
 #include <catch2/catch.hpp>
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
-#include <mam4xx/mam4.hpp>
 
-// using namespace haero;
 using namespace mam4;
+
 // using namespace mam4::conversions;
 const int nmodes = AeroConfig::num_modes();
 const int loffset = 9;
@@ -75,9 +67,9 @@ TEST_CASE("test_henry_factor_so2", "mam4_mo_setsox_unit_tests") {
   // NOTE: also given with a value of 0.1068378555E-02, but that's not germane
   // to this test
   const Real t_factor = 0.3415485654e-3;
-  const Real ref_xk = 1.230 * haero::exp(3120.0 * t_factor);
-  const Real ref_xe = 1.7e-2 * haero::exp(2090.0 * t_factor);
-  const Real ref_x2 = 6.0e-8 * haero::exp(1120.0 * t_factor);
+  const Real ref_xk = 1.230 * exp(3120.0 * t_factor);
+  const Real ref_xe = 1.7e-2 * exp(2090.0 * t_factor);
+  const Real ref_x2 = 6.0e-8 * exp(1120.0 * t_factor);
   Real xk, xe, x2;
 
   mam4::mo_setsox::henry_factor_so2(t_factor, xk, xe, x2);
@@ -99,8 +91,8 @@ TEST_CASE("test_henry_factor_co2", "mam4_mo_setsox_unit_tests") {
   // NOTE: also given with a value of 0.1068378555E-02, but that's not germane
   // to this test
   const Real t_factor = 0.3415485654e-3;
-  const Real ref_xk = 3.1e-2 * haero::exp(2423.0 * t_factor);
-  const Real ref_xe = 4.3e-7 * haero::exp(-913.0 * t_factor);
+  const Real ref_xk = 3.1e-2 * exp(2423.0 * t_factor);
+  const Real ref_xe = 4.3e-7 * exp(-913.0 * t_factor);
   Real xk, xe;
 
   mam4::mo_setsox::henry_factor_co2(t_factor, xk, xe);

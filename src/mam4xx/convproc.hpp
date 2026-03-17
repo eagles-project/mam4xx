@@ -6,12 +6,11 @@
 #ifndef MAM4XX_CONVPROC_HPP
 #define MAM4XX_CONVPROC_HPP
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/aero_model.hpp>
-#include <mam4xx/aero_species.hpp>
-#include <mam4xx/atmosphere.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
+#include "aero_config.hpp"
+#include "aero_model.hpp"
+#include "aero_modes.hpp"
+#include "atmosphere.hpp"
+#include "utils.hpp"
 
 #include <mam4xx/ndrop.hpp>
 #include <mam4xx/wv_sat_methods.hpp>
@@ -69,7 +68,16 @@ Real faer_resusp_vs_fprec_evap_mpln(const Real fprec_evap, const int) {
   return y_var;
 }
 } // namespace WetDepTemp
+  //
 namespace ndrop_od {
+
+using mam4::erf;
+using mam4::exp;
+using mam4::log;
+using mam4::min;
+using mam4::max;
+using mam4::pow;
+using mam4::sqrt;
 
 KOKKOS_INLINE_FUNCTION
 void qsat(const Real t, const Real p, Real &es, Real &qs) {
@@ -140,7 +148,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
                     Real fm[AeroConfig::num_modes()],
                     Real fluxn[AeroConfig::num_modes()],
                     Real fluxm[AeroConfig::num_modes()], Real &flux_fullact,
-                    const Real smax_prescribed = finite_max_v<Real>) {
+                    const Real smax_prescribed = max()) {
   // 	  !---------------------------------------------------------------------------------
   // !Calculates number, surface, and mass fraction of aerosols activated as CCN
   // !calculates flux of cloud droplets, surface area, and aerosol mass into
@@ -453,7 +461,7 @@ public:
   // but there is the problem of the indexes being in a different order.
   //
   KOKKOS_INLINE_FUNCTION
-  static constexpr Real specdens_amode(const int i) {
+  static Real specdens_amode(const int i) {
     // clang-format off
     const Real specdens_amode[maxd_aspectype] = {
       mam4::mam4_density_so4,
@@ -473,7 +481,7 @@ public:
   // specdens_amode(l) = dry density (kg/m^3) of aerosol chemical species type l
   // The same concerns specified for specdens_amode apply to spechygro.
   KOKKOS_INLINE_FUNCTION
-  static constexpr Real spechygro(const int i) {
+  static Real spechygro(const int i) {
     // clang-format off
     const Real spechygro[maxd_aspectype] = {
        mam4::mam4_hyg_so4,

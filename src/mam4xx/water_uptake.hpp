@@ -7,12 +7,14 @@
 #define MAM4XX_WATER_UPTAKE_HPP
 
 #include <Kokkos_Complex.hpp>
-#include <mam4xx/atmosphere.hpp>
-#include <mam4xx/surface.hpp>
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/convproc.hpp>
-#include <mam4xx/utils.hpp>
-#include <mam4xx/wv_sat_methods.hpp>
+
+#include "atmosphere.hpp"
+#include "surface.hpp"
+#include "aero_config.hpp"
+#include "convproc.hpp"
+#include "utils.hpp"
+#include "wv_sat_methods.hpp"
+
 namespace mam4 {
 class Water_Uptake {
 
