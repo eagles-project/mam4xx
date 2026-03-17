@@ -128,7 +128,6 @@ void jlong(Ensemble *ensemble) {
 
     View2D rsf("rsf", nw, pver);
     View4D xsqy("xsqy", numj, nw, nt, np_xs);
-    View2D xswk("xswk", numj, nw);
 
     const Real values_xsqy = synthetic_values_xsqy[0];
     Kokkos::deep_copy(xsqy, values_xsqy);
@@ -144,7 +143,7 @@ void jlong(Ensemble *ensemble) {
                 prs, dprs, nw, nump, numsza, numcolo3, numalb, np_xs, numj,
                 j_long, // output
                 // work arrays
-                rsf, xswk);
+                rsf);
         });
 
     const Real zero = 0;
