@@ -1,12 +1,11 @@
 #include <mam4xx/mam4.hpp>
 
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
 using namespace mam4::mo_drydep;
-using namespace haero;
+
 void calculate_aerodynamic_and_quasilaminar_resistance(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;

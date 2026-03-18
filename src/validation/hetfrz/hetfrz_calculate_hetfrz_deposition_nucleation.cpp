@@ -3,9 +3,8 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
+
 #include <validation.hpp>
 
 using namespace skywalker;
@@ -112,8 +111,8 @@ void calculate_hetfrz_deposition_nucleation(Ensemble *ensemble) {
     bool do_dst1_b = (do_dst1 != 0.0);
     bool do_dst3_b = (do_dst3 != 0.0);
 
-    haero::Real frzbcdep;
-    haero::Real frzdudep;
+    Real frzbcdep;
+    Real frzdudep;
     // Compute frzbccnt and frzducnt
     hetfrz::calculate_hetfrz_deposition_nucleation(
         deltat, temperature, uncoated_aer_num.data(), sigma_iv, eswtr, vwice,

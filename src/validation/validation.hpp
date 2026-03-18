@@ -16,8 +16,6 @@ namespace mam4 {
 
 namespace testing {
 
-using namespace haero::testing;
-
 // these functions are defined in src/tests/testing.cpp and allow the creation
 // of standalone objects that use "managed" ColumnViews
 Prognostics create_prognostics(int num_levels);

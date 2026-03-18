@@ -5,13 +5,10 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/calcsize.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
 
 void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -116,7 +113,7 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
                   // Note: it only needs to update aerosol variables.
                   for (int i = utils::aero_start_ind(); i < pcnst; ++i) {
                     qqcw(kk, i) =
-                        haero::max(zero, qqcw(kk, i) + dqqcwdt(kk, i) * dt);
+                        max(zero, qqcw(kk, i) + dqqcwdt(kk, i) * dt);
                   }
                 }
               }); // k

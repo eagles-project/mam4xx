@@ -5,14 +5,10 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/mam4.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
+
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
-using namespace haero::testing;
 
 void aero_model_wetdep(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -48,11 +44,11 @@ void aero_model_wetdep(Ensemble *ensemble) {
     ColumnView hydrostatic_dp =
         validation::get_input_in_columnview(input, "pdel");
 
-    auto vapor_mixing_ratio = create_column_view(nlev);
-    auto liquid_mixing_ratio = create_column_view(nlev); //
-    auto ice_mixing_ratio = create_column_view(nlev);    //
-    auto cloud_liquid_number_mixing_ratio = create_column_view(nlev);
-    auto cloud_ice_number_mixing_ratio = create_column_view(nlev);
+    auto vapor_mixing_ratio = testing::create_column_view(nlev);
+    auto liquid_mixing_ratio = testing::create_column_view(nlev); //
+    auto ice_mixing_ratio = testing::create_column_view(nlev);    //
+    auto cloud_liquid_number_mixing_ratio = testing::create_column_view(nlev);
+    auto cloud_ice_number_mixing_ratio = testing::create_column_view(nlev);
     // We need deep_copy because of executation error due to different layout
     // q[0] = atm.vapor_mixing_ratio(klev);               // qv
     Kokkos::deep_copy(vapor_mixing_ratio,
@@ -70,10 +66,10 @@ void aero_model_wetdep(Ensemble *ensemble) {
     Kokkos::deep_copy(cloud_ice_number_mixing_ratio,
                       Kokkos::subview(state_q, Kokkos::ALL(), 4));
 
-    auto height = create_column_view(nlev);
-    auto interface_pressure = create_column_view(nlev + 1);
-    auto cloud_fraction = create_column_view(nlev);
-    auto updraft_vel_ice_nucleation = create_column_view(nlev);
+    auto height = testing::create_column_view(nlev);
+    auto interface_pressure = testing::create_column_view(nlev + 1);
+    auto cloud_fraction = testing::create_column_view(nlev);
+    auto updraft_vel_ice_nucleation = testing::create_column_view(nlev);
 
     auto atm = Atmosphere(nlev, temperature, pressure, vapor_mixing_ratio,
                           liquid_mixing_ratio, cloud_liquid_number_mixing_ratio,

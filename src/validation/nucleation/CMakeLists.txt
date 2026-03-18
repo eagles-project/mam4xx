@@ -11,8 +11,7 @@ add_executable(nucleation_driver nucleation_driver.cpp
                binary_nuc_vehk2002.cpp
                pbl_nuc_wang2008.cpp
                mer07_veh02_nuc_mosaic_1box.cpp)
-message("linking nuc driver against haero libs: haero")
-target_link_libraries(nucleation_driver skywalker;validation;haero)
+target_link_libraries(nucleation_driver skywalker;validation)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

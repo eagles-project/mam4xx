@@ -1,21 +1,10 @@
-#include "atmosphere_utils.hpp"
-#include "testing.hpp"
-
-#include "mam4xx/aero_modes.hpp"
-#include "mam4xx/conversions.hpp"
-#include <mam4xx/mode_dry_particle_size.hpp>
-
-#include <haero/constants.hpp>
-#include <haero/floating_point.hpp>
-#include <haero/haero.hpp>
-
-#include "mam4xx/conversions.hpp"
+#include <mam4xx/floating_point.hpp>
+#include <mam4xx/mam4.hpp>
 
 #include <catch2/catch.hpp>
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
 #include <ekat_pack_kokkos.hpp>
-#include <mam4xx/mam4.hpp>
 
 // using namespace haero;
 using namespace mam4;
@@ -53,8 +42,8 @@ TEST_CASE("test_ndrop_init", "mam4_ndrop_unit_tests") {
                           num2vol_ratio_max_nmodes);
 
   for (int i = 0; i < AeroConfig::num_modes(); ++i) {
-    a_alogsig = haero::log(modes(i).mean_std_dev);
-    a_exp45logsig = haero::exp(4.5 * alogsig[i] * alogsig[i]);
+    a_alogsig = mam4::log(modes(i).mean_std_dev);
+    a_exp45logsig = mam4::exp(4.5 * alogsig[i] * alogsig[i]);
     a_num2vol_ratio_min_nmodes =
         one / conversions::mean_particle_volume_from_diameter(
                   modes(i).max_diameter, modes(i).mean_std_dev);
@@ -91,10 +80,10 @@ TEST_CASE("test_ndrop_init", "mam4_ndrop_unit_tests") {
         FloatingPoint<Real>::in_bounds(num2vol_ratio_max_nmodes[i], 0.0, huge));
   }
 
-  const Real rhoh2o = haero::Constants::density_h2o;
-  const Real r_universal = haero::Constants::r_gas * one_thousand; //[J/K/kmol]
+  const Real rhoh2o = mam4::Constants::density_h2o;
+  const Real r_universal = mam4::Constants::r_gas * one_thousand; //[J/K/kmol]
   const Real mwh2o =
-      haero::Constants::molec_weight_h2o * one_thousand; // [kg/kmol]
+      mam4::Constants::molec_weight_h2o * one_thousand; // [kg/kmol]
   a_aten = two * mwh2o * mam4::ndrop::surften /
            (r_universal * mam4::ndrop::t0 * rhoh2o);
 
@@ -176,7 +165,7 @@ TEST_CASE("test_qsat", "mam4_ndrop_unit_tests") {
     logger.debug("qs [base]: [ {} ]", qs_base);
     logger.debug("qs [calc]: [ {} ]", qs_calc);
 
-    REQUIRE(FloatingPoint<Real>::equiv(es_calc, haero::min(es_base, p[i])));
+    REQUIRE(FloatingPoint<Real>::equiv(es_calc, mam4::min(es_base, p[i])));
     REQUIRE(FloatingPoint<Real>::equiv(qs_calc, qs_base));
   }
 }

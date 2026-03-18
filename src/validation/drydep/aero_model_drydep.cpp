@@ -3,9 +3,8 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/drydep.hpp>
-#include <skywalker.hpp>
+
 #include <validation.hpp>
 
 using namespace skywalker;
@@ -76,10 +75,10 @@ void aero_model_drydep(Ensemble *ensemble) {
       return dev;
     };
 
-    haero::ConstColumnView tair = to_dev(input.get_array("tair"));
-    haero::ConstColumnView pmid = to_dev(input.get_array("pmid"));
-    haero::ConstColumnView pint = to_dev(input.get_array("pint"));
-    haero::ConstColumnView pdel = to_dev(input.get_array("pdel"));
+    ConstColumnView tair = to_dev(input.get_array("tair"));
+    ConstColumnView pmid = to_dev(input.get_array("pmid"));
+    ConstColumnView pint = to_dev(input.get_array("pint"));
+    ConstColumnView pdel = to_dev(input.get_array("pdel"));
 
     auto state_q_mem =
         mam4::validation::create_column_view(nlev * aero_model::pcnst);
@@ -175,7 +174,7 @@ void aero_model_drydep(Ensemble *ensemble) {
     for (int i = 0; i < aero_model::pcnst; ++i)
       dqdt[i] = dqdt_tmp[i];
 
-    auto team_policy = haero::ThreadTeamPolicy(1u, 1u);
+    auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           Real vlc_trb[AeroConfig::num_modes()][aerosol_categories] = {};
@@ -187,7 +186,7 @@ void aero_model_drydep(Ensemble *ensemble) {
               aerdepdryis, rho, dry, vlc_trb, grv, dqdt);
         });
     Kokkos::fence();
-    auto to_host = [](haero::ConstColumnView dev) {
+    auto to_host = [](ConstColumnView dev) {
       auto host = Kokkos::create_mirror_view(dev);
       Kokkos::deep_copy(host, dev);
       std::vector<Real> vec(host.size());

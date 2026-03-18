@@ -5,9 +5,9 @@
 
 #include "atmosphere_utils.hpp"
 #include <mam4xx/conversions.hpp>
+#include "testing.hpp"
 
 #include <ekat_assert.hpp>
-#include <haero/testing.hpp>
 
 namespace mam4 {
 
@@ -23,18 +23,18 @@ Atmosphere init_atm_const_tv_lapse_rate(int num_levels, const Real pblh,
   const Real ztop = 10e3;
   const Real dz = ztop / num_levels;
 
-  auto d_temperature = haero::testing::create_column_view(num_levels);
-  auto d_pressure = haero::testing::create_column_view(num_levels);
-  auto d_mix = haero::testing::create_column_view(num_levels);
-  auto d_liq = haero::testing::create_column_view(num_levels);
-  auto d_nliq = haero::testing::create_column_view(num_levels);
-  auto d_ice = haero::testing::create_column_view(num_levels);
-  auto d_nice = haero::testing::create_column_view(num_levels);
-  auto d_height = haero::testing::create_column_view(num_levels);
-  auto d_hdp = haero::testing::create_column_view(num_levels);
-  auto d_intp = haero::testing::create_column_view(num_levels + 1);
-  auto d_cf = haero::testing::create_column_view(num_levels);
-  auto d_w = haero::testing::create_column_view(num_levels);
+  auto d_temperature = testing::create_column_view(num_levels);
+  auto d_pressure = testing::create_column_view(num_levels);
+  auto d_mix = testing::create_column_view(num_levels);
+  auto d_liq = testing::create_column_view(num_levels);
+  auto d_nliq = testing::create_column_view(num_levels);
+  auto d_ice = testing::create_column_view(num_levels);
+  auto d_nice = testing::create_column_view(num_levels);
+  auto d_height = testing::create_column_view(num_levels);
+  auto d_hdp = testing::create_column_view(num_levels);
+  auto d_intp = testing::create_column_view(num_levels + 1);
+  auto d_cf = testing::create_column_view(num_levels);
+  auto d_w = testing::create_column_view(num_levels);
   auto h_temperature = Kokkos::create_mirror_view(d_temperature);
   auto h_pressure = Kokkos::create_mirror_view(d_pressure);
   auto h_mix = Kokkos::create_mirror_view(d_mix);

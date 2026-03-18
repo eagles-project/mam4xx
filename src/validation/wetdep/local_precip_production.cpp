@@ -3,14 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/wet_dep.hpp>
-#include <skywalker.hpp>
-#include <validation.hpp>
-#include <vector>
 
-using namespace haero;
+#include <validation.hpp>
+
 using namespace skywalker;
 
 void test_local_precip_production_process(const Input &input, Output &output) {
@@ -34,9 +30,9 @@ void test_local_precip_production_process(const Input &input, Output &output) {
   const Real source_term = input.get("source_term");
   const Real sink_term = input.get("sink_term");
   EKAT_ASSERT(0 < (source_term - sink_term));
-  Real gravity = Constants::gravity;
+  Real gravity = mam4::Constants::gravity;
 
-  ColumnView return_vals = mam4::validation::create_column_view(1);
+  auto return_vals = mam4::validation::create_column_view(1);
   Kokkos::parallel_for(
       "wetdep::local_precip_production", 1, KOKKOS_LAMBDA(const int kk) {
         Real pdel_temp = pdel;

@@ -3,16 +3,12 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
-#include <mam4xx/aero_modes.hpp>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/water_uptake.hpp>
-#include <skywalker.hpp>
+
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
 
 void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
 
@@ -47,15 +43,15 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
     ColumnView temperature;
-    temperature = haero::testing::create_column_view(pver);
+    temperature = testing::create_column_view(pver);
     auto temperature_host = View1DHost((Real *)temperature_db.data(), pver);
 
     ColumnView pmid;
-    pmid = haero::testing::create_column_view(pver);
+    pmid = testing::create_column_view(pver);
     auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
 
     ColumnView cldn;
-    cldn = haero::testing::create_column_view(pver);
+    cldn = testing::create_column_view(pver);
     auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
 
     Kokkos::deep_copy(temperature, temperature_host);

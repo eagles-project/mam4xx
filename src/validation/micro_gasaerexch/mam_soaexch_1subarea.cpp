@@ -5,14 +5,12 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
 using namespace gasaerexch;
+
 void mam_soaexch_1subarea(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Extract scalar values from input arrays

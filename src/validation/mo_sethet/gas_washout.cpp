@@ -5,19 +5,15 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
 using namespace mo_sethet;
 
 void gas_washout(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
-    using ColumnView = haero::ColumnView;
     constexpr int pver = mam4::nlev;
 
     const int plev = input.get_array("plev")[0];
@@ -33,10 +29,10 @@ void gas_washout(Ensemble *ensemble) {
     auto tfld_i_host = View1DHost((Real *)tfld_i_in.data(), pver);
     auto delz_i_host = View1DHost((Real *)delz_i_in.data(), pver);
     auto xgas_host = View1DHost((Real *)xgas_in.data(), pver);
-    xhen_i = haero::testing::create_column_view(pver);
-    tfld_i = haero::testing::create_column_view(pver);
-    delz_i = haero::testing::create_column_view(pver);
-    xgas = haero::testing::create_column_view(pver);
+    xhen_i = testing::create_column_view(pver);
+    tfld_i = testing::create_column_view(pver);
+    delz_i = testing::create_column_view(pver);
+    xgas = testing::create_column_view(pver);
     Kokkos::deep_copy(xhen_i, xhen_i_host);
     Kokkos::deep_copy(tfld_i, tfld_i_host);
     Kokkos::deep_copy(delz_i, delz_i_host);

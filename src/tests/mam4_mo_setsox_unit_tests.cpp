@@ -1,9 +1,5 @@
-#include "atmosphere_utils.hpp"
-#include "testing.hpp"
-
 #include <mam4xx/floating_point.hpp>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/math.hpp>
 
 #include <catch2/catch.hpp>
 #include <ekat_comm.hpp>
@@ -67,9 +63,9 @@ TEST_CASE("test_henry_factor_so2", "mam4_mo_setsox_unit_tests") {
   // NOTE: also given with a value of 0.1068378555E-02, but that's not germane
   // to this test
   const Real t_factor = 0.3415485654e-3;
-  const Real ref_xk = 1.230 * exp(3120.0 * t_factor);
-  const Real ref_xe = 1.7e-2 * exp(2090.0 * t_factor);
-  const Real ref_x2 = 6.0e-8 * exp(1120.0 * t_factor);
+  const Real ref_xk = 1.230 * mam4::exp(3120.0 * t_factor);
+  const Real ref_xe = 1.7e-2 * mam4::exp(2090.0 * t_factor);
+  const Real ref_x2 = 6.0e-8 * mam4::exp(1120.0 * t_factor);
   Real xk, xe, x2;
 
   mam4::mo_setsox::henry_factor_so2(t_factor, xk, xe, x2);
@@ -91,8 +87,8 @@ TEST_CASE("test_henry_factor_co2", "mam4_mo_setsox_unit_tests") {
   // NOTE: also given with a value of 0.1068378555E-02, but that's not germane
   // to this test
   const Real t_factor = 0.3415485654e-3;
-  const Real ref_xk = 3.1e-2 * exp(2423.0 * t_factor);
-  const Real ref_xe = 4.3e-7 * exp(-913.0 * t_factor);
+  const Real ref_xk = 3.1e-2 * mam4::exp(2423.0 * t_factor);
+  const Real ref_xe = 4.3e-7 * mam4::exp(-913.0 * t_factor);
   Real xk, xe;
 
   mam4::mo_setsox::henry_factor_co2(t_factor, xk, xe);
@@ -112,8 +108,8 @@ TEST_CASE("test_henry_factor_h202", "mam4_mo_setsox_unit_tests") {
   // NOTE: also given with a value of 0.1068378555E-02, but that's not germane
   // to this test
   const Real t_factor = 0.3415485654e-3;
-  const Real ref_xk = 7.4e4 * haero::exp(6621.0 * t_factor);
-  const Real ref_xe = 2.2e-12 * haero::exp(-3730.0 * t_factor);
+  const Real ref_xk = 7.4e4 * mam4::exp(6621.0 * t_factor);
+  const Real ref_xe = 2.2e-12 * mam4::exp(-3730.0 * t_factor);
   Real xk, xe;
 
   mam4::mo_setsox::henry_factor_h2o2(t_factor, xk, xe);
@@ -133,7 +129,7 @@ TEST_CASE("test_henry_factor_o3", "mam4_mo_setsox_unit_tests") {
   // NOTE: also given with a value of 0.1068378555E-02, but that's not germane
   // to this test
   const Real t_factor = 0.3415485654e-3;
-  const Real ref_xk = 1.15e-2 * haero::exp(2560.0 * t_factor);
+  const Real ref_xk = 1.15e-2 * mam4::exp(2560.0 * t_factor);
   Real xk;
 
   mam4::mo_setsox::henry_factor_o3(t_factor, xk);
@@ -157,7 +153,7 @@ TEST_CASE("test_compute_aer_factor", "mam4_mo_setsox_unit_tests") {
     // this is completely arbitrary, checking +/- values, since tmr is only used
     // to assign a variable = max(0, tmr[i])
     tmr[config_.numptrcw_amode[i] - loffset] =
-        haero::pow(-1, i) * 0.5e-10 * (i + 1);
+        mam4::pow(-1, i) * 0.5e-10 * (i + 1);
   }
   Real *tmr_ptr = tmr;
   Real faqgain_so4[nmodes];
@@ -240,7 +236,7 @@ TEST_CASE("test_update_tmr", "mam4_mo_setsox_unit_tests") {
   Real tmr = 27;
   Real ref_tmr = 28;
   const Real dqdt = 42.0;
-  const Real dtime = haero::pow(42.0, -1);
+  const Real dtime = mam4::pow(42.0, -1);
 
   mam4::mo_setsox::update_tmr(tmr, dqdt, dtime);
 

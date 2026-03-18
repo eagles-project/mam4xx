@@ -23,7 +23,7 @@ add_executable(ndrop_driver
                dropmixnuc.cpp
                )
 
-target_link_libraries(ndrop_driver skywalker;validation;haero)
+target_link_libraries(ndrop_driver skywalker;validation)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

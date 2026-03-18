@@ -5,6 +5,7 @@
 #ifndef MAM4XX_AERO_PROCESS_HPP
 #define MAM4XX_AERO_PROCESS_HPP
 
+#include "aero_config.hpp"
 #include "atmosphere.hpp"
 #include "surface.hpp"
 
@@ -17,14 +18,10 @@ namespace mam4 {
 /// This type defines the interface for a specific process in the aerosol
 /// lifecycle, backed by a specific implementation, the structure of which is
 /// defined by a specific "aerosol configuration".
-template <typename AerosolConfig, typename AerosolProcessImpl>
+template <typename AerosolProcessImpl>
 class AeroProcess final {
 public:
   // Types derived from template parameters.
-  using AeroConfig = AerosolConfig;
-  using Prognostics = typename AerosolConfig::Prognostics;
-  using Diagnostics = typename AerosolConfig::Diagnostics;
-  using Tendencies = typename AerosolConfig::Tendencies;
   using ProcessImpl = AerosolProcessImpl;
   using ProcessConfig = typename ProcessImpl::Config;
 

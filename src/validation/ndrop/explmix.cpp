@@ -5,8 +5,6 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
@@ -38,8 +36,8 @@ void explmix(Ensemble *ensemble) {
 
     for (int k = top_lev; k < pver; k++) {
       // add logic for km1 and kp1 from fortran
-      int kp1 = haero::min(k + 1, pver - 1);
-      int km1 = haero::max(k - 1, top_lev);
+      int kp1 = mam4::min(k + 1, pver - 1);
+      int km1 = mam4::max(k - 1, top_lev);
 
       Real qold_km1 = qold_db[km1];
       Real qold_k = qold_db[k];

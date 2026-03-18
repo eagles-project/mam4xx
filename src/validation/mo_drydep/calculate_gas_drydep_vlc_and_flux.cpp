@@ -1,12 +1,11 @@
 #include <mam4xx/mam4.hpp>
 
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
 using namespace mam4::mo_drydep;
-using namespace haero;
+
 void calculate_gas_drydep_vlc_and_flux(const seq_drydep::Data &data,
                                        Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {

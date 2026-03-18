@@ -5,12 +5,11 @@
 
 #include <mam4xx/nucleation.hpp>
 
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
+
 void binary_nuc_vehk2002(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters

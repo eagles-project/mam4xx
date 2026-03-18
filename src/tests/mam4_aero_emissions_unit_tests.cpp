@@ -1,15 +1,11 @@
-#include "atmosphere_utils.hpp"
-#include "testing.hpp"
-
-#include <haero/floating_point.hpp>
-#include <haero/haero.hpp>
+#include <mam4xx/aero_model_emissions.hpp>
+#include <mam4xx/floating_point.hpp>
+#include <mam4xx/mam4.hpp>
 
 #include <catch2/catch.hpp>
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
 
-#include <mam4xx/aero_model_emissions.hpp>
-#include <mam4xx/mam4.hpp>
 
 using namespace mam4;
 

@@ -5,8 +5,6 @@
 
 #include "testing.hpp"
 
-#include <haero/testing.hpp>
-
 // the testing namespace contains functions that are useful only within tests,
 // not to be used in production code
 namespace mam4::testing {
@@ -64,10 +62,10 @@ Diagnostics create_diagnostics(int num_levels) {
     Kokkos::deep_copy(d.g0_soa_out, 0.0);
 
     d.is_cloudy =
-        haero::DeviceType::view_1d<bool>("is_cloudy_bool", num_levels);
+        DeviceType::view_1d<bool>("is_cloudy_bool", num_levels);
     Kokkos::deep_copy(d.is_cloudy, false);
     d.num_substeps =
-        haero::DeviceType::view_1d<int>("num_substeps", num_levels);
+        DeviceType::view_1d<int>("num_substeps", num_levels);
     Kokkos::deep_copy(d.num_substeps, 0);
 
     d.icenuc_num_hetfrz = create_column_view(num_levels);

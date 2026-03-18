@@ -7,7 +7,6 @@
 #include "testing.hpp"
 #include <mam4xx/mam4.hpp>
 #include <mam4xx/utils.hpp>
-// #include <mam4xx/wv_sat_methods.hpp>
 
 #include <catch2/catch.hpp>
 #include <ekat_comm.hpp>
@@ -18,7 +17,7 @@
 // std::string data_file = MAM4_TEST_DATA_DIR;
 // #include <mam4_test_config.hpp>
 
-using namespace haero;
+using namespace mam4;
 
 TEST_CASE("test_constructor", "mam4_nucleate_ice_process") {
   mam4::AeroConfig mam4_config;
@@ -340,7 +339,7 @@ TEST_CASE("test_wv_sat_svp_trans", "mam4_nucleate_ice_process") {
                                 ekat::logger::LogLevel::debug, comm);
 
   const Real epsilon = ekat::is_single_precision<Real>::value ? 0.01 : 0.0001;
-  const Real tmelt = haero::Constants::melting_pt_h2o;
+  const Real tmelt = Constants::melting_pt_h2o;
   Real temperature = tmelt + 40;
   REQUIRE(std::abs(7373.80964886279 - mam4::wv_sat_methods::wv_sat_svp_trans(
                                           temperature)) < epsilon);

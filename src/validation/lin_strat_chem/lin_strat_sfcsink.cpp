@@ -5,13 +5,11 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
+
 using namespace lin_strat_chem;
 void lin_strat_sfcsink(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {

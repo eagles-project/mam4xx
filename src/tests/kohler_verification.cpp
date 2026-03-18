@@ -5,7 +5,7 @@
 
 #include "kohler_verification.hpp"
 
-#ifdef HAERO_DOUBLE_PRECISION
+#ifdef MAM4XX_DOUBLE_PRECISION
 #include <mam4_test_config.hpp>
 
 #include <fstream>
@@ -111,7 +111,7 @@ void KohlerVerification::generate_input_data() {
   Kokkos::parallel_for(
       "KohlerVerification::generate_input_data", md_policy,
       KOKKOS_CLASS_LAMBDA(const int i, const int j, const int k) {
-        const int idx = haero::square(n) * i + n * j + k;
+        const int idx = square(n) * i + n * j + k;
         relative_humidity(idx) = rhmin + i * drh;
         hygroscopicity(idx) = hmin + j * dhyg;
         dry_radius(idx) = rmin + k * ddry;

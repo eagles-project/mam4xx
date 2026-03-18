@@ -154,8 +154,8 @@ void calculate_hetfrz_immersion_nucleation(Ensemble *ensemble) {
     bool do_dst1_b = (do_dst1 != 0.0);
     bool do_dst3_b = (do_dst3 != 0.0);
 
-    haero::Real frzbcimm;
-    haero::Real frzduimm;
+    Real frzbcimm;
+    Real frzduimm;
 
     hetfrz::calculate_hetfrz_immersion_nucleation(
         deltat, temperature, uncoated_aer_num.data(),

@@ -5,13 +5,10 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
 
 void tropopause_twmo(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -31,11 +28,11 @@ void tropopause_twmo(Ensemble *ensemble) {
     auto temp_host = View1DHost((Real *)temp_in.data(), pver);
     auto zm_host = View1DHost((Real *)zm_in.data(), pver);
     auto zi_host = View1DHost((Real *)zi_in.data(), pver);
-    pmid = haero::testing::create_column_view(pver);
-    pint = haero::testing::create_column_view(pver);
-    temp = haero::testing::create_column_view(pver);
-    zm = haero::testing::create_column_view(pver);
-    zi = haero::testing::create_column_view(pver);
+    pmid = testing::create_column_view(pver);
+    pint = testing::create_column_view(pver);
+    temp = testing::create_column_view(pver);
+    zm = testing::create_column_view(pver);
+    zi = testing::create_column_view(pver);
     Kokkos::deep_copy(pmid, pmid_host);
     Kokkos::deep_copy(pint, pint_host);
     Kokkos::deep_copy(temp, temp_host);

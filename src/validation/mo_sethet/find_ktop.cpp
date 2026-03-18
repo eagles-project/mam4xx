@@ -5,19 +5,15 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
 using namespace mo_sethet;
 
 void find_ktop(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
-    using ColumnView = haero::ColumnView;
     constexpr int pver = mam4::nlev;
 
     const Real rlat = input.get_array("rlat")[0];
@@ -25,10 +21,10 @@ void find_ktop(Ensemble *ensemble) {
 
     ColumnView press;
     auto press_host = View1DHost((Real *)press_in.data(), pver);
-    press = haero::testing::create_column_view(pver);
+    press = testing::create_column_view(pver);
     Kokkos::deep_copy(press, press_host);
 
-    auto ktop_out = haero::testing::create_column_view(1);
+    auto ktop_out = testing::create_column_view(1);
     auto ktop_out_host = View1DHost("ktop_out_host", 1);
     ktop_out_host(0) = 0;
     Kokkos::deep_copy(ktop_out, ktop_out_host);

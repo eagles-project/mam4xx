@@ -3,14 +3,11 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <mam4xx/mam4_constants.hpp>
+#include <mam4xx/mam4_types.hpp>
 #include <mam4xx/nucleation.hpp>
 
-#include <haero/constants.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
-
-#include <iostream>
 
 using namespace skywalker;
 using namespace mam4;

@@ -13,13 +13,11 @@
 
 #include <catch2/catch.hpp>
 #include <cmath>
-#include <iomanip>
 #include <iostream>
 #include <limits>
-#include <memory>
 
-using namespace haero;
 using namespace mam4;
+
 TEST_CASE("test_constructor", "mam4_coagulation_process") {
   mam4::AeroConfig mam4_config;
   mam4::CoagulationProcess::ProcessConfig process_config;
@@ -35,6 +33,7 @@ TEST_CASE("test_aging_pairs", "mam4_aging_pairs") {
 }
 
 TEST_CASE("bm0ij_data", "mam4_cagulation_process") {
+  using mam4::abs;
 
   // Here we test a few values returned directly from fortran with those
   // as defined in the C++ code.
@@ -46,17 +45,18 @@ TEST_CASE("bm0ij_data", "mam4_cagulation_process") {
   int n2n = 2;
   Real bm0ij_f = 0.674432;
   Real bm0ij_c = coagulation::bm0ij_data(n1, n2a, n2n);
-  REQUIRE(haero::abs(bm0ij_f - bm0ij_c) < threshold_error);
+  REQUIRE(abs(bm0ij_f - bm0ij_c) < threshold_error);
 
   n1 = 1;
   n2a = 4;
   n2n = 0;
   bm0ij_f = 0.739575;
   bm0ij_c = coagulation::bm0ij_data(n1, n2a, n2n);
-  REQUIRE(haero::abs(bm0ij_f - bm0ij_c) < threshold_error);
+  REQUIRE(abs(bm0ij_f - bm0ij_c) < threshold_error);
 }
 
 TEST_CASE("bm3ij_data", "mam4_coagulation_process") {
+  using mam4::abs;
 
   const Real threshold_error = std::numeric_limits<float>::epsilon();
 
@@ -65,14 +65,14 @@ TEST_CASE("bm3ij_data", "mam4_coagulation_process") {
   int n2n = 2;
   Real bm3i_f = 0.74927;
   Real bm3i_c = coagulation::bm3i_data(n1, n2a, n2n);
-  REQUIRE(haero::abs(bm3i_f - bm3i_c) < threshold_error);
+  REQUIRE(abs(bm3i_f - bm3i_c) < threshold_error);
 
   n1 = 1;
   n2a = 4;
   n2n = 0;
   bm3i_f = 0.91886;
   bm3i_c = coagulation::bm3i_data(n1, n2a, n2n);
-  REQUIRE(haero::abs(bm3i_f - bm3i_c) < threshold_error);
+  REQUIRE(abs(bm3i_f - bm3i_c) < threshold_error);
 }
 
 TEST_CASE("intra_coag_rate_for_0th_moment", "mam4_coagulation_process") {

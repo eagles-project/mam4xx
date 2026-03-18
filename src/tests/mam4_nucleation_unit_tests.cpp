@@ -12,12 +12,10 @@
 #include <ekat_logger.hpp>
 
 #include <cmath>
-#include <iomanip>
 #include <iostream>
-#include <limits>
 #include <sstream>
 
-using namespace haero;
+using namespace mam4;
 
 TEST_CASE("test_constructor", "mam4_nucleation_process") {
   mam4::AeroConfig mam4_config;

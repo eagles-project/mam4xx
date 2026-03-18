@@ -5,14 +5,11 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
-using namespace modal_aer_opt;
+using namespace modal_aero_opt;
 
 void calc_volc_ext(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -29,9 +26,9 @@ void calc_volc_ext(Ensemble *ensemble) {
     auto extinct_host = View1DHost((Real *)extinct_db.data(), pver);
 
     ColumnView state_zm, ext_cmip6_sw, extinct;
-    state_zm = haero::testing::create_column_view(pver);
-    ext_cmip6_sw = haero::testing::create_column_view(pver);
-    extinct = haero::testing::create_column_view(pver);
+    state_zm = testing::create_column_view(pver);
+    ext_cmip6_sw = testing::create_column_view(pver);
+    extinct = testing::create_column_view(pver);
     Kokkos::deep_copy(state_zm, state_zm_host);
     Kokkos::deep_copy(ext_cmip6_sw, ext_cmip6_sw_host);
     Kokkos::deep_copy(extinct, extinct_host);

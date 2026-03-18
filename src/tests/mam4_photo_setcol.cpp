@@ -4,10 +4,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "atmosphere_utils.hpp"
-#include "testing.hpp"
+#include <mam4xx/mam4.hpp>
+
 #include <catch2/catch.hpp>
 #include <ekat_logger.hpp>
-#include <mam4xx/mam4.hpp>
 
 // Precision-dependent tolerance traits
 template <typename T> struct PrecisionTolerance;
@@ -21,7 +21,6 @@ template <> struct PrecisionTolerance<double> {
 };
 
 using namespace mam4;
-using namespace haero;
 
 // Test compute_o3_column_density: serial reference vs parallel implementation
 TEST_CASE("compute_o3_column_density", "mo_photo") {

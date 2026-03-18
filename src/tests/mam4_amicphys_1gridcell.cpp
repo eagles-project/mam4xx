@@ -15,8 +15,8 @@
 #include <ekat_pack_kokkos.hpp>
 
 #include <type_traits>
+#include <iomanip>
 
-using namespace haero;
 using namespace mam4;
 
 namespace {
@@ -214,7 +214,7 @@ void mam_amicphys_1subarea_clear(
   if (ntsubstep > 1)
     dtsubstep = deltat / ntsubstep;
   Real del_h2so4_gasprod =
-      haero::max(qgas3[igas_h2so4] - qgas1[igas_h2so4], 0.0) / ntsubstep;
+      max(qgas3[igas_h2so4] - qgas1[igas_h2so4], 0.0) / ntsubstep;
 
   // loop over multiple time sub-steps
   for (int jtsubstep = 1; jtsubstep <= ntsubstep; ++jtsubstep) {
@@ -437,7 +437,7 @@ void mam_amicphys_1subarea_clear(
 
         Real delta_q = dso4dt_ait * dtsubstep;
         qaer_cur[iaer_so4][nait] += delta_q;
-        delta_q = haero::min(delta_q, qgas_cur[igas_h2so4]);
+        delta_q = min(delta_q, qgas_cur[igas_h2so4]);
         qgas_cur[igas_h2so4] -= delta_q;
       }
 
@@ -447,7 +447,7 @@ void mam_amicphys_1subarea_clear(
 
         Real delta_q = dnh4dt_ait * dtsubstep;
         qaer_cur[iaer_nh4][nait] += delta_q;
-        delta_q = haero::min(delta_q, qgas_cur[igas_nh3]);
+        delta_q = min(delta_q, qgas_cur[igas_nh3]);
         qgas_cur[igas_nh3] -= delta_q;
       }
       for (int i = 0; i < num_gas_ids; ++i)
@@ -1155,7 +1155,7 @@ void subarea_partition_factors(
   const Real tmp_q_cbn_cldy = q_cbn_cell_avg / fcldy;
   // interstitial, cloudy subarea
   const Real tmp_q_int_cldy =
-      haero::max(0.0, ((q_int_cell_avg + q_cbn_cell_avg) - tmp_q_cbn_cldy));
+      max(0.0, ((q_int_cell_avg + q_cbn_cell_avg) - tmp_q_cbn_cldy));
   // interstitial, clear  subarea
   const Real tmp_q_int_clea = (q_int_cell_avg - fcldy * tmp_q_int_cldy) / fclea;
 
@@ -1172,9 +1172,9 @@ void subarea_partition_factors(
   //    because number and mass have different activation fractions
   // *** question ***
 
-  Real tmp_aa = haero::max(1.e-35, tmp_q_int_clea * fclea) /
-                haero::max(1.e-35, q_int_cell_avg);
-  tmp_aa = haero::max(0.0, haero::min(1.0, tmp_aa));
+  Real tmp_aa = max(1.e-35, tmp_q_int_clea * fclea) /
+                max(1.e-35, q_int_cell_avg);
+  tmp_aa = max(0.0, min(1.0, tmp_aa));
 
   part_fac_q_int_clea = tmp_aa / fclea;
   part_fac_q_int_cldy = (1.0 - tmp_aa) / fcldy;
@@ -1287,7 +1287,7 @@ void construct_subareas_1gridcell(
       if (jclea > 0) {
         const Real tmpa =
             (relhumgcm - afracsub[jcldy - 1]) / afracsub[jclea - 1];
-        relhumsub[jclea - 1] = haero::max(0.0, haero::min(1.0, tmpa));
+        relhumsub[jclea - 1] = max(0.0, min(1.0, tmpa));
       }
     }
   }
@@ -1301,29 +1301,29 @@ void construct_subareas_1gridcell(
   //  Interstitial aerosols
   Real qgcm1[gas_pcnst], qgcm2[gas_pcnst], qgcm3[gas_pcnst];
   for (int i = 0; i < gas_pcnst; ++i) {
-    qgcm1[i] = haero::max(0.0, q_pregaschem[i]);
-    qgcm2[i] = haero::max(0.0, q_precldchem[i]);
-    qgcm3[i] = haero::max(0.0, q[i]);
+    qgcm1[i] = max(0.0, q_pregaschem[i]);
+    qgcm2[i] = max(0.0, q_precldchem[i]);
+    qgcm3[i] = max(0.0, q[i]);
   }
 
   // Cloud-borne aerosols
   Real qqcwgcm2[gas_pcnst], qqcwgcm3[gas_pcnst];
   for (int i = 0; i < gas_pcnst; ++i) {
-    qqcwgcm2[i] = haero::max(0.0, qqcw_precldchem[i]);
-    qqcwgcm3[i] = haero::max(0.0, qqcw[i]);
+    qqcwgcm2[i] = max(0.0, qqcw_precldchem[i]);
+    qqcwgcm3[i] = max(0.0, qqcw[i]);
   }
 
   // aerosol water
   Real qaerwatgcm3[num_modes] = {};
   for (int i = 0; i < num_modes; ++i) {
-    qaerwatgcm3[i] = haero::max(0.0, qaerwat[i]);
+    qaerwatgcm3[i] = max(0.0, qaerwat[i]);
   }
 
   // ----------------------------------------------------------------------------
   //  Initialize the subarea mean mixing ratios
   // ----------------------------------------------------------------------------
   {
-    const int n = haero::min(maxsubarea, nsubarea + 1);
+    const int n = min(maxsubarea, nsubarea + 1);
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < gas_pcnst; ++j) {
         qsub1[j][i] = 0.0;
@@ -1634,13 +1634,13 @@ void modal_aero_amicphys_intr(
   // get saturation mixing ratio
   //     call qsat( t(1:ncol,1:pver), pmid(1:ncol,1:pvnner), &
   //               ev_sat(1:ncol,1:pver), qv_sat(1:ncol,1:pver) )
-  const Real epsqs = haero::Constants::weight_ratio_h2o_air;
+  const Real epsqs = Constants::weight_ratio_h2o_air;
   // Saturation vapor pressure
   const Real ev_sat = conversions::vapor_saturation_pressure_magnus(t, pmid);
   // Saturation specific humidity
   const Real qv_sat = epsqs * ev_sat / (pmid - (1 - epsqs) * ev_sat);
 
-  const Real relhumgcm = haero::max(0.0, haero::min(1.0, qv / qv_sat));
+  const Real relhumgcm = max(0.0, min(1.0, qv / qv_sat));
 
   // Set up cloudy/clear subareas inside a grid cell
   int nsubarea, ncldy_subarea, jclea, jcldy;
@@ -1678,7 +1678,7 @@ void modal_aero_amicphys_intr(
   for (int n = 0; n < num_modes; ++n) {
     dgn_a[n] = dgncur_a[n];
     dgn_awet[n] = dgncur_awet[n];
-    wetdens[n] = haero::max(1000.0, wetdens_host[n]);
+    wetdens[n] = max(1000.0, wetdens_host[n]);
   }
   Real qsub_tendaa[gas_pcnst][nqtendaa][maxsubarea] = {};
   Real qqcwsub_tendaa[gas_pcnst][nqqcwtendaa][maxsubarea] = {};
@@ -1724,7 +1724,7 @@ void modal_aero_amicphys_intr(
   Real qqcwgcm_tendaa[gas_pcnst][nqqcwtendaa];
   if (ncldy_subarea <= 0) {
     for (int i = 0; i < gas_pcnst; ++i)
-      qqcwgcm4[i] = haero::max(0.0, qqcw[i]);
+      qqcwgcm4[i] = max(0.0, qqcw[i]);
     for (int i = 0; i < gas_pcnst; ++i)
       for (int j = 0; j < nqqcwtendaa; ++j)
         qqcwgcm_tendaa[i][j] = 0.0;
@@ -1754,10 +1754,10 @@ void modal_aero_amicphys_intr(
   for (int lmz = 0; lmz < gas_pcnst; ++lmz) {
     if (lmapcc_all[lmz] > 0) {
       // HW, to ensure non-negative
-      q[lmz] = haero::max(qgcm4[lmz], 0.0);
+      q[lmz] = max(qgcm4[lmz], 0.0);
       if (lmapcc_all[lmz] >= lmapcc_val_aer) {
         // HW, to ensure non-negative
-        qqcw[lmz] = haero::max(qqcwgcm4[lmz], 0.0);
+        qqcw[lmz] = max(qqcwgcm4[lmz], 0.0);
       }
     }
   }
@@ -2272,7 +2272,7 @@ TEST_CASE("cloudy", "test_mam4_amicphys") {
     REQUIRE(wetdens[i] == Approx(check_wetdens[i]));
   }
   for (int i = 0; i < num_gas_ids; ++i) {
-#ifdef HAERO_DOUBLE_PRECISION
+#ifdef MAM4XX_DOUBLE_PRECISION
     const double epsilon = 0.0001;
 #else
     const double epsilon = 0.1;
@@ -2287,7 +2287,7 @@ TEST_CASE("cloudy", "test_mam4_amicphys") {
   }
   for (int i = 0; i < num_gas_ids; ++i) {
     for (int j = 0; j < nqtendaa; ++j) {
-#ifdef HAERO_DOUBLE_PRECISION
+#ifdef MAM4XX_DOUBLE_PRECISION
       const double epsilon = 0.0001;
 #else
       const double epsilon = 0.1;

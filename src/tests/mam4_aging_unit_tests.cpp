@@ -12,12 +12,8 @@
 
 #include <catch2/catch.hpp>
 #include <cmath>
-#include <iomanip>
 #include <iostream>
-#include <limits>
-#include <memory>
 
-using namespace haero;
 using namespace mam4;
 
 TEST_CASE("test_constructor", "mam4_aging_process") {

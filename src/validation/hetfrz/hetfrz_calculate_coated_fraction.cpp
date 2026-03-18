@@ -3,9 +3,8 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
+
 #include <validation.hpp>
 
 using namespace skywalker;
@@ -147,8 +146,8 @@ void calculate_coated_fraction(Ensemble *ensemble) {
     auto coated_aer_num = input.get_array("coated_aer_num");
     auto uncoated_aer_num = input.get_array("uncoated_aer_num");
     auto dstcoat = input.get_array("dstcoat");
-    haero::Real na500 = 0.0;
-    haero::Real tot_na500 = 0.0;
+    Real na500 = 0.0;
+    Real tot_na500 = 0.0;
 
     hetfrz::calculate_coated_fraction(
         air_density, so4mac, pommac, mommac, soamac, dmac, bcmac, mommpc,

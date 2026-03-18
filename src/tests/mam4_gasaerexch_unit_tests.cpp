@@ -17,9 +17,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
-#include <memory>
 
-using namespace haero;
 using namespace mam4;
 TEST_CASE("test_constructor", "mam4_gasaerexch_process") {
   mam4::AeroConfig mam4_config;

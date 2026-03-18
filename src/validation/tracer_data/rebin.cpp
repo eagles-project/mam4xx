@@ -5,13 +5,10 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <iostream>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
 
 void rebin(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {

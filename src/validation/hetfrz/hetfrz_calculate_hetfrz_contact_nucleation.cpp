@@ -5,7 +5,7 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
+
 #include <validation.hpp>
 
 using namespace skywalker;
@@ -133,8 +133,8 @@ void calculate_hetfrz_contact_nucleation(Ensemble *ensemble) {
     bool do_dst1_b = (do_dst1 != 0.0);
     bool do_dst3_b = (do_dst3 != 0.0);
 
-    haero::Real frzbccnt;
-    haero::Real frzducnt;
+    Real frzbccnt;
+    Real frzducnt;
     // Compute frzbccnt and frzducnt
     hetfrz::calculate_hetfrz_contact_nucleation(
         deltat, temperature, uncoated_aer_num.data(), icnlx, sigma_iv, eswtr,

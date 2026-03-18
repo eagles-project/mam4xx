@@ -5,9 +5,6 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/calcsize.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
@@ -121,7 +118,7 @@ void aitken_accum_exchange(Ensemble *ensemble) {
     const int accum_idx = int(ModeIndex::Accumulation);
     static constexpr Real close_to_one = 1.0 + 1.0e-15;
     static constexpr Real seconds_in_a_day = 86400.0;
-    const auto adj_tscale = haero::max(seconds_in_a_day, dt);
+    const auto adj_tscale = mam4::max(seconds_in_a_day, dt);
     const auto adj_tscale_inv = 1.0 / (adj_tscale * close_to_one);
 
     Kokkos::parallel_for(

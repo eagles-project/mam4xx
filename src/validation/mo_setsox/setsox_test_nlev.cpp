@@ -5,13 +5,11 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
+
 void setsox_test_nlev(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters
@@ -61,21 +59,21 @@ void setsox_test_nlev(Ensemble *ensemble) {
     // we'll use the same validation data for every level in a column.
     // then we'll make sure every level gets the same answer and then write the
     // first entry as the final output
-    ColumnView press = haero::testing::create_column_view(nlev);
+    ColumnView press = testing::create_column_view(nlev);
     auto press_h = Kokkos::create_mirror_view(press);
-    ColumnView pdel = haero::testing::create_column_view(nlev);
+    ColumnView pdel = testing::create_column_view(nlev);
     auto pdel_h = Kokkos::create_mirror_view(pdel);
-    ColumnView tfld = haero::testing::create_column_view(nlev);
+    ColumnView tfld = testing::create_column_view(nlev);
     auto tfld_h = Kokkos::create_mirror_view(tfld);
-    ColumnView mbar = haero::testing::create_column_view(nlev);
+    ColumnView mbar = testing::create_column_view(nlev);
     auto mbar_h = Kokkos::create_mirror_view(mbar);
-    ColumnView lwc = haero::testing::create_column_view(nlev);
+    ColumnView lwc = testing::create_column_view(nlev);
     auto lwc_h = Kokkos::create_mirror_view(lwc);
-    ColumnView cldfrc = haero::testing::create_column_view(nlev);
+    ColumnView cldfrc = testing::create_column_view(nlev);
     auto cldfrc_h = Kokkos::create_mirror_view(cldfrc);
-    ColumnView cldnum = haero::testing::create_column_view(nlev);
+    ColumnView cldnum = testing::create_column_view(nlev);
     auto cldnum_h = Kokkos::create_mirror_view(cldnum);
-    ColumnView xhnm = haero::testing::create_column_view(nlev);
+    ColumnView xhnm = testing::create_column_view(nlev);
     auto xhnm_h = Kokkos::create_mirror_view(xhnm);
 
     using View1DHost = typename HostType::view_1d<Real>;
@@ -85,9 +83,9 @@ void setsox_test_nlev(Ensemble *ensemble) {
     View1DHost qin_h[nspec];
 
     for (int i = 0; i < nspec; ++i) {
-      qcw[i] = haero::testing::create_column_view(nlev);
+      qcw[i] = testing::create_column_view(nlev);
       qcw_h[i] = Kokkos::create_mirror_view(qcw[i]);
-      qin[i] = haero::testing::create_column_view(nlev);
+      qin[i] = testing::create_column_view(nlev);
       qin_h[i] = Kokkos::create_mirror_view(qin[i]);
     }
 

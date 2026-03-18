@@ -5,13 +5,11 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
+
 void ccncalc(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
@@ -51,8 +49,8 @@ void ccncalc(Ensemble *ensemble) {
 
     ColumnView tair;
     ColumnView pmid;
-    tair = haero::testing::create_column_view(pver);
-    pmid = haero::testing::create_column_view(pver);
+    tair = testing::create_column_view(pver);
+    pmid = testing::create_column_view(pver);
 
     auto tair_host = View1DHost((Real *)tair_db.data(), pver);
     auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);

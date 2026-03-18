@@ -3,14 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/wet_dep.hpp>
-#include <skywalker.hpp>
-#include <validation.hpp>
-#include <vector>
 
-using namespace haero;
+#include <validation.hpp>
+
 using namespace skywalker;
 
 void test_wetdep_resusp_process(const Input &input, Output &output) {
@@ -41,7 +37,7 @@ void test_wetdep_resusp_process(const Input &input, Output &output) {
   const Real scavabx_old = input.get("scavabx_old");
   const Real precnumx_base_old = input.get("precnumx_base_old");
 
-  ColumnView return_val = mam4::validation::create_column_view(1);
+  auto return_val = mam4::validation::create_column_view(1);
   Kokkos::parallel_for(
       "wetdep::wetdep_resusp", 1, KOKKOS_LAMBDA(const int) {
         return_val[0] = mam4::wetdep::wetdep_resusp(

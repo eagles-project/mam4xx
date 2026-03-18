@@ -10,10 +10,5 @@
 
 #include <catch2/catch.hpp>
 #include <cmath>
-#include <iomanip>
-#include <iostream>
-#include <limits>
-#include <memory>
 
-using namespace haero;
 using namespace mam4;

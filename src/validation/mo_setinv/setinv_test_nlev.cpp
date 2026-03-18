@@ -5,13 +5,11 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
+
 void setinv_test_nlev(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1D = DeviceType::view_1d<Real>;
@@ -43,9 +41,9 @@ void setinv_test_nlev(Ensemble *ensemble) {
     const int nfs = mam4::mo_setinv::nfs;
     const int num_tracer_cnst = mam4::mo_setinv::num_tracer_cnst;
 
-    ColumnView tfld = haero::testing::create_column_view(nlev);
-    ColumnView qv = haero::testing::create_column_view(nlev);
-    ColumnView pmid = haero::testing::create_column_view(nlev);
+    ColumnView tfld = testing::create_column_view(nlev);
+    ColumnView qv = testing::create_column_view(nlev);
+    ColumnView pmid = testing::create_column_view(nlev);
 
     View2D invariants("invariants", nlev, nfs);
     auto invariants_h = Kokkos::create_mirror_view(invariants);

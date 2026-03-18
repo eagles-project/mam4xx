@@ -5,13 +5,10 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
 
 void update_from_explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -53,7 +50,7 @@ void update_from_explmix(Ensemble *ensemble) {
 
     using View1DHost = typename HostType::view_1d<Real>;
 
-    View1D indexes = haero::testing::create_column_view(2);
+    View1D indexes = testing::create_column_view(2);
     auto indexes_host = View1DHost("nnew_nsav", 2);
     Kokkos::deep_copy(indexes, indexes_host);
 
@@ -73,17 +70,17 @@ void update_from_explmix(Ensemble *ensemble) {
     ColumnView zn, csbot, zs, ekd, overlapp, overlapm, ekkp, ekkm, qncld, qcld,
         cldn;
 
-    ekd = haero::testing::create_column_view(pver);
-    zn = haero::testing::create_column_view(pver);
-    csbot = haero::testing::create_column_view(pver);
-    zs = haero::testing::create_column_view(pver);
-    overlapp = haero::testing::create_column_view(pver);
-    overlapm = haero::testing::create_column_view(pver);
-    ekkp = haero::testing::create_column_view(pver);
-    ekkm = haero::testing::create_column_view(pver);
-    qncld = haero::testing::create_column_view(pver);
-    qcld = haero::testing::create_column_view(pver);
-    cldn = haero::testing::create_column_view(pver);
+    ekd = testing::create_column_view(pver);
+    zn = testing::create_column_view(pver);
+    csbot = testing::create_column_view(pver);
+    zs = testing::create_column_view(pver);
+    overlapp = testing::create_column_view(pver);
+    overlapm = testing::create_column_view(pver);
+    ekkp = testing::create_column_view(pver);
+    ekkm = testing::create_column_view(pver);
+    qncld = testing::create_column_view(pver);
+    qcld = testing::create_column_view(pver);
+    cldn = testing::create_column_view(pver);
 
     auto csbot_host = View1DHost((Real *)csbot_db.data(), pver);
     auto cldn_host = View1DHost((Real *)cldn_col_db.data(), pver);

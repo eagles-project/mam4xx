@@ -5,13 +5,11 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
+
 void dropmixnuc(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const Real zero = 0;
@@ -67,7 +65,7 @@ void dropmixnuc(Ensemble *ensemble) {
 
     count = 0;
     for (int i = 0; i < ncnst_tot; ++i) {
-      qqcw[i] = haero::testing::create_column_view(pver);
+      qqcw[i] = testing::create_column_view(pver);
       qqcw_host[i] = View1DHost("qqcw_host", pver);
     }
 
@@ -94,17 +92,17 @@ void dropmixnuc(Ensemble *ensemble) {
     ColumnView cldn;
     ColumnView wsub;
     ColumnView cldo;
-    tair = haero::testing::create_column_view(pver);
-    pmid = haero::testing::create_column_view(pver);
-    pint = haero::testing::create_column_view(pver);
-    pdel = haero::testing::create_column_view(pver);
-    rpdel = haero::testing::create_column_view(pver);
-    zm = haero::testing::create_column_view(pver);
-    ncldwtr = haero::testing::create_column_view(pver);
-    kvh = haero::testing::create_column_view(pver);
-    cldn = haero::testing::create_column_view(pver);
-    wsub = haero::testing::create_column_view(pver);
-    cldo = haero::testing::create_column_view(pver);
+    tair = testing::create_column_view(pver);
+    pmid = testing::create_column_view(pver);
+    pint = testing::create_column_view(pver);
+    pdel = testing::create_column_view(pver);
+    rpdel = testing::create_column_view(pver);
+    zm = testing::create_column_view(pver);
+    ncldwtr = testing::create_column_view(pver);
+    kvh = testing::create_column_view(pver);
+    cldn = testing::create_column_view(pver);
+    wsub = testing::create_column_view(pver);
+    cldo = testing::create_column_view(pver);
 
     auto tair_host = View1DHost((Real *)tair_db.data(), pver);
     auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
@@ -140,18 +138,18 @@ void dropmixnuc(Ensemble *ensemble) {
     ColumnView ndropmix;
     ColumnView nsource;
     ColumnView wtke;
-    qcld = haero::testing::create_column_view(pver);
-    tendnd = haero::testing::create_column_view(pver);
-    ndropcol = haero::testing::create_column_view(pver);
-    ndropmix = haero::testing::create_column_view(pver);
-    nsource = haero::testing::create_column_view(pver);
-    wtke = haero::testing::create_column_view(pver);
+    qcld = testing::create_column_view(pver);
+    tendnd = testing::create_column_view(pver);
+    ndropcol = testing::create_column_view(pver);
+    ndropmix = testing::create_column_view(pver);
+    nsource = testing::create_column_view(pver);
+    wtke = testing::create_column_view(pver);
 
     ColumnView ptend_q[pcnst];
 
     count = 0;
     for (int i = 0; i < pcnst; ++i) {
-      ptend_q[i] = haero::testing::create_column_view(pver);
+      ptend_q[i] = testing::create_column_view(pver);
     }
 
     View2D factnum("factnum", ntot_amode, pver);
@@ -160,8 +158,8 @@ void dropmixnuc(Ensemble *ensemble) {
     ColumnView coltend_cw[ncnst_tot];
 
     for (int i = 0; i < ncnst_tot; ++i) {
-      coltend[i] = haero::testing::create_column_view(pver);
-      coltend_cw[i] = haero::testing::create_column_view(pver);
+      coltend[i] = testing::create_column_view(pver);
+      coltend_cw[i] = testing::create_column_view(pver);
     }
 
     View2D ccn("ccn", pver, psat);
@@ -179,30 +177,30 @@ void dropmixnuc(Ensemble *ensemble) {
     View2D mact("mact", pver, ntot_amode);
 
     ColumnView ekd;
-    ekd = haero::testing::create_column_view(pver);
+    ekd = testing::create_column_view(pver);
 
     ColumnView zn, csbot, zs, overlapp, overlapm, ekkp, ekkm, qncld, srcn,
         source;
 
-    zn = haero::testing::create_column_view(pver);
-    csbot = haero::testing::create_column_view(pver);
-    zs = haero::testing::create_column_view(pver);
-    overlapp = haero::testing::create_column_view(pver);
-    overlapm = haero::testing::create_column_view(pver);
-    ekkp = haero::testing::create_column_view(pver);
-    ekkm = haero::testing::create_column_view(pver);
-    qncld = haero::testing::create_column_view(pver);
-    srcn = haero::testing::create_column_view(pver);
-    source = haero::testing::create_column_view(pver);
+    zn = testing::create_column_view(pver);
+    csbot = testing::create_column_view(pver);
+    zs = testing::create_column_view(pver);
+    overlapp = testing::create_column_view(pver);
+    overlapm = testing::create_column_view(pver);
+    ekkp = testing::create_column_view(pver);
+    ekkm = testing::create_column_view(pver);
+    qncld = testing::create_column_view(pver);
+    srcn = testing::create_column_view(pver);
+    source = testing::create_column_view(pver);
 
     ColumnView dz, csbot_cscen;
-    dz = haero::testing::create_column_view(pver);
-    csbot_cscen = haero::testing::create_column_view(pver);
+    dz = testing::create_column_view(pver);
+    csbot_cscen = testing::create_column_view(pver);
 
     ColumnView raertend, qqcwtend;
 
-    raertend = haero::testing::create_column_view(pver);
-    qqcwtend = haero::testing::create_column_view(pver);
+    raertend = testing::create_column_view(pver);
+    qqcwtend = testing::create_column_view(pver);
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(

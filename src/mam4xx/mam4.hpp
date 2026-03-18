@@ -59,24 +59,18 @@ const char *revision();
 // Returns true iff this build has changes that weren't committed to the git repo.
 bool has_uncommitted_changes();
 
-using NucleationProcess = AeroProcess<AeroConfig, Nucleation>;
-using GasAerExchProcess = AeroProcess<AeroConfig, GasAerExch>;
-using CoagulationProcess = AeroProcess<AeroConfig, Coagulation>;
-using CalcSizeProcess = AeroProcess<AeroConfig, CalcSize>;
-using ConvProcProcess = AeroProcess<AeroConfig, ConvProc>;
-using AgingProcess = AeroProcess<AeroConfig, Aging>;
-using RenameProcess = AeroProcess<AeroConfig, Rename>;
-using HetfrzProcess = AeroProcess<AeroConfig, Hetfrz>;
-using NucleateIceProcess = AeroProcess<AeroConfig, NucleateIce>;
-using DryDepositionProcess = AeroProcess<AeroConfig, DryDeposition>;
-using WaterUptakeProcess = AeroProcess<AeroConfig, Water_Uptake>;
+using NucleationProcess = AeroProcess<Nucleation>;
+using GasAerExchProcess = AeroProcess<GasAerExch>;
+using CoagulationProcess = AeroProcess<Coagulation>;
+using CalcSizeProcess = AeroProcess<CalcSize>;
+using ConvProcProcess = AeroProcess<ConvProc>;
+using AgingProcess = AeroProcess<Aging>;
+using RenameProcess = AeroProcess<Rename>;
+using HetfrzProcess = AeroProcess<Hetfrz>;
+using NucleateIceProcess = AeroProcess<NucleateIce>;
+using DryDepositionProcess = AeroProcess<DryDeposition>;
+using WaterUptakeProcess = AeroProcess<Water_Uptake>;
 
 } // namespace mam4
-
-namespace haero {
-
-using namespace mam4;
-
-}
 
 #endif

@@ -3,14 +3,12 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "Kokkos_Core.hpp"
 #include <mam4xx/mam4.hpp>
-#include <skywalker.hpp>
+
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
 
 void hetfrz_rates_1box(Ensemble *ensemble) {
 

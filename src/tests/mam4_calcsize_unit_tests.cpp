@@ -15,7 +15,7 @@
 // std::string data_file = MAM4_TEST_DATA_DIR;
 // #include <mam4_test_config.hpp>
 
-using namespace haero;
+using namespace mam4;
 
 TEST_CASE("test_constructor", "mam4_calcsize_process") {
   mam4::AeroConfig mam4_config;

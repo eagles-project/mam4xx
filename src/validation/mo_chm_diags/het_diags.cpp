@@ -5,13 +5,10 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
 using namespace mo_chm_diags;
 
 // constexpr const int gas_pcnst = gas_chemistry::gas_pcnst;
@@ -20,7 +17,6 @@ void het_diags(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
     using View1D = typename DeviceType::view_1d<Real>;
-    using ColumnView = haero::ColumnView;
 
     const auto het_rates_in = input.get_array("het_rates");
     const auto mmr_in = input.get_array("mmr");
@@ -35,8 +31,8 @@ void het_diags(Ensemble *ensemble) {
     View1DHost mmr_host[gas_pcnst];
 
     for (int mm = 0; mm < gas_pcnst; ++mm) {
-      het_rates[mm] = haero::testing::create_column_view(pver);
-      mmr[mm] = haero::testing::create_column_view(pver);
+      het_rates[mm] = testing::create_column_view(pver);
+      mmr[mm] = testing::create_column_view(pver);
 
       het_rates_host[mm] = View1DHost("het_rates_host", pver);
       mmr_host[mm] = View1DHost("mmr_host", pver);
@@ -60,7 +56,7 @@ void het_diags(Ensemble *ensemble) {
     ColumnView pdel;
     auto pdel_host =
         View1DHost((Real *)pdel_in.data(), pver); // puts data into host
-    pdel = haero::testing::create_column_view(pver);
+    pdel = testing::create_column_view(pver);
     Kokkos::deep_copy(pdel, pdel_host);
 
     std::vector<Real> vector0(gas_pcnst, 0);

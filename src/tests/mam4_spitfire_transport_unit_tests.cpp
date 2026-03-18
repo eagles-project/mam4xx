@@ -3,13 +3,11 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "mam4xx/drydep.hpp"
-#include "mam4xx/spitfire_transport.hpp"
-#include "testing.hpp"
-#include <catch2/catch.hpp>
 #include <mam4xx/mam4.hpp>
+#include "testing.hpp"
 
-using namespace haero;
+#include <catch2/catch.hpp>
+
 using namespace mam4;
 
 TEST_CASE("minmod", "mam4_spitfire_transport") {
@@ -37,10 +35,10 @@ TEST_CASE("get_flux", "mam4_spitfire_transport") {
   auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
 
   const Real deltat = 10.0;
-  ColumnView xw = haero::testing::create_column_view(mam4::nlev);
-  ColumnView phi = haero::testing::create_column_view(mam4::nlev);
-  ColumnView vel = haero::testing::create_column_view(mam4::nlev);
-  ColumnView flux = haero::testing::create_column_view(mam4::nlev);
+  ColumnView xw = testing::create_column_view(mam4::nlev);
+  ColumnView phi = testing::create_column_view(mam4::nlev);
+  ColumnView vel = testing::create_column_view(mam4::nlev);
+  ColumnView flux = testing::create_column_view(mam4::nlev);
 
   spitfire::get_flux(team_policy, xw, phi, vel, deltat, flux);
 }

@@ -5,14 +5,11 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
-using namespace modal_aer_opt;
+using namespace modal_aero_opt;
 using namespace ndrop;
 using namespace validation;
 
@@ -44,7 +41,7 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     const auto pint_db = input.get_array("pint");
 
     ColumnView zm;
-    zm = haero::testing::create_column_view(pver);
+    zm = testing::create_column_view(pver);
     auto zm_host = View1DHost((Real *)zm_db.data(), pver);
     Kokkos::deep_copy(zm, zm_host);
 
@@ -56,31 +53,31 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     ColumnView zi;
     ColumnView pint;
 
-    temperature = haero::testing::create_column_view(pver);
+    temperature = testing::create_column_view(pver);
     auto temperature_host = View1DHost((Real *)temperature_db.data(), pver);
     Kokkos::deep_copy(temperature, temperature_host);
 
-    pmid = haero::testing::create_column_view(pver);
+    pmid = testing::create_column_view(pver);
     auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
     Kokkos::deep_copy(pmid, pmid_host);
 
-    pdeldry = haero::testing::create_column_view(pver);
+    pdeldry = testing::create_column_view(pver);
     auto pdeldry_host = View1DHost((Real *)pdeldry_db.data(), pver);
     Kokkos::deep_copy(pdeldry, pdeldry_host);
 
-    pdel = haero::testing::create_column_view(pver);
+    pdel = testing::create_column_view(pver);
     auto pdel_host = View1DHost((Real *)pdel_db.data(), pver);
     Kokkos::deep_copy(pdel, pdel_host);
 
-    cldn = haero::testing::create_column_view(pver);
+    cldn = testing::create_column_view(pver);
     auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
     Kokkos::deep_copy(cldn, cldn_host);
 
-    zi = haero::testing::create_column_view(pver);
+    zi = testing::create_column_view(pver);
     auto zi_host = View1DHost((Real *)zi_db.data(), pver);
     Kokkos::deep_copy(zi, zi_host);
 
-    pint = haero::testing::create_column_view(pver);
+    pint = testing::create_column_view(pver);
     auto pint_host = View1DHost((Real *)pint_db.data(), pver);
     Kokkos::deep_copy(pint, pint_host);
 
@@ -285,7 +282,7 @@ void aer_rad_props_sw(Ensemble *ensemble) {
 
     View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
 
-    const int work_len = modal_aer_opt::get_work_len_aerosol_optics();
+    const int work_len = modal_aero_opt::get_work_len_aerosol_optics();
     View1D work("work", work_len);
 
     auto vapor_mixing_ratio = create_column_view(nlev);
@@ -326,7 +323,7 @@ void aer_rad_props_sw(Ensemble *ensemble) {
 
     mam4::Prognostics progs = validation::create_prognostics(nlev);
 
-    mam4::modal_aer_opt::CalcsizeData cal_data;
+    mam4::modal_aero_opt::CalcsizeData cal_data;
     cal_data.initialize();
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
@@ -347,7 +344,7 @@ void aer_rad_props_sw(Ensemble *ensemble) {
           team.team_barrier();
           Real aodvis = 0.0;
 
-          aer_rad_props::aer_rad_props_sw(
+          aero_rad_props::aero_rad_props_sw(
               team, dt, progs_in, atm, zi, pdel, ssa_cmip6_sw, af_cmip6_sw,
               ext_cmip6_sw, tau, tau_w, tau_w_g, tau_w_f,
               // FIXME

@@ -3,14 +3,11 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/wet_dep.hpp>
-#include <skywalker.hpp>
+
 #include <validation.hpp>
 #include <vector>
 
-using namespace haero;
 using namespace skywalker;
 
 void test_wetdepa_v2_process(const Input &input, Output &output) {
@@ -78,25 +75,25 @@ void test_wetdepa_v2_process(const Input &input, Output &output) {
   const std::vector<Real> qqcw = input.get_array("qqcw");
   const std::vector<Real> sol_factic = input.get_array("sol_factic");
 
-  ColumnView pdel_dev = mam4::validation::create_column_view(nlev);
-  ColumnView cmfdqr_dev = mam4::validation::create_column_view(nlev);
-  ColumnView evapc_dev = mam4::validation::create_column_view(nlev);
-  ColumnView dlf_dev = mam4::validation::create_column_view(nlev);
-  ColumnView conicw_dev = mam4::validation::create_column_view(nlev);
-  ColumnView precs_dev = mam4::validation::create_column_view(nlev);
-  ColumnView evaps_dev = mam4::validation::create_column_view(nlev);
-  ColumnView cwat_dev = mam4::validation::create_column_view(nlev);
-  ColumnView cldt_dev = mam4::validation::create_column_view(nlev);
-  ColumnView cldc_dev = mam4::validation::create_column_view(nlev);
-  ColumnView cldvcu_dev = mam4::validation::create_column_view(nlev);
-  ColumnView cldvst_dev = mam4::validation::create_column_view(nlev);
-  ColumnView tracer_dev = mam4::validation::create_column_view(nlev);
-  ColumnView scavcoef_dev = mam4::validation::create_column_view(nlev);
-  ColumnView f_act_conv_dev = mam4::validation::create_column_view(nlev);
-  ColumnView qqcw_dev = mam4::validation::create_column_view(nlev);
-  ColumnView sol_factic_dev = mam4::validation::create_column_view(nlev);
+  auto pdel_dev = mam4::validation::create_column_view(nlev);
+  auto cmfdqr_dev = mam4::validation::create_column_view(nlev);
+  auto evapc_dev = mam4::validation::create_column_view(nlev);
+  auto dlf_dev = mam4::validation::create_column_view(nlev);
+  auto conicw_dev = mam4::validation::create_column_view(nlev);
+  auto precs_dev = mam4::validation::create_column_view(nlev);
+  auto evaps_dev = mam4::validation::create_column_view(nlev);
+  auto cwat_dev = mam4::validation::create_column_view(nlev);
+  auto cldt_dev = mam4::validation::create_column_view(nlev);
+  auto cldc_dev = mam4::validation::create_column_view(nlev);
+  auto cldvcu_dev = mam4::validation::create_column_view(nlev);
+  auto cldvst_dev = mam4::validation::create_column_view(nlev);
+  auto tracer_dev = mam4::validation::create_column_view(nlev);
+  auto scavcoef_dev = mam4::validation::create_column_view(nlev);
+  auto f_act_conv_dev = mam4::validation::create_column_view(nlev);
+  auto qqcw_dev = mam4::validation::create_column_view(nlev);
+  auto sol_factic_dev = mam4::validation::create_column_view(nlev);
 
-  auto copy_to_dev = [](ColumnView dev, std::vector<Real> vec) {
+  auto copy_to_dev = [](mam4::ColumnView dev, std::vector<Real> vec) {
     auto host = Kokkos::create_mirror_view(dev);
     for (int i = 0; i < nlev; ++i)
       host[i] = vec[i];
@@ -122,15 +119,15 @@ void test_wetdepa_v2_process(const Input &input, Output &output) {
   copy_to_dev(qqcw_dev, qqcw);
   copy_to_dev(sol_factic_dev, sol_factic);
 
-  ColumnView fracis_dev = mam4::validation::create_column_view(nlev);
-  ColumnView scavt_dev = mam4::validation::create_column_view(nlev);
-  ColumnView iscavt_dev = mam4::validation::create_column_view(nlev);
-  ColumnView icscavt_dev = mam4::validation::create_column_view(nlev);
-  ColumnView isscavt_dev = mam4::validation::create_column_view(nlev);
-  ColumnView bcscavt_dev = mam4::validation::create_column_view(nlev);
-  ColumnView bsscavt_dev = mam4::validation::create_column_view(nlev);
-  ColumnView rcscavt_dev = mam4::validation::create_column_view(nlev);
-  ColumnView rsscavt_dev = mam4::validation::create_column_view(nlev);
+  auto fracis_dev = mam4::validation::create_column_view(nlev);
+  auto scavt_dev = mam4::validation::create_column_view(nlev);
+  auto iscavt_dev = mam4::validation::create_column_view(nlev);
+  auto icscavt_dev = mam4::validation::create_column_view(nlev);
+  auto isscavt_dev = mam4::validation::create_column_view(nlev);
+  auto bcscavt_dev = mam4::validation::create_column_view(nlev);
+  auto bsscavt_dev = mam4::validation::create_column_view(nlev);
+  auto rcscavt_dev = mam4::validation::create_column_view(nlev);
+  auto rsscavt_dev = mam4::validation::create_column_view(nlev);
 
   Kokkos::parallel_for(
       "wetdep::wetdepa_v2", nlev, KOKKOS_LAMBDA(const int kk) {
@@ -153,7 +150,7 @@ void test_wetdepa_v2_process(const Input &input, Output &output) {
             scavt_dev[kk], bcscavt_dev[kk], rcscavt_dev[kk], rsscavt_dev[kk]);
       });
 
-  auto copy_to_host = [&](std::string name, ColumnView dev) {
+  auto copy_to_host = [&](std::string name, mam4::ColumnView dev) {
     std::vector<Real> vec(nlev);
     auto host = Kokkos::create_mirror_view(dev);
     Kokkos::deep_copy(host, dev);

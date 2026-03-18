@@ -13,7 +13,7 @@ add_executable(tracer_data_driver
                vert_interp.cpp
                rebin.cpp
                )
-target_link_libraries(tracer_data_driver skywalker;validation;haero)
+target_link_libraries(tracer_data_driver skywalker;validation)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

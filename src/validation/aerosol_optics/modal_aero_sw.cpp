@@ -5,14 +5,11 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
-using namespace modal_aer_opt;
+using namespace modal_aero_opt;
 using namespace ndrop;
 using namespace validation;
 
@@ -42,7 +39,7 @@ void modal_aero_sw(Ensemble *ensemble) {
     const auto cldn_db = input.get_array("cldn");
 
     ColumnView state_zm;
-    state_zm = haero::testing::create_column_view(pver);
+    state_zm = testing::create_column_view(pver);
     auto state_zm_host = View1DHost((Real *)state_zm_db.data(), pver);
     Kokkos::deep_copy(state_zm, state_zm_host);
 
@@ -52,23 +49,23 @@ void modal_aero_sw(Ensemble *ensemble) {
     ColumnView pdel;
     ColumnView cldn;
 
-    temperature = haero::testing::create_column_view(pver);
+    temperature = testing::create_column_view(pver);
     auto temperature_host = View1DHost((Real *)temperature_db.data(), pver);
     Kokkos::deep_copy(temperature, temperature_host);
 
-    pmid = haero::testing::create_column_view(pver);
+    pmid = testing::create_column_view(pver);
     auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
     Kokkos::deep_copy(pmid, pmid_host);
 
-    pdeldry = haero::testing::create_column_view(pver);
+    pdeldry = testing::create_column_view(pver);
     auto pdeldry_host = View1DHost((Real *)pdeldry_db.data(), pver);
     Kokkos::deep_copy(pdeldry, pdeldry_host);
 
-    pdel = haero::testing::create_column_view(pver);
+    pdel = testing::create_column_view(pver);
     auto pdel_host = View1DHost((Real *)pdel_db.data(), pver);
     Kokkos::deep_copy(pdel, pdel_host);
 
-    cldn = haero::testing::create_column_view(pver);
+    cldn = testing::create_column_view(pver);
     auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
     Kokkos::deep_copy(cldn, cldn_host);
 
@@ -243,7 +240,7 @@ void modal_aero_sw(Ensemble *ensemble) {
     View2D output_diagnostics_amode("output_diagnostics_amode", 3, ntot_amode);
 
     View2D qaerwat_m("qaerwat_m", pver, ntot_amode);
-    const int work_len = modal_aer_opt::get_work_len_aerosol_optics();
+    const int work_len = modal_aero_opt::get_work_len_aerosol_optics();
     View1D work("work", work_len);
 
     ColumnView hydrostatic_dp = create_column_view(nlev);
@@ -285,7 +282,7 @@ void modal_aero_sw(Ensemble *ensemble) {
 
     mam4::Prognostics progs = validation::create_prognostics(nlev);
 
-    mam4::modal_aer_opt::CalcsizeData cal_data;
+    mam4::modal_aero_opt::CalcsizeData cal_data;
     cal_data.initialize();
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);

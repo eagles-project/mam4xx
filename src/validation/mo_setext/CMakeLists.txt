@@ -13,7 +13,7 @@ add_executable(setext_driver
                extfrc_set.cpp
                )
 
-target_link_libraries(setext_driver skywalker;validation;haero)
+target_link_libraries(setext_driver skywalker;validation)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

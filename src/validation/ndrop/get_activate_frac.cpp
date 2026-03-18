@@ -5,13 +5,10 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
 
 void get_activate_frac(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -48,9 +45,9 @@ void get_activate_frac(Ensemble *ensemble) {
     ColumnView tair;
     ColumnView pmid;
     ColumnView wsub;
-    tair = haero::testing::create_column_view(pver);
-    pmid = haero::testing::create_column_view(pver);
-    wsub = haero::testing::create_column_view(pver);
+    tair = testing::create_column_view(pver);
+    pmid = testing::create_column_view(pver);
+    wsub = testing::create_column_view(pver);
 
     auto tair_host = View1DHost((Real *)tair_db.data(), pver);
     auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
@@ -64,14 +61,14 @@ void get_activate_frac(Ensemble *ensemble) {
     View2D fm("fm", pver, ntot_amode);
     View2D fluxn("fluxn", pver, ntot_amode);
     View2D fluxm("fluxm", pver, ntot_amode);
-    ColumnView flux_fullact = haero::testing::create_column_view(pver);
+    ColumnView flux_fullact = testing::create_column_view(pver);
 
     Kokkos::parallel_for(
         "get_activate_frac", pver, KOKKOS_LAMBDA(int kk) {
           const Real air_density =
               conversions::density_of_ideal_gas(tair(kk), pmid(kk));
           // Note: Boltzmann’s constant and Avogadro’s number in
-          // haero::Constants have more digits than the e3sm values. Thus, aten
+          // mam4::Constants have more digits than the e3sm values. Thus, aten
           // computed by ndrop_init has a relative difference of 1e-5 w.r.t
           // e3sm’s aten which causes this to test fail. I will use value of
           // aten from validation data only for testing proposes.

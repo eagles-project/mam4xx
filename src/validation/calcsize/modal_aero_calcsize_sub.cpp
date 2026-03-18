@@ -5,13 +5,10 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/calcsize.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
 
 void modal_aero_calcsize_sub(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -42,7 +39,7 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
     Kokkos::deep_copy(qqcw, qqcw_host);
     View2D dgnumdry_m("dgnumdry_m", pver, ntot_amode);
     View2D dgncur_c("dgncur_c", pver, ntot_amode);
-    mam4::modal_aer_opt::CalcsizeData cal_data;
+    mam4::modal_aero_opt::CalcsizeData cal_data;
     cal_data.initialize();
 
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);

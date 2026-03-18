@@ -5,15 +5,12 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <ekat_subview_utils.hpp>
-#include <haero/math.hpp>
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
+
+#include <ekat_subview_utils.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
 using namespace validation;
 
 void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {

@@ -5,18 +5,14 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
 
 void twmo(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
-    using ColumnView = haero::ColumnView;
     constexpr int pver = mam4::nlev;
 
     const auto pmid1d_in = input.get_array("pmid1d");
@@ -29,8 +25,8 @@ void twmo(Ensemble *ensemble) {
     ColumnView pmid1d, temp1d;
     auto pmid1d_host = View1DHost((Real *)pmid1d_in.data(), pver);
     auto temp1d_host = View1DHost((Real *)temp1d_in.data(), pver);
-    pmid1d = haero::testing::create_column_view(pver);
-    temp1d = haero::testing::create_column_view(pver);
+    pmid1d = testing::create_column_view(pver);
+    temp1d = testing::create_column_view(pver);
     Kokkos::deep_copy(pmid1d, pmid1d_host);
     Kokkos::deep_copy(temp1d, temp1d_host);
 

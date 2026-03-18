@@ -13,7 +13,7 @@ add_executable(micro_gasaerexch_driver
                mam_gasaerexch_1subarea.cpp
                )
 
-target_link_libraries(micro_gasaerexch_driver skywalker;validation;haero)
+target_link_libraries(micro_gasaerexch_driver skywalker;validation)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

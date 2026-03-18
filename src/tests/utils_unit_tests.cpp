@@ -3,11 +3,11 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <catch2/catch.hpp>
-#include <haero/math.hpp>
 #include <mam4xx/mam4.hpp>
 
-using Real = haero::Real;
+#include <catch2/catch.hpp>
+
+using Real = mam4::Real;
 
 TEST_CASE("test_min_max_bound", "utils") {
 

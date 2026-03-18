@@ -5,13 +5,13 @@
 
 #include <mam4xx/nucleation.hpp>
 
-#include <haero/constants.hpp>
-#include <skywalker.hpp>
+#include <mam4xx/mam4_constants.hpp>
+
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
+
 void pbl_nuc_wang2008(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters
@@ -48,7 +48,7 @@ void pbl_nuc_wang2008(Ensemble *ensemble) {
     Real radius_cluster_nm_ = input.get_array("radius_cluster")[0];
 
     nucleation::pbl_nuc_wang2008(
-        so4vol_, haero::Constants::pi, pbl_nuc_wang2008_user_choice_,
+        so4vol_, Constants::pi, pbl_nuc_wang2008_user_choice_,
         adjust_factor_pbl_ratenucl_, pbl_nuc_wang2008_actual_, ratenucl_,
         rateloge_, cnum_tot_, cnum_h2so4_, cnum_nh3_, radius_cluster_nm_);
 

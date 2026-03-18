@@ -4,10 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/nucleation.hpp>
-#include <validation.hpp>
+#include <mam4xx/mam4_constants.hpp>
 
-#include <haero/constants.hpp>
-#include <skywalker.hpp>
+#include <validation.hpp>
 
 #include <iostream>
 

@@ -5,8 +5,6 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
@@ -84,7 +82,7 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
 
     const Real dgnum_amode_imode = dgnum_amode[imode];
 
-    haero::ThreadTeamPolicy team_policy(ncol, Kokkos::AUTO);
+    ThreadTeamPolicy team_policy(ncol, Kokkos::AUTO);
 
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {

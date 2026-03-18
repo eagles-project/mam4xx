@@ -3,13 +3,11 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "Kokkos_Core.hpp"
-#include <catch2/catch.hpp>
-#include <iomanip>
-#include <iostream>
 #include <mam4xx/convproc.hpp>
-#include <skywalker.hpp>
+
 #include <validation.hpp>
+
+#include <catch2/catch.hpp>
 
 using namespace skywalker;
 using namespace mam4;
@@ -210,7 +208,7 @@ void compute_tendencies(Ensemble *ensemble) {
 
     // NOTE: we haven't parallelized convproc over vertical levels because of
     // NOTE: data dependencies, so we run this serially
-    auto team_policy = haero::ThreadTeamPolicy(1u, 1u);
+    auto team_policy = ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
           convproc.compute_tendencies(aero_config, team, t, dt, atmosphere,

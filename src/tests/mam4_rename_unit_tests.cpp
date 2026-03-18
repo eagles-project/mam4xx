@@ -15,8 +15,6 @@
 // std::string data_file = MAM4_TEST_DATA_DIR;
 // #include <mam4_test_config.hpp>
 
-using namespace haero;
-
 TEST_CASE("test_constructor", "mam4_rename_process") {
   mam4::AeroConfig mam4_config;
   mam4::RenameProcess process(mam4_config);
@@ -48,7 +46,7 @@ TEST_CASE("test_compute_before_growth_dryvol_and_num", "mam4_rename_process") {
 TEST_CASE("test_total_interstitial_and_cloudborne", "mam4_rename_process") {
   // mam4::AeroConfig mam4_config;
   // mam4::RenameProcess process(mam4_config);
-  Real outvar = mam4::rename::total_interstitial_and_cloudborne();
+  mam4::Real outvar = mam4::rename::total_interstitial_and_cloudborne();
   REQUIRE(outvar == outvar);
 }
 
@@ -56,9 +54,9 @@ TEST_CASE("test_compute_tail_fraction", "mam4_rename_process") {
   // mam4::AeroConfig mam4_config;
   // mam4::RenameProcess process(mam4_config);
   // test to see if it runs
-  Real log_dia_tail_fac = 1.5;
-  Real tail_fraction = 0.0;
+  mam4::Real log_dia_tail_fac = 1.5;
+  mam4::Real tail_fraction = 0.0;
   mam4::rename::compute_tail_fraction(1.0e-3, 3.0e-3, 2.0, log_dia_tail_fac,
                                       tail_fraction);
-  CHECK(!isnan(tail_fraction));
+  CHECK(!mam4::isnan(tail_fraction));
 }

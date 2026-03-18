@@ -4,7 +4,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/calcsize.hpp>
-#include <skywalker.hpp>
+#include <mam4xx/floating_point.hpp>
+
 #include <validation.hpp>
 
 using namespace skywalker;
@@ -53,9 +54,9 @@ void adjust_num_sizes(Ensemble *ensemble) {
     }
 
     static constexpr Real seconds_in_a_day = 86400.0;
-    const Real adj_tscale = haero::max(seconds_in_a_day, dt);
+    const Real adj_tscale = mam4::max(seconds_in_a_day, dt);
     const Real adj_tscale_inv =
-        FloatingPoint<Real>::safe_denominator(adj_tscale);
+        mam4::FloatingPoint<Real>::safe_denominator(adj_tscale);
 
     Real interstitial_tend[nmodes] = {0};
     Real cloudborne_tend[nmodes] = {0};

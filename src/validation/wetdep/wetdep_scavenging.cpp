@@ -3,14 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/wet_dep.hpp>
-#include <skywalker.hpp>
-#include <validation.hpp>
-#include <vector>
 
-using namespace haero;
+#include <validation.hpp>
+
 using namespace skywalker;
 
 void test_wetdep_scavenging_process(const Input &input, Output &output) {
@@ -44,7 +40,7 @@ void test_wetdep_scavenging_process(const Input &input, Output &output) {
   const Real tracer_1 = input.get("tracer_1");
   const Real tracer_2 = input.get("tracer_2");
 
-  ColumnView return_vals = mam4::validation::create_column_view(2);
+  auto return_vals = mam4::validation::create_column_view(2);
   Kokkos::parallel_for(
       "wetdep::wetdep_scavenging", 1, KOKKOS_LAMBDA(const int) {
         Real src = 0, fin = 0;

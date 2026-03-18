@@ -5,14 +5,11 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
-using namespace modal_aer_opt;
+using namespace modal_aero_opt;
 
 void volcanic_cmip_sw(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -21,7 +18,7 @@ void volcanic_cmip_sw(Ensemble *ensemble) {
     constexpr Real zero = 0;
     const auto zi_db = input.get_array("zi");
     ColumnView zi;
-    zi = haero::testing::create_column_view(pver);
+    zi = testing::create_column_view(pver);
     auto zi_host = View1DHost((Real *)zi_db.data(), pver);
     Kokkos::deep_copy(zi, zi_host);
     printf("zi size %lu \n", zi.size());
@@ -80,7 +77,7 @@ void volcanic_cmip_sw(Ensemble *ensemble) {
     auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          aer_rad_props::volcanic_cmip_sw(team, zi, ilev_tropp, ext_cmip6_sw,
+          aero_rad_props::volcanic_cmip_sw(team, zi, ilev_tropp, ext_cmip6_sw,
                                           ssa_cmip6_sw, af_cmip6_sw, tau, tau_w,
                                           tau_w_g, tau_w_f);
         });

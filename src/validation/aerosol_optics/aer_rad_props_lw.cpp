@@ -5,14 +5,11 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
 using namespace mam4;
-using namespace haero;
-using namespace modal_aer_opt;
+using namespace modal_aero_opt;
 using namespace ndrop;
 using namespace validation;
 
@@ -73,35 +70,35 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     ColumnView zm;
     ColumnView zi;
 
-    temperature = haero::testing::create_column_view(pver);
+    temperature = testing::create_column_view(pver);
     auto temperature_host = View1DHost((Real *)temperature_db.data(), pver);
     Kokkos::deep_copy(temperature, temperature_host);
 
-    pmid = haero::testing::create_column_view(pver);
+    pmid = testing::create_column_view(pver);
     auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
     Kokkos::deep_copy(pmid, pmid_host);
 
-    pdeldry = haero::testing::create_column_view(pver);
+    pdeldry = testing::create_column_view(pver);
     auto pdeldry_host = View1DHost((Real *)pdeldry_db.data(), pver);
     Kokkos::deep_copy(pdeldry, pdeldry_host);
 
-    pdel = haero::testing::create_column_view(pver);
+    pdel = testing::create_column_view(pver);
     auto pdel_host = View1DHost((Real *)pdel_db.data(), pver);
     Kokkos::deep_copy(pdel, pdel_host);
 
-    cldn = haero::testing::create_column_view(pver);
+    cldn = testing::create_column_view(pver);
     auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
     Kokkos::deep_copy(cldn, cldn_host);
 
-    pint = haero::testing::create_column_view(pver);
+    pint = testing::create_column_view(pver);
     auto pint_host = View1DHost((Real *)pint_db.data(), pver);
     Kokkos::deep_copy(pint, pint_host);
 
-    zm = haero::testing::create_column_view(pver);
+    zm = testing::create_column_view(pver);
     auto zm_host = View1DHost((Real *)zm_db.data(), pver);
     Kokkos::deep_copy(zm, zm_host);
 
-    zi = haero::testing::create_column_view(pver);
+    zi = testing::create_column_view(pver);
     auto zi_host = View1DHost((Real *)zi_db.data(), pver);
     Kokkos::deep_copy(zi, zi_host);
 
@@ -273,7 +270,7 @@ void aer_rad_props_lw(Ensemble *ensemble) {
                           cloud_fraction, updraft_vel_ice_nucleation, pblh);
 
     mam4::Prognostics progs = validation::create_prognostics(nlev);
-    mam4::modal_aer_opt::CalcsizeData cal_data;
+    mam4::modal_aero_opt::CalcsizeData cal_data;
     cal_data.initialize();
 
     Kokkos::parallel_for(
@@ -291,11 +288,11 @@ void aer_rad_props_lw(Ensemble *ensemble) {
                                                     kk);
               });
           team.team_barrier();
-          aer_rad_props::aer_rad_props_lw(team, dt, progs_in, atm, zi, pdel,
-                                          ext_cmip6_lw, aersol_optics_data,
-                                          cal_data,
-                                          // output
-                                          odap_aer);
+          aero_rad_props::aero_rad_props_lw(team, dt, progs_in, atm, zi, pdel,
+                                            ext_cmip6_lw, aersol_optics_data,
+                                            cal_data,
+                                            // output
+                                            odap_aer);
           team.team_barrier();
           // 2. Let's extract state_q and qqcw from prog.
           Kokkos::parallel_for(
