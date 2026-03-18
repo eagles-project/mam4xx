@@ -102,8 +102,7 @@ KOKKOS_INLINE_FUNCTION Real fcvt_num() { return 1; }
 
 // factor for converting aerosol water mix-ratios from (kg/kg) to (mol/mol)
 KOKKOS_INLINE_FUNCTION Real fcvt_wtr() {
-  return Constants::molec_weight_dry_air /
-         Constants::molec_weight_h2o;
+  return Constants::molec_weight_dry_air / Constants::molec_weight_h2o;
 }
 
 // Returns index of aerosol numbers in gas_pcnst array
@@ -995,7 +994,7 @@ void mam_newnuc_1subarea(
   //   dry-diameter limits for "grown" new particles
   constexpr int nait = static_cast<int>(ModeIndex::Aitken);
   Real dplom_mode = exp(0.67 * log(modes(nait).min_diameter) +
-                               0.33 * log(modes(nait).nom_diameter));
+                        0.33 * log(modes(nait).nom_diameter));
   Real dphim_mode = modes(nait).max_diameter;
 
   //   mass1p_... = mass (kg) of so4 & nh4 in a single particle of diameter ...
@@ -1015,7 +1014,8 @@ void mam_newnuc_1subarea(
   constexpr Real mw_so4a_host = 115;
   constexpr Real mwnh4 = 18;
   constexpr Real mwso4 = 96;
-  // BAD CONSTANTS (These should come from Constants but it is fixed here to stay BFB)
+  // BAD CONSTANTS (These should come from Constants but it is fixed here to
+  // stay BFB)
   constexpr Real rgas = 8.31446759100000;
   constexpr Real avogadro = 6.022140000000000E+023;
 
@@ -1027,7 +1027,7 @@ void mam_newnuc_1subarea(
       newnuc_method_flagaa, deltat, temp, relhumnn, pmid, zmid, pblh,  // in
       qh2so4_cur, qh2so4_avg, qnh3_cur, tmp_uptkrate, mw_so4a_host, 1, // in
       dplom_mode, dphim_mode, rgas, avogadro, mwnh4, mwso4,            // in
-      Constants::pi,                                            // in
+      Constants::pi,                                                   // in
       itmp, qnuma_del, qso4a_del, qnh4a_del, qh2so4_del,               // out
       qnh3_del, dens_nh4so4a, dnclusterdt);                            // out
 

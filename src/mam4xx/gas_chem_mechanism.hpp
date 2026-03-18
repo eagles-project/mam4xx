@@ -2,6 +2,7 @@
 #define MAM4XX_GAS_CHEM_HPP
 
 #include "mam4_config.hpp"
+#include "mam4_math.hpp"
 
 #include <ekat_kokkos_types.hpp>
 
@@ -11,6 +12,9 @@
 //          Mike Schmidt (mjschm@sandia.gov)
 namespace mam4 {
 namespace gas_chemistry {
+
+using mam4::exp;
+
 constexpr int nabscol = 2;    // number of absorbing densities
 constexpr int rxntot = 7;     // number of total reactions
 constexpr int gas_pcnst = 31; // number of gas phase species

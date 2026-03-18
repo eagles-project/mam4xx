@@ -13,7 +13,6 @@
 #include "spitfire_transport.hpp"
 #include "surface.hpp"
 
-
 namespace mam4 {
 
 class DryDeposition {
@@ -125,9 +124,8 @@ using mam4::sqrt;
 //  fdot, calculate the value of the polynomial (psistar) at xin.
 // ##############################################################################
 KOKKOS_INLINE_FUNCTION
-Real cfint2(const ConstColumnView xw /*nlev+1*/,
-            const Real ff[mam4::nlev + 1], const Real fdot[mam4::nlev + 1],
-            const Real xin) {
+Real cfint2(const ConstColumnView xw /*nlev+1*/, const Real ff[mam4::nlev + 1],
+            const Real fdot[mam4::nlev + 1], const Real xin) {
   const int nlev = mam4::nlev;
   const Real xins = spitfire::median(xw[0], xin, xw[nlev]);
   int intz = -1;
@@ -375,10 +373,9 @@ template <typename VIEWTYPE>
 KOKKOS_INLINE_FUNCTION Real sedimentation_solver_for_1_tracer(
     const Real dt, const Kokkos::View<Real *> sed_vel /*nlev*/,
     const VIEWTYPE qq_in /*nlev*/, const ColumnView rho /*nlev*/,
-    const ConstColumnView tair /*nlev*/,
-    const ConstColumnView pint /*nlev+1*/,
-    const ConstColumnView pmid /*nlev*/,
-    const ConstColumnView pdel /*nlev*/, ColumnView dqdt_sed /*nlev*/) {
+    const ConstColumnView tair /*nlev*/, const ConstColumnView pint /*nlev+1*/,
+    const ConstColumnView pmid /*nlev*/, const ConstColumnView pdel /*nlev*/,
+    ColumnView dqdt_sed /*nlev*/) {
   // clang-format off
   /*
   in :: dt
@@ -494,13 +491,12 @@ Real slip_correction_factor(const Real dyn_visc, const Real pres,
   const Real mean_free_path =
       2.0 * dyn_visc /
       (pres * sqrt(8.0 / (Constants::pi * Constants::r_gas_dry_air *
-                                 temp))); // (BAD CONSTANTS)
+                          temp))); // (BAD CONSTANTS)
 
   const Real slip_correction_factor =
-      1.0 +
-      mean_free_path *
-          (1.257 + 0.4 * exp(-1.1 * particle_radius / mean_free_path)) /
-          particle_radius; // (BAD CONSTANTS)
+      1.0 + mean_free_path *
+                (1.257 + 0.4 * exp(-1.1 * particle_radius / mean_free_path)) /
+                particle_radius; // (BAD CONSTANTS)
 
   return slip_correction_factor;
 }
@@ -647,9 +643,8 @@ void modal_aero_turb_drydep_velocity(
       static constexpr Real beta =
           2.0; // (BAD CONSTANT) empirical parameter $\beta$ in Eq. (7c) of
                // Zhang L. et al. (2001)
-      const Real impaction =
-          pow(stk_nbr / (alpha(lt) + stk_nbr),
-                     beta); // Eq. (7c) of Zhang L. et al.  (2001)
+      const Real impaction = pow(stk_nbr / (alpha(lt) + stk_nbr),
+                                 beta); // Eq. (7c) of Zhang L. et al.  (2001)
 
       //-----------------------------------------------------
       // Stick fraction, Eq. (10) of Zhang L. et al.  (2001)
@@ -658,8 +653,7 @@ void modal_aero_turb_drydep_velocity(
       static constexpr Real stickfrac_lowerbnd =
           1.0e-10; // (BAD CONSTANT) lower bound of stick fraction
       if (iwet(lt) < 0) {
-        stickfrac =
-            max(stickfrac_lowerbnd, exp(-sqrt(stk_nbr)));
+        stickfrac = max(stickfrac_lowerbnd, exp(-sqrt(stk_nbr)));
       }
 
       //----------------------------------------------------------------------------------
@@ -798,13 +792,11 @@ void calcram(const Real landfrac, const Real icefrac, const Real ocnfrac,
       const Real nu0 = pow(1.00 - 15.000 * psi0, 0.25);
 
       if (ustar != 0.0) {
-        ram1_out =
-            1.0 / xkar / ustar *
-            (log(temp) +
-             log(
-                 ((square(nu0) + 1.0) * square(nu0 + 1.0)) /
-                 ((square(nu) + 1.0) * square(nu + 1.0))) +
-             2.0 * (atan(nu) - atan(nu0)));
+        ram1_out = 1.0 / xkar / ustar *
+                   (log(temp) +
+                    log(((square(nu0) + 1.0) * square(nu0 + 1.0)) /
+                        ((square(nu) + 1.0) * square(nu + 1.0))) +
+                    2.0 * (atan(nu) - atan(nu0)));
       } else {
         ram1_out = 0.0;
       }

@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "atmosphere_utils.hpp"
-#include <mam4xx/conversions.hpp>
 #include "testing.hpp"
+#include <mam4xx/conversions.hpp>
 
 #include <ekat_assert.hpp>
 

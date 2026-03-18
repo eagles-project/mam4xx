@@ -228,9 +228,7 @@ void maxsat(
     return;
 
   for (int m = 0; m < nmode; m++) {
-    ar_func1[m] =
-        0.5 *
-        exp(2.5 * square(log(modes(m).mean_std_dev)));
+    ar_func1[m] = 0.5 * exp(2.5 * square(log(modes(m).mean_std_dev)));
     ar_func2[m] = 1.0 + 0.25 * log(modes(m).mean_std_dev);
     if (eta[m] > small) {
       g1 = (zeta / eta[m]) * sqrt(zeta / eta[m]);
@@ -628,7 +626,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
                                     (latvap / (rh2o * tair) - one));
   const Real beta = two * pi * rhoh2o * gthermfac * gamma; // [m2/s]
   const Real wnuc = w_in;
-  const Real alw = alpha * wnuc;                  // [/s]
+  const Real alw = alpha * wnuc;           // [/s]
   const Real etafactor1 = alw * sqrt(alw); // [/ s^(3/2)]
   // [unitless]
   const Real zeta = twothird * sqrt(alw) * aten / sqrt(gthermfac);
@@ -692,8 +690,8 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
 
     const Real arg_erf_m = arg_erf_n - 1.5 * sq2 * alogsig[imode];
     fm[imode] = half * (one - erf(arg_erf_m)); // activated mass
-    fluxn[imode] = fn[imode] * w_in; // activated aerosol number flux
-    fluxm[imode] = fm[imode] * w_in; // activated aerosol mass flux
+    fluxn[imode] = fn[imode] * w_in;           // activated aerosol number flux
+    fluxm[imode] = fm[imode] * w_in;           // activated aerosol mass flux
   }
   // is vertical velocity equal to flux of activated aerosol fraction assuming
   // 100% activation [m/s]?
@@ -980,18 +978,21 @@ void update_from_newcld(
 
   // input arguments
   // real(r8), intent(in) :: cldn_col_in       cloud fraction [fraction]
-  // real(r8), intent(in) :: cldo_col_in       cloud fraction on previous time step [fraction]
-  // real(r8), intent(in) :: dtinv             inverse time step for microphysics [s^{-1}]
-  // real(r8), intent(in) :: wtke_col_in       subgrid vertical velocity [m/s]
-  // real(r8), intent(in) :: temp_col_in       temperature [K]
-  // real(r8), intent(in) :: cs_col_in         air density at actual level kk [kg/m^3]
-  // real(r8), intent(in) :: state_q_col_in(:) aerosol mmrs [kg/kg]
+  // real(r8), intent(in) :: cldo_col_in       cloud fraction on previous time
+  // step [fraction] real(r8), intent(in) :: dtinv             inverse time step
+  // for microphysics [s^{-1}] real(r8), intent(in) :: wtke_col_in       subgrid
+  // vertical velocity [m/s] real(r8), intent(in) :: temp_col_in temperature [K]
+  // real(r8), intent(in) :: cs_col_in         air density at actual level kk
+  // [kg/m^3] real(r8), intent(in) :: state_q_col_in(:) aerosol mmrs [kg/kg]
   //
-  // real(r8), intent(inout) :: qcld               cloud droplet number mixing ratio [#/kg]
-  // real(r8), intent(inout) :: raercol_nsav(:)    single column of saved aerosol mass, number mixing ratios [#/kg or kg/kg]
-  // real(r8), intent(inout) :: raercol_cw_nsav(:) same as raercol_nsav but for cloud-borne phase [#/kg or kg/kg]
-  // real(r8), intent(inout) :: nsource_col_out(:) droplet number mixing ratio source tendency [#/kg/s]
-  // real(r8), intent(inout) :: factnum_col_out(:) activation fraction for aerosol number [fraction]
+  // real(r8), intent(inout) :: qcld               cloud droplet number mixing
+  // ratio [#/kg] real(r8), intent(inout) :: raercol_nsav(:)    single column of
+  // saved aerosol mass, number mixing ratios [#/kg or kg/kg] real(r8),
+  // intent(inout) :: raercol_cw_nsav(:) same as raercol_nsav but for
+  // cloud-borne phase [#/kg or kg/kg] real(r8), intent(inout) ::
+  // nsource_col_out(:) droplet number mixing ratio source tendency [#/kg/s]
+  // real(r8), intent(inout) :: factnum_col_out(:) activation fraction for
+  // aerosol number [fraction]
 
   const Real zero = 0;
   const Real one = 1;
@@ -1171,7 +1172,7 @@ void update_from_explmix(
     const ColumnView
         &csbot, // air density at bottom (interface) of layer [kg/m^3]
     const ConstColumnView &cldn, // cloud fraction [fraction]
-    const ColumnView &zn,               // g/pdel for layer [m^2/kg]
+    const ColumnView &zn,        // g/pdel for layer [m^2/kg]
     const ColumnView &zs,        // inverse of distance between levels [m^-1]
     const ColumnView &eddy_diff, // diffusivity for droplets [m^2/s]
     const View2D &nact,          // fractional aero. number activation rate [/s]
@@ -1393,12 +1394,11 @@ void update_from_explmix(
 
 KOKKOS_INLINE_FUNCTION
 void dropmixnuc(
-    const ThreadTeam &team, const Real dtmicro,
-    const ConstColumnView &temp, const ConstColumnView &pmid,
-    const ConstColumnView &pint, const ConstColumnView &pdel,
-    const ConstColumnView &rpdel, const ConstColumnView &zm,
-    const ConstView2D &state_q, const ConstColumnView &ncldwtr,
-    const ConstColumnView &v_diffusivity,
+    const ThreadTeam &team, const Real dtmicro, const ConstColumnView &temp,
+    const ConstColumnView &pmid, const ConstColumnView &pint,
+    const ConstColumnView &pdel, const ConstColumnView &rpdel,
+    const ConstColumnView &zm, const ConstView2D &state_q,
+    const ConstColumnView &ncldwtr, const ConstColumnView &v_diffusivity,
     const ConstColumnView &cldn,
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
     const Real specdens_amode[maxd_aspectype],
@@ -1673,7 +1673,7 @@ void dropmixnuc(
             const int lptr = mam_cnst_idx[imode][lspec] - 1;
             qqcwtend(k) = (raercol_cw[k][nnew](mm) - qqcw_fld[mm](k)) * dtinv;
             qqcw_fld[mm](k) = max(raercol_cw[k][nnew](mm),
-                                         zero); // update cloud-borne aerosol
+                                  zero); // update cloud-borne aerosol
 
             if (lspec == 0) {
               // Fortran indexing to C++ indexing

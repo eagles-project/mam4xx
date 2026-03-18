@@ -6,8 +6,8 @@
 #ifndef MAM4XX_GASAEREXCH_HPP
 #define MAM4XX_GASAEREXCH_HPP
 
-#include "aero_modes.hpp"
 #include "aero_config.hpp"
+#include "aero_modes.hpp"
 #include "atmosphere.hpp"
 #include "gasaerexch_soaexch.hpp"
 #include "mam4_constants.hpp"
@@ -141,8 +141,8 @@ private:
 namespace gasaerexch {
 
 using mam4::exp;
-using mam4::min;
 using mam4::log;
+using mam4::min;
 using mam4::pow;
 using mam4::sqrt;
 
@@ -236,9 +236,8 @@ Real gas_diffusivity(
 {
 
   constexpr Real onethird = 1.0 / 3.0;
-  const Real dgas =
-      (1.0e-3 * pow(T_in_K, 1.75) * sqrt(1. / mw_gas + 0.035)) /
-      (p_in_atm * pow((pow(vd_gas, onethird) + 2.7189), 2.0));
+  const Real dgas = (1.0e-3 * pow(T_in_K, 1.75) * sqrt(1. / mw_gas + 0.035)) /
+                    (p_in_atm * pow((pow(vd_gas, onethird) + 2.7189), 2.0));
   const Real gas_diffusivity = dgas * 1.0e-4;
 
   return gas_diffusivity;
@@ -340,8 +339,7 @@ void gas_aer_uptkrates_1box1gas(const Real accom, const Real gasdiffus,
       beta = beta_inp;
     }
     const Real constant =
-        tworootpi *
-        exp(beta * lndpgn + 0.5 * pow(beta * lnsg[n], 2.0));
+        tworootpi * exp(beta * lndpgn + 0.5 * pow(beta * lnsg[n], 2.0));
 
     // sum over gauss-hermite quadrature points
     Real sumghq = 0.0;
@@ -378,12 +376,12 @@ void mam_gasaerexch_1subarea(
     Real uptkaer[gasaerexch::max_gas][mam4::gasaerexch::max_mode],  // inout
     Real &uptkrate_h2so4) {                                         // inout
 
+  using mam4::exp;
+  using mam4::log;
   using mam4::gasaerexch::max_aer;
   using mam4::gasaerexch::max_gas;
   using mam4::gasaerexch::max_mode;
   using mam4::gasaerexch::nsoa;
-  using mam4::exp;
-  using mam4::log;
 
   constexpr int mode_aging_optaa[max_mode] = {0, 0, 0, 1, 0};
 
@@ -521,8 +519,7 @@ void mam_gasaerexch_1subarea(
       if (tmp_kxt > 0.001) {
         const Real tmp_pok = tmp_pxt / tmp_kxt;
         tmp_q3 = (tmp_q1 - tmp_pok) * exp(-tmp_kxt) + tmp_pok;
-        tmp_q4 = (tmp_q1 - tmp_pok) * (1.0 - exp(-tmp_kxt)) / tmp_kxt +
-                 tmp_pok;
+        tmp_q4 = (tmp_q1 - tmp_pok) * (1.0 - exp(-tmp_kxt)) / tmp_kxt + tmp_pok;
       } else {
         const Real tmp_kxt2 = tmp_kxt * tmp_kxt;
         tmp_q3 = tmp_q1 * (1.0 - tmp_kxt + tmp_kxt2 * 0.5) +

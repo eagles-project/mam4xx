@@ -9,11 +9,14 @@
 #include "aero_config.hpp"
 #include "calcsize.hpp"
 #include "conversions.hpp"
+#include "mam4_math.hpp"
 #include "ndrop.hpp"
 #include "utils.hpp"
 
 namespace mam4 {
 namespace modal_aero_calcsize {
+
+using mam4::sqrt;
 
 constexpr int maxd_aspectype = ndrop::maxd_aspectype;
 

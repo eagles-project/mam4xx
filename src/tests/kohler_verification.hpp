@@ -32,8 +32,7 @@ struct KohlerVerification {
     @param [in] n number of trials for each of the 3 parameters
   */
   explicit KohlerVerification(const int nn)
-      : n(nn), n_trials(cube(nn)),
-        true_sol("kohler_true_sol", cube(nn)),
+      : n(nn), n_trials(cube(nn)), true_sol("kohler_true_sol", cube(nn)),
         relative_humidity("relative_humidity", cube(nn)),
         hygroscopicity("hygroscopicity", cube(nn)),
         dry_radius("dry_radius", cube(nn)),

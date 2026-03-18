@@ -18,7 +18,8 @@ constexpr int nswbands = 14;
 constexpr int nlwbands = 16;
 constexpr int pver = mam4::nlev;
 
-constexpr Real shr_const_rgas = Constants::r_gas * 1e3; // Universal gas constant ~ J/K/kmole
+constexpr Real shr_const_rgas =
+    Constants::r_gas * 1e3; // Universal gas constant ~ J/K/kmole
 constexpr Real shr_const_mwdair = Constants::molec_weight_dry_air *
                                   1e3; // molecular weight dry air ~ kg/kmole
 constexpr Real shr_const_cpdair =
@@ -30,7 +31,7 @@ constexpr Real cnst_kap =
 constexpr Real cnst_faktor =
     -Constants::gravity /
     Constants::r_gas_dry_air; // acceleration of gravity ~ m/s^2/Dry air
-                                     // gas constant     ~ J/K/kg
+                              // gas constant     ~ J/K/kg
 constexpr Real cnst_ka1 = cnst_kap - 1.0;
 
 KOKKOS_INLINE_FUNCTION
@@ -47,9 +48,8 @@ void get_dtdz(const Real pm, const Real pmk, const Real pmid1d_up,
   // dtdz      temperature lapse rate vs. height [K/m]
   // tm        mean temperature [K] -- needed to find pressure at trop + 2 km
 
-  const Real a1 =
-      (temp1d_up - temp1d_down) /
-      (pow(pmid1d_up, cnst_kap) - pow(pmid1d_down, cnst_kap));
+  const Real a1 = (temp1d_up - temp1d_down) /
+                  (pow(pmid1d_up, cnst_kap) - pow(pmid1d_down, cnst_kap));
   const Real b1 = temp1d_down - a1 * pow(pmid1d_down, cnst_kap);
   tm = a1 * pmk + b1;
   const Real dtdp = a1 * cnst_kap * (pow(pm, cnst_ka1));
@@ -114,8 +114,8 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
   trp = -99.0; // negative means not valid
 
   // initialize start level
-  pmk = half * (pow(pmid1d(pver - 2), cnst_kap) +
-                pow(pmid1d(pver - 1), cnst_kap));
+  pmk = half *
+        (pow(pmid1d(pver - 2), cnst_kap) + pow(pmid1d(pver - 1), cnst_kap));
   pm = pow(pmk, (one / cnst_kap));
 
   get_dtdz(pm, pmk, pmid1d(pver - 2), pmid1d(pver - 1), temp1d(pver - 2),
@@ -124,8 +124,7 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
   for (int kk = pver - 2; kk >= 1; --kk) { // main_loop
     pmk0 = pmk;
     dtdz0 = dtdz;
-    pmk = half * (pow(pmid1d(kk - 1), cnst_kap) +
-                  pow(pmid1d(kk), cnst_kap));
+    pmk = half * (pow(pmid1d(kk - 1), cnst_kap) + pow(pmid1d(kk), cnst_kap));
     pm = pow(pmk, (one / cnst_kap));
 
     get_dtdz(pm, pmk, pmid1d(kk - 1), pmid1d(kk), temp1d(kk - 1), temp1d(kk),

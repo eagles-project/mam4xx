@@ -233,8 +233,8 @@ void hetero(const Real temperature, const Real w_vlc, const Real Ns, Real &Nis,
   const Real B_coef = (A11 + B11 * lnNs) * lnw + (A12 + B12 * lnNs);
   const Real C_coef = A21 + B21 * lnNs;
 
-  Nis = exp(A22) * pow(Ns, B22) *
-        exp(B_coef * temperature) * pow(w_vlc, C_coef);
+  Nis =
+      exp(A22) * pow(Ns, B22) * exp(B_coef * temperature) * pow(w_vlc, C_coef);
   Nis = min(Nis, Ns);
   // FIXME: Mention that this variables is set to zero in PR
   // don't include deposition nucleation for cirrus clouds when T < -37C
@@ -416,10 +416,10 @@ public:
 
         if (dgnum_aitken(kk) > zero) {
           // only allow so4 with D > 0.1 um in ice nucleation
-          so4_num = num_aitken(kk) * air_density * num_m3_to_cm3 *
-                    (half - half * erf(log(so4_sz_thresh_icenuc /
-                                                         dgnum_aitken(kk)) /
-                                              (sqrt_two * alnsg_amode_aitken)));
+          so4_num =
+              num_aitken(kk) * air_density * num_m3_to_cm3 *
+              (half - half * erf(log(so4_sz_thresh_icenuc / dgnum_aitken(kk)) /
+                                 (sqrt_two * alnsg_amode_aitken)));
         } // end dgnum_aitken
 
         so4_num = max(zero, so4_num);

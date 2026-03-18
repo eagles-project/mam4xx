@@ -6,7 +6,6 @@
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
 
-
 using namespace mam4;
 
 TEST_CASE("test_init_dust_dmt_vwr", "mam4_aero_emissions_unit_tests") {

@@ -1,12 +1,15 @@
 #ifndef MAM4XX_SEQ_DRYDEP_HPP
 #define MAM4XX_SEQ_DRYDEP_HPP
 
-#include "mam4_types.hpp"
 #include "gas_chem_mechanism.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
 
 #include <ekat_kernel_assert.hpp>
 
 namespace mam4::seq_drydep { // C++ version of E3SM's seq_drydep_mod.F90
+
+using mam4::exp;
 
 // maximum number of species involved in dry deposition
 constexpr int maxspc = 210;

@@ -480,8 +480,8 @@ void calc_sox_aqueous(const bool modal_aerosols, const Real rah2o2,
   // FIXME: BAD CONSTANTS
   constexpr Real small_value_20 = 1.0e-20;
   constexpr Real small_value_30 = 1.0e-30;
-  Real pso4 = rah2o2 * 7.4e4 * exp(6621.0 * t_factor) * h2o2g * patm *
-              1.23 * exp(3120.0 * t_factor) * so2g * patm;
+  Real pso4 = rah2o2 * 7.4e4 * exp(6621.0 * t_factor) * h2o2g * patm * 1.23 *
+              exp(3120.0 * t_factor) * so2g * patm;
   // [M/s] = [mole/L(w)/s] / [mole/L(a)/s] / [/L(a)/s]
   pso4 = pso4 * xlwc / const0 / xhnm;
 
@@ -1219,8 +1219,7 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
   //------------------------------------------------------------------------
   //        ... S(IV)+ O3
   //------------------------------------------------------------------------
-  Real rao3 = 4.39e11 * exp(-4131.0 / tz) +
-              2.56e3 * exp(-996.0 / tz) / xph;
+  Real rao3 = 4.39e11 * exp(-4131.0 / tz) + 2.56e3 * exp(-996.0 / tz) / xph;
 
   /*
   -----------------------------------------------------------------

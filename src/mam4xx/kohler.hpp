@@ -6,9 +6,9 @@
 #ifndef MAM4XX_KOHLER_HPP
 #define MAM4XX_KOHLER_HPP
 
+#include "floating_point.hpp"
 #include "mam4_constants.hpp"
 #include "mam4_math.hpp"
-#include "floating_point.hpp"
 
 namespace mam4 {
 
@@ -42,9 +42,9 @@ surface_tension_water_air(double T = Constants::triple_pt_h2o) {
   constexpr double b = -0.625;
   constexpr double mu = 1.256;
   const auto tau = 1 - T / Tc;
-  EKAT_KERNEL_ASSERT(FloatingPoint<double>::in_bounds(
-      T, Constants::triple_pt_h2o - 25, Tc,
-      std::numeric_limits<float>::epsilon()));
+  EKAT_KERNEL_ASSERT(
+      FloatingPoint<double>::in_bounds(T, Constants::triple_pt_h2o - 25, Tc,
+                                       std::numeric_limits<float>::epsilon()));
   return B * pow(tau, mu) * (1 + b * tau);
 }
 
@@ -142,8 +142,7 @@ struct KohlerPolynomial {
   KohlerPolynomial(Real rel_h, Real hygro, Real dry_rad_microns,
                    Real temperature = Constants::triple_pt_h2o)
       : log_rel_humidity(log(rel_h)), hygroscopicity(hygro),
-        dry_radius(dry_rad_microns),
-        dry_radius_cubed(cube(dry_rad_microns)),
+        dry_radius(dry_rad_microns), dry_radius_cubed(cube(dry_rad_microns)),
         kelvin_a(kelvin_coefficient(temperature)) {
 
     kelvin_a *= 1e6; /* convert from N to mN and m to micron */

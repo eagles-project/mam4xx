@@ -6,11 +6,11 @@
 #ifndef MAM4XX_WATER_UPTAKE_HPP
 #define MAM4XX_WATER_UPTAKE_HPP
 
-#include "atmosphere.hpp"
-#include "surface.hpp"
 #include "aero_config.hpp"
+#include "atmosphere.hpp"
 #include "convproc.hpp"
 #include "mam4_math.hpp"
+#include "surface.hpp"
 #include "utils.hpp"
 #include "wv_sat_methods.hpp"
 
@@ -201,7 +201,7 @@ void modal_aero_kohler(const Real rdry_in, const Real hygro, const Real rh,
       2.0e4 * mw * surften / (ugascon * tair * rhow); // (BAD CONSTANT)
 
   const Real rdry = rdry_in * factor_m2um; // convert (m) to (microns)
-  const Real vol = cube(rdry);      // vol is r**3, not volume
+  const Real vol = cube(rdry);             // vol is r**3, not volume
   const Real bb = vol * hygro;
 
   // quartic
@@ -257,8 +257,8 @@ void modal_aero_water_uptake_wetaer(
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
 
     const Real hystfac =
-        1.0 / max(1.0e-5, (rhdeliques[imode] -
-                                  rhcrystal[imode])); // (BAD CONSTANT)
+        1.0 /
+        max(1.0e-5, (rhdeliques[imode] - rhcrystal[imode])); // (BAD CONSTANT)
 
     water_uptake::modal_aero_kohler(dryrad[imode], hygro[imode], rh,
                                     wetrad[imode]);
@@ -415,9 +415,8 @@ KOKKOS_INLINE_FUNCTION void modal_aero_water_uptake_dryaer(
       hygro[imode] = spechygro_1;
     }
 
-    const Real v2ncur_a =
-        1.0 / ((Constants::pi / 6.0) * cube(dgncur_a[imode]) *
-               exp(4.5 * square(alnsg)));
+    const Real v2ncur_a = 1.0 / ((Constants::pi / 6.0) * cube(dgncur_a[imode]) *
+                                 exp(4.5 * square(alnsg)));
     // naer = aerosol number (#/kg)
     naer[imode] = dryvolmr * v2ncur_a;
 

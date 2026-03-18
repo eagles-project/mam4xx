@@ -74,8 +74,8 @@ namespace ndrop_od {
 using mam4::erf;
 using mam4::exp;
 using mam4::log;
-using mam4::min;
 using mam4::max;
+using mam4::min;
 using mam4::pow;
 using mam4::sqrt;
 
@@ -130,7 +130,7 @@ void ndrop_int(Real exp45logsig[AeroConfig::num_modes()],
 
   // SHR_CONST_RHOFW   = 1.000e3_R8      ! density of fresh water     ~ kg/m^3
   const Real rhoh2o = Constants::density_h2o;
-  const Real r_universal = Constants::r_gas * one_thousand; //[J/K/kmole]
+  const Real r_universal = Constants::r_gas * one_thousand;      //[J/K/kmole]
   const Real mwh2o = Constants::molec_weight_h2o * one_thousand; // [kg/kmol]
   // BAD CONSTANT
   aten = two * mwh2o * surften / (r_universal * t0 * rhoh2o);
@@ -225,9 +225,10 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
 
   const Real rair = Constants::r_gas_dry_air;
   const Real rh2o = Constants::r_gas_h2o_vapor;
-  const Real latvap = Constants::latent_heat_evap; // latent heat of evaporation ~ J/kg
+  const Real latvap =
+      Constants::latent_heat_evap;          // latent heat of evaporation ~ J/kg
   const Real cpair = Constants::cp_dry_air; // specific heat of dry air ~ J/kg/K
-  const Real gravit = Constants::gravity; // acceleration of gravity ~ m/s^2
+  const Real gravit = Constants::gravity;   // acceleration of gravity ~ m/s^2
   // SHR_CONST_RHOFW   = 1.000e3_R8      ! density of fresh water     ~ kg/m^3
   const Real rhoh2o = Constants::density_h2o;
   const Real pi = Constants::pi;
@@ -252,7 +253,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // BAD CONSTANT
   const Real etafactor2max =
       1.e10 / pow((alpha * wmaxf),
-                         1.5); // !this should make eta big if na is very small.
+                  1.5); // !this should make eta big if na is very small.
   // vapor diffusivity [m2/s]
   const Real diff0 = 0.211e-4 * (p0 / pres) * pow(tair / t0, 1.94);
   // ! thermal conductivity [J / (m-s-K)]
@@ -267,7 +268,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   const Real beta = two * pi * rhoh2o * gthermfac * gamma; //[m2/s]
   // nucleation w, but = w_in if wdiab == 0 [m/s]
   const Real wnuc = w_in;
-  const Real alw = alpha * wnuc;                  // [/s]
+  const Real alw = alpha * wnuc;           // [/s]
   const Real etafactor1 = alw * sqrt(alw); // [/ s^(3/2)]
   // [unitless]
   const Real zeta = twothird * sqrt(alw) * aten / sqrt(gthermfac);
@@ -300,7 +301,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
         smc[imode] =
             two * aten *
             sqrt(aten / (27. * hygro[imode] *
-                                amcube[imode])); // ! only if variable size dist
+                         amcube[imode])); // ! only if variable size dist
       } else {
         // BAD CONSTANT
         smc[imode] = 100.;
@@ -333,8 +334,8 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
 
     const Real arg_erf_m = arg_erf_n - 1.5 * sq2 * alogsig[imode];
     fm[imode] = half * (one - erf(arg_erf_m)); // !activated mass
-    fluxn[imode] = fn[imode] * w_in; // !activated aerosol number flux
-    fluxm[imode] = fm[imode] * w_in; // !activated aerosol mass flux
+    fluxn[imode] = fn[imode] * w_in;           // !activated aerosol number flux
+    fluxm[imode] = fm[imode] * w_in;           // !activated aerosol mass flux
   }
   // FIXME: what is this??
   // is vertical velocity equal to flux of activated aerosol fraction assuming
@@ -1032,8 +1033,7 @@ ma_precpprod(const Real rprd, const Real dpdry,
       const Real wd_flux_tmp = max(0.0, wd_flux[icnst] * x_ratio);
 
       // change to wet deposition flux from evaporation [(kg/kg/s)*mb]
-      const Real del_wd_flux_evap =
-          max(0.0, wd_flux[icnst] - wd_flux_tmp);
+      const Real del_wd_flux_evap = max(0.0, wd_flux[icnst] - wd_flux_tmp);
       // wet deposition flux from the aerosol scavenging
       // wd_flux (updated) = (wd_flux after resuspension) - (scavenging !
       // increment)
@@ -1632,9 +1632,8 @@ void compute_ent_det_dp(const int nlev, const int ktop, const int kbot,
       }
     }
     // get courantmax to calculate ntsub
-    courantmax =
-        max(courantmax, (mu[kk + 1] + eudp[kk] - md[kk] + eddp[kk]) *
-                                   dt / dpdry[kk]);
+    courantmax = max(courantmax, (mu[kk + 1] + eudp[kk] - md[kk] + eddp[kk]) *
+                                     dt / dpdry[kk]);
   }
   // number of time substeps needed to maintain "courant number" <= 1
   if (courantmax > (1.0 + 1.0e-6)) {
@@ -1748,10 +1747,10 @@ void initialize_tmr_array(
         const Real max_con = max(gath(km1, icnst), gath(kk, icnst));
 
         // relative difference between level kk and kk-1 [unitless]
-        const Real c_dif_rel =
-            min_con < 0 ? 0
-                        : abs(gath(kk, icnst) - gath(km1, icnst)) /
-                              max(max_con, small_con);
+        const Real c_dif_rel = min_con < 0
+                                   ? 0
+                                   : abs(gath(kk, icnst) - gath(km1, icnst)) /
+                                         max(max_con, small_con);
 
         // If the two layers differ significantly use a geometric averaging
         // procedure But only do that for deep convection.  For shallow, use the
@@ -1767,8 +1766,8 @@ void initialize_tmr_array(
 
           // gath at the below (kk level) [kg/kg]
           const Real c_below = max(gath(kk, icnst), max_con * 1.e-12);
-          chat(kk, icnst) = mam4::log(c_above / c_below) /
-                            (c_above - c_below) * c_above * c_below;
+          chat(kk, icnst) = mam4::log(c_above / c_below) / (c_above - c_below) *
+                            c_above * c_below;
         } else {
           // Small diff, so just arithmetic mean
           chat(kk, icnst) = 0.5 * (gath(kk, icnst) + gath(kk, icnst));

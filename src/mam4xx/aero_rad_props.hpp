@@ -30,7 +30,7 @@ constexpr Real cnst_kap =
 constexpr Real cnst_faktor =
     -Constants::gravity /
     Constants::r_gas_dry_air; // acceleration of gravity ~ m/s^2/Dry air
-                                     // gas constant     ~ J/K/kg
+                              // gas constant     ~ J/K/kg
 constexpr Real cnst_ka1 = cnst_kap - 1.0;
 
 // Similar to volcanic_cmip_sw,
@@ -249,16 +249,16 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
 
 KOKKOS_INLINE_FUNCTION
 void aero_rad_props_sw(const ThreadTeam &team, const Real dt,
-                      mam4::Prognostics &progs, const Atmosphere &atm,
-                      const ConstColumnView &zi, const ConstColumnView &pdel,
-                      const View2D &ssa_cmip6_sw, const View2D &af_cmip6_sw,
-                      const View2D &ext_cmip6_sw_m, const View2D &tau,
-                      const View2D &tau_w, const View2D &tau_w_g,
-                      const View2D &tau_w_f,
-                      // FIXME
-                      const AerosolOpticsDeviceData &aersol_optics_data,
-                      const CalcsizeData &calcsizedata, Real &aodvis,
-                      const View1D &work) {
+                       mam4::Prognostics &progs, const Atmosphere &atm,
+                       const ConstColumnView &zi, const ConstColumnView &pdel,
+                       const View2D &ssa_cmip6_sw, const View2D &af_cmip6_sw,
+                       const View2D &ext_cmip6_sw_m, const View2D &tau,
+                       const View2D &tau_w, const View2D &tau_w_g,
+                       const View2D &tau_w_f,
+                       // FIXME
+                       const AerosolOpticsDeviceData &aersol_optics_data,
+                       const CalcsizeData &calcsizedata, Real &aodvis,
+                       const View1D &work) {
 
   const ConstColumnView temperature = atm.temperature;
   const ConstColumnView pmid = atm.pressure;

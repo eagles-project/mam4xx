@@ -6,17 +6,20 @@
 #ifndef MAM4XX_CALCSIZE_HPP
 #define MAM4XX_CALCSIZE_HPP
 
-#include "atmosphere.hpp"
-#include "surface.hpp"
-
 #include "aero_config.hpp"
+#include "atmosphere.hpp"
 #include "conversions.hpp"
+#include "floating_point.hpp"
+#include "mam4_math.hpp"
 #include "mam4_types.hpp"
+#include "surface.hpp"
 #include "utils.hpp"
 
 namespace mam4 {
 
 namespace calcsize {
+
+using mam4::sqrt;
 
 /*-----------------------------------------------------------------------------
 Compute initial dry volume based on bulk mass mixing ratio (mmr) and species

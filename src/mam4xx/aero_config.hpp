@@ -76,7 +76,6 @@ class Prognostics final {
   int nlev_;
 
 public:
-
   /// Creates a container for prognostic variables on the specified number of
   /// vertical levels. All views must be set manually.
   /// NOTE: it's currently possible to configure a Prognostics object with a
@@ -173,7 +172,6 @@ class Diagnostics final {
   int nlev_;
 
 public:
-
   /// Creates a container for diagnostic variables on the specified number of
   /// vertical levels. All views must be set manually.
   /// NOTE: it's currently possible to configure a Diagnostics object with a

@@ -51,8 +51,7 @@ void calc_het_rates(const Real satf, // saturation fraction in cloud //in
   Real work3;
   Real h2o_mol = 1.0e3 / mass_h2o; // [gm/mol water]
 
-  work3 =
-      satf * max(rain / (h2o_mol * (work1 + 1.0 / (xhen * work2))), 0.0);
+  work3 = satf * max(rain / (h2o_mol * (work1 + 1.0 / (xhen * work2))), 0.0);
   het_rates = work3 + tmp_hetrates;
 
 } // end calc_het_rates
@@ -316,8 +315,8 @@ void sethet_detail(
   //-----------------------------------------------------------------
   //	... the 2 and .6 multipliers are from a formula by frossling (1938)
   //-----------------------------------------------------------------
-  xkgm = xdg / xrm * 2.0 + xdg / xrm * .6 * sqrt(xrm * xum / xvv) *
-                               pow((xvv / xdg), (1.0 / 3.0));
+  xkgm = xdg / xrm * 2.0 +
+         xdg / xrm * .6 * sqrt(xrm * xum / xvv) * pow((xvv / xdg), (1.0 / 3.0));
 
   //-----------------------------------------------------------------
   //	... Find the level index that only calculate het_rates below
@@ -340,9 +339,8 @@ void sethet_detail(
   zsurf = m2km * phis * rga;
 
   Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, ktop, local_pver - 1), [&](int kk) {
-        delz(kk) = abs((zmid(kk) - zmid(kk + 1)) * km2cm);
-      });
+      Kokkos::TeamVectorRange(team, ktop, local_pver - 1),
+      [&](int kk) { delz(kk) = abs((zmid(kk) - zmid(kk + 1)) * km2cm); });
   delz(pver - 1) = abs((zmid(pver - 1) - zsurf) * km2cm);
   //-----------------------------------------------------------------
   //       ... part 0b,  for temperature dependent of henrys

@@ -18,8 +18,7 @@ namespace mam4 {
 /// This type defines the interface for a specific process in the aerosol
 /// lifecycle, backed by a specific implementation, the structure of which is
 /// defined by a specific "aerosol configuration".
-template <typename AerosolProcessImpl>
-class AeroProcess final {
+template <typename AerosolProcessImpl> class AeroProcess final {
 public:
   // Types derived from template parameters.
   using ProcessImpl = AerosolProcessImpl;

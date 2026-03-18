@@ -6,7 +6,14 @@
 #ifndef MAM4XX_MERIKANTO2007_HPP
 #define MAM4XX_MERIKANTO2007_HPP
 
+#include "mam4_math.hpp"
+
+#include <ekat_kokkos_types.hpp>
+
 namespace mam4::merikanto2007 {
+
+using mam4::exp;
+using mam4::log;
 
 /// The functions in this file implement parameterizations described in
 /// Merikanto et al, New parameterization of sulfuric acid-ammonia-water ternary

@@ -61,11 +61,9 @@ Diagnostics create_diagnostics(int num_levels) {
     d.g0_soa_out = create_column_view(num_levels);
     Kokkos::deep_copy(d.g0_soa_out, 0.0);
 
-    d.is_cloudy =
-        DeviceType::view_1d<bool>("is_cloudy_bool", num_levels);
+    d.is_cloudy = DeviceType::view_1d<bool>("is_cloudy_bool", num_levels);
     Kokkos::deep_copy(d.is_cloudy, false);
-    d.num_substeps =
-        DeviceType::view_1d<int>("num_substeps", num_levels);
+    d.num_substeps = DeviceType::view_1d<int>("num_substeps", num_levels);
     Kokkos::deep_copy(d.num_substeps, 0);
 
     d.icenuc_num_hetfrz = create_column_view(num_levels);

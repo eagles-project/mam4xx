@@ -725,8 +725,10 @@ KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
       pext *= wetvol * rhoh2o;
       pabs *= wetvol * rhoh2o;
       pabs = mam4::utils::min_max_bound(zero, pext, pabs);
-      Real palb = one - pabs / max(pext, small_value_40); // parameterized single
-                                                          // scattering albedo [unitless]
+      Real palb =
+          one -
+          pabs / max(pext, small_value_40); // parameterized single
+                                            // scattering albedo [unitless]
       const Real dopaer = pext * mass; // aerosol optical depth in layer [1]
 
       // end cols
@@ -1053,7 +1055,7 @@ void modal_aero_lw(const ThreadTeam &team, const Real dt,
       });
 } // modal_aero_lw
 
-} // namespace modal_aer_opt
+} // namespace modal_aero_opt
 
 } // end namespace mam4
 

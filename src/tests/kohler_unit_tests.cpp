@@ -4,10 +4,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4_test_config.hpp>
-#include <mam4xx/mam4_types.hpp>
 #include <mam4xx/constants.hpp>
-#include <mam4xx/kohler.hpp>
 #include <mam4xx/floating_point.hpp>
+#include <mam4xx/kohler.hpp>
+#include <mam4xx/mam4_types.hpp>
 
 #include <catch2/catch.hpp>
 #include <ekat_comm.hpp>
@@ -51,12 +51,10 @@ struct KohlerSolveTestFtor {
   void operator()(const int i) const {
     KohlerSolver<math::NewtonSolver<KohlerPolynomial>> newton_solver(
         relative_humidity(i), hygroscopicity(i), dry_radius(i), tol);
-    KohlerSolver<math::BisectionSolver<KohlerPolynomial>>
-        bisection_solver(relative_humidity(i), hygroscopicity(i), dry_radius(i),
-                         tol);
-    KohlerSolver<math::BracketedNewtonSolver<KohlerPolynomial>>
-        bracket_solver(relative_humidity(i), hygroscopicity(i), dry_radius(i),
-                       tol);
+    KohlerSolver<math::BisectionSolver<KohlerPolynomial>> bisection_solver(
+        relative_humidity(i), hygroscopicity(i), dry_radius(i), tol);
+    KohlerSolver<math::BracketedNewtonSolver<KohlerPolynomial>> bracket_solver(
+        relative_humidity(i), hygroscopicity(i), dry_radius(i), tol);
 
     newton_sol(i) = newton_solver.solve();
     bisection_sol(i) = bisection_solver.solve();

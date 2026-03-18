@@ -158,8 +158,8 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
   // Calculate ambient equilibrium soa gas
   for (int ll = 0; ll < ntot_soaspec; ++ll) {
     // BAD CONSTANT
-    p0_soa[ll] = p0_soa_298 * exp(-(delh_vap_soa / rgas) *
-                                         ((1.0 / temp) - (1.0 / 298.0)));
+    p0_soa[ll] = p0_soa_298 *
+                 exp(-(delh_vap_soa / rgas) * ((1.0 / temp) - (1.0 / 298.0)));
     // BAD CONSTANT
     g0_soa[ll] = 1.01325e5 * p0_soa[ll] / pmid;
   }
@@ -229,8 +229,7 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
         continue;
       a_opoa[n] = 0.0;
       for (int ll = 0; ll < ntot_poaspec; ++ll) {
-        a_opoa[n] +=
-            opoa_frac[ll][n] * max(qaer_prv[iaer_pom + ll][n], 0.0);
+        a_opoa[n] += opoa_frac[ll][n] * max(qaer_prv[iaer_pom + ll][n], 0.0);
       }
     }
 
@@ -435,10 +434,9 @@ Real soa_exch_substepsize(
         // scheme, then add this fraction to the total fraction (variable
         // tot_frac_single_soa_species) summed over all aerosol modes.
 
-        const Real phi = (g_soa[ll] - g_star) /
-                         max(g_soa[ll], max(g_star, eps_gas));
-        tot_frac_single_soa_species[ll] +=
-            uptkaer_soag_tmp[ll][n] * abs(phi);
+        const Real phi =
+            (g_soa[ll] - g_star) / max(g_soa[ll], max(g_star, eps_gas));
+        tot_frac_single_soa_species[ll] += uptkaer_soag_tmp[ll][n] * abs(phi);
       }
     }
   }

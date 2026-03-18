@@ -501,8 +501,7 @@ void wetdep_scavenging(const int is_st_cu, const bool is_strat_cloudborne,
 
   // calculate limitation of removal rate using Dana and Hales coefficient
   // odds  : limit on removal rate (proportional to prec) [fraction]
-  Real odds =
-      precabx / max(cldv_ik, small_value_5) * scavcoef_ik * deltat;
+  Real odds = precabx / max(cldv_ik, small_value_5) * scavcoef_ik * deltat;
   odds = utils::min_max_bound(0.0, 1.0, odds);
 
   Real src1; // incloud scavenging tendency [kg/kg/s]
@@ -551,8 +550,7 @@ Real compute_evap_frac(const Real pdel_ik, const Real evap_ik,
   // BAD CONSTANT
   constexpr Real small_value_12 = 1.e-12;
   const Real gravit = Constants::gravity;
-  Real fracevx =
-      evap_ik * pdel_ik / gravit / max(small_value_12, precabx);
+  Real fracevx = evap_ik * pdel_ik / gravit / max(small_value_12, precabx);
   // trap to ensure reasonable ratio bounds
   fracevx = utils::min_max_bound(0., 1., fracevx);
   return fracevx;
@@ -770,8 +768,8 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   // temporary saved tracer value
   const Real clddiff = cldt - cldc;
   // temporarily calculation of tracer [kg/kg]
-  const Real tracer_tmp = min(
-      qqcw, tracer * (clddiff / max(small_value_2, (1. - clddiff))));
+  const Real tracer_tmp =
+      min(qqcw, tracer * (clddiff / max(small_value_2, (1. - clddiff))));
   // calculate in-cumulus and mean tracer values for wetdep_scavenging use
   // in-cumulus tracer concentration [kg/kg]
   const Real tracer_incu = f_act_conv * (tracer + tracer_tmp);
@@ -786,9 +784,8 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   // Sungsu: Below new formula of 'fracp' is necessary since 'conicw'
   // is a LWC/IWC that has already precipitated out, that is, 'conicw' does
   // not contain precipitation at all !
-  Real fracp =
-      cmfdqr * deltat /
-      max(small_value_12, cldc * conicw + (cmfdqr + dlf) * deltat);
+  Real fracp = cmfdqr * deltat /
+               max(small_value_12, cldc * conicw + (cmfdqr + dlf) * deltat);
   fracp = utils::min_max_bound(0.0, 1.0, fracp) * cldc;
 
   Real srcc = 0; // tendency for convective rain scavenging [kg/kg/s]
@@ -984,8 +981,7 @@ void sum_deep_and_shallow(const ThreadTeam &team, const View1D &conicw,
 }
 
 KOKKOS_INLINE_FUNCTION
-void cloud_diagnostics(const ThreadTeam &team,
-                       ConstColumnView temperature,
+void cloud_diagnostics(const ThreadTeam &team, ConstColumnView temperature,
                        ConstColumnView pmid, ConstColumnView pdel,
                        const View1D &cmfdqr, const View1D &evapc,
                        const ConstColumnView &cldt, const View1D &cldcu,
@@ -1010,11 +1006,10 @@ KOKKOS_INLINE_FUNCTION
 void set_f_act(const ThreadTeam &team, int *isprx,
                const View1D &f_act_conv_coarse,
                const View1D &f_act_conv_coarse_dust,
-               const View1D &f_act_conv_coarse_nacl,
-               ConstColumnView pdel, ConstColumnView prain,
-               const View1D &cmfdqr, const ConstView1D &evapr,
-               const View2D &state_q, const View2D &ptend_q, const Real dt,
-               const int nlev) {
+               const View1D &f_act_conv_coarse_nacl, ConstColumnView pdel,
+               ConstColumnView prain, const View1D &cmfdqr,
+               const ConstView1D &evapr, const View2D &state_q,
+               const View2D &ptend_q, const Real dt, const int nlev) {
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     isprx[k] = aero_model::examine_prec_exist(k, pdel.data(), prain.data(),
@@ -1105,9 +1100,9 @@ void compute_q_tendencies(
     const View2D &state_q, const View2D &qqcw, const View2D &ptend_q,
     // Kokkos::View<Real * [aero_model::maxd_aspectype + 2][aero_model::pcnst]>
     //     qqcw_sav,
-    ConstColumnView pdel, const Real dt, const int jnummaswtr,
-    const int jnv, const int mm, const int lphase, const int imode,
-    const int lspec, View1D workspace[14]) {
+    ConstColumnView pdel, const Real dt, const int jnummaswtr, const int jnv,
+    const int mm, const int lphase, const int imode, const int lspec,
+    View1D workspace[14]) {
 
   team.team_barrier();
   // clang-format off
@@ -1400,16 +1395,15 @@ void compute_q_tendencies(
       if (jnv)
         scavcoef = (1 == jnv) ? scavcoefnum[k] : scavcoefvol[k];
 
-      Real fracp = cmfdqr[k] * dt /
-                   max(small_value_12,
-                              cldcu[k] * conicw[k] + (cmfdqr[k] + dlf[k]) * dt);
+      Real fracp =
+          cmfdqr[k] * dt /
+          max(small_value_12, cldcu[k] * conicw[k] + (cmfdqr[k] + dlf[k]) * dt);
       fracp = utils::min_max_bound(0.0, 1.0, fracp) * cldcu[k];
       // temporary saved tracer value
       const Real clddiff = cldt[k] - cldcu[k];
       // temporarily calculation of tracer [kg/kg]
-      const Real tracer_tmp = min(
-          tqqcw,
-          tracer * (clddiff / max(small_value_2, (1. - clddiff))));
+      const Real tracer_tmp =
+          min(tqqcw, tracer * (clddiff / max(small_value_2, (1. - clddiff))));
       // calculate in-cumulus and mean tracer values for wetdep_scavenging use
       // in-cumulus tracer concentration [kg/kg]
       const Real tracer_incu = f_act_conv[k] * (tracer + tracer_tmp);
@@ -1420,8 +1414,7 @@ void compute_q_tendencies(
 
       // calculate limitation of removal rate using Dana and Hales coefficient
       // odds  : limit on removal rate (proportional to prec) [fraction]
-      Real odds =
-          precabc[k] / max(cldvcu[k], small_value_5) * scavcoef * dt;
+      Real odds = precabc[k] / max(cldvcu[k], small_value_5) * scavcoef * dt;
       odds = utils::min_max_bound(0.0, 1.0, odds);
 
       // incloud scavenging tendency [kg/kg/s]
@@ -1438,8 +1431,8 @@ void compute_q_tendencies(
       constexpr Real small_value_12 = 1.e-12; // BAD CONSTANT
       const Real tracer = qqcw(k, mm);
       // strat in-cloud removal only affects strat-cloudborne aerosol
-      Real fracp = prain[k] * dt /
-                   max(totcond[k] + prain[k] * dt, small_value_12);
+      Real fracp =
+          prain[k] * dt / max(totcond[k] + prain[k] * dt, small_value_12);
       fracp = utils::min_max_bound(0.0, 1.0, fracp);
       // in-cloud scavenging:
       // incloud scavenging tendency [kg/kg/s]
@@ -1460,17 +1453,15 @@ void compute_q_tendencies(
       // temporary saved tracer value
       const Real clddiff = cldt[k] - cldcu[k];
       // temporarily calculation of tracer [kg/kg]
-      const Real tracer_tmp = min(
-          tqqcw,
-          tracer * (clddiff / max(small_value_2, (1. - clddiff))));
+      const Real tracer_tmp =
+          min(tqqcw, tracer * (clddiff / max(small_value_2, (1. - clddiff))));
       // mean tracer concenration [kg/kg]
       Real tracer_mean = tracer * (1. - cldcu[k] * f_act_conv[k]) -
                          cldcu[k] * f_act_conv[k] * tracer_tmp;
 
       // calculate limitation of removal rate using Dana and Hales coefficient
       // odds  : limit on removal rate (proportional to prec) [fraction]
-      Real odds =
-          precabs[k] / max(cldvst[k], small_value_5) * scavcoef * dt;
+      Real odds = precabs[k] / max(cldvst[k], small_value_5) * scavcoef * dt;
       odds = utils::min_max_bound(0.0, 1.0, odds);
       // strat in-cloud removal only affects strat-cloudborne aerosol
       const Real src2 = (sol_factb[k] * cldvst[k] * odds * tracer_mean) / dt;
@@ -1483,8 +1474,7 @@ void compute_q_tendencies(
     constexpr Real small_value_36 = 1.e-36; // BAD CONSTANT
     const Real tracer =
         lphase == 1 ? state_q(k, mm) + ptend_q(k, mm) * dt : qqcw(k, mm);
-    const Real rat =
-        tracer / max(dt * (srcc[k] + srcs[k]), small_value_36);
+    const Real rat = tracer / max(dt * (srcc[k] + srcs[k]), small_value_36);
     if (rat < 1) {
       srcs[k] *= rat;
       srcc[k] *= rat;
@@ -1820,10 +1810,8 @@ void aero_model_wetdep(
     // inputs
     const ConstColumnView &cldt, const ConstColumnView &rprdsh,
     const ConstColumnView &rprddp, const ConstColumnView &evapcdp,
-    const ConstColumnView &evapcsh,
-    const ConstColumnView &dp_frac,
-    const ConstColumnView &sh_frac,
-    const ConstColumnView &icwmrdp,
+    const ConstColumnView &evapcsh, const ConstColumnView &dp_frac,
+    const ConstColumnView &sh_frac, const ConstColumnView &icwmrdp,
     const ConstColumnView &icwmrsh, const ConstColumnView &evapr,
     const ConstColumnView &dlf, const ConstColumnView &prain,
     const View2D scavimptblnum, const View2D scavimptblvol,

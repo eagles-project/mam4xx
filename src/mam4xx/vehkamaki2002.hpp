@@ -6,7 +6,14 @@
 #ifndef MAM4XX_VEHKAMAKI2002_HPP
 #define MAM4XX_VEHKAMAKI2002_HPP
 
+#include "mam4_math.hpp"
+
+#include <ekat_kokkos_types.hpp>
+
 namespace mam4::vehkamaki2002 {
+
+using mam4::exp;
+using mam4::log;
 
 /// The functions in this file implement parameterizations described in
 /// Vehkamaki et al, An improved parameterization for sulfuric acid-water /

@@ -9,8 +9,8 @@
 #include "mam4_constants.hpp"
 #include "mam4_math.hpp"
 
-#include <ekat_kokkos_types.hpp>
 #include <ekat_kernel_assert.hpp>
+#include <ekat_kokkos_types.hpp>
 
 /// This file contains functions for converting between various representations
 /// of physical quantities in aerosol parameterizations.

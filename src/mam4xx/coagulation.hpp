@@ -786,8 +786,7 @@ void getcoags_wrapper_f(const Real airtemp, const Real airprs, const Real dgatk,
 
   const Real kfmat = sqrt(3.0 * boltzmann * airtemp / pdensat);
   const Real kfmac = sqrt(3.0 * boltzmann * airtemp / pdensac);
-  const Real kfmatac =
-      sqrt(6.0 * boltzmann * airtemp / (pdensat + pdensac));
+  const Real kfmatac = sqrt(6.0 * boltzmann * airtemp / (pdensat + pdensac));
 
   // -------------------------------------------------------------------------------------------------
   // Call subr. getcoags ported from the CMAQ model to calculate
@@ -815,7 +814,8 @@ void getcoags_wrapper_f(const Real airtemp, const Real airprs, const Real dgatk,
 
   // For the mass transfer, convert from the CMAQ model's coag rate parameters
   // to the MIRAGE2 model's parameters
-  const Real dumatk3 = (cube(dgatk) * exp(4.5 * xxlsgat * xxlsgat)); // or unit conversion
+  const Real dumatk3 =
+      (cube(dgatk) * exp(4.5 * xxlsgat * xxlsgat)); // or unit conversion
   betaij3 = max(0.0, qv12 / dumatk3);
 }
 
@@ -894,7 +894,8 @@ void mam_coag_aer_update(
     // Portions of mass going into different modes
     const Real prtn2 = bijqnumj2 / decay_const;
     const Real prtn1 = 1.0 - prtn2;
-    const Real tmp_xf = 1.0 - exp(-decay_factor); // total fraction lost from aitken mode
+    const Real tmp_xf =
+        1.0 - exp(-decay_factor); // total fraction lost from aitken mode
     for (int iaer = 0; iaer < num_aer; ++iaer) {
       const Real tmp_dq =
           tmp_xf * qaer_bgn[iaer][nait]; // total amount lost from aitken mode
@@ -914,8 +915,8 @@ void mam_coag_aer_update(
   //  Mass transfer out of pcarbon mode. Only one coag pair is involved:
   // - coag pair 2: pca + accumulation -> accumulation
   // --------------------------------------------------------------------
-  decay_const = max(
-      0.0, ybetaij3[1] * qnum_tavg[nacc]); // there is only 1 destination
+  decay_const =
+      max(0.0, ybetaij3[1] * qnum_tavg[nacc]); // there is only 1 destination
 
   decay_factor = deltat * decay_const; // calculate coag-induced changes only
                                        // when this number is not ~= zero

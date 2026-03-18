@@ -3,14 +3,13 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-
 #include "atmosphere_utils.hpp"
 #include "testing.hpp"
 
 #include <mam4xx/aero_modes.hpp>
-#include <mam4xx/conversions.hpp>
 #include <mam4xx/atmosphere.hpp>
 #include <mam4xx/constants.hpp>
+#include <mam4xx/conversions.hpp>
 #include <mam4xx/floating_point.hpp>
 
 #include <catch2/catch.hpp>
@@ -104,8 +103,8 @@ TEST_CASE("conversions", "") {
     auto const mmr = 1e-8;
     auto const num_conc =
         number_conc_from_mmr(mmr, Constants::molec_weight_nacl, rho);
-    auto const mmr0 = mmr_from_number_conc(
-        num_conc, Constants::molec_weight_nacl, rho);
+    auto const mmr0 =
+        mmr_from_number_conc(num_conc, Constants::molec_weight_nacl, rho);
 
     logger.info("unit_temp = {}, unit_pressure = {}, rho = {}", unit_temp,
                 unit_pressure, rho);

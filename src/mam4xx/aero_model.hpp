@@ -286,14 +286,13 @@ void calc_schmidt_number(const Real freepath, const Real r_aer,
   // working variables [unitless]
   const Real dum = freepath / r_aer;
   // ! slip correction factor [unitless]
-  const Real dumfuchs =
-      one + 1.246 * dum + 0.42 * dum * exp(-0.87 / dum);
+  const Real dumfuchs = one + 1.246 * dum + 0.42 * dum * exp(-0.87 / dum);
   taurelax =
       two * rhoaero * r_aer * r_aer * dumfuchs / (9. * rhoair * airkinvisc);
 
   // single-particle aerosol mass [g]
-  const Real aeromass = four_thirds * Constants::pi * r_aer * r_aer *
-                        r_aer * rhoaero; // ![g]
+  const Real aeromass =
+      four_thirds * Constants::pi * r_aer * r_aer * r_aer * rhoaero; // ![g]
   // aerosol diffusivity [cm^2/s]
   const Real aerodiffus = boltz_cgs * temp * taurelax / aeromass; //  ! [cm^2/s]
   schmidt = airkinvisc / aerodiffus;
@@ -351,9 +350,9 @@ void calc_impact_efficiency(const Real r_aer, const Real r_rain,
   const Real reynolds = r_rain * vfall / airkinvisc;
   const Real sqrtreynolds = sqrt(reynolds);
   // efficiency of aerosol-collection  in different processes
-  const Real ebrown =
-      four * (one + 0.4 * sqrtreynolds * pow(schmidt, one_third)) /
-      (reynolds * schmidt);
+  const Real ebrown = four *
+                      (one + 0.4 * sqrtreynolds * pow(schmidt, one_third)) /
+                      (reynolds * schmidt);
 
   //------------ calculate intercept effect ------------
   Real dum =
@@ -485,8 +484,7 @@ void calc_1_impact_rate(const Real dg0,     //  in
                       one_thousand;
   // unit conversion from [mol g /cm^3/kg]/1000 to [mol/cm^3]
   // air molar density [mol/cm^3]
-  const Real cair =
-      rhoair / Constants::molec_weight_dry_air / one_thousand;
+  const Real cair = rhoair / Constants::molec_weight_dry_air / one_thousand;
   // !   molecular freepath [cm]
   // BAD CONSTANT
   // FIXME move this constant to Constants
@@ -575,7 +573,7 @@ inline void modal_aero_bcscavcoef_init(
   const Real dlndg_nimptblgrow = log(1.25);
   // ! set up temperature-pressure pair to compute impaction scavenging rates
   const Real temp_0C = Constants::melting_pt_h2o; //     ! K
-  const Real press_750hPa = 0.75e6;                      //  ! dynes/cm2
+  const Real press_750hPa = 0.75e6;               //  ! dynes/cm2
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
     const Real sigmag = sigmag_amode[imode];
     // clang-format off
@@ -591,8 +589,7 @@ inline void modal_aero_bcscavcoef_init(
       // aerosol diameter [m]
       const Real dg0 = dgnum_amode[imode] * wetdiaratio;
       // ratio of volume for wet/dry aerosols [fraction]
-      const Real wetvolratio =
-          exp(Real(jgrow) * dlndg_nimptblgrow * three);
+      const Real wetvolratio = exp(Real(jgrow) * dlndg_nimptblgrow * three);
       // dry and wet aerosol density [kg/m3]
       Real rhowetaero = one + (rhodryaero - one) / wetvolratio;
       rhowetaero = min(rhowetaero, rhodryaero);
@@ -874,8 +871,10 @@ void set_f_act_coarse(const int kk,
   const int idx_coarse = static_cast<int>(ModeIndex::Coarse);
   const int lcoardust = aero_model::lptr_dust_a_amode(idx_coarse);
   const int lcoarnacl = aero_model::lptr_nacl_a_amode(idx_coarse);
-  const Real tmpdust = max(0.0, state_q(kk, lcoardust) + ptend_q(kk, lcoardust) * dt);
-  const Real tmpnacl = max(0.0, state_q(kk, lcoarnacl) + ptend_q(kk, lcoarnacl) * dt);
+  const Real tmpdust =
+      max(0.0, state_q(kk, lcoardust) + ptend_q(kk, lcoardust) * dt);
+  const Real tmpnacl =
+      max(0.0, state_q(kk, lcoarnacl) + ptend_q(kk, lcoarnacl) * dt);
   if (tmpdust + tmpnacl > small_value_30)
     f_act_conv_coarse =
         (f_act_conv_coarse_dust * tmpdust + f_act_conv_coarse_nacl * tmpnacl) /
@@ -993,8 +992,7 @@ void apportion_sfc_flux_deep(const Real rprddpsum, const Real rprdshsum,
   // (wet removal)*[(precip evap)/(precip production)]
   //  working variables for resuspension from deep and shallow convection
   const Real tmp_resudp = tmpa * min(tmp_evapdp / tmp_precdp, 1.0);
-  const Real tmp_resush =
-      (1.0 - tmpa) * min(tmp_evapsh / tmp_precsh, 1.0);
+  const Real tmp_resush = (1.0 - tmpa) * min(tmp_evapsh / tmp_precsh, 1.0);
   Real tmpb = max(tmp_resudp, small_value_35) /
               max(tmp_resudp + tmp_resush, small_value_35);
   tmpb = utils::min_max_bound(0.0, 1.0, tmpb);

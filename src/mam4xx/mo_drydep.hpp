@@ -176,11 +176,9 @@ void calculate_uustar(
   //-------------------------------------------------------------------------------------
   Real ustarb;
   if (unstable) {
-    Real bb =
-        9.4 * square(cvarb) * sqrt(abs(ribn) * zl / z0b);
-    ustarb =
-        cvarb * va *
-        sqrt(1.0 - (9.4 * ribn / (1.0 + 7.4 * bb))); // BAD_CONSTANTS
+    Real bb = 9.4 * square(cvarb) * sqrt(abs(ribn) * zl / z0b);
+    ustarb = cvarb * va *
+             sqrt(1.0 - (9.4 * ribn / (1.0 + 7.4 * bb))); // BAD_CONSTANTS
   } else {
     ustarb = cvarb * va / (1. + 4.7 * ribn);
   }
@@ -214,12 +212,10 @@ void calculate_ustar(
     if (fr_lnduse[lt]) { // BAD_CONSTANTS
       cvar[lt] = karman / log(zl / z0(index_season[lt], lt));
       if (unstable) {
-        bycp[lt] =
-            9.4 * square(cvar[lt]) *
-            sqrt(abs(ribn) * zl / z0(index_season[lt], lt));
-        ustar[lt] = sqrt(
-            cvar[lt] * uustar *
-            sqrt(1.0 - (9.4 * ribn / (1.0 + 7.4 * bycp[lt]))));
+        bycp[lt] = 9.4 * square(cvar[lt]) *
+                   sqrt(abs(ribn) * zl / z0(index_season[lt], lt));
+        ustar[lt] = sqrt(cvar[lt] * uustar *
+                         sqrt(1.0 - (9.4 * ribn / (1.0 + 7.4 * bycp[lt]))));
       } else {
         ustar[lt] = sqrt(cvar[lt] * uustar / (1.0 + 4.7 * ribn));
       }
@@ -245,15 +241,12 @@ void calculate_ustar_over_water(
   int lt = lt_for_water;
   if (fr_lnduse[lt]) {
     // BAD_CONSTANTS
-    Real z0water =
-        0.016 * square(ustar[lt]) / grav + diffk / (9.1 * ustar[lt]);
+    Real z0water = 0.016 * square(ustar[lt]) / grav + diffk / (9.1 * ustar[lt]);
     cvar[lt] = karman / log(zl / z0water);
     if (unstable) {
-      bycp[lt] = 9.4 * square(cvar[lt]) *
-                 sqrt(abs(ribn) * zl / z0water);
-      ustar[lt] =
-          sqrt(cvar[lt] * uustar *
-                      sqrt(1.0 - (9.4 * ribn / (1.0 + 7.4 * bycp[lt]))));
+      bycp[lt] = 9.4 * square(cvar[lt]) * sqrt(abs(ribn) * zl / z0water);
+      ustar[lt] = sqrt(cvar[lt] * uustar *
+                       sqrt(1.0 - (9.4 * ribn / (1.0 + 7.4 * bycp[lt]))));
     } else {
       ustar[lt] = sqrt(cvar[lt] * uustar / (1.0 + 4.7 * ribn));
     }
@@ -315,8 +308,7 @@ void calculate_aerodynamic_and_quasilaminar_resistance(
       if (obklen[lt] < 0.0) {
         Real zeta = zl / obklen[lt];
         zeta = max(-1.0, zeta);
-        psih = exp(0.598 + 0.39 * log(-zeta) -
-                          0.09 * square(log(-zeta)));
+        psih = exp(0.598 + 0.39 * log(-zeta) - 0.09 * square(log(-zeta)));
       } else {
         Real zeta = zl / obklen[lt];
         zeta = min(1.0, zeta);
@@ -633,8 +625,8 @@ KOKKOS_INLINE_FUNCTION
 Real get_saturation_specific_humidity(const Real temperature, // [K]
                                       const Real pressure) {  // [Pa]
   // saturation vapor pressure [Pa] (BAD_CONSTANTS)
-  Real es = 611.0 *
-            exp(5414.77 * (temperature - tmelt) / (tmelt * temperature));
+  Real es =
+      611.0 * exp(5414.77 * (temperature - tmelt) / (tmelt * temperature));
   // saturation specific humidity [kg/kg] (BAD_CONSTANTS)
   Real ws = 0.622 * es / (pressure - es);
 

@@ -128,8 +128,8 @@ void mam_pcarbon_aging_frac(
 
   qaer_del_cond_tmp = max(qaer_del_cond_tmp, 1e-35);
 
-  frac_cond = qaer_del_cond_tmp /
-              (qaer_del_cond_tmp + max(qaer_del_coag_tmp, 0.0));
+  frac_cond =
+      qaer_del_cond_tmp / (qaer_del_cond_tmp + max(qaer_del_coag_tmp, 0.0));
 
   frac_coag = 1.0 - frac_cond;
 
@@ -153,7 +153,8 @@ void mam_pcarbon_aging_frac(
     }
   }
 
-  const Real fac_volsfc = exp(2.5 * square(log(mam4::modes(imom_pc).mean_std_dev)));
+  const Real fac_volsfc =
+      exp(2.5 * square(log(mam4::modes(imom_pc).mean_std_dev)));
 
   const Real xferfrac_max = 1.0 - 10.0 * epsilon(); //  1-eps
 
@@ -162,8 +163,7 @@ void mam_pcarbon_aging_frac(
   // use 1 mol (bi-)sulfate = 65 cm^3 --> 1 molecule = (4.76e-10 m)^3
   // BAD CONSTANT, BAAAD CONSTANT
   const Real dr_so4_monolayers_pcage = n_so4_monolayers_pcage * 4.76e-10;
-  const Real xferfrac_tmp2 =
-      max(6.0 * dr_so4_monolayers_pcage * vol_core, 0.0);
+  const Real xferfrac_tmp2 = max(6.0 * dr_so4_monolayers_pcage * vol_core, 0.0);
 
   if (xferfrac_tmp1 >= xferfrac_tmp2) {
     xferfrac_pcage = xferfrac_max;

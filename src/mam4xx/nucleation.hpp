@@ -571,8 +571,7 @@ void mer07_veh02_nuc_mosaic_1box(
   }
 
   // FIXME: BAD CONSTANT
-  rateloge = rateloge +
-             log(max(1.0e-38, adjust_factor_bin_tern_ratenucl));
+  rateloge = rateloge + log(max(1.0e-38, adjust_factor_bin_tern_ratenucl));
 
   // do boundary layer nuc
   if ((newnuc_method_flagaa == 11) || (newnuc_method_flagaa == 12)) {
@@ -607,9 +606,8 @@ void mer07_veh02_nuc_mosaic_1box(
 
   // determine size bin into which the new particles go
   // (probably it will always be bin #1, but ...)
-  Real voldry_clus =
-      (max(cnum_h2so4, 1.0) * mw_so4a + cnum_nh3 * mw_nh4a) /
-      (1.0e3 * dens_sulfacid * avogad);
+  Real voldry_clus = (max(cnum_h2so4, 1.0) * mw_so4a + cnum_nh3 * mw_nh4a) /
+                     (1.0e3 * dens_sulfacid * avogad);
   // correction when host code sulfate is really ammonium bisulfate/sulfate
   voldry_clus = voldry_clus * (mw_so4a_host / mw_so4a);
   Real dpdry_clus = pow(voldry_clus * 6.0 / pi, onethird);
@@ -715,8 +713,7 @@ void mer07_veh02_nuc_mosaic_1box(
     // neglect (dmean/150)**0.048 factor,
     // which should be very close to 1.0 because of small exponent
     // FIXME: BAD CONSTANTS
-    Real gamma_kk = 0.23 * pow(dnuc_kk, 0.2) *
-                    pow(dfin_kk / 3.0, 0.075) *
+    Real gamma_kk = 0.23 * pow(dnuc_kk, 0.2) * pow(dfin_kk / 3.0, 0.075) *
                     pow(dens_part * 1.0e-3, -0.33) *
                     pow(temp_in / 293.0, -0.75);
 
@@ -1133,7 +1130,7 @@ private:
     using mam4::log;
     // dry-diameter limits for "grown" new particles
     dp_lo_mode = exp(0.67 * log(modes(nait).min_diameter) +
-                            0.33 * log(modes(nait).max_diameter));
+                     0.33 * log(modes(nait).max_diameter));
     dp_hi_mode = modes(nait).max_diameter;
   }
 

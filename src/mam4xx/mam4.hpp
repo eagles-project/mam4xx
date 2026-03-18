@@ -8,11 +8,11 @@
 
 // This header makes all MAM4 processes available.
 
-#include "aero_process.hpp"
-#include "aero_rad_props.hpp"
 #include "aero_config.hpp"
 #include "aero_model.hpp"
 #include "aero_model_emissions.hpp"
+#include "aero_process.hpp"
+#include "aero_rad_props.hpp"
 #include "aging.hpp"
 #include "calcsize.hpp"
 #include "coagulation.hpp"
@@ -36,8 +36,8 @@
 #include "mo_sethet.hpp"
 #include "mo_setinv.hpp"
 #include "mo_setsox.hpp"
-#include "modal_aero_opt.hpp"
 #include "modal_aero_calcsize.hpp"
+#include "modal_aero_opt.hpp"
 #include "ndrop.hpp"
 #include "nucleate_ice.hpp"
 #include "nucleation.hpp"
@@ -56,7 +56,8 @@ const char *version();
 // Returns mam4xx's git revision hash, or "unknown" if not found.
 const char *revision();
 
-// Returns true iff this build has changes that weren't committed to the git repo.
+// Returns true iff this build has changes that weren't committed to the git
+// repo.
 bool has_uncommitted_changes();
 
 using NucleationProcess = AeroProcess<Nucleation>;

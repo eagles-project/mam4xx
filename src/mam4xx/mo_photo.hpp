@@ -1,12 +1,16 @@
 #ifndef MAM4XX_MO_PHOTO_HPP
 #define MAM4XX_MO_PHOTO_HPP
 
+#include "mam4_math.hpp"
 #include "mam4_types.hpp"
 #include "utils.hpp"
 
 namespace mam4 {
 
 namespace mo_photo {
+
+using mam4::cos;
+using mam4::pow;
 
 // number of vertical levels
 constexpr int pver = mam4::nlev;
@@ -417,8 +421,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
         // BAD CONSTANT
         Real fac2 = min(zero, 1.6 * coschi * above_tra - one);
         // BAD CONSTANT
-        cld_mult[kk] =
-            max(.05, one + fac1 * clouds[kk] + fac2 * above_cld[kk]);
+        cld_mult[kk] = max(.05, one + fac1 * clouds[kk] + fac2 * above_cld[kk]);
       });
 
 } // end cloud_mod
@@ -838,7 +841,7 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
   //	... zero all photorates
   //-----------------------------------------------------------------
   constexpr Real zero = 0;
-  constexpr Real Pa2mb = 1.e-2;                      // pascals to mb
+  constexpr Real Pa2mb = 1.e-2;               // pascals to mb
   constexpr Real r2d = 180.0 / Constants::pi; // degrees to radians
   // BAD CONSTANT
   constexpr Real max_zen_angle = 88.85; //  degrees

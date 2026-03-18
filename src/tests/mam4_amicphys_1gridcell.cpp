@@ -14,8 +14,8 @@
 #include <ekat_logger.hpp>
 #include <ekat_pack_kokkos.hpp>
 
-#include <type_traits>
 #include <iomanip>
+#include <type_traits>
 
 using namespace mam4;
 
@@ -1172,8 +1172,8 @@ void subarea_partition_factors(
   //    because number and mass have different activation fractions
   // *** question ***
 
-  Real tmp_aa = max(1.e-35, tmp_q_int_clea * fclea) /
-                max(1.e-35, q_int_cell_avg);
+  Real tmp_aa =
+      max(1.e-35, tmp_q_int_clea * fclea) / max(1.e-35, q_int_cell_avg);
   tmp_aa = max(0.0, min(1.0, tmp_aa));
 
   part_fac_q_int_clea = tmp_aa / fclea;

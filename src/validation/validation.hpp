@@ -6,11 +6,11 @@
 #ifndef MAM4XX_VALIDATION_HPP
 #define MAM4XX_VALIDATION_HPP
 #include <cfenv>
-#include <testing.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/mo_photo.hpp>
 #include <skywalker.hpp>
 #include <string>
+#include <testing.hpp>
 
 namespace mam4 {
 
