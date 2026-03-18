@@ -137,7 +137,7 @@ if (MAM4XX_STANDALONE)
   set(EKAT_INCLUDE_DIRS
     ${ekat_SOURCE_DIR}/src/kokkos
     ${ekat_SOURCE_DIR}/extern/kokkos/core/src
-    ${ekat_SOURCE_DIR}/extern/Catch2/include
+    ${ekat_SOURCE_DIR}/extern/Catch2/single_include
   )
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${ekat_SOURCE_DIR}/cmake/")
 endif()

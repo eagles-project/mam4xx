@@ -5,9 +5,6 @@
 
 #include <mam4xx/mam4.hpp>
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/rename.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
@@ -53,10 +50,10 @@ void find_renaming_pairs(Ensemble *ensemble) {
     // We do not use sz_factor in rename-mam4xx; however, rename-mam4 does.
     // We only computes sz_factor for validation proposes
     Real sz_factor[nmodes] = {0};
-    sz_factor[1] =
-        Constants::pi_sixth * exp(4.5 * square(log(modes(1).mean_std_dev)));
-    sz_factor[0] =
-        Constants::pi_sixth * exp(4.5 * square(log(modes(0).mean_std_dev)));
+    sz_factor[1] = Constants::pi_sixth *
+                   mam4::exp(4.5 * square(mam4::log(modes(1).mean_std_dev)));
+    sz_factor[0] = Constants::pi_sixth *
+                   mam4::exp(4.5 * square(mam4::log(modes(0).mean_std_dev)));
 
     std::vector<Real> sz_factor_out(nmodes, 0);
     validation::convert_modal_array_to_vector(sz_factor, sz_factor_out);

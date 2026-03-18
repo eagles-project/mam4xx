@@ -8,9 +8,9 @@
 
 #include <mam4xx/aero_modes.hpp>
 #include <mam4xx/atmosphere.hpp>
-#include <mam4xx/constants.hpp>
 #include <mam4xx/conversions.hpp>
 #include <mam4xx/floating_point.hpp>
+#include <mam4xx/mam4_constants.hpp>
 
 #include <catch2/catch.hpp>
 
@@ -160,12 +160,12 @@ TEST_CASE("conversions", "") {
 
     auto const temp_celsius = unit_temp - Constants::freezing_pt_h2o;
     auto const check_magnus_ew =
-        6.1094 * exp((17.625 * temp_celsius) / (234.04 + temp_celsius));
+        6.1094 * mam4::exp((17.625 * temp_celsius) / (234.04 + temp_celsius));
     logger.info("magnus ew = {}, check magnus ew = {}", magnus_ew,
                 check_magnus_ew * 100);
 
     auto const check_magnus =
-        1.00071 * exp(0.000000045 * unit_pressure) * check_magnus_ew;
+        1.00071 * mam4::exp(0.000000045 * unit_pressure) * check_magnus_ew;
     logger.info("magnus = {}, check magnus = {}", magnus, check_magnus * 100);
     logger.info("hardy = {}", hardy);
 
@@ -284,7 +284,7 @@ TEST_CASE("conversions", "") {
         logger.error("rel diff found at level {}: rh_q = {} rh_w = {} rel_diff "
                      "= {} tol = {}",
                      k, h_rh_q(k), h_rh_w(k),
-                     abs(h_rh_q(k) - h_rh_w(k)) / h_rh_q(k), tol);
+                     mam4::abs(h_rh_q(k) - h_rh_w(k)) / h_rh_q(k), tol);
       }
       REQUIRE(FloatingPoint<Real>::rel(h_rh_q(k), h_rh_w(k), tol));
     }

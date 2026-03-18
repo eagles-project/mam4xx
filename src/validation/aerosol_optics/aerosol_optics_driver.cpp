@@ -3,11 +3,11 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <mam4xx/modal_aer_opt.hpp>
+#include <mam4xx/modal_aero_opt.hpp>
+
+#include <validation.hpp>
 
 #include <iostream>
-#include <skywalker.hpp>
-#include <validation.hpp>
 
 void usage() {
   std::cerr << "aerosol_optics_driver: a Skywalker driver for validating the "

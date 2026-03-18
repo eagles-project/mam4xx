@@ -5,9 +5,106 @@
 
 #include "testing.hpp"
 
+#include <ekat_fpe.hpp>
+#include <ekat_kokkos_session.hpp>
+
 // the testing namespace contains functions that are useful only within tests,
 // not to be used in production code
 namespace mam4::testing {
+
+// A simple memory allocation pool for standalone ColumnViews to be used in
+// (e.g.) unit tests. A ColumnPool manages a number of ColumnViews with a fixed
+// number of vertical levels.
+class ColumnPool {
+  size_t num_levels_;          // number of vertical levels per column (fixed)
+  size_t num_cols_;            // number of allocated columns
+  std::vector<int> col_used_;  // columns that are being used already
+  std::vector<Real *> memory_; // per-column memory itself (allocated on device)
+public:
+  // constructs a column pool with the given initial number of columns, each
+  // with the given number of vertical levels.`
+  ColumnPool(size_t num_vertical_levels, size_t initial_num_columns = 64)
+      : num_levels_(num_vertical_levels), num_cols_(initial_num_columns),
+        col_used_(initial_num_columns, 0),
+        memory_(initial_num_columns, nullptr) {
+    for (size_t i = 0; i < num_cols_; ++i) {
+      memory_[i] = reinterpret_cast<Real *>(Kokkos::kokkos_malloc(
+          "Column pool", sizeof(Real) * num_vertical_levels));
+    }
+  }
+
+  // no copying of the pool
+
+  // destructor
+  ~ColumnPool() {
+    for (size_t i = 0; i < num_cols_; ++i) {
+      Kokkos::kokkos_free(memory_[i]);
+    }
+  }
+
+  // returns a "fresh" (unused) ColumnView from the ColumnPool, marking it as
+  // used, and allocating additional memory if needed)
+  ColumnView column_view() {
+    // find the first unused column
+    size_t i;
+    for (i = 0; i < num_cols_; ++i) {
+      if (!col_used_[i])
+        break;
+    }
+    if (i == num_cols_) { // all columns in the pool are in use!
+      // double the number of allocated columns in the pool
+      size_t new_num_cols = 2 * num_cols_;
+      col_used_.resize(new_num_cols, 0);
+      memory_.resize(new_num_cols, nullptr);
+      for (size_t i = num_cols_; i < new_num_cols; ++i) {
+        memory_[i] = reinterpret_cast<Real *>(
+            Kokkos::kokkos_malloc(sizeof(Real) * num_levels_));
+      }
+      num_cols_ = new_num_cols;
+    }
+
+    col_used_[i] = 1;
+    return ColumnView(memory_[i], num_levels_);
+  }
+};
+
+// column pools, organized by column resolution
+std::map<size_t, std::unique_ptr<ColumnPool>> pools_{};
+
+mam4::Atmosphere create_atmosphere(int num_levels, mam4::Real pblh) {
+  auto temperature = create_column_view(num_levels);
+  auto pressure = create_column_view(num_levels);
+  auto vapor_mixing_ratio = create_column_view(num_levels);
+  auto liquid_mixing_ratio = create_column_view(num_levels);
+  auto cloud_liquid_number_mixing_ratio = create_column_view(num_levels);
+  auto ice_mixing_ratio = create_column_view(num_levels);
+  auto cloud_ice_number_mixing_ratio = create_column_view(num_levels);
+  auto height = create_column_view(num_levels);
+  auto hydrostatic_dp = create_column_view(num_levels);
+  auto interface_pressure = create_column_view(num_levels + 1);
+  auto cloud_fraction = create_column_view(num_levels);
+  auto updraft_vel_ice_nucleation = create_column_view(num_levels);
+  return Atmosphere(num_levels, temperature, pressure, vapor_mixing_ratio,
+                    liquid_mixing_ratio, cloud_liquid_number_mixing_ratio,
+                    ice_mixing_ratio, cloud_ice_number_mixing_ratio, height,
+                    hydrostatic_dp, interface_pressure, cloud_fraction,
+                    updraft_vel_ice_nucleation, pblh);
+}
+
+ColumnView create_column_view(int num_levels) {
+  // find a column pool for the given number of vertical levels
+  auto iter = pools_.find(num_levels);
+  if (iter == pools_.end()) {
+    auto result = pools_.emplace(
+        num_levels, std::unique_ptr<ColumnPool>(new ColumnPool(num_levels)));
+    iter = result.first;
+  }
+  return iter->second->column_view();
+}
+
+void finalize() { pools_.clear(); }
+
+Surface create_surface() { return Surface(); }
 
 Prognostics create_prognostics(int num_levels) {
   Prognostics p(num_levels);
@@ -185,3 +282,27 @@ Tendencies create_tendencies(int num_levels) {
 }
 
 } // namespace mam4::testing
+
+//------------------------------------------------------------------------
+// EKAT test session initialization and finalization overrides
+//------------------------------------------------------------------------
+// The following functions are called at the beginning and the end of an
+// EKAT test session. When calling EkatCreateUnitTest, you must specify the
+// option EXCLUDE_TEST_SESSION which prevents EKAT from using its own
+// default implementations.
+//------------------------------------------------------------------------
+
+// This implementation of ekat_initialize_test_session is identical to the
+// default provided by EKAT.
+void ekat_initialize_test_session(int argc, char **argv,
+                                  const bool print_config) {
+  ekat::initialize_kokkos_session(argc, argv, print_config);
+  ekat::enable_fpes(mam4::testing::default_fpes);
+}
+
+// This implementation of ekat_finalize_test_session calls
+// haero::testing::finalize() to deallocate all ColumnView pools.
+void ekat_finalize_test_session() {
+  mam4::testing::finalize();
+  ekat::finalize_kokkos_session();
+}
