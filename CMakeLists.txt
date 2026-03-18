@@ -116,12 +116,20 @@ if (MAM4XX_STANDALONE)
   list(APPEND mam4xx_tpls EKAT)
 endif()
 
-FetchContent_Declare(
-  skywalker
-  GIT_REPOSITORY https://github.com/eagles-project/skywalker.git
-  GIT_TAG        main
-)
-list(APPEND mam4xx_tpls skywalker)
+if (MAM4XX_ENABLE_SKYWALKER)
+  FetchContent_Declare(
+    skywalker
+    GIT_REPOSITORY https://github.com/eagles-project/skywalker.git
+    GIT_TAG        main
+  )
+  list(APPEND mam4xx_tpls skywalker)
+
+  FetchContent_Declare(
+    mam_x_validation
+    GIT_REPOSITORY https://github.com/eagles-project/mam_x_validation.git
+    GIT_TAG        main
+  )
+endif()
 
 FetchContent_MakeAvailable(${mam4xx_tpls})
 
