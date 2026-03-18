@@ -93,8 +93,7 @@ message(STATUS "Using ${MAM4XX_PRECISION} precision floating point numbers")
 # Report the installation prefix.
 message(STATUS "Installation prefix is ${CMAKE_INSTALL_PREFIX}")
 
-include_directories(${PROJECT_BINARY_DIR})
-include_directories(${PROJECT_BINARY_DIR}/src)
+include_directories(${PROJECT_BINARY_DIR}/src/mam4xx)
 include_directories(${PROJECT_SOURCE_DIR}/src)
 
 # Emit compile_commands.json for use with clangd.
@@ -129,6 +128,7 @@ if (MAM4XX_ENABLE_SKYWALKER)
     GIT_REPOSITORY https://github.com/eagles-project/mam_x_validation.git
     GIT_TAG        main
   )
+  list(APPEND mam4xx_tpls mam_x_validation)
 endif()
 
 FetchContent_MakeAvailable(${mam4xx_tpls})
