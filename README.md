@@ -16,8 +16,6 @@ To build MAM4xx, you need:
 * optionally, a working MPI installation (like [OpenMPI](https://www.open-mpi.org/)
   or [Mpich](https://www.mpich.org/)), if you want to use MAM4xx in a
   multi-node parallel environment
-* the [HAERO](https://github.com/eagles-project/haero) aerosol package interface,
-  which provides necessary libraries and settings.
 
 You can obtain all of these freely on the Linux and Mac platforms. On Linux,
 just use your favorite package manager. On a Mac, you can get the Clang C/C++
@@ -33,79 +31,20 @@ brew install cmake openmpi
 
 ## Building MAM4xx
 
-### Installing HAERO
-
-Before you get started with MAM4xx, you'll need a working installation of the
-HAERO high-performance aerosol interface library. For your convenience, we have
-provided the `build-haero.sh` script, which can be used to quickly and easily
-install HAERO in a desired configuration. The script allows you to set a number
-of parameters. Check out the comments at the top of `build-haero.sh`.
-
-You can build a CPU-capable version of HAERO with some defaults set by typing
-
-```shell
-./build-haero.sh <install-path>
-```
-
-The extended syntax to fully configure other types of build is
-
-```shell
-./build-haero.sh <install-path> <device> <precision> <build-type> [device-arch]
-```
-
-in which the options are:
-
-```shell
-device: {cpu, gpu}
-precision: {single, double}
-build-type: {Debug, Release}
-```
-
-and the semi-optional `device-arch` argument must correspond to
-[those accepted by Kokkos](https://kokkos.org/kokkos-core-wiki/get-started/configuration-guide.html#architectures)
-and is likely required for a properly-configured GPU build.
-That is to say, the `device-arch` option **should** be set for GPU builds, and
-building for GPU without that argument is unsupported.
-
-If you'd rather install HAERO yourself, you can follow the instructions in the
-[HAERO repository](https://github.com/eagles-project/haero). Make sure you run
-all the steps, including `make install`.
-
-If you're on a machine that requires modules to get access to compilers, etc,
-use
-```
-source build-haero.sh <path> [...]
-```
-to make sure your environment is updated.
-
-### Initializing submodules
-
-Before you start working with the repo, make sure you initialize its submodules:
-
-```
-git submodule update --init --recursive
-```
-
-### Configuring and Building MAM4xx
-
 To build MAM4xx:
 
-1. Create a build directory by running the `setup` script from the top-level
-   source directory:
+1. Configure it with CMake from the top-level source directory. See the top-level `CMakeLists.txt`
+   file for options, but something like this typically works fine for development work:
+
    ```
-   ./setup build
+   cmake -S . -B build
    ```
-2. Change to your build directory and edit the `config.sh` file to select
-   configuration options. Then run `./config.sh` to configure the model. MAM4xx
-   gets most of its configuration information from HAERO, so there aren't many
-   options here.
-3. From the build directory, type `make -j` to build the library. (If you're
-   building MAM4xx for GPUs, place a number after the `-j` flag, as in
-   `make -j 8`).
-4. To run tests for the library (and the driver, if configured), type
-   `make test`.
-5. To install the model to the location indicated by `PREFIX` in your
-   `config.sh` script, type `make install`. By default, products are installed
+2. Change to the build directory (`build` in the example above) and type `make` (or `ninja`, if
+   you're using CMake 4+).
+3. To run tests for the library (and the driver, if configured), type
+   `make test` or `ninja test`.
+4. To install the model to the location indicated by `PREFIX` in your
+   `config.sh` script, type `make install` or `ninja install`. By default, products are installed
    in `include`, `lib`, `bin`, and `share` subdirectories within your build
    directory.
 

@@ -6,7 +6,6 @@
 #include <ekat_logger.hpp>
 #include <ekat_pack_kokkos.hpp>
 
-// using namespace haero;
 using namespace mam4;
 using namespace mam4::conversions;
 

@@ -301,7 +301,7 @@ void ekat_initialize_test_session(int argc, char **argv,
 }
 
 // This implementation of ekat_finalize_test_session calls
-// haero::testing::finalize() to deallocate all ColumnView pools.
+// mam4::testing::finalize() to deallocate all ColumnView pools.
 void ekat_finalize_test_session() {
   mam4::testing::finalize();
   ekat::finalize_kokkos_session();

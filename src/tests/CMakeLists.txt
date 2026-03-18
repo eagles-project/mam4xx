@@ -5,13 +5,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mam4_test_config.hpp.in
   @ONLY
 )
 
-# For some reason, ctest is looking for test-launcher in
-# ${PROJECT_BINARY_DIR}/bin, so let's make sure it's there.
-file(COPY ${ekat_SOURCE_DIR}/bin/test-launcher DESTINATION ${PROJECT_BINARY_DIR}/bin
-    FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
-                    GROUP_EXECUTE GROUP_READ
-                    WORLD_EXECUTE WORLD_READ)
-
 add_library(mam4xx_tests kohler_verification.cpp
                          atmosphere_utils.cpp
                          testing.cpp)

@@ -25,8 +25,6 @@ asynchronous team communication:
 
 * `eagles-mam-cpp`: This is the best channel for discussing and troubleshooting
   issues related to MAM4xx development.
-* `eagles_haero`: This channel is for discussing the HAERO aerosol package
-  "toolbox" used by MAM4xx.
 * `eagles_mamrefactor`: In this channel, you can ask questions about the
   [MAM4 box model](https://github.com/eagles-project/mam_refactor) used for
   porting MAM4's aerosol microphysics parameterizations.
@@ -136,27 +134,20 @@ stages (processes). MAM4xx uses the aerosol processes defined by MAM4.
 
 ### Aerosol process data structures
 
-MAM4xx uses several data structures defined in [HAERO](https://github.com/eagles-project/haero).
+MAM4xx uses several data structures:
 In particular:
 
-* The [`Real`](https://github.com/eagles-project/haero/blob/main/haero/haero.hpp)
-  type is a floating point number in single or double precision, depending on
-  how HAERO was configured.
-* The [`ColumnView`](https://github.com/eagles-project/haero/blob/main/haero/haero.hpp)
-  type is a Kokkos view (array) representing a quantity defined on an
+* The `Real` type is a floating point number in single or double precision, depending on
+  how `mam4xx` was configured.
+* The `ColumnView` type is a Kokkos view (array) representing a quantity defined on an
   atmospheric column. See the section on Kokkos views below for more details on
   this type.
-* The [`AeroProcess`](https://github.com/eagles-project/haero/blob/main/haero/aero_process.hpp)
-  class template defines the interface for an aerosol process.
-* The [`Atmosphere`](https://github.com/eagles-project/haero/blob/main/haero/atmosphere.hpp)
-  class defines the state of the atmosphere, which is typically used as input
+* The `AeroProcess` class template defines the interface for an aerosol process.
+* The `Atmosphere` class defines the state of the atmosphere, which is typically used as input
   data for aerosol processes.
-* The [`AeroSpecies`](https://github.com/eagles-project/haero/blob/main/haero/aero_species.hpp)
-  and [`GasSpecies`](https://github.com/eagles-project/haero/blob/main/haero/gas_species.hpp)
-  types define the respective physical properties of aerosol and gas
-  molecules present in the atmosphere.
-* The [`ThreadTeam`](https://github.com/eagles-project/haero/blob/main/haero/haero.hpp)
-  type is used to control a team of threads allocated to a single atmospheric
+* The `AeroSpecies` and `GasSpecies` types define the respective physical properties of aerosol
+  and gas molecules present in the atmosphere.
+* The `ThreadTeam` type is used to control a team of threads allocated to a single atmospheric
   column. It's used in Kokkos `parallel_for` loops.
 
 The most interesting of these data types is the `AeroProcess` class template.
@@ -188,10 +179,6 @@ code. To see specific examples of aerosol process implementations, take a look
 at the [`mam4::Nucleation`](https://github.com/eagles-project/mam4xx/blob/main/src/nucleation.hpp)
 and [`mam4::GasAerExch`](https://github.com/eagles-project/mam4xx/blob/main/src/gasaerexch.hpp)
 classes, which implement nucleation and gas-aerosol exchange (a.k.a. "condensation").
-
-HAERO contains several other data structures in addition those mentioned above.
-More details on these data structures can be found in the
-[HAERO documentation](https://eagles-project.github.io/haero/).
 
 ## C++ Guidelines
 
@@ -267,7 +254,7 @@ tips/opinions:
   _This is particularly true when writing code that runs on a GPU, for which the
   standard template library is largely unavailable!_
 
-## Kokkos, EKAT, Haero: Intra-node Parallelism
+## Kokkos, EKAT: Intra-node Parallelism
 
 MAM4xx is written in "performance-portable" C++ code using [Kokkos](https://kokkos.github.io/kokkos-core-wiki/)
 to dispatch parallelizable workloads to threads on CPUs or GPUs on a compute
@@ -286,29 +273,22 @@ The high-performance data types in MAM4xx used for these parallel dispatches are
 all provided by Kokkos. Kokkos is a general-purpose parallel programming model,
 and is accordingly complex, with many elaborate features and options. In order
 to reduce this complexity and focus on decisions and logic related to earth
-system models (ESMs) in general and aerosols in particular, we make use of a
-couple of additional layers:
-
-* [**E3SM/Kokkos Application Toolkit (EKAT)**](https://github.com/E3SM-Project/EKAT):
-  A library that defines specific Kokkos-based data structures relevant to
-  E3SM-related projects, and some useful bundled external libraries:
+system models (ESMs) in general and aerosols in particular, we make use of
+the [**E3SM/Kokkos Application Toolkit (EKAT)**](https://github.com/E3SM-Project/EKAT),
+a library that defines specific Kokkos-based data structures relevant to E3SM-related
+projects, and some useful bundled external libraries:
     * `yamlcpp`: a C++ YAML parser for handling configuration files
     * `spdlog`: a fancy C++ logging system that provides multiple loggers and
                 extensible logging levels
     * `fmt`: a fancy C++ formatting system that provides Python-like formatting
              for C++ strings
-* [**High performance AEROsol interface (HAERO)**](https://github.com/eagles-project/haero):
-  A library that defines data types for aerosol packages. HAERO relies heavily
-  upon EKAT, but makes a lot of choices appropriate for aerosol column physics
-  so we can focus on solving relevant problems and not reinventing the wheel
-  over and over.
 
 If MPI is enabled, EKAT configures MPI in its own build system, and this
-configuration is passed along to HAERO and MAM4xx. If you enable MPI, you'll
+configuration is passed along to MAM4xx. If you enable MPI, you'll
 need an implementation on your system like [OpenMPI](https://www.open-mpi.org)
 or [MPICH](https://www.mpich.org).
 
-In this section, we describe the data structures provided by HAERO (via EKAT
+In this section, we describe the data structures provided by mam4xx (via EKAT
 and Kokkos). The [Kokkos documentation](https://kokkos.github.io/kokkos-core-wiki/)
 and [tutorials](https://github.com/kokkos/kokkos-tutorials) are fantastic
 resources for understanding the most important data structures and
@@ -341,7 +321,7 @@ The **shape** of a `View` is the set of dimensions of its indices. For example,
 the rank-3 `View` `T` may have a shape of `(100, 100, 100)`.
 
 The `View` type is very flexible, so it can be complicated to work with
-directly. HAERO provides a few useful types that nail down the various
+directly. mam4xx provides a few useful types that nail down the various
 parameters according to the needs of aerosol column physics:
 
 * `ColumnView`: a rank-1 `View` whose index (typically written `k`) identifies
@@ -416,7 +396,6 @@ describes the computational grid(s) used by EAMxx.
 * [EKAT repository](https://github.com/E3SM-Project/EKAT)
 * [E3SM website](https://e3sm.org)
 * [Kokkos documentation](https://kokkos.github.io/kokkos-core-wiki/)
-* [HAERO repository](https://github.com/eagles-project/haero)
 * [LLVM C++ Style Guide](https://llvm.org/docs/CodingStandards.html)
 * [MAM4 box model repository](https://github.com/eagles-project/mam_refactor)
 * [SCREAM (EAMxx) repository](https://github.com/E3SM-Project/scream)
