@@ -6,11 +6,13 @@
 #ifndef MAM4XX_DRYDEP_HPP
 #define MAM4XX_DRYDEP_HPP
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/atmosphere.hpp>
-#include <mam4xx/spitfire_transport.hpp>
+#include "aero_config.hpp"
+#include "atmosphere.hpp"
+#include "convproc.hpp"
+#include "mam4_math.hpp"
+#include "spitfire_transport.hpp"
+#include "surface.hpp"
 
-#include <mam4xx/convproc.hpp>
 
 namespace mam4 {
 
@@ -110,6 +112,13 @@ public:
 };
 
 namespace drydep {
+
+using mam4::atan;
+using mam4::exp;
+using mam4::log;
+using mam4::min;
+using mam4::pow;
+using mam4::sqrt;
 
 // ##############################################################################
 //  Given a coordinate xw, an interpolating polynomial ff and its derivative
@@ -1061,10 +1070,10 @@ void aero_model_drydep(
           // sigmag_amode : assumed geometric standard deviation of particle size distribution
           const Real sigmag_amode = modes(imode).mean_std_dev;
 
-          const Real alnsg_amode = log(sigmag_amode);
+          const Real alnsg_amode = ::mam4::log(sigmag_amode);
           // rad_aer  // volume mean wet radius of interstitial aerosols [m]
           const Real rad_aer = 0.5 * dgncur_awet[imode][kk] *
-                               exp(1.5 * square(alnsg_amode));
+                               ::mam4::exp(1.5 * square(alnsg_amode));
           // dens_aer : wet density of interstitial aerosols [kg/m3]
           const Real dens_aer = wetdens[imode][kk];
 

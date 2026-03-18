@@ -6,13 +6,15 @@
 #ifndef MAM4XX_KOHLER_HPP
 #define MAM4XX_KOHLER_HPP
 
-#include <mam4xx/mam4.hpp>
-
-#include <mam4xx/constants.hpp>
-#include <mam4xx/floating_point.hpp>
-#include <mam4xx/root_finders.hpp>
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
+#include "floating_point.hpp"
 
 namespace mam4 {
+
+using mam4::exp;
+using mam4::log;
+using mam4::pow;
 
 /// Surface tension of liquid water in air as a function of temperature
 ///   @param [in] T temperature [K]

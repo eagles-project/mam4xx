@@ -1,13 +1,16 @@
 #ifndef MAM4XX_MO_CHM_DIAGS_HPP
 #define MAM4XX_MO_CHM_DIAGS_HPP
 
-#include <mam4xx/gas_chem.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
+#include "gas_chem_mechanism.hpp"
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
 
 namespace mam4 {
 
 namespace mo_chm_diags {
+
+using mam4::square;
 
 using View1D = DeviceType::view_1d<Real>;
 

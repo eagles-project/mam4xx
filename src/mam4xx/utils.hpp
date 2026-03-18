@@ -6,13 +6,19 @@
 #ifndef MAM4XX_UTILS_HPP
 #define MAM4XX_UTILS_HPP
 
-#include <mam4xx/gas_chem_mechanism.hpp>
+#include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "atmosphere.hpp"
+#include "gas_chem_mechanism.hpp"
+#include "mam4_math.hpp"
 
 #include <ekat_math_utils.hpp>
 // This file contains utility-type functions that are available for use by
 // various processes, tests, etc.
 
 namespace mam4::utils {
+
+using mam4::max;
 
 // this function considers 'num' and returns either 'num' (already in bounds) or
 // 'high'/'low' if num is outside the bounds

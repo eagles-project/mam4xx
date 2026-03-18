@@ -6,13 +6,13 @@
 #ifndef MAM4XX_HETFZR_HPP
 #define MAM4XX_HETFZR_HPP
 
-#include <mam4xx/atmosphere.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
-#include <mam4xx/wv_sat_methods.hpp>
+#include "atmosphere.hpp"
+#include "aero_config.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
+#include "surface.hpp"
+#include "utils.hpp"
+#include "wv_sat_methods.hpp"
 
 namespace mam4 {
 
@@ -119,6 +119,14 @@ public:
 };
 
 namespace hetfrz {
+
+using mam4::cos;
+using mam4::cbrt;
+using mam4::erf;
+using mam4::exp;
+using mam4::log;
+using mam4::pow;
+using mam4::sqrt;
 
 KOKKOS_INLINE_FUNCTION
 Real get_air_viscosity(const Real tc) {

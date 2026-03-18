@@ -6,12 +6,11 @@
 #ifndef MAM4XX_AERO_MODEL_HPP
 #define MAM4XX_AERO_MODEL_HPP
 
-#include <mam4xx/atmosphere.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
+#include "aero_config.hpp"
+#include "conversions.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
+#include "utils.hpp"
 
 #include <ekat_math_utils.hpp>
 #include <ekat_subview_utils.hpp>
@@ -19,6 +18,12 @@
 namespace mam4 {
 
 namespace aero_model {
+
+using mam4::exp;
+using mam4::log;
+using mam4::pow;
+using mam4::round;
+using mam4::sqrt;
 
 // BAD CONSTANT
 constexpr int nimptblgrow_mind = -7, nimptblgrow_maxd = 12;

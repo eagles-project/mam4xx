@@ -1,5 +1,10 @@
 #ifndef MAM4XX_GAS_CHEM_HPP
 #define MAM4XX_GAS_CHEM_HPP
+
+#include "mam4_config.hpp"
+
+#include <ekat_kokkos_types.hpp>
+
 // pp_linoz_mam4_resus_mom_soag
 // Generated code.
 // Authors: Oscar Diaz-Ibarra (odiazib@sandia.gov)

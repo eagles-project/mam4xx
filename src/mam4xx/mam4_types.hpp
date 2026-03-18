@@ -6,7 +6,7 @@
 #ifndef MAM4_TYPES_HPP
 #define MAM4_TYPES_HPP
 
-#include <mam4xx/config.hpp>
+#include "mam4_config.hpp"
 
 #include <ekat_kokkos_types.hpp>
 

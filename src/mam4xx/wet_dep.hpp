@@ -6,20 +6,25 @@
 #ifndef MAM4XX_WET_DEPOSITION_HPP
 #define MAM4XX_WET_DEPOSITION_HPP
 
-#include <ekat_subview_utils.hpp>
-#include <mam4xx/atmosphere.hpp>
-#include <mam4xx/constants.hpp>
+#include "aero_config.hpp"
+#include "aero_model.hpp"
+#include "atmosphere.hpp"
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
+#include "modal_aero_calcsize.hpp"
+#include "utils.hpp"
+#include "water_uptake.hpp"
 
-#include <limits>
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/aero_model.hpp>
-#include <mam4xx/modal_aer_opt.hpp>
-#include <mam4xx/utils.hpp>
+#include <ekat_subview_utils.hpp>
 
 // Based on e3sm_mam4_refactor/components/eam/src/chemistry/aerosol/wetdep.F90
 namespace mam4 {
 
 namespace wetdep {
+
+using mam4::exp;
+using mam4::log;
+using mam4::sqrt;
 
 /**
  * @brief Calculate local precipitation generation rate (kg/m2/s)

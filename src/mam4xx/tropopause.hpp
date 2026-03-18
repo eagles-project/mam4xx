@@ -1,11 +1,17 @@
 #ifndef MAM4XX_TROPOPAUSE_HPP
 #define MAM4XX_TROPOPAUSE_HPP
 
-#include <mam4xx/aero_config.hpp>
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
 
 namespace mam4 {
 
 namespace tropopause {
+
+using mam4::exp;
+using mam4::log;
+using mam4::pow;
 
 // FIXME: Get these values from modal_aer_opt.
 constexpr int nswbands = 14;

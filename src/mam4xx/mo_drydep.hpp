@@ -6,14 +6,22 @@
 #ifndef MAM4XX_MO_DRYDEP_HPP
 #define MAM4XX_MO_DRYDEP_HPP
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/gas_chem_mechanism.hpp>
-#include <mam4xx/seq_drydep.hpp>
-#include <mam4xx/utils.hpp>
+#include "gas_chem_mechanism.hpp"
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
+#include "seq_drydep.hpp"
 
+#include <ekat_kernel_assert.hpp>
 #include <ekat_subview_utils.hpp>
 
 namespace mam4::mo_drydep {
+
+using mam4::abs;
+using mam4::exp;
+using mam4::log;
+using mam4::pow;
+using mam4::sqrt;
+
 using View1D = DeviceType::view_1d<Real>;
 constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
 constexpr int n_land_type = mam4::seq_drydep::NLUse;
@@ -77,7 +85,7 @@ inline void find_season_index_at_lat(const Real clat_j,
       diff_min = current_diff;
       pos_min = i;
     }
-  } // i
+  }
   EKAT_KERNEL_ASSERT_MSG(pos_min > -1,
                          "Error in mo_drydep: dvel_inti: cannot find index.\n");
   /* specify the season as the most frequent in the 11 vegetation classes

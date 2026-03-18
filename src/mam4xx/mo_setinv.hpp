@@ -1,12 +1,10 @@
 #ifndef MAM4XX_MO_SETINV_HPP
 #define MAM4XX_MO_SETINV_HPP
 
-#include <mam4xx/atmosphere.hpp>
+#include "conversions.hpp"
+#include "gas_chem_mechanism.hpp"
+#include "mam4_types.hpp"
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/gas_chem_mechanism.hpp>
-#include <mam4xx/mam4_types.hpp>
 namespace mam4 {
 namespace mo_setinv {
 // number of invariants

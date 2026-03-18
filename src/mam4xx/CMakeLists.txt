@@ -2,8 +2,8 @@ include(GNUInstallDirs)
 
 # Generate aero_config.hpp, which contains build-time parameters.
 configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in
-  ${CMAKE_CURRENT_BINARY_DIR}/config.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/mam4_config.hpp.in
+  ${CMAKE_CURRENT_BINARY_DIR}/mam4_config.hpp
   @ONLY
 )
 
@@ -49,8 +49,8 @@ install(FILES
         mo_setsox.hpp
         mo_sethet.hpp
         tropopause.hpp
-        modal_aer_opt.hpp
-        aer_rad_props.hpp
+        modal_aero_opt.hpp
+        aero_rad_props.hpp
         modal_aero_calcsize.hpp
         mo_setinv.hpp
         aero_model_emissions.hpp

@@ -6,7 +6,8 @@
 #ifndef MAM4XX_SPITFIRE_HPP
 #define MAM4XX_SPITFIRE_HPP
 
-#include <mam4xx/mam4_types.hpp>
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
 
 namespace mam4::spitfire {
 

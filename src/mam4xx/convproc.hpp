@@ -10,10 +10,10 @@
 #include "aero_model.hpp"
 #include "aero_modes.hpp"
 #include "atmosphere.hpp"
+#include "mam4_math.hpp"
+#include "ndrop.hpp"
 #include "utils.hpp"
-
-#include <mam4xx/ndrop.hpp>
-#include <mam4xx/wv_sat_methods.hpp>
+#include "wv_sat_methods.hpp"
 
 namespace mam4 {
 
@@ -1493,9 +1493,9 @@ Real compute_wup(const int iconvtype, const Real mu_i_kk, const Real mu_i_kp1,
     // height above surface [km]
     const Real zkm = zmagl * 1.0e-3;
     if (1.0 <= zkm) {
-      wup_kk = w_peak * pow((zkm / w_peak), 0.21);
+      wup_kk = w_peak * mam4::pow((zkm / w_peak), 0.21);
     } else {
-      wup_kk = 2.9897 * sqrt(zkm);
+      wup_kk = 2.9897 * mam4::sqrt(zkm);
     }
     wup_kk = utils::min_max_bound(w_min, w_peak, wup_kk);
   }
@@ -1767,7 +1767,7 @@ void initialize_tmr_array(
 
           // gath at the below (kk level) [kg/kg]
           const Real c_below = max(gath(kk, icnst), max_con * 1.e-12);
-          chat(kk, icnst) = log(c_above / c_below) /
+          chat(kk, icnst) = mam4::log(c_above / c_below) /
                             (c_above - c_below) * c_above * c_below;
         } else {
           // Small diff, so just arithmetic mean
@@ -1939,7 +1939,7 @@ void compute_wetdep_tend(
     cdt = (half_cld * dp / mu_p_eudp) * rprd / (half_cld * icwmr + dt * rprd);
   }
   if (cdt > 0.0) {
-    const Real expcdtm1 = exp(-cdt) - 1;
+    const Real expcdtm1 = mam4::exp(-cdt) - 1;
     // The indexing started at 2 for Fortran, so 1 for C++
     for (int icnst = 1; icnst < ConvProc::pcnst_extd; ++icnst) {
       if (doconvproc_extd[icnst]) {

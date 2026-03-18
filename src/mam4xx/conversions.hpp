@@ -3,17 +3,24 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef MAM4_CONVERSIONS_HPP
-#define MAM4_CONVERSIONS_HPP
+#ifndef MAM4XX_CONVERSIONS_HPP
+#define MAM4XX_CONVERSIONS_HPP
 
-#include <mam4xx/constants.hpp>
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
 
+#include <ekat_kokkos_types.hpp>
 #include <ekat_kernel_assert.hpp>
 
 /// This file contains functions for converting between various representations
 /// of physical quantities in aerosol parameterizations.
 
 namespace mam4::conversions {
+
+using mam4::cbrt;
+using mam4::exp;
+using mam4::log;
+using mam4::square;
 
 /// Given a number concentration for a species or mixture [m-3], computes and
 /// returns a mass mixing ratio [kg species/kg dry air] based on its molecular

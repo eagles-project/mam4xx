@@ -5,10 +5,7 @@
 #ifndef MAM4XX_GAS_SPECIES_HPP
 #define MAM4XX_GAS_SPECIES_HPP
 
-#include <limits>
-#include <map>
-#include <string>
-#include <vector>
+#include "mam4_config.hpp"
 
 namespace mam4 {
 

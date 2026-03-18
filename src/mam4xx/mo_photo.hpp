@@ -1,10 +1,8 @@
 #ifndef MAM4XX_MO_PHOTO_HPP
 #define MAM4XX_MO_PHOTO_HPP
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/gas_chem_mechanism.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
+#include "mam4_types.hpp"
+#include "utils.hpp"
 
 namespace mam4 {
 

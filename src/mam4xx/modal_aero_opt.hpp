@@ -1,15 +1,19 @@
-#ifndef MAM4XX_MODAL_AER_OPT_HPP
-#define MAM4XX_MODAL_AER_OPT_HPP
+#ifndef MAM4XX_MODAL_AERO_OPT_HPP
+#define MAM4XX_MODAL_AERO_OPT_HPP
 
 #include <Kokkos_Complex.hpp>
 
 #include "aero_config.hpp"
+#include "mam4_math.hpp"
 #include "modal_aero_calcsize.hpp"
 #include "ndrop.hpp"
 #include "water_uptake.hpp"
 
 namespace mam4 {
-namespace modal_aer_opt {
+namespace modal_aero_opt {
+
+using mam4::exp;
+using mam4::log;
 
 using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;

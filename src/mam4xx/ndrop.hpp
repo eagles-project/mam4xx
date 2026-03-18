@@ -1,20 +1,25 @@
 #ifndef MAM4XX_NDROP_HPP
 #define MAM4XX_NDROP_HPP
 
-#include <mam4xx/atmosphere.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/aero_model.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
-#include <mam4xx/wv_sat_methods.hpp>
+#include "aero_config.hpp"
+#include "aero_model.hpp"
+#include "conversions.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
+#include "utils.hpp"
+#include "wv_sat_methods.hpp"
 
 #include <ekat_math_utils.hpp>
 
 namespace mam4 {
 
 namespace ndrop {
+
+using mam4::erf;
+using mam4::exp;
+using mam4::log;
+using mam4::pow;
+using mam4::sqrt;
 
 using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;

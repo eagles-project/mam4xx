@@ -6,14 +6,15 @@
 #ifndef MAM4XX_WATER_UPTAKE_HPP
 #define MAM4XX_WATER_UPTAKE_HPP
 
-#include <Kokkos_Complex.hpp>
-
 #include "atmosphere.hpp"
 #include "surface.hpp"
 #include "aero_config.hpp"
 #include "convproc.hpp"
+#include "mam4_math.hpp"
 #include "utils.hpp"
 #include "wv_sat_methods.hpp"
+
+#include <Kokkos_Complex.hpp>
 
 namespace mam4 {
 class Water_Uptake {
@@ -61,6 +62,11 @@ public:
 };
 
 namespace water_uptake {
+
+using mam4::cbrt;
+using mam4::exp;
+using mam4::log;
+
 constexpr int maxd_aspectype = 14;
 constexpr Real small_value_30 = 1e-30; // (Bad Constant)
 constexpr Real small_value_31 = 1e-31; // (Bad Constant)
@@ -151,7 +157,7 @@ void makoh_quartic(Kokkos::complex<Real> cx[4], const Real p3, const Real p2,
     cx[2] = cx[0];
     cx[3] = cx[0];
   } else {
-    cb = Kokkos::pow(cb, 1.0 / 3.0);
+    cb = pow(cb, 1.0 / 3.0);
     Kokkos::complex<Real> cy = -cb + qq / cb + p2 / 6.0;
     Kokkos::complex<Real> cb0 = Kokkos::sqrt(cy * cy - p0);
     Kokkos::complex<Real> cb1 = (p3 * cy - p1) / (2.0 * cb0);

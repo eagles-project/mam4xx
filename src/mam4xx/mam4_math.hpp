@@ -1,7 +1,7 @@
 #ifndef MAM4XX_MATH_HPP
 #define MAM4XX_MATH_HPP
 
-#include "mam4xx/config.hpp"
+#include "mam4_config.hpp"
 
 #include <Kokkos_MathematicalFunctions.hpp>
 #include <Kokkos_MinMax.hpp>
@@ -17,6 +17,8 @@ inline Real max(const Real x, const Real y) { return (x > y) ? x : y; }
 
 inline Real square(const Real x) { return x * x; }
 inline Real cube(const Real x) { return x * x * x; }
+
+inline constexpr Real epsilon() { return Kokkos::Experimental::epsilon_v<Real>; }
 
 } // namespace mam4
 

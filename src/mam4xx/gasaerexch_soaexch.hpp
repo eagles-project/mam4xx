@@ -6,11 +6,15 @@
 #ifndef MAM4XX_GASAEREXCH_SOAEXCH_HPP
 #define MAM4XX_GASAEREXCH_SOAEXCH_HPP
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/aero_modes.hpp>
+#include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "mam4_math.hpp"
 
 namespace mam4 {
 namespace gasaerexch {
+
+using mam4::exp;
+using mam4::max;
 
 // ==============================================================================
 // Calculate SOA species's eiquilibrium vapor mixing ratio under the ambient

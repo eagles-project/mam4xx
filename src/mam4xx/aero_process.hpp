@@ -5,10 +5,10 @@
 #ifndef MAM4XX_AERO_PROCESS_HPP
 #define MAM4XX_AERO_PROCESS_HPP
 
+#include "atmosphere.hpp"
+#include "surface.hpp"
+
 #include <cstring>
-#include <mam4xx/atmosphere.hpp>
-#include <mam4xx/surface.hpp>
-#include <memory>
 #include <type_traits>
 
 namespace mam4 {

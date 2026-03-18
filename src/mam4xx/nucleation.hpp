@@ -6,14 +6,16 @@
 #ifndef MAM4XX_NUCLEATION_HPP
 #define MAM4XX_NUCLEATION_HPP
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/merikanto2007.hpp>
-#include <mam4xx/vehkamaki2002.hpp>
-#include <mam4xx/wang2008.hpp>
-
-#include <mam4xx/atmosphere.hpp>
+#include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "atmosphere.hpp"
+#include "conversions.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
+#include "merikanto2007.hpp"
+#include "surface.hpp"
+#include "vehkamaki2002.hpp"
+#include "wang2008.hpp"
 
 namespace mam4 {
 
@@ -23,6 +25,11 @@ namespace mam4 {
 //-----------------------------------------------------------------------------
 
 namespace nucleation {
+
+using mam4::exp;
+using mam4::log;
+using mam4::pow;
+using mam4::sqrt;
 
 //--------------------------------------------------------
 // calculates boundary nucleation nucleation rate
@@ -1122,6 +1129,8 @@ private:
   // considered for the aitken mode, so this function sets them to those values
   KOKKOS_INLINE_FUNCTION
   void set_mode_dp_lo_dp_hi() {
+    using mam4::exp;
+    using mam4::log;
     // dry-diameter limits for "grown" new particles
     dp_lo_mode = exp(0.67 * log(modes(nait).min_diameter) +
                             0.33 * log(modes(nait).max_diameter));

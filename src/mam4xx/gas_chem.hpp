@@ -1,19 +1,18 @@
 #ifndef MAM4XX_GAS_CHEMISTRY_HPP
 #define MAM4XX_GAS_CHEMISTRY_HPP
 
-#include <mam4xx/aero_species.hpp>
-#include <mam4xx/atmosphere.hpp>
-#include <mam4xx/constants.hpp>
+#include "gas_chem_mechanism.hpp"
+#include "mam4_math.hpp"
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/gas_chem_mechanism.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
+#include <ekat_kernel_assert.hpp>
 
 namespace mam4 {
 
 namespace gas_chemistry {
+
+using mam4::exp;
+using mam4::log10;
+using mam4::pow;
 
 // BAD CONSTANTs
 constexpr int itermax = 11;

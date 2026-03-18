@@ -6,20 +6,24 @@
 #ifndef MAM4XX_NUCLEATE_ICE_HPP
 #define MAM4XX_NUCLEATE_ICE_HPP
 
-#include <mam4xx/atmosphere.hpp>
-#include <mam4xx/surface.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
-#include <mam4xx/wv_sat_methods.hpp>
+#include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "atmosphere.hpp"
+#include "conversions.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
+#include "surface.hpp"
+#include "wv_sat_methods.hpp"
 
 #include <ekat_math_utils.hpp>
 
 namespace mam4 {
 
 namespace nucleate_ice {
+
+using mam4::exp;
+using mam4::log;
+using mam4::pow;
 
 /*-------------------------------------------------------------------------------
 Purpose:
@@ -273,6 +277,8 @@ public:
   void init(const AeroConfig &aero_config,
             const Config &nucleate_ice_config = Config()) {
 
+    using mam4::log;
+
     _nucleate_ice_subgrid = nucleate_ice_config._nucleate_ice_subgrid;
 
     _num_m3_to_cm3 = 1.0e-6;
@@ -298,6 +304,10 @@ public:
                           const Prognostics &prognostics,
                           const Diagnostics &diagnostics,
                           const Tendencies &tendencies) const {
+
+    using mam4::erf;
+    using mam4::log;
+    using mam4::sqrt;
 
     const int nk = atmosphere.num_levels();
     const Real tmelt_m_five = Constants::freezing_pt_h2o - 5;
@@ -448,6 +458,8 @@ public:
           subgrid, // Subgrid scale factor on relative humidity (dimensionless)
       // outputs
       Real &nuci, Real &onihf, Real &oniimm, Real &onidep, Real &onimey) const {
+
+    using mam4::pow;
     /*---------------------------------------------------------------
     Purpose:
      The parameterization of ice nucleation.

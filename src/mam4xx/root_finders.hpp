@@ -5,10 +5,14 @@
 #ifndef MAM4XX_ROOTFINDERS_HPP
 #define MAM4XX_ROOTFINDERS_HPP
 
-#include <mam4xx/floating_point.hpp>
+#include "floating_point.hpp"
+#include "mam4_math.hpp"
 
 namespace mam4 {
 namespace math {
+
+using mam4::max;
+using mam4::nan;
 
 /** @brief Scalar rootfinding algorithm that employs Newton's method.
   This algorithm has a quadratic convergence rate but it is not guaranteed to

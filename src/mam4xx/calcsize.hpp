@@ -6,13 +6,13 @@
 #ifndef MAM4XX_CALCSIZE_HPP
 #define MAM4XX_CALCSIZE_HPP
 
-#include <mam4xx/atmosphere.hpp>
-#include <mam4xx/surface.hpp>
+#include "atmosphere.hpp"
+#include "surface.hpp"
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
+#include "aero_config.hpp"
+#include "conversions.hpp"
+#include "mam4_types.hpp"
+#include "utils.hpp"
 
 namespace mam4 {
 

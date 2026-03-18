@@ -6,15 +6,15 @@
 #ifndef MAM4XX_COAGULATION_HPP
 #define MAM4XX_COAGULATION_HPP
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/atmosphere.hpp>
-#include <mam4xx/constants.hpp>
-#include <mam4xx/surface.hpp>
+#include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "atmosphere.hpp"
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
+#include "surface.hpp"
 
 #include <Kokkos_Array.hpp>
-#include <iomanip>
-#include <iostream>
 
 namespace mam4 {
 
@@ -73,6 +73,12 @@ private:
 };
 
 namespace coagulation {
+
+using mam4::exp;
+using mam4::log;
+using mam4::pow;
+using mam4::round;
+using mam4::sqrt;
 
 KOKKOS_INLINE_FUNCTION
 Real bm0ij_data(const int n1, const int n2a, const int n2n) {

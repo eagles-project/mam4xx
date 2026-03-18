@@ -1,16 +1,21 @@
 #ifndef MAM4XX_MICROPHYSICS_AMICPHYS_HPP
 #define MAM4XX_MICROPHYSICS_AMICPHYS_HPP
 
-#include <mam4xx/aging.hpp>
-#include <mam4xx/coagulation.hpp>
-#include <mam4xx/gas_chem_mechanism.hpp>
-#include <mam4xx/gasaerexch.hpp>
-#include <mam4xx/nucleation.hpp>
-#include <mam4xx/rename.hpp>
+#include "aging.hpp"
+#include "coagulation.hpp"
+#include "gas_chem_mechanism.hpp"
+#include "gasaerexch.hpp"
+#include "mam4_math.hpp"
+#include "nucleation.hpp"
+#include "rename.hpp"
 
 namespace mam4 {
 
 namespace microphysics {
+
+using mam4::exp;
+using mam4::log;
+using mam4::pow;
 
 using View2D = DeviceType::view_2d<Real>;
 

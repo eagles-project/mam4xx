@@ -7,8 +7,10 @@
 #define MAM4XX_AERO_MODES_HPP
 
 #include "aero_species.hpp"
-#include "constants.hpp"
 #include "gas_species.hpp"
+#include "mam4_constants.hpp"
+
+#include <ekat_kokkos_types.hpp>
 
 #include <string>
 

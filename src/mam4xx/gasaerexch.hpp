@@ -6,16 +6,16 @@
 #ifndef MAM4XX_GASAEREXCH_HPP
 #define MAM4XX_GASAEREXCH_HPP
 
-#include "mam4xx/aero_modes.hpp"
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/gasaerexch_soaexch.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/atmosphere.hpp>
-#include <mam4xx/constants.hpp>
+#include "aero_modes.hpp"
+#include "aero_config.hpp"
+#include "atmosphere.hpp"
+#include "gasaerexch_soaexch.hpp"
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
+#include "surface.hpp"
 
 #include <Kokkos_Array.hpp>
-#include <iomanip>
-#include <iostream>
 
 namespace mam4 {
 
@@ -139,6 +139,12 @@ private:
 };
 
 namespace gasaerexch {
+
+using mam4::exp;
+using mam4::min;
+using mam4::log;
+using mam4::pow;
+using mam4::sqrt;
 
 KOKKOS_INLINE_FUNCTION
 void mam_gasaerexch_1subarea_1gas_nonvolatile(
@@ -376,6 +382,8 @@ void mam_gasaerexch_1subarea(
   using mam4::gasaerexch::max_gas;
   using mam4::gasaerexch::max_mode;
   using mam4::gasaerexch::nsoa;
+  using mam4::exp;
+  using mam4::log;
 
   constexpr int mode_aging_optaa[max_mode] = {0, 0, 0, 1, 0};
 

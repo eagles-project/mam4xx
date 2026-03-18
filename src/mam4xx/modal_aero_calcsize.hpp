@@ -6,15 +6,11 @@
 #ifndef MAM4XX_MODAL_AERO_CALCSIZE_HPP
 #define MAM4XX_MODAL_AERO_CALCSIZE_HPP
 
-#include <mam4xx/atmosphere.hpp>
-#include <mam4xx/surface.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/calcsize.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/ndrop.hpp>
-#include <mam4xx/utils.hpp>
+#include "aero_config.hpp"
+#include "calcsize.hpp"
+#include "conversions.hpp"
+#include "ndrop.hpp"
+#include "utils.hpp"
 
 namespace mam4 {
 namespace modal_aero_calcsize {

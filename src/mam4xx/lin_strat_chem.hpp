@@ -17,10 +17,19 @@
 #ifndef MAM4XX_LIN_STRAT_CHEM_HPP
 #define MAM4XX_LIN_STRAT_CHEM_HPP
 
-#include <mam4xx/aero_config.hpp>
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
+
+#include <ekat_kokkos_types.hpp>
 
 namespace mam4 {
 namespace lin_strat_chem {
+
+using mam4::exp;
+using mam4::log10;
+using mam4::max;
+using mam4::sqrt;
 
 constexpr Real radians_to_degrees = 180. / Constants::pi;
 // number of vertical levels

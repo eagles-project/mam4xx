@@ -6,18 +6,23 @@
 #ifndef MAM4XX_RENAME_HPP
 #define MAM4XX_RENAME_HPP
 
-#include <mam4xx/atmosphere.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
+#include "aero_config.hpp"
+#include "atmosphere.hpp"
+#include "conversions.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
+#include "utils.hpp"
 
 #include <ekat_math_utils.hpp>
 
 namespace mam4 {
 
 namespace rename {
+
+using mam4::erfc;
+using mam4::exp;
+using mam4::log;
+using mam4::sqrt;
 
 KOKKOS_INLINE_FUNCTION
 void compute_dryvol_change_in_src_mode(

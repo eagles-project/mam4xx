@@ -1,20 +1,20 @@
-#ifndef MAM4XX_AER_RAD_PROPS_HPP
-#define MAM4XX_AER_RAD_PROPS_HPP
+#ifndef MAM4XX_AERO_RAD_PROPS_HPP
+#define MAM4XX_AERO_RAD_PROPS_HPP
 
 #include "aero_config.hpp"
 
-#include "modal_aer_opt.hpp"
+#include "modal_aero_opt.hpp"
 #include "tropopause.hpp"
 
 namespace mam4 {
 
-namespace aer_rad_props {
+namespace aero_rad_props {
 
 // From radconstants
-constexpr int nswbands = modal_aer_opt::nswbands;
-constexpr int nlwbands = modal_aer_opt::nlwbands;
+constexpr int nswbands = modal_aero_opt::nswbands;
+constexpr int nlwbands = modal_aero_opt::nlwbands;
 using View2D = DeviceType::view_2d<Real>;
-using namespace mam4::modal_aer_opt;
+using namespace mam4::modal_aero_opt;
 constexpr Real km_inv_to_m_inv = 0.001; // 1/km to 1/m
 
 constexpr Real shr_const_rgas =
@@ -239,7 +239,7 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
   tropopause::tropopause_twmo(pmid, pint, temperature, zm, zi, trop_level);
 
   if (trop_level < -1) {
-    Kokkos::abort("aer_rad_props: tropopause not found\n");
+    Kokkos::abort("aero_rad_props: tropopause not found\n");
   }
 
   // Need to ported default_backup, i.e., tropopause_climate
@@ -248,7 +248,7 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
 } // tropopause_or_quit
 
 KOKKOS_INLINE_FUNCTION
-void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
+void aero_rad_props_sw(const ThreadTeam &team, const Real dt,
                       mam4::Prognostics &progs, const Atmosphere &atm,
                       const ConstColumnView &zi, const ConstColumnView &pdel,
                       const View2D &ssa_cmip6_sw, const View2D &af_cmip6_sw,
@@ -334,10 +334,10 @@ void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
    call aer_vis_diag_out(lchnk, ncol, nnite, idxnite, tau(:,:,idx_sw_diag))
   */
 
-} // aer_rad_props_sw
+} // aero_rad_props_sw
 
 KOKKOS_INLINE_FUNCTION
-void aer_rad_props_lw(
+void aero_rad_props_lw(
     // inputs
     const ThreadTeam &team, const Real dt, mam4::Prognostics &progs,
     const Atmosphere &atm, const ConstColumnView &zi,
@@ -406,9 +406,9 @@ void aer_rad_props_lw(
                                            odap_aer);
   // call outfld('extinct_lw_bnd7',odap_aer(:,:,idx_lw_diag), pcols, lchnk)
 
-} // aer_rad_props_lw
+} // aero_rad_props_lw
 
-} // namespace aer_rad_props
+} // namespace aero_rad_props
 } // end namespace mam4
 
 #endif

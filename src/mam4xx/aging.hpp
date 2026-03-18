@@ -5,7 +5,12 @@
 
 #ifndef MAM4XX_AGING_HPP
 #define MAM4XX_AGING_HPP
-#include <mam4xx/aero_config.hpp>
+
+#include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "atmosphere.hpp"
+#include "mam4_math.hpp"
+#include "surface.hpp"
 
 namespace mam4 {
 
@@ -57,6 +62,10 @@ public:
 };
 
 namespace aging {
+
+using mam4::exp;
+using mam4::log;
+using mam4::square;
 
 //------------------------------------------------------------------------
 // calculate fractions of aged pom/bc to be transferred to accum mode, aerosol

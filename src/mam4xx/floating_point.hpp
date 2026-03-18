@@ -5,6 +5,8 @@
 #ifndef MAM4XX_FLOATING_POINT_UTILS_HPP
 #define MAM4XX_FLOATING_POINT_UTILS_HPP
 
+#include "mam4_config.hpp"
+
 #include <Kokkos_Core.hpp>
 #include <ekat_kernel_assert.hpp>
 

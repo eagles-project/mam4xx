@@ -6,7 +6,7 @@
 #ifndef MAM4XX_AERO_CONFIG_HPP
 #define MAM4XX_AERO_CONFIG_HPP
 
-#include <mam4xx/math.hpp>
+#include "mam4_types.hpp"
 
 #include <ekat_kokkos_types.hpp>
 

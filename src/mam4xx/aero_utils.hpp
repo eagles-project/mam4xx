@@ -5,7 +5,9 @@
 #ifndef MAM4XX_AERO_UTILS_HPP
 #define MAM4XX_AERO_UTILS_HPP
 
-#include <mam4xx/gas_species.hpp>
+#include "gas_species.hpp"
+
+#include <functional>
 
 namespace mam4 {
 
@@ -16,7 +18,7 @@ template <typename AeroConfig> struct AeroUtils final {
 
   // Types derived from template parameters.
   using Config = AeroConfig;
-  using AeroMD = template AeroConfig::AeroMetadata;
+  using AeroMD = typename AeroConfig::AeroMetadata;
 
   // You can't create one of these classes--it's just a templated namespace.
   AeroUtils() = delete;

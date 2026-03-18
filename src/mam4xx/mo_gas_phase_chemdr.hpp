@@ -1,19 +1,19 @@
 #ifndef MAM4XX_MICROPHYSICS_GAS_PHASE_CHEM_DR_HPP
 #define MAM4XX_MICROPHYSICS_GAS_PHASE_CHEM_DR_HPP
 
-#include <mam4xx/aero_model.hpp>
-#include <mam4xx/compute_o3_column_density.hpp>
-#include <mam4xx/diagnostic_arrays.hpp>
-#include <mam4xx/gas_phase_chemistry.hpp>
-#include <mam4xx/lin_strat_chem.hpp>
-#include <mam4xx/mam4_amicphys.hpp>
-#include <mam4xx/mo_drydep.hpp>
-#include <mam4xx/mo_photo.hpp>
-#include <mam4xx/mo_setext.hpp>
-#include <mam4xx/mo_sethet.hpp>
-#include <mam4xx/mo_setinv.hpp>
-#include <mam4xx/mo_setsox.hpp>
-#include <mam4xx/seq_drydep.hpp>
+#include "aero_model.hpp"
+#include "compute_o3_column_density.hpp"
+#include "diagnostic_arrays.hpp"
+#include "gas_phase_chemistry.hpp"
+#include "lin_strat_chem.hpp"
+#include "mam4_amicphys.hpp"
+#include "mo_drydep.hpp"
+#include "mo_photo.hpp"
+#include "mo_setext.hpp"
+#include "mo_sethet.hpp"
+#include "mo_setinv.hpp"
+#include "mo_setsox.hpp"
+#include "seq_drydep.hpp"
 
 namespace mam4 {
 
@@ -306,7 +306,7 @@ void perform_atmospheric_chemistry_and_microphysics(
   // microphysics we use pseudo_density.
   int ilev_tropp = 0;
   if (linoz_conf.compute) {
-    ilev_tropp = mam4::aer_rad_props::tropopause_or_quit(
+    ilev_tropp = mam4::aero_rad_props::tropopause_or_quit(
         atm.pressure, atm.interface_pressure, atm.temperature, atm.height, zi);
   }
   team.team_barrier();

@@ -1,9 +1,17 @@
 #ifndef MAM4XX_WV_SAT_METHODS_HPP
 #define MAM4XX_WV_SAT_METHODS_HPP
 
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
+
+#include <ekat_kokkos_types.hpp>
+
 namespace mam4 {
 
 namespace wv_sat_methods {
+
+using mam4::log10;
+using mam4::pow;
 
 KOKKOS_INLINE_FUNCTION
 Real GoffGratch_svp_water(const Real temperature) {

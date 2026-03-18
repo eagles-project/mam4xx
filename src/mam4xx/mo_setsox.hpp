@@ -1,19 +1,22 @@
 #ifndef MAM4XX_MO_SETSOX_HPP
 #define MAM4XX_MO_SETSOX_HPP
 
-#include <mam4xx/atmosphere.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
-#include <mam4xx/wv_sat_methods.hpp>
+#include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
 
 #include <ekat_math_utils.hpp>
 
 namespace mam4 {
 
 namespace mo_setsox {
+
+using mam4::abs;
+using mam4::exp;
+using mam4::max;
+using mam4::pow;
+using mam4::sqrt;
 
 // mo_setsox-specific configuration
 struct Config {

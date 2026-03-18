@@ -1,7 +1,10 @@
 #ifndef MAM4XX_SEQ_DRYDEP_HPP
 #define MAM4XX_SEQ_DRYDEP_HPP
 
-#include <mam4xx/mam4_types.hpp>
+#include "mam4_types.hpp"
+#include "gas_chem_mechanism.hpp"
+
+#include <ekat_kernel_assert.hpp>
 
 namespace mam4::seq_drydep { // C++ version of E3SM's seq_drydep_mod.F90
 

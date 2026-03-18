@@ -1,12 +1,17 @@
 #ifndef MAM4XX_MO_SETHET_HPP
 #define MAM4XX_MO_SETHET_HPP
 
-#include <mam4xx/gas_chem.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/mo_chm_diags.hpp>
-#include <mam4xx/utils.hpp>
+#include "atmosphere.hpp"
+#include "gas_chem_mechanism.hpp"
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
 
 namespace mam4 {
+
+using mam4::exp;
+using mam4::min;
+using mam4::pow;
+using mam4::sqrt;
 
 namespace mo_sethet {
 

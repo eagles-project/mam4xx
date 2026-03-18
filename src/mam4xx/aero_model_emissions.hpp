@@ -1,12 +1,17 @@
 #ifndef MAM4XX_AERO_MODEL_EMISSIONS_HPP
 #define MAM4XX_AERO_MODEL_EMISSIONS_HPP
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/gas_chem_mechanism.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
 
 namespace mam4::aero_model_emissions {
+
+using mam4::exp;
+using mam4::log;
+using mam4::log10;
+using mam4::pow;
+using mam4::sqrt;
 
 using const_view_1d = DeviceType::view_1d<const Real>;
 using const_view_2d = DeviceType::view_2d<const Real>;
