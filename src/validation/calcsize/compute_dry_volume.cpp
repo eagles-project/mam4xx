@@ -4,9 +4,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/calcsize.hpp>
-#include <skywalker.hpp>
+
 #include <validation.hpp>
-// #include <mam4xx/aero_config.hpp>
 
 using namespace skywalker;
 using namespace mam4;

@@ -16,9 +16,14 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <limits>
 
-using namespace mam4;
+using mam4::Atmosphere;
+using mam4::DeviceType;
+using mam4::Real;
+using mam4::Surface;
+using mam4::ThreadTeam;
+using mam4::ThreadTeamPolicy;
+
 TEST_CASE("test_constructor", "mam4_gasaerexch_process") {
   mam4::AeroConfig mam4_config;
   mam4::GasAerExchProcess::ProcessConfig process_config;
@@ -275,7 +280,7 @@ TEST_CASE("mam_gasaerexch_1subarea_1gas_nonvolatile", "mam_gasaerexch") {
       Real qgas_avg = 0;
       for (int j = 0; j < num_mode; j++)
         qaer_cur[j] = in_qaer_cur[p][n][j];
-      gasaerexch::mam_gasaerexch_1subarea_1gas_nonvolatile(
+      mam4::gasaerexch::mam_gasaerexch_1subarea_1gas_nonvolatile(
           dt, qgas_netprod_otrproc, uptkaer[p][n], qgas_cur, qgas_avg,
           qaer_cur);
 

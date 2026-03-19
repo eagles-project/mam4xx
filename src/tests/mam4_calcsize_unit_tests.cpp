@@ -15,7 +15,7 @@
 // std::string data_file = MAM4_TEST_DATA_DIR;
 // #include <mam4_test_config.hpp>
 
-using namespace mam4;
+using mam4::Real;
 
 TEST_CASE("test_constructor", "mam4_calcsize_process") {
   mam4::AeroConfig mam4_config;
@@ -32,8 +32,8 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
 
   int nlev = 1;
   Real pblh = 1000;
-  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
-  Surface sfc = mam4::testing::create_surface();
+  mam4::Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  mam4::Surface sfc = mam4::testing::create_surface();
   mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
   mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
   mam4::Tendencies tends = mam4::testing::create_tendencies(nlev);
@@ -74,7 +74,7 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
     ss.str("");
 
     for (int k = 0; k < nlev; ++k) {
-      CHECK(!isnan(h_prog_n_mode_i(k)));
+      CHECK(!mam4::isnan(h_prog_n_mode_i(k)));
     }
 
     const auto n_spec = mam4::num_species_mode(imode);
@@ -98,7 +98,7 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
       ss.str("");
 
       for (int k = 0; k < nlev; ++k) {
-        CHECK(!isnan(h_prog_aero_i(k)));
+        CHECK(!mam4::isnan(h_prog_aero_i(k)));
       }
 
     } // end species
@@ -106,10 +106,10 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
 
   const int ncol = 1;
   // Single-column dispatch.
-  auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
+  auto team_policy = mam4::ThreadTeamPolicy(ncol, Kokkos::AUTO);
   Real t = 0.0, dt = 30.0;
   Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+      team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
         process.compute_tendencies(team, t, dt, atm, sfc, progs, diags, tends);
       });
 
@@ -126,7 +126,7 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
     ss.str("");
 
     for (int k = 0; k < nlev; ++k) {
-      CHECK(!isnan(h_tends_n_mode_i(k)));
+      CHECK(!mam4::isnan(h_tends_n_mode_i(k)));
     }
 
     const auto n_spec = mam4::num_species_mode(imode);
@@ -146,7 +146,7 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
       ss.str("");
 
       for (int k = 0; k < nlev; ++k) {
-        CHECK(!isnan(h_tends_aero_i(k)));
+        CHECK(!mam4::isnan(h_tends_aero_i(k)));
       }
 
     } // end species

@@ -248,8 +248,8 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleate_ice_process") {
   ss.str("");
 
   for (int k = 0; k < nlev; ++k) {
-    CHECK(!isnan(h_prog_qgas0(k)));
-    CHECK(!isnan(h_tend_qgas0(k)));
+    CHECK(!mam4::isnan(h_prog_qgas0(k)));
+    CHECK(!mam4::isnan(h_tend_qgas0(k)));
   }
 
   // Single-column dispatch.
@@ -278,8 +278,8 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleate_ice_process") {
   ss.str("");
 
   for (int k = 0; k < nlev; ++k) {
-    CHECK(!isnan(h_prog_qgas0(k)));
-    CHECK(!isnan(h_tend_qgas0(k)));
+    CHECK(!mam4::isnan(h_prog_qgas0(k)));
+    CHECK(!mam4::isnan(h_tend_qgas0(k)));
   }
 }
 

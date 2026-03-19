@@ -63,10 +63,6 @@ public:
 
 namespace water_uptake {
 
-using mam4::cbrt;
-using mam4::exp;
-using mam4::log;
-
 constexpr int maxd_aspectype = 14;
 constexpr Real small_value_30 = 1e-30; // (Bad Constant)
 constexpr Real small_value_31 = 1e-31; // (Bad Constant)
@@ -118,7 +114,7 @@ void find_real_solution(const Real rdry, const Kokkos::complex<Real> cx[4],
     if (xr < rdry * (1.0 - Water_Uptake::eps)) {
       continue;
     }
-    if (isnan(xr)) {
+    if (mam4::isnan(xr)) {
       continue;
     }
 
@@ -152,7 +148,7 @@ void makoh_quartic(Kokkos::complex<Real> cx[4], const Real p3, const Real p2,
 
   if (cb == czero) {
     // insoluble particle
-    cx[0] = cbrt(-p1);
+    cx[0] = mam4::cbrt(-p1);
     cx[1] = cx[0];
     cx[2] = cx[0];
     cx[3] = cx[0];
@@ -208,7 +204,7 @@ void modal_aero_kohler(const Real rdry_in, const Real hygro, const Real rh,
   const Real ss =
       utils::min_max_bound(small_value_10, 1.0 - Water_Uptake::eps, rh);
 
-  const Real slog = log(ss);
+  const Real slog = mam4::log(ss);
   const Real p43 = -aa / slog;
   const Real p42 = 0.0;
   const Real p41 = bb / slog - vol;
@@ -280,7 +276,7 @@ void modal_aero_water_uptake_wetaer(
       wtrvol[imode] = wtrvol[imode] * hystfac * (rh - rhcrystal[imode]);
       wtrvol[imode] = max(wtrvol[imode], 0.0);
       wetvol[imode] = dryvol[imode] + wtrvol[imode];
-      wetrad[imode] = cbrt(wetvol[imode] / (4.0 / 3.0 * Constants::pi));
+      wetrad[imode] = mam4::cbrt(wetvol[imode] / (4.0 / 3.0 * Constants::pi));
     }
 
     // calculate wet aerosol diameter and aerosol water
@@ -390,7 +386,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_water_uptake_dryaer(
     specdens_1[imode] = specdens_amode[type_idx];
     const Real spechygro_1 = spechygro[type_idx];
 
-    const Real alnsg = log(sigmag);
+    const Real alnsg = mam4::log(sigmag);
 
     for (int ispec = 0; ispec < nspec; ++ispec) {
       type_idx = lspectype_amode[ispec][imode] - 1;
@@ -416,7 +412,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_water_uptake_dryaer(
     }
 
     const Real v2ncur_a = 1.0 / ((Constants::pi / 6.0) * cube(dgncur_a[imode]) *
-                                 exp(4.5 * square(alnsg)));
+                                 mam4::exp(4.5 * square(alnsg)));
     // naer = aerosol number (#/kg)
     naer[imode] = dryvolmr * v2ncur_a;
 
@@ -436,7 +432,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_water_uptake_dryaer(
     // thus not in the subroutine output
     dryvol[imode] = 1.0 / v2ncur_a;
     drymass[imode] = drydens * dryvol[imode];
-    dryrad[imode] = cbrt(dryvol[imode] / (Constants::pi * 4.0 / 3.0));
+    dryrad[imode] = mam4::cbrt(dryvol[imode] / (Constants::pi * 4.0 / 3.0));
   }
 }
 template <typename VectorType>

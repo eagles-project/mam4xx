@@ -12,10 +12,6 @@
 
 namespace mam4 {
 
-using mam4::exp;
-using mam4::log;
-using mam4::pow;
-
 /// Surface tension of liquid water in air as a function of temperature
 ///   @param [in] T temperature [K]
 ///   @return sigma [N/m]
@@ -45,7 +41,7 @@ surface_tension_water_air(double T = Constants::triple_pt_h2o) {
   EKAT_KERNEL_ASSERT(
       FloatingPoint<double>::in_bounds(T, Constants::triple_pt_h2o - 25, Tc,
                                        std::numeric_limits<float>::epsilon()));
-  return B * pow(tau, mu) * (1 + b * tau);
+  return B * mam4::pow(tau, mu) * (1 + b * tau);
 }
 
 /// Kelvin coefficient
@@ -141,8 +137,8 @@ struct KohlerPolynomial {
   KOKKOS_INLINE_FUNCTION
   KohlerPolynomial(Real rel_h, Real hygro, Real dry_rad_microns,
                    Real temperature = Constants::triple_pt_h2o)
-      : log_rel_humidity(log(rel_h)), hygroscopicity(hygro),
-        dry_radius(dry_rad_microns), dry_radius_cubed(cube(dry_rad_microns)),
+      : log_rel_humidity(mam4::log(rel_h)), hygroscopicity(hygro),
+        dry_radius(dry_rad_microns), dry_radius_cubed(mam4::cube(dry_rad_microns)),
         kelvin_a(kelvin_coefficient(temperature)) {
 
     kelvin_a *= 1e6; /* convert from N to mN and m to micron */
@@ -198,7 +194,7 @@ struct KohlerPolynomial {
 
   KOKKOS_INLINE_FUNCTION
   bool valid_inputs() const {
-    return valid_inputs(exp(this->log_rel_humidity), this->hygroscopicity,
+    return valid_inputs(mam4::exp(this->log_rel_humidity), this->hygroscopicity,
                         this->dry_radius);
   }
 };

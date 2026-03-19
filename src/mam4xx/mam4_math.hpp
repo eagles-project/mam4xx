@@ -9,16 +9,31 @@
 
 namespace mam4 {
 
-using namespace Kokkos; // bring in Kokkos math functions
+using Kokkos::atan;
+using Kokkos::cbrt;
+using Kokkos::cos;
+using Kokkos::erf;
+using Kokkos::erfc;
+using Kokkos::exp;
+using Kokkos::isnan;
+using Kokkos::nan;
+using Kokkos::log;
+using Kokkos::log10;
+using Kokkos::max;
+using Kokkos::min;
+using Kokkos::pow;
+using Kokkos::round;
+using Kokkos::sin;
+using Kokkos::sqrt;
 
-inline Real max() { return Kokkos::Experimental::finite_max_v<Real>; }
-inline Real min(const Real x, const Real y) { return (x < y) ? x : y; }
-inline Real max(const Real x, const Real y) { return (x > y) ? x : y; }
+KOKKOS_INLINE_FUNCTION Real max() { return Kokkos::Experimental::finite_max_v<Real>; }
+KOKKOS_INLINE_FUNCTION Real max(Real x, Real y) { return Kokkos::max(x, y); }
+KOKKOS_INLINE_FUNCTION Real min(Real x, Real y) { return Kokkos::min(x, y); }
 
-inline Real square(const Real x) { return x * x; }
-inline Real cube(const Real x) { return x * x * x; }
+KOKKOS_INLINE_FUNCTION Real square(const Real x) { return x * x; }
+KOKKOS_INLINE_FUNCTION Real cube(const Real x) { return x * x * x; }
 
-inline constexpr Real epsilon() {
+KOKKOS_INLINE_FUNCTION constexpr Real epsilon() {
   return Kokkos::Experimental::epsilon_v<Real>;
 }
 

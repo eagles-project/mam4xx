@@ -10,5 +10,3 @@
 
 #include <catch2/catch.hpp>
 #include <cmath>
-
-using namespace mam4;

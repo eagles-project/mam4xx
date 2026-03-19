@@ -16,7 +16,7 @@
 // std::string data_file = MAM4_TEST_DATA_DIR;
 // #include <mam4_test_config.hpp>
 
-using namespace mam4;
+using mam4::Real;
 
 TEST_CASE("test_constructor", "mam4_convproc_process") {
   mam4::AeroConfig mam4_config;
@@ -29,15 +29,15 @@ TEST_CASE("update_conu_from_act_frac", "mam4_convproc_process") {
   const int lc = 5;
   const Real act_frac = 0.5;
   const Real dt_u_inv = 0.25;
-  ColumnView conu_dev = testing::create_column_view(mam4::ConvProc::pcnst_extd);
+  mam4::ColumnView conu_dev = mam4::testing::create_column_view(mam4::ConvProc::pcnst_extd);
   {
     auto host_view = Kokkos::create_mirror_view(conu_dev);
     for (int i = 0; i < mam4::ConvProc::pcnst_extd; ++i)
       host_view[i] = i;
     Kokkos::deep_copy(conu_dev, host_view);
   }
-  ColumnView dconudt_dev =
-      testing::create_column_view(mam4::ConvProc::pcnst_extd);
+  mam4::ColumnView dconudt_dev =
+      mam4::testing::create_column_view(mam4::ConvProc::pcnst_extd);
   {
     auto host_view = Kokkos::create_mirror_view(dconudt_dev);
     for (int i = 0; i < mam4::ConvProc::pcnst_extd; ++i)
@@ -83,8 +83,8 @@ TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
   const int num_modes = mam4::ConvProc::num_modes;
   const int pcnst_extd = mam4::ConvProc::pcnst_extd;
   const int maxd_aspectype = mam4::ConvProc::maxd_aspectype;
-  ColumnView aqfrac_dev = testing::create_column_view(pcnst_extd);
-  ColumnView doconvproc_extd_dev = testing::create_column_view(pcnst_extd);
+  mam4::ColumnView aqfrac_dev = mam4::testing::create_column_view(pcnst_extd);
+  mam4::ColumnView doconvproc_extd_dev = mam4::testing::create_column_view(pcnst_extd);
   Kokkos::parallel_for(
       1, KOKKOS_LAMBDA(const int) {
         Real aqfrac[pcnst_extd];
@@ -151,7 +151,7 @@ TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
 }
 TEST_CASE("assign_dotend", "mam4_convproc_process") {
   const int pcnst = mam4::aero_model::pcnst;
-  ColumnView dotend_dev = testing::create_column_view(pcnst);
+  mam4::ColumnView dotend_dev = mam4::testing::create_column_view(pcnst);
   Kokkos::parallel_for(
       1, KOKKOS_LAMBDA(const int) {
         bool dotend[pcnst];

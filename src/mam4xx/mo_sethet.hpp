@@ -8,11 +8,6 @@
 
 namespace mam4 {
 
-using mam4::exp;
-using mam4::min;
-using mam4::pow;
-using mam4::sqrt;
-
 namespace mo_sethet {
 
 constexpr Real avo = Constants::avogadro;
@@ -316,7 +311,7 @@ void sethet_detail(
   //	... the 2 and .6 multipliers are from a formula by frossling (1938)
   //-----------------------------------------------------------------
   xkgm = xdg / xrm * 2.0 +
-         xdg / xrm * .6 * sqrt(xrm * xum / xvv) * pow((xvv / xdg), (1.0 / 3.0));
+         xdg / xrm * .6 * mam4::sqrt(xrm * xum / xvv) * mam4::pow((xvv / xdg), (1.0 / 3.0));
 
   //-----------------------------------------------------------------
   //	... Find the level index that only calculate het_rates below
@@ -363,13 +358,13 @@ void sethet_detail(
         //-----------------------------------------------------------------
         // temperature factor
         t_factor(kk) = (t0 - tfld(kk)) / (t0 * tfld(kk));
-        xhen_h2o2(kk) = 7.45e4 * exp(6620.0 * t_factor(kk));
+        xhen_h2o2(kk) = 7.45e4 * mam4::exp(6620.0 * t_factor(kk));
         // HNO3, for calculation of H2SO4 het rate use
-        xk0_hno3(kk) = 2.1e5 * exp(8700.0 * t_factor(kk));
+        xk0_hno3(kk) = 2.1e5 * mam4::exp(8700.0 * t_factor(kk));
         xhen_hno3(kk) = xk0_hno3(kk) * (1.0 + hno3_diss / xph0);
         // SO2
-        xk0_so2(kk) = 1.23 * exp(3120.0 * t_factor(kk));
-        so2_diss(kk) = 1.23e-2 * exp(1960.0 * t_factor(kk));
+        xk0_so2(kk) = 1.23 * mam4::exp(3120.0 * t_factor(kk));
+        so2_diss(kk) = 1.23e-2 * mam4::exp(1960.0 * t_factor(kk));
         xhen_so2(kk) = xk0_so2(kk) * (1.0 + so2_diss(kk) / xph0);
       });
   //-----------------------------------------------------------------
