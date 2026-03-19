@@ -14,8 +14,9 @@ To build MAM4xx, you need:
 * GNU Make
 * reliable C and C++ compilers
 * optionally, a working MPI installation (like [OpenMPI](https://www.open-mpi.org/)
-  or [Mpich](https://www.mpich.org/)), if you want to use MAM4xx in a
+  or [MPICH](https://www.mpich.org/)), if you want to use MAM4xx in a
   multi-node parallel environment
+* optionally, a GPU with appropriate drivers installed
 
 You can obtain all of these freely on the Linux and Mac platforms. On Linux,
 just use your favorite package manager. On a Mac, you can get the Clang C/C++
@@ -29,52 +30,67 @@ For example, to download the relevant software on your Mac using Homebrew, type
 brew install cmake openmpi
 ```
 
+## Configuring MAM4xx
+
+From the top-level source directory, invoke CMake with appropriate options like this:
+
+```
+cmake -S . -B <build-directory> [OPTIONS]
+```
+
+Available options are:
+
+* `MAM4XX_PRECISION`: Set this to `single` or `double` to set floating point precision. It's set
+  to `double` by default.
+* `MAM4XX_ENABLE_GPU`: Set this flag to enable MAM4xx to run on GPUs. It should be accompanied by
+  a `MAM4XX_DEVICE_ARCH` setting with an architecture flag that conforms to those listed
+  [here](https://kokkos.org/kokkos-core-wiki/get-started/configuration-guide.html#gpu-architectures).
+  Specifically, MAM4xx sets `Kokkos_ARCH_${MAM4XX_DEVICE_ARCH}` to configure an appropriate backend.
+* `MAM4XX_ENABLE_MPI`: Set this flag to enable MAM4xx to use MPI. This requires a working set of
+  MPI C and C++ compilers.
+* `MAM4XX_ENABLE_COVERAGE`: Set this flag to have MAM4xx generate code coverage reports. This
+  requires [lcov](https://github.com/linux-test-project/lcov) to be installed.
+* `MAM4XX_ENABLE_TESTS`: Set this flag to enable MAM4xx's unit tests.
+* `MAM4XX_ENABLE_SKYWALKER`: Set this flag to enable MAM4xx's cross validation testing against
+  MAM4 Fortran datasets generated during the porting process.
+
+Here's an example that configures MAMxx to run on CPUs with cross validation and testing enabled:
+
+```
+cmake -S . -B build \
+  -DMAMXX_ENABLE_MPI=ON \
+  -DMAMXX_PRECISION=double \
+  -DMAMXX_ENABLE_SKYWALKER=ON
+```
+
+Here's a GPU configuration example that uses NVidia's `AMPERE86` architecture:
+
+```
+cmake -S . -B build \
+  -DMAMXX_ENABLE_MPI=ON \
+  -DMAMXX_ENABLE_GPU=ON \
+  -DMAMXX_DEVICE_ARCH=AMPERE86=ON \
+  -DMAMXX_PRECISION=double
+```
+
+By default, CMake 3.x generates Makefiles, and CMake 4.x generates Ninja files. You can set this
+manually with the -G flag.
+
+You can also specify a location to install MAM4xx with `CMAKE_INSTALL_PREFIX`.
+
 ## Building MAM4xx
 
 To build MAM4xx:
 
-1. Configure it with CMake from the top-level source directory. See the top-level `CMakeLists.txt`
-   file for options, but something like this typically works fine for development work:
-
-   ```
-   cmake -S . -B build
-   ```
-2. Change to the build directory (`build` in the example above) and type `make` (or `ninja`, if
-   you're using CMake 4+).
-3. To run tests for the library (and the driver, if configured), type
+1. Change to your build directory (`build` in the example above) and type `make` (or `ninja`).
+2. To run tests for the library (and the driver, if configured), type
    `make test` or `ninja test`.
-4. To install the model to the location indicated by `PREFIX` in your
+3. To install the model to the location indicated by `PREFIX` in your
    `config.sh` script, type `make install` or `ninja install`. By default, products are installed
    in `include`, `lib`, `bin`, and `share` subdirectories within your build
    directory.
 
-### Making code changes and rebuilding
-
-This project uses **build trees** that are separate from source trees. This
-is standard practice in CMake-based build systems, and it allows you to build
-several different configurations without leaving generated and compiled files
-all over your source directory. However, you might have to change the way you
-work in order to be productive in this kind of environment.
-
-When you make a code change, make sure you build from the build directory that
-you created in step 1 above:
-
-```
-cd /path/to/mam4xx/build
-make -j
-```
-
-You can also run tests from this build directory with `make test`.
-
-This is very different from how some people like to work. One method of making
-this easier is to use an editor in a dedicated window, and have another window
-open with a terminal, sitting in your `build` directory.
-
-The build directory has a structure that mirrors the source directory, and you
-can type `make` in any one of its subdirectories to do partial builds. In
-practice, though, it's safest to always build from the top of the build tree.
-
-### Checking C++ formatting, and auto-formatting
+## Checking C++ formatting, and auto-formatting
 
 Our C++ style rules are described in the [MAM4xx developer guide](https://github.com/eagles-project/mam4xx/blob/main/docs/development.md).
 We enforce them using `clang-format`. If you have the correct version of
@@ -91,7 +107,7 @@ different version of `clang-format` than the one we support, you'll get an error
 message telling you the correct version to install when you use either of these
 targets.
 
-### Analyzing code coverage
+## Analyzing code coverage
 
 You can get a code coverage report if you've enabled mam4xx to build with
 code coverage instrumentation. This option is configurable in your `config.sh`
