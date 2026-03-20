@@ -3,8 +3,6 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "testing.hpp"
-
 #include <mam4xx/mam4.hpp>
 
 #include <ekat_comm.hpp>
@@ -12,7 +10,6 @@
 #include <ekat_type_traits.hpp>
 
 #include <catch2/catch.hpp>
-#include <cmath>
 
 using namespace mam4;
 
@@ -22,9 +19,9 @@ TEST_CASE("test_constructor", "mam4_dry_deposition_process") {
   ekat::Comm comm;
   ekat::logger::Logger<> logger("dry deposition constructor test",
                                 ekat::logger::LogLevel::debug, comm);
-  mam4::AeroConfig mam4_config;
-  mam4::DryDepositionProcess::ProcessConfig process_config;
-  mam4::DryDepositionProcess process(mam4_config, process_config);
+  AeroConfig mam4_config;
+  DryDepositionProcess::ProcessConfig process_config;
+  DryDepositionProcess process(mam4_config, process_config);
   REQUIRE(process.name() == "MAM4 Dry Deposition");
   REQUIRE(process.aero_config() == mam4_config);
 }
@@ -50,8 +47,8 @@ TEST_CASE("test_calcram", "mam4_dry_deposition_process") {
         const Real obklen = -0.20723257141035126e+03;
         const Real ustar = 0.39900396673305327e+00;
         Real ram1_out = 0, fv_out = 0;
-        mam4::drydep::calcram(landfrac, icefrac, ocnfrac, obklen, ustar, tair,
-                              pmid, pdel, ram1_in, fv_in, ram1_out, fv_out);
+        drydep::calcram(landfrac, icefrac, ocnfrac, obklen, ustar, tair, pmid,
+                        pdel, ram1_in, fv_in, ram1_out, fv_out);
         vlc.min_val = ram1_out;
         vlc.max_val = fv_out;
       },
@@ -67,8 +64,8 @@ TEST_CASE("test_calcram", "mam4_dry_deposition_process") {
         const Real obklen = 0.20723257141035126e+03;
         const Real ustar = 0.39900396673305327e+00;
         Real ram1_out = 0, fv_out = 0;
-        mam4::drydep::calcram(landfrac, icefrac, ocnfrac, obklen, ustar, tair,
-                              pmid, pdel, ram1_in, fv_in, ram1_out, fv_out);
+        drydep::calcram(landfrac, icefrac, ocnfrac, obklen, ustar, tair, pmid,
+                        pdel, ram1_in, fv_in, ram1_out, fv_out);
         vlc.min_val = ram1_out;
         vlc.max_val = fv_out;
       },
@@ -83,8 +80,8 @@ TEST_CASE("test_calcram", "mam4_dry_deposition_process") {
         const Real obklen = -0.20723257141035126e+03;
         const Real ustar = 0;
         Real ram1_out = 0, fv_out = 0;
-        mam4::drydep::calcram(landfrac, icefrac, ocnfrac, obklen, ustar, tair,
-                              pmid, pdel, ram1_in, fv_in, ram1_out, fv_out);
+        drydep::calcram(landfrac, icefrac, ocnfrac, obklen, ustar, tair, pmid,
+                        pdel, ram1_in, fv_in, ram1_out, fv_out);
         vlc.min_val = ram1_out;
         vlc.max_val = fv_out;
       },

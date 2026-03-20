@@ -112,7 +112,8 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
                 if (update_mmr) {
                   // Note: it only needs to update aerosol variables.
                   for (int i = utils::aero_start_ind(); i < pcnst; ++i) {
-                    qqcw(kk, i) = mam4::max(zero, qqcw(kk, i) + dqqcwdt(kk, i) * dt);
+                    qqcw(kk, i) =
+                        mam4::max(zero, qqcw(kk, i) + dqqcwdt(kk, i) * dt);
                   }
                 }
               }); // k

@@ -16,11 +16,11 @@
 // std::string data_file = MAM4_TEST_DATA_DIR;
 // #include <mam4_test_config.hpp>
 
-using mam4::Real;
+using namespace mam4;
 
 TEST_CASE("test_constructor", "mam4_convproc_process") {
-  mam4::AeroConfig mam4_config;
-  mam4::ConvProcProcess process(mam4_config);
+  AeroConfig mam4_config;
+  ConvProcProcess process(mam4_config);
   REQUIRE(process.name() == "MAM4 convproc");
   REQUIRE(process.aero_config() == mam4_config);
 }
@@ -29,48 +29,47 @@ TEST_CASE("update_conu_from_act_frac", "mam4_convproc_process") {
   const int lc = 5;
   const Real act_frac = 0.5;
   const Real dt_u_inv = 0.25;
-  mam4::ColumnView conu_dev = mam4::testing::create_column_view(mam4::ConvProc::pcnst_extd);
+  ColumnView conu_dev = testing::create_column_view(ConvProc::pcnst_extd);
   {
     auto host_view = Kokkos::create_mirror_view(conu_dev);
-    for (int i = 0; i < mam4::ConvProc::pcnst_extd; ++i)
+    for (int i = 0; i < ConvProc::pcnst_extd; ++i)
       host_view[i] = i;
     Kokkos::deep_copy(conu_dev, host_view);
   }
-  mam4::ColumnView dconudt_dev =
-      mam4::testing::create_column_view(mam4::ConvProc::pcnst_extd);
+  ColumnView dconudt_dev = testing::create_column_view(ConvProc::pcnst_extd);
   {
     auto host_view = Kokkos::create_mirror_view(dconudt_dev);
-    for (int i = 0; i < mam4::ConvProc::pcnst_extd; ++i)
+    for (int i = 0; i < ConvProc::pcnst_extd; ++i)
       host_view[i] = 2 * i;
     Kokkos::deep_copy(dconudt_dev, host_view);
   }
   Kokkos::parallel_for(
       1, KOKKOS_LAMBDA(const int) {
-        Real conu[mam4::ConvProc::pcnst_extd];
-        for (int i = 0; i < mam4::ConvProc::pcnst_extd; ++i)
+        Real conu[ConvProc::pcnst_extd];
+        for (int i = 0; i < ConvProc::pcnst_extd; ++i)
           conu[i] = conu_dev[i];
-        Real dconudt[mam4::ConvProc::pcnst_extd];
-        for (int i = 0; i < mam4::ConvProc::pcnst_extd; ++i)
+        Real dconudt[ConvProc::pcnst_extd];
+        for (int i = 0; i < ConvProc::pcnst_extd; ++i)
           dconudt[i] = dconudt_dev[i];
-        mam4::convproc::update_conu_from_act_frac(conu, dconudt, la, lc,
-                                                  act_frac, dt_u_inv);
-        for (int i = 0; i < mam4::ConvProc::pcnst_extd; ++i)
+        convproc::update_conu_from_act_frac(conu, dconudt, la, lc, act_frac,
+                                            dt_u_inv);
+        for (int i = 0; i < ConvProc::pcnst_extd; ++i)
           conu_dev[i] = conu[i];
-        for (int i = 0; i < mam4::ConvProc::pcnst_extd; ++i)
+        for (int i = 0; i < ConvProc::pcnst_extd; ++i)
           dconudt_dev[i] = dconudt[i];
       });
-  Real conu[mam4::ConvProc::pcnst_extd];
+  Real conu[ConvProc::pcnst_extd];
   {
     auto host_view = Kokkos::create_mirror_view(conu_dev);
     Kokkos::deep_copy(host_view, conu_dev);
-    for (int i = 0; i < mam4::ConvProc::pcnst_extd; ++i)
+    for (int i = 0; i < ConvProc::pcnst_extd; ++i)
       conu[i] = host_view[i];
   }
-  Real dconudt[mam4::ConvProc::pcnst_extd];
+  Real dconudt[ConvProc::pcnst_extd];
   {
     auto host_view = Kokkos::create_mirror_view(dconudt_dev);
     Kokkos::deep_copy(host_view, dconudt_dev);
-    for (int i = 0; i < mam4::ConvProc::pcnst_extd; ++i)
+    for (int i = 0; i < ConvProc::pcnst_extd; ++i)
       dconudt[i] = host_view[i];
   }
   REQUIRE(conu[la] == 1.5);
@@ -79,12 +78,12 @@ TEST_CASE("update_conu_from_act_frac", "mam4_convproc_process") {
   REQUIRE(dconudt[lc] == 3.0 / 8.0);
 }
 TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
-  const int pcnst = mam4::aero_model::pcnst;
-  const int num_modes = mam4::ConvProc::num_modes;
-  const int pcnst_extd = mam4::ConvProc::pcnst_extd;
-  const int maxd_aspectype = mam4::ConvProc::maxd_aspectype;
-  mam4::ColumnView aqfrac_dev = mam4::testing::create_column_view(pcnst_extd);
-  mam4::ColumnView doconvproc_extd_dev = mam4::testing::create_column_view(pcnst_extd);
+  const int pcnst = aero_model::pcnst;
+  const int num_modes = ConvProc::num_modes;
+  const int pcnst_extd = ConvProc::pcnst_extd;
+  const int maxd_aspectype = ConvProc::maxd_aspectype;
+  ColumnView aqfrac_dev = testing::create_column_view(pcnst_extd);
+  ColumnView doconvproc_extd_dev = testing::create_column_view(pcnst_extd);
   Kokkos::parallel_for(
       1, KOKKOS_LAMBDA(const int) {
         Real aqfrac[pcnst_extd];
@@ -94,8 +93,7 @@ TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
           for (int i = 0; i < pcnst; ++i)
             // Set every other values to true as a test.
             doconvproc[i] = i % 2;
-          mam4::convproc::set_cloudborne_vars(doconvproc, aqfrac,
-                                              doconvproc_extd);
+          convproc::set_cloudborne_vars(doconvproc, aqfrac, doconvproc_extd);
         }
         for (int i = 0; i < pcnst_extd; ++i)
           aqfrac_dev[i] = aqfrac[i];
@@ -118,12 +116,12 @@ TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
   }
   std::set<int> check;
   for (int j = 0; j < num_modes; ++j) {
-    const int k = mam4::ConvProc::numptr_amode(j);
+    const int k = ConvProc::numptr_amode(j);
     // k%2 because that is what is set in doconvproc above.
     if (0 <= k && k % 2)
       check.insert(pcnst + k);
     for (int i = 0; i < maxd_aspectype; ++i) {
-      const int k = mam4::ConvProc::lmassptr_amode(i, j);
+      const int k = ConvProc::lmassptr_amode(i, j);
       // k%2 because that is what is set in doconvproc above.
       if (0 <= k && k % 2)
         check.insert(pcnst + k);
@@ -141,7 +139,7 @@ TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
       REQUIRE(doconvproc_extd[i] == i % 2);
     } else {
       // Extended values are set according to
-      // mam4::ConvProc::lmassptr_amode:
+      // ConvProc::lmassptr_amode:
       if (check.count(i))
         REQUIRE(doconvproc_extd[i] == true);
       else
@@ -150,8 +148,8 @@ TEST_CASE("set_cloudborne_vars", "mam4_convproc_process") {
   }
 }
 TEST_CASE("assign_dotend", "mam4_convproc_process") {
-  const int pcnst = mam4::aero_model::pcnst;
-  mam4::ColumnView dotend_dev = mam4::testing::create_column_view(pcnst);
+  const int pcnst = aero_model::pcnst;
+  ColumnView dotend_dev = testing::create_column_view(pcnst);
   Kokkos::parallel_for(
       1, KOKKOS_LAMBDA(const int) {
         bool dotend[pcnst];
@@ -161,8 +159,8 @@ TEST_CASE("assign_dotend", "mam4_convproc_process") {
               2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
           const bool convproc_do_aer = true;
           const bool convproc_do_gas = false;
-          mam4::convproc::assign_dotend(species_class, convproc_do_aer,
-                                        convproc_do_gas, dotend);
+          convproc::assign_dotend(species_class, convproc_do_aer,
+                                  convproc_do_gas, dotend);
         }
         for (int i = 0; i < pcnst; ++i)
           dotend_dev[i] = dotend[i];
@@ -192,8 +190,8 @@ TEST_CASE("assign_dotend", "mam4_convproc_process") {
               2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
           const bool convproc_do_aer = false;
           const bool convproc_do_gas = true;
-          mam4::convproc::assign_dotend(species_class, convproc_do_aer,
-                                        convproc_do_gas, dotend);
+          convproc::assign_dotend(species_class, convproc_do_aer,
+                                  convproc_do_gas, dotend);
         }
         for (int i = 0; i < pcnst; ++i)
           dotend_dev[i] = dotend[i];

@@ -38,8 +38,10 @@ void compute_dry_volume_k(int k, int imode,
   dryvol_c = 0;
   const auto n_spec = num_species_mode(imode);
   for (int ispec = 0; ispec < n_spec; ispec++) {
-    dryvol_i += mam4::max(0.0, q_i[imode][ispec](k)) * inv_density[imode][ispec];
-    dryvol_c += mam4::max(0.0, q_c[imode][ispec](k)) * inv_density[imode][ispec];
+    dryvol_i +=
+        mam4::max(0.0, q_i[imode][ispec](k)) * inv_density[imode][ispec];
+    dryvol_c +=
+        mam4::max(0.0, q_c[imode][ispec](k)) * inv_density[imode][ispec];
   } // end ispec
 
 } // end
@@ -422,10 +424,10 @@ void compute_coef_acc_ait_transfer(
         if (noxf_acc2ait[ispec]) { // then species which can't be
                                    // transferred
           // need qmass*invdens = (kg/kg-air) * [1/(kg/m3)] = m3/kg-air
-          drv_i_noxf +=
-              mam4::max(zero, q_i[iacc][ispec](klev)) * inv_density[iacc][ispec];
-          drv_c_noxf +=
-              mam4::max(zero, q_c[iacc][ispec](klev)) * inv_density[iacc][ispec];
+          drv_i_noxf += mam4::max(zero, q_i[iacc][ispec](klev)) *
+                        inv_density[iacc][ispec];
+          drv_c_noxf += mam4::max(zero, q_c[iacc][ispec](klev)) *
+                        inv_density[iacc][ispec];
         } // end if
       }   // end ispec
       drv_t_noxf =
@@ -660,7 +662,8 @@ void aitken_accum_exchange(
   // voltonum_ait and voltonum_acc are O(10^22) and O(10^20), respectively,
   // and their multiplication overflows single precision, and
   // the square root ends up NaN. Thus,we compute sqrt individually
-  const auto num2vol_ratio_geomean = mam4::sqrt(voltonum_ait) * mam4::sqrt(voltonum_acc);
+  const auto num2vol_ratio_geomean =
+      mam4::sqrt(voltonum_ait) * mam4::sqrt(voltonum_acc);
 
   compute_coef_ait_acc_transfer(
       accum_idx, num2vol_ratio_geomean, adj_tscale_inv, drv_i_aitsv,
@@ -695,9 +698,9 @@ void aitken_accum_exchange(
         dt; // diff in num from  ait -> accum and accum -> ait transfer
     const Real num_i = mam4::max(
         zero, num_i_aitsv - num_diff_i); // num removed/added from aitken mode
-    const Real num_i_acc =
-        mam4::max(zero,
-            num_i_accsv + num_diff_i); // num added/removed to accumulation mode
+    const Real num_i_acc = mam4::max(
+        zero,
+        num_i_accsv + num_diff_i); // num added/removed to accumulation mode
 
     const Real vol_diff_i =
         (drv_i_aitsv * xfercoef_vol_ait2acc -
@@ -707,9 +710,9 @@ void aitken_accum_exchange(
     const Real drv_i = mam4::max(
         zero, drv_i_aitsv - vol_diff_i); // drv removed/added from aitken mode
 
-    const Real drv_i_acc =
-        mam4::max(zero,
-            drv_i_accsv + vol_diff_i); // drv added/removed to accumulation mode
+    const Real drv_i_acc = mam4::max(
+        zero,
+        drv_i_accsv + vol_diff_i); // drv added/removed to accumulation mode
 
     // cloud borne species
     const Real num_diff_c = (xfertend_num[0][1] - xfertend_num[1][1]) *

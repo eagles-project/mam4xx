@@ -167,7 +167,7 @@ void find_ktop(
   Real p_limit = 0;      // pressure limit [Pa]
   Real d2r = pi / 180.0; // degree to radian
 
-  if (abs(rlat) > 60.0 * d2r) {
+  if (mam4::abs(rlat) > 60.0 * d2r) {
     p_limit = 300.0e2; // 300hPa for high latitudes
   } else {
     p_limit = 100.0e2; // 100hPa for low latitudes
@@ -310,8 +310,8 @@ void sethet_detail(
   //-----------------------------------------------------------------
   //	... the 2 and .6 multipliers are from a formula by frossling (1938)
   //-----------------------------------------------------------------
-  xkgm = xdg / xrm * 2.0 +
-         xdg / xrm * .6 * mam4::sqrt(xrm * xum / xvv) * mam4::pow((xvv / xdg), (1.0 / 3.0));
+  xkgm = xdg / xrm * 2.0 + xdg / xrm * .6 * mam4::sqrt(xrm * xum / xvv) *
+                               mam4::pow((xvv / xdg), (1.0 / 3.0));
 
   //-----------------------------------------------------------------
   //	... Find the level index that only calculate het_rates below
@@ -335,8 +335,8 @@ void sethet_detail(
 
   Kokkos::parallel_for(
       Kokkos::TeamVectorRange(team, ktop, local_pver - 1),
-      [&](int kk) { delz(kk) = abs((zmid(kk) - zmid(kk + 1)) * km2cm); });
-  delz(pver - 1) = abs((zmid(pver - 1) - zsurf) * km2cm);
+      [&](int kk) { delz(kk) = mam4::abs((zmid(kk) - zmid(kk + 1)) * km2cm); });
+  delz(pver - 1) = mam4::abs((zmid(pver - 1) - zsurf) * km2cm);
   //-----------------------------------------------------------------
   //       ... part 0b,  for temperature dependent of henrys
   //                     xxhe1 = henry con for hno3

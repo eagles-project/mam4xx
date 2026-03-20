@@ -6,17 +6,9 @@
 #include "mam4_math.hpp"
 #include "mam4_types.hpp"
 
-#include <ekat_math_utils.hpp>
-
 namespace mam4 {
 
 namespace mo_setsox {
-
-using mam4::abs;
-using mam4::exp;
-using mam4::max;
-using mam4::pow;
-using mam4::sqrt;
 
 // mo_setsox-specific configuration
 struct Config {
@@ -206,7 +198,7 @@ void calc_ynetpos(const Real yph, const Real fact1_so2, const Real fact2_so2,
   //-----------------------------------------------------------------
 
   // calc current [H+] from pH
-  xph = pow(10.0, -yph);
+  xph = mam4::pow(10.0, -yph);
 
   //-----------------------------------------------------------------
   //          ... so2
@@ -407,12 +399,12 @@ void calc_ph_values(const Real temperature, const Real patm, const Real xlwc,
     }
     // FIXME: better error handling
     // FIXME: BAD CONSTANT
-    if (abs(yph_hi - yph_lo) <= 0.005) {
+    if (mam4::abs(yph_hi - yph_lo) <= 0.005) {
       // |yph_hi - yph_lo| <= convergence criterion, so set
       // final pH to their midpoint and exit
       // (0.005 absolute error in pH gives 0.01 relative error in H+)
       yph = 0.5 * (yph_hi + yph_lo);
-      xph = pow(10.0, -yph);
+      xph = mam4::pow(10.0, -yph);
       converged = true;
       return;
     }
@@ -656,7 +648,7 @@ Real cldaero_uptakerate(const Real xl, const Real cldnum, const Real cfact,
   // FIXME: this may not make sense--revisit this
   //  radxnum_cd = (drop radius)*(drop number conc)
   //  following holds because volx34pi_cd = num_cd*(rad_cd**3)
-  Real radxnum_cd = pow(volx34pi_cd * square(num_cd), one_third);
+  Real radxnum_cd = mam4::pow(volx34pi_cd * square(num_cd), one_third);
 
   Real rad_cd;
   //  rad_cd = (drop radius in cm), computed from liquid water and drop number,
@@ -676,11 +668,11 @@ Real cldaero_uptakerate(const Real xl, const Real cldnum, const Real cfact,
   //  gasdiffus = h2so4 gas diffusivity from mosaic code (cm^2/s)
   //  (pmid must be Pa)
   // FIXME: BAD CONSTANTS
-  Real gasdiffus = 0.557 * pow(tfld, 1.75) / press;
+  Real gasdiffus = 0.557 * mam4::pow(tfld, 1.75) / press;
 
   //  gasspeed = h2so4 gas mean molecular speed from mosaic code (cm/s)
   // FIXME: BAD CONSTANTS
-  Real gasspeed = 1.455e4 * sqrt(tfld / 98.0);
+  Real gasspeed = 1.455e4 * mam4::sqrt(tfld / 98.0);
 
   //  knudsen number
   // FIXME(?): BAD CONSTANT(?)
@@ -1075,7 +1067,7 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
 
   constexpr Real ph0 = 5.0; // Initial PH values
   // initial PH value, in H+ concentration
-  Real xph0 = pow(10, -ph0);
+  Real xph0 = mam4::pow(10, -ph0);
   // cfact := total atms density [kg/L]
   // FIXME: BAD CONSTANTS
   //           cm-3 * m-3    * kg/m3            * kg/L;

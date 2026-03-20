@@ -12,29 +12,25 @@
 #include <ekat_type_traits.hpp>
 
 #include <catch2/catch.hpp>
-#include <cmath>
 #include <iostream>
-#include <limits>
 
-using mam4::Real;
+using namespace mam4;
 
 TEST_CASE("test_constructor", "mam4_coagulation_process") {
-  mam4::AeroConfig mam4_config;
-  mam4::CoagulationProcess::ProcessConfig process_config;
-  mam4::CoagulationProcess process(mam4_config, process_config);
+  AeroConfig mam4_config;
+  CoagulationProcess::ProcessConfig process_config;
+  CoagulationProcess process(mam4_config, process_config);
   REQUIRE(process.name() == "MAM4 Coagulation");
   REQUIRE(process.aero_config() == mam4_config);
 }
 
 TEST_CASE("test_aging_pairs", "mam4_aging_pairs") {
   // mam4 coagulation assumes that max_agepair is 1
-  mam4::AeroConfig mam4_config;
+  AeroConfig mam4_config;
   REQUIRE(mam4_config.max_agepair() == 1);
 }
 
 TEST_CASE("bm0ij_data", "mam4_cagulation_process") {
-  using mam4::abs;
-
   // Here we test a few values returned directly from fortran with those
   // as defined in the C++ code.
 
@@ -44,34 +40,32 @@ TEST_CASE("bm0ij_data", "mam4_cagulation_process") {
   int n2a = 1;
   int n2n = 2;
   Real bm0ij_f = 0.674432;
-  Real bm0ij_c = mam4::coagulation::bm0ij_data(n1, n2a, n2n);
+  Real bm0ij_c = coagulation::bm0ij_data(n1, n2a, n2n);
   REQUIRE(abs(bm0ij_f - bm0ij_c) < threshold_error);
 
   n1 = 1;
   n2a = 4;
   n2n = 0;
   bm0ij_f = 0.739575;
-  bm0ij_c = mam4::coagulation::bm0ij_data(n1, n2a, n2n);
+  bm0ij_c = coagulation::bm0ij_data(n1, n2a, n2n);
   REQUIRE(abs(bm0ij_f - bm0ij_c) < threshold_error);
 }
 
 TEST_CASE("bm3ij_data", "mam4_coagulation_process") {
-  using mam4::abs;
-
   const Real threshold_error = std::numeric_limits<float>::epsilon();
 
   int n1 = 0;
   int n2a = 1;
   int n2n = 2;
   Real bm3i_f = 0.74927;
-  Real bm3i_c = mam4::coagulation::bm3i_data(n1, n2a, n2n);
+  Real bm3i_c = coagulation::bm3i_data(n1, n2a, n2n);
   REQUIRE(abs(bm3i_f - bm3i_c) < threshold_error);
 
   n1 = 1;
   n2a = 4;
   n2n = 0;
   bm3i_f = 0.91886;
-  bm3i_c = mam4::coagulation::bm3i_data(n1, n2a, n2n);
+  bm3i_c = coagulation::bm3i_data(n1, n2a, n2n);
   REQUIRE(abs(bm3i_f - bm3i_c) < threshold_error);
 }
 
@@ -95,7 +89,7 @@ TEST_CASE("intra_coag_rate_for_0th_moment", "mam4_coagulation_process") {
   int n2x = 1;
   Real qnxx = 0.0;
 
-  mam4::coagulation::intramodal_coag_rate_for_0th_moment(
+  coagulation::intramodal_coag_rate_for_0th_moment(
       a_const, knc, kngxx, kfmxx, sqdgxx, esxx04, esxx08, esxx20, esxx01,
       esxx05, esxx25, n2x, qnxx);
 }
@@ -114,16 +108,16 @@ TEST_CASE("test_compute_tendencies", "mam4_coagulation_process") {
   const Real qv0 =
       0.015; // specific humidity at surface [kg h2o / kg moist air]
   const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
-  mam4::Atmosphere atm =
-      mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
+  Atmosphere atm =
+      init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
 
-  mam4::Surface sfc = mam4::testing::create_surface();
-  mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
-  mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
-  mam4::Tendencies tends = mam4::testing::create_tendencies(nlev);
+  Surface sfc = testing::create_surface();
+  Prognostics progs = testing::create_prognostics(nlev);
+  Diagnostics diags = testing::create_diagnostics(nlev);
+  Tendencies tends = testing::create_tendencies(nlev);
 
-  mam4::AeroConfig mam4_config;
-  mam4::NucleationProcess process(mam4_config);
+  AeroConfig mam4_config;
+  NucleationProcess process(mam4_config);
 
   const auto prog_qgas0 = progs.q_gas[0];
   const auto tend_qgas0 = tends.q_gas[0];
@@ -149,15 +143,15 @@ TEST_CASE("test_compute_tendencies", "mam4_coagulation_process") {
   ss.str("");
 
   for (int k = 0; k < nlev; ++k) {
-    CHECK(!mam4::isnan(h_prog_qgas0(k)));
-    CHECK(!mam4::isnan(h_tend_qgas0(k)));
+    CHECK(!isnan(h_prog_qgas0(k)));
+    CHECK(!isnan(h_tend_qgas0(k)));
   }
 
   // Single-column dispatch.
-  auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+  auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
   Real t = 0.0, dt = 30.0;
   Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
+      team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
         process.compute_tendencies(team, t, dt, atm, sfc, progs, diags, tends);
       });
   Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);
@@ -179,7 +173,7 @@ TEST_CASE("test_compute_tendencies", "mam4_coagulation_process") {
   ss.str("");
 
   for (int k = 0; k < nlev; ++k) {
-    CHECK(!mam4::isnan(h_prog_qgas0(k)));
-    CHECK(!mam4::isnan(h_tend_qgas0(k)));
+    CHECK(!isnan(h_prog_qgas0(k)));
+    CHECK(!isnan(h_tend_qgas0(k)));
   }
 }

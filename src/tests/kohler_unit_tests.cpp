@@ -3,17 +3,19 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "kohler_verification.hpp"
 #include <mam4_test_config.hpp>
-#include <mam4xx/constants.hpp>
+
 #include <mam4xx/floating_point.hpp>
 #include <mam4xx/kohler.hpp>
+#include <mam4xx/mam4_constants.hpp>
+#include <mam4xx/mam4_math.hpp>
 #include <mam4xx/mam4_types.hpp>
+#include <mam4xx/root_finders.hpp>
 
 #include <catch2/catch.hpp>
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
-
-#include <cmath>
 
 using namespace mam4;
 

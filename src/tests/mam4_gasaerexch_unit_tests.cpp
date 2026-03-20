@@ -13,27 +13,21 @@
 #include <ekat_type_traits.hpp>
 
 #include <catch2/catch.hpp>
-#include <cmath>
 #include <iomanip>
 #include <iostream>
 
-using mam4::Atmosphere;
-using mam4::DeviceType;
-using mam4::Real;
-using mam4::Surface;
-using mam4::ThreadTeam;
-using mam4::ThreadTeamPolicy;
+using namespace mam4;
 
 TEST_CASE("test_constructor", "mam4_gasaerexch_process") {
-  mam4::AeroConfig mam4_config;
-  mam4::GasAerExchProcess::ProcessConfig process_config;
-  mam4::GasAerExchProcess process(mam4_config, process_config);
+  AeroConfig mam4_config;
+  GasAerExchProcess::ProcessConfig process_config;
+  GasAerExchProcess process(mam4_config, process_config);
   REQUIRE(process.name() == "MAM4 gas/aersol exchange");
   REQUIRE(process.aero_config() == mam4_config);
 }
 
 TEST_CASE("test_compute_tendencies", "mam4_gasaerexch_process") {
-  const int num_mode = mam4::GasAerExch::num_mode;
+  const int num_mode = GasAerExch::num_mode;
   int nlev = 72;
   Real pblh = 1000;
   // these values correspond to a humid atmosphere with relative humidity
@@ -44,18 +38,18 @@ TEST_CASE("test_compute_tendencies", "mam4_gasaerexch_process") {
       0.015; // specific humidity at surface [kg h2o / kg moist air]
   const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
   Atmosphere atm =
-      mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
+      init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
 
-  Surface sfc = mam4::testing::create_surface();
-  mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
-  mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
+  Surface sfc = testing::create_surface();
+  Prognostics progs = testing::create_prognostics(nlev);
+  Diagnostics diags = testing::create_diagnostics(nlev);
   for (int i = 0; i < num_mode; ++i)
     Kokkos::deep_copy(diags.wet_geometric_mean_diameter_i[i], 0.001);
-  mam4::Tendencies tends = mam4::testing::create_tendencies(nlev);
+  Tendencies tends = testing::create_tendencies(nlev);
 
-  mam4::AeroConfig mam4_config;
-  mam4::GasAerExchProcess::ProcessConfig process_config;
-  mam4::GasAerExchProcess process(mam4_config, process_config);
+  AeroConfig mam4_config;
+  GasAerExchProcess::ProcessConfig process_config;
+  GasAerExchProcess process(mam4_config, process_config);
 
   // Single-column dispatch.
   auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
@@ -69,13 +63,13 @@ TEST_CASE("test_compute_tendencies", "mam4_gasaerexch_process") {
 TEST_CASE("test_multicol_compute_tendencies", "mam4_gasaerexch_process") {
   // Now we process multiple columns within a single dispatch (mc means
   // "multi-column").
-  const int num_mode = mam4::GasAerExch::num_mode;
+  const int num_mode = GasAerExch::num_mode;
   int ncol = 8;
   DeviceType::view_1d<Atmosphere> mc_atm("mc_progs", ncol);
   DeviceType::view_1d<Surface> mc_sfc("mc_sfc", ncol);
-  DeviceType::view_1d<mam4::Prognostics> mc_progs("mc_atm", ncol);
-  DeviceType::view_1d<mam4::Diagnostics> mc_diags("mc_diags", ncol);
-  DeviceType::view_1d<mam4::Tendencies> mc_tends("mc_tends", ncol);
+  DeviceType::view_1d<Prognostics> mc_progs("mc_atm", ncol);
+  DeviceType::view_1d<Diagnostics> mc_diags("mc_diags", ncol);
+  DeviceType::view_1d<Tendencies> mc_tends("mc_tends", ncol);
   const int nlev = 72;
   const Real pblh = 1000;
   // these values correspond to a humid atmosphere with relative humidity
@@ -86,13 +80,13 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_gasaerexch_process") {
       0.015; // specific humidity at surface [kg h2o / kg moist air]
   const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
   Atmosphere atmosphere =
-      mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
-  Surface surface = mam4::testing::create_surface();
-  mam4::Prognostics prognostics = mam4::testing::create_prognostics(nlev);
-  mam4::Diagnostics diagnostics = mam4::testing::create_diagnostics(nlev);
+      init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
+  Surface surface = testing::create_surface();
+  Prognostics prognostics = testing::create_prognostics(nlev);
+  Diagnostics diagnostics = testing::create_diagnostics(nlev);
   for (int i = 0; i < num_mode; ++i)
     Kokkos::deep_copy(diagnostics.wet_geometric_mean_diameter_i[i], 0.001);
-  mam4::Tendencies tendencies = mam4::testing::create_tendencies(nlev);
+  Tendencies tendencies = testing::create_tendencies(nlev);
   for (int icol = 0; icol < ncol; ++icol) {
     Kokkos::parallel_for(
         "Load multi-column views", 1, KOKKOS_LAMBDA(const int) {
@@ -104,9 +98,9 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_gasaerexch_process") {
         });
   }
 
-  mam4::AeroConfig mam4_config;
-  mam4::GasAerExchProcess::ProcessConfig process_config;
-  mam4::GasAerExchProcess process(mam4_config, process_config);
+  AeroConfig mam4_config;
+  GasAerExchProcess::ProcessConfig process_config;
+  GasAerExchProcess process(mam4_config, process_config);
 
   // Dispatch over all the above columns.
   auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
@@ -136,7 +130,7 @@ TEST_CASE("mam_gasaerexch_1subarea_1gas_nonvolatile", "mam_gasaerexch") {
   ekat::logger::Logger<> logger("gasaerexch unit tests",
                                 ekat::logger::LogLevel::debug, comm);
 
-  const int num_mode = mam4::GasAerExch::num_mode;
+  const int num_mode = GasAerExch::num_mode;
   // Values as used in mam_refactor smoke test:
 
   const Real dts[3] = {1.0, 1.0e-20, 10.0};
@@ -280,7 +274,7 @@ TEST_CASE("mam_gasaerexch_1subarea_1gas_nonvolatile", "mam_gasaerexch") {
       Real qgas_avg = 0;
       for (int j = 0; j < num_mode; j++)
         qaer_cur[j] = in_qaer_cur[p][n][j];
-      mam4::gasaerexch::mam_gasaerexch_1subarea_1gas_nonvolatile(
+      gasaerexch::mam_gasaerexch_1subarea_1gas_nonvolatile(
           dt, qgas_netprod_otrproc, uptkaer[p][n], qgas_cur, qgas_avg,
           qaer_cur);
 

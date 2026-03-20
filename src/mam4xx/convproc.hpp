@@ -245,7 +245,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // BAD CONSTANT
   const Real etafactor2max =
       1.e10 / mam4::pow((alpha * wmaxf),
-                  1.5); // !this should make eta big if na is very small.
+                        1.5); // !this should make eta big if na is very small.
   // vapor diffusivity [m2/s]
   const Real diff0 = 0.211e-4 * (p0 / pres) * mam4::pow(tair / t0, 1.94);
   // ! thermal conductivity [J / (m-s-K)]
@@ -260,7 +260,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   const Real beta = two * pi * rhoh2o * gthermfac * gamma; //[m2/s]
   // nucleation w, but = w_in if wdiab == 0 [m/s]
   const Real wnuc = w_in;
-  const Real alw = alpha * wnuc;           // [/s]
+  const Real alw = alpha * wnuc;                 // [/s]
   const Real etafactor1 = alw * mam4::sqrt(alw); // [/ s^(3/2)]
   // [unitless]
   const Real zeta = twothird * mam4::sqrt(alw) * aten / mam4::sqrt(gthermfac);
@@ -293,7 +293,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
         smc[imode] =
             two * aten *
             mam4::sqrt(aten / (27. * hygro[imode] *
-                         amcube[imode])); // ! only if variable size dist
+                               amcube[imode])); // ! only if variable size dist
       } else {
         // BAD CONSTANT
         smc[imode] = 100.;
@@ -326,8 +326,8 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
 
     const Real arg_erf_m = arg_erf_n - 1.5 * sq2 * alogsig[imode];
     fm[imode] = half * (one - mam4::erf(arg_erf_m)); // !activated mass
-    fluxn[imode] = fn[imode] * w_in;           // !activated aerosol number flux
-    fluxm[imode] = fm[imode] * w_in;           // !activated aerosol mass flux
+    fluxn[imode] = fn[imode] * w_in; // !activated aerosol number flux
+    fluxm[imode] = fm[imode] * w_in; // !activated aerosol mass flux
   }
   // FIXME: what is this??
   // is vertical velocity equal to flux of activated aerosol fraction assuming
@@ -1025,7 +1025,8 @@ ma_precpprod(const Real rprd, const Real dpdry,
       const Real wd_flux_tmp = mam4::max(0.0, wd_flux[icnst] * x_ratio);
 
       // change to wet deposition flux from evaporation [(kg/kg/s)*mb]
-      const Real del_wd_flux_evap = mam4::max(0.0, wd_flux[icnst] - wd_flux_tmp);
+      const Real del_wd_flux_evap =
+          mam4::max(0.0, wd_flux[icnst] - wd_flux_tmp);
       // wet deposition flux from the aerosol scavenging
       // wd_flux (updated) = (wd_flux after resuspension) - (scavenging !
       // increment)
@@ -1624,8 +1625,9 @@ void compute_ent_det_dp(const int nlev, const int ktop, const int kbot,
       }
     }
     // get courantmax to calculate ntsub
-    courantmax = mam4::max(courantmax, (mu[kk + 1] + eudp[kk] - md[kk] + eddp[kk]) *
-                                     dt / dpdry[kk]);
+    courantmax =
+        mam4::max(courantmax,
+                  (mu[kk + 1] + eudp[kk] - md[kk] + eddp[kk]) * dt / dpdry[kk]);
   }
   // number of time substeps needed to maintain "courant number" <= 1
   if (courantmax > (1.0 + 1.0e-6)) {
@@ -1739,10 +1741,10 @@ void initialize_tmr_array(
         const Real max_con = mam4::max(gath(km1, icnst), gath(kk, icnst));
 
         // relative difference between level kk and kk-1 [unitless]
-        const Real c_dif_rel = min_con < 0
-                                   ? 0
-                                   : mam4::abs(gath(kk, icnst) - gath(km1, icnst)) /
-                                     mam4::max(max_con, small_con);
+        const Real c_dif_rel =
+            min_con < 0 ? 0
+                        : mam4::abs(gath(kk, icnst) - gath(km1, icnst)) /
+                              mam4::max(max_con, small_con);
 
         // If the two layers differ significantly use a geometric averaging
         // procedure But only do that for deep convection.  For shallow, use the

@@ -1,5 +1,5 @@
 #include <mam4xx/floating_point.hpp>
-#include <mam4xx/mam4.hpp>
+#include <mam4xx/mo_setsox.hpp>
 
 #include <catch2/catch.hpp>
 #include <ekat_comm.hpp>
@@ -7,10 +7,9 @@
 
 using namespace mam4;
 
-// using namespace mam4::conversions;
 const int nmodes = AeroConfig::num_modes();
 const int loffset = 9;
-const mam4::mo_setsox::Config setsox_config_;
+const mo_setsox::Config setsox_config_;
 
 TEST_CASE("test_sox_cldaero_create_obj", "mam4_mo_setsox_unit_tests") {
   ekat::Comm comm;
@@ -19,7 +18,7 @@ TEST_CASE("test_sox_cldaero_create_obj", "mam4_mo_setsox_unit_tests") {
       ekat::logger::LogLevel::debug, comm);
   logger.debug("");
 
-  const mam4::mo_setsox::Config config_;
+  const mo_setsox::Config config_;
 
   const int nspec = AeroConfig::num_gas_phase_species();
   const Real cldfrc1 = 1.0;
@@ -35,7 +34,7 @@ TEST_CASE("test_sox_cldaero_create_obj", "mam4_mo_setsox_unit_tests") {
 
   // cldfrc > 0 => calculate xlwc, so4c comes from adding 3 entries of qwc,
   // and so4_fact = 1
-  mam4::mo_setsox::Cloudconc cldconc = mam4::mo_setsox::sox_cldaero_create_obj(
+  mo_setsox::Cloudconc cldconc = mo_setsox::sox_cldaero_create_obj(
       cldfrc1, qcw, lwc, cfact, loffset, setsox_config_);
   logger.debug("so4c = {}, xlwc = {}, so4_fact = {}", cldconc.so4c,
                cldconc.xlwc, cldconc.so4_fact);
@@ -44,8 +43,8 @@ TEST_CASE("test_sox_cldaero_create_obj", "mam4_mo_setsox_unit_tests") {
   REQUIRE(FloatingPoint<Real>::equiv(cldconc.so4_fact, 1.0));
 
   // cldfrc = 0 => xlwc = 0
-  cldconc = mam4::mo_setsox::sox_cldaero_create_obj(cldfrc0, qcw, lwc, cfact,
-                                                    loffset, config_);
+  cldconc = mo_setsox::sox_cldaero_create_obj(cldfrc0, qcw, lwc, cfact, loffset,
+                                              config_);
   logger.debug("so4c = {}, xlwc = {}, so4_fact = {}", cldconc.so4c,
                cldconc.xlwc, cldconc.so4_fact);
   REQUIRE(FloatingPoint<Real>::equiv(cldconc.so4c, 3.0));
@@ -68,7 +67,7 @@ TEST_CASE("test_henry_factor_so2", "mam4_mo_setsox_unit_tests") {
   const Real ref_x2 = 6.0e-8 * mam4::exp(1120.0 * t_factor);
   Real xk, xe, x2;
 
-  mam4::mo_setsox::henry_factor_so2(t_factor, xk, xe, x2);
+  mo_setsox::henry_factor_so2(t_factor, xk, xe, x2);
 
   logger.debug("xk = {}", xk);
   logger.debug("xe = {}", xe);
@@ -91,7 +90,7 @@ TEST_CASE("test_henry_factor_co2", "mam4_mo_setsox_unit_tests") {
   const Real ref_xe = 4.3e-7 * mam4::exp(-913.0 * t_factor);
   Real xk, xe;
 
-  mam4::mo_setsox::henry_factor_co2(t_factor, xk, xe);
+  mo_setsox::henry_factor_co2(t_factor, xk, xe);
 
   logger.debug("xk = {}", xk);
   REQUIRE(FloatingPoint<Real>::equiv(xk, ref_xk));
@@ -112,7 +111,7 @@ TEST_CASE("test_henry_factor_h202", "mam4_mo_setsox_unit_tests") {
   const Real ref_xe = 2.2e-12 * mam4::exp(-3730.0 * t_factor);
   Real xk, xe;
 
-  mam4::mo_setsox::henry_factor_h2o2(t_factor, xk, xe);
+  mo_setsox::henry_factor_h2o2(t_factor, xk, xe);
 
   logger.debug("xk = {}", xk);
   REQUIRE(FloatingPoint<Real>::equiv(xk, ref_xk));
@@ -132,7 +131,7 @@ TEST_CASE("test_henry_factor_o3", "mam4_mo_setsox_unit_tests") {
   const Real ref_xk = 1.15e-2 * mam4::exp(2560.0 * t_factor);
   Real xk;
 
-  mam4::mo_setsox::henry_factor_o3(t_factor, xk);
+  mo_setsox::henry_factor_o3(t_factor, xk);
 
   logger.debug("xk = {}", xk);
   REQUIRE(FloatingPoint<Real>::equiv(xk, ref_xk));
@@ -143,7 +142,7 @@ TEST_CASE("test_compute_aer_factor", "mam4_mo_setsox_unit_tests") {
   ekat::logger::Logger<> logger("mo_setsox unit tests: test_compute_aer_factor",
                                 ekat::logger::LogLevel::debug, comm);
   logger.debug("");
-  mam4::mo_setsox::Config config_;
+  mo_setsox::Config config_;
   // for reference:
   // lptr_so4_cw_amode[4] = {15, 23, 30, -1};
   // numptrcw_amode[nmodes] = {23, 28, 36, 40};
@@ -152,14 +151,13 @@ TEST_CASE("test_compute_aer_factor", "mam4_mo_setsox_unit_tests") {
   for (int i = 0; i < nmodes; ++i) {
     // this is completely arbitrary, checking +/- values, since tmr is only used
     // to assign a variable = max(0, tmr[i])
-    tmr[config_.numptrcw_amode[i] - loffset] =
-        mam4::pow(-1, i) * 0.5e-10 * (i + 1);
+    tmr[config_.numptrcw_amode[i] - loffset] = pow(-1, i) * 0.5e-10 * (i + 1);
   }
   Real *tmr_ptr = tmr;
   Real faqgain_so4[nmodes];
   Real ref_faqgain_so4[nmodes] = {0.4, 0.0, 0.6, 0.0};
 
-  mam4::mo_setsox::compute_aer_factor(tmr_ptr, loffset, config_, faqgain_so4);
+  mo_setsox::compute_aer_factor(tmr_ptr, loffset, config_, faqgain_so4);
 
   for (int i = 0; i < nmodes; ++i) {
     logger.debug("faqgain_so4[i] = {}", faqgain_so4[i]);
@@ -209,7 +207,7 @@ TEST_CASE("test_cldaero_uptakerate", "mam4_mo_setsox_unit_tests") {
               t_tfld = tfld[ell];
               t_press = press[m];
               t_cfact = cfact[n];
-              uptkrate = mam4::mo_setsox::cldaero_uptakerate(
+              uptkrate = mo_setsox::cldaero_uptakerate(
                   t_xl, t_cldnum, t_cfact, t_cldfrc, t_tfld, t_press);
               logger.debug("[xl, cldnum, cldfrc, tfld, press, cfact] = [{}, "
                            "{}, {}, {}, {}, {}]",
@@ -236,9 +234,9 @@ TEST_CASE("test_update_tmr", "mam4_mo_setsox_unit_tests") {
   Real tmr = 27;
   Real ref_tmr = 28;
   const Real dqdt = 42.0;
-  const Real dtime = mam4::pow(42.0, -1);
+  const Real dtime = pow(42.0, -1);
 
-  mam4::mo_setsox::update_tmr(tmr, dqdt, dtime);
+  mo_setsox::update_tmr(tmr, dqdt, dtime);
 
   logger.debug("tmr = {}", tmr);
   REQUIRE(FloatingPoint<Real>::equiv(tmr, ref_tmr));
@@ -260,13 +258,13 @@ TEST_CASE("test_update_tmr_nonzero", "mam4_mo_setsox_unit_tests") {
   for (int j = 0; j < 8; ++j) {
     tmp_idx = idx[j];
     if (tmp_idx < 0) {
-      mam4::mo_setsox::update_tmr_nonzero(fake_tmr, tmp_idx);
+      mo_setsox::update_tmr_nonzero(fake_tmr, tmp_idx);
       logger.debug("idx[{}] = {}", j, tmp_idx);
       logger.debug("tmr_fake = {}; ref_tmr_fake = {}", tmp_idx, fake_tmr,
                    tmp_idx, fake_tmr);
       REQUIRE(FloatingPoint<Real>::equiv(fake_tmr, fake_tmr));
     } else {
-      mam4::mo_setsox::update_tmr_nonzero(tmr_in[tmp_idx], tmp_idx);
+      mo_setsox::update_tmr_nonzero(tmr_in[tmp_idx], tmp_idx);
       logger.debug("idx[{}] = {}", j, tmp_idx);
       logger.debug("tmr[{}] = {}; ref_tmr[{}] = {}", tmp_idx, tmr_in[tmp_idx],
                    tmp_idx, ref_tmr[tmp_idx]);
@@ -335,7 +333,7 @@ TEST_CASE("test_update_tmr_nonzero", "mam4_mo_setsox_unit_tests") {
   }
 
   for (int j = 0; j < 2; ++j) {
-    mam4::mo_setsox::sox_cldaero_update(
+    mo_setsox::sox_cldaero_update(
         loffset, dt, mbar, pdel, press, tfld, cldnum, cldfrc[j], cfact, xlwc[j],
         delso4_hprxn, xh2so4, xso4, xso4_init, qcw, qin);
     for (int i = 0; i < nspec_gas; ++i) {

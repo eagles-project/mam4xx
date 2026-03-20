@@ -26,11 +26,6 @@
 namespace mam4 {
 namespace lin_strat_chem {
 
-using mam4::exp;
-using mam4::log10;
-using mam4::max;
-using mam4::sqrt;
-
 constexpr Real radians_to_degrees = 180. / Constants::pi;
 // number of vertical levels
 constexpr int pver = mam4::nlev;
@@ -74,17 +69,18 @@ void psc_activation(const Real lats, const Real temp, const Real pmid,
   constexpr Real chlorine_loading_1987 = 2.5977; //    ! EESC value [ppbv]
 
   // use only if abs(latitude) > lats_threshold
-  if (abs(lats) > lats_threshold) {
+  if (mam4::abs(lats) > lats_threshold) {
     if (excess_chlorine) {
       if (temp <= psc_T) {
         // define maximum SZA for PSC loss (= tangent height at sunset)
         const Real max_sza =
-            (ninety + sqrt(max(sixteen * log10(one_hundred_k / pmid), zero)));
+            (ninety + mam4::sqrt(max(
+                          sixteen * mam4::log10(one_hundred_k / pmid), zero)));
 
         if ((sza * radians_to_degrees) <= max_sza) {
-          const Real psc_loss =
-              exp(-linoz_cariolle_psc *
-                  square(chlorine_loading / chlorine_loading_1987) * delta_t);
+          const Real psc_loss = mam4::exp(
+              -linoz_cariolle_psc *
+              square(chlorine_loading / chlorine_loading_1987) * delta_t);
 
           o3_new = o3_old * psc_loss;
 
@@ -205,7 +201,8 @@ void lin_strat_chem_solve_kk(const Real o3col, const Real temperature,
                              ss_o3);                            // out
 
   const Real delta_o3 =
-      (ss_o3 - o3_old) * (one - exp(linoz_dPmL_dO3 * delta_t)); //  ozone change
+      (ss_o3 - o3_old) *
+      (one - mam4::exp(linoz_dPmL_dO3 * delta_t)); //  ozone change
 
   Real o3_new = o3_old + delta_o3; // define new ozone mixing ratio
 
@@ -274,7 +271,7 @@ Real lin_strat_sfcsink_kk(const Real delta_t, const Real pdel, // in
                          1e3; //     ! molecular weight dry air ~ kg/kmole;//!
   constexpr Real rgrav = one / Constants::gravity; // reciprocal of gravit
   const Real efactor =
-      (one - exp(-delta_t / o3_tau));            // !compute time scale factor
+      (one - mam4::exp(-delta_t / o3_tau));      // !compute time scale factor
                                                  //
   const Real mass = pdel * rgrav;                //   air mass in kg/m2
   const Real do3 = (o3_sfc - o3l_old) * efactor; // vmr

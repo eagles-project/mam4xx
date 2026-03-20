@@ -333,7 +333,8 @@ KOKKOS_INLINE_FUNCTION Real mean_particle_diameter_from_volume(
 KOKKOS_INLINE_FUNCTION Real
 mean_particle_volume_from_diameter(Real geom_diam, Real mean_std_dev) {
   const double pio6 = Constants::pi_sixth;
-  return cube(geom_diam) * mam4::exp(4.5 * square(mam4::log(mean_std_dev))) * pio6;
+  return cube(geom_diam) * mam4::exp(4.5 * square(mam4::log(mean_std_dev))) *
+         pio6;
 }
 
 /// Compute the density of an ideal gas given its temperature and pressure.

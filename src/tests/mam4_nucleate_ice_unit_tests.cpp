@@ -20,8 +20,8 @@
 using namespace mam4;
 
 TEST_CASE("test_constructor", "mam4_nucleate_ice_process") {
-  mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
+  AeroConfig mam4_config;
+  NucleateIceProcess process(mam4_config);
   REQUIRE(process.name() == "MAM4 nucleate_ice");
   REQUIRE(process.aero_config() == mam4_config);
 }
@@ -33,13 +33,13 @@ TEST_CASE("test_wv_sat_svp_to_qsat", "mam4_nucleate_ice_process") {
 
   std::ostringstream ss;
 
-  mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
+  AeroConfig mam4_config;
+  NucleateIceProcess process(mam4_config);
   Real es, p;
   // FIXME: do these numbers make sense?
   es = 101325.0 + 1;
   p = 101325.0;
-  Real qs = mam4::wv_sat_methods::wv_sat_svp_to_qsat(es, p);
+  Real qs = wv_sat_methods::wv_sat_svp_to_qsat(es, p);
   ss << "qs [out]: [ ";
   ss << qs << " ";
   ss << "]";
@@ -50,7 +50,7 @@ TEST_CASE("test_wv_sat_svp_to_qsat", "mam4_nucleate_ice_process") {
   REQUIRE(qs <= 1.0);
 
   es -= 500;
-  qs = mam4::wv_sat_methods::wv_sat_svp_to_qsat(es, p);
+  qs = wv_sat_methods::wv_sat_svp_to_qsat(es, p);
   ss << "qs [out]: [ ";
   ss << qs << " ";
   ss << "]";
@@ -70,8 +70,8 @@ TEST_CASE("test_wv_sat_qsat_water", "mam4_nucleate_ice_process") {
   // NOTE: qs output comes directly from wv_sat_svp_to_qsat() (above), so we
   // won't test those values here
 
-  mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
+  AeroConfig mam4_config;
+  NucleateIceProcess process(mam4_config);
   Real es, p, qs;
   Real t[4] = {273, 298, 323, 373};
   // for temperature \in [273, 373]K (~[0, 100]C) es is \in [615, 1.009e5]
@@ -82,7 +82,7 @@ TEST_CASE("test_wv_sat_qsat_water", "mam4_nucleate_ice_process") {
   // we make p artificially high to test es calculation
   p = 2.0e5;
   for (int i = 0; i < 4; ++i) {
-    mam4::wv_sat_methods::wv_sat_qsat_water(t[i], p, es, qs);
+    wv_sat_methods::wv_sat_qsat_water(t[i], p, es, qs);
     ss << "temperature = " << t[i];
     logger.debug(ss.str());
     ss.str("");
@@ -98,7 +98,7 @@ TEST_CASE("test_wv_sat_qsat_water", "mam4_nucleate_ice_process") {
   // make p artificially low to test min(es, p)
   p = 10;
   for (int i = 0; i < 4; ++i) {
-    mam4::wv_sat_methods::wv_sat_qsat_water(t[i], p, es, qs);
+    wv_sat_methods::wv_sat_qsat_water(t[i], p, es, qs);
     ss << "temperature = " << t[i];
     logger.debug(ss.str());
     ss.str("");
@@ -119,13 +119,13 @@ TEST_CASE("test_GoffGratch_svp_ice", "mam4_nucleate_ice_process") {
 
   std::ostringstream ss;
 
-  mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
+  AeroConfig mam4_config;
+  NucleateIceProcess process(mam4_config);
   Real t[4] = {173, 198, 223, 273};
   Real es;
   // for temperature \in [173, 273]K (~[-100, 0]C) es is \in [1.0e-3, 604]
   for (int i = 0; i < 4; ++i) {
-    es = mam4::wv_sat_methods::GoffGratch_svp_ice(t[i]);
+    es = wv_sat_methods::GoffGratch_svp_ice(t[i]);
     ss << "temperature = " << t[i];
     logger.debug(ss.str());
     ss.str("");
@@ -146,13 +146,13 @@ TEST_CASE("test_calculate_regm_nucleati", "mam4_nucleate_ice_process") {
 
   std::ostringstream ss;
 
-  mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
+  AeroConfig mam4_config;
+  NucleateIceProcess process(mam4_config);
   Real w_vlc, Na, regm;
   // FIXME: do these numbers make sense?
   w_vlc = 0.2;
   Na = 58;
-  mam4::nucleate_ice::calculate_regm_nucleati(w_vlc, Na, regm);
+  nucleate_ice::calculate_regm_nucleati(w_vlc, Na, regm);
   ss << "regm [out]: [ ";
   ss << regm << " ";
   ss << "]";
@@ -171,13 +171,13 @@ TEST_CASE("test_calculate_RHw_hf", "mam4_nucleate_ice_process") {
 
   std::ostringstream ss;
 
-  mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
+  AeroConfig mam4_config;
+  NucleateIceProcess process(mam4_config);
   Real temperature, lnw, RHw;
   // FIXME: do these numbers make sense?
   temperature = -40.0;
   lnw = 1.0;
-  mam4::nucleate_ice::calculate_RHw_hf(temperature, lnw, RHw);
+  nucleate_ice::calculate_RHw_hf(temperature, lnw, RHw);
   ss << "RHw [out]: [ ";
   ss << RHw << " ";
   ss << "]";
@@ -189,7 +189,7 @@ TEST_CASE("test_calculate_RHw_hf", "mam4_nucleate_ice_process") {
 
   temperature = -100.0;
   lnw = 2.0;
-  mam4::nucleate_ice::calculate_RHw_hf(temperature, lnw, RHw);
+  nucleate_ice::calculate_RHw_hf(temperature, lnw, RHw);
   ss << "RHw [out]: [ ";
   ss << RHw << " ";
   ss << "]";
@@ -214,15 +214,15 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleate_ice_process") {
       0.015; // specific humidity at surface [kg h2o / kg moist air]
   const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
   Atmosphere atm =
-      mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
+      init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
 
-  Surface sfc = mam4::testing::create_surface();
-  mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
-  mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
-  mam4::Tendencies tends = mam4::testing::create_tendencies(nlev);
+  Surface sfc = testing::create_surface();
+  Prognostics progs = testing::create_prognostics(nlev);
+  Diagnostics diags = testing::create_diagnostics(nlev);
+  Tendencies tends = testing::create_tendencies(nlev);
 
-  mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
+  AeroConfig mam4_config;
+  NucleateIceProcess process(mam4_config);
 
   const auto prog_qgas0 = progs.q_gas[0];
   const auto tend_qgas0 = tends.q_gas[0];
@@ -248,8 +248,8 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleate_ice_process") {
   ss.str("");
 
   for (int k = 0; k < nlev; ++k) {
-    CHECK(!mam4::isnan(h_prog_qgas0(k)));
-    CHECK(!mam4::isnan(h_tend_qgas0(k)));
+    CHECK(!isnan(h_prog_qgas0(k)));
+    CHECK(!isnan(h_tend_qgas0(k)));
   }
 
   // Single-column dispatch.
@@ -278,8 +278,8 @@ TEST_CASE("test_compute_tendencies", "mam4_nucleate_ice_process") {
   ss.str("");
 
   for (int k = 0; k < nlev; ++k) {
-    CHECK(!mam4::isnan(h_prog_qgas0(k)));
-    CHECK(!mam4::isnan(h_tend_qgas0(k)));
+    CHECK(!isnan(h_prog_qgas0(k)));
+    CHECK(!isnan(h_tend_qgas0(k)));
   }
 }
 
@@ -289,9 +289,9 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_nucleateIce_process") {
   int ncol = 8;
   DeviceType::view_1d<Atmosphere> mc_atm("mc_progs", ncol);
   DeviceType::view_1d<Surface> mc_sfc("mc_sfc", ncol);
-  DeviceType::view_1d<mam4::Prognostics> mc_progs("mc_atm", ncol);
-  DeviceType::view_1d<mam4::Diagnostics> mc_diags("mc_diags", ncol);
-  DeviceType::view_1d<mam4::Tendencies> mc_tends("mc_tends", ncol);
+  DeviceType::view_1d<Prognostics> mc_progs("mc_atm", ncol);
+  DeviceType::view_1d<Diagnostics> mc_diags("mc_diags", ncol);
+  DeviceType::view_1d<Tendencies> mc_tends("mc_tends", ncol);
   int nlev = 72;
   Real pblh = 1000;
   // these values correspond to a humid atmosphere with relative humidity
@@ -302,11 +302,11 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_nucleateIce_process") {
       0.015; // specific humidity at surface [kg h2o / kg moist air]
   const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
   Atmosphere atm =
-      mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
-  Surface sfc = mam4::testing::create_surface();
-  mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
-  mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
-  mam4::Tendencies tends = mam4::testing::create_tendencies(nlev);
+      init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
+  Surface sfc = testing::create_surface();
+  Prognostics progs = testing::create_prognostics(nlev);
+  Diagnostics diags = testing::create_diagnostics(nlev);
+  Tendencies tends = testing::create_tendencies(nlev);
   for (int icol = 0; icol < ncol; ++icol) {
     Kokkos::parallel_for(
         "Load multi-column views", 1, KOKKOS_LAMBDA(const int) {
@@ -318,8 +318,8 @@ TEST_CASE("test_multicol_compute_tendencies", "mam4_nucleateIce_process") {
         });
   }
 
-  mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
+  AeroConfig mam4_config;
+  NucleateIceProcess process(mam4_config);
 
   // Dispatch over all the above columns.
   auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
@@ -341,12 +341,12 @@ TEST_CASE("test_wv_sat_svp_trans", "mam4_nucleate_ice_process") {
   const Real epsilon = ekat::is_single_precision<Real>::value ? 0.01 : 0.0001;
   const Real tmelt = Constants::melting_pt_h2o;
   Real temperature = tmelt + 40;
-  REQUIRE(std::abs(7373.80964886279 - mam4::wv_sat_methods::wv_sat_svp_trans(
-                                          temperature)) < epsilon);
+  REQUIRE(mam4::abs(7373.80964886279 -
+                    wv_sat_methods::wv_sat_svp_trans(temperature)) < epsilon);
   temperature = tmelt - 10;
-  REQUIRE(std::abs(272.7574754946415 - mam4::wv_sat_methods::wv_sat_svp_trans(
-                                           temperature)) < epsilon);
+  REQUIRE(mam4::abs(272.7574754946415 -
+                    wv_sat_methods::wv_sat_svp_trans(temperature)) < epsilon);
   temperature = tmelt - 30;
-  REQUIRE(std::abs(37.94098622403198 - mam4::wv_sat_methods::wv_sat_svp_trans(
-                                           temperature)) < epsilon);
+  REQUIRE(mam4::abs(37.94098622403198 -
+                    wv_sat_methods::wv_sat_svp_trans(temperature)) < epsilon);
 }

@@ -3,11 +3,11 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <mam4xx/mam4.hpp>
+#include <mam4xx/utils.hpp>
 
 #include <catch2/catch.hpp>
 
-using Real = mam4::Real;
+using namespace mam4;
 
 TEST_CASE("test_min_max_bound", "utils") {
 
@@ -16,16 +16,16 @@ TEST_CASE("test_min_max_bound", "utils") {
   Real num = 0.5;
 
   /// if num is between low and high return num
-  Real ret = mam4::utils::min_max_bound(low, high, num);
+  Real ret = utils::min_max_bound(low, high, num);
   REQUIRE(ret == num);
 
   /// if num is greater than high return high
   num = 1.5;
-  ret = mam4::utils::min_max_bound(low, high, num);
+  ret = utils::min_max_bound(low, high, num);
   REQUIRE(ret == high);
 
   // if num is less than low return low
   num = -0.5;
-  ret = mam4::utils::min_max_bound(low, high, num);
+  ret = utils::min_max_bound(low, high, num);
   REQUIRE(ret == low);
 }

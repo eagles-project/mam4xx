@@ -10,9 +10,6 @@
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
 
-#include <map>
-#include <sstream>
-
 using namespace mam4;
 
 TEST_CASE("aero_modes_test", "") {

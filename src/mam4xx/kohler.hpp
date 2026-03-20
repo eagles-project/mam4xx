@@ -138,7 +138,8 @@ struct KohlerPolynomial {
   KohlerPolynomial(Real rel_h, Real hygro, Real dry_rad_microns,
                    Real temperature = Constants::triple_pt_h2o)
       : log_rel_humidity(mam4::log(rel_h)), hygroscopicity(hygro),
-        dry_radius(dry_rad_microns), dry_radius_cubed(mam4::cube(dry_rad_microns)),
+        dry_radius(dry_rad_microns),
+        dry_radius_cubed(mam4::cube(dry_rad_microns)),
         kelvin_a(kelvin_coefficient(temperature)) {
 
     kelvin_a *= 1e6; /* convert from N to mN and m to micron */

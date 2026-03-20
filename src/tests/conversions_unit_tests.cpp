@@ -17,8 +17,6 @@
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
 
-#include <cmath>
-
 using namespace mam4;
 using namespace mam4::conversions;
 
