@@ -20,7 +20,7 @@ template <> struct PrecisionTolerance<double> {
   static constexpr double tol = 1e-12; // Double precision tolerance
 };
 
-using namespace mam4;
+using mam4::Real;
 
 // Test compute_o3_column_density: serial reference vs parallel implementation
 TEST_CASE("compute_o3_column_density", "mo_photo") {
@@ -29,14 +29,14 @@ TEST_CASE("compute_o3_column_density", "mo_photo") {
 
   ekat::logger::Logger<> logger("compute_o3_column_density tests",
                                 ekat::logger::LogLevel::debug, comm);
-  using View1D = DeviceType::view_1d<Real>;
-  using View1DHost = typename HostType::view_1d<Real>;
+  using View1D = mam4::DeviceType::view_1d<Real>;
+  using View1DHost = typename mam4::HostType::view_1d<Real>;
 
   // Initialize random number generator for reproducibility
   std::default_random_engine generator(98765);
   std::uniform_real_distribution<double> unif_dist(1e-8, 1e-5);
 
-  constexpr int pver = nlev;
+  constexpr int pver = mam4::nlev;
   constexpr Real tol = PrecisionTolerance<Real>::tol;
 
   // Test inputs
@@ -51,8 +51,8 @@ TEST_CASE("compute_o3_column_density", "mo_photo") {
   const Real Gammav = 0.01; // Virtual temperature lapse rate [K/m]
   const Real qv0 = 0.015;   // Surface specific humidity [kg/kg]
   const Real qv1 = 7.5e-4;  // Specific humidity lapse rate [1/m]
-  Atmosphere atm =
-      init_atm_const_tv_lapse_rate(pver, pblh, Tv0, Gammav, qv0, qv1);
+  mam4::Atmosphere atm =
+      mam4::init_atm_const_tv_lapse_rate(pver, pblh, Tv0, Gammav, qv0, qv1);
 
   // Create host views for inputs
   View1DHost pdel_host("pdel_host", pver);     // Pressure thickness [Pa]
@@ -72,8 +72,9 @@ TEST_CASE("compute_o3_column_density", "mo_photo") {
   o3_col_deltas_host(0) = o3_col_deltas_0;
 
   Real running_sum = 0.0;
-  for (int kk = 0; kk < nlev; ++kk) {
-    const Real vmr_o3_kk = conversions::vmr_from_mmr(mmr_o3_host(kk), mw_o3);
+  for (int kk = 0; kk < mam4::nlev; ++kk) {
+    const Real vmr_o3_kk =
+        mam4::conversions::vmr_from_mmr(mmr_o3_host(kk), mw_o3);
     const Real delta_kk = xfactor * pdel_host(kk) * vmr_o3_kk;
 
     o3_col_dens_ref(kk) = o3_col_deltas_0 + running_sum + 0.5 * delta_kk;
@@ -87,10 +88,11 @@ TEST_CASE("compute_o3_column_density", "mo_photo") {
   View1D o3_col_dens("o3_col_dens", pver);
   Kokkos::deep_copy(mmr_o3, mmr_o3_host);
 
-  auto team_policy = ThreadTeamPolicy(1, Kokkos::AUTO);
+  auto team_policy = mam4::ThreadTeamPolicy(1, Kokkos::AUTO);
   Kokkos::parallel_for(
-      "compute_o3_column", team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-        microphysics::compute_o3_column_density(
+      "compute_o3_column", team_policy,
+      KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
+        mam4::microphysics::compute_o3_column_density(
             team,
             pdel,            // Pressure thickness array [nlev]
             mmr_o3,          // Ozone mass mixing ratio [nlev]

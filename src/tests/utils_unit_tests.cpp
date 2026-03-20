@@ -7,7 +7,7 @@
 
 #include <catch2/catch.hpp>
 
-using namespace mam4;
+using mam4::Real;
 
 TEST_CASE("test_min_max_bound", "utils") {
 
@@ -16,16 +16,16 @@ TEST_CASE("test_min_max_bound", "utils") {
   Real num = 0.5;
 
   /// if num is between low and high return num
-  Real ret = utils::min_max_bound(low, high, num);
+  Real ret = mam4::utils::min_max_bound(low, high, num);
   REQUIRE(ret == num);
 
   /// if num is greater than high return high
   num = 1.5;
-  ret = utils::min_max_bound(low, high, num);
+  ret = mam4::utils::min_max_bound(low, high, num);
   REQUIRE(ret == high);
 
   // if num is less than low return low
   num = -0.5;
-  ret = utils::min_max_bound(low, high, num);
+  ret = mam4::utils::min_max_bound(low, high, num);
   REQUIRE(ret == low);
 }

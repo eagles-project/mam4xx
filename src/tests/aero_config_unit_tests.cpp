@@ -11,7 +11,7 @@
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
 
-using namespace mam4;
+using mam4::Real;
 
 TEST_CASE("aero_config", "") {
   ekat::Comm comm;
@@ -23,11 +23,11 @@ TEST_CASE("aero_config", "") {
     using std::isnan;
 
     const int nlev = 72;
-    Prognostics progs = testing::create_prognostics(nlev);
-    Diagnostics diags = testing::create_diagnostics(nlev);
-    Tendencies tends = testing::create_tendencies(nlev);
+    auto progs = mam4::testing::create_prognostics(nlev);
+    auto diags = mam4::testing::create_diagnostics(nlev);
+    auto tends = mam4::testing::create_tendencies(nlev);
 
-    typedef typename ColumnView::host_mirror_type HostColumnView;
+    typedef typename mam4::ColumnView::host_mirror_type HostColumnView;
 
     HostColumnView h_progs_num_aer[4];
     HostColumnView h_progs_q_aer_i[4][7];
@@ -49,7 +49,7 @@ TEST_CASE("aero_config", "") {
 
     logger.info("creating host mirror views");
 
-    for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    for (int m = 0; m < mam4::AeroConfig::num_modes(); ++m) {
       logger.debug("mode m = {}", m);
       h_progs_num_aer[m] = Kokkos::create_mirror_view(progs.n_mode_i[m]);
       h_tends_num_aer[m] = Kokkos::create_mirror_view(tends.n_mode_i[m]);
@@ -62,7 +62,7 @@ TEST_CASE("aero_config", "") {
 
       h_diags_wet_diam_i[m] =
           Kokkos::create_mirror_view(diags.wet_geometric_mean_diameter_i[m]);
-      for (int s = 0; s < AeroConfig::num_aerosol_ids(); ++s) {
+      for (int s = 0; s < mam4::AeroConfig::num_aerosol_ids(); ++s) {
         logger.debug("[mode, species] = [{}, {}]", m, s);
         h_progs_q_aer_i[m][s] =
             Kokkos::create_mirror_view(progs.q_aero_i[m][s]);
@@ -73,19 +73,19 @@ TEST_CASE("aero_config", "") {
         h_tends_q_aer_c[m][s] =
             Kokkos::create_mirror_view(tends.q_aero_c[m][s]);
       }
-      for (int g = 0; g < AeroConfig::num_gas_ids(); ++g) {
+      for (int g = 0; g < mam4::AeroConfig::num_gas_ids(); ++g) {
         logger.debug("[mode, gas] = [{}, {}]", m, g);
         h_progs_uptkaer[g][m] = Kokkos::create_mirror_view(progs.uptkaer[g][m]);
         h_tends_uptkaer[g][m] = Kokkos::create_mirror_view(tends.uptkaer[g][m]);
       }
     }
-    for (int g = 0; g < AeroConfig::num_gas_ids(); ++g) {
+    for (int g = 0; g < mam4::AeroConfig::num_gas_ids(); ++g) {
       h_progs_q_gas[g] = Kokkos::create_mirror_view(progs.q_gas[g]);
       h_tends_q_gas[g] = Kokkos::create_mirror_view(tends.q_gas[g]);
     }
 
     logger.info("deep copying views");
-    for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    for (int m = 0; m < mam4::AeroConfig::num_modes(); ++m) {
       Kokkos::deep_copy(h_progs_num_aer[m], progs.n_mode_i[m]);
       Kokkos::deep_copy(h_tends_num_aer[m], tends.n_mode_i[m]);
 
@@ -98,24 +98,24 @@ TEST_CASE("aero_config", "") {
 
       Kokkos::deep_copy(h_diags_wet_diam_i[m],
                         diags.wet_geometric_mean_diameter_i[m]);
-      for (int s = 0; s < AeroConfig::num_aerosol_ids(); ++s) {
+      for (int s = 0; s < mam4::AeroConfig::num_aerosol_ids(); ++s) {
         Kokkos::deep_copy(h_progs_q_aer_i[m][s], progs.q_aero_i[m][s]);
         Kokkos::deep_copy(h_tends_q_aer_i[m][s], tends.q_aero_i[m][s]);
         Kokkos::deep_copy(h_progs_q_aer_c[m][s], progs.q_aero_c[m][s]);
         Kokkos::deep_copy(h_tends_q_aer_c[m][s], tends.q_aero_c[m][s]);
       }
-      for (int g = 0; g < AeroConfig::num_gas_ids(); ++g) {
+      for (int g = 0; g < mam4::AeroConfig::num_gas_ids(); ++g) {
         Kokkos::deep_copy(h_progs_uptkaer[g][m], progs.uptkaer[g][m]);
         Kokkos::deep_copy(h_tends_uptkaer[g][m], tends.uptkaer[g][m]);
       }
     }
-    for (int g = 0; g < AeroConfig::num_gas_ids(); ++g) {
+    for (int g = 0; g < mam4::AeroConfig::num_gas_ids(); ++g) {
       Kokkos::deep_copy(h_progs_q_gas[g], progs.q_gas[g]);
       Kokkos::deep_copy(h_tends_q_gas[g], tends.q_gas[g]);
     }
 
     logger.info("checking that all views are initialized to zero.");
-    for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+    for (int m = 0; m < mam4::AeroConfig::num_modes(); ++m) {
       for (int k = 0; k < nlev; ++k) {
         REQUIRE(h_progs_num_aer[m](k) == 0);
         REQUIRE(h_tends_num_aer[m](k) == 0);
@@ -123,13 +123,13 @@ TEST_CASE("aero_config", "") {
         REQUIRE(h_diags_dry_diam_c[m](k) == 0);
         REQUIRE(h_diags_dry_diam_total[m](k) == 0);
         REQUIRE(h_diags_wet_diam_i[m](k) == 0);
-        for (int s = 0; s < AeroConfig::num_aerosol_ids(); ++s) {
+        for (int s = 0; s < mam4::AeroConfig::num_aerosol_ids(); ++s) {
           REQUIRE(h_progs_q_aer_i[m][s](k) == 0);
           REQUIRE(h_tends_q_aer_i[m][s](k) == 0);
           REQUIRE(h_progs_q_aer_c[m][s](k) == 0);
           REQUIRE(h_tends_q_aer_c[m][s](k) == 0);
         }
-        for (int g = 0; g < AeroConfig::num_gas_ids(); ++g) {
+        for (int g = 0; g < mam4::AeroConfig::num_gas_ids(); ++g) {
           REQUIRE(h_progs_uptkaer[g][m](k) == 0);
           REQUIRE(h_tends_uptkaer[g][m](k) == 0);
           if (m == 0) {

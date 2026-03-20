@@ -8,16 +8,16 @@
 
 #include <catch2/catch.hpp>
 
-using namespace mam4;
+using mam4::Real;
 
 TEST_CASE("minmod", "mam4_spitfire_transport") {
   Real aa = 1.0;
   Real bb = 2.0;
 
-  Real mm = spitfire::minmod(aa, bb);
+  Real mm = mam4::spitfire::minmod(aa, bb);
   REQUIRE(mm == aa);
 
-  mm = spitfire::minmod(bb, aa);
+  mm = mam4::spitfire::minmod(bb, aa);
   REQUIRE(mm == aa);
 }
 
@@ -26,19 +26,19 @@ TEST_CASE("median", "mam4_spitfire_transport") {
   Real bb = 1.0;
   Real cc = 2.0;
 
-  Real med = spitfire::median(aa, bb, cc);
+  Real med = mam4::spitfire::median(aa, bb, cc);
   REQUIRE(med == bb);
 }
 
 TEST_CASE("get_flux", "mam4_spitfire_transport") {
 
-  auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+  auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
 
   const Real deltat = 10.0;
-  ColumnView xw = testing::create_column_view(nlev);
-  ColumnView phi = testing::create_column_view(nlev);
-  ColumnView vel = testing::create_column_view(nlev);
-  ColumnView flux = testing::create_column_view(nlev);
+  mam4::ColumnView xw = mam4::testing::create_column_view(mam4::nlev);
+  mam4::ColumnView phi = mam4::testing::create_column_view(mam4::nlev);
+  mam4::ColumnView vel = mam4::testing::create_column_view(mam4::nlev);
+  mam4::ColumnView flux = mam4::testing::create_column_view(mam4::nlev);
 
-  spitfire::get_flux(team_policy, xw, phi, vel, deltat, flux);
+  mam4::spitfire::get_flux(team_policy, xw, phi, vel, deltat, flux);
 }

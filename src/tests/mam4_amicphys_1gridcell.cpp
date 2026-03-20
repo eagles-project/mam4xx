@@ -17,7 +17,7 @@
 #include <iomanip>
 #include <type_traits>
 
-using namespace mam4;
+using mam4::Real;
 
 namespace {
 static constexpr int nqtendaa = 5;
@@ -31,8 +31,9 @@ static constexpr int iqtend_coag = 3;
 static constexpr int iqtend_cond_only = 4;
 static constexpr int iqqcwtend_rnam = 0;
 static constexpr int maxsubarea = 2;
-const Real fcvt_gas[AeroConfig::num_gas_ids()] = {1, 1, 1, 1, 1, 1};
-const Real fcvt_aer[AeroConfig::num_aerosol_ids()] = {1, 1, 1, 1, 1, 1, 1};
+const Real fcvt_gas[mam4::AeroConfig::num_gas_ids()] = {1, 1, 1, 1, 1, 1};
+const Real fcvt_aer[mam4::AeroConfig::num_aerosol_ids()] = {1, 1, 1, 1,
+                                                            1, 1, 1};
 // leave number mix-ratios unchanged (#/kmol-air)
 const Real fcvt_num = 1.0;
 // factor for converting aerosol water mix-ratios from (kg/kg) to (mol/mol)
@@ -58,50 +59,54 @@ const int lmapcc_all[gas_pcnst] = {
     lmapcc_val_aer, lmapcc_val_num};
 
 // Where lmapcc_val_num are defined in lmapcc_all
-const int numptr_amode[AeroConfig::num_modes()] = {12, 17, 25, 29};
+const int numptr_amode[mam4::AeroConfig::num_modes()] = {12, 17, 25, 29};
 // Where lmapcc_val_gas are defined in lmapcc_all
-const int lmap_gas[AeroConfig::num_modes()] = {4, 1};
+const int lmap_gas[mam4::AeroConfig::num_modes()] = {4, 1};
 // Where lmapcc_val_aer are defined in lmapcc_all
-const int
-    lmassptr_amode[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()] = {
-        {5, 13, 18, 26}, {6, 14, 19, 27},  {7, 15, 20, 28}, {8, 16, 21, -6},
-        {9, -6, 22, -6}, {10, -6, 23, -6}, {11, -6, 24, -6}};
+const int lmassptr_amode[mam4::AeroConfig::num_aerosol_ids()]
+                        [mam4::AeroConfig::num_modes()] = {
+                            {5, 13, 18, 26}, {6, 14, 19, 27}, {7, 15, 20, 28},
+                            {8, 16, 21, -6}, {9, -6, 22, -6}, {10, -6, 23, -6},
+                            {11, -6, 24, -6}};
 
 void mam_amicphys_1subarea_clear(
     const bool do_cond, const bool do_rename, const bool do_newnuc,
     const bool do_coag, const int nstep, const Real deltat, const int jsub,
     const int nsubarea, const bool iscldy_subarea, const Real afracsub,
     const Real temp, const Real pmid, const Real pdel, const Real zmid,
-    const Real pblh, const Real relhum, Real dgn_a[AeroConfig::num_modes()],
-    Real dgn_awet[AeroConfig::num_modes()],
-    Real wetdens[AeroConfig::num_modes()],
-    const Real qgas1[AeroConfig::num_gas_ids()],
-    const Real qgas3[AeroConfig::num_gas_ids()],
-    Real qgas4[AeroConfig::num_gas_ids()],
-    Real qgas_delaa[AeroConfig::num_gas_ids()][nqtendaa],
-    const Real qnum3[AeroConfig::num_modes()],
-    Real qnum4[AeroConfig::num_modes()],
-    Real qnum_delaa[AeroConfig::num_modes()][nqtendaa],
-    const Real qaer3[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-    Real qaer4[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()],
-    Real qaer_delaa[AeroConfig::num_aerosol_ids()][AeroConfig::num_modes()]
-                   [nqtendaa],
-    const Real qwtr3[AeroConfig::num_modes()],
-    Real qwtr4[AeroConfig::num_modes()]) {
-  static constexpr int num_gas_ids = AeroConfig::num_gas_ids();
-  static constexpr int num_modes = AeroConfig::num_modes();
-  static constexpr int num_aerosol_ids = AeroConfig::num_aerosol_ids();
+    const Real pblh, const Real relhum,
+    Real dgn_a[mam4::AeroConfig::num_modes()],
+    Real dgn_awet[mam4::AeroConfig::num_modes()],
+    Real wetdens[mam4::AeroConfig::num_modes()],
+    const Real qgas1[mam4::AeroConfig::num_gas_ids()],
+    const Real qgas3[mam4::AeroConfig::num_gas_ids()],
+    Real qgas4[mam4::AeroConfig::num_gas_ids()],
+    Real qgas_delaa[mam4::AeroConfig::num_gas_ids()][nqtendaa],
+    const Real qnum3[mam4::AeroConfig::num_modes()],
+    Real qnum4[mam4::AeroConfig::num_modes()],
+    Real qnum_delaa[mam4::AeroConfig::num_modes()][nqtendaa],
+    const Real qaer3[mam4::AeroConfig::num_aerosol_ids()]
+                    [mam4::AeroConfig::num_modes()],
+    Real qaer4[mam4::AeroConfig::num_aerosol_ids()]
+              [mam4::AeroConfig::num_modes()],
+    Real qaer_delaa[mam4::AeroConfig::num_aerosol_ids()]
+                   [mam4::AeroConfig::num_modes()][nqtendaa],
+    const Real qwtr3[mam4::AeroConfig::num_modes()],
+    Real qwtr4[mam4::AeroConfig::num_modes()]) {
+  static constexpr int num_gas_ids = mam4::AeroConfig::num_gas_ids();
+  static constexpr int num_modes = mam4::AeroConfig::num_modes();
+  static constexpr int num_aerosol_ids = mam4::AeroConfig::num_aerosol_ids();
 
-  static constexpr int igas_h2so4 = static_cast<int>(GasId::H2SO4);
+  static constexpr int igas_h2so4 = static_cast<int>(mam4::GasId::H2SO4);
   // Turn off nh3 for now.  This is a future enhancement.
   static constexpr int igas_nh3 = -999888777; // Same as mam_refactor
-  static constexpr int iaer_so4 = static_cast<int>(AeroId::SO4);
-  static constexpr int iaer_pom = static_cast<int>(AeroId::POM);
+  static constexpr int iaer_so4 = static_cast<int>(mam4::AeroId::SO4);
+  static constexpr int iaer_pom = static_cast<int>(mam4::AeroId::POM);
   static constexpr int newnuc_h2so4_conc_optaa = 2;
 
-  const AeroId gas_to_aer[num_gas_ids] = {AeroId::None, AeroId::None,
-                                          AeroId::SO4,  AeroId::None,
-                                          AeroId::None, AeroId::SOA};
+  const mam4::AeroId gas_to_aer[num_gas_ids] = {
+      mam4::AeroId::None, mam4::AeroId::None, mam4::AeroId::SO4,
+      mam4::AeroId::None, mam4::AeroId::None, mam4::AeroId::SOA};
 
   const bool l_gas_condense_to_mode[num_gas_ids][num_modes] = {
       {false, false, false, false}, {false, false, false, false},
@@ -196,7 +201,8 @@ void mam_amicphys_1subarea_clear(
   Real qaer_del_rnam[num_aerosol_ids][num_modes] = {};
   Real qaer_del_nnuc[num_aerosol_ids][num_modes] = {};
   Real qaer_del_coag[num_aerosol_ids][num_modes] = {};
-  Real qaer_delsub_coag_in[num_aerosol_ids][AeroConfig::max_agepair()] = {};
+  Real qaer_delsub_coag_in[num_aerosol_ids][mam4::AeroConfig::max_agepair()] =
+      {};
   Real qaer_delsub_cond[num_aerosol_ids][num_modes] = {};
   Real qaer_delsub_coag[num_aerosol_ids][num_modes] = {};
   Real qaer_del_cond_only[num_aerosol_ids][num_modes] = {};
@@ -214,7 +220,7 @@ void mam_amicphys_1subarea_clear(
   if (ntsubstep > 1)
     dtsubstep = deltat / ntsubstep;
   Real del_h2so4_gasprod =
-      max(qgas3[igas_h2so4] - qgas1[igas_h2so4], 0.0) / ntsubstep;
+      mam4::max(qgas3[igas_h2so4] - qgas1[igas_h2so4], 0.0) / ntsubstep;
 
   // loop over multiple time sub-steps
   for (int jtsubstep = 1; jtsubstep <= ntsubstep; ++jtsubstep) {
@@ -248,7 +254,7 @@ void mam_amicphys_1subarea_clear(
       int niter_out = 0;
       Real g0_soa_out = 0;
       const bool use_nh3 = false;
-      gasaerexch::mam_gasaerexch_1subarea(
+      mam4::gasaerexch::mam_gasaerexch_1subarea(
           nghq, igas_h2so4, use_nh3, ntot_soamode, gas_to_aer, iaer_so4,
           iaer_pom, l_calc_gas_uptake_coeff, l_gas_condense_to_mode,
           eqn_and_numerics_category, dtsubstep, dtsub_soa_fixed, temp, pmid,

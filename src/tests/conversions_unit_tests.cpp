@@ -17,7 +17,7 @@
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
 
-using namespace mam4;
+using mam4::Real;
 using namespace mam4::conversions;
 
 TEST_CASE("conversions", "") {
@@ -39,8 +39,8 @@ TEST_CASE("conversions", "") {
       0.015; // specific humidity at surface [kg h2o / kg moist air]
   const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
   const Real pblh = 0;
-  Atmosphere atm =
-      init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
+  auto atm =
+      mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
 
   const auto T = atm.temperature;
   const auto P = atm.pressure;
@@ -90,8 +90,10 @@ TEST_CASE("conversions", "") {
     logger.info("vapor_density = {}, check = {}", vapor_density,
                 check_vapor_density);
 
-    REQUIRE(FloatingPoint<Real>::equiv(dry_air_density, check_dry_air_density));
-    REQUIRE(FloatingPoint<Real>::equiv(vapor_density, check_vapor_density));
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(dry_air_density,
+                                             check_dry_air_density));
+    REQUIRE(
+        mam4::FloatingPoint<Real>::equiv(vapor_density, check_vapor_density));
   }
 
   SECTION("mixing ratios") {
@@ -100,22 +102,22 @@ TEST_CASE("conversions", "") {
     auto const rho = density_of_ideal_gas(unit_temp, unit_pressure);
     auto const mmr = 1e-8;
     auto const num_conc =
-        number_conc_from_mmr(mmr, Constants::molec_weight_nacl, rho);
+        number_conc_from_mmr(mmr, mam4::Constants::molec_weight_nacl, rho);
     auto const mmr0 =
-        mmr_from_number_conc(num_conc, Constants::molec_weight_nacl, rho);
+        mmr_from_number_conc(num_conc, mam4::Constants::molec_weight_nacl, rho);
 
     logger.info("unit_temp = {}, unit_pressure = {}, rho = {}", unit_temp,
                 unit_pressure, rho);
-    logger.info("molec_weight_nacl= {}", Constants::molec_weight_nacl);
+    logger.info("molec_weight_nacl= {}", mam4::Constants::molec_weight_nacl);
     logger.info("mixing ratio = {}, num_conc = {}, mmr0 = {}", mmr, num_conc,
                 mmr0);
-    REQUIRE(FloatingPoint<Real>::equiv(mmr, mmr0));
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(mmr, mmr0));
 
     // mass mixing ratio (mmr) <-> molar mixing ratio (vmr)
-    auto const vmr = vmr_from_mmr(mmr0, Constants::molec_weight_nacl);
-    auto const mmr1 = mmr_from_vmr(vmr, Constants::molec_weight_nacl);
+    auto const vmr = vmr_from_mmr(mmr0, mam4::Constants::molec_weight_nacl);
+    auto const mmr1 = mmr_from_vmr(vmr, mam4::Constants::molec_weight_nacl);
     logger.info("mmr0 = {}, vmr = {}, mmr1 = {}", mmr0, vmr, mmr1);
-    REQUIRE(FloatingPoint<Real>::equiv(mmr1, mmr0));
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(mmr1, mmr0));
   }
 
   SECTION("temperature") {
@@ -133,7 +135,7 @@ TEST_CASE("conversions", "") {
                 qv0, Tv0, temp, vtemp);
     logger.info("rho_dry = {}, rho_wet = {}", rho_dry, rho_wet);
     REQUIRE(rho_dry > rho_wet);
-    REQUIRE(FloatingPoint<Real>::equiv(Tv0, vtemp, tol));
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(Tv0, vtemp, tol));
   }
 
   SECTION("specfic humidity") {
@@ -144,7 +146,7 @@ TEST_CASE("conversions", "") {
     logger.info("qv0 initial = {}, calc vapor mixing ratio = {}, calc specific "
                 "humidity = {}",
                 qv0, vmr, sh);
-    REQUIRE(FloatingPoint<Real>::equiv(qv0, sh));
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(qv0, sh));
   }
 
   SECTION("vapor saturation pressure") {
@@ -156,7 +158,7 @@ TEST_CASE("conversions", "") {
     auto const hardy = vapor_saturation_pressure_hardy(unit_temp);
     logger.info("unit_temp = {}, unit_pressure = {}", unit_temp, unit_pressure);
 
-    auto const temp_celsius = unit_temp - Constants::freezing_pt_h2o;
+    auto const temp_celsius = unit_temp - mam4::Constants::freezing_pt_h2o;
     auto const check_magnus_ew =
         6.1094 * mam4::exp((17.625 * temp_celsius) / (234.04 + temp_celsius));
     logger.info("magnus ew = {}, check magnus ew = {}", magnus_ew,
@@ -167,10 +169,11 @@ TEST_CASE("conversions", "") {
     logger.info("magnus = {}, check magnus = {}", magnus, check_magnus * 100);
     logger.info("hardy = {}", hardy);
 
-    REQUIRE(FloatingPoint<Real>::equiv(magnus_ew, check_magnus_ew * 100));
-    REQUIRE(FloatingPoint<Real>::equiv(magnus, check_magnus * 100));
-    bool check_hardy = FloatingPoint<Real>::equiv(hardy, 0.36647176529292896) ||
-                       FloatingPoint<Real>::equiv(hardy, 0.36647177);
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(magnus_ew, check_magnus_ew * 100));
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(magnus, check_magnus * 100));
+    bool check_hardy =
+        mam4::FloatingPoint<Real>::equiv(hardy, 0.36647176529292896) ||
+        mam4::FloatingPoint<Real>::equiv(hardy, 0.36647177);
     REQUIRE(check_hardy);
   }
 
@@ -180,14 +183,14 @@ TEST_CASE("conversions", "") {
     auto const hardy = saturation_mixing_ratio_hardy(unit_temp, unit_pressure);
     logger.info("unit_temp = {}, unit_pressure = {}", unit_temp, unit_pressure);
 
-    auto const eps_h2o =
-        Constants::molec_weight_h2o / Constants::molec_weight_dry_air;
+    auto const eps_h2o = mam4::Constants::molec_weight_h2o /
+                         mam4::Constants::molec_weight_dry_air;
     auto const check_hardy =
         (eps_h2o * vapor_saturation_pressure_hardy(unit_temp)) /
         (unit_pressure - vapor_saturation_pressure_hardy(unit_temp));
 
     logger.info("hardy = {}, check hardy = {}", hardy, check_hardy);
-    REQUIRE(FloatingPoint<Real>::equiv(hardy, check_hardy));
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(hardy, check_hardy));
   }
 
   SECTION("humidity and vapor mixing ratio") {
@@ -204,28 +207,31 @@ TEST_CASE("conversions", "") {
     logger.info("calc rel humidity from sh = {}, calc vmr = {}, calc rel "
                 "humidity from vmr = {}",
                 rel_humidity0, vmr, rel_humidity1);
-    REQUIRE(FloatingPoint<Real>::equiv(rel_humidity0, rel_humidity1));
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(rel_humidity0, rel_humidity1));
   }
 
   SECTION("mean particle") {
     // mean particle diameter <-> mean particle volume
     logger.info("SECTION mean particle");
-    auto const accum_diam = mam4_accum_nom_diameter_m;
-    auto const volume =
-        mean_particle_volume_from_diameter(accum_diam, mam4_accum_mead_std_dev);
-    auto const diameter =
-        mean_particle_diameter_from_volume(volume, mam4_accum_mead_std_dev);
+    auto const accum_diam = mam4::mam4_accum_nom_diameter_m;
+    auto const volume = mean_particle_volume_from_diameter(
+        accum_diam, mam4::mam4_accum_mead_std_dev);
+    auto const diameter = mean_particle_diameter_from_volume(
+        volume, mam4::mam4_accum_mead_std_dev);
     logger.info("mam4_accum_diam = {}, mam4_accum_std_dev = {}, calc volume = "
                 "{}, calc diameter = {}",
-                accum_diam, mam4_accum_mead_std_dev, volume, diameter);
-    REQUIRE(FloatingPoint<Real>::equiv(diameter, accum_diam));
+                accum_diam, mam4::mam4_accum_mead_std_dev, volume, diameter);
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(diameter, accum_diam));
   }
 
   SECTION("relative humidity") {
     logger.info("SECTION relative humidity");
-    ColumnView specific_humidity = testing::create_column_view(nlev);
-    ColumnView relative_humidity_w = testing::create_column_view(nlev);
-    ColumnView relative_humidity_q = testing::create_column_view(nlev);
+    mam4::ColumnView specific_humidity =
+        mam4::testing::create_column_view(nlev);
+    mam4::ColumnView relative_humidity_w =
+        mam4::testing::create_column_view(nlev);
+    mam4::ColumnView relative_humidity_q =
+        mam4::testing::create_column_view(nlev);
 
     // compute relative humidity with respect to specific humidity and to
     // mixing ratio
@@ -267,24 +273,24 @@ TEST_CASE("conversions", "") {
       logger.debug(
           "level {}: T = {} P = {} w = {} q = {} relative humidity = {}", k,
           h_T(k), h_P(k), h_w(k), h_q(k), h_rh_q(k));
-      if (!FloatingPoint<Real>::in_bounds(h_rh_q(k), 0, 1)) {
+      if (!mam4::FloatingPoint<Real>::in_bounds(h_rh_q(k), 0, 1)) {
         logger.error("\tlevel {}: w = {} wsat = {}", k,
                      vapor_mixing_ratio_from_specific_humidity(h_q(k)),
                      saturation_mixing_ratio_hardy(h_T(k), h_P(k)));
       }
       // check that relative humidities are in bounds
-      CHECK(FloatingPoint<Real>::in_bounds(h_rh_q(k), 0, 1));
-      CHECK(FloatingPoint<Real>::in_bounds(h_rh_w(k), 0, 1));
+      CHECK(mam4::FloatingPoint<Real>::in_bounds(h_rh_q(k), 0, 1));
+      CHECK(mam4::FloatingPoint<Real>::in_bounds(h_rh_w(k), 0, 1));
 
       // both relative humidities should match
       const Real tol = 2 * std::numeric_limits<float>::epsilon();
-      if (!FloatingPoint<Real>::rel(h_rh_q(k), h_rh_w(k), tol)) {
+      if (!mam4::FloatingPoint<Real>::rel(h_rh_q(k), h_rh_w(k), tol)) {
         logger.error("rel diff found at level {}: rh_q = {} rh_w = {} rel_diff "
                      "= {} tol = {}",
                      k, h_rh_q(k), h_rh_w(k),
                      mam4::abs(h_rh_q(k) - h_rh_w(k)) / h_rh_q(k), tol);
       }
-      REQUIRE(FloatingPoint<Real>::rel(h_rh_q(k), h_rh_w(k), tol));
+      REQUIRE(mam4::FloatingPoint<Real>::rel(h_rh_q(k), h_rh_w(k), tol));
     }
   }
 }
