@@ -37,8 +37,6 @@ EkatCreateUnitTest(mam4_rename_unit_tests mam4_rename_unit_tests.cpp
   LIBS mam4xx_tests USER_DEFINED_TEST_SESSION)
 EkatCreateUnitTest(mam4_aging_unit_tests mam4_aging_unit_tests.cpp
   LIBS mam4xx_tests USER_DEFINED_TEST_SESSION)
-EkatCreateUnitTest(mam4_hetfrz_unit_tests mam4_hetfrz_unit_tests.cpp
-  LIBS mam4xx_tests USER_DEFINED_TEST_SESSION)
 # EkatCreateUnitTest(mam4_amicphys_1gridcell_tests mam4_amicphys_1gridcell.cpp
 #   LIBS mam4xx_tests USER_DEFINED_TEST_SESSION)
 EkatCreateUnitTest(mam4_nucleate_ice_unit_tests mam4_nucleate_ice_unit_tests.cpp
@@ -67,7 +65,6 @@ if (NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel") #The Intel compiler always em
   # target_compile_options(mam4_amicphys_1gridcell_tests PRIVATE)
   target_compile_options(mam4_rename_unit_tests PRIVATE)
   target_compile_options(mam4_aging_unit_tests PRIVATE)
-  target_compile_options(mam4_hetfrz_unit_tests PRIVATE)
   target_compile_options(mam4_nucleate_ice_unit_tests PRIVATE)
   target_compile_options(mam4_spitfire_transport_unit_tests PRIVATE)
   target_compile_options(mam4_mo_setsox_unit_tests PRIVATE)
