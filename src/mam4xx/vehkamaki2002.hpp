@@ -12,9 +12,6 @@
 
 namespace mam4::vehkamaki2002 {
 
-using mam4::exp;
-using mam4::log;
-
 /// The functions in this file implement parameterizations described in
 /// Vehkamaki et al, An improved parameterization for sulfuric acid-water /
 /// nucleation rates for tropospheric and stratospheric conditions,
@@ -57,12 +54,14 @@ KOKKOS_INLINE_FUNCTION
 Real h2so4_critical_mole_fraction(Real c_h2so4, Real temp, Real rel_hum) {
   // Calculate the mole fraction using eq 11 of Vehkamaki et al (2002).
   auto N_a = c_h2so4;
-  return 0.740997 - 0.00266379 * temp - 0.00349998 * log(N_a) +
-         0.0000504022 * temp * log(N_a) + 0.00201048 * log(rel_hum) -
-         0.000183289 * temp * log(rel_hum) + 0.00157407 * square(log(rel_hum)) -
-         0.0000179059 * temp * square(log(rel_hum)) +
-         0.000184403 * cube(log(rel_hum)) -
-         1.50345e-6 * temp * cube(log(rel_hum));
+  return 0.740997 - 0.00266379 * temp - 0.00349998 * mam4::log(N_a) +
+         0.0000504022 * temp * mam4::log(N_a) +
+         0.00201048 * mam4::log(rel_hum) -
+         0.000183289 * temp * mam4::log(rel_hum) +
+         0.00157407 * square(mam4::log(rel_hum)) -
+         0.0000179059 * temp * square(mam4::log(rel_hum)) +
+         0.000184403 * cube(mam4::log(rel_hum)) -
+         1.50345e-6 * temp * cube(mam4::log(rel_hum));
 }
 
 /// Computes the log of the binary nucleation rate [m-3 s-1] as parameterized by
@@ -106,10 +105,13 @@ Real log_nucleation_rate(Real c_h2so4, Real temp, Real rel_hum, Real x_crit) {
 
   // Compute the nucleation rate using eq 12.
   auto N_a = c_h2so4;
-  return a + b * log(rel_hum) + c * square(log(rel_hum)) +
-         d * cube(log(rel_hum)) + e * log(N_a) + f * log(rel_hum) * log(N_a) +
-         g * square(log(rel_hum)) * (log(N_a)) + h * square(log(N_a)) +
-         i * log(rel_hum) * square(log(N_a)) + j * cube(log(N_a));
+  return a + b * mam4::log(rel_hum) + c * square(mam4::log(rel_hum)) +
+         d * cube(mam4::log(rel_hum)) + e * mam4::log(N_a) +
+         f * mam4::log(rel_hum) * mam4::log(N_a) +
+         g * square(mam4::log(rel_hum)) * (mam4::log(N_a)) +
+         h * square(mam4::log(N_a)) +
+         i * mam4::log(rel_hum) * square(mam4::log(N_a)) +
+         j * cube(mam4::log(N_a));
 }
 /// Computes the binary nucleation rate [m-3 s-1] as parameterized by
 /// Vehkmaki et al (2002), eq 12.
@@ -120,7 +122,7 @@ Real log_nucleation_rate(Real c_h2so4, Real temp, Real rel_hum, Real x_crit) {
 KOKKOS_INLINE_FUNCTION
 Real nucleation_rate(Real c_h2so4, Real temp, Real rel_hum, Real x_crit) {
   // Calculate of the coefficients in eq 12 of Vehkamaki et al (2002).
-  return (exp(log_nucleation_rate(c_h2so4, temp, rel_hum, x_crit)));
+  return (mam4::exp(log_nucleation_rate(c_h2so4, temp, rel_hum, x_crit)));
 }
 
 /// Computes the total number of molecules in a critical cluster as
@@ -166,11 +168,13 @@ Real num_critical_molecules(Real c_h2so4, Real temp, Real rel_hum,
 
   // Compute n_tot using eq 13.
   auto N_a = c_h2so4;
-  return exp(A + B * log(rel_hum) + C * square(log(rel_hum)) +
-             D * cube(log(rel_hum)) + E * log(N_a) +
-             F * log(rel_hum) * log(N_a) + G * square(log(rel_hum)) * log(N_a) +
-             H * square(log(N_a)) + I * log(rel_hum) * square(log(N_a)) +
-             J * cube(log(N_a)));
+  return mam4::exp(A + B * mam4::log(rel_hum) + C * square(mam4::log(rel_hum)) +
+                   D * cube(mam4::log(rel_hum)) + E * mam4::log(N_a) +
+                   F * mam4::log(rel_hum) * mam4::log(N_a) +
+                   G * square(mam4::log(rel_hum)) * mam4::log(N_a) +
+                   H * square(mam4::log(N_a)) +
+                   I * mam4::log(rel_hum) * square(mam4::log(N_a)) +
+                   J * cube(mam4::log(N_a)));
 }
 
 /// Computes the radius [nm] of a critical cluster as parameterized in Vehkamaki
@@ -179,7 +183,8 @@ Real num_critical_molecules(Real c_h2so4, Real temp, Real rel_hum,
 /// @param [in] n_tot The total number of molecules in the critical cluster [-]
 KOKKOS_INLINE_FUNCTION
 Real critical_radius(Real x_crit, Real n_tot) {
-  return exp(-1.6524245 + 0.42316402 * x_crit + 0.3346648 * log(n_tot));
+  return mam4::exp(-1.6524245 + 0.42316402 * x_crit +
+                   0.3346648 * mam4::log(n_tot));
 }
 
 /// Computes the threshold number concentration of H2SO4 [cm-3] that produces a
@@ -189,11 +194,11 @@ Real critical_radius(Real x_crit, Real n_tot) {
 /// @param [in] rel_hum The relative humidity [-]
 KOKKOS_INLINE_FUNCTION
 Real h2so4_nucleation_threshold(Real temp, Real rel_hum) {
-  return exp(-279.243 + 11.7344 * rel_hum + 22700.9 / temp -
-             1088.64 * rel_hum / temp + 1.14436 * temp -
-             0.0302331 * rel_hum * temp - 0.00130254 * square(temp) -
-             6.38697 * log(rel_hum) + 854.98 * log(rel_hum) / temp +
-             0.00879662 * temp * log(rel_hum));
+  return mam4::exp(
+      -279.243 + 11.7344 * rel_hum + 22700.9 / temp - 1088.64 * rel_hum / temp +
+      1.14436 * temp - 0.0302331 * rel_hum * temp - 0.00130254 * square(temp) -
+      6.38697 * mam4::log(rel_hum) + 854.98 * mam4::log(rel_hum) / temp +
+      0.00879662 * temp * mam4::log(rel_hum));
 }
 
 } // namespace mam4::vehkamaki2002

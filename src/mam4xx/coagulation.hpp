@@ -715,9 +715,9 @@ void getcoags(const Real lamda, const Real kfmatac, const Real kfmat,
 
   // Trap subscripts for bm0 and bm0i, between 1 and 10.
   // See page h.5 of whitby et al. (1991)
-  const int n2n = max(1, min(10, round(4.0 * (sgatk - 0.75)))) - 1;
-  const int n2a = max(1, min(10, round(4.0 * (sgacc - 0.75)))) - 1;
-  const int n1 = max(1, min(10, 1 + round(dlgsqt2 * log(rat)))) - 1;
+  const int n2n = mam4::max(1, mam4::min(10, round(4.0 * (sgatk - 0.75)))) - 1;
+  const int n2a = mam4::max(1, mam4::min(10, round(4.0 * (sgacc - 0.75)))) - 1;
+  const int n1 = mam4::max(1, mam4::min(10, 1 + round(dlgsqt2 * log(rat)))) - 1;
 
   // -----------------------------------------------------------------
   //  Aitken to accumulation mode coagulation rate for the 0th moment
@@ -808,15 +808,15 @@ void getcoags_wrapper_f(const Real airtemp, const Real airprs, const Real dgatk,
   // --------------------------------------------------------------------
   //  Clip negative values
 
-  betaii0 = max(0.0, qn11);
-  betajj0 = max(0.0, qn22);
-  betaij0 = max(0.0, qn12);
+  betaii0 = mam4::max(0.0, qn11);
+  betajj0 = mam4::max(0.0, qn22);
+  betaij0 = mam4::max(0.0, qn12);
 
   // For the mass transfer, convert from the CMAQ model's coag rate parameters
   // to the MIRAGE2 model's parameters
   const Real dumatk3 =
       (cube(dgatk) * exp(4.5 * xxlsgat * xxlsgat)); // or unit conversion
-  betaij3 = max(0.0, qv12 / dumatk3);
+  betaij3 = mam4::max(0.0, qv12 / dumatk3);
 }
 
 // --------------------------------------------------------
@@ -880,8 +880,8 @@ void mam_coag_aer_update(
   const int npca = static_cast<int>(ModeIndex::PrimaryCarbon);
   const int nait = static_cast<int>(ModeIndex::Aitken);
 
-  const Real bijqnumj1 = max(0.0, ybetaij3[0] * qnum_tavg[nacc]);
-  const Real bijqnumj2 = max(0.0, ybetaij3[2] * qnum_tavg[npca]);
+  const Real bijqnumj1 = mam4::max(0.0, ybetaij3[0] * qnum_tavg[nacc]);
+  const Real bijqnumj2 = mam4::max(0.0, ybetaij3[2] * qnum_tavg[npca]);
   Real decay_const = bijqnumj1 + bijqnumj2;
 
   constexpr Real epsilonx2 = epsilon() * 2.0;
@@ -915,8 +915,8 @@ void mam_coag_aer_update(
   //  Mass transfer out of pcarbon mode. Only one coag pair is involved:
   // - coag pair 2: pca + accumulation -> accumulation
   // --------------------------------------------------------------------
-  decay_const =
-      max(0.0, ybetaij3[1] * qnum_tavg[nacc]); // there is only 1 destination
+  decay_const = mam4::max(
+      0.0, ybetaij3[1] * qnum_tavg[nacc]); // there is only 1 destination
 
   decay_factor = deltat * decay_const; // calculate coag-induced changes only
                                        // when this number is not ~= zero
@@ -1006,8 +1006,8 @@ void mam_coag_num_update(Real ybetaij0[Coagulation::max_coagpair],
   // pcarbon mode number loss - approximate analytical solution
   // using average number conc. for accumulaiton mode
   // ----------------------------------------------------------------------------
-  Real bijdtqnumj = max(0.0, deltat * ybetaij0[1] * qnum_tavg[nacc]);
-  Real biidt = max(0.0, deltat * ybetaii0[1]);
+  Real bijdtqnumj = mam4::max(0.0, deltat * ybetaij0[1] * qnum_tavg[nacc]);
+  Real biidt = mam4::max(0.0, deltat * ybetaii0[1]);
 
   update_qnum_for_intra_and_intermodal_coag(bijdtqnumj, biidt, qnum_bgn[npca],
                                             qnum_end[npca]);
@@ -1021,8 +1021,8 @@ void mam_coag_num_update(Real ybetaij0[Coagulation::max_coagpair],
 
   Real bijqnumj = ybetaij0[0] * qnum_tavg[nacc];
   bijqnumj = bijqnumj + ybetaij0[2] * qnum_tavg[npca];
-  bijdtqnumj = max(0.0, deltat * bijqnumj);
-  biidt = max(0.0, deltat * ybetaii0[0]);
+  bijdtqnumj = mam4::max(0.0, deltat * bijqnumj);
+  biidt = mam4::max(0.0, deltat * ybetaii0[0]);
 
   update_qnum_for_intra_and_intermodal_coag(bijdtqnumj, biidt, qnum_bgn[nait],
                                             qnum_end[nait]);
@@ -1060,14 +1060,14 @@ void mam_coag_1subarea(
   Real qaer_bgn[num_aer][num_mode];
   for (int ispec = 0; ispec < num_aer; ++ispec) {
     for (int imode = 0; imode < num_mode; ++imode) {
-      qaer_cur[ispec][imode] = max(0.0, qaer_cur[ispec][imode]);
+      qaer_cur[ispec][imode] = mam4::max(0.0, qaer_cur[ispec][imode]);
       qaer_bgn[ispec][imode] = qaer_cur[ispec][imode];
     }
   }
 
   Real qnum_bgn[num_mode];
   for (int imode = 0; imode < num_mode; ++imode) {
-    qnum_cur[imode] = max(0.0, qnum_cur[imode]);
+    qnum_cur[imode] = mam4::max(0.0, qnum_cur[imode]);
     qnum_bgn[imode] = qnum_cur[imode];
   }
 

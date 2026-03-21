@@ -11,7 +11,7 @@ using namespace mam4::modal_aero_opt;
 using namespace mam4::ndrop;
 using namespace mam4::validation;
 
-void aer_rad_props_lw(Ensemble *ensemble) {
+void aero_rad_props_lw(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     constexpr int pver = mam4::nlev;
     constexpr int maxd_aspectype = mam4::ndrop::maxd_aspectype;

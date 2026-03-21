@@ -16,8 +16,6 @@
 namespace mam4 {
 namespace modal_aero_calcsize {
 
-using mam4::sqrt;
-
 constexpr int maxd_aspectype = ndrop::maxd_aspectype;
 
 KOKKOS_INLINE_FUNCTION
@@ -557,11 +555,12 @@ KOKKOS_INLINE_FUNCTION void aitken_accum_exchange(
   // num2vol_ratio_geomean is the geometric mean num2vol_ratio values
   // between the aitken and accum modes
   // const auto num2vol_ratio_geomean =
-  // sqrt(voltonum_ait*voltonum_acc);
+  // mam4::sqrt(voltonum_ait*voltonum_acc);
   // voltonum_ait and voltonum_acc are O(10^22) and O(10^20), respectively,
   // and their multiplication overflows single precision, and
   // the square root ends up NaN. Thus,we compute sqrt individually
-  const auto num2vol_ratio_geomean = sqrt(voltonum_ait) * sqrt(voltonum_acc);
+  const auto num2vol_ratio_geomean =
+      mam4::sqrt(voltonum_ait) * mam4::sqrt(voltonum_acc);
 
   // Compute aitken -> accumulation transfer
   calcsize::compute_coef_ait_acc_transfer(

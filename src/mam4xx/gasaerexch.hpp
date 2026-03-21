@@ -140,12 +140,6 @@ private:
 
 namespace gasaerexch {
 
-using mam4::exp;
-using mam4::log;
-using mam4::min;
-using mam4::pow;
-using mam4::sqrt;
-
 KOKKOS_INLINE_FUNCTION
 void mam_gasaerexch_1subarea_1gas_nonvolatile(
     const Real dt, const Real qgas_netprod_otrproc,
@@ -198,9 +192,11 @@ void mam_gasaerexch_1subarea_1gas_nonvolatile(
       // calculate analytical solution assuming step-wise constant condensation
       // coeff.
       const Real zqgas_equil = tmp_pxt / tmp_kxt;
-      zqgas_end = (zqgas_init - zqgas_equil) * exp(-tmp_kxt) + zqgas_equil;
-      zqgas_avg = (zqgas_init - zqgas_equil) * (1.0 - exp(-tmp_kxt)) / tmp_kxt +
-                  zqgas_equil;
+      zqgas_end =
+          (zqgas_init - zqgas_equil) * mam4::exp(-tmp_kxt) + zqgas_equil;
+      zqgas_avg =
+          (zqgas_init - zqgas_equil) * (1.0 - mam4::exp(-tmp_kxt)) / tmp_kxt +
+          zqgas_equil;
     } else {
       // Weaker condensation, use Taylor expansion to avoid large error
       // resulting from small denominator
@@ -236,8 +232,9 @@ Real gas_diffusivity(
 {
 
   constexpr Real onethird = 1.0 / 3.0;
-  const Real dgas = (1.0e-3 * pow(T_in_K, 1.75) * sqrt(1. / mw_gas + 0.035)) /
-                    (p_in_atm * pow((pow(vd_gas, onethird) + 2.7189), 2.0));
+  const Real dgas =
+      (1.0e-3 * pow(T_in_K, 1.75) * mam4::sqrt(1. / mw_gas + 0.035)) /
+      (p_in_atm * pow((pow(vd_gas, onethird) + 2.7189), 2.0));
   const Real gas_diffusivity = dgas * 1.0e-4;
 
   return gas_diffusivity;
@@ -252,7 +249,7 @@ Real mean_molecular_speed(
     const Real r_universal_mJ, // universal gas constant (mJ/K mol)
     const Real pi) {
   // BAD CONSTANTS
-  const Real mean_molecular_speed = 145.5 * sqrt(temp / rmw);
+  const Real mean_molecular_speed = 145.5 * mam4::sqrt(temp / rmw);
 
   return mean_molecular_speed;
 }
@@ -292,8 +289,8 @@ void gas_aer_uptkrates_1box1gas(const Real accom, const Real gasdiffus,
   //!           Kn = Knudsen number
   //!           ac = accomodation coefficient
 
-  const Real tworootpi = 2 * sqrt(Constants::pi);
-  const Real root2 = sqrt(2.0);
+  const Real tworootpi = 2 * mam4::sqrt(Constants::pi);
+  const Real root2 = mam4::sqrt(2.0);
   const Real one = 1.0;
   const Real two = 2.0;
 
@@ -316,7 +313,7 @@ void gas_aer_uptkrates_1box1gas(const Real accom, const Real gasdiffus,
 
   // outermost loop over all modes
   for (int n = 0; n < GasAerExch::num_mode; ++n) {
-    const Real lndpgn = log(dgncur_awet[n]); // (m)
+    const Real lndpgn = mam4::log(dgncur_awet[n]); // (m)
 
     // beta = dln(uptake_rate)/dln(D_p)
     //      = 2.0 in free molecular regime, 1.0 in continuum regime
@@ -324,7 +321,7 @@ void gas_aer_uptkrates_1box1gas(const Real accom, const Real gasdiffus,
     // is very accurate
     Real beta = 0;
     if (std::abs(beta_inp - 1.5) > 0.5) {
-      // D_p = dgncur_awet(n) * exp( 1.5*(lnsg[n]**2) )
+      // D_p = dgncur_awet(n) * mam4::exp( 1.5*(lnsg[n]**2) )
       const Real D_p = dgncur_awet[n];
       const Real knudsen = two * gasfreepath / D_p;
 
@@ -334,19 +331,19 @@ void gas_aer_uptkrates_1box1gas(const Real accom, const Real gasdiffus,
           (two * knudsen + one + accomxp283) /
               (knudsen * (knudsen + one + accomxp283) + accomxp75);
       beta = one - knudsen * tmpa;
-      beta = max(one, min(two, beta));
+      beta = mam4::max(one, mam4::min(two, beta));
     } else {
       beta = beta_inp;
     }
     const Real constant =
-        tworootpi * exp(beta * lndpgn + 0.5 * pow(beta * lnsg[n], 2.0));
+        tworootpi * mam4::exp(beta * lndpgn + 0.5 * pow(beta * lnsg[n], 2.0));
 
     // sum over gauss-hermite quadrature points
     Real sumghq = 0.0;
     for (int iq = 0; iq < nghq; ++iq) {
       const Real lndp =
           lndpgn + beta * lnsg[n] * lnsg[n] + root2 * lnsg[n] * xghq[iq];
-      const Real D_p = exp(lndp);
+      const Real D_p = mam4::exp(lndp);
 
       const Real hh = fuchs_sutugin(D_p, gasfreepath, accomxp283, accomxp75);
       sumghq += wghq[iq] * D_p * hh / pow(D_p, beta);
@@ -390,12 +387,12 @@ void mam_gasaerexch_1subarea(
   Real uptkrate[max_mode];
   constexpr int ntot_amode = AeroConfig::num_modes();
   // BAD CONSTANT
-  Real alnsg_aer[max_mode] = {Real(log(1.8))};
+  Real alnsg_aer[max_mode] = {Real(mam4::log(1.8))};
   // sigmag_amode : assumed geometric standard deviation of particle size
   // distribution
   for (int imode = 0; imode < ntot_amode; ++imode) {
     const Real sigmag_amode = modes(imode).mean_std_dev;
-    alnsg_aer[imode] = log(sigmag_amode);
+    alnsg_aer[imode] = mam4::log(sigmag_amode);
   }
 
   // using c++ indexing (fortran index -1)
@@ -518,8 +515,9 @@ void mam_gasaerexch_1subarea(
       Real tmp_q4 = 0.0;
       if (tmp_kxt > 0.001) {
         const Real tmp_pok = tmp_pxt / tmp_kxt;
-        tmp_q3 = (tmp_q1 - tmp_pok) * exp(-tmp_kxt) + tmp_pok;
-        tmp_q4 = (tmp_q1 - tmp_pok) * (1.0 - exp(-tmp_kxt)) / tmp_kxt + tmp_pok;
+        tmp_q3 = (tmp_q1 - tmp_pok) * mam4::exp(-tmp_kxt) + tmp_pok;
+        tmp_q4 = (tmp_q1 - tmp_pok) * (1.0 - mam4::exp(-tmp_kxt)) / tmp_kxt +
+                 tmp_pok;
       } else {
         const Real tmp_kxt2 = tmp_kxt * tmp_kxt;
         tmp_q3 = tmp_q1 * (1.0 - tmp_kxt + tmp_kxt2 * 0.5) +

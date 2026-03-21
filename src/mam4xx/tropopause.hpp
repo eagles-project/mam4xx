@@ -9,10 +9,6 @@ namespace mam4 {
 
 namespace tropopause {
 
-using mam4::exp;
-using mam4::log;
-using mam4::pow;
-
 // FIXME: Get these values from modal_aer_opt.
 constexpr int nswbands = 14;
 constexpr int nlwbands = 16;
@@ -48,11 +44,12 @@ void get_dtdz(const Real pm, const Real pmk, const Real pmid1d_up,
   // dtdz      temperature lapse rate vs. height [K/m]
   // tm        mean temperature [K] -- needed to find pressure at trop + 2 km
 
-  const Real a1 = (temp1d_up - temp1d_down) /
-                  (pow(pmid1d_up, cnst_kap) - pow(pmid1d_down, cnst_kap));
-  const Real b1 = temp1d_down - a1 * pow(pmid1d_down, cnst_kap);
+  const Real a1 =
+      (temp1d_up - temp1d_down) /
+      (mam4::pow(pmid1d_up, cnst_kap) - mam4::pow(pmid1d_down, cnst_kap));
+  const Real b1 = temp1d_down - a1 * mam4::pow(pmid1d_down, cnst_kap);
   tm = a1 * pmk + b1;
-  const Real dtdp = a1 * cnst_kap * (pow(pm, cnst_ka1));
+  const Real dtdp = a1 * cnst_kap * (mam4::pow(pm, cnst_ka1));
   dtdz = cnst_faktor * dtdp * pm / tm;
 
 } // get_dtdz
@@ -114,9 +111,9 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
   trp = -99.0; // negative means not valid
 
   // initialize start level
-  pmk = half *
-        (pow(pmid1d(pver - 2), cnst_kap) + pow(pmid1d(pver - 1), cnst_kap));
-  pm = pow(pmk, (one / cnst_kap));
+  pmk = half * (mam4::pow(pmid1d(pver - 2), cnst_kap) +
+                mam4::pow(pmid1d(pver - 1), cnst_kap));
+  pm = mam4::pow(pmk, (one / cnst_kap));
 
   get_dtdz(pm, pmk, pmid1d(pver - 2), pmid1d(pver - 1), temp1d(pver - 2),
            temp1d(pver - 1), dtdz, tm);
@@ -124,8 +121,9 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
   for (int kk = pver - 2; kk >= 1; --kk) { // main_loop
     pmk0 = pmk;
     dtdz0 = dtdz;
-    pmk = half * (pow(pmid1d(kk - 1), cnst_kap) + pow(pmid1d(kk), cnst_kap));
-    pm = pow(pmk, (one / cnst_kap));
+    pmk = half * (mam4::pow(pmid1d(kk - 1), cnst_kap) +
+                  mam4::pow(pmid1d(kk), cnst_kap));
+    pm = mam4::pow(pmk, (one / cnst_kap));
 
     get_dtdz(pm, pmk, pmid1d(kk - 1), pmid1d(kk), temp1d(kk - 1), temp1d(kk),
              dtdz, tm);
@@ -149,7 +147,7 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
     if (dtdz0 < gam) {
       ag = (dtdz - dtdz0) / (pmk - pmk0);
       bg = dtdz0 - (ag * pmk0);
-      ptph = exp(log((gam - bg) / ag) / cnst_kap);
+      ptph = mam4::exp(mam4::log((gam - bg) / ag) / cnst_kap);
     } else {
       ptph = pm;
     } // if dtdz0<gam
@@ -170,9 +168,10 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
 
     // test until apm < p2km
     for (int jj = kk; jj >= 1; --jj) { // in_loop
-      pmk2 = half * (pow(pmid1d(jj - 1), cnst_kap) +
-                     pow(pmid1d(jj), cnst_kap)); // ! p mean ^kappa
-      pm2 = pow(pmk2, one / cnst_kap); //                           ! p mean
+      pmk2 = half * (mam4::pow(pmid1d(jj - 1), cnst_kap) +
+                     mam4::pow(pmid1d(jj), cnst_kap)); // ! p mean ^kappa
+      pm2 =
+          mam4::pow(pmk2, one / cnst_kap); //                           ! p mean
       if (pm2 > ptph) {
         // cycle in_loop  -   doesn't happen
         continue;

@@ -16,12 +16,6 @@
 
 namespace mam4::mo_drydep {
 
-using mam4::abs;
-using mam4::exp;
-using mam4::log;
-using mam4::pow;
-using mam4::sqrt;
-
 using View1D = DeviceType::view_1d<Real>;
 constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
 constexpr int n_land_type = mam4::seq_drydep::NLUse;
@@ -80,7 +74,7 @@ inline void find_season_index_at_lat(const Real clat_j,
   const Real target_lat = clat_j;
 
   for (int i = 0; i < nlat_lai; ++i) {
-    Real current_diff = abs(lat_lai(i) - target_lat);
+    Real current_diff = mam4::abs(lat_lai(i) - target_lat);
     if (current_diff < diff_min) {
       diff_min = current_diff;
       pos_min = i;
@@ -159,26 +153,26 @@ void calculate_uustar(
   Real z0b = 0.0; // average roughness length over grid
   for (int lt = 0; lt < n_land_type; ++lt) {
     if (fr_lnduse[lt]) {
-      z0b += lcl_frc_landuse[lt] * log(z0(index_season[lt], lt));
+      z0b += lcl_frc_landuse[lt] * mam4::log(z0(index_season[lt], lt));
     }
   }
 
   //-------------------------------------------------------------------------------------
   // find the constant velocity uu*=(u_i)(u*_i)
   //-------------------------------------------------------------------------------------
-  z0b = exp(z0b);
+  z0b = mam4::exp(z0b);
   EKAT_KERNEL_ASSERT_MSG(
       zl > 0, "Error in mo_drydep: cvarb: zl must be a positive number\n");
-  Real cvarb = karman / log(zl / z0b);
+  Real cvarb = karman / mam4::log(zl / z0b);
 
   //-------------------------------------------------------------------------------------
   // unstable and stable cases
   //-------------------------------------------------------------------------------------
   Real ustarb;
   if (unstable) {
-    Real bb = 9.4 * square(cvarb) * sqrt(abs(ribn) * zl / z0b);
+    Real bb = 9.4 * square(cvarb) * mam4::sqrt(mam4::abs(ribn) * zl / z0b);
     ustarb = cvarb * va *
-             sqrt(1.0 - (9.4 * ribn / (1.0 + 7.4 * bb))); // BAD_CONSTANTS
+             mam4::sqrt(1.0 - (9.4 * ribn / (1.0 + 7.4 * bb))); // BAD_CONSTANTS
   } else {
     ustarb = cvarb * va / (1. + 4.7 * ribn);
   }
@@ -210,14 +204,15 @@ void calculate_ustar(
 
   for (int lt = beglt; lt <= endlt; ++lt) {
     if (fr_lnduse[lt]) { // BAD_CONSTANTS
-      cvar[lt] = karman / log(zl / z0(index_season[lt], lt));
+      cvar[lt] = karman / mam4::log(zl / z0(index_season[lt], lt));
       if (unstable) {
         bycp[lt] = 9.4 * square(cvar[lt]) *
-                   sqrt(abs(ribn) * zl / z0(index_season[lt], lt));
-        ustar[lt] = sqrt(cvar[lt] * uustar *
-                         sqrt(1.0 - (9.4 * ribn / (1.0 + 7.4 * bycp[lt]))));
+                   mam4::sqrt(mam4::abs(ribn) * zl / z0(index_season[lt], lt));
+        ustar[lt] =
+            mam4::sqrt(cvar[lt] * uustar *
+                       mam4::sqrt(1.0 - (9.4 * ribn / (1.0 + 7.4 * bycp[lt]))));
       } else {
-        ustar[lt] = sqrt(cvar[lt] * uustar / (1.0 + 4.7 * ribn));
+        ustar[lt] = mam4::sqrt(cvar[lt] * uustar / (1.0 + 4.7 * ribn));
       }
     }
   }
@@ -242,13 +237,15 @@ void calculate_ustar_over_water(
   if (fr_lnduse[lt]) {
     // BAD_CONSTANTS
     Real z0water = 0.016 * square(ustar[lt]) / grav + diffk / (9.1 * ustar[lt]);
-    cvar[lt] = karman / log(zl / z0water);
+    cvar[lt] = karman / mam4::log(zl / z0water);
     if (unstable) {
-      bycp[lt] = 9.4 * square(cvar[lt]) * sqrt(abs(ribn) * zl / z0water);
-      ustar[lt] = sqrt(cvar[lt] * uustar *
-                       sqrt(1.0 - (9.4 * ribn / (1.0 + 7.4 * bycp[lt]))));
+      bycp[lt] =
+          9.4 * square(cvar[lt]) * mam4::sqrt(mam4::abs(ribn) * zl / z0water);
+      ustar[lt] =
+          mam4::sqrt(cvar[lt] * uustar *
+                     mam4::sqrt(1.0 - (9.4 * ribn / (1.0 + 7.4 * bycp[lt]))));
     } else {
-      ustar[lt] = sqrt(cvar[lt] * uustar / (1.0 + 4.7 * ribn));
+      ustar[lt] = mam4::sqrt(cvar[lt] * uustar / (1.0 + 4.7 * ribn));
     }
   }
 }
@@ -308,7 +305,8 @@ void calculate_aerodynamic_and_quasilaminar_resistance(
       if (obklen[lt] < 0.0) {
         Real zeta = zl / obklen[lt];
         zeta = max(-1.0, zeta);
-        psih = exp(0.598 + 0.39 * log(-zeta) - 0.09 * square(log(-zeta)));
+        psih = mam4::exp(0.598 + 0.39 * mam4::log(-zeta) -
+                         0.09 * square(mam4::log(-zeta)));
       } else {
         Real zeta = zl / obklen[lt];
         zeta = min(1.0, zeta);
@@ -318,7 +316,7 @@ void calculate_aerodynamic_and_quasilaminar_resistance(
       // NOTE: diffm, difft params. It's only used here, so we hardwire it
       constexpr Real diffm = 1.789e-5;
       constexpr Real difft = 2.060e-5;
-      const Real crb = pow(difft / diffm, 2.0 / 3.0);
+      const Real crb = mam4::pow(difft / diffm, 2.0 / 3.0);
       dep_ra[lt] = (karman - psih * cvar[lt]) / (ustar[lt] * karman * cvar[lt]);
       dep_rb[lt] = (2.0 / (karman * ustar[lt])) * crb;
     }
@@ -362,7 +360,7 @@ void calculate_resistance_rgsx_and_rsmx(
           } else { // BAD_CONSTANTS
             rmx = 1.0 / (heff[idx_drydep] / 3000.0 + 100.0 * foxd(idx_drydep));
           }
-          cts = 1000.0 * exp(-tc - 4.0); // correction for frost
+          cts = 1000.0 * mam4::exp(-tc - 4.0); // correction for frost
 
           EKAT_KERNEL_ASSERT_MSG(
               rgss(sndx, lt) != 0,
@@ -617,7 +615,7 @@ Real get_potential_temperature(const Real temperature,         // [K]
   constexpr Real rovcp = rair / cp;
 
   // BAD_CONSTANT
-  return temperature * pow(p00 / pressure, rovcp) *
+  return temperature * mam4::pow(p00 / pressure, rovcp) *
          (1.0 + 0.61 * specific_humidity);
 }
 
@@ -625,8 +623,8 @@ KOKKOS_INLINE_FUNCTION
 Real get_saturation_specific_humidity(const Real temperature, // [K]
                                       const Real pressure) {  // [Pa]
   // saturation vapor pressure [Pa] (BAD_CONSTANTS)
-  Real es =
-      611.0 * exp(5414.77 * (temperature - tmelt) / (tmelt * temperature));
+  Real es = 611.0 *
+            mam4::exp(5414.77 * (temperature - tmelt) / (tmelt * temperature));
   // saturation specific humidity [kg/kg] (BAD_CONSTANTS)
   Real ws = 0.622 * es / (pressure - es);
 
@@ -690,7 +688,7 @@ void drydep_xactive(
                          "should be > pressure_10m\n");
   // BAD_CONSTANTS
   Real zl = -rair / grav * air_temp * (1. + 0.61 * spec_hum) *
-            log(pressure_10m / pressure_sfc);
+            mam4::log(pressure_10m / pressure_sfc);
   EKAT_KERNEL_ASSERT_MSG(zl > 0,
                          "Error in mo_drydep: zl must be a positive number\n");
 

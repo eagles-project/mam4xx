@@ -9,9 +9,6 @@ namespace mam4 {
 
 namespace mo_photo {
 
-using mam4::cos;
-using mam4::pow;
-
 // number of vertical levels
 constexpr int pver = mam4::nlev;
 constexpr int pverm = pver - 1;
@@ -229,7 +226,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
           // liquid water path in each layer [g/m2]
           const Real del_lwp = rgrav * lwc(kk) * delp(kk) * thousand /
                                clouds(kk); // the unit is (likely) g/m^2
-          del_tau(kk) = del_lwp * f_lwp2tau * pow(clouds(kk), 1.5);
+          del_tau(kk) = del_lwp * f_lwp2tau * mam4::pow(clouds(kk), 1.5);
         } else {
           del_tau(kk) = zero;
         } // end if

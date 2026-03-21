@@ -22,10 +22,6 @@ namespace mam4 {
 
 namespace wetdep {
 
-using mam4::exp;
-using mam4::log;
-using mam4::sqrt;
-
 /**
  * @brief Calculate local precipitation generation rate (kg/m2/s)
  *        from source (condensation) and sink (evaporation) terms.
@@ -179,8 +175,8 @@ Real flux_precnum_vs_flux_prec_mpln(const Real flux_prec, const int jstrcnv) {
   }
   Real y_var;
   if (flux_prec >= small_value_36) {
-    const Real x_var = log(flux_prec);
-    y_var = exp(a0 + a1 * x_var);
+    const Real x_var = mam4::log(flux_prec);
+    y_var = mam4::exp(a0 + a1 * x_var);
   } else {
     y_var = 0.0;
   }
@@ -585,15 +581,15 @@ Real rain_mix_ratio(const Real temperature, const Real pmid,
 
   // define the constant convfw. taken from cldwat.F90
   // reference: Tripoli and Cotton (1980)
-  // falling velocity at air density = 1 kg/m3 [m/s * sqrt(rho)]
-  const Real convfw = 1.94 * 2.13 * sqrt(rhoh2o * gravit * 2.7e-4);
+  // falling velocity at air density = 1 kg/m3 [m/s * mam4::sqrt(rho)]
+  const Real convfw = 1.94 * 2.13 * mam4::sqrt(rhoh2o * gravit * 2.7e-4);
 
   Real rain = 0;
   if (temperature > tmelt) {
     // rho =air density [kg/m3]
     const Real rho = pmid / (rair * temperature);
     //  vfall = calculated raindrop falling velocity [m/s]
-    const Real vfall = convfw / sqrt(rho);
+    const Real vfall = convfw / mam4::sqrt(rho);
     rain = sumppr / (rho * vfall);
     if (rain < small_value_14)
       rain = 0;

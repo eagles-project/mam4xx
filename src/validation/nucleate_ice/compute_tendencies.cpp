@@ -33,7 +33,8 @@ void compute_tendencies(Ensemble *ensemble) {
         input.get_array("so4_sz_thresh_icenuc")[0];
 
     mam4::AeroConfig mam4_config;
-    mam4::NucleateIce::Config nucleate_ice_config(subgrid, so4_sz_thresh_icenuc);
+    mam4::NucleateIce::Config nucleate_ice_config(subgrid,
+                                                  so4_sz_thresh_icenuc);
     mam4::NucleateIceProcess process(mam4_config, nucleate_ice_config);
 
     const Real pmid = input.get_array("pmid")[0];        // air pressure
@@ -50,7 +51,8 @@ void compute_tendencies(Ensemble *ensemble) {
     auto d_temp = mam4::validation::create_column_view(nlev);
     auto d_pmid = mam4::validation::create_column_view(nlev);
     auto d_cloud_fraction = mam4::validation::create_column_view(nlev);
-    auto d_updraft_vel_ice_nucleation = mam4::validation::create_column_view(nlev);
+    auto d_updraft_vel_ice_nucleation =
+        mam4::validation::create_column_view(nlev);
     auto d_vapor_mixing_ratio = mam4::validation::create_column_view(nlev);
     Kokkos::deep_copy(d_temp, temp);
     Kokkos::deep_copy(d_pmid, pmid);
@@ -97,14 +99,20 @@ void compute_tendencies(Ensemble *ensemble) {
     auto coarse_pom = state_q[int(lptr_pom_a_amode[modeptr_coarse]) - 1];
     auto coarse_soa = state_q[int(lptr_soa_a_amode[modeptr_coarse]) - 1];
 
-    const int dst_idx = aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::DST);
+    const int dst_idx =
+        aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::DST);
     const int nacl_idx =
         aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::NaCl);
-    const int so4_idx = aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::SO4);
-    const int mom_idx = aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::MOM);
-    const int bc_idx = aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::BC);
-    const int pom_idx = aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::POM);
-    const int soa_idx = aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::SOA);
+    const int so4_idx =
+        aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::SO4);
+    const int mom_idx =
+        aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::MOM);
+    const int bc_idx =
+        aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::BC);
+    const int pom_idx =
+        aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::POM);
+    const int soa_idx =
+        aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::SOA);
 
     // we only copy values of mass m.r that are use in this process.
     // Other values will be equal to zero

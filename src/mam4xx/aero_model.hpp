@@ -19,12 +19,6 @@ namespace mam4 {
 
 namespace aero_model {
 
-using mam4::exp;
-using mam4::log;
-using mam4::pow;
-using mam4::round;
-using mam4::sqrt;
-
 // BAD CONSTANT
 constexpr int nimptblgrow_mind = -7, nimptblgrow_maxd = 12;
 constexpr int nimptblgrow_total = -nimptblgrow_mind + nimptblgrow_maxd + 1;
@@ -61,7 +55,7 @@ void modal_aero_bcscavcoef_get(const int imode,
   const Real zero = 0;
   const Real one = 1;
   // BAD CONSTANT
-  const Real dlndg_nimptblgrow = log(1.25);
+  const Real dlndg_nimptblgrow = mam4::log(1.25);
   // With precipitation
   // interpolate table values using log of
   // (actual-wet-size)/(base-dry-size) ratio of wet and dry aerosol diameter
@@ -79,7 +73,7 @@ void modal_aero_bcscavcoef_get(const int imode,
     scavimpvol = scavimptblvol(-nimptblgrow_mind, imode);
     scavimpnum = scavimptblnum(-nimptblgrow_mind, imode);
   } else {
-    Real xgrow = log(wetdiaratio) / dlndg_nimptblgrow;
+    Real xgrow = mam4::log(wetdiaratio) / dlndg_nimptblgrow;
     int jgrow = int(xgrow); // get index jgrow
     if (xgrow < zero) { // // adjust jgrow appropriately if xgrow is negative
       jgrow = jgrow - 1;
@@ -89,7 +83,7 @@ void modal_aero_bcscavcoef_get(const int imode,
       jgrow = nimptblgrow_mind;
       xgrow = jgrow;
     } else {
-      jgrow = min(jgrow, nimptblgrow_maxd - 1);
+      jgrow = mam4::min(jgrow, nimptblgrow_maxd - 1);
     }
     // compute factors for interpolating impaction scavenging removal amounts
     const Real dumfhi = xgrow - jgrow;
@@ -105,9 +99,9 @@ void modal_aero_bcscavcoef_get(const int imode,
   } // wetdiaratio
 
   // impaction scavenging removal amount for volume
-  scavcoefvol_kk = exp(scavimpvol);
+  scavcoefvol_kk = mam4::exp(scavimpvol);
   // impaction scavenging removal amount to number
-  scavcoefnum_kk = exp(scavimpnum);
+  scavcoefnum_kk = mam4::exp(scavimpnum);
 
 } // modal_aero_bcscavcoef_get
 
@@ -168,7 +162,7 @@ void calc_rain_drop_conc(const int nr, const Real rlo, const Real dr,
     // rain radius in the bin [cm]
     const Real rr = rlo + ii * dr;
     rrainsv[ii] = rr;
-    xnumrainsv[ii] = exp(-rr / 2.7e-2);
+    xnumrainsv[ii] = mam4::exp(-rr / 2.7e-2);
     // rain diameter in the bin [cm]
     const Real dd = 2. * rr;
     Real vfallstp = zero;
@@ -185,7 +179,7 @@ void calc_rain_drop_conc(const int nr, const Real rlo, const Real dr,
       vfallstp = 1069.8 * pow(dd, 0.235);
     }
     // rain droplet falling speed [cm/s]
-    vfallrainsv[ii] = vfallstp * sqrt(1.204e-3 / rhoair);
+    vfallrainsv[ii] = vfallstp * mam4::sqrt(1.204e-3 / rhoair);
     // sum of precipitation in all bins
     precipsum += vfallrainsv[ii] * rr * rr * rr * xnumrainsv[ii];
 
@@ -213,7 +207,7 @@ void calc_aer_conc_frac(const int na, const Real xlo, const Real dx,
   // @param [in]  na           ! number of aerosol bins
   // @param [in]  xlo          ! lower limit of aerosol radius (log)
   // @param [in]  dx           ! aerosol radius bin width (log)
-  // @param [in]  xg0          ! log(mean radius)
+  // @param [in]  xg0          ! mam4::log(mean radius)
   // @param [in]  sx           ! standard deviation (log)
 
   // @param [out] raerosv(:)   ! aerosol radius [cm]
@@ -231,10 +225,10 @@ void calc_aer_conc_frac(const int na, const Real xlo, const Real dx,
   for (int ii = 0; ii < na; ++ii) {
     const Real xx = xlo + ii * dx;
     // aerosol radius in the bin [cm]
-    const Real aa = exp(xx);
+    const Real aa = mam4::exp(xx);
     raerosv[ii] = aa;
     const Real dum = (xx - xg0) / sx;
-    fnumaerosv[ii] = exp(-0.5 * dum * dum);
+    fnumaerosv[ii] = mam4::exp(-0.5 * dum * dum);
     fvolaerosv[ii] =
         four_thirds * fnumaerosv[ii] * Constants::pi * aa * aa * aa;
     anumsum += fnumaerosv[ii];
@@ -286,7 +280,7 @@ void calc_schmidt_number(const Real freepath, const Real r_aer,
   // working variables [unitless]
   const Real dum = freepath / r_aer;
   // ! slip correction factor [unitless]
-  const Real dumfuchs = one + 1.246 * dum + 0.42 * dum * exp(-0.87 / dum);
+  const Real dumfuchs = one + 1.246 * dum + 0.42 * dum * mam4::exp(-0.87 / dum);
   taurelax =
       two * rhoaero * r_aer * r_aer * dumfuchs / (9. * rhoair * airkinvisc);
 
@@ -348,7 +342,7 @@ void calc_impact_efficiency(const Real r_aer, const Real r_rain,
   const Real stokes = vfall * taurelax / r_rain;
   // Reynolds number [unitless]
   const Real reynolds = r_rain * vfall / airkinvisc;
-  const Real sqrtreynolds = sqrt(reynolds);
+  const Real sqrtreynolds = mam4::sqrt(reynolds);
   // efficiency of aerosol-collection  in different processes
   const Real ebrown = four *
                       (one + 0.4 * sqrtreynolds * pow(schmidt, one_third)) /
@@ -360,7 +354,7 @@ void calc_impact_efficiency(const Real r_aer, const Real r_rain,
   const Real eintercept = four * chi * (chi + dum);
 
   // ! ------------ calculate impact effect ------------
-  dum = log(one + reynolds);
+  dum = mam4::log(one + reynolds);
   const Real sstar = (1.2 + dum / 12.) / (one + dum);
   Real eimpact = zero;
   if (stokes > sstar) {
@@ -370,7 +364,7 @@ void calc_impact_efficiency(const Real r_aer, const Real r_rain,
   // ! ------------ calculate total effects ------------
   etotal = ebrown + eintercept + eimpact;
 
-  etotal = min(etotal, one);
+  etotal = mam4::min(etotal, one);
 } // calc_impact_efficiency
 
 /*=====================================================================*/
@@ -444,7 +438,7 @@ void calc_1_impact_rate(const Real dg0,     //  in
   const Real dr = 0.005;
   // // Nearest whole number: nint
   // // number of rain bins
-  // const int nr = 1 + round((rhi - rlo) / dr);
+  // const int nr = 1 + mam4::round((rhi - rlo) / dr);
   // FIXME: values to compute nr are hard-coded.
   const int nr = 50;
   // We comment this line because nr is hard-coded.
@@ -457,17 +451,17 @@ void calc_1_impact_rate(const Real dg0,     //  in
   // aerosol bin information
   const Real ag0 = dg0 / two; // mean radius of aerosol
   // standard deviation (log-normal distribution)
-  const Real sx = log(sigmag);
-  // log(mean radius) (log-normal distribution)
-  const Real xg0 = log(ag0);
+  const Real sx = mam4::log(sigmag);
+  // mam4::log(mean radius) (log-normal distribution)
+  const Real xg0 = mam4::log(ag0);
   const Real xg3 = xg0 + three * sx * sx; // mean + 3*std^2
   // BAD CONSTANT
   // set the iteration radius for aerosol particles
-  const Real dx = max(0.2 * sx, 0.01);
-  const Real xlo = xg3 - max(four * sx, two * dx);
-  const Real xhi = xg3 + max(four * sx, two * dx);
+  const Real dx = mam4::max(0.2 * sx, 0.01);
+  const Real xlo = xg3 - mam4::max(four * sx, two * dx);
+  const Real xhi = xg3 + mam4::max(four * sx, two * dx);
   // Nearest whole number: nint
-  const int na = 1 + round((xhi - xlo) / dx);
+  const int na = 1 + mam4::round((xhi - xlo) / dx);
 
   if (na > naerosvmax) {
     Kokkos::abort("subr. calc_1_impact_rate -- na > naerosvmax \n ");
@@ -570,7 +564,7 @@ inline void modal_aero_bcscavcoef_init(
   const Real one = 1;
   const Real three = 3;
   // BAD CONSTANT
-  const Real dlndg_nimptblgrow = log(1.25);
+  const Real dlndg_nimptblgrow = mam4::log(1.25);
   // ! set up temperature-pressure pair to compute impaction scavenging rates
   const Real temp_0C = Constants::melting_pt_h2o; //     ! K
   const Real press_750hPa = 0.75e6;               //  ! dynes/cm2
@@ -585,14 +579,15 @@ inline void modal_aero_bcscavcoef_init(
     const Real rhodryaero = aerosol_dry_density[imode];
     for (int jgrow = nimptblgrow_mind; jgrow <= nimptblgrow_maxd; ++jgrow) {
       // ratio of diameter for wet/dry aerosols [fraction]
-      const Real wetdiaratio = exp(Real(jgrow) * dlndg_nimptblgrow);
+      const Real wetdiaratio = mam4::exp(Real(jgrow) * dlndg_nimptblgrow);
       // aerosol diameter [m]
       const Real dg0 = dgnum_amode[imode] * wetdiaratio;
       // ratio of volume for wet/dry aerosols [fraction]
-      const Real wetvolratio = exp(Real(jgrow) * dlndg_nimptblgrow * three);
+      const Real wetvolratio =
+          mam4::exp(Real(jgrow) * dlndg_nimptblgrow * three);
       // dry and wet aerosol density [kg/m3]
       Real rhowetaero = one + (rhodryaero - one) / wetvolratio;
-      rhowetaero = min(rhowetaero, rhodryaero);
+      rhowetaero = mam4::min(rhowetaero, rhodryaero);
       /* FIXME: not sure why wet aerosol density is set as dry aerosol density
          here ! but the above calculation of rhowetaero is incorrect. ! I think
          the number 1.0_r8 should be 1000._r8 as the unit is kg/m3 ! the above
@@ -617,8 +612,8 @@ inline void modal_aero_bcscavcoef_init(
       calc_1_impact_rate(dg0_cgs, sigmag, rhowetaero_cgs, temp_0C, press_750hPa,
                          scavratenum, scavratevol);
 
-      scavimptblnum(jgrow - nimptblgrow_mind, imode) = log(scavratenum);
-      scavimptblvol(jgrow - nimptblgrow_mind, imode) = log(scavratevol);
+      scavimptblnum(jgrow - nimptblgrow_mind, imode) = mam4::log(scavratenum);
+      scavimptblvol(jgrow - nimptblgrow_mind, imode) = mam4::log(scavratevol);
 
     } // jgrow
 
@@ -695,7 +690,7 @@ void define_act_frac(const int lphase, const int imode,
     // all below-cloud scav OFF (anything cloud-borne is located "in-cloud")
     sol_factb = 0.0;
     // strat  in-cloud scav totally ON for cloud-borne
-    sol_facti = min(0.6, scav_fraction_in_cloud_strat);
+    sol_facti = mam4::min(0.6, scav_fraction_in_cloud_strat);
     // conv   in-cloud scav OFF (having this on would mean
     // that conv precip collects strat droplets)
     sol_factic = 0.0;
@@ -872,9 +867,9 @@ void set_f_act_coarse(const int kk,
   const int lcoardust = aero_model::lptr_dust_a_amode(idx_coarse);
   const int lcoarnacl = aero_model::lptr_nacl_a_amode(idx_coarse);
   const Real tmpdust =
-      max(0.0, state_q(kk, lcoardust) + ptend_q(kk, lcoardust) * dt);
+      mam4::max(0.0, state_q(kk, lcoardust) + ptend_q(kk, lcoardust) * dt);
   const Real tmpnacl =
-      max(0.0, state_q(kk, lcoarnacl) + ptend_q(kk, lcoarnacl) * dt);
+      mam4::max(0.0, state_q(kk, lcoarnacl) + ptend_q(kk, lcoarnacl) * dt);
   if (tmpdust + tmpnacl > small_value_30)
     f_act_conv_coarse =
         (f_act_conv_coarse_dust * tmpdust + f_act_conv_coarse_nacl * tmpnacl) /
@@ -976,10 +971,10 @@ void apportion_sfc_flux_deep(const Real rprddpsum, const Real rprdshsum,
 
   // working variables for precipitation and evaporation from deep and shallow
   // convection
-  const Real tmp_precdp = max(rprddpsum, small_value_35);
-  const Real tmp_precsh = max(rprdshsum, small_value_35);
-  const Real tmp_evapdp = max(evapcdpsum, small_value_36);
-  const Real tmp_evapsh = max(evapcshsum, small_value_36);
+  const Real tmp_precdp = mam4::max(rprddpsum, small_value_35);
+  const Real tmp_precsh = mam4::max(rprdshsum, small_value_35);
+  const Real tmp_evapdp = mam4::max(evapcdpsum, small_value_36);
+  const Real tmp_evapsh = mam4::max(evapcshsum, small_value_36);
 
   // assume that in- and below-cloud removal are proportional to
   // column precip production
@@ -991,10 +986,11 @@ void apportion_sfc_flux_deep(const Real rprddpsum, const Real rprdshsum,
   // assume that resuspension is proportional to
   // (wet removal)*[(precip evap)/(precip production)]
   //  working variables for resuspension from deep and shallow convection
-  const Real tmp_resudp = tmpa * min(tmp_evapdp / tmp_precdp, 1.0);
-  const Real tmp_resush = (1.0 - tmpa) * min(tmp_evapsh / tmp_precsh, 1.0);
-  Real tmpb = max(tmp_resudp, small_value_35) /
-              max(tmp_resudp + tmp_resush, small_value_35);
+  const Real tmp_resudp = tmpa * mam4::min(tmp_evapdp / tmp_precdp, 1.0);
+  const Real tmp_resush =
+      (1.0 - tmpa) * mam4::min(tmp_evapsh / tmp_precsh, 1.0);
+  Real tmpb = mam4::max(tmp_resudp, small_value_35) /
+              mam4::max(tmp_resudp + tmp_resush, small_value_35);
   tmpb = utils::min_max_bound(0.0, 1.0, tmpb);
 
   sflxecdp = sflxec * tmpb;

@@ -12,9 +12,6 @@
 namespace mam4 {
 namespace modal_aero_opt {
 
-using mam4::exp;
-using mam4::log;
-
 using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;
 using View3D = DeviceType::view_3d<Real>;
@@ -201,7 +198,7 @@ void modal_size_parameters(const Real sigma_logr_aer,
    sigma_logr_aer   geometric standard deviation of number distribution
    dgnumwet    aerosol wet number mode diameter [m]
    radsurf     aerosol surface mode radius [m]
-   logradsurf  log(aerosol surface mode radius)
+   logradsurf  mam4::log(aerosol surface mode radius)
    cheb      chebychev polynomial parameters
 
   FORTRAN refactoring: ismethod is tempararily used to ensure BFB test
@@ -210,11 +207,11 @@ void modal_size_parameters(const Real sigma_logr_aer,
   constexpr Real half = 0.5;
   constexpr Real one = 1.0;
   constexpr Real two = 2.0;
-  const Real xrmin = log(rmmin);
-  const Real xrmax = log(rmmax);
+  const Real xrmin = mam4::log(rmmin);
+  const Real xrmax = mam4::log(rmmax);
 
-  const Real alnsg_amode = log(sigma_logr_aer);
-  const Real explnsigma = exp(two * alnsg_amode * alnsg_amode);
+  const Real alnsg_amode = mam4::log(sigma_logr_aer);
+  const Real explnsigma = mam4::exp(two * alnsg_amode * alnsg_amode);
   // do kk = top_lev, pver
   // do icol = 1, ncol
   //  convert from number mode diameter to surface area
@@ -223,9 +220,9 @@ void modal_size_parameters(const Real sigma_logr_aer,
   //  here two calculations are used to ensure passing BFB test
   //  can be simplified (there is only round-off difference
   if (ismethod2) {
-    logradsurf = log(half * dgnumwet) + two * alnsg_amode * alnsg_amode;
+    logradsurf = mam4::log(half * dgnumwet) + two * alnsg_amode * alnsg_amode;
   } else {
-    logradsurf = log(radsurf);
+    logradsurf = mam4::log(radsurf);
 
   } // ismethod2
   //  --------------- FORTRAN refactoring -------------------
@@ -546,7 +543,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
     const View2D &tauxar, const View2D &wa, const View2D &ga,
     const View2D &fa) {
 
-  const Real xrmax = log(rmmax);
+  const Real xrmax = mam4::log(rmmax);
   //  calculates aerosol sw radiative properties
   // dt               timestep [s]
   // lchnk             chunk id
@@ -579,7 +576,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
 
   // sigma_logr_aer          geometric standard deviation of number
   // distribution radsurf(pcols,pver)     aerosol surface mode radius
-  // logradsurf(pcols,pver)  log(aerosol surface mode radius)
+  // logradsurf(pcols,pver)  mam4::log(aerosol surface mode radius)
   // cheb(ncoef,pcols,pver)  chebychev polynomial parameters
 
   // specvol(:,:)         volume concentration of aerosol specie [m3/kg]
@@ -713,7 +710,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
       //  do icol=1,ncol
 
       if (logradsurf <= xrmax) {
-        pext = exp(pext);
+        pext = mam4::exp(pext);
       } else {
         // BAD CONSTANT
         pext = 1.5 / (radsurf * rhoh2o); //  geometric optics

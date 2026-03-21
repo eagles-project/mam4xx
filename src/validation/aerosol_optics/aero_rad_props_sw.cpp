@@ -11,7 +11,7 @@ using namespace mam4::modal_aero_opt;
 using namespace mam4::ndrop;
 using namespace mam4::validation;
 
-void aer_rad_props_sw(Ensemble *ensemble) {
+void aero_rad_props_sw(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename mam4::HostType::view_1d<Real>;
     using View3DHost = typename mam4::HostType::view_3d<Real>;
@@ -324,10 +324,10 @@ void aer_rad_props_sw(Ensemble *ensemble) {
     mam4::modal_aero_opt::CalcsizeData cal_data;
     cal_data.initialize();
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          static constexpr int nlev_loc = nlev;
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
+          static constexpr int nlev_loc = mam4::nlev;
           // we need to inject validation values to progs.
           auto progs_in = progs;
           Kokkos::parallel_for(
@@ -335,14 +335,15 @@ void aer_rad_props_sw(Ensemble *ensemble) {
                 // copy data from prog to stateq
                 const auto &state_q_kk = ekat::subview(state_q, kk);
                 const auto &qqcw_kk = ekat::subview(qqcw, kk);
-                utils::inject_qqcw_to_prognostics(qqcw_kk.data(), progs_in, kk);
-                utils::inject_stateq_to_prognostics(state_q_kk.data(), progs_in,
-                                                    kk);
+                mam4::utils::inject_qqcw_to_prognostics(qqcw_kk.data(),
+                                                        progs_in, kk);
+                mam4::utils::inject_stateq_to_prognostics(state_q_kk.data(),
+                                                          progs_in, kk);
               });
           team.team_barrier();
           Real aodvis = 0.0;
 
-          aero_rad_props::aero_rad_props_sw(
+          mam4::aero_rad_props::aero_rad_props_sw(
               team, dt, progs_in, atm, zi, pdel, ssa_cmip6_sw, af_cmip6_sw,
               ext_cmip6_sw, tau, tau_w, tau_w_g, tau_w_f,
               // FIXME
@@ -354,17 +355,18 @@ void aer_rad_props_sw(Ensemble *ensemble) {
               Kokkos::TeamVectorRange(team, nlev_loc), [&](int kk) {
                 const auto state_q_kk = ekat::subview(state_q, kk);
                 const auto qqcw_kk = ekat::subview(qqcw, kk);
-                utils::extract_stateq_from_prognostics(progs_in, atm,
-                                                       state_q_kk, kk);
+                mam4::utils::extract_stateq_from_prognostics(progs_in, atm,
+                                                             state_q_kk, kk);
 
-                utils::extract_qqcw_from_prognostics(progs_in, qqcw_kk, kk);
+                mam4::utils::extract_qqcw_from_prognostics(progs_in, qqcw_kk,
+                                                           kk);
               });
         });
 
     Kokkos::deep_copy(qqcw_host, qqcw);
     count = 0;
     for (int kk = 0; kk < pver; ++kk) {
-      for (int i = 0; i < pcnst; ++i) {
+      for (int i = 0; i < mam4::pcnst; ++i) {
         qqcw_db[count] = qqcw_host(kk, i);
         count++;
       }

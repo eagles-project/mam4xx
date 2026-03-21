@@ -26,11 +26,6 @@ namespace mam4 {
 
 namespace nucleation {
 
-using mam4::exp;
-using mam4::log;
-using mam4::pow;
-using mam4::sqrt;
-
 //--------------------------------------------------------
 // calculates boundary nucleation nucleation rate
 // using the linear or quadratic parameterization in
@@ -55,13 +50,12 @@ void pbl_nuc_wang2008(Real so4vol, Real pi, int pbl_nuc_wang2008_user_choice,
   // subr arguments (inout or out)
   // integer,  intent(out)   :: pbl_nuc_wang2008_actual   ! 1 = first-order, 2 =
   // second-order scheme, 0 = none real(wp), intent(inout) :: ratenucl ! binary
-  // nucleation rate, j (# cm-3 s-1) real(wp), intent(inout) :: rateloge ! log(
-  // ratenucl ) real(wp), intent(inout) :: cnum_tot                  ! total
-  // number of molecules in one cluster real(wp), intent(inout) :: cnum_h2so4 !
-  // number of h2so4 molecules in one cluster real(wp), intent(inout) ::
-  // cnum_nh3                  ! number of nh3 molecules   in one cluster
-  // real(wp), intent(inout) :: radius_cluster_nm         ! the radius of a
-  // cluster in nm
+  // nucleation rate, j (# cm-3 s-1) real(wp), intent(inout) :: rateloge !
+  // mam4::log( ratenucl ) real(wp), intent(inout) :: cnum_tot ! total number of
+  // molecules in one cluster real(wp), intent(inout) :: cnum_h2so4 ! number of
+  // h2so4 molecules in one cluster real(wp), intent(inout) :: cnum_nh3 ! number
+  // of nh3 molecules   in one cluster real(wp), intent(inout) ::
+  // radius_cluster_nm         ! the radius of a cluster in nm
 
   constexpr Real mw_h2so4_gmol = 98.0;       // BAD_CONSTANT
   constexpr Real avogadro_mol = 6.023e23;    // BAD_CONSTANT
@@ -87,7 +81,7 @@ void pbl_nuc_wang2008(Real so4vol, Real pi, int pbl_nuc_wang2008_user_choice,
 
   // Scale the calculated PBL nuc rate by user-specificed tuning factor
   tmp_ratenucl = tmp_ratenucl * adjust_factor_pbl_ratenucl;
-  Real tmp_rateloge = log(max(1.0e-38, tmp_ratenucl));
+  Real tmp_rateloge = mam4::log(max(1.0e-38, tmp_ratenucl));
 
   //------------------------------------------------------------------
   // If PBL nuc rate is lower than the incoming ternary/binary rate,
@@ -142,7 +136,7 @@ void binary_nuc_vehk2002(Real temp, Real rh, Real so4vol, Real &ratenucl,
 
   // arguments (out)
   // real(wp), intent(out) :: ratenucl         ! binary nucleation rate, j (#
-  // cm-3 s-1) real(wp), intent(out) :: rateloge         ! log( ratenucl )
+  // cm-3 s-1) real(wp), intent(out) :: rateloge         ! mam4::log( ratenucl )
   //
   // real(wp), intent(out) :: cnum_h2so4       ! number of h2so4 molecules
   //                                           ! in the critical nucleus
@@ -157,7 +151,7 @@ void binary_nuc_vehk2002(Real temp, Real rh, Real so4vol, Real &ratenucl,
   // calc nucleation rate
   // following eq. (12) in Vehkam\"aki et al. (2002)
   rateloge = vehkamaki2002::log_nucleation_rate(so4vol, temp, rh, x_crit);
-  ratenucl = exp(min(rateloge, log(1e38)));
+  ratenucl = mam4::exp(min(rateloge, mam4::log(1e38)));
 
   // calc number of molecules in critical cluster
   // following eq. (13) in Vehkam\"aki et al. (2002)
@@ -194,7 +188,7 @@ void ternary_nuc_merik2007(Real t, Real rh, Real c2, Real c3, Real &j_log,
                            Real &ntot, Real &nacid, Real &namm, Real &r) {
   Real t_onset = merikanto2007::onset_temperature(rh, c2, c3);
 
-  // Set log(J) assuming no nucleation.
+  // Set mam4::log(J) assuming no nucleation.
 
   // If t_onset > t, nucleation occurs.
   if (t_onset > t) {
@@ -262,7 +256,7 @@ void mer07_veh02_wang08_nuc_1box(int newnuc_method_user_choice,
   // Set "effective zero"
   //---------------------------------------------------------------
   ratenuclt = 1.0e-38;
-  rateloge = log(ratenuclt);
+  rateloge = mam4::log(ratenuclt);
 
   //---------------------------------------------------------------
   // Make call to merikanto ternary parameterization routine
@@ -294,7 +288,7 @@ void mer07_veh02_wang08_nuc_1box(int newnuc_method_user_choice,
     newnuc_method_actual = 2;
   }
 
-  rateloge += log(max(1.0e-38, adjust_factor_pbl_ratenucl));
+  rateloge += mam4::log(max(1.0e-38, adjust_factor_pbl_ratenucl));
 
   //---------------------------------------------------------------------
   // Do boundary layer nuc
@@ -319,7 +313,7 @@ void mer07_veh02_wang08_nuc_1box(int newnuc_method_user_choice,
     dnclusterdt = 0.0;
   } else {
     // ratenuclt is #/cm3/s; dnclusterdt is #/m3/s
-    dnclusterdt = exp(rateloge) * 1.0e6;
+    dnclusterdt = mam4::exp(rateloge) * 1.0e6;
   }
 } // end mer07_veh02_wang08_nuc_1box()
 
@@ -544,7 +538,7 @@ void mer07_veh02_nuc_mosaic_1box(
   // FIXME: BAD CONSTANTS
   Real nh3ppt = qnh3_cur * 1.0e12;
   Real ratenuclt = 1.0e-38;
-  Real rateloge = log(ratenuclt);
+  Real rateloge = mam4::log(ratenuclt);
 
   Real cnum_h2so4 = 0.0;
   Real cnum_tot = 0.0;
@@ -571,7 +565,8 @@ void mer07_veh02_nuc_mosaic_1box(
   }
 
   // FIXME: BAD CONSTANT
-  rateloge = rateloge + log(max(1.0e-38, adjust_factor_bin_tern_ratenucl));
+  rateloge =
+      rateloge + mam4::log(max(1.0e-38, adjust_factor_bin_tern_ratenucl));
 
   // do boundary layer nuc
   if ((newnuc_method_flagaa == 11) || (newnuc_method_flagaa == 12)) {
@@ -593,7 +588,7 @@ void mer07_veh02_nuc_mosaic_1box(
     return;
   // REFACTOR NOTE:  if exit above, no yaml / python data written out
 
-  ratenuclt = exp(rateloge);
+  ratenuclt = mam4::exp(rateloge);
   // ratenuclt_bb is #/m3/s; ratenuclt is #/cm3/s;
   Real ratenuclt_bb = ratenuclt * 1.0e6;
   dnclusterdt = ratenuclt_bb;
@@ -602,7 +597,7 @@ void mer07_veh02_nuc_mosaic_1box(
   // ammsulf/ammbisulf
   // FIXME: BAD CONSTANTS
   Real tmpa = max(0.10, min(0.95, rh_in));
-  Real wetvol_dryvol = 1.0 - 0.56 / log(tmpa);
+  Real wetvol_dryvol = 1.0 - 0.56 / mam4::log(tmpa);
 
   // determine size bin into which the new particles go
   // (probably it will always be bin #1, but ...)
@@ -610,7 +605,7 @@ void mer07_veh02_nuc_mosaic_1box(
                      (1.0e3 * dens_sulfacid * avogad);
   // correction when host code sulfate is really ammonium bisulfate/sulfate
   voldry_clus = voldry_clus * (mw_so4a_host / mw_so4a);
-  Real dpdry_clus = pow(voldry_clus * 6.0 / pi, onethird);
+  Real dpdry_clus = mam4::pow(voldry_clus * 6.0 / pi, onethird);
 
   int igrow;
   isize_nuc = 1;
@@ -634,7 +629,7 @@ void mer07_veh02_nuc_mosaic_1box(
       }
     }
   }
-  Real voldry_part = (pi / 6.0) * pow(dpdry_part, 3);
+  Real voldry_part = (pi / 6.0) * mam4::pow(dpdry_part, 3);
 
   // determine composition and density of the "grown particles"
   // the grown particles are assumed to be liquid
@@ -696,7 +691,7 @@ void mer07_veh02_nuc_mosaic_1box(
     // use kk2002 eqn 21 for h2so4 uptake, and correct for nh3 & h2o uptake
     // h2so4 molecular speed (m/s);
     // FIXME: BAD CONSTANTS
-    Real tmp_spd = 14.7 * sqrt(temp_in);
+    Real tmp_spd = 14.7 * mam4::sqrt(temp_in);
     Real gr_kk = 3.0e-9 * tmp_spd * mw_sulfacid * so4vol_in /
                  (dens_part * wet_volfrac_so4a);
 
@@ -706,16 +701,17 @@ void mer07_veh02_nuc_mosaic_1box(
     // dfin_kk = wet diam (nm) of grown particle having dry dia = dpdry_part
     // (m)
     // FIXME: BAD CONSTANT
-    Real dfin_kk = 1.0e9 * dpdry_part * pow(wetvol_dryvol, onethird);
+    Real dfin_kk = 1.0e9 * dpdry_part * mam4::pow(wetvol_dryvol, onethird);
     // dnuc_kk = wet diam (nm) of cluster
     Real dnuc_kk = 2.0 * radius_cluster;
     dnuc_kk = max(dnuc_kk, 1.0);
     // neglect (dmean/150)**0.048 factor,
     // which should be very close to 1.0 because of small exponent
     // FIXME: BAD CONSTANTS
-    Real gamma_kk = 0.23 * pow(dnuc_kk, 0.2) * pow(dfin_kk / 3.0, 0.075) *
-                    pow(dens_part * 1.0e-3, -0.33) *
-                    pow(temp_in / 293.0, -0.75);
+    Real gamma_kk = 0.23 * mam4::pow(dnuc_kk, 0.2) *
+                    mam4::pow(dfin_kk / 3.0, 0.075) *
+                    mam4::pow(dens_part * 1.0e-3, -0.33) *
+                    mam4::pow(temp_in / 293.0, -0.75);
 
     // "cs_prime parameter" (1/m2)
     // instead kk2002 eqn 3, use
@@ -733,7 +729,7 @@ void mer07_veh02_nuc_mosaic_1box(
     tmpa = max(tmpa, 0.0);
     // FIXME: BAD CONSTANT
     // tmpb = h2so4 gas diffusivity (m2/s, then m2/h)
-    tmpb = 6.7037e-6 * pow(temp_in, 0.75) / cair;
+    tmpb = 6.7037e-6 * mam4::pow(temp_in, 0.75) / cair;
     // m2/h
     // FIXME: BAD CONSTANT
     tmpb = tmpb * 3600.0;
@@ -742,7 +738,7 @@ void mer07_veh02_nuc_mosaic_1box(
     // "nu" parameter (nm) -- kk2002 eqn 11
     Real nu_kk = gamma_kk * cs_prime_kk / gr_kk;
     // nucleation rate adjustment factor (--) -- kk2002 eqn 13
-    factor_kk = exp((nu_kk / dfin_kk) - (nu_kk / dnuc_kk));
+    factor_kk = mam4::exp((nu_kk / dfin_kk) - (nu_kk / dnuc_kk));
   }
   Real ratenuclt_kk = ratenuclt_bb * factor_kk;
 
@@ -876,7 +872,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
 
   // wet/dry volume ratio - use simple kohler approx for ammsulf/ammbisulf
   tmpa = max(0.10, min(0.95, rh_in));
-  wetvol_dryvol = 1.0 - 0.56 / log(tmpa);
+  wetvol_dryvol = 1.0 - 0.56 / mam4::log(tmpa);
 
   // determine size bin into which the new particles go
   // (probably it will always be bin #1, but ...)
@@ -885,7 +881,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
 
   // correction when host code sulfate is really ammonium bisulfate/sulfate
   voldry_clus *= (mw_so4a_host / mw_so4a);
-  dpdry_clus = pow(voldry_clus * 6.0 / pi, onethird);
+  dpdry_clus = mam4::pow(voldry_clus * 6.0 / pi, onethird);
 
   isize_nuc = 1;
   dpdry_part = dp_lo_sect[0];
@@ -964,14 +960,14 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
   } else {
     // "gr" parameter (nm/h) = condensation growth rate of new particles
     // use kk2002 eqn 21 for h2so4 uptake, and correct for nh3 & h2o uptake
-    tmp_spd = 14.7 * sqrt(temp_in); // h2so4 molecular speed [m/s]
+    tmp_spd = 14.7 * mam4::sqrt(temp_in); // h2so4 molecular speed [m/s]
     gr_kk = 3.0e-9 * tmp_spd * mw_sulfacid * so4vol_in /
             (dens_part * wet_volfrac_so4a);
 
     // "gamma" parameter (nm2/m2/h)
     // use kk2002 eqn 22
     // dfin_kk = wet diam (nm) of grown particle having dry dia = dpdry_part (m)
-    dfin_kk = 1.0e9 * dpdry_part * pow(wetvol_dryvol, onethird);
+    dfin_kk = 1.0e9 * dpdry_part * mam4::pow(wetvol_dryvol, onethird);
 
     // dnuc_kk = wet diam (nm) of cluster
     dnuc_kk = 2.0 * radius_cluster;
@@ -979,8 +975,10 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
 
     // neglect (dmean/150)**0.048 factor,
     // which should be very close to 1.0 because of small exponent
-    gamma_kk = 0.23 * pow(dnuc_kk, 0.2) * pow(dfin_kk / 3.0, 0.075) *
-               pow(dens_part * 1.0e-3, -0.33) * pow(temp_in / 293.0, -0.75);
+    gamma_kk = 0.23 * mam4::pow(dnuc_kk, 0.2) *
+               mam4::pow(dfin_kk / 3.0, 0.075) *
+               mam4::pow(dens_part * 1.0e-3, -0.33) *
+               mam4::pow(temp_in / 293.0, -0.75);
 
     // "cs_prime parameter" (1/m2)
     // instead of kk2002 eqn 3, use
@@ -996,7 +994,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
     tmpa = max(tmpa, 0.0);
 
     // tmpb = h2so4 gas diffusivity ([m2/s], then [m2/h])
-    tmpb = 6.7037e-6 * pow(temp_in, 0.75) / cair;
+    tmpb = 6.7037e-6 * mam4::pow(temp_in, 0.75) / cair;
     tmpb *= 3600.0; // [m2/h] 3600 = seconds in hour
     cs_prime_kk = tmpa / (4.0 * pi * tmpb * accom_coef_h2so4);
 
@@ -1004,7 +1002,7 @@ void newnuc_cluster_growth(Real ratenuclt_bb, Real cnum_h2so4, Real cnum_nh3,
     nu_kk = gamma_kk * cs_prime_kk / gr_kk;
 
     // nucleation rate adjustment factor (--) -- kk2002 eqn 13
-    factor_kk = exp((nu_kk / dfin_kk) - (nu_kk / dnuc_kk));
+    factor_kk = mam4::exp((nu_kk / dfin_kk) - (nu_kk / dnuc_kk));
   }
   ratenuclt_kk = ratenuclt_bb * factor_kk;
 
@@ -1129,8 +1127,8 @@ private:
     using mam4::exp;
     using mam4::log;
     // dry-diameter limits for "grown" new particles
-    dp_lo_mode = exp(0.67 * log(modes(nait).min_diameter) +
-                     0.33 * log(modes(nait).max_diameter));
+    dp_lo_mode = mam4::exp(0.67 * mam4::log(modes(nait).min_diameter) +
+                           0.33 * mam4::log(modes(nait).max_diameter));
     dp_hi_mode = modes(nait).max_diameter;
   }
 
@@ -1722,7 +1720,8 @@ public:
 
 //     // dry-diameter limits for "grown" new particles
 //     dp_lo_mode[0] =
-//         exp(0.67 * log(dgnumlo_aer[nait]) + 0.33 * log(dgnum_aer[nait]));
+//         mam4::exp(0.67 * mam4::log(dgnumlo_aer[nait]) + 0.33 *
+//         mam4::log(dgnum_aer[nait]));
 //     dp_hi_mode[0] = dgnumhi_aer[nait];
 
 //     // mass1p_... = mass (kg) of so4 & nh4 in a single particle of diameter

@@ -112,13 +112,6 @@ public:
 
 namespace drydep {
 
-using mam4::atan;
-using mam4::exp;
-using mam4::log;
-using mam4::min;
-using mam4::pow;
-using mam4::sqrt;
-
 // ##############################################################################
 //  Given a coordinate xw, an interpolating polynomial ff and its derivative
 //  fdot, calculate the value of the polynomial (psistar) at xin.
@@ -286,8 +279,10 @@ void cfdotmc_pro(const ConstColumnView xw /*nlev+1*/,
     fdot[kk] = spitfire::median(fdot[kk], qpl, qpr);
 
     const Real ttlmt = spitfire::minmod(qpl, qpr);
-    const Real tmin = min(min(0.0, 3 * ss[kk]), min(1.5 * tt, ttlmt));
-    const Real tmax = max(max(0.0, 3 * ss[kk]), max(1.5 * tt, ttlmt));
+    const Real tmin =
+        mam4::min(mam4::min(0.0, 3 * ss[kk]), mam4::min(1.5 * tt, ttlmt));
+    const Real tmax =
+        mam4::max(mam4::max(0.0, 3 * ss[kk]), mam4::max(1.5 * tt, ttlmt));
 
     fdot[kk] = fdot[kk] + spitfire::minmod(tmin - fdot[kk], tmax - fdot[kk]);
   }
@@ -421,7 +416,7 @@ KOKKOS_INLINE_FUNCTION Real sedimentation_solver_for_1_tracer(
   // Filter out any negative fluxes from the getflx routine
 
   for (int kk = 1; kk < nlev; ++kk)
-    dtmassflux[kk] = max(0.0, dtmassflux[kk]);
+    dtmassflux[kk] = mam4::max(0.0, dtmassflux[kk]);
 
   //  Set values for the upper and lower boundaries
   // no flux at model top
@@ -435,7 +430,7 @@ KOKKOS_INLINE_FUNCTION Real sedimentation_solver_for_1_tracer(
   //  thin surface layers?
   for (int kk = 0; kk < nlev; ++kk)
     dtmassflux[kk + 1] =
-        min(dtmassflux[kk + 1], mxsedfac * qq_in[kk] * pdel[kk]);
+        mam4::min(dtmassflux[kk + 1], mxsedfac * qq_in[kk] * pdel[kk]);
 
   // -----------------------------------------------------------------------
   //  Calculate the mixing ratio tendencies resulting from flux divergence
@@ -455,8 +450,9 @@ KOKKOS_INLINE_FUNCTION Real sedimentation_solver_for_1_tracer(
 KOKKOS_INLINE_FUNCTION
 Real radius_for_moment(const int moment, const Real sig_part,
                        const Real radius_part, const Real radius_max) {
-  const Real lnsig = log(sig_part);
-  return min(radius_max, radius_part) * exp((moment - 1.5) * lnsig * lnsig);
+  const Real lnsig = mam4::log(sig_part);
+  return mam4::min(radius_max, radius_part) *
+         mam4::exp((moment - 1.5) * lnsig * lnsig);
 }
 
 //==========================================================================
@@ -490,13 +486,14 @@ Real slip_correction_factor(const Real dyn_visc, const Real pres,
   // [m]
   const Real mean_free_path =
       2.0 * dyn_visc /
-      (pres * sqrt(8.0 / (Constants::pi * Constants::r_gas_dry_air *
-                          temp))); // (BAD CONSTANTS)
+      (pres * mam4::sqrt(8.0 / (Constants::pi * Constants::r_gas_dry_air *
+                                temp))); // (BAD CONSTANTS)
 
   const Real slip_correction_factor =
-      1.0 + mean_free_path *
-                (1.257 + 0.4 * exp(-1.1 * particle_radius / mean_free_path)) /
-                particle_radius; // (BAD CONSTANTS)
+      1.0 +
+      mean_free_path *
+          (1.257 + 0.4 * mam4::exp(-1.1 * particle_radius / mean_free_path)) /
+          particle_radius; // (BAD CONSTANTS)
 
   return slip_correction_factor;
 }
@@ -542,8 +539,8 @@ Real gravit_settling_velocity(const Real particle_radius,
   // Account for size distribution (i.e., we are calculating the bulk velocity
   // for a particle population instead of a single particle).
 
-  const Real lnsig = log(particle_sig);
-  const Real dispersion = exp(2.0 * lnsig * lnsig);
+  const Real lnsig = mam4::log(particle_sig);
+  const Real dispersion = mam4::exp(2.0 * lnsig * lnsig);
 
   return gravit_settling_velocity * dispersion;
 }
@@ -653,7 +650,8 @@ void modal_aero_turb_drydep_velocity(
       static constexpr Real stickfrac_lowerbnd =
           1.0e-10; // (BAD CONSTANT) lower bound of stick fraction
       if (iwet(lt) < 0) {
-        stickfrac = max(stickfrac_lowerbnd, exp(-sqrt(stk_nbr)));
+        stickfrac =
+            mam4::max(stickfrac_lowerbnd, mam4::exp(-mam4::sqrt(stk_nbr)));
       }
 
       //----------------------------------------------------------------------------------
@@ -786,17 +784,17 @@ void calcram(const Real landfrac, const Real icefrac, const Real ocnfrac,
 
     // calculate aerodynamic resistence
     if (psi > 0.0) {
-      ram1_out = 1.0 / xkar / ustar * (log(temp) + 4.7 * (psi - psi0));
+      ram1_out = 1.0 / xkar / ustar * (mam4::log(temp) + 4.7 * (psi - psi0));
     } else {
       const Real nu = pow(1.00 - 15.000 * psi, 0.25);
       const Real nu0 = pow(1.00 - 15.000 * psi0, 0.25);
 
       if (ustar != 0.0) {
         ram1_out = 1.0 / xkar / ustar *
-                   (log(temp) +
-                    log(((square(nu0) + 1.0) * square(nu0 + 1.0)) /
-                        ((square(nu) + 1.0) * square(nu + 1.0))) +
-                    2.0 * (atan(nu) - atan(nu0)));
+                   (mam4::log(temp) +
+                    mam4::log(((square(nu0) + 1.0) * square(nu0 + 1.0)) /
+                              ((square(nu) + 1.0) * square(nu + 1.0))) +
+                    2.0 * (mam4::atan(nu) - mam4::atan(nu0)));
       } else {
         ram1_out = 0.0;
       }
@@ -1065,7 +1063,7 @@ void aero_model_drydep(
           const Real alnsg_amode = ::mam4::log(sigmag_amode);
           // rad_aer  // volume mean wet radius of interstitial aerosols [m]
           const Real rad_aer = 0.5 * dgncur_awet[imode][kk] *
-                               ::mam4::exp(1.5 * square(alnsg_amode));
+                               mam4::exp(1.5 * square(alnsg_amode));
           // dens_aer : wet density of interstitial aerosols [kg/m3]
           const Real dens_aer = wetdens[imode][kk];
 

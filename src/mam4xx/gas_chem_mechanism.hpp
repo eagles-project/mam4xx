@@ -13,8 +13,6 @@
 namespace mam4 {
 namespace gas_chemistry {
 
-using mam4::exp;
-
 constexpr int nabscol = 2;    // number of absorbing densities
 constexpr int rxntot = 7;     // number of total reactions
 constexpr int gas_pcnst = 31; // number of gas phase species
@@ -55,9 +53,9 @@ const Real *get_adv_mass() {
 
 KOKKOS_INLINE_FUNCTION
 void setrxt(Real rates[rxntot], const Real temp) {
-  rates[2] = 2.9000000000e-12 * exp(-160.000000 / temp);
-  rates[4] = 9.6000000000e-12 * exp(-234.000000 / temp);
-  rates[6] = 1.9000000000e-13 * exp(520.000000 / temp);
+  rates[2] = 2.9000000000e-12 * mam4::exp(-160.000000 / temp);
+  rates[4] = 9.6000000000e-12 * mam4::exp(-234.000000 / temp);
+  rates[6] = 1.9000000000e-13 * mam4::exp(520.000000 / temp);
 } // setrxt
 
 KOKKOS_INLINE_FUNCTION

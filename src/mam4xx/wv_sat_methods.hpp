@@ -10,9 +10,6 @@ namespace mam4 {
 
 namespace wv_sat_methods {
 
-using mam4::log10;
-using mam4::pow;
-
 KOKKOS_INLINE_FUNCTION
 Real GoffGratch_svp_water(const Real temperature) {
   // Goff & Gratch (1946)
@@ -33,16 +30,18 @@ Real GoffGratch_svp_water(const Real temperature) {
   const Real svp_at_steam_pt_pressure = 1013.246; // BAD_CONSTANT!
 
   // uncertain below -70 C (NOTE: from mam4)
-  return pow(ten,
-             -Real(7.90298) * (tboil / temperature - one) +
-                 Real(5.02808) * log10(tboil / temperature) -
-                 Real(1.3816e-7) *
-                     (pow(ten, Real(11.344) * (one - temperature / tboil)) -
-                      one) +
-                 Real(8.1328e-3) *
-                     (pow(ten, -Real(3.49149) * (tboil / temperature - one)) -
-                      one) +
-                 log10(svp_at_steam_pt_pressure)) *
+  return mam4::pow(ten,
+                   -Real(7.90298) * (tboil / temperature - one) +
+                       Real(5.02808) * mam4::log10(tboil / temperature) -
+                       Real(1.3816e-7) *
+                           (mam4::pow(ten, Real(11.344) *
+                                               (one - temperature / tboil)) -
+                            one) +
+                       Real(8.1328e-3) *
+                           (mam4::pow(ten, -Real(3.49149) *
+                                               (tboil / temperature - one)) -
+                            one) +
+                       mam4::log10(svp_at_steam_pt_pressure)) *
          ten * ten;
 
 } // GoffGratch_svp_water
@@ -60,10 +59,10 @@ Real GoffGratch_svp_ice(const Real temperature) {
   // https://en.wikipedia.org/wiki/Goff-Gratch_equation
   const Real svp_at_ice_pt_pressure = 6.1071; // BAD_CONSTANT!
 
-  return pow(ten, -Real(9.09718) * (h2otrip / temperature - one) -
-                      Real(3.56654) * log10(h2otrip / temperature) +
-                      Real(0.876793) * (one - temperature / h2otrip) +
-                      log10(svp_at_ice_pt_pressure)) *
+  return mam4::pow(ten, -Real(9.09718) * (h2otrip / temperature - one) -
+                            Real(3.56654) * mam4::log10(h2otrip / temperature) +
+                            Real(0.876793) * (one - temperature / h2otrip) +
+                            mam4::log10(svp_at_ice_pt_pressure)) *
          ten * ten;
 
 } // end GoffGratch_svp_ice

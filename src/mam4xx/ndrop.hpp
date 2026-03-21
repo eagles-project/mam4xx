@@ -15,12 +15,6 @@ namespace mam4 {
 
 namespace ndrop {
 
-using mam4::erf;
-using mam4::exp;
-using mam4::log;
-using mam4::pow;
-using mam4::sqrt;
-
 using View1D = DeviceType::view_1d<Real>;
 using View2D = DeviceType::view_2d<Real>;
 using ConstView2D = DeviceType::view_2d<const Real>;
@@ -228,19 +222,20 @@ void maxsat(
     return;
 
   for (int m = 0; m < nmode; m++) {
-    ar_func1[m] = 0.5 * exp(2.5 * square(log(modes(m).mean_std_dev)));
-    ar_func2[m] = 1.0 + 0.25 * log(modes(m).mean_std_dev);
+    ar_func1[m] =
+        0.5 * mam4::exp(2.5 * square(mam4::log(modes(m).mean_std_dev)));
+    ar_func2[m] = 1.0 + 0.25 * mam4::log(modes(m).mean_std_dev);
     if (eta[m] > small) {
-      g1 = (zeta / eta[m]) * sqrt(zeta / eta[m]);
-      g2 = (smode_crit[m] / sqrt(eta[m] + 3.0 * zeta)) *
-           sqrt(smode_crit[m] / sqrt(eta[m] + 3.0 * zeta));
+      g1 = (zeta / eta[m]) * mam4::sqrt(zeta / eta[m]);
+      g2 = (smode_crit[m] / mam4::sqrt(eta[m] + 3.0 * zeta)) *
+           mam4::sqrt(smode_crit[m] / mam4::sqrt(eta[m] + 3.0 * zeta));
       sum += (ar_func1[m] * g1 + ar_func2[m] * g2) /
              (smode_crit[m] * smode_crit[m]);
     } else {
       sum = big;
     }
   }
-  smax = 1.0 / sqrt(sum);
+  smax = 1.0 / mam4::sqrt(sum);
   return;
 } // end maxsat
 
@@ -380,8 +375,8 @@ void ccncalc(const Real state_q[aero_model::pcnst], const Real tair,
   //// const Real percent_to_fraction = 0.01;
   // super(:)=supersat(:)*percent_to_fraction
   // supersaturation [fraction]
-  const Real sq2 = sqrt(2.0);
-  const Real two_over_root27 = 2.0 / sqrt(27.0);
+  const Real sq2 = mam4::sqrt(2.0);
+  const Real two_over_root27 = 2.0 / mam4::sqrt(27.0);
   // BAD CONSTANT
   // supersaturation (%) to determine ccn concentration
   const Real super[psat] = {0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01};
@@ -403,7 +398,7 @@ void ccncalc(const Real state_q[aero_model::pcnst], const Real tair,
   // surface tension parameter [m]
   const Real aparam = surften_coef / tair;
   // [m^(3/2)]
-  const Real ssat_coeff = two_over_root27 * aparam * sqrt(aparam);
+  const Real ssat_coeff = two_over_root27 * aparam * mam4::sqrt(aparam);
 
   // interstitial + activated aerosol number conc [#/m3]
   Real naerosol[AeroConfig::num_modes()] = {zero};
@@ -431,15 +426,15 @@ void ccncalc(const Real state_q[aero_model::pcnst], const Real tair,
       // [m3]
       const Real amcube = amcubecoef_imode * vaerosol[imode] / naerosol[imode];
       // critical supersaturation at mode radius [unitless]
-      ss_crit_imode = ssat_coeff / sqrt(hygro[imode] * amcube);
+      ss_crit_imode = ssat_coeff / mam4::sqrt(hygro[imode] * amcube);
     }
 
     const Real argfactor_imode = twothird / (sq2 * alogsig[imode]);
     for (int lsat = 0; lsat < psat; ++lsat) {
       // [dimensionless]
       const Real arg_erf_ccn =
-          argfactor_imode * log(ss_crit_imode / super[lsat]);
-      ccn[lsat] += naerosol[imode] * half * (one - erf(arg_erf_ccn));
+          argfactor_imode * mam4::log(ss_crit_imode / super[lsat]);
+      ccn[lsat] += naerosol[imode] * half * (one - mam4::erf(arg_erf_ccn));
     }
 
   } // imode end
@@ -483,8 +478,8 @@ void ndrop_init(Real exp45logsig[AeroConfig::num_modes()],
   const Real two = 2.0;
   const Real one_thousand = 1e3;
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
-    alogsig[imode] = log(modes(imode).mean_std_dev);
-    exp45logsig[imode] = exp(4.5 * alogsig[imode] * alogsig[imode]);
+    alogsig[imode] = mam4::log(modes(imode).mean_std_dev);
+    exp45logsig[imode] = mam4::exp(4.5 * alogsig[imode] * alogsig[imode]);
 
     // voltonumbhi_amode
     num2vol_ratio_min_nmodes[imode] =
@@ -564,7 +559,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // ---------------------------------------------------------------------------------
   const Real zero = 0;
   const Real one = 1;
-  const Real sq2 = sqrt(2.0);
+  const Real sq2 = mam4::sqrt(2.0);
   const Real two = 2;
   const Real three_fourths = 3.0 / 4.0;
   const Real twothird = 2.0 / 3.0;
@@ -614,9 +609,9 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // [s^(3/2)]
   // BAD CONSTANT
   // this should make eta big if na is very small.
-  const Real etafactor2max = 1.0e10 / pow((alpha * wmaxf), 1.5);
+  const Real etafactor2max = 1.0e10 / mam4::pow((alpha * wmaxf), 1.5);
   // vapor diffusivity [m2/s]
-  const Real diff0 = 0.211e-4 * (p0 / pres) * pow(tair / t0, 1.94);
+  const Real diff0 = 0.211e-4 * (p0 / pres) * mam4::pow(tair / t0, 1.94);
   // thermal conductivity [J / (m-s-K)]--converted to [J/m/s/deg]
   const Real conduct0 = (5.69 + 0.017 * (tair - t0)) * 4.186e2 * 1.0e-5;
   // thermodynamic function [m2/s]
@@ -626,10 +621,10 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
                                     (latvap / (rh2o * tair) - one));
   const Real beta = two * pi * rhoh2o * gthermfac * gamma; // [m2/s]
   const Real wnuc = w_in;
-  const Real alw = alpha * wnuc;           // [/s]
-  const Real etafactor1 = alw * sqrt(alw); // [/ s^(3/2)]
+  const Real alw = alpha * wnuc;                 // [/s]
+  const Real etafactor1 = alw * mam4::sqrt(alw); // [/ s^(3/2)]
   // [unitless]
-  const Real zeta = twothird * sqrt(alw) * aten / sqrt(gthermfac);
+  const Real zeta = twothird * mam4::sqrt(alw) * aten / mam4::sqrt(gthermfac);
 
   Real amcube[nmode] = {}; // cube of dry mode radius [m3]
 
@@ -653,13 +648,13 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
       // should depend on mean radius of mode to account for gas kinetic
       // effects see Fountoukis and Nenes, JGR2005 and Meskhidze et al.,
       // JGR2006 for appropriate size to use for effective diffusivity.
-      etafactor2[imode] = one / (na[imode] * beta * sqrt(gthermfac));
+      etafactor2[imode] = one / (na[imode] * beta * mam4::sqrt(gthermfac));
       // BAD CONSTANT
       if (hygro[imode] > 1.0e-10) {
         ssat_crit_imode[imode] =
             two * aten *
             // only if variable size dist
-            sqrt(aten / (27.0 * hygro[imode] * amcube[imode]));
+            mam4::sqrt(aten / (27.0 * hygro[imode] * amcube[imode]));
       } else {
         // BAD CONSTANT
         ssat_crit_imode[imode] = 100.0;
@@ -670,7 +665,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
       etafactor2[imode] = etafactor2max;
     } // volume
     // only if variable size dist
-    lnsm[imode] = log(ssat_crit_imode[imode]);
+    lnsm[imode] = mam4::log(ssat_crit_imode[imode]);
     eta[imode] = etafactor1 * etafactor2[imode];
   } // end imode
 
@@ -678,7 +673,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
 
   maxsat(zeta, eta, nmode, ssat_crit_imode, supersat);
   // ([fraction]))
-  const Real lnsupersat = log(supersat);
+  const Real lnsupersat = mam4::log(supersat);
 
   // Use maximum supersaturation to calculate aerosol activation output
   for (int imode = 0; imode < nmode; ++imode) {
@@ -686,12 +681,12 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
     const Real arg_erf_n =
         twothird * (lnsm[imode] - lnsupersat) / (sq2 * alogsig[imode]);
 
-    fn[imode] = half * (one - erf(arg_erf_n)); // activated number
+    fn[imode] = half * (one - mam4::erf(arg_erf_n)); // activated number
 
     const Real arg_erf_m = arg_erf_n - 1.5 * sq2 * alogsig[imode];
-    fm[imode] = half * (one - erf(arg_erf_m)); // activated mass
-    fluxn[imode] = fn[imode] * w_in;           // activated aerosol number flux
-    fluxm[imode] = fm[imode] * w_in;           // activated aerosol mass flux
+    fm[imode] = half * (one - mam4::erf(arg_erf_m)); // activated mass
+    fluxn[imode] = fn[imode] * w_in; // activated aerosol number flux
+    fluxm[imode] = fm[imode] * w_in; // activated aerosol mass flux
   }
   // is vertical velocity equal to flux of activated aerosol fraction assuming
   // 100% activation [m/s]?

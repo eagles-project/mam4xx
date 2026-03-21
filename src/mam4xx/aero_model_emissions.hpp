@@ -7,12 +7,6 @@
 
 namespace mam4::aero_model_emissions {
 
-using mam4::exp;
-using mam4::log;
-using mam4::log10;
-using mam4::pow;
-using mam4::sqrt;
-
 using const_view_1d = DeviceType::view_1d<const Real>;
 using const_view_2d = DeviceType::view_2d<const Real>;
 
@@ -86,7 +80,7 @@ constexpr Real seasalt_density = 2.2e3;
 // NOTE: in the fortran, nsalt is used as an offset to jump over the first 3
 // entries in the seasalt_indices array. as such, we may need to subtract 1 when
 // using as an index
-// const int nsalt = max(3, ntot_amode - 3);
+// const int nsalt = mam4::max(3, ntot_amode - 3);
 constexpr int nsalt = 3;
 constexpr int nnum = nsalt;
 constexpr int nsalt_om = 3;
@@ -257,7 +251,7 @@ void init_dust_dmt_vwr(DustEmissionsData &data) {
   // Bin physical properties
   // [frc] Geometric std dev PaG77 p. 2080 Table1
   constexpr Real gsd_anl = 2.0;
-  const Real ln_gsd = log(gsd_anl);
+  const Real ln_gsd = mam4::log(gsd_anl);
 
   // Set a fundamental statistic for each bin
   // Mass median diameter analytic She84 p.75 Table 1 [m]
@@ -268,7 +262,7 @@ void init_dust_dmt_vwr(DustEmissionsData &data) {
   dmt_vma = 3.5e-6;
   // Compute analytic size statistics
   // Convert mass median diameter to number median particle diameter [m]
-  Real dmt_nma = dmt_vma * exp(-3.0 * square(ln_gsd));
+  Real dmt_nma = dmt_vma * mam4::exp(-3.0 * square(ln_gsd));
 
   // [m] Size Bin minima
   Real sz_min[sz_nbr];
@@ -286,7 +280,7 @@ void init_dust_dmt_vwr(DustEmissionsData &data) {
   // In C. Zender's code call dst_sz_rsl
   for (int n = 0; n < dust_nbin; ++n) {
     // Factor for logarithmic grid
-    Real series_ratio = pow((dmt_max[n] / dmt_min[n]), (1.0 / sz_nbr));
+    Real series_ratio = mam4::pow((dmt_max[n] / dmt_min[n]), (1.0 / sz_nbr));
     sz_min[0] = dmt_min[n];
     // NOTE: Loop starts at 1 (2 in fortran code)
     for (int m = 1; m < sz_nbr; ++m) {
@@ -309,13 +303,13 @@ void init_dust_dmt_vwr(DustEmissionsData &data) {
     // Lognormal distribution at sz_ctr
     // Factor in lognormal distribution
     // NOTE: original variable name in fortran: lngsdsqrttwopi_rcp
-    const Real lnN_factor = 1.0 / (ln_gsd * sqrt(2.0 * pi));
+    const Real lnN_factor = 1.0 / (ln_gsd * mam4::sqrt(2.0 * pi));
 
     for (int m = 0; m < sz_nbr; ++m) {
       // Evaluate lognormal distribution for these sizes (call lgn_evl)
-      Real tmp = log(sz_ctr[m] / dmt_nma) / ln_gsd;
-      Real lgn_dst = lnN_factor * exp(-0.5 * square(tmp)) / sz_ctr[m];
-      Real coeff = pi / 6.0 * pow(sz_ctr[m], 3) * lgn_dst * sz_dlt[m];
+      Real tmp = mam4::log(sz_ctr[m] / dmt_nma) / ln_gsd;
+      Real lgn_dst = lnN_factor * mam4::exp(-0.5 * square(tmp)) / sz_ctr[m];
+      Real coeff = pi / 6.0 * mam4::pow(sz_ctr[m], 3) * lgn_dst * sz_dlt[m];
       // Integrate moments of size distribution
       data.dust_dmt_vwr[n] += sz_ctr[m] * coeff;
       vlm_rsl[n] += coeff;
@@ -345,8 +339,8 @@ void dust_emis(
   Real dust_mass_to_num[dust_nbin];
 
   for (int ibin = 0; ibin < dust_nbin; ++ibin) {
-    dust_mass_to_num[ibin] =
-        6.0 / (Constants::pi * dust_density * pow(data.dust_dmt_vwr[ibin], 3));
+    dust_mass_to_num[ibin] = 6.0 / (Constants::pi * dust_density *
+                                    mam4::pow(data.dust_dmt_vwr[ibin], 3));
   }
 
   if (soil_erodibility >= soil_erod_threshold) {
@@ -395,41 +389,48 @@ void init_seasalt_sections(SeasaltEmissionsData &data /* inout */) {
   for (int i = 0; i < salt_nsection; ++i) {
     data.rdry[i] = data.Dg(i) / 2.0;
     data.rm[i] = 1.814 * data.rdry[i] * 1.0e6;
-    data.bm[i] = (0.380 - log10(data.rm[i])) / 0.65;
+    data.bm[i] = (0.380 - mam4::log10(data.rm[i])) / 0.65;
   }
 
   // FIXME: BAD CONSTANTS
   // calculate constants from emission polynomials
   for (int isec = sec1_beg; isec < sec1_end; ++isec) {
-    data.consta[isec] =
-        -2.576e35 * pow(data.Dg(isec), 4) + 5.932e28 * pow(data.Dg(isec), 3) -
-        2.867e21 * pow(data.Dg(isec), 2) - 3.003e13 * data.Dg(isec) - 2.881e6;
-    data.constb[isec] =
-        7.188e37 * pow(data.Dg(isec), 4) - 1.616e31 * pow(data.Dg(isec), 3) +
-        6.791e23 * pow(data.Dg(isec), 2) + 1.829e16 * data.Dg(isec) + 7.609e8;
+    data.consta[isec] = -2.576e35 * mam4::pow(data.Dg(isec), 4) +
+                        5.932e28 * mam4::pow(data.Dg(isec), 3) -
+                        2.867e21 * mam4::pow(data.Dg(isec), 2) -
+                        3.003e13 * data.Dg(isec) - 2.881e6;
+    data.constb[isec] = 7.188e37 * mam4::pow(data.Dg(isec), 4) -
+                        1.616e31 * mam4::pow(data.Dg(isec), 3) +
+                        6.791e23 * mam4::pow(data.Dg(isec), 2) +
+                        1.829e16 * data.Dg(isec) + 7.609e8;
   }
   for (int isec = sec2_beg; isec < sec2_end; ++isec) {
-    data.consta[isec] =
-        -2.452e33 * pow(data.Dg(isec), 4) + 2.404e27 * pow(data.Dg(isec), 3) -
-        8.148e20 * pow(data.Dg(isec), 2) + 1.183e14 * data.Dg(isec) - 6.743e6;
-    data.constb[isec] =
-        7.368e35 * pow(data.Dg(isec), 4) - 7.310e29 * pow(data.Dg(isec), 3) +
-        2.528e23 * pow(data.Dg(isec), 2) - 3.787e16 * data.Dg(isec) + 2.279e9;
+    data.consta[isec] = -2.452e33 * mam4::pow(data.Dg(isec), 4) +
+                        2.404e27 * mam4::pow(data.Dg(isec), 3) -
+                        8.148e20 * mam4::pow(data.Dg(isec), 2) +
+                        1.183e14 * data.Dg(isec) - 6.743e6;
+    data.constb[isec] = 7.368e35 * mam4::pow(data.Dg(isec), 4) -
+                        7.310e29 * mam4::pow(data.Dg(isec), 3) +
+                        2.528e23 * mam4::pow(data.Dg(isec), 2) -
+                        3.787e16 * data.Dg(isec) + 2.279e9;
   }
   for (int isec = sec3_beg; isec < sec3_end; ++isec) {
-    data.consta[isec] =
-        1.085e29 * pow(data.Dg(isec), 4) - 9.841e23 * pow(data.Dg(isec), 3) +
-        3.132e18 * pow(data.Dg(isec), 2) - 4.165e12 * data.Dg(isec) + 2.181e6;
-    data.constb[isec] =
-        -2.859e31 * pow(data.Dg(isec), 4) + 2.601e26 * pow(data.Dg(isec), 3) -
-        8.297e20 * pow(data.Dg(isec), 2) + 1.105e15 * data.Dg(isec) - 5.800e8;
+    data.consta[isec] = 1.085e29 * mam4::pow(data.Dg(isec), 4) -
+                        9.841e23 * mam4::pow(data.Dg(isec), 3) +
+                        3.132e18 * mam4::pow(data.Dg(isec), 2) -
+                        4.165e12 * data.Dg(isec) + 2.181e6;
+    data.constb[isec] = -2.859e31 * mam4::pow(data.Dg(isec), 4) +
+                        2.601e26 * mam4::pow(data.Dg(isec), 3) -
+                        8.297e20 * mam4::pow(data.Dg(isec), 2) +
+                        1.105e15 * data.Dg(isec) - 5.800e8;
   }
   for (int isec = sec4_beg; isec < sec4_end; ++isec) {
     // use monahan
-    data.consta[isec] = (1.373 * pow(data.rm[isec], -3) *
-                         (1 + 0.057 * pow(data.rm[isec], 1.05)) *
-                         pow(10, 1.19 * exp(-square(data.bm[isec])))) *
-                        (data.rm[isec] - data.rm[isec - 1]);
+    data.consta[isec] =
+        (1.373 * mam4::pow(data.rm[isec], -3) *
+         (1 + 0.057 * mam4::pow(data.rm[isec], 1.05)) *
+         mam4::pow(10, 1.19 * mam4::exp(-square(data.bm[isec])))) *
+        (data.rm[isec] - data.rm[isec - 1]);
   }
 } // end init_seasalt_sections
 
@@ -489,18 +490,18 @@ void calculate_seasalt_numflux_in_bins(
   constexpr Real z0 = 0.0001;
 
   // Needed in Gantt et al. calculation of organic mass fraction
-  Real u10 = sqrt(square(u_bottom) + square(v_bottom));
+  Real u10 = mam4::sqrt(square(u_bottom) + square(v_bottom));
 
   // move the winds to 10m high from the midpoint of the gridbox:
   // follows Tie and Seinfeld and Pandis, p.859 with math.
   // u10cubed is defined as the 3.41 power of 10m wind
   // FIXME: terrible variable name
   // FIXME: BAD CONSTANT
-  Real u10cubed = u10 * log(10.0 / z0) / log(z_bottom / z0);
+  Real u10cubed = u10 * mam4::log(10.0 / z0) / mam4::log(z_bottom / z0);
 
   // we need them to the 3.41 power, according to Gong et al., 1997
   // FIXME: BAD CONSTANT
-  u10cubed = pow(u10cubed, 3.41);
+  u10cubed = mam4::pow(u10cubed, 3.41);
 
   calc_seasalt_fluxes(
       // in
@@ -553,8 +554,8 @@ void seasalt_emis_flux_calc(
           // can be factored out in a function, but it is not done here
           // as the results might not stay BFB
           if (flux_type == FluxType::MassFlux) {
-            cflux_tmp *= 4.0 / 3.0 * Constants::pi * pow(data.rdry[ibin], 3) *
-                         seasalt_density;
+            cflux_tmp *= 4.0 / 3.0 * Constants::pi *
+                         mam4::pow(data.rdry[ibin], 3) * seasalt_density;
           }
           // Mixing state 3: internal mixture, add OM to mass and number
           cflux[mode_idx] += cflux_tmp;
@@ -826,7 +827,7 @@ void calc_marine_organic_massflux(
               (data.Dg(ibin) < data.seasalt_size_range_hi(idx_salt_offset))) {
             // should use dry size, convert from number to mass flux (kg/m2/s)
             cflux_tmp = fi[ibin] * ocean_frac * emis_scalefactor * (4.0 / 3.0) *
-                        Constants::pi * pow(data.rdry[ibin], 3) *
+                        Constants::pi * mam4::pow(data.rdry[ibin], 3) *
                         seasalt_density;
             // Mixing state 3: internal mixture, add OM to mass and number
             // and avoid division by zero

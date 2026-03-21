@@ -94,9 +94,9 @@ void lin_strat_chem_solve_multicol(Ensemble *ensemble) {
       rlats[i] = rlats_db[i];
     }
 
-    auto team_policy = ThreadTeamPolicy(ncol, 1u);
+    auto team_policy = mam4::ThreadTeamPolicy(ncol, 1u);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           const int icol = team.league_rank();
           auto o3col_icol = Kokkos::subview(o3col, icol, Kokkos::ALL());
           auto temperature_icol =

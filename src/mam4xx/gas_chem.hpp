@@ -10,10 +10,6 @@ namespace mam4 {
 
 namespace gas_chemistry {
 
-using mam4::exp;
-using mam4::log10;
-using mam4::pow;
-
 // BAD CONSTANTs
 constexpr int itermax = 11;
 const Real rel_err = 1.0e-3;
@@ -34,10 +30,10 @@ void usrrxt(Real rxt[rxntot], // inout
   const Real one = 1.0;
   if (usr_HO2_HO2_ndx > 0) {
     // BAD CONSTANT
-    const Real ko = 3.5e-13 * exp(430.0 / temperature);
-    const Real kinf = 1.7e-33 * mtot * exp(1000. / temperature);
-    const Real fc =
-        one + 1.4e-21 * invariants[inv_h2o_ndx] * exp(2200. / temperature);
+    const Real ko = 3.5e-13 * mam4::exp(430.0 / temperature);
+    const Real kinf = 1.7e-33 * mtot * mam4::exp(1000. / temperature);
+    const Real fc = one + 1.4e-21 * invariants[inv_h2o_ndx] *
+                              mam4::exp(2200. / temperature);
     rxt[usr_HO2_HO2_ndx] = (ko + kinf) * fc;
   }
 
@@ -46,8 +42,10 @@ void usrrxt(Real rxt[rxntot], // inout
    -----------------------------------------------------------------*/
   if (usr_DMS_OH_ndx > 0) {
     // BAD CONSTANT
-    const Real ko = one + 5.5e-31 * exp(7460. / temperature) * mtot * 0.21;
-    rxt[usr_DMS_OH_ndx] = 1.7e-42 * exp(7810. / temperature) * mtot * 0.21 / ko;
+    const Real ko =
+        one + 5.5e-31 * mam4::exp(7460. / temperature) * mtot * 0.21;
+    rxt[usr_DMS_OH_ndx] =
+        1.7e-42 * mam4::exp(7810. / temperature) * mtot * 0.21 / ko;
   }
 
   /*-----------------------------------------------------------------
@@ -55,10 +53,11 @@ void usrrxt(Real rxt[rxntot], // inout
   -----------------------------------------------------------------*/
   if (usr_SO2_OH_ndx > 0) {
     // BAD CONSTANT
-    const Real fc = 3.0e-31 * pow(300. / temperature, 3.3);
+    const Real fc = 3.0e-31 * mam4::pow(300. / temperature, 3.3);
     const Real ko = fc * mtot / (one + fc * mtot / 1.5e-12);
     rxt[usr_SO2_OH_ndx] =
-        ko * pow(0.6, one / (one + square(log10(fc * mtot / 1.5e-12))));
+        ko *
+        mam4::pow(0.6, one / (one + square(mam4::log10(fc * mtot / 1.5e-12))));
   }
 
 } // usrrxt

@@ -11,9 +11,6 @@
 namespace mam4 {
 namespace math {
 
-using mam4::max;
-using mam4::nan;
-
 /** @brief Scalar rootfinding algorithm that employs Newton's method.
   This algorithm has a quadratic convergence rate but it is not guaranteed to
   converge. It may converge to an incorrect root if a poor initial guess is
@@ -48,7 +45,7 @@ template <typename ScalarFunction> struct NewtonSolver {
   KOKKOS_INLINE_FUNCTION
   NewtonSolver(const value_type x0, const value_type a0, const value_type b0,
                const Real &tol, const ScalarFunction &fn)
-      : xroot(x0), conv_tol(tol), counter(0), iter_diff(max()), f(fn),
+      : xroot(x0), conv_tol(tol), counter(0), iter_diff(mam4::max()), f(fn),
         fail(false) {}
 
   /// Solves for the root.  Prints a warning message if the convergence
@@ -68,7 +65,7 @@ template <typename ScalarFunction> struct NewtonSolver {
       ++counter;
       f_deriv = f.derivative(xroot);
       if (FloatingPoint<value_type>::zero(f_deriv)) {
-        xroot = nan("");
+        xroot = mam4::nan("");
         keep_going = false;
         fail = true;
         break;
@@ -82,7 +79,7 @@ template <typename ScalarFunction> struct NewtonSolver {
         keep_going = false;
         fail = true;
       }
-      if (isnan(xnp1)) {
+      if (mam4::isnan(xnp1)) {
         keep_going = false;
         fail = true;
       }
@@ -135,8 +132,8 @@ template <typename ScalarFunction> struct BracketedNewtonSolver {
                         const value_type b0, const Real tol,
                         const ScalarFunction &fn)
       : xroot(x0), a(a0), b(b0), conv_tol(tol), fa(fn(value_type(a0))),
-        fx(fn(x0)), fb(fn(value_type(b0))), f(fn), counter(0), iter_diff(max()),
-        fail(false) {
+        fx(fn(x0)), fb(fn(value_type(b0))), f(fn), counter(0),
+        iter_diff(mam4::max()), fail(false) {
     EKAT_KERNEL_ASSERT(b - a > 0.0);
     EKAT_KERNEL_ASSERT(fa * fb < 0.0);
   }
@@ -180,7 +177,7 @@ template <typename ScalarFunction> struct BracketedNewtonSolver {
         keep_going = false;
         fail = true;
       }
-      if (isnan(x)) {
+      if (mam4::isnan(x)) {
         keep_going = false;
         fail = true;
       }
@@ -273,7 +270,7 @@ template <typename ScalarFunction> struct BisectionSolver {
         keep_going = false;
         fail = true;
       }
-      if (isnan(xnp1)) {
+      if (mam4::isnan(xnp1)) {
         keep_going = false;
         fail = true;
       }

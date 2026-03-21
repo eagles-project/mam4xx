@@ -19,11 +19,6 @@ namespace mam4 {
 
 namespace rename {
 
-using mam4::erfc;
-using mam4::exp;
-using mam4::log;
-using mam4::sqrt;
-
 KOKKOS_INLINE_FUNCTION
 void compute_dryvol_change_in_src_mode(
     const int nmode,              // in
@@ -145,10 +140,10 @@ void compute_tail_fraction(const Real diameter, const Real log_dia_cutoff,
                            Real &tail_fraction) {
   // Compute tail fraction to be used for inter-mode species transfer
   // rename use present function for this if statement.
-  const Real log_diameter = log(diameter) + log_dia_tail_fac;
+  const Real log_diameter = mam4::log(diameter) + log_dia_tail_fac;
   const Real tail = (log_dia_cutoff - log_diameter) * tail_dist_fac;
   // complimentary error function (erfc)
-  tail_fraction = Real(0.5) * erfc(tail);
+  tail_fraction = Real(0.5) * mam4::erfc(tail);
 
 } // end compute_tail_fraction
 
@@ -158,9 +153,9 @@ void compute_tail_fraction(const Real diameter, const Real log_dia_cutoff,
                            const Real tail_dist_fac, Real &tail_fraction) {
   // Compute tail fraction to be used for inter-mode species transfer we use
   // this function if log_dia_tail_fac is not present in the function call
-  const Real tail = (log_dia_cutoff - log(diameter)) * tail_dist_fac;
+  const Real tail = (log_dia_cutoff - mam4::log(diameter)) * tail_dist_fac;
   // complimentary error function (erfc)
-  tail_fraction = Real(0.5) * erfc(tail);
+  tail_fraction = Real(0.5) * mam4::erfc(tail);
 
 } // end compute_tail_fraction
 
@@ -405,7 +400,7 @@ void find_renaming_pairs(
     Real diameter_cutoff[AeroConfig::num_modes()],      // out
     Real ln_dia_cutoff[AeroConfig::num_modes()],
     Real diameter_threshold[AeroConfig::num_modes()]) {
-  const Real sqrt_half = sqrt(0.5);
+  const Real sqrt_half = mam4::sqrt(0.5);
   // (3^3): relaxing 3 * diameter, which makes it 3^3 for volume
   const Real frelax = 27.0;
   const Real zero = 0;
@@ -427,7 +422,7 @@ void find_renaming_pairs(
       diameter_threshold[m] = zero;
 
     } else {
-      const Real alnsg_amode = log(modes(m).mean_std_dev);
+      const Real alnsg_amode = mam4::log(modes(m).mean_std_dev);
       mean_std_dev[m] = modes(m).mean_std_dev;
       // factor for computing distribution tails of the "src mode"
       fmode_dist_tail_fac[m] = sqrt_half / alnsg_amode;
@@ -461,14 +456,15 @@ void find_renaming_pairs(
       // from the source to the destination mode.
       // FIXME: This looks very strange to us, can someone take a look?
       // e.g., taking log then exp, units?
-      const Real alnsg_amode_dest_mode = log(modes(dest_mode).mean_std_dev);
-      diameter_cutoff[src_mode] =
-          sqrt(modes(src_mode).nom_diameter * exp(1.5 * square(alnsg_amode)) *
-               modes(dest_mode).nom_diameter *
-               exp(1.5 * square(alnsg_amode_dest_mode)));
+      const Real alnsg_amode_dest_mode =
+          mam4::log(modes(dest_mode).mean_std_dev);
+      diameter_cutoff[src_mode] = mam4::sqrt(
+          modes(src_mode).nom_diameter * mam4::exp(1.5 * square(alnsg_amode)) *
+          modes(dest_mode).nom_diameter *
+          mam4::exp(1.5 * square(alnsg_amode_dest_mode)));
 
       // log of cutoff
-      ln_dia_cutoff[src_mode] = log(diameter_cutoff[src_mode]);
+      ln_dia_cutoff[src_mode] = mam4::log(diameter_cutoff[src_mode]);
       // 99% of the cutoff
       // FIXME: BAD CONSTANT!
       diameter_threshold[src_mode] = 0.99 * diameter_cutoff[src_mode];

@@ -21,10 +21,6 @@ namespace mam4 {
 
 namespace nucleate_ice {
 
-using mam4::exp;
-using mam4::log;
-using mam4::pow;
-
 /*-------------------------------------------------------------------------------
 Purpose:
  A parameterization of ice nucleation.
@@ -66,12 +62,12 @@ void calculate_regm_nucleati(const Real w_vlc, const Real Na, Real &regm) {
   // Na               aerosol number concentration [#/cm^3]
   // regm             threshold temperature [C]
 
-  const Real lnNa = log(Na);
+  const Real lnNa = mam4::log(Na);
   // BAD CONSTANT
   const Real A_coef = -Real(1.4938) * lnNa + Real(12.884);
   const Real B_coef = -Real(10.41) * lnNa - Real(67.69);
 
-  regm = A_coef * log(w_vlc) + B_coef;
+  regm = A_coef * mam4::log(w_vlc) + B_coef;
 } // end calculate_regm_nucleati
 
 KOKKOS_INLINE_FUNCTION
@@ -114,10 +110,10 @@ void calculate_Ni_hf(const Real A1, const Real B1, const Real C1, const Real A2,
   // Na             aerosol number concentrations [#/cm^3]
   // Ni             ice number concentrations [#/cm^3]
 
-  const Real k1 = exp(A2 + B2 * temperature + C2 * lnw);
+  const Real k1 = mam4::exp(A2 + B2 * temperature + C2 * lnw);
   const Real k2 = A1 + B1 * temperature + C1 * lnw;
 
-  Ni = min(k1 * pow(Na, k2), Na);
+  Ni = min(k1 * mam4::pow(Na, k2), Na);
 } // end calculate_Ni_hf
 
 KOKKOS_INLINE_FUNCTION
@@ -163,7 +159,7 @@ void hf(const Real temperature, const Real w_vlc, const Real RH, const Real Na,
   Real A2_fast, B2_fast, B4_slow = zero;
   Real lnw, RHw = zero;
 
-  lnw = log(w_vlc);
+  lnw = mam4::log(w_vlc);
 
   Ni = zero;
 
@@ -225,16 +221,16 @@ void hetero(const Real temperature, const Real w_vlc, const Real Ns, Real &Nis,
   const Real B21 = -0.2667;
   const Real B22 = -1.4588;
 
-  const Real lnNs = log(Ns);
-  const Real lnw = log(w_vlc);
+  const Real lnNs = mam4::log(Ns);
+  const Real lnw = mam4::log(w_vlc);
 
   // ice from immersion nucleation (cm^-3)
 
   const Real B_coef = (A11 + B11 * lnNs) * lnw + (A12 + B12 * lnNs);
   const Real C_coef = A21 + B21 * lnNs;
 
-  Nis =
-      exp(A22) * pow(Ns, B22) * exp(B_coef * temperature) * pow(w_vlc, C_coef);
+  Nis = mam4::exp(A22) * mam4::pow(Ns, B22) * mam4::exp(B_coef * temperature) *
+        mam4::pow(w_vlc, C_coef);
   Nis = min(Nis, Ns);
   // FIXME: Mention that this variables is set to zero in PR
   // don't include deposition nucleation for cirrus clouds when T < -37C
@@ -293,7 +289,7 @@ public:
     _mincld = 0.0001;
 
     const int aitken_idx = int(ModeIndex::Aitken);
-    _alnsg_amode_aitken = log(modes(aitken_idx).mean_std_dev);
+    _alnsg_amode_aitken = mam4::log(modes(aitken_idx).mean_std_dev);
 
   } // end(init)
 
@@ -418,8 +414,9 @@ public:
           // only allow so4 with D > 0.1 um in ice nucleation
           so4_num =
               num_aitken(kk) * air_density * num_m3_to_cm3 *
-              (half - half * erf(log(so4_sz_thresh_icenuc / dgnum_aitken(kk)) /
-                                 (sqrt_two * alnsg_amode_aitken)));
+              (half -
+               half * erf(mam4::log(so4_sz_thresh_icenuc / dgnum_aitken(kk)) /
+                          (sqrt_two * alnsg_amode_aitken)));
         } // end dgnum_aitken
 
         so4_num = max(zero, so4_num);
@@ -566,7 +563,7 @@ public:
               n1 = nihf;
             } else {
               n1 = (niimm + nidep) *
-                   pow((niimm + nidep) / nihf, (tc - regm) / Real(5.));
+                   mam4::pow((niimm + nidep) / nihf, (tc - regm) / Real(5.));
 
             } // end nihf <= (niimm + nidep)
 

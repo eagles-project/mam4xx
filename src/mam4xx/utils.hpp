@@ -18,13 +18,11 @@
 
 namespace mam4::utils {
 
-using mam4::max;
-
 // this function considers 'num' and returns either 'num' (already in bounds) or
 // 'high'/'low' if num is outside the bounds
 KOKKOS_INLINE_FUNCTION
 Real min_max_bound(const Real &low, const Real &high, const Real &num) {
-  return max(low, min(high, num));
+  return mam4::max(low, min(high, num));
 }
 
 // number of constituents in gas chemistry "work arrays"

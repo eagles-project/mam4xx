@@ -13,10 +13,6 @@ namespace mam4 {
 
 namespace microphysics {
 
-using mam4::exp;
-using mam4::log;
-using mam4::pow;
-
 using View2D = DeviceType::view_2d<Real>;
 
 // number of constituents in gas chemistry "work arrays"
@@ -993,8 +989,8 @@ void mam_newnuc_1subarea(
 
   //   dry-diameter limits for "grown" new particles
   constexpr int nait = static_cast<int>(ModeIndex::Aitken);
-  Real dplom_mode = exp(0.67 * log(modes(nait).min_diameter) +
-                        0.33 * log(modes(nait).nom_diameter));
+  Real dplom_mode = mam4::exp(0.67 * mam4::log(modes(nait).min_diameter) +
+                              0.33 * mam4::log(modes(nait).nom_diameter));
   Real dphim_mode = modes(nait).max_diameter;
 
   //   mass1p_... = mass (kg) of so4 & nh4 in a single particle of diameter ...
@@ -1003,8 +999,8 @@ void mam_newnuc_1subarea(
   //      mass1p_aithi - dp = dphim_mode
   constexpr Real dens_so4a_host = 1770;
   tmpa = dens_so4a_host * Constants::pi / 6.0;
-  Real mass1p_aitlo = tmpa * (pow(dplom_mode, 3.0));
-  Real mass1p_aithi = tmpa * (pow(dphim_mode, 3.0));
+  Real mass1p_aitlo = tmpa * (mam4::pow(dplom_mode, 3.0));
+  Real mass1p_aithi = tmpa * (mam4::pow(dphim_mode, 3.0));
 
   //   limit RH to between 0.1% and 99%
   Real relhumnn = max(0.01, min(0.99, relhum));

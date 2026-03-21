@@ -1,6 +1,9 @@
 #ifndef MAM4XX_MICROPHYSICS_GAS_CHEMISTRY_HPP
 #define MAM4XX_MICROPHYSICS_GAS_CHEMISTRY_HPP
 
+#include "gas_chem.hpp"
+#include "mo_photo.hpp"
+
 namespace mam4 {
 
 namespace microphysics {
