@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void calculate_hetfrz_immersion_nucleation(Ensemble *ensemble) {
   // Run the ensemble.
@@ -157,7 +155,7 @@ void calculate_hetfrz_immersion_nucleation(Ensemble *ensemble) {
     Real frzbcimm;
     Real frzduimm;
 
-    hetfrz::calculate_hetfrz_immersion_nucleation(
+    mam4::hetfrz::calculate_hetfrz_immersion_nucleation(
         deltat, temperature, uncoated_aer_num.data(),
         total_interstitial_aer_num.data(), total_cloudborne_aer_num.data(),
         sigma_iw, eswtr, vwice, dim_theta.data(), pdf_imm_theta.data(),

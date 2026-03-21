@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/coagulation.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void getcoags(Ensemble *ensemble) {
 
@@ -88,9 +86,9 @@ void getcoags(Ensemble *ensemble) {
     Real qn12 = 0.0;
     Real qv12 = 0.0;
 
-    coagulation::getcoags(lamdaa[0], kfmatac[0], kfmat[0], kfmac[0], knc[0],
-                          dgatk[0], dgacc[0], sgatk[0], sgacc[0], xxlsgat[0],
-                          xxlsgac[0], qn11, qn22, qn12, qv12);
+    mam4::coagulation::getcoags(lamdaa[0], kfmatac[0], kfmat[0], kfmac[0],
+                                knc[0], dgatk[0], dgacc[0], sgatk[0], sgacc[0],
+                                xxlsgat[0], xxlsgac[0], qn11, qn22, qn12, qv12);
 
     output.set("qn11", qn11);
     output.set("qn22", qn22);

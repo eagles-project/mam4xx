@@ -4,21 +4,19 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace modal_aero_opt;
-using namespace ndrop;
-using namespace validation;
+using namespace mam4::modal_aero_opt;
+using namespace mam4::ndrop;
+using namespace mam4::validation;
 
 void aer_rad_props_lw(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     constexpr int pver = mam4::nlev;
-    constexpr int maxd_aspectype = ndrop::maxd_aspectype;
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View3DHost = typename HostType::view_3d<Real>;
+    constexpr int maxd_aspectype = mam4::ndrop::maxd_aspectype;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View3DHost = typename mam4::HostType::view_3d<Real>;
     constexpr Real zero = 0;
     Real pblh = 1000;
 
@@ -27,15 +25,15 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     const auto state_q_db = input.get_array("state_q");
     auto qqcw_db = input.get_array("qqcw"); // 2d
 
-    View2D state_q("state_q", pver, pcnst);
+    View2D state_q("state_q", pver, mam4::pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
-    View2D qqcw("qqcw", pver, pcnst);
+    View2D qqcw("qqcw", pver, mam4::pcnst);
     auto qqcw_host = Kokkos::create_mirror_view(qqcw);
 
     int count = 0;
     for (int kk = 0; kk < pver; ++kk) {
-      for (int i = 0; i < pcnst; ++i) {
+      for (int i = 0; i < mam4::pcnst; ++i) {
         qqcw_host(kk, i) = qqcw_db[count];
         count++;
       }
@@ -61,44 +59,44 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     const auto zm_db = input.get_array("zm");
     const auto zi_db = input.get_array("zi");
 
-    ColumnView temperature;
-    ColumnView pmid;
-    ColumnView pdeldry;
-    ColumnView pdel;
-    ColumnView cldn;
-    ColumnView pint;
-    ColumnView zm;
-    ColumnView zi;
+    mam4::ColumnView temperature;
+    mam4::ColumnView pmid;
+    mam4::ColumnView pdeldry;
+    mam4::ColumnView pdel;
+    mam4::ColumnView cldn;
+    mam4::ColumnView pint;
+    mam4::ColumnView zm;
+    mam4::ColumnView zi;
 
-    temperature = testing::create_column_view(pver);
+    temperature = mam4::testing::create_column_view(pver);
     auto temperature_host = View1DHost((Real *)temperature_db.data(), pver);
     Kokkos::deep_copy(temperature, temperature_host);
 
-    pmid = testing::create_column_view(pver);
+    pmid = mam4::testing::create_column_view(pver);
     auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
     Kokkos::deep_copy(pmid, pmid_host);
 
-    pdeldry = testing::create_column_view(pver);
+    pdeldry = mam4::testing::create_column_view(pver);
     auto pdeldry_host = View1DHost((Real *)pdeldry_db.data(), pver);
     Kokkos::deep_copy(pdeldry, pdeldry_host);
 
-    pdel = testing::create_column_view(pver);
+    pdel = mam4::testing::create_column_view(pver);
     auto pdel_host = View1DHost((Real *)pdel_db.data(), pver);
     Kokkos::deep_copy(pdel, pdel_host);
 
-    cldn = testing::create_column_view(pver);
+    cldn = mam4::testing::create_column_view(pver);
     auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
     Kokkos::deep_copy(cldn, cldn_host);
 
-    pint = testing::create_column_view(pver);
+    pint = mam4::testing::create_column_view(pver);
     auto pint_host = View1DHost((Real *)pint_db.data(), pver);
     Kokkos::deep_copy(pint, pint_host);
 
-    zm = testing::create_column_view(pver);
+    zm = mam4::testing::create_column_view(pver);
     auto zm_host = View1DHost((Real *)zm_db.data(), pver);
     Kokkos::deep_copy(zm, zm_host);
 
-    zi = testing::create_column_view(pver);
+    zi = mam4::testing::create_column_view(pver);
     auto zi_host = View1DHost((Real *)zi_db.data(), pver);
     Kokkos::deep_copy(zi, zi_host);
 
@@ -230,13 +228,13 @@ void aer_rad_props_lw(Ensemble *ensemble) {
       } // d3
 
     View2D odap_aer("odap_aer", nlwbands, pver);
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
 
-    auto vapor_mixing_ratio = create_column_view(nlev);
-    auto liquid_mixing_ratio = create_column_view(nlev); //
-    auto ice_mixing_ratio = create_column_view(nlev);    //
-    auto cloud_liquid_number_mixing_ratio = create_column_view(nlev);
-    auto cloud_ice_number_mixing_ratio = create_column_view(nlev);
+    auto vapor_mixing_ratio = create_column_view(mam4::nlev);
+    auto liquid_mixing_ratio = create_column_view(mam4::nlev); //
+    auto ice_mixing_ratio = create_column_view(mam4::nlev);    //
+    auto cloud_liquid_number_mixing_ratio = create_column_view(mam4::nlev);
+    auto cloud_ice_number_mixing_ratio = create_column_view(mam4::nlev);
 
     // Some variables of state_q are part of atm.
     // We need deep_copy because of executation error due to different layout
@@ -261,21 +259,21 @@ void aer_rad_props_lw(Ensemble *ensemble) {
     auto &hydrostatic_dp = pdeldry;
     auto &cloud_fraction = cldn;
 
-    auto updraft_vel_ice_nucleation = create_column_view(nlev);
+    auto updraft_vel_ice_nucleation = create_column_view(mam4::nlev);
 
-    auto atm = Atmosphere(nlev, temperature, pmid, vapor_mixing_ratio,
-                          liquid_mixing_ratio, cloud_liquid_number_mixing_ratio,
-                          ice_mixing_ratio, cloud_ice_number_mixing_ratio,
-                          height, hydrostatic_dp, interface_pressure,
-                          cloud_fraction, updraft_vel_ice_nucleation, pblh);
+    auto atm = mam4::Atmosphere(
+        mam4::nlev, temperature, pmid, vapor_mixing_ratio, liquid_mixing_ratio,
+        cloud_liquid_number_mixing_ratio, ice_mixing_ratio,
+        cloud_ice_number_mixing_ratio, height, hydrostatic_dp,
+        interface_pressure, cloud_fraction, updraft_vel_ice_nucleation, pblh);
 
-    mam4::Prognostics progs = validation::create_prognostics(nlev);
+    mam4::Prognostics progs = mam4::validation::create_prognostics(mam4::nlev);
     mam4::modal_aero_opt::CalcsizeData cal_data;
     cal_data.initialize();
 
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          static constexpr int nlev_loc = nlev;
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
+          static constexpr int nlev_loc = mam4::nlev;
           // we need to inject validation values to progs.
           auto progs_in = progs;
           Kokkos::parallel_for(
@@ -283,32 +281,34 @@ void aer_rad_props_lw(Ensemble *ensemble) {
                 // copy data from prog to stateq
                 const auto &state_q_kk = ekat::subview(state_q, kk);
                 const auto &qqcw_kk = ekat::subview(qqcw, kk);
-                utils::inject_qqcw_to_prognostics(qqcw_kk.data(), progs_in, kk);
-                utils::inject_stateq_to_prognostics(state_q_kk.data(), progs_in,
-                                                    kk);
+                mam4::utils::inject_qqcw_to_prognostics(qqcw_kk.data(),
+                                                        progs_in, kk);
+                mam4::utils::inject_stateq_to_prognostics(state_q_kk.data(),
+                                                          progs_in, kk);
               });
           team.team_barrier();
-          aero_rad_props::aero_rad_props_lw(team, dt, progs_in, atm, zi, pdel,
-                                            ext_cmip6_lw, aersol_optics_data,
-                                            cal_data,
-                                            // output
-                                            odap_aer);
+          mam4::aero_rad_props::aero_rad_props_lw(team, dt, progs_in, atm, zi,
+                                                  pdel, ext_cmip6_lw,
+                                                  aersol_optics_data, cal_data,
+                                                  // output
+                                                  odap_aer);
           team.team_barrier();
           // 2. Let's extract state_q and qqcw from prog.
           Kokkos::parallel_for(
               Kokkos::TeamVectorRange(team, pver), [&](int kk) {
                 const auto state_q_kk = ekat::subview(state_q, kk);
                 const auto qqcw_kk = ekat::subview(qqcw, kk);
-                utils::extract_stateq_from_prognostics(progs_in, atm,
-                                                       state_q_kk, kk);
-                utils::extract_qqcw_from_prognostics(progs_in, qqcw_kk, kk);
+                mam4::utils::extract_stateq_from_prognostics(progs_in, atm,
+                                                             state_q_kk, kk);
+                mam4::utils::extract_qqcw_from_prognostics(progs_in, qqcw_kk,
+                                                           kk);
               });
         });
 
     Kokkos::deep_copy(qqcw_host, qqcw);
     count = 0;
     for (int kk = 0; kk < pver; ++kk) {
-      for (int i = 0; i < pcnst; ++i) {
+      for (int i = 0; i < mam4::pcnst; ++i) {
         qqcw_db[count] = qqcw_host(kk, i);
         count++;
       }

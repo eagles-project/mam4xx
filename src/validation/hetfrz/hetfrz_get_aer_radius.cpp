@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void get_aer_radius(Ensemble *ensemble) {
 
@@ -37,7 +35,8 @@ void get_aer_radius(Ensemble *ensemble) {
     skywalker::Real aermc = input.get("aermc");
     skywalker::Real aernum = input.get("aernum");
 
-    skywalker::Real radius = hetfrz::get_aer_radius(specdens, aermc, aernum);
+    skywalker::Real radius =
+        mam4::hetfrz::get_aer_radius(specdens, aermc, aernum);
 
     // Store radius
     output.set("radius", radius);

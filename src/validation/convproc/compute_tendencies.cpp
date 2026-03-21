@@ -4,17 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/convproc.hpp>
-
 #include <validation.hpp>
 
 #include <catch2/catch.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 namespace {
 void get_input(const Input &input, const std::string &name, const int size,
-               std::vector<Real> &host, ColumnView &dev) {
+               std::vector<Real> &host, mam4::ColumnView &dev) {
   host = input.get_array(name);
   dev = mam4::validation::create_column_view(size);
 
@@ -26,10 +24,10 @@ void get_input(const Input &input, const std::string &name, const int size,
 }
 void get_input(const Input &input, const std::string &name, const int rows,
                const int cols, std::vector<Real> &host,
-               Diagnostics::ColumnTracerView &dev) {
+               mam4::Diagnostics::ColumnTracerView &dev) {
   host = input.get_array(name);
-  ColumnView col_view = mam4::validation::create_column_view(rows * cols);
-  dev = Diagnostics::ColumnTracerView(col_view.data(), rows, cols);
+  mam4::ColumnView col_view = mam4::validation::create_column_view(rows * cols);
+  dev = mam4::Diagnostics::ColumnTracerView(col_view.data(), rows, cols);
   EKAT_ASSERT(host.size() == rows * cols);
   {
     std::vector<std::vector<Real>> matrix(rows, std::vector<Real>(cols));
@@ -45,7 +43,7 @@ void get_input(const Input &input, const std::string &name, const int rows,
 }
 void set_output(Output &output, const std::string &name, const int rows,
                 const int cols, std::vector<Real> &host,
-                const Diagnostics::ColumnTracerView &dev) {
+                const mam4::Diagnostics::ColumnTracerView &dev) {
   host.resize(rows * cols);
   auto host_view = Kokkos::create_mirror_view(dev);
   Kokkos::deep_copy(host_view, dev);
@@ -68,7 +66,7 @@ void compute_tendencies(Ensemble *ensemble) {
     const Real dt = 36000;
     const Real pblh = 1000;
     // const int pcnst_extd = ConvProc::pcnst_extd;
-    const int pcnst = aero_model::pcnst;
+    const int pcnst = mam4::aero_model::pcnst;
     // Fetch ensemble parameters
     // Convert to C++ index by subtracting one.
     // ktop is jt(il1g) to jt(il2g) in Fortran
@@ -88,11 +86,12 @@ void compute_tendencies(Ensemble *ensemble) {
         mmtoo_prevap_resusp[i] = resusp[i] - 1;
     }
 
-    Atmosphere atmosphere = validation::create_atmosphere(nlev, pblh);
-    Surface surface = validation::create_surface();
-    mam4::Prognostics prognostics = validation::create_prognostics(nlev);
-    mam4::Diagnostics diagnostics = validation::create_diagnostics(nlev);
-    mam4::Tendencies tendencies = validation::create_tendencies(nlev);
+    mam4::Atmosphere atmosphere =
+        mam4::validation::create_atmosphere(nlev, pblh);
+    mam4::Surface surface = mam4::validation::create_surface();
+    mam4::Prognostics prognostics = mam4::validation::create_prognostics(nlev);
+    mam4::Diagnostics diagnostics = mam4::validation::create_diagnostics(nlev);
+    mam4::Tendencies tendencies = mam4::validation::create_tendencies(nlev);
     mam4::AeroConfig aero_config;
     mam4::ConvProc::Config convproc_config;
     convproc_config.convproc_do_aer = true;
@@ -102,7 +101,7 @@ void compute_tendencies(Ensemble *ensemble) {
     convproc_config.kbot = kbot;
 
     std::vector<Real> species_class_host;
-    ColumnView species_class_dev;
+    mam4::ColumnView species_class_dev;
     get_input(input, "species_class", pcnst, species_class_host,
               species_class_dev);
     for (int i = 0; i < pcnst; ++i)
@@ -144,13 +143,13 @@ void compute_tendencies(Ensemble *ensemble) {
         mam4::validation::create_column_view(nlev);
     diagnostics.delta_pressure = mam4::validation::create_column_view(nlev);
     auto mixing_ratio =
-        mam4::validation::create_column_view(nlev * aero_model::pcnst);
-    diagnostics.tracer_mixing_ratio = Diagnostics::ColumnTracerView(
-        mixing_ratio.data(), nlev, aero_model::pcnst);
+        mam4::validation::create_column_view(nlev * mam4::aero_model::pcnst);
+    diagnostics.tracer_mixing_ratio = mam4::Diagnostics::ColumnTracerView(
+        mixing_ratio.data(), nlev, mam4::aero_model::pcnst);
     auto mixing_ratio_dt =
-        mam4::validation::create_column_view(nlev * aero_model::pcnst);
-    diagnostics.d_tracer_mixing_ratio_dt = Diagnostics::ColumnTracerView(
-        mixing_ratio_dt.data(), nlev, aero_model::pcnst);
+        mam4::validation::create_column_view(nlev * mam4::aero_model::pcnst);
+    diagnostics.d_tracer_mixing_ratio_dt = mam4::Diagnostics::ColumnTracerView(
+        mixing_ratio_dt.data(), nlev, mam4::aero_model::pcnst);
     Kokkos::parallel_for(
         "init_column_views", nlev, KOKKOS_LAMBDA(int i) {
           diagnostics.hydrostatic_dry_dp[i] = 0;
@@ -169,7 +168,7 @@ void compute_tendencies(Ensemble *ensemble) {
           diagnostics.mass_entrain_rate_into_downdraft[i] = 0;
           diagnostics.mass_detrain_rate_from_updraft[i] = 0;
           diagnostics.delta_pressure[i] = 0;
-          for (int j = 0; j < aero_model::pcnst; ++j) {
+          for (int j = 0; j < mam4::aero_model::pcnst; ++j) {
             diagnostics.tracer_mixing_ratio(i, j) = 0;
             diagnostics.d_tracer_mixing_ratio_dt(i, j) = 0;
           }
@@ -178,7 +177,7 @@ void compute_tendencies(Ensemble *ensemble) {
     std::vector<Real> temperature_host, pmid_host, du_host, eu_host, ed_host,
         dp_host, dpdry_host, cldfrac_host, icwmr_host, rprd_host, evapc_host,
         dqdt_host;
-    ColumnView temperature_dev, pmid_dev;
+    mam4::ColumnView temperature_dev, pmid_dev;
 
     get_input(input, "state_pdeldry", nlev, dpdry_host,
               diagnostics.hydrostatic_dry_dp);
@@ -208,9 +207,9 @@ void compute_tendencies(Ensemble *ensemble) {
 
     // NOTE: we haven't parallelized convproc over vertical levels because of
     // NOTE: data dependencies, so we run this serially
-    auto team_policy = ThreadTeamPolicy(1u, 1u);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           convproc.compute_tendencies(aero_config, team, t, dt, atmosphere,
                                       prognostics, diagnostics, tendencies);
         });

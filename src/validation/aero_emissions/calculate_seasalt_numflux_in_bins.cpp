@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void calculate_seasalt_numflux_in_bins(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {

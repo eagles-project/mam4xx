@@ -4,17 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace mo_photo;
+using namespace mam4::mo_photo;
 
 void jlong(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View1D = typename DeviceType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
     const auto alb_in_db = input.get_array("alb_in");
     const Real sza_in = input.get_array("sza_in")[0];
     const auto p_in_db = input.get_array("p_in");
@@ -135,9 +133,9 @@ void jlong(Ensemble *ensemble) {
     auto psum_l = View1D("psum_l", nw);
     auto psum_u = View1D("psum_u", nw);
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           jlong(team, sza_in, alb_in, p_in, t_in, colo3_in, xsqy, sza, del_sza,
                 alb, press, del_p, colo3, o3rat, del_alb, del_o3rat, etfphot,
                 rsf_tab, // in

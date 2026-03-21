@@ -4,12 +4,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/wet_dep.hpp>
-
-#include <iostream>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
-using namespace mam4;
+#include <iostream>
+
 using namespace skywalker;
 
 void test_wetdep_clddiag(std::unique_ptr<Ensemble> &ensemble);
@@ -33,9 +31,9 @@ int main(int argc, char **argv) {
   if (argc == 1) {
     usage((const char *)argv[0]);
   }
-  validation::initialize(argc, argv, validation::default_fpes);
+  mam4::validation::initialize(argc, argv, mam4::validation::default_fpes);
   std::string input_file = argv[1];
-  std::string output_file = validation::output_name(input_file);
+  std::string output_file = mam4::validation::output_name(input_file);
   std::cout << argv[0] << ": reading " << input_file << std::endl;
 
   // Load the ensemble. Any error encountered is fatal.
@@ -90,7 +88,7 @@ int main(int argc, char **argv) {
     // Write out a Python module.
     std::cout << argv[0] << ": writing " << output_file << std::endl;
     ensemble->write(output_file);
-    validation::finalize(ensemble);
+    mam4::validation::finalize(ensemble);
   } catch (Exception &e) {
     std::cerr << ": Error: " << e.what() << std::endl;
   }

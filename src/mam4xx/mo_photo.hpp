@@ -391,7 +391,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   const Real C2 = 9.524;
 
   // cos (solar zenith angle)
-  const Real coschi = max(cos(zen_angle), half);
+  const Real coschi = max(mam4::cos(zen_angle), half);
 
   Kokkos::parallel_for(
       Kokkos::TeamVectorRange(team, pver_local), [&](const int kk) {

@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void seasalt_emis(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {

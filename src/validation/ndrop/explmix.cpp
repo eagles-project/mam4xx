@@ -4,17 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
     const int top_lev = 7 - 1;
-    const int pver = ndrop::pver;
+    const int pver = mam4::ndrop::pver;
     const Real dtmix = input.get_array("dtmix")[0];
     const Real is_unact = input.get_array("is_unact")[0];
 

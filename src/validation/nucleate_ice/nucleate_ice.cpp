@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void nucleate_ice_test(Ensemble *ensemble) {
 
@@ -19,7 +17,7 @@ void nucleate_ice_test(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Fetch ensemble parameters
 
-    NucleateIce this_nucleate_ice;
+    mam4::NucleateIce this_nucleate_ice;
     // outputs
     const Real zero = 0;
     Real nuci, onihf, oniimm, onidep, onimey = zero;

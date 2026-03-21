@@ -3,10 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/aging.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
+
+#include <iostream>
 
 // This driver computes the binary or aerosol aging rate for the given
 // input.
@@ -21,7 +21,6 @@ void usage() {
 }
 
 using namespace skywalker;
-using namespace mam4;
 
 // Parameterizations used by the aging process.
 void mam_pcarbon_aging_frac(Ensemble *ensemble);
@@ -33,9 +32,9 @@ int main(int argc, char **argv) {
     usage();
   }
 
-  validation::initialize(argc, argv, validation::default_fpes);
+  mam4::validation::initialize(argc, argv, mam4::validation::default_fpes);
   std::string input_file = argv[1];
-  std::string output_file = validation::output_name(input_file);
+  std::string output_file = mam4::validation::output_name(input_file);
   std::cout << argv[0] << ": reading " << input_file << std::endl;
 
   // Load the ensemble. Any error encountered is fatal.
@@ -68,5 +67,5 @@ int main(int argc, char **argv) {
   ensemble->write(output_file);
 
   // Clean up.
-  validation::finalize(ensemble);
+  mam4::validation::finalize(ensemble);
 }

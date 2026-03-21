@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void setsox_test(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -52,8 +50,8 @@ void setsox_test(Ensemble *ensemble) {
 
     const mam4::mo_setsox::Config setsox_config_;
 
-    Real dqdt_aqso4[AeroConfig::num_gas_phase_species()] = {};
-    Real dqdt_aqh2so4[AeroConfig::num_gas_phase_species()] = {};
+    Real dqdt_aqso4[mam4::AeroConfig::num_gas_phase_species()] = {};
+    Real dqdt_aqh2so4[mam4::AeroConfig::num_gas_phase_species()] = {};
 
     mam4::mo_setsox::setsox_single_level(
         loffset, dt, press, pdel, tfld, mbar, lwc, cldfrc, cldnum, xhnm,

@@ -4,19 +4,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace mo_photo;
+using namespace mam4::mo_photo;
 
 void find_index(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // validation test from standalone mo_photo.
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View1D = typename DeviceType::view_1d<Real>;
-    using ViewInt1D = typename DeviceType::view_1d<int>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
+    using ViewInt1D = typename mam4::DeviceType::view_1d<int>;
 
     const auto var_in_db = input.get_array("var_in");
     const auto var_len = input.get_array("var_len")[0];
@@ -27,9 +25,9 @@ void find_index(Ensemble *ensemble) {
     Kokkos::deep_copy(var_in, var_in_host);
 
     ViewInt1D idx_out("idx_out", 1);
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           find_index(var_in, var_len,
                      var_min, //  in
                      idx_out(0));

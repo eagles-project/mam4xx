@@ -4,21 +4,19 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace lin_strat_chem;
+using namespace mam4::lin_strat_chem;
 
 void lin_strat_chem_solve_multicol(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const auto o3col_db = input.get_array("o3col");
     const auto temperature_db = input.get_array("temp");
     const auto pmid_db = input.get_array("pmid");
-    using View1D = typename DeviceType::view_1d<Real>;
-    using View2D = typename DeviceType::view_2d<Real>;
-    using View1DHost = typename HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
+    using View2D = typename mam4::DeviceType::view_2d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
 
     constexpr int ncol = 4;
     constexpr int pver = mam4::nlev;

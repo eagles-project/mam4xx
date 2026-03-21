@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void calculate_mass_mean_radius(Ensemble *ensemble) {
 
@@ -59,9 +57,9 @@ void calculate_mass_mean_radius(Ensemble *ensemble) {
         input.get_array("total_interstitial_aer_num");
     auto hetraer = input.get_array("hetraer");
 
-    hetfrz::calculate_mass_mean_radius(bcmac, bcmpc, dmac, dmc,
-                                       total_interstitial_aer_num.data(),
-                                       hetraer.data());
+    mam4::hetfrz::calculate_mass_mean_radius(bcmac, bcmpc, dmac, dmc,
+                                             total_interstitial_aer_num.data(),
+                                             hetraer.data());
 
     output.set("hetraer", hetraer);
   });

@@ -4,18 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <ekat_assert.hpp>
-#include <iomanip>
-#include <iostream>
 
 #include <mam4xx/convproc.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
+
 using namespace skywalker;
-using namespace mam4;
 
 namespace {
 void get_input(const Input &input, const std::string &name, const int size,
-               std::vector<Real> &host, ColumnView &dev) {
+               std::vector<Real> &host, mam4::ColumnView &dev) {
   host = input.get_array(name);
   EKAT_ASSERT(host.size() == size);
   dev = mam4::validation::create_column_view(size);
@@ -25,7 +22,7 @@ void get_input(const Input &input, const std::string &name, const int size,
   Kokkos::deep_copy(dev, host_view);
 }
 void set_output(Output &output, const std::string &name, const int size,
-                std::vector<Real> &host, const ColumnView &dev) {
+                std::vector<Real> &host, const mam4::ColumnView &dev) {
   host.resize(size);
   auto host_view = Kokkos::create_mirror_view(dev);
   Kokkos::deep_copy(host_view, dev);
@@ -39,38 +36,41 @@ void aer_vol_num_hygro(Ensemble *ensemble) {
   // Settings settings = ensemble->settings();
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-    const int num_modes = AeroConfig::num_modes();
+    const int num_modes = mam4::AeroConfig::num_modes();
     // Fetch ensemble parameters
     // Convert to C++ index by subtracting one.
-    EKAT_ASSERT(input.get("pcnst_extd") == ConvProc::pcnst_extd);
+    EKAT_ASSERT(input.get("pcnst_extd") == mam4::ConvProc::pcnst_extd);
     const Real rhoair = input.get("rhoair");
 
     std::vector<Real> conu_host, vaerosol_host, naerosol_host, hygro_host,
         hygro_2_host;
-    ColumnView conu_dev, vaerosol_dev, naerosol_dev, hygro_dev, hygro_2_dev;
-    get_input(input, "conu", ConvProc::pcnst_extd, conu_host, conu_dev);
+    mam4::ColumnView conu_dev, vaerosol_dev, naerosol_dev, hygro_dev,
+        hygro_2_dev;
+    get_input(input, "conu", mam4::ConvProc::pcnst_extd, conu_host, conu_dev);
     vaerosol_dev = mam4::validation::create_column_view(num_modes);
     naerosol_dev = mam4::validation::create_column_view(num_modes);
     hygro_dev = mam4::validation::create_column_view(num_modes);
     hygro_2_dev = mam4::validation::create_column_view(num_modes);
     Kokkos::parallel_for(
         "aer_vol_num_hygro", 1, KOKKOS_LAMBDA(int) {
-          Real conu[ConvProc::pcnst_extd];
-          for (int i = 0; i < ConvProc::pcnst_extd; ++i)
+          Real conu[mam4::ConvProc::pcnst_extd];
+          for (int i = 0; i < mam4::ConvProc::pcnst_extd; ++i)
             conu[i] = conu_dev[i];
           Real vaerosol[num_modes];
           Real naerosol[num_modes];
           Real hygro[num_modes];
-          convproc::aer_vol_num_hygro(conu, rhoair, vaerosol, naerosol, hygro);
+          mam4::convproc::aer_vol_num_hygro(conu, rhoair, vaerosol, naerosol,
+                                            hygro);
           for (int i = 0; i < num_modes; ++i)
             vaerosol_dev[i] = vaerosol[i];
           for (int i = 0; i < num_modes; ++i)
             naerosol_dev[i] = naerosol[i];
           for (int i = 0; i < num_modes; ++i)
             hygro_dev[i] = hygro[i];
-          for (int i = 0; i < ConvProc::pcnst_extd; ++i)
+          for (int i = 0; i < mam4::ConvProc::pcnst_extd; ++i)
             conu[i] /= 1.0e21;
-          convproc::aer_vol_num_hygro(conu, rhoair, vaerosol, naerosol, hygro);
+          mam4::convproc::aer_vol_num_hygro(conu, rhoair, vaerosol, naerosol,
+                                            hygro);
           for (int i = 0; i < num_modes; ++i)
             hygro_2_dev[i] = hygro[i];
         });

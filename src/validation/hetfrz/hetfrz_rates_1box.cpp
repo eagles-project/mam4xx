@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void hetfrz_rates_1box(Ensemble *ensemble) {
 
@@ -382,43 +380,48 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
 
     const int nlev = qc.size();
     Real pblh = 1000;
-    mam4::Prognostics progs = validation::create_prognostics(nlev);
-    mam4::Diagnostics diags = validation::create_diagnostics(nlev);
-    mam4::Tendencies tends = validation::create_tendencies(nlev);
+    mam4::Prognostics progs = mam4::validation::create_prognostics(nlev);
+    mam4::Diagnostics diags = mam4::validation::create_diagnostics(nlev);
+    mam4::Tendencies tends = mam4::validation::create_tendencies(nlev);
 
-    const int acc = static_cast<int>(ModeIndex::Accumulation);
-    const int crs = static_cast<int>(ModeIndex::Coarse);
-    const int pc = static_cast<int>(ModeIndex::PrimaryCarbon);
+    const int acc = static_cast<int>(mam4::ModeIndex::Accumulation);
+    const int crs = static_cast<int>(mam4::ModeIndex::Coarse);
+    const int pc = static_cast<int>(mam4::ModeIndex::PrimaryCarbon);
 
-    const int acc_so4 =
-        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::SO4);
-    const int acc_pom =
-        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::POM);
-    const int acc_soa =
-        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::SOA);
+    const int acc_so4 = aerosol_index_for_mode(mam4::ModeIndex::Accumulation,
+                                               mam4::AeroId::SO4);
+    const int acc_pom = aerosol_index_for_mode(mam4::ModeIndex::Accumulation,
+                                               mam4::AeroId::POM);
+    const int acc_soa = aerosol_index_for_mode(mam4::ModeIndex::Accumulation,
+                                               mam4::AeroId::SOA);
     const int acc_bc =
-        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::BC);
-    const int acc_dst =
-        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::DST);
-    const int acc_nacl =
-        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::NaCl);
-    const int acc_mom =
-        aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::MOM);
+        aerosol_index_for_mode(mam4::ModeIndex::Accumulation, mam4::AeroId::BC);
+    const int acc_dst = aerosol_index_for_mode(mam4::ModeIndex::Accumulation,
+                                               mam4::AeroId::DST);
+    const int acc_nacl = aerosol_index_for_mode(mam4::ModeIndex::Accumulation,
+                                                mam4::AeroId::NaCl);
+    const int acc_mom = aerosol_index_for_mode(mam4::ModeIndex::Accumulation,
+                                               mam4::AeroId::MOM);
 
-    const int crs_dst = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::DST);
+    const int crs_dst =
+        aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::DST);
     const int crs_nacl =
-        aerosol_index_for_mode(ModeIndex::Coarse, AeroId::NaCl);
-    const int crs_so4 = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::SO4);
-    const int crs_bc = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::BC);
-    const int crs_pom = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::POM);
-    const int crs_mom = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::MOM);
+        aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::NaCl);
+    const int crs_so4 =
+        aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::SO4);
+    const int crs_bc =
+        aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::BC);
+    const int crs_pom =
+        aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::POM);
+    const int crs_mom =
+        aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::MOM);
 
-    const int pc_pom =
-        aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::POM);
-    const int pc_bc =
-        aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::BC);
-    const int pc_mom =
-        aerosol_index_for_mode(ModeIndex::PrimaryCarbon, AeroId::MOM);
+    const int pc_pom = aerosol_index_for_mode(mam4::ModeIndex::PrimaryCarbon,
+                                              mam4::AeroId::POM);
+    const int pc_bc = aerosol_index_for_mode(mam4::ModeIndex::PrimaryCarbon,
+                                             mam4::AeroId::BC);
+    const int pc_mom = aerosol_index_for_mode(mam4::ModeIndex::PrimaryCarbon,
+                                              mam4::AeroId::MOM);
 
     auto host_column = Kokkos::create_mirror_view(progs.n_mode_i[acc]);
 
@@ -611,44 +614,47 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = temperature[k];
     }
-    auto d_temperature = validation::create_column_view(nlev);
+    auto d_temperature = mam4::validation::create_column_view(nlev);
     Kokkos::deep_copy(d_temperature, host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = pmid[k];
     }
-    auto d_pressure = validation::create_column_view(nlev);
+    auto d_pressure = mam4::validation::create_column_view(nlev);
     Kokkos::deep_copy(d_pressure, host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = qc[k];
     }
-    auto d_liquid_mixing_ratio = validation::create_column_view(nlev);
+    auto d_liquid_mixing_ratio = mam4::validation::create_column_view(nlev);
     Kokkos::deep_copy(d_liquid_mixing_ratio, host_column);
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = nc[k];
     }
     auto d_cloud_liquid_number_mixing_ratio =
-        validation::create_column_view(nlev);
+        mam4::validation::create_column_view(nlev);
     Kokkos::deep_copy(d_cloud_liquid_number_mixing_ratio, host_column);
 
     // Because the Atmosphere type uses ConstColumnViews, we have to construct
     // an atm object with views for all its data or set them piecemeal.
-    auto d_vapor_mixing_ratio = validation::create_column_view(nlev);
-    auto d_ice_mixing_ratio = validation::create_column_view(nlev);
-    auto d_cloud_ice_number_mixing_ratio = validation::create_column_view(nlev);
-    auto d_height = validation::create_column_view(nlev);
-    auto d_hydrostatic_dp = validation::create_column_view(nlev);
-    auto d_interface_pressure = validation::create_column_view(nlev + 1);
-    auto d_cloud_fraction = validation::create_column_view(nlev);
-    auto d_updraft_vel_ice_nucleation = validation::create_column_view(nlev);
-    Atmosphere atm(nlev, d_temperature, d_pressure, d_vapor_mixing_ratio,
-                   d_liquid_mixing_ratio, d_cloud_liquid_number_mixing_ratio,
-                   d_ice_mixing_ratio, d_cloud_ice_number_mixing_ratio,
-                   d_height, d_hydrostatic_dp, d_interface_pressure,
-                   d_cloud_fraction, d_updraft_vel_ice_nucleation, pblh);
-    Surface sfc = mam4::testing::create_surface();
+    auto d_vapor_mixing_ratio = mam4::validation::create_column_view(nlev);
+    auto d_ice_mixing_ratio = mam4::validation::create_column_view(nlev);
+    auto d_cloud_ice_number_mixing_ratio =
+        mam4::validation::create_column_view(nlev);
+    auto d_height = mam4::validation::create_column_view(nlev);
+    auto d_hydrostatic_dp = mam4::validation::create_column_view(nlev);
+    auto d_interface_pressure = mam4::validation::create_column_view(nlev + 1);
+    auto d_cloud_fraction = mam4::validation::create_column_view(nlev);
+    auto d_updraft_vel_ice_nucleation =
+        mam4::validation::create_column_view(nlev);
+    mam4::Atmosphere atm(nlev, d_temperature, d_pressure, d_vapor_mixing_ratio,
+                         d_liquid_mixing_ratio,
+                         d_cloud_liquid_number_mixing_ratio, d_ice_mixing_ratio,
+                         d_cloud_ice_number_mixing_ratio, d_height,
+                         d_hydrostatic_dp, d_interface_pressure,
+                         d_cloud_fraction, d_updraft_vel_ice_nucleation, pblh);
+    mam4::Surface sfc = mam4::testing::create_surface();
 
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = ast[k];
@@ -656,7 +662,7 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
     Kokkos::deep_copy(diags.stratiform_cloud_fraction, host_column);
 
     // Now need to unpack factnum and copy to device
-    const int num_modes = AeroConfig::num_modes();
+    const int num_modes = mam4::AeroConfig::num_modes();
     for (int imode = 0; imode < num_modes; ++imode) {
       for (int k = 0; k < nlev; ++k) {
         ;
@@ -667,10 +673,10 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
 
     mam4::AeroConfig mam4_config;
     mam4::HetfrzProcess process(mam4_config);
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Real t = 0.0;
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           process.compute_tendencies(team, t, dt, atm, sfc, progs, diags,
                                      tends);
         });

@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
 
@@ -32,26 +30,26 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
     auto dgncur_awet_db = input.get_array("dgncur_awet");
     auto qaerwat_db = input.get_array("qaerwat");
 
-    using View2D = typename DeviceType::view_2d<Real>;
-    using View1DHost = typename HostType::view_1d<Real>;
+    using View2D = typename mam4::DeviceType::view_2d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
 
-    constexpr int pcnst = aero_model::pcnst;
-    constexpr int pver = ndrop::pver;
-    constexpr int ntot_amode = AeroConfig::num_modes();
+    constexpr int pcnst = mam4::aero_model::pcnst;
+    constexpr int pver = mam4::ndrop::pver;
+    constexpr int ntot_amode = mam4::AeroConfig::num_modes();
 
     View2D state_q("state_q", pver, pcnst);
     mam4::validation::convert_1d_vector_to_2d_view_device(state_q_db, state_q);
 
-    ColumnView temperature;
-    temperature = testing::create_column_view(pver);
+    mam4::ColumnView temperature;
+    temperature = mam4::testing::create_column_view(pver);
     auto temperature_host = View1DHost((Real *)temperature_db.data(), pver);
 
-    ColumnView pmid;
-    pmid = testing::create_column_view(pver);
+    mam4::ColumnView pmid;
+    pmid = mam4::testing::create_column_view(pver);
     auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
 
-    ColumnView cldn;
-    cldn = testing::create_column_view(pver);
+    mam4::ColumnView cldn;
+    cldn = mam4::testing::create_column_view(pver);
     auto cldn_host = View1DHost((Real *)cldn_db.data(), pver);
 
     Kokkos::deep_copy(temperature, temperature_host);
@@ -72,19 +70,19 @@ void modal_aero_water_uptake_dr_col(Ensemble *ensemble) {
     {
 
       const int top_lev = 1;
-      auto team_policy = ThreadTeamPolicy(1, 1u);
+      auto team_policy = mam4::ThreadTeamPolicy(1, 1u);
       Kokkos::parallel_for(
-          team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+          team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
             for (int kk = top_lev; kk < pver; ++kk) {
 
-              int nspec_amode[AeroConfig::num_modes()];
-              int lspectype_amode[water_uptake::maxd_aspectype]
-                                 [AeroConfig::num_modes()];
-              Real specdens_amode[water_uptake::maxd_aspectype];
-              Real spechygro[water_uptake::maxd_aspectype];
+              int nspec_amode[mam4::AeroConfig::num_modes()];
+              int lspectype_amode[mam4::water_uptake::maxd_aspectype]
+                                 [mam4::AeroConfig::num_modes()];
+              Real specdens_amode[mam4::water_uptake::maxd_aspectype];
+              Real spechygro[mam4::water_uptake::maxd_aspectype];
 
-              water_uptake::get_e3sm_parameters(nspec_amode, lspectype_amode,
-                                                specdens_amode, spechygro);
+              mam4::water_uptake::get_e3sm_parameters(
+                  nspec_amode, lspectype_amode, specdens_amode, spechygro);
 
               const auto state_q_kk =
                   Kokkos::subview(state_q, kk, Kokkos::ALL());

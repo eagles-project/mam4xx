@@ -4,18 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <ekat_assert.hpp>
-#include <iomanip>
-#include <iostream>
 
 #include <mam4xx/convproc.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
+
 using namespace skywalker;
-using namespace mam4;
 
 namespace {
 void get_input(const Input &input, const std::string &name, const int size,
-               std::vector<Real> &host, ColumnView &dev) {
+               std::vector<Real> &host, mam4::ColumnView &dev) {
   host = input.get_array(name);
   EKAT_ASSERT(host.size() == size);
   dev = mam4::validation::create_column_view(size);
@@ -25,7 +22,7 @@ void get_input(const Input &input, const std::string &name, const int size,
   Kokkos::deep_copy(dev, host_view);
 }
 void set_output(Output &output, const std::string &name, const int size,
-                std::vector<Real> &host, const ColumnView &dev) {
+                std::vector<Real> &host, const mam4::ColumnView &dev) {
   host.resize(size);
   auto host_view = Kokkos::create_mirror_view(dev);
   Kokkos::deep_copy(host_view, dev);
@@ -39,7 +36,7 @@ void ma_activate_convproc(Ensemble *ensemble) {
   // Settings settings = ensemble->settings();
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-    const int pcnst_extd = ConvProc::pcnst_extd;
+    const int pcnst_extd = mam4::ConvProc::pcnst_extd;
     // Fetch ensemble parameters
     // Convert to C++ index by subtracting one.
     const Real f_ent = input.get("f_ent");
@@ -57,7 +54,7 @@ void ma_activate_convproc(Ensemble *ensemble) {
     EKAT_ASSERT(kactfirst == 67);
 
     std::vector<Real> conu_host, dconudt_host;
-    ColumnView conu_dev, dconudt_dev;
+    mam4::ColumnView conu_dev, dconudt_dev;
     get_input(input, "conu", pcnst_extd, conu_host, conu_dev);
     get_input(input, "dconudt", pcnst_extd, dconudt_host, dconudt_dev);
     Kokkos::parallel_for(
@@ -67,8 +64,8 @@ void ma_activate_convproc(Ensemble *ensemble) {
             conu[i] = conu_dev[i];
           for (int i = 0; i < pcnst_extd; ++i)
             dconudt[i] = dconudt_dev[i];
-          convproc::ma_activate_convproc(conu, dconudt, f_ent, dt_u, wup, tair,
-                                         rhoair, kk, kactfirst);
+          mam4::convproc::ma_activate_convproc(conu, dconudt, f_ent, dt_u, wup,
+                                               tair, rhoair, kk, kactfirst);
           for (int i = 0; i < pcnst_extd; ++i)
             conu_dev[i] = conu[i];
           for (int i = 0; i < pcnst_extd; ++i)

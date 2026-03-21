@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void calculate_water_activity(Ensemble *ensemble) {
   // Run the ensemble.
@@ -52,9 +50,9 @@ void calculate_water_activity(Ensemble *ensemble) {
     auto r3lx = input.get("r3lx");
 
     // Compute aw
-    hetfrz::calculate_water_activity(total_interstitial_aer_num.data(),
-                                     awcam.data(), awfacm.data(), r3lx,
-                                     aw.data());
+    mam4::hetfrz::calculate_water_activity(total_interstitial_aer_num.data(),
+                                           awcam.data(), awfacm.data(), r3lx,
+                                           aw.data());
 
     output.set("aw", aw);
   });

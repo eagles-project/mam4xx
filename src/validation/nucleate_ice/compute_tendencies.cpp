@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void compute_tendencies(Ensemble *ensemble) {
 
@@ -24,18 +22,18 @@ void compute_tendencies(Ensemble *ensemble) {
 
     int nlev = 1;
     Real pblh = 1000;
-    Atmosphere atm = validation::create_atmosphere(nlev, pblh);
-    Surface sfc = validation::create_surface();
-    mam4::Prognostics progs = validation::create_prognostics(nlev);
-    mam4::Diagnostics diags = validation::create_diagnostics(nlev);
-    mam4::Tendencies tends = validation::create_tendencies(nlev);
+    mam4::Atmosphere atm = mam4::validation::create_atmosphere(nlev, pblh);
+    mam4::Surface sfc = mam4::validation::create_surface();
+    mam4::Prognostics progs = mam4::validation::create_prognostics(nlev);
+    mam4::Diagnostics diags = mam4::validation::create_diagnostics(nlev);
+    mam4::Tendencies tends = mam4::validation::create_tendencies(nlev);
 
     const Real subgrid = input.get_array("nucleate_ice_subgrid")[0];
     const Real so4_sz_thresh_icenuc =
         input.get_array("so4_sz_thresh_icenuc")[0];
 
     mam4::AeroConfig mam4_config;
-    NucleateIce::Config nucleate_ice_config(subgrid, so4_sz_thresh_icenuc);
+    mam4::NucleateIce::Config nucleate_ice_config(subgrid, so4_sz_thresh_icenuc);
     mam4::NucleateIceProcess process(mam4_config, nucleate_ice_config);
 
     const Real pmid = input.get_array("pmid")[0];        // air pressure
@@ -49,11 +47,11 @@ void compute_tendencies(Ensemble *ensemble) {
     // qn(:ncol,:pver) = state_q(:ncol,:pver,1)
     const Real vapor_mixing_ratio = state_q[0];
 
-    auto d_temp = validation::create_column_view(nlev);
-    auto d_pmid = validation::create_column_view(nlev);
-    auto d_cloud_fraction = validation::create_column_view(nlev);
-    auto d_updraft_vel_ice_nucleation = validation::create_column_view(nlev);
-    auto d_vapor_mixing_ratio = validation::create_column_view(nlev);
+    auto d_temp = mam4::validation::create_column_view(nlev);
+    auto d_pmid = mam4::validation::create_column_view(nlev);
+    auto d_cloud_fraction = mam4::validation::create_column_view(nlev);
+    auto d_updraft_vel_ice_nucleation = mam4::validation::create_column_view(nlev);
+    auto d_vapor_mixing_ratio = mam4::validation::create_column_view(nlev);
     Kokkos::deep_copy(d_temp, temp);
     Kokkos::deep_copy(d_pmid, pmid);
     Kokkos::deep_copy(d_cloud_fraction, cloud_fraction);
@@ -76,8 +74,8 @@ void compute_tendencies(Ensemble *ensemble) {
 
     // we only copy values of mass m.r that are use in this process.
     // Other values will be equal to zero
-    const int aitken_idx = int(ModeIndex::Aitken);
-    const int coarse_idx = int(ModeIndex::Coarse);
+    const int aitken_idx = int(mam4::ModeIndex::Aitken);
+    const int coarse_idx = int(mam4::ModeIndex::Coarse);
     Kokkos::deep_copy(progs.n_mode_i[aitken_idx], num_aitken);
     Kokkos::deep_copy(progs.n_mode_i[coarse_idx], num_coarse);
 
@@ -99,14 +97,14 @@ void compute_tendencies(Ensemble *ensemble) {
     auto coarse_pom = state_q[int(lptr_pom_a_amode[modeptr_coarse]) - 1];
     auto coarse_soa = state_q[int(lptr_soa_a_amode[modeptr_coarse]) - 1];
 
-    const int dst_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::DST);
+    const int dst_idx = aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::DST);
     const int nacl_idx =
-        aerosol_index_for_mode(ModeIndex::Coarse, AeroId::NaCl);
-    const int so4_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::SO4);
-    const int mom_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::MOM);
-    const int bc_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::BC);
-    const int pom_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::POM);
-    const int soa_idx = aerosol_index_for_mode(ModeIndex::Coarse, AeroId::SOA);
+        aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::NaCl);
+    const int so4_idx = aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::SO4);
+    const int mom_idx = aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::MOM);
+    const int bc_idx = aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::BC);
+    const int pom_idx = aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::POM);
+    const int soa_idx = aerosol_index_for_mode(mam4::ModeIndex::Coarse, mam4::AeroId::SOA);
 
     // we only copy values of mass m.r that are use in this process.
     // Other values will be equal to zero
@@ -122,9 +120,9 @@ void compute_tendencies(Ensemble *ensemble) {
     Kokkos::deep_copy(diags.dry_geometric_mean_diameter_i[aitken_idx],
                       dgnum[modeptr_aitken]);
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           process.compute_tendencies(team, t, dt, atm, sfc, progs, diags,
                                      tends);
         });

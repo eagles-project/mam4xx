@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void calculate_vars_for_water_activity(Ensemble *ensemble) {
 
@@ -122,7 +120,7 @@ void calculate_vars_for_water_activity(Ensemble *ensemble) {
     auto total_interstitial_aer_num =
         input.get_array("total_interstitial_aer_num");
 
-    hetfrz::calculate_vars_for_water_activity(
+    mam4::hetfrz::calculate_vars_for_water_activity(
         so4mac, soamac, bcmac, mommac, pommac, num_accum, so4mc, mommc, bcmc,
         pommc, soamc, num_coarse, total_interstitial_aer_num.data(),
         awcam.data(), awfacm.data());

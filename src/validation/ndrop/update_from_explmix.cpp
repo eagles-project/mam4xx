@@ -4,17 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void update_from_explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
-    const int ntot_amode = AeroConfig::num_modes();
-    const int pver = ndrop::pver;
+    const int ntot_amode = mam4::AeroConfig::num_modes();
+    const int pver = mam4::ndrop::pver;
     const int top_lev = 6;
     const auto mam_idx_db = input.get_array("mam_idx");
     const auto nspec_amode_db = input.get_array("nspec_amode");
@@ -39,18 +37,18 @@ void update_from_explmix(Ensemble *ensemble) {
     const Real dtmicro = input.get_array("dtmicro")[0];
 
     const Real zero = 0.0;
-    const int nmodes = AeroConfig::num_modes();
+    const int nmodes = mam4::AeroConfig::num_modes();
     const int ncnst_tot = 25;
     const int nspec_max = 8;
     int raer_len = pver * ncnst_tot;
     int act_len = pver * nmodes;
 
-    using View1D = ndrop::View1D;
-    using View2D = ndrop::View2D;
+    using View1D = mam4::ndrop::View1D;
+    using View2D = mam4::ndrop::View2D;
 
-    using View1DHost = typename HostType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
 
-    View1D indexes = testing::create_column_view(2);
+    View1D indexes = mam4::testing::create_column_view(2);
     auto indexes_host = View1DHost("nnew_nsav", 2);
     Kokkos::deep_copy(indexes, indexes_host);
 
@@ -160,12 +158,12 @@ void update_from_explmix(Ensemble *ensemble) {
       }
     }
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           int nnew = 1;
           int nsav = 0;
-          ndrop::update_from_explmix(
+          mam4::ndrop::update_from_explmix(
               team, dtmicro, csbot, cldn, zn, zs, ekd, nact, mact, qcld,
               raercol, raercol_cw, nsav, nnew, nspec_amode, mam_idx, true,
               top_lev, overlapp, overlapm, ekkp, ekkm, qncld);

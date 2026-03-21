@@ -3,10 +3,8 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <mam4xx/mo_drydep.hpp>
-
 #include <iostream>
-#include <skywalker.hpp>
+#include <mam4xx/mo_drydep.hpp>
 #include <validation.hpp>
 
 void usage() {
@@ -19,7 +17,6 @@ void usage() {
 }
 
 using namespace skywalker;
-using namespace mam4;
 using DryDepData = mam4::seq_drydep::Data;
 
 // Parameterizations used by the mo_drydep() process.
@@ -41,21 +38,21 @@ namespace {
 
 // this function creates data views for dry deposition of tracers
 mam4::seq_drydep::Data create_drydep_data() {
-  using View1D = typename DeviceType::view_1d<Real>;
-  using View2D = typename DeviceType::view_2d<Real>;
-  using View1DHost = typename HostType::view_1d<Real>;
+  using View1D = typename mam4::DeviceType::view_1d<Real>;
+  using View2D = typename mam4::DeviceType::view_2d<Real>;
+  using View1DHost = typename mam4::HostType::view_1d<Real>;
 
-  using ViewBool1D = typename DeviceType::view_1d<bool>;
-  using ViewInt1D = typename DeviceType::view_1d<int>;
-  using ViewBool1DHost = typename HostType::view_1d<bool>;
-  using ViewInt1DHost = typename HostType::view_1d<int>;
+  using ViewBool1D = typename mam4::DeviceType::view_1d<bool>;
+  using ViewInt1D = typename mam4::DeviceType::view_1d<int>;
+  using ViewBool1DHost = typename mam4::HostType::view_1d<bool>;
+  using ViewInt1DHost = typename mam4::HostType::view_1d<int>;
 
   // allocate the views
   constexpr int n_drydep = 3;
   constexpr int NSeas = mam4::seq_drydep::NSeas;
   constexpr int NLUse = mam4::seq_drydep::NLUse;
   constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
-  seq_drydep::Data data{
+  mam4::seq_drydep::Data data{
       View1D("drat", n_drydep),
       View1D("foxd", n_drydep),
       View2D("rac", NSeas, NLUse),
@@ -232,9 +229,9 @@ int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
   }
-  validation::initialize(argc, argv);
+  mam4::validation::initialize(argc, argv);
   std::string input_file = argv[1];
-  std::string output_file = validation::output_name(input_file);
+  std::string output_file = mam4::validation::output_name(input_file);
   std::cout << argv[0] << ": reading " << input_file << std::endl;
 
   // Load the ensemble. Any error encountered is fatal.
@@ -288,5 +285,5 @@ int main(int argc, char **argv) {
   std::cout << argv[0] << ": writing " << output_file << std::endl;
   ensemble->write(output_file);
 
-  validation::finalize(ensemble);
+  mam4::validation::finalize(ensemble);
 }

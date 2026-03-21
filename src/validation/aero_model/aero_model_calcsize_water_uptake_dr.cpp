@@ -4,19 +4,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    constexpr int pcnst = aero_model::pcnst;
-    constexpr int pver = ndrop::pver;
-    constexpr int ntot_amode = AeroConfig::num_modes();
+    constexpr int pcnst = mam4::aero_model::pcnst;
+    constexpr int pver = mam4::ndrop::pver;
+    constexpr int ntot_amode = mam4::AeroConfig::num_modes();
 
-    using View2D = DeviceType::view_2d<Real>;
+    using View2D = mam4::DeviceType::view_2d<Real>;
     constexpr Real zero = 0.0;
 
     auto state_q_db = input.get_array("state_q");
@@ -47,33 +45,35 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
     View2D ptend_q("ptend_q", pver, pcnst);
     View2D dqqcwdt("dqqcwdt", pver, pcnst);
 
-    wetdep::View2D qaerwat("qaerwat", pver, ntot_amode);
+    mam4::wetdep::View2D qaerwat("qaerwat", pver, ntot_amode);
     const auto qaerwat_db = input.get_array("qaerwat");
     mam4::validation::convert_1d_vector_to_2d_view_device(qaerwat_db, qaerwat);
 
-    wetdep::View2D wetdens("wetdens", pver, ntot_amode);
+    mam4::wetdep::View2D wetdens("wetdens", pver, ntot_amode);
     const auto wetdens_db = input.get_array("wetdens");
     mam4::validation::convert_1d_vector_to_2d_view_device(wetdens_db, wetdens);
 
-    wetdep::View2D dgnumwet("dgnumwet", pver, ntot_amode);
+    mam4::wetdep::View2D dgnumwet("dgnumwet", pver, ntot_amode);
     const auto dgnumwet_db = input.get_array("dgnumwet");
     mam4::validation::convert_1d_vector_to_2d_view_device(dgnumwet_db,
                                                           dgnumwet);
 
-    ColumnView temperature =
-        validation::get_input_in_columnview(input, "temperature");
-    ColumnView pmid = validation::get_input_in_columnview(input, "pmid");
+    mam4::ColumnView temperature =
+        mam4::validation::get_input_in_columnview(input, "temperature");
+    mam4::ColumnView pmid =
+        mam4::validation::get_input_in_columnview(input, "pmid");
 
-    ColumnView cldn = validation::get_input_in_columnview(input, "cldn");
+    mam4::ColumnView cldn =
+        mam4::validation::get_input_in_columnview(input, "cldn");
 
     mam4::modal_aero_calcsize::CalcsizeData cal_data;
     cal_data.initialize();
     const bool update_mmr = true;
     cal_data.set_update_mmr(update_mmr);
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           // FIXME: top_lev is set to 1 in calcsize ?
           const int top_lev = 0; // 1( in fortran )
 
@@ -87,7 +87,7 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
                 auto dgncur_c_k = Kokkos::subview(dgncur_c, kk, Kokkos::ALL());
                 auto ptend_q_k = Kokkos::subview(ptend_q, kk, Kokkos::ALL());
                 auto dqqcwdt_k = Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
-                modal_aero_calcsize::modal_aero_calcsize_sub(
+                mam4::modal_aero_calcsize::modal_aero_calcsize_sub(
                     state_q_k, // in
                     qqcw_k,    // in/out
                     dt, cal_data,
@@ -111,7 +111,7 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
 
                 if (update_mmr) {
                   // Note: it only needs to update aerosol variables.
-                  for (int i = utils::aero_start_ind(); i < pcnst; ++i) {
+                  for (int i = mam4::utils::aero_start_ind(); i < pcnst; ++i) {
                     qqcw(kk, i) =
                         mam4::max(zero, qqcw(kk, i) + dqqcwdt(kk, i) * dt);
                   }

@@ -3,13 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/drydep.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void modal_aero_gravit_settling_velocity(Ensemble *ensemble) {
 
@@ -45,7 +42,7 @@ void modal_aero_gravit_settling_velocity(Ensemble *ensemble) {
     auto sig_part = input.get_array("sig_part");
 
     auto to_dev = [](const std::vector<Real> &vec) {
-      ColumnView dev = mam4::validation::create_column_view(vec.size());
+      mam4::ColumnView dev = mam4::validation::create_column_view(vec.size());
       auto host = Kokkos::create_mirror_view(dev);
       for (int i = 0; i < vec.size(); ++i)
         host[i] = vec[i];
@@ -58,10 +55,10 @@ void modal_aero_gravit_settling_velocity(Ensemble *ensemble) {
     auto density_part_dev = to_dev(density_part);
     auto sig_part_dev = to_dev(sig_part);
 
-    ColumnView vlc_grv = mam4::validation::create_column_view(nlev);
+    mam4::ColumnView vlc_grv = mam4::validation::create_column_view(nlev);
     Kokkos::parallel_for(
         "modal_aero_depvel_part", nlev, KOKKOS_LAMBDA(int lev) {
-          vlc_grv[lev] = drydep::modal_aero_gravit_settling_velocity(
+          vlc_grv[lev] = mam4::drydep::modal_aero_gravit_settling_velocity(
               moment, radius_max, tair_dev[lev], pmid_dev[lev],
               radius_part_dev[lev], density_part_dev[lev], sig_part_dev[lev]);
         });

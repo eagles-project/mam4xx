@@ -4,12 +4,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace gasaerexch;
+using namespace mam4::gasaerexch;
 
 void mam_gasaerexch_1subarea(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -67,10 +65,10 @@ void mam_gasaerexch_1subarea(Ensemble *ensemble) {
     }
 
     // Call the function
-    mam_gasaerexch_1subarea(jtsubstep, dtsubstep, temp, pmid, aircon, n_mode,
-                            qgas_cur, qgas_avg, qgas_netprod_otrproc, qaer_cur,
-                            qnum_cur, qwtr_cur, dgn_awet, uptkaer,
-                            uptkrate_h2so4);
+    mam4::mam_gasaerexch_1subarea(jtsubstep, dtsubstep, temp, pmid, aircon,
+                                  n_mode, qgas_cur, qgas_avg,
+                                  qgas_netprod_otrproc, qaer_cur, qnum_cur,
+                                  qwtr_cur, dgn_awet, uptkaer, uptkrate_h2so4);
 
     // Prepare output arrays
     std::vector<Real> qgas_cur_out(max_gas);

@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/coagulation.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void coag_aer_update(Ensemble *ensemble) {
 
@@ -46,9 +44,9 @@ void coag_aer_update(Ensemble *ensemble) {
     auto qaer_bgn_f = input.get_array("qaer_bgn");
     auto qaer_end_f = input.get_array("qaer_end");
 
-    const int num_modes = AeroConfig::num_modes();
-    const int num_aero = AeroConfig::num_aerosol_ids();
-    const int max_agepair = AeroConfig::max_agepair();
+    const int num_modes = mam4::AeroConfig::num_modes();
+    const int num_aero = mam4::AeroConfig::num_aerosol_ids();
+    const int max_agepair = mam4::AeroConfig::max_agepair();
 
     Real qaer_bgn_c[num_aero][num_modes];
     Real qaer_end_c[num_aero][num_modes];
@@ -62,9 +60,9 @@ void coag_aer_update(Ensemble *ensemble) {
     }
 
     Real qaer_del_coag_out_c[num_aero][max_agepair] = {{0}};
-    coagulation::mam_coag_aer_update(ybetaij3.data(), deltat[0],
-                                     qnum_tavg.data(), qaer_bgn_c, qaer_end_c,
-                                     qaer_del_coag_out_c);
+    mam4::coagulation::mam_coag_aer_update(ybetaij3.data(), deltat[0],
+                                           qnum_tavg.data(), qaer_bgn_c,
+                                           qaer_end_c, qaer_del_coag_out_c);
 
     n = 0;
     for (int ispec = 0; ispec < num_aero; ++ispec) {

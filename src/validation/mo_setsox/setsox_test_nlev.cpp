@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void setsox_test_nlev(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -51,7 +49,7 @@ void setsox_test_nlev(Ensemble *ensemble) {
     auto qin_in = input.get_array("qin");
 
     const int nlev = mam4::nlev;
-    const int nspec = AeroConfig::num_gas_phase_species();
+    const int nspec = mam4::AeroConfig::num_gas_phase_species();
 
     // This is a sort hacky way of testing the column dispatch, but should still
     // be reasonably robust.
@@ -59,33 +57,33 @@ void setsox_test_nlev(Ensemble *ensemble) {
     // we'll use the same validation data for every level in a column.
     // then we'll make sure every level gets the same answer and then write the
     // first entry as the final output
-    ColumnView press = testing::create_column_view(nlev);
+    mam4::ColumnView press = mam4::testing::create_column_view(nlev);
     auto press_h = Kokkos::create_mirror_view(press);
-    ColumnView pdel = testing::create_column_view(nlev);
+    mam4::ColumnView pdel = mam4::testing::create_column_view(nlev);
     auto pdel_h = Kokkos::create_mirror_view(pdel);
-    ColumnView tfld = testing::create_column_view(nlev);
+    mam4::ColumnView tfld = mam4::testing::create_column_view(nlev);
     auto tfld_h = Kokkos::create_mirror_view(tfld);
-    ColumnView mbar = testing::create_column_view(nlev);
+    mam4::ColumnView mbar = mam4::testing::create_column_view(nlev);
     auto mbar_h = Kokkos::create_mirror_view(mbar);
-    ColumnView lwc = testing::create_column_view(nlev);
+    mam4::ColumnView lwc = mam4::testing::create_column_view(nlev);
     auto lwc_h = Kokkos::create_mirror_view(lwc);
-    ColumnView cldfrc = testing::create_column_view(nlev);
+    mam4::ColumnView cldfrc = mam4::testing::create_column_view(nlev);
     auto cldfrc_h = Kokkos::create_mirror_view(cldfrc);
-    ColumnView cldnum = testing::create_column_view(nlev);
+    mam4::ColumnView cldnum = mam4::testing::create_column_view(nlev);
     auto cldnum_h = Kokkos::create_mirror_view(cldnum);
-    ColumnView xhnm = testing::create_column_view(nlev);
+    mam4::ColumnView xhnm = mam4::testing::create_column_view(nlev);
     auto xhnm_h = Kokkos::create_mirror_view(xhnm);
 
-    using View1DHost = typename HostType::view_1d<Real>;
-    ColumnView qcw[nspec];
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    mam4::ColumnView qcw[nspec];
     View1DHost qcw_h[nspec];
-    ColumnView qin[nspec];
+    mam4::ColumnView qin[nspec];
     View1DHost qin_h[nspec];
 
     for (int i = 0; i < nspec; ++i) {
-      qcw[i] = testing::create_column_view(nlev);
+      qcw[i] = mam4::testing::create_column_view(nlev);
       qcw_h[i] = Kokkos::create_mirror_view(qcw[i]);
-      qin[i] = testing::create_column_view(nlev);
+      qin[i] = mam4::testing::create_column_view(nlev);
       qin_h[i] = Kokkos::create_mirror_view(qin[i]);
     }
 
@@ -119,9 +117,9 @@ void setsox_test_nlev(Ensemble *ensemble) {
     }
 
     // Single-column dispatch.
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           Real dqdt_aqso4[nspec] = {};
           Real dqdt_aqh2so4[nspec] = {};
           mam4::mo_setsox::setsox(team, loffset, dt, press, pdel, tfld, mbar,

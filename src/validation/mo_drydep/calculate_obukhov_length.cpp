@@ -1,18 +1,16 @@
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 using namespace mam4::mo_drydep;
 
 void calculate_obukhov_length(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View1D = typename DeviceType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
 
-    using ViewBool1D = typename DeviceType::view_1d<bool>;
-    using ViewBool1DHost = typename HostType::view_1d<bool>;
+    using ViewBool1D = typename mam4::DeviceType::view_1d<bool>;
+    using ViewBool1DHost = typename mam4::HostType::view_1d<bool>;
 
     const int beglt = int(input.get_array("beglt")[0]) - 1;
     const int endlt = int(input.get_array("endlt")[0]) - 1;
@@ -48,9 +46,9 @@ void calculate_obukhov_length(Ensemble *ensemble) {
     View1D obklen_d("obklen", n_land_type);
     Kokkos::deep_copy(obklen_d, 0);
 
-    auto team_policy = ThreadTeamPolicy(1u, 1u);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           calculate_obukhov_length(beglt, endlt, fr_lnduse_d.data(), unstable,
                                    tha, thg, ustar_d.data(), cvar_d.data(), va,
                                    bycp_d.data(), ribn, obklen_d.data());

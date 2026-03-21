@@ -4,18 +4,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <catch2/catch.hpp>
-#include <iomanip>
-#include <iostream>
 #include <mam4xx/convproc.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 namespace {
 void get_input(const Input &input, const std::string &name, const int size,
-               std::vector<Real> &host, ColumnView &dev) {
+               std::vector<Real> &host, mam4::ColumnView &dev) {
   host = input.get_array(name);
   dev = mam4::validation::create_column_view(size);
 
@@ -40,11 +36,11 @@ void ma_precpevap(Ensemble *ensemble) {
     Real pr_flux_base = input.get("pr_flux_base");
 
     std::vector<Real> evapc_host, dpdry_i_host;
-    ColumnView evapc_dev, dpdry_i_dev;
+    mam4::ColumnView evapc_dev, dpdry_i_dev;
     get_input(input, "evapc", nlev, evapc_host, evapc_dev);
     get_input(input, "dpdry_i", nlev, dpdry_i_host, dpdry_i_dev);
 
-    ColumnView return_vals = mam4::validation::create_column_view(3);
+    mam4::ColumnView return_vals = mam4::validation::create_column_view(3);
     Kokkos::parallel_for(
         "ma_precpevap", 1, KOKKOS_LAMBDA(int) {
           Real evapc[nlev];
@@ -55,8 +51,8 @@ void ma_precpevap(Ensemble *ensemble) {
             dpdry_i[i] = dpdry_i_dev(i);
           Real pr_flux_tmp = -1, x_ratio = -1;
           Real flux_base = pr_flux_base;
-          convproc::ma_precpevap(dpdry_i[kk], evapc[kk], pr_flux, flux_base,
-                                 pr_flux_tmp, x_ratio);
+          mam4::convproc::ma_precpevap(dpdry_i[kk], evapc[kk], pr_flux,
+                                       flux_base, pr_flux_tmp, x_ratio);
           return_vals(0) = flux_base;
           return_vals(1) = pr_flux_tmp;
           return_vals(2) = x_ratio;
@@ -73,7 +69,7 @@ void ma_precpevap(Ensemble *ensemble) {
 
   // Check some corner cases.
   const int nlev = 72;
-  ColumnView return_vals = mam4::validation::create_column_view(3);
+  mam4::ColumnView return_vals = mam4::validation::create_column_view(3);
   Kokkos::parallel_for(
       "ma_precpevap", 1, KOKKOS_LAMBDA(int) {
         const int kk = 1;
@@ -85,8 +81,8 @@ void ma_precpevap(Ensemble *ensemble) {
           dpdry_i[i] = 1123;
         Real pr_flux = -1, pr_flux_tmp = -1, x_ratio = -1;
         Real flux_base = 1.0e-40;
-        convproc::ma_precpevap(dpdry_i[kk], evapc[kk], pr_flux, flux_base,
-                               pr_flux_tmp, x_ratio);
+        mam4::convproc::ma_precpevap(dpdry_i[kk], evapc[kk], pr_flux, flux_base,
+                                     pr_flux_tmp, x_ratio);
         return_vals(0) = flux_base;
         return_vals(1) = pr_flux_tmp;
         return_vals(2) = x_ratio;
@@ -111,8 +107,8 @@ void ma_precpevap(Ensemble *ensemble) {
           dpdry_i[i] = 1123;
         Real pr_flux = 0, pr_flux_tmp = -1, x_ratio = -1;
         Real flux_base = 1.0;
-        convproc::ma_precpevap(dpdry_i[kk], evapc[kk], pr_flux, flux_base,
-                               pr_flux_tmp, x_ratio);
+        mam4::convproc::ma_precpevap(dpdry_i[kk], evapc[kk], pr_flux, flux_base,
+                                     pr_flux_tmp, x_ratio);
         return_vals(0) = flux_base;
         return_vals(1) = pr_flux_tmp;
         return_vals(2) = x_ratio;

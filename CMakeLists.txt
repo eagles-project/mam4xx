@@ -28,6 +28,7 @@ endif()
 if (NOT DEFINED EAMXX_VERSION_MAJOR)
   set(MAM4XX_STANDALONE ON)
   set(CXX_STANDARD 17)
+  set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # emit compile_commands.json for use with clangd
 else()
   set(MAM4XX_STANDALONE OFF)
 endif()
@@ -98,9 +99,6 @@ message(STATUS "Installation prefix is ${CMAKE_INSTALL_PREFIX}")
 
 include_directories(${PROJECT_BINARY_DIR}/src/mam4xx)
 include_directories(${PROJECT_SOURCE_DIR}/src)
-
-# emit compile_commands.json for use with clangd
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 #-----------------------
 # Third-party libraries

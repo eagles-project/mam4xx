@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/hetfrz.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void calculate_hetfrz_deposition_nucleation(Ensemble *ensemble) {
 
@@ -114,7 +112,7 @@ void calculate_hetfrz_deposition_nucleation(Ensemble *ensemble) {
     Real frzbcdep;
     Real frzdudep;
     // Compute frzbccnt and frzducnt
-    hetfrz::calculate_hetfrz_deposition_nucleation(
+    mam4::hetfrz::calculate_hetfrz_deposition_nucleation(
         deltat, temperature, uncoated_aer_num.data(), sigma_iv, eswtr, vwice,
         rgdep, r_bc, r_dust_a1, r_dust_a3, do_bc_b, do_dst1_b, do_dst3_b,
         frzbcdep, frzdudep);

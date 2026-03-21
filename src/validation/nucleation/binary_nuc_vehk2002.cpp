@@ -8,7 +8,6 @@
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void binary_nuc_vehk2002(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -33,8 +32,8 @@ void binary_nuc_vehk2002(Ensemble *ensemble) {
     Real cnum_tot;
     Real radius_cluster;
 
-    nucleation::binary_nuc_vehk2002(temp, rh, so4vol, ratenucl, rateloge,
-                                    cnum_h2so4, cnum_tot, radius_cluster);
+    mam4::nucleation::binary_nuc_vehk2002(temp, rh, so4vol, ratenucl, rateloge,
+                                          cnum_h2so4, cnum_tot, radius_cluster);
 
     output.set("ratenucl", ratenucl);
     output.set("rateloge", rateloge);

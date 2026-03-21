@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void calcualte_collkernel_sub(Ensemble *ensemble) {
 
@@ -110,9 +108,9 @@ void calcualte_collkernel_sub(Ensemble *ensemble) {
 
     skywalker::Real K_total;
 
-    hetfrz::calculate_collkernel_sub(temperature, pressure, rho_air, r3lx, r_a,
-                                     lambda, latvap, viscos_air, Re, Ktherm_air,
-                                     Ktherm, Pr, Tdiff, K_total);
+    mam4::hetfrz::calculate_collkernel_sub(
+        temperature, pressure, rho_air, r3lx, r_a, lambda, latvap, viscos_air,
+        Re, Ktherm_air, Ktherm, Pr, Tdiff, K_total);
 
     output.set("K_total", K_total);
   });

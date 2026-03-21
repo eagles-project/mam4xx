@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void get_reynolds_number(Ensemble *ensemble) {
   // Run the ensemble.
@@ -38,7 +36,8 @@ void get_reynolds_number(Ensemble *ensemble) {
     skywalker::Real rho_air = input.get("rho_air");
 
     // Compute reynolds number
-    skywalker::Real re = hetfrz::get_reynolds_num(r3lx, rho_air, viscos_air);
+    skywalker::Real re =
+        mam4::hetfrz::get_reynolds_num(r3lx, rho_air, viscos_air);
 
     // Store re as an output variable
     output.set("re", re);

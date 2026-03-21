@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/aging.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void mam_pcarbon_aging_frac(Ensemble *ensemble) {
 
@@ -40,12 +38,12 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
     auto qaer_del_cond_f = input.get_array("qaer_del_cond");
     auto qaer_del_coag_in_f = input.get_array("qaer_del_coag_in");
 
-    const int num_modes = AeroConfig::num_modes();
-    const int num_aero = AeroConfig::num_aerosol_ids();
+    const int num_modes = mam4::AeroConfig::num_modes();
+    const int num_aero = mam4::AeroConfig::num_aerosol_ids();
 
     Real qaer_cur_c[num_aero][num_modes];
     Real qaer_del_cond_c[num_aero][num_modes];
-    Real qaer_del_coag_in_c[num_aero][AeroConfig::max_agepair()];
+    Real qaer_del_coag_in_c[num_aero][mam4::AeroConfig::max_agepair()];
 
     int n = 0;
     for (int imode = 0; imode < num_modes; ++imode) {
@@ -57,7 +55,7 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
     }
 
     n = 0;
-    for (int imode = 0; imode < AeroConfig::max_agepair(); ++imode) {
+    for (int imode = 0; imode < mam4::AeroConfig::max_agepair(); ++imode) {
       for (int ispec = 0; ispec < num_aero; ++ispec) {
         qaer_del_coag_in_c[ispec][imode] = qaer_del_coag_in_f[n];
         n += 1;
@@ -68,7 +66,7 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
     Real frac_cond;
     Real frac_coag;
     const unsigned n_so4_monolayers_pcage = 8;
-    aging::mam_pcarbon_aging_frac(
+    mam4::aging::mam_pcarbon_aging_frac(
         n_so4_monolayers_pcage, dgn_a_f.data(), qaer_cur_c, qaer_del_cond_c,
         qaer_del_coag_in_c, xferfrac_pcage, frac_cond, frac_coag);
 
@@ -82,7 +80,7 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
     }
 
     n = 0;
-    for (int imode = 0; imode < AeroConfig::max_agepair(); ++imode) {
+    for (int imode = 0; imode < mam4::AeroConfig::max_agepair(); ++imode) {
       for (int ispec = 0; ispec < num_aero; ++ispec) {
         qaer_del_coag_in_f[n] = qaer_del_coag_in_c[ispec][imode];
         n += 1;

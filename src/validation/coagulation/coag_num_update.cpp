@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/coagulation.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void coag_num_update(Ensemble *ensemble) {
 
@@ -52,8 +50,8 @@ void coag_num_update(Ensemble *ensemble) {
     auto qnum_bgn = input.get_array("qnum_bgn");
     auto qnum_end = input.get_array("qnum_end");
 
-    std::vector<Real> qnum_tavg(AeroConfig::num_modes() + 1);
-    coagulation::mam_coag_num_update(
+    std::vector<Real> qnum_tavg(mam4::AeroConfig::num_modes() + 1);
+    mam4::coagulation::mam_coag_num_update(
         ybetaij0.data(), ybetaii0.data(), ybetajj0.data(), deltat[0],
         qnum_bgn.data(), qnum_end.data(), qnum_tavg.data());
 

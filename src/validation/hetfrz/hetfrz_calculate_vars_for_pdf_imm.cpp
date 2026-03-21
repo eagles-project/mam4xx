@@ -3,13 +3,12 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
+#include <iostream>
+
 using namespace skywalker;
-using namespace mam4;
 
 void calculate_vars_for_pdf_imm(Ensemble *ensemble) {
   // Run the ensemble.
@@ -30,7 +29,8 @@ void calculate_vars_for_pdf_imm(Ensemble *ensemble) {
     auto pdf_imm_theta = input.get_array("pdf_imm_theta");
 
     // Compute dim_theta and pdf_imm_theta
-    hetfrz::calculate_vars_for_pdf_imm(dim_theta.data(), pdf_imm_theta.data());
+    mam4::hetfrz::calculate_vars_for_pdf_imm(dim_theta.data(),
+                                             pdf_imm_theta.data());
 
     output.set("dim_theta", dim_theta);
     output.set("pdf_imm_theta", pdf_imm_theta);

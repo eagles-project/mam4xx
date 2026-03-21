@@ -4,18 +4,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/convproc.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 namespace {
 void get_input(const Input &input, const std::string &name, const int rows,
                const int cols, std::vector<Real> &host,
                Kokkos::View<Real **, Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
-  ColumnView col_view = mam4::validation::create_column_view(rows * cols);
+  mam4::ColumnView col_view = mam4::validation::create_column_view(rows * cols);
   dev = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(col_view.data(), rows,
                                                        cols);
   EKAT_ASSERT(host.size() == rows * cols);
@@ -51,7 +49,7 @@ void ma_resuspend_convproc(Ensemble *ensemble) {
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
-    const int pcnst = aero_model::pcnst;
+    const int pcnst = mam4::aero_model::pcnst;
     // Fetch ensemble parameters
 
     // these variables depend on mode No and k
@@ -69,7 +67,7 @@ void ma_resuspend_convproc(Ensemble *ensemble) {
     get_input(input, "dcondt", pcnst_extd, nlev, dcondt_host, dcondt_dev);
     {
       dcondt_resusp_host.resize(nlev * pcnst_extd);
-      ColumnView col_view =
+      mam4::ColumnView col_view =
           mam4::validation::create_column_view(nlev * pcnst_extd);
       dcondt_resusp_dev = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(
           col_view.data(), pcnst_extd, nlev);
@@ -82,7 +80,7 @@ void ma_resuspend_convproc(Ensemble *ensemble) {
             for (int i = 0; i < 2 * pcnst; ++i)
               dcondt[i] = dcondt_dev(i, klev);
             Real dcondt_resusp[2 * pcnst];
-            convproc::ma_resuspend_convproc(dcondt, dcondt_resusp);
+            mam4::convproc::ma_resuspend_convproc(dcondt, dcondt_resusp);
 
             for (int i = 0; i < 2 * pcnst; ++i)
               dcondt_dev(i, klev) = dcondt[i];

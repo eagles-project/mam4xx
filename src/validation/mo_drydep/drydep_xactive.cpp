@@ -1,18 +1,16 @@
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 using namespace mam4::mo_drydep;
 
-void drydep_xactive(const seq_drydep::Data &data, Ensemble *ensemble) {
+void drydep_xactive(const mam4::seq_drydep::Data &data, Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View1D = typename DeviceType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
 
-    using ViewInt1D = typename DeviceType::view_1d<int>;
-    using ViewInt1DHost = typename HostType::view_1d<int>;
+    using ViewInt1D = typename mam4::DeviceType::view_1d<int>;
+    using ViewInt1DHost = typename mam4::HostType::view_1d<int>;
 
     const auto fraction_landuse = input.get_array("fraction_landuse");
     const int ncdate = int(input.get_array("ncdate")[0]);
@@ -53,9 +51,9 @@ void drydep_xactive(const seq_drydep::Data &data, Ensemble *ensemble) {
     View1D dvel_d("dvel", gas_pcnst);
     View1D dflx_d("dflx", gas_pcnst);
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO());
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO());
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           int index_season[n_land_type] = {};
           for (int lt = 0; lt < mam4::mo_drydep::n_land_type; ++lt) {
             index_season[lt] = col_index_season_d(month - 1);

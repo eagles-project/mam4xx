@@ -4,16 +4,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void rebin(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1D = typename DeviceType::view_1d<Real>;
-    using View1DHost = typename HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
     // Example data retrieval and setup
     auto src_x_db = input.get_array("src_x"); // Source bin positions
     auto trg_x_db = input.get_array("trg_x"); // Source data
@@ -36,12 +34,12 @@ void rebin(Ensemble *ensemble) {
 
     View1D trg("trg", ntrg);
 
-    auto team_policy = ThreadTeamPolicy(1, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           // Call rebin function
-          vertical_interpolation::rebin(team, nsrc, ntrg, src_x, trg_x.data(),
-                                        src, trg);
+          mam4::vertical_interpolation::rebin(team, nsrc, ntrg, src_x,
+                                              trg_x.data(), src, trg);
         });
 
     std::vector<Real> trg_out(ntrg);

@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/hetfrz.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void calculate_coated_fraction(Ensemble *ensemble) {
 
@@ -149,7 +147,7 @@ void calculate_coated_fraction(Ensemble *ensemble) {
     Real na500 = 0.0;
     Real tot_na500 = 0.0;
 
-    hetfrz::calculate_coated_fraction(
+    mam4::hetfrz::calculate_coated_fraction(
         air_density, so4mac, pommac, mommac, soamac, dmac, bcmac, mommpc,
         pommpc, bcmpc, so4mc, pommc, soamc, mommc, dmc,
         total_interstitial_aer_num.data(), total_cloudborne_aer_num.data(),

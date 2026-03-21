@@ -4,21 +4,19 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace modal_aero_opt;
+using namespace mam4::modal_aero_opt;
 
 void volcanic_cmip_sw(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
 
     constexpr Real zero = 0;
     const auto zi_db = input.get_array("zi");
-    ColumnView zi;
-    zi = testing::create_column_view(pver);
+    mam4::ColumnView zi;
+    zi = mam4::testing::create_column_view(pver);
     auto zi_host = View1DHost((Real *)zi_db.data(), pver);
     Kokkos::deep_copy(zi, zi_host);
     printf("zi size %lu \n", zi.size());
@@ -74,12 +72,12 @@ void volcanic_cmip_sw(Ensemble *ensemble) {
     mam4::validation::convert_1d_vector_to_transpose_2d_view_device(tau_w_f_db,
                                                                     tau_w_f);
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          aero_rad_props::volcanic_cmip_sw(team, zi, ilev_tropp, ext_cmip6_sw,
-                                           ssa_cmip6_sw, af_cmip6_sw, tau,
-                                           tau_w, tau_w_g, tau_w_f);
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
+          mam4::aero_rad_props::volcanic_cmip_sw(
+              team, zi, ilev_tropp, ext_cmip6_sw, ssa_cmip6_sw, af_cmip6_sw,
+              tau, tau_w, tau_w_g, tau_w_f);
         });
 
     const int pver_po = pver + 1;

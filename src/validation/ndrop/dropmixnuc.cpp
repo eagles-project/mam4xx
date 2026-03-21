@@ -4,23 +4,21 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void dropmixnuc(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const Real zero = 0;
-    const int maxd_aspectype = ndrop::maxd_aspectype;
-    const int ntot_amode = AeroConfig::num_modes();
-    const int pcnst = aero_model::pcnst;
-    const int psat = ndrop::psat;
-    const int ncnst_tot = ndrop::ncnst_tot;
+    const int maxd_aspectype = mam4::ndrop::maxd_aspectype;
+    const int ntot_amode = mam4::AeroConfig::num_modes();
+    const int pcnst = mam4::aero_model::pcnst;
+    const int psat = mam4::ndrop::psat;
+    const int ncnst_tot = mam4::ndrop::ncnst_tot;
     const int nspec_max = mam4::ndrop::nspec_max;
 
-    const int pver = ndrop::pver;
+    const int pver = mam4::ndrop::pver;
 
     const auto state_q_db = input.get_array("state_q");
     // Conversion from Fortran to C++ indexing.
@@ -40,10 +38,10 @@ void dropmixnuc(Ensemble *ensemble) {
     const auto cldo_db = input.get_array("cldo");
     const auto qqcw_db = input.get_array("qqcw");
 
-    using View1D = ndrop::View1D;
-    using View2D = ndrop::View2D;
+    using View1D = mam4::ndrop::View1D;
+    using View2D = mam4::ndrop::View2D;
 
-    using View1DHost = typename HostType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
 
     int count = 0;
 
@@ -60,12 +58,12 @@ void dropmixnuc(Ensemble *ensemble) {
 
     Kokkos::deep_copy(state_q, state_host);
 
-    ColumnView qqcw[ncnst_tot];
+    mam4::ColumnView qqcw[ncnst_tot];
     View1DHost qqcw_host[ncnst_tot];
 
     count = 0;
     for (int i = 0; i < ncnst_tot; ++i) {
-      qqcw[i] = testing::create_column_view(pver);
+      qqcw[i] = mam4::testing::create_column_view(pver);
       qqcw_host[i] = View1DHost("qqcw_host", pver);
     }
 
@@ -81,28 +79,28 @@ void dropmixnuc(Ensemble *ensemble) {
       Kokkos::deep_copy(qqcw[i], qqcw_host[i]);
     }
 
-    ColumnView tair;
-    ColumnView pmid;
-    ColumnView pint;
-    ColumnView pdel;
-    ColumnView rpdel;
-    ColumnView zm;
-    ColumnView ncldwtr;
-    ColumnView kvh;
-    ColumnView cldn;
-    ColumnView wsub;
-    ColumnView cldo;
-    tair = testing::create_column_view(pver);
-    pmid = testing::create_column_view(pver);
-    pint = testing::create_column_view(pver);
-    pdel = testing::create_column_view(pver);
-    rpdel = testing::create_column_view(pver);
-    zm = testing::create_column_view(pver);
-    ncldwtr = testing::create_column_view(pver);
-    kvh = testing::create_column_view(pver);
-    cldn = testing::create_column_view(pver);
-    wsub = testing::create_column_view(pver);
-    cldo = testing::create_column_view(pver);
+    mam4::ColumnView tair;
+    mam4::ColumnView pmid;
+    mam4::ColumnView pint;
+    mam4::ColumnView pdel;
+    mam4::ColumnView rpdel;
+    mam4::ColumnView zm;
+    mam4::ColumnView ncldwtr;
+    mam4::ColumnView kvh;
+    mam4::ColumnView cldn;
+    mam4::ColumnView wsub;
+    mam4::ColumnView cldo;
+    tair = mam4::testing::create_column_view(pver);
+    pmid = mam4::testing::create_column_view(pver);
+    pint = mam4::testing::create_column_view(pver);
+    pdel = mam4::testing::create_column_view(pver);
+    rpdel = mam4::testing::create_column_view(pver);
+    zm = mam4::testing::create_column_view(pver);
+    ncldwtr = mam4::testing::create_column_view(pver);
+    kvh = mam4::testing::create_column_view(pver);
+    cldn = mam4::testing::create_column_view(pver);
+    wsub = mam4::testing::create_column_view(pver);
+    cldo = mam4::testing::create_column_view(pver);
 
     auto tair_host = View1DHost((Real *)tair_db.data(), pver);
     auto pmid_host = View1DHost((Real *)pmid_db.data(), pver);
@@ -132,34 +130,34 @@ void dropmixnuc(Ensemble *ensemble) {
     const Real dtmicro = input.get_array("dtmicro")[0];
 
     // output
-    ColumnView qcld;
-    ColumnView tendnd;
-    ColumnView ndropcol;
-    ColumnView ndropmix;
-    ColumnView nsource;
-    ColumnView wtke;
-    qcld = testing::create_column_view(pver);
-    tendnd = testing::create_column_view(pver);
-    ndropcol = testing::create_column_view(pver);
-    ndropmix = testing::create_column_view(pver);
-    nsource = testing::create_column_view(pver);
-    wtke = testing::create_column_view(pver);
+    mam4::ColumnView qcld;
+    mam4::ColumnView tendnd;
+    mam4::ColumnView ndropcol;
+    mam4::ColumnView ndropmix;
+    mam4::ColumnView nsource;
+    mam4::ColumnView wtke;
+    qcld = mam4::testing::create_column_view(pver);
+    tendnd = mam4::testing::create_column_view(pver);
+    ndropcol = mam4::testing::create_column_view(pver);
+    ndropmix = mam4::testing::create_column_view(pver);
+    nsource = mam4::testing::create_column_view(pver);
+    wtke = mam4::testing::create_column_view(pver);
 
-    ColumnView ptend_q[pcnst];
+    mam4::ColumnView ptend_q[pcnst];
 
     count = 0;
     for (int i = 0; i < pcnst; ++i) {
-      ptend_q[i] = testing::create_column_view(pver);
+      ptend_q[i] = mam4::testing::create_column_view(pver);
     }
 
     View2D factnum("factnum", ntot_amode, pver);
 
-    ColumnView coltend[ncnst_tot];
-    ColumnView coltend_cw[ncnst_tot];
+    mam4::ColumnView coltend[ncnst_tot];
+    mam4::ColumnView coltend_cw[ncnst_tot];
 
     for (int i = 0; i < ncnst_tot; ++i) {
-      coltend[i] = testing::create_column_view(pver);
-      coltend_cw[i] = testing::create_column_view(pver);
+      coltend[i] = mam4::testing::create_column_view(pver);
+      coltend_cw[i] = mam4::testing::create_column_view(pver);
     }
 
     View2D ccn("ccn", pver, psat);
@@ -176,35 +174,35 @@ void dropmixnuc(Ensemble *ensemble) {
     View2D nact("nact", pver, ntot_amode);
     View2D mact("mact", pver, ntot_amode);
 
-    ColumnView ekd;
-    ekd = testing::create_column_view(pver);
+    mam4::ColumnView ekd;
+    ekd = mam4::testing::create_column_view(pver);
 
-    ColumnView zn, csbot, zs, overlapp, overlapm, ekkp, ekkm, qncld, srcn,
+    mam4::ColumnView zn, csbot, zs, overlapp, overlapm, ekkp, ekkm, qncld, srcn,
         source;
 
-    zn = testing::create_column_view(pver);
-    csbot = testing::create_column_view(pver);
-    zs = testing::create_column_view(pver);
-    overlapp = testing::create_column_view(pver);
-    overlapm = testing::create_column_view(pver);
-    ekkp = testing::create_column_view(pver);
-    ekkm = testing::create_column_view(pver);
-    qncld = testing::create_column_view(pver);
-    srcn = testing::create_column_view(pver);
-    source = testing::create_column_view(pver);
+    zn = mam4::testing::create_column_view(pver);
+    csbot = mam4::testing::create_column_view(pver);
+    zs = mam4::testing::create_column_view(pver);
+    overlapp = mam4::testing::create_column_view(pver);
+    overlapm = mam4::testing::create_column_view(pver);
+    ekkp = mam4::testing::create_column_view(pver);
+    ekkm = mam4::testing::create_column_view(pver);
+    qncld = mam4::testing::create_column_view(pver);
+    srcn = mam4::testing::create_column_view(pver);
+    source = mam4::testing::create_column_view(pver);
 
-    ColumnView dz, csbot_cscen;
-    dz = testing::create_column_view(pver);
-    csbot_cscen = testing::create_column_view(pver);
+    mam4::ColumnView dz, csbot_cscen;
+    dz = mam4::testing::create_column_view(pver);
+    csbot_cscen = mam4::testing::create_column_view(pver);
 
-    ColumnView raertend, qqcwtend;
+    mam4::ColumnView raertend, qqcwtend;
 
-    raertend = testing::create_column_view(pver);
-    qqcwtend = testing::create_column_view(pver);
+    raertend = mam4::testing::create_column_view(pver);
+    qqcwtend = mam4::testing::create_column_view(pver);
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           int nspec_amode[ntot_amode];
           int lspectype_amode[maxd_aspectype][ntot_amode];
           int lmassptr_amode[maxd_aspectype][ntot_amode];
@@ -214,21 +212,22 @@ void dropmixnuc(Ensemble *ensemble) {
           int mam_idx[ntot_amode][nspec_max];
           int mam_cnst_idx[ntot_amode][nspec_max];
 
-          ndrop::get_e3sm_parameters(
+          mam4::ndrop::get_e3sm_parameters(
               nspec_amode, lspectype_amode, lmassptr_amode, numptr_amode,
               specdens_amode, spechygro, mam_idx, mam_cnst_idx);
 
-          Real exp45logsig[AeroConfig::num_modes()],
-              alogsig[AeroConfig::num_modes()],
-              num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
-              num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
+          Real exp45logsig[mam4::AeroConfig::num_modes()],
+              alogsig[mam4::AeroConfig::num_modes()],
+              num2vol_ratio_min_nmodes[mam4::AeroConfig::num_modes()],
+              num2vol_ratio_max_nmodes[mam4::AeroConfig::num_modes()] = {};
 
           Real aten = zero;
 
-          ndrop::ndrop_init(exp45logsig, alogsig, aten,
-                            num2vol_ratio_min_nmodes,  // voltonumbhi_amode
-                            num2vol_ratio_max_nmodes); // voltonumblo_amode
-          ndrop::dropmixnuc(
+          mam4::ndrop::ndrop_init(
+              exp45logsig, alogsig, aten,
+              num2vol_ratio_min_nmodes,  // voltonumbhi_amode
+              num2vol_ratio_max_nmodes); // voltonumblo_amode
+          mam4::ndrop::dropmixnuc(
               team, dtmicro, tair, pmid, pint, pdel, rpdel,
               zm, //  ! in zm[kk] - zm[kk+1], for pver zm[kk-1] - zm[kk]
               state_q, ncldwtr,

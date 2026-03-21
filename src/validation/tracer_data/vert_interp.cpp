@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void vert_interp(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -21,7 +19,7 @@ void vert_interp(Ensemble *ensemble) {
     const auto ncol = static_cast<int>(input.get_array("ncol")[0]);
 
     // Define the Kokkos views based on the input data
-    using View2D = typename DeviceType::view_2d<Real>;
+    using View2D = typename mam4::DeviceType::view_2d<Real>;
 
     View2D pin("pin", ncol, levsiz);
     View2D pmid("pmid", ncol, pver);
@@ -33,9 +31,9 @@ void vert_interp(Ensemble *ensemble) {
     mam4::validation::convert_1d_vector_to_2d_view_device(pmid_db, pmid);
     mam4::validation::convert_1d_vector_to_2d_view_device(datain_db, datain);
 
-    auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(ncol, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           // Perform the vertical interpolation
           const int icol = team.league_rank(); // column index
           const auto pin_at_icol = ekat::subview(pin, icol);

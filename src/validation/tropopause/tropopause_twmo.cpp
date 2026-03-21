@@ -4,15 +4,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void tropopause_twmo(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
     constexpr int pver = mam4::nlev;
 
     const auto pmid_in = input.get_array("pmid");
@@ -21,28 +19,29 @@ void tropopause_twmo(Ensemble *ensemble) {
     const auto zm_in = input.get_array("zm");
     const auto zi_in = input.get_array("zi");
 
-    ColumnView pmid, pint, temp, zm, zi;
+    mam4::ColumnView pmid, pint, temp, zm, zi;
 
     auto pmid_host = View1DHost((Real *)pmid_in.data(), pver);
     auto pint_host = View1DHost((Real *)pint_in.data(), pver);
     auto temp_host = View1DHost((Real *)temp_in.data(), pver);
     auto zm_host = View1DHost((Real *)zm_in.data(), pver);
     auto zi_host = View1DHost((Real *)zi_in.data(), pver);
-    pmid = testing::create_column_view(pver);
-    pint = testing::create_column_view(pver);
-    temp = testing::create_column_view(pver);
-    zm = testing::create_column_view(pver);
-    zi = testing::create_column_view(pver);
+    pmid = mam4::testing::create_column_view(pver);
+    pint = mam4::testing::create_column_view(pver);
+    temp = mam4::testing::create_column_view(pver);
+    zm = mam4::testing::create_column_view(pver);
+    zi = mam4::testing::create_column_view(pver);
     Kokkos::deep_copy(pmid, pmid_host);
     Kokkos::deep_copy(pint, pint_host);
     Kokkos::deep_copy(temp, temp_host);
     Kokkos::deep_copy(zm, zm_host);
     Kokkos::deep_copy(zi, zi_host);
 
-    DeviceType::view_1d<int> tropLev("tropLev", 1);
+    mam4::DeviceType::view_1d<int> tropLev("tropLev", 1);
     Kokkos::parallel_for(
         "tropopause_twmo", 1, KOKKOS_LAMBDA(int i) {
-          tropopause::tropopause_twmo(pmid, pint, temp, zm, zi, tropLev(0));
+          mam4::tropopause::tropopause_twmo(pmid, pint, temp, zm, zi,
+                                            tropLev(0));
         });
 
     auto tropLev_host = Kokkos::create_mirror_view(tropLev);

@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void aitken_accum_exchange(Ensemble *ensemble) {
 
@@ -21,10 +19,10 @@ void aitken_accum_exchange(Ensemble *ensemble) {
 
     int nlev = 1;
     Real pblh = 1000;
-    Atmosphere atm = validation::create_atmosphere(nlev, pblh);
-    mam4::Prognostics progs = validation::create_prognostics(nlev);
-    mam4::Diagnostics diags = validation::create_diagnostics(nlev);
-    mam4::Tendencies tends = validation::create_tendencies(nlev);
+    mam4::Atmosphere atm = mam4::validation::create_atmosphere(nlev, pblh);
+    mam4::Prognostics progs = mam4::validation::create_prognostics(nlev);
+    mam4::Diagnostics diags = mam4::validation::create_diagnostics(nlev);
+    mam4::Tendencies tends = mam4::validation::create_tendencies(nlev);
 
     mam4::AeroConfig mam4_config;
     mam4::CalcSizeProcess process(mam4_config);
@@ -84,7 +82,7 @@ void aitken_accum_exchange(Ensemble *ensemble) {
       h_prog_n_mode_c(0) = n_c[imode];
       Kokkos::deep_copy(progs.n_mode_c[imode], h_prog_n_mode_c);
 
-      const auto n_spec = num_species_mode(imode);
+      const auto n_spec = mam4::num_species_mode(imode);
       for (int isp = 0; isp < n_spec; ++isp) {
         auto h_prog_aero_i =
             Kokkos::create_mirror_view(progs.q_aero_i[imode][isp]);
@@ -96,8 +94,9 @@ void aitken_accum_exchange(Ensemble *ensemble) {
         h_prog_aero_c(0) = q_c[count];
         Kokkos::deep_copy(progs.q_aero_c[imode][isp], h_prog_aero_c);
 
-        const int aero_id = int(mode_aero_species(imode, isp));
-        inv_density[imode][isp] = Real(1.0) / aero_species(aero_id).density;
+        const int aero_id = int(mam4::mode_aero_species(imode, isp));
+        inv_density[imode][isp] =
+            Real(1.0) / mam4::aero_species(aero_id).density;
 
         count++;
       } // end species
@@ -114,8 +113,8 @@ void aitken_accum_exchange(Ensemble *ensemble) {
 
     } // end modes
 
-    const int aitken_idx = int(ModeIndex::Aitken);
-    const int accum_idx = int(ModeIndex::Accumulation);
+    const int aitken_idx = int(mam4::ModeIndex::Aitken);
+    const int accum_idx = int(mam4::ModeIndex::Accumulation);
     static constexpr Real close_to_one = 1.0 + 1.0e-15;
     static constexpr Real seconds_in_a_day = 86400.0;
     const auto adj_tscale = mam4::max(seconds_in_a_day, dt);
@@ -133,7 +132,7 @@ void aitken_accum_exchange(Ensemble *ensemble) {
           Real &dgncur_c_accum =
               diags.dry_geometric_mean_diameter_c[accum_idx](k);
 
-          calcsize::aitken_accum_exchange(
+          mam4::calcsize::aitken_accum_exchange(
               k, aitken_idx, accum_idx, no_transfer_acc2ait,
               n_common_species_ait_accum, ait_spec_in_acc, acc_spec_in_ait,
               v2nmax_nmodes, v2nmin_nmodes, v2nnom_nmodes, dgnmax_nmodes,
@@ -160,7 +159,7 @@ void aitken_accum_exchange(Ensemble *ensemble) {
       Kokkos::deep_copy(h_tend_num_c, tends.n_mode_c[imode]);
       tend_n_mode_c_out.push_back(h_tend_num_c(0));
 
-      const auto n_spec = num_species_mode(imode);
+      const auto n_spec = mam4::num_species_mode(imode);
       for (int isp = 0; isp < n_spec; ++isp) {
         auto h_tend_aero_i =
             Kokkos::create_mirror_view(tends.q_aero_i[imode][isp]);

@@ -4,17 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
-using namespace lin_strat_chem;
+using namespace mam4::lin_strat_chem;
 void lin_strat_sfcsink(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1D = typename DeviceType::view_1d<Real>;
-    using View2D = typename DeviceType::view_2d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
+    using View2D = typename mam4::DeviceType::view_2d<Real>;
     constexpr Real zero = 0;
 
     constexpr int ncol = 4;
@@ -34,9 +32,9 @@ void lin_strat_sfcsink(Ensemble *ensemble) {
 
     View1D o3l_sfcsink("o3l_sfcsink", ncol);
 
-    auto team_policy = ThreadTeamPolicy(ncol, 1u);
+    auto team_policy = mam4::ThreadTeamPolicy(ncol, 1u);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           const int icol = team.league_rank();
           auto pdel_icol = Kokkos::subview(pdel, icol, Kokkos::ALL());
           auto o3l_vmr_icol = Kokkos::subview(o3l_vmr, icol, Kokkos::ALL());

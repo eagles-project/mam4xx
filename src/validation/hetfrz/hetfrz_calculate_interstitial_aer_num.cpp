@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void calculate_interstitial_aer_num(Ensemble *ensemble) {
 
@@ -89,9 +87,9 @@ void calculate_interstitial_aer_num(Ensemble *ensemble) {
     auto total_interstitial_aer_num =
         input.get_array("total_interstitial_aer_num");
 
-    hetfrz::calculate_interstitial_aer_num(bcmac, dmac, bcmpc, dmc, ssmc, mommc,
-                                           bcmc, pommc, soamc, ncoarse,
-                                           total_interstitial_aer_num.data());
+    mam4::hetfrz::calculate_interstitial_aer_num(
+        bcmac, dmac, bcmpc, dmc, ssmc, mommc, bcmc, pommc, soamc, ncoarse,
+        total_interstitial_aer_num.data());
 
     output.set("total_interstitial_aer_num", total_interstitial_aer_num);
   });

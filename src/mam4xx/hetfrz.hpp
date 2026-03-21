@@ -308,7 +308,7 @@ void collkernel(const Real temperature, const Real pressure, const Real eswtr,
 
 KOKKOS_INLINE_FUNCTION
 Real get_form_factor(const Real alpha) {
-  const Real v_cos = cos(alpha);
+  const Real v_cos = mam4::cos(alpha);
   return (2.0 + v_cos) * square(1.0 - v_cos) / 4.0;
 }
 

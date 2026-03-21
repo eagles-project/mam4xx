@@ -3,15 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
-#include <mam4xx/aero_modes.hpp>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/water_uptake.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void makoh_quartic(Ensemble *ensemble) {
   // Run the ensemble.
@@ -28,8 +23,8 @@ void makoh_quartic(Ensemble *ensemble) {
 
     Kokkos::complex<Real> cx[4] = {};
 
-    water_uptake::makoh_quartic(cx, p3.data()[0], p2.data()[0], p1.data()[0],
-                                p0.data()[0]);
+    mam4::water_uptake::makoh_quartic(cx, p3.data()[0], p2.data()[0],
+                                      p1.data()[0], p0.data()[0]);
 
     std::vector<Real> real_cx(4, 0.0);
     std::vector<Real> imag_cx(4, 0.0);

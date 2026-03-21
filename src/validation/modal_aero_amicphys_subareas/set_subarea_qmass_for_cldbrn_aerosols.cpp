@@ -4,11 +4,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
+
 void set_subarea_qmass_for_cldbrn_aerosols(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters
@@ -26,11 +25,11 @@ void set_subarea_qmass_for_cldbrn_aerosols(Ensemble *ensemble) {
       }
     }
 
-    using View2D = typename DeviceType::view_2d<Real>;
-    using View2DHost = typename HostType::view_2d<Real>;
+    using View2D = typename mam4::DeviceType::view_2d<Real>;
+    using View2DHost = typename mam4::HostType::view_2d<Real>;
 
     using mam4::gas_chemistry::gas_pcnst;
-    constexpr int subarea_max = microphysics::maxsubarea();
+    constexpr int subarea_max = mam4::microphysics::maxsubarea();
 
     EKAT_ASSERT(int(input.get_array("ncnst")[0]) == gas_pcnst);
 
@@ -52,9 +51,9 @@ void set_subarea_qmass_for_cldbrn_aerosols(Ensemble *ensemble) {
     Kokkos::deep_copy(qqcwsub_h, 0.0);
     Kokkos::deep_copy(qqcwsub_d, 0.0);
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           Real qqcwsub[gas_pcnst][subarea_max] = {{0.0}};
           mam4::microphysics::set_subarea_qmass_for_cldbrn_aerosols(
               jclea, jcldy, fcldy, qqcwgcm, qqcwsub);

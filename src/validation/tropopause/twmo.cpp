@@ -4,15 +4,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void twmo(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
     constexpr int pver = mam4::nlev;
 
     const auto pmid1d_in = input.get_array("pmid1d");
@@ -22,19 +20,19 @@ void twmo(Ensemble *ensemble) {
     const Real gam = input.get_array("gam")[0];
     Real trp_in = input.get_array("trp")[0];
 
-    ColumnView pmid1d, temp1d;
+    mam4::ColumnView pmid1d, temp1d;
     auto pmid1d_host = View1DHost((Real *)pmid1d_in.data(), pver);
     auto temp1d_host = View1DHost((Real *)temp1d_in.data(), pver);
-    pmid1d = testing::create_column_view(pver);
-    temp1d = testing::create_column_view(pver);
+    pmid1d = mam4::testing::create_column_view(pver);
+    temp1d = mam4::testing::create_column_view(pver);
     Kokkos::deep_copy(pmid1d, pmid1d_host);
     Kokkos::deep_copy(temp1d, temp1d_host);
 
-    DeviceType::view_1d<Real> trp_out_val("Return from Device", 1);
+    mam4::DeviceType::view_1d<Real> trp_out_val("Return from Device", 1);
     Kokkos::parallel_for(
         "twmo", 1, KOKKOS_LAMBDA(int i) {
           Real trp_use = trp_in;
-          tropopause::twmo(temp1d, pmid1d, plimu, pliml, gam, trp_use);
+          mam4::tropopause::twmo(temp1d, pmid1d, plimu, pliml, gam, trp_use);
           trp_out_val[0] = trp_use;
         });
 

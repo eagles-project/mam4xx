@@ -4,15 +4,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/gas_chem.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace gas_chemistry;
+using namespace mam4::gas_chemistry;
 
 void newton_raphson_iter(Ensemble *ensemble) {
 

@@ -3,13 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/drydep.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void schmidt_number(Ensemble *ensemble) {
 
@@ -31,8 +28,8 @@ void schmidt_number(Ensemble *ensemble) {
     Kokkos::parallel_reduce(
         1,
         KOKKOS_LAMBDA(const int, Real &schmidt) {
-          schmidt = drydep::schmidt_number(temp, pres, radius, vsc_dyn_atm,
-                                           vsc_knm_atm);
+          schmidt = mam4::drydep::schmidt_number(temp, pres, radius,
+                                                 vsc_dyn_atm, vsc_knm_atm);
         },
         schmidt_number);
     output.set("schmidt_number", schmidt_number);

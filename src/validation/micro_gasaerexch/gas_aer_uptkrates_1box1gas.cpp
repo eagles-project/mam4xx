@@ -4,12 +4,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace gasaerexch;
+using namespace mam4::gasaerexch;
 
 void gas_aer_uptkrates_1box1gas(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -23,11 +21,11 @@ void gas_aer_uptkrates_1box1gas(Ensemble *ensemble) {
     auto dgncur_awet_vec = input.get_array("dgncur_awet");
     auto lnsg_vec = input.get_array("lnsg");
 
-    Real dgncur_awet[GasAerExch::num_mode];
-    Real lnsg[GasAerExch::num_mode];
-    Real uptkaer[GasAerExch::num_mode];
+    Real dgncur_awet[mam4::GasAerExch::num_mode];
+    Real lnsg[mam4::GasAerExch::num_mode];
+    Real uptkaer[mam4::GasAerExch::num_mode];
 
-    for (int mode = 0; mode < GasAerExch::num_mode; ++mode) {
+    for (int mode = 0; mode < mam4::GasAerExch::num_mode; ++mode) {
       dgncur_awet[mode] = dgncur_awet_vec[mode];
       lnsg[mode] = lnsg_vec[mode];
     }
@@ -35,8 +33,8 @@ void gas_aer_uptkrates_1box1gas(Ensemble *ensemble) {
     gas_aer_uptkrates_1box1gas(accom, gasdiffus, gasfreepath, beta_inp,
                                dgncur_awet, lnsg, uptkaer);
 
-    std::vector<Real> uptkaer_vec(GasAerExch::num_mode);
-    for (int mode = 0; mode < GasAerExch::num_mode; ++mode) {
+    std::vector<Real> uptkaer_vec(mam4::GasAerExch::num_mode);
+    for (int mode = 0; mode < mam4::GasAerExch::num_mode; ++mode) {
       uptkaer_vec[mode] = uptkaer[mode];
     }
 

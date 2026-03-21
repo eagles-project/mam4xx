@@ -1,21 +1,19 @@
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 using namespace mam4::mo_drydep;
 
-void calculate_uustar(const seq_drydep::Data &data, Ensemble *ensemble) {
+void calculate_uustar(const mam4::seq_drydep::Data &data, Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View1D = typename DeviceType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
 
-    using ViewInt1D = typename DeviceType::view_1d<int>;
-    using ViewInt1DHost = typename HostType::view_1d<int>;
+    using ViewInt1D = typename mam4::DeviceType::view_1d<int>;
+    using ViewInt1DHost = typename mam4::HostType::view_1d<int>;
 
-    using ViewBool1D = typename DeviceType::view_1d<bool>;
-    using ViewBool1DHost = typename HostType::view_1d<bool>;
+    using ViewBool1D = typename mam4::DeviceType::view_1d<bool>;
+    using ViewBool1DHost = typename mam4::HostType::view_1d<bool>;
 
     const auto index_season = input.get_array("index_season");
     const auto fr_lnduse = input.get_array("fr_lnduse");
@@ -45,9 +43,9 @@ void calculate_uustar(const seq_drydep::Data &data, Ensemble *ensemble) {
 
     View1D uustar_d("uustar", 1);
 
-    auto team_policy = ThreadTeamPolicy(1u, 1u);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           calculate_uustar(data, index_season_d.data(), fr_lnduse_d.data(),
                            unstable, lcl_frc_landuse_d.data(), va, zl, ribn,
                            uustar_d(0));

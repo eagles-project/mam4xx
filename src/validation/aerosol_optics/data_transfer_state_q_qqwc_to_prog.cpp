@@ -4,20 +4,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 #include <ekat_subview_utils.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace validation;
+using namespace mam4::validation;
 
 void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     constexpr int pver = mam4::nlev;
-    constexpr int pcnst = aero_model::pcnst;
-    using View2D = DeviceType::view_2d<Real>;
+    constexpr int pcnst = mam4::aero_model::pcnst;
+    using View2D = mam4::DeviceType::view_2d<Real>;
 
     const auto state_q_db = input.get_array("state_q");
     auto qqcw_db = input.get_array("qqcw"); // 2d
@@ -40,15 +38,15 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
     Kokkos::deep_copy(qqcw, qqcw_host);
 
     // We do not need temperature, pressure, and hydrostatic_dp in this test
-    ColumnView temperature = create_column_view(nlev);
-    ColumnView pressure = create_column_view(nlev);
-    ColumnView hydrostatic_dp = create_column_view(nlev);
+    mam4::ColumnView temperature = create_column_view(mam4::nlev);
+    mam4::ColumnView pressure = create_column_view(mam4::nlev);
+    mam4::ColumnView hydrostatic_dp = create_column_view(mam4::nlev);
 
-    auto vapor_mixing_ratio = create_column_view(nlev);
-    auto liquid_mixing_ratio = create_column_view(nlev); //
-    auto ice_mixing_ratio = create_column_view(nlev);    //
-    auto cloud_liquid_number_mixing_ratio = create_column_view(nlev);
-    auto cloud_ice_number_mixing_ratio = create_column_view(nlev);
+    auto vapor_mixing_ratio = create_column_view(mam4::nlev);
+    auto liquid_mixing_ratio = create_column_view(mam4::nlev); //
+    auto ice_mixing_ratio = create_column_view(mam4::nlev);    //
+    auto cloud_liquid_number_mixing_ratio = create_column_view(mam4::nlev);
+    auto cloud_ice_number_mixing_ratio = create_column_view(mam4::nlev);
     // Some variables of state_q are part of atm.
     // We need deep_copy because of executation error due to different layout
     // q[0] = atm.vapor_mixing_ratio(klev);               // qv
@@ -67,16 +65,16 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
     Kokkos::deep_copy(cloud_ice_number_mixing_ratio,
                       Kokkos::subview(state_q, Kokkos::ALL(), 4));
 
-    auto height = create_column_view(nlev);
-    auto interface_pressure = create_column_view(nlev + 1);
-    auto cloud_fraction = create_column_view(nlev);
-    auto updraft_vel_ice_nucleation = create_column_view(nlev);
+    auto height = create_column_view(mam4::nlev);
+    auto interface_pressure = create_column_view(mam4::nlev + 1);
+    auto cloud_fraction = create_column_view(mam4::nlev);
+    auto updraft_vel_ice_nucleation = create_column_view(mam4::nlev);
 
-    auto atm = Atmosphere(nlev, temperature, pressure, vapor_mixing_ratio,
-                          liquid_mixing_ratio, cloud_liquid_number_mixing_ratio,
-                          ice_mixing_ratio, cloud_ice_number_mixing_ratio,
-                          height, hydrostatic_dp, interface_pressure,
-                          cloud_fraction, updraft_vel_ice_nucleation, pblh);
+    auto atm = mam4::Atmosphere(
+        mam4::nlev, temperature, pressure, vapor_mixing_ratio,
+        liquid_mixing_ratio, cloud_liquid_number_mixing_ratio, ice_mixing_ratio,
+        cloud_ice_number_mixing_ratio, height, hydrostatic_dp,
+        interface_pressure, cloud_fraction, updraft_vel_ice_nucleation, pblh);
 
     View2D state_q_output("state_q_output", pver, pcnst);
     View2D qqcw_output("qqcw_output", pver, pcnst);
@@ -88,37 +86,39 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
     // inject_stateq_to_prognostics does not set values for index lower than
     // utils::aero_start_ind().
     const auto &qqcw_output_non = Kokkos::subview(
-        qqcw_output, Kokkos::ALL, range_type(0, utils::aero_start_ind()));
+        qqcw_output, Kokkos::ALL, range_type(0, mam4::utils::aero_start_ind()));
     Kokkos::deep_copy(qqcw_output_non, -9999.900390625);
 
     // inject_stateq_to_prognostics is not emplying values from index 5 to
     // utils::gasses_start_ind(). Hence, we set the output view with values from
     // the original views.
-    const auto &state_q_output_non = Kokkos::subview(
-        state_q_output, Kokkos::ALL, range_type(5, utils::gasses_start_ind()));
+    const auto &state_q_output_non =
+        Kokkos::subview(state_q_output, Kokkos::ALL,
+                        range_type(5, mam4::utils::gasses_start_ind()));
     const auto &state_non = Kokkos::subview(
-        state_q, Kokkos::ALL, range_type(5, utils::gasses_start_ind()));
+        state_q, Kokkos::ALL, range_type(5, mam4::utils::gasses_start_ind()));
 
     Kokkos::deep_copy(state_q_output_non, state_non);
 
-    mam4::Prognostics progs = validation::create_prognostics(nlev);
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    mam4::Prognostics progs = mam4::validation::create_prognostics(mam4::nlev);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           // 1. We inject values of state_q in prog.
           //  inject_qqcw_to_prognostics and inject_stateq_to_prognostics are
           //  use in validation and testing.
           auto progs_in = progs;
-          static constexpr int nlev_loc = nlev;
+          static constexpr int nlev_loc = mam4::nlev;
           // we need to inject validation values to progs.
           Kokkos::parallel_for(
               Kokkos::TeamVectorRange(team, nlev_loc), [&](int kk) {
                 // copy data from prog to stateq
                 const auto state_q_kk = ekat::subview(state_q, kk);
                 const auto qqcw_kk = ekat::subview(qqcw, kk);
-                utils::inject_qqcw_to_prognostics(qqcw_kk.data(), progs_in, kk);
-                utils::inject_stateq_to_prognostics(state_q_kk.data(), progs_in,
-                                                    kk);
+                mam4::utils::inject_qqcw_to_prognostics(qqcw_kk.data(),
+                                                        progs_in, kk);
+                mam4::utils::inject_stateq_to_prognostics(state_q_kk.data(),
+                                                          progs_in, kk);
               });
           team.team_barrier();
           // 2. Let's extract state_q and qqcw from prog.
@@ -127,9 +127,10 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
                 const auto state_q_output_kk =
                     ekat::subview(state_q_output, kk);
                 const auto qqcw_output_kk = ekat::subview(qqcw_output, kk);
-                utils::extract_stateq_from_prognostics(progs, atm,
-                                                       state_q_output_kk, kk);
-                utils::extract_qqcw_from_prognostics(progs, qqcw_output_kk, kk);
+                mam4::utils::extract_stateq_from_prognostics(
+                    progs, atm, state_q_output_kk, kk);
+                mam4::utils::extract_qqcw_from_prognostics(progs,
+                                                           qqcw_output_kk, kk);
               });
 
           team.team_barrier();

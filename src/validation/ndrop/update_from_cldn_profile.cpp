@@ -4,18 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace ndrop;
+using namespace mam4::ndrop;
+
 void update_from_cldn_profile(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const Real zero = 0;
-    const int ntot_amode = AeroConfig::num_modes();
+    const int ntot_amode = mam4::AeroConfig::num_modes();
 
     const Real cldn_col_in = input.get_array("cldn_col_in_kk")[0];
     const Real cldn_col_in_kp1 = input.get_array("cldn_col_in_kp1")[0];
@@ -28,15 +25,16 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     const auto state_q_col_in_kp1 = input.get_array("state_q_col_in_kp1");
     Real qcld = input.get_array("qcld")[0];
 
-    Real exp45logsig[AeroConfig::num_modes()], alogsig[AeroConfig::num_modes()],
-        num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
-        num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
+    Real exp45logsig[mam4::AeroConfig::num_modes()],
+        alogsig[mam4::AeroConfig::num_modes()],
+        num2vol_ratio_min_nmodes[mam4::AeroConfig::num_modes()],
+        num2vol_ratio_max_nmodes[mam4::AeroConfig::num_modes()] = {};
 
     Real aten = zero;
 
-    ndrop::ndrop_init(exp45logsig, alogsig, aten,
-                      num2vol_ratio_min_nmodes,  // voltonumbhi_amode
-                      num2vol_ratio_max_nmodes); // voltonumblo_amode
+    mam4::ndrop::ndrop_init(exp45logsig, alogsig, aten,
+                            num2vol_ratio_min_nmodes,  // voltonumbhi_amode
+                            num2vol_ratio_max_nmodes); // voltonumblo_amode
 
     auto raercol_nsav = input.get_array("raercol_nsav_kk");
     auto raercol_nsav_kp1 = input.get_array("raercol_nsav_kp1");
@@ -60,11 +58,11 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     int mam_idx[ntot_amode][nspec_max];
     int mam_cnst_idx[ntot_amode][nspec_max];
 
-    ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
-                               numptr_amode, specdens_amode, spechygro, mam_idx,
-                               mam_cnst_idx);
+    mam4::ndrop::get_e3sm_parameters(
+        nspec_amode, lspectype_amode, lmassptr_amode, numptr_amode,
+        specdens_amode, spechygro, mam_idx, mam_cnst_idx);
 
-    ndrop::update_from_cldn_profile(
+    mam4::ndrop::update_from_cldn_profile(
         cldn_col_in, cldn_col_in_kp1, dtinv, wtke_col_in, zs,
         dz, // ! in
         temp_col_in, air_density, air_density_kp1, csbot_cscen,

@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void get_form_factor(Ensemble *ensemble) {
 
@@ -25,7 +23,7 @@ void get_form_factor(Ensemble *ensemble) {
     skywalker::Real alpha = input.get("alpha");
 
     // Compute dg0imm
-    skywalker::Real f_form = hetfrz::get_form_factor(alpha);
+    skywalker::Real f_form = mam4::hetfrz::get_form_factor(alpha);
 
     // Store dg0imm
     output.set("f_form", f_form);

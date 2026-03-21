@@ -3,15 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
-#include <mam4xx/aero_modes.hpp>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/water_uptake.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void modal_aero_kohler(Ensemble *ensemble) {
   // Run the ensemble.
@@ -26,8 +21,8 @@ void modal_aero_kohler(Ensemble *ensemble) {
 
     std::vector<Real> rwet_out(1, 0);
 
-    water_uptake::modal_aero_kohler(rdry_in.data()[0], hygro.data()[0],
-                                    rh.data()[0], rwet_out.data()[0]);
+    mam4::water_uptake::modal_aero_kohler(rdry_in.data()[0], hygro.data()[0],
+                                          rh.data()[0], rwet_out.data()[0]);
 
     output.set("rwet_out", rwet_out);
   });

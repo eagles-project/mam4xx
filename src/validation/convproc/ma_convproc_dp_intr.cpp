@@ -4,65 +4,70 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <catch2/catch.hpp>
-#include <iomanip>
-#include <iostream>
+
 #include <mam4xx/convproc.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 namespace {
 
 void init_scratch(
-    Kokkos::View<Real *> scratch1Dviews[ConvProc::Col1DViewInd::NumScratch]) {
-  const ConvProc::Config config_;
-  Kokkos::resize(scratch1Dviews[ConvProc::q], config_.nlev * aero_model::pcnst);
-  Kokkos::resize(scratch1Dviews[ConvProc::mu], 1 + config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::md], 1 + config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::eudp], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::dudp], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::eddp], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::dddp], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::rhoair], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::zmagl], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::zmagl], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::gath],
-                 (1 + config_.nlev) * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::chat],
-                 (1 + config_.nlev) * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::conu],
-                 (1 + config_.nlev) * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::cond],
-                 (1 + config_.nlev) * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::dconudt_wetdep],
-                 (1 + config_.nlev) * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::dconudt_activa],
-                 (1 + config_.nlev) * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::fa_u], config_.nlev);
-  Kokkos::resize(scratch1Dviews[ConvProc::dcondt],
-                 config_.nlev * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::dcondt_wetdep],
-                 config_.nlev * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::dcondt_prevap],
-                 config_.nlev * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::dcondt_prevap_hist],
-                 config_.nlev * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::dcondt_resusp],
-                 config_.nlev * ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::wd_flux], ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::sumactiva], ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::sumaqchem], ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::sumprevap], ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::sumprevap_hist],
-                 ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::sumresusp], ConvProc::pcnst_extd);
-  Kokkos::resize(scratch1Dviews[ConvProc::sumwetdep], ConvProc::pcnst_extd);
+    Kokkos::View<Real *>
+        scratch1Dviews[mam4::ConvProc::Col1DViewInd::NumScratch]) {
+  const mam4::ConvProc::Config config_;
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::q],
+                 config_.nlev * mam4::aero_model::pcnst);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::mu], 1 + config_.nlev);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::md], 1 + config_.nlev);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::eudp], config_.nlev);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::dudp], config_.nlev);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::eddp], config_.nlev);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::dddp], config_.nlev);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::rhoair], config_.nlev);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::zmagl], config_.nlev);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::zmagl], config_.nlev);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::gath],
+                 (1 + config_.nlev) * mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::chat],
+                 (1 + config_.nlev) * mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::conu],
+                 (1 + config_.nlev) * mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::cond],
+                 (1 + config_.nlev) * mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::dconudt_wetdep],
+                 (1 + config_.nlev) * mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::dconudt_activa],
+                 (1 + config_.nlev) * mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::fa_u], config_.nlev);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::dcondt],
+                 config_.nlev * mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::dcondt_wetdep],
+                 config_.nlev * mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::dcondt_prevap],
+                 config_.nlev * mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::dcondt_prevap_hist],
+                 config_.nlev * mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::dcondt_resusp],
+                 config_.nlev * mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::wd_flux],
+                 mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::sumactiva],
+                 mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::sumaqchem],
+                 mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::sumprevap],
+                 mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::sumprevap_hist],
+                 mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::sumresusp],
+                 mam4::ConvProc::pcnst_extd);
+  Kokkos::resize(scratch1Dviews[mam4::ConvProc::sumwetdep],
+                 mam4::ConvProc::pcnst_extd);
 }
 
 void get_input(const Input &input, const std::string &name, const int size,
-               std::vector<Real> &host, ColumnView &dev) {
+               std::vector<Real> &host, mam4::ColumnView &dev) {
   host = input.get_array(name);
   dev = mam4::validation::create_column_view(size);
 
@@ -72,12 +77,12 @@ void get_input(const Input &input, const std::string &name, const int size,
     host_view[n] = host[n];
   Kokkos::deep_copy(dev, host_view);
 }
-void get_input(
-    const Input &input, const std::string &name, const int rows, const int cols,
-    std::vector<Real> &host,
-    Kokkos::View<Real * [aero_model::pcnst], Kokkos::MemoryUnmanaged> &dev) {
+void get_input(const Input &input, const std::string &name, const int rows,
+               const int cols, std::vector<Real> &host,
+               Kokkos::View<Real * [mam4::aero_model::pcnst],
+                            Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
-  ColumnView col_view = mam4::validation::create_column_view(rows * cols);
+  mam4::ColumnView col_view = mam4::validation::create_column_view(rows * cols);
   dev = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(col_view.data(), rows,
                                                        cols);
   EKAT_ASSERT(host.size() == rows * cols);
@@ -116,8 +121,8 @@ void ma_convproc_dp_intr(Ensemble *ensemble) {
     const int ktop = 47;
     const int kbot = 71;
     const Real dt = 36000;
-    // const int pcnst_extd = ConvProc::pcnst_extd;
-    const int pcnst = aero_model::pcnst;
+    // const int pcnst_extd = mam4::ConvProc::pcnst_extd;
+    const int pcnst = mam4::aero_model::pcnst;
     const int nsrflx = 6;
     // Fetch ensemble parameters
     // Convert to C++ index by subtracting one.
@@ -146,7 +151,7 @@ void ma_convproc_dp_intr(Ensemble *ensemble) {
         du_host, eu_host, ed_host, dp_host, dpdry_host, cldfrac_host,
         icwmr_host, rprd_host, evapc_host, doconvproc_host, species_class_host,
         dqdt_host, qsrflx_host;
-    ColumnView temperature_dev, pmid_dev, mu_dev, md_dev, du_dev, eu_dev,
+    mam4::ColumnView temperature_dev, pmid_dev, mu_dev, md_dev, du_dev, eu_dev,
         ed_dev, dp_dev, dpdry_dev, cldfrac_dev, icwmr_dev, rprd_dev, evapc_dev,
         doconvproc_dev, species_class_dev;
 
@@ -174,7 +179,8 @@ void ma_convproc_dp_intr(Ensemble *ensemble) {
 
     // get_input(input, "doconvproc", pcnst, doconvproc_host, doconvproc_dev);
     //
-    Kokkos::View<Real *> scratch1Dviews[ConvProc::Col1DViewInd::NumScratch];
+    Kokkos::View<Real *>
+        scratch1Dviews[mam4::ConvProc::Col1DViewInd::NumScratch];
     init_scratch(scratch1Dviews);
 
     Kokkos::parallel_for(
@@ -202,7 +208,7 @@ void ma_convproc_dp_intr(Ensemble *ensemble) {
           }
           auto dqdt_view = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(
               &dqdt[0][0], nlev, pcnst);
-          convproc::ma_convproc_dp_intr(
+          mam4::convproc::ma_convproc_dp_intr(
               scratch1Dviews, nlev, temperature, pmid, dpdry, dt, cldfrac,
               icwmr, rprd, evapc, du, eu, ed, dp, ktop, kbot, qnew_dev,
               species_class, mmtoo_prevap_resusp, dqdt_view, qsrflx, dotend);

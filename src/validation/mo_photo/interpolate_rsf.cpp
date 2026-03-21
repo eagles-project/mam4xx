@@ -4,17 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace mo_photo;
+using namespace mam4::mo_photo;
 
 void interpolate_rsf(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View1D = typename DeviceType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
 
     const auto alb_in_db = input.get_array("alb_in");
     const Real sza_in = input.get_array("sza_in")[0];
@@ -106,9 +104,9 @@ void interpolate_rsf(Ensemble *ensemble) {
     auto psum_u = View1D("psum_u", nw);
 
     View2D rsf("rsf", nw, pver);
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           interpolate_rsf(team, alb_in, sza_in, p_in, colo3_in,
                           pver, // in
                           sza, del_sza, alb, press, del_p, colo3, o3rat,
