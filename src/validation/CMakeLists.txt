@@ -1,5 +1,4 @@
-# Here's a submodule that contains Skywalker inputs and Python scripts for
-# processing outputs.
+# This folder contains Skywalker inputs and Python scripts for processing outputs.
 set(MAM_X_VALIDATION_DIR ${mam_x_validation_SOURCE_DIR})
 
 # This library has some common utilities used by Skywalker drivers in this

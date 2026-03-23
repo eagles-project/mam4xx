@@ -102,7 +102,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          submodules: recursive
 
       - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |

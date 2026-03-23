@@ -74,7 +74,6 @@ jobs:
         with:
           persist-credentials: false
           show-progress: false
-          submodules: recursive
       - name: Show action trigger
         uses: ./.github/actions/show-workflow-trigger
       - name: Get CUDA Arch
