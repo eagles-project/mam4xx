@@ -10,7 +10,7 @@ configure_file(
 # Most of mam4xx is implemented in C++ headers, so we must
 # install them for a client.
 install(FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/config.hpp
+        ${CMAKE_CURRENT_BINARY_DIR}/mam4_config.hpp
         aero_config.hpp
         aero_model.hpp
         aero_modes.hpp
