@@ -111,7 +111,7 @@ jobs:
         with:
           repository: E3SM-Project/EKAT
           submodules: recursive
-          path: $EKAT_SOURCE_DIR
+          path: ${{ github.workspace }}/ekat_src
 
       - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |
