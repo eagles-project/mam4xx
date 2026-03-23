@@ -120,7 +120,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
             -DMAM4XX_ENABLE_MPI=OFF \
             -DMAM4XX_ENABLE_GPU=OFF \
-            -DMAM4XX_PRECISION=${{ matrix.fp-precision }}
+            -DMAM4XX_PRECISION=${{ matrix.fp-precision }} \
             -DKokkos_ARCH_AMDAVX:BOOL=ON \
             -DNUM_VERTICAL_LEVELS=72 \
             -DENABLE_COVERAGE=ON \
