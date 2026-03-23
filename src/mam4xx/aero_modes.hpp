@@ -174,7 +174,8 @@ static constexpr Real mam4_hyg_mom = 0.1;
   Note that in MAM4 fortran, molecular weights are given as g/mol, rather than
   kg/mol.
 
-  Here we use SI units for everything, so molecular weights are given as [kg/mol].
+  Here we use SI units for everything, so molecular weights are given as
+  [kg/mol].
 
   When the variable is "universal" in the sense that it will be the same
   whether MAM4 is using or some other software package is using it, we
