@@ -102,7 +102,6 @@ void sethet(Ensemble *ensemble) {
     so2_diss = haero::testing::create_column_view(pver);
 
     ColumnView tmp_hetrates[gas_pcnst];
-    View1DHost tmp_hetrates_host[gas_pcnst];
     View2DHost qin_host("qin_host", pver, gas_pcnst);
 
     View2D het_rates("het_rates", pver, gas_pcnst);
@@ -112,7 +111,6 @@ void sethet(Ensemble *ensemble) {
     for (int mm = 0; mm < gas_pcnst; ++mm) {
 
       tmp_hetrates[mm] = haero::testing::create_column_view(pver);
-      tmp_hetrates_host[mm] = View1DHost("tmp_hetrates_host", pver);
     }
 
     int count = 0;

@@ -87,7 +87,7 @@ void adjrxt(Real rate[rxntot], const Real inv[nfs], const Real m) {
 // in consistent units
 template <typename VectorType>
 KOKKOS_INLINE_FUNCTION void
-imp_prod_loss(Real prod[clscnt4], Real loss[clscnt4], VectorType &y,
+imp_prod_loss(Real prod[clscnt4], Real loss[clscnt4], const VectorType &y,
               const Real rxt[rxntot], const Real het_rates[gas_pcnst]) {
   const Real zero = 0;
   loss[0] = (het_rates[1] + rxt[0] + rxt[2]) * y[1];
