@@ -31,25 +31,22 @@ Atmosphere create_atmosphere(int num_levels, Real pblh);
 ColumnView create_column_view(int num_levels);
 
 // creates a Prognostics object with the given number of vertical levels and
-// a set of newly-allocated views, managed using Haero's testing column data
-// pool
+// a set of newly-allocated views, managed using a testing column data pool
 Prognostics create_prognostics(int num_levels);
 
 // creates a Diagnostics object with the given number of vertical levels and
-// a set of newly-allocated views, managed using Haero's testing column data
-// pool
+// a set of newly-allocated views, managed using a testing column data pool
 Diagnostics create_diagnostics(int num_levels);
 
 // creates a Tendencies object with the given number of vertical levels and
-// a set of newly-allocated views, managed using Haero's testing column data
-// pool
+// a set of newly-allocated views, managed using a testing column data pool
 Tendencies create_tendencies(int num_levels);
 
 // creates a Surface object
 Surface create_surface();
 
 /// Call this at the end of a testing session to delete all ColumnViews
-/// allocated by create_column_view. This is called by Haero's implementation
+/// allocated by create_column_view. This is called by mam4xx's implementation
 /// of ekat_finalize_test_session, which is called automatically at the end of
 /// each Catch2-powered unit test.
 void finalize();

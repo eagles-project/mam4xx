@@ -68,9 +68,6 @@ jobs:
         build-type: ${{ fromJSON(needs.define_matrix.outputs.build_type) }}
         fp-precision: ${{ fromJSON(needs.define_matrix.outputs.precision) }}
     name: gcc-cuda / ${{ matrix.build-type }} - ${{ matrix.fp-precision }}
-    env:
-      # relative path to nvcc_wrapper from mam4xx root
-      haero_nvcw: "haero_src/ext/ekat/extern/kokkos/bin/nvcc_wrapper"
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
@@ -78,12 +75,6 @@ jobs:
           persist-credentials: false
           show-progress: false
           submodules: recursive
-      - name: Cloning Haero
-        uses: actions/checkout@v4
-        with:
-          repository: eagles-project/haero
-          submodules: recursive
-          path: haero_src
       - name: Show action trigger
         uses: ./.github/actions/show-workflow-trigger
       - name: Get CUDA Arch
@@ -121,37 +112,16 @@ jobs:
                   exit 1
                   ;;
           esac
-      - name: Set nvcc_wrapper Arch
-        run: |
-          nvcw="$(pwd)/${haero_nvcw}"
-          sed -i s/default_arch=\"sm_70\"/default_arch=\"sm_"$CUDA_ARCH"\"/g "${nvcw}"
-          echo "===================================="
-          grep -i "default_arch=" "${nvcw}"
-      - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
-        run: |
-          nvcw="$(pwd)/${haero_nvcw}"
-          cmake -S haero_src -B haero_build \
-            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-            -DCMAKE_INSTALL_PREFIX="haero_install" \
-            -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER="${nvcw}" \
-            -DHAERO_ENABLE_MPI=OFF \
-            -DHAERO_ENABLE_GPU=ON \
-            -DHAERO_PRECISION=${{ matrix.fp-precision }} \
-            -DKokkos_ARCH_$CUDA_DEVICE=ON \
-            -DHAERO_DEVICE_ARCH=$CUDA_DEVICE
-          cd haero_build
-          make -j
-          make install
       - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |
           nvcw="$(pwd)/${haero_nvcw}"
           cmake -S . -B build \
-            -DCMAKE_CXX_COMPILER="${nvcw}" \
-            -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-            -DMAM4XX_HAERO_DIR=$(pwd)/haero_install \
+            -DMAM4XX_ENABLE_MPI=OFF \
+            -DMAM4XX_ENABLE_GPU=ON \
+            -DMAM4XX_PRECISION=${{ matrix.fp-precision }} \
+            -DMAM4XX_DEVICE_ARCH=$CUDA_DEVICE
             -DNUM_VERTICAL_LEVELS=72 \
             -DENABLE_COVERAGE=OFF \
             -DENABLE_SKYWALKER=ON \

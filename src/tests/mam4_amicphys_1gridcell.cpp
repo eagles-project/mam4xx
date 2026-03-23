@@ -2319,7 +2319,7 @@ TEST_CASE("cloudy", "test_mam4_amicphys") {
   }
   for (int i = 0; i < num_modes; ++i) {
     for (int j = 0; j < nqtendaa; ++j) {
-#ifdef HAERO_DOUBLE_PRECISION
+#ifdef MAM4XX_DOUBLE_PRECISION
       const double epsilon = 0.001;
 #else
       const double epsilon = 0.5;
@@ -2338,7 +2338,7 @@ TEST_CASE("cloudy", "test_mam4_amicphys") {
   }
   for (int i = 0; i < num_aerosol_ids; ++i) {
     for (int j = 0; j < num_modes; ++j) {
-#ifdef HAERO_DOUBLE_PRECISION
+#ifdef MAM4XX_DOUBLE_PRECISION
       const double epsilon = 0.001;
 #else
       const double epsilon = 0.1;
@@ -2357,7 +2357,7 @@ TEST_CASE("cloudy", "test_mam4_amicphys") {
   for (int i = 0; i < num_aerosol_ids; ++i) {
     for (int j = 0; j < num_modes; ++j) {
       for (int k = 0; k < nqtendaa; ++k) {
-#ifdef HAERO_DOUBLE_PRECISION
+#ifdef MAM4XX_DOUBLE_PRECISION
         const double epsilon = 0.001;
 #else
         const double epsilon = 1.0;

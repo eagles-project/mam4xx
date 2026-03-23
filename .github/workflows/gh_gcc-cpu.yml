@@ -104,34 +104,15 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           submodules: recursive
 
-      - name: Cloning Haero
-        uses: actions/checkout@v3
-        with:
-          repository: eagles-project/haero
-          submodules: recursive
-          path: haero_src
-
-      - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
-        run: |
-          cmake -S haero_src -B haero_build \
-            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-            -DCMAKE_INSTALL_PREFIX="haero_install" \
-            -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER=g++ \
-            -DHAERO_ENABLE_MPI=OFF \
-            -DHAERO_ENABLE_GPU=OFF \
-            -DKokkos_ARCH_AMDAVX:BOOL=ON \
-            -DHAERO_PRECISION=${{ matrix.fp-precision }}
-          cd haero_build
-          make -j
-          make install
-
       - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |
           cmake -S . -B build \
             -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-            -DMAM4XX_HAERO_DIR=$(pwd)/haero_install \
+            -DMAM4XX_ENABLE_MPI=OFF \
+            -DMAM4XX_ENABLE_GPU=OFF \
+            -DMAM4XX_PRECISION=${{ matrix.fp-precision }}
+            -DKokkos_ARCH_AMDAVX:BOOL=ON \
             -DNUM_VERTICAL_LEVELS=72 \
             -DENABLE_COVERAGE=ON \
             -G "Unix Makefiles"
