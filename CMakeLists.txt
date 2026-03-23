@@ -10,11 +10,6 @@ option(MAM4XX_ENABLE_COVERAGE  "Enable code coverage instrumentation" OFF)
 option(MAM4XX_ENABLE_SKYWALKER "Enable Skywalker cross validation" ON)
 option(MAM4XX_ENABLE_TESTS     "Enable unit tests" ON)
 
-# This option is only used in CI, where we have to use special sauce to get the
-# submodules working with SSH. No mortal user should be concerned with this.
-option(DISABLE_SUBMODULE_CHECKS "Skip checks for git submodules" OFF)
-mark_as_advanced(FORCE DISABLE_SUBMODULE_CHECKS)
-
 # Single or double precision?
 if (CMAKE_VERSION GREATER_EQUAL 4.2)
   set(CACHE{MAM4XX_PRECISION}   TYPE STRING HELP "Precision of Real numbers (single, [double])" VALUE double)
@@ -110,6 +105,14 @@ if (MAM4XX_STANDALONE)
   set(EKAT_ENABLE_ALL_PACKAGES ON)
   set(EKAT_ENABLE_MPI ${MAM4XX_ENABLE_MPI})
   set(EKAT_ENABLE_TESTS OFF)
+  # HACK: We need this for our CI builds because EKAT uses SSH to get its submodules, so we
+  # HACK: have a GitHub Action do it for us. We can remove this if/when EKAT switches to
+  # HACK: CMake's FetchContent machinery like we have.
+  if (DEFINED ENV{EKAT_SOURCE_DIR})
+    set(FETCHCONTENT_SOURCE_DIR_EKAT $ENV{EKAT_SOURCE_DIR})
+    set(ekat_SOURCE_DIR $ENV{EKAT_SOURCE_DIR})
+    message(STATUS "Building EKAT from source at $ENV{EKAT_SOURCE_DIR}")
+  endif()
   FetchContent_Declare(
     EKAT
     GIT_REPOSITORY https://github.com/E3SM-Project/EKAT.git

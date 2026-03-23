@@ -10,6 +10,9 @@ on:
         required: false
         type: string
 
+env:
+  EKAT_SOURCE_DIR: ekat_src # we clone EKAT here
+
 jobs:
   # this is more work than I'd expect, but this is how you pass info after
   # operating on it in a job/step
@@ -74,6 +77,12 @@ jobs:
         with:
           persist-credentials: false
           show-progress: false
+      - name: Cloning EKAT
+        uses: actions/checkout@v4
+        with:
+          repository: E3SM-Project/EKAT
+          submodules: recursive
+          path: $EKAT_SOURCE_DIR
       - name: Show action trigger
         uses: ./.github/actions/show-workflow-trigger
       - name: Get CUDA Arch
