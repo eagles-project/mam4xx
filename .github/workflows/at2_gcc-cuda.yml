@@ -129,7 +129,7 @@ jobs:
             -DMAM4XX_ENABLE_MPI=OFF \
             -DMAM4XX_ENABLE_GPU=ON \
             -DMAM4XX_PRECISION=${{ matrix.fp-precision }} \
-            -DMAM4XX_DEVICE_ARCH=$CUDA_DEVICE
+            -DMAM4XX_DEVICE_ARCH=$CUDA_DEVICE \
             -DNUM_VERTICAL_LEVELS=72 \
             -DENABLE_COVERAGE=OFF \
             -DENABLE_SKYWALKER=ON \
