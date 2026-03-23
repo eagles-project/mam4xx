@@ -11,7 +11,7 @@ on:
         type: string
 
 env:
-  EKAT_SOURCE_DIR: ekat_src # we clone EKAT here
+  EKAT_SOURCE_DIR: $GITHUB_WORKSPACE/ekat_src # we clone EKAT here
 
 jobs:
   # this is more work than I'd expect, but this is how you pass info after

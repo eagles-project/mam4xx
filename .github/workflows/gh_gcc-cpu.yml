@@ -19,7 +19,7 @@ on:
         required: true
 
 env:
-  EKAT_SOURCE_DIR: ekat_src # we clone EKAT here
+  EKAT_SOURCE_DIR: $GITHUB_WORKSPACE/ekat_src # we clone EKAT here
 
 # Below are jobs, each of which runs sequentially.
 jobs:
