@@ -131,8 +131,8 @@ jobs:
             -DMAM4XX_PRECISION=${{ matrix.fp-precision }} \
             -DMAM4XX_DEVICE_ARCH=$CUDA_DEVICE \
             -DNUM_VERTICAL_LEVELS=72 \
-            -DENABLE_COVERAGE=OFF \
-            -DENABLE_SKYWALKER=ON \
+            -DMAM4XX_ENABLE_COVERAGE=OFF \
+            -DMAM4XX_ENABLE_SKYWALKER=ON \
             -DCMAKE_CUDA_ARCHITECTURES=$CUDA_ARCH \
             -G "Unix Makefiles"
       - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
