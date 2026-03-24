@@ -40,8 +40,8 @@ cmake -S . -B <build-directory> [OPTIONS]
 
 Available options are:
 
-* `MAM4XX_PRECISION`: Set this to `single` or `double` to set floating point precision. It's set
-  to `double` by default.
+* `MAM4XX_PRECISION`: Set this to `single` or `double` to set floating point precision
+  (default: `double`).
 * `MAM4XX_ENABLE_GPU`: Set this flag to enable MAM4xx to run on GPUs. It should be accompanied by
   a `MAM4XX_DEVICE_ARCH` setting with an architecture flag that conforms to those listed
   [here](https://kokkos.org/kokkos-core-wiki/get-started/configuration-guide.html#gpu-architectures).
@@ -53,6 +53,8 @@ Available options are:
 * `MAM4XX_ENABLE_TESTS`: Set this flag to enable MAM4xx's unit tests.
 * `MAM4XX_ENABLE_SKYWALKER`: Set this flag to enable MAM4xx's cross validation testing against
   MAM4 Fortran datasets generated during the porting process.
+* `MAM4XX_NUM_VERTICAL_LEVELS`: Set this to the number of vertical levels in an atmospheric
+  column (default: 72).
 
 Here's an example that configures MAMxx to run on CPUs with cross validation and testing enabled:
 

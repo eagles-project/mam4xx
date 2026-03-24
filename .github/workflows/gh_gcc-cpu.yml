@@ -122,7 +122,7 @@ jobs:
             -DMAM4XX_ENABLE_GPU=OFF \
             -DMAM4XX_PRECISION=${{ matrix.fp-precision }} \
             -DKokkos_ARCH_AMDAVX:BOOL=ON \
-            -DNUM_VERTICAL_LEVELS=72 \
+            -DMAM4XX_NUM_VERTICAL_LEVELS=72 \
             -DMAM4XX_ENABLE_COVERAGE=ON \
             -G "Unix Makefiles"
 

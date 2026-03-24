@@ -29,10 +29,10 @@ else()
 endif()
 
 if( NOT DEFINED SCREAM_NUM_VERTICAL_LEV)
-  set(NUM_VERTICAL_LEVELS 72 CACHE STRING "the number of vertical levels per column")
+  set(MAM4XX_NUM_VERTICAL_LEVELS 72 CACHE STRING "the number of vertical levels per column")
 else()
   # use the same number of levels as EAMxx if MAM4xx is run under EAMxx (or SCREAM)
-  set(NUM_VERTICAL_LEVELS ${SCREAM_NUM_VERTICAL_LEV} CACHE STRING "the number of vertical levels per column equals scream num levels")
+  set(MAM4XX_NUM_VERTICAL_LEVELS ${SCREAM_NUM_VERTICAL_LEV} CACHE STRING "the number of vertical levels per column equals scream num levels")
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")

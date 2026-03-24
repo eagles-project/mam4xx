@@ -21,7 +21,7 @@ using Real = @MAM4XX_REAL_TYPE@;
 
 // Number of vertical levels per column (must match the number in the
 // host model)
-constexpr int nlev = @NUM_VERTICAL_LEVELS@;
+constexpr int nlev = @MAM4XX_NUM_VERTICAL_LEVELS@;
 constexpr int pcnst = 40;
 
 } // namespace mam4
