@@ -224,7 +224,7 @@ if (MAM4XX_ENABLE_COVERAGE)
 endif()
 
 # support for valgrind (standalone, Linux only)
-if (MAM4XX_STANDALONE)
+if (MAM4XX_STANDALONE AND NOT TARGET memcheck)
   include(add_memcheck_target)
   add_memcheck_target()
 endif()

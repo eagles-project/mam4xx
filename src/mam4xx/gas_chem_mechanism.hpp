@@ -1,8 +1,8 @@
 #ifndef MAM4XX_GAS_CHEM_HPP
 #define MAM4XX_GAS_CHEM_HPP
 
-#include "mam4_config.hpp"
 #include "mam4_math.hpp"
+#include <mam4xx/mam4_config.hpp>
 
 #include <ekat_kokkos_types.hpp>
 

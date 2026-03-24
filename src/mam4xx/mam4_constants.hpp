@@ -5,7 +5,7 @@
 #ifndef MAM4XX_PHYSICAL_CONSTANTS_HPP
 #define MAM4XX_PHYSICAL_CONSTANTS_HPP
 
-#include "mam4_config.hpp"
+#include <mam4xx/mam4_config.hpp>
 
 // clang-format off
 // All physical constants in mam4xx are in SI units unless it's explicitly

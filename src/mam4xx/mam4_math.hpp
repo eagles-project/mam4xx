@@ -1,7 +1,7 @@
 #ifndef MAM4XX_MATH_HPP
 #define MAM4XX_MATH_HPP
 
-#include "mam4_config.hpp"
+#include <mam4xx/mam4_config.hpp>
 
 #include <Kokkos_MathematicalFunctions.hpp>
 #include <Kokkos_MinMax.hpp>
