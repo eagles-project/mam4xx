@@ -33,7 +33,7 @@ KOKKOS_INLINE_FUNCTION
 void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
                  const mam4::Prognostics &progs,
                  const Real adv_mass_kg_per_moles[gas_pcnst],
-                 const int offset_aerosol, const View2D& vmr_col) {
+                 const int offset_aerosol, const View2D &vmr_col) {
   // Make a local copy of nlev to avoid the identifier "mam4::nlev" being
   // undefined in device code.
   constexpr int nlev_local = nlev;

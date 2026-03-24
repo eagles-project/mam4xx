@@ -215,7 +215,7 @@ void sethet_detail(
     const ConstColumnView &nevapr, // evaporation [kg/kg/s] //in
     const Real delt,               // time step [s] //in
     const View2D &invariants,      // total atms density [cm^-3] //in
-    const View2D &qin,              // xported species [vmr]  //in
+    const View2D &qin,             // xported species [vmr]  //in
     // working variables
     const ColumnView
         &t_factor, // temperature factor to calculate henry's law parameters
