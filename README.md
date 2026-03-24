@@ -46,6 +46,7 @@ Available options are:
   a `MAM4XX_DEVICE_ARCH` setting with an architecture flag that conforms to those listed
   [here](https://kokkos.org/kokkos-core-wiki/get-started/configuration-guide.html#gpu-architectures).
   Specifically, MAM4xx sets `Kokkos_ARCH_${MAM4XX_DEVICE_ARCH}` to configure an appropriate backend.
+  **This parameter is only required for standalone MAM4xx configurations.**
 * `MAM4XX_ENABLE_MPI`: Set this flag to enable MAM4xx to use MPI. This requires a working set of
   MPI C and C++ compilers.
 * `MAM4XX_ENABLE_COVERAGE`: Set this flag to have MAM4xx generate code coverage reports. This

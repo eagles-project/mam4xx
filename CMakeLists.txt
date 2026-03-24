@@ -70,10 +70,14 @@ set(MAM4XX_VERSION "${MAM4XX_MAJOR_VERSION}.${MAM4XX_MINOR_VERSION}.${MAM4XX_PAT
 message(STATUS "Configuring MAM4xx v${MAM4XX_VERSION} (build type: ${CMAKE_BUILD_TYPE})")
 
 if(MAM4XX_ENABLE_GPU)
-  if (NOT MAM4XX_DEVICE_ARCH)
-    message(FATAL_ERROR "MAM4XX_ENABLE_GPU is set but no MAM4XX_DEVICE_ARCH is given")
+  if (MAM4XX_STANDALONE)
+    if (NOT MAM4XX_DEVICE_ARCH)
+      message(FATAL_ERROR "MAM4XX_ENABLE_GPU is set but no MAM4XX_DEVICE_ARCH is given")
+    endif()
+    message(STATUS "Configuring for GPU (${MAM4XX_DEVICE_ARCH})")
+  else()
+    message(STATUS "Configuring for GPU")
   endif()
-  message(STATUS "Configuring for GPU (${MAM4XX_DEVICE_ARCH})")
 else() #CPU
   message(STATUS "Configuring for CPU")
 endif()
