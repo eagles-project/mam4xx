@@ -47,8 +47,6 @@ Available options are:
   [here](https://kokkos.org/kokkos-core-wiki/get-started/configuration-guide.html#gpu-architectures).
   Specifically, MAM4xx sets `Kokkos_ARCH_${MAM4XX_DEVICE_ARCH}` to configure an appropriate backend.
   **This parameter is only required for standalone MAM4xx configurations.**
-* `MAM4XX_ENABLE_MPI`: Set this flag to enable MAM4xx to use MPI. This requires a working set of
-  MPI C and C++ compilers.
 * `MAM4XX_ENABLE_COVERAGE`: Set this flag to have MAM4xx generate code coverage reports. This
   requires [lcov](https://github.com/linux-test-project/lcov) to be installed.
 * `MAM4XX_ENABLE_TESTS`: Set this flag to enable MAM4xx's unit tests.
@@ -61,7 +59,6 @@ Here's an example that configures MAMxx to run on CPUs with cross validation and
 
 ```
 cmake -S . -B build \
-  -DMAMXX_ENABLE_MPI=ON \
   -DMAMXX_PRECISION=double \
   -DMAMXX_ENABLE_SKYWALKER=ON
 ```
@@ -70,7 +67,6 @@ Here's a GPU configuration example that uses NVidia's `AMPERE86` architecture:
 
 ```
 cmake -S . -B build \
-  -DMAMXX_ENABLE_MPI=ON \
   -DMAMXX_ENABLE_GPU=ON \
   -DMAMXX_DEVICE_ARCH=AMPERE86=ON \
   -DMAMXX_PRECISION=double

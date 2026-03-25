@@ -5,7 +5,6 @@ cmake_minimum_required(VERSION 3.17.0)
 #----------------------
 
 option(MAM4XX_ENABLE_GPU       "Enable GPU support" OFF)
-option(MAM4XX_ENABLE_MPI       "Enable MPI parallelism" ON)
 option(MAM4XX_ENABLE_COVERAGE  "Enable code coverage instrumentation" OFF)
 option(MAM4XX_ENABLE_SKYWALKER "Enable Skywalker cross validation" ON)
 option(MAM4XX_ENABLE_TESTS     "Enable unit tests" ON)
@@ -49,12 +48,6 @@ enable_language(CXX)
 
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
-endif()
-
-if (MAM4XX_ENABLE_MPI)
-  find_package(MPI COMPONENTS C CXX REQUIRED)
-  include_directories(${MPI_INCLUDE_DIRS})
-  link_libraries(${MPI_LIBRARIES})
 endif()
 
 message(STATUS "Generating project files in build directory: ${PROJECT_BINARY_DIR}")
@@ -107,7 +100,7 @@ include(FetchContent)
 # for standalone mode, configure EKAT and Kokkos
 if (MAM4XX_STANDALONE)
   set(EKAT_ENABLE_ALL_PACKAGES ON)
-  set(EKAT_ENABLE_MPI ${MAM4XX_ENABLE_MPI})
+  set(EKAT_ENABLE_MPI OFF) # standalone mam4xx is a column model, no need for MPI
   set(EKAT_ENABLE_TESTS OFF)
   set(EKAT_SKIP_FIND_YAML_CPP ON) # use yaml-cpp from submodule
   # HACK: We need this for our CI builds because EKAT uses SSH to get its submodules, so we

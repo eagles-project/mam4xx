@@ -126,7 +126,6 @@ jobs:
           cmake -S . -B build \
             -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-            -DMAM4XX_ENABLE_MPI=OFF \
             -DMAM4XX_ENABLE_GPU=ON \
             -DMAM4XX_PRECISION=${{ matrix.fp-precision }} \
             -DMAM4XX_DEVICE_ARCH=$CUDA_DEVICE \
