@@ -138,9 +138,9 @@ void henry_factor_so2(const Real t_factor, Real &xk, Real &xe, Real &x2) {
 
   // FIXME: BAD CONSTANTS
   // for so2
-  xk = 1.230 * exp(3120.0 * t_factor);
-  xe = 1.7e-2 * exp(2090.0 * t_factor);
-  x2 = 6.0e-8 * exp(1120.0 * t_factor);
+  xk = 1.230 * mam4::exp(3120.0 * t_factor);
+  xe = 1.7e-2 * mam4::exp(2090.0 * t_factor);
+  x2 = 6.0e-8 * mam4::exp(1120.0 * t_factor);
 } // end henry_factor_so2
 
 //===========================================================================
@@ -152,8 +152,8 @@ void henry_factor_co2(const Real t_factor, Real &xk, Real &xe) {
 
   // FIXME: BAD CONSTANTS
   // for co2
-  xk = 3.1e-2 * exp(2423.0 * t_factor);
-  xe = 4.3e-7 * exp(-913.0 * t_factor);
+  xk = 3.1e-2 * mam4::exp(2423.0 * t_factor);
+  xe = 4.3e-7 * mam4::exp(-913.0 * t_factor);
 } // end henry_factor_co2
 
 //===========================================================================
@@ -165,8 +165,8 @@ void henry_factor_h2o2(const Real t_factor, Real &xk, Real &xe) {
 
   // FIXME: BAD CONSTANTS
   // for h2o2
-  xk = 7.4e4 * exp(6621.0 * t_factor);
-  xe = 2.2e-12 * exp(-3730.0 * t_factor);
+  xk = 7.4e4 * mam4::exp(6621.0 * t_factor);
+  xe = 2.2e-12 * mam4::exp(-3730.0 * t_factor);
 
 } // end henry_factor_h2o2
 
@@ -179,7 +179,7 @@ void henry_factor_o3(const Real t_factor, Real &xk) {
 
   // FIXME: BAD CONSTANTS
   // for o3
-  xk = 1.15e-2 * exp(2560.0 * t_factor);
+  xk = 1.15e-2 * mam4::exp(2560.0 * t_factor);
 } // end henry_factor_o3
 
 //===========================================================================

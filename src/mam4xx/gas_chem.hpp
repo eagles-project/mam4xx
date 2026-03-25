@@ -162,8 +162,8 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
       for (int kk = 0; kk < clscnt4; ++kk) {
         int mm = permute_4[kk];
         // BAD CONSTANT
-        if (abs(solution[mm]) > 1.0e-20) {
-          max_delta[kk] = abs(forcing[mm] / solution[mm]);
+        if (mam4::abs(solution[mm]) > 1.0e-20) {
+          max_delta[kk] = mam4::abs(forcing[mm] / solution[mm]);
         } else {
           max_delta[kk] = zero;
         }
@@ -204,13 +204,14 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
         // TODO: is there a computational reason this needs to happen?
         // I suspect not, given that epsilon is hard-coded to 1e-3, meaning that
         // all of this logic surrounding 'converged[kk] = ...' is unnecessary
-        bool frc_mask = abs(forcing[mm]) > small;
+        bool frc_mask = mam4::abs(forcing[mm]) > small;
         if (frc_mask) {
           // this ends up effectively being:
           //                         if (small < abs(forcing) <= eps * abs(sol))
           //                            => converged
           // so the lower bound appears unnecessary
-          converged[kk] = abs(forcing[mm]) <= epsilon[kk] * abs(solution[mm]);
+          converged[kk] =
+              mam4::abs(forcing[mm]) <= epsilon[kk] * mam4::abs(solution[mm]);
         } else {
           // and this is just; if (abs(forcing) <= small <= eps) => converged
           // and the implicit comparison of small and eps is not helpful
@@ -375,7 +376,7 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
     interval_done += dt;
 
     // BAD CONSTANT
-    if (abs(delt - interval_done) <= 0.0001) {
+    if (mam4::abs(delt - interval_done) <= 0.0001) {
       if (fail_cnt > 0) {
         // FIXME: probably handle this more gracefully via error logging?
         EKAT_KERNEL_ERROR_MSG("ERROR: imp_sol failure @ (lchnk,lev,col) = \n");

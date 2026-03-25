@@ -109,6 +109,7 @@ if (MAM4XX_STANDALONE)
   set(EKAT_ENABLE_ALL_PACKAGES ON)
   set(EKAT_ENABLE_MPI ${MAM4XX_ENABLE_MPI})
   set(EKAT_ENABLE_TESTS OFF)
+  set(EKAT_SKIP_FIND_YAML_CPP ON) # use yaml-cpp from submodule
   # HACK: We need this for our CI builds because EKAT uses SSH to get its submodules, so we
   # HACK: have a GitHub Action do it for us. We can remove this if/when EKAT switches to
   # HACK: CMake's FetchContent machinery like we have.

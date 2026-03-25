@@ -57,10 +57,6 @@ install(FILES
         DESTINATION include/mam4xx)
 
 add_library(mam4xx aero_modes.cpp)
-#get_target_property(EKAT_DEFINITIONS ekat::AllLibs INTERFACE_COMPILE_DEFINITIONS)
-#add_definitions(${EKAT_DEFINITIONS})
-#get_target_property(EKAT_INCLUDE_DIRS ekat::AllLibs INCLUDE_DIRECTORIES)
-#message(STATUS "Hoof-ya: ${EKAT_INCLUDE_DIRS}")
 target_include_directories(mam4xx PUBLIC
   ${EKAT_INCLUDE_DIRS}
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>

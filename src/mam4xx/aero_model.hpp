@@ -118,7 +118,7 @@ Real air_dynamic_viscosity(const Real temp) {
   // Note: We do not have a reference for this correlation.
   // However, this equation is presented in page 3 of
   // http://pages.erau.edu/~snivelyj/ep711sp12/EP711_15.pdf.
-  return 1.8325e-4 * (416.16 / (temp + 120.)) * pow(temp / 296.16, 1.5);
+  return 1.8325e-4 * (416.16 / (temp + 120.)) * mam4::pow(temp / 296.16, 1.5);
 
 } // end air_dynamic_viscosity
 
@@ -170,13 +170,13 @@ void calc_rain_drop_conc(const int nr, const Real rlo, const Real dr,
     if (dd <= 0.007) {
       vfallstp = 2.88e5 * dd * dd;
     } else if (dd <= 0.025) {
-      vfallstp = 2.8008e4 * pow(dd, 1.528);
+      vfallstp = 2.8008e4 * mam4::pow(dd, 1.528);
     } else if (dd <= 0.1) {
-      vfallstp = 4104.9 * pow(dd, 1.008);
+      vfallstp = 4104.9 * mam4::pow(dd, 1.008);
     } else if (dd <= 0.25) {
-      vfallstp = 1812.1 * pow(dd, 0.638);
+      vfallstp = 1812.1 * mam4::pow(dd, 0.638);
     } else {
-      vfallstp = 1069.8 * pow(dd, 0.235);
+      vfallstp = 1069.8 * mam4::pow(dd, 0.235);
     }
     // rain droplet falling speed [cm/s]
     vfallrainsv[ii] = vfallstp * mam4::sqrt(1.204e-3 / rhoair);
@@ -344,9 +344,9 @@ void calc_impact_efficiency(const Real r_aer, const Real r_rain,
   const Real reynolds = r_rain * vfall / airkinvisc;
   const Real sqrtreynolds = mam4::sqrt(reynolds);
   // efficiency of aerosol-collection  in different processes
-  const Real ebrown = four *
-                      (one + 0.4 * sqrtreynolds * pow(schmidt, one_third)) /
-                      (reynolds * schmidt);
+  const Real ebrown =
+      four * (one + 0.4 * sqrtreynolds * mam4::pow(schmidt, one_third)) /
+      (reynolds * schmidt);
 
   //------------ calculate intercept effect ------------
   Real dum =
@@ -359,7 +359,7 @@ void calc_impact_efficiency(const Real r_aer, const Real r_rain,
   Real eimpact = zero;
   if (stokes > sstar) {
     dum = stokes - sstar;
-    eimpact = pow(dum / (dum + two_thirds), 1.5);
+    eimpact = mam4::pow(dum / (dum + two_thirds), 1.5);
   }
   // ! ------------ calculate total effects ------------
   etotal = ebrown + eintercept + eimpact;
