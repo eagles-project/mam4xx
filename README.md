@@ -77,6 +77,18 @@ manually with the -G flag.
 
 You can also specify a location to install MAM4xx with `CMAKE_INSTALL_PREFIX`.
 
+### Setup script
+
+As an alternative to manually running CMake, you can run the provided [setup](https://github.com/eagles-project/mam4xx/blob/main/setup)
+script, providing your desired build directory:
+
+```
+./setup build
+```
+
+This creates a `build` directory containing a `config.sh` script that you can edit and run to
+configure mam4xx. Run it within the build directory without arguments like this: `./config.sh`
+
 ## Building MAM4xx
 
 To build MAM4xx:
