@@ -342,7 +342,7 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
       // -----------------------------------------------------------------------
       //            ... non-convergence
       // -----------------------------------------------------------------------
-      fail_cnt += fail_cnt;
+      fail_cnt += 1;
 
       stp_con_cnt = 0;
 
@@ -357,6 +357,16 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
         // break;
         // cycle time_step_loop
       } else {
+        // Non-convergence warning: use Kokkos::printf for GPU-safe output.
+        // Species names are not available here; printing species index instead.
+        Kokkos::printf("imp_sol: Failed to converge, dt=%e, time=%e\n", dt,
+                       interval_done + dt);
+        for (int kk = 0; kk < clscnt4; ++kk) {
+          if (!converged[kk]) {
+            Kokkos::printf("  species index %d, max_delta=%e\n", kk,
+                           max_delta[kk]);
+          }
+        }
         // write(iulog,'('' imp_sol: Failed to converge @
         // (lchnk,lev,col,nstep,dt,time) = '',4i6,1p,2e21.13)') &
         //                   lchnk,lev,icol,nstep,dt,interval_done+dt
