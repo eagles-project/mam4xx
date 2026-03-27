@@ -145,7 +145,7 @@ void get_aer_mmr_sum(
     // index of species in state_q array
     const int spc_idx = lmassptr_amode[lspec][imode] - 1;
     // aerosol volume mixing ratio [m3/kg]
-    const Real vol = max(state_q[spc_idx] + qcldbrn1d[lspec], zero) /
+    const Real vol = mam4::max(state_q[spc_idx] + qcldbrn1d[lspec], zero) /
                      density_sp; // volume = mmr/density
     vaerosolsum_icol += vol;
     hygrosum_icol += vol * hygro_sp; // bulk hygroscopicity
@@ -466,7 +466,7 @@ void qsat(const Real t, const Real p, Real &svp, Real &qsat) {
   svp = wv_sat_methods::wv_sat_svp_trans(t);
   qsat = wv_sat_methods::wv_sat_svp_to_qsat(svp, p);
   // Ensures returned svp is consistent with limiters on qsat.
-  svp = min(svp, p);
+  svp = mam4::min(svp, p);
 } // qsat
 
 KOKKOS_INLINE_FUNCTION
@@ -1217,13 +1217,13 @@ void update_from_explmix(
         const int km1 = mam4::max(k - 1, top_lev);
         // maximum overlap assumption
         if (cldn(kp1) > overlap_cld_thresh) {
-          overlapp(k) = min(cldn(k) / cldn(kp1), one);
+          overlapp(k) = mam4::min(cldn(k) / cldn(kp1), one);
         } else {
           overlapp(k) = one;
         }
 
         if (cldn(km1) > overlap_cld_thresh) {
-          overlapm(k) = min(cldn(k) / cldn(km1), one);
+          overlapm(k) = mam4::min(cldn(k) / cldn(km1), one);
         } else {
           overlapm(k) = one;
         }
@@ -1241,8 +1241,8 @@ void update_from_explmix(
         // the following is a safety measure to avoid negatives in explmix
 
         for (int imode = 0; imode < ntot_amode; imode++) {
-          nact(k, imode) = min(nact(k, imode), eddy_diff_kp(k));
-          mact(k, imode) = min(mact(k, imode), eddy_diff_kp(k));
+          nact(k, imode) = mam4::min(nact(k, imode), eddy_diff_kp(k));
+          mact(k, imode) = mam4::min(mact(k, imode), eddy_diff_kp(k));
         }
 
         // rce-comment -- tinv is the sum of all first-order-loss-rates
@@ -1256,7 +1256,7 @@ void update_from_explmix(
         // artificial source.
         //  BAD CONSTANT
         if (tinv > 1e-6) {
-          min_val = min(min_val, one / tinv);
+          min_val = mam4::min(min_val, one / tinv);
         }
       },
       Kokkos::Min<Real>(dtmin));
@@ -1509,7 +1509,7 @@ void dropmixnuc(
     const Real cs = conversions::density_of_ideal_gas(temp(k), pmid(k));
     dz(k) = one / (cs * gravity * rpdel(k)); // layer thickness [m]
     zn(k) = gravity * rpdel(k);
-    wtke(k) = max(wsub(k), wmixmin);
+    wtke(k) = mam4::max(wsub(k), wmixmin);
     // cloud droplet number mixing ratio [#/kg]
     // load number nucleated into qcld on cloud boundaries
     qcld(k) = ncldwtr(k);
@@ -1590,7 +1590,7 @@ void dropmixnuc(
   // NOTE: update_from_cldn_profile loops from 7 to 71 in fortran code.
   Kokkos::parallel_for(
       Kokkos::TeamVectorRange(team, top_lev, pver_loc - 1), [&](int k) {
-        const int kp1 = min(k + 1, pver - 1);
+        const int kp1 = mam4::min(k + 1, pver - 1);
 
         // PART II: changes in aerosol and cloud water from vertical profile of
         // new cloud fraction
@@ -1667,8 +1667,8 @@ void dropmixnuc(
             // Fortran indexing to C++ indexing
             const int lptr = mam_cnst_idx[imode][lspec] - 1;
             qqcwtend(k) = (raercol_cw[k][nnew](mm) - qqcw_fld[mm](k)) * dtinv;
-            qqcw_fld[mm](k) = max(raercol_cw[k][nnew](mm),
-                                  zero); // update cloud-borne aerosol
+            qqcw_fld[mm](k) = mam4::max(raercol_cw[k][nnew](mm),
+                                        zero); // update cloud-borne aerosol
 
             if (lspec == 0) {
               // Fortran indexing to C++ indexing

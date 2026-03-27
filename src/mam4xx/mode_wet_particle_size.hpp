@@ -240,8 +240,8 @@ void diag_dgn_wet(
     // Convert dry volume to dry diameter, then to wet diameter
     const Real sx = std::log(mam4::modes(n).mean_std_dev);
     const Real tmpb =
-        tmp_dryvol /
-        max(1.0e-30, qnum_cur[n] * (Constants::pi / 6.0) * exp(4.5 * sx * sx));
+        tmp_dryvol / mam4::max(1.0e-30, qnum_cur[n] * (Constants::pi / 6.0) *
+                                            exp(4.5 * sx * sx));
     dgn_awet[n] = pow(tmpb, (1.0 / 3.0) * dwet_ddry_ratio);
   }
 }

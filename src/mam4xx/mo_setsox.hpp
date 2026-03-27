@@ -477,7 +477,7 @@ void calc_sox_aqueous(const bool modal_aerosols, const Real rah2o2,
   // [M/s] = [mole/L(w)/s] / [mole/L(a)/s] / [/L(a)/s]
   pso4 = pso4 * xlwc / const0 / xhnm;
 
-  Real delta_s = max(pso4 * dt, small_value_30);
+  Real delta_s = mam4::max(pso4 * dt, small_value_30);
 
   xso4_init = xso4;
 
@@ -507,7 +507,7 @@ void calc_sox_aqueous(const bool modal_aerosols, const Real rah2o2,
   // [M/s] =[mole/L(w)/s] * [mole/L(a)/s] / [/L(a)/s] / [mixing ratio/s]
   pso4 = pso4 * xlwc / const0 / xhnm;
 
-  delta_s = max(pso4 * dt, small_value_30);
+  delta_s = mam4::max(pso4 * dt, small_value_30);
 
   xso4_init = xso4;
 
@@ -568,12 +568,12 @@ void compute_aer_factor(const Real *tmr, const int loffset,
     ll = config_.numptrcw_amode[m] - loffset;
     // FIXME: I believe these two logic blocks can be combined
     if (ll > 0) {
-      qnum_c[m] = max(zero, tmr[ll]);
+      qnum_c[m] = mam4::max(zero, tmr[ll]);
     }
     // force qnum_c(m) to be positive for m = modeptr_accum or m = 1
     if (m == config_.modeptr_accum) {
       // FIXME: BAD CONSTANT
-      qnum_c[m] = max(1.0e-10, qnum_c[m]);
+      qnum_c[m] = mam4::max(1.0e-10, qnum_c[m]);
     }
 
     // NOTE: given what I've seen for the value of lptr_so4_cw_amode in mam4,
@@ -641,7 +641,7 @@ Real cldaero_uptakerate(const Real xl, const Real cldnum, const Real cfact,
 
   //  change drop number conc from #/kg to #/cm^3
   Real num_cd = cm3_to_L * cldnum * cfact / cldfrc;
-  num_cd = max(num_cd, 0.0);
+  num_cd = mam4::max(num_cd, 0.0);
 
   // (liquid water volume in cm^3/cm^3)
   Real volx34pi_cd = (xl * 0.75) / Constants::pi;
@@ -723,7 +723,7 @@ void update_tmr_nonzero(Real &tmr, const int idx) {
   // NOTE: in the fortran version, this if statement is if (idx > 0), so I
   // believe this is the correct way to port it
   if (idx >= 0) {
-    tmr = max(tmr, small_value_20);
+    tmr = mam4::max(tmr, small_value_20);
   }
 
 } // end update_tmr_nonzero
@@ -849,7 +849,7 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
     Real uptkrate =
         cldaero_uptakerate(xlwc, cldnum, cfact, cldfrc, tfld, press);
     //   // average uptake rate over dt
-    uptkrate = (one - exp(-one * min(100.0, dt * uptkrate))) / dt;
+    uptkrate = (one - mam4::exp(-one * mam4::min(100.0, dt * uptkrate))) / dt;
     //   // dso4dt_gasuptk = so4_c tendency from h2so4 gas uptake (mol/mol/s)
     Real dso4dt_gasuptk = xh2so4 * uptkrate;
 

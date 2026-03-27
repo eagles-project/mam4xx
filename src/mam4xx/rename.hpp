@@ -117,12 +117,13 @@ void compute_before_growth_dryvol_and_num(
 
   // FIXME: is it feasible that pregrowth_dryvol would be smaller than 1e-25?
   // NOTE: we get rid of this and use safe_divide() in do_inter_mode_transfer()
-  b4_growth_dryvol_bounded = max(b4_growth_dryvol, smallest_dryvol_value);
+  b4_growth_dryvol_bounded = mam4::max(b4_growth_dryvol, smallest_dryvol_value);
 
   // Compute total before growth number [units: #/kmol-air]
   Real b4_growth_qnum = total_interstitial_and_cloudborne(
       is_cloudy, src_mode, qnum_i_cur, qnum_c_cur);
-  b4_growth_qnum = max(zero, b4_growth_qnum); // bound to have minimum of 0
+  b4_growth_qnum =
+      mam4::max(zero, b4_growth_qnum); // bound to have minimum of 0
 
   // // bound number within min and max of the source mode
   b4_growth_qnum_bounded = utils::min_max_bound(
@@ -190,12 +191,12 @@ void compute_xfer_fractions(const Real b4_growth_dryvol,
   }
 
   xfer_vol_frac =
-      min(volume_fraction, after_growth_dryvol) / after_growth_dryvol;
-  xfer_vol_frac = min(xfer_vol_frac, xferfrac_max);
+      mam4::min(volume_fraction, after_growth_dryvol) / after_growth_dryvol;
+  xfer_vol_frac = mam4::min(xfer_vol_frac, xferfrac_max);
   xfer_num_frac = after_growth_tail_fr_num - b4_growth_tail_fr_qnum;
 
   // transfer fraction for number cannot exceed that of mass
-  xfer_num_frac = max(zero, min(xfer_num_frac, xfer_vol_frac));
+  xfer_num_frac = mam4::max(zero, mam4::min(xfer_num_frac, xfer_vol_frac));
 
 } // end compute_xfer_fractions
 

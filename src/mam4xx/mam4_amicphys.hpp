@@ -521,7 +521,7 @@ void get_partition_factors(const Real &qgcm_intrst,              // in
 
   // interstitial, cloudy subarea
   const Real tmp_q_intrst_cldy =
-      max(0, ((qgcm_intrst + qgcm_cldbrn) - tmp_q_cldbrn_cldy));
+      mam4::max(0, ((qgcm_intrst + qgcm_cldbrn) - tmp_q_cldbrn_cldy));
 
   EKAT_KERNEL_ASSERT_MSG(fclea != 0, "Error! get_partition_factors - fclea is "
                                      "zero\n");
@@ -538,8 +538,8 @@ void get_partition_factors(const Real &qgcm_intrst,              // in
 
   constexpr Real eps = 1.e-35; // BAD CONSTANT
   Real clea2gcm_ratio =
-      max(eps, tmp_q_intrst_clea * fclea) / max(eps, qgcm_intrst);
-  clea2gcm_ratio = max(0, min(1, clea2gcm_ratio));
+      mam4::max(eps, tmp_q_intrst_clea * fclea) / mam4::max(eps, qgcm_intrst);
+  clea2gcm_ratio = mam4::max(0, mam4::min(1, clea2gcm_ratio));
 
   factor_clea = clea2gcm_ratio / fclea;
   factor_cldy = (1 - clea2gcm_ratio) / fcldy;
@@ -1003,7 +1003,7 @@ void mam_newnuc_1subarea(
   Real mass1p_aithi = tmpa * (mam4::pow(dphim_mode, 3.0));
 
   //   limit RH to between 0.1% and 99%
-  Real relhumnn = max(0.01, min(0.99, relhum));
+  Real relhumnn = mam4::max(0.01, mam4::min(0.99, relhum));
 
   // BAD CONSTANTS (These should come from chemistry mechanism
   // but it is fixed here for stay BFB)
@@ -1041,7 +1041,7 @@ void mam_newnuc_1subarea(
   //   mass nuc rate (kg/kmol-air/s) from mass nuc amts
   EKAT_KERNEL_ASSERT_MSG(deltat != 0, "Error! mam_newnuc_1subarea: "
                                       " deltat should not be equal to 0\n");
-  Real dmdt_ait = max(0.0, (tmpb / deltat));
+  Real dmdt_ait = mam4::max(0.0, (tmpb / deltat));
 
   // BAD CONSTANTS
   if (dndt_ait < 1.0e2) {
@@ -1089,7 +1089,7 @@ void mam_newnuc_1subarea(
   if (dso4dt_ait > 0.0) {
     tmp_q_del = dso4dt_ait * deltat;
     qaer_cur[iaer_so4][nait] = qaer_cur[iaer_so4][nait] + tmp_q_del;
-    tmp_q_del = min(tmp_q_del, qgas_cur[igas_h2so4]);
+    tmp_q_del = mam4::min(tmp_q_del, qgas_cur[igas_h2so4]);
     qgas_cur[igas_h2so4] = qgas_cur[igas_h2so4] - tmp_q_del;
   }
 } // end mam_newnuc_1subarea
@@ -1287,7 +1287,7 @@ void mam_amicphys_1subarea(
 
   constexpr int ntsubstep = 1;
   const Real del_h2so4_gasprod =
-      max(qgas3[igas_h2so4] - qgas1[igas_h2so4], 0) / ntsubstep;
+      mam4::max(qgas3[igas_h2so4] - qgas1[igas_h2so4], 0) / ntsubstep;
   //-----------------------------------
   // Initialize increment diagnostics
   //-----------------------------------
@@ -2043,7 +2043,7 @@ void form_gcm_of_gases_and_aerosols_from_subareas(
   }
 
   for (int icnst = 0; icnst < gas_pcnst; ++icnst) {
-    qgcm[icnst] = max(0, qgcm[icnst]);
+    qgcm[icnst] = mam4::max(0, qgcm[icnst]);
   }
 
   // Cloud-borne aerosols
@@ -2232,7 +2232,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_amicphys_intr(
                          "Error! modal_aero_amicphys_intr: "
                          "nsubarea should be < maxsubarea() \n");
 
-  const Real relhumgcm = max(0.0, min(1.0, qv / qv_sat));
+  const Real relhumgcm = mam4::max(0.0, mam4::min(1.0, qv / qv_sat));
 
   Real relhumsub[maxsubarea()];
   set_subarea_rh(ncldy_subarea, jclea, jcldy, afracsub, relhumgcm, // in
@@ -2257,13 +2257,13 @@ KOKKOS_INLINE_FUNCTION void modal_aero_amicphys_intr(
   Real qqcwgcm2[gas_pcnst], qqcwgcm3[gas_pcnst]; // cld borne aerosols
   for (int icnst = 0; icnst < gas_pcnst; ++icnst) {
     // Gases and interstitial aerosols
-    qgcm1[icnst] = max(0, q_pregaschem[icnst]);
-    qgcm2[icnst] = max(0, q_precldchem[icnst]);
-    qgcm3[icnst] = max(0, qq[icnst]);
+    qgcm1[icnst] = mam4::max(0, q_pregaschem[icnst]);
+    qgcm2[icnst] = mam4::max(0, q_precldchem[icnst]);
+    qgcm3[icnst] = mam4::max(0, qq[icnst]);
 
     // Cloud-borne aerosols
-    qqcwgcm2[icnst] = max(0, qqcw_precldchem[icnst]);
-    qqcwgcm3[icnst] = max(0, qqcw[icnst]);
+    qqcwgcm2[icnst] = mam4::max(0, qqcw_precldchem[icnst]);
+    qqcwgcm3[icnst] = mam4::max(0, qqcw[icnst]);
   }
   // Partition grid cell mean to subareas
   Real qsub1[gas_pcnst][maxsubarea()];
@@ -2300,7 +2300,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_amicphys_intr(
   for (int imode = 0; imode < num_modes; ++imode) {
     dgn_a[imode] = dgncur_a[imode];
     dgn_awet[imode] = dgncur_awet[imode];
-    wetdens[imode] = max(one_thousand, wetdens_host[imode]);
+    wetdens[imode] = mam4::max(one_thousand, wetdens_host[imode]);
   }
 
   Real qsub_tendaa[gas_pcnst][nqtendaa()][maxsubarea()] = {};

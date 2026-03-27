@@ -223,7 +223,7 @@ void modal_aero_kohler(const Real rdry_in, const Real hygro, const Real rh,
   }
 
   // bound and convert from microns to m
-  rwet = min(rwet, rmax); // upper bound based on 1 day lifetime
+  rwet = mam4::min(rwet, rmax); // upper bound based on 1 day lifetime
   rwet_out = rwet * factor_um2m;
 }
 
@@ -253,17 +253,17 @@ void modal_aero_water_uptake_wetaer(
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
 
     const Real hystfac =
-        1.0 /
-        max(1.0e-5, (rhdeliques[imode] - rhcrystal[imode])); // (BAD CONSTANT)
+        1.0 / mam4::max(1.0e-5, (rhdeliques[imode] -
+                                 rhcrystal[imode])); // (BAD CONSTANT)
 
     water_uptake::modal_aero_kohler(dryrad[imode], hygro[imode], rh,
                                     wetrad[imode]);
 
-    wetrad[imode] = max(wetrad[imode], dryrad[imode]);
+    wetrad[imode] = mam4::max(wetrad[imode], dryrad[imode]);
     wetvol[imode] = (Constants::pi * 4.0 / 3.0) * cube(wetrad[imode]);
-    wetvol[imode] = max(wetvol[imode], dryvol[imode]);
+    wetvol[imode] = mam4::max(wetvol[imode], dryvol[imode]);
     wtrvol[imode] = wetvol[imode] - dryvol[imode];
-    wtrvol[imode] = max(wtrvol[imode], 0.0);
+    wtrvol[imode] = mam4::max(wtrvol[imode], 0.0);
 
     // apply simple treatment of deliquesence/crystallization hysteresis
     // for rhcrystal < rh < rhdeliques, aerosol water is a fraction of
@@ -274,7 +274,7 @@ void modal_aero_water_uptake_wetaer(
       wtrvol[imode] = 0.0;
     } else if (rh < rhdeliques[imode]) {
       wtrvol[imode] = wtrvol[imode] * hystfac * (rh - rhcrystal[imode]);
-      wtrvol[imode] = max(wtrvol[imode], 0.0);
+      wtrvol[imode] = mam4::max(wtrvol[imode], 0.0);
       wetvol[imode] = dryvol[imode] + wtrvol[imode];
       wetrad[imode] = mam4::cbrt(wetvol[imode] / (4.0 / 3.0 * Constants::pi));
     }
@@ -310,7 +310,7 @@ void modal_aero_water_uptake_rh_clearair(const Real temperature,
   if (cldn < cldn_thresh) {
     rh = (rh - cldn) / (1.0 - cldn); // RH of clear portion
   }
-  rh = max(rh, 0.0);
+  rh = mam4::max(rh, 0.0);
 }
 
 KOKKOS_INLINE_FUNCTION

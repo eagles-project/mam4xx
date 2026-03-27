@@ -399,7 +399,7 @@ also output wetvol and watervol
 
     crefin += watervol * crefwsw(ilwsw);
     // BAD CONTANT
-    crefin /= max(wetvol, small_value_40);
+    crefin /= mam4::max(wetvol, small_value_40);
 
   } // lwsw=='lw'
   // FIXME
@@ -438,8 +438,8 @@ void compute_factors(const int prefri, const Real ref_ind,
       }
     } // ii
     // FIXME: check Fortran to C++ indexing conversion
-    ix = max(ii - 1, 0);
-    const int ip1 = min(ix + 1, prefri - 1);
+    ix = mam4::max(ii - 1, 0);
+    const int ip1 = mam4::min(ix + 1, prefri - 1);
     const Real dx = ref_table[ip1] - ref_table[ix];
     if (abs(dx) > threshold) {
       tt = (ref_ind - ref_table[ix]) / dx;
@@ -497,8 +497,8 @@ void binterp(const View3D &table, const Real ref_real, const Real ref_img,
   const Real tuc = ttab - tu;
   const Real tcuc = one - tuc - utab;
   const Real tcu = utab - tu;
-  const int jp1 = min(jtab + 1, prefi - 1);
-  const int ip1 = min(itab + 1, prefr - 1);
+  const int jp1 = mam4::min(jtab + 1, prefi - 1);
+  const int ip1 = mam4::min(itab + 1, prefr - 1);
   for (int icoef = 0; icoef < ncoef; ++icoef) {
     coef[icoef] = tcuc * table(icoef, itab, jtab) +
                   tuc * table(icoef, ip1, jtab) + tu * table(icoef, ip1, jp1) +
@@ -724,8 +724,9 @@ KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
       pabs = mam4::utils::min_max_bound(zero, pext, pabs);
       Real palb =
           one -
-          pabs / max(pext, small_value_40); // parameterized single
-                                            // scattering albedo [unitless]
+          pabs /
+              mam4::max(pext, small_value_40); // parameterized single
+                                               // scattering albedo [unitless]
       const Real dopaer = pext * mass; // aerosol optical depth in layer [1]
 
       // end cols
@@ -964,7 +965,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_lw_k(
       calc_parameterized(cabs, cheb_kk, pabs);
 
       pabs *= wetvol * rhoh2o;
-      pabs = max(zero, pabs);
+      pabs = mam4::max(zero, pabs);
       Real dopaer = pabs * mass;
 
       // update absorption optical depth

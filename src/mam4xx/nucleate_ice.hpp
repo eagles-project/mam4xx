@@ -113,7 +113,7 @@ void calculate_Ni_hf(const Real A1, const Real B1, const Real C1, const Real A2,
   const Real k1 = mam4::exp(A2 + B2 * temperature + C2 * lnw);
   const Real k2 = A1 + B1 * temperature + C1 * lnw;
 
-  Ni = min(k1 * mam4::pow(Na, k2), Na);
+  Ni = mam4::min(k1 * mam4::pow(Na, k2), Na);
 } // end calculate_Ni_hf
 
 KOKKOS_INLINE_FUNCTION
@@ -231,7 +231,7 @@ void hetero(const Real temperature, const Real w_vlc, const Real Ns, Real &Nis,
 
   Nis = mam4::exp(A22) * mam4::pow(Ns, B22) * mam4::exp(B_coef * temperature) *
         mam4::pow(w_vlc, C_coef);
-  Nis = min(Nis, Ns);
+  Nis = mam4::min(Nis, Ns);
   // FIXME: Mention that this variables is set to zero in PR
   // don't include deposition nucleation for cirrus clouds when T < -37C
   Nid = Real(0.0);
@@ -383,7 +383,7 @@ public:
 
         wv_sat_methods::wv_sat_qsat_water(temp, pmid, es, qs);
         const Real relhum = qv / qs;
-        const Real icldm = max(ast(kk), mincld);
+        const Real icldm = mam4::max(ast(kk), mincld);
 
         // compute aerosol number for so4, soot, and dust with units #/cm^3
         // remove soot number, because it is set to zero
@@ -419,7 +419,7 @@ public:
                           (sqrt_two * alnsg_amode_aitken)));
         } // end dgnum_aitken
 
-        so4_num = max(zero, so4_num);
+        so4_num = mam4::max(zero, so4_num);
 
         // Real naai = zero;
 

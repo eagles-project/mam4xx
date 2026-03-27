@@ -121,7 +121,7 @@ Real growth_parameter(const Real c_so4, const Real c_nh4,
                       const Real mw_h2so4) {
   // Compute the wet/dry volume ratio using the simple Kohler approximation
   // for ammonium sulfate and bisulfate.
-  const auto bounded_rel_hum = max(0.10, min(0.95, rel_hum));
+  const auto bounded_rel_hum = mam4::max(0.10, mam4::min(0.95, rel_hum));
   const auto wet_dry_vol_ratio = 1.0 - 0.56 / log(bounded_rel_hum);
 
   // Compute the growth rate [nm/h] of new particles.
@@ -192,7 +192,7 @@ Real apparent_nucleation_factor(const Real c_so4, const Real c_nh4,
                                 const Real rho_air, const Real mw_h2so4) {
   // Compute the wet/dry volume ratio using the simple Kohler approximation
   // for ammonium sulfate and bisulfate.
-  const auto bounded_rel_hum = max(0.10, min(0.95, rel_hum));
+  const auto bounded_rel_hum = mam4::max(0.10, mam4::min(0.95, rel_hum));
   const auto wet_dry_vol_ratio = 1.0 - 0.56 / log(bounded_rel_hum);
 
   // Wet diameter [nm] of grown particles with dry diameter d_dry_grown.

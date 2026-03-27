@@ -126,17 +126,17 @@ calculate_cloudy_volume(const int nlev, const Real cld[/*nlev*/], FUNC lprec,
   Real sumpppr = small_value_36; // Sum of positive precips from above
 
   for (int i = 0; i < nlev; i++) {
-    const Real clouds = min(1.0, cldv1 / sumpppr) * (sumppr / sumpppr);
+    const Real clouds = mam4::min(1.0, cldv1 / sumpppr) * (sumppr / sumpppr);
     if (is_tot_cld) {
-      cldv[i] = max(clouds, cld[i]);
+      cldv[i] = mam4::max(clouds, cld[i]);
     } else {
       // For convective and stratiform precipitation volume at the top
       // interface of each layer. Neglect the current layer.
-      cldv[i] = max(clouds, 0.0);
+      cldv[i] = mam4::max(clouds, 0.0);
     }
     // Local production rate of precip [kg/m2/s] if positive
     const Real prec = lprec(i);
-    const Real lprecp = max(prec, small_value_30);
+    const Real lprecp = mam4::max(prec, small_value_30);
     cldv1 += cld[i] * lprecp;
     sumppr += prec;
     sumpppr += lprecp;
@@ -376,7 +376,7 @@ Real wetdep_resusp_nonlinear(
   } else {
     // fraction of precabx and precabx_base
     Real u_new = utils::min_max_bound(0.0, 1.0, precabx_new / precabx_base_old);
-    u_new = min(u_new, u_old);
+    u_new = mam4::min(u_new, u_old);
     if (mam_prevap_resusp_optcc <= 130) {
       // non-linear resuspension of aerosol mass
       x_new = 1.0 - faer_resusp_vs_fprec_evap_mpln(1.0 - u_new, is_st_cu);
@@ -385,18 +385,18 @@ Real wetdep_resusp_nonlinear(
       x_new = 1.0 - fprecn_resusp_vs_fprec_evap_mpln(1.0 - u_new, is_st_cu);
     }
     x_new = utils::min_max_bound(0.0, 1.0, x_new);
-    x_new = min(x_new, x_old);
+    x_new = mam4::min(x_new, x_old);
     x_ratio = utils::min_max_bound(0.0, 1.0, x_new / x_old);
   }
 
   // update aerosol resuspension
   if (mam_prevap_resusp_optcc <= 130) {
     // aerosol mass resuspension
-    const Real scavabx_new = max(0.0, scavabx_old * x_ratio);
-    resusp_x = max(0.0, scavabx_old - scavabx_new);
+    const Real scavabx_new = mam4::max(0.0, scavabx_old * x_ratio);
+    resusp_x = mam4::max(0.0, scavabx_old - scavabx_new);
   } else {
     // number resuspension
-    resusp_x = max(0.0, precnumx_base_old * (x_old - x_new));
+    resusp_x = mam4::max(0.0, precnumx_base_old * (x_old - x_new));
   }
   return resusp_x;
 }
@@ -444,7 +444,7 @@ Real wetdep_resusp_noprecip(const int is_st_cu,
           1.0 - fprecn_resusp_vs_fprec_evap_mpln(1.0 - u_old, is_st_cu);
       x_old = utils::min_max_bound(0.0, 1.0, x_old);
       const Real x_new = 0.0;
-      resusp_x = max(0.0, precnumx_base_old * (x_old - x_new));
+      resusp_x = mam4::max(0.0, precnumx_base_old * (x_old - x_new));
     }
   }
   return resusp_x;
@@ -497,7 +497,8 @@ void wetdep_scavenging(const int is_st_cu, const bool is_strat_cloudborne,
 
   // calculate limitation of removal rate using Dana and Hales coefficient
   // odds  : limit on removal rate (proportional to prec) [fraction]
-  Real odds = precabx / max(cldv_ik, small_value_5) * scavcoef_ik * deltat;
+  Real odds =
+      precabx / mam4::max(cldv_ik, small_value_5) * scavcoef_ik * deltat;
   odds = utils::min_max_bound(0.0, 1.0, odds);
 
   Real src1; // incloud scavenging tendency [kg/kg/s]
@@ -546,7 +547,8 @@ Real compute_evap_frac(const Real pdel_ik, const Real evap_ik,
   // BAD CONSTANT
   constexpr Real small_value_12 = 1.e-12;
   const Real gravit = Constants::gravity;
-  Real fracevx = evap_ik * pdel_ik / gravit / max(small_value_12, precabx);
+  Real fracevx =
+      evap_ik * pdel_ik / gravit / mam4::max(small_value_12, precabx);
   // trap to ensure reasonable ratio bounds
   fracevx = utils::min_max_bound(0., 1., fracevx);
   return fracevx;
@@ -629,7 +631,7 @@ Real wetdep_resusp(const int is_st_cu, const int mam_prevap_resusp_optcc,
   const Real gravit = Constants::gravity;
 
   Real resusp_x = 0;
-  const Real tmpa = max(0.0, evapx * pdel_ik / gravit);
+  const Real tmpa = mam4::max(0.0, evapx * pdel_ik / gravit);
   const Real precabx_new =
       utils::min_max_bound(0.0, precabx_base_old, precabx_old - tmpa);
 
@@ -764,15 +766,15 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   // temporary saved tracer value
   const Real clddiff = cldt - cldc;
   // temporarily calculation of tracer [kg/kg]
-  const Real tracer_tmp =
-      min(qqcw, tracer * (clddiff / max(small_value_2, (1. - clddiff))));
+  const Real tracer_tmp = mam4::min(
+      qqcw, tracer * (clddiff / mam4::max(small_value_2, (1. - clddiff))));
   // calculate in-cumulus and mean tracer values for wetdep_scavenging use
   // in-cumulus tracer concentration [kg/kg]
   const Real tracer_incu = f_act_conv * (tracer + tracer_tmp);
   // mean tracer concenration [kg/kg]
   Real tracer_mean =
       tracer * (1. - cldc * f_act_conv) - cldc * f_act_conv * tracer_tmp;
-  tracer_mean = max(0., tracer_mean);
+  tracer_mean = mam4::max(0., tracer_mean);
 
   // now do the convective scavenging
 
@@ -780,8 +782,9 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   // Sungsu: Below new formula of 'fracp' is necessary since 'conicw'
   // is a LWC/IWC that has already precipitated out, that is, 'conicw' does
   // not contain precipitation at all !
-  Real fracp = cmfdqr * deltat /
-               max(small_value_12, cldc * conicw + (cmfdqr + dlf) * deltat);
+  Real fracp =
+      cmfdqr * deltat /
+      mam4::max(small_value_12, cldc * conicw + (cmfdqr + dlf) * deltat);
   fracp = utils::min_max_bound(0.0, 1.0, fracp) * cldc;
 
   Real srcc = 0; // tendency for convective rain scavenging [kg/kg/s]
@@ -794,7 +797,7 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   // now do the stratiform scavenging
 
   // fracp: fraction of convective cloud water converted to rain
-  fracp = precs * deltat / max(small_value_12, cwat + precs * deltat);
+  fracp = precs * deltat / mam4::max(small_value_12, cwat + precs * deltat);
   fracp = utils::min_max_bound(0.0, 1.0, fracp);
 
   Real srcs = 0; // tendency for stratiform rain scavenging [kg/kg/s]
@@ -807,7 +810,7 @@ void wetdepa_v2(const Real deltat, const Real pdel, const Real cmfdqr,
   // rat =  ratio of amount available to amount removed [fraction]
   // make sure we dont take out more than is there
   // ratio of amount available to amount removed
-  const Real rat = tracer / max(deltat * (srcc + srcs), small_value_36);
+  const Real rat = tracer / mam4::max(deltat * (srcc + srcs), small_value_36);
   if (rat < 1) {
     srcs = srcs * rat;
     srcc = srcc * rat;
@@ -972,7 +975,7 @@ void sum_deep_and_shallow(const ThreadTeam &team, const View1D &conicw,
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nlev), [&](int k) {
     // sum deep and shallow convection contributions
     conicw[k] = (icwmrdp[k] * dp_frac[k] + icwmrsh[k] * sh_frac[k]) /
-                max(small_value_2, sh_frac[k] + dp_frac[k]);
+                mam4::max(small_value_2, sh_frac[k] + dp_frac[k]);
   });
 }
 
@@ -1166,8 +1169,8 @@ void compute_q_tendencies(
   View1D rain = workspace[1];
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     const Real gravit = Constants::gravity;
-    evap[k] = max(0.0, evapr[k] * pdel[k] / gravit);
-    rain[k] = max(0.0, prain[k] * pdel[k] / gravit);
+    evap[k] = mam4::max(0.0, evapr[k] * pdel[k] / gravit);
+    rain[k] = mam4::max(0.0, prain[k] * pdel[k] / gravit);
   });
 
   View1D precabs = workspace[3];
@@ -1197,13 +1200,13 @@ void compute_q_tendencies(
           precabs_base_tmp[k] = 0.0;
           bndd[k] = 0.0;
         }
-        prec_base = max(0.0, precabs_base_tmp[k] + rain[k]);
+        prec_base = mam4::max(0.0, precabs_base_tmp[k] + rain[k]);
         prec = utils::min_max_bound(0.0, prec_base, bndd[k] + rain[k]);
       }
     });
     team.team_barrier();
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev - 1), [&](int k) {
-      precabs_base[k + 1] = max(0.0, precabs_base_tmp[k] + rain[k]);
+      precabs_base[k + 1] = mam4::max(0.0, precabs_base_tmp[k] + rain[k]);
     });
     team.team_barrier();
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev - 1), [&](int k) {
@@ -1248,10 +1251,10 @@ void compute_q_tendencies(
       } else if (precabs_base[k + 1] > precabs_base_tmp[k]) {
         // note - calc rainshaft number flux from rainshaft water flux,
         // then multiply by rainshaft area to get grid-average number flux
-        const Real arainx = max(cldvst[k + 1], small_value_2);
+        const Real arainx = mam4::max(cldvst[k + 1], small_value_2);
         const Real tmpa = arainx * flux_precnum_vs_flux_prec_mpln(
                                        precabs_base[k + 1] / arainx, 1);
-        precnums_base[k + 1] = max(0.0, tmpa);
+        precnums_base[k + 1] = mam4::max(0.0, tmpa);
       } else {
         copy_from_prev[k + 1] = 1;
       }
@@ -1269,8 +1272,8 @@ void compute_q_tendencies(
   View1D cmfd = workspace[1];
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     const Real gravit = Constants::gravity;
-    evap[k] = max(0.0, evapc[k] * pdel[k] / gravit);
-    cmfd[k] = max(0.0, cmfdqr[k] * pdel[k] / gravit);
+    evap[k] = mam4::max(0.0, evapc[k] * pdel[k] / gravit);
+    cmfd[k] = mam4::max(0.0, cmfdqr[k] * pdel[k] / gravit);
   });
 
   View1D precabc = workspace[8];
@@ -1298,13 +1301,13 @@ void compute_q_tendencies(
           precabc_base_tmp[k] = 0.0;
           bndd[k] = 0.0;
         }
-        prec_base = max(0.0, precabc_base_tmp[k] + cmfd[k]);
+        prec_base = mam4::max(0.0, precabc_base_tmp[k] + cmfd[k]);
         prec = utils::min_max_bound(0.0, prec_base, bndd[k] + cmfd[k]);
       }
     });
     team.team_barrier();
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev - 1), [&](int k) {
-      precabc_base[k + 1] = max(0.0, precabc_base_tmp[k] + cmfd[k]);
+      precabc_base[k + 1] = mam4::max(0.0, precabc_base_tmp[k] + cmfd[k]);
     });
     team.team_barrier();
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev - 1), [&](int k) {
@@ -1343,10 +1346,10 @@ void compute_q_tendencies(
       } else if (precabc_base[k + 1] > precabc_base_tmp[k]) {
         // note - calc rainshaft number flux from rainshaft water flux,
         // then multiply by rainshaft area to get grid-average number flux
-        const Real arainx = max(cldvst[k + 1], small_value_2);
+        const Real arainx = mam4::max(cldvst[k + 1], small_value_2);
         const Real evap = arainx * flux_precnum_vs_flux_prec_mpln(
                                        precabc_base[k + 1] / arainx, 2);
-        precnumc_base[k + 1] = max(0.0, evap);
+        precnumc_base[k + 1] = mam4::max(0.0, evap);
       } else {
         copy_from_prev[k + 1] = 1;
       }
@@ -1391,26 +1394,27 @@ void compute_q_tendencies(
       if (jnv)
         scavcoef = (1 == jnv) ? scavcoefnum[k] : scavcoefvol[k];
 
-      Real fracp =
-          cmfdqr[k] * dt /
-          max(small_value_12, cldcu[k] * conicw[k] + (cmfdqr[k] + dlf[k]) * dt);
+      Real fracp = cmfdqr[k] * dt /
+                   mam4::max(small_value_12,
+                             cldcu[k] * conicw[k] + (cmfdqr[k] + dlf[k]) * dt);
       fracp = utils::min_max_bound(0.0, 1.0, fracp) * cldcu[k];
       // temporary saved tracer value
       const Real clddiff = cldt[k] - cldcu[k];
       // temporarily calculation of tracer [kg/kg]
-      const Real tracer_tmp =
-          min(tqqcw, tracer * (clddiff / max(small_value_2, (1. - clddiff))));
+      const Real tracer_tmp = mam4::min(
+          tqqcw, tracer * (clddiff / mam4::max(small_value_2, (1. - clddiff))));
       // calculate in-cumulus and mean tracer values for wetdep_scavenging use
       // in-cumulus tracer concentration [kg/kg]
       const Real tracer_incu = f_act_conv[k] * (tracer + tracer_tmp);
       // mean tracer concenration [kg/kg]
       Real tracer_mean = tracer * (1. - cldcu[k] * f_act_conv[k]) -
                          cldcu[k] * f_act_conv[k] * tracer_tmp;
-      tracer_mean = max(0., tracer_mean);
+      tracer_mean = mam4::max(0., tracer_mean);
 
       // calculate limitation of removal rate using Dana and Hales coefficient
       // odds  : limit on removal rate (proportional to prec) [fraction]
-      Real odds = precabc[k] / max(cldvcu[k], small_value_5) * scavcoef * dt;
+      Real odds =
+          precabc[k] / mam4::max(cldvcu[k], small_value_5) * scavcoef * dt;
       odds = utils::min_max_bound(0.0, 1.0, odds);
 
       // incloud scavenging tendency [kg/kg/s]
@@ -1428,7 +1432,7 @@ void compute_q_tendencies(
       const Real tracer = qqcw(k, mm);
       // strat in-cloud removal only affects strat-cloudborne aerosol
       Real fracp =
-          prain[k] * dt / max(totcond[k] + prain[k] * dt, small_value_12);
+          prain[k] * dt / mam4::max(totcond[k] + prain[k] * dt, small_value_12);
       fracp = utils::min_max_bound(0.0, 1.0, fracp);
       // in-cloud scavenging:
       // incloud scavenging tendency [kg/kg/s]
@@ -1449,15 +1453,16 @@ void compute_q_tendencies(
       // temporary saved tracer value
       const Real clddiff = cldt[k] - cldcu[k];
       // temporarily calculation of tracer [kg/kg]
-      const Real tracer_tmp =
-          min(tqqcw, tracer * (clddiff / max(small_value_2, (1. - clddiff))));
+      const Real tracer_tmp = mam4::min(
+          tqqcw, tracer * (clddiff / mam4::max(small_value_2, (1. - clddiff))));
       // mean tracer concenration [kg/kg]
       Real tracer_mean = tracer * (1. - cldcu[k] * f_act_conv[k]) -
                          cldcu[k] * f_act_conv[k] * tracer_tmp;
 
       // calculate limitation of removal rate using Dana and Hales coefficient
       // odds  : limit on removal rate (proportional to prec) [fraction]
-      Real odds = precabs[k] / max(cldvst[k], small_value_5) * scavcoef * dt;
+      Real odds =
+          precabs[k] / mam4::max(cldvst[k], small_value_5) * scavcoef * dt;
       odds = utils::min_max_bound(0.0, 1.0, odds);
       // strat in-cloud removal only affects strat-cloudborne aerosol
       const Real src2 = (sol_factb[k] * cldvst[k] * odds * tracer_mean) / dt;
@@ -1470,7 +1475,8 @@ void compute_q_tendencies(
     constexpr Real small_value_36 = 1.e-36; // BAD CONSTANT
     const Real tracer =
         lphase == 1 ? state_q(k, mm) + ptend_q(k, mm) * dt : qqcw(k, mm);
-    const Real rat = tracer / max(dt * (srcc[k] + srcs[k]), small_value_36);
+    const Real rat =
+        tracer / mam4::max(dt * (srcc[k] + srcs[k]), small_value_36);
     if (rat < 1) {
       srcs[k] *= rat;
       srcc[k] *= rat;
@@ -1507,12 +1513,12 @@ void compute_q_tendencies(
             // fraction of precabx and precabx_base
             Real u_new = utils::min_max_bound(0.0, 1.0,
                                               precabs_tmp[k] / precabs_base[k]);
-            u_new = min(u_new, u_old);
+            u_new = mam4::min(u_new, u_old);
             // non-linear resuspension of aerosol mass
             Real x_new =
                 1.0 - faer_resusp_vs_fprec_evap_mpln(1.0 - u_new, is_st_cu);
             x_new = utils::min_max_bound(0.0, 1.0, x_new);
-            x_new = min(x_new, x_old);
+            x_new = mam4::min(x_new, x_old);
             x_ratio[k] = utils::min_max_bound(0.0, 1.0, x_new / x_old);
           }
         }
@@ -1520,7 +1526,7 @@ void compute_q_tendencies(
       View1D tmpa = workspace[1];
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
         const Real gravit = Constants::gravity;
-        tmpa[k] = max(0.0, srcs[k] * pdel[k] / gravit);
+        tmpa[k] = mam4::max(0.0, srcs[k] * pdel[k] / gravit);
       });
       team.team_barrier();
       Kokkos::single(Kokkos::PerTeam(team), [=]() {
@@ -1534,9 +1540,9 @@ void compute_q_tendencies(
             scavabs_tmp = scavabs[k];
           } else {
             // aerosol mass resuspension
-            scavabs_tmp = max(0.0, scavabs[k] * x_ratio[k]);
+            scavabs_tmp = mam4::max(0.0, scavabs[k] * x_ratio[k]);
           }
-          scavabs_tmp = max(0.0, scavabs_tmp + tmpa[k]);
+          scavabs_tmp = mam4::max(0.0, scavabs_tmp + tmpa[k]);
           scavabs[k + 1] = scavabs_tmp;
         }
       });
@@ -1603,12 +1609,12 @@ void compute_q_tendencies(
             // fraction of precabx and precabx_base
             Real u_new =
                 utils::min_max_bound(0.0, 1.0, precabc[k] / precabc_base[k]);
-            u_new = min(u_new, u_old);
+            u_new = mam4::min(u_new, u_old);
             // non-linear resuspension of aerosol mass
             Real x_new =
                 1.0 - faer_resusp_vs_fprec_evap_mpln(1.0 - u_new, is_st_cu);
             x_new = utils::min_max_bound(0.0, 1.0, x_new);
-            x_new = min(x_new, x_old);
+            x_new = mam4::min(x_new, x_old);
             x_ratio[k] = utils::min_max_bound(0.0, 1.0, x_new / x_old);
           }
         }
@@ -1616,7 +1622,7 @@ void compute_q_tendencies(
       View1D tmpc = workspace[1];
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
         const Real gravit = Constants::gravity;
-        tmpc[k] = max(0.0, srcc[k] * pdel[k] / gravit);
+        tmpc[k] = mam4::max(0.0, srcc[k] * pdel[k] / gravit);
       });
       team.team_barrier();
       Kokkos::single(Kokkos::PerTeam(team), [=]() {
@@ -1630,9 +1636,9 @@ void compute_q_tendencies(
             scavabc_tmp = scavabc[k];
           } else {
             // aerosol mass resuspension
-            scavabc_tmp = max(0.0, scavabc[k] * x_ratio[k]);
+            scavabc_tmp = mam4::max(0.0, scavabc[k] * x_ratio[k]);
           }
-          scavabc_tmp = max(0.0, scavabc_tmp + tmpc[k]);
+          scavabc_tmp = mam4::max(0.0, scavabc_tmp + tmpc[k]);
           scavabc[k + 1] = scavabc_tmp;
         }
       });
@@ -2073,7 +2079,7 @@ void aero_model_wetdep(
       if (calcsizedata.update_mmr) {
         // Note: it only needs to update aerosol variables.
         for (int i = utils::aero_start_ind(); i < pcnst; ++i) {
-          qqcw(kk, i) = max(zero, qqcw(kk, i) + dqqcwdt_kk[i] * dt);
+          qqcw(kk, i) = mam4::max(zero, qqcw(kk, i) + dqqcwdt_kk[i] * dt);
         }
       } // end update could aerosols.
 

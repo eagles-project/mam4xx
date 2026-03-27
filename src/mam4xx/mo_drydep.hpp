@@ -304,12 +304,12 @@ void calculate_aerodynamic_and_quasilaminar_resistance(
       // BAD_CONSTANTS
       if (obklen[lt] < 0.0) {
         Real zeta = zl / obklen[lt];
-        zeta = max(-1.0, zeta);
+        zeta = mam4::max(-1.0, zeta);
         psih = mam4::exp(0.598 + 0.39 * mam4::log(-zeta) -
                          0.09 * square(mam4::log(-zeta)));
       } else {
         Real zeta = zl / obklen[lt];
-        zeta = min(1.0, zeta);
+        zeta = mam4::min(1.0, zeta);
         psih = -5.0 * zeta;
       }
       // NOTE: crb is a mo_drydep module variable initialized from the
@@ -575,7 +575,7 @@ void calculate_gas_drydep_vlc_and_flux(
           resc = 1.0 / (1.0 / rsmx[ispec][lt] + 1.0 / rlux[ispec][lt] +
                         1.0 / (rdc + rclx[ispec][lt]) +
                         1.0 / (rac(index_season[lt], lt) + rgsx[ispec][lt]));
-          resc = max(10.0, resc);
+          resc = mam4::max(10.0, resc);
           lnd_frc = lcl_frc_landuse[lt];
         }
 
@@ -696,13 +696,13 @@ void drydep_xactive(
   // wind speed
   //-------------------------------------------------------------------------------------
   // BAD_CONSTANT
-  Real va = max(0.01, wind_speed);
+  Real va = mam4::max(0.01, wind_speed);
 
   //-------------------------------------------------------------------------------------
   // Richardson number
   //-------------------------------------------------------------------------------------
   Real ribn = zl * grav * (tha - thg) / thg / (va * va);
-  ribn = min(ribn, ric);
+  ribn = mam4::min(ribn, ric);
 
   bool unstable = (ribn < 0.0);
 

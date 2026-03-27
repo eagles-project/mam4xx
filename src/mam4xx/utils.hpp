@@ -22,7 +22,7 @@ namespace mam4::utils {
 // 'high'/'low' if num is outside the bounds
 KOKKOS_INLINE_FUNCTION
 Real min_max_bound(const Real &low, const Real &high, const Real &num) {
-  return mam4::max(low, min(high, num));
+  return mam4::max(low, mam4::min(high, num));
 }
 
 // number of constituents in gas chemistry "work arrays"

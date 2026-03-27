@@ -128,7 +128,7 @@ void wv_sat_qsat_water(const Real t, const Real p, Real &es, Real &qs) {
   es = svp_water(t);
   qs = wv_sat_svp_to_qsat(es, p);
   // Ensures returned es is consistent with limiters on qs.
-  es = min(es, p);
+  es = mam4::min(es, p);
 
 } // wv_sat_qsat_water
 

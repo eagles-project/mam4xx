@@ -17,7 +17,7 @@ namespace mam4::spitfire {
 KOKKOS_INLINE_FUNCTION
 Real minmod(const Real aa, const Real bb) {
   return 0.5 * (Kokkos::copysign(1.0, aa) + Kokkos::copysign(1.0, bb)) *
-         min(abs(aa), abs(bb));
+         mam4::min(abs(aa), abs(bb));
 }
 
 //##############################################################################

@@ -46,7 +46,8 @@ void calc_het_rates(const Real satf, // saturation fraction in cloud //in
   Real work3;
   Real h2o_mol = 1.0e3 / mass_h2o; // [gm/mol water]
 
-  work3 = satf * max(rain / (h2o_mol * (work1 + 1.0 / (xhen * work2))), 0.0);
+  work3 =
+      satf * mam4::max(rain / (h2o_mol * (work1 + 1.0 / (xhen * work2))), 0.0);
   het_rates = work3 + tmp_hetrates;
 
 } // end calc_het_rates
@@ -149,7 +150,7 @@ void gas_washout(
     // -----------------------------------------------------------------
     allca += xca;
     if (allca < xeqca) {
-      xgas(k) = max(xgas(k) - xca, 0.0);
+      xgas(k) = mam4::max(xgas(k) - xca, 0.0);
     }
   }
 } // end subroutine gas_washout
@@ -384,7 +385,7 @@ void sethet_detail(
           1.0; // fraction of layer traversed by falling drop in timestep delt
       if (rain(kk) != 0.0) { // finding rain cloud
         stay = ((zmid(kk) - zsurf) * km2cm) / (xum * delt);
-        stay = min(stay, 1.0);
+        stay = mam4::min(stay, 1.0);
         // calculate gas washout by cloud
         gas_washout(team, kk, xkgm, xliq(kk), // in
                     xhen_h2o2, tfld, delz,    // in
@@ -414,7 +415,7 @@ void sethet_detail(
         yh2o2 = large_value_lifetime;
       }
       tmp_hetrates[1](kk) =
-          max(1.0 / yh2o2, 0.0) * stay; // FIXME: bad constant index
+          mam4::max(1.0 / yh2o2, 0.0) * stay; // FIXME: bad constant index
 
       Real yso2 = 0;
       const Real xxx3 =
@@ -425,7 +426,7 @@ void sethet_detail(
         yso2 = large_value_lifetime;
       }
       tmp_hetrates[2](kk) =
-          max(1.0 / yso2, 0.0) * stay; // FIXME: bad constant index
+          mam4::max(1.0 / yso2, 0.0) * stay; // FIXME: bad constant index
     }
   });
   team.team_barrier();

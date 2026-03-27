@@ -208,8 +208,9 @@ KOKKOS_INLINE_FUNCTION void compute_coef_acc_ait_transfer(
           ; // !get mmr
           // Fortran to C++ indexing
           const int idx = lmassptr_amode[ispec][iacc] - 1;
-          drv_i_noxf += max(zero, state_q[idx]) * inv_density[iacc][ispec];
-          drv_c_noxf += max(zero, qqcw[idx]) * inv_density[iacc][ispec];
+          drv_i_noxf +=
+              mam4::max(zero, state_q[idx]) * inv_density[iacc][ispec];
+          drv_c_noxf += mam4::max(zero, qqcw[idx]) * inv_density[iacc][ispec];
         } // end if
       }   // end ispec
       drv_t_noxf =
@@ -220,8 +221,8 @@ KOKKOS_INLINE_FUNCTION void compute_coef_acc_ait_transfer(
                    num2vol_ratio_max_nmodes[iacc]; // total number that can't be
                                                    // moved to the aitken mode
       num_t0 = num_t;
-      num_t = max(zero, num_t - num_t_noxf);
-      drv_t = max(zero, drv_t - drv_t_noxf);
+      num_t = mam4::max(zero, num_t - num_t_noxf);
+      drv_t = mam4::max(zero, drv_t - drv_t_noxf);
     } // end if (num_t > drv_t*num2vol_ratio_geomean)
   }   // end if (drv_t)
 
@@ -435,8 +436,8 @@ KOKKOS_INLINE_FUNCTION void compute_dry_volume(
   for (int ispec = 0; ispec < n_spec; ispec++) {
     // Fortran to C++ indexing
     const int idx = lmassptr_amode[ispec][imode] - 1;
-    dryvol_i += max(zero, state_q[idx]) * inv_density[imode][ispec];
-    dryvol_c += max(zero, qqcw[idx]) * inv_density[imode][ispec];
+    dryvol_i += mam4::max(zero, state_q[idx]) * inv_density[imode][ispec];
+    dryvol_c += mam4::max(zero, qqcw[idx]) * inv_density[imode][ispec];
   } // end ispec
 
 } // end
@@ -483,12 +484,12 @@ update_tends_flx(const int jmode,         // in
     const int ispec_src = src_species_idx[i];
     const int ispec_dest = dest_species_idx[i];
     // interstitial species
-    const Real xfertend_i = max(zero, state_q[ispec_src]) * xfercoef;
+    const Real xfertend_i = mam4::max(zero, state_q[ispec_src]) * xfercoef;
     ptend[ispec_src] -= xfertend_i;
     ptend[ispec_dest] += xfertend_i;
 
     // cloud borne species
-    const Real xfertend_c = max(zero, qqcw[ispec_src]) * xfercoef;
+    const Real xfertend_c = mam4::max(zero, qqcw[ispec_src]) * xfercoef;
     dqqcwdt[ispec_src] -= xfertend_c;
     dqqcwdt[ispec_dest] += xfertend_c;
   }
@@ -594,36 +595,36 @@ KOKKOS_INLINE_FUNCTION void aitken_accum_exchange(
     const Real num_diff_i =
         (xfertend_num[0][0] - xfertend_num[1][0]) *
         dt; // diff in num from  ait -> accum and accum -> ait transfer
-    const Real num_i = max(
+    const Real num_i = mam4::max(
         zero, num_i_aitsv - num_diff_i); // num removed/added from aitken mode
-    const Real num_i_acc =
-        max(zero,
-            num_i_accsv + num_diff_i); // num added/removed to accumulation mode
+    const Real num_i_acc = mam4::max(
+        zero,
+        num_i_accsv + num_diff_i); // num added/removed to accumulation mode
 
     const Real vol_diff_i =
         (drv_i_aitsv * xfercoef_vol_ait2acc -
          (drv_i_accsv - drv_i_noxf) * xfercoef_vol_acc2ait) *
         dt; // diff in volume transfer fomr ait -> accum and accum -> ait
             // transfer
-    const Real drv_i = max(
+    const Real drv_i = mam4::max(
         zero, drv_i_aitsv - vol_diff_i); // drv removed/added from aitken mode
 
-    const Real drv_i_acc =
-        max(zero,
-            drv_i_accsv + vol_diff_i); // drv added/removed to accumulation mode
+    const Real drv_i_acc = mam4::max(
+        zero,
+        drv_i_accsv + vol_diff_i); // drv added/removed to accumulation mode
 
     // cloud borne species
     const Real num_diff_c = (xfertend_num[0][1] - xfertend_num[1][1]) *
                             dt; // same as above for cloud borne aerosols
 
-    const Real num_c = max(zero, num_c_aitsv - num_diff_c);
-    const Real num_c_acc = max(zero, num_c_accsv + num_diff_c);
+    const Real num_c = mam4::max(zero, num_c_aitsv - num_diff_c);
+    const Real num_c_acc = mam4::max(zero, num_c_accsv + num_diff_c);
     const Real vol_diff_c =
         (drv_c_aitsv * xfercoef_vol_ait2acc -
          (drv_c_accsv - drv_c_noxf) * xfercoef_vol_acc2ait) *
         dt;
-    const Real drv_c = max(zero, drv_c_aitsv - vol_diff_c);
-    const Real drv_c_acc = max(zero, drv_c_accsv + vol_diff_c);
+    const Real drv_c = mam4::max(zero, drv_c_aitsv - vol_diff_c);
+    const Real drv_c_acc = mam4::max(zero, drv_c_accsv + vol_diff_c);
 
     // NOTE: CHECK original function does not have num2vol_ratio_max and dgnmax
     // as inputs. interstitial species (aitken mode)
@@ -778,7 +779,7 @@ modal_aero_calcsize_sub(const VectorType &state_q, // in
   !----------------------------------------------------------------------------*/
 
   // tadj => adj_tscale
-  const Real adj_tscale = max(seconds_in_a_day, dt);
+  const Real adj_tscale = mam4::max(seconds_in_a_day, dt);
 
   // inverse of the adjustment time scale
   // tadjinv = 1.0/(tadj*close_to_one)

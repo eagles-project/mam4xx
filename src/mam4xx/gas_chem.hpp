@@ -399,7 +399,7 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
         stp_con_cnt = 0;
       }
 
-      dt = min(dt, delt - interval_done);
+      dt = mam4::min(dt, delt - interval_done);
 
     } // abs( delt - interval_done ) <= .0001
   }   // time_step_loop

@@ -127,7 +127,8 @@ void adjust_num_sizes(const Real &drv_i, const Real &drv_c,
   // fraction of adj_tscale covered in the current time step "dt"
   const Real zero = 0.0;
   const Real one = 1.0;
-  const Real frac_adj_in_dt = mam4::max(zero, min(one, dt * adj_tscale_inv));
+  const Real frac_adj_in_dt =
+      mam4::max(zero, mam4::min(one, dt * adj_tscale_inv));
 
   // inverse of time step
   const Real dtinv = FloatingPoint<Real>::safe_denominator(dt);

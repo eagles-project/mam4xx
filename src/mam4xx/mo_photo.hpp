@@ -388,7 +388,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   const Real C2 = 9.524;
 
   // cos (solar zenith angle)
-  const Real coschi = max(mam4::cos(zen_angle), half);
+  const Real coschi = mam4::max(mam4::cos(zen_angle), half);
 
   Kokkos::parallel_for(
       Kokkos::TeamVectorRange(team, pver_local), [&](const int kk) {
@@ -416,9 +416,10 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
         const Real above_tra = C1 / (C2 + above_tau[kk]);
         // factor to calculate cld_mult
         // BAD CONSTANT
-        Real fac2 = min(zero, 1.6 * coschi * above_tra - one);
+        Real fac2 = mam4::min(zero, 1.6 * coschi * above_tra - one);
         // BAD CONSTANT
-        cld_mult[kk] = max(.05, one + fac1 * clouds[kk] + fac2 * above_cld[kk]);
+        cld_mult[kk] =
+            mam4::max(.05, one + fac1 * clouds[kk] + fac2 * above_cld[kk]);
       });
 
 } // end cloud_mod
@@ -441,7 +442,7 @@ void find_index(const View1D &var_in, const int var_len,
   for (int ii = 0; ii < var_len; ii++) {
     if (var_in(ii) > var_min) {
       // Fortran to C++ indexing
-      idx_out = max(min(ii, var_len - 1) - 1, 0);
+      idx_out = mam4::max(mam4::min(ii, var_len - 1) - 1, 0);
       break;
     } // end if
   }   // end for ii
@@ -586,7 +587,7 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
         // Fortran to C++ indexing
         auto min = [](int i, int j) { return (i < j) ? i : j; };
         auto max = [](int i, int j) { return (i < j) ? j : i; };
-        pind = max(min(iz, nump - 1), 1);
+        pind = mam4::max(mam4::min(iz, nump - 1), 1);
         wght1 = utils::min_max_bound(
             zero, one, (p_in[kk] - press[pind]) * del_p[pind - 1]);
       } // end if
@@ -748,7 +749,7 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
       // Fortran indexing to C++ indexing
       // number of temperatures in xsection table
       // BAD CONSTANT for 201 and 148.5
-      const int t_index = min(201, max(t_in[kk] - 148.5, 1)) - 1;
+      const int t_index = mam4::min(201, mam4::max(t_in[kk] - 148.5, 1)) - 1;
 
       /*----------------------------------------------------------------------
                  ... find pressure level
