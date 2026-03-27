@@ -4,8 +4,8 @@
 #-------------------------------------------------------------------------------
 # Description:
 #   This script checks out two branches/tags/commits locally, building them
-#   in a specific configuration and running their validation tests, ultimately
-#   producing a comparison of their bit-for-bit (BFB) hashes.
+#   in a specific configuration and running their validation tests, producing
+#   a visually-interpretable comparison of their bit-for-bit (BFB) hashes.
 #
 # Usage:
 #   ./check_bfb_bashes.sh <branch1> <branch2> <device> <precision> <build_type> [gpu_type] [gpu_arch]
@@ -66,7 +66,7 @@ main() {
     fi
   fi
 
-  temp_dir="$(mktemp -d bfb-comparison-XXXX)"
+  temp_dir="$(mktemp -d bfb-comparison-XXXXXX)"
   echo "Comparing bit-for-bit hashes in temporary directory $temp_dir."
 
   # clone repos into the temporary directory
@@ -134,10 +134,10 @@ clone_repo() {
 
   echo "Cloning code from $branch branch of github.com/$repo to $path..."
 
-  git clone git@github.com:$repo.git -b $branch $path
+  git clone git@github.com:$repo.git -b $branch $path >& clone.log
   if [ "$branch" != "jeff-cohere/merge-haero" ]; then
     pushd $path
-    git submodule update --init --recursive     
+    git submodule update --init --recursive >& submodules.log
     popd
   fi
 } 
@@ -152,12 +152,12 @@ build_branch() {
 
   if [ "$branch" != "jeff-cohere/merge-haero" ]; then
     local haero_dir=build/haero
-    ./build-haero.sh $haero_dir $device $precision $build_type $gpu_type $device_arch
+    ./build-haero.sh $haero_dir $device $precision $build_type $gpu_type $device_arch >& haero.log
     cmake -S . -B build \
       -DCMAKE_BUILD_TYPE=$build_type \
       -DMAM4XX_HAERO_DIR=`pwd`/$haero_dir \
       -DENABLE_SKYWALKER=ON \
-      -G "Unix Makefiles"
+      -G "Unix Makefiles" >& cmake.log
   else
     if [ "$device" == "gpu" ]; then
       cmake -S . -B build \
@@ -167,7 +167,7 @@ build_branch() {
         -DMAM4XX_DEVICE_ARCH=$device_arch \
         -DMAM4XX_PRECISION=$precision \
         -DMAM4XX_ENABLE_SKYWALKER=ON \
-        -G "Unix Makefiles"
+        -G "Unix Makefiles" >& cmake.log
     else
       cmake -S . -B build \
         -DCMAKE_BUILD_TYPE=$build_type \
@@ -175,11 +175,11 @@ build_branch() {
         -DMAM4XX_ENABLE_GPU=OFF \
         -DMAM4XX_PRECISION=$precision \
         -DMAM4XX_ENABLE_SKYWALKER=ON \
-        -G "Unix Makefiles"
+        -G "Unix Makefiles" >& cmake.log
     fi
   fi
   cd build
-  make -j8
+  make -j8 > build.log
 
   popd
 }
@@ -190,12 +190,15 @@ run_branch() {
 
   pushd $path/build
 
-  make test
+  make test >& test.log
 
   popd
 }
 
 compare_bfb_hashes() {
+
+  echo "Comparing $branch1 hashes to $branch2 hashes..."
+
   local path1=$1 
   local build_dir1=$path1/build
   local path2=$2
