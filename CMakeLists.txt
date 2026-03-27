@@ -114,7 +114,7 @@ if (MAM4XX_STANDALONE)
   FetchContent_Declare(
     EKAT
     GIT_REPOSITORY https://github.com/E3SM-Project/EKAT.git
-    GIT_TAG        master
+    GIT_TAG        5617d52dc4ef9be171580bf95bcd8df335fdb8e6  # 2026/03/23
   )
   list(APPEND mam4xx_tpls EKAT)
 
@@ -154,7 +154,7 @@ if (MAM4XX_ENABLE_SKYWALKER)
   FetchContent_Declare(
     skywalker
     GIT_REPOSITORY https://github.com/eagles-project/skywalker.git
-    GIT_TAG        main
+    GIT_TAG        a4d33b93a668e06d648f62450ae8a4ebb431e30c  # 2026/03/12
   )
   list(APPEND mam4xx_tpls skywalker)
 
@@ -162,7 +162,7 @@ if (MAM4XX_ENABLE_SKYWALKER)
   FetchContent_Declare(
     mam_x_validation
     GIT_REPOSITORY https://github.com/eagles-project/mam_x_validation.git
-    GIT_TAG        main
+    GIT_TAG        5f471bbaf5245c77d4c892d3d0c444ec9dd93c34  # 2026/03/04
   )
   list(APPEND mam4xx_tpls mam_x_validation)
 endif()
