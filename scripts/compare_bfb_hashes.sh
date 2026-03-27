@@ -22,6 +22,8 @@ build_type=$5
 gpu_type=$7
 device_arch=$7
 
+temp_dir="$(mktemp -d bfb-comparison-XXXXXX)"
+
 usage() {
   echo "$0: usage:"
   echo "$0 <branch1> <branch2> <cpu|gpu> <single|double> <Debug|Release> [nvidia|amd|intel] [device-arch]"
@@ -66,7 +68,6 @@ main() {
     fi
   fi
 
-  temp_dir="$(mktemp -d bfb-comparison-XXXXXX)"
   echo "Comparing bit-for-bit hashes in temporary directory $temp_dir."
 
   # clone repos into the temporary directory
@@ -134,7 +135,7 @@ clone_repo() {
 
   echo "Cloning code from $branch branch of github.com/$repo to $path..."
 
-  git clone git@github.com:$repo.git -b $branch $path >& clone.log
+  git clone git@github.com:$repo.git -b $branch $path >& $temp_dir/clone.log
   if [ "$branch" != "jeff-cohere/merge-haero" ]; then
     pushd $path
     git submodule update --init --recursive >& submodules.log
@@ -207,7 +208,7 @@ compare_bfb_hashes() {
   # extract hashes, erasing timestamps
   grep -A 2 "mam4xx hash" $build_dir1/Testing/Temporary/LastTest.log | sed -e "s/ date=.*$//;" > $path1/bfb-hashes.txt
   grep -A 2 "mam4xx hash" $build_dir2/Testing/Temporary/LastTest.log | sed -e "s/ date=.*$//;" > $path2/bfb-hashes.txt
-  diff $path1/bfb-hashes.txt $path2/bfb-hashes.txt
+  diff -u $path1/bfb-hashes.txt $path2/bfb-hashes.txt
 }
 
 # Silent versions of popd and pushd
