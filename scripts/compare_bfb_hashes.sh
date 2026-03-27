@@ -179,7 +179,7 @@ build_branch() {
     fi
   fi
   cd build
-  make -j8 > build.log
+  make -j8 >& build.log
 
   popd
 }
@@ -204,9 +204,10 @@ compare_bfb_hashes() {
   local path2=$2
   local build_dir2=$path2/build
 
-  grep -A 2 "mam4xx hash" $build_dir1/Testing/Temporary/LastTest.log > $build_dir1/bfb-hashes.txt
-  grep -A 2 "mam4xx hash" $build_dir2/Testing/Temporary/LastTest.log > $build_dir2/bfb-hashes.txt
-  diff $build_dir1/bfb-hashes.txt $build_dir2/bfb-hashes.txt
+  # extract hashes, erasing timestamps
+  grep -A 2 "mam4xx hash" $build_dir1/Testing/Temporary/LastTest.log | sed -e "s/ date=.*$//;" > $path1/bfb-hashes.txt
+  grep -A 2 "mam4xx hash" $build_dir2/Testing/Temporary/LastTest.log | sed -e "s/ date=.*$//;" > $path2/bfb-hashes.txt
+  diff $path1/bfb-hashes.txt $path2/bfb-hashes.txt
 }
 
 # Silent versions of popd and pushd
