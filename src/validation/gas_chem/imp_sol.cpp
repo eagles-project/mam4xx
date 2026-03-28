@@ -30,10 +30,11 @@ void imp_sol(Ensemble *ensemble) {
       factor[i] = true;
     }
 
+    int fail_cnt = 0;
     imp_sol(base_sol, //    ! species mixing ratios [vmr] & !
             reaction_rates.data(), het_rates.data(), extfrc.data(), delt,
             permute_4, clsmap_4, factor, epsilon, prod_out.data(),
-            loss_out.data());
+            loss_out.data(), fail_cnt);
 
     output.set("base_sol", base_sol);
   });

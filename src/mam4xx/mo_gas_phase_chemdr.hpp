@@ -363,12 +363,13 @@ void perform_atmospheric_chemistry_and_microphysics(
     for (int i = 0; i < gas_pcnst; ++i)
       vmr0[i] = vmr[i];
 
+    int fail_cnt = 0;
     mam4::microphysics::gas_phase_chemistry(
         // in
         temp, dt, photo_rates_k.data(), extfrc_k.data(), invariants_k.data(),
         clsmap_4, permute_4, het_rates_k.data(),
         // out
-        vmr);
+        vmr, fail_cnt);
     // calculate tendency due to gas phase chemistry
     if (gas_phase_chemistry_dvmrdt.size()) {
       const Real mbar = Constants::molec_weight_dry_air;

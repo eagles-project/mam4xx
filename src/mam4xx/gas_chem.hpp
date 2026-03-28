@@ -235,7 +235,8 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
         const Real extfrc[extcnt], const Real &delt,
         const int permute_4[gas_pcnst], const int clsmap_4[gas_pcnst],
         const bool factor[itermax], Real epsilon[clscnt4],
-        Real prod_out[clscnt4], Real loss_out[clscnt4]) {
+        Real prod_out[clscnt4], Real loss_out[clscnt4],
+        int &fail_cnt) { // out - number of convergence failures
 
   // ---------------------------------------------------------------------------
   //  ... imp_sol advances the volumetric mixing ratio
@@ -282,8 +283,9 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
   //       !-----------------------------------------------------------------------
   Real dt = delt;
   int cut_cnt = 0;
-  int fail_cnt = 0;
+  fail_cnt = 0;
   int stp_con_cnt = 0;
+  Real lsol[gas_pcnst]={};
   // track how much of the outer time step = delt (interval) has been completed
   // during Newton-Raphson iteration
   Real interval_done = zero;
@@ -293,7 +295,8 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
     // -----------------------------------------------------------------------
     //  ... transfer from base to local work arrays
     // -----------------------------------------------------------------------
-    auto &lsol = base_sol;
+    for (int mm = 0; mm < gas_pcnst; ++mm) 
+      lsol[mm] = base_sol[mm];
     // -----------------------------------------------------------------------
     //  ... transfer from base to class array
     // -----------------------------------------------------------------------
@@ -356,6 +359,7 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
         // FIXME: figure out how we want to do error handling/logging
         // break;
         // cycle time_step_loop
+         continue; // cycle time_step_loop
       } else {
         // Non-convergence warning: use Kokkos::printf for GPU-safe output.
         // Species names are not available here; printing species index instead.
@@ -389,7 +393,8 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
     if (mam4::abs(delt - interval_done) <= 0.0001) {
       if (fail_cnt > 0) {
         // FIXME: probably handle this more gracefully via error logging?
-        EKAT_KERNEL_ERROR_MSG("ERROR: imp_sol failure @ (lchnk,lev,col) = \n");
+        Kokkos::printf("ERROR: imp_sol failure @ (lchnk,lev,col) = \n");
+        // EKAT_KERNEL_ERROR_MSG("ERROR: imp_sol failure @ (lchnk,lev,col) = \n");
       }
       break;
     } else {
