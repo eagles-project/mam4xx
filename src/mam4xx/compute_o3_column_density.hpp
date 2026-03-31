@@ -8,6 +8,7 @@ namespace mam4 {
 namespace microphysics {
 
 using View1D = DeviceType::view_1d<Real>;
+using View2D = DeviceType::view_2d<Real>;
 using ConstView1D = DeviceType::view_1d<const Real>;
 
 // FIXME: check if we have ported these function in mam4xx. If no, let's move
@@ -59,16 +60,16 @@ void compute_o3_column_density(const ThreadTeam &team, const ConstView1D &pdel,
 // vmr_o3 is an input instead of mmr_o3
 KOKKOS_INLINE_FUNCTION
 void compute_o3_column_density(const ThreadTeam &team, const ConstView1D &pdel,
-                               const View1D &vmr_o3, const Real o3_col_deltas_0,
-                               const View1D &o3_col_dens) {
+                               const View2D &vmr, const Real o3_col_deltas_0,
+                               const int o3_indx, const View1D &o3_col_dens) {
   constexpr Real xfactor = 2.8704e21 / (9.80616 * 1.38044); // BAD_CONSTANT!
   constexpr int nlev = mam4::nlev;
   Kokkos::parallel_scan(Kokkos::TeamThreadRange(team, nlev),
                         [&](int kk, Real &partial_sum, bool is_final) {
                           // Compute this level's contribution before touching
                           // partial_sum
-                          const Real delta_kk = xfactor * pdel(kk) * vmr_o3(kk);
-
+                          const Real delta_kk =
+                              xfactor * pdel(kk) * vmr(kk, o3_indx);
                           if (is_final) {
                             // partial_sum is the EXCLUSIVE prefix: sum of
                             // delta_i for i in [0, kk)
