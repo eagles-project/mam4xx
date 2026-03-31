@@ -70,8 +70,8 @@ void update_from_explmix(Ensemble *ensemble) {
     std::vector<Real> nsav_out(1);
     int counter = 0;
 
-    ColumnView zn, csbot, zs, ekd, overlapp, overlapm, ekkp, ekkm, qncld, srcn,
-        source, qcld, cldn;
+    ColumnView zn, csbot, zs, ekd, overlapp, overlapm, ekkp, ekkm, qncld, qcld,
+        cldn;
 
     ekd = haero::testing::create_column_view(pver);
     zn = haero::testing::create_column_view(pver);
@@ -84,8 +84,6 @@ void update_from_explmix(Ensemble *ensemble) {
     qncld = haero::testing::create_column_view(pver);
     qcld = haero::testing::create_column_view(pver);
     cldn = haero::testing::create_column_view(pver);
-    srcn = haero::testing::create_column_view(pver);
-    source = haero::testing::create_column_view(pver);
 
     auto csbot_host = View1DHost((Real *)csbot_db.data(), pver);
     auto cldn_host = View1DHost((Real *)cldn_col_db.data(), pver);

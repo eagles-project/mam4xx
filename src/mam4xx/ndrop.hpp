@@ -1191,7 +1191,8 @@ void update_from_explmix(
     const ColumnView &overlapm, // cloud overlap involving level kk-1 [fraction]
     const ColumnView &eddy_diff_kp, // zn*zs*density*diffusivity [/s]
     const ColumnView &eddy_diff_km, // zn*zs*density*diffusivity   [/s]
-    const ColumnView &qncld // updated cloud droplet number mixing ratio [#/kg]
+    const ColumnView
+        &qncld // work space: stores qcld so qcld can be updated in parallal
 ) {
 
   // threshold cloud fraction to compute overlap [fraction]
@@ -1309,19 +1310,18 @@ void update_from_explmix(
           // k+1
           //         srcn(:)=srcn(:)+nact(:,m)*(raercol(:,mm,nsav))
           Real srcn = zero;
-          if (k < pver_loc - 1) {
-            for (int imode = 0; imode < ntot_amode; imode++) {
-              const int mm = mam_idx[imode][0] - 1;
-              srcn += nact(k, imode) * raercol_kp1_nsav(mm);
-            } // end imode
-          } else {
-            for (int imode = 0; imode < ntot_amode; imode++) {
-              const int mm = mam_idx[imode][0] - 1;
+          for (int imode = 0; imode < ntot_amode; imode++) {
+            const int mm = mam_idx[imode][0] - 1;
+            srcn += nact(k, imode) * raercol_kp1_nsav(mm);
+            if (k == pver_loc - 1) {
+              // rce-comment- new formulation for k=pver
+              // srcn(  pver  )=srcn(  pver  )+nact(  pver
+              // ,m)*(raercol(pver,mm,nsav))
               const Real tmpa = raercol_k_nsav(mm) * nact(k, imode) +
                                 raercol_cw_k_nsav(mm) * nact(k, imode);
               srcn += haero::max(zero, tmpa);
-            } // end imode
-          }
+            }
+          } // end imode
           // update aerosol number
           // rce-comment
           //    the interstitial particle mixratio is different in clear/cloudy
