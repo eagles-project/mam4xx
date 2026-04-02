@@ -11,8 +11,10 @@ using namespace mam4::ndrop;
 
 void update_from_cldn_profile(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
+    using View1DHost = typename HostType::view_1d<Real>;
     const Real zero = 0;
     const int ntot_amode = mam4::AeroConfig::num_modes();
+    const int ncnst_tot = mam4::ndrop::ncnst_tot;
 
     const Real cldn_col_in = input.get_array("cldn_col_in_kk")[0];
     const Real cldn_col_in_kp1 = input.get_array("cldn_col_in_kp1")[0];
@@ -57,10 +59,12 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     int numptr_amode[ntot_amode];
     int mam_idx[ntot_amode][nspec_max];
     int mam_cnst_idx[ntot_amode][nspec_max];
-
-    mam4::ndrop::get_e3sm_parameters(
-        nspec_amode, lspectype_amode, lmassptr_amode, numptr_amode,
-        specdens_amode, spechygro, mam_idx, mam_cnst_idx);
+    auto raercol_nsav_view = View1DHost(raercol_nsav.data(), ncnst_tot);
+    auto raercol_nsav_kp1_view = View1DHost(raercol_nsav_kp1.data(), ncnst_tot);
+    auto raercol_cw_nsav_view = View1DHost(raercol_cw_nsav.data(), ncnst_tot);
+    ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
+                               numptr_amode, specdens_amode, spechygro, mam_idx,
+                               mam_cnst_idx);
 
     mam4::ndrop::update_from_cldn_profile(
         cldn_col_in, cldn_col_in_kp1, dtinv, wtke_col_in, zs,
@@ -69,8 +73,8 @@ void update_from_cldn_profile(Ensemble *ensemble) {
         state_q_col_in_kp1.data(), // ! in
         lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
         num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode,
-        nspec_amode, exp45logsig, alogsig, aten, mam_idx, raercol_nsav.data(),
-        raercol_nsav_kp1.data(), raercol_cw_nsav.data(),
+        nspec_amode, exp45logsig, alogsig, aten, mam_idx, raercol_nsav_view,
+        raercol_nsav_kp1_view, raercol_cw_nsav_view,
         nsource_col, // inout
         qcld, factnum_col.data(),
         ekd, // out
