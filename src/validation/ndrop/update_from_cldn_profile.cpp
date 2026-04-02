@@ -100,22 +100,23 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     View1D mact_view("mact_view", ntot_amode);
     Kokkos::deep_copy(mact_view, mact_host);
 
-    Kokkos::parallel_for("update_from_cldn_profile", 1, KOKKOS_LAMBDA(int) {
-      ndrop::update_from_cldn_profile(
-          cldn_col_in, cldn_col_in_kp1, dtinv, wtke_col_in, zs,
-          dz, // ! in
-          temp_col_in, air_density, air_density_kp1, csbot_cscen,
-          state_q_col_in_kp1.data(), // ! in
-          lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
-          num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode,
-          nspec_amode, exp45logsig, alogsig, aten, mam_idx, raercol_nsav_view,
-          raercol_nsav_kp1_view, raercol_cw_nsav_view,
-          nsource_col_view[0], // inout
-          qcld_view[0], factnum_col_view.data(),
-          ekd_view[0], // out
-          nact_view.data(), mact_view.data());
-    });
-    
+    Kokkos::parallel_for(
+        "update_from_cldn_profile", 1, KOKKOS_LAMBDA(int) {
+          ndrop::update_from_cldn_profile(
+              cldn_col_in, cldn_col_in_kp1, dtinv, wtke_col_in, zs,
+              dz, // ! in
+              temp_col_in, air_density, air_density_kp1, csbot_cscen,
+              state_q_col_in_kp1.data(), // ! in
+              lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
+              num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode,
+              nspec_amode, exp45logsig, alogsig, aten, mam_idx,
+              raercol_nsav_view, raercol_nsav_kp1_view, raercol_cw_nsav_view,
+              nsource_col_view[0], // inout
+              qcld_view[0], factnum_col_view.data(),
+              ekd_view[0], // out
+              nact_view.data(), mact_view.data());
+        });
+
     Kokkos::deep_copy(qcld_host, qcld_view);
     qcld = qcld_host[0];
 
@@ -126,11 +127,11 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     Kokkos::deep_copy(raercol_cw_nsav_host, raercol_cw_nsav_view);
     Kokkos::deep_copy(factnum_col_host, factnum_col_view);
 
-    for (int i=0; i<ncnst_tot; ++i)
+    for (int i = 0; i < ncnst_tot; ++i)
       raercol_nsav[i] = raercol_nsav_host[i];
-    for (int i=0; i<ncnst_tot; ++i)
+    for (int i = 0; i < ncnst_tot; ++i)
       raercol_cw_nsav[i] = raercol_cw_nsav_host[i];
-    for (int i=0; i<ntot_amode; ++i)
+    for (int i = 0; i < ntot_amode; ++i)
       factnum_col[i] = factnum_col_host[i];
 
     Kokkos::deep_copy(ekd_host, ekd_view);
@@ -138,9 +139,9 @@ void update_from_cldn_profile(Ensemble *ensemble) {
 
     Kokkos::deep_copy(nact_host, nact_view);
     Kokkos::deep_copy(mact_host, mact_view);
-    for (int i=0; i<ntot_amode; ++i)
+    for (int i = 0; i < ntot_amode; ++i)
       nact[i] = nact_host[i];
-    for (int i=0; i<ntot_amode; ++i)
+    for (int i = 0; i < ntot_amode; ++i)
       mact[i] = mact_host[i];
 
     output.set("qcld", qcld);
