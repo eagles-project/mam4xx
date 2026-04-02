@@ -3,16 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
-#include <mam4xx/aero_modes.hpp>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/water_uptake.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
 
 void modal_aero_water_uptake_dr(Ensemble *ensemble) {
 
@@ -36,15 +30,16 @@ void modal_aero_water_uptake_dr(Ensemble *ensemble) {
     auto dgncur_awet = input.get_array("dgncur_awet");
     auto qaerwat = input.get_array("qaerwat");
 
-    int nspec_amode[AeroConfig::num_modes()];
-    int lspectype_amode[water_uptake::maxd_aspectype][AeroConfig::num_modes()];
-    Real specdens_amode[water_uptake::maxd_aspectype];
-    Real spechygro[water_uptake::maxd_aspectype];
+    int nspec_amode[mam4::AeroConfig::num_modes()];
+    int lspectype_amode[mam4::water_uptake::maxd_aspectype]
+                       [mam4::AeroConfig::num_modes()];
+    Real specdens_amode[mam4::water_uptake::maxd_aspectype];
+    Real spechygro[mam4::water_uptake::maxd_aspectype];
 
-    water_uptake::get_e3sm_parameters(nspec_amode, lspectype_amode,
-                                      specdens_amode, spechygro);
+    mam4::water_uptake::get_e3sm_parameters(nspec_amode, lspectype_amode,
+                                            specdens_amode, spechygro);
 
-    water_uptake::modal_aero_water_uptake_dr(
+    mam4::water_uptake::modal_aero_water_uptake_dr(
         nspec_amode, specdens_amode, spechygro, lspectype_amode, state_q.data(),
         temperature, pmid, cldn, dgncur_a.data(), dgncur_awet.data(),
         qaerwat.data());

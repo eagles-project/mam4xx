@@ -4,38 +4,34 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     const Real zero = 0;
-    using View2DHost = typename HostType::view_2d<Real>;
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View1D = typename DeviceType::view_1d<Real>;
-    using View2D = typename DeviceType::view_2d<Real>;
+    using View2DHost = typename mam4::HostType::view_2d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
+    using View2D = typename mam4::DeviceType::view_2d<Real>;
 
     const int ncol = int(input.get_array("ncol")[0]);
 
     auto scavimptblvol_vector = input.get_array("scavimptblvol");
     auto scavimptblnum_vector = input.get_array("scavimptblnum");
     View2DHost scavimptblvol_host("scavimptblvol_host",
-                                  aero_model::nimptblgrow_total,
-                                  AeroConfig::num_modes());
+                                  mam4::aero_model::nimptblgrow_total,
+                                  mam4::AeroConfig::num_modes());
     View2DHost scavimptblnum_host("scavimptblnum_host",
-                                  aero_model::nimptblgrow_total,
-                                  AeroConfig::num_modes());
+                                  mam4::aero_model::nimptblgrow_total,
+                                  mam4::AeroConfig::num_modes());
 
     // Note:  scavimptblvol_vector and scavimptblnum_vector were written in
     // row-major order.
     int count = 0;
-    for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
-      for (int i = 0; i < aero_model::nimptblgrow_total; ++i) {
+    for (int imode = 0; imode < mam4::AeroConfig::num_modes(); ++imode) {
+      for (int i = 0; i < mam4::aero_model::nimptblgrow_total; ++i) {
         scavimptblvol_host(i, imode) = scavimptblvol_vector[count];
         scavimptblnum_host(i, imode) = scavimptblnum_vector[count];
         count++;
@@ -59,11 +55,12 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
     Kokkos::deep_copy(scavimptblvol, scavimptblvol_host);
 
     auto dgn_awet_vector = input.get_array("dgn_awet");
-    View2DHost dgn_awet_host("dgn_awet_host", ncol, AeroConfig::num_modes());
-    View2D dgn_awet("dgn_awet", ncol, AeroConfig::num_modes());
+    View2DHost dgn_awet_host("dgn_awet_host", ncol,
+                             mam4::AeroConfig::num_modes());
+    View2D dgn_awet("dgn_awet", ncol, mam4::AeroConfig::num_modes());
 
     count = 0;
-    for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
+    for (int imode = 0; imode < mam4::AeroConfig::num_modes(); ++imode) {
       for (int icol = 0; icol < ncol; ++icol) {
         dgn_awet_host(icol, imode) = dgn_awet_vector[count];
         count++;
@@ -84,13 +81,13 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
 
     const Real dgnum_amode_imode = dgnum_amode[imode];
 
-    haero::ThreadTeamPolicy team_policy(ncol, Kokkos::AUTO);
+    mam4::ThreadTeamPolicy team_policy(ncol, Kokkos::AUTO);
 
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           const int icol = team.league_rank();
           if (isprx(icol)) {
-            aero_model::modal_aero_bcscavcoef_get(
+            mam4::aero_model::modal_aero_bcscavcoef_get(
                 imode, dgn_awet(icol, imode), dgnum_amode_imode, scavimptblvol,
                 scavimptblnum, scavcoefnum(icol), scavcoefvol(icol));
           }

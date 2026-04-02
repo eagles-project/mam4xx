@@ -4,12 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
 
 void find_season_index(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -44,7 +41,7 @@ void find_season_index(Ensemble *ensemble) {
       }
     }
 
-    constexpr Real r2d = 180.0 / Constants::pi; // radians to degrees
+    constexpr Real r2d = 180.0 / mam4::Constants::pi; // radians to degrees
 
     View2DIntHost index_season_lai("index_season_lai", plon, 12);
 
@@ -53,8 +50,8 @@ void find_season_index(Ensemble *ensemble) {
       clat(j) *= r2d;
     }
 
-    mo_drydep::find_season_index(clat, lat_lai, nlat_lai, wk_lai,
-                                 index_season_lai);
+    mam4::mo_drydep::find_season_index(clat, lat_lai, nlat_lai, wk_lai,
+                                       index_season_lai);
 
     auto policy = KTH::RangePolicy(0, plon);
     Kokkos::parallel_for(policy, [&](const int &j) {

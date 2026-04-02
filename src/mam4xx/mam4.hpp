@@ -8,58 +8,69 @@
 
 // This header makes all MAM4 processes available.
 
-#include <haero/aero_process.hpp>
-#include <mam4xx/aer_rad_props.hpp>
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/aero_model.hpp>
-#include <mam4xx/aero_model_emissions.hpp>
-#include <mam4xx/aging.hpp>
-#include <mam4xx/calcsize.hpp>
-#include <mam4xx/coagulation.hpp>
-#include <mam4xx/compute_o3_column_density.hpp>
-#include <mam4xx/convproc.hpp>
-#include <mam4xx/diagnostic_arrays.hpp>
-#include <mam4xx/drydep.hpp>
-#include <mam4xx/gas_chem.hpp>
-#include <mam4xx/gas_chem_mechanism.hpp>
-#include <mam4xx/gas_phase_chemistry.hpp>
-#include <mam4xx/gasaerexch.hpp>
-#include <mam4xx/hetfrz.hpp>
-#include <mam4xx/lin_strat_chem.hpp>
-#include <mam4xx/mam4_amicphys.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/mo_chm_diags.hpp>
-#include <mam4xx/mo_drydep.hpp>
-#include <mam4xx/mo_gas_phase_chemdr.hpp>
-#include <mam4xx/mo_photo.hpp>
-#include <mam4xx/mo_setext.hpp>
-#include <mam4xx/mo_sethet.hpp>
-#include <mam4xx/mo_setinv.hpp>
-#include <mam4xx/mo_setsox.hpp>
-#include <mam4xx/modal_aer_opt.hpp>
-#include <mam4xx/modal_aero_calcsize.hpp>
-#include <mam4xx/ndrop.hpp>
-#include <mam4xx/nucleate_ice.hpp>
-#include <mam4xx/nucleation.hpp>
-#include <mam4xx/rename.hpp>
-#include <mam4xx/spitfire_transport.hpp>
-#include <mam4xx/tropopause.hpp>
-#include <mam4xx/vertical_interpolation.hpp>
-#include <mam4xx/water_uptake.hpp>
-#include <mam4xx/wet_dep.hpp>
+#include "aero_config.hpp"
+#include "aero_model.hpp"
+#include "aero_model_emissions.hpp"
+#include "aero_process.hpp"
+#include "aero_rad_props.hpp"
+#include "aging.hpp"
+#include "calcsize.hpp"
+#include "coagulation.hpp"
+#include "compute_o3_column_density.hpp"
+#include "convproc.hpp"
+#include "diagnostic_arrays.hpp"
+#include "drydep.hpp"
+#include "gas_chem.hpp"
+#include "gas_chem_mechanism.hpp"
+#include "gas_phase_chemistry.hpp"
+#include "gasaerexch.hpp"
+#include "hetfrz.hpp"
+#include "lin_strat_chem.hpp"
+#include "mam4_amicphys.hpp"
+#include "mam4_types.hpp"
+#include "mo_chm_diags.hpp"
+#include "mo_drydep.hpp"
+#include "mo_gas_phase_chemdr.hpp"
+#include "mo_photo.hpp"
+#include "mo_setext.hpp"
+#include "mo_sethet.hpp"
+#include "mo_setinv.hpp"
+#include "mo_setsox.hpp"
+#include "modal_aero_calcsize.hpp"
+#include "modal_aero_opt.hpp"
+#include "ndrop.hpp"
+#include "nucleate_ice.hpp"
+#include "nucleation.hpp"
+#include "rename.hpp"
+#include "spitfire_transport.hpp"
+#include "tropopause.hpp"
+#include "vertical_interpolation.hpp"
+#include "water_uptake.hpp"
+#include "wet_dep.hpp"
+
 namespace mam4 {
 
-using NucleationProcess = haero::AeroProcess<AeroConfig, Nucleation>;
-using GasAerExchProcess = haero::AeroProcess<AeroConfig, GasAerExch>;
-using CoagulationProcess = haero::AeroProcess<AeroConfig, Coagulation>;
-using CalcSizeProcess = haero::AeroProcess<AeroConfig, CalcSize>;
-using ConvProcProcess = haero::AeroProcess<AeroConfig, ConvProc>;
-using AgingProcess = haero::AeroProcess<AeroConfig, Aging>;
-using RenameProcess = haero::AeroProcess<AeroConfig, Rename>;
-using HetfrzProcess = haero::AeroProcess<AeroConfig, Hetfrz>;
-using NucleateIceProcess = haero::AeroProcess<AeroConfig, NucleateIce>;
-using DryDepositionProcess = haero::AeroProcess<AeroConfig, DryDeposition>;
-using WaterUptakeProcess = haero::AeroProcess<AeroConfig, Water_Uptake>;
+// Returns mam4xx's version string.
+const char *version();
+
+// Returns mam4xx's git revision hash, or "unknown" if not found.
+const char *revision();
+
+// Returns true iff this build has changes that weren't committed to the git
+// repo.
+bool has_uncommitted_changes();
+
+using NucleationProcess = AeroProcess<Nucleation>;
+using GasAerExchProcess = AeroProcess<GasAerExch>;
+using CoagulationProcess = AeroProcess<Coagulation>;
+using CalcSizeProcess = AeroProcess<CalcSize>;
+using ConvProcProcess = AeroProcess<ConvProc>;
+using AgingProcess = AeroProcess<Aging>;
+using RenameProcess = AeroProcess<Rename>;
+using HetfrzProcess = AeroProcess<Hetfrz>;
+using NucleateIceProcess = AeroProcess<NucleateIce>;
+using DryDepositionProcess = AeroProcess<DryDeposition>;
+using WaterUptakeProcess = AeroProcess<Water_Uptake>;
 
 } // namespace mam4
 

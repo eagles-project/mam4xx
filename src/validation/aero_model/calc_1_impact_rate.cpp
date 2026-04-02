@@ -4,13 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void calc_1_impact_rate(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -25,13 +21,13 @@ void calc_1_impact_rate(Ensemble *ensemble) {
 
     // const Real input.get_array("")[0]
 
-    aero_model::calc_1_impact_rate(dg0,         //  in
-                                   sigmag,      //  in
-                                   rhoaero,     //  in
-                                   temp,        //  in
-                                   press,       //  in
-                                   scavratenum, // out
-                                   scavratevol);
+    mam4::aero_model::calc_1_impact_rate(dg0,         //  in
+                                         sigmag,      //  in
+                                         rhoaero,     //  in
+                                         temp,        //  in
+                                         press,       //  in
+                                         scavratenum, // out
+                                         scavratevol);
 
     output.set("scavratenum", std::vector(1, scavratenum));
     output.set("scavratevol", std::vector(1, scavratevol));

@@ -3,14 +3,12 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "mam4xx/drydep.hpp"
-#include "mam4xx/spitfire_transport.hpp"
 #include "testing.hpp"
-#include <catch2/catch.hpp>
 #include <mam4xx/mam4.hpp>
 
-using namespace haero;
-using namespace mam4;
+#include <catch2/catch.hpp>
+
+using mam4::Real;
 
 TEST_CASE("minmod", "mam4_spitfire_transport") {
   Real aa = 1.0;
@@ -34,13 +32,13 @@ TEST_CASE("median", "mam4_spitfire_transport") {
 
 TEST_CASE("get_flux", "mam4_spitfire_transport") {
 
-  auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+  auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
 
   const Real deltat = 10.0;
-  ColumnView xw = haero::testing::create_column_view(mam4::nlev);
-  ColumnView phi = haero::testing::create_column_view(mam4::nlev);
-  ColumnView vel = haero::testing::create_column_view(mam4::nlev);
-  ColumnView flux = haero::testing::create_column_view(mam4::nlev);
+  mam4::ColumnView xw = mam4::testing::create_column_view(mam4::nlev);
+  mam4::ColumnView phi = mam4::testing::create_column_view(mam4::nlev);
+  mam4::ColumnView vel = mam4::testing::create_column_view(mam4::nlev);
+  mam4::ColumnView flux = mam4::testing::create_column_view(mam4::nlev);
 
-  spitfire::get_flux(team_policy, xw, phi, vel, deltat, flux);
+  mam4::spitfire::get_flux(team_policy, xw, phi, vel, deltat, flux);
 }

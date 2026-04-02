@@ -3,14 +3,11 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/wet_dep.hpp>
-#include <skywalker.hpp>
+
 #include <validation.hpp>
 #include <vector>
 
-using namespace haero;
 using namespace skywalker;
 
 void test_wetdep_clddiag_process(const Input &input, Output &output) {
@@ -18,7 +15,7 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
   const int pver = 72;
   int nlev = 72;
   Real pblh = 1000;
-  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  auto atm = mam4::testing::create_atmosphere(nlev, pblh);
   // Ensemble parameters
   // Declare array of strings for input names
   std::string input_variables[] = {"dt"};
@@ -97,10 +94,10 @@ void test_wetdep_clddiag_process(const Input &input, Output &output) {
   std::copy(prain.begin(), prain.end(), prain_arr);
 
   // Prepare device views for output arrays
-  ColumnView cldv_dev = mam4::validation::create_column_view(pver);
-  ColumnView cldvcu_dev = mam4::validation::create_column_view(pver);
-  ColumnView cldvst_dev = mam4::validation::create_column_view(pver);
-  ColumnView rain_dev = mam4::validation::create_column_view(pver);
+  auto cldv_dev = mam4::validation::create_column_view(pver);
+  auto cldvcu_dev = mam4::validation::create_column_view(pver);
+  auto cldvst_dev = mam4::validation::create_column_view(pver);
+  auto rain_dev = mam4::validation::create_column_view(pver);
 
   Kokkos::parallel_for(
       "wetdep::clddiag", 1, KOKKOS_LAMBDA(const int) {

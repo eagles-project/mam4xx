@@ -3,15 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
-#include <mam4xx/aero_modes.hpp>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/water_uptake.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void modal_aero_water_uptake_rh_clearair(Ensemble *ensemble) {
 
@@ -29,7 +24,7 @@ void modal_aero_water_uptake_rh_clearair(Ensemble *ensemble) {
     auto h2ommr = input.get_array("h2ommr");
 
     std::vector<Real> rh(1, 0);
-    water_uptake::modal_aero_water_uptake_rh_clearair(
+    mam4::water_uptake::modal_aero_water_uptake_rh_clearair(
         temperature.data()[0], pmid.data()[0], h2ommr.data()[0], cldn.data()[0],
         rh.data()[0]);
 

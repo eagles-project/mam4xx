@@ -3,19 +3,17 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <mam4xx/mam4_constants.hpp>
 #include <mam4xx/nucleation.hpp>
-#include <validation.hpp>
 
-#include <haero/constants.hpp>
-#include <skywalker.hpp>
+#include <validation.hpp>
 
 #include <iostream>
 
 using namespace skywalker;
-using namespace mam4;
 
 void mer07_veh02_wang08_nuc_1box(Ensemble *ensemble) {
-  constexpr Real pi = Constants::pi;
+  constexpr Real pi = mam4::Constants::pi;
 
   // Figure out settings for binary/ternary nucleation and planetary boundary
   // layer treatment
@@ -65,7 +63,7 @@ void mer07_veh02_wang08_nuc_1box(Ensemble *ensemble) {
         KOKKOS_LAMBDA(int i, Real &dnclusterdt) {
           int newnuc_method_actual, pbl_nuc_wang2008_actual;
           Real temp_dnclusterdt, rateloge, cnum_h2so4, cnum_nh3, radius_cluster;
-          nucleation::mer07_veh02_wang08_nuc_1box(
+          mam4::nucleation::mer07_veh02_wang08_nuc_1box(
               newnuc_method_user_choice, newnuc_method_actual,
               pbl_nuc_wang2008_user_choice, pbl_nuc_wang2008_actual,
               ln_nuc_rate_cutoff, adjust_factor_bin_tern_ratenucl,

@@ -1,16 +1,10 @@
 #ifndef MAM4XX_MO_SETSOX_HPP
 #define MAM4XX_MO_SETSOX_HPP
 
-#include <haero/atmosphere.hpp>
-#include <haero/math.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
-#include <mam4xx/wv_sat_methods.hpp>
-
-#include <ekat_math_utils.hpp>
+#include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
 
 namespace mam4 {
 
@@ -144,9 +138,9 @@ void henry_factor_so2(const Real t_factor, Real &xk, Real &xe, Real &x2) {
 
   // FIXME: BAD CONSTANTS
   // for so2
-  xk = 1.230 * haero::exp(3120.0 * t_factor);
-  xe = 1.7e-2 * haero::exp(2090.0 * t_factor);
-  x2 = 6.0e-8 * haero::exp(1120.0 * t_factor);
+  xk = 1.230 * mam4::exp(3120.0 * t_factor);
+  xe = 1.7e-2 * mam4::exp(2090.0 * t_factor);
+  x2 = 6.0e-8 * mam4::exp(1120.0 * t_factor);
 } // end henry_factor_so2
 
 //===========================================================================
@@ -158,8 +152,8 @@ void henry_factor_co2(const Real t_factor, Real &xk, Real &xe) {
 
   // FIXME: BAD CONSTANTS
   // for co2
-  xk = 3.1e-2 * haero::exp(2423.0 * t_factor);
-  xe = 4.3e-7 * haero::exp(-913.0 * t_factor);
+  xk = 3.1e-2 * mam4::exp(2423.0 * t_factor);
+  xe = 4.3e-7 * mam4::exp(-913.0 * t_factor);
 } // end henry_factor_co2
 
 //===========================================================================
@@ -171,8 +165,8 @@ void henry_factor_h2o2(const Real t_factor, Real &xk, Real &xe) {
 
   // FIXME: BAD CONSTANTS
   // for h2o2
-  xk = 7.4e4 * haero::exp(6621.0 * t_factor);
-  xe = 2.2e-12 * haero::exp(-3730.0 * t_factor);
+  xk = 7.4e4 * mam4::exp(6621.0 * t_factor);
+  xe = 2.2e-12 * mam4::exp(-3730.0 * t_factor);
 
 } // end henry_factor_h2o2
 
@@ -185,7 +179,7 @@ void henry_factor_o3(const Real t_factor, Real &xk) {
 
   // FIXME: BAD CONSTANTS
   // for o3
-  xk = 1.15e-2 * haero::exp(2560.0 * t_factor);
+  xk = 1.15e-2 * mam4::exp(2560.0 * t_factor);
 } // end henry_factor_o3
 
 //===========================================================================
@@ -204,7 +198,7 @@ void calc_ynetpos(const Real yph, const Real fact1_so2, const Real fact2_so2,
   //-----------------------------------------------------------------
 
   // calc current [H+] from pH
-  xph = haero::pow(10.0, -yph);
+  xph = mam4::pow(10.0, -yph);
 
   //-----------------------------------------------------------------
   //          ... so2
@@ -405,12 +399,12 @@ void calc_ph_values(const Real temperature, const Real patm, const Real xlwc,
     }
     // FIXME: better error handling
     // FIXME: BAD CONSTANT
-    if (haero::abs(yph_hi - yph_lo) <= 0.005) {
+    if (mam4::abs(yph_hi - yph_lo) <= 0.005) {
       // |yph_hi - yph_lo| <= convergence criterion, so set
       // final pH to their midpoint and exit
       // (0.005 absolute error in pH gives 0.01 relative error in H+)
       yph = 0.5 * (yph_hi + yph_lo);
-      xph = haero::pow(10.0, -yph);
+      xph = mam4::pow(10.0, -yph);
       converged = true;
       return;
     }
@@ -478,12 +472,12 @@ void calc_sox_aqueous(const bool modal_aerosols, const Real rah2o2,
   // FIXME: BAD CONSTANTS
   constexpr Real small_value_20 = 1.0e-20;
   constexpr Real small_value_30 = 1.0e-30;
-  Real pso4 = rah2o2 * 7.4e4 * haero::exp(6621.0 * t_factor) * h2o2g * patm *
-              1.23 * haero::exp(3120.0 * t_factor) * so2g * patm;
+  Real pso4 = rah2o2 * 7.4e4 * exp(6621.0 * t_factor) * h2o2g * patm * 1.23 *
+              exp(3120.0 * t_factor) * so2g * patm;
   // [M/s] = [mole/L(w)/s] / [mole/L(a)/s] / [/L(a)/s]
   pso4 = pso4 * xlwc / const0 / xhnm;
 
-  Real delta_s = haero::max(pso4 * dt, small_value_30);
+  Real delta_s = mam4::max(pso4 * dt, small_value_30);
 
   xso4_init = xso4;
 
@@ -513,7 +507,7 @@ void calc_sox_aqueous(const bool modal_aerosols, const Real rah2o2,
   // [M/s] =[mole/L(w)/s] * [mole/L(a)/s] / [/L(a)/s] / [mixing ratio/s]
   pso4 = pso4 * xlwc / const0 / xhnm;
 
-  delta_s = haero::max(pso4 * dt, small_value_30);
+  delta_s = mam4::max(pso4 * dt, small_value_30);
 
   xso4_init = xso4;
 
@@ -574,12 +568,12 @@ void compute_aer_factor(const Real *tmr, const int loffset,
     ll = config_.numptrcw_amode[m] - loffset;
     // FIXME: I believe these two logic blocks can be combined
     if (ll > 0) {
-      qnum_c[m] = haero::max(zero, tmr[ll]);
+      qnum_c[m] = mam4::max(zero, tmr[ll]);
     }
     // force qnum_c(m) to be positive for m = modeptr_accum or m = 1
     if (m == config_.modeptr_accum) {
       // FIXME: BAD CONSTANT
-      qnum_c[m] = haero::max(1.0e-10, qnum_c[m]);
+      qnum_c[m] = mam4::max(1.0e-10, qnum_c[m]);
     }
 
     // NOTE: given what I've seen for the value of lptr_so4_cw_amode in mam4,
@@ -647,14 +641,14 @@ Real cldaero_uptakerate(const Real xl, const Real cldnum, const Real cfact,
 
   //  change drop number conc from #/kg to #/cm^3
   Real num_cd = cm3_to_L * cldnum * cfact / cldfrc;
-  num_cd = haero::max(num_cd, 0.0);
+  num_cd = mam4::max(num_cd, 0.0);
 
   // (liquid water volume in cm^3/cm^3)
-  Real volx34pi_cd = (xl * 0.75) / haero::Constants::pi;
+  Real volx34pi_cd = (xl * 0.75) / Constants::pi;
   // FIXME: this may not make sense--revisit this
   //  radxnum_cd = (drop radius)*(drop number conc)
   //  following holds because volx34pi_cd = num_cd*(rad_cd**3)
-  Real radxnum_cd = haero::pow(volx34pi_cd * haero::square(num_cd), one_third);
+  Real radxnum_cd = mam4::pow(volx34pi_cd * square(num_cd), one_third);
 
   Real rad_cd;
   //  rad_cd = (drop radius in cm), computed from liquid water and drop number,
@@ -674,11 +668,11 @@ Real cldaero_uptakerate(const Real xl, const Real cldnum, const Real cfact,
   //  gasdiffus = h2so4 gas diffusivity from mosaic code (cm^2/s)
   //  (pmid must be Pa)
   // FIXME: BAD CONSTANTS
-  Real gasdiffus = 0.557 * haero::pow(tfld, 1.75) / press;
+  Real gasdiffus = 0.557 * mam4::pow(tfld, 1.75) / press;
 
   //  gasspeed = h2so4 gas mean molecular speed from mosaic code (cm/s)
   // FIXME: BAD CONSTANTS
-  Real gasspeed = 1.455e4 * haero::sqrt(tfld / 98.0);
+  Real gasspeed = 1.455e4 * mam4::sqrt(tfld / 98.0);
 
   //  knudsen number
   // FIXME(?): BAD CONSTANT(?)
@@ -729,7 +723,7 @@ void update_tmr_nonzero(Real &tmr, const int idx) {
   // NOTE: in the fortran version, this if statement is if (idx > 0), so I
   // believe this is the correct way to port it
   if (idx >= 0) {
-    tmr = haero::max(tmr, small_value_20);
+    tmr = mam4::max(tmr, small_value_20);
   }
 
 } // end update_tmr_nonzero
@@ -855,7 +849,7 @@ void sox_cldaero_update(const int loffset, const Real dt, const Real mbar,
     Real uptkrate =
         cldaero_uptakerate(xlwc, cldnum, cfact, cldfrc, tfld, press);
     //   // average uptake rate over dt
-    uptkrate = (one - haero::exp(-one * haero::min(100.0, dt * uptkrate))) / dt;
+    uptkrate = (one - mam4::exp(-one * mam4::min(100.0, dt * uptkrate))) / dt;
     //   // dso4dt_gasuptk = so4_c tendency from h2so4 gas uptake (mol/mol/s)
     Real dso4dt_gasuptk = xh2so4 * uptkrate;
 
@@ -1073,7 +1067,7 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
 
   constexpr Real ph0 = 5.0; // Initial PH values
   // initial PH value, in H+ concentration
-  Real xph0 = haero::pow(10, -ph0);
+  Real xph0 = mam4::pow(10, -ph0);
   // cfact := total atms density [kg/L]
   // FIXME: BAD CONSTANTS
   //           cm-3 * m-3    * kg/m3            * kg/L;
@@ -1212,13 +1206,12 @@ void setsox_single_level(const int loffset, const Real dt, const Real press,
   //------------------------------------------------------------------------
   //       ... S(IV) (HSO3) + H2O2
   //------------------------------------------------------------------------
-  Real rah2o2 = 8.e4 * haero::exp(-3650.0 * t_factor) / (0.1 + xph);
+  Real rah2o2 = 8.e4 * exp(-3650.0 * t_factor) / (0.1 + xph);
 
   //------------------------------------------------------------------------
   //        ... S(IV)+ O3
   //------------------------------------------------------------------------
-  Real rao3 = 4.39e11 * haero::exp(-4131.0 / tz) +
-              2.56e3 * haero::exp(-996.0 / tz) / xph;
+  Real rao3 = 4.39e11 * exp(-4131.0 / tz) + 2.56e3 * exp(-996.0 / tz) / xph;
 
   /*
   -----------------------------------------------------------------

@@ -5,8 +5,12 @@
 
 #ifndef MAM4XX_AGING_HPP
 #define MAM4XX_AGING_HPP
-#include <haero/math.hpp>
-#include <mam4xx/aero_config.hpp>
+
+#include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "atmosphere.hpp"
+#include "mam4_math.hpp"
+#include "surface.hpp"
 
 namespace mam4 {
 
@@ -118,10 +122,10 @@ void mam_pcarbon_aging_frac(
       qaer_del_coag_in[iaer_so4][ipair] * so4_vol +
       qaer_del_coag_in[iaer_soa][ipair] * fac_m2v_eqvhyg_aer;
 
-  qaer_del_cond_tmp = haero::max(qaer_del_cond_tmp, 1e-35);
+  qaer_del_cond_tmp = mam4::max(qaer_del_cond_tmp, 1e-35);
 
   frac_cond = qaer_del_cond_tmp /
-              (qaer_del_cond_tmp + haero::max(qaer_del_coag_tmp, 0.0));
+              (qaer_del_cond_tmp + mam4::max(qaer_del_coag_tmp, 0.0));
 
   frac_coag = 1.0 - frac_cond;
 
@@ -145,10 +149,10 @@ void mam_pcarbon_aging_frac(
     }
   }
 
-  const Real fac_volsfc = haero::exp(
-      2.5 * haero::square(haero::log(mam4::modes(imom_pc).mean_std_dev)));
+  const Real fac_volsfc =
+      mam4::exp(2.5 * square(mam4::log(mam4::modes(imom_pc).mean_std_dev)));
 
-  const Real xferfrac_max = 1.0 - 10.0 * haero::epsilon(); //  1-eps
+  const Real xferfrac_max = 1.0 - 10.0 * epsilon(); //  1-eps
 
   const Real xferfrac_tmp1 = vol_shell * dgn_a[imom_pc] * fac_volsfc;
 
@@ -156,12 +160,12 @@ void mam_pcarbon_aging_frac(
   // BAD CONSTANT, BAAAD CONSTANT
   const Real dr_so4_monolayers_pcage = n_so4_monolayers_pcage * 4.76e-10;
   const Real xferfrac_tmp2 =
-      haero::max(6.0 * dr_so4_monolayers_pcage * vol_core, 0.0);
+      mam4::max(6.0 * dr_so4_monolayers_pcage * vol_core, 0.0);
 
   if (xferfrac_tmp1 >= xferfrac_tmp2) {
     xferfrac_pcage = xferfrac_max;
   } else {
-    xferfrac_pcage = haero::min(xferfrac_tmp1 / xferfrac_tmp2, xferfrac_max);
+    xferfrac_pcage = mam4::min(xferfrac_tmp1 / xferfrac_tmp2, xferfrac_max);
   }
 }
 

@@ -6,14 +6,13 @@
 #ifndef MAM4XX_WET_PARTICLE_SIZE_HPP
 #define MAM4XX_WET_PARTICLE_SIZE_HPP
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/aero_modes.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/kohler.hpp>
-#include <mam4xx/mam4_types.hpp>
-
-#include <haero/atmosphere.hpp>
-#include <haero/haero.hpp>
+#include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "atmosphere.hpp"
+#include "conversions.hpp"
+#include "kohler.hpp"
+#include "mam4_types.hpp"
+#include "root_finders.hpp"
 
 namespace mam4 {
 
@@ -99,8 +98,7 @@ void mode_avg_wet_particle_diam_water_uptake(const Diagnostics &diags,
 
     // Set up Kohler solver
     // (requires double precision)
-    typedef KohlerSolver<haero::math::NewtonSolver<KohlerPolynomial>>
-        SolverType;
+    typedef KohlerSolver<math::NewtonSolver<KohlerPolynomial>> SolverType;
     const Real tol = solver_convergence_tol;
     // Solve for the roots of the Kohler polynomial
     //
@@ -242,8 +240,8 @@ void diag_dgn_wet(
     // Convert dry volume to dry diameter, then to wet diameter
     const Real sx = std::log(mam4::modes(n).mean_std_dev);
     const Real tmpb =
-        tmp_dryvol / haero::max(1.0e-30, qnum_cur[n] * (Constants::pi / 6.0) *
-                                             exp(4.5 * sx * sx));
+        tmp_dryvol / mam4::max(1.0e-30, qnum_cur[n] * (Constants::pi / 6.0) *
+                                            exp(4.5 * sx * sx));
     dgn_awet[n] = pow(tmpb, (1.0 / 3.0) * dwet_ddry_ratio);
   }
 }

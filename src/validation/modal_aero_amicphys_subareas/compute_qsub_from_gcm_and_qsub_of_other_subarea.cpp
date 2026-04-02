@@ -4,14 +4,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
+
 void compute_qsub_from_gcm_and_qsub_of_other_subarea(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters
@@ -27,12 +23,12 @@ void compute_qsub_from_gcm_and_qsub_of_other_subarea(Ensemble *ensemble) {
       }
     }
 
-    using View2D = typename DeviceType::view_2d<Real>;
-    using View2DHost = typename HostType::view_2d<Real>;
+    using View2D = typename mam4::DeviceType::view_2d<Real>;
+    using View2DHost = typename mam4::HostType::view_2d<Real>;
 
     using mam4::gas_chemistry::gas_pcnst;
 
-    constexpr int subarea_max = microphysics::maxsubarea();
+    constexpr int subarea_max = mam4::microphysics::maxsubarea();
 
     const auto lcompute_ = input.get_array("lcompute");
     const Real f_a = input.get_array("f_a")[0];
@@ -70,9 +66,9 @@ void compute_qsub_from_gcm_and_qsub_of_other_subarea(Ensemble *ensemble) {
     Kokkos::deep_copy(qsub_a_d, qsub_a_h);
     Kokkos::deep_copy(qsub_b_d, qsub_b_h);
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           Real qsub_a_in[gas_pcnst][subarea_max];
           Real qsub_b_in[gas_pcnst][subarea_max];
           for (int j = 0; j < subarea_max; ++j) {

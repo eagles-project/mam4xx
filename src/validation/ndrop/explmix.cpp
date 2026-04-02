@@ -4,19 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void explmix(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
     const int top_lev = 7 - 1;
-    const int pver = ndrop::pver;
+    const int pver = mam4::ndrop::pver;
     const Real dtmix = input.get_array("dtmix")[0];
     const Real is_unact = input.get_array("is_unact")[0];
 
@@ -38,8 +34,8 @@ void explmix(Ensemble *ensemble) {
 
     for (int k = top_lev; k < pver; k++) {
       // add logic for km1 and kp1 from fortran
-      int kp1 = haero::min(k + 1, pver - 1);
-      int km1 = haero::max(k - 1, top_lev);
+      int kp1 = mam4::min(k + 1, pver - 1);
+      int km1 = mam4::max(k - 1, top_lev);
 
       Real qold_km1 = qold_db[km1];
       Real qold_k = qold_db[k];
@@ -57,12 +53,12 @@ void explmix(Ensemble *ensemble) {
       if (is_unact) {
         qactold_km1 = qactold[km1];
         qactold_kp1 = qactold[kp1];
-        q[k] =
-            ndrop::explmix(qold_km1, qold_k, qold_kp1, src, ekkp, ekkm,
-                           overlapp, overlapm, dtmix, qactold_km1, qactold_kp1);
+        q[k] = mam4::ndrop::explmix(qold_km1, qold_k, qold_kp1, src, ekkp, ekkm,
+                                    overlapp, overlapm, dtmix, qactold_km1,
+                                    qactold_kp1);
       } else {
-        q[k] = ndrop::explmix(qold_km1, qold_k, qold_kp1, src, ekkp, ekkm,
-                              overlapp, overlapm, dtmix);
+        q[k] = mam4::ndrop::explmix(qold_km1, qold_k, qold_kp1, src, ekkp, ekkm,
+                                    overlapp, overlapm, dtmix);
       }
     }
 

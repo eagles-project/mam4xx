@@ -4,17 +4,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
+
 void set_ub_col(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1D = typename DeviceType::view_1d<Real>;
-    using View2D = typename DeviceType::view_2d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
+    using View2D = typename mam4::DeviceType::view_2d<Real>;
 
     constexpr int pver = mam4::nlev;
     constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;

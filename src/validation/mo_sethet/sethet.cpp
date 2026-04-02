@@ -4,21 +4,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
-using namespace mo_sethet;
+using namespace mam4::mo_sethet;
 
 void sethet(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View2DHost = typename HostType::view_2d<Real>;
-    using ColumnView = haero::ColumnView;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View2DHost = typename mam4::HostType::view_2d<Real>;
+    using ColumnView = mam4::ColumnView;
     constexpr int pver = mam4::nlev;
     constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
     constexpr int nfs = mam4::gas_chemistry::nfs;
@@ -53,7 +48,7 @@ void sethet(Ensemble *ensemble) {
     const auto qin_in = input.get_array("qin");
 
     // ColumnView input values
-    ColumnView press, zmid, tfld, cmfdqr, nrain, nevapr, xhnm;
+    mam4::ColumnView press, zmid, tfld, cmfdqr, nrain, nevapr, xhnm;
 
     auto press_host = View1DHost((Real *)press_in.data(), pver);
     auto zmid_host = View1DHost((Real *)zmid_in.data(), pver);
@@ -63,13 +58,13 @@ void sethet(Ensemble *ensemble) {
     auto nevapr_host = View1DHost((Real *)nevapr_in.data(), pver);
     auto xhnm_host = View1DHost((Real *)xhnm_in.data(), pver);
 
-    press = haero::testing::create_column_view(pver);
-    zmid = haero::testing::create_column_view(pver);
-    tfld = haero::testing::create_column_view(pver);
-    cmfdqr = haero::testing::create_column_view(pver);
-    nrain = haero::testing::create_column_view(pver);
-    nevapr = haero::testing::create_column_view(pver);
-    xhnm = haero::testing::create_column_view(pver);
+    press = mam4::testing::create_column_view(pver);
+    zmid = mam4::testing::create_column_view(pver);
+    tfld = mam4::testing::create_column_view(pver);
+    cmfdqr = mam4::testing::create_column_view(pver);
+    nrain = mam4::testing::create_column_view(pver);
+    nevapr = mam4::testing::create_column_view(pver);
+    xhnm = mam4::testing::create_column_view(pver);
 
     Kokkos::deep_copy(press, press_host);
     Kokkos::deep_copy(zmid, zmid_host);
@@ -82,24 +77,24 @@ void sethet(Ensemble *ensemble) {
     View2D invariants("invariants", pver, nfs);
 
     // working var inputs
-    ColumnView xgas2, xgas3, delz, xh2o2, xso2, xliq, rain, precip, xhen_h2o2,
-        xhen_hno3, xhen_so2, t_factor, xk0_hno3, xk0_so2, so2_diss;
+    mam4::ColumnView xgas2, xgas3, delz, xh2o2, xso2, xliq, rain, precip,
+        xhen_h2o2, xhen_hno3, xhen_so2, t_factor, xk0_hno3, xk0_so2, so2_diss;
 
-    xgas2 = haero::testing::create_column_view(pver);
-    xgas3 = haero::testing::create_column_view(pver);
-    delz = haero::testing::create_column_view(pver);
-    xh2o2 = haero::testing::create_column_view(pver);
-    xso2 = haero::testing::create_column_view(pver);
-    xliq = haero::testing::create_column_view(pver);
-    rain = haero::testing::create_column_view(pver);
-    precip = haero::testing::create_column_view(pver);
-    xhen_h2o2 = haero::testing::create_column_view(pver);
-    xhen_hno3 = haero::testing::create_column_view(pver);
-    xhen_so2 = haero::testing::create_column_view(pver);
-    t_factor = haero::testing::create_column_view(pver);
-    xk0_hno3 = haero::testing::create_column_view(pver);
-    xk0_so2 = haero::testing::create_column_view(pver);
-    so2_diss = haero::testing::create_column_view(pver);
+    xgas2 = mam4::testing::create_column_view(pver);
+    xgas3 = mam4::testing::create_column_view(pver);
+    delz = mam4::testing::create_column_view(pver);
+    xh2o2 = mam4::testing::create_column_view(pver);
+    xso2 = mam4::testing::create_column_view(pver);
+    xliq = mam4::testing::create_column_view(pver);
+    rain = mam4::testing::create_column_view(pver);
+    precip = mam4::testing::create_column_view(pver);
+    xhen_h2o2 = mam4::testing::create_column_view(pver);
+    xhen_hno3 = mam4::testing::create_column_view(pver);
+    xhen_so2 = mam4::testing::create_column_view(pver);
+    t_factor = mam4::testing::create_column_view(pver);
+    xk0_hno3 = mam4::testing::create_column_view(pver);
+    xk0_so2 = mam4::testing::create_column_view(pver);
+    so2_diss = mam4::testing::create_column_view(pver);
 
     ColumnView tmp_hetrates[gas_pcnst];
     View2DHost qin_host("qin_host", pver, gas_pcnst);
@@ -109,8 +104,7 @@ void sethet(Ensemble *ensemble) {
     auto het_rates_host = Kokkos::create_mirror_view(het_rates);
 
     for (int mm = 0; mm < gas_pcnst; ++mm) {
-
-      tmp_hetrates[mm] = haero::testing::create_column_view(pver);
+      tmp_hetrates[mm] = mam4::testing::create_column_view(pver);
     }
 
     int count = 0;
@@ -127,14 +121,14 @@ void sethet(Ensemble *ensemble) {
     }
     Kokkos::deep_copy(qin, qin_host);
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           Kokkos::parallel_for(
               Kokkos::TeamVectorRange(team, pver),
               [&](int kk) { invariants(kk, indexm) = xhnm(kk); });
           team.team_barrier();
-          mo_sethet::sethet_detail(
+          mam4::mo_sethet::sethet_detail(
               team, het_rates, rlat, press, zmid, phis, tfld, cmfdqr, nrain,
               nevapr, delt, invariants, qin, t_factor, xk0_hno3, xk0_so2,
               so2_diss, xgas2, xgas3, delz, xh2o2, xso2, xliq, rain, precip,

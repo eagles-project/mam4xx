@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/coagulation.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void coag_1subarea(Ensemble *ensemble) {
 
@@ -66,9 +64,9 @@ void coag_1subarea(Ensemble *ensemble) {
     auto qnum_cur_f = input.get_array("qnum_cur");
     auto qaer_cur_f = input.get_array("qaer_cur");
 
-    const int num_modes = AeroConfig::num_modes();
-    const int num_aero = AeroConfig::num_aerosol_ids();
-    const int max_agepair = AeroConfig::max_agepair();
+    const int num_modes = mam4::AeroConfig::num_modes();
+    const int num_aero = mam4::AeroConfig::num_aerosol_ids();
+    const int max_agepair = mam4::AeroConfig::max_agepair();
     Real qaer_cur_c[num_aero][num_modes];
     for (int imode = 0, n = 0; imode < num_modes; ++imode) {
       for (int ispec = 0; ispec < num_aero; ++ispec, ++n) {
@@ -77,7 +75,7 @@ void coag_1subarea(Ensemble *ensemble) {
     }
 
     Real qaer_del_coag_out_c[num_aero][max_agepair] = {{0}};
-    coagulation::mam_coag_1subarea(
+    mam4::coagulation::mam_coag_1subarea(
         deltat_f[0], temp_f[0], pmid_f[0], aircon_f[0], dgn_awet_f.data(),
         wetdens_f.data(), qnum_cur_f.data(), qaer_cur_c, qaer_del_coag_out_c);
 

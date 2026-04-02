@@ -1,33 +1,33 @@
 #ifndef MAM4XX_TROPOPAUSE_HPP
 #define MAM4XX_TROPOPAUSE_HPP
 
-#include <haero/math.hpp>
-#include <mam4xx/aero_config.hpp>
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
 
 namespace mam4 {
 
 namespace tropopause {
 
-using ConstColumnView = haero::ConstColumnView;
 // FIXME: Get these values from modal_aer_opt.
 constexpr int nswbands = 14;
 constexpr int nlwbands = 16;
 constexpr int pver = mam4::nlev;
 
 constexpr Real shr_const_rgas =
-    haero::Constants::r_gas * 1e3; // Universal gas constant ~ J/K/kmole
-constexpr Real shr_const_mwdair = haero::Constants::molec_weight_dry_air *
+    Constants::r_gas * 1e3; // Universal gas constant ~ J/K/kmole
+constexpr Real shr_const_mwdair = Constants::molec_weight_dry_air *
                                   1e3; // molecular weight dry air ~ kg/kmole
 constexpr Real shr_const_cpdair =
-    haero::Constants::cp_dry_air; // specific heat of dry air [J/K/kmole]
+    Constants::cp_dry_air; // specific heat of dry air [J/K/kmole]
 
 constexpr Real cnst_kap =
     (shr_const_rgas / shr_const_mwdair) / shr_const_cpdair; //  ! R/Cp
 
 constexpr Real cnst_faktor =
-    -haero::Constants::gravity /
-    haero::Constants::r_gas_dry_air; // acceleration of gravity ~ m/s^2/Dry air
-                                     // gas constant     ~ J/K/kg
+    -Constants::gravity /
+    Constants::r_gas_dry_air; // acceleration of gravity ~ m/s^2/Dry air
+                              // gas constant     ~ J/K/kg
 constexpr Real cnst_ka1 = cnst_kap - 1.0;
 
 KOKKOS_INLINE_FUNCTION
@@ -46,10 +46,10 @@ void get_dtdz(const Real pm, const Real pmk, const Real pmid1d_up,
 
   const Real a1 =
       (temp1d_up - temp1d_down) /
-      (haero::pow(pmid1d_up, cnst_kap) - haero::pow(pmid1d_down, cnst_kap));
-  const Real b1 = temp1d_down - a1 * haero::pow(pmid1d_down, cnst_kap);
+      (mam4::pow(pmid1d_up, cnst_kap) - mam4::pow(pmid1d_down, cnst_kap));
+  const Real b1 = temp1d_down - a1 * mam4::pow(pmid1d_down, cnst_kap);
   tm = a1 * pmk + b1;
-  const Real dtdp = a1 * cnst_kap * (haero::pow(pm, cnst_ka1));
+  const Real dtdp = a1 * cnst_kap * (mam4::pow(pm, cnst_ka1));
   dtdz = cnst_faktor * dtdp * pm / tm;
 
 } // get_dtdz
@@ -111,9 +111,9 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
   trp = -99.0; // negative means not valid
 
   // initialize start level
-  pmk = half * (haero::pow(pmid1d(pver - 2), cnst_kap) +
-                haero::pow(pmid1d(pver - 1), cnst_kap));
-  pm = haero::pow(pmk, (one / cnst_kap));
+  pmk = half * (mam4::pow(pmid1d(pver - 2), cnst_kap) +
+                mam4::pow(pmid1d(pver - 1), cnst_kap));
+  pm = mam4::pow(pmk, (one / cnst_kap));
 
   get_dtdz(pm, pmk, pmid1d(pver - 2), pmid1d(pver - 1), temp1d(pver - 2),
            temp1d(pver - 1), dtdz, tm);
@@ -121,9 +121,9 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
   for (int kk = pver - 2; kk >= 1; --kk) { // main_loop
     pmk0 = pmk;
     dtdz0 = dtdz;
-    pmk = half * (haero::pow(pmid1d(kk - 1), cnst_kap) +
-                  haero::pow(pmid1d(kk), cnst_kap));
-    pm = haero::pow(pmk, (one / cnst_kap));
+    pmk = half * (mam4::pow(pmid1d(kk - 1), cnst_kap) +
+                  mam4::pow(pmid1d(kk), cnst_kap));
+    pm = mam4::pow(pmk, (one / cnst_kap));
 
     get_dtdz(pm, pmk, pmid1d(kk - 1), pmid1d(kk), temp1d(kk - 1), temp1d(kk),
              dtdz, tm);
@@ -147,7 +147,7 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
     if (dtdz0 < gam) {
       ag = (dtdz - dtdz0) / (pmk - pmk0);
       bg = dtdz0 - (ag * pmk0);
-      ptph = haero::exp(haero::log((gam - bg) / ag) / cnst_kap);
+      ptph = mam4::exp(mam4::log((gam - bg) / ag) / cnst_kap);
     } else {
       ptph = pm;
     } // if dtdz0<gam
@@ -168,10 +168,10 @@ void twmo(const ConstColumnView &temp1d, const ConstColumnView &pmid1d,
 
     // test until apm < p2km
     for (int jj = kk; jj >= 1; --jj) { // in_loop
-      pmk2 = half * (haero::pow(pmid1d(jj - 1), cnst_kap) +
-                     haero::pow(pmid1d(jj), cnst_kap)); // ! p mean ^kappa
-      pm2 = haero::pow(pmk2,
-                       one / cnst_kap); //                           ! p mean
+      pmk2 = half * (mam4::pow(pmid1d(jj - 1), cnst_kap) +
+                     mam4::pow(pmid1d(jj), cnst_kap)); // ! p mean ^kappa
+      pm2 =
+          mam4::pow(pmk2, one / cnst_kap); //                           ! p mean
       if (pm2 > ptph) {
         // cycle in_loop  -   doesn't happen
         continue;

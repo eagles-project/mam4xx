@@ -18,6 +18,9 @@ on:
       cc_token:
         required: true
 
+env:
+  EKAT_SOURCE_DIR: ${{ github.workspace }}/ekat_src # we clone EKAT here
+
 # Below are jobs, each of which runs sequentially.
 jobs:
   # this is more work than I'd expect, but this is how you pass info after
@@ -102,38 +105,24 @@ jobs:
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          submodules: recursive
 
-      - name: Cloning Haero
-        uses: actions/checkout@v3
+      - name: Cloning EKAT
+        uses: actions/checkout@v4
         with:
-          repository: eagles-project/haero
+          repository: E3SM-Project/EKAT
           submodules: recursive
-          path: haero_src
-
-      - name: Building Haero (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
-        run: |
-          cmake -S haero_src -B haero_build \
-            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-            -DCMAKE_INSTALL_PREFIX="haero_install" \
-            -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER=g++ \
-            -DHAERO_ENABLE_MPI=OFF \
-            -DHAERO_ENABLE_GPU=OFF \
-            -DKokkos_ARCH_AMDAVX:BOOL=ON \
-            -DHAERO_PRECISION=${{ matrix.fp-precision }}
-          cd haero_build
-          make -j
-          make install
+          path: ${{ github.workspace }}/ekat_src
 
       - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)
         run: |
           cmake -S . -B build \
             -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-            -DMAM4XX_HAERO_DIR=$(pwd)/haero_install \
-            -DNUM_VERTICAL_LEVELS=72 \
-            -DENABLE_COVERAGE=ON \
+            -DMAM4XX_ENABLE_GPU=OFF \
+            -DMAM4XX_PRECISION=${{ matrix.fp-precision }} \
+            -DKokkos_ARCH_AMDAVX:BOOL=ON \
+            -DMAM4XX_NUM_VERTICAL_LEVELS=72 \
+            -DMAM4XX_ENABLE_COVERAGE=ON \
             -G "Unix Makefiles"
 
       - name: Building MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)

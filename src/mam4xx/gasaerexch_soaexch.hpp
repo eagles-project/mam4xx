@@ -6,11 +6,9 @@
 #ifndef MAM4XX_GASAEREXCH_SOAEXCH_HPP
 #define MAM4XX_GASAEREXCH_SOAEXCH_HPP
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/aero_modes.hpp>
-
-#include <haero/haero.hpp>
-#include <haero/math.hpp>
+#include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "mam4_math.hpp"
 
 namespace mam4 {
 namespace gasaerexch {
@@ -54,8 +52,8 @@ void soa_equilib_mixing_ratio_no_solute(const Real &T_in_K,     // in
 
   // The equilibrium vapor pressure
   const Real p0_soa =
-      p0_soa_at_298K * exp(-(delh_vap_soa / (r_universal / 1.e3)) *
-                           ((1.0 / T_in_K) - (1.0 / 298.0)));
+      p0_soa_at_298K * mam4::exp(-(delh_vap_soa / (r_universal / 1.e3)) *
+                                 ((1.0 / T_in_K) - (1.0 / 298.0)));
 
   // Convert to mixing ratio in mol/mol
   g0_soa = pstd_in_Pa * p0_soa / p_in_Pa;
@@ -157,8 +155,8 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
   // Calculate ambient equilibrium soa gas
   for (int ll = 0; ll < ntot_soaspec; ++ll) {
     // BAD CONSTANT
-    p0_soa[ll] = p0_soa_298 * haero::exp(-(delh_vap_soa / rgas) *
-                                         ((1.0 / temp) - (1.0 / 298.0)));
+    p0_soa[ll] = p0_soa_298 * mam4::exp(-(delh_vap_soa / rgas) *
+                                        ((1.0 / temp) - (1.0 / 298.0)));
     // BAD CONSTANT
     g0_soa[ll] = 1.01325e5 * p0_soa[ll] / pmid;
   }
@@ -213,12 +211,12 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
     // > create qxxx_bgn = qxxx_cur at the very beginning (is it needed)
     //
     for (int ll = 0; ll < ntot_soaspec; ++ll) {
-      g_soa[ll] = haero::max(qgas_prv[ll], 0.0);
+      g_soa[ll] = mam4::max(qgas_prv[ll], 0.0);
       tot_soa[ll] = g_soa[ll];
       for (int n = 0; n < ntot_soamode; ++n) {
         if (skip_soamode[n])
           continue;
-        a_soa[ll][n] = haero::max(qaer_prv[ll][n], 0.0);
+        a_soa[ll][n] = mam4::max(qaer_prv[ll][n], 0.0);
         tot_soa[ll] += a_soa[ll][n];
       }
     }
@@ -229,7 +227,7 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
       a_opoa[n] = 0.0;
       for (int ll = 0; ll < ntot_poaspec; ++ll) {
         a_opoa[n] +=
-            opoa_frac[ll][n] * haero::max(qaer_prv[iaer_pom + ll][n], 0.0);
+            opoa_frac[ll][n] * mam4::max(qaer_prv[iaer_pom + ll][n], 0.0);
       }
     }
 
@@ -248,13 +246,13 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
       for (int n = 0; n < ntot_soamode; ++n) {
         if (skip_soamode[n])
           continue;
-        sat[ll][n] = g0_soa[ll] / haero::max(a_ooa_sum_tmp[n], a_min1);
+        sat[ll][n] = g0_soa[ll] / mam4::max(a_ooa_sum_tmp[n], a_min1);
         g_star[ll][n] = sat[ll][n] * a_soa[ll][n];
         phi[ll][n] = (g_soa[ll] - g_star[ll][n]) /
-                     haero::max(g_soa[ll], haero::max(g_star[ll][n], g_min1));
-        tmpb += uptkaer_soag_tmp[ll][n] * haero::abs(phi[ll][n]);
+                     mam4::max(g_soa[ll], mam4::max(g_star[ll][n], g_min1));
+        tmpb += uptkaer_soag_tmp[ll][n] * abs(phi[ll][n]);
       }
-      tmpa = haero::max(tmpa, tmpb);
+      tmpa = mam4::max(tmpa, tmpb);
     }
 
     if (dtsub_fixed > 0.0) {
@@ -292,7 +290,7 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
       }
       for (int ll = 0; ll < ntot_soaspec; ++ll) {
         if (del_g_soa_tmp[ll] > 0.0) {
-          sat[ll][n] = g0_soa[ll] / haero::max(a_ooa_sum_tmp[n], a_min1);
+          sat[ll][n] = g0_soa[ll] / mam4::max(a_ooa_sum_tmp[n], a_min1);
           g_star[ll][n] =
               sat[ll][n] * a_soa_tmp[ll][n]; // this just needed for diagnostics
         }
@@ -312,7 +310,7 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
       }
 
       g_soa[ll] = (tot_soa[ll] - tmpa) / (1.0 + tmpb);
-      g_soa[ll] = haero::max(0.0, g_soa[ll]);
+      g_soa[ll] = mam4::max(0.0, g_soa[ll]);
       for (int n = 0; n < ntot_soamode; ++n) {
         if (skip_soamode[n])
           continue;
@@ -338,7 +336,7 @@ void mam_soaexch_1subarea(const Real dtsubstep,                 // in
 
   // Convert qgas_avg from sum_over[ qgas*dt_cut ] to an average
   for (int igas = 0; igas < nsoa; ++igas) {
-    qgas_avg[igas] = haero::max(0.0, qgas_avg[igas] / dtsum_qgas_avg);
+    qgas_avg[igas] = mam4::max(0.0, qgas_avg[igas] / dtsum_qgas_avg);
   }
 }
 //================================================================================
@@ -403,7 +401,7 @@ Real soa_exch_substepsize(
   // For each SOA species, estimate the normalized total mass exchange rate by
   // using a simple Euler forward scheme.  Here the normalized mass exchange
   // rate is defined as
-  //   condensed or evaporated SOA /dt / max( available-SOA-gas,
+  //   condensed or evaporated SOA /dt / mam4::max( available-SOA-gas,
   //   equilibrium-SOA-gas-mixing-ratio )
   // We first calculate this rate for each SOA species and each aerosol mode.
   // Then, for each species, we calculate the sum of its absolute value over all
@@ -423,7 +421,7 @@ Real soa_exch_substepsize(
         // This this the pre-factor of SOA (aerosol) mixing ratio in the
         // expression of the equilibrium SOA mixing ratio -- it is not a
         // saturation rato!
-        const Real sat = g0_soa[ll] / haero::max(a_ooa_sum_tmp[n], eps_aer);
+        const Real sat = g0_soa[ll] / mam4::max(a_ooa_sum_tmp[n], eps_aer);
 
         // g_star -  equilibrium SOA gas mixing ratio (mol/mol at actual mw),
         // with solute effect accounted for
@@ -435,9 +433,8 @@ Real soa_exch_substepsize(
         // tot_frac_single_soa_species) summed over all aerosol modes.
 
         const Real phi = (g_soa[ll] - g_star) /
-                         haero::max(g_soa[ll], haero::max(g_star, eps_gas));
-        tot_frac_single_soa_species[ll] +=
-            uptkaer_soag_tmp[ll][n] * haero::abs(phi);
+                         mam4::max(g_soa[ll], mam4::max(g_star, eps_gas));
+        tot_frac_single_soa_species[ll] += uptkaer_soag_tmp[ll][n] * abs(phi);
       }
     }
   }
@@ -448,13 +445,13 @@ Real soa_exch_substepsize(
   Real max_frac_all_soa_species = tot_frac_single_soa_species[0];
   for (int i = 0; i < ntot_soaspec; ++i)
     max_frac_all_soa_species =
-        haero::max(max_frac_all_soa_species, tot_frac_single_soa_species[i]);
+        mam4::max(max_frac_all_soa_species, tot_frac_single_soa_species[i]);
 
   //------------------------------------------------------------------------------------------------------
   // Determine the adaptive step size, dt_cur, requiring that the condensed or
   // evaporated amount of any SOA species cannot exceed a fraction (alpha_astem)
   // of
-  //   max( available-SOA-gas, equilibrium-SOA-gas-mixing-ratio ).
+  //   mam4::max( available-SOA-gas, equilibrium-SOA-gas-mixing-ratio ).
   //------------------------------------------------------------------------------------------------------
 
   // how far we are from the end of the full time step
@@ -524,7 +521,6 @@ void mam_soaexch_advance_in_time(
   // niter         Total number of sub-steps
   // clang-format on
 
-  using haero::max;
   static constexpr int max_mode = AeroConfig::num_modes();
 
   // The local arrays a_soa and g_soa declared below have the same meaning of
@@ -617,7 +613,7 @@ void mam_soaexch_advance_in_time(
     //  non-negative
     for (int i = 0; i < ntot_soaspec; ++i) {
       const int soa = static_cast<int>(soaspec[i]);
-      g_soa[i] = max(qgas_cur[soa], 0.0);
+      g_soa[i] = mam4::max(qgas_cur[soa], 0.0);
     }
 
     //  Load incoming SOA aerosols into temporary array, force values to be
@@ -627,7 +623,7 @@ void mam_soaexch_advance_in_time(
         for (int i = 0; i < ntot_soaspec; ++i) {
           const int soa =
               static_cast<int>(gas_to_aer[static_cast<int>(soaspec[i])]);
-          a_soa[i][n] = max(qaer_cur[soa][n], 0.0);
+          a_soa[i][n] = mam4::max(qaer_cur[soa][n], 0.0);
         }
       }
     }
@@ -707,7 +703,7 @@ void mam_soaexch_advance_in_time(
         Real a_ooa_sum_old = a_opoa[n];
         for (int i = 0; i < ntot_soaspec; ++i)
           a_ooa_sum_old += a_soa[i][n];
-        const Real sat_old = g0_soa[ll] / max(a_ooa_sum_old, eps_aer);
+        const Real sat_old = g0_soa[ll] / mam4::max(a_ooa_sum_old, eps_aer);
 
         // soa gas mixrat that is in equilib with each aerosol mode (mol/mol)
         // diagnosed using old gas and aerosol mixing ratios
@@ -753,7 +749,7 @@ void mam_soaexch_advance_in_time(
       //  equation, (i.e., variable sat_hybrid).
 
       for (int ll = 0; ll < ntot_soaspec; ++ll)
-        sat_hybrid[ll][n] = g0_soa[ll] / max(a_ooa_sum_hybrid, eps_aer);
+        sat_hybrid[ll][n] = g0_soa[ll] / mam4::max(a_ooa_sum_hybrid, eps_aer);
     }
     // ------------------------------------------------------------------------------------------
     //  Implicit solve for the linearize equations
@@ -768,7 +764,7 @@ void mam_soaexch_advance_in_time(
         }
       }
       g_soa[ll] = (tot_soa[ll] - tmpa) / (1.0 + tmpb);
-      g_soa[ll] = max(0.0, g_soa[ll]);
+      g_soa[ll] = mam4::max(0.0, g_soa[ll]);
       for (int n = 0; n < ntot_soamode; ++n) {
         if (!skip_soamode[n]) {
           a_soa[ll][n] = (a_soa[ll][n] + beta[ll][n] * g_soa[ll]) /
@@ -807,7 +803,7 @@ void mam_soaexch_advance_in_time(
   // -------------------------------------------------------------------
   for (int i = 0; i < ntot_soaspec; ++i) {
     const int soa = static_cast<int>(soaspec[i]);
-    qgas_avg[soa] = max(0.0, qgas_avg_sum[i] / dtsum_qgas_avg);
+    qgas_avg[soa] = mam4::max(0.0, qgas_avg_sum[i] / dtsum_qgas_avg);
   }
 }
 

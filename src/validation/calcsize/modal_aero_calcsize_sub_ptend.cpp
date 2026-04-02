@@ -4,21 +4,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/calcsize.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
 
 void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    constexpr int pcnst = aero_model::pcnst;
-    constexpr int pver = ndrop::pver;
-    constexpr int ntot_amode = AeroConfig::num_modes();
-    using View2D = DeviceType::view_2d<Real>;
+    constexpr int pcnst = mam4::aero_model::pcnst;
+    constexpr int pver = mam4::ndrop::pver;
+    constexpr int ntot_amode = mam4::AeroConfig::num_modes();
+    using View2D = mam4::DeviceType::view_2d<Real>;
 
     auto state_q_db = input.get_array("state_q");
     auto qqcw_db = input.get_array("qqcw");
@@ -54,9 +49,9 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
     const bool update_mmr = true;
     cal_data.set_update_mmr(update_mmr);
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           // FIXME: top_lev is set to 1 in calcsize ?
           const int top_lev = 0; // 1( in fortran )
 
@@ -71,12 +66,12 @@ void modal_aero_calcsize_sub_ptend(Ensemble *ensemble) {
             // Real dgncur_c[ntot_amode] = {};
             auto ptend_q_k = Kokkos::subview(ptend_q, kk, Kokkos::ALL());
             auto dqqcwdt_k = Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
-            modal_aero_calcsize::modal_aero_calcsize_sub(state_q_k, // in
-                                                         qqcw_k,    // in/out
-                                                         dt, cal_data,
-                                                         // outputs
-                                                         dgncur_i, dgncur_c_k,
-                                                         ptend_q_k, dqqcwdt_k);
+            mam4::modal_aero_calcsize::modal_aero_calcsize_sub(
+                state_q_k, // in
+                qqcw_k,    // in/out
+                dt, cal_data,
+                // outputs
+                dgncur_i, dgncur_c_k, ptend_q_k, dqqcwdt_k);
           } // k
         });
 

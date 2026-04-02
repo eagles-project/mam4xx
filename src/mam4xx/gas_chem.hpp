@@ -1,18 +1,10 @@
 #ifndef MAM4XX_GAS_CHEMISTRY_HPP
 #define MAM4XX_GAS_CHEMISTRY_HPP
 
-#include <haero/aero_species.hpp>
-#include <haero/atmosphere.hpp>
-#include <haero/constants.hpp>
-#include <haero/math.hpp>
+#include "gas_chem_mechanism.hpp"
+#include "mam4_math.hpp"
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/gas_chem_mechanism.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
-
-using Real = haero::Real;
+#include <ekat_kernel_assert.hpp>
 
 namespace mam4 {
 
@@ -38,10 +30,10 @@ void usrrxt(Real rxt[rxntot], // inout
   const Real one = 1.0;
   if (usr_HO2_HO2_ndx > 0) {
     // BAD CONSTANT
-    const Real ko = 3.5e-13 * haero::exp(430.0 / temperature);
-    const Real kinf = 1.7e-33 * mtot * haero::exp(1000. / temperature);
+    const Real ko = 3.5e-13 * mam4::exp(430.0 / temperature);
+    const Real kinf = 1.7e-33 * mtot * mam4::exp(1000. / temperature);
     const Real fc = one + 1.4e-21 * invariants[inv_h2o_ndx] *
-                              haero::exp(2200. / temperature);
+                              mam4::exp(2200. / temperature);
     rxt[usr_HO2_HO2_ndx] = (ko + kinf) * fc;
   }
 
@@ -51,9 +43,9 @@ void usrrxt(Real rxt[rxntot], // inout
   if (usr_DMS_OH_ndx > 0) {
     // BAD CONSTANT
     const Real ko =
-        one + 5.5e-31 * haero::exp(7460. / temperature) * mtot * 0.21;
+        one + 5.5e-31 * mam4::exp(7460. / temperature) * mtot * 0.21;
     rxt[usr_DMS_OH_ndx] =
-        1.7e-42 * haero::exp(7810. / temperature) * mtot * 0.21 / ko;
+        1.7e-42 * mam4::exp(7810. / temperature) * mtot * 0.21 / ko;
   }
 
   /*-----------------------------------------------------------------
@@ -61,11 +53,11 @@ void usrrxt(Real rxt[rxntot], // inout
   -----------------------------------------------------------------*/
   if (usr_SO2_OH_ndx > 0) {
     // BAD CONSTANT
-    const Real fc = 3.0e-31 * haero::pow(300. / temperature, 3.3);
+    const Real fc = 3.0e-31 * mam4::pow(300. / temperature, 3.3);
     const Real ko = fc * mtot / (one + fc * mtot / 1.5e-12);
     rxt[usr_SO2_OH_ndx] =
-        ko * haero::pow(0.6, one / (one + haero::square(haero::log10(
-                                              fc * mtot / 1.5e-12))));
+        ko *
+        mam4::pow(0.6, one / (one + square(mam4::log10(fc * mtot / 1.5e-12))));
   }
 
 } // usrrxt
@@ -170,8 +162,8 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
       for (int kk = 0; kk < clscnt4; ++kk) {
         int mm = permute_4[kk];
         // BAD CONSTANT
-        if (haero::abs(solution[mm]) > 1.0e-20) {
-          max_delta[kk] = haero::abs(forcing[mm] / solution[mm]);
+        if (mam4::abs(solution[mm]) > 1.0e-20) {
+          max_delta[kk] = mam4::abs(forcing[mm] / solution[mm]);
         } else {
           max_delta[kk] = zero;
         }
@@ -212,14 +204,14 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
         // TODO: is there a computational reason this needs to happen?
         // I suspect not, given that epsilon is hard-coded to 1e-3, meaning that
         // all of this logic surrounding 'converged[kk] = ...' is unnecessary
-        bool frc_mask = haero::abs(forcing[mm]) > small;
+        bool frc_mask = mam4::abs(forcing[mm]) > small;
         if (frc_mask) {
           // this ends up effectively being:
           //                         if (small < abs(forcing) <= eps * abs(sol))
           //                            => converged
           // so the lower bound appears unnecessary
           converged[kk] =
-              haero::abs(forcing[mm]) <= epsilon[kk] * haero::abs(solution[mm]);
+              mam4::abs(forcing[mm]) <= epsilon[kk] * mam4::abs(solution[mm]);
         } else {
           // and this is just; if (abs(forcing) <= small <= eps) => converged
           // and the implicit comparison of small and eps is not helpful
@@ -384,7 +376,7 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
     interval_done += dt;
 
     // BAD CONSTANT
-    if (haero::abs(delt - interval_done) <= 0.0001) {
+    if (mam4::abs(delt - interval_done) <= 0.0001) {
       if (fail_cnt > 0) {
         // FIXME: probably handle this more gracefully via error logging?
         EKAT_KERNEL_ERROR_MSG("ERROR: imp_sol failure @ (lchnk,lev,col) = \n");
@@ -407,7 +399,7 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
         stp_con_cnt = 0;
       }
 
-      dt = haero::min(dt, delt - interval_done);
+      dt = mam4::min(dt, delt - interval_done);
 
     } // abs( delt - interval_done ) <= .0001
   }   // time_step_loop

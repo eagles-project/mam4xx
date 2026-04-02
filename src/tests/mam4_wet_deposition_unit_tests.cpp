@@ -3,25 +3,16 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "mam4xx/aero_modes.hpp"
 #include "testing.hpp"
 #include <mam4xx/mam4.hpp>
-
-#include <haero/constants.hpp>
 
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
 #include <ekat_type_traits.hpp>
 
 #include <catch2/catch.hpp>
-#include <cmath>
-#include <iomanip>
-#include <iostream>
-#include <limits>
-#include <memory>
 
-using namespace haero;
-using namespace mam4;
+using mam4::Real;
 
 Real tol = 1e-8;
 
@@ -31,15 +22,15 @@ TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
                                 ekat::logger::LogLevel::debug, comm);
   int nlev = 72;
   Real pblh = 1000;
-  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  mam4::Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
 
   // TODO - Pass this to subroutine instead of whole atmosphere
   const int pver = atm.num_levels();
 
-  ColumnView pdel = mam4::testing::create_column_view(pver);
-  ColumnView source_term = mam4::testing::create_column_view(pver);
-  ColumnView sink_term = mam4::testing::create_column_view(pver);
-  ColumnView lprec = mam4::testing::create_column_view(pver);
+  mam4::ColumnView pdel = mam4::testing::create_column_view(pver);
+  mam4::ColumnView source_term = mam4::testing::create_column_view(pver);
+  mam4::ColumnView sink_term = mam4::testing::create_column_view(pver);
+  mam4::ColumnView lprec = mam4::testing::create_column_view(pver);
 
   // Need to use Kokkos to initialize values
   // These arrays only have a single value in them...
@@ -55,7 +46,7 @@ TEST_CASE("test_local_precip_production", "mam4_wet_deposition_process") {
         }
       });
 
-  Real gravity = Constants::gravity;
+  Real gravity = mam4::Constants::gravity;
   Kokkos::parallel_for(
       "test_local_precip_production", 1, KOKKOS_LAMBDA(const int) {
         Real *pdel_device = pdel.data();
@@ -91,17 +82,17 @@ TEST_CASE("test_calculate_cloudy_volume", "mam4_wet_deposition_process") {
                                 ekat::logger::LogLevel::debug, comm);
   int nlev = 72;
   Real pblh = 1000;
-  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  mam4::Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
 
   const int pver = atm.num_levels();
 
   // Input vectors
-  ColumnView cld = mam4::testing::create_column_view(pver);
-  ColumnView lprec = mam4::testing::create_column_view(pver);
+  mam4::ColumnView cld = mam4::testing::create_column_view(pver);
+  mam4::ColumnView lprec = mam4::testing::create_column_view(pver);
 
   // Output vectors
-  ColumnView cldv = mam4::testing::create_column_view(pver);
-  ColumnView sumppr_all = mam4::testing::create_column_view(pver);
+  mam4::ColumnView cldv = mam4::testing::create_column_view(pver);
+  mam4::ColumnView sumppr_all = mam4::testing::create_column_view(pver);
 
   // Reference input from
   // e3sm_mam4_refactor/components/eam/src/chemistry/yaml/wetdep/calculate_cloudy_volume_output_ts_355.py
@@ -239,17 +230,17 @@ TEST_CASE("test_rain_mix_ratio", "mam4_wet_deposition_process") {
                                 ekat::logger::LogLevel::debug, comm);
   int nlev = 72;
   Real pblh = 1000;
-  Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
+  mam4::Atmosphere atm = mam4::testing::create_atmosphere(nlev, pblh);
 
   const int pver = atm.num_levels();
 
   // Input Vectors
-  ColumnView temperature = mam4::testing::create_column_view(pver);
-  ColumnView pmid = mam4::testing::create_column_view(pver);
-  ColumnView sumppr = mam4::testing::create_column_view(pver);
+  mam4::ColumnView temperature = mam4::testing::create_column_view(pver);
+  mam4::ColumnView pmid = mam4::testing::create_column_view(pver);
+  mam4::ColumnView sumppr = mam4::testing::create_column_view(pver);
 
   // Output Vectors
-  ColumnView rain = mam4::testing::create_column_view(pver);
+  mam4::ColumnView rain = mam4::testing::create_column_view(pver);
 
   // Need to use Kokkos to initialize values
   // Validation data from
@@ -303,7 +294,7 @@ TEST_CASE("test_flux_precnum_vs_flux_prec_mpln(",
           const int  jstrcnv = 1;
           const Real flux = 625774.9256400075;
 	  const Real ans = mam4::wetdep::flux_precnum_vs_flux_prec_mpln(flux_prec,jstrcnv);
-	  const Real err = haero::abs((flux-ans)/ans);
+	  const Real err = mam4::abs((flux-ans)/ans);
           EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
@@ -312,7 +303,7 @@ TEST_CASE("test_flux_precnum_vs_flux_prec_mpln(",
   const Real flux = 222562.1254970778;
   const Real ans =
       mam4::wetdep::flux_precnum_vs_flux_prec_mpln(flux_prec, jstrcnv);
-  const Real err = haero::abs((flux - ans) / ans);
+  const Real err = mam4::abs((flux - ans) / ans);
   EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
@@ -321,7 +312,7 @@ TEST_CASE("test_flux_precnum_vs_flux_prec_mpln(",
   const Real flux = 0.0;
   const Real ans =
       mam4::wetdep::flux_precnum_vs_flux_prec_mpln(flux_prec, jstrcnv);
-  const Real err = haero::abs(flux - ans);
+  const Real err = mam4::abs(flux - ans);
   EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
@@ -330,7 +321,7 @@ TEST_CASE("test_flux_precnum_vs_flux_prec_mpln(",
   const Real flux = 0.0;
   const Real ans =
       mam4::wetdep::flux_precnum_vs_flux_prec_mpln(flux_prec, jstrcnv);
-  const Real err = haero::abs(flux - ans);
+  const Real err = mam4::abs(flux - ans);
   EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 });
@@ -347,7 +338,7 @@ TEST_CASE("faer_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
           const int  jstrcnv = 1;
           const Real flux = 0.007075389488885791;
 	  const Real ans = mam4::wetdep::faer_resusp_vs_fprec_evap_mpln(fprec_evap,jstrcnv);
-	  const Real err = haero::abs((flux-ans)/ans);
+	  const Real err = mam4::abs((flux-ans)/ans);
           EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
@@ -356,7 +347,7 @@ TEST_CASE("faer_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
   const Real flux = 0.009535933995416133;
   const Real ans =
       mam4::wetdep::faer_resusp_vs_fprec_evap_mpln(fprec_evap, jstrcnv);
-  const Real err = haero::abs((flux - ans) / ans);
+  const Real err = mam4::abs((flux - ans) / ans);
   EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
@@ -365,7 +356,7 @@ TEST_CASE("faer_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
   const Real flux = 0.0005124494240644202;
   const Real ans =
       mam4::wetdep::faer_resusp_vs_fprec_evap_mpln(fprec_evap, jstrcnv);
-  const Real err = haero::abs((flux - ans) / ans);
+  const Real err = mam4::abs((flux - ans) / ans);
   EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
@@ -374,7 +365,7 @@ TEST_CASE("faer_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
   const Real flux = 6.222788982804435e-05;
   const Real ans =
       mam4::wetdep::faer_resusp_vs_fprec_evap_mpln(fprec_evap, jstrcnv);
-  const Real err = haero::abs((flux - ans) / ans);
+  const Real err = mam4::abs((flux - ans) / ans);
   EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 });
@@ -391,7 +382,7 @@ TEST_CASE("fprecn_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
           const int  jstrcnv = 1;
           const Real flux = 0.2768051337282046;
 	  const Real ans = mam4::wetdep::fprecn_resusp_vs_fprec_evap_mpln(fprec_evap,jstrcnv);
-	  const Real err = haero::abs((flux-ans)/ans);
+	  const Real err = mam4::abs((flux-ans)/ans);
           EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
@@ -400,7 +391,7 @@ TEST_CASE("fprecn_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
   const Real flux = 0.1183317577400569;
   const Real ans =
       mam4::wetdep::fprecn_resusp_vs_fprec_evap_mpln(fprec_evap, jstrcnv);
-  const Real err = haero::abs((flux - ans) / ans);
+  const Real err = mam4::abs((flux - ans) / ans);
   EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
@@ -409,7 +400,7 @@ TEST_CASE("fprecn_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
   const Real flux = 0.03401171698136975;
   const Real ans =
       mam4::wetdep::fprecn_resusp_vs_fprec_evap_mpln(fprec_evap, jstrcnv);
-  const Real err = haero::abs((flux - ans) / ans);
+  const Real err = mam4::abs((flux - ans) / ans);
   EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 {
@@ -418,7 +409,7 @@ TEST_CASE("fprecn_resusp_vs_fprec_evap_mpln(", "mam4_wet_deposition_process") {
   const Real flux = 0.002724799476656648;
   const Real ans =
       mam4::wetdep::fprecn_resusp_vs_fprec_evap_mpln(fprec_evap, jstrcnv);
-  const Real err = haero::abs((flux - ans) / ans);
+  const Real err = mam4::abs((flux - ans) / ans);
   EKAT_KERNEL_REQUIRE(err < 1.0e-6);
 }
 });

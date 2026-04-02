@@ -6,16 +6,15 @@
 #ifndef MAM4XX_COAGULATION_HPP
 #define MAM4XX_COAGULATION_HPP
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/mam4_types.hpp>
+#include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "atmosphere.hpp"
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
+#include "surface.hpp"
 
 #include <Kokkos_Array.hpp>
-#include <haero/atmosphere.hpp>
-#include <haero/constants.hpp>
-#include <haero/haero.hpp>
-#include <haero/surface.hpp>
-#include <iomanip>
-#include <iostream>
 
 namespace mam4 {
 
@@ -74,6 +73,12 @@ private:
 };
 
 namespace coagulation {
+
+using mam4::exp;
+using mam4::log;
+using mam4::pow;
+using mam4::round;
+using mam4::sqrt;
 
 KOKKOS_INLINE_FUNCTION
 Real bm0ij_data(const int n1, const int n2a, const int n2n) {
@@ -653,13 +658,13 @@ void getcoags(const Real lamda, const Real kfmatac, const Real kfmat,
               Real &qn12, Real &qv12) {
 
   const Real a_const = 1.246;
-  const Real esat01 = haero::exp(0.125 * xxlsgat * xxlsgat);
-  const Real esac01 = haero::exp(0.125 * xxlsgac * xxlsgac);
-  const Real sqrttwo = haero::sqrt(2.0);
-  const Real dlgsqt2 = 1.0 / haero::log(sqrttwo);
+  const Real esat01 = exp(0.125 * xxlsgat * xxlsgat);
+  const Real esac01 = exp(0.125 * xxlsgac * xxlsgac);
+  const Real sqrttwo = sqrt(2.0);
+  const Real dlgsqt2 = 1.0 / log(sqrttwo);
 
-  const Real esat04 = haero::pow(esat01, 4.0);
-  const Real esac04 = haero::pow(esac01, 4.0);
+  const Real esat04 = pow(esat01, 4.0);
+  const Real esac04 = pow(esac01, 4.0);
 
   const Real esat05 = esat04 * esat01;
   const Real esac05 = esac04 * esac01;
@@ -691,8 +696,8 @@ void getcoags(const Real lamda, const Real kfmatac, const Real kfmat,
 
   const Real dgat3 = dgatk * dgatk * dgatk;
 
-  const Real sqdgat = haero::sqrt(dgatk);
-  const Real sqdgac = haero::sqrt(dgacc);
+  const Real sqdgat = sqrt(dgatk);
+  const Real sqdgac = sqrt(dgacc);
   const Real sqdgat7 = dgat3 * sqdgat;
 
   const Real r1 = sqdgac / sqdgat;
@@ -710,14 +715,9 @@ void getcoags(const Real lamda, const Real kfmatac, const Real kfmat,
 
   // Trap subscripts for bm0 and bm0i, between 1 and 10.
   // See page h.5 of whitby et al. (1991)
-  const int n2n =
-      haero::max(1, haero::min(10, haero::round(4.0 * (sgatk - 0.75)))) - 1;
-  const int n2a =
-      haero::max(1, haero::min(10, haero::round(4.0 * (sgacc - 0.75)))) - 1;
-  const int n1 =
-      haero::max(1,
-                 haero::min(10, 1 + haero::round(dlgsqt2 * haero::log(rat)))) -
-      1;
+  const int n2n = mam4::max(1, mam4::min(10, round(4.0 * (sgatk - 0.75)))) - 1;
+  const int n2a = mam4::max(1, mam4::min(10, round(4.0 * (sgacc - 0.75)))) - 1;
+  const int n1 = mam4::max(1, mam4::min(10, 1 + round(dlgsqt2 * log(rat)))) - 1;
 
   // -----------------------------------------------------------------
   //  Aitken to accumulation mode coagulation rate for the 0th moment
@@ -760,15 +760,15 @@ void getcoags_wrapper_f(const Real airtemp, const Real airprs, const Real dgatk,
   // -----------------------------------------------
   // Prepare input to getcoags
   // -----------------------------------------------
-  const Real t0 = haero::Constants::freezing_pt_h2o + 15.0;
-  const Real sqrt_temp = haero::sqrt(airtemp);
+  const Real t0 = Constants::freezing_pt_h2o + 15.0;
+  const Real sqrt_temp = sqrt(airtemp);
 
   // Calculate mean free path [m]:
   // 6.6328e-8 is the sea level value given in table i.2.8
   // on page 10 of u.s. standard atmosphere 1962
   // BAD CONSTANT
   const Real lamda =
-      6.6328e-8 * haero::Constants::pressure_stp * airtemp / (t0 * airprs);
+      6.6328e-8 * Constants::pressure_stp * airtemp / (t0 * airprs);
 
   //  Calculate dynamic viscosity [kg m**-1 s**-1]:
   // u.s. standard atmosphere 1962 page 14 expression
@@ -784,10 +784,9 @@ void getcoags_wrapper_f(const Real airtemp, const Real airprs, const Real dgatk,
 
   // Terms used in equation a5 of binkowski & shankar (1995)
 
-  const Real kfmat = haero::sqrt(3.0 * boltzmann * airtemp / pdensat);
-  const Real kfmac = haero::sqrt(3.0 * boltzmann * airtemp / pdensac);
-  const Real kfmatac =
-      haero::sqrt(6.0 * boltzmann * airtemp / (pdensat + pdensac));
+  const Real kfmat = sqrt(3.0 * boltzmann * airtemp / pdensat);
+  const Real kfmac = sqrt(3.0 * boltzmann * airtemp / pdensac);
+  const Real kfmatac = sqrt(6.0 * boltzmann * airtemp / (pdensat + pdensac));
 
   // -------------------------------------------------------------------------------------------------
   // Call subr. getcoags ported from the CMAQ model to calculate
@@ -809,16 +808,15 @@ void getcoags_wrapper_f(const Real airtemp, const Real airprs, const Real dgatk,
   // --------------------------------------------------------------------
   //  Clip negative values
 
-  betaii0 = haero::max(0.0, qn11);
-  betajj0 = haero::max(0.0, qn22);
-  betaij0 = haero::max(0.0, qn12);
+  betaii0 = mam4::max(0.0, qn11);
+  betajj0 = mam4::max(0.0, qn22);
+  betaij0 = mam4::max(0.0, qn12);
 
   // For the mass transfer, convert from the CMAQ model's coag rate parameters
   // to the MIRAGE2 model's parameters
   const Real dumatk3 =
-      (haero::cube(dgatk) *
-       haero::exp(4.5 * xxlsgat * xxlsgat)); // or unit conversion
-  betaij3 = haero::max(0.0, qv12 / dumatk3);
+      (cube(dgatk) * exp(4.5 * xxlsgat * xxlsgat)); // or unit conversion
+  betaij3 = mam4::max(0.0, qv12 / dumatk3);
 }
 
 // --------------------------------------------------------
@@ -882,11 +880,11 @@ void mam_coag_aer_update(
   const int npca = static_cast<int>(ModeIndex::PrimaryCarbon);
   const int nait = static_cast<int>(ModeIndex::Aitken);
 
-  const Real bijqnumj1 = haero::max(0.0, ybetaij3[0] * qnum_tavg[nacc]);
-  const Real bijqnumj2 = haero::max(0.0, ybetaij3[2] * qnum_tavg[npca]);
+  const Real bijqnumj1 = mam4::max(0.0, ybetaij3[0] * qnum_tavg[nacc]);
+  const Real bijqnumj2 = mam4::max(0.0, ybetaij3[2] * qnum_tavg[npca]);
   Real decay_const = bijqnumj1 + bijqnumj2;
 
-  constexpr Real epsilonx2 = haero::epsilon() * 2.0;
+  constexpr Real epsilonx2 = epsilon() * 2.0;
   Real decay_factor =
       deltat * decay_const; // calculate coag-induced changes only when this
                             // number is not ~= zero
@@ -897,7 +895,7 @@ void mam_coag_aer_update(
     const Real prtn2 = bijqnumj2 / decay_const;
     const Real prtn1 = 1.0 - prtn2;
     const Real tmp_xf =
-        1.0 - haero::exp(-decay_factor); // total fraction lost from aitken mode
+        1.0 - exp(-decay_factor); // total fraction lost from aitken mode
     for (int iaer = 0; iaer < num_aer; ++iaer) {
       const Real tmp_dq =
           tmp_xf * qaer_bgn[iaer][nait]; // total amount lost from aitken mode
@@ -917,14 +915,14 @@ void mam_coag_aer_update(
   //  Mass transfer out of pcarbon mode. Only one coag pair is involved:
   // - coag pair 2: pca + accumulation -> accumulation
   // --------------------------------------------------------------------
-  decay_const = haero::max(
+  decay_const = mam4::max(
       0.0, ybetaij3[1] * qnum_tavg[nacc]); // there is only 1 destination
 
   decay_factor = deltat * decay_const; // calculate coag-induced changes only
                                        // when this number is not ~= zero
   if (decay_factor > epsilonx2) {
     const Real tmp_xf =
-        1.0 - haero::exp(-decay_factor); // total fraction lost from pca mode
+        1.0 - exp(-decay_factor); // total fraction lost from pca mode
     for (int iaer = 0; iaer < num_aer; ++iaer) {
       const Real tmp_dq =
           tmp_xf * qaer_bgn[iaer][npca]; // total amount lost from pca mode
@@ -950,7 +948,7 @@ void update_qnum_for_intra_and_intermodal_coag(const Real bijdtqnumj,
     qnumi_end = qnumi_bgn / (1.0 + (bijdtqnumj + biidt * qnumi_bgn) *
                                        (1.0 + 0.5 * bijdtqnumj));
   } else {
-    const Real tmp_exp = haero::exp(-bijdtqnumj);
+    const Real tmp_exp = exp(-bijdtqnumj);
     qnumi_end = qnumi_bgn * tmp_exp /
                 (1.0 + (biidt * qnumi_bgn / bijdtqnumj) * (1.0 - tmp_exp));
   }
@@ -1008,8 +1006,8 @@ void mam_coag_num_update(Real ybetaij0[Coagulation::max_coagpair],
   // pcarbon mode number loss - approximate analytical solution
   // using average number conc. for accumulaiton mode
   // ----------------------------------------------------------------------------
-  Real bijdtqnumj = haero::max(0.0, deltat * ybetaij0[1] * qnum_tavg[nacc]);
-  Real biidt = haero::max(0.0, deltat * ybetaii0[1]);
+  Real bijdtqnumj = mam4::max(0.0, deltat * ybetaij0[1] * qnum_tavg[nacc]);
+  Real biidt = mam4::max(0.0, deltat * ybetaii0[1]);
 
   update_qnum_for_intra_and_intermodal_coag(bijdtqnumj, biidt, qnum_bgn[npca],
                                             qnum_end[npca]);
@@ -1023,8 +1021,8 @@ void mam_coag_num_update(Real ybetaij0[Coagulation::max_coagpair],
 
   Real bijqnumj = ybetaij0[0] * qnum_tavg[nacc];
   bijqnumj = bijqnumj + ybetaij0[2] * qnum_tavg[npca];
-  bijdtqnumj = haero::max(0.0, deltat * bijqnumj);
-  biidt = haero::max(0.0, deltat * ybetaii0[0]);
+  bijdtqnumj = mam4::max(0.0, deltat * bijqnumj);
+  biidt = mam4::max(0.0, deltat * ybetaii0[0]);
 
   update_qnum_for_intra_and_intermodal_coag(bijdtqnumj, biidt, qnum_bgn[nait],
                                             qnum_end[nait]);
@@ -1062,14 +1060,14 @@ void mam_coag_1subarea(
   Real qaer_bgn[num_aer][num_mode];
   for (int ispec = 0; ispec < num_aer; ++ispec) {
     for (int imode = 0; imode < num_mode; ++imode) {
-      qaer_cur[ispec][imode] = haero::max(0.0, qaer_cur[ispec][imode]);
+      qaer_cur[ispec][imode] = mam4::max(0.0, qaer_cur[ispec][imode]);
       qaer_bgn[ispec][imode] = qaer_cur[ispec][imode];
     }
   }
 
   Real qnum_bgn[num_mode];
   for (int imode = 0; imode < num_mode; ++imode) {
-    qnum_cur[imode] = haero::max(0.0, qnum_cur[imode]);
+    qnum_cur[imode] = mam4::max(0.0, qnum_cur[imode]);
     qnum_bgn[imode] = qnum_cur[imode];
   }
 
@@ -1096,8 +1094,8 @@ void mam_coag_1subarea(
     const Real sigma_aer_dest = mam4::modes(dest_mode).mean_std_dev;
 
     getcoags_wrapper_f(temp, pmid, dgn_awet[src_mode], dgn_awet[dest_mode],
-                       sigma_aer_src, sigma_aer_dest, haero::log(sigma_aer_src),
-                       haero::log(sigma_aer_dest), wetdens[src_mode],
+                       sigma_aer_src, sigma_aer_dest, log(sigma_aer_src),
+                       log(sigma_aer_dest), wetdens[src_mode],
                        wetdens[dest_mode], ybetaij0[ip], ybetaij3[ip],
                        ybetaii0[ip], ybetajj0[ip]);
   }

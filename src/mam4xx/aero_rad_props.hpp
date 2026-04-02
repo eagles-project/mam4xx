@@ -1,37 +1,36 @@
-#ifndef MAM4XX_AER_RAD_PROPS_HPP
-#define MAM4XX_AER_RAD_PROPS_HPP
+#ifndef MAM4XX_AERO_RAD_PROPS_HPP
+#define MAM4XX_AERO_RAD_PROPS_HPP
 
-#include <haero/math.hpp>
-#include <mam4xx/aero_config.hpp>
+#include "aero_config.hpp"
 
-#include <mam4xx/modal_aer_opt.hpp>
-#include <mam4xx/tropopause.hpp>
+#include "modal_aero_opt.hpp"
+#include "tropopause.hpp"
+
 namespace mam4 {
 
-namespace aer_rad_props {
+namespace aero_rad_props {
 
-using ConstColumnView = haero::ConstColumnView;
 // From radconstants
-constexpr int nswbands = modal_aer_opt::nswbands;
-constexpr int nlwbands = modal_aer_opt::nlwbands;
+constexpr int nswbands = modal_aero_opt::nswbands;
+constexpr int nlwbands = modal_aero_opt::nlwbands;
 using View2D = DeviceType::view_2d<Real>;
-using namespace mam4::modal_aer_opt;
+using namespace mam4::modal_aero_opt;
 constexpr Real km_inv_to_m_inv = 0.001; // 1/km to 1/m
 
 constexpr Real shr_const_rgas =
-    haero::Constants::r_gas * 1e3; // Universal gas constant ~ J/K/kmole
-constexpr Real shr_const_mwdair = haero::Constants::molec_weight_dry_air *
+    Constants::r_gas * 1e3; // Universal gas constant ~ J/K/kmole
+constexpr Real shr_const_mwdair = Constants::molec_weight_dry_air *
                                   1e3; // molecular weight dry air ~ kg/kmole
 constexpr Real shr_const_cpdair =
-    haero::Constants::cp_dry_air; // specific heat of dry air   ~ J/kg/K
+    Constants::cp_dry_air; // specific heat of dry air   ~ J/kg/K
 
 constexpr Real cnst_kap =
     (shr_const_rgas / shr_const_mwdair) / shr_const_cpdair; //   R/Cp
 
 constexpr Real cnst_faktor =
-    -haero::Constants::gravity /
-    haero::Constants::r_gas_dry_air; // acceleration of gravity ~ m/s^2/Dry air
-                                     // gas constant     ~ J/K/kg
+    -Constants::gravity /
+    Constants::r_gas_dry_air; // acceleration of gravity ~ m/s^2/Dry air
+                              // gas constant     ~ J/K/kg
 constexpr Real cnst_ka1 = cnst_kap - 1.0;
 
 // Similar to volcanic_cmip_sw,
@@ -240,7 +239,7 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
   tropopause::tropopause_twmo(pmid, pint, temperature, zm, zi, trop_level);
 
   if (trop_level < -1) {
-    Kokkos::abort("aer_rad_props: tropopause not found\n");
+    Kokkos::abort("aero_rad_props: tropopause not found\n");
   }
 
   // Need to ported default_backup, i.e., tropopause_climate
@@ -249,17 +248,17 @@ int tropopause_or_quit(const ConstColumnView &pmid, const ConstColumnView &pint,
 } // tropopause_or_quit
 
 KOKKOS_INLINE_FUNCTION
-void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
-                      mam4::Prognostics &progs, const haero::Atmosphere &atm,
-                      const ConstColumnView &zi, const ConstColumnView &pdel,
-                      const View2D &ssa_cmip6_sw, const View2D &af_cmip6_sw,
-                      const View2D &ext_cmip6_sw_m, const View2D &tau,
-                      const View2D &tau_w, const View2D &tau_w_g,
-                      const View2D &tau_w_f,
-                      // FIXME
-                      const AerosolOpticsDeviceData &aersol_optics_data,
-                      const CalcsizeData &calcsizedata, Real &aodvis,
-                      const View1D &work) {
+void aero_rad_props_sw(const ThreadTeam &team, const Real dt,
+                       mam4::Prognostics &progs, const Atmosphere &atm,
+                       const ConstColumnView &zi, const ConstColumnView &pdel,
+                       const View2D &ssa_cmip6_sw, const View2D &af_cmip6_sw,
+                       const View2D &ext_cmip6_sw_m, const View2D &tau,
+                       const View2D &tau_w, const View2D &tau_w_g,
+                       const View2D &tau_w_f,
+                       // FIXME
+                       const AerosolOpticsDeviceData &aersol_optics_data,
+                       const CalcsizeData &calcsizedata, Real &aodvis,
+                       const View1D &work) {
 
   const ConstColumnView temperature = atm.temperature;
   const ConstColumnView pmid = atm.pressure;
@@ -335,13 +334,13 @@ void aer_rad_props_sw(const ThreadTeam &team, const Real dt,
    call aer_vis_diag_out(lchnk, ncol, nnite, idxnite, tau(:,:,idx_sw_diag))
   */
 
-} // aer_rad_props_sw
+} // aero_rad_props_sw
 
 KOKKOS_INLINE_FUNCTION
-void aer_rad_props_lw(
+void aero_rad_props_lw(
     // inputs
     const ThreadTeam &team, const Real dt, mam4::Prognostics &progs,
-    const haero::Atmosphere &atm, const ConstColumnView &zi,
+    const Atmosphere &atm, const ConstColumnView &zi,
     const ConstColumnView &pdel, const View2D &ext_cmip6_lw_m,
     const AerosolOpticsDeviceData &aersol_optics_data,
     const CalcsizeData &calcsizedata,
@@ -407,9 +406,9 @@ void aer_rad_props_lw(
                                            odap_aer);
   // call outfld('extinct_lw_bnd7',odap_aer(:,:,idx_lw_diag), pcols, lchnk)
 
-} // aer_rad_props_lw
+} // aero_rad_props_lw
 
-} // namespace aer_rad_props
+} // namespace aero_rad_props
 } // end namespace mam4
 
 #endif

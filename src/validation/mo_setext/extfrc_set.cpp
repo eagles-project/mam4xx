@@ -4,18 +4,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
-using namespace mo_setext;
+using namespace mam4::mo_setext;
+
 void extfrc_set(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
     const int pver = mam4::nlev;
     Forcing forcings[extfrc_cnt];
     for (int i = 1; i <= extfrc_cnt; ++i) {
@@ -52,10 +48,10 @@ void extfrc_set(Ensemble *ensemble) {
 
     View2D frcing("frcing", pver, extcnt);
     const int ncol = 1;
-    auto team_policy = ThreadTeamPolicy(ncol, 1u);
+    auto team_policy = mam4::ThreadTeamPolicy(ncol, 1u);
 
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           extfrc_set(team, forcings, frcing);
         });
     std::vector<Real> frcing_out(pver * extcnt, 0.0);

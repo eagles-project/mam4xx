@@ -4,27 +4,23 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void modal_aero_bcscavcoef_init(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     auto dgnum_amode = input.get_array("dgnum_amode");
     auto sigmag_amode = input.get_array("sigmag_amode");
-    using View2DHost = typename HostType::view_2d<Real>;
+    using View2DHost = typename mam4::HostType::view_2d<Real>;
     View2DHost scavimptblvol_host("scavimptblvol_host",
-                                  aero_model::nimptblgrow_total,
-                                  AeroConfig::num_modes());
+                                  mam4::aero_model::nimptblgrow_total,
+                                  mam4::AeroConfig::num_modes());
     View2DHost scavimptblnum_host("scavimptblnum_host",
-                                  aero_model::nimptblgrow_total,
-                                  AeroConfig::num_modes());
+                                  mam4::aero_model::nimptblgrow_total,
+                                  mam4::AeroConfig::num_modes());
 
-    Real aerosol_dry_density[AeroConfig::num_modes()] = {};
+    Real aerosol_dry_density[mam4::AeroConfig::num_modes()] = {};
     // Note: Original code uses the following aerosol densities.
     // sulfate, sulfate, dust, p-organic
     aerosol_dry_density[0] = mam4::mam4_density_so4;
@@ -32,14 +28,14 @@ void modal_aero_bcscavcoef_init(Ensemble *ensemble) {
     aerosol_dry_density[2] = mam4::mam4_density_dst;
     aerosol_dry_density[3] = mam4::mam4_density_pom;
 
-    aero_model::modal_aero_bcscavcoef_init(
+    mam4::aero_model::modal_aero_bcscavcoef_init(
         dgnum_amode.data(), sigmag_amode.data(), aerosol_dry_density,
         scavimptblnum_host, scavimptblvol_host);
     // Note:  scavimptblnum and scavimptblvol were written in row-major order.
     std::vector<Real> values_scavimptblvol;
     std::vector<Real> values_scavimptblnum;
-    for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
-      for (int m = 0; m < aero_model::nimptblgrow_total; ++m) {
+    for (int imode = 0; imode < mam4::AeroConfig::num_modes(); ++imode) {
+      for (int m = 0; m < mam4::aero_model::nimptblgrow_total; ++m) {
         values_scavimptblnum.push_back(scavimptblnum_host(m, imode));
         values_scavimptblvol.push_back(scavimptblvol_host(m, imode));
       }

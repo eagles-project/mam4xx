@@ -1,6 +1,6 @@
 #ifndef MAM4XX_VERTICAL_INTERPOLATION_HPP
 #define MAM4XX_VERTICAL_INTERPOLATION_HPP
-#include <haero/math.hpp>
+
 namespace mam4 {
 
 namespace vertical_interpolation {
@@ -73,12 +73,12 @@ void rebin(const ThreadTeam &team, int nsrc, int ntrg, const ConstView1D &src_x,
         }
       }
       Real y = 0.0;
-      sil = haero::max(sil, 1);
-      siu = haero::min(siu, nsrc);
+      sil = mam4::max(sil, 1);
+      siu = mam4::min(siu, nsrc);
       for (int si = sil; si <= siu; ++si) {
         int si1 = si - 1;
-        Real sl = haero::max(tl, src_x(si1));
-        Real su = haero::min(tu, src_x(si));
+        Real sl = mam4::max(tl, src_x(si1));
+        Real su = mam4::min(tu, src_x(si));
         y += (su - sl) * src(si1);
       }
       EKAT_KERNEL_ASSERT_MSG(trg_x[i + 1] - trg_x[i] != 0.0,

@@ -6,17 +6,11 @@
 #ifndef MAM4XX_KOHLER_HPP
 #define MAM4XX_KOHLER_HPP
 
-#include <mam4xx/mam4.hpp>
-
-#include <haero/constants.hpp>
-#include <haero/floating_point.hpp>
-#include <haero/haero.hpp>
-#include <haero/math.hpp>
-#include <haero/root_finders.hpp>
+#include "floating_point.hpp"
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
 
 namespace mam4 {
-
-using haero::square;
 
 /// Surface tension of liquid water in air as a function of temperature
 ///   @param [in] T temperature [K]
@@ -44,10 +38,10 @@ surface_tension_water_air(double T = Constants::triple_pt_h2o) {
   constexpr double b = -0.625;
   constexpr double mu = 1.256;
   const auto tau = 1 - T / Tc;
-  EKAT_KERNEL_ASSERT(haero::FloatingPoint<double>::in_bounds(
-      T, Constants::triple_pt_h2o - 25, Tc,
-      std::numeric_limits<float>::epsilon()));
-  return B * pow(tau, mu) * (1 + b * tau);
+  EKAT_KERNEL_ASSERT(
+      FloatingPoint<double>::in_bounds(T, Constants::triple_pt_h2o - 25, Tc,
+                                       std::numeric_limits<float>::epsilon()));
+  return B * mam4::pow(tau, mu) * (1 + b * tau);
 }
 
 /// Kelvin coefficient
@@ -143,9 +137,9 @@ struct KohlerPolynomial {
   KOKKOS_INLINE_FUNCTION
   KohlerPolynomial(Real rel_h, Real hygro, Real dry_rad_microns,
                    Real temperature = Constants::triple_pt_h2o)
-      : log_rel_humidity(log(rel_h)), hygroscopicity(hygro),
+      : log_rel_humidity(mam4::log(rel_h)), hygroscopicity(hygro),
         dry_radius(dry_rad_microns),
-        dry_radius_cubed(haero::cube(dry_rad_microns)),
+        dry_radius_cubed(mam4::cube(dry_rad_microns)),
         kelvin_a(kelvin_coefficient(temperature)) {
 
     kelvin_a *= 1e6; /* convert from N to mN and m to micron */
@@ -167,7 +161,7 @@ struct KohlerPolynomial {
   KOKKOS_INLINE_FUNCTION double operator()(const U &wet_radius) const {
     const double rwet = Real(wet_radius);
     const double result =
-        (log_rel_humidity * rwet - kelvin_a) * haero::cube(rwet) +
+        (log_rel_humidity * rwet - kelvin_a) * cube(rwet) +
         ((hygroscopicity - log_rel_humidity) * rwet + kelvin_a) *
             dry_radius_cubed;
     return result;
@@ -201,13 +195,13 @@ struct KohlerPolynomial {
 
   KOKKOS_INLINE_FUNCTION
   bool valid_inputs() const {
-    return valid_inputs(exp(this->log_rel_humidity), this->hygroscopicity,
+    return valid_inputs(mam4::exp(this->log_rel_humidity), this->hygroscopicity,
                         this->dry_radius);
   }
 };
 
 /// Solver for the Kohler polynomial; templated so that it can
-/// use any root finding algorithm from the haero::math namespace.
+/// use any root finding algorithm from the math namespace.
 ///
 /// This solver replaces subroutine modal_aero_kohler from
 /// modal_aero_wateruptake.F90.

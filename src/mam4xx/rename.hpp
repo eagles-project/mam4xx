@@ -6,26 +6,16 @@
 #ifndef MAM4XX_RENAME_HPP
 #define MAM4XX_RENAME_HPP
 
-#include <haero/atmosphere.hpp>
-#include <haero/math.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
+#include "aero_config.hpp"
+#include "atmosphere.hpp"
+#include "conversions.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
+#include "utils.hpp"
 
 #include <ekat_math_utils.hpp>
 
 namespace mam4 {
-
-using haero::cube;
-using haero::erfc;
-using haero::log;
-using haero::max;
-using haero::min;
-using haero::sqrt;
-using Constants = haero::Constants;
-using haero::square;
 
 namespace rename {
 
@@ -127,13 +117,13 @@ void compute_before_growth_dryvol_and_num(
 
   // FIXME: is it feasible that pregrowth_dryvol would be smaller than 1e-25?
   // NOTE: we get rid of this and use safe_divide() in do_inter_mode_transfer()
-  b4_growth_dryvol_bounded =
-      haero::max(b4_growth_dryvol, smallest_dryvol_value);
+  b4_growth_dryvol_bounded = mam4::max(b4_growth_dryvol, smallest_dryvol_value);
 
   // Compute total before growth number [units: #/kmol-air]
   Real b4_growth_qnum = total_interstitial_and_cloudborne(
       is_cloudy, src_mode, qnum_i_cur, qnum_c_cur);
-  b4_growth_qnum = max(zero, b4_growth_qnum); // bound to have minimum of 0
+  b4_growth_qnum =
+      mam4::max(zero, b4_growth_qnum); // bound to have minimum of 0
 
   // // bound number within min and max of the source mode
   b4_growth_qnum_bounded = utils::min_max_bound(
@@ -151,10 +141,10 @@ void compute_tail_fraction(const Real diameter, const Real log_dia_cutoff,
                            Real &tail_fraction) {
   // Compute tail fraction to be used for inter-mode species transfer
   // rename use present function for this if statement.
-  const Real log_diameter = log(diameter) + log_dia_tail_fac;
+  const Real log_diameter = mam4::log(diameter) + log_dia_tail_fac;
   const Real tail = (log_dia_cutoff - log_diameter) * tail_dist_fac;
   // complimentary error function (erfc)
-  tail_fraction = Real(0.5) * erfc(tail);
+  tail_fraction = Real(0.5) * mam4::erfc(tail);
 
 } // end compute_tail_fraction
 
@@ -164,9 +154,9 @@ void compute_tail_fraction(const Real diameter, const Real log_dia_cutoff,
                            const Real tail_dist_fac, Real &tail_fraction) {
   // Compute tail fraction to be used for inter-mode species transfer we use
   // this function if log_dia_tail_fac is not present in the function call
-  const Real tail = (log_dia_cutoff - log(diameter)) * tail_dist_fac;
+  const Real tail = (log_dia_cutoff - mam4::log(diameter)) * tail_dist_fac;
   // complimentary error function (erfc)
-  tail_fraction = Real(0.5) * erfc(tail);
+  tail_fraction = Real(0.5) * mam4::erfc(tail);
 
 } // end compute_tail_fraction
 
@@ -185,7 +175,7 @@ void compute_xfer_fractions(const Real b4_growth_dryvol,
   // BAD CONSTANT
   // 1-eps (this number is little less than 1, e.g. 0.99) // FIXME: this comment
   // is nonsense
-  constexpr Real xferfrac_max = Real(1.0) - 10.0 * haero::epsilon();
+  constexpr Real xferfrac_max = Real(1.0) - 10.0 * epsilon();
   // assume we have fractions to transfer, so we will not skip the rest of the
   // calculations
   is_xfer_frac_zero = false;
@@ -201,12 +191,12 @@ void compute_xfer_fractions(const Real b4_growth_dryvol,
   }
 
   xfer_vol_frac =
-      min(volume_fraction, after_growth_dryvol) / after_growth_dryvol;
-  xfer_vol_frac = min(xfer_vol_frac, xferfrac_max);
+      mam4::min(volume_fraction, after_growth_dryvol) / after_growth_dryvol;
+  xfer_vol_frac = mam4::min(xfer_vol_frac, xferfrac_max);
   xfer_num_frac = after_growth_tail_fr_num - b4_growth_tail_fr_qnum;
 
   // transfer fraction for number cannot exceed that of mass
-  xfer_num_frac = max(zero, min(xfer_num_frac, xfer_vol_frac));
+  xfer_num_frac = mam4::max(zero, mam4::min(xfer_num_frac, xfer_vol_frac));
 
 } // end compute_xfer_fractions
 
@@ -411,7 +401,7 @@ void find_renaming_pairs(
     Real diameter_cutoff[AeroConfig::num_modes()],      // out
     Real ln_dia_cutoff[AeroConfig::num_modes()],
     Real diameter_threshold[AeroConfig::num_modes()]) {
-  const Real sqrt_half = haero::sqrt(0.5);
+  const Real sqrt_half = mam4::sqrt(0.5);
   // (3^3): relaxing 3 * diameter, which makes it 3^3 for volume
   const Real frelax = 27.0;
   const Real zero = 0;
@@ -433,7 +423,7 @@ void find_renaming_pairs(
       diameter_threshold[m] = zero;
 
     } else {
-      const Real alnsg_amode = log(modes(m).mean_std_dev);
+      const Real alnsg_amode = mam4::log(modes(m).mean_std_dev);
       mean_std_dev[m] = modes(m).mean_std_dev;
       // factor for computing distribution tails of the "src mode"
       fmode_dist_tail_fac[m] = sqrt_half / alnsg_amode;
@@ -467,14 +457,15 @@ void find_renaming_pairs(
       // from the source to the destination mode.
       // FIXME: This looks very strange to us, can someone take a look?
       // e.g., taking log then exp, units?
-      const Real alnsg_amode_dest_mode = log(modes(dest_mode).mean_std_dev);
-      diameter_cutoff[src_mode] =
-          sqrt(modes(src_mode).nom_diameter * exp(1.5 * square(alnsg_amode)) *
-               modes(dest_mode).nom_diameter *
-               exp(1.5 * square(alnsg_amode_dest_mode)));
+      const Real alnsg_amode_dest_mode =
+          mam4::log(modes(dest_mode).mean_std_dev);
+      diameter_cutoff[src_mode] = mam4::sqrt(
+          modes(src_mode).nom_diameter * mam4::exp(1.5 * square(alnsg_amode)) *
+          modes(dest_mode).nom_diameter *
+          mam4::exp(1.5 * square(alnsg_amode_dest_mode)));
 
       // log of cutoff
-      ln_dia_cutoff[src_mode] = log(diameter_cutoff[src_mode]);
+      ln_dia_cutoff[src_mode] = mam4::log(diameter_cutoff[src_mode]);
       // 99% of the cutoff
       // FIXME: BAD CONSTANT!
       diameter_threshold[src_mode] = 0.99 * diameter_cutoff[src_mode];

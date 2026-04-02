@@ -6,7 +6,6 @@
 #include <mam4xx/aero_model.hpp>
 
 #include <iostream>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 // This driver computes the binary or ternary rename for the given
@@ -22,7 +21,6 @@ void usage() {
 }
 
 using namespace skywalker;
-using namespace mam4;
 
 // Parameterizations used by the aero_model process.
 void modal_aero_bcscavcoef_init(Ensemble *ensemble);
@@ -35,9 +33,9 @@ int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
   }
-  validation::initialize(argc, argv, validation::default_fpes);
+  mam4::validation::initialize(argc, argv, mam4::validation::default_fpes);
   std::string input_file = argv[1];
-  std::string output_file = validation::output_name(input_file);
+  std::string output_file = mam4::validation::output_name(input_file);
   std::cout << argv[0] << ": reading " << input_file << std::endl;
 
   // Load the ensemble. Any error encountered is fatal.
@@ -78,5 +76,5 @@ int main(int argc, char **argv) {
   ensemble->write(output_file);
 
   // Clean up.
-  validation::finalize(ensemble);
+  mam4::validation::finalize(ensemble);
 }

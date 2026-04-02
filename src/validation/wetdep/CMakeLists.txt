@@ -20,7 +20,7 @@ add_executable(wetdep_driver
                local_precip_production.cpp
                wetdep_resusp.cpp
                wetdepa_v2.cpp)
-target_link_libraries(wetdep_driver skywalker;validation;haero)
+target_link_libraries(wetdep_driver skywalker;validation)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

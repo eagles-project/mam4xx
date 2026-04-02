@@ -3,14 +3,13 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <mam4xx/mam4_constants.hpp>
 #include <mam4xx/nucleation.hpp>
 
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
+
 void mer07_veh02_nuc_mosaic_1box(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters
@@ -50,7 +49,7 @@ void mer07_veh02_nuc_mosaic_1box(Ensemble *ensemble) {
     const Real avogad_ = input.get_array("avogad")[0];
     const Real mw_nh4a_ = input.get_array("mw_nh4a")[0];
     const Real mw_so4a_ = input.get_array("mw_so4a")[0];
-    const Real pi = haero::Constants::pi;
+    const Real pi = mam4::Constants::pi;
 
     int isize_nuc;
     Real qnuma_del;
@@ -61,7 +60,7 @@ void mer07_veh02_nuc_mosaic_1box(Ensemble *ensemble) {
     Real dens_nh4so4a;
     Real dnclusterdt;
 
-    nucleation::mer07_veh02_nuc_mosaic_1box(
+    mam4::nucleation::mer07_veh02_nuc_mosaic_1box(
         newnuc_method_flagaa_, dtnuc_, temp_in_, rh_in_, press_in_, zm_in_,
         pblh_in_, qh2so4_cur_, qh2so4_avg_, qnh3_cur_, h2so4_uptkrate_,
         mw_so4a_host_, nsize_, dplom_sect_, dphim_sect_, rgas_, avogad_,

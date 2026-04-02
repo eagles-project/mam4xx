@@ -4,20 +4,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
-using namespace mo_photo;
+using namespace mam4::mo_photo;
 
 void table_photo(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View1D = typename DeviceType::view_1d<Real>;
-    using View2D = typename DeviceType::view_2d<Real>;
-    using View3D = typename DeviceType::view_3d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
+    using View2D = typename mam4::DeviceType::view_2d<Real>;
+    using View3D = typename mam4::DeviceType::view_3d<Real>;
 
     const int ncol = 4;
 
@@ -154,9 +151,9 @@ void table_photo(Ensemble *ensemble) {
 
     View2D work_cloud_mod("work_cloud_mod", ncol, 5 * pver);
 
-    auto team_policy = ThreadTeamPolicy(ncol, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(ncol, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           const int i = team.league_rank();
           auto photo_icol =
               Kokkos::subview(photo, i, Kokkos::ALL(), Kokkos::ALL());

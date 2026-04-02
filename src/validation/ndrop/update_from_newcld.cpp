@@ -4,21 +4,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace ndrop;
+using namespace mam4::ndrop;
 
 void update_from_newcld(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points
     // validation test from standalone ndrop
     const Real zero = 0;
-    const int ntot_amode = AeroConfig::num_modes();
+    const int ntot_amode = mam4::AeroConfig::num_modes();
 
     const Real cldn_col_in = input.get_array("cldn_col_in")[0];
     const Real cldo_col_in = input.get_array("cldo_col_in")[0];
@@ -29,9 +25,10 @@ void update_from_newcld(Ensemble *ensemble) {
     const auto state_q = input.get_array("state_q_col_in");
     Real qcld = input.get_array("qcld")[0];
 
-    Real exp45logsig[AeroConfig::num_modes()], alogsig[AeroConfig::num_modes()],
-        num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
-        num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
+    Real exp45logsig[mam4::AeroConfig::num_modes()],
+        alogsig[mam4::AeroConfig::num_modes()],
+        num2vol_ratio_min_nmodes[mam4::AeroConfig::num_modes()],
+        num2vol_ratio_max_nmodes[mam4::AeroConfig::num_modes()] = {};
 
     Real aten = zero;
 

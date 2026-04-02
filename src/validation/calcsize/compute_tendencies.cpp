@@ -4,14 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/calcsize.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
 
 void compute_tendencies(Ensemble *ensemble) {
 
@@ -27,11 +22,11 @@ void compute_tendencies(Ensemble *ensemble) {
 
     int nlev = 1;
     Real pblh = 1000;
-    Atmosphere atm = validation::create_atmosphere(nlev, pblh);
-    Surface sfc = validation::create_surface();
-    mam4::Prognostics progs = validation::create_prognostics(nlev);
-    mam4::Diagnostics diags = validation::create_diagnostics(nlev);
-    mam4::Tendencies tends = validation::create_tendencies(nlev);
+    mam4::Atmosphere atm = mam4::validation::create_atmosphere(nlev, pblh);
+    mam4::Surface sfc = mam4::validation::create_surface();
+    mam4::Prognostics progs = mam4::validation::create_prognostics(nlev);
+    mam4::Diagnostics diags = mam4::validation::create_diagnostics(nlev);
+    mam4::Tendencies tends = mam4::validation::create_tendencies(nlev);
 
     mam4::AeroConfig mam4_config;
     mam4::CalcSizeProcess process(mam4_config);
@@ -53,7 +48,7 @@ void compute_tendencies(Ensemble *ensemble) {
       h_prog_n_mode_c(0) = n_c[imode];
       Kokkos::deep_copy(progs.n_mode_c[imode], h_prog_n_mode_c);
 
-      const auto n_spec = num_species_mode(imode);
+      const auto n_spec = mam4::num_species_mode(imode);
       for (int isp = 0; isp < n_spec; ++isp) {
         // correcting index for inputs.
         auto h_prog_aero_i =
@@ -70,9 +65,9 @@ void compute_tendencies(Ensemble *ensemble) {
       } // end species
     }   // end modes
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           process.compute_tendencies(team, t, dt, atm, sfc, progs, diags,
                                      tends);
         });
@@ -80,7 +75,7 @@ void compute_tendencies(Ensemble *ensemble) {
     // Outputs from e3sm are saved in 1D array of 21 inputs.
     int total_number_of_species = 0;
     for (int imode = 0; imode < nmodes; ++imode) {
-      total_number_of_species += num_species_mode(imode);
+      total_number_of_species += mam4::num_species_mode(imode);
     } // end mode
 
     std::vector<Real> tend_aero_i_out(total_number_of_species, -1);
@@ -103,7 +98,7 @@ void compute_tendencies(Ensemble *ensemble) {
       Kokkos::deep_copy(h_tend_num_c, tends.n_mode_c[imode]);
       tend_n_mode_c_out.push_back(h_tend_num_c(0));
 
-      const auto n_spec = num_species_mode(imode);
+      const auto n_spec = mam4::num_species_mode(imode);
       for (int isp = 0; isp < n_spec; ++isp) {
 
         // save outputs using the same indexing from e3sm.

@@ -3,20 +3,18 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef HAERO_VALIDATION_HPP
-#define HAERO_VALIDATION_HPP
+#ifndef MAM4XX_VALIDATION_HPP
+#define MAM4XX_VALIDATION_HPP
 #include <cfenv>
-#include <haero/testing.hpp>
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/mo_photo.hpp>
 #include <skywalker.hpp>
 #include <string>
+#include <testing.hpp>
 
 namespace mam4 {
 
 namespace testing {
-
-using namespace haero::testing;
 
 // these functions are defined in src/tests/testing.cpp and allow the creation
 // of standalone objects that use "managed" ColumnViews

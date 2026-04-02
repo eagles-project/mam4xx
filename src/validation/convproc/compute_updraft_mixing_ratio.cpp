@@ -4,18 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <ekat_assert.hpp>
-#include <iomanip>
-#include <iostream>
 
 #include <mam4xx/convproc.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
+
 using namespace skywalker;
-using namespace mam4;
 
 namespace {
 void get_input(const Input &input, const std::string &name, const int size,
-               std::vector<Real> &host, ColumnView &dev) {
+               std::vector<Real> &host, mam4::ColumnView &dev) {
   host = input.get_array(name);
   EKAT_ASSERT(host.size() == size);
   dev = mam4::validation::create_column_view(size);
@@ -24,15 +21,15 @@ void get_input(const Input &input, const std::string &name, const int size,
     host_view[n] = host[n];
   Kokkos::deep_copy(dev, host_view);
 }
-void get_input(
-    const Input &input, const std::string &name, const int rows, const int cols,
-    std::vector<Real> &host,
-    Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged> &dev) {
+void get_input(const Input &input, const std::string &name, const int rows,
+               const int cols, std::vector<Real> &host,
+               Kokkos::View<Real * [mam4::ConvProc::pcnst_extd],
+                            Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
   EKAT_ASSERT(host.size() == rows * cols);
-  ColumnView col_view = mam4::validation::create_column_view(rows * cols);
-  dev = Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged>(
-      col_view.data(), rows, cols);
+  mam4::ColumnView col_view = mam4::validation::create_column_view(rows * cols);
+  dev = Kokkos::View<Real * [mam4::ConvProc::pcnst_extd],
+                     Kokkos::MemoryUnmanaged>(col_view.data(), rows, cols);
   {
     std::vector<std::vector<Real>> matrix(rows, std::vector<Real>(cols));
     // Col Major layout
@@ -47,7 +44,7 @@ void get_input(
   }
 }
 void set_output(Output &output, const std::string &name, const int rows,
-                std::vector<Real> &host, const ColumnView &dev) {
+                std::vector<Real> &host, const mam4::ColumnView &dev) {
   host.resize(rows);
   auto host_view = Kokkos::create_mirror_view(dev);
   Kokkos::deep_copy(host_view, dev);
@@ -57,7 +54,7 @@ void set_output(Output &output, const std::string &name, const int rows,
 }
 void set_output(Output &output, const std::string &name, const int rows,
                 const int cols, std::vector<Real> &host,
-                const Kokkos::View<Real * [ConvProc::pcnst_extd],
+                const Kokkos::View<Real * [mam4::ConvProc::pcnst_extd],
                                    Kokkos::MemoryUnmanaged> &dev) {
   host.resize(rows * cols);
   auto host_view = Kokkos::create_mirror_view(dev);
@@ -74,7 +71,7 @@ void compute_updraft_mixing_ratio(Ensemble *ensemble) {
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
-    const int pcnst_extd = ConvProc::pcnst_extd;
+    const int pcnst_extd = mam4::ConvProc::pcnst_extd;
     // Fetch ensemble parameters
     const Real dt = input.get("dt");
     EKAT_ASSERT(std::abs(dt - 3600) < 1);
@@ -97,7 +94,7 @@ void compute_updraft_mixing_ratio(Ensemble *ensemble) {
         gath_host, temperature_host, aqfrac_host, icwmr_host, rprd_host,
         fa_u_host, dconudt_wetdep_host, dconudt_activa_host, conu_host;
 
-    ColumnView doconvproc_extd_dev, dp_i_dev, dpdry_i_dev, cldfrac_dev,
+    mam4::ColumnView doconvproc_extd_dev, dp_i_dev, dpdry_i_dev, cldfrac_dev,
         rhoair_i_dev, zmagl_dev, mu_i_dev, eudp_dev, temperature_dev,
         aqfrac_dev, icwmr_dev, rprd_dev, fa_u_dev, scalars_dev;
     Kokkos::View<Real *[pcnst_extd], Kokkos::MemoryUnmanaged> gath_dev,
@@ -124,7 +121,7 @@ void compute_updraft_mixing_ratio(Ensemble *ensemble) {
     fa_u_dev = mam4::validation::create_column_view(nlev);
     {
       dconudt_wetdep_host.resize((nlev + 1) * pcnst_extd);
-      ColumnView dev =
+      mam4::ColumnView dev =
           mam4::validation::create_column_view((nlev + 1) * pcnst_extd);
       dconudt_wetdep_dev =
           Kokkos::View<Real *[pcnst_extd], Kokkos::MemoryUnmanaged>(
@@ -132,7 +129,7 @@ void compute_updraft_mixing_ratio(Ensemble *ensemble) {
     }
     {
       dconudt_activa_host.resize((nlev + 1) * pcnst_extd);
-      ColumnView dev =
+      mam4::ColumnView dev =
           mam4::validation::create_column_view((nlev + 1) * pcnst_extd);
       dconudt_activa_dev =
           Kokkos::View<Real *[pcnst_extd], Kokkos::MemoryUnmanaged>(
@@ -183,7 +180,7 @@ void compute_updraft_mixing_ratio(Ensemble *ensemble) {
 
           Real wcldbase = xx_wcldbase;
           int kcldbase = xx_kcldbase;
-          convproc::compute_updraft_mixing_ratio(
+          mam4::convproc::compute_updraft_mixing_ratio(
               doconvproc_extd, nlev, ktop, kbot, iconvtype, dt, dp_i, dpdry_i,
               cldfrac, rhoair_i, zmagl, dz, mu_i, eudp, gath_dev, temperature,
               aqfrac, icwmr, rprd, fa_u, dconudt_wetdep_dev, dconudt_activa_dev,

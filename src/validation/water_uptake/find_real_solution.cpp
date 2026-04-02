@@ -3,15 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
-#include <mam4xx/aero_modes.hpp>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/water_uptake.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void find_real_solution(Ensemble *ensemble) {
 
@@ -36,7 +31,7 @@ void find_real_solution(Ensemble *ensemble) {
     }
 
     // Call the function
-    water_uptake::find_real_solution(rdry, cx, rwet, nsol);
+    mam4::water_uptake::find_real_solution(rdry, cx, rwet, nsol);
 
     output.set("nsol",
                nsol + 1); // Adding one to account for Fortran vs C indexing

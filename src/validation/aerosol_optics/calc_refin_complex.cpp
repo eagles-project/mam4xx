@@ -4,22 +4,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
-using namespace modal_aer_opt;
-// using namespace ndrop;
+using namespace mam4::modal_aero_opt;
 
 void calc_refin_complex(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     constexpr Real zero = 0;
 
-    using View1DHost = typename HostType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
 
     // lwsw   ! indicator if this is lw or sw lw =0 and sw =1
     // ncol, ilwsw
@@ -85,9 +79,9 @@ void calc_refin_complex(Ensemble *ensemble) {
     Kokkos::deep_copy(crefwsw, crefwsw_host);
 
     View1D outputs("outputs", 5);
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           Real refr = zero;
           Real refi = zero;
           Real dryvol = zero;

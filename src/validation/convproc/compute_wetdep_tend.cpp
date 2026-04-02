@@ -4,15 +4,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/convproc.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 namespace {
 void get_input(const Input &input, const std::string &name, const int size,
-               std::vector<Real> &host, ColumnView &dev) {
+               std::vector<Real> &host, mam4::ColumnView &dev) {
   host = input.get_array(name);
   dev = mam4::validation::create_column_view(size);
 
@@ -26,7 +24,7 @@ void get_input(const Input &input, const std::string &name, const int rows,
                const int cols, std::vector<Real> &host,
                Kokkos::View<Real **, Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
-  ColumnView col_view = mam4::validation::create_column_view(rows * cols);
+  mam4::ColumnView col_view = mam4::validation::create_column_view(rows * cols);
   dev = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(col_view.data(), rows,
                                                        cols);
   EKAT_ASSERT(host.size() == rows * cols);
@@ -61,7 +59,7 @@ void compute_wetdep_tend(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-    const int pcnst_extd = ConvProc::pcnst_extd;
+    const int pcnst_extd = mam4::ConvProc::pcnst_extd;
     const int nlev = 72;
     // Fetch ensemble parameters
 
@@ -76,7 +74,7 @@ void compute_wetdep_tend(Ensemble *ensemble) {
     std::vector<Real> doconvproc_extd_host, dt_u_host, dp_i_host,
         cldfrac_i_host, mu_p_eudp_host, aqfrac_host, icwmr_host, rprd_host,
         conu_host, dconudt_wetdep_host;
-    ColumnView doconvproc_extd_dev, dt_u_dev, dp_i_dev, cldfrac_i_dev,
+    mam4::ColumnView doconvproc_extd_dev, dt_u_dev, dp_i_dev, cldfrac_i_dev,
         mu_p_eudp_dev, aqfrac_dev, icwmr_dev, rprd_dev;
     Kokkos::View<Real **, Kokkos::MemoryUnmanaged> conu_dev, dconudt_wetdep_dev;
 
@@ -119,10 +117,10 @@ void compute_wetdep_tend(Ensemble *ensemble) {
             doconvproc_extd[n] = doconvproc_extd_dev[n];
           }
 
-          convproc::compute_wetdep_tend(doconvproc_extd, dt, dt_u[kk], dp_i[kk],
-                                        cldfrac_i[kk], mu_p_eudp[kk], aqfrac,
-                                        icwmr[kk], rprd[kk], conu[kk],
-                                        dconudt_wetdep[kk]);
+          mam4::convproc::compute_wetdep_tend(
+              doconvproc_extd, dt, dt_u[kk], dp_i[kk], cldfrac_i[kk],
+              mu_p_eudp[kk], aqfrac, icwmr[kk], rprd[kk], conu[kk],
+              dconudt_wetdep[kk]);
           for (int i = 0; i < nlev + 1; ++i) {
             for (int j = 0; j < pcnst_extd; ++j) {
               conu_dev(i, j) = conu[i][j];

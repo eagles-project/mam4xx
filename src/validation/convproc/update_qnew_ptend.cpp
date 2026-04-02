@@ -4,15 +4,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/convproc.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 namespace {
 void get_input(const Input &input, const std::string &name, const int size,
-               std::vector<Real> &host, ColumnView &dev) {
+               std::vector<Real> &host, mam4::ColumnView &dev) {
   host = input.get_array(name);
   dev = mam4::validation::create_column_view(size);
 
@@ -24,7 +22,7 @@ void get_input(const Input &input, const std::string &name, const int size,
 }
 
 void set_output(Output &output, const std::string &name, const int size,
-                std::vector<Real> &host, const ColumnView &dev) {
+                std::vector<Real> &host, const mam4::ColumnView &dev) {
   auto host_view = Kokkos::create_mirror_view(dev);
   Kokkos::deep_copy(host_view, dev);
   for (int n = 0; n < size; ++n)
@@ -39,7 +37,7 @@ void update_qnew_ptend(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-    const int pcnst = aero_model::pcnst;
+    const int pcnst = mam4::aero_model::pcnst;
     // Fetch ensemble parameters
 
     // delta t (model time increment) [s]
@@ -50,7 +48,7 @@ void update_qnew_ptend(Ensemble *ensemble) {
 
     std::vector<Real> dotend_host, dqdt_host, ptend_lq_host, ptend_q_host,
         qnew_host;
-    ColumnView dotend_dev, ptend_lq_dev, dqdt_dev, ptend_q_dev, qnew_dev;
+    mam4::ColumnView dotend_dev, ptend_lq_dev, dqdt_dev, ptend_q_dev, qnew_dev;
 
     get_input(input, "dotend", pcnst, dotend_host, dotend_dev);
     get_input(input, "dqdt", pcnst, dqdt_host, dqdt_dev);
@@ -77,8 +75,8 @@ void update_qnew_ptend(Ensemble *ensemble) {
           for (int j = 0; j < pcnst; ++j)
             qnew[j] = qnew_dev(j);
 
-          convproc::update_qnew_ptend(dotend, is_update_ptend, dqdt, dt,
-                                      ptend_lq, ptend_q, qnew);
+          mam4::convproc::update_qnew_ptend(dotend, is_update_ptend, dqdt, dt,
+                                            ptend_lq, ptend_q, qnew);
           for (int n = 0; n < pcnst; ++n)
             ptend_lq_dev[n] = ptend_lq[n];
           for (int j = 0; j < pcnst; ++j)

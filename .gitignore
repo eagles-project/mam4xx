@@ -1,6 +1,5 @@
 .DS_Store
-.haero
 build/
-haero/
+.cache/
 src/tests/mam4_test_config.hpp
 *.out

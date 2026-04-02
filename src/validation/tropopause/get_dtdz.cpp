@@ -4,13 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void get_dtdz(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -24,8 +20,8 @@ void get_dtdz(Ensemble *ensemble) {
     Real dtdz = 0;
     Real tm = 0;
 
-    tropopause::get_dtdz(pm, pmk, pmid1d_up, pmid1d_down, temp1d_up,
-                         temp1d_down, dtdz, tm);
+    mam4::tropopause::get_dtdz(pm, pmk, pmid1d_up, pmid1d_down, temp1d_up,
+                               temp1d_down, dtdz, tm);
 
     output.set("dtdz", dtdz);
     output.set("tm", tm);

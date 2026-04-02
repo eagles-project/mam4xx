@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void get_air_viscosity(Ensemble *ensemble) {
 
@@ -25,7 +23,7 @@ void get_air_viscosity(Ensemble *ensemble) {
     skywalker::Real temperature = input.get("temperature");
 
     // Compute reynolds number
-    skywalker::Real viscos_air = hetfrz::get_air_viscosity(temperature);
+    skywalker::Real viscos_air = mam4::hetfrz::get_air_viscosity(temperature);
 
     // Store re as an output variable
     output.set("viscos_air", viscos_air);

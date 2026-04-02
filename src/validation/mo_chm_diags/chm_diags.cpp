@@ -4,23 +4,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
-using namespace mo_chm_diags;
+using namespace mam4::mo_chm_diags;
 
 // constexpr const int gas_pcnst = gas_chemistry::gas_pcnst;
 
 void chm_diags(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View1D = typename DeviceType::view_1d<Real>;
-    using ColumnView = haero::ColumnView;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
 
     const int lchnk = 16;
     const int pcnst = 41;
@@ -78,9 +72,9 @@ void chm_diags(Ensemble *ensemble) {
         "bc_a4",  "mom_a4", "num_a4"};
 
     //=========init views==========
-    ColumnView mmr[gas_pcnst];
-    ColumnView vmr[gas_pcnst];
-    ColumnView mmr_tend[gas_pcnst];
+    mam4::ColumnView mmr[gas_pcnst];
+    mam4::ColumnView vmr[gas_pcnst];
+    mam4::ColumnView mmr_tend[gas_pcnst];
     View1DHost mmr_host[gas_pcnst];
     View1DHost vmr_host[gas_pcnst];
     View1DHost mmr_tend_host[gas_pcnst];
@@ -93,9 +87,9 @@ void chm_diags(Ensemble *ensemble) {
     }
 
     for (int mm = 0; mm < gas_pcnst; ++mm) {
-      mmr[mm] = haero::testing::create_column_view(pver);
-      vmr[mm] = haero::testing::create_column_view(pver);
-      mmr_tend[mm] = haero::testing::create_column_view(pver);
+      mmr[mm] = mam4::testing::create_column_view(pver);
+      vmr[mm] = mam4::testing::create_column_view(pver);
+      mmr_tend[mm] = mam4::testing::create_column_view(pver);
 
       mmr_host[mm] = View1DHost("mmr_host", pver);
       vmr_host[mm] = View1DHost("vmr_host", pver);
@@ -119,14 +113,14 @@ void chm_diags(Ensemble *ensemble) {
       Kokkos::deep_copy(mmr_tend[mm], mmr_tend_host[mm]);
     }
 
-    ColumnView pdel;
-    ColumnView pdeldry;
+    mam4::ColumnView pdel;
+    mam4::ColumnView pdeldry;
     auto pdel_host =
         View1DHost((Real *)pdel_in.data(), pver); // puts data into host
     auto pdeldry_host =
         View1DHost((Real *)pdeldry_in.data(), pver); // puts data into host
-    pdel = haero::testing::create_column_view(pver);
-    pdeldry = haero::testing::create_column_view(pver);
+    pdel = mam4::testing::create_column_view(pver);
+    pdeldry = mam4::testing::create_column_view(pver);
     Kokkos::deep_copy(pdel, pdel_host);
     Kokkos::deep_copy(pdeldry, pdeldry_host);
 
@@ -137,31 +131,31 @@ void chm_diags(Ensemble *ensemble) {
     View1D depvel("depvel", gas_pcnst);
     View1D depflx("depflx", gas_pcnst);
 
-    auto vmr_nox = haero::testing::create_column_view(pver);
-    auto vmr_noy = haero::testing::create_column_view(pver);
-    auto vmr_clox = haero::testing::create_column_view(pver);
-    auto vmr_cloy = haero::testing::create_column_view(pver);
-    auto vmr_brox = haero::testing::create_column_view(pver);
-    auto vmr_broy = haero::testing::create_column_view(pver);
+    auto vmr_nox = mam4::testing::create_column_view(pver);
+    auto vmr_noy = mam4::testing::create_column_view(pver);
+    auto vmr_clox = mam4::testing::create_column_view(pver);
+    auto vmr_cloy = mam4::testing::create_column_view(pver);
+    auto vmr_brox = mam4::testing::create_column_view(pver);
+    auto vmr_broy = mam4::testing::create_column_view(pver);
 
-    auto mmr_noy = haero::testing::create_column_view(pver);
-    auto mmr_sox = haero::testing::create_column_view(pver);
-    auto mmr_nhx = haero::testing::create_column_view(pver);
-    auto net_chem = haero::testing::create_column_view(pver);
+    auto mmr_noy = mam4::testing::create_column_view(pver);
+    auto mmr_sox = mam4::testing::create_column_view(pver);
+    auto mmr_nhx = mam4::testing::create_column_view(pver);
+    auto net_chem = mam4::testing::create_column_view(pver);
 
-    auto mass_bc = haero::testing::create_column_view(pver);
-    auto mass_dst = haero::testing::create_column_view(pver);
-    auto mass_mom = haero::testing::create_column_view(pver);
-    auto mass_ncl = haero::testing::create_column_view(pver);
+    auto mass_bc = mam4::testing::create_column_view(pver);
+    auto mass_dst = mam4::testing::create_column_view(pver);
+    auto mass_mom = mam4::testing::create_column_view(pver);
+    auto mass_ncl = mam4::testing::create_column_view(pver);
 
-    auto mass_pom = haero::testing::create_column_view(pver);
-    auto mass_so4 = haero::testing::create_column_view(pver);
-    auto mass_soa = haero::testing::create_column_view(pver);
+    auto mass_pom = mam4::testing::create_column_view(pver);
+    auto mass_so4 = mam4::testing::create_column_view(pver);
+    auto mass_soa = mam4::testing::create_column_view(pver);
 
-    auto area = haero::testing::create_column_view(1);
-    auto mass = haero::testing::create_column_view(pver);
-    auto drymass = haero::testing::create_column_view(pver);
-    auto ozone_layer = haero::testing::create_column_view(pver);
+    auto area = mam4::testing::create_column_view(1);
+    auto mass = mam4::testing::create_column_view(pver);
+    auto drymass = mam4::testing::create_column_view(pver);
+    auto ozone_layer = mam4::testing::create_column_view(pver);
 
     auto vmr_nox_host = View1DHost("vmr_nox_host", pver);
     auto vmr_noy_host = View1DHost("vmr_noy_host", pver);
@@ -205,10 +199,10 @@ void chm_diags(Ensemble *ensemble) {
     Kokkos::deep_copy(area, 0.029210577134805595);
 
     //===fldcw===
-    ColumnView fldcw[pcnst];
+    mam4::ColumnView fldcw[pcnst];
     View1DHost fldcw_host[pcnst];
     for (int nn = 0; nn < pcnst; ++nn) {
-      fldcw[nn] = haero::testing::create_column_view(pver);
+      fldcw[nn] = mam4::testing::create_column_view(pver);
       fldcw_host[nn] = View1DHost("fldcw_host", pver);
     }
 
@@ -268,17 +262,17 @@ void chm_diags(Ensemble *ensemble) {
         250092.672000, 1.007400,   12.011000,     12.011000, 250092.672000,
         1.007400};
 
-    auto ozone_col = haero::testing::create_column_view(1);
-    auto ozone_trop = haero::testing::create_column_view(1);
-    auto ozone_strat = haero::testing::create_column_view(1);
-    auto df_noy = haero::testing::create_column_view(1);
-    auto df_sox = haero::testing::create_column_view(1);
-    auto df_nhx = haero::testing::create_column_view(1);
+    auto ozone_col = mam4::testing::create_column_view(1);
+    auto ozone_trop = mam4::testing::create_column_view(1);
+    auto ozone_strat = mam4::testing::create_column_view(1);
+    auto df_noy = mam4::testing::create_column_view(1);
+    auto df_sox = mam4::testing::create_column_view(1);
+    auto df_nhx = mam4::testing::create_column_view(1);
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          mo_chm_diags::chm_diags(
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
+          mam4::mo_chm_diags::chm_diags(
               team, lchnk, ncol, id_o3, vmr, mmr, depvel, depflx, mmr_tend,
               pdel, pdeldry, fldcw, ltrop, area, sox_species, aer_species,
               adv_mass, solsym, mass, drymass, ozone_layer, ozone_col,

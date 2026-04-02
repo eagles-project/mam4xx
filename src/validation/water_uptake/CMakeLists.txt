@@ -21,7 +21,7 @@ add_executable(water_uptake_driver
                modal_aero_water_uptake_dr_col.cpp
                water_uptake_wetdens.cpp
                )
-target_link_libraries(water_uptake_driver skywalker;validation;haero)
+target_link_libraries(water_uptake_driver skywalker;validation)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
  configure_file(
@@ -35,17 +35,17 @@ target_link_libraries(water_uptake_driver skywalker;validation;haero)
 set(TestLabel "water_uptake")
 
 foreach (input
-          find_real_solution
-          makoh_quartic
-          modal_aero_kohler
-          modal_aero_water_uptake_rh_clearair
-          modal_aero_water_uptake_wetaer
-          modal_aero_water_uptake_dryaer
-          modal_aero_water_uptake_dr
-          modal_aero_water_uptake_dr_wetdens
-          water_uptake_wetdens
-          modal_aero_water_uptake_dr_ts_355_col
-          )
+         find_real_solution
+         makoh_quartic
+         modal_aero_kohler
+         modal_aero_water_uptake_rh_clearair
+         modal_aero_water_uptake_wetaer
+         modal_aero_water_uptake_dryaer
+         modal_aero_water_uptake_dr
+         modal_aero_water_uptake_dr_wetdens
+         water_uptake_wetdens
+         modal_aero_water_uptake_dr_ts_355_col
+        )
 
   # copy the baseline file into place; is the skywalker file produced by fortran code?
    configure_file(

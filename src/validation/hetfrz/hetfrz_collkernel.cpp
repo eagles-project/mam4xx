@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void collkernel(Ensemble *ensemble) {
 
@@ -70,8 +68,9 @@ void collkernel(Ensemble *ensemble) {
     skywalker::Real Kcoll_dust_a1 = 0.0;
     skywalker::Real Kcoll_dust_a3 = 0.0;
 
-    hetfrz::collkernel(temperature, pressure, eswtr, r3ls, r_bc, r_dust_a1,
-                       r_dust_a3, Kcoll_bc, Kcoll_dust_a1, Kcoll_dust_a3);
+    mam4::hetfrz::collkernel(temperature, pressure, eswtr, r3ls, r_bc,
+                             r_dust_a1, r_dust_a3, Kcoll_bc, Kcoll_dust_a1,
+                             Kcoll_dust_a3);
 
     // Store collection kernels as output
     output.set("Kcoll_bc", Kcoll_bc);

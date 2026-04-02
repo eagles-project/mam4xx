@@ -6,9 +6,9 @@
 #ifndef MAM4XX_KOHLER_VERIFICATION_HPP
 #define MAM4XX_KOHLER_VERIFICATION_HPP
 
-#include <haero/haero.hpp>
+#include <mam4xx/mam4.hpp>
 
-#ifdef HAERO_DOUBLE_PRECISION
+#ifdef MAM4XX_DOUBLE_PRECISION
 #include <mam4xx/kohler.hpp>
 
 namespace mam4 {
@@ -32,11 +32,10 @@ struct KohlerVerification {
     @param [in] n number of trials for each of the 3 parameters
   */
   explicit KohlerVerification(const int nn)
-      : n(nn), n_trials(haero::cube(nn)),
-        true_sol("kohler_true_sol", haero::cube(nn)),
-        relative_humidity("relative_humidity", haero::cube(nn)),
-        hygroscopicity("hygroscopicity", haero::cube(nn)),
-        dry_radius("dry_radius", haero::cube(nn)),
+      : n(nn), n_trials(cube(nn)), true_sol("kohler_true_sol", cube(nn)),
+        relative_humidity("relative_humidity", cube(nn)),
+        hygroscopicity("hygroscopicity", cube(nn)),
+        dry_radius("dry_radius", cube(nn)),
         rhmin(KohlerPolynomial::rel_humidity_min),
         drh((KohlerPolynomial::rel_humidity_max -
              KohlerPolynomial::rel_humidity_min) /

@@ -3,13 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/drydep.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void modal_aero_turb_drydep_velocity(Ensemble *ensemble) {
 
@@ -42,7 +39,7 @@ void modal_aero_turb_drydep_velocity(Ensemble *ensemble) {
     }
 
     auto to_dev = [](const std::vector<Real> &vec) {
-      ColumnView dev = mam4::validation::create_column_view(vec.size());
+      mam4::ColumnView dev = mam4::validation::create_column_view(vec.size());
       auto host = Kokkos::create_mirror_view(dev);
       for (int i = 0; i < vec.size(); ++i)
         host[i] = vec[i];
@@ -67,7 +64,7 @@ void modal_aero_turb_drydep_velocity(Ensemble *ensemble) {
         1,
         KOKKOS_LAMBDA(const int, DryTrb &vlc) {
           Real vlc_trb, vlc_dry;
-          drydep::modal_aero_turb_drydep_velocity(
+          mam4::drydep::modal_aero_turb_drydep_velocity(
               moment, fraction_land_use.data(), radius_max, tair, pmid,
               radius_part, density_part, sig_part, fricvel, ram1, vlc_grv,
               vlc_trb, vlc_dry);

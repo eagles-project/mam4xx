@@ -10,10 +10,7 @@
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
 
-#include <map>
-#include <sstream>
-
-using namespace mam4;
+using mam4::Real;
 
 TEST_CASE("aero_modes_test", "") {
 
@@ -30,18 +27,18 @@ TEST_CASE("aero_modes_test", "") {
 
   for (int m = 0; m < 4; ++m) {
     for (int s = 0; s < 7; ++s) {
-      const int aero_idx = aerosol_index_for_mode(static_cast<ModeIndex>(m),
-                                                  static_cast<AeroId>(s));
+      const int aero_idx = aerosol_index_for_mode(
+          static_cast<mam4::ModeIndex>(m), static_cast<mam4::AeroId>(s));
       logger.debug("m = {} s = {} aero_idx = {}", m, s, aero_idx);
       if (aero_idx >= 0) {
         logger.info("{} mode contains aerosol species \"{}\".",
-                    mode_str(static_cast<ModeIndex>(m)),
-                    aero_id_str(static_cast<AeroId>(s)));
+                    mode_str(static_cast<mam4::ModeIndex>(m)),
+                    aero_id_str(static_cast<mam4::AeroId>(s)));
         REQUIRE(mode_has_spec[m][s]);
       } else {
         logger.info("{} mode does not contain aerosol species \"{}\".",
-                    mode_str(static_cast<ModeIndex>(m)),
-                    aero_id_str(static_cast<AeroId>(s)));
+                    mode_str(static_cast<mam4::ModeIndex>(m)),
+                    aero_id_str(static_cast<mam4::AeroId>(s)));
         REQUIRE(!mode_has_spec[m][s]);
       }
     }

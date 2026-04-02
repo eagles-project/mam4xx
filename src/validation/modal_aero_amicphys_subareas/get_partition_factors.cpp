@@ -4,14 +4,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
+
 void get_partition_factors(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters
@@ -27,8 +23,8 @@ void get_partition_factors(Ensemble *ensemble) {
       }
     }
 
-    using View1D = typename DeviceType::view_1d<Real>;
-    using View1DHost = typename HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
 
     const Real qgcm_intrst = input.get_array("qgcm_intrst")[0];
     const Real qgcm_cldbrn = input.get_array("qgcm_cldbrn")[0];
@@ -44,9 +40,9 @@ void get_partition_factors(Ensemble *ensemble) {
     Kokkos::deep_copy(factor_cldy_h, 0.0);
     Kokkos::deep_copy(factor_cldy_d, 0.0);
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           Real factor_clea_in = 0.0;
           Real factor_cldy_in = 0.0;
           mam4::microphysics::get_partition_factors(

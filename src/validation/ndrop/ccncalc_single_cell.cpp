@@ -4,22 +4,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void ccncalc_single_cell(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // number of vertical points.
     // validation test from standalone ndrop.
     const Real zero = 0;
-    const int maxd_aspectype = ndrop::maxd_aspectype;
-    const int ntot_amode = AeroConfig::num_modes();
-    const int psat = ndrop::psat;
+    const int maxd_aspectype = mam4::ndrop::maxd_aspectype;
+    const int ntot_amode = mam4::AeroConfig::num_modes();
+    const int psat = mam4::ndrop::psat;
 
     const auto state_q = input.get_array("state_q");
 
@@ -56,15 +52,16 @@ void ccncalc_single_cell(Ensemble *ensemble) {
     const auto numptr_amode_db = input.get_array("numptr_amode");
     const auto nspec_amode_db = input.get_array("nspec_amode");
 
-    Real exp45logsig[AeroConfig::num_modes()], alogsig[AeroConfig::num_modes()],
-        num2vol_ratio_min_nmodes[AeroConfig::num_modes()],
-        num2vol_ratio_max_nmodes[AeroConfig::num_modes()] = {};
+    Real exp45logsig[mam4::AeroConfig::num_modes()],
+        alogsig[mam4::AeroConfig::num_modes()],
+        num2vol_ratio_min_nmodes[mam4::AeroConfig::num_modes()],
+        num2vol_ratio_max_nmodes[mam4::AeroConfig::num_modes()] = {};
 
     Real aten = zero;
 
-    ndrop::ndrop_init(exp45logsig, alogsig, aten,
-                      num2vol_ratio_min_nmodes,  // voltonumbhi_amode
-                      num2vol_ratio_max_nmodes); // voltonumblo_amode
+    mam4::ndrop::ndrop_init(exp45logsig, alogsig, aten,
+                            num2vol_ratio_min_nmodes,  // voltonumbhi_amode
+                            num2vol_ratio_max_nmodes); // voltonumblo_amode
 
     int numptr_amode[ntot_amode];
     int nspec_amode[ntot_amode];
@@ -73,11 +70,11 @@ void ccncalc_single_cell(Ensemble *ensemble) {
       nspec_amode[i] = nspec_amode_db[i];
     }
     std::vector<Real> ccn(psat, zero);
-    ndrop::ccncalc(state_q.data(), tair, qcldbrn, qcldbrn_num.data(),
-                   air_density, lspectype_amode, specdens_amode, spechygro,
-                   lmassptr_amode, num2vol_ratio_min_nmodes,
-                   num2vol_ratio_max_nmodes, numptr_amode, nspec_amode,
-                   exp45logsig, alogsig, ccn.data());
+    mam4::ndrop::ccncalc(state_q.data(), tair, qcldbrn, qcldbrn_num.data(),
+                         air_density, lspectype_amode, specdens_amode,
+                         spechygro, lmassptr_amode, num2vol_ratio_min_nmodes,
+                         num2vol_ratio_max_nmodes, numptr_amode, nspec_amode,
+                         exp45logsig, alogsig, ccn.data());
 
     output.set("ccn", ccn);
   });

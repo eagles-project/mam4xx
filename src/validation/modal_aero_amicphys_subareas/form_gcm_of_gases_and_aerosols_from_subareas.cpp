@@ -6,14 +6,10 @@
 #include <catch2/catch.hpp>
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
+
 void form_gcm_of_gases_and_aerosols_from_subareas(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters
@@ -30,10 +26,10 @@ void form_gcm_of_gases_and_aerosols_from_subareas(Ensemble *ensemble) {
       }
     }
 
-    using View1D = typename DeviceType::view_1d<Real>;
-    using View1DHost = typename HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
 
-    constexpr int subarea_max = microphysics::maxsubarea();
+    constexpr int subarea_max = mam4::microphysics::maxsubarea();
 
     using mam4::gas_chemistry::gas_pcnst;
 
@@ -80,9 +76,9 @@ void form_gcm_of_gases_and_aerosols_from_subareas(Ensemble *ensemble) {
       }
     }
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           Real qgcm[gas_pcnst] = {0.0};
           Real qqcwgcm[gas_pcnst] = {0.0};
           mam4::microphysics::form_gcm_of_gases_and_aerosols_from_subareas(

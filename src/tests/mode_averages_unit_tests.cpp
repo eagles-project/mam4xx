@@ -8,21 +8,20 @@
 
 #include <mam4xx/aero_config.hpp>
 #include <mam4xx/aero_modes.hpp>
+#include <mam4xx/atmosphere.hpp>
 #include <mam4xx/conversions.hpp>
+#include <mam4xx/floating_point.hpp>
 #include <mam4xx/mam4_types.hpp>
 #include <mam4xx/mode_dry_particle_size.hpp>
 #include <mam4xx/mode_hygroscopicity.hpp>
 #include <mam4xx/mode_wet_particle_size.hpp>
-
-#include <haero/atmosphere.hpp>
-#include <haero/floating_point.hpp>
 
 #include <catch2/catch.hpp>
 
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
 
-using namespace mam4;
+using mam4::Real;
 
 TEST_CASE("modal_averages", "") {
   ekat::Comm comm;
@@ -35,8 +34,8 @@ TEST_CASE("modal_averages", "") {
   /// mixing ratios.
   /// These values are chosen for simplicity; they roughly match
   /// (within an order of magnitude) realistic values.
-  Prognostics progs = testing::create_prognostics(nlev);
-  Diagnostics diags = testing::create_diagnostics(nlev);
+  mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
+  mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
 
   const Real number_mixing_ratio = 2e7;
   const Real mass_mixing_ratio = 3e-8;
@@ -44,8 +43,8 @@ TEST_CASE("modal_averages", "") {
     Kokkos::deep_copy(progs.n_mode_i[m], number_mixing_ratio);
     Kokkos::deep_copy(progs.n_mode_c[m], number_mixing_ratio);
     for (int aid = 0; aid < 7; ++aid) {
-      const int s = aerosol_index_for_mode(static_cast<ModeIndex>(m),
-                                           static_cast<AeroId>(aid));
+      const int s = aerosol_index_for_mode(static_cast<mam4::ModeIndex>(m),
+                                           static_cast<mam4::AeroId>(aid));
       if (s >= 0) {
         auto h_q_view_i = Kokkos::create_mirror_view(progs.q_aero_i[m][s]);
         auto h_q_view_c = Kokkos::create_mirror_view(progs.q_aero_c[m][s]);
@@ -72,22 +71,22 @@ TEST_CASE("modal_averages", "") {
     for (int m = 0; m < 4; ++m) {
       Real dry_vol = 0.0;
       for (int aid = 0; aid < 7; ++aid) {
-        const int s = aerosol_index_for_mode(static_cast<ModeIndex>(m),
-                                             static_cast<AeroId>(aid));
+        const int s = aerosol_index_for_mode(static_cast<mam4::ModeIndex>(m),
+                                             static_cast<mam4::AeroId>(aid));
         if (s >= 0) {
-          dry_vol += mass_mixing_ratio / aero_species(s).density;
+          dry_vol += mass_mixing_ratio / mam4::aero_species(s).density;
         }
       }
       const Real mean_vol = dry_vol / number_mixing_ratio;
       dry_aero_mean_particle_diam[m] =
-          conversions::mean_particle_diameter_from_volume(
-              mean_vol, modes(m).mean_std_dev);
+          mam4::conversions::mean_particle_diameter_from_volume(
+              mean_vol, mam4::modes(m).mean_std_dev);
       dry_aero_mean_particle_diam_total[m] =
-          conversions::mean_particle_diameter_from_volume(
-              2 * mean_vol, modes(m).mean_std_dev);
+          mam4::conversions::mean_particle_diameter_from_volume(
+              2 * mean_vol, mam4::modes(m).mean_std_dev);
 
       logger.info("{} mode has mean particle diameter {}",
-                  mode_str(static_cast<ModeIndex>(m)),
+                  mode_str(static_cast<mam4::ModeIndex>(m)),
                   dry_aero_mean_particle_diam[m]);
     }
 
@@ -112,8 +111,8 @@ TEST_CASE("modal_averages", "") {
                         diags.dry_geometric_mean_diameter_total[m]);
 
       for (int k = 0; k < nlev; ++k) {
-        if (!FloatingPoint<Real>::equiv(h_diam_i(k),
-                                        dry_aero_mean_particle_diam[m])) {
+        if (!mam4::FloatingPoint<Real>::equiv(h_diam_i(k),
+                                              dry_aero_mean_particle_diam[m])) {
           logger.debug(
               "h_diam_i({}) = {}, dry_aero_mean_particle_diam[{}] = {}", k,
               h_diam_i(k), m, dry_aero_mean_particle_diam[m]);
@@ -121,24 +120,24 @@ TEST_CASE("modal_averages", "") {
           logger.debug("h_diam_c({}) = {}, h_diam_total({}) = {}", k,
                        h_diam_c(k), k, h_diam_total(k));
         }
-        if (!FloatingPoint<Real>::equiv(h_diam_c(k),
-                                        dry_aero_mean_particle_diam[m])) {
+        if (!mam4::FloatingPoint<Real>::equiv(h_diam_c(k),
+                                              dry_aero_mean_particle_diam[m])) {
           logger.debug(
               "h_diam_c({}) = {}, dry_aero_mean_particle_diam[{}] = {}", k,
               h_diam_c(k), m, dry_aero_mean_particle_diam[m]);
         }
-        if (!FloatingPoint<Real>::equiv(h_diam_total(k),
-                                        dry_aero_mean_particle_diam_total[m])) {
+        if (!mam4::FloatingPoint<Real>::equiv(
+                h_diam_total(k), dry_aero_mean_particle_diam_total[m])) {
           logger.debug("h_diam_total({}) = {}, "
                        "dry_aero_mean_particle_diam_total[{}] = {}",
                        k, h_diam_total(k), m,
                        dry_aero_mean_particle_diam_total[m]);
         }
-        REQUIRE(FloatingPoint<Real>::equiv(h_diam_i(k),
-                                           dry_aero_mean_particle_diam[m]));
-        REQUIRE(FloatingPoint<Real>::equiv(h_diam_c(k),
-                                           dry_aero_mean_particle_diam[m]));
-        REQUIRE(FloatingPoint<Real>::equiv(
+        REQUIRE(mam4::FloatingPoint<Real>::equiv(
+            h_diam_i(k), dry_aero_mean_particle_diam[m]));
+        REQUIRE(mam4::FloatingPoint<Real>::equiv(
+            h_diam_c(k), dry_aero_mean_particle_diam[m]));
+        REQUIRE(mam4::FloatingPoint<Real>::equiv(
             h_diam_total(k), dry_aero_mean_particle_diam_total[m]));
       }
     }
@@ -151,17 +150,17 @@ TEST_CASE("modal_averages", "") {
       Real dry_vol = 0.0;
       Real hyg = 0.0;
       for (int aid = 0; aid < 7; ++aid) {
-        const int s = aerosol_index_for_mode(static_cast<ModeIndex>(m),
-                                             static_cast<AeroId>(aid));
+        const int s = aerosol_index_for_mode(static_cast<mam4::ModeIndex>(m),
+                                             static_cast<mam4::AeroId>(aid));
         if (s >= 0) {
-          dry_vol += mass_mixing_ratio / aero_species(s).density;
-          hyg += mass_mixing_ratio * aero_species(s).hygroscopicity /
-                 aero_species(s).density;
+          dry_vol += mass_mixing_ratio / mam4::aero_species(s).density;
+          hyg += mass_mixing_ratio * mam4::aero_species(s).hygroscopicity /
+                 mam4::aero_species(s).density;
         }
       }
       hygro[m] = hyg / dry_vol;
       logger.info("{} mode has hygroscopicity {}",
-                  mode_str(static_cast<ModeIndex>(m)), hygro[m]);
+                  mode_str(static_cast<mam4::ModeIndex>(m)), hygro[m]);
     }
 
     Kokkos::parallel_for(
@@ -172,11 +171,11 @@ TEST_CASE("modal_averages", "") {
       auto h_hyg = Kokkos::create_mirror_view(diags.hygroscopicity[m]);
       Kokkos::deep_copy(h_hyg, diags.hygroscopicity[m]);
       for (int k = 0; k < nlev; ++k) {
-        if (!FloatingPoint<Real>::equiv(h_hyg(k), hygro[m])) {
+        if (!mam4::FloatingPoint<Real>::equiv(h_hyg(k), hygro[m])) {
           logger.debug("h_hyg({}) = {}, hygro[{}] = {}", k, h_hyg(k), m,
                        hygro[m]);
         }
-        REQUIRE(FloatingPoint<Real>::equiv(h_hyg(k), hygro[m]));
+        REQUIRE(mam4::FloatingPoint<Real>::equiv(h_hyg(k), hygro[m]));
       }
     }
     logger.info("hygroscopicity tests complete.");
@@ -195,18 +194,19 @@ TEST_CASE("modal_averages", "") {
         0.015; // specific humidity at surface [kg h2o / kg moist air]
     const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
     const Real pblh = 0;
-    Atmosphere atm =
-        init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
+    mam4::Atmosphere atm =
+        mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
 
     const auto w = atm.vapor_mixing_ratio;
     const auto T = atm.temperature;
     const auto P = atm.pressure;
-    ColumnView relative_humidity = testing::create_column_view(nlev);
+    mam4::ColumnView relative_humidity =
+        mam4::testing::create_column_view(nlev);
     Kokkos::parallel_for(
         "compute relative humidity", nlev, KOKKOS_LAMBDA(const int k) {
           relative_humidity(k) =
-              conversions::relative_humidity_from_vapor_mixing_ratio(w(k), T(k),
-                                                                     P(k));
+              mam4::conversions::relative_humidity_from_vapor_mixing_ratio(
+                  w(k), T(k), P(k));
         });
 
     typedef typename Kokkos::MinMax<Real>::value_type MinMax;
@@ -240,9 +240,10 @@ TEST_CASE("modal_averages", "") {
       Kokkos::deep_copy(h_dry_diam, diags.dry_geometric_mean_diameter_i[m]);
       Kokkos::deep_copy(h_wet_diam, diags.wet_geometric_mean_diameter_i[m]);
 
-      if (!FloatingPoint<Real>::in_bounds(
-              h_dry_diam(0) * 1e3, KohlerPolynomial::dry_radius_min_microns,
-              KohlerPolynomial::dry_radius_max_microns)) {
+      if (!mam4::FloatingPoint<Real>::in_bounds(
+              h_dry_diam(0) * 1e3,
+              mam4::KohlerPolynomial::dry_radius_min_microns,
+              mam4::KohlerPolynomial::dry_radius_max_microns)) {
 
         logger.error("dry particle size out of bounds for mode {}", m);
       }

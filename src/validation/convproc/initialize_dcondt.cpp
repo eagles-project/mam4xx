@@ -4,18 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <ekat_assert.hpp>
-#include <iomanip>
-#include <iostream>
 
 #include <mam4xx/convproc.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
+
 using namespace skywalker;
-using namespace mam4;
 
 namespace {
 void get_input(const Input &input, const std::string &name, const int size,
-               std::vector<Real> &host, ColumnView &dev) {
+               std::vector<Real> &host, mam4::ColumnView &dev) {
   host = input.get_array(name);
   EKAT_ASSERT(host.size() == size);
   dev = mam4::validation::create_column_view(size);
@@ -24,15 +21,15 @@ void get_input(const Input &input, const std::string &name, const int size,
     host_view[n] = host[n];
   Kokkos::deep_copy(dev, host_view);
 }
-void get_input(
-    const Input &input, const std::string &name, const int rows, const int cols,
-    std::vector<Real> &host,
-    Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged> &dev) {
+void get_input(const Input &input, const std::string &name, const int rows,
+               const int cols, std::vector<Real> &host,
+               Kokkos::View<Real * [mam4::ConvProc::pcnst_extd],
+                            Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
   EKAT_ASSERT(host.size() == rows * cols);
-  ColumnView col_view = mam4::validation::create_column_view(rows * cols);
-  dev = Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged>(
-      col_view.data(), rows, cols);
+  mam4::ColumnView col_view = mam4::validation::create_column_view(rows * cols);
+  dev = Kokkos::View<Real * [mam4::ConvProc::pcnst_extd],
+                     Kokkos::MemoryUnmanaged>(col_view.data(), rows, cols);
   {
     std::vector<std::vector<Real>> matrix(rows, std::vector<Real>(cols));
     // Col Major layout
@@ -48,7 +45,7 @@ void get_input(
 }
 void set_output(Output &output, const std::string &name, const int rows,
                 const int cols, std::vector<Real> &host,
-                const Kokkos::View<Real * [ConvProc::pcnst_extd],
+                const Kokkos::View<Real * [mam4::ConvProc::pcnst_extd],
                                    Kokkos::MemoryUnmanaged> &dev) {
   host.resize(rows * cols);
   auto host_view = Kokkos::create_mirror_view(dev);
@@ -60,7 +57,7 @@ void set_output(Output &output, const std::string &name, const int rows,
 }
 void set_host(const std::string &name, const int rows, const int cols,
               std::vector<Real> &host,
-              const Kokkos::View<Real * [ConvProc::pcnst_extd],
+              const Kokkos::View<Real * [mam4::ConvProc::pcnst_extd],
                                  Kokkos::MemoryUnmanaged> &dev) {
   host.resize(rows * cols);
   auto host_view = Kokkos::create_mirror_view(dev);
@@ -89,13 +86,13 @@ void initialize_dcondt(Ensemble *ensemble) {
         md_i_host, chat_host, gath_host, conu_host, cond_host,
         dconudt_activa_host, dconudt_wetdep_host, dudp_host, dddp_host,
         eudp_host, eddp_host, dcondt_host, dcondt_host_2;
-    ColumnView doconvproc_extd_dev, dpdry_i_dev, fa_u_dev, mu_i_dev, md_i_dev,
-        dudp_dev, dddp_dev, eudp_dev, eddp_dev;
-    Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged>
+    mam4::ColumnView doconvproc_extd_dev, dpdry_i_dev, fa_u_dev, mu_i_dev,
+        md_i_dev, dudp_dev, dddp_dev, eudp_dev, eddp_dev;
+    Kokkos::View<Real * [mam4::ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged>
         gath_dev, chat_dev, conu_dev, cond_dev, dconudt_activa_dev,
         dconudt_wetdep_dev, dcondt_dev, dcondt_dev_2;
 
-    get_input(input, "doconvproc_extd", ConvProc::pcnst_extd,
+    get_input(input, "doconvproc_extd", mam4::ConvProc::pcnst_extd,
               doconvproc_extd_host, doconvproc_extd_dev);
 
     get_input(input, "dpdry_i", nlev, dpdry_i_host, dpdry_i_dev);
@@ -108,33 +105,34 @@ void initialize_dcondt(Ensemble *ensemble) {
     get_input(input, "mu_i", nlev + 1, mu_i_host, mu_i_dev);
     get_input(input, "md_i", nlev + 1, md_i_host, md_i_dev);
 
-    get_input(input, "chat", nlev + 1, ConvProc::pcnst_extd, chat_host,
+    get_input(input, "chat", nlev + 1, mam4::ConvProc::pcnst_extd, chat_host,
               chat_dev);
-    get_input(input, "const", nlev, ConvProc::pcnst_extd, gath_host, gath_dev);
-    get_input(input, "conu", nlev + 1, ConvProc::pcnst_extd, conu_host,
+    get_input(input, "const", nlev, mam4::ConvProc::pcnst_extd, gath_host,
+              gath_dev);
+    get_input(input, "conu", nlev + 1, mam4::ConvProc::pcnst_extd, conu_host,
               conu_dev);
-    get_input(input, "cond", nlev + 1, ConvProc::pcnst_extd, cond_host,
+    get_input(input, "cond", nlev + 1, mam4::ConvProc::pcnst_extd, cond_host,
               cond_dev);
 
-    get_input(input, "dconudt_activa", nlev + 1, ConvProc::pcnst_extd,
+    get_input(input, "dconudt_activa", nlev + 1, mam4::ConvProc::pcnst_extd,
               dconudt_activa_host, dconudt_activa_dev);
-    get_input(input, "dconudt_wetdep", nlev + 1, ConvProc::pcnst_extd,
+    get_input(input, "dconudt_wetdep", nlev + 1, mam4::ConvProc::pcnst_extd,
               dconudt_wetdep_host, dconudt_wetdep_dev);
 
-    ColumnView col_view =
-        mam4::validation::create_column_view(nlev * ConvProc::pcnst_extd);
-    dcondt_dev =
-        Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged>(
-            col_view.data(), nlev, ConvProc::pcnst_extd);
-    ColumnView col_view_2 =
-        mam4::validation::create_column_view(nlev * ConvProc::pcnst_extd);
-    dcondt_dev_2 =
-        Kokkos::View<Real * [ConvProc::pcnst_extd], Kokkos::MemoryUnmanaged>(
-            col_view_2.data(), nlev, ConvProc::pcnst_extd);
+    mam4::ColumnView col_view =
+        mam4::validation::create_column_view(nlev * mam4::ConvProc::pcnst_extd);
+    dcondt_dev = Kokkos::View<Real * [mam4::ConvProc::pcnst_extd],
+                              Kokkos::MemoryUnmanaged>(
+        col_view.data(), nlev, mam4::ConvProc::pcnst_extd);
+    mam4::ColumnView col_view_2 =
+        mam4::validation::create_column_view(nlev * mam4::ConvProc::pcnst_extd);
+    dcondt_dev_2 = Kokkos::View<Real * [mam4::ConvProc::pcnst_extd],
+                                Kokkos::MemoryUnmanaged>(
+        col_view_2.data(), nlev, mam4::ConvProc::pcnst_extd);
 
     Kokkos::parallel_for(
         "initialize_dcondt", 1, KOKKOS_LAMBDA(int) {
-          bool doconvproc_extd[ConvProc::pcnst_extd];
+          bool doconvproc_extd[mam4::ConvProc::pcnst_extd];
           Real dpdry_i[nlev];
           Real fa_u[nlev];
           Real mu_i[nlev + 1];
@@ -144,7 +142,7 @@ void initialize_dcondt(Ensemble *ensemble) {
           Real eudp[nlev];
           Real eddp[nlev];
 
-          for (int i = 0; i < ConvProc::pcnst_extd; ++i)
+          for (int i = 0; i < mam4::ConvProc::pcnst_extd; ++i)
             doconvproc_extd[i] = doconvproc_extd_dev[i];
           for (int i = 0; i < nlev; ++i)
             dpdry_i[i] = dpdry_i_dev(i);
@@ -163,24 +161,25 @@ void initialize_dcondt(Ensemble *ensemble) {
           for (int i = 0; i < nlev; ++i)
             eddp[i] = eddp_dev(i);
 
-          convproc::initialize_dcondt(doconvproc_extd, iflux_method, ktop, kbot,
-                                      nlev, dpdry_i, fa_u, mu_i, md_i, chat_dev,
-                                      gath_dev, conu_dev, cond_dev,
-                                      dconudt_activa_dev, dconudt_wetdep_dev,
-                                      dudp, dddp, eudp, eddp, dcondt_dev);
+          mam4::convproc::initialize_dcondt(
+              doconvproc_extd, iflux_method, ktop, kbot, nlev, dpdry_i, fa_u,
+              mu_i, md_i, chat_dev, gath_dev, conu_dev, cond_dev,
+              dconudt_activa_dev, dconudt_wetdep_dev, dudp, dddp, eudp, eddp,
+              dcondt_dev);
 
           const int iflux_method_2 = 2;
           // flip a bit to trip a check in initialize_dcondt
           mu_i[62] *= -1;
           md_i[62] *= -1;
-          convproc::initialize_dcondt(doconvproc_extd, iflux_method_2, ktop,
-                                      kbot, nlev, dpdry_i, fa_u, mu_i, md_i,
-                                      chat_dev, gath_dev, conu_dev, cond_dev,
-                                      dconudt_activa_dev, dconudt_wetdep_dev,
-                                      dudp, dddp, eudp, eddp, dcondt_dev_2);
+          mam4::convproc::initialize_dcondt(
+              doconvproc_extd, iflux_method_2, ktop, kbot, nlev, dpdry_i, fa_u,
+              mu_i, md_i, chat_dev, gath_dev, conu_dev, cond_dev,
+              dconudt_activa_dev, dconudt_wetdep_dev, dudp, dddp, eudp, eddp,
+              dcondt_dev_2);
         });
     // Check case of iflux_method == 2 which is not part of the e3sm tests.
-    set_host("dcondt", nlev, ConvProc::pcnst_extd, dcondt_host_2, dcondt_dev_2);
+    set_host("dcondt", nlev, mam4::ConvProc::pcnst_extd, dcondt_host_2,
+             dcondt_dev_2);
     const std::map<int, Real> check_vals = {
         {3782, -7310.292049285079}, {3787, -16982.38670267153},
         {3799, 31.81635154330214},  {3822, 6423.064850051624},
@@ -231,7 +230,7 @@ void initialize_dcondt(Ensemble *ensemble) {
       for (const auto x : check_vals)
         EKAT_REQUIRE(std::abs(x.second - dcondt_host_2[x.first]) < .0000001);
 
-    set_output(output, "dcondt", nlev, ConvProc::pcnst_extd, dcondt_host,
+    set_output(output, "dcondt", nlev, mam4::ConvProc::pcnst_extd, dcondt_host,
                dcondt_dev);
   });
 }

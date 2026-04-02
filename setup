@@ -6,18 +6,8 @@
 # Print usage info.
 if [ "$1" = "" ]; then
   echo "setup: Creates a build directory with a configuration file."
-  echo "Optional argument 2 is path to haero install location."
-  echo "Usage: setup build_dir [haero_dir]"
+  echo "Usage: setup build_dir"
   exit 1
-fi
-
-# assign optional argument 2 to DIR_HAERO if it exists
-if [ -z "$2" ]; then
-  # if the optional arg isn't given, we print this placeholder
-  export DIR_HAERO=/path/to/haero
-else
-  # expand arg to full path, in case it's relative
-  export DIR_HAERO=$(readlink -f $2)
 fi
 
 # Create the build directory if it doesn't exist.
@@ -29,7 +19,7 @@ fi
 echo -e "#!/usr/bin/env bash\n" > $1/config.sh
 echo "SOURCE_DIR=$PWD" >> $1/config.sh
 cat <<EOT >> $1/config.sh
-# ^^^^^^ location of mam4xx source code.
+# ^^^^^^ location of haero source code.
 
 # config.sh -- A CMake configuration script.
 # Edit this file to change the parameters in your build. Uncomment exactly one
@@ -39,18 +29,6 @@ cat <<EOT >> $1/config.sh
 #                             Installation prefix
 #-----------------------------------------------------------------------------
 PREFIX=$PWD/$1
-
-#-----------------------------------------------------------------------------
-#                                   HAERO
-#-----------------------------------------------------------------------------
-
-# To build MAM4xx, you must have HAERO installed. Set this variable to a path
-# with include/, lib/, and share/ directories in which HAERO has been installed.
-# For instructions on building HAERO, surf to
-# https://github.com/eagles-project/haero
-# and check out the README.md file there.
-
-HAERO_DIR=$DIR_HAERO
 
 #-----------------------------------------------------------------------------
 #                       Aerosol parameterization settings
@@ -64,6 +42,11 @@ NUM_VERTICAL_LEVELS=72
 #-----------------------------------------------------------------------------
 
 # Set this to
+# * 'double' for double precision
+# * 'single' for single precision
+PRECISION=double
+
+# Set this to
 # * 'Debug' for development (debugging symbols, no optimization)
 # * 'Release' for production (no symbols, optimization).
 BUILD_TYPE=Debug
@@ -75,18 +58,133 @@ BUILD_TYPE=Debug
 #COVERAGE=ON
 
 #-----------------------------------------------------------------------------
+#                             On-Node Parallelism (Kokkos)
+#-----------------------------------------------------------------------------
+
+# Set this to ON to dispatch aerosol calculations to a GPU.
+ENABLE_GPU=OFF
+
+# OPTIONAL: Select one of the following device architectures based on the above.
+# (These options are taken from kokkos_arch.cmake)
+# Source in docs (incomplete list here):
+# https://kokkos.org/kokkos-core-wiki/get-started/configuration-guide.html
+#DEVICE_ARCH=NATIVE          # Detects the architecture of the compiling CPU
+#DEVICE_ARCH=AMDAVX          # AMD CPU
+#DEVICE_ARCH=ZEN             # AMD Zen architecture (CPU)
+#DEVICE_ARCH=ZEN2            # AMD Zen2 architecture (CPU)
+#DEVICE_ARCH=ZEN3            # AMD Zen3 architecture (CPU)
+#DEVICE_ARCH=ZEN4            # AMD Zen4 architecture (CPU)
+#DEVICE_ARCH=ZEN5            # AMD Zen5 architecture (CPU)
+#DEVICE_ARCH=ARMV80          # ARMv8.0 Compatible CPU
+#DEVICE_ARCH=ARMV81          # ARMv8.1 Compatible CPU
+#DEVICE_ARCH=ARMV8_THUNDERX  # ARMv8 Cavium ThunderX CPU
+#DEVICE_ARCH=ARMV8_THUNDERX2 # ARMv8 Cavium ThunderX2 CPU
+#DEVICE_ARCH=A64FX           # ARMv8.2 CPU with SVE Support
+#DEVICE_ARCH=ARMV9_GRACE     # ARMv9-A/A64/neoverse-v2
+#DEVICE_ARCH=WSM             # Intel Westmere CPU
+#DEVICE_ARCH=SNB             # Intel Sandy/Ivy Bridge CPUs
+#DEVICE_ARCH=KNC             # Intel Knights Corner Xeon Phi CPU
+#DEVICE_ARCH=KNL             # Intel Knights Landing Xeon Phi CPU
+#DEVICE_ARCH=BDW             # Intel Broadwell Xeon E-class CPUs
+#DEVICE_ARCH=HSW             # Intel Haswell CPUs
+#DEVICE_ARCH=ICL             # Intel Ice Lake Client CPUs (AVX512) (POTENTIALLY DEPRECATED)
+#DEVICE_ARCH=ICX             # Intel Ice Lake Xeon Server CPUs (AVX512)  (POTENTIALLY DEPRECATED)
+#DEVICE_ARCH=SKX             # Intel Sky Lake Xeon E-class HPC CPUs (AVX512)
+#DEVICE_ARCH=SKL             # Intel Skylake Client CPUs (POTENTIALLY DEPRECATED)
+Kokkos_ARCH_SPR              # Intel Sapphire Rapids CPUs
+#DEVICE_ARCH=BGQ             # IBM Blue Gene Q CPU (POTENTIALLY DEPRECATED)
+#DEVICE_ARCH=POWER7          # IBM POWER7 CPUs (POTENTIALLY DEPRECATED)
+#DEVICE_ARCH=POWER8          # IBM POWER8 CPUs
+#DEVICE_ARCH=POWER9          # IBM POWER9 CPUs
+#DEVICE_ARCH=RISCV_U74MC     # U74MC/RISC-V ISA
+#DEVICE_ARCH=RISCV_SG2042    # SG2042/RISC-V ISA
+#DEVICE_ARCH=RISCV_RVA22V    # RVA22V/RISC-V ISA
+#DEVICE_ARCH=KEPLER30        # NVIDIA Kepler generation CC 3.0 (CUDA)
+#DEVICE_ARCH=KEPLER32        # NVIDIA Kepler generation CC 3.2 (CUDA)
+#DEVICE_ARCH=KEPLER35        # NVIDIA Kepler generation CC 3.5 (CUDA)
+#DEVICE_ARCH=KEPLER37        # NVIDIA Kepler generation CC 3.7 (CUDA)
+#DEVICE_ARCH=MAXWELL50       # NVIDIA Maxwell generation CC 5.0 (CUDA)
+#DEVICE_ARCH=MAXWELL52       # NVIDIA Maxwell generation CC 5.2 (CUDA)
+#DEVICE_ARCH=MAXWELL53       # NVIDIA Maxwell generation CC 5.3 (CUDA)
+#DEVICE_ARCH=PASCAL60        # NVIDIA Pascal generation CC 6.0 (CUDA)
+#DEVICE_ARCH=PASCAL61        # NVIDIA Pascal generation CC 6.1 (CUDA)
+#DEVICE_ARCH=VOLTA70         # NVIDIA Volta generation CC 7.0 (CUDA)
+#DEVICE_ARCH=VOLTA72         # NVIDIA Volta generation CC 7.2 (CUDA)
+#DEVICE_ARCH=TURING75        # NVIDIA Turing generation CC 7.5 (CUDA)
+#DEVICE_ARCH=AMPERE80        # NVIDIA Ampere generation CC 8.0 (CUDA)
+#DEVICE_ARCH=AMPERE86        # NVIDIA Ampere generation CC 8.6 (CUDA)
+#DEVICE_ARCH=ADA89           # NVIDIA Ada Lovelace generation cc 8.9 (CUDA)
+#DEVICE_ARCH=HOPPER90        # NVIDIA Hopper generation cc 9.0 (CUDA)
+#DEVICE_ARCH=BLACKWELL100    # NVIDIA Blackwell generation cc 10.0 (CUDA)
+#DEVICE_ARCH=BLACKWELL120    # NVIDIA Blackwell generation cc 12.0 (CUDA)
+#DEVICE_ARCH=AMD_GFX1030     # V620, W6800
+#DEVICE_ARCH=AMD_GFX1100     # 7900xt
+#DEVICE_ARCH=AMD_GFX1103     # Ryzen 8000G Phoenix series APU
+#DEVICE_ARCH=AMD_GFX906      # MI50, MI60
+#DEVICE_ARCH=AMD_GFX908      # MI100
+#DEVICE_ARCH=AMD_GFX90A      # MI200 series
+#DEVICE_ARCH=AMD_GFX940      # MI300A (pre-production--not sure on meaning)
+#DEVICE_ARCH=AMD_GFX942      # MI300A, MI300X
+#DEVICE_ARCH=AMD_GFX942_APU  # MI300A
+#DEVICE_ARCH=INTEL_GEN       # Intel GPUs (SPIR64-based devices)
+#DEVICE_ARCH=INTEL_GEN9      # Intel GPU Gen9
+#DEVICE_ARCH=INTEL_GEN11     # Intel GPU Gen11
+#DEVICE_ARCH=INTEL_GEN12LP   # Intel GPU Gen12LP
+#DEVICE_ARCH=INTEL_DG1       # Intel Iris XeMAX GPU
+#DEVICE_ARCH=INTEL_DG2       # Intel DG2 GPU (e.g., Flex, Arc)
+#DEVICE_ARCH=INTEL_XEHP      # Intel GPU Xe-HP
+#DEVICE_ARCH=INTEL_PVC       # Intel GPU Ponte Vecchio
+
+#-----------------------------------------------------------------------------
+#                                   Compilers
+#-----------------------------------------------------------------------------
+
+CXX=c++
+CC=cc
+
+# NVIDIA GPU + gcc
+# CXX=[PATH]/nvcc_wrapper
+# CC=gcc
+
+# AMD GPU
+# CXX=hipcc
+# CC=amdclang
+
+# Intel GPU
+# CXX=icpx
+# CC=icx
+
+# Override compilers here (ONLY if you know what you're doing!).
+
+# C++ compiler.
+#CXX=c++
+
+# C compiler.
+#CC=cc
+
+#-----------------------------------------------------------------------------
 #                   Don't change anything below here.
 #-----------------------------------------------------------------------------
 
 # We use good old-fashioned UNIX makefiles.
 GENERATOR="Unix Makefiles"
 
+OPTIONS=""
+
 if [ "\$VERBOSE" = "ON" ]; then
   OPTIONS="\$OPTIONS -DCMAKE_VERBOSE_MAKEFILE=ON"
 fi
 
 if [ "\$COVERAGE" = "ON" ]; then
-  OPTIONS="\$OPTIONS -DENABLE_COVERAGE=ON"
+  OPTIONS="\$OPTIONS -DMAM4XX_ENABLE_COVERAGE=ON"
+fi
+
+# Clear the build cache.
+rm -f CMakeCache.txt
+
+# Set the device architecture if needed.
+if [ ! "\$DEVICE_ARCH" = "" ]; then
+  OPTIONS="\$OPTIONS -DMAM4XX_DEVICE_ARCH=\$DEVICE_ARCH"
 fi
 
 # Clear the build cache.
@@ -96,9 +194,10 @@ rm -f CMakeCache.txt
 cmake \
  -DCMAKE_INSTALL_PREFIX:PATH=\$PREFIX \
  -DCMAKE_BUILD_TYPE=\$BUILD_TYPE \
- -DMAM4XX_HAERO_DIR=\$HAERO_DIR \
- -DNUM_VERTICAL_LEVELS=\$NUM_VERTICAL_LEVELS \
- -DENABLE_SKYWALKER=ON \
+ -DCMAKE_C_COMPILER=\$CC \
+ -DCMAKE_CXX_COMPILER=\$CXX \
+ -DMAM4XX_ENABLE_GPU=\$ENABLE_GPU \
+ -DMAM4XX_PRECISION=\$PRECISION \
  \$OPTIONS \
  -G "\$GENERATOR" \
  \$SOURCE_DIR
@@ -109,13 +208,8 @@ chmod a+x $1/config.sh
 
 # Give instructions.
 echo "Your build directory '$1' is ready."
-# assign optional argument 2 to DIR_HAERO if it exists
-if [ ! -z "$2" ]; then
-  # expand arg to full path, in case it's relative
-  echo "You have given '$DIR_HAERO' as the HAERO library install location."
-fi
 echo "To configure your build:"
 echo "  1. cd $1"
 echo "  2. Edit config.sh"
-echo "  3. ./config.sh"
+echo "  3. source config.sh"
 echo "  4. Build using 'make -j'."

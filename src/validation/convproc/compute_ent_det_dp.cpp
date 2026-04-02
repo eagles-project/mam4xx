@@ -4,18 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <ekat_assert.hpp>
-#include <iomanip>
-#include <iostream>
 
 #include <mam4xx/convproc.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
+
 using namespace skywalker;
-using namespace mam4;
 
 namespace {
 void get_input(const Input &input, const std::string &name, const int size,
-               std::vector<Real> &host, ColumnView &dev) {
+               std::vector<Real> &host, mam4::ColumnView &dev) {
   host = input.get_array(name);
   EKAT_ASSERT(host.size() == size);
   dev = mam4::validation::create_column_view(size);
@@ -25,7 +22,7 @@ void get_input(const Input &input, const std::string &name, const int size,
   Kokkos::deep_copy(dev, host_view);
 }
 void set_output(Output &output, const std::string &name, const int size,
-                std::vector<Real> &host, const ColumnView &dev) {
+                std::vector<Real> &host, const mam4::ColumnView &dev) {
   host.resize(size);
   auto host_view = Kokkos::create_mirror_view(dev);
   Kokkos::deep_copy(host_view, dev);
@@ -51,7 +48,7 @@ void compute_ent_det_dp(Ensemble *ensemble) {
 
     std::vector<Real> dpdry_i_host, du_host, eu_host, ed_host, mu_i_host,
         md_i_host, eudp_host, dudp_host, eddp_host, dddp_host;
-    ColumnView dpdry_i_dev, du_dev, eu_dev, ed_dev, mu_i_dev, md_i_dev,
+    mam4::ColumnView dpdry_i_dev, du_dev, eu_dev, ed_dev, mu_i_dev, md_i_dev,
         eudp_dev, dudp_dev, eddp_dev, dddp_dev, ntsub_dev;
     get_input(input, "dpdry_i", nlev, dpdry_i_host, dpdry_i_dev);
     get_input(input, "du", nlev, du_host, du_dev);
@@ -86,9 +83,9 @@ void compute_ent_det_dp(Ensemble *ensemble) {
             ed[i] = ed_dev[i];
           int ntsub = 0;
           Real eudp[nlev], dudp[nlev], eddp[nlev], dddp[nlev];
-          convproc::compute_ent_det_dp(nlev, ktop, kbot, dt, dpdry_i, mu_i,
-                                       md_i, du, eu, ed, ntsub, eudp, dudp,
-                                       eddp, dddp);
+          mam4::convproc::compute_ent_det_dp(nlev, ktop, kbot, dt, dpdry_i,
+                                             mu_i, md_i, du, eu, ed, ntsub,
+                                             eudp, dudp, eddp, dddp);
           for (int i = 0; i < nlev; ++i)
             eudp_dev[i] = eudp[i];
           for (int i = 0; i < nlev; ++i)

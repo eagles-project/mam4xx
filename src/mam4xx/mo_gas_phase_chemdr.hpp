@@ -1,19 +1,19 @@
 #ifndef MAM4XX_MICROPHYSICS_GAS_PHASE_CHEM_DR_HPP
 #define MAM4XX_MICROPHYSICS_GAS_PHASE_CHEM_DR_HPP
 
-#include <mam4xx/aero_model.hpp>
-#include <mam4xx/compute_o3_column_density.hpp>
-#include <mam4xx/diagnostic_arrays.hpp>
-#include <mam4xx/gas_phase_chemistry.hpp>
-#include <mam4xx/lin_strat_chem.hpp>
-#include <mam4xx/mam4_amicphys.hpp>
-#include <mam4xx/mo_drydep.hpp>
-#include <mam4xx/mo_photo.hpp>
-#include <mam4xx/mo_setext.hpp>
-#include <mam4xx/mo_sethet.hpp>
-#include <mam4xx/mo_setinv.hpp>
-#include <mam4xx/mo_setsox.hpp>
-#include <mam4xx/seq_drydep.hpp>
+#include "aero_model.hpp"
+#include "compute_o3_column_density.hpp"
+#include "diagnostic_arrays.hpp"
+#include "gas_phase_chemistry.hpp"
+#include "lin_strat_chem.hpp"
+#include "mam4_amicphys.hpp"
+#include "mo_drydep.hpp"
+#include "mo_photo.hpp"
+#include "mo_setext.hpp"
+#include "mo_sethet.hpp"
+#include "mo_setinv.hpp"
+#include "mo_setsox.hpp"
+#include "seq_drydep.hpp"
 
 namespace mam4 {
 
@@ -30,7 +30,7 @@ using View1D = DeviceType::view_1d<Real>;
 using ConstView1D = DeviceType::view_1d<const Real>;
 
 KOKKOS_INLINE_FUNCTION
-void mmr2vmr_col(const ThreadTeam &team, const haero::Atmosphere &atm,
+void mmr2vmr_col(const ThreadTeam &team, const Atmosphere &atm,
                  const mam4::Prognostics &progs,
                  const Real adv_mass_kg_per_moles[gas_pcnst],
                  const int offset_aerosol, const View2D &vmr_col) {
@@ -156,7 +156,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     const unsigned n_so4_monolayers_pcage, const Real sfc_temp,
     const Real pressure_sfc, const Real wind_speed, const Real rain,
     const Real solar_flux, const View1D cnst_offline_icol[num_tracer_cnst],
-    const Forcing *forcings_in, const haero::Atmosphere &atm,
+    const Forcing *forcings_in, const Atmosphere &atm,
     const PhotoTableData &photo_table,
     const mam4::mo_setsox::Config &config_setsox,
     const AmicPhysConfig &config_amicphys, const Real zenith_angle_icol,
@@ -306,7 +306,7 @@ void perform_atmospheric_chemistry_and_microphysics(
   // microphysics we use pseudo_density.
   int ilev_tropp = 0;
   if (linoz_conf.compute) {
-    ilev_tropp = mam4::aer_rad_props::tropopause_or_quit(
+    ilev_tropp = mam4::aero_rad_props::tropopause_or_quit(
         atm.pressure, atm.interface_pressure, atm.temperature, atm.height, zi);
   }
   team.team_barrier();
@@ -371,7 +371,7 @@ void perform_atmospheric_chemistry_and_microphysics(
         vmr);
     // calculate tendency due to gas phase chemistry
     if (gas_phase_chemistry_dvmrdt.size()) {
-      const Real mbar = haero::Constants::molec_weight_dry_air;
+      const Real mbar = Constants::molec_weight_dry_air;
       const Real gravit = Constants::gravity;
       const Real x = 1.0 / mbar * pdel / gravit;
       for (int m = 0; m < gas_pcnst; ++m)
@@ -399,7 +399,7 @@ void perform_atmospheric_chemistry_and_microphysics(
     for (int i = 0; i < gas_pcnst; ++i)
       vmr_bef_aq_chem[i] = vmr[i];
     // aqueous chemistry ...
-    const Real mbar = haero::Constants::molec_weight_dry_air;
+    const Real mbar = Constants::molec_weight_dry_air;
     constexpr int indexm = mam4::gas_chemistry::indexm;
     Real dqdt_aqso4_t[gas_pcnst] = {};
     Real dqdt_aqh2so4_t[gas_pcnst] = {};
@@ -416,7 +416,7 @@ void perform_atmospheric_chemistry_and_microphysics(
 
     // calculate tendency due to gas phase chemistry
     if (aqueous_chemistry_dvmrdt.size()) {
-      const Real mbar = haero::Constants::molec_weight_dry_air;
+      const Real mbar = Constants::molec_weight_dry_air;
       const Real gravit = Constants::gravity;
       const Real x = 1.0 / mbar * pdel / gravit;
       for (int m = 0; m < gas_pcnst; ++m)

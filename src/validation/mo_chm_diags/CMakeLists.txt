@@ -14,7 +14,7 @@ add_executable(mo_chm_diags_driver
                chm_diags.cpp
                )
 
-target_link_libraries(mo_chm_diags_driver skywalker;validation;haero)
+target_link_libraries(mo_chm_diags_driver skywalker;validation)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

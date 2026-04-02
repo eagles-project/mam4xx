@@ -1,22 +1,19 @@
 #include <mam4xx/mam4.hpp>
-
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 using namespace mam4::mo_drydep;
-using namespace haero;
-void calculate_ustar(const seq_drydep::Data &data, Ensemble *ensemble) {
+
+void calculate_ustar(const mam4::seq_drydep::Data &data, Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View1D = typename DeviceType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
 
-    using ViewInt1D = typename DeviceType::view_1d<int>;
-    using ViewInt1DHost = typename HostType::view_1d<int>;
+    using ViewInt1D = typename mam4::DeviceType::view_1d<int>;
+    using ViewInt1DHost = typename mam4::HostType::view_1d<int>;
 
-    using ViewBool1D = typename DeviceType::view_1d<bool>;
-    using ViewBool1DHost = typename HostType::view_1d<bool>;
+    using ViewBool1D = typename mam4::DeviceType::view_1d<bool>;
+    using ViewBool1DHost = typename mam4::HostType::view_1d<bool>;
 
     const int beglt = int(input.get_array("beglt")[0]) - 1;
     const int endlt = int(input.get_array("endlt")[0]) - 1;
@@ -45,9 +42,9 @@ void calculate_ustar(const seq_drydep::Data &data, Ensemble *ensemble) {
     View1D cvar_d("cvar", n_land_type);
     View1D bycp_d("bycp", n_land_type);
 
-    auto team_policy = ThreadTeamPolicy(1u, 1u);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           calculate_ustar(data, beglt, endlt, index_season_d.data(),
                           fr_lnduse_d.data(), unstable, zl, uustar, ribn,
                           ustar_d.data(), cvar_d.data(), bycp_d.data());

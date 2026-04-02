@@ -3,11 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <mam4xx/modal_aer_opt.hpp>
+#include <mam4xx/modal_aero_opt.hpp>
+#include <validation.hpp>
 
 #include <iostream>
-#include <skywalker.hpp>
-#include <validation.hpp>
 
 void usage() {
   std::cerr << "aerosol_optics_driver: a Skywalker driver for validating the "
@@ -19,7 +18,6 @@ void usage() {
 }
 
 using namespace skywalker;
-using namespace mam4;
 
 // Parameterizations used by the aerosol_optics() process.
 void binterp(Ensemble *ensemble);
@@ -31,8 +29,8 @@ void modal_aero_sw(Ensemble *ensemble);
 void modal_aero_lw(Ensemble *ensemble);
 void calc_parameterized(Ensemble *ensemble);
 void update_aod_spec(Ensemble *ensemble);
-void aer_rad_props_lw(Ensemble *ensemble);
-void aer_rad_props_sw(Ensemble *ensemble);
+void aero_rad_props_lw(Ensemble *ensemble);
+void aero_rad_props_sw(Ensemble *ensemble);
 void volcanic_cmip_sw(Ensemble *ensemble);
 void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble);
 
@@ -40,9 +38,9 @@ int main(int argc, char **argv) {
   if (argc == 1) {
     usage();
   }
-  validation::initialize(argc, argv, validation::default_fpes);
+  mam4::validation::initialize(argc, argv, mam4::validation::default_fpes);
   std::string input_file = argv[1];
-  std::string output_file = validation::output_name(input_file);
+  std::string output_file = mam4::validation::output_name(input_file);
   std::cout << argv[0] << ": reading " << input_file << std::endl;
 
   // Load the ensemble. Any error encountered is fatal.
@@ -77,9 +75,9 @@ int main(int argc, char **argv) {
     } else if (func_name == "update_aod_spec") {
       update_aod_spec(ensemble);
     } else if (func_name == "aer_rad_props_lw") {
-      aer_rad_props_lw(ensemble);
+      aero_rad_props_lw(ensemble);
     } else if (func_name == "aer_rad_props_sw") {
-      aer_rad_props_sw(ensemble);
+      aero_rad_props_sw(ensemble);
     } else if (func_name == "volcanic_cmip_sw") {
       volcanic_cmip_sw(ensemble);
     } else if (func_name == "data_transfer_state_q_qqwc_to_prog") {
@@ -99,5 +97,5 @@ int main(int argc, char **argv) {
   ensemble->write(output_file);
 
   // Clean up.
-  validation::finalize(ensemble);
+  mam4::validation::finalize(ensemble);
 }

@@ -3,13 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/drydep.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void calcram(Ensemble *ensemble) {
 
@@ -48,8 +45,8 @@ void calcram(Ensemble *ensemble) {
         1,
         KOKKOS_LAMBDA(const int, Calcram &vlc) {
           Real ram1_out, fv_out;
-          drydep::calcram(landfrac, icefrac, ocnfrac, obklen, ustar, tair, pmid,
-                          pdel, ram1_in, fv_in, ram1_out, fv_out);
+          mam4::drydep::calcram(landfrac, icefrac, ocnfrac, obklen, ustar, tair,
+                                pmid, pdel, ram1_in, fv_in, ram1_out, fv_out);
           vlc.min_val = ram1_out;
           vlc.max_val = fv_out;
         },

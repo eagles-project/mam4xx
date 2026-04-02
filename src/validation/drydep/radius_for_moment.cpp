@@ -3,13 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/drydep.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void radius_for_moment(Ensemble *ensemble) {
 
@@ -29,8 +26,8 @@ void radius_for_moment(Ensemble *ensemble) {
     Kokkos::parallel_reduce(
         1,
         KOKKOS_LAMBDA(const int, Real &rad) {
-          rad = drydep::radius_for_moment(moment, sig_part, radius_part,
-                                          radius_max);
+          rad = mam4::drydep::radius_for_moment(moment, sig_part, radius_part,
+                                                radius_max);
         },
         radius_for_moment);
     output.set("radius_for_moment", radius_for_moment);

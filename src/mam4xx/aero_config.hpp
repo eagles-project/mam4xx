@@ -6,11 +6,9 @@
 #ifndef MAM4XX_AERO_CONFIG_HPP
 #define MAM4XX_AERO_CONFIG_HPP
 
-#include <mam4xx/aero_modes.hpp>
+#include "mam4_types.hpp"
 
-#include <algorithm>
-#include <map>
-#include <numeric>
+#include <ekat_kokkos_types.hpp>
 
 namespace mam4 {
 
@@ -19,18 +17,9 @@ class Diagnostics; // fwd decl
 // Tendencies are identical in structure to prognostics.
 using Tendencies = Prognostics; // fwd decl
 
-// Number of vertical levels per column (must match the number in the
-// host model)
-constexpr int nlev = @NUM_VERTICAL_LEVELS@;
-constexpr int pcnst = 40;
 /// @struct MAM4::AeroConfig: for use with all MAM4 process implementations
 class AeroConfig final {
 public:
-  // Types.
-  using Prognostics = ::mam4::Prognostics;
-  using Diagnostics = ::mam4::Diagnostics;
-  using Tendencies = ::mam4::Tendencies;
-
   bool calculate_gas_uptake_coefficient = false;
   int number_gauss_points_for_integration = 2;
   // Default constructor.
@@ -87,9 +76,6 @@ class Prognostics final {
   int nlev_;
 
 public:
-  using ColumnView = haero::ColumnView;
-  using ThreadTeam = haero::ThreadTeam;
-
   /// Creates a container for prognostic variables on the specified number of
   /// vertical levels. All views must be set manually.
   /// NOTE: it's currently possible to configure a Prognostics object with a
@@ -186,8 +172,6 @@ class Diagnostics final {
   int nlev_;
 
 public:
-  using ColumnView = haero::ColumnView;
-
   /// Creates a container for diagnostic variables on the specified number of
   /// vertical levels. All views must be set manually.
   /// NOTE: it's currently possible to configure a Diagnostics object with a
@@ -247,10 +231,10 @@ public:
   ColumnView g0_soa_out;
 
   /// boolean indicating whether cloudborne aerosols are present in a cell
-  haero::DeviceType::view_1d<bool> is_cloudy;
+  DeviceType::view_1d<bool> is_cloudy;
 
   /// Number of time substeps needed to converge in mam_soaexch_advance_in_time
-  haero::DeviceType::view_1d<int> num_substeps;
+  DeviceType::view_1d<int> num_substeps;
 
   // Output variables for nucleate_ice process:
   // Ask experts for better names for: icenuc_num_hetfrz, icenuc_num_immfrz,
@@ -541,8 +525,6 @@ class Sources final {
   int nlev_;
 
 public:
-  using ColumnView = haero::ColumnView;
-
   /// Creates a container for sources on the specified number of
   /// vertical levels. All views must be set manually.
   /// NOTE: it's currently possible to configure a Sources object with a

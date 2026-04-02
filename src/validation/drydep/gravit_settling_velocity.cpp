@@ -3,13 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/drydep.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void gravit_settling_velocity(Ensemble *ensemble) {
 
@@ -35,7 +32,7 @@ void gravit_settling_velocity(Ensemble *ensemble) {
     Kokkos::parallel_reduce(
         1,
         KOKKOS_LAMBDA(const int, Real &gsv) {
-          gsv = drydep::gravit_settling_velocity(
+          gsv = mam4::drydep::gravit_settling_velocity(
               particle_radius, particle_density, slip_correction,
               dynamic_viscosity, particle_sig);
         },

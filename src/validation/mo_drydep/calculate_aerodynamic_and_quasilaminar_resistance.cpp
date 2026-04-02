@@ -1,19 +1,16 @@
 #include <mam4xx/mam4.hpp>
-
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 using namespace mam4::mo_drydep;
-using namespace haero;
+
 void calculate_aerodynamic_and_quasilaminar_resistance(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View1D = typename DeviceType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
 
-    using ViewBool1D = typename DeviceType::view_1d<bool>;
-    using ViewBool1DHost = typename HostType::view_1d<bool>;
+    using ViewBool1D = typename mam4::DeviceType::view_1d<bool>;
+    using ViewBool1DHost = typename mam4::HostType::view_1d<bool>;
 
     const int beglt = int(input.get_array("beglt")[0]) - 1;
     const int endlt = int(input.get_array("endlt")[0]) - 1;
@@ -45,9 +42,9 @@ void calculate_aerodynamic_and_quasilaminar_resistance(Ensemble *ensemble) {
     View1D dep_ra_d("dep_ra", n_land_type);
     View1D dep_rb_d("dep_rb", n_land_type);
 
-    auto team_policy = ThreadTeamPolicy(1u, 1u);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           calculate_aerodynamic_and_quasilaminar_resistance(
               beglt, endlt, fr_lnduse_d.data(), zl, obklen_d.data(),
               ustar_d.data(), cvar_d.data(), dep_ra_d.data(), dep_rb_d.data());

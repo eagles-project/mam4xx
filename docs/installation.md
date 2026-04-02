@@ -16,8 +16,6 @@ To build MAM4xx, you need:
 * optionally, a working MPI installation (like [OpenMPI](https://www.open-mpi.org/)
   or [MPICH](https://www.mpich.org/)), if you want to use MAM4xx in a
   multi-node parallel environment
-* the [HAERO](https://github.com/eagles-project/haero) aerosol package interface,
-  which provides necessary libraries and settings.
 
 You can obtain all of these freely on the Linux and Mac platforms. On Linux,
 just use your favorite package manager. On a Mac, you can get the Clang C/C++
@@ -30,14 +28,6 @@ For example, to download the relevant software on your Mac using Homebrew, type
 ```bash
 brew install cmake openmpi
 ```
-
-## Build and Install HAERO
-
-MAM4xx uses data structures and libraries provided by Haero. To build Haero, you
-can either
-
-* use the [build-haero.sh script](https://github.com/eagles-project/mam4xx/blob/main/build-haero.sh), or
-* follow the directions in the [Haero repository](https://github.com/eagles-project/haero) itself
 
 ## Clone the MAM4xx Repository
 
@@ -55,25 +45,22 @@ at GitHub:
 
 This places a `mam4xx` folder into your current path.
 
-## Configure MAM4xx
+## Configure and Build MAM4xx
 
-MAM4xx uses CMake, and accepts a number of options that specify how it should be
-built. In order to simplify the build process, we've provided a simple `setup`
-script that generates a shell script you can run to invoke CMake with the
-appropriate options set.
+1. Configure it with CMake from the top-level source directory. See the top-level `CMakeLists.txt`
+   file for options, but something like this typically works fine for development work:
 
-To configure MAM4xx:
-
-1. Create a build directory by running the `setup` script from the top-level
-   source directory:
-   ```bash
-   ./setup build
    ```
-2. Change to your build directory and edit the `config.sh` file to select
-   configuration options. Then run `./config.sh` to configure the model.
-
-If you prefer, you can fish the options out of the `setup` script (or your
-generated `config.sh` file) and feed them directly to CMake.
+   cmake -S . -B build
+   ```
+2. Change to the build directory (`build` in the example above) and type `make` (or `ninja`, if
+   you're using CMake 4+).
+3. To run tests for the library (and the driver, if configured), type
+   `make test` or `ninja test`.
+4. To install the model to the location indicated by `PREFIX` in your
+   `config.sh` script, type `make install` or `ninja install`. By default, products are installed
+   in `include`, `lib`, `bin`, and `share` subdirectories within your build
+   directory.
 
 ## Build, Test, and Install MAM4xx
 

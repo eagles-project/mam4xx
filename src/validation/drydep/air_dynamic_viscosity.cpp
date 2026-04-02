@@ -3,13 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/drydep.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void air_dynamic_viscosity(Ensemble *ensemble) {
 
@@ -23,7 +20,7 @@ void air_dynamic_viscosity(Ensemble *ensemble) {
     Kokkos::parallel_reduce(
         1,
         KOKKOS_LAMBDA(const int, Real &vis) {
-          vis = drydep::air_dynamic_viscosity(temp);
+          vis = mam4::drydep::air_dynamic_viscosity(temp);
         },
         air_dynamic_viscosity);
 

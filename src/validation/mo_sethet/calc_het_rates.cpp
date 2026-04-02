@@ -4,15 +4,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
-using namespace mo_sethet;
+using namespace mam4::mo_sethet;
 
 void calc_het_rates(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {

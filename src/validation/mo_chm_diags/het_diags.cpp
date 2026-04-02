@@ -4,23 +4,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
-using namespace mo_chm_diags;
+using namespace mam4::mo_chm_diags;
 
 // constexpr const int gas_pcnst = gas_chemistry::gas_pcnst;
 
 void het_diags(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View1D = typename DeviceType::view_1d<Real>;
-    using ColumnView = haero::ColumnView;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
 
     const auto het_rates_in = input.get_array("het_rates");
     const auto mmr_in = input.get_array("mmr");
@@ -29,14 +23,14 @@ void het_diags(Ensemble *ensemble) {
 
     Real wght = wght_in[0];
 
-    ColumnView het_rates[gas_pcnst];
-    ColumnView mmr[gas_pcnst];
+    mam4::ColumnView het_rates[gas_pcnst];
+    mam4::ColumnView mmr[gas_pcnst];
     View1DHost het_rates_host[gas_pcnst];
     View1DHost mmr_host[gas_pcnst];
 
     for (int mm = 0; mm < gas_pcnst; ++mm) {
-      het_rates[mm] = haero::testing::create_column_view(pver);
-      mmr[mm] = haero::testing::create_column_view(pver);
+      het_rates[mm] = mam4::testing::create_column_view(pver);
+      mmr[mm] = mam4::testing::create_column_view(pver);
 
       het_rates_host[mm] = View1DHost("het_rates_host", pver);
       mmr_host[mm] = View1DHost("mmr_host", pver);
@@ -57,10 +51,10 @@ void het_diags(Ensemble *ensemble) {
       Kokkos::deep_copy(mmr[mm], mmr_host[mm]);
     }
 
-    ColumnView pdel;
+    mam4::ColumnView pdel;
     auto pdel_host =
         View1DHost((Real *)pdel_in.data(), pver); // puts data into host
-    pdel = haero::testing::create_column_view(pver);
+    pdel = mam4::testing::create_column_view(pver);
     Kokkos::deep_copy(pdel, pdel_host);
 
     std::vector<Real> vector0(gas_pcnst, 0);
@@ -84,11 +78,11 @@ void het_diags(Ensemble *ensemble) {
         250092.672000, 1.007400,   12.011000,     12.011000, 250092.672000,
         1.007400};
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
-          mo_chm_diags::het_diags(team, het_rates, mmr, pdel, wght, wrk_wd,
-                                  sox_wk, adv_mass, sox_species);
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
+          mam4::mo_chm_diags::het_diags(team, het_rates, mmr, pdel, wght,
+                                        wrk_wd, sox_wk, adv_mass, sox_species);
         });
 
     std::vector<Real> wrk_wd_mm(gas_pcnst);

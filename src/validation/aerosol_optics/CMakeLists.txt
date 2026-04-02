@@ -20,13 +20,13 @@ add_executable(aerosol_optics_driver
                modal_aero_lw.cpp
                calc_parameterized.cpp
                update_aod_spec.cpp
-               aer_rad_props_lw.cpp
-               aer_rad_props_sw.cpp
+               aero_rad_props_lw.cpp
+               aero_rad_props_sw.cpp
                volcanic_cmip_sw.cpp
                data_transfer_state_q_qqwc_to_prog.cpp
                )
 
-target_link_libraries(aerosol_optics_driver skywalker;validation;haero)
+target_link_libraries(aerosol_optics_driver skywalker;validation)
 
 # Copy some Python scripts from mam_x_validation to our binary directory.
 foreach(script

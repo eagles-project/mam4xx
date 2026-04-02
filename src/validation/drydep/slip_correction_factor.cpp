@@ -3,13 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/drydep.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void slip_correction_factor(Ensemble *ensemble) {
 
@@ -30,8 +27,8 @@ void slip_correction_factor(Ensemble *ensemble) {
     Kokkos::parallel_reduce(
         1,
         KOKKOS_LAMBDA(const int, Real &slip) {
-          slip = drydep::slip_correction_factor(dyn_visc, pres, temp,
-                                                particle_radius);
+          slip = mam4::drydep::slip_correction_factor(dyn_visc, pres, temp,
+                                                      particle_radius);
         },
         slip_correction_factor);
     output.set("slip_correction_factor", slip_correction_factor);

@@ -4,19 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
-using namespace mo_photo;
+using namespace mam4::mo_photo;
+
 void cloud_mod(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View1D = typename DeviceType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
 
     // number of vertical points.
     // validation test from standalone mo_photo.
@@ -43,9 +39,9 @@ void cloud_mod(Ensemble *ensemble) {
     View1D cld_mult("cld_mult", pver);
     View1D work("work", 5 * pver);
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           cloud_mod(team, zen_angle, clouds, lwc, delp,
                     srf_alb, //  in
                     eff_alb, cld_mult, work);

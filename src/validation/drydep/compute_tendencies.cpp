@@ -3,20 +3,17 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/mam4.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void compute_tendencies(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = mam4::nlev;
-    const int aerosol_index = DryDeposition::index_interstitial_aerosols;
+    const int aerosol_index = mam4::DryDeposition::index_interstitial_aerosols;
 
     EKAT_REQUIRE_MSG(input.has_array("ntot_amode"),
                      "Required name: ntot_amode");
@@ -31,7 +28,7 @@ void compute_tendencies(Ensemble *ensemble) {
       EKAT_REQUIRE_MSG(input.has_array(s), "Required name: " + s);
 
     for (std::string s : {"statq_", "qqcw_"}) {
-      for (int i = aerosol_index; i < aero_model::pcnst; ++i) {
+      for (int i = aerosol_index; i < mam4::aero_model::pcnst; ++i) {
         const std::string name = s + std::to_string(i + 1);
         EKAT_REQUIRE_MSG(input.has_array(name), "Required name: " + name);
         EKAT_REQUIRE_MSG(nlev == input.get_array(name).size(),
@@ -41,7 +38,7 @@ void compute_tendencies(Ensemble *ensemble) {
 
     for (std::string s : {"dgncur_awet", "wetdens"}) {
       EKAT_REQUIRE_MSG(input.has_array(s), "Required name: " + s);
-      EKAT_REQUIRE_MSG(nlev * AeroConfig::num_modes() ==
+      EKAT_REQUIRE_MSG(nlev * mam4::AeroConfig::num_modes() ==
                            input.get_array(s).size(),
                        s + " array should be exactly 288 entry long.");
     }
@@ -60,7 +57,7 @@ void compute_tendencies(Ensemble *ensemble) {
                        s + " array should be exactly 1 entry long.");
 
     auto to_dev = [](const std::vector<Real> &vec) {
-      ColumnView dev = mam4::validation::create_column_view(vec.size());
+      mam4::ColumnView dev = mam4::validation::create_column_view(vec.size());
       auto host = Kokkos::create_mirror_view(dev);
       for (int i = 0; i < vec.size(); ++i)
         host[i] = vec[i];
@@ -68,18 +65,18 @@ void compute_tendencies(Ensemble *ensemble) {
       return dev;
     };
 
-    haero::ConstColumnView tair = to_dev(input.get_array("tair"));
-    haero::ConstColumnView pmid = to_dev(input.get_array("pmid"));
-    haero::ConstColumnView pint = to_dev(input.get_array("pint"));
-    haero::ConstColumnView pdel = to_dev(input.get_array("pdel"));
+    mam4::ColumnView tair = to_dev(input.get_array("tair"));
+    mam4::ColumnView pmid = to_dev(input.get_array("pmid"));
+    mam4::ColumnView pint = to_dev(input.get_array("pint"));
+    mam4::ColumnView pdel = to_dev(input.get_array("pdel"));
 
     auto state_q_mem =
-        mam4::validation::create_column_view(nlev * aero_model::pcnst);
-    Diagnostics::ColumnTracerView state_q(state_q_mem.data(), nlev,
-                                          aero_model::pcnst);
+        mam4::validation::create_column_view(nlev * mam4::aero_model::pcnst);
+    mam4::Diagnostics::ColumnTracerView state_q(state_q_mem.data(), nlev,
+                                                mam4::aero_model::pcnst);
     {
       auto host_q = Kokkos::create_mirror_view(state_q);
-      for (int i = aerosol_index; i < aero_model::pcnst; ++i) {
+      for (int i = aerosol_index; i < mam4::aero_model::pcnst; ++i) {
         const std::string name = "statq_" + std::to_string(i + 1);
         const std::vector<Real> vec = input.get_array(name);
         for (int j = 0; j < vec.size(); ++j)
@@ -88,8 +85,8 @@ void compute_tendencies(Ensemble *ensemble) {
       Kokkos::deep_copy(state_q, host_q);
     }
 
-    Kokkos::View<Real *> qqcw[aero_model::pcnst];
-    for (int i = 0; i < aero_model::pcnst; ++i) {
+    Kokkos::View<Real *> qqcw[mam4::aero_model::pcnst];
+    for (int i = 0; i < mam4::aero_model::pcnst; ++i) {
       const std::string name = "qqcw_" + std::to_string(i + 1);
       if (i < aerosol_index)
         qqcw[i] = mam4::validation::create_column_view(nlev);
@@ -97,10 +94,10 @@ void compute_tendencies(Ensemble *ensemble) {
         qqcw[i] = to_dev(input.get_array(name));
     }
 
-    ColumnView dgncur_awet[AeroConfig::num_modes()];
+    mam4::ColumnView dgncur_awet[mam4::AeroConfig::num_modes()];
     {
       std::vector<Real> dgncur_tot = input.get_array("dgncur_awet");
-      for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+      for (int m = 0; m < mam4::AeroConfig::num_modes(); ++m) {
         std::vector<Real> dgncur(nlev);
         for (int lev = 0; lev < nlev; ++lev)
           dgncur[lev] = dgncur_tot[m * nlev + lev]; // col
@@ -109,10 +106,10 @@ void compute_tendencies(Ensemble *ensemble) {
       }
     }
 
-    ColumnView wetdens[AeroConfig::num_modes()];
+    mam4::ColumnView wetdens[mam4::AeroConfig::num_modes()];
     {
       std::vector<Real> wetdens_tot = input.get_array("wetdens");
-      for (int m = 0; m < AeroConfig::num_modes(); ++m) {
+      for (int m = 0; m < mam4::AeroConfig::num_modes(); ++m) {
         std::vector<Real> wet(nlev);
         for (int lev = 0; lev < nlev; ++lev)
           wet[lev] = wetdens_tot[m * nlev + lev]; // col
@@ -131,37 +128,38 @@ void compute_tendencies(Ensemble *ensemble) {
     const Real dt = input.get_array("dt").front();
 
     auto ptend_q_mem =
-        mam4::validation::create_column_view(nlev * aero_model::pcnst);
-    Diagnostics::ColumnTracerView ptend_q(ptend_q_mem.data(), nlev,
-                                          aero_model::pcnst);
+        mam4::validation::create_column_view(nlev * mam4::aero_model::pcnst);
+    mam4::Diagnostics::ColumnTracerView ptend_q(ptend_q_mem.data(), nlev,
+                                                mam4::aero_model::pcnst);
 
-    ColumnView aerdepdryis =
-        mam4::validation::create_column_view(aero_model::pcnst);
-    ColumnView aerdepdrycw =
-        mam4::validation::create_column_view(aero_model::pcnst);
+    mam4::ColumnView aerdepdryis =
+        mam4::validation::create_column_view(mam4::aero_model::pcnst);
+    mam4::ColumnView aerdepdrycw =
+        mam4::validation::create_column_view(mam4::aero_model::pcnst);
 
-    const int aerosol_categories = DryDeposition::aerosol_categories;
-    ColumnView rho = mam4::validation::create_column_view(nlev);
-    Kokkos::View<Real *> vlc_dry[AeroConfig::num_modes()][aerosol_categories],
-        vlc_trb[AeroConfig::num_modes()][aerosol_categories],
-        vlc_grv[AeroConfig::num_modes()][aerosol_categories];
-    for (int j = 0; j < AeroConfig::num_modes(); ++j) {
+    const int aerosol_categories = mam4::DryDeposition::aerosol_categories;
+    mam4::ColumnView rho = mam4::validation::create_column_view(nlev);
+    Kokkos::View<Real *> vlc_dry[mam4::AeroConfig::num_modes()]
+                                [aerosol_categories],
+        vlc_trb[mam4::AeroConfig::num_modes()][aerosol_categories],
+        vlc_grv[mam4::AeroConfig::num_modes()][aerosol_categories];
+    for (int j = 0; j < mam4::AeroConfig::num_modes(); ++j) {
       for (int i = 0; i < aerosol_categories; ++i) {
         Kokkos::resize(vlc_dry[j][i], nlev);
         Kokkos::resize(vlc_trb[j][i], nlev);
         Kokkos::resize(vlc_grv[j][i], nlev);
       }
     }
-    Kokkos::View<Real *> dqdt_tmp[aero_model::pcnst];
-    for (int i = 0; i < aero_model::pcnst; ++i)
+    Kokkos::View<Real *> dqdt_tmp[mam4::aero_model::pcnst];
+    for (int i = 0; i < mam4::aero_model::pcnst; ++i)
       Kokkos::resize(dqdt_tmp[i], nlev);
 
     Real pblh = 1000;
-    Atmosphere atm = validation::create_atmosphere(nlev, pblh);
-    Surface sfc = validation::create_surface();
-    mam4::Prognostics progs = validation::create_prognostics(nlev);
-    mam4::Diagnostics diags = validation::create_diagnostics(nlev);
-    mam4::Tendencies tends = validation::create_tendencies(nlev);
+    mam4::Atmosphere atm = mam4::validation::create_atmosphere(nlev, pblh);
+    mam4::Surface sfc = mam4::validation::create_surface();
+    mam4::Prognostics progs = mam4::validation::create_prognostics(nlev);
+    mam4::Diagnostics diags = mam4::validation::create_diagnostics(nlev);
+    mam4::Tendencies tends = mam4::validation::create_tendencies(nlev);
 
     mam4::AeroConfig mam4_config;
     mam4::DryDepositionProcess::ProcessConfig process_config;
@@ -174,7 +172,7 @@ void compute_tendencies(Ensemble *ensemble) {
     atm.hydrostatic_dp = pdel;
 
     diags.tracer_mixing_ratio = state_q;
-    for (int i = 0; i < AeroConfig::num_modes(); ++i) {
+    for (int i = 0; i < mam4::AeroConfig::num_modes(); ++i) {
       diags.wet_geometric_mean_diameter_i[i] = dgncur_awet[i];
       diags.wet_density[i] = wetdens[i];
     }
@@ -189,33 +187,34 @@ void compute_tendencies(Ensemble *ensemble) {
     diags.deposition_flux_of_cloud_borne_aerosols = aerdepdrycw;
     diags.deposition_flux_of_interstitial_aerosols = aerdepdryis;
 
-    static constexpr int ntot_amode = AeroConfig::num_modes();
-    const int num_aerosol = AeroConfig::num_aerosol_ids();
+    static constexpr int ntot_amode = mam4::AeroConfig::num_modes();
+    const int num_aerosol = mam4::AeroConfig::num_aerosol_ids();
     for (int m = 0; m < ntot_amode; ++m) {
-      progs.n_mode_c[m] = qqcw[ConvProc::numptrcw_amode(m)];
+      progs.n_mode_c[m] = qqcw[mam4::ConvProc::numptrcw_amode(m)];
       for (int a = 0; a < num_aerosol; ++a)
-        if (-1 < ConvProc::lmassptrcw_amode(a, m))
-          progs.q_aero_c[m][a] = qqcw[ConvProc::lmassptrcw_amode(a, m)];
+        if (-1 < mam4::ConvProc::lmassptrcw_amode(a, m))
+          progs.q_aero_c[m][a] = qqcw[mam4::ConvProc::lmassptrcw_amode(a, m)];
     }
 
-    auto team_policy = haero::ThreadTeamPolicy(1u, 1u);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, 1u);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           process.compute_tendencies(team, t, dt, atm, sfc, progs, diags,
                                      tends);
         });
 
     for (int m = 0; m < ntot_amode; ++m) {
-      qqcw[ConvProc::numptrcw_amode(m)] = tends.n_mode_c[m] = tends.n_mode_c[m];
+      qqcw[mam4::ConvProc::numptrcw_amode(m)] = tends.n_mode_c[m] =
+          tends.n_mode_c[m];
       for (int a = 0; a < num_aerosol; ++a)
-        if (-1 < ConvProc::lmassptrcw_amode(a, m))
-          qqcw[ConvProc::lmassptrcw_amode(a, m)] = tends.q_aero_c[m][a];
+        if (-1 < mam4::ConvProc::lmassptrcw_amode(a, m))
+          qqcw[mam4::ConvProc::lmassptrcw_amode(a, m)] = tends.q_aero_c[m][a];
     }
     aerdepdrycw = diags.deposition_flux_of_cloud_borne_aerosols;
     aerdepdryis = diags.deposition_flux_of_interstitial_aerosols;
     ptend_q = diags.d_tracer_mixing_ratio_dt;
     Kokkos::fence();
-    auto to_host = [](haero::ConstColumnView dev) {
+    auto to_host = [](mam4::ColumnView dev) {
       auto host = Kokkos::create_mirror_view(dev);
       Kokkos::deep_copy(host, dev);
       std::vector<Real> vec(host.size());
@@ -228,7 +227,7 @@ void compute_tendencies(Ensemble *ensemble) {
     std::vector<Real> cw_host = to_host(aerdepdrycw);
     Kokkos::deep_copy(ptend_host, ptend_q);
     std::vector<Real> ptend(nlev);
-    for (int m = aerosol_index; m < aero_model::pcnst; ++m) {
+    for (int m = aerosol_index; m < mam4::aero_model::pcnst; ++m) {
       for (int lev = 0; lev < nlev; ++lev)
         ptend[lev] = ptend_host(lev, m);
       output.set("ptendq_" + std::to_string(m + 1), ptend);

@@ -4,15 +4,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/convproc.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 namespace {
 void get_input(const Input &input, const std::string &name, const int size,
-               std::vector<Real> &host, ColumnView &dev) {
+               std::vector<Real> &host, mam4::ColumnView &dev) {
   host = input.get_array(name);
   dev = mam4::validation::create_column_view(size);
 
@@ -24,7 +22,7 @@ void get_input(const Input &input, const std::string &name, const int size,
 }
 
 void set_output(Output &output, const std::string &name, const int size,
-                std::vector<Real> &host, const ColumnView &dev) {
+                std::vector<Real> &host, const mam4::ColumnView &dev) {
   auto host_view = Kokkos::create_mirror_view(dev);
   Kokkos::deep_copy(host_view, dev);
   for (int n = 0; n < size; ++n)
@@ -36,7 +34,7 @@ void get_input(const Input &input, const std::string &name, const int rows,
                const int cols, const bool col_major, std::vector<Real> &host,
                Kokkos::View<Real **, Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
-  ColumnView col_view = mam4::validation::create_column_view(rows * cols);
+  mam4::ColumnView col_view = mam4::validation::create_column_view(rows * cols);
   dev = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(col_view.data(), rows,
                                                        cols);
   EKAT_ASSERT(host.size() == rows * cols);
@@ -81,7 +79,7 @@ void update_tendency_final(Ensemble *ensemble) {
 
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
-    const int pcnst = aero_model::pcnst;
+    const int pcnst = mam4::aero_model::pcnst;
     // Fetch ensemble parameters
 
     // delta t (model time increment) [s]
@@ -101,12 +99,12 @@ void update_tendency_final(Ensemble *ensemble) {
 
     // flag for doing convective transport
     std::vector<Real> doconvproc_host;
-    ColumnView doconvproc_dev;
+    mam4::ColumnView doconvproc_dev;
     get_input(input, "doconvproc", pcnst, doconvproc_host, doconvproc_dev);
 
     std::vector<Real> sumactiva_host, sumaqchem_host, sumwetdep_host,
         sumresusp_host, sumprevap_host, sumprevap_hist_host;
-    ColumnView sumactiva_dev, sumaqchem_dev, sumwetdep_dev, sumresusp_dev,
+    mam4::ColumnView sumactiva_dev, sumaqchem_dev, sumwetdep_dev, sumresusp_dev,
         sumprevap_dev, sumprevap_hist_dev;
     get_input(input, "sumactiva", 2 * ncnst, sumactiva_host, sumactiva_dev);
     get_input(input, "sumaqchem", 2 * ncnst, sumaqchem_host, sumaqchem_dev);
@@ -149,7 +147,7 @@ void update_tendency_final(Ensemble *ensemble) {
           for (int i = 0; i < ncnst; ++i)
             for (int j = 0; j < nsrflx; ++j)
               qsrflx[i][j] = qsrflx_dev(i, j);
-          convproc::update_tendency_diagnostics(
+          mam4::convproc::update_tendency_diagnostics(
               ntsub, ncnst, doconvproc, sumactiva, sumaqchem, sumwetdep,
               sumresusp, sumprevap, sumprevap_hist, qsrflx);
           for (int i = 0; i < ncnst; ++i)
@@ -177,8 +175,8 @@ void update_tendency_final(Ensemble *ensemble) {
             for (int i = 0; i < ncnst; ++i)
               q_i[i] = q_i_dev(i, klev);
 
-            convproc::update_tendency_final(ntsub, jtsub, ncnst, dt, dcondt,
-                                            doconvproc, dqdt, q_i);
+            mam4::convproc::update_tendency_final(
+                ntsub, jtsub, ncnst, dt, dcondt, doconvproc, dqdt, q_i);
             for (int i = 0; i < ncnst; ++i)
               dqdt_dev(i, klev) = dqdt[i];
             for (int i = 0; i < ncnst; ++i)

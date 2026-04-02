@@ -1,11 +1,9 @@
 #ifndef MAM4XX_MO_PHOTO_HPP
 #define MAM4XX_MO_PHOTO_HPP
 
-#include <haero/math.hpp>
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/gas_chem_mechanism.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
+#include "utils.hpp"
 
 namespace mam4 {
 
@@ -228,7 +226,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
           // liquid water path in each layer [g/m2]
           const Real del_lwp = rgrav * lwc(kk) * delp(kk) * thousand /
                                clouds(kk); // the unit is (likely) g/m^2
-          del_tau(kk) = del_lwp * f_lwp2tau * haero::pow(clouds(kk), 1.5);
+          del_tau(kk) = del_lwp * f_lwp2tau * mam4::pow(clouds(kk), 1.5);
         } else {
           del_tau(kk) = zero;
         } // end if
@@ -390,7 +388,7 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
   const Real C2 = 9.524;
 
   // cos (solar zenith angle)
-  const Real coschi = haero::max(haero::cos(zen_angle), half);
+  const Real coschi = mam4::max(mam4::cos(zen_angle), half);
 
   Kokkos::parallel_for(
       Kokkos::TeamVectorRange(team, pver_local), [&](const int kk) {
@@ -418,10 +416,10 @@ void cloud_mod(const ThreadTeam &team, const Real zen_angle,
         const Real above_tra = C1 / (C2 + above_tau[kk]);
         // factor to calculate cld_mult
         // BAD CONSTANT
-        Real fac2 = haero::min(zero, 1.6 * coschi * above_tra - one);
+        Real fac2 = mam4::min(zero, 1.6 * coschi * above_tra - one);
         // BAD CONSTANT
         cld_mult[kk] =
-            haero::max(.05, one + fac1 * clouds[kk] + fac2 * above_cld[kk]);
+            mam4::max(.05, one + fac1 * clouds[kk] + fac2 * above_cld[kk]);
       });
 
 } // end cloud_mod
@@ -444,7 +442,7 @@ void find_index(const View1D &var_in, const int var_len,
   for (int ii = 0; ii < var_len; ii++) {
     if (var_in(ii) > var_min) {
       // Fortran to C++ indexing
-      idx_out = max(min(ii, var_len - 1) - 1, 0);
+      idx_out = mam4::max(mam4::min(ii, var_len - 1) - 1, 0);
       break;
     } // end if
   }   // end for ii
@@ -589,7 +587,7 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
         // Fortran to C++ indexing
         auto min = [](int i, int j) { return (i < j) ? i : j; };
         auto max = [](int i, int j) { return (i < j) ? j : i; };
-        pind = max(min(iz, nump - 1), 1);
+        pind = mam4::max(mam4::min(iz, nump - 1), 1);
         wght1 = utils::min_max_bound(
             zero, one, (p_in[kk] - press[pind]) * del_p[pind - 1]);
       } // end if
@@ -751,7 +749,7 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
       // Fortran indexing to C++ indexing
       // number of temperatures in xsection table
       // BAD CONSTANT for 201 and 148.5
-      const int t_index = haero::min(201, haero::max(t_in[kk] - 148.5, 1)) - 1;
+      const int t_index = mam4::min(201, mam4::max(t_in[kk] - 148.5, 1)) - 1;
 
       /*----------------------------------------------------------------------
                  ... find pressure level
@@ -806,7 +804,7 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
 } // jlong
 
 // FIXME: note the use of ConstColumnView for views we get from the
-// FIXME: haero::Atmosphere type
+// FIXME: Atmosphere type
 KOKKOS_INLINE_FUNCTION
 void table_photo(const ThreadTeam &team, const View2D &photo, // out
                  const ConstColumnView &pmid, const ConstColumnView &pdel,
@@ -841,8 +839,8 @@ void table_photo(const ThreadTeam &team, const View2D &photo, // out
   //	... zero all photorates
   //-----------------------------------------------------------------
   constexpr Real zero = 0;
-  constexpr Real Pa2mb = 1.e-2;                      // pascals to mb
-  constexpr Real r2d = 180.0 / haero::Constants::pi; // degrees to radians
+  constexpr Real Pa2mb = 1.e-2;               // pascals to mb
+  constexpr Real r2d = 180.0 / Constants::pi; // degrees to radians
   // BAD CONSTANT
   constexpr Real max_zen_angle = 88.85; //  degrees
   constexpr int pver_local = pver;

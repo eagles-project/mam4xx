@@ -3,23 +3,19 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef MAM4_CONVERSIONS_HPP
-#define MAM4_CONVERSIONS_HPP
+#ifndef MAM4XX_CONVERSIONS_HPP
+#define MAM4XX_CONVERSIONS_HPP
 
-#include <haero/constants.hpp>
-#include <haero/math.hpp>
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
 
 #include <ekat_kernel_assert.hpp>
+#include <ekat_kokkos_types.hpp>
 
 /// This file contains functions for converting between various representations
 /// of physical quantities in aerosol parameterizations.
 
 namespace mam4::conversions {
-
-using Real = haero::Real;
-using Constants = haero::Constants;
-using haero::cube;
-using haero::square;
 
 /// Given a number concentration for a species or mixture [m-3], computes and
 /// returns a mass mixing ratio [kg species/kg dry air] based on its molecular
@@ -155,7 +151,7 @@ KOKKOS_INLINE_FUNCTION Real vapor_saturation_pressure_magnus_ew(Real T) {
   static constexpr Real exp_den = 234.04; // deg C
   const auto Tf = Constants::freezing_pt_h2o;
   const auto celsius_temp = T - Tf;
-  return e0 * exp(exp_num * celsius_temp / (exp_den + celsius_temp));
+  return e0 * mam4::exp(exp_num * celsius_temp / (exp_den + celsius_temp));
 }
 
 /// Computes the saturation vapor pressure of water as a function
@@ -180,7 +176,7 @@ KOKKOS_INLINE_FUNCTION Real vapor_saturation_pressure_magnus_ew(Real T) {
 ///  @return es(T) saturation vapor pressure of water vapor [Pa]
 KOKKOS_INLINE_FUNCTION Real vapor_saturation_pressure_magnus(Real T, Real P) {
   const auto ew = vapor_saturation_pressure_magnus_ew(T);
-  return 1.00071 * exp(4.5e-8 * P) * ew;
+  return 1.00071 * mam4::exp(4.5e-8 * P) * ew;
 }
 
 ///  Saturation vapor pressure, Hardy formula
@@ -215,9 +211,9 @@ KOKKOS_INLINE_FUNCTION Real vapor_saturation_pressure_hardy(Real T) {
   log_es += g[4] * square(T);
   // Higher are powers of T
   log_es += g[5] * cube(T);
-  log_es += g[6] * pow(T, 4);
-  log_es += g[7] * log(T);
-  return exp(log_es);
+  log_es += g[6] * mam4::pow(T, 4);
+  log_es += g[7] * mam4::log(T);
+  return mam4::exp(log_es);
 }
 
 ///  Saturation mixing ratio of water vapor
@@ -324,8 +320,8 @@ KOKKOS_INLINE_FUNCTION Real vapor_mixing_ratio_from_relative_humidity(
 KOKKOS_INLINE_FUNCTION Real mean_particle_diameter_from_volume(
     const Real mode_mean_particle_volume, const Real mean_std_dev) {
   const double pio6 = Constants::pi_sixth;
-  return cbrt(mode_mean_particle_volume / pio6) *
-         exp(-1.5 * square(log(mean_std_dev)));
+  return mam4::cbrt(mode_mean_particle_volume / pio6) *
+         mam4::exp(-1.5 * square(mam4::log(mean_std_dev)));
 }
 
 ///   This function is the inverse of
@@ -337,13 +333,14 @@ KOKKOS_INLINE_FUNCTION Real mean_particle_diameter_from_volume(
 KOKKOS_INLINE_FUNCTION Real
 mean_particle_volume_from_diameter(Real geom_diam, Real mean_std_dev) {
   const double pio6 = Constants::pi_sixth;
-  return cube(geom_diam) * exp(4.5 * square(log(mean_std_dev))) * pio6;
+  return cube(geom_diam) * mam4::exp(4.5 * square(mam4::log(mean_std_dev))) *
+         pio6;
 }
 
 /// Compute the density of an ideal gas given its temperature and pressure.
 ///
 /// Example usage (default assumes gas is air):
-///    atm = haero::Atmosphere;
+///    atm = Atmosphere;
 ///    k = level idx;
 ///
 ///    rho = density_of_ideal_gas(atm.temperature(k), atm.pressure(k));

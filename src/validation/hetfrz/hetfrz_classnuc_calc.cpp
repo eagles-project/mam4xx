@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void hetfrz_classnuc_calc(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -136,7 +134,7 @@ void hetfrz_classnuc_calc(Ensemble *ensemble) {
     skywalker::Real frzdudep = 0.0;
 
     // call hetfrz::hetfrz_classnuc_calc
-    hetfrz::hetfrz_classnuc_calc(
+    mam4::hetfrz::hetfrz_classnuc_calc(
         deltat, temperature, pressure, supersatice, fn.data(), r3lx, icnlx,
         hetraer.data(), awcam.data(), awfacm.data(), dstcoat.data(),
         total_aer_num.data(), coated_aer_num.data(), uncoated_aer_num.data(),

@@ -3,14 +3,11 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/wet_dep.hpp>
-#include <skywalker.hpp>
+
 #include <validation.hpp>
 #include <vector>
 
-using namespace haero;
 using namespace skywalker;
 
 void test_calculate_cloudy_volume_process(const Input &input, Output &output) {
@@ -37,10 +34,10 @@ void test_calculate_cloudy_volume_process(const Input &input, Output &output) {
   EKAT_ASSERT(nlev == cld.size());
   EKAT_ASSERT(nlev == lprec.size());
 
-  ColumnView cld_dev = mam4::validation::create_column_view(nlev);
-  ColumnView lprec_dev = mam4::validation::create_column_view(nlev);
-  ColumnView cldv_dev = mam4::validation::create_column_view(nlev);
-  ColumnView sumppr_all_dev = mam4::validation::create_column_view(nlev);
+  auto cld_dev = mam4::validation::create_column_view(nlev);
+  auto lprec_dev = mam4::validation::create_column_view(nlev);
+  auto cldv_dev = mam4::validation::create_column_view(nlev);
+  auto sumppr_all_dev = mam4::validation::create_column_view(nlev);
   {
     auto cld_host = Kokkos::create_mirror_view(cld_dev);
     for (int i = 0; i < nlev; ++i)

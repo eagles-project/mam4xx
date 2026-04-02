@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/aging.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void mam_pcarbon_aging_1subarea(Ensemble *ensemble) {
 
@@ -64,16 +62,16 @@ void mam_pcarbon_aging_1subarea(Ensemble *ensemble) {
     auto qaer_del_coag_f = input.get_array("qaer_del_coag");
     auto qaer_del_coag_in_f = input.get_array("qaer_del_coag_in");
 
-    const int num_modes = AeroConfig::num_modes();
-    const int num_aero = AeroConfig::num_aerosol_ids();
+    const int num_modes = mam4::AeroConfig::num_modes();
+    const int num_aero = mam4::AeroConfig::num_aerosol_ids();
 
     Real qaer_cur_c[num_aero][num_modes];
     Real qaer_del_cond_c[num_aero][num_modes];
     Real qaer_del_coag_c[num_aero][num_modes];
-    Real qaer_del_coag_in_c[num_aero][AeroConfig::max_agepair()];
+    Real qaer_del_coag_in_c[num_aero][mam4::AeroConfig::max_agepair()];
 
     int n = 0;
-    for (int imode = 0; imode < AeroConfig::max_agepair(); ++imode) {
+    for (int imode = 0; imode < mam4::AeroConfig::max_agepair(); ++imode) {
       for (int ispec = 0; ispec < num_aero; ++ispec) {
         qaer_del_coag_in_c[ispec][imode] = qaer_del_coag_in_f[n];
         n += 1;
@@ -90,13 +88,13 @@ void mam_pcarbon_aging_1subarea(Ensemble *ensemble) {
       }
     }
     const unsigned n_so4_monolayers_pcage = 8;
-    aging::mam_pcarbon_aging_1subarea(
+    mam4::aging::mam_pcarbon_aging_1subarea(
         n_so4_monolayers_pcage, dgn_a_f.data(), qnum_cur_f.data(),
         qnum_del_cond_f.data(), qnum_del_coag_f.data(), qaer_cur_c,
         qaer_del_cond_c, qaer_del_coag_c, qaer_del_coag_in_c);
 
     n = 0;
-    for (int imode = 0; imode < AeroConfig::max_agepair(); ++imode) {
+    for (int imode = 0; imode < mam4::AeroConfig::max_agepair(); ++imode) {
       for (int ispec = 0; ispec < num_aero; ++ispec) {
         qaer_del_coag_in_f[n] = qaer_del_coag_in_c[ispec][imode];
         n += 1;

@@ -4,11 +4,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/calcsize.hpp>
-#include <skywalker.hpp>
+#include <mam4xx/floating_point.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void adjust_num_sizes(Ensemble *ensemble) {
 
@@ -21,7 +20,7 @@ void adjust_num_sizes(Ensemble *ensemble) {
 
     Real dt = input.get("dt");
 
-    const auto nmodes = AeroConfig::num_modes();
+    const auto nmodes = mam4::AeroConfig::num_modes();
 
     // these variables depend on mode No and k
     auto in_drv_i = input.get_array("dryvol_i");
@@ -53,9 +52,9 @@ void adjust_num_sizes(Ensemble *ensemble) {
     }
 
     static constexpr Real seconds_in_a_day = 86400.0;
-    const Real adj_tscale = haero::max(seconds_in_a_day, dt);
+    const Real adj_tscale = mam4::max(seconds_in_a_day, dt);
     const Real adj_tscale_inv =
-        FloatingPoint<Real>::safe_denominator(adj_tscale);
+        mam4::FloatingPoint<Real>::safe_denominator(adj_tscale);
 
     Real interstitial_tend[nmodes] = {0};
     Real cloudborne_tend[nmodes] = {0};
@@ -68,11 +67,11 @@ void adjust_num_sizes(Ensemble *ensemble) {
     for (int m = 0; m < nmodes; ++m) {
       num_i[m] = init_num_i[m] < 0 ? zero : init_num_i[m];
       num_c[m] = init_num_c[m] < 0 ? zero : init_num_c[m];
-      calcsize::adjust_num_sizes(drv_i[m], drv_c[m], init_num_i[m],
-                                 init_num_c[m], dt, v2nmin[m], v2nmax[m],
-                                 adj_tscale_inv, // in
-                                 num_i[m], num_c[m], interstitial_tend[m],
-                                 cloudborne_tend[m]);
+      mam4::calcsize::adjust_num_sizes(drv_i[m], drv_c[m], init_num_i[m],
+                                       init_num_c[m], dt, v2nmin[m], v2nmax[m],
+                                       adj_tscale_inv, // in
+                                       num_i[m], num_c[m], interstitial_tend[m],
+                                       cloudborne_tend[m]);
     }
     //});
 

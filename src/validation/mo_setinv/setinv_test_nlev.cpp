@@ -4,19 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
+
 void setinv_test_nlev(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1D = DeviceType::view_1d<Real>;
-    using View2D = DeviceType::view_2d<Real>;
-    using View2DHost = typename HostType::view_2d<Real>;
+    using View1D = mam4::DeviceType::view_1d<Real>;
+    using View2D = mam4::DeviceType::view_2d<Real>;
+    using View2DHost = typename mam4::HostType::view_2d<Real>;
     // Ensemble parameters
     // Declare array of strings for input names
     std::string input_arrays[] = {
@@ -43,9 +39,9 @@ void setinv_test_nlev(Ensemble *ensemble) {
     const int nfs = mam4::mo_setinv::nfs;
     const int num_tracer_cnst = mam4::mo_setinv::num_tracer_cnst;
 
-    ColumnView tfld = haero::testing::create_column_view(nlev);
-    ColumnView qv = haero::testing::create_column_view(nlev);
-    ColumnView pmid = haero::testing::create_column_view(nlev);
+    mam4::ColumnView tfld = mam4::testing::create_column_view(nlev);
+    mam4::ColumnView qv = mam4::testing::create_column_view(nlev);
+    mam4::ColumnView pmid = mam4::testing::create_column_view(nlev);
 
     View2D invariants("invariants", nlev, nfs);
     auto invariants_h = Kokkos::create_mirror_view(invariants);
@@ -57,8 +53,8 @@ void setinv_test_nlev(Ensemble *ensemble) {
 
     View2DHost c_off_h("c_off_h", num_tracer_cnst, nlev);
 
-    constexpr Real mwh2o = Constants::molec_weight_h2o;
-    Real qv_k_in = conversions::mmr_from_vmr(h2ovmr_in, mwh2o);
+    constexpr Real mwh2o = mam4::Constants::molec_weight_h2o;
+    Real qv_k_in = mam4::conversions::mmr_from_vmr(h2ovmr_in, mwh2o);
 
     for (int k = 0; k < nlev; ++k) {
       for (int i = 0; i < num_tracer_cnst; ++i) {
@@ -75,9 +71,9 @@ void setinv_test_nlev(Ensemble *ensemble) {
     }
 
     // Single-column dispatch.
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           mam4::mo_setinv::setinv(team, invariants, tfld, qv, c_off, pmid);
         });
 

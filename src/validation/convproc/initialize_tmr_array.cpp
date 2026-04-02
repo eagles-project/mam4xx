@@ -4,18 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <ekat_assert.hpp>
-#include <iomanip>
-#include <iostream>
 
 #include <mam4xx/convproc.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
+
 using namespace skywalker;
-using namespace mam4;
 
 namespace {
 void get_input(const Input &input, const std::string &name, const int size,
-               std::vector<Real> &host, ColumnView &dev) {
+               std::vector<Real> &host, mam4::ColumnView &dev) {
   host = input.get_array(name);
   EKAT_ASSERT(host.size() == size);
   dev = mam4::validation::create_column_view(size);
@@ -24,13 +21,13 @@ void get_input(const Input &input, const std::string &name, const int size,
     host_view[n] = host[n];
   Kokkos::deep_copy(dev, host_view);
 }
-void get_input(
-    const Input &input, const std::string &name, const int rows, const int cols,
-    std::vector<Real> &host,
-    Kokkos::View<Real * [aero_model::pcnst], Kokkos::MemoryUnmanaged> &dev) {
+void get_input(const Input &input, const std::string &name, const int rows,
+               const int cols, std::vector<Real> &host,
+               Kokkos::View<Real * [mam4::aero_model::pcnst],
+                            Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
   EKAT_ASSERT(host.size() == rows * cols);
-  ColumnView col_view = mam4::validation::create_column_view(rows * cols);
+  mam4::ColumnView col_view = mam4::validation::create_column_view(rows * cols);
   dev = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(col_view.data(), rows,
                                                        cols);
   {
@@ -47,7 +44,7 @@ void get_input(
 }
 void set_output(Output &output, const std::string &name, const int rows,
                 const int cols, std::vector<Real> &host,
-                const Kokkos::View<Real * [ConvProc::pcnst_extd],
+                const Kokkos::View<Real * [mam4::ConvProc::pcnst_extd],
                                    Kokkos::MemoryUnmanaged> &dev) {
   host.resize(rows * cols);
   auto host_view = Kokkos::create_mirror_view(dev);
@@ -64,8 +61,8 @@ void initialize_tmr_array(Ensemble *ensemble) {
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
-    const int pcnst_extd = ConvProc::pcnst_extd;
-    const int pcnst = aero_model::pcnst;
+    const int pcnst_extd = mam4::ConvProc::pcnst_extd;
+    const int pcnst = mam4::aero_model::pcnst;
     using Kokko2DView =
         Kokkos::View<Real *[pcnst_extd], Kokkos::MemoryUnmanaged>;
     // Fetch ensemble parameters
@@ -75,7 +72,7 @@ void initialize_tmr_array(Ensemble *ensemble) {
 
     std::vector<Real> doconvproc_extd_host, q_i_host, gath_host, chat_host,
         conu_host, cond_host;
-    ColumnView doconvproc_extd_dev;
+    mam4::ColumnView doconvproc_extd_dev;
     Kokkos::View<Real *[pcnst], Kokkos::MemoryUnmanaged> q_i_dev;
     get_input(input, "doconvproc_extd", pcnst_extd, doconvproc_extd_host,
               doconvproc_extd_dev);
@@ -94,9 +91,9 @@ void initialize_tmr_array(Ensemble *ensemble) {
           bool doconvproc_extd[pcnst_extd];
           for (int i = 0; i < pcnst_extd; ++i)
             doconvproc_extd[i] = doconvproc_extd_dev[i];
-          convproc::initialize_tmr_array(nlev, iconvtype, doconvproc_extd,
-                                         q_i_dev, gath_dev, chat_dev, conu_dev,
-                                         cond_dev);
+          mam4::convproc::initialize_tmr_array(nlev, iconvtype, doconvproc_extd,
+                                               q_i_dev, gath_dev, chat_dev,
+                                               conu_dev, cond_dev);
         });
     // Check case of iflux_method == 2 which is not part of the e3sm tests.
     set_output(output, "const", nlev, pcnst_extd, gath_host, gath_dev);

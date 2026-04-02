@@ -1,0 +1,29 @@
+// mam4xx: Copyright (c) 2022,
+// Battelle Memorial Institute and
+// National Technology & Engineering Solutions of Sandia, LLC (NTESS)
+// SPDX-License-Identifier: BSD-3-Clause
+
+#ifndef MAM4XX_CONFIG_HPP
+#define MAM4XX_CONFIG_HPP
+
+namespace mam4 {
+
+/// Real-valued numbers are of this type.
+using Real = @MAM4XX_REAL_TYPE@;
+
+#if @MAM4XX_DOUBLE_PRECISION@
+#define MAM4XX_DOUBLE_PRECISION 1
+#else
+#define MAM4XX_SINGLE_PRECISION 1
+#endif
+
+#cmakedefine MAM4XX_ENABLE_GPU
+
+// Number of vertical levels per column (must match the number in the
+// host model)
+constexpr int nlev = @MAM4XX_NUM_VERTICAL_LEVELS@;
+constexpr int pcnst = 40;
+
+} // namespace mam4
+
+#endif

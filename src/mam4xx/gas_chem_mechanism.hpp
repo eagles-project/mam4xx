@@ -1,11 +1,18 @@
 #ifndef MAM4XX_GAS_CHEM_HPP
 #define MAM4XX_GAS_CHEM_HPP
+
+#include "mam4_math.hpp"
+#include <mam4xx/mam4_config.hpp>
+
+#include <ekat_kokkos_types.hpp>
+
 // pp_linoz_mam4_resus_mom_soag
 // Generated code.
 // Authors: Oscar Diaz-Ibarra (odiazib@sandia.gov)
 //          Mike Schmidt (mjschm@sandia.gov)
 namespace mam4 {
 namespace gas_chemistry {
+
 constexpr int nabscol = 2;    // number of absorbing densities
 constexpr int rxntot = 7;     // number of total reactions
 constexpr int gas_pcnst = 31; // number of gas phase species
@@ -46,9 +53,9 @@ const Real *get_adv_mass() {
 
 KOKKOS_INLINE_FUNCTION
 void setrxt(Real rates[rxntot], const Real temp) {
-  rates[2] = 2.9000000000e-12 * haero::exp(-160.000000 / temp);
-  rates[4] = 9.6000000000e-12 * haero::exp(-234.000000 / temp);
-  rates[6] = 1.9000000000e-13 * haero::exp(520.000000 / temp);
+  rates[2] = 2.9000000000e-12 * mam4::exp(-160.000000 / temp);
+  rates[4] = 9.6000000000e-12 * mam4::exp(-234.000000 / temp);
+  rates[6] = 1.9000000000e-13 * mam4::exp(520.000000 / temp);
 } // setrxt
 
 KOKKOS_INLINE_FUNCTION

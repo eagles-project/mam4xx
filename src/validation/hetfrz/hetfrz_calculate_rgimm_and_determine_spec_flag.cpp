@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void calculate_rgimm_and_determine_spec_flag(Ensemble *ensemble) {
   // Run the ensemble.
@@ -58,7 +56,7 @@ void calculate_rgimm_and_determine_spec_flag(Ensemble *ensemble) {
     auto rgimm = input.get("rgimm");
 
     bool do_spec_flag = true;
-    hetfrz::calculate_rgimm_and_determine_spec_flag(
+    mam4::hetfrz::calculate_rgimm_and_determine_spec_flag(
         vwice, sigma_iw, temperature, aw, supersatice, rgimm, do_spec_flag);
 
     skywalker::Real do_spec_flag_real = int(do_spec_flag);

@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void get_Aimm(Ensemble *ensemble) {
   // Run the ensemble.
@@ -45,7 +43,8 @@ void get_Aimm(Ensemble *ensemble) {
     skywalker::Real dg0imm = input.get("dg0imm");
 
     // Compute Aimm
-    skywalker::Real Aimm = hetfrz::get_Aimm(vwice, rgimm, temperature, dg0imm);
+    skywalker::Real Aimm =
+        mam4::hetfrz::get_Aimm(vwice, rgimm, temperature, dg0imm);
 
     // Store Aimm as an output variable
     output.set("Aimm", Aimm);

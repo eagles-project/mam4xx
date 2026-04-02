@@ -3,24 +3,20 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include <mam4xx/mam4_constants.hpp>
+#include <mam4xx/mam4_types.hpp>
 #include <mam4xx/nucleation.hpp>
 
-#include <haero/constants.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
-#include <iostream>
-
 using namespace skywalker;
-using namespace mam4;
 
 void newnuc_cluster_growth(Ensemble *ensemble) {
-  constexpr Real rgas = Constants::r_gas; // [J/K/mol]
-  constexpr Real pi = Constants::pi;
-  constexpr Real avogadro = Constants::avogadro;              // [#/mol]
-  constexpr Real mw_so4a = Constants::molec_weight_so4 * 1e3; // [g/mol]
-  constexpr Real mw_nh4a = Constants::molec_weight_nh4 * 1e3; // [g/mol]
+  constexpr Real rgas = mam4::Constants::r_gas; // [J/K/mol]
+  constexpr Real pi = mam4::Constants::pi;
+  constexpr Real avogadro = mam4::Constants::avogadro;              // [#/mol]
+  constexpr Real mw_so4a = mam4::Constants::molec_weight_so4 * 1e3; // [g/mol]
+  constexpr Real mw_nh4a = mam4::Constants::molec_weight_nh4 * 1e3; // [g/mol]
 
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
@@ -54,14 +50,14 @@ void newnuc_cluster_growth(Ensemble *ensemble) {
     Real tmp_uptkrate = input.get("tmp_uptkrate");
 
     // Call the cluster growth function on device.
-    DeviceType::view_1d<Real> return_vals("Return from Device", 5);
+    mam4::DeviceType::view_1d<Real> return_vals("Return from Device", 5);
     Kokkos::parallel_for(
         "newnuc_cluster_growth", 1, KOKKOS_LAMBDA(int i) {
           // computed outputs
           int isize_group;
           Real dens_nh4so4a, qh2so4_del, qnh3_del, qso4a_del, qnh4a_del,
               qnuma_del;
-          nucleation::newnuc_cluster_growth(
+          mam4::nucleation::newnuc_cluster_growth(
               dnclusterdt, cnum_h2so4, cnum_nh3, radius_cluster, dplom_mode,
               dphim_mode, nsize, deltat, temp, relhumnn, cair, accom_coef_h2so4,
               mw_so4a, mw_so4a_host, mw_nh4a, avogadro, pi, qnh3_cur,

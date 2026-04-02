@@ -1,5 +1,5 @@
 #ifndef MAM4XX_BFBHASH_HPP
-#define MAM4xx_BFBHASH_HPP
+#define MAM4XX_BFBHASH_HPP
 
 // This was copied from Andrew Bradley's original implementation at
 // E3SM/components/eamxx/src/share/util/eamxx_bfbhash.hpp.

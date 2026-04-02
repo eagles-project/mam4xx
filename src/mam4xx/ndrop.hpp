@@ -1,15 +1,13 @@
 #ifndef MAM4XX_NDROP_HPP
 #define MAM4XX_NDROP_HPP
 
-#include <haero/atmosphere.hpp>
-#include <haero/math.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/aero_model.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
-#include <mam4xx/wv_sat_methods.hpp>
+#include "aero_config.hpp"
+#include "aero_model.hpp"
+#include "conversions.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
+#include "utils.hpp"
+#include "wv_sat_methods.hpp"
 
 #include <ekat_math_utils.hpp>
 
@@ -147,7 +145,7 @@ void get_aer_mmr_sum(
     // index of species in state_q array
     const int spc_idx = lmassptr_amode[lspec][imode] - 1;
     // aerosol volume mixing ratio [m3/kg]
-    const Real vol = haero::max(state_q[spc_idx] + qcldbrn1d[lspec], zero) /
+    const Real vol = mam4::max(state_q[spc_idx] + qcldbrn1d[lspec], zero) /
                      density_sp; // volume = mmr/density
     vaerosolsum_icol += vol;
     hygrosum_icol += vol * hygro_sp; // bulk hygroscopicity
@@ -225,20 +223,19 @@ void maxsat(
 
   for (int m = 0; m < nmode; m++) {
     ar_func1[m] =
-        0.5 *
-        haero::exp(2.5 * haero::square(haero::log(modes(m).mean_std_dev)));
-    ar_func2[m] = 1.0 + 0.25 * haero::log(modes(m).mean_std_dev);
+        0.5 * mam4::exp(2.5 * square(mam4::log(modes(m).mean_std_dev)));
+    ar_func2[m] = 1.0 + 0.25 * mam4::log(modes(m).mean_std_dev);
     if (eta[m] > small) {
-      g1 = (zeta / eta[m]) * haero::sqrt(zeta / eta[m]);
-      g2 = (smode_crit[m] / haero::sqrt(eta[m] + 3.0 * zeta)) *
-           haero::sqrt(smode_crit[m] / haero::sqrt(eta[m] + 3.0 * zeta));
+      g1 = (zeta / eta[m]) * mam4::sqrt(zeta / eta[m]);
+      g2 = (smode_crit[m] / mam4::sqrt(eta[m] + 3.0 * zeta)) *
+           mam4::sqrt(smode_crit[m] / mam4::sqrt(eta[m] + 3.0 * zeta));
       sum += (ar_func1[m] * g1 + ar_func2[m] * g2) /
              (smode_crit[m] * smode_crit[m]);
     } else {
       sum = big;
     }
   }
-  smax = 1.0 / haero::sqrt(sum);
+  smax = 1.0 / mam4::sqrt(sum);
   return;
 } // end maxsat
 
@@ -378,8 +375,8 @@ void ccncalc(const Real state_q[aero_model::pcnst], const Real tair,
   //// const Real percent_to_fraction = 0.01;
   // super(:)=supersat(:)*percent_to_fraction
   // supersaturation [fraction]
-  const Real sq2 = haero::sqrt(2.0);
-  const Real two_over_root27 = 2.0 / haero::sqrt(27.0);
+  const Real sq2 = mam4::sqrt(2.0);
+  const Real two_over_root27 = 2.0 / mam4::sqrt(27.0);
   // BAD CONSTANT
   // supersaturation (%) to determine ccn concentration
   const Real super[psat] = {0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01};
@@ -387,10 +384,10 @@ void ccncalc(const Real state_q[aero_model::pcnst], const Real tair,
   const int phase = 3; // interstitial + cloudborne
   const int nmodes = AeroConfig::num_modes();
 
-  const Real mwh2o = haero::Constants::molec_weight_h2o * 1e3; // [kg/kmol]
-  const Real r_universal = haero::Constants::r_gas * 1e3;      // [J/K/kmol]
-  const Real rhoh2o = haero::Constants::density_h2o;
-  const Real pi = haero::Constants::pi;
+  const Real mwh2o = Constants::molec_weight_h2o * 1e3; // [kg/kmol]
+  const Real r_universal = Constants::r_gas * 1e3;      // [J/K/kmol]
+  const Real rhoh2o = Constants::density_h2o;
+  const Real pi = Constants::pi;
 
   // surface tension coefficient [m-K] (from mam4)
   // surface tension has SI units [N m^-1] and [dyn cm^-1] in CGS, with
@@ -401,7 +398,7 @@ void ccncalc(const Real state_q[aero_model::pcnst], const Real tair,
   // surface tension parameter [m]
   const Real aparam = surften_coef / tair;
   // [m^(3/2)]
-  const Real ssat_coeff = two_over_root27 * aparam * haero::sqrt(aparam);
+  const Real ssat_coeff = two_over_root27 * aparam * mam4::sqrt(aparam);
 
   // interstitial + activated aerosol number conc [#/m3]
   Real naerosol[AeroConfig::num_modes()] = {zero};
@@ -429,15 +426,15 @@ void ccncalc(const Real state_q[aero_model::pcnst], const Real tair,
       // [m3]
       const Real amcube = amcubecoef_imode * vaerosol[imode] / naerosol[imode];
       // critical supersaturation at mode radius [unitless]
-      ss_crit_imode = ssat_coeff / haero::sqrt(hygro[imode] * amcube);
+      ss_crit_imode = ssat_coeff / mam4::sqrt(hygro[imode] * amcube);
     }
 
     const Real argfactor_imode = twothird / (sq2 * alogsig[imode]);
     for (int lsat = 0; lsat < psat; ++lsat) {
       // [dimensionless]
       const Real arg_erf_ccn =
-          argfactor_imode * haero::log(ss_crit_imode / super[lsat]);
-      ccn[lsat] += naerosol[imode] * half * (one - haero::erf(arg_erf_ccn));
+          argfactor_imode * mam4::log(ss_crit_imode / super[lsat]);
+      ccn[lsat] += naerosol[imode] * half * (one - mam4::erf(arg_erf_ccn));
     }
 
   } // imode end
@@ -469,7 +466,7 @@ void qsat(const Real t, const Real p, Real &svp, Real &qsat) {
   svp = wv_sat_methods::wv_sat_svp_trans(t);
   qsat = wv_sat_methods::wv_sat_svp_to_qsat(svp, p);
   // Ensures returned svp is consistent with limiters on qsat.
-  svp = haero::min(svp, p);
+  svp = mam4::min(svp, p);
 } // qsat
 
 KOKKOS_INLINE_FUNCTION
@@ -481,8 +478,8 @@ void ndrop_init(Real exp45logsig[AeroConfig::num_modes()],
   const Real two = 2.0;
   const Real one_thousand = 1e3;
   for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
-    alogsig[imode] = haero::log(modes(imode).mean_std_dev);
-    exp45logsig[imode] = haero::exp(4.5 * alogsig[imode] * alogsig[imode]);
+    alogsig[imode] = mam4::log(modes(imode).mean_std_dev);
+    exp45logsig[imode] = mam4::exp(4.5 * alogsig[imode] * alogsig[imode]);
 
     // voltonumbhi_amode
     num2vol_ratio_min_nmodes[imode] =
@@ -496,11 +493,11 @@ void ndrop_init(Real exp45logsig[AeroConfig::num_modes()],
   } // imode
 
   // density of fresh water [kg/m^3]
-  const Real rhoh2o = haero::Constants::density_h2o;
+  const Real rhoh2o = Constants::density_h2o;
   // [J/K/kmol]
-  const Real r_universal = haero::Constants::r_gas * one_thousand;
+  const Real r_universal = Constants::r_gas * one_thousand;
   // [kg/kmol]
-  const Real mwh2o = haero::Constants::molec_weight_h2o * one_thousand;
+  const Real mwh2o = Constants::molec_weight_h2o * one_thousand;
   // BAD CONSTANT
   // [m]
   aten = two * mwh2o * surften / (r_universal * t0 * rhoh2o);
@@ -562,7 +559,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // ---------------------------------------------------------------------------------
   const Real zero = 0;
   const Real one = 1;
-  const Real sq2 = haero::sqrt(2.0);
+  const Real sq2 = mam4::sqrt(2.0);
   const Real two = 2;
   const Real three_fourths = 3.0 / 4.0;
   const Real twothird = 2.0 / 3.0;
@@ -582,17 +579,17 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
     return;
   }
 
-  const Real rair = haero::Constants::r_gas_dry_air;
-  const Real rh2o = haero::Constants::r_gas_h2o_vapor;
+  const Real rair = Constants::r_gas_dry_air;
+  const Real rh2o = Constants::r_gas_h2o_vapor;
   // latent heat of evaporation [J/kg]
-  const Real latvap = haero::Constants::latent_heat_evap;
+  const Real latvap = Constants::latent_heat_evap;
   // specific heat of dry air [J/kg/K]
-  const Real cpair = haero::Constants::cp_dry_air;
+  const Real cpair = Constants::cp_dry_air;
   // acceleration of gravity [m/s^2]
-  const Real gravity = haero::Constants::gravity;
+  const Real gravity = Constants::gravity;
   // density of fresh water [kg/m^3]
-  const Real rhoh2o = haero::Constants::density_h2o;
-  const Real pi = haero::Constants::pi;
+  const Real rhoh2o = Constants::density_h2o;
+  const Real pi = Constants::pi;
 
   const Real pres = rair * rhoair * tair; // pressure [Pa]
   // Obtain Saturation vapor pressure (svp) and saturation specific humidity
@@ -612,9 +609,9 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
   // [s^(3/2)]
   // BAD CONSTANT
   // this should make eta big if na is very small.
-  const Real etafactor2max = 1.0e10 / haero::pow((alpha * wmaxf), 1.5);
+  const Real etafactor2max = 1.0e10 / mam4::pow((alpha * wmaxf), 1.5);
   // vapor diffusivity [m2/s]
-  const Real diff0 = 0.211e-4 * (p0 / pres) * haero::pow(tair / t0, 1.94);
+  const Real diff0 = 0.211e-4 * (p0 / pres) * mam4::pow(tair / t0, 1.94);
   // thermal conductivity [J / (m-s-K)]--converted to [J/m/s/deg]
   const Real conduct0 = (5.69 + 0.017 * (tair - t0)) * 4.186e2 * 1.0e-5;
   // thermodynamic function [m2/s]
@@ -624,10 +621,10 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
                                     (latvap / (rh2o * tair) - one));
   const Real beta = two * pi * rhoh2o * gthermfac * gamma; // [m2/s]
   const Real wnuc = w_in;
-  const Real alw = alpha * wnuc;                  // [/s]
-  const Real etafactor1 = alw * haero::sqrt(alw); // [/ s^(3/2)]
+  const Real alw = alpha * wnuc;                 // [/s]
+  const Real etafactor1 = alw * mam4::sqrt(alw); // [/ s^(3/2)]
   // [unitless]
-  const Real zeta = twothird * haero::sqrt(alw) * aten / haero::sqrt(gthermfac);
+  const Real zeta = twothird * mam4::sqrt(alw) * aten / mam4::sqrt(gthermfac);
 
   Real amcube[nmode] = {}; // cube of dry mode radius [m3]
 
@@ -651,13 +648,13 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
       // should depend on mean radius of mode to account for gas kinetic
       // effects see Fountoukis and Nenes, JGR2005 and Meskhidze et al.,
       // JGR2006 for appropriate size to use for effective diffusivity.
-      etafactor2[imode] = one / (na[imode] * beta * haero::sqrt(gthermfac));
+      etafactor2[imode] = one / (na[imode] * beta * mam4::sqrt(gthermfac));
       // BAD CONSTANT
       if (hygro[imode] > 1.0e-10) {
         ssat_crit_imode[imode] =
             two * aten *
             // only if variable size dist
-            haero::sqrt(aten / (27.0 * hygro[imode] * amcube[imode]));
+            mam4::sqrt(aten / (27.0 * hygro[imode] * amcube[imode]));
       } else {
         // BAD CONSTANT
         ssat_crit_imode[imode] = 100.0;
@@ -668,7 +665,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
       etafactor2[imode] = etafactor2max;
     } // volume
     // only if variable size dist
-    lnsm[imode] = haero::log(ssat_crit_imode[imode]);
+    lnsm[imode] = mam4::log(ssat_crit_imode[imode]);
     eta[imode] = etafactor1 * etafactor2[imode];
   } // end imode
 
@@ -676,7 +673,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
 
   maxsat(zeta, eta, nmode, ssat_crit_imode, supersat);
   // ([fraction]))
-  const Real lnsupersat = haero::log(supersat);
+  const Real lnsupersat = mam4::log(supersat);
 
   // Use maximum supersaturation to calculate aerosol activation output
   for (int imode = 0; imode < nmode; ++imode) {
@@ -684,10 +681,10 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
     const Real arg_erf_n =
         twothird * (lnsm[imode] - lnsupersat) / (sq2 * alogsig[imode]);
 
-    fn[imode] = half * (one - haero::erf(arg_erf_n)); // activated number
+    fn[imode] = half * (one - mam4::erf(arg_erf_n)); // activated number
 
     const Real arg_erf_m = arg_erf_n - 1.5 * sq2 * alogsig[imode];
-    fm[imode] = half * (one - haero::erf(arg_erf_m)); // activated mass
+    fm[imode] = half * (one - mam4::erf(arg_erf_m)); // activated mass
     fluxn[imode] = fn[imode] * w_in; // activated aerosol number flux
     fluxm[imode] = fm[imode] * w_in; // activated aerosol mass flux
   }
@@ -974,24 +971,23 @@ void update_from_newcld(
     Real raercol_cw_nsav[ncnst_tot], // inout
     Real &nsource_col_out, Real factnum_col_out[AeroConfig::num_modes()]) {
 
-  // // input arguments
-  // real(r8), intent(in) :: cldn_col_in(:)   cloud fraction [fraction]
-  // real(r8), intent(in) :: cldo_col_in(:)   cloud fraction on previous time
-  // step [fraction] real(r8), intent(in) :: dtinv     inverse time step for
-  // microphysics [s^{-1}] real(r8), intent(in) :: wtke_col_in(:)   subgrid
-  // vertical velocity [m/s] real(r8), intent(in) :: temp_col_in(:)
-  // temperature [K] real(r8), intent(in) :: cs_col_in(:)     air density at
-  // actual level kk [kg/m^3] real(r8), intent(in) :: state_q_col_in(:,:)
-  // aerosol mmrs [kg/kg]
-
-  // real(r8), intent(inout) :: qcld(:)  cloud droplet number mixing ratio
-  // [#/kg] real(r8), intent(inout) :: nsource_col_out(:)   droplet number
-  // mixing ratio source tendency [#/kg/s] real(r8), intent(inout) ::
-  // raercol_nsav(:,:)   single column of saved aerosol mass, number mixing
-  // ratios [#/kg or kg/kg] real(r8), intent(inout) :: raercol_cw_nsav(:,:)
-  // same as raercol_nsav but for cloud-borne phase [#/kg or kg/kg] real(r8),
-  // intent(inout) :: factnum_col_out(:,:)  activation fraction for aerosol
-  // number [fraction] k-loop for growing/shrinking cloud calcs
+  // input arguments
+  // real(r8), intent(in) :: cldn_col_in       cloud fraction [fraction]
+  // real(r8), intent(in) :: cldo_col_in       cloud fraction on previous time
+  // step [fraction] real(r8), intent(in) :: dtinv             inverse time step
+  // for microphysics [s^{-1}] real(r8), intent(in) :: wtke_col_in       subgrid
+  // vertical velocity [m/s] real(r8), intent(in) :: temp_col_in temperature [K]
+  // real(r8), intent(in) :: cs_col_in         air density at actual level kk
+  // [kg/m^3] real(r8), intent(in) :: state_q_col_in(:) aerosol mmrs [kg/kg]
+  //
+  // real(r8), intent(inout) :: qcld               cloud droplet number mixing
+  // ratio [#/kg] real(r8), intent(inout) :: raercol_nsav(:)    single column of
+  // saved aerosol mass, number mixing ratios [#/kg or kg/kg] real(r8),
+  // intent(inout) :: raercol_cw_nsav(:) same as raercol_nsav but for
+  // cloud-borne phase [#/kg or kg/kg] real(r8), intent(inout) ::
+  // nsource_col_out(:) droplet number mixing ratio source tendency [#/kg/s]
+  // real(r8), intent(inout) :: factnum_col_out(:) activation fraction for
+  // aerosol number [fraction]
 
   const Real zero = 0;
   const Real one = 1;
@@ -1114,7 +1110,7 @@ Real explmix(const Real qold_km1, // number / mass mixing ratio from previous
       qold_k + dtmix * (src + eddy_diff_kp * (overlapp * qold_kp1 - qold_k) +
                         eddy_diff_km * (overlapm * qold_km1 - qold_k));
   // force to non-negative
-  qnew = haero::max(qnew, 0);
+  qnew = mam4::max(qnew, 0);
   // output: updated number or mass mixing ratio [# or kg / kg]
   return qnew;
 } // end explmix
@@ -1159,7 +1155,7 @@ Real explmix(const Real qold_km1, // number / mass mixing ratio from previous
            eddy_diff_km * (qold_km1 - qold_k + qactold_km1 * (one - overlapm)));
 
   // force to non-negative
-  qnew = haero::max(qnew, 0);
+  qnew = mam4::max(qnew, 0);
   // output: updated number or mass mixing ratio [# or kg / kg]
   return qnew;
 } // end explmix
@@ -1170,8 +1166,8 @@ void update_from_explmix(
     const Real dtmicro, // time step for microphysics [s]
     const ColumnView
         &csbot, // air density at bottom (interface) of layer [kg/m^3]
-    const haero::ConstColumnView &cldn, // cloud fraction [fraction]
-    const ColumnView &zn,               // g/pdel for layer [m^2/kg]
+    const ConstColumnView &cldn, // cloud fraction [fraction]
+    const ColumnView &zn,        // g/pdel for layer [m^2/kg]
     const ColumnView &zs,        // inverse of distance between levels [m^-1]
     const ColumnView &eddy_diff, // diffusivity for droplets [m^2/s]
     const View2D &nact,          // fractional aero. number activation rate [/s]
@@ -1217,17 +1213,17 @@ void update_from_explmix(
   Kokkos::parallel_reduce(
       Kokkos::TeamVectorRange(team, top_lev, pver_loc),
       [&](int k, Real &min_val) {
-        const int kp1 = haero::min(k + 1, pver_loc - 1);
-        const int km1 = haero::max(k - 1, top_lev);
+        const int kp1 = mam4::min(k + 1, pver_loc - 1);
+        const int km1 = mam4::max(k - 1, top_lev);
         // maximum overlap assumption
         if (cldn(kp1) > overlap_cld_thresh) {
-          overlapp(k) = haero::min(cldn(k) / cldn(kp1), one);
+          overlapp(k) = mam4::min(cldn(k) / cldn(kp1), one);
         } else {
           overlapp(k) = one;
         }
 
         if (cldn(km1) > overlap_cld_thresh) {
-          overlapm(k) = haero::min(cldn(k) / cldn(km1), one);
+          overlapm(k) = mam4::min(cldn(k) / cldn(km1), one);
         } else {
           overlapm(k) = one;
         }
@@ -1245,8 +1241,8 @@ void update_from_explmix(
         // the following is a safety measure to avoid negatives in explmix
 
         for (int imode = 0; imode < ntot_amode; imode++) {
-          nact(k, imode) = haero::min(nact(k, imode), eddy_diff_kp(k));
-          mact(k, imode) = haero::min(mact(k, imode), eddy_diff_kp(k));
+          nact(k, imode) = mam4::min(nact(k, imode), eddy_diff_kp(k));
+          mact(k, imode) = mam4::min(mact(k, imode), eddy_diff_kp(k));
         }
 
         // rce-comment -- tinv is the sum of all first-order-loss-rates
@@ -1260,7 +1256,7 @@ void update_from_explmix(
         // artificial source.
         //  BAD CONSTANT
         if (tinv > 1e-6) {
-          min_val = haero::min(min_val, one / tinv);
+          min_val = mam4::min(min_val, one / tinv);
         }
       },
       Kokkos::Min<Real>(dtmin));
@@ -1295,8 +1291,8 @@ void update_from_explmix(
     team.team_barrier();
     Kokkos::parallel_for(
         Kokkos::TeamVectorRange(team, top_lev, pver_loc), [&](int k) {
-          const int kp1 = haero::min(k + 1, pver_loc - 1);
-          const int km1 = haero::max(k - 1, top_lev);
+          const int kp1 = mam4::min(k + 1, pver_loc - 1);
+          const int km1 = mam4::max(k - 1, top_lev);
           const View1D &raercol_km1_nsav = raercol[km1][nsav];
           const View1D &raercol_k_nsav = raercol[k][nsav];
           const View1D &raercol_kp1_nsav = raercol[kp1][nsav];
@@ -1319,7 +1315,7 @@ void update_from_explmix(
               // ,m)*(raercol(pver,mm,nsav))
               const Real tmpa = raercol_k_nsav(mm) * nact(k, imode) +
                                 raercol_cw_k_nsav(mm) * nact(k, imode);
-              srcn += haero::max(zero, tmpa);
+              srcn += mam4::max(zero, tmpa);
             }
           } // end imode
           // update aerosol number
@@ -1348,7 +1344,7 @@ void update_from_explmix(
               } else {
                 const Real tmpa = raercol_k_nsav(mm) * nact(k, imode) +
                                   raercol_cw_k_nsav(mm) * nact(k, imode);
-                source = haero::max(zero, tmpa);
+                source = mam4::max(zero, tmpa);
               }
               // update aerosol species mass
               raercol_cw_k_nnew(mm) =
@@ -1393,13 +1389,12 @@ void update_from_explmix(
 
 KOKKOS_INLINE_FUNCTION
 void dropmixnuc(
-    const ThreadTeam &team, const Real dtmicro,
-    const haero::ConstColumnView &temp, const haero::ConstColumnView &pmid,
-    const haero::ConstColumnView &pint, const haero::ConstColumnView &pdel,
-    const haero::ConstColumnView &rpdel, const haero::ConstColumnView &zm,
-    const ConstView2D &state_q, const haero::ConstColumnView &ncldwtr,
-    const haero::ConstColumnView &v_diffusivity,
-    const haero::ConstColumnView &cldn,
+    const ThreadTeam &team, const Real dtmicro, const ConstColumnView &temp,
+    const ConstColumnView &pmid, const ConstColumnView &pint,
+    const ConstColumnView &pdel, const ConstColumnView &rpdel,
+    const ConstColumnView &zm, const ConstView2D &state_q,
+    const ConstColumnView &ncldwtr, const ConstColumnView &v_diffusivity,
+    const ConstColumnView &cldn,
     const int lspectype_amode[maxd_aspectype][AeroConfig::num_modes()],
     const Real specdens_amode[maxd_aspectype],
     const Real spechygro[maxd_aspectype],
@@ -1486,8 +1481,8 @@ void dropmixnuc(
 
   // NOTE FOR C++ PORT: Get the cloud borne MMRs from AD in variable qcldbrn,
   // do not port the code before END NOTE
-  const Real gravity = haero::Constants::gravity;
-  const Real rair = haero::Constants::r_gas_dry_air;
+  const Real gravity = Constants::gravity;
+  const Real rair = Constants::r_gas_dry_air;
 
   // air_density [kg/m3]
   // geometric thickness of layers [m]
@@ -1514,7 +1509,7 @@ void dropmixnuc(
     const Real cs = conversions::density_of_ideal_gas(temp(k), pmid(k));
     dz(k) = one / (cs * gravity * rpdel(k)); // layer thickness [m]
     zn(k) = gravity * rpdel(k);
-    wtke(k) = haero::max(wsub(k), wmixmin);
+    wtke(k) = mam4::max(wsub(k), wmixmin);
     // cloud droplet number mixing ratio [#/kg]
     // load number nucleated into qcld on cloud boundaries
     qcld(k) = ncldwtr(k);
@@ -1595,7 +1590,7 @@ void dropmixnuc(
   // NOTE: update_from_cldn_profile loops from 7 to 71 in fortran code.
   Kokkos::parallel_for(
       Kokkos::TeamVectorRange(team, top_lev, pver_loc - 1), [&](int k) {
-        const int kp1 = haero::min(k + 1, pver - 1);
+        const int kp1 = mam4::min(k + 1, pver - 1);
 
         // PART II: changes in aerosol and cloud water from vertical profile of
         // new cloud fraction
@@ -1648,7 +1643,7 @@ void dropmixnuc(
         // droplet number mixing ratio tendency due to mixing [#/kg/s]
         ndropmix(k) = (qcld(k) - ncldwtr(k)) * dtinv - nsource(k);
         // BAD CONSTANT
-        tendnd(k) = (haero::max(qcld(k), 1.e-6) - ncldwtr(k)) * dtinv;
+        tendnd(k) = (max(qcld(k), 1.e-6) - ncldwtr(k)) * dtinv;
         // ndropcol(icol) = ndropcol(icol)/gravity
         // sum up ndropcol_kk outside of kk loop
         // column-integrated droplet number [#/m2]
@@ -1672,8 +1667,8 @@ void dropmixnuc(
             // Fortran indexing to C++ indexing
             const int lptr = mam_cnst_idx[imode][lspec] - 1;
             qqcwtend(k) = (raercol_cw[k][nnew](mm) - qqcw_fld[mm](k)) * dtinv;
-            qqcw_fld[mm](k) = haero::max(raercol_cw[k][nnew](mm),
-                                         zero); // update cloud-borne aerosol
+            qqcw_fld[mm](k) = mam4::max(raercol_cw[k][nnew](mm),
+                                        zero); // update cloud-borne aerosol
 
             if (lspec == 0) {
               // Fortran indexing to C++ indexing

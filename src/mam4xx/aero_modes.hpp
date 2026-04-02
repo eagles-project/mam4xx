@@ -6,16 +6,13 @@
 #ifndef MAM4XX_AERO_MODES_HPP
 #define MAM4XX_AERO_MODES_HPP
 
-#include <haero/aero_species.hpp>
-#include <haero/constants.hpp>
-#include <haero/gas_species.hpp>
-#include <haero/math.hpp>
+#include "aero_species.hpp"
+#include "gas_species.hpp"
+#include "mam4_constants.hpp"
 
-#include "mam4_types.hpp"
+#include <ekat_kokkos_types.hpp>
 
-#include <iostream>
 #include <string>
-#include <vector>
 
 namespace mam4 {
 
@@ -47,7 +44,6 @@ namespace mam4 {
 /// deliquescence_pt, particles achieve their maximum amount of liquid water.
 ///
 struct Mode final {
-  using Real = haero::Real;
   /// The minimum diameter for particles that belong to this mode.
   const Real min_diameter;
   /// The nominal diameter for particles that belong to this mode.
@@ -178,12 +174,12 @@ static constexpr Real mam4_hyg_mom = 0.1;
   Note that in MAM4 fortran, molecular weights are given as g/mol, rather than
   kg/mol.
 
-  Here and in Haero we use SI units for everything, so molecular weights
-  are given as [kg/mol].
+  Here we use SI units for everything, so molecular weights are given as
+  [kg/mol].
 
   When the variable is "universal" in the sense that it will be the same
   whether MAM4 is using or some other software package is using it, we
-  use the external haero::Constants value, which is sourced to the latest
+  use the external Constants value, which is sourced to the latest
   NIST data available.  Additionally, this prepares Mam4xx to ultimately
   use an external source of constants with EAM.  Examples are the
   molecular weights of Carbon, Sulphate, and Sodium Chloride.

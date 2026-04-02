@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void calculate_cloudborne_aer_num(Ensemble *ensemble) {
 
@@ -126,7 +124,7 @@ void calculate_cloudborne_aer_num(Ensemble *ensemble) {
     auto soamc_cb = input.get("soamc_cb");
     auto num_coarse_cb = input.get("num_coarse_cb");
     auto total_cloudborne_aer_num = input.get_array("total_cloudborne_aer_num");
-    hetfrz::calculate_cloudborne_aer_num(
+    mam4::hetfrz::calculate_cloudborne_aer_num(
         dmac_cb, ssmac_cb, so4mac_cb, bcmac_cb, pommac_cb, soamac_cb, mommac_cb,
         num_accum_cb, dmc_cb, ssmc_cb, mommc_cb, bcmc_cb, pommc_cb, soamc_cb,
         num_coarse_cb, total_cloudborne_aer_num.data());

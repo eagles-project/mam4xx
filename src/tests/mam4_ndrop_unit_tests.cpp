@@ -1,25 +1,11 @@
-#include "atmosphere_utils.hpp"
-#include "testing.hpp"
-
-#include "mam4xx/aero_modes.hpp"
-#include "mam4xx/conversions.hpp"
-#include <mam4xx/mode_dry_particle_size.hpp>
-
-#include <haero/constants.hpp>
-#include <haero/floating_point.hpp>
-#include <haero/haero.hpp>
-
-#include "mam4xx/conversions.hpp"
+#include <mam4xx/mam4.hpp>
 
 #include <catch2/catch.hpp>
 #include <ekat_comm.hpp>
 #include <ekat_logger.hpp>
 #include <ekat_pack_kokkos.hpp>
-#include <mam4xx/mam4.hpp>
 
-// using namespace haero;
-using namespace mam4;
-using namespace mam4::conversions;
+using mam4::Real;
 
 // NOTE: other than the nonnegative-ish requirements, this test is basically
 // vacuous, since it mostly does the same thing as the function, but I suppose
@@ -36,11 +22,11 @@ TEST_CASE("test_ndrop_init", "mam4_ndrop_unit_tests") {
   Real a_num2vol_ratio_min_nmodes;
   Real a_num2vol_ratio_max_nmodes;
 
-  Real exp45logsig[AeroConfig::num_modes()];
-  Real alogsig[AeroConfig::num_modes()];
+  Real exp45logsig[mam4::AeroConfig::num_modes()];
+  Real alogsig[mam4::AeroConfig::num_modes()];
   Real aten;
-  Real num2vol_ratio_min_nmodes[AeroConfig::num_modes()];
-  Real num2vol_ratio_max_nmodes[AeroConfig::num_modes()];
+  Real num2vol_ratio_min_nmodes[mam4::AeroConfig::num_modes()];
+  Real num2vol_ratio_max_nmodes[mam4::AeroConfig::num_modes()];
 
   const Real one = 1;
   const Real two = 2;
@@ -52,56 +38,56 @@ TEST_CASE("test_ndrop_init", "mam4_ndrop_unit_tests") {
   mam4::ndrop::ndrop_init(exp45logsig, alogsig, aten, num2vol_ratio_min_nmodes,
                           num2vol_ratio_max_nmodes);
 
-  for (int i = 0; i < AeroConfig::num_modes(); ++i) {
-    a_alogsig = haero::log(modes(i).mean_std_dev);
-    a_exp45logsig = haero::exp(4.5 * alogsig[i] * alogsig[i]);
+  for (int i = 0; i < mam4::AeroConfig::num_modes(); ++i) {
+    a_alogsig = mam4::log(mam4::modes(i).mean_std_dev);
+    a_exp45logsig = mam4::exp(4.5 * alogsig[i] * alogsig[i]);
     a_num2vol_ratio_min_nmodes =
-        one / conversions::mean_particle_volume_from_diameter(
-                  modes(i).max_diameter, modes(i).mean_std_dev);
+        one / mam4::conversions::mean_particle_volume_from_diameter(
+                  mam4::modes(i).max_diameter, mam4::modes(i).mean_std_dev);
     a_num2vol_ratio_max_nmodes =
-        one / conversions::mean_particle_volume_from_diameter(
-                  modes(i).min_diameter, modes(i).mean_std_dev);
+        one / mam4::conversions::mean_particle_volume_from_diameter(
+                  mam4::modes(i).min_diameter, mam4::modes(i).mean_std_dev);
 
     logger.debug("reference and computed alogsig[i] = {}, {}", a_alogsig,
                  alogsig[i]);
-    REQUIRE(FloatingPoint<Real>::equiv(alogsig[i], a_alogsig));
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(alogsig[i], a_alogsig));
     // it's a log, so 0 < x < inf \approx huge
-    REQUIRE(FloatingPoint<Real>::in_bounds(alogsig[i], 0.0, huge));
+    REQUIRE(mam4::FloatingPoint<Real>::in_bounds(alogsig[i], 0.0, huge));
 
     logger.debug("reference and computed exp45logsig[i] = {}, {}",
                  a_exp45logsig, exp45logsig[i]);
-    REQUIRE(FloatingPoint<Real>::equiv(exp45logsig[i], a_exp45logsig));
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(exp45logsig[i], a_exp45logsig));
     // has form exp(4.5 x^2) => 1 <= x < inf \approx huge
-    REQUIRE(FloatingPoint<Real>::in_bounds(exp45logsig[i], 1.0, huge));
+    REQUIRE(mam4::FloatingPoint<Real>::in_bounds(exp45logsig[i], 1.0, huge));
 
     logger.debug("reference and computed num2vol_ratio_min_nmodes[i] = {}, {}",
                  a_num2vol_ratio_min_nmodes, num2vol_ratio_min_nmodes[i]);
-    REQUIRE(FloatingPoint<Real>::equiv(num2vol_ratio_min_nmodes[i],
-                                       a_num2vol_ratio_min_nmodes));
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(num2vol_ratio_min_nmodes[i],
+                                             a_num2vol_ratio_min_nmodes));
     // reciprocal of a volume => should be > 0
-    REQUIRE(
-        FloatingPoint<Real>::in_bounds(num2vol_ratio_min_nmodes[i], 0.0, huge));
+    REQUIRE(mam4::FloatingPoint<Real>::in_bounds(num2vol_ratio_min_nmodes[i],
+                                                 0.0, huge));
 
     logger.debug("reference and computed num2vol_ratio_max_nmodes[i] = {}, {}",
                  a_num2vol_ratio_max_nmodes, num2vol_ratio_max_nmodes[i]);
-    REQUIRE(FloatingPoint<Real>::equiv(num2vol_ratio_max_nmodes[i],
-                                       a_num2vol_ratio_max_nmodes));
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(num2vol_ratio_max_nmodes[i],
+                                             a_num2vol_ratio_max_nmodes));
     // reciprocal of a volume => should be > 0
-    REQUIRE(
-        FloatingPoint<Real>::in_bounds(num2vol_ratio_max_nmodes[i], 0.0, huge));
+    REQUIRE(mam4::FloatingPoint<Real>::in_bounds(num2vol_ratio_max_nmodes[i],
+                                                 0.0, huge));
   }
 
-  const Real rhoh2o = haero::Constants::density_h2o;
-  const Real r_universal = haero::Constants::r_gas * one_thousand; //[J/K/kmol]
+  const Real rhoh2o = mam4::Constants::density_h2o;
+  const Real r_universal = mam4::Constants::r_gas * one_thousand; //[J/K/kmol]
   const Real mwh2o =
-      haero::Constants::molec_weight_h2o * one_thousand; // [kg/kmol]
+      mam4::Constants::molec_weight_h2o * one_thousand; // [kg/kmol]
   a_aten = two * mwh2o * mam4::ndrop::surften /
            (r_universal * mam4::ndrop::t0 * rhoh2o);
 
   logger.debug("reference and computed aten = {}, {}", a_aten, aten);
-  REQUIRE(FloatingPoint<Real>::equiv(aten, a_aten));
+  REQUIRE(mam4::FloatingPoint<Real>::equiv(aten, a_aten));
   // all quantities should be positive and nonzero (assumes surften is > 0)
-  REQUIRE(FloatingPoint<Real>::in_bounds(aten, 0.0, huge));
+  REQUIRE(mam4::FloatingPoint<Real>::in_bounds(aten, 0.0, huge));
 }
 
 TEST_CASE("test_get_aer_num", "mam4_ndrop_unit_tests") {
@@ -140,7 +126,7 @@ TEST_CASE("test_get_aer_num", "mam4_ndrop_unit_tests") {
                              naerosol);
     logger.debug("reference value and computed naerosol = {}, {}", ans_i,
                  naerosol);
-    REQUIRE(FloatingPoint<Real>::equiv(naerosol, ans_i));
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(naerosol, ans_i));
   }
 }
 
@@ -153,13 +139,13 @@ TEST_CASE("test_qsat", "mam4_ndrop_unit_tests") {
 
   // I took these from the mam_x_validation file dropmixnuc_ts_1417.yaml
   // temperature [K]
-  const Real t[AeroConfig::num_modes()] = {272.15, 0.2529892939E003,
-                                           0.2159618556E003, 0.2686359632E003};
+  const Real t[mam4::AeroConfig::num_modes()] = {
+      272.15, 0.2529892939E003, 0.2159618556E003, 0.2686359632E003};
   // pressure [Pa]
-  const Real p[AeroConfig::num_modes()] = {101325.0, 0.1238254131E002,
-                                           0.1999170945E005, 0.9524671355E005};
+  const Real p[mam4::AeroConfig::num_modes()] = {
+      101325.0, 0.1238254131E002, 0.1999170945E005, 0.9524671355E005};
 
-  for (int i = 0; i < AeroConfig::num_modes(); ++i) {
+  for (int i = 0; i < mam4::AeroConfig::num_modes(); ++i) {
     logger.debug("i = {}", i);
     logger.debug("temperature, pressure = {}, {}", t[i], p[i]);
 
@@ -176,8 +162,9 @@ TEST_CASE("test_qsat", "mam4_ndrop_unit_tests") {
     logger.debug("qs [base]: [ {} ]", qs_base);
     logger.debug("qs [calc]: [ {} ]", qs_calc);
 
-    REQUIRE(FloatingPoint<Real>::equiv(es_calc, haero::min(es_base, p[i])));
-    REQUIRE(FloatingPoint<Real>::equiv(qs_calc, qs_base));
+    REQUIRE(
+        mam4::FloatingPoint<Real>::equiv(es_calc, mam4::min(es_base, p[i])));
+    REQUIRE(mam4::FloatingPoint<Real>::equiv(qs_calc, qs_base));
   }
 }
 
@@ -206,17 +193,18 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
   Real qactold_km1 = 1;
   Real qactold_kp1 = 1;
 
-  q = ndrop::explmix(qold_km1, qold_k, qold_kp1, src, ek_kp1, ek_km1,
-                     overlap_kp1, overlap_km1, dt);
+  q = mam4::ndrop::explmix(qold_km1, qold_k, qold_kp1, src, ek_kp1, ek_km1,
+                           overlap_kp1, overlap_km1, dt);
 
   logger.info("q = {}", q);
-  REQUIRE(FloatingPoint<Real>::equiv(q, 1.1));
+  REQUIRE(mam4::FloatingPoint<Real>::equiv(q, 1.1));
 
-  q = ndrop::explmix(qold_km1, qold_k, qold_kp1, src, ek_kp1, ek_km1,
-                     overlap_kp1, overlap_km1, dt, qactold_km1, qactold_kp1);
+  q = mam4::ndrop::explmix(qold_km1, qold_k, qold_kp1, src, ek_kp1, ek_km1,
+                           overlap_kp1, overlap_km1, dt, qactold_km1,
+                           qactold_kp1);
 
   logger.info("q = {}", q);
-  REQUIRE(FloatingPoint<Real>::equiv(q, 0.9));
+  REQUIRE(mam4::FloatingPoint<Real>::equiv(q, 0.9));
 }
 
 TEST_CASE("test_maxsat", "mam4_ndrop") {
@@ -225,7 +213,7 @@ TEST_CASE("test_maxsat", "mam4_ndrop") {
                                 ekat::logger::LogLevel::debug, comm);
 
   logger.info("start of maxsat test");
-  static constexpr int nmodes = AeroConfig::num_modes();
+  static constexpr int nmodes = mam4::AeroConfig::num_modes();
   logger.info("nmodes = {}", nmodes);
 
   Real zeta = 0;
@@ -239,17 +227,17 @@ TEST_CASE("test_maxsat", "mam4_ndrop") {
     smc[m] = 1;
   }
 
-  ndrop::maxsat(zeta, eta, nmodes, smc, smax);
+  mam4::ndrop::maxsat(zeta, eta, nmodes, smc, smax);
   logger.info("smax = {}", smax);
-  REQUIRE(FloatingPoint<Real>::equiv(smax, 1e-20));
+  REQUIRE(mam4::FloatingPoint<Real>::equiv(smax, 1e-20));
 
   for (int m = 0; m < nmodes; m++) {
     smc[m] = 0;
   }
   smax = 0;
-  ndrop::maxsat(zeta, eta, nmodes, smc, smax);
+  mam4::ndrop::maxsat(zeta, eta, nmodes, smc, smax);
   logger.info("smax = {}", smax);
-  REQUIRE(FloatingPoint<Real>::equiv(smax, 1e-10));
+  REQUIRE(mam4::FloatingPoint<Real>::equiv(smax, 1e-10));
 
   // set up smoke test values
   for (int m = 0; m < nmodes; m++) {
@@ -260,10 +248,10 @@ TEST_CASE("test_maxsat", "mam4_ndrop") {
   const Real double_answer = 0.4698982924029698;
   const Real single_answer = 0.46989828;
 
-  ndrop::maxsat(zeta, eta, nmodes, smc, smax);
+  mam4::ndrop::maxsat(zeta, eta, nmodes, smc, smax);
   logger.info("smax = {}", smax);
   logger.info("double_answer = {}, single_answer = {}", double_answer,
               single_answer);
-  REQUIRE((FloatingPoint<Real>::equiv(smax, double_answer) ||
-           FloatingPoint<Real>::equiv(smax, single_answer)));
+  REQUIRE((mam4::FloatingPoint<Real>::equiv(smax, double_answer) ||
+           mam4::FloatingPoint<Real>::equiv(smax, single_answer)));
 }

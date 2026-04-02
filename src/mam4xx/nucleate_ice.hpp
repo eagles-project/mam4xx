@@ -6,16 +6,14 @@
 #ifndef MAM4XX_NUCLEATE_ICE_HPP
 #define MAM4XX_NUCLEATE_ICE_HPP
 
-#include <haero/atmosphere.hpp>
-#include <haero/surface.hpp>
-
-#include <haero/math.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/mam4_types.hpp>
-#include <mam4xx/utils.hpp>
-#include <mam4xx/wv_sat_methods.hpp>
+#include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "atmosphere.hpp"
+#include "conversions.hpp"
+#include "mam4_math.hpp"
+#include "mam4_types.hpp"
+#include "surface.hpp"
+#include "wv_sat_methods.hpp"
 
 #include <ekat_math_utils.hpp>
 
@@ -64,12 +62,12 @@ void calculate_regm_nucleati(const Real w_vlc, const Real Na, Real &regm) {
   // Na               aerosol number concentration [#/cm^3]
   // regm             threshold temperature [C]
 
-  const Real lnNa = haero::log(Na);
+  const Real lnNa = mam4::log(Na);
   // BAD CONSTANT
   const Real A_coef = -Real(1.4938) * lnNa + Real(12.884);
   const Real B_coef = -Real(10.41) * lnNa - Real(67.69);
 
-  regm = A_coef * log(w_vlc) + B_coef;
+  regm = A_coef * mam4::log(w_vlc) + B_coef;
 } // end calculate_regm_nucleati
 
 KOKKOS_INLINE_FUNCTION
@@ -112,10 +110,10 @@ void calculate_Ni_hf(const Real A1, const Real B1, const Real C1, const Real A2,
   // Na             aerosol number concentrations [#/cm^3]
   // Ni             ice number concentrations [#/cm^3]
 
-  const Real k1 = haero::exp(A2 + B2 * temperature + C2 * lnw);
+  const Real k1 = mam4::exp(A2 + B2 * temperature + C2 * lnw);
   const Real k2 = A1 + B1 * temperature + C1 * lnw;
 
-  Ni = haero::min(k1 * haero::pow(Na, k2), Na);
+  Ni = mam4::min(k1 * mam4::pow(Na, k2), Na);
 } // end calculate_Ni_hf
 
 KOKKOS_INLINE_FUNCTION
@@ -161,7 +159,7 @@ void hf(const Real temperature, const Real w_vlc, const Real RH, const Real Na,
   Real A2_fast, B2_fast, B4_slow = zero;
   Real lnw, RHw = zero;
 
-  lnw = haero::log(w_vlc);
+  lnw = mam4::log(w_vlc);
 
   Ni = zero;
 
@@ -223,17 +221,17 @@ void hetero(const Real temperature, const Real w_vlc, const Real Ns, Real &Nis,
   const Real B21 = -0.2667;
   const Real B22 = -1.4588;
 
-  const Real lnNs = haero::log(Ns);
-  const Real lnw = haero::log(w_vlc);
+  const Real lnNs = mam4::log(Ns);
+  const Real lnw = mam4::log(w_vlc);
 
   // ice from immersion nucleation (cm^-3)
 
   const Real B_coef = (A11 + B11 * lnNs) * lnw + (A12 + B12 * lnNs);
   const Real C_coef = A21 + B21 * lnNs;
 
-  Nis = haero::exp(A22) * haero::pow(Ns, B22) *
-        haero::exp(B_coef * temperature) * haero::pow(w_vlc, C_coef);
-  Nis = haero::min(Nis, Ns);
+  Nis = mam4::exp(A22) * mam4::pow(Ns, B22) * mam4::exp(B_coef * temperature) *
+        mam4::pow(w_vlc, C_coef);
+  Nis = mam4::min(Nis, Ns);
   // FIXME: Mention that this variables is set to zero in PR
   // don't include deposition nucleation for cirrus clouds when T < -37C
   Nid = Real(0.0);
@@ -275,6 +273,8 @@ public:
   void init(const AeroConfig &aero_config,
             const Config &nucleate_ice_config = Config()) {
 
+    using mam4::log;
+
     _nucleate_ice_subgrid = nucleate_ice_config._nucleate_ice_subgrid;
 
     _num_m3_to_cm3 = 1.0e-6;
@@ -289,7 +289,7 @@ public:
     _mincld = 0.0001;
 
     const int aitken_idx = int(ModeIndex::Aitken);
-    _alnsg_amode_aitken = haero::log(modes(aitken_idx).mean_std_dev);
+    _alnsg_amode_aitken = mam4::log(modes(aitken_idx).mean_std_dev);
 
   } // end(init)
 
@@ -301,8 +301,12 @@ public:
                           const Diagnostics &diagnostics,
                           const Tendencies &tendencies) const {
 
+    using mam4::erf;
+    using mam4::log;
+    using mam4::sqrt;
+
     const int nk = atmosphere.num_levels();
-    const Real tmelt_m_five = haero::Constants::freezing_pt_h2o - 5;
+    const Real tmelt_m_five = Constants::freezing_pt_h2o - 5;
     const int coarse_idx = int(ModeIndex::Coarse);
     const int aitken_idx = int(ModeIndex::Aitken);
 
@@ -365,7 +369,7 @@ public:
 
         const Real zero = 0;
         const Real half = 0.5;
-        const Real sqrt_two = haero::sqrt(2.0);
+        const Real sqrt_two = sqrt(2.0);
 
         const Real pmid = atmosphere.pressure(kk);
         const Real air_density = conversions::density_of_ideal_gas(temp, pmid);
@@ -379,7 +383,7 @@ public:
 
         wv_sat_methods::wv_sat_qsat_water(temp, pmid, es, qs);
         const Real relhum = qv / qs;
-        const Real icldm = haero::max(ast(kk), mincld);
+        const Real icldm = mam4::max(ast(kk), mincld);
 
         // compute aerosol number for so4, soot, and dust with units #/cm^3
         // remove soot number, because it is set to zero
@@ -408,13 +412,14 @@ public:
 
         if (dgnum_aitken(kk) > zero) {
           // only allow so4 with D > 0.1 um in ice nucleation
-          so4_num = num_aitken(kk) * air_density * num_m3_to_cm3 *
-                    (half - half * haero::erf(haero::log(so4_sz_thresh_icenuc /
-                                                         dgnum_aitken(kk)) /
-                                              (sqrt_two * alnsg_amode_aitken)));
+          so4_num =
+              num_aitken(kk) * air_density * num_m3_to_cm3 *
+              (half -
+               half * erf(mam4::log(so4_sz_thresh_icenuc / dgnum_aitken(kk)) /
+                          (sqrt_two * alnsg_amode_aitken)));
         } // end dgnum_aitken
 
-        so4_num = haero::max(zero, so4_num);
+        so4_num = mam4::max(zero, so4_num);
 
         // Real naai = zero;
 
@@ -450,6 +455,8 @@ public:
           subgrid, // Subgrid scale factor on relative humidity (dimensionless)
       // outputs
       Real &nuci, Real &onihf, Real &oniimm, Real &onidep, Real &onimey) const {
+
+    using mam4::pow;
     /*---------------------------------------------------------------
     Purpose:
      The parameterization of ice nucleation.
@@ -556,7 +563,7 @@ public:
               n1 = nihf;
             } else {
               n1 = (niimm + nidep) *
-                   haero::pow((niimm + nidep) / nihf, (tc - regm) / Real(5.));
+                   mam4::pow((niimm + nidep) / nihf, (tc - regm) / Real(5.));
 
             } // end nihf <= (niimm + nidep)
 

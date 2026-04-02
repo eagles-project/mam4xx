@@ -3,15 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
-#include <mam4xx/aero_modes.hpp>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/water_uptake.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void modal_aero_water_uptake_dryaer(Ensemble *ensemble) {
   // Run the ensemble.
@@ -22,24 +17,25 @@ void modal_aero_water_uptake_dryaer(Ensemble *ensemble) {
     auto dgncur_a = input.get_array("dgncur_a");
     auto state_q = input.get_array("state_q");
 
-    int nspec_amode[AeroConfig::num_modes()];
-    int lspectype_amode[water_uptake::maxd_aspectype][AeroConfig::num_modes()];
-    Real specdens_amode[water_uptake::maxd_aspectype];
-    Real spechygro[water_uptake::maxd_aspectype];
+    int nspec_amode[mam4::AeroConfig::num_modes()];
+    int lspectype_amode[mam4::water_uptake::maxd_aspectype]
+                       [mam4::AeroConfig::num_modes()];
+    Real specdens_amode[mam4::water_uptake::maxd_aspectype];
+    Real spechygro[mam4::water_uptake::maxd_aspectype];
 
-    water_uptake::get_e3sm_parameters(nspec_amode, lspectype_amode,
-                                      specdens_amode, spechygro);
+    mam4::water_uptake::get_e3sm_parameters(nspec_amode, lspectype_amode,
+                                            specdens_amode, spechygro);
 
-    std::vector<Real> hygro(AeroConfig::num_modes(), 0.0);
-    std::vector<Real> naer(AeroConfig::num_modes(), 0.0);
-    std::vector<Real> dryrad(AeroConfig::num_modes(), 0.0);
-    std::vector<Real> dryvol(AeroConfig::num_modes(), 0.0);
-    std::vector<Real> drymass(AeroConfig::num_modes(), 0.0);
-    std::vector<Real> rhcrystal(AeroConfig::num_modes(), 0.0);
-    std::vector<Real> rhdeliques(AeroConfig::num_modes(), 0.0);
-    std::vector<Real> specdens_1(AeroConfig::num_modes(), 0.0);
+    std::vector<Real> hygro(mam4::AeroConfig::num_modes(), 0.0);
+    std::vector<Real> naer(mam4::AeroConfig::num_modes(), 0.0);
+    std::vector<Real> dryrad(mam4::AeroConfig::num_modes(), 0.0);
+    std::vector<Real> dryvol(mam4::AeroConfig::num_modes(), 0.0);
+    std::vector<Real> drymass(mam4::AeroConfig::num_modes(), 0.0);
+    std::vector<Real> rhcrystal(mam4::AeroConfig::num_modes(), 0.0);
+    std::vector<Real> rhdeliques(mam4::AeroConfig::num_modes(), 0.0);
+    std::vector<Real> specdens_1(mam4::AeroConfig::num_modes(), 0.0);
 
-    water_uptake::modal_aero_water_uptake_dryaer(
+    mam4::water_uptake::modal_aero_water_uptake_dryaer(
         nspec_amode, specdens_amode, spechygro, lspectype_amode, state_q.data(),
         dgncur_a.data(), hygro.data(), naer.data(), dryrad.data(),
         dryvol.data(), drymass.data(), rhcrystal.data(), rhdeliques.data(),

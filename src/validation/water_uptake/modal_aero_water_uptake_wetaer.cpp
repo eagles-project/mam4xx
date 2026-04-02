@@ -3,15 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
-#include <mam4xx/aero_modes.hpp>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/water_uptake.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void modal_aero_water_uptake_wetaer(Ensemble *ensemble) {
 
@@ -36,13 +31,13 @@ void modal_aero_water_uptake_wetaer(Ensemble *ensemble) {
     auto naer = input.get_array("naer");
     auto dryvol = input.get_array("dryvol");
 
-    std::vector<Real> wetrad(AeroConfig::num_modes(), 0);
-    std::vector<Real> wetvol(AeroConfig::num_modes(), 0);
-    std::vector<Real> wtrvol(AeroConfig::num_modes(), 0);
-    std::vector<Real> dgncur_awet(AeroConfig::num_modes(), 0);
-    std::vector<Real> qaerwat(AeroConfig::num_modes(), 0);
+    std::vector<Real> wetrad(mam4::AeroConfig::num_modes(), 0);
+    std::vector<Real> wetvol(mam4::AeroConfig::num_modes(), 0);
+    std::vector<Real> wtrvol(mam4::AeroConfig::num_modes(), 0);
+    std::vector<Real> dgncur_awet(mam4::AeroConfig::num_modes(), 0);
+    std::vector<Real> qaerwat(mam4::AeroConfig::num_modes(), 0);
 
-    water_uptake::modal_aero_water_uptake_wetaer(
+    mam4::water_uptake::modal_aero_water_uptake_wetaer(
         rhcrystal.data(), rhdeliques.data(), dgncur_a.data(), dryrad.data(),
         hygro.data(), rh.data()[0], naer.data(), dryvol.data(), wetrad.data(),
         wetvol.data(), wtrvol.data(), dgncur_awet.data(), qaerwat.data());

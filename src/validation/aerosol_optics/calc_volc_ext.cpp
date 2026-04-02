@@ -4,20 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
-using namespace modal_aer_opt;
+using namespace mam4::modal_aero_opt;
 
 void calc_volc_ext(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1D = DeviceType::view_1d<Real>;
-    using View1DHost = typename HostType::view_1d<Real>;
+    using View1D = mam4::DeviceType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
 
     const int trop_level = int(input.get_array("trop_level")[0]) - 1;
     const auto state_zm_db = input.get_array("state_zm");
@@ -28,19 +23,19 @@ void calc_volc_ext(Ensemble *ensemble) {
     auto ext_cmip6_sw_host = View1DHost((Real *)ext_cmip6_sw_db.data(), pver);
     auto extinct_host = View1DHost((Real *)extinct_db.data(), pver);
 
-    ColumnView state_zm, ext_cmip6_sw, extinct;
-    state_zm = haero::testing::create_column_view(pver);
-    ext_cmip6_sw = haero::testing::create_column_view(pver);
-    extinct = haero::testing::create_column_view(pver);
+    mam4::ColumnView state_zm, ext_cmip6_sw, extinct;
+    state_zm = mam4::testing::create_column_view(pver);
+    ext_cmip6_sw = mam4::testing::create_column_view(pver);
+    extinct = mam4::testing::create_column_view(pver);
     Kokkos::deep_copy(state_zm, state_zm_host);
     Kokkos::deep_copy(ext_cmip6_sw, ext_cmip6_sw_host);
     Kokkos::deep_copy(extinct, extinct_host);
 
     View1D tropopause_m("tropopause_m", 1);
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           calc_volc_ext(trop_level, state_zm, ext_cmip6_sw, extinct,
                         tropopause_m(0));
         });

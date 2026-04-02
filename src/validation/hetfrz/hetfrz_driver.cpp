@@ -5,7 +5,6 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 void usage() {
@@ -18,7 +17,6 @@ void usage() {
 }
 
 using namespace skywalker;
-using namespace mam4;
 
 // Parameterizations used by the hetfzr process.
 void get_reynolds_number(Ensemble *ensemble);
@@ -51,9 +49,9 @@ int main(int argc, char **argv) {
     usage();
   }
 
-  validation::initialize(argc, argv, validation::default_fpes);
+  mam4::validation::initialize(argc, argv, mam4::validation::default_fpes);
   std::string input_file = argv[1];
-  std::string output_file = validation::output_name(input_file);
+  std::string output_file = mam4::validation::output_name(input_file);
   std::cout << argv[0] << ": reading " << input_file << std::endl;
 
   // Load the ensemble. Any error encountered is fatal.
@@ -146,5 +144,5 @@ int main(int argc, char **argv) {
   std::cout << argv[0] << ": writing " << output_file << std::endl;
   ensemble->write(output_file);
 
-  validation::finalize(ensemble);
+  mam4::validation::finalize(ensemble);
 }

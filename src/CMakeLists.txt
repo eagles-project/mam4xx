@@ -2,12 +2,12 @@
 add_subdirectory(mam4xx)
 
 # MAM4 process unit tests.
-if (ENABLE_TESTS)
+if (MAM4XX_ENABLE_TESTS)
   add_subdirectory(tests)
 endif()
 
 # MAM4 cross validation with Fortran implementations (double precision only)
-if (ENABLE_SKYWALKER AND HAERO_PRECISION STREQUAL "double")
+if (MAM4XX_ENABLE_SKYWALKER AND MAM4XX_PRECISION STREQUAL "double")
   add_subdirectory(validation)
 endif()
 

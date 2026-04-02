@@ -1,12 +1,10 @@
 #ifndef MAM4XX_MO_SETINV_HPP
 #define MAM4XX_MO_SETINV_HPP
 
-#include <haero/atmosphere.hpp>
+#include "conversions.hpp"
+#include "gas_chem_mechanism.hpp"
+#include "mam4_types.hpp"
 
-#include <mam4xx/aero_config.hpp>
-#include <mam4xx/conversions.hpp>
-#include <mam4xx/gas_chem_mechanism.hpp>
-#include <mam4xx/mam4_types.hpp>
 namespace mam4 {
 namespace mo_setinv {
 // number of invariants
@@ -93,7 +91,7 @@ void setinv(const ThreadTeam &team, const View2D &invariants,
 
   Config setinv_config_;
   constexpr int nk = mam4::nlev;
-  constexpr Real mwh2o = haero::Constants::molec_weight_h2o;
+  constexpr Real mwh2o = Constants::molec_weight_h2o;
 
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
     const Real tfld_k = tfld(k);

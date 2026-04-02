@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void get_dg0imm(Ensemble *ensemble) {
 
@@ -32,7 +30,7 @@ void get_dg0imm(Ensemble *ensemble) {
     skywalker::Real rgimm = input.get("rgimm");
 
     // Compute dg0imm
-    skywalker::Real dg0imm = hetfrz::get_dg0imm(sigma_iw, rgimm);
+    skywalker::Real dg0imm = mam4::hetfrz::get_dg0imm(sigma_iw, rgimm);
 
     // Store dg0imm
     output.set("dg0imm", dg0imm);

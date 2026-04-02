@@ -4,18 +4,15 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <catch2/catch.hpp>
-#include <iomanip>
-#include <iostream>
+
 #include <mam4xx/convproc.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 namespace {
 void get_input(const Input &input, const std::string &name, const int size,
-               std::vector<Real> &host, ColumnView &dev) {
+               std::vector<Real> &host, mam4::ColumnView &dev) {
   host = input.get_array(name);
   dev = mam4::validation::create_column_view(size);
 
@@ -29,7 +26,7 @@ void get_input(const Input &input, const std::string &name, const int rows,
                const int cols, std::vector<Real> &host,
                Kokkos::View<Real **, Kokkos::MemoryUnmanaged> &dev) {
   host = input.get_array(name);
-  ColumnView col_view = mam4::validation::create_column_view(rows * cols);
+  mam4::ColumnView col_view = mam4::validation::create_column_view(rows * cols);
   dev = Kokkos::View<Real **, Kokkos::MemoryUnmanaged>(col_view.data(), rows,
                                                        cols);
   EKAT_ASSERT(host.size() == rows * cols);
@@ -63,7 +60,7 @@ void compute_activation_tend(Ensemble *ensemble) {
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
-    const int pcnst_extd = ConvProc::pcnst_extd;
+    const int pcnst_extd = mam4::ConvProc::pcnst_extd;
     // Fetch ensemble parameters
     // Convert to C++ index by subtracting one.
     const int kk = input.get("kk") - 1;
@@ -75,7 +72,7 @@ void compute_activation_tend(Ensemble *ensemble) {
 
     std::vector<Real> cldfrac_i_host, rhoair_i_host, mu_i_host, dt_u_host,
         wup_host, icwmr_host, temperature_host, conu_host, dconudt_activa_host;
-    ColumnView cldfrac_i_dev, rhoair_i_dev, mu_i_dev, dt_u_dev, wup_dev,
+    mam4::ColumnView cldfrac_i_dev, rhoair_i_dev, mu_i_dev, dt_u_dev, wup_dev,
         icwmr_dev, temperature_dev;
 
     Kokkos::View<Real **, Kokkos::MemoryUnmanaged> conu_dev, dconudt_activa_dev;
@@ -91,7 +88,7 @@ void compute_activation_tend(Ensemble *ensemble) {
     get_input(input, "dconudt_activa", nlev + 1, pcnst_extd,
               dconudt_activa_host, dconudt_activa_dev);
 
-    ColumnView scalars_dev = mam4::validation::create_column_view(4);
+    mam4::ColumnView scalars_dev = mam4::validation::create_column_view(4);
     Kokkos::parallel_for(
         "compute_activation_tend", 1, KOKKOS_LAMBDA(int) {
           Real cldfrac_i[nlev], rhoair_i[nlev], dt_u[nlev], wup[nlev],
@@ -116,7 +113,7 @@ void compute_activation_tend(Ensemble *ensemble) {
           int kactfirst = kactfirst_host;
           Real xx_wcldbase = xx_wcldbase_host;
           int xx_kcldbase = xx_kcldbase_host;
-          convproc::compute_activation_tend(
+          mam4::convproc::compute_activation_tend(
               f_ent, cldfrac_i[kk], rhoair_i[kk], mu_i[kk], mu_i[kk + 1],
               dt_u[kk], wup[kk], icwmr[kk], temperature[kk], kk, kactcnt,
               kactfirst, conu[kk], dconudt_activa[kk], xx_wcldbase,

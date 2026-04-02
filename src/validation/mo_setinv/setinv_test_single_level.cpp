@@ -4,15 +4,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
+
 #include <vector>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
+
 void setinv_test_single_level(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters

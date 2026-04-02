@@ -4,13 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void maxsat(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
@@ -22,7 +18,7 @@ void maxsat(Ensemble *ensemble) {
     eta = input.get_array("eta");
     smc = input.get_array("smc");
     Real smax = 0;
-    ndrop::maxsat(zeta, eta.data(), nmode, smc.data(), smax);
+    mam4::ndrop::maxsat(zeta, eta.data(), nmode, smc.data(), smax);
     output.set("smax", smax);
   });
 }

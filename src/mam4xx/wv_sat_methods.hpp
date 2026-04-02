@@ -1,6 +1,11 @@
 #ifndef MAM4XX_WV_SAT_METHODS_HPP
 #define MAM4XX_WV_SAT_METHODS_HPP
 
+#include "mam4_constants.hpp"
+#include "mam4_math.hpp"
+
+#include <ekat_kokkos_types.hpp>
+
 namespace mam4 {
 
 namespace wv_sat_methods {
@@ -15,7 +20,7 @@ Real GoffGratch_svp_water(const Real temperature) {
   // This value is slightly high, but it seems to be the value for the
   // steam point of water originally (and most frequently) used in the
   // Goff & Gratch scheme.
-  const Real tboil = haero::Constants::boil_pt_h2o;
+  const Real tboil = Constants::boil_pt_h2o;
 
   const Real ten = 10;
   const Real one = 1;
@@ -25,18 +30,18 @@ Real GoffGratch_svp_water(const Real temperature) {
   const Real svp_at_steam_pt_pressure = 1013.246; // BAD_CONSTANT!
 
   // uncertain below -70 C (NOTE: from mam4)
-  return haero::pow(ten,
-                    -Real(7.90298) * (tboil / temperature - one) +
-                        Real(5.02808) * haero::log10(tboil / temperature) -
-                        Real(1.3816e-7) *
-                            (haero::pow(ten, Real(11.344) *
-                                                 (one - temperature / tboil)) -
-                             one) +
-                        Real(8.1328e-3) *
-                            (haero::pow(ten, -Real(3.49149) *
-                                                 (tboil / temperature - one)) -
-                             one) +
-                        haero::log10(svp_at_steam_pt_pressure)) *
+  return mam4::pow(ten,
+                   -Real(7.90298) * (tboil / temperature - one) +
+                       Real(5.02808) * mam4::log10(tboil / temperature) -
+                       Real(1.3816e-7) *
+                           (mam4::pow(ten, Real(11.344) *
+                                               (one - temperature / tboil)) -
+                            one) +
+                       Real(8.1328e-3) *
+                           (mam4::pow(ten, -Real(3.49149) *
+                                               (tboil / temperature - one)) -
+                            one) +
+                       mam4::log10(svp_at_steam_pt_pressure)) *
          ten * ten;
 
 } // GoffGratch_svp_water
@@ -46,7 +51,7 @@ Real GoffGratch_svp_ice(const Real temperature) {
   // temperature in Kelvin
 
   // good down to -100 C
-  const Real h2otrip = haero::Constants::triple_pt_h2o;
+  const Real h2otrip = Constants::triple_pt_h2o;
   const Real ten = 10;
   const Real one = 1;
   // got this from wikipedia article for Goff-Gratch eqn. and pulled it out of
@@ -54,11 +59,10 @@ Real GoffGratch_svp_ice(const Real temperature) {
   // https://en.wikipedia.org/wiki/Goff-Gratch_equation
   const Real svp_at_ice_pt_pressure = 6.1071; // BAD_CONSTANT!
 
-  return haero::pow(ten,
-                    -Real(9.09718) * (h2otrip / temperature - one) -
-                        Real(3.56654) * haero::log10(h2otrip / temperature) +
-                        Real(0.876793) * (one - temperature / h2otrip) +
-                        haero::log10(svp_at_ice_pt_pressure)) *
+  return mam4::pow(ten, -Real(9.09718) * (h2otrip / temperature - one) -
+                            Real(3.56654) * mam4::log10(h2otrip / temperature) +
+                            Real(0.876793) * (one - temperature / h2otrip) +
+                            mam4::log10(svp_at_ice_pt_pressure)) *
          ten * ten;
 
 } // end GoffGratch_svp_ice
@@ -92,7 +96,7 @@ Real wv_sat_svp_to_qsat(const Real es, const Real p) {
   // = 18.016_R8       ! molecular weight water vapor
   // const Real SHR_CONST_MWWV = 18.016;
   // const Real SHR_CONST_MWDAIR = 28.966;
-  const Real epsilo = haero::Constants::weight_ratio_h2o_air;
+  const Real epsilo = Constants::weight_ratio_h2o_air;
 
   const Real zero = 0;
   const Real one = 1;
@@ -124,7 +128,7 @@ void wv_sat_qsat_water(const Real t, const Real p, Real &es, Real &qs) {
   es = svp_water(t);
   qs = wv_sat_svp_to_qsat(es, p);
   // Ensures returned es is consistent with limiters on qs.
-  es = haero::min(es, p);
+  es = mam4::min(es, p);
 
 } // wv_sat_qsat_water
 
@@ -138,7 +142,7 @@ Real wv_sat_svp_trans(const Real t) {
   const Real ttrice = 20.00; // transition range from es over H2O to es over ice
   const Real zero = 0;
   const Real one = 1;
-  const Real tmelt = haero::Constants::melting_pt_h2o;
+  const Real tmelt = Constants::melting_pt_h2o;
   // Water
   Real es = zero;
   if (t >= (tmelt - ttrice)) {

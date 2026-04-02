@@ -4,11 +4,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/coagulation.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void getcoags_wrapper_f(Ensemble *ensemble) {
   // Run the ensemble.
@@ -81,10 +79,10 @@ void getcoags_wrapper_f(Ensemble *ensemble) {
     Real betaii0 = 0.0;
     Real betajj0 = 0.0;
 
-    coagulation::getcoags_wrapper_f(airtemp[0], airprs[0], dgatk[0], dgacc[0],
-                                    sgatk[0], sgacc[0], xxlsgat[0], xxlsgac[0],
-                                    pdensat[0], pdensac[0], betaij0, betaij3,
-                                    betaii0, betajj0);
+    mam4::coagulation::getcoags_wrapper_f(
+        airtemp[0], airprs[0], dgatk[0], dgacc[0], sgatk[0], sgacc[0],
+        xxlsgat[0], xxlsgac[0], pdensat[0], pdensac[0], betaij0, betaij3,
+        betaii0, betajj0);
 
     // write output data
     output.set("betaij0", betaij0);

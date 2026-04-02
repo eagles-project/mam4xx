@@ -2,15 +2,16 @@ include(GNUInstallDirs)
 
 # Generate aero_config.hpp, which contains build-time parameters.
 configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/aero_config.hpp.in
-  ${CMAKE_CURRENT_BINARY_DIR}/aero_config.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/mam4_config.hpp.in
+  ${CMAKE_CURRENT_BINARY_DIR}/mam4_config.hpp
   @ONLY
 )
 
 # Most of mam4xx is implemented in C++ headers, so we must
 # install them for a client.
 install(FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/aero_config.hpp
+        ${CMAKE_CURRENT_BINARY_DIR}/mam4_config.hpp
+        aero_config.hpp
         aero_model.hpp
         aero_modes.hpp
         calcsize.hpp
@@ -48,8 +49,8 @@ install(FILES
         mo_setsox.hpp
         mo_sethet.hpp
         tropopause.hpp
-        modal_aer_opt.hpp
-        aer_rad_props.hpp
+        modal_aero_opt.hpp
+        aero_rad_props.hpp
         modal_aero_calcsize.hpp
         mo_setinv.hpp
         aero_model_emissions.hpp
@@ -57,9 +58,11 @@ install(FILES
 
 add_library(mam4xx aero_modes.cpp)
 target_include_directories(mam4xx PUBLIC
+  ${EKAT_INCLUDE_DIRS}
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
   $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
   $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(mam4xx PUBLIC haero)
+target_link_libraries(mam4xx PUBLIC ekat::AllLibs)
+
 install(TARGETS mam4xx DESTINATION ${CMAKE_INSTALL_LIBDIR})

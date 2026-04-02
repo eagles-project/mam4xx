@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void get_temperature_diff(Ensemble *ensemble) {
   // Run the ensemble.
@@ -52,7 +50,7 @@ void get_temperature_diff(Ensemble *ensemble) {
     skywalker::Real pressure = input.get("pressure");
 
     // Compute temperature difference
-    skywalker::Real T_diff = hetfrz::get_temperature_diff(
+    skywalker::Real T_diff = mam4::hetfrz::get_temperature_diff(
         temperature, pressure, eswtr, latvap, Ktherm_air);
 
     // Store T_diff as an output variable

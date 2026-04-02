@@ -3,14 +3,10 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <iostream>
 #include <mam4xx/mam4.hpp>
-#include <mam4xx/wet_dep.hpp>
-#include <skywalker.hpp>
-#include <validation.hpp>
-#include <vector>
 
-using namespace haero;
+#include <validation.hpp>
+
 using namespace skywalker;
 
 void test_compute_evap_frac_process(const Input &input, Output &output) {
@@ -35,7 +31,7 @@ void test_compute_evap_frac_process(const Input &input, Output &output) {
   const Real evap_ik = input.get("evap_ik");
   const Real precabx = input.get("precabx");
 
-  ColumnView return_vals = mam4::validation::create_column_view(1);
+  auto return_vals = mam4::validation::create_column_view(1);
   Kokkos::parallel_for(
       "wetdep::compute_evap_frac", 1, KOKKOS_LAMBDA(const int) {
         return_vals[0] =

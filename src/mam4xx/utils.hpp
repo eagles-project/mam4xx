@@ -6,8 +6,11 @@
 #ifndef MAM4XX_UTILS_HPP
 #define MAM4XX_UTILS_HPP
 
-#include <haero/math.hpp>
-#include <mam4xx/gas_chem_mechanism.hpp>
+#include "aero_config.hpp"
+#include "aero_modes.hpp"
+#include "atmosphere.hpp"
+#include "gas_chem_mechanism.hpp"
+#include "mam4_math.hpp"
 
 #include <ekat_math_utils.hpp>
 // This file contains utility-type functions that are available for use by
@@ -15,15 +18,11 @@
 
 namespace mam4::utils {
 
-using Real = haero::Real;
-using haero::max;
-using haero::min;
-
 // this function considers 'num' and returns either 'num' (already in bounds) or
 // 'high'/'low' if num is outside the bounds
 KOKKOS_INLINE_FUNCTION
 Real min_max_bound(const Real &low, const Real &high, const Real &num) {
-  return max(low, min(high, num));
+  return mam4::max(low, mam4::min(high, num));
 }
 
 // number of constituents in gas chemistry "work arrays"
@@ -223,7 +222,7 @@ void get_num_idx_in_state_q(int idxs[AeroConfig::num_modes()]) {
 template <typename VectorType>
 KOKKOS_INLINE_FUNCTION void
 extract_stateq_from_prognostics(const mam4::Prognostics &progs,
-                                const haero::Atmosphere &atm, VectorType &q,
+                                const Atmosphere &atm, VectorType &q,
                                 const int klev) {
 
   int s_idx = ekat::invalid<int>();

@@ -5,11 +5,9 @@
 
 #include <iostream>
 #include <mam4xx/hetfrz.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
 
 void get_latent_heat_vapor(Ensemble *ensemble) {
 
@@ -25,7 +23,7 @@ void get_latent_heat_vapor(Ensemble *ensemble) {
     skywalker::Real temperature = input.get("temperature");
 
     // Compute reynolds number
-    skywalker::Real latvap = hetfrz::get_latent_heat_vapor(temperature);
+    skywalker::Real latvap = mam4::hetfrz::get_latent_heat_vapor(temperature);
 
     // Store re as an output variable
     output.set("latvap", latvap);

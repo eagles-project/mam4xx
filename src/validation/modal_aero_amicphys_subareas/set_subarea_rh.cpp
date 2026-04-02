@@ -4,14 +4,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/aero_config.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
+
 void set_subarea_rh(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters
@@ -27,10 +23,10 @@ void set_subarea_rh(Ensemble *ensemble) {
       }
     }
 
-    using View1D = typename DeviceType::view_1d<Real>;
-    using View1DHost = typename HostType::view_1d<Real>;
+    using View1D = typename mam4::DeviceType::view_1d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
 
-    constexpr int subarea_max = microphysics::maxsubarea();
+    constexpr int subarea_max = mam4::microphysics::maxsubarea();
 
     const auto ncldy_subarea_ = input.get_array("ncldy_subarea")[0];
     const auto jclea_ = input.get_array("jclea")[0];
@@ -53,9 +49,9 @@ void set_subarea_rh(Ensemble *ensemble) {
     Kokkos::deep_copy(relhumsub_h, 0.0);
     Kokkos::deep_copy(relhumsub_d, 0.0);
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           Real relhumsub[subarea_max] = {};
           mam4::microphysics::set_subarea_rh(ncldy_subarea, jclea, jcldy,
                                              afracsub, relhumgcm, relhumsub);

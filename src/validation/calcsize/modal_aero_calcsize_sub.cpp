@@ -4,22 +4,17 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
-
-#include <mam4xx/calcsize.hpp>
-#include <skywalker.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;
-using namespace mam4;
-using namespace haero;
 
 void modal_aero_calcsize_sub(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    constexpr int pcnst = aero_model::pcnst;
-    constexpr int pver = ndrop::pver;
-    constexpr int ntot_amode = AeroConfig::num_modes();
+    constexpr int pcnst = mam4::aero_model::pcnst;
+    constexpr int pver = mam4::ndrop::pver;
+    constexpr int ntot_amode = mam4::AeroConfig::num_modes();
 
-    using View2D = DeviceType::view_2d<Real>;
+    using View2D = mam4::DeviceType::view_2d<Real>;
 
     auto state_q_db = input.get_array("state_q");
     auto qqcw_db = input.get_array("qqcw");
@@ -42,12 +37,12 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
     Kokkos::deep_copy(qqcw, qqcw_host);
     View2D dgnumdry_m("dgnumdry_m", pver, ntot_amode);
     View2D dgncur_c("dgncur_c", pver, ntot_amode);
-    mam4::modal_aer_opt::CalcsizeData cal_data;
+    mam4::modal_aero_opt::CalcsizeData cal_data;
     cal_data.initialize();
 
-    auto team_policy = ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
-        team_policy, KOKKOS_LAMBDA(const ThreadTeam &team) {
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           // FIXME: top_lev is set to 1 in calcsize ?
           const int top_lev = 0; // 1( in fortran )
 
@@ -62,7 +57,7 @@ void modal_aero_calcsize_sub(Ensemble *ensemble) {
                 Kokkos::subview(dgncur_c, kk, Kokkos::ALL());
             // Real dqqcwdt[pcnst] = {};
             auto dqqcwdt_k = Kokkos::subview(dqqcwdt, kk, Kokkos::ALL());
-            modal_aero_calcsize::modal_aero_calcsize_sub(
+            mam4::modal_aero_calcsize::modal_aero_calcsize_sub(
                 state_q_k, // in
                 qqcw_k,    // in/out
                 dt, cal_data, dgncur_i, dgncur_c_k, ptend_k, dqqcwdt_k);
