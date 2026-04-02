@@ -44,44 +44,33 @@ void dropmixnuc(Ensemble *ensemble) {
 
     using View1D = ndrop::View1D;
     using View2D = ndrop::View2D;
+    using View3D = ndrop::View3D;
 
     using View1DHost = typename HostType::view_1d<Real>;
-
-    int count = 0;
 
     View2D state_q("state_q", pver, pcnst);
     auto state_host = Kokkos::create_mirror_view(state_q);
 
-    for (int i = 0; i < pcnst; ++i) {
+    for (int i = 0, count = 0; i < pcnst; ++i) {
       // input data is store on the cpu.
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < pver; ++kk, ++count) {
         state_host(kk, i) = state_q_db[count];
-        count++;
       }
     }
 
     Kokkos::deep_copy(state_q, state_host);
 
-    ColumnView qqcw[ncnst_tot];
-    View1DHost qqcw_host[ncnst_tot];
+    View2D qqcw("qqcw", ncnst_tot, pver);
+    auto qqcw_host = Kokkos::create_mirror_view(qqcw);
 
-    count = 0;
-    for (int i = 0; i < ncnst_tot; ++i) {
-      qqcw[i] = haero::testing::create_column_view(pver);
-      qqcw_host[i] = View1DHost("qqcw_host", pver);
-    }
-
-    for (int kk = 0; kk < pver; ++kk) {
-      for (int i = 0; i < ncnst_tot; ++i) {
-        qqcw_host[i](kk) = qqcw_db[count];
-        count++;
+    for (int kk = 0, count = 0; kk < pver; ++kk) {
+      for (int i = 0; i < ncnst_tot; ++i, ++count) {
+        qqcw_host(i, kk) = qqcw_db[count];
       }
     }
 
     // transfer data to GPU.
-    for (int i = 0; i < ncnst_tot; ++i) {
-      Kokkos::deep_copy(qqcw[i], qqcw_host[i]);
-    }
+    Kokkos::deep_copy(qqcw, qqcw_host);
 
     ColumnView tair;
     ColumnView pmid;
@@ -147,33 +136,13 @@ void dropmixnuc(Ensemble *ensemble) {
     nsource = haero::testing::create_column_view(pver);
     wtke = haero::testing::create_column_view(pver);
 
-    ColumnView ptend_q[pcnst];
-
-    count = 0;
-    for (int i = 0; i < pcnst; ++i) {
-      ptend_q[i] = haero::testing::create_column_view(pver);
-    }
-
+    View2D ptend_q("ptend_q", pcnst, pver);
     View2D factnum("factnum", ntot_amode, pver);
-
-    ColumnView coltend[ncnst_tot];
-    ColumnView coltend_cw[ncnst_tot];
-
-    for (int i = 0; i < ncnst_tot; ++i) {
-      coltend[i] = haero::testing::create_column_view(pver);
-      coltend_cw[i] = haero::testing::create_column_view(pver);
-    }
-
+    View2D coltend("coltend", ncnst_tot, pver);
+    View2D coltend_cw("coltend_cw", ncnst_tot, pver);
     View2D ccn("ccn", pver, psat);
-
-    View1D raercol_cw[pver][2];
-    View1D raercol[pver][2];
-    for (int i = 0; i < pver; ++i) {
-      raercol[i][0] = View1D("raercol_0", ncnst_tot);
-      raercol[i][1] = View1D("raercol_1", ncnst_tot);
-      raercol_cw[i][0] = View1D("raercol_cw_0", ncnst_tot);
-      raercol_cw[i][1] = View1D("raercol_cw_0", ncnst_tot);
-    }
+    View3D raercol_cw("raercol_cw", pver, 2, ncnst_tot);
+    View3D raercol("raercol", pver, 2, ncnst_tot);
 
     View2D nact("nact", pver, ntot_amode);
     View2D mact("mact", pver, ntot_amode);
@@ -263,24 +232,22 @@ void dropmixnuc(Ensemble *ensemble) {
     std::vector<Real> output_qqcw;
 
     // transfer data to host
-    for (int i = 0; i < ncnst_tot; ++i) {
-      Kokkos::deep_copy(qqcw_host[i], qqcw[i]);
-    }
+    Kokkos::deep_copy(qqcw_host, qqcw);
 
     for (int kk = 0; kk < pver; ++kk) {
       for (int i = 0; i < ncnst_tot; ++i) {
-        output_qqcw.push_back(qqcw_host[i](kk));
+        output_qqcw.push_back(qqcw_host(i, kk));
       }
     }
 
     output.set("qqcw", output_qqcw);
 
-    auto ptend_q_host = Kokkos::create_mirror_view(ptend_q[0]);
+    auto ptend_q_host = Kokkos::create_mirror_view(ptend_q);
+    Kokkos::deep_copy(ptend_q_host, ptend_q);
     std::vector<Real> output_ptend_q;
     for (int i = 0; i < pcnst; ++i) {
-      Kokkos::deep_copy(ptend_q_host, ptend_q[i]);
       for (int kk = 0; kk < pver; ++kk) {
-        output_ptend_q.push_back(ptend_q_host(kk));
+        output_ptend_q.push_back(ptend_q_host(i, kk));
       }
     }
     output.set("ptend_q", output_ptend_q);

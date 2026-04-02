@@ -50,6 +50,7 @@ void update_from_explmix(Ensemble *ensemble) {
 
     using View1D = ndrop::View1D;
     using View2D = ndrop::View2D;
+    using View3D = ndrop::View3D;
 
     using View1DHost = typename HostType::view_1d<Real>;
 
@@ -103,49 +104,33 @@ void update_from_explmix(Ensemble *ensemble) {
     View2D mact("mact", pver, ntot_amode);
     auto nact_host = Kokkos::create_mirror_view(nact);
     auto mact_host = Kokkos::create_mirror_view(mact);
-    counter = 0;
-    for (int i = 0; i < ntot_amode; ++i) {
+    for (int i = 0, counter = 0; i < ntot_amode; ++i) {
       // input data is store on the cpu.
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < pver; ++kk, ++counter) {
         nact_host(kk, i) = nact_db[counter];
         mact_host(kk, i) = mact_db[counter];
-        counter++;
       }
     }
 
-    View1D raercol_cw[pver][2];
-    View1D raercol[pver][2];
-    View1DHost raercol_host[pver][2];
-    View1DHost raercol_cw_host[pver][2];
-    for (int i = 0; i < pver; ++i) {
-      raercol[i][0] = View1D("raercol_0", ncnst_tot);
-      raercol[i][1] = View1D("raercol_1", ncnst_tot);
-      raercol_cw[i][0] = View1D("raercol_cw_0", ncnst_tot);
-      raercol_cw[i][1] = View1D("raercol_cw_0", ncnst_tot);
-      raercol_host[i][0] = View1DHost("raercol_host", ncnst_tot);
-      raercol_host[i][1] = View1DHost("raercol_host", ncnst_tot);
-      raercol_cw_host[i][0] = View1DHost("raercol_cw_host", ncnst_tot);
-      raercol_cw_host[i][1] = View1DHost("raercol_cw_host", ncnst_tot);
-    }
+    View3D raercol_cw("raercol_cw", pver, 2, ncnst_tot);
+    ;
+    auto raercol_cw_host = Kokkos::create_mirror_view(raercol_cw);
+    View3D raercol("raercol", pver, 2, ncnst_tot);
+    ;
+    auto raercol_host = Kokkos::create_mirror_view(raercol);
 
-    counter = 0;
-    for (int n = 0; n < ncnst_tot; n++) {
-      for (int k = 0; k < pver; k++) {
-        raercol_host[k][0][n] = raercol_1[counter];
-        raercol_cw_host[k][0][n] = raercol_cw_1[counter];
+    for (int n = 0, counter = 0; n < ncnst_tot; n++) {
+      for (int k = 0; k < pver; k++, ++counter) {
+        raercol_host(k, 0, n) = raercol_1[counter];
+        raercol_cw_host(k, 0, n) = raercol_cw_1[counter];
 
-        raercol_host[k][1][n] = raercol_2[counter];
-        raercol_cw_host[k][1][n] = raercol_cw_2[counter];
-        counter++;
+        raercol_host(k, 1, n) = raercol_2[counter];
+        raercol_cw_host(k, 1, n) = raercol_cw_2[counter];
       }
     }
 
-    for (int k = 0; k < pver; k++) {
-      Kokkos::deep_copy(raercol[k][0], raercol_host[k][0]);
-      Kokkos::deep_copy(raercol[k][1], raercol_host[k][1]);
-      Kokkos::deep_copy(raercol_cw[k][0], raercol_cw_host[k][0]);
-      Kokkos::deep_copy(raercol_cw[k][1], raercol_cw_host[k][1]);
-    }
+    Kokkos::deep_copy(raercol, raercol_host);
+    Kokkos::deep_copy(raercol_cw, raercol_cw_host);
 
     Kokkos::deep_copy(nact, nact_host);
     Kokkos::deep_copy(mact, mact_host);
@@ -155,11 +140,9 @@ void update_from_explmix(Ensemble *ensemble) {
     for (int m = 0; m < nmodes; m++) {
       nspec_amode[m] = nspec_amode_db[m];
     }
-    counter = 0;
-    for (int n = 0; n < nspec_max; n++) {
-      for (int m = 0; m < nmodes; m++) {
+    for (int n = 0, counter = 0; n < nspec_max; n++) {
+      for (int m = 0; m < nmodes; m++, ++counter) {
         mam_idx[m][n] = mam_idx_db[counter];
-        counter++;
       }
     }
 
@@ -181,40 +164,30 @@ void update_from_explmix(Ensemble *ensemble) {
     Kokkos::deep_copy(mact_host, mact);
     Kokkos::deep_copy(indexes_host, indexes);
 
-    counter = 0;
-    for (int i = 0; i < ntot_amode; ++i) {
+    for (int i = 0, counter = 0; i < ntot_amode; ++i) {
       // input data is store on the cpu.
-      for (int kk = 0; kk < pver; ++kk) {
+      for (int kk = 0; kk < pver; ++kk, ++counter) {
         nact_out[counter] = nact_host(kk, i);
         mact_out[counter] = mact_host(kk, i);
-        counter++;
       }
     }
 
-    counter = 0;
     for (int k = 0; k < pver; k++) {
-      qcld_out[counter] = qcld_host[k];
-      counter++;
+      qcld_out[k] = qcld_host[k];
     }
 
-    for (int k = 0; k < pver; k++) {
-      Kokkos::deep_copy(raercol_host[k][0], raercol[k][0]);
-      Kokkos::deep_copy(raercol_host[k][1], raercol[k][1]);
-      Kokkos::deep_copy(raercol_cw_host[k][0], raercol_cw[k][0]);
-      Kokkos::deep_copy(raercol_cw_host[k][1], raercol_cw[k][1]);
-    }
+    Kokkos::deep_copy(raercol_host, raercol);
+    Kokkos::deep_copy(raercol_cw_host, raercol_cw);
 
     nnew_out[0] = indexes_host(0) + 1;
     nsav_out[0] = indexes_host(1) + 1;
-    counter = 0;
-    for (int n = 0; n < ncnst_tot; n++) {
-      for (int k = 0; k < pver; k++) {
-        raercol_1_out[counter] = raercol_host[k][0](n);
-        raercol_cw_1_out[counter] = raercol_cw_host[k][0](n);
+    for (int n = 0, counter = 0; n < ncnst_tot; n++) {
+      for (int k = 0; k < pver; k++, ++counter) {
+        raercol_1_out[counter] = raercol_host(k, 0, n);
+        raercol_cw_1_out[counter] = raercol_cw_host(k, 0, n);
 
-        raercol_2_out[counter] = raercol_host[k][1](n);
-        raercol_cw_2_out[counter] = raercol_cw_host[k][1](n);
-        counter++;
+        raercol_2_out[counter] = raercol_host(k, 1, n);
+        raercol_cw_2_out[counter] = raercol_cw_host(k, 1, n);
       }
     }
 

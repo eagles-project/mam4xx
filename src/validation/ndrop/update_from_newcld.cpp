@@ -15,10 +15,12 @@ using namespace ndrop;
 
 void update_from_newcld(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
+    using View1DHost = typename HostType::view_1d<Real>;
     // number of vertical points
     // validation test from standalone ndrop
     const Real zero = 0;
     const int ntot_amode = AeroConfig::num_modes();
+    const int ncnst_tot = mam4::ndrop::ncnst_tot;
 
     const Real cldn_col_in = input.get_array("cldn_col_in")[0];
     const Real cldo_col_in = input.get_array("cldo_col_in")[0];
@@ -56,6 +58,8 @@ void update_from_newcld(Ensemble *ensemble) {
     auto raercol_cw_nsav = input.get_array("raercol_cw_nsav");
     auto nsource_col_out = input.get_array("nsource_col_out")[0];
     auto factnum_col_out = input.get_array("factnum_col_out");
+    auto raercol_nsav_view = View1DHost(raercol_nsav.data(), ncnst_tot);
+    auto raercol_cw_nsav_view = View1DHost(raercol_cw_nsav.data(), ncnst_tot);
 
     update_from_newcld(cldn_col_in, cldo_col_in, dtinv, //& ! in
                        wtke_col_in, temp_col_in, air_density,
@@ -64,8 +68,8 @@ void update_from_newcld(Ensemble *ensemble) {
                        lmassptr_amode, num2vol_ratio_min_nmodes,
                        num2vol_ratio_max_nmodes, numptr_amode, nspec_amode,
                        exp45logsig, alogsig, aten, mam_idx, qcld,
-                       raercol_nsav.data(),
-                       raercol_cw_nsav.data(), //&      ! inout
+                       raercol_nsav_view,
+                       raercol_cw_nsav_view, //&      ! inout
                        nsource_col_out, factnum_col_out.data());
 
     output.set("qcld", qcld);
