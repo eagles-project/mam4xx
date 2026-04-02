@@ -155,7 +155,7 @@ if (MAM4XX_ENABLE_SKYWALKER)
   FetchContent_Declare(
     skywalker
     GIT_REPOSITORY https://github.com/eagles-project/skywalker.git
-    GIT_TAG        a4d33b93a668e06d648f62450ae8a4ebb431e30c  # 2026/03/12
+    GIT_TAG        1896d99229719e52379c869477dce14cce9b60e2  # 2026/04/02
   )
   list(APPEND mam4xx_tpls skywalker)
 
