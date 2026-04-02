@@ -65,20 +65,20 @@ void update_from_explmix(Ensemble *ensemble) {
     std::vector<Real> nsav_out(1);
     int counter = 0;
 
-    ColumnView zn, csbot, zs, ekd, overlapp, overlapm, ekkp, ekkm, qncld, qcld,
-        cldn;
+    mam4::ColumnView zn, csbot, zs, ekd, overlapp, overlapm, ekkp, ekkm, qncld,
+        qcld, cldn;
 
-    ekd = testing::create_column_view(pver);
-    zn = testing::create_column_view(pver);
-    csbot = testing::create_column_view(pver);
-    zs = testing::create_column_view(pver);
-    overlapp = testing::create_column_view(pver);
-    overlapm = testing::create_column_view(pver);
-    ekkp = testing::create_column_view(pver);
-    ekkm = testing::create_column_view(pver);
-    qncld = testing::create_column_view(pver);
-    qcld = testing::create_column_view(pver);
-    cldn = testing::create_column_view(pver);
+    ekd = mam4::testing::create_column_view(pver);
+    zn = mam4::testing::create_column_view(pver);
+    csbot = mam4::testing::create_column_view(pver);
+    zs = mam4::testing::create_column_view(pver);
+    overlapp = mam4::testing::create_column_view(pver);
+    overlapm = mam4::testing::create_column_view(pver);
+    ekkp = mam4::testing::create_column_view(pver);
+    ekkm = mam4::testing::create_column_view(pver);
+    qncld = mam4::testing::create_column_view(pver);
+    qcld = mam4::testing::create_column_view(pver);
+    cldn = mam4::testing::create_column_view(pver);
 
     auto csbot_host = View1DHost((Real *)csbot_db.data(), pver);
     auto cldn_host = View1DHost((Real *)cldn_col_db.data(), pver);

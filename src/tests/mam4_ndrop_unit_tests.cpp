@@ -193,14 +193,15 @@ TEST_CASE("test_explmix", "mam4_ndrop") {
   Real qactold_km1 = 1;
   Real qactold_kp1 = 1;
 
-  q = ndrop::explmix(qold_km1, qold_k, qold_kp1, src, ek_kp1, ek_km1,
-                     overlap_kp1, overlap_km1, dt);
+  q = mam4::ndrop::explmix(qold_km1, qold_k, qold_kp1, src, ek_kp1, ek_km1,
+                           overlap_kp1, overlap_km1, dt);
 
   logger.info("q = {}", q);
   REQUIRE(mam4::FloatingPoint<Real>::equiv(q, 1.1));
 
-  q = ndrop::explmix(qold_km1, qold_k, qold_kp1, src, ek_kp1, ek_km1,
-                     overlap_kp1, overlap_km1, dt, qactold_km1, qactold_kp1);
+  q = mam4::ndrop::explmix(qold_km1, qold_k, qold_kp1, src, ek_kp1, ek_km1,
+                           overlap_kp1, overlap_km1, dt, qactold_km1,
+                           qactold_kp1);
 
   logger.info("q = {}", q);
   REQUIRE(mam4::FloatingPoint<Real>::equiv(q, 0.9));

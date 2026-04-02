@@ -11,8 +11,8 @@ using namespace mam4::mo_sethet;
 
 void sethet(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
-    using View2DHost = typename HostType::view_2d<Real>;
+    using View1DHost = typename mam4::HostType::view_1d<Real>;
+    using View2DHost = typename mam4::HostType::view_2d<Real>;
     using ColumnView = mam4::ColumnView;
     constexpr int pver = mam4::nlev;
     constexpr int gas_pcnst = mam4::gas_chemistry::gas_pcnst;
