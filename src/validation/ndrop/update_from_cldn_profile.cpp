@@ -14,7 +14,7 @@ using namespace mam4;
 using namespace ndrop;
 void update_from_cldn_profile(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = typename HostType::view_1d<Real>;
+    using View1D = ndrop::View1D;
     const Real zero = 0;
     const int ntot_amode = AeroConfig::num_modes();
     const int ncnst_tot = mam4::ndrop::ncnst_tot;
@@ -61,9 +61,9 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     int numptr_amode[ntot_amode];
     int mam_idx[ntot_amode][nspec_max];
     int mam_cnst_idx[ntot_amode][nspec_max];
-    auto raercol_nsav_view = View1DHost(raercol_nsav.data(), ncnst_tot);
-    auto raercol_nsav_kp1_view = View1DHost(raercol_nsav_kp1.data(), ncnst_tot);
-    auto raercol_cw_nsav_view = View1DHost(raercol_cw_nsav.data(), ncnst_tot);
+    auto raercol_nsav_view = View1D(raercol_nsav.data(), ncnst_tot);
+    auto raercol_nsav_kp1_view = View1D(raercol_nsav_kp1.data(), ncnst_tot);
+    auto raercol_cw_nsav_view = View1D(raercol_cw_nsav.data(), ncnst_tot);
     ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
                                numptr_amode, specdens_amode, spechygro, mam_idx,
                                mam_cnst_idx);
