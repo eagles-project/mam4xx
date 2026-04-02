@@ -151,6 +151,7 @@ endif()
 
 if (MAM4XX_ENABLE_SKYWALKER)
   # build Skywalker
+  set(SKYWALKER_PRECISION ${MAM4XX_PRECISION})
   FetchContent_Declare(
     skywalker
     GIT_REPOSITORY https://github.com/eagles-project/skywalker.git
