@@ -14,6 +14,7 @@ using namespace mam4;
 using namespace ndrop;
 void update_from_cldn_profile(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
+    using View1DHost = HostType::view_1d<Real>;
     using View1D = ndrop::View1D;
     const Real zero = 0;
     const int ntot_amode = AeroConfig::num_modes();
@@ -61,26 +62,86 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     int numptr_amode[ntot_amode];
     int mam_idx[ntot_amode][nspec_max];
     int mam_cnst_idx[ntot_amode][nspec_max];
-    auto raercol_nsav_view = View1D(raercol_nsav.data(), ncnst_tot);
-    auto raercol_nsav_kp1_view = View1D(raercol_nsav_kp1.data(), ncnst_tot);
-    auto raercol_cw_nsav_view = View1D(raercol_cw_nsav.data(), ncnst_tot);
     ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
                                numptr_amode, specdens_amode, spechygro, mam_idx,
                                mam_cnst_idx);
 
-    ndrop::update_from_cldn_profile(
-        cldn_col_in, cldn_col_in_kp1, dtinv, wtke_col_in, zs,
-        dz, // ! in
-        temp_col_in, air_density, air_density_kp1, csbot_cscen,
-        state_q_col_in_kp1.data(), // ! in
-        lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
-        num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode,
-        nspec_amode, exp45logsig, alogsig, aten, mam_idx, raercol_nsav_view,
-        raercol_nsav_kp1_view, raercol_cw_nsav_view,
-        nsource_col, // inout
-        qcld, factnum_col.data(),
-        ekd, // out
-        nact.data(), mact.data());
+    View1DHost raercol_nsav_host(raercol_nsav.data(), ncnst_tot);
+    View1DHost raercol_nsav_kp1_host(raercol_nsav_kp1.data(), ncnst_tot);
+    View1DHost raercol_cw_nsav_host(raercol_cw_nsav.data(), ncnst_tot);
+    View1D raercol_nsav_view("raercol_nsav_view", ncnst_tot);
+    View1D raercol_nsav_kp1_view("raercol_nsav_kp1_view", ncnst_tot);
+    View1D raercol_cw_nsav_view("raercol_cw_nsav_view", ncnst_tot);
+    Kokkos::deep_copy(raercol_nsav_view, raercol_nsav_host);
+    Kokkos::deep_copy(raercol_nsav_kp1_view, raercol_nsav_kp1_host);
+    Kokkos::deep_copy(raercol_cw_nsav_view, raercol_cw_nsav_host);
+
+    View1DHost nsource_col_host(&nsource_col, 1);
+    View1D nsource_col_view("nsource_col_view", 1);
+    Kokkos::deep_copy(nsource_col_view, nsource_col_host);
+
+    View1DHost qcld_host(&qcld, 1);
+    View1D qcld_view("qcld_view", 1);
+    Kokkos::deep_copy(qcld_view, qcld_host);
+
+    View1DHost factnum_col_host(factnum_col.data(), ntot_amode);
+    View1D factnum_col_view("factnum_col_view", ntot_amode);
+    Kokkos::deep_copy(factnum_col_view, factnum_col_host);
+
+    View1DHost ekd_host(&ekd, 1);
+    View1D ekd_view("ekd_view", 1);
+    Kokkos::deep_copy(ekd_view, ekd_host);
+
+    View1DHost nact_host(nact.data(), ntot_amode);
+    View1D nact_view("nact_view", ntot_amode);
+    Kokkos::deep_copy(nact_view, nact_host);
+
+    View1DHost mact_host(mact.data(), ntot_amode);
+    View1D mact_view("mact_view", ntot_amode);
+    Kokkos::deep_copy(mact_view, mact_host);
+
+    Kokkos::parallel_for("update_from_cldn_profile", 1, KOKKOS_LAMBDA(int) {
+      ndrop::update_from_cldn_profile(
+          cldn_col_in, cldn_col_in_kp1, dtinv, wtke_col_in, zs,
+          dz, // ! in
+          temp_col_in, air_density, air_density_kp1, csbot_cscen,
+          state_q_col_in_kp1.data(), // ! in
+          lspectype_amode, specdens_amode, spechygro, lmassptr_amode,
+          num2vol_ratio_min_nmodes, num2vol_ratio_max_nmodes, numptr_amode,
+          nspec_amode, exp45logsig, alogsig, aten, mam_idx, raercol_nsav_view,
+          raercol_nsav_kp1_view, raercol_cw_nsav_view,
+          nsource_col_view[0], // inout
+          qcld_view[0], factnum_col_view.data(),
+          ekd_view[0], // out
+          nact_view.data(), mact_view.data());
+    });
+    
+    Kokkos::deep_copy(qcld_host, qcld_view);
+    qcld = qcld_host[0];
+
+    Kokkos::deep_copy(nsource_col_host, nsource_col_view);
+    nsource_col = nsource_col_host[0];
+
+    Kokkos::deep_copy(raercol_nsav_host, raercol_nsav_view);
+    Kokkos::deep_copy(raercol_cw_nsav_host, raercol_cw_nsav_view);
+    Kokkos::deep_copy(factnum_col_host, factnum_col_view);
+
+    for (int i=0; i<ncnst_tot; ++i)
+      raercol_nsav[i] = raercol_nsav_host[i];
+    for (int i=0; i<ncnst_tot; ++i)
+      raercol_cw_nsav[i] = raercol_cw_nsav_host[i];
+    for (int i=0; i<ntot_amode; ++i)
+      factnum_col[i] = factnum_col_host[i];
+
+    Kokkos::deep_copy(ekd_host, ekd_view);
+    ekd = ekd_host[0];
+
+    Kokkos::deep_copy(nact_host, nact_view);
+    Kokkos::deep_copy(mact_host, mact_view);
+    for (int i=0; i<ntot_amode; ++i)
+      nact[i] = nact_host[i];
+    for (int i=0; i<ntot_amode; ++i)
+      mact[i] = mact_host[i];
 
     output.set("qcld", qcld);
     output.set("nsource_col", nsource_col);
