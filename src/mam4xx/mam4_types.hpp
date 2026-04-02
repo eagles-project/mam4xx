@@ -3,8 +3,8 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef MAM4_TYPES_HPP
-#define MAM4_TYPES_HPP
+#ifndef MAM4XX_TYPES_HPP
+#define MAM4XX_TYPES_HPP
 
 #include <mam4xx/mam4_config.hpp>
 
