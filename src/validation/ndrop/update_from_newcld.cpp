@@ -12,6 +12,7 @@ using namespace mam4::ndrop;
 void update_from_newcld(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename HostType::view_1d<Real>;
+    using View1D = ndrop::View1D;
     // number of vertical points
     // validation test from standalone ndrop
     const Real zero = 0;
@@ -55,8 +56,18 @@ void update_from_newcld(Ensemble *ensemble) {
     auto raercol_cw_nsav = input.get_array("raercol_cw_nsav");
     auto nsource_col_out = input.get_array("nsource_col_out")[0];
     auto factnum_col_out = input.get_array("factnum_col_out");
-    auto raercol_nsav_view = View1DHost(raercol_nsav.data(), ncnst_tot);
-    auto raercol_cw_nsav_view = View1DHost(raercol_cw_nsav.data(), ncnst_tot);
+
+    auto raercol_nsav_view = View1D("aercol_cw_nsav_vi", ncnst_tot);
+    auto raercol_nsav_host = Kokkos::create_mirror_view(raercol_nsav_view);
+    for (int i=0; i<ncnst_tot; ++i)
+      raercol_nsav_host(i) = raercol_nsav[i];
+    Kokkos::deep_copy(raercol_nsav_view, raercol_nsav_host);
+
+    auto raercol_cw_nsav_view = View1D("raercol_cw_nsav_view", ncnst_tot);
+    auto raercol_cw_nsav_host = Kokkos::create_mirror_view(raercol_cw_nsav_view);
+    for (int i=0; i<ncnst_tot; ++i)
+      raercol_cw_nsav_host(i) = raercol_cw_nsav[i];
+    Kokkos::deep_copy(raercol_cw_nsav_view, raercol_cw_nsav_host);
 
     update_from_newcld(cldn_col_in, cldo_col_in, dtinv, //& ! in
                        wtke_col_in, temp_col_in, air_density,
@@ -71,7 +82,15 @@ void update_from_newcld(Ensemble *ensemble) {
 
     output.set("qcld", qcld);
     output.set("nsource_col_out", nsource_col_out);
+
+    Kokkos::deep_copy(raercol_nsav_host, raercol_nsav_view);
+    for (int i=0; i<ncnst_tot; ++i)
+      raercol_nsav[i] = raercol_nsav_host(i);
     output.set("raercol_nsav", raercol_nsav);
+
+    Kokkos::deep_copy(raercol_cw_nsav_host, raercol_cw_nsav_view);
+    for (int i=0; i<ncnst_tot; ++i)
+      raercol_cw_nsav[i] = raercol_cw_nsav_host(i);
     output.set("raercol_cw_nsav", raercol_cw_nsav);
     output.set("factnum_col_out", factnum_col_out);
   });

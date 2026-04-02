@@ -64,7 +64,6 @@ void update_from_explmix(Ensemble *ensemble) {
 
     std::vector<Real> nnew_out(1);
     std::vector<Real> nsav_out(1);
-    int counter = 0;
 
     mam4::ColumnView zn, csbot, zs, ekd, overlapp, overlapm, ekkp, ekkm, qncld,
         qcld, cldn;
