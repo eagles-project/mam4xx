@@ -302,7 +302,7 @@ void activate_modal(const Real w_in, const Real wmaxf, const Real tair,
       smc[imode] = one;
       etafactor2[imode] =
           etafactor2max; // ! this should make eta big if na is very small.
-    } // volumne
+    }                    // volumne
     lnsm[imode] = mam4::log(smc[imode]); // ! only if variable size dist
     eta[imode] = etafactor1 * etafactor2[imode];
   } // end imode
@@ -2353,7 +2353,7 @@ void compute_updraft_mixing_ratio(
       // *** these must obey  dt_u(k)*mu_p_eudp = dpdry(k)*fa_u(k)
       fa_u[kk] = dt_u * (mu_p_eudp / dpdry[kk]);
     } // "(mu_p_eudp > mbsth)"
-  } // "kk = kbot-1; ktop <= kk; --kk"
+  }   // "kk = kbot-1; ktop <= kk; --kk"
 }
 // ======================================================================================
 template <typename SubView, typename ConstSubView>

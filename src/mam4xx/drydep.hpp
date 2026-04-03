@@ -23,7 +23,7 @@ public:
   static constexpr int n_land_type = 11;
 
   struct Config {
-    Config() {};
+    Config(){};
 
     Config(const Config &) = default;
     ~Config() = default;

@@ -445,7 +445,7 @@ void find_index(const View1D &var_in, const int var_len,
       idx_out = mam4::max(mam4::min(ii, var_len - 1) - 1, 0);
       break;
     } // end if
-  } // end for ii
+  }   // end for ii
 
 } // find_index
 
@@ -583,7 +583,7 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
             izl = iz;
             break;
           } // end if
-        } // end for iz
+        }   // end for iz
         // Fortran to C++ indexing
         auto min = [](int i, int j) { return (i < j) ? i : j; };
         auto max = [](int i, int j) { return (i < j) ? j : i; };
@@ -760,7 +760,7 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
           for (int i = 0; i < numj; i++) {
             xswk(i, wn) = xsqy(i, wn, t_index, 0);
           } // end for i
-        } // end for wn
+        }   // end for wn
         // Fortran to C++ indexing conversion
       } else if (ptarget <= prs[np_xs - 1]) {
         for (int wn = 0; wn < nw; wn++) {
@@ -768,7 +768,7 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
             // Fortran to C++ indexing conversion
             xswk(i, wn) = xsqy(i, wn, t_index, np_xs - 1);
           } // end for i
-        } // end for wn
+        }   // end for wn
 
       } else {
         Real delp = zero;
@@ -782,7 +782,7 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
             delp = (prs[pndx] - ptarget) * dprs[pndx];
             break;
           } // end if
-        } // end for km
+        }   // end for km
         for (int wn = 0; wn < nw; wn++) {
           for (int i = 0; i < numj; i++) {
             xswk(i, wn) = xsqy(i, wn, t_index, pndx) +
@@ -790,8 +790,8 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
                                   xsqy(i, wn, t_index, pndx));
 
           } // end for i
-        } // end for wn
-      } // end if
+        }   // end for wn
+      }     // end if
       for (int i = 0; i < numj; ++i) {
         Real suma = zero;
         for (int wn = 0; wn < nw; wn++) {
@@ -799,8 +799,8 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
         }
         j_long(i, kk) = suma;
       } // i
-    }; // end kk
-  }); // end single
+    };  // end kk
+  });   // end single
 } // jlong
 
 // FIXME: note the use of ConstColumnView for views we get from the

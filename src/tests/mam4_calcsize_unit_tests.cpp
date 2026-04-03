@@ -102,7 +102,7 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
       }
 
     } // end species
-  } // end modes
+  }   // end modes
 
   const int ncol = 1;
   // Single-column dispatch.
@@ -150,5 +150,5 @@ TEST_CASE("test_compute_tendencies", "mam4_calcsize_process") {
       }
 
     } // end species
-  } // end modes
+  }   // end modes
 }

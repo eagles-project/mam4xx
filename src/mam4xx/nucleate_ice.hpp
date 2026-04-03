@@ -189,7 +189,7 @@ void hf(const Real temperature, const Real w_vlc, const Real RH, const Real Na,
       calculate_Ni_hf(A1_slow, B1_slow, C1_slow, A2_slow, B4_slow, C2_slow,
                       temperature, lnw, Na, Ni);
     } // end temperature >= regm
-  } // end temperature <= -Real(37.0)
+  }   // end temperature <= -Real(37.0)
 
 } // end hf
 
@@ -600,7 +600,7 @@ public:
     onihf = nihf * one_millon / rhoair;
 
   } // end nucleati
-}; // end class nucleate_ice
+};  // end class nucleate_ice
 } // end namespace mam4
 
 #endif

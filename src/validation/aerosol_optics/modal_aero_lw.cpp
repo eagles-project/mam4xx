@@ -140,10 +140,10 @@ void modal_aero_lw(Ensemble *ensemble) {
                                 (d3 + refindex_real * (d4 + refindex_im * d5)));
               absplw3_host[d1][d5](d2, d3, d4) = absplw_db[offset];
             } // d5
-          } // d4
-        } // d3
-      } // d2
-    } // d1
+          }   // d4
+        }     // d3
+      }       // d2
+    }         // d1
 
     set_aerosol_optics_data_for_modal_aero_lw_views(aersol_optics_data);
 

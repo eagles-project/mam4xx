@@ -21,7 +21,7 @@ class Hetfrz {
 public:
   struct Config {
 
-    Config() {};
+    Config(){};
 
     Config(const Config &) = default;
     ~Config() = default;

@@ -29,7 +29,7 @@ void vert_interp(const ThreadTeam &team, const int levsiz, const int pver,
           pmid(k) <= pin(kk + 1) * unit_factor_pin) {
         kupper = kk;
       } // end if
-    } // end for
+    }   // end for
 
     if (pmid(k) < pin(0) * unit_factor_pin) {
       EKAT_KERNEL_ASSERT_MSG(

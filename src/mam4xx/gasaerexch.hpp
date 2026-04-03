@@ -29,7 +29,7 @@ public:
   static constexpr int num_mode = AeroConfig::num_modes();
 
   KOKKOS_INLINE_FUNCTION
-  static const ModeIndex (&Modes()) [num_mode] {
+  static const ModeIndex (&Modes())[num_mode] {
     static const ModeIndex modes[num_mode] = {
         ModeIndex::Accumulation, ModeIndex::Aitken, ModeIndex::Coarse,
         ModeIndex::PrimaryCarbon};
@@ -472,8 +472,8 @@ void mam_gasaerexch_1subarea(
         for (int imode = 0; imode < ntot_amode; ++imode) {
           uptkaer[igas][imode] = uptkaer[igas_h2so4][imode] * 2.08;
         } // imode
-      } // igas == igas_nh3
-    } // igas
+      }   // igas == igas_nh3
+    }     // igas
     // uptkrate_h2so4 = 0;
     for (int n = 0; n < ntot_amode; ++n)
       uptkrate_h2so4 += uptkaer[igas_h2so4][n];

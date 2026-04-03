@@ -104,7 +104,7 @@ inline void set_aerosol_optics_data_for_modal_aero_sw_views(
 
       aersol_optics_data.refitabsw[d1][d5] = View1D("refitabsw", refindex_im);
     } // d5
-  } // d1
+  }   // d1
 
 } // configure_aerosol_optics_data
 
@@ -181,7 +181,7 @@ inline void set_device_specrefindex(
         specrefindex_host(ll, ibands) =
             specrefndx_host(ibands, lspectype_amode[ll][mm] - 1);
       } // ll
-    } // ibands
+    }   // ibands
     Kokkos::deep_copy(specrefindex[mm], specrefindex_host);
 
   } // mm
@@ -714,7 +714,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
       } else {
         // BAD CONSTANT
         pext = 1.5 / (radsurf * rhoh2o); //  geometric optics
-      } // if logradsurf(kk) <= xrmax
+      }                                  // if logradsurf(kk) <= xrmax
 
       // convert from m2/kg water to m2/kg aerosol
       // FIXME: specpext is used by check_error_warning, which is not ported
@@ -736,7 +736,7 @@ KOKKOS_INLINE_FUNCTION void modal_aero_sw_wo_diagnostics_k(
       fa(mm, isw) = dopaer * palb * pasm * pasm;
 
     } // isw
-  } // mm
+  }   // mm
 } // modal_aero_sw_wo_diagnostics_k ends
 
 inline int get_work_len_aerosol_optics() {
