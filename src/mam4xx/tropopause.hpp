@@ -228,7 +228,7 @@ void tropopause_twmo(const ConstColumnView &pmid, const ConstColumnView &pint,
         break;
       }
     } // kk
-  }   // tP
+  } // tP
 
 } // tropopause_twmo
 

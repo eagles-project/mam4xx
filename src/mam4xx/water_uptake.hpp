@@ -22,7 +22,7 @@ class Water_Uptake {
 public:
   struct Config {
 
-    Config(){};
+    Config() {};
 
     Config(const Config &) = default;
     ~Config() = default;

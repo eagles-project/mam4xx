@@ -63,7 +63,7 @@ void compute_tendencies(Ensemble *ensemble) {
 
         count++;
       } // end species
-    }   // end modes
+    } // end modes
 
     auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(

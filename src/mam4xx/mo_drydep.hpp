@@ -106,7 +106,7 @@ inline void find_season_index_at_lat(const Real clat_j,
     }
 
     index_season_lai(m) = k_max; //
-  }                              // m
+  } // m
 } // findSeasonIndex
 
 /**

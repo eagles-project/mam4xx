@@ -373,7 +373,7 @@ void compute_coef_ait_acc_transfer(const int iacc,                   // in
       xfertend_num[0][0] = num_i_aitsv * xfercoef_num_ait2acc;
       xfertend_num[0][1] = num_c_aitsv * xfercoef_num_ait2acc;
     } // end if (num_t < drv_t*num2vol_ratio_geomean)
-  }   // end if (drv_t > zero)
+  } // end if (drv_t > zero)
 
 } // end compute_coef_ait_acc_transfer
 
@@ -430,7 +430,7 @@ void compute_coef_acc_ait_transfer(
           drv_c_noxf += mam4::max(zero, q_c[iacc][ispec](klev)) *
                         inv_density[iacc][ispec];
         } // end if
-      }   // end ispec
+      } // end ispec
       drv_t_noxf =
           drv_i_noxf +
           drv_c_noxf; // total volume that can't be moved to the aitken mode
@@ -441,7 +441,7 @@ void compute_coef_acc_ait_transfer(
       num_t = mam4::max(zero, num_t - num_t_noxf);
       drv_t = mam4::max(zero, drv_t - drv_t_noxf);
     } // end if (num_t > drv_t*num2vol_ratio_geomean)
-  }   // end if (drv_t)
+  } // end if (drv_t)
 
   if (drv_t > zero) {
     // Find out if we need to transfer based on the new num_t
@@ -821,7 +821,7 @@ void aitken_accum_exchange(
           ait_spec_in_acc, // defined in aero_modes - src => aitken
           xfertend_num, xfercoef_vol_acc2ait, prognostics, tendencies);
     } // end if (acc2_ait_index)
-  }   // end if (ait2acc_index+acc2_ait_index > 0)
+  } // end if (ait2acc_index+acc2_ait_index > 0)
 
 } // aitken_accum_exchange
 
@@ -921,7 +921,7 @@ public:
           break;
         }
       } // end aitken foor
-    }   // end accumulation for
+    } // end accumulation for
     _n_common_species_ait_accum = count;
 
     // Set mode parameters.

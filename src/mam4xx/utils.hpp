@@ -308,7 +308,7 @@ inject_stateq_to_prognostics(const VectorType &q, mam4::Prognostics &progs,
   } else {
     s_idx = aero_start_ind(); // If no gasses; start with the first index of
                               // aerosols
-  }                           // end if
+  } // end if
 
   // Now start adding aerosols mmr into the state_q
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
@@ -317,12 +317,12 @@ inject_stateq_to_prognostics(const VectorType &q, mam4::Prognostics &progs,
       if (progs.q_aero_i[m][a].data()) {
         progs.q_aero_i[m][a](klev) = q[s_idx];
         s_idx++; // update index even if we lack some aerosol mmrs
-      }          // end if
-    }            // a
+      } // end if
+    } // a
     // Now add aerosol number mmr
     progs.n_mode_i[m](klev) = q[s_idx];
     s_idx++; // update index
-  }          // m
+  } // m
 }
 template <typename VectorType>
 KOKKOS_INLINE_FUNCTION void inject_ptend_to_tendencies(const VectorType &ptend,
@@ -342,7 +342,7 @@ KOKKOS_INLINE_FUNCTION void inject_ptend_to_tendencies(const VectorType &ptend,
   } else {
     s_idx = aero_start_ind(); // If no gasses; start with the first index of
                               // aerosols
-  }                           // end if
+  } // end if
 
   // Now start adding aerosols mmr into the state_q
   for (int m = 0; m < AeroConfig::num_modes(); ++m) {
@@ -351,12 +351,12 @@ KOKKOS_INLINE_FUNCTION void inject_ptend_to_tendencies(const VectorType &ptend,
       if (tends.q_aero_i[m][a].data()) {
         tends.q_aero_i[m][a](klev) = ptend[s_idx];
         s_idx++; // update index even if we lack some aerosol mmrs
-      }          // end if
-    }            // a
+      } // end if
+    } // a
     // Now add aerosol number mmr
     tends.n_mode_i[m](klev) = ptend[s_idx];
     s_idx++; // update index
-  }          // m
+  } // m
 }
 
 // Given an AerosolState with views for dry aerosol quantities, creates a
@@ -386,7 +386,7 @@ extract_qqcw_from_prognostics(const mam4::Prognostics &progs, VectorType &qqcw,
     // Now add aerosol number mmr
     qqcw[s_idx] = progs.n_mode_c[m](klev);
     s_idx++; // update index
-  }          // m
+  } // m
 }
 
 // Given an AerosolState with views for dry aerosol quantities, creates a

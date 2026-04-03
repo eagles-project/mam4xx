@@ -11,8 +11,8 @@ using namespace mam4::ndrop;
 
 void update_from_cldn_profile(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = HostType::view_1d<Real>;
-    using View1D = ndrop::View1D;
+    using View1DHost = mam4::HostType::view_1d<Real>;
+    using View1D = mam4::ndrop::View1D;
     const Real zero = 0;
     const int ntot_amode = mam4::AeroConfig::num_modes();
     const int ncnst_tot = mam4::ndrop::ncnst_tot;
@@ -60,9 +60,9 @@ void update_from_cldn_profile(Ensemble *ensemble) {
     int numptr_amode[ntot_amode];
     int mam_idx[ntot_amode][nspec_max];
     int mam_cnst_idx[ntot_amode][nspec_max];
-    ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
-                               numptr_amode, specdens_amode, spechygro, mam_idx,
-                               mam_cnst_idx);
+    mam4::ndrop::get_e3sm_parameters(
+        nspec_amode, lspectype_amode, lmassptr_amode, numptr_amode,
+        specdens_amode, spechygro, mam_idx, mam_cnst_idx);
 
     View1DHost raercol_nsav_host(raercol_nsav.data(), ncnst_tot);
     View1DHost raercol_nsav_kp1_host(raercol_nsav_kp1.data(), ncnst_tot);
@@ -100,7 +100,7 @@ void update_from_cldn_profile(Ensemble *ensemble) {
 
     Kokkos::parallel_for(
         "update_from_cldn_profile", 1, KOKKOS_LAMBDA(int) {
-          ndrop::update_from_cldn_profile(
+          mam4::ndrop::update_from_cldn_profile(
               cldn_col_in, cldn_col_in_kp1, dtinv, wtke_col_in, zs,
               dz, // ! in
               temp_col_in, air_density, air_density_kp1, csbot_cscen,

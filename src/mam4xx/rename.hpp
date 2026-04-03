@@ -470,7 +470,7 @@ void find_renaming_pairs(
       // FIXME: BAD CONSTANT!
       diameter_threshold[src_mode] = 0.99 * diameter_cutoff[src_mode];
     } // end if/else (dest_mode < 0)
-  }   // end for(m)
+  } // end for(m)
 } // end find_renaming_pairs
 } // end namespace rename
 
@@ -502,11 +502,11 @@ public:
           // [m3-spc/kmol-air] (where m3-species) is meter cubed volume of a
           // species) used for avoiding overflow. it corresponds to dp = 1 nm
           // and number = 1e-5 #/mg-air ~= 1e-5 #/cm3-air
-          _smallest_dryvol_value{1.0e-25}, _mam4xx2rename_idx{
-                                               {0, 1, 2, 3, 4, 5, 6},
-                                               {0, 1, -1, -1, 4, 6, -1},
-                                               {0, 1, 2, 3, 4, 5, 6},
-                                               {2, 3, 6, -1, -1, -1, -1}} {}
+          _smallest_dryvol_value{1.0e-25},
+          _mam4xx2rename_idx{{0, 1, 2, 3, 4, 5, 6},
+                             {0, 1, -1, -1, 4, 6, -1},
+                             {0, 1, 2, 3, 4, 5, 6},
+                             {2, 3, 6, -1, -1, -1, -1}} {}
 
     KOKKOS_INLINE_FUNCTION
     Config(const Config &) = default;
@@ -784,7 +784,7 @@ public:
         // aerosol number mixing ratios [#/kmol-air]
         qnum_i_cur, qmol_c_cur, qnum_c_cur);
   } // end mam_rename_1subarea_()
-};  // end class Rename
+}; // end class Rename
 
 } // end namespace mam4
 

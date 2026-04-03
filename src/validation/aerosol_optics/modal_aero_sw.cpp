@@ -159,10 +159,10 @@ void modal_aero_sw(Ensemble *ensemble) {
               extpsw_host[d1][d5](d2, d3, d4) = extpsw_db[offset];
               asmpsw_host[d1][d5](d2, d3, d4) = asmpsw_db[offset];
             } // d5
-          }   // d4
-        }     // d3
-      }       // d2
-    }         // d1
+          } // d4
+        } // d3
+      } // d2
+    } // d1
 
     for (int d1 = 0; d1 < ntot_amode; ++d1)
       for (int d5 = 0; d5 < nswbands; ++d5) {

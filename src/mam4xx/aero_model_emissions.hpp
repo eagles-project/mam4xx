@@ -560,9 +560,9 @@ void seasalt_emis_flux_calc(
           // Mixing state 3: internal mixture, add OM to mass and number
           cflux[mode_idx] += cflux_tmp;
         } // end if (Dg(ibin))
-      }   // end for (ibin)
-    }     // end if (mode_idx)
-  }       // end for (ispec)
+      } // end for (ibin)
+    } // end if (mode_idx)
+  } // end for (ispec)
 } // end seasalt_emis_flux_calc()
 
 KOKKOS_INLINE_FUNCTION
@@ -787,9 +787,9 @@ void calc_marine_organic_numflux(
           cflux[num_mode_idx] +=
               cflux_tmp * (1.0 / (1.0 - om_seasalt[ibin]) - 1.0);
         } // end if (Dg)
-      }   // end for (ibin)
-    }     // end if (mode_idx)
-  }       // end for (ispec)
+      } // end for (ibin)
+    } // end if (mode_idx)
+  } // end for (ispec)
 } // end calc_marine_organic_numflux()
 
 KOKKOS_INLINE_FUNCTION
@@ -836,11 +836,11 @@ void calc_marine_organic_massflux(
                   cflux_tmp * mass_frac_bub_section[iorg][ibin] /
                   om_seasalt[ibin] * (1.0 / (1.0 - om_seasalt[ibin]) - 1.0);
             } // if (om_seasalt)
-          }   // if (Dg)
-        }     // for (ibin)
-      }       // for (iorg)
-    }         // if (emit_this_mode)
-  }           // end for (ispec)
+          } // if (Dg)
+        } // for (ibin)
+      } // for (iorg)
+    } // if (emit_this_mode)
+  } // end for (ispec)
 } // end subroutine calc_marine_organic_massflux
 
 KOKKOS_INLINE_FUNCTION

@@ -172,7 +172,7 @@ void aitken_accum_exchange(Ensemble *ensemble) {
         tend_aero_c_out.push_back(h_tend_aero_c(0));
 
       } // end species
-    }   // end mode
+    } // end mode
 
     output.set("interstitial_ptend", tend_aero_i_out);
     output.set("interstitial_ptend_num", tend_n_mode_i_out);

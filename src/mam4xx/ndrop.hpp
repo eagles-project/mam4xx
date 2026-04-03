@@ -108,7 +108,7 @@ void get_e3sm_parameters(
       mam_cnst_idx[j][i] = mam_cnst_idx_temp[count];
       count++;
     } // j
-  }   // i
+  } // i
 
 } // get_e3sm_parameters
 
@@ -150,7 +150,7 @@ void get_aer_mmr_sum(
                      density_sp; // volume = mmr/density
     vaerosolsum_icol += vol;
     hygrosum_icol += vol * hygro_sp; // bulk hygroscopicity
-  }                                  // end
+  } // end
 } // end get_aer_mmr_sum
 
 KOKKOS_INLINE_FUNCTION
@@ -442,7 +442,7 @@ void ccncalc(const Real state_q[aero_model::pcnst], const Real tair,
 
   for (int lsat = 0; lsat < psat; ++lsat) {
     ccn[lsat] *= per_m3_to_per_cm3; // convert from #/m3 to #/cm3
-  }                                 // lsat
+  } // lsat
 
 } /// ccncalc
 
@@ -1030,7 +1030,7 @@ void update_from_newcld(
         raercol_cw_nsav[mm] += dact; // cloud-borne aerosol
         raercol_nsav[mm] -= dact;
       } // lspec
-    }   // imode
+    } // imode
 
   } // cldn_col_in < cldo_col_in
 
@@ -1080,8 +1080,8 @@ void update_from_newcld(
         raercol_nsav[mm] -= dact;
 
       } // lspec
-    }   // imode
-  }     // cldn_col_in - cldo_col_in  > grow_cld_thresh
+    } // imode
+  } // cldn_col_in - cldo_col_in  > grow_cld_thresh
 
 } // update_from_newcld
 
@@ -1291,8 +1291,8 @@ void update_from_explmix(
     team.team_barrier();
     Kokkos::parallel_for(
         Kokkos::TeamVectorRange(team, top_lev, pver_loc), [&](int k) {
-          const int kp1 = haero::min(k + 1, pver_loc - 1);
-          const int km1 = haero::max(k - 1, top_lev);
+          const int kp1 = mam4::min(k + 1, pver_loc - 1);
+          const int km1 = mam4::max(k - 1, top_lev);
           const View1D raercol_km1_nsav = ekat::subview(raercol, km1, nsav);
           const View1D raercol_k_nsav = ekat::subview(raercol, k, nsav);
           const View1D raercol_kp1_nsav = ekat::subview(raercol, kp1, nsav);
@@ -1361,8 +1361,8 @@ void update_from_explmix(
                             raercol_cw_km1_nsav(mm), raercol_cw_kp1_nsav(mm));
               }
             } // lspec loop
-          }   // imode loop
-        });   // k loop
+          } // imode loop
+        }); // k loop
     team.team_barrier();
   } // old_cloud_nsubmix_loop
 
@@ -1384,9 +1384,9 @@ void update_from_explmix(
               raercol(k, nnew, mm) += raercol_cw(k, nnew, mm);
               raercol_cw(k, nnew, mm) = zero;
             } // lspec
-          }   // imode
-        }     // if cldn(k) == 0
-      });     // kk
+          } // imode
+        } // if cldn(k) == 0
+      }); // kk
 } // end update_from_explmix
 
 KOKKOS_INLINE_FUNCTION
@@ -1555,7 +1555,7 @@ void dropmixnuc(
             const int spc_idx = lmassptr_amode[lspec - 1][imode] - 1;
             raercol(k, nsav, mm) = state_q(k, spc_idx);
           } // lspec
-        }   // imode
+        } // imode
 
         // PART I:  changes of aerosol and cloud water from temporal changes in
         // cloud fraction droplet nucleation/aerosol activation
@@ -1668,8 +1668,8 @@ void dropmixnuc(
             // Fortran indexing to C++ indexing
             const int lptr = mam_cnst_idx[imode][lspec] - 1;
             qqcwtend(k) = (raercol_cw(k, nnew, mm) - qqcw_fld(mm, k)) * dtinv;
-            qqcw_fld(mm, k) = haero::max(raercol_cw(k, nnew, mm),
-                                         zero); // update cloud-borne aerosol
+            qqcw_fld(mm, k) = mam4::max(raercol_cw(k, nnew, mm),
+                                        zero); // update cloud-borne aerosol
 
             if (lspec == 0) {
               // Fortran indexing to C++ indexing
@@ -1693,7 +1693,7 @@ void dropmixnuc(
             ptend_q(lptr, k) = raertend(k);
 
           } // lspec
-        }   // imode
+        } // imode
 
         const auto state_q_k = ekat::subview(state_q, k);
         const auto ccn_k = ekat::subview(ccn, k);

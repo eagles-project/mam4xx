@@ -11,8 +11,8 @@ using namespace mam4::ndrop;
 
 void update_from_newcld(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
-    using View1DHost = HostType::view_1d<Real>;
-    using View1D = ndrop::View1D;
+    using View1DHost = mam4::HostType::view_1d<Real>;
+    using View1D = mam4::ndrop::View1D;
     // number of vertical points
     // validation test from standalone ndrop
     const Real zero = 0;

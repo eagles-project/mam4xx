@@ -60,7 +60,7 @@ void extfrc_set(const ThreadTeam &team, const Forcing *forcings,
           frcing(kk, nn) += forcing_mm.fields_data[isec](kk);
         }
       } // isec
-    }   // end mm
+    } // end mm
   });
 } // extfrc_set
 

@@ -91,7 +91,7 @@ void psc_activation(const Real lats, const Real temp, const Real pmid,
       } // temp <= psc_T
 
     } // end excess_chlorine
-  }   // end abs(lats) > lats_threshold
+  } // end abs(lats) > lats_threshold
 
 } // psc_activation
 
