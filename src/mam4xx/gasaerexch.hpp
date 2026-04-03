@@ -39,8 +39,7 @@ public:
   // In MAM4, there are only two gases that condense to aerosols:
   // 1. H2SO4 -> SO4
   // 2. SOAG  -> SOA
-  KOKKOS_INLINE_FUNCTION
-  static constexpr AeroId gas_to_aer(const GasId gas) {
+  KOKKOS_INLINE_FUNCTION static constexpr AeroId gas_to_aer(const GasId gas) {
     AeroId air = AeroId::None;
     if (GasId::H2SO4 == gas)
       air = AeroId::SO4;
