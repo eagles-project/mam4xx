@@ -111,6 +111,7 @@ jobs:
         with:
           repository: E3SM-Project/EKAT
           submodules: recursive
+          ref: bartgol/fetch-content-fixes
           path: ${{ github.workspace }}/ekat_src
 
       - name: Configuring MAM4xx (${{ matrix.build-type }}, ${{ matrix.fp-precision }} precision)

@@ -82,6 +82,7 @@ jobs:
         with:
           repository: E3SM-Project/EKAT
           submodules: recursive
+          ref: bartgol/fetch-content-fixes
           path: ${{ github.workspace }}/ekat_src
       - name: Show action trigger
         uses: ./.github/actions/show-workflow-trigger
