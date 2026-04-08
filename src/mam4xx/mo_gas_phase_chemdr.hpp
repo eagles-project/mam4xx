@@ -149,7 +149,7 @@ struct LinozConf {
   // set from namelist input linoz_tau
   Real o3_tau;
 };
-
+#if 0
 KOKKOS_INLINE_FUNCTION
 void perform_atmospheric_chemistry_and_microphysics(
     const ThreadTeam &team, const Real dt, const Real rlats,
@@ -551,6 +551,7 @@ void perform_atmospheric_chemistry_and_microphysics(
   }   // for loop over num_modes
   team.team_barrier();
 } // perform_atmospheric_chemistry_and_microphysics
+#endif
 } // namespace microphysics
 } // namespace mam4
 #endif

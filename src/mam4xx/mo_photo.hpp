@@ -437,8 +437,6 @@ void find_index(const View1D &var_in, const int var_len,
   // @param[in]  var_len   length of the input variable
   // @param[in]  var_min   variable threshold
   // @param[out]  idx_out   index
-  auto min = [](int i, int j) { return (i < j) ? i : j; };
-  auto max = [](int i, int j) { return (i < j) ? j : i; };
   for (int ii = 0; ii < var_len; ii++) {
     if (var_in(ii) > var_min) {
       // Fortran to C++ indexing
@@ -585,8 +583,6 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
           } // end if
         }   // end for iz
         // Fortran to C++ indexing
-        auto min = [](int i, int j) { return (i < j) ? i : j; };
-        auto max = [](int i, int j) { return (i < j) ? j : i; };
         pind = mam4::max(mam4::min(iz, nump - 1), 1);
         wght1 = utils::min_max_bound(
             zero, one, (p_in[kk] - press[pind]) * del_p[pind - 1]);
