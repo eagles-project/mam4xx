@@ -8,8 +8,6 @@
 
 #include <catch2/catch.hpp>
 #include <ekat_logger.hpp>
-#include <algorithm>
-#include <array>
 #include <random>
 
 // Precision-dependent tolerance traits
@@ -113,8 +111,8 @@ TEST_CASE("compute_o3_column_density", "mo_photo") {
   // Compare serial reference with parallel implementation
 
   for (int k = 0; k < pver; ++k) {
-    const Real diff =
-        std::abs(o3_col_dens_host(k) - o3_col_dens_ref(k)) / o3_col_dens_ref(k);
+    const Real raw_diff = o3_col_dens_host(k) - o3_col_dens_ref(k);
+    const Real diff = (raw_diff > 0 ? raw_diff : -raw_diff) / o3_col_dens_ref(k);
     if (diff >= tol) {
       std::ostringstream ss;
       ss << "diff : [ ";
@@ -132,7 +130,7 @@ TEST_CASE("compute_o3_column_density", "mo_photo") {
 // Helpers shared by interpolate_rsf and jlong tests
 // ============================================================================
 
-using namespace mam4;
+// using namespace mam4;
 
 // Table dimensions — compile-time constants required inside device lambdas.
 constexpr int test_nw       = 4;
@@ -146,10 +144,10 @@ constexpr int test_np_xs    = 4;
 constexpr Real test_sza_in  = 30.0; // degrees, well within daylight range
 
 // Build a small PhotoTableData with synthetic monotone lookup arrays.
-static mo_photo::PhotoTableData build_test_photo_table() {
+static mam4::mo_photo::PhotoTableData build_test_photo_table() {
   using HostView1D = Kokkos::View<Real *, Kokkos::HostSpace>;
 
-  auto photo_table = mo_photo::create_photo_table_data(
+  auto photo_table = mam4::mo_photo::create_photo_table_data(
       test_nw, test_nt, test_np_xs, test_numj,
       test_nump, test_numsza, test_numcolo3, test_numalb);
 
@@ -247,6 +245,7 @@ static mo_photo::PhotoTableData build_test_photo_table() {
   Kokkos::deep_copy(photo_table.xsqy, xsqy_h);
 
   return photo_table;
+ 
 }
 
 // ============================================================================
@@ -257,17 +256,17 @@ TEST_CASE("interpolate_rsf", "mo_photo") {
   ekat::logger::Logger<> logger("interpolate_rsf tests",
                                 ekat::logger::LogLevel::debug, comm);
 
-  constexpr int pver     = nlev;
+  constexpr int pver     = mam4::nlev;
   constexpr Real Pa2mb   = 1e-2;
   constexpr Real tol     = 0.0;//PrecisionTolerance<Real>::tol;
 
   auto photo_table = build_test_photo_table();
 
-  Atmosphere atm =
-      init_atm_const_tv_lapse_rate(pver, 1000.0, 300.0, 0.01, 0.015, 7.5e-4);
+  mam4::Atmosphere atm =
+      mam4::init_atm_const_tv_lapse_rate(pver, 1000.0, 300.0, 0.01, 0.015, 7.5e-4);
 
-  using View1D     = mo_photo::View1D;
-  using View2D     = mo_photo::View2D;
+  using View1D     = mam4::mo_photo::View1D;
+  using View2D     = mam4::mo_photo::View2D;
   using View1DHost = Kokkos::View<Real *, Kokkos::HostSpace>;
   using View2DHost = Kokkos::View<Real **, Kokkos::HostSpace>;
 
@@ -307,7 +306,7 @@ TEST_CASE("interpolate_rsf", "mo_photo") {
     int idx = 0;
     for (int ii = 0; ii < len; ++ii) {
       if (arr(ii) > val) {
-        idx = std::max(std::min(ii, len - 1) - 1, 0);
+        idx = mam4::max(mam4::min(ii, len - 1) - 1, 0);
         break;
       }
     }
@@ -338,8 +337,8 @@ TEST_CASE("interpolate_rsf", "mo_photo") {
       int iz = 1;
       for (; iz < test_nump; ++iz)
         if (press_h(iz) < p_in_host(kk)) break;
-      iz    = std::min(iz, test_nump - 1);
-      pind  = std::max(iz, 1);
+      iz    = iz < test_nump - 1 ? iz : test_nump - 1;
+      pind  = iz > 1 ? iz : 1;
       wght1 = bound(0.0, 1.0, (p_in_host(kk) - press_h(pind)) * del_p_h(pind - 1));
     }
 
@@ -369,7 +368,7 @@ TEST_CASE("interpolate_rsf", "mo_photo") {
       Real w010 = wrk0 * wk,  w110 = dels0 * wk;
       wk = dels1 * dels2;
       Real w011 = wrk0 * wk,  w111 = dels0 * wk;
-      std::array<Real, test_nw> psum{};
+      Real psum[test_nw] = {};
       for (int wn = 0; wn < test_nw; ++wn)
         psum[wn] =
           w000 * rsf_tab_h(wn, iz_c, is_c, iv_c,  albind)  +
@@ -380,14 +379,18 @@ TEST_CASE("interpolate_rsf", "mo_photo") {
           w101 * rsf_tab_h(wn, iz_c, isp1, iv_c,  ialp1)   +
           w110 * rsf_tab_h(wn, iz_c, isp1, ivp1, albind)   +
           w111 * rsf_tab_h(wn, iz_c, isp1, ivp1, ialp1);
-      return psum;
+      // Copy into a fixed-size array for return by value
+      struct PsumArr { Real v[test_nw]; };
+      PsumArr ret{};
+      for (int wn = 0; wn < test_nw; ++wn) ret.v[wn] = psum[wn];
+      return ret;
     };
     auto psum_l = calc_psum(pind,     ratindl, v3ratl);
     auto psum_u = calc_psum(pind - 1, ratindu, v3ratu);
 
     for (int wn = 0; wn < test_nw; ++wn)
       rsf_ref(wn, kk) =
-          (psum_l[wn] + wght1 * (psum_u[wn] - psum_l[wn])) * etfphot_h(wn);
+          (psum_l.v[wn] + wght1 * (psum_u.v[wn] - psum_l.v[wn])) * etfphot_h(wn);
   }
 
   // ===== PARALLEL IMPLEMENTATION =====
@@ -404,14 +407,14 @@ TEST_CASE("interpolate_rsf", "mo_photo") {
     const auto del_o3rat_d = photo_table.del_o3rat;
     const auto etfphot_d   = photo_table.etfphot;
     const auto rsf_tab_d   = photo_table.rsf_tab;
-    mo_photo::View2D psum_l_d("psum_l", pver, test_nw);
-    mo_photo::View2D psum_u_d("psum_u", pver, test_nw);
+    View2D psum_l_d("psum_l", pver, test_nw);
+    View2D psum_u_d("psum_u", pver, test_nw);
 
     Kokkos::parallel_for(
-        "interpolate_rsf_par", ThreadTeamPolicy(1, Kokkos::AUTO),
-        KOKKOS_LAMBDA(const ThreadTeam &team) {
-      mo_photo::interpolate_rsf(
-          team, alb_in_d, test_sza_in, p_in_d, colo3_in_d, nlev,
+        "interpolate_rsf_par", mam4::ThreadTeamPolicy(1, Kokkos::AUTO),
+        KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
+      mam4::mo_photo::interpolate_rsf(
+          team, alb_in_d, test_sza_in, p_in_d, colo3_in_d, pver,
           sza_d, del_sza_d, alb_d, press_d, del_p_d, colo3_d,
           o3rat_d, del_alb_d, del_o3rat_d, etfphot_d, rsf_tab_d,
           test_nw, test_nump, test_numsza, test_numcolo3, test_numalb,
@@ -427,9 +430,9 @@ TEST_CASE("interpolate_rsf", "mo_photo") {
     for (int k = 0; k < pver; ++k) {
       const Real ref = rsf_ref(wn, k);
       const Real par = rsf_par_h(wn, k);
-      const Real diff = ref != 0.0
-                            ? std::abs(par - ref) / std::abs(ref)
-                            : std::abs(par);
+      const Real aref = ref > 0 ? ref : -ref;
+      const Real adiff = (par - ref) > 0 ? (par - ref) : -(par - ref);
+      const Real diff = aref != 0.0 ? adiff / aref : adiff;
       if (diff > tol) {
         std::ostringstream ss;
         ss << "RSF mismatch wn=" << wn << " k=" << k
@@ -441,7 +444,7 @@ TEST_CASE("interpolate_rsf", "mo_photo") {
     }
   }
 }
-
+#if 1
 // ============================================================================
 // Test: jlong — host serial reference vs parallel implementation
 // ============================================================================
@@ -450,18 +453,18 @@ TEST_CASE("jlong", "mo_photo") {
   ekat::logger::Logger<> logger("jlong tests",
                                 ekat::logger::LogLevel::debug, comm);
 
-  constexpr int pver   = nlev;
+  constexpr int pver   = mam4::nlev;
   constexpr Real Pa2mb = 1e-2;
   constexpr Real tol   = 0.0;//PrecisionTolerance<Real>::tol;
 
   auto photo_table = build_test_photo_table();
 
-  Atmosphere atm =
-      init_atm_const_tv_lapse_rate(pver, 1000.0, 300.0, 0.01, 0.015, 7.5e-4);
+  mam4::Atmosphere atm =
+      mam4::init_atm_const_tv_lapse_rate(pver, 1000.0, 300.0, 0.01, 0.015, 7.5e-4);
 
-  using View1D     = mo_photo::View1D;
-  using View2D     = mo_photo::View2D;
-  using View3D     = mo_photo::View3D;
+  using View1D     = mam4::mo_photo::View1D;
+  using View2D     = mam4::mo_photo::View2D;
+  using View3D     = mam4::mo_photo::View3D;
   using View1DHost = Kokkos::View<Real *, Kokkos::HostSpace>;
   using View2DHost = Kokkos::View<Real **, Kokkos::HostSpace>;
 
@@ -504,7 +507,7 @@ TEST_CASE("jlong", "mo_photo") {
     int idx = 0;
     for (int ii = 0; ii < len; ++ii) {
       if (arr(ii) > val) {
-        idx = std::max(std::min(ii, len - 1) - 1, 0);
+        idx = mam4::max(mam4::min(ii, len - 1) - 1, 0);
         break;
       }
     }
@@ -532,8 +535,8 @@ TEST_CASE("jlong", "mo_photo") {
       int iz = 1;
       for (; iz < test_nump; ++iz)
         if (press_h(iz) < p_in_host(kk)) break;
-      iz    = std::min(iz, test_nump - 1);
-      pind  = std::max(iz, 1);
+      iz    = iz < test_nump - 1 ? iz : test_nump - 1;
+      pind  = iz > 1 ? iz : 1;
       wght1 = bound(0.0, 1.0, (p_in_host(kk) - press_h(pind)) * del_p_h(pind - 1));
     }
     Real v3ratu = colo3_in_host(kk) / colo3_h(pind - 1);
@@ -559,9 +562,10 @@ TEST_CASE("jlong", "mo_photo") {
       Real w010 = wrk0*wk, w110 = dels0*wk;
       wk = dels1 * dels2;
       Real w011 = wrk0*wk, w111 = dels0*wk;
-      std::array<Real, test_nw> ps{};
+      struct PsArr { Real v[test_nw]; };
+      PsArr ps{};
       for (int wn = 0; wn < test_nw; ++wn)
-        ps[wn] =
+        ps.v[wn] =
           w000*rsf_tab_h(wn,iz_c,is_h,iv_c, albind) +
           w001*rsf_tab_h(wn,iz_c,is_h,iv_c, ialp1)  +
           w010*rsf_tab_h(wn,iz_c,is_h,ivp1, albind) +
@@ -576,17 +580,17 @@ TEST_CASE("jlong", "mo_photo") {
     auto psum_u = calc_psum(pind - 1, ratindu, v3ratu);
     for (int wn = 0; wn < test_nw; ++wn)
       rsf_ref(wn, kk) =
-          (psum_l[wn] + wght1 * (psum_u[wn] - psum_l[wn])) * etfphot_h(wn);
+          (psum_l.v[wn] + wght1 * (psum_u.v[wn] - psum_l.v[wn])) * etfphot_h(wn);
   }
 
   // Step 2: compute j_long_ref on host
   View2DHost j_long_ref("j_long_ref", test_numj, pver);
   for (int kk = 0; kk < pver; ++kk) {
-    const int t_index =
-        std::min(201, std::max((int)(temper_host(kk) - 148.5), 1)) - 1;
+    const int ti0 = (int)(temper_host(kk) - 148.5);
+    const int t_index = (ti0 < 1 ? 1 : (ti0 > 201 ? 201 : ti0)) - 1;
 
     Real ptarget = p_in_host(kk);
-    std::array<Real, test_nw> xswk_row{};
+    Real xswk_row[test_nw] = {};
     if (ptarget >= prs_h(0)) {
       for (int wn = 0; wn < test_nw; ++wn)
         for (int i = 0; i < test_numj; ++i)
@@ -643,9 +647,9 @@ TEST_CASE("jlong", "mo_photo") {
     const auto temper      = atm.temperature;
 
     Kokkos::parallel_for(
-        "jlong_par", ThreadTeamPolicy(1, Kokkos::AUTO),
-        KOKKOS_LAMBDA(const ThreadTeam &team) {
-      mo_photo::jlong(
+        "jlong_par", mam4::ThreadTeamPolicy(1, Kokkos::AUTO),
+        KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
+      mam4::mo_photo::jlong(
           team, test_sza_in, alb_in_d, p_in_d, temper, colo3_in_d,
           xsqy_d, sza_d, del_sza_d, alb_d, press_d, del_p_d, colo3_d,
           o3rat_d, del_alb_d, del_o3rat_d, etfphot_d, rsf_tab_d,
@@ -665,9 +669,9 @@ TEST_CASE("jlong", "mo_photo") {
     for (int k = 0; k < pver; ++k) {
       const Real ref  = j_long_ref(i, k);
       const Real par  = j_par_h(i, k);
-      const Real diff = ref != 0.0
-                            ? std::abs(par - ref) / std::abs(ref)
-                            : std::abs(par);
+      const Real aref2 = ref > 0 ? ref : -ref;
+      const Real adiff2 = (par - ref) > 0 ? (par - ref) : -(par - ref);
+      const Real diff = aref2 != 0.0 ? adiff2 / aref2 : adiff2;
       if (diff > tol) {
         std::ostringstream ss;
         ss << "j_long mismatch reaction=" << i << " k=" << k
@@ -679,3 +683,4 @@ TEST_CASE("jlong", "mo_photo") {
     }
   }
 }
+#endif
