@@ -59,17 +59,17 @@ Here's an example that configures MAMxx to run on CPUs with cross validation and
 
 ```
 cmake -S . -B build \
-  -DMAMXX_PRECISION=double \
-  -DMAMXX_ENABLE_SKYWALKER=ON
+  -DMAM4XX_PRECISION=double \
+  -DMAM4XX_ENABLE_SKYWALKER=ON
 ```
 
 Here's a GPU configuration example that uses NVidia's `AMPERE86` architecture:
 
 ```
 cmake -S . -B build \
-  -DMAMXX_ENABLE_GPU=ON \
-  -DMAMXX_DEVICE_ARCH=AMPERE86=ON \
-  -DMAMXX_PRECISION=double
+  -DMAM4XX_ENABLE_GPU=ON \
+  -DMAM4XX_DEVICE_ARCH=AMPERE86 \
+  -DMAM4XX_PRECISION=double
 ```
 
 By default, CMake 3.x generates Makefiles, and CMake 4.x generates Ninja files. You can set this
