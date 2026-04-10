@@ -5,9 +5,7 @@
 #ifndef MAM4XX_AERO_PROCESS_HPP
 #define MAM4XX_AERO_PROCESS_HPP
 
-#include "aero_config.hpp"
-#include "atmosphere.hpp"
-#include "surface.hpp"
+#include <mam4xx/mam4.hpp>
 
 #include <cstring>
 #include <type_traits>
@@ -129,6 +127,18 @@ private:
   ProcessConfig process_config_;
   ProcessImpl process_impl_;
 };
+
+using NucleationProcess = AeroProcess<Nucleation>;
+using GasAerExchProcess = AeroProcess<GasAerExch>;
+using CoagulationProcess = AeroProcess<Coagulation>;
+using CalcSizeProcess = AeroProcess<CalcSize>;
+using ConvProcProcess = AeroProcess<ConvProc>;
+using AgingProcess = AeroProcess<Aging>;
+using RenameProcess = AeroProcess<Rename>;
+using HetfrzProcess = AeroProcess<Hetfrz>;
+using NucleateIceProcess = AeroProcess<NucleateIce>;
+using DryDepositionProcess = AeroProcess<DryDeposition>;
+using WaterUptakeProcess = AeroProcess<Water_Uptake>;
 
 } // namespace mam4
 

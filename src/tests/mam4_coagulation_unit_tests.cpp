@@ -3,8 +3,6 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "atmosphere_utils.hpp"
-#include "testing.hpp"
 #include <mam4xx/mam4.hpp>
 
 #include <ekat_comm.hpp>
@@ -12,17 +10,8 @@
 #include <ekat_type_traits.hpp>
 
 #include <catch2/catch.hpp>
-#include <iostream>
 
 using mam4::Real;
-
-TEST_CASE("test_constructor", "mam4_coagulation_process") {
-  mam4::AeroConfig mam4_config;
-  mam4::CoagulationProcess::ProcessConfig process_config;
-  mam4::CoagulationProcess process(mam4_config, process_config);
-  REQUIRE(process.name() == "MAM4 Coagulation");
-  REQUIRE(process.aero_config() == mam4_config);
-}
 
 TEST_CASE("test_aging_pairs", "mam4_aging_pairs") {
   // mam4 coagulation assumes that max_agepair is 1
@@ -92,88 +81,4 @@ TEST_CASE("intra_coag_rate_for_0th_moment", "mam4_coagulation_process") {
   mam4::coagulation::intramodal_coag_rate_for_0th_moment(
       a_const, knc, kngxx, kfmxx, sqdgxx, esxx04, esxx08, esxx20, esxx01,
       esxx05, esxx25, n2x, qnxx);
-}
-
-TEST_CASE("test_compute_tendencies", "mam4_coagulation_process") {
-
-  ekat::Comm comm;
-  ekat::logger::Logger<> logger("aging unit tests",
-                                ekat::logger::LogLevel::debug, comm);
-  int nlev = 72;
-  Real pblh = 1000;
-  // these values correspond to a humid atmosphere with relative humidity
-  // values approximately between 32% and 98%
-  const Real Tv0 = 300;     // reference virtual temperature [K]
-  const Real Gammav = 0.01; // virtual temperature lapse rate [K/m]
-  const Real qv0 =
-      0.015; // specific humidity at surface [kg h2o / kg moist air]
-  const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
-  mam4::Atmosphere atm =
-      mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
-
-  auto sfc = mam4::testing::create_surface();
-  auto progs = mam4::testing::create_prognostics(nlev);
-  auto diags = mam4::testing::create_diagnostics(nlev);
-  auto tends = mam4::testing::create_tendencies(nlev);
-
-  mam4::AeroConfig mam4_config;
-  mam4::NucleationProcess process(mam4_config);
-
-  const auto prog_qgas0 = progs.q_gas[0];
-  const auto tend_qgas0 = tends.q_gas[0];
-  auto h_prog_qgas0 = Kokkos::create_mirror_view(prog_qgas0);
-  auto h_tend_qgas0 = Kokkos::create_mirror_view(tend_qgas0);
-  Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);
-  Kokkos::deep_copy(h_tend_qgas0, tend_qgas0);
-
-  std::ostringstream ss;
-  ss << "prog_qgas0 [in]: [ ";
-  for (int k = 0; k < nlev; ++k) {
-    ss << h_prog_qgas0(k) << " ";
-  }
-  ss << "]";
-  logger.debug(ss.str());
-  ss.str("");
-  ss << "tend_qgas0 [in]: [ ";
-  for (int k = 0; k < nlev; ++k) {
-    ss << h_tend_qgas0(k) << " ";
-  }
-  ss << "]";
-  logger.debug(ss.str());
-  ss.str("");
-
-  for (int k = 0; k < nlev; ++k) {
-    CHECK(!mam4::isnan(h_prog_qgas0(k)));
-    CHECK(!mam4::isnan(h_tend_qgas0(k)));
-  }
-
-  // Single-column dispatch.
-  auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
-  Real t = 0.0, dt = 30.0;
-  Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
-        process.compute_tendencies(team, t, dt, atm, sfc, progs, diags, tends);
-      });
-  Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);
-  Kokkos::deep_copy(h_tend_qgas0, tend_qgas0);
-
-  ss << "prog_qgas0 [out]: [ ";
-  for (int k = 0; k < nlev; ++k) {
-    ss << h_prog_qgas0(k) << " ";
-  }
-  ss << "]";
-  logger.debug(ss.str());
-  ss.str("");
-  ss << "tend_qgas0 [out]: [ ";
-  for (int k = 0; k < nlev; ++k) {
-    ss << h_tend_qgas0(k) << " ";
-  }
-  ss << "]";
-  logger.debug(ss.str());
-  ss.str("");
-
-  for (int k = 0; k < nlev; ++k) {
-    CHECK(!mam4::isnan(h_prog_qgas0(k)));
-    CHECK(!mam4::isnan(h_tend_qgas0(k)));
-  }
 }

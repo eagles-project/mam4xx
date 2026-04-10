@@ -19,13 +19,6 @@
 
 using mam4::Real;
 
-TEST_CASE("test_constructor", "mam4_nucleate_ice_process") {
-  mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
-  REQUIRE(process.name() == "MAM4 nucleate_ice");
-  REQUIRE(process.aero_config() == mam4_config);
-}
-
 TEST_CASE("test_wv_sat_svp_to_qsat", "mam4_nucleate_ice_process") {
   ekat::Comm comm;
   ekat::logger::Logger<> logger("nucleate_ice unit tests",
@@ -34,7 +27,6 @@ TEST_CASE("test_wv_sat_svp_to_qsat", "mam4_nucleate_ice_process") {
   std::ostringstream ss;
 
   mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
   Real es, p;
   // FIXME: do these numbers make sense?
   es = 101325.0 + 1;
@@ -71,7 +63,6 @@ TEST_CASE("test_wv_sat_qsat_water", "mam4_nucleate_ice_process") {
   // won't test those values here
 
   mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
   Real es, p, qs;
   Real t[4] = {273, 298, 323, 373};
   // for temperature \in [273, 373]K (~[0, 100]C) es is \in [615, 1.009e5]
@@ -120,7 +111,6 @@ TEST_CASE("test_GoffGratch_svp_ice", "mam4_nucleate_ice_process") {
   std::ostringstream ss;
 
   mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
   Real t[4] = {173, 198, 223, 273};
   Real es;
   // for temperature \in [173, 273]K (~[-100, 0]C) es is \in [1.0e-3, 604]
@@ -147,7 +137,6 @@ TEST_CASE("test_calculate_regm_nucleati", "mam4_nucleate_ice_process") {
   std::ostringstream ss;
 
   mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
   Real w_vlc, Na, regm;
   // FIXME: do these numbers make sense?
   w_vlc = 0.2;
@@ -172,7 +161,6 @@ TEST_CASE("test_calculate_RHw_hf", "mam4_nucleate_ice_process") {
   std::ostringstream ss;
 
   mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
   Real temperature, lnw, RHw;
   // FIXME: do these numbers make sense?
   temperature = -40.0;
@@ -197,140 +185,6 @@ TEST_CASE("test_calculate_RHw_hf", "mam4_nucleate_ice_process") {
   ss.str("");
   REQUIRE(RHw > 0.9);
   REQUIRE(RHw < 1.6);
-}
-
-TEST_CASE("test_compute_tendencies", "mam4_nucleate_ice_process") {
-  ekat::Comm comm;
-
-  ekat::logger::Logger<> logger("nucleate_ice unit tests",
-                                ekat::logger::LogLevel::debug, comm);
-  int nlev = 72;
-  Real pblh = 1000;
-  // these values correspond to a humid atmosphere with relative humidity
-  // values approximately between 32% and 98%
-  const Real Tv0 = 300;     // reference virtual temperature [K]
-  const Real Gammav = 0.01; // virtual temperature lapse rate [K/m]
-  const Real qv0 =
-      0.015; // specific humidity at surface [kg h2o / kg moist air]
-  const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
-  mam4::Atmosphere atm =
-      mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
-
-  mam4::Surface sfc = mam4::testing::create_surface();
-  mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
-  mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
-  mam4::Tendencies tends = mam4::testing::create_tendencies(nlev);
-
-  mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
-
-  const auto prog_qgas0 = progs.q_gas[0];
-  const auto tend_qgas0 = tends.q_gas[0];
-  auto h_prog_qgas0 = Kokkos::create_mirror_view(prog_qgas0);
-  auto h_tend_qgas0 = Kokkos::create_mirror_view(tend_qgas0);
-  Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);
-  Kokkos::deep_copy(h_tend_qgas0, tend_qgas0);
-
-  std::ostringstream ss;
-  ss << "prog_qgas0 [in]: [ ";
-  for (int k = 0; k < nlev; ++k) {
-    ss << h_prog_qgas0(k) << " ";
-  }
-  ss << "]";
-  logger.debug(ss.str());
-  ss.str("");
-  ss << "tend_qgas0 [in]: [ ";
-  for (int k = 0; k < nlev; ++k) {
-    ss << h_tend_qgas0(k) << " ";
-  }
-  ss << "]";
-  logger.debug(ss.str());
-  ss.str("");
-
-  for (int k = 0; k < nlev; ++k) {
-    CHECK(!mam4::isnan(h_prog_qgas0(k)));
-    CHECK(!mam4::isnan(h_tend_qgas0(k)));
-  }
-
-  // Single-column dispatch.
-  auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
-  Real t = 0.0, dt = 30.0;
-  Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
-        process.compute_tendencies(team, t, dt, atm, sfc, progs, diags, tends);
-      });
-  Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);
-  Kokkos::deep_copy(h_tend_qgas0, tend_qgas0);
-
-  ss << "prog_qgas0 [out]: [ ";
-  for (int k = 0; k < nlev; ++k) {
-    ss << h_prog_qgas0(k) << " ";
-  }
-  ss << "]";
-  logger.debug(ss.str());
-  ss.str("");
-  ss << "tend_qgas0 [out]: [ ";
-  for (int k = 0; k < nlev; ++k) {
-    ss << h_tend_qgas0(k) << " ";
-  }
-  ss << "]";
-  logger.debug(ss.str());
-  ss.str("");
-
-  for (int k = 0; k < nlev; ++k) {
-    CHECK(!mam4::isnan(h_prog_qgas0(k)));
-    CHECK(!mam4::isnan(h_tend_qgas0(k)));
-  }
-}
-
-TEST_CASE("test_multicol_compute_tendencies", "mam4_nucleateIce_process") {
-  // Now we process multiple columns within a single dispatch (mc means
-  // "multi-column").
-  int ncol = 8;
-  mam4::DeviceType::view_1d<mam4::Atmosphere> mc_atm("mc_progs", ncol);
-  mam4::DeviceType::view_1d<mam4::Surface> mc_sfc("mc_sfc", ncol);
-  mam4::DeviceType::view_1d<mam4::Prognostics> mc_progs("mc_atm", ncol);
-  mam4::DeviceType::view_1d<mam4::Diagnostics> mc_diags("mc_diags", ncol);
-  mam4::DeviceType::view_1d<mam4::Tendencies> mc_tends("mc_tends", ncol);
-  int nlev = 72;
-  Real pblh = 1000;
-  // these values correspond to a humid atmosphere with relative humidity
-  // values approximately between 32% and 98%
-  const Real Tv0 = 300;     // reference virtual temperature [K]
-  const Real Gammav = 0.01; // virtual temperature lapse rate [K/m]
-  const Real qv0 =
-      0.015; // specific humidity at surface [kg h2o / kg moist air]
-  const Real qv1 = 7.5e-4; // specific humidity lapse rate [1 / m]
-  mam4::Atmosphere atm =
-      mam4::init_atm_const_tv_lapse_rate(nlev, pblh, Tv0, Gammav, qv0, qv1);
-  mam4::Surface sfc = mam4::testing::create_surface();
-  mam4::Prognostics progs = mam4::testing::create_prognostics(nlev);
-  mam4::Diagnostics diags = mam4::testing::create_diagnostics(nlev);
-  mam4::Tendencies tends = mam4::testing::create_tendencies(nlev);
-  for (int icol = 0; icol < ncol; ++icol) {
-    Kokkos::parallel_for(
-        "Load multi-column views", 1, KOKKOS_LAMBDA(const int) {
-          mc_atm(icol) = atm;
-          mc_sfc(icol) = sfc;
-          mc_progs(icol) = progs;
-          mc_diags(icol) = diags;
-          mc_tends(icol) = tends;
-        });
-  }
-
-  mam4::AeroConfig mam4_config;
-  mam4::NucleateIceProcess process(mam4_config);
-
-  // Dispatch over all the above columns.
-  auto team_policy = mam4::ThreadTeamPolicy(ncol, Kokkos::AUTO);
-  Real t = 0.0, dt = 30.0;
-  Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
-        const int icol = team.league_rank();
-        process.compute_tendencies(team, t, dt, mc_atm(icol), mc_sfc(icol),
-                                   mc_progs(icol), mc_diags(icol),
-                                   mc_tends(icol));
-      });
 }
 
 TEST_CASE("test_wv_sat_svp_trans", "mam4_nucleate_ice_process") {

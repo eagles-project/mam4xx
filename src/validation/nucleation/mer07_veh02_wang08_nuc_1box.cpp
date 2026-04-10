@@ -3,9 +3,7 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <mam4xx/mam4_constants.hpp>
-#include <mam4xx/nucleation.hpp>
-
+#include <aero_process.hpp>
 #include <validation.hpp>
 
 #include <iostream>

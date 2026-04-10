@@ -11,7 +11,6 @@
 #include "aero_config.hpp"
 #include "aero_model.hpp"
 #include "aero_model_emissions.hpp"
-#include "aero_process.hpp"
 #include "aero_rad_props.hpp"
 #include "aging.hpp"
 #include "calcsize.hpp"
@@ -59,18 +58,6 @@ const char *revision();
 // Returns true iff this build has changes that weren't committed to the git
 // repo.
 bool has_uncommitted_changes();
-
-using NucleationProcess = AeroProcess<Nucleation>;
-using GasAerExchProcess = AeroProcess<GasAerExch>;
-using CoagulationProcess = AeroProcess<Coagulation>;
-using CalcSizeProcess = AeroProcess<CalcSize>;
-using ConvProcProcess = AeroProcess<ConvProc>;
-using AgingProcess = AeroProcess<Aging>;
-using RenameProcess = AeroProcess<Rename>;
-using HetfrzProcess = AeroProcess<Hetfrz>;
-using NucleateIceProcess = AeroProcess<NucleateIce>;
-using DryDepositionProcess = AeroProcess<DryDeposition>;
-using WaterUptakeProcess = AeroProcess<Water_Uptake>;
 
 } // namespace mam4
 
