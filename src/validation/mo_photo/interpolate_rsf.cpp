@@ -100,8 +100,8 @@ void interpolate_rsf(Ensemble *ensemble) {
     // const auto  = View1D("", );
     // Kokkos::deep_copy(, );
 
-    auto psum_l = View1D("psum_l", nw);
-    auto psum_u = View1D("psum_u", nw);
+    View2D psum_l("psum_l", pver, nw);
+    View2D psum_u("psum_u", pver, nw);
 
     View2D rsf("rsf", nw, pver);
     auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
@@ -113,7 +113,7 @@ void interpolate_rsf(Ensemble *ensemble) {
                           del_alb, del_o3rat, etfphot, rsf_tab, nw, nump,
                           numsza, numcolo3, numalb,
                           rsf, // out
-                          // work array
+                          // per-level work arrays
                           psum_l, psum_u);
         });
 

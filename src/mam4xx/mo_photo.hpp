@@ -18,6 +18,7 @@ constexpr int phtcnt = 1;
 
 using View5D = DeviceType::view_ND<Real, 5>;
 using View4D = DeviceType::view_ND<Real, 4>;
+using View3D = DeviceType::view_ND<Real, 3>;
 using View2D = DeviceType::view_2d<Real>;
 using View1D = DeviceType::view_1d<Real>;
 using ConstView1D = DeviceType::view_1d<const Real>;
@@ -101,9 +102,9 @@ inline PhotoTableData create_photo_table_data(int nw, int nt, int np_xs,
 struct PhotoTableWorkArrays {
   View2D lng_prates;
   View2D rsf;
-  View2D xswk;
-  View1D psum_l;
-  View1D psum_u;
+  View3D xswk;   // per-level scratch: (pver, numj, nw)
+  View2D psum_l; // per-level scratch: (pver, nw)
+  View2D psum_u; // per-level scratch: (pver, nw)
 
   View1D parg;
   View1D eff_alb;
@@ -112,10 +113,10 @@ struct PhotoTableWorkArrays {
   View1D work_cloud_mod;
 };
 inline int get_photo_table_work_len(const PhotoTableData &photo_table_data) {
-  return pver * photo_table_data.numj +                /*lng_prates*/
-         pver * photo_table_data.nw +                  /*rsf*/
-         photo_table_data.numj * photo_table_data.nw + /*xswk*/
-         2 * photo_table_data.nw /*psum_l + psum_u*/ +
+  return pver * photo_table_data.numj +                        /*lng_prates*/
+         pver * photo_table_data.nw +                          /*rsf*/
+         pver * photo_table_data.numj * photo_table_data.nw + /*xswk*/
+         2 * pver * photo_table_data.nw /*psum_l + psum_u*/ +
          8 * nlev /*parg + eff_alb + cld_mult + work_cloud_mod*/;
 } // get_photo_table_work_len
 KOKKOS_INLINE_FUNCTION
@@ -129,12 +130,12 @@ void set_photo_table_work_arrays(const PhotoTableData &photo_table_data,
   photo_table_work.rsf = View2D(work_ptr, photo_table_data.nw, pver);
   work_ptr += pver * photo_table_data.nw;
   photo_table_work.xswk =
-      View2D(work_ptr, photo_table_data.numj, photo_table_data.nw);
-  work_ptr += photo_table_data.numj * photo_table_data.nw;
-  photo_table_work.psum_l = View1D(work_ptr, photo_table_data.nw);
-  work_ptr += photo_table_data.nw;
-  photo_table_work.psum_u = View1D(work_ptr, photo_table_data.nw);
-  work_ptr += photo_table_data.nw;
+      View3D(work_ptr, pver, photo_table_data.numj, photo_table_data.nw);
+  work_ptr += pver * photo_table_data.numj * photo_table_data.nw;
+  photo_table_work.psum_l = View2D(work_ptr, pver, photo_table_data.nw);
+  work_ptr += pver * photo_table_data.nw;
+  photo_table_work.psum_u = View2D(work_ptr, pver, photo_table_data.nw);
+  work_ptr += pver * photo_table_data.nw;
   photo_table_work.parg = View1D(work_ptr, nlev);
   work_ptr += nlev;
   photo_table_work.eff_alb = View1D(work_ptr, nlev);
@@ -453,14 +454,16 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
                    const int ial,         // in
                    const View5D &rsf_tab, // in
                    const int nw,
-                   const View1D &psum) // out
+                   const View2D &psum, // out
+                   const int kk)
 {
 
   // @param[in]   dels(3)
   // @param[in]   wrk0
   // @param[in]  iz, is, iv, ial
   // @param[in]   nw// wavelengths >200nm
-  // @param[in/out] psum(:)
+  // @param[in]   kk     level index
+  // @param[out]  psum(:,:)  per-level work array; row kk is written
   const int isp1 = is + 1;
   const int ivp1 = iv + 1;
   const int ialp1 = ial + 1;
@@ -481,7 +484,7 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
 
   for (int wn = 0; wn < nw; wn++) {
 
-    psum[wn] = wght_0_0_0 * rsf_tab(wn, iz, is, iv, ial) +
+    psum(kk, wn) = wght_0_0_0 * rsf_tab(wn, iz, is, iv, ial) +
                wght_0_0_1 * rsf_tab(wn, iz, is, iv, ialp1) +
                wght_0_1_0 * rsf_tab(wn, iz, is, ivp1, ial) +
                wght_0_1_1 * rsf_tab(wn, iz, is, ivp1, ialp1) +
@@ -506,8 +509,8 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
                      const int nw, const int nump, const int numsza,
                      const int numcolo3, const int numalb,
                      const View2D &rsf, // out
-                     // work array
-                     const View1D &psum_l, const View1D &psum_u) {
+                     // per-level work arrays (indexed by level kk)
+                     const View2D &psum_l, const View2D &psum_u) {
   /*----------------------------------------------------------------------
           ... interpolate table rsf to model variables
   ----------------------------------------------------------------------*/
@@ -541,111 +544,106 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
   const Real one = 1;
   const Real zero = 0;
 
-  // NOTE: psum_l and psum_u are not dimensioned by the number of levels, kk, so
-  // they cannot be parallelized over kk
-  Kokkos::single(Kokkos::PerTeam(team), [=]() {
+  // Each level's computation is independent. is, dels[0], and wrk0 are
+  // level-invariant and computed redundantly per thread (same result, race-free).
+  // The izl warm-start is removed; each thread starts the pressure search from
+  // iz=1, yielding the identical pind since press is monotone.
+  Kokkos::parallel_for(
+      Kokkos::TeamVectorRange(team, kbot), [&](const int kk) {
     int is = 0;
-    find_index(sza, numsza, sza_in, // in
-               is);                 // ! out
+    find_index(sza, numsza, sza_in, is);
 
     Real dels[3] = {};
     dels[0] = utils::min_max_bound(zero, one, (sza_in - sza[is]) * del_sza[is]);
     const Real wrk0 = one - dels[0];
-    int izl = 2; //   may change in the level_loop
-    for (int kk = kbot - 1; kk > -1; kk--) {
-      /*----------------------------------------------------------------------
-         ... find albedo indicies
-       ----------------------------------------------------------------------*/
-      int albind = 0;
-      find_index(alb, numalb, alb_in[kk], //  & ! in
-                 albind);                 // ! out
-      /*----------------------------------------------------------------------
-           ... find pressure level indicies
-      ----------------------------------------------------------------------*/
-      int pind = 0;
-      Real wght1 = 0;
-      if (p_in[kk] > press[0]) {
-        pind = 1;
-        wght1 = one;
 
-        // Fortran to C++ indexing
-      } else if (p_in[kk] <= press[nump - 1]) {
-        // Fortran to C++ indexing
-        pind = nump - 1;
-        wght1 = zero;
-      } else {
-        int iz = 0;
-        // Fortran to C++ indexing
-        for (iz = izl - 1; iz < nump; iz++) {
-          if (press[iz] < p_in[kk]) {
-            izl = iz;
-            break;
-          } // end if
-        }   // end for iz
-        // Fortran to C++ indexing
-        pind = mam4::max(mam4::min(iz, nump - 1), 1);
-        wght1 = utils::min_max_bound(
-            zero, one, (p_in[kk] - press[pind]) * del_p[pind - 1]);
-      } // end if
+    /*----------------------------------------------------------------------
+       ... find albedo indicies
+     ----------------------------------------------------------------------*/
+    int albind = 0;
+    find_index(alb, numalb, alb_in[kk], albind);
+    /*----------------------------------------------------------------------
+         ... find pressure level indicies
+    ----------------------------------------------------------------------*/
+    int pind = 0;
+    Real wght1 = 0;
+    if (p_in[kk] > press[0]) {
+      pind = 1;
+      wght1 = one;
+      // Fortran to C++ indexing
+    } else if (p_in[kk] <= press[nump - 1]) {
+      // Fortran to C++ indexing
+      pind = nump - 1;
+      wght1 = zero;
+    } else {
+      int iz = 0;
+      // Fortran to C++ indexing; start from iz=1 (equivalent to izl-1 with
+      // initial izl=2; BFB with original since press is monotone)
+      for (iz = 1; iz < nump; iz++) {
+        if (press[iz] < p_in[kk]) {
+          break;
+        } // end if
+      }   // end for iz
+      // Fortran to C++ indexing
+      iz = iz < nump - 1 ? iz : nump - 1;
+      pind = iz > 1 ? iz : 1;
+      wght1 = utils::min_max_bound(
+          zero, one, (p_in[kk] - press[pind]) * del_p[pind - 1]);
+    } // end if
 
-      /*----------------------------------------------------------------------
-           ... find "o3 ratios"
-      ----------------------------------------------------------------------*/
+    /*----------------------------------------------------------------------
+         ... find "o3 ratios"
+    ----------------------------------------------------------------------*/
 
-      const Real v3ratu = colo3_in[kk] / colo3[pind - 1];
-      int ratindu = 0;
-      find_index(o3rat, numcolo3, v3ratu, //  in
-                 ratindu);                // out
+    const Real v3ratu = colo3_in[kk] / colo3[pind - 1];
+    int ratindu = 0;
+    find_index(o3rat, numcolo3, v3ratu, ratindu);
 
-      Real v3ratl = zero;
-      int ratindl = 0;
-      if (colo3[pind] != zero) {
-        v3ratl = colo3_in[kk] / colo3[pind];
-        find_index(o3rat, numcolo3, v3ratl, // in
-                   ratindl);                // ! out
-      } else {
-        ratindl = ratindu;
-        v3ratl = o3rat[ratindu];
-      } // end if colo3[pind] != zero
+    Real v3ratl = zero;
+    int ratindl = 0;
+    if (colo3[pind] != zero) {
+      v3ratl = colo3_in[kk] / colo3[pind];
+      find_index(o3rat, numcolo3, v3ratl, ratindl);
+    } else {
+      ratindl = ratindu;
+      v3ratl = o3rat[ratindu];
+    } // end if colo3[pind] != zero
 
-      /*----------------------------------------------------------------------
-              ... compute the weigths
-      ----------------------------------------------------------------------*/
+    /*----------------------------------------------------------------------
+            ... compute the weigths
+    ----------------------------------------------------------------------*/
 
-      int ial = albind;
+    int ial = albind;
 
-      dels[2] = utils::min_max_bound(zero, one,
-                                     (alb_in[kk] - alb[ial]) * del_alb[ial]);
+    dels[2] = utils::min_max_bound(zero, one,
+                                   (alb_in[kk] - alb[ial]) * del_alb[ial]);
 
-      int iv = ratindl;
-      dels[1] =
-          utils::min_max_bound(zero, one, (v3ratl - o3rat[iv]) * del_o3rat[iv]);
-      calc_sum_wght(dels, wrk0,        // in
-                    pind, is, iv, ial, // in
-                    rsf_tab, nw,
-                    psum_l); // out
+    int iv = ratindl;
+    dels[1] =
+        utils::min_max_bound(zero, one, (v3ratl - o3rat[iv]) * del_o3rat[iv]);
+    calc_sum_wght(dels, wrk0,        // in
+                  pind, is, iv, ial, // in
+                  rsf_tab, nw,
+                  psum_l, kk); // out
 
-      iv = ratindu;
-      dels[1] =
-          utils::min_max_bound(zero, one, (v3ratu - o3rat[iv]) * del_o3rat[iv]);
-      calc_sum_wght(dels, wrk0,            // in
-                    pind - 1, is, iv, ial, // in
-                    rsf_tab, nw,
-                    psum_u); //  inout
+    iv = ratindu;
+    dels[1] =
+        utils::min_max_bound(zero, one, (v3ratu - o3rat[iv]) * del_o3rat[iv]);
+    calc_sum_wght(dels, wrk0,            // in
+                  pind - 1, is, iv, ial, // in
+                  rsf_tab, nw,
+                  psum_u, kk); //  inout
 
-      for (int wn = 0; wn < nw; wn++)
-        rsf(wn, kk) = psum_l[wn] + wght1 * (psum_u[wn] - psum_l[wn]);
-
-      /*------------------------------------------------------------------------------
-          etfphot comes in as photons/cm^2/sec/nm  (rsf includes the wlintv
-       factor
-       -- nm)
-         ... --> convert to photons/cm^2/s
-       ------------------------------------------------------------------------------*/
-      for (int wn = 0; wn < nw; wn++)
-        rsf(wn, kk) *= etfphot[wn];
-    } // loop over kk
-  }); // Kokkos::single
+    /*------------------------------------------------------------------------------
+        etfphot comes in as photons/cm^2/sec/nm  (rsf includes the wlintv
+     factor
+     -- nm)
+       ... --> convert to photons/cm^2/s
+     ------------------------------------------------------------------------------*/
+    for (int wn = 0; wn < nw; wn++)
+      rsf(wn, kk) = (psum_l(kk, wn) + wght1 * (psum_u(kk, wn) - psum_l(kk, wn)))
+                    * etfphot[wn];
+  }); // TeamVectorRange over kbot levels
 } // interpolate_rsf
 //======================================================================================
 KOKKOS_INLINE_FUNCTION
@@ -661,8 +659,8 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
            const int numj,
            const View2D &j_long, // output
            // work arrays
-           const View2D &rsf, const View2D &xswk, const View1D &psum_l,
-           const View1D &psum_u)
+           const View2D &rsf, const View3D &xswk, const View2D &psum_l,
+           const View2D &psum_u)
 // out
 {
 
@@ -734,69 +732,67 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
   ------------------------------------------------------------------------------*/
   // To avoid the 'pver is undefined' error during CUDA code compilation.
   constexpr int pver_local = pver;
-  // xswk is not dimentioned by number of levels so can not parallelize over
-  // levels.
-  Kokkos::single(Kokkos::PerTeam(team), [=]() {
-    for (int kk = 0; kk < pver_local; ++kk) {
-      /*----------------------------------------------------------------------
-        ... get index into xsqy
-       ----------------------------------------------------------------------*/
+  // Each level is processed independently; xswk is now per-level (View3D).
+  Kokkos::parallel_for(
+      Kokkos::TeamVectorRange(team, pver_local), [&](const int kk) {
+    /*----------------------------------------------------------------------
+      ... get index into xsqy
+     ----------------------------------------------------------------------*/
 
-      // Fortran indexing to C++ indexing
-      // number of temperatures in xsection table
-      // BAD CONSTANT for 201 and 148.5
-      const int t_index = mam4::min(201, mam4::max(t_in[kk] - 148.5, 1)) - 1;
+    // Fortran indexing to C++ indexing
+    // number of temperatures in xsection table
+    // BAD CONSTANT for 201 and 148.5
+    const int t_index = mam4::min(201, mam4::max(t_in[kk] - 148.5, 1)) - 1;
 
-      /*----------------------------------------------------------------------
-                 ... find pressure level
-       ----------------------------------------------------------------------*/
-      const Real ptarget = p_in[kk];
-      if (ptarget >= prs[0]) {
-        for (int wn = 0; wn < nw; wn++) {
-          for (int i = 0; i < numj; i++) {
-            xswk(i, wn) = xsqy(i, wn, t_index, 0);
-          } // end for i
-        }   // end for wn
-        // Fortran to C++ indexing conversion
-      } else if (ptarget <= prs[np_xs - 1]) {
-        for (int wn = 0; wn < nw; wn++) {
-          for (int i = 0; i < numj; i++) {
-            // Fortran to C++ indexing conversion
-            xswk(i, wn) = xsqy(i, wn, t_index, np_xs - 1);
-          } // end for i
-        }   // end for wn
+    /*----------------------------------------------------------------------
+               ... find pressure level
+     ----------------------------------------------------------------------*/
+    const Real ptarget = p_in[kk];
+    if (ptarget >= prs[0]) {
+      for (int wn = 0; wn < nw; wn++) {
+        for (int i = 0; i < numj; i++) {
+          xswk(kk, i, wn) = xsqy(i, wn, t_index, 0);
+        } // end for i
+      }   // end for wn
+      // Fortran to C++ indexing conversion
+    } else if (ptarget <= prs[np_xs - 1]) {
+      for (int wn = 0; wn < nw; wn++) {
+        for (int i = 0; i < numj; i++) {
+          // Fortran to C++ indexing conversion
+          xswk(kk, i, wn) = xsqy(i, wn, t_index, np_xs - 1);
+        } // end for i
+      }   // end for wn
 
-      } else {
-        Real delp = zero;
-        int pndx = 0;
-        // Question: delp is not initialized in fortran code. What if the
-        // following code does not satify this if condition: ptarget >=
-        // prs[km] Conversion indexing from Fortran to C++
-        for (int km = 1; km < np_xs; km++) {
-          if (ptarget >= prs[km]) {
-            pndx = km - 1;
-            delp = (prs[pndx] - ptarget) * dprs[pndx];
-            break;
-          } // end if
-        }   // end for km
-        for (int wn = 0; wn < nw; wn++) {
-          for (int i = 0; i < numj; i++) {
-            xswk(i, wn) = xsqy(i, wn, t_index, pndx) +
-                          delp * (xsqy(i, wn, t_index, pndx + 1) -
-                                  xsqy(i, wn, t_index, pndx));
+    } else {
+      Real delp = zero;
+      int pndx = 0;
+      // Question: delp is not initialized in fortran code. What if the
+      // following code does not satify this if condition: ptarget >=
+      // prs[km] Conversion indexing from Fortran to C++
+      for (int km = 1; km < np_xs; km++) {
+        if (ptarget >= prs[km]) {
+          pndx = km - 1;
+          delp = (prs[pndx] - ptarget) * dprs[pndx];
+          break;
+        } // end if
+      }   // end for km
+      for (int wn = 0; wn < nw; wn++) {
+        for (int i = 0; i < numj; i++) {
+          xswk(kk, i, wn) = xsqy(i, wn, t_index, pndx) +
+                        delp * (xsqy(i, wn, t_index, pndx + 1) -
+                                xsqy(i, wn, t_index, pndx));
 
-          } // end for i
-        }   // end for wn
-      }     // end if
-      for (int i = 0; i < numj; ++i) {
-        Real suma = zero;
-        for (int wn = 0; wn < nw; wn++) {
-          suma += xswk(i, wn) * rsf(wn, kk);
-        }
-        j_long(i, kk) = suma;
-      } // i
-    };  // end kk
-  });   // end single
+        } // end for i
+      }   // end for wn
+    }     // end if
+    for (int i = 0; i < numj; ++i) {
+      Real suma = zero;
+      for (int wn = 0; wn < nw; wn++) {
+        suma += xswk(kk, i, wn) * rsf(wn, kk);
+      }
+      j_long(i, kk) = suma;
+    } // i
+  }); // end TeamVectorRange
 } // jlong
 
 // FIXME: note the use of ConstColumnView for views we get from the

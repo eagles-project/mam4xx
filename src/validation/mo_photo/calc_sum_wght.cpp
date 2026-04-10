@@ -39,7 +39,7 @@ void calc_sum_wght(Ensemble *ensemble) {
     auto dels_host = View1DHost((Real *)dels_db.data(), 3);
     Kokkos::deep_copy(dels, dels_host);
 
-    const auto psum = View1D("psum", nw);
+    const auto psum = View2D("psum", 1, nw);
 
     auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
@@ -48,12 +48,14 @@ void calc_sum_wght(Ensemble *ensemble) {
                         iz, is, iv, ial,   // in
                         rsf_tab,           // in
                         nw,                //
-                        psum);
+                        psum, 0);          // psum(row=0,:)
         });
     const Real zero = 0;
     std::vector<Real> psum_db(nw, zero);
-    auto psum_host = View1DHost((Real *)psum_db.data(), nw);
+    auto psum_host = Kokkos::create_mirror_view(psum);
     Kokkos::deep_copy(psum_host, psum);
+    for (int w = 0; w < nw; ++w)
+      psum_db[w] = psum_host(0, w);
 
     output.set("psum", psum_db);
   });
