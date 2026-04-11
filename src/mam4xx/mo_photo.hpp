@@ -113,8 +113,8 @@ struct PhotoTableWorkArrays {
   View1D work_cloud_mod;
 };
 inline int get_photo_table_work_len(const PhotoTableData &photo_table_data) {
-  return pver * photo_table_data.numj +                        /*lng_prates*/
-         pver * photo_table_data.nw +                          /*rsf*/
+  return pver * photo_table_data.numj +                       /*lng_prates*/
+         pver * photo_table_data.nw +                         /*rsf*/
          pver * photo_table_data.numj * photo_table_data.nw + /*xswk*/
          2 * pver * photo_table_data.nw /*psum_l + psum_u*/ +
          8 * nlev /*parg + eff_alb + cld_mult + work_cloud_mod*/;
@@ -455,8 +455,7 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
                    const View5D &rsf_tab, // in
                    const int nw,
                    const View2D &psum, // out
-                   const int kk)
-{
+                   const int kk) {
 
   // @param[in]   dels(3)
   // @param[in]   wrk0
@@ -485,13 +484,13 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
   for (int wn = 0; wn < nw; wn++) {
 
     psum(kk, wn) = wght_0_0_0 * rsf_tab(wn, iz, is, iv, ial) +
-               wght_0_0_1 * rsf_tab(wn, iz, is, iv, ialp1) +
-               wght_0_1_0 * rsf_tab(wn, iz, is, ivp1, ial) +
-               wght_0_1_1 * rsf_tab(wn, iz, is, ivp1, ialp1) +
-               wght_1_0_0 * rsf_tab(wn, iz, isp1, iv, ial) +
-               wght_1_0_1 * rsf_tab(wn, iz, isp1, iv, ialp1) +
-               wght_1_1_0 * rsf_tab(wn, iz, isp1, ivp1, ial) +
-               wght_1_1_1 * rsf_tab(wn, iz, isp1, ivp1, ialp1);
+                   wght_0_0_1 * rsf_tab(wn, iz, is, iv, ialp1) +
+                   wght_0_1_0 * rsf_tab(wn, iz, is, ivp1, ial) +
+                   wght_0_1_1 * rsf_tab(wn, iz, is, ivp1, ialp1) +
+                   wght_1_0_0 * rsf_tab(wn, iz, isp1, iv, ial) +
+                   wght_1_0_1 * rsf_tab(wn, iz, isp1, iv, ialp1) +
+                   wght_1_1_0 * rsf_tab(wn, iz, isp1, ivp1, ial) +
+                   wght_1_1_1 * rsf_tab(wn, iz, isp1, ivp1, ialp1);
   } // end wn
 } // calc_sum_wght
 
@@ -545,11 +544,10 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
   const Real zero = 0;
 
   // Each level's computation is independent. is, dels[0], and wrk0 are
-  // level-invariant and computed redundantly per thread (same result, race-free).
-  // The izl warm-start is removed; each thread starts the pressure search from
-  // iz=1, yielding the identical pind since press is monotone.
-  Kokkos::parallel_for(
-      Kokkos::TeamVectorRange(team, kbot), [&](const int kk) {
+  // level-invariant and computed redundantly per thread (same result,
+  // race-free). The izl warm-start is removed; each thread starts the pressure
+  // search from iz=1, yielding the identical pind since press is monotone.
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, kbot), [&](const int kk) {
     int is = 0;
     find_index(sza, numsza, sza_in, is);
 
@@ -587,8 +585,8 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
       // Fortran to C++ indexing
       iz = iz < nump - 1 ? iz : nump - 1;
       pind = iz > 1 ? iz : 1;
-      wght1 = utils::min_max_bound(
-          zero, one, (p_in[kk] - press[pind]) * del_p[pind - 1]);
+      wght1 = utils::min_max_bound(zero, one,
+                                   (p_in[kk] - press[pind]) * del_p[pind - 1]);
     } // end if
 
     /*----------------------------------------------------------------------
@@ -615,24 +613,22 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
 
     int ial = albind;
 
-    dels[2] = utils::min_max_bound(zero, one,
-                                   (alb_in[kk] - alb[ial]) * del_alb[ial]);
+    dels[2] =
+        utils::min_max_bound(zero, one, (alb_in[kk] - alb[ial]) * del_alb[ial]);
 
     int iv = ratindl;
     dels[1] =
         utils::min_max_bound(zero, one, (v3ratl - o3rat[iv]) * del_o3rat[iv]);
-    calc_sum_wght(dels, wrk0,        // in
-                  pind, is, iv, ial, // in
-                  rsf_tab, nw,
-                  psum_l, kk); // out
+    calc_sum_wght(dels, wrk0,               // in
+                  pind, is, iv, ial,        // in
+                  rsf_tab, nw, psum_l, kk); // out
 
     iv = ratindu;
     dels[1] =
         utils::min_max_bound(zero, one, (v3ratu - o3rat[iv]) * del_o3rat[iv]);
-    calc_sum_wght(dels, wrk0,            // in
-                  pind - 1, is, iv, ial, // in
-                  rsf_tab, nw,
-                  psum_u, kk); //  inout
+    calc_sum_wght(dels, wrk0,               // in
+                  pind - 1, is, iv, ial,    // in
+                  rsf_tab, nw, psum_u, kk); //  inout
 
     /*------------------------------------------------------------------------------
         etfphot comes in as photons/cm^2/sec/nm  (rsf includes the wlintv
@@ -641,8 +637,9 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
        ... --> convert to photons/cm^2/s
      ------------------------------------------------------------------------------*/
     for (int wn = 0; wn < nw; wn++)
-      rsf(wn, kk) = (psum_l(kk, wn) + wght1 * (psum_u(kk, wn) - psum_l(kk, wn)))
-                    * etfphot[wn];
+      rsf(wn, kk) =
+          (psum_l(kk, wn) + wght1 * (psum_u(kk, wn) - psum_l(kk, wn))) *
+          etfphot[wn];
   }); // TeamVectorRange over kbot levels
 } // interpolate_rsf
 //======================================================================================
@@ -735,64 +732,64 @@ void jlong(const ThreadTeam &team, const Real sza_in, const View1D &alb_in,
   // Each level is processed independently; xswk is now per-level (View3D).
   Kokkos::parallel_for(
       Kokkos::TeamVectorRange(team, pver_local), [&](const int kk) {
-    /*----------------------------------------------------------------------
-      ... get index into xsqy
-     ----------------------------------------------------------------------*/
+        /*----------------------------------------------------------------------
+          ... get index into xsqy
+         ----------------------------------------------------------------------*/
 
-    // Fortran indexing to C++ indexing
-    // number of temperatures in xsection table
-    // BAD CONSTANT for 201 and 148.5
-    const int t_index = mam4::min(201, mam4::max(t_in[kk] - 148.5, 1)) - 1;
+        // Fortran indexing to C++ indexing
+        // number of temperatures in xsection table
+        // BAD CONSTANT for 201 and 148.5
+        const int t_index = mam4::min(201, mam4::max(t_in[kk] - 148.5, 1)) - 1;
 
-    /*----------------------------------------------------------------------
-               ... find pressure level
-     ----------------------------------------------------------------------*/
-    const Real ptarget = p_in[kk];
-    if (ptarget >= prs[0]) {
-      for (int wn = 0; wn < nw; wn++) {
-        for (int i = 0; i < numj; i++) {
-          xswk(kk, i, wn) = xsqy(i, wn, t_index, 0);
-        } // end for i
-      }   // end for wn
-      // Fortran to C++ indexing conversion
-    } else if (ptarget <= prs[np_xs - 1]) {
-      for (int wn = 0; wn < nw; wn++) {
-        for (int i = 0; i < numj; i++) {
+        /*----------------------------------------------------------------------
+                   ... find pressure level
+         ----------------------------------------------------------------------*/
+        const Real ptarget = p_in[kk];
+        if (ptarget >= prs[0]) {
+          for (int wn = 0; wn < nw; wn++) {
+            for (int i = 0; i < numj; i++) {
+              xswk(kk, i, wn) = xsqy(i, wn, t_index, 0);
+            } // end for i
+          }   // end for wn
           // Fortran to C++ indexing conversion
-          xswk(kk, i, wn) = xsqy(i, wn, t_index, np_xs - 1);
-        } // end for i
-      }   // end for wn
+        } else if (ptarget <= prs[np_xs - 1]) {
+          for (int wn = 0; wn < nw; wn++) {
+            for (int i = 0; i < numj; i++) {
+              // Fortran to C++ indexing conversion
+              xswk(kk, i, wn) = xsqy(i, wn, t_index, np_xs - 1);
+            } // end for i
+          }   // end for wn
 
-    } else {
-      Real delp = zero;
-      int pndx = 0;
-      // Question: delp is not initialized in fortran code. What if the
-      // following code does not satify this if condition: ptarget >=
-      // prs[km] Conversion indexing from Fortran to C++
-      for (int km = 1; km < np_xs; km++) {
-        if (ptarget >= prs[km]) {
-          pndx = km - 1;
-          delp = (prs[pndx] - ptarget) * dprs[pndx];
-          break;
-        } // end if
-      }   // end for km
-      for (int wn = 0; wn < nw; wn++) {
-        for (int i = 0; i < numj; i++) {
-          xswk(kk, i, wn) = xsqy(i, wn, t_index, pndx) +
-                        delp * (xsqy(i, wn, t_index, pndx + 1) -
-                                xsqy(i, wn, t_index, pndx));
+        } else {
+          Real delp = zero;
+          int pndx = 0;
+          // Question: delp is not initialized in fortran code. What if the
+          // following code does not satify this if condition: ptarget >=
+          // prs[km] Conversion indexing from Fortran to C++
+          for (int km = 1; km < np_xs; km++) {
+            if (ptarget >= prs[km]) {
+              pndx = km - 1;
+              delp = (prs[pndx] - ptarget) * dprs[pndx];
+              break;
+            } // end if
+          }   // end for km
+          for (int wn = 0; wn < nw; wn++) {
+            for (int i = 0; i < numj; i++) {
+              xswk(kk, i, wn) = xsqy(i, wn, t_index, pndx) +
+                                delp * (xsqy(i, wn, t_index, pndx + 1) -
+                                        xsqy(i, wn, t_index, pndx));
 
-        } // end for i
-      }   // end for wn
-    }     // end if
-    for (int i = 0; i < numj; ++i) {
-      Real suma = zero;
-      for (int wn = 0; wn < nw; wn++) {
-        suma += xswk(kk, i, wn) * rsf(wn, kk);
-      }
-      j_long(i, kk) = suma;
-    } // i
-  }); // end TeamVectorRange
+            } // end for i
+          }   // end for wn
+        }     // end if
+        for (int i = 0; i < numj; ++i) {
+          Real suma = zero;
+          for (int wn = 0; wn < nw; wn++) {
+            suma += xswk(kk, i, wn) * rsf(wn, kk);
+          }
+          j_long(i, kk) = suma;
+        } // i
+      }); // end TeamVectorRange
 } // jlong
 
 // FIXME: note the use of ConstColumnView for views we get from the

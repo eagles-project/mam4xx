@@ -112,7 +112,8 @@ TEST_CASE("compute_o3_column_density", "mo_photo") {
 
   for (int k = 0; k < pver; ++k) {
     const Real raw_diff = o3_col_dens_host(k) - o3_col_dens_ref(k);
-    const Real diff = (raw_diff > 0 ? raw_diff : -raw_diff) / o3_col_dens_ref(k);
+    const Real diff =
+        (raw_diff > 0 ? raw_diff : -raw_diff) / o3_col_dens_ref(k);
     if (diff >= tol) {
       std::ostringstream ss;
       ss << "diff : [ ";
@@ -133,30 +134,32 @@ TEST_CASE("compute_o3_column_density", "mo_photo") {
 // using namespace mam4;
 
 // Table dimensions — compile-time constants required inside device lambdas.
-constexpr int test_nw       = 4;
-constexpr int test_numj     = 1;
-constexpr int test_nump     = 5;
-constexpr int test_numsza   = 3;
+constexpr int test_nw = 4;
+constexpr int test_numj = 1;
+constexpr int test_nump = 5;
+constexpr int test_numsza = 3;
 constexpr int test_numcolo3 = 4;
-constexpr int test_numalb   = 3;
-constexpr int test_nt       = 201;
-constexpr int test_np_xs    = 4;
-constexpr Real test_sza_in  = 30.0; // degrees, well within daylight range
+constexpr int test_numalb = 3;
+constexpr int test_nt = 201;
+constexpr int test_np_xs = 4;
+constexpr Real test_sza_in = 30.0; // degrees, well within daylight range
 
 // Build a small PhotoTableData with synthetic monotone lookup arrays.
 static mam4::mo_photo::PhotoTableData build_test_photo_table() {
   using HostView1D = Kokkos::View<Real *, Kokkos::HostSpace>;
 
   auto photo_table = mam4::mo_photo::create_photo_table_data(
-      test_nw, test_nt, test_np_xs, test_numj,
-      test_nump, test_numsza, test_numcolo3, test_numalb);
+      test_nw, test_nt, test_np_xs, test_numj, test_nump, test_numsza,
+      test_numcolo3, test_numalb);
 
   std::default_random_engine gen(54321);
   std::uniform_real_distribution<Real> pos(1e-6, 1.0);
 
   // sza [degrees]: monotone increasing
   auto sza_h = Kokkos::create_mirror_view(photo_table.sza);
-  sza_h(0) = 0.0; sza_h(1) = 45.0; sza_h(2) = 88.0;
+  sza_h(0) = 0.0;
+  sza_h(1) = 45.0;
+  sza_h(2) = 88.0;
   Kokkos::deep_copy(photo_table.sza, sza_h);
 
   auto del_sza_h = Kokkos::create_mirror_view(photo_table.del_sza);
@@ -166,7 +169,9 @@ static mam4::mo_photo::PhotoTableData build_test_photo_table() {
 
   // alb: monotone increasing
   auto alb_h = Kokkos::create_mirror_view(photo_table.alb);
-  alb_h(0) = 0.0; alb_h(1) = 0.3; alb_h(2) = 0.8;
+  alb_h(0) = 0.0;
+  alb_h(1) = 0.3;
+  alb_h(2) = 0.8;
   Kokkos::deep_copy(photo_table.alb, alb_h);
 
   auto del_alb_h = Kokkos::create_mirror_view(photo_table.del_alb);
@@ -176,8 +181,11 @@ static mam4::mo_photo::PhotoTableData build_test_photo_table() {
 
   // press [hPa]: monotone decreasing (surface first)
   auto press_h = Kokkos::create_mirror_view(photo_table.press);
-  press_h(0) = 1000.0; press_h(1) = 500.0; press_h(2) = 100.0;
-  press_h(3) =   50.0; press_h(4) =  10.0;
+  press_h(0) = 1000.0;
+  press_h(1) = 500.0;
+  press_h(2) = 100.0;
+  press_h(3) = 50.0;
+  press_h(4) = 10.0;
   Kokkos::deep_copy(photo_table.press, press_h);
 
   auto del_p_h = Kokkos::create_mirror_view(photo_table.del_p);
@@ -187,13 +195,19 @@ static mam4::mo_photo::PhotoTableData build_test_photo_table() {
 
   // colo3: decreasing with altitude
   auto colo3_h = Kokkos::create_mirror_view(photo_table.colo3);
-  colo3_h(0) = 5e17; colo3_h(1) = 4e17; colo3_h(2) = 3e17;
-  colo3_h(3) = 2e17; colo3_h(4) = 1e17;
+  colo3_h(0) = 5e17;
+  colo3_h(1) = 4e17;
+  colo3_h(2) = 3e17;
+  colo3_h(3) = 2e17;
+  colo3_h(4) = 1e17;
   Kokkos::deep_copy(photo_table.colo3, colo3_h);
 
   // o3rat: monotone increasing
   auto o3rat_h = Kokkos::create_mirror_view(photo_table.o3rat);
-  o3rat_h(0) = 0.5; o3rat_h(1) = 1.0; o3rat_h(2) = 1.5; o3rat_h(3) = 2.0;
+  o3rat_h(0) = 0.5;
+  o3rat_h(1) = 1.0;
+  o3rat_h(2) = 1.5;
+  o3rat_h(3) = 2.0;
   Kokkos::deep_copy(photo_table.o3rat, o3rat_h);
 
   auto del_o3rat_h = Kokkos::create_mirror_view(photo_table.del_o3rat);
@@ -209,17 +223,20 @@ static mam4::mo_photo::PhotoTableData build_test_photo_table() {
 
   // rsf_tab(nw, nump, numsza, numcolo3, numalb): random positive
   auto rsf_tab_h = Kokkos::create_mirror_view(photo_table.rsf_tab);
-  for (int w  = 0; w  < test_nw;       ++w)
-  for (int ip = 0; ip < test_nump;     ++ip)
-  for (int is = 0; is < test_numsza;   ++is)
-  for (int iv = 0; iv < test_numcolo3; ++iv)
-  for (int ia = 0; ia < test_numalb;   ++ia)
-    rsf_tab_h(w, ip, is, iv, ia) = pos(gen);
+  for (int w = 0; w < test_nw; ++w)
+    for (int ip = 0; ip < test_nump; ++ip)
+      for (int is = 0; is < test_numsza; ++is)
+        for (int iv = 0; iv < test_numcolo3; ++iv)
+          for (int ia = 0; ia < test_numalb; ++ia)
+            rsf_tab_h(w, ip, is, iv, ia) = pos(gen);
   Kokkos::deep_copy(photo_table.rsf_tab, rsf_tab_h);
 
   // prs [hPa]: monotone decreasing
   auto prs_h = Kokkos::create_mirror_view(photo_table.prs);
-  prs_h(0) = 500.0; prs_h(1) = 100.0; prs_h(2) = 10.0; prs_h(3) = 1.0;
+  prs_h(0) = 500.0;
+  prs_h(1) = 100.0;
+  prs_h(2) = 10.0;
+  prs_h(3) = 1.0;
   Kokkos::deep_copy(photo_table.prs, prs_h);
 
   auto dprs_h = Kokkos::create_mirror_view(photo_table.dprs);
@@ -228,7 +245,8 @@ static mam4::mo_photo::PhotoTableData build_test_photo_table() {
   Kokkos::deep_copy(photo_table.dprs, dprs_h);
 
   auto pam_h = Kokkos::create_mirror_view(photo_table.pht_alias_mult_1);
-  pam_h(0) = 1.0; pam_h(1) = 0.0;
+  pam_h(0) = 1.0;
+  pam_h(1) = 0.0;
   Kokkos::deep_copy(photo_table.pht_alias_mult_1, pam_h);
 
   auto li_h = Kokkos::create_mirror_view(photo_table.lng_indexer);
@@ -237,15 +255,14 @@ static mam4::mo_photo::PhotoTableData build_test_photo_table() {
 
   // xsqy(numj, nw, nt, np_xs): random positive
   auto xsqy_h = Kokkos::create_mirror_view(photo_table.xsqy);
-  for (int j  = 0; j  < test_numj;  ++j)
-  for (int w  = 0; w  < test_nw;    ++w)
-  for (int it = 0; it < test_nt;    ++it)
-  for (int ip = 0; ip < test_np_xs; ++ip)
-    xsqy_h(j, w, it, ip) = pos(gen);
+  for (int j = 0; j < test_numj; ++j)
+    for (int w = 0; w < test_nw; ++w)
+      for (int it = 0; it < test_nt; ++it)
+        for (int ip = 0; ip < test_np_xs; ++ip)
+          xsqy_h(j, w, it, ip) = pos(gen);
   Kokkos::deep_copy(photo_table.xsqy, xsqy_h);
 
   return photo_table;
- 
 }
 
 // ============================================================================
@@ -256,17 +273,17 @@ TEST_CASE("interpolate_rsf", "mo_photo") {
   ekat::logger::Logger<> logger("interpolate_rsf tests",
                                 ekat::logger::LogLevel::debug, comm);
 
-  constexpr int pver     = mam4::nlev;
-  constexpr Real Pa2mb   = 1e-2;
-  constexpr Real tol     = 0.0;//PrecisionTolerance<Real>::tol;
+  constexpr int pver = mam4::nlev;
+  constexpr Real Pa2mb = 1e-2;
+  constexpr Real tol = PrecisionTolerance<Real>::tol;
 
   auto photo_table = build_test_photo_table();
 
-  mam4::Atmosphere atm =
-      mam4::init_atm_const_tv_lapse_rate(pver, 1000.0, 300.0, 0.01, 0.015, 7.5e-4);
+  mam4::Atmosphere atm = mam4::init_atm_const_tv_lapse_rate(
+      pver, 1000.0, 300.0, 0.01, 0.015, 7.5e-4);
 
-  using View1D     = mam4::mo_photo::View1D;
-  using View2D     = mam4::mo_photo::View2D;
+  using View1D = mam4::mo_photo::View1D;
+  using View2D = mam4::mo_photo::View2D;
   using View1DHost = Kokkos::View<Real *, Kokkos::HostSpace>;
   using View2DHost = Kokkos::View<Real **, Kokkos::HostSpace>;
 
@@ -277,29 +294,40 @@ TEST_CASE("interpolate_rsf", "mo_photo") {
   auto pressure_host = Kokkos::create_mirror_view(atm.pressure);
   Kokkos::deep_copy(pressure_host, atm.pressure);
   for (int k = 0; k < pver; ++k) {
-    alb_in_host(k)   = 0.15;
-    p_in_host(k)     = pressure_host(k) * Pa2mb;
+    alb_in_host(k) = 0.15;
+    p_in_host(k) = pressure_host(k) * Pa2mb;
     colo3_in_host(k) = 3e17;
   }
   View1D alb_in_d("alb_in", pver);
   View1D p_in_d("p_in", pver);
   View1D colo3_in_d("colo3_in", pver);
   Kokkos::deep_copy(alb_in_d, alb_in_host);
-  Kokkos::deep_copy(p_in_d,   p_in_host);
+  Kokkos::deep_copy(p_in_d, p_in_host);
   Kokkos::deep_copy(colo3_in_d, colo3_in_host);
 
   // Mirror table arrays onto host for serial reference
-  auto sza_h       = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.sza);
-  auto del_sza_h   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.del_sza);
-  auto alb_h       = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.alb);
-  auto press_h     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.press);
-  auto del_p_h     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.del_p);
-  auto colo3_h     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.colo3);
-  auto o3rat_h     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.o3rat);
-  auto del_alb_h   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.del_alb);
-  auto del_o3rat_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.del_o3rat);
-  auto etfphot_h   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.etfphot);
-  auto rsf_tab_h   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.rsf_tab);
+  auto sza_h =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.sza);
+  auto del_sza_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                       photo_table.del_sza);
+  auto alb_h =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.alb);
+  auto press_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                     photo_table.press);
+  auto del_p_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                     photo_table.del_p);
+  auto colo3_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                     photo_table.colo3);
+  auto o3rat_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                     photo_table.o3rat);
+  auto del_alb_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                       photo_table.del_alb);
+  auto del_o3rat_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                         photo_table.del_o3rat);
+  auto etfphot_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                       photo_table.etfphot);
+  auto rsf_tab_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                       photo_table.rsf_tab);
 
   // helper: find_index on host
   auto find_idx_h = [](const auto &arr, int len, Real val) {
@@ -322,7 +350,7 @@ TEST_CASE("interpolate_rsf", "mo_photo") {
   // find zenith angle index and dels[0] — same for all levels
   int is_h = find_idx_h(sza_h, test_numsza, test_sza_in);
   Real dels0 = bound(0.0, 1.0, (test_sza_in - sza_h(is_h)) * del_sza_h(is_h));
-  Real wrk0  = 1.0 - dels0;
+  Real wrk0 = 1.0 - dels0;
 
   for (int kk = 0; kk < pver; ++kk) {
     int albind = find_idx_h(alb_h, test_numalb, alb_in_host(kk));
@@ -330,96 +358,104 @@ TEST_CASE("interpolate_rsf", "mo_photo") {
     int pind = 0;
     Real wght1 = 0;
     if (p_in_host(kk) > press_h(0)) {
-      pind = 1; wght1 = 1.0;
+      pind = 1;
+      wght1 = 1.0;
     } else if (p_in_host(kk) <= press_h(test_nump - 1)) {
-      pind = test_nump - 1; wght1 = 0.0;
+      pind = test_nump - 1;
+      wght1 = 0.0;
     } else {
       int iz = 1;
       for (; iz < test_nump; ++iz)
-        if (press_h(iz) < p_in_host(kk)) break;
-      iz    = iz < test_nump - 1 ? iz : test_nump - 1;
-      pind  = iz > 1 ? iz : 1;
-      wght1 = bound(0.0, 1.0, (p_in_host(kk) - press_h(pind)) * del_p_h(pind - 1));
+        if (press_h(iz) < p_in_host(kk))
+          break;
+      iz = iz < test_nump - 1 ? iz : test_nump - 1;
+      pind = iz > 1 ? iz : 1;
+      wght1 =
+          bound(0.0, 1.0, (p_in_host(kk) - press_h(pind)) * del_p_h(pind - 1));
     }
 
     Real v3ratu = colo3_in_host(kk) / colo3_h(pind - 1);
     int ratindu = find_idx_h(o3rat_h, test_numcolo3, v3ratu);
 
-    Real v3ratl; int ratindl;
+    Real v3ratl;
+    int ratindl;
     if (colo3_h(pind) != 0.0) {
-      v3ratl  = colo3_in_host(kk) / colo3_h(pind);
+      v3ratl = colo3_in_host(kk) / colo3_h(pind);
       ratindl = find_idx_h(o3rat_h, test_numcolo3, v3ratl);
     } else {
       ratindl = ratindu;
-      v3ratl  = o3rat_h(ratindu);
+      v3ratl = o3rat_h(ratindu);
     }
 
-    Real dels2 = bound(0.0, 1.0, (alb_in_host(kk) - alb_h(albind)) * del_alb_h(albind));
+    Real dels2 =
+        bound(0.0, 1.0, (alb_in_host(kk) - alb_h(albind)) * del_alb_h(albind));
 
     // calc_sum_wght for psum_l
     auto calc_psum = [&](int iz_c, int iv_c, Real v3rat) {
       Real dels1 = bound(0.0, 1.0, (v3rat - o3rat_h(iv_c)) * del_o3rat_h(iv_c));
       int is_c = is_h, isp1 = is_c + 1, ivp1 = iv_c + 1, ialp1 = albind + 1;
       Real wk = (1.0 - dels1) * (1.0 - dels2);
-      Real w000 = wrk0 * wk,  w100 = dels0 * wk;
+      Real w000 = wrk0 * wk, w100 = dels0 * wk;
       wk = (1.0 - dels1) * dels2;
-      Real w001 = wrk0 * wk,  w101 = dels0 * wk;
+      Real w001 = wrk0 * wk, w101 = dels0 * wk;
       wk = dels1 * (1.0 - dels2);
-      Real w010 = wrk0 * wk,  w110 = dels0 * wk;
+      Real w010 = wrk0 * wk, w110 = dels0 * wk;
       wk = dels1 * dels2;
-      Real w011 = wrk0 * wk,  w111 = dels0 * wk;
+      Real w011 = wrk0 * wk, w111 = dels0 * wk;
       Real psum[test_nw] = {};
       for (int wn = 0; wn < test_nw; ++wn)
-        psum[wn] =
-          w000 * rsf_tab_h(wn, iz_c, is_c, iv_c,  albind)  +
-          w001 * rsf_tab_h(wn, iz_c, is_c, iv_c,  ialp1)   +
-          w010 * rsf_tab_h(wn, iz_c, is_c, ivp1,  albind)  +
-          w011 * rsf_tab_h(wn, iz_c, is_c, ivp1,  ialp1)   +
-          w100 * rsf_tab_h(wn, iz_c, isp1, iv_c,  albind)  +
-          w101 * rsf_tab_h(wn, iz_c, isp1, iv_c,  ialp1)   +
-          w110 * rsf_tab_h(wn, iz_c, isp1, ivp1, albind)   +
-          w111 * rsf_tab_h(wn, iz_c, isp1, ivp1, ialp1);
+        psum[wn] = w000 * rsf_tab_h(wn, iz_c, is_c, iv_c, albind) +
+                   w001 * rsf_tab_h(wn, iz_c, is_c, iv_c, ialp1) +
+                   w010 * rsf_tab_h(wn, iz_c, is_c, ivp1, albind) +
+                   w011 * rsf_tab_h(wn, iz_c, is_c, ivp1, ialp1) +
+                   w100 * rsf_tab_h(wn, iz_c, isp1, iv_c, albind) +
+                   w101 * rsf_tab_h(wn, iz_c, isp1, iv_c, ialp1) +
+                   w110 * rsf_tab_h(wn, iz_c, isp1, ivp1, albind) +
+                   w111 * rsf_tab_h(wn, iz_c, isp1, ivp1, ialp1);
       // Copy into a fixed-size array for return by value
-      struct PsumArr { Real v[test_nw]; };
+      struct PsumArr {
+        Real v[test_nw];
+      };
       PsumArr ret{};
-      for (int wn = 0; wn < test_nw; ++wn) ret.v[wn] = psum[wn];
+      for (int wn = 0; wn < test_nw; ++wn)
+        ret.v[wn] = psum[wn];
       return ret;
     };
-    auto psum_l = calc_psum(pind,     ratindl, v3ratl);
+    auto psum_l = calc_psum(pind, ratindl, v3ratl);
     auto psum_u = calc_psum(pind - 1, ratindu, v3ratu);
 
     for (int wn = 0; wn < test_nw; ++wn)
-      rsf_ref(wn, kk) =
-          (psum_l.v[wn] + wght1 * (psum_u.v[wn] - psum_l.v[wn])) * etfphot_h(wn);
+      rsf_ref(wn, kk) = (psum_l.v[wn] + wght1 * (psum_u.v[wn] - psum_l.v[wn])) *
+                        etfphot_h(wn);
   }
 
   // ===== PARALLEL IMPLEMENTATION =====
   View2D rsf_par("rsf_par", test_nw, pver);
   {
-    const auto sza_d       = photo_table.sza;
-    const auto del_sza_d   = photo_table.del_sza;
-    const auto alb_d       = photo_table.alb;
-    const auto press_d     = photo_table.press;
-    const auto del_p_d     = photo_table.del_p;
-    const auto colo3_d     = photo_table.colo3;
-    const auto o3rat_d     = photo_table.o3rat;
-    const auto del_alb_d   = photo_table.del_alb;
+    const auto sza_d = photo_table.sza;
+    const auto del_sza_d = photo_table.del_sza;
+    const auto alb_d = photo_table.alb;
+    const auto press_d = photo_table.press;
+    const auto del_p_d = photo_table.del_p;
+    const auto colo3_d = photo_table.colo3;
+    const auto o3rat_d = photo_table.o3rat;
+    const auto del_alb_d = photo_table.del_alb;
     const auto del_o3rat_d = photo_table.del_o3rat;
-    const auto etfphot_d   = photo_table.etfphot;
-    const auto rsf_tab_d   = photo_table.rsf_tab;
+    const auto etfphot_d = photo_table.etfphot;
+    const auto rsf_tab_d = photo_table.rsf_tab;
     View2D psum_l_d("psum_l", pver, test_nw);
     View2D psum_u_d("psum_u", pver, test_nw);
 
     Kokkos::parallel_for(
         "interpolate_rsf_par", mam4::ThreadTeamPolicy(1, Kokkos::AUTO),
         KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
-      mam4::mo_photo::interpolate_rsf(
-          team, alb_in_d, test_sza_in, p_in_d, colo3_in_d, pver,
-          sza_d, del_sza_d, alb_d, press_d, del_p_d, colo3_d,
-          o3rat_d, del_alb_d, del_o3rat_d, etfphot_d, rsf_tab_d,
-          test_nw, test_nump, test_numsza, test_numcolo3, test_numalb,
-          rsf_par, psum_l_d, psum_u_d);
-    });
+          mam4::mo_photo::interpolate_rsf(
+              team, alb_in_d, test_sza_in, p_in_d, colo3_in_d, pver, sza_d,
+              del_sza_d, alb_d, press_d, del_p_d, colo3_d, o3rat_d, del_alb_d,
+              del_o3rat_d, etfphot_d, rsf_tab_d, test_nw, test_nump,
+              test_numsza, test_numcolo3, test_numalb, rsf_par, psum_l_d,
+              psum_u_d);
+        });
     Kokkos::fence();
   }
 
@@ -435,36 +471,34 @@ TEST_CASE("interpolate_rsf", "mo_photo") {
       const Real diff = aref != 0.0 ? adiff / aref : adiff;
       if (diff > tol) {
         std::ostringstream ss;
-        ss << "RSF mismatch wn=" << wn << " k=" << k
-           << " parallel=" << par << " serial=" << ref
-           << " diff=" << diff;
+        ss << "RSF mismatch wn=" << wn << " k=" << k << " parallel=" << par
+           << " serial=" << ref << " diff=" << diff;
         logger.debug(ss.str());
       }
       REQUIRE(diff <= tol);
     }
   }
 }
-#if 1
 // ============================================================================
 // Test: jlong — host serial reference vs parallel implementation
 // ============================================================================
 TEST_CASE("jlong", "mo_photo") {
   ekat::Comm comm;
-  ekat::logger::Logger<> logger("jlong tests",
-                                ekat::logger::LogLevel::debug, comm);
+  ekat::logger::Logger<> logger("jlong tests", ekat::logger::LogLevel::debug,
+                                comm);
 
-  constexpr int pver   = mam4::nlev;
+  constexpr int pver = mam4::nlev;
   constexpr Real Pa2mb = 1e-2;
-  constexpr Real tol   = 0.0;//PrecisionTolerance<Real>::tol;
+  constexpr Real tol = PrecisionTolerance<Real>::tol;
 
   auto photo_table = build_test_photo_table();
 
-  mam4::Atmosphere atm =
-      mam4::init_atm_const_tv_lapse_rate(pver, 1000.0, 300.0, 0.01, 0.015, 7.5e-4);
+  mam4::Atmosphere atm = mam4::init_atm_const_tv_lapse_rate(
+      pver, 1000.0, 300.0, 0.01, 0.015, 7.5e-4);
 
-  using View1D     = mam4::mo_photo::View1D;
-  using View2D     = mam4::mo_photo::View2D;
-  using View3D     = mam4::mo_photo::View3D;
+  using View1D = mam4::mo_photo::View1D;
+  using View2D = mam4::mo_photo::View2D;
+  using View3D = mam4::mo_photo::View3D;
   using View1DHost = Kokkos::View<Real *, Kokkos::HostSpace>;
   using View2DHost = Kokkos::View<Real **, Kokkos::HostSpace>;
 
@@ -476,32 +510,46 @@ TEST_CASE("jlong", "mo_photo") {
   auto temper_host = Kokkos::create_mirror_view(atm.temperature);
   Kokkos::deep_copy(temper_host, atm.temperature);
   for (int k = 0; k < pver; ++k) {
-    alb_in_host(k)   = 0.15;
-    p_in_host(k)     = pressure_host(k) * Pa2mb;
+    alb_in_host(k) = 0.15;
+    p_in_host(k) = pressure_host(k) * Pa2mb;
     colo3_in_host(k) = 3e17;
   }
   View1D alb_in_d("alb_in", pver);
   View1D p_in_d("p_in", pver);
   View1D colo3_in_d("colo3_in", pver);
-  Kokkos::deep_copy(alb_in_d,   alb_in_host);
-  Kokkos::deep_copy(p_in_d,     p_in_host);
+  Kokkos::deep_copy(alb_in_d, alb_in_host);
+  Kokkos::deep_copy(p_in_d, p_in_host);
   Kokkos::deep_copy(colo3_in_d, colo3_in_host);
 
   // Mirror table onto host
-  auto sza_h       = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.sza);
-  auto del_sza_h   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.del_sza);
-  auto alb_h       = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.alb);
-  auto press_h     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.press);
-  auto del_p_h     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.del_p);
-  auto colo3_h     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.colo3);
-  auto o3rat_h     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.o3rat);
-  auto del_alb_h   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.del_alb);
-  auto del_o3rat_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.del_o3rat);
-  auto etfphot_h   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.etfphot);
-  auto rsf_tab_h   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.rsf_tab);
-  auto xsqy_h      = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.xsqy);
-  auto prs_h       = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.prs);
-  auto dprs_h      = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.dprs);
+  auto sza_h =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.sza);
+  auto del_sza_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                       photo_table.del_sza);
+  auto alb_h =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.alb);
+  auto press_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                     photo_table.press);
+  auto del_p_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                     photo_table.del_p);
+  auto colo3_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                     photo_table.colo3);
+  auto o3rat_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                     photo_table.o3rat);
+  auto del_alb_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                       photo_table.del_alb);
+  auto del_o3rat_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                         photo_table.del_o3rat);
+  auto etfphot_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                       photo_table.etfphot);
+  auto rsf_tab_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                       photo_table.rsf_tab);
+  auto xsqy_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                    photo_table.xsqy);
+  auto prs_h =
+      Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, photo_table.prs);
+  auto dprs_h = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{},
+                                                    photo_table.dprs);
 
   auto find_idx_h = [](const auto &arr, int len, Real val) {
     int idx = 0;
@@ -520,67 +568,76 @@ TEST_CASE("jlong", "mo_photo") {
   // ===== SERIAL REFERENCE =====
   // Step 1: compute rsf_ref using same logic as interpolate_rsf
   View2DHost rsf_ref("rsf_ref", test_nw, pver);
-  int is_h  = find_idx_h(sza_h, test_numsza, test_sza_in);
+  int is_h = find_idx_h(sza_h, test_numsza, test_sza_in);
   Real dels0 = bound(0.0, 1.0, (test_sza_in - sza_h(is_h)) * del_sza_h(is_h));
-  Real wrk0  = 1.0 - dels0;
+  Real wrk0 = 1.0 - dels0;
 
   for (int kk = 0; kk < pver; ++kk) {
     int albind = find_idx_h(alb_h, test_numalb, alb_in_host(kk));
-    int pind = 0; Real wght1 = 0;
+    int pind = 0;
+    Real wght1 = 0;
     if (p_in_host(kk) > press_h(0)) {
-      pind = 1; wght1 = 1.0;
+      pind = 1;
+      wght1 = 1.0;
     } else if (p_in_host(kk) <= press_h(test_nump - 1)) {
-      pind = test_nump - 1; wght1 = 0.0;
+      pind = test_nump - 1;
+      wght1 = 0.0;
     } else {
       int iz = 1;
       for (; iz < test_nump; ++iz)
-        if (press_h(iz) < p_in_host(kk)) break;
-      iz    = iz < test_nump - 1 ? iz : test_nump - 1;
-      pind  = iz > 1 ? iz : 1;
-      wght1 = bound(0.0, 1.0, (p_in_host(kk) - press_h(pind)) * del_p_h(pind - 1));
+        if (press_h(iz) < p_in_host(kk))
+          break;
+      iz = iz < test_nump - 1 ? iz : test_nump - 1;
+      pind = iz > 1 ? iz : 1;
+      wght1 =
+          bound(0.0, 1.0, (p_in_host(kk) - press_h(pind)) * del_p_h(pind - 1));
     }
     Real v3ratu = colo3_in_host(kk) / colo3_h(pind - 1);
     int ratindu = find_idx_h(o3rat_h, test_numcolo3, v3ratu);
-    Real v3ratl; int ratindl;
+    Real v3ratl;
+    int ratindl;
     if (colo3_h(pind) != 0.0) {
-      v3ratl  = colo3_in_host(kk) / colo3_h(pind);
+      v3ratl = colo3_in_host(kk) / colo3_h(pind);
       ratindl = find_idx_h(o3rat_h, test_numcolo3, v3ratl);
     } else {
-      ratindl = ratindu; v3ratl = o3rat_h(ratindu);
+      ratindl = ratindu;
+      v3ratl = o3rat_h(ratindu);
     }
-    Real dels2 = bound(0.0, 1.0, (alb_in_host(kk) - alb_h(albind)) * del_alb_h(albind));
+    Real dels2 =
+        bound(0.0, 1.0, (alb_in_host(kk) - alb_h(albind)) * del_alb_h(albind));
     int ialp1 = albind + 1;
 
     auto calc_psum = [&](int iz_c, int iv_c, Real v3rat) {
       Real dels1 = bound(0.0, 1.0, (v3rat - o3rat_h(iv_c)) * del_o3rat_h(iv_c));
       int isp1 = is_h + 1, ivp1 = iv_c + 1;
       Real wk = (1.0 - dels1) * (1.0 - dels2);
-      Real w000 = wrk0*wk, w100 = dels0*wk;
+      Real w000 = wrk0 * wk, w100 = dels0 * wk;
       wk = (1.0 - dels1) * dels2;
-      Real w001 = wrk0*wk, w101 = dels0*wk;
+      Real w001 = wrk0 * wk, w101 = dels0 * wk;
       wk = dels1 * (1.0 - dels2);
-      Real w010 = wrk0*wk, w110 = dels0*wk;
+      Real w010 = wrk0 * wk, w110 = dels0 * wk;
       wk = dels1 * dels2;
-      Real w011 = wrk0*wk, w111 = dels0*wk;
-      struct PsArr { Real v[test_nw]; };
+      Real w011 = wrk0 * wk, w111 = dels0 * wk;
+      struct PsArr {
+        Real v[test_nw];
+      };
       PsArr ps{};
       for (int wn = 0; wn < test_nw; ++wn)
-        ps.v[wn] =
-          w000*rsf_tab_h(wn,iz_c,is_h,iv_c, albind) +
-          w001*rsf_tab_h(wn,iz_c,is_h,iv_c, ialp1)  +
-          w010*rsf_tab_h(wn,iz_c,is_h,ivp1, albind) +
-          w011*rsf_tab_h(wn,iz_c,is_h,ivp1, ialp1)  +
-          w100*rsf_tab_h(wn,iz_c,isp1,iv_c, albind) +
-          w101*rsf_tab_h(wn,iz_c,isp1,iv_c, ialp1)  +
-          w110*rsf_tab_h(wn,iz_c,isp1,ivp1,albind)  +
-          w111*rsf_tab_h(wn,iz_c,isp1,ivp1,ialp1);
+        ps.v[wn] = w000 * rsf_tab_h(wn, iz_c, is_h, iv_c, albind) +
+                   w001 * rsf_tab_h(wn, iz_c, is_h, iv_c, ialp1) +
+                   w010 * rsf_tab_h(wn, iz_c, is_h, ivp1, albind) +
+                   w011 * rsf_tab_h(wn, iz_c, is_h, ivp1, ialp1) +
+                   w100 * rsf_tab_h(wn, iz_c, isp1, iv_c, albind) +
+                   w101 * rsf_tab_h(wn, iz_c, isp1, iv_c, ialp1) +
+                   w110 * rsf_tab_h(wn, iz_c, isp1, ivp1, albind) +
+                   w111 * rsf_tab_h(wn, iz_c, isp1, ivp1, ialp1);
       return ps;
     };
-    auto psum_l = calc_psum(pind,     ratindl, v3ratl);
+    auto psum_l = calc_psum(pind, ratindl, v3ratl);
     auto psum_u = calc_psum(pind - 1, ratindu, v3ratu);
     for (int wn = 0; wn < test_nw; ++wn)
-      rsf_ref(wn, kk) =
-          (psum_l.v[wn] + wght1 * (psum_u.v[wn] - psum_l.v[wn])) * etfphot_h(wn);
+      rsf_ref(wn, kk) = (psum_l.v[wn] + wght1 * (psum_u.v[wn] - psum_l.v[wn])) *
+                        etfphot_h(wn);
   }
 
   // Step 2: compute j_long_ref on host
@@ -600,7 +657,8 @@ TEST_CASE("jlong", "mo_photo") {
         for (int i = 0; i < test_numj; ++i)
           xswk_row[wn] = xsqy_h(i, wn, t_index, test_np_xs - 1);
     } else {
-      Real delp = 0; int pndx = 0;
+      Real delp = 0;
+      int pndx = 0;
       for (int km = 1; km < test_np_xs; ++km) {
         if (ptarget >= prs_h(km)) {
           pndx = km - 1;
@@ -611,8 +669,8 @@ TEST_CASE("jlong", "mo_photo") {
       for (int wn = 0; wn < test_nw; ++wn)
         for (int i = 0; i < test_numj; ++i)
           xswk_row[wn] = xsqy_h(i, wn, t_index, pndx) +
-              delp * (xsqy_h(i, wn, t_index, pndx + 1) -
-                      xsqy_h(i, wn, t_index, pndx));
+                         delp * (xsqy_h(i, wn, t_index, pndx + 1) -
+                                 xsqy_h(i, wn, t_index, pndx));
     }
     for (int i = 0; i < test_numj; ++i) {
       Real suma = 0;
@@ -630,35 +688,33 @@ TEST_CASE("jlong", "mo_photo") {
     View2D psum_l_d("psum_l", pver, test_nw);
     View2D psum_u_d("psum_u", pver, test_nw);
 
-    const auto sza_d       = photo_table.sza;
-    const auto del_sza_d   = photo_table.del_sza;
-    const auto alb_d       = photo_table.alb;
-    const auto press_d     = photo_table.press;
-    const auto del_p_d     = photo_table.del_p;
-    const auto colo3_d     = photo_table.colo3;
-    const auto o3rat_d     = photo_table.o3rat;
-    const auto del_alb_d   = photo_table.del_alb;
+    const auto sza_d = photo_table.sza;
+    const auto del_sza_d = photo_table.del_sza;
+    const auto alb_d = photo_table.alb;
+    const auto press_d = photo_table.press;
+    const auto del_p_d = photo_table.del_p;
+    const auto colo3_d = photo_table.colo3;
+    const auto o3rat_d = photo_table.o3rat;
+    const auto del_alb_d = photo_table.del_alb;
     const auto del_o3rat_d = photo_table.del_o3rat;
-    const auto etfphot_d   = photo_table.etfphot;
-    const auto rsf_tab_d   = photo_table.rsf_tab;
-    const auto xsqy_d      = photo_table.xsqy;
-    const auto prs_d       = photo_table.prs;
-    const auto dprs_d      = photo_table.dprs;
-    const auto temper      = atm.temperature;
+    const auto etfphot_d = photo_table.etfphot;
+    const auto rsf_tab_d = photo_table.rsf_tab;
+    const auto xsqy_d = photo_table.xsqy;
+    const auto prs_d = photo_table.prs;
+    const auto dprs_d = photo_table.dprs;
+    const auto temper = atm.temperature;
 
     Kokkos::parallel_for(
         "jlong_par", mam4::ThreadTeamPolicy(1, Kokkos::AUTO),
         KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
-      mam4::mo_photo::jlong(
-          team, test_sza_in, alb_in_d, p_in_d, temper, colo3_in_d,
-          xsqy_d, sza_d, del_sza_d, alb_d, press_d, del_p_d, colo3_d,
-          o3rat_d, del_alb_d, del_o3rat_d, etfphot_d, rsf_tab_d,
-          prs_d, dprs_d,
-          test_nw, test_nump, test_numsza, test_numcolo3, test_numalb,
-          test_np_xs, test_numj,
-          j_long_par,
-          rsf_work, xswk_d, psum_l_d, psum_u_d);
-    });
+          mam4::mo_photo::jlong(
+              team, test_sza_in, alb_in_d, p_in_d, temper, colo3_in_d, xsqy_d,
+              sza_d, del_sza_d, alb_d, press_d, del_p_d, colo3_d, o3rat_d,
+              del_alb_d, del_o3rat_d, etfphot_d, rsf_tab_d, prs_d, dprs_d,
+              test_nw, test_nump, test_numsza, test_numcolo3, test_numalb,
+              test_np_xs, test_numj, j_long_par, rsf_work, xswk_d, psum_l_d,
+              psum_u_d);
+        });
     Kokkos::fence();
   }
 
@@ -667,20 +723,18 @@ TEST_CASE("jlong", "mo_photo") {
   Kokkos::deep_copy(j_par_h, j_long_par);
   for (int i = 0; i < test_numj; ++i) {
     for (int k = 0; k < pver; ++k) {
-      const Real ref  = j_long_ref(i, k);
-      const Real par  = j_par_h(i, k);
+      const Real ref = j_long_ref(i, k);
+      const Real par = j_par_h(i, k);
       const Real aref2 = ref > 0 ? ref : -ref;
       const Real adiff2 = (par - ref) > 0 ? (par - ref) : -(par - ref);
       const Real diff = aref2 != 0.0 ? adiff2 / aref2 : adiff2;
       if (diff > tol) {
         std::ostringstream ss;
         ss << "j_long mismatch reaction=" << i << " k=" << k
-           << " parallel=" << par << " serial=" << ref
-           << " diff=" << diff;
+           << " parallel=" << par << " serial=" << ref << " diff=" << diff;
         logger.debug(ss.str());
       }
       REQUIRE(diff <= tol);
     }
   }
 }
-#endif

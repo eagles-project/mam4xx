@@ -170,8 +170,8 @@ void table_photo(Ensemble *ensemble) {
               Kokkos::subview(j_long, i, Kokkos::ALL(), Kokkos::ALL());
           work_arrays.rsf =
               Kokkos::subview(rsf, i, Kokkos::ALL(), Kokkos::ALL());
-          work_arrays.xswk =
-              Kokkos::subview(xswk, i, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+          work_arrays.xswk = Kokkos::subview(xswk, i, Kokkos::ALL(),
+                                             Kokkos::ALL(), Kokkos::ALL());
           work_arrays.psum_l =
               Kokkos::subview(psum_l, i, Kokkos::ALL(), Kokkos::ALL());
           work_arrays.psum_u =
