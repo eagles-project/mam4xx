@@ -4,6 +4,7 @@
 #include "mam4_math.hpp"
 #include "mam4_types.hpp"
 #include "utils.hpp"
+#include <ekat_subview_utils.hpp>
 
 namespace mam4 {
 
@@ -454,8 +455,8 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
                    const int ial,         // in
                    const View5D &rsf_tab, // in
                    const int nw,
-                   const View2D &psum, // out
-                   const int kk) {
+                   const View1D &psum // out
+) {
 
   // @param[in]   dels(3)
   // @param[in]   wrk0
@@ -483,14 +484,14 @@ void calc_sum_wght(const Real dels[3], const Real wrk0, // in
 
   for (int wn = 0; wn < nw; wn++) {
 
-    psum(kk, wn) = wght_0_0_0 * rsf_tab(wn, iz, is, iv, ial) +
-                   wght_0_0_1 * rsf_tab(wn, iz, is, iv, ialp1) +
-                   wght_0_1_0 * rsf_tab(wn, iz, is, ivp1, ial) +
-                   wght_0_1_1 * rsf_tab(wn, iz, is, ivp1, ialp1) +
-                   wght_1_0_0 * rsf_tab(wn, iz, isp1, iv, ial) +
-                   wght_1_0_1 * rsf_tab(wn, iz, isp1, iv, ialp1) +
-                   wght_1_1_0 * rsf_tab(wn, iz, isp1, ivp1, ial) +
-                   wght_1_1_1 * rsf_tab(wn, iz, isp1, ivp1, ialp1);
+    psum(wn) = wght_0_0_0 * rsf_tab(wn, iz, is, iv, ial) +
+               wght_0_0_1 * rsf_tab(wn, iz, is, iv, ialp1) +
+               wght_0_1_0 * rsf_tab(wn, iz, is, ivp1, ial) +
+               wght_0_1_1 * rsf_tab(wn, iz, is, ivp1, ialp1) +
+               wght_1_0_0 * rsf_tab(wn, iz, isp1, iv, ial) +
+               wght_1_0_1 * rsf_tab(wn, iz, isp1, iv, ialp1) +
+               wght_1_1_0 * rsf_tab(wn, iz, isp1, ivp1, ial) +
+               wght_1_1_1 * rsf_tab(wn, iz, isp1, ivp1, ialp1);
   } // end wn
 } // calc_sum_wght
 
@@ -619,16 +620,16 @@ void interpolate_rsf(const ThreadTeam &team, const View1D &alb_in,
     int iv = ratindl;
     dels[1] =
         utils::min_max_bound(zero, one, (v3ratl - o3rat[iv]) * del_o3rat[iv]);
-    calc_sum_wght(dels, wrk0,               // in
-                  pind, is, iv, ial,        // in
-                  rsf_tab, nw, psum_l, kk); // out
+    calc_sum_wght(dels, wrk0,                              // in
+                  pind, is, iv, ial,                       // in
+                  rsf_tab, nw, ekat::subview(psum_l, kk)); // out
 
     iv = ratindu;
     dels[1] =
         utils::min_max_bound(zero, one, (v3ratu - o3rat[iv]) * del_o3rat[iv]);
-    calc_sum_wght(dels, wrk0,               // in
-                  pind - 1, is, iv, ial,    // in
-                  rsf_tab, nw, psum_u, kk); //  inout
+    calc_sum_wght(dels, wrk0,                              // in
+                  pind - 1, is, iv, ial,                   // in
+                  rsf_tab, nw, ekat::subview(psum_u, kk)); //  inout
 
     /*------------------------------------------------------------------------------
         etfphot comes in as photons/cm^2/sec/nm  (rsf includes the wlintv

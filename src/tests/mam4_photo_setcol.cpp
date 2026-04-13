@@ -146,7 +146,6 @@ constexpr Real test_sza_in = 30.0; // degrees, well within daylight range
 
 // Build a small PhotoTableData with synthetic monotone lookup arrays.
 static mam4::mo_photo::PhotoTableData build_test_photo_table() {
-  using HostView1D = Kokkos::View<Real *, Kokkos::HostSpace>;
 
   auto photo_table = mam4::mo_photo::create_photo_table_data(
       test_nw, test_nt, test_np_xs, test_numj, test_nump, test_numsza,
