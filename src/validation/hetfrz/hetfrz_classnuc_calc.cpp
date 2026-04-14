@@ -35,12 +35,6 @@ void hetfrz_classnuc_calc(Ensemble *ensemble) {
       exit(1);
     }
 
-    if (!input.has_array("fn")) {
-      std::cerr << "Required name: "
-                << "fn" << std::endl;
-      exit(1);
-    }
-
     if (!input.has_array("r3lx")) {
       std::cerr << "Required name: "
                 << "r3lx" << std::endl;
@@ -71,24 +65,6 @@ void hetfrz_classnuc_calc(Ensemble *ensemble) {
       exit(1);
     }
 
-    if (!input.has_array("dstcoat")) {
-      std::cerr << "Required name: "
-                << "dstcoat" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has_array("total_aer_num")) {
-      std::cerr << "Required name: "
-                << "total_aer_num" << std::endl;
-      exit(1);
-    }
-
-    if (!input.has_array("coated_aer_num")) {
-      std::cerr << "Required name: "
-                << "coated_aer_num" << std::endl;
-      exit(1);
-    }
-
     if (!input.has_array("uncoated_aer_num")) {
       std::cerr << "Required name: "
                 << "uncoated_aer_num" << std::endl;
@@ -112,15 +88,11 @@ void hetfrz_classnuc_calc(Ensemble *ensemble) {
     auto temperature = input.get_array("temperature")[0];
     auto pressure = input.get_array("pressure")[0];
     auto supersatice = input.get_array("supersatice")[0];
-    auto fn = input.get_array("fn");
     auto r3lx = input.get_array("r3lx")[0];
     auto icnlx = input.get_array("icnlx")[0];
     auto hetraer = input.get_array("hetraer");
     auto awcam = input.get_array("awcam");
     auto awfacm = input.get_array("awfacm");
-    auto dstcoat = input.get_array("dstcoat");
-    auto total_aer_num = input.get_array("total_aer_num");
-    auto coated_aer_num = input.get_array("coated_aer_num");
     auto uncoated_aer_num = input.get_array("uncoated_aer_num");
     auto total_interstitial_aer_num =
         input.get_array("total_interstitial_aer_num");
@@ -134,11 +106,14 @@ void hetfrz_classnuc_calc(Ensemble *ensemble) {
     skywalker::Real frzdudep = 0.0;
 
     // call hetfrz::hetfrz_classnuc_calc
+    Real dim_theta[mam4::Hetfrz::pdf_n_theta];
+    Real pdf_imm_theta[mam4::Hetfrz::pdf_n_theta];
+    mam4::hetfrz::calculate_vars_for_pdf_imm(dim_theta, pdf_imm_theta);
     mam4::hetfrz::hetfrz_classnuc_calc(
-        deltat, temperature, pressure, supersatice, fn.data(), r3lx, icnlx,
-        hetraer.data(), awcam.data(), awfacm.data(), dstcoat.data(),
-        total_aer_num.data(), coated_aer_num.data(), uncoated_aer_num.data(),
+        deltat, temperature, pressure, supersatice, r3lx, icnlx, hetraer.data(),
+        awcam.data(), awfacm.data(), uncoated_aer_num.data(),
         total_interstitial_aer_num.data(), total_cloudborne_aer_num.data(),
+	dim_theta, pdf_imm_theta,
         frzbcimm, frzdiumm, frzbccnt, frzducnt, frzbcdep, frzdudep);
 
     std::vector<skywalker::Real> frzbcimm_v = {frzbcimm};
