@@ -55,8 +55,9 @@ void calculate_rgimm_and_determine_spec_flag(Ensemble *ensemble) {
     auto supersatice = input.get("supersatice");
     auto rgimm = input.get("rgimm");
 
-    const bool do_spec_flag = mam4::hetfrz::calculate_rgimm_and_determine_spec_flag(
-        vwice, sigma_iw, temperature, aw, supersatice, rgimm);
+    const bool do_spec_flag =
+        mam4::hetfrz::calculate_rgimm_and_determine_spec_flag(
+            vwice, sigma_iw, temperature, aw, supersatice, rgimm);
 
     skywalker::Real do_spec_flag_real = int(do_spec_flag);
 

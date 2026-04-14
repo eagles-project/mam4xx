@@ -116,6 +116,10 @@ public:
                           const Surface &sfc, const Prognostics &progs,
                           const Diagnostics &diags,
                           const Tendencies &tends) const;
+
+private:
+  Real dim_theta[pdf_n_theta];
+  Real pdf_imm_theta[pdf_n_theta];
 };
 
 namespace hetfrz {
@@ -615,8 +619,9 @@ bool calculate_rgimm_and_determine_spec_flag(
 KOKKOS_INLINE_FUNCTION
 void calculate_water_activity(
     const Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
-    const Real awcam[Hetfrz::hetfrz_aer_nspec], const Real awfacm[Hetfrz::hetfrz_aer_nspec],
-    const Real r3lx, Real aw[Hetfrz::hetfrz_aer_nspec]) {
+    const Real awcam[Hetfrz::hetfrz_aer_nspec],
+    const Real awfacm[Hetfrz::hetfrz_aer_nspec], const Real r3lx,
+    Real aw[Hetfrz::hetfrz_aer_nspec]) {
 
   Real molal[Hetfrz::hetfrz_aer_nspec];
   constexpr Real mw_so4 = Constants::molec_weight_so4 * 1000.0; /// BAD CONSTANT
@@ -639,60 +644,21 @@ void calculate_water_activity(
   }
 }
 
-KOKKOS_INLINE_FUNCTION
-void calculate_vars_for_pdf_imm(Real dim_theta[Hetfrz::pdf_n_theta],
-                                Real pdf_imm_theta[Hetfrz::pdf_n_theta]) {
-
-  constexpr Real theta_min = 1.0 / 180.0 * Constants::pi;   // (BAD CONSTANT)
-  constexpr Real theta_max = 179.0 / 180.0 * Constants::pi; // (BAD CONSTANT)
-  constexpr Real imm_dust_mean_theta =
-      46.0 / 180.0 * Constants::pi;         // (BAD CONSTANT)
-  constexpr Real imm_dust_var_theta = 0.01; // (BAD CONSTANT)
-
-  const Real ln_theta_min = mam4::log(theta_min);
-  const Real ln_theta_max = mam4::log(theta_max);
-  const Real ln_imm_dust_mean_theta = mam4::log(imm_dust_mean_theta);
-
-  // calculate the integral in the denominator
-  const Real x1_imm = (ln_theta_min - ln_imm_dust_mean_theta) /
-                      (mam4::sqrt(2.0) * imm_dust_var_theta);
-  const Real x2_imm = (ln_theta_max - ln_imm_dust_mean_theta) /
-                      (mam4::sqrt(2.0) * imm_dust_var_theta);
-
-  const Real norm_theta_imm = (mam4::erf(x2_imm) - mam4::erf(x1_imm)) * 0.5;
-
-  for (int ibin = 0; ibin < Hetfrz::pdf_n_theta; ++ibin) {
-    dim_theta[ibin] = 0.0;
-    pdf_imm_theta[ibin] = 0.0;
-  }
-
-  for (int ibin = Hetfrz::itheta_bin_beg; ibin <= Hetfrz::itheta_bin_end;
-       ++ibin) {
-    dim_theta[ibin] = 1.0 / 180.0 * Constants::pi + ibin * Hetfrz::pdf_d_theta;
-
-    pdf_imm_theta[ibin] = mam4::exp(-(square(mam4::log(dim_theta[ibin]) -
-                                             ln_imm_dust_mean_theta)) /
-                                    (2.0 * square(imm_dust_var_theta))) /
-                          (dim_theta[ibin] * imm_dust_var_theta *
-                           mam4::sqrt(2.0 * Constants::pi)) /
-                          norm_theta_imm;
-  }
-}
 
 KOKKOS_INLINE_FUNCTION
 void hetfrz_classnuc_calc(
     const Real deltat, const Real temperature, const Real pressure,
-    const Real supersatice, const Real r3lx,
-    const Real icnlx, Real hetraer[Hetfrz::hetfrz_aer_nspec],
-    Real awcam[Hetfrz::hetfrz_aer_nspec], Real awfacm[Hetfrz::hetfrz_aer_nspec],
-    Real dstcoat[Hetfrz::hetfrz_aer_nspec],
-    Real total_aer_num[Hetfrz::hetfrz_aer_nspec],
-    Real coated_aer_num[Hetfrz::hetfrz_aer_nspec],
-    Real uncoated_aer_num[Hetfrz::hetfrz_aer_nspec],
-    Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
-    Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec], Real &frzbcimm,
-    Real &frzduimm, Real &frzbccnt, Real &frzducnt, Real &frzbcdep,
-    Real &frzdudep) {
+    const Real supersatice, const Real r3lx, const Real icnlx,
+    const Real hetraer[Hetfrz::hetfrz_aer_nspec],
+    const Real awcam[Hetfrz::hetfrz_aer_nspec],
+    const Real awfacm[Hetfrz::hetfrz_aer_nspec],
+    const Real uncoated_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real dim_theta[Hetfrz::pdf_n_theta],
+    const Real pdf_imm_theta[Hetfrz::pdf_n_theta],
+    Real &frzbcimm, Real &frzduimm, Real &frzbccnt, Real &frzducnt,
+    Real &frzbcdep, Real &frzdudep) {
 
   // *****************************************************************************
   //                 PDF theta model
@@ -708,11 +674,6 @@ void hetfrz_classnuc_calc(
   // dim_theta index values of 53 through 113.  These loop bounds are
   // hardcoded in the variables itheta_bin_beg and itheta_bin_end.
   //
-
-  Real dim_theta[Hetfrz::pdf_n_theta];
-  Real pdf_imm_theta[Hetfrz::pdf_n_theta];
-
-  calculate_vars_for_pdf_imm(dim_theta, pdf_imm_theta);
 
   // get saturation vapor pressures
   const Real eswtr = wv_sat_methods::svp_water(temperature);
@@ -878,7 +839,7 @@ Real get_aer_radius(const Real specdens, const Real aermc, const Real aernum) {
 KOKKOS_INLINE_FUNCTION
 void calculate_mass_mean_radius(
     const Real bcmac, const Real bcmpc, const Real dmac, const Real dmc,
-    Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
     Real hetraer[Hetfrz::hetfrz_aer_nspec]) {
 
   const Real aermc_min_threshold = 1.0e-30;
@@ -924,9 +885,9 @@ void calculate_coated_fraction(
     const Real mommac, const Real soamac, const Real dmac, const Real bcmac,
     const Real mommpc, const Real pommpc, const Real bcmpc, const Real so4mc,
     const Real pommc, const Real soamc, const Real mommc, const Real dmc,
-    Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
-    Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec],
-    Real hetraer[Hetfrz::hetfrz_aer_nspec],
+    const Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real hetraer[Hetfrz::hetfrz_aer_nspec],
     Real total_aer_num[Hetfrz::hetfrz_aer_nspec],
     Real coated_aer_num[Hetfrz::hetfrz_aer_nspec],
     Real uncoated_aer_num[Hetfrz::hetfrz_aer_nspec],
@@ -1049,7 +1010,7 @@ void calculate_vars_for_water_activity(
     const Real so4mac, const Real soamac, const Real bcmac, const Real mommac,
     const Real pommac, const Real num_accum, const Real so4mc, const Real mommc,
     const Real bcmc, const Real pommc, const Real soamc, const Real num_coarse,
-    Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
     Real awcam[Hetfrz::hetfrz_aer_nspec],
     Real awfacm[Hetfrz::hetfrz_aer_nspec]) {
 
@@ -1094,7 +1055,9 @@ void calculate_vars_for_water_activity(
 KOKKOS_INLINE_FUNCTION
 void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
                        const Prognostics &progs, const Diagnostics &diags,
-                       const Tendencies &tends, const Hetfrz::Config &config) {
+                       const Tendencies &tends, const Hetfrz::Config &config,
+                       const Real dim_theta[Hetfrz::pdf_n_theta],
+                       const Real pdf_imm_theta[Hetfrz::pdf_n_theta]) {
   const Real temp = atm.temperature(k);
   const Real pmid = atm.pressure(k);
   const Real qc = atm.liquid_mixing_ratio(k);
@@ -1379,11 +1342,12 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
 
     Real fn[Hetfrz::hetfrz_aer_nspec] = {af_accum, af_accum, af_coarse};
 
+
     hetfrz::hetfrz_classnuc_calc(
-        dt, temp, pmid, supersatice, r3lx, ncic * air_density * 1e-6,
-        hetraer, awcam, awfacm, dstcoat, total_aer_num, coated_aer_num,
-        uncoated_aer_num, total_interstitial_aer_num, total_cloudborne_aer_num,
-        frzbcimm, frzduimm, frzbccnt, frzducnt, frzbcdep, frzdudep);
+        dt, temp, pmid, supersatice, r3lx, ncic * air_density * 1e-6, hetraer,
+        awcam, awfacm, uncoated_aer_num, total_interstitial_aer_num,
+        total_cloudborne_aer_num, dim_theta, pdf_imm_theta, frzbcimm, frzduimm, frzbccnt, frzducnt,
+        frzbcdep, frzdudep);
 
     // These are the output tendencies from hetfrz that need to be properly
     // coupled into the cloud micorphysical scheme
@@ -1428,13 +1392,53 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
                 (10.0 / dt);
 }
 
+KOKKOS_INLINE_FUNCTION
+void calculate_vars_for_pdf_imm(Real dim_theta[Hetfrz::pdf_n_theta],
+                                Real pdf_imm_theta[Hetfrz::pdf_n_theta]) {
+
+  constexpr Real theta_min = 1.0 / 180.0 * Constants::pi;   // (BAD CONSTANT)
+  constexpr Real theta_max = 179.0 / 180.0 * Constants::pi; // (BAD CONSTANT)
+  constexpr Real imm_dust_mean_theta =
+      46.0 / 180.0 * Constants::pi;         // (BAD CONSTANT)
+  constexpr Real imm_dust_var_theta = 0.01; // (BAD CONSTANT)
+
+  const Real ln_theta_min = mam4::log(theta_min);
+  const Real ln_theta_max = mam4::log(theta_max);
+  const Real ln_imm_dust_mean_theta = mam4::log(imm_dust_mean_theta);
+
+  // calculate the integral in the denominator
+  const Real x1_imm = (ln_theta_min - ln_imm_dust_mean_theta) /
+                      (mam4::sqrt(2.0) * imm_dust_var_theta);
+  const Real x2_imm = (ln_theta_max - ln_imm_dust_mean_theta) /
+                      (mam4::sqrt(2.0) * imm_dust_var_theta);
+
+  const Real norm_theta_imm = (mam4::erf(x2_imm) - mam4::erf(x1_imm)) * 0.5;
+
+  for (int ibin = 0; ibin < Hetfrz::pdf_n_theta; ++ibin) {
+    dim_theta[ibin] = 0.0;
+    pdf_imm_theta[ibin] = 0.0;
+  }
+
+  for (int ibin = Hetfrz::itheta_bin_beg; ibin <= Hetfrz::itheta_bin_end;
+       ++ibin) {
+    dim_theta[ibin] = 1.0 / 180.0 * Constants::pi + ibin * Hetfrz::pdf_d_theta;
+
+    pdf_imm_theta[ibin] = mam4::exp(-(square(mam4::log(dim_theta[ibin]) -
+                                             ln_imm_dust_mean_theta)) /
+                                    (2.0 * square(imm_dust_var_theta))) /
+                          (dim_theta[ibin] * imm_dust_var_theta *
+                           mam4::sqrt(2.0 * Constants::pi)) /
+                          norm_theta_imm;
+  }
+}
+
 } // namespace hetfrz
 
 // init -- initializes the implementation with MAM4's configuration
 inline void Hetfrz::init(const AeroConfig &aero_config,
                          const Config &process_config) {
-
   config_ = process_config;
+  hetfrz::calculate_vars_for_pdf_imm(dim_theta, pdf_imm_theta);
 };
 
 // compute_tendencies -- computes tendencies and updates diagnostics
@@ -1461,7 +1465,7 @@ void Hetfrz::compute_tendencies(const AeroConfig &config,
       diags.hetfrz(d, k) = 0.;
   });
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
-    hetfrz::hetfrz_rates_1box(k, dt, atm, progs, diags, tends, config_);
+    hetfrz::hetfrz_rates_1box(k, dt, atm, progs, diags, tends, config_, dim_theta, pdf_imm_theta);
   });
 }
 
