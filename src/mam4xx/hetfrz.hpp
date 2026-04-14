@@ -644,7 +644,6 @@ void calculate_water_activity(
   }
 }
 
-
 KOKKOS_INLINE_FUNCTION
 void hetfrz_classnuc_calc(
     const Real deltat, const Real temperature, const Real pressure,
@@ -656,9 +655,9 @@ void hetfrz_classnuc_calc(
     const Real total_interstitial_aer_num[Hetfrz::hetfrz_aer_nspec],
     const Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec],
     const Real dim_theta[Hetfrz::pdf_n_theta],
-    const Real pdf_imm_theta[Hetfrz::pdf_n_theta],
-    Real &frzbcimm, Real &frzduimm, Real &frzbccnt, Real &frzducnt,
-    Real &frzbcdep, Real &frzdudep) {
+    const Real pdf_imm_theta[Hetfrz::pdf_n_theta], Real &frzbcimm,
+    Real &frzduimm, Real &frzbccnt, Real &frzducnt, Real &frzbcdep,
+    Real &frzdudep) {
 
   // *****************************************************************************
   //                 PDF theta model
@@ -1342,12 +1341,11 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
 
     Real fn[Hetfrz::hetfrz_aer_nspec] = {af_accum, af_accum, af_coarse};
 
-
     hetfrz::hetfrz_classnuc_calc(
         dt, temp, pmid, supersatice, r3lx, ncic * air_density * 1e-6, hetraer,
         awcam, awfacm, uncoated_aer_num, total_interstitial_aer_num,
-        total_cloudborne_aer_num, dim_theta, pdf_imm_theta, frzbcimm, frzduimm, frzbccnt, frzducnt,
-        frzbcdep, frzdudep);
+        total_cloudborne_aer_num, dim_theta, pdf_imm_theta, frzbcimm, frzduimm,
+        frzbccnt, frzducnt, frzbcdep, frzdudep);
 
     // These are the output tendencies from hetfrz that need to be properly
     // coupled into the cloud micorphysical scheme
@@ -1465,7 +1463,8 @@ void Hetfrz::compute_tendencies(const AeroConfig &config,
       diags.hetfrz(d, k) = 0.;
   });
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
-    hetfrz::hetfrz_rates_1box(k, dt, atm, progs, diags, tends, config_, dim_theta, pdf_imm_theta);
+    hetfrz::hetfrz_rates_1box(k, dt, atm, progs, diags, tends, config_,
+                              dim_theta, pdf_imm_theta);
   });
 }
 
