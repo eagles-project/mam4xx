@@ -156,11 +156,10 @@ void calculate_hetfrz_immersion_nucleation(Ensemble *ensemble) {
     Real frzduimm;
 
     mam4::hetfrz::calculate_hetfrz_immersion_nucleation(
-        deltat, temperature, uncoated_aer_num.data(),
-        total_interstitial_aer_num.data(), total_cloudborne_aer_num.data(),
-        sigma_iw, eswtr, vwice, dim_theta.data(), pdf_imm_theta.data(),
-        rgimm_bc, rgimm_dust_a1, rgimm_dust_a3, r_bc, r_dust_a1, r_dust_a3,
-        do_bc_b, do_dst1_b, do_dst3_b, frzbcimm, frzduimm);
+        deltat, temperature, total_cloudborne_aer_num.data(), sigma_iw, vwice,
+        dim_theta.data(), pdf_imm_theta.data(), rgimm_bc, rgimm_dust_a1,
+        rgimm_dust_a3, r_bc, r_dust_a1, r_dust_a3, do_bc_b, do_dst1_b,
+        do_dst3_b, frzbcimm, frzduimm);
 
     output.set("frzbcimm", frzbcimm);
     output.set("frzduimm", frzduimm);
