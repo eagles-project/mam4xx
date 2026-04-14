@@ -1117,105 +1117,63 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
   const Real pmid = atm.pressure(k);
   const Real qc = atm.liquid_mixing_ratio(k);
   const Real nc = atm.cloud_liquid_number_mixing_ratio(k);
-  const Real ast = diags.stratiform_cloud_fraction(k);
+  const Real ast = diags.hetfrz(Diagnostics::stratiform_cloud_fraction, k);
 
   // These are the output tendencies from heterogeneous freezing that need to be
   // added correctly to the cloud-micorphysics scheme.
-  auto &hetfrz_immersion_nucleation_tend =
+  Real &hetfrz_immersion_nucleation_tend =
       diags.hetfrz_immersion_nucleation_tend(k);
   hetfrz_immersion_nucleation_tend = 0;
-  auto &hetfrz_contact_nucleation_tend =
+  Real &hetfrz_contact_nucleation_tend =
       diags.hetfrz_contact_nucleation_tend(k);
   hetfrz_contact_nucleation_tend = 0;
-  auto &hetfrz_depostion_nucleation_tend =
+  Real &hetfrz_depostion_nucleation_tend =
       diags.hetfrz_depostion_nucleation_tend(k);
   hetfrz_depostion_nucleation_tend = 0;
 
   // These fields are used for diagnostics
-  auto &bc_num = diags.bc_num(k);
-  bc_num = 0;
-  auto &dst1_num = diags.dst1_num(k);
-  dst1_num = 0;
-  auto &dst3_num = diags.dst3_num(k);
-  dst3_num = 0;
-  auto &bcc_num = diags.bcc_num(k);
-  bcc_num = 0;
-  auto &dst1c_num = diags.dst1c_num(k);
-  dst1c_num = 0;
-  auto &dst3c_num = diags.dst3c_num(k);
-  dst3c_num = 0;
-  auto &bcuc_num = diags.bcuc_num(k);
-  bcuc_num = 0;
-  auto &dst1uc_num = diags.dst1uc_num(k);
-  dst1uc_num = 0;
-  auto &dst3uc_num = diags.dst3uc_num(k);
-  dst3uc_num = 0;
-  auto &bc_a1_num = diags.bc_a1_num(k);
-  bc_a1_num = 0;
-  auto &dst_a1_num = diags.dst_a1_num(k);
-  dst_a1_num = 0;
-  auto &dst_a3_num = diags.dst_a3_num(k);
-  dst_a3_num = 0;
-  auto &bc_c1_num = diags.bc_c1_num(k);
-  bc_c1_num = 0;
-  auto &dst_c1_num = diags.dst_c1_num(k);
-  dst_c1_num = 0;
-  auto &dst_c3_num = diags.dst_c3_num(k);
-  dst_c3_num = 0;
-  auto &fn_bc_c1_num = diags.fn_bc_c1_num(k);
-  fn_bc_c1_num = 0;
-  auto &fn_dst_c1_num = diags.fn_dst_c1_num(k);
-  fn_dst_c1_num = 0;
-  auto &fn_dst_c3_num = diags.fn_dst_c3_num(k);
-  fn_dst_c3_num = 0;
-  auto &na500 = diags.na500(k);
-  na500 = 0;
-  auto &totna500 = diags.totna500(k);
-  totna500 = 0;
-  auto &freqimm = diags.freqimm(k);
-  freqimm = 0;
-  auto &freqcnt = diags.freqcnt(k);
-  freqcnt = 0;
-  auto &freqdep = diags.freqdep(k);
-  freqdep = 0;
-  auto &freqmix = diags.freqmix(k);
-  freqmix = 0;
-  auto &dstfrezimm = diags.dstfrezimm(k);
-  dstfrezimm = 0;
-  auto &dstfrezcnt = diags.dstfrezcnt(k);
-  dstfrezcnt = 0;
-  auto &dstfrezdep = diags.dstfrezdep(k);
-  dstfrezdep = 0;
-  auto &bcfrezimm = diags.bcfrezimm(k);
-  bcfrezimm = 0;
-  auto &bcfrezcnt = diags.bcfrezcnt(k);
-  bcfrezcnt = 0;
-  auto &bcfrezdep = diags.bcfrezdep(k);
-  bcfrezdep = 0;
-  auto &nimix_imm = diags.nimix_imm(k);
-  nimix_imm = 0;
-  auto &nimix_cnt = diags.nimix_cnt(k);
-  nimix_cnt = 0;
-  auto &nimix_dep = diags.nimix_dep(k);
-  nimix_dep = 0;
-  auto &dstnidep = diags.dstnidep(k);
-  dstnidep = 0;
-  auto &dstnicnt = diags.dstnicnt(k);
-  dstnicnt = 0;
-  auto &dstniimm = diags.dstniimm(k);
-  dstniimm = 0;
-  auto &bcnidep = diags.bcnidep(k);
-  bcnidep = 0;
-  auto &bcnicnt = diags.bcnicnt(k);
-  bcnicnt = 0;
-  auto &bcniimm = diags.bcniimm(k);
-  bcniimm = 0;
-  auto &numice10s = diags.numice10s(k);
-  numice10s = 0;
-  auto &numimm10sdst = diags.numimm10sdst(k);
-  numimm10sdst = 0;
-  auto &numimm10sbc = diags.numimm10sbc(k);
-  numimm10sbc = 0;
+  Real &bc_num = diags.hetfrz(Diagnostics::bc_num, k);
+  Real &dst1_num = diags.hetfrz(Diagnostics::dst1_num, k);
+  Real &dst3_num = diags.hetfrz(Diagnostics::dst3_num, k);
+  Real &bcc_num = diags.hetfrz(Diagnostics::bcc_num, k);
+  Real &dst1c_num = diags.hetfrz(Diagnostics::dst1c_num, k);
+  Real &dst3c_num = diags.hetfrz(Diagnostics::dst3c_num, k);
+  Real &bcuc_num = diags.hetfrz(Diagnostics::bcuc_num, k);
+  Real &dst1uc_num = diags.hetfrz(Diagnostics::dst1uc_num, k);
+  Real &dst3uc_num = diags.hetfrz(Diagnostics::dst3uc_num, k);
+  Real &bc_a1_num = diags.hetfrz(Diagnostics::bc_a1_num, k);
+  Real &dst_a1_num = diags.hetfrz(Diagnostics::dst_a1_num, k);
+  Real &dst_a3_num = diags.hetfrz(Diagnostics::dst_a3_num, k);
+  Real &bc_c1_num = diags.hetfrz(Diagnostics::bc_c1_num, k);
+  Real &dst_c1_num = diags.hetfrz(Diagnostics::dst_c1_num, k);
+  Real &dst_c3_num = diags.hetfrz(Diagnostics::dst_c3_num, k);
+  Real &fn_bc_c1_num = diags.hetfrz(Diagnostics::fn_bc_c1_num, k);
+  Real &fn_dst_c1_num = diags.hetfrz(Diagnostics::fn_dst_c1_num, k);
+  Real &fn_dst_c3_num = diags.hetfrz(Diagnostics::fn_dst_c3_num, k);
+  Real &na500 = diags.hetfrz(Diagnostics::na500, k);
+  Real &totna500 = diags.hetfrz(Diagnostics::totna500, k);
+  Real &freqimm = diags.hetfrz(Diagnostics::freqimm, k);
+  Real &freqcnt = diags.hetfrz(Diagnostics::freqcnt, k);
+  Real &freqdep = diags.hetfrz(Diagnostics::freqdep, k);
+  Real &freqmix = diags.hetfrz(Diagnostics::freqmix, k);
+  Real &dstfrezimm = diags.hetfrz(Diagnostics::dstfrezimm, k);
+  Real &dstfrezcnt = diags.hetfrz(Diagnostics::dstfrezcnt, k);
+  Real &dstfrezdep = diags.hetfrz(Diagnostics::dstfrezdep, k);
+  Real &bcfrezimm = diags.hetfrz(Diagnostics::bcfrezimm, k);
+  Real &bcfrezcnt = diags.hetfrz(Diagnostics::bcfrezcnt, k);
+  Real &bcfrezdep = diags.hetfrz(Diagnostics::bcfrezdep, k);
+  Real &nimix_imm = diags.hetfrz(Diagnostics::nimix_imm, k);
+  Real &nimix_cnt = diags.hetfrz(Diagnostics::nimix_cnt, k);
+  Real &nimix_dep = diags.hetfrz(Diagnostics::nimix_dep, k);
+  Real &dstnidep = diags.hetfrz(Diagnostics::dstnidep, k);
+  Real &dstnicnt = diags.hetfrz(Diagnostics::dstnicnt, k);
+  Real &dstniimm = diags.hetfrz(Diagnostics::dstniimm, k);
+  Real &bcnidep = diags.hetfrz(Diagnostics::bcnidep, k);
+  Real &bcnicnt = diags.hetfrz(Diagnostics::bcnicnt, k);
+  Real &bcniimm = diags.hetfrz(Diagnostics::bcniimm, k);
+  Real &numice10s = diags.hetfrz(Diagnostics::numice10s, k);
+  Real &numimm10sdst = diags.hetfrz(Diagnostics::numimm10sdst, k);
+  Real &numimm10sbc = diags.hetfrz(Diagnostics::numimm10sbc, k);
   // End fields used for diagnostics.
 
   const int coarse_idx = int(ModeIndex::Coarse);
@@ -1515,8 +1473,11 @@ void Hetfrz::compute_tendencies(const AeroConfig &config,
   // and hetfrz_depostion_nucleation_tend. In order for heterogenous freezing to
   // have impacts on the model state, these tendencies must be correctly added
   // to the relevant cloud-microphysical parameterization.
-
   const int nk = atm.num_levels();
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
+    for (int d=0; d<Diagnostics::number_of_hetfrz_diag; ++d)
+      diags.hetfrz(d,k) = 0.;
+  });
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
     hetfrz::hetfrz_rates_1box(k, dt, atm, progs, diags, tends, config_);
   });
