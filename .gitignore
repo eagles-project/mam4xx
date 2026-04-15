@@ -1,5 +1,6 @@
 .DS_Store
 build/
+.build/
 .cache/
 src/tests/mam4_test_config.hpp
 *.out
