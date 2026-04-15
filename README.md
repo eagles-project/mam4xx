@@ -83,9 +83,9 @@ You can also use `build.sh` (located in this directory) to configure and build m
 Type `./build.sh` for usage information. Some simple examples:
 
 * Debuggable double-precision CPU build:
-  `./build.sh ~/mam4xx-builds/cpu cpu double Debug`
+  `./build.sh build-cpu cpu double Debug`
 * Debuggable double-precision NVidia GPU build (AMPERE86 architecture):
-  `./build.sh ~/mam4xx-builds/cuda gpu double Debug nvidia AMPERE86`
+  `./build.sh build-cuda gpu double Debug nvidia AMPERE86`
 
 ## Building MAM4xx
 

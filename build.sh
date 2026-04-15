@@ -2,12 +2,12 @@
 
 # This script builds mam4xx in standalone mode. Run it like this:
 #
-# `./build.sh <prefix> <device> <precision> <build_type> [gpu_type] [gpu_arch]
+# `./build.sh <build-dir> <device> <precision> <build_type> [gpu_type] [gpu_arch]
 #
 # where
-# * <prefix> is the installation prefix (e.g. /usr/local) in which you
-#   would like mam4xx installed
-# * <device> (either `cpu` or `gpu`), identifies the device type for which Haero
+# * <build-dir> is the build directory prefix (e.g. `build`) in which you
+#   would like mam4xx configured and built
+# * <device> (either `cpu` or `gpu`), identifies the device type for which mam4xx
 #   is built.
 # * <precision> (either `single` or `double`) determines the precision of
 #   floating point numbers used in mam4xx. Default: double
@@ -20,7 +20,7 @@
 #   * The full list of options may be found on the kokkos docs site:
 # https://kokkos.org/kokkos-core-wiki/get-started/configuration-guide.html#architectures
 
-PREFIX=$1
+BUILD_DIR=$1
 DEVICE=$2
 PRECISION=$3
 BUILD_TYPE=$4
@@ -33,8 +33,8 @@ if [[ ! -x `which ninja` ]]; then
   exit
 fi
 
-if [[ "$PREFIX" == "" ]]; then
-  echo "mam4xx installation prefix was not specified!"
+if [[ "$BUILD_DIR" == "" ]]; then
+  echo "mam4xx build directory was not specified!"
   echo "Usage: $0 <prefix> <device> <precision> <build_type> [gpu_type] [gpu_arch]"
   exit
 fi
@@ -125,11 +125,10 @@ echo "C++ compiler: ${CXX}"
 #     DON'T CHANGE ANYTHING BELOW HERE UNLESS YOU KNOW WHAT YOU'RE DOING
 # ==============================================================================
 
-echo "Configuring mam4xx (in .build)"
+echo "Configuring mam4xx in $BUILD_DIR."
 rm -rf .build
-cmake -S . -B .build \
+cmake -S . -B $BUILD_DIR \
   -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-  -DCMAKE_INSTALL_PREFIX="$PREFIX" \
   -DCMAKE_C_COMPILER=$CC \
   -DCMAKE_CXX_COMPILER=$CXX \
   -DMAM4XX_ENABLE_GPU=$ENABLE_GPU \
@@ -138,6 +137,5 @@ cmake -S . -B .build \
   -G Ninja \
   || exit
 
-echo "Building and installing mam4xx in $PREFIX..."
-cmake --build .build
-cmake --install .build
+echo "Building mam4xx in $BUILD_DIR..."
+cmake --build $BUILD_DIR
