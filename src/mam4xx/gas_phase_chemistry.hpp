@@ -80,12 +80,6 @@ KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
   // Class solution algorithms
   //===========================
 
-  // copy photolysis rates into reaction_rates (assumes photolysis rates come
-  // first)
-  for (int i = 0; i < phtcnt; ++i) {
-    reaction_rates[i] = photo_rates[i];
-  }
-
   // ... solve for "Implicit" species
   using mam4::gas_chemistry::itermax;
   bool factor[itermax];
