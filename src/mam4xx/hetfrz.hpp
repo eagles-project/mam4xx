@@ -474,26 +474,19 @@ void calculate_hetfrz_deposition_nucleation(
 }
 
 KOKKOS_INLINE_FUNCTION
-void calculate_hetfrz_immersion_nucleation(
+Real calculate_hetfrz_immersion_nucleation_bc(
     const Real deltat, const Real temperature,
     const Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec],
-    const Real sigma_iw, const Real vwice,
-    const Real dim_theta[Hetfrz::pdf_n_theta],
-    const Real pdf_imm_theta[Hetfrz::pdf_n_theta], const Real rgimm_bc,
-    const Real rgimm_dust_a1, const Real rgimm_dust_a3, const Real r_bc,
-    const Real r_dust_a1, const Real r_dust_a3, const bool do_bc,
-    const bool do_dst1, const bool do_dst3, Real &frzbcimm, Real &frzduimm) {
+    const Real sigma_iw, const Real vwice, const Real rgimm_bc,
+    const Real r_bc) {
 
   // nucleation rate per particle
   constexpr Real bad_boltzmann = 1.38e-23; // (BAD CONSTANT)
 
-  frzbcimm = 0.0;
-  frzduimm = 0.0;
-
-  if (do_bc) {
-    // print do_bc
-    // form factor
-    // only consider flat surfaces due to uncertainty of curved surfaces
+  Real frzbcimm = 0.0;
+  // form factor
+  // only consider flat surfaces due to uncertainty of curved surfaces
+  if (temperature <= 263.15) {
     const Real dg0imm_bc = get_dg0imm(sigma_iw, rgimm_bc);
     const Real f_imm_bc =
         get_form_factor(Hetfrz::theta_imm_bc * Constants::pi / 180.0);
@@ -503,13 +496,29 @@ void calculate_hetfrz_immersion_nucleation(
         mam4::exp((-Hetfrz::dga_imm_bc - f_imm_bc * dg0imm_bc) /
                   (bad_boltzmann * temperature));
     const int id_bc = Hetfrz::id_bc;
-    frzbcimm +=
+    frzbcimm =
         mam4::min(Hetfrz::limfacbc * total_cloudborne_aer_num[id_bc] / deltat,
                   total_cloudborne_aer_num[id_bc] / deltat *
                       (1.0 - mam4::exp(-Jimm_bc * deltat)));
   }
+  return frzbcimm;
+}
 
-  if (do_dst1) {
+KOKKOS_INLINE_FUNCTION
+Real calculate_hetfrz_immersion_nucleation_dst1(
+    const Real deltat, const Real temperature,
+    const Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real sigma_iw, const Real vwice,
+    const Real dim_theta[Hetfrz::pdf_n_theta],
+    const Real pdf_imm_theta[Hetfrz::pdf_n_theta], const Real rgimm_dust_a1,
+    const Real r_dust_a1) {
+
+  // nucleation rate per particle
+  constexpr Real bad_boltzmann = 1.38e-23; // (BAD CONSTANT)
+
+  Real frzduimm = 0.0;
+
+  if (temperature <= 263.15) {
     // homogeneous energy of germ formation
     const Real dg0imm_dust_a1 = get_dg0imm(sigma_iw, rgimm_dust_a1);
     // prefactor
@@ -544,12 +553,28 @@ void calculate_hetfrz_immersion_nucleation(
       sum_imm_dust_a1 = 1.0;
     }
     const int id_dst1 = Hetfrz::id_dst1;
-    frzduimm += mam4::min(1.0 * total_cloudborne_aer_num[id_dst1] / deltat,
-                          total_cloudborne_aer_num[id_dst1] / deltat *
-                              (1.0 - sum_imm_dust_a1));
+    frzduimm = mam4::min(1.0 * total_cloudborne_aer_num[id_dst1] / deltat,
+                         total_cloudborne_aer_num[id_dst1] / deltat *
+                             (1.0 - sum_imm_dust_a1));
   }
+  return frzduimm;
+}
 
-  if (do_dst3) {
+KOKKOS_INLINE_FUNCTION
+Real calculate_hetfrz_immersion_nucleation_dst3(
+    const Real deltat, const Real temperature,
+    const Real total_cloudborne_aer_num[Hetfrz::hetfrz_aer_nspec],
+    const Real sigma_iw, const Real vwice,
+    const Real dim_theta[Hetfrz::pdf_n_theta],
+    const Real pdf_imm_theta[Hetfrz::pdf_n_theta], const Real rgimm_dust_a3,
+    const Real r_dust_a3) {
+
+  // nucleation rate per particle
+  constexpr Real bad_boltzmann = 1.38e-23; // (BAD CONSTANT)
+
+  Real frzduimm = 0.0;
+
+  if (temperature <= 263.15) {
     // homogeneous energy of germ formation
     const Real dg0imm_dust_a3 = get_dg0imm(sigma_iw, rgimm_dust_a3);
     // prefactor
@@ -587,11 +612,7 @@ void calculate_hetfrz_immersion_nucleation(
                           total_cloudborne_aer_num[id_dst3] / deltat *
                               (1.0 - sum_imm_dust_a3));
   }
-
-  if (temperature > 263.15) {
-    frzduimm = 0.0;
-    frzbcimm = 0.0;
-  }
+  return frzduimm;
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -641,6 +662,46 @@ void calculate_water_activity(
                          coeff_c2 * square(molal[ispec]) +
                          coeff_c3 * cube(molal[ispec]));
     }
+  }
+}
+
+KOKKOS_INLINE_FUNCTION
+void calculate_vars_for_pdf_imm(Real dim_theta[Hetfrz::pdf_n_theta],
+                                Real pdf_imm_theta[Hetfrz::pdf_n_theta]) {
+
+  constexpr Real theta_min = 1.0 / 180.0 * Constants::pi;   // (BAD CONSTANT)
+  constexpr Real theta_max = 179.0 / 180.0 * Constants::pi; // (BAD CONSTANT)
+  constexpr Real imm_dust_mean_theta =
+      46.0 / 180.0 * Constants::pi;         // (BAD CONSTANT)
+  constexpr Real imm_dust_var_theta = 0.01; // (BAD CONSTANT)
+
+  const Real ln_theta_min = mam4::log(theta_min);
+  const Real ln_theta_max = mam4::log(theta_max);
+  const Real ln_imm_dust_mean_theta = mam4::log(imm_dust_mean_theta);
+
+  // calculate the integral in the denominator
+  const Real x1_imm = (ln_theta_min - ln_imm_dust_mean_theta) /
+                      (mam4::sqrt(2.0) * imm_dust_var_theta);
+  const Real x2_imm = (ln_theta_max - ln_imm_dust_mean_theta) /
+                      (mam4::sqrt(2.0) * imm_dust_var_theta);
+
+  const Real norm_theta_imm = (mam4::erf(x2_imm) - mam4::erf(x1_imm)) * 0.5;
+
+  for (int ibin = 0; ibin < Hetfrz::pdf_n_theta; ++ibin) {
+    dim_theta[ibin] = 0.0;
+    pdf_imm_theta[ibin] = 0.0;
+  }
+
+  for (int ibin = Hetfrz::itheta_bin_beg; ibin <= Hetfrz::itheta_bin_end;
+       ++ibin) {
+    dim_theta[ibin] = 1.0 / 180.0 * Constants::pi + ibin * Hetfrz::pdf_d_theta;
+
+    pdf_imm_theta[ibin] = mam4::exp(-(square(mam4::log(dim_theta[ibin]) -
+                                             ln_imm_dust_mean_theta)) /
+                                    (2.0 * square(imm_dust_var_theta))) /
+                          (dim_theta[ibin] * imm_dust_var_theta *
+                           mam4::sqrt(2.0 * Constants::pi)) /
+                          norm_theta_imm;
   }
 }
 
@@ -729,21 +790,33 @@ void hetfrz_classnuc_calc(
   Real rgimm_dust_a3 = rgimm;
   // print out rgimm
 
+  frzbcimm = 0;
+  frzduimm = 0;
   const bool do_bc = calculate_rgimm_and_determine_spec_flag(
       vwice, sigma_iw, temperature, aw[Hetfrz::id_bc], supersatice, rgimm_bc);
+
+  if (do_bc)
+    frzbcimm += calculate_hetfrz_immersion_nucleation_bc(
+        deltat, temperature, total_cloudborne_aer_num, sigma_iw, vwice,
+        rgimm_bc, r_bc);
 
   const bool do_dst1 = calculate_rgimm_and_determine_spec_flag(
       vwice, sigma_iw, temperature, aw[Hetfrz::id_dst1], supersatice,
       rgimm_dust_a1);
 
+  if (do_dst1)
+    frzduimm += calculate_hetfrz_immersion_nucleation_dst1(
+        deltat, temperature, total_cloudborne_aer_num, sigma_iw, vwice,
+        dim_theta, pdf_imm_theta, rgimm_dust_a1, r_dust_a1);
+
   const bool do_dst3 = calculate_rgimm_and_determine_spec_flag(
       vwice, sigma_iw, temperature, aw[Hetfrz::id_dst3], supersatice,
       rgimm_dust_a3);
 
-  calculate_hetfrz_immersion_nucleation(
-      deltat, temperature, total_cloudborne_aer_num, sigma_iw, vwice, dim_theta,
-      pdf_imm_theta, rgimm_bc, rgimm_dust_a1, rgimm_dust_a3, r_bc, r_dust_a1,
-      r_dust_a3, do_bc, do_dst1, do_dst3, frzbcimm, frzduimm);
+  if (do_dst3)
+    frzduimm += calculate_hetfrz_immersion_nucleation_dst3(
+        deltat, temperature, total_cloudborne_aer_num, sigma_iw, vwice,
+        dim_theta, pdf_imm_theta, rgimm_dust_a3, r_dust_a3);
 
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   //  Deposition nucleation
@@ -1388,46 +1461,6 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
                  (10.0 / dt);
   numimm10sbc = hetfrz_immersion_nucleation_tend * Hetfrz::frz_cm3_to_m3 * dt *
                 (10.0 / dt);
-}
-
-KOKKOS_INLINE_FUNCTION
-void calculate_vars_for_pdf_imm(Real dim_theta[Hetfrz::pdf_n_theta],
-                                Real pdf_imm_theta[Hetfrz::pdf_n_theta]) {
-
-  constexpr Real theta_min = 1.0 / 180.0 * Constants::pi;   // (BAD CONSTANT)
-  constexpr Real theta_max = 179.0 / 180.0 * Constants::pi; // (BAD CONSTANT)
-  constexpr Real imm_dust_mean_theta =
-      46.0 / 180.0 * Constants::pi;         // (BAD CONSTANT)
-  constexpr Real imm_dust_var_theta = 0.01; // (BAD CONSTANT)
-
-  const Real ln_theta_min = mam4::log(theta_min);
-  const Real ln_theta_max = mam4::log(theta_max);
-  const Real ln_imm_dust_mean_theta = mam4::log(imm_dust_mean_theta);
-
-  // calculate the integral in the denominator
-  const Real x1_imm = (ln_theta_min - ln_imm_dust_mean_theta) /
-                      (mam4::sqrt(2.0) * imm_dust_var_theta);
-  const Real x2_imm = (ln_theta_max - ln_imm_dust_mean_theta) /
-                      (mam4::sqrt(2.0) * imm_dust_var_theta);
-
-  const Real norm_theta_imm = (mam4::erf(x2_imm) - mam4::erf(x1_imm)) * 0.5;
-
-  for (int ibin = 0; ibin < Hetfrz::pdf_n_theta; ++ibin) {
-    dim_theta[ibin] = 0.0;
-    pdf_imm_theta[ibin] = 0.0;
-  }
-
-  for (int ibin = Hetfrz::itheta_bin_beg; ibin <= Hetfrz::itheta_bin_end;
-       ++ibin) {
-    dim_theta[ibin] = 1.0 / 180.0 * Constants::pi + ibin * Hetfrz::pdf_d_theta;
-
-    pdf_imm_theta[ibin] = mam4::exp(-(square(mam4::log(dim_theta[ibin]) -
-                                             ln_imm_dust_mean_theta)) /
-                                    (2.0 * square(imm_dust_var_theta))) /
-                          (dim_theta[ibin] * imm_dust_var_theta *
-                           mam4::sqrt(2.0 * Constants::pi)) /
-                          norm_theta_imm;
-  }
 }
 
 } // namespace hetfrz
