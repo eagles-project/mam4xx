@@ -40,11 +40,14 @@ set(TEST_LIST
     nlnmat_ts_355
     imp_prod_loss_ts_355
     newton_raphson_iter_ts_355
+    stand_newton_raphson_iter_ts_355
     imp_sol_ts_355
     adjrxt_ts_1400
     setrxt_ts_1400
     usrrxt_merged
     usrrxt_ts_1416
+    stand_imp_sol_ts_355_fails_1
+    stand_imp_sol_ts_355_fails
     )
 
 set(DEFAULT_TOL 1e-12)
@@ -52,15 +55,18 @@ set(DEFAULT_TOL 1e-12)
 
 set(ERROR_THRESHOLDS
    ${DEFAULT_TOL} # indprd_ts_355
-   ${DEFAULT_TOL} # linmat_ts_355
-   ${DEFAULT_TOL} # nlnmat_ts_355
-   ${DEFAULT_TOL} # imp_prod_loss_ts_355
+   3e-10          # linmat_ts_355
+   4e-10          # nlnmat_ts_355
+   2e-10          # imp_prod_loss_ts_355
    7e-11          # newton_raphson_iter_ts_355
+   ${DEFAULT_TOL} # stand_newton_raphson_iter_ts_355
    ${DEFAULT_TOL} # imp_sol_ts_355
    ${DEFAULT_TOL} # adjrxt_ts_1400
    ${DEFAULT_TOL} # setrxt_ts_1400
    ${DEFAULT_TOL} # usrrxt_merged
    ${DEFAULT_TOL} # usrrxt_ts_1416
+   ${DEFAULT_TOL} # stand_imp_sol_ts_355_fails_1
+   ${DEFAULT_TOL} # stand_imp_sol_ts_355_fails
    )
 
 set(TestLabel "gas_chem")

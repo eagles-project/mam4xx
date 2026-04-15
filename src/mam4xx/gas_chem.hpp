@@ -161,12 +161,14 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
     if (nr_iter > 0) {
       for (int kk = 0; kk < clscnt4; ++kk) {
         int mm = permute_4[kk];
+        
         // BAD CONSTANT
         if (mam4::abs(solution[mm]) > 1.0e-20) {
           max_delta[kk] = mam4::abs(forcing[mm] / solution[mm]);
         } else {
           max_delta[kk] = zero;
         }
+        Kokkos::printf("newton_raphson_iter: kk=%d, mm=%d solution[mm]=%e max_delta[kk]=%e\n", kk, mm, solution[mm], max_delta[kk]);
 
       } // kk
 
