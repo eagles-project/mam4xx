@@ -77,21 +77,19 @@ manually with the -G flag.
 
 You can also specify a location to install MAM4xx with `CMAKE_INSTALL_PREFIX`.
 
-### Setup script
+### `build.sh` script
 
-As an alternative to manually running CMake, you can run the provided [setup](https://github.com/eagles-project/mam4xx/blob/main/setup)
-script, providing your desired build directory:
+You can also use `build.sh` (located in this directory) to configure and build mam4xx all at once.
+Type `./build.sh` for usage information. Some simple examples:
 
-```
-./setup build
-```
-
-This creates a `build` directory containing a `config.sh` script that you can edit and run to
-configure mam4xx. Run it within the build directory without arguments like this: `./config.sh`
+* Debuggable double-precision CPU build:
+  `./build.sh ~/mam4xx-builds/cpu cpu double Debug`
+* Debuggable double-precision NVidia GPU build (AMPERE86 architecture):
+  `./build.sh ~/mam4xx-builds/cuda gpu double Debug nvidia AMPERE86`
 
 ## Building MAM4xx
 
-To build MAM4xx:
+To build or rebuild MAM4xx:
 
 1. Change to your build directory (`build` in the example above) and type `make` (or `ninja`).
 2. To run tests for the library (and the driver, if configured), type
@@ -101,7 +99,11 @@ To build MAM4xx:
    in `include`, `lib`, `bin`, and `share` subdirectories within your build
    directory.
 
-## Checking C++ formatting, and auto-formatting
+You can skip this step if you just ran `build.sh`.
+
+## Tools and Workflows
+
+### Checking C++ formatting, and auto-formatting
 
 Our C++ style rules are described in the [MAM4xx developer guide](https://github.com/eagles-project/mam4xx/blob/main/docs/development.md).
 We enforce them using `clang-format`. If you have the correct version of
@@ -118,7 +120,7 @@ different version of `clang-format` than the one we support, you'll get an error
 message telling you the correct version to install when you use either of these
 targets.
 
-## Analyzing code coverage
+### Analyzing code coverage
 
 You can get a code coverage report if you've enabled mam4xx to build with
 code coverage instrumentation. This option is configurable in your `config.sh`
@@ -141,11 +143,11 @@ Our automated testing system generates code coverage reports and uploads them
 to [codecov.io](https://about.codecov.io/) so they appear in the message feed
 for relevant pull requests.
 
-## Continuous Integration
+### Continuous Integration
 
 See [the SNL CI README](.github/workflows/README.md) for more detailed information.
 
-## Generating Documentation
+### Generating Documentation
 
 Documentation for MAM4xx can be built using
 [`mkdocs`](https://squidfunk.github.io/mkdocs-material/).
