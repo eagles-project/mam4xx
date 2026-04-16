@@ -1398,7 +1398,7 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
   Real frzbcdep = 0.0;
   Real frzdudep = 0.0;
 
-  if ((temp > 235.15) & (temp < 269.15)) {
+  if ((temp > 235.15) && (temp < 269.15)) {
 
     const Real qcic = mam4::min((qc / lcldm), 5.0e-3);
     const Real ncic = mam4::max((nc / lcldm), 0.0);
@@ -1491,10 +1491,6 @@ void Hetfrz::compute_tendencies(const AeroConfig &config,
   // have impacts on the model state, these tendencies must be correctly added
   // to the relevant cloud-microphysical parameterization.
   const int nk = atm.num_levels();
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
-    for (int d = 0; d < Diagnostics::number_of_hetfrz_diag; ++d)
-      diags.hetfrz(d, k) = 0.;
-  });
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, nk), [&](int k) {
     hetfrz::hetfrz_rates_1box(k, dt, atm, progs, diags, tends, config_,
                               dim_theta, pdf_imm_theta);
