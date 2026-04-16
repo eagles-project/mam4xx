@@ -20,10 +20,7 @@
 namespace mam4 {
 
 /// @class GasAerExch
-/// This class implements MAM4's gas/aersol exchange  parameterization. Its
-/// structure is defined by the usage of the impl_ member in the AeroProcess
-/// class in
-/// ../aero_process.hpp.
+/// This class implements MAM4's gas/aersol exchange parameterization.
 class GasAerExch {
 public:
   static constexpr int num_mode = AeroConfig::num_modes();

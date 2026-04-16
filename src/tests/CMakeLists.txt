@@ -23,13 +23,9 @@ target_link_libraries(mam4xx_tests mam4xx)
 
 EkatCreateUnitTest(utils_unit_tests utils_unit_tests.cpp
   LIBS mam4xx_tests USER_DEFINED_TEST_SESSION)
-EkatCreateUnitTest(mam4_nucleation_unit_tests mam4_nucleation_unit_tests.cpp
-  LIBS mam4xx_tests USER_DEFINED_TEST_SESSION)
 EkatCreateUnitTest(mam4_gasaerexch_unit_tests mam4_gasaerexch_unit_tests.cpp
   LIBS mam4xx_tests USER_DEFINED_TEST_SESSION)
 EkatCreateUnitTest(mam4_coagulation_unit_tests mam4_coagulation_unit_tests.cpp
-  LIBS mam4xx_tests USER_DEFINED_TEST_SESSION)
-EkatCreateUnitTest(mam4_calcsize_unit_tests mam4_calcsize_unit_tests.cpp
   LIBS mam4xx_tests USER_DEFINED_TEST_SESSION)
 EkatCreateUnitTest(mam4_convproc_unit_tests mam4_convproc_unit_tests.cpp
   LIBS mam4xx_tests USER_DEFINED_TEST_SESSION)
@@ -57,10 +53,8 @@ EkatCreateUnitTest(mam4_photo_setcol mam4_photo_setcol.cpp
 
 if (NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel") #The Intel compiler always emit a warning for inline functions.
   target_compile_options(utils_unit_tests PRIVATE)
-  target_compile_options(mam4_nucleation_unit_tests PRIVATE)
   target_compile_options(mam4_gasaerexch_unit_tests PRIVATE)
   target_compile_options(mam4_coagulation_unit_tests PRIVATE)
-  target_compile_options(mam4_calcsize_unit_tests PRIVATE)
   target_compile_options(mam4_convproc_unit_tests PRIVATE)
   # target_compile_options(mam4_amicphys_1gridcell_tests PRIVATE)
   target_compile_options(mam4_rename_unit_tests PRIVATE)

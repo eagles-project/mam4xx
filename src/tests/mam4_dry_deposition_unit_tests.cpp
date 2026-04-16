@@ -15,17 +15,6 @@ using mam4::Real;
 
 Real tol = 1e-8;
 
-TEST_CASE("test_constructor", "mam4_dry_deposition_process") {
-  ekat::Comm comm;
-  ekat::logger::Logger<> logger("dry deposition constructor test",
-                                ekat::logger::LogLevel::debug, comm);
-  mam4::AeroConfig mam4_config;
-  mam4::DryDepositionProcess::ProcessConfig process_config;
-  mam4::DryDepositionProcess process(mam4_config, process_config);
-  REQUIRE(process.name() == "MAM4 Dry Deposition");
-  REQUIRE(process.aero_config() == mam4_config);
-}
-
 TEST_CASE("test_calcram", "mam4_dry_deposition_process") {
   ekat::Comm comm;
   ekat::logger::Logger<> logger("dry deposition calcram test",

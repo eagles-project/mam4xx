@@ -3,7 +3,6 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "testing.hpp"
 #include <mam4xx/mam4.hpp>
 
 #include <ekat_comm.hpp>
@@ -11,116 +10,13 @@
 #include <ekat_type_traits.hpp>
 
 #include <catch2/catch.hpp>
-#include <iostream>
 
 using mam4::Real;
-
-TEST_CASE("test_constructor", "mam4_aging_process") {
-  mam4::AeroConfig mam4_config;
-  mam4::AgingProcess process(mam4_config);
-  REQUIRE(process.name() == "MAM4 aging");
-  REQUIRE(process.aero_config() == mam4_config);
-}
 
 TEST_CASE("test_aging_pairs", "mam4_aging_pairs") {
   // mam4 aging assumes that max_agepair is 1
   mam4::AeroConfig mam4_config;
   REQUIRE(mam4_config.max_agepair() == 1);
-}
-
-TEST_CASE("test_compute_tendencies", "mam4_aging_process") {
-  ekat::Comm comm;
-
-  ekat::logger::Logger<> logger("aging unit tests",
-                                ekat::logger::LogLevel::debug, comm);
-  int nlev = 72;
-  Real pblh = 1000;
-  auto atm = mam4::testing::create_atmosphere(nlev, pblh);
-  auto sfc = mam4::testing::create_surface();
-  auto progs = mam4::testing::create_prognostics(nlev);
-  auto diags = mam4::testing::create_diagnostics(nlev);
-  auto tends = mam4::testing::create_tendencies(nlev);
-
-  {
-    Kokkos::Array<Real, 21> interstitial = {
-        0.1218350564E-08, 0.3560443333E-08, 0.4203338951E-08, 0.3723412167E-09,
-        0.2330196615E-09, 0.1435909119E-10, 0.2704344376E-11, 0.2116400132E-11,
-        0.1326256343E-10, 0.1741610336E-16, 0.1280539377E-16, 0.1045693148E-08,
-        0.5358722850E-10, 0.2926142847E-10, 0.3986256848E-11, 0.3751267639E-10,
-        0.4679337373E-10, 0.9456518445E-13, 0.2272248527E-08, 0.2351792086E-09,
-        0.2733926271E-16};
-    const auto nmodes = mam4::AeroConfig::num_modes();
-    for (int imode = 0, count = 0; imode < nmodes; ++imode) {
-      const auto n_spec = mam4::num_species_mode(imode);
-      for (int isp = 0; isp < n_spec; ++isp, ++count) {
-        auto h_prog_aero_i =
-            Kokkos::create_mirror_view(progs.q_aero_i[imode][isp]);
-        for (int k = 0; k < nlev; ++k)
-          h_prog_aero_i(k) = interstitial[count];
-        Kokkos::deep_copy(progs.q_aero_i[imode][isp], h_prog_aero_i);
-      }
-    }
-  }
-  mam4::AeroConfig mam4_config;
-  mam4::AgingProcess process(mam4_config);
-
-  const auto prog_qgas0 = progs.q_gas[0];
-  const auto tend_qgas0 = tends.q_gas[0];
-  auto h_prog_qgas0 = Kokkos::create_mirror_view(prog_qgas0);
-  auto h_tend_qgas0 = Kokkos::create_mirror_view(tend_qgas0);
-  Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);
-  Kokkos::deep_copy(h_tend_qgas0, tend_qgas0);
-
-  std::ostringstream ss;
-  ss << "prog_qgas0 [in]: [ ";
-  for (int k = 0; k < nlev; ++k) {
-    ss << h_prog_qgas0(k) << " ";
-  }
-  ss << "]";
-  logger.debug(ss.str());
-  ss.str("");
-  ss << "tend_qgas0 [in]: [ ";
-  for (int k = 0; k < nlev; ++k) {
-    ss << h_tend_qgas0(k) << " ";
-  }
-  ss << "]";
-  logger.debug(ss.str());
-  ss.str("");
-
-  for (int k = 0; k < nlev; ++k) {
-    CHECK(!mam4::isnan(h_prog_qgas0(k)));
-    CHECK(!mam4::isnan(h_tend_qgas0(k)));
-  }
-
-  // Single-column dispatch.
-  auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
-  Real t = 0.0, dt = 30.0;
-  Kokkos::parallel_for(
-      team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
-        process.compute_tendencies(team, t, dt, atm, sfc, progs, diags, tends);
-      });
-  Kokkos::deep_copy(h_prog_qgas0, prog_qgas0);
-  Kokkos::deep_copy(h_tend_qgas0, tend_qgas0);
-
-  ss << "prog_qgas0 [out]: [ ";
-  for (int k = 0; k < nlev; ++k) {
-    ss << h_prog_qgas0(k) << " ";
-  }
-  ss << "]";
-  logger.debug(ss.str());
-  ss.str("");
-  ss << "tend_qgas0 [out]: [ ";
-  for (int k = 0; k < nlev; ++k) {
-    ss << h_tend_qgas0(k) << " ";
-  }
-  ss << "]";
-  logger.debug(ss.str());
-  ss.str("");
-
-  for (int k = 0; k < nlev; ++k) {
-    CHECK(!mam4::isnan(h_prog_qgas0(k)));
-    CHECK(!mam4::isnan(h_tend_qgas0(k)));
-  }
 }
 
 TEST_CASE("test_cond_coag_mass_to_accum", "mam4_aging_process") {

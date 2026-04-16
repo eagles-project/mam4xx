@@ -18,12 +18,6 @@
 
 using mam4::Real;
 
-TEST_CASE("test_constructor", "mam4_convproc_process") {
-  mam4::AeroConfig mam4_config;
-  mam4::ConvProcProcess process(mam4_config);
-  REQUIRE(process.name() == "MAM4 convproc");
-  REQUIRE(process.aero_config() == mam4_config);
-}
 TEST_CASE("update_conu_from_act_frac", "mam4_convproc_process") {
   const int la = 3;
   const int lc = 5;

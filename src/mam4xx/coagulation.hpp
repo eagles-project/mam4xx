@@ -19,10 +19,7 @@
 namespace mam4 {
 
 /// @class Coagulation
-/// This class implements MAM4's gas/aersol exchange  parameterization. Its
-/// structure is defined by the usage of the impl_ member in the AeroProcess
-/// class in
-/// ../aero_process.hpp.
+/// This class implements MAM4's gas/aersol exchange parameterization.
 class Coagulation {
 public:
   // number of coagulation pairs
