@@ -92,15 +92,15 @@ void table_photo(Ensemble *ensemble) {
     Kokkos::deep_copy(table_data.dprs, dprs_host);
 
     View3D rsf("rsf", ncol, table_data.nw, pver);
-    View3D xswk("xswk", ncol, table_data.numj, table_data.nw);
+    View4D xswk("xswk", ncol, pver, table_data.numj, table_data.nw);
 
     const Real values_xsqy = synthetic_values_xsqy[0];
     Kokkos::deep_copy(table_data.xsqy, values_xsqy);
 
     View3D j_long("j_long", ncol, table_data.numj, pver);
 
-    auto psum_l = View2D("psum_l", ncol, table_data.nw);
-    auto psum_u = View2D("psum_u", ncol, table_data.nw);
+    View3D psum_l("psum_l", ncol, pver, table_data.nw);
+    View3D psum_u("psum_u", ncol, pver, table_data.nw);
 
     auto pht_alias_mult_1_db = input.get_array("pht_alias_mult");
     auto pht_alias_mult_1_host =
@@ -170,10 +170,12 @@ void table_photo(Ensemble *ensemble) {
               Kokkos::subview(j_long, i, Kokkos::ALL(), Kokkos::ALL());
           work_arrays.rsf =
               Kokkos::subview(rsf, i, Kokkos::ALL(), Kokkos::ALL());
-          work_arrays.xswk =
-              Kokkos::subview(xswk, i, Kokkos::ALL(), Kokkos::ALL());
-          work_arrays.psum_l = Kokkos::subview(psum_l, i, Kokkos::ALL());
-          work_arrays.psum_u = Kokkos::subview(psum_u, i, Kokkos::ALL());
+          work_arrays.xswk = Kokkos::subview(xswk, i, Kokkos::ALL(),
+                                             Kokkos::ALL(), Kokkos::ALL());
+          work_arrays.psum_l =
+              Kokkos::subview(psum_l, i, Kokkos::ALL(), Kokkos::ALL());
+          work_arrays.psum_u =
+              Kokkos::subview(psum_u, i, Kokkos::ALL(), Kokkos::ALL());
 
           work_arrays.parg = Kokkos::subview(parg, i, Kokkos::ALL());
           work_arrays.eff_alb = Kokkos::subview(eff_alb, i, Kokkos::ALL());

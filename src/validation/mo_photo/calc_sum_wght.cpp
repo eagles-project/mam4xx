@@ -48,12 +48,14 @@ void calc_sum_wght(Ensemble *ensemble) {
                         iz, is, iv, ial,   // in
                         rsf_tab,           // in
                         nw,                //
-                        psum);
+                        psum);             // psum
         });
     const Real zero = 0;
     std::vector<Real> psum_db(nw, zero);
-    auto psum_host = View1DHost((Real *)psum_db.data(), nw);
+    auto psum_host = Kokkos::create_mirror_view(psum);
     Kokkos::deep_copy(psum_host, psum);
+    for (int w = 0; w < nw; ++w)
+      psum_db[w] = psum_host(w);
 
     output.set("psum", psum_db);
   });

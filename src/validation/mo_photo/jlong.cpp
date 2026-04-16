@@ -123,15 +123,15 @@ void jlong(Ensemble *ensemble) {
 
     View2D rsf("rsf", nw, pver);
     View4D xsqy("xsqy", numj, nw, nt, np_xs);
-    View2D xswk("xswk", numj, nw);
+    View3D xswk("xswk", pver, numj, nw);
 
     const Real values_xsqy = synthetic_values_xsqy[0];
     Kokkos::deep_copy(xsqy, values_xsqy);
 
     View2D j_long("j_long", numj, pver);
 
-    auto psum_l = View1D("psum_l", nw);
-    auto psum_u = View1D("psum_u", nw);
+    View2D psum_l("psum_l", pver, nw);
+    View2D psum_u("psum_u", pver, nw);
 
     auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
     Kokkos::parallel_for(
