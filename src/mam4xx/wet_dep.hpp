@@ -1101,7 +1101,7 @@ void compute_q_tendencies(
     //     qqcw_sav,
     ConstColumnView pdel, const Real dt, const int jnummaswtr, const int jnv,
     const int mm, const int lphase, const int imode, const int lspec,
-    View1D workspace[14]) {
+    View2D workspace) {
 
   team.team_barrier();
   // clang-format off
@@ -1165,18 +1165,19 @@ void compute_q_tendencies(
   }
 
   // currently compute_q_tendencies_worksparce[14]
-  View1D evap = workspace[0];
-  View1D rain = workspace[1];
+  View1D evap = ekat::subview(workspace, 0);
+  View1D rain = ekat::subview(workspace, 1);
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     const Real gravit = Constants::gravity;
     evap[k] = mam4::max(0.0, evapr[k] * pdel[k] / gravit);
     rain[k] = mam4::max(0.0, prain[k] * pdel[k] / gravit);
   });
 
-  View1D precabs = workspace[3];
-  View1D precabs_tmp = workspace[4];
-  View1D precabs_base = workspace[5];
-  View1D precabs_base_tmp = workspace[6];
+  // (look below for workspace 2)
+  View1D precabs = ekat::subview(workspace, 3);
+  View1D precabs_tmp = ekat::subview(workspace, 4);
+  View1D precabs_base = ekat::subview(workspace, 5);
+  View1D precabs_base_tmp = ekat::subview(workspace, 6);
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     precabs[k] = 0.0;
     precabs_tmp[k] = 0.0;
@@ -1186,7 +1187,7 @@ void compute_q_tendencies(
 
   team.team_barrier();
   if (mam_prevap_resusp_optcc >= 100) {
-    View1D bndd = workspace[2];
+    View1D bndd = ekat::subview(workspace, 2);
     Kokkos::single(Kokkos::PerTeam(team), [=]() {
       // Because of these two values, the loop can not be parallel_for
       Real prec = 0.0, prec_base = 0.0;
@@ -1219,7 +1220,7 @@ void compute_q_tendencies(
           utils::min_max_bound(0.0, precabs_base[k], precabs[k] - evap[k]);
     });
   } else if (mam_prevap_resusp_optcc == 0) {
-    View1D netc = workspace[2];
+    View1D netc = ekat::subview(workspace, 2);
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
       const Real gravit = Constants::gravity;
       netc[k] = (prain[k] - evapr[k]) * pdel[k] / gravit;
@@ -1233,14 +1234,14 @@ void compute_q_tendencies(
                           });
   }
 
-  View1D precnums_base = workspace[7];
+  View1D precnums_base = ekat::subview(workspace, 7);
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                        [&](int k) { precnums_base[k] = 0.0; });
   // Yes, it is redundant but keys off of the old code.
   if (mam_prevap_resusp_optcc >= 100 && mam_prevap_resusp_optcc > 130) {
     constexpr Real small_value_2 = 1.e-2;   // BAD CONSTANT
     constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
-    View1D copy_from_prev = workspace[2];
+    View1D copy_from_prev = ekat::subview(workspace, 2);
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                          [&](int k) { copy_from_prev[k] = 0.0; });
     team.team_barrier();
@@ -1269,17 +1270,17 @@ void compute_q_tendencies(
     });
   }
 
-  View1D cmfd = workspace[1];
+  View1D cmfd = ekat::subview(workspace, 1);
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     const Real gravit = Constants::gravity;
     evap[k] = mam4::max(0.0, evapc[k] * pdel[k] / gravit);
     cmfd[k] = mam4::max(0.0, cmfdqr[k] * pdel[k] / gravit);
   });
 
-  View1D precabc = workspace[8];
-  View1D precabc_base = workspace[10];
-  View1D precnumc_base = workspace[11];
-  View1D precabc_base_tmp = workspace[6];
+  View1D precabc = ekat::subview(workspace, 8);
+  View1D precabc_base = ekat::subview(workspace, 10);
+  View1D precnumc_base = ekat::subview(workspace, 11);
+  View1D precabc_base_tmp = ekat::subview(workspace, 6);
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
     precabc[k] = 0.0;
     precabc_base[k] = 0.0;
@@ -1288,7 +1289,7 @@ void compute_q_tendencies(
   });
 
   if (mam_prevap_resusp_optcc >= 100) {
-    View1D bndd = workspace[2];
+    View1D bndd = ekat::subview(workspace, 2);
     Kokkos::single(Kokkos::PerTeam(team), [=]() {
       Real prec = 0, prec_base = 0.0;
       constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
@@ -1315,7 +1316,7 @@ void compute_q_tendencies(
           utils::min_max_bound(0.0, precabc_base[k + 1], bndd[k] + cmfd[k]);
     });
   } else if (mam_prevap_resusp_optcc == 0) {
-    View1D netc = workspace[2];
+    View1D netc = ekat::subview(workspace, 2);
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
       const Real gravit = Constants::gravity;
       netc[k] = (cmfdqr[k] - evapc[k]) * pdel[k] / gravit;
@@ -1335,7 +1336,7 @@ void compute_q_tendencies(
     // conditional
     constexpr Real small_value_2 = 1.e-2;   // BAD CONSTANT
     constexpr Real small_value_30 = 1.e-30; // BAD CONSTANT
-    View1D copy_from_prev = workspace[2];
+    View1D copy_from_prev = ekat::subview(workspace, 2);
     Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                          [&](int k) { copy_from_prev[k] = 0.0; });
     team.team_barrier();
@@ -1365,8 +1366,8 @@ void compute_q_tendencies(
   }
   team.team_barrier();
 
-  View1D srcc = workspace[2];
-  View1D srcs = workspace[0];
+  View1D srcc = ekat::subview(workspace, 2);
+  View1D srcs = ekat::subview(workspace, 0);
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                        [&](int k) { srcc[k] = 0.0; });
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
@@ -1484,13 +1485,13 @@ void compute_q_tendencies(
   });
 
   team.team_barrier();
-  View1D scavabs = workspace[12];
+  View1D scavabs = ekat::subview(workspace, 12);
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                        [&](int k) { scavabs[k] = 0.0; });
   team.team_barrier();
   if (mam_prevap_resusp_optcc >= 100) {
     if (mam_prevap_resusp_optcc <= 130) {
-      View1D x_ratio = workspace[9];
+      View1D x_ratio = ekat::subview(workspace, 9);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                            [&](int k) { x_ratio[k] = 0.0; });
       team.team_barrier();
@@ -1523,7 +1524,7 @@ void compute_q_tendencies(
           }
         }
       });
-      View1D tmpa = workspace[1];
+      View1D tmpa = ekat::subview(workspace, 1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
         const Real gravit = Constants::gravity;
         tmpa[k] = mam4::max(0.0, srcs[k] * pdel[k] / gravit);
@@ -1547,7 +1548,7 @@ void compute_q_tendencies(
         }
       });
     } else {
-      View1D copy_from_prev = workspace[1];
+      View1D copy_from_prev = ekat::subview(workspace, 1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                            [&](int k) { copy_from_prev[k] = 0.0; });
       team.team_barrier();
@@ -1580,13 +1581,13 @@ void compute_q_tendencies(
                           });
   }
 
-  View1D scavabc = workspace[13];
+  View1D scavabc = ekat::subview(workspace, 13);
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                        [&](int k) { scavabc[k] = 0.0; });
   team.team_barrier();
   if (mam_prevap_resusp_optcc >= 100) {
     if (mam_prevap_resusp_optcc <= 130) {
-      View1D x_ratio = workspace[9];
+      View1D x_ratio = ekat::subview(workspace, 9);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                            [&](int k) { x_ratio[k] = 0.0; });
       team.team_barrier();
@@ -1619,7 +1620,7 @@ void compute_q_tendencies(
           }
         }
       });
-      View1D tmpc = workspace[1];
+      View1D tmpc = ekat::subview(workspace, 1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev), [&](int k) {
         const Real gravit = Constants::gravity;
         tmpc[k] = mam4::max(0.0, srcc[k] * pdel[k] / gravit);
@@ -1643,7 +1644,7 @@ void compute_q_tendencies(
         }
       });
     } else { // 130 < mam_prevap_resusp_optcc
-      View1D copy_from_prev = workspace[1];
+      View1D copy_from_prev = ekat::subview(workspace, 1);
       Kokkos::parallel_for(Kokkos::TeamThreadRange(team, nlev),
                            [&](int k) { copy_from_prev[k] = 0.0; });
       team.team_barrier();
@@ -1792,7 +1793,7 @@ int get_aero_model_wetdep_work_len() {
                  // scavcoefnum, scavcoefvol
                  // sol_facti, sol_factic, sol_factb, f_act_conv,
                  // scavt, bcscavt, rcscavt,
-                 // compute_q_tendencies_workspace[14]
+                 // compute_q_tendencies_workspace(14, nlev)
                  2 * mam4::nlev * pcnst +
                  // ptend_q, rtscavt_sv
                  2 * pcnst +
@@ -1969,11 +1970,8 @@ void aero_model_wetdep(
   work_ptr += aero_model::pcnst * 2;
 
   const int num_tendencies_workspaces = 14;
-  View1D compute_q_tendencies_workspace[num_tendencies_workspaces];
-  for (int i = 0; i < num_tendencies_workspaces; ++i) {
-    compute_q_tendencies_workspace[i] = View1D(work_ptr, mam4::nlev);
-    work_ptr += mam4::nlev;
-  }
+  View2D compute_q_tendencies_workspace(work_ptr, num_tendencies_workspaces, mam4::nlev);
+  work_ptr += num_tendencies_workspaces * mam4::nlev;
 
   /// error check
   const int workspace_used(work_ptr - work.data()),
