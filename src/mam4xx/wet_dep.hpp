@@ -1970,7 +1970,8 @@ void aero_model_wetdep(
   work_ptr += aero_model::pcnst * 2;
 
   const int num_tendencies_workspaces = 14;
-  View2D compute_q_tendencies_workspace(work_ptr, num_tendencies_workspaces, mam4::nlev);
+  View2D compute_q_tendencies_workspace(work_ptr, num_tendencies_workspaces,
+                                        mam4::nlev);
   work_ptr += num_tendencies_workspaces * mam4::nlev;
 
   /// error check
