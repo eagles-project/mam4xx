@@ -52,10 +52,9 @@ using Int1D = DeviceType::view_1d<int>;
 using View2D = DeviceType::view_2d<Real>;
 using View2DHost = typename HostType::view_2d<Real>;
 KOKKOS_INLINE_FUNCTION
-void local_precip_production(Real pdel, Real source_term, Real sink_term,
-                             Real gravity, Real &result) {
-  Real r = (pdel / gravity) * (source_term - sink_term);
-  result = r;
+Real local_precip_production(Real pdel, Real source_term, Real sink_term,
+                             Real gravity) {
+  return (pdel / gravity) * (source_term - sink_term);
 }
 
 // Function to call to initialize the arrays passe to the
@@ -917,8 +916,7 @@ void clddiag(const int nlev, const Real *temperature, const Real *pmid,
   Real g = Constants::gravity;
   for (int i = 0; i < nlev; i++) {
     const Real source_term = prain[i] + cmfdqr[i];
-    Real lprec = 0.0;
-    local_precip_production(pdel[i], source_term, evapr[i], g, lprec);
+    Real lprec = local_precip_production(pdel[i], source_term, evapr[i], g);
     sumppr_all += lprec;
     // Calculate rain mixing ratio
     rain[i] = rain_mix_ratio(temperature[i], pmid[i], sumppr_all);
@@ -928,24 +926,21 @@ void clddiag(const int nlev, const Real *temperature, const Real *pmid,
   // Total
   auto prec = [&](int i) -> Real {
     const Real source_term = prain[i] + cmfdqr[i];
-    Real lprec = 0.0;
-    local_precip_production(pdel[i], source_term, evapr[i], g, lprec);
+    Real lprec = local_precip_production(pdel[i], source_term, evapr[i], g);
     return lprec;
   };
   calculate_cloudy_volume(nlev, cldt, prec, true, cldv);
 
   // Convective
   auto prec_cu = [&](int i) -> Real {
-    Real lprec = 0.0;
-    local_precip_production(pdel[i], cmfdqr[i], evapc[i], g, lprec);
+    Real lprec = local_precip_production(pdel[i], cmfdqr[i], evapc[i], g);
     return lprec;
   };
   calculate_cloudy_volume(nlev, cldcu, prec_cu, false, cldvcu);
 
   // Stratiform
   auto prec_st = [&](int i) -> Real {
-    Real lprec = 0.0;
-    local_precip_production(pdel[i], prain[i], evapr[i], g, lprec);
+    Real lprec = local_precip_production(pdel[i], prain[i], evapr[i], g);
     return lprec;
   };
   calculate_cloudy_volume(nlev, cldst, prec_st, false, cldvst);
