@@ -1,5 +1,5 @@
-#ifndef MAM4_TEST_CONFIG_HPP
-#define MAM4_TEST_CONFIG_HPP
+#ifndef MAM4XX_TEST_CONFIG_HPP
+#define MAM4XX_TEST_CONFIG_HPP
 
 // clang-format off
 #define MAM4_TEST_DATA_DIR "@CMAKE_CURRENT_SOURCE_DIR@/data"
