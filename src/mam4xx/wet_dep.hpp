@@ -912,8 +912,8 @@ void clddiag(const int nlev, const Real *temperature, const Real *pmid,
   // FIXME: Possible bug: why there is no evapc in sumppr_all calculation?
   Real sumppr_all = 0.0;
   Real g = Constants::gravity;
-  // NOTE: we can't use a parallel_scan here because rain[i] is updated using the partially
-  // NOTE: summed sumppr_all
+  // NOTE: we can't use a parallel_scan here because rain[i] is updated using
+  // the partially NOTE: summed sumppr_all
   for (int i = 0; i < nlev; i++) {
     const Real source_term = prain[i] + cmfdqr[i];
     Real lprec = local_precip_production(pdel[i], source_term, evapr[i], g);
