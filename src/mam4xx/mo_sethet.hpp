@@ -233,10 +233,9 @@ void sethet_detail(
     const ColumnView &xhen_h2o2, // henry law constants
     const ColumnView &xhen_hno3, // henry law constants
     const ColumnView &xhen_so2,  // henry law constants
-    const View2D tmp_hetrates, const int spc_h2o2_ndx,
-    const int spc_so2_ndx, const int h2o2_ndx, const int so2_ndx,
-    const int h2so4_ndx, const int gas_wetdep_cnt, const int wetdep_map[3],
-    const int indexm) {
+    const View2D tmp_hetrates, const int spc_h2o2_ndx, const int spc_so2_ndx,
+    const int h2o2_ndx, const int so2_ndx, const int h2so4_ndx,
+    const int gas_wetdep_cnt, const int wetdep_map[3], const int indexm) {
 
   const int pver = mam4::nlev;
   //-----------------------------------------------------------------------
@@ -377,9 +376,10 @@ void sethet_detail(
   });
   team.team_barrier();
   Kokkos::single(Kokkos::PerTeam(team), [=]() {
-    // gas_washout is odd in that it modifies all of xgas2 and xgas3
-    // from level kk to level pver so calling it in parallel is a
-    // race condition for xgas2.  Hence the Kokkos::single.
+    // NOTE: gas_washout sequentially modifies xgas2 and xgas3 from level kk to
+    // pver NOTE: every time it's called, so it can't be called in parallel
+    // without NOTE: producing unpredictable output in these views. Hence
+    // Kokkos::single.
     for (int kk = ktop; kk < pver; ++kk) {
       Real stay =
           1.0; // fraction of layer traversed by falling drop in timestep delt
