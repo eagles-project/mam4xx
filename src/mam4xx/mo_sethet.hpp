@@ -233,7 +233,7 @@ void sethet_detail(
     const ColumnView &xhen_h2o2, // henry law constants
     const ColumnView &xhen_hno3, // henry law constants
     const ColumnView &xhen_so2,  // henry law constants
-    const ColumnView tmp_hetrates[gas_pcnst], const int spc_h2o2_ndx,
+    const View2D tmp_hetrates, const int spc_h2o2_ndx,
     const int spc_so2_ndx, const int h2o2_ndx, const int so2_ndx,
     const int h2so4_ndx, const int gas_wetdep_cnt, const int wetdep_map[3],
     const int indexm) {
@@ -296,7 +296,7 @@ void sethet_detail(
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
     for (int mm = 0; mm < gas_pcnst; ++mm) {
       het_rates(kk, mm) = 0.0;
-      tmp_hetrates[mm](kk) = 0.0; // initiate temporary array
+      tmp_hetrates(kk, mm) = 0.0; // initiate temporary array
     }
   });
   team.team_barrier();
@@ -414,7 +414,7 @@ void sethet_detail(
       } else {
         yh2o2 = large_value_lifetime;
       }
-      tmp_hetrates[1](kk) =
+      tmp_hetrates(kk, 1) =
           mam4::max(1.0 / yh2o2, 0.0) * stay; // FIXME: bad constant index
 
       Real yso2 = 0;
@@ -425,7 +425,7 @@ void sethet_detail(
       } else {
         yso2 = large_value_lifetime;
       }
-      tmp_hetrates[2](kk) =
+      tmp_hetrates(kk, 2) =
           mam4::max(1.0 / yso2, 0.0) * stay; // FIXME: bad constant index
     }
   });
@@ -450,7 +450,7 @@ void sethet_detail(
 
       if (h2o2_ndx >= 0) {
         calc_het_rates(satf_h2o2, rain(kk), xhen_h2o2(kk), // in
-                       tmp_hetrates[1](kk), work1, work2,  // in
+                       tmp_hetrates(kk, 1), work1, work2,  // in
                        het_rates(kk, h2o2_ndx));           // out
       }
       // if ( prog_modal_aero .and.
@@ -458,13 +458,13 @@ void sethet_detail(
         het_rates(kk, so2_ndx) = het_rates(kk, h2o2_ndx);
       } else if (so2_ndx >= 0) {
         calc_het_rates(satf_so2, rain(kk), xhen_so2(kk),  // in
-                       tmp_hetrates[2](kk), work1, work2, // in
+                       tmp_hetrates(kk, 2), work1, work2, // in
                        het_rates(kk, so2_ndx));           // out
       }
 
       if (h2so4_ndx >= 0) {
         calc_het_rates(satf_hno3, rain(kk), xhen_hno3(kk), // in
-                       tmp_hetrates[0](kk), work1, work2,  // in
+                       tmp_hetrates(kk, 0), work1, work2,  // in
                        het_rates(kk, h2so4_ndx));          // out
       }
     }
@@ -535,11 +535,8 @@ void sethet(
   const auto xhen_so2 = View1D(work_ptr, nlev);
   work_ptr += nlev;
 
-  ColumnView tmp_hetrates[gas_pcnst];
-  for (int i = 0; i < gas_pcnst; ++i) {
-    tmp_hetrates[i] = ColumnView(work_ptr, nlev);
-    work_ptr += nlev;
-  }
+  View2D tmp_hetrates(work_ptr, nlev, gas_pcnst);
+  work_ptr += nlev * gas_pcnst;
 
   // BAD CONSTANT
   // FIXME: should we move these indices and map to a config file?
