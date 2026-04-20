@@ -38,9 +38,8 @@ void test_local_precip_production_process(const Input &input, Output &output) {
         Real pdel_temp = pdel;
         Real source_term_temp = source_term;
         Real sink_term_temp = sink_term;
-        Real result = 1;
-        mam4::wetdep::local_precip_production(pdel_temp, source_term_temp,
-                                              sink_term_temp, gravity, result);
+        Real result = mam4::wetdep::local_precip_production(
+            pdel_temp, source_term_temp, sink_term_temp, gravity);
         return_vals(0) = result;
       });
 
