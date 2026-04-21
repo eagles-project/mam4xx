@@ -131,7 +131,7 @@ void gas_washout(
     allca[kk] = 0; // pretend allca is a kokkos view.
   });
   for (int k = ktop; k < pver; k++) {
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, k, pver), [&](int kk) {
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ktop, k+1), [&](int kk) {
       if (rain(kk) != 0.0) { // finding rain cloud
         const Real xeqca =
             xgas(k) /
