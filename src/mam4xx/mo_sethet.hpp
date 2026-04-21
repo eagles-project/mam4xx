@@ -104,12 +104,10 @@ void calc_precip_rescale(
 //=================================================================================
 KOKKOS_INLINE_FUNCTION
 void gas_washout(
-    const ThreadTeam &team,
-    const int ktop,               
-    const int pver,              
-    const Real xkgm,              // mass flux on rain drop //in
-    const ColumnView xliq,           // liquid rain water content [gm/m^3] // in
-    const ColumnView rain,           
+    const ThreadTeam &team, const int ktop, const int pver,
+    const Real xkgm,       // mass flux on rain drop //in
+    const ColumnView xliq, // liquid rain water content [gm/m^3] // in
+    const ColumnView rain,
     const ColumnView xhen_i,      // henry's law constant
     const ConstColumnView tfld_i, // temperature [K]
     const ColumnView delz_i,      // layer depth about interfaces [cm]  // in
@@ -136,13 +134,14 @@ void gas_washout(
     Kokkos::parallel_for(Kokkos::TeamVectorRange(team, k, pver), [&](int kk) {
       if (rain(kk) != 0.0) { // finding rain cloud
         const Real xeqca =
-            xgas(k) / (xliq(kk) * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
+            xgas(k) /
+            (xliq(kk) * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
             xliq(kk) * avo2;
         //-----------------------------------------------------------------
         //       ... calculate ca; inside cloud concentration in  #/cm3(air)
         //-----------------------------------------------------------------
-        const Real xca =
-            geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq(kk) * cm3_2_m3;
+        const Real xca = geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) *
+                         xliq(kk) * cm3_2_m3;
 
         // -----------------------------------------------------------------
         //       ... if is not saturated (take hno3 as an example)
@@ -386,11 +385,11 @@ void sethet_detail(
   // race condition for xgas2.  Hence the Kokkos::single.
   // calculate gas washout by cloud
   gas_washout(team, ktop, pver, xkgm, xliq, rain, // in
-              xhen_h2o2, tfld, delz,    // in
-              xgas2);                   // inout
-  gas_washout(team, ktop, pver, xkgm, xliq , rain,// in
-              xhen_so2, tfld, delz,     // in
-              xgas3);                   // inout
+              xhen_h2o2, tfld, delz,              // in
+              xgas2);                             // inout
+  gas_washout(team, ktop, pver, xkgm, xliq, rain, // in
+              xhen_so2, tfld, delz,               // in
+              xgas3);                             // inout
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ktop, pver), [&](int kk) {
     // gas_washout is odd in that it modifies all of xgas2 and xgas3
     // from level kk to level pver so calling it in parallel is a
