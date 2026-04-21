@@ -106,11 +106,11 @@ void calcualte_collkernel_sub(Ensemble *ensemble) {
     skywalker::Real Re = input.get("Re");
     skywalker::Real Tdiff = input.get("Tdiff");
 
-    skywalker::Real K_total;
+    const skywalker::Real K_total =
 
-    mam4::hetfrz::calculate_collkernel_sub(
-        temperature, pressure, rho_air, r3lx, r_a, lambda, latvap, viscos_air,
-        Re, Ktherm_air, Ktherm, Pr, Tdiff, K_total);
+        mam4::hetfrz::calculate_collkernel_sub(
+            temperature, pressure, rho_air, r3lx, r_a, lambda, latvap,
+            viscos_air, Re, Ktherm_air, Ktherm, Pr, Tdiff);
 
     output.set("K_total", K_total);
   });

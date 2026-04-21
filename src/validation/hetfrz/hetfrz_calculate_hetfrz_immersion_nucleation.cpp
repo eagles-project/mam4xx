@@ -152,15 +152,23 @@ void calculate_hetfrz_immersion_nucleation(Ensemble *ensemble) {
     bool do_dst1_b = (do_dst1 != 0.0);
     bool do_dst3_b = (do_dst3 != 0.0);
 
-    Real frzbcimm;
-    Real frzduimm;
+    Real frzbcimm = 0;
+    Real frzduimm = 0;
 
-    mam4::hetfrz::calculate_hetfrz_immersion_nucleation(
-        deltat, temperature, uncoated_aer_num.data(),
-        total_interstitial_aer_num.data(), total_cloudborne_aer_num.data(),
-        sigma_iw, eswtr, vwice, dim_theta.data(), pdf_imm_theta.data(),
-        rgimm_bc, rgimm_dust_a1, rgimm_dust_a3, r_bc, r_dust_a1, r_dust_a3,
-        do_bc_b, do_dst1_b, do_dst3_b, frzbcimm, frzduimm);
+    if (do_bc_b)
+      frzbcimm += mam4::hetfrz::calculate_hetfrz_immersion_nucleation_bc(
+          deltat, temperature, total_cloudborne_aer_num.data(), sigma_iw, vwice,
+          rgimm_bc, r_bc);
+
+    if (do_dst1_b)
+      frzduimm += mam4::hetfrz::calculate_hetfrz_immersion_nucleation_dst1(
+          deltat, temperature, total_cloudborne_aer_num.data(), sigma_iw, vwice,
+          dim_theta.data(), pdf_imm_theta.data(), rgimm_dust_a1, r_dust_a1);
+
+    if (do_dst3_b)
+      frzduimm += mam4::hetfrz::calculate_hetfrz_immersion_nucleation_dst3(
+          deltat, temperature, total_cloudborne_aer_num.data(), sigma_iw, vwice,
+          dim_theta.data(), pdf_imm_theta.data(), rgimm_dust_a3, r_dust_a3);
 
     output.set("frzbcimm", frzbcimm);
     output.set("frzduimm", frzduimm);

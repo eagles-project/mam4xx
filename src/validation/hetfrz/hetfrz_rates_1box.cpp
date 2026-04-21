@@ -659,7 +659,10 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
     for (int k = 0; k < nlev; ++k) {
       host_column(k) = ast[k];
     }
-    Kokkos::deep_copy(diags.stratiform_cloud_fraction, host_column);
+    Kokkos::deep_copy(
+        ekat::subview(diags.hetfrz,
+                      mam4::Diagnostics::stratiform_cloud_fraction),
+        host_column);
 
     // Now need to unpack factnum and copy to device
     const int num_modes = mam4::AeroConfig::num_modes();
