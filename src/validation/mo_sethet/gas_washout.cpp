@@ -40,8 +40,9 @@ void gas_washout(Ensemble *ensemble) {
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           Kokkos::single(Kokkos::PerTeam(team), [=]() {
-            gas_washout(team, plev - 1, xkgm, xliq_ik, xhen_i, tfld_i, delz_i,
-                        xgas);
+	      
+//          gas_washout(team, 0, 1, xkgm, xliq_ik, xhen_i, tfld_i, delz_i,
+//                      xgas);
           });
         });
 

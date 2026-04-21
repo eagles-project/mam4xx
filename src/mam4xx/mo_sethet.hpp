@@ -105,9 +105,11 @@ void calc_precip_rescale(
 KOKKOS_INLINE_FUNCTION
 void gas_washout(
     const ThreadTeam &team,
-    const int plev,               // calculate from this level below //in
+    const int ktop,               
+    const int pver,              
     const Real xkgm,              // mass flux on rain drop //in
-    const Real xliq_ik,           // liquid rain water content [gm/m^3] // in
+    const ColumnView xliq,           // liquid rain water content [gm/m^3] // in
+    const ColumnView rain,           
     const ColumnView xhen_i,      // henry's law constant
     const ConstColumnView tfld_i, // temperature [K]
     const ColumnView delz_i,      // layer depth about interfaces [cm]  // in
@@ -126,32 +128,35 @@ void gas_washout(
   //       ... calculate the saturation concentration eqca
   // -----------------------------------------------------------------
   // total of ca between level plev and kk [#/cm3]
-  Real allca = 0.0;
+  Real allca[mam4::nlev] = {};
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver), [&](int kk) {
+    allca[kk] = 0; // pretend allca is a kokkos view.
+  });
+  for (int k = ktop; k < pver; k++) {
+    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, k, pver), [&](int kk) {
+      if (rain(kk) != 0.0) { // finding rain cloud
+        const Real xeqca =
+            xgas(k) / (xliq(kk) * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
+            xliq(kk) * avo2;
+        //-----------------------------------------------------------------
+        //       ... calculate ca; inside cloud concentration in  #/cm3(air)
+        //-----------------------------------------------------------------
+        const Real xca =
+            geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq(kk) * cm3_2_m3;
 
-  // This loop causes problems because plev is the only level this
-  // function should be changing but it changes values in other levels
-  // which prevents gas_washout from running in parallel over all the
-  // levels in a column.
-  for (int k = plev; k < pver; k++) {
-    const Real xeqca =
-        xgas(k) / (xliq_ik * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
-        xliq_ik * avo2;
-    //-----------------------------------------------------------------
-    //       ... calculate ca; inside cloud concentration in  #/cm3(air)
-    //-----------------------------------------------------------------
-    const Real xca =
-        geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) * xliq_ik * cm3_2_m3;
-
-    // -----------------------------------------------------------------
-    //       ... if is not saturated (take hno3 as an example)
-    //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
-    //           otherwise
-    //               hno3(gas)_new = hno3(gas)_old
-    // -----------------------------------------------------------------
-    allca += xca;
-    if (allca < xeqca) {
-      xgas(k) = mam4::max(xgas(k) - xca, 0.0);
-    }
+        // -----------------------------------------------------------------
+        //       ... if is not saturated (take hno3 as an example)
+        //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
+        //           otherwise
+        //               hno3(gas)_new = hno3(gas)_old
+        // -----------------------------------------------------------------
+        allca[kk] += xca;
+        if (allca[kk] < xeqca) {
+          xgas(k) = mam4::max(xgas(k) - xca, 0.0);
+        }
+      }
+    });
+    team.team_barrier();
   }
 } // end subroutine gas_washout
 
@@ -376,58 +381,59 @@ void sethet_detail(
     xgas3(kk) = xso2(kk);
   });
   team.team_barrier();
-  Kokkos::single(Kokkos::PerTeam(team), [=]() {
+  // gas_washout is odd in that it modifies all of xgas2 and xgas3
+  // from level kk to level pver so calling it in parallel is a
+  // race condition for xgas2.  Hence the Kokkos::single.
+  // calculate gas washout by cloud
+  gas_washout(team, ktop, pver, xkgm, xliq, rain, // in
+              xhen_h2o2, tfld, delz,    // in
+              xgas2);                   // inout
+  gas_washout(team, ktop, pver, xkgm, xliq , rain,// in
+              xhen_so2, tfld, delz,     // in
+              xgas3);                   // inout
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ktop, pver), [&](int kk) {
     // gas_washout is odd in that it modifies all of xgas2 and xgas3
     // from level kk to level pver so calling it in parallel is a
     // race condition for xgas2.  Hence the Kokkos::single.
-    for (int kk = ktop; kk < pver; ++kk) {
-      Real stay =
-          1.0; // fraction of layer traversed by falling drop in timestep delt
-      if (rain(kk) != 0.0) { // finding rain cloud
-        stay = ((zmid(kk) - zsurf) * km2cm) / (xum * delt);
-        stay = mam4::min(stay, 1.0);
-        // calculate gas washout by cloud
-        gas_washout(team, kk, xkgm, xliq(kk), // in
-                    xhen_h2o2, tfld, delz,    // in
-                    xgas2);                   // inout
-        gas_washout(team, kk, xkgm, xliq(kk), // in
-                    xhen_so2, tfld, delz,     // in
-                    xgas3);                   // inout
-      }
-      //-----------------------------------------------------------------
-      //       ... calculate the lifetime of washout (second)
-      //             after all layers washout
-      //             the concentration of hno3 is reduced
-      //             then the lifetime xtt is calculated by
-      //
-      //                  xtt = (xhno3(ini) - xgas1(new))/(dt*xhno3(ini))
-      //                  where dt = passing time (s) in vertical
-      //                             path below the cloud
-      //                        dt = dz(cm)/um(cm/s)
-      //-----------------------------------------------------------------
-      const Real xdtm = delz(kk) / xum; // the traveling time in each dz
-
-      const Real xxx2 = (xh2o2(kk) - xgas2(kk));
-      Real yh2o2 = 0;    // washout lifetime [s]
-      if (xxx2 != 0.0) { // if no washout lifetime = 1.e29
-        yh2o2 = xh2o2(kk) / xxx2 * xdtm;
-      } else {
-        yh2o2 = large_value_lifetime;
-      }
-      tmp_hetrates[1](kk) =
-          mam4::max(1.0 / yh2o2, 0.0) * stay; // FIXME: bad constant index
-
-      Real yso2 = 0;
-      const Real xxx3 =
-          (xso2(kk) - xgas3(kk)); // working variables for h2o2 (2) and so2 (3)
-      if (xxx3 != 0.0) {          // if no washout lifetime = 1.e29
-        yso2 = xso2(kk) / xxx3 * xdtm;
-      } else {
-        yso2 = large_value_lifetime;
-      }
-      tmp_hetrates[2](kk) =
-          mam4::max(1.0 / yso2, 0.0) * stay; // FIXME: bad constant index
+    Real stay =
+        1.0; // fraction of layer traversed by falling drop in timestep delt
+    if (rain(kk) != 0.0) { // finding rain cloud
+      stay = ((zmid(kk) - zsurf) * km2cm) / (xum * delt);
+      stay = mam4::min(stay, 1.0);
     }
+    //-----------------------------------------------------------------
+    //       ... calculate the lifetime of washout (second)
+    //             after all layers washout
+    //             the concentration of hno3 is reduced
+    //             then the lifetime xtt is calculated by
+    //
+    //                  xtt = (xhno3(ini) - xgas1(new))/(dt*xhno3(ini))
+    //                  where dt = passing time (s) in vertical
+    //                             path below the cloud
+    //                        dt = dz(cm)/um(cm/s)
+    //-----------------------------------------------------------------
+    const Real xdtm = delz(kk) / xum; // the traveling time in each dz
+
+    const Real xxx2 = (xh2o2(kk) - xgas2(kk));
+    Real yh2o2 = 0;    // washout lifetime [s]
+    if (xxx2 != 0.0) { // if no washout lifetime = 1.e29
+      yh2o2 = xh2o2(kk) / xxx2 * xdtm;
+    } else {
+      yh2o2 = large_value_lifetime;
+    }
+    tmp_hetrates[1](kk) =
+        mam4::max(1.0 / yh2o2, 0.0) * stay; // FIXME: bad constant index
+
+    Real yso2 = 0;
+    const Real xxx3 =
+        (xso2(kk) - xgas3(kk)); // working variables for h2o2 (2) and so2 (3)
+    if (xxx3 != 0.0) {          // if no washout lifetime = 1.e29
+      yso2 = xso2(kk) / xxx3 * xdtm;
+    } else {
+      yso2 = large_value_lifetime;
+    }
+    tmp_hetrates[2](kk) =
+        mam4::max(1.0 / yso2, 0.0) * stay; // FIXME: bad constant index
   });
   team.team_barrier();
   //-----------------------------------------------------------------
