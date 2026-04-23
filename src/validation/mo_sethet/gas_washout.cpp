@@ -105,20 +105,21 @@ void gas_washout(Ensemble *ensemble) {
     Kokkos::deep_copy(rain_i, 0.1);
 
     auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
-
+    const int ktop = 0;
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
-          // try the old implementation
-          // int ktop = 0, pver = 1;
-          Kokkos::single(Kokkos::PerTeam(team), [=]() {
-            old_gas_washout(team, plev, xkgm, xliq_i[0], xhen_i, tfld_i, delz_i,
-                            xgas_old);
-          });
-
-          // now the new one
-          gas_washout(team, plev, 1, xkgm, xliq_i, rain_i, xhen_i, tfld_i,
-                      delz_i, xgas_new);
-        });
+      Kokkos::single(Kokkos::PerTeam(team), [=]() {
+        for (int kk = ktop; kk < pver; ++kk) 
+          old_gas_washout(team, kk, xkgm, xliq_i[kk], xhen_i, tfld_i, delz_i,
+                          xgas_old);
+      });
+    });
+    // now the new one
+    Kokkos::parallel_for(
+        team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
+      gas_washout(team, ktop, pver, xkgm, xliq_i, rain_i, xhen_i, tfld_i, delz_i, 
+        xgas_new);
+    });
 
     Kokkos::deep_copy(xgas_host, xgas_old);
     std::vector<Real> xgas_old_out(pver);
@@ -134,7 +135,8 @@ void gas_washout(Ensemble *ensemble) {
     // compute an error norm
     Real l2 = 0.0;
     for (int k = 0; k < pver; k++) {
-      l2 += xgas_new_out[k] - xgas_old_out[k];
+      const  Real diff = xgas_new_out[k] - xgas_old_out[k];
+      l2 += diff * diff;
     }
     l2 = sqrt(l2);
     printf("xgas error (L2): %g\n", l2);
