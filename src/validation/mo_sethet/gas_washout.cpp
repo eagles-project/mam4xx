@@ -105,7 +105,7 @@ void gas_washout(Ensemble *ensemble) {
     Kokkos::deep_copy(rain_i, 0.1);
 
     auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
-    const int ktop = 0;
+    const int ktop = plev;
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
       Kokkos::single(Kokkos::PerTeam(team), [=]() {
