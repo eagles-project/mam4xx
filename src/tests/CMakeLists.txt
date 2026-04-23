@@ -74,8 +74,8 @@ EkatCreateUnitTest(aero_modes_unit_tests aero_modes_tests.cpp
 EkatCreateUnitTest(aero_config_unit_tests aero_config_unit_tests.cpp
   LIBS mam4xx_tests USER_DEFINED_TEST_SESSION)
 
-# FIXME: This test fails on single-precision builds.
 if (${MAM4XX_PRECISION} MATCHES double)
+  # this test is too sensitive for single precision
   EkatCreateUnitTest(mode_averages mode_averages_unit_tests.cpp
     LIBS mam4xx_tests USER_DEFINED_TEST_SESSION)
 endif()
