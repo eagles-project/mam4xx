@@ -131,30 +131,31 @@ void gas_washout(
     allca[kk] = 0; // pretend allca is a kokkos view.
   });
   for (int k = ktop; k < pver; k++) {
-    Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ktop, k+1), [&](int kk) {
-      if (rain(kk) != 0.0) { // finding rain cloud
-        const Real xeqca =
-            xgas(k) /
-            (xliq(kk) * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
-            xliq(kk) * avo2;
-        //-----------------------------------------------------------------
-        //       ... calculate ca; inside cloud concentration in  #/cm3(air)
-        //-----------------------------------------------------------------
-        const Real xca = geo_fac * xkgm * xgas(k) / (xrm * xum) * delz_i(k) *
-                         xliq(kk) * cm3_2_m3;
+    Kokkos::parallel_for(
+        Kokkos::TeamVectorRange(team, ktop, k + 1), [&](int kk) {
+          if (rain(kk) != 0.0) { // finding rain cloud
+            const Real xeqca =
+                xgas(k) /
+                (xliq(kk) * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
+                xliq(kk) * avo2;
+            //-----------------------------------------------------------------
+            //       ... calculate ca; inside cloud concentration in  #/cm3(air)
+            //-----------------------------------------------------------------
+            const Real xca = geo_fac * xkgm * xgas(k) / (xrm * xum) *
+                             delz_i(k) * xliq(kk) * cm3_2_m3;
 
-        // -----------------------------------------------------------------
-        //       ... if is not saturated (take hno3 as an example)
-        //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
-        //           otherwise
-        //               hno3(gas)_new = hno3(gas)_old
-        // -----------------------------------------------------------------
-        allca[kk] += xca;
-        if (allca[kk] < xeqca) {
-          xgas(k) = mam4::max(xgas(k) - xca, 0.0);
-        }
-      }
-    });
+            // -----------------------------------------------------------------
+            //       ... if is not saturated (take hno3 as an example)
+            //               hno3(gas)_new = hno3(gas)_old - hno3(h2o)
+            //           otherwise
+            //               hno3(gas)_new = hno3(gas)_old
+            // -----------------------------------------------------------------
+            allca[kk] += xca;
+            if (allca[kk] < xeqca) {
+              xgas(k) = mam4::max(xgas(k) - xca, 0.0);
+            }
+          }
+        });
     team.team_barrier();
   }
 } // end subroutine gas_washout
