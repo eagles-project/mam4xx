@@ -81,7 +81,8 @@ void gas_washout(Ensemble *ensemble) {
     const auto delz_i_in = input.get_array("delz_i");
     const auto xgas_in = input.get_array("xgas");
 
-    mam4::ColumnView xliq_i, xhen_i, tfld_i, delz_i, xgas_old, xgas_new;
+    mam4::ColumnView xliq_i, xhen_i, tfld_i, delz_i, xgas_old, xgas_new,
+        scratch;
     auto xliq_i_host = View1DHost((Real *)xliq_i_in.data(), pver);
     auto xhen_i_host = View1DHost((Real *)xhen_i_in.data(), pver);
     auto tfld_i_host = View1DHost((Real *)tfld_i_in.data(), pver);
@@ -93,6 +94,7 @@ void gas_washout(Ensemble *ensemble) {
     delz_i = mam4::testing::create_column_view(pver);
     xgas_old = mam4::testing::create_column_view(pver);
     xgas_new = mam4::testing::create_column_view(pver);
+    scratch = mam4::testing::create_column_view(pver);
     Kokkos::deep_copy(xliq_i, xliq_i_host);
     Kokkos::deep_copy(xhen_i, xhen_i_host);
     Kokkos::deep_copy(tfld_i, tfld_i_host);
@@ -117,7 +119,7 @@ void gas_washout(Ensemble *ensemble) {
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           gas_washout(team, plev, pver, xkgm, xliq_i, rain_i, xhen_i, tfld_i,
-                      delz_i, xgas_new);
+                      delz_i, xgas_new, scratch);
         });
 
     Kokkos::deep_copy(xgas_host, xgas_old);

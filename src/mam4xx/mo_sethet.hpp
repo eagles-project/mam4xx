@@ -5,6 +5,7 @@
 #include "gas_chem_mechanism.hpp"
 #include "mam4_constants.hpp"
 #include "mam4_math.hpp"
+#include <ekat_subview_utils.hpp>
 
 namespace mam4 {
 
@@ -111,7 +112,8 @@ void gas_washout(
     const ColumnView xhen_i,      // henry's law constant
     const ConstColumnView tfld_i, // temperature [K]
     const ColumnView delz_i,      // layer depth about interfaces [cm]  // in
-    const ColumnView xgas) {      // gas concentration // inout
+    const ColumnView xgas,        // gas concentration // inout
+    const ColumnView scratch) {
   //------------------------------------------------------------------------
   // calculate gas washout by cloud if not saturated
   //------------------------------------------------------------------------
@@ -126,10 +128,8 @@ void gas_washout(
   //       ... calculate the saturation concentration eqca
   // -----------------------------------------------------------------
   // total of ca between level plev and kk [#/cm3]
-  Real allca[mam4::nlev] = {};
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver), [&](int kk) {
-    allca[kk] = 0; // pretend allca is a kokkos view.
-  });
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver),
+                       [&](int kk) { scratch[kk] = 0; });
   for (int k = ktop; k < pver; k++) {
     Kokkos::parallel_for(
         Kokkos::TeamVectorRange(team, ktop, k + 1), [&](int kk) {
@@ -150,8 +150,8 @@ void gas_washout(
             //           otherwise
             //               hno3(gas)_new = hno3(gas)_old
             // -----------------------------------------------------------------
-            allca[kk] += xca;
-            if (allca[kk] < xeqca) {
+            scratch[kk] += xca;
+            if (scratch[kk] < xeqca) {
               xgas(k) = mam4::max(xgas(k) - xca, 0.0);
             }
           }
@@ -238,10 +238,9 @@ void sethet_detail(
     const ColumnView &xhen_h2o2, // henry law constants
     const ColumnView &xhen_hno3, // henry law constants
     const ColumnView &xhen_so2,  // henry law constants
-    const ColumnView tmp_hetrates[gas_pcnst], const int spc_h2o2_ndx,
-    const int spc_so2_ndx, const int h2o2_ndx, const int so2_ndx,
-    const int h2so4_ndx, const int gas_wetdep_cnt, const int wetdep_map[3],
-    const int indexm) {
+    const View2D tmp_hetrates, const int spc_h2o2_ndx, const int spc_so2_ndx,
+    const int h2o2_ndx, const int so2_ndx, const int h2so4_ndx,
+    const int gas_wetdep_cnt, const int wetdep_map[3], const int indexm) {
 
   const int pver = mam4::nlev;
   //-----------------------------------------------------------------------
@@ -301,7 +300,7 @@ void sethet_detail(
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver), [&](int kk) {
     for (int mm = 0; mm < gas_pcnst; ++mm) {
       het_rates(kk, mm) = 0.0;
-      tmp_hetrates[mm](kk) = 0.0; // initiate temporary array
+      tmp_hetrates(mm, kk) = 0.0; // initiate temporary array
     }
   });
   team.team_barrier();
@@ -385,12 +384,15 @@ void sethet_detail(
   // from level kk to level pver so calling it in parallel is a
   // race condition for xgas2.  Hence the Kokkos::single.
   // calculate gas washout by cloud
+  View1D scratch_space = ekat::subview(tmp_hetrates, 0);
   gas_washout(team, ktop, pver, xkgm, xliq, rain, // in
               xhen_h2o2, tfld, delz,              // in
-              xgas2);                             // inout
+              xgas2, scratch_space);              // inout
   gas_washout(team, ktop, pver, xkgm, xliq, rain, // in
               xhen_so2, tfld, delz,               // in
-              xgas3);                             // inout
+              xgas3, scratch_space);              // inout
+  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver),
+                       [&](int kk) { scratch_space(kk) = 0.0; });
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ktop, pver), [&](int kk) {
     // gas_washout is odd in that it modifies all of xgas2 and xgas3
     // from level kk to level pver so calling it in parallel is a
@@ -421,7 +423,7 @@ void sethet_detail(
     } else {
       yh2o2 = large_value_lifetime;
     }
-    tmp_hetrates[1](kk) =
+    tmp_hetrates(1, kk) =
         mam4::max(1.0 / yh2o2, 0.0) * stay; // FIXME: bad constant index
 
     Real yso2 = 0;
@@ -432,7 +434,7 @@ void sethet_detail(
     } else {
       yso2 = large_value_lifetime;
     }
-    tmp_hetrates[2](kk) =
+    tmp_hetrates(2, kk) =
         mam4::max(1.0 / yso2, 0.0) * stay; // FIXME: bad constant index
   });
   team.team_barrier();
@@ -456,7 +458,7 @@ void sethet_detail(
 
       if (h2o2_ndx >= 0) {
         calc_het_rates(satf_h2o2, rain(kk), xhen_h2o2(kk), // in
-                       tmp_hetrates[1](kk), work1, work2,  // in
+                       tmp_hetrates(1, kk), work1, work2,  // in
                        het_rates(kk, h2o2_ndx));           // out
       }
       // if ( prog_modal_aero .and.
@@ -464,13 +466,13 @@ void sethet_detail(
         het_rates(kk, so2_ndx) = het_rates(kk, h2o2_ndx);
       } else if (so2_ndx >= 0) {
         calc_het_rates(satf_so2, rain(kk), xhen_so2(kk),  // in
-                       tmp_hetrates[2](kk), work1, work2, // in
+                       tmp_hetrates(2, kk), work1, work2, // in
                        het_rates(kk, so2_ndx));           // out
       }
 
       if (h2so4_ndx >= 0) {
         calc_het_rates(satf_hno3, rain(kk), xhen_hno3(kk), // in
-                       tmp_hetrates[0](kk), work1, work2,  // in
+                       tmp_hetrates(0, kk), work1, work2,  // in
                        het_rates(kk, h2so4_ndx));          // out
       }
     }
@@ -540,12 +542,8 @@ void sethet(
   work_ptr += nlev;
   const auto xhen_so2 = View1D(work_ptr, nlev);
   work_ptr += nlev;
-
-  ColumnView tmp_hetrates[gas_pcnst];
-  for (int i = 0; i < gas_pcnst; ++i) {
-    tmp_hetrates[i] = ColumnView(work_ptr, nlev);
-    work_ptr += nlev;
-  }
+  View2D tmp_hetrates = View2D(work_ptr, gas_pcnst, nlev);
+  work_ptr += gas_pcnst * nlev;
 
   // BAD CONSTANT
   // FIXME: should we move these indices and map to a config file?

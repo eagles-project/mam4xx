@@ -96,16 +96,13 @@ void sethet(Ensemble *ensemble) {
     xk0_so2 = mam4::testing::create_column_view(pver);
     so2_diss = mam4::testing::create_column_view(pver);
 
-    ColumnView tmp_hetrates[gas_pcnst];
     View2DHost qin_host("qin_host", pver, gas_pcnst);
 
     View2D het_rates("het_rates", pver, gas_pcnst);
     View2D qin("qin", pver, gas_pcnst);
     auto het_rates_host = Kokkos::create_mirror_view(het_rates);
 
-    for (int mm = 0; mm < gas_pcnst; ++mm) {
-      tmp_hetrates[mm] = mam4::testing::create_column_view(pver);
-    }
+    View2D tmp_hetrates(" tmp_hetrates", gas_pcnst, pver);
 
     int count = 0;
     for (int mm = 0; mm < gas_pcnst; ++mm) {
@@ -116,9 +113,7 @@ void sethet(Ensemble *ensemble) {
     }
 
     // transfer data to GPU.
-    for (int mm = 0; mm < gas_pcnst; ++mm) {
-      Kokkos::deep_copy(tmp_hetrates[mm], 0.0);
-    }
+    Kokkos::deep_copy(tmp_hetrates, 0.0);
     Kokkos::deep_copy(qin, qin_host);
 
     auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
