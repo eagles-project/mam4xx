@@ -3,7 +3,7 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include <mam4xx/mo_chm_diags.hpp>
+#include <mo_chm_diags.hpp>
 #include <validation.hpp>
 
 #include <iostream>
