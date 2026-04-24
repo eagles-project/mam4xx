@@ -381,9 +381,7 @@ void sethet_detail(
   });
   team.team_barrier();
   // gas_washout is odd in that it modifies all of xgas2 and xgas3
-  // from level kk to level pver so calling it in parallel is a
-  // race condition for xgas2.  Hence the Kokkos::single.
-  // calculate gas washout by cloud
+  // from level kk to level pver to calculate gas washout by cloud
   View1D scratch_space = ekat::subview(tmp_hetrates, 0);
   gas_washout(team, ktop, pver, xkgm, xliq, rain, // in
               xhen_h2o2, tfld, delz,              // in
@@ -394,9 +392,6 @@ void sethet_detail(
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, local_pver),
                        [&](int kk) { scratch_space(kk) = 0.0; });
   Kokkos::parallel_for(Kokkos::TeamVectorRange(team, ktop, pver), [&](int kk) {
-    // gas_washout is odd in that it modifies all of xgas2 and xgas3
-    // from level kk to level pver so calling it in parallel is a
-    // race condition for xgas2.  Hence the Kokkos::single.
     Real stay =
         1.0; // fraction of layer traversed by falling drop in timestep delt
     if (rain(kk) != 0.0) { // finding rain cloud
