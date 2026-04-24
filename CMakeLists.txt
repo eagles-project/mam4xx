@@ -163,7 +163,7 @@ if (MAM4XX_ENABLE_SKYWALKER)
   FetchContent_Declare(
     mam_x_validation
     GIT_REPOSITORY https://github.com/eagles-project/mam_x_validation.git
-    GIT_TAG        5f471bbaf5245c77d4c892d3d0c444ec9dd93c34  # 2026/03/04
+    GIT_TAG        8abea036f30f1d4c3005b205169bd2d4c0a701c3 # 2026/04/23
   )
   list(APPEND mam4xx_tpls mam_x_validation)
 endif()
