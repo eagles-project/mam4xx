@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include <mam4xx/mam4.hpp>
+#include <mo_chm_diags.hpp>
 #include <validation.hpp>
 
 using namespace skywalker;

@@ -1,10 +1,10 @@
 #ifndef MAM4XX_MO_CHM_DIAGS_HPP
 #define MAM4XX_MO_CHM_DIAGS_HPP
 
-#include "gas_chem_mechanism.hpp"
-#include "mam4_constants.hpp"
-#include "mam4_math.hpp"
-#include "mam4_types.hpp"
+#include "mam4xx/gas_chem_mechanism.hpp"
+#include "mam4xx/mam4_constants.hpp"
+#include "mam4xx/mam4_math.hpp"
+#include "mam4xx/mam4_types.hpp"
 
 namespace mam4 {
 
