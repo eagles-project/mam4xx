@@ -143,7 +143,8 @@ KOKKOS_INLINE_FUNCTION Real fcvt_gas(const int gas_id) {
   // BAD CONSTANTS
   constexpr Real mwuse_soa = 150;
   // molecular weight of the gas
-  Real mw_gas = gas_chemistry::adv_mass[lmap_gas(gas_id)];
+  constexpr auto adv_mass = gas_chemistry::adv_mass;
+  Real mw_gas = adv_mass[lmap_gas(gas_id)];
   // denominator
   Real denom = mw_gas;
   // special case for soa
