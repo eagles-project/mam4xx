@@ -2,11 +2,11 @@
 
 # This script builds mam4xx in standalone mode. Run it like this:
 #
-# `./build.sh <build-dir> <device> <precision> <build_type> [gpu_type] [gpu_arch]
+# `./build.sh <build_dir> <device> <precision> <build_type> [gpu_type] [gpu_arch]`
 #
 # where
-# * <build-dir> is the build directory prefix (e.g. `build`) in which you
-#   would like mam4xx configured and built
+# * <build_dir> is the build directory (e.g. `build`) in which you would like
+#   mam4xx configured and built
 # * <device> (either `cpu` or `gpu`), identifies the device type for which mam4xx
 #   is built.
 # * <precision> (either `single` or `double`) determines the precision of
@@ -35,7 +35,7 @@ fi
 
 if [[ "$BUILD_DIR" == "" ]]; then
   echo "mam4xx build directory was not specified!"
-  echo "Usage: $0 <prefix> <device> <precision> <build_type> [gpu_type] [gpu_arch]"
+  echo "Usage: $0 <build_dir> <device> <precision> <build_type> [gpu_type] [gpu_arch]"
   exit
 fi
 
