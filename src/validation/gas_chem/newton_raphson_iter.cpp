@@ -35,7 +35,7 @@ void newton_raphson_iter(Ensemble *ensemble) {
     newton_raphson_iter(dti, lin_jac.data(), lrxt.data(),
                         lhet.data(),           // & ! in
                         iter_invariant.data(), //              & ! in
-                        factor, permute_4, clsmap_4, lsol,
+                        factor, lsol,
                         solution.data(),        //              & ! inout
                         converged, convergence, //         & ! out
                         prod.data(), loss.data(), max_delta.data(),

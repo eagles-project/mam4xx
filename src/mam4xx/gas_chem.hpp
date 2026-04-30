@@ -74,8 +74,7 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
     const Real dti, const Real lin_jac[nzcnt], const Real lrxt[rxntot],
     const Real lhet[gas_pcnst],         // in
     const Real iter_invariant[clscnt4], // in
-    const bool factor[itermax], const int permute_4[gas_pcnst],
-    const int clsmap_4[gas_pcnst], VectorType &lsol,
+    const bool factor[itermax], VectorType &lsol,
     Real solution[clscnt4],                     // inout
     bool converged[clscnt4], bool &convergence, // out
     Real prod[clscnt4], Real loss[clscnt4], Real max_delta[clscnt4],
@@ -160,7 +159,7 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
     // same deal below
     if (nr_iter > 0) {
       for (int kk = 0; kk < clscnt4; ++kk) {
-        int mm = permute_4[kk];
+        int mm = gas_chemistry::permute_4[kk];
         // BAD CONSTANT
         if (mam4::abs(solution[mm]) > 1.0e-20) {
           max_delta[kk] = mam4::abs(forcing[mm] / solution[mm]);
@@ -186,8 +185,8 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
     // -----------------------------------------------------------------------
 
     for (int kk = 0; kk < clscnt4; ++kk) {
-      int jj = clsmap_4[kk];
-      int mm = permute_4[kk];
+      int jj = gas_chemistry::clsmap_4[kk];
+      int mm = gas_chemistry::permute_4[kk];
       lsol[jj] = solution[mm];
     } // end kk
 
@@ -200,7 +199,7 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
       for (int kk = 0; kk < clscnt4; ++kk) {
         converged[kk] = true;
 
-        int mm = permute_4[kk];
+        int mm = gas_chemistry::permute_4[kk];
         // TODO: is there a computational reason this needs to happen?
         // I suspect not, given that epsilon is hard-coded to 1e-3, meaning that
         // all of this logic surrounding 'converged[kk] = ...' is unnecessary
@@ -232,10 +231,8 @@ template <typename VectorType>
 KOKKOS_INLINE_FUNCTION void
 imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
         const Real reaction_rates[rxntot], const Real het_rates[gas_pcnst],
-        const Real extfrc[extcnt], const Real &delt,
-        const int permute_4[gas_pcnst], const int clsmap_4[gas_pcnst],
-        const bool factor[itermax], Real epsilon[clscnt4],
-        Real prod_out[clscnt4], Real loss_out[clscnt4]) {
+        const Real extfrc[extcnt], const Real &delt, const bool factor[itermax],
+        Real epsilon[clscnt4], Real prod_out[clscnt4], Real loss_out[clscnt4]) {
 
   // ---------------------------------------------------------------------------
   //  ... imp_sol advances the volumetric mixing ratio
@@ -299,8 +296,8 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
     // -----------------------------------------------------------------------
 
     for (int kk = 0; kk < clscnt4; ++kk) {
-      int jj = clsmap_4[kk];
-      int mm = permute_4[kk];
+      int jj = gas_chemistry::clsmap_4[kk];
+      int mm = gas_chemistry::permute_4[kk];
       solution[mm] = lsol[jj];
     } // kk
 
@@ -330,7 +327,7 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
 
     newton_raphson_iter(dti, lin_jac, reaction_rates, het_rates, // in
                         iter_invariant,                          // in
-                        factor, permute_4, clsmap_4, lsol,
+                        factor, lsol,
                         solution,                        // inout
                         converged, convergence,          // out
                         prod, loss, max_delta, epsilon); // out
@@ -410,8 +407,8 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
   //-----------------------------------------------------------------------
 
   for (int kk = 0; kk < clscnt4; ++kk) {
-    const int jj = clsmap_4[kk];
-    const int mm = permute_4[kk];
+    const int jj = gas_chemistry::clsmap_4[kk];
+    const int mm = gas_chemistry::permute_4[kk];
     //  ... Transfer latest solution back to base array
     base_sol[jj] = solution[mm];
     //  ... Prod/Loss history buffers...
