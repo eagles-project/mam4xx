@@ -69,20 +69,12 @@ void het_diags(Ensemble *ensemble) {
     Kokkos::deep_copy(sox_wk, sox_wk_host);
 
     const Real sox_species[3] = {4, -1, 3};
-    const Real adv_mass[gas_pcnst] = {
-        47.998200,     34.013600,  98.078400,     64.064800, 62.132400,
-        12.011000,     115.107340, 12.011000,     12.011000, 12.011000,
-        135.064039,    58.442468,  250092.672000, 1.007400,  115.107340,
-        12.011000,     58.442468,  250092.672000, 1.007400,  135.064039,
-        58.442468,     115.107340, 12.011000,     12.011000, 12.011000,
-        250092.672000, 1.007400,   12.011000,     12.011000, 250092.672000,
-        1.007400};
 
     auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           mam4::mo_chm_diags::het_diags(team, het_rates, mmr, pdel, wght,
-                                        wrk_wd, sox_wk, adv_mass, sox_species);
+                                        wrk_wd, sox_wk, sox_species);
         });
 
     std::vector<Real> wrk_wd_mm(gas_pcnst);

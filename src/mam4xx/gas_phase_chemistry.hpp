@@ -41,10 +41,13 @@ KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
     // in
     const Real temp, const Real dt,
     const Real photo_rates[mam4::mo_photo::phtcnt], const Real extfrc[extcnt],
-    const Real invariants[nfs], const int (&clsmap_4)[gas_pcnst],
-    const int (&permute_4)[gas_pcnst], const Real het_rates[gas_pcnst],
+    const Real invariants[nfs], const Real het_rates[gas_pcnst],
     // out
     VectorType &qq) {
+
+  constexpr auto clsmap_4 = gas_chemistry::clsmap_4;
+  constexpr auto permute_4 = gas_chemistry::permute_4;
+
   //=====================================================================
   // ... set rates for "tabular" and user specified reactions
   //=====================================================================
