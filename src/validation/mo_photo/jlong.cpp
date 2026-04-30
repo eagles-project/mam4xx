@@ -133,7 +133,7 @@ void jlong(Ensemble *ensemble) {
     View2D psum_l("psum_l", pver, nw);
     View2D psum_u("psum_u", pver, nw);
 
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           jlong(team, sza_in, alb_in, p_in, t_in, colo3_in, xsqy, sza, del_sza,

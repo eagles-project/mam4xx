@@ -66,7 +66,7 @@ void compute_qsub_from_gcm_and_qsub_of_other_subarea(Ensemble *ensemble) {
     Kokkos::deep_copy(qsub_a_d, qsub_a_h);
     Kokkos::deep_copy(qsub_b_d, qsub_b_h);
 
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           Real qsub_a_in[gas_pcnst][subarea_max];

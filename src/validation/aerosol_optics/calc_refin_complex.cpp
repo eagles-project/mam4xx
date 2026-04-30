@@ -79,7 +79,7 @@ void calc_refin_complex(Ensemble *ensemble) {
     Kokkos::deep_copy(crefwsw, crefwsw_host);
 
     View1D outputs("outputs", 5);
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           Real refr = zero;

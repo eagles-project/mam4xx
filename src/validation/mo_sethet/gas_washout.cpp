@@ -106,7 +106,7 @@ void gas_washout(Ensemble *ensemble) {
     auto rain_i = mam4::testing::create_column_view(pver);
     Kokkos::deep_copy(rain_i, 0.1);
 
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           Kokkos::single(Kokkos::PerTeam(team), [=]() {

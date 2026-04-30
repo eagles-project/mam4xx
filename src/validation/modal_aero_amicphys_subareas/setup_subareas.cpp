@@ -62,7 +62,7 @@ void setup_subareas(Ensemble *ensemble) {
     Kokkos::deep_copy(fcldy_h, 0.0);
     Kokkos::deep_copy(fcldy_d, 0.0);
 
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           int nsubarea = 0;

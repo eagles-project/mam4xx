@@ -84,7 +84,7 @@ void set_subarea_gases_and_aerosols(Ensemble *ensemble) {
     Kokkos::deep_copy(qqcwsub3_h, 0.0);
     Kokkos::deep_copy(qqcwsub3_d, 0.0);
 
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           Real qsub1[gas_pcnst][subarea_max] = {{0.0}};

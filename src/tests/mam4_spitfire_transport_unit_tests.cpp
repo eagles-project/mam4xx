@@ -10,6 +10,12 @@
 
 using mam4::Real;
 
+#ifdef MAM4XX_ENABLE_GPU
+constexpr int team_size = mam4::nlev;
+#else
+constexpr int team_size = 1;
+#endif
+
 TEST_CASE("minmod", "mam4_spitfire_transport") {
   Real aa = 1.0;
   Real bb = 2.0;
@@ -32,7 +38,7 @@ TEST_CASE("median", "mam4_spitfire_transport") {
 
 TEST_CASE("get_flux", "mam4_spitfire_transport") {
 
-  auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+  auto team_policy = mam4::ThreadTeamPolicy(1u, team_size);
 
   const Real deltat = 10.0;
   mam4::ColumnView xw = mam4::testing::create_column_view(mam4::nlev);

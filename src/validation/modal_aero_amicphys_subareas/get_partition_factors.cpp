@@ -40,7 +40,7 @@ void get_partition_factors(Ensemble *ensemble) {
     Kokkos::deep_copy(factor_cldy_h, 0.0);
     Kokkos::deep_copy(factor_cldy_d, 0.0);
 
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           Real factor_clea_in = 0.0;

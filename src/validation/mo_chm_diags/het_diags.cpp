@@ -78,7 +78,7 @@ void het_diags(Ensemble *ensemble) {
         250092.672000, 1.007400,   12.011000,     12.011000, 250092.672000,
         1.007400};
 
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           mam4::mo_chm_diags::het_diags(team, het_rates, mmr, pdel, wght,

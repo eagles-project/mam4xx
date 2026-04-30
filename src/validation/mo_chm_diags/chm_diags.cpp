@@ -269,7 +269,7 @@ void chm_diags(Ensemble *ensemble) {
     auto df_sox = mam4::testing::create_column_view(1);
     auto df_nhx = mam4::testing::create_column_view(1);
 
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           mam4::mo_chm_diags::chm_diags(

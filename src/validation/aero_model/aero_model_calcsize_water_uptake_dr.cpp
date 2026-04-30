@@ -71,7 +71,7 @@ void aero_model_calcsize_water_uptake_dr(Ensemble *ensemble) {
     const bool update_mmr = true;
     cal_data.set_update_mmr(update_mmr);
 
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           // FIXME: top_lev is set to 1 in calcsize ?

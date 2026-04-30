@@ -324,7 +324,7 @@ void aero_rad_props_sw(Ensemble *ensemble) {
     mam4::modal_aero_opt::CalcsizeData cal_data;
     cal_data.initialize();
 
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           static constexpr int nlev_loc = mam4::nlev;

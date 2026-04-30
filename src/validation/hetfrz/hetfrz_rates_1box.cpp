@@ -676,7 +676,7 @@ void hetfrz_rates_1box(Ensemble *ensemble) {
 
     mam4::AeroConfig mam4_config;
     mam4::HetfrzProcess process(mam4_config);
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Real t = 0.0;
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
