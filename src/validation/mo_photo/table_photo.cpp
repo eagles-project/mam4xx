@@ -151,7 +151,7 @@ void table_photo(Ensemble *ensemble) {
 
     View2D work_cloud_mod("work_cloud_mod", ncol, 5 * pver);
 
-    auto team_policy = mam4::ThreadTeamPolicy(ncol, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(ncol, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           const int i = team.league_rank();

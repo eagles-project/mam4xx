@@ -51,7 +51,7 @@ void drydep_xactive(const mam4::seq_drydep::Data &data, Ensemble *ensemble) {
     View1D dvel_d("dvel", gas_pcnst);
     View1D dflx_d("dflx", gas_pcnst);
 
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO());
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           int index_season[n_land_type] = {};

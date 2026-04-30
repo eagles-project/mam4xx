@@ -56,7 +56,7 @@ void binterp(Ensemble *ensemble) {
     View1D coef("coef", ncoef);
     View1D tab("tab", 4);
 
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           int itab = 0;

@@ -22,6 +22,13 @@ Prognostics create_prognostics(int num_levels);
 Diagnostics create_diagnostics(int num_levels);
 Tendencies create_tendencies(int num_levels);
 
+// use this team size for parallel dispatches in validation tests
+#ifdef MAM4XX_ENABLE_GPU
+constexpr int team_size = mam4::nlev;
+#else
+constexpr int team_size = 1;
+#endif
+
 } // namespace testing
 
 namespace validation {

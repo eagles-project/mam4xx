@@ -33,7 +33,7 @@ void calc_volc_ext(Ensemble *ensemble) {
 
     View1D tropopause_m("tropopause_m", 1);
 
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           calc_volc_ext(trop_level, state_zm, ext_cmip6_sw, extinct,

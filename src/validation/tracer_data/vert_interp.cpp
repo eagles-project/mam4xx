@@ -31,7 +31,7 @@ void vert_interp(Ensemble *ensemble) {
     mam4::validation::convert_1d_vector_to_2d_view_device(pmid_db, pmid);
     mam4::validation::convert_1d_vector_to_2d_view_device(datain_db, datain);
 
-    auto team_policy = mam4::ThreadTeamPolicy(ncol, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(ncol, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           // Perform the vertical interpolation

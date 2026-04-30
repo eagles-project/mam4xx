@@ -81,7 +81,7 @@ void modal_aero_bcscavcoef_get(Ensemble *ensemble) {
 
     const Real dgnum_amode_imode = dgnum_amode[imode];
 
-    mam4::ThreadTeamPolicy team_policy(ncol, Kokkos::AUTO);
+    mam4::ThreadTeamPolicy team_policy(ncol, mam4::testing::team_size);
 
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {

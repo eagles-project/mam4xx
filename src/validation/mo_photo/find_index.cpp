@@ -25,7 +25,7 @@ void find_index(Ensemble *ensemble) {
     Kokkos::deep_copy(var_in, var_in_host);
 
     ViewInt1D idx_out("idx_out", 1);
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           find_index(var_in, var_len,

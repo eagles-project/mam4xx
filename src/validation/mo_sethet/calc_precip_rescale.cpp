@@ -36,7 +36,7 @@ void calc_precip_rescale(Ensemble *ensemble) {
     Kokkos::deep_copy(precip, precip_host);
     // std::vector<Real> precip(pver, zero);
     mam4::DeviceType::view_1d<Real> trp_out_val("Return from Device", 1);
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           calc_precip_rescale(team, cmfdqr, nrain, nevapr, precip);

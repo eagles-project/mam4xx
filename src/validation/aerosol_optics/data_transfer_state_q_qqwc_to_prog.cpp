@@ -101,7 +101,7 @@ void data_transfer_state_q_qqwc_to_prog(Ensemble *ensemble) {
     Kokkos::deep_copy(state_q_output_non, state_non);
 
     mam4::Prognostics progs = mam4::validation::create_prognostics(mam4::nlev);
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           // 1. We inject values of state_q in prog.

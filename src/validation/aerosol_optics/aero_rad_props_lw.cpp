@@ -228,7 +228,7 @@ void aero_rad_props_lw(Ensemble *ensemble) {
       } // d3
 
     View2D odap_aer("odap_aer", nlwbands, pver);
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
 
     auto vapor_mixing_ratio = create_column_view(mam4::nlev);
     auto liquid_mixing_ratio = create_column_view(mam4::nlev); //

@@ -104,7 +104,7 @@ void interpolate_rsf(Ensemble *ensemble) {
     View2D psum_u("psum_u", pver, nw);
 
     View2D rsf("rsf", nw, pver);
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           interpolate_rsf(team, alb_in, sza_in, p_in, colo3_in,

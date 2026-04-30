@@ -34,7 +34,7 @@ void rebin(Ensemble *ensemble) {
 
     View1D trg("trg", ntrg);
 
-    auto team_policy = mam4::ThreadTeamPolicy(1, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           // Call rebin function

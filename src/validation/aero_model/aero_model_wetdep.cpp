@@ -168,7 +168,7 @@ void aero_model_wetdep(Ensemble *ensemble) {
     const bool update_mmr = true;
     cal_data.set_update_mmr(update_mmr);
 
-    auto team_policy = mam4::ThreadTeamPolicy(1u, Kokkos::AUTO);
+    auto team_policy = mam4::ThreadTeamPolicy(1u, mam4::testing::team_size);
     Kokkos::parallel_for(
         team_policy, KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           auto progs_in = progs;

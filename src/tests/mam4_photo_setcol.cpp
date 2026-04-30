@@ -23,6 +23,12 @@ template <> struct PrecisionTolerance<double> {
 
 using mam4::Real;
 
+#ifdef MAM4XX_ENABLE_GPU
+constexpr int team_size = mam4::nlev;
+#else
+constexpr int team_size = 1;
+#endif
+
 // Test compute_o3_column_density: serial reference vs parallel implementation
 TEST_CASE("compute_o3_column_density", "mo_photo") {
 
@@ -89,7 +95,7 @@ TEST_CASE("compute_o3_column_density", "mo_photo") {
   View1D o3_col_dens("o3_col_dens", pver);
   Kokkos::deep_copy(mmr_o3, mmr_o3_host);
 
-  auto team_policy = mam4::ThreadTeamPolicy(1, Kokkos::AUTO);
+  auto team_policy = mam4::ThreadTeamPolicy(1, team_size);
   Kokkos::parallel_for(
       "compute_o3_column", team_policy,
       KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
@@ -446,7 +452,7 @@ TEST_CASE("interpolate_rsf", "mo_photo") {
     View2D psum_u_d("psum_u", pver, test_nw);
 
     Kokkos::parallel_for(
-        "interpolate_rsf_par", mam4::ThreadTeamPolicy(1, Kokkos::AUTO),
+        "interpolate_rsf_par", mam4::ThreadTeamPolicy(1, pver),
         KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           mam4::mo_photo::interpolate_rsf(
               team, alb_in_d, test_sza_in, p_in_d, colo3_in_d, pver, sza_d,
@@ -704,7 +710,7 @@ TEST_CASE("jlong", "mo_photo") {
     const auto temper = atm.temperature;
 
     Kokkos::parallel_for(
-        "jlong_par", mam4::ThreadTeamPolicy(1, Kokkos::AUTO),
+        "jlong_par", mam4::ThreadTeamPolicy(1, pver),
         KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           mam4::mo_photo::jlong(
               team, test_sza_in, alb_in_d, p_in_d, temper, colo3_in_d, xsqy_d,
