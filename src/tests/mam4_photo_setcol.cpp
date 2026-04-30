@@ -452,7 +452,7 @@ TEST_CASE("interpolate_rsf", "mo_photo") {
     View2D psum_u_d("psum_u", pver, test_nw);
 
     Kokkos::parallel_for(
-        "interpolate_rsf_par", mam4::ThreadTeamPolicy(1, pver),
+        "interpolate_rsf_par", mam4::ThreadTeamPolicy(1, team_size),
         KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           mam4::mo_photo::interpolate_rsf(
               team, alb_in_d, test_sza_in, p_in_d, colo3_in_d, pver, sza_d,
@@ -710,7 +710,7 @@ TEST_CASE("jlong", "mo_photo") {
     const auto temper = atm.temperature;
 
     Kokkos::parallel_for(
-        "jlong_par", mam4::ThreadTeamPolicy(1, pver),
+        "jlong_par", mam4::ThreadTeamPolicy(1, team_size),
         KOKKOS_LAMBDA(const mam4::ThreadTeam &team) {
           mam4::mo_photo::jlong(
               team, test_sza_in, alb_in_d, p_in_d, temper, colo3_in_d, xsqy_d,
