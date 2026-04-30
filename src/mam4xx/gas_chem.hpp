@@ -81,6 +81,8 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
     // work array
     Real epsilon[clscnt4]) {
 
+  constexpr auto clsmap_4 = gas_chemistry::clsmap_4;
+  constexpr auto permute_4 = gas_chemistry::permute_4;
   // dti := 1 / dt
   // lrxt := reaction rates in 1D array [1/cm^3/s]
   // lhet := washout rates [1/s]
@@ -159,7 +161,7 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
     // same deal below
     if (nr_iter > 0) {
       for (int kk = 0; kk < clscnt4; ++kk) {
-        int mm = gas_chemistry::permute_4[kk];
+        int mm = permute_4[kk];
         // BAD CONSTANT
         if (mam4::abs(solution[mm]) > 1.0e-20) {
           max_delta[kk] = mam4::abs(forcing[mm] / solution[mm]);
@@ -185,8 +187,8 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
     // -----------------------------------------------------------------------
 
     for (int kk = 0; kk < clscnt4; ++kk) {
-      int jj = gas_chemistry::clsmap_4[kk];
-      int mm = gas_chemistry::permute_4[kk];
+      int jj = clsmap_4[kk];
+      int mm = permute_4[kk];
       lsol[jj] = solution[mm];
     } // end kk
 
@@ -199,7 +201,7 @@ KOKKOS_INLINE_FUNCTION void newton_raphson_iter(
       for (int kk = 0; kk < clscnt4; ++kk) {
         converged[kk] = true;
 
-        int mm = gas_chemistry::permute_4[kk];
+        int mm = permute_4[kk];
         // TODO: is there a computational reason this needs to happen?
         // I suspect not, given that epsilon is hard-coded to 1e-3, meaning that
         // all of this logic surrounding 'converged[kk] = ...' is unnecessary
@@ -233,6 +235,9 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
         const Real reaction_rates[rxntot], const Real het_rates[gas_pcnst],
         const Real extfrc[extcnt], const Real &delt, const bool factor[itermax],
         Real epsilon[clscnt4], Real prod_out[clscnt4], Real loss_out[clscnt4]) {
+
+  constexpr auto clsmap_4 = gas_chemistry::clsmap_4;
+  constexpr auto permute_4 = gas_chemistry::permute_4;
 
   // ---------------------------------------------------------------------------
   //  ... imp_sol advances the volumetric mixing ratio
@@ -296,8 +301,8 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
     // -----------------------------------------------------------------------
 
     for (int kk = 0; kk < clscnt4; ++kk) {
-      int jj = gas_chemistry::clsmap_4[kk];
-      int mm = gas_chemistry::permute_4[kk];
+      int jj = clsmap_4[kk];
+      int mm = permute_4[kk];
       solution[mm] = lsol[jj];
     } // kk
 
@@ -407,8 +412,8 @@ imp_sol(VectorType &base_sol, // inout - species mixing ratios [vmr]
   //-----------------------------------------------------------------------
 
   for (int kk = 0; kk < clscnt4; ++kk) {
-    const int jj = gas_chemistry::clsmap_4[kk];
-    const int mm = gas_chemistry::permute_4[kk];
+    const int jj = clsmap_4[kk];
+    const int mm = permute_4[kk];
     //  ... Transfer latest solution back to base array
     base_sol[jj] = solution[mm];
     //  ... Prod/Loss history buffers...
