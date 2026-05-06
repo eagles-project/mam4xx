@@ -115,7 +115,7 @@ if (MAM4XX_STANDALONE)
   # the tags in 
   #      .github/workflows/at2_gcc-cuda.yml 
   # and 
-  #      .github/workflows/at2_gcc-cuda.yml
+  #      .github/workflows/gh_gcc-cpu.yml
   # files for the actions/checkout@v4 ref: option. 
   FetchContent_Declare(
     EKAT
