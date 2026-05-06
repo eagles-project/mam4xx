@@ -111,7 +111,7 @@ if (MAM4XX_STANDALONE)
   FetchContent_Declare(
     EKAT
     GIT_REPOSITORY https://github.com/E3SM-Project/EKAT.git
-    GIT_TAG        007bdcff6cb26948517d2d26f3d7ca005363d119 # 2026/04/13
+    GIT_TAG        759e5900a4efcbb557de40e462526f918a4b0b6c # 2026/04/13
   )
   list(APPEND mam4xx_tpls EKAT)
 
