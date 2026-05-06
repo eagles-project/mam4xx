@@ -108,6 +108,15 @@ if (MAM4XX_STANDALONE)
     set(ekat_SOURCE_DIR $ENV{EKAT_SOURCE_DIR})
     message(STATUS "Building EKAT from source at $ENV{EKAT_SOURCE_DIR}")
   endif()
+
+  # Fetch a specific SHA for ekat so we can update manually when needed and not
+  # every time ekat updates the master branch.  
+  # NOTE: This same tag is used in the github workflow actions and should match
+  # the tags in 
+  #      .github/workflows/at2_gcc-cuda.yml 
+  # and 
+  #      .github/workflows/gh_gcc-cpu.yml
+  # files for the actions/checkout@v4 ref: option. 
   FetchContent_Declare(
     EKAT
     GIT_REPOSITORY https://github.com/E3SM-Project/EKAT.git
