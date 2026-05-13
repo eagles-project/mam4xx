@@ -128,21 +128,24 @@ void gas_washout(
   //       ... calculate the saturation concentration eqca
   // -----------------------------------------------------------------
   // total of ca between level plev and kk [#/cm3]
-  Kokkos::parallel_for(Kokkos::TeamVectorRange(team, pver),
-                       [&](int kk) { scratch[kk] = 0; });
-  for (int k = ktop; k < pver; k++) {
-    Kokkos::parallel_for(
-        Kokkos::TeamVectorRange(team, ktop, k + 1), [&](int kk) {
-          if (rain(kk) != 0.0) { // finding rain cloud
+  for (int kk = ktop; kk < pver; ++kk) {
+    if (rain(kk) != 0.0) { // finding rain cloud
+      Kokkos::parallel_scan(
+          Kokkos::TeamThreadRange(team, kk, pver),
+          [&](const int k, Real &accumulator, const bool last) {
+            const Real xca = geo_fac * xkgm * xgas(k) / (xrm * xum) *
+                             delz_i(k) * xliq(kk) * cm3_2_m3;
+            accumulator += xca;
+            if (last)
+              scratch[k] = accumulator;
+          });
+      team.team_barrier();
+      Kokkos::parallel_for(
+          Kokkos::TeamVectorRange(team, kk, pver), [&](const int k) {
             const Real xeqca =
                 xgas(k) /
                 (xliq(kk) * avo2 + 1.0 / (xhen_i(k) * const0 * tfld_i(k))) *
                 xliq(kk) * avo2;
-            //-----------------------------------------------------------------
-            //       ... calculate ca; inside cloud concentration in  #/cm3(air)
-            //-----------------------------------------------------------------
-            const Real xca = geo_fac * xkgm * xgas(k) / (xrm * xum) *
-                             delz_i(k) * xliq(kk) * cm3_2_m3;
 
             // -----------------------------------------------------------------
             //       ... if is not saturated (take hno3 as an example)
@@ -150,13 +153,18 @@ void gas_washout(
             //           otherwise
             //               hno3(gas)_new = hno3(gas)_old
             // -----------------------------------------------------------------
-            scratch[kk] += xca;
-            if (scratch[kk] < xeqca) {
+            if (scratch[k] < xeqca) {
+              //-----------------------------------------------------------------
+              //       ... calculate ca; inside cloud concentration in
+              //       #/cm3(air)
+              //-----------------------------------------------------------------
+              const Real xca = geo_fac * xkgm * xgas(k) / (xrm * xum) *
+                               delz_i(k) * xliq(kk) * cm3_2_m3;
               xgas(k) = mam4::max(xgas(k) - xca, 0.0);
             }
-          }
-        });
-    team.team_barrier();
+          });
+      team.team_barrier();
+    }
   }
 } // end subroutine gas_washout
 
