@@ -42,7 +42,6 @@ void het_diags(
     // Real noy_wk, //output //this isn't actually used in this function?
     View1D sox_wk, // output
     // Real nhx_wk, //output //this isn't actually used in this function?
-    const Real adv_mass[gas_pcnst], // constant from elsewhere
     const Real sox_species[3]) {
   // change to pass values for a single col
   //===========
@@ -66,6 +65,7 @@ void het_diags(
         wrk_wd(mm) *= rgrav * wght * square(rearth);
       });
 
+  constexpr auto adv_mass = gas_chemistry::adv_mass;
   for (int mm = 0; mm < gas_pcnst; mm++) {
     for (int i = 0; i < 3; i++) { // FIXME: bad constant (len of sox species)
       if (sox_species[i] == mm)
