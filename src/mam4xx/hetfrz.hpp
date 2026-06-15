@@ -3,8 +3,8 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
-#ifndef MAM4XX_HETFZR_HPP
-#define MAM4XX_HETFZR_HPP
+#ifndef MAM4XX_HETFRZ_HPP
+#define MAM4XX_HETFRZ_HPP
 
 #include "aero_config.hpp"
 #include "atmosphere.hpp"
@@ -929,8 +929,8 @@ void calculate_mass_mean_radius(
   hetraer[1] = r_dust_a1_prescribed;
   hetraer[2] = r_dust_a3_prescribed;
 
-  const Real specdens_bc = aero_species(int(AeroId::BC)).density;
-  const Real specdens_dust = aero_species(int(AeroId::DST)).density;
+  const Real specdens_bc = aero_species(AeroId::BC).density;
+  const Real specdens_dust = aero_species(AeroId::DST).density;
   // BC
   if (((bcmac + bcmpc) * 1.0e-3 > aermc_min_threshold) &
       (bc_num > aernum_min_threshold)) {
@@ -988,35 +988,35 @@ void calculate_coated_fraction(
   Real vol_shell[Hetfrz::hetfrz_aer_nspec];
   Real vol_core[Hetfrz::hetfrz_aer_nspec];
 
-  const Real spechygro_so4 = 0.507; // Sulfate hygroscopicity
-  const Real spechygro_soa = 0.14;  // SOA hygroscopicity
-  const Real spechygro_pom = 0.1;   // POM hygroscopicity
-  const Real spechygro_mom = 0.1;   // MOM hygroscopicity
-  const Real soa_equivso4_factor = spechygro_soa / spechygro_so4;
-  const Real pom_equivso4_factor = spechygro_pom / spechygro_so4;
-  const Real mom_equivso4_factor = spechygro_mom / spechygro_so4;
+  const AeroSpecies so4 = aero_species(AeroId::SO4);
+  const AeroSpecies soa = aero_species(AeroId::SOA);
+  const AeroSpecies pom = aero_species(AeroId::POM);
+  const AeroSpecies mom = aero_species(AeroId::MOM);
+  const AeroSpecies dst = aero_species(AeroId::DST);
+  const AeroSpecies bc = aero_species(AeroId::BC);
 
-  const Real specdens_so4 = aero_species(int(AeroId::SO4)).density;
-  const Real specdens_pom = aero_species(int(AeroId::POM)).density;
-  const Real specdens_mom = aero_species(int(AeroId::MOM)).density;
-  const Real specdens_soa = aero_species(int(AeroId::SOA)).density;
-  const Real specdens_dst = aero_species(int(AeroId::DST)).density;
-  const Real specdens_bc = aero_species(int(AeroId::BC)).density;
+  // FIXME: for some reason, these hygroscopicities are overridden here(!!)
+  const Real soa_hygroscopicity = 0.14;
+  const Real pom_hygroscopicity = 0.1;
+
+  const Real soa_equivso4_factor = soa_hygroscopicity / so4.hygroscopicity;
+  const Real pom_equivso4_factor = pom_hygroscopicity / so4.hygroscopicity;
+  const Real mom_equivso4_factor = mom.hygroscopicity / so4.hygroscopicity;
 
   vol_shell[1] =
-      (so4mac / specdens_so4 + pommac * pom_equivso4_factor / specdens_pom +
-       mommac * mom_equivso4_factor / specdens_mom +
-       soamac * soa_equivso4_factor / specdens_soa) /
+      (so4mac / so4.density + pommac * pom_equivso4_factor / pom.density +
+       mommac * mom_equivso4_factor / mom.density +
+       soamac * soa_equivso4_factor / soa.density) /
       air_density;
 
-  vol_core[1] = dmac / (specdens_dst * air_density);
+  vol_core[1] = dmac / (dst.density * air_density);
 
   // bc
-  vol_shell[0] = (pommpc * pom_equivso4_factor / specdens_pom +
-                  mommpc * mom_equivso4_factor / specdens_mom) /
+  vol_shell[0] = (pommpc * pom_equivso4_factor / pom.density +
+                  mommpc * mom_equivso4_factor / mom.density) /
                  air_density;
 
-  vol_core[0] = bcmpc / (specdens_bc * air_density);
+  vol_core[0] = bcmpc / (bc.density * air_density);
 
   // dust_a1
   Real coat_ratio1 = vol_shell[0] * (r_bc * 2.0) * fac_volsfc_pcarbon;
@@ -1033,12 +1033,12 @@ void calculate_coated_fraction(
   dstcoat[1] = coat_ratio1 / coat_ratio2;
 
   // dust_a3
-  vol_shell[2] = so4mc / (specdens_so4 * air_density) +
-                 pommc / (specdens_pom * air_density) +
-                 soamc / (specdens_soa * air_density) +
-                 mommc / (specdens_mom * air_density);
+  vol_shell[2] = so4mc / (so4.density * air_density) +
+                 pommc / (pom.density * air_density) +
+                 soamc / (soa.density * air_density) +
+                 mommc / (mom.density * air_density);
 
-  vol_core[2] = dmc / (specdens_dst * air_density);
+  vol_core[2] = dmc / (dst.density * air_density);
   coat_ratio1 = vol_shell[2] * (r_dust_a3 * 2.0) * fac_volsfc_dust_a3;
   coat_ratio2 = mam4::max(6.0 * dr_so4_monolayers_dust * vol_core[2], 1.0e-36);
   dstcoat[2] = coat_ratio1 / coat_ratio2;

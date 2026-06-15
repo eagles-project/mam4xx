@@ -23,10 +23,10 @@ void modal_aero_bcscavcoef_init(Ensemble *ensemble) {
     Real aerosol_dry_density[mam4::AeroConfig::num_modes()] = {};
     // Note: Original code uses the following aerosol densities.
     // sulfate, sulfate, dust, p-organic
-    aerosol_dry_density[0] = mam4::mam4_density_so4;
-    aerosol_dry_density[1] = mam4::mam4_density_so4;
-    aerosol_dry_density[2] = mam4::mam4_density_dst;
-    aerosol_dry_density[3] = mam4::mam4_density_pom;
+    aerosol_dry_density[0] = mam4::aero_species(mam4::AeroId::SO4).density;
+    aerosol_dry_density[1] = mam4::aero_species(mam4::AeroId::SO4).density;
+    aerosol_dry_density[2] = mam4::aero_species(mam4::AeroId::DST).density;
+    aerosol_dry_density[3] = mam4::aero_species(mam4::AeroId::POM).density;
 
     mam4::aero_model::modal_aero_bcscavcoef_init(
         dgnum_amode.data(), sigmag_amode.data(), aerosol_dry_density,

@@ -96,15 +96,16 @@ void mam_pcarbon_aging_frac(
 
   const int imom_pc = static_cast<int>(ModeIndex::PrimaryCarbon);
 
-  const Real _molecular_weight_soa = 150 / 1000.0;
-  // FIXME. MW for SO4 is not a standard MW. (BAD CONSTANT)
-  const Real _molecular_weight_so4 = 115 / 1000.0;
+  const Real molecular_weight_soa =
+      150 / 1000.0; // FIXME: should be aero_species(AeroId::SOA).density
+  const Real molecular_weight_so4 =
+      115 / 1000.0; // FIXME: should be aero_species(AeroId::SO4).density
 
   // Compute the aerosol volume per mole
   const Real so4_vol =
-      _molecular_weight_so4 * 1000.0 / aero_species(iaer_so4).density;
+      molecular_weight_so4 * 1000.0 / aero_species(AeroId::SO4).density;
   const Real soa_vol =
-      _molecular_weight_soa * 1000.0 / aero_species(iaer_soa).density;
+      molecular_weight_soa * 1000.0 / aero_species(AeroId::SOA).density;
 
   // (Bad Constants) for hygroscopicitiy
   constexpr Real hygro_soa = 0.14000000000000001;

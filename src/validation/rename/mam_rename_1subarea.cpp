@@ -95,8 +95,8 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     Real molecular_weight_rename[naerosol_species] = {
         150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
     for (int iaero = 0; iaero < naerosol_species; ++iaero) {
-      mass_2_vol[iaero] =
-          molecular_weight_rename[iaero] / mam4::aero_species(iaero).density;
+      mass_2_vol[iaero] = molecular_weight_rename[iaero] /
+                          mam4::aero_species(mam4::AeroId(iaero)).density;
     }
 
     this_rename.mam_rename_1subarea_(iscloudy, smallest_dryvol_value,

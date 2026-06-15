@@ -95,7 +95,7 @@ void init_calcsize(
     // compute inv density; density is constant, so we can compute in init.
     const auto n_spec = num_species_mode(m);
     for (int ispec = 0; ispec < n_spec; ispec++) {
-      const int aero_id = int(mode_aero_species(m, ispec));
+      const AeroId aero_id = mode_aero_species(m, ispec);
       inv_density[m][ispec] = Real(1.0) / aero_species(aero_id).density;
     } // for(ispec)
     // FIXME: do we need to update num2vol_ratio_min_nmodes and

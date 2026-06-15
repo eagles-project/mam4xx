@@ -42,10 +42,11 @@ void mode_hygroscopicity_i(const Diagnostics &diags, const Prognostics &progs,
     const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx),
                                          static_cast<AeroId>(aid));
     if (s >= 0) {
+      const AeroId aero_id = AeroId(aid);
       const Real mass_mix_ratio = progs.q_aero_i[mode_idx][s](k);
-      volume_mixing_ratio += mass_mix_ratio / aero_species(s).density;
-      hyg += mass_mix_ratio * aero_species(s).hygroscopicity /
-             aero_species(s).density;
+      volume_mixing_ratio += mass_mix_ratio / aero_species(aero_id).density;
+      hyg += mass_mix_ratio * aero_species(aero_id).hygroscopicity /
+             aero_species(aero_id).density;
     }
   }
   diags.hygroscopicity[mode_idx](k) = hyg / volume_mixing_ratio;

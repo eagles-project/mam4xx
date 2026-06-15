@@ -454,43 +454,41 @@ public:
   // but there is the problem of the indexes being in a different order.
   //
   KOKKOS_INLINE_FUNCTION
-  static Real specdens_amode(const int i) {
+  static Real specdens_amode(const int l) {
     // clang-format off
     const Real specdens_amode[maxd_aspectype] = {
-      mam4::mam4_density_so4,
+      aero_species(AeroId::SO4).density,
       mam4::max(),
       mam4::max(),
-      mam4::mam4_density_pom,
-      mam4::mam4_density_soa,
-      mam4::mam4_density_bc ,
-      mam4::mam4_density_nacl,
-      mam4::mam4_density_dst,
-      mam4::mam4_density_mom,
+      aero_species(AeroId::POM).density,
+      aero_species(AeroId::SOA).density,
+      aero_species(AeroId::BC).density,
+      aero_species(AeroId::NaCl).density,
+      aero_species(AeroId::DST).density,
+      aero_species(AeroId::MOM).density,
       0, 0, 0, 0, 0};
     // clang-format on
-    return specdens_amode[i];
+    return specdens_amode[l];
   }
 
   // specdens_amode(l) = dry density (kg/m^3) of aerosol chemical species type l
   // The same concerns specified for specdens_amode apply to spechygro.
   KOKKOS_INLINE_FUNCTION
-  static Real spechygro(const int i) {
+  static Real spechygro(const int l) {
     // clang-format off
     const Real spechygro[maxd_aspectype] = {
-       mam4::mam4_hyg_so4,
+      aero_species(AeroId::SO4).hygroscopicity,
        mam4::max(),
        mam4::max(),
-       mam4::mam4_hyg_pom,
-       // (BAD CONSTANT) mam4::mam4_hyg_soa = 0.1
-       0.1400000000e+00,
-       mam4::mam4_hyg_bc,
-       mam4::mam4_hyg_nacl,
-       // (BAD CONSTANT) mam4_hyg_dst = 0.14
-       0.6800000000e-01,
-       mam4::mam4_hyg_mom,
+      aero_species(AeroId::POM).hygroscopicity,
+       0.1400000000e+00, // BAD_CONSTANT: should be aero_species(AeroId::SOA).hygroscopicity
+      aero_species(AeroId::BC).hygroscopicity,
+      aero_species(AeroId::NaCl).hygroscopicity,
+       0.6800000000e-01, // BAD_CONSTANT: should be aero_species(AeroId::DST).hygroscopicity
+      aero_species(AeroId::MOM).hygroscopicity,
        0, 0, 0, 0, 0};
     // clang-format on
-    return spechygro[i];
+    return spechygro[l];
   }
 
   KOKKOS_INLINE_FUNCTION

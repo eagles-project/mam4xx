@@ -94,7 +94,7 @@ void aitken_accum_exchange(Ensemble *ensemble) {
         h_prog_aero_c(0) = q_c[count];
         Kokkos::deep_copy(progs.q_aero_c[imode][isp], h_prog_aero_c);
 
-        const int aero_id = int(mam4::mode_aero_species(imode, isp));
+        const auto aero_id = mam4::mode_aero_species(imode, isp);
         inv_density[imode][isp] =
             Real(1.0) / mam4::aero_species(aero_id).density;
 

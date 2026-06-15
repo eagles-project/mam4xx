@@ -38,11 +38,10 @@ void mode_avg_dry_particle_diam(const Diagnostics &diags,
     const int s = aerosol_index_for_mode(static_cast<ModeIndex>(mode_idx),
                                          static_cast<AeroId>(aid));
     if (s >= 0) {
-      volume_mixing_ratio_i +=
-          progs.q_aero_i[mode_idx][s](k) / aero_species(s).density;
+      const AeroSpecies species = aero_species(AeroId(aid));
+      volume_mixing_ratio_i += progs.q_aero_i[mode_idx][s](k) / species.density;
 
-      volume_mixing_ratio_c +=
-          progs.q_aero_c[mode_idx][s](k) / aero_species(s).density;
+      volume_mixing_ratio_c += progs.q_aero_c[mode_idx][s](k) / species.density;
     }
   }
   const Real mean_vol_i = volume_mixing_ratio_i / progs.n_mode_i[mode_idx](k);

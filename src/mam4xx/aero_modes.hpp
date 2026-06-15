@@ -12,8 +12,6 @@
 
 #include <ekat_kokkos_types.hpp>
 
-#include <string>
-
 namespace mam4 {
 
 /// @struct Mode
@@ -121,94 +119,6 @@ KOKKOS_INLINE_FUNCTION const mam4::Mode &modes(const int i) {
        mam4_crystallization_rel_hum, mam4_delequesence_rel_hum}};
   return M[i];
 };
-
-/// Identifiers for aerosol species that inhabit MAM4 modes.
-enum class AeroId {
-  SOA = 0,  // secondary organic aerosol
-  SO4 = 1,  // sulphate
-  POM = 2,  // primary organic matter
-  BC = 3,   // black carbon
-  NaCl = 4, // sodium chloride
-  DST = 5,  // dust
-  MOM = 6,  // marine organic matter,
-  None = 7  // invalid aerosol species
-};
-
-/// Map ModeIndex to string (for logging, e.g.)
-/// This function cannot be called inside a GPU kernel,
-/// but it's helpful to use with ekat::Logger statements
-/// (which also cannot be called inside a kernel)
-std::string aero_id_str(const AeroId aid);
-
-/// Map ModeIndex to string (it is used by mam_coupling in emaxx)
-/// give aerosol id return the aersol short name
-/// this is name from e3sm
-std::string aero_id_short_name(const AeroId aid);
-
-/// Molecular weight of mam4 dust aerosol [kg/mol]
-static constexpr Real mam4_molec_weight_dst = 0.135065;
-
-/// Molecular weight of mam4 marine organic matter [kg/mol]
-static constexpr Real mam4_molec_weight_mom = 250.093;
-
-/// mam4 aerosol densities [kg/m3]
-static constexpr Real mam4_density_soa = 1000.0;
-static constexpr Real mam4_density_so4 = 1770.0;
-static constexpr Real mam4_density_pom = 1000.0;
-static constexpr Real mam4_density_bc = 1700.0;
-static constexpr Real mam4_density_nacl = 1900.0;
-static constexpr Real mam4_density_dst = 2600.0;
-static constexpr Real mam4_density_mom = 1601.0;
-
-/// mam4 aerosol hygroscopicities
-static constexpr Real mam4_hyg_soa = 0.1;
-static constexpr Real mam4_hyg_so4 = 0.507;
-static constexpr Real mam4_hyg_pom = 1e-10;
-static constexpr Real mam4_hyg_bc = 1e-10;
-static constexpr Real mam4_hyg_nacl = 1.16;
-static constexpr Real mam4_hyg_dst = 0.14;
-static constexpr Real mam4_hyg_mom = 0.1;
-
-/// A list of aerosol species in MAM4.
-/**
-  Note that in MAM4 fortran, molecular weights are given as g/mol, rather than
-  kg/mol.
-
-  Here we use SI units for everything, so molecular weights are given as
-  [kg/mol].
-
-  When the variable is "universal" in the sense that it will be the same
-  whether MAM4 is using or some other software package is using it, we
-  use the external Constants value, which is sourced to the latest
-  NIST data available.  Additionally, this prepares Mam4xx to ultimately
-  use an external source of constants with EAM.  Examples are the
-  molecular weights of Carbon, Sulphate, and Sodium Chloride.
-
-  Some of these constants are unique to mam4 -- these are listed here, with
-  the prefix mam4_*. For example, its definition
-  of primary carbon, dust, and marine organic matter are defined by choices
-  of what those modes represent.  Other examples, such as the density of some
-  substances, differ from the values provided by NIST; these, too, are listed
-  here as mam4_* constants.
-*/
-KOKKOS_INLINE_FUNCTION AeroSpecies aero_species(const int i) {
-  static const AeroSpecies species[7] = {
-      AeroSpecies{Constants::molec_weight_c, mam4_density_soa,
-                  mam4_hyg_soa}, // secondary organic aerosol
-      AeroSpecies{Constants::molec_weight_so4, mam4_density_so4, mam4_hyg_so4},
-      AeroSpecies{Constants::molec_weight_c, mam4_density_pom,
-                  mam4_hyg_pom}, // primary organic matter
-      AeroSpecies{Constants::molec_weight_c, mam4_density_bc,
-                  mam4_hyg_bc}, // black carbon
-      AeroSpecies{Constants::molec_weight_nacl, mam4_density_nacl,
-                  mam4_hyg_nacl}, // sodium chloride
-      AeroSpecies{mam4_molec_weight_dst, mam4_density_dst,
-                  mam4_hyg_dst}, // dust
-      AeroSpecies{mam4_molec_weight_mom, mam4_density_mom,
-                  mam4_hyg_mom} // marine organic matter
-  };
-  return species[i];
-}
 
 // A list of species within each mode for MAM4.
 KOKKOS_INLINE_FUNCTION AeroId mode_aero_species(const int modeNo,

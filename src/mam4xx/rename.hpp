@@ -11,6 +11,7 @@
 #include "conversions.hpp"
 #include "mam4_math.hpp"
 #include "mam4_types.hpp"
+#include "mam4xx/aero_modes.hpp"
 #include "utils.hpp"
 
 #include <ekat_math_utils.hpp>
@@ -579,8 +580,8 @@ public:
     const Real unit_factor = 1000; // from kg/mol to kg/kmol
 
     for (int iaero = 0; iaero < AeroConfig::num_aerosol_ids(); ++iaero) {
-      _mass_2_vol[iaero] = aero_species(iaero).molecular_weight /
-                           aero_species(iaero).density * unit_factor;
+      _mass_2_vol[iaero] = aero_species(AeroId(iaero)).molecular_weight /
+                           aero_species(AeroId(iaero)).density * unit_factor;
     }
     // Correction because of differences in MWs between mam4xx and mam4
     int iaer_soa = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::SOA);
@@ -588,11 +589,11 @@ public:
     int iaer_pom = aerosol_index_for_mode(ModeIndex::Accumulation, AeroId::POM);
 
     _mass_2_vol[iaer_soa] =
-        config_._molecular_weight_soa / aero_species(iaer_soa).density;
+        config_._molecular_weight_soa / aero_species(AeroId::SOA).density;
     _mass_2_vol[iaer_so4] =
-        config_._molecular_weight_so4 / aero_species(iaer_so4).density;
+        config_._molecular_weight_so4 / aero_species(AeroId::SO4).density;
     _mass_2_vol[iaer_pom] =
-        config_._molecular_weight_pom / aero_species(iaer_pom).density;
+        config_._molecular_weight_pom / aero_species(AeroId::POM).density;
 
   } // end(init)
 
@@ -668,19 +669,19 @@ public:
         for (int jspec = 0; jspec < nspec; ++jspec) {
           // get the mapping from the mam4xx species ordering to rename's
           rename_idx = _mam4xx2rename_idx[imode][jspec];
+
+          const AeroId aero_id = mode_aero_species(imode, jspec);
+          const Real molecular_weight = aero_species(aero_id).molecular_weight;
+
           // convert mass mixing ratios to molar mixing ratios
           qmol_i_cur[imode][rename_idx] = conversions::vmr_from_mmr(
-              prognostics.q_aero_i[imode][rename_idx](kk),
-              aero_species(rename_idx).molecular_weight);
+              prognostics.q_aero_i[imode][rename_idx](kk), molecular_weight);
           qmol_i_del[imode][rename_idx] = conversions::vmr_from_mmr(
-              tendencies.q_aero_i[imode][rename_idx](kk),
-              aero_species(rename_idx).molecular_weight);
+              tendencies.q_aero_i[imode][rename_idx](kk), molecular_weight);
           qmol_c_cur[imode][rename_idx] = conversions::vmr_from_mmr(
-              prognostics.q_aero_c[imode][rename_idx](kk),
-              aero_species(rename_idx).molecular_weight);
+              prognostics.q_aero_c[imode][rename_idx](kk), molecular_weight);
           qmol_c_del[imode][rename_idx] = conversions::vmr_from_mmr(
-              tendencies.q_aero_c[imode][rename_idx](kk),
-              aero_species(rename_idx).molecular_weight);
+              tendencies.q_aero_c[imode][rename_idx](kk), molecular_weight);
         }
       }
 

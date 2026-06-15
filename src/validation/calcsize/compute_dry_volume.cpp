@@ -45,7 +45,7 @@ void compute_dry_volume_k(Ensemble *ensemble) {
           Real inv_density[4][7];
           const auto n_spec = mam4::num_species_mode(imode);
           for (int ispec = 0; ispec < n_spec; ispec++) {
-            const int aero_id = int(mam4::mode_aero_species(imode, ispec));
+            const mam4::AeroId aero_id = mam4::mode_aero_species(imode, ispec);
             inv_density[imode][ispec] =
                 Real(1.0) / mam4::aero_species(aero_id).density;
           } // for(ispec)
