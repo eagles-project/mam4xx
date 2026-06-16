@@ -7,7 +7,6 @@
 
 #include "Kokkos_Macros.hpp"
 #include "mam4_config.hpp"
-#include "mam4_constants.hpp"
 
 #include <ekat_kokkos_types.hpp>
 
@@ -69,30 +68,14 @@ static constexpr Real mam4_hyg_mom = 0.1;
 
 } // namespace defaults
 
-namespace {
+namespace internal {
 
-// This array stores the dynamically configured properties of resident aerosol
-// species. Any of these properties may be overridden by "namelist" parameters.
-auto aero_species_ = Kokkos::to_array<AeroSpecies>({
-    AeroSpecies{Constants::molec_weight_c, defaults::mam4_density_soa,
-                defaults::mam4_hyg_soa}, // secondary organic aerosol
-    AeroSpecies{Constants::molec_weight_so4, defaults::mam4_density_so4,
-                defaults::mam4_hyg_so4},
-    AeroSpecies{Constants::molec_weight_c, defaults::mam4_density_pom,
-                defaults::mam4_hyg_pom}, // primary organic matter
-    AeroSpecies{Constants::molec_weight_c, defaults::mam4_density_bc,
-                defaults::mam4_hyg_bc}, // black carbon
-    AeroSpecies{Constants::molec_weight_nacl, defaults::mam4_density_nacl,
-                defaults::mam4_hyg_nacl}, // sodium chloride
-    AeroSpecies{defaults::mam4_molec_weight_dst, defaults::mam4_density_dst,
-                defaults::mam4_hyg_dst}, // dust
-    AeroSpecies{defaults::mam4_molec_weight_mom, defaults::mam4_density_mom,
-                defaults::mam4_hyg_mom} // marine organic matter
-});
+using DeviceType = ekat::KokkosTypes<ekat::DefaultDevice>;
+extern typename DeviceType::view_1d<AeroSpecies> aero_species_d;
 
-} // namespace
+} // namespace internal
 
-/// Returns an immutable  list of aerosol species in MAM4.
+/// Returns the aerosol species associated with the given unique identifier.
 /**
   Note that in MAM4 fortran, molecular weights are given as g/mol, rather than
   kg/mol.
@@ -115,15 +98,20 @@ auto aero_species_ = Kokkos::to_array<AeroSpecies>({
   here as mam4_* constants.
 */
 KOKKOS_INLINE_FUNCTION const AeroSpecies aero_species(const AeroId id) {
-  return aero_species_[int(id)];
+  return internal::aero_species_d[int(id)];
 }
 
-//-------------------------------------------------------------
-// The following functions cannot be called within GPU kernels
-//-------------------------------------------------------------
+//--------------------------------------------------------
+// The following functions can only be called on the host
+//--------------------------------------------------------
 
-// Overrides the molecular weight [kg/mol] in the aerosol species with the given
-// ID.
+// Configures the set of aerosol species to be used by mam4xx. This may only be called once.
+void configure_aero_species(const std::map<AeroId, AeroSpecies>& species);
+
+// Configures the default set of aerosol species to be used by mam4xx. Call only once.
+void configure_default_aero_species();
+
+// Overrides the molecular weight [kg/mol] in the aerosol species with the given ID.
 void set_aero_molecular_weight(const AeroId id, Real molecular_weight);
 
 // Overrides the mass density [kg/m^3] in the aerosol species with the given ID.

@@ -5,6 +5,7 @@
 
 #include "validation.hpp"
 #include "bfbhash.hpp"
+#include <mam4xx/aero_species.hpp>
 
 #include <ekat_fpe.hpp>
 
@@ -159,6 +160,7 @@ void initialize(int argc, char **argv) {
   input_file_ = determine_filename(argv[1]);
   set_flags(argc, argv);
   Kokkos::initialize(argc, argv);
+  mam4::configure_default_aero_species();
 }
 
 void initialize(int argc, char **argv, int fpes_) {
@@ -171,6 +173,7 @@ void initialize(int argc, char **argv, int fpes_) {
   set_flags(argc, argv);
   Kokkos::initialize(argc, argv);
   ekat::enable_fpes(fpes_);
+  mam4::configure_default_aero_species();
 }
 
 void finalize(Ensemble *ensemble) {

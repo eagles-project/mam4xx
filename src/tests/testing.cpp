@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "testing.hpp"
+#include "mam4xx/aero_species.hpp"
 
 #include <ekat_fpe.hpp>
 #include <ekat_kokkos_session.hpp>
@@ -209,12 +210,11 @@ Tendencies create_tendencies(int num_levels) {
 // default implementations.
 //------------------------------------------------------------------------
 
-// This implementation of ekat_initialize_test_session is identical to the
-// default provided by EKAT.
 void ekat_initialize_test_session(int argc, char **argv,
                                   const bool print_config) {
   ekat::initialize_kokkos_session(argc, argv, print_config);
   ekat::enable_fpes(mam4::testing::default_fpes);
+  mam4::configure_default_aero_species();
 }
 
 // This implementation of ekat_finalize_test_session calls
