@@ -45,9 +45,6 @@ KOKKOS_INLINE_FUNCTION void gas_phase_chemistry(
     // out
     VectorType &qq) {
 
-  constexpr auto clsmap_4 = gas_chemistry::clsmap_4;
-  constexpr auto permute_4 = gas_chemistry::permute_4;
-
   //=====================================================================
   // ... set rates for "tabular" and user specified reactions
   //=====================================================================
