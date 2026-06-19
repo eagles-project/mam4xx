@@ -1185,9 +1185,6 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
   Real &dstnidep = diags.hetfrz(Diagnostics::dstnidep, k);
   Real &dstnicnt = diags.hetfrz(Diagnostics::dstnicnt, k);
   Real &dstniimm = diags.hetfrz(Diagnostics::dstniimm, k);
-  Real &bcnidep = diags.hetfrz(Diagnostics::bcnidep, k);
-  Real &bcnicnt = diags.hetfrz(Diagnostics::bcnicnt, k);
-  Real &bcniimm = diags.hetfrz(Diagnostics::bcniimm, k);
   Real &numice10s = diags.hetfrz(Diagnostics::numice10s, k);
   Real &numimm10sdst = diags.hetfrz(Diagnostics::numimm10sdst, k);
   Real &numimm10sbc = diags.hetfrz(Diagnostics::numimm10sbc, k);
@@ -1411,8 +1408,6 @@ void hetfrz_rates_1box(const int k, const Real dt, const Atmosphere &atm,
     r3lx = mam4::max(4e-6, r3lx);
     const Real supersatice =
         wv_sat_methods::svp_water(temp) / wv_sat_methods::svp_ice(temp);
-
-    Real fn[Hetfrz::hetfrz_aer_nspec] = {af_accum, af_accum, af_coarse};
 
     hetfrz::hetfrz_classnuc_calc(
         dt, temp, pmid, supersatice, r3lx, ncic * air_density * 1e-6, hetraer,
