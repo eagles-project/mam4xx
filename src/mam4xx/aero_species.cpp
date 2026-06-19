@@ -4,8 +4,35 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "aero_species.hpp"
+#include "mam4_constants.hpp"
 
 namespace mam4 {
+
+AeroSpeciesHostView default_aero_species() {
+  AeroSpeciesHostView species("Aerosol species", int(AeroId::NumSpecies));
+  species[int(AeroId::SOA)] =
+      AeroSpecies{Constants::molec_weight_c, defaults::mam4_density_soa,
+                  defaults::mam4_hyg_soa};
+  species[int(AeroId::SO4)] =
+      AeroSpecies{Constants::molec_weight_so4, defaults::mam4_density_so4,
+                  defaults::mam4_hyg_so4};
+  species[int(AeroId::POM)] =
+      AeroSpecies{Constants::molec_weight_c, defaults::mam4_density_pom,
+                  defaults::mam4_hyg_pom};
+  species[int(AeroId::BC)] =
+      AeroSpecies{Constants::molec_weight_c, defaults::mam4_density_bc,
+                  defaults::mam4_hyg_bc};
+  species[int(AeroId::NaCl)] =
+      AeroSpecies{Constants::molec_weight_nacl, defaults::mam4_density_nacl,
+                  defaults::mam4_hyg_nacl};
+  species[int(AeroId::DST)] =
+      AeroSpecies{defaults::mam4_molec_weight_dst, defaults::mam4_density_dst,
+                  defaults::mam4_hyg_dst};
+  species[int(AeroId::MOM)] =
+      AeroSpecies{defaults::mam4_molec_weight_mom, defaults::mam4_density_mom,
+                  defaults::mam4_hyg_mom};
+  return species;
+}
 
 std::string aero_id_str(const AeroId aid) {
   switch (aid) {

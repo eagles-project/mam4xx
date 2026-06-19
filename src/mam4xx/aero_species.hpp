@@ -7,41 +7,45 @@
 
 #include "mam4_config.hpp"
 
+#include <ekat_kokkos_types.hpp>
+
 #include <string>
 
 namespace mam4 {
 
 /// @struct AeroSpecies
 /// This type represents an aerosol species.
-struct AeroSpecies final {
+struct AeroSpecies {
   // Molecular weight [kg/mol]
-  const Real molecular_weight;
+  Real molecular_weight;
 
   /// Material density [kg/m^3]
-  const Real density;
+  Real density;
 
   /// Hygroscopicity
-  const Real hygroscopicity;
+  Real hygroscopicity;
 };
 
 /// Identifiers for aerosol species that inhabit MAM4 modes.
 enum class AeroId {
-  SOA = 0,  // secondary organic aerosol
-  SO4 = 1,  // sulphate
-  POM = 2,  // primary organic matter
-  BC = 3,   // black carbon
-  NaCl = 4, // sodium chloride
-  DST = 5,  // dust
-  MOM = 6,  // marine organic matter,
+  SOA = 0,        // secondary organic aerosol
+  SO4 = 1,        // sulphate
+  POM = 2,        // primary organic matter
+  BC = 3,         // black carbon
+  NaCl = 4,       // sodium chloride
+  DST = 5,        // dust
+  MOM = 6,        // marine organic matter,
   NumSpecies = 7, // number of aerosol species
-  None = 8  // invalid aerosol species
+  None = 8        // invalid aerosol species
 };
 
 /// A device-side Kokkos View containing aerosol species.
-using AeroSpeciesView = typename ekat::KokkosTypes<ekat::DefaultDevice>::view_1d<AeroSpecies>;
+using AeroSpeciesView =
+    typename ekat::KokkosTypes<ekat::DefaultDevice>::view_1d<AeroSpecies>;
 
-/// A host-side Kokkos View for configuring aerosol species. 
-using AeroSpeciesHostView = typename ekat::KokkosTypes<ekat::HostDevice>::view_1d<AeroSpecies>;
+/// A host-side Kokkos View for configuring aerosol species.
+using AeroSpeciesHostView =
+    typename ekat::KokkosTypes<ekat::HostDevice>::view_1d<AeroSpecies>;
 
 // default values for aerosol species properties
 namespace defaults {
@@ -72,23 +76,14 @@ static constexpr Real mam4_hyg_mom = 0.1;
 
 } // namespace defaults
 
-/// Returns a newly-created view containing the default configuration for aerosol species.
-/// Create this on the host, override properties as desired, and copy to device with Kokkos::deep_copy.
-KOKKOS_INLINE_FUNCTION const AeroSpeciesHostView default_aero_species() {
-  AeroSpeciesHostView species("Aerosol species", AeroId::NumSpecies);
-  species[int(AeroId::SOA)] = AeroSpecies{Constants::molec_weight_c, defaults::mam4_density_soa, defaults::mam4_hyg_soa};
-  species[int(AeroId::SO4)] = AeroSpecies{Constants::molec_weight_so4, defaults::mam4_density_so4, defaults::mam4_hyg_so4};
-  species[int(AeroId::POM)] = AeroSpecies{Constants::molec_weight_c, defaults::mam4_density_pom, defaults::mam4_hyg_pom};
-  species[int(AeroId::BC)]  = AeroSpecies{Constants::molec_weight_c, defaults::mam4_density_bc, defaults::mam4_hyg_bc};
-  species[int(AeroId::NaCl)] = AeroSpecies{Constants::molec_weight_nacl, defaults::mam4_density_nacl, defaults::mam4_hyg_nacl};
-  species[int(AeroId::DST)] = AeroSpecies{defaults::mam4_molec_weight_dst, defaults::mam4_density_dst, defaults::mam4_hyg_dst};
-  species[int(AeroId::MOM)] = AeroSpecies{defaults::mam4_molec_weight_mom, defaults::mam4_density_mom, defaults::mam4_hyg_mom};
-  return species;
-}
-
 //--------------------------------------------------------
 // The following functions can only be called on the host
 //--------------------------------------------------------
+
+/// Returns a newly-created view containing the default configuration for
+/// aerosol species. Create this on the host, override properties as desired,
+/// and copy to device with Kokkos::deep_copy.
+AeroSpeciesHostView default_aero_species();
 
 /// Maps an AeroId to the name of its species.
 std::string aero_id_str(const AeroId id);

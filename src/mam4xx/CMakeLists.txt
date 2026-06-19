@@ -56,7 +56,7 @@ install(FILES
         aero_model_emissions.hpp
         DESTINATION include/mam4xx)
 
-add_library(mam4xx aero_modes.cpp)
+add_library(mam4xx aero_modes.cpp aero_species.cpp gas_species.cpp)
 target_include_directories(mam4xx PUBLIC
   ${EKAT_INCLUDE_DIRS}
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
