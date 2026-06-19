@@ -22,9 +22,8 @@ public:
   bool calculate_gas_uptake_coefficient = false;
   int number_gauss_points_for_integration = 2;
 
-  // Default constructor with default aerosol species.
-  KOKKOS_INLINE_FUNCTION
-  AeroConfig() : aero_species(aero_species_on_device(default_aero_species())) {}
+  // Default constructor is disabled.
+  AeroConfig() = delete;
 
   // Constructor with configured aerosol species.
   KOKKOS_INLINE_FUNCTION

@@ -81,13 +81,10 @@ static constexpr Real molec_weight_so2 = 0.06407;
 /// to device with Kokkos::deep_copy.
 GasSpeciesHostView default_gas_species();
 
-/// Return a newly-created device view whose data is copied from the given host view.
+/// Return a newly-created device view whose data is copied from the given host
+/// view.
 GasSpeciesView
 gas_species_on_device(const GasSpeciesHostView &gas_species_on_host);
-
-/// Return a newly-created host view whose data is copied from the given device view.
-GasSpeciesHostView
-gas_species_on_host(const GasSpeciesView &gas_species_on_device);
 
 } // namespace mam4
 #endif

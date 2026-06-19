@@ -1127,16 +1127,15 @@ void mam_newnuc_1subarea(
 KOKKOS_INLINE_FUNCTION
 void mam_amicphys_1subarea(
     // in
-    const AeroSpeciesView &aero_species,
-    const int newnuc_h2so4_conc_optaa, const int gaexch_h2so4_uptake_optaa,
-    const bool do_cond_sub, const bool do_rename_sub, const bool do_newnuc_sub,
-    const bool do_coag_sub, const Real deltat, const int jsubarea,
-    const bool iscldy_subarea, const unsigned n_so4_monolayers_pcage,
-    const Real afracsub, const Real temp, const Real pmid, const Real pdel,
-    const Real zmid, const Real pblh, const Real relhumsub,
-    const Real (&dgn_a)[num_modes], const Real (&dgn_awet)[num_modes],
-    const Real (&wetdens)[num_modes], const Real (&qgas1)[max_gas()],
-    const Real (&qgas3)[max_gas()],
+    const AeroSpeciesView &aero_species, const int newnuc_h2so4_conc_optaa,
+    const int gaexch_h2so4_uptake_optaa, const bool do_cond_sub,
+    const bool do_rename_sub, const bool do_newnuc_sub, const bool do_coag_sub,
+    const Real deltat, const int jsubarea, const bool iscldy_subarea,
+    const unsigned n_so4_monolayers_pcage, const Real afracsub, const Real temp,
+    const Real pmid, const Real pdel, const Real zmid, const Real pblh,
+    const Real relhumsub, const Real (&dgn_a)[num_modes],
+    const Real (&dgn_awet)[num_modes], const Real (&wetdens)[num_modes],
+    const Real (&qgas1)[max_gas()], const Real (&qgas3)[max_gas()],
     // inout
     Real (&qgas_cur)[max_gas()], Real (&qgas_delaa)[max_gas()][nqtendaa()],
     // in
@@ -1913,12 +1912,11 @@ void mam_amicphys_1gridcell(
 
     mam_amicphys_1subarea(
         // in
-        config.aero_species,
-        config.gaexch_h2so4_uptake_optaa, config.newnuc_h2so4_conc_optaa,
-        do_cond, do_rename, do_newnuc, do_coag, deltat, jsub,
-        iscldy_subarea[jsub], n_so4_monolayers_pcage, afracsub[jsub], temp,
-        pmid, pdel, zmid, pblh, relhumsub[jsub], dgn_a, dgn_awet, wetdens,
-        qgas1, qgas3, qgas4,
+        config.aero_species, config.gaexch_h2so4_uptake_optaa,
+        config.newnuc_h2so4_conc_optaa, do_cond, do_rename, do_newnuc, do_coag,
+        deltat, jsub, iscldy_subarea[jsub], n_so4_monolayers_pcage,
+        afracsub[jsub], temp, pmid, pdel, zmid, pblh, relhumsub[jsub], dgn_a,
+        dgn_awet, wetdens, qgas1, qgas3, qgas4,
         qgas_delaa,             // out
         qnum3,                  // in
         qnum4, qnum_delaa,      // out

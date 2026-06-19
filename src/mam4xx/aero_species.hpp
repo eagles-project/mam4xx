@@ -85,13 +85,10 @@ static constexpr Real mam4_hyg_mom = 0.1;
 /// and copy to device with Kokkos::deep_copy.
 AeroSpeciesHostView default_aero_species();
 
-/// Return a newly-created device view whose data is copied from the given host view.
+/// Return a newly-created device view whose data is copied from the given host
+/// view.
 AeroSpeciesView
 aero_species_on_device(const AeroSpeciesHostView &aero_species_on_host);
-
-/// Return a newly-created device view whose data is copied from the given host view.
-AeroSpeciesHostView
-aero_species_on_host(const AeroSpeciesView &aero_species_on_device);
 
 /// Maps an AeroId to the name of its species.
 std::string aero_id_str(const AeroId id);

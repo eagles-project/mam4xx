@@ -1976,9 +1976,10 @@ void assign_dotend(const int species_class[aero_model::pcnst],
 // This function just uses kk==kactfirst so can be called in parallel over kk.
 template <typename SubView>
 KOKKOS_INLINE_FUNCTION void
-ma_activate_convproc(SubView conu, SubView dconudt, const Real f_ent,
-                     const Real dt_u, const Real wup, const Real tair,
-                     const Real rhoair, const int kk, const int kactfirst) {
+ma_activate_convproc(const AeroSpeciesView &aero_species, SubView conu,
+                     SubView dconudt, const Real f_ent, const Real dt_u,
+                     const Real wup, const Real tair, const Real rhoair,
+                     const int kk, const int kactfirst) {
   // clang-format off
   // -----------------------------------------------------------------------
   // 
@@ -2069,7 +2070,7 @@ ma_activate_convproc(SubView conu, SubView dconudt, const Real f_ent,
   // number fraction of aerosols activated [fraction]
   Real fn[ntot_amode] = {};
   //  calculate aerosol (or a+cw) volume, number and hygroscopicity
-  aer_vol_num_hygro(conu, rhoair, vaerosol, naerosol, hygro);
+  aer_vol_num_hygro(aero_species, conu, rhoair, vaerosol, naerosol, hygro);
 
   //  call Razzak-Ghan activation routine with single updraft
 
@@ -2120,10 +2121,11 @@ ma_activate_convproc(SubView conu, SubView dconudt, const Real f_ent,
 // Can be called in parallel over kk, not used for subscripting.
 template <typename SubView>
 KOKKOS_INLINE_FUNCTION void compute_activation_tend(
-    const Real f_ent, const Real cldfrac, const Real rhoair, const Real mu_i_kk,
-    const Real mu_i_kp1, const Real dt_u, const Real wup, const Real icwmr,
-    const Real temperature, const int kk, int &kactcnt, int &kactfirst,
-    SubView conu, SubView dconudt_activa, Real &xx_wcldbase, int &xx_kcldbase) {
+    const AeroSpeciesView &aero_species, const Real f_ent, const Real cldfrac,
+    const Real rhoair, const Real mu_i_kk, const Real mu_i_kp1, const Real dt_u,
+    const Real wup, const Real icwmr, const Real temperature, const int kk,
+    int &kactcnt, int &kactfirst, SubView conu, SubView dconudt_activa,
+    Real &xx_wcldbase, int &xx_kcldbase) {
   // clang-format off
   // -----------------------------------------------------------------------
   //  aerosol activation - method 2
@@ -2178,7 +2180,7 @@ KOKKOS_INLINE_FUNCTION void compute_activation_tend(
   }
 
   if ( do_act_this_lev ) {
-    ma_activate_convproc(
+    ma_activate_convproc(aero_species,
       conu, dconudt_activa, f_ent, dt_u, wup,
       temperature, rhoair, kk,  kactfirst);
   }
@@ -2188,6 +2190,7 @@ KOKKOS_INLINE_FUNCTION void compute_activation_tend(
 // calculation of conu from one level to the next.
 KOKKOS_INLINE_FUNCTION
 void compute_updraft_mixing_ratio(
+  const AeroSpeciesView &aero_species,
   const bool doconvproc_extd[ConvProc::pcnst_extd],
   const int nlev,
   const int ktop,   
@@ -2334,10 +2337,10 @@ void compute_updraft_mixing_ratio(
       auto dconudt_activa_sub =
           Kokkos::subview(dconudt_activa, kk, Kokkos::ALL());
       auto conu_sub = Kokkos::subview(conu, kk, Kokkos::ALL());
-      compute_activation_tend(f_ent, cldfrac_i, rhoair[kk], mu[kk], mu[kk + 1],
-                              dt_u, wup_kk, icwmr[kk], temperature[kk], kk,
-                              kactcnt, kactfirst, conu_sub, dconudt_activa_sub,
-                              xx_wcldbase, xx_kcldbase);
+      compute_activation_tend(aero_species, f_ent, cldfrac_i, rhoair[kk],
+                              mu[kk], mu[kk + 1], dt_u, wup_kk, icwmr[kk],
+                              temperature[kk], kk, kactcnt, kactfirst, conu_sub,
+                              dconudt_activa_sub, xx_wcldbase, xx_kcldbase);
 
       // wet removal
       // NOTE: conu is input/output in this function!  So this call will effect
@@ -2358,7 +2361,8 @@ void compute_updraft_mixing_ratio(
 // ======================================================================================
 template <typename SubView, typename ConstSubView>
 KOKKOS_INLINE_FUNCTION void
-ma_convproc_tend(const Kokkos::View<Real *>
+ma_convproc_tend(const AeroSpeciesView &aero_species,
+                 const Kokkos::View<Real *>
                      scratch1Dviews[ConvProc::Col1DViewInd::NumScratch],
                  const int nlev, const ConvProc::convtype convtype,
                  const Real dt, const Real temperature[/* nlev */],
@@ -2655,9 +2659,9 @@ ma_convproc_tend(const Kokkos::View<Real *>
     const Real dz = dpdry[0] * hund_ovr_g / rhoair[0];
 
     compute_updraft_mixing_ratio(
-        doconvproc_extd, nlev, ktop, kbot, iconvtype, dt, dp, dpdry, cldfrac,
-        rhoair.data(), zmagl.data(), dz, mu.data(), eudp.data(), gath,
-        temperature, aqfrac, icwmr, rprd, fa_u.data(), dconudt_wetdep,
+        aero_species, doconvproc_extd, nlev, ktop, kbot, iconvtype, dt, dp,
+        dpdry, cldfrac, rhoair.data(), zmagl.data(), dz, mu.data(), eudp.data(),
+        gath, temperature, aqfrac, icwmr, rprd, fa_u.data(), dconudt_wetdep,
         dconudt_activa, conu, xx_wcldbase, xx_kcldbase);
 
     // Compute downdraft mixing ratios from cloudtop to cloudbase
@@ -2743,7 +2747,8 @@ ma_convproc_tend(const Kokkos::View<Real *>
 // =========================================================================================
 template <typename SubView, typename ConstSubView>
 KOKKOS_INLINE_FUNCTION void
-ma_convproc_dp_intr(const Kokkos::View<Real *>
+ma_convproc_dp_intr(const AeroSpeciesView &aero_species,
+                    const Kokkos::View<Real *>
                         scratch1Dviews[ConvProc::Col1DViewInd::NumScratch],
                     const int nlev, const Real temperature[/* nlev */],
                     const Real pmid[/* nlev */], const Real dpdry[/* nlev */],
@@ -2843,10 +2848,11 @@ ma_convproc_dp_intr(const Kokkos::View<Real *>
   //
   // clang-format on
 
-  ma_convproc_tend(scratch1Dviews, nlev, ConvProc::Deep, dt, temperature, pmid,
-                   qnew, du, eu, ed, dp, dpdry, ktop, kbot, mmtoo_prevap_resusp,
-                   cldfrac, icwmr, rprddp, evapcdp, dqdt, dotend, qsrflx,
-                   species_class, xx_mfup_max, xx_wcldbase, xx_kcldbase);
+  ma_convproc_tend(aero_species, scratch1Dviews, nlev, ConvProc::Deep, dt,
+                   temperature, pmid, qnew, du, eu, ed, dp, dpdry, ktop, kbot,
+                   mmtoo_prevap_resusp, cldfrac, icwmr, rprddp, evapcdp, dqdt,
+                   dotend, qsrflx, species_class, xx_mfup_max, xx_wcldbase,
+                   xx_kcldbase);
 }
 
 // =========================================================================================
@@ -2921,7 +2927,7 @@ ma_convproc_sh_intr(const int nlev, const Real temperature[/* nlev */],
 // =========================================================================================
 KOKKOS_INLINE_FUNCTION
 void ma_convproc_intr(
-    const ThreadTeam &team,
+    const ThreadTeam &team, const AeroSpeciesView &aero_species,
     const Kokkos::View<Real *>
         scratch1Dviews[ConvProc::Col1DViewInd::NumScratch],
     const bool convproc_do_aer, const bool convproc_do_gas, const int nlev,
@@ -3052,10 +3058,10 @@ void ma_convproc_intr(
         dqdt(j, i) = 0;
     for (int j = 0; j < nlev; ++j)
       dlfdp[j] = mam4::max((dlf[j] - dlfsh[j]), 0.0);
-    ma_convproc_dp_intr(scratch1Dviews, nlev, temperature, pmid, dpdry, dt,
-                        dp_frac, icwmrdp, rprddp, evapcdp, du, eu, ed, dp, ktop,
-                        kbot, qnew, species_class, mmtoo_prevap_resusp, dqdt,
-                        qsrflx, dotend);
+    ma_convproc_dp_intr(aero_species, scratch1Dviews, nlev, temperature, pmid,
+                        dpdry, dt, dp_frac, icwmrdp, rprddp, evapcdp, du, eu,
+                        ed, dp, ktop, kbot, qnew, species_class,
+                        mmtoo_prevap_resusp, dqdt, qsrflx, dotend);
     // apply deep conv processing tendency and prepare for shallow conv
     // processing
     for (int kk = 0; kk < nlev; ++kk)
@@ -3185,11 +3191,11 @@ void ConvProc::compute_tendencies(const AeroConfig &config,
   // Aerosol wet deposition (interstitial) [kg/m2/s]
   Real aerdepwetis[aero_model::pcnst] = {};
   convproc::ma_convproc_intr(
-      team, scratch1Dviews, convproc_do_aer, convproc_do_gas, nlev, temperature,
-      pmid, dpdry, pdel, dt, dp_frac, icwmrdp, rprddp, evapcdp, sh_frac,
-      icwmrsh, rprdsh, evapcsh, dlftot, dlfsh, sh_e_ed_ratio, du, eu, ed, dp,
-      ktop, kbot, species_class, mmtoo_prevap_resusp, state_q, ptend_q,
-      ptend_lq, aerdepwetis);
+      team, config.aero_species, scratch1Dviews, convproc_do_aer,
+      convproc_do_gas, nlev, temperature, pmid, dpdry, pdel, dt, dp_frac,
+      icwmrdp, rprddp, evapcdp, sh_frac, icwmrsh, rprdsh, evapcsh, dlftot,
+      dlfsh, sh_e_ed_ratio, du, eu, ed, dp, ktop, kbot, species_class,
+      mmtoo_prevap_resusp, state_q, ptend_q, ptend_lq, aerdepwetis);
 }
 } // namespace mam4
 #endif

@@ -72,7 +72,8 @@ inline void init_scavimptbl(const AeroConfig &aero_config,
     sigmag_amode[i] = modes(i).mean_std_dev;
   }
 
-  auto aero_species = aero_species_on_host(aero_config.aero_species);
+  auto aero_species = Kokkos::create_mirror(aero_config.aero_species);
+  Kokkos::deep_copy(aero_species, aero_config.aero_species);
 
   // Note: Original code uses the following aerosol densities.
   // sulfate, sulfate, dust, p-organic

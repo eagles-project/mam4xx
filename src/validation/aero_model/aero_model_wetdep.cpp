@@ -127,7 +127,8 @@ void aero_model_wetdep(Ensemble *ensemble) {
                                   mam4::aero_model::nimptblgrow_total,
                                   aero_config.num_modes());
 
-    mam4::wetdep::init_scavimptbl(aero_config, scavimptblvol_host, scavimptblnum_host);
+    mam4::wetdep::init_scavimptbl(aero_config, scavimptblvol_host,
+                                  scavimptblnum_host);
 
     View2D scavimptblnum("scavimptblnum", mam4::aero_model::nimptblgrow_total,
                          aero_config.num_modes());

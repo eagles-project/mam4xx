@@ -42,14 +42,6 @@ aero_species_on_device(const AeroSpeciesHostView &species_on_host) {
   return species_on_device;
 }
 
-AeroSpeciesHostView
-aero_species_on_host(const AeroSpeciesView &species_on_device) {
-  AeroSpeciesHostView species_on_host("On-host aerosol species",
-                                      species_on_device.extent(0));
-  Kokkos::deep_copy(species_on_host, species_on_device);
-  return species_on_host;
-}
-
 std::string aero_id_str(const AeroId aid) {
   switch (aid) {
   case (AeroId::SO4): {
