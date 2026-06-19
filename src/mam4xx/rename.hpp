@@ -554,6 +554,7 @@ public:
                                 _num_pairs,                 // out
                                 _diameter_cutoff,           // out
                                 _ln_dia_cutoff, _diameter_threshold);
+    const AeroSpeciesView &aero_species = aero_config.aero_species;
 
     for (int imode = 0; imode < AeroConfig::num_modes(); ++imode) {
       _dgnum_amode[imode] = modes(imode).nom_diameter;
@@ -604,6 +605,7 @@ public:
                           const Prognostics &prognostics,
                           const Diagnostics &diagnostics,
                           const Tendencies &tendencies) const {
+    const AeroSpeciesView &aero_species = config.aero_species;
 
     if (_num_pairs <= 0)
       return;

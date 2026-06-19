@@ -221,6 +221,7 @@ void assign_3d_array(const int first_dimlen,  // in
 
 // MAM4 aerosol microphysics configuration data
 struct AmicPhysConfig {
+  AeroSpeciesView aero_species;
   // these switches activate various aerosol microphysics processes
   bool do_cond;   // condensation (a.k.a gas-aerosol exchange)
   bool do_rename; // mode "renaming"
@@ -1126,6 +1127,7 @@ void mam_newnuc_1subarea(
 KOKKOS_INLINE_FUNCTION
 void mam_amicphys_1subarea(
     // in
+    const AeroSpeciesView &aero_species,
     const int newnuc_h2so4_conc_optaa, const int gaexch_h2so4_uptake_optaa,
     const bool do_cond_sub, const bool do_rename_sub, const bool do_newnuc_sub,
     const bool do_coag_sub, const Real deltat, const int jsubarea,
@@ -1666,7 +1668,7 @@ void mam_amicphys_1subarea(
 
     if (do_aging_in_subarea) {
       mam4::aging::mam_pcarbon_aging_1subarea(
-          n_so4_monolayers_pcage, dgn_a,                // input
+          aero_species, n_so4_monolayers_pcage, dgn_a,  // input
           qnum_cur, qnum_delsub_cond, qnum_delsub_coag, // in-outs
           qaer_cur, qaer_delsub_cond, qaer_delsub_coag, // in-outs
           qaer_delsub_coag_in);                         // in-outs
@@ -1911,6 +1913,7 @@ void mam_amicphys_1gridcell(
 
     mam_amicphys_1subarea(
         // in
+        config.aero_species,
         config.gaexch_h2so4_uptake_optaa, config.newnuc_h2so4_conc_optaa,
         do_cond, do_rename, do_newnuc, do_coag, deltat, jsub,
         iscldy_subarea[jsub], n_so4_monolayers_pcage, afracsub[jsub], temp,

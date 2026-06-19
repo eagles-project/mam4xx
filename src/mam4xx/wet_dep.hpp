@@ -57,13 +57,13 @@ Real local_precip_production(Real pdel, Real source_term, Real sink_term,
   return (pdel / gravity) * (source_term - sink_term);
 }
 
-// Function to call to initialize the arrays passe to the
-// aero_model_wetdep function.
-// this is host function, scavimptblvol and  scavimptblnum need to be sycn to
-// device.
-inline void init_scavimptbl(View2DHost scavimptblvol,
+// Function to call to initialize the arrays passed to the aero_model_wetdep
+// function. This is a host function, so scavimptblvol and scavimptblnum need
+// to be synced to device.
+inline void init_scavimptbl(const AeroConfig &aero_config,
+                            View2DHost scavimptblvol,
                             View2DHost scavimptblnum) {
-  const int num_modes = AeroConfig::num_modes();
+  const int num_modes = aero_config.num_modes();
   Real dgnum_amode[num_modes];
   Real sigmag_amode[num_modes];
   Real aerosol_dry_density[num_modes];
@@ -71,12 +71,15 @@ inline void init_scavimptbl(View2DHost scavimptblvol,
     dgnum_amode[i] = modes(i).nom_diameter;
     sigmag_amode[i] = modes(i).mean_std_dev;
   }
+
+  auto aero_species = aero_species_on_host(aero_config.aero_species);
+
   // Note: Original code uses the following aerosol densities.
   // sulfate, sulfate, dust, p-organic
-  aerosol_dry_density[0] = mam4::mam4_density_so4;
-  aerosol_dry_density[1] = mam4::mam4_density_so4;
-  aerosol_dry_density[2] = mam4::mam4_density_dst;
-  aerosol_dry_density[3] = mam4::mam4_density_pom;
+  aerosol_dry_density[0] = aero_species(int(AeroId::SO4)).density;
+  aerosol_dry_density[1] = aero_species(int(AeroId::SO4)).density;
+  aerosol_dry_density[2] = aero_species(int(AeroId::DST)).density;
+  aerosol_dry_density[3] = aero_species(int(AeroId::POM)).density;
   aero_model::modal_aero_bcscavcoef_init(dgnum_amode, sigmag_amode,
                                          aerosol_dry_density, scavimptblnum,
                                          scavimptblvol);

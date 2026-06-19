@@ -68,7 +68,7 @@ namespace aging {
 // change due to condenstion and coagulation
 KOKKOS_INLINE_FUNCTION
 void mam_pcarbon_aging_frac(
-    const unsigned n_so4_monolayers_pcage,
+    const AeroSpeciesView &aero_species, const unsigned n_so4_monolayers_pcage,
     const Real dgn_a[AeroConfig::num_modes()], // dry geometric mean diameter of
                                                // number distribution [m]
     const Real qaer_cur[AeroConfig::num_aerosol_ids()]
@@ -236,7 +236,7 @@ void transfer_cond_coag_mass_to_accum(
 
 KOKKOS_INLINE_FUNCTION
 void mam_pcarbon_aging_1subarea(
-    const unsigned n_so4_monolayers_pcage,
+    const AeroSpeciesView &aero_species, const unsigned n_so4_monolayers_pcage,
     const Real dgn_a[AeroConfig::num_modes()], // dry geometric mean diameter of
                                                // number distribution [m]
     Real qnum_cur[AeroConfig::num_modes()],    // aerosol number mixing ratio
@@ -270,9 +270,9 @@ void mam_pcarbon_aging_1subarea(
   const int nsrc = static_cast<int>(ModeIndex::PrimaryCarbon);
   const int ndest = static_cast<int>(ModeIndex::Accumulation);
 
-  mam_pcarbon_aging_frac(n_so4_monolayers_pcage, dgn_a, qaer_cur, qaer_del_cond,
-                         qaer_del_coag_in, xferfrac_pcage, frac_cond,
-                         frac_coag);
+  mam_pcarbon_aging_frac(aero_species, n_so4_monolayers_pcage, dgn_a, qaer_cur,
+                         qaer_del_cond, qaer_del_coag_in, xferfrac_pcage,
+                         frac_cond, frac_coag);
   // Note, there are probably optimizations to be done here, closely following
   // the Fortran code required extra unpacking of arrays.
 
@@ -392,7 +392,8 @@ void aerosol_aging_rates_1box(const int k, const AeroConfig &aero_config,
   }
 
   // primary carbon aging
-  mam_pcarbon_aging_1subarea(config.n_so4_monolayers_pcage, dgn_a, qnum_cur,
+  mam_pcarbon_aging_1subarea(aero_config.aero_species,
+                             config.n_so4_monolayers_pcage, dgn_a, qnum_cur,
                              qnum_del_cond, qnum_del_coag, qaer_cur,
                              qaer_del_cond, qaer_del_coag, qaer_del_coag_in);
 

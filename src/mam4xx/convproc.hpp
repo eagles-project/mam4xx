@@ -454,18 +454,18 @@ public:
   // but there is the problem of the indexes being in a different order.
   //
   KOKKOS_INLINE_FUNCTION
-  static Real specdens_amode(const int i) {
+  static Real specdens_amode(const AeroSpeciesView &aero_species, const int i) {
     // clang-format off
     const Real specdens_amode[maxd_aspectype] = {
-      mam4::mam4_density_so4,
+      aero_species(int(AeroId::SO4)).density,
       mam4::max(),
       mam4::max(),
-      mam4::mam4_density_pom,
-      mam4::mam4_density_soa,
-      mam4::mam4_density_bc ,
-      mam4::mam4_density_nacl,
-      mam4::mam4_density_dst,
-      mam4::mam4_density_mom,
+      aero_species(int(AeroId::POM)).density,
+      aero_species(int(AeroId::SOA)).density,
+      aero_species(int(AeroId::BC)).density,
+      aero_species(int(AeroId::NaCl)).density,
+      aero_species(int(AeroId::DST)).density,
+      aero_species(int(AeroId::MOM)).density,
       0, 0, 0, 0, 0};
     // clang-format on
     return specdens_amode[i];
@@ -474,20 +474,18 @@ public:
   // specdens_amode(l) = dry density (kg/m^3) of aerosol chemical species type l
   // The same concerns specified for specdens_amode apply to spechygro.
   KOKKOS_INLINE_FUNCTION
-  static Real spechygro(const int i) {
+  static Real spechygro(const AeroSpeciesView &aero_species, const int i) {
     // clang-format off
     const Real spechygro[maxd_aspectype] = {
-       mam4::mam4_hyg_so4,
+       aero_species(int(AeroId::SO4)).hygroscopicity,
        mam4::max(),
        mam4::max(),
-       mam4::mam4_hyg_pom,
-       // (BAD CONSTANT) mam4::mam4_hyg_soa = 0.1
-       0.1400000000e+00,
-       mam4::mam4_hyg_bc,
-       mam4::mam4_hyg_nacl,
-       // (BAD CONSTANT) mam4_hyg_dst = 0.14
-       0.6800000000e-01,
-       mam4::mam4_hyg_mom,
+       aero_species(int(AeroId::POM)).hygroscopicity,
+       0.1400000000e+00, // FIXME: should be aero_species(int(AeroId::SOA)).hygroscopicity
+       aero_species(int(AeroId::BC)).hygroscopicity,
+       aero_species(int(AeroId::NaCl)).hygroscopicity,
+       0.6800000000e-01, // FIXME: should be aero_species(int(AeroId::DST)).hygroscopicity,
+       aero_species(int(AeroId::MOM)).hygroscopicity,
        0, 0, 0, 0, 0};
     // clang-format on
     return spechygro[i];
@@ -1380,8 +1378,8 @@ update_conu_from_act_frac(SubView conu, SubView dconudt, const int la,
 }
 template <typename SubView>
 KOKKOS_INLINE_FUNCTION void
-aer_vol_num_hygro(const SubView conu, const Real rhoair,
-                  Real vaerosol[AeroConfig::num_modes()],
+aer_vol_num_hygro(const AeroSpeciesView &aero_species, const SubView conu,
+                  const Real rhoair, Real vaerosol[AeroConfig::num_modes()],
                   Real naerosol[AeroConfig::num_modes()],
                   Real hygro[AeroConfig::num_modes()]) {
   // clang-format off
@@ -1417,12 +1415,14 @@ aer_vol_num_hygro(const SubView conu, const Real rhoair,
       // mass divided by density
       const Real tmp_vol_spec =
           mam4::max(conu[ConvProc::lmassptr_amode(ispec, imode)], 0.0) /
-          ConvProc::specdens_amode(ConvProc::lspectype_amode(ispec, imode));
+          ConvProc::specdens_amode(aero_species,
+                                   ConvProc::lspectype_amode(ispec, imode));
       // total aerosol volume
       tmp_vol += tmp_vol_spec;
       //  volume*hygro suming up for all species
       tmp_hygro += tmp_vol_spec *
-                   ConvProc::spechygro(ConvProc::lspectype_amode(ispec, imode));
+                   ConvProc::spechygro(aero_species,
+                                       ConvProc::lspectype_amode(ispec, imode));
     }
     // change volume from m3/kgair to m3/m3air
     vaerosol[imode] = tmp_vol * rhoair;

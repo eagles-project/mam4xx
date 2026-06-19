@@ -6,9 +6,8 @@
 #ifndef MAM4XX_AERO_CONFIG_HPP
 #define MAM4XX_AERO_CONFIG_HPP
 
+#include "aero_species.hpp"
 #include "mam4_types.hpp"
-
-#include <ekat_kokkos_types.hpp>
 
 namespace mam4 {
 
@@ -22,9 +21,15 @@ class AeroConfig final {
 public:
   bool calculate_gas_uptake_coefficient = false;
   int number_gauss_points_for_integration = 2;
-  // Default constructor.
+
+  // Default constructor with default aerosol species.
   KOKKOS_INLINE_FUNCTION
-  AeroConfig() {}
+  AeroConfig() : aero_species(aero_species_on_device(default_aero_species())) {}
+
+  // Constructor with configured aerosol species.
+  KOKKOS_INLINE_FUNCTION
+  explicit AeroConfig(const AeroSpeciesView &aero_species)
+      : aero_species(aero_species) {}
 
   // Copy constructor.
   KOKKOS_INLINE_FUNCTION
@@ -68,6 +73,9 @@ public:
   ///  gas_chem_mechanism.hpp)
   KOKKOS_INLINE_FUNCTION
   static constexpr int num_gas_phase_species() { return 31; }
+
+  /// Aerosol species
+  AeroSpeciesView aero_species;
 };
 
 /// MAM4 column-wise prognostic aerosol fields (also used for tendencies).

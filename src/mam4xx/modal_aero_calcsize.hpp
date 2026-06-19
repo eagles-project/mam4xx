@@ -20,6 +20,7 @@ constexpr int maxd_aspectype = ndrop::maxd_aspectype;
 
 KOKKOS_INLINE_FUNCTION
 void init_calcsize(
+    const AeroSpeciesView &aero_species,
     Real inv_density[AeroConfig::num_modes()][AeroConfig::num_aerosol_ids()],
     Real num2vol_ratio_min[AeroConfig::num_modes()],
     Real num2vol_ratio_max[AeroConfig::num_modes()],
@@ -140,15 +141,16 @@ struct CalcsizeData {
   bool update_mmr = false;
 
   void initialize() {
-
+    auto aero_species = aero_species_on_device(default_aero_species());
     ndrop::get_e3sm_parameters(nspec_amode, lspectype_amode, lmassptr_amode,
                                numptr_amode, specdens_amode, spechygro, mam_idx,
                                mam_cnst_idx);
 
-    init_calcsize(inv_density, num2vol_ratio_min, num2vol_ratio_max,
-                  num2vol_ratio_max_nmodes, num2vol_ratio_min_nmodes,
-                  num2vol_ratio_nom_nmodes, dgnmin_nmodes, dgnmax_nmodes,
-                  dgnnom_nmodes, mean_std_dev_nmodes,
+    init_calcsize(aero_species, inv_density, num2vol_ratio_min,
+                  num2vol_ratio_max, num2vol_ratio_max_nmodes,
+                  num2vol_ratio_min_nmodes, num2vol_ratio_nom_nmodes,
+                  dgnmin_nmodes, dgnmax_nmodes, dgnnom_nmodes,
+                  mean_std_dev_nmodes,
                   // outputs
                   noxf_acc2ait, n_common_species_ait_accum, ait_spec_in_acc,
                   acc_spec_in_ait);

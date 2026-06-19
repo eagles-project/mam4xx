@@ -80,10 +80,18 @@ static constexpr Real mam4_hyg_mom = 0.1;
 // The following functions can only be called on the host
 //--------------------------------------------------------
 
-/// Returns a newly-created view containing the default configuration for
+/// Returns a newly-created host view containing the default configuration for
 /// aerosol species. Create this on the host, override properties as desired,
 /// and copy to device with Kokkos::deep_copy.
 AeroSpeciesHostView default_aero_species();
+
+/// Return a newly-created device view whose data is copied from the given host view.
+AeroSpeciesView
+aero_species_on_device(const AeroSpeciesHostView &aero_species_on_host);
+
+/// Return a newly-created device view whose data is copied from the given host view.
+AeroSpeciesHostView
+aero_species_on_host(const AeroSpeciesView &aero_species_on_device);
 
 /// Maps an AeroId to the name of its species.
 std::string aero_id_str(const AeroId id);

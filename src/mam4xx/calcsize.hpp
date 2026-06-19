@@ -948,7 +948,8 @@ public:
       const auto n_spec = num_species_mode(m);
       for (int ispec = 0; ispec < n_spec; ispec++) {
         const int aero_id = int(mode_aero_species(m, ispec));
-        _inv_density[m][ispec] = Real(1.0) / aero_species(aero_id).density;
+        _inv_density[m][ispec] =
+            Real(1.0) / aero_config.aero_species(aero_id).density;
       } // for(ispec)
       // FIXME: do we need to update num2vol_ratio_min_nmodes and
       // num2vol_ratio_max_nmodes as well?

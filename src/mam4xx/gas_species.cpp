@@ -25,4 +25,20 @@ GasSpeciesHostView default_gas_species() {
   return species;
 }
 
+GasSpeciesView
+gas_species_on_device(const GasSpeciesHostView &species_on_host) {
+  GasSpeciesView species_on_device("On-device gas species",
+                                   species_on_host.extent(0));
+  Kokkos::deep_copy(species_on_device, species_on_host);
+  return species_on_device;
+}
+
+GasSpeciesHostView
+gas_species_on_host(const GasSpeciesView &species_on_device) {
+  GasSpeciesHostView species_on_host("On-host gas species",
+                                     species_on_device.extent(0));
+  Kokkos::deep_copy(species_on_host, species_on_device);
+  return species_on_host;
+}
+
 } // namespace mam4
