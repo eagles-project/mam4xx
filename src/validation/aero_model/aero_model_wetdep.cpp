@@ -9,12 +9,15 @@
 using namespace skywalker;
 
 void aero_model_wetdep(Ensemble *ensemble) {
+  auto aero_species =
+      mam4::aero_species_on_device(mam4::default_aero_species());
+  mam4::AeroConfig aero_config(aero_species);
+
   ensemble->process([=](const Input &input, Output &output) {
     using View1DHost = typename mam4::HostType::view_1d<Real>;
     using View2DHost = typename mam4::HostType::view_2d<Real>;
     using View2D = mam4::DeviceType::view_2d<Real>;
 
-    mam4::AeroConfig aero_config;
     mam4::Prognostics progs = mam4::validation::create_prognostics(mam4::nlev);
     mam4::Tendencies tends = mam4::validation::create_tendencies(mam4::nlev);
     int nlev = mam4::nlev;

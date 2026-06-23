@@ -10,6 +10,9 @@ using namespace skywalker;
 
 void calculate_coated_fraction(Ensemble *ensemble) {
 
+  auto aero_species =
+      mam4::aero_species_on_device(mam4::default_aero_species());
+
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     if (!input.has("so4mac")) {
@@ -148,8 +151,8 @@ void calculate_coated_fraction(Ensemble *ensemble) {
     Real tot_na500 = 0.0;
 
     mam4::hetfrz::calculate_coated_fraction(
-        air_density, so4mac, pommac, mommac, soamac, dmac, bcmac, mommpc,
-        pommpc, bcmpc, so4mc, pommc, soamc, mommc, dmc,
+        aero_species, air_density, so4mac, pommac, mommac, soamac, dmac, bcmac,
+        mommpc, pommpc, bcmpc, so4mc, pommc, soamc, mommc, dmc,
         total_interstitial_aer_num.data(), total_cloudborne_aer_num.data(),
         hetraer.data(), total_aer_num.data(), coated_aer_num.data(),
         uncoated_aer_num.data(), dstcoat.data(), na500, tot_na500);

@@ -17,6 +17,10 @@ void compute_tendencies(Ensemble *ensemble) {
   ensemble->process([=](const Input &input, Output &output) {
     // Fetch ensemble parameters
 
+    auto aero_species =
+        mam4::aero_species_on_device(mam4::default_aero_species());
+    mam4::AeroConfig mam4_config(aero_species);
+
     Real dt = input.get("dt");
     Real t = 0;
 
@@ -28,7 +32,6 @@ void compute_tendencies(Ensemble *ensemble) {
     mam4::Diagnostics diags = mam4::validation::create_diagnostics(nlev);
     mam4::Tendencies tends = mam4::validation::create_tendencies(nlev);
 
-    mam4::AeroConfig mam4_config;
     mam4::CalcSizeProcess process(mam4_config);
     const auto nmodes = mam4_config.num_modes();
 

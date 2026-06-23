@@ -11,6 +11,9 @@ using namespace skywalker;
 
 void calculate_mass_mean_radius(Ensemble *ensemble) {
 
+  auto aero_species =
+      mam4::aero_species_on_device(mam4::default_aero_species());
+
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     if (!input.has("bcmac")) {
@@ -57,9 +60,9 @@ void calculate_mass_mean_radius(Ensemble *ensemble) {
         input.get_array("total_interstitial_aer_num");
     auto hetraer = input.get_array("hetraer");
 
-    mam4::hetfrz::calculate_mass_mean_radius(bcmac, bcmpc, dmac, dmc,
-                                             total_interstitial_aer_num.data(),
-                                             hetraer.data());
+    mam4::hetfrz::calculate_mass_mean_radius(
+        aero_species, bcmac, bcmpc, dmac, dmc,
+        total_interstitial_aer_num.data(), hetraer.data());
 
     output.set("hetraer", hetraer);
   });

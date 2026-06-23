@@ -118,6 +118,9 @@ TEST_CASE("transfer_aged_pcarbon_to_accum", "mam4_aging_process") {
 
 TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
 
+  auto aero_species =
+      mam4::aero_species_on_device(mam4::default_aero_species());
+
   Real dgn_a[mam4::AeroConfig::num_modes()] = {};
   Real qnum_cur[mam4::AeroConfig::num_modes()] = {};
   Real qnum_del_cond[mam4::AeroConfig::num_modes()] = {};
@@ -154,8 +157,8 @@ TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
   }
   const unsigned n_so4_monolayers_pcage = 8;
   mam4::aging::mam_pcarbon_aging_1subarea(
-      n_so4_monolayers_pcage, dgn_a, qnum_cur, qnum_del_cond, qnum_del_coag,
-      qaer_cur, qaer_del_cond, qaer_del_coag, qaer_del_coag_in);
+      aero_species, n_so4_monolayers_pcage, dgn_a, qnum_cur, qnum_del_cond,
+      qnum_del_coag, qaer_cur, qaer_del_cond, qaer_del_coag, qaer_del_coag_in);
 
   // Passing in zeros for everything should give zeros back
   for (int imode = 0; imode < mam4::AeroConfig::num_modes(); ++imode) {

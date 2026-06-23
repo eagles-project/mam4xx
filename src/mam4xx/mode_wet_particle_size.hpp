@@ -219,6 +219,7 @@ void mode_avg_wet_particle_diam_water_uptake(const Diagnostics &diags,
 // ------------------------------------------------------------------------
 KOKKOS_INLINE_FUNCTION
 void diag_dgn_wet(
+    const mam4::AeroConfig &aero_config,
     const Real qaer_cur[mam4::AeroConfig::num_aerosol_ids()]
                        [mam4::AeroConfig::num_modes()],
     const Real qnum_cur[mam4::AeroConfig::num_modes()],
@@ -235,7 +236,7 @@ void diag_dgn_wet(
     for (int iaer = 0; iaer < num_aer; ++iaer) {
       const Real weight_gm_per_mol = molecular_weight_gm[iaer];
       const Real tmpa = qaer_cur[iaer][n] * weight_gm_per_mol;
-      tmp_dryvol += tmpa / mam4::aero_species(iaer).density;
+      tmp_dryvol += tmpa / aero_config.aero_species(iaer).density;
     }
     // Convert dry volume to dry diameter, then to wet diameter
     const Real sx = std::log(mam4::modes(n).mean_std_dev);

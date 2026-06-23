@@ -13,6 +13,9 @@ void compute_dry_volume_k(Ensemble *ensemble) {
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
 
+  auto aero_species =
+      mam4::aero_species_on_device(mam4::default_aero_species());
+
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     // Fetch ensemble parameters
@@ -47,7 +50,7 @@ void compute_dry_volume_k(Ensemble *ensemble) {
           for (int ispec = 0; ispec < n_spec; ispec++) {
             const int aero_id = int(mam4::mode_aero_species(imode, ispec));
             inv_density[imode][ispec] =
-                Real(1.0) / mam4::aero_species(aero_id).density;
+                Real(1.0) / aero_species(aero_id).density;
           } // for(ispec)
 
           Real dryvol_i_k = 0;

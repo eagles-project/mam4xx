@@ -10,6 +10,9 @@ using namespace skywalker;
 
 void mam_rename_1subarea(Ensemble *ensemble) {
 
+  auto aero_species =
+      mam4::aero_species_on_device(mam4::default_aero_species());
+
   ensemble->process([=](const Input &input, Output &output) {
     int nlev = 1;
 
@@ -17,7 +20,7 @@ void mam_rename_1subarea(Ensemble *ensemble) {
     mam4::Diagnostics diags(nlev);
     mam4::Tendencies tends(nlev);
 
-    mam4::AeroConfig mam4_config;
+    mam4::AeroConfig mam4_config(aero_species);
     mam4::RenameProcess process(mam4_config);
 
     constexpr int nmodes = mam4::AeroConfig::num_modes();
@@ -96,7 +99,7 @@ void mam_rename_1subarea(Ensemble *ensemble) {
         150, 115, 150, 12, 58.5, 135, 250092}; // [kg/kmol]
     for (int iaero = 0; iaero < naerosol_species; ++iaero) {
       mass_2_vol[iaero] =
-          molecular_weight_rename[iaero] / mam4::aero_species(iaero).density;
+          molecular_weight_rename[iaero] / aero_species(iaero).density;
     }
 
     this_rename.mam_rename_1subarea_(iscloudy, smallest_dryvol_value,

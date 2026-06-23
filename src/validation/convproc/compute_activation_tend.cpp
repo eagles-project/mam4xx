@@ -57,6 +57,10 @@ void set_output(Output &output, const std::string &name, const int rows,
 void compute_activation_tend(Ensemble *ensemble) {
   // We don't need any settings for this particular test.
   // Settings settings = ensemble->settings();
+
+  auto aero_species =
+      mam4::aero_species_on_device(mam4::default_aero_species());
+
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = 72;
@@ -114,9 +118,9 @@ void compute_activation_tend(Ensemble *ensemble) {
           Real xx_wcldbase = xx_wcldbase_host;
           int xx_kcldbase = xx_kcldbase_host;
           mam4::convproc::compute_activation_tend(
-              f_ent, cldfrac_i[kk], rhoair_i[kk], mu_i[kk], mu_i[kk + 1],
-              dt_u[kk], wup[kk], icwmr[kk], temperature[kk], kk, kactcnt,
-              kactfirst, conu[kk], dconudt_activa[kk], xx_wcldbase,
+              aero_species, f_ent, cldfrac_i[kk], rhoair_i[kk], mu_i[kk],
+              mu_i[kk + 1], dt_u[kk], wup[kk], icwmr[kk], temperature[kk], kk,
+              kactcnt, kactfirst, conu[kk], dconudt_activa[kk], xx_wcldbase,
               xx_kcldbase);
 
           for (int i = 0; i < nlev + 1; ++i) {

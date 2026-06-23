@@ -10,6 +10,10 @@ using namespace skywalker;
 
 void compute_tendencies(Ensemble *ensemble) {
 
+  auto aero_species =
+      mam4::aero_species_on_device(mam4::default_aero_species());
+  mam4::AeroConfig mam4_config(aero_species);
+
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     const int nlev = mam4::nlev;
@@ -161,7 +165,6 @@ void compute_tendencies(Ensemble *ensemble) {
     mam4::Diagnostics diags = mam4::validation::create_diagnostics(nlev);
     mam4::Tendencies tends = mam4::validation::create_tendencies(nlev);
 
-    mam4::AeroConfig mam4_config;
     mam4::DryDepositionProcess::ProcessConfig process_config;
     mam4::DryDepositionProcess process(mam4_config, process_config);
     const Real t = 0;

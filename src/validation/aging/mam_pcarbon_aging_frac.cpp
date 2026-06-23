@@ -10,6 +10,9 @@ using namespace skywalker;
 
 void mam_pcarbon_aging_frac(Ensemble *ensemble) {
 
+  auto aero_species =
+      mam4::aero_species_on_device(mam4::default_aero_species());
+
   // Run the ensemble.
   ensemble->process([=](const Input &input, Output &output) {
     // Ensemble parameters
@@ -66,9 +69,10 @@ void mam_pcarbon_aging_frac(Ensemble *ensemble) {
     Real frac_cond;
     Real frac_coag;
     const unsigned n_so4_monolayers_pcage = 8;
-    mam4::aging::mam_pcarbon_aging_frac(
-        n_so4_monolayers_pcage, dgn_a_f.data(), qaer_cur_c, qaer_del_cond_c,
-        qaer_del_coag_in_c, xferfrac_pcage, frac_cond, frac_coag);
+    mam4::aging::mam_pcarbon_aging_frac(aero_species, n_so4_monolayers_pcage,
+                                        dgn_a_f.data(), qaer_cur_c,
+                                        qaer_del_cond_c, qaer_del_coag_in_c,
+                                        xferfrac_pcage, frac_cond, frac_coag);
 
     n = 0;
     for (int imode = 0; imode < num_modes; ++imode) {
