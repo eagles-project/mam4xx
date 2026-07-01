@@ -22,9 +22,9 @@ namespace mam4 {
 
 /// MemorySpace refers to the memory space on the device.
 #ifdef KOKKOS_ENABLE_CUDA
-typedef Kokkos::CudaSpace MemorySpace;
+using MemorySpace = Kokkos::CudaSpace;
 #else
-typedef Kokkos::HostSpace MemorySpace;
+using MemorySpace = Kokkos::HostSpace;
 #endif
 
 /// Device and host types

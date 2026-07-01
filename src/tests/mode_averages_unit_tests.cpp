@@ -28,8 +28,8 @@ TEST_CASE("modal_averages", "") {
   ekat::logger::Logger<> logger("modal averages tests",
                                 ekat::logger::LogLevel::info, comm);
 
-  auto aero_species =
-      mam4::aero_species_on_device(mam4::default_aero_species());
+  auto aero_species_h = mam4::default_aero_species();
+  auto aero_species = mam4::aero_species_on_device(aero_species_h);
 
   /// Use EAMxx default number of levels
   const int nlev = 72;
@@ -77,7 +77,7 @@ TEST_CASE("modal_averages", "") {
         const int s = aerosol_index_for_mode(static_cast<mam4::ModeIndex>(m),
                                              static_cast<mam4::AeroId>(aid));
         if (s >= 0) {
-          dry_vol += mass_mixing_ratio / aero_species(s).density;
+          dry_vol += mass_mixing_ratio / aero_species_h(s).density;
         }
       }
       const Real mean_vol = dry_vol / number_mixing_ratio;
@@ -156,9 +156,9 @@ TEST_CASE("modal_averages", "") {
         const int s = aerosol_index_for_mode(static_cast<mam4::ModeIndex>(m),
                                              static_cast<mam4::AeroId>(aid));
         if (s >= 0) {
-          dry_vol += mass_mixing_ratio / aero_species(s).density;
-          hyg += mass_mixing_ratio * aero_species(s).hygroscopicity /
-                 aero_species(s).density;
+          dry_vol += mass_mixing_ratio / aero_species_h(s).density;
+          hyg += mass_mixing_ratio * aero_species_h(s).hygroscopicity /
+                 aero_species_h(s).density;
         }
       }
       hygro[m] = hyg / dry_vol;
