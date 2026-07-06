@@ -3,6 +3,8 @@
 // National Technology & Engineering Solutions of Sandia, LLC (NTESS)
 // SPDX-License-Identifier: BSD-3-Clause
 
+#include "testing.hpp"
+
 #include <mam4xx/mam4.hpp>
 
 #include <ekat_comm.hpp>
@@ -121,69 +123,54 @@ TEST_CASE("mam4_pcarbon_aging_1subarea", "mam4_aging_process") {
   auto aero_species =
       mam4::aero_species_on_device(mam4::default_aero_species());
 
-  Real dgn_a[mam4::AeroConfig::num_modes()] = {};
-  Real qnum_cur[mam4::AeroConfig::num_modes()] = {};
-  Real qnum_del_cond[mam4::AeroConfig::num_modes()] = {};
-  Real qnum_del_coag[mam4::AeroConfig::num_modes()] = {};
-  Real qaer_cur[mam4::AeroConfig::num_aerosol_ids()]
-               [mam4::AeroConfig::num_modes()] = {};
-  Real qaer_del_cond[mam4::AeroConfig::num_aerosol_ids()]
-                    [mam4::AeroConfig::num_modes()] = {};
-  Real qaer_del_coag[mam4::AeroConfig::num_aerosol_ids()]
-                    [mam4::AeroConfig::num_modes()] = {};
-  Real qaer_del_coag_in[mam4::AeroConfig::num_aerosol_ids()]
-                       [mam4::AeroConfig::max_agepair()] = {};
+  auto test_results = mam4::testing::create_on_device_test_results();
+  Kokkos::parallel_for(
+      "mam4_pcarbon_aging_1subarea", 1, KOKKOS_LAMBDA(const int i) {
+        Real dgn_a[mam4::AeroConfig::num_modes()] = {};
+        Real qnum_cur[mam4::AeroConfig::num_modes()] = {};
+        Real qnum_del_cond[mam4::AeroConfig::num_modes()] = {};
+        Real qnum_del_coag[mam4::AeroConfig::num_modes()] = {};
+        Real qaer_cur[mam4::AeroConfig::num_aerosol_ids()]
+                     [mam4::AeroConfig::num_modes()] = {};
+        Real qaer_del_cond[mam4::AeroConfig::num_aerosol_ids()]
+                          [mam4::AeroConfig::num_modes()] = {};
+        Real qaer_del_coag[mam4::AeroConfig::num_aerosol_ids()]
+                          [mam4::AeroConfig::num_modes()] = {};
+        Real qaer_del_coag_in[mam4::AeroConfig::num_aerosol_ids()]
+                             [mam4::AeroConfig::max_agepair()] = {};
 
-  // Fill all arrays with zeros
-  for (int imode = 0; imode < mam4::AeroConfig::num_modes(); ++imode) {
-    dgn_a[imode] = 0.0;
-    qnum_cur[imode] = 0.0;
-    qnum_del_cond[imode] = 0.0;
-    qnum_del_coag[imode] = 0.0;
-  }
+        const unsigned n_so4_monolayers_pcage = 8;
 
-  for (int ispec = 0; ispec < mam4::AeroConfig::num_aerosol_ids(); ++ispec) {
-    for (int imode = 0; imode < mam4::AeroConfig::num_modes(); ++imode) {
-      qaer_cur[ispec][imode] = 0.0;
-      qaer_del_cond[ispec][imode] = 0.0;
-      qaer_del_coag[ispec][imode] = 0.0;
-    }
-  }
-
-  for (int ispec = 0; ispec < mam4::AeroConfig::num_aerosol_ids(); ++ispec) {
-    for (int imode = 0; imode < mam4::AeroConfig::max_agepair(); ++imode) {
-      qaer_del_coag_in[ispec][imode] = 0.0;
-    }
-  }
-  const unsigned n_so4_monolayers_pcage = 8;
-
-  Kokkos::single(
-      "mam_pcarbon_aging_1subarea", KOKKOS_LAMBDA(const int i) {
         mam4::aging::mam_pcarbon_aging_1subarea(
             aero_species, n_so4_monolayers_pcage, dgn_a, qnum_cur,
             qnum_del_cond, qnum_del_coag, qaer_cur, qaer_del_cond,
             qaer_del_coag, qaer_del_coag_in);
+
+        // Passing in zeros for everything should give zeros back
+        for (int imode = 0; imode < mam4::AeroConfig::num_modes(); ++imode) {
+          REQUIRE_ON_DEVICE(test_results, dgn_a[imode] != 0.0);
+          REQUIRE_ON_DEVICE(test_results, qnum_cur[imode] == 0.0);
+          REQUIRE_ON_DEVICE(test_results, qnum_del_cond[imode] == 0.0);
+          REQUIRE_ON_DEVICE(test_results, qnum_del_coag[imode] == 0.0);
+        }
+
+        for (int ispec = 0; ispec < mam4::AeroConfig::num_aerosol_ids();
+             ++ispec) {
+          for (int imode = 0; imode < mam4::AeroConfig::num_modes(); ++imode) {
+            REQUIRE_ON_DEVICE(test_results, qaer_cur[ispec][imode] == 0.0);
+            REQUIRE_ON_DEVICE(test_results, qaer_del_cond[ispec][imode] == 0.0);
+            REQUIRE_ON_DEVICE(test_results, qaer_del_coag[ispec][imode] == 0.0);
+          }
+        }
+
+        for (int ispec = 0; ispec < mam4::AeroConfig::num_aerosol_ids();
+             ++ispec) {
+          for (int imode = 0; imode < mam4::AeroConfig::max_agepair();
+               ++imode) {
+            REQUIRE_ON_DEVICE(test_results,
+                              qaer_del_coag_in[ispec][imode] == 0.0);
+          }
+        }
       });
-
-  // Passing in zeros for everything should give zeros back
-  for (int imode = 0; imode < mam4::AeroConfig::num_modes(); ++imode) {
-    REQUIRE(dgn_a[imode] == 0.0);
-    REQUIRE(qnum_cur[imode] == 0.0);
-    REQUIRE(qnum_del_cond[imode] == 0.0);
-    REQUIRE(qnum_del_coag[imode] == 0.0);
-  }
-
-  for (int ispec = 0; ispec < mam4::AeroConfig::num_aerosol_ids(); ++ispec) {
-    for (int imode = 0; imode < mam4::AeroConfig::num_modes(); ++imode) {
-      REQUIRE(qaer_cur[ispec][imode] == 0.0);
-      REQUIRE(qaer_del_cond[ispec][imode] == 0.0);
-      REQUIRE(qaer_del_coag[ispec][imode] == 0.0);
-    }
-  }
-
-  for (int ispec = 0; ispec < mam4::AeroConfig::num_aerosol_ids(); ++ispec) {
-    for (int imode = 0; imode < mam4::AeroConfig::max_agepair(); ++imode) {
-      REQUIRE(qaer_del_coag_in[ispec][imode] == 0.0);
-    }
-  }
+  mam4::testing::report_on_device_test_results(test_results);
 }
